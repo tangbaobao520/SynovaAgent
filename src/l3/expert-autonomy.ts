@@ -161,6 +161,7 @@ export class ExpertAutonomyEngine {
   private parseResponse(content: string): LLMReActResponse {
     try { return JSON.parse(content); } catch {
       // Direct parse failed — attempt regex extraction, non-critical fallback
+      log.debug('LLM response JSON parse failed, attempting regex extraction');
       const match = content.match(/\{[\s\S]*\}/);
       if (match) return JSON.parse(match[0]);
     }

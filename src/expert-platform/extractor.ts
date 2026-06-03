@@ -178,7 +178,8 @@ export class ExpertKnowledgeExtractor {
         comment: review.comment || '',
         suggestedCorrection: review.correction,
       };
-    } catch {
+    } catch (err: any) {
+      log.warn({ err: err.message }, 'Cross-validation LLM call failed — defaulting to agree');
       return { agrees: true, comment: '自动审核失败，默认通过' };
     }
   }

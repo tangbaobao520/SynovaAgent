@@ -117,8 +117,8 @@ export class CorroborationEngine {
         confidence: parsed.confidence ?? 0.5,
         reasoning: parsed.reasoning ?? 'LLM 未返回推理',
       };
-    } catch {
-      // LLM unavailable — fallback to numerical comparison
+    } catch (err: any) {
+      log.warn({ err: err.message }, 'LLM pairwise evidence check failed — falling back to numerical comparison');
       const diff = Math.abs(evidenceA.confidence - evidenceB.confidence);
       return {
         consistent: diff <= 0.3,

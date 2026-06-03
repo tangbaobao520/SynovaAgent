@@ -67,7 +67,8 @@ export class PythonBridge {
     try {
       const result = await this.run<{ status: string }>('', 'ping', {});
       return result.status === 'ok';
-    } catch {
+    } catch (err: any) {
+      log.debug({ err: err.message }, 'Python bridge health check failed');
       return false;
     }
   }

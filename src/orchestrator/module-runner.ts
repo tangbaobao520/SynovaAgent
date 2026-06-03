@@ -159,8 +159,8 @@ export class ModuleRunner {
             ),
           ]);
           return { moduleId: module.name, ...retryResult, durationMs: Date.now() - startTime };
-        } catch {
-          /* retry also failed — fall through to return error result */
+        } catch (retryErr: any) {
+          log.debug({ moduleId: module.name, err: retryErr.message }, 'Module retry also failed — degraded');
         }
       }
 
