@@ -48,16 +48,21 @@ else
   echo -e "  ${GREEN}✅ L3→L5 边界: 无直接数据库操作${RESET}"
 fi
 
-# ═══ 3. GraphStore 接口重复声明 ═══
-# graph-bridge.ts 不应重新声明 GraphStore（应与 engine-core 一致）
-DUPLICATE_GS=$(grep -n "export interface GraphStore" src/l4/graph-bridge.ts 2>/dev/null || true)
-if [ -n "$DUPLICATE_GS" ]; then
-  echo -e "  ${YELLOW}⚠  GraphStore 接口在 graph-bridge.ts 重复声明${RESET}"
-  echo "     铁律 39: 应通过类型兼容测试确保与 engine-core 一致。"
+# ═══ 3. GraphStore 接口声明唯一性 ═══
+# 只允许 graph-bridge.ts 声明 GraphStore。禁止在其他文件新增声明。
+GS_DECLARATIONS=$(grep -rn "export interface GraphStore " src/ --include="*.ts" 2>/dev/null \
+  | grep -v "node_modules" | grep -v "\.test\." || true)
+GS_COUNT=$(echo "$GS_DECLARATIONS" | grep -c . 2>/dev/null || echo 0)
+if [ "$GS_COUNT" -gt 1 ]; then
+  echo -e "  ${RED}❌ GraphStore 接口多处声明: ${GS_COUNT} 处${RESET}"
+  echo "$GS_DECLARATIONS" | while read -r line; do echo "     ${line}"; done
+  echo "     铁律 39: GraphStore 只允许在一处声明 (graph-bridge.ts 或 engine-core)"
+  FAIL=$((FAIL + 1))
+elif [ "$GS_COUNT" -eq 1 ]; then
+  echo -e "  ${YELLOW}⚠  GraphStore 在 graph-bridge.ts 声明 (1处, 与 engine-core 镜像)${RESET}"
   echo "     运行: npx vitest run tests/architecture/graphstore-compatibility.test.ts"
-  # 警告，非硬阻断
 else
-  echo -e "  ${GREEN}✅ GraphStore 接口: 未重复声明${RESET}"
+  echo -e "  ${GREEN}✅ GraphStore 接口: 未声明 (应从 engine-core 导入)${RESET}"
 fi
 
 # ═══ 4. 多租户安全: graph 参数传递 ═══

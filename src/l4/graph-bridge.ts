@@ -20,7 +20,11 @@ import { createLogger } from '../logger';
 
 const log = createLogger('l4/graph-bridge');
 
-// ═══ GraphStore Interface (mirrors engine-core) ═══
+// ═══ GraphStore Interface ═══
+// 铁律 39: 类型镜像 engine-core GraphStore (graph-store.ts:27)。
+// 使用 string 类型参数 (vs engine-core 的 NodeType/EdgeType 枚举) 以保持 synova-agent 独立。
+// 结构兼容性由 tests/architecture/graphstore-compatibility.test.ts 验证。
+// engine-core 引用: @synova/engine-core/dist/pipeline/diagnosis/graph-store
 
 export interface GraphStore {
   createNode(type: string, props: Record<string,unknown>, graph: string): string;
