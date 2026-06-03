@@ -27,12 +27,12 @@
 
 ## 基础设施
 
-- [ ] **GIT_WORKFLOW** | 2026-06-03 | Feature branch 工作流未建立 (铁律 34) | 当前单人开发，main 上直接工作 | 1h
+- [x] **GIT_WORKFLOW** | 2026-06-03 | Feature branch 工作流 | ✅ pre-commit + commit-msg + pre-push hooks 已安装, Conventional Commits 强制 | —
 - [x] **ONTOLOGY_VENDOR** | 2026-06-03 | ontology-syncer vendor 残留 | ✅ 已修复, EngineCoreVendorAdapter.createGraphStore() | —
 
 ---
 
-**统计**: 共 1 项待解决 (13 项已修复)，预估总工时 ~ 1h
+**统计**: 共 0 项待解决 (14 项已修复) ✅
 
 **规则**:
 - 新增技术债务时，在此文件中添加条目（含创建日期）
