@@ -2,6 +2,7 @@
  * providers/deepseek.ts — DeepSeek Provider 适配器
  */
 import type { LLMProvider, LLMMessage, ChatOptions, ChatResult, StreamCallback, HealthCheckResult, ProviderConfig, ChatCompletionResponse } from './types';
+import { DiagnosticAgentError, ErrorCode, isRetryable } from '../errors/types';
 
 const DEFAULT_BASE_URL = 'https://api.deepseek.com/v1';
 const DEFAULT_MODEL = 'deepseek-chat';
@@ -16,7 +17,7 @@ export function createDeepSeekProvider(config: ProviderConfig): LLMProvider {
     baseUrl,
 
     async chat(messages: LLMMessage[], opts?: ChatOptions): Promise<ChatResult> {
-      if (!apiKey) throw new Error('DeepSeek API Key 未配置');
+      if (!apiKey) throw new DiagnosticAgentError(ErrorCode.AUTH_FAILED, 'DeepSeek API Key 未配置', 0, false);
       const res = await fetch(`${baseUrl}/chat/completions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
@@ -30,7 +31,8 @@ export function createDeepSeekProvider(config: ProviderConfig): LLMProvider {
       });
       if (!res.ok) {
         const text = await res.text().catch(() => '');
-        throw new Error(`DeepSeek API 错误 (${res.status}): ${text.slice(0, 300)}`);
+        const code = res.status === 429 ? ErrorCode.RATE_LIMITED : res.status >= 500 ? ErrorCode.NETWORK : ErrorCode.INTERNAL;
+        throw new DiagnosticAgentError(code, `DeepSeek API ${res.status}: ${text.slice(0, 200)}`, 0, isRetryable(code));
       }
       const data = await res.json() as ChatCompletionResponse;
       const content = data.choices?.[0]?.message?.content;
