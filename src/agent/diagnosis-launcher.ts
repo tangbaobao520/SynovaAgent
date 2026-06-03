@@ -49,7 +49,7 @@ export class DiagnosisLauncher {
         traceId: sessionId, spanId: sessionId.slice(0, 16),
         timestamp: new Date().toISOString(),
       });
-      onEvent?.({ type: 'phase_started', phase: 1, label: '数据采集' });
+      onEvent?.({ type: 'phase_started', phase: 1, label: '数据采集', confidence: 0.9 });
 
       log.info({ teamId, initiatorRole }, '启动六阶段诊断');
 
@@ -67,7 +67,7 @@ export class DiagnosisLauncher {
             const contradictions = this.ctx.corroborationEngine.detectContradictions({ orgId: teamId });
             if (contradictions.length > 0) {
               log.info({ count: contradictions.length }, '证据矛盾检测完成');
-              onEvent?.({ type: 'evidence_contradictions', phase: 1, message: `发现 ${contradictions.length} 处证据矛盾` });
+              onEvent?.({ type: 'evidence_contradictions', phase: 1, message: `发现 ${contradictions.length} 处证据矛盾`, findings: contradictions.slice(0, 3).map(c => ({ moduleId: c.evidenceA?.id || 'evidence', summary: c.description || '矛盾信号', confidence: 1 - Math.min(c.scoreDifference, 1) })), confidence: 0.85 });
             }
           }
         } catch (err: any) {
@@ -173,7 +173,7 @@ export class DiagnosisLauncher {
           try {
             const communities = generateCommunityReports(graphStore, teamId);
             log.info({ communityCount: communities.length }, '社区报告已生成');
-            onEvent?.({ type: 'community_reports', phase: 2, message: `发现 ${communities.length} 个社区` });
+            onEvent?.({ type: 'community_reports', phase: 2, message: `发现 ${communities.length} 个协作圈`, findings: communities.slice(0, 3).map((c: any) => ({ moduleId: c.id || 'community', summary: c.label || `协作圈 ${c.size || 0} 人`, confidence: c.confidence || 0.7 })), confidence: 0.7 });
           } catch (err: any) {
             log.warn({ err }, 'CommunityReports failed — degraded');
           }
@@ -186,7 +186,8 @@ export class DiagnosisLauncher {
           log.info({ autoMerged: resolution.autoMerged, queued: resolution.queuedForReview }, 'L3 实体解析完成');
           if (resolution.autoMerged > 0 || resolution.queuedForReview > 0) {
             onEvent?.({ type: 'entity_resolution', phase: 3,
-              message: `发现 ${resolution.autoMerged} 对重复实体(自动合并), ${resolution.queuedForReview} 对待审核` });
+              message: `发现 ${resolution.autoMerged} 对重复实体(自动合并), ${resolution.queuedForReview} 对待审核`,
+              confidence: 0.8 });
           }
         } catch (err: any) {
           log.warn({ err }, 'EntityResolution failed — degraded');

@@ -125,12 +125,16 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
           label: event.label,
           message: event.message,
         });
+        // L1-P0: 富事件输出 — 支持前端进度条 + 发现卡片 + 图更新渲染
         sseWrite(res, {
           type: event.type,
           phase: event.phase,
           label: event.label,
           message: event.message,
-          findings: (event as { findings?: unknown }).findings,
+          findings: event.findings,
+          confidence: event.confidence,
+          nodesCreated: event.nodesCreated,
+          edgesCreated: event.edgesCreated,
         });
       },
     );
