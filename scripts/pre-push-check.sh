@@ -6,7 +6,7 @@
 # ═══════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
 
-RED='\033[0;31m'; GREEN='\033[0;32m'; RESET='\033[0m'
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RESET='\033[0m'
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 echo ""
@@ -42,6 +42,19 @@ if bash "$SCRIPT_DIR/pre-commit-check.sh" 2>/dev/null; then
 else
   echo -e "${RED}❌ 铁律违规 — 修复后重试 push${RESET}"
   FAIL=1
+fi
+
+# npm audit: critical vulnerabilities → block push
+echo -n "  npm audit ... "
+AUDIT=$(npm audit --json 2>/dev/null || echo '{"error":"audit failed"}')
+if echo "$AUDIT" | grep -q '"critical"'; then
+  CRIT=$(echo "$AUDIT" | grep -o '"critical":[0-9]*' | grep -o '[0-9]*' | head -1)
+  echo -e "${RED}❌ ${CRIT} critical vulnerabilities${RESET}"
+  FAIL=1
+elif echo "$AUDIT" | grep -q '"error"'; then
+  echo -e "${YELLOW}⚠ audit unavailable${RESET}"
+else
+  echo -e "${GREEN}✅${RESET}"
 fi
 
 echo ""

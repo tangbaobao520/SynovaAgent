@@ -79,6 +79,35 @@ if [ -f .env ] && grep -q "sk-\|ApiKey.*[a-f0-9]\{20\}" .env 2>/dev/null; then
 fi
 hard_check "P0-01: .env 不含真实 API Key" "$M"
 
+# 铁律 37: 文件大小 — 单文件 >1000 行硬阻断, >500 行警告
+OVERSIZE=$(find src/ -name "*.ts" -type f -exec wc -l {} \; 2>/dev/null \
+  | awk '$1 > 1000 && $2 != "total" {print $2": "$1" lines"}' || true)
+hard_check "铁律 37: 单文件 >1000 行" "$OVERSIZE"
+
+LARGE=$(find src/ -name "*.ts" -type f -exec wc -l {} \; 2>/dev/null \
+  | awk '$1 > 500 && $1 <= 1000 && $2 != "total" {print $2": "$1" lines"}' || true)
+warn_check "铁律 37: 单文件 >500 行 (建议拆分)" "$LARGE"
+
+# 铁律 33: 新测试文件命名 — 新增 test 文件必须含 .test. 或 .spec.
+NEW_TESTS=$(git diff --cached --name-only --diff-filter=A 2>/dev/null \
+  | grep "^tests/" | grep "\.ts$" | grep -v "\.test\.\|\.spec\.\|\.integration\.\|\.e2e\." || true)
+hard_check "铁律 33: 新测试文件命名不符合规范" "$NEW_TESTS"
+
+# 铁律 34: 分支命名 — feat/ fix/ chore/ docs/ test/ refactor/
+BRANCH=$(git branch --show-current 2>/dev/null || echo "main")
+if echo "$BRANCH" | grep -qE '^(feat|fix|chore|docs|test|refactor|perf|ci)/'; then
+  M=""
+elif [ "$BRANCH" = "main" ]; then
+  M="main 分支 — 铁律 34 要求 feature branch (警告, 非阻断)"
+else
+  M="分支名 '$BRANCH' 不符合规范 — 应为 feat/ fix/ chore/ 前缀"
+fi
+if [ "$BRANCH" = "main" ]; then
+  warn_check "铁律 34: 分支命名" "$M"
+else
+  hard_check "铁律 34: 分支命名" "$M"
+fi
+
 echo ""
 
 # ═══════════════════════════════════════════════════════════
@@ -92,14 +121,6 @@ M=$(grep -rn "console\.log\|console\.error" src/ --include="*.ts" 2>/dev/null \
   | grep -v "src/cli\.ts\|src/setup\.ts\|src/tui/" \
   || true)
 hard_check "铁律 11: console.log 残留 (非CLI/TUI)" "$M"
-
-# 铁律 34: 禁止直接 commit 到 main (Git 工作流未建立前为警告)
-M=""
-CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
-if [ "$CURRENT_BRANCH" = "main" ]; then
-  M="当前在 main 分支 — 铁律 34 要求 feature branch"
-fi
-warn_check "铁律 34: 不在 main 上 commit" "$M"
 
 # 铁律 11+24+31: 空 catch (无 log 且无注释)
 M=$(grep -rn "catch\s*{" src/ --include="*.ts" 2>/dev/null \
