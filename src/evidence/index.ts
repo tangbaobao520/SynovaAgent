@@ -84,6 +84,51 @@ export class CorroborationEngine {
     return contradictions;
   }
 
+  /**
+   * CV-001: LLM-as-judge 语义交叉验证。
+   * 用独立 LLM 调用判断两条证据在语义层面是否一致、矛盾、或无关。
+   * 这是真正的"多源交叉验证"——不是简单的置信度数值比较。
+   */
+  async validateWithLLM(
+    evidenceA: Evidence,
+    evidenceB: Evidence,
+    llmClient: { consult: (sys: string, msg: string, opts?: Record<string, unknown>) => Promise<{ content: string }> },
+  ): Promise<{ consistent: boolean; contradictory: boolean; confidence: number; reasoning: string }> {
+    const prompt = `你是组织诊断的证据审核专家。判断以下两条证据在语义层面是否一致。
+
+证据A [${evidenceA.type}, 置信度${evidenceA.confidence}]: "${evidenceA.content.slice(0, 300)}"
+
+证据B [${evidenceB.type}, 置信度${evidenceB.confidence}]: "${evidenceB.content.slice(0, 300)}"
+
+请判断:
+1. 两条证据是否指向同一结论? (consistent: true/false)
+2. 是否互相矛盾? (contradictory: true/false)
+3. 综合可信度 (confidence: 0-1)
+4. 理由 (reasoning: 简短中文说明)
+
+只输出 JSON: {"consistent":bool,"contradictory":bool,"confidence":0.0,"reasoning":"..."}`;
+
+    try {
+      const result = await llmClient.consult(prompt, '', { temperature: 0.1, maxTokens: 300 });
+      const parsed = JSON.parse(result.content) as { consistent: boolean; contradictory: boolean; confidence: number; reasoning: string };
+      return {
+        consistent: parsed.consistent ?? false,
+        contradictory: parsed.contradictory ?? false,
+        confidence: parsed.confidence ?? 0.5,
+        reasoning: parsed.reasoning ?? 'LLM 未返回推理',
+      };
+    } catch {
+      // LLM unavailable — fallback to numerical comparison
+      const diff = Math.abs(evidenceA.confidence - evidenceB.confidence);
+      return {
+        consistent: diff <= 0.3,
+        contradictory: diff > 0.5,
+        confidence: 1 - diff,
+        reasoning: 'LLM 不可用，降级为数值比较',
+      };
+    }
+  }
+
   /** Calculate corroboration stats for a specific evidence item */
   corroborate(evidenceId: string, filter: EvidenceFilter): CorroborationResult | null {
     const all = this.store.query(filter);
