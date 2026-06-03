@@ -8,8 +8,18 @@ import express from 'express';
 import cors from 'cors';
 import type { Server } from 'http';
 import { loadConfig } from './config';
-import { initEngineContext } from './init/engine-context';
+import { initEngineContext, getDatabase } from './init/engine-context';
 import { logger } from './logger';
+// C2+C3+C4: 编排层接线 (审计 P0-20260604)
+import { EventStore } from './orchestrator/event-store';
+import { EventBus } from './orchestrator/event-bus';
+import { HookRunner } from './orchestrator/hook-runner';
+import { SessionManager } from './orchestrator/session-manager';
+import { PhaseStateMachine } from './orchestrator/phase-state-machine';
+import { createOrchestrationWiring } from './orchestrator/wiring';
+import { initFederalReporter, getFederalAdapter } from './adapters/federal-adapter';
+import { bindConnectorTools } from './init/connector-binding';
+import { ToolRegistry } from './agent/tools';
 import chatRoutes from './routes/chat';
 import healthRoutes from './routes/health';
 import ontologyRoutes from './routes/ontology';
@@ -24,8 +34,50 @@ export async function createServer(): Promise<Server> {
 
   // 初始化 engine-core (DB + 服务注入)
   initEngineContext();
+  const db = getDatabase();
+
+  // ═══ C3: 编排层初始化 — EventBus + StateMachine + Session (审计 P0-20260604) ═══
+  const eventStore = new EventStore(db);
+  const eventBus = new EventBus(eventStore);
+  const hookRunner = new HookRunner();
+  const sessionManager = new SessionManager();
+  const phaseStateMachine = new PhaseStateMachine({
+    0: { label: '组织访谈', required: true, maxDurationMs: 600_000 },
+    1: { label: '数据采集', required: true, maxDurationMs: 120_000 },
+    2: { label: '假设生成', required: true, maxDurationMs: 300_000 },
+    3: { label: '根因分析', required: true, maxDurationMs: 180_000 },
+    4: { label: '报告生成', required: true, maxDurationMs: 60_000 },
+    5: { label: '交付', required: true, maxDurationMs: 120_000 },
+  });
+  const wiring = createOrchestrationWiring(eventBus, hookRunner, sessionManager, phaseStateMachine);
+  logger.info('编排层已初始化 (EventBus + PhaseStateMachine + SessionManager)');
+
+  // ═══ C2: 联邦进化 — 诊断完成后上报质量信号 (差分隐私+加密) ═══
+  let federalAdapter;
+  try {
+    federalAdapter = await initFederalReporter(db, { epsilon: 1.0, optOut: config.devMode });
+    logger.info('联邦进化上报已启用');
+  } catch (err: any) {
+    logger.warn({ err }, '联邦进化初始化失败 — degraded, 继续启动');
+    federalAdapter = getFederalAdapter();
+  }
+
+  // ═══ C4: Connector → ToolRegistry 桥接 ═══
+  let connectorToolRegistry: ToolRegistry | undefined;
+  try {
+    connectorToolRegistry = new ToolRegistry();
+    bindConnectorTools(connectorToolRegistry);
+    logger.info('Connector 工具绑定完成');
+  } catch (err: any) {
+    logger.warn({ err }, 'Connector 工具绑定失败 — degraded');
+  }
 
   const app = express();
+
+  // 附着共享编排上下文到 Express locals — routes 可通过 req.app.locals 访问
+  app.locals.orchestration = { eventBus, hookRunner, sessionManager, stateMachine: phaseStateMachine, wiring, db, eventStore };
+  app.locals.federalAdapter = federalAdapter;
+  if (connectorToolRegistry) app.locals.connectorToolRegistry = connectorToolRegistry;
 
   // 基础中间件
   app.use(cors());
