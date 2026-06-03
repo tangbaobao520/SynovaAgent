@@ -48,4 +48,6 @@ export interface EngineContext {
   diagnosisEngine: DiagnosisEngine;
   /** 铁律 39: GraphStore factory — 通过 adapter 获取, 不直接 import vendor */
   createGraphStore?: (db: unknown) => Promise<unknown>;
+  /** FED-001: 联邦进化适配器 — 诊断完成后上报质量信号 */
+  federalAdapter?: import('../adapters/federal-adapter').FederalAdapter;
 }

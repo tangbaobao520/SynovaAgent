@@ -83,6 +83,8 @@ export interface EngineConfig {
   enableTripleReflection?: boolean;
   /** 铁律 39: L2 通过 DiagnosisEngine 接口调用引擎 */
   diagnosisEngine?: import('../l2-interfaces/diagnosis-engine').DiagnosisEngine;
+  /** FED-001: 联邦进化适配器 */
+  federalAdapter?: import('../adapters/federal-adapter').FederalAdapter;
 }
 
 export interface ProcessResult {
@@ -203,6 +205,7 @@ export class ConversationEngine {
       graphStore: this.graphStore,
       diagnosisEngine,
       createGraphStore: (db) => EngineCoreVendorAdapter.createGraphStore(db),
+      federalAdapter: config.federalAdapter,
       flags: {
         enableCommunityReports: this.enableCommunityReports,
         enableEntityResolution: this.enableEntityResolution,

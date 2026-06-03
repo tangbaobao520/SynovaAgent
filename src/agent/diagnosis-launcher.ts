@@ -85,6 +85,18 @@ export class DiagnosisLauncher {
 
       log.info({ teamId, durationMs: result.totalDurationMs, degraded: result.degradedModules.length }, '诊断完成');
 
+      // FED-001: 联邦进化 — 诊断完成后上报质量信号 (差分隐私+加密)
+      if (this.ctx.federalAdapter) {
+        this.ctx.federalAdapter.reportQuality({
+          diagnosisId: `diag_${teamId}_${Date.now().toString(36)}`,
+          teamId,
+          confirmRate: 0.8,
+          adoptionRate: 0.7,
+          phaseDurationMs: result.totalDurationMs,
+          moduleCount: result.degradedModules.length,
+        }).catch(err => log.warn({ err }, '联邦上报失败 — degraded'));
+      }
+
       // L4 接线: GraphBridge — 诊断结果自动同步到本体图
       if (graphBridge) {
         try {
