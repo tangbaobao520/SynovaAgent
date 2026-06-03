@@ -17,12 +17,20 @@ echo ""
 
 FAIL=0
 
-# Step 4a: TypeScript 编译检查 (存量 type 错误警告, 不阻断 — vitest 是主门禁)
+# Step 4a: TypeScript 编译检查 (只检查 src/ 层级, 排除 vendor + packages)
 echo -n "  tsc --noEmit ... "
 TSC_OUT=$(npx tsc --noEmit 2>&1 || true)
-TSC_ERR_COUNT=$(echo "$TSC_OUT" | grep -c "error TS" 2>/dev/null || echo 0)
-if [ "${TSC_ERR_COUNT:-0}" -gt 0 ]; then
-  echo -e "${YELLOW}⚠ ${TSC_ERR_COUNT} type errors (存量, vitest 主门禁)${RESET}"
+# 精准排除: vendor engine-core + packages (这些包独立有自己的 tsc/CI)
+TSC_OWN=$(echo "$TSC_OUT" | grep "error TS" | grep -v "server/vendor/" | grep -v "packages/" || true)
+TSC_OWN_COUNT=$(echo "$TSC_OWN" | grep -c "error TS" 2>/dev/null || echo 0)
+TSC_VENDOR_COUNT=$(echo "$TSC_OUT" | grep "server/vendor/" | grep -c "error TS" 2>/dev/null || echo 0)
+TSC_PKG_COUNT=$(echo "$TSC_OUT" | grep "packages/" | grep -c "error TS" 2>/dev/null || echo 0)
+if [ "${TSC_OWN_COUNT:-0}" -gt 0 ]; then
+  echo -e "${RED}❌ ${TSC_OWN_COUNT} src/ errors — 修复后重试 push${RESET}"
+  echo "$TSC_OWN" | head -10
+  FAIL=1
+elif [ "${TSC_VENDOR_COUNT:-0}" -gt 0 ] || [ "${TSC_PKG_COUNT:-0}" -gt 0 ]; then
+  echo -e "${GREEN}✅ src/ 零错误${RESET} ${YELLOW}(vendor: ${TSC_VENDOR_COUNT}, packages: ${TSC_PKG_COUNT} — 各自独立门禁)${RESET}"
 else
   echo -e "${GREEN}✅${RESET}"
 fi

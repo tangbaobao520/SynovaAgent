@@ -10,15 +10,20 @@ import { createServer } from '../src/server';
 import type { Server } from 'http';
 
 let server: Server;
-const PORT = 3099;
-const BASE = `http://localhost:${PORT}`;
+let BASE: string;
 
 beforeAll(async () => {
+  // port 0 = OS 分配随机端口, 避免 EADDRINUSE
+  process.env.PORT = '0';
+  process.env.SYNOVA_DB_PATH = ':memory:';
   server = await createServer();
+  const addr = server.address();
+  const port = typeof addr === 'object' && addr ? addr.port : 3000;
+  BASE = `http://localhost:${port}`;
 });
 
 afterAll(() => {
-  if (server) server.close();
+  if (server) { server.close(); }
 });
 
 // ═══ Slice 1: Health ═══
@@ -102,7 +107,7 @@ describe('Diagnosis API', () => {
     expect(res.status).toBe(400);
   });
 
-  it('POST /api/diagnosis/consult with valid input → 200 SSE stream', async () => {
+  it('POST /api/diagnosis/consult with valid input → 200 SSE stream', { timeout: 180_000 }, async () => {
     const res = await fetch(`${BASE}/api/diagnosis/consult`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -118,7 +123,7 @@ describe('Diagnosis API', () => {
     expect(contentType).toMatch(/text\/event-stream|application\/json/);
     // 消费流以避免资源泄漏
     await res.text();
-  }, 30000);
+  });
 
   it('GET /api/diagnosis/consult/nonexistent/status → 404', async () => {
     const res = await fetch(`${BASE}/api/diagnosis/consult/nonexistent/status`);

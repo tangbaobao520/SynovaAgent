@@ -6,17 +6,20 @@ import { createServer } from '../src/server';
 import type { Server } from 'http';
 
 let server: Server;
-const PORT = 3098;
-const BASE = `http://localhost:${PORT}`;
+let BASE: string;
 
 beforeAll(async () => {
   process.env.DEV_MODE = 'true';
-  process.env.PORT = String(PORT);
+  // port 0 = OS 分配随机端口, 避免 EADDRINUSE
+  process.env.PORT = '0';
   process.env.SYNOVA_DB_PATH = ':memory:';
   server = await createServer();
+  const addr = server.address();
+  const port = typeof addr === 'object' && addr ? addr.port : 3098;
+  BASE = `http://localhost:${port}`;
 });
 
-afterAll(() => { if (server) server.close(); });
+afterAll(() => { if (server) { server.close(); } });
 
 describe('Sessions API', () => {
   let sessionId: string;
