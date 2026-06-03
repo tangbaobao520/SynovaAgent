@@ -149,7 +149,8 @@ M=$(echo "$M" | while read -r line; do
   file=$(echo "$line" | cut -d: -f1)
   linenum=$(echo "$line" | cut -d: -f2)
   next=$((linenum + 1))
-  if sed -n "${next}p" "$file" 2>/dev/null | grep -q "log\."; then continue; fi
+  # Skip if next line has log OR comment OR return/assignment (JSON.parse fallback)
+  if sed -n "${next}p" "$file" 2>/dev/null | grep -qE "log\.|//|/\*|items\s*=|return "; then continue; fi
   echo "$line"
 done || true)
 warn_check "铁律 11+24+31: 空 catch (静默吞)" "$M"

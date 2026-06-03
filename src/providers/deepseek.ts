@@ -5,7 +5,7 @@ import type { LLMProvider, LLMMessage, ChatOptions, ChatResult, StreamCallback, 
 import { DiagnosticAgentError, ErrorCode, isRetryable } from '../errors/types';
 
 const DEFAULT_BASE_URL = 'https://api.deepseek.com/v1';
-const DEFAULT_MODEL = 'deepseek-chat';
+const DEFAULT_MODEL = 'deepseek-v4-flash';
 
 export function createDeepSeekProvider(config: ProviderConfig): LLMProvider {
   const baseUrl = config.baseUrl || DEFAULT_BASE_URL;
@@ -109,8 +109,7 @@ export function createDeepSeekProvider(config: ProviderConfig): LLMProvider {
     },
 
     listModels(): string[] {
-      // P3-03: 当前同步返回已知模型。LLMProvider 接口为同步签名，改为 API /models 需接口升级。
-      return [model, 'deepseek-chat', 'deepseek-reasoner'];
+      return [model, 'deepseek-v4-pro', 'deepseek-v4-flash', 'deepseek-v4-r1'];
     },
   };
 }

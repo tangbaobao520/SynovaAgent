@@ -31,7 +31,9 @@ import type { DiagnosticPath, SubgraphSummary, BrokerNode, GraphDiff, AnomalyPat
 import { reflectOnTriples } from '../l4/triple-reflection';
 import type { Triple, ReflectionResult } from '../l4/triple-reflection';
 import type { L3ResolutionResult } from '../l4/entity-resolver';
+import { resolveEntitiesL3 } from '../l4/entity-resolver';
 import type { CommunityReport } from '../l4/community-reports';
+import { generateCommunityReports } from '../l4/community-reports';
 // P1-01: 子组件提取 — 单体引擎拆分为 3 个独立类
 import { ToolLoopExecutor } from './tool-loop-executor';
 import { DiagnosisLauncher, type DiagnosisEvent, type ConsultationResult } from './diagnosis-launcher';

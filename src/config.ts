@@ -26,7 +26,7 @@ export function loadConfig(): SynovaConfig {
   // LLM 配置
   const llmApiKey = process.env.LLM_API_KEY || process.env.DEEPSEEK_API_KEY || '';
   const llmBaseUrl = process.env.LLM_BASE_URL || process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com/v1';
-  const llmModel = process.env.LLM_MODEL || 'deepseek-chat';
+  const llmModel = process.env.LLM_MODEL || 'deepseek-v4-flash';
   const gatewayHost = process.env.OPENCLAW_GATEWAY_HOST || '';
   const engineTokens = process.env.ENGINE_API_TOKENS || (devMode ? 'synova-dev-token' : '');
 

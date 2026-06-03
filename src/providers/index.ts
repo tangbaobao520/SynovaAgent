@@ -17,7 +17,7 @@ import type { LLMProvider, ProviderConfig } from './types';
 export type ProviderType = 'deepseek' | 'openai' | 'gateway';
 
 const PROVIDER_LABELS: Record<ProviderType, string> = {
-  deepseek: 'DeepSeek (默认推荐, 国内低延迟)',
+  deepseek: 'DeepSeek V4 (默认推荐, 国内低延迟, 1M 上下文)',
   openai: 'OpenAI 兼容 (通义千问/智谱GLM/Kimi/文心一言/零一万物/MiniMax 等)',
   gateway: '自定义 Gateway (高级, 非必要不使用)',
 };
