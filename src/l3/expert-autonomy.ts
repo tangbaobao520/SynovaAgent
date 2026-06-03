@@ -17,6 +17,8 @@ export interface QueryAPI {
   findDiagnosticPaths(fromType: string, toType: string): Promise<unknown>;
   summarizeSubgraph(rootId: string, maxDepth?: number): Promise<unknown>;
   findCrossDimensionalBrokers(): Promise<unknown>;
+  /** Pattern engine: match signals against known diagnostic patterns */
+  matchPattern?(signals: string[]): Promise<unknown>;
 }
 
 export interface AutonomyConfig { maxRounds: number }
@@ -171,6 +173,8 @@ export class ExpertAutonomyEngine {
         return this.queryApi.summarizeSubgraph('root', 3);
       case 'findCrossDimensionalBrokers':
         return this.queryApi.findCrossDimensionalBrokers();
+      case 'match_pattern':
+        return this.queryApi.matchPattern ? this.queryApi.matchPattern([]) : { error: 'matchPattern not configured' };
       default:
         return { error: `未知查询: ${functionName}` };
     }
