@@ -440,6 +440,16 @@ export class ConversationEngine {
         .withGateDataCompleteness(0.3)
         .withGateMinHypothesisConfidence(0.5);
 
+      // 编排层: Phase 1 启动 — 发射事件 + 并行模块采集
+      this.eventBus?.emit({
+        id: `evt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,6)}`,
+        type: 'phase.started', consultationId: this.sessionId, phase: 1,
+        data: { label: '数据采集' },
+        traceId: this.sessionId, spanId: this.sessionId.slice(0, 16),
+        timestamp: new Date().toISOString(),
+      });
+      onEvent?.({ type: 'phase_started', phase: 1, label: '数据采集' });
+
       log.info({ teamId, initiatorRole }, '启动六阶段诊断');
 
       const result = await orchestrator.runConsultation(teamId, {
