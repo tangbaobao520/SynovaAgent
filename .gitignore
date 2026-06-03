@@ -8,3 +8,7 @@ coverage/
 *.tar.gz
 .DS_Store
 Thumbs.db
+*.html
+*.ps1
+*.cmd
+Dockerfile
