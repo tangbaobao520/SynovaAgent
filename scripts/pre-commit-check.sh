@@ -53,8 +53,8 @@ echo ""
 # ═══════════════════════════════════════════════════════════
 echo "── 硬阻断 ──────────────────────────────────────────────"
 
-# 铁律 38: as any 零容忍 — 匹配 as any; as any) as any] as any, as any} as any>
-M=$(grep -rn -E 'as any[][;,)}>]' src/ --include="*.ts" 2>/dev/null \
+# 铁律 38: as any 零容忍 — \b 单词边界覆盖所有语法位置 (行尾/空格/标点)
+M=$(grep -rn -E 'as any\b' src/ --include="*.ts" 2>/dev/null \
   | grep -v "node_modules" | grep -v "\.test\." | grep -v "\.d\.ts" | grep -v '//\|/\*\*' || true)
 hard_check "铁律 38: as any 零容忍" "$M"
 

@@ -5,6 +5,7 @@
  * 用户按 Enter 后进入对话。
  */
 import blessed from 'neo-blessed';
+import { getCurrentVersion } from '../services/update-checker';
 
 const BOLD = '\x1b[1m';
 const DIM = '\x1b[2m';
@@ -15,15 +16,7 @@ const MAGENTA = '\x1b[35m';
 const WHITE = '\x1b[37m';
 const RESET = '\x1b[0m';
 
-import * as fs from 'fs';
-import * as path from 'path';
-
-const VERSION = (() => {
-  try {
-    const pkgPath = path.join(__dirname, '..', 'package.json');
-    return JSON.parse(fs.readFileSync(pkgPath, 'utf-8')).version || '0.0.0';
-  } catch { return '0.0.0'; }
-})();
+const VERSION = getCurrentVersion();
 
 interface WelcomeConfig {
   providerName: string;

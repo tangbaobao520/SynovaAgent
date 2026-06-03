@@ -5,7 +5,7 @@ set -euo pipefail
 
 # 精确匹配代码中的 as any 语法模式（as any; / as any) / as any] / as any, / as any } / as any>）
 # 注释中的 "as any" 文字不会匹配这些语法模式
-AS_ANY=$(grep -rn -E 'as any[][;,)}>]' src/ --include="*.ts" \
+AS_ANY=$(grep -rn -E 'as any\b' src/ --include="*.ts" \
   | grep -v "node_modules" \
   | grep -v "\.test\." \
   | grep -v "\.d\.ts" \
