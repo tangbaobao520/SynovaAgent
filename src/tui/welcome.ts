@@ -59,7 +59,7 @@ export async function showWelcome(
     const info = [
       `${BOLD}${WHITE}SynovaAgent${RESET} ${DIM}v${VERSION}${RESET}`,
       '',
-      `${DIM}模型:${RESET} ${config.model || 'deepseek-chat'}    ${DIM}Provider:${RESET} ${config.providerName || 'deepseek'}    ${DIM}工作区:${RESET} ${shortDir}`,
+      `${DIM}模型:${RESET} ${config.model || 'deepseek-v4-flash'}    ${DIM}Provider:${RESET} ${config.providerName || 'deepseek'}    ${DIM}工作区:${RESET} ${shortDir}`,
       '',
       `${DIM}─── 更新日志 ─────────────────────────────────────────────${RESET}`,
       `${GREEN}2026-06-02${RESET}  TUI 三栏布局 · 流式对话 · 六阶段诊断 · 本体图谱实时监测`,

@@ -23,6 +23,8 @@ export interface ToolSchema {
   type: 'object';
   properties: Record<string, ToolParameter>;
   required?: string[];
+  /** DeepSeek V4 Strict Mode — 必须为 false 以启用服务端 Schema 验证 */
+  additionalProperties?: boolean;
 }
 
 /** Execution mode — determines how the tool is dispatched (Slice 1.2 + 4.1) */
@@ -50,6 +52,12 @@ export interface ToolCallResult {
 
 export class ToolRegistry implements ToolRegistryInterface {
   private tools = new Map<string, ToolDefinition>();
+  /** Cached OpenAI-compatible tool schema (P1: DeepSeek prefix cache optimization) */
+  private _cachedOpenAITools: Array<{
+    type: 'function';
+    function: { name: string; description: string; parameters: ToolSchema; strict?: boolean };
+  }> | null = null;
+  private _toolCacheVersion = 0;
   private connectorRegistry: unknown = null; // ConnectorRegistry reference (lazy)
 
   /** Bind to ConnectorRegistry for 'connector' mode tools (Slice 4.1) */
@@ -60,6 +68,8 @@ export class ToolRegistry implements ToolRegistryInterface {
 
   register(tool: ToolDefinition): void {
     this.tools.set(tool.name, tool);
+    this._cachedOpenAITools = null; // invalidate cache
+    this._toolCacheVersion++;
     log.debug({ name: tool.name, mode: tool.executionMode || 'local' }, 'Tool registered');
   }
 
@@ -146,14 +156,30 @@ export class ToolRegistry implements ToolRegistryInterface {
     }
   }
 
-  /** 生成 OpenAI 兼容的 function calling schema */
+  /** 生成 OpenAI 兼容的 function calling schema (P1: 固化缓存 — DeepSeek prefix cache 优化) */
   toOpenAITools(): Array<{
     type: 'function';
-    function: { name: string; description: string; parameters: ToolSchema };
+    function: { name: string; description: string; parameters: ToolSchema; strict?: boolean };
   }> {
-    return this.listTools().map(t => ({
+    if (this._cachedOpenAITools) return this._cachedOpenAITools;
+    // 按名称排序确保跨请求的工具定义顺序一致（Prefix Cache 关键）
+    this._cachedOpenAITools = this.listTools().map(t => ({
       type: 'function' as const,
-      function: { name: t.name, description: t.description, parameters: t.parameters },
+      function: {
+        name: t.name,
+        description: t.description,
+        parameters: this._injectStrictMode(t.parameters),
+        strict: true, // DeepSeek V4 Strict Mode — 服务端 Schema 验证，消除参数幻觉
+      },
     }));
+    return this._cachedOpenAITools;
+  }
+
+  /** DeepSeek V4 Strict Mode: 确保 additionalProperties: false */
+  private _injectStrictMode(schema: ToolSchema): ToolSchema {
+    if (schema.type === 'object' && schema.additionalProperties === undefined) {
+      return { ...schema, additionalProperties: false };
+    }
+    return schema;
   }
 }

@@ -160,7 +160,7 @@ async function main() {
     // 显示 Welcome 过渡页，等待用户按 Enter
     await showWelcome(welcomeScreen, {
       providerName: provider.name,
-      model: process.env.LLM_MODEL || 'deepseek-chat',
+      model: process.env.LLM_MODEL || 'deepseek-v4-flash',
       workDir: process.cwd(),
     });
 
