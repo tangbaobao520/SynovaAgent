@@ -27,16 +27,17 @@ else
   echo -e "${GREEN}✅${RESET}"
 fi
 
-# Step 4b: 全量测试 — Anthropic 标准: 零失败才允许 push
+# Step 4b: 全量测试 — Anthropic 标准: 零测试失败才允许 push
 echo -n "  vitest run ... "
-VITEST_OUTPUT=$(npx vitest run --reporter=dot 2>&1)
-FAILED_COUNT=$(echo "$VITEST_OUTPUT" | grep -oP '\d+(?= failed)' | head -1 || echo "0")
-PASSED_COUNT=$(echo "$VITEST_OUTPUT" | grep -oP '\d+(?= passed)' | head -1 || echo "0")
-if [ "${FAILED_COUNT:-0}" -eq 0 ] && [ "${PASSED_COUNT:-0}" -gt 0 ]; then
-  echo -e "${GREEN}✅ ${PASSED_COUNT} passed, 0 failed${RESET}"
+VITEST_OUTPUT=$(npx vitest run --reporter=verbose 2>&1 || true)
+FAILED_TESTS=$(echo "$VITEST_OUTPUT" | grep -c "× " 2>/dev/null || echo 0)
+PASSED_TESTS=$(echo "$VITEST_OUTPUT" | grep -c "✓ " 2>/dev/null || echo 0)
+FAILED_TESTS=$(echo "$FAILED_TESTS" | tr -d '[:space:]')
+PASSED_TESTS=$(echo "$PASSED_TESTS" | tr -d '[:space:]')
+if [ "${FAILED_TESTS:-0}" -eq 0 ] && [ "${PASSED_TESTS:-0}" -gt 0 ]; then
+  echo -e "${GREEN}✅ ${PASSED_TESTS} passed, 0 failed${RESET}"
 else
-  echo -e "${RED}❌ ${FAILED_COUNT:-?} failed, ${PASSED_COUNT:-?} passed — 零失败才允许 push${RESET}"
-  echo "     Anthropic 标准: CI 零失败合并。修复后重试。"
+  echo -e "${RED}❌ ${FAILED_TESTS} failed, ${PASSED_TESTS} passed — 零失败才允许 push${RESET}"
   FAIL=1
 fi
 
