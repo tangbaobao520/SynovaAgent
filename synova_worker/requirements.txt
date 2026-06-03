@@ -1,0 +1,4 @@
+# SynovaAgent Python Worker — connector dependencies
+# Day 2-3: Feishu connector (no SDK needed — uses urllib built-in)
+# Phase B: Add feishu, PyGithub, jira, sentence-transformers as needed
+requests>=2.31
