@@ -1,11 +1,17 @@
 /**
- * l3/expert-dispatcher.ts — L3 专家调度器
+ * l3/expert-dispatcher.ts — L3 专家调度器 (Sprint 3: 合并 engine-core 结构化解析+重试+超时)
  *
  * 铁律 39: 从 SubAgentCoordinator (L2) 中提取的 L3 逻辑。
  * 职责: 专家子 Agent 执行 — 证据过滤 + Prompt 构建 + ExpertAutonomyEngine + QualityFirewall
  *
- * L2 的 SubAgentCoordinator 只做编排 (并发/事件/聚合),
- * L3 的 ExpertDispatcher 做实质分析 (专家调度/策略/防火墙)。
+ * Sprint 3 (审计 P1-03): 吸收 engine-core ExpertSubAgentExecutor 的能力:
+ *   - EXPERT_REPORT_SCHEMA — 结构化 JSON 输出验证
+ *   - parseStructuredOutput — 健壮 JSON 解析 (含 markdown 兜底)
+ *   - extractOntologyPatches — 从 LLM 输出提取本体图补丁
+ *   - runWithRetry — 指数退避重试 (网络错误)
+ *   - 超时隔离 — 每个 Expert 独立超时
+ *
+ * engine-core 的 ExpertSubAgentExecutor 已标记 @deprecated。
  */
 import type { LLMClient } from '../orchestrator/diagnosis-orchestrator';
 import type { Evidence } from '../evidence/types';
@@ -17,9 +23,81 @@ import { createLogger } from '../logger';
 
 const log = createLogger('l3/expert-dispatcher');
 
+// ═══ Rich Expert Report (Sprint 3: 吸收 engine-core 结构化输出) ═══
+
+export interface ExpertReport extends SubAgentReport {
+  /** Structured findings from LLM output */
+  findings?: Array<{
+    id: string;
+    dimension: string;
+    statement: string;
+    confidence: number;
+    evidenceRefs: string[];
+    severity: 'critical' | 'high' | 'medium' | 'low';
+    suggestedActions: string[];
+  }>;
+  /** Overall assessment narrative */
+  overallAssessment?: string;
+  /** Uncertainties the expert flagged */
+  uncertainties?: Array<{
+    description: string;
+    reason: '数据不足' | '超出领域' | '需要人工判断';
+    suggestedNextStep: string;
+  }>;
+  /** Conflicting signals from other experts' perspectives */
+  conflictingSignals?: Array<{
+    dimension: string;
+    myFinding: string;
+    myConfidence: number;
+    potentialOpposingExpert: string;
+    reason: string;
+  }>;
+  /** Cross-references suggesting other experts should review */
+  crossReferences?: Array<{
+    dimension: string;
+    expertType: string;
+    reason: string;
+    priority: 'advisory' | 'important' | 'critical';
+  }>;
+  /** Ontology patches extracted from LLM output */
+  ontologyPatches?: Array<Record<string, unknown>>;
+  /** LLM model used */
+  model?: string;
+}
+
+// ═══ Output Schema (from engine-core ExpertSubAgentExecutor) ═══
+
+export const EXPERT_REPORT_SCHEMA = JSON.stringify({
+  findings: [{
+    id: 'f1', dimension: '...', statement: '≤200字',
+    confidence: 0.8, evidenceRefs: ['ev-xxx'],
+    severity: 'critical|high|medium|low', suggestedActions: ['...'],
+  }],
+  overallAssessment: '≤300字',
+  uncertainties: [{
+    description: '...', reason: '数据不足|超出领域|需要人工判断',
+    suggestedNextStep: '...',
+  }],
+  conflictingSignals: [{
+    dimension: '...', myFinding: '...', myConfidence: 0.5,
+    potentialOpposingExpert: 'org_diagnostician', reason: '...',
+  }],
+  crossReferences: [{
+    dimension: '...', expertType: 'financial_analyst',
+    reason: '...', priority: 'advisory|important|critical',
+  }],
+  ontologyPatches: [],
+});
+
+// ═══ Config ═══
+
 export interface ExpertDispatcherConfig {
   llmClient: LLMClient;
   policies: DataAccessPolicy[];
+  /** Per-expert timeout in ms (default 60s) */
+  timeoutMs?: number;
+  /** Max retries for network errors (default 2) */
+  maxRetries?: number;
   /** Optional: ExpertAutonomyEngine factory (DI) */
   engineFactory?: (llm: LLMClient, api: QueryAPI, policy: DataAccessPolicy, cfg?: { maxRounds?: number }) => ExpertAutonomyEngine;
 }
@@ -28,20 +106,24 @@ export class ExpertDispatcher {
   private llmClient: LLMClient;
   private policies: DataAccessPolicy[];
   private queryApi: QueryAPI | null = null;
-  private graphStoreForFirewall: { queryNodes: (type: string, filters?: Record<string,unknown>, graph?: string) => Array<{id:string}> } | null = null;
+  private graphStoreForFirewall: { queryNodes: (type: string, filters?: Record<string, unknown>, graph?: string) => Array<{ id: string }> } | null = null;
   private enableAutonomy = false;
   private engineFactory: ((llm: LLMClient, api: QueryAPI, policy: DataAccessPolicy, cfg?: { maxRounds?: number }) => ExpertAutonomyEngine) | null = null;
+  private timeoutMs: number;
+  private maxRetries: number;
 
   constructor(config: ExpertDispatcherConfig) {
     this.llmClient = config.llmClient;
     this.policies = config.policies;
     this.engineFactory = config.engineFactory || null;
+    this.timeoutMs = config.timeoutMs ?? 60_000;
+    this.maxRetries = config.maxRetries ?? 2;
   }
 
   /** Enable expert autonomy with graph query + quality firewall */
   enableAutonomyWithGraph(
     queryApi: QueryAPI,
-    graphStore: { queryNodes: (type: string, filters?: Record<string,unknown>, graph?: string) => Array<{id:string}> },
+    graphStore: { queryNodes: (type: string, filters?: Record<string, unknown>, graph?: string) => Array<{ id: string }> },
   ): this {
     this.queryApi = queryApi;
     this.graphStoreForFirewall = graphStore;
@@ -69,8 +151,8 @@ export class ExpertDispatcher {
     });
   }
 
-  /** Run a single expert sub-agent with full L3 pipeline */
-  async runExpert(type: ExpertType, evidence: Evidence[]): Promise<SubAgentReport | null> {
+  /** Run a single expert sub-agent with full L3 pipeline (returns rich ExpertReport) */
+  async runExpert(type: ExpertType, evidence: Evidence[]): Promise<ExpertReport | null> {
     const policy = this.policies.find(p => p.expertType === type);
     if (!policy) return null;
 
@@ -78,47 +160,155 @@ export class ExpertDispatcher {
     const filtered = this.filterEvidence(evidence, policy);
 
     try {
-      const evidenceSummary = filtered.slice(0, 10).map(e =>
-        `[${e.type}] ${e.content.slice(0, 100)} (置信度: ${e.confidence})`,
-      ).join('\n');
-
       // Gear 1: ExpertAutonomyEngine — ReAct loop with graph queries
       if (this.enableAutonomy && this.queryApi) {
-        const engine = this.engineFactory
-          ? this.engineFactory(this.llmClient, this.queryApi, policy, { maxRounds: 5 })
-          : new ExpertAutonomyEngine(this.llmClient, this.queryApi, policy, { maxRounds: 5 });
+        return await this.runWithRetry(async () => {
+          const engine = this.engineFactory
+            ? this.engineFactory(this.llmClient, this.queryApi!, policy, { maxRounds: 5 })
+            : new ExpertAutonomyEngine(this.llmClient, this.queryApi!, policy, { maxRounds: 5 });
 
-        const autonomyResult = await engine.run({
-          evidence: filtered.map(e => `[${e.type}] ${e.content.slice(0, 100)}`),
-          expertType: type,
-        });
+          const autonomyResult = await Promise.race([
+            engine.run({
+              evidence: filtered.map(e => `[${e.type}] ${e.content.slice(0, 100)}`),
+              expertType: type,
+            }),
+            new Promise<never>((_, reject) =>
+              setTimeout(() => reject(new Error(`expert_timeout: ${type} exceeded ${this.timeoutMs}ms`)), this.timeoutMs)),
+          ]);
 
-        // Gear 4: QualityFirewall
-        let hypothesis = autonomyResult.hypothesis;
-        let confidence = autonomyResult.confidence;
-        let qWarnings: string[] = [];
-        if (this.graphStoreForFirewall) {
-          const firewall = new QualityFirewall(this.graphStoreForFirewall, 'default');
-          const qr = await firewall.validate({
-            hypothesis, evidenceRefs: filtered.slice(0, 5).map(e => e.id),
-            confidence, expertType: type,
-          });
-          if (!qr.passed) hypothesis = `[低质量-已过滤] ${hypothesis}`;
-          confidence = qr.adjustedConfidence;
-          qWarnings = qr.warnings;
-        }
+          // Gear 4: QualityFirewall
+          let hypothesis = autonomyResult.hypothesis;
+          let confidence = autonomyResult.confidence;
+          let qWarnings: string[] = [];
+          if (this.graphStoreForFirewall) {
+            const firewall = new QualityFirewall(this.graphStoreForFirewall, 'default');
+            const qr = await firewall.validate({
+              hypothesis, evidenceRefs: filtered.slice(0, 5).map(e => e.id),
+              confidence, expertType: type,
+            });
+            if (!qr.passed) hypothesis = `[低质量-已过滤] ${hypothesis}`;
+            confidence = qr.adjustedConfidence;
+            qWarnings = qr.warnings;
+          }
 
-        return { expertType: type, hypothesis, confidence, evidenceUsed: filtered.length, durationMs: Date.now() - startTime, autonomyRounds: autonomyResult.roundsUsed, qualityWarnings: qWarnings };
+          return {
+            expertType: type, hypothesis, confidence,
+            evidenceUsed: filtered.length, durationMs: Date.now() - startTime,
+            autonomyRounds: autonomyResult.roundsUsed, qualityWarnings: qWarnings,
+          };
+        }, type);
       }
 
-      // Fallback: simple LLM consult
-      const prompt = EXPERT_PROMPTS[type] || '你是组织诊断专家。';
-      const result = await this.llmClient.consult(prompt, evidenceSummary || '无证据', { temperature: 0.3, maxTokens: 500 });
+      // Fallback: structured LLM consult with output schema
+      return await this.runWithRetry(async () => {
+        const prompt = EXPERT_PROMPTS[type] || '你是组织诊断专家。';
+        const evidenceSummary = filtered.slice(0, 10).map(e =>
+          `[${e.type}] ${e.content.slice(0, 100)} (置信度: ${e.confidence})`,
+        ).join('\n');
 
-      return { expertType: type, hypothesis: result.content.slice(0, 200), confidence: 0.6, evidenceUsed: filtered.length, durationMs: Date.now() - startTime };
+        const systemPrompt = `${prompt}\n\n## 输出格式 (必须严格遵守)\n只输出纯 JSON, 不要 Markdown 代码块包裹。\n${EXPERT_REPORT_SCHEMA}`;
+        const userMessage = `## 可用证据\n${evidenceSummary || '无证据'}\n\n## 本体图更新 (可选)\n如果你发现了证据中未出现的新实体或关系，请在 ontologyPatches 字段中输出。格式: "ontologyPatches": [{ "createNodes": [...], "createEdges": [...] }]`;
+
+        const response = await Promise.race([
+          this.llmClient.consult(systemPrompt, userMessage, { temperature: 0.3, maxTokens: 800 }),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error(`expert_timeout: ${type} exceeded ${this.timeoutMs}ms`)), this.timeoutMs)),
+        ]);
+
+        const parsed = this.parseStructuredOutput(response.content, type);
+        const ontologyPatches = this.extractOntologyPatches(response.content);
+
+        return {
+          expertType: type,
+          hypothesis: parsed.overallAssessment?.slice(0, 200) || response.content.slice(0, 200),
+          confidence: parsed.findings?.length
+            ? parsed.findings.reduce((sum: number, f: { confidence: number }) => sum + f.confidence, 0) / parsed.findings.length
+            : 0.6,
+          evidenceUsed: filtered.length, durationMs: Date.now() - startTime,
+          findings: parsed.findings,
+          overallAssessment: parsed.overallAssessment,
+          uncertainties: parsed.uncertainties,
+          conflictingSignals: parsed.conflictingSignals,
+          crossReferences: parsed.crossReferences,
+          ontologyPatches,
+          model: response.model,
+        };
+      }, type);
     } catch (err: any) {
       log.warn({ err, expertType: type }, '专家执行失败');
       return null;
+    }
+  }
+
+  // ═══ Private: Structured Parsing (from engine-core ExpertSubAgentExecutor) ═══
+
+  /** Parse structured JSON output with markdown code-block fallback */
+  private parseStructuredOutput(content: string, expertType: string): Partial<ExpertReport> {
+    try {
+      const json = JSON.parse(content.trim());
+      return {
+        findings: Array.isArray(json.findings) ? json.findings : [],
+        overallAssessment: String(json.overallAssessment || ''),
+        uncertainties: Array.isArray(json.uncertainties) ? json.uncertainties : [],
+        conflictingSignals: Array.isArray(json.conflictingSignals) ? json.conflictingSignals : [],
+        crossReferences: Array.isArray(json.crossReferences) ? json.crossReferences : [],
+      };
+    } catch {
+      // Try extracting JSON from markdown code block
+      const match = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (match) {
+        try {
+          const json = JSON.parse(match[1].trim());
+          return {
+            findings: Array.isArray(json.findings) ? json.findings : [],
+            overallAssessment: String(json.overallAssessment || ''),
+            uncertainties: Array.isArray(json.uncertainties) ? json.uncertainties : [],
+            conflictingSignals: Array.isArray(json.conflictingSignals) ? json.conflictingSignals : [],
+            crossReferences: Array.isArray(json.crossReferences) ? json.crossReferences : [],
+          };
+        } catch { /* fall through */ }
+      }
+      log.warn({ expertType, contentPreview: content.slice(0, 200) }, 'Expert JSON parse failed — using raw text');
+      return { overallAssessment: content.slice(0, 500) };
+    }
+  }
+
+  /** Extract ontology patches from LLM output (full JSON or code block) */
+  private extractOntologyPatches(content: string): Array<Record<string, unknown>> {
+    try {
+      const json = JSON.parse(content.trim());
+      if (json.ontologyPatches && Array.isArray(json.ontologyPatches)) return json.ontologyPatches;
+      if (json.ontologyPatches && !Array.isArray(json.ontologyPatches)) return [json.ontologyPatches];
+      return [];
+    } catch {
+      const match = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (match) {
+        try {
+          const json = JSON.parse(match[1].trim());
+          if (json.ontologyPatches) return Array.isArray(json.ontologyPatches) ? json.ontologyPatches : [json.ontologyPatches];
+        } catch { /* intentional fallthrough */ }
+      }
+    }
+    return [];
+  }
+
+  /** Retry wrapper with exponential backoff for network errors */
+  private async runWithRetry<T extends ExpertReport>(
+    fn: () => Promise<T>,
+    expertType: string,
+    attempt = 0,
+  ): Promise<T> {
+    try {
+      return await fn();
+    } catch (err: any) {
+      const isNetworkError = /timeout|network|econnrefused|etimedout|5\d{2}/i.test(err.message);
+      if (isNetworkError && attempt < this.maxRetries) {
+        const delay = Math.min(2000 * Math.pow(2, attempt), 8000);
+        log.debug({ expertType, attempt, delay }, 'Expert network error — retrying');
+        await new Promise(r => setTimeout(r, delay));
+        return this.runWithRetry(fn, expertType, attempt + 1);
+      }
+      throw err;
     }
   }
 }
