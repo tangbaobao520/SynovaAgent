@@ -205,6 +205,9 @@ async function send() {
               case 'interrupted':
                 addSystem('msg', '⏸ 诊断已中断');
                 break;
+              case 'degraded':
+                addSystem('msg', '⚠️ 部分模块降级: ' + (evt.message || ''));
+                break;
               default:
                 break;
             }
