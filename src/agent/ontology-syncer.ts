@@ -64,16 +64,16 @@ export class OntologySyncer {
       created: false,
     };
 
-    // Attempt to create SOG nodes via engine-core GraphStore
+    // 铁律 39: 通过 adapter 获取 GraphStore, 不直接 import vendor
     try {
-      const { createGraphStore } = await import(
-        '../../../../server/vendor/@synova/engine-core/src/pipeline/diagnosis/graph-store'
-      );
       const { SOGNodeType } = await import('@synova/sog-core');
       const { getDatabase } = await import('../init/engine-context');
-
       const db = getDatabase();
-      const store = createGraphStore('sqlite', db);
+      if (!this.ctx.createGraphStore) {
+        log.warn('createGraphStore 未注入 — 跳过 SOG 同步');
+        return result;
+      }
+      const store = await this.ctx.createGraphStore(db) as Record<string, unknown>;
 
       // Create Team node
       store.createNode(SOGNodeType.TEAM, {

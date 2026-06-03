@@ -65,15 +65,12 @@ export async function applyOntologyPatches(
   let errors = 0;
 
   try {
-    const { createGraphStore } = await import(
-      '../../../../server/vendor/@synova/engine-core/src/pipeline/diagnosis/graph-store'
-    );
+    // 铁律 39: 通过 adapter 获取 GraphStore
+    const { EngineCoreVendorAdapter } = await import('../adapters/engine-core-adapter');
     const { SOGNodeType } = await import('@synova/sog-core');
-
-    // Dynamic require for database (available at runtime)
     const { getDatabase } = await import('../init/engine-context');
     const db = getDatabase();
-    const store = createGraphStore('sqlite', db);
+    const store = await EngineCoreVendorAdapter.createGraphStore(db) as Record<string, unknown>;
 
     for (const patch of patches) {
       try {

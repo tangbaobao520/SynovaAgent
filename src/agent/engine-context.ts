@@ -46,4 +46,6 @@ export interface EngineContext {
   loggerPrefix: string;
   /** 铁律 39: DiagnosisEngine — L2 通过接口调用引擎, 不直接 import engine-core */
   diagnosisEngine: DiagnosisEngine;
+  /** 铁律 39: GraphStore factory — 通过 adapter 获取, 不直接 import vendor */
+  createGraphStore?: (db: unknown) => Promise<unknown>;
 }

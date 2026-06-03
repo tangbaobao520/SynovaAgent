@@ -37,6 +37,7 @@ import { ToolLoopExecutor } from './tool-loop-executor';
 import { DiagnosisLauncher, type DiagnosisEvent, type ConsultationResult } from './diagnosis-launcher';
 import { OntologySyncer, type OntologySyncResult } from './ontology-syncer';
 import type { EngineContext } from './engine-context';
+import { EngineCoreVendorAdapter } from '../adapters/engine-core-adapter';
 
 const log = createLogger('agent/conversation-engine');
 
@@ -201,6 +202,7 @@ export class ConversationEngine {
       graphBridge: this.graphBridge,
       graphStore: this.graphStore,
       diagnosisEngine,
+      createGraphStore: (db) => EngineCoreVendorAdapter.createGraphStore(db),
       flags: {
         enableCommunityReports: this.enableCommunityReports,
         enableEntityResolution: this.enableEntityResolution,

@@ -63,4 +63,12 @@ export class EngineCoreVendorAdapter implements DiagnosisEngine {
       throw err;
     }
   }
+
+  /** 铁律 39: GraphStore 工厂 — 返回 engine-core 类型兼容的 store */
+  static async createGraphStore(db: unknown): Promise<Record<string, unknown>> {
+    const { createGraphStore: factory } = await import(
+      '../../../server/vendor/@synova/engine-core/src/pipeline/diagnosis/graph-store'
+    );
+    return (factory as (backend: string, database: unknown) => Record<string, unknown>)('sqlite', db);
+  }
 }

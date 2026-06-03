@@ -21,14 +21,12 @@ export async function ingestFile(filePath: string, orgId: string): Promise<Inges
   const entities = extractEntities(content);
   let sogCreated = false;
 
-  // Try engine-core integration for SOG mapping
+  // 铁律 39: 通过 adapter 获取 GraphStore; ontology-adapter 保留 (L5 数据层直接调用)
   try {
-    const { createGraphStore } = await import(
-      '../../../../server/vendor/@synova/engine-core/src/pipeline/diagnosis/graph-store'
-    );
+    const { EngineCoreVendorAdapter } = await import('../adapters/engine-core-adapter');
     const { getDatabase } = await import('../init/engine-context');
     const db = getDatabase();
-    const store = createGraphStore('sqlite', db);
+    const store = await EngineCoreVendorAdapter.createGraphStore(db) as Record<string, unknown>;
 
     const { ingestDocument } = await import(
       '../../../../server/vendor/@synova/engine-core/src/pipeline/diagnosis/ontology-adapter'
