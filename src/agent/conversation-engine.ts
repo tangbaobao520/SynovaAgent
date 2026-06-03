@@ -14,6 +14,11 @@ import type { LLMProvider, LLMMessage } from '../providers/types';
 import { ToolRegistry } from './tools';
 import { createLogger } from '../logger';
 import type { ViewAdapter } from '../l1-interaction/types';
+import type { IntentRouter } from '../orchestrator/intent-router';
+import type { DimensionRegistry } from '../orchestrator/dimension-registry';
+import type { HookRunner } from '../orchestrator/hook-runner';
+import type { SessionManager } from '../orchestrator/session-manager';
+import type { EventBus } from '../orchestrator/event-bus';
 
 const log = createLogger('agent/conversation-engine');
 
@@ -50,6 +55,18 @@ export interface EngineConfig {
   maxTurns?: number;
   /** 组织 ID */
   orgId?: string;
+  /** 编排层: IntentRouter (替换简单轮次计数) */
+  intentRouter?: IntentRouter;
+  /** 编排层: DimensionRegistry (维度覆盖追踪) */
+  dimensionRegistry?: DimensionRegistry;
+  /** 编排层: HookRunner (工具 pre/post hooks) */
+  hookRunner?: HookRunner;
+  /** 编排层: SessionManager (自动压缩) */
+  sessionManager?: SessionManager;
+  /** 编排层: EventBus (事件追踪) */
+  eventBus?: EventBus;
+  /** 会话 ID (用于事件追踪) */
+  sessionId?: string;
 }
 
 export interface ProcessResult {
@@ -96,6 +113,16 @@ export class ConversationEngine {
   private toolRegistry: ToolRegistry;
   private viewAdapter: ViewAdapter | null = null;
 
+  // 编排层组件 (Iter 3-5 接线)
+  private intentRouter: IntentRouter | null = null;
+  private dimensionRegistry: DimensionRegistry | null = null;
+  private hookRunner: HookRunner | null = null;
+  private sessionManager: SessionManager | null = null;
+  private eventBus: EventBus | null = null;
+  private sessionId: string = '';
+  /** 维度覆盖追踪 (Phase 0) */
+  private dimensionCoverage: Map<string, { status: string; confidence: number; evidenceCount: number }> = new Map();
+
   constructor(provider: LLMProvider, config: EngineConfig = {}) {
     this.provider = provider;
     this.phase = 0;
@@ -107,6 +134,14 @@ export class ConversationEngine {
     };
     this.messages = [{ role: 'system', content: SYSTEM_PROMPT }];
     this.toolRegistry = new ToolRegistry();
+
+    // 编排层接线: 接收可选组件
+    this.intentRouter = config.intentRouter || null;
+    this.dimensionRegistry = config.dimensionRegistry || null;
+    this.hookRunner = config.hookRunner || null;
+    this.sessionManager = config.sessionManager || null;
+    this.eventBus = config.eventBus || null;
+    this.sessionId = config.sessionId || '';
   }
 
   /** Bind a ViewAdapter for L1 decoupling (Slice C). When set, Engine uses adapter for display. */
@@ -244,14 +279,59 @@ export class ConversationEngine {
     this.turnCount++;
     this.messages.push({ role: 'user', content: userInput });
 
-    // Phase 0: 结构化访谈
+    // Phase 0: 顾问式访谈 (Iter 3 接线 — 意图路由 + 维度覆盖)
     if (this.phase === 0) {
-      const phaseComplete =
-        this.turnCount >= this.config.maxTurns ||
-        this.detectPhaseComplete(userInput);
+      // 意图分类 (9分支) — LLM驱动的顾问式对话
+      if (this.intentRouter) {
+        try {
+          const intent = await this.intentRouter.classify(
+            userInput,
+            this.messages.filter(m => m.role === 'user').map(m => m.content),
+          );
+          if (intent.category === 'diagnostic' && intent.signals && this.dimensionRegistry) {
+            const dims = this.dimensionRegistry.selectBySignals(intent.signals);
+            for (const d of dims) {
+              const existing = this.dimensionCoverage.get(d.id);
+              if (!existing || existing.status === 'uncovered') {
+                this.dimensionCoverage.set(d.id, { status: 'partial', confidence: 0.5, evidenceCount: 1 });
+              } else {
+                existing.evidenceCount++;
+                if (existing.evidenceCount >= 2) {
+                  existing.status = 'covered';
+                  existing.confidence = Math.min(1, existing.confidence + 0.25);
+                }
+              }
+            }
+            this.sessionManager?.addMessage({ role: 'user', content: userInput });
+          }
+        } catch { /* 意图分类失败 → 降级为原有轮次逻辑 */ }
+      }
+
+      const coveredCount = [...this.dimensionCoverage.values()].filter(d => d.status === 'covered').length;
+      const explicitComplete = this.detectPhaseComplete(userInput);
+      const turnLimitReached = this.turnCount >= this.config.maxTurns;
+      const dimensionsReady = coveredCount >= 4;
       const minTurns = Math.min(3, this.config.maxTurns);
 
-      if (phaseComplete && this.turnCount >= minTurns) {
+      // 用户想结束但维度不够 → 告知缺失，不结束
+      if (explicitComplete && !dimensionsReady && this.turnCount >= minTurns) {
+        const missing = [...this.dimensionCoverage.entries()]
+          .filter(([, v]) => v.status !== 'covered').slice(0, 3)
+          .map(([k]) => this.dimensionRegistry?.get(k)?.name || k).join('、');
+        const reply = `感谢分享！诊断之前还想了解${missing || '一些补充信息'}——这对更准确的诊断结果很重要。`;
+        this.messages.push({ role: 'assistant', content: reply });
+        return { reply, phaseComplete: false };
+      }
+
+      if ((explicitComplete || turnLimitReached) && dimensionsReady && this.turnCount >= minTurns) {
+        this.eventBus?.emit({
+          id: `evt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,6)}`,
+          type: 'phase.completed', consultationId: this.sessionId, phase: 0,
+          data: { coveredDimensions: coveredCount, totalRounds: this.turnCount },
+          traceId: this.sessionId, spanId: this.sessionId.slice(0, 16),
+          timestamp: new Date().toISOString(),
+        });
+
         const reply = '感谢你提供的信息！我已收集到足够的组织概况。现在开始运行六阶段诊断分析...';
         this.messages.push({ role: 'assistant', content: reply });
         this.phase = 1;
@@ -468,7 +548,48 @@ export class ConversationEngine {
             params = {};
           }
 
-          const execResult = await this.toolRegistry.execute(tc.function.name, params);
+          // 编排层 Hook: pre-tool-use (权限/脱敏)
+          let effectiveParams = params;
+          if (this.hookRunner) {
+            const preResult = await this.hookRunner.runPreToolUse({
+              name: tc.function.name, input: JSON.stringify(params),
+            });
+            if (preResult.action === 'deny') {
+              (this.messages as any[]).push({
+                role: 'tool', tool_call_id: crypto.randomUUID(),
+                content: JSON.stringify({ error: `工具被拒绝: ${preResult.reason}` }),
+              });
+              this.eventBus?.emit({
+                id: `evt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,6)}`,
+                type: 'tool.denied', consultationId: this.sessionId,
+                data: { toolName: tc.function.name, reason: preResult.reason },
+                traceId: this.sessionId, spanId: this.sessionId.slice(0, 16),
+                timestamp: new Date().toISOString(),
+              });
+              continue; // Skip this tool, continue next
+            }
+            if (preResult.action === 'modify' && preResult.modifiedInput) {
+              try { effectiveParams = JSON.parse(preResult.modifiedInput); } catch { /* keep original */ }
+            }
+          }
+
+          const execResult = await this.toolRegistry.execute(tc.function.name, effectiveParams);
+
+          // 编排层 Hook: post-tool-use (审计/证据)
+          if (this.hookRunner) {
+            await this.hookRunner.runPostToolUse(
+              { name: tc.function.name, input: JSON.stringify(effectiveParams) },
+              { content: JSON.stringify(execResult), isError: !!(execResult as any).error },
+            );
+            this.eventBus?.emit({
+              id: `evt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,6)}`,
+              type: 'tool.executed', consultationId: this.sessionId,
+              data: { toolName: tc.function.name, success: !(execResult as any).error },
+              traceId: this.sessionId, spanId: this.sessionId.slice(0, 16),
+              timestamp: new Date().toISOString(),
+            });
+          }
+
           (this.messages as any[]).push({
             role: 'tool',
             tool_call_id: crypto.randomUUID(),
