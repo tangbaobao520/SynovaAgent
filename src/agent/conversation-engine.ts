@@ -21,6 +21,7 @@ import type { SessionManager } from '../orchestrator/session-manager';
 import type { EventBus } from '../orchestrator/event-bus';
 import type { EvidenceCollector } from '../evidence/index';
 import type { createGraphBridge } from '../l4/graph-bridge';
+import { ReportGraphAdapter } from '../l4/report-graph-adapter';
 
 const log = createLogger('agent/conversation-engine');
 
@@ -73,6 +74,8 @@ export interface EngineConfig {
   evidenceCollector?: EvidenceCollector;
   /** L4: GraphBridge (Phase 1 自动写入本体图) */
   graphBridge?: ReturnType<typeof createGraphBridge>;
+  /** L4: ReportGraphAdapter (Phase 4 报告从图读取) */
+  reportAdapter?: ReportGraphAdapter;
 }
 
 export interface ProcessResult {
@@ -127,6 +130,7 @@ export class ConversationEngine {
   private eventBus: EventBus | null = null;
   private evidenceCollector: EvidenceCollector | null = null;
   private graphBridge: ReturnType<typeof createGraphBridge> | null = null;
+  private reportAdapter: ReportGraphAdapter | null = null;
   private sessionId: string = '';
   /** 维度覆盖追踪 (Phase 0) */
   private dimensionCoverage: Map<string, { status: string; confidence: number; evidenceCount: number }> = new Map();
@@ -151,6 +155,7 @@ export class ConversationEngine {
     this.eventBus = config.eventBus || null;
     this.evidenceCollector = config.evidenceCollector || null;
     this.graphBridge = config.graphBridge || null;
+    this.reportAdapter = config.reportAdapter || null;
     this.sessionId = config.sessionId || '';
   }
 
