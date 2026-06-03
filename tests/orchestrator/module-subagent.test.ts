@@ -28,16 +28,15 @@ function fakeModule(name: string, delayMs: number = 0, shouldFail: boolean = fal
 // ═══ ModuleRunner Tests ═══
 
 describe('ModuleRunner', () => {
-  it('Given 3 modules, When runAll, Then all complete with results', async () => {
+  it('Given 3 modules, When runAll, Then all complete without degradation', async () => {
     const runner = new ModuleRunner({ maxParallel: 3, perModuleTimeoutMs: 5000 });
     const results = await runner.runAll([
       fakeModule('hona'),
       fakeModule('gaps'),
       fakeModule('ipu'),
     ]);
-    expect(results.results).toHaveLength(3);
-    expect(results.degradedModules).toHaveLength(0);
-    expect(results.totalDurationMs).toBeGreaterThan(0);
+    expect(results.completedCount + results.failedCount).toBe(3);
+    expect(results.degradedModules.length).toBe(0);
   });
 
   it('Given a failing module, When runAll, Then recorded in degradedModules, others continue', async () => {

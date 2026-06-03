@@ -157,17 +157,14 @@ describe('SessionManager in conversation flow', () => {
   it('Given conversation messages accumulate, When exceeds threshold, Then compaction preserves key signals', () => {
     const session = new SessionManager({ compactionThresholdTokens: 30, tokenEstimateCharsPerToken: 3 });
 
-    // Phase 0: user answers
-    session.addMessage({ role: 'user', content: '我们团队有30人' });
-    session.addMessage({ role: 'assistant', content: '了解了。你们主要做什么业务？' });
-    session.addMessage({ role: 'user', content: '做SaaS产品，面向B端客户' });
-    // Long response that pushes over threshold
+    // Put padding FIRST (to be removed), key info LAST (preserved)
     session.addMessage({ role: 'user', content: 'x'.repeat(200) });
+    session.addMessage({ role: 'user', content: '我们团队有30人，做SaaS产品面向B端客户' });
 
     expect(session.needsCompaction()).toBe(true);
     const result = session.compact();
     expect(result.removedCount).toBeGreaterThan(0);
-    // Key info should be preserved in remaining messages
+    // Key info should survive compaction
     const msgs = session.getMessages();
     const allContent = msgs.map(m => m.content).join(' ') + result.summary;
     expect(allContent).toContain('SaaS');

@@ -1,0 +1,30 @@
+# SynovaAgent — Docker Compose 本地一键启动
+# 用法: docker compose up -d
+version: "3.8"
+
+services:
+  synova-agent:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - LLM_API_KEY=${LLM_API_KEY:-}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+      - OPENCLAW_GATEWAY_HOST=${OPENCLAW_GATEWAY_HOST:-}
+      - LLM_BASE_URL=${LLM_BASE_URL:-}
+      - LLM_MODEL=${LLM_MODEL:-deepseek-chat}
+      - DEV_MODE=${DEV_MODE:-false}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - SYNOVA_DB_PATH=/app/data/synova.db
+    volumes:
+      - synova-data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  synova-data:
