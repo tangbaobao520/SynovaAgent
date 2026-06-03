@@ -8,7 +8,7 @@
  *   - 阈值: auto_merge >= 0.85, review [0.65, 0.85), ignore < 0.65
  *   - 仅比较同类型节点 (blocking)
  */
-import { SOGNodeType } from '@synova/sog-core';
+import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
 import { createLogger } from '../logger';
 
 const log = createLogger('l4/entity-resolver');

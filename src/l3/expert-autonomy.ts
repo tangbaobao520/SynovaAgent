@@ -146,6 +146,8 @@ export class ExpertAutonomyEngine {
         queryHistory,
       };
     } catch {
+      // LLM final output also failed — return bare minimum with lowest confidence
+      log.warn('max_rounds_forced: LLM 最终调用也失败，返回最低置信度');
       return {
         hypothesis: '分析未完成(达到最大轮次)',
         confidence: 0.2,
@@ -158,7 +160,7 @@ export class ExpertAutonomyEngine {
 
   private parseResponse(content: string): LLMReActResponse {
     try { return JSON.parse(content); } catch {
-      // Try extracting JSON from text
+      // Direct parse failed — attempt regex extraction, non-critical fallback
       const match = content.match(/\{[\s\S]*\}/);
       if (match) return JSON.parse(match[0]);
     }

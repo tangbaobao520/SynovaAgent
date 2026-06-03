@@ -53,7 +53,7 @@ export function createChatPanel(opts: { top?: number; left?: number; width?: str
     input.setValue('');
     // 强制重置 neo-blessed 内部 _reading 标志位
     // 否则第二轮输入时 readInput() 因 _reading===true 而直接 return
-    try { (input as any)._reading = false; } catch {}
+    try { (input as { _reading?: boolean })._reading = false; } catch {}
     return val.trim();
   }
 

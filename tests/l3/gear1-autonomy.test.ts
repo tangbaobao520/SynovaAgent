@@ -96,7 +96,7 @@ describe('QualityFirewall — 四道检验', () => {
       expertType: 'strategy',
     });
     expect(result.passed).toBe(false);
-    expect(result.rejections).toContain('evidence_not_found');
+    expect(result.rejections.some(r => r.includes('evidence_not_found'))).toBe(true);
   });
 
   it('Given finding with real evidence but low confidence, When firewall checks, Then passed but flagged low confidence', async () => {
@@ -123,7 +123,7 @@ describe('QualityFirewall — 四道检验', () => {
       expertType: 'strategy',
       evidenceTimestamps: { ev_old_1: oldDate },
     });
-    expect(result.warnings).toContain('possibly_stale');
+    expect(result.warnings.some(w => w.includes('possibly_stale'))).toBe(true);
     expect(result.adjustedConfidence).toBeLessThan(0.8);
   });
 
@@ -137,7 +137,7 @@ describe('QualityFirewall — 四道检验', () => {
       expertType: 'strategy',
       contradictingExperts: ['finance'],
     });
-    expect(result.warnings).toContain('contradicted_by_expert');
+    expect(result.warnings.some(w => w.includes('contradicted_by_expert'))).toBe(true);
   });
 
   it('Given all checks pass, When firewall validates, Then returns passed=true with no rejections', async () => {

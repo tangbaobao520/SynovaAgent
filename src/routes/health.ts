@@ -4,17 +4,19 @@
  * GET /health → { status, name, version, uptime }
  */
 import { Router } from 'express';
+import * as fs from 'fs';
+import * as path from 'path';
 import { checkForUpdates, getCurrentVersion } from '../services/update-checker';
 
 const router = Router();
 const startTime = Date.now();
-function getVersion(): string {
+
+const VERSION = (() => {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    return require('../../package.json').version || '0.1.0';
-  } catch { return '0.1.0'; }
-}
-const VERSION = getVersion();
+    const pkgPath = path.join(__dirname, '..', 'package.json');
+    return JSON.parse(fs.readFileSync(pkgPath, 'utf-8')).version || '0.0.0';
+  } catch { return '0.0.0'; }
+})();
 
 router.get('/health', (_req, res) => {
   res.json({

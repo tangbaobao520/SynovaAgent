@@ -1,7 +1,7 @@
 /**
  * providers/gateway.ts — OpenClaw Gateway Provider 适配器
  */
-import type { LLMProvider, LLMMessage, ChatOptions, ChatResult, StreamCallback, HealthCheckResult, ProviderConfig } from './types';
+import type { LLMProvider, LLMMessage, ChatOptions, ChatResult, StreamCallback, HealthCheckResult, ProviderConfig, ChatCompletionResponse } from './types';
 
 export function createGatewayProvider(config: ProviderConfig): LLMProvider {
   const gatewayHost = config.gatewayHost || 'http://127.0.0.1:18789';
@@ -24,7 +24,7 @@ export function createGatewayProvider(config: ProviderConfig): LLMProvider {
         signal: opts?.signal ?? AbortSignal.timeout(120_000),
       });
       if (!res.ok) { const t = await res.text().catch(() => ''); throw new Error(`Gateway 错误 (${res.status}): ${t.slice(0, 300)}`); }
-      const data = await res.json() as any;
+      const data = await res.json() as ChatCompletionResponse;
       const content = data?.choices?.[0]?.message?.content;
       if (!content) throw new Error('Gateway 返回缺少 content');
       return { content, model: data.model || model };

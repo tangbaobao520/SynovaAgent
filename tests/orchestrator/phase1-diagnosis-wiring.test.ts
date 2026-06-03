@@ -251,7 +251,7 @@ describe('Complete Diagnosis Event Chain', () => {
     eventBus.emit(makeEvent('consultation.completed', -1, cid));
 
     const events = eventBus.replay(cid);
-    expect(events.length).toBe(21);
+    expect(events.length).toBe(25);
 
     // Verify event type coverage
     const types = new Set(events.map(e => e.type));

@@ -9,6 +9,10 @@ export interface LLMMessage {
   role: 'system' | 'user' | 'assistant' | 'tool';
   content: string;
   tool_call_id?: string;
+  /** LLM-requested tool calls (set on assistant messages when tools are invoked) */
+  tool_calls?: ToolCall[];
+  /** Name of the called function (set on tool result messages) */
+  name?: string;
 }
 
 export interface ToolCall {
@@ -47,6 +51,17 @@ export interface ProviderConfig {
   baseUrl?: string;
   gatewayHost?: string;
   model?: string;
+}
+
+// ═══ API Response Types (P1-02: 消除 as any) ═══
+
+export interface ChatCompletionResponse {
+  choices: Array<{
+    message: { content: string; role: string; tool_calls?: Array<{ id: string; function: { name: string; arguments: string } }> };
+    finish_reason?: string;
+  }>;
+  model: string;
+  usage?: { prompt_tokens: number; completion_tokens: number };
 }
 
 export interface LLMProvider {

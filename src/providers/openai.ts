@@ -3,7 +3,7 @@
  *
  * 任何兼容 OpenAI Chat Completions API 的服务都可以用此适配器。
  */
-import type { LLMProvider, LLMMessage, ChatOptions, ChatResult, StreamCallback, HealthCheckResult, ProviderConfig } from './types';
+import type { LLMProvider, LLMMessage, ChatOptions, ChatResult, StreamCallback, HealthCheckResult, ProviderConfig, ChatCompletionResponse } from './types';
 
 const DEFAULT_BASE_URL = 'https://api.openai.com/v1';
 const DEFAULT_MODEL = 'gpt-4o';
@@ -36,8 +36,8 @@ export function createOpenAIProvider(config: ProviderConfig): LLMProvider {
     async chat(messages, opts) {
       const res = await makeRequest(messages, opts);
       if (!res.ok) { const t = await res.text().catch(() => ''); throw new Error(`OpenAI API 错误 (${res.status}): ${t.slice(0, 300)}`); }
-      const data = await res.json() as any;
-      const content = data?.choices?.[0]?.message?.content;
+      const data = await res.json() as ChatCompletionResponse;
+      const content = data.choices?.[0]?.message?.content;
       if (!content) throw new Error('OpenAI 返回缺少 content');
       return { content, model: data.model || model };
     },

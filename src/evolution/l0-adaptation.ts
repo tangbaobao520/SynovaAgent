@@ -80,7 +80,7 @@ export async function applyOntologyPatches(
         if (patch.action === 'create' && patch.nodeType) {
           // Map string type to SOGNodeType enum
           const nodeType = (SOGNodeType as Record<string, string>)[patch.nodeType.toUpperCase()] || patch.nodeType;
-          store.createNode(nodeType as any, patch.props || {}, orgId);
+          store.createNode(nodeType, patch.props || {}, orgId);
           applied++;
         }
       } catch (err: any) {

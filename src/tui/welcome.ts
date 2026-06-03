@@ -15,13 +15,15 @@ const MAGENTA = '\x1b[35m';
 const WHITE = '\x1b[37m';
 const RESET = '\x1b[0m';
 
-function getVersion(): string {
+import * as fs from 'fs';
+import * as path from 'path';
+
+const VERSION = (() => {
   try {
-    const pkg = require('../../package.json');
-    return pkg.version || '0.1.0';
-  } catch { return '0.1.0'; }
-}
-const VERSION = getVersion();
+    const pkgPath = path.join(__dirname, '..', 'package.json');
+    return JSON.parse(fs.readFileSync(pkgPath, 'utf-8')).version || '0.0.0';
+  } catch { return '0.0.0'; }
+})();
 
 interface WelcomeConfig {
   providerName: string;
@@ -118,7 +120,8 @@ export async function showWelcome(
     const onEnter = () => {
       clearInterval(blinkInterval);
       screen.remove(welcomeBox);
-      (welcomeBox as any).detach?.();
+      // blessed Box.detach 未在类型定义中声明
+      (welcomeBox as { detach?: () => void }).detach?.();
       screen.removeListener('keypress', keyHandler);
       resolve();
     };

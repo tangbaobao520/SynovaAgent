@@ -5,6 +5,8 @@
  */
 import Database from 'better-sqlite3';
 
+type SqliteRow = Record<string, unknown>;
+
 export interface DiagnosticPattern {
   id: string;
   name: string;
@@ -73,7 +75,7 @@ export class PatternEngine {
   }
 
   private seed(): void {
-    const count = this.db.prepare('SELECT COUNT(*) as c FROM mode_library').get() as any;
+    const count = this.db.prepare('SELECT COUNT(*) as c FROM mode_library').get() as SqliteRow;
     if (count.c === 0) {
       const insert = this.db.prepare('INSERT INTO mode_library (id,name,dimension,condition_text,severity,weight,expert_type,source) VALUES (?,?,?,?,?,?,?,?)');
       const tx = this.db.transaction(() => {
@@ -84,14 +86,14 @@ export class PatternEngine {
   }
 
   getPatternsForExpert(expertType: string): DiagnosticPattern[] {
-    return this.db.prepare('SELECT * FROM mode_library WHERE expert_type=?').all(expertType) as any[];
+    return this.db.prepare('SELECT * FROM mode_library WHERE expert_type=?').all(expertType) as SqliteRow[];
   }
 
   matchPatterns(dimension: string): DiagnosticPattern[] {
-    return this.db.prepare('SELECT * FROM mode_library WHERE dimension=? OR dimension IS NULL').all(dimension) as any[];
+    return this.db.prepare('SELECT * FROM mode_library WHERE dimension=? OR dimension IS NULL').all(dimension) as SqliteRow[];
   }
 
   getAllPatterns(): DiagnosticPattern[] {
-    return this.db.prepare('SELECT * FROM mode_library ORDER BY weight DESC').all() as any[];
+    return this.db.prepare('SELECT * FROM mode_library ORDER BY weight DESC').all() as SqliteRow[];
   }
 }

@@ -10,9 +10,11 @@ import { ReportGraphAdapter } from '../../src/l4/report-graph-adapter';
 import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
 
 let server: Server;
+let PORT: number;
 
 beforeAll(async () => {
   const app = express();
+  app.use(express.json());
 
   app.post('/api/test/phase4-report', async (req, res) => {
     const { orgId } = req.body as { orgId: string };
@@ -55,14 +57,18 @@ beforeAll(async () => {
     });
   });
 
-  return new Promise<void>((resolve) => { server = app.listen(3094, () => resolve()); });
+  return new Promise<void>((resolve) => { server = app.listen(0, () => {
+        const addr = server!.address() as { port: number };
+        PORT = addr.port;
+        resolve();
+      }); });
 });
 
 afterAll(() => { if (server) server.close(); });
 
 describe('E2E: ReportGraphAdapter → Phase 4', () => {
   it('returns node stats with correct counts', async () => {
-    const res = await fetch('http://localhost:3094/api/test/phase4-report', {
+    const res = await fetch(`http://localhost:${PORT}/api/test/phase4-report`, {
       method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ orgId:'e2e' }),
     });
     const body = await res.json() as any;
@@ -72,7 +78,7 @@ describe('E2E: ReportGraphAdapter → Phase 4', () => {
   });
 
   it('returns risks sorted critical first', async () => {
-    const res = await fetch('http://localhost:3094/api/test/phase4-report', {
+    const res = await fetch(`http://localhost:${PORT}/api/test/phase4-report`, {
       method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ orgId:'e2e' }),
     });
     const body = await res.json() as any;
@@ -81,7 +87,7 @@ describe('E2E: ReportGraphAdapter → Phase 4', () => {
   });
 
   it('returns causal chains for root cause analysis', async () => {
-    const res = await fetch('http://localhost:3094/api/test/phase4-report', {
+    const res = await fetch(`http://localhost:${PORT}/api/test/phase4-report`, {
       method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ orgId:'e2e' }),
     });
     const body = await res.json() as any;

@@ -22,7 +22,7 @@ router.get('/api/review/queue', (_req: Request, res: Response) => {
     const db = getDatabase();
     db.exec(`CREATE TABLE IF NOT EXISTS review_queue (id TEXT PRIMARY KEY, finding_id TEXT, reason TEXT, priority TEXT DEFAULT 'medium', status TEXT DEFAULT 'pending', created_at TEXT DEFAULT (datetime('now')))`);
     const items = db.prepare('SELECT * FROM review_queue ORDER BY created_at DESC LIMIT 50').all();
-    res.json({ ok: true, items, count: (items as any[]).length });
+    res.json({ ok: true, items, count: items.length });
   } catch (err: any) { res.status(500).json({ ok: false, error: err.message }); }
 });
 

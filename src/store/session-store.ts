@@ -13,6 +13,9 @@ import Database from 'better-sqlite3';
 
 // ═══ Types ═══
 
+/** Raw SQLite row (P1-02: 替代 as any) */
+type SqliteRow = Record<string, unknown>;
+
 export interface SessionRow {
   id: string;
   orgId: string;
@@ -109,7 +112,7 @@ export class SessionStore {
   }
 
   getSession(id: string): SessionRow | null {
-    const row = this.db.prepare('SELECT * FROM agent_sessions WHERE id=?').get(id) as any;
+    const row = this.db.prepare('SELECT * FROM agent_sessions WHERE id=?').get(id) as SqliteRow | undefined;
     if (!row) return null;
     return {
       id: row.id, orgId: row.org_id, phase: row.phase,
@@ -128,7 +131,7 @@ export class SessionStore {
   listSessions(limit = 20): SessionRow[] {
     const rows = this.db.prepare(
       'SELECT s.*, (SELECT COUNT(*) FROM agent_messages WHERE session_id=s.id) as msg_count FROM agent_sessions s ORDER BY s.updated_at DESC LIMIT ?'
-    ).all(limit) as any[];
+    ).all(limit) as SqliteRow[];
     return rows.map(r => ({
       id: r.id, orgId: r.org_id, phase: r.phase,
       stateJson: r.state_json, createdAt: r.created_at, updatedAt: r.updated_at,
@@ -152,7 +155,7 @@ export class SessionStore {
   getMessages(sessionId: string): MessageRow[] {
     const rows = this.db.prepare(
       'SELECT * FROM agent_messages WHERE session_id=? ORDER BY id ASC'
-    ).all(sessionId) as any[];
+    ).all(sessionId) as SqliteRow[];
     return rows.map(r => ({
       id: r.id, sessionId: r.session_id, role: r.role,
       content: r.content, timestamp: r.timestamp,
@@ -167,7 +170,7 @@ export class SessionStore {
   }
 
   loadState(sessionId: string): ConversationState | null {
-    const row = this.db.prepare('SELECT state_json FROM agent_sessions WHERE id=?').get(sessionId) as any;
+    const row = this.db.prepare('SELECT state_json FROM agent_sessions WHERE id=?').get(sessionId) as SqliteRow | undefined;
     if (!row?.state_json) return null;
     try {
       return JSON.parse(row.state_json);
@@ -192,7 +195,7 @@ export class SessionStore {
         WHERE m.content LIKE ?
         ORDER BY s.updated_at DESC
         LIMIT ?
-      `).all(query, likePattern, limit) as any[];
+      `).all(query, likePattern, limit) as SqliteRow[];
       return rows.map(r => ({
         sessionId: r.session_id, orgId: r.org_id,
         messageCount: r.msg_count, snippet: r.snippet, updatedAt: r.updated_at,
@@ -209,7 +212,7 @@ export class SessionStore {
       WHERE agent_messages_fts MATCH ?
       ORDER BY rank
       LIMIT ?
-    `).all(query, limit) as any[];
+    `).all(query, limit) as SqliteRow[];
     return rows.map(r => ({
       sessionId: r.session_id, orgId: r.org_id,
       messageCount: r.msg_count, snippet: r.snippet, updatedAt: r.updated_at,

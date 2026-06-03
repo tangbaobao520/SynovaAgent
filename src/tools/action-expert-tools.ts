@@ -26,8 +26,8 @@ export const measureEffectivenessTool: ToolDefinition = {
       const BASE = `http://localhost:${process.env.PORT||3000}`;
       const r = await fetch(`${BASE}/api/sessions/search?q=${encodeURIComponent(orgId)}`);
       if (r.ok) {
-        const d = await r.json() as any;
-        return { orgId, previousDiagnoses: d.results?.length || 0, hasHistory: d.results?.length > 0, recommendation: d.results?.length > 0 ? `对比上次行动项效果，评估改善幅度。` : '首次诊断——无历史数据可对比。' };
+        const d = await r.json() as { results?: unknown[] };
+        return { orgId, previousDiagnoses: d.results?.length || 0, hasHistory: (d.results?.length ?? 0) > 0, recommendation: (d.results?.length ?? 0) > 0 ? `对比上次行动项效果，评估改善幅度。` : '首次诊断——无历史数据可对比。' };
       }
     } catch {
       // 会话 API 不可达 — 降级为无历史数据模式

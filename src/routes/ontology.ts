@@ -10,6 +10,7 @@ import { createGraphStore } from '@synova/engine-core';
 import { ingestDocument } from '@synova/engine-core';
 import { getDatabase } from '../init/engine-context';
 import { createLogger } from '../logger';
+import { summarizeSubgraph, findCrossDimensionalBrokers, getGraphDiff } from '../l4/diagnosis-graph-query';
 
 const router = Router();
 const log = createLogger('routes/ontology');
@@ -164,7 +165,6 @@ router.get('/api/ontology/graph/:orgId/summary', (req: Request, res: Response) =
     if (orgIdErr) return res.status(400).json({ ok: false, error: orgIdErr, code: 'VALIDATION_ERROR' });
 
     const store = createGraphStore('sqlite', getDatabase());
-    const { summarizeSubgraph } = require('../../l4/diagnosis-graph-query');
     const summary = summarizeSubgraph(store, orgId, rootId || orgId, 3);
     res.json({ ok: true, summary });
   } catch (err: any) {
@@ -180,7 +180,6 @@ router.get('/api/ontology/graph/:orgId/brokers', (req: Request, res: Response) =
     if (orgIdErr) return res.status(400).json({ ok: false, error: orgIdErr, code: 'VALIDATION_ERROR' });
 
     const store = createGraphStore('sqlite', getDatabase());
-    const { findCrossDimensionalBrokers } = require('../../l4/diagnosis-graph-query');
     const brokers = findCrossDimensionalBrokers(store, orgId, 0.01);
     res.json({ ok: true, brokers: brokers.slice(0, 20) });
   } catch (err: any) {
@@ -198,7 +197,6 @@ router.get('/api/ontology/graph/:orgId/diff', (req: Request, res: Response) => {
     if (orgIdErr) return res.status(400).json({ ok: false, error: orgIdErr, code: 'VALIDATION_ERROR' });
 
     const store = createGraphStore('sqlite', getDatabase());
-    const { getGraphDiff } = require('../../l4/diagnosis-graph-query');
     const diff = getGraphDiff(store, orgId, fromDate, toDate);
     res.json({ ok: true, diff });
   } catch (err: any) {

@@ -1,4 +1,13 @@
 import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
+
+/** Graph API JSON response (P1-02: 替代 as any) */
+interface GraphData {
+  nodes?: Array<{ id?: string; type?: string; props?: Record<string, unknown> }>;
+  edges?: Array<{ to?: string; from?: string; type?: string; weight?: number }>;
+  nodeCount?: number;
+  edgeCount?: number;
+}
+
 /**
  * tools/org-expert-tools.ts — 组织专家工具链 (Phase C1)
  *
@@ -59,7 +68,7 @@ export const scanCollaborationTool: ToolDefinition = {
       const BASE = `http://localhost:${process.env.PORT || 3000}`;
       const res = await fetch(`${BASE}/api/ontology/graph/${orgId}`);
       if (res.ok) {
-        const data = await res.json() as any;
+        const data = await res.json() as GraphData;
         const interactsEdges = (data.edges || []).filter((e: any) => e.type === SOGEdgeType.INTERACTS_WITH);
         return {
           orgId,
@@ -96,7 +105,7 @@ export const assessDecisionFlowTool: ToolDefinition = {
       const BASE = `http://localhost:${process.env.PORT || 3000}`;
       const res = await fetch(`${BASE}/api/ontology/graph/${orgId}`);
       if (res.ok) {
-        const data = await res.json() as any;
+        const data = await res.json() as GraphData;
         const belongsToEdges = (data.edges || []).filter((e: any) => e.type === SOGEdgeType.BELONGS_TO);
         // 计算审批链平均深度（简化：BELONGS_TO 边数 / Person 数）
         const personCount = (data.nodes || []).filter((n: any) => n.type === SOGNodeType.PERSON).length;
@@ -135,7 +144,7 @@ export const identifyKeyPersonRiskTool: ToolDefinition = {
       const BASE = `http://localhost:${process.env.PORT || 3000}`;
       const res = await fetch(`${BASE}/api/ontology/graph/${orgId}`);
       if (res.ok) {
-        const data = await res.json() as any;
+        const data = await res.json() as GraphData;
         const persons = (data.nodes || []).filter((n: any) => n.type === SOGNodeType.PERSON);
         // 简化中心性：基于边的度数
         const centrality = persons.map((p: any) => {

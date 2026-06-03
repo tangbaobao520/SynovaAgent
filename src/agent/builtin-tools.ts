@@ -35,8 +35,8 @@ export function registerBuiltinTools(
         const BASE = `http://localhost:${process.env.PORT || 3000}`;
         const res = await fetch(`${BASE}/api/ontology/graph/${orgId}`);
         if (res.ok) {
-          const data = await res.json() as any;
-          const nodeTypes = [...new Set((data.nodes || []).map((n: any) => n.type))];
+          const data = await res.json() as { nodes?: Array<{ type?: string }>; edges?: unknown[]; nodeCount?: number; edgeCount?: number };
+          const nodeTypes = [...new Set((data.nodes || []).map(n => n.type).filter(Boolean))];
           return {
             orgId: data.orgId || orgId,
             nodeCount: data.nodeCount || 0,

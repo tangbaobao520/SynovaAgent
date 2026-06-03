@@ -15,12 +15,14 @@
  * Web 版本: 服务器重启即更新，不需要客户端检测。
  * TUI/CLI 版本: 启动时检查 + 用户手动 /update。
  */
-import { execSync } from 'child_process';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 import * as fs from 'fs';
 import * as path from 'path';
 import { createLogger } from '../logger';
 
 const log = createLogger('services/update-checker');
+const execAsync = promisify(exec);
 
 // ═══ Constants ═══
 
@@ -102,25 +104,22 @@ function writeCache(data: CacheData): void {
 
 // ═══ Detection ═══
 
-/** 检测是否在 git 仓库中 */
-function isGitRepo(): boolean {
+/** 检测是否在 git 仓库中（文件检测，不阻塞事件循环） */
+async function isGitRepo(): Promise<boolean> {
   try {
-    execSync('git rev-parse --git-dir', { stdio: 'ignore', timeout: 3000 });
+    await execAsync('git rev-parse --git-dir', { timeout: 3000 });
     return true;
   } catch {
     return false;
   }
 }
 
-/** 检测安装方法 (借鉴 Hermes detect_install_method) */
+/** 检测安装方法 (借鉴 Hermes detect_install_method) — 文件检测版，零阻塞 */
 export function detectInstallMethod(): 'git' | 'npm' | 'docker' | 'unknown' {
   try {
     if (fs.existsSync('/.dockerenv')) return 'docker';
-    // Check for .git directory
-    if (isGitRepo()) return 'git';
-    // Check for npm global install
-    const npmGlobal = execSync('npm list -g synova-agent 2>/dev/null', { timeout: 3000 }).toString();
-    if (npmGlobal.includes('synova-agent')) return 'npm';
+    // 文件检测: .git 目录存在 → git 安装
+    if (fs.existsSync(path.join(process.cwd(), '.git'))) return 'git';
   } catch { /* fall through */ }
   return 'unknown';
 }
@@ -170,29 +169,24 @@ export async function checkForUpdates(): Promise<UpdateCheckResult> {
   }
 
   // ═══ 第 2 层: Git fetch (借鉴 Hermes git ls-remote / rev-list) ═══
-  if (!isGitRepo()) {
+  if (!(await isGitRepo())) {
     log.debug('非 git 仓库，跳过 git 更新检查');
     return baseResult;
   }
 
   try {
     // Fetch origin (quiet, timeout 15s)
-    execSync('git fetch origin --quiet', {
-      stdio: 'ignore', timeout: 15000,
-    });
+    await execAsync('git fetch origin --quiet', { timeout: 15000 });
 
     // Count commits behind origin/main
-    const countStr = execSync('git rev-list --count HEAD..origin/main', {
-      timeout: 5000, encoding: 'utf-8',
-    }).trim();
-    const commitsBehind = parseInt(countStr) || 0;
+    const { stdout: countStr } = await execAsync('git rev-list --count HEAD..origin/main', { timeout: 5000 });
+    const commitsBehind = parseInt(countStr.trim()) || 0;
 
     // Try to get latest tag
     let latestTag: string | undefined;
     try {
-      latestTag = execSync('git describe --tags --abbrev=0 origin/main 2>/dev/null', {
-        timeout: 3000, encoding: 'utf-8',
-      }).trim();
+      const { stdout: tagStr } = await execAsync('git describe --tags --abbrev=0 origin/main 2>/dev/null', { timeout: 3000 });
+      latestTag = tagStr.trim();
     } catch { /* no tags */ }
 
     // Write cache

@@ -51,6 +51,7 @@ export class ModuleRunner {
       perModuleTimeoutMs: config.perModuleTimeoutMs ?? 30_000,
       priorityGroups: config.priorityGroups,
       retryFailedModules: config.retryFailedModules ?? false,
+      afterRun: config.afterRun,
     };
   }
 
@@ -159,7 +160,7 @@ export class ModuleRunner {
           ]);
           return { moduleId: module.name, ...retryResult, durationMs: Date.now() - startTime };
         } catch {
-          /* retry also failed */
+          /* retry also failed — fall through to return error result */
         }
       }
 

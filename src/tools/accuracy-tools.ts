@@ -5,6 +5,16 @@
  * cross_validate / trace_lineage / match_pattern / verify_closure / request_human
  */
 import type { ToolDefinition } from '../agent/tools';
+import { createLogger } from '../logger';
+
+const log = createLogger('tools/accuracy');
+
+/** Typed JSON fetch response — P1-02: 消除 as any, 用 unknown 强制校验 */
+async function fetchJSON(url: string): Promise<unknown> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
 
 // ═══ B1: cross_validate ═══
 
@@ -32,19 +42,19 @@ export const crossValidateTool: ToolDefinition = {
       // 1. 检查本体图是否有此维度的数据
       const ontRes = await fetch(`${BASE}/api/ontology/graph/${findingId}`);
       if (ontRes.ok) {
-        const data = await ontRes.json() as any;
-        if (data.nodeCount > 0) sources.push('ontology_graph');
+        const data = await ontRes.json() as { nodeCount?: number };
+        if (data.nodeCount && data.nodeCount > 0) sources.push('ontology_graph');
       }
-    } catch { /* 本体 API 不可达——跳过此数据源 */ }
+    } catch (err: any) { log.warn({ err: err.message }, 'cross_validate: 本体 API 不可达'); }
 
     // 2. 检查会话历史是否有此维度的诊断数据
     try {
       const sessRes = await fetch(`${BASE}/api/sessions/search?q=${encodeURIComponent(dimension)}`);
       if (sessRes.ok) {
-        const sessData = await sessRes.json() as any;
-        if (sessData.results?.length > 0) sources.push('diagnostic_sessions');
+        const sessData = await sessRes.json() as { results?: unknown[] };
+        if (sessData.results && sessData.results.length > 0) sources.push('diagnostic_sessions');
       }
-    } catch { /* skip */ }
+    } catch (err: any) { log.warn({ err: err.message }, 'cross_validate: 会话 API 不可达'); }
 
     // 只在有实际数据源时计数
     const confidence = sources.length >= minSources ? 0.7 + (sources.length - minSources) * 0.1 : sources.length / Math.max(minSources, 1) * 0.5;
@@ -80,20 +90,20 @@ export const traceLineageTool: ToolDefinition = {
       const BASE = `http://localhost:${process.env.PORT || 3000}`;
       const res = await fetch(`${BASE}/api/ontology/graph/${evidenceId}`);
       if (res.ok) {
-        const data = await res.json() as any;
+        const data = await res.json() as { edges?: Array<{ to?: string; from?: string; type?: string; weight?: number }> };
         // 提取该节点的上下游边
-        const upstream = (data.edges || []).filter((e: any) => e.to === evidenceId);
-        const downstream = (data.edges || []).filter((e: any) => e.from === evidenceId);
+        const upstream = (data.edges || []).filter(e => e.to === evidenceId);
+        const downstream = (data.edges || []).filter(e => e.from === evidenceId);
         return {
           evidenceId,
           upstreamCount: upstream.length,
           downstreamCount: downstream.length,
-          upstream: upstream.slice(0, 5).map((e: any) => ({ from: e.from, type: e.type, weight: e.weight })),
-          downstream: downstream.slice(0, 5).map((e: any) => ({ to: e.to, type: e.type, weight: e.weight })),
+          upstream: upstream.slice(0, 5).map(e => ({ from: e.from, type: e.type, weight: e.weight })),
+          downstream: downstream.slice(0, 5).map(e => ({ to: e.to, type: e.type, weight: e.weight })),
           traceable: upstream.length + downstream.length > 0,
         };
       }
-    } catch { /* API 不可达 */ }
+    } catch (err: any) { log.warn({ err: err.message }, 'accuracy tool: 本体 API 不可达'); }
     return { evidenceId, traceable: false, error: '本体 API 不可达，无法追踪血缘' };
   },
 };
@@ -128,7 +138,7 @@ export const matchPatternTool: ToolDefinition = {
       const BASE = `http://localhost:${process.env.PORT || 3000}`;
       const res = await fetch(`${BASE}/api/ontology/graph/${orgId}`);
       if (res.ok) {
-        const data = await res.json() as any;
+        const data = await res.json() as Record<string, unknown>;
         const matched = patterns.filter(p => {
           if (p.id === 'key_person_risk' && data.nodeCount > 5) return true;
           if (p.id === 'info_silo' && data.edgeCount < 3) return true;
@@ -142,7 +152,7 @@ export const matchPatternTool: ToolDefinition = {
           confidence: matched.length > 0 ? 0.6 : 0.3,
         };
       }
-    } catch { /* API 不可达 */ }
+    } catch (err: any) { log.warn({ err: err.message }, 'accuracy tool: 本体 API 不可达'); }
     return {
       dimension, orgId,
       patternsChecked: patterns.length, patternsMatched: 0, matches: [],
@@ -170,7 +180,7 @@ export const verifyClosureTool: ToolDefinition = {
       const BASE = `http://localhost:${process.env.PORT || 3000}`;
       const res = await fetch(`${BASE}/api/sessions/search?q=${encodeURIComponent(orgId)}`);
       if (res.ok) {
-        const data = await res.json() as any;
+        const data = await res.json() as Record<string, unknown>;
         if (data.results && data.results.length > 0) {
           return {
             orgId,
@@ -182,7 +192,7 @@ export const verifyClosureTool: ToolDefinition = {
           };
         }
       }
-    } catch { /* API 不可达 */ }
+    } catch (err: any) { log.warn({ err: err.message }, 'accuracy tool: 本体 API 不可达'); }
     return {
       orgId,
       hasHistory: false,
