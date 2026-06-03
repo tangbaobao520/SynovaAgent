@@ -22,6 +22,12 @@ import { getGlobalScheduler } from '../cron/scheduler';
 import { createLogger } from '../logger';
 import { TuiViewAdapter } from '../l1-interaction/tui-adapter';
 import { checkForUpdates, formatUpdateMessage, getCurrentVersion } from '../services/update-checker';
+import { EventStore } from '../orchestrator/event-store';
+import { EventBus } from '../orchestrator/event-bus';
+import { HookRunner } from '../orchestrator/hook-runner';
+import { SessionManager } from '../orchestrator/session-manager';
+import { PhaseStateMachine } from '../orchestrator/phase-state-machine';
+import { createOrchestrationWiring } from '../orchestrator/wiring';
 
 // ═══ 加载 .env（不用 dotenv 依赖，手动解析）═══
 (function loadEnvFile() {
@@ -182,6 +188,21 @@ async function main() {
     process.exit(1);
   }
 
+  // ═══ 编排层初始化 — EventBus + StateMachine + Session ═══
+  const eventStore = new EventStore(db);
+  const eventBus = new EventBus(eventStore);
+  const hookRunner = new HookRunner();
+  const sessionManager = new SessionManager();
+  const phaseStateMachine = new PhaseStateMachine({
+    0: { label: '组织访谈', required: true, maxDurationMs: 600_000 },
+    1: { label: '数据采集', required: true, maxDurationMs: 120_000 },
+    2: { label: '假设生成', required: true, maxDurationMs: 300_000 },
+    3: { label: '根因分析', required: true, maxDurationMs: 180_000 },
+    4: { label: '报告生成', required: true, maxDurationMs: 60_000 },
+    5: { label: '交付', required: true, maxDurationMs: 120_000 },
+  });
+  const wiring = createOrchestrationWiring(eventBus, hookRunner, sessionManager, phaseStateMachine);
+
   // ═══ Step 4: 创建对话 ═══
   let conv: AgentConversation;
   let sessionId: string;
@@ -310,11 +331,24 @@ async function main() {
       store.addMessage(sessionId, 'user', input);
       app.chat.addMessage('user', input);
 
+      // 编排层: 每轮对话生成 traceId，串联后续事件
+      const turnTraceId = `turn_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,8)}`;
+
       app.setTitleStatus('诊断进行中');
       try {
         const result = await conv.processMessageStream(input, (token) => {
           app.chat.appendToken(token);
           app.screen.render();
+        });
+
+        // 编排层: 记录对话轮次事件
+        eventBus.emit({
+          id: `evt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,6)}`,
+          type: 'interview.answered',
+          consultationId: sessionId, phase: conv.getPhase(),
+          data: { role: conv.getOrgId() },
+          traceId: turnTraceId, spanId: turnTraceId.slice(0, 16),
+          timestamp: new Date().toISOString(),
         });
 
         // 流式内容已完成，作为完整消息添加
@@ -323,8 +357,19 @@ async function main() {
         store.updateSession(sessionId, { phase: conv.getPhase() });
         store.saveState(sessionId, conv.serialize());
 
+        // 编排层: 追踪会话消息 + 检测压缩
+        sessionManager.addMessage({ role: 'user', content: input });
+        sessionManager.addMessage({ role: 'assistant', content: result.reply });
+        const compactionSummary = wiring.checkCompaction();
+        if (compactionSummary) {
+          app.chat.addMessage('system', `📦 会话已自动压缩 (节省上下文空间)`);
+        }
+
         app.side.setPhase(conv.getPhase());
         if (result.phaseComplete) {
+          // 编排层: Phase 0 → Phase 1 事件
+          wiring.emitPhaseCompleted(sessionId, 0, turnTraceId);
+          wiring.advancePhase(sessionId, turnTraceId);
           app.setTitleStatus('诊断完成');
           app.chat.addMessage('system', '═══ Phase 0 完成，启动六阶段诊断 ═══');
 
