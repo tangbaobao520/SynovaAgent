@@ -53,6 +53,28 @@ export class DiagnosisLauncher {
 
       log.info({ teamId, initiatorRole }, '启动六阶段诊断');
 
+      // P1-3: EvidenceManager 接线 — 加载证据 + 矛盾检测
+      let evidenceSummary = '';
+      if (this.ctx.evidenceCollector && this.ctx.corroborationEngine) {
+        try {
+          const allEvidence = this.ctx.evidenceCollector.query({ orgId: teamId, limit: 50 });
+          if (allEvidence.length > 0) {
+            evidenceSummary = allEvidence.map(e =>
+              `[${e.type}|conf:${e.confidence}] ${e.content.slice(0, 150)}`
+            ).join('\n');
+
+            // 矛盾检测 — 标记高价值信号
+            const contradictions = this.ctx.corroborationEngine.detectContradictions({ orgId: teamId });
+            if (contradictions.length > 0) {
+              log.info({ count: contradictions.length }, '证据矛盾检测完成');
+              onEvent?.({ type: 'evidence_contradictions', phase: 1, message: `发现 ${contradictions.length} 处证据矛盾` });
+            }
+          }
+        } catch (err: any) {
+          log.warn({ err }, '证据加载失败 — degraded, 诊断继续');
+        }
+      }
+
       // 铁律 39: L2 → DiagnosisEngine 接口 (不直接 import engine-core)
       const result = await this.engine.runConsultation(teamId, {
         role: initiatorRole,

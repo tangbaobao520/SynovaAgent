@@ -23,6 +23,11 @@ export class EvidenceCollector {
     this.store.add(evidence);
   }
 
+  /** Query evidence by filter */
+  query(filter: EvidenceFilter): Evidence[] {
+    return this.store.query(filter);
+  }
+
   /** Batch collect from interview text */
   collectFromInterview(orgId: string, sessionId: string, userMessages: string[]): void {
     for (const msg of userMessages) {

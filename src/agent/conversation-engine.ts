@@ -197,6 +197,7 @@ export class ConversationEngine {
       hookRunner: this.hookRunner,
       eventBus: this.eventBus,
       evidenceCollector: this.evidenceCollector,
+      corroborationEngine: this.corroborationEngine,
       graphBridge: this.graphBridge,
       graphStore: this.graphStore,
       diagnosisEngine,

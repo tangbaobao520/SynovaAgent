@@ -10,7 +10,7 @@ import type { LLMProvider, LLMMessage } from '../providers/types';
 import type { ToolRegistry } from './tools';
 import type { HookRunner } from '../orchestrator/hook-runner';
 import type { EventBus } from '../orchestrator/event-bus';
-import type { EvidenceCollector } from '../evidence/index';
+import type { EvidenceCollector, CorroborationEngine } from '../evidence/index';
 import type { createGraphBridge, GraphStore } from '../l4/graph-bridge';
 import type { DiagnosisEngine } from '../l2-interfaces/diagnosis-engine';
 
@@ -31,6 +31,8 @@ export interface EngineContext {
   eventBus: EventBus | null;
   /** Evidence collector (optional) */
   evidenceCollector: EvidenceCollector | null;
+  /** CorroborationEngine — 矛盾检测 + 交叉验证 (optional) */
+  corroborationEngine: CorroborationEngine | null;
   /** GraphBridge for diagnosis→ontology sync */
   graphBridge: ReturnType<typeof createGraphBridge> | null;
   /** GraphStore for read-only L4 queries */
