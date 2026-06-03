@@ -13,7 +13,6 @@
     "sourceMap": true,
     "moduleResolution": "node",
     "outDir": "./dist",
-    "rootDir": "./src",
     "paths": {
       "@synova/sog-core": ["../packages/sog-core/src/index.ts"],
       "@synova/engine-core": ["../server/vendor/@synova/engine-core/dist/index"],
