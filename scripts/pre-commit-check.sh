@@ -104,7 +104,7 @@ hard_check "Anthropic: 禁止 pre-existing/known-failure 标记" "$PRE_EXISTING"
 
 # Anthropic 标准: engine-core vendor Critical bug 不得延期
 SOG_DELETE=$(grep -n "DELETE FROM graph_nodes" ../server/vendor/@synova/engine-core/src/pipeline/diagnosis/graph-store.ts 2>/dev/null || true)
-warn_check "Anthropic: SOG-001 deleteNode 物理删除 (下个commit修复)" "$SOG_DELETE"
+hard_check "Anthropic: SOG-001 deleteNode 物理删除 (不得延期)" "$SOG_DELETE"
 
 # 铁律 34: 分支命名 — feat/ fix/ chore/ docs/ test/ refactor/
 BRANCH=$(git branch --show-current 2>/dev/null || echo "main")

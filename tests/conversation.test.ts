@@ -66,10 +66,11 @@ describe('AgentConversation — phase progression', () => {
     expect(conv.getPhase()).toBe(1);
   });
 
-  it('Given max turns reached, When processMessage, Then returns phase complete signal', async () => {
+  it('Given max turns reached but no dimension coverage, When processMessage, Then phaseComplete=false (needs 4+ covered dimensions)', async () => {
     const conv = new AgentConversation(fakeProvider(), { maxTurns: 1 });
     const r1 = await conv.processMessage('turn 1');
-    expect(r1.phaseComplete).toBeTruthy(); // reached max turns
+    // Engine now requires dimension coverage >= 4 + minTurns >= 3 for phase completion
+    expect(r1.phaseComplete).toBeFalsy();
   });
 });
 
