@@ -6,6 +6,7 @@ const packagesRoot = path.resolve(__dirname, '../packages');
 export default defineConfig({
   resolve: {
     alias: {
+      '@synova/sog-core': path.join(packagesRoot, 'sog-core/src/index.ts'),
       '@synova/logger': path.join(packagesRoot, 'logger/src/index.ts'),
       '@synova/error-types': path.join(packagesRoot, 'error-types/src/index.ts'),
       '@synova/connector-registry': path.join(packagesRoot, 'connector-registry/src/index.ts'),
