@@ -153,5 +153,58 @@ router.get('/api/ontology/graph/:orgId', (req: Request, res: Response) => {
   }
 });
 
+// ═══ L4 Phase 2c: 3 new graph query endpoints ═══
+
+/** GET /api/ontology/graph/:orgId/summary — Subgraph summary around a root node */
+router.get('/api/ontology/graph/:orgId/summary', (req: Request, res: Response) => {
+  try {
+    const { orgId } = req.params;
+    const rootId = req.query.root as string;
+    const orgIdErr = validateOrgId(orgId);
+    if (orgIdErr) return res.status(400).json({ ok: false, error: orgIdErr, code: 'VALIDATION_ERROR' });
+
+    const store = createGraphStore('sqlite', getDatabase());
+    const { summarizeSubgraph } = require('../../l4/diagnosis-graph-query');
+    const summary = summarizeSubgraph(store, orgId, rootId || orgId, 3);
+    res.json({ ok: true, summary });
+  } catch (err: any) {
+    res.status(500).json({ ok: false, error: err.message, code: 'QUERY_ERROR' });
+  }
+});
+
+/** GET /api/ontology/graph/:orgId/brokers — Cross-dimensional brokers */
+router.get('/api/ontology/graph/:orgId/brokers', (req: Request, res: Response) => {
+  try {
+    const { orgId } = req.params;
+    const orgIdErr = validateOrgId(orgId);
+    if (orgIdErr) return res.status(400).json({ ok: false, error: orgIdErr, code: 'VALIDATION_ERROR' });
+
+    const store = createGraphStore('sqlite', getDatabase());
+    const { findCrossDimensionalBrokers } = require('../../l4/diagnosis-graph-query');
+    const brokers = findCrossDimensionalBrokers(store, orgId, 0.01);
+    res.json({ ok: true, brokers: brokers.slice(0, 20) });
+  } catch (err: any) {
+    res.status(500).json({ ok: false, error: err.message, code: 'QUERY_ERROR' });
+  }
+});
+
+/** GET /api/ontology/graph/:orgId/diff — Graph changes */
+router.get('/api/ontology/graph/:orgId/diff', (req: Request, res: Response) => {
+  try {
+    const { orgId } = req.params;
+    const fromDate = req.query.from as string;
+    const toDate = req.query.to as string;
+    const orgIdErr = validateOrgId(orgId);
+    if (orgIdErr) return res.status(400).json({ ok: false, error: orgIdErr, code: 'VALIDATION_ERROR' });
+
+    const store = createGraphStore('sqlite', getDatabase());
+    const { getGraphDiff } = require('../../l4/diagnosis-graph-query');
+    const diff = getGraphDiff(store, orgId, fromDate, toDate);
+    res.json({ ok: true, diff });
+  } catch (err: any) {
+    res.status(500).json({ ok: false, error: err.message, code: 'QUERY_ERROR' });
+  }
+});
+
 export default router;
 
