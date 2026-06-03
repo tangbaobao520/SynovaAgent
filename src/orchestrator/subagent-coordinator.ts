@@ -29,6 +29,8 @@ export interface DataAccessPolicy {
   anonymizationRules: AnonymizationRule[];
   /** 行级过滤 (SQL WHERE) */
   rowLevelFilter?: string;
+  /** Gear 1: 限制可调用的图查询函数 (空=全部允许) */
+  allowedQueryFunctions?: string[];
 }
 
 export interface SubAgentReport {
