@@ -209,7 +209,12 @@ async function main() {
   try {
     // TUI 始终以新会话开始——旧会话可查询但不自动恢复
     // （这与 CLI 不同：CLI 面向反复使用，TUI 面向单次深度诊断）
-    conv = new ConversationEngine(provider);
+    // 铁律 39: 注入 DiagnosisEngine 适配器 — TUI 诊断链路
+    const { ToolRegistry } = await import('../agent/tools');
+    const { EngineCoreVendorAdapter } = await import('../adapters/engine-core-adapter');
+    conv = new ConversationEngine(provider, {
+      diagnosisEngine: new EngineCoreVendorAdapter(provider, new ToolRegistry()),
+    });
     // Slice C: bind ViewAdapter for L1 decoupling
     // P1-02: ViewAdapter 为 L1 接口注入, conv 是 ConversationEngine 类型未导出该方法
     (conv as { setViewAdapter?: (a: ViewAdapter) => void }).setViewAdapter?.(viewAdapter);
