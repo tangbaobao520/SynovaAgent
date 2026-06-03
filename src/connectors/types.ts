@@ -49,7 +49,10 @@ export interface OntologyMapping {
   edges: Array<{ type: string; from: string; to: string; props?: Record<string, unknown> }>;
 }
 
-/** Full DataConnector interface (used by stub implementations) */
+/**
+ * @deprecated L5-DATA-LAYER: 使用 SynovaConnector (Airbyte协议) 替代。
+ * 见 src/connectors/unified-connector.ts — adaptLegacyConnector() 迁移工具
+ */
 export interface DataConnector {
   readonly name: string;
   readonly platform: string;
