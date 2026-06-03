@@ -22,6 +22,7 @@ import type { EventBus } from '../orchestrator/event-bus';
 import type { EvidenceCollector, CorroborationEngine } from '../evidence/index';
 import type { createGraphBridge } from '../l4/graph-bridge';
 import { ReportGraphAdapter } from '../l4/report-graph-adapter';
+import type { DecisionInput, DecisionResult } from '../l4/decision-capture';
 
 const log = createLogger('agent/conversation-engine');
 
@@ -78,6 +79,8 @@ export interface EngineConfig {
   reportAdapter?: ReportGraphAdapter;
   /** L3: CorroborationEngine (Phase 3 矛盾检测+交叉验证) */
   corroborationEngine?: CorroborationEngine;
+  /** L3: DecisionCapture callback (Phase 5 用户确认/驳回根因) */
+  onDecision?: (decision: DecisionInput) => Promise<DecisionResult>;
 }
 
 export interface ProcessResult {
@@ -134,6 +137,7 @@ export class ConversationEngine {
   private graphBridge: ReturnType<typeof createGraphBridge> | null = null;
   private reportAdapter: ReportGraphAdapter | null = null;
   private corroborationEngine: CorroborationEngine | null = null;
+  private onDecision: ((decision: DecisionInput) => Promise<DecisionResult>) | null = null;
   private sessionId: string = '';
   /** 维度覆盖追踪 (Phase 0) */
   private dimensionCoverage: Map<string, { status: string; confidence: number; evidenceCount: number }> = new Map();
@@ -160,12 +164,19 @@ export class ConversationEngine {
     this.graphBridge = config.graphBridge || null;
     this.reportAdapter = config.reportAdapter || null;
     this.corroborationEngine = config.corroborationEngine || null;
+    this.onDecision = config.onDecision || null;
     this.sessionId = config.sessionId || '';
   }
 
   /** Bind a ViewAdapter for L1 decoupling (Slice C). When set, Engine uses adapter for display. */
   setViewAdapter(adapter: ViewAdapter): void {
     this.viewAdapter = adapter;
+  }
+
+  /** Phase 5: Record user decision on a root cause node */
+  async recordDecision(decision: DecisionInput): Promise<DecisionResult> {
+    if (this.onDecision) return this.onDecision(decision);
+    return { recorded: false, error: 'DecisionCapture callback not configured' };
   }
 
   // ═══ Public API ═══
