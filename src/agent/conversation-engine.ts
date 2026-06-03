@@ -19,7 +19,7 @@ import type { DimensionRegistry } from '../orchestrator/dimension-registry';
 import type { HookRunner } from '../orchestrator/hook-runner';
 import type { SessionManager } from '../orchestrator/session-manager';
 import type { EventBus } from '../orchestrator/event-bus';
-import type { EvidenceCollector } from '../evidence/index';
+import type { EvidenceCollector, CorroborationEngine } from '../evidence/index';
 import type { createGraphBridge } from '../l4/graph-bridge';
 import { ReportGraphAdapter } from '../l4/report-graph-adapter';
 
@@ -76,6 +76,8 @@ export interface EngineConfig {
   graphBridge?: ReturnType<typeof createGraphBridge>;
   /** L4: ReportGraphAdapter (Phase 4 报告从图读取) */
   reportAdapter?: ReportGraphAdapter;
+  /** L3: CorroborationEngine (Phase 3 矛盾检测+交叉验证) */
+  corroborationEngine?: CorroborationEngine;
 }
 
 export interface ProcessResult {
@@ -131,6 +133,7 @@ export class ConversationEngine {
   private evidenceCollector: EvidenceCollector | null = null;
   private graphBridge: ReturnType<typeof createGraphBridge> | null = null;
   private reportAdapter: ReportGraphAdapter | null = null;
+  private corroborationEngine: CorroborationEngine | null = null;
   private sessionId: string = '';
   /** 维度覆盖追踪 (Phase 0) */
   private dimensionCoverage: Map<string, { status: string; confidence: number; evidenceCount: number }> = new Map();
@@ -156,6 +159,7 @@ export class ConversationEngine {
     this.evidenceCollector = config.evidenceCollector || null;
     this.graphBridge = config.graphBridge || null;
     this.reportAdapter = config.reportAdapter || null;
+    this.corroborationEngine = config.corroborationEngine || null;
     this.sessionId = config.sessionId || '';
   }
 
