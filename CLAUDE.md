@@ -474,6 +474,127 @@ Claw-Code `unsafe_code = "forbid"` 不是文档约定——编译器拒绝编译
 
 ---
 
+**铁律 38. `as any` 零容忍——TypeScript 类型安全真空一律禁止。`as any` 不是"跳过"而是"埋雷"。**
+
+**触发条件**：写任何代码时，绝不使用 `as any`。使用 `as any` 是违规，不是"先跳过后补"。
+
+**Why**：2026-06-03 审计发现 47 处 `as any` 遍布全仓——provider 响应、SQLite 查询、LLM 消息、API 调用、TUI 组件。每处单独看是"一行代码"，47 处累积后类型保护完全失效。这是"微观决策理性、宏观结果灾难"的典型案例。和 4 次接线失败、15 个空 catch 块是同一个模式。
+
+**为什么我在每次写代码时都会产生 `as any`**：
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 我的微观逻辑（每次）：                                                        │
+│   1. 这行类型对不上 → 卡住了                                                 │
+│   2. 想定义类型但"不确定完整结构" → 犹豫                                      │
+│   3. 功能等着上线 → 时间压力                                                  │
+│   4. as any 跳过 → "后面再补"                                                 │
+│   5. 后面永远没补                                                             │
+│                                                                               │
+│ × 47 次重复 = 47 处类型安全真空                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+**替代方案（每次想写 `as any` 时必须用其中一个）**：
+
+| 场景 | ❌ 禁止 | ✅ 强制替代 |
+|------|---------|-----------|
+| API JSON 响应 | `res.json() as any` | `res.json() as { field?: string }` — 内联类型，哪怕不完整也比 `any` 安全 100 倍 |
+| SQLite 查询 | `.all() as any[]` | `as Record<string, unknown>[]` 或定义 `DbRow` 类型 |
+| LLM 工具消息 | `(msgs as any[]).push(...)` | 扩展 `LLMMessage` 类型加可选字段 |
+| 框架内部属性 | `(obj as any)._internal` | `(obj as { _internal?: boolean })._internal` |
+| 未知第三方类型 | `as any` | 用 `unknown` + 类型守卫 |
+| 类型太复杂的对象 | `as any` | 分步定义接口，或最多用 `Record<string, unknown>` |
+
+**自动化门禁（pre-commit 硬阻断）**：
+
+```bash
+# 每次 commit 前执行。超过 0 处 as any → 阻断提交。
+# 加到 .husky/pre-commit 或 lint-staged：
+AS_ANY_COUNT=$(grep -rn "as any" src/ --include="*.ts" | grep -v "node_modules" | grep -v "\.test\." | grep -v "P1-02\|铁律 38" | wc -l)
+if [ "$AS_ANY_COUNT" -gt 0 ]; then
+  echo "❌ 铁律 38 违规: 发现 ${AS_ANY_COUNT} 处 as any。逐处用具体类型/unknown/Record 替代后重试。"
+  grep -rn "as any" src/ --include="*.ts" | grep -v "node_modules" | grep -v "\.test\."
+  exit 1
+fi
+```
+
+**TUI/框架应急例外**：blessed 等无类型定义的第三方库内部属性访问，需用精准类型断言 + 注释说明原因，每处单独审核。不允许泛化的 `as any`。
+
+**禁止**：
+- 禁止"这行过不去，加个 as any 先跑通"——过不去是类型系统在保护你，不要关掉它
+- 禁止"后面统一补类型"——不会补的。47 次历史证明
+- 禁止用 `as any` 关闭泛型推导——用 `unknown` + 类型收窄
+- 禁止复制粘贴含 `as any` 的代码——第一个工具文件用了 `as any`，后面 6 个文件全部复制。看到就要改
+
+**每周日审计命令**：
+```bash
+grep -rn "as any" src/ --include="*.ts" | grep -v "node_modules" | grep -v "\.test\."
+# 目标: 零输出。非零 = 铁律违反 = 本周最高优先级修复项。
+```
+
+### 七、架构铁律（2026-06-03 新增——基于核心竞争力审计 19 项 Critical/High 问题）
+
+> 五层架构是项目地基。违反边界 = 地基裂缝。每条边界违规都是技术债务复利。
+
+**铁律 39. 五层架构边界——每层只与相邻层通信，禁止跨层调用。**
+
+**五层定义**：
+
+```
+L1 交互 (TUI/CLI/Web) → 只调用 L2
+L2 编排 (ConversationEngine/Orchestrator) → 只调用 L1(显示) + L3(诊断)  
+L3 洞察 (ExpertAutonomy/Corroboration/SignalFusion) → 只调用 L2(被调) + L4(读图)
+L4 本体 (GraphBridge/GraphStore/EntityResolver) → 只调用 L3(被调) + L5(存储)
+L5 存储 (SQLite/文件系统) → 只被 L4 调用
+```
+
+**强制规则**：
+
+| 规则 | 违规示例 | 检测方法 |
+|------|---------|---------|
+| L2 不得直接 import L4 类 | `import { GraphStore } from '../l4/graph-store'` 在 conversation-engine.ts 中 | `grep "from.*l4/" src/agent/ src/orchestrator/` |
+| L3 不得绕过 L4 直接操作存储 | 在 expert 代码中直接 `db.prepare(...)` | `grep "db\.\|sqlite\|Database" src/l3/` |
+| 每层只能通过上层暴露的接口访问下层 | 动态 `require()` 绕过 import 检查 | `grep "require(" src/` (已有铁律 9) |
+| L4 GraphStore 接口不得重复声明 | `graph-bridge.ts:25` vs `graph-store.ts:27` 两套接口 | `check-architecture.sh` 类型兼容测试 |
+| 多租户安全：queryNodes/queryEdges 的 graph 参数必须传递 | `queryNodes(type, {}, undefined)` 缺失 graph | code review + pre-commit 模式检查 |
+
+**每次修改跨层代码时必须核对的清单**：
+```
+[ ] 我修改的文件属于哪一层？ (L1/L2/L3/L4/L5)
+[ ] 我新增的 import 来自哪一层？ → 只能来自同层或相邻下层
+[ ] 如果是 L4 代码：graph 参数是否所有调用方都传递了？（禁止 optional 跳过）
+[ ] 如果是 L3 代码：是否通过 L4 接口访问图？还是直接操作了 GraphStore？
+[ ] 引擎核心类型（GraphStore, NodeType 等）是否从 engine-core 导入？还是在本地重复声明？
+```
+
+**架构自动化门禁**（每次 commit 执行）：
+```bash
+# 1. 跨层 import 检测: L2 不得直接 import L4
+L2_L4_LEAK=$(grep -rn "from.*l4/" src/agent/ src/orchestrator/ --include="*.ts" | grep -v "node_modules" | grep -v "\.test\." | wc -l)
+if [ "$L2_L4_LEAK" -gt 0 ]; then
+  echo "❌ 铁律 39 违规: L2→L4 跨层引用 ${L2_L4_LEAK} 处。L2 只能通过 L3 访问 L4。"
+fi
+
+# 2. GraphStore 接口一致性: synova-agent 的声明必须与 engine-core 兼容
+#    运行: npx vitest run tests/architecture/graphstore-compatibility.test.ts
+
+# 3. 多租户安全: L4 查询接口 graph 参数不得省略
+#    人工审查，CI 中标记 PR 需要架构 review
+```
+
+**禁止**：
+- 禁止为了"方便"在 L2 中直接 import L4 的类 → 走 L3 接口
+- 禁止在 synova-agent 中重新声明 engine-core 已有的类型 → 从 engine-core 导入或建立类型桥接
+- 禁止在查询/写入图数据时省略 `graph` 参数 → 多租户隔离的基石
+- 禁止"先跨层调用，后面再重构" → 架构边界违约是复利债务，47 次 `as any` 就是教训
+
+**历史架构违规（2026-06-03 审计发现）**：
+1. GraphStore 接口在 `graph-bridge.ts:25` 和 `graph-store.ts:27` 重复声明 → 两份独立维护，必然分叉
+2. queryNodes/queryEdges graph 参数可选 → 跨租户数据泄漏风险
+3. FederalReporter/GlobalAggregator/RuleDeployer 完整存在但零接线 → 核心竞争力功能成死代码
+4. deleteNode() 物理删除 graph_nodes 行 → 违反时序图"No Delete"原则
+5. engine-core 772 文件单体包 → 跨包相对路径引用，独立发布不可行
+
 ## 项目身份
 
 **产品**：ClawOrg — AI 团队操作系统。L0 多轮对话 → JTBD 理解 → 引擎蒸馏 → 团队蓝图 → 持续进化。

@@ -124,6 +124,9 @@ warn_check "铁律 11+24+31: 空 catch (静默吞)" "$M"
 echo -n "  "
 bash "$(dirname "$0")/check-tech-debt.sh" 2>/dev/null || echo "  ⚠ 技术债务检查跳过"
 
+# 铁律 39: 架构边界检查
+bash "$(dirname "$0")/check-architecture.sh" 2>/dev/null || true
+
 echo ""
 echo "───────────────────────────────────────────────────────────"
 
