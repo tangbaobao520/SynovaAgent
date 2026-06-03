@@ -151,6 +151,12 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
     };
     activeConsultations.set(consultId, active);
 
+    // T1.4: 客户端断连后清理 Map 条目，防止 OOM
+    req.on('close', () => {
+      active.aborted = true;
+      setTimeout(() => activeConsultations.delete(consultId), 5000);
+    });
+
     // 启动诊断（异步）
     const consultationPromise = orchestrator.runConsultation(teamId, initiator);
 

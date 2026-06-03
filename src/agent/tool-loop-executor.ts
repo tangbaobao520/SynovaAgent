@@ -138,7 +138,7 @@ export class ToolLoopExecutor {
   async streamWithToolLoop(onToken: (token: string) => void): Promise<string> {
     const MAX_ROUNDS = 3;
     const tools = this.ctx.toolRegistry.listTools();
-    const { provider, messages, toolRegistry } = this.ctx;
+    const { provider, messages, toolRegistry, hookRunner, eventBus, sessionId } = this.ctx;
 
     for (let round = 0; round < MAX_ROUNDS; round++) {
       try {
@@ -182,12 +182,34 @@ export class ToolLoopExecutor {
             params = {};
           }
 
+          // T1.3: stream 路径也执行 hook (权限检查)
+          let effectiveParams = params;
+          if (hookRunner) {
+            const preResult = await hookRunner.runPreToolUse({ name: tc.function.name, input: JSON.stringify(params) });
+            if (preResult.action === 'deny') {
+              messages.push({ role: 'tool', tool_call_id: crypto.randomUUID(), content: JSON.stringify({ error: `工具被拒绝: ${preResult.reason}` }) });
+              eventBus?.emit({ id: `evt_${Date.now().toString(36)}`, type: 'tool.denied', consultationId: sessionId, data: { toolName: tc.function.name, reason: preResult.reason }, traceId: sessionId, spanId: sessionId.slice(0, 16), timestamp: new Date().toISOString() });
+              continue;
+            }
+            if (preResult.action === 'modify' && preResult.modifiedInput) {
+              try { effectiveParams = JSON.parse(preResult.modifiedInput); } catch { /* keep original */ }
+            }
+          }
+
           let execResult: unknown;
           try {
-            execResult = await toolRegistry.execute(tc.function.name, params);
+            execResult = await toolRegistry.execute(tc.function.name, effectiveParams);
           } catch (err: any) {
             this.log.warn({ err, tool: tc.function.name }, '工具执行失败');
             execResult = { error: `工具执行失败: ${err.message}` };
+            if (hookRunner) {
+              hookRunner.runPostToolUseFailure?.({ name: tc.function.name, input: JSON.stringify(effectiveParams) }, { message: err.message }).catch(() => {});
+            }
+          }
+
+          if (hookRunner && !(execResult as ToolExecResult)?.error) {
+            hookRunner.runPostToolUse({ name: tc.function.name, input: JSON.stringify(effectiveParams) }, { content: JSON.stringify(execResult), isError: false }).catch(() => {});
+            eventBus?.emit({ id: `evt_${Date.now().toString(36)}`, type: 'tool.executed', consultationId: sessionId, data: { toolName: tc.function.name, success: true }, traceId: sessionId, spanId: sessionId.slice(0, 16), timestamp: new Date().toISOString() });
           }
 
           messages.push({
