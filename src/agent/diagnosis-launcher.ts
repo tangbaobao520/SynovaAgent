@@ -41,15 +41,12 @@ export class DiagnosisLauncher {
     const { eventBus, sessionId, graphBridge, graphStore, flags } = this.ctx;
 
     try {
-      // Phase 1 启动 — 发射事件
-      eventBus?.emit({
-        id: `evt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
-        type: 'phase.started', consultationId: sessionId, phase: 1,
-        data: { label: '数据采集' },
-        traceId: sessionId, spanId: sessionId.slice(0, 16),
-        timestamp: new Date().toISOString(),
-      });
-      onEvent?.({ type: 'phase_started', phase: 1, label: '数据采集', confidence: 0.9 });
+      // ═══ Batch 2: 六阶段追踪 — 每阶段发射 phase_started 事件 ═══
+      const phaseLabels = [
+        '组织访谈', '数据采集', '假设生成', '根因分析', '报告生成', '交付',
+      ];
+      // Phase 0 完成信号 (ConversationEngine 已在 Phase 0 完成后调用 startDiagnosis)
+      onEvent?.({ type: 'phase_started', phase: 1, label: phaseLabels[1], confidence: 0.9 });
 
       log.info({ teamId, initiatorRole }, '启动六阶段诊断');
 

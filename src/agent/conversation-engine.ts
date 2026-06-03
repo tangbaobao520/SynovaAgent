@@ -17,6 +17,7 @@ import type { ViewAdapter } from '../l1-interaction/types';
 import type { IntentRouter } from '../orchestrator/intent-router';
 import type { DimensionRegistry } from '../orchestrator/dimension-registry';
 import type { HookRunner } from '../orchestrator/hook-runner';
+import type { PhaseStateMachine } from '../orchestrator/phase-state-machine';
 import type { SessionManager } from '../orchestrator/session-manager';
 import type { EventBus } from '../orchestrator/event-bus';
 import type { EvidenceCollector, CorroborationEngine } from '../evidence/index';
@@ -63,6 +64,8 @@ export interface EngineConfig {
   sessionManager?: SessionManager;
   /** 编排层: EventBus (事件追踪) */
   eventBus?: EventBus;
+  /** 编排层: PhaseStateMachine (Batch 2: 状态机驱动 Phase 转换) */
+  phaseStateMachine?: PhaseStateMachine;
   /** 会话 ID (用于事件追踪) */
   sessionId?: string;
   /** L3: EvidenceCollector (Phase 0 证据采集) */
@@ -142,6 +145,7 @@ export class ConversationEngine {
   private hookRunner: HookRunner | null = null;
   private sessionManager: SessionManager | null = null;
   private eventBus: EventBus | null = null;
+  private phaseStateMachine: PhaseStateMachine | null = null;
   private evidenceCollector: EvidenceCollector | null = null;
   private graphBridge: ReturnType<typeof createGraphBridge> | null = null;
   private reportAdapter: ReportGraphAdapter | null = null;
@@ -179,6 +183,7 @@ export class ConversationEngine {
     this.hookRunner = config.hookRunner || null;
     this.sessionManager = config.sessionManager || null;
     this.eventBus = config.eventBus || null;
+    this.phaseStateMachine = config.phaseStateMachine || null;
     this.evidenceCollector = config.evidenceCollector || null;
     this.graphBridge = config.graphBridge || null;
     this.reportAdapter = config.reportAdapter || null;
@@ -423,6 +428,11 @@ export class ConversationEngine {
 
         const reply = '感谢你提供的信息！我已收集到足够的组织概况。现在开始运行六阶段诊断分析...';
         this.messages.push({ role: 'assistant', content: reply });
+        // Batch 2: PhaseStateMachine 驱动 — 替代硬编码 phase=1
+        if (this.phaseStateMachine) {
+          const next = this.phaseStateMachine.advance();
+          log.info({ nextPhase: next.phase, label: next.label }, '状态机推进');
+        }
         this.phase = 1;
 
         // Slice 5.1: 自动同步 SOG 本体
