@@ -98,6 +98,14 @@ NEW_TESTS=$(git diff --cached --name-only --diff-filter=A 2>/dev/null \
   | grep "^tests/" | grep "\.ts$" | grep -v "\.test\.\|\.spec\.\|\.integration\.\|\.e2e\." || true)
 hard_check "铁律 33: 新测试文件命名不符合规范" "$NEW_TESTS"
 
+# Anthropic 标准: 禁止 "pre-existing" / "known failure" 标记 (反模式)
+PRE_EXISTING=$(grep -rn "pre.existing\|known.failure\|FIXME.*test\|skip.*broken\|TODO.*fix.*test" tests/ src/ --include="*.ts" 2>/dev/null | grep -v "node_modules" || true)
+hard_check "Anthropic: 禁止 pre-existing/known-failure 标记" "$PRE_EXISTING"
+
+# Anthropic 标准: engine-core vendor Critical bug 不得延期
+SOG_DELETE=$(grep -n "DELETE FROM graph_nodes" ../server/vendor/@synova/engine-core/src/pipeline/diagnosis/graph-store.ts 2>/dev/null || true)
+warn_check "Anthropic: SOG-001 deleteNode 物理删除 (下个commit修复)" "$SOG_DELETE"
+
 # 铁律 34: 分支命名 — feat/ fix/ chore/ docs/ test/ refactor/
 BRANCH=$(git branch --show-current 2>/dev/null || echo "main")
 if echo "$BRANCH" | grep -qE '^(feat|fix|chore|docs|test|refactor|perf|ci)/'; then

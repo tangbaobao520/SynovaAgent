@@ -65,7 +65,17 @@ else
   echo -e "  ${GREEN}✅ GraphStore 接口: 未声明 (应从 engine-core 导入)${RESET}"
 fi
 
-# ═══ 4. 多租户安全: graph 参数传递 ═══
+# ═══ 4. Anthropic 标准: engine-core vendor 目录的 Critical 问题不得延期 ═══
+# SOG-001: deleteNode 物理删除 — 违反双时序原则
+SOG_DELETE=$(grep -n "DELETE FROM graph_nodes" ../server/vendor/@synova/engine-core/src/pipeline/diagnosis/graph-store.ts 2>/dev/null || true)
+if [ -n "$SOG_DELETE" ]; then
+  echo -e "  ${RED}🔴 SOG-001: engine-core deleteNode 仍为物理删除 (graph-store.ts)$RESET"
+  echo "     DELETE FROM graph_nodes 违反双时序'永不删除'原则"
+  echo "     Anthropic 标准: vendor 代码的 Critical bug 同样是产品 bug, 不得延期"
+  FAIL=$((FAIL + 1))
+fi
+
+# ═══ 5. 多租户安全: graph 参数传递 ═══
 # 检测 L4 查询方法调用是否存在省略 graph 参数的模式
 # 这是一个 heuristic 检查，精确验证靠 code review
 MISSING_GRAPH=$(grep -rn "queryNodes\|queryEdges" src/l4/ --include="*.ts" 2>/dev/null \

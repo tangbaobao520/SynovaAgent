@@ -26,12 +26,16 @@ else
   FAIL=1
 fi
 
-# Step 4b: 全量测试
+# Step 4b: 全量测试 — Anthropic 标准: 零失败才允许 push
 echo -n "  vitest run ... "
-if npx vitest run --reporter=dot 2>&1 | tail -1 | grep -q "passed"; then
-  echo -e "${GREEN}✅${RESET}"
+VITEST_OUTPUT=$(npx vitest run --reporter=dot 2>&1)
+FAILED_COUNT=$(echo "$VITEST_OUTPUT" | grep -oP '\d+(?= failed)' | head -1 || echo "0")
+PASSED_COUNT=$(echo "$VITEST_OUTPUT" | grep -oP '\d+(?= passed)' | head -1 || echo "0")
+if [ "${FAILED_COUNT:-0}" -eq 0 ] && [ "${PASSED_COUNT:-0}" -gt 0 ]; then
+  echo -e "${GREEN}✅ ${PASSED_COUNT} passed, 0 failed${RESET}"
 else
-  echo -e "${RED}❌ 测试未全绿 — 修复后重试 push${RESET}"
+  echo -e "${RED}❌ ${FAILED_COUNT:-?} failed, ${PASSED_COUNT:-?} passed — 零失败才允许 push${RESET}"
+  echo "     Anthropic 标准: CI 零失败合并。修复后重试。"
   FAIL=1
 fi
 
