@@ -19,6 +19,7 @@ import type { DimensionRegistry } from '../orchestrator/dimension-registry';
 import type { HookRunner } from '../orchestrator/hook-runner';
 import type { SessionManager } from '../orchestrator/session-manager';
 import type { EventBus } from '../orchestrator/event-bus';
+import type { EvidenceCollector } from '../evidence/index';
 
 const log = createLogger('agent/conversation-engine');
 
@@ -67,6 +68,8 @@ export interface EngineConfig {
   eventBus?: EventBus;
   /** 会话 ID (用于事件追踪) */
   sessionId?: string;
+  /** L3: EvidenceCollector (Phase 0 证据采集) */
+  evidenceCollector?: EvidenceCollector;
 }
 
 export interface ProcessResult {
@@ -119,6 +122,7 @@ export class ConversationEngine {
   private hookRunner: HookRunner | null = null;
   private sessionManager: SessionManager | null = null;
   private eventBus: EventBus | null = null;
+  private evidenceCollector: EvidenceCollector | null = null;
   private sessionId: string = '';
   /** 维度覆盖追踪 (Phase 0) */
   private dimensionCoverage: Map<string, { status: string; confidence: number; evidenceCount: number }> = new Map();
@@ -141,6 +145,7 @@ export class ConversationEngine {
     this.hookRunner = config.hookRunner || null;
     this.sessionManager = config.sessionManager || null;
     this.eventBus = config.eventBus || null;
+    this.evidenceCollector = config.evidenceCollector || null;
     this.sessionId = config.sessionId || '';
   }
 
@@ -278,6 +283,13 @@ export class ConversationEngine {
   async processMessage(userInput: string): Promise<ProcessResult> {
     this.turnCount++;
     this.messages.push({ role: 'user', content: userInput });
+
+    // L3 接线: EvidenceCollector — Phase 0 证据自动采集
+    if (this.phase === 0 && this.evidenceCollector) {
+      this.evidenceCollector.collectFromInterview(
+        this.orgId || 'default', this.sessionId, [userInput],
+      );
+    }
 
     // Phase 0: 顾问式访谈 (Iter 3 接线 — 意图路由 + 维度覆盖)
     if (this.phase === 0) {
