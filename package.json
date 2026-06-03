@@ -20,6 +20,7 @@
     "check:architecture": "bash scripts/check-architecture.sh",
     "check:secrets": "bash scripts/check-secrets.sh",
     "check:security": "bash scripts/check-security.sh",
+    "anthropic:decide": "bash scripts/anthropic-decide.sh",
     "check:wire": "bash scripts/wire-check.sh",
     "check:all": "bash scripts/pre-push-check.sh",
     "hooks:install": "bash scripts/install-hooks.sh",

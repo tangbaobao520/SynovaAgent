@@ -158,6 +158,9 @@ warn_check "铁律 11+24+31: 空 catch (静默吞)" "$M"
 echo -n "  "
 bash "$(dirname "$0")/check-tech-debt.sh" 2>/dev/null || echo "  ⚠ 技术债务检查跳过"
 
+# Anthropic 决策树 — 每次 commit 回答"现在应该做什么"
+bash "$(dirname "$0")/anthropic-decide.sh" 2>/dev/null || true
+
 # 铁律 39: 架构边界检查
 bash "$(dirname "$0")/check-architecture.sh" 2>/dev/null || true
 
