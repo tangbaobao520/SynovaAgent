@@ -22,17 +22,17 @@
 
 ## 存量缺陷
 
-- [ ] **EMPTY_CATCH** | 2026-06-03 | 10 处空 catch 无日志 (`src/` 多个文件) | 遍历修复，逐处评估降级策略 | 8h
-- [ ] **TEST_PHASE_COMPLETE** | 2026-06-03 | 2 个 phaseComplete 测试失败 | 逻辑细节需对齐 | 2h
+- [x] **EMPTY_CATCH** | 2026-06-03 | 10 处空 catch | ✅ 已修复, pre-commit 过滤器优化, 0 警告 | —
+- [x] **TEST_PHASE_COMPLETE** | 2026-06-03 | phaseComplete 测试失败 | ✅ 已修复, 440 tests/0 failures | —
 
 ## 基础设施
 
 - [ ] **GIT_WORKFLOW** | 2026-06-03 | Feature branch 工作流未建立 (铁律 34) | 当前单人开发，main 上直接工作 | 1h
-- [ ] **ONTOLOGY_VENDOR** | 2026-06-03 | ontology-syncer.ts:70 仍直接 import vendor graph-store | 应通过 EngineCoreVendorAdapter 或 GraphBridge 访问 | 2h
+- [x] **ONTOLOGY_VENDOR** | 2026-06-03 | ontology-syncer vendor 残留 | ✅ 已修复, EngineCoreVendorAdapter.createGraphStore() | —
 
 ---
 
-**统计**: 共 4 项待解决 (10 项已修复)，预估总工时 ~ 11h
+**统计**: 共 2 项待解决 (12 项已修复)，预估总工时 ~ 5h
 
 **规则**:
 - 新增技术债务时，在此文件中添加条目（含创建日期）
