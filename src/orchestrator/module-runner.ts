@@ -36,6 +36,8 @@ export interface ModuleRunnerConfig {
   perModuleTimeoutMs: number;
   priorityGroups?: string[][];
   retryFailedModules?: boolean;
+  /** Phase 1b: after all modules complete, call with results for GraphStore sync */
+  afterRun?: (results: ModuleRunResults) => Promise<void>;
 }
 
 // ═══ ModuleRunner ═══
@@ -107,13 +109,22 @@ export class ModuleRunner {
         `批次完成 (${batch.length} 模块)`);
     }
 
-    return {
+    const finalResults = {
       results,
       degradedModules,
       totalDurationMs: Date.now() - startTime,
       completedCount,
       failedCount,
     };
+
+    // Phase 1b: GraphBridge hook — sync module findings to GraphStore
+    if (this.config.afterRun) {
+      await this.config.afterRun(finalResults).catch(err =>
+        log.warn({ err }, 'afterRun hook failed — GraphStore sync degraded'),
+      );
+    }
+
+    return finalResults;
   }
 
   /** Run a single module with timeout */
