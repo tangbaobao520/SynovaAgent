@@ -20,6 +20,9 @@ import { createOrchestrationWiring } from './orchestrator/wiring';
 import { initFederalReporter, getFederalAdapter } from './adapters/federal-adapter';
 import { bindConnectorTools } from './init/connector-binding';
 import { ToolRegistry } from './agent/tools';
+// Code Review A1+A3: 凭证加密 + L5 事件总线初始化
+import { CredentialVault } from './security/credential-vault';
+import { getOntologyEventBus } from './l5/ontology-event-bus';
 import chatRoutes from './routes/chat';
 import healthRoutes from './routes/health';
 import ontologyRoutes from './routes/ontology';
@@ -72,12 +75,35 @@ export async function createServer(): Promise<Server> {
     logger.warn({ err }, 'Connector 工具绑定失败 — degraded');
   }
 
+  // ═══ A1: CredentialVault — 凭证加密存储 (替代 .env 明文) ═══
+  let credentialVault: CredentialVault | undefined;
+  try {
+    const masterSecret = process.env.CREDENTIAL_MASTER_KEY || config.engineTokens || 'synova-dev-secret';
+    const salt = config.dbPath; // 确定性 salt — 每个实例独立密钥
+    credentialVault = new CredentialVault(db, masterSecret, salt);
+    logger.info('CredentialVault 已初始化 (AES-256-GCM 凭证加密)');
+  } catch (err: any) {
+    logger.warn({ err }, 'CredentialVault 初始化失败 — degraded, 凭证仍走 .env');
+  }
+
+  // ═══ A3: OntologyEventBus — L5 进程内事件总线初始化 ═══
+  try {
+    // GraphStore 由 engine-core adapter 创建，注入到总线
+    const { EngineCoreVendorAdapter } = await import('./adapters/engine-core-adapter');
+    const store = await EngineCoreVendorAdapter.createGraphStore(db);
+    getOntologyEventBus(store as unknown as import('./l4/graph-bridge').GraphStore);
+    logger.info('OntologyEventBus 已初始化 (L5 进程内事件总线)');
+  } catch (err: any) {
+    logger.warn({ err }, 'OntologyEventBus 初始化失败 — degraded, 连接器管线不可用');
+  }
+
   const app = express();
 
   // 附着共享编排上下文到 Express locals — routes 可通过 req.app.locals 访问
   app.locals.orchestration = { eventBus, hookRunner, sessionManager, stateMachine: phaseStateMachine, wiring, db, eventStore };
   app.locals.federalAdapter = federalAdapter;
   if (connectorToolRegistry) app.locals.connectorToolRegistry = connectorToolRegistry;
+  if (credentialVault) app.locals.credentialVault = credentialVault;
 
   // 基础中间件
   app.use(cors());
@@ -140,6 +166,46 @@ export async function createServer(): Promise<Server> {
   app.use(metricsRoutes);
   app.use(reviewRoutes);
   app.use(expertRoutes);        // POST/GET /api/expert
+
+  // ═══ A2: Connector Pipeline — 手动触发 + 定时同步 ═══
+  app.post('/api/connector/sync', async (req, res) => {
+    try {
+      const { module: moduleName, orgId } = req.body as { module?: string; orgId?: string };
+      if (!moduleName || !orgId) {
+        return res.status(400).json({ ok: false, error: 'module 和 orgId 必填', code: 'VALIDATION_ERROR' });
+      }
+      // 延迟 import 避免循环依赖
+      const { runConnectorPipeline } = await import('./l5/connector-pipeline');
+      const vault = req.app.locals.credentialVault;
+      const credentials = vault
+        ? vault.decryptForSubprocess(moduleName) || '{}'
+        : '{}';
+      const creds: Record<string, string> = JSON.parse(credentials);
+      const result = await runConnectorPipeline(moduleName, orgId, creds);
+      res.json({ ok: true, ...result });
+    } catch (err: any) {
+      res.status(500).json({ ok: false, error: err.message, code: 'PIPELINE_ERROR' });
+    }
+  });
+
+  // 定时同步: 每 30 分钟运行已注册的 Connector 管线
+  const connectorSyncInterval = setInterval(async () => {
+    try {
+      const registry = connectorToolRegistry;
+      if (!registry) return;
+      const { runConnectorPipeline } = await import('./l5/connector-pipeline');
+      const connectors = registry.listTools().filter(t => t.executionMode === 'connector');
+      for (const tool of connectors) {
+        try {
+          const result = await runConnectorPipeline(tool.name, 'default', {});
+          if (result.degraded) logger.warn({ tool: tool.name, errors: result.errors }, 'Connector 同步 degraded');
+          else logger.debug({ tool: tool.name, nodes: result.nodesCreated }, 'Connector 同步完成');
+        } catch (err: any) {
+          logger.warn({ err, tool: tool.name }, 'Connector 同步失败');
+        }
+      }
+    } catch { /* no connectors registered — skip */ }
+  }, 30 * 60_000); // 30 min
 
   // 404
   app.use((_req, res) => {
