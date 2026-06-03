@@ -67,7 +67,9 @@ export interface CPCInput { processName: string; teamId: string; efficiency?: nu
 
 // ═══ GraphBridge ═══
 
-export function createGraphBridge(store: GraphStore, graph: string) {
+export function createGraphBridge(store: GraphStore, graph: string, onGraphUpdated?: () => void) {
+  const notify = () => onGraphUpdated?.();
+
   return {
     upsertFromHONA(people: HONAInput[], interactions: HONAEdge[]): BridgeResult {
       const result: BridgeResult = { nodesCreated: 0, edgesCreated: 0, degraded: false, errors: [] };
@@ -125,6 +127,7 @@ export function createGraphBridge(store: GraphStore, graph: string) {
         result.errors.push(`upsertFromKeyPersonRisk: ${err.message}`);
         log.warn({ err }, 'upsertFromKeyPersonRisk 失败');
       }
+      if (result.nodesCreated > 0) notify(); // T3.2: SOG更新→触发专家
       return result;
     },
 
