@@ -99,8 +99,8 @@ export class DiagnosisLauncher {
 
       // L4 接线: GraphBridge — 诊断结果自动同步到本体图
       if (graphBridge) {
+        const report = result.report as DiagnosisReport;
         try {
-          const report = result.report as DiagnosisReport;
           if (report.keyFindings) {
             const risks = report.keyFindings
               .filter(f => f.riskLevel)
@@ -110,6 +110,64 @@ export class DiagnosisLauncher {
         } catch (err: any) {
           log.warn({ err }, 'GraphBridge sync failed — degraded');
         }
+
+        // C6: 接入剩余 5 个 upsert 方法 (审计 P0-20260604)
+        // 每个独立 try/catch — 单个数据段失败不影响其他
+
+        // HONA — 人-组织网络分析
+        try {
+          const honaData = (report as { hona?: any; humanOrganization?: any }).hona
+            || (report as { humanOrganization?: any }).humanOrganization;
+          if (honaData?.people?.length > 0) {
+            const result = graphBridge.upsertFromHONA(honaData.people, honaData.interactions || honaData.edges || []);
+            if (result.errors.length > 0) log.warn({ errors: result.errors }, 'HONA sync — some errors');
+            log.debug({ nodes: result.nodesCreated, edges: result.edgesCreated }, 'HONA 已同步到本体图');
+          }
+        } catch (err: any) { log.warn({ err }, 'HONA GraphBridge sync failed — degraded'); }
+
+        // FinancialImpact — 财务影响分析
+        try {
+          const finData = (report as { financialImpact?: any; financial?: any }).financialImpact
+            || (report as { financial?: any }).financial;
+          if (finData?.items?.length > 0) {
+            const result = graphBridge.upsertFromFinancialImpact(finData.items);
+            if (result.errors.length > 0) log.warn({ errors: result.errors }, 'FinancialImpact sync — some errors');
+            log.debug({ nodes: result.nodesCreated }, 'FinancialImpact 已同步到本体图');
+          }
+        } catch (err: any) { log.warn({ err }, 'FinancialImpact GraphBridge sync failed — degraded'); }
+
+        // CapabilityGap — 能力缺口分析
+        try {
+          const capData = (report as { capabilityGap?: any; capabilities?: any }).capabilityGap
+            || (report as { capabilities?: any }).capabilities;
+          if (capData?.gaps?.length > 0) {
+            const result = graphBridge.upsertFromCapabilityGap(capData.gaps);
+            if (result.errors.length > 0) log.warn({ errors: result.errors }, 'CapabilityGap sync — some errors');
+            log.debug({ nodes: result.nodesCreated }, 'CapabilityGap 已同步到本体图');
+          }
+        } catch (err: any) { log.warn({ err }, 'CapabilityGap GraphBridge sync failed — degraded'); }
+
+        // SevenPowers — 七力战略分析
+        try {
+          const stratData = (report as { sevenPowers?: any; strategy?: any }).sevenPowers
+            || (report as { strategy?: any }).strategy;
+          if (stratData?.powers?.length > 0) {
+            const result = graphBridge.upsertFromSevenPowers(stratData.powers);
+            if (result.errors.length > 0) log.warn({ errors: result.errors }, 'SevenPowers sync — some errors');
+            log.debug({ nodes: result.nodesCreated }, 'SevenPowers 已同步到本体图');
+          }
+        } catch (err: any) { log.warn({ err }, 'SevenPowers GraphBridge sync failed — degraded'); }
+
+        // CPC — 关键流程链
+        try {
+          const cpcData = (report as { cpc?: any; processes?: any }).cpc
+            || (report as { processes?: any }).processes;
+          if (cpcData?.processes?.length > 0) {
+            const result = graphBridge.upsertFromCPC(cpcData.processes);
+            if (result.errors.length > 0) log.warn({ errors: result.errors }, 'CPC sync — some errors');
+            log.debug({ nodes: result.nodesCreated, edges: result.edgesCreated }, 'CPC 已同步到本体图');
+          }
+        } catch (err: any) { log.warn({ err }, 'CPC GraphBridge sync failed — degraded'); }
 
         if (flags.enableCommunityReports && graphStore) {
           try {
