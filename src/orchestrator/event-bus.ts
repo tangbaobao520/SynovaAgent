@@ -36,11 +36,12 @@ export class EventBus {
       for (const handler of handlers) handler(event);
     }
 
-    // 3. Notify once subscribers (then remove)
+    // 3. Notify once subscribers (snapshot → delete → iterate — 防竞态)
     const onceHandlers = this.onceSubscribers.get(event.type);
-    if (onceHandlers) {
-      for (const handler of onceHandlers) handler(event);
-      this.onceSubscribers.delete(event.type);
+    if (onceHandlers && onceHandlers.size > 0) {
+      const snapshot = [...onceHandlers];
+      this.onceSubscribers.delete(event.type); // 先删后发 — 防止并发 re-entry
+      for (const handler of snapshot) handler(event);
     }
 
     // 4. Notify wildcard subscribers ('*' matches all events)

@@ -90,6 +90,15 @@ header .status{font-size:11px;color:var(--dim)}
 .banner{background:#2d1f1f;border:1px solid #5c2a2a;padding:14px;border-radius:8px;margin-bottom:14px;font-size:12px;line-height:1.7;max-width:90%;align-self:center}
 .banner code{background:#1a0f0f;padding:2px 6px;border-radius:3px;color:#e74c3c}
 .banner .cmd{display:block;background:#0a0a0f;padding:8px 12px;border-radius:4px;margin:8px 0;font-family:monospace;font-size:11px;color:var(--accent2)}
+/* ── Graph Visualization (L1: Cytoscape.js — Batch 4) ── */
+#graph-panel{display:none;flex:1;background:var(--bg);position:relative;overflow:hidden}
+#graph-panel.active{display:flex}
+#cy-container{flex:1;z-index:1}
+#graph-panel .graph-toolbar{position:absolute;top:10px;right:10px;z-index:10;display:flex;gap:6px}
+#graph-panel .graph-toolbar button{background:var(--panel);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer}
+#graph-panel .graph-legend{position:absolute;bottom:10px;left:10px;z-index:10;background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:10px}
+#graph-panel .graph-legend span{margin-right:10px;display:inline-flex;align-items:center;gap:4px}
+.legend-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 </style>
@@ -107,16 +116,32 @@ header .status{font-size:11px;color:var(--dim)}
   </div>
 </div>
 <div id="messages"></div>
+<div id="graph-panel">
+  <div id="cy-container"></div>
+  <div class="graph-toolbar">
+    <button onclick="resetGraphView()">🔍 重置视角</button>
+    <button onclick="toggleLabels()">🏷️ 标签</button>
+    <button onclick="toggleGraph()">💬 返回对话</button>
+  </div>
+  <div class="graph-legend">
+    <span><span class="legend-dot" style="background:#4ecdc4"></span> 本人</span>
+    <span><span class="legend-dot" style="background:#f39c12"></span> 团队</span>
+    <span><span class="legend-dot" style="background:#e74c3c"></span> 高风险</span>
+    <span>粗线 = 强协作</span>
+  </div>
+</div>
 <div id="quick-actions">
   <button class="q-btn" onclick="quickDiag('公司诊断')">🔍 诊断我的公司</button>
   <button class="q-btn" onclick="quickDiag('团队协作分析')">👥 团队协作分析</button>
   <button class="q-btn" onclick="quickDiag('关键人风险评估')">⚠️ 关键人风险</button>
+  <button class="q-btn" onclick="toggleGraph()" style="background:var(--accent);color:#fff">📊 团队全景图</button>
 </div>
 <div id="input-area">
   <input id="user-input" type="text" placeholder="描述你的组织问题..." />
   <button id="send-btn" onclick="send()">发送</button>
 </div>
 
+<script src="https://unpkg.com/cytoscape@3.30/dist/cytoscape.min.js"></script>
 <script>
 // ═══ Constants ═══
 const API = '';
@@ -417,6 +442,101 @@ async function send() {
   loading = false; btn.disabled = false; btn.textContent = '发送';
   quickActions.style.display = 'flex';
 }
+
+// ═══ Graph Visualization (L1: Cytoscape.js — Batch 4) ═══
+let cyInstance = null;
+let showLabels = true;
+
+function toggleGraph() {
+  const graphPanel = document.getElementById('graph-panel');
+  const messagesDiv = document.getElementById('messages');
+  if (graphPanel.classList.contains('active')) {
+    graphPanel.classList.remove('active');
+    messagesDiv.style.display = '';
+    quickActions.style.display = 'flex';
+    document.getElementById('input-area').style.display = '';
+    document.getElementById('progress-bar-container').style.display = '';
+  } else {
+    loadGraphView();
+    graphPanel.classList.add('active');
+    messagesDiv.style.display = 'none';
+    quickActions.style.display = 'none';
+    document.getElementById('input-area').style.display = 'none';
+    document.getElementById('progress-bar-container').style.display = 'none';
+  }
+}
+
+async function loadGraphView() {
+  const container = document.getElementById('cy-container');
+  if (!container) return;
+
+  if (cyInstance) { cyInstance.destroy(); cyInstance = null; }
+
+  // Fetch ontology graph data from REST API
+  try {
+    const res = await fetch('/api/ontology/graph/default');
+    if (!res.ok) throw new Error('Graph API unavailable');
+    const data = await res.json();
+
+    const nodes = (data.nodes || []).map(n => ({
+      data: {
+        id: n.id, label: n.props?.name || n.type || '?',
+        type: n.type, risk: n.props?.riskLevel || 'normal',
+      },
+    }));
+
+    const edges = (data.edges || []).map(e => ({
+      data: {
+        id: e.id, source: e.from, target: e.to,
+        label: e.type, weight: e.weight || 1,
+      },
+    }));
+
+    const riskColors = { critical: '#e74c3c', high: '#f39c12', medium: '#f1c40f', normal: '#4ecdc4' };
+
+    cyInstance = cytoscape({
+      container,
+      elements: [...nodes, ...edges],
+      style: [
+        { selector: 'node', style: {
+          'background-color': (ele) => riskColors[ele.data('risk')] || '#4ecdc4',
+          'label': (ele) => showLabels ? ele.data('label') : '',
+          'color': '#e0e0e0', 'font-size': '10px',
+          'text-valign': 'bottom', 'text-halign': 'center',
+          'width': 28, 'height': 28,
+          'border-width': (ele) => ele.data('risk') === 'critical' ? 3 : 1,
+          'border-color': (ele) => ele.data('risk') === 'critical' ? '#e74c3c' : '#2a2a3a',
+        }},
+        { selector: 'edge', style: {
+          'width': (ele) => Math.max(1, Math.min(6, ele.data('weight') * 2)),
+          'line-color': '#4a4a6a',
+          'target-arrow-color': '#4a4a6a',
+          'target-arrow-shape': 'triangle',
+          'curve-style': 'bezier',
+          'label': (ele) => showLabels ? ele.data('label') : '',
+          'color': '#888', 'font-size': '8px',
+        }},
+        { selector: 'node:selected', style: { 'border-color': '#6c5ce7', 'border-width': 3 }},
+        { selector: 'edge:selected', style: { 'line-color': '#6c5ce7', 'width': 4 }},
+      ],
+      layout: { name: 'cose', animate: true, animationDuration: 1000, nodeRepulsion: 2000 },
+      minZoom: 0.3, maxZoom: 3,
+    });
+
+    cyInstance.on('tap', 'node', (evt) => {
+      const node = evt.target;
+      addSystem('msg', '📌 ' + node.data('label') + ' (' + node.data('type') + ')' +
+        (node.data('risk') !== 'normal' ? ' ⚠️ ' + node.data('risk') : ''));
+    });
+
+    addSystem('msg', '📊 团队全景图已加载 (' + nodes.length + ' 人, ' + edges.length + ' 关联)');
+  } catch(e) {
+    addSystem('msg', '⚠️ 团队全景图暂不可用 — 需要先运行诊断生成数据');
+  }
+}
+
+function resetGraphView() { if (cyInstance) { cyInstance.fit(); cyInstance.center(); } }
+function toggleLabels() { showLabels = !showLabels; loadGraphView(); }
 
 init();
 </script>
