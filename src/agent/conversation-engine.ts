@@ -20,39 +20,30 @@ import type { HookRunner } from '../orchestrator/hook-runner';
 import type { SessionManager } from '../orchestrator/session-manager';
 import type { EventBus } from '../orchestrator/event-bus';
 import type { EvidenceCollector, CorroborationEngine } from '../evidence/index';
-import type { createGraphBridge } from '../l4/graph-bridge';
+import type { createGraphBridge, GraphStore } from '../l4/graph-bridge';
 import { ReportGraphAdapter } from '../l4/report-graph-adapter';
 import type { DecisionInput, DecisionResult } from '../l4/decision-capture';
+import {
+  findDiagnosticPaths, summarizeSubgraph, findCrossDimensionalBrokers,
+  getGraphDiff, detectAnomalousPatterns,
+} from '../l4/diagnosis-graph-query';
+import type { DiagnosticPath, SubgraphSummary, BrokerNode, GraphDiff, AnomalyPattern } from '../l4/diagnosis-graph-query';
+import { reflectOnTriples } from '../l4/triple-reflection';
+import type { Triple, ReflectionResult } from '../l4/triple-reflection';
+import type { L3ResolutionResult } from '../l4/entity-resolver';
+import type { CommunityReport } from '../l4/community-reports';
+// P1-01: 子组件提取 — 单体引擎拆分为 3 个独立类
+import { ToolLoopExecutor } from './tool-loop-executor';
+import { DiagnosisLauncher, type DiagnosisEvent, type ConsultationResult } from './diagnosis-launcher';
+import { OntologySyncer, type OntologySyncResult } from './ontology-syncer';
+import type { EngineContext } from './engine-context';
 
 const log = createLogger('agent/conversation-engine');
 
 // ═══ Types ═══
 
-/** Simplified diagnosis event for TUI/UI consumption (Slice 3.2) */
-export interface DiagnosisEvent {
-  type: string;
-  phase: number;
-  label?: string;
-  message?: string;
-  findings?: Array<{ moduleId: string; summary: string }>;
-}
-
-/** Simplified consultation result (Slice 3.2) */
-export interface ConsultationResult {
-  teamId: string;
-  report: unknown;
-  totalDurationMs: number;
-  degradedModules: string[];
-}
-
-/** Ontology sync result (Slice 5.1) */
-export interface OntologySyncResult {
-  persons: number;
-  teams: number;
-  personsDetail?: string[];
-  teamCount: number;
-  created: boolean;
-}
+// Re-export for backward compatibility (P1-01: 子组件提取)
+export type { DiagnosisEvent, ConsultationResult, OntologySyncResult };
 
 export interface EngineConfig {
   /** Phase 0 最大轮次 (默认 6) */
@@ -81,6 +72,14 @@ export interface EngineConfig {
   corroborationEngine?: CorroborationEngine;
   /** L3: DecisionCapture callback (Phase 5 用户确认/驳回根因) */
   onDecision?: (decision: DecisionInput) => Promise<DecisionResult>;
+  /** L4: GraphStore (for diagnosis graph queries + entity resolution) */
+  graphStore?: GraphStore;
+  /** L4: enable automated entity resolution after diagnosis (Phase 3a) */
+  enableEntityResolution?: boolean;
+  /** L4: enable community reports after GraphBridge sync (Phase 2b) */
+  enableCommunityReports?: boolean;
+  /** L4: enable triple reflection after diagnosis (Phase 3b) */
+  enableTripleReflection?: boolean;
 }
 
 export interface ProcessResult {
@@ -139,8 +138,18 @@ export class ConversationEngine {
   private corroborationEngine: CorroborationEngine | null = null;
   private onDecision: ((decision: DecisionInput) => Promise<DecisionResult>) | null = null;
   private sessionId: string = '';
+  // L4 本体层组件
+  private graphStore: GraphStore | null = null;
+  private enableEntityResolution: boolean = false;
+  private enableCommunityReports: boolean = false;
+  private enableTripleReflection: boolean = false;
   /** 维度覆盖追踪 (Phase 0) */
   private dimensionCoverage: Map<string, { status: string; confidence: number; evidenceCount: number }> = new Map();
+
+  // P1-01: 子组件提取
+  private toolLoop: ToolLoopExecutor;
+  private diagnosisLauncher: DiagnosisLauncher;
+  private ontologySyncer: OntologySyncer;
 
   constructor(provider: LLMProvider, config: EngineConfig = {}) {
     this.provider = provider;
@@ -166,6 +175,33 @@ export class ConversationEngine {
     this.corroborationEngine = config.corroborationEngine || null;
     this.onDecision = config.onDecision || null;
     this.sessionId = config.sessionId || '';
+    // L4 本体层接线
+    this.graphStore = config.graphStore || null;
+    this.enableEntityResolution = config.enableEntityResolution ?? false;
+    this.enableCommunityReports = config.enableCommunityReports ?? false;
+    this.enableTripleReflection = config.enableTripleReflection ?? false;
+
+    // P1-01: 构建共享上下文 + 实例化子组件
+    const engineCtx: EngineContext = {
+      provider: this.provider,
+      messages: this.messages,
+      orgId: this.orgId,
+      sessionId: this.sessionId,
+      toolRegistry: this.toolRegistry,
+      hookRunner: this.hookRunner,
+      eventBus: this.eventBus,
+      evidenceCollector: this.evidenceCollector,
+      graphBridge: this.graphBridge,
+      graphStore: this.graphStore,
+      flags: {
+        enableCommunityReports: this.enableCommunityReports,
+        enableEntityResolution: this.enableEntityResolution,
+      },
+      loggerPrefix: 'agent',
+    };
+    this.toolLoop = new ToolLoopExecutor(engineCtx);
+    this.diagnosisLauncher = new DiagnosisLauncher(engineCtx);
+    this.ontologySyncer = new OntologySyncer(engineCtx);
   }
 
   /** Bind a ViewAdapter for L1 decoupling (Slice C). When set, Engine uses adapter for display. */
@@ -177,6 +213,78 @@ export class ConversationEngine {
   async recordDecision(decision: DecisionInput): Promise<DecisionResult> {
     if (this.onDecision) return this.onDecision(decision);
     return { recorded: false, error: 'DecisionCapture callback not configured' };
+  }
+
+  // ═══ L4 Ontology Public API ═══
+
+  /** Phase 2a: Find diagnostic paths between node types (for ExpertAutonomyEngine) */
+  findDiagnosticPaths(fromType: string, toType: string): DiagnosticPath[] {
+    if (!this.graphStore) return [];
+    return findDiagnosticPaths(this.graphStore, this.orgId, fromType, toType);
+  }
+
+  /** Phase 2a: Summarize subgraph around a root node (for ExpertAutonomyEngine) */
+  summarizeSubgraph(rootId: string, maxDepth = 3): SubgraphSummary {
+    if (!this.graphStore) return { rootId, nodeCount: 0, edgeCount: 0, typeDistribution: {}, strongestConnections: [], risks: [], anomalyScore: 0 };
+    return summarizeSubgraph(this.graphStore, this.orgId, rootId, maxDepth);
+  }
+
+  /** Phase 2a: Find cross-dimensional brokers via betweenness centrality */
+  findCrossDimensionalBrokers(): BrokerNode[] {
+    if (!this.graphStore) return [];
+    return findCrossDimensionalBrokers(this.graphStore, this.orgId);
+  }
+
+  /** Phase 2a: Detect anomalous graph patterns (isolated nodes, weight outliers) */
+  detectAnomalousPatterns(): AnomalyPattern[] {
+    if (!this.graphStore) return [];
+    return detectAnomalousPatterns(this.graphStore, this.orgId);
+  }
+
+  /** Phase 2a: Get graph diff between time snapshots */
+  getGraphDiff(fromDate?: string, toDate?: string): GraphDiff {
+    if (!this.graphStore) return { nodesAdded: [], nodesRemoved: [], edgesAdded: [], edgesRemoved: [], weightChanges: [] };
+    return getGraphDiff(this.graphStore, this.orgId, fromDate, toDate);
+  }
+
+  /** Phase 2b: Generate community reports from graph structure */
+  generateCommunityReports(): CommunityReport[] {
+    if (!this.graphStore || !this.enableCommunityReports) return [];
+    try {
+      return generateCommunityReports(this.graphStore, this.orgId);
+    } catch (err: any) {
+      log.warn({ err }, 'CommunityReports generation failed');
+      return [];
+    }
+  }
+
+  /** Phase 3a: Run L3 entity resolution to find duplicate entities */
+  resolveEntities(): L3ResolutionResult {
+    if (!this.graphStore || !this.enableEntityResolution) {
+      return { matches: [], autoMerged: 0, queuedForReview: 0, ignored: 0 };
+    }
+    try {
+      return resolveEntitiesL3(this.graphStore, this.orgId);
+    } catch (err: any) {
+      log.warn({ err }, 'EntityResolution failed');
+      return { matches: [], autoMerged: 0, queuedForReview: 0, ignored: 0 };
+    }
+  }
+
+  /** Phase 3b: Run triple reflection to validate knowledge graph triples */
+  async reflectOnTriples(triples: Triple[]): Promise<ReflectionResult> {
+    if (!this.enableTripleReflection || triples.length === 0) {
+      return { reflections: [], degraded: false };
+    }
+    try {
+      return await reflectOnTriples(
+        { consult: (sys, ctx, opts) => this.provider.chat([{ role: 'system', content: sys }, { role: 'user', content: ctx }], opts) },
+        triples,
+      );
+    } catch (err: any) {
+      log.warn({ err }, 'TripleReflection failed');
+      return { reflections: triples.map(t => ({ triple: t, action: 'keep' as const, reason: 'Reflection unavailable' })), degraded: true };
+    }
   }
 
   // ═══ Public API ═══
@@ -212,81 +320,10 @@ export class ConversationEngine {
     return this.toolRegistry;
   }
 
-  // ═══ SOG Ontology Sync (Slice 5.1) ═══
+  // ═══ SOG Ontology Sync (delegated to OntologySyncer) ═══
 
-  /**
-   * Extract organization info from Phase 0 messages and sync to SOG graph.
-   *
-   * Uses simple heuristics (keyword extraction) to identify:
-   *   - Organization name → creates Team node
-   *   - Role/title mentions → creates Person nodes
-   *   - Team count mentions → creates Team nodes
-   *
-   * Returns summary for TUI display.
-   */
   async syncToSOG(): Promise<OntologySyncResult> {
-    const userMessages = this.messages.filter(m => m.role === 'user');
-    const allText = userMessages.map(m => m.content).join(' ');
-    const personNames = new Set<string>();
-    const teamNames = new Set<string>();
-
-    // Heuristic: quoted names are likely persons or teams
-    const quotedPattern = /[「「]([^」」]{1,10})[」」]/g;
-    let match;
-    while ((match = quotedPattern.exec(allText)) !== null) {
-      personNames.add(match[1]);
-    }
-
-    // Heuristic: "X人" / "X个团队" / "X部门"
-    const teamCountMatch = allText.match(/(\d+)\s*(个|名|位).*(团队|部门|组)/);
-    const teamCount = teamCountMatch ? parseInt(teamCountMatch[1]) : 0;
-
-    // Heuristic: "CEO/CTO/经理" patterns
-    const rolePattern = /([一-龥]{2,4})(?:是|担任?|负责?)(?:我们的?)?(CEO|CTO|经理|主管|总监|负责人)/g;
-    while ((match = rolePattern.exec(allText)) !== null) {
-      personNames.add(match[1]);
-    }
-
-    const result: OntologySyncResult = {
-      persons: personNames.size,
-      teams: teamCount > 0 ? teamCount : 1,
-      personsDetail: [...personNames],
-      teamCount,
-      created: false,
-    };
-
-    // Attempt to create SOG nodes via engine-core GraphStore
-    try {
-      const { createGraphStore } = await import(
-        '../../../../server/vendor/@synova/engine-core/src/pipeline/diagnosis/graph-store'
-      );
-      const { SOGNodeType, SOGEdgeType } = await import('@synova/sog-core');
-      const { getDatabase } = await import('../init/engine-context');
-
-      const db = getDatabase();
-      const store = createGraphStore('sqlite', db);
-
-      // Create Team node
-      store.createNode(SOGNodeType.TEAM, {
-        name: this.orgId || '默认组织',
-        teamType: 'permanent',
-      }, this.orgId || 'default');
-
-      // Create Person nodes from extracted names
-      for (const name of personNames) {
-        store.createNode(SOGNodeType.PERSON, { name }, this.orgId || 'default');
-      }
-
-      result.created = true;
-      log.info({
-        persons: personNames.size,
-        team: this.orgId,
-      }, 'SOG 本体节点已创建');
-    } catch (err: any) {
-      log.warn({ err: err.message }, 'SOG 同步失败（engine-core 不可用），继续非本体模式');
-    }
-
-    return result;
+    return this.ontologySyncer.syncToSOG();
   }
 
   /** Get current ontology summary (for TUI side panel) */
@@ -341,7 +378,7 @@ export class ConversationEngine {
             }
             this.sessionManager?.addMessage({ role: 'user', content: userInput });
           }
-        } catch { /* 意图分类失败 → 降级为原有轮次逻辑 */ }
+        } catch (err: any) { log.warn({ err: err.message }, '意图分类失败，降级为原有轮次逻辑'); }
       }
 
       const coveredCount = [...this.dimensionCoverage.values()].filter(d => d.status === 'covered').length;
@@ -423,7 +460,7 @@ export class ConversationEngine {
         const reply = '感谢你的信息！访谈完成。现在开始运行六阶段诊断分析...';
         for (const ch of reply) {
           display(ch);
-          await sleep(20);
+          await sleep(5); // P3-06: 20ms→5ms 更流畅的流式体验
         }
         this.viewAdapter?.showAgentMessage(reply);
         this.messages.push({ role: 'assistant', content: reply });
@@ -441,109 +478,14 @@ export class ConversationEngine {
     return { reply, phaseComplete: false };
   }
 
-  // ═══ Diagnosis Orchestrator Integration (Slice 3.2) ═══
+  // ═══ Diagnosis Orchestrator Integration (delegated to DiagnosisLauncher) ═══
 
-  /**
-   * Start the diagnosis pipeline after Phase 0 interview completes.
-   *
-   * Creates a DiagnosisOrchestrator, wires it with the current LLM provider
-   * and tool registry, then runs the full 6-phase consultation.
-   *
-   * Events are emitted via the onEvent callback for TUI/UI rendering.
-   * Returns a ConsultationResult when complete, or null if engine-core
-   * is unavailable (graceful degradation — iron law #31).
-   */
   async startDiagnosis(
     initiatorRole: string,
     initiatorName: string,
     onEvent?: (event: DiagnosisEvent) => void,
   ): Promise<ConsultationResult | null> {
-    const teamId = this.orgId || 'default';
-
-    try {
-      // Dynamic import — engine-core is heavy (305 files, ~20k LOC)
-      const { DiagnosisOrchestrator } = await import(
-        '../../../../server/vendor/@synova/engine-core/src/pipeline/diagnosis/diagnosis-orchestrator'
-      );
-      const { createDiagnosisLLMClient, createToolExecutorAdapter } = await import('./orchestrator-adapter');
-
-      // Wire adapters
-      const llmClient = createDiagnosisLLMClient(this.provider);
-      const toolExecutor = createToolExecutorAdapter(this.toolRegistry);
-
-      // Create orchestrator with builders
-      const orchestrator = new DiagnosisOrchestrator(llmClient, toolExecutor)
-        .withMaxIterations(4)
-        .withGateDataCompleteness(0.3)
-        .withGateMinHypothesisConfidence(0.5);
-
-      // 编排层: Phase 1 启动 — 发射事件 + 并行模块采集
-      this.eventBus?.emit({
-        id: `evt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,6)}`,
-        type: 'phase.started', consultationId: this.sessionId, phase: 1,
-        data: { label: '数据采集' },
-        traceId: this.sessionId, spanId: this.sessionId.slice(0, 16),
-        timestamp: new Date().toISOString(),
-      });
-      onEvent?.({ type: 'phase_started', phase: 1, label: '数据采集' });
-
-      log.info({ teamId, initiatorRole }, '启动六阶段诊断');
-
-      const result = await orchestrator.runConsultation(teamId, {
-        role: initiatorRole,
-        name: initiatorName,
-        teamId,
-        concerns: this.extractConcerns(),
-      });
-
-      // Forward events to caller
-      if (onEvent) {
-        for (const event of result.events) {
-          onEvent(event);
-        }
-      }
-
-      log.info({
-        teamId,
-        durationMs: result.totalDurationMs,
-        degraded: result.degradedModules.length,
-      }, '诊断完成');
-
-      return {
-      // L4 接线: GraphBridge — 诊断结果自动同步到本体图
-      if (this.graphBridge) {
-        try {
-          // Sync key person risks as Risk nodes
-          if ((result.report as any)?.keyFindings) {
-            const risks = (result.report as any).keyFindings
-              .filter((f: any) => f.riskLevel)
-              .map((f: any) => ({ roleId: f.entity || f.roleId, riskLevel: f.riskLevel || 'medium', knowledgeDomains: f.domains || [], busFactor: f.busFactor || 1 }));
-            if (risks.length > 0) this.graphBridge.upsertFromKeyPersonRisk(risks);
-          }
-        } catch (err: any) {
-          log.warn({ err }, 'GraphBridge sync failed — degraded, diagnosis continues');
-        }
-      }
-
-      return {
-        teamId: result.teamId,
-        report: result.report,
-        totalDurationMs: result.totalDurationMs,
-        degradedModules: result.degradedModules,
-      };
-    } catch (err: any) {
-      log.error({ err, teamId }, '诊断引擎启动失败');
-      if (onEvent) {
-        onEvent({ type: 'error', phase: 0, message: `诊断引擎不可用: ${err.message}` } as any);
-      }
-      return null;
-    }
-  }
-
-  /** Extract user-stated concerns from Phase 0 messages */
-  private extractConcerns(): string[] {
-    const userMessages = this.messages.filter(m => m.role === 'user');
-    return userMessages.map(m => m.content.slice(0, 200));
+    return this.diagnosisLauncher.startDiagnosis(initiatorRole, initiatorName, onEvent);
   }
 
   // ═══ Serialization ═══
@@ -572,198 +514,14 @@ export class ConversationEngine {
     return engine;
   }
 
-  // ═══ Private: LLM + Tool Loop ═══
+  // ═══ Private: LLM + Tool Loop (delegated to ToolLoopExecutor) ═══
 
-  /**
-   * Call LLM with tool execution loop (non-streaming).
-   * Max 3 rounds of tool calls to prevent infinite loops.
-   */
   private async callLLMWithTools(): Promise<string> {
-    const MAX_TOOL_ROUNDS = 3;
-    const tools = this.toolRegistry.listTools();
-
-    for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-      try {
-        const result = await this.provider.chat(this.messages, {
-          tools: tools.length > 0 ? this.toolRegistry.toOpenAITools() : undefined,
-        });
-
-        // 无工具调用 → 直接返回
-        if (!result.toolCalls || result.toolCalls.length === 0) {
-          return result.content || '(empty response)';
-        }
-
-        // 有工具调用 → 执行并注入结果
-        log.info({ count: result.toolCalls.length, round }, 'LLM 请求工具调用');
-
-        this.messages.push({
-          role: 'assistant',
-          content: result.content || '',
-        } as LLMMessage);
-
-        for (const tc of result.toolCalls) {
-          let params: Record<string, unknown> = {};
-          try {
-            params = JSON.parse(tc.function.arguments);
-          } catch {
-            log.debug({ name: tc.function.name, args: tc.function.arguments.slice(0, 100) },
-              'JSON.parse 失败于工具参数，使用空对象');
-            params = {};
-          }
-
-          // 编排层 Hook: pre-tool-use (权限/脱敏)
-          let effectiveParams = params;
-          if (this.hookRunner) {
-            const preResult = await this.hookRunner.runPreToolUse({
-              name: tc.function.name, input: JSON.stringify(params),
-            });
-            if (preResult.action === 'deny') {
-              (this.messages as any[]).push({
-                role: 'tool', tool_call_id: crypto.randomUUID(),
-                content: JSON.stringify({ error: `工具被拒绝: ${preResult.reason}` }),
-              });
-              this.eventBus?.emit({
-                id: `evt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,6)}`,
-                type: 'tool.denied', consultationId: this.sessionId,
-                data: { toolName: tc.function.name, reason: preResult.reason },
-                traceId: this.sessionId, spanId: this.sessionId.slice(0, 16),
-                timestamp: new Date().toISOString(),
-              });
-              continue; // Skip this tool, continue next
-            }
-            if (preResult.action === 'modify' && preResult.modifiedInput) {
-              try { effectiveParams = JSON.parse(preResult.modifiedInput); } catch { /* keep original */ }
-            }
-          }
-
-          const execResult = await this.toolRegistry.execute(tc.function.name, effectiveParams);
-
-          // 编排层 Hook: post-tool-use (审计/证据)
-          if (this.hookRunner) {
-            await this.hookRunner.runPostToolUse(
-              { name: tc.function.name, input: JSON.stringify(effectiveParams) },
-              { content: JSON.stringify(execResult), isError: !!(execResult as any).error },
-            );
-            this.eventBus?.emit({
-              id: `evt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,6)}`,
-              type: 'tool.executed', consultationId: this.sessionId,
-              data: { toolName: tc.function.name, success: !(execResult as any).error },
-              traceId: this.sessionId, spanId: this.sessionId.slice(0, 16),
-              timestamp: new Date().toISOString(),
-            });
-          }
-
-          (this.messages as any[]).push({
-            role: 'tool',
-            tool_call_id: crypto.randomUUID(),
-            content: JSON.stringify(execResult),
-          });
-        }
-
-        continue; // 下一轮 LLM 调用
-      } catch (err: any) {
-        log.error({ err, round }, 'LLM 调用失败');
-        return `抱歉，调用失败：${err.message}`;
-      }
-    }
-
-    // 达到最大轮次 → 最后一次无工具调用
-    try {
-      const final = await this.provider.chat(this.messages);
-      return final.content || '(no response)';
-    } catch (err: any) {
-      log.error({ err }, 'callLLMWithTools: 最终轮 LLM 调用失败');
-      return `工具调用超过最大轮次: ${err.message}`;
-    }
+    return this.toolLoop.callLLMWithTools();
   }
 
-  /**
-   * Call LLM with streaming token output + tool execution loop.
-   *
-   * Slice 0.1 fix: single provider.chat() call per round —
-   * no more separate stream()+chat() double calls.
-   */
   private async streamWithToolLoop(onToken: (token: string) => void): Promise<string> {
-    const MAX_ROUNDS = 3;
-    const tools = this.toolRegistry.listTools();
-
-    for (let round = 0; round < MAX_ROUNDS; round++) {
-      try {
-        const result = await this.provider.chat(this.messages, {
-          tools: tools.length > 0 ? this.toolRegistry.toOpenAITools() : undefined,
-        });
-
-        const content = result.content || '';
-
-        // 无工具调用 → 流式输出文本 + 返回
-        if (!result.toolCalls || result.toolCalls.length === 0) {
-          for (const ch of content) {
-            onToken(ch);
-          }
-          this.messages.push({ role: 'assistant', content });
-          return content || '(empty response)';
-        }
-
-        // 有工具调用
-        log.debug({ count: result.toolCalls.length, round }, 'streamWithToolLoop: 工具调用');
-
-        for (const ch of content) {
-          onToken(ch);
-        }
-
-        (this.messages as any[]).push({
-          role: 'assistant',
-          content,
-          tool_calls: result.toolCalls,
-        });
-
-        onToken('\n[工具调用: ');
-        for (const tc of result.toolCalls) {
-          onToken(tc.function.name + ' ');
-          let params: Record<string, unknown> = {};
-          try {
-            params = JSON.parse(tc.function.arguments);
-          } catch {
-            log.debug({ name: tc.function.name, args: tc.function.arguments.slice(0, 100) },
-              'JSON.parse 失败于工具参数，使用空对象');
-            params = {};
-          }
-
-          let execResult: unknown;
-          try {
-            execResult = await this.toolRegistry.execute(tc.function.name, params);
-          } catch (err: any) {
-            log.warn({ err, tool: tc.function.name }, '工具执行失败');
-            execResult = { error: `工具执行失败: ${err.message}` };
-          }
-
-          (this.messages as any[]).push({
-            role: 'tool',
-            tool_call_id: crypto.randomUUID(),
-            content: JSON.stringify(execResult),
-          });
-        }
-        onToken(']\n');
-
-        continue;
-      } catch (err: any) {
-        log.error({ err, round }, 'streamWithToolLoop: LLM 调用失败');
-        return `抱歉，调用失败：${err.message}`;
-      }
-    }
-
-    // 达到最大轮次
-    try {
-      const final = await this.provider.chat(this.messages);
-      for (const ch of (final.content || '')) {
-        onToken(ch);
-      }
-      this.messages.push({ role: 'assistant', content: final.content || '' });
-      return final.content || '(no response)';
-    } catch (err: any) {
-      log.error({ err }, 'streamWithToolLoop: 最终轮 LLM 调用失败');
-      return '工具调用超过最大轮次，请稍后重试。';
-    }
+    return this.toolLoop.streamWithToolLoop(onToken);
   }
 
   // ═══ Private: Helpers ═══

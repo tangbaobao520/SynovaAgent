@@ -1,7 +1,7 @@
 /**
  * providers/deepseek.ts — DeepSeek Provider 适配器
  */
-import type { LLMProvider, LLMMessage, ChatOptions, ChatResult, StreamCallback, HealthCheckResult, ProviderConfig } from './types';
+import type { LLMProvider, LLMMessage, ChatOptions, ChatResult, StreamCallback, HealthCheckResult, ProviderConfig, ChatCompletionResponse } from './types';
 
 const DEFAULT_BASE_URL = 'https://api.deepseek.com/v1';
 const DEFAULT_MODEL = 'deepseek-chat';
@@ -32,8 +32,8 @@ export function createDeepSeekProvider(config: ProviderConfig): LLMProvider {
         const text = await res.text().catch(() => '');
         throw new Error(`DeepSeek API 错误 (${res.status}): ${text.slice(0, 300)}`);
       }
-      const data = await res.json() as any;
-      const content = data?.choices?.[0]?.message?.content;
+      const data = await res.json() as ChatCompletionResponse;
+      const content = data.choices?.[0]?.message?.content;
       if (!content) throw new Error('DeepSeek 返回缺少 content');
       return {
         content,
@@ -106,8 +106,9 @@ export function createDeepSeekProvider(config: ProviderConfig): LLMProvider {
       }
     },
 
-    listModels() {
-      return [model, 'deepseek-v4-pro', 'deepseek-reasoner'];
+    listModels(): string[] {
+      // P3-03: 当前同步返回已知模型。LLMProvider 接口为同步签名，改为 API /models 需接口升级。
+      return [model, 'deepseek-chat', 'deepseek-reasoner'];
     },
   };
 }

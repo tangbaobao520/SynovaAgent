@@ -98,6 +98,8 @@ export class SubAgentCoordinator {
   private queryApi: QueryAPI | null = null;
   private graphStoreForFirewall: { queryNodes: (type: string, filters?: Record<string,unknown>, graph?: string) => Array<{id:string}> } | null = null;
   private enableAutonomy = false;
+  /** P3-08: 可选工厂函数 — 允许测试和自定义配置注入 ExpertAutonomyEngine */
+  private autonomyEngineFactory: ((llm: LLMClient, api: QueryAPI, policy: DataAccessPolicy, cfg?: { maxRounds?: number }) => ExpertAutonomyEngine) | null = null;
 
   constructor(llmClient: LLMClient, policies: DataAccessPolicy[] = DEFAULT_POLICIES) {
     this.llmClient = llmClient;
@@ -105,10 +107,11 @@ export class SubAgentCoordinator {
   }
 
   /** Gear 1: Enable expert autonomy with graph query API + quality firewall */
-  enableExpertAutonomy(queryApi: QueryAPI, graphStore: { queryNodes: (type: string, filters?: Record<string,unknown>, graph?: string) => Array<{id:string}> }): this {
+  enableExpertAutonomy(queryApi: QueryAPI, graphStore: { queryNodes: (type: string, filters?: Record<string,unknown>, graph?: string) => Array<{id:string}> }, opts?: { engineFactory?: (llm: LLMClient, api: QueryAPI, policy: DataAccessPolicy, cfg?: { maxRounds?: number }) => ExpertAutonomyEngine }): this {
     this.queryApi = queryApi;
     this.graphStoreForFirewall = graphStore;
     this.enableAutonomy = true;
+    if (opts?.engineFactory) this.autonomyEngineFactory = opts.engineFactory;
     log.info('专家自主权引擎已启用');
     return this;
   }
@@ -188,7 +191,10 @@ export class SubAgentCoordinator {
 
       // Gear 1: Expert Autonomy — ReAct loop with graph queries
       if (this.enableAutonomy && this.queryApi) {
-        const engine = new ExpertAutonomyEngine(this.llmClient, this.queryApi, policy, { maxRounds: 5 });
+        // P3-08: 优先使用注入的工厂函数, 否则默认构造
+        const engine = this.autonomyEngineFactory
+          ? this.autonomyEngineFactory(this.llmClient, this.queryApi, policy, { maxRounds: 5 })
+          : new ExpertAutonomyEngine(this.llmClient, this.queryApi, policy, { maxRounds: 5 });
         const autonomyResult = await engine.run({
           evidence: filtered.map(e => `[${e.type}] ${e.content.slice(0, 100)}`),
           expertType: type,

@@ -67,8 +67,12 @@ const INTENT_CLASSIFICATION_PROMPT = `你是 Synova 组织诊断的意图分类�
   "suggestedDimensions": ["资源约束", "风险瓶颈"]
 }`;
 
+// P3-04: 意图分类结果缓存 (TTL 60s)
+const CACHE_TTL_MS = 60_000;
+
 export class IntentRouter {
   private llmClient: LLMClient;
+  private resultCache = new Map<string, { result: IntentResult; at: number }>();
 
   constructor(llmClient: LLMClient) {
     this.llmClient = llmClient;
@@ -86,6 +90,11 @@ export class IntentRouter {
         ? `\n对话上下文:\n${conversationHistory.slice(-3).join('\n')}`
         : '';
 
+      // P3-04: LRU 缓存 — 相同用户输入 60s 内复用结果
+      const cacheKey = `${userInput}:${conversationHistory?.length || 0}`;
+      const cached = this.resultCache.get(cacheKey);
+      if (cached && Date.now() - cached.at < CACHE_TTL_MS) return cached.result;
+
       const result = await this.llmClient.consult(
         INTENT_CLASSIFICATION_PROMPT,
         `用户输入: "${userInput}"${context}`,
@@ -93,6 +102,7 @@ export class IntentRouter {
       );
 
       const parsed = JSON.parse(result.content) as IntentResult;
+      this.resultCache.set(cacheKey, { result: parsed, at: Date.now() });
       log.debug({ intent: parsed.intent, confidence: parsed.confidence }, '意图分类完成');
       return parsed;
     } catch (err: any) {

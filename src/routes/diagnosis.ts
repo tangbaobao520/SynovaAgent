@@ -25,79 +25,39 @@ import type {
 } from '@synova/engine-core';
 import { loadConfig } from '../config';
 import { createLogger } from '../logger';
+import { createProvider } from '../providers';
+import { detectProvider } from '../providers/detect';
 
 const log = createLogger('routes/diagnosis');
 const router = Router();
 
-// ═══ LLM Client ═══
+// ═══ LLM Client (复用 providers 层，消除重复代码 — P1-04) ═══
+
+// P3-10: 模块级单例 — 避免每次请求重建 provider
+let _llmClient: DiagnosisLLMClient | null = null;
 
 function createLLMClient(): DiagnosisLLMClient {
+  if (_llmClient) return _llmClient;
+
   const config = loadConfig();
+  const providerType = detectProvider();
+  const provider = createProvider(providerType, {
+    apiKey: config.llmApiKey,
+    baseUrl: config.llmBaseUrl,
+    gatewayHost: config.gatewayHost,
+    model: config.llmModel,
+  });
 
-  return {
+  _llmClient = {
     async consult(systemPrompt: string, userMessage: string): Promise<LLMResponse> {
-      // Gateway 模式优先
-      const gatewayHost = config.gatewayHost;
-      if (gatewayHost) {
-        try {
-          const res = await fetch(`${gatewayHost}/v1/chat/completions`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              model: config.llmModel,
-              messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: userMessage },
-              ],
-              temperature: 0.7,
-              max_tokens: 4000,
-            }),
-            signal: AbortSignal.timeout(120_000),
-          });
-          if (!res.ok) {
-            const text = await res.text().catch(() => '');
-            throw new Error(`Gateway LLM 错误 (${res.status}): ${text.slice(0, 200)}`);
-          }
-          const data = await res.json() as any;
-          const content = data?.choices?.[0]?.message?.content;
-          if (!content) throw new Error('Gateway 返回数据缺少 choices[0].message.content');
-          return { content, model: config.llmModel };
-        } catch (gwErr) {
-          log.warn({ err: gwErr }, 'Gateway 失败，fallback 直连');
-        }
-      }
-
-      // 直连模式
-      if (!config.llmApiKey) {
-        throw new Error('LLM_API_KEY 未配置，无法调用 LLM');
-      }
-      const res = await fetch(`${config.llmBaseUrl}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${config.llmApiKey}`,
-        },
-        body: JSON.stringify({
-          model: config.llmModel,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userMessage },
-          ],
-          temperature: 0.7,
-          max_tokens: 4000,
-        }),
-        signal: AbortSignal.timeout(120_000),
-      });
-      if (!res.ok) {
-        const text = await res.text().catch(() => '');
-        throw new Error(`LLM 错误 (${res.status}): ${text.slice(0, 200)}`);
-      }
-      const data = await res.json() as any;
-      const content = data?.choices?.[0]?.message?.content;
-      if (!content) throw new Error('LLM 返回数据缺少 choices[0].message.content');
-      return { content, model: config.llmModel };
+      const result = await provider.chat([
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userMessage },
+      ], { temperature: 0.7, maxTokens: 4000 });
+      return { content: result.content, model: result.model };
     },
   };
+  return _llmClient;
 }
 
 // ═══ Tool Executor ═══
@@ -194,21 +154,24 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
     // 启动诊断（异步）
     const consultationPromise = orchestrator.runConsultation(teamId, initiator);
 
-    // 轮询 tracer 事件并推送 SSE
+    // SSE 事件推送: 500ms 低频率轮询 + finish 时全量 flush (P1-07)
     let lastEventIdx = 0;
-    const pollInterval = setInterval(() => {
-      if (active.aborted) {
-        clearInterval(pollInterval);
-        stream.interrupt(consultId);
-        return;
-      }
+    const flushEvents = () => {
       const events = tracer.events();
       while (lastEventIdx < events.length) {
         stream.write(events[lastEventIdx]);
         active.events.push(events[lastEventIdx]);
         lastEventIdx++;
       }
-    }, 100);
+    };
+    const pollInterval = setInterval(() => {
+      if (active.aborted) {
+        clearInterval(pollInterval);
+        stream.interrupt(consultId);
+        return;
+      }
+      flushEvents();
+    }, 500);
 
     // 等待诊断完成
     let result;

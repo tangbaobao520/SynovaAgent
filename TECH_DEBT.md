@@ -10,15 +10,15 @@
 ## P3 — 改进建议 (低优先级)
 
 - [ ] **P3-01** | 2026-06-03 | 测试覆盖率 35%→60% (`vitest.config.ts:33`) | 逐步提升，非紧急 | 持续
-- [ ] **P3-02** | 2026-06-03 | PIIScrubber 正则不完整 (`src/security/index.ts:114`) | 国际号码+IP 匹配 | 2h
-- [ ] **P3-03** | 2026-06-03 | listModels() 硬编码 (`src/providers/deepseek.ts:109`) | 需调用 API /models | 1h
-- [ ] **P3-04** | 2026-06-03 | 意图分类 LLM 无缓存 (`src/orchestrator/intent-router.ts:89`) | LRU 缓存 TTL 60s | 2h
-- [ ] **P3-05** | 2026-06-03 | AgentConversation 纯委托层可删除 (`src/agent/conversation.ts`) | 需确认所有调用方已迁移到 ConversationEngine | 1h
-- [ ] **P3-06** | 2026-06-03 | 流式 sleep(20ms)→5ms (`src/agent/conversation-engine.ts`) | 体验优化，非阻塞 | 0.5h
+- [x] **P3-02** | 2026-06-03 | PIIScrubber 正则不完整 | ✅ 已修复: 国际号码 + 精确 IP (0-255) | —
+- [x] **P3-03** | 2026-06-03 | listModels() 硬编码 | ✅ 已改进: 标注接口限制, 补充模型列表 | —
+- [x] **P3-04** | 2026-06-03 | 意图分类 LLM 无缓存 | ✅ 已修复: Map TTL 60s 缓存 | —
+- [ ] **P3-05** | 2026-06-03 | AgentConversation 纯委托层可删除 (`src/agent/conversation.ts`) | @deprecated 已标注, 迁移被 CLI/MCP/TUI 阻塞 | 1h
+- [x] **P3-06** | 2026-06-03 | 流式 sleep(20ms)→5ms | ✅ 已修复 | —
 - [ ] **P3-07** | 2026-06-03 | 测试文件按铁律 33 重命名 (`tests/`) | 全量重命名，需 CI 配合 | 3h
-- [ ] **P3-08** | 2026-06-03 | ExpertAutonomyEngine 改为依赖注入 (`subagent-coordinator.ts:190`) | 架构改进，非功能缺陷 | 2h
-- [ ] **P3-09** | 2026-06-03 | BFS 队列无上限 (`diagnosis-graph-query.ts:52`) | 添加 maxQueue=10000 | 1h
-- [ ] **P3-10** | 2026-06-03 | createLLMClient 每次请求新建 (`diagnosis.ts:148`) | 改为单例 | 1h
+- [x] **P3-08** | 2026-06-03 | ExpertAutonomyEngine 改为依赖注入 | ✅ 已修复: engineFactory 可选注入 | —
+- [x] **P3-09** | 2026-06-03 | BFS 队列无上限 | ✅ 已修复: MAX_QUEUE=10000 | —
+- [x] **P3-10** | 2026-06-03 | createLLMClient 每次请求新建 | ✅ 已修复: 模块级单例缓存 | —
 
 ## 存量缺陷
 
@@ -31,7 +31,7 @@
 
 ---
 
-**统计**: 共 14 项，预估总工时 30h
+**统计**: 共 7 项待解决 (7 项已修复)，预估总工时 ~ 9h
 
 **规则**:
 - 新增技术债务时，在此文件中添加条目（含创建日期）

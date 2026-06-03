@@ -57,7 +57,10 @@ export function findDiagnosticPaths(
     const queue: Array<{ nodeId: string; pathNodes: string[]; pathEdges: Array<{from:string, to:string, type:string}>; totalWeight: number }> =
       [{ nodeId: start.id, pathNodes: [start.id], pathEdges: [], totalWeight: 0 }];
 
+    // P3-09: BFS 队列上限 10000 防止无限增长
+    const MAX_QUEUE = 10_000;
     for (const item of queue) {
+      if (queue.length > MAX_QUEUE) break;
       if (toNodes.has(item.nodeId) && item.pathNodes.length > 1) {
         paths.push({ nodes: item.pathNodes, edges: item.pathEdges, length: item.pathNodes.length, totalWeight: item.totalWeight });
         if (paths.length >= maxResults) break;

@@ -1,6 +1,10 @@
 /**
  * agent/conversation.ts — AgentConversation 兼容层 (Slice 1.1)
  *
+ * @deprecated P3-05: 纯委托层，无独立逻辑。调用方应直接使用 ConversationEngine。
+ * 迁移被 TUI/CLI/MCP 阻塞，完成后删除此文件。
+ * 详见 TECH_DEBT.md #P3-05。
+ *
  * 委托给纯逻辑 ConversationEngine。
  * 保持与原有调用方 (TUI/CLI/Web) 的 API 兼容。
  * 零 UI 依赖 — ConversationEngine 内部不 import neo-blessed/readline。
