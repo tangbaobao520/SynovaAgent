@@ -120,6 +120,10 @@ M=$(echo "$M" | while read -r line; do
 done || true)
 warn_check "铁律 11+24+31: 空 catch (静默吞)" "$M"
 
+# 技术债务追踪 (TECH_DEBT.md)
+echo -n "  "
+bash "$(dirname "$0")/check-tech-debt.sh" 2>/dev/null || echo "  ⚠ 技术债务检查跳过"
+
 echo ""
 echo "───────────────────────────────────────────────────────────"
 
