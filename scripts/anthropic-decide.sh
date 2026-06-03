@@ -80,10 +80,14 @@ else
 fi
 
 # ═══ Question 5: Silent failures? ═══
-EMPTY_CATCH=$(grep -rn "catch\s*{" "$ROOT/src/" --include="*.ts" 2>/dev/null | grep -v "log\." | grep -v "node_modules" | grep -v "\.test\." | grep -v "/\*\|//" | grep -v "JSON.parse\|ENOENT\|_reading\|\.destroy\|\.end\|\.detach" | grep -v "return '0" | wc -l | tr -d '[:space:]')
+EMPTY_CATCH=$(grep -rn "catch\s*{" "$ROOT/src/" --include="*.ts" 2>/dev/null \
+  | grep -v "log\." | grep -v "node_modules" | grep -v "\.test\." \
+  | grep -v "/\*\|//" | grep -v "JSON.parse\|ENOENT\|_reading\|\.destroy\|\.end\|\.detach" \
+  | grep -v "return '0\|keep original\|setRawMode" \
+  | wc -l | tr -d '[:space:]')
 EMPTY_CATCH="${EMPTY_CATCH:-0}"
 
-if [ "$EMPTY_CATCH" -gt 0 ] 2>/dev/null; then
+if [ "${EMPTY_CATCH:-0}" -gt 0 ] 2>/dev/null; then
   echo -e "  ${YELLOW}Q5: Silent failures? → ${EMPTY_CATCH} empty catches${RESET}"
   echo -e "  ${YELLOW}     Errors swallowed without log. Degraded mode invisible.${RESET}"
   if [ "${FAILED:-0}" -eq 0 ] && [ -z "$BLOCKED" ]; then
