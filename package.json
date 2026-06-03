@@ -18,6 +18,8 @@
     "check:iron-laws": "bash scripts/pre-commit-check.sh",
     "check:as-any": "bash scripts/check-as-any.sh",
     "check:architecture": "bash scripts/check-architecture.sh",
+    "check:secrets": "bash scripts/check-secrets.sh",
+    "check:security": "bash scripts/check-security.sh",
     "check:wire": "bash scripts/wire-check.sh",
     "check:all": "bash scripts/pre-push-check.sh",
     "hooks:install": "bash scripts/install-hooks.sh",

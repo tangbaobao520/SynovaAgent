@@ -79,6 +79,11 @@ if [ -f .env ] && grep -q "sk-\|ApiKey.*[a-f0-9]\{20\}" .env 2>/dev/null; then
 fi
 hard_check "P0-01: .env 不含真实 API Key" "$M"
 
+# Secrets 扫描: 源码中不得硬编码 API Key/Token/Password
+bash "$(dirname "$0")/check-secrets.sh" 2>/dev/null || { echo -e "  ${RED}❌ Secrets 扫描: 发现疑似泄漏${RESET}"; HARD_FAIL=$((HARD_FAIL + 1)); }
+# 安全检查: eval() / new Function() / HTTP 明文
+bash "$(dirname "$0")/check-security.sh" 2>/dev/null || true
+
 # 铁律 37: 文件大小 — 单文件 >1000 行硬阻断, >500 行警告
 OVERSIZE=$(find src/ -name "*.ts" -type f -exec wc -l {} \; 2>/dev/null \
   | awk '$1 > 1000 && $2 != "total" {print $2": "$1" lines"}' || true)
