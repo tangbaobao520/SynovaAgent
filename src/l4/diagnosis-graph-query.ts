@@ -43,9 +43,11 @@ export function findDiagnosticPaths(
   const toNodes = new Set(store.queryNodes(toType, undefined, graph).map(n => n.id));
   if (fromNodes.length === 0 || toNodes.size === 0) return [];
 
+  // P2-03: 限制最大边数防止内存溢出
   const allEdges = store.queryEdges(undefined, undefined, undefined, graph)
     .filter(e => !edgeTypes || edgeTypes.includes(e.type))
-    .filter(e => e.weight >= minWeight);
+    .filter(e => e.weight >= minWeight)
+    .slice(0, 5000);
 
   const paths: DiagnosticPath[] = [];
 
@@ -229,7 +231,7 @@ export function detectAnomalousPatterns(store: GraphStoreRO, graph: string): Ano
   // Anomaly 2: Endpoint violations
   for (const e of edges.slice(0, 50)) {
     // Simplified: check if edge type is valid
-    if (!Object.values(SOGEdgeType).includes(e.type as any)) {
+    if (!(Object.values(SOGEdgeType) as string[]).includes(e.type)) {
       patterns.push({ type: 'invalid_edge_type', description: `边 ${e.id} 使用未知类型: ${e.type}`, severity: 'high', involvedNodes: [e.from, e.to] });
     }
   }

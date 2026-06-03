@@ -6,6 +6,7 @@
  *
  * 简化 Leiden 社区检测 + 结构化报告生成。
  */
+import { SOGNodeType } from '@synova/sog-core';
 import { createLogger } from '../logger';
 
 const log = createLogger('l4/community-reports');
@@ -24,6 +25,10 @@ export interface CommunityReport {
   summary: string;
   keyNodes: string[];
 }
+
+// P2-02: TTL 缓存避免每次全量重算
+const communityReportCache = new Map<string, { reports: CommunityReport[]; cachedAt: number }>();
+const CACHE_TTL_MS = 60_000; // 60 秒
 
 // ═══ Simplified Leiden Community Detection ═══
 
@@ -89,6 +94,10 @@ function detectCommunities(edges: Array<{from:string, to:string, weight:number}>
 // ═══ Community Reports ═══
 
 export function generateCommunityReports(store: GraphStoreRO, graph: string): CommunityReport[] {
+  // P2-02: TTL 缓存 — 同一 graph 60s 内直接返回
+  const cached = communityReportCache.get(graph);
+  if (cached && Date.now() - cached.cachedAt < CACHE_TTL_MS) return cached.reports;
+
   const edges = store.queryEdges(undefined, undefined, undefined, graph);
   if (edges.length < 2) return [];
 
@@ -138,9 +147,9 @@ export function generateCommunityReports(store: GraphStoreRO, graph: string): Co
     });
   }
 
-  log.info({ communityCount: reports.length }, '社区报告生成完成');
-  return reports.sort((a, b) => b.nodeCount - a.nodeCount);
+  const sorted = reports.sort((a, b) => b.nodeCount - a.nodeCount);
+  communityReportCache.set(graph, { reports: sorted, cachedAt: Date.now() });
+  log.info({ communityCount: sorted.length }, '社区报告生成完成');
+  return sorted;
 }
 
-// Import at top (circumventing module order)
-import { SOGNodeType } from '@synova/sog-core';

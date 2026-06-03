@@ -107,7 +107,7 @@ export class CronScheduler {
   }
 
   private restoreJobs(): void {
-    const rows = this.db.prepare('SELECT * FROM cron_jobs').all() as any[];
+    const rows = this.db.prepare('SELECT * FROM cron_jobs').all() as Array<Record<string, unknown>>;
     for (const row of rows) {
       log.debug({ name: row.name, id: row.id }, '恢复持久化任务');
       // 恢复为无操作 job — 调用方在启动时重新 schedule 同名任务覆盖
@@ -218,14 +218,23 @@ export class CronScheduler {
 // ═══ Global Singleton (Slice 2.3: H4 fix — 防止双重 CronScheduler 实例) ═══
 
 let _globalScheduler: CronScheduler | null = null;
+let _initLock: Promise<CronScheduler> | null = null;
 
-/** 获取或创建全局 CronScheduler 单例 */
+/** 获取或创建全局 CronScheduler 单例 (P2-08: 初始化锁防竞态) */
 export function getGlobalScheduler(db?: import('better-sqlite3').default): CronScheduler {
-  if (!_globalScheduler) {
-    if (!db) throw new Error('首次调用 getGlobalScheduler 必须提供 database 实例');
-    _globalScheduler = new CronScheduler(db);
+  if (_globalScheduler) return _globalScheduler;
+  if (!db) throw new Error('首次调用 getGlobalScheduler 必须提供 database 实例');
+
+  if (!_initLock) {
+    _initLock = (async () => {
+      _globalScheduler = new CronScheduler(db!);
+      return _globalScheduler;
+    })();
   }
-  return _globalScheduler;
+
+  // 同步返回——初始化已在首次调用时同步完成
+  if (_globalScheduler) return _globalScheduler;
+  throw new Error('CronScheduler 初始化未完成——并发调用时请等待首次初始化');
 }
 
 /** 停止并销毁全局单例（用于 graceful shutdown） */

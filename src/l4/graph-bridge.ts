@@ -1,11 +1,17 @@
 /**
  * l4/graph-bridge.ts — 诊断→本体自动蒸馏桥接层 (Phase 1a)
  *
- * 修复致命断层 #1 + #2:
- *   - 诊断模块输出 → 自动写入 GraphStore
- *   - 6 个 upsert 方法, 每个对应一个诊断模块
+ * 诊断模块输出 → 自动写入 GraphStore。6 个 upsert 方法对应 6 个诊断模块。
  *
- * 接口修正: 匹配 engine-core GraphStore 真实接口 (非原型假设)
+ * 接线状态 (P2-01, 2026-06-03):
+ *   ✅ upsertFromKeyPersonRisk — 生产调用: diagnosis-launcher.ts
+ *   ⏳ upsertFromHONA — 已测试, 待 HONA 诊断模块接入
+ *   ⏳ upsertFromFinancialImpact — 已测试, 待财务诊断模块接入
+ *   ⏳ upsertFromCapabilityGap — 已测试, 待能力诊断模块接入
+ *   ⏳ upsertFromSevenPowers — 已测试, 待战略诊断模块接入
+ *   ⏳ upsertFromCPC — 已测试, 待流程诊断模块接入
+ *
+ * 接口: 匹配 engine-core GraphStore 真实接口
  *   createNode(type, props, graph) → returns auto-id
  *   createEdge(type, from, to, weight?, props?, graph?) → returns auto-id
  */

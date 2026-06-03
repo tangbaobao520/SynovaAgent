@@ -53,17 +53,26 @@ export class CorroborationEngine {
     const evidence = this.store.query({ ...filter, limit: 100 });
     const contradictions: ContradictionSignal[] = [];
 
-    for (let i = 0; i < evidence.length; i++) {
-      for (let j = i + 1; j < evidence.length; j++) {
-        if (evidence[i].type !== evidence[j].type) continue;
-        const diff = Math.abs(evidence[i].confidence - evidence[j].confidence);
-        if (diff > 0.3) {
-          contradictions.push({
-            evidenceA: evidence[i],
-            evidenceB: evidence[j],
-            scoreDifference: diff,
-            description: `${evidence[i].type}: 证据 "${evidence[i].content.slice(0, 60)}..." (置信度 ${evidence[i].confidence}) 与 "${evidence[j].content.slice(0, 60)}..." (置信度 ${evidence[j].confidence}) 存在矛盾`,
-          });
+    // P2-06: 按 type 分组 — O(n²) → O(k * (n/k)²), k = 类型数
+    const byType = new Map<string, typeof evidence>();
+    for (const e of evidence) {
+      const group = byType.get(e.type) || [];
+      group.push(e);
+      byType.set(e.type, group);
+    }
+
+    for (const [, group] of byType) {
+      for (let i = 0; i < group.length; i++) {
+        for (let j = i + 1; j < group.length; j++) {
+          const diff = Math.abs(group[i].confidence - group[j].confidence);
+          if (diff > 0.3) {
+            contradictions.push({
+              evidenceA: group[i],
+              evidenceB: group[j],
+              scoreDifference: diff,
+              description: `${group[i].type}: 证据 "${group[i].content.slice(0, 60)}..." (置信度 ${group[i].confidence}) 与 "${group[j].content.slice(0, 60)}..." (置信度 ${group[j].confidence}) 存在矛盾`,
+            });
+          }
         }
       }
     }

@@ -14,7 +14,13 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "check:iron-laws": "bash scripts/pre-commit-check.sh",
+    "check:as-any": "bash scripts/check-as-any.sh",
+    "check:wire": "bash scripts/wire-check.sh",
+    "check:all": "bash scripts/pre-push-check.sh",
+    "hooks:install": "bash scripts/install-hooks.sh",
+    "hooks:test": "echo 'feat(test): verify hook' | bash scripts/commit-msg-check.sh /dev/stdin"
   },
   "dependencies": {
     "@synova/connector-registry": "file:../packages/connector-registry",
