@@ -14,7 +14,7 @@
 import * as readline from 'readline';
 import { createProvider } from '../providers';
 import { detectProvider } from '../providers/detect';
-import { AgentConversation } from '../agent/conversation';
+import { ConversationEngine } from '../agent/conversation-engine';
 
 // ═══ MCP Protocol ═══
 
@@ -94,7 +94,7 @@ async function handleToolCall(name: string, params: Record<string, unknown>): Pr
         apiKey: process.env.LLM_API_KEY || process.env.DEEPSEEK_API_KEY,
         gatewayHost: process.env.OPENCLAW_GATEWAY_HOST,
       });
-      const conv = new AgentConversation(provider, { orgId: orgName, maxTurns: 3 });
+      const conv = new ConversationEngine(provider, { orgId: orgName, maxTurns: 3 });
       const result = await conv.processMessage(
         `我的组织"${orgName}"需要诊断。角色: ${params.initiatorRole || '管理者'}`,
       );

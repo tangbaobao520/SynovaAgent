@@ -4,7 +4,9 @@
  * 验证: AgentConversation 状态机 + 消息历史 + Phase 推进
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { AgentConversation } from '../src/agent/conversation';
+import { ConversationEngine } from '../src/agent/conversation-engine';
+// 保持测试兼容 — AgentConversation 已删除 (P3-05)
+const AgentConversation = ConversationEngine;
 import type { LLMProvider } from '../src/providers/types';
 
 // Fake provider for deterministic testing

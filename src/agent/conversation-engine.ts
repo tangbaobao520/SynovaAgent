@@ -96,6 +96,9 @@ export interface EngineState {
   startedAt: string;
 }
 
+/** @deprecated 使用 EngineState。保留用于 TUI/CLI 后向兼容。 */
+export type ConversationState = EngineState;
+
 const SYSTEM_PROMPT = `你是 SynovaAgent，一个组织数字孪生诊断专家。
 
 你的角色是"组织医生"——通过结构化访谈了解用户组织的情况，然后运行六阶段诊断分析。

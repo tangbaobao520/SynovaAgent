@@ -17,7 +17,7 @@ import * as fs from 'fs';
 import { createProvider } from './providers';
 import { detectProvider } from './providers/detect';
 import { isLLMConfigured, runSetup } from './setup';
-import { AgentConversation } from './agent/conversation';
+import { ConversationEngine } from './agent/conversation-engine';
 import { SessionStore } from './store/session-store';
 import { registerBuiltinTools } from './agent/builtin-tools';
 import type { LLMProvider } from './providers/types';
@@ -73,7 +73,7 @@ async function main() {
 
   // 3. 显示历史会话
   const sessions = store.listSessions(5);
-  let conv: AgentConversation;
+  let conv: ConversationEngine;
   let sessionId: string;
 
   if (sessions.length > 0) {
@@ -93,7 +93,7 @@ async function main() {
     if (idx >= 0 && idx < sessions.length) {
       const state = store.loadState(sessions[idx].id);
       if (state) {
-        conv = AgentConversation.fromState(provider, state);
+        conv = ConversationEngine.fromState(provider, state);
         sessionId = sessions[idx].id;
         console.log(`${GREEN}✅ 恢复会话: ${state.orgId}${RESET} (Phase ${state.phase}, ${state.messages.length} 条消息)\n`);
         // 回放最近几条消息
@@ -115,7 +115,7 @@ async function main() {
   const orgName = await new Promise<string>(r => rl.question(`${CYAN}组织名称:${RESET} `, r));
   rl.close();
 
-  conv = new AgentConversation(provider, { orgId: orgName || 'default' });
+  conv = new ConversationEngine(provider, { orgId: orgName || 'default' });
   const sess = store.createSession(orgName || 'default');
   sessionId = sess.id;
   store.saveState(sessionId, conv.serialize());
@@ -127,7 +127,7 @@ async function main() {
 
 // ═══ Chat Loop ═══
 
-function startChat(provider: LLMProvider, store: SessionStore, conv: AgentConversation, sessionId: string) {
+function startChat(provider: LLMProvider, store: SessionStore, conv: ConversationEngine, sessionId: string) {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
   const agentLabel = () => process.stdout.write(`\n${PURPLE}Agent:${RESET} `);

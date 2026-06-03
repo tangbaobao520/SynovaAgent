@@ -2,7 +2,7 @@ import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
 /**
  * tui/chat.ts — SynovaAgent TUI 对话入口 (Era 2.1b)
  *
- * 三区布局 + AgentConversation 集成 + 价值主张开场白。
+ * 三区布局 + ConversationEngine 集成 + 价值主张开场白。
  * 用法: npx tsx src/tui/chat.ts
  */
 import Database from 'better-sqlite3';
@@ -11,7 +11,7 @@ import * as fs from 'fs';
 import { createProvider } from '../providers';
 import { detectProvider } from '../providers/detect';
 import { isLLMConfigured, runSetup } from '../setup';
-import { AgentConversation } from '../agent/conversation';
+import { ConversationEngine } from '../agent/conversation-engine';
 import { SessionStore } from '../store/session-store';
 import { registerBuiltinTools } from '../agent/builtin-tools';
 import { loadConfig } from '../config';
@@ -204,14 +204,15 @@ async function main() {
   const wiring = createOrchestrationWiring(eventBus, hookRunner, sessionManager, phaseStateMachine);
 
   // ═══ Step 4: 创建对话 ═══
-  let conv: AgentConversation;
+  let conv: ConversationEngine;
   let sessionId: string;
   try {
     // TUI 始终以新会话开始——旧会话可查询但不自动恢复
     // （这与 CLI 不同：CLI 面向反复使用，TUI 面向单次深度诊断）
-    conv = new AgentConversation(provider);
+    conv = new ConversationEngine(provider);
     // Slice C: bind ViewAdapter for L1 decoupling
-    (conv as any).setViewAdapter?.(viewAdapter);
+    // P1-02: ViewAdapter 为 L1 接口注入, conv 是 ConversationEngine 类型未导出该方法
+    (conv as { setViewAdapter?: (a: ViewAdapter) => void }).setViewAdapter?.(viewAdapter);
     const s = store.createSession('default');
     sessionId = s.id;
 
@@ -234,7 +235,7 @@ async function main() {
     try {
       const response = await fetch(`http://localhost:${config.port}/api/ontology/graph/${conv.getOrgId() || 'default'}`);
       if (response.ok) {
-        const data = await response.json() as any;
+        const data = await response.json() as { nodeCount?: number; nodes?: Array<{ type?: string }>; edges?: Array<{ type?: string }> };
         if (data.nodeCount > 0) {
           app.side.setOntologySummary({
             persons: data.nodes?.filter((n: any) => n.type === SOGNodeType.PERSON).length || 0,
@@ -445,7 +446,8 @@ async function main() {
     } finally {
       streaming = false;
       // 重置输入框内部状态，防止第二轮无法输入
-      try { (app.input as any)._reading = false; } catch {}
+      // blessed Textarea._reading 无类型定义 — 停止读取以防输入冲突
+      try { (app.input as { _reading?: boolean })._reading = false; } catch {}
       app.input.setValue('');
       app.screen.render();
       app.chat.focus();
@@ -453,7 +455,8 @@ async function main() {
   });
 
   // 暴露告警接口到全局（供 Cron 回调）
-  (globalThis as any).__synovaAlerts = {
+  // P1-02: 全局告警桥接 — TUI 通过 globalThis 暴露告警给各面板消费
+  (globalThis as { __synovaAlerts?: { addAlert: (a: SynovaAlert) => void } }).__synovaAlerts = {
     pushAlert(level: 'critical' | 'warning', title: string, data: string, suggestion: string) {
       app.side.pushAlert({ level, title, data, suggestion });
       app.flashTitle(true);

@@ -18,7 +18,11 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     testTimeout: 30_000,
-    include: ['./tests/**/*.test.ts'],
+    // 铁律 33: 测试按类型命名
+    //   *.test.ts → 单元测试 (纯函数, 无 I/O)
+    //   *.integration.test.ts → 集成测试 (API + DB, 真实 SQLite)
+    //   *.e2e.test.ts → 端到端测试 (完整用户旅程)
+    include: ['./tests/**/*.test.ts', './tests/**/*.integration.test.ts'],
     coverage: {
       provider: 'v8',
       include: ['./src/**/*.ts'],
@@ -30,11 +34,12 @@ export default defineConfig({
         './src/setup.ts',      // 交互式 setup 向导 — 需 e2e
         './src/monitoring/**', // Prometheus 指标 — 已有 smoke test
       ],
+      // P3-01: 目标 60%，当前基线 40% (逐步提升)
       thresholds: {
-        lines: 35,
-        functions: 40,
-        branches: 25,
-        statements: 35,
+        lines: 40,
+        functions: 45,
+        branches: 30,
+        statements: 40,
       },
     },
     env: {

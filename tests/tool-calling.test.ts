@@ -5,7 +5,8 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ToolRegistry, type ToolDefinition } from '../src/agent/tools';
-import { AgentConversation } from '../src/agent/conversation';
+import { ConversationEngine } from '../src/agent/conversation-engine';
+const AgentConversation = ConversationEngine;
 import type { LLMProvider, LLMMessage } from '../src/providers/types';
 
 // ═══ Tool Registry ═══

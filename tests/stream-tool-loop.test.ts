@@ -8,7 +8,8 @@
  * Given/When/Then 格式，fake provider 可控。
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { AgentConversation } from '../src/agent/conversation';
+import { ConversationEngine } from '../src/agent/conversation-engine';
+const AgentConversation = ConversationEngine;
 import { ToolRegistry } from '../src/agent/tools';
 import type { LLMProvider, ChatResult, StreamCallback } from '../src/providers/types';
 
