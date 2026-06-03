@@ -1,0 +1,374 @@
+/**
+ * report-renderer.ts — 诊断报告 HTML 渲染器（V2：姿态适配）
+ *
+ * 金字塔结构：
+ *   顶层：CEO 一句话摘要 + 姿态标签
+ *   中层：缝隙雷达图 + 关键发现
+ *   底层：全部证据链 + 根因树 + 行动建议
+ *
+ * 输出：自包含 HTML（内联 CSS，无外部依赖）
+ * 设计：编排器负责数据翻译（posture-lens），渲染器负责视觉呈现。
+ *       不同姿态的区别在头部颜色/标题，内容已由编排器完成姿态适配。
+ */
+import { StructuredDiagnosisReport } from './types';
+
+// ── 姿态 → 视觉配置 ──
+
+const POSTURE_GRADIENTS: Record<string, string> = {
+  moat_builder: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+  steady_operator: 'linear-gradient(135deg, #0f3d3d 0%, #1a5c5c 100%)',
+  survival_seeker: 'linear-gradient(135deg, #5c1a0f 0%, #8b3a1f 100%)',
+};
+
+const POSTURE_BADGES: Record<string, string> = {
+  moat_builder: '#1a1a2e',
+  steady_operator: '#0f766e',
+  survival_seeker: '#b91c1c',
+};
+
+// ── 共享 CSS ──
+
+const SHARED_CSS = `
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.6; color: #1a1a1a; background: #f8f9fa; }
+  .container { max-width: 960px; margin: 0 auto; padding: 40px 24px; }
+  .header { color: white; padding: 48px 32px; border-radius: 12px; margin-bottom: 32px; }
+  .header h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+  .header .meta { opacity: 0.7; font-size: 14px; }
+  .posture-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 13px; font-weight: 600; color: white; margin-bottom: 12px; }
+  .posture-opening { background: white; border-left: 4px solid #6366f1; padding: 18px 24px; border-radius: 8px; margin-bottom: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); font-size: 14px; color: #4b5563; }
+  .ceo-summary { background: white; border-left: 4px solid #2563eb; padding: 24px; border-radius: 8px; margin-bottom: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .ceo-summary h2 { font-size: 18px; color: #2563eb; margin-bottom: 12px; }
+  .ceo-summary p { font-size: 16px; color: #333; white-space: pre-line; }
+  .section { background: white; border-radius: 8px; padding: 28px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .section h2 { font-size: 20px; margin-bottom: 16px; color: #1a1a2e; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; }
+  .radar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+  .radar-item { background: #f0f4ff; padding: 12px 16px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; }
+  .radar-item .label { font-weight: 500; }
+  .radar-item .score { font-weight: 700; color: #2563eb; }
+  .finding { padding: 16px; margin-bottom: 12px; border-radius: 6px; border-left: 4px solid #e5e7eb; }
+  .finding.critical { border-left-color: #dc2626; background: #fef2f2; }
+  .finding.high { border-left-color: #ea580c; background: #fff7ed; }
+  .finding.medium { border-left-color: #ca8a04; background: #fefce8; }
+  .finding.low { border-left-color: #16a34a; background: #f0fdf4; }
+  .finding .severity { font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 4px; }
+  .evidence-item { padding: 12px; border-bottom: 1px solid #f3f4f6; font-size: 14px; }
+  .evidence-item .source { font-size: 12px; color: #6b7280; }
+  .evidence-item.private { background: #fffbeb; }
+  .root-cause { padding: 16px; border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 12px; }
+  .root-cause .confidence { font-size: 12px; color: #6b7280; }
+  .causal-chain { margin-top: 8px; padding: 8px 12px; background: #f9fafb; border-radius: 4px; font-size: 13px; }
+  .actions { list-style: none; }
+  .actions li { padding: 10px 16px; margin-bottom: 8px; background: #f0fdf4; border-radius: 6px; border-left: 3px solid #16a34a; }
+  .degraded-banner { background: #fffbeb; border: 1px solid #f59e0b; padding: 12px 16px; border-radius: 6px; margin-bottom: 24px; color: #92400e; font-size: 14px; }
+  .footer { text-align: center; padding: 24px; color: #9ca3af; font-size: 12px; }
+  @media (max-width: 640px) {
+    .container { padding: 16px; }
+    .header { padding: 32px 20px; }
+  }
+`;
+
+/** 渲染完整诊断报告为自包含 HTML */
+export function renderDiagnosisReport(report: StructuredDiagnosisReport): string {
+  const gradient = POSTURE_GRADIENTS[report.posture] || POSTURE_GRADIENTS.steady_operator;
+  const badgeColor = POSTURE_BADGES[report.posture] || POSTURE_BADGES.steady_operator;
+
+  return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Synova — ${escapeHtml(report.postureLabel)} · ${escapeHtml(report.generatedAt)}</title>
+<style>${SHARED_CSS}</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header — 姿态特定 -->
+  <div class="header" style="background: ${gradient};">
+    <div class="posture-badge" style="background: ${badgeColor};">${escapeHtml(report.postureLabel)}</div>
+    <h1>Synova 组织诊断报告</h1>
+    <div class="meta">生成时间: ${escapeHtml(report.generatedAt)} &middot; 耗时: ${report.durationMs}ms</div>
+  </div>
+
+  ${renderDegradedBanner(report)}
+
+  <!-- CEO 摘要 -->
+  <div class="ceo-summary">
+    <h2>CEO 摘要</h2>
+    <p>${escapeHtml(report.ceoSummary)}</p>
+  </div>
+
+  <!-- 缝隙雷达 -->
+  <div class="section">
+    <h2>诊断维度得分</h2>
+    <div class="radar-grid">
+      ${Object.entries(report.gapRadar).map(([dim, score]) => `
+        <div class="radar-item">
+          <span class="label">${escapeHtml(dim)}</span>
+          <span class="score">${(score * 100).toFixed(0)}%</span>
+        </div>
+      `).join('')}
+    </div>
+  </div>
+
+  <!-- 关键发现 -->
+  <div class="section">
+    <h2>关键发现 (${report.keyFindings.length})</h2>
+    ${report.keyFindings.map(f => `
+      <div class="finding ${f.severity}">
+        <div class="severity">${f.severity}</div>
+        <div><strong>${escapeHtml(f.moduleId)}</strong>: ${escapeHtml(f.detail)}</div>
+        ${f.evidenceRefs.length > 0 ? `<div style="font-size:12px;color:#6b7280;margin-top:4px;">证据: ${f.evidenceRefs.join(', ')}</div>` : ''}
+      </div>
+    `).join('')}
+    ${report.keyFindings.length === 0 ? '<p style="color:#6b7280;">无关键发现</p>' : ''}
+  </div>
+
+  <!-- 根因树 -->
+  <div class="section">
+    <h2>根因分析 (${report.rootCauseTree.rootCauses.length})</h2>
+    ${report.rootCauseTree.rootCauses.map(rc => `
+      <div class="root-cause">
+        <div><strong>${escapeHtml(rc.description)}</strong></div>
+        <div class="confidence">维度: ${escapeHtml(rc.dimension)} &middot; 置信度: ${(rc.confidence * 100).toFixed(0)}%</div>
+        ${rc.causalChain.nodes.length > 0 ? `
+          <div class="causal-chain">
+            因果链: ${rc.causalChain.nodes.map((n, i) => `${i > 0 ? ' → ' : ''}${escapeHtml(n.label)}(${n.type})`).join('')}
+          </div>
+        ` : ''}
+        ${rc.supportingEvidence.length > 0 ? `<div style="font-size:12px;color:#6b7280;margin-top:4px;">证据: ${rc.supportingEvidence.join(', ')}</div>` : ''}
+      </div>
+    `).join('')}
+    ${report.rootCauseTree.rootCauses.length === 0 ? '<p style="color:#6b7280;">无根因</p>' : ''}
+
+    ${report.rootCauseTree.contradictions.length > 0 ? `
+      <h3 style="margin-top:16px;color:#dc2626;">矛盾信号 (${report.rootCauseTree.contradictions.length})</h3>
+      ${report.rootCauseTree.contradictions.map(c => `
+        <div style="padding:8px 12px;background:#fef2f2;border-radius:4px;margin-bottom:8px;font-size:14px;">
+          ${escapeHtml(c.description)} (严重度: ${(c.severity * 100).toFixed(0)}%)
+        </div>
+      `).join('')}
+    ` : ''}
+  </div>
+
+  <!-- 证据链 -->
+  <div class="section">
+    <h2>证据链 (${report.evidenceChain.length})</h2>
+    ${report.evidenceChain.map(e => `
+      <div class="evidence-item ${e.isPrivate ? 'private' : ''}">
+        <div><strong>[${escapeHtml(e.id)}]</strong> ${escapeHtml(e.content.slice(0, 300))}</div>
+        <div class="source">来源: ${e.source} &middot; 维度: ${escapeHtml(e.dimension)} &middot; 置信度: ${(e.confidence * 100).toFixed(0)}% &middot; ${e.isPrivate ? '🔒 隐私' : '🌐 公开'}</div>
+      </div>
+    `).join('')}
+    ${report.evidenceChain.length === 0 ? '<p style="color:#6b7280;">无证据</p>' : ''}
+  </div>
+
+  <!-- 行动建议 -->
+  <div class="section">
+    <h2>行动建议 (${report.actionRecommendations.length})</h2>
+    <ul class="actions">
+      ${report.actionRecommendations.map(a => `<li>${escapeHtml(a)}</li>`).join('')}
+    </ul>
+    ${report.actionRecommendations.length === 0 ? '<p style="color:#6b7280;">无建议</p>' : ''}
+  </div>
+
+  <div class="footer">
+    Synova Diagnostic Agent &middot; 由 AI 生成，仅供参考 &middot; ${escapeHtml(report.generatedAt)}
+  </div>
+
+</div>
+</body>
+</html>`;
+}
+
+// ── 内部辅助 ──
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function renderDegradedBanner(report: StructuredDiagnosisReport): string {
+  if (report.degradedModules.length === 0) return '';
+
+  const modules = report.degradedModules.join(', ');
+  return `
+    <div class="degraded-banner">
+      ⚠ 本次诊断以下模块降级运行，结果可能不完整：${escapeHtml(modules)}
+    </div>
+  `;
+}
+
+// ====================================================================
+// Marketing Section (ARCH-19)
+// ====================================================================
+
+export interface MarketingSectionInput {
+  categoryClarity?: import('./category-clarity').CategoryClarityResult | null;
+  differentiationValidation?: import('./differentiation-validation').DifferentiationValidationResult | null;
+  positioningConsistency?: import('./positioning-consistency').PositioningConsistencyResult | null;
+}
+
+const MARKETING_CSS = `
+  .mkt-section { background: white; border-radius: 8px; padding: 28px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .mkt-section h2 { font-size: 20px; margin-bottom: 16px; color: #1a1a2e; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; }
+  .mkt-card { padding: 16px; margin-bottom: 14px; border-radius: 8px; border-left: 4px solid #6366f1; background: #f8f7ff; }
+  .mkt-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+  .mkt-card .mkt-verdict { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 12px; font-weight: 700; margin-bottom: 8px; }
+  .mkt-card .mkt-verdict.positive { background: #dcfce7; color: #166534; }
+  .mkt-card .mkt-verdict.warning { background: #fef3c7; color: #92400e; }
+  .mkt-card .mkt-verdict.danger { background: #fee2e2; color: #991b1b; }
+  .mkt-card .mkt-verdict.info { background: #dbeafe; color: #1e40af; }
+  .mkt-card p { font-size: 14px; color: #374151; margin-top: 6px; }
+  .mkt-card .mkt-meta { font-size: 12px; color: #6b7280; margin-top: 6px; }
+  .mkt-card .mkt-bar-wrap { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+  .mkt-card .mkt-bar { flex: 1; height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; }
+  .mkt-card .mkt-bar-fill { height: 100%; border-radius: 4px; }
+  .mkt-card .mkt-bar-fill.high { background: #10b981; }
+  .mkt-card .mkt-bar-fill.mid { background: #f59e0b; }
+  .mkt-card .mkt-bar-fill.low { background: #ef4444; }
+  .mkt-card .mkt-tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
+  .mkt-card .mkt-tag { display: inline-block; padding: 2px 8px; background: #e5e7eb; border-radius: 4px; font-size: 12px; color: #374151; }
+  .mkt-card .mkt-gap { padding: 6px 10px; margin: 4px 0; background: #fef2f2; border-radius: 4px; font-size: 13px; border-left: 2px solid #ef4444; }
+  .mkt-quotes { font-size: 13px; color: #6b7280; font-style: italic; margin-top: 6px; }
+  .mkt-quotes span { display: block; padding: 2px 0; }
+  .mkt-na { color: #9ca3af; font-size: 14px; font-style: italic; }
+`;
+
+/** 渲染营销诊断章节 HTML，可嵌入全貌报告 */
+export function renderMarketingSection(input: MarketingSectionInput): string {
+  const sections: string[] = [];
+
+  // ── 1. Category Clarity ──
+  if (input.categoryClarity) {
+    const cc = input.categoryClarity;
+    const verdictClass = cc.clarity === 'clear' ? 'positive' : cc.clarity === 'fuzzy' ? 'warning' : 'danger';
+    const verdictLabel = cc.clarity === 'clear' ? '认知清晰' : cc.clarity === 'fuzzy' ? '认知模糊' : '认知混乱';
+    const ratioPct = (cc.consistencyRatio * 100).toFixed(0);
+    sections.push(`
+      <div class="mkt-card">
+        <h3>品类认知清晰度</h3>
+        <div class="mkt-verdict ${verdictClass}">${verdictLabel} &middot; ${ratioPct}% 一致性</div>
+        <p>${escapeHtml(cc.interpretation)}</p>
+        <div class="mkt-meta">
+          主导品类词: <strong>${escapeHtml(cc.dominantCategory ?? '—')}</strong> &middot;
+          样本数: ${cc.totalResponses}
+        </div>
+        <div class="mkt-tags">
+          ${cc.categoryDistribution.slice(0, 5).map(d =>
+            `<span class="mkt-tag">${escapeHtml(d.term)} (${(d.pct * 100).toFixed(0)}%)</span>`
+          ).join('')}
+        </div>
+        ${cc.sampleQuotes.length > 0 ? `
+          <div class="mkt-quotes">客户原话：${cc.sampleQuotes.map(q => `<span>"${escapeHtml(q)}"</span>`).join('')}</div>
+        ` : ''}
+      </div>`);
+  }
+
+  // ── 2. Positioning Consistency ──
+  if (input.positioningConsistency) {
+    const pc = input.positioningConsistency;
+    const alignmentClass = pc.alignment === 'strong' ? 'positive' : pc.alignment === 'partial' ? 'warning' : 'danger';
+    const alignmentLabel = pc.alignment === 'strong' ? '三方对齐' : pc.alignment === 'partial' ? '部分对齐' : '三方断裂';
+    sections.push(`
+      <div class="mkt-card">
+        <h3>定位三方一致性</h3>
+        <div class="mkt-verdict ${alignmentClass}">${alignmentLabel}</div>
+        <p>${escapeHtml(pc.interpretation)}</p>
+        <div class="mkt-meta">
+          对外-内部对齐: ${(pc.externalInternalAlignment * 100).toFixed(0)}% &middot;
+          对外-客户对齐: ${(pc.externalCustomerAlignment * 100).toFixed(0)}% &middot;
+          内部-客户对齐: ${(pc.internalCustomerAlignment * 100).toFixed(0)}%
+        </div>
+        <div class="mkt-bar-wrap">
+          <span style="font-size:12px;">对外↔内部</span>
+          <div class="mkt-bar"><div class="mkt-bar-fill ${pc.externalInternalAlignment > 0.25 ? 'high' : pc.externalInternalAlignment > 0.08 ? 'mid' : 'low'}" style="width:${(pc.externalInternalAlignment * 100).toFixed(0)}%"></div></div>
+          <span style="font-size:12px;">${(pc.externalInternalAlignment * 100).toFixed(0)}%</span>
+        </div>
+        <div class="mkt-bar-wrap">
+          <span style="font-size:12px;">对外↔客户</span>
+          <div class="mkt-bar"><div class="mkt-bar-fill ${pc.externalCustomerAlignment > 0.25 ? 'high' : pc.externalCustomerAlignment > 0.08 ? 'mid' : 'low'}" style="width:${(pc.externalCustomerAlignment * 100).toFixed(0)}%"></div></div>
+          <span style="font-size:12px;">${(pc.externalCustomerAlignment * 100).toFixed(0)}%</span>
+        </div>
+        <div class="mkt-bar-wrap">
+          <span style="font-size:12px;">内部↔客户</span>
+          <div class="mkt-bar"><div class="mkt-bar-fill ${pc.internalCustomerAlignment > 0.25 ? 'high' : pc.internalCustomerAlignment > 0.08 ? 'mid' : 'low'}" style="width:${(pc.internalCustomerAlignment * 100).toFixed(0)}%"></div></div>
+          <span style="font-size:12px;">${(pc.internalCustomerAlignment * 100).toFixed(0)}%</span>
+        </div>
+        <div class="mkt-tags">
+          ${pc.externalKeywords.slice(0, 5).map(k => `<span class="mkt-tag">对外:${escapeHtml(k)}</span>`).join('')}
+          ${pc.internalKeywords.slice(0, 5).map(k => `<span class="mkt-tag">内部:${escapeHtml(k)}</span>`).join('')}
+          ${pc.customerKeywords.slice(0, 5).map(k => `<span class="mkt-tag">客户:${escapeHtml(k)}</span>`).join('')}
+        </div>
+        ${pc.gaps.length > 0 ? pc.gaps.map(g => `
+          <div class="mkt-gap">${escapeHtml(g.description)} (${g.severity})</div>
+        `).join('') : ''}
+      </div>`);
+  }
+
+  // ── 3. Differentiation Validation ──
+  if (input.differentiationValidation) {
+    const dv = input.differentiationValidation;
+    const verdictClass = dv.verdict === 'reliable' ? 'positive' : dv.verdict === 'fake' ? 'warning' : 'danger';
+    const verdictLabel = dv.verdict === 'reliable' ? '差异化可靠' : dv.verdict === 'fake' ? '虚假差异化' : '定位崩坏';
+    const methodLabel = dv.method === 'llm_assisted' ? 'LLM 辅助判定' : '规则判定';
+    sections.push(`
+      <div class="mkt-card">
+        <h3>差异化实质性验证</h3>
+        <div class="mkt-verdict ${verdictClass}">${verdictLabel} &middot; ${methodLabel}</div>
+        <p>${escapeHtml(dv.interpretation)}</p>
+        <div class="mkt-meta">
+          声称差异化: <strong>${escapeHtml(dv.claimedDifferentiation)}</strong> &middot;
+          文本重叠度: ${(dv.textOverlap * 100).toFixed(0)}% &middot;
+          语义等价: ${dv.semanticEquivalence === null ? '未判定' : dv.semanticEquivalence ? '✅ 是' : '❌ 否'}
+          ${dv.semanticConfidence > 0 ? ` &middot; LLM置信度: ${(dv.semanticConfidence * 100).toFixed(0)}%` : ''}
+        </div>
+        <div class="mkt-meta">
+          组织支撑: ${dv.orgCapabilitySupport.supports ? '✅ 支撑' : '❌ 不支撑'} &middot;
+          关联维度得分: ${dv.orgCapabilitySupport.avgScore.toFixed(2)}
+          ${dv.orgCapabilitySupport.gaps.length > 0 ? ` &middot; 缺口: ${dv.orgCapabilitySupport.gaps.join(', ')}` : ''}
+        </div>
+        <div class="mkt-tags">
+          ${dv.perceivedKeywords.map(k => `<span class="mkt-tag">客户感知:${escapeHtml(k)}</span>`).join('')}
+          ${dv.orgCapabilitySupport.relevantDimensions.map(d => `<span class="mkt-tag">维度:${escapeHtml(d)}</span>`).join('')}
+        </div>
+        ${dv.degraded ? '<div class="mkt-meta" style="color:#b91c1c;">⚠ 本模块降级运行（LLM 不可用，纯规则判定）</div>' : ''}
+      </div>`);
+  }
+
+  if (sections.length === 0) {
+    return `
+      <div class="mkt-section">
+        <h2>营销效能诊断</h2>
+        <p class="mkt-na">暂无营销诊断数据。需要客户访谈/问卷数据才能产出品类认知、定位一致性和差异化验证分析。</p>
+      </div>`;
+  }
+
+  return `
+    <div class="mkt-section">
+      <h2>营销效能诊断</h2>
+      ${sections.join('\n')}
+    </div>`;
+}
+
+/**
+ * Render a full diagnosis report including marketing sections.
+ * Wraps renderDiagnosisReport + appends marketing section before footer.
+ */
+export function renderFullDiagnosisReport(
+  report: StructuredDiagnosisReport,
+  marketing?: MarketingSectionInput,
+): string {
+  const base = renderDiagnosisReport(report);
+  if (!marketing) return base;
+
+  const marketingHtml = renderMarketingSection(marketing);
+
+  // Inject marketing section before the footer
+  const footerMarker = '<div class="footer">';
+  return base.replace(footerMarker, marketingHtml + '\n' + footerMarker);
+}

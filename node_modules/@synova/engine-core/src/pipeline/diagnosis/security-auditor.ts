@@ -1,0 +1,319 @@
+/**
+ * security-auditor.ts — 安全检查规则收集器
+ *
+ * A5: 对标 Claw-Code 的 security-related patterns (secret redaction,
+ * permission enforcement, unsafe code detection) + Hermes 的数据隐私审计。
+ *
+ * 收集器不阻断诊断流程——它在每次诊断的 Phase 1（数据采集阶段）并行运行，
+ * 将安全检查结果注入证据池。如果检查发现严重违规，标记为 degraded。
+ *
+ * 四类检查：
+ *   L1 数据最小化    — 诊断是否采集了超出必要范围的数据
+ *   L2 权限边界      — 数据源授权是否合规
+ *   L3 隐私保护      — 匿名问卷聚合阈值是否满足，个体可识别信息是否泄露
+ *   L4 安全配置      — 引擎部署环境是否存在已知风险
+ */
+
+import { createLogger } from '../../infra/logger';
+import type { DiagnosisEvidence } from './types';
+
+const log = createLogger('diagnosis/security-auditor');
+
+// ====================================================================
+// Types
+// ====================================================================
+
+export type SecurityLayer = 'L1' | 'L2' | 'L3' | 'L4';
+export type SecuritySeverity = 'critical' | 'high' | 'medium' | 'low' | 'info';
+
+export interface SecurityAuditRule {
+  id: string;
+  layer: SecurityLayer;
+  name: string;
+  description: string;
+  severity: SecuritySeverity;
+  /** 检查函数：返回 null = 通过，返回 string = 违规描述 */
+  check: (context: SecurityAuditContext) => SecurityAuditFinding | null;
+}
+
+export interface SecurityAuditContext {
+  orgId: string;
+  teamId: string;
+  /** 已激活的数据源 */
+  activeDataSources: string[];
+  /** 已授权的权限范围 */
+  authorizedScopes: string[];
+  /** 受访者数量 */
+  intervieweeCount?: number;
+  /** 匿名问卷回收数 */
+  surveyResponseCount?: number;
+  /** 聚合阈值 */
+  aggregationThreshold?: number;
+  /** 引擎版本 */
+  engineVersion?: string;
+  /** 部署模式 */
+  deploymentMode?: 'cloud' | 'local' | 'hybrid';
+}
+
+export interface SecurityAuditFinding {
+  ruleId: string;
+  layer: SecurityLayer;
+  severity: SecuritySeverity;
+  title: string;
+  description: string;
+  recommendation: string;
+  /** 是否阻断诊断（critical 且无法降级时） */
+  blocking: boolean;
+}
+
+export interface SecurityAuditReport {
+  auditId: string;
+  orgId: string;
+  teamId: string;
+  /** 通过的规则数 */
+  passed: number;
+  /** 违规发现 */
+  findings: SecurityAuditFinding[];
+  /** 总体评级 */
+  overallRating: 'compliant' | 'needs_attention' | 'at_risk' | 'critical_risk';
+  /** 生成的证据条目 */
+  evidence: DiagnosisEvidence[];
+  /** 审计时间 */
+  auditedAt: string;
+}
+
+// ====================================================================
+// Built-in Audit Rules (对标 Claw-Code 的安全检查)
+// ====================================================================
+
+const BUILTIN_RULES: SecurityAuditRule[] = [
+  // ── L1: 数据最小化 ──
+  {
+    id: 'L1-001',
+    layer: 'L1',
+    name: '数据源最小必要原则',
+    description: '诊断应仅激活与范围相关的数据源，不应激活所有可用数据源',
+    severity: 'medium',
+    check: (ctx) => {
+      const relevantSources = ctx.authorizedScopes.length;
+      const totalSources = ctx.activeDataSources.length;
+      if (totalSources > relevantSources * 2 && totalSources > 5) {
+        return {
+          ruleId: 'L1-001',
+          layer: 'L1', severity: 'medium',
+          title: '激活的数据源超出诊断范围',
+          description: `已激活 ${totalSources} 个数据源，但诊断范围仅需 ${relevantSources} 个`,
+          recommendation: '建议在 Phase 0 确认范围后，仅激活相关数据源',
+          blocking: false,
+        };
+      }
+      return null;
+    },
+  },
+  {
+    id: 'L1-002',
+    layer: 'L1',
+    name: '数据保留期限',
+    description: '诊断数据应有明确的保留期限，不应无限期保留',
+    severity: 'low',
+    check: (_ctx) => null, // 由 knowledge-curator 的归档策略覆盖
+  },
+
+  // ── L2: 权限边界 ──
+  {
+    id: 'L2-001',
+    layer: 'L2',
+    name: '数据源授权检查',
+    description: '所有激活的数据源必须经过用户明确授权',
+    severity: 'high',
+    check: (ctx) => {
+      const unauthorized = ctx.activeDataSources.filter(
+        s => !ctx.authorizedScopes.includes(s));
+      if (unauthorized.length > 0) {
+        return {
+          ruleId: 'L2-001',
+          layer: 'L2', severity: 'high',
+          title: '存在未授权的数据源',
+          description: `${unauthorized.join(', ')} 在未授权的情况下被激活`,
+          recommendation: '立即停用未授权数据源，在 Phase 0 重新确认授权范围',
+          blocking: true,
+        };
+      }
+      return null;
+    },
+  },
+  {
+    id: 'L2-002',
+    layer: 'L2',
+    name: '跨组织数据隔离',
+    description: '诊断数据不应跨组织共享',
+    severity: 'critical',
+    check: (ctx) => {
+      // 检查是否有其他组织的证据混入
+      if (ctx.orgId === 'unknown' || !ctx.orgId) {
+        return {
+          ruleId: 'L2-002',
+          layer: 'L2', severity: 'critical',
+          title: '组织 ID 未确认',
+          description: '无法确认诊断数据的组织归属',
+          recommendation: '在 Phase 0 确认组织身份后再开始采集',
+          blocking: true,
+        };
+      }
+      return null;
+    },
+  },
+
+  // ── L3: 隐私保护 ──
+  {
+    id: 'L3-001',
+    layer: 'L3',
+    name: '匿名问卷聚合阈值',
+    description: '匿名问卷结果必须达到最低聚合人数才能展示',
+    severity: 'high',
+    check: (ctx) => {
+      const threshold = ctx.aggregationThreshold ?? 3;
+      const responses = ctx.surveyResponseCount ?? 0;
+      if (responses > 0 && responses < threshold) {
+        return {
+          ruleId: 'L3-001',
+          layer: 'L3', severity: 'high',
+          title: '匿名问卷回收数低于聚合阈值',
+          description: `当前 ${responses} 份回收，阈值 ${threshold} 份。低于阈值的匿名结果可能暴露个体身份。`,
+          recommendation: `等待回收数达到 ${threshold} 份后再展示结果，或提高聚合阈值`,
+          blocking: true,
+        };
+      }
+      return null;
+    },
+  },
+  {
+    id: 'L3-002',
+    layer: 'L3',
+    name: '个体可识别信息检测',
+    description: '诊断证据不应包含可直接识别个体的信息',
+    severity: 'medium',
+    check: (_ctx) => null, // 由 outbound-sanitizer 脱敏 + evidence 标注 isPrivate 覆盖
+  },
+
+  // ── L4: 安全配置 ──
+  {
+    id: 'L4-001',
+    layer: 'L4',
+    name: '引擎版本检查',
+    description: '应使用最新稳定版本的引擎，避免已知漏洞',
+    severity: 'low',
+    check: (ctx) => {
+      if (ctx.engineVersion && ctx.engineVersion.includes('beta')) {
+        return {
+          ruleId: 'L4-001',
+          layer: 'L4', severity: 'low',
+          title: '使用 beta 版本引擎',
+          description: `当前引擎版本 ${ctx.engineVersion} 为非稳定版本`,
+          recommendation: '生产环境建议切换到稳定版本',
+          blocking: false,
+        };
+      }
+      return null;
+    },
+  },
+  {
+    id: 'L4-002',
+    layer: 'L4',
+    name: '本地部署安全配置',
+    description: '本地部署应限制外部网络访问',
+    severity: 'medium',
+    check: (ctx) => {
+      if (ctx.deploymentMode === 'local') {
+        return {
+          ruleId: 'L4-002',
+          layer: 'L4', severity: 'medium',
+          title: '本地部署模式确认',
+          description: '引擎在本地模式下运行，数据不离开服务器。请确认防火墙规则限制外部访问。',
+          recommendation: '确保诊断端口不暴露在公网',
+          blocking: false,
+        };
+      }
+      return null;
+    },
+  },
+];
+
+// ====================================================================
+// Auditor
+// ====================================================================
+
+/**
+ * 运行安全检查。
+ * 对标 Claw-Code 的安全检查——不阻断主流程，违规注入 evidence。
+ */
+export function runSecurityAudit(context: SecurityAuditContext): SecurityAuditReport {
+  const findings: SecurityAuditFinding[] = [];
+  let passed = 0;
+
+  for (const rule of BUILTIN_RULES) {
+    try {
+      const finding = rule.check(context);
+      if (finding) {
+        findings.push(finding);
+      } else {
+        passed++;
+      }
+    } catch (err) {
+      log.warn({ err, ruleId: rule.id }, '[security-audit] 规则检查异常');
+    }
+  }
+
+  // 总体评级
+  const criticalCount = findings.filter(f => f.severity === 'critical').length;
+  const highCount = findings.filter(f => f.severity === 'high').length;
+  let overallRating: SecurityAuditReport['overallRating'];
+  if (criticalCount > 0) overallRating = 'critical_risk';
+  else if (highCount > 0 || findings.filter(f => f.blocking).length > 0) overallRating = 'at_risk';
+  else if (findings.length > 0) overallRating = 'needs_attention';
+  else overallRating = 'compliant';
+
+  // 生成证据条目
+  const evidence: DiagnosisEvidence[] = findings.map(f => ({
+    id: `sec-${f.ruleId}-${Date.now()}`,
+    source: 'module',
+    content: `[${f.layer}] ${f.severity.toUpperCase()}: ${f.title} — ${f.description}。建议: ${f.recommendation}`,
+    confidence: f.severity === 'critical' ? 1.0 : f.severity === 'high' ? 0.9 : 0.7,
+    timestamp: new Date().toISOString(),
+    phase: 1,
+    dimension: 'security_audit',
+    isPrivate: false,
+    moduleId: 'security-auditor',
+  }));
+
+  log.info({
+    orgId: context.orgId,
+    passed,
+    findings: findings.length,
+    overallRating,
+  }, '[security-audit] 安全检查完成');
+
+  return {
+    auditId: `audit_${Date.now().toString(36)}`,
+    orgId: context.orgId,
+    teamId: context.teamId,
+    passed,
+    findings,
+    overallRating,
+    evidence,
+    auditedAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * 快速检查：是否有阻断性发现。
+ * Phase 0 进入 Phase 1 前调用——如果存在阻断性风险，暂停诊断。
+ */
+export function hasBlockingFindings(report: SecurityAuditReport): boolean {
+  return report.findings.some(f => f.blocking);
+}
+
+/** 列出自定义规则（用于扩展） */
+export function listBuiltinRules(): SecurityAuditRule[] {
+  return [...BUILTIN_RULES];
+}

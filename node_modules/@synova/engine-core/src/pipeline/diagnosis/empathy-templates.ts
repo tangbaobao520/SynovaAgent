@@ -1,0 +1,267 @@
+/**
+ * empathy-templates.ts — 诊断共情模板
+ *
+ * 对标 Claw-Code recovery_recipes.rs 的场景化消息生成：
+ *   - 按风险等级调整语气和措辞
+ *   - 按接收者角色定制信息深度
+ *   - 场景感知的坏消息传递策略
+ *
+ * 六种沟通场景：
+ *   OPENING         — 诊断开场
+ *   FINDING_SHARED  — 共识型发现（低风险）
+ *   FINDING_SENSITIVE — 敏感发现（需谨慎措辞）
+ *   CRITICAL_ALERT  — 关键风险预警
+ *   RECOMMENDATION  — 行动建议
+ *   CLOSING         — 诊断收尾
+ */
+
+// ====================================================================
+// 类型定义
+// ====================================================================
+
+/** 沟通场景 */
+export type EmpathyScenario =
+  | 'opening'
+  | 'finding_shared'
+  | 'finding_sensitive'
+  | 'critical_alert'
+  | 'recommendation'
+  | 'closing';
+
+/** 接收者角色类型 */
+export type RecipientRole = 'ceo' | 'cto' | 'manager' | 'ic' | 'hr';
+
+/** 风险等级 */
+export type RiskSeverity = 'low' | 'medium' | 'high' | 'critical';
+
+/** 模板参数 */
+export interface EmpathyTemplateParams {
+  scenario: EmpathyScenario;
+  recipientRole: RecipientRole;
+  severity: RiskSeverity;
+  /** 团队/组织名称 */
+  teamName: string;
+  /** 具体发现/维度名 */
+  dimensionName?: string;
+  /** 自定义插值变量 */
+  variables?: Record<string, string>;
+}
+
+/** 消息块 */
+export interface EmpathyMessage {
+  /** 主要消息（显示在卡片顶部） */
+  headline: string;
+  /** 详细说明 */
+  body: string;
+  /** 建议的语气标记：direct | supportive | urgent | neutral */
+  tone: 'direct' | 'supportive' | 'urgent' | 'neutral';
+  /** 是否包含行动号召 */
+  hasCallToAction: boolean;
+}
+
+// ====================================================================
+// 角色语气映射
+// ====================================================================
+
+const ROLE_TONE: Record<RecipientRole, { formality: number; detailLevel: number }> = {
+  ceo:     { formality: 0.7, detailLevel: 0.3 },  // 高层摘要，少细节
+  cto:     { formality: 0.5, detailLevel: 0.9 },  // 技术细节
+  manager: { formality: 0.6, detailLevel: 0.7 },  // 中层平衡
+  ic:      { formality: 0.3, detailLevel: 0.8 },  // 低形式，高细节
+  hr:      { formality: 0.8, detailLevel: 0.5 },  // 合规措辞
+};
+
+const ROLE_LABEL: Record<RecipientRole, string> = {
+  ceo: '创始人/CEO',
+  cto: '技术负责人',
+  manager: '团队管理者',
+  ic: '团队成员',
+  hr: 'HR 负责人',
+};
+
+// ====================================================================
+// 场景模板库
+// ====================================================================
+
+interface ScenarioTemplate {
+  headlines: Record<RiskSeverity, string>;
+  bodies: Record<RiskSeverity, (p: EmpathyTemplateParams) => string>;
+  defaultTone: Record<RiskSeverity, EmpathyMessage['tone']>;
+}
+
+const TEMPLATES: Record<EmpathyScenario, ScenarioTemplate> = {
+  opening: {
+    headlines: {
+      low: '开始团队健康诊断',
+      medium: '开始团队健康诊断',
+      high: '开始深度团队诊断',
+      critical: '启动紧急团队诊断',
+    },
+    bodies: {
+      low: (p) => `我们将对「${p.teamName}」进行一次快速健康检查，预计耗时 3-5 分钟。`,
+      medium: (p) => `我们将系统性地评估「${p.teamName}」的协作健康状况，覆盖信息流、决策权、信任等关键维度。`,
+      high: (p) => `基于初步信号，「${p.teamName}」可能存在需要关注的协作问题。本次诊断将深入分析根因并提供可执行的改进建议。`,
+      critical: (p) => `检测到「${p.teamName}」存在关键风险信号，建议立即启动诊断以识别单点故障和协作断裂点。`,
+    },
+    defaultTone: {
+      low: 'supportive', medium: 'supportive', high: 'direct', critical: 'urgent',
+    },
+  },
+
+  finding_shared: {
+    headlines: {
+      low: '发现：${dimensionName} 维度表现良好',
+      medium: '发现：${dimensionName} 有优化空间',
+      high: '发现：${dimensionName} 需要关注',
+      critical: '警告：${dimensionName} 存在严重问题',
+    },
+    bodies: {
+      low: () => '该维度指标处于健康区间，团队在此方面协作顺畅。继续保持现有做法即可。',
+      medium: () => '该维度存在轻微偏差，尚未影响团队效率，但建议纳入后续优化计划。',
+      high: () => '该维度已显现出对团队效率的实质性影响。建议在接下来 2 周内制定专项改进计划。',
+      critical: () => '该维度的异常已对团队运作造成显著影响。建议立即组建专项小组处理，并设置每周检查点追踪进展。',
+    },
+    defaultTone: {
+      low: 'supportive', medium: 'neutral', high: 'direct', critical: 'urgent',
+    },
+  },
+
+  finding_sensitive: {
+    headlines: {
+      low: '关于${dimensionName}的观察',
+      medium: '关于${dimensionName}的反馈',
+      high: '${dimensionName}方面需要坦诚沟通',
+      critical: '${dimensionName}：需要立即面对的挑战',
+    },
+    bodies: {
+      low: (p) => `我们注意到「${p.dimensionName ?? '该维度'}」的反馈中存在轻微的角色认知差异——这在团队发展中是正常的。`,
+      medium: (p) => `多位团队成员在「${p.dimensionName ?? '该维度'}」方面表达了不同的体验。这不是谁对谁错的问题，而是协作模式需要微调的信号。`,
+      high: (p) => `「${p.dimensionName ?? '该维度'}」的数据显示团队成员之间存在显著的认知分歧。我们理解这类话题可能敏感，但坦诚面对是解决问题的第一步。`,
+      critical: (p) => `以下发现涉及团队信任和协作的底层问题。我们理解接收这类信息需要勇气——正因为您关心团队，才选择面对而非回避。`,
+    },
+    defaultTone: {
+      low: 'supportive', medium: 'supportive', high: 'supportive', critical: 'supportive',
+    },
+  },
+
+  critical_alert: {
+    headlines: {
+      low: '提示：${dimensionName}',
+      medium: '注意：${dimensionName} 需要行动',
+      high: '重要：${dimensionName} 风险较高',
+      critical: '紧急：${dimensionName} 已达到危险水平',
+    },
+    bodies: {
+      low: () => '该指标的轻微偏离不值得过度关注，但我们建议保持观察。',
+      medium: (p) => `「${p.teamName}」在${p.dimensionName ?? '该维度'}上的指标已触发关注阈值。及早行动可以避免问题固化。`,
+      high: (p) => `如果不采取行动，${p.dimensionName ?? '该维度'}的问题可能在 3-6 个月内显著影响团队留存和效率。我们整理了以下优先行动建议。`,
+      critical: (p) => `「${p.teamName}」正面临${p.dimensionName ?? '关键维度'}的系统性风险。根据同类团队的基准数据，此类问题如不在 30 天内处理，可能导致核心成员流失或项目延期。`,
+    },
+    defaultTone: {
+      low: 'neutral', medium: 'direct', high: 'direct', critical: 'urgent',
+    },
+  },
+
+  recommendation: {
+    headlines: {
+      low: '优化建议',
+      medium: '改进建议',
+      high: '重点行动建议',
+      critical: '紧急行动方案',
+    },
+    bodies: {
+      low: () => '以下是一些锦上添花的优化方向，可按需采纳。',
+      medium: () => '以下建议基于诊断数据生成，建议在未来 4 周内逐步推进。',
+      high: () => '以下是基于根因分析的优先行动项。建议指定负责人并设置明确的完成期限。',
+      critical: () => '以下是必须立即执行的行动方案。建议每日站会追踪进度，每周向管理层汇报。',
+    },
+    defaultTone: {
+      low: 'supportive', medium: 'neutral', high: 'direct', critical: 'urgent',
+    },
+  },
+
+  closing: {
+    headlines: {
+      low: '诊断完成',
+      medium: '诊断完成 — 汇总',
+      high: '诊断完成 — 请关注重点事项',
+      critical: '诊断完成 — 需立即行动',
+    },
+    bodies: {
+      low: (p) => `「${p.teamName}」整体健康状况良好。建议 3 个月后进行下一次例行检查。`,
+      medium: (p) => `「${p.teamName}」的诊断已全部完成。整体健康度可接受，部分维度建议持续关注。`,
+      high: (p) => `「${p.teamName}」的诊断报告已生成。建议在 48 小时内与核心团队分享关键发现，并在一周内启动改进计划。`,
+      critical: (p) => `「${p.teamName}」的诊断报告已生成。诊断团队建议在 24 小时内召开紧急会议讨论诊断结果。我们理解这很紧迫，但数据显示延迟行动的代价可能远超快速响应带来的不适。`,
+    },
+    defaultTone: {
+      low: 'supportive', medium: 'neutral', high: 'direct', critical: 'urgent',
+    },
+  },
+};
+
+// ====================================================================
+// 主渲染函数
+// ====================================================================
+
+/** 渲染共情消息 */
+export function renderEmpathyMessage(params: EmpathyTemplateParams): EmpathyMessage {
+  const template = TEMPLATES[params.scenario];
+  const headline = interpolate(template.headlines[params.severity], params);
+  const body = template.bodies[params.severity](params);
+  const tone = template.defaultTone[params.severity];
+
+  return {
+    headline,
+    body,
+    tone,
+    hasCallToAction: params.severity === 'high' || params.severity === 'critical',
+  };
+}
+
+/** 批量渲染：为一条发现生成面向多角色的消息 */
+export function renderMultiRoleMessages(
+  params: Omit<EmpathyTemplateParams, 'recipientRole'>,
+  roles: RecipientRole[],
+): Map<RecipientRole, EmpathyMessage> {
+  const results = new Map<RecipientRole, EmpathyMessage>();
+  for (const role of roles) {
+    results.set(role, renderEmpathyMessage({ ...params, recipientRole: role }));
+  }
+  return results;
+}
+
+// ====================================================================
+// 辅助函数
+// ====================================================================
+
+/** 获取角色的推荐称呼 */
+export function getRoleLabel(role: RecipientRole): string {
+  return ROLE_LABEL[role];
+}
+
+/** 获取角色的沟通风格参数 */
+export function getRoleTone(role: RecipientRole): { formality: number; detailLevel: number } {
+  return ROLE_TONE[role];
+}
+
+/** 根据角色调整信息的详细程度 */
+export function adaptDetailLevel(baseMessage: string, role: RecipientRole): string {
+  const { detailLevel } = ROLE_TONE[role];
+  if (detailLevel >= 0.8) return baseMessage;
+  // 截短：CEO 看前两句话
+  const sentences = baseMessage.split(/[。！]/).filter(s => s.trim());
+  const keepCount = Math.max(1, Math.ceil(sentences.length * detailLevel));
+  return sentences.slice(0, keepCount).join('。') + '。';
+}
+
+function interpolate(template: string, params: EmpathyTemplateParams): string {
+  let result = template;
+  result = result.replace(/\$\{dimensionName\}/g, params.dimensionName ?? '该维度');
+  result = result.replace(/\$\{teamName\}/g, params.teamName);
+  if (params.variables) {
+    for (const [key, value] of Object.entries(params.variables)) {
+      result = result.replace(new RegExp(`\\$\\{${key}\\}`, 'g'), value);
+    }
+  }
+  return result;
+}

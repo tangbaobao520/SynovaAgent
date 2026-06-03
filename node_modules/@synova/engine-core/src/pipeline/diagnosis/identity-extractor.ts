@@ -1,0 +1,152 @@
+/**
+ * diagnosis/identity-extractor.ts — 身份标记提取
+ *
+ * 从团队自述中提取"我们是谁"的关键词。
+ *
+ * 数据源：
+ *   - 记忆黑板中团队的自我描述
+ *   - L0 对话中"我们"开头的陈述句
+ *   - SOUL.md 中的团队自我叙事
+ *
+ * 实现方式（两阶段）：
+ *   阶段一（现在就做）：正则提取"我们"开头的句子，按词频聚类。
+ *     不做语义推理。产出的 markers 是观测，不是判断。
+ *   阶段二（等 LLM 能力，6-12 个月后）：LLM 读所有对话 → 提取
+ *     shared identity markers → 识别 marker 之间的优先级和矛盾。
+ *
+ * 当前成熟度：可提取，不推荐做推理。数据结构预留。
+ */
+
+import type { IdentityMarkers } from './types';
+import { saveIdentityData, loadIdentityData } from './persistence';
+
+// ====================================================================
+// In-memory store: team identity statements
+// ====================================================================
+
+/** Sentences starting with "我们" (or "we") for each team */
+const teamIdentitySentences = new Map<string, string[]>();
+
+// ====================================================================
+// Startup recovery: load persisted data into memory
+// ====================================================================
+
+function recoverTeamIfNeeded(teamId: string): void {
+  if (teamIdentitySentences.has(teamId)) return;
+  const data = loadIdentityData(teamId);
+  if (data.length > 0) {
+    teamIdentitySentences.set(teamId, data);
+  }
+}
+
+// ====================================================================
+// Predefined identity marker vocabulary (Chinese)
+// ====================================================================
+
+const IDENTITY_MARKER_PATTERNS: Array<{ pattern: RegExp; marker: string }> = [
+  { pattern: /技术|工程|代码|开发|架构|算法|AI|人工智能/i, marker: '技术驱动' },
+  { pattern: /用户|客户|体验|UX|设计思维|用户立场|customer/i, marker: '用户立场' },
+  { pattern: /小|精干|精简|lean|小而美|敏捷/i, marker: '小而美' },
+  { pattern: /增长|扩张|规模化|增速|增长黑客|scale/i, marker: '增长优先' },
+  { pattern: /产品|product|打磨|体验/i, marker: '产品导向' },
+  { pattern: /数据|data|分析|指标|KPI|OKR|度量/i, marker: '数据驱动' },
+  { pattern: /创新|探索|前沿|突破|先锋|disrupt/i, marker: '创新探索' },
+  { pattern: /稳定|可靠|安全|信任|合规|compliance/i, marker: '安全稳定' },
+  { pattern: /效率|速度|快|自动化|效率优先/i, marker: '效率优先' },
+  { pattern: /社区|开源|open.?source|社区驱动/i, marker: '社区导向' },
+  { pattern: /垂直|行业|专注|细分|niche/i, marker: '垂直深耕' },
+  { pattern: /平台|ecosystem|生态|连接|platform/i, marker: '平台生态' },
+  { pattern: /跨境|贸易|供应链|供应链|物流|cross.?border/i, marker: '跨境贸易' },
+  { pattern: /运营|operation|执行|落地/i, marker: '运营执行' },
+  { pattern: /内容|创作|content|media|自媒体/i, marker: '内容创作' },
+];
+
+// ====================================================================
+// External log feeder
+// ====================================================================
+
+/**
+ * Feed a sentence containing team identity self-description.
+ * Call this from L0 dialogue ingestion or SOUL.md parsing.
+ */
+export function recordIdentitySentence(teamId: string, sentence: string): void {
+  recoverTeamIfNeeded(teamId);
+  if (!teamIdentitySentences.has(teamId)) {
+    teamIdentitySentences.set(teamId, []);
+  }
+  const arr = teamIdentitySentences.get(teamId)!;
+  arr.push(sentence);
+  saveIdentityData(teamId, [...arr]);
+}
+
+/**
+ * Feed bulk identity sentences (e.g., from SOUL.md parsing).
+ */
+export function recordIdentitySentences(teamId: string, sentences: string[]): void {
+  recoverTeamIfNeeded(teamId);
+  if (!teamIdentitySentences.has(teamId)) {
+    teamIdentitySentences.set(teamId, []);
+  }
+  const arr = teamIdentitySentences.get(teamId)!;
+  arr.push(...sentences);
+  saveIdentityData(teamId, [...arr]);
+}
+
+/**
+ * Clear identity data for a team.
+ */
+export function clearIdentityData(teamId: string): boolean {
+  return teamIdentitySentences.delete(teamId);
+}
+
+// ====================================================================
+// Public API
+// ====================================================================
+
+/**
+ * Extract identity markers from accumulated team self-descriptions.
+ *
+ * Stage 1 implementation: regex keyword clustering. No semantic inference.
+ * Stage 2 (future): LLM reads all conversations → shared identity markers.
+ */
+export function extractIdentityMarkers(teamId: string): IdentityMarkers {
+  const sentences = teamIdentitySentences.get(teamId) ?? [];
+  const combined = sentences.join(' ');
+
+  // Match against predefined marker patterns
+  const matchCounts: Record<string, number> = {};
+  for (const { pattern, marker } of IDENTITY_MARKER_PATTERNS) {
+    const matches = (combined.match(new RegExp(pattern.source, 'gi')) ?? []).length;
+    if (matches > 0) {
+      matchCounts[marker] = matches;
+    }
+  }
+
+  // Build frequency (normalized by total marker occurrences)
+  const totalMatches = Object.values(matchCounts).reduce((a, b) => a + b, 0);
+  const frequency: Record<string, number> = {};
+  for (const [marker, count] of Object.entries(matchCounts)) {
+    frequency[marker] = totalMatches > 0 ? Math.round((count / totalMatches) * 100) / 100 : 0;
+  }
+
+  // Sort markers by frequency
+  const markers = Object.entries(frequency)
+    .sort((a, b) => b[1] - a[1])
+    .map(([name]) => name);
+
+  // Primary anchor = most frequent marker
+  const primaryAnchor = markers.length > 0 ? markers[0] : null;
+
+  // Trend: all stable for now (Stage 1 doesn't do temporal comparison)
+  const trend: Record<string, 'stable'> = {};
+  for (const marker of markers) {
+    trend[marker] = 'stable';
+  }
+
+  return {
+    markers,
+    frequency,
+    trend,
+    primaryAnchor,
+  };
+}

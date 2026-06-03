@@ -1,0 +1,261 @@
+/**
+ * diagnosis/cpc.ts — 协作协议完备性 (Collaboration Protocol Completeness)
+ *
+ * 纯计算模块：消费已有 Phase C 输出的 CollaborationModeBlue + 六缝隙快照，
+ * 评估团队协作协议在各维度的完备程度。
+ *
+ * 无需新数据源。所有计算基于已有快照数据结构。
+ */
+
+import type { GapSnapshot, CPCReport, CPCDimensionDetail, CPCGap } from './types';
+import type { GapDimension } from '../schema-bridge';
+import { getLatestSnapshot } from './gap-recorder';
+import { GAP_DIMENSIONS } from './gap-recorder';
+
+// ====================================================================
+// Dimension completeness checkers
+// ====================================================================
+
+interface GapData {
+  mode: string;
+  engineScore: number;
+  confidence: string;
+  sourceBreakdown: Record<string, number>;
+}
+
+function checkDivisionOfLabor(gap: GapData): CPCDimensionDetail {
+  const missing: string[] = [];
+  let score = 0.5;
+
+  if (gap.mode === 'flexible' || gap.mode === 'unknown') {
+    missing.push('缺少明确的分工模式定义');
+  } else {
+    score += 0.2;
+    if (gap.mode === 'fixed' || gap.mode === 'morphing') score += 0.15;
+  }
+
+  if (gap.engineScore < 0.5) {
+    missing.push('角色分配信息不足');
+  } else {
+    score += 0.15;
+  }
+
+  return {
+    score: Math.min(score, 1),
+    confidence: gap.confidence as 'high' | 'medium' | 'low',
+    missingCapabilities: missing,
+  };
+}
+
+function checkInformationFlow(gap: GapData): CPCDimensionDetail {
+  const missing: string[] = [];
+  let score = 0.5;
+
+  if (gap.mode === 'unknown') {
+    missing.push('信息流拓扑未定义');
+  } else {
+    score += 0.2;
+  }
+
+  if (gap.engineScore < 0.5) {
+    missing.push('路由规则或可见性矩阵缺失');
+  } else {
+    score += 0.15;
+  }
+
+  if (!gap.sourceBreakdown?.['sync_mode'] && !gap.sourceBreakdown?.['visibility_matrix']) {
+    missing.push('同步策略或可见性控制未配置');
+  }
+
+  return {
+    score: Math.min(score, 1),
+    confidence: gap.confidence as 'high' | 'medium' | 'low',
+    missingCapabilities: missing,
+  };
+}
+
+function checkAuthorityGovernance(gap: GapData): CPCDimensionDetail {
+  const missing: string[] = [];
+  let score = 0.5;
+
+  if (gap.mode === 'unknown') {
+    missing.push('权限治理模式未定义');
+  } else {
+    score += 0.15;
+  }
+
+  if (gap.engineScore < 0.5) {
+    missing.push('决策流或否决权配置不足');
+  } else {
+    score += 0.2;
+  }
+
+  if (!gap.sourceBreakdown?.['decision_flow'] && !gap.sourceBreakdown?.['veto_config']) {
+    missing.push('缺少明确的决策流程或否决机制');
+  }
+
+  return {
+    score: Math.min(score, 1),
+    confidence: gap.confidence as 'high' | 'medium' | 'low',
+    missingCapabilities: missing,
+  };
+}
+
+function checkTrustIncentive(gap: GapData): CPCDimensionDetail {
+  const missing: string[] = [];
+  let score = 0.5;
+
+  if (gap.mode === 'unknown') {
+    missing.push('信任与激励机制未定义');
+  } else {
+    score += 0.15;
+  }
+
+  if (gap.engineScore < 0.5) {
+    missing.push('激励对齐或信任模型不完整');
+  } else {
+    score += 0.2;
+  }
+
+  if (!gap.sourceBreakdown?.['incentive']) {
+    missing.push('缺少成败信号定义');
+  }
+
+  return {
+    score: Math.min(score, 1),
+    confidence: gap.confidence as 'high' | 'medium' | 'low',
+    missingCapabilities: missing,
+  };
+}
+
+function checkKnowledgeSharing(gap: GapData): CPCDimensionDetail {
+  const missing: string[] = [];
+  let score = 0.5;
+
+  if (gap.mode === 'unknown') {
+    missing.push('知识共享策略未定义');
+  } else {
+    score += 0.2;
+  }
+
+  if (gap.engineScore < 0.4) {
+    missing.push('同步间隔或隐性知识处理未配置');
+  }
+
+  if (!gap.sourceBreakdown?.['sync_interval'] && !gap.sourceBreakdown?.['tacit_knowledge']) {
+    missing.push('缺少知识同步机制或隐性知识管理');
+  }
+
+  return {
+    score: Math.min(score, 1),
+    confidence: gap.confidence as 'high' | 'medium' | 'low',
+    missingCapabilities: missing,
+  };
+}
+
+function checkExternalInterface(gap: GapData): CPCDimensionDetail {
+  const missing: string[] = [];
+  let score = 0.5;
+
+  if (gap.mode === 'unknown') {
+    missing.push('对外接口策略未定义');
+  } else {
+    score += 0.2;
+  }
+
+  if (gap.engineScore < 0.4) {
+    missing.push('授权角色或审计日志未启用');
+  } else {
+    score += 0.15;
+  }
+
+  return {
+    score: Math.min(score, 1),
+    confidence: gap.confidence as 'high' | 'medium' | 'low',
+    missingCapabilities: missing,
+  };
+}
+
+const DIM_CHECKERS: Record<GapDimension, (gap: GapData) => CPCDimensionDetail> = {
+  division_of_labor: checkDivisionOfLabor,
+  information_flow: checkInformationFlow,
+  authority_governance: checkAuthorityGovernance,
+  trust_incentive: checkTrustIncentive,
+  knowledge_sharing: checkKnowledgeSharing,
+  external_interface: checkExternalInterface,
+};
+
+// ====================================================================
+// Public API
+// ====================================================================
+
+/**
+ * Compute Collaboration Protocol Completeness for a team.
+ * Pure computation — consumes existing GapSnapshot data.
+ * Returns null if no snapshot exists.
+ */
+export function computeCPC(teamId: string, snapshot?: GapSnapshot | null): CPCReport | null {
+  const snap = snapshot ?? getLatestSnapshot(teamId);
+  if (!snap || Object.keys(snap.gaps).length === 0) return null;
+
+  const byDimension = {} as Record<string, CPCDimensionDetail>;
+  const allGaps: CPCGap[] = [];
+
+  for (const dim of GAP_DIMENSIONS) {
+    const gapData = snap.gaps[dim];
+    if (!gapData) {
+      byDimension[dim] = {
+        score: 0,
+        confidence: 'low',
+        missingCapabilities: ['该维度无观测数据'],
+      };
+      allGaps.push({ dimension: dim, missing: '无观测数据', severity: 'critical' });
+      continue;
+    }
+
+    const detail = DIM_CHECKERS[dim]({
+      mode: gapData.mode,
+      engineScore: gapData.engineScore,
+      confidence: gapData.confidence,
+      sourceBreakdown: gapData.sourceBreakdown,
+    });
+    byDimension[dim] = detail;
+
+    for (const missing of detail.missingCapabilities) {
+      allGaps.push({
+        dimension: dim,
+        missing,
+        severity: detail.score < 0.4 ? 'critical' : detail.score < 0.7 ? 'moderate' : 'minor',
+      });
+    }
+  }
+
+  // Aggregate completeness score
+  const scores = Object.values(byDimension).map(d => d.score);
+  const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+
+  // Determine level
+  let level: CPCReport['level'];
+  if (avgScore >= 0.85) level = 'comprehensive';
+  else if (avgScore >= 0.65) level = 'adequate';
+  else if (avgScore >= 0.4) level = 'basic';
+  else level = 'minimal';
+
+  const dimWithGaps = allGaps.length > 0
+    ? [...new Set(allGaps.map(g => g.dimension))].join('、')
+    : '无';
+
+  return {
+    completenessScore: Math.round(avgScore * 100) / 100,
+    byDimension,
+    gaps: allGaps,
+    level,
+    interpretation: allGaps.length === 0
+      ? '协作协议各维度完备，无明显缺口。'
+      : `协作协议完备性为${level}级别（${(avgScore * 100).toFixed(0)}%）。` +
+        `${allGaps.length} 个缺口分布在 ${dimWithGaps} 维度。` +
+        (allGaps.filter(g => g.severity === 'critical').length > 0
+          ? `其中 ${allGaps.filter(g => g.severity === 'critical').length} 个为严重级别，建议优先处理。`
+          : ''),
+  };
+}

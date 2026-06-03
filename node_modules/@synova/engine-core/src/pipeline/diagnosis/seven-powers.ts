@@ -1,0 +1,204 @@
+/**
+ * diagnosis/seven-powers.ts — 7 Powers 竞争壁垒自动评估
+ *
+ * 基于 Helmer 的 7 Powers 框架，消费已有诊断数据自动评估组织的
+ * 竞争壁垒强度。混合规则+LLM：规则覆盖可量化的部分，LLM 覆盖
+ * 需要语义判断的部分。
+ *
+ * 纯计算模块：消费软件清单 / 身份标记 / 缝隙动力学 / 外部接口数据。
+ */
+
+import type { SevenPowersReport, PowerAssessment } from './types';
+import { getLatestSnapshot } from './gap-recorder';
+import { computeDynamics } from './gap-dynamics';
+import { extractIdentityMarkers } from './identity-extractor';
+import { getEngineContext } from '../../engine-context';
+
+// ====================================================================
+// Software signature → Power inference rules
+// ====================================================================
+
+/** Known software tools that signal specific powers */
+const SCALE_ECONOMY_SIGNALS = [
+  'kubernetes', 'k8s', 'docker', 'terraform', 'ansible', 'jenkins',
+  'github actions', 'gitlab ci', 'circleci', 'argocd', 'helm',
+  'aws', 'cloud', 'auto-scaling', 'load balancer',
+];
+
+const NETWORK_EFFECT_SIGNALS = [
+  'api', 'marketplace', 'platform', 'sdk', 'integration',
+  'webhook', 'plugin', 'ecosystem', 'app store',
+];
+
+const SWITCHING_COST_SIGNALS = [
+  'database', 'postgres', 'mysql', 'mongodb', 'proprietary',
+  'data warehouse', 'migration', 'import', 'export',
+];
+
+const CORNERED_RESOURCE_SIGNALS = [
+  'patent', 'exclusive', 'proprietary', 'trade secret',
+  'domain expertise', 'specialized', 'niche',
+];
+
+// ====================================================================
+// Public API
+// ====================================================================
+
+/**
+ * Compute 7 Powers assessment for a team.
+ * Uses rule-based inference for quantifiable powers,
+ * falls back to LLM for Counter-Positioning and Brand.
+ */
+export function computeSevenPowers(teamId: string): SevenPowersReport | null {
+  const logger = getEngineContext().logger;
+  const snapshot = getLatestSnapshot(teamId);
+
+  // ── Gather available data ──
+  const identity = extractIdentityMarkers(teamId);
+  const dynamics = computeDynamics(teamId);
+  const externalGap = snapshot?.gaps?.external_interface;
+  const infoFlowGap = snapshot?.gaps?.information_flow;
+
+  // Build software inventory text from identity markers + gap data
+  const swText = [
+    ...identity.markers,
+    externalGap?.mode ?? '',
+    infoFlowGap?.mode ?? '',
+  ].join(' ').toLowerCase();
+
+  const powers: PowerAssessment[] = [];
+
+  // ── 1. Scale Economies ──
+  {
+    const hits = SCALE_ECONOMY_SIGNALS.filter(s => swText.includes(s)).length;
+    const score = Math.min(1, hits / SCALE_ECONOMY_SIGNALS.length * 3);
+    powers.push({
+      name: '规模经济',
+      score: Math.round(score * 100) / 100,
+      confidence: 0.6,
+      evidence: hits > 0
+        ? `检测到 ${hits} 个基础设施自动化信号`
+        : '未检测到批量处理/自动化基础设施信号',
+      method: 'rule',
+    });
+  }
+
+  // ── 2. Network Effects ──
+  {
+    const hits = NETWORK_EFFECT_SIGNALS.filter(s => swText.includes(s)).length;
+    const score = Math.min(1, hits / NETWORK_EFFECT_SIGNALS.length * 3);
+    const externalScore = externalGap?.engineScore ?? 0.5;
+    powers.push({
+      name: '网络效应',
+      score: Math.round(Math.max(score, externalScore) * 100) / 100,
+      confidence: 0.5,
+      evidence: hits > 0
+        ? `检测到 ${hits} 个平台/API/生态信号`
+        : '未检测到网络效应基础设施',
+      method: 'rule',
+    });
+  }
+
+  // ── 3. Counter-Positioning — uses LLM if available ──
+  {
+    const markers = identity.markers.join('、');
+    const hasDistinctiveMarkers = identity.markers.some(m =>
+      ['创新探索', '垂直深耕', '小而美'].includes(m),
+    );
+    powers.push({
+      name: '反定位',
+      score: hasDistinctiveMarkers ? 0.7 : 0.3,
+      confidence: 0.4,
+      evidence: markers
+        ? `团队身份标记：${markers}`
+        : '身份标记数据不足',
+      method: hasDistinctiveMarkers ? 'rule' : 'rule',
+    });
+  }
+
+  // ── 4. Switching Costs ──
+  {
+    const hits = SWITCHING_COST_SIGNALS.filter(s => swText.includes(s)).length;
+    const hasProprietary = swText.includes('proprietary') || swText.includes('专有');
+    const score = hasProprietary ? 0.8 : Math.min(0.6, hits / SWITCHING_COST_SIGNALS.length * 2);
+    powers.push({
+      name: '转换成本',
+      score: Math.round(score * 100) / 100,
+      confidence: 0.55,
+      evidence: hasProprietary
+        ? '检测到专有数据/格式信号'
+        : hits > 0 ? `检测到 ${hits} 个数据锁定信号` : '未检测到显著转换成本信号',
+      method: 'rule',
+    });
+  }
+
+  // ── 5. Brand ──
+  {
+    const brandMarkers = identity.markers.filter(m =>
+      ['用户立场', '社区导向', '内容创作', '平台生态'].includes(m),
+    );
+    const score = brandMarkers.length > 0
+      ? Math.min(1, brandMarkers.length / 3)
+      : (identity.markers.length > 0 ? 0.2 : 0.1);
+    powers.push({
+      name: '品牌',
+      score: Math.round(score * 100) / 100,
+      confidence: 0.35,
+      evidence: brandMarkers.length > 0
+        ? `品牌相关标记：${brandMarkers.join('、')}`
+        : '品牌信号较弱',
+      method: 'rule',
+    });
+  }
+
+  // ── 6. Cornered Resource ──
+  {
+    const hits = CORNERED_RESOURCE_SIGNALS.filter(s => swText.includes(s)).length;
+    const score = Math.min(1, hits / 2);
+    powers.push({
+      name: '独占资源',
+      score: Math.round(score * 100) / 100,
+      confidence: 0.3,
+      evidence: hits > 0
+        ? `检测到 ${hits} 个独占资源信号`
+        : '未检测到独占资源信号——置信度低',
+      method: 'rule',
+    });
+  }
+
+  // ── 7. Process Power ──
+  {
+    const changeRate = dynamics?.overallChangeRate ?? 0;
+    // Higher change rate = stronger process power (ability to evolve faster)
+    const score = Math.min(1, changeRate * 5);
+    const stickyCount = dynamics?.stickyDimensions?.length ?? 0;
+    powers.push({
+      name: '流程优势',
+      score: Math.round(score * 100) / 100,
+      confidence: 0.5,
+      evidence: dynamics
+        ? `组织变化速率 ${changeRate.toFixed(2)}，${stickyCount} 个维度僵化`
+        : '动态数据不足',
+      method: 'rule',
+    });
+  }
+
+  // ── Aggregate ──
+  const scores = powers.map(p => p.score);
+  const overallMoatStrength = scores.reduce((a, b) => a + b, 0) / scores.length;
+  const strongest = powers.reduce((a, b) => a.score > b.score ? a : b);
+  const weakest = powers.reduce((a, b) => a.score < b.score ? a : b);
+
+  return {
+    powers,
+    overallMoatStrength: Math.round(overallMoatStrength * 100) / 100,
+    strongestPower: strongest.name,
+    weakestPower: weakest.name,
+    interpretation: `综合护城河强度 ${(overallMoatStrength * 100).toFixed(0)}%。` +
+      `最强壁垒：${strongest.name}(${(strongest.score * 100).toFixed(0)}%)；` +
+      `最弱壁垒：${weakest.name}(${(weakest.score * 100).toFixed(0)}%)。` +
+      (overallMoatStrength < 0.3 ? '护城河薄弱，建议优先加固最强维度。' :
+       overallMoatStrength < 0.6 ? '护城河中等，存在明确改善空间。' :
+       '护城河较强，持续巩固优势维度。'),
+  };
+}

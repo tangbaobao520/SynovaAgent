@@ -1,0 +1,45 @@
+{
+  "name": "synova-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Synova组织智能诊断 — 独立进程，终端对话式组织诊断。配置 LLM 即用。",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "chat": "tsx src/cli.ts",
+    "tui": "tsx src/tui/chat.ts",
+    "synova": "tsx src/tui/chat.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@synova/connector-registry": "file:../packages/connector-registry",
+    "@synova/engine-core": "file:../server/vendor/@synova/engine-core",
+    "@synova/error-types": "file:../packages/error-types",
+    "@synova/extension-registry": "file:../packages/extension-registry",
+    "@synova/knowledge-ingest": "file:../packages/knowledge-ingest",
+    "@synova/logger": "file:../packages/logger",
+    "@synova/sog-core": "file:../packages/sog-core",
+    "better-sqlite3": "^11.0.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "neo-blessed": "^0.2.0",
+    "pino": "^9.0.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.0",
+    "@types/blessed": "^0.1.27",
+    "@types/cors": "^2.8.0",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.0.0",
+    "@vitest/coverage-v8": "^4.1.8",
+    "tsx": "^4.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^4.0.0"
+  }
+}

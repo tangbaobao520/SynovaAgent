@@ -1,0 +1,143 @@
+/**
+ * engine-server/config.ts — 配置集中管理
+ *
+ * 所有环境变量和配置项统一从此文件导出。
+ * 遵循"后端铁律"：环境变量不散落在代码各处。
+ */
+
+// ================================================================
+// 服务配置
+// ================================================================
+
+/** 引擎服务端口 */
+export const ENGINE_PORT = parseInt(process.env.ENGINE_PORT || '18790', 10);
+
+/** 引擎服务主机 */
+export const ENGINE_HOST = process.env.ENGINE_HOST || '127.0.0.1';
+
+// ================================================================
+// LLM 配置
+// ================================================================
+
+/** 
+ * Gateway 地址（ClawOrg 自身的 OpenClaw Gateway）
+ * 
+ * ⚠️ 红线：不要指向 EasyClaw 或其他产品的 Gateway 端口。
+ * ClawOrg 是独立产品，与其混用 Gateway 是设计违规。
+ * 未设置时（空串或未定义），LLM client 会跳过 Gateway，直接走 DEEPSEEK_API_KEY 直连。
+ */
+export const GATEWAY_HOST = process.env.OPENCLAW_GATEWAY_HOST || '';
+
+/** LLM 模型 */
+export const LLM_MODEL = process.env.OPENCLAW_MODEL || 'openclaw';
+
+/** LLM 请求超时（毫秒） */
+export const LLM_TIMEOUT_MS = parseInt(process.env.LLM_TIMEOUT_MS || '120000', 10);
+
+/** LLM max_tokens */
+export const LLM_MAX_TOKENS = parseInt(process.env.LLM_MAX_TOKENS || '4000', 10);
+
+/** LLM temperature */
+export const LLM_TEMPERATURE = parseFloat(process.env.LLM_TEMPERATURE || '0.7');
+
+/** 出厂 API Key（fallback）。Gateway 不可用时直连 DeepSeek。生产环境必须设置 DEEPSEEK_API_KEY 或 GATEWAY_HOST 之一。 */
+export const DEEPSEEK_API_KEY: string = (() => {
+  const key = process.env.DEEPSEEK_API_KEY || process.env.LLM_API_KEY || '';
+  if (key) return key;
+  if (process.env.DEV_MODE === 'true') {
+    console.warn('[engine-core] ⚠️  DEV_MODE: 未设置 DEEPSEEK_API_KEY / LLM_API_KEY。直连 DeepSeek 不可用。');
+    return '';
+  }
+  // 生产环境：如果没有 Gateway，则 DeepSeek API Key 必须有
+  const gateway = process.env.OPENCLAW_GATEWAY_HOST || '';
+  if (!gateway) {
+    throw new Error(
+      '[engine-core] FATAL: 既未设置 GATEWAY_HOST 也未设置 DEEPSEEK_API_KEY / LLM_API_KEY。' +
+      '生产环境必须至少配置一种 LLM 通道。',
+    );
+  }
+  console.warn('[engine-core] ⚠️  未设置 DEEPSEEK_API_KEY / LLM_API_KEY。' +
+    'Gateway 不可用时将无法 fallback 到直连。如不需要 fallback，可忽略此警告。');
+  return '';
+})();
+
+// ================================================================
+// 认证配置
+// ================================================================
+
+/** API Token 前缀 */
+export const AUTH_TOKEN_PREFIX = 'Bearer ';
+
+/** 有效 API Token 列表（可配置多个）。启动时计算，生产必须设置 ENGINE_API_TOKENS。 */
+const VALID_TOKENS: string[] = (() => {
+  const raw = process.env.ENGINE_API_TOKENS || '';
+  if (raw) {
+    return raw.split(',').map(t => t.trim()).filter(Boolean);
+  }
+  if (process.env.DEV_MODE === 'true') {
+    console.warn('[engine-core] ⚠️  DEV_MODE: ENGINE_API_TOKENS 未设置，使用不安全 fallback。');
+    return ['claworg-dev-token'];
+  }
+  throw new Error('[engine-core] FATAL: ENGINE_API_TOKENS 环境变量未设置。生产环境必须设置 ENGINE_API_TOKENS。');
+})();
+
+export function getValidTokens(): string[] {
+  return VALID_TOKENS;
+}
+
+// ================================================================
+// 限流配置
+// ================================================================
+
+/** 认证失败限流：每 IP 10 次/分钟 */
+export const RATE_LIMIT_AUTH = { windowMs: 60_000, max: 10 };
+
+/** 生成端点限流：每 token 20 次/小时 */
+export const RATE_LIMIT_GENERATE = { windowMs: 3_600_000, max: 20 };
+
+/** 轮询端点限流：每 token 60 次/分钟 */
+export const RATE_LIMIT_POLL = { windowMs: 60_000, max: 60 };
+
+// ================================================================
+// 任务队列配置
+// ================================================================
+
+/** 最大并发任务数 */
+export const MAX_CONCURRENT_TASKS = parseInt(process.env.MAX_CONCURRENT_TASKS || '5', 10);
+
+/** 同步模式超时（毫秒）。管道包含7次LLM调用+退化重推，实际耗时45-90s */
+export const SYNC_TIMEOUT_MS = parseInt(process.env.ENGINE_SYNC_TIMEOUT_MS || '120000', 10);
+
+/** 任务过期时间最小值（秒） */
+export const TASK_TTL_MIN_SECONDS = 900;
+
+/** 任务过期清理间隔（毫秒） */
+export const TASK_CLEANUP_INTERVAL_MS = 60_000;
+
+/** 估算生成时间（秒） */
+export const ESTIMATED_GENERATION_SECONDS = 45;
+
+// ================================================================
+// 引擎版本
+// ================================================================
+
+export const ENGINE_VERSION = '3.1.0';
+export const PIPELINE_VERSION = 'v0.4.0';
+export const BLUEPRINT_SCHEMA_VERSION = '1.0';
+
+// ================================================================
+// 输入校验约束
+// ================================================================
+
+export const INPUT_CONSTRAINTS = {
+  jobMinLength: 1,
+  jobMaxLength: 500,
+  constraintsMinCount: 1,
+  constraintsMaxCount: 10,
+  successMetricsMaxCount: 5,
+  failureModesMaxCount: 5,
+  confidenceMin: 0,
+  confidenceMax: 1,
+  supportedSchemaVersions: ['1.0'],
+  supportedStages: ['from_scratch', 'expansion', 'optimization'],
+} as const;

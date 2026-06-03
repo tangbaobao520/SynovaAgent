@@ -1,0 +1,366 @@
+/**
+ * engine-server/pipeline/evolution-loop.ts — M3 进化闭环最小实现（V1.2 第三阶段）
+ *
+ * 不依赖 GBK 编码损坏的旧 evolution/ 文件。
+ * 基于 schema-bridge.ts 和 collaboration-collector.ts 从头构建。
+ *
+ * 进化流程：
+ * 1. 采集运行时协作信号（collaboration-collector）
+ * 2. 信号超过阈值 → 生成模式变体
+ * 3. 变体写入 evolution-overrides.json（红线：不写 src/）
+ * 4. 下次管道调用时合并覆盖层
+ *
+ * @packageDocumentation
+ */
+
+import * as fs from 'fs';
+import * as path from 'path';
+import type {
+  GapDimension,
+  EvolutionSignal,
+  EvolutionOverride,
+  EvolutionOverridesFile,
+} from './schema-bridge';
+import { collectEvolutionSignals, getDimensionStats, resetCollector } from './collaboration-collector';
+import type { CollaborationModeBlue, BlueprintFeedbackRequest } from '../types';
+import { appendDynamicAmmo, recordAmmoUsage, type AmmoEntry } from './phase-b/ammo-depot';
+
+// ====================================================================
+// 导入 Wilson CI 用于信号有效性判定
+// ====================================================================
+import { wilsonCILower } from '../observer/stats-utils';
+import { createLogger } from '../infra/logger';
+
+const log = createLogger('engine-server/pipeline/evolution-loop');
+
+// ====================================================================
+// 配置
+// ====================================================================
+
+const OVERRIDES_PATH = path.join(process.cwd(), 'evolution-overrides.json');
+
+const SIGNAL_THRESHOLDS = {
+  deadlock_frequent: 0.3,
+  mode_conflict: 0.4,
+  overridden: 0.3,
+  satisfaction_drop: 0.15,
+  circuit_breaker_trip: 0.2,
+};
+
+const MIN_SAMPLE_SIZE = 30; // 最少 30 个样本才触发进化（原 5，提升后降低误报率）
+
+/** 等待确认周期：连续 2 个周期都检测到同一维度的退化才触发 */
+const WAIT_CONFIRM_CYCLES = 2;
+
+/** 跨周期信号缓存：gapDimension → 历史信号强度 */
+const lastCycleSignals = new Map<string, { strength: number; cycleCount: number }>();
+
+// ====================================================================
+// 变体生成（轻量版）
+// ====================================================================
+
+const MODE_VARIANTS: Record<string, string[]> = {
+  iron_captain: ['democratic_council', 'cross_check_balance'],
+  democratic_council: ['iron_captain', 'loose_federation'],
+  loose_federation: ['democratic_council', 'cross_check_balance'],
+  cross_check_balance: ['iron_captain', 'democratic_council'],
+  bytedance_flat: ['democratic_council', 'loose_federation'],
+  haier_ren_dan_he_yi: ['loose_federation', 'cross_check_balance'],
+  haidilao_frontline_auth: ['cross_check_balance', 'democratic_council'],
+  mckinsey_partnership: ['democratic_council', 'loose_federation'],
+  tencent_internal_race: ['cross_check_balance', 'bytedance_flat'],
+};
+
+function generateVariant(currentMode: string): string {
+  const candidates = MODE_VARIANTS[currentMode];
+  if (!candidates || candidates.length === 0) {
+    // 回退：随机选一个非当前模式
+    const all = Object.keys(MODE_VARIANTS).filter(m => m !== currentMode);
+    return all[Math.floor(Math.random() * all.length)] || 'democratic_council';
+  }
+  return candidates[Math.floor(Math.random() * candidates.length)];
+}
+
+// ====================================================================
+// 覆盖层读写
+// ====================================================================
+
+export function loadOverrides(): EvolutionOverridesFile {
+  try {
+    if (fs.existsSync(OVERRIDES_PATH)) {
+      const raw = fs.readFileSync(OVERRIDES_PATH, 'utf-8');
+      return JSON.parse(raw);
+    }
+  } catch (err) {
+    log.info(`[evolution-loop] 无法读取 overrides: ${(err as Error).message}`);
+  }
+  return {
+    version: '1.0',
+    generatedAt: new Date().toISOString(),
+    overrides: [],
+    metadata: { totalOverrides: 0, pendingReview: 0, merged: 0 },
+  };
+}
+
+export function saveOverrides(file: EvolutionOverridesFile): void {
+  file.generatedAt = new Date().toISOString();
+  file.metadata.totalOverrides = file.overrides.length;
+  file.metadata.pendingReview = file.overrides.filter(o => !o.merged).length;
+  file.metadata.merged = file.overrides.filter(o => o.merged).length;
+
+  fs.writeFileSync(OVERRIDES_PATH, JSON.stringify(file, null, 2), 'utf-8');
+  log.info(`[evolution-loop] Overrides 已保存: ${file.metadata.totalOverrides} 条 (${file.metadata.pendingReview} 待审核)`);
+}
+
+// ====================================================================
+// 弹药库进化反馈：将已合并的覆盖条目写入弹药库
+// ====================================================================
+
+/**
+ * 将 evolution-overrides.json 中已合并(merged=true)的覆盖条目写入弹药库，
+ * 作为"组织进化弹药"供后续管道调用的 Phase B 参考。
+ *
+ * 使用迭代替换逻辑：
+ * - 如果弹药库中已有相同 id 的条目，跳过（只写一次）
+ * - 如果没有，追加
+ *
+ * 这样已验证的进化变体逐次积累到弹药库中，形成持续进化的知识体系。
+ *
+ * @returns 本次新增的条目数
+ */
+export function writeOverridesAsOrgAmmo(blueprintId: string): number {
+  const overrides = loadOverrides();
+  const mergedOverrides = overrides.overrides.filter(o => o.merged);
+  if (mergedOverrides.length === 0) return 0;
+
+  let writeCount = 0;
+
+  for (const override of mergedOverrides) {
+    const ammoId = `evo-${override.id.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+
+    const newEntry: AmmoEntry = {
+      id: ammoId,
+      industry: '组织进化',
+      subdomain: override.gapDimension || 'general',
+      keywords: [override.scope, override.gapDimension || '', 'evolution', 'override'].filter(Boolean),
+      factText: `进化变体: ${override.oldValue} → ${override.newValue}${override.reviewNotes ? ` (${override.reviewNotes})` : ''}`,
+      confidence: 'verified',
+      sources: override.reviewNotes ? [override.reviewNotes] : [],
+      updatedAt: new Date().toISOString(),
+      matchType: 'organization',
+      structuralConditions: { minRoleCount: 1 },
+    };
+
+    // 追加到动态弹药库（幂等 + 文件系统持久化）
+    appendDynamicAmmo(newEntry);
+    // P0-2: 记录弹药使用（SQLite埋点 + 内存统计更新）
+    recordAmmoUsage(ammoId, blueprintId);
+    writeCount++;
+  }
+
+  if (writeCount > 0) {
+    log.info(`[evolution-loop] 弹药库进化反馈: ${writeCount} 条组织弹药已写入`);
+  }
+
+  return writeCount;
+}
+
+// ====================================================================
+// 应用覆盖层到 CollaborationMode
+// ====================================================================
+
+/**
+ * 将 evolution-overrides.json 合并到运行时 CollaborationModeBlue。
+ * 覆盖层中 merged=true 的条目直接应用，pending 的条目仅在标记为实验组时应用。
+ */
+export function applyOverridesToMode(
+  mode: CollaborationModeBlue,
+  experimentGroup?: string, // 'control' | 'variant_a' | 'variant_b'
+): CollaborationModeBlue {
+  const overrides = loadOverrides();
+  let result = { ...mode };
+
+  for (const override of overrides.overrides) {
+    if (!override.merged && experimentGroup === 'control') continue;
+
+    if (override.scope === 'mode') {
+      result = {
+        ...result,
+        mode: override.newValue as CollaborationModeBlue['mode'],
+      };
+      log.info(`[evolution-loop] 应用覆盖: ${override.oldValue} → ${override.newValue} (${override.merged ? 'merged' : experimentGroup})`);
+    }
+  }
+
+  return result;
+}
+
+// ====================================================================
+// S2 用户反馈消费
+// ====================================================================
+
+/**
+ * 消费 S2 用户反馈信号，更新推断置信度。
+ *
+ * 对每个被修改/删除的配置项，如果它来自某个 inferred 推断，
+ * 降低该推断的 confidence，写入 evolution-overrides.json。
+ */
+export function consumeFeedback(feedback: BlueprintFeedbackRequest): number {
+  const overrides = loadOverrides();
+  let updatedCount = 0;
+
+  for (const change of feedback.changes) {
+    if (!change.sourceInference) continue;
+
+    const override: EvolutionOverride = {
+      id: `fb-${Date.now()}-${change.field.replace(/[^a-zA-Z0-9]/g, '-')}`,
+      scope: 'inference',
+      gapDimension: 'trust_incentive',
+      oldValue: String(change.oldValue ?? '(inferred)'),
+      newValue: String(change.newValue ?? '(deleted)'),
+      confidenceDelta: -0.1,
+      experimentId: `feedback-${feedback.blueprintId}`,
+      sampleSize: 1,
+      createdAt: new Date().toISOString(),
+      merged: false,
+      reviewNotes: `S2反馈: ${change.field} 由用户${change.changeType === 'delete' ? '删除' : '修改'}, 推断来源: ${change.sourceInference.inferenceStatement}`,
+    };
+
+    overrides.overrides.push(override);
+    updatedCount++;
+  }
+
+  if (updatedCount > 0) {
+    saveOverrides(overrides);
+    log.info(`[evolution-loop] S2反馈消费: ${updatedCount} 条推断置信度已调整`);
+  }
+
+  return updatedCount;
+}
+
+// ====================================================================
+// 主入口：执行进化循环
+// ====================================================================
+
+export interface EvolutionLoopResult {
+  /** 是否产生了新变体 */
+  newVariants: boolean;
+  /** 产生的覆盖条目 */
+  newOverrides: EvolutionOverride[];
+  /** 当前所有覆盖 */
+  allOverrides: EvolutionOverridesFile;
+  /** 日志 */
+  log: string[];
+}
+
+/**
+ * 采集信号、生成变体、写入覆盖层。
+ * 应在每次 Blueprint 生成后调用（异步，不阻塞管道返回）。
+ */
+export function runEvolutionLoop(
+  currentMode: string,
+  blueprintId: string,
+): EvolutionLoopResult {
+  const log: string[] = [];
+  const signals = collectEvolutionSignals();
+  const overrides = loadOverrides();
+  const newOverrides: EvolutionOverride[] = [];
+
+  if (signals.length === 0) {
+    log.push('无进化信号（样本不足或所有维度正常）');
+    return { newVariants: false, newOverrides: [], allOverrides: overrides, log };
+  }
+
+  for (const signal of signals) {
+    // 检查阈值
+    const threshold = SIGNAL_THRESHOLDS[signal.signalType] || 0.3;
+
+    if (signal.sampleSize < MIN_SAMPLE_SIZE) {
+      log.push(`${signal.gapDimension}: 样本不足 (${signal.sampleSize}/${MIN_SAMPLE_SIZE})`);
+      continue;
+    }
+
+    // Wilson CI 下界判定：信号强度置信下界低于阈值则不应触发
+    const ciLower = wilsonCILower(
+      Math.round(signal.signalStrength * signal.sampleSize),
+      signal.sampleSize,
+    );
+    if (ciLower < threshold) {
+      log.push(`${signal.gapDimension}: 信号未达阈值（CI 下界 ${ciLower.toFixed(2)} < ${threshold}）`);
+      continue;
+    }
+
+    // 等待确认机制：连续 2 个周期都检测到同一维度的退化才触发
+    const prevSignal = lastCycleSignals.get(signal.gapDimension);
+    if (prevSignal) {
+      // 已有上一周期记录 → 更新计数
+      lastCycleSignals.set(signal.gapDimension, {
+        strength: signal.signalStrength,
+        cycleCount: prevSignal.cycleCount + 1,
+      });
+      if (prevSignal.cycleCount + 1 < WAIT_CONFIRM_CYCLES) {
+        log.push(`${signal.gapDimension}: 等待确认中 (${prevSignal.cycleCount + 1}/${WAIT_CONFIRM_CYCLES})`);
+        continue;
+      }
+    } else {
+      // 首次出现 → 记录但不触发
+      lastCycleSignals.set(signal.gapDimension, {
+        strength: signal.signalStrength,
+        cycleCount: 1,
+      });
+      log.push(`${signal.gapDimension}: 首次检出，等待确认下一周期 (1/${WAIT_CONFIRM_CYCLES})`);
+      continue;
+    }
+
+    if (signal.suggestedAction === 'keep') {
+      log.push(`${signal.gapDimension}: 建议保持，不生成变体`);
+      continue;
+    }
+
+    // 生成变体
+    const newMode = generateVariant(currentMode);
+    const override: EvolutionOverride = {
+      id: `evo-${Date.now()}-${signal.gapDimension}`,
+      scope: 'mode',
+      gapDimension: signal.gapDimension,
+      oldValue: currentMode,
+      newValue: newMode,
+      confidenceDelta: -signal.signalStrength,
+      experimentId: `exp-${blueprintId}-${signal.gapDimension}`,
+      sampleSize: signal.sampleSize,
+      createdAt: new Date().toISOString(),
+      merged: false,
+      reviewNotes: `自动生成: ${signal.signalType}, strength=${signal.signalStrength.toFixed(2)}`,
+    };
+
+    newOverrides.push(override);
+    overrides.overrides.push(override);
+    log.push(`✅ ${signal.gapDimension}: ${currentMode} → ${newMode} (${signal.signalType}, strength=${signal.signalStrength.toFixed(2)})`);
+  }
+
+  if (newOverrides.length > 0) {
+    saveOverrides(overrides);
+    // 将已合并的进化变体回写到弹药库
+    writeOverridesAsOrgAmmo(blueprintId);
+  }
+
+  // 重置计数器（已消费信号）
+  resetCollector();
+
+  return { newVariants: newOverrides.length > 0, newOverrides, allOverrides: overrides, log };
+}
+
+/**
+ * 将进化循环日志注入 BlueprintDTO notes
+ */
+export function injectEvolutionNotes(
+  result: EvolutionLoopResult,
+  notes: string[],
+): void {
+  if (result.newVariants) {
+    notes.push(`M3进化: ${result.newOverrides.length} 个新模式变体已写入 evolution-overrides.json`);
+  }
+  for (const entry of result.log) {
+    notes.push(`[EvolutionLoop] ${entry}`);
+  }
+}

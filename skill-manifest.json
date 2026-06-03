@@ -1,0 +1,24 @@
+{
+  "sogVersion": "1.0.0",
+  "skillId": "synova-organization-diagnosis",
+  "skillName": "Synova Organization Diagnosis",
+  "version": "0.1.0",
+  "author": "Synova",
+  "description": "Powered by NemoClaw, Brain by Synova. Six-phase organizational diagnosis agent with SOG-Core v1.0 ontology, 22 diagnostic modules, 6 expert sub-agents, and federated evolution.",
+  "platform": "NemoClaw",
+  "entryPoint": "src/index.ts",
+  "mcpTools": ["diagnose_organization", "query_ontology", "ingest_document", "get_session"],
+  "capabilities": {
+    "diagnosis": "Six-phase pipeline (Scope→Collect→Hypothesize→RootCause→Report→Deliver)",
+    "ontology": "SOG-Core v1.0: 14 node types + 10 edge types",
+    "evolution": "Layer 2 org adaptation + Layer 3 federated reporting",
+    "deployment": "Docker + one-click install + on-premise",
+    "providers": "DeepSeek / OpenAI / Gateway (auto-failover chain)"
+  },
+  "requirements": {
+    "llm": "LLM_API_KEY or OPENCLAW_GATEWAY_HOST",
+    "storage": "SQLite (embedded, zero config)",
+    "node": ">= 20"
+  },
+  "license": "MIT"
+}
