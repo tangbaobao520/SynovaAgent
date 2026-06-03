@@ -1,7 +1,12 @@
 /**
- * connectors/types.ts — re-export from @synova/connector-registry
+ * connectors/types.ts — 数据模型类型 (连接器数据 + SOG 本体)
  *
- * @synova/connector-registry@0.1.0
+ * 连接器接口定义在 @synova/connector-registry (独立包):
+ *   SynovaConnector (Airbyte 协议: spec/check/discover/read)
+ *   DataConnector (旧接口, @deprecated — 迁移到 SynovaConnector)
+ *
+ * 本文件的 ConnectorMessage/ConnectorMember/ConnectorEvent 是数据模型类型,
+ * 与连接器接口定义不重复 — 它们描述连接器产出的数据形状。
  */
 export type {
   DataConnector,
@@ -11,7 +16,6 @@ export type {
   ToolRegistryInterface,
 } from '@synova/connector-registry';
 
-// Legacy types (used by feishu.ts, nemoclaw.ts — kept for compatibility)
 export type { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
 
 export interface ConnectorMessage {
