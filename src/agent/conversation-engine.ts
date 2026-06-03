@@ -20,6 +20,7 @@ import type { HookRunner } from '../orchestrator/hook-runner';
 import type { SessionManager } from '../orchestrator/session-manager';
 import type { EventBus } from '../orchestrator/event-bus';
 import type { EvidenceCollector } from '../evidence/index';
+import type { createGraphBridge } from '../l4/graph-bridge';
 
 const log = createLogger('agent/conversation-engine');
 
@@ -70,6 +71,8 @@ export interface EngineConfig {
   sessionId?: string;
   /** L3: EvidenceCollector (Phase 0 证据采集) */
   evidenceCollector?: EvidenceCollector;
+  /** L4: GraphBridge (Phase 1 自动写入本体图) */
+  graphBridge?: ReturnType<typeof createGraphBridge>;
 }
 
 export interface ProcessResult {
@@ -123,6 +126,7 @@ export class ConversationEngine {
   private sessionManager: SessionManager | null = null;
   private eventBus: EventBus | null = null;
   private evidenceCollector: EvidenceCollector | null = null;
+  private graphBridge: ReturnType<typeof createGraphBridge> | null = null;
   private sessionId: string = '';
   /** 维度覆盖追踪 (Phase 0) */
   private dimensionCoverage: Map<string, { status: string; confidence: number; evidenceCount: number }> = new Map();
@@ -146,6 +150,7 @@ export class ConversationEngine {
     this.sessionManager = config.sessionManager || null;
     this.eventBus = config.eventBus || null;
     this.evidenceCollector = config.evidenceCollector || null;
+    this.graphBridge = config.graphBridge || null;
     this.sessionId = config.sessionId || '';
   }
 
@@ -483,6 +488,22 @@ export class ConversationEngine {
         durationMs: result.totalDurationMs,
         degraded: result.degradedModules.length,
       }, '诊断完成');
+
+      return {
+      // L4 接线: GraphBridge — 诊断结果自动同步到本体图
+      if (this.graphBridge) {
+        try {
+          // Sync key person risks as Risk nodes
+          if ((result.report as any)?.keyFindings) {
+            const risks = (result.report as any).keyFindings
+              .filter((f: any) => f.riskLevel)
+              .map((f: any) => ({ roleId: f.entity || f.roleId, riskLevel: f.riskLevel || 'medium', knowledgeDomains: f.domains || [], busFactor: f.busFactor || 1 }));
+            if (risks.length > 0) this.graphBridge.upsertFromKeyPersonRisk(risks);
+          }
+        } catch (err: any) {
+          log.warn({ err }, 'GraphBridge sync failed — degraded, diagnosis continues');
+        }
+      }
 
       return {
         teamId: result.teamId,
