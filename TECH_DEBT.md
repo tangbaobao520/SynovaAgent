@@ -28,6 +28,7 @@
 ## 基础设施
 
 - [ ] **GIT_WORKFLOW** | 2026-06-03 | Feature branch 工作流未建立 (铁律 34) | 当前单人开发，main 上直接工作 | 1h
+- [ ] **ONTOLOGY_VENDOR** | 2026-06-03 | ontology-syncer.ts:70 仍直接 import vendor graph-store | 应通过 EngineCoreVendorAdapter 或 GraphBridge 访问 | 2h
 
 ---
 

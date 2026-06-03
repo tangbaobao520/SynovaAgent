@@ -80,6 +80,8 @@ export interface EngineConfig {
   enableCommunityReports?: boolean;
   /** L4: enable triple reflection after diagnosis (Phase 3b) */
   enableTripleReflection?: boolean;
+  /** 铁律 39: L2 通过 DiagnosisEngine 接口调用引擎 */
+  diagnosisEngine?: import('../l2-interfaces/diagnosis-engine').DiagnosisEngine;
 }
 
 export interface ProcessResult {
@@ -185,6 +187,7 @@ export class ConversationEngine {
     this.enableTripleReflection = config.enableTripleReflection ?? false;
 
     // P1-01: 构建共享上下文 + 实例化子组件
+    const diagnosisEngine = config.diagnosisEngine || createNoopEngine();
     const engineCtx: EngineContext = {
       provider: this.provider,
       messages: this.messages,
@@ -196,6 +199,7 @@ export class ConversationEngine {
       evidenceCollector: this.evidenceCollector,
       graphBridge: this.graphBridge,
       graphStore: this.graphStore,
+      diagnosisEngine,
       flags: {
         enableCommunityReports: this.enableCommunityReports,
         enableEntityResolution: this.enableEntityResolution,
@@ -203,7 +207,7 @@ export class ConversationEngine {
       loggerPrefix: 'agent',
     };
     this.toolLoop = new ToolLoopExecutor(engineCtx);
-    this.diagnosisLauncher = new DiagnosisLauncher(engineCtx);
+    this.diagnosisLauncher = new DiagnosisLauncher(engineCtx, diagnosisEngine);
     this.ontologySyncer = new OntologySyncer(engineCtx);
   }
 
@@ -543,6 +547,18 @@ export class ConversationEngine {
 }
 
 // ═══ Utility ═══
+
+import type { DiagnosisEngine } from '../l2-interfaces/diagnosis-engine';
+
+/** 铁律 39: 无 engine 注入时的安全降级 — 返回明确错误而非崩溃 */
+function createNoopEngine(): DiagnosisEngine {
+  return {
+    async runConsultation(_teamId, _initiator, onEvent) {
+      onEvent?.({ type: 'error', phase: 0, label: '引擎未配置', message: 'DiagnosisEngine 未注入 — 请在 server.ts 中配置 EngineCoreVendorAdapter' });
+      return { teamId: _teamId, report: { error: '引擎未配置' }, totalDurationMs: 0, degradedModules: ['engine'] };
+    },
+  };
+}
 
 function sleep(ms: number): Promise<void> {
   return new Promise(r => setTimeout(r, ms));
