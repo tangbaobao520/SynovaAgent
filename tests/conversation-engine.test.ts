@@ -12,9 +12,8 @@ import type { LLMProvider, ChatResult, StreamCallback } from '../src/providers/t
 // ═══ We test ConversationEngine by loading it directly ═══
 // (we use dynamic import because it doesn't exist yet — this IS the TDD step)
 
-// For now, we import AgentConversation which has the correct interface shape.
-// After ConversationEngine is extracted, these same tests must pass against it.
-import { AgentConversation } from '../src/agent/conversation';
+// ConversationEngine was extracted from ConversationEngine — same interface, new location
+import { ConversationEngine } from '../src/agent/conversation-engine';
 
 // ═══ Fake Provider ═══
 
@@ -37,10 +36,10 @@ function fakeProvider(responseText = '你好！请告诉我你的组织情况。
 // ═══ Tests: These MUST pass against ConversationEngine when extracted ═══
 
 describe('ConversationEngine — pure logic, zero UI dependency', () => {
-  let engine: AgentConversation;
+  let engine: ConversationEngine;
 
   beforeEach(() => {
-    engine = new AgentConversation(fakeProvider());
+    engine = new ConversationEngine(fakeProvider());
   });
 
   // ── Phase 0 completion ──
@@ -99,7 +98,7 @@ describe('ConversationEngine — pure logic, zero UI dependency', () => {
     expect(state.orgId).toBe('roundtrip-org');
     expect(state.phase).toBe(0);
 
-    const restored = AgentConversation.fromState(fakeProvider(), state);
+    const restored = ConversationEngine.fromState(fakeProvider(), state);
     expect(restored.getOrgId()).toBe('roundtrip-org');
     expect(restored.getPhase()).toBe(0);
     expect(restored.getMessages().length).toBe(state.messages.length);
