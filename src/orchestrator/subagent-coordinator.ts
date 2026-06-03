@@ -10,6 +10,9 @@
 import type { LLMClient } from './diagnosis-orchestrator';
 import type { Evidence } from '../evidence/types';
 import { createLogger } from '../logger';
+import { ExpertAutonomyEngine } from '../l3/expert-autonomy';
+import { QualityFirewall } from '../l3/quality-firewall';
+import type { QueryAPI } from '../l3/expert-autonomy';
 
 const log = createLogger('orchestrator/subagent-coordinator');
 
@@ -39,6 +42,10 @@ export interface SubAgentReport {
   confidence: number;
   evidenceUsed: number;
   durationMs: number;
+  /** Gear 1: ReAct rounds used (only when autonomy enabled) */
+  autonomyRounds?: number;
+  /** Gear 4: Quality firewall warnings */
+  qualityWarnings?: string[];
 }
 
 // ═══ Default Policies ═══
@@ -88,10 +95,22 @@ const DEFAULT_POLICIES: DataAccessPolicy[] = [
 export class SubAgentCoordinator {
   private llmClient: LLMClient;
   private policies: DataAccessPolicy[];
+  private queryApi: QueryAPI | null = null;
+  private graphStoreForFirewall: { queryNodes: (type: string, filters?: Record<string,unknown>, graph?: string) => Array<{id:string}> } | null = null;
+  private enableAutonomy = false;
 
   constructor(llmClient: LLMClient, policies: DataAccessPolicy[] = DEFAULT_POLICIES) {
     this.llmClient = llmClient;
     this.policies = policies;
+  }
+
+  /** Gear 1: Enable expert autonomy with graph query API + quality firewall */
+  enableExpertAutonomy(queryApi: QueryAPI, graphStore: { queryNodes: (type: string, filters?: Record<string,unknown>, graph?: string) => Array<{id:string}> }): this {
+    this.queryApi = queryApi;
+    this.graphStoreForFirewall = graphStore;
+    this.enableAutonomy = true;
+    log.info('专家自主权引擎已启用');
+    return this;
   }
 
   /**
@@ -167,6 +186,43 @@ export class SubAgentCoordinator {
         `[${e.type}] ${e.content.slice(0, 100)} (置信度: ${e.confidence})`,
       ).join('\n');
 
+      // Gear 1: Expert Autonomy — ReAct loop with graph queries
+      if (this.enableAutonomy && this.queryApi) {
+        const engine = new ExpertAutonomyEngine(this.llmClient, this.queryApi, policy, { maxRounds: 5 });
+        const autonomyResult = await engine.run({
+          evidence: filtered.map(e => `[${e.type}] ${e.content.slice(0, 100)}`),
+          expertType: type,
+        });
+
+        // Quality firewall
+        let hypothesis = autonomyResult.hypothesis;
+        let confidence = autonomyResult.confidence;
+        let qWarnings: string[] = [];
+        if (this.graphStoreForFirewall) {
+          const firewall = new QualityFirewall(this.graphStoreForFirewall, 'default');
+          const qr = await firewall.validate({
+            hypothesis: autonomyResult.hypothesis,
+            evidenceRefs: filtered.slice(0, 5).map(e => e.id),
+            confidence: autonomyResult.confidence,
+            expertType: type,
+          });
+          if (!qr.passed) hypothesis = `[低质量-已过滤] ${hypothesis}`;
+          confidence = qr.adjustedConfidence;
+          qWarnings = qr.warnings;
+        }
+
+        return {
+          expertType: type,
+          hypothesis,
+          confidence,
+          evidenceUsed: filtered.length,
+          durationMs: Date.now() - startTime,
+          autonomyRounds: autonomyResult.roundsUsed,
+          qualityWarnings: qWarnings,
+        };
+      }
+
+      // Fallback: simple LLM consult (no autonomy)
       const systemPrompt = `你是 Synova 的${this.getExpertLabel(type)}。分析以下证据，生成诊断假设。只输出 JSON: {"hypothesis": "...", "confidence": 0.0-1.0}`;
 
       const response = await this.llmClient.consult(
