@@ -39,12 +39,15 @@ export class PhaseStateMachine {
   private phaseCompletedAt: Record<number, string> = {};
   private abortReason: string | undefined;
   private config: Record<number, PhaseConfig>;
+  /** GNS v2.0: 最大 Phase 数 (默认 5 = 六阶段诊断, 9 = 含导航) */
+  readonly maxPhases: number;
 
   private enterCallbacks = new Map<number, PhaseCallback[]>();
   private exitCallbacks = new Map<number, PhaseCallback[]>();
 
   constructor(config: Record<number, PhaseConfig>) {
     this.config = config;
+    this.maxPhases = Math.max(...Object.keys(config).map(Number), 5);
   }
 
   // ═══ Public ═══
@@ -85,7 +88,7 @@ export class PhaseStateMachine {
     }
 
     // Check completion
-    if (nextPhase > 5) {
+    if (nextPhase > this.maxPhases) {
       this.state = 'completed';
       log.info('所有 Phase 完成');
       return { phase: -1, label: '' };
@@ -100,7 +103,7 @@ export class PhaseStateMachine {
       effectivePhase++;
     }
 
-    if (effectivePhase > 5) {
+    if (effectivePhase > this.maxPhases) {
       this.state = 'completed';
       return { phase: -1, label: '' };
     }

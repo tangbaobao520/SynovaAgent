@@ -30,7 +30,7 @@ router.get('/', (_req: Request, res: Response) => {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Synova · 组织智能诊断</title>
+<title>Synova · 增长导航</title>
 <style>
 :root{
   --bg:#0f0f14;--panel:#1a1a24;--border:#2a2a3a;--text:#e0e0e0;--dim:#888;
@@ -99,6 +99,24 @@ header .status{font-size:11px;color:var(--dim)}
 #graph-panel .graph-legend{position:absolute;bottom:10px;left:10px;z-index:10;background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:10px}
 #graph-panel .graph-legend span{margin-right:10px;display:inline-flex;align-items:center;gap:4px}
 .legend-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+/* ── GNS v2.0: 双栏布局 ── */
+#main-layout{display:grid;grid-template-columns:1fr 320px;gap:0;flex:1;overflow:hidden}
+#main-layout.single-col{grid-template-columns:1fr}
+#right-sidebar{background:var(--panel);border-left:1px solid var(--border);overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:12px;font-size:12px}
+#right-sidebar h3{font-size:13px;color:var(--accent2);margin:0 0 6px;padding-bottom:4px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px}
+#right-sidebar .sb-section{background:var(--bg);border-radius:6px;padding:10px}
+.sb-item{padding:6px 8px;margin:4px 0;border-radius:4px;font-size:11px;line-height:1.4}
+.sb-item.goal{border-left:2px solid var(--cyan)}
+.sb-item.alert{border-left:2px solid var(--red)}
+.sb-item.alert.priority-high{background:#1f0a0a}
+.sb-item.alert.priority-medium{background:#1f1a0a}
+.sb-item.obstacle{border-left:2px solid var(--orange)}
+.sb-item .sb-title{font-weight:600;margin-bottom:2px}
+.sb-item .sb-meta{font-size:10px;color:var(--dim)}
+.sb-progress{height:3px;background:#1a1a2a;border-radius:2px;margin-top:4px}
+.sb-progress-fill{height:100%;border-radius:2px;background:var(--cyan)}
+.sb-empty{color:var(--dim);font-size:11px;text-align:center;padding:8px}
+@media(max-width:800px){#right-sidebar{display:none}#main-layout{grid-template-columns:1fr}}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 </style>
@@ -115,7 +133,14 @@ header .status{font-size:11px;color:var(--dim)}
     <span id="progress-phases"></span>
   </div>
 </div>
+<div id="main-layout">
 <div id="messages"></div>
+<div id="right-sidebar">
+  <div class="sb-section"><h3>📌 目标跟踪</h3><div id="sb-goals"><div class="sb-empty">暂无目标</div></div></div>
+  <div class="sb-section"><h3>🚨 关键告警</h3><div id="sb-alerts"><div class="sb-empty">暂无告警</div></div></div>
+  <div class="sb-section"><h3>🔄 遗留问题</h3><div id="sb-obstacles"><div class="sb-empty">暂无遗留问题</div></div></div>
+</div>
+</div>
 <div id="graph-panel">
   <div id="cy-container"></div>
   <div class="graph-toolbar">
@@ -361,6 +386,14 @@ function handleSSEEvent(evt) {
       addDegraded(evt.message || '部分模块降级');
       break;
 
+    // ── GNS v2.0: 右边栏更新 ──
+    case 'right_column_update':
+      if (evt.rightColumn) renderRightSidebar(evt.rightColumn);
+      break;
+    case 'proposal_created':
+      addProposalCard(evt);
+      break;
+
     // ── Unknown ──
     default:
       // Forward any unrecognized events as JSON for debugging
@@ -537,6 +570,62 @@ async function loadGraphView() {
 
 function resetGraphView() { if (cyInstance) { cyInstance.fit(); cyInstance.center(); } }
 function toggleLabels() { showLabels = !showLabels; loadGraphView(); }
+
+// ═══ GNS v2.0: 右边栏渲染 + 提议处理 ═══
+
+function renderRightSidebar(data) {
+  const renderItems = (containerId, items, type, formatter) => {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    if (!items || items.length === 0) {
+      container.innerHTML = '<div class="sb-empty">暂无' + type + '</div>';
+      return;
+    }
+    container.innerHTML = items.slice(0, 5).map(item => formatter(item)).join('');
+  };
+
+  renderItems('sb-goals', data.goals, '目标', g =>
+    '<div class="sb-item goal"><div class="sb-title">' + esc(g.name) + '</div>' +
+    '<div class="sb-progress"><div class="sb-progress-fill" style="width:' + (g.progress || 0) + '%"></div></div>' +
+    '<div class="sb-meta">进度 ' + (g.progress || 0) + '% · ' + esc(g.status) + '</div></div>');
+
+  renderItems('sb-alerts', data.alerts, '告警', a =>
+    '<div class="sb-item alert priority-' + (a.priority || 'medium') + '"><div class="sb-title">' + esc(a.description) + '</div>' +
+    '<div class="sb-meta">置信度 ' + Math.round((a.confidence || 0) * 100) + '% · ' + (a.priority || '?') + '</div></div>');
+
+  renderItems('sb-obstacles', data.obstacles, '遗留问题', o =>
+    '<div class="sb-item obstacle"><div class="sb-title">' + esc(o.description) + '</div>' +
+    '<div class="sb-meta">' + esc(o.status) + ' · ' + (o.updatedAt || '').slice(0,10) + '</div></div>');
+}
+
+function addProposalCard(evt) {
+  const d = document.createElement('div');
+  d.className = 'msg agent';
+  d.style.borderLeft = '3px solid var(--accent2)';
+  d.innerHTML =
+    '<div style="font-size:13px;margin-bottom:6px">💡 ' + esc(evt.message || '新的变更提议') + '</div>' +
+    '<div style="display:flex;gap:6px;margin-top:8px">' +
+    '<button onclick="resolveProposal(\'' + (evt.proposalId || '') + '\',\'confirm\')" style="background:#0a2a0a;color:var(--green);border:1px solid var(--green);padding:4px 12px;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600">✅ 确认</button>' +
+    '<button onclick="resolveProposal(\'' + (evt.proposalId || '') + '\',\'reject\')" style="background:#2a0a0a;color:var(--red);border:1px solid var(--red);padding:4px 12px;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600">❌ 拒绝</button>' +
+    '<button onclick="resolveProposal(\'' + (evt.proposalId || '') + '\',\'opinion\')" style="background:#1a1a2a;color:var(--accent2);border:1px solid var(--accent2);padding:4px 12px;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600">💬 提出看法</button>' +
+    '</div>';
+  messages.appendChild(d);
+  scrollDown();
+}
+
+async function resolveProposal(id, action) {
+  try {
+    const res = await fetch('/api/proposal/' + id + '/resolve', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ action, feedback: '' }),
+    });
+    const data = await res.json();
+    addSystem('msg', data.ok ?
+      (action === 'confirm' ? '✅ 已确认' : action === 'reject' ? '❌ 已拒绝' : '💬 已记录看法') :
+      '⚠️ ' + (data.error || '操作失败'));
+  } catch(e) { addSystem('msg', '⚠️ 操作失败: ' + e.message); }
+}
 
 init();
 </script>

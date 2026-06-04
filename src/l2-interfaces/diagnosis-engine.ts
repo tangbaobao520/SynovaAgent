@@ -7,19 +7,22 @@
  * 五层架构: L2(编排) → DiagnosisEngine(接口) → Adapter → engine-core(L3)
  */
 
-/** 诊断事件 (L2 内部类型, 对 L1 暴露, L1-P0: 增强字段支持前端差异化渲染) */
+/** 诊断事件 (L2→L1, 前端通过 SSE 消费) */
 export interface DiagnosisEvent {
   type: string;
   phase: number;
   label?: string;
   message?: string;
-  /** 中间发现列表 — 前端渲染为发现卡片 */
   findings?: Array<{ moduleId: string; summary: string; confidence?: number }>;
-  /** 整体置信度 — 前端渲染为可信度标签 */
   confidence?: number;
-  /** 图更新计数 — 前端显示"团队全景图已更新" */
   nodesCreated?: number;
   edgesCreated?: number;
+  /** GNS v2.0: 右边栏状态更新 — 前端渲染目标/告警/遗留问题 */
+  rightColumn?: {
+    goals: Array<{ id: string; name: string; progress: number; status: string }>;
+    alerts: Array<{ id: string; description: string; priority: 'high' | 'medium' | 'low'; confidence: number; raisedAt: string }>;
+    obstacles: Array<{ id: string; description: string; status: 'tracking' | 'resolved' | 'stale'; updatedAt: string }>;
+  };
 }
 
 /** 诊断结果 */
