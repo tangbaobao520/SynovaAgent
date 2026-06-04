@@ -267,20 +267,24 @@ export class ConversationEngine {
   }
 
   // ═══ L4 Ontology Public API ═══
+  //
+  // EC-03: 这些方法直调 L4 diagnosis-graph-query，违反铁律 39 (L2→L4)。
+  // 调用方应直接使用 L4 函数 (diagnosis-launcher.ts 已正确直调 L4)。
+  // ConversationEngine 包装层为死代码，保留仅为 TUI 向后兼容。
 
-  /** Phase 2a: Find diagnostic paths between node types (for ExpertAutonomyEngine) */
+  /** @deprecated EC-03: 直接调用 L4 findDiagnosticPaths */
   findDiagnosticPaths(fromType: string, toType: string): DiagnosticPath[] {
     if (!this.graphStore) return [];
     return findDiagnosticPaths(this.graphStore, this.orgId, fromType, toType);
   }
 
-  /** Phase 2a: Summarize subgraph around a root node (for ExpertAutonomyEngine) */
+  /** @deprecated EC-03: 直接调用 L4 summarizeSubgraph */
   summarizeSubgraph(rootId: string, maxDepth = 3): SubgraphSummary {
     if (!this.graphStore) return { rootId, nodeCount: 0, edgeCount: 0, typeDistribution: {}, strongestConnections: [], risks: [], anomalyScore: 0 };
     return summarizeSubgraph(this.graphStore, this.orgId, rootId, maxDepth);
   }
 
-  /** Phase 2a: Find cross-dimensional brokers via betweenness centrality */
+  /** @deprecated EC-03: 直接调用 L4 findCrossDimensionalBrokers */
   findCrossDimensionalBrokers(): BrokerNode[] {
     if (!this.graphStore) return [];
     return findCrossDimensionalBrokers(this.graphStore, this.orgId);
@@ -298,28 +302,22 @@ export class ConversationEngine {
     return getGraphDiff(this.graphStore, this.orgId, fromDate, toDate);
   }
 
-  /** Phase 2b: Generate community reports from graph structure */
+  /** @deprecated EC-03: 直接调用 L4 community-reports。diagnosis-launcher.ts 已正确调用。 */
   generateCommunityReports(): CommunityReport[] {
     if (!this.graphStore || !this.enableCommunityReports) return [];
     try {
       return generateCommunityReports(this.graphStore, this.orgId);
-    } catch (err: any) {
-      log.warn({ err }, 'CommunityReports generation failed');
-      return [];
-    }
+    } catch (err: any) { log.warn({ err }, 'CommunityReports failed'); return []; }
   }
 
-  /** Phase 3a: Run L3 entity resolution to find duplicate entities */
+  /** @deprecated EC-03: 直接调用 L4 entity-resolver。diagnosis-launcher.ts 已正确调用。 */
   resolveEntities(): L3ResolutionResult {
     if (!this.graphStore || !this.enableEntityResolution) {
       return { matches: [], autoMerged: 0, queuedForReview: 0, ignored: 0 };
     }
     try {
       return resolveEntitiesL3(this.graphStore, this.orgId);
-    } catch (err: any) {
-      log.warn({ err }, 'EntityResolution failed');
-      return { matches: [], autoMerged: 0, queuedForReview: 0, ignored: 0 };
-    }
+    } catch (err: any) { log.warn({ err }, 'EntityResolution failed'); return { matches: [], autoMerged: 0, queuedForReview: 0, ignored: 0 }; }
   }
 
   /** Phase 3b: Run triple reflection to validate knowledge graph triples */
