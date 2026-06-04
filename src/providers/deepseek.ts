@@ -3,6 +3,7 @@
  */
 import type { LLMProvider, LLMMessage, ChatOptions, ChatResult, StreamCallback, HealthCheckResult, ProviderConfig, ChatCompletionResponse } from './types';
 import { DiagnosticAgentError, ErrorCode, isRetryable } from '../errors/types';
+import { sanitizeMessages } from './message-sanitizer';
 
 const DEFAULT_BASE_URL = 'https://api.deepseek.com/v1';
 const DEFAULT_MODEL = 'deepseek-v4-flash';
@@ -18,12 +19,14 @@ export function createDeepSeekProvider(config: ProviderConfig): LLMProvider {
 
     async chat(messages: LLMMessage[], opts?: ChatOptions): Promise<ChatResult> {
       if (!apiKey) throw new DiagnosticAgentError({ code: ErrorCode.AUTH_FAILED, message: 'DeepSeek API Key 未配置', phase: 0, retryable: false });
+      // P2-5.4: 消息清洗 — 修复 UTF-16 代理项/控制字符/全角/过长
+      const cleaned = sanitizeMessages(messages);
       const res = await fetch(`${baseUrl}/chat/completions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
         body: JSON.stringify({
           model: opts?.model || model,
-          messages,
+          messages: cleaned,
           temperature: opts?.temperature ?? 0.7,
           max_tokens: opts?.maxTokens ?? 4000,
         }),
@@ -46,12 +49,13 @@ export function createDeepSeekProvider(config: ProviderConfig): LLMProvider {
 
     async stream(messages: LLMMessage[], cb: StreamCallback, opts?: ChatOptions): Promise<void> {
       if (!apiKey) { cb.onError?.(new Error('DeepSeek API Key 未配置')); return; }
+      const cleaned = sanitizeMessages(messages);
       const res = await fetch(`${baseUrl}/chat/completions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
         body: JSON.stringify({
           model: opts?.model || model,
-          messages,
+          messages: cleaned,
           temperature: opts?.temperature ?? 0.7,
           max_tokens: opts?.maxTokens ?? 4000,
           stream: true,
