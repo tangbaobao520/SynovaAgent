@@ -15,47 +15,67 @@ export interface OutcomeRecord {
   templateId: string;
   diagnosisId: string;
   orgId: string;
-  /** 建议是否被采纳 */
   adopted: boolean;
-  /** 采纳后的实际效果评分 (0-1) */
   effectiveness?: number;
-  /** 跟踪阶段: 30/60/90 天 */
   checkPoint: 30 | 60 | 90;
   recordedAt: string;
   notes?: string;
 }
 
+/** EC-09: OutcomeStore 接口 — 内存+SQLite 双实现 */
+export interface OutcomeStore {
+  save(outcome: OutcomeRecord): void;
+  getByTemplate(templateId: string): OutcomeRecord[];
+  getEffectivenessRate(templateId: string): number | null;
+}
+
 export class OutcomeTracker {
-  private records = new Map<string, OutcomeRecord[]>();
+  // EC-09: 优先 SQLite, 回退内存 Map
+  private memoryFallback = new Map<string, OutcomeRecord[]>();
+  private store: OutcomeStore | null = null;
   private validator: TemplateValidator;
 
-  constructor(validator: TemplateValidator) {
+  constructor(validator: TemplateValidator, store?: OutcomeStore) {
     this.validator = validator;
+    if (store) this.store = store;
   }
 
-  /** Record an outcome at a checkpoint */
-  record(outcome: OutcomeRecord): void {
-    const existing = this.records.get(outcome.templateId) || [];
-    existing.push(outcome);
-    this.records.set(outcome.templateId, existing);
+  /** EC-09: 注入 SQLite store */
+  withStore(store: OutcomeStore): this {
+    this.store = store;
+    // 迁移内存中的已有记录
+    for (const [templateId, records] of this.memoryFallback) {
+      for (const r of records) store.save(r);
+    }
+    this.memoryFallback.clear();
+    return this;
+  }
 
-    // Update template validation based on outcome
+  record(outcome: OutcomeRecord): void {
+    if (this.store) {
+      this.store.save(outcome);
+    } else {
+      const existing = this.memoryFallback.get(outcome.templateId) || [];
+      existing.push(outcome);
+      this.memoryFallback.set(outcome.templateId, existing);
+    }
+
     const wasEffective = (outcome.effectiveness ?? 0) >= 0.5;
     this.validator.recordValidation(outcome.templateId, wasEffective,
       `${outcome.checkPoint}天跟踪: 效果=${outcome.effectiveness}`);
 
     log.debug({ templateId: outcome.templateId, checkPoint: outcome.checkPoint,
-      effective: wasEffective }, '效果已记录');
+      effective: wasEffective, persisted: !!this.store }, '效果已记录');
   }
 
-  /** Get outcome history for a template */
   getHistory(templateId: string): OutcomeRecord[] {
-    return this.records.get(templateId) || [];
+    if (this.store) return this.store.getByTemplate(templateId);
+    return this.memoryFallback.get(templateId) || [];
   }
 
-  /** Get effectiveness rate for a template */
   getEffectivenessRate(templateId: string): number | null {
-    const history = this.getHistory(templateId);
+    if (this.store) return this.store.getEffectivenessRate(templateId);
+    const history = this.memoryFallback.get(templateId) || [];
     if (history.length === 0) return null;
     const effective = history.filter(r => (r.effectiveness ?? 0) >= 0.5).length;
     return Math.round((effective / history.length) * 100) / 100;

@@ -19,11 +19,27 @@ export interface QueryAPI {
   findCrossDimensionalBrokers(): Promise<unknown>;
   /** Pattern engine: match signals against known diagnostic patterns */
   matchPattern?(signals: string[]): Promise<unknown>;
+  /** EC-08: Upsert node into graph store (non-destructive) */
+  upsertNode?(type: string, props: Record<string, unknown>): Promise<unknown>;
 }
 
 export interface AutonomyConfig { maxRounds: number }
 
-export interface AutonomyInput { evidence: string[]; expertType: string }
+/** EC-08: 结构化本体补丁 — expert 可用图查询替代纯文本推断 */
+export interface OntologyPatch {
+  action: 'create' | 'update';
+  nodeType: string;
+  props: Record<string, unknown>;
+  evidence: string;
+  confidence: number;
+}
+
+export interface AutonomyInput {
+  evidence: string[];
+  expertType: string;
+  /** EC-08: 结构化本体补丁 — 优先用于图查询 */
+  patches?: OntologyPatch[];
+}
 
 export interface AutonomyResult {
   hypothesis: string;
@@ -67,10 +83,24 @@ export class ExpertAutonomyEngine {
     const queryHistory: string[] = [];
     let previousResults = new Set<string>();
 
+    // EC-08: patches 输入 → 优先用于图查询, 文本 evidence 作为补充
+    if (input.patches && input.patches.length > 0) {
+      try {
+        for (const p of input.patches) {
+          this.queryApi.upsertNode?.(p.nodeType, p.props);
+        }
+      } catch (err: any) {
+        log.warn({ err: err.message }, 'patches GraphStore upsert 失败 — 继续文本模式');
+      }
+    }
+    const patchContext = input.patches?.length
+      ? `\n结构化本体数据 (已写入图): ${input.patches.map(p => `${p.nodeType}: ${JSON.stringify(p.props)}`).join('; ')}`
+      : '';
+
     for (let round = 0; round < this.config.maxRounds; round++) {
       const context = [
         `你是${input.expertType}专家。`,
-        `可用证据: ${input.evidence.join('; ') || '(无)'}`,
+        `可用证据: ${input.evidence.join('; ') || '(无)'}${patchContext}`,
         `已查询历史: ${queryHistory.join('; ') || '(无)'}`,
         `可用查询函数: ${(this.policy.allowedQueryFunctions || []).join(', ') || '全部'}`,
         `输出 JSON: {"thought":"...","action":"query_graph"|"finalize","function":"...","hypothesis":"...","confidence":0.0-1.0}`,

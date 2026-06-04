@@ -92,6 +92,18 @@ export const EXPERT_REPORT_SCHEMA = JSON.stringify({
 
 // ═══ Config ═══
 
+// ═══ EC-08: OntologyPatch 输入类型 ═══
+
+export interface OntologyPatch {
+  action: 'create' | 'update';
+  nodeType: string;
+  props: Record<string, unknown>;
+  evidence: string;
+  confidence: number;
+}
+
+// ═══ Config ═══
+
 export interface ExpertDispatcherConfig {
   llmClient: LLMClient;
   policies: DataAccessPolicy[];
@@ -132,6 +144,35 @@ export class ExpertDispatcher {
     return this;
   }
 
+  /** EC-08: 将 Evidence 转换为 OntologyPatch[] 结构化输入 */
+  private evidenceToPatches(evidence: Evidence[]): OntologyPatch[] {
+    return evidence.map(e => ({
+      action: 'create' as const,
+      nodeType: this.mapDimensionToNodeType(e.type),
+      props: {
+        name: e.content.slice(0, 100),
+        confidence: e.confidence,
+        dimension: e.type,
+        source: 'expert_evidence',
+      },
+      evidence: e.content,
+      confidence: e.confidence,
+    }));
+  }
+
+  /** Map evidence dimension to SOG node type */
+  private mapDimensionToNodeType(dimension: string): string {
+    const map: Record<string, string> = {
+      goal_alignment: 'Goal', strategic_clarity: 'Goal', mission_objectives: 'Goal',
+      team_structure: 'Team', collaboration: 'Team', org_structure: 'Team',
+      cost: 'Financial', revenue: 'Financial', roi: 'Financial', budget: 'Financial',
+      risk: 'Risk', financial_risk: 'Risk',
+      current_state: 'Person', resource_allocation: 'Resource',
+      communication: 'Process', information_flow: 'Process',
+    };
+    return map[dimension] || 'Observation';
+  }
+
   /** Filter evidence by expert's DataAccessPolicy (row-level security) */
   filterEvidence(evidence: Evidence[], policy: DataAccessPolicy): Evidence[] {
     return evidence.filter(e => {
@@ -168,8 +209,11 @@ export class ExpertDispatcher {
             ? this.engineFactory(this.llmClient, this.queryApi!, policy, { maxRounds: 5 })
             : new ExpertAutonomyEngine(this.llmClient, this.queryApi!, policy, { maxRounds: 5 });
 
+          // EC-08: 传入 patches 供引擎做图查询 (additive — 保留文本 evidence)
+          const patches = this.evidenceToPatches(filtered);
           const autonomyResult = await Promise.race([
             engine.run({
+              patches,
               evidence: filtered.map(e => `[${e.type}] ${e.content.slice(0, 100)}`),
               expertType: type,
             }),

@@ -92,3 +92,77 @@ export class ExpertStore {
     };
   }
 }
+
+// ═══ EC-09: SQLiteOutcomeStore — OutcomeTracker 的 SQLite 实现 ═══
+
+import type { OutcomeRecord, OutcomeStore } from './outcome-tracker';
+
+export class SQLiteOutcomeStore implements OutcomeStore {
+  private db: Database.Database;
+
+  constructor(db: Database.Database) {
+    this.db = db;
+    this.initSchema();
+  }
+
+  private initSchema(): void {
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS expert_outcomes (
+        id TEXT PRIMARY KEY,
+        template_id TEXT NOT NULL,
+        diagnosis_id TEXT NOT NULL,
+        org_id TEXT NOT NULL,
+        adopted INTEGER DEFAULT 0,
+        effectiveness REAL,
+        check_point INTEGER NOT NULL,
+        recorded_at TEXT DEFAULT (datetime('now')),
+        notes TEXT
+      );
+      CREATE INDEX IF NOT EXISTS idx_outcomes_template
+        ON expert_outcomes(template_id);
+    `);
+  }
+
+  save(outcome: OutcomeRecord): void {
+    this.db.prepare(`
+      INSERT OR REPLACE INTO expert_outcomes
+        (id, template_id, diagnosis_id, org_id, adopted, effectiveness, check_point, recorded_at, notes)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      outcome.id, outcome.templateId, outcome.diagnosisId, outcome.orgId,
+      outcome.adopted ? 1 : 0, outcome.effectiveness ?? null,
+      outcome.checkPoint, outcome.recordedAt, outcome.notes ?? null,
+    );
+  }
+
+  getByTemplate(templateId: string): OutcomeRecord[] {
+    const rows = this.db.prepare(`
+      SELECT * FROM expert_outcomes WHERE template_id = ? ORDER BY recorded_at DESC
+    `).all(templateId) as Array<Record<string, unknown>>;
+
+    return rows.map(r => ({
+      id: r.id as string,
+      templateId: r.template_id as string,
+      diagnosisId: r.diagnosis_id as string,
+      orgId: r.org_id as string,
+      adopted: !!(r.adopted as number),
+      effectiveness: r.effectiveness as number | undefined,
+      checkPoint: r.check_point as 30 | 60 | 90,
+      recordedAt: r.recorded_at as string,
+      notes: r.notes as string | undefined,
+    }));
+  }
+
+  getEffectivenessRate(templateId: string): number | null {
+    const row = this.db.prepare(`
+      SELECT
+        COUNT(*) as total,
+        SUM(CASE WHEN effectiveness >= 0.5 THEN 1 ELSE 0 END) as effective
+      FROM expert_outcomes
+      WHERE template_id = ? AND effectiveness IS NOT NULL
+    `).get(templateId) as { total: number; effective: number } | undefined;
+
+    if (!row || row.total === 0) return null;
+    return Math.round((row.effective / row.total) * 100) / 100;
+  }
+}
