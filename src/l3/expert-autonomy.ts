@@ -97,13 +97,20 @@ export class ExpertAutonomyEngine {
       ? `\n结构化本体数据 (已写入图): ${input.patches.map(p => `${p.nodeType}: ${JSON.stringify(p.props)}`).join('; ')}`
       : '';
 
+    // Build tool list for LLM context
+    const availableTools = this.toolRegistry
+      ? this.buildToolList()
+      : (this.policy.allowedQueryFunctions || []).join(', ');
+
     for (let round = 0; round < this.config.maxRounds; round++) {
       const context = [
         `你是${input.expertType}专家。`,
         `可用证据: ${input.evidence.join('; ') || '(无)'}${patchContext}`,
         `已查询历史: ${queryHistory.join('; ') || '(无)'}`,
-        `可用查询函数: ${(this.policy.allowedQueryFunctions || []).join(', ') || '全部'}`,
-        `输出 JSON: {"thought":"...","action":"query_graph"|"finalize","function":"...","hypothesis":"...","confidence":0.0-1.0}`,
+        `可用工具 (通过 function 字段调用):`,
+        availableTools,
+        `输出 JSON: {"thought":"简短推理","action":"query_graph"|"finalize","function":"工具名","hypothesis":"发现(仅finalize时)","confidence":0.0-1.0}`,
+        `规则: 优先使用工具查数据而非猜测。query_graph 可多次调用不同 tool。信息足够或连续2次无新信息时输出 finalize。`,
       ].join('\n');
 
       try {
@@ -186,6 +193,25 @@ export class ExpertAutonomyEngine {
         action: 'max_rounds_forced',
         queryHistory,
       };
+    }
+  }
+
+  /** Build a human-readable tool list for the LLM prompt */
+  private buildToolList(): string {
+    if (!this.toolRegistry) return '无可用工具';
+    try {
+      const tools = (this.toolRegistry as { listTools(): Array<{ name: string; description: string }> }).listTools();
+      const readTools = tools.filter(t =>
+        !t.name.startsWith('brave_') && !t.name.startsWith('github_')
+        || this.policy.allowedQueryFunctions?.includes(t.name)
+        || !this.policy.allowedQueryFunctions
+      );
+      if (readTools.length === 0) return '无可用工具';
+      return readTools.slice(0, 15).map(t =>
+        `  - ${t.name}: ${t.description.slice(0, 80)}`
+      ).join('\n');
+    } catch {
+      return '工具列表不可用';
     }
   }
 
