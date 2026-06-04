@@ -369,11 +369,11 @@ export class ConversationEngine {
       }
       // Use GOAL node as InterviewSummary carrier (v2.0: type='InterviewSummary')
       this.graphStore.createNode(
-        'Goal' as any,
+        'Goal' as unknown as Parameters<typeof this.graphStore.createNode>[0],
         {
           name: `Phase0_Interview_${this.orgId}_${Date.now().toString(36)}`,
           description: `Phase 0 访谈摘要 — ${coveredCount}/6 维度已覆盖`,
-          goalType: 'mission' as any,
+          goalType: 'mission' as unknown as string,
           progress: coveredCount / 6,
         },
         this.orgId || 'default',

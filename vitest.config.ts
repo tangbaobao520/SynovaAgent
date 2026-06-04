@@ -5,14 +5,18 @@ const packagesRoot = path.resolve(__dirname, '../packages');
 
 export default defineConfig({
   resolve: {
-    alias: {
-      '@synova/sog-core': path.join(packagesRoot, 'sog-core/src/index.ts'),
-      '@synova/logger': path.join(packagesRoot, 'logger/src/index.ts'),
-      '@synova/error-types': path.join(packagesRoot, 'error-types/src/index.ts'),
-      '@synova/connector-registry': path.join(packagesRoot, 'connector-registry/src/index.ts'),
-      '@synova/extension-registry': path.join(packagesRoot, 'extension-registry/src/index.ts'),
-      '@synova/knowledge-ingest': path.join(packagesRoot, 'knowledge-ingest/src/index.ts'),
-    },
+    alias: [
+      { find: '@synova/sog-core', replacement: path.join(packagesRoot, 'sog-core/src/index.ts') },
+      { find: '@synova/logger', replacement: path.join(packagesRoot, 'logger/src/index.ts') },
+      { find: '@synova/error-types', replacement: path.join(packagesRoot, 'error-types/src/index.ts') },
+      { find: '@synova/connector-registry', replacement: path.join(packagesRoot, 'connector-registry/src/index.ts') },
+      { find: '@synova/extension-registry', replacement: path.join(packagesRoot, 'extension-registry/src/index.ts') },
+      { find: '@synova/knowledge-ingest', replacement: path.join(packagesRoot, 'knowledge-ingest/src/index.ts') },
+      { find: '@synova/diagnosis-engine', replacement: path.join(packagesRoot, 'diagnosis-engine/src/index.ts') },
+      // engine-core: map src/ subpath imports to dist/ (TS source → compiled JS)
+      { find: '@synova/engine-core/src', replacement: path.resolve(__dirname, '../server/vendor/@synova/engine-core/dist') },
+      { find: '@synova/engine-core', replacement: path.resolve(__dirname, '../server/vendor/@synova/engine-core/dist/index') },
+    ],
   },
   test: {
     globals: true,
@@ -46,6 +50,7 @@ export default defineConfig({
       DEV_MODE: 'true',
       PORT: '3099',
       SYNOVA_DB_PATH: ':memory:',
+      SYNOVA_SKIP_MCP: '1',
     },
   },
 });

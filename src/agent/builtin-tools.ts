@@ -170,7 +170,10 @@ export function registerBuiltinTools(
         const data = await res.json() as { nodes?: Array<{ type?: string; props?: Record<string, unknown> }> };
         const docs = (data.nodes || [])
           .filter(n => n.type === 'Document')
-          .map(n => ({ type: n.type, name: (n.props as any)?.name || '未命名', docType: (n.props as any)?.docType }));
+          .map(n => {
+            const p = n.props as { name?: string; docType?: string };
+            return { type: n.type, name: p?.name || '未命名', docType: p?.docType };
+          });
         const limit = Number(params.limit || 5);
         const query = String(params.query || '').toLowerCase();
         const filtered = query

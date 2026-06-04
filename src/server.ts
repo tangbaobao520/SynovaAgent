@@ -280,14 +280,17 @@ export async function createServer(): Promise<Server> {
     } catch (err: any) { logger.warn({ err }, 'IM 通道初始化失败 — degraded'); }
 
     // MCP 工具注册 — 自动连接 Brave Search + GitHub (如果 API Key 已配置)
-    try {
-      const { registerMCPTools } = await import('./mcp/tool-registration');
-      const { ToolRegistry } = await import('./agent/tools');
-      const mcpRegistry = new ToolRegistry();
-      await registerMCPTools(mcpRegistry);
-      app.locals.mcpToolRegistry = mcpRegistry;
-      logger.info('MCP 工具已注册');
-    } catch (err: any) { logger.warn({ err }, 'MCP 工具注册失败 — degraded (需 BRAVE_API_KEY 或 GITHUB_TOKEN)'); }
+    // SYNOVA_SKIP_MCP=1 跳过 (测试环境)
+    if (process.env.SYNOVA_SKIP_MCP !== '1') {
+      try {
+        const { registerMCPTools } = await import('./mcp/tool-registration');
+        const { ToolRegistry } = await import('./agent/tools');
+        const mcpRegistry = new ToolRegistry();
+        await registerMCPTools(mcpRegistry);
+        app.locals.mcpToolRegistry = mcpRegistry;
+        logger.info('MCP 工具已注册');
+      } catch (err: any) { logger.warn({ err }, 'MCP 工具注册失败 — degraded (需 BRAVE_API_KEY 或 GITHUB_TOKEN)'); }
+    }
 
     // GNS M2-3: 每日 19:00 简报
     scheduler.schedule('daily-briefing', '0 19 * * *', async () => {
@@ -295,7 +298,10 @@ export async function createServer(): Promise<Server> {
         const { BriefingGenerator } = await import('./l3/briefing-generator');
         const { EngineCoreVendorAdapter } = await import('./adapters/engine-core-adapter');
         const store = await EngineCoreVendorAdapter.createGraphStore(db);
-        const gen = new BriefingGenerator(store as any);
+        const gen = new BriefingGenerator(store as {
+          queryNodes(type: string, filters?: Record<string, unknown>, graph?: string): Array<{ id: string; props: Record<string, unknown> }>;
+          queryEdges(type?: string, from?: string, to?: string, graph?: string): Array<{ from: string; to: string; type: string; props: Record<string, unknown> }>;
+        });
         const briefing = await gen.generate('default');
         const markdown = gen.formatMarkdown(briefing);
         logger.info({ summary: briefing.summary }, '每日简报已生成');

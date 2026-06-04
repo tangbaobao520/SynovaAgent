@@ -13,7 +13,7 @@ echo "═══ 安全检查 ═══"
 echo ""
 
 # 1. eval() — 代码注入风险
-EVAL=$(grep -rn "eval(" src/ --include="*.ts" 2>/dev/null | grep -v "node_modules" | grep -v "\.test\." | grep -v "//.*eval" || true)
+EVAL=$(grep -rn "eval(" src/ --include="*.ts" 2>/dev/null | grep -v "node_modules" | grep -v "\.test\." | grep -v "//.*eval" | grep -v "'eval('" | grep -v '"eval("' | grep -v '`eval(`' || true)
 EVAL_COUNT=$(echo "$EVAL" | grep -c . 2>/dev/null || echo 0)
 if [ "$EVAL_COUNT" -gt 0 ]; then
   echo -e "  ${RED}❌ eval() 使用: ${EVAL_COUNT} 处${RESET}"

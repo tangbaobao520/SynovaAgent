@@ -4,6 +4,10 @@
 import { describe, it, expect, afterAll } from 'vitest';
 import { MCPBridge } from '../../src/mcp/bridge';
 
+// MCP Bridge 测试需要真实的 MCP Server 进程 (npx + npm 包)。
+// 默认跳过；设置 SYNOVA_TEST_MCP=1 启用。
+const MCP_AVAILABLE = process.env.SYNOVA_TEST_MCP === '1';
+
 describe('MCPBridge — 连通性', () => {
   const bridge = new MCPBridge();
 
@@ -15,23 +19,21 @@ describe('MCPBridge — 连通性', () => {
     expect(bridge.listServers()).toHaveLength(0);
   });
 
-  it('Given memory server, When connect, Then discovers tools', async () => {
+  it.skipIf(!MCP_AVAILABLE)('Given memory server, When connect, Then discovers tools', async () => {
     try {
       const tools = await bridge.connect('memory');
       expect(tools.length).toBeGreaterThan(0);
       expect(tools[0]).toHaveProperty('name');
       expect(tools[0]).toHaveProperty('description');
     } catch (err: any) {
-      // MCP server may not be installed — skip gracefully
       console.warn('Memory MCP server 不可用:', err.message);
       expect(true).toBe(true);
     }
   }, 15_000);
 
-  it('Given brave-search without API key, When connect, Then fails gracefully', async () => {
+  it.skipIf(!MCP_AVAILABLE)('Given brave-search without API key, When connect, Then fails gracefully', async () => {
     try {
       await bridge.connect('brave-search');
-      // If it succeeds, tools should be available
       const tools = bridge.getTools('brave-search');
       expect(Array.isArray(tools)).toBe(true);
     } catch (err: any) {
@@ -41,12 +43,12 @@ describe('MCPBridge — 连通性', () => {
 });
 
 describe('MCPBridge — JSON-RPC protocol', () => {
-  it('Given connect called twice, When second call, Then returns cached tools (no duplicate process)', async () => {
+  it.skipIf(!MCP_AVAILABLE)('Given connect called twice, When second call, Then returns cached tools (no duplicate process)', async () => {
     const b = new MCPBridge();
     try {
       await b.connect('memory');
       const tools1 = b.getTools('memory');
-      await b.connect('memory'); // second call
+      await b.connect('memory');
       const tools2 = b.getTools('memory');
       expect(tools1).toEqual(tools2);
     } catch { /* server unavailable */ }

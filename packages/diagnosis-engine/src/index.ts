@@ -25,7 +25,7 @@ export type { GraphStore } from '@synova/engine-core/src/pipeline/diagnosis/grap
 
 // ═══ 引擎上下文注入 ═══
 
-export { setEngineContext, getEngineContext } from '@synova/engine-core/src/infra/engine-context';
+export { setEngineContext, getEngineContext } from '@synova/engine-core/src/engine-context';
 
 // ═══ 文档摄取 ═══
 

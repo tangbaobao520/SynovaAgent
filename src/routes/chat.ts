@@ -31,7 +31,7 @@ router.get('/api/user-state', async (_req: Request, res: Response) => {
     const db = getDatabase();
     const store = createGraphStore('sqlite', db) as { queryNodes(type: string, filters?: Record<string,unknown>, graph?: string): Array<{id:string, props:Record<string,unknown>}> };
     const summaries = store.queryNodes('Goal', { goalType: 'mission' }, 'default')
-      .filter(n => (n.props as any)?.name?.startsWith('Phase0_Interview'));
+      .filter(n => (n.props as { name?: string })?.name?.startsWith('Phase0_Interview'));
     res.json({
       ok: true,
       hasCompletedPhase0: summaries.length > 0,

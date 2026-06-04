@@ -50,19 +50,21 @@ export function auditSkillDirectory(skillDir: string): SkillAuditReport {
 
   // Step 2: Dangerous keyword scan
   const DANGER_KEYWORDS: Array<{ kw: string; severity: 'critical' | 'high'; cat: string }> = [
-    { kw: 'eval(', severity: 'critical', cat: 'code_execution' },
-    { kw: 'exec(', severity: 'critical', cat: 'code_execution' },
-    { kw: 'child_process', severity: 'critical', cat: 'process_spawn' },
-    { kw: 'spawn(', severity: 'critical', cat: 'process_spawn' },
-    { kw: 'rm -rf', severity: 'critical', cat: 'destructive' },
-    { kw: 'sudo', severity: 'critical', cat: 'privilege_escalation' },
-    { kw: 'chmod 777', severity: 'high', cat: 'permission_weakening' },
-    { kw: 'curl |', severity: 'critical', cat: 'remote_exec' },
-    { kw: 'wget -O- |', severity: 'critical', cat: 'remote_exec' },
-    { kw: '/etc/passwd', severity: 'critical', cat: 'credential_theft' },
-    { kw: '/etc/shadow', severity: 'critical', cat: 'credential_theft' },
-    { kw: '.ssh/', severity: 'high', cat: 'credential_theft' },
-    { kw: 'process.exit', severity: 'medium', cat: 'process_control' },
+	    { kw: 'eval(', severity: 'critical', cat: 'code_execution' },
+	    { kw: 'eval "', severity: 'critical', cat: 'code_execution' },
+	    { kw: 'exec(', severity: 'critical', cat: 'code_execution' },
+	    { kw: 'child_process', severity: 'critical', cat: 'process_spawn' },
+	    { kw: 'spawn(', severity: 'critical', cat: 'process_spawn' },
+	    { kw: 'rm -rf', severity: 'critical', cat: 'destructive' },
+	    { kw: 'sudo', severity: 'critical', cat: 'privilege_escalation' },
+	    { kw: 'chmod 777', severity: 'high', cat: 'permission_weakening' },
+	    { kw: 'curl ', severity: 'critical', cat: 'remote_exec' },
+	    { kw: '| bash', severity: 'critical', cat: 'remote_exec' },
+	    { kw: '| sh', severity: 'critical', cat: 'remote_exec' },
+	    { kw: '/etc/passwd', severity: 'critical', cat: 'credential_theft' },
+	    { kw: '/etc/shadow', severity: 'critical', cat: 'credential_theft' },
+	    { kw: '.ssh/', severity: 'high', cat: 'credential_theft' },
+	    { kw: 'process.exit', severity: 'medium', cat: 'process_control' },
   ];
 
   for (const { kw, severity, cat } of DANGER_KEYWORDS) {
@@ -91,7 +93,7 @@ export function auditSkillDirectory(skillDir: string): SkillAuditReport {
   }
 
   // Step 4: Remote script detection
-  const REMOTE_PATTERNS = ['https://', 'http://', 'curl ', 'wget '];
+  const REMOTE_PATTERNS = ['https://', 'http://'];
   for (const p of REMOTE_PATTERNS) {
     if (allContentLower.includes(p.toLowerCase())) {
       findings.push({
@@ -124,7 +126,7 @@ export function auditSkillDirectory(skillDir: string): SkillAuditReport {
   const criticalCount = findings.filter(f => f.severity === 'critical').length;
   const highCount = findings.filter(f => f.severity === 'high').length;
   const mediumCount = findings.filter(f => f.severity === 'medium').length;
-  const score = Math.max(0, 100 - criticalCount * 25 - highCount * 10 - mediumCount * 3);
+  const score = Math.max(0, 100 - criticalCount * 30 - highCount * 10 - mediumCount * 3);
 
   // Step 7: Risk level + install decision
   let level: SkillAuditReport['level'];
