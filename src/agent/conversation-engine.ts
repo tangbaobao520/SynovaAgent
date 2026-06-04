@@ -201,7 +201,6 @@ function buildSystemPrompt(
     context,
     covText,
   ].filter(Boolean).join('\n\n---\n\n');
-  ].join('\n\n---\n\n');
   // 易变层不放入 system prompt — 追加到 user message 末尾保护 Cache
 }
 
@@ -253,7 +252,7 @@ export class ConversationEngine {
       maxTurns: config.maxTurns ?? 6,
       orgId: config.orgId || '',
     };
-    this.messages = [{ role: 'system', content: buildSystemPrompt(0, 0, this.dimensionCoverage, config.dimensionRegistry) }];
+    this.messages = [{ role: 'system', content: buildSystemPrompt(0, 0, this.dimensionCoverage, this.dimensionRegistry) }];
     this.toolRegistry = new ToolRegistry();
 
     // 编排层接线: 接收可选组件
