@@ -20,6 +20,7 @@ import { ExpertAutonomyEngine } from './expert-autonomy';
 import type { QueryAPI } from './expert-autonomy';
 import { QualityFirewall } from './quality-firewall';
 import { validateExpertOutput } from './expert-output-schema';
+import { getExpertRegistry } from './expert-registry';
 import { createLogger } from '../logger';
 
 const log = createLogger('l3/expert-dispatcher');
@@ -262,7 +263,7 @@ export class ExpertDispatcher {
 
       // Fallback: structured LLM consult with output schema
       return await this.runWithRetry(async () => {
-        const prompt = EXPERT_PROMPTS[type] || '你是组织诊断专家。';
+        const prompt = getExpertRegistry().getPrompt(type) || '你是组织诊断专家。';
         const evidenceSummary = filtered.slice(0, 10).map(e =>
           `[${e.type}] ${e.content.slice(0, 100)} (置信度: ${e.confidence})`,
         ).join('\n');
@@ -407,12 +408,4 @@ export class ExpertDispatcher {
   }
 }
 
-/** Expert system prompts (L3 domain logic) */
-const EXPERT_PROMPTS: Record<string, string> = {
-  strategy: '你是企业战略专家。分析组织的战略清晰度、目标对齐度和资源配置有效性。',
-  org: '你是组织架构专家。分析团队结构、协作模式和信息流动效率。',
-  finance: '你是财务分析专家。分析成本结构、资源利用率和投资回报。',
-  tech: '你是技术架构专家。分析工具链效率、技术债务和自动化水平。',
-  marketing: '你是市场营销专家。分析市场定位、竞争差异化和增长策略。',
-  action: '你是执行力专家。分析行动项的优先级、可行性和预期效果。',
-};
+// Expert prompts moved to ExpertRegistry (src/l3/expert-registry.ts) — Task 3

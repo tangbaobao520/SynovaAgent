@@ -101,6 +101,53 @@ export class ExtensionRegistry {
     return counts;
   }
 
+  // ═══ Task 1: discover + hotload ═══
+
+  /**
+   * Discover extensions in a base directory.
+   * Scans subdirectories for manifest.json files.
+   * Returns manifests for user to choose which to install.
+   */
+  async discover(baseDir: string): Promise<ExtensionManifest[]> {
+    const manifests: ExtensionManifest[] = [];
+    try {
+      const fs = await import('fs');
+      const path = await import('path');
+      if (!fs.existsSync(baseDir)) return manifests;
+
+      const entries = fs.readdirSync(baseDir, { withFileTypes: true });
+      for (const entry of entries) {
+        if (!entry.isDirectory() || entry.name.startsWith('.') || entry.name === 'node_modules') continue;
+        const manifestPath = path.join(baseDir, entry.name, 'manifest.json');
+        if (fs.existsSync(manifestPath)) {
+          try {
+            const raw = fs.readFileSync(manifestPath, 'utf-8');
+            const manifest = JSON.parse(raw) as ExtensionManifest;
+            manifest.entryPoint = manifest.entryPoint || `./${entry.name}/index.js`;
+            manifests.push(manifest);
+          } catch { /* skip invalid manifests */ }
+        }
+      }
+    } catch (err: any) {
+      log.warn({ err: err.message, baseDir }, '扩展发现失败');
+    }
+    return manifests;
+  }
+
+  /**
+   * Hotload an extension from a manifest.
+   * Dynamically imports the entry point and registers it.
+   */
+  async hotload<T = unknown>(manifest: ExtensionManifest, baseDir: string): Promise<ResolvedExtension<T>> {
+    const path = await import('path');
+    const entryPath = path.resolve(baseDir, manifest.entryPoint || `./${manifest.name}/index.js`);
+
+    log.info({ name: manifest.name, entry: entryPath }, '热加载扩展');
+    const implementation = await import(entryPath) as T;
+
+    return this.register(manifest, implementation);
+  }
+
   // ═══ Internal ═══
 
   private validateDependencies(manifest: ExtensionManifest): void {
