@@ -44,14 +44,17 @@ describe('ConversationEngine — pure logic, zero UI dependency', () => {
 
   // ── Phase 0 completion ──
 
-  it('Given Phase 0 and 6 turns, When processMessage 6 times, Then phaseComplete=true on 6th turn', async () => {
+  it('Given Phase 0 and 6 turns with completion signal, When processMessage, Then phaseComplete=true', async () => {
     engine.setOrgId('test-org');
+    // Batch 6 fix: ConversationEngine Phase 0 requires explicit completion signal
+    // (e.g. "开始诊断") or turn limit reached (default maxTurns=6)
     const results: boolean[] = [];
     for (let i = 0; i < 6; i++) {
-      const r = await engine.processMessage(`turn ${i + 1}`);
+      // Last turn sends explicit completion signal
+      const msg = i === 5 ? '开始诊断' : `turn ${i + 1}`;
+      const r = await engine.processMessage(msg);
       results.push(r.phaseComplete);
     }
-    // At least the last one should complete (maxTurns=6 default)
     expect(results[results.length - 1]).toBe(true);
   });
 

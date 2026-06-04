@@ -404,8 +404,9 @@ export class ConversationEngine {
       const coveredCount = [...this.dimensionCoverage.values()].filter(d => d.status === 'covered').length;
       const explicitComplete = this.detectPhaseComplete(userInput);
       const turnLimitReached = this.turnCount >= this.config.maxTurns;
-      const dimensionsReady = coveredCount >= 4;
-      const minTurns = Math.min(3, this.config.maxTurns);
+      // 无 IntentRouter 时跳过维度覆盖要求 — 纯轮次+显式完成判断
+      const dimensionsReady = this.intentRouter ? coveredCount >= 4 : true;
+      const minTurns = this.intentRouter ? Math.min(3, this.config.maxTurns) : 2;
 
       // 用户想结束但维度不够 → 告知缺失，不结束
       if (explicitComplete && !dimensionsReady && this.turnCount >= minTurns) {
