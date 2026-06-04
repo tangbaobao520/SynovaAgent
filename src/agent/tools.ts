@@ -170,8 +170,8 @@ export class ToolRegistry implements ToolRegistryInterface {
           if (!connector) {
             return { error: `Connector "${tool.connectorName}" 未注册` };
           }
-          const result = await connector.executeTool(name, params);
-          return result as ToolCallResult;
+          const rawResult = await connector.executeTool(name, params);
+          return this.wrapUntrustedResult(name, rawResult as ToolCallResult);
         }
 
         case 'http': {
