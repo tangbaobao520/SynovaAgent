@@ -6,6 +6,7 @@
  */
 import { Router, type Request, type Response } from 'express';
 import { loadConfig } from '../config';
+import { getProposalManager } from '../l2/proposal-manager';
 
 const router = Router();
 
@@ -39,6 +40,21 @@ router.get('/api/user-state', async (_req: Request, res: Response) => {
   } catch {
     res.json({ ok: true, hasCompletedPhase0: false, hasDataSources: false });
   }
+});
+
+/** GNS v2.0: 提议确认/拒绝/看法 */
+router.post('/api/proposal/:id/resolve', (req: Request, res: Response) => {
+  const { id } = req.params as { id: string };
+  const { action, feedback } = req.body as { action?: string; feedback?: string };
+  if (!action || !['confirm', 'reject', 'opinion'].includes(action)) {
+    return res.status(400).json({ ok: false, error: 'action 必须是 confirm/reject/opinion' });
+  }
+  const mgr = getProposalManager();
+  const result = mgr.resolve(id, action as 'confirm' | 'reject' | 'opinion', feedback);
+  if (!result.ok) {
+    return res.status(404).json(result);
+  }
+  res.json({ ok: true, proposal: result.proposal });
 });
 
 // ═══ Web 对话界面 ═══
