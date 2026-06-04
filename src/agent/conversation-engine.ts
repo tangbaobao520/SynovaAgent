@@ -22,20 +22,15 @@ import type { PIIScrubber } from '../security/pii-scrubber';
 import type { SessionManager } from '../orchestrator/session-manager';
 import type { EventBus } from '../orchestrator/event-bus';
 import type { EvidenceCollector, CorroborationEngine } from '../evidence/index';
-import type { createGraphBridge, GraphStore } from '../l4/graph-bridge';
-import { ReportGraphAdapter } from '../l4/report-graph-adapter';
+// EC-03: L2 只依赖 L4 类型 (接口契约), 运行时通过 diagnosis-launcher (L3) 调用
+import type { GraphStore } from '../l4/graph-bridge';
+import type { createGraphBridge } from '../l4/graph-bridge';
+import type { ReportGraphAdapter } from '../l4/report-graph-adapter';
 import type { DecisionInput, DecisionResult } from '../l4/decision-capture';
-import {
-  findDiagnosticPaths, summarizeSubgraph, findCrossDimensionalBrokers,
-  getGraphDiff, detectAnomalousPatterns,
-} from '../l4/diagnosis-graph-query';
-import type { DiagnosticPath, SubgraphSummary, BrokerNode, GraphDiff, AnomalyPattern } from '../l4/diagnosis-graph-query';
-import { reflectOnTriples } from '../l4/triple-reflection';
+import type { DiagnosticPath, SubgraphSummary, BrokerNode, GraphDiff } from '../l4/diagnosis-graph-query';
 import type { Triple, ReflectionResult } from '../l4/triple-reflection';
 import type { L3ResolutionResult } from '../l4/entity-resolver';
-import { resolveEntitiesL3 } from '../l4/entity-resolver';
 import type { CommunityReport } from '../l4/community-reports';
-import { generateCommunityReports } from '../l4/community-reports';
 // P1-01: 子组件提取 — 单体引擎拆分为 3 个独立类
 import { ToolLoopExecutor } from './tool-loop-executor';
 import { DiagnosisLauncher, type DiagnosisEvent, type ConsultationResult } from './diagnosis-launcher';
@@ -271,75 +266,8 @@ export class ConversationEngine {
     return { recorded: false, error: 'DecisionCapture callback not configured' };
   }
 
-  // ═══ L4 Ontology Public API ═══
-  //
-  // EC-03: 这些方法直调 L4 diagnosis-graph-query，违反铁律 39 (L2→L4)。
-  // 调用方应直接使用 L4 函数 (diagnosis-launcher.ts 已正确直调 L4)。
-  // ConversationEngine 包装层为死代码，保留仅为 TUI 向后兼容。
-
-  /** @deprecated EC-03: 直接调用 L4 findDiagnosticPaths */
-  findDiagnosticPaths(fromType: string, toType: string): DiagnosticPath[] {
-    if (!this.graphStore) return [];
-    return findDiagnosticPaths(this.graphStore, this.orgId, fromType, toType);
-  }
-
-  /** @deprecated EC-03: 直接调用 L4 summarizeSubgraph */
-  summarizeSubgraph(rootId: string, maxDepth = 3): SubgraphSummary {
-    if (!this.graphStore) return { rootId, nodeCount: 0, edgeCount: 0, typeDistribution: {}, strongestConnections: [], risks: [], anomalyScore: 0 };
-    return summarizeSubgraph(this.graphStore, this.orgId, rootId, maxDepth);
-  }
-
-  /** @deprecated EC-03: 直接调用 L4 findCrossDimensionalBrokers */
-  findCrossDimensionalBrokers(): BrokerNode[] {
-    if (!this.graphStore) return [];
-    return findCrossDimensionalBrokers(this.graphStore, this.orgId);
-  }
-
-  /** Phase 2a: Detect anomalous graph patterns (isolated nodes, weight outliers) */
-  detectAnomalousPatterns(): AnomalyPattern[] {
-    if (!this.graphStore) return [];
-    return detectAnomalousPatterns(this.graphStore, this.orgId);
-  }
-
-  /** Phase 2a: Get graph diff between time snapshots */
-  getGraphDiff(fromDate?: string, toDate?: string): GraphDiff {
-    if (!this.graphStore) return { nodesAdded: [], nodesRemoved: [], edgesAdded: [], edgesRemoved: [], weightChanges: [] };
-    return getGraphDiff(this.graphStore, this.orgId, fromDate, toDate);
-  }
-
-  /** @deprecated EC-03: 直接调用 L4 community-reports。diagnosis-launcher.ts 已正确调用。 */
-  generateCommunityReports(): CommunityReport[] {
-    if (!this.graphStore || !this.enableCommunityReports) return [];
-    try {
-      return generateCommunityReports(this.graphStore, this.orgId);
-    } catch (err: any) { log.warn({ err }, 'CommunityReports failed'); return []; }
-  }
-
-  /** @deprecated EC-03: 直接调用 L4 entity-resolver。diagnosis-launcher.ts 已正确调用。 */
-  resolveEntities(): L3ResolutionResult {
-    if (!this.graphStore || !this.enableEntityResolution) {
-      return { matches: [], autoMerged: 0, queuedForReview: 0, ignored: 0 };
-    }
-    try {
-      return resolveEntitiesL3(this.graphStore, this.orgId);
-    } catch (err: any) { log.warn({ err }, 'EntityResolution failed'); return { matches: [], autoMerged: 0, queuedForReview: 0, ignored: 0 }; }
-  }
-
-  /** Phase 3b: Run triple reflection to validate knowledge graph triples */
-  async reflectOnTriples(triples: Triple[]): Promise<ReflectionResult> {
-    if (!this.enableTripleReflection || triples.length === 0) {
-      return { reflections: [], degraded: false };
-    }
-    try {
-      return await reflectOnTriples(
-        { consult: (sys, ctx, opts) => this.provider.chat([{ role: 'system', content: sys }, { role: 'user', content: ctx }], opts) },
-        triples,
-      );
-    } catch (err: any) {
-      log.warn({ err }, 'TripleReflection failed');
-      return { reflections: triples.map(t => ({ triple: t, action: 'keep' as const, reason: 'Reflection unavailable' })), degraded: true };
-    }
-  }
+  // EC-03: L4 运行时调用已从 ConversationEngine 移除。
+  // 所有 L4 操作由 diagnosis-launcher.ts (L2→L3→L4 正确路径) 处理。
 
   // ═══ Public API ═══
 
