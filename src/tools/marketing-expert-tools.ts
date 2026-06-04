@@ -1,30 +1,59 @@
-/** tools/marketing-expert-tools.ts — 营销专家工具链 (Phase C6) */
+/** tools/marketing-expert-tools.ts — 营销专家工具链 (Phase C6, SOG 数据填充) */
 import type { ToolDefinition } from '../agent/tools';
+import { SOGNodeType } from '@synova/sog-core';
+
+const getGraph = async (orgId: string) => {
+  try { const r = await fetch(`http://localhost:${process.env.PORT || 3000}/api/ontology/graph/${orgId}`); return r.ok ? r.json() : null; } catch { return null; }
+};
 
 export const collectPositioningDataTool: ToolDefinition = {
-  name: 'collect_positioning_data', description: '采集客户定位数据——激活 3 个存根模块',
+  name: 'collect_positioning_data', description: '从 SOG 图分析市场定位线索 (GOAL/CLIENT/CAPABILITY 节点)',
   parameters: { type:'object', properties:{ orgId:{type:'string'} }, required:['orgId'] },
-  handler: async (p) => ({
-    orgId: p.orgId, status: 'interview_required',
-    questions: ['你的三个主要竞争对手是谁？','客户选择你的首要原因是什么？','你如何描述自己的差异化？','目标客户画像是什么？'],
-    note: '此数据将激活 category-clarity / positioning-consistency / differentiation-validation 三个诊断模块。',
-  }),
+  handler: async (p) => {
+    const g = await getGraph(p.orgId as string);
+    const goals = g ? (g.nodes || []).filter((n: any) => n.type === SOGNodeType.GOAL) : [];
+    const clients = g ? (g.nodes || []).filter((n: any) => n.type === SOGNodeType.CLIENT) : [];
+    const capabilities = g ? (g.nodes || []).filter((n: any) => n.type === SOGNodeType.CAPABILITY) : [];
+    return {
+      orgId: p.orgId, status: goals.length > 0 ? 'ok' : 'limited',
+      goals: goals.length, clients: clients.length, capabilities: capabilities.length,
+      positioningHints: goals.slice(0, 3).map((g: any) => g.props?.description || g.props?.name),
+      note: '此数据激活 category-clarity / positioning-consistency / differentiation-validation 诊断模块。',
+    };
+  },
 };
 
 export const competitiveLandscapeTool: ToolDefinition = {
-  name: 'competitive_landscape', description: '竞品矩阵：功能/价格/目标客户/差异化',
-  parameters: { type:'object', properties:{ orgId:{type:'string'}, competitors:{type:'string'} }, required:['orgId'] },
+  name: 'competitive_landscape', description: '基于 SOG 图生成竞品矩阵',
+  parameters: { type:'object', properties:{ orgId:{type:'string'} }, required:['orgId'] },
   handler: async (p) => {
-    let comps = [];
+    let comps: Array<{ name: string; features: string; price: string }> = [];
     try { comps = JSON.parse(p.competitors as string || '[]'); } catch { comps = []; }
-    return { orgId: p.orgId, competitors: comps.length > 0 ? comps : [{ name:'竞品A', features:'待填写', price:'待填写' }, { name:'竞品B', features:'待填写', price:'待填写' }], matrix: '待 Phase 0 访谈填充', recommendation: '提供竞品信息后可生成完整竞品矩阵。' };
+    const g = await getGraph(p.orgId as string);
+    const persons = g ? (g.nodes || []).filter((n: any) => n.type === SOGNodeType.PERSON).length : 0;
+    const teams = g ? (g.nodes || []).filter((n: any) => n.type === SOGNodeType.TEAM).length : 0;
+    return {
+      orgId: p.orgId, teamSize: persons, teamCount: teams,
+      competitors: comps.length > 0 ? comps : [{ name: '竞品A', features: '待填写', price: '待填写' }],
+      matrix: comps.length > 0 ? '已提供竞品数据' : `基于 ${persons}人/${teams}团队规模，建议补充竞品信息`,
+    };
   },
 };
 
 export const goToMarketAuditTool: ToolDefinition = {
-  name: 'go_to_market_audit', description: '渠道效率、获客成本、转化漏斗评估',
+  name: 'go_to_market_audit', description: '从 SOG 图分析渠道和流程效率 (PROCESS + CLIENT 节点)',
   parameters: { type:'object', properties:{ orgId:{type:'string'} }, required:['orgId'] },
-  handler: async (p) => ({ orgId: p.orgId, channels: ['直销', '渠道合作', '线上营销', '内容营销'], questions: ['各渠道获客成本？','转化率？','客户生命周期价值？'], status: 'interview_required' }),
+  handler: async (p) => {
+    const g = await getGraph(p.orgId as string);
+    const processes = g ? (g.nodes || []).filter((n: any) => n.type === SOGNodeType.PROCESS) : [];
+    const clients = g ? (g.nodes || []).filter((n: any) => n.type === SOGNodeType.CLIENT) : [];
+    return {
+      orgId: p.orgId, status: processes.length > 0 ? 'ok' : 'limited',
+      processCount: processes.length, clientCount: clients.length,
+      channels: ['直销', '渠道合作', '线上营销', '内容营销'],
+      hint: processes.length === 0 ? 'SOG 中无 PROCESS 节点。接入项目/CRM 连接器后自动填充。' : undefined,
+    };
+  },
 };
 
 export const MARKETING_EXPERT_TOOLS: ToolDefinition[] = [collectPositioningDataTool, competitiveLandscapeTool, goToMarketAuditTool];
