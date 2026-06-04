@@ -22,6 +22,13 @@
     "check:security": "bash scripts/check-security.sh",
     "anthropic:decide": "bash scripts/anthropic-decide.sh",
     "check:wire": "bash scripts/wire-check.sh",
+    "electron:dev": "electron electron-main.ts",
+    "electron:build": "electron-builder --config build-synova.js",
+    "electron:build:win": "electron-builder --config build-synova.js --win",
+    "electron:build:mac": "electron-builder --config build-synova.js --mac",
+    "docker:build": "docker build -t synova-agent .",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
     "check:all": "bash scripts/pre-push-check.sh",
     "hooks:install": "bash scripts/install-hooks.sh",
     "hooks:test": "echo 'feat(test): verify hook' | bash scripts/commit-msg-check.sh /dev/stdin"
