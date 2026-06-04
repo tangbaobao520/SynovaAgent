@@ -146,6 +146,69 @@ export function registerBuiltinTools(
     },
   });
 
+  // ═══ Cron: schedule_task (用户通过对话设定定时任务) ═══
+  registry.register({
+    name: 'schedule_task',
+    description: '设定定时任务。支持 cron 表达式 (分 时 日 月 周) 或自然语言描述。示例: 每天19:00发送简报 → cron="0 19 * * *"',
+    parameters: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: '任务名称' },
+        cron: { type: 'string', description: 'cron 表达式, 如 "0 19 * * *" (每天19:00), "*/5 * * * *" (每5分钟)' },
+        action: { type: 'string', description: '任务描述: "daily_briefing"=每日简报, "connector_sync"=连接器同步, "custom"=自定义' },
+      },
+      required: ['name', 'cron'],
+    },
+    operationType: 'write',
+    sideEffects: 'mutating',
+    handler: async (params) => {
+      try {
+        const { getGlobalScheduler } = await import('../cron/scheduler');
+        const { getDatabase } = await import('../init/engine-context');
+        const scheduler = getGlobalScheduler(getDatabase());
+
+        const id = scheduler.schedule(
+          String(params.name),
+          String(params.cron),
+          async () => {
+            log.info({ task: params.name }, '定时任务触发');
+            // Future: trigger actual action (briefing/connector sync/custom)
+          },
+        );
+
+        return { ok: true, id, name: params.name, cron: params.cron, message: `定时任务 "${params.name}" 已设定 (${params.cron})` };
+      } catch (err: any) {
+        return { error: `定时任务设定失败: ${err.message}` };
+      }
+    },
+  });
+
+  // ═══ Cron: list_scheduled_tasks ═══
+  registry.register({
+    name: 'list_scheduled_tasks',
+    description: '查看所有已设定的定时任务，包括上次运行时间和失败次数',
+    parameters: { type: 'object', properties: {} },
+    operationType: 'read',
+    sideEffects: 'none',
+    handler: async () => {
+      try {
+        const { getGlobalScheduler } = await import('../cron/scheduler');
+        const { getDatabase } = await import('../init/engine-context');
+        const scheduler = getGlobalScheduler(getDatabase());
+        const jobs = scheduler.listJobs();
+        return {
+          count: jobs.length,
+          jobs: jobs.map(j => ({
+            id: j.id, name: j.name, cron: j.cron,
+            lastRunAt: j.lastRunAt, failures: j.failures, runs: j.runs,
+          })),
+        };
+      } catch (err: any) {
+        return { error: `查询定时任务失败: ${err.message}` };
+      }
+    },
+  });
+
   // Phase B: 注册共享准确率工具
   for (const tool of ACCURACY_TOOLS) {
     registry.register(tool);

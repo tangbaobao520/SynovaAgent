@@ -233,24 +233,28 @@ export async function createServer(): Promise<Server> {
     }
   });
 
-  // 定时同步: 每 30 分钟运行已注册的 Connector 管线
-  const connectorSyncInterval = setInterval(async () => {
-    try {
-      const registry = connectorToolRegistry;
-      if (!registry) return;
-      const { runConnectorPipeline } = await import('./l5/connector-pipeline');
-      const connectors = registry.listTools().filter(t => t.executionMode === 'connector');
-      for (const tool of connectors) {
-        try {
-          const result = await runConnectorPipeline(tool.name, 'default', {});
-          if (result.degraded) logger.warn({ tool: tool.name, errors: result.errors }, 'Connector 同步 degraded');
-          else logger.debug({ tool: tool.name, nodes: result.nodesCreated }, 'Connector 同步完成');
-        } catch (err: any) {
-          logger.warn({ err, tool: tool.name }, 'Connector 同步失败');
+  // Cron: 每 30 分钟运行已注册的 Connector 管线 (替换 setInterval)
+  const { getGlobalScheduler } = await import('./cron/scheduler');
+  const scheduler = getGlobalScheduler(db);
+  try {
+    scheduler.schedule('connector-sync', '*/30 * * * *', async () => {
+      try {
+        const registry = connectorToolRegistry;
+        if (!registry) return;
+        const { runConnectorPipeline } = await import('./l5/connector-pipeline');
+        const connectors = registry.listTools().filter(t => t.executionMode === 'connector');
+        for (const tool of connectors) {
+          try {
+            const result = await runConnectorPipeline(tool.name, 'default', {});
+            if (result.degraded) logger.warn({ tool: tool.name, errors: result.errors }, 'Connector 同步 degraded');
+          } catch (err: any) { logger.warn({ err, tool: tool.name }, 'Connector 同步失败'); }
         }
-      }
-    } catch { /* no connectors registered — skip */ }
-  }, 30 * 60_000); // 30 min
+      } catch { /* no connectors — skip */ }
+    });
+    logger.info('Connector 同步调度已启动 (cron: */30 * * * *)');
+  } catch (err: any) {
+    logger.warn({ err }, 'Cron 调度器初始化失败 — degraded');
+  }
 
   // 404
   app.use((_req, res) => {
