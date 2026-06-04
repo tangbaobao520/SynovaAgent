@@ -22,6 +22,25 @@ router.get('/api/status', (_req: Request, res: Response) => {
   });
 });
 
+/** GNS v2.0: 检测用户状态 — 决定显示 Phase 0 还是直接进入默认循环 */
+router.get('/api/user-state', async (_req: Request, res: Response) => {
+  try {
+    const { createGraphStore } = await import('@synova/diagnosis-engine');
+    const { getDatabase } = await import('../init/engine-context');
+    const db = getDatabase();
+    const store = createGraphStore('sqlite', db) as { queryNodes(type: string, filters?: Record<string,unknown>, graph?: string): Array<{id:string, props:Record<string,unknown>}> };
+    const summaries = store.queryNodes('Goal', { goalType: 'mission' }, 'default')
+      .filter(n => (n.props as any)?.name?.startsWith('Phase0_Interview'));
+    res.json({
+      ok: true,
+      hasCompletedPhase0: summaries.length > 0,
+      hasDataSources: !!(process.env.FEISHU_APP_ID || process.env.CRM_API_KEY),
+    });
+  } catch {
+    res.json({ ok: true, hasCompletedPhase0: false, hasDataSources: false });
+  }
+});
+
 // ═══ Web 对话界面 ═══
 
 router.get('/', (_req: Request, res: Response) => {
@@ -190,6 +209,10 @@ input.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
 // ═══ Init ═══
 async function init() {
   try {
+    // GNS v2.0: 检测用户状态 — Phase 0 已完成/有数据源/新手
+    const stateRes = await fetch(API + '/api/user-state');
+    const state = await stateRes.json().catch(() => ({}));
+
     const r = await fetch(API + '/api/status');
     const s = await r.json();
     if (s.llmConfigured) {
@@ -206,7 +229,20 @@ async function init() {
         'DEV_MODE 下本体功能仍可用。'
       );
     }
-    addSystem('msg', '👋 我是 Synova，你的 AI 组织诊断助手。<br>点击下方按钮开始，或直接输入你的组织名称。');
+    // GNS v2.0: 根据用户状态显示不同入口
+    if (state.hasCompletedPhase0) {
+      addSystem('msg', '👋 欢迎回来！<br>你的组织数据已就绪，直接开始监测和对话。');
+    } else if (state.hasDataSources) {
+      addSystem('msg', '👋 检测到已接入数据源。<br>你可以选择跳过访谈直接开始，或先让我了解你的组织。');
+      // Show skip prompt
+      const skipBtn = document.getElementById('quick-actions');
+      if (skipBtn) {
+        skipBtn.innerHTML = '<button class="q-btn" onclick="skipPhase0()" style="background:var(--accent);color:#fff">🚀 跳过访谈，直接开始</button>' +
+          '<button class="q-btn" onclick="quickDiag(\'公司诊断\')">🔍 先了解我的组织</button>';
+      }
+    } else {
+      addSystem('msg', '👋 我是 Synova，你的 AI 组织诊断助手。<br>点击下方按钮开始，或直接输入你的组织名称。');
+    }
   } catch(e) {
     dot.className = 'dot off';
     statusText.textContent = '服务异常';
@@ -216,6 +252,12 @@ async function init() {
 // ═══ Quick Action ═══
 function quickDiag(topic) {
   input.value = topic;
+  send();
+}
+
+// GNS v2.0: 跳过 Phase 0 — 发送特殊指令触发 skip
+function skipPhase0() {
+  input.value = '跳过访谈，直接开始';
   send();
 }
 

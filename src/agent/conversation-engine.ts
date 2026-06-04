@@ -303,6 +303,39 @@ export class ConversationEngine {
     return this.toolRegistry;
   }
 
+  // ═══ GNS v2.0: Phase 0 访谈摘要持久化 ═══
+
+  private async persistInterviewSummary(coveredCount: number): Promise<void> {
+    if (!this.graphStore) return;
+    try {
+      const dimensions: Record<string, { summary: string; keyPoints: string[]; confidence: number }> = {};
+      for (const [id, cov] of this.dimensionCoverage) {
+        const msgs = this.messages
+          .filter(m => m.role === 'user')
+          .map(m => m.content);
+        dimensions[id] = {
+          summary: msgs.slice(-3).join('; ').slice(0, 200),
+          keyPoints: msgs.filter(m => m.includes(id)).slice(0, 3),
+          confidence: cov.confidence,
+        };
+      }
+      // Use GOAL node as InterviewSummary carrier (v2.0: type='InterviewSummary')
+      this.graphStore.createNode(
+        'Goal' as any,
+        {
+          name: `Phase0_Interview_${this.orgId}_${Date.now().toString(36)}`,
+          description: `Phase 0 访谈摘要 — ${coveredCount}/6 维度已覆盖`,
+          goalType: 'mission' as any,
+          progress: coveredCount / 6,
+        },
+        this.orgId || 'default',
+      );
+      log.info({ coveredCount, orgId: this.orgId }, 'Phase 0 访谈摘要已持久化');
+    } catch (err: any) {
+      log.warn({ err }, 'InterviewSummary 持久化失败');
+    }
+  }
+
   // ═══ SOG Ontology Sync (delegated to OntologySyncer) ═══
 
   async syncToSOG(): Promise<OntologySyncResult> {
@@ -402,6 +435,10 @@ export class ConversationEngine {
         }
         this.phase = 1;
 
+        // GNS v2.0: Phase 0 完成 → 持久化 InterviewSummary 到 GraphStore
+        this.persistInterviewSummary(coveredCount).catch(err => {
+          log.warn({ err }, 'InterviewSummary 持久化失败 — degraded');
+        });
         // Slice 5.1: 自动同步 SOG 本体
         this.syncToSOG().then(r => { this._lastOntologyResult = r; }).catch(() => {});
 
