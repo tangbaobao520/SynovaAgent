@@ -17,7 +17,7 @@ export function createDeepSeekProvider(config: ProviderConfig): LLMProvider {
     baseUrl,
 
     async chat(messages: LLMMessage[], opts?: ChatOptions): Promise<ChatResult> {
-      if (!apiKey) throw new DiagnosticAgentError(ErrorCode.AUTH_FAILED, 'DeepSeek API Key 未配置', 0, false);
+      if (!apiKey) throw new DiagnosticAgentError({ code: ErrorCode.AUTH_FAILED, message: 'DeepSeek API Key 未配置', phase: 0, retryable: false });
       const res = await fetch(`${baseUrl}/chat/completions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
@@ -32,7 +32,7 @@ export function createDeepSeekProvider(config: ProviderConfig): LLMProvider {
       if (!res.ok) {
         const text = await res.text().catch(() => '');
         const code = res.status === 429 ? ErrorCode.RATE_LIMITED : res.status >= 500 ? ErrorCode.NETWORK : ErrorCode.INTERNAL;
-        throw new DiagnosticAgentError(code, `DeepSeek API ${res.status}: ${text.slice(0, 200)}`, 0, isRetryable(code));
+        throw new DiagnosticAgentError({ code, message: `DeepSeek API ${res.status}: ${text.slice(0, 200)}`, phase: 0, retryable: isRetryable(code) });
       }
       const data = await res.json() as ChatCompletionResponse;
       const content = data.choices?.[0]?.message?.content;
@@ -106,6 +106,45 @@ export function createDeepSeekProvider(config: ProviderConfig): LLMProvider {
       } catch (err: any) {
         return { healthy: false, error: `连接失败: ${err.message}`, latencyMs: Date.now() - start };
       }
+    },
+
+    // Hermes #12: ProviderTransport 适配器
+
+    validateResponse(raw: unknown): { valid: boolean; error?: string } {
+      if (!raw || typeof raw !== 'object') return { valid: false, error: '响应体为空或非 JSON' };
+      const r = raw as Record<string, unknown>;
+      const choices = r.choices;
+      if (!Array.isArray(choices) || choices.length === 0) {
+        return { valid: false, error: '响应缺少 choices 数组' };
+      }
+      const msg = (choices[0] as Record<string, unknown>)?.message;
+      if (!msg || typeof msg !== 'object') {
+        return { valid: false, error: 'choices[0].message 缺失' };
+      }
+      const content = (msg as Record<string, unknown>).content;
+      if (content === undefined || content === null || content === '') {
+        // 允许空 content (工具调用模式)
+        const toolCalls = (msg as Record<string, unknown>).tool_calls;
+        if (!Array.isArray(toolCalls) || toolCalls.length === 0) {
+          return { valid: false, error: 'content 和 tool_calls 均为空' };
+        }
+      }
+      return { valid: true };
+    },
+
+    convertTools(tools: Array<{ name: string; description: string; parameters: Record<string, unknown> }>): Array<unknown> {
+      return tools.map(t => ({
+        type: 'function' as const,
+        function: {
+          name: t.name,
+          description: t.description,
+          parameters: {
+            ...t.parameters,
+            additionalProperties: false, // DeepSeek V4 Strict Mode
+          },
+          strict: true,
+        },
+      }));
     },
 
     listModels(): string[] {

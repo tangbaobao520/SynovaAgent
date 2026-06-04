@@ -78,31 +78,40 @@ export class DiagnosticAgentError extends Error {
   readonly provider?: string;
   readonly model?: string;
 
+  // New API: options object
   constructor(opts: {
-    code: ErrorCodeType;
-    message: string;
-    phase: number;
-    retryable: boolean;
-    shouldCompress?: boolean;
-    shouldRotateCredential?: boolean;
-    shouldFallback?: boolean;
-    cause?: unknown;
-    statusCode?: number;
-    provider?: string;
-    model?: string;
-  }) {
-    super(opts.message);
+    code: ErrorCodeType; message: string; phase: number; retryable: boolean;
+    shouldCompress?: boolean; shouldRotateCredential?: boolean; shouldFallback?: boolean;
+    cause?: unknown; statusCode?: number; provider?: string; model?: string;
+  });
+  // Backward-compat: old positional API (code, message, phase, retryable)
+  constructor(code: ErrorCodeType, message: string, phase: number, retryable: boolean);
+  constructor(
+    codeOrOpts: ErrorCodeType | {
+      code: ErrorCodeType; message: string; phase: number; retryable: boolean;
+      shouldCompress?: boolean; shouldRotateCredential?: boolean; shouldFallback?: boolean;
+      cause?: unknown; statusCode?: number; provider?: string; model?: string;
+    },
+    message?: string, phase?: number, retryable?: boolean,
+  ) {
+    let code: ErrorCodeType; let msg: string; let ph: number; let retry: boolean;
+    let compress = false; let rotate = false; let fallback = false;
+    let cause: unknown; let status: number | undefined; let prov: string | undefined; let mod: string | undefined;
+
+    if (typeof codeOrOpts === 'object') {
+      code = codeOrOpts.code; msg = codeOrOpts.message; ph = codeOrOpts.phase; retry = codeOrOpts.retryable;
+      compress = codeOrOpts.shouldCompress ?? false; rotate = codeOrOpts.shouldRotateCredential ?? false;
+      fallback = codeOrOpts.shouldFallback ?? false; cause = codeOrOpts.cause; status = codeOrOpts.statusCode;
+      prov = codeOrOpts.provider; mod = codeOrOpts.model;
+    } else {
+      code = codeOrOpts; msg = message!; ph = phase!; retry = retryable!;
+    }
+
+    super(msg);
     this.name = 'DiagnosticAgentError';
-    this.code = opts.code;
-    this.phase = opts.phase;
-    this.retryable = opts.retryable;
-    this.shouldCompress = opts.shouldCompress ?? false;
-    this.shouldRotateCredential = opts.shouldRotateCredential ?? false;
-    this.shouldFallback = opts.shouldFallback ?? false;
-    this.cause = opts.cause;
-    this.statusCode = opts.statusCode;
-    this.provider = opts.provider;
-    this.model = opts.model;
+    this.code = code; this.phase = ph; this.retryable = retry;
+    this.shouldCompress = compress; this.shouldRotateCredential = rotate; this.shouldFallback = fallback;
+    this.cause = cause; this.statusCode = status; this.provider = prov; this.model = mod;
   }
 }
 

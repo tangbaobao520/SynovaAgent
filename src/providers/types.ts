@@ -79,6 +79,12 @@ export interface LLMProvider {
   /** 流式调用 */
   stream(messages: LLMMessage[], callback: StreamCallback, options?: ChatOptions): Promise<void>;
 
+  /** Hermes #12: 校验 LLM 返回的原始响应 */
+  validateResponse?(raw: unknown): { valid: boolean; error?: string };
+
+  /** Hermes #12: 将内部 ToolDefinition 转换为 Provider 原生格式 */
+  convertTools?(tools: Array<{ name: string; description: string; parameters: Record<string, unknown> }>): Array<unknown>;
+
   /** 健康检查（验证 API Key 和连接） */
   healthCheck(): Promise<HealthCheckResult>;
 
