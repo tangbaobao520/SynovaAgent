@@ -252,6 +252,24 @@ export async function createServer(): Promise<Server> {
       } catch { /* no connectors — skip */ }
     });
     logger.info('Connector 同步调度已启动 (cron: */30 * * * *)');
+
+    // GNS M2-3: 每日 19:00 简报
+    scheduler.schedule('daily-briefing', '0 19 * * *', async () => {
+      try {
+        const { BriefingGenerator } = await import('./l3/briefing-generator');
+        const { EngineCoreVendorAdapter } = await import('./adapters/engine-core-adapter');
+        const store = await EngineCoreVendorAdapter.createGraphStore(db);
+        const gen = new BriefingGenerator(store as any);
+        const briefing = await gen.generate('default');
+        const markdown = gen.formatMarkdown(briefing);
+        logger.info({ summary: briefing.summary }, '每日简报已生成');
+        // Future: IM 发送 markdown
+        logger.debug({ markdown: markdown.slice(0, 500) }, '简报内容 (预览)');
+      } catch (err: any) {
+        logger.warn({ err }, '每日简报生成失败 — degraded');
+      }
+    });
+    logger.info('每日简报调度已启动 (cron: 0 19 * * *)');
   } catch (err: any) {
     logger.warn({ err }, 'Cron 调度器初始化失败 — degraded');
   }
