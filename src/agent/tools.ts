@@ -204,6 +204,16 @@ export class ToolRegistry implements ToolRegistryInterface {
     }
   }
 
+  /** Hermes P7: 不安全数据包裹 — 高风险工具输出标记为不可信 */
+  private wrapUntrustedResult(name: string, result: ToolCallResult): ToolCallResult {
+    const unsafePrefixes = ['web_search', 'web_extract', 'connector_', 'browser_', 'mcp_'];
+    const isUnsafe = unsafePrefixes.some(p => name.startsWith(p.replace('_', '')) || name.includes(p.replace('_', '')));
+    if (isUnsafe && result.content && typeof result.content === 'string') {
+      result.content = `<untrusted_tool_result>\n${result.content}\n</untrusted_tool_result>`;
+    }
+    return result;
+  }
+
   /** Hermes P0-3: 并行执行工具 — 门控检查后并发或串行 */
   async executeParallel(toolCalls: Array<{ name: string; params: Record<string, unknown> }>): Promise<Map<string, ToolCallResult>> {
     if (toolCalls.length === 0) return new Map();
@@ -259,5 +269,62 @@ export class ToolRegistry implements ToolRegistryInterface {
       return { ...schema, additionalProperties: false };
     }
     return schema;
+  }
+}
+
+// ═══ Hermes P4: 工具循环保护 (ToolGuardrails) ═══
+
+import * as crypto from 'crypto';
+
+export class ToolGuardrails {
+  private exactFailCount = new Map<string, number>();
+  private sameToolFailCount = new Map<string, number>();
+  private resultHashes = new Map<string, string[]>();
+  private lastResultHash = new Map<string, string>();
+
+  readonly EXACT_FAIL_WARN = 2;
+  readonly EXACT_FAIL_BLOCK = 5;
+  readonly SAME_TOOL_WARN = 3;
+  readonly SAME_TOOL_HALT = 8;
+  readonly NO_PROGRESS_BLOCK = 5;
+
+  check(name: string, params: Record<string, unknown>, result: Record<string, unknown>): GuardrailDecision {
+    const key = `${name}:${JSON.stringify(params)}`;
+    const hash = this.sha256(JSON.stringify(result));
+
+    // 1. 精确失败检测: 相同工具+相同参数连续失败
+    if (result.error) {
+      this.exactFailCount.set(key, (this.exactFailCount.get(key) || 0) + 1);
+      const count = this.exactFailCount.get(key)!;
+      if (count >= this.EXACT_FAIL_BLOCK) return { action: 'block', reason: `${name} 相同参数连续失败 ${count} 次` };
+      if (count >= this.EXACT_FAIL_WARN) return { action: 'warn', reason: `${name} 连续失败 ${count} 次` };
+    } else {
+      this.exactFailCount.delete(key);
+    }
+
+    // 2. 幂等无进展检测 (只读工具返回相同结果)
+    const prevHash = this.lastResultHash.get(name);
+    if (prevHash && prevHash === hash) {
+      const history = this.resultHashes.get(name) || [];
+      history.push(hash);
+      this.resultHashes.set(name, history);
+      if (history.length >= this.NO_PROGRESS_BLOCK) {
+        return { action: 'block', reason: `${name} 连续 ${history.length} 次返回相同结果` };
+      }
+    }
+    this.lastResultHash.set(name, hash);
+
+    return { action: 'allow' };
+  }
+
+  resetForTurn(): void {
+    this.exactFailCount.clear();
+    this.sameToolFailCount.clear();
+    this.resultHashes.clear();
+    this.lastResultHash.clear();
+  }
+
+  private sha256(input: string): string {
+    return crypto.createHash('sha256').update(input).digest('hex');
   }
 }

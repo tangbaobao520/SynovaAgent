@@ -92,3 +92,69 @@ export function createVaultKey(masterSecret: string, salt?: string): { key: Buff
   const key = crypto.scryptSync(masterSecret, s, 32);
   return { key, salt: s };
 }
+
+// ═══ Hermes P6: 凭据池轮换 (CredentialPool) ═══
+
+export interface PoolEntry {
+  connectorId: string;
+  credentials: Record<string, string>;
+  status: 'ok' | 'exhausted' | 'dead';
+  lastError?: string;
+  usedCount: number;
+}
+
+export class CredentialPool {
+  private credentials = new Map<string, PoolEntry>();
+  private recoveryTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+  register(connectorId: string, creds: Record<string, string>): void {
+    this.credentials.set(connectorId, {
+      connectorId, credentials: creds, status: 'ok', usedCount: 0,
+    });
+  }
+
+  /** Round-robin: 返回使用次数最少的可用凭据 */
+  acquire(): { connectorId: string; credentials: Record<string, string> } | null {
+    const available = [...this.credentials.values()]
+      .filter(c => c.status === 'ok')
+      .sort((a, b) => a.usedCount - b.usedCount);
+    if (available.length === 0) return null;
+    const selected = available[0];
+    selected.usedCount++;
+    return { connectorId: selected.connectorId, credentials: { ...selected.credentials } };
+  }
+
+  /** 标记凭据错误 — exhausted 状态, 24h 后自动恢复 */
+  markError(connectorId: string, error: string): void {
+    const entry = this.credentials.get(connectorId);
+    if (!entry) return;
+    entry.lastError = error;
+    entry.status = 'exhausted';
+    // 清除已有恢复定时器
+    const existing = this.recoveryTimers.get(connectorId);
+    if (existing) clearTimeout(existing);
+    this.recoveryTimers.set(connectorId, setTimeout(() => {
+      const e = this.credentials.get(connectorId);
+      if (e && e.status === 'exhausted') e.status = 'ok';
+    }, 24 * 3600_000));
+  }
+
+  /** 标记凭据永久失效 */
+  markDead(connectorId: string): void {
+    const entry = this.credentials.get(connectorId);
+    if (entry) entry.status = 'dead';
+  }
+
+  /** 列出所有凭据状态 */
+  listStatus(): Array<{ id: string; status: string; usedCount: number; lastError?: string }> {
+    return [...this.credentials.entries()].map(([id, e]) => ({
+      id, status: e.status, usedCount: e.usedCount, lastError: e.lastError,
+    }));
+  }
+}
+
+let _credentialPool: CredentialPool | null = null;
+export function getCredentialPool(): CredentialPool {
+  if (!_credentialPool) _credentialPool = new CredentialPool();
+  return _credentialPool;
+}

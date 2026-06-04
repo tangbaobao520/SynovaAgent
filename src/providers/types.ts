@@ -24,7 +24,12 @@ export interface ChatOptions {
   temperature?: number;
   maxTokens?: number;
   signal?: AbortSignal;
-  tools?: Array<{ type: 'function'; function: { name: string; description: string; parameters: Record<string, unknown> } }>;
+  tools?: Array<{ type: 'function'; function: { name: string; description: string; parameters: Record<string, unknown>; strict?: boolean } }>;
+  /** Hermes P5: Prefix Cache 配置 (DeepSeek 自动缓存 — 保留用于 Anthropic 等显式断点) */
+  cacheConfig?: {
+    enabled: boolean;
+    breakpoints: ('system' | 'messages' | 'tools')[];
+  };
 }
 
 export interface ChatResult {

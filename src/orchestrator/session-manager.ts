@@ -36,6 +36,8 @@ export interface CompactionResult {
 export interface SessionConfig {
   compactionThresholdTokens: number;
   tokenEstimateCharsPerToken: number;
+  /** Hermes P8: LLM summarization for compression fallback */
+  llmSummarize?: (messages: Message[]) => Promise<string>;
 }
 
 // ═══ SessionManager ═══
@@ -101,6 +103,35 @@ export class SessionManager {
 
     // Deep compress: normal conversation
     return 'deep_compress';
+  }
+
+  /**
+   * Hermes P8: 压缩失败恢复链 — LLM 摘要 → 确定性摘要 → 保留所有
+   */
+  async compactWithFallback(): Promise<CompactionResult & { method: 'llm' | 'deterministic' | 'none' }> {
+    // 层级 1: LLM 摘要
+    if (this.config.llmSummarize) {
+      try {
+        const summary = await this.config.llmSummarize(this.messages);
+        if (summary) {
+          const originalLength = this.messages.length;
+          // 保留 system prompt + 最后 3 条, 其余替换为 LLM 摘要
+          const preserved = this.messages.slice(-3);
+          this.messages = [
+            this.messages[0], // system prompt
+            { role: 'system', content: `[会话摘要] ${summary}` },
+            ...preserved,
+          ];
+          return { removedCount: originalLength - this.messages.length, summary, preservedCount: this.messages.length, method: 'llm' };
+        }
+      } catch (err: any) {
+        log.warn({ err: err.message }, 'LLM 摘要失败, 降级到确定性压缩');
+      }
+    }
+
+    // 层级 2: 确定性摘要 (保留关键数据点)
+    const result = this.compact();
+    return { ...result, method: result.removedCount > 0 ? 'deterministic' : 'none' };
   }
 
   /**
