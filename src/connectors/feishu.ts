@@ -41,23 +41,20 @@ export class FeishuConnector implements DataConnector {
   }
 
   async fetchMessages(orgId: string, since: string, until?: string): Promise<ConnectorMessage[]> {
-    // Phase B: 调用飞书消息 API
-    // GET https://open.feishu.cn/open-apis/im/v1/messages
-    log.info({ orgId, since, until }, '[feishu] 获取消息');
+    // P1: 激活 Python 连接器 — synova_worker/connectors/feishu.py 已就绪
+    // 激活路径: PythonBridge.run('connectors.feishu', 'fetch_messages', { orgId, since, until })
+    // 需要有效飞书 App ID + App Secret (配置在 .env 中)
+    log.info({ orgId, since, until }, '[feishu] 获取消息 — 待激活 (Python 连接器就绪)');
     return [];
   }
 
   async fetchMembers(orgId: string): Promise<ConnectorMember[]> {
-    // Phase B: 调用飞书通讯录 API
-    // GET https://open.feishu.cn/open-apis/contact/v3/users
-    log.info({ orgId }, '[feishu] 获取成员');
+    log.info({ orgId }, '[feishu] 获取成员 — 待激活 (Python 连接器就绪)');
     return [];
   }
 
   async fetchEvents(orgId: string, since: string, until?: string): Promise<ConnectorEvent[]> {
-    // Phase B: 调用飞书审批 API
-    // GET https://open.feishu.cn/open-apis/approval/v4/instances
-    log.info({ orgId, since, until }, '[feishu] 获取事件');
+    log.info({ orgId, since, until }, '[feishu] 获取事件 — 待激活 (Python 连接器就绪)');
     return [];
   }
 
