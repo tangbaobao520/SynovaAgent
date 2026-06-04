@@ -311,6 +311,19 @@ export class ExpertDispatcher {
       throw err;
     }
   }
+
+  /** Hermes P0-3: 6 专家并行执行 — 诊断速度 3-6x */
+  async runAllExperts(evidence: Evidence[]): Promise<ExpertReport[]> {
+    const expertTypes: ExpertType[] = ['strategy', 'org', 'finance', 'tech', 'marketing', 'action'];
+
+    const results = await Promise.allSettled(
+      expertTypes.map(type => this.runExpert(type, evidence)),
+    );
+
+    return results
+      .filter((r): r is PromiseFulfilledResult<ExpertReport> => r.status === 'fulfilled' && r.value !== null)
+      .map(r => r.value);
+  }
 }
 
 /** Expert system prompts (L3 domain logic) */

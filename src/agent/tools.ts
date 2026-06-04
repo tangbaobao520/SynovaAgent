@@ -30,6 +30,12 @@ export interface ToolSchema {
 /** Execution mode — determines how the tool is dispatched (Slice 1.2 + 4.1) */
 export type ToolExecutionMode = 'local' | 'connector' | 'remote-agent' | 'http';
 
+/** Hermes P0-3: 操作类型 — 用于并行门控 */
+export type OperationType = 'read' | 'write' | 'admin' | 'interactive';
+
+/** Hermes P0-3: 副作用声明 */
+export type SideEffect = 'none' | 'mutating' | 'destructive';
+
 export interface ToolDefinition {
   name: string;
   description: string;
@@ -40,7 +46,47 @@ export interface ToolDefinition {
   httpEndpoint?: string;
   /** Connector name (required when executionMode='connector') */
   connectorName?: string;
+  /** Hermes P0-3: 操作类型 — 用于并行门控 */
+  operationType?: OperationType;
+  /** Hermes P0-3: 副作用声明 */
+  sideEffects?: SideEffect;
+  /** Hermes P0-3: 资源路径 — 用于路径冲突检测 */
+  resourcePath?: string;
   handler: (params: Record<string, unknown>) => Promise<Record<string, unknown>>;
+}
+
+// ═══ Hermes P0-3: 并行门控 ═══
+
+export interface GuardrailDecision {
+  action: 'allow' | 'warn' | 'block';
+  reason?: string;
+}
+
+/** Hermes P0-3: 参考 Hermes tool_dispatch_helpers.py _should_parallelize_tool_batch() */
+export class ParallelGate {
+  /** Determine if a set of tools can be executed in parallel */
+  canParallelize(tools: ToolDefinition[]): boolean {
+    if (tools.length <= 1) return false;
+
+    for (const t of tools) {
+      // 交互式工具不能并行 (需要用户输入)
+      if (t.operationType === 'interactive') return false;
+      // 破坏性操作不能并行 (安全)
+      if (t.sideEffects === 'destructive') return false;
+    }
+
+    // 所有只读工具可以并行
+    if (tools.every(t => t.operationType === 'read' || !t.operationType)) return true;
+
+    // 写操作检查路径冲突
+    const writeTools = tools.filter(t => t.operationType === 'write');
+    if (writeTools.length > 1) {
+      const paths = writeTools.map(t => t.resourcePath || t.name).filter(Boolean);
+      if (new Set(paths).size !== paths.length) return false; // 路径重叠 → 串行
+    }
+
+    return true;
+  }
 }
 
 export interface ToolCallResult {
@@ -59,6 +105,8 @@ export class ToolRegistry implements ToolRegistryInterface {
   }> | null = null;
   private _toolCacheVersion = 0;
   private connectorRegistry: unknown = null; // ConnectorRegistry reference (lazy)
+  /** Hermes P0-3: 并行门控实例 */
+  readonly gate = new ParallelGate();
 
   /** Bind to ConnectorRegistry for 'connector' mode tools (Slice 4.1) */
   bindConnectorRegistry(registry: unknown): void {
@@ -154,6 +202,36 @@ export class ToolRegistry implements ToolRegistryInterface {
       log.error({ err, name, mode }, '工具执行失败');
       return { error: `工具 ${name} 执行失败: ${err.message}` };
     }
+  }
+
+  /** Hermes P0-3: 并行执行工具 — 门控检查后并发或串行 */
+  async executeParallel(toolCalls: Array<{ name: string; params: Record<string, unknown> }>): Promise<Map<string, ToolCallResult>> {
+    if (toolCalls.length === 0) return new Map();
+    if (toolCalls.length === 1) {
+      const r = await this.execute(toolCalls[0].name, toolCalls[0].params);
+      return new Map([[toolCalls[0].name, r]]);
+    }
+
+    const defs = toolCalls.map(t => this.tools.get(t.name)).filter(Boolean) as ToolDefinition[];
+    const canParallel = this.gate.canParallelize(defs);
+
+    if (!canParallel) {
+      // 串行执行 (保持顺序)
+      const results = new Map<string, ToolCallResult>();
+      for (const t of toolCalls) {
+        results.set(t.name, await this.execute(t.name, t.params));
+      }
+      return results;
+    }
+
+    // 并行执行 (最多 8 并发)
+    const entries = await Promise.all(
+      toolCalls.map(async (t): Promise<[string, ToolCallResult]> => {
+        const r = await this.execute(t.name, t.params);
+        return [t.name, r];
+      }),
+    );
+    return new Map(entries);
   }
 
   /** 生成 OpenAI 兼容的 function calling schema (P1: 固化缓存 — DeepSeek prefix cache 优化) */

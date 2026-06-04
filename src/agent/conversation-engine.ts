@@ -109,16 +109,16 @@ export interface EngineState {
 /** @deprecated 使用 EngineState。保留用于 TUI/CLI 后向兼容。 */
 export type ConversationState = EngineState;
 
-const SYSTEM_PROMPT = `你是 SynovaAgent，一个组织数字孪生诊断专家。
+// ═══ Hermes P0-2: 三层系统提示 — DeepSeek Prefix Cache 优化 ═══
+//
+// 层 1: 稳定层 — 会话期间不变 (Prefix Cache 命中)
+// 层 2: 上下文层 — Phase 变化时更新
+// 层 3: 易变层 — 每轮更新 (放在 user message 前, 不影响 Cache)
+// 参考: Hermes system_prompt.py build_system_prompt() 三层组装
+
+const STABLE_LAYER = `你是 Synova，一个 AI 组织诊断助手。
 
 你的角色是"组织医生"——通过结构化访谈了解用户组织的情况，然后运行六阶段诊断分析。
-
-当前阶段：Phase 0（组织访谈）
-你要做的是：
-1. 了解组织名称、规模、行业
-2. 了解当前最关心的问题/痛点
-3. 了解组织架构（团队数量、关键角色）
-4. 确认诊断深度和范围
 
 规则：
 - 每次只问 1-2 个问题，不要一次问太多
@@ -126,6 +126,37 @@ const SYSTEM_PROMPT = `你是 SynovaAgent，一个组织数字孪生诊断专家
 - 收集到足够信息后，告知用户"访谈完成，开始运行诊断分析"
 - 用中文回复，专业但不冷漠
 - 回复控制在 100-200 字`;
+
+function buildContextLayer(phase: number): string {
+  switch (phase) {
+    case 0:
+      return `## 当前阶段：Phase 0（组织访谈）
+你要做的是：
+1. 了解组织名称、规模、行业
+2. 了解当前最关心的问题/痛点
+3. 了解组织架构（团队数量、关键角色）
+4. 确认诊断深度和范围`;
+    case 1:
+      return `## 当前阶段：Phase 1（数据采集）
+系统正在从连接的数据源采集信息。继续与用户对话，引导提供更多细节。`;
+    default:
+      return `## 当前阶段：Phase ${phase}
+继续诊断分析，基于已有信息推进。`;
+  }
+}
+
+function buildVolatileLayer(turnCount: number, phase: number): string {
+  // 易变层放在 user message 末尾，不影响 Prefix Cache
+  return `[轮次: ${turnCount}] [阶段: ${phase}/5]`;
+}
+
+function buildSystemPrompt(phase: number, turnCount: number): string {
+  return [
+    STABLE_LAYER,
+    buildContextLayer(phase),
+  ].join('\n\n---\n\n');
+  // 易变层不放入 system prompt — 追加到 user message 末尾保护 Cache
+}
 
 // ═══ ConversationEngine ═══
 
@@ -174,7 +205,7 @@ export class ConversationEngine {
       maxTurns: config.maxTurns ?? 6,
       orgId: config.orgId || '',
     };
-    this.messages = [{ role: 'system', content: SYSTEM_PROMPT }];
+    this.messages = [{ role: 'system', content: buildSystemPrompt(0, 0) }];
     this.toolRegistry = new ToolRegistry();
 
     // 编排层接线: 接收可选组件
@@ -324,10 +355,11 @@ export class ConversationEngine {
     this.orgId = id;
   }
 
-  /** Advance to next phase */
+  /** Advance to next phase (Hermes P0-2: 重建 system prompt 以更新上下文层) */
   advancePhase(): void {
     this.phase++;
-    log.debug({ phase: this.phase }, 'Phase 推进');
+    this.messages[0] = { role: 'system', content: buildSystemPrompt(this.phase, this.turnCount) };
+    log.debug({ phase: this.phase }, 'Phase 推进, system prompt 已更新');
   }
 
   /** Get message history (shallow copy) */
@@ -364,7 +396,8 @@ export class ConversationEngine {
    */
   async processMessage(userInput: string): Promise<ProcessResult> {
     this.turnCount++;
-    this.messages.push({ role: 'user', content: userInput });
+    // Hermes P0-2: 易变层追加到 user message — 保护 Prefix Cache
+    this.messages.push({ role: 'user', content: `${userInput}\n\n${buildVolatileLayer(this.turnCount, this.phase)}` });
 
     // L3 接线: EvidenceCollector — Phase 0 证据自动采集
     if (this.phase === 0 && this.evidenceCollector) {
@@ -468,7 +501,8 @@ export class ConversationEngine {
     onToken: (token: string) => void,
   ): Promise<ProcessResult> {
     this.turnCount++;
-    this.messages.push({ role: 'user', content: userInput });
+    // Hermes P0-2: 易变层追加到 user message — 保护 Prefix Cache
+    this.messages.push({ role: 'user', content: `${userInput}\n\n${buildVolatileLayer(this.turnCount, this.phase)}` });
 
     // L1 decoupling: when ViewAdapter is bound, use it for display
     const display = (token: string) => {
