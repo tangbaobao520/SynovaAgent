@@ -449,17 +449,21 @@ function extractStatusCode(error: unknown): number | undefined {
   return undefined;
 }
 
+type ErrorLike = { body?: unknown; response?: { json?: () => unknown }; message?: string };
+type ErrorPayload = { code?: unknown; type?: unknown; message?: unknown };
+
 function extractErrorBody(error: unknown): Record<string, unknown> {
-  const e = error as any;
-  if (e?.body && typeof e.body === 'object') return e.body;
-  try { const r = e?.response?.json?.(); if (r && typeof r === 'object') return r; } catch {}
+  const e = error as ErrorLike;
+  if (e?.body && typeof e.body === 'object' && !Array.isArray(e.body)) return e.body as Record<string, unknown>;
+  try { const r = e?.response?.json?.(); if (r && typeof r === 'object' && !Array.isArray(r)) return r as Record<string, unknown>; } catch { /* not JSON */ }
   return {};
 }
 
 function extractErrorCode(body: Record<string, unknown>): string {
   const err = body?.error;
-  if (err && typeof err === 'object') {
-    const code = (err as any).code || (err as any).type;
+  if (err && typeof err === 'object' && !Array.isArray(err)) {
+    const payload = err as ErrorPayload;
+    const code = payload.code || payload.type;
     if (typeof code === 'string' && code.trim() && code.trim() !== '400') return code.trim();
   }
   const code = body?.code || body?.error_code;
@@ -468,10 +472,12 @@ function extractErrorCode(body: Record<string, unknown>): string {
 }
 
 function buildErrorMessage(error: unknown, body: Record<string, unknown>): string {
-  const parts: string[] = [String((error as any)?.message || error || '')];
+  const e = error as ErrorLike;
+  const parts: string[] = [String(e?.message || error || '')];
   const errObj = body?.error;
-  if (errObj && typeof errObj === 'object' && typeof (errObj as any).message === 'string') {
-    parts.push((errObj as any).message);
+  if (errObj && typeof errObj === 'object' && !Array.isArray(errObj)) {
+    const payload = errObj as ErrorPayload;
+    if (typeof payload.message === 'string') parts.push(payload.message);
   }
   return parts.filter(Boolean).join(' ').toLowerCase();
 }
