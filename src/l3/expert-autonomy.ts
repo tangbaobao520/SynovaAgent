@@ -135,7 +135,8 @@ export class ExpertAutonomyEngine {
 
         // Execute query
         if (parsed.action === 'query_graph' && parsed.function) {
-          const result = await this.executeQuery(parsed.function);
+          // Pass empty params — ToolRegistry tools handle defaults internally
+          const result = await this.executeQuery(parsed.function, {});
           const resultKey = JSON.stringify(result).slice(0, 200);
 
           // Smart termination: zero information gain
@@ -198,17 +199,45 @@ export class ExpertAutonomyEngine {
     return { thought: content.slice(0, 200), action: 'finalize', confidence: 0.3 };
   }
 
-  private async executeQuery(functionName: string): Promise<unknown> {
+  // ToolRegistry 注入 (替代硬编码 switch)
+  private toolRegistry?: { execute(name: string, params: Record<string, unknown>): Promise<Record<string, unknown>> };
+
+  withToolRegistry(registry: { execute(name: string, params: Record<string, unknown>): Promise<Record<string, unknown>> }): this {
+    this.toolRegistry = registry;
+    return this;
+  }
+
+  private async executeQuery(functionName: string, params?: Record<string, unknown>): Promise<unknown> {
+    // Path 1: ToolRegistry (优先 — 统一工具系统, 含 MCP/图查询/专家工具)
+    if (this.toolRegistry) {
+      const result = await this.toolRegistry.execute(functionName, params || {});
+      if (result.error) return { error: result.error };
+      return result;
+    }
+
+    // Path 2: QueryAPI fallback (向后兼容)
     switch (functionName) {
       case 'findDiagnosticPaths':
-        return this.queryApi.findDiagnosticPaths('Risk', 'Person');
+        return this.queryApi.findDiagnosticPaths(
+          String(params?.fromType || 'Risk'),
+          String(params?.toType || 'Person'),
+        );
       case 'summarizeSubgraph':
-        return this.queryApi.summarizeSubgraph('root', 3);
+        return this.queryApi.summarizeSubgraph(
+          String(params?.rootId || 'root'),
+          Number(params?.maxDepth || 3),
+        );
       case 'findCrossDimensionalBrokers':
         return this.queryApi.findCrossDimensionalBrokers();
       case 'match_pattern':
-        return this.queryApi.matchPattern ? this.queryApi.matchPattern([]) : { error: 'matchPattern not configured' };
+        return this.queryApi.matchPattern
+          ? this.queryApi.matchPattern((params?.signals as string[]) || [])
+          : { error: 'matchPattern not configured' };
       default:
+        // Forward unknown tools to query_sog_graph (动态 L4 查询)
+        if (this.toolRegistry) {
+          return this.toolRegistry.execute('query_sog_graph', { operation: functionName, ...params });
+        }
         return { error: `未知查询: ${functionName}` };
     }
   }

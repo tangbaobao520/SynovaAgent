@@ -113,6 +113,8 @@ export interface ExpertDispatcherConfig {
   maxRetries?: number;
   /** PII 脱敏: 证据出站到云 LLM 前脱敏 */
   piiScrubber?: import('../security/pii-scrubber').PIIScrubber;
+  /** ToolRegistry: 注入到 ExpertAutonomyEngine (替代硬编码 switch) */
+  toolRegistry?: import('../agent/tools').ToolRegistry;
   /** Optional: ExpertAutonomyEngine factory (DI) */
   engineFactory?: (llm: LLMClient, api: QueryAPI, policy: DataAccessPolicy, cfg?: { maxRounds?: number }) => ExpertAutonomyEngine;
 }
@@ -127,6 +129,7 @@ export class ExpertDispatcher {
   private timeoutMs: number;
   private maxRetries: number;
   private piiScrubber: import('../security/pii-scrubber').PIIScrubber | null = null;
+  private toolRegistry: import('../agent/tools').ToolRegistry | null = null;
 
   constructor(config: ExpertDispatcherConfig) {
     this.llmClient = config.llmClient;
@@ -135,6 +138,7 @@ export class ExpertDispatcher {
     this.timeoutMs = config.timeoutMs ?? 60_000;
     this.maxRetries = config.maxRetries ?? 2;
     this.piiScrubber = config.piiScrubber || null;
+    this.toolRegistry = config.toolRegistry || null;
   }
 
   /** Enable expert autonomy with graph query + quality firewall */
@@ -218,6 +222,8 @@ export class ExpertDispatcher {
           const engine = this.engineFactory
             ? this.engineFactory(this.llmClient, this.queryApi!, policy, { maxRounds: 5 })
             : new ExpertAutonomyEngine(this.llmClient, this.queryApi!, policy, { maxRounds: 5 });
+          // 注入 ToolRegistry — 替代硬编码 switch, 专家可调用所有注册工具
+          if (this.toolRegistry) engine.withToolRegistry(this.toolRegistry);
 
           // EC-08: 传入 patches 供引擎做图查询 (additive — 保留文本 evidence)
           const patches = this.evidenceToPatches(filtered);
