@@ -4,6 +4,7 @@
  * 用户确认/驳回根因节点时，记录决策到 GraphStore 决策边。
  * 这是 Palantir 对标: Action as First-Class Citizen。
  */
+import { SOGNodeType } from '@synova/sog-core';
 import { createLogger } from '../logger';
 
 const log = createLogger('l4/decision-capture');
@@ -33,9 +34,9 @@ export function captureDecision(
 ): DecisionResult {
   try {
     // Verify node exists
-    const node = store.queryNodes('Risk', { id: decision.nodeId }, graph)
-      .concat(store.queryNodes('Goal', { id: decision.nodeId }, graph))
-      .concat(store.queryNodes('Financial', { id: decision.nodeId }, graph));
+    const node = store.queryNodes(SOGNodeType.RISK, { id: decision.nodeId }, graph)
+      .concat(store.queryNodes(SOGNodeType.GOAL, { id: decision.nodeId }, graph))
+      .concat(store.queryNodes(SOGNodeType.FINANCIAL, { id: decision.nodeId }, graph));
 
     if (node.length === 0) {
       return { recorded: false, error: `节点 ${decision.nodeId} 不存在` };
