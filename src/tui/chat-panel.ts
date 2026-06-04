@@ -23,6 +23,12 @@ export interface ChatPanel {
   appendToken(token: string): void;
   /** 聚焦输入框 */
   focus(): void;
+  /** 注册输入提交回调: app.chat.onSubmit((text) => { ... }) */
+  onSubmit(cb: (text: string) => void): void;
+  /** 输入框引用 (blessed Textbox) */
+  readonly input: blessed.Widgets.TextboxElement;
+  /** 清空并读取输入框内容 */
+  readInput: () => string;
 }
 
 export function createChatPanel(opts: { top?: number; left?: number; width?: string; height?: string } = {}): ChatPanel {
