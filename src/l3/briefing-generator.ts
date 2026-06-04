@@ -11,6 +11,7 @@
  *   4. 遗留问题
  *   5. 推荐动作
  */
+import { getReportTemplateRegistry } from './report-templates';
 import { createLogger } from '../logger';
 
 const log = createLogger('l3/briefing-generator');
@@ -119,47 +120,10 @@ export class BriefingGenerator {
     return briefing;
   }
 
-  /** Format briefing as Markdown for IM delivery */
-  formatMarkdown(briefing: DailyBriefing): string {
-    const lines: string[] = [];
-    lines.push(`📊 **Synova 每日简报** — ${briefing.date}`);
-    lines.push('');
-    lines.push(briefing.summary);
-    lines.push('');
-
-    if (briefing.goals.length > 0) {
-      lines.push('### 📌 目标进度');
-      for (const g of briefing.goals.slice(0, 5)) {
-        const bar = '█'.repeat(Math.round(g.progress / 10)) + '░'.repeat(10 - Math.round(g.progress / 10));
-        const trend = g.trend === 'up' ? '📈' : g.trend === 'down' ? '📉' : '➡️';
-        lines.push(`${trend} ${g.name}: ${bar} ${g.progress}%`);
-      }
-      lines.push('');
-    }
-
-    if (briefing.alerts.length > 0) {
-      lines.push('### 🚨 活跃告警');
-      for (const a of briefing.alerts.slice(0, 5)) {
-        const icon = a.priority === 'high' ? '🔴' : '🟡';
-        lines.push(`${icon} ${a.description} (置信度 ${Math.round(a.confidence * 100)}%)`);
-      }
-      lines.push('');
-    }
-
-    if (briefing.obstacles.length > 0) {
-      lines.push('### 🔄 遗留问题');
-      for (const o of briefing.obstacles.slice(0, 3)) {
-        lines.push(`- ${o.description} [${o.status}]`);
-      }
-      lines.push('');
-    }
-
-    lines.push('### 💡 建议');
-    for (const r of briefing.recommendations) {
-      lines.push(`- ${r}`);
-    }
-
-    return lines.join('\n');
+  /** Format briefing using registered report template */
+  formatMarkdown(briefing: DailyBriefing, template = 'daily_briefing'): string {
+    const registry = getReportTemplateRegistry();
+    return registry.render(template, briefing);
   }
 }
 

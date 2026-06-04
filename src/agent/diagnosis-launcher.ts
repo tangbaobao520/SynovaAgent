@@ -9,8 +9,12 @@ import type { DiagnosisEngine, DiagnosisEvent, ConsultationResult } from '../l2-
 import { createLogger } from '../logger';
 import { resolveEntitiesL3 } from '../l4/entity-resolver';
 import { generateCommunityReports } from '../l4/community-reports';
+import { runSafetyGate } from '../security/safety-guardrails';
+import { getFaultRecovery } from '../services/fault-recovery';
 
 const log = createLogger('agent/diagnosis-launcher');
+// Fault recovery singleton for phase-level error handling
+const faultRecovery = getFaultRecovery();
 
 // Re-export for backward compat
 export type { DiagnosisEvent, ConsultationResult };
@@ -70,6 +74,17 @@ export class DiagnosisLauncher {
         } catch (err: any) {
           log.warn({ err }, '证据加载失败 — degraded, 诊断继续');
         }
+      }
+
+      // NRA 安全门禁 — 诊断前检查阶段覆盖+诚实标记
+      const gate = runSafetyGate({
+        diagnosisPhase: 1,
+        completedPhases: new Set([0]),
+        confidence: 0.5,
+        auditEnabled: !!this.ctx.eventBus,
+      });
+      if (!gate.passed) {
+        onEvent?.({ type: 'degraded', phase: 0, label: '安全门禁', message: gate.blockReasons.join('; ') });
       }
 
       // 铁律 39: L2 → DiagnosisEngine 接口 (不直接 import engine-core)

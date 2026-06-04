@@ -246,6 +246,43 @@ export function registerBuiltinTools(
     },
   });
 
+  // ═══ Skill 安装器 — 用户对话"安装 XXX"触发 ═══
+  registry.register({
+    name: 'install_skill',
+    description: '安装一个 Skill 或 MCP Server。系统自动执行安全审计后注册。用法: install_skill(skillName="brave-search")',
+    parameters: {
+      type: 'object',
+      properties: {
+        skillName: { type: 'string', description: 'Skill 名称: brave-search / github / memory / filesystem' },
+      },
+      required: ['skillName'],
+    },
+    operationType: 'write',
+    sideEffects: 'mutating',
+    handler: async (params) => {
+      try {
+        const { getSkillInstaller } = await import('../mcp/skill-installer');
+        const { getMCPBridge } = await import('../mcp/bridge');
+        const skillName = String(params.skillName);
+        const installer = getSkillInstaller('vendor/mcp-servers');
+        const manifests = installer.discover();
+        const match = manifests.find(m => m.name === skillName);
+        if (!match) return { error: `未找到 Skill: ${skillName}。可用: ${manifests.map(m => m.name).join(', ') || '无'}` };
+
+        const result = await installer.install(
+          `vendor/mcp-servers/${skillName}`,
+          registry,
+        );
+        if (result.success) {
+          return { ok: true, skill: skillName, auditScore: result.auditReport.score, tools: result.installedTools };
+        }
+        return { error: result.error || '安装失败', auditScore: result.auditReport.score };
+      } catch (err: any) {
+        return { error: `安装失败: ${err.message}` };
+      }
+    },
+  });
+
   // Phase B: 注册共享准确率工具
   for (const tool of ACCURACY_TOOLS) {
     registry.register(tool);

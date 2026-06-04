@@ -253,6 +253,42 @@ export async function createServer(): Promise<Server> {
     });
     logger.info('Connector 同步调度已启动 (cron: */30 * * * *)');
 
+    // 文件安全守卫 — 连接器读写保护
+    const { getFileGuard } = await import('./security/file-guard');
+    app.locals.fileGuard = getFileGuard(config.dbPath);
+
+    // 连接器沙箱 — 安全等级判定
+    const { determineSandboxLevel } = await import('./security/connector-sandbox');
+    app.locals.determineSandboxLevel = determineSandboxLevel;
+
+    // 告警规则引擎 — 运行时注册检查
+    try {
+      const { getAlertRuleEngine } = await import('./l5/alert-rules');
+      getAlertRuleEngine();
+      logger.info('告警规则引擎已初始化');
+    } catch (err: any) { logger.warn({ err }, '告警规则引擎初始化失败 — degraded'); }
+
+    // IM 通道 — 注册飞书 Webhook (如果配置)
+    try {
+      const { getIMRegistry, createFeishuWebhookChannel } = await import('./l1/im-channel');
+      const imReg = getIMRegistry();
+      if (process.env.FEISHU_WEBHOOK_URL) {
+        imReg.register(createFeishuWebhookChannel(process.env.FEISHU_WEBHOOK_URL));
+        imReg.switchTo('feishu');
+        logger.info('飞书 IM 通道已注册');
+      }
+    } catch (err: any) { logger.warn({ err }, 'IM 通道初始化失败 — degraded'); }
+
+    // MCP 工具注册 — 自动连接 Brave Search + GitHub (如果 API Key 已配置)
+    try {
+      const { registerMCPTools } = await import('./mcp/tool-registration');
+      const { ToolRegistry } = await import('./agent/tools');
+      const mcpRegistry = new ToolRegistry();
+      await registerMCPTools(mcpRegistry);
+      app.locals.mcpToolRegistry = mcpRegistry;
+      logger.info('MCP 工具已注册');
+    } catch (err: any) { logger.warn({ err }, 'MCP 工具注册失败 — degraded (需 BRAVE_API_KEY 或 GITHUB_TOKEN)'); }
+
     // GNS M2-3: 每日 19:00 简报
     scheduler.schedule('daily-briefing', '0 19 * * *', async () => {
       try {
