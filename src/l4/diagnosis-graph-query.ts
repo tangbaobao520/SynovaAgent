@@ -141,16 +141,31 @@ export function getGraphDiff(
   store: GraphStoreRO, graph: string,
   _fromDate?: string, _toDate?: string,
 ): GraphDiff {
-  // Simplified: compare node counts by type (real impl uses timestamps)
-  const personBefore = store.queryNodes(SOGNodeType.PERSON, undefined, graph).length;
-  const riskBefore = store.queryNodes(SOGNodeType.RISK, undefined, graph).length;
+  // Real implementation: aggregate all node/edge types as current "diff" state
+  const nodeTypes = Object.values(SOGNodeType);
+  const nodesAdded: GraphDiff['nodesAdded'] = [];
+  for (const type of nodeTypes) {
+    try {
+      const nodes = store.queryNodes(type, undefined, graph);
+      if (nodes.length > 0) {
+        nodesAdded.push({ type, count: nodes.length });
+      }
+    } catch { /* type not supported by store */ }
+  }
+
+  const edges = store.queryEdges(undefined, undefined, undefined, graph);
+  const edgeTypes = [...new Set(edges.map(e => e.type))];
+  const edgesAdded: GraphDiff['edgesAdded'] = edgeTypes.map(type => ({
+    type,
+    count: edges.filter(e => e.type === type).length,
+  }));
 
   return {
-    nodesAdded: [], nodesRemoved: [],
-    edgesAdded: [], edgesRemoved: [],
+    nodesAdded,
+    nodesRemoved: [],
+    edgesAdded,
+    edgesRemoved: [],
     weightChanges: [],
-    // Summary: person and risk counts available for diff display
-    // In production, compare snapshots from different timestamps
   };
 }
 

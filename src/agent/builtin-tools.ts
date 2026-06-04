@@ -146,6 +146,43 @@ export function registerBuiltinTools(
     },
   });
 
+  // ═══ read_document — 读取已摄取的文档内容 ═══
+  registry.register({
+    name: 'read_document',
+    description: '读取已上传到知识库的文档内容。用于专家 Agent 查询历史诊断报告、上传的 PDF/TXT 等。',
+    parameters: {
+      type: 'object',
+      properties: {
+        orgId: { type: 'string', description: '组织 ID' },
+        query: { type: 'string', description: '搜索关键词 (可选, 留空返回最近5条)' },
+        limit: { type: 'number', description: '返回条数 (默认5)' },
+      },
+      required: ['orgId'],
+    },
+    operationType: 'read',
+    sideEffects: 'none',
+    handler: async (params) => {
+      try {
+        const orgId = String(params.orgId || getOrgId());
+        const BASE = `http://localhost:${process.env.PORT || 3000}`;
+        const res = await fetch(`${BASE}/api/ontology/graph/${orgId}`);
+        if (!res.ok) return { documents: [], count: 0, hint: '本体 API 不可达' };
+        const data = await res.json() as { nodes?: Array<{ type?: string; props?: Record<string, unknown> }> };
+        const docs = (data.nodes || [])
+          .filter(n => n.type === 'Document')
+          .map(n => ({ type: n.type, name: (n.props as any)?.name || '未命名', docType: (n.props as any)?.docType }));
+        const limit = Number(params.limit || 5);
+        const query = String(params.query || '').toLowerCase();
+        const filtered = query
+          ? docs.filter(d => d.name.toLowerCase().includes(query))
+          : docs.slice(-limit);
+        return { documents: filtered.slice(0, limit), count: filtered.length, totalDocs: docs.length, orgId };
+      } catch (err: any) {
+        return { error: `读取文档失败: ${err.message}` };
+      }
+    },
+  });
+
   // ═══ Cron: schedule_task (用户通过对话设定定时任务) ═══
   registry.register({
     name: 'schedule_task',
