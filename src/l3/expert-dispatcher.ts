@@ -19,6 +19,7 @@ import type { DataAccessPolicy, SubAgentReport, ExpertType } from '../orchestrat
 import { ExpertAutonomyEngine } from './expert-autonomy';
 import type { QueryAPI } from './expert-autonomy';
 import { QualityFirewall } from './quality-firewall';
+import { validateExpertOutput } from './expert-output-schema';
 import { createLogger } from '../logger';
 
 const log = createLogger('l3/expert-dispatcher');
@@ -218,18 +219,38 @@ export class ExpertDispatcher {
         const parsed = this.parseStructuredOutput(response.content, type);
         const ontologyPatches = this.extractOntologyPatches(response.content);
 
+        // EC-07: zod Schema 校验 — LLM 输出不符合 Schema 时标记 degraded
+        const validation = validateExpertOutput(parsed as Record<string, unknown>);
+        if (!validation.valid) {
+          log.warn({ expertType: type, errors: validation.errors }, 'Expert output schema 校验失败 — degraded');
+        }
+
         return {
           expertType: type,
-          hypothesis: parsed.overallAssessment?.slice(0, 200) || response.content.slice(0, 200),
-          confidence: parsed.findings?.length
-            ? parsed.findings.reduce((sum: number, f: { confidence: number }) => sum + f.confidence, 0) / parsed.findings.length
+          hypothesis: validation.output.overallAssessment?.slice(0, 200) || response.content.slice(0, 200),
+          confidence: validation.output.findings?.length
+            ? validation.output.findings.reduce((sum: number, f: { confidence: number }) => sum + f.confidence, 0) / validation.output.findings.length
             : 0.6,
           evidenceUsed: filtered.length, durationMs: Date.now() - startTime,
-          findings: parsed.findings,
-          overallAssessment: parsed.overallAssessment,
-          uncertainties: parsed.uncertainties,
-          conflictingSignals: parsed.conflictingSignals,
-          crossReferences: parsed.crossReferences,
+          findings: validation.output.findings?.map(f => ({
+            id: f.id, dimension: f.dimension, statement: f.statement,
+            confidence: f.confidence, evidenceRefs: f.evidenceRefs,
+            severity: f.severity, suggestedActions: f.suggestedActions || [],
+          })),
+          overallAssessment: validation.output.overallAssessment,
+          uncertainties: validation.output.uncertainties?.map(u => ({
+            description: u.description, reason: u.reason as '数据不足' | '超出领域' | '需要人工判断',
+            suggestedNextStep: u.suggestedNextStep || '',
+          })),
+          conflictingSignals: validation.output.conflictingSignals?.map(c => ({
+            dimension: c.dimension, myFinding: c.myFinding,
+            myConfidence: c.myConfidence, potentialOpposingExpert: c.potentialOpposingExpert || '',
+            reason: c.reason || '',
+          })),
+          crossReferences: validation.output.crossReferences?.map(c => ({
+            dimension: c.dimension, expertType: c.expertType,
+            reason: c.reason || '', priority: c.priority,
+          })),
           ontologyPatches,
           model: response.model,
         };
