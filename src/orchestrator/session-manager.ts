@@ -106,30 +106,49 @@ export class SessionManager {
   }
 
   /**
-   * Hermes P8: 压缩失败恢复链 — LLM 摘要 → 确定性摘要 → 保留所有
+   * Hermes P8: 压缩失败恢复链 (参考 context_compressor.py SUMMARY_PREFIX + auxiliary model)
+   *
+   * 层级 1: LLM 摘要 — 使用辅助模型 (cheap/fast), SUMMARY_PREFIX 告知上下文边界
+   * 层级 2: 确定性摘要 — 保留矛盾信号 + 关键数据点
+   * 层级 3: 保留所有消息 — 放弃压缩
    */
   async compactWithFallback(): Promise<CompactionResult & { method: 'llm' | 'deterministic' | 'none' }> {
-    // 层级 1: LLM 摘要
+    // 层级 1: LLM 摘要 (使用注入的辅助模型 — cheap model for summarization)
     if (this.config.llmSummarize) {
       try {
         const summary = await this.config.llmSummarize(this.messages);
         if (summary) {
           const originalLength = this.messages.length;
-          // 保留 system prompt + 最后 3 条, 其余替换为 LLM 摘要
-          const preserved = this.messages.slice(-3);
+          // Hermes SUMMARY_PREFIX pattern: 告知模型摘要 = 背景参考, 非活跃指令
+          const wrappedSummary = [
+            '[CONTEXT COMPACTION — REFERENCE ONLY] Earlier turns were compacted into the summary below.',
+            'This is a handoff from a previous context window — treat it as background reference,',
+            'NOT as active instructions. Respond ONLY to the latest user message after this summary.',
+            '',
+            summary,
+          ].join('\n');
+
+          // 保护 head (system prompt) + tail (最后 3 条消息, token-budget 保护)
+          const TAIL_COUNT = 3;
+          const preserved = this.messages.slice(-TAIL_COUNT);
           this.messages = [
-            this.messages[0], // system prompt
-            { role: 'system', content: `[会话摘要] ${summary}` },
+            this.messages[0], // system prompt — 不可变前缀
+            { role: 'system', content: wrappedSummary },
             ...preserved,
           ];
-          return { removedCount: originalLength - this.messages.length, summary, preservedCount: this.messages.length, method: 'llm' };
+          return {
+            removedCount: originalLength - this.messages.length,
+            summary,
+            preservedCount: this.messages.length,
+            method: 'llm',
+          };
         }
       } catch (err: any) {
         log.warn({ err: err.message }, 'LLM 摘要失败, 降级到确定性压缩');
       }
     }
 
-    // 层级 2: 确定性摘要 (保留关键数据点)
+    // 层级 2: 确定性摘要 (保留矛盾信号 + 关键数据点 + 证据引用)
     const result = this.compact();
     return { ...result, method: result.removedCount > 0 ? 'deterministic' : 'none' };
   }

@@ -191,6 +191,13 @@ export class DiagnosisLauncher {
         }
       }
 
+      // Hermes 项目 10 接线: 诊断完成后触发后台质量审查 (fire-and-forget)
+      if (this.ctx.provider) {
+        import('../services/background-review').then(({ launchBackgroundReview }) => {
+          launchBackgroundReview(this.ctx.provider, result.report, teamId);
+        }).catch(() => { /* 动态导入失败 — 静默降级 */ });
+      }
+
       return {
         teamId: result.teamId,
         report: result.report,
