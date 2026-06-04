@@ -306,6 +306,24 @@ export async function createServer(): Promise<Server> {
       }
     });
     logger.info('每日简报调度已启动 (cron: 0 19 * * *)');
+
+    // P2: SQLite 每日备份 (凌晨 3:00)
+    scheduler.schedule('db-backup', '0 3 * * *', async () => {
+      try {
+        const { backupDatabase } = await import('./services/db-encryption');
+        const result = backupDatabase({
+          dbPath: config.dbPath,
+          backupDir: config.dbPath.replace(/[^/\\]+$/, '') + 'backups',
+          maxBackups: 7,
+          encryptBackups: true,
+          masterSecret: process.env.CREDENTIAL_MASTER_KEY || config.engineTokens || 'synova-dev-secret',
+          salt: config.dbPath,
+        });
+        if (result.ok) logger.info({ path: result.path }, '数据库备份完成');
+        else logger.warn({ error: result.error }, '数据库备份失败');
+      } catch (err: any) { logger.warn({ err }, '数据库备份异常'); }
+    });
+    logger.info('数据库备份调度已启动 (cron: 0 3 * * *, 保留 7 天)');
   } catch (err: any) {
     logger.warn({ err }, 'Cron 调度器初始化失败 — degraded');
   }

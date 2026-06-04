@@ -153,3 +153,61 @@ export function autoEncryptOnShutdown(config: EncryptionConfig): boolean {
   if (isDatabaseEncrypted(config.dbPath)) return false;
   return encryptDatabase(config);
 }
+
+// ═══ P2: SQLite 定期备份 ═══
+
+export interface BackupConfig {
+  dbPath: string;
+  backupDir: string;
+  maxBackups: number;
+  encryptBackups: boolean;
+  masterSecret?: string;
+  salt?: string;
+}
+
+/**
+ * Create a timestamped backup of the database file.
+ * If encryptBackups=true, backup is AES-256-GCM encrypted.
+ * Old backups beyond maxBackups are pruned.
+ */
+export function backupDatabase(config: BackupConfig): { ok: boolean; path?: string; error?: string } {
+  try {
+    if (!fs.existsSync(config.dbPath)) {
+      return { ok: false, error: '数据库文件不存在' };
+    }
+
+    // Ensure backup dir exists
+    if (!fs.existsSync(config.backupDir)) {
+      fs.mkdirSync(config.backupDir, { recursive: true });
+    }
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const backupPath = path.join(config.backupDir, `synova-backup-${timestamp}.db`);
+
+    // Copy database
+    if (config.encryptBackups && config.masterSecret && config.salt) {
+      const key = crypto.scryptSync(config.masterSecret, config.salt + '-backup', 32);
+      const iv = crypto.randomBytes(12);
+      const cipher = crypto.createCipheriv('aes-256-gcm', key, iv, { authTagLength: 16 });
+      const plaintext = fs.readFileSync(config.dbPath);
+      const encrypted = Buffer.concat([cipher.update(plaintext), cipher.final()]);
+      const authTag = cipher.getAuthTag();
+      fs.writeFileSync(backupPath, Buffer.concat([iv, authTag, encrypted]));
+    } else {
+      fs.copyFileSync(config.dbPath, backupPath);
+    }
+
+    // Prune old backups
+    const files = fs.readdirSync(config.backupDir)
+      .filter(f => f.startsWith('synova-backup-'))
+      .sort();
+    while (files.length > config.maxBackups) {
+      fs.unlinkSync(path.join(config.backupDir, files.shift()!));
+    }
+
+    return { ok: true, path: backupPath };
+  } catch (err: any) {
+    return { ok: false, error: err.message };
+  }
+}
+
