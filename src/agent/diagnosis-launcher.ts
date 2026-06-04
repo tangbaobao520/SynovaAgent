@@ -11,6 +11,16 @@ import { resolveEntitiesL3 } from '../l4/entity-resolver';
 import { generateCommunityReports } from '../l4/community-reports';
 import { runSafetyGate } from '../security/safety-guardrails';
 import { getFaultRecovery } from '../services/fault-recovery';
+import type { SessionStore } from '../store/session-store';
+
+// 诊断检查点 — 每个 Phase 完成后保存状态到 SessionStore
+interface DiagnosisCheckpoint {
+  sessionId: string;
+  phase: number;
+  completedModules: string[];
+  partialReport: unknown;
+  savedAt: string;
+}
 
 const log = createLogger('agent/diagnosis-launcher');
 // Fault recovery singleton for phase-level error handling
@@ -86,6 +96,19 @@ export class DiagnosisLauncher {
       if (!gate.passed) {
         onEvent?.({ type: 'degraded', phase: 0, label: '安全门禁', message: gate.blockReasons.join('; ') });
       }
+
+      // 诊断检查点保存 — 每个 Phase 完成后写入 SessionStore
+      const saveCheckpoint = (phase: number, modules: string[], report: unknown) => {
+        try {
+          const store: SessionStore | undefined = (this.ctx as { sessionStore?: SessionStore }).sessionStore;
+          if (store) {
+            store.saveDiagnosisCheckpoint?.({
+              sessionId: this.ctx.sessionId, phase, completedModules: modules,
+              partialReport: report, savedAt: new Date().toISOString(),
+            });
+          }
+        } catch { /* 检查点保存失败不阻断诊断 */ }
+      };
 
       // 铁律 39: L2 → DiagnosisEngine 接口 (不直接 import engine-core)
       const result = await this.engine.runConsultation(teamId, {

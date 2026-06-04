@@ -90,6 +90,16 @@ export class SessionStore {
       );
     `);
 
+    // 诊断检查点表
+    try {
+      this.db.exec(`CREATE TABLE IF NOT EXISTS diagnosis_checkpoints (
+        session_id TEXT NOT NULL, phase INTEGER DEFAULT 0,
+        completed_modules TEXT DEFAULT '[]', partial_report TEXT DEFAULT 'null',
+        saved_at TEXT NOT NULL DEFAULT (datetime('now')),
+        PRIMARY KEY (session_id, phase)
+      )`);
+    } catch { /* 表已存在 */ }
+
     // FTS5 同步触发器 (幂等——触发器已存在时报错忽略)
     this.db.exec(`
       CREATE TRIGGER IF NOT EXISTS agent_msg_fts_insert AFTER INSERT ON agent_messages BEGIN
@@ -217,5 +227,47 @@ export class SessionStore {
       sessionId: r.session_id, orgId: r.org_id,
       messageCount: r.msg_count, snippet: r.snippet, updatedAt: r.updated_at,
     }));
+  }
+
+  // ═══ 诊断检查点 — 崩溃恢复 ═══
+
+  /** 保存诊断检查点 (每个 Phase 完成后调用) */
+  saveDiagnosisCheckpoint(checkpoint: {
+    sessionId: string; phase: number; completedModules: string[];
+    partialReport: unknown; savedAt: string;
+  }): void {
+    this.db.prepare(`
+      INSERT OR REPLACE INTO diagnosis_checkpoints (session_id, phase, completed_modules, partial_report, saved_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(
+      checkpoint.sessionId, checkpoint.phase,
+      JSON.stringify(checkpoint.completedModules),
+      JSON.stringify(checkpoint.partialReport),
+      checkpoint.savedAt,
+    );
+  }
+
+  /** 获取最近的诊断检查点 */
+  getDiagnosisCheckpoint(sessionId: string): {
+    phase: number; completedModules: string[]; partialReport: unknown; savedAt: string;
+  } | null {
+    const row = this.db.prepare(`
+      SELECT phase, completed_modules, partial_report, saved_at
+      FROM diagnosis_checkpoints WHERE session_id = ? ORDER BY saved_at DESC LIMIT 1
+    `).get(sessionId) as Record<string, unknown> | undefined;
+    if (!row) return null;
+    try {
+      return {
+        phase: row.phase as number,
+        completedModules: JSON.parse(row.completed_modules as string || '[]'),
+        partialReport: JSON.parse(row.partial_report as string || 'null'),
+        savedAt: row.saved_at as string,
+      };
+    } catch { return null; }
+  }
+
+  /** 删除会话的检查点 */
+  deleteDiagnosisCheckpoints(sessionId: string): void {
+    this.db.prepare('DELETE FROM diagnosis_checkpoints WHERE session_id = ?').run(sessionId);
   }
 }
