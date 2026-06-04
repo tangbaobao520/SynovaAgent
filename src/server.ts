@@ -39,6 +39,16 @@ export async function createServer(): Promise<Server> {
   initEngineContext();
   const db = getDatabase();
 
+  // P0-5.3: 数据库启动时自动解密
+  const { autoDecryptOnStartup, autoEncryptOnShutdown } = await import('./services/db-encryption');
+  const encryptionConfig = {
+    masterSecret: process.env.CREDENTIAL_MASTER_KEY || config.engineTokens || 'synova-dev-secret',
+    salt: config.dbPath,
+    dbPath: config.dbPath,
+  };
+  const wasEncrypted = autoDecryptOnStartup(encryptionConfig);
+  if (wasEncrypted) logger.info('数据库启动时已解密');
+
   // ═══ C3: 编排层初始化 — EventBus + StateMachine + Session (审计 P0-20260604) ═══
   const eventStore = new EventStore(db);
   const eventBus = new EventBus(eventStore);
@@ -246,6 +256,17 @@ export async function createServer(): Promise<Server> {
   return new Promise((resolve, reject) => {
     const server = app.listen(config.port, () => {
       logger.info({ port: config.port }, `Synova-Agent → http://localhost:${config.port}`);
+
+      // P0-5.3: 优雅关闭时加密数据库
+      const shutdown = (signal: string) => {
+        logger.info({ signal }, '收到信号 — 加密数据库后退出');
+        autoEncryptOnShutdown(encryptionConfig);
+        server.close(() => process.exit(0));
+        setTimeout(() => process.exit(0), 5000);
+      };
+      process.on('SIGTERM', () => shutdown('SIGTERM'));
+      process.on('SIGINT', () => shutdown('SIGINT'));
+
       resolve(server);
     });
     server.on('error', reject);
