@@ -10,6 +10,8 @@
 import type { LLMMessage } from '../providers/types';
 import type { EngineContext } from './engine-context';
 import { createLogger } from '../logger';
+import { ToolGuardrails } from './tools';
+import * as crypto from 'crypto';
 
 /** Tool execution result — may contain error property on failure */
 interface ToolExecResult {
@@ -20,6 +22,7 @@ interface ToolExecResult {
 export class ToolLoopExecutor {
   private ctx: EngineContext;
   private log = createLogger('agent/tool-loop');
+  private guardrails = new ToolGuardrails();
 
   constructor(ctx: EngineContext) {
     this.ctx = ctx;
@@ -86,6 +89,17 @@ export class ToolLoopExecutor {
             if (preResult.action === 'modify' && preResult.modifiedInput) {
               try { effectiveParams = JSON.parse(preResult.modifiedInput); } catch { /* JSON parse failed — keep original params, non-critical */ }
             }
+          }
+
+          // Hermes P4 接线: 循环保护 — 检查是否为死循环
+          const guardResult = this.guardrails.check(tc.function.name, effectiveParams, {});
+          if (guardResult.action === 'block') {
+            this.log.warn({ tool: tc.function.name, reason: guardResult.reason }, '工具被循环保护阻止');
+            messages.push({ role: 'tool', tool_call_id: crypto.randomUUID(), content: JSON.stringify({ error: `工具被阻止: ${guardResult.reason}` }) });
+            continue;
+          }
+          if (guardResult.action === 'warn') {
+            this.log.warn({ tool: tc.function.name, reason: guardResult.reason }, '工具循环警告');
           }
 
           const execResult = await toolRegistry.execute(tc.function.name, effectiveParams);

@@ -79,11 +79,40 @@ export async function createServer(): Promise<Server> {
   let credentialVault: CredentialVault | undefined;
   try {
     const masterSecret = process.env.CREDENTIAL_MASTER_KEY || config.engineTokens || 'synova-dev-secret';
-    const salt = config.dbPath; // 确定性 salt — 每个实例独立密钥
+    const salt = config.dbPath;
     credentialVault = new CredentialVault(db, masterSecret, salt);
     logger.info('CredentialVault 已初始化 (AES-256-GCM 凭证加密)');
   } catch (err: any) {
     logger.warn({ err }, 'CredentialVault 初始化失败 — degraded, 凭证仍走 .env');
+  }
+
+  // ═══ P6 接线: CredentialPool — 多凭据轮换 ═══
+  let credentialPool: import('./security/credential-vault').CredentialPool | undefined;
+  try {
+    const { getCredentialPool } = await import('./security/credential-vault');
+    credentialPool = getCredentialPool();
+    // 从 vault 加载已存储凭据到 pool
+    if (credentialVault) {
+      for (const cred of credentialVault.list()) {
+        const decrypted = credentialVault.decryptForSubprocess(cred.id);
+        if (decrypted) {
+          try { credentialPool.register(cred.id, JSON.parse(decrypted)); } catch { /* skip malformed */ }
+        }
+      }
+    }
+    logger.info('CredentialPool 已初始化 (多凭据轮换)');
+  } catch (err: any) {
+    logger.warn({ err }, 'CredentialPool 初始化失败 — degraded');
+  }
+
+  // ═══ PII 接线: PIIScrubber — 4级敏感度脱敏 ═══
+  let piiScrubber: import('./security/pii-scrubber').PIIScrubber | undefined;
+  try {
+    const { getPIIScrubber } = await import('./security/pii-scrubber');
+    piiScrubber = getPIIScrubber();
+    logger.info('PIIScrubber 已初始化 (S1-S4 敏感度脱敏)');
+  } catch (err: any) {
+    logger.warn({ err }, 'PIIScrubber 初始化失败 — degraded');
   }
 
   // ═══ A3: OntologyEventBus — L5 进程内事件总线初始化 ═══
@@ -104,6 +133,8 @@ export async function createServer(): Promise<Server> {
   app.locals.federalAdapter = federalAdapter;
   if (connectorToolRegistry) app.locals.connectorToolRegistry = connectorToolRegistry;
   if (credentialVault) app.locals.credentialVault = credentialVault;
+  if (credentialPool) app.locals.credentialPool = credentialPool;
+  if (piiScrubber) app.locals.piiScrubber = piiScrubber;
 
   // 基础中间件
   app.use(cors());
