@@ -23,8 +23,19 @@ export interface SynovaConfig {
 export function loadConfig(): SynovaConfig {
   const devMode = process.env.DEV_MODE === 'true';
 
-  // LLM 配置
-  const llmApiKey = process.env.LLM_API_KEY || process.env.DEEPSEEK_API_KEY || '';
+  // LLM 配置 — 多 Provider 支持
+  // 通用: LLM_API_KEY (最高优先级) → Provider 专属 env → ''
+  const llmApiKey = process.env.LLM_API_KEY
+    || process.env.DEEPSEEK_API_KEY
+    || process.env.QWEN_API_KEY || process.env.DASHSCOPE_API_KEY
+    || process.env.GLM_API_KEY || process.env.ZHIPU_API_KEY
+    || process.env.MOONSHOT_API_KEY || process.env.KIMI_API_KEY
+    || process.env.YI_API_KEY || process.env.LINGYI_API_KEY
+    || process.env.MINIMAX_API_KEY
+    || process.env.STEP_API_KEY
+    || process.env.ERNIE_API_KEY
+    || process.env.OPENAI_API_KEY
+    || '';
   const llmBaseUrl = process.env.LLM_BASE_URL || process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com/v1';
   const llmModel = process.env.LLM_MODEL || 'deepseek-v4-flash';
   const gatewayHost = process.env.OPENCLAW_GATEWAY_HOST || '';
