@@ -111,6 +111,8 @@ export interface ExpertDispatcherConfig {
   timeoutMs?: number;
   /** Max retries for network errors (default 2) */
   maxRetries?: number;
+  /** PII 脱敏: 证据出站到云 LLM 前脱敏 */
+  piiScrubber?: import('../security/pii-scrubber').PIIScrubber;
   /** Optional: ExpertAutonomyEngine factory (DI) */
   engineFactory?: (llm: LLMClient, api: QueryAPI, policy: DataAccessPolicy, cfg?: { maxRounds?: number }) => ExpertAutonomyEngine;
 }
@@ -124,6 +126,7 @@ export class ExpertDispatcher {
   private engineFactory: ((llm: LLMClient, api: QueryAPI, policy: DataAccessPolicy, cfg?: { maxRounds?: number }) => ExpertAutonomyEngine) | null = null;
   private timeoutMs: number;
   private maxRetries: number;
+  private piiScrubber: import('../security/pii-scrubber').PIIScrubber | null = null;
 
   constructor(config: ExpertDispatcherConfig) {
     this.llmClient = config.llmClient;
@@ -131,6 +134,7 @@ export class ExpertDispatcher {
     this.engineFactory = config.engineFactory || null;
     this.timeoutMs = config.timeoutMs ?? 60_000;
     this.maxRetries = config.maxRetries ?? 2;
+    this.piiScrubber = config.piiScrubber || null;
   }
 
   /** Enable expert autonomy with graph query + quality firewall */
@@ -200,6 +204,12 @@ export class ExpertDispatcher {
 
     const startTime = Date.now();
     const filtered = this.filterEvidence(evidence, policy);
+    // PII 脱敏: 证据出站到云 LLM 前脱敏 (S4移除 + S3脱敏 + S2角色掩盖)
+    if (this.piiScrubber) {
+      for (const e of filtered) {
+        e.content = this.piiScrubber.scrub(e.content, 'S2').cleaned;
+      }
+    }
 
     try {
       // Gear 1: ExpertAutonomyEngine — ReAct loop with graph queries

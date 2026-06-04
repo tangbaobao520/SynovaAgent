@@ -18,6 +18,7 @@ import type { IntentRouter } from '../orchestrator/intent-router';
 import type { DimensionRegistry } from '../orchestrator/dimension-registry';
 import type { HookRunner } from '../orchestrator/hook-runner';
 import type { PhaseStateMachine } from '../orchestrator/phase-state-machine';
+import type { PIIScrubber } from '../security/pii-scrubber';
 import type { SessionManager } from '../orchestrator/session-manager';
 import type { EventBus } from '../orchestrator/event-bus';
 import type { EvidenceCollector, CorroborationEngine } from '../evidence/index';
@@ -66,6 +67,8 @@ export interface EngineConfig {
   eventBus?: EventBus;
   /** 编排层: PhaseStateMachine (Batch 2: 状态机驱动 Phase 转换) */
   phaseStateMachine?: PhaseStateMachine;
+  /** PII 脱敏: 用户输入出站到云 LLM 前脱敏 */
+  piiScrubber?: PIIScrubber;
   /** 会话 ID (用于事件追踪) */
   sessionId?: string;
   /** L3: EvidenceCollector (Phase 0 证据采集) */
@@ -177,6 +180,7 @@ export class ConversationEngine {
   private sessionManager: SessionManager | null = null;
   private eventBus: EventBus | null = null;
   private phaseStateMachine: PhaseStateMachine | null = null;
+  private piiScrubber: PIIScrubber | null = null;
   private evidenceCollector: EvidenceCollector | null = null;
   private graphBridge: ReturnType<typeof createGraphBridge> | null = null;
   private reportAdapter: ReportGraphAdapter | null = null;
@@ -215,6 +219,7 @@ export class ConversationEngine {
     this.sessionManager = config.sessionManager || null;
     this.eventBus = config.eventBus || null;
     this.phaseStateMachine = config.phaseStateMachine || null;
+    this.piiScrubber = config.piiScrubber || null;
     this.evidenceCollector = config.evidenceCollector || null;
     this.graphBridge = config.graphBridge || null;
     this.reportAdapter = config.reportAdapter || null;
@@ -394,8 +399,10 @@ export class ConversationEngine {
    */
   async processMessage(userInput: string): Promise<ProcessResult> {
     this.turnCount++;
+    // PII 脱敏: 出站到云 LLM 前脱敏 (S4移除 + S3脱敏 + S2角色掩盖)
+    const input = this.piiScrubber?.scrub(userInput, 'S2').cleaned ?? userInput;
     // Hermes P0-2: 易变层追加到 user message — 保护 Prefix Cache
-    this.messages.push({ role: 'user', content: `${userInput}\n\n${buildVolatileLayer(this.turnCount, this.phase)}` });
+    this.messages.push({ role: 'user', content: `${input}\n\n${buildVolatileLayer(this.turnCount, this.phase)}` });
 
     // L3 接线: EvidenceCollector — Phase 0 证据自动采集
     if (this.phase === 0 && this.evidenceCollector) {
@@ -499,8 +506,10 @@ export class ConversationEngine {
     onToken: (token: string) => void,
   ): Promise<ProcessResult> {
     this.turnCount++;
+    // PII 脱敏: 出站到云 LLM 前脱敏 (S4移除 + S3脱敏 + S2角色掩盖)
+    const input = this.piiScrubber?.scrub(userInput, 'S2').cleaned ?? userInput;
     // Hermes P0-2: 易变层追加到 user message — 保护 Prefix Cache
-    this.messages.push({ role: 'user', content: `${userInput}\n\n${buildVolatileLayer(this.turnCount, this.phase)}` });
+    this.messages.push({ role: 'user', content: `${input}\n\n${buildVolatileLayer(this.turnCount, this.phase)}` });
 
     // L1 decoupling: when ViewAdapter is bound, use it for display
     const display = (token: string) => {
