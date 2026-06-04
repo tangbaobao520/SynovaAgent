@@ -133,7 +133,13 @@ function buildContextLayer(phase: number): string {
 1. 了解组织名称、规模、行业
 2. 了解当前最关心的问题/痛点
 3. 了解组织架构（团队数量、关键角色）
-4. 确认诊断深度和范围`;
+4. 确认诊断深度和范围
+
+## 对话规则
+- 每个问题附带"为什么这么问"
+- 形成假设时邀请反驳："我的初步判断是……但可能判断错了"
+- 用户连续表达相似意思时，主动问"需要我开始诊断吗？"
+- 覆盖 ≥4 维度可建议结束访谈`;
     case 1:
       return `## 当前阶段：Phase 1（数据采集）
 系统正在从连接的数据源采集信息。继续与用户对话，引导提供更多细节。`;
@@ -143,15 +149,58 @@ function buildContextLayer(phase: number): string {
   }
 }
 
+/** GNS: 根据维度覆盖生成动态追问提示 */
+function buildCoverageContext(
+  coverage: Map<string, { status: string; confidence: number; evidenceCount: number }>,
+  dimensionRegistry?: { get(id: string): { name: string } | undefined } | null,
+): string {
+  if (!coverage || coverage.size === 0) return '';
+  const covered = [...coverage.entries()].filter(([, v]) => v.status === 'covered');
+  const partial = [...coverage.entries()].filter(([, v]) => v.status === 'partial');
+  const uncovered = DIMENSION_NAMES.filter(d => !coverage.has(d));
+
+  const lines: string[] = [];
+  if (covered.length > 0) {
+    lines.push(`已了解: ${covered.map(([k]) => dimensionRegistry?.get(k)?.name || k).join('、')}`);
+  }
+  if (partial.length > 0) {
+    lines.push(`部分了解: ${partial.map(([k]) => dimensionRegistry?.get(k)?.name || k).join('、')}`);
+  }
+  if (uncovered.length > 0) {
+    lines.push(`待了解: ${uncovered.map(k => dimensionRegistry?.get(k)?.name || k).join('、')}`);
+  }
+  if (covered.length >= 4) {
+    lines.push('信息已较充分——可以建议用户开始诊断。');
+  } else if (partial.length > 0 || uncovered.length > 0) {
+    const next = partial[0]?.[0] || uncovered[0] || '';
+    const name = dimensionRegistry?.get(next)?.name || next;
+    lines.push(`优先追问: ${name}`);
+  }
+  return lines.join('\n');
+}
+
+/** 六维度名称 (fallback，无 DimensionRegistry 时使用) */
+const DIMENSION_NAMES = [
+  'mission_objectives', 'business_value', 'current_state',
+  'resource_constraints', 'risk_bottlenecks', 'success_criteria',
+];
+
 function buildVolatileLayer(turnCount: number, phase: number): string {
-  // 易变层放在 user message 末尾，不影响 Prefix Cache
   return `[轮次: ${turnCount}] [阶段: ${phase}/5]`;
 }
 
-function buildSystemPrompt(phase: number, turnCount: number): string {
+function buildSystemPrompt(
+  phase: number, turnCount: number,
+  coverage?: Map<string, { status: string; confidence: number; evidenceCount: number }>,
+  dimensionRegistry?: { get(id: string): { name: string } | undefined } | null,
+): string {
+  const context = buildContextLayer(phase);
+  const covText = coverage ? buildCoverageContext(coverage, dimensionRegistry) : '';
   return [
     STABLE_LAYER,
-    buildContextLayer(phase),
+    context,
+    covText,
+  ].filter(Boolean).join('\n\n---\n\n');
   ].join('\n\n---\n\n');
   // 易变层不放入 system prompt — 追加到 user message 末尾保护 Cache
 }
@@ -204,7 +253,7 @@ export class ConversationEngine {
       maxTurns: config.maxTurns ?? 6,
       orgId: config.orgId || '',
     };
-    this.messages = [{ role: 'system', content: buildSystemPrompt(0, 0) }];
+    this.messages = [{ role: 'system', content: buildSystemPrompt(0, 0, this.dimensionCoverage, config.dimensionRegistry) }];
     this.toolRegistry = new ToolRegistry();
 
     // 编排层接线: 接收可选组件
@@ -289,7 +338,7 @@ export class ConversationEngine {
   /** Advance to next phase (Hermes P0-2: 重建 system prompt 以更新上下文层) */
   advancePhase(): void {
     this.phase++;
-    this.messages[0] = { role: 'system', content: buildSystemPrompt(this.phase, this.turnCount) };
+    this.messages[0] = { role: 'system', content: buildSystemPrompt(this.phase, this.turnCount, this.dimensionCoverage, this.dimensionRegistry) };
     log.debug({ phase: this.phase }, 'Phase 推进, system prompt 已更新');
   }
 
