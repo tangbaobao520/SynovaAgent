@@ -12,3 +12,5 @@ Thumbs.db
 *.ps1
 *.cmd
 Dockerfile
+synova_worker/__pycache__/
+**/__pycache__/
