@@ -6,8 +6,7 @@
  * GET  /api/ontology/graph/:orgId.html — 可视化页面
  */
 import { Router, type Request, type Response } from 'express';
-import { createGraphStore } from '@synova/engine-core';
-import { ingestDocument } from '@synova/engine-core';
+import { createGraphStore, ingestDocument } from '@synova/diagnosis-engine';
 import { getDatabase } from '../init/engine-context';
 import { createLogger } from '../logger';
 import { summarizeSubgraph, findCrossDimensionalBrokers, getGraphDiff } from '../l4/diagnosis-graph-query';

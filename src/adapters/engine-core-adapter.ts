@@ -28,10 +28,8 @@ export class EngineCoreVendorAdapter implements DiagnosisEngine {
     onEvent?: (event: DiagnosisEvent) => void,
   ): Promise<ConsultationResult> {
     try {
-      // 唯一知道 vendor 路径的地方 — 铁律 39
-      const { DiagnosisOrchestrator } = await import(
-        '../../../server/vendor/@synova/engine-core/src/pipeline/diagnosis/diagnosis-orchestrator'
-      );
+      // 铁律 39: 通过 @synova/diagnosis-engine 包访问 (不再直连 vendor 路径)
+      const { DiagnosisOrchestrator } = await import('@synova/diagnosis-engine');
       const { createDiagnosisLLMClient, createToolExecutorAdapter } = await import(
         '../agent/orchestrator-adapter'
       );
@@ -64,11 +62,9 @@ export class EngineCoreVendorAdapter implements DiagnosisEngine {
     }
   }
 
-  /** 铁律 39: GraphStore 工厂 — 返回 engine-core 类型兼容的 store */
+  /** 铁律 39: GraphStore 工厂 — 通过 @synova/diagnosis-engine 包 */
   static async createGraphStore(db: unknown): Promise<Record<string, unknown>> {
-    const { createGraphStore: factory } = await import(
-      '../../../server/vendor/@synova/engine-core/src/pipeline/diagnosis/graph-store'
-    );
+    const { createGraphStore: factory } = await import('@synova/diagnosis-engine');
     return (factory as (backend: string, database: unknown) => Record<string, unknown>)('sqlite', db);
   }
 }

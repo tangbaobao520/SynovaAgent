@@ -5,7 +5,7 @@
  * engine-core 的所有模块依赖这些基础设施。
  */
 import Database from 'better-sqlite3';
-import { setEngineContext } from '@synova/engine-core';
+import { setEngineContext } from '@synova/diagnosis-engine';
 import { createLogger } from '../logger';
 import { loadConfig } from '../config';
 import { SqliteStorageBackend } from '../store/storage-backend';

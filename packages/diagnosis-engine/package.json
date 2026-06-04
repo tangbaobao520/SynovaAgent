@@ -1,0 +1,17 @@
+{
+  "name": "@synova/diagnosis-engine",
+  "version": "0.1.0",
+  "description": "Synova Diagnosis Engine — 六阶段诊断编排器 + GraphStore + 29 模块 (从 engine-core 提取)",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@synova/engine-core": "file:../../../server/vendor/@synova/engine-core",
+    "@synova/sog-core": "file:../sog-core"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  }
+}
