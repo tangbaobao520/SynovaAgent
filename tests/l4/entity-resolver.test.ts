@@ -22,36 +22,37 @@ describe('resolveEntitiesL3', () => {
     } as any;
   }
 
-  it('runs L3 resolution without error', () => {
+  it('runs L3 resolution without error', async () => {
     const store = fakeStore([
       { id:'p1', type:SOGNodeType.PERSON, props:{ name:'Alice', email:'alice@example.com' }},
       { id:'p2', type:SOGNodeType.PERSON, props:{ name:'Alice', email:'alice@example.com' }},
     ]);
     // L3 resolution should not throw
-    expect(() => resolveEntitiesL3(store, 'g')).not.toThrow();
+    const result = await resolveEntitiesL3(store, 'g');
+    expect(result.matches).toBeDefined();
   });
 
-  it('returns empty for graph with no duplicates', () => {
+  it('returns empty for graph with no duplicates', async () => {
     const store = fakeStore([
       { id:'p1', type:SOGNodeType.PERSON, props:{ name:'Alice' }},
     ]);
-    const result = resolveEntitiesL3(store, 'g');
+    const result = await resolveEntitiesL3(store, 'g');
     expect(result.matches).toHaveLength(0);
   });
 
-  it('returns empty for empty graph', () => {
+  it('returns empty for empty graph', async () => {
     const store = fakeStore([]);
-    const result = resolveEntitiesL3(store, 'g');
+    const result = await resolveEntitiesL3(store, 'g');
     expect(result.matches).toHaveLength(0);
     expect(result.autoMerged).toBe(0);
   });
 
-  it('does not match different types (blocking)', () => {
+  it('does not match different types (blocking)', async () => {
     const store = fakeStore([
       { id:'p1', type:SOGNodeType.PERSON, props:{ name:'Alice' }},
       { id:'t1', type:SOGNodeType.TEAM, props:{ name:'Alice' }},
     ]);
-    const result = resolveEntitiesL3(store, 'g');
+    const result = await resolveEntitiesL3(store, 'g');
     const crossType = result.matches.filter(m => m.entityA.type !== m.entityB.type);
     expect(crossType).toHaveLength(0);
   });

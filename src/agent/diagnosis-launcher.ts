@@ -217,7 +217,7 @@ export class DiagnosisLauncher {
 
       if (flags.enableEntityResolution && graphStore) {
         try {
-          const resolution = resolveEntitiesL3(graphStore, teamId);
+          const resolution = await resolveEntitiesL3(graphStore, teamId);
           log.info({ autoMerged: resolution.autoMerged, queued: resolution.queuedForReview }, 'L3 实体解析完成');
           if (resolution.autoMerged > 0 || resolution.queuedForReview > 0) {
             onEvent?.({ type: 'entity_resolution', phase: 3,
