@@ -150,6 +150,10 @@ export async function createServer(): Promise<Server> {
   app.use(cors());
   app.use(express.json({ limit: '10mb' }));
 
+  // P1-1.3: 输入脱敏检查 (S4 API Key/Token 硬阻断, S2-S3 告警放行)
+  const { sanitizeCheckMiddleware } = await import('./middleware/sanitize-check');
+  app.use(sanitizeCheckMiddleware);
+
   // Token 认证中间件（铁律 24: 异常处理审计 — devMode 跳过鉴权）
   // 白名单: 健康检查、Web 界面、静态资源不鉴权
   app.use((req, res, next) => {
