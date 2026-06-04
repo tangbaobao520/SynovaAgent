@@ -30,7 +30,7 @@ router.get('/', (_req: Request, res: Response) => {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>SynovaAgent · 组织数字孪生</title>
+<title>Synova · 组织智能诊断</title>
 <style>
 :root{
   --bg:#0f0f14;--panel:#1a1a24;--border:#2a2a3a;--text:#e0e0e0;--dim:#888;
@@ -105,7 +105,7 @@ header .status{font-size:11px;color:var(--dim)}
 </head>
 <body>
 <header>
-  <h1><span class="dot" id="status-dot"></span>SynovaAgent</h1>
+  <h1><span class="dot" id="status-dot"></span>Synova</h1>
   <span class="status" id="status-text">连接中...</span>
 </header>
 <div id="progress-bar-container">
@@ -169,7 +169,7 @@ async function init() {
     const s = await r.json();
     if (s.llmConfigured) {
       dot.className = 'dot';
-      statusText.textContent = s.gatewayHost ? 'Gateway 已连接' : '已就绪';
+      statusText.textContent = s.gatewayHost ? 'Gateway · Synova' : 'Synova · 已就绪';
     } else {
       dot.className = 'dot off';
       statusText.textContent = '未配置 LLM';
@@ -181,7 +181,7 @@ async function init() {
         'DEV_MODE 下本体功能仍可用。'
       );
     }
-    addSystem('msg', '👋 我是 SynovaAgent，你的组织数字孪生诊断专家。<br>点击下方按钮开始，或直接输入你的组织名称。');
+    addSystem('msg', '👋 我是 Synova，你的 AI 组织诊断助手。<br>点击下方按钮开始，或直接输入你的组织名称。');
   } catch(e) {
     dot.className = 'dot off';
     statusText.textContent = '服务异常';

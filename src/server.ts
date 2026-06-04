@@ -214,7 +214,7 @@ export async function createServer(): Promise<Server> {
 
   return new Promise((resolve, reject) => {
     const server = app.listen(config.port, () => {
-      logger.info({ port: config.port }, `SynovaAgent 启动 → http://localhost:${config.port}`);
+      logger.info({ port: config.port }, `Synova-Agent → http://localhost:${config.port}`);
       resolve(server);
     });
     server.on('error', reject);

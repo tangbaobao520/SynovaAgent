@@ -33,7 +33,7 @@ let interrupted = false;
 
 async function main() {
   console.log('');
-  console.log(`${PURPLE}${BOLD}  SynovaAgent${RESET} ${DIM}— 组织数字孪生诊断${RESET}`);
+  console.log(`${PURPLE}${BOLD}  Synova-Agent${RESET} ${DIM}— 组织智能诊断${RESET}`);
   console.log('');
 
   // 1. LLM 配置

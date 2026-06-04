@@ -151,7 +151,7 @@ async function main() {
   try {
     // 先创建一个临时 screen 用于 Welcome 页
     const welcomeScreen = blessed.screen({
-      title: 'SynovaAgent',
+      title: 'Synova',
       smartCSR: true,
       fullUnicode: true,
       useBCE: true,

@@ -20,7 +20,7 @@ function Write-Err($msg) { Write-Host "   ❌ $msg" -ForegroundColor Red }
 
 Write-Host ""
 Write-Host "══════════════════════════════════════════════" -ForegroundColor Magenta
-Write-Host "  SynovaAgent 部署程序" -ForegroundColor Magenta
+Write-Host "  Synova 部署程序" -ForegroundColor Magenta
 Write-Host "  组织数字孪生诊断 Agent — PDE 一键部署" -ForegroundColor Gray
 Write-Host "══════════════════════════════════════════════" -ForegroundColor Magenta
 
@@ -154,7 +154,7 @@ npx tsx src/server.ts
       $action = New-ScheduledTaskAction -Execute $startScript
       $trigger = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
       $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1)
-      Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Settings $settings -Description "SynovaAgent 诊断服务" -Force | Out-Null
+      Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Settings $settings -Description "Synova-Agent 诊断服务" -Force | Out-Null
 
       Write-OK "开机自启已配置 (Task Scheduler: $taskName)"
     } catch {
