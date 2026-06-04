@@ -28,9 +28,7 @@ export async function ingestFile(filePath: string, orgId: string): Promise<Inges
     const db = getDatabase();
     const store = await EngineCoreVendorAdapter.createGraphStore(db) as Record<string, unknown>;
 
-    const { ingestDocument } = await import(
-      '../../../../server/vendor/@synova/engine-core/src/pipeline/diagnosis/ontology-adapter'
-    );
+    const { ingestDocument } = await import('@synova/diagnosis-engine');
     await ingestDocument({
       orgId, name: filePath.split('/').pop() || filePath, type: fileType,
       content: content.slice(0, 10000),

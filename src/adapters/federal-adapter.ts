@@ -30,9 +30,7 @@ let _instance: FederalAdapter = noopAdapter;
 /** Initialize federal reporting with engine-core FederalReporter */
 export async function initFederalReporter(db: unknown, config?: { epsilon?: number; optOut?: boolean }): Promise<FederalAdapter> {
   try {
-    const { FederalReporter } = await import(
-      '../../../server/vendor/@synova/engine-core/src/pipeline/diagnosis/federal-reporter'
-    );
+    const { FederalReporter } = await import('@synova/diagnosis-engine');
     const reporter = new FederalReporter(db, {
       epsilon: config?.epsilon ?? 1.0,
       optOut: config?.optOut ?? false,
