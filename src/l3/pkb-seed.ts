@@ -54,6 +54,13 @@ const SEEDS: SeedEntry[] = [
   { domain: 'finance', type: 'threshold', confidence: 0.8, level: 2, content: '现金流预警: 月均净现金流连续 3 个月为负且现金储备 < 3 个月运营支出 → 紧急融资需求。' },
   { domain: 'finance', type: 'best_practice', confidence: 0.7, level: 1, content: '小企业: 必须每月出三大表(利润表/资产负债表/现金流量表)。建立月度预算对比实际的分析习惯。' },
   { domain: 'finance', type: 'theory', confidence: 0.85, level: 3, content: '自由现金流估价(DCF): 企业价值 = Σ(未来自由现金流 / (1+WACC)^t) + 终值。WACC 通常 8-12%。' },
+  // 会计准则
+  { domain: 'finance', type: 'regulation', confidence: 0.95, level: 2, content: '中国企业会计准则(CAS): 财政部颁布，与 IFRS 持续趋同。要求企业编制利润表、资产负债表、现金流量表、所有者权益变动表及附注。小微企业适用《小企业会计准则》(简化版)。' },
+  { domain: 'finance', type: 'regulation', confidence: 0.9, level: 3, content: 'IFRS 15 收入确认五步法: 1.识别合同 2.识别履约义务 3.确定交易价格 4.分摊交易价格 5.在履约时确认收入。SaaS 多年合同需按履约进度分摊确认,不能一次性确认。' },
+  { domain: 'finance', type: 'regulation', confidence: 0.9, level: 3, content: 'IFRS 16 租赁: 承租人几乎全部租赁纳入资产负债表(短期和低价值除外)。使用权资产+租赁负债。对零售/航空等重租赁行业影响巨大——资产负债率上升 10-30%。' },
+  { domain: 'finance', type: 'regulation', confidence: 0.85, level: 2, content: '资产减值(CAS 8 / IAS 36): 资产账面价值超过可收回金额时需计提减值。商誉至少每年减值测试一次,不得转回。存货按成本与可变现净值孰低计量。' },
+  { domain: 'finance', type: 'rule', confidence: 0.9, level: 2, content: '收入确认红线: 无合同不确认收入、未交付不确认收入、退货率不确定不确认全额。预收款在资产负债表中为负债,交付后才转为收入。违反此原则→收入虚增→误导决策。' },
+  { domain: 'finance', type: 'best_practice', confidence: 0.8, level: 2, content: '诊断财务数据前先确认会计准则基础。CAS vs IFRS vs US GAAP 在收入确认、租赁、资产减值上差异显著。跨国企业合并报表需统一准则基础后再分析。' },
   { domain: 'finance', type: 'benchmark', confidence: 0.75, level: 1, content: '小微企业: 月营收 < 50万时应控制固定成本 < 营收的 40%。现金流覆盖 > 3 个月为底线安全线。' },
 
   // ═══ 技术 (15 条) ═══
