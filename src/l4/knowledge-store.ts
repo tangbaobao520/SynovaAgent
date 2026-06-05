@@ -344,6 +344,62 @@ export class KnowledgeStore {
       entry.result, entry.confidence ?? null, entry.userFeedback ?? null, entry.contradictingExpert ?? null);
   }
 
+  /** 冲突检测 — 相似知识标记 reviewing */
+  detectConflicts(): number {
+    try {
+      const rows = this.db.prepare(`
+        SELECT a.id as id1, a.pkb_domain, a.text as text1, b.id as id2, b.text as text2
+        FROM knowledge_chunks a
+        JOIN knowledge_chunks b ON a.pkb_domain = b.pkb_domain AND a.id < b.id
+        WHERE a.pkb_domain IS NOT NULL AND a.pkb_status = 'active' AND b.pkb_status = 'active'
+        LIMIT 100
+      `).all() as Array<Record<string, unknown>>;
+      let count = 0;
+      for (const r of rows) {
+        const t1 = (r.text1 as string).toLowerCase();
+        const t2 = (r.text2 as string).toLowerCase();
+        const sim = this.jaccardTextSimilarity(t1, t2);
+        if (sim > 0.8) {
+          this.db.prepare('UPDATE knowledge_chunks SET pkb_status = ?, updated_at = ? WHERE id = ?')
+            .run('reviewing', new Date().toISOString(), r.id2);
+          count++;
+        }
+      }
+      return count;
+    } catch { return 0; }
+  }
+
+  /** 应用诊断反馈 — 调整知识置信度 */
+  applyFeedback(): number {
+    try {
+      this.initFeedbackSchema();
+      const rows = this.db.prepare(`
+        SELECT knowledge_entry_id, SUM(CASE WHEN result = 'confirmed' THEN 0.02 ELSE -0.05 END) as delta
+        FROM diagnosis_feedback WHERE processed = 0 GROUP BY knowledge_entry_id
+      `).all() as Array<Record<string, unknown>>;
+      for (const r of rows) {
+        const id = r.knowledge_entry_id as string;
+        try {
+          const current = this.db.prepare('SELECT pkb_confidence FROM knowledge_chunks WHERE id = ?').get(id) as Record<string, unknown> | undefined;
+          if (!current) continue;
+          const newConf = Math.max(0, Math.min(1, (current.pkb_confidence as number || 0.7) + (r.delta as number)));
+          this.update(id, { pkb_confidence: newConf, pkb_status: newConf < 0.5 ? 'deprecated' : 'active' });
+        } catch { /* skip malformed */ }
+      }
+      this.db.prepare('UPDATE diagnosis_feedback SET processed = 1 WHERE processed = 0').run();
+      return rows.length;
+    } catch { return 0; }
+  }
+
+  private jaccardTextSimilarity(a: string, b: string): number {
+    if (!a || !b) return 0;
+    const setA = new Set(a.split(/\s+/).filter(w => w.length > 1));
+    const setB = new Set(b.split(/\s+/).filter(w => w.length > 1));
+    if (setA.size === 0 || setB.size === 0) return 0;
+    const intersection = new Set([...setA].filter(x => setB.has(x)));
+    return intersection.size / (setA.size + setB.size - intersection.size);
+  }
+
   /** Row → KnowledgeChunk 映射复用 */
   private rowToChunk(r: Record<string, unknown>): KnowledgeChunk {
     return {

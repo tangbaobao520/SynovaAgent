@@ -8,7 +8,7 @@
  * 运行时可通过 add_pkb_entry 工具动态添加团队专属知识。
  */
 import { KnowledgeStore } from '../l4/knowledge-store';
-import { getDatabase } from '../init/engine-context';
+import type Database from 'better-sqlite3';
 import { createLogger } from '../logger';
 
 const log = createLogger('l3/pkb-seed');
@@ -87,8 +87,8 @@ const SEEDS: SeedEntry[] = [
 /**
  * 将种子知识写入 KnowledgeStore — 幂等 (检查已存在则跳过)
  */
-export function seedPKB(): { inserted: number; skipped: number } {
-  const store = new KnowledgeStore(getDatabase());
+export function seedPKB(db: Database.Database): { inserted: number; skipped: number } {
+  const store = new KnowledgeStore(db);
   const stats = store.pkbStats();
 
   // 已存在种子 → 跳过

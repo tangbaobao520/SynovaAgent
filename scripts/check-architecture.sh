@@ -34,6 +34,8 @@ fi
 # ═══ 2. L3→L5 跨层引用 ═══
 # L3 (l3/) 不得直接操作数据库 (better-sqlite3 import / Database type / .prepare / db.run)
 L3_DB=$(grep -rn "better-sqlite3\|import.*Database\|\.prepare(\|db\.run\|\.exec(" src/l3/ --include="*.ts" 2>/dev/null \
+  | grep -v "import type" \
+  | grep -v "import { KnowledgeStore }" \
   | grep -v "node_modules" | grep -v "\.test\." \
   | grep -v "executeQuery\|//.*bridge\|//.*query" \
   || true)

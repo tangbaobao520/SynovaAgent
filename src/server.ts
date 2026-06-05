@@ -370,7 +370,7 @@ app.use(credentialRoutes);  // POST /api/credentials/:provider | GET /api/creden
     // PKB: 种子知识 + 生命周期
     try {
       const { seedPKB } = await import('./l3/pkb-seed');
-      const { inserted } = seedPKB();
+      const { inserted } = seedPKB(db);
       if (inserted > 0) logger.info({ inserted }, 'PKB 种子知识已初始化');
     } catch (err: any) { logger.warn({ err }, 'PKB 种子初始化失败 — degraded'); }
   } catch (err: any) { logger.warn({ err }, '齿轮6 启动失败 — degraded'); }
