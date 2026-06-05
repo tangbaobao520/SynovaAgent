@@ -13,6 +13,7 @@
 import { createLogger } from '../logger';
 import { KnowledgeStore } from '../l4/knowledge-store';
 import { getDatabase } from '../init/engine-context';
+import { getCurrentFilterClause } from '../services/request-context';
 import type { FilterClause } from '../l4/knowledge-store';
 
 const log = createLogger('l3/knowledge-agent');
@@ -57,8 +58,8 @@ export function createKnowledgeAgent(config: KnowledgeAgentConfig = {}): Knowled
           const query = String(params.query || '');
           const limit = Number(params.limit || defaultLimit);
           const store = new KnowledgeStore(getDatabase());
-          // 从全局上下文获取权限过滤条件 (由调用方注入)
-          const filter: FilterClause = (params._filter as FilterClause) || { conditions: [] };
+          // M2: 从请求上下文获取当前用户的权限过滤条件
+          const filter = await getCurrentFilterClause('KnowledgeChunk') as FilterClause;
 
           const { results, stats } = store.search(query, filter, limit);
           const filtered = params.sourceType
@@ -96,7 +97,8 @@ export function createKnowledgeAgent(config: KnowledgeAgentConfig = {}): Knowled
         handler: async (params: Record<string, unknown>) => {
           const chunkId = String(params.chunkId || '');
           const store = new KnowledgeStore(getDatabase());
-          const { results } = store.search(`id:${chunkId}`, { conditions: [] }, 1);
+          const filter = await getCurrentFilterClause('KnowledgeChunk') as FilterClause;
+          const { results } = store.search(`id:${chunkId}`, filter, 1);
           if (results.length === 0) return { found: false, reason: '未找到或无权限' };
           const r = results[0];
           return {

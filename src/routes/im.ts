@@ -9,6 +9,7 @@
 import { Router, type Request, type Response } from 'express';
 import { createLogger } from '../logger';
 import { handleInboundMessage } from '../l1/im-inbound';
+import { runWithContext } from '../services/request-context';
 
 const log = createLogger('routes/im');
 const router = Router();
@@ -48,12 +49,15 @@ router.post('/api/im/feishu/webhook', async (req: Request, res: Response) => {
       return;
     }
 
-    const result = handleInboundMessage(store, piiScrubber, {
-      platform: 'feishu',
-      senderId,
-      content: String(content),
-      timestamp: new Date().toISOString(),
-      rawPayload: payload,
+    // M2: 建立请求级用户上下文 (KnowledgeAgent 工具执行时自动获取权限过滤)
+    const result = await runWithContext({ user: { userId: senderId, identity: { openId: senderId, email: '', name: senderId, source: 'feishu' }, auth: { roles: ['employee'], teamId: 'default', tenantId: 'default', sensitivity: 'normal' }, permissions: { version: 1, expiresAt: Date.now() + 3600000 } } }, async () => {
+      return handleInboundMessage(store, piiScrubber, {
+        platform: 'feishu',
+        senderId,
+        content: String(content),
+        timestamp: new Date().toISOString(),
+        rawPayload: payload,
+      });
     });
 
     // 发送回复 (异步, fire-and-forget)
