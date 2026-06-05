@@ -2,8 +2,9 @@
 import type { ToolDefinition } from '../agent/tools';
 import { SOGNodeType } from '@synova/sog-core';
 
-const getGraph = async (orgId: string) => {
-  try { const r = await fetch(`http://localhost:${process.env.PORT || 3000}/api/ontology/graph/${orgId}`); return r.ok ? r.json() : null; } catch { return null; }
+interface GraphData { nodes?: Array<{ type: string; props?: Record<string, unknown> }>; }
+const getGraph = async (orgId: string): Promise<GraphData | null> => {
+  try { const r = await fetch(`http://localhost:${process.env.PORT || 3000}/api/ontology/graph/${orgId}`); return r.ok ? await r.json() as GraphData : null; } catch { return null; }
 };
 
 export const scanIndustryLandscapeTool: ToolDefinition = {

@@ -30,9 +30,9 @@ export async function ingestFile(filePath: string, orgId: string): Promise<Inges
 
     const { ingestDocument } = await import('@synova/diagnosis-engine');
     await ingestDocument({
-      orgId, name: filePath.split('/').pop() || filePath, type: fileType,
-      content: content.slice(0, 10000),
-    }, store, orgId);
+      id: `doc_${Date.now()}`, name: filePath.split('/').pop() || filePath, type: fileType,
+      content: content.slice(0, 10000), source: 'user_upload' as const,
+    }, store as unknown as Parameters<typeof ingestDocument>[1], orgId);
 
     sogCreated = true;
     log.info({ filePath, orgId, entities: entities.length }, '文件已录入本体');

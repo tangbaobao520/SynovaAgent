@@ -104,7 +104,7 @@ export function createChatPanel(opts: { top?: number; left?: number; width?: str
     },
 
     // 保留接口兼容性（TuiApp 需要）
-    get input() { return input; },
+    get input() { return input!; },
     get readInput() { return readInput; },
     get onSubmit() {
       return (cb: (text: string) => void) => { onSubmitCb = cb; };

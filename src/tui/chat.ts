@@ -148,6 +148,7 @@ async function main() {
   }
 
   let app: ReturnType<typeof createTuiApp>;
+  let tuiViewAdapter: TuiViewAdapter | undefined;
   try {
     // 先创建一个临时 screen 用于 Welcome 页
     const welcomeScreen = blessed.screen({
@@ -169,7 +170,7 @@ async function main() {
     app.setTitleStatus(`准备就绪 · ${provider.name}`);
 
     // Slice C: ViewAdapter — ConversationEngine 通过此接口与 TUI 通信
-    const viewAdapter = new TuiViewAdapter(app);
+    tuiViewAdapter = new TuiViewAdapter(app);
 
     // 启动时后台检查更新 (借鉴 Hermes banner prefetch)
     checkForUpdates().then((result) => {
@@ -217,7 +218,7 @@ async function main() {
     });
     // Slice C: bind ViewAdapter for L1 decoupling
     // P1-02: ViewAdapter 为 L1 接口注入, conv 是 ConversationEngine 类型未导出该方法
-    (conv as { setViewAdapter?: (a: ViewAdapter) => void }).setViewAdapter?.(viewAdapter);
+    (conv as { setViewAdapter?: (a: TuiViewAdapter) => void }).setViewAdapter?.(tuiViewAdapter);
     const s = store.createSession('default');
     sessionId = s.id;
 
@@ -240,8 +241,8 @@ async function main() {
     try {
       const response = await fetch(`http://localhost:${config.port}/api/ontology/graph/${conv.getOrgId() || 'default'}`);
       if (response.ok) {
-        const data = await response.json() as { nodeCount?: number; nodes?: Array<{ type?: string }>; edges?: Array<{ type?: string }> };
-        if (data.nodeCount > 0) {
+        const data = await response.json() as { nodeCount?: number; edgeCount?: number; nodes?: Array<{ type?: string }>; edges?: Array<{ type?: string }> };
+        if ((data.nodeCount ?? 0) > 0) {
           app.side.setOntologySummary({
             persons: data.nodes?.filter((n: any) => n.type === SOGNodeType.PERSON).length || 0,
             teams: data.nodes?.filter((n: any) => n.type === SOGNodeType.TEAM).length || 0,
@@ -461,9 +462,9 @@ async function main() {
 
   // 暴露告警接口到全局（供 Cron 回调）
   // P1-02: 全局告警桥接 — TUI 通过 globalThis 暴露告警给各面板消费
-  (globalThis as { __synovaAlerts?: { addAlert: (a: SynovaAlert) => void } }).__synovaAlerts = {
-    pushAlert(level: 'critical' | 'warning', title: string, data: string, suggestion: string) {
-      app.side.pushAlert({ level, title, data, suggestion });
+  (globalThis as { __synovaAlerts?: { pushAlert: (level: 'critical' | 'warning', title: string, data: string, suggestion: string) => void } }).__synovaAlerts = {
+    pushAlert(level, title, data, suggestion) {
+      app.side.pushAlert({ level: level as 'critical' | 'warning', title, data, suggestion });
       app.flashTitle(true);
       setTimeout(() => app.flashTitle(false), 5000);
     },

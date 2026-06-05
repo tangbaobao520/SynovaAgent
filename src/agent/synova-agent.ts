@@ -9,7 +9,7 @@ import Database from 'better-sqlite3';
 import * as path from 'path';
 import * as fs from 'fs';
 import { createServer } from '../server';
-import { getGlobalScheduler, destroyGlobalScheduler } from '../cron/scheduler';
+import { CronScheduler, getGlobalScheduler, destroyGlobalScheduler } from '../cron/scheduler';
 import { loadConfig } from '../config';
 import { createLogger } from '../logger';
 

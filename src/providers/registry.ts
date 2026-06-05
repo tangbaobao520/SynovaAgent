@@ -25,7 +25,7 @@ export function detectProviderFromUrl(url: string): ProviderType {
 
 export function createProviderChain(
   providers: LLMProvider[],
-): LLMProvider & { healthCheck(): Promise<HealthCheckResult[]> } {
+): Omit<LLMProvider, 'healthCheck'> & { healthCheck(): Promise<HealthCheckResult[]> } {
   if (providers.length === 0) throw new Error('ProviderChain 至少需要一个 provider');
 
   return {
@@ -140,6 +140,6 @@ export class ProviderRegistry {
     }
     const all = [...healthy, ...unhealthy];
     if (all.length === 0) throw new Error('未注册任何 Provider');
-    return createProviderChain(all);
+    return createProviderChain(all) as unknown as LLMProvider;
   }
 }

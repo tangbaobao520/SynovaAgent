@@ -128,8 +128,8 @@ export class SessionStore {
     const row = this.db.prepare('SELECT * FROM agent_sessions WHERE id=?').get(id) as SqliteRow | undefined;
     if (!row) return null;
     return {
-      id: row.id, orgId: row.org_id, phase: row.phase,
-      stateJson: row.state_json, createdAt: row.created_at, updatedAt: row.updated_at,
+      id: row.id as string, orgId: row.org_id as string, phase: row.phase as number,
+      stateJson: row.state_json as string | null, createdAt: row.created_at as string, updatedAt: row.updated_at as string,
     };
   }
 
@@ -146,8 +146,8 @@ export class SessionStore {
       'SELECT s.*, (SELECT COUNT(*) FROM agent_messages WHERE session_id=s.id) as msg_count FROM agent_sessions s ORDER BY s.updated_at DESC LIMIT ?'
     ).all(limit) as SqliteRow[];
     return rows.map(r => ({
-      id: r.id, orgId: r.org_id, phase: r.phase,
-      stateJson: r.state_json, createdAt: r.created_at, updatedAt: r.updated_at,
+      id: r.id as string, orgId: r.org_id as string, phase: r.phase as number,
+      stateJson: r.state_json as string | null, createdAt: r.created_at as string, updatedAt: r.updated_at as string,
     }));
   }
 
@@ -170,23 +170,23 @@ export class SessionStore {
       'SELECT * FROM agent_messages WHERE session_id=? ORDER BY id ASC'
     ).all(sessionId) as SqliteRow[];
     return rows.map(r => ({
-      id: r.id, sessionId: r.session_id, role: r.role,
-      content: r.content, timestamp: r.timestamp,
+      id: Number(r.id), sessionId: r.session_id as string, role: r.role as MessageRow['role'],
+      content: r.content as string, timestamp: r.timestamp as string,
     }));
   }
 
   // ═══ State ═══
 
-  saveState(sessionId: string, state: ConversationState): void {
+  saveState(sessionId: string, state: Record<string, unknown>): void {
     this.db.prepare('UPDATE agent_sessions SET state_json=?, phase=?, updated_at=? WHERE id=?')
-      .run(JSON.stringify(state), state.phase, new Date().toISOString(), sessionId);
+      .run(JSON.stringify(state), state.phase ?? 0, new Date().toISOString(), sessionId);
   }
 
   loadState(sessionId: string): ConversationState | null {
     const row = this.db.prepare('SELECT state_json FROM agent_sessions WHERE id=?').get(sessionId) as SqliteRow | undefined;
     if (!row?.state_json) return null;
     try {
-      return JSON.parse(row.state_json);
+      return JSON.parse(row.state_json as string);
     } catch (err) {
       log.warn({ err }, '会话状态反序列化失败');
       return null;
@@ -211,8 +211,8 @@ export class SessionStore {
         LIMIT ?
       `).all(query, likePattern, limit) as SqliteRow[];
       return rows.map(r => ({
-        sessionId: r.session_id, orgId: r.org_id,
-        messageCount: r.msg_count, snippet: r.snippet, updatedAt: r.updated_at,
+        sessionId: r.session_id as string, orgId: r.org_id as string,
+        messageCount: Number(r.msg_count), snippet: r.snippet as string, updatedAt: r.updated_at as string,
       }));
     }
 
@@ -228,8 +228,8 @@ export class SessionStore {
       LIMIT ?
     `).all(query, limit) as SqliteRow[];
     return rows.map(r => ({
-      sessionId: r.session_id, orgId: r.org_id,
-      messageCount: r.msg_count, snippet: r.snippet, updatedAt: r.updated_at,
+      sessionId: r.session_id as string, orgId: r.org_id as string,
+      messageCount: Number(r.msg_count), snippet: r.snippet as string, updatedAt: r.updated_at as string,
     }));
   }
 

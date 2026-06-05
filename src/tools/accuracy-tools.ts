@@ -26,7 +26,7 @@ export const crossValidateTool: ToolDefinition = {
     properties: {
       findingId: { type: 'string', description: '需要验证的发现 ID' },
       dimension: { type: 'string', description: '诊断维度，如 information_flow' },
-      minSources: { type: 'number', description: '最少独立数据源数量', default: '3' },
+      minSources: { type: 'number', description: '最少独立数据源数量' },
     },
     required: ['findingId', 'dimension'],
   },
@@ -36,16 +36,16 @@ export const crossValidateTool: ToolDefinition = {
     const minSources = (params.minSources as number) || 3;
 
     const sources: string[] = [];
+    const BASE = `http://localhost:${process.env.PORT || 3000}`;
     // 检查数据源：访谈数据、模块计算、本体图数据、外部 API
     try {
-      const BASE = `http://localhost:${process.env.PORT || 3000}`;
       // 1. 检查本体图是否有此维度的数据
       const ontRes = await fetch(`${BASE}/api/ontology/graph/${findingId}`);
       if (ontRes.ok) {
         const data = await ontRes.json() as { nodeCount?: number };
         if (data.nodeCount && data.nodeCount > 0) sources.push('ontology_graph');
       }
-    } catch (err: any) { log.warn({ err: err.message }, 'cross_validate: 本体 API 不可达'); }
+    } catch (err: unknown) { log.warn({ err: (err as Error).message }, 'cross_validate: 本体 API 不可达'); }
 
     // 2. 检查会话历史是否有此维度的诊断数据
     try {
@@ -54,7 +54,7 @@ export const crossValidateTool: ToolDefinition = {
         const sessData = await sessRes.json() as { results?: unknown[] };
         if (sessData.results && sessData.results.length > 0) sources.push('diagnostic_sessions');
       }
-    } catch (err: any) { log.warn({ err: err.message }, 'cross_validate: 会话 API 不可达'); }
+    } catch (err: unknown) { log.warn({ err: (err as Error).message }, 'cross_validate: 会话 API 不可达'); }
 
     // 只在有实际数据源时计数
     const confidence = sources.length >= minSources ? 0.7 + (sources.length - minSources) * 0.1 : sources.length / Math.max(minSources, 1) * 0.5;
@@ -139,9 +139,11 @@ export const matchPatternTool: ToolDefinition = {
       const res = await fetch(`${BASE}/api/ontology/graph/${orgId}`);
       if (res.ok) {
         const data = await res.json() as Record<string, unknown>;
+        const nodeCount = Number(data.nodeCount ?? 0);
+        const edgeCount = Number(data.edgeCount ?? 0);
         const matched = patterns.filter(p => {
-          if (p.id === 'key_person_risk' && data.nodeCount > 5) return true;
-          if (p.id === 'info_silo' && data.edgeCount < 3) return true;
+          if (p.id === 'key_person_risk' && nodeCount > 5) return true;
+          if (p.id === 'info_silo' && edgeCount < 3) return true;
           return false;
         });
         return {
@@ -180,14 +182,15 @@ export const verifyClosureTool: ToolDefinition = {
       const BASE = `http://localhost:${process.env.PORT || 3000}`;
       const res = await fetch(`${BASE}/api/sessions/search?q=${encodeURIComponent(orgId)}`);
       if (res.ok) {
-        const data = await res.json() as Record<string, unknown>;
-        if (data.results && data.results.length > 0) {
+        const data = await res.json() as { results?: Array<Record<string, unknown>> };
+        const results = data.results ?? [];
+        if (results.length > 0) {
           return {
             orgId,
-            previousDiagnoses: data.results.length,
-            latestSession: data.results[0],
+            previousDiagnoses: results.length,
+            latestSession: results[0],
             hasHistory: true,
-            summary: `找到 ${data.results.length} 次历史诊断。最近一次: ${data.results[0].updatedAt}`,
+            summary: `找到 ${results.length} 次历史诊断。最近一次: ${results[0].updatedAt}`,
             recommendation: '对比上次行动项采纳率和本次指标变化，评估改善效果',
           };
         }
@@ -212,7 +215,7 @@ export const requestHumanTool: ToolDefinition = {
     properties: {
       findingId: { type: 'string', description: '需要审核的发现 ID' },
       reason: { type: 'string', description: '请求人工审核的原因' },
-      priority: { type: 'string', description: '优先级: low/medium/high/critical', default: 'medium' },
+      priority: { type: 'string', description: '优先级: low/medium/high/critical' },
     },
     required: ['findingId', 'reason'],
   },

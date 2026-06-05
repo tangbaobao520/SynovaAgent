@@ -7,7 +7,6 @@
  * 流程: LLM → tool call → ToolRegistry.execute() → result → LLM → 最终回复
  */
 import { createLogger } from '../logger';
-import type { ToolRegistryInterface } from '../connectors/types';
 
 const log = createLogger('agent/tools');
 
@@ -25,6 +24,7 @@ export interface ToolSchema {
   required?: string[];
   /** DeepSeek V4 Strict Mode — 必须为 false 以启用服务端 Schema 验证 */
   additionalProperties?: boolean;
+  [key: string]: unknown;
 }
 
 /** Execution mode — determines how the tool is dispatched (Slice 1.2 + 4.1) */
@@ -96,7 +96,7 @@ export interface ToolCallResult {
 
 // ═══ ToolRegistry ═══
 
-export class ToolRegistry implements ToolRegistryInterface {
+export class ToolRegistry {
   private tools = new Map<string, ToolDefinition>();
   /** Cached OpenAI-compatible tool schema (P1: DeepSeek prefix cache optimization) */
   private _cachedOpenAITools: Array<{

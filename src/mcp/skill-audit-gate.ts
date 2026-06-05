@@ -49,7 +49,7 @@ export function auditSkillDirectory(skillDir: string): SkillAuditReport {
   const allContentLower = allContent.toLowerCase();
 
   // Step 2: Dangerous keyword scan
-  const DANGER_KEYWORDS: Array<{ kw: string; severity: 'critical' | 'high'; cat: string }> = [
+  const DANGER_KEYWORDS: Array<{ kw: string; severity: 'critical' | 'high' | 'medium'; cat: string }> = [
 	    { kw: 'eval(', severity: 'critical', cat: 'code_execution' },
 	    { kw: 'eval "', severity: 'critical', cat: 'code_execution' },
 	    { kw: 'exec(', severity: 'critical', cat: 'code_execution' },

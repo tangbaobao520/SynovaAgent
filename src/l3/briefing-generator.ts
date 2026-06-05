@@ -123,7 +123,15 @@ export class BriefingGenerator {
   /** Format briefing using registered report template */
   formatMarkdown(briefing: DailyBriefing, template = 'daily_briefing'): string {
     const registry = getReportTemplateRegistry();
-    return registry.render(template, briefing);
+    const reportData: import('./report-templates').ReportData = {
+      orgId: 'unknown',
+      date: briefing.date,
+      goals: briefing.goals.map(g => ({ name: g.name, progress: g.progress, status: g.trend, trend: g.trend })),
+      alerts: briefing.alerts.map(a => ({ description: a.description, priority: a.priority, confidence: a.confidence })),
+      obstacles: briefing.obstacles,
+      recommendations: briefing.recommendations,
+    };
+    return registry.render(template, reportData);
   }
 }
 

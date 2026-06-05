@@ -104,7 +104,7 @@ export class OntologyEventBus {
   }
 
   /** Health check */
-  health(): { status: 'healthy' | 'degraded' | 'unhealthy'; metrics: typeof this.metrics; dlqSize: number } {
+  health(): { status: 'healthy' | 'degraded' | 'unhealthy'; metrics: { published: number; consumed: number; failed: number; deadLettered: number }; dlqSize: number } {
     const failureRate = this.metrics.failed / Math.max(this.metrics.published, 1);
     if (failureRate > 0.5) return { status: 'unhealthy', metrics: { ...this.metrics }, dlqSize: this.deadLetterQueue.length };
     if (failureRate > 0.1) return { status: 'degraded', metrics: { ...this.metrics }, dlqSize: this.deadLetterQueue.length };

@@ -53,10 +53,11 @@ router.post('/api/expert/contribute', (req: Request, res: Response) => {
 
 /** GET /api/expert/templates/:id */
 router.get('/api/expert/templates/:id', (req: Request, res: Response) => {
-  const entry = getStore().get(req.params.id);
+  const id = req.params.id as string;
+  const entry = getStore().get(id);
   if (!entry) return res.status(404).json({ ok: false, error: '模板不存在', code: 'NOT_FOUND' });
   const statuses = validator.getAllStatuses();
-  res.json({ ok: true, entry, validationStatus: statuses[req.params.id] || 'unvalidated' });
+  res.json({ ok: true, entry, validationStatus: statuses[id] || 'unvalidated' });
 });
 
 /** GET /api/expert/mine */

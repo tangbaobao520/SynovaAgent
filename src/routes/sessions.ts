@@ -69,11 +69,11 @@ router.get('/api/sessions/search', (req: Request, res: Response) => {
 router.get('/api/sessions/:id', (req: Request, res: Response) => {
   try {
     const store = getStore();
-    const session = store.getSession(req.params.id);
+    const session = store.getSession(req.params.id as string);
     if (!session) {
       return res.status(404).json({ ok: false, error: '会话不存在', code: 'NOT_FOUND' });
     }
-    const messages = store.getMessages(req.params.id);
+    const messages = store.getMessages(req.params.id as string);
     res.json({ ok: true, session, messages });
   } catch (err: any) {
     log.error({ err }, '获取会话失败');
@@ -85,11 +85,11 @@ router.get('/api/sessions/:id', (req: Request, res: Response) => {
 router.delete('/api/sessions/:id', (req: Request, res: Response) => {
   try {
     const store = getStore();
-    const session = store.getSession(req.params.id);
+    const session = store.getSession(req.params.id as string);
     if (!session) {
       return res.status(404).json({ ok: false, error: '会话不存在', code: 'NOT_FOUND' });
     }
-    store.deleteSession(req.params.id);
+    store.deleteSession(req.params.id as string);
     res.json({ ok: true, deleted: req.params.id });
   } catch (err: any) {
     log.error({ err }, '删除会话失败');

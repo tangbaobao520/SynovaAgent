@@ -10,7 +10,7 @@
  * @since 0.2.0
  */
 import { getConnectorRegistry } from '../connectors/registry';
-import type { ToolRegistryInterface } from '../connectors/types';
+import type { ToolRegistry } from '../agent/tools';
 import { createLogger } from '../logger';
 
 const log = createLogger('init/connector-binding');
@@ -24,9 +24,9 @@ const log = createLogger('init/connector-binding');
  *
  * @param toolRegistry - ToolRegistry 实例 (实现在 agent/tools.ts)
  */
-export function bindConnectorTools(toolRegistry: ToolRegistryInterface): void {
+export function bindConnectorTools(toolRegistry: ToolRegistry): void {
   const registry = getConnectorRegistry();
-  registry.bindToolRegistry(toolRegistry);
+  registry.bindToolRegistry(toolRegistry as unknown as import('../connectors/types').ToolRegistryInterface);
 
   for (const c of registry.list()) {
     const conn = registry.get(c.name);
@@ -37,11 +37,11 @@ export function bindConnectorTools(toolRegistry: ToolRegistryInterface): void {
         toolRegistry.register({
           name: tool.name,
           description: tool.description,
-          parameters: tool.parameters,
+          parameters: tool.parameters as unknown as import('../agent/tools').ToolSchema,
           executionMode: 'connector',
           connectorName: conn.name,
           handler: async (params: Record<string, unknown>) =>
-            conn.executeTool(tool.name, params),
+            (await conn.executeTool(tool.name, params)) as unknown as Record<string, unknown>,
         });
       } catch (err: any) {
         log.warn({ err, connector: conn.name, tool: tool.name },

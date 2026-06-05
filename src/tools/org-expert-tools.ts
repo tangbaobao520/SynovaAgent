@@ -25,7 +25,7 @@ export const buildOrgGraphTool: ToolDefinition = {
     type: 'object',
     properties: {
       orgId: { type: 'string', description: '组织 ID' },
-      dataSource: { type: 'string', description: '数据源: feishu/dingtalk/wecom/manual', default: 'manual' },
+      dataSource: { type: 'string', description: '数据源: feishu/dingtalk/wecom/manual' },
     },
     required: ['orgId'],
   },
@@ -133,7 +133,7 @@ export const identifyKeyPersonRiskTool: ToolDefinition = {
     type: 'object',
     properties: {
       orgId: { type: 'string', description: '组织 ID' },
-      threshold: { type: 'number', description: '中心性阈值 (0-1)，默认 0.7', default: '0.7' },
+      threshold: { type: 'number', description: '中心性阈值 (0-1)，默认 0.7' },
     },
     required: ['orgId'],
   },

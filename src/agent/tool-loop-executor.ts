@@ -215,7 +215,7 @@ export class ToolLoopExecutor {
             this.log.warn({ err, tool: tc.function.name }, '工具执行失败');
             execResult = { error: `工具执行失败: ${err.message}` };
             if (hookRunner) {
-              hookRunner.runPostToolUseFailure?.({ name: tc.function.name, input: JSON.stringify(effectiveParams) }, { message: err.message }).catch(() => {});
+              hookRunner.runPostToolUseFailure?.({ name: tc.function.name, input: JSON.stringify(effectiveParams) }, new Error(err.message)).catch(() => {});
             }
           }
 

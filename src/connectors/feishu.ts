@@ -87,7 +87,7 @@ export class FeishuConnector implements DataConnector {
       mapping.edges.push({
         type: SOGEdgeType.INTERACTS_WITH,
         from: msg.senderId,
-        to: msg.recipientIds[0] || msg.senderId,
+        to: msg.recipientIds?.[0] || msg.senderId,
         weight: 1,
         props: { channel: msg.channel },
       });
@@ -99,7 +99,7 @@ export class FeishuConnector implements DataConnector {
         type: SOGNodeType.EVENT,
         props: { eventType: evt.eventType, timestamp: evt.timestamp },
       });
-      for (const relatedId of evt.relatedEntityIds) {
+      for (const relatedId of evt.relatedEntityIds || []) {
         mapping.edges.push({
           type: SOGEdgeType.CORRESPONDS_TO,
           from: evt.id,

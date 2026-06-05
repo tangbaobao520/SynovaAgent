@@ -73,7 +73,7 @@ export class OntologySyncer {
         log.warn('createGraphStore 未注入 — 跳过 SOG 同步');
         return result;
       }
-      const store = await this.ctx.createGraphStore(db) as Record<string, unknown>;
+      const store = await this.ctx.createGraphStore(db) as { createNode: (type: string, props: Record<string, unknown>, graph: string) => string };
 
       // Create Team node
       store.createNode(SOGNodeType.TEAM, {

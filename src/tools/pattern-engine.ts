@@ -86,14 +86,17 @@ export class PatternEngine {
   }
 
   getPatternsForExpert(expertType: string): DiagnosticPattern[] {
-    return this.db.prepare('SELECT * FROM mode_library WHERE expert_type=?').all(expertType) as SqliteRow[];
+    const rows = this.db.prepare('SELECT * FROM mode_library WHERE expert_type=?').all(expertType) as SqliteRow[];
+    return rows.map(r => r as unknown as DiagnosticPattern);
   }
 
   matchPatterns(dimension: string): DiagnosticPattern[] {
-    return this.db.prepare('SELECT * FROM mode_library WHERE dimension=? OR dimension IS NULL').all(dimension) as SqliteRow[];
+    const rows = this.db.prepare('SELECT * FROM mode_library WHERE dimension=? OR dimension IS NULL').all(dimension) as SqliteRow[];
+    return rows.map(r => r as unknown as DiagnosticPattern);
   }
 
   getAllPatterns(): DiagnosticPattern[] {
-    return this.db.prepare('SELECT * FROM mode_library ORDER BY weight DESC').all() as SqliteRow[];
+    const rows = this.db.prepare('SELECT * FROM mode_library ORDER BY weight DESC').all() as SqliteRow[];
+    return rows.map(r => r as unknown as DiagnosticPattern);
   }
 }

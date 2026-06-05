@@ -11,9 +11,10 @@ const log = createLogger('l4/diagnosis-graph-query');
 
 // ═══ Read-only GraphStore ═══
 
-interface GraphStoreRO {
+export interface GraphStoreRO {
   queryNodes(type: string, filters?: Record<string,unknown>, graph?: string): Array<{id:string, type:string, props:Record<string,unknown>}>;
   queryEdges(type?: string, from?: string, to?: string, graph?: string): Array<{id:string, type:string, from:string, to:string, weight:number, props:Record<string,unknown>}>;
+  queryTriples(pattern: Record<string,unknown>, graph?: string): unknown[];
 }
 
 // ═══ Output Types ═══
@@ -26,7 +27,7 @@ export interface SubgraphSummary {
   risks: string[]; anomalyScore: number;
 }
 
-export interface GraphDiff { nodesAdded: string[]; nodesRemoved: string[]; edgesAdded: string[]; edgesRemoved: string[]; weightChanges: Array<{edgeId:string, from:number, to:number}> }
+export interface GraphDiff { nodesAdded: Array<{ type: string; count: number }>; nodesRemoved: string[]; edgesAdded: Array<{ type: string; count: number }>; edgesRemoved: string[]; weightChanges: Array<{edgeId:string, from:number, to:number}> }
 
 export interface BrokerNode { nodeId: string; nodeType: string; betweennessScore: number; bridgingDimensions: string[] }
 

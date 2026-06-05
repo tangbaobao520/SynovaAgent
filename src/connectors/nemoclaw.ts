@@ -36,7 +36,7 @@ export class NemoClawConnector implements DataConnector {
       if (m.department) mapping.nodes.push({ type: SOGNodeType.TEAM, props: { name: m.department, teamType: 'permanent' } });
     }
     for (const msg of messages) {
-      mapping.edges.push({ type: SOGEdgeType.INTERACTS_WITH, from: msg.senderId, to: msg.recipientIds[0] || msg.senderId, weight: 1, props: { channel: msg.channel } });
+      mapping.edges.push({ type: SOGEdgeType.INTERACTS_WITH, from: msg.senderId, to: msg.recipientIds?.[0] || msg.senderId, weight: 1, props: { channel: msg.channel } });
     }
     for (const evt of events) {
       mapping.nodes.push({ type: SOGNodeType.EVENT, props: { eventType: evt.eventType, timestamp: evt.timestamp } });

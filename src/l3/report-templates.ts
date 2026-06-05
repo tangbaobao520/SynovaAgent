@@ -14,7 +14,7 @@ export interface ReportTemplate {
   name: string;
   description: string;
   /** 模板渲染函数 */
-  render(data: Record<string, unknown>): string;
+  render(data: ReportData): string;
 }
 
 export interface ReportData {

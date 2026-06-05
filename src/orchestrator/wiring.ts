@@ -71,7 +71,7 @@ export function createOrchestrationWiring(
         id: `evt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
         type: 'phase.started',
         consultationId: cid, phase,
-        data: { label: DEFAULT_PHASE_CONFIGS[phase]?.label || `Phase ${phase}` },
+        data: { label: DEFAULT_PHASE_CONFIGS[phase as keyof typeof DEFAULT_PHASE_CONFIGS]?.label || `Phase ${phase}` },
         traceId, spanId: traceId.slice(0, 16),
         timestamp: new Date().toISOString(),
       });

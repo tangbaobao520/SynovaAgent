@@ -7,7 +7,8 @@
  * Task 3: query_sog_graph — 动态 SOG 图查询 (替代硬编码 QueryAPI)
  * Task 4: GitHub MCP — 技术专家工具
  */
-import type { ToolRegistry } from '../agent/tools';
+import type { ToolRegistry, ToolParameter } from '../agent/tools';
+import type { GraphStoreRO } from '../l4/diagnosis-graph-query';
 import { getMCPBridge, type MCPToolDef } from './bridge';
 import { createLogger } from '../logger';
 
@@ -27,7 +28,7 @@ export async function registerMCPTools(registry: ToolRegistry): Promise<void> {
       registry.register({
         name: `brave_${tool.name}`,
         description: `[Brave Search] ${tool.description}`,
-        parameters: { type: 'object', properties: tool.parameters as Record<string, unknown> },
+        parameters: { type: 'object', properties: tool.parameters as Record<string, ToolParameter> },
         operationType: 'read',
         sideEffects: 'none',
         executionMode: 'connector',
@@ -50,7 +51,7 @@ export async function registerMCPTools(registry: ToolRegistry): Promise<void> {
       registry.register({
         name: `github_${tool.name}`,
         description: `[GitHub] ${tool.description}`,
-        parameters: { type: 'object', properties: tool.parameters as Record<string, unknown> },
+        parameters: { type: 'object', properties: tool.parameters as Record<string, ToolParameter> },
         operationType: 'read',
         sideEffects: 'none',
         executionMode: 'connector',
@@ -95,17 +96,13 @@ export async function registerMCPTools(registry: ToolRegistry): Promise<void> {
       const { getDatabase } = await import('../init/engine-context');
 
       const db = getDatabase();
-      const store = createGraphStore('sqlite', db) as {
-        queryNodes(t: string, f?: Record<string,unknown>, g?: string): Array<{id:string;type:string;props:Record<string,unknown>}>;
-        queryEdges(t?: string, f?: string, to?: string, g?: string): Array<{from:string;to:string;type:string;props:Record<string,unknown>}>;
-        queryTriples(p: Record<string,unknown>, g?: string): unknown[];
-      };
+      const store = createGraphStore('sqlite', db) as unknown as GraphStoreRO;
       const graph = (params.graph as string) || 'default';
 
       switch (params.operation) {
         case 'findPath': {
           const paths = findDiagnosticPaths(
-            store as Parameters<typeof findDiagnosticPaths>[0],
+            store,
             graph,
             String(params.fromType || ''),
             String(params.toType || ''),
@@ -114,7 +111,7 @@ export async function registerMCPTools(registry: ToolRegistry): Promise<void> {
         }
         case 'summarize': {
           const summary = summarizeSubgraph(
-            store as Parameters<typeof summarizeSubgraph>[0],
+            store,
             graph,
             String(params.rootId || ''),
             Number(params.maxDepth || 3),
@@ -123,7 +120,7 @@ export async function registerMCPTools(registry: ToolRegistry): Promise<void> {
         }
         case 'brokers': {
           const brokers = findCrossDimensionalBrokers(
-            store as Parameters<typeof findCrossDimensionalBrokers>[0],
+            store,
             graph,
           );
           return { brokers };

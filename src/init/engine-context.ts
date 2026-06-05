@@ -41,11 +41,15 @@ export function initEngineContext(): void {
       getDb: () => db!,
     },
     logger: {
-      info: (msg: string, meta?: any) => log.info(meta || {}, msg),
-      warn: (msg: string, meta?: any) => log.warn(meta || {}, msg),
-      error: (msg: string, meta?: any) => log.error(meta || {}, msg),
-      debug: (msg: string, meta?: any) => log.debug(meta || {}, msg),
-    },
+      trace: (...args: any[]) => log.debug({ args }, args.length > 1 ? args[1] : 'trace'),
+      debug: (...args: any[]) => log.debug(args.length > 1 ? args[1] : {}, args[0]),
+      info: (...args: any[]) => log.info(args.length > 1 ? args[1] : {}, args[0]),
+      warn: (...args: any[]) => log.warn(args.length > 1 ? args[1] : {}, args[0]),
+      error: (...args: any[]) => log.error(args.length > 1 ? args[1] : {}, args[0]),
+      fatal: (...args: any[]) => log.error(args.length > 1 ? args[1] : {}, `[FATAL] ${args[0]}`),
+      child: (_bindings: Record<string, unknown>) => createLogger('engine-core'),
+      level: process.env.LOG_LEVEL || 'info',
+    } as import('@synova/engine-core/src/infra/logger').AppLogger,
   });
 
   // 3. 设置存储后端 (Slice 2.2: SQLite 持久化替换内存模式)

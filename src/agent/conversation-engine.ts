@@ -97,7 +97,7 @@ export interface ProcessResult {
   phaseComplete: boolean;
 }
 
-export interface EngineState {
+export type EngineState = {
   orgId: string;
   phase: number;
   messages: LLMMessage[];
@@ -251,7 +251,7 @@ export class ConversationEngine {
     this.config = {
       maxTurns: config.maxTurns ?? 6,
       orgId: config.orgId || '',
-    };
+    } as Required<EngineConfig>;
     this.messages = [{ role: 'system', content: buildSystemPrompt(0, 0, this.dimensionCoverage, this.dimensionRegistry) }];
     this.toolRegistry = new ToolRegistry();
 

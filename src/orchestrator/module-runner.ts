@@ -142,8 +142,8 @@ export class ModuleRunner {
       ]);
 
       return {
-        moduleId: module.name,
         ...result,
+        moduleId: module.name,
         durationMs: Date.now() - startTime,
       };
     } catch (err: any) {
@@ -158,7 +158,7 @@ export class ModuleRunner {
               setTimeout(() => reject(new Error(`Retry timeout`)), this.config.perModuleTimeoutMs),
             ),
           ]);
-          return { moduleId: module.name, ...retryResult, durationMs: Date.now() - startTime };
+          return { ...retryResult, moduleId: module.name, durationMs: Date.now() - startTime };
         } catch (retryErr: any) {
           log.debug({ moduleId: module.name, err: retryErr.message }, 'Module retry also failed — degraded');
         }

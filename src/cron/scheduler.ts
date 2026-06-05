@@ -112,11 +112,11 @@ export class CronScheduler {
       log.debug({ name: row.name, id: row.id }, '恢复持久化任务');
       // 恢复为无操作 job — 调用方在启动时重新 schedule 同名任务覆盖
       const job: CronJob = {
-        id: row.id, name: row.name, cron: row.cron,
+        id: row.id as string, name: row.name as string, cron: row.cron as string,
         handler: async () => {}, // 占位，等待重新注册
-        lastRunAt: row.last_run_at, lastError: row.last_error,
-        failures: row.failures || 0, runs: row.runs || 0,
-        nextRun: nextCronTime(row.cron).getTime(),
+        lastRunAt: row.last_run_at as string | null, lastError: row.last_error as string | null,
+        failures: Number(row.failures || 0), runs: Number(row.runs || 0),
+        nextRun: nextCronTime(row.cron as string).getTime(),
       };
       this.jobs.set(job.id, job);
     }
@@ -221,7 +221,7 @@ let _globalScheduler: CronScheduler | null = null;
 let _initLock: Promise<CronScheduler> | null = null;
 
 /** 获取或创建全局 CronScheduler 单例 (P2-08: 初始化锁防竞态) */
-export function getGlobalScheduler(db?: import('better-sqlite3').default): CronScheduler {
+export function getGlobalScheduler(db?: import('better-sqlite3').Database): CronScheduler {
   if (_globalScheduler) return _globalScheduler;
   if (!db) throw new Error('首次调用 getGlobalScheduler 必须提供 database 实例');
 

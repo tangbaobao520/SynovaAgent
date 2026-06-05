@@ -32,7 +32,7 @@ export interface SidePanel {
   clearAlerts(): void;
 }
 
-export function createSidePanel(opts: { top?: number; left?: number; width?: string; height?: string } = {}): SidePanel {
+export function createSidePanel(opts: { top?: number | string; left?: number | string; width?: string; height?: string } = {}): SidePanel {
   const box = blessed.box({
     top: opts.top ?? 0,
     left: opts.left ?? '75%',

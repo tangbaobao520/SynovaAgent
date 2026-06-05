@@ -75,13 +75,13 @@ router.get('/api/ontology/graph/:orgId.html', (req: Request, res: Response) => {
     }
     const store = createGraphStore('sqlite', getDatabase());
 
-    const types = ['Person', 'Team', 'Agent', 'Tool', 'Client', 'Process', 'Event', 'Document', 'Financial'] as const;
-    const nodes: any[] = [];
-    for (const t of types) nodes.push(...store.queryNodes(t, undefined, orgId));
-    const edges = store.queryEdges(undefined, undefined, undefined, orgId);
+    const types: string[] = ['Person', 'Team', 'Agent', 'Tool', 'Client', 'Process', 'Event', 'Document', 'Financial'];
+    const nodes: Array<{ id?: unknown; type?: unknown; props?: unknown }> = [];
+    for (const t of types) nodes.push(...store.queryNodes(t as unknown as Parameters<typeof store.queryNodes>[0], undefined, orgId as string));
+    const edges = store.queryEdges(undefined, undefined, undefined, orgId as string);
 
     const nodeRows = nodes.map(n =>
-      `<tr><td><span class="badge badge-${n.type}">${n.type}</span></td><td>${n.id.slice(0, 16)}</td><td>${JSON.stringify(n.props).slice(0, 120)}</td></tr>`
+      `<tr><td><span class="badge badge-${String(n.type ?? '')}">${String(n.type ?? '')}</span></td><td>${String(n.id ?? '').slice(0, 16)}</td><td>${JSON.stringify(n.props ?? {}).slice(0, 120)}</td></tr>`
     ).join('\n');
     const edgeRows = edges.map(e =>
       `<tr><td>${e.type}</td><td>${e.from.slice(0, 16)}</td><td>${e.to.slice(0, 16)}</td><td>${(e.weight ?? 0).toFixed(2)}</td></tr>`
@@ -135,12 +135,12 @@ router.get('/api/ontology/graph/:orgId', (req: Request, res: Response) => {
     }
     const store = createGraphStore('sqlite', getDatabase());
 
-    const types = ['Person', 'Team', 'Agent', 'Tool', 'Client', 'Process', 'Event', 'Document', 'Financial'] as const;
-    const nodes: any[] = [];
+    const types: string[] = ['Person', 'Team', 'Agent', 'Tool', 'Client', 'Process', 'Event', 'Document', 'Financial'];
+    const nodes: Array<{ id?: unknown; type?: unknown; props?: unknown }> = [];
     for (const t of types) {
-      nodes.push(...store.queryNodes(t, undefined, orgId));
+      nodes.push(...store.queryNodes(t as unknown as Parameters<typeof store.queryNodes>[0], undefined, orgId as string));
     }
-    const edges = store.queryEdges(undefined, undefined, undefined, orgId);
+    const edges = store.queryEdges(undefined, undefined, undefined, orgId as string);
 
     res.json({
       ok: true, orgId,
@@ -164,7 +164,7 @@ router.get('/api/ontology/graph/:orgId/summary', (req: Request, res: Response) =
     if (orgIdErr) return res.status(400).json({ ok: false, error: orgIdErr, code: 'VALIDATION_ERROR' });
 
     const store = createGraphStore('sqlite', getDatabase());
-    const summary = summarizeSubgraph(store, orgId, rootId || orgId, 3);
+    const summary = summarizeSubgraph(store, orgId as string, rootId || (orgId as string), 3);
     res.json({ ok: true, summary });
   } catch (err: any) {
     res.status(500).json({ ok: false, error: err.message, code: 'QUERY_ERROR' });
@@ -179,7 +179,7 @@ router.get('/api/ontology/graph/:orgId/brokers', (req: Request, res: Response) =
     if (orgIdErr) return res.status(400).json({ ok: false, error: orgIdErr, code: 'VALIDATION_ERROR' });
 
     const store = createGraphStore('sqlite', getDatabase());
-    const brokers = findCrossDimensionalBrokers(store, orgId, 0.01);
+    const brokers = findCrossDimensionalBrokers(store, orgId as string, 0.01);
     res.json({ ok: true, brokers: brokers.slice(0, 20) });
   } catch (err: any) {
     res.status(500).json({ ok: false, error: err.message, code: 'QUERY_ERROR' });
@@ -196,7 +196,7 @@ router.get('/api/ontology/graph/:orgId/diff', (req: Request, res: Response) => {
     if (orgIdErr) return res.status(400).json({ ok: false, error: orgIdErr, code: 'VALIDATION_ERROR' });
 
     const store = createGraphStore('sqlite', getDatabase());
-    const diff = getGraphDiff(store, orgId, fromDate, toDate);
+    const diff = getGraphDiff(store, orgId as string, fromDate, toDate);
     res.json({ ok: true, diff });
   } catch (err: any) {
     res.status(500).json({ ok: false, error: err.message, code: 'QUERY_ERROR' });

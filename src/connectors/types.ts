@@ -9,7 +9,6 @@
  * 与连接器接口定义不重复 — 它们描述连接器产出的数据形状。
  */
 export type {
-  DataConnector,
   ConnectorTool,
   ConnectorStatus,
   ConnectorHealth,
@@ -24,9 +23,11 @@ export interface ConnectorMessage {
   senderName?: string;
   channelId: string;
   channelName?: string;
+  channel?: string;
   content: string;
   timestamp: string;
   threadId?: string;
+  recipientIds?: string[];
   reactions?: Array<{ type: string; count: number }>;
 }
 
@@ -34,6 +35,7 @@ export interface ConnectorMember {
   id: string;
   name: string;
   email?: string;
+  department?: string;
   teams?: string[];
   role?: string;
   joinedAt?: string;
@@ -42,15 +44,17 @@ export interface ConnectorMember {
 export interface ConnectorEvent {
   id: string;
   type: string;
+  eventType?: string;
   actorId: string;
   targetId?: string;
   timestamp: string;
+  relatedEntityIds?: string[];
   metadata?: Record<string, unknown>;
 }
 
 export interface OntologyMapping {
   nodes: Array<{ type: string; props: Record<string, unknown> }>;
-  edges: Array<{ type: string; from: string; to: string; props?: Record<string, unknown> }>;
+  edges: Array<{ type: string; from: string; to: string; weight?: number; props?: Record<string, unknown> }>;
 }
 
 /**

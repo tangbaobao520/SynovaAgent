@@ -199,7 +199,7 @@ export class ExpertAutonomyEngine {
   private buildToolList(): string {
     if (!this.toolRegistry) return '无可用工具';
     try {
-      const tools = (this.toolRegistry as { listTools(): Array<{ name: string; description: string }> }).listTools();
+      const tools = this.toolRegistry.listTools();
       const readTools = tools.filter(t =>
         !t.name.startsWith('brave_') && !t.name.startsWith('github_')
         || this.policy.allowedQueryFunctions?.includes(t.name)
@@ -226,9 +226,9 @@ export class ExpertAutonomyEngine {
   }
 
   // ToolRegistry 注入 (替代硬编码 switch)
-  private toolRegistry?: { execute(name: string, params: Record<string, unknown>): Promise<Record<string, unknown>> };
+  private toolRegistry?: { execute(name: string, params: Record<string, unknown>): Promise<Record<string, unknown>>; listTools(): Array<{ name: string; description: string }> };
 
-  withToolRegistry(registry: { execute(name: string, params: Record<string, unknown>): Promise<Record<string, unknown>> }): this {
+  withToolRegistry(registry: { execute(name: string, params: Record<string, unknown>): Promise<Record<string, unknown>>; listTools(): Array<{ name: string; description: string }> }): this {
     this.toolRegistry = registry;
     return this;
   }
@@ -260,10 +260,6 @@ export class ExpertAutonomyEngine {
           ? this.queryApi.matchPattern((params?.signals as string[]) || [])
           : { error: 'matchPattern not configured' };
       default:
-        // Forward unknown tools to query_sog_graph (动态 L4 查询)
-        if (this.toolRegistry) {
-          return this.toolRegistry.execute('query_sog_graph', { operation: functionName, ...params });
-        }
         return { error: `未知查询: ${functionName}` };
     }
   }

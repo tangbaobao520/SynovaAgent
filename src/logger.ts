@@ -88,7 +88,7 @@ export function createLogger(name: string) {
   // Wrap child methods to apply value-level redaction
   const wrap = (method: keyof typeof child) => {
     const orig = child[method] as Function;
-    (child as Record<string, unknown>)[method] = (...args: unknown[]) => {
+    (child as unknown as Record<string, unknown>)[method as string] = (...args: unknown[]) => {
       const redacted = args.map(arg =>
         typeof arg === 'object' && arg !== null ? redactValues(arg) : arg
       );

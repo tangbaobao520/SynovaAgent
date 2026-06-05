@@ -70,7 +70,7 @@ export async function applyOntologyPatches(
     const { SOGNodeType } = await import('@synova/sog-core');
     const { getDatabase } = await import('../init/engine-context');
     const db = getDatabase();
-    const store = await EngineCoreVendorAdapter.createGraphStore(db) as Record<string, unknown>;
+    const store = await EngineCoreVendorAdapter.createGraphStore(db) as { createNode(type: string, props: Record<string, unknown>, graph: string): void };
 
     for (const patch of patches) {
       try {
