@@ -67,6 +67,14 @@ const SEEDS: SeedEntry[] = [
   { domain: 'org', type: 'theory', confidence: 0.9, level: 2, content: '组织行为学核心框架: 个体(人格/知觉/动机/态度)→群体(沟通/冲突/领导/权力)→组织(文化/结构/变革)。三个层次相互影响,诊断不能只看单一层次。' },
   { domain: 'org', type: 'theory', confidence: 0.85, level: 2, content: '激励理论双因素(Herzberg): 保健因素(工资/工作环境/人际关系)不满足→不满,满足→不会不满。激励因素(成就感/认可/成长/责任)满足→真正的激励。只加薪不增加工作意义→员工仍会流失。' },
   { domain: 'org', type: 'theory', confidence: 0.85, level: 2, content: 'AMO模型(Ability-Motivation-Opportunity): 绩效=能力×动机×机会。能力不够→培训或招聘,动机不足→激励和反馈,机会缺失→授权和资源。三者乘积为零则绩效为零。与杨三角异曲同工。' },
+  // 人+Agent 组织理论 (前沿)
+  { domain: 'org', type: 'theory', confidence: 0.8, level: 3, content: 'Superminds理论(MIT Thomas Malone): 组织是"超级思维"——人类+AI构成的集体智能。五类超级思维: 层级型(传统组织)、民主型(投票)、市场型(价格信号)、社区型(规范共识)、生态系统型(进化)。AI Agent 加入后,组织从纯人类层级向人机混合生态系统演进。' },
+  { domain: 'org', type: 'theory', confidence: 0.85, level: 3, content: '人+Agent协作的三种模式(Microsoft Research 2024): 1.嵌入式(Agent作为工具,人类决策,如Copilot) 2.对等式(Agent作为同事,共同执行,如多Agent诊断) 3.自主式(Agent独立执行,人类监督,如自动驾驶)。组织诊断需识别当前模式并评估升级路径。' },
+  { domain: 'org', type: 'theory', confidence: 0.8, level: 3, content: 'Agentic Organization(斯坦福HAI 2024-2025): 随着AI Agent能力提升,组织设计的核心问题从"如何管理人"变为"如何设计人+Agent的协作系统"。关键发现: 1.混合团队的效率上限取决于Agent的透明度和可解释性 2.人类对Agent的信任建立需要可预测性和误差边界 3.最优配置不是替代人类,而是让Agent承担信息整合和模式识别,人类负责价值判断和创造力。' },
+  { domain: 'org', type: 'rule', confidence: 0.85, level: 3, content: '多Agent组织设计原则: 1.每个Agent必须有明确的角色边界和可被人类审核的决策日志 2.Agent之间的信息传递必须有版本控制和冲突检测 3.关键决策(人事/财务/安全)必须保留人类审批节点 4.Agent的绩效评估不同于人类——用准确率/一致性/覆盖度而非完成任务数。' },
+  { domain: 'org', type: 'theory', confidence: 0.75, level: 3, content: '组织网络分析(ONA)在人机混合团队中的应用: 传统ONA分析人类之间的沟通网络。未来组织需要双模ONA——同时映射人-人、人-Agent、Agent-Agent三类关系。诊断指标: Agent依赖度(人类向Agent求助的频率)、Agent可替代性(Agent宕机时人类的处理能力)、决策溯源完整度(从结论追溯到原始数据的链条长度)。' },
+  { domain: 'org', type: 'benchmark', confidence: 0.7, level: 3, content: '人机混合组织成熟度模型(Anthropic/OpenAI 2025研究综合): L1工具辅助(人类决策,AI提供信息)→L2协作执行(AI执行子任务,人类整合)→L3对等诊断(AI与人类专家并列诊断,互相验证)→L4自主执行(AI独立管理部分业务域,人类监督)→L5自适应组织(AI持续优化组织结构和流程,人类设定目标和边界)。' },
+  { domain: 'org', type: 'best_practice', confidence: 0.8, level: 2, content: '引入AI Agent到组织时: 1.先在小范围(单团队)试点,建立信任后再扩展 2.设定明确的"人类保留权限"清单 3.每季度审计Agent决策与人类决策的差异率 4.建立Agent退役机制(当Agent准确率<阈值时自动降级为只读模式)。' },
   { domain: 'org', type: 'best_practice', confidence: 0.8, level: 1, content: '小企业组织建设: 10-50人核心任务是建立基本制度(考勤/薪酬/考核)。50-100人需要中层管理者和明确的部门职责。100人以上需要HR专职岗位。不要等到乱象丛生才补制度。' },
 
   // ═══ 财务 (15 条) ═══
