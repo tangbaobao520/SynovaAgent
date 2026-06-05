@@ -1,10 +1,12 @@
 /** tools/finance-expert-tools.ts — 财务专家工具链 (Phase C4, SOG 数据填充) */
 import type { ToolDefinition } from '../agent/tools';
 import { SOGNodeType } from '@synova/sog-core';
+import { createLogger } from '../logger';
+const log = createLogger('tools/finance-expert');
 
 interface GraphData { nodes?: Array<{ type: string; props?: Record<string, unknown> }>; }
 const getGraph = async (orgId: string): Promise<GraphData | null> => {
-  try { const r = await fetch(`http://localhost:${process.env.PORT || 3000}/api/ontology/graph/${orgId}`); return r.ok ? await r.json() as GraphData : null; } catch { return null; }
+  try { const r = await fetch(`http://localhost:${process.env.PORT || 3000}/api/ontology/graph/${orgId}`); return r.ok ? await r.json() as GraphData : null; } catch { log.debug('本体 API 不可达 — 返回 null'); return null; }
 };
 
 export const collectCostDataTool: ToolDefinition = {

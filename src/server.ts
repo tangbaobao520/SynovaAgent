@@ -107,7 +107,7 @@ export async function createServer(): Promise<Server> {
       for (const cred of credentialVault.list()) {
         const decrypted = credentialVault.decryptForSubprocess(cred.id);
         if (decrypted) {
-          try { credentialPool.register(cred.id, JSON.parse(decrypted)); } catch { /* skip malformed */ }
+          try { credentialPool.register(cred.id, JSON.parse(decrypted)); } catch { logger.debug('凭证解密/注册失败 — 跳过'); }
         }
       }
     }
@@ -251,7 +251,7 @@ app.use(agentObserverRoutes); // POST /api/agent-observer/report
             if (result.degraded) logger.warn({ tool: tool.name, errors: result.errors }, 'Connector 同步 degraded');
           } catch (err: any) { logger.warn({ err, tool: tool.name }, 'Connector 同步失败'); }
         }
-      } catch { /* no connectors — skip */ }
+      } catch { logger.debug('无可用连接器 — 跳过同步'); }
     });
     logger.info('Connector 同步调度已启动 (cron: */30 * * * *)');
 

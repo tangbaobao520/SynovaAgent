@@ -1,12 +1,14 @@
 /** tools/action-expert-tools.ts — 行动专家工具链 (Phase C5) */
 import type { ToolDefinition } from '../agent/tools';
+import { createLogger } from '../logger';
+const log = createLogger('tools/action-expert');
 
 export const prioritizeByImpactTool: ToolDefinition = {
   name: 'prioritize_by_impact', description: '影响力×紧急性矩阵排序行动项',
   parameters: { type:'object', properties:{ orgId:{type:'string'}, actionItems:{type:'string'} }, required:['orgId'] },
   handler: async (p) => {
     let items = [];
-    try { items = JSON.parse(p.actionItems as string || '[]'); } catch { items = []; }
+    try { items = JSON.parse(p.actionItems as string || '[]'); } catch { log.debug('actionItems JSON 解析失败 — 使用空数组'); items = []; }
     return { orgId: p.orgId, prioritized: items.map((a:any,i:number) => ({ ...a, priority: i===0?'critical':i<3?'high':'medium', impactScore: 0.8 - i*0.15 })), framework: 'impact_vs_urgency_matrix' };
   },
 };
@@ -30,6 +32,7 @@ export const measureEffectivenessTool: ToolDefinition = {
         return { orgId, previousDiagnoses: d.results?.length || 0, hasHistory: (d.results?.length ?? 0) > 0, recommendation: (d.results?.length ?? 0) > 0 ? `对比上次行动项效果，评估改善幅度。` : '首次诊断——无历史数据可对比。' };
       }
     } catch {
+      log.debug('Action expert 工具调用失败');
       // 会话 API 不可达 — 降级为无历史数据模式
     }
     return { orgId, hasHistory: false, message: '闭环验证需要历史诊断数据' };

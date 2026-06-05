@@ -349,7 +349,7 @@ export class ExpertDispatcher {
             conflictingSignals: Array.isArray(json.conflictingSignals) ? json.conflictingSignals : [],
             crossReferences: Array.isArray(json.crossReferences) ? json.crossReferences : [],
           };
-        } catch { /* fall through */ }
+        } catch { log.debug('Fallback 专家不可用 — 继续'); }
       }
       return { overallAssessment: content.slice(0, 500) };
     }
@@ -369,7 +369,7 @@ export class ExpertDispatcher {
         try {
           const json = JSON.parse(match[1].trim());
           if (json.ontologyPatches) return Array.isArray(json.ontologyPatches) ? json.ontologyPatches : [json.ontologyPatches];
-        } catch { /* intentional fallthrough */ }
+        } catch { log.debug('Fallback 模式不可用 — 继续'); }
       }
     }
     return [];

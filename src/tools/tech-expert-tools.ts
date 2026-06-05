@@ -3,6 +3,8 @@ import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
  * tools/tech-expert-tools.ts — 技术专家工具链 (Phase C2)
  */
 import type { ToolDefinition } from '../agent/tools';
+import { createLogger } from '../logger';
+const log = createLogger('tools/tech-expert');
 
 export const scanSoftwareEcosystemTool: ToolDefinition = {
   name: 'scan_software_ecosystem',
@@ -18,7 +20,7 @@ export const scanSoftwareEcosystemTool: ToolDefinition = {
         const tools = (data.nodes || []).filter(n => n.type === SOGNodeType.TOOL);
         return { orgId, toolCount: tools.length, tools: tools.map(t => ({ name: t.props?.name, category: t.props?.category })), recommendation: tools.length === 0 ? '未发现工具节点。请通过 Phase 0 访谈或 API 录入使用的软件工具。' : `已识别 ${tools.length} 个工具。` };
       }
-    } catch { /* API 不可达——本体服务未启动或网络不通 */ }
+    } catch { log.debug('本体 API 不可达 — 工具降级'); }
     return { orgId, toolCount: 0, recommendation: '通过访谈或 API 录入软件工具清单' };
   },
 };
@@ -47,7 +49,7 @@ export const assessAiMaturityTool: ToolDefinition = {
         const tools = (data.nodes || []).filter(n => n.type === SOGNodeType.TOOL);
         return { orgId, agentCount: agents.length, toolCount: tools.length, maturityLevel: agents.length > 0 ? 'intermediate' : 'beginner', recommendation: agents.length === 0 ? '建议从部署一个内部 AI Agent 开始（如代码审查助手）。' : `已有 ${agents.length} 个 Agent 在运行。建议定期评估效果。` };
       }
-    } catch { /* API 不可达——本体服务未启动或网络不通 */ }
+    } catch { log.debug('本体 API 不可达 — 工具降级'); }
     return { orgId, maturityLevel: 'unknown', recommendation: '请通过 Phase 0 访谈描述当前 AI 使用情况' };
   },
 };

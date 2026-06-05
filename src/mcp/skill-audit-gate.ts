@@ -118,7 +118,7 @@ export function auditSkillDirectory(skillDir: string): SkillAuditReport {
             description: `依赖数量较多 (${depCount})，扩大供应链攻击面`,
           });
         }
-      } catch { /* invalid JSON */ }
+      } catch { log.debug('Skill package.json 格式无效 — 跳过依赖检查'); }
     }
   }
 

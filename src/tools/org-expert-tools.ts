@@ -15,6 +15,8 @@ interface GraphData {
  * 依赖: DataConnector + GraphStore + graph-query
  */
 import type { ToolDefinition } from '../agent/tools';
+import { createLogger } from '../logger';
+const log = createLogger('tools/org-expert');
 
 // ═══ build_org_graph ═══
 
@@ -82,7 +84,7 @@ export const scanCollaborationTool: ToolDefinition = {
           },
         };
       }
-    } catch { /* API 不可达 */ }
+    } catch { log.debug('本体 API 不可达 — 工具降级'); }
     return { orgId, interactionEdges: 0, message: '本体 API 不可达' };
   },
 };
@@ -119,7 +121,7 @@ export const assessDecisionFlowTool: ToolDefinition = {
           bottleneckRisk: avgChainDepth > 3 ? 'high' : avgChainDepth > 1.5 ? 'medium' : 'low',
         };
       }
-    } catch { /* API 不可达 */ }
+    } catch { log.debug('本体 API 不可达 — 工具降级'); }
     return { orgId, message: '本体 API 不可达' };
   },
 };
@@ -163,7 +165,7 @@ export const identifyKeyPersonRiskTool: ToolDefinition = {
             : '未发现关键人员风险',
         };
       }
-    } catch { /* API 不可达 */ }
+    } catch { log.debug('本体 API 不可达 — 工具降级'); }
     return { orgId, message: '本体 API 不可达' };
   },
 };

@@ -86,7 +86,7 @@ export class ToolLoopExecutor {
               continue; // Skip this tool, continue next
             }
             if (preResult.action === 'modify' && preResult.modifiedInput) {
-              try { effectiveParams = JSON.parse(preResult.modifiedInput); } catch { /* JSON parse failed — keep original params, non-critical */ }
+              try { effectiveParams = JSON.parse(preResult.modifiedInput); } catch { this.log.debug('工具参数 JSON 解析失败 — 使用原始参数'); }
             }
           }
 
@@ -204,7 +204,7 @@ export class ToolLoopExecutor {
               continue;
             }
             if (preResult.action === 'modify' && preResult.modifiedInput) {
-              try { effectiveParams = JSON.parse(preResult.modifiedInput); } catch { /* keep original */ }
+              try { effectiveParams = JSON.parse(preResult.modifiedInput); } catch { this.log.debug('工具参数 JSON 解析失败 — 使用原始参数'); }
             }
           }
 

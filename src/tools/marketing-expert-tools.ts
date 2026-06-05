@@ -1,10 +1,12 @@
 /** tools/marketing-expert-tools.ts — 营销专家工具链 (Phase C6, SOG 数据填充) */
 import type { ToolDefinition } from '../agent/tools';
 import { SOGNodeType } from '@synova/sog-core';
+import { createLogger } from '../logger';
+const log = createLogger('tools/marketing-expert');
 
 interface GraphData { nodes?: Array<{ type: string; props?: Record<string, unknown> }>; }
 const getGraph = async (orgId: string): Promise<GraphData | null> => {
-  try { const r = await fetch(`http://localhost:${process.env.PORT || 3000}/api/ontology/graph/${orgId}`); return r.ok ? await r.json() as GraphData : null; } catch { return null; }
+  try { const r = await fetch(`http://localhost:${process.env.PORT || 3000}/api/ontology/graph/${orgId}`); return r.ok ? await r.json() as GraphData : null; } catch { log.debug('本体 API 不可达 — 返回 null'); return null; }
 };
 
 export const collectPositioningDataTool: ToolDefinition = {
@@ -29,7 +31,7 @@ export const competitiveLandscapeTool: ToolDefinition = {
   parameters: { type:'object', properties:{ orgId:{type:'string'} }, required:['orgId'] },
   handler: async (p) => {
     let comps: Array<{ name: string; features: string; price: string }> = [];
-    try { comps = JSON.parse(p.competitors as string || '[]'); } catch { comps = []; }
+    try { comps = JSON.parse(p.competitors as string || '[]'); } catch { log.debug('competitors JSON 解析失败 — 使用空数组'); comps = []; }
     const g = await getGraph(p.orgId as string);
     const persons = g ? (g.nodes || []).filter((n: any) => n.type === SOGNodeType.PERSON).length : 0;
     const teams = g ? (g.nodes || []).filter((n: any) => n.type === SOGNodeType.TEAM).length : 0;

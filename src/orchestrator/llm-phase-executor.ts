@@ -179,7 +179,7 @@ export class LLMPhaseExecutor {
         }
         return calls;
       }
-    } catch { /* fall through */ }
+    } catch { log.debug('Phase LLM 响应解析失败 — 继续'); }
 
     // Try standard JSON format
     try {
@@ -187,7 +187,7 @@ export class LLMPhaseExecutor {
       if (parsed.tool_calls || parsed.toolCalls) {
         return parsed.tool_calls || parsed.toolCalls || [];
       }
-    } catch { /* not JSON */ }
+    } catch { log.debug('LLM 响应非 JSON — 使用原始文本'); }
 
     return calls;
   }

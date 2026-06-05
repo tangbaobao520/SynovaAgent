@@ -88,6 +88,7 @@ async function main() {
         console.log(`${YELLOW}   启动前请先执行: chcp 65001${RESET}\n`);
       }
     } catch {
+      log.debug('TUI 命令执行失败');
       // chcp 不可用（Windows Terminal / Git Bash 默认 UTF-8 环境，无需处理）
     }
   }
