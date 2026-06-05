@@ -102,23 +102,30 @@ const SEEDS: SeedEntry[] = [
   { domain: 'finance', type: 'rule', confidence: 0.8, level: 2, content: '发票管理: 增值税专用发票认证期限 360 天。跨年度未认证→进项税额不得抵扣→成本虚增。每月进行发票进销项差异分析,差异 > 5% → 需要解释原因。' },
   { domain: 'finance', type: 'benchmark', confidence: 0.75, level: 1, content: '小微企业: 月营收 < 50万时应控制固定成本 < 营收的 40%。现金流覆盖 > 3 个月为底线安全线。' },
 
-  // ═══ 技术 (PKB 最弱短板 → 全面补强: AI原生 + 安全 + DevOps + 数据) ═══
-  { domain: 'tech', type: 'theory', confidence: 0.9, level: 2, content: '技术债务评估: 四个维度——代码质量(测试覆盖率>60%)、架构一致性(符合设计的模块占比>80%)、工具链效率(CI/CD自动化率>90%)、技术文档完整度(>70%)。AI时代: AI代码生成会同时增加代码量和维护负担,需新增"AI生成代码占比"和"AI生成代码的测试覆盖率"指标。' },
-  { domain: 'tech', type: 'benchmark', confidence: 0.85, level: 2, content: '软件团队基准: 单元测试覆盖率>60%合格,>80%良好。CI构建<10分钟。部署频率>每周一次。AI时代: AI辅助编程后,人均产出可提升30-50%,但code review时间需同比例增加以保持质量。' },
-  { domain: 'tech', type: 'rule', confidence: 0.85, level: 2, content: '技术债预警: 每sprint修复技术债<总时间15%→加速累积。hotfix占比>30%→严重影响生产力。AI时代新增: AI生成代码的折旧率(3个月后仍未被重构的比例>40%→AI技术债在累积)。' },
-  { domain: 'tech', type: 'threshold', confidence: 0.8, level: 2, content: '系统可靠性: 月度可用性<99.9%(月宕机>43分钟)→需SRE投入。P95延迟>500ms→体验恶化。AI时代: AI Agent调用链的端到端延迟<5秒(P95),AI决策失误率<5%为合格。' },
-  { domain: 'tech', type: 'best_practice', confidence: 0.7, level: 1, content: '小团队技术选型: 优先成熟框架和云服务,避免自建基础设施。AI时代: 优先选择有AI Agent SDK和API的供应商,自研AI基础设施只适合>50人的团队。' },
-  { domain: 'tech', type: 'theory', confidence: 0.8, level: 3, content: 'TOGAF企业架构: 业务架构→数据架构→应用架构→技术架构四层。AI时代新增: AI架构层(模型管理/Agent编排/评估体系),需横切各层——每个架构决策都要考虑"这个组件未来是否会被AI Agent调用?"。' },
-  { domain: 'tech', type: 'benchmark', confidence: 0.7, level: 1, content: '5-20人团队: 一位全栈工程师可覆盖前后端。工具链: Git+CI/CD+监控+日志四件套。AI时代: 1个懂AI的工程师+AI Agent可替代2-3个传统工程师的产出,但需要新增AI Agent的监控和评估工具。' },
-  // 技术 AI 原生知识
-  { domain: 'tech', type: 'theory', confidence: 0.85, level: 3, content: 'AI成熟度模型: L1实验(个别人用AI辅助编程)→L2标准化(团队有AI工具和规范)→L3集成(AI Agent参与开发流程,自动生成代码和测试)→L4自主(AI Agent独立管理非关键系统,人类监督)→L5原生(AI-first架构,人类定义意图,AI实现)。诊断技术团队时先定位当前Level。' },
-  { domain: 'tech', type: 'rule', confidence: 0.85, level: 2, content: 'AI安全基线: 1.AI Agent的决策必须有可追溯日志(谁授权了什么) 2.AI生成的代码必须通过与传统代码相同的安全审计 3.训练数据不能包含生产敏感信息 4.AI Agent的API必须认证和限流 5.定期红队测试(尝试用prompt engineering绕过安全限制)。' },
-  { domain: 'tech', type: 'theory', confidence: 0.8, level: 2, content: 'DevOps成熟度: L1手动→L2自动化构建部署→L3 CI/CD全自动化→L4 ChatOps+AI辅助运维→L5 AI Agent自主运维。核心指标: 变更失败率<15%,恢复时间<1h,部署频率>按需。AI时代: AI可自动诊断故障、建议修复方案、执行回滚,人类值班时间从7×24降至工作时间。' },
-  { domain: 'tech', type: 'benchmark', confidence: 0.75, level: 2, content: '云架构健康度: 资源利用率>40%(避免过度预留),自动扩缩容覆盖率>80%,灾备恢复演练>每季度一次。多云/混合云占比(避免单云锁定)。AI时代新增: GPU/TPU利用率>60%(AI推理成本优化),模型服务延迟<200ms(P95)。' },
-  { domain: 'tech', type: 'theory', confidence: 0.8, level: 2, content: '数据成熟度模型: L1散落(Excel+邮件)→L2集中(数据仓库)→L3治理(数据目录+质量)→L4智能(AI驱动的数据发现和推荐)→L5原生(所有决策以数据为起点,AI Agent自动从数据中发现问题)。诊断时先定位当前Level,再给出两步升级建议。' },
-  { domain: 'tech', type: 'rule', confidence: 0.8, level: 2, content: '技术选型AI适配度检查: 1.该技术是否有API可被AI Agent调用? 2.日志和监控数据是否结构化(AI需要标准化输入)? 3.社区是否有AI相关的插件/集成? 4.供应商是否有AI路线图? 选型时"AI适配度"应与"性能/成本/稳定性"并列评估。' },
-
-  // ═══ 市场 (15 条) ═══
+  // ═══ 技术 — 面向所有企业: 技术公司(代码/架构/DevOps/AI) + 非技术公司(SaaS集成/软件优化/AI替代) ═══
+  // ── 非技术企业: SaaS + 软件栈优化 ──
+  { domain: 'tech', type: 'theory', confidence: 0.9, level: 1, content: '企业软件栈诊断框架(非技术公司): 六个维度——1.覆盖度(核心业务是否都有工具支撑) 2.冗余度(同一功能是否买了多个工具) 3.集成度(工具间数据是否互通) 4.利用率(买了的功能用了多少) 5.AI就绪度(是否可通过API对接Synova) 6.成本效率(工具费用/员工数是否合理)。' },
+  { domain: 'tech', type: 'benchmark', confidence: 0.8, level: 1, content: '企业SaaS费用基准: CRM 50-150元/人月、HRM 30-80元、财务 20-50元、协同办公 20-60元。全员软件人均<300元为健康,>800元需审查。SaaS总支出<营收2%(传统)或<5%(科技)。' },
+  { domain: 'tech', type: 'rule', confidence: 0.9, level: 2, content: 'SaaS冗余诊断: 列出所有在用SaaS→按功能分类→标重叠→算使用率(日活/总账号)→使用率<30%的考虑砍掉。目标:每功能1个主工具+1个备选。' },
+  { domain: 'tech', type: 'theory', confidence: 0.85, level: 2, content: '数据接入评估: Synova L5可对接飞书/企微/钉钉/Salesforce/用友/金蝶/北森/Moka。评估标准:是否有开放API、API是否支持业务数据读取、是否有webhook、数据是否JSON/CSV。无API→数据孤岛→优先替换。' },
+  { domain: 'tech', type: 'best_practice', confidence: 0.75, level: 1, content: '企业软件选型原则: 1.选头部SaaS(稳定) 2.必须有开放API(对接AI) 3.先试用2周 4.合同≤1年 5.避免定制开发。选型让使用者(非IT部)参与决策。' },
+  { domain: 'tech', type: 'theory', confidence: 0.8, level: 2, content: '企业IT成熟度(非技术公司): L1手工(Excel+邮件)→L2单点(各部门各自SaaS)→L3集成(API互通)→L4智能(AI跨系统分析)→L5自治(AI自动优化,人审批)。' },
+  { domain: 'tech', type: 'rule', confidence: 0.85, level: 2, content: 'AI替代评估: 1.核心是信息处理还是物理操作?(信息→可替) 2.每天重复操作>2h?(高价值) 3.有API可安全访问?(可替)。优先级:高频重复+有API→ROI最高。不可替代:签字文件/面谈销售/创意设计。' },
+  { domain: 'tech', type: 'benchmark', confidence: 0.7, level: 2, content: 'AI可替代的SaaS: 客服机器人(减70%人工)、基础报表(替Tableau/PowerBI)、HR简历初筛、合同初审(提80%效率)。' },
+  { domain: 'tech', type: 'rule', confidence: 0.85, level: 2, content: '软件更换原则: 1.使用率<30%→先优化,不换 2.无API→优先换 3.数据无法导出→高优先级换 4.新旧并行3个月再下线 5.每年换≤2个核心系统。' },
+  { domain: 'tech', type: 'best_practice', confidence: 0.7, level: 1, content: '企业IT管理清单: 1.维护软件清单(半年更新) 2.每个软件有使用部门负责人 3.采购需IT+使用部门+财务三方 4.季度Review使用率 5.确保有人了解每个软件的API能力。' },
+  // ── 技术企业: 代码/架构/DevOps/AI 工程 ──
+  { domain: 'tech', type: 'theory', confidence: 0.9, level: 2, content: '技术债务评估(技术公司): 四个维度——代码质量(测试覆盖率>60%)、架构一致性(符合设计的模块>80%)、工具链效率(CI/CD自动化>90%)、文档完整度(>70%)。AI时代新增:AI生成代码占比、AI代码测试覆盖率。' },
+  { domain: 'tech', type: 'benchmark', confidence: 0.85, level: 2, content: '软件团队基准: 测试覆盖率>60%合格>80%良好。CI<10分钟。部署>每周一次。AI时代:AI辅助编程提升产出30-50%,但code review需同比增加。' },
+  { domain: 'tech', type: 'rule', confidence: 0.85, level: 2, content: '技术债预警: 修复时间<总时间15%→加速累积。hotfix>30%→严重影响。AI时代:AI生成代码3个月折旧率>40%→AI技术债。' },
+  { domain: 'tech', type: 'threshold', confidence: 0.8, level: 2, content: '系统可靠性: 可用性<99.9%→需SRE。P95延迟>500ms→恶化。AI时代:AI Agent调用链延迟<5s(P95),AI失误率<5%。' },
+  { domain: 'tech', type: 'theory', confidence: 0.8, level: 3, content: 'TOGAF企业架构: 业务→数据→应用→技术四层。AI时代新增:AI架构层(模型管理/Agent编排/评估),每个架构决策考虑"未来是否被AI Agent调用"。' },
+  { domain: 'tech', type: 'theory', confidence: 0.85, level: 3, content: 'AI成熟度模型(技术公司): L1实验→L2标准化→L3集成(AI参与开发)→L4自主(AI管非关键系统)→L5原生(AI-first,人定义意图)。' },
+  { domain: 'tech', type: 'rule', confidence: 0.85, level: 2, content: 'AI安全基线: 1.AI决策可追溯 2.AI代码同标准审计 3.训练数据不含敏感信息 4.AI Agent API需认证限流 5.定期红队测试。' },
+  { domain: 'tech', type: 'theory', confidence: 0.8, level: 2, content: 'DevOps成熟度: L1手动→L2自动构建→L3 CI/CD全自动→L4 ChatOps+AI运维→L5 AI自主运维。指标:变更失败<15%,恢复<1h,按需部署。' },
+  { domain: 'tech', type: 'benchmark', confidence: 0.75, level: 2, content: '云架构健康度: 资源利用率>40%,自动扩缩容>80%,灾备演练>季一次。AI时代:GPU/TPU利用率>60%,模型服务延迟<200ms(P95)。' },
+  { domain: 'tech', type: 'theory', confidence: 0.8, level: 2, content: '数据成熟度: L1散落→L2集中→L3治理→L4智能→L5原生(AI自动发现问题)。每级给出两步升级建议。' },
+  { domain: 'tech', type: 'rule', confidence: 0.8, level: 2, content: '技术选型AI适配度: 1.有API可被Agent调? 2.日志监控结构化? 3.社区有AI插件? 4.供应商有AI路线图? AI适配度与性能/成本/稳定并列。' },
   { domain: 'marketing', type: 'theory', confidence: 0.9, level: 2, content: 'GTM 策略(Go-to-Market): 四个核心问题——卖给谁(目标客户)、卖什么(产品定位)、怎么卖(销售渠道)、为什么选你(竞争优势)。' },
   { domain: 'marketing', type: 'theory', confidence: 0.85, level: 2, content: 'RFM 模型: Recency(最近一次消费)、Frequency(消费频率)、Monetary(消费金额)。用于客户分层和精准营销。' },
   { domain: 'marketing', type: 'benchmark', confidence: 0.8, level: 2, content: 'B2B SaaS: 网站访客→注册转化率 2-5%,注册→付费转化率 15-25%。NPS > 30 为良好,> 50 为优秀。' },
@@ -181,7 +188,11 @@ const SEEDS: SeedEntry[] = [
   { domain: 'action', type: 'rule', confidence: 0.85, level: 2, content: 'RICE优先级排序: Reach×Impact×Confidence÷Effort。AI适配: AI自动计算各项得分(从项目历史数据中学习),生成排序建议。人类只确认最终排序,不需要手动估算。关键: AI建议≠最终决定,人类保留否决权。' },
   // 执行 AI 原生知识
   { domain: 'action', type: 'theory', confidence: 0.75, level: 3, content: '人机混合团队的执行模式: Level 1 传统(人做所有事)→Level 2 辅助(AI做信息收集和报告)→Level 3 协作(AI和人类共同决策)→Level 4 自主(AI独立管理常规任务,人类只处理异常)。诊断时先判断当前团队处于哪个Level,再给出升级建议。升级不是替换人,是让人做更高价值的事。' },
-  { domain: 'action', type: 'rule', confidence: 0.8, level: 2, content: 'AI时代会议规则: 1.信息同步类会议由AI Agent常态化进行(异步,不占人类时间) 2.决策会议前AI必须生成数据和方案对比,人类只做判断 3.“这个会议能不能由AI代替?”成为每个会议的准入门槛。目标是人类会议时间从30%降至15%。' },
+  { domain: 'action', type: 'rule', confidence: 0.8, level: 2, content: 'AI时代会议规则: 1.信息同步类会议由AI Agent常态化进行(异步,不占人类时间) 2.决策会议前AI必须生成数据和方案对比,人类只做判断 3.”这个会议能不能由AI代替?”成为每个会议的准入门槛。目标是人类会议时间从30%降至15%。' },
+  // ⚠️ 工具选择指南 — 避免冲突推荐
+  { domain: 'action', type: 'rule', confidence: 0.95, level: 1, content: '执行工具选择指南(铁律): 1.初创期→OKR(目标对齐)+看板(可视化)。成长期→OKR+KPI混合(战略+执行)。成熟期→BSC(全面)+KPI(精细化)。任何时候: 一旦选定,至少坚持2个季度再评估。不要在同一个团队同时推行Scrum和Kanban(二选一)。工具切换的时机: 企业规模翻倍、业务模式转型、现有工具完成率<50%持续2个季度。' },
+  { domain: 'action', type: 'rule', confidence: 0.9, level: 2, content: '方法论的适用边界: OKR→需要团队有自驱力和数据透明度,不适合强管控文化。KPI→适合流程标准化高的岗位(生产/销售),不适合创新岗位。Scrum→适合需求不明确、快速迭代的项目,不适合运维型工作。Kanban→适合持续交付型工作,不适合需要固定周期的项目。向客户推荐工具时,必须先说明: 1.为什么这个适合你(而非其他) 2.什么时候需要升级 3.什么情况下绝对不应该用。' },
+  { domain: 'strategy', type: 'rule', confidence: 0.95, level: 1, content: '运营工具选择指南(铁律): 1.小企业(≤100人)→5S+PDCA(简单有效,先养成习惯) 2.成长企业(100-500人)→精益生产+价值流图(系统化) 3.大型企业(>500人)→六西格玛+SCOR(数据驱动)。原则: 不要在5S都没做好的企业推行六西格玛。工具是渐进式的——先把基础的做好,再上复杂的。每个阶段至少稳定运行1年再评估升级。' },
 ];
 
 /**

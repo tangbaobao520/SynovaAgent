@@ -268,17 +268,28 @@ export const WIRING_REGISTRY: WiringEntry[] = [
     ref: 'P3: 跨语言集成测试覆盖',
   },
 
-  // ═══ Observer 适配器 ═══
+  // ═══ PKB + Knowledge (M2 actual) ═══
   {
-    moduleName: 'AgentObserverCollector',
-    package: '@synova/test-kit',
-    sourceFile: 'src/agent-observer/collector.ts',
-    expectedEntries: ['src/server.ts'],
-    purpose: 'Agent 可观测性收集器 (MCP)',
-    required: false,
-    status: 'optional',
-    ref: 'P3: AgentObserver 建设中',
+    moduleName: 'KnowledgeStore',
+    package: '@synova/synova-agent',
+    sourceFile: 'src/l4/knowledge-store.ts',
+    expectedEntries: ['src/server.ts', 'src/l3/knowledge-agent.ts', 'src/routes/knowledge.ts'],
+    purpose: 'PKB 知识库存储 (FTS5 + 权限过滤 + 生命周期)',
+    required: true,
+    status: 'wired',
+    ref: 'M2: KnowledgeAgent + Gear6',
   },
+  {
+    moduleName: 'QARouter',
+    package: '@synova/synova-agent',
+    sourceFile: 'src/l1/qa-router.ts',
+    expectedEntries: ['src/routes/im.ts'],
+    purpose: '员工知识问答路由器 (领域识别→检索→专家回答)',
+    required: true,
+    status: 'wired',
+    ref: 'M2: QA Router',
+  },
+  // ═══ Observer 适配器 ═══
   {
     moduleName: 'ObserverMCP',
     package: '@synova/test-kit',
