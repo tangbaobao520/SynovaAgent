@@ -15,5 +15,6 @@ export { WIRING_REGISTRY } from './wiring-registry';
 export type { WiringEntry, WiringModule } from './wiring-registry';
 
 export { createTestEnv, type TestEnvironment } from './test-utils';
-export { archCheck } from './arch-check';
-export { securityScanners } from './security-scanners';
+export { archCheck, LAYERS, type Layer } from './arch-check';
+export { scanEmptyCatches, scanAsAny, scanFileSizes } from './security-scanners';
+export type { ScanResult, FileSizeWarning } from './security-scanners';

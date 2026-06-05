@@ -81,6 +81,55 @@ export function createKnowledgeAgent(config: KnowledgeAgentConfig = {}): Knowled
         },
       });
 
+      // ── query_knowledge (PKB Slice 1) ──
+      registry.register({
+        name: 'query_knowledge',
+        description: `从全局专业知识库(PKB)检索诊断所需的行业标准、分析方法、基准数据、最佳实践。
+领域: strategy(战略) / org(组织) / finance(财务) / tech(技术) / marketing(市场) / action(执行)。
+类型: theory(理论框架) / benchmark(基准数据) / rule(诊断规则) / threshold(阈值) / template(模板) / case_study(案例) / regulation(法规) / best_practice(最佳实践)。
+知识层级: 1=基础(中小企业主) 2=专业(manager) 3=深度(CFO/CPA)。`,
+        parameters: {
+          type: 'object',
+          properties: {
+            domain: { type: 'string', description: '专业领域 (必填): strategy/org/finance/tech/marketing/action' },
+            query: { type: 'string', description: '搜索关键词 (可选, 留空返回该领域全部知识)' },
+            type: { type: 'string', description: '知识类型过滤 (可选)' },
+            minConfidence: { type: 'number', description: '最低置信度 0-1 (默认 0.5)' },
+            knowledgeLevel: { type: 'number', description: '知识层级 1/2/3 (默认 2)' },
+          },
+          required: ['domain'],
+        },
+        operationType: 'read',
+        sideEffects: 'none',
+        handler: async (params: Record<string, unknown>) => {
+          const store = new KnowledgeStore(getDatabase());
+          const filter = await getCurrentFilterClause('KnowledgeChunk') as FilterClause;
+          const { results, stats } = store.searchPKB({
+            query: String(params.query || ''),
+            domain: String(params.domain || ''),
+            type: params.type as string | undefined,
+            minConfidence: Number(params.minConfidence || 0.5),
+            knowledgeLevel: Number(params.knowledgeLevel || 2),
+            limit: Number(params.limit || 10),
+          }, filter, Number(params.limit || 10));
+
+          return {
+            results: results.map(r => ({
+              id: r.id,
+              text: r.text,
+              domain: (r as unknown as Record<string, unknown>).pkb_domain,
+              type: (r as unknown as Record<string, unknown>).pkb_type,
+              confidence: (r as unknown as Record<string, unknown>).pkb_confidence,
+              level: (r as unknown as Record<string, unknown>).knowledge_level,
+              source: (r as unknown as Record<string, unknown>).pkb_source || r.authorityLevel,
+              sourceLabel: formatSource(r.sourceType, r.authorityLevel),
+            })),
+            total: stats.totalHits,
+            filteredOut: stats.filteredOut,
+          };
+        },
+      });
+
       // ── fetch_source ──
       registry.register({
         name: 'fetch_source',

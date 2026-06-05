@@ -66,9 +66,22 @@ export class KnowledgeStore {
         access_team_id TEXT,
         access_owner_id TEXT,
         access_sensitivity TEXT NOT NULL DEFAULT 'normal',
+        -- PKB 扩展 (Slice 1)
+        pkb_domain TEXT,
+        pkb_type TEXT,
+        pkb_confidence REAL DEFAULT 0.7,
+        pkb_status TEXT DEFAULT 'active',
+        pkb_source TEXT,
+        pkb_expires_at TEXT,
+        pkb_version TEXT,
+        knowledge_level INTEGER DEFAULT 2,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
+      -- PKB 索引
+      CREATE INDEX IF NOT EXISTS idx_kb_domain ON knowledge_chunks(pkb_domain);
+      CREATE INDEX IF NOT EXISTS idx_kb_status ON knowledge_chunks(pkb_status);
+      CREATE INDEX IF NOT EXISTS idx_kb_level ON knowledge_chunks(knowledge_level);
       CREATE VIRTUAL TABLE IF NOT EXISTS knowledge_chunks_fts USING fts5(
         id UNINDEXED,
         text,
@@ -197,6 +210,96 @@ export class KnowledgeStore {
     const count = (this.db.prepare('SELECT COUNT(*) as c FROM knowledge_chunks').get() as Record<string, unknown>).c as number || 0;
     const size = (this.db.prepare('SELECT SUM(LENGTH(text)) as s FROM knowledge_chunks').get() as Record<string, unknown>).s as number || 0;
     return { totalChunks: count, totalSizeBytes: size };
+  }
+
+  /** 更新知识条目 (PKB Slice 1) */
+  update(id: string, props: Record<string, unknown>): void {
+    const now = new Date().toISOString();
+    const existing = this.db.prepare('SELECT * FROM knowledge_chunks WHERE id=?').get(id) as Record<string, unknown> | undefined;
+    if (!existing) throw new Error(`KnowledgeChunk ${id} not found`);
+    const merged: Record<string, unknown> = { ...existing, ...props, updated_at: now };
+    this.db.prepare(`
+      UPDATE knowledge_chunks SET text=?, source_type=?, authority_level=?, mime_type=?,
+        access_level=?, access_team_id=?, access_sensitivity=?,
+        pkb_confidence=?, pkb_status=?, pkb_expires_at=?, pkb_version=?, knowledge_level=?, updated_at=?
+      WHERE id=?
+    `).run(
+      merged.text, merged.source_type, merged.authority_level, merged.mime_type,
+      merged.access_level, merged.access_team_id, merged.access_sensitivity,
+      merged.pkb_confidence ?? null, merged.pkb_status ?? 'active',
+      merged.pkb_expires_at ?? null, merged.pkb_version ?? null,
+      merged.knowledge_level ?? 2, now, id,
+    );
+  }
+
+  /** 删除知识条目 */
+  delete(id: string): void {
+    this.db.prepare('DELETE FROM knowledge_chunks WHERE id=?').run(id);
+  }
+
+  /** PKB 专用搜索 — 按 domain/type/level/confidence 过滤 */
+  searchPKB(params: {
+    query: string; domain?: string; type?: string; minConfidence?: number;
+    knowledgeLevel?: number; limit?: number;
+  }, filter: FilterClause, limit = 10): { results: KnowledgeChunk[]; stats: SearchStats } {
+    const startTime = Date.now();
+    const minConf = params.minConfidence ?? 0.5;
+    const level = params.knowledgeLevel ?? 2;
+
+    let sql = `SELECT k.*, 1 as rank FROM knowledge_chunks k WHERE k.pkb_domain = ? AND k.pkb_confidence >= ? AND k.knowledge_level <= ?`;
+    const sqlParams: unknown[] = [params.domain, minConf, level];
+
+    if (params.type) { sql += ' AND k.pkb_type = ?'; sqlParams.push(params.type); }
+    if (params.query) {
+      sql += ' AND (k.text LIKE ? OR k.source_id LIKE ?)';
+      const like = `%${params.query}%`;
+      sqlParams.push(like, like);
+    }
+    sql += ' ORDER BY k.pkb_confidence DESC, k.updated_at DESC LIMIT ?';
+    sqlParams.push(limit * 2);
+
+    const rows = this.db.prepare(sql).all(...sqlParams) as Array<Record<string, unknown>>;
+
+    // 权限过滤
+    const filtered = filter.conditions.length === 0
+      ? rows
+      : rows.filter(row => this.matchFilter(row, filter));
+
+    const stats: SearchStats = {
+      totalHits: rows.length,
+      filteredOut: rows.length - filtered.length,
+      latencyMs: Date.now() - startTime,
+    };
+
+    return {
+      results: filtered.slice(0, limit).map(r => this.rowToChunk(r)),
+      stats,
+    };
+  }
+
+  /** 获取 PKB 统计 */
+  pkbStats(): { total: number; byDomain: Record<string, number>; averageConfidence: number } {
+    const total = (this.db.prepare("SELECT COUNT(*) as c FROM knowledge_chunks WHERE pkb_domain IS NOT NULL").get() as Record<string, unknown>).c as number || 0;
+    const avgConf = (this.db.prepare('SELECT AVG(pkb_confidence) as a FROM knowledge_chunks WHERE pkb_domain IS NOT NULL').get() as Record<string, unknown>).a as number || 0;
+    const domains = this.db.prepare('SELECT pkb_domain, COUNT(*) as c FROM knowledge_chunks WHERE pkb_domain IS NOT NULL GROUP BY pkb_domain').all() as Array<Record<string, unknown>>;
+    const byDomain: Record<string, number> = {};
+    for (const d of domains) { byDomain[d.pkb_domain as string] = d.c as number; }
+    return { total, byDomain, averageConfidence: Math.round(avgConf * 100) / 100 };
+  }
+
+  /** Row → KnowledgeChunk 映射复用 */
+  private rowToChunk(r: Record<string, unknown>): KnowledgeChunk {
+    return {
+      id: r.id as string, text: r.text as string,
+      sourceType: r.source_type as string, sourceId: r.source_id as string,
+      authorityLevel: r.authority_level as KnowledgeChunk['authorityLevel'],
+      mimeType: r.mime_type as string | undefined,
+      accessLevel: r.access_level as KnowledgeChunk['accessLevel'],
+      accessTeamId: r.access_team_id as string | undefined,
+      accessOwnerId: r.access_owner_id as string | undefined,
+      accessSensitivity: r.access_sensitivity as KnowledgeChunk['accessSensitivity'],
+      createdAt: r.created_at as string, updatedAt: r.updated_at as string,
+    };
   }
 
   // ═══ 权限过滤 ═══

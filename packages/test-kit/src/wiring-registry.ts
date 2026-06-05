@@ -253,4 +253,38 @@ export const WIRING_REGISTRY: WiringEntry[] = [
     status: 'optional',
     ref: 'todo #5 — 正在建设中',
   },
+
+  // ═══ Python Bridge ═══
+  {
+    moduleName: 'PythonBridge',
+    package: '@synova/test-kit',
+    sourceFile: 'synova_worker/__main__.py',
+    expectedEntries: [],
+    purpose: 'Python ↔ TypeScript 跨语言桥接',
+    required: false,
+    status: 'optional',
+    ref: 'P3: 跨语言集成测试覆盖',
+  },
+
+  // ═══ Observer 适配器 ═══
+  {
+    moduleName: 'AgentObserverCollector',
+    package: '@synova/test-kit',
+    sourceFile: 'src/agent-observer/collector.ts',
+    expectedEntries: ['src/server.ts'],
+    purpose: 'Agent 可观测性收集器 (MCP)',
+    required: false,
+    status: 'optional',
+    ref: 'P3: AgentObserver 建设中',
+  },
+  {
+    moduleName: 'ObserverMCP',
+    package: '@synova/test-kit',
+    sourceFile: 'packages/agent-observer-mcp/src/index.ts',
+    expectedEntries: [],
+    purpose: 'MCP Server — 多框架 Agent 可观测性',
+    required: false,
+    status: 'optional',
+    ref: 'P3: 多框架适配器',
+  },
 ];
