@@ -7,6 +7,7 @@
 import { getPythonBridge } from '../providers/python-bridge';
 import { getOntologyEventBus } from './ontology-event-bus';
 import type { OntologyEvent } from './ontology-event-bus';
+import { withRetry } from '../services/retry';
 import { createLogger } from '../logger';
 
 const log = createLogger('l5/connector-pipeline');
@@ -39,10 +40,14 @@ export async function runConnectorPipeline(
     const eventBus = getOntologyEventBus();
 
     // Step 1: Python connector → fetch data → SOG mapper → OntologyEvent[]
-    const events = await bridge.run<OntologyEvent[]>(
-      `connectors.${module}`,
-      `connector_${module}_read`,
-      { ...credentials, orgId },
+    // P2: 指数退避重试 (网络错误自动重试最多 3 次)
+    const events = await withRetry(
+      () => bridge.run<OntologyEvent[]>(
+        `connectors.${module}`,
+        `connector_${module}_read`,
+        { ...credentials, orgId },
+      ),
+      { label: `connector-${module}`, maxRetries: 3, baseDelayMs: 1500 },
     );
 
     // Step 2: OntologyEventBus → GraphStore
