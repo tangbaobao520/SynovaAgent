@@ -1,9 +1,13 @@
 /**
  * providers/deepseek.ts — DeepSeek Provider 适配器
+ *
+ * 使用 BaseLLMProvider 消除 SSE/HTTP/健康检查重复代码 (54→0 行重复)。
+ * 保留唯一特性: sanitizeMessages, DiagnosticAgentError, validateResponse, convertTools
  */
-import type { LLMProvider, LLMMessage, ChatOptions, ChatResult, StreamCallback, HealthCheckResult, ProviderConfig, ChatCompletionResponse } from './types';
+import type { LLMProvider, LLMMessage, ChatOptions, ChatResult, ProviderConfig, ChatCompletionResponse } from './types';
 import { DiagnosticAgentError, ErrorCode, isRetryable } from '../errors/types';
 import { sanitizeMessages } from './message-sanitizer';
+import { createOpenAICompatibleProvider } from './base';
 
 const DEFAULT_BASE_URL = 'https://api.deepseek.com/v1';
 const DEFAULT_MODEL = 'deepseek-v4-flash';
@@ -13,107 +17,45 @@ export function createDeepSeekProvider(config: ProviderConfig): LLMProvider {
   const apiKey = config.apiKey || '';
   const model = config.model || DEFAULT_MODEL;
 
-  return {
+  const provider = createOpenAICompatibleProvider({
     name: 'deepseek',
     baseUrl,
+    model,
+    apiKey,
+    getHeaders: () => ({ Authorization: `Bearer ${apiKey}` }),
 
-    async chat(messages: LLMMessage[], opts?: ChatOptions): Promise<ChatResult> {
-      if (!apiKey) throw new DiagnosticAgentError({ code: ErrorCode.AUTH_FAILED, message: 'DeepSeek API Key 未配置', phase: 0, retryable: false });
-      // P2-5.4: 消息清洗 — 修复 UTF-16 代理项/控制字符/全角/过长
-      const cleaned = sanitizeMessages(messages);
-      const res = await fetch(`${baseUrl}/chat/completions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-        body: JSON.stringify({
-          model: opts?.model || model,
-          messages: cleaned,
-          temperature: opts?.temperature ?? 0.7,
-          max_tokens: opts?.maxTokens ?? 4000,
-        }),
-        signal: opts?.signal ?? AbortSignal.timeout(120_000),
+    /** P2-5.4: 消息清洗 — 修复 UTF-16 代理项/控制字符/全角/过长 */
+    beforeSend: (messages: LLMMessage[]) => sanitizeMessages(messages) as unknown as LLMMessage[],
+
+    /** Hermes #12: 结构化错误码 + 可重试判定 */
+    onError: (err: Error, context: string) => {
+      // 尝试从原始错误中提取 HTTP 状态码
+      const statusMatch = err.message.match(/\((\d{3})\)/);
+      const status = statusMatch ? parseInt(statusMatch[1], 10) : 0;
+      const code = status === 429 ? ErrorCode.RATE_LIMITED
+        : status >= 500 ? ErrorCode.NETWORK
+        : ErrorCode.INTERNAL;
+      return new DiagnosticAgentError({
+        code, message: `DeepSeek ${context}: ${err.message}`,
+        phase: 0, retryable: isRetryable(code),
       });
-      if (!res.ok) {
-        const text = await res.text().catch(() => '');
-        const code = res.status === 429 ? ErrorCode.RATE_LIMITED : res.status >= 500 ? ErrorCode.NETWORK : ErrorCode.INTERNAL;
-        throw new DiagnosticAgentError({ code, message: `DeepSeek API ${res.status}: ${text.slice(0, 200)}`, phase: 0, retryable: isRetryable(code) });
-      }
-      const data = await res.json() as ChatCompletionResponse;
-      const content = data.choices?.[0]?.message?.content;
-      if (!content) throw new Error('DeepSeek 返回缺少 content');
-      return {
-        content,
-        model: data.model || model,
-        usage: data.usage ? { promptTokens: data.usage.prompt_tokens, completionTokens: data.usage.completion_tokens } : undefined,
-      };
     },
 
-    async stream(messages: LLMMessage[], cb: StreamCallback, opts?: ChatOptions): Promise<void> {
-      if (!apiKey) { cb.onError?.(new Error('DeepSeek API Key 未配置')); return; }
-      const cleaned = sanitizeMessages(messages);
-      const res = await fetch(`${baseUrl}/chat/completions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-        body: JSON.stringify({
-          model: opts?.model || model,
-          messages: cleaned,
-          temperature: opts?.temperature ?? 0.7,
-          max_tokens: opts?.maxTokens ?? 4000,
-          stream: true,
-        }),
-        signal: opts?.signal ?? AbortSignal.timeout(120_000),
-      });
-      if (!res.ok) {
-        const text = await res.text().catch(() => '');
-        cb.onError?.(new Error(`DeepSeek 流式错误 (${res.status}): ${text.slice(0, 200)}`));
-        return;
-      }
-      const reader = res.body!.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-      let fullContent = '';
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || '';
-          for (const line of lines) {
-            if (!line.startsWith('data: ')) continue;
-            const data = line.slice(6).trim();
-            if (data === '[DONE]') continue;
-            try {
-              const chunk = JSON.parse(data);
-              const token = chunk?.choices?.[0]?.delta?.content;
-              if (token) { fullContent += token; cb.onToken(token); }
-            } catch { /* skip malformed SSE chunks — stream-level, high volume */ }
-          }
-        }
-      } finally {
-        reader.releaseLock();
-      }
-      cb.onComplete?.({ content: fullContent, model });
-    },
+    /** 丰富返回: usage 信息 */
+    afterResponse: (data: ChatCompletionResponse, _opts?: ChatOptions): Partial<ChatResult> => ({
+      usage: data.usage ? {
+        promptTokens: data.usage.prompt_tokens,
+        completionTokens: data.usage.completion_tokens,
+      } : undefined,
+    }),
+  });
 
-    async healthCheck(): Promise<HealthCheckResult> {
-      if (!apiKey) return { healthy: false, error: 'API Key 未配置。请设置 $env:LLM_API_KEY="sk-your-key"' };
-      const start = Date.now();
-      try {
-        const res = await fetch(`${baseUrl}/models`, {
-          headers: { Authorization: `Bearer ${apiKey}` },
-          signal: AbortSignal.timeout(10_000),
-        });
-        const latency = Date.now() - start;
-        if (res.ok) return { healthy: true, latencyMs: latency };
-        if (res.status === 401) return { healthy: false, error: 'API Key 无效 (401)，请检查 Key 是否正确', latencyMs: latency };
-        return { healthy: false, error: `API 返回 ${res.status}`, latencyMs: latency };
-      } catch (err: any) {
-        return { healthy: false, error: `连接失败: ${err.message}`, latencyMs: Date.now() - start };
-      }
-    },
+  // ── DeepSeek 独有特性 ──
 
-    // Hermes #12: ProviderTransport 适配器
+  return {
+    ...provider,
 
+    // Hermes #12: ProviderTransport 适配器 — 响应格式校验
     validateResponse(raw: unknown): { valid: boolean; error?: string } {
       if (!raw || typeof raw !== 'object') return { valid: false, error: '响应体为空或非 JSON' };
       const r = raw as Record<string, unknown>;
@@ -127,7 +69,6 @@ export function createDeepSeekProvider(config: ProviderConfig): LLMProvider {
       }
       const content = (msg as Record<string, unknown>).content;
       if (content === undefined || content === null || content === '') {
-        // 允许空 content (工具调用模式)
         const toolCalls = (msg as Record<string, unknown>).tool_calls;
         if (!Array.isArray(toolCalls) || toolCalls.length === 0) {
           return { valid: false, error: 'content 和 tool_calls 均为空' };
@@ -142,10 +83,7 @@ export function createDeepSeekProvider(config: ProviderConfig): LLMProvider {
         function: {
           name: t.name,
           description: t.description,
-          parameters: {
-            ...t.parameters,
-            additionalProperties: false, // DeepSeek V4 Strict Mode
-          },
+          parameters: { ...t.parameters, additionalProperties: false },
           strict: true,
         },
       }));
@@ -153,6 +91,15 @@ export function createDeepSeekProvider(config: ProviderConfig): LLMProvider {
 
     listModels(): string[] {
       return [model, 'deepseek-v4-pro', 'deepseek-v4-flash', 'deepseek-v4-r1'];
+    },
+
+    /** 401 专项检测 */
+    async healthCheck() {
+      const hc = await provider.healthCheck();
+      if (!hc.healthy && hc.error?.includes('401')) {
+        return { ...hc, error: 'API Key 无效 (401)，请检查 Key 是否正确' };
+      }
+      return hc;
     },
   };
 }
