@@ -89,6 +89,28 @@ router.post('/api/im/wecom/webhook', async (_req: Request, res: Response) => {
   res.status(200).json({ ok: true, note: '企业微信适配待实现' });
 });
 
+// ═══ 员工知识问答 (QA Router) ═══
+
+router.post('/api/qa/ask', async (req: Request, res: Response) => {
+  try {
+    const { question, userId, teamId, knowledgeLevel } = req.body as { question?: string; userId?: string; teamId?: string; knowledgeLevel?: number };
+    if (!question) return res.status(400).json({ ok: false, error: '缺少 question 参数' });
+
+    const { answerQuestion } = await import('../l1/qa-router');
+    const result = await answerQuestion({
+      question,
+      userId: userId || 'web-user',
+      teamId,
+      knowledgeLevel: knowledgeLevel as 1 | 2 | 3 | undefined,
+    });
+
+    res.json(result);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ ok: false, error: msg });
+  }
+});
+
 // ═══ 健康检查 ═══
 
 router.get('/api/im/health', async (_req: Request, res: Response) => {
