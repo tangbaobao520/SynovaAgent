@@ -358,6 +358,23 @@ app.use(knowledgeRoutes);   // POST /api/knowledge/search | POST /api/knowledge/
       } catch (err: any) { logger.warn({ err }, '数据库备份异常'); }
     });
     logger.info('数据库备份调度已启动 (cron: 0 3 * * *, 保留 7 天)');
+
+    // M2: 齿轮6 知识提取 (每6小时)
+    try {
+      const { startGear6Scheduler } = await import('./l3/gear6-scheduler');
+      startGear6Scheduler();
+      logger.info('齿轮6 知识提取调度已启动 (每6h)');
+    } catch (err: any) { logger.warn({ err }, '齿轮6 启动失败 — degraded'); }
+
+    // M2: KnowledgeAgent 注册到专家系统
+    try {
+      const { createKnowledgeAgent } = await import('./l3/knowledge-agent');
+      const kAgent = createKnowledgeAgent();
+      if (app.locals.connectorToolRegistry) {
+        kAgent.registerTo(app.locals.connectorToolRegistry);
+        logger.info('KnowledgeAgent 已注册到工具注册表 (第7个专家)');
+      }
+    } catch (err: any) { logger.warn({ err }, 'KnowledgeAgent 注册失败 — degraded'); }
   } catch (err: any) {
     logger.warn({ err }, 'Cron 调度器初始化失败 — degraded');
   }

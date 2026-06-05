@@ -8,6 +8,7 @@ import type { ToolRegistry } from './tools';
 import type { SessionStore } from '../store/session-store';
 import { ACCURACY_TOOLS, ORG_EXPERT_TOOLS, TECH_EXPERT_TOOLS, STRATEGY_EXPERT_TOOLS, FINANCE_EXPERT_TOOLS, ACTION_EXPERT_TOOLS, MARKETING_EXPERT_TOOLS } from '../tools';
 import { createLogger } from '../logger';
+import { registerPandocTools } from '../../vendor/pandoc-skill/synova-tools';
 
 const log = createLogger('agent/builtin-tools');
 
@@ -298,4 +299,12 @@ export function registerBuiltinTools(
   for (const t of ACTION_EXPERT_TOOLS) registry.register(t);
   for (const t of MARKETING_EXPERT_TOOLS) registry.register(t);
   log.info({ total: ACCURACY_TOOLS.length + ORG_EXPERT_TOOLS.length + TECH_EXPERT_TOOLS.length + STRATEGY_EXPERT_TOOLS.length + FINANCE_EXPERT_TOOLS.length + ACTION_EXPERT_TOOLS.length + MARKETING_EXPERT_TOOLS.length }, '全部工具已注册');
+
+  // Pandoc 文档转换工具
+  try {
+    registerPandocTools(registry);
+    log.info('Pandoc 文档转换工具已注册');
+  } catch (err: any) {
+    log.warn({ err: err.message }, 'Pandoc 文档转换工具注册失败 — 可能未安装 Pandoc');
+  }
 }
