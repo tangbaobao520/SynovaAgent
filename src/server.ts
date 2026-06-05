@@ -17,7 +17,7 @@ import { HookRunner } from './orchestrator/hook-runner';
 import { SessionManager } from './orchestrator/session-manager';
 import { PhaseStateMachine } from './orchestrator/phase-state-machine';
 import { createOrchestrationWiring } from './orchestrator/wiring';
-import { initFederalReporter, getFederalAdapter } from './adapters/federal-adapter';
+import { initFederalReporter, getFederalAdapter, FederalAdapter } from './adapters/federal-adapter';
 import { bindConnectorTools } from './init/connector-binding';
 import { ToolRegistry } from './agent/tools';
 // Code Review A1+A3: 凭证加密 + L5 事件总线初始化
@@ -32,6 +32,7 @@ import metricsRoutes from './monitoring/routes';
 import reviewRoutes from './routes/review';
 import expertRoutes from './routes/expert';
 import agentObserverRoutes from './routes/agent-observer';
+import type { ServiceContainer } from './services/container';
 
 export async function createServer(): Promise<Server> {
   const config = loadConfig();
@@ -100,8 +101,8 @@ export async function createServer(): Promise<Server> {
   // ═══ P6 接线: CredentialPool — 多凭据轮换 ═══
   let credentialPool: import('./security/credential-vault').CredentialPool | undefined;
   try {
-    const { getCredentialPool } = await import('./security/credential-vault');
-    credentialPool = getCredentialPool();
+    const { CredentialPool: CP } = await import('./security/credential-vault');
+    credentialPool = new CP(); // DI: 显式构造替代 getCredentialPool()
     // 从 vault 加载已存储凭据到 pool
     if (credentialVault) {
       for (const cred of credentialVault.list()) {
@@ -119,8 +120,8 @@ export async function createServer(): Promise<Server> {
   // ═══ PII 接线: PIIScrubber — 4级敏感度脱敏 ═══
   let piiScrubber: import('./security/pii-scrubber').PIIScrubber | undefined;
   try {
-    const { getPIIScrubber } = await import('./security/pii-scrubber');
-    piiScrubber = getPIIScrubber();
+    const { PIIScrubber: PS } = await import('./security/pii-scrubber');
+    piiScrubber = new PS(); // DI: 显式构造替代 getPIIScrubber()
     logger.info('PIIScrubber 已初始化 (S1-S4 敏感度脱敏)');
   } catch (err: any) {
     logger.warn({ err }, 'PIIScrubber 初始化失败 — degraded');
@@ -139,7 +140,28 @@ export async function createServer(): Promise<Server> {
 
   const app = express();
 
-  // 附着共享编排上下文到 Express locals — routes 可通过 req.app.locals 访问
+  // ═══ P2 DI 深化: 统一服务容器 (单例生命周期管理) ═══
+  // 所有服务在此集中创建，Routes 通过 req.app.locals.container 访问。
+  // 兼容旧代码: app.locals.xxx 仍然可用，逐步迁移到 container。
+  // 集中创建所有服务 — 单一组合根
+  const container: ServiceContainer = {
+    db,
+    eventBus, hookRunner, sessionManager, stateMachine: phaseStateMachine,
+    piiScrubber: piiScrubber!,
+    credentialVault,
+    credentialPool,
+    federalAdapter,
+    expertRegistry: new (await import('./l3/expert-registry')).ExpertRegistry(),
+    proposalManager: new (await import('./l2/proposal-manager')).ProposalManager(),
+    reportTemplates: new (await import('./l3/report-templates')).ReportTemplateRegistry(),
+    llmCache: new (await import('./services/llm-cache')).LLMCache(),
+    faultRecovery: new (await import('./services/fault-recovery')).FaultRecovery(),
+    mcpBridge: new (await import('./mcp/bridge')).MCPBridge(),
+  };
+  // 可选组件 (可能因配置/环境而缺失)
+  if (connectorToolRegistry) container.connectorToolRegistry = connectorToolRegistry;
+  app.locals.container = container;
+  // 兼容旧代码 (逐步迁移到 container)
   app.locals.orchestration = { eventBus, hookRunner, sessionManager, stateMachine: phaseStateMachine, wiring, db, eventStore };
   app.locals.federalAdapter = federalAdapter;
   if (connectorToolRegistry) app.locals.connectorToolRegistry = connectorToolRegistry;
