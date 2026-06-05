@@ -366,14 +366,15 @@ app.use(knowledgeRoutes);   // POST /api/knowledge/search | POST /api/knowledge/
       logger.info('齿轮6 知识提取调度已启动 (每6h)');
     } catch (err: any) { logger.warn({ err }, '齿轮6 启动失败 — degraded'); }
 
-    // M2: KnowledgeAgent 注册到专家系统
+    // M2: KnowledgeAgent — 第7个专家 (注册工具到专家共享 ToolRegistry)
     try {
       const { createKnowledgeAgent } = await import('./l3/knowledge-agent');
+      const { ToolRegistry: TR } = await import('./agent/tools');
+      const expertTools = app.locals.expertToolRegistry || new TR();
       const kAgent = createKnowledgeAgent();
-      if (app.locals.connectorToolRegistry) {
-        kAgent.registerTo(app.locals.connectorToolRegistry);
-        logger.info('KnowledgeAgent 已注册到工具注册表 (第7个专家)');
-      }
+      kAgent.registerTo(expertTools);
+      app.locals.expertToolRegistry = expertTools;
+      logger.info('KnowledgeAgent 已注册 — 第7个专家 (knowledge) 就绪');
     } catch (err: any) { logger.warn({ err }, 'KnowledgeAgent 注册失败 — degraded'); }
   } catch (err: any) {
     logger.warn({ err }, 'Cron 调度器初始化失败 — degraded');

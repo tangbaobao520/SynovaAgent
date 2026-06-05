@@ -397,7 +397,7 @@ export class ExpertDispatcher {
 
   /** Hermes P0-3: 6 专家并行执行 — 诊断速度 3-6x */
   async runAllExperts(evidence: Evidence[]): Promise<ExpertReport[]> {
-    const expertTypes: ExpertType[] = ['strategy', 'org', 'finance', 'tech', 'marketing', 'action'];
+    const expertTypes: ExpertType[] = ['strategy', 'org', 'finance', 'tech', 'marketing', 'action', 'knowledge'];
 
     const results = await Promise.allSettled(
       expertTypes.map(type => this.runExpert(type, evidence)),

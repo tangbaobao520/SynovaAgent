@@ -14,7 +14,7 @@ const log = createLogger('orchestrator/subagent-coordinator');
 
 // ═══ Types (L2 接口定义) ═══
 
-export type ExpertType = 'strategy' | 'org' | 'finance' | 'tech' | 'marketing' | 'action';
+export type ExpertType = 'strategy' | 'org' | 'finance' | 'tech' | 'marketing' | 'action' | 'knowledge';
 
 export interface AnonymizationRule { field: string; replace: string; }
 
@@ -77,7 +77,7 @@ export class SubAgentCoordinator {
   async dispatch(evidence: Evidence[], maxConcurrency = 6): Promise<SubAgentReport[]> {
     if (evidence.length === 0) return [];
 
-    const expertTypes: ExpertType[] = ['strategy', 'org', 'finance', 'tech', 'marketing', 'action'];
+    const expertTypes: ExpertType[] = ['strategy', 'org', 'finance', 'tech', 'marketing', 'action', 'knowledge'];
     const tasks = expertTypes.map(type => this.dispatcher.runExpert(type, evidence));
 
     const results: SubAgentReport[] = [];
