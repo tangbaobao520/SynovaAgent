@@ -8,7 +8,7 @@ import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const REPO_ROOT = path.resolve(import.meta.dirname, '../../..');
+const REPO_ROOT = path.resolve(import.meta.dirname, '../../../..');
 const ALLOWED_VENDOR_REF_FILES = [
   'src/adapters/engine-core-adapter.ts',
   'src/adapters/federal-adapter.ts',
@@ -20,13 +20,16 @@ describe('铁律 39: server/vendor 引用白名单', () => {
     const violations: string[] = [];
 
     for (const file of srcFiles) {
-      const rel = path.relative(REPO_ROOT, file);
+      const rel = path.relative(REPO_ROOT, file).replace(/\\/g, '/');
       const content = fs.readFileSync(file, 'utf-8');
 
       // 检查是否包含 server/vendor 引用
       if (content.includes('server/vendor') || content.includes('vendor/@synova')) {
         // 检查是否在白名单中
-        const isAllowed = ALLOWED_VENDOR_REF_FILES.some(a => rel.startsWith(a));
+        const isAllowed = ALLOWED_VENDOR_REF_FILES.some(a => {
+          const normalized = a.replace(/\\/g, '/');
+          return rel.startsWith(normalized) || rel === normalized;
+        });
         if (!isAllowed) {
           violations.push(rel);
         }

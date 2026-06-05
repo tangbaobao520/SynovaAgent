@@ -4,11 +4,12 @@
  * L4: 完整诊断用户旅程。
  * 验证: POST /api/diagnosis/consult → SSE 流式响应 → 本体图查询
  *
- * 历史：EADDRINUSE 端口冲突 — 此测试使用动态端口 + waitForServer
+ * 注意: E2E 测试需要服务器在 3099 端口运行。
+ * 启动: cd .. && npx tsx src/server.ts
  */
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
-const BASE = process.env.BASE_URL || 'http://localhost:3099';
+const BASE = 'http://localhost:3099';
 
 describe('E2E: 诊断 API 用户旅程', () => {
   it('GET /health → 200 + status:ok', async () => {

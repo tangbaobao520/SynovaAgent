@@ -9,7 +9,7 @@ import { spawn } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
 
-const REPO_ROOT = path.resolve(import.meta.dirname, '../../..');
+const REPO_ROOT = path.resolve(import.meta.dirname, '../../../..');
 const WORKER_DIR = path.join(REPO_ROOT, 'synova_worker');
 const WORKER_MAIN = path.join(WORKER_DIR, '__main__.py');
 const REQUIREMENTS = path.join(WORKER_DIR, 'requirements.txt');

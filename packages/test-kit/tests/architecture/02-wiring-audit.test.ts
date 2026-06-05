@@ -13,7 +13,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { WIRING_REGISTRY } from '../../src/wiring-registry';
 
-const REPO_ROOT = path.resolve(import.meta.dirname, '../../..');
+const REPO_ROOT = path.resolve(import.meta.dirname, '../../../..');
 
 describe('铁律 0-2 Step 5: 模块接线验证', () => {
   // 按优先级分组

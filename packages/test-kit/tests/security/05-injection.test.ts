@@ -8,7 +8,7 @@ import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const REPO_ROOT = path.resolve(import.meta.dirname, '../../..');
+const REPO_ROOT = path.resolve(import.meta.dirname, '../../../..');
 
 describe('注入防护', () => {
   it('src/ 中所有路由的 orgId 参数应经过校验', () => {

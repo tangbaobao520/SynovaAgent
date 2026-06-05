@@ -10,7 +10,7 @@ import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const REPO_ROOT = path.resolve(import.meta.dirname, '../../..');
+const REPO_ROOT = path.resolve(import.meta.dirname, '../../../..');
 
 describe('铁律 11+24+31: 空 catch 审计', () => {
   it('src/ 中无空 catch 块 (Catch with no log.warn/error)', () => {

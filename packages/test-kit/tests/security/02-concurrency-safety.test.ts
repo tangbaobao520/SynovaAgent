@@ -8,7 +8,7 @@ import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const REPO_ROOT = path.resolve(import.meta.dirname, '../../..');
+const REPO_ROOT = path.resolve(import.meta.dirname, '../../../..');
 
 describe('BUG-05: 模块级全局变量竞态', () => {
   it('src/ 中无模块级全局 interrupted/aborted 变量 (非测试文件)', () => {

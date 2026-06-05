@@ -8,7 +8,7 @@ import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const REPO_ROOT = path.resolve(import.meta.dirname, '../../..');
+const REPO_ROOT = path.resolve(import.meta.dirname, '../../../..');
 const PRODUCTION_DIRS = ['src/'];
 
 describe('WIRE-02: GraphBridge 6 upsert 方法接线状态', () => {

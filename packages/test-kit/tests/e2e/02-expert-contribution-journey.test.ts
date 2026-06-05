@@ -6,7 +6,7 @@
  */
 import { describe, it, expect } from 'vitest';
 
-const BASE = process.env.BASE_URL || 'http://localhost:3099';
+const BASE = 'http://localhost:3099';
 
 describe('E2E: 行业专家贡献旅程', () => {
   it('POST /api/expert/contribute → 200 + template', async () => {

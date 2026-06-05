@@ -119,6 +119,27 @@ const SEEDS: SeedEntry[] = [
   { domain: 'marketing', type: 'threshold', confidence: 0.8, level: 2, content: '市场份额: 在目标市场排名 > 前 3 且份额 > 10% → 有竞争力。份额 < 5% 且市场增长 > 20% → 处于追赶位置。' },
   { domain: 'marketing', type: 'best_practice', confidence: 0.7, level: 1, content: '小企业: 先做好一个获客渠道(内容/广告/销售),跑通 1→10 后再扩渠道。不要同时尝试超过 3 个渠道。' },
   { domain: 'marketing', type: 'theory', confidence: 0.8, level: 3, content: '品牌资产模型(Keller CBBE): 品牌显著性→品牌形象→品牌判断→品牌共鸣四个层次。品牌价值 = 消费者对品牌的知识和联想。' },
+  { domain: 'marketing', type: 'theory', confidence: 0.9, level: 2, content: 'STP 市场定位: Segmentation(按地理/人口/心理/行为细分市场)→Targeting(选择目标市场,评估规模/增长/竞争/匹配度)→Positioning(差异化定位,价值主张一句话说清)。' },
+  { domain: 'marketing', type: 'theory', confidence: 0.85, level: 2, content: '4P/4C 营销组合: 4P(产品/价格/渠道/促销)→4C(客户价值/成本/便利/沟通)。4P是厂商视角,4C是客户视角。现代营销应4P+4C并用,以4C为起点反推4P。' },
+  { domain: 'marketing', type: 'theory', confidence: 0.85, level: 2, content: 'AARRR 海盗指标: Acquisition(获客)→Activation(激活)→Retention(留存)→Revenue(变现)→Referral(推荐)。用于诊断增长漏斗,找到最大瓶颈。常见:获客够但激活低→产品体验问题,留存低→产品价值不足。' },
+  { domain: 'marketing', type: 'theory', confidence: 0.8, level: 2, content: '品牌定位金字塔: 底层→品牌属性(是什么),中层→品牌利益(解决什么),高层→品牌价值观(信仰什么),塔尖→品牌精髓(一句话)。诊断:品牌各层是否一致?客户认知与品牌自述是否有偏差?' },
+  { domain: 'marketing', type: 'theory', confidence: 0.8, level: 3, content: '客户旅程地图(Customer Journey Map): 认知→考虑→购买→使用→忠诚→推荐六个阶段。每个阶段标注触点、情绪曲线、痛点和机会。用于发现营销断裂点和体验优化空间。' },
+  { domain: 'marketing', type: 'rule', confidence: 0.85, level: 2, content: '定价策略检查清单: 1.成本加成(确保不低于成本) 2.竞争对标(与竞品的价差是否合理) 3.价值定价(客户愿意付多少钱) 4.价格弹性(提价5%会流失多少客户)。最优价格不是最低价,是客户感知价值与竞品的平衡点。' },
+  { domain: 'marketing', type: 'benchmark', confidence: 0.75, level: 2, content: '各行业营销费用占营收比: SaaS 40-60%(早期)/20-30%(成熟),消费品 10-20%,制造业 3-8%,服务业 5-10%。营销ROI>3为良好,>5为优秀。' },
+  { domain: 'marketing', type: 'best_practice', confidence: 0.7, level: 1, content: '小企业营销起步: 1.建立品牌一句话介绍 2.先做一个免费获客渠道(SEO/内容/社交媒体) 3.客户推荐奖励机制 4.每季度测一个新渠道,保留>2倍ROI的。' },
+
+  // ═══ 运营/供应链 (15 条) ═══
+  { domain: 'strategy', type: 'theory', confidence: 0.9, level: 2, content: '精益生产(Lean): 核心理念——消除一切不创造价值的浪费。七大浪费: 过量生产、等待、搬运、过度加工、库存、多余动作、缺陷。通过价值流图(VSM)识别浪费,持续改善(Kaizen)。' },
+  { domain: 'strategy', type: 'theory', confidence: 0.9, level: 2, content: '六西格玛(6σ): DMAIC方法论——Define(定义问题)→Measure(测量现状)→Analyze(分析根因)→Improve(改善)→Control(控制)。6σ=每百万次机会仅3.4个缺陷。与Lean结合为Lean Six Sigma。' },
+  { domain: 'strategy', type: 'theory', confidence: 0.85, level: 2, content: 'TQM全面质量管理: 全员参与、全流程覆盖、持续改进。核心: PDCA循环(Plan计划→Do执行→Check检查→Act处理)。日本戴明奖和美国波多里奇奖是TQM的两大标杆。' },
+  { domain: 'strategy', type: 'theory', confidence: 0.85, level: 2, content: '5S现场管理: 整理(Seiri区分要/不要)→整顿(Seiton定置定位)→清扫(Seiso打扫维护)→清洁(Seiketsu标准化)→素养(Shitsuke习惯化)。简单但极难坚持——5S是精益和TQM的基础前提。' },
+  { domain: 'strategy', type: 'theory', confidence: 0.8, level: 2, content: 'JIT准时生产: Just-In-Time——在需要时按需要量生产。核心要素: 看板(Kanban)拉动系统、单件流、快速换模(SMED)、零库存目标。丰田生产系统(TPS)的核心支柱之一。' },
+  { domain: 'strategy', type: 'benchmark', confidence: 0.8, level: 2, content: '制造业效率基准: OEE(设备综合效率) = 可用率×性能率×质量率。世界级水平>85%,行业平均60-75%。库存周转率>12次/年为精益,<4次/年为积压。' },
+  { domain: 'strategy', type: 'rule', confidence: 0.85, level: 2, content: '价值流图(VSM)诊断: 绘制从原材料到客户的完整流程→标注每个环节的C/T(周期时间)和VAT(增值时间)→计算流程效率=增值时间/总周期时间。健康企业>10%,世界级>25%。<5%→严重浪费。' },
+  { domain: 'strategy', type: 'rule', confidence: 0.8, level: 2, content: '供应链风险诊断: 单一供应商依赖度>70%→高风险(断供即停)。关键物料库存覆盖<2周→紧急补货风险。供应商所在地政治/自然灾害风险未评估→盲区。供应商财务健康度<BBB级→潜在断裂。' },
+  { domain: 'strategy', type: 'benchmark', confidence: 0.75, level: 2, content: '供应链健康度: 订单准时交付率>95%为合格,>98%为优秀。库存准确率>98%。供应商准时交付率>90%。物流成本占营收比:制造业3-8%,零售业5-12%,电商8-15%。' },
+  { domain: 'strategy', type: 'theory', confidence: 0.8, level: 3, content: 'SCOR供应链运作参考模型: Plan(计划)→Source(采购)→Make(制造)→Deliver(交付)→Return(退货)。五个核心流程,每个可分解到三级指标。用于诊断供应链瓶颈和标杆对比。' },
+  { domain: 'strategy', type: 'best_practice', confidence: 0.7, level: 1, content: '小企业供应链管理: 1.关键物料至少保持2-3个合格供应商 2.签订框架协议而非单次采购 3.每月Review库存周转率 4.用ABC分类法管理库存(A类重点管,B类定期管,C类批量管)。' },
 
   // ═══ 执行 (15 条) ═══
   { domain: 'action', type: 'theory', confidence: 0.9, level: 2, content: 'OKR 方法: Objective(目标)定性+KR(关键结果)定量。每季度 3-5 个 O,每个 O 配 2-4 个 KR。完成率 70% 为健康。' },
