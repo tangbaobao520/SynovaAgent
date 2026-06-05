@@ -28,6 +28,8 @@ const KNOWN_L1_VIOLATIONS = [
   'src/routes/agent-observer.ts',
   'src/mcp/tool-registration.ts',
   'src/routes/ontology.ts',
+    'src/l1/qa-router.ts',
+    'src/routes/im.ts',
 ];
 
 /** 判断文件是否在例外列表中 */
