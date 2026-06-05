@@ -6,6 +6,9 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
+import { createLogger } from '../logger';
+
+const log = createLogger('skills/loader');
 
 export interface SkillDefinition {
   name: string;
@@ -56,7 +59,7 @@ export function loadSkills(skillsDir: string): SkillDefinition[] {
         const content = fs.readFileSync(skillPath, 'utf-8');
         const skill = parseSkillMd(content);
         if (skill) skills.push(skill);
-      } catch { /* skip */ }
+      } catch (err) { log.debug({ err }, '技能加载跳过无效文件'); }
     }
   }
   return skills;

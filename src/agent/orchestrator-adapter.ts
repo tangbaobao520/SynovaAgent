@@ -83,8 +83,8 @@ export function createToolExecutorAdapter(registry: ToolRegistry): ToolExecutor 
       let params: Record<string, unknown>;
       try {
         params = JSON.parse(input);
-      } catch {
-        log.debug({ toolName, input: input.slice(0, 100) }, 'ToolExecutor: JSON.parse 失败，使用空参数');
+      } catch (err) {
+        log.warn({ err, toolName, input: input.slice(0, 100) }, '编排器适配调用失败 — 使用空参数');
         params = {};
       }
 

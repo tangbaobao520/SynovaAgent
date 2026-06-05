@@ -8,6 +8,9 @@
  */
 import type { ViewAdapter } from './types';
 import type { Response } from 'express';
+import { createLogger } from '../logger';
+
+const log = createLogger('l1/web-adapter');
 
 export class WebViewAdapter implements ViewAdapter {
   private res: Response;
@@ -25,8 +28,8 @@ export class WebViewAdapter implements ViewAdapter {
   private emit(type: string, data: string): void {
     try {
       this.res.write(`event: ${type}\ndata: ${JSON.stringify(data)}\n\n`);
-    } catch {
-      // Client disconnected — ignore
+    } catch (err) {
+      log.debug({ err }, 'Web 适配器 SSE 写入失败 — 客户端断开');
     }
   }
 

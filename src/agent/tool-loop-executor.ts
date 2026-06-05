@@ -60,9 +60,8 @@ export class ToolLoopExecutor {
           let params: Record<string, unknown> = {};
           try {
             params = JSON.parse(tc.function.arguments);
-          } catch {
-            this.log.debug({ name: tc.function.name, args: tc.function.arguments.slice(0, 100) },
-              'JSON.parse 失败于工具参数，使用空对象');
+          } catch (err) {
+            this.log.warn({ err, name: tc.function.name }, '工具参数解析失败 — degraded');
             params = {};
           }
 
@@ -190,9 +189,8 @@ export class ToolLoopExecutor {
           let params: Record<string, unknown> = {};
           try {
             params = JSON.parse(tc.function.arguments);
-          } catch {
-            this.log.debug({ name: tc.function.name, args: tc.function.arguments.slice(0, 100) },
-              'JSON.parse 失败于工具参数，使用空对象');
+          } catch (err) {
+            this.log.warn({ err, name: tc.function.name }, '工具参数解析失败 — degraded');
             params = {};
           }
 

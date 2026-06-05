@@ -86,7 +86,7 @@ export function createDeepSeekProvider(config: ProviderConfig): LLMProvider {
               const chunk = JSON.parse(data);
               const token = chunk?.choices?.[0]?.delta?.content;
               if (token) { fullContent += token; cb.onToken(token); }
-            } catch { /* skip malformed chunks */ }
+            } catch { /* skip malformed SSE chunks — stream-level, high volume */ }
           }
         }
       } finally {

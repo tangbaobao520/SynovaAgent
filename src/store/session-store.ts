@@ -10,6 +10,9 @@
  * 会话数据属于 Agent 进程层，本体数据属于 engine-core 层。
  */
 import Database from 'better-sqlite3';
+import { createLogger } from '../logger';
+
+const log = createLogger('store/session-store');
 
 // ═══ Types ═══
 
@@ -98,7 +101,7 @@ export class SessionStore {
         saved_at TEXT NOT NULL DEFAULT (datetime('now')),
         PRIMARY KEY (session_id, phase)
       )`);
-    } catch { /* 表已存在 */ }
+    } catch (err) { log.debug({ err }, '会话表已存在 — 跳过创建'); }
 
     // FTS5 同步触发器 (幂等——触发器已存在时报错忽略)
     this.db.exec(`
@@ -184,7 +187,8 @@ export class SessionStore {
     if (!row?.state_json) return null;
     try {
       return JSON.parse(row.state_json);
-    } catch {
+    } catch (err) {
+      log.warn({ err }, '会话状态反序列化失败');
       return null;
     }
   }
@@ -263,7 +267,7 @@ export class SessionStore {
         partialReport: JSON.parse(row.partial_report as string || 'null'),
         savedAt: row.saved_at as string,
       };
-    } catch { return null; }
+    } catch (err) { log.warn({ err }, '会话检查点解析失败'); return null; }
   }
 
   /** 删除会话的检查点 */

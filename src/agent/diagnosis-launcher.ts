@@ -107,7 +107,7 @@ export class DiagnosisLauncher {
               partialReport: report, savedAt: new Date().toISOString(),
             });
           }
-        } catch { /* 检查点保存失败不阻断诊断 */ }
+        } catch (err) { log.warn({ err }, '检查点保存失败 — degraded'); }
       };
 
       // 铁律 39: L2 → DiagnosisEngine 接口 (不直接 import engine-core)

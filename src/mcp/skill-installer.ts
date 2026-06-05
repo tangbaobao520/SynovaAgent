@@ -126,7 +126,7 @@ export class SkillInstaller {
         const { getExpertRegistry } = await import('../l3/expert-registry');
         getExpertRegistry().register(manifest.expertType, manifest.expertPrompt);
         installedTools.push(`expert:${manifest.expertType}`);
-      } catch { /* expert registry unavailable */ }
+      } catch (err) { log.debug({ err }, '专家注册表不可用 — 跳过'); }
     }
 
     // Register to ExtensionRegistry

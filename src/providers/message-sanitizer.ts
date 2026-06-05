@@ -62,13 +62,15 @@ function repairJSON(text: string): string {
   try {
     JSON.parse(text);
     return text; // Already valid
-  } catch {
+  } catch (err) {
+    log.warn({ err }, '消息脱敏 JSON 修复失败 — 尝试备选方案');
     // Try removing trailing comma
     const fixed = text.replace(/,\s*([}\]])/g, '$1');
     try {
       JSON.parse(fixed);
       return fixed;
-    } catch {
+    } catch (err2) {
+      log.warn({ err: err2 }, '消息脱敏 JSON 修复二次失败 — 尝试补充括号');
       // Try adding missing closing brackets
       const withClose = text + '}]'.repeat(
         (text.match(/\{/g) || []).length - (text.match(/\}/g) || []).length +
@@ -77,7 +79,8 @@ function repairJSON(text: string): string {
       try {
         JSON.parse(withClose);
         return withClose;
-      } catch {
+      } catch (err3) {
+        log.warn({ err: err3 }, '消息脱敏失败 — 返回原文');
         return text; // Can't repair — return original
       }
     }

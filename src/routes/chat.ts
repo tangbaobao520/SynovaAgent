@@ -6,7 +6,10 @@
  */
 import { Router, type Request, type Response } from 'express';
 import { loadConfig } from '../config';
+import { createLogger } from '../logger';
 import { getProposalManager } from '../l2/proposal-manager';
+
+const log = createLogger('routes/chat');
 
 const router = Router();
 
@@ -37,7 +40,8 @@ router.get('/api/user-state', async (_req: Request, res: Response) => {
       hasCompletedPhase0: summaries.length > 0,
       hasDataSources: !!(process.env.FEISHU_APP_ID || process.env.CRM_API_KEY),
     });
-  } catch {
+  } catch (err) {
+    log.warn({ err }, '用户状态查询失败 — degraded');
     res.json({ ok: true, hasCompletedPhase0: false, hasDataSources: false });
   }
 });

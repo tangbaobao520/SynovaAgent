@@ -149,8 +149,8 @@ export class FaultRecovery {
     // First attempt
     try {
       return { parsed: JSON.parse(content) as T, degraded: false };
-    } catch {
-      log.debug({ label, contentPreview: content.slice(0, 100) }, 'JSON 解析失败，重试...');
+    } catch (err) {
+      log.warn({ err, label, contentPreview: content.slice(0, 100) }, 'JSON 解析失败，重试...');
     }
 
     // Retry: try extracting from markdown code block
@@ -158,7 +158,7 @@ export class FaultRecovery {
       try {
         const match = content.match(/```(?:json)?\s*([\s\S]*?)```/);
         if (match) return { parsed: JSON.parse(match[1].trim()) as T, degraded: false };
-      } catch { /* continue */ }
+      } catch (err) { log.debug({ err }, '恢复步骤失败 — 继续'); }
     }
 
     // All retries failed — return defaults

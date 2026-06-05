@@ -183,9 +183,8 @@ export class ExpertAutonomyEngine {
         action: 'max_rounds_forced',
         queryHistory,
       };
-    } catch {
-      // LLM final output also failed — return bare minimum with lowest confidence
-      log.warn('max_rounds_forced: LLM 最终调用也失败，返回最低置信度');
+    } catch (err) {
+      log.warn({ err }, 'LLM 最终调用也失败 — degraded');
       return {
         hypothesis: '分析未完成(达到最大轮次)',
         confidence: 0.2,
@@ -210,7 +209,8 @@ export class ExpertAutonomyEngine {
       return readTools.slice(0, 15).map(t =>
         `  - ${t.name}: ${t.description.slice(0, 80)}`
       ).join('\n');
-    } catch {
+    } catch (err) {
+      log.warn({ err }, '工具列表获取失败 — degraded');
       return '工具列表不可用';
     }
   }

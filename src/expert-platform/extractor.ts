@@ -138,8 +138,8 @@ export class ExpertKnowledgeExtractor {
             status: 'experimental',
           };
         }
-      } catch {
-        log.error({ err }, '知识提取重试也失败');
+      } catch (err) {
+        log.warn({ err }, '专家输出提取失败 — degraded');
       }
 
       return null;

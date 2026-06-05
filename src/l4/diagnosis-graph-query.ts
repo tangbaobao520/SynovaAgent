@@ -150,7 +150,7 @@ export function getGraphDiff(
       if (nodes.length > 0) {
         nodesAdded.push({ type, count: nodes.length });
       }
-    } catch { /* type not supported by store */ }
+    } catch (err) { log.debug({ err }, '图查询类型不支持 — 跳过'); }
   }
 
   const edges = store.queryEdges(undefined, undefined, undefined, graph);

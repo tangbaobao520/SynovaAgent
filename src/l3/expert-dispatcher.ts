@@ -335,7 +335,8 @@ export class ExpertDispatcher {
         conflictingSignals: Array.isArray(json.conflictingSignals) ? json.conflictingSignals : [],
         crossReferences: Array.isArray(json.crossReferences) ? json.crossReferences : [],
       };
-    } catch {
+    } catch (err) {
+      log.warn({ err }, '专家调度解析失败 — degraded');
       // Try extracting JSON from markdown code block
       const match = content.match(/```(?:json)?\s*([\s\S]*?)```/);
       if (match) {
@@ -350,7 +351,6 @@ export class ExpertDispatcher {
           };
         } catch { /* fall through */ }
       }
-      log.warn({ expertType, contentPreview: content.slice(0, 200) }, 'Expert JSON parse failed — using raw text');
       return { overallAssessment: content.slice(0, 500) };
     }
   }
@@ -362,7 +362,8 @@ export class ExpertDispatcher {
       if (json.ontologyPatches && Array.isArray(json.ontologyPatches)) return json.ontologyPatches;
       if (json.ontologyPatches && !Array.isArray(json.ontologyPatches)) return [json.ontologyPatches];
       return [];
-    } catch {
+    } catch (err) {
+      log.warn({ err }, '本体补丁提取失败 — degraded');
       const match = content.match(/```(?:json)?\s*([\s\S]*?)```/);
       if (match) {
         try {

@@ -69,7 +69,7 @@ export async function resolveEntitiesL3(store: GraphStoreRO, graph: string): Pro
             if (semSim >= 0) {
               finalScore = 0.35 * fusedScore + 0.65 * semSim; // Trust semantic more
             }
-          } catch { /* semantic unavailable — keep fusedScore */ }
+          } catch (err) { log.debug({ err }, '语义匹配不可用 — 使用拼音匹配'); }
         }
 
         let confidence: EntityMatch['confidence'] = 'ignore';
@@ -123,7 +123,8 @@ function phoneticSimilarity(nameA: string, nameB: string): number {
     const pyB = pinyin(nameB, { toneType: 'none', type: 'array' }).join(' ');
     const dist = levenshteinDistance(pyA, pyB);
     return Math.max(0, 1 - dist / Math.max(pyA.length, pyB.length, 1));
-  } catch {
+  } catch (err) {
+    log.warn({ err }, '实体解析失败 — degraded');
     return 0;
   }
 }
@@ -189,7 +190,8 @@ async function semanticSimilarity(textA: string, textB: string): Promise<number>
       texts: [textA, textB],
     });
     return result.similarity;
-  } catch {
+  } catch (err) {
+    log.warn({ err }, '语义匹配不可用 — degraded');
     return -1; // Python Bridge unavailable — caller should fall back
   }
 }

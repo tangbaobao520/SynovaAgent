@@ -130,7 +130,8 @@ export function isDatabaseEncrypted(dbPath: string): boolean {
     // Encrypted data is high-entropy — not ASCII
     const asciiCount = [...header].filter(b => b >= 0x20 && b <= 0x7e).length;
     return asciiCount < header.length * 0.5;
-  } catch {
+  } catch (err) {
+    log.error({ err }, '数据库加密检测失败');
     return false;
   }
 }

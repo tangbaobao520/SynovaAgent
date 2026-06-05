@@ -70,7 +70,7 @@ export function getCurrentVersion(): string {
       if (fs.existsSync(p)) {
         return JSON.parse(fs.readFileSync(p, 'utf-8')).version || '0.0.0';
       }
-    } catch { /* continue */ }
+    } catch (err) { log.debug({ err }, '版本检查网络请求失败'); }
   }
   return '0.0.0';
 }
@@ -90,7 +90,7 @@ function readCache(): CacheData | null {
     if (Date.now() - new Date(data.checkedAt).getTime() < CACHE_TTL_MS) {
       return data;
     }
-  } catch { /* cache expired or corrupt */ }
+  } catch (err) { log.debug({ err }, '更新缓存失效'); }
   return null;
 }
 
@@ -99,7 +99,7 @@ function writeCache(data: CacheData): void {
     const dir = path.dirname(CACHE_FILE);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(CACHE_FILE, JSON.stringify(data));
-  } catch { /* non-critical */ }
+  } catch (err) { log.debug({ err }, '缓存写入失败 — 非关键'); }
 }
 
 // ═══ Detection ═══
@@ -109,7 +109,8 @@ async function isGitRepo(): Promise<boolean> {
   try {
     await execAsync('git rev-parse --git-dir', { timeout: 3000 });
     return true;
-  } catch {
+  } catch (err) {
+    log.debug({ err }, 'Git 仓库检测失败');
     return false;
   }
 }
@@ -120,7 +121,7 @@ export function detectInstallMethod(): 'git' | 'npm' | 'docker' | 'unknown' {
     if (fs.existsSync('/.dockerenv')) return 'docker';
     // 文件检测: .git 目录存在 → git 安装
     if (fs.existsSync(path.join(process.cwd(), '.git'))) return 'git';
-  } catch { /* fall through */ }
+  } catch (err) { log.debug({ err }, '安装方法检测失败 — 返回 unknown'); }
   return 'unknown';
 }
 
@@ -187,7 +188,7 @@ export async function checkForUpdates(): Promise<UpdateCheckResult> {
     try {
       const { stdout: tagStr } = await execAsync('git describe --tags --abbrev=0 origin/main 2>/dev/null', { timeout: 3000 });
       latestTag = tagStr.trim();
-    } catch { /* no tags */ }
+    } catch (err) { log.debug({ err }, 'GitHub tags 解析失败'); }
 
     // Write cache
     writeCache({

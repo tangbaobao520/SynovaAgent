@@ -62,7 +62,7 @@ export async function ingestDocumentText(
       try {
         store.createEdge('MENTIONS', pid, `doc_${fileName}`, 0.5, {}, orgId);
         result.edgesCreated++;
-      } catch { /* edge may already exist */ }
+      } catch (err) { log.debug({ err }, '边可能已存在 — 跳过'); }
     }
 
     log.info({ fileName, nodes: result.nodesCreated, edges: result.edgesCreated }, '文档知识摄取完成');

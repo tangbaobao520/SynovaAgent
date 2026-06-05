@@ -72,8 +72,8 @@ export async function validateLLMOutput<T>(
           log.info('LLM 输出重试解析成功 (从 markdown 提取)');
           return { valid: true, data: result.data, retried: true };
         }
-      } catch {
-        // Second attempt failed too
+      } catch (err) {
+        log.warn({ err }, 'LLM 输出校验失败');
       }
     }
   }

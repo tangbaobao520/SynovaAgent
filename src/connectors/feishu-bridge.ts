@@ -58,7 +58,8 @@ export async function feishuHealthCheck(appId: string, appSecret: string): Promi
       { appId, appSecret },
     );
     return result.healthy;
-  } catch {
+  } catch (err) {
+    log.warn({ err }, '飞书连接器健康检查失败');
     return false;
   }
 }
