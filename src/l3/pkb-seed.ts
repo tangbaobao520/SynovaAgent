@@ -102,14 +102,21 @@ const SEEDS: SeedEntry[] = [
   { domain: 'finance', type: 'rule', confidence: 0.8, level: 2, content: '发票管理: 增值税专用发票认证期限 360 天。跨年度未认证→进项税额不得抵扣→成本虚增。每月进行发票进销项差异分析,差异 > 5% → 需要解释原因。' },
   { domain: 'finance', type: 'benchmark', confidence: 0.75, level: 1, content: '小微企业: 月营收 < 50万时应控制固定成本 < 营收的 40%。现金流覆盖 > 3 个月为底线安全线。' },
 
-  // ═══ 技术 (15 条) ═══
-  { domain: 'tech', type: 'theory', confidence: 0.9, level: 2, content: '技术债务评估: 四个维度——代码质量(测试覆盖率>60%)、架构一致性(符合设计的模块占比>80%)、工具链效率(CI/CD自动化率>90%)、技术文档完整度(>70%)。' },
-  { domain: 'tech', type: 'benchmark', confidence: 0.85, level: 2, content: '软件团队: 单元测试覆盖率 > 60% 为合格,> 80% 为良好。CI 构建时间 < 10分钟。部署频率 > 每周一次。' },
-  { domain: 'tech', type: 'rule', confidence: 0.85, level: 2, content: '技术债预警: 如果每 sprint 修复技术债的时间 < 总开发时间的 15%,技术债正在加速累积。hotfix 占比 > 30% → 债务已严重影响生产力。' },
-  { domain: 'tech', type: 'threshold', confidence: 0.8, level: 2, content: '系统可靠性: 月度可用性 < 99.9%(月宕机 > 43 分钟)→ 需要 SRE 投入。P95 延迟 > 500ms → 用户体验恶化。' },
-  { domain: 'tech', type: 'best_practice', confidence: 0.7, level: 1, content: '小团队: 优先选成熟的开发框架和云服务,避免自建基础设施。技术选型优先考虑社区活跃度和招聘可行性。' },
-  { domain: 'tech', type: 'theory', confidence: 0.8, level: 3, content: 'TOGAF 架构框架: 业务架构→数据架构→应用架构→技术架构四个层次。适用于大型企业架构规划和治理。' },
-  { domain: 'tech', type: 'benchmark', confidence: 0.7, level: 1, content: '5-20人技术团队: 一位全栈工程师可覆盖前后端。工具链: Git+CI/CD+监控+日志 四件套必备。' },
+  // ═══ 技术 (PKB 最弱短板 → 全面补强: AI原生 + 安全 + DevOps + 数据) ═══
+  { domain: 'tech', type: 'theory', confidence: 0.9, level: 2, content: '技术债务评估: 四个维度——代码质量(测试覆盖率>60%)、架构一致性(符合设计的模块占比>80%)、工具链效率(CI/CD自动化率>90%)、技术文档完整度(>70%)。AI时代: AI代码生成会同时增加代码量和维护负担,需新增"AI生成代码占比"和"AI生成代码的测试覆盖率"指标。' },
+  { domain: 'tech', type: 'benchmark', confidence: 0.85, level: 2, content: '软件团队基准: 单元测试覆盖率>60%合格,>80%良好。CI构建<10分钟。部署频率>每周一次。AI时代: AI辅助编程后,人均产出可提升30-50%,但code review时间需同比例增加以保持质量。' },
+  { domain: 'tech', type: 'rule', confidence: 0.85, level: 2, content: '技术债预警: 每sprint修复技术债<总时间15%→加速累积。hotfix占比>30%→严重影响生产力。AI时代新增: AI生成代码的折旧率(3个月后仍未被重构的比例>40%→AI技术债在累积)。' },
+  { domain: 'tech', type: 'threshold', confidence: 0.8, level: 2, content: '系统可靠性: 月度可用性<99.9%(月宕机>43分钟)→需SRE投入。P95延迟>500ms→体验恶化。AI时代: AI Agent调用链的端到端延迟<5秒(P95),AI决策失误率<5%为合格。' },
+  { domain: 'tech', type: 'best_practice', confidence: 0.7, level: 1, content: '小团队技术选型: 优先成熟框架和云服务,避免自建基础设施。AI时代: 优先选择有AI Agent SDK和API的供应商,自研AI基础设施只适合>50人的团队。' },
+  { domain: 'tech', type: 'theory', confidence: 0.8, level: 3, content: 'TOGAF企业架构: 业务架构→数据架构→应用架构→技术架构四层。AI时代新增: AI架构层(模型管理/Agent编排/评估体系),需横切各层——每个架构决策都要考虑"这个组件未来是否会被AI Agent调用?"。' },
+  { domain: 'tech', type: 'benchmark', confidence: 0.7, level: 1, content: '5-20人团队: 一位全栈工程师可覆盖前后端。工具链: Git+CI/CD+监控+日志四件套。AI时代: 1个懂AI的工程师+AI Agent可替代2-3个传统工程师的产出,但需要新增AI Agent的监控和评估工具。' },
+  // 技术 AI 原生知识
+  { domain: 'tech', type: 'theory', confidence: 0.85, level: 3, content: 'AI成熟度模型: L1实验(个别人用AI辅助编程)→L2标准化(团队有AI工具和规范)→L3集成(AI Agent参与开发流程,自动生成代码和测试)→L4自主(AI Agent独立管理非关键系统,人类监督)→L5原生(AI-first架构,人类定义意图,AI实现)。诊断技术团队时先定位当前Level。' },
+  { domain: 'tech', type: 'rule', confidence: 0.85, level: 2, content: 'AI安全基线: 1.AI Agent的决策必须有可追溯日志(谁授权了什么) 2.AI生成的代码必须通过与传统代码相同的安全审计 3.训练数据不能包含生产敏感信息 4.AI Agent的API必须认证和限流 5.定期红队测试(尝试用prompt engineering绕过安全限制)。' },
+  { domain: 'tech', type: 'theory', confidence: 0.8, level: 2, content: 'DevOps成熟度: L1手动→L2自动化构建部署→L3 CI/CD全自动化→L4 ChatOps+AI辅助运维→L5 AI Agent自主运维。核心指标: 变更失败率<15%,恢复时间<1h,部署频率>按需。AI时代: AI可自动诊断故障、建议修复方案、执行回滚,人类值班时间从7×24降至工作时间。' },
+  { domain: 'tech', type: 'benchmark', confidence: 0.75, level: 2, content: '云架构健康度: 资源利用率>40%(避免过度预留),自动扩缩容覆盖率>80%,灾备恢复演练>每季度一次。多云/混合云占比(避免单云锁定)。AI时代新增: GPU/TPU利用率>60%(AI推理成本优化),模型服务延迟<200ms(P95)。' },
+  { domain: 'tech', type: 'theory', confidence: 0.8, level: 2, content: '数据成熟度模型: L1散落(Excel+邮件)→L2集中(数据仓库)→L3治理(数据目录+质量)→L4智能(AI驱动的数据发现和推荐)→L5原生(所有决策以数据为起点,AI Agent自动从数据中发现问题)。诊断时先定位当前Level,再给出两步升级建议。' },
+  { domain: 'tech', type: 'rule', confidence: 0.8, level: 2, content: '技术选型AI适配度检查: 1.该技术是否有API可被AI Agent调用? 2.日志和监控数据是否结构化(AI需要标准化输入)? 3.社区是否有AI相关的插件/集成? 4.供应商是否有AI路线图? 选型时"AI适配度"应与"性能/成本/稳定性"并列评估。' },
 
   // ═══ 市场 (15 条) ═══
   { domain: 'marketing', type: 'theory', confidence: 0.9, level: 2, content: 'GTM 策略(Go-to-Market): 四个核心问题——卖给谁(目标客户)、卖什么(产品定位)、怎么卖(销售渠道)、为什么选你(竞争优势)。' },
@@ -127,13 +134,16 @@ const SEEDS: SeedEntry[] = [
   { domain: 'marketing', type: 'rule', confidence: 0.85, level: 2, content: '定价策略检查清单: 1.成本加成(确保不低于成本) 2.竞争对标(与竞品的价差是否合理) 3.价值定价(客户愿意付多少钱) 4.价格弹性(提价5%会流失多少客户)。最优价格不是最低价,是客户感知价值与竞品的平衡点。' },
   { domain: 'marketing', type: 'benchmark', confidence: 0.75, level: 2, content: '各行业营销费用占营收比: SaaS 40-60%(早期)/20-30%(成熟),消费品 10-20%,制造业 3-8%,服务业 5-10%。营销ROI>3为良好,>5为优秀。' },
   { domain: 'marketing', type: 'best_practice', confidence: 0.7, level: 1, content: '小企业营销起步: 1.建立品牌一句话介绍 2.先做一个免费获客渠道(SEO/内容/社交媒体) 3.客户推荐奖励机制 4.每季度测一个新渠道,保留>2倍ROI的。' },
-  // 营销补充 —《赢取竞争的100+N工具箱》
-  { domain: 'marketing', type: 'theory', confidence: 0.85, level: 2, content: 'CRM客户关系管理: 识别(谁是高价值客户)→区分(按LTV分层)→互动(个性化沟通)→定制(针对高价值客户定制服务)。核心指标: 客户生命周期价值(LTV)、获客成本(CAC)、流失率、复购率。' },
-  { domain: 'marketing', type: 'theory', confidence: 0.8, level: 2, content: '内容营销漏斗: 认知阶段(博客/白皮书/视频)→考虑阶段(案例研究/产品对比/Demo)→决策阶段(试用/优惠/客户推荐)。每个阶段需要不同的内容类型。B2B平均需要接触13次才能转化。' },
-  { domain: 'marketing', type: 'theory', confidence: 0.8, level: 2, content: '渠道冲突管理: 直销vs代理vs电商三渠道并存时,必须明确: 1.价格体系统一(渠道间价差<10%) 2.客户归属规则(谁先接触归谁) 3.渠道激励差异化(不同渠道不同KPI)。渠道冲突是增长的最大隐性成本。' },
-  { domain: 'marketing', type: 'benchmark', confidence: 0.75, level: 2, content: '数字营销效率基准: 搜索引擎广告ROAS>3为合格,>5为优秀。社媒CPM 20-80元。邮件营销打开率>20%,点击率>3%。SEO自然流量占比>40%为健康。' },
-  { domain: 'marketing', type: 'rule', confidence: 0.85, level: 2, content: '品牌一致性检查: 1.所有触点的视觉和文案风格是否统一 2.客户在各渠道的体验是否一致 3.员工是否能用一句话说清品牌定位。不一致→品牌资产稀释,消费者混淆。' },
-  { domain: 'marketing', type: 'best_practice', confidence: 0.7, level: 1, content: '产品卖点提炼: 不要列功能,要讲利益。用"因为(功能),所以你能(利益)"句式。最多3个核心卖点,超过3个等于没有。每个卖点用客户的语言,不用行业术语。' },
+  // 营销补充 —《赢取竞争的100+N工具箱》(AI时代适配)
+  { domain: 'marketing', type: 'theory', confidence: 0.85, level: 2, content: 'CRM客户关系管理: 识别(谁是高价值客户)→区分(按LTV分层)→互动(个性化沟通)→定制(针对高价值客户定制服务)。核心指标: 客户生命周期价值(LTV)、获客成本(CAC)、流失率、复购率。AI时代: AI Agent可自动完成客户分层、个性化内容生成和触达时机选择,人类聚焦于高价值客户的深度关系。' },
+  { domain: 'marketing', type: 'theory', confidence: 0.8, level: 2, content: '内容营销漏斗: 认知阶段(博客/白皮书/视频)→考虑阶段(案例研究/产品对比/Demo)→决策阶段(试用/优惠/客户推荐)。每个阶段需要不同的内容类型。B2B平均需要接触13次才能转化。AI适配: AI可批量生成个性化内容、自动A/B测试、根据用户行为实时调整内容策略。' },
+  { domain: 'marketing', type: 'theory', confidence: 0.8, level: 2, content: '渠道冲突管理: 直销vs代理vs电商三渠道并存时,必须明确: 1.价格体系统一(渠道间价差<10%) 2.客户归属规则(谁先接触归谁) 3.渠道激励差异化(不同渠道不同KPI)。渠道冲突是增长的最大隐性成本。AI适配: AI可实时监控全渠道价格和库存,自动预警并建议调价策略。' },
+  { domain: 'marketing', type: 'benchmark', confidence: 0.75, level: 2, content: '数字营销效率基准: 搜索引擎广告ROAS>3为合格,>5为优秀。社媒CPM 20-80元。邮件营销打开率>20%,点击率>3%。SEO自然流量占比>40%为健康。AI时代: AI驱动的动态定价和个性化推荐可将ROAS提升30-50%。' },
+  { domain: 'marketing', type: 'rule', confidence: 0.85, level: 2, content: '品牌一致性检查: 所有触点的视觉和文案风格是否统一,客户在各渠道的体验是否一致,员工是否能用一句话说清品牌定位。不一致→品牌资产稀释。AI时代: AI可自动审核全渠道品牌一致性,但品牌价值观的确定仍需人类决策。' },
+  { domain: 'marketing', type: 'best_practice', confidence: 0.7, level: 1, content: '产品卖点提炼: 不要列功能,要讲利益。用"因为(功能),所以你能(利益)"句式。最多3个核心卖点,超过3个等于没有。每个卖点用客户的语言,不用行业术语。AI辅助: AI可分析竞品卖点和客户评论,生成差异化卖点建议,但最终需人类确认。' },
+  // 营销 AI 原生知识 — 不是传统工具的延伸, 而是根本性的新能力
+  { domain: 'marketing', type: 'theory', confidence: 0.8, level: 3, content: 'AI原生营销: 不同于"AI辅助的传统营销"。核心变化: 1.从"创建内容→推送受众"变为"理解意图→生成个性化回复" 2.搜索被对话取代(用户不再搜索"最好的CRM",而是问AI助手"我该用什么CRM") 3.品牌价值的衡量从"知名度"变为"推荐率"(被AI推荐了多少次)。传统营销漏斗正在被AI对话界面瓦解。' },
+  { domain: 'marketing', type: 'rule', confidence: 0.75, level: 3, content: 'AI时代的品牌建设: 1.确保你的产品信息是AI可索引的结构化数据(被AI推荐比被人类搜索更重要) 2.品牌声誉管理要覆盖AI生成的答案(用户问AI"XX品牌靠谱吗",AI从全网数据中总结) 3.客户体验从"减少摩擦"变为"智能预判"(AI agent主动为客户解决问题)。' },
 
   // ═══ 运营/供应链 (15 条) ═══
   { domain: 'strategy', type: 'theory', confidence: 0.9, level: 2, content: '精益生产(Lean): 核心理念——消除一切不创造价值的浪费。七大浪费: 过量生产、等待、搬运、过度加工、库存、多余动作、缺陷。通过价值流图(VSM)识别浪费,持续改善(Kaizen)。' },
@@ -156,19 +166,22 @@ const SEEDS: SeedEntry[] = [
   { domain: 'action', type: 'threshold', confidence: 0.8, level: 2, content: '交付延期: 项目里程碑延期率 > 30% → 计划能力不足或资源瓶颈。单个任务阻塞 > 5 个工作日 → 需要 escalate。' },
   { domain: 'action', type: 'best_practice', confidence: 0.7, level: 1, content: '小团队: 每日站会 ≤ 15 分钟。周计划聚焦 3-5 件最重要的事。月度回顾总结进展和调整方向。' },
   { domain: 'action', type: 'theory', confidence: 0.8, level: 3, content: '变革管理(Kotter 8步): 紧迫感→领导联盟→愿景→沟通→赋能→短期胜利→固化→文化制度化。大型组织变革的经典框架。' },
-  // 执行补充 —《赢取竞争的100+N工具箱》
-  { domain: 'action', type: 'theory', confidence: 0.9, level: 2, content: 'PMBOK项目管理十大知识领域: 整合/范围/时间/成本/质量/人力资源/沟通/风险/采购/干系人管理。诊断项目失败时,从这10个维度逐一排查。' },
-  { domain: 'action', type: 'theory', confidence: 0.85, level: 2, content: 'SCRUM敏捷框架: 3个角色(Product Owner/Scrum Master/Dev Team)、5个事件(Sprint/Planning/Daily/Review/Retrospective)、3个产物(Product Backlog/Sprint Backlog/Increment)。适合需求变化快的创新项目。' },
-  { domain: 'action', type: 'theory', confidence: 0.85, level: 2, content: 'Kanban看板方法: 可视化工作流→限制WIP(在制品)→管理流动→明确流程策略→持续改进。与Scrum的区别: Kanban不固定迭代周期,适合运维型/持续交付型团队。' },
-  { domain: 'action', type: 'rule', confidence: 0.9, level: 2, content: '项目管理铁三角: 范围/时间/成本三者互相制约。加范围→必加工时或加成本。压时间→必砍范围或加成本。砍成本→必砍范围或延时间。诊断延期项目时先判断哪个维度被突破了。' },
-  { domain: 'action', type: 'threshold', confidence: 0.85, level: 2, content: '项目健康度: 计划完成率(SPI)>0.9为正常,<0.7为严重滞后。预算偏差(CV)<10%为正常。风险关闭率>80%。干系人满意度>70%。多项目并行时,任一指标连续两周恶化→立即复盘。' },
-  { domain: 'action', type: 'theory', confidence: 0.8, level: 2, content: '风险管理五步法: 识别(头脑风暴+检查清单)→评估(概率×影响矩阵)→应对(规避/转移/减轻/接受)→监控(风险登记册定期review)→沟通(向干系人报告风险状态)。' },
-  { domain: 'action', type: 'rule', confidence: 0.85, level: 2, content: '沟通管理: 向上管理→说结果和需要的支持,不说细节。平级协作→说协调点和资源冲突。向下管理→说目标和边界。对外→说进度和风险。信息不对称是执行力最大的敌人。' },
-  { domain: 'action', type: 'theory', confidence: 0.8, level: 2, content: 'PDCA持续改进循环: Plan(分析现状→设定目标→制定方案)→Do(小范围试点→收集数据)→Check(对比目标→分析偏差)→Act(成功则标准化推广,失败则重新计划)。适用于任何需要持续优化的流程。' },
-  { domain: 'action', type: 'benchmark', confidence: 0.75, level: 2, content: '会议效率基准: 决策会≤8人,信息同步会≤30人。会议准时开始率>90%。有明确议程和会前阅读材料。会议纪要24h内发出。人均会议时间<总工时30%。' },
-  { domain: 'action', type: 'best_practice', confidence: 0.7, level: 1, content: '小团队项目管理: 用看板工具(Trello/飞书多维表格)可视化任务。每周一次优先级评审,砍掉不再重要的任务。每个任务明确负责人和DDL。避免"多人负责=没人负责"。' },
-  { domain: 'action', type: 'theory', confidence: 0.8, level: 2, content: '精益六西格玛DMAIC执行: Define(定义问题和目标)→Measure(测量当前基线)→Analyze(找到根本原因)→Improve(实施改进)→Control(建立控制计划防止回退)。适用于制造/服务流程的深度优化。' },
-  { domain: 'action', type: 'rule', confidence: 0.85, level: 2, content: '优先级排序RICE模型: Reach(影响多少人)×Impact(对目标的影响1-3分)×Confidence(把握程度20-100%)÷Effort(所需人周)。得分高的先做。防止"老板说的重要"取代"数据说的重要"。' },
+  // 执行补充 —《赢取竞争的100+N工具箱》(AI时代适配)
+  { domain: 'action', type: 'theory', confidence: 0.9, level: 2, content: 'PMBOK项目管理十大知识领域: 整合/范围/时间/成本/质量/人力资源/沟通/风险/采购/干系人管理。诊断项目失败时从这10个维度逐一排查。AI适配: AI可自动追踪进度/预算/风险三项,动态预测延期概率,人类只需审批关键决策。' },
+  { domain: 'action', type: 'theory', confidence: 0.85, level: 2, content: 'SCRUM敏捷框架: 3个角色(PO/SM/Team)、5个事件、3个产物。适合需求变化快的创新项目。AI适配: AI Agent可担任SM(自动生成sprint报告/检测阻塞/建议改进),PO协助(数据驱动优先级排序),人类专注于创意和决策。' },
+  { domain: 'action', type: 'theory', confidence: 0.85, level: 2, content: 'Kanban看板方法: 可视化工作流→限制WIP→管理流动→持续改进。AI适配: AI自动优化WIP限额、检测瓶颈、预测交付日期。WIP限额从"经验法则"变为"数据驱动的动态调整"。' },
+  { domain: 'action', type: 'rule', confidence: 0.9, level: 2, content: '项目管理铁三角: 范围/时间/成本三者互相制约。AI时代新增第四个维度: 质量/AI介入度。AI介入度高→可同时优化三者(AI自动处理重复性任务释放人类时间)。诊断延期时先判断: 哪些任务可以交给AI加速?' },
+  { domain: 'action', type: 'threshold', confidence: 0.85, level: 2, content: '项目健康度: SPI>0.9为正常,CV<10%,风险关闭率>80%。AI时代新指标: AI辅助决策采纳率>60%、自动化任务占比>30%、人机协作效率比(有AI vs 无AI的任务完成时间)<0.7。' },
+  { domain: 'action', type: 'theory', confidence: 0.8, level: 2, content: '风险管理五步法: 识别→评估→应对→监控→沟通。AI适配: AI可7×24扫描代码库/运维数据/市场新闻自动识别风险,人类聚焦于低概率高影响的"黑天鹅"风险,常规风险交给AI预警。' },
+  { domain: 'action', type: 'rule', confidence: 0.85, level: 2, content: '沟通管理: 向上→说结果和需要的支持。平级→说协调点和资源冲突。向下→说目标和边界。AI时代新通道: AI→AI(Agent间自动协商资源),AI→人(自动生成状态报告和预警),人→AI(用自然语言设定目标和约束)。' },
+  { domain: 'action', type: 'theory', confidence: 0.8, level: 2, content: 'PDCA持续改进: Plan→Do→Check→Act。AI适配: 改为P→D(人+AI协作)→C(AI自动对比分析)→A(人确认,AI执行标准化)。AI加速了循环频率,从月级降为日级甚至实时。' },
+  { domain: 'action', type: 'benchmark', confidence: 0.75, level: 2, content: '会议效率基准: 决策会≤8人,准时率>90%,纪要24h内。AI时代: AI自动生成会议纪要和行动项,人工只需review。AI可参与信息同步会(自动回答进度问题),人类只参加需要判断的决策会。' },
+  { domain: 'action', type: 'best_practice', confidence: 0.7, level: 1, content: '小团队项目管理: 用看板工具可视化任务,每周优先级评审。AI增强: AI自动从聊天记录中提取行动项并创建任务卡,自动提醒DDL,分析历史数据建议更合理的估时。' },
+  { domain: 'action', type: 'theory', confidence: 0.8, level: 2, content: '精益六西格玛DMAIC: Define→Measure→Analyze→Improve→Control。AI适配: AI承担Measure(自动收集数据)和Analyze(自动找根因),人类负责Define(定义什么值得改善)和Improve(创造性方案)。' },
+  { domain: 'action', type: 'rule', confidence: 0.85, level: 2, content: 'RICE优先级排序: Reach×Impact×Confidence÷Effort。AI适配: AI自动计算各项得分(从项目历史数据中学习),生成排序建议。人类只确认最终排序,不需要手动估算。关键: AI建议≠最终决定,人类保留否决权。' },
+  // 执行 AI 原生知识
+  { domain: 'action', type: 'theory', confidence: 0.75, level: 3, content: '人机混合团队的执行模式: Level 1 传统(人做所有事)→Level 2 辅助(AI做信息收集和报告)→Level 3 协作(AI和人类共同决策)→Level 4 自主(AI独立管理常规任务,人类只处理异常)。诊断时先判断当前团队处于哪个Level,再给出升级建议。升级不是替换人,是让人做更高价值的事。' },
+  { domain: 'action', type: 'rule', confidence: 0.8, level: 2, content: 'AI时代会议规则: 1.信息同步类会议由AI Agent常态化进行(异步,不占人类时间) 2.决策会议前AI必须生成数据和方案对比,人类只做判断 3.“这个会议能不能由AI代替?”成为每个会议的准入门槛。目标是人类会议时间从30%降至15%。' },
 ];
 
 /**
