@@ -12,6 +12,7 @@ export default defineConfig({
       { find: '@synova/connector-registry', replacement: path.join(packagesRoot, 'connector-registry/src/index.ts') },
       { find: '@synova/extension-registry', replacement: path.join(packagesRoot, 'extension-registry/src/index.ts') },
       { find: '@synova/knowledge-ingest', replacement: path.join(packagesRoot, 'knowledge-ingest/src/index.ts') },
+      { find: '@synova/engine-auth', replacement: path.join(packagesRoot, 'engine-auth/src/index.ts') },
       { find: '@synova/diagnosis-engine', replacement: path.join(packagesRoot, 'diagnosis-engine/src/index.ts') },
       // engine-core: map src/ subpath imports to dist/ (TS source → compiled JS)
       { find: '@synova/engine-core/src', replacement: path.resolve(__dirname, '../server/vendor/@synova/engine-core/dist') },

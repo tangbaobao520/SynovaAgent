@@ -33,6 +33,8 @@ export enum SOGNodeType {
   CAPABILITY = 'Capability',
   RISK = 'Risk',
   COMPLIANCE = 'Compliance',
+	USER = 'User',            // Auth M1: 系统用户
+	KNOWLEDGE_CHUNK = 'KnowledgeChunk', // Auth M1: 知识片段
 }
 
 export enum SOGEdgeType {
@@ -46,6 +48,7 @@ export enum SOGEdgeType {
   CONSUMES = 'CONSUMES',
   ALIGNS_WITH = 'ALIGNS_WITH',
   PROVIDES = 'PROVIDES',
+	HAS_ACCESS_TO = 'HAS_ACCESS_TO', // Auth M1: 用户→资源访问权限
 }
 
 // ═══════════════════════════════════════════════════════════════════

@@ -42,6 +42,7 @@
   "dependencies": {
     "@synova/connector-registry": "file:../packages/connector-registry",
     "@synova/diagnosis-engine": "file:../packages/diagnosis-engine",
+    "@synova/engine-auth": "file:../packages/engine-auth",
     "@synova/engine-core": "file:../server/vendor/@synova/engine-core",
     "@synova/error-types": "file:../packages/error-types",
     "@synova/extension-registry": "file:../packages/extension-registry",

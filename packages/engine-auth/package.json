@@ -1,0 +1,17 @@
+{
+  "name": "@synova/engine-auth",
+  "version": "0.1.0",
+  "description": "Synova 权限管理 — RBAC + ABAC + 用户身份缓存 + 数据访问过滤",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./src/index.ts"
+    }
+  },
+  "files": ["src/", "README.md"],
+  "license": "UNLICENSED",
+  "private": true
+}
