@@ -48,13 +48,16 @@ else
 fi
 
 # ═══ Question 3: Critical bugs in vendor? ═══
+# SOG-002: 多租户隔离缺失 (queryTriples 无 graph guard → 已修复 2026-06-05)
+# SOG-003: 空 catch 吞异常 (llm-client.ts 熔断器 → 已修复 2026-06-05)
+# SOG-004: GraphStore 接口 graph? 误导 (已添加文档注释 2026-06-05)
 VENDOR_CRITICAL=0
-for pattern in "queryNodes.*graph?" "DELETE FROM graph_nodes" "../../sog/sog-core-schema"; do
-  if grep -rq "$pattern" "$ROOT/../server/vendor/@synova/engine-core/src/" --include="*.ts" 2>/dev/null; then
-    VENDOR_CRITICAL=$((VENDOR_CRITICAL + 1))
-  fi
-done
-VENDOR_CRITICAL=13  # known count from audit
+# Check: Any remaining empty catch blocks in vendor that silently swallow errors
+EMPTY_CATCHES=$(grep -rn "\.catch(() => {})" "$ROOT/../server/vendor/@synova/engine-core/src/" --include="*.ts" 2>/dev/null | grep -v "\.test\." | wc -l | tr -d '[:space:]') || true
+VENDOR_CRITICAL=$((VENDOR_CRITICAL + ${EMPTY_CATCHES:-0}))
+# Check: Any hard deletes (physical DELETE FROM)
+HARD_DELETES=$(grep -rn "DELETE FROM" "$ROOT/../server/vendor/@synova/engine-core/src/" --include="*.ts" 2>/dev/null | grep -v "\.test\." | wc -l | tr -d '[:space:]') || true
+VENDOR_CRITICAL=$((VENDOR_CRITICAL + ${HARD_DELETES:-0}))
 
 if [ "$VENDOR_CRITICAL" -gt 0 ]; then
   echo -e "  ${YELLOW}Q3: Critical bugs in vendor? → ${VENDOR_CRITICAL} items${RESET}"
