@@ -1,0 +1,25 @@
+{
+  "name": "@synova/agent-observer-mcp",
+  "version": "1.0.0",
+  "description": "MCP Server for Synova Agent Observer — auto-reports tool calls from 10+ AI agent frameworks to Synova SOG graph",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./src/index.ts"
+    }
+  },
+  "files": ["src/", "README.md"],
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "keywords": ["mcp", "synova", "agent-observer", "monitoring"],
+  "license": "UNLICENSED",
+  "private": true
+}

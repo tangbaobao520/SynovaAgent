@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "agent_end": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${SKILL_ROOT}/report.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
