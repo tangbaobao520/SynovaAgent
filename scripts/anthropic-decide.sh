@@ -83,12 +83,24 @@ else
 fi
 
 # ═══ Question 5: Silent failures? ═══
-EMPTY_CATCH=$(grep -rn "catch\s*{" "$ROOT/src/" --include="*.ts" 2>/dev/null \
-  | grep -v "log\." | grep -v "node_modules" | grep -v "\.test\." \
-  | grep -v "/\*\|//" | grep -v "JSON.parse\|ENOENT\|_reading\|\.destroy\|\.end\|\.detach" \
-  | grep -v "return '0\|keep original\|setRawMode" \
-  | wc -l | tr -d '[:space:]')
-EMPTY_CATCH="${EMPTY_CATCH:-0}"
+# 检查 catch 块是否包含日志 (log./logger./console.) — 支持多行 catch 块 (检查后续 2 行)
+RAW_CATCHES=$(grep -rn "catch\s*{" "$ROOT/src/" --include="*.ts" 2>/dev/null \
+  | grep -v "node_modules" | grep -v "\.test\." || true)
+EMPTY_CATCH=0
+if [ -n "$RAW_CATCHES" ]; then
+  while IFS= read -r line; do
+    FILE=$(echo "$line" | cut -d: -f1)
+    LINE_NUM=$(echo "$line" | cut -d: -f2)
+    CONTEXT=$(sed -n "${LINE_NUM},$((LINE_NUM + 2))p" "$FILE" 2>/dev/null || echo "")
+    # 检查本行+后续 2 行是否包含 log./logger./console.
+    if ! echo "$CONTEXT" | grep -q "log\.\|logger\.\|console\."; then
+      # 排除已知的合法静默模式 (SSE 流、TUI 清理、资源释放)
+      if ! echo "$CONTEXT" | grep -q "JSON.parse\|ENOENT\|_reading\|\.destroy\|\.end\|\.detach\|setRawMode\|best-effort\|already closed\|keep original\|benign\|intentional\|fall through\|skip non-JSON\|binary file\|not JSON\|SSE.*chunk"; then
+        EMPTY_CATCH=$((EMPTY_CATCH + 1))
+      fi
+    fi
+  done <<< "$RAW_CATCHES"
+fi
 
 if [ "${EMPTY_CATCH:-0}" -gt 0 ] 2>/dev/null; then
   echo -e "  ${YELLOW}Q5: Silent failures? → ${EMPTY_CATCH} empty catches${RESET}"
