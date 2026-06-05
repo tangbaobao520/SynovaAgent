@@ -61,6 +61,13 @@ const SEEDS: SeedEntry[] = [
   { domain: 'finance', type: 'regulation', confidence: 0.85, level: 2, content: '资产减值(CAS 8 / IAS 36): 资产账面价值超过可收回金额时需计提减值。商誉至少每年减值测试一次,不得转回。存货按成本与可变现净值孰低计量。' },
   { domain: 'finance', type: 'rule', confidence: 0.9, level: 2, content: '收入确认红线: 无合同不确认收入、未交付不确认收入、退货率不确定不确认全额。预收款在资产负债表中为负债,交付后才转为收入。违反此原则→收入虚增→误导决策。' },
   { domain: 'finance', type: 'best_practice', confidence: 0.8, level: 2, content: '诊断财务数据前先确认会计准则基础。CAS vs IFRS vs US GAAP 在收入确认、租赁、资产减值上差异显著。跨国企业合并报表需统一准则基础后再分析。' },
+  // 税法与税务
+  { domain: 'finance', type: 'regulation', confidence: 0.95, level: 2, content: '企业所得税法: 法定税率 25%。高新技术企业 15%, 小微企业年应纳税所得额≤300万部分按 5% 征收。研发费用加计扣除 100%。亏损可结转 5 年(高新技术企业 10 年)。' },
+  { domain: 'finance', type: 'regulation', confidence: 0.9, level: 2, content: '增值税暂行条例: 一般纳税人税率 13%/9%/6% 三档, 小规模纳税人征收率 3%(现行优惠 1%)。月销售额≤10万(季度≤30万)免征增值税。一般纳税人进项税额可抵扣,小规模纳税人不可抵扣。' },
+  { domain: 'finance', type: 'regulation', confidence: 0.85, level: 3, content: '个人所得税法: 综合所得七级超额累进税率 3%-45%。经营所得五级超额累进税率 5%-35%。股息红利/财产转让 20%。专项附加扣除(子女/房贷/租房/赡养/继续教育/大病)每人最高可减除十几万应税所得。' },
+  { domain: 'finance', type: 'rule', confidence: 0.9, level: 2, content: '税务合规红线: 虚开发票→刑事责任。账外收入(私户收款)不申报→补税+滞纳金(日万分之五)+罚款(0.5-5倍)。关联交易定价不合理→税务机关有权核定调整。' },
+  { domain: 'finance', type: 'benchmark', confidence: 0.85, level: 2, content: '企业税负健康度: 综合税负率(实缴/营收) 3-8% 为正常区间。增值税税负率(应缴/营收) 2-5% 为正常。税负率异常偏低(远低于行业均值)→税务稽查风险。' },
+  { domain: 'finance', type: 'rule', confidence: 0.8, level: 2, content: '发票管理: 增值税专用发票认证期限 360 天。跨年度未认证→进项税额不得抵扣→成本虚增。每月进行发票进销项差异分析,差异 > 5% → 需要解释原因。' },
   { domain: 'finance', type: 'benchmark', confidence: 0.75, level: 1, content: '小微企业: 月营收 < 50万时应控制固定成本 < 营收的 40%。现金流覆盖 > 3 个月为底线安全线。' },
 
   // ═══ 技术 (15 条) ═══
