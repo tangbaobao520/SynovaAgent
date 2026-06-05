@@ -207,7 +207,7 @@ export function createKnowledgeAgent(config: KnowledgeAgentConfig = {}): Knowled
               });
               extracted++;
             }
-          } catch { /* state parse failed — skip */ }
+          } catch { log.debug('Gear6: 会话状态解析失败 — 跳过'); }
         }
 
         // 2. 扫描长文档 (knowledge_chunks 中的原始文本)
