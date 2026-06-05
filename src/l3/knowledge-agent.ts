@@ -130,6 +130,54 @@ export function createKnowledgeAgent(config: KnowledgeAgentConfig = {}): Knowled
         },
       });
 
+      // ── add_pkb_entry (团队知识沉淀) ──
+      registry.register({
+        name: 'add_pkb_entry',
+        description: `添加一条知识到全局/团队专业知识库(PKB)。诊断过程中发现的行业规律、团队经验、最佳实践都可以沉淀下来。后续诊断会自动检索到这些知识。`,
+        parameters: {
+          type: 'object',
+          properties: {
+            domain: { type: 'string', description: '专业领域: strategy/org/finance/tech/marketing/action' },
+            type: { type: 'string', description: '知识类型: theory/benchmark/rule/threshold/template/case_study/best_practice' },
+            content: { type: 'string', description: '知识内容 (必填)' },
+            confidence: { type: 'number', description: '置信度 0-1 (默认 0.7)' },
+            level: { type: 'number', description: '知识层级 1=基础 2=专业 3=深度 (默认 2)' },
+            owner: { type: 'string', description: '归属: global=全局共享, team:xxx=某团队专属 (默认 global)' },
+          },
+          required: ['domain', 'type', 'content'],
+        },
+        operationType: 'write',
+        sideEffects: 'mutating',
+        handler: async (params: Record<string, unknown>) => {
+          const store = new KnowledgeStore(getDatabase());
+          const owner = (params.owner as string) || 'global';
+          const accessLevel = owner === 'global' ? 'public' : 'team';
+          const accessTeamId = owner.startsWith('team:') ? owner.slice(5) : undefined;
+
+          const id = store.insert({
+            text: String(params.content || ''),
+            sourceType: 'external',
+            sourceId: `pkb-user:${params.domain}`,
+            authorityLevel: 'reference',
+            accessLevel: accessLevel as 'public' | 'team',
+            accessTeamId,
+            accessSensitivity: 'normal',
+          });
+          store.update(id, {
+            pkb_domain: String(params.domain || ''),
+            pkb_type: String(params.type || 'theory'),
+            pkb_confidence: Number(params.confidence || 0.7),
+            pkb_status: 'active',
+            pkb_source: 'user_contribution',
+            pkb_version: '1.0',
+            knowledge_level: Number(params.level || 2),
+          });
+
+          log.info({ id, domain: params.domain, type: params.type, owner }, 'PKB 条目已添加');
+          return { ok: true, id, domain: params.domain, type: params.type, owner };
+        },
+      });
+
       // ── fetch_source ──
       registry.register({
         name: 'fetch_source',

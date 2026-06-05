@@ -366,7 +366,14 @@ app.use(credentialRoutes);  // POST /api/credentials/:provider | GET /api/creden
       const { startGear6Scheduler } = await import('./l3/gear6-scheduler');
       startGear6Scheduler();
       logger.info('齿轮6 知识提取调度已启动 (每6h)');
-    } catch (err: any) { logger.warn({ err }, '齿轮6 启动失败 — degraded'); }
+
+    // PKB: 种子知识 + 生命周期
+    try {
+      const { seedPKB } = await import('./l3/pkb-seed');
+      const { inserted } = seedPKB();
+      if (inserted > 0) logger.info({ inserted }, 'PKB 种子知识已初始化');
+    } catch (err: any) { logger.warn({ err }, 'PKB 种子初始化失败 — degraded'); }
+  } catch (err: any) { logger.warn({ err }, '齿轮6 启动失败 — degraded'); }
 
     // M2: KnowledgeAgent — 第7个专家 (注册工具到专家共享 ToolRegistry)
     try {

@@ -287,6 +287,63 @@ export class KnowledgeStore {
     return { total, byDomain, averageConfidence: Math.round(avgConf * 100) / 100 };
   }
 
+  /** 置信度衰减 (Slice 3) — 每周衰减因子 */
+  decayConfidence(factor = 0.95): number {
+    const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+    const result = this.db.prepare(`
+      UPDATE knowledge_chunks
+      SET pkb_confidence = MAX(0, ROUND(pkb_confidence * ?, 4)),
+          pkb_status = CASE WHEN pkb_confidence * ? < 0.5 THEN 'deprecated' ELSE pkb_status END,
+          updated_at = ?
+      WHERE pkb_domain IS NOT NULL AND pkb_status = 'active' AND updated_at < ?
+    `).run(factor, factor, new Date().toISOString(), weekAgo);
+    return result.changes;
+  }
+
+  /** 过期检测 (Slice 3) */
+  expireOutdated(): number {
+    const now = new Date().toISOString();
+    const result = this.db.prepare(`
+      UPDATE knowledge_chunks SET pkb_status = 'expired', updated_at = ?
+      WHERE pkb_domain IS NOT NULL AND pkb_status = 'active' AND pkb_expires_at IS NOT NULL AND pkb_expires_at < ?
+    `).run(now, now);
+    return result.changes;
+  }
+
+  /** 诊断反馈表 (Slice 4) */
+  initFeedbackSchema(): void {
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS diagnosis_feedback (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        consult_id TEXT NOT NULL,
+        knowledge_entry_id TEXT NOT NULL,
+        expert_type TEXT NOT NULL,
+        result TEXT NOT NULL CHECK(result IN ('confirmed','rejected','contradicted')),
+        confidence REAL,
+        user_feedback TEXT,
+        contradicting_expert TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        processed INTEGER DEFAULT 0
+      );
+      CREATE INDEX IF NOT EXISTS idx_fb_entry ON diagnosis_feedback(knowledge_entry_id);
+      CREATE INDEX IF NOT EXISTS idx_fb_processed ON diagnosis_feedback(processed);
+    `);
+  }
+
+  /** 记录诊断反馈 */
+  recordFeedback(entry: {
+    consultId: string; knowledgeEntryId: string; expertType: string;
+    result: 'confirmed' | 'rejected' | 'contradicted';
+    confidence?: number; userFeedback?: string; contradictingExpert?: string;
+  }): void {
+    this.initFeedbackSchema();
+    this.db.prepare(`
+      INSERT INTO diagnosis_feedback (consult_id, knowledge_entry_id, expert_type, result, confidence, user_feedback, contradicting_expert)
+      VALUES (?,?,?,?,?,?,?)
+    `).run(entry.consultId, entry.knowledgeEntryId, entry.expertType,
+      entry.result, entry.confidence ?? null, entry.userFeedback ?? null, entry.contradictingExpert ?? null);
+  }
+
   /** Row → KnowledgeChunk 映射复用 */
   private rowToChunk(r: Record<string, unknown>): KnowledgeChunk {
     return {
