@@ -127,6 +127,13 @@ const SEEDS: SeedEntry[] = [
   { domain: 'marketing', type: 'rule', confidence: 0.85, level: 2, content: '定价策略检查清单: 1.成本加成(确保不低于成本) 2.竞争对标(与竞品的价差是否合理) 3.价值定价(客户愿意付多少钱) 4.价格弹性(提价5%会流失多少客户)。最优价格不是最低价,是客户感知价值与竞品的平衡点。' },
   { domain: 'marketing', type: 'benchmark', confidence: 0.75, level: 2, content: '各行业营销费用占营收比: SaaS 40-60%(早期)/20-30%(成熟),消费品 10-20%,制造业 3-8%,服务业 5-10%。营销ROI>3为良好,>5为优秀。' },
   { domain: 'marketing', type: 'best_practice', confidence: 0.7, level: 1, content: '小企业营销起步: 1.建立品牌一句话介绍 2.先做一个免费获客渠道(SEO/内容/社交媒体) 3.客户推荐奖励机制 4.每季度测一个新渠道,保留>2倍ROI的。' },
+  // 营销补充 —《赢取竞争的100+N工具箱》
+  { domain: 'marketing', type: 'theory', confidence: 0.85, level: 2, content: 'CRM客户关系管理: 识别(谁是高价值客户)→区分(按LTV分层)→互动(个性化沟通)→定制(针对高价值客户定制服务)。核心指标: 客户生命周期价值(LTV)、获客成本(CAC)、流失率、复购率。' },
+  { domain: 'marketing', type: 'theory', confidence: 0.8, level: 2, content: '内容营销漏斗: 认知阶段(博客/白皮书/视频)→考虑阶段(案例研究/产品对比/Demo)→决策阶段(试用/优惠/客户推荐)。每个阶段需要不同的内容类型。B2B平均需要接触13次才能转化。' },
+  { domain: 'marketing', type: 'theory', confidence: 0.8, level: 2, content: '渠道冲突管理: 直销vs代理vs电商三渠道并存时,必须明确: 1.价格体系统一(渠道间价差<10%) 2.客户归属规则(谁先接触归谁) 3.渠道激励差异化(不同渠道不同KPI)。渠道冲突是增长的最大隐性成本。' },
+  { domain: 'marketing', type: 'benchmark', confidence: 0.75, level: 2, content: '数字营销效率基准: 搜索引擎广告ROAS>3为合格,>5为优秀。社媒CPM 20-80元。邮件营销打开率>20%,点击率>3%。SEO自然流量占比>40%为健康。' },
+  { domain: 'marketing', type: 'rule', confidence: 0.85, level: 2, content: '品牌一致性检查: 1.所有触点的视觉和文案风格是否统一 2.客户在各渠道的体验是否一致 3.员工是否能用一句话说清品牌定位。不一致→品牌资产稀释,消费者混淆。' },
+  { domain: 'marketing', type: 'best_practice', confidence: 0.7, level: 1, content: '产品卖点提炼: 不要列功能,要讲利益。用"因为(功能),所以你能(利益)"句式。最多3个核心卖点,超过3个等于没有。每个卖点用客户的语言,不用行业术语。' },
 
   // ═══ 运营/供应链 (15 条) ═══
   { domain: 'strategy', type: 'theory', confidence: 0.9, level: 2, content: '精益生产(Lean): 核心理念——消除一切不创造价值的浪费。七大浪费: 过量生产、等待、搬运、过度加工、库存、多余动作、缺陷。通过价值流图(VSM)识别浪费,持续改善(Kaizen)。' },
@@ -149,6 +156,19 @@ const SEEDS: SeedEntry[] = [
   { domain: 'action', type: 'threshold', confidence: 0.8, level: 2, content: '交付延期: 项目里程碑延期率 > 30% → 计划能力不足或资源瓶颈。单个任务阻塞 > 5 个工作日 → 需要 escalate。' },
   { domain: 'action', type: 'best_practice', confidence: 0.7, level: 1, content: '小团队: 每日站会 ≤ 15 分钟。周计划聚焦 3-5 件最重要的事。月度回顾总结进展和调整方向。' },
   { domain: 'action', type: 'theory', confidence: 0.8, level: 3, content: '变革管理(Kotter 8步): 紧迫感→领导联盟→愿景→沟通→赋能→短期胜利→固化→文化制度化。大型组织变革的经典框架。' },
+  // 执行补充 —《赢取竞争的100+N工具箱》
+  { domain: 'action', type: 'theory', confidence: 0.9, level: 2, content: 'PMBOK项目管理十大知识领域: 整合/范围/时间/成本/质量/人力资源/沟通/风险/采购/干系人管理。诊断项目失败时,从这10个维度逐一排查。' },
+  { domain: 'action', type: 'theory', confidence: 0.85, level: 2, content: 'SCRUM敏捷框架: 3个角色(Product Owner/Scrum Master/Dev Team)、5个事件(Sprint/Planning/Daily/Review/Retrospective)、3个产物(Product Backlog/Sprint Backlog/Increment)。适合需求变化快的创新项目。' },
+  { domain: 'action', type: 'theory', confidence: 0.85, level: 2, content: 'Kanban看板方法: 可视化工作流→限制WIP(在制品)→管理流动→明确流程策略→持续改进。与Scrum的区别: Kanban不固定迭代周期,适合运维型/持续交付型团队。' },
+  { domain: 'action', type: 'rule', confidence: 0.9, level: 2, content: '项目管理铁三角: 范围/时间/成本三者互相制约。加范围→必加工时或加成本。压时间→必砍范围或加成本。砍成本→必砍范围或延时间。诊断延期项目时先判断哪个维度被突破了。' },
+  { domain: 'action', type: 'threshold', confidence: 0.85, level: 2, content: '项目健康度: 计划完成率(SPI)>0.9为正常,<0.7为严重滞后。预算偏差(CV)<10%为正常。风险关闭率>80%。干系人满意度>70%。多项目并行时,任一指标连续两周恶化→立即复盘。' },
+  { domain: 'action', type: 'theory', confidence: 0.8, level: 2, content: '风险管理五步法: 识别(头脑风暴+检查清单)→评估(概率×影响矩阵)→应对(规避/转移/减轻/接受)→监控(风险登记册定期review)→沟通(向干系人报告风险状态)。' },
+  { domain: 'action', type: 'rule', confidence: 0.85, level: 2, content: '沟通管理: 向上管理→说结果和需要的支持,不说细节。平级协作→说协调点和资源冲突。向下管理→说目标和边界。对外→说进度和风险。信息不对称是执行力最大的敌人。' },
+  { domain: 'action', type: 'theory', confidence: 0.8, level: 2, content: 'PDCA持续改进循环: Plan(分析现状→设定目标→制定方案)→Do(小范围试点→收集数据)→Check(对比目标→分析偏差)→Act(成功则标准化推广,失败则重新计划)。适用于任何需要持续优化的流程。' },
+  { domain: 'action', type: 'benchmark', confidence: 0.75, level: 2, content: '会议效率基准: 决策会≤8人,信息同步会≤30人。会议准时开始率>90%。有明确议程和会前阅读材料。会议纪要24h内发出。人均会议时间<总工时30%。' },
+  { domain: 'action', type: 'best_practice', confidence: 0.7, level: 1, content: '小团队项目管理: 用看板工具(Trello/飞书多维表格)可视化任务。每周一次优先级评审,砍掉不再重要的任务。每个任务明确负责人和DDL。避免"多人负责=没人负责"。' },
+  { domain: 'action', type: 'theory', confidence: 0.8, level: 2, content: '精益六西格玛DMAIC执行: Define(定义问题和目标)→Measure(测量当前基线)→Analyze(找到根本原因)→Improve(实施改进)→Control(建立控制计划防止回退)。适用于制造/服务流程的深度优化。' },
+  { domain: 'action', type: 'rule', confidence: 0.85, level: 2, content: '优先级排序RICE模型: Reach(影响多少人)×Impact(对目标的影响1-3分)×Confidence(把握程度20-100%)÷Effort(所需人周)。得分高的先做。防止"老板说的重要"取代"数据说的重要"。' },
 ];
 
 /**
