@@ -97,8 +97,7 @@ router.get('/api/im/health', async (_req: Request, res: Response) => {
       activeChannel: active?.platform || null,
       registeredChannels: imReg.list().map((c: { platform: string }) => c.platform),
     });
-  } catch {
-    res.json({ ok: true, activeChannel: null, registeredChannels: [] });
+  } catch { log.debug('IM 健康检查 — 无活跃通道'); res.json({ ok: true, activeChannel: null, registeredChannels: [] });
   }
 });
 

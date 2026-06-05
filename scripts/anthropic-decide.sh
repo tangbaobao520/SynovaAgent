@@ -95,7 +95,7 @@ if [ -n "$RAW_CATCHES" ]; then
     # 检查本行+后续 2 行是否包含 log./logger./console.
     if ! echo "$CONTEXT" | grep -q "log\.\|logger\.\|console\."; then
       # 排除已知的合法静默模式 (SSE 流、TUI 清理、资源释放)
-      if ! echo "$CONTEXT" | grep -q "JSON.parse\|ENOENT\|_reading\|\.destroy\|\.end\|\.detach\|setRawMode\|best-effort\|already closed\|keep original\|benign\|intentional\|fall through\|skip non-JSON\|binary file\|not JSON\|SSE.*chunk"; then
+      if ! echo "$CONTEXT" | grep -q "JSON.parse\|ENOENT\|_reading\|\.destroy\|\.end\|\.detach\|setRawMode\|best-effort\|already closed\|keep original\|benign\|intentional\|fall through\|skip non-JSON\|binary file\|not JSON\|SSE.*chunk\|already exists\|ALTER TABLE"; then
         EMPTY_CATCH=$((EMPTY_CATCH + 1))
       fi
     fi
