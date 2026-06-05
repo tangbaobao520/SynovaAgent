@@ -106,6 +106,56 @@ npm run check:iron-laws   # 铁律门禁 (6 硬阻断)
 npm run check:architecture # 架构边界检查
 npm run check:all         # pre-push 全部门禁 (tsc + vitest + iron-laws)
 npm run hooks:install     # 安装 Git hooks
+npm run workflow:start    # 任务启动检查点 (开始写代码前)
+npm run workflow:impl     # 实现完成检查点 (声称完成前)
+npm run workflow:design   # 设计对齐检查点 (写代码前)
+npm run workflow:deploy   # 部署后验证
+```
+
+---
+
+## ⚡ Anthropic 工程工作流 (7 节点自动触发)
+
+> 详细设计: `docs/workflow/ANTHROPIC-WORKFLOW.md`
+
+### 触发机制
+
+```
+① 任务开始 → AI 自律 (CLAUDE.md 指令)
+② 设计完成 → 人工触发
+③ 实现完成 → AI 自律 (CLAUDE.md 指令) ← 最关键
+④ 提交前   → Git Hook (.git/hooks/pre-commit)
+⑤ 推送前   → Git Hook (.git/hooks/pre-push)
+⑥ 部署后   → 人工触发
+⑦ 线上     → Cron
+```
+
+### AI 自律指令 (每次启动自动执行)
+
+```
+⚠️ 每次接受新任务时，必须先执行:
+   bash scripts/workflow/task-start.sh "任务描述"
+   → 生成 Task Brief → 确认用户旅程 → 确认 Done 标准 → 才能写代码
+
+⚠️ 声称"完成"之前，必须执行:
+   bash scripts/workflow/checkpoint-impl.sh <新函数名>
+   → 接线审计 → 测试全绿 → tsc 零错误 → 铁律门禁 → 才能 commit
+
+⚠️ 每次 git push 成功后，必须提醒:
+   "部署已完成。请运行: bash scripts/workflow/checkpoint-deploy.sh [服务器URL]"
+```
+
+### 人工触发命令
+
+```bash
+# 节点 ②: 设计文档写完后
+bash scripts/workflow/checkpoint-design.sh docs/research/my-feature.html
+
+# 节点 ⑥: 部署到服务器后
+bash scripts/workflow/checkpoint-deploy.sh https://your-server.com
+
+# 节点 ⑦: 设置定时监控
+crontab -e  # 添加: */30 * * * * bash /path/to/scripts/workflow/checkpoint-runtime.sh
 ```
 
 ---
@@ -123,6 +173,9 @@ npm run hooks:install     # 安装 Git hooks
 ## 执行原则
 
 - **先读再改** — 不假设代码内容
+- **任务启动先跑 workflow** — `bash scripts/workflow/task-start.sh "任务"`
 - **每批验证** — `npx vitest run` 全绿 + `npm run check:iron-laws` 通过
+- **接线审计是硬门禁** — `bash scripts/workflow/wire-check.sh <函数名>` 零结果=未完成
 - **逐项 commit** — 单模块独立提交，不批量
 - **改完列清单** — 文件 + 行号 + 为什么改
+- **部署后验证** — `bash scripts/workflow/checkpoint-deploy.sh` curl 外部 URL
