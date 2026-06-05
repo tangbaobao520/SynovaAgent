@@ -357,6 +357,18 @@ function formatSource(sourceType: string, authorityLevel: string): string {
   return `${typeMap[sourceType] || sourceType} · ${levelMap[authorityLevel] || authorityLevel}`;
 }
 
+/** 自动检测文本领域 (用于 Gear6 自动分类) */
+function detectDomain(text: string): string | null {
+  const lower = text.toLowerCase();
+  if (/财务|成本|利润|收入|税务|发票|报表|现金流|资产|负债|预算/.test(lower)) return 'finance';
+  if (/组织|团队|管理|文化|招聘|绩效|薪酬|劳动|合同|社保/.test(lower)) return 'org';
+  if (/战略|目标|方向|竞争|市场|增长|扩张/.test(lower)) return 'strategy';
+  if (/营销|客户|销售|品牌|广告|获客|转化|渠道/.test(lower)) return 'marketing';
+  if (/技术|系统|工具|软件|开发|自动化|代码|架构/.test(lower)) return 'tech';
+  if (/执行|项目|任务|进度|计划|交付|流程|OKR|KPI/.test(lower)) return 'action';
+  return null;
+}
+
 function splitText(text: string, maxLen: number): string[] {
   const parts: string[] = [];
   let i = 0;
