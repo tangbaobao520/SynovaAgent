@@ -34,6 +34,7 @@ import expertRoutes from './routes/expert';
 import agentObserverRoutes from './routes/agent-observer';
 import imRoutes from './routes/im';
 import knowledgeRoutes from './routes/knowledge';
+import credentialRoutes from './routes/credentials';
 import type { ServiceContainer } from './services/container';
 
 export async function createServer(): Promise<Server> {
@@ -239,6 +240,7 @@ export async function createServer(): Promise<Server> {
 app.use(agentObserverRoutes); // POST /api/agent-observer/report
 app.use(imRoutes);          // POST /api/im/feishu/webhook | GET /api/im/health
 app.use(knowledgeRoutes);   // POST /api/knowledge/search | POST /api/knowledge/ingest
+app.use(credentialRoutes);  // POST /api/credentials/:provider | GET /api/credentials
 
   // ═══ A2: Connector Pipeline — 手动触发 + 定时同步 ═══
   app.post('/api/connector/sync', async (req, res) => {
