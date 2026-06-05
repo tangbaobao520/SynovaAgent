@@ -31,6 +31,7 @@ import sessionsRoutes from './routes/sessions';
 import metricsRoutes from './monitoring/routes';
 import reviewRoutes from './routes/review';
 import expertRoutes from './routes/expert';
+import agentObserverRoutes from './routes/agent-observer';
 
 export async function createServer(): Promise<Server> {
   const config = loadConfig();
@@ -211,6 +212,7 @@ export async function createServer(): Promise<Server> {
   app.use(metricsRoutes);
   app.use(reviewRoutes);
   app.use(expertRoutes);        // POST/GET /api/expert
+app.use(agentObserverRoutes); // POST /api/agent-observer/report
 
   // ═══ A2: Connector Pipeline — 手动触发 + 定时同步 ═══
   app.post('/api/connector/sync', async (req, res) => {

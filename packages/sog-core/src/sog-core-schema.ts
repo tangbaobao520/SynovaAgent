@@ -66,6 +66,12 @@ export interface AgentProps {
   name: string;
   agentType: 'internal' | 'external';
   model?: string;
+  // AgentObserver v1.1 扩展 (optional, 向后兼容)
+  platform?: string;
+  lastSeen?: string;
+  status?: 'active' | 'idle' | 'error' | 'offline';
+  activityCount?: number;
+  lastToolName?: string;
 }
 
 export interface ToolProps {
