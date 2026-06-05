@@ -1,0 +1,36 @@
+{
+  "name": "@synova/test-kit",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Synova 全维度测试套件 — 架构审计 + 接线验证 + 安全测试 + E2E 旅程 + 跨语言集成",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "test": "vitest run",
+    "test:architecture": "vitest run tests/architecture/",
+    "test:wire": "vitest run tests/wire/",
+    "test:security": "vitest run tests/security/",
+    "test:unit": "vitest run tests/unit/",
+    "test:e2e": "vitest run tests/e2e/",
+    "test:python": "vitest run tests/python-bridge/",
+    "test:observer": "vitest run tests/observer-adapters/",
+    "test:all": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@synova/sog-core": "file:../sog-core",
+    "@synova/logger": "file:../logger",
+    "@synova/error-types": "file:../error-types",
+    "@synova/diagnosis-engine": "file:../diagnosis-engine",
+    "@synova/connector-registry": "file:../connector-registry",
+    "@synova/extension-registry": "file:../extension-registry",
+    "@synova/engine-auth": "file:../engine-auth"
+  },
+  "devDependencies": {
+    "vitest": "^4.0.0",
+    "typescript": "^5.6.0",
+    "better-sqlite3": "^11.0.0",
+    "@types/better-sqlite3": "^7.6.0"
+  }
+}
