@@ -1,0 +1,105 @@
+/**
+ * routes/im.ts — IM Webhook 路由 (M1-Slice2)
+ *
+ * POST /api/im/feishu/webhook — 飞书消息推送
+ * POST /api/im/wecom/webhook  — 企业微信消息推送
+ *
+ * 铁律 31: 降级模式 — 消息处理失败仍返回 200 (避免 IM 平台重试风暴)
+ */
+import { Router, type Request, type Response } from 'express';
+import { createLogger } from '../logger';
+import { handleInboundMessage } from '../l1/im-inbound';
+
+const log = createLogger('routes/im');
+const router = Router();
+
+// ═══ 飞书 Webhook ═══
+
+router.post('/api/im/feishu/webhook', async (req: Request, res: Response) => {
+  try {
+    const payload = req.body;
+    const challenge = payload?.challenge || payload?.header?.challenge;
+
+    // URL 验证 (飞书首次配置时发送)
+    if (challenge) {
+      log.info('飞书 Webhook URL 验证');
+      res.status(200).json({ challenge });
+      return;
+    }
+
+    // 提取消息内容
+    const event = payload?.event || payload;
+    const content = typeof event?.message?.content === 'string'
+      ? event.message.content
+      : typeof event?.message === 'string'
+        ? event.message
+        : event?.text || JSON.stringify(event?.message || {});
+    const senderId = event?.sender?.open_id || event?.sender_id || payload?.event?.sender?.open_id || 'unknown';
+
+    // 获取依赖
+    const { getDatabase } = await import('../init/engine-context');
+    const { SessionStore: SS } = await import('../store/session-store');
+    const store = new SS(getDatabase());
+
+    const container = req.app.locals.container || req.app.locals;
+    const piiScrubber = container.piiScrubber;
+    if (!piiScrubber) {
+      res.status(500).json({ ok: false, error: 'PIIScrubber not initialized' });
+      return;
+    }
+
+    const result = handleInboundMessage(store, piiScrubber, {
+      platform: 'feishu',
+      senderId,
+      content: String(content),
+      timestamp: new Date().toISOString(),
+      rawPayload: payload,
+    });
+
+    // 发送回复 (异步, fire-and-forget)
+    if (result.ok) {
+      try {
+        const { getIMRegistry } = await import('../l1/im-channel');
+        const imReg = getIMRegistry();
+        const active = imReg.getActive();
+        if (active) {
+          await active.sendMessage(senderId, {
+            text: `已收到 (会话 ${(result.sessionId || '').slice(-6)})`,
+          });
+        }
+      } catch (err: unknown) { log.warn({ err }, 'IM 回复发送失败'); }
+    }
+
+    // 始终返回 200 — 避免飞书重试风暴
+    res.status(200).json({ ok: true, sessionId: result.sessionId, degraded: result.degraded });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log.error({ err: msg }, 'IM Webhook 异常');
+    res.status(200).json({ ok: false, error: msg, degraded: true });
+  }
+});
+
+// ═══ 企业微信 (stub) ═══
+
+router.post('/api/im/wecom/webhook', async (_req: Request, res: Response) => {
+  res.status(200).json({ ok: true, note: '企业微信适配待实现' });
+});
+
+// ═══ 健康检查 ═══
+
+router.get('/api/im/health', async (_req: Request, res: Response) => {
+  try {
+    const { getIMRegistry } = await import('../l1/im-channel');
+    const imReg = getIMRegistry();
+    const active = imReg.getActive();
+    res.json({
+      ok: true,
+      activeChannel: active?.platform || null,
+      registeredChannels: imReg.list().map((c: { platform: string }) => c.platform),
+    });
+  } catch {
+    res.json({ ok: true, activeChannel: null, registeredChannels: [] });
+  }
+});
+
+export default router;

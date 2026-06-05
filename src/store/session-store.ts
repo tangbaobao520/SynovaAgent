@@ -68,11 +68,13 @@ export class SessionStore {
       CREATE TABLE IF NOT EXISTS agent_sessions (
         id TEXT PRIMARY KEY,
         org_id TEXT NOT NULL,
+        user_id TEXT,
         phase INTEGER DEFAULT 0,
         state_json TEXT,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
+      -- M1-Slice2: user_id migration for existing databases (idempotent via try-catch below)
 
       CREATE TABLE IF NOT EXISTS agent_messages (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -103,6 +105,9 @@ export class SessionStore {
       )`);
     } catch (err) { log.debug({ err }, '会话表已存在 — 跳过创建'); }
 
+    // M1-Slice2: 迁移旧数据库 (添加 user_id 列，幂等)
+    try { this.db.exec('ALTER TABLE agent_sessions ADD COLUMN user_id TEXT'); } catch { /* already exists */ }
+
     // FTS5 同步触发器 (幂等——触发器已存在时报错忽略)
     this.db.exec(`
       CREATE TRIGGER IF NOT EXISTS agent_msg_fts_insert AFTER INSERT ON agent_messages BEGIN
@@ -116,11 +121,11 @@ export class SessionStore {
 
   // ═══ Sessions ═══
 
-  createSession(orgId: string): SessionRow {
+  createSession(orgId: string, userId?: string): SessionRow {
     const id = `sess_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`; // nosec: nonce for session ID
     const now = new Date().toISOString();
-    this.db.prepare('INSERT INTO agent_sessions (id, org_id, phase, created_at, updated_at) VALUES (?,?,0,?,?)')
-      .run(id, orgId, now, now);
+    this.db.prepare('INSERT INTO agent_sessions (id, org_id, user_id, phase, created_at, updated_at) VALUES (?,?,?,0,?,?)')
+      .run(id, orgId, userId || null, now, now);
     return this.getSession(id)!;
   }
 
