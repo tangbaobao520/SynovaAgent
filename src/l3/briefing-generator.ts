@@ -138,7 +138,8 @@ export class BriefingGenerator {
 // ═══ Singleton ═══
 
 let _instance: BriefingGenerator | null = null;
-export function getBriefingGenerator(store?: Parameters<typeof BriefingGenerator.prototype.generate>[0] extends string ? never : any): BriefingGenerator {
+export function getBriefingGenerator(store?: any, inject?: BriefingGenerator): BriefingGenerator {
+  if (inject) { _instance = inject; return inject; }
   if (!_instance) _instance = new BriefingGenerator(store);
   return _instance;
 }

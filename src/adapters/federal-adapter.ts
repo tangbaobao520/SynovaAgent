@@ -65,6 +65,7 @@ export async function initFederalReporter(db: unknown, config?: { epsilon?: numb
 }
 
 /** Get current federal adapter instance */
-export function getFederalAdapter(): FederalAdapter {
+export function getFederalAdapter(inject?: FederalAdapter): FederalAdapter {
+  if (inject) { _instance = inject; return inject; }
   return _instance;
 }

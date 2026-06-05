@@ -274,7 +274,8 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
 
 // Singleton
 let _instance: FaultRecovery | null = null;
-export function getFaultRecovery(config?: Partial<FaultConfig>): FaultRecovery {
+export function getFaultRecovery(config?: Partial<FaultConfig>, inject?: FaultRecovery): FaultRecovery {
+  if (inject) { _instance = inject; return inject; }
   if (!_instance) _instance = new FaultRecovery(config);
   return _instance;
 }

@@ -158,7 +158,8 @@ export class PIIScrubber {
 
 // Singleton
 let _instance: PIIScrubber | null = null;
-export function getPIIScrubber(): PIIScrubber {
+export function getPIIScrubber(inject?: PIIScrubber): PIIScrubber {
+  if (inject) { _instance = inject; return inject; }
   if (!_instance) _instance = new PIIScrubber();
   return _instance;
 }

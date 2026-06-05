@@ -123,7 +123,8 @@ export class LLMCache {
 
 /** 全局单例 — 整个进程共享一个 LLM 缓存 */
 let _instance: LLMCache | null = null;
-export function getLLMCache(): LLMCache {
+export function getLLMCache(inject?: LLMCache): LLMCache {
+  if (inject) { _instance = inject; return inject; }
   if (!_instance) _instance = new LLMCache();
   return _instance;
 }

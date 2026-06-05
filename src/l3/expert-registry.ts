@@ -51,7 +51,8 @@ export class ExpertRegistry {
 
 // Singleton
 let _instance: ExpertRegistry | null = null;
-export function getExpertRegistry(): ExpertRegistry {
+export function getExpertRegistry(inject?: ExpertRegistry): ExpertRegistry {
+  if (inject) { _instance = inject; return inject; }
   if (!_instance) _instance = new ExpertRegistry();
   return _instance;
 }

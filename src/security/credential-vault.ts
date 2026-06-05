@@ -154,7 +154,8 @@ export class CredentialPool {
 }
 
 let _credentialPool: CredentialPool | null = null;
-export function getCredentialPool(): CredentialPool {
+export function getCredentialPool(inject?: CredentialPool): CredentialPool {
+  if (inject) { _credentialPool = inject; return inject; }
   if (!_credentialPool) _credentialPool = new CredentialPool();
   return _credentialPool;
 }

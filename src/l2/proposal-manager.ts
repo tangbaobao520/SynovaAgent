@@ -147,7 +147,8 @@ export class ProposalManager {
 // ═══ Singleton ═══
 
 let _instance: ProposalManager | null = null;
-export function getProposalManager(): ProposalManager {
+export function getProposalManager(inject?: ProposalManager): ProposalManager {
+  if (inject) { _instance = inject; return inject; }
   if (!_instance) _instance = new ProposalManager();
   return _instance;
 }

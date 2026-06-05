@@ -33,7 +33,7 @@ echo "  目标: ${FUNC_NAME}"
 echo ""
 
 # 搜索生产入口文件
-SEARCH_DIRS=("$ROOT/src/server.ts" "$ROOT/src/routes/" "$ROOT/src/agent/" "$ROOT/src/cli.ts" "$ROOT/src/index.ts")
+SEARCH_DIRS=("$ROOT/src/server.ts" "$ROOT/src/routes/" "$ROOT/src/agent/" "$ROOT/src/cli.ts" "$ROOT/src/index.ts" "$ROOT/src/orchestrator/" "$ROOT/src/l3/" "$ROOT/src/l4/" "$ROOT/src/l5/" "$ROOT/src/services/" "$ROOT/src/providers/")
 
 # 排除 import 语句和测试文件 (只看实际调用/使用)
 RESULTS=$(grep -rn "$FUNC_NAME" "${SEARCH_DIRS[@]}" --include="*.ts" 2>/dev/null | grep -v "\.test\." | grep -v "node_modules" || true)

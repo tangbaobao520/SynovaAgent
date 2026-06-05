@@ -134,7 +134,8 @@ export function createFeishuWebhookChannel(webhookUrl: string): IMChannel {
 // ═══ Singleton ═══
 
 let _instance: IMRegistry | null = null;
-export function getIMRegistry(): IMRegistry {
+export function getIMRegistry(inject?: IMRegistry): IMRegistry {
+  if (inject) { _instance = inject; return inject; }
   if (!_instance) _instance = new IMRegistry();
   return _instance;
 }

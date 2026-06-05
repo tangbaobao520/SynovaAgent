@@ -164,7 +164,8 @@ export class AlertRuleEngine {
 // ═══ Singleton ═══
 
 let _instance: AlertRuleEngine | null = null;
-export function getAlertRuleEngine(): AlertRuleEngine {
+export function getAlertRuleEngine(inject?: AlertRuleEngine): AlertRuleEngine {
+  if (inject) { _instance = inject; return inject; }
   if (!_instance) _instance = new AlertRuleEngine();
   return _instance;
 }

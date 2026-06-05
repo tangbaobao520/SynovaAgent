@@ -146,7 +146,8 @@ export class FileGuard {
 
 let _instance: FileGuard | null = null;
 
-export function getFileGuard(workDir?: string): FileGuard {
+export function getFileGuard(workDir?: string, inject?: FileGuard): FileGuard {
+  if (inject) { _instance = inject; return inject; }
   if (!_instance) _instance = new FileGuard(workDir);
   return _instance;
 }

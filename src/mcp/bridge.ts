@@ -207,7 +207,8 @@ export class MCPBridge {
 // ═══ Singleton ═══
 
 let _bridge: MCPBridge | null = null;
-export function getMCPBridge(): MCPBridge {
+export function getMCPBridge(inject?: MCPBridge): MCPBridge {
+  if (inject) { _bridge = inject; return inject; }
   if (!_bridge) _bridge = new MCPBridge();
   return _bridge;
 }

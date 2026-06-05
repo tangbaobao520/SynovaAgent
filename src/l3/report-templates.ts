@@ -178,7 +178,8 @@ export class ReportTemplateRegistry {
 // ═══ Singleton ═══
 
 let _instance: ReportTemplateRegistry | null = null;
-export function getReportTemplateRegistry(): ReportTemplateRegistry {
+export function getReportTemplateRegistry(inject?: ReportTemplateRegistry): ReportTemplateRegistry {
+  if (inject) { _instance = inject; return inject; }
   if (!_instance) _instance = new ReportTemplateRegistry();
   return _instance;
 }

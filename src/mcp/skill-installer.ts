@@ -160,7 +160,8 @@ export class SkillInstaller {
 // ═══ Singleton ═══
 
 let _instance: SkillInstaller | null = null;
-export function getSkillInstaller(baseDir?: string): SkillInstaller {
+export function getSkillInstaller(baseDir?: string, inject?: SkillInstaller): SkillInstaller {
+  if (inject) { _instance = inject; return inject; }
   if (!_instance) _instance = new SkillInstaller(baseDir);
   return _instance;
 }

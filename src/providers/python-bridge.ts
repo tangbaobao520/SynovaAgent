@@ -76,7 +76,8 @@ export class PythonBridge {
 
 // Singleton
 let _bridge: PythonBridge | null = null;
-export function getPythonBridge(): PythonBridge {
+export function getPythonBridge(inject?: PythonBridge): PythonBridge {
+  if (inject) { _bridge = inject; return inject; }
   if (!_bridge) _bridge = new PythonBridge();
   return _bridge;
 }
