@@ -79,7 +79,12 @@ export function createTuiApp(existingScreen?: blessed.Widgets.Screen): TuiApp {
     }
   });
   screen.key(['tab'], () => { chat.focus(); });
-  screen.on('resize', () => { screen.render(); });
+  screen.on('resize', () => {
+    // 终端 <90 列强制隐藏右边栏（对标 CodeWhale SIDEBAR_VISIBLE_MIN_WIDTH）
+    if ((screen.width as number) < 90) side.box.hide();
+    else side.box.show();
+    screen.render();
+  });
 
   // 右边栏始终可见 (CodeWhale 风格)
   side.box.show();

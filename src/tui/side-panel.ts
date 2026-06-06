@@ -124,8 +124,7 @@ export function createSidePanel(opts: { left?: string; width?: string; height?: 
 
     // 空状态
     if (lines.length === 0) {
-      lines.push(` ${D}对话开始后显示${X}`);
-      lines.push(` ${D}增长数据${X}`);
+      lines.push(` ${D}发送消息后开始导航${X}`);
     }
 
     return lines.join('\n');
