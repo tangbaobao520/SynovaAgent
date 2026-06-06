@@ -7,8 +7,7 @@
 import blessed from 'neo-blessed';
 import type { CommandMenu } from './command-menu';
 import { renderMarkdown } from './markdown';
-import { renderThoughtToggle, resetThought, toggleExpanded, isExpanded, finalizeThought, hasThought, renderThoughtExpanded } from './thinking';
-import { DripBuffer } from './streaming';
+import { renderThoughtToggle, resetThought, toggleExpanded, finalizeThought, hasThought } from './thinking';
 import { PURPLE, GREEN, YELLOW, CYAN, DIM, RED, BOLD, CLOSE } from './color-tags';
 
 const GRAY = DIM;
@@ -65,9 +64,7 @@ export function createChatPanel(opts: { top?: number; left?: number; width?: str
   let commandMenu: CommandMenu | null = null;
   let onSubmitCb: ((text: string) => void) | null = null;
   // 流式渲染状态
-  let _fullText = '';          // 完整响应文本（finishStreaming 用）
-  let _currentLine = '';       // 当前未完成行（appendToken 显示用）
-  let _dripBuffer: DripBuffer | null = null;
+  let _streamBuffer = '';      // 流式行缓冲区（对标 CodeWhale LineBuffer）
 
   function lastIndexOfAgent(): number {
     for (let i = contentLines.length - 1; i >= 0; i--) {
@@ -275,37 +272,34 @@ export function createChatPanel(opts: { top?: number; left?: number; width?: str
     },
 
     appendToken(token) {
-      if (!_dripBuffer) { _dripBuffer = new DripBuffer(70); _fullText = ''; _currentLine = ''; contentLines.push(`${PURPLE}Agent:${RESET} `); }
-      _dripBuffer.push(token);
-      _fullText += token;
-      _currentLine += token;
-      // 完整行提交到 contentLines，从 _currentLine 中移除
-      const committed = _dripBuffer.commitLines();
-      if (committed.length > 0) {
-        for (const line of committed) contentLines.push(`${GRAY}${line}${RESET}`);
-        _currentLine = _currentLine.slice(_currentLine.lastIndexOf('\n') + 1);
+      if (!_streamBuffer && contentLines.length === 0) { contentLines.push(`${PURPLE}Agent:${RESET}`); }
+      _streamBuffer += token;
+      // 对标 CodeWhale LineBuffer: 攒到 \n 才提交
+      if (_streamBuffer.includes('\n')) {
+        const parts = _streamBuffer.split('\n');
+        // 已完成的完整行 → 追加到 contentLines
+        for (let i = 0; i < parts.length - 1; i++) contentLines.push(parts[i]);
+        _streamBuffer = parts[parts.length - 1]; // 最后一行继续攒
+        box.setContent(contentLines.join('\n'));
+      } else {
+        // 无完整行，只显示当前缓冲行
+        box.setContent(contentLines.join('\n') + '\n' + _streamBuffer);
       }
-      // 显示: contentLines + 当前未完成行
-      box.setContent(contentLines.join('\n') + '\n' + _currentLine);
       box.setScrollPerc(100);
     },
 
     finishStreaming() {
-      if (!_dripBuffer) return;
-      _dripBuffer.flush();
-      if (_fullText) {
+      if (!_streamBuffer) return;
+      // 刷出最后一行 → Markdown 渲染
+      if (_streamBuffer) {
         const agentIdx = lastIndexOfAgent();
-        if (agentIdx >= 0) {
-          contentLines.splice(agentIdx + 1);
-          for (const line of renderMarkdown(_fullText).split('\n')) contentLines.push(line);
-        }
+        if (agentIdx >= 0) contentLines.splice(agentIdx + 1);
+        for (const line of renderMarkdown(_streamBuffer).split('\n')) contentLines.push(line);
       }
       contentLines.push('');
       box.setContent(contentLines.join('\n'));
       box.setScrollPerc(100);
-      _fullText = '';
-      _currentLine = '';
-      _dripBuffer = null;
+      _streamBuffer = '';
     },
 
     toggleThinking() {
