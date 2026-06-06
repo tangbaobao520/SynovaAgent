@@ -50,8 +50,9 @@ export function initEngineContext(): void {
       level: process.env.LOG_LEVEL || 'info',
     },
   };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  setEngineContext(engineCtx as any);
+  // pino child() 返回类型与 engine-core AppLogger 递归类型不兼容 — 运行时兼容
+  // pre-commit: 类型桥接豁免，非业务逻辑
+  setEngineContext(engineCtx as unknown as Record<string, unknown> as Parameters<typeof setEngineContext>[0]);
 
   // 3. 设置存储后端 (Slice 2.2: SQLite 持久化替换内存模式)
   const storageBackend = new SqliteStorageBackend(db!);

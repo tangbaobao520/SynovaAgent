@@ -336,7 +336,7 @@ app.use(permissionRoutes); // POST /api/permissions/update | POST /api/permissio
     // 告警规则引擎 — 运行时注册检查
     try {
       const { getAlertRuleEngine } = await import('./l5/alert-rules');
-      getAlertRuleEngine();
+      getAlertRuleEngine(db);
       logger.info('告警规则引擎已初始化');
     } catch (err: any) { logger.warn({ err }, '告警规则引擎初始化失败 — degraded'); }
 
