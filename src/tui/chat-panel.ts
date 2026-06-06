@@ -269,7 +269,9 @@ export function createChatPanel(opts: { top?: number; left?: number; width?: str
     },
 
     setInitialContent(text) {
-      const lines = text.split('\n');
+      // 纯文本模式 — 不含 ANSI，避免 Windows 终端渲染垃圾字符
+      const plain = text.replace(/\x1b\[[0-9;]*m/g, '');
+      const lines = plain.split('\n');
       for (const line of lines) contentLines.push(line);
       contentLines.push('');
       box.setContent(contentLines.join('\n'));
