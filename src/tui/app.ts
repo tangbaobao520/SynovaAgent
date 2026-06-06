@@ -31,23 +31,16 @@ export function createTuiApp(existingScreen?: blessed.Widgets.Screen): TuiApp {
     useBCE: true,
   });
 
-  // ── 对话区 (70%) + 右边栏 (30%)，留底部 4 行给 input(3) + status(1) ──
-  const chat = createChatPanel({ width: '70%', height: '100%-4' });
+  // ── 对话区(68%) + 2%间隙 + 右边栏(30%)，留底部 6 行 ──
+  const chat = createChatPanel({ width: '68%', height: '100%-6' });
   screen.append(chat.box);
 
-  const side = createSidePanel({ left: '70%', width: '30%', height: '100%-4' });
+  const side = createSidePanel({ left: '70%', width: '30%', height: '100%-6' });  // input(5) + status(1)
   screen.append(side.box);
-
-  // 分隔线（细线 — gray 替代 black 避免 Windows 终端映射为蓝色）
-  const divider = blessed.box({
-    left: '70%', top: 0, width: 1, height: '100%-4',
-    content: '│',
-  });
-  screen.append(divider);
 
   // 全宽输入框
   const input = blessed.textbox({
-    bottom: 1, left: 0, width: '100%', height: 3,
+    bottom: 1, left: 0, width: '100%', height: 5,  // 2(border) + 3(input) = CodeWhale Comfortable
     inputOnFocus: true,
     border: { type: 'line' },
     style: { border: { fg: 'cyan' }, focus: { border: { fg: 'magenta' } } },
@@ -88,9 +81,8 @@ export function createTuiApp(existingScreen?: blessed.Widgets.Screen): TuiApp {
   screen.key(['tab'], () => { chat.focus(); });
   screen.on('resize', () => { screen.render(); });
 
-  // 初始隐藏右边栏
-  side.box.hide();
-  divider.hide();
+  // 右边栏始终可见 (CodeWhale 风格)
+  side.box.show();
 
   const app: TuiApp = {
     screen, chat, side, status, input, commandMenu,
@@ -110,7 +102,7 @@ export function createTuiApp(existingScreen?: blessed.Widgets.Screen): TuiApp {
       }
     },
 
-    showSidebar() { side.box.show(); divider.show(); screen.render(); },
+    showSidebar() { side.box.show(); screen.render(); },
   };
 
   screen.render();

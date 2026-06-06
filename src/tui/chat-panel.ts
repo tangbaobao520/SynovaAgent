@@ -51,7 +51,7 @@ export function createChatPanel(opts: { top?: number; left?: number; width?: str
     top: opts.top ?? 0,
     left: opts.left ?? 0,
     width: opts.width ?? '75%',
-    height: opts.height ?? '100%-4',  // 底部 4 行留给全宽 input + status
+    height: opts.height ?? '100%-6',  // 底部 6 行 = input(5) + status(1)
     border: { type: 'line' },
     scrollable: true,
     alwaysScroll: true,
@@ -95,8 +95,8 @@ export function createChatPanel(opts: { top?: number; left?: number; width?: str
 
     bindInput(extInput: blessed.Widgets.TextboxElement) {
       input = extInput;
-      const MIN_HEIGHT = 3;
-      const MAX_HEIGHT = 10;
+      const MIN_HEIGHT = 5;  // CodeWhale Comfortable: 2(border) + 3(input)
+      const MAX_HEIGHT = 12; // CodeWhale max: 2(border) + 10(input)
 
       // 动态调整输入框高度
       const adjustHeight = () => {
@@ -130,6 +130,14 @@ export function createChatPanel(opts: { top?: number; left?: number; width?: str
       };
       emitter.on('keypress', () => setImmediate(adjustHeight));
 
+      // CodeWhale 风格: Esc 清空输入 (命令菜单可见时先关闭菜单)
+      emitter.key('escape', () => {
+        if (commandMenu?.visible) { commandMenu.hide(); }
+        input!.clearValue();
+        input!.setValue('');
+        (input as unknown as { screen: { render: () => void } }).screen.render();
+      });
+
       // neo-blessed Textbox._listener 拦截 Enter → 调 _done → emit 'submit'
       emitter.on('submit', (value: unknown) => {
         const text = typeof value === 'string' ? value.trim() : '';
@@ -144,7 +152,7 @@ export function createChatPanel(opts: { top?: number; left?: number; width?: str
           input!.setValue('');
           (input as unknown as { height: number }).height = MIN_HEIGHT;
           (input as unknown as { screen: { render: () => void } }).screen.render();
-          setImmediate(() => { try { (input as { readInput?: () => void }).readInput?.(); } catch {} });
+          // readInput() 由外部 app.chat.focus() 统一管理
           return;
         }
         // 正常提交
@@ -157,7 +165,7 @@ export function createChatPanel(opts: { top?: number; left?: number; width?: str
         (input as unknown as { height: number }).height = MIN_HEIGHT;
         setImmediate(() => {
           try {
-            (input as { readInput?: () => void }).readInput?.();
+            /* readInput() 已移除 — 由 focus() 统一管理 */
           } catch { /* 静默 */ }
         });
       });
@@ -189,15 +197,7 @@ export function createChatPanel(opts: { top?: number; left?: number; width?: str
       // 方向键导航
       emitter.key('up', () => { if (commandMenu!.visible) { commandMenu!.moveUp(); screen.render(); } });
       emitter.key('down', () => { if (commandMenu!.visible) { commandMenu!.moveDown(); screen.render(); } });
-      emitter.key('escape', () => {
-        if (commandMenu!.visible) {
-          commandMenu!.hide();
-          input!.clearValue();
-          input!.setValue('');
-          screen.render();
-          setImmediate(() => { try { (input as unknown as { readInput?: () => void }).readInput?.(); } catch {} });
-        }
-      });
+      // Escape 清空输入已统一在 bindInput() 处理 — 命令菜单关闭逻辑也移过去
       // Ctrl+O 切换思考块折叠
       const screenEmitter = screen as unknown as { key: (name: string[], fn: () => void) => void };
       screenEmitter.key(['C-o'], () => {
@@ -224,7 +224,8 @@ export function createChatPanel(opts: { top?: number; left?: number; width?: str
         if (thought) {
           for (const line of thought.split('\n')) contentLines.push(line);
         }
-        const boxW = (typeof box.width === 'number' && box.width > 10) ? box.width - 4 : 70;
+        const boxW = (typeof box.width === 'number' && box.width > 10) ? box.width - 4
+          : (typeof box.width === 'string') ? Math.floor((box.screen?.width || 80) * parseFloat(box.width) / 100) - 4 : 70;
         // 前缀 + 右对齐时间戳
         const pad = Math.max(0, boxW - `${prefix}${formatted}`.replace(/\x1b\[[0-9;]*m/g, '').length - 6);
         const wrapped = wrapText(`${prefix}${formatted}${' '.repeat(pad)}${ts}`, boxW);
@@ -236,7 +237,8 @@ export function createChatPanel(opts: { top?: number; left?: number; width?: str
         finalizeThought();
         resetThought();
       } else if (role === 'user') {
-        const boxW2 = (typeof box.width === 'number' && box.width > 10) ? box.width - 4 : 70;
+        const boxW2 = (typeof box.width === 'number' && box.width > 10) ? box.width - 4
+          : (typeof box.width === 'string') ? Math.floor((box.screen?.width || 80) * parseFloat(box.width) / 100) - 4 : 70;
         const pad = Math.max(0, boxW2 - `${prefix}${text}`.replace(/\x1b\[[0-9;]*m/g, '').length - 6);
         const uLines = wrapText(`${prefix}${text}${' '.repeat(pad)}${ts}`, boxW2);
         for (const line of uLines) contentLines.push(line);
@@ -246,7 +248,8 @@ export function createChatPanel(opts: { top?: number; left?: number; width?: str
         lastLine = '';
       } else {
         // system/alert: no markdown
-        const boxW = (typeof box.width === 'number' && box.width > 10) ? box.width - 4 : 70;
+        const boxW = (typeof box.width === 'number' && box.width > 10) ? box.width - 4
+          : (typeof box.width === 'string') ? Math.floor((box.screen?.width || 80) * parseFloat(box.width) / 100) - 4 : 70;
         const wrapped = wrapText(`${prefix}${text}`, boxW);
         for (const line of wrapped) contentLines.push(line);
         contentLines.push('');
@@ -336,14 +339,11 @@ export function createChatPanel(opts: { top?: number; left?: number; width?: str
 
     focus() {
       if (!input) return;
-      // 确保 stdin raw mode 激活
       try { process.stdin.setRawMode(true); } catch {}
+      // 强制重置 _reading 防止 neo-blessed 内部状态残留
+      try { (input as unknown as { _reading?: boolean })._reading = false; } catch {}
       input.focus();
-      // 显式调用 readInput — Windows 上 inputOnFocus 可能不触发
-      try {
-        const inp = input as unknown as { readInput: (cb?: (err: unknown, val: string) => void) => void; _reading?: boolean };
-        if (!inp._reading) inp.readInput();
-      } catch {}
+      // inputOnFocus: true 会自动调用 readInput()，此处不再显式调用
     },
 
     // 保留接口兼容性（TuiApp 需要）

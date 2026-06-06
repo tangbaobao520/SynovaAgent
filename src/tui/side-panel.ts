@@ -59,7 +59,7 @@ export function createSidePanel(opts: { left?: string; width?: string; height?: 
     top: 0,
     left: opts.left ?? '75%',
     width: opts.width ?? '25%',
-    height: opts.height ?? '100%-4',
+    height: opts.height ?? '100%-6',  // input(5) + status(1)
     border: { type: 'line' },
     style: { border: { fg: 'gray' } },
     tags: false,

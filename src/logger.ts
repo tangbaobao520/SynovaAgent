@@ -42,7 +42,17 @@ const REDACT_VALUE_PATTERNS = [
   /(?:mongodb|postgres|mysql|redis):\/\/[^:]+:([^@]+)@/g,
 ];
 
-const destination = pino.destination({ dest: 2, sync: true });
+const rawDest = pino.destination({ dest: 2, sync: true });
+
+// TUI 模式下 chat.ts 的 IIFE 会设 LOG_LEVEL=silent，但 logger 模块级 level 常量
+// 在 import 时已缓存，无法动态更新。用 writable stream wrapper 拦截 write() 来静默输出。
+const destination = {
+  write(msg: string) {
+    if (process.env.LOG_LEVEL !== 'silent') {
+      rawDest.write(msg);
+    }
+  },
+};
 
 export const logger = pino({
   name: 'synova-agent',

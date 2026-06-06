@@ -65,21 +65,18 @@ const OPENING_MESSAGE = '告诉我，你当前最关心的增长目标是什么�
 // ═══ Main ═══
 
 async function main() {
-  // ═══ Step 0: 终端环境检测 ═══
+  // ═══ Step 0: 终端编码自动切换 UTF-8 ═══
   if (process.platform === 'win32') {
-    // Windows 终端 codepage 需为 UTF-8 (65001)，否则中文乱码
     try {
       const { execSync } = await import('child_process');
       const out = execSync('chcp', { encoding: 'buffer', timeout: 3000 }).toString();
       const cpMatch = out.match(/(\d+)/);
       const cp = cpMatch ? parseInt(cpMatch[1]) : 0;
       if (cp !== 65001) {
-        console.log(`\n${YELLOW}⚠ 终端编码为 CP${cp}，中文可能显示异常${RESET}`);
-        console.log(`${YELLOW}   启动前请先执行: chcp 65001${RESET}\n`);
+        try { execSync('chcp 65001', { timeout: 3000 }); } catch { /* 静默 */ }
       }
     } catch {
-      log.debug('TUI 命令执行失败');
-      // chcp 不可用（Windows Terminal / Git Bash 默认 UTF-8 环境，无需处理）
+      // chcp 不可用（Windows Terminal / Git Bash 默认 UTF-8，无需处理）
     }
   }
 
@@ -494,6 +491,8 @@ async function main() {
 
       store.addMessage(sessionId, 'user', input);
       app.chat.addMessage('user', input);
+      app.screen.render(); // 不等 LLM 回调，立即渲染用户消息
+      app.screen.render();  // 立即渲染，不等 LLM 响应
 
       // 编排层: 每轮对话生成 traceId，串联后续事件
       const turnTraceId = `turn_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,8)}`;

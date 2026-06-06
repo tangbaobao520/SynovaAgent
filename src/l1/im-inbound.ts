@@ -129,22 +129,71 @@ export function handleInboundMessage(
 
     // Step 3: PII 脱敏输入
     const scrubbed = piiScrubber.scrub(msg.content, 'S2');
+    const userInput = scrubbed.cleaned || msg.content;
 
-    // Step 4: 存储消息
-    store.addMessage(sessionId, 'user', scrubbed.cleaned || msg.content);
+    // Step 4: 存储用户消息
+    store.addMessage(sessionId, 'user', userInput);
 
-    // Step 5: 构造回复 (AI 回复由 ConversationEngine 在后续请求中异步生成)
-    // 当前返回确认消息
-    const reply = `已收到你的消息 (会话 ${sessionId.slice(-6)})`;
+    // Step 5: AI 回复 — 异步生成，不阻塞 Webhook 响应
+    generateAIReply(store, sessionId, identity, userInput).catch(err => {
+      log.warn({ err: err instanceof Error ? err.message : String(err), sessionId }, 'AI 回复生成失败');
+    });
 
-    // 存储系统回复
-    store.addMessage(sessionId, 'assistant', reply);
-
+    // 先返回 200 确认收到（飞书要求 3s 内响应，AI 回复异步发送）
     return { ok: true, degraded: false, sessionId };
   } catch (err: unknown) {
     const error = err instanceof Error ? err.message : String(err);
     log.warn({ err: error, senderId: msg.senderId }, 'IM 消息处理失败 — degraded');
     return { ok: false, degraded: true, error };
+  }
+}
+
+// ═══ AI 回复生成 ═══
+
+async function generateAIReply(
+  store: SessionStore,
+  sessionId: string,
+  identity: CachedIdentity,
+  userInput: string,
+): Promise<void> {
+  const { createProvider } = await import('../providers');
+  const { detectProvider } = await import('../providers/detect');
+  const { ConversationEngine } = await import('../agent/conversation-engine');
+  const { SessionStore } = await import('../store/session-store');
+  const { registerBuiltinTools } = await import('../agent/builtin-tools');
+
+  const provider = createProvider(detectProvider(), {
+    apiKey: process.env.LLM_API_KEY || process.env.DEEPSEEK_API_KEY,
+    gatewayHost: process.env.OPENCLAW_GATEWAY_HOST,
+    baseUrl: process.env.LLM_BASE_URL,
+  });
+
+  const conv = new ConversationEngine(provider);
+  const builtinStore = new SessionStore(store['db' as keyof typeof store] as never);
+  registerBuiltinTools(conv.getToolRegistry(), store, sessionId, () => conv.getPhase(), () => identity.teamId);
+
+  // 恢复会话历史
+  const msgs = store.getMessages(sessionId);
+  for (const m of msgs) {
+    if (m.role === 'user' || m.role === 'assistant') {
+      (conv as unknown as { addToHistory?: (r: string, c: string) => void }).addToHistory?.(m.role, m.content);
+    }
+  }
+
+  const result = await conv.processMessage(userInput);
+  const reply = result.reply || '抱歉，我暂时无法回答。';
+
+  // 存储 AI 回复
+  store.addMessage(sessionId, 'assistant', reply);
+
+  // 通过 IM 通道发送
+  const { getIMRegistry } = await import('./im-channel');
+  const imReg = getIMRegistry();
+  const active = imReg.getActive();
+  if (active) {
+    await active.sendMessage(identity.openId, {
+      text: reply.slice(0, 2000), // 飞书单条消息限制
+    });
   }
 }
 
