@@ -550,29 +550,47 @@ async function main() {
           // Slice 5.1: SOG 本体同步 — 从访谈内容提取组织信息
           conv.startDiagnosis('管理者', conv.getOrgId() || '用户').then(() => {}); // fire-and-forget SOG sync
 
-          // Slice 3.2: 自动启动导航分析
+          // Slice 3.2: 自动启动导航分析 — 初始化专家状态
           app.setTitleStatus('Phase 1: 数据采集中...');
-          app.side.setExperts([
-            { name: '战略', status: 'queued' }, { name: '组织', status: 'queued' },
-            { name: '财务', status: 'queued' }, { name: '技术', status: 'queued' },
-            { name: '营销', status: 'queued' }, { name: '行动', status: 'queued' },
-          ]);
+          const expertStatusMap = new Map<string, { name: string; status: 'queued' | 'running' | 'done' | 'failed'; elapsed?: string }>();
+          const EXPERT_NAMES: Record<string, string> = {
+            strategy: '战略', org: '组织', finance: '财务', tech: '技术', marketing: '营销', action: '行动',
+          };
+          for (const [id, name] of Object.entries(EXPERT_NAMES)) {
+            expertStatusMap.set(id, { name, status: 'queued' });
+          }
+          app.side.setExperts([...expertStatusMap.values()]);
           app.side.refresh();
 
           conv.startDiagnosis(
             '管理者',
             conv.getOrgId() || '用户',
             (event) => {
-              // 实时推送导航事件到侧边栏
               switch (event.type) {
                 case 'phase_started':
                   app.setTitleStatus(`Phase ${event.phase}: ${event.label || '进行中...'}`);
+                  // Phase 开始时标记相关专家为 running
+                  for (const [id, s] of expertStatusMap) {
+                    if (s.status === 'queued') { s.status = 'running'; break; }
+                  }
+                  app.side.setExperts([...expertStatusMap.values()]);
+                  app.side.refresh();
                   break;
                 case 'module_completed':
                   if (event.findings) {
                     app.side.setObstacles(event.findings.map(f => ({
                       name: f.summary.slice(0, 40), status: 'active' as const,
                     })));
+                    // 标记首个匹配专家为 done
+                    for (const f of event.findings) {
+                      for (const [id, s] of expertStatusMap) {
+                        if (f.moduleId?.includes(id) && s.status === 'running') {
+                          s.status = 'done'; s.elapsed = '';
+                          break;
+                        }
+                      }
+                    }
+                    app.side.setExperts([...expertStatusMap.values()]);
                     app.side.refresh();
                   }
                   break;
@@ -582,6 +600,11 @@ async function main() {
                 case 'complete':
                   app.setTitleStatus('导航完成');
                   app.chat.addMessage('system', '📋 增长导航已完成，查看侧边栏获取完整简报。');
+                  for (const [, s] of expertStatusMap) {
+                    if (s.status !== 'done' && s.status !== 'failed') s.status = 'done';
+                  }
+                  app.side.setExperts([...expertStatusMap.values()]);
+                  app.side.refresh();
                   break;
                 case 'error':
                   app.chat.addMessage('alert', `⚠️ 导航错误: ${event.message || '未知'}`);
