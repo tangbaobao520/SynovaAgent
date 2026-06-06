@@ -25,13 +25,25 @@ class LLMCostTracker {
   private records: CostRecord[] = [];
   private sessionTotal = 0;
   private monthlyTotal = 0;
+  private budgetLimit: number;
 
-  /** 记录一次 LLM 调用 */
-  record(model: string, inputTokens: number, outputTokens: number): void {
+  constructor() {
+    this.budgetLimit = parseFloat(process.env.LLM_BUDGET || '5'); // 默认 ¥5/诊断
+  }
+
+  /** 记录一次 LLM 调用。返回 { exceeded: true } 如果超预算 */
+  record(model: string, inputTokens: number, outputTokens: number): { exceeded: boolean; cost: number } {
     const rec: CostRecord = { model, inputTokens, outputTokens, timestamp: Date.now() };
+    const cost = this.calcCost(rec);
     this.records.push(rec);
-    this.sessionTotal += this.calcCost(rec);
+    this.sessionTotal += cost;
     this.monthlyTotal = this.calcMonthly();
+    return { exceeded: this.sessionTotal > this.budgetLimit, cost: Math.round(cost * 10000) / 10000 };
+  }
+
+  /** 当前会话预算上限 */
+  get budgetRemaining(): number {
+    return Math.max(0, Math.round((this.budgetLimit - this.sessionTotal) * 100) / 100);
   }
 
   /** 本次会话费用 */

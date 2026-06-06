@@ -357,6 +357,17 @@ async function main() {
           } else {
             app.chat.addMessage('system', '暂无思考内容。');
           }
+        } else if (cmd === '/budget' || cmd.startsWith('/budget ')) {
+          const { getCostTracker, formatCost } = await import('../services/llm-cost');
+          const tracker = getCostTracker();
+          const amount = parseFloat(input.slice(8).trim());
+          if (!amount || amount <= 0) {
+            app.chat.addMessage('system', `当前预算上限: ¥${tracker.budgetRemaining.toFixed(2)}\n本次费用: ${formatCost(tracker.sessionCost)}\n用法: /budget <金额> 设置上限`);
+          } else {
+            process.env.LLM_BUDGET = String(amount);
+            app.chat.addMessage('system', `✅ 预算上限已设为 ¥${amount}`);
+          }
+          app.screen.render(); streaming = false; return;
         } else if (cmd === '/help') {
           app.chat.addMessage('system', '命令: /setup 配置 LLM /model 切换模型 /think 展开思考 /quit 退出 /status 状态 /search <词> 搜索');
         } else if (cmd === '/status') {
@@ -517,14 +528,17 @@ async function main() {
         // 成本追踪（usage 在运行时存在，类型定义可能不完整）
         const usage = (result as { usage?: { promptTokens?: number; completionTokens?: number } }).usage;
         if (usage) {
-          import('../services/llm-cost').then(({ getCostTracker }) => {
-            getCostTracker().record(
-              process.env.LLM_MODEL || 'deepseek-v4-flash',
-              usage.promptTokens || 0,
-              usage.completionTokens || 0,
-            );
-            app.status.refreshCost();
-          }).catch(() => {});
+          const { getCostTracker, formatCost } = await import('../services/llm-cost');
+          const tracker = getCostTracker();
+          const { exceeded, cost } = tracker.record(
+            process.env.LLM_MODEL || 'deepseek-v4-flash',
+            usage.promptTokens || 0,
+            usage.completionTokens || 0,
+          );
+          app.status.refreshCost();
+          if (exceeded) {
+            app.chat.addMessage('system', `⚠️ 本次诊断费用已达预算上限。剩余预算: ${formatCost(tracker.budgetRemaining)}。可通过 /budget <金额> 调整上限。`);
+          }
         }
 
         // 流式内容已在 finishStreaming 中渲染，不再 addMessage

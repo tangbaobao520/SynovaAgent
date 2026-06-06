@@ -19,6 +19,7 @@ const COMMANDS: CommandItem[] = [
   { cmd: '/setup',   desc: '配置 DeepSeek API Key' },
   { cmd: '/model',   desc: '切换模型 <模型名>' },
   { cmd: '/effort',  desc: '推理强度 off|high|max' },
+  { cmd: '/budget',  desc: '预算上限 <金额>' },
   { cmd: '/think',   desc: '展开思考过程' },
   { cmd: '/help',    desc: '查看帮助' },
   { cmd: '/status',  desc: '查看系统状态' },
