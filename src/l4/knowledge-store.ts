@@ -66,6 +66,8 @@ export class KnowledgeStore {
         access_team_id TEXT,
         access_owner_id TEXT,
         access_sensitivity TEXT NOT NULL DEFAULT 'normal',
+        -- 多租户隔离 (Phase 4c)
+        org_id TEXT DEFAULT 'default',
         -- PKB 扩展 (Slice 1)
         pkb_domain TEXT,
         pkb_type TEXT,
@@ -113,21 +115,44 @@ export class KnowledgeStore {
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
     `);
+
+    // 权限变更审计表 (M2 — 对话变更权限)
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS permission_audit_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        event_type TEXT NOT NULL CHECK(event_type IN ('access_change','bulk_share','restrict','temporary_grant','revoke')),
+        changed_by TEXT NOT NULL,
+        target_ids TEXT NOT NULL,
+        old_access_level TEXT,
+        new_access_level TEXT,
+        old_team_id TEXT,
+        new_team_id TEXT,
+        old_sensitivity TEXT,
+        new_sensitivity TEXT,
+        reason TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_perm_audit_time ON permission_audit_log(created_at);
+      CREATE INDEX IF NOT EXISTS idx_perm_audit_user ON permission_audit_log(changed_by);
+    `);
+    // Phase 4c: 向后兼容 — 已有数据库添加 org_id 列
+    try { this.db.exec('ALTER TABLE knowledge_chunks ADD COLUMN org_id TEXT DEFAULT \'default\''); } catch { /* 列已存在 */ }
     log.info('KnowledgeStore schema initialized');
   }
 
   // ═══ CRUD ═══
 
-  insert(chunk: Omit<KnowledgeChunk, 'id' | 'createdAt' | 'updatedAt'>): string {
+  insert(chunk: Omit<KnowledgeChunk, 'id' | 'createdAt' | 'updatedAt'> & { orgId?: string }): string {
     const id = `kc_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
     const now = new Date().toISOString();
+    const orgId = chunk.orgId || 'default';
     this.db.prepare(`
       INSERT INTO knowledge_chunks (id, text, source_type, source_id, authority_level, mime_type,
-        access_level, access_team_id, access_owner_id, access_sensitivity, created_at, updated_at)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+        access_level, access_team_id, access_owner_id, access_sensitivity, org_id, created_at, updated_at)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
     `).run(id, chunk.text, chunk.sourceType, chunk.sourceId, chunk.authorityLevel,
       chunk.mimeType || null, chunk.accessLevel, chunk.accessTeamId || null,
-      chunk.accessOwnerId || null, chunk.accessSensitivity, now, now);
+      chunk.accessOwnerId || null, chunk.accessSensitivity, orgId, now, now);
     return id;
   }
 
@@ -389,6 +414,192 @@ export class KnowledgeStore {
       this.db.prepare('UPDATE diagnosis_feedback SET processed = 1 WHERE processed = 0').run();
       return rows.length;
     } catch { return 0; }
+  }
+
+  // ═══ 权限管理 (M2 — 对话变更权限) ═══
+
+  /** 财务领域强制 restricted — 不可降级 (铁律: 财务是最高级权限) */
+  private readonly FINANCE_LOCK_DOMAINS = ['finance'];
+
+  /**
+   * 更新单条知识的访问权限。
+   * 财务领域强制 restricted sensitivity，不可降级。
+   */
+  updateAccess(id: string, access: {
+    accessLevel?: KnowledgeChunk['accessLevel'];
+    accessTeamId?: string | null;
+    accessSensitivity?: KnowledgeChunk['accessSensitivity'];
+  }): { ok: boolean; warning?: string } {
+    const existing = this.db.prepare('SELECT * FROM knowledge_chunks WHERE id=?').get(id) as Record<string, unknown> | undefined;
+    if (!existing) return { ok: false, warning: `条目 ${id} 不存在` };
+
+    // 财务领域锁定: sensitivity 不可降级到 normal
+    const domain = existing.pkb_domain as string | undefined;
+    if (domain && this.FINANCE_LOCK_DOMAINS.includes(domain)) {
+      if (access.accessSensitivity && access.accessSensitivity !== 'restricted') {
+        return { ok: false, warning: `财务领域条目 (${domain}) 敏感级别不可降级 — 保持 restricted` };
+      }
+      // 财务条目不可设为 public
+      if (access.accessLevel === 'public') {
+        return { ok: false, warning: `财务领域条目 (${domain}) 不可设为 public — 保持 team/private` };
+      }
+    }
+
+    const now = new Date().toISOString();
+    const updates: string[] = [];
+    const values: unknown[] = [];
+
+    if (access.accessLevel) {
+      updates.push('access_level = ?'); values.push(access.accessLevel);
+    }
+    if (access.accessTeamId !== undefined) {
+      updates.push('access_team_id = ?'); values.push(access.accessTeamId);
+    }
+    if (access.accessSensitivity) {
+      updates.push('access_sensitivity = ?'); values.push(access.accessSensitivity);
+    }
+
+    if (updates.length === 0) return { ok: false, warning: '无变更' };
+
+    updates.push('updated_at = ?'); values.push(now);
+    values.push(id);
+
+    this.db.prepare(`UPDATE knowledge_chunks SET ${updates.join(', ')} WHERE id=?`).run(...values);
+    return { ok: true };
+  }
+
+  /**
+   * 批量更新访问权限 — 按领域或 ID 列表。
+   * 市场领域可共享 (public)，财务领域强制 restricted。
+   */
+  bulkUpdateAccess(params: {
+    domain?: string;
+    ids?: string[];
+    accessLevel?: KnowledgeChunk['accessLevel'];
+    accessTeamId?: string | null;
+    accessSensitivity?: KnowledgeChunk['accessSensitivity'];
+    /** 仅限于当前团队的数据 */
+    restrictToTeam?: string;
+  }): { ok: boolean; updated: number; skipped: number; warnings: string[] } {
+    const warnings: string[] = [];
+    let updated = 0;
+    let skipped = 0;
+
+    // 财务领域锁定
+    if (params.domain && this.FINANCE_LOCK_DOMAINS.includes(params.domain)) {
+      if (params.accessLevel === 'public') {
+        return { ok: false, updated: 0, skipped: 0, warnings: ['财务领域不可设为 public'] };
+      }
+      if (params.accessSensitivity && params.accessSensitivity !== 'restricted') {
+        return { ok: false, updated: 0, skipped: 0, warnings: ['财务领域敏感级别不可降级'] };
+      }
+    }
+
+    const now = new Date().toISOString();
+    const updates: string[] = [];
+    const values: unknown[] = [];
+
+    if (params.accessLevel) { updates.push('access_level = ?'); values.push(params.accessLevel); }
+    if (params.accessTeamId !== undefined) { updates.push('access_team_id = ?'); values.push(params.accessTeamId); }
+    if (params.accessSensitivity) { updates.push('access_sensitivity = ?'); values.push(params.accessSensitivity); }
+    updates.push('updated_at = ?'); values.push(now);
+
+    if (updates.length <= 1) return { ok: false, updated: 0, skipped: 0, warnings: ['无变更字段'] };
+
+    // 按 ID 列表
+    if (params.ids && params.ids.length > 0) {
+      const placeholders = params.ids.map(() => '?').join(',');
+      const sql = `UPDATE knowledge_chunks SET ${updates.join(', ')} WHERE id IN (${placeholders})`;
+      const result = this.db.prepare(sql).run(...values, ...params.ids);
+      updated = result.changes;
+      return { ok: true, updated, skipped, warnings };
+    }
+
+    // 按领域
+    if (params.domain) {
+      let whereClause = 'pkb_domain = ?';
+      const whereValues: unknown[] = [params.domain];
+      if (params.restrictToTeam) {
+        whereClause += ' AND access_team_id = ?';
+        whereValues.push(params.restrictToTeam);
+      }
+      const sql = `UPDATE knowledge_chunks SET ${updates.join(', ')} WHERE ${whereClause}`;
+      const result = this.db.prepare(sql).run(...values, ...whereValues);
+      updated = result.changes;
+      return { ok: true, updated, skipped, warnings };
+    }
+
+    return { ok: false, updated: 0, skipped: 0, warnings: ['请指定 domain 或 ids'] };
+  }
+
+  /**
+   * 记录权限变更审计
+   */
+  auditPermissionChange(entry: {
+    eventType: 'access_change' | 'bulk_share' | 'restrict' | 'temporary_grant' | 'revoke';
+    changedBy: string;
+    targetIds: string[];
+    oldAccessLevel?: string;
+    newAccessLevel?: string;
+    oldTeamId?: string;
+    newTeamId?: string;
+    oldSensitivity?: string;
+    newSensitivity?: string;
+    reason?: string;
+  }): void {
+    this.db.prepare(`
+      INSERT INTO permission_audit_log (event_type, changed_by, target_ids, old_access_level, new_access_level, old_team_id, new_team_id, old_sensitivity, new_sensitivity, reason)
+      VALUES (?,?,?,?,?,?,?,?,?,?)
+    `).run(
+      entry.eventType, entry.changedBy, JSON.stringify(entry.targetIds),
+      entry.oldAccessLevel ?? null, entry.newAccessLevel ?? null,
+      entry.oldTeamId ?? null, entry.newTeamId ?? null,
+      entry.oldSensitivity ?? null, entry.newSensitivity ?? null,
+      entry.reason ?? null,
+    );
+  }
+
+  /** 获取权限审计日志 */
+  getPermissionAuditLog(limit = 50, changedBy?: string): Array<Record<string, unknown>> {
+    if (changedBy) {
+      return this.db.prepare('SELECT * FROM permission_audit_log WHERE changed_by=? ORDER BY created_at DESC LIMIT ?').all(changedBy, limit) as Array<Record<string, unknown>>;
+    }
+    return this.db.prepare('SELECT * FROM permission_audit_log ORDER BY created_at DESC LIMIT ?').all(limit) as Array<Record<string, unknown>>;
+  }
+
+  /** 按领域列出知识条目 (用于权限管理概览) */
+  listByDomain(domain?: string, limit = 100): Array<Record<string, unknown>> {
+    if (domain) {
+      return this.db.prepare(`
+        SELECT id, pkb_domain, pkb_type, access_level, access_team_id, access_sensitivity, pkb_confidence, pkb_status, substr(text, 1, 100) as preview, updated_at
+        FROM knowledge_chunks WHERE pkb_domain = ? ORDER BY updated_at DESC LIMIT ?
+      `).all(domain, limit) as Array<Record<string, unknown>>;
+    }
+    return this.db.prepare(`
+      SELECT id, pkb_domain, pkb_type, access_level, access_team_id, access_sensitivity, pkb_confidence, pkb_status, substr(text, 1, 100) as preview, updated_at
+      FROM knowledge_chunks WHERE pkb_domain IS NOT NULL ORDER BY pkb_domain, updated_at DESC LIMIT ?
+    `).all(limit) as Array<Record<string, unknown>>;
+  }
+
+  /** 按领域获取访问统计 (用于 admin 概览) */
+  getAccessStatsByDomain(): Record<string, { total: number; public: number; team: number; private: number; restricted: number }> {
+    const rows = this.db.prepare(`
+      SELECT pkb_domain, access_level, access_sensitivity, COUNT(*) as c
+      FROM knowledge_chunks WHERE pkb_domain IS NOT NULL
+      GROUP BY pkb_domain, access_level, access_sensitivity
+    `).all() as Array<Record<string, unknown>>;
+    const stats: Record<string, { total: number; public: number; team: number; private: number; restricted: number }> = {};
+    for (const r of rows) {
+      const domain = r.pkb_domain as string;
+      if (!stats[domain]) stats[domain] = { total: 0, public: 0, team: 0, private: 0, restricted: 0 };
+      stats[domain].total += (r.c as number);
+      const level = r.access_level as string;
+      if (level === 'public') stats[domain].public += (r.c as number);
+      else if (level === 'team') stats[domain].team += (r.c as number);
+      else stats[domain].private += (r.c as number);
+      if (r.access_sensitivity === 'restricted') stats[domain].restricted += (r.c as number);
+    }
+    return stats;
   }
 
   private jaccardTextSimilarity(a: string, b: string): number {

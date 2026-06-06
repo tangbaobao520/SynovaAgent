@@ -1,136 +1,167 @@
 /**
- * tui/welcome.ts — SynovaAgent Welcome 过渡页
+ * tui/welcome.ts — Synova Welcome 内容
  *
- * 对标 Claude Code 的启动仪式感：六边形 Logo + 版本 + 工作区 + 更新日志。
- * 用户按 Enter 后进入对话。
+ * formatWelcome: 纯文本生成（单栏纵向，无 blessed 依赖）
+ * showWelcome:  全屏覆盖页（需 blessed，按 Enter 消失）
  */
 import blessed from 'neo-blessed';
 import { getCurrentVersion } from '../services/update-checker';
 
-const BOLD = '\x1b[1m';
-const DIM = '\x1b[2m';
-const CYAN = '\x1b[36m';
-const GREEN = '\x1b[32m';
-const YELLOW = '\x1b[33m';
-const MAGENTA = '\x1b[35m';
-const WHITE = '\x1b[37m';
-const RESET = '\x1b[0m';
-
 const VERSION = getCurrentVersion();
 
-interface WelcomeConfig {
+const B = '\x1b[1m';
+const D = '\x1b[2m';
+const C = '\x1b[36m';
+const G = '\x1b[32m';
+const Y = '\x1b[33m';
+const M = '\x1b[35m';
+const W = '\x1b[37m';
+const R = '\x1b[0m';
+
+export interface WelcomeConfig {
   providerName: string;
   model: string;
   workDir: string;
+  healthy: boolean;
 }
 
+/** 生成 Welcome 纯文本（单栏纵向，直接放进对话区） */
+export function formatWelcome(config: WelcomeConfig): string {
+  const cwd = config.workDir || process.cwd();
+  const home = process.env.USERPROFILE || process.env.HOME || '';
+  const shortDir = cwd.replace(home, '~').replace(/\\/g, '/');
+  const icon = config.healthy ? '✅' : '⚠️';
+
+  return [
+    `${C}   ███████╗ ██╗   ██╗ ███╗   ██╗  ██████╗  ██╗   ██╗  █████╗   ${R}`,
+    `${C}   ██╔════╝ ╚██╗ ██╔╝ ████╗  ██║ ██╔═══██╗ ██║   ██║ ██╔══██╗  ${R}`,
+    `${C}   ███████╗  ╚████╔╝  ██╔██╗ ██║ ██║   ██║ ██║   ██║ ███████║  ${R}  ${D}v${VERSION}${R}`,
+    `${C}   ╚════██║   ╚██╔╝   ██║╚██╗██║ ██║   ██║ ╚██╗ ██╔╝ ██╔══██║  ${R}`,
+    `${C}   ███████║    ██║    ██║ ╚████║ ╚██████╔╝  ╚████╔╝  ██║  ██║  ${R}`,
+    `${C}   ╚═════╝    ╚═╝    ╚═╝  ╚═══╝  ╚═════╝    ╚═══╝   ╚═╝  ╚═╝  ${R}`,
+    '',
+    `  ${B}${W}组织增长导航系统${R}`,
+    `  ${D}7×24 驻扎在企业内部 · 不说话时安静采集数据 · 说话时给你答案${R}`,
+    '',
+    `  ${D}──────────────────────────────────────────────────────${R}`,
+    `   ${G}◈${R} 设定增长目标，持续跟踪进度      ${G}◈${R} 6 位 AI 专家并行分析`,
+    `   ${G}◈${R} 多源数据交叉验证，发现增长障碍   ${G}◈${R} 每日 19:00 简报推送`,
+    `   ${G}◈${R} 每条结论有来源、有置信度、有替代方案`,
+    `  ${D}──────────────────────────────────────────────────────${R}`,
+    '',
+    `   ${D}模型:${R} ${config.model}  ${D}│${R}  ${D}Provider:${R} ${config.providerName} ${icon}  ${D}│${R}  ${D}工作区:${R} ${shortDir}  ${D}│${R}  ${D}最近:${R} 权限管理 · PKB`,
+    '',
+    `   ${Y}💡${R} 直接输入增长目标即可开始    ${D}/setup${R} 配置 LLM    ${D}/help${R} 全部命令`,
+  ].join('\n');
+}
+
+/** 全屏 Welcome 覆盖页（保留，供未来使用）*/
 export async function showWelcome(
   screen: blessed.Widgets.Screen,
   config: WelcomeConfig,
 ): Promise<void> {
   return new Promise((resolve) => {
-    const logo = [
-      `${DIM}                 ╱‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾╲${RESET}`,
-      `${DIM}                ╱                                                ╲${RESET}`,
-      `${DIM}               ╱          ${YELLOW}◯  ◯  ◯  ◯  ◯  ◯${DIM}          ╲${RESET}`,
-      `${DIM}              ╱         ${YELLOW}╱                    ╲${DIM}         ╲${RESET}`,
-      `${DIM}             ╱         ${YELLOW}╱${BOLD}${WHITE}      S Y N O V A      ${RESET}${YELLOW}╲${DIM}         ╲${RESET}`,
-      `${DIM}            ╱          ${YELLOW}╲${DIM}    组织数字孪生诊断    ${YELLOW}╱${DIM}          ╲${RESET}`,
-      `${DIM}           ╱           ${YELLOW}╲                        ╱${DIM}           ╲${RESET}`,
-      `${DIM}          ╱             ${YELLOW}╲    ${GREEN}六阶诊断引擎${RESET}    ${YELLOW}╱${DIM}             ╲${RESET}`,
-      `${DIM}         ╱               ${YELLOW}╲  ${CYAN}本体图谱 · 根因分析${RESET}  ${YELLOW}╱${DIM}               ╲${RESET}`,
-      `${DIM}        ╱                 ${YELLOW}╲  ${CYAN}交叉验证 · 持续监测${RESET}  ${YELLOW}╱${DIM}                 ╲${RESET}`,
-      `${DIM}       ╱                   ${YELLOW}╲                        ╱${DIM}                   ╲${RESET}`,
-      `${DIM}      ╱                     ${YELLOW}╲   ${MAGENTA}专家团队就绪${RESET}   ${YELLOW}╱${DIM}                     ╲${RESET}`,
-      `${DIM}     ╱                       ${YELLOW}╲  ${DIM}战略 · 组织 · 财务${RESET}  ${YELLOW}╱${DIM}                       ╲${RESET}`,
-      `${DIM}    ╱                         ${YELLOW}╲  ${DIM}技术 · 营销 · 行动${RESET}  ${YELLOW}╱${DIM}                         ╲${RESET}`,
-      `${DIM}   ╱                           ${YELLOW}╲                        ╱${DIM}                           ╲${RESET}`,
-      `${DIM}  ╱                             ${YELLOW}╲${DIM}────────────────────${YELLOW}╱${DIM}                             ╲${RESET}`,
-      `${DIM} ╱                               ${YELLOW}◯────────────────────◯${DIM}                               ╲${RESET}`,
-      `${DIM}╱                                                                                                ╲${RESET}`,
-    ].join('\n');
-
-    // ═══ 构建内容 ═══
-
     const cwd = config.workDir || process.cwd();
     const home = process.env.USERPROFILE || process.env.HOME || '';
     const shortDir = cwd.replace(home, '~').replace(/\\/g, '/');
+    const icon = config.healthy ? '✅' : '⚠️';
 
-    const info = [
-      `${BOLD}${WHITE}SynovaAgent${RESET} ${DIM}v${VERSION}${RESET}`,
+    // 左栏：Logo + 状态
+    const left = [
+      `${C}   ███████╗ ██╗   ██╗ ███╗   ██╗  ██████╗  ██╗   ██╗  █████╗   ${R}`,
+      `${C}   ██╔════╝ ╚██╗ ██╔╝ ████╗  ██║ ██╔═══██╗ ██║   ██║ ██╔══██╗  ${R}`,
+      `${C}   ███████╗  ╚████╔╝  ██╔██╗ ██║ ██║   ██║ ██║   ██║ ███████║  ${R}  ${D}v${VERSION}${R}`,
+      `${C}   ╚════██║   ╚██╔╝   ██║╚██╗██║ ██║   ██║ ╚██╗ ██╔╝ ██╔══██║  ${R}`,
+      `${C}   ███████║    ██║    ██║ ╚████║ ╚██████╔╝  ╚████╔╝  ██║  ██║  ${R}`,
+      `${C}   ╚═════╝    ╚═╝    ╚═╝  ╚═══╝  ╚═════╝    ╚═══╝   ╚═╝  ╚═╝  ${R}`,
       '',
-      `${DIM}模型:${RESET} ${config.model || 'deepseek-v4-flash'}    ${DIM}Provider:${RESET} ${config.providerName || 'deepseek'}    ${DIM}工作区:${RESET} ${shortDir}`,
-      '',
-      `${DIM}─── 更新日志 ─────────────────────────────────────────────${RESET}`,
-      `${GREEN}2026-06-02${RESET}  TUI 三栏布局 · 流式对话 · 六阶段诊断 · 本体图谱实时监测`,
-      `${GREEN}2026-06-01${RESET}  26 专家工具链 · Cron 自主巡检 · 会话持久化`,
-      `${GREEN}2026-05-31${RESET}  LLM Provider 多通道 · DeepSeek / OpenAI 兼容 / Gateway`,
-      '',
-      `${DIM}💡 首次使用请直接输入组织名称，Agent 会引导你完成诊断访谈${RESET}`,
-      `${DIM}   Ctrl+C 退出  /help 查看命令  /status 查看状态${RESET}`,
-      '',
-      `${BOLD}${GREEN}                       按 Enter 开始诊断${RESET} ${DIM}──→${RESET}`,
+      `  ${D}模型:${R} ${config.model}`,
+      `  ${D}Provider:${R} ${config.providerName} ${icon}`,
+      `  ${D}工作区:${R} ${shortDir}`,
     ].join('\n');
 
-    const content = [logo, '', info].join('\n');
+    // 右栏：介绍 + 能力
+    const right = [
+      `${B}${W}SynovaAgent${R}  ${D}组织增长导航系统${R}`,
+      '',
+      `${D}7×24 驻扎在企业内部${R}`,
+      `${D}不说话时安静采集数据，说话时给你答案${R}`,
+      '',
+      `${D}─── 核心能力 ─────────────────────────${R}`,
+      ` ${G}◈${R} 设定增长目标，持续跟踪进度`,
+      ` ${G}◈${R} 6 位 AI 专家并行分析，交叉验证`,
+      ` ${G}◈${R} 多源数据发现增长障碍`,
+      ` ${G}◈${R} 每日 19:00 简报推送`,
+      ` ${G}◈${R} 每条结论有来源、有置信度`,
+      '',
+      `${D}─── 最近更新 ─────────────────────────${R}`,
+      ` ${G}06-06${R} 权限管理 · PKB 148条种子知识`,
+      ` ${G}06-04${R} 知识Agent · 飞书 · IMA`,
+      ` ${G}06-02${R} TUI 三栏 · 流式对话`,
+      '',
+      ` ${Y}💡${R} 直接输入增长目标即可开始`,
+      ` ${D}/setup${R} 配置 LLM   ${D}/help${R} 全部命令`,
+    ].join('\n');
 
-    // ═══ 创建全屏 Welcome Box ═══
+    // 合并两栏（简单拼接，左边补空格对齐）
+    const leftLines = left.split('\n');
+    const rightLines = right.split('\n');
+    const maxLines = Math.max(leftLines.length, rightLines.length);
+    const lines: string[] = [];
+    for (let i = 0; i < maxLines; i++) {
+      const l = leftLines[i] || '';
+      const r = rightLines[i] || '';
+      // ANSI 颜色会干扰宽度计算，用固定间距
+      lines.push(`  ${l}${' '.repeat(Math.max(0, 44 - stripAnsi(l).length))}  ${r}`);
+    }
+
+    const content = [
+      '',
+      ...lines,
+      '',
+      `${B}${G}                        按 Enter 开始${R} ${D}──→${R}`,
+    ].join('\n');
+
     const welcomeBox = blessed.box({
-      top: 0,
-      left: 0,
-      width: '100%',
-      height: '100%',
+      top: 0, left: 0, width: '100%', height: '100%',
       content,
       border: { type: 'line' },
-      style: {
-        border: { fg: 'cyan' },
-        fg: 'white',
-        bg: 'black',
-      },
+      style: { border: { fg: 'cyan' }, fg: 'white', bg: 'black' },
       tags: false,
     });
-
     screen.append(welcomeBox);
 
-    // ═══ 闪烁提示 ═══
+    // 闪烁提示
     let blinkOn = true;
-    const blinkInterval = setInterval(() => {
-      if (!welcomeBox) return;
-      const lines = content.split('\n');
-      const lastLineIdx = lines.length - 1;
-      const promptLine = lines[lastLineIdx];
-      if (blinkOn) {
-        lines[lastLineIdx] = promptLine;
-      } else {
-        lines[lastLineIdx] = promptLine.replace('按 Enter 开始诊断', `${DIM}按 Enter 开始诊断${RESET}`);
-      }
-      welcomeBox.setContent(lines.join('\n'));
+    const blink = setInterval(() => {
+      const all = content.split('\n');
+      const last = all.length - 1;
+      all[last] = blinkOn
+        ? `${B}${G}                        按 Enter 开始${R} ${D}──→${R}`
+        : `${D}                        按 Enter 开始${R} ${D}──→${R}`;
+      welcomeBox.setContent(all.join('\n'));
       screen.render();
       blinkOn = !blinkOn;
     }, 600);
 
-    // ═══ Enter 键处理 ═══
     const onEnter = () => {
-      clearInterval(blinkInterval);
+      clearInterval(blink);
       screen.remove(welcomeBox);
-      // blessed Box.detach 未在类型定义中声明
       (welcomeBox as { detach?: () => void }).detach?.();
       screen.removeListener('keypress', keyHandler);
       resolve();
     };
 
     const keyHandler = (_ch: any, key: any) => {
-      if (key.name === 'enter' || key.name === 'return') {
-        onEnter();
-      }
-      if (key.name === 'c' && key.ctrl) {
-        clearInterval(blinkInterval);
-        screen.destroy();
-        process.exit(0);
-      }
+      if (key.name === 'enter' || key.name === 'return') onEnter();
+      if (key.name === 'c' && key.ctrl) { clearInterval(blink); screen.destroy(); process.exit(0); }
     };
 
     screen.on('keypress', keyHandler);
     screen.render();
   });
+}
+
+function stripAnsi(s: string): string {
+  return s.replace(/\x1b\[[0-9;]*m/g, '');
 }

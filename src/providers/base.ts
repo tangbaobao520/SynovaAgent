@@ -60,6 +60,7 @@ export function createOpenAICompatibleProvider(cfg: ProviderAdapterConfig): LLMP
       temperature: opts?.temperature ?? 0.7,
       max_tokens: opts?.maxTokens ?? 4000,
     };
+    if (opts?.reasoningEffort) body.reasoning_effort = opts.reasoningEffort;
     if (stream) body.stream = true;
 
     return fetch(`${baseUrl}${chatPath}`, {

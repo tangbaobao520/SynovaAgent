@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Synova 增长导航系统 — 终端启动脚本
+set -e
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$ROOT"
+exec npx tsx src/tui/chat.ts "$@"

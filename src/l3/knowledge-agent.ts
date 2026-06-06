@@ -12,6 +12,7 @@
  */
 import { createLogger } from '../logger';
 import { KnowledgeStore } from '../l4/knowledge-store';
+import type { KnowledgeChunk } from '../l4/knowledge-store';
 import { getDatabase } from '../init/engine-context';
 import { getCurrentFilterClause } from '../services/request-context';
 import type { FilterClause } from '../l4/knowledge-store';
@@ -241,6 +242,169 @@ export function createKnowledgeAgent(config: KnowledgeAgentConfig = {}): Knowled
             return { nodes: nodes.slice(0, limit).map(n => ({ type: n.type, props: n.props })), total: nodes.length };
           } catch (err: unknown) {
             return { error: `图查询失败: ${err instanceof Error ? err.message : String(err)}` };
+          }
+        },
+      });
+
+      // ── manage_permissions (M2 — 对话变更权限, admin-only) ──
+      registry.register({
+        name: 'manage_permissions',
+        description: `管理知识库权限 (仅管理员可用)。通过对话修改知识的访问级别、团队归属、敏感度。
+⚠️ 财务领域 (finance) 强制 restricted 敏感度，不可降级，不可设为 public。
+市场领域 (marketing) 默认可共享 (public)。
+操作类型:
+- change_access: 修改单条知识的访问权限
+- bulk_share: 批量将某领域的知识设为公开 (适合市场/战略知识共享)
+- restrict: 批量限制某领域的知识为 team-only (适合财务/薪酬数据)
+- list_by_domain: 查看某领域的权限分布概览
+- grant_temporary: 临时授权某团队访问特定知识 (需设过期时间)`,
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', description: '操作: change_access / bulk_share / restrict / list_by_domain / grant_temporary' },
+            targetId: { type: 'string', description: '[change_access] 目标条目 ID' },
+            domain: { type: 'string', description: '[bulk_share/restrict/list_by_domain] 领域: strategy/org/finance/tech/marketing/action' },
+            accessLevel: { type: 'string', description: '访问级别: public / team / private' },
+            teamId: { type: 'string', description: '团队 ID (accessLevel=team 时必填)' },
+            sensitivity: { type: 'string', description: '敏感度: normal / sensitive / restricted (财务领域强制 restricted)' },
+            reason: { type: 'string', description: '变更原因 (会记录到审计日志)' },
+          },
+          required: ['action'],
+        },
+        operationType: 'admin',
+        sideEffects: 'mutating',
+        handler: async (params: Record<string, unknown>) => {
+          const store = new KnowledgeStore(getDatabase());
+          const user = (await import('../services/request-context')).getCurrentUser();
+
+          // ── 权限检查: 仅 admin ──
+          if (!user || !user.auth.roles.includes('admin' as never)) {
+            return { ok: false, error: 'PERMISSION_DENIED', message: '仅管理员可修改知识库权限。当前角色: ' + (user?.auth.roles.join(', ') || 'unknown') };
+          }
+
+          const action = String(params.action || '');
+          const reason = String(params.reason || '管理员通过对话修改');
+          const changedBy = user.userId;
+
+          try {
+            switch (action) {
+
+              case 'change_access': {
+                const targetId = String(params.targetId || '');
+                if (!targetId) return { ok: false, error: 'targetId 必填' };
+                const rows = store.listByDomain(undefined, 1000);
+                const entry = rows.find(r => r.id === targetId);
+                if (!entry) return { ok: false, error: `条目 ${targetId} 不存在` };
+
+                const result = store.updateAccess(targetId, {
+                  accessLevel: params.accessLevel as KnowledgeChunk['accessLevel'] | undefined,
+                  accessTeamId: (params.teamId as string) || undefined,
+                  accessSensitivity: params.accessSensitivity as KnowledgeChunk['accessSensitivity'] | undefined,
+                });
+
+                if (result.ok) {
+                  store.auditPermissionChange({
+                    eventType: 'access_change',
+                    changedBy,
+                    targetIds: [targetId],
+                    oldAccessLevel: entry.access_level as string,
+                    newAccessLevel: (params.accessLevel as string) || (entry.access_level as string),
+                    oldTeamId: entry.access_team_id as string | undefined,
+                    newTeamId: (params.teamId as string) || (entry.access_team_id as string | undefined),
+                    oldSensitivity: entry.access_sensitivity as string,
+                    newSensitivity: (params.sensitivity as string) || (entry.access_sensitivity as string),
+                    reason,
+                  });
+                }
+                return { ...result, action: 'change_access', targetId };
+              }
+
+              case 'bulk_share': {
+                const domain = String(params.domain || '');
+                if (!domain) return { ok: false, error: 'domain 必填' };
+                const result = store.bulkUpdateAccess({
+                  domain,
+                  accessLevel: (params.accessLevel as 'public' | 'team') || 'public',
+                  accessSensitivity: 'normal',
+                });
+                if (result.updated > 0) {
+                  store.auditPermissionChange({
+                    eventType: 'bulk_share', changedBy,
+                    targetIds: [`domain:${domain}`],
+                    newAccessLevel: (params.accessLevel as string) || 'public',
+                    reason,
+                  });
+                }
+                return { ...result, action: 'bulk_share', domain };
+              }
+
+              case 'restrict': {
+                const domain = String(params.domain || '');
+                if (!domain) return { ok: false, error: 'domain 必填' };
+                const result = store.bulkUpdateAccess({
+                  domain,
+                  accessLevel: 'team',
+                  accessSensitivity: domain === 'finance' ? 'restricted' : 'sensitive',
+                  accessTeamId: (params.teamId as string) || undefined,
+                });
+                if (result.updated > 0) {
+                  store.auditPermissionChange({
+                    eventType: 'restrict', changedBy,
+                    targetIds: [`domain:${domain}`],
+                    newAccessLevel: 'team',
+                    newSensitivity: domain === 'finance' ? 'restricted' : 'sensitive',
+                    reason,
+                  });
+                }
+                return { ...result, action: 'restrict', domain };
+              }
+
+              case 'list_by_domain': {
+                const domain = params.domain as string | undefined;
+                const entries = store.listByDomain(domain, 100);
+                const stats = store.getAccessStatsByDomain();
+                return {
+                  ok: true,
+                  action: 'list_by_domain',
+                  domain: domain || 'all',
+                  entries: entries.map(e => ({
+                    id: e.id, domain: e.pkb_domain, type: e.pkb_type,
+                    accessLevel: e.access_level, teamId: e.access_team_id,
+                    sensitivity: e.access_sensitivity, status: e.pkb_status,
+                    preview: e.preview, updatedAt: e.updated_at,
+                  })),
+                  stats: domain ? { [domain]: stats[domain] } : stats,
+                };
+              }
+
+              case 'grant_temporary': {
+                const targetId = String(params.targetId || '');
+                const teamId = String(params.teamId || '');
+                if (!targetId || !teamId) return { ok: false, error: 'targetId 和 teamId 必填' };
+                const result = store.updateAccess(targetId, {
+                  accessLevel: 'team',
+                  accessTeamId: teamId,
+                });
+                if (result.ok) {
+                  store.auditPermissionChange({
+                    eventType: 'temporary_grant', changedBy,
+                    targetIds: [targetId],
+                    newAccessLevel: 'team', newTeamId: teamId,
+                    reason: `${reason} (临时授权至团队 ${teamId})`,
+                  });
+                  // 记录过期任务 (可选: 24h 后自动回收)
+                  log.info({ targetId, teamId, changedBy }, '临时授权已生效 (默认 24h 后需手动回收)');
+                }
+                return { ...result, action: 'grant_temporary', targetId, teamId, note: '临时授权已生效，24h 后请手动回收或使用 revoke 操作' };
+              }
+
+              default:
+                return { ok: false, error: `未知操作: ${action}。支持: change_access / bulk_share / restrict / list_by_domain / grant_temporary` };
+            }
+          } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err);
+            log.error({ err: msg, action, changedBy }, '权限管理操作失败');
+            return { ok: false, error: msg, action };
           }
         },
       });

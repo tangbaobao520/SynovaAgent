@@ -1,14 +1,26 @@
 /**
- * tui/status-bar.ts — 底部状态栏
+ * tui/status-bar.ts — 底部状态栏 (对标 CodeWhale Footer)
+ *
+ * 三芯片: 模式 | 模型 | 费用
+ * 快捷键栏在单独一行。
  */
 import blessed from 'neo-blessed';
+import { getCostTracker, formatCost } from '../services/llm-cost';
 
 const DIM = '\x1b[2m';
+const CYAN = '\x1b[36m';
+const YELLOW = '\x1b[33m';
+const WHITE = '\x1b[1m';
 const RESET = '\x1b[0m';
 
 export interface StatusBar {
   box: blessed.Widgets.BoxElement;
-  setInfo(text: string): void;
+  /** 更新模式标签 */
+  setMode(mode: string): void;
+  /** 刷新费用显示 */
+  refreshCost(): void;
+  /** 设置快捷键提示 */
+  setHints(text: string): void;
 }
 
 export function createStatusBar(opts: { bottom?: number; height?: number } = {}): StatusBar {
@@ -20,13 +32,29 @@ export function createStatusBar(opts: { bottom?: number; height?: number } = {})
     style: { bg: 'black', fg: 'white' },
   });
 
+  let currentMode = '增长导航';
+  let currentHints = 'Ctrl+C 退出  /setup 配置  /model 切换  /help 帮助';
+
+  function render() {
+    const cost = getCostTracker();
+    const model = cost.currentModel;
+    const session = formatCost(cost.sessionCost);
+    const monthly = formatCost(cost.monthlyCost);
+
+    const left = ` ${CYAN}${currentMode}${RESET} ${DIM}│${RESET} ${model} ${DIM}│${RESET} ${YELLOW}本次${RESET} ${session} ${DIM}│${RESET} ${YELLOW}本月${RESET} ${monthly}`;
+    const right = `${DIM}${currentHints}${RESET}`;
+    // 用空格填充中间
+    const totalWidth = (box.width as number) || 80;
+    const padLen = Math.max(0, totalWidth - left.replace(/\x1b\[[0-9;]*m/g, '').length - right.replace(/\x1b\[[0-9;]*m/g, '').length);
+    box.setContent(left + ' '.repeat(padLen) + right);
+  }
+
   const bar: StatusBar = {
     box,
-    setInfo(text) {
-      box.setContent(` ${DIM}${text}${RESET}`);
-    },
+    setMode(mode) { currentMode = mode; render(); },
+    refreshCost() { render(); },
+    setHints(text) { currentHints = text; render(); },
   };
 
-  bar.setInfo('Enter 发送  Ctrl+C 退出  /help 帮助  /search 搜索  /history 历史');
   return bar;
 }

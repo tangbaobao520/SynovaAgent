@@ -1,0 +1,56 @@
+# ── 依赖 ──
+node_modules/
+.pnp/
+.pnp.js
+
+# ── 数据 (运行时 volume 挂载) ──
+data/
+logs/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# ── 构建产物 ──
+dist/
+build/
+*.tgz
+*.tar.gz
+
+# ── IDE / 编辑器 ──
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── 测试 ──
+coverage/
+.nyc_output/
+test-results/
+
+# ── Git ──
+.git/
+.gitignore
+.gitattributes
+
+# ── 环境 ──
+.env
+.env.local
+.env.*.local
+
+# ── OS ──
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ── 文档 (不需要进镜像) ──
+docs/
+*.md
+!README.md
+
+# ── Claude / AI 工具 ──
+.claude/
+.memory/
+MEMORY.md
+CLAUDE.md

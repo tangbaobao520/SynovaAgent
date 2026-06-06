@@ -9,6 +9,7 @@
  *   - change: 指标变化率超阈值
  *   - pattern: 模式匹配 (如: 连续3次下降)
  */
+import Database from 'better-sqlite3';
 import { createLogger } from '../logger';
 
 const log = createLogger('l5/alert-rules');
@@ -81,10 +82,20 @@ const DEFAULT_RULES: AlertRule[] = [
 export class AlertRuleEngine {
   private rules = new Map<string, AlertRule>();
   private lastTriggered = new Map<string, number>();
+  private db?: Database.Database;
 
-  constructor() {
+  constructor(db?: Database.Database) {
     for (const rule of DEFAULT_RULES) {
       this.rules.set(rule.name, rule);
+    }
+    if (db) {
+      this.db = db;
+      db.exec(`CREATE TABLE IF NOT EXISTS alert_cooldowns (rule_name TEXT PRIMARY KEY, last_triggered_at INTEGER NOT NULL)`);
+      const rows = db.prepare('SELECT rule_name, last_triggered_at FROM alert_cooldowns').all() as Array<Record<string, unknown>>;
+      for (const r of rows) {
+        this.lastTriggered.set(r.rule_name as string, r.last_triggered_at as number);
+      }
+      log.info({ count: rows.length }, '冷却期已从 SQLite 恢复');
     }
   }
 
@@ -138,6 +149,7 @@ export class AlertRuleEngine {
 
       if (triggered) {
         this.lastTriggered.set(rule.name, now);
+        try { this.db?.prepare('INSERT OR REPLACE INTO alert_cooldowns (rule_name, last_triggered_at) VALUES (?,?)').run(rule.name, now); } catch {}
         triggers.push({
           rule,
           currentValue: value,
@@ -158,14 +170,14 @@ export class AlertRuleEngine {
   /** Reset all cooldowns (for testing) */
   resetCooldowns(): void {
     this.lastTriggered.clear();
+    try { this.db?.prepare('DELETE FROM alert_cooldowns').run(); } catch {}
   }
 }
 
 // ═══ Singleton ═══
 
 let _instance: AlertRuleEngine | null = null;
-export function getAlertRuleEngine(inject?: AlertRuleEngine): AlertRuleEngine {
-  if (inject) { _instance = inject; return inject; }
-  if (!_instance) _instance = new AlertRuleEngine();
+export function getAlertRuleEngine(db?: Database.Database): AlertRuleEngine {
+  if (!_instance) _instance = new AlertRuleEngine(db);
   return _instance;
 }

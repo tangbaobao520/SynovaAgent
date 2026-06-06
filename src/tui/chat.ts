@@ -1,14 +1,14 @@
 import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
 /**
- * tui/chat.ts — SynovaAgent TUI 对话入口 (Era 2.1b)
+ * tui/chat.ts — Synova 增长导航 TUI 入口
  *
- * 三区布局 + ConversationEngine 集成 + 价值主张开场白。
+ * 三区布局 (对话 + 导航面板 + 状态栏) + ConversationEngine + 增长开场白。
  * 用法: npx tsx src/tui/chat.ts
  */
 import Database from 'better-sqlite3';
 import * as path from 'path';
 import * as fs from 'fs';
-import { createProvider } from '../providers';
+import { createProvider, type ProviderType } from '../providers';
 import { detectProvider } from '../providers/detect';
 import { isLLMConfigured, runSetup } from '../setup';
 import { ConversationEngine } from '../agent/conversation-engine';
@@ -17,7 +17,7 @@ import { registerBuiltinTools } from '../agent/builtin-tools';
 import { loadConfig } from '../config';
 import blessed from 'neo-blessed';
 import { createTuiApp } from './app';
-import { showWelcome } from './welcome';
+import { formatWelcome } from './welcome';
 import { getGlobalScheduler } from '../cron/scheduler';
 import { createLogger } from '../logger';
 import { TuiViewAdapter } from '../l1-interaction/tui-adapter';
@@ -48,6 +48,8 @@ import { createOrchestrationWiring } from '../orchestrator/wiring';
       }
     }
   }
+  // TUI 独占 stdout — 静默日志防止 JSON 打穿画面
+  process.env.LOG_LEVEL = 'silent';
 })();
 
 const log = createLogger('tui/chat');
@@ -58,19 +60,7 @@ const RESET = '\x1b[0m';
 
 // ═══ 价值主张开场白 ═══
 
-const OPENING_MESSAGE = [
-  '你好。你可能正在想"这个 Agent 到底能做什么"。',
-  '',
-  '简单说：我们是一支由六个 AI 专家组成的诊断团队——',
-  '战略、组织、财务、技术、营销、行动——',
-  '他们会同时分析你的组织，交叉验证发现，',
-  '标注出互相矛盾的结论。',
-  '',
-  '整个过程 10-15 分钟，结束后会持续监测你',
-  '组织的关键指标。准备好了吗？',
-  '',
-  '先告诉我你的组织名称。',
-].join('\n');
+const OPENING_MESSAGE = '告诉我，你当前最关心的增长目标是什么？';
 
 // ═══ Main ═══
 
@@ -93,34 +83,34 @@ async function main() {
     }
   }
 
-  let provider: ReturnType<typeof createProvider>;
+  let provider: ReturnType<typeof createProvider> | undefined;
 
-  // ═══ Step 1: LLM 配置 ═══
+  // ═══ Step 1: 检测 LLM 配置 (非致命 — 进入 TUI 后再配) ═══
+  let llmHealthy = false;
+  const detectedType = detectProvider();
   try {
-    if (!isLLMConfigured()) {
-      console.log('未检测到 LLM 配置，进入 Setup...');
-      await runSetup();
-    }
+    if (isLLMConfigured()) {
+      provider = createProvider(detectedType, {
+        apiKey: process.env.LLM_API_KEY || process.env.DEEPSEEK_API_KEY,
+        gatewayHost: process.env.OPENCLAW_GATEWAY_HOST,
+        baseUrl: process.env.LLM_BASE_URL,
+      });
 
-    provider = createProvider(detectProvider(), {
-      apiKey: process.env.LLM_API_KEY || process.env.DEEPSEEK_API_KEY,
-      gatewayHost: process.env.OPENCLAW_GATEWAY_HOST,
-      baseUrl: process.env.LLM_BASE_URL,
-    });
-
-    // 验证连接
-    const health = await provider.healthCheck();
-    if (!health.healthy) {
-      console.log(`\n${RED}⚠ LLM 连接失败: ${health.error}${RESET}`);
-      console.log(`${YELLOW}将以离线模式启动——本体功能可用，诊断需要 LLM。${RESET}`);
-      console.log(`${YELLOW}修复 Key 后重启: $env:LLM_API_KEY="sk-your-key"; npx tsx src/tui/chat.ts${RESET}\n`);
+      const health = await provider.healthCheck();
+      if (health.healthy) {
+        llmHealthy = true;
+        console.log(`${GREEN}✅ ${provider.name} 连接成功${RESET} (${health.latencyMs}ms)\n`);
+      } else {
+        console.log(`${YELLOW}⚠ LLM 连接失败: ${health.error}${RESET}`);
+        console.log(`${YELLOW}  进入 TUI 后可用 /setup 重新配置${RESET}\n`);
+      }
     } else {
-      console.log(`${GREEN}✅ ${provider.name} 连接成功${RESET} (${health.latencyMs}ms)\n`);
+      console.log(`${YELLOW}⚠ 未检测到 LLM 配置${RESET}`);
+      console.log(`${YELLOW}  进入 TUI 后输入 /setup 即可配置，无需重启${RESET}\n`);
     }
   } catch (err: any) {
-    console.error(`${RED}Step 1 失败 (LLM 配置): ${err.message}${RESET}`);
-    console.error(`${YELLOW}提示: 检查网络连接或 API Key 格式${RESET}`);
-    process.exit(1);
+    console.error(`${YELLOW}⚠ LLM 检测异常: ${err.message}${RESET}`);
+    console.error(`${YELLOW}  进入 TUI 后可用 /setup 重新配置${RESET}\n`);
   }
 
   // ═══ Step 2: 初始化 DB + SessionStore ═══
@@ -140,48 +130,44 @@ async function main() {
     process.exit(1);
   }
 
-  // ═══ Step 3: Welcome 过渡页 ═══
-  // readline (runSetup) 关闭后需清理终端模式
-  if (process.stdin.isTTY) {
-    try { process.stdin.setRawMode?.(false); } catch {}
-    process.stdin.resume();
-    await new Promise(r => setTimeout(r, 50));
-  }
-
-  let app: ReturnType<typeof createTuiApp>;
+  // ═══ Step 3: 直接构建 TUI — 无覆盖层，输入框立即可用 ═══
+  let app: ReturnType<typeof createTuiApp> | undefined;
   let tuiViewAdapter: TuiViewAdapter | undefined;
   try {
-    // 先创建一个临时 screen 用于 Welcome 页
-    const welcomeScreen = blessed.screen({
-      title: 'Synova',
-      smartCSR: true,
-      fullUnicode: true,
-      useBCE: true,
+    const screen = blessed.screen({
+      title: 'Synova', smartCSR: true, fullUnicode: true, useBCE: true,
     });
+    // Windows: 确保 stdin raw mode 和终端模式正确
+    if (process.platform === 'win32' && process.stdin.isTTY) {
+      try { process.stdin.setRawMode(true); } catch {}
+    }
 
-    // 显示 Welcome 过渡页，等待用户按 Enter
-    await showWelcome(welcomeScreen, {
-      providerName: provider.name,
-      model: process.env.LLM_MODEL || 'deepseek-v4-flash',
-      workDir: process.cwd(),
-    });
-
-    // Enter 后在同一 screen 上构建 TUI 三栏布局
-    app = createTuiApp(welcomeScreen);
-    app.setTitleStatus(`准备就绪 · ${provider.name}`);
-
-    // Slice C: ViewAdapter — ConversationEngine 通过此接口与 TUI 通信
+    app = createTuiApp(screen);
+    app.setTitleStatus(llmHealthy ? `准备就绪 · ${provider!.name}` : '需要配置 LLM — 输入 /setup');
     tuiViewAdapter = new TuiViewAdapter(app);
 
-    // 启动时后台检查更新 (借鉴 Hermes banner prefetch)
+    const tui = app;
     checkForUpdates().then((result) => {
       const msg = formatUpdateMessage(result);
-      if (msg) {
-        app.chat.addMessage('system', msg);
-        app.screen.render();
-      }
-    }).catch(() => { /* 静默降级 */ });
+      if (msg) { tui.chat.addMessage('system', msg); tui.screen.render(); }
+    }).catch(() => {});
+
+    // Welcome 作为对话区首条内容 + LLM 状态提示，一次性 setInitialContent 滚到顶部
+    let welcome = formatWelcome({
+      providerName: provider?.name || '未配置',
+      model: process.env.LLM_MODEL || (llmHealthy ? 'deepseek-v4-flash' : '待配置'),
+      workDir: process.cwd(),
+      healthy: llmHealthy,
+    });
+    if (!llmHealthy) {
+      welcome += '\n👋 检测到你还没有配置 LLM。输入 /setup 粘贴 DeepSeek API Key 即可。';
+    } else {
+      welcome += '\n\n' + OPENING_MESSAGE;
+    }
+    app.chat.setInitialContent(welcome);
+    app.screen.render();
   } catch (err: any) {
+    try { app?.screen.destroy(); } catch {}
     console.error(`${RED}Step 3 失败 (TUI 界面创建): ${err.message}${RESET}`);
     console.error(`${YELLOW}提示: 请确认终端支持 Unicode 且窗口足够大 (≥80×24)${RESET}`);
     if (err.message?.includes('ileft') || err.message?.includes('coords')) {
@@ -196,38 +182,61 @@ async function main() {
   const hookRunner = new HookRunner();
   const sessionManager = new SessionManager();
   const phaseStateMachine = new PhaseStateMachine({
-    0: { label: '组织访谈', required: true, maxDurationMs: 600_000 },
+    0: { label: '目标访谈', required: true, maxDurationMs: 600_000 },
     1: { label: '数据采集', required: true, maxDurationMs: 120_000 },
     2: { label: '假设生成', required: true, maxDurationMs: 300_000 },
-    3: { label: '根因分析', required: true, maxDurationMs: 180_000 },
-    4: { label: '报告生成', required: true, maxDurationMs: 60_000 },
+    3: { label: '障碍分析', required: true, maxDurationMs: 180_000 },
+    4: { label: '简报生成', required: true, maxDurationMs: 60_000 },
     5: { label: '交付', required: true, maxDurationMs: 120_000 },
   });
   const wiring = createOrchestrationWiring(eventBus, hookRunner, sessionManager, phaseStateMachine);
 
-  // ═══ Step 4: 创建对话 ═══
-  let conv: ConversationEngine;
+  // ═══ Step 4: 创建对话 (LLM 未配置时进入仅本体模式) ═══
+  let conv: ConversationEngine | undefined;
   let sessionId: string;
+
+  /** 完整的对话引擎初始化 (首次启动或 /setup 后重新初始化) */
+  async function initConversationEngine(): Promise<boolean> {
+    if (!provider) return false;
+    try {
+      const { ToolRegistry } = await import('../agent/tools');
+      const { EngineCoreVendorAdapter } = await import('../adapters/engine-core-adapter');
+      conv = new ConversationEngine(provider, {
+        diagnosisEngine: new EngineCoreVendorAdapter(provider, new ToolRegistry()),
+      });
+      (conv as { setViewAdapter?: (a: TuiViewAdapter) => void }).setViewAdapter?.(tuiViewAdapter!);
+
+      registerBuiltinTools(conv.getToolRegistry(), store, sessionId, () => conv!.getPhase(), () => conv!.getOrgId());
+
+      // M2: KnowledgeAgent 工具注册
+      try {
+        const { createKnowledgeAgent } = await import('../l3/knowledge-agent');
+        const kAgent = createKnowledgeAgent();
+        kAgent.registerTo(conv.getToolRegistry() as unknown as { register: (tool: Record<string, unknown>) => void });
+        log.info('KnowledgeAgent 工具已注册到 TUI');
+      } catch (err: any) {
+        log.warn({ err: err.message }, 'KnowledgeAgent 注册到 TUI 失败 — degraded');
+      }
+
+      app!.setTitleStatus(`准备就绪 · ${provider.name}`);
+      app!.screen.render();
+      return true;
+    } catch (err: any) {
+      log.error({ err }, 'ConversationEngine 初始化失败');
+      return false;
+    }
+  }
+
   try {
-    // TUI 始终以新会话开始——旧会话可查询但不自动恢复
-    // （这与 CLI 不同：CLI 面向反复使用，TUI 面向单次深度诊断）
-    // 铁律 39: 注入 DiagnosisEngine 适配器 — TUI 诊断链路
-    const { ToolRegistry } = await import('../agent/tools');
-    const { EngineCoreVendorAdapter } = await import('../adapters/engine-core-adapter');
-    conv = new ConversationEngine(provider, {
-      diagnosisEngine: new EngineCoreVendorAdapter(provider, new ToolRegistry()),
-    });
-    // Slice C: bind ViewAdapter for L1 decoupling
-    // P1-02: ViewAdapter 为 L1 接口注入, conv 是 ConversationEngine 类型未导出该方法
-    (conv as { setViewAdapter?: (a: TuiViewAdapter) => void }).setViewAdapter?.(tuiViewAdapter);
     const s = store.createSession('default');
     sessionId = s.id;
 
-    // 显示开场白
-    app.chat.addMessage('agent', OPENING_MESSAGE);
-
-    registerBuiltinTools(conv.getToolRegistry(), store, sessionId, () => conv.getPhase(), () => conv.getOrgId());
-    app.side.setPhase(conv.getPhase());
+    if (llmHealthy && provider) {
+      const ok = await initConversationEngine();
+      if (!ok) {
+        app.chat.addMessage('alert', '⚠️ LLM 连接异常。输入 /setup 重新配置。');
+      }
+    }
     app.screen.render();
   } catch (err: any) {
     console.error(`${RED}Step 4 失败 (对话初始化): ${err.message}${RESET}`);
@@ -240,16 +249,11 @@ async function main() {
   scheduler.schedule('ontology-monitor', '*/5 * * * *', async () => {
     // 每 5 分钟检查本体图变化
     try {
-      const response = await fetch(`http://localhost:${config.port}/api/ontology/graph/${conv.getOrgId() || 'default'}`);
+      const response = await fetch(`http://localhost:${config.port}/api/ontology/graph/${conv?.getOrgId() || 'default'}`);
       if (response.ok) {
         const data = await response.json() as { nodeCount?: number; edgeCount?: number; nodes?: Array<{ type?: string }>; edges?: Array<{ type?: string }> };
         if ((data.nodeCount ?? 0) > 0) {
-          app.side.setOntologySummary({
-            persons: data.nodes?.filter((n: any) => n.type === SOGNodeType.PERSON).length || 0,
-            teams: data.nodes?.filter((n: any) => n.type === SOGNodeType.TEAM).length || 0,
-            tools: data.nodes?.filter((n: any) => n.type === SOGNodeType.AGENT || n.type === SOGNodeType.TOOL).length || 0,
-            edges: data.edgeCount || 0,
-          });
+          // 本体数据已更新（侧边栏刷新由诊断事件驱动）
         }
       }
     } catch (err: any) {
@@ -260,6 +264,65 @@ async function main() {
 
   // 5. 对话循环
   let streaming = false;
+  let sidebarShown = false;
+
+  // LLM 配置向导: null → 正常，'awaiting_key' → 等待输入 API Key
+  let setupState: null | 'awaiting_key' = null;
+  // TS 无法 narrow 跨函数边界的 app — 在定义时捕获
+  const ui = app!;
+
+  /** 验证 + 保存 + 初始化 Key（复用逻辑：wizard 和 auto-detect 两路调用） */
+  async function tryConfigureKey(rawKey: string) {
+    let apiKey = rawKey.trim();
+    const asciiKey = apiKey.replace(/[^\x20-\x7E]/g, '');
+    if (asciiKey !== apiKey) {
+      ui.chat.addMessage('system', '⚠️ 检测到全角字符已自动过滤。');
+      apiKey = asciiKey;
+    }
+    if (!apiKey) {
+      ui.chat.addMessage('system', '请输入 DeepSeek API Key：');
+      return;
+    }
+    const masked = apiKey.length > 12
+      ? apiKey.slice(0, 6) + '****' + apiKey.slice(-4)
+      : apiKey.slice(0, 4) + '****';
+    ui.chat.addMessage('system', `Key: ${masked}\n正在测试连接...`);
+    ui.setTitleStatus('测试连接中...');
+    ui.screen.render();
+
+    try {
+      const model = 'deepseek-v4-flash';
+      const testProvider = createProvider('deepseek', { apiKey });
+      const health = await testProvider.healthCheck();
+      if (health.healthy) {
+        provider = testProvider;
+        llmHealthy = true;
+        process.env.LLM_API_KEY = apiKey;
+        process.env.LLM_MODEL = model;
+        const envPath = path.resolve(process.cwd(), '.env');
+        let envContent = '';
+        if (fs.existsSync(envPath)) {
+          envContent = fs.readFileSync(envPath, 'utf-8').split('\n')
+            .filter(l => !l.startsWith('LLM_') && !l.startsWith('DEEPSEEK_')).join('\n');
+        }
+        envContent += `\nLLM_API_KEY=${apiKey}\nLLM_MODEL=${model}\n`;
+        fs.writeFileSync(envPath, envContent);
+        const ok = await initConversationEngine();
+        if (ok) {
+          ui.chat.addMessage('system', `✅ 连接成功！DeepSeek · ${model} (${health.latencyMs}ms)\n配置已保存到 .env。\n切换模型: /model deepseek-v4-pro`);
+          ui.setTitleStatus('准备就绪 · DeepSeek');
+          if (!conv) ui.chat.addMessage('agent', OPENING_MESSAGE);
+        } else {
+          ui.chat.addMessage('alert', '⚠️ 连接成功但引擎初始化失败，请重启 TUI');
+        }
+        setupState = null;
+      } else {
+        ui.chat.addMessage('alert', `❌ 连接失败: ${health.error}\n请重新输入 DeepSeek API Key：`);
+      }
+    } catch (err: any) {
+      ui.chat.addMessage('alert', `❌ 配置失败: ${err.message}\n请重新输入：`);
+    }
+  }
 
   app.chat.onSubmit(async (input) => {
     if (streaming) {
@@ -267,6 +330,16 @@ async function main() {
       app.screen.render();
       return;
     }
+
+    // ═══ LLM 配置向导：只问 Key，模型默认 deepseek-v4-flash ═══
+    if (setupState === 'awaiting_key') {
+      streaming = true;
+      await tryConfigureKey(input);
+      app.screen.render();
+      streaming = false;
+      return;
+    }
+
     streaming = true;
 
     try {
@@ -274,15 +347,38 @@ async function main() {
       if (input.startsWith('/')) {
         const cmd = input.toLowerCase();
         if (cmd === '/quit' || cmd === '/exit') {
-          store.saveState(sessionId, conv.serialize());
+          if (conv) store.saveState(sessionId, conv.serialize());
           app.screen.destroy();
           process.exit(0);
+        } else if (cmd === '/think') {
+          const { renderThoughtExpanded, hasThought } = await import('../tui/thinking');
+          if (hasThought()) {
+            app.chat.addMessage('system', renderThoughtExpanded());
+          } else {
+            app.chat.addMessage('system', '暂无思考内容。');
+          }
+        } else if (cmd === '/budget' || cmd.startsWith('/budget ')) {
+          const { getCostTracker, formatCost } = await import('../services/llm-cost');
+          const tracker = getCostTracker();
+          const amount = parseFloat(input.slice(8).trim());
+          if (!amount || amount <= 0) {
+            app.chat.addMessage('system', `当前预算上限: ¥${tracker.budgetRemaining.toFixed(2)}\n本次费用: ${formatCost(tracker.sessionCost)}\n用法: /budget <金额> 设置上限`);
+          } else {
+            process.env.LLM_BUDGET = String(amount);
+            app.chat.addMessage('system', `✅ 预算上限已设为 ¥${amount}`);
+          }
+          app.screen.render(); streaming = false; return;
         } else if (cmd === '/help') {
-          app.chat.addMessage('system', '命令: /quit 退出 /status 状态 /history 历史 /search <词> 搜索 /upload <文件路径> 上传 /update 检查更新');
+          app.chat.addMessage('system', '命令: /setup 配置 LLM /model 切换模型 /think 展开思考 /quit 退出 /status 状态 /search <词> 搜索');
         } else if (cmd === '/status') {
-          const n = conv.getMessages().filter(m => m.role === 'user').length;
-          app.chat.addMessage('system', `Phase: ${conv.getPhase()}/5 | 消息: ${n} 条 | Provider: ${provider.name}`);
+          if (conv && provider) {
+            const n = conv.getMessages().filter(m => m.role === 'user').length;
+            app.chat.addMessage('system', `Phase: ${conv.getPhase()}/5 | 消息: ${n} 条 | Provider: ${provider.name}`);
+          } else {
+            app.chat.addMessage('system', `LLM 未配置 — 输入 /setup 配置后即可开始增长导航`);
+          }
         } else if (cmd.startsWith('/history')) {
+          if (!conv) { app.chat.addMessage('system', '暂无对话历史'); app.screen.render(); streaming = false; return; }
           const msgs = conv.getMessages().filter(m => m.role !== 'system').slice(-6);
           for (const m of msgs) {
             app.chat.addMessage(m.role === 'user' ? 'user' : 'agent', m.content.slice(0, 120));
@@ -311,7 +407,7 @@ async function main() {
             app.screen.render();
             try {
               const { ingestFile } = await import('../ingest/index');
-              const result = await ingestFile(filePath, conv.getOrgId() || 'default');
+              const result = await ingestFile(filePath, conv?.getOrgId() || 'default');
               app.chat.addMessage('system',
                 `📄 ${result.fileType.toUpperCase()} · ${result.entityCount} 实体 · ${result.relationCount} 关系` +
                 (result.sogCreated ? ' · ✅ 本体已更新' : ' · ⚠️ 基本提取') +
@@ -320,6 +416,45 @@ async function main() {
               app.chat.addMessage('alert', `文档解析失败: ${err.message}`);
             }
           }
+        } else if (cmd === '/setup') {
+          setupState = 'awaiting_key';
+          app.chat.addMessage('system', '请输入 DeepSeek API Key：');
+          app.screen.render();
+          streaming = false;
+          return;
+        } else if (cmd === '/model' || cmd.startsWith('/model ')) {
+          const newModel = input.slice(7).trim();
+          if (!newModel) {
+            app.chat.addMessage('system', `当前模型: ${process.env.LLM_MODEL || 'deepseek-v4-flash'}\n用法: /model <模型名称>\n例: /model deepseek-v4-pro`);
+          } else {
+            process.env.LLM_MODEL = newModel;
+            const envPath = path.resolve(process.cwd(), '.env');
+            if (fs.existsSync(envPath)) {
+              let content = fs.readFileSync(envPath, 'utf-8');
+              if (content.includes('LLM_MODEL=')) content = content.replace(/LLM_MODEL=.*/g, `LLM_MODEL=${newModel}`);
+              else content += `\nLLM_MODEL=${newModel}\n`;
+              fs.writeFileSync(envPath, content);
+            }
+            app.chat.addMessage('system', `✅ 模型已切换为 ${newModel}。重启 TUI 生效。`);
+          }
+          app.screen.render(); streaming = false; return;
+        } else if (cmd === '/effort' || cmd.startsWith('/effort ')) {
+          const level = input.slice(8).trim() || '';
+          if (!level || !['off','high','max'].includes(level)) {
+            app.chat.addMessage('system', `当前推理强度: ${process.env.REASONING_EFFORT || '默认'}\n用法: /effort off|high|max\n  off  — 无推理，快速响应（省钱）\n  high — 深度推理（复杂分析）\n  max  — 最强推理（战略决策）`);
+          } else {
+            process.env.REASONING_EFFORT = level;
+            const envPath = path.resolve(process.cwd(), '.env');
+            if (fs.existsSync(envPath)) {
+              let content = fs.readFileSync(envPath, 'utf-8');
+              if (content.includes('REASONING_EFFORT=')) content = content.replace(/REASONING_EFFORT=.*/g, `REASONING_EFFORT=${level}`);
+              else content += `\nREASONING_EFFORT=${level}\n`;
+              fs.writeFileSync(envPath, content);
+            }
+            app.chat.addMessage('system', `✅ 推理强度已设为 ${level}。`);
+            app.status.setMode(level === 'off' ? '增长导航' : `增长导航 · 推理${level}`);
+          }
+          app.screen.render(); streaming = false; return;
         } else if (cmd.startsWith('/search ')) {
           const q = input.slice(8).trim();
           const results = store.search(q, 5);
@@ -335,19 +470,50 @@ async function main() {
         return;
       }
 
-      // 正常消息
+      // 正常消息 — 需要 LLM 已配置
+      if (!conv || !provider) {
+        // 智能检测：直接粘贴的 Key → 自动配置
+        if (/^sk-/i.test(input)) {
+          app.chat.addMessage('system', '检测到 API Key，正在验证...');
+          app.screen.render();
+          await tryConfigureKey(input);
+          streaming = false;
+          return;
+        }
+        app.chat.addMessage('system', 'LLM 尚未配置。输入 /setup 配置 DeepSeek API Key。\n\n💡 也可以直接粘贴你的 Key（以 sk- 开头），自动识别。');
+        app.screen.render();
+        streaming = false;
+        return;
+      }
+
+      // 首次真实对话 → 显示右边栏（进入工作状态）
+      if (!sidebarShown) {
+        sidebarShown = true;
+        app.showSidebar();
+      }
+
       store.addMessage(sessionId, 'user', input);
       app.chat.addMessage('user', input);
 
       // 编排层: 每轮对话生成 traceId，串联后续事件
       const turnTraceId = `turn_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,8)}`;
 
-      app.setTitleStatus('诊断进行中');
+      app.setTitleStatus('分析进行中');
       try {
+        const thinking = await import('../tui/thinking');
         const result = await conv.processMessageStream(input, (token) => {
-          app.chat.appendToken(token);
+          const t = (token as { type?: string; text?: string; content?: string });
+          if (t.type === 'reasoning') {
+            if (!thinking.hasThought()) thinking.beginThought();
+            thinking.appendThought(t.text || t.content || String(token));
+          } else {
+            app.chat.appendToken(typeof token === 'string' ? token : (t.content || t.text || ''));
+          }
           app.screen.render();
         });
+
+        // 结束流式，刷 Markdown
+        app.chat.finishStreaming();
 
         // 编排层: 记录对话轮次事件
         eventBus.emit({
@@ -359,8 +525,23 @@ async function main() {
           timestamp: new Date().toISOString(),
         });
 
-        // 流式内容已完成，作为完整消息添加
-        app.chat.addMessage('agent', result.reply);
+        // 成本追踪（usage 在运行时存在，类型定义可能不完整）
+        const usage = (result as { usage?: { promptTokens?: number; completionTokens?: number } }).usage;
+        if (usage) {
+          const { getCostTracker, formatCost } = await import('../services/llm-cost');
+          const tracker = getCostTracker();
+          const { exceeded, cost } = tracker.record(
+            process.env.LLM_MODEL || 'deepseek-v4-flash',
+            usage.promptTokens || 0,
+            usage.completionTokens || 0,
+          );
+          app.status.refreshCost();
+          if (exceeded) {
+            app.chat.addMessage('system', `⚠️ 本次诊断费用已达预算上限。剩余预算: ${formatCost(tracker.budgetRemaining)}。可通过 /budget <金额> 调整上限。`);
+          }
+        }
+
+        // 流式内容已在 finishStreaming 中渲染，不再 addMessage
         store.addMessage(sessionId, 'assistant', result.reply);
         store.updateSession(sessionId, { phase: conv.getPhase() });
         store.saveState(sessionId, conv.serialize());
@@ -373,50 +554,74 @@ async function main() {
           app.chat.addMessage('system', `📦 会话已自动压缩 (节省上下文空间)`);
         }
 
-        app.side.setPhase(conv.getPhase());
         if (result.phaseComplete) {
           // 编排层: Phase 0 → Phase 1 事件
           wiring.emitPhaseCompleted(sessionId, 0, turnTraceId);
           wiring.advancePhase(sessionId, turnTraceId);
-          app.setTitleStatus('诊断完成');
-          app.chat.addMessage('system', '═══ Phase 0 完成，启动六阶段诊断 ═══');
+          app.setTitleStatus('目标确认完成');
+          app.chat.addMessage('system', '═══ 目标已确认，启动增长导航 ═══');
 
           // Slice 5.1: SOG 本体同步 — 从访谈内容提取组织信息
           conv.startDiagnosis('管理者', conv.getOrgId() || '用户').then(() => {}); // fire-and-forget SOG sync
-          app.side.setOntologySummary({ persons: 1, teams: 1, tools: 0, edges: 0 });
 
-          // Slice 3.2: 自动启动诊断流水线
+          // Slice 3.2: 自动启动导航分析 — 初始化专家状态
           app.setTitleStatus('Phase 1: 数据采集中...');
-          app.side.setDiagnosisProgress(1, '数据采集', []);
+          const expertStatusMap = new Map<string, { name: string; status: 'queued' | 'running' | 'done' | 'failed'; elapsed?: string }>();
+          const EXPERT_NAMES: Record<string, string> = {
+            strategy: '战略', org: '组织', finance: '财务', tech: '技术', marketing: '营销', action: '行动',
+          };
+          for (const [id, name] of Object.entries(EXPERT_NAMES)) {
+            expertStatusMap.set(id, { name, status: 'queued' });
+          }
+          app.side.setExperts([...expertStatusMap.values()]);
+          app.side.refresh();
 
           conv.startDiagnosis(
             '管理者',
             conv.getOrgId() || '用户',
             (event) => {
-              // 实时推送诊断事件到侧边栏
               switch (event.type) {
                 case 'phase_started':
                   app.setTitleStatus(`Phase ${event.phase}: ${event.label || '进行中...'}`);
-                  app.side.setDiagnosisProgress(event.phase, event.label || '', []);
+                  // Phase 开始时标记相关专家为 running
+                  for (const [id, s] of expertStatusMap) {
+                    if (s.status === 'queued') { s.status = 'running'; break; }
+                  }
+                  app.side.setExperts([...expertStatusMap.values()]);
+                  app.side.refresh();
                   break;
                 case 'module_completed':
                   if (event.findings) {
-                    app.side.setDiagnosisProgress(
-                      conv.getPhase(),
-                      '',
-                      event.findings.map(f => ({ moduleId: f.moduleId, text: f.summary })),
-                    );
+                    app.side.setObstacles(event.findings.map(f => ({
+                      name: f.summary.slice(0, 40), status: 'active' as const,
+                    })));
+                    // 标记首个匹配专家为 done
+                    for (const f of event.findings) {
+                      for (const [id, s] of expertStatusMap) {
+                        if (f.moduleId?.includes(id) && s.status === 'running') {
+                          s.status = 'done'; s.elapsed = '';
+                          break;
+                        }
+                      }
+                    }
+                    app.side.setExperts([...expertStatusMap.values()]);
+                    app.side.refresh();
                   }
                   break;
                 case 'phase_completed':
                   app.chat.addMessage('system', `✅ Phase ${event.phase} 完成`);
                   break;
                 case 'complete':
-                  app.setTitleStatus('诊断完成');
-                  app.chat.addMessage('system', '📋 六阶段诊断已完成，查看侧边栏获取完整报告。');
+                  app.setTitleStatus('导航完成');
+                  app.chat.addMessage('system', '📋 增长导航已完成，查看侧边栏获取完整简报。');
+                  for (const [, s] of expertStatusMap) {
+                    if (s.status !== 'done' && s.status !== 'failed') s.status = 'done';
+                  }
+                  app.side.setExperts([...expertStatusMap.values()]);
+                  app.side.refresh();
                   break;
                 case 'error':
-                  app.chat.addMessage('alert', `⚠️ 诊断错误: ${event.message || '未知'}`);
+                  app.chat.addMessage('alert', `⚠️ 导航错误: ${event.message || '未知'}`);
                   break;
               }
               app.screen.render();
@@ -427,20 +632,20 @@ async function main() {
                 teamId: diagnosisResult.teamId,
                 durationMs: diagnosisResult.totalDurationMs,
                 degraded: diagnosisResult.degradedModules.length,
-              }, '诊断流水线完成');
+              }, '增长导航完成');
               if (diagnosisResult.degradedModules.length > 0) {
                 app.chat.addMessage('system',
-                  `⚠️ 部分诊断模块降级: ${diagnosisResult.degradedModules.join(', ')}`);
+                  `⚠️ 部分分析模块降级: ${diagnosisResult.degradedModules.join(', ')}`);
               }
-              app.side.setDiagnosisProgress(5, '完成', []);
+              app.side.setExperts([]); app.side.refresh();
             } else {
-              app.chat.addMessage('alert', '⚠️ 诊断引擎不可用。请检查 engine-core 是否正确安装。');
+              app.chat.addMessage('alert', '⚠️ 导航引擎不可用。请检查 engine-core 是否正确安装。');
             }
             app.setTitleStatus('准备就绪');
             app.screen.render();
           }).catch((err: any) => {
-            log.error({ err }, '诊断流水线异常');
-            app.chat.addMessage('alert', `诊断异常: ${err.message}`);
+            log.error({ err }, '增长导航异常');
+            app.chat.addMessage('alert', `导航异常: ${err.message}`);
             app.setTitleStatus('准备就绪');
             app.screen.render();
           });
@@ -465,7 +670,8 @@ async function main() {
   // P1-02: 全局告警桥接 — TUI 通过 globalThis 暴露告警给各面板消费
   (globalThis as { __synovaAlerts?: { pushAlert: (level: 'critical' | 'warning', title: string, data: string, suggestion: string) => void } }).__synovaAlerts = {
     pushAlert(level, title, data, suggestion) {
-      app.side.pushAlert({ level: level as 'critical' | 'warning', title, data, suggestion });
+      app.side.setLegacyIssues([{ title, foundDate: new Date().toISOString().slice(0, 10), status: 'unresolved' }]);
+      app.side.refresh();
       app.flashTitle(true);
       setTimeout(() => app.flashTitle(false), 5000);
     },
@@ -476,7 +682,7 @@ async function main() {
   // ═══ 7. Graceful shutdown (Slice 2.3: M5 fix) ═══
   const shutdown = (signal: string) => {
     log.info({ signal }, '收到信号，开始优雅关闭');
-    store.saveState(sessionId, conv.serialize());
+    if (conv) store.saveState(sessionId, conv.serialize());
     if (scheduler) scheduler.stop();
     if (db) {
       try { db.pragma('wal_checkpoint(TRUNCATE)'); } catch { /* best-effort */ }
