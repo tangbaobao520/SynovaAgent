@@ -66,6 +66,8 @@ export class KnowledgeStore {
         access_team_id TEXT,
         access_owner_id TEXT,
         access_sensitivity TEXT NOT NULL DEFAULT 'normal',
+        -- 多租户隔离 (Phase 4c)
+        org_id TEXT DEFAULT 'default',
         -- PKB 扩展 (Slice 1)
         pkb_domain TEXT,
         pkb_type TEXT,
@@ -133,21 +135,24 @@ export class KnowledgeStore {
       CREATE INDEX IF NOT EXISTS idx_perm_audit_time ON permission_audit_log(created_at);
       CREATE INDEX IF NOT EXISTS idx_perm_audit_user ON permission_audit_log(changed_by);
     `);
+    // Phase 4c: 向后兼容 — 已有数据库添加 org_id 列
+    try { this.db.exec('ALTER TABLE knowledge_chunks ADD COLUMN org_id TEXT DEFAULT \'default\''); } catch { /* 列已存在 */ }
     log.info('KnowledgeStore schema initialized');
   }
 
   // ═══ CRUD ═══
 
-  insert(chunk: Omit<KnowledgeChunk, 'id' | 'createdAt' | 'updatedAt'>): string {
+  insert(chunk: Omit<KnowledgeChunk, 'id' | 'createdAt' | 'updatedAt'> & { orgId?: string }): string {
     const id = `kc_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
     const now = new Date().toISOString();
+    const orgId = chunk.orgId || 'default';
     this.db.prepare(`
       INSERT INTO knowledge_chunks (id, text, source_type, source_id, authority_level, mime_type,
-        access_level, access_team_id, access_owner_id, access_sensitivity, created_at, updated_at)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+        access_level, access_team_id, access_owner_id, access_sensitivity, org_id, created_at, updated_at)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
     `).run(id, chunk.text, chunk.sourceType, chunk.sourceId, chunk.authorityLevel,
       chunk.mimeType || null, chunk.accessLevel, chunk.accessTeamId || null,
-      chunk.accessOwnerId || null, chunk.accessSensitivity, now, now);
+      chunk.accessOwnerId || null, chunk.accessSensitivity, orgId, now, now);
     return id;
   }
 
