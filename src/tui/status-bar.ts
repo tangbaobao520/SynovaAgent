@@ -26,6 +26,7 @@ export function createStatusBar(opts: { bottom?: number; height?: number } = {})
     left: 0,
     width: '100%',
     height: opts.height ?? 1,
+    tags: true,
     style: { bg: 'black', fg: 'white' },
   });
 

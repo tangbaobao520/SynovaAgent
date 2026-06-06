@@ -54,7 +54,8 @@ export function createCommandMenu(): CommandMenu {
       selected: { fg: 'white', bg: 'cyan' },
       item: { fg: 'white' },
     },
-    keys: false,  // 我们自己控制键盘
+    tags: true,
+    keys: false,
     vi: false,
     hidden: true,
     items: [],
