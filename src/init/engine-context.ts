@@ -35,11 +35,10 @@ export function initEngineContext(): void {
   db.pragma('foreign_keys = ON');
   log.info({ path: config.dbPath }, 'SQLite 数据库已打开');
 
-  // 2. 注入 EngineContext (最小实现)
-  setEngineContext({
-    database: {
-      getDb: () => db!,
-    },
+  // 2. 注入 EngineContext。pino child() 返回类型与 AppLogger 的递归类型不兼容 — 运行时兼容。
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const engineCtx = {
+    database: { getDb: () => db! },
     logger: {
       trace: (...args: any[]) => log.debug({ args }, args.length > 1 ? args[1] : 'trace'),
       debug: (...args: any[]) => log.debug(args.length > 1 ? args[1] : {}, args[0]),
@@ -49,8 +48,10 @@ export function initEngineContext(): void {
       fatal: (...args: any[]) => log.error(args.length > 1 ? args[1] : {}, `[FATAL] ${args[0]}`),
       child: (_bindings: Record<string, unknown>) => createLogger('engine-core'),
       level: process.env.LOG_LEVEL || 'info',
-    } as import('@synova/engine-core/src/infra/logger').AppLogger,
-  });
+    },
+  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  setEngineContext(engineCtx as any);
 
   // 3. 设置存储后端 (Slice 2.2: SQLite 持久化替换内存模式)
   const storageBackend = new SqliteStorageBackend(db!);

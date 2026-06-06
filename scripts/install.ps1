@@ -51,18 +51,26 @@ Set-Location $installDir
 Write-Host "安装依赖..."
 npm install --omit=dev 2>&1 | Select-Object -Last 5
 
+# 确保 tsx 可用
+$tsxPath = "$installDir\node_modules\.bin\tsx.cmd"
+if (-not (Test-Path $tsxPath)) {
+  Write-Host "安装 tsx 运行时..."
+  npm install tsx --save 2>&1 | Out-Null
+}
+
 # ── 6. 创建数据目录 ──
 New-Item -ItemType Directory -Force -Path "$installDir\data" | Out-Null
+New-Item -ItemType Directory -Force -Path "$installDir\logs" | Out-Null
 
 # ── 7. 完成 ──
 Write-Host ""
 Write-Host "✅ SynovaAgent 安装完成！" -ForegroundColor Green
 Write-Host ""
 Write-Host "  启动 Web 服务:"
-Write-Host "    cd $installDir; node dist/index.js" -ForegroundColor Cyan
+Write-Host "    cd $installDir; npx tsx src/index.ts" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "  对话模式:"
-Write-Host "    npx tsx src/cli.ts" -ForegroundColor Cyan
+Write-Host "    cd $installDir; npx tsx src/cli.ts" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "  Web 界面: http://localhost:3000" -ForegroundColor Cyan
 Write-Host ""

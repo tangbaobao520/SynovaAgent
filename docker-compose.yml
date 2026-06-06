@@ -24,9 +24,11 @@ services:
       - LLM_API_KEY=${LLM_API_KEY:-}
       - LLM_BASE_URL=${LLM_BASE_URL:-https://api.deepseek.com/v1}
       - LLM_MODEL=${LLM_MODEL:-deepseek-v4-flash}
+      - ENGINE_TOKENS=${ENGINE_TOKENS:-change-me-in-production}
       - FEISHU_APP_ID=${FEISHU_APP_ID:-}
       - FEISHU_APP_SECRET=${FEISHU_APP_SECRET:-}
       - SYNOVA_DB_PATH=/app/data/synova.db
+      - CREDENTIAL_MASTER_KEY=${CREDENTIAL_MASTER_KEY:-}
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://localhost:3000/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))"]
       interval: 30s

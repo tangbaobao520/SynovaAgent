@@ -3,13 +3,13 @@
  *
  * 诊断模块输出 → 自动写入 GraphStore。6 个 upsert 方法对应 6 个诊断模块。
  *
- * 接线状态 (P2-01, 2026-06-03):
- *   ✅ upsertFromKeyPersonRisk — 生产调用: diagnosis-launcher.ts
- *   ⏳ upsertFromHONA — 已测试, 待 HONA 诊断模块接入
- *   ⏳ upsertFromFinancialImpact — 已测试, 待财务诊断模块接入
- *   ⏳ upsertFromCapabilityGap — 已测试, 待能力诊断模块接入
- *   ⏳ upsertFromSevenPowers — 已测试, 待战略诊断模块接入
- *   ⏳ upsertFromCPC — 已测试, 待流程诊断模块接入
+ * 接线状态 (C6, 2026-06-04):
+ *   ✅ upsertFromKeyPersonRisk — diagnosis-launcher.ts
+ *   ✅ upsertFromHONA — diagnosis-launcher.ts
+ *   ✅ upsertFromFinancialImpact — diagnosis-launcher.ts
+ *   ✅ upsertFromCapabilityGap — diagnosis-launcher.ts
+ *   ✅ upsertFromSevenPowers — diagnosis-launcher.ts
+ *   ✅ upsertFromCPC — diagnosis-launcher.ts
  *
  * 接口: 匹配 engine-core GraphStore 真实接口
  *   createNode(type, props, graph) → returns auto-id

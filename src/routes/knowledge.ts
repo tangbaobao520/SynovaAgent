@@ -10,6 +10,7 @@
 import { Router, type Request, type Response } from 'express';
 import { KnowledgeStore } from '../l4/knowledge-store';
 import { getDatabase } from '../init/engine-context';
+import { getCurrentFilterClause } from '../services/request-context';
 import { createLogger } from '../logger';
 import type { KnowledgeChunk, FilterClause } from '../l4/knowledge-store';
 
@@ -22,7 +23,7 @@ function getStore(): KnowledgeStore {
 
 // ═══ 搜索 ═══
 
-router.post('/api/knowledge/search', (req: Request, res: Response) => {
+router.post('/api/knowledge/search', async (req: Request, res: Response) => {
   try {
     const { query, limit } = req.body as { query?: string; limit?: number };
     if (!query || typeof query !== 'string') {
@@ -30,7 +31,7 @@ router.post('/api/knowledge/search', (req: Request, res: Response) => {
     }
 
     const store = getStore();
-    const filter: FilterClause = (req as unknown as Record<string, unknown>).filter as FilterClause || { conditions: [] };
+    const filter = await getCurrentFilterClause('KnowledgeChunk') as FilterClause;
 
     const { results, stats } = store.search(query, filter, limit || 10);
 

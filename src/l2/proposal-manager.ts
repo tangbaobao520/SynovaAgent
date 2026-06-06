@@ -1,19 +1,12 @@
 /**
  * l2/proposal-manager.ts — GNS v2.0 变更提议管理器 (M2 核心)
  *
- * 铁律 39: L2 编排层组件。管理右边栏变更的整个生命周期。
- *
- * 核心原则: Agent 对右边栏的任何变更都必须通过"提议→确认"流程。
- * 对话框提供三选项: ✅确认 ❌拒绝 💬提出看法
- *
- * 提议生命周期:
- *   proposed → confirmed (用户确认, 执行变更)
- *   proposed → rejected  (用户拒绝, 记录原因)
- *   proposed → opinion   (用户提出看法, 调整后重提)
- *   proposed → expired   (7 天未响应, 自动取消)
+ * 铁律 39: L2 编排层组件。SQLite 持久化 — 重启不丢失。
  */
+import Database from 'better-sqlite3';
 import { createLogger } from '../logger';
 
+type SqliteDB = InstanceType<typeof Database>;
 const log = createLogger('l2/proposal-manager');
 
 // ═══ Types ═══
@@ -24,34 +17,55 @@ export interface Proposal {
   title: string;
   description: string;
   confidence: number;
-  source: string;         // 触发来源: 'metric.updated' | 'expert_analysis' | 'user_request'
+  source: string;
   status: 'proposed' | 'confirmed' | 'rejected' | 'opinion' | 'expired';
   createdAt: string;
-  expiresAt: string;      // 7 天超时
+  expiresAt: string;
   resolvedAt?: string;
   userFeedback?: string;
-  suppressedUntil?: string; // 拒绝后抑制同类提议
+  suppressedUntil?: string;
 }
 
 // ═══ ProposalManager ═══
 
 export class ProposalManager {
-  private proposals = new Map<string, Proposal>();
-  private suppressedTypes = new Map<string, number>(); // type → suppressed until timestamp
+  private db: SqliteDB;
 
-  /** Create a new proposal */
+  constructor(db: SqliteDB) {
+    this.db = db;
+    this.initSchema();
+  }
+
+  private initSchema(): void {
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS proposals (
+        id TEXT PRIMARY KEY,
+        type TEXT NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT DEFAULT '',
+        confidence REAL DEFAULT 0.7,
+        source TEXT DEFAULT 'unknown',
+        status TEXT NOT NULL DEFAULT 'proposed',
+        created_at TEXT NOT NULL,
+        expires_at TEXT,
+        resolved_at TEXT,
+        user_feedback TEXT
+      );
+      CREATE TABLE IF NOT EXISTS proposal_suppressions (
+        proposal_type TEXT PRIMARY KEY,
+        suppressed_until INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_proposals_status ON proposals(status);
+      CREATE INDEX IF NOT EXISTS idx_proposals_created ON proposals(created_at);
+    `);
+  }
+
   propose(opts: {
-    type: Proposal['type'];
-    title: string;
-    description: string;
-    confidence: number;
-    source: string;
+    type: Proposal['type']; title: string; description: string;
+    confidence: number; source: string;
   }): Proposal {
-    // Check if this type is suppressed
-    const suppressedUntil = this.suppressedTypes.get(opts.type);
-    if (suppressedUntil && Date.now() < suppressedUntil) {
-      log.debug({ type: opts.type, suppressedUntil: new Date(suppressedUntil).toISOString() },
-        '提议类型被抑制, 跳过');
+    const suppressed = this.db.prepare('SELECT suppressed_until FROM proposal_suppressions WHERE proposal_type=?').get(opts.type) as { suppressed_until: number } | undefined;
+    if (suppressed && Date.now() < suppressed.suppressed_until) {
       return {
         id: '', type: opts.type, title: opts.title, description: opts.description,
         confidence: opts.confidence, source: opts.source,
@@ -66,89 +80,94 @@ export class ProposalManager {
       confidence: opts.confidence, source: opts.source,
       status: 'proposed',
       createdAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 7 * 24 * 3600_000).toISOString(), // 7 days
+      expiresAt: new Date(Date.now() + 7 * 24 * 3600_000).toISOString(),
     };
 
-    this.proposals.set(proposal.id, proposal);
-    log.info({ id: proposal.id, type: opts.type, title: opts.title }, '提议已创建');
+    this.db.prepare(`INSERT INTO proposals (id,type,title,description,confidence,source,status,created_at,expires_at)
+      VALUES (?,?,?,?,?,?,?,?,?)`).run(
+      proposal.id, proposal.type, proposal.title, proposal.description,
+      proposal.confidence, proposal.source, proposal.status,
+      proposal.createdAt, proposal.expiresAt,
+    );
+    log.info({ id: proposal.id, type: opts.type }, '提议已创建 (SQLite)');
     return proposal;
   }
 
-  /** Resolve a proposal: confirm / reject / provide opinion */
-  resolve(
-    id: string,
-    action: 'confirm' | 'reject' | 'opinion',
-    feedback?: string,
-  ): { ok: boolean; proposal?: Proposal; error?: string } {
-    const proposal = this.proposals.get(id);
-    if (!proposal) return { ok: false, error: `提议 ${id} 不存在` };
-    if (proposal.status !== 'proposed') return { ok: false, error: `提议 ${id} 已处理 (${proposal.status})` };
+  resolve(id: string, action: 'confirm' | 'reject' | 'opinion', feedback?: string):
+    { ok: boolean; proposal?: Proposal; error?: string } {
+    const row = this.db.prepare('SELECT * FROM proposals WHERE id=?').get(id) as Record<string, unknown> | undefined;
+    if (!row) return { ok: false, error: `提议 ${id} 不存在` };
+    if (row.status !== 'proposed') return { ok: false, error: `提议 ${id} 已处理 (${row.status})` };
 
-    proposal.resolvedAt = new Date().toISOString();
-    proposal.userFeedback = feedback;
-
+    const now = new Date().toISOString();
+    let status = row.status as string;
     switch (action) {
-      case 'confirm':
-        proposal.status = 'confirmed';
-        break;
+      case 'confirm': status = 'confirmed'; break;
       case 'reject':
-        proposal.status = 'rejected';
-        // Suppress same type for 24h
-        this.suppressedTypes.set(proposal.type, Date.now() + 24 * 3600_000);
+        status = 'rejected';
+        this.db.prepare(`INSERT OR REPLACE INTO proposal_suppressions (proposal_type, suppressed_until) VALUES (?,?)`)
+          .run(row.type, Date.now() + 24 * 3600_000);
         break;
-      case 'opinion':
-        proposal.status = 'opinion';
-        break;
+      case 'opinion': status = 'opinion'; break;
     }
 
-    log.info({ id, action, feedback }, '提议已处理');
+    this.db.prepare(`UPDATE proposals SET status=?, resolved_at=?, user_feedback=? WHERE id=?`)
+      .run(status, now, feedback || null, id);
+
+    const proposal = this.rowToProposal({ ...row, status, resolved_at: now, user_feedback: feedback });
+    log.info({ id, action }, '提议已处理');
     return { ok: true, proposal };
   }
 
-  /** Get all pending proposals */
   getPending(): Proposal[] {
-    const now = Date.now();
-    // Auto-expire overdue proposals
-    for (const [id, p] of this.proposals) {
-      if (p.status === 'proposed' && new Date(p.expiresAt).getTime() < now) {
-        p.status = 'expired';
-        log.info({ id, type: p.type }, '提议已过期');
-      }
-    }
-    return [...this.proposals.values()].filter(p => p.status === 'proposed');
+    const now = new Date().toISOString();
+    this.db.prepare(`UPDATE proposals SET status='expired' WHERE status='proposed' AND expires_at < ?`).run(now);
+    const rows = this.db.prepare('SELECT * FROM proposals WHERE status=? ORDER BY created_at DESC').all('proposed') as Record<string, unknown>[];
+    return rows.map(r => this.rowToProposal(r));
   }
 
-  /** Get proposal history for audit */
   getHistory(limit = 20): Proposal[] {
-    return [...this.proposals.values()]
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .slice(0, limit);
+    const rows = this.db.prepare('SELECT * FROM proposals ORDER BY created_at DESC LIMIT ?').all(limit) as Record<string, unknown>[];
+    return rows.map(r => this.rowToProposal(r));
   }
 
-  /** Get confirmation rate for analytics */
   getConfirmationRate(): { total: number; confirmed: number; rejected: number; opinion: number; rate: number } {
-    const resolved = [...this.proposals.values()].filter(p => p.status !== 'proposed' && p.status !== 'expired');
-    const confirmed = resolved.filter(p => p.status === 'confirmed').length;
-    const rejected = resolved.filter(p => p.status === 'rejected').length;
-    const opinion = resolved.filter(p => p.status === 'opinion').length;
+    const row = this.db.prepare(`
+      SELECT COUNT(*) as total,
+        SUM(CASE WHEN status='confirmed' THEN 1 ELSE 0 END) as confirmed,
+        SUM(CASE WHEN status='rejected' THEN 1 ELSE 0 END) as rejected,
+        SUM(CASE WHEN status='opinion' THEN 1 ELSE 0 END) as opinion
+      FROM proposals WHERE status NOT IN ('proposed','expired')
+    `).get() as Record<string, number>;
     return {
-      total: resolved.length,
-      confirmed, rejected, opinion,
-      rate: resolved.length > 0 ? Math.round((confirmed / resolved.length) * 100) : 0,
+      total: row.total || 0, confirmed: row.confirmed || 0,
+      rejected: row.rejected || 0, opinion: row.opinion || 0,
+      rate: row.total > 0 ? Math.round((row.confirmed / row.total) * 100) : 0,
     };
   }
 
-  /** Clear suppression for a type (e.g. user explicitly requests) */
   clearSuppression(type: Proposal['type']): void {
-    this.suppressedTypes.delete(type);
+    this.db.prepare('DELETE FROM proposal_suppressions WHERE proposal_type=?').run(type);
+  }
+
+  private rowToProposal(r: Record<string, unknown>): Proposal {
+    return {
+      id: r.id as string, type: r.type as Proposal['type'],
+      title: r.title as string, description: r.description as string,
+      confidence: r.confidence as number, source: r.source as string,
+      status: r.status as Proposal['status'],
+      createdAt: r.created_at as string, expiresAt: r.expires_at as string,
+      resolvedAt: r.resolved_at as string | undefined,
+      userFeedback: r.user_feedback as string | undefined,
+    };
   }
 }
 
-// ═══ Singleton ═══
+// ═══ Singleton (兼容旧无参调用) ═══
 
 let _instance: ProposalManager | null = null;
-export function getProposalManager(inject?: ProposalManager): ProposalManager {
-  if (inject) { _instance = inject; return inject; }
-  if (!_instance) _instance = new ProposalManager();
+export function getProposalManager(db?: SqliteDB): ProposalManager {
+  if (db) { _instance = new ProposalManager(db); return _instance; }
+  if (!_instance) throw new Error('ProposalManager requires Database — call getProposalManager(db) at startup');
   return _instance;
 }

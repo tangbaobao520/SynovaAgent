@@ -1,23 +1,15 @@
 /**
- * tui/app.ts — SynovaAgent TUI 主入口 (Era 2.1a)
+ * tui/app.ts — Synova 增长导航 TUI 主布局
  *
- * 三区布局: 对话(75%) | 洞察(25%) | 状态栏(1行)
- * 键盘路由, 窗口 resize 自适应。
- *
- * 用法: npx tsx src/tui/app.ts
+ * 对话区(70%) | 右边栏(30%) | 输入框 | 状态栏(模式|模型|费用)
  */
 import blessed from 'neo-blessed';
 import { createChatPanel } from './chat-panel';
 import { createSidePanel } from './side-panel';
 import { createStatusBar } from './status-bar';
+import { createCommandMenu, type CommandMenu } from './command-menu';
 
-const BOLD = '\x1b[1m';
-const PURPLE = '\x1b[35m';
-const GREEN = '\x1b[32m';
-const RED = '\x1b[31m';
-const RESET = '\x1b[0m';
-
-const TITLE_BASE = 'Synova 组织诊断';
+const TITLE_BASE = 'Synova 增长导航';
 
 export interface TuiApp {
   screen: blessed.Widgets.Screen;
@@ -25,10 +17,10 @@ export interface TuiApp {
   side: ReturnType<typeof createSidePanel>;
   status: ReturnType<typeof createStatusBar>;
   input: blessed.Widgets.TextboxElement;
-  /** 设置标题状态 */
+  commandMenu: CommandMenu;
   setTitleStatus(status: string): void;
-  /** 标题栏闪烁（告警时触发） */
   flashTitle(enabled: boolean): void;
+  showSidebar(): void;
 }
 
 export function createTuiApp(existingScreen?: blessed.Widgets.Screen): TuiApp {
@@ -39,62 +31,42 @@ export function createTuiApp(existingScreen?: blessed.Widgets.Screen): TuiApp {
     useBCE: true,
   });
 
-  // ── 布局（Claude Code 风格：全宽输入框贯穿底部）──
-  // 消息区 + 侧边栏：上方，高度 = 100% - 4（留 4 行给 input + status）
-  const chat = createChatPanel({ width: '75%', height: '100%-4' });
+  // ── 对话区 (70%) + 右边栏 (30%)，留底部 4 行给 input(3) + status(1) ──
+  const chat = createChatPanel({ width: '70%', height: '100%-4' });
   screen.append(chat.box);
 
-  const side = createSidePanel({ left: '75%', width: '25%', height: '100%-4' });
+  const side = createSidePanel({ left: '70%', width: '30%', height: '100%-4' });
   screen.append(side.box);
 
-  // 分隔线：对话区 ↔ 侧边栏
+  // 分隔线（细线 — gray 替代 black 避免 Windows 终端映射为蓝色）
   const divider = blessed.box({
-    left: '75%',
-    top: 0,
-    width: 1,
-    height: '100%-4',
-    style: { fg: 'gray', bg: 'gray' },
-    content: '',
+    left: '70%', top: 0, width: 1, height: '100%-4',
+    content: '│',
   });
   screen.append(divider);
 
-  // 全宽输入框：screen 级元素，贯穿整个终端宽度
+  // 全宽输入框
   const input = blessed.textbox({
-    bottom: 1,
-    left: 0,
-    width: '100%',
-    height: 3,
+    bottom: 1, left: 0, width: '100%', height: 3,
     inputOnFocus: true,
     border: { type: 'line' },
     style: { border: { fg: 'cyan' }, focus: { border: { fg: 'magenta' } } },
   });
   screen.append(input);
+  input.on('click', () => { (input as { readInput?: () => void }).readInput?.(); });
 
-  // ❯ 提示符 — Claude Code 风格
-  const prompt = blessed.text({
-    bottom: 2,
-    left: 2,
-    content: '❯',
-    style: { fg: 'green', bold: true },
-  });
-  screen.append(prompt);
-  // prompt 不需要交互，但需要跟随 input 渲染
-  input.on('focus', () => { screen.render(); });
+  chat.bindInput(input);
 
-  // 修复 Windows 下鼠标点击后无法直接输入的问题
-  input.on('click', () => {
-    input.readInput();
-  });
+  // 命令菜单
+  const commandMenu = createCommandMenu();
+  screen.append(commandMenu.list);
+  chat.bindCommandMenu(commandMenu);
 
-  chat.bindInput(input);  // 绑定输入事件到 chat panel
-
-  // 状态栏：最底部
+  // 状态栏
   const status = createStatusBar({ bottom: 0, height: 1 });
   screen.append(status.box);
-
-  // ── 初始状态 ──
-  side.setPhase(0);
-  side.setOntologySummary(null);
+  status.setMode('增长导航');
+  status.setHints('Ctrl+C 退出  /setup 配置  /model 切换  /help 帮助');
 
   // ── 键盘 ──
   let flashInterval: ReturnType<typeof setInterval> | null = null;
@@ -105,38 +77,40 @@ export function createTuiApp(existingScreen?: blessed.Widgets.Screen): TuiApp {
     screen.destroy();
     process.exit(0);
   });
-
-  screen.key(['tab'], () => {
-    chat.focus();
+  // 兜底：stdin 级别的 Ctrl+C（screen.key 在某些终端不触发）
+  process.stdin.on('keypress', (_ch, key) => {
+    if (key && key.ctrl && key.name === 'c') {
+      if (flashInterval) clearInterval(flashInterval);
+      screen.destroy();
+      process.exit(0);
+    }
   });
+  screen.key(['tab'], () => { chat.focus(); });
+  screen.on('resize', () => { screen.render(); });
 
-  // ── resize ──
-  screen.on('resize', () => {
-    screen.render();
-  });
+  // 初始隐藏右边栏
+  side.box.hide();
+  divider.hide();
 
   const app: TuiApp = {
-    screen, chat, side, status, input,
+    screen, chat, side, status, input, commandMenu,
 
-    setTitleStatus(status) {
-      screen.title = `${TITLE_BASE} · ${status}`;
-    },
+    setTitleStatus(s) { screen.title = `${TITLE_BASE} · ${s}`; },
 
     flashTitle(enabled) {
       if (enabled && !flashInterval) {
         flashInterval = setInterval(() => {
           flashOn = !flashOn;
-          screen.title = flashOn
-            ? `⚠ ${TITLE_BASE} · 告警`
-            : `${TITLE_BASE} · ⚠ 告警`;
+          screen.title = flashOn ? `⚠ ${TITLE_BASE} · 告警` : `${TITLE_BASE} · ⚠ 告警`;
           screen.render();
         }, 800);
       } else if (!enabled && flashInterval) {
-        clearInterval(flashInterval);
-        flashInterval = null;
+        clearInterval(flashInterval); flashInterval = null;
         screen.title = `${TITLE_BASE} · 准备就绪`;
       }
     },
+
+    showSidebar() { side.box.show(); divider.show(); screen.render(); },
   };
 
   screen.render();
@@ -154,5 +128,4 @@ if (require.main === module) {
       app.screen.render();
     }, 500);
   });
-  app.status.setInfo('Enter 发送  Ctrl+C 退出  /help 帮助');
 }

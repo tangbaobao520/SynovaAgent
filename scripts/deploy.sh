@@ -71,9 +71,9 @@ echo -e "${CYAN}[5/5] 验证部署...${RESET}"
 sleep 5
 
 if [ -n "$REMOTE" ]; then
-  HEALTH=$(ssh "$REMOTE" "curl -s http://localhost:3000/api/health" || echo '{"status":"down"}')
+  HEALTH=$(ssh "$REMOTE" "curl -s http://localhost:3000/health" || echo '{"status":"down"}')
 else
-  HEALTH=$(curl -s http://localhost:3000/api/health 2>/dev/null || echo '{"status":"down"}')
+  HEALTH=$(curl -s http://localhost:3000/health 2>/dev/null || echo '{"status":"down"}')
 fi
 
 STATUS=$(echo "$HEALTH" | grep -o '"status":"[^"]*"' | cut -d'"' -f4 || echo "unknown")
@@ -85,6 +85,6 @@ fi
 
 echo ""
 echo "  访问: http://localhost:3000"
-echo "  健康: http://localhost:3000/api/health"
+echo "  健康: http://localhost:3000/health"
 echo "  Web:  http://localhost:3000/"
 echo ""

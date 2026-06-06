@@ -70,6 +70,8 @@ export interface EngineConfig {
   evidenceCollector?: EvidenceCollector;
   /** L4: GraphBridge (Phase 1 自动写入本体图) */
   graphBridge?: ReturnType<typeof createGraphBridge>;
+  /** L2: ExpertRouter (多专家路由协调者) */
+  expertRouter?: import('../l2/expert-router').ExpertRouter;
   /** L4: ReportGraphAdapter (Phase 4 报告从图读取) */
   reportAdapter?: ReportGraphAdapter;
   /** L3: CorroborationEngine (Phase 3 矛盾检测+交叉验证) */
@@ -218,6 +220,7 @@ export class ConversationEngine {
 
   // 编排层组件 (Iter 3-5 接线)
   private intentRouter: IntentRouter | null = null;
+  private expertRouter: import('../l2/expert-router').ExpertRouter | null = null;
   private dimensionRegistry: DimensionRegistry | null = null;
   private hookRunner: HookRunner | null = null;
   private sessionManager: SessionManager | null = null;
@@ -257,6 +260,7 @@ export class ConversationEngine {
 
     // 编排层接线: 接收可选组件
     this.intentRouter = config.intentRouter || null;
+    this.expertRouter = config.expertRouter || null;
     this.dimensionRegistry = config.dimensionRegistry || null;
     this.hookRunner = config.hookRunner || null;
     this.sessionManager = config.sessionManager || null;
@@ -524,10 +528,9 @@ export class ConversationEngine {
     // Hermes P0-2: 易变层追加到 user message — 保护 Prefix Cache
     this.messages.push({ role: 'user', content: `${input}\n\n${buildVolatileLayer(this.turnCount, this.phase)}` });
 
-    // L1 decoupling: when ViewAdapter is bound, use it for display
+    // L1 decoupling: onToken 已处理 TUI 显示，不再重复调用 viewAdapter
     const display = (token: string) => {
       onToken(token);
-      this.viewAdapter?.appendToken(token);
     };
 
     if (this.phase === 0) {
@@ -565,6 +568,15 @@ export class ConversationEngine {
     initiatorName: string,
     onEvent?: (event: DiagnosisEvent) => void,
   ): Promise<ConsultationResult | null> {
+    // L2 ExpertRouter: 根据 Phase 选择专家策略
+    if (this.expertRouter) {
+      const selection = await this.expertRouter.route(initiatorName, {
+        phase: this.phase,
+        orgSize: this.orgId,
+      });
+      // 将 ExpertSelection 传给 diagnosisLauncher（SubAgentCoordinator 消费）
+      (this.diagnosisLauncher as { setExpertSelection?: (s: unknown) => void }).setExpertSelection?.(selection);
+    }
     return this.diagnosisLauncher.startDiagnosis(initiatorRole, initiatorName, onEvent);
   }
 

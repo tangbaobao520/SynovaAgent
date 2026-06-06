@@ -4,6 +4,9 @@
   "private": true,
   "description": "Synova组织智能诊断 — 独立进程，终端对话式组织诊断。配置 LLM 即用。",
   "main": "dist/index.js",
+  "bin": {
+    "synova": "./bin/synova"
+  },
   "scripts": {
     "dev": "tsx src/index.ts",
     "chat": "tsx src/cli.ts",

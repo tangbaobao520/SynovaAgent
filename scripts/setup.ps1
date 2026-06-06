@@ -74,9 +74,16 @@ Write-Step "3/7 确定安装目录"
 $installDir = if ($env:SYNOVA_HOME) { $env:SYNOVA_HOME } else { "$env:USERPROFILE\.synova-agent" }
 Write-OK "安装目录: $installDir"
 
+# 创建安装目录并复制文件
+New-Item -ItemType Directory -Force -Path $installDir | Out-Null
+Write-Host "   复制文件到 $installDir ..." -ForegroundColor Gray
+# 排除 node_modules, data, logs, .git 以加速复制
+Get-ChildItem -Path $sourceDir -Exclude node_modules,data,logs,.git | Copy-Item -Recurse -Destination $installDir -Force
+Write-OK "文件已复制到安装目录"
+
 # ═══ 4. 安装 npm 依赖 ═══
 Write-Step "4/7 安装 Node.js 依赖"
-Set-Location $sourceDir
+Set-Location $installDir
 Write-Host "   npm install --omit=dev ... (可能需要 2-3 分钟)" -ForegroundColor Gray
 npm install --omit=dev 2>&1 | Select-Object -Last 3
 if ($LASTEXITCODE -ne 0) {
@@ -84,6 +91,20 @@ if ($LASTEXITCODE -ne 0) {
   exit 1
 }
 Write-OK "Node.js 依赖已安装"
+
+# 确保 tsx 可用 (运行时依赖)
+Write-Host "   检查 tsx 运行时..." -ForegroundColor Gray
+$tsxPath = "$installDir\node_modules\.bin\tsx.cmd"
+if (-not (Test-Path $tsxPath)) {
+  Write-Host "   安装 tsx..." -ForegroundColor Gray
+  npm install tsx --save 2>&1 | Out-Null
+}
+if (Test-Path $tsxPath) {
+  Write-OK "tsx 运行时就绪"
+} else {
+  Write-Err "tsx 安装失败 — 请手动: npm install tsx"
+  exit 1
+}
 
 # ═══ 5. 配置飞书凭证 ═══
 Write-Step "5/7 配置飞书凭证"
@@ -141,20 +162,25 @@ if (-not $NoAutoStart) {
     Write-OK "开机自启已配置 (Task Scheduler: $taskName)"
   } else {
     try {
-      # 创建启动脚本
+      # 创建启动脚本 (使用安装目录 $installDir，非源码临时目录)
       $startScript = "$installDir\start-synova.cmd"
       @"
 @echo off
-cd /d "$sourceDir"
+title SynovaAgent — AI 组织诊断服务
+cd /d "$installDir"
 start "" http://localhost:3000
-npx tsx src/server.ts
+npx tsx src/index.ts
 "@ | Out-File -FilePath $startScript -Encoding ascii
 
-      # 注册计划任务: 用户登录时启动
+      # 注册计划任务: 用户登录时启动 + 失败自动重启 (最多10次)
       $action = New-ScheduledTaskAction -Execute $startScript
       $trigger = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
-      $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1)
-      Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Settings $settings -Description "Synova-Agent 诊断服务" -Force | Out-Null
+      $settings = New-ScheduledTaskSettingsSet `
+        -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
+        -StartWhenAvailable `
+        -RestartCount 10 -RestartInterval (New-TimeSpan -Minutes 1) `
+        -ExecutionTimeLimit (New-TimeSpan -Days 0)
+      Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Settings $settings -Description "Synova-Agent AI 组织诊断服务 (http://localhost:3000)" -Force | Out-Null
 
       Write-OK "开机自启已配置 (Task Scheduler: $taskName)"
     } catch {
@@ -171,7 +197,13 @@ Write-Step "7/7 启动服务"
 Write-Host "   正在启动 SynovaAgent ..." -ForegroundColor Gray
 
 try {
-  Start-Process "node" -ArgumentList "--require", "tsx/cjs", "$sourceDir\src\server.ts" -WindowStyle Hidden
+  $entryPoint = "$installDir\src\index.ts"
+  $tsxCmd = "$installDir\node_modules\.bin\tsx.cmd"
+  if (Test-Path $tsxCmd) {
+    Start-Process $tsxCmd -ArgumentList $entryPoint -WindowStyle Hidden
+  } else {
+    Start-Process "npx" -ArgumentList "tsx", $entryPoint -WindowStyle Hidden
+  }
 
   Start-Sleep -Seconds 3
 
@@ -187,7 +219,7 @@ try {
     Write-Warn "服务可能还在启动中，请稍后访问 http://localhost:3000"
   }
 } catch {
-  Write-Warn "自动启动失败，请手动运行: npx tsx src/server.ts"
+  Write-Warn "自动启动失败，请手动运行: cd $installDir; npx tsx src/index.ts"
 }
 
 # ═══ 完成 ═══

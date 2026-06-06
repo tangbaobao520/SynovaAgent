@@ -36,6 +36,7 @@ import imRoutes from './routes/im';
 import knowledgeRoutes from './routes/knowledge';
 import credentialRoutes from './routes/credentials';
 import documentRoutes from './routes/documents';
+import permissionRoutes from './routes/permissions';
 import type { ServiceContainer } from './services/container';
 
 export async function createServer(): Promise<Server> {
@@ -48,7 +49,7 @@ export async function createServer(): Promise<Server> {
   // P0-5.3: 数据库启动时自动解密
   const { autoDecryptOnStartup, autoEncryptOnShutdown } = await import('./services/db-encryption');
   const encryptionConfig = {
-    masterSecret: process.env.CREDENTIAL_MASTER_KEY || config.engineTokens || 'synova-dev-secret',
+    masterSecret: process.env.CREDENTIAL_MASTER_KEY || config.engineTokens || (config.devMode ? 'synova-dev-secret' : ''),
     salt: config.dbPath,
     dbPath: config.dbPath,
   };
@@ -61,11 +62,11 @@ export async function createServer(): Promise<Server> {
   const hookRunner = new HookRunner();
   const sessionManager = new SessionManager();
   const phaseStateMachine = new PhaseStateMachine({
-    0: { label: '组织访谈', required: true, maxDurationMs: 600_000 },
+    0: { label: '目标访谈', required: true, maxDurationMs: 600_000 },
     1: { label: '数据采集', required: true, maxDurationMs: 120_000 },
     2: { label: '假设生成', required: true, maxDurationMs: 300_000 },
-    3: { label: '根因分析', required: true, maxDurationMs: 180_000 },
-    4: { label: '报告生成', required: true, maxDurationMs: 60_000 },
+    3: { label: '障碍分析', required: true, maxDurationMs: 180_000 },
+    4: { label: '简报生成', required: true, maxDurationMs: 60_000 },
     5: { label: '交付', required: true, maxDurationMs: 120_000 },
   });
   const wiring = createOrchestrationWiring(eventBus, hookRunner, sessionManager, phaseStateMachine);
@@ -94,7 +95,7 @@ export async function createServer(): Promise<Server> {
   // ═══ A1: CredentialVault — 凭证加密存储 (替代 .env 明文) ═══
   let credentialVault: CredentialVault | undefined;
   try {
-    const masterSecret = process.env.CREDENTIAL_MASTER_KEY || config.engineTokens || 'synova-dev-secret';
+    const masterSecret = process.env.CREDENTIAL_MASTER_KEY || config.engineTokens || (config.devMode ? 'synova-dev-secret' : '');
     const salt = config.dbPath;
     credentialVault = new CredentialVault(db, masterSecret, salt);
     logger.info('CredentialVault 已初始化 (AES-256-GCM 凭证加密)');
@@ -156,7 +157,7 @@ export async function createServer(): Promise<Server> {
     credentialPool,
     federalAdapter,
     expertRegistry: new (await import('./l3/expert-registry')).ExpertRegistry(),
-    proposalManager: new (await import('./l2/proposal-manager')).ProposalManager(),
+    proposalManager: new (await import('./l2/proposal-manager')).ProposalManager(db),
     reportTemplates: new (await import('./l3/report-templates')).ReportTemplateRegistry(),
     llmCache: new (await import('./services/llm-cache')).LLMCache(),
     faultRecovery: new (await import('./services/fault-recovery')).FaultRecovery(),
@@ -181,25 +182,63 @@ export async function createServer(): Promise<Server> {
   const { sanitizeCheckMiddleware } = await import('./middleware/sanitize-check');
   app.use(sanitizeCheckMiddleware);
 
-  // Token 认证中间件（铁律 24: 异常处理审计 — devMode 跳过鉴权）
-  // 白名单: 健康检查、Web 界面、静态资源不鉴权
-  app.use((req, res, next) => {
-    if (config.devMode) return next();
-    if (req.path === '/health' || req.path === '/' || req.path.startsWith('/api/status')) return next();
-    if (req.path.startsWith('/assets/') || req.path.endsWith('.html') || req.path.endsWith('.js') || req.path.endsWith('.css')) return next();
+  // Token 认证 + RBAC 中间件 (内联 — 避免 tsx workspace 包解析问题)
+  const whiteListed = (path: string) =>
+    path === '/health' || path === '/' || path.startsWith('/api/status') ||
+    path.startsWith('/assets/') || path.endsWith('.html') || path.endsWith('.js') || path.endsWith('.css');
 
+  // 内联 RBAC: 根据角色生成 FilterClause
+  const buildFilterClause = (ctx: { auth: { roles: string[]; teamId: string } }) => {
+    const maxRole = ctx.auth.roles.includes('admin') ? 'admin'
+      : ctx.auth.roles.includes('manager') ? 'manager' : 'employee';
+    if (maxRole === 'admin') return { conditions: [] as Array<{ field: string; operator: string; value: unknown }> };
+    const c: Array<{ field: string; operator: string; value: unknown }> = [
+      { field: 'access.level', operator: 'IN', value: ['public', 'team'] },
+      { field: 'access.teamId', operator: 'EQ', value: ctx.auth.teamId },
+      { field: 'access.sensitivity', operator: 'NOT_EQ', value: 'restricted' },
+    ];
+    return { conditions: c };
+  };
+
+  app.use(async (req, res, next) => {
+    if (whiteListed(req.path)) return next();
     const token = req.headers['authorization']?.replace('Bearer ', '') || (req.query.token as string);
-    if (!token || token !== config.engineTokens) {
-      return res.status(401).json({ ok: false, code: 'UNAUTHORIZED', message: '缺少或无效的 API Token。请在 Authorization header 中提供 Bearer <token>，或在 DEV_MODE=true 下运行。' });
+
+    // DevMode: admin 上下文
+    if (config.devMode) {
+      const { runWithContext } = await import('./services/request-context');
+      const ctx = {
+        userId: 'dev-admin',
+        identity: { openId: 'dev', email: 'dev@localhost', name: 'Dev Admin', source: 'api' as const },
+        auth: { roles: ['admin' as const], teamId: 'default', tenantId: 'default', sensitivity: 'normal' as const },
+        permissions: { version: 1, expiresAt: Date.now() + 86400000 },
+      };
+      runWithContext({ user: ctx, authProvider: { getPermissionFilter: async () => ({ conditions: [] }) } as never }, async () => { next(); });
+        return;
+      }
+
+      if (!token) {
+        return res.status(401).json({ ok: false, code: 'UNAUTHORIZED', message: '缺少 API Token' });
     }
 
-    // 鉴权成功，剥离 token query 参数防止日志泄漏
-    // Express Request.query 为 getter-only，需要覆写（P1-02: 用类型断言替代 as any）
+    const parts = token.split(':');
+    const tenantId = parts[0] || 'default';
+    const role = parts[1] || 'employee';
+    const ctx = {
+      userId: token,
+      identity: { openId: token, email: `${token}@${tenantId}`, name: token, source: 'api' as const },
+      auth: { roles: [role] as string[], teamId: tenantId, tenantId, sensitivity: 'normal' as const },
+      permissions: { version: 1, expiresAt: Date.now() + 86400000 },
+    };
+    const filter = buildFilterClause(ctx);
+    const authProvider = { getPermissionFilter: async () => filter };
+
+    const { runWithContext } = await import('./services/request-context');
     if (req.query.token) {
       const { token: _, ...cleanQuery } = req.query;
       Object.defineProperty(req, 'query', { value: cleanQuery, writable: true, configurable: true });
     }
-    next();
+    runWithContext({ user: ctx, authProvider: authProvider as never }, async () => { next(); });
   });
 
   // Slice 6.2: 简易速率限制 (100 req/min per IP)
@@ -243,6 +282,7 @@ app.use(imRoutes);          // POST /api/im/feishu/webhook | GET /api/im/health
 app.use(knowledgeRoutes);   // POST /api/knowledge/search | POST /api/knowledge/ingest
 app.use(credentialRoutes);  // POST /api/credentials/:provider | GET /api/credentials
 app.use(documentRoutes);   // POST /api/documents/upload | GET /api/documents/list
+app.use(permissionRoutes); // POST /api/permissions/update | POST /api/permissions/bulk | GET /api/permissions/audit
 
   // ═══ A2: Connector Pipeline — 手动触发 + 定时同步 ═══
   app.post('/api/connector/sync', async (req, res) => {
@@ -354,7 +394,7 @@ app.use(documentRoutes);   // POST /api/documents/upload | GET /api/documents/li
           backupDir: config.dbPath.replace(/[^/\\]+$/, '') + 'backups',
           maxBackups: 7,
           encryptBackups: true,
-          masterSecret: process.env.CREDENTIAL_MASTER_KEY || config.engineTokens || 'synova-dev-secret',
+          masterSecret: process.env.CREDENTIAL_MASTER_KEY || config.engineTokens || (config.devMode ? 'synova-dev-secret' : ''),
           salt: config.dbPath,
         });
         if (result.ok) logger.info({ path: result.path }, '数据库备份完成');

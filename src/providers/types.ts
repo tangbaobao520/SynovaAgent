@@ -23,6 +23,8 @@ export interface ChatOptions {
   model?: string;
   temperature?: number;
   maxTokens?: number;
+  /** DeepSeek reasoning_effort: 'off' | 'high' | 'max' */
+  reasoningEffort?: string;
   signal?: AbortSignal;
   tools?: Array<{ type: 'function'; function: { name: string; description: string; parameters: Record<string, unknown>; strict?: boolean } }>;
   /** Hermes P5: Prefix Cache 配置 (DeepSeek 自动缓存 — 保留用于 Anthropic 等显式断点) */

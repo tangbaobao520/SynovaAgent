@@ -1,139 +1,151 @@
 /**
- * tui/side-panel.ts — 洞察面板
+ * tui/side-panel.ts — 右边栏 (对标 CodeWhale Sidebar)
  *
- * 诊断进度 + 组织图谱 + 告警区。
- * 人类语言：X人 · Y团队 · Z工具 · N条关联
+ * 四面板堆叠: 增长目标 / 增长障碍 / 专家分析 / 遗留问题
+ * 空面板自动折叠，不占空间。
  */
 import blessed from 'neo-blessed';
 
-const BOLD = '\x1b[1m';
-const DIM = '\x1b[2m';
-const RED = '\x1b[31m';
-const YELLOW = '\x1b[33m';
-const CYAN = '\x1b[36m';
-const RESET = '\x1b[0m';
+const B = '\x1b[1m';
+const D = '\x1b[2m';
+const G = '\x1b[32m';
+const Y = '\x1b[33m';
+const C = '\x1b[36m';
+const R = '\x1b[31m';
+const W = '\x1b[37m';
+const X = '\x1b[0m';
 
-const PHASE_LABELS = ['组织访谈', '数据采集', '假设生成', '根因分析', '报告生成', '交付'];
+// ═══ 数据模型 ═══
 
-export interface Alert {
-  level: 'critical' | 'warning';
-  title: string;
-  data: string;
-  suggestion: string;
+export interface GoalData {
+  text: string;
+  progressPct: number;
+  elapsedDays: number;
+  totalDays: number;
+  phase: number;
 }
+
+export interface ObstacleItem {
+  name: string;
+  status: 'pending' | 'active' | 'resolved';
+  confidence?: number;
+}
+
+export interface ExpertStatus {
+  name: string;
+  status: 'done' | 'running' | 'queued' | 'failed';
+  elapsed?: string;
+}
+
+export interface LegacyIssue {
+  title: string;
+  foundDate: string;
+  status: 'unresolved' | 'in_progress';
+}
+
+// ═══ Widget ═══
 
 export interface SidePanel {
   box: blessed.Widgets.BoxElement;
-  setPhase(phase: number): void;
-  /** Slice 3.2: 显示诊断进度和模块发现 */
-  setDiagnosisProgress(phase: number, label: string, findings: Array<{ moduleId: string; text: string }>): void;
-  setOntologySummary(summary: { persons: number; teams: number; tools: number; edges: number } | null): void;
-  pushAlert(alert: Alert): void;
-  clearAlerts(): void;
+  setGoal(data: GoalData | null): void;
+  setObstacles(items: ObstacleItem[]): void;
+  setExperts(experts: ExpertStatus[]): void;
+  setLegacyIssues(issues: LegacyIssue[]): void;
+  refresh(): void;
 }
 
-export function createSidePanel(opts: { top?: number | string; left?: number | string; width?: string; height?: string } = {}): SidePanel {
+export function createSidePanel(opts: { left?: string; width?: string; height?: string } = {}): SidePanel {
   const box = blessed.box({
-    top: opts.top ?? 0,
+    top: 0,
     left: opts.left ?? '75%',
     width: opts.width ?? '25%',
-    height: opts.height ?? '100%-3',
+    height: opts.height ?? '100%-4',
     border: { type: 'line' },
     style: { border: { fg: 'gray' } },
-    tags: true,
+    tags: false,
+    scrollable: true,
   });
 
-  const phaseBox = blessed.box({
-    top: 1, left: 1, right: 1, height: 4,
-    label: ' 诊断进度 ',
-    border: { type: 'line' },
-    style: { border: { fg: 'cyan' } },
-  });
-  box.append(phaseBox);
+  let goal: GoalData | null = null;
+  let obstacles: ObstacleItem[] = [];
+  let experts: ExpertStatus[] = [];
+  let legacy: LegacyIssue[] = [];
 
-  const ontologyBox = blessed.box({
-    top: 6, left: 1, right: 1, height: 4,
-    label: ' 组织图谱 ',
-    border: { type: 'line' },
-    style: { border: { fg: 'yellow' } },
-  });
-  box.append(ontologyBox);
+  function buildContent(): string {
+    const lines: string[] = [];
 
-  const alertBox = blessed.box({
-    top: 11, left: 1, right: 1, height: 6,
-    label: ' 告警 ',
-    border: { type: 'line' },
-    style: { border: { fg: 'gray' } },
-    hidden: true,
-  });
-  box.append(alertBox);
+    // ── 增长目标 ──
+    if (goal) {
+      lines.push(`${B}${W}◆ 增长目标${X}`);
+      lines.push(`  ${goal.text}`);
+      const bar = '█'.repeat(Math.round(goal.progressPct / 10)) + '░'.repeat(10 - Math.round(goal.progressPct / 10));
+      lines.push(`  ${C}${bar}${X} ${goal.progressPct}%`);
+      lines.push(`  ${D}第 ${goal.elapsedDays} 天 / 共 ${goal.totalDays} 天${X}`);
+      lines.push(`  ${D}Phase ${goal.phase}/5${X}`);
+      lines.push('');
+    }
 
-  const alerts: Alert[] = [];
+    // ── 增长障碍 ──
+    if (obstacles.length > 0) {
+      const actives = obstacles.filter(o => o.status !== 'resolved');
+      lines.push(`${B}${W}▼ 增长障碍${X} ${D}(${actives.length}项)${X}`);
+      for (const o of obstacles.slice(0, 8)) {
+        const icon = o.status === 'resolved' ? `${G}✓${X}` : o.status === 'active' ? `${C}▶${X}` : `${D}○${X}`;
+        const conf = o.confidence ? ` ${D}${Math.round(o.confidence * 100)}%${X}` : '';
+        lines.push(`  ${icon} ${o.name}${conf}`);
+      }
+      if (obstacles.length > 8) lines.push(`  ${D}... 还有 ${obstacles.length - 8} 项${X}`);
+      lines.push('');
+    }
+
+    // ── 专家分析 ──
+    if (experts.length > 0) {
+      lines.push(`${B}${W}▼ 专家分析${X}`);
+      for (const e of experts) {
+        let icon: string;
+        switch (e.status) {
+          case 'done': icon = `${G}◆${X}`; break;
+          case 'running': icon = `${C}▶${X}`; break;
+          case 'failed': icon = `${R}✕${X}`; break;
+          default: icon = `${D}○${X}`;
+        }
+        const label = e.status === 'done' ? '完成' : e.status === 'running' ? '进行中' : e.status === 'failed' ? '失败' : '排队';
+        const elapsed = e.elapsed ? ` ${D}${e.elapsed}${X}` : '';
+        lines.push(`  ${icon} ${e.name}  ${D}${label}${X}${elapsed}`);
+      }
+      lines.push('');
+    }
+
+    // ── 遗留问题 ──
+    if (legacy.length > 0) {
+      lines.push(`${B}${W}▼ 遗留问题${X} ${D}(${legacy.length}项)${X}`);
+      for (const l of legacy.slice(0, 5)) {
+        const icon = l.status === 'in_progress' ? `${Y}⚡${X}` : `${R}⚡${X}`;
+        lines.push(`  ${icon} ${l.title}`);
+        lines.push(`    ${D}${l.foundDate} · ${l.status === 'in_progress' ? '进行中' : '未解决'}${X}`);
+      }
+      if (legacy.length > 5) lines.push(`  ${D}... 还有 ${legacy.length - 5} 项${X}`);
+      lines.push('');
+    }
+
+    // 空状态
+    if (lines.length === 0) {
+      lines.push(` ${D}对话开始后显示${X}`);
+      lines.push(` ${D}增长数据${X}`);
+    }
+
+    return lines.join('\n');
+  }
 
   const panel: SidePanel = {
     box,
-
-    setPhase(phase) {
-      const label = PHASE_LABELS[phase] || `Phase ${phase}`;
-      const pct = Math.round((phase / 5) * 100);
-      const bar = '█'.repeat(Math.round(pct / 10)) + '░'.repeat(10 - Math.round(pct / 10));
-      phaseBox.setContent(
-        `${BOLD}Phase ${phase}/5${RESET} · ${label}\n` +
-        `[${CYAN}${bar}${RESET}] ${pct}%`
-      );
-    },
-
-    setDiagnosisProgress(phase, label, findings) {
-      const phaseLabel = label || PHASE_LABELS[phase] || `Phase ${phase}`;
-      const pct = Math.round((phase / 5) * 100);
-      const bar = '█'.repeat(Math.round(pct / 10)) + '░'.repeat(10 - Math.round(pct / 10));
-
-      let content = `${BOLD}Phase ${phase}/5${RESET} · ${phaseLabel}\n`;
-      content += `[${CYAN}${bar}${RESET}] ${pct}%\n`;
-
-      if (findings.length > 0) {
-        content += '\n' + DIM + '─'.repeat(20) + RESET + '\n';
-        for (const f of findings.slice(0, 5)) {
-          content += `${YELLOW}▸${RESET} ${f.text.slice(0, 60)}\n`;
-        }
-        if (findings.length > 5) {
-          content += `${DIM}... 还有 ${findings.length - 5} 条发现${RESET}`;
-        }
-      }
-      phaseBox.setContent(content);
-    },
-
-    setOntologySummary(summary) {
-      if (!summary || (summary.persons === 0 && summary.teams === 0 && summary.tools === 0)) {
-        ontologyBox.setContent(`${DIM}等待数据加载...${RESET}`);
-      } else {
-        ontologyBox.setContent(
-          `已识别:\n` +
-          `  ${summary.persons}人 · ${summary.teams}团队\n` +
-          `  ${summary.tools}工具 · ${summary.edges}条关联`
-        );
-      }
-    },
-
-    pushAlert(alert) {
-      alerts.unshift(alert);
-      if (alerts.length > 3) alerts.pop();
-      const icon = alert.level === 'critical' ? '🔴' : '🟡';
-      const content = alerts.map(a =>
-        `${icon} ${a.title}\n${DIM}${a.data}${RESET}\n${DIM}${a.suggestion}${RESET}`
-      ).join('\n' + '─'.repeat(20) + '\n');
-      alertBox.setContent(content);
-      alertBox.show();
-      alertBox.style.border = { fg: alert.level === 'critical' ? 'red' : 'yellow' };
-    },
-
-    clearAlerts() {
-      alerts.length = 0;
-      alertBox.setContent('');
-      alertBox.hide();
-      alertBox.style.border = { fg: 'gray' };
-    },
+    setGoal(data) { goal = data; },
+    setObstacles(items) { obstacles = items; },
+    setExperts(list) { experts = list; },
+    setLegacyIssues(issues) { legacy = issues; },
+    refresh() { box.setContent(buildContent()); },
   };
 
+  panel.refresh();
   return panel;
 }

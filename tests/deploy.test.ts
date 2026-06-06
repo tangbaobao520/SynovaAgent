@@ -16,6 +16,7 @@ describe('Deployment artifacts', () => {
     expect(df).toContain('WORKDIR');
     expect(df).toContain('EXPOSE 3000');
     expect(df).toContain('HEALTHCHECK');
+    expect(df).toContain('fetch'); // Alpine 不含 wget/curl，用 node fetch
   });
 
   it('docker-compose.yml exists and has valid structure', () => {
@@ -31,7 +32,15 @@ describe('Deployment artifacts', () => {
     const content = fs.readFileSync(p, 'utf-8');
     expect(content).toContain('#!/usr/bin/env bash');
     expect(content).toContain('Node.js');
-    expect(content).toContain('LLM_API_KEY');
+    // 不再引用不存在的 dist/index.js
+    expect(content).toContain('src/index.ts');
+    expect(content).not.toContain('dist/index.js');
+    // PM2 进程守护
+    expect(content).toContain('pm2');
+    // 开机自启 (systemd 或 launchd)
+    expect(content).toMatch(/systemd|launchd/);
+    // 环境变量检查
+    expect(content).toContain('SYNOVA_HOME');
   });
 
   it('install.ps1 exists and has valid PowerShell', () => {
@@ -40,6 +49,36 @@ describe('Deployment artifacts', () => {
     const content = fs.readFileSync(p, 'utf-8');
     expect(content).toContain('Write-Host');
     expect(content).toContain('Node.js');
+    // 不再引用不存在的 dist/index.js
+    expect(content).toContain('src/index.ts');
+    expect(content).not.toContain('dist/index.js');
+    // 确保安装 tsx
+    expect(content).toContain('tsx');
+  });
+
+  it('.dockerignore exists and excludes critical files', () => {
+    const p = path.join(ROOT, '.dockerignore');
+    expect(fs.existsSync(p)).toBe(true);
+    const content = fs.readFileSync(p, 'utf-8');
+    expect(content).toContain('node_modules');
+    expect(content).toContain('data/');
+    expect(content).toContain('logs/');
+    expect(content).toContain('.git/');
+    expect(content).toContain('dist/');
+  });
+
+  it('setup.ps1 uses installDir (not sourceDir) for auto-start', () => {
+    const p = path.join(ROOT, 'scripts', 'setup.ps1');
+    expect(fs.existsSync(p)).toBe(true);
+    const content = fs.readFileSync(p, 'utf-8');
+    // 开机自启脚本必须 cd 到 $installDir，不是 $sourceDir
+    expect(content).toContain('cd /d "$installDir"');
+    // 统一入口为 src/index.ts
+    expect(content).toContain('src/index.ts');
+    // RestartCount 增加到 10
+    expect(content).toContain('RestartCount 10');
+    // 检查 tsx
+    expect(content).toContain('tsx.cmd');
   });
 
   it('README.md exists and documents key endpoints', () => {

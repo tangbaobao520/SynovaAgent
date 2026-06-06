@@ -1,0 +1,16 @@
+Total: 213 tests, 210 passed, 3 failed
+--- FAIL: E2E: 行业专家贡献旅程 POST /api/expert/contribute → 200 + template
+AssertionError: expected 404 to be 200 // Object.is equality
+    at D:/novis-backup-20260526/Novis/synova-agent/packages/test-kit/tests/e2e/02-expert-contribution-journey.test.ts:24:24
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at file:///D:/novis-backup-20260526/Novis/synova-agent/packages/test-kit/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+--- FAIL: E2E: 行业专家贡献旅程 GET /api/expert/marketplace → 200 + templates[]
+AssertionError: expected 404 to be 200 // Object.is equality
+    at D:/novis-backup-20260526/Novis/synova-agent/packages/test-kit/tests/e2e/02-expert-contribution-journey.test.ts:33:24
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at file:///D:/novis-backup-20260526/Novis/synova-agent/packages/test-kit/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+--- FAIL: E2E: 行业专家贡献旅程 POST /api/expert/contribute → 400 (缺少必填字段)
+AssertionError: expected 404 to be 400 // Object.is equality
+    at D:/novis-backup-20260526/Novis/synova-agent/packages/test-kit/tests/e2e/02-expert-contribution-journey.test.ts:44:24
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at file:///D:/novis-backup-20260526/Novis/synova-agent/packages/test-kit/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20

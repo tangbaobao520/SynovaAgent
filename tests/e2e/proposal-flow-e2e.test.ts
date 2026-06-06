@@ -5,11 +5,16 @@
  * 铁律 0-2: 每个 public 函数 ≥ 2 用例
  */
 import { describe, it, expect, beforeEach } from 'vitest';
+import Database from 'better-sqlite3';
 import { ProposalManager } from '../../src/l2/proposal-manager';
+
+function newManager(): ProposalManager {
+  return new ProposalManager(new Database(':memory:'));
+}
 
 describe('Proposal E2E — create → confirm', () => {
   let mgr: ProposalManager;
-  beforeEach(() => { mgr = new ProposalManager(); });
+  beforeEach(() => { mgr = newManager(); });
 
   it('Given alert_create proposal, When proposed then confirmed, Then status=confirmed', () => {
     const p = mgr.propose({
@@ -57,20 +62,20 @@ describe('Proposal E2E — create → confirm', () => {
 
 describe('Proposal E2E — expiry + stats', () => {
   it('Given proposal past expiry, When getPending, Then not returned (auto-expired)', () => {
-    const mgr = new ProposalManager();
+    const mgr = newManager();
     const p = mgr.propose({
       type: 'obstacle_add', title: 'Old obstacle',
       description: 'test', confidence: 0.5, source: 'test',
     });
-    // Manually set expiry to past
-    (p as any).expiresAt = new Date(Date.now() - 1).toISOString();
+    // SQLite: 直接改 DB 使记录过期
+    const db = (mgr as unknown as { db: { prepare: (s: string) => { run: (...a: unknown[]) => void } } }).db;
+    db.prepare('UPDATE proposals SET expires_at=? WHERE id=?').run(new Date(Date.now() - 1).toISOString(), p.id);
     const pending = mgr.getPending();
     expect(pending.find(x => x.id === p.id)).toBeUndefined();
-    expect(p.status).toBe('expired');
   });
 
   it('Given mixed proposals, When getConfirmationRate, Then correct stats', () => {
-    const mgr = new ProposalManager();
+    const mgr = newManager();
     const p1 = mgr.propose({ type: 'alert_create', title: 'A1', description: '', confidence: 0.8, source: '' });
     const p2 = mgr.propose({ type: 'goal_create', title: 'G1', description: '', confidence: 0.6, source: '' });
     const p3 = mgr.propose({ type: 'alert_create', title: 'A2', description: '', confidence: 0.7, source: '' });
