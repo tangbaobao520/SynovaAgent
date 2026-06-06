@@ -6,12 +6,9 @@
  */
 import blessed from 'neo-blessed';
 import { getCostTracker, formatCost } from '../services/llm-cost';
-
-const DIM = '\x1b[2m';
-const CYAN = '\x1b[36m';
-const YELLOW = '\x1b[33m';
-const WHITE = '\x1b[1m';
-const RESET = '\x1b[0m';
+import { DIM, CYAN, YELLOW, BOLD, CLOSE } from './color-tags';
+const WHITE = BOLD;
+const RESET = CLOSE;
 
 export interface StatusBar {
   box: blessed.Widgets.BoxElement;

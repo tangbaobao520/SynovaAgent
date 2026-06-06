@@ -6,17 +6,18 @@
  */
 import blessed from 'neo-blessed';
 import { getCurrentVersion } from '../services/update-checker';
+import { BOLD, DIM, CYAN, GREEN, YELLOW, PURPLE, WHITE, CLOSE } from './color-tags';
 
 const VERSION = getCurrentVersion();
 
-const B = '\x1b[1m';
-const D = '\x1b[2m';
-const C = '\x1b[36m';
-const G = '\x1b[32m';
-const Y = '\x1b[33m';
-const M = '\x1b[35m';
-const W = '\x1b[37m';
-const R = '\x1b[0m';
+const B = BOLD;
+const D = DIM;
+const C = CYAN;
+const G = GREEN;
+const Y = YELLOW;
+const M = PURPLE;
+const W = WHITE;
+const R = CLOSE;
 
 export interface WelcomeConfig {
   providerName: string;

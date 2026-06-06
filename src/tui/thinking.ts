@@ -7,10 +7,8 @@
  * - 压缩时保留推理摘要
  */
 
-const B = '\x1b[1m';
-const D = '\x1b[2m';
-const C = '\x1b[36m';
-const R = '\x1b[0m';
+import { BOLD, DIM, CYAN, CLOSE } from './color-tags';
+const B = BOLD; const D = DIM; const C = CYAN; const R = CLOSE;
 
 const SPINNER = ['|', '/', '-', '\\'];
 const SPINNER_INTERVAL = 100; // ms

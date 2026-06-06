@@ -5,13 +5,8 @@
  * 输出 ANSI 转义序列，blessed 直接渲染。
  */
 
-const B = '\x1b[1m';
-const D = '\x1b[2m';
-const C = '\x1b[36m';
-const G = '\x1b[32m';
-const Y = '\x1b[33m';
-const W = '\x1b[37m';
-const R = '\x1b[0m';
+import { BOLD, DIM, CYAN, GREEN, YELLOW, WHITE, CLOSE } from './color-tags';
+const B = BOLD; const D = DIM; const C = CYAN; const G = GREEN; const Y = YELLOW; const W = WHITE; const R = CLOSE;
 
 /**
  * 将 Markdown 文本渲染为 ANSI 格式化字符串。

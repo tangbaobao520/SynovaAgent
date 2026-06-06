@@ -6,14 +6,9 @@
  */
 import blessed from 'neo-blessed';
 
-const B = '\x1b[1m';
-const D = '\x1b[2m';
-const G = '\x1b[32m';
-const Y = '\x1b[33m';
-const C = '\x1b[36m';
-const R = '\x1b[31m';
-const W = '\x1b[37m';
-const X = '\x1b[0m';
+import { BOLD, DIM, GREEN, YELLOW, CYAN, RED, WHITE, CLOSE } from './color-tags';
+const B = BOLD; const D = DIM; const G = GREEN; const Y = YELLOW;
+/* eslint-disable */ const C = CYAN; const R = RED; const W = WHITE; const X = CLOSE;
 
 // ═══ 数据模型 ═══
 

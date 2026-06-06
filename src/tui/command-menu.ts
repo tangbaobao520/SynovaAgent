@@ -4,11 +4,7 @@
  * 输入 / 时弹出在输入框下方，↑↓ 导航，Enter 选中，Esc 取消。
  */
 import blessed from 'neo-blessed';
-
-const DIM = '\x1b[2m';
-const CYAN = '\x1b[36m';
-const WHITE = '\x1b[37m';
-const RESET = '\x1b[0m';
+import { DIM, CYAN, WHITE, CLOSE as RESET } from './color-tags';
 
 export interface CommandItem {
   cmd: string;

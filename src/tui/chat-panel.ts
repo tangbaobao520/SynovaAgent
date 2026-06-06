@@ -9,14 +9,10 @@ import type { CommandMenu } from './command-menu';
 import { renderMarkdown } from './markdown';
 import { renderThoughtToggle, resetThought, toggleExpanded, isExpanded, finalizeThought, hasThought, renderThoughtExpanded } from './thinking';
 import { DripBuffer } from './streaming';
+import { PURPLE, GREEN, YELLOW, CYAN, DIM, RED, BOLD, CLOSE } from './color-tags';
 
-const PURPLE = '\x1b[35m';
-const GREEN = '\x1b[32m';
-const GRAY = '\x1b[2m';
-const RED = '\x1b[31m';
-const YELLOW = '\x1b[33m';
-const CYAN = '\x1b[36m';
-const RESET = '\x1b[0m';
+const GRAY = DIM;
+const RESET = CLOSE;
 
 export interface ChatPanel {
   box: blessed.Widgets.BoxElement;
@@ -51,13 +47,14 @@ export function createChatPanel(opts: { top?: number; left?: number; width?: str
     top: opts.top ?? 0,
     left: opts.left ?? 0,
     width: opts.width ?? '75%',
-    height: opts.height ?? '100%-6',  // 底部 6 行 = input(5) + status(1)
+    height: opts.height ?? '100%-6',
     border: { type: 'line' },
     scrollable: true,
     alwaysScroll: true,
     mouse: true,
     keys: true,
     vi: true,
+    tags: true,  // 启用 blessed 内置 tags → 不再手工 ANSI
     scrollbar: { ch: ' ', track: { bg: 'cyan' } },
     style: { border: { fg: 'gray' } },
   });
@@ -269,10 +266,8 @@ export function createChatPanel(opts: { top?: number; left?: number; width?: str
     },
 
     setInitialContent(text) {
-      // 纯文本模式 — 不含 ANSI，避免 Windows 终端渲染垃圾字符
-      const plain = text.replace(/\x1b\[[0-9;]*m/g, '');
-      const lines = plain.split('\n');
-      for (const line of lines) contentLines.push(line);
+      // blessed tags 由 neo-blessed 内部处理 — 不需要手动 strip
+      for (const line of text.split('\n')) contentLines.push(line);
       contentLines.push('');
       box.setContent(contentLines.join('\n'));
       box.setScrollPerc(0);
