@@ -1,39 +1,78 @@
 #!/bin/bash
-# ═══════════════════════════════════════════════════════════════════════════════
-# Secrets 扫描 — pre-commit 硬阻断
-# 检测: API Key / Token / Password 硬编码在源码中
-# ═══════════════════════════════════════════════════════════════════════════════
+# check-secrets.sh — 凭证/密钥泄漏检测 (pre-commit 硬阻断)
+#
+# 覆盖所有已知泄露模式：
+#   - LLM API Key (sk-/ak-/fk-/org- 前缀)
+#   - 飞书 App Secret / App ID
+#   - Password / Token 硬编码在非 .env 文件中
+#   - .env 文件被意外暂存
+#
+# 历史事故: .env 真实 API Key 暴露仓库 / 飞书 App Secret 暴露
 set -euo pipefail
-
-RED='\033[0;31m'; GREEN='\033[0;32m'; RESET='\033[0m'
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'; VIOLATIONS=0
 
 echo ""
 echo "═══ Secrets 扫描 ═══"
 echo ""
 
-# 扫描 staged 文件中的敏感模式
-# 排除: .env (已 gitignored), 测试文件, node_modules, 注释
-STAGED=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null | grep '\.ts$\|\.js$\|\.json$\|\.yaml$\|\.yml$' | grep -v node_modules | grep -v '\.test\.' || true)
+# ═══ 1. .env 意外暂存 ═══
+if git diff --cached --name-only 2>/dev/null | grep -q '^\.env$'; then
+  echo -e "  ${RED}❌ .env 文件被暂存 — 请立即 git rm --cached .env${NC}"
+  VIOLATIONS=$((VIOLATIONS + 1))
+else
+  echo -e "  ${GREEN}✅ .env 未被暂存${NC}"
+fi
 
-LEAKS=""
+# ═══ 2. .gitignore 必须包含 .env ═══
+if ! grep -q '^\.env$' "$REPO_ROOT/.gitignore" 2>/dev/null; then
+  echo -e "  ${RED}❌ .gitignore 缺少 .env 条目${NC}"
+  VIOLATIONS=$((VIOLATIONS + 1))
+else
+  echo -e "  ${GREEN}✅ .gitignore 包含 .env${NC}"
+fi
+
+# ═══ 3. 源码硬编码密钥扫描 (staged files) ═══
+STAGED=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null \
+  | grep -E '\.(ts|js|json|yaml|yml|md|html)$' \
+  | grep -v node_modules | grep -v '\.test\.' | grep -v '\.spec\.' || true)
+
+HARDCODED=""
 if [ -n "$STAGED" ]; then
-  # 模式: API Key (sk-), token=, password=, secret= (非示例值)
-  LEAKS=$(echo "$STAGED" | xargs grep -n "sk-[a-zA-Z0-9]\{20,\}\|ApiKey['\"]\s*:\s*['\"][a-zA-Z0-9]\|token['\"]\s*:\s*['\"][a-zA-Z0-9]\{16,\}\|password['\"]\s*:\s*['\"][^'\"]\{4,\}\|secret['\"]\s*:\s*['\"][a-zA-Z0-9]\{8,\}" 2>/dev/null \
-    | grep -v "your-\|example\|placeholder\|demo\|test-\|xxx\|TODO\|CHANGE" \
+  HARDCODED=$(echo "$STAGED" | xargs grep -Hn \
+    -e 'sk-[a-zA-Z0-9]\{20,\}' \
+    -e '[Ff][Ee][Ii][Ss][Hh][Uu].*[Ss][Ee][Cc][Rr][Ee][Tt].*=.\{8,\}' \
+    -e '[Ff][Ee][Ii][Ss][Hh][Uu].*[Aa][Pp][Pp].*[Ii][Dd].*=.\{8,\}' \
+    -e 'app_secret.*[:=].\{8,\}' \
+    -e 'app_id.*[:=].*cli_[a-z0-9]\{8,\}' \
+    -e '[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd].*[:=].\{6,\}' \
+    -e '[Tt][Oo][Kk][Ee][Nn].*[:=].\{16,\}' \
+    -e '[Ss][Ee][Cc][Rr][Ee][Tt].*[:=].\{16,\}' \
+    2>/dev/null \
+    | grep -v 'your-\|example\|placeholder\|demo\|test-\|xxx\|TODO\|CHANGE\|process\.env\|CLAUDE\|/docs/\|/tests/' \
     || true)
 fi
 
-if [ -n "$LEAKS" ]; then
-  COUNT=$(echo "$LEAKS" | wc -l | tr -d ' ')
-  echo -e "  ${RED}❌ Secrets 泄漏: ${COUNT} 处${RESET}"
-  echo "$LEAKS" | while read -r line; do echo "     ${line}"; done
-  echo ""
-  echo "  禁止在源码中硬编码 API Key / Token / Password。"
-  echo "  使用环境变量或 .env (已 gitignored)。"
-  echo ""
-  exit 1
+if [ -n "$HARDCODED" ]; then
+  COUNT=$(echo "$HARDCODED" | wc -l | tr -d ' ')
+  echo -e "  ${RED}❌ 硬编码凭证: ${COUNT} 处${NC}"
+  echo "$HARDCODED" | head -10 | while read -r line; do echo "     ${line}"; done
+  echo "  禁止在源码中硬编码 API Key / App Secret / Token / Password。"
+  VIOLATIONS=$((VIOLATIONS + 1))
+else
+  echo -e "  ${GREEN}✅ 暂存文件无硬编码凭证${NC}"
 fi
 
-echo -e "  ${GREEN}✅ 无 Secrets 泄漏${RESET}"
+# ═══ 4. 本地 .env 提醒 (不阻断) ═══
+if [ -f "$REPO_ROOT/.env" ] && grep -q 'sk-\|FEISHU\|DEEPSEEK' "$REPO_ROOT/.env" 2>/dev/null; then
+  echo -e "  ${YELLOW}⚠️  本地 .env 包含 API Key (未暂存, 不阻断)${NC}"
+fi
+
 echo ""
-exit 0
+if [ "$VIOLATIONS" -gt 0 ]; then
+  echo -e "${RED}Secrets 扫描: ${VIOLATIONS} 项违规 — 提交已拒绝${NC}"
+  exit 1
+else
+  echo -e "  ${GREEN}Secrets 扫描: 全部通过 ✅${NC}"
+  exit 0
+fi
