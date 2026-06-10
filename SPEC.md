@@ -1,32 +1,31 @@
-# SPEC: 通用测量管道
+# SPEC: 专家推理管道
 
 ## 全局定位
 - Synova 是 AI 组织诊断系统，核心是服务于增长
-- 本模块属于 L3 洞察层 — 连接数据(L4)和专家推理(L3)
-- 服务于用户旅程：任何数据源 → 测量管道 → N个测量器计算 → 评分+证据 → 专家推理 → 报告
-- 不对接具体专家 — 管道是通用的，所有专家共享
+- 本模块属于 L3 洞察层 — 消费测量管道输出，驱动 LLM 推理，产诊断结论
+- 服务于用户旅程：测量结果 → 专家推理 → 诊断报告
+- 对接：六专家（战略/组织/财务/营销/技术/行动）。管道通用，不绑定具体专家
 
 ## 接口签名
-- MeasurerConfig: { id, dimension, dataRequirements, frequency }
-- Measurer: { config, compute(input: MeasurementInput) → MeasurementResult }
-- MeasurementInput: { dimensions: EightDimExtraction[], metrics?: Record<string, number> }
-- MeasurementResult: { measurerId, dimension, score(0-10), confidence, evidence[], trend?, computedAt }
-- MeasurementPipeline: register(measurers) → run(input) → MeasurementOutput
-- MeasurementOutput: { results: MeasurementResult[], aggregated: Record<string, DimensionScore>, computedAt }
+- ExpertConfig: { id, name, dimensions[], systemPrompt }
+- ExpertInput: { dimension: string, measurements: MeasurementResult[], context?: string }
+- ExpertOutput: { expertId, findings[], conclusion, score, confidence }
+- ExpertAgent: { config, reason(input) → ExpertOutput }
+- ExpertPipeline: register(agents) → run(input) → ExpertOutput[]
 
 ## 接入点
-- MeasurementPipeline 被 ExpertAgent 调用（L3）
-- MeasurementPipeline 消费 GraphStore 数据（L4）— 通过 MeasurementInput 接口
-- MeasurementPipeline 输出被 ReportBuilder 消费（L2）
+- ExpertPipeline 被 ConversationEngine 或 API route 调用（L2）
+- ExpertPipeline 消费 MeasurementPipeline 输出（L3 → L3）
+- ExpertPipeline 输出被 ReportBuilder 消费（L2）
 
 ## 算法选择
-- 每个测量器独立 compute() — 管道不关心计算逻辑
-- 管道只负责：加载 → 依次执行 → 收集结果 → 聚合
-- 聚合策略：同维度多测量器 → 加权平均（权重=confidence）
-- 不引入 LLM — 测量器是纯计算，专家推理是 LLM
+- 每个专家独立 LLM 调用（并行执行）
+- System prompt 约束专家只分析自己的维度
+- 专家输出结构化 JSON（强制格式，不自由文本）
+- LLM 失败 → degraded, 其他专家继续
 
 ## 边界条件
-- 数据缺失 → measurementResult.confidence = 'low', evidence = ['数据不足']
-- 计算失败 → 单个测量器失败不影响其他，管道继续
-- 测量器注册失败 → pipeline.run() 返回 partial results + degradedModules[]
-- 空输入 → 返回空 MeasurementOutput，不报错
+- 测量数据缺失 → 专家标注 confidence: low, 不编造结论
+- LLM 调用超时 → 30s 超时
+- LLM 返回非 JSON → 解析失败，retry 一次，仍失败则降级
+- 专家没有对应维度的测量数据 → 跳过该专家
