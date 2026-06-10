@@ -16,3 +16,4 @@ synova_worker/__pycache__/
 **/__pycache__/
 .env
 .env
+STATE.md
