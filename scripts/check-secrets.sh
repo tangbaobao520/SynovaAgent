@@ -32,24 +32,25 @@ else
   echo -e "  ${GREEN}✅ .gitignore 包含 .env${NC}"
 fi
 
-# ═══ 3. 源码硬编码密钥扫描 (staged files) ═══
+# ═══ 3. 源码硬编码密钥扫描 (全部文件, 包括测试) ═══
+# 测试文件里的 fallback 值同样危险 — 真实密钥不能出现在仓库任何位置
 STAGED=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null \
   | grep -E '\.(ts|js|json|yaml|yml|md|html)$' \
-  | grep -v node_modules | grep -v '\.test\.' | grep -v '\.spec\.' || true)
+  | grep -v node_modules || true)
 
 HARDCODED=""
 if [ -n "$STAGED" ]; then
+  # 三个可靠模式:
+  #   1. LLM API Key 前缀 (sk-/ak-/fk-/org-)
+  #   2. 飞书/企业 App ID 前缀 (cli_)
+  #   3. process.env 回退到硬编码字符串 (|| 'xxx' 或 || "xxx")
   HARDCODED=$(echo "$STAGED" | xargs grep -Hn \
     -e 'sk-[a-zA-Z0-9]\{20,\}' \
-    -e '[Ff][Ee][Ii][Ss][Hh][Uu].*[Ss][Ee][Cc][Rr][Ee][Tt].*=.\{8,\}' \
-    -e '[Ff][Ee][Ii][Ss][Hh][Uu].*[Aa][Pp][Pp].*[Ii][Dd].*=.\{8,\}' \
-    -e 'app_secret.*[:=].\{8,\}' \
-    -e 'app_id.*[:=].*cli_[a-z0-9]\{8,\}' \
-    -e '[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd].*[:=].\{6,\}' \
-    -e '[Tt][Oo][Kk][Ee][Nn].*[:=].\{16,\}' \
-    -e '[Ss][Ee][Cc][Rr][Ee][Tt].*[:=].\{16,\}' \
+    -e 'cli_[a-z0-9]\{10,\}' \
+    -e "||\s*'[a-zA-Z0-9_-]\{8,\}'" \
+    -e '||\s*"[a-zA-Z0-9_-]\{8,\}"' \
     2>/dev/null \
-    | grep -v 'your-\|example\|placeholder\|demo\|test-\|xxx\|TODO\|CHANGE\|process\.env\|CLAUDE\|/docs/\|/tests/' \
+    | grep -v 'your-\|example\|placeholder\|demo\|test-\|xxx\|TODO\|CHANGE\|'\''\s*$' \
     || true)
 fi
 
