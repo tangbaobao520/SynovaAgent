@@ -166,7 +166,7 @@ async function runTests() {
     assert(o.aggregated['D3'] && o.aggregated['D3'].measurerCount === 1);
   });
 
-  await test('missing data → measurer reports low', async function() {
+  await test('missing required field → measurer reports low', async function() {
     var p = new MeasurementPipeline();
     p.register([{
       config: { id: 'needy', dimension: 'D3', dataRequirements: ['collab'] },
@@ -175,7 +175,8 @@ async function runTests() {
         return { measurerId: 'needy', dimension: 'D3', score: 7, confidence: 'high', evidence: ['协作密度正常'], trend: 'stable', computedAt: new Date().toISOString() };
       },
     }]);
-    var o = await p.run({});
+    // 非空输入 — 但缺少 measurer 需要的特定字段
+    var o = await p.run({ otherData: true });
     assert(o.results[0].confidence === 'low');
     assert(o.results[0].evidence[0].includes('缺少'));
   });
