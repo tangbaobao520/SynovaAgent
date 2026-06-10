@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Synova 一页纸</title>
+<style>
+  :root { --bg: #0d1117; --surface: #161b22; --border: #30363d; --text: #c9d1d9; --muted: #8b949e; --accent: #58a6ff; --green: #3fb950; --orange: #d2991d; }
+  body { background:var(--bg); color:var(--text); font-family:system-ui,sans-serif; max-width:800px; margin:2rem auto; padding:0 1.5rem; line-height:1.6; }
+  h1 { color:#f0f6fc; font-size:1.8rem; border-bottom:2px solid var(--border); padding-bottom:.5rem; }
+  h2 { color:var(--accent); font-size:1.1rem; margin:1.5rem 0 .5rem; }
+  p { margin:.4rem 0; }
+  .table { width:100%; border-collapse:collapse; margin:.5rem 0; font-size:.9rem; }
+  .table td { padding:.4rem .8rem; border-bottom:1px solid var(--border); vertical-align:top; }
+  .table td:first-child { color:var(--muted); white-space:nowrap; width:30%; }
+  .tag { display:inline-block; padding:.1em .5em; border-radius:3px; font-size:.8rem; margin-right:.3em; }
+  .tag-ok { background:#1a3a1a; color:var(--green); }
+  .tag-wip { background:#3a2e0a; color:var(--orange); }
+  hr { border:none; border-top:1px solid var(--border); margin:1rem 0; }
+</style>
+</head>
+<body>
+
+<h1>Synova</h1>
+
+<p>一个 AI 系统。驻扎在企业里，持续看数据，告诉老板<strong>增长卡在哪、为什么、怎么办</strong>。</p>
+
+<hr>
+
+<h2>不是 ChatBot，是诊断系统</h2>
+
+<table class="table">
+<tr><td>ChatBot</td><td>你问一句，它答一句。答完就忘了你。</td></tr>
+<tr><td>管理咨询</td><td>收几百万，派几个顾问做几个月访谈，出一份 PPT。5 年后又一样。</td></tr>
+<tr><td>SaaS 报表</td><td>给你看数据——"销售额下降 15%"。但不告诉你为什么，也不告诉你怎么办。</td></tr>
+<tr><td><strong>Synova</strong></td><td>一直盯着。数据有异常 → 自动分析 → 跨角度验证 → 告诉你卡在哪 + 证据 + 怎么做。<br><strong>不替你做决策。只让你决策时有依据，而不是凭感觉。</strong></td></tr>
+</table>
+
+<hr>
+
+<h2>服务谁</h2>
+
+<table class="table">
+<tr><td>直接用户</td><td>FDE（现场诊断工程师）—— 他们拿着 Synova 去服务企业客户</td></tr>
+<tr><td>最终受益者</td><td>5-300 人的企业老板 —— 请不起麦肯锡，但需要知道自己的公司哪里出问题了</td></tr>
+</table>
+
+<hr>
+
+<h2>怎么用</h2>
+
+<table class="table">
+<tr><td>第一步</td><td>FDE 拿着八维度采访提纲（任务目标/业务价值/现状起点/资源约束/风险瓶颈/成功标准/市场定位/数字底座），面对面访谈企业老板</td></tr>
+<tr><td>第二步</td><td>采访结束，上传记录文档。Synova 自动提取关键信息，检查覆盖度，启动诊断</td></tr>
+<tr><td>第三步</td><td>出报告。企业老板看到：我的增长卡在哪、你怎么知道的、我该做什么</td></tr>
+</table>
+
+<hr>
+
+<h2>核心能力</h2>
+
+<table class="table">
+<tr><td>持续盯着</td><td>7×24 监测企业数据（飞书/财务/代码/文档），不会累、不会忘、不会有盲区</td></tr>
+<tr><td>多角度分析</td><td>6 个 AI 专家同时看——战略/组织/财务/营销/技术/知识库。一个信号是噪音，三个信号指向同一个地方就是问题</td></tr>
+<tr><td>证据说话</td><td>不说"感觉团队协作有问题"。说"过去 4 周跨部门消息量下降 34%，联合会议减少 60%"</td></tr>
+</table>
+
+<hr>
+
+<h2>为什么别人不做</h2>
+
+<table class="table">
+<tr><td>大厂（腾讯/阿里）</td><td>5-300 人企业的诊断市场，对不上他们几百亿的年增长目标。不是不能做——是理性的不选择</td></tr>
+<tr><td>AI 大厂（OpenAI/Anthropic）</td><td>他们是平台，卖的是 API。做垂直诊断 = 和所有客户竞争。平台中立性比一个小市场重要</td></tr>
+<tr><td>小咨询公司</td><td>在做，但靠个人经验。没有 AI，质量不稳定，很多企业被割韭菜</td></tr>
+</table>
+
+<hr>
+
+<h2>当前状态</h2>
+
+<table class="table">
+<tr><td><span class="tag tag-ok">定稿</span></td><td>产品逻辑通了。理论框架定了。诊断方法论有了。</td></tr>
+<tr><td><span class="tag tag-wip">建设中</span></td><td>代码是散的——有 24 个计算模块，但测试跑不通。FDE 演示管线还没通。</td></tr>
+<tr><td><span class="tag tag-wip">下一步</span></td><td>让演示跑通：上传文档 → 出诊断报告。这是当前唯一重要的事。</td></tr>
+</table>
+
+</body>
+</html>

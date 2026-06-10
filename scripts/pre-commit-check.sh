@@ -3,7 +3,9 @@
 # 铁律自动化门禁 — pre-commit 硬阻断 + 存量警告
 # 用法: bash scripts/pre-commit-check.sh
 # hard-block: as any / Mock-TODO / CJS require / .only / .env leak / branch
+#   + TUI铁律: ink patch缺失 / 过度Pipeline / flex-end / React.memo缺失
 # warning: empty catch (存量问题, 不阻断但可见)
+#   + TUI铁律: for-ch-of无sleep / finishStreaming顺序 / 注释*/
 # ═══════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
 
@@ -102,6 +104,11 @@ hard_check "铁律 33: 新测试文件命名不符合规范" "$NEW_TESTS"
 PRE_EXISTING=$(grep -rn "pre.existing\|known.failure\|FIXME.*test\|skip.*broken\|TODO.*fix.*test" tests/ src/ --include="*.ts" 2>/dev/null | grep -v "node_modules" || true)
 hard_check "Anthropic: 禁止 pre-existing/known-failure 标记" "$PRE_EXISTING"
 
+# ═══ 自动化诚实门禁 ═══
+# 每处违规 = 硬阻断。不靠 CLAUDE.md 提醒，靠编译器级强制执行。
+bash "$(dirname "$0")/check-reality.sh" || { echo -e "  ${RED}❌ 诚实门禁: 存在违规项${RESET}"; HARD_FAIL=$((HARD_FAIL + 1)); }
+echo ""
+
 # Anthropic 标准: engine-core vendor Critical bug 不得延期
 SOG_DELETE=$(grep -n "DELETE FROM graph_nodes" ../server/vendor/@synova/engine-core/src/pipeline/diagnosis/graph-store.ts 2>/dev/null || true)
 hard_check "Anthropic: SOG-001 deleteNode 物理删除 (不得延期)" "$SOG_DELETE"
@@ -120,6 +127,78 @@ if [ "$BRANCH" = "main" ]; then
 else
   hard_check "铁律 34: 分支命名" "$M"
 fi
+
+echo ""
+
+# ═══════════════════════════════════════════════════════════
+# 铁律 40-45: TUI V2 铁律 (2026-06-07)
+# ═══════════════════════════════════════════════════════════
+echo "── TUI V2 铁律 ─────────────────────────────────────────"
+
+# 铁律 40: 闪烁修复不可回退 — ink patch 必须存在
+PATCH_FILE=$(find patches/ -name "ink+*.patch" 2>/dev/null | head -1)
+if [ -z "$PATCH_FILE" ]; then
+  M="patches/ 目录缺少 ink patch 文件"
+  hard_check "铁律 40-1: ink patch 缺失" "$M"
+else
+  hard_check "铁律 40-1: ink patch 存在" ""
+fi
+M=$(grep -rn '"postinstall".*patch-package' package.json 2>/dev/null || true)
+if [ -z "$M" ]; then
+  hard_check "铁律 40-2: postinstall: patch-package" "MISSING"
+else
+  hard_check "铁律 40-2: postinstall: patch-package" ""
+fi
+
+# 铁律 40-3: React.memo 在 Message/StreamingText 上
+M=$(grep -rn "export function Message\|export function StreamingText" src/tui-v2/ --include="*.tsx" 2>/dev/null | grep -v "React.memo" || true)
+hard_check "铁律 40-3: Message/StreamingText 缺少 React.memo" "$M"
+
+# 铁律 41: 流式 Pipeline 简单直接 — 禁止在 hook 中使用过度工程化的类
+# streaming.ts 中定义这些类是允许的,但 use-streaming.ts 中不能导入使用
+M=$(grep -rn "LineBuffer\|FrameRateLimiter\|StreamChunker" src/tui-v2/hooks/use-streaming.ts 2>/dev/null || true)
+hard_check "铁律 41: use-streaming.ts 中禁止 LineBuffer/FrameRateLimiter/StreamChunker" "$M"
+
+# 铁律 42: 逐字流必须有延迟 (简化检查: for-ch-of 行无 sleep 则警告)
+M=$(grep -n "for.*const ch of" src/agent/tool-loop-executor.ts 2>/dev/null || true)
+M_SLEEP=""
+if [ -n "$M" ]; then
+  while IFS= read -r line 2>/dev/null || true; do
+    [ -z "$line" ] && continue
+    linenum=$(echo "$line" | cut -d: -f1)
+    [ -z "$linenum" ] && continue
+    # 检查下 5 行内是否有 sleep
+    if ! sed -n "$((linenum+1)),$((linenum+5))p" src/agent/tool-loop-executor.ts 2>/dev/null | grep -q "sleep"; then
+      M_SLEEP="${M_SLEEP}tool-loop-executor.ts:${linenum}: for-ch-of 后缺少 sleep(5)\n"
+    fi
+  done <<< "$M"
+fi
+warn_check "铁律 42: for-ch-of 无 sleep(5) 延迟" "${M_SLEEP:-}"
+
+# 铁律 43: finishStreaming 顺序 — 简化为检查 use-streaming.ts 中顺序
+M=$(grep -n "isStreaming.*false\|finishStreaming\|flushBuffer\|addAgentMessage" src/tui-v2/hooks/use-streaming.ts 2>/dev/null || true)
+M_ORDER=""
+if [ -n "$M" ]; then
+  flush_line=$(echo "$M" | grep "flushBuffer" | head -1 | cut -d: -f1)
+  msg_line=$(echo "$M" | grep "addAgentMessage" | head -1 | cut -d: -f1)
+  state_line=$(echo "$M" | grep "isStreaming.*false" | head -1 | cut -d: -f1)
+  if [ -n "$flush_line" ] && [ -n "$state_line" ] && [ "$flush_line" -gt "$state_line" ]; then
+    M_ORDER="use-streaming.ts: flushBuffer(${flush_line}) 应在 isStreaming=false(${state_line}) 之前"
+  fi
+fi
+warn_check "铁律 43: finishStreaming 顺序 (flushBuffer→addAgent→isStreaming=false)" "${M_ORDER:-}"
+
+# 铁律 44: 禁止 justifyContent="flex-end"
+M=$(grep -rn 'justifyContent.*flex-end\|justifyContent.*"flex-end"' src/tui-v2/ --include="*.tsx" 2>/dev/null || true)
+hard_check "铁律 44: 禁止 justifyContent=flex-end" "$M"
+
+# 铁律 45: 注释中 */ 必须加空格
+M=$(grep -rn '\*/\|\*/' src/tui-v2/ --include="*.tsx" 2>/dev/null \
+  | grep -v '^[^:]*:[^:]*:.*//' \
+  | grep -v 'export \* from\|import.*\*' \
+  | grep -v 'endsWith.*\*/\|\.\*\/' \
+  | grep -v '\* /\|/ \*' || true)
+warn_check "铁律 45: 注释中 */ 未加空格 (esbuild 兼容)" "$M"
 
 echo ""
 

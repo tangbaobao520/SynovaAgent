@@ -181,10 +181,11 @@ function buildCoverageContext(
   return lines.join('\n');
 }
 
-/** 六维度名称 (fallback，无 DimensionRegistry 时使用) */
+/** 八维度名称 (fallback，无 DimensionRegistry 时使用) */
 const DIMENSION_NAMES = [
   'mission_objectives', 'business_value', 'current_state',
   'resource_constraints', 'risk_bottlenecks', 'success_criteria',
+  'market_positioning', 'digital_foundation',
 ];
 
 function buildVolatileLayer(turnCount: number, phase: number): string {
