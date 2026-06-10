@@ -94,6 +94,22 @@ const CORE_DIMENSIONS: DiagnosticDimension[] = [
       { id: 'sc_2', text: '如果6个月后回顾，什么样的结果会让你觉得"这次诊断值了"？', reason: '设定成功基线', required: false },
     ],
   },
+  {
+    id: 'market_positioning', name: '市场定位', category: 'core', priority: 7,
+    triggerSignals: ['市场', '定位', '竞争', '差异化', '品类', '竞品'],
+    questions: [
+      { id: 'mp_1', text: '客户用什么词描述你们公司？跟你们自己用的词一样吗？', reason: '检测内外认知对齐', required: true },
+      { id: 'mp_2', text: '和竞品相比，客户选你们的最主要原因是什么？', reason: '验证差异化是否实质', required: true },
+    ],
+  },
+  {
+    id: 'digital_foundation', name: '数字底座', category: 'core', priority: 8,
+    triggerSignals: ['系统', '工具', '流程', '自动化', '数字化', '软件', '效率'],
+    questions: [
+      { id: 'df_1', text: '日常运转用哪些核心系统和工具？流程效率和自动化程度如何？', reason: '评估运营效率和系统瓶颈', required: true },
+      { id: 'df_2', text: '系统和工具是否在拖业务的后腿？哪些流程最需要改善？', reason: '发现流程瓶颈', required: false },
+    ],
+  },
 ];
 
 // ═══ Industry Extension Dimensions ═══
