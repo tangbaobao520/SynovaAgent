@@ -50,14 +50,8 @@ else
   echo "  ✅ 无跨层违规"
 fi
 
-# ═══ 4. TSC 状态 ═══
-echo -e "${CYAN}── 4. 类型检查 ──────────────────────────────────────${NC}"
-TSC_ERRORS=$(npx tsc --noEmit 2>&1 | grep -c 'error TS' 2>/dev/null || echo "?")
-echo "  TSC 错误: ${TSC_ERRORS}"
-echo ""
-
-# ═══ 5. 决策树 ═══
-echo -e "${CYAN}── 5. 下一步建议 ────────────────────────────────────${NC}"
+# ═══ 4. 决策树 ═══
+echo -e "${CYAN}── 4. 下一步建议 ────────────────────────────────────${NC}"
 echo ""
 
 # 决策逻辑
@@ -69,9 +63,6 @@ if [ "$PLACE" -gt 0 ] || [ "$NO_STATE" -gt 0 ]; then
   PRIORITY="P1"
 elif [ "$SKEL" -gt 3 ]; then
   SUGGESTION="升级骨架模块: ${SKEL} 个 @state:skeleton 文件。选一个对演示最有价值的，接真实数据源使其升级为 @state:real。"
-  PRIORITY="P0"
-elif [ -n "${TSC_ERRORS:-}" ] && [ "${TSC_ERRORS}" != "?" ] && [ "${TSC_ERRORS}" -gt 5 ]; then
-  SUGGESTION="修复类型错误: ${TSC_ERRORS} 个 TSC 错误。优先修复 engine-core 相关的模块解析问题（WORKLOG-20260608 遗留）。"
   PRIORITY="P0"
 else
   # 检查是否跑通了端到端管线
@@ -88,8 +79,8 @@ echo -e "  ${GREEN}建议:${NC} ${SUGGESTION}"
 echo -e "  ${YELLOW}优先级:${NC} ${PRIORITY}"
 echo ""
 
-# ═══ 6. 一页纸提醒 ═══
-echo -e "${CYAN}── 6. 全局锚点 (每次做任务前重温) ─────────────────${NC}"
+# ═══ 5. 一页纸提醒 ═══
+echo -e "${CYAN}── 5. 全局锚点 (每次做任务前重温) ─────────────────${NC}"
 echo "  Synova = AI 组织诊断系统，核心是服务于增长"
 echo "  五层架构: L1交互 → L2编排 → L3洞察 → L4本体 → L5存储"
 echo "  六专家: 战略 / 组织 / 财务 / 营销 / 技术 / 知识库"
