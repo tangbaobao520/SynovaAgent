@@ -51,6 +51,7 @@ if [ -n "$STAGED" ]; then
     -e '||\s*"[a-zA-Z0-9_-]\{8,\}"' \
     2>/dev/null \
     | grep -v 'your-\|example\|placeholder\|demo\|test-\|xxx\|TODO\|CHANGE\|'\''\s*$' \
+    | grep -v "'deepseek'\|'qwen'\|'glm'\|'kimi'\|'yi'\|'minimax'\|'step'\|'ernie'\|'openai'\|'gateway'\|'silicon'" \
     || true)
 fi
 

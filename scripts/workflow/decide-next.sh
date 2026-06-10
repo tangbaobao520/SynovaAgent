@@ -21,9 +21,9 @@ echo ""
 # ═══ 2. 代码健康度 (从 STATE.md 缓存读取, 瞬时) ═══
 echo -e "${CYAN}── 2. 代码健康度 ────────────────────────────────────${NC}"
 if [ -f "$REPO_ROOT/STATE.md" ]; then
-  REAL=$(grep -c '🟢' "$REPO_ROOT/STATE.md" 2>/dev/null || echo 0)
-  SKEL=$(grep -c '🟡' "$REPO_ROOT/STATE.md" 2>/dev/null || echo 0)
-  PLACE=$(grep -c '🔴' "$REPO_ROOT/STATE.md" 2>/dev/null || echo 0)
+  REAL=$(grep -c '🟢' "$REPO_ROOT/STATE.md" 2>/dev/null | head -1 | tr -d ' ' || echo 0)
+  SKEL=$(grep -c '🟡' "$REPO_ROOT/STATE.md" 2>/dev/null | head -1 | tr -d ' ' || echo 0)
+  PLACE=$(grep -c '🔴' "$REPO_ROOT/STATE.md" 2>/dev/null | head -1 | tr -d ' ' || echo 0)
   echo "  🟢 real:        ${REAL}"
   echo "  🟡 skeleton:    ${SKEL}"
   echo "  🔴 placeholder: ${PLACE}"
@@ -45,27 +45,37 @@ else
 fi
 echo ""
 
-# ═══ 4. 决策树 ═══
+# ═══ 4. 决策树 (按优先级逐级检查) ═══
 echo -e "${CYAN}── 4. 下一步建议 ────────────────────────────────────${NC}"
 SUGGESTION=""
 PRIORITY=""
 
-if [ "$PLACE" -gt 0 ]; then
-  SUGGESTION="消除占位代码: ${PLACE} 个 @state:placeholder。优先处理 skeleton 模块——接口已定义，补齐数据源即可升级为 real。"
-  PRIORITY="P1"
-elif [ "$SKEL" -gt 3 ]; then
-  SUGGESTION="升级骨架模块: ${SKEL} 个 @state:skeleton。选一个对演示最有价值的，接真实数据源使其升级为 @state:real。"
+# 检查关键模块状态
+V2_EXISTS=$(test -f "$REPO_ROOT/src/routes/diagnosis-upload-v2.ts" && echo 1 || echo 0)
+REAL_REPORT_EXISTS=$(test -f "$REPO_ROOT/tests/output/mvp-report-real.html" && echo 1 || echo 0)
+SAMPLE_REPORT_EXISTS=$(test -f "$REPO_ROOT/tests/output/mvp-sample-report.html" && echo 1 || echo 0)
+SERVER_STARTED=$(test -f "$REPO_ROOT/.server.pid" && echo 1 || echo 0)
+
+# 决策逻辑 (从紧急到优化)
+if [ "$PLACE" -gt 0 ] 2>/dev/null; then
+  SUGGESTION="消除占位代码: ${PLACE} 个 @state:placeholder 文件。"
   PRIORITY="P0"
-elif [ -f "$REPO_ROOT/tests/output/mvp-sample-report.html" ]; then
-  SUGGESTION="MVP 骨架已跑通。下一步: 接真实 DeepSeek API 跑一次端到端诊断管线。验证八维度提取 + 报告生成的真实链路。"
+elif [ "$SKEL" -gt 5 ] 2>/dev/null; then
+  SUGGESTION="升级骨架模块: ${SKEL} 个 @state:skeleton。选一个最有演示价值的模块接真实数据源。"
+  PRIORITY="P1"
+elif [ "$REAL_REPORT_EXISTS" -eq 1 ] && [ "$V2_EXISTS" -eq 1 ]; then
+  SUGGESTION="端到端管线已跑通(V2+真实API)。下一步: 启动Express服务器 → 浏览器测试 POST /api/diagnosis/upload → 看真实报告。验证完整的HTTP链路。"
+  PRIORITY="P0"
+elif [ "$SAMPLE_REPORT_EXISTS" -eq 1 ]; then
+  SUGGESTION="骨架已跑通(mock)。下一步: 接真实 DeepSeek API 跑端到端管线。"
   PRIORITY="P0"
 else
-  SUGGESTION="跑通 MVP 端到端管线: 上传示例文档 → 真实 LLM 八维度提取 → 诊断引擎 → 金字塔报告。"
+  SUGGESTION="跑通 MVP 管线: 文档上传 → 八维度提取 → 报告生成。"
   PRIORITY="P0"
 fi
 
 echo -e "  ${GREEN}建议:${NC} ${SUGGESTION}"
-echo -e "  ${YELLOW}优先级:${NC} ${PRIORITY}"
+echo -e "  ${YELLOW}优先级:${NC} ${PRIORITY}""
 echo ""
 
 # ═══ 5. 全局锚点 ═══

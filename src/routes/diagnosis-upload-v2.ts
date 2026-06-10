@@ -39,7 +39,10 @@ router.post('/upload', async (req: Request, res: Response) => {
       if (job) { job.status = 'failed'; job.error = (err as Error).message; }
     });
     res.json({ jobId, status: 'extracting' });
-  } catch (err) { log.error({ err }, '上传失败'); res.status(500).json({ error: '服务器内部错误' }); }
+  } catch (err: any) {
+    log.error({ err: err?.message || String(err), stack: err?.stack?.slice(0, 500) }, '上传失败');
+    res.status(500).json({ error: err?.message || '服务器内部错误' });
+  }
 });
 
 router.get('/report/:jobId', (req: Request, res: Response) => {
@@ -73,7 +76,11 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
   job.status = 'extracting';
   const { DocExtractor } = await import('../../packages/engine-core/src/pipeline/diagnosis/doc-extractor');
   const graphStore = createMemoryGraphStore();
-  const extractor = new DocExtractor(graphStore as any, llmClient as any);
+  // 类型断言: createMemoryGraphStore 实现 GraphStore 接口，但不需要完整 SQLiteGraphStore
+  const extractor = new DocExtractor(
+    graphStore as unknown as Parameters<typeof DocExtractor.prototype.constructor>[0],
+    llmClient,
+  );
   const { SOGNodeType } = await import('@synova/sog-core');
   const docId = graphStore.createNode(SOGNodeType.DOCUMENT, { name: `interview_${jobId}`, content }, teamId);
   const extraction = await extractor.extract(docId, content, teamId);
@@ -103,7 +110,7 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
     explanation: buildExplanation(extraction, diagnosisResult.degradedModules),
     orgName, diagnosedAt: new Date().toISOString().replace('T', ' ').slice(0, 19),
     overallScore: sections.reduce((sum, s) => sum + s.score, 0) / sections.length,
-    extraction: extraction as any, sections,
+    extraction, sections,
     crossValidation: [],
     dataTrust: {
       coveredSources: ['FDE采访文档（八维度提取）'],
