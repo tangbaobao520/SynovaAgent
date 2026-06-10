@@ -37,7 +37,7 @@ import knowledgeRoutes from './routes/knowledge';
 import credentialRoutes from './routes/credentials';
 import documentRoutes from './routes/documents';
 import permissionRoutes from './routes/permissions';
-import diagnosisUploadRoutes from './routes/diagnosis-upload';
+import diagnosisUploadRoutes from './routes/diagnosis-upload-v2';
 import type { ServiceContainer } from './services/container';
 
 export async function createServer(): Promise<Server> {
