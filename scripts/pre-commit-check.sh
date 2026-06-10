@@ -51,6 +51,20 @@ echo "════════════════════════�
 echo ""
 
 # ═══════════════════════════════════════════════════════════
+# 门禁 ①: SPEC 先行 (硬阻断)
+# Anthropic 铁律 0-2 Step 1: 没有 spec 的代码不准进仓库
+# ═══════════════════════════════════════════════════════════
+bash "$(dirname "$0")/workflow/check-spec.sh" || { HARD_FAIL=$((HARD_FAIL + 1)); }
+echo ""
+
+# ═══════════════════════════════════════════════════════════
+# 门禁 ②: 测试先行 (MVP 警告, Phase 2 硬阻断)
+# Anthropic 铁律 0-2 Step 2: 先写测试
+# ═══════════════════════════════════════════════════════════
+bash "$(dirname "$0")/workflow/check-test-first.sh" 2>/dev/null || true
+echo ""
+
+# ═══════════════════════════════════════════════════════════
 # 硬阻断 (Hard Block) — 违反直接拒绝 commit
 # ═══════════════════════════════════════════════════════════
 echo "── 硬阻断 ──────────────────────────────────────────────"
@@ -74,12 +88,14 @@ hard_check "铁律 9: CJS require() 残留" "$M"
 M=$(grep -rn "\.only(\|\.skip(" tests/ --include="*.ts" 2>/dev/null | grep -v "node_modules" || true)
 hard_check "vitest .only()/.skip() 残留" "$M"
 
-# .env 安全检查
+# .env 安全检查 — 只在 .env 被暂存时才阻断
 M=""
-if [ -f .env ] && grep -q "sk-\|ApiKey.*[a-f0-9]\{20\}" .env 2>/dev/null; then
-  M=".env 包含疑似真实 API Key"
+if git diff --cached --name-only 2>/dev/null | grep -q "^\.env$"; then
+  if [ -f .env ] && grep -q "sk-\|ApiKey.*[a-f0-9]\{20\}" .env 2>/dev/null; then
+    M=".env 已暂存且包含疑似真实 API Key — 撤销 git add .env"
+  fi
 fi
-hard_check "P0-01: .env 不含真实 API Key" "$M"
+hard_check "P0-01: .env 不含真实 API Key (仅当暂存时)" "$M"
 
 # Secrets 扫描: 源码中不得硬编码 API Key/Token/Password
 bash "$(dirname "$0")/check-secrets.sh" 2>/dev/null || { echo -e "  ${RED}❌ Secrets 扫描: 发现疑似泄漏${RESET}"; HARD_FAIL=$((HARD_FAIL + 1)); }
