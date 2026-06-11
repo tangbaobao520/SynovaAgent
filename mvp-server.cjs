@@ -19,6 +19,7 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+try { const fileUpload = require('express-fileupload'); app.use(fileUpload({ limits: { fileSize: 10*1024*1024 }, abortOnLimit: true })); } catch(e) { console.log('express-fileupload 未安装 — 文件上传不可用'); }
 
 function loadEnv() {
   var env = {};
@@ -41,11 +42,41 @@ var DIMS = [
 ];
 
 // ═══ Web UI ═══
-app.get('/', function(_req, res) {
+function webPage() {
   var reports = listReports();
-  var reportList = reports.length ? reports.map(function(r) { return '<tr><td><a href="/report/' + r.jobId + '">' + (r.orgName||'企业') + '</a></td><td>' + r.status + '</td><td>' + (r.createdAt||'').slice(0,16) + '</td></tr>'; }).join('') : '<tr><td colspan="3" style="color:var(--muted);">暂无诊断报告。上传第一份文档开始。</td></tr>';
-  res.type('html').send('<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Synova 组织诊断</title><style>:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#c9d1d9;--muted:#8b949e;--accent:#58a6ff;--green:#3fb950;--orange:#d2991d}*{margin:0;padding:0;box-sizing:border-box}body{background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;max-width:900px;margin:0 auto;padding:2rem 1.5rem;line-height:1.6}h1{color:#f0f6fc;font-size:1.6rem;margin-bottom:.5rem}h2{color:var(--accent);font-size:1.1rem;margin:2rem 0 1rem}.sub{color:var(--muted);font-size:.9rem;margin-bottom:2rem}textarea{width:100%;height:300px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:1rem;font-size:.9rem;font-family:system-ui,sans-serif;resize:vertical}input[type=text]{width:100%;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:.6rem 1rem;font-size:.9rem;margin-bottom:.5rem}button{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:.8rem 2rem;font-size:1rem;cursor:pointer;margin-top:.5rem}button:hover{opacity:.9}table{width:100%;border-collapse:collapse;margin:1rem 0}th,td{padding:.5rem .8rem;text-align:left;border-bottom:1px solid var(--border)}th{color:var(--muted);font-size:.8rem}a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}.status{display:inline-block;padding:.15em .5em;border-radius:3px;font-size:.75rem}.status.complete{background:#1a3a1a;color:var(--green)}.status.extracting,.status.measuring,.status.reasoning,.status.building{background:#3a2e0a;color:var(--orange)}.status.failed{background:#3a1a1a;color:#f85149}.cols{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}@media(max-width:700px){.cols{grid-template-columns:1fr}}</style></head><body><h1>🔬 Synova 组织诊断</h1><p class="sub">FDE 采访完成后，粘贴访谈记录，AI 自动诊断。</p><div class="cols"><div><h2>📄 上传访谈记录</h2><form action="/api/diagnosis/upload" method="POST"><input type="text" name="orgName" placeholder="企业名称（选填）"><textarea name="content" placeholder="在此粘贴访谈记录...&#10;&#10;建议包含：&#10;· 任务目标（想做到什么程度）&#10;· 业务价值（靠什么赚钱）&#10;· 现状起点（现在有什么）&#10;· 资源约束（缺什么）&#10;· 风险瓶颈（怕什么）&#10;· 成功标准（怎么算成了）&#10;· 市场定位（客户怎么说）&#10;· 数字底座（用什么系统）"></textarea><button type="submit">开始诊断 →</button></form></div><div><h2>📊 历史报告</h2><table><tr><th>企业</th><th>状态</th><th>时间</th></tr>' + reportList + '</table></div></div></body></html>');
-});
+  var rows = '';
+  if (reports.length) {
+    reports.forEach(function(r) {
+      rows += '<tr><td><a href="/report/' + r.jobId + '">' + (r.orgName||'企业') + '</a></td><td>' + r.status + '</td><td>' + (r.createdAt||'').slice(0,16) + '</td></tr>';
+    });
+  } else {
+    rows = '<tr><td colspan="3" style="color:var(--muted);">暂无诊断报告。上传第一份文档开始。</td></tr>';
+  }
+  return '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Synova 组织诊断</title><style>'
+    + ':root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#c9d1d9;--muted:#8b949e;--accent:#58a6ff;--green:#3fb950;--orange:#d2991d}'
+    + '*{margin:0;padding:0;box-sizing:border-box}body{background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;max-width:900px;margin:0 auto;padding:2rem 1.5rem;line-height:1.6}'
+    + 'h1{color:#f0f6fc;font-size:1.6rem;margin-bottom:.5rem}h2{color:var(--accent);font-size:1.1rem;margin:2rem 0 1rem}'
+    + '.sub{color:var(--muted);font-size:.9rem;margin-bottom:2rem}'
+    + 'textarea{width:100%;height:300px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:1rem;font-size:.9rem;font-family:system-ui,sans-serif;resize:vertical}'
+    + 'input[type=text]{width:100%;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:.6rem 1rem;font-size:.9rem;margin-bottom:.5rem}'
+    + 'input[type=file]{color:var(--text);font-size:.85rem}'
+    + 'button{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:.8rem 2rem;font-size:1rem;cursor:pointer;margin-top:.5rem}button:hover{opacity:.9}'
+    + 'table{width:100%;border-collapse:collapse;margin:1rem 0}th,td{padding:.5rem .8rem;text-align:left;border-bottom:1px solid var(--border)}th{color:var(--muted);font-size:.8rem}'
+    + 'a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}'
+    + '.cols{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}@media(max-width:700px){.cols{grid-template-columns:1fr}}'
+    + '</style></head><body>'
+    + '<h1>Synova 组织诊断</h1><p class="sub">上传访谈文档或直接粘贴，AI 自动诊断。</p>'
+    + '<div class="cols"><div><h2>上传文档</h2>'
+    + '<form action="/api/diagnosis/upload" method="POST" enctype="multipart/form-data">'
+    + '<input type="text" name="orgName" placeholder="企业名称（选填）">'
+    + '<div style="margin-bottom:.5rem"><input type="file" name="file" accept=".txt,.md" style="color:var(--text);font-size:.85rem">'
+    + '<span style="font-size:.8rem;color:var(--muted);display:block;margin-top:.2rem">支持 .txt / .md — 选择文件后点下方按钮</span></div>'
+    + '<textarea name="content" placeholder="或在此直接粘贴访谈记录..."></textarea>'
+    + '<button type="submit">开始诊断</button></form></div>'
+    + '<div><h2>历史报告</h2><table><tr><th>企业</th><th>状态</th><th>时间</th></tr>' + rows + '</table></div></div>'
+    + '</body></html>';
+}
+app.get('/', function(_req, res) { res.type('html').send(webPage()); });
 
 // GET /report/:jobId — 查看历史报告
 app.get('/report/:jobId', function(req, res) {
@@ -61,14 +92,24 @@ app.get('/api/health', function(_req, res) {
 });
 
 app.post('/api/diagnosis/upload', function(req, res) {
-  var content = req.body.content, orgName = req.body.orgName || '企业';
+  var content, orgName;
+
+  // 文件上传 → 读取文件内容; 表单粘贴 → req.body.content
+  if (req.files && req.files.file) {
+    content = req.files.file.data.toString('utf-8');
+    orgName = req.body.orgName || '企业';
+  } else {
+    content = req.body.content;
+    orgName = req.body.orgName || '企业';
+  }
+
   if (!content || content.length < 20) return res.status(400).send('文档太短，至少20字符。<a href="/">返回</a>');
   var jobId = 'diag_' + Date.now().toString(36);
   var job = { jobId: jobId, orgName: orgName, status: 'extracting', report: null, error: null, createdAt: new Date().toISOString(), completedAt: null };
   saveJob(job);
-  console.log('[job:' + jobId + '] created: ' + orgName);
+  console.log('[job:' + jobId + '] created: ' + orgName + ' (' + content.length + ' chars)');
 
-  // 表单提交 → 302 跳转到轮询页; JSON → 返回 jobId
+  // 文件上传 → 302 跳转; JSON → 返回 jobId
   if (req.get('Content-Type') && req.get('Content-Type').includes('application/json')) {
     res.json({ jobId: jobId, status: 'extracting' });
   } else {
