@@ -4,4 +4,4 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$ROOT"
-exec npx tsx src/tui/chat.ts "$@"
+exec npx tsx src/tui-v2/chat.tsx "$@"
