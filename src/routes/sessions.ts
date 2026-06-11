@@ -8,7 +8,6 @@
  * DELETE /api/sessions/:id          → 删除
  */
 import { Router, type Request, type Response } from 'express';
-import Database from 'better-sqlite3';
 import { SessionStore } from '../store/session-store';
 import { createLogger } from '../logger';
 import { getDatabase } from '../init/engine-context';

@@ -1,6 +1,5 @@
 /** routes/review.ts — 人工审核队列 (Batch 3 #12) */
 import { Router, type Request, type Response } from 'express';
-import Database from 'better-sqlite3';
 import { getDatabase } from '../init/engine-context';
 
 const router = Router();
