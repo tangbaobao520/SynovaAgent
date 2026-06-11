@@ -212,8 +212,7 @@ import { analyzeCapabilityGaps } from './capability-gap';
 import { computeIntentAlignment } from './intent-alignment';
 import { computeGoalAlignment } from './goal-alignment';
 import { computeRiskAggregation } from './risk-aggregator';
-import { computeComplianceCheck } from './compliance-check';
-import { computeLocationImpact } from './location-impact';
+
 import { computeSevenPowers } from './seven-powers';
 import { computeHTM } from './htm';
 import { computeEOB } from './eob';
@@ -535,28 +534,6 @@ function registerBuiltinModules(): void {
       confidenceModel: 'deterministic',
       label: '风险聚合',
       description: 'SOG v1.0: Risk 节点遍历→风险概览+热力图+topN 排序',
-      ontologyRole: 'analyzer',
-    },
-    {
-      id: 'compliance-check',
-      version: '1.0.0',
-      priority: 'P2',
-      requiredDataSources: {},
-      compute: (_teamId: string) => null, // Requires SOG graph data
-      confidenceModel: 'deterministic',
-      label: '合规检查',
-      description: 'SOG v1.0: Compliance 节点覆盖度评估',
-      ontologyRole: 'analyzer',
-    },
-    {
-      id: 'location-impact',
-      version: '1.0.0',
-      priority: 'P2',
-      requiredDataSources: {},
-      compute: (_teamId: string) => null, // Requires SOG graph data
-      confidenceModel: 'statistical',
-      label: '办公模式影响',
-      description: 'SOG v1.0: Location+BELONGS_TO+INTERACTS_WITH 远程/混合办公协作分析',
       ontologyRole: 'analyzer',
     },
   ];
