@@ -19,6 +19,14 @@ import { createInterface } from 'readline';
 
 const log = createLogger('mcp/bridge');
 
+/** Windows 需要 .cmd 后缀才能 spawn npm/npx */
+function resolveCommand(cmd: string): string {
+  if (process.platform === 'win32' && (cmd === 'npx' || cmd === 'npm')) {
+    return cmd + '.cmd';
+  }
+  return cmd;
+}
+
 // ═══ Types ═══
 
 export interface MCPToolDef {
@@ -97,10 +105,16 @@ export class MCPBridge {
 
     log.info({ server: serverName }, '启动 MCP Server');
 
-    const proc = spawn(config.command, config.args, {
+    const proc = spawn(resolveCommand(config.command), config.args, {
       stdio: ['pipe', 'pipe', 'pipe'],
       env: { ...process.env, ...config.env },
       cwd: 'vendor/mcp-servers',
+      shell: process.platform === 'win32', // Windows 需要 shell 来解析 .cmd
+    });
+
+    proc.on('error', (err) => {
+      log.warn({ server: serverName, err: err.message }, 'MCP Server 启动失败（非阻断）');
+      this.servers.delete(serverName);
     });
 
     const rl = createInterface({ input: proc.stdout! });
