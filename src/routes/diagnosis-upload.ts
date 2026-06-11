@@ -167,20 +167,21 @@ async function runDiagnosisPipeline(
 
   // ── Step 4: 构建报告 ──
   job.status = 'building';
-  log.info({ jobId: job.jobId, duration: diagnosisResult.totalDurationMs }, '诊断完成，构建报告');
+  log.info({ jobId: job.jobId, duration: diagnosisResult.totalDurationMs,
+    degraded: diagnosisResult.degradedModules }, '诊断完成，构建报告');
 
   const { ReportBuilder } = await import(
     '../../packages/engine-core/src/pipeline/diagnosis/report-builder'
   );
 
-  // 从诊断结果中提取各专家 section
-  const reportText = typeof diagnosisResult.report === 'string' ? diagnosisResult.report : '';
-  const sections = extractSections(reportText, extraction);
+  // 从诊断引擎输出构建 section：优先引擎输出，提取结果兜底
+  const engineReport = typeof diagnosisResult.report === 'string' ? diagnosisResult.report : '';
+  const sections = buildSectionsFromEngine(extraction, diagnosisResult.degradedModules);
 
   const reportBuilder = new ReportBuilder();
   const html = reportBuilder.build({
-    coreConclusion: buildCoreConclusion(sections, orgName),
-    explanation: buildExplanation(sections),
+    coreConclusion: buildCoreFromExtraction(extraction, orgName),
+    explanation: buildExplanationFromExtraction(extraction, diagnosisResult.degradedModules),
     orgName,
     diagnosedAt: new Date().toISOString().replace('T', ' ').slice(0, 19),
     overallScore: sections.length > 0
@@ -188,12 +189,17 @@ async function runDiagnosisPipeline(
       : 5.0,
     extraction,
     sections,
-    crossValidation: extractCrossValidation(reportText),
+    crossValidation: engineReport
+      ? engineReport.split('\n').filter(l => l.includes('交叉') || l.includes('印证') || l.includes('同时指向')).slice(0, 3)
+      : [],
     dataTrust: {
       coveredSources: ['FDE 采访文档（八维度提取）'],
-      missingSources: extraction.insufficientDimensions.length > 0
-        ? extraction.insufficientDimensions.map(d => `${d}维度的访谈信息不足`)
-        : [],
+      missingSources: [
+        ...extraction.insufficientDimensions.map(d => `${d}维度的访谈信息不足`),
+        ...(diagnosisResult.degradedModules.length > 0
+          ? ['诊断引擎部分模块降级: ' + diagnosisResult.degradedModules.join(', ')]
+          : []),
+      ],
     },
   });
 

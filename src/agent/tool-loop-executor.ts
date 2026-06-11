@@ -165,6 +165,7 @@ export class ToolLoopExecutor {
         if (!result.toolCalls || result.toolCalls.length === 0) {
           for (const ch of content) {
             onToken(ch);
+            await sleep(5); // P3-06: 5ms/char 流式动画
           }
           messages.push({ role: 'assistant', content });
           return content || '(empty response)';
@@ -175,6 +176,7 @@ export class ToolLoopExecutor {
 
         for (const ch of content) {
           onToken(ch);
+          await sleep(5);
         }
 
         messages.push({
@@ -244,6 +246,7 @@ export class ToolLoopExecutor {
       const final = await provider.chat(messages);
       for (const ch of (final.content || '')) {
         onToken(ch);
+        await sleep(5);
       }
       messages.push({ role: 'assistant', content: final.content || '' });
       return final.content || '(no response)';
@@ -252,4 +255,8 @@ export class ToolLoopExecutor {
       return '工具调用超过最大轮次，请稍后重试。';
     }
   }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(r => setTimeout(r, ms));
 }

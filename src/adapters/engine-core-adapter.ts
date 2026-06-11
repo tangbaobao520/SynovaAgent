@@ -34,8 +34,44 @@ export class EngineCoreVendorAdapter implements DiagnosisEngine {
         '../agent/orchestrator-adapter'
       );
 
+      // 确保 EngineContext 已初始化 — 引擎模块需要 DB + logger
+      try {
+        const { getDatabase, initEngineContext } = await import('../init/engine-context');
+        try { getDatabase(); } catch { initEngineContext(); }
+      } catch {}
+
       const llmClient = createDiagnosisLLMClient(this.provider);
       const toolExecutor = createToolExecutorAdapter(this.toolRegistry);
+
+      // PDE 手动完成访谈后创建初始 snapshot — 首次诊断的数据种子
+      try {
+        const { getLatestSnapshot, recordGapSnapshot } = await import(
+          '../../packages/engine-core/src/pipeline/diagnosis/gap-recorder'
+        );
+        if (!getLatestSnapshot(teamId)) {
+          const GAP_DIMS = [
+            'division_of_labor', 'information_flow', 'authority_governance',
+            'trust_incentive', 'knowledge_sharing', 'external_interface',
+          ] as const;
+          const gaps = Object.fromEntries(
+            GAP_DIMS.map(dim => [dim, {
+              mode: 'inferred_from_interview',
+              engineScore: 0.5,
+              confidence: 'medium' as const,
+              sourceBreakdown: { pde_interview: 1.0 },
+            }])
+          ) as Record<string, unknown>;
+          recordGapSnapshot({
+            teamId,
+            observedAt: new Date().toISOString(),
+            sourcePipeline: 'manual_trigger',
+            gaps,
+          } as Parameters<typeof recordGapSnapshot>[0]);
+          log.info({ teamId }, '已创建初始 snapshot（PDE 访谈数据）');
+        }
+      } catch (seedErr: unknown) {
+        log.warn({ err: (seedErr as Error).message }, '种子 snapshot 创建失败（非阻断）');
+      }
 
       const orchestrator = new DiagnosisOrchestrator(llmClient, toolExecutor)
         .withMaxIterations(4)

@@ -19,14 +19,23 @@ export class PythonBridge {
 
   async run<T = Record<string, unknown>>(module: string, command: string, params: unknown): Promise<T> {
     return new Promise((resolve, reject) => {
-      const proc = spawn(this.pythonPath, ['-m', `synova_worker.${module}`], {
+      // 确保 synova_worker 在 PYTHONPATH 中
+      const pythonEnv = {
+        ...process.env,
+        PYTHONUNBUFFERED: '1',
+        PYTHONPATH: `${process.cwd()};${process.env.PYTHONPATH || ''}`,
+      };
+      // 始终运行 synova_worker 主模块 (__main__.py 负责 JSON 路由)
+      // module + command 通过 JSON body 传递
+      const fullCommand = module ? `${module}:${command}` : command;
+      const proc = spawn(this.pythonPath, ['-m', 'synova_worker'], {
         stdio: ['pipe', 'pipe', 'pipe'],
         timeout: 30_000,
-        env: { PYTHONUNBUFFERED: '1', ...process.env },
+        env: pythonEnv,
       });
 
       const requestId = crypto.randomUUID();
-      const input = JSON.stringify({ command, params, requestId });
+      const input = JSON.stringify({ command: fullCommand, params, requestId });
       let output = '';
       let errorOutput = '';
 
