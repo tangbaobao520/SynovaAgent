@@ -179,7 +179,7 @@ async function runPipeline(jobId, content, orgName) {
     { id: 'tech', name: '技术视角：数字底座与工具链', dimensions: ['D2'], systemPrompt: '你是技术诊断专家。分析数字基础设施、系统健康度、工具效率。只基于测量数据，不编造。' },
     { id: 'action', name: '行动建议：从分析到执行', dimensions: ['D1', 'D2'], systemPrompt: '你是行动诊断专家。基于其他专家的分析，提炼出优先级最高的可执行行动。每条建议必须具体到能检查是否完成。不重复分析，只提炼行动。' },
   ], { complete: llmCall });
-  var expOutput = await ep.run(measOutput.aggregated);
+  var expOutput = await ep.run(measOutput.aggregated, content);
   console.log('[job:' + jobId + '] experts: ' + expOutput.results.length);
 
   // Step 4: 报告

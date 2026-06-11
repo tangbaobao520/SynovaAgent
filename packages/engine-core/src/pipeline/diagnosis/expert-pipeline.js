@@ -105,13 +105,14 @@ class ExpertPipeline {
    * 运行所有专家。并行执行。
    * 专家只处理自己有数据的维度。
    * @param {Record<string, {score: number, confidence: string, measurerCount: number}>} aggregatedInput — MeasurementPipeline.aggregated 输出
+   * @param {string} [rawDocument] — 原始文档全文（可选，专家基于原文形成洞察）
    * @returns {Promise<{results: ExpertOutput[], degradedModules: string[], computedAt: string}>}
    */
-  async run(aggregatedInput) {
+  async run(aggregatedInput, rawDocument) {
     this._degraded = [];
 
-    // 只激活有数据的专家
-    const activeExperts = this._experts.filter(e => {
+    // 激活专家：有数据 OR 有原始文档（有文档时全激活）
+    const activeExperts = rawDocument ? this._experts : this._experts.filter(e => {
       return e.config.dimensions.some(d => aggregatedInput[d] && aggregatedInput[d].measurerCount > 0);
     });
 
@@ -120,7 +121,7 @@ class ExpertPipeline {
     }
 
     // 并行执行
-    const promises = activeExperts.map(e => this._runOne(e, aggregatedInput));
+    const promises = activeExperts.map(e => this._runOne(e, aggregatedInput, rawDocument));
     const results = await Promise.all(promises);
 
     return {
@@ -135,7 +136,7 @@ class ExpertPipeline {
    * @param {Record<string, *>} input
    * @returns {Promise<ExpertOutput|null>}
    */
-  async _runOne(expert, input) {
+  async _runOne(expert, input, rawDocument) {
     const dimensionData = {};
     let hasData = false;
     for (const d of expert.config.dimensions) {
@@ -144,9 +145,10 @@ class ExpertPipeline {
         hasData = true;
       }
     }
-    if (!hasData) return null;
+    // 有原始文档时即使没有测量数据也激活
+    if (!hasData && !rawDocument) return null;
 
-    const prompt = this._buildPrompt(expert.config, dimensionData);
+    const prompt = this._buildPrompt(expert.config, dimensionData, rawDocument);
 
     try {
       // LLM 调用 (最多重试 1 次)
@@ -220,14 +222,26 @@ class ExpertPipeline {
     throw new Error('No LLM client configured for expert: ' + expert.config.id);
   }
 
-  _buildPrompt(config, dimData) {
+  _buildPrompt(config, dimData, rawDocument) {
     const dataStr = JSON.stringify(dimData, null, 2);
+    const hasMetrics = dimData && Object.keys(dimData).length > 0;
+    const docSection = rawDocument ? `\n\n## 原始文档（你的主要分析依据）\n以下是企业访谈/文档的全文。你的洞察应该主要从这里提取——测量数据仅作为补充验证。\n"""\n${rawDocument.slice(0, 8000)}\n"""` : '';
+
     return `你正在诊断一家企业。你的专业领域是：${config.name}。
 
-以下是测量管道的分析结果（每个维度 0-10 分，附置信度）：
-${dataStr}
+${hasMetrics ? `## 测量数据（辅助参考）\n以下结构化评分仅供参考——可能因数据不足而不准确。你更应该相信原始文档中的实际内容。\n${dataStr}` : '## 测量数据\n暂无结构化测量数据。请完全基于原始文档进行分析。'}${docSection}
 
-请分析这些数据，给出你的诊断结论。返回 JSON 对象（只返回 JSON，不要其他文字）：
+## 你的任务
+从你的专业视角分析这家企业。给出具体的、有洞察力的诊断。
+
+⚠️ 重要提醒：
+- 如果文档中有真实信息，基于这些信息给出判断——不要说"数据不足"
+- 如果某个方面文档确实没提到，诚实说"未提及"，但不要因此放弃其他方面的分析
+- 不要念测量数据——测量数据可能有误，你是专家，你有判断力
+- 每条发现必须有原文证据支撑
+- 建议必须可执行——"提升协作"不算建议，"每周召开跨部门联席会"算建议
+
+返回 JSON 对象（只返回 JSON，不要其他文字）：
 {
   "conclusion": "一句话核心结论",
   "findings": [
