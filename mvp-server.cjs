@@ -1,16 +1,24 @@
-// Synova MVP Server — 端到端诊断管线 (测量+专家管道)
+// Synova MVP Server — Web UI + 测量+专家管道 + SQLite存储
 // node mvp-server.cjs
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
+const path = require('path');
 const { MeasurementPipeline } = require('./packages/engine-core/src/pipeline/diagnosis/measurement-pipeline');
 const { createMeasurers } = require('./packages/engine-core/src/pipeline/diagnosis/real-measurers');
 const { ExpertPipeline } = require('./packages/engine-core/src/pipeline/diagnosis/expert-pipeline');
 
+// SQLite persistence
+let db;
+try { const Database = require('better-sqlite3'); db = new Database('./data/mvp.db'); db.pragma('journal_mode=WAL'); db.exec("CREATE TABLE IF NOT EXISTS reports (jobId TEXT PRIMARY KEY, orgName TEXT, status TEXT, report TEXT, error TEXT, createdAt TEXT, completedAt TEXT)"); } catch(e) { db = null; console.log('SQLite 不可用, 使用内存存储'); }
+function saveJob(j) { if (db) db.prepare('INSERT OR REPLACE INTO reports VALUES (?,?,?,?,?,?,?)').run(j.jobId, j.orgName||'', j.status, j.report||'', j.error||'', j.createdAt, j.completedAt||''); }
+function loadJob(id) { if (!db) return null; var r = db.prepare('SELECT * FROM reports WHERE jobId=?').get(id); return r ? { jobId: r.jobId, orgName: r.orgName, status: r.status, report: r.report, error: r.error, createdAt: r.createdAt, completedAt: r.completedAt } : null; }
+function listReports() { if (!db) return []; return db.prepare('SELECT jobId, orgName, status, createdAt, completedAt FROM reports ORDER BY createdAt DESC LIMIT 20').all(); }
+
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
-const jobStore = new Map();
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 function loadEnv() {
   var env = {};
@@ -32,22 +40,47 @@ var DIMS = [
   { key: 'digitalFoundation', label: '数字底座', q: '日常用哪些系统和工具？' },
 ];
 
+// ═══ Web UI ═══
+app.get('/', function(_req, res) {
+  var reports = listReports();
+  var reportList = reports.length ? reports.map(function(r) { return '<tr><td><a href="/report/' + r.jobId + '">' + (r.orgName||'企业') + '</a></td><td>' + r.status + '</td><td>' + (r.createdAt||'').slice(0,16) + '</td></tr>'; }).join('') : '<tr><td colspan="3" style="color:var(--muted);">暂无诊断报告。上传第一份文档开始。</td></tr>';
+  res.type('html').send('<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Synova 组织诊断</title><style>:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#c9d1d9;--muted:#8b949e;--accent:#58a6ff;--green:#3fb950;--orange:#d2991d}*{margin:0;padding:0;box-sizing:border-box}body{background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;max-width:900px;margin:0 auto;padding:2rem 1.5rem;line-height:1.6}h1{color:#f0f6fc;font-size:1.6rem;margin-bottom:.5rem}h2{color:var(--accent);font-size:1.1rem;margin:2rem 0 1rem}.sub{color:var(--muted);font-size:.9rem;margin-bottom:2rem}textarea{width:100%;height:300px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:1rem;font-size:.9rem;font-family:system-ui,sans-serif;resize:vertical}input[type=text]{width:100%;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:.6rem 1rem;font-size:.9rem;margin-bottom:.5rem}button{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:.8rem 2rem;font-size:1rem;cursor:pointer;margin-top:.5rem}button:hover{opacity:.9}table{width:100%;border-collapse:collapse;margin:1rem 0}th,td{padding:.5rem .8rem;text-align:left;border-bottom:1px solid var(--border)}th{color:var(--muted);font-size:.8rem}a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}.status{display:inline-block;padding:.15em .5em;border-radius:3px;font-size:.75rem}.status.complete{background:#1a3a1a;color:var(--green)}.status.extracting,.status.measuring,.status.reasoning,.status.building{background:#3a2e0a;color:var(--orange)}.status.failed{background:#3a1a1a;color:#f85149}.cols{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}@media(max-width:700px){.cols{grid-template-columns:1fr}}</style></head><body><h1>🔬 Synova 组织诊断</h1><p class="sub">FDE 采访完成后，粘贴访谈记录，AI 自动诊断。</p><div class="cols"><div><h2>📄 上传访谈记录</h2><form action="/api/diagnosis/upload" method="POST"><input type="text" name="orgName" placeholder="企业名称（选填）"><textarea name="content" placeholder="在此粘贴访谈记录...&#10;&#10;建议包含：&#10;· 任务目标（想做到什么程度）&#10;· 业务价值（靠什么赚钱）&#10;· 现状起点（现在有什么）&#10;· 资源约束（缺什么）&#10;· 风险瓶颈（怕什么）&#10;· 成功标准（怎么算成了）&#10;· 市场定位（客户怎么说）&#10;· 数字底座（用什么系统）"></textarea><button type="submit">开始诊断 →</button></form></div><div><h2>📊 历史报告</h2><table><tr><th>企业</th><th>状态</th><th>时间</th></tr>' + reportList + '</table></div></div></body></html>');
+});
+
+// GET /report/:jobId — 查看历史报告
+app.get('/report/:jobId', function(req, res) {
+  var jid = Array.isArray(req.params.jobId) ? req.params.jobId[0] : req.params.jobId;
+  var job = loadJob(jid) || { status: 'not_found' };
+  if (job.status === 'complete') return res.type('html').send(job.report);
+  if (job.status === 'failed') return res.type('html').send('<html><body style="background:#0d1117;color:#c9d1d9;font-family:system-ui;padding:2rem"><h1>诊断失败</h1><p>' + (job.error||'未知错误') + '</p><a href="/" style="color:#58a6ff;">返回</a></body></html>');
+  return res.type('html').send('<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta http-equiv="refresh" content="3"><title>诊断中...</title><style>body{background:#0d1117;color:#c9d1d9;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}</style></head><body><div style="text-align:center"><div style="font-size:3rem;margin-bottom:1rem">🔬</div><h1>诊断中...</h1><p style="color:#8b949e">状态: ' + job.status + ' | 3秒后自动刷新</p></div></body></html>');
+});
+
 app.get('/api/health', function(_req, res) {
   res.json({ status: 'ok', service: 'synova-e2e', time: new Date().toISOString() });
 });
 
 app.post('/api/diagnosis/upload', function(req, res) {
   var content = req.body.content, orgName = req.body.orgName || '企业';
-  if (!content || content.length < 20) return res.status(400).json({ error: 'Content too short' });
+  if (!content || content.length < 20) return res.status(400).send('文档太短，至少20字符。<a href="/">返回</a>');
   var jobId = 'diag_' + Date.now().toString(36);
-  jobStore.set(jobId, { jobId: jobId, status: 'extracting', createdAt: new Date().toISOString() });
-  console.log('[job:' + jobId + '] created');
-  res.json({ jobId: jobId, status: 'extracting' });
+  var job = { jobId: jobId, orgName: orgName, status: 'extracting', report: null, error: null, createdAt: new Date().toISOString(), completedAt: null };
+  saveJob(job);
+  console.log('[job:' + jobId + '] created: ' + orgName);
+
+  // 表单提交 → 302 跳转到轮询页; JSON → 返回 jobId
+  if (req.get('Content-Type') && req.get('Content-Type').includes('application/json')) {
+    res.json({ jobId: jobId, status: 'extracting' });
+  } else {
+    res.redirect('/report/' + jobId);
+  }
+
   runPipeline(jobId, content, orgName);
 });
 
 app.get('/api/diagnosis/report/:jobId', function(req, res) {
-  var job = jobStore.get(req.params.jobId);
+  var jid = Array.isArray(req.params.jobId) ? req.params.jobId[0] : req.params.jobId;
+  var job = loadJob(jid);
   if (!job) return res.status(404).json({ error: 'Not found' });
   if (job.status === 'complete') return res.type('html').send(job.report);
   if (job.status === 'failed') return res.status(500).json({ error: job.error });
@@ -55,10 +88,10 @@ app.get('/api/diagnosis/report/:jobId', function(req, res) {
 });
 
 async function runPipeline(jobId, content, orgName) {
-  var job = jobStore.get(jobId);
+  var job = loadJob(jobId) || { jobId: jobId, orgName: orgName, status: 'extracting', report: null, error: null, createdAt: new Date().toISOString(), completedAt: null };
   var env = loadEnv();
   var KEY = env.LLM_API_KEY, BASE = env.LLM_BASE_URL || 'https://api.deepseek.com', MODEL = env.LLM_MODEL || 'deepseek-chat';
-  if (!KEY) { job.status = 'failed'; job.error = 'No API key'; return; }
+  if (!KEY) { job.status = 'failed'; job.error = 'No API key'; saveJob(job); return; }
 
   async function llmCall(prompt, sysPrompt) {
     var msgs = [];
@@ -73,7 +106,7 @@ async function runPipeline(jobId, content, orgName) {
   }
 
   // Step 1: 八维度提取
-  job.status = 'extracting';
+  job.status = 'extracting'; saveJob(job);
   console.log('[job:' + jobId + '] extracting...');
   var dimList = DIMS.map(function(d) { return d.label + '(' + d.key + '): ' + d.q; }).join('\n');
   var prompt = '你是企业诊断顾问。从下列文档中提取八维度关键信息。\n\n文档：\n"""\n' + content.slice(0, 16000) + '\n"""\n\n维度：\n' + dimList + '\n\n返回JSON：[{"dimensionKey":"mission","dimensionLabel":"任务目标","content":"提取的信息","confidence":"high|medium|low","sufficient":true/false},...]\n每个维度独立提取。无信息→写"未提及",confidence:"low",sufficient:false。不编造。';
@@ -88,14 +121,14 @@ async function runPipeline(jobId, content, orgName) {
   console.log('[job:' + jobId + '] extracted: ' + covered + '/8');
 
   // Step 2: 测量管道
-  job.status = 'measuring';
+  job.status = 'measuring'; saveJob(job);
   var mp = new MeasurementPipeline();
   mp.register(createMeasurers(dims));
   var measOutput = await mp.run({ dims: dims });
   console.log('[job:' + jobId + '] measurers: ' + measOutput.results.length);
 
   // Step 3: 专家推理管道
-  job.status = 'reasoning';
+  job.status = 'reasoning'; saveJob(job);
   var ep = new ExpertPipeline();
   ep.register([
     { id: 'strategic', name: '战略健康：方向对不对', dimensions: ['D1'], systemPrompt: '你是企业战略诊断专家。分析战略方向和竞争力量。只基于测量数据，不编造。' },
@@ -109,11 +142,11 @@ async function runPipeline(jobId, content, orgName) {
   console.log('[job:' + jobId + '] experts: ' + expOutput.results.length);
 
   // Step 4: 报告
-  job.status = 'building';
+  job.status = 'building'; saveJob(job);
   var html = buildReport(orgName, dims, covered, measOutput, expOutput);
   try { fs.mkdirSync('tests/output', { recursive: true }); } catch(e) {}
   fs.writeFileSync('tests/output/http-' + jobId + '.html', html);
-  job.status = 'complete'; job.report = html; job.completedAt = new Date().toISOString();
+  job.status = 'complete'; job.report = html; job.completedAt = new Date().toISOString(); saveJob(job);
   console.log('[job:' + jobId + '] done: ' + (html.length/1024).toFixed(1) + 'KB');
 }
 
