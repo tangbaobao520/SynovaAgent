@@ -1,23 +1,28 @@
 /**
  * routes/diagnosis-upload.ts — MVP 诊断上报路由 V2
- * @state: skeleton — 诊断引擎已接入，extractSections 不再硬编码，改为消费引擎输出 + 提取结果
+ * @state: real — 接入真实测量管道 + 专家LLM推理 + GraphBridge后处理
  *
- * V2 变更: extractSections → buildSectionsFromEngine
- *         调用真实诊断引擎，degradedModules 影响置信度
+ * V2 变更 (2026-06-11):
+ *   - MeasurementPipeline (7个真实测量器) 替换硬编码评分
+ *   - ExpertPipeline (6专家并行LLM) 替换硬编码 buildSectionsFromEngine
+ *   - GraphBridge 后处理 — 诊断结果写入本体层 (P0-1)
+ *   - 覆盖度检查 — 报告展示各维度数据充分性 (P0-3)
+ *
+ * 铁律 31: 每层独立返回 degradedModules, 调用方检查并传播
+ * 铁律 24: 每个 catch 带 log.warn + degraded 标记
+ * 铁律 32: 错误带 .code + .phase + .retryable
  */
 import { Router, type Request, type Response } from 'express';
 import { createProvider } from '../providers';
 import { loadConfig } from '../config';
 import { createLogger } from '../logger';
-import { EngineCoreVendorAdapter } from '../adapters/engine-core-adapter';
-import { ToolRegistry } from '../agent/tools';
 
 const log = createLogger('routes/diagnosis-upload');
 const router = Router();
 
 interface DiagnosisJob {
   jobId: string; teamId: string;
-  status: 'extracting' | 'diagnosing' | 'building' | 'complete' | 'failed';
+  status: 'extracting' | 'measuring' | 'reasoning' | 'building' | 'complete' | 'failed';
   createdAt: string; completedAt?: string; report?: string; error?: string;
 }
 const jobStore = new Map<string, DiagnosisJob>();
@@ -61,7 +66,6 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
   const config = loadConfig();
   const providerType = (process.env.LLM_PROVIDER as string || 'deepseek') as 'deepseek' | 'qwen' | 'glm' | 'kimi' | 'yi' | 'minimax' | 'step' | 'ernie' | 'openai' | 'gateway';
   const provider = createProvider(providerType, { apiKey: config.llmApiKey || '', model: config.llmModel, baseUrl: config.llmBaseUrl });
-  const toolRegistry = new ToolRegistry();
   const llmClient = {
     async complete(prompt: string, systemPrompt?: string): Promise<string> {
       const messages: Array<{role: 'system'|'user'|'assistant'; content: string}> = [];
@@ -85,105 +89,307 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
   const docId = graphStore.createNode(SOGNodeType.DOCUMENT, { name: `interview_${jobId}`, content }, teamId);
   const extraction = await extractor.extract(docId, content, teamId);
 
-  // Step 2: 诊断引擎
-  job.status = 'diagnosing';
-  log.info({ jobId, covered: extraction.coveredCount }, '提取完成，启动诊断引擎');
-  const concerns = extraction.dimensions
-    .filter(d => d.content && d.content !== '未提及')
-    .map(d => `[${d.dimensionLabel}] ${d.content.slice(0, 200)}`);
-  const adapter = new EngineCoreVendorAdapter(provider, toolRegistry);
-  const diagnosisResult = await adapter.runConsultation(teamId, {
-    role: 'fde', name: 'FDE', teamId,
-    concerns: concerns.length > 0 ? concerns : ['初步诊断'],
-  });
+  // ── 提取结果准备 ──
+  const dims = extraction.dimensions;
+  const covered = dims.filter((d: { sufficient: boolean }) => d.sufficient).length;
+  log.info({ jobId, covered: `${covered}/8`, insufficient: extraction.insufficientDimensions }, '八维度提取完成');
 
-  // Step 3: 构建报告 — 消费真实引擎输出
+  // Step 2: 测量管道 (7个真实测量器)
+  job.status = 'measuring';
+  log.info({ jobId }, '启动测量管道');
+  let measOutput: { results: Array<{ measurerId: string; score?: number }>; aggregated: Record<string, unknown>; degradedModules: string[] };
+  try {
+    const { MeasurementPipeline } = await import(
+      '../../packages/engine-core/src/pipeline/diagnosis/measurement-pipeline'
+    );
+    const { createMeasurers } = await import(
+      '../../packages/engine-core/src/pipeline/diagnosis/real-measurers'
+    );
+    // CJS 模块无 TS 类型声明 — 内联接口
+    const PipeFactory = MeasurementPipeline as unknown as {
+      new(): { register(arr: unknown[]): void; run(input: Record<string, unknown>): Promise<{ results: Array<{ measurerId: string; score?: number }>; aggregated: Record<string, unknown>; degradedModules: string[] }> };
+    };
+    const mp = new PipeFactory();
+    mp.register(createMeasurers(dims));
+    measOutput = await mp.run({ dims });
+    log.info({ jobId, count: measOutput.results.length, degraded: measOutput.degradedModules }, '测量完成');
+  } catch (measErr: any) {
+    log.warn({ jobId, err: measErr.message }, '测量管道失败，降级为空测量');
+    measOutput = { results: [], aggregated: {}, degradedModules: ['measurement-pipeline'] };
+  }
+
+  // Step 3: 专家推理管道 (6专家并行LLM, 铁律24: 每个catch打log+降级)
+  job.status = 'reasoning';
+  log.info({ jobId }, '启动专家推理管道');
+  let expOutput: { results: Array<{
+    expertId: string; expertName: string; score: number; confidence: 'high'|'medium'|'low';
+    conclusion: string; findings: Array<{ severity: 'critical'|'warning'|'info'; title: string; description: string; evidence: string[]; suggestion: string }>;
+  }>; degradedModules: string[] };
+  try {
+    const { ExpertPipeline } = await import(
+      '../../packages/engine-core/src/pipeline/diagnosis/expert-pipeline'
+    );
+    // CJS 模块无 TS 类型声明 — 内联接口
+    const ExpertFactory = ExpertPipeline as unknown as {
+      new(): {
+        register(defs: Array<{id: string; name: string; dimensions: string[]; systemPrompt: string}>, opts: { complete: (p: string, s?: string) => Promise<string> }): void;
+        run(aggregated: Record<string, unknown>, content: string): Promise<{ results: Array<{ expertId: string; expertName: string; score: number; confidence: 'high'|'medium'|'low'; conclusion: string; findings: Array<{ severity: 'critical'|'warning'|'info'; title: string; description: string; evidence: string[]; suggestion: string }> }>; degradedModules: string[] }>;
+      };
+    };
+    const ep = new ExpertFactory();
+    ep.register([
+      { id: 'strategic', name: '战略健康：方向对不对', dimensions: ['D1'], systemPrompt: '你是企业战略诊断专家。基于测量数据和原始文档，分析战略方向、竞争力量和增长路径。每条发现必须有证据支撑，不编造。用中文输出。' },
+      { id: 'org', name: '组织能力：团队能不能执行', dimensions: ['D2'], systemPrompt: '你是组织诊断专家。基于测量数据和原始文档，分析团队结构、关键人依赖、协作健康度。识别单点故障和人才缺口。每条发现必须有证据支撑，不编造。用中文输出。' },
+      { id: 'finance', name: '财务视角：增长的财务支撑', dimensions: ['D1'], systemPrompt: '你是财务诊断专家。基于测量数据和原始文档，分析客户集中度、营收健康度、现金流风险。关注利润率而非规模。每条发现必须有证据支撑，不编造。用中文输出。' },
+      { id: 'marketing', name: '营销视角：市场定位与客户认知', dimensions: ['D1'], systemPrompt: '你是营销诊断专家。基于测量数据和原始文档，分析市场定位清晰度、客户认知、差异化是否实质。关注"客户用什么词描述你"vs"你想被怎么描述"的差距。每条发现必须有证据支撑，不编造。用中文输出。' },
+      { id: 'tech', name: '技术视角：数字底座与工具链', dimensions: ['D2'], systemPrompt: '你是技术诊断专家。基于测量数据和原始文档，分析数字基础设施、数据孤岛、工具效率。评估AI-ready程度。每条发现必须有证据支撑，不编造。用中文输出。' },
+      { id: 'action', name: '行动建议：从分析到执行', dimensions: ['D1', 'D2'], systemPrompt: '你是行动诊断专家。基于其他专家的分析发现，提炼出3-5条优先级最高的可执行行动。每条建议必须具体到能检查是否完成。不重复分析，只提炼行动。用中文输出。' },
+    ], { complete: llmClient.complete });
+    expOutput = await ep.run(measOutput.aggregated, content);
+    log.info({ jobId, count: expOutput.results.length, degraded: expOutput.degradedModules }, '专家推理完成');
+  } catch (expErr: any) {
+    log.warn({ jobId, err: expErr.message }, '专家管道失败，降级为空推理');
+    expOutput = { results: [], degradedModules: ['expert-pipeline'] };
+  }
+
+  // 合并降级信号 (铁律31: 传播到调用链顶端)
+  const allDegraded = [
+    ...measOutput.degradedModules.map((m: string) => `测量器:${m}`),
+    ...expOutput.degradedModules.map((m: string) => `专家:${m}`),
+  ];
+
+  // Step 4: 构建报告 — 消费真实专家输出
   job.status = 'building';
-  log.info({ jobId, duration: diagnosisResult.totalDurationMs, degraded: diagnosisResult.degradedModules }, '诊断完成');
+  log.info({ jobId }, '构建报告');
 
-  const { ReportBuilder } = await import('../../packages/engine-core/src/pipeline/diagnosis/report-builder');
-  const sections = buildSectionsFromEngine(extraction, diagnosisResult.degradedModules);
+  const { ReportBuilder } = await import(
+    '../../packages/engine-core/src/pipeline/diagnosis/report-builder'
+  );
+  const sections = buildSectionsFromExperts(extraction, expOutput, allDegraded);
 
   const builder = new ReportBuilder();
   const html = builder.build({
-    coreConclusion: buildCore(extraction, orgName),
-    explanation: buildExplanation(extraction, diagnosisResult.degradedModules),
+    coreConclusion: buildCoreFromExperts(expOutput, orgName, allDegraded),
+    explanation: buildExplanationFromExp(extraction, expOutput, allDegraded),
     orgName, diagnosedAt: new Date().toISOString().replace('T', ' ').slice(0, 19),
-    overallScore: sections.reduce((sum, s) => sum + s.score, 0) / sections.length,
+    overallScore: sections.length > 0
+      ? sections.reduce((sum: number, s: { score: number }) => sum + s.score, 0) / sections.length
+      : 5.0,
     extraction, sections,
-    crossValidation: [],
+    crossValidation: extractCrossRefs(expOutput),
     dataTrust: {
-      coveredSources: ['FDE采访文档（八维度提取）'],
+      coveredSources: ['FDE采访文档（八维度LLM提取）'],
       missingSources: [
-        ...extraction.insufficientDimensions.map(d => `${d}维度的访谈信息不足`),
-        ...(diagnosisResult.degradedModules.length > 0 ? ['诊断引擎部分模块降级: ' + diagnosisResult.degradedModules.join(', ')] : []),
+        ...extraction.insufficientDimensions.map((d: string) => `${d}维度的访谈信息不足`),
+        ...(allDegraded.length > 0 ? ['部分管道降级: ' + allDegraded.join(', ')] : []),
       ],
     },
   });
 
+  // Step 5: GraphBridge 后处理 (P0-1: 结果写入本体层)
+  try {
+    await syncDiagnosisToGraph(extraction, expOutput, measOutput, teamId, jobId, graphStore);
+    log.info({ jobId }, 'GraphBridge 同步完成');
+  } catch (syncErr: any) {
+    log.warn({ jobId, err: syncErr.message }, 'GraphBridge 同步失败（非阻断）');
+    allDegraded.push('graphbridge-sync');
+  }
+
   job.status = 'complete'; job.completedAt = new Date().toISOString(); job.report = html;
-  log.info({ jobId }, '诊断报告已就绪');
+  log.info({ jobId, degraded: allDegraded }, '诊断报告已就绪');
 }
 
-// ═══ Section Builder (V2: 消费引擎degraded状态) ═══
+// ═══ Section Builder: 从真实专家输出构建 ═══
 
-function buildSectionsFromEngine(
+function buildSectionsFromExperts(
   extraction: { dimensions: Array<{dimensionKey: string; dimensionLabel: string; content: string; sufficient: boolean}> },
-  degradedModules: string[],
+  expOutput: { results: Array<{expertId: string; expertName: string; score: number; confidence: 'high'|'medium'|'low'; conclusion: string; findings: Array<{severity: 'critical'|'warning'|'info'; title: string; description: string; evidence: string[]; suggestion: string}>}>; degradedModules: string[] },
+  allDegraded: string[],
 ): Array<{
   expertName: string; expertLabel: string; score: number;
   trend: 'improving' | 'stable' | 'declining';
   findings: Array<{severity: 'critical'|'warning'|'info'; title: string; description: string; evidence: string[]; suggestion: string; crossReference?: string}>;
   dataCoverage: number; confidence: 'high'|'medium'|'low';
 }> {
-  const map = new Map(extraction.dimensions.map(d => [d.dimensionKey, d]));
-  const g = (k: string) => map.get(k)?.content || '';
-  const s = (k: string) => map.get(k)?.sufficient ?? false;
-  const engDown = degradedModules.length > 0;
+  // 维度→专家映射
+  const EXPERT_DIM_MAP: Record<string, string[]> = {
+    strategic: ['mission', 'marketPositioning'],
+    org: ['currentState', 'resources'],
+    finance: ['businessModel', 'risks', 'successCriteria'],
+    marketing: ['marketPositioning', 'businessModel'],
+    tech: ['digitalFoundation', 'resources'],
+    action: ['successCriteria', 'risks'],
+  };
 
+  const dimMap = new Map(extraction.dimensions.map(d => [d.dimensionKey, d]));
+
+  // 有专家输出→用专家输出; 无专家输出→用提取数据兜底
+  if (expOutput.results.length > 0) {
+    return expOutput.results
+      .filter(r => r.expertId !== 'action') // 行动专家单独处理
+      .map(r => {
+        const dimKeys = EXPERT_DIM_MAP[r.expertId] || [];
+        const coverage = dimKeys.length > 0
+          ? dimKeys.filter(k => dimMap.get(k)?.sufficient).length / dimKeys.length
+          : 0.5;
+        const degraded = allDegraded.length > 0;
+        return {
+          expertName: r.expertId,
+          expertLabel: r.expertName || r.expertId,
+          score: r.score || 5.0,
+          trend: 'stable' as const,
+          findings: (r.findings || []).map((f: any) => ({
+            severity: (f.severity || 'info') as 'critical'|'warning'|'info',
+            title: f.title || '',
+            description: f.description || '',
+            evidence: Array.isArray(f.evidence) ? f.evidence : (f.evidence ? [f.evidence] : []),
+            suggestion: f.suggestion || '',
+          })),
+          dataCoverage: coverage,
+          confidence: degraded ? 'low' : ((r.confidence || 'medium') as 'high'|'medium'|'low'),
+        };
+      });
+  }
+
+  // 兜底：从提取数据构建基本sections (铁律11: 降级打log)
+  log.warn('专家输出为空，使用提取数据兜底');
   return [
     {
-      expertName: 'strategic', expertLabel: '战略健康：方向对不对',
-      score: g('mission') ? 6.5 : 4.0, trend: 'stable' as const,
-      findings: [
-        { severity: (s('mission') ? 'info' : 'warning') as 'info'|'warning', title: s('mission') ? '战略方向明确' : '战略方向待补充', description: g('mission') || '未提及战略方向。', evidence: g('mission') ? [g('mission').slice(0, 200)] : [], suggestion: s('mission') ? '定期审视战略与市场匹配度' : '补充战略方向信息' },
-        { severity: (s('marketPositioning') ? 'info' : 'warning') as 'info'|'warning', title: '市场定位', description: g('marketPositioning') || '未提及市场差异化。', evidence: g('marketPositioning') ? [g('marketPositioning').slice(0, 200)] : [], suggestion: '明确客户认知与差异化' },
-      ],
-      dataCoverage: s('mission') ? 0.6 : 0.3, confidence: engDown ? 'low' : (s('mission') ? 'medium' : 'low') as 'medium'|'low',
-    },
-    {
-      expertName: 'org', expertLabel: '组织能力：团队能不能执行',
-      score: g('currentState') ? 5.5 : 3.5, trend: 'stable' as const,
-      findings: [
-        { severity: (s('currentState') ? 'info' : 'warning') as 'info'|'warning', title: '组织现状', description: g('currentState') || '未提及团队规模和架构。', evidence: g('currentState') ? [g('currentState').slice(0, 200)] : [], suggestion: '梳理关键岗位和能力缺口' },
-        { severity: (g('resources')?.includes('只有') ? 'warning' : 'info') as 'warning'|'info', title: '资源约束', description: g('resources') || '未提及预算和人员限制。', evidence: g('resources') ? [g('resources').slice(0, 200)] : [], suggestion: g('resources')?.includes('只有') ? '关键岗位单点依赖——立即建立备份' : '在约束内找到最优解' },
-      ],
-      dataCoverage: s('currentState') ? 0.6 : 0.3, confidence: engDown ? 'low' : (s('currentState') ? 'medium' : 'low') as 'medium'|'low',
-    },
-    {
-      expertName: 'finance', expertLabel: '财务视角：增长的财务支撑',
-      score: g('businessModel') ? 5.5 : 4.0, trend: 'stable' as const,
-      findings: [
-        { severity: (s('risks') ? 'warning' : 'info') as 'warning'|'info', title: s('risks') ? '风险关注' : '风险识别不足', description: g('risks') || '未系统识别风险。', evidence: g('risks') ? [g('risks').slice(0, 200)] : [], suggestion: s('risks') ? '制定风险缓解计划' : '补充风险评估' },
-        { severity: (s('successCriteria') ? 'info' : 'warning') as 'info'|'warning', title: '成功标准', description: g('successCriteria') || '未定义成功标准。', evidence: g('successCriteria') ? [g('successCriteria').slice(0, 200)] : [], suggestion: s('successCriteria') ? '拆解为年度里程碑' : '定义北极星指标' },
-      ],
-      dataCoverage: s('businessModel') ? 0.5 : 0.3, confidence: engDown ? 'low' : (s('businessModel') ? 'medium' : 'low') as 'medium'|'low',
+      expertName: 'strategic', expertLabel: '战略健康：方向对不对', score: 4.0, trend: 'stable',
+      findings: [{ severity: 'warning', title: '专家分析不可用', description: '专家推理管道未产出结果，请重试。', evidence: [], suggestion: '重新运行诊断或补充更多信息' }],
+      dataCoverage: 0.3, confidence: 'low',
     },
   ];
 }
 
-function buildCore(extraction: { dimensions: Array<{dimensionKey: string; content: string}> }, orgName: string): string {
-  const g = (k: string) => extraction.dimensions.find(d => d.dimensionKey === k)?.content || '';
-  const risks = g('risks'); const mission = g('mission');
-  if (risks && mission) return `${esc(orgName)}的增长卡点在组织能力——${risks.slice(0, 100)}。战略方向（${mission.slice(0, 60)}），但执行层面存在关键风险。`;
-  if (mission) return `${esc(orgName)}当前处于转型期。${mission.slice(0, 150)}。`;
-  return `${esc(orgName)}的初步诊断已完成。基于现有信息，主要关注点在组织执行能力。`;
+function buildCoreFromExperts(
+  expOutput: { results: Array<{expertId: string; conclusion: string; score: number}> },
+  orgName: string,
+  degraded: string[],
+): string {
+  if (expOutput.results.length === 0) {
+    return `${esc(orgName)}的初步诊断已完成。${degraded.length > 0 ? '⚠️ 部分管道降级(' + degraded.join(',') + ')，结论置信度降低。' : '建议补充更多信息以提升诊断深度。'}`;
+  }
+  // 取前3个专家的结论拼接
+  const conclusions = expOutput.results
+    .filter(r => r.expertId !== 'action')
+    .slice(0, 3)
+    .map(r => r.conclusion)
+    .filter(Boolean);
+  return conclusions.length > 0
+    ? conclusions.join(' ')
+    : `${esc(orgName)}的诊断分析已完成，详见各专家报告。`;
 }
 
-function buildExplanation(ex: { dimensions: Array<{dimensionKey: string; dimensionLabel: string; content: string; sufficient: boolean}> }, degraded: string[]): string {
-  const parts = ex.dimensions.filter(d => d.sufficient).slice(0, 4).map(d => `${d.dimensionLabel}: ${d.content.slice(0, 50)}`);
-  const base = parts.join('。');
-  return degraded.length > 0 ? `${base}。⚠️ 诊断引擎部分模块降级(${degraded.join(',')})，结论置信度降低。` : base;
+function buildExplanationFromExp(
+  extraction: { dimensions: Array<{dimensionLabel: string; content: string; sufficient: boolean}> },
+  expOutput: { results: Array<{expertName: string; score: number}> },
+  degraded: string[],
+): string {
+  const parts = extraction.dimensions
+    .filter(d => d.sufficient)
+    .slice(0, 4)
+    .map(d => `${d.dimensionLabel}: ${d.content.slice(0, 50)}`);
+  const base = parts.join('。') || '数据有限';
+  const expSummary = expOutput.results.length > 0
+    ? `${expOutput.results.length}个专家已完成推理。`
+    : '';
+  return `${base}。${expSummary}${degraded.length > 0 ? ' ⚠️ 部分管道降级(' + degraded.join(',') + ')，结论置信度降低。' : ''}`;
+}
+
+function extractCrossRefs(expOutput: { results: Array<{findings: Array<{title: string; description: string}>}> }): string[] {
+  // 从多专家finding中提取交叉印证——同一个主题被多个专家提及
+  const themes = new Map<string, number>();
+  expOutput.results.forEach(r => {
+    (r.findings || []).forEach((f: { title: string; description: string }) => {
+      const keyword = f.title.slice(0, 20);
+      themes.set(keyword, (themes.get(keyword) || 0) + 1);
+    });
+  });
+  return [...themes.entries()]
+    .filter(([, count]) => count >= 2)
+    .map(([theme, count]) => `${theme}（${count}位专家同时指向）`)
+    .slice(0, 3);
+}
+
+/** P0-1: 诊断结果同步到本体层 */
+async function syncDiagnosisToGraph(
+  extraction: { dimensions: Array<{dimensionKey: string; dimensionLabel: string; content: string; sufficient: boolean}> },
+  expOutput: { results: Array<{expertId: string; findings: Array<{severity: string; title: string; description: string}>}> },
+  measOutput: { results: Array<{measurerId: string; score?: number}> },
+  teamId: string,
+  jobId: string,
+  graphStore: any,
+): Promise<void> {
+  try {
+    const { SOGNodeType } = await import('@synova/sog-core');
+    const now = new Date().toISOString();
+
+    // 创建 Diagnosis 节点
+    const diagId = graphStore.createNode(
+      'Diagnosis',
+      {
+        name: `diagnosis_${jobId}`,
+        diagnosedAt: now,
+        extractionCovered: extraction.dimensions.filter((d: { sufficient: boolean }) => d.sufficient).length,
+        extractionTotal: extraction.dimensions.length,
+        expertCount: expOutput.results.length,
+        measurerCount: measOutput.results.length,
+      },
+      teamId,
+    );
+
+    // 创建 Signal 节点 (每个critical/warning finding → 一个Signal)
+    const signalIds: string[] = [];
+    for (const expert of expOutput.results) {
+      for (const finding of (expert.findings || [])) {
+        if (finding.severity === 'critical' || finding.severity === 'warning') {
+          const sigId = graphStore.createNode(
+            'Signal',
+            {
+              name: `[${finding.severity}] ${finding.title}`,
+              severity: finding.severity,
+              source: expert.expertId,
+              description: finding.description,
+              observedAt: now,
+            },
+            teamId,
+          );
+          signalIds.push(sigId);
+          // Edge: Diagnosis → Signal
+          graphStore.createEdge('HAS_SIGNAL', diagId, sigId, 1.0, {}, teamId);
+        }
+      }
+    }
+
+    // 创建 Observation 节点 (每个测量器结果)
+    for (const m of measOutput.results) {
+      if (m.score !== undefined) {
+        const obsId = graphStore.createNode(
+          'Observation',
+          {
+            name: `measurement_${m.measurerId}`,
+            measurerId: m.measurerId,
+            score: m.score,
+            observedAt: now,
+          },
+          teamId,
+        );
+        graphStore.createEdge('HAS_OBSERVATION', diagId, obsId, 1.0, {}, teamId);
+      }
+    }
+
+    log.info({ jobId, diagId, signals: signalIds.length }, 'GraphBridge 同步完成');
+  } catch (err: any) {
+    // 铁律24: 区分错误类型, 打log + degraded
+    const msg = err?.message || String(err);
+    if (msg.includes('ENOENT') || msg.includes('not found')) {
+      log.warn({ jobId, err: msg }, 'GraphBridge 文件缺失（非阻断）');
+    } else {
+      log.error({ jobId, err: msg, code: 'GRAPHSYNC_FAILED', phase: 5, retryable: true }, 'GraphBridge 同步失败');
+    }
+    throw err;
+  }
 }
 
 function esc(t: string): string { return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }

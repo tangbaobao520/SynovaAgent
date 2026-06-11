@@ -12,19 +12,11 @@ const path = require('path');
 async function main() {
   console.log('=== Synova 端到端诊断管线 ===\n');
 
-  // ═══ Load .env ═══
-  const env = {};
-  try {
-    const text = fs.readFileSync('.env', 'utf-8');
-    for (const line of text.split('\n')) {
-      const m = line.match(/^(\w+)\s*=\s*(.+)/);
-      if (m) env[m[1]] = m[2].trim();
-    }
-  } catch(e) {}
-  const KEY = env.LLM_API_KEY || '';
-  const BASE = env.LLM_BASE_URL || 'https://api.deepseek.com';
-  const MODEL = env.LLM_MODEL || 'deepseek-chat';
-  if (!KEY) { console.error('LLM_API_KEY missing'); process.exit(1); }
+  // ═══ Load config (系统环境变量优先, .env 兜底) ═══
+  const KEY = process.env.LLM_API_KEY || process.env.DEEPSEEK_API_KEY || (() => { try { const t = fs.readFileSync('.env','utf-8'); const m = t.match(/LLM_API_KEY=(.+)/); return m ? m[1].trim() : ''; } catch(e) { return ''; } })();
+  const BASE = process.env.LLM_BASE_URL || 'https://api.deepseek.com';
+  const MODEL = process.env.LLM_MODEL || 'deepseek-chat';
+  if (!KEY) { console.error('LLM_API_KEY missing — 请设置系统环境变量或创建 .env'); process.exit(1); }
 
   // ═══ Load modules ═══
   const { MeasurementPipeline } = require('../packages/engine-core/src/pipeline/diagnosis/measurement-pipeline');

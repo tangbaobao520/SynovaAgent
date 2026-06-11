@@ -57,25 +57,32 @@ SAMPLE_REPORT_EXISTS=$(test -f "$REPO_ROOT/tests/output/mvp-sample-report.html" 
 SERVER_STARTED=$(test -f "$REPO_ROOT/.server.pid" && echo 1 || echo 0)
 
 # 决策逻辑 (从紧急到优化)
-if [ "$PLACE" -gt 0 ] 2>/dev/null; then
-  SUGGESTION="消除占位代码: ${PLACE} 个 @state:placeholder 文件。"
-  PRIORITY="P0"
-elif [ "$SKEL" -gt 5 ] 2>/dev/null; then
-  SUGGESTION="升级骨架模块: ${SKEL} 个 @state:skeleton。选一个最有演示价值的模块接真实数据源。"
+# 注: placeholder 计数含 engine-core legacy 文件, 不代表 src/ 目录状态
+SRC_PLACE=$(grep -rn "@state:placeholder" "$REPO_ROOT/src/" --include="*.ts" 2>/dev/null | wc -l | tr -d ' ' || echo 0)
+SRC_SKEL=$(grep -rn "@state:skeleton" "$REPO_ROOT/src/" --include="*.ts" 2>/dev/null | wc -l | tr -d ' ' || echo 0)
+
+# 检查是否有未提交的变更
+UNCOMMITTED=$(git status --porcelain 2>/dev/null | grep -v "^?" | head -1 || true)
+
+if [ -n "$UNCOMMITTED" ]; then
+  SUGGESTION="有未提交的代码变更。审查变更 → commit → push → 然后根据全量手册 Phase 0 继续。"
+  PRIORITY="P0 (当前)"
+elif [ "$SRC_SKEL" -gt 3 ] 2>/dev/null; then
+  SUGGESTION="src/ 目录还有 ${SRC_SKEL} 个 skeleton 模块。选一个最有演示价值的接真实数据。"
   PRIORITY="P1"
-elif [ "$REAL_REPORT_EXISTS" -eq 1 ] && [ "$V2_EXISTS" -eq 1 ]; then
-  SUGGESTION="端到端管线已跑通(V2+真实API)。下一步: 启动Express服务器 → 浏览器测试 POST /api/diagnosis/upload → 看真实报告。验证完整的HTTP链路。"
-  PRIORITY="P0"
-elif [ "$SAMPLE_REPORT_EXISTS" -eq 1 ]; then
-  SUGGESTION="骨架已跑通(mock)。下一步: 接真实 DeepSeek API 跑端到端管线。"
-  PRIORITY="P0"
+elif [ "$SRC_PLACE" -gt 0 ] 2>/dev/null; then
+  SUGGESTION="src/ 目录有 ${SRC_PLACE} 个 placeholder。清理或接真实实现。"
+  PRIORITY="P1"
+elif [ "$V2_EXISTS" -eq 1 ]; then
+  SUGGESTION="Phase 0 核心已完成(P0-1+P0-3)。下一步: 启动 Express 服务器 → 浏览器测试 → 验证完整 HTTP 链路。或按全量手册进入 Phase 1。"
+  PRIORITY="P0 (演示验证)"
 else
-  SUGGESTION="跑通 MVP 管线: 文档上传 → 八维度提取 → 报告生成。"
+  SUGGESTION="按全量对齐手册 Phase 0-3 修复路径推进。"
   PRIORITY="P0"
 fi
 
 echo -e "  ${GREEN}建议:${NC} ${SUGGESTION}"
-echo -e "  ${YELLOW}优先级:${NC} ${PRIORITY}""
+echo -e "  ${YELLOW}优先级:${NC} ${PRIORITY}"
 echo ""
 
 # ═══ 5. 全局锚点 ═══

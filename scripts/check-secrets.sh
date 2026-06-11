@@ -16,6 +16,72 @@ echo ""
 echo "═══ Secrets 扫描 ═══"
 echo ""
 
+# ═══ 0. 全工作区扫描 (硬阻断) ═══
+# 不限于暂存区 — 磁盘上任一文件含真实 API Key 即阻断。
+# 覆盖 .env / .claude/ / scripts/ 等 gitignored 文件。
+# 历史事故: .env 和 .claude/settings.local.json 含真实 Key 但从未暂存, 旧门禁漏掉。
+echo "── 全工作区扫描 ──"
+FULL_SCAN=$(grep -rn \
+  -e 'sk-[a-zA-Z0-9]\{20,\}' \
+  -e 'cli_[a-z0-9]\{10,\}' \
+  "$REPO_ROOT" \
+  --include='*.env' --include='*.env.*' \
+  --include='*.json' --include='*.ts' --include='*.js' \
+  --include='*.yaml' --include='*.yml' --include='*.sh' \
+  --include='*.bat' --include='*.ps1' \
+  2>/dev/null \
+  | grep -v 'node_modules' \
+  | grep -v '\.git/' \
+  | grep -v '/dist/\|/build/\|/release/\|/vendor/\|/tests/' \
+  | grep -v 'package-lock\.json' \
+  | grep -v 'your-\|example\|placeholder\|demo\|test-\|xxx\|TODO\|CHANGE\|CHANGE_ME' \
+  | grep -v "'deepseek'\|'qwen'\|'glm'\|'kimi'\|'yi'\|'minimax'\|'step'\|'ernie'\|'openai'\|'gateway'\|'silicon'" \
+  | grep -v "deepseek-chat\|deepseek-v4\|deepseek-r1\|qwen-max\|qwen-plus\|glm-4\|kimi-latest\|ernie-bot" \
+  || true)
+
+# 二次过滤: .env.example 中的占位符不阻断
+FULL_SCAN_FILTERED=""
+if [ -n "$FULL_SCAN" ]; then
+  FULL_SCAN_FILTERED=$(echo "$FULL_SCAN" | grep -v '\.env\.example:' || true)
+fi
+
+if [ -n "$FULL_SCAN_FILTERED" ]; then
+  COUNT=$(echo "$FULL_SCAN_FILTERED" | wc -l | tr -d ' ')
+  echo -e "  ${RED}❌ 工作区发现真实凭证: ${COUNT} 处  [硬阻断]${NC}"
+  echo "$FULL_SCAN_FILTERED" | head -10 | while read -r line; do echo "     ${line}"; done
+  echo "  以上文件包含疑似真实 API Key / App Secret。"
+  echo "  如果是真实密钥 → 立即轮换 + 删除。如果是占位符 → 加入排除列表。"
+  VIOLATIONS=$((VIOLATIONS + 1))
+else
+  echo -e "  ${GREEN}✅ 工作区无真实凭证${NC}"
+fi
+
+echo ""
+
+# ═══ 0b. .claude/ 目录专项扫描 (硬阻断) ═══
+# settings.local.json 可能含 API Key (如 DEEPSEEK_API_KEY=sk-xxx)
+echo "── .claude/ 目录扫描 ──"
+CLAUDE_SCAN=$(grep -rn \
+  -e 'sk-[a-zA-Z0-9]\{20,\}' \
+  -e 'cli_[a-z0-9]\{10,\}' \
+  "$REPO_ROOT/.claude/" \
+  --include='*.json' --include='*.yaml' --include='*.yml' \
+  2>/dev/null \
+  | grep -v 'your-\|example\|placeholder\|xxx\|TODO' \
+  || true)
+
+if [ -n "$CLAUDE_SCAN" ]; then
+  COUNT=$(echo "$CLAUDE_SCAN" | wc -l | tr -d ' ')
+  echo -e "  ${RED}❌ .claude/ 目录含真实凭证: ${COUNT} 处  [硬阻断]${NC}"
+  echo "$CLAUDE_SCAN" | while read -r line; do echo "     ${line}"; done
+  echo "  .claude/ 目录中的 API Key 同样危险 — settings.local.json 可能被备份/同步。"
+  VIOLATIONS=$((VIOLATIONS + 1))
+else
+  echo -e "  ${GREEN}✅ .claude/ 目录无凭证${NC}"
+fi
+
+echo ""
+
 # ═══ 1. .env 意外暂存 ═══
 if git diff --cached --name-only 2>/dev/null | grep -q '^\.env$'; then
   echo -e "  ${RED}❌ .env 文件被暂存 — 请立即 git rm --cached .env${NC}"
@@ -52,6 +118,7 @@ if [ -n "$STAGED" ]; then
     2>/dev/null \
     | grep -v 'your-\|example\|placeholder\|demo\|test-\|xxx\|TODO\|CHANGE\|'\''\s*$' \
     | grep -v "'deepseek'\|'qwen'\|'glm'\|'kimi'\|'yi'\|'minimax'\|'step'\|'ernie'\|'openai'\|'gateway'\|'silicon'" \
+    | grep -v "deepseek-chat\|deepseek-v4\|deepseek-r1\|qwen-max\|qwen-plus\|glm-4\|kimi-latest\|ernie-bot" \
     || true)
 fi
 
@@ -65,9 +132,22 @@ else
   echo -e "  ${GREEN}✅ 暂存文件无硬编码凭证${NC}"
 fi
 
-# ═══ 4. 本地 .env 提醒 (不阻断) ═══
-if [ -f "$REPO_ROOT/.env" ] && grep -q 'sk-\|FEISHU\|DEEPSEEK' "$REPO_ROOT/.env" 2>/dev/null; then
-  echo -e "  ${YELLOW}⚠️  本地 .env 包含 API Key (未暂存, 不阻断)${NC}"
+# ═══ 4. 本地 .env 检查 (硬阻断 — 含真实 Key 即阻断) ═══
+# 历史事故: 旧门禁此处只警告不阻断, .env 真实 Key 长期留在磁盘未被发现。
+if [ -f "$REPO_ROOT/.env" ]; then
+  REAL_KEY_IN_ENV=$(grep -E 'sk-[a-zA-Z0-9]{20,}' "$REPO_ROOT/.env" 2>/dev/null \
+    | grep -v 'your-\|example\|placeholder\|xxx\|sk-your' || true)
+  if [ -n "$REAL_KEY_IN_ENV" ]; then
+    echo -e "  ${RED}❌ 本地 .env 包含疑似真实 API Key  [硬阻断]${NC}"
+    echo "$REAL_KEY_IN_ENV" | while read -r line; do echo "     ${line}"; done
+    echo "  请确认此 Key 是否真实。如果是 → 立即去服务商后台轮换, 然后更新 .env。"
+    echo "  如已轮换(旧Key已失效) → 将 .env 中旧Key替换为占位符 sk-your-xxx 后重试。"
+    VIOLATIONS=$((VIOLATIONS + 1))
+  else
+    echo -e "  ${GREEN}✅ 本地 .env 无真实凭证${NC}"
+  fi
+else
+  echo -e "  ${GREEN}✅ 无 .env 文件${NC}"
 fi
 
 echo ""

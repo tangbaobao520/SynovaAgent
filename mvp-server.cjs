@@ -21,12 +21,18 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 try { const fileUpload = require('express-fileupload'); app.use(fileUpload({ limits: { fileSize: 10*1024*1024 }, abortOnLimit: true })); } catch(e) { console.log('express-fileupload 未安装 — 文件上传不可用'); }
 
+// 优先读系统环境变量, 其次 .env 文件 (兼容未设系统变量的开发环境)
 function loadEnv() {
   var env = {};
+  // 先读 .env 做底 (如果存在)
   try {
     var t = fs.readFileSync('.env', 'utf-8');
     t.split('\n').forEach(function(l) { var m = l.match(/^(\w+)\s*=\s*(.+)/); if (m) env[m[1]] = m[2].trim(); });
   } catch(e) {}
+  // 系统环境变量覆盖 (优先级最高)
+  ['LLM_API_KEY','LLM_MODEL','LLM_BASE_URL','DEEPSEEK_API_KEY','FEISHU_APP_ID','FEISHU_APP_SECRET'].forEach(function(k) {
+    if (process.env[k]) env[k] = process.env[k];
+  });
   return env;
 }
 

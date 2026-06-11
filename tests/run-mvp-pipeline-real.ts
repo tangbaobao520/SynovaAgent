@@ -8,21 +8,22 @@
 async function main() {
   console.log('=== Synova MVP 真实管线测试 ===\n');
 
-  // ── Load API config from .env ──
-  const { readFileSync } = await import('fs');
-  const envContent = readFileSync('.env', 'utf-8');
-  const env: Record<string, string> = {};
-  for (const line of envContent.split('\n')) {
-    const m = line.match(/^(\w+)\s*=\s*(.+)/);
-    if (m) env[m[1]] = m[2].trim();
+  // ── Load API config (系统环境变量优先, .env 兜底) ──
+  let API_KEY = process.env.LLM_API_KEY || process.env.DEEPSEEK_API_KEY || '';
+  if (!API_KEY) {
+    // Fallback: 尝试读 .env (兼容未设系统变量的开发环境)
+    try {
+      const { readFileSync } = await import('fs');
+      const envContent = readFileSync('.env', 'utf-8');
+      const m = envContent.match(/LLM_API_KEY=(.+)/);
+      if (m) API_KEY = m[1].trim();
+    } catch(e) {}
   }
-
-  const API_KEY = env.LLM_API_KEY || '';
-  const API_BASE = env.LLM_BASE_URL || 'https://api.deepseek.com';
-  const MODEL = env.LLM_MODEL || 'deepseek-chat';
+  const API_BASE = process.env.LLM_BASE_URL || 'https://api.deepseek.com';
+  const MODEL = process.env.LLM_MODEL || 'deepseek-chat';
 
   if (!API_KEY) {
-    console.error('❌ LLM_API_KEY 未设置');
+    console.error('❌ LLM_API_KEY 未设置 — 请设置系统环境变量或创建 .env');
     process.exit(1);
   }
 

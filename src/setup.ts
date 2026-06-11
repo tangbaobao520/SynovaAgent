@@ -1,12 +1,14 @@
 /**
  * setup.ts — 交互式终端 Setup 向导 (Era 1.1)
  *
- * 首次启动检测无 LLM 配置 → 自动引导用户选择 Provider → 输入 Key → 测试连接 → 写入 .env
+ * 首次启动检测无 LLM 配置 → 自动引导用户选择 Provider → 输入 Key → 测试连接
  *
  * 对标 Hermes `hermes setup` 的交互体验，但适配我们的场景:
  *   - 3 个 Provider (DeepSeek / OpenAI-compatible / Gateway)
  *   - 实时连接测试
- *   - .env 持久化 + 当前会话立即生效
+ *   - 当前会话立即生效 + 提示永久设置系统环境变量命令
+ *
+ * ⚠️ 密钥不再写入 .env 文件 — 改用 Windows 系统环境变量 (铁律安全检查)
  */
 import * as readline from 'readline';
 import * as fs from 'fs';
@@ -88,40 +90,17 @@ export async function runSetup(): Promise<SetupResult> {
     console.log(`${YELLOW}将继续保存配置，你可以稍后修正。${RESET}`);
   }
 
-  // Step 4: 写入 .env
-  const envPath = path.resolve(process.cwd(), '.env');
-  const envLines: string[] = [];
-  if (fs.existsSync(envPath)) {
-    // 保留已有配置，只更新 LLM 相关
-    const existing = fs.readFileSync(envPath, 'utf-8').split('\n');
-    for (const line of existing) {
-      if (!line.startsWith('LLM_') && !line.startsWith('DEEPSEEK_') && !line.startsWith('OPENCLAW_') && !line.startsWith('OPENAI_')) {
-        envLines.push(line);
-      }
-    }
-  }
-  if (selected.type === 'gateway') {
-    if (gatewayHost) envLines.push(`OPENCLAW_GATEWAY_HOST=${gatewayHost}`);
-  } else if (selected.type === 'openai') {
-    if (apiKey.trim()) envLines.push(`LLM_API_KEY=${apiKey.trim()}`);
-    if (baseUrl) envLines.push(`LLM_BASE_URL=${baseUrl}`);
-  } else {
-    if (apiKey.trim()) envLines.push(`LLM_API_KEY=${apiKey.trim()}`);
-  }
-  envLines.push(`# SynovaAgent Provider: ${selected.type}`);
-  try {
-    fs.writeFileSync(envPath, envLines.filter(l => l.trim()).join('\n') + '\n');
-  } catch (err: any) {
-    console.log(`${RED}❌ 配置写入失败: ${err.message}${RESET}`);
-    console.log(`${YELLOW}配置仅在本会话生效，重启后需重新设置。${RESET}`);
-  }
-
-  // 写入当前会话（仅非空值）
+  // Step 4: 设置环境变量 (本会话) + 提示永久设置命令
   if (apiKey.trim()) process.env.LLM_API_KEY = apiKey.trim();
   if (gatewayHost) process.env.OPENCLAW_GATEWAY_HOST = gatewayHost;
   if (baseUrl) process.env.LLM_BASE_URL = baseUrl;
 
-  console.log(`${GREEN}✅ 配置已保存到 ${envPath}${RESET}`);
+  console.log(`${GREEN}✅ 配置已生效 (本会话)${RESET}`);
+  if (apiKey.trim()) {
+    console.log(`${YELLOW}💡 永久保存请运行以下 PowerShell 命令:${RESET}`);
+    console.log(`${CYAN}   [Environment]::SetEnvironmentVariable('LLM_API_KEY', '${apiKey.trim()}', 'User')${RESET}`);
+    console.log(`${DIM}   运行后重新打开终端即可在所有会话中生效。${RESET}`);
+  }
   console.log('');
   rl.close();
 
