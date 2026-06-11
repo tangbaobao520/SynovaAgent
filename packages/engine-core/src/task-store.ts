@@ -9,6 +9,7 @@
  */
 
 import { createLogger } from './infra/logger';
+import { createRequire } from 'node:module';
 
 const log = createLogger('engine-server/task-store');
 
@@ -34,9 +35,10 @@ function getRealStore(): RealTaskStore | null {
   if (_bridgeAttempted) return _realStore;
   _bridgeAttempted = true;
   try {
-    // src/ → engine-core/ → @synova/ → vendor/ → server/ → dist/engine-server/task-store
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    _realStore = require('../../../../dist/engine-server/task-store') as RealTaskStore;
+    // 懒加载服务端 task-store 桥接, 回退到 in-memory Map
+    // 使用 createRequire (ESM 标准) 替代裸 require(), 铁律 9 + 铁律 32
+    const nodeRequire = createRequire(import.meta.url);
+    _realStore = nodeRequire('../../../../dist/engine-server/task-store') as RealTaskStore;
     return _realStore;
   } catch {
     log.debug('[task-store] real task store bridge unavailable, falling back to in-memory map');
