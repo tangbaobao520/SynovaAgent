@@ -5,7 +5,7 @@ import type { ToolRegistry } from '../../src/agent/tools';
 import { spawn } from 'child_process';
 import path from 'path';
 
-const SKILL_DIR = path.resolve(__dirname);
+const SKILL_DIR = path.resolve(import.meta.dirname);
 
 export function registerPandocTools(registry: ToolRegistry): void {
   registry.register({

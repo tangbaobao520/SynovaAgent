@@ -62,7 +62,7 @@ export interface UpdateCheckResult {
 /** 从 package.json 读取唯一版本源 (铁律 28) */
 export function getCurrentVersion(): string {
   const candidates = [
-    path.join(__dirname, '..', 'package.json'),
+    path.join(import.meta.dirname, '..', 'package.json'),
     path.join(process.cwd(), 'package.json'),
   ];
   for (const p of candidates) {

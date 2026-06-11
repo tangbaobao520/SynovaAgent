@@ -64,6 +64,66 @@ L5 存储 (SQLite) → L4
 ```
 pre-commit `check-architecture.sh` 检测 L2→L4 / L3→L5 跨层违规。
 
+### 六、TUI V2 铁律（2026-06-07 新增 — 基于闪烁修复+流式事故）
+
+> 以下铁律来自 2026-06-07 TUI V2 闪烁修复和流式 Pipeline 事故。
+> 核心原则：**ink 补丁层已经解决了闪烁，React 层不要过度工程化。**
+
+**铁律 40. 闪烁修复不可回退（冻结）。**
+
+任何修改 TUI V2 时，必须确认以下冻结项完好：
+```
+[ ] patches/ink+5.2.1.patch 存在
+[ ] package.json "postinstall": "patch-package" 存在
+[ ] React.memo 在 Message/StreamingText 上
+[ ] 没有引入全量重渲染（forceUpdate / 逐 token 的 setState）
+[ ] 没有 fallback 到旧的 useStreaming 实现
+```
+pre-commit 硬阻断：patch 文件缺失、postinstall 缺失、React.memo 被移除。
+
+**铁律 41. 流式 Pipeline 简单直接 — 禁止过度工程化。**
+
+`useStreaming` hook 只能用 `bufferRef += token` + `setTimeout(flush, 16)` 模式。
+禁止引入：`LineBuffer` / `FrameRateLimiter` / `StreamChunker` 多层嵌套。
+ink 补丁层已解决闪烁，React 层只需简单的 buffer + 60fps flush。
+
+**Why**：LineBuffer 要求换行才提交→无换行文本永远不可见。三层嵌套→buffer 永远来不及 flush。
+pre-commit 硬阻断：`use-streaming.ts` 中出现 `LineBuffer`/`FrameRateLimiter`/`StreamChunker` 类名。
+
+**铁律 42. 逐字流必须有延迟。**
+
+非流式 API 模拟流式时，`for (const ch of content) onToken(ch)` 必须配合 `await sleep(5)`。
+每字符至少 5ms 间隔，留出 UI flush 时间。
+
+**Why**：零延迟→所有 token 几毫秒内传完→buffer 来不及显示→用户看到空白。
+pre-commit 警告：`tool-loop-executor.ts` 中 `for (const ch of` 后无 `sleep`。
+
+**铁律 43. finishStreaming 调用顺序不可反。**
+
+必须是：
+```
+flushBuffer() → addAgentMessage(reply) → setState({ isStreaming: false })
+```
+先 `isStreaming=false` 后 `addAgentMessage` → 中间有一帧空白。
+
+**Why**：顺序反了会在流式结束和新消息之间出现空白帧。
+pre-commit 警告：检测 `setState({ ... isStreaming: false })` 在 `addAgentMessage` 之前。
+
+**铁律 44. ChatPanel 禁止 `justifyContent="flex-end"`。**
+
+ink 不支持真正的滚动。flex-end 会把旧消息推出可见区域。
+正确做法：消息截断算法 + `⋯ 上方还有 N 条消息`。
+
+pre-commit 硬阻断：`chat-panel.tsx` 中出现 `justifyContent.*flex-end`。
+
+**铁律 45. 注释中 `*/` 必须加空格。**
+
+JSDoc 或块注释中 `*/` 必须写为 `* /`。
+否则 esbuild 把 `*/` 识别为块注释结束符→编译失败。
+
+**Why**：message.tsx 注释写了 `-/*/+`，esbuild 解析崩溃。
+pre-commit 警告：`.tsx` 文件注释中出现 `*/`（非行尾的块注释结束符）。
+
 ---
 
 ## 项目身份
