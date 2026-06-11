@@ -1,0 +1,175 @@
+diff --git a/node_modules/ink/build/ink.js b/node_modules/ink/build/ink.js
+index a9c444f..9a34104 100644
+--- a/node_modules/ink/build/ink.js
++++ b/node_modules/ink/build/ink.js
+@@ -119,15 +119,19 @@ export default class Ink {
+             this.fullStaticOutput += staticOutput;
+         }
+         if (outputHeight >= this.options.stdout.rows) {
+-            this.options.stdout.write(ansiEscapes.clearTerminal + this.fullStaticOutput + output);
++            // 用同步输出包裹 clearTerminal，避免清屏和重写之间的白屏闪烁
++            // ESC[?2026h = begin synchronized update, ESC[?2026l = end synchronized update
++            this.options.stdout.write('\x1b[?2026h' + ansiEscapes.clearTerminal + this.fullStaticOutput + output + '\x1b[?2026l');
+             this.lastOutput = output;
+             return;
+         }
+         // To ensure static output is cleanly rendered before main output, clear main output first
+         if (hasStaticOutput) {
++            this.options.stdout.write('\x1b[?2026h');
+             this.log.clear();
+             this.options.stdout.write(staticOutput);
+             this.log(output);
++            this.options.stdout.write('\x1b[?2026l');
+         }
+         if (!hasStaticOutput && output !== this.lastOutput) {
+             this.throttledLog(output);
+@@ -150,9 +154,12 @@ export default class Ink {
+             this.options.stdout.write(data);
+             return;
+         }
++        // 用同步输出包裹，避免 clear + write 之间的闪烁
++        this.options.stdout.write('\x1b[?2026h');
+         this.log.clear();
+         this.options.stdout.write(data);
+         this.log(this.lastOutput);
++        this.options.stdout.write('\x1b[?2026l');
+     }
+     writeToStderr(data) {
+         if (this.isUnmounted) {
+@@ -167,9 +174,12 @@ export default class Ink {
+             this.options.stderr.write(data);
+             return;
+         }
++        // 用同步输出包裹，避免 clear + write 之间的闪烁
++        this.options.stdout.write('\x1b[?2026h');
+         this.log.clear();
+         this.options.stderr.write(data);
+         this.log(this.lastOutput);
++        this.options.stdout.write('\x1b[?2026l');
+     }
+     // eslint-disable-next-line @typescript-eslint/ban-types
+     unmount(error) {
+diff --git a/node_modules/ink/build/log-update.js b/node_modules/ink/build/log-update.js
+index 547421e..3046614 100644
+--- a/node_modules/ink/build/log-update.js
++++ b/node_modules/ink/build/log-update.js
+@@ -1,37 +1,116 @@
+ import ansiEscapes from 'ansi-escapes';
+ import cliCursor from 'cli-cursor';
++
++// Synchronized Output: 让终端缓冲所有输出，只在完整帧时刷新
++// 消除 eraseLines 和重写之间的"空白帧"闪烁
++const SYNC_BEGIN = '\x1b[?2026h';
++const SYNC_END = '\x1b[?2026l';
++
+ const create = (stream, { showCursor = false } = {}) => {
+     let previousLineCount = 0;
+     let previousOutput = '';
++    let previousLines = [];
+     let hasHiddenCursor = false;
++
+     const render = (str) => {
+         if (!showCursor && !hasHiddenCursor) {
+             cliCursor.hide();
+             hasHiddenCursor = true;
+         }
++
+         const output = str + '\n';
+         if (output === previousOutput) {
+             return;
+         }
++
++        // 拆行为数组
++        const newLines = output.split('\n');
++        if (newLines.length > 0 && newLines[newLines.length - 1] === '') {
++            newLines.pop();
++        }
++
++        let writeData;
++
++        // 行级 diff（行数相同且有前帧）— 只更新变化的行
++        if (previousOutput && newLines.length === previousLines.length && newLines.length > 3) {
++            let firstDiff = -1;
++            let lastDiff = -1;
++            for (let i = 0; i < newLines.length; i++) {
++                if (newLines[i] !== previousLines[i]) {
++                    if (firstDiff === -1) firstDiff = i;
++                    lastDiff = i;
++                }
++            }
++
++            if (firstDiff === -1) {
++                // 无变化（理论上已被 output === previousOutput 过滤，但安全起见）
++                previousOutput = output;
++                return;
++            }
++
++            const diffCount = lastDiff - firstDiff + 1;
++
++            // 变化行数超过 60% → 全量重写更高效
++            if (diffCount > newLines.length * 0.6) {
++                writeData = SYNC_BEGIN + ansiEscapes.eraseLines(previousLineCount) + output + SYNC_END;
++            } else {
++                // 行级 diff：只擦除和重写变化的行
++                // 1. 移动光标到第一个变化行
++                const moveUp = previousLineCount - 1 - firstDiff;
++                let ansi = SYNC_BEGIN;
++                if (moveUp > 0) {
++                    ansi += `\x1b[${moveUp}A`;
++                }
++                ansi += '\x1b[G'; // 行首
++
++                // 2. 逐行擦除 + 重写
++                for (let i = firstDiff; i <= lastDiff; i++) {
++                    ansi += '\x1b[2K' + newLines[i];
++                    if (i < lastDiff) {
++                        ansi += '\n';
++                    }
++                }
++
++                // 3. 光标归位到最后
++                const moveDown = previousLineCount - 1 - lastDiff;
++                if (moveDown > 0) {
++                    ansi += `\x1b[${moveDown}B`;
++                }
++                ansi += '\n' + SYNC_END;
++
++                writeData = ansi;
++            }
++        } else {
++            // 行数变了或首帧 → 全量重写 + 同步输出
++            writeData = SYNC_BEGIN + ansiEscapes.eraseLines(previousLineCount) + output + SYNC_END;
++        }
++
++        stream.write(writeData);
+         previousOutput = output;
+-        stream.write(ansiEscapes.eraseLines(previousLineCount) + output);
+-        previousLineCount = output.split('\n').length;
++        previousLines = newLines;
++        previousLineCount = newLines.length;
+     };
++
+     render.clear = () => {
+-        stream.write(ansiEscapes.eraseLines(previousLineCount));
++        stream.write(SYNC_BEGIN + ansiEscapes.eraseLines(previousLineCount) + SYNC_END);
+         previousOutput = '';
++        previousLines = [];
+         previousLineCount = 0;
+     };
++
+     render.done = () => {
+         previousOutput = '';
++        previousLines = [];
+         previousLineCount = 0;
+         if (!showCursor) {
+             cliCursor.show();
+             hasHiddenCursor = false;
+         }
+     };
++
+     return render;
+ };
++
+ const logUpdate = { create };
+ export default logUpdate;
+ //# sourceMappingURL=log-update.js.map
