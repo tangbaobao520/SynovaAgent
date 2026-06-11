@@ -17,8 +17,128 @@ function createMeasurers(dims) {
   const hasData = (key) => { const d = get(key); return d && d.sufficient && d.content && d.content !== '未提及'; };
   const contentLen = (key) => { const d = get(key); return d ? d.content.length : 0; };
 
+  // ═══ 力量适用性判定（规则引擎） ═══
+  // 一个企业不可能同时拥有七种力量。先判定适用性，再对适用的力量量化。
+  function checkPowerApplicability(dims) {
+    const txt = dims.map(d => d.content || '').join(' ');
+    const hasManyClients = txt.includes('客户') && !txt.includes('只有');
+    const isPlatform = txt.includes('平台') || txt.includes('SaaS') || txt.includes('软件');
+    const isManufacturing = txt.includes('制造') || txt.includes('工厂') || txt.includes('产线');
+    const isEarly = txt.includes('初创') || txt.includes('刚成立') || txt.includes('早期');
+    const isMature = !isEarly && (txt.includes('年营收') || txt.includes('成立') || parseInt(txt.match(/(\d+)人/)?.[1] || '0') > 50);
+
+    return {
+      scaleEconomies: isManufacturing || isPlatform || isMature,
+      networkEffects: isPlatform,
+      counterPositioning: isEarly,
+      switchingCosts: hasManyClients && isMature,
+      brand: isMature,
+      corneredResource: txt.includes('专利') || txt.includes('独家') || txt.includes('牌照') || txt.includes('只有'),
+      processPower: isMature && (isManufacturing || txt.includes('流程') || txt.includes('体系')),
+    };
+  }
+
   return [
-    // ═══ D1: 战略健康 ═══
+    // ═══ D1: 战略力量 — 7 Powers 量化 ═══
+    {
+      config: { id: 'seven-powers', dimension: 'D1', dataRequirements: ['mission', 'businessModel', 'resources', 'marketPositioning'] },
+      compute() {
+        const applicable = checkPowerApplicability(dims);
+        const scores = {};
+        const evidence = [];
+        let totalScore = 0, count = 0;
+
+        // Power 1: 规模经济
+        if (applicable.scaleEconomies) {
+          const hasScaleSignal = (get('businessModel')?.content || '').includes('规模') || (get('resources')?.content || '').includes('产量');
+          // 公式: 强度 = (固定成本占比 - 行业平均) / 行业标准差
+          // 当前数据: 文本中是否有规模经济和产量描述
+          const score = hasScaleSignal ? 6.0 : 3.0;
+          scores.scaleEconomies = score;
+          evidence.push(hasScaleSignal ? '存在规模效应信号（批量生产、产量描述）' : '规模效应信号弱，无法量化固定成本占比');
+          totalScore += score; count++;
+        } else { evidence.push('规模经济不适用（非制造业/非平台/早期阶段）'); }
+
+        // Power 2: 网络效应
+        if (applicable.networkEffects) {
+          // 公式: 价值 ∝ n² (Metcalfe) 或 n×log(n) (Briscoe)
+          // 当前数据: 文本中是否有用户网络描述
+          const hasNetwork = (get('businessModel')?.content || '').includes('用户') || (get('marketPositioning')?.content || '').includes('平台');
+          const score = hasNetwork ? 5.0 : 2.0;
+          scores.networkEffects = score;
+          evidence.push(hasNetwork ? '存在网络效应信号（用户/平台描述）' : '网络效应信号弱');
+          totalScore += score; count++;
+        } else { evidence.push('网络效应不适用（非平台/SaaS/软件企业）'); }
+
+        // Power 3: 反定位
+        if (applicable.counterPositioning) {
+          // 公式: min(蚕食比率, 40%) / 40% × 10
+          // 当前数据: 是否有新模式颠覆旧模式的描述
+          const hasDisruption = (get('mission')?.content || '').includes('颠覆') || (get('mission')?.content || '').includes('新模式') || (get('marketPositioning')?.content || '').includes('不同');
+          const score = hasDisruption ? 6.0 : 2.0;
+          scores.counterPositioning = score;
+          evidence.push(hasDisruption ? '存在反定位信号（颠覆性模式描述）' : '反定位信号弱，无法量化蚕食比率');
+          totalScore += score; count++;
+        } else { evidence.push('反定位不适用（成熟企业，反定位是挑战者的力量）'); }
+
+        // Power 4: 转换成本
+        if (applicable.switchingCosts) {
+          // 公式: (行业流失率 - 企业流失率) / 行业流失率 × 10
+          // 当前数据: 是否有客户锁定描述
+          const hasLockIn = (get('businessModel')?.content || '').includes('合同') || (get('risks')?.content || '').includes('依赖');
+          const score = hasLockIn ? 5.0 : 2.0;
+          scores.switchingCosts = score;
+          evidence.push(hasLockIn ? '存在转换成本信号（合同/依赖关系）' : '转换成本信号弱');
+          totalScore += score; count++;
+        } else { evidence.push('转换成本不适用（客户少/早期阶段）'); }
+
+        // Power 5: 品牌
+        if (applicable.brand) {
+          // 公式: 品牌溢价 = WTP(品牌) - WTP(无品牌等价替代)，品牌价值 = 溢价 × 销量
+          // 当前数据: 文本中是否有品质/口碑/NPS描述
+          const brandText = (get('marketPositioning')?.content || '') + (get('businessModel')?.content || '');
+          const hasBrand = brandText.includes('品质') || brandText.includes('口碑') || brandText.includes('不便宜') || brandText.includes('信任');
+          const score = hasBrand ? 6.0 : 3.0;
+          scores.brand = score;
+          evidence.push(hasBrand ? '存在品牌效应信号（品质/口碑/溢价描述）' : '品牌效应信号弱，无法量化品牌溢价');
+          totalScore += score; count++;
+        } else { evidence.push('品牌不适用（早期企业，品牌尚未建立）'); }
+
+        // Power 6: 垄断资源
+        if (applicable.corneredResource) {
+          // 公式: 资源价值 = NPV(独占资源带来的增量现金流)
+          // 当前数据: 是否有专利/独家/稀缺资源描述
+          const resText = (get('resources')?.content || '') + (get('businessModel')?.content || '');
+          const hasExclusive = resText.includes('专利') || resText.includes('独家') || resText.includes('只有');
+          const score = hasExclusive ? 7.0 : 2.0;
+          scores.corneredResource = score;
+          evidence.push(hasExclusive ? '存在垄断资源信号（专利/独家描述）' : '垄断资源信号弱，无法量化NPV');
+          totalScore += score; count++;
+        } else { evidence.push('垄断资源不适用（未检测到专利/独家/稀缺资源信号）'); }
+
+        // Power 7: 流程优势
+        if (applicable.processPower) {
+          // 公式: 学习曲线 Cost(n) = Cost(1) × n^(-log₂(1-b))
+          // 当前数据: 是否有流程/体系/效率描述
+          const processText = (get('resources')?.content || '') + (get('digitalFoundation')?.content || '');
+          const hasProcess = processText.includes('流程') || processText.includes('体系') || processText.includes('效率') || processText.includes('自动化');
+          const score = hasProcess ? 5.0 : 2.0;
+          scores.processPower = score;
+          evidence.push(hasProcess ? '存在流程优势信号（流程/体系/效率描述）' : '流程优势信号弱，无法量化学习曲线斜率');
+          totalScore += score; count++;
+        } else { evidence.push('流程优势不适用（早期/非制造业企业，流程尚未沉淀）'); }
+
+        return {
+          measurerId: 'seven-powers', dimension: 'D1',
+          score: count > 0 ? Math.round(totalScore / count * 10) / 10 : 0,
+          confidence: count >= 3 ? 'medium' : 'low',
+          evidence,
+          trend: 'stable',
+          computedAt: new Date().toISOString(),
+        };
+      },
+    },
+    // ═══ D1: 战略方向清晰度 ═══
     {
       config: { id: 'mission-clarity', dimension: 'D1', dataRequirements: ['mission', 'marketPositioning'] },
       compute() {
@@ -33,6 +153,86 @@ function createMeasurers(dims) {
             missionOk ? '任务目标信息充分（' + contentLen('mission') + '字）' : '任务目标信息不足',
             marketOk ? '市场定位信息充分（' + contentLen('marketPositioning') + '字）' : '市场定位信息不足',
           ],
+          trend: 'stable',
+          computedAt: new Date().toISOString(),
+        };
+      },
+    },
+    // ═══ D2: 目标对齐度 — cosine(G, E) ═══
+    {
+      config: { id: 'goal-alignment', dimension: 'D2', dataRequirements: ['mission', 'currentState', 'successCriteria'] },
+      compute() {
+        // 公式: 对齐度 = cosine(G, E) / 跨层级衰减率
+        // 当前数据: 从文本中检测目标一致性信号
+        const mission = get('mission')?.content || '';
+        const state = get('currentState')?.content || '';
+        const criteria = get('successCriteria')?.content || '';
+        const hasMission = hasData('mission');
+        const hasCriteria = hasData('successCriteria');
+        const hasState = hasData('currentState');
+
+        // 目标-执行对齐: mission 中的目标与 currentState 中的团队是否匹配
+        const missionTarget = mission.match(/(\d+)万/) ? parseInt(mission.match(/(\d+)万/)[1]) : 0;
+        const stateTeam = state.match(/(\d+)人/) ? parseInt(state.match(/(\d+)人/)[1]) : 0;
+
+        let score = 5, evidence = [];
+        if (hasMission && hasState && missionTarget > 0 && stateTeam > 0) {
+          // 简单对齐: 目标/团队比率 (每千万营收需要多少人)
+          const ratio = stateTeam / (missionTarget / 1000);
+          if (ratio < 3) { score = 8; evidence.push('目标-团队配比合理（' + ratio.toFixed(1) + '人/千万），执行资源充足'); }
+          else if (ratio < 8) { score = 6; evidence.push('目标-团队配比中等（' + ratio.toFixed(1) + '人/千万），需关注效率'); }
+          else { score = 3; evidence.push('目标-团队配比偏高（' + ratio.toFixed(1) + '人/千万），可能存在效率问题'); }
+        } else {
+          score = hasMission && hasState ? 4 : 0;
+          evidence.push('无法计算目标-团队配比：' + (!hasMission ? '缺少目标数据 ' : '') + (!hasState ? '缺少团队规模数据' : ''));
+        }
+
+        if (hasCriteria) {
+          evidence.push('成功标准明确，可衡量目标对齐度');
+        } else {
+          evidence.push('缺少明确的成功标准，目标对齐无法验证');
+        }
+
+        return {
+          measurerId: 'goal-alignment', dimension: 'D2',
+          score,
+          confidence: hasMission && hasState ? 'medium' : 'low',
+          evidence,
+          trend: 'stable',
+          computedAt: new Date().toISOString(),
+        };
+      },
+    },
+    // ═══ D2: 能力分布熵 ═══
+    {
+      config: { id: 'capability-entropy', dimension: 'D2', dataRequirements: ['currentState', 'resources'] },
+      compute() {
+        // 公式: 能力分布熵 = -Σ(pⱼ × log(pⱼ)) / log(k)
+        // 当前数据: 从资源和团队描述中推断能力集中度
+        const resourceText = get('resources')?.content || '';
+        const stateText = get('currentState')?.content || '';
+        const hasSingle = resourceText.includes('只有') || resourceText.includes('唯一') || resourceText.includes('1个') || resourceText.includes('一人');
+
+        // 简化: 检测单点依赖信号 → 反映能力集中度
+        const singleCount = (resourceText.match(/只有|唯一|全靠|一人|1个/g) || []).length;
+        const score = singleCount >= 2 ? 2 : singleCount === 1 ? 4 : 6;
+        const evidence = [
+          singleCount >= 2 ? '高能力集中度：多个关键岗位存在单点依赖（熵值低）'
+            : singleCount === 1 ? '中能力集中度：存在个别关键岗位单点依赖'
+            : '能力分布较均匀：未检测到明显的单点依赖',
+        ];
+
+        // 团队规模体现分布
+        const teamMatch = stateText.match(/(\d+)人/);
+        if (teamMatch && parseInt(teamMatch[1]) < 20) {
+          evidence.push('小团队（' + teamMatch[1] + '人）：能力集中是正常现象，但有单点风险');
+        }
+
+        return {
+          measurerId: 'capability-entropy', dimension: 'D2',
+          score,
+          confidence: hasData('resources') ? 'medium' : 'low',
+          evidence,
           trend: 'stable',
           computedAt: new Date().toISOString(),
         };

@@ -98,9 +98,12 @@ async function runPipeline(jobId, content, orgName) {
   job.status = 'reasoning';
   var ep = new ExpertPipeline();
   ep.register([
-    { id: 'strategic', name: '战略健康：方向对不对', dimensions: ['D1'], systemPrompt: '你是企业战略诊断专家。分析战略方向和市场定位。只基于测量数据，不编造。' },
-    { id: 'org', name: '组织能力：团队能不能执行', dimensions: ['D2'], systemPrompt: '你是组织诊断专家。分析团队规模、关键人依赖、执行能力。只基于测量数据，不编造。' },
-    { id: 'finance', name: '财务视角：增长的财务支撑', dimensions: ['D1'], systemPrompt: '你是财务诊断专家。分析客户集中度、增长动力。只基于测量数据，不编造。' },
+    { id: 'strategic', name: '战略健康：方向对不对', dimensions: ['D1'], systemPrompt: '你是企业战略诊断专家。分析战略方向和竞争力量。只基于测量数据，不编造。' },
+    { id: 'org', name: '组织能力：团队能不能执行', dimensions: ['D2'], systemPrompt: '你是组织诊断专家。分析团队规模、关键人依赖、协作健康度。只基于测量数据，不编造。' },
+    { id: 'finance', name: '财务视角：增长的财务支撑', dimensions: ['D1'], systemPrompt: '你是财务诊断专家。分析客户集中度、增长动力、现金流风险。只基于测量数据，不编造。' },
+    { id: 'marketing', name: '营销视角：市场定位与客户认知', dimensions: ['D1'], systemPrompt: '你是营销诊断专家。分析市场定位清晰度、客户认知、差异化是否实质。只基于测量数据，不编造。' },
+    { id: 'tech', name: '技术视角：数字底座与工具链', dimensions: ['D2'], systemPrompt: '你是技术诊断专家。分析数字基础设施、系统健康度、工具效率。只基于测量数据，不编造。' },
+    { id: 'action', name: '行动建议：从分析到执行', dimensions: ['D1', 'D2'], systemPrompt: '你是行动诊断专家。基于其他专家的分析，提炼出优先级最高的可执行行动。每条建议必须具体到能检查是否完成。不重复分析，只提炼行动。' },
   ], { complete: llmCall });
   var expOutput = await ep.run(measOutput.aggregated);
   console.log('[job:' + jobId + '] experts: ' + expOutput.results.length);
