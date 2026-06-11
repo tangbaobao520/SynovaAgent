@@ -1,6 +1,6 @@
 {
   "_comment": "OpenClaw 两层 strictness 模式。base → strict:true + noImplicitAny:true。诊断目录额外开启返回值检查和无贯穿检查。noUnusedLocals 暂不开启（传播到外部文件产生 39 条噪音，非类型安全风险）。",
-  "extends": "../../../tsconfig.base.json",
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
     "rootDir": "./src",
     "outDir": "./dist",

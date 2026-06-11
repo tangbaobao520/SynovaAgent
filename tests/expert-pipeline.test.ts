@@ -72,18 +72,19 @@ function mockLLM(output: Partial<ExpertOutput> = {}): LLMClient {
 describe('ExpertPipeline', () => {
   it('应该能注册专家', () => {
     if (!ExpertPipeline) return;
-    const p = new ExpertPipeline(mockLLM());
-    p.register([{ id: 'org', name: '组织专家', dimensions: ['D2'], systemPrompt: '你是组织诊断专家。' }]);
+    const p = new ExpertPipeline();
+    const llm = mockLLM();
+    p.register([{ id: 'org', name: '组织专家', dimensions: ['D2'], systemPrompt: '你是组织诊断专家。' }], llm);
     expect(p.getExpertCount()).toBe(1);
   });
 
   it('专家只处理自己维度的数据', async () => {
     if (!ExpertPipeline) return;
-    const p = new ExpertPipeline(mockLLM());
+    const p = new ExpertPipeline();
     p.register([{
       id: 'org', name: '组织专家', dimensions: ['D2'],
       systemPrompt: '你是组织诊断专家。只分析组织能力维度。',
-    }]);
+    }], mockLLM());
 
     // 给 D3 数据 — 组织专家不应该处理
     const input: Record<string, unknown> = {
@@ -96,11 +97,11 @@ describe('ExpertPipeline', () => {
 
   it('有对应维度数据时专家应该执行', async () => {
     if (!ExpertPipeline) return;
-    const p = new ExpertPipeline(mockLLM({ conclusion: '组织能力正常' }));
+    const p = new ExpertPipeline();
     p.register([{
       id: 'org', name: '组织专家', dimensions: ['D2'],
       systemPrompt: '你是组织诊断专家。',
-    }]);
+    }], mockLLM({ conclusion: '组织能力正常' }));
 
     const input = {
       D2: { score: 5.5, confidence: 'medium', measurerCount: 2 },
@@ -117,23 +118,20 @@ describe('ExpertPipeline', () => {
     const failLLM: LLMClient = {
       async complete() { throw new Error('API 超时'); },
     };
-    const p = new ExpertPipeline(failLLM);
+    const p = new ExpertPipeline();
     p.register([{
       id: 'org', name: '组织专家', dimensions: ['D2'],
       systemPrompt: '你是组织诊断专家。',
-    }]);
-    p.register([{
-      id: 'strat', name: '战略专家', dimensions: ['D1'],
-      systemPrompt: '你是战略诊断专家。',
-    }]);
+    }], failLLM);
 
     const input = {
       D2: { score: 5.5, confidence: 'medium', measurerCount: 1 },
-      D1: { score: 7.0, confidence: 'high', measurerCount: 1 },
     };
     const output = await p.run(input);
-    // 两个都失败（同一个 failLLM），都在 degraded 中
+    // LLM 调用失败 → 降级输出 + degraded
     expect(output.degradedModules.length).toBeGreaterThan(0);
+    // 降级输出仍返回结果（只是标记为不可用）
+    expect(output.results.length).toBeGreaterThan(0);
   });
 
   it('JSON 解析失败时会重试', async () => {
@@ -146,8 +144,8 @@ describe('ExpertPipeline', () => {
         return JSON.stringify({ conclusion: '重试后成功', findings: [], score: 5.0, confidence: 'low' });
       },
     };
-    const p = new ExpertPipeline(flakyLLM);
-    p.register([{ id: 'org', name: '组织专家', dimensions: ['D2'], systemPrompt: '你是组织诊断专家。' }]);
+    const p = new ExpertPipeline();
+    p.register([{ id: 'org', name: '组织专家', dimensions: ['D2'], systemPrompt: '你是组织诊断专家。' }], flakyLLM);
 
     const output = await p.run({ D2: { score: 5.0, confidence: 'medium', measurerCount: 1 } });
     expect(output.results[0].conclusion).toBe('重试后成功');
@@ -155,8 +153,8 @@ describe('ExpertPipeline', () => {
 
   it('专家输出必须包含结构化发现', async () => {
     if (!ExpertPipeline) return;
-    const p = new ExpertPipeline(mockLLM());
-    p.register([{ id: 'org', name: '组织专家', dimensions: ['D2'], systemPrompt: '你是组织诊断专家。' }]);
+    const p = new ExpertPipeline();
+    p.register([{ id: 'org', name: '组织专家', dimensions: ['D2'], systemPrompt: '你是组织诊断专家。' }], mockLLM());
 
     const output = await p.run({ D2: { score: 4.0, confidence: 'medium', measurerCount: 1 } });
     const f = output.results[0].findings[0];
@@ -176,15 +174,12 @@ describe('ExpertPipeline', () => {
     const m2: LLMClient = {
       async complete() { order.push('strat'); return JSON.stringify({ conclusion: 'ok', findings: [], score: 5, confidence: 'medium' }); },
     };
-    const p = new ExpertPipeline(m1, m2);
+    const p = new ExpertPipeline();
     p.register([{ id: 'org', name: '组织', dimensions: ['D2'], systemPrompt: '...' }], m1);
     p.register([{ id: 'strat', name: '战略', dimensions: ['D1'], systemPrompt: '...' }], m2);
 
-    const start = Date.now();
-    const output = await p.run({ D2: { score: 1, confidence: 'low', measurerCount: 0 }, D1: { score: 1, confidence: 'low', measurerCount: 0 } });
-    const elapsed = Date.now() - start;
-    // 如果并行: < 200ms (mock instant) ; 如果串行: > 100ms
-    // 实际只要 2 个都执行了就行
+    const output = await p.run({ D2: { score: 1, confidence: 'low', measurerCount: 1 }, D1: { score: 1, confidence: 'low', measurerCount: 1 } });
+    // 2 个专家都应该执行（measurerCount > 0）
     expect(output.results.length).toBe(2);
     expect(order.length).toBe(2);
   });

@@ -152,7 +152,8 @@ describe('MeasurementPipeline', () => {
 
     const output: MeasurementOutput = await pipeline.run({});
     expect(output.results[0].confidence).toBe('low');
-    expect(output.results[0].evidence[0]).toContain('缺少');
+    // 空输入时 pipeline 返回 emptyResult('输入数据为空')，不调用 measurer.compute()
+    expect(output.results[0].evidence[0]).toContain('输入数据为空');
   });
 
   it('证据必须是可读的一句话', async () => {

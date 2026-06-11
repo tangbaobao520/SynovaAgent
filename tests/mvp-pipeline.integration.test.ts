@@ -101,7 +101,8 @@ describe('MVP Pipeline: Document → Extraction → Report', () => {
   });
 
   it('ReportBuilder builds a valid HTML report with pyramid structure', async () => {
-    const { ReportBuilder, EIGHT_DIMENSIONS } = await import('../packages/engine-core/src/pipeline/diagnosis/doc-extractor');
+    const { ReportBuilder } = await import('../packages/engine-core/src/pipeline/diagnosis/report-builder');
+    const { EIGHT_DIMENSIONS } = await import('../packages/engine-core/src/pipeline/diagnosis/doc-extractor');
     const extraction: any = {
       documentId: 'doc_1',
       extractedAt: new Date().toISOString(),
