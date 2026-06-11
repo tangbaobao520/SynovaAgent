@@ -1,0 +1,654 @@
+/**
+ * engine-server/pipeline/phase-b/ammo-depot.ts — 弹药库种子数据
+ *
+ * 两轮注入架构（V1.3）：
+ *   Round 1 — 行业事实弹药：Phase A 前注入，匹配 taskDef.job + constraints 的关键词
+ *   Round 2 — 组织事实弹药：Phase A 后注入，匹配 TeamStructureBlue 的结构属性
+ *
+ * 每条行业弹药包含：matchType='industry' + 行业/关键词/领域事实
+ * 每条组织弹药包含：matchType='organization' + structuralConditions（角色数/层级/文化维度等）
+ *
+ * Line A 弹药工厂接入（2026-05-19）：新增 getAmmoDepot/loadAmmoDepot/reloadAmmoDepot，
+ *   支持从 research/ammo-factory/entries/ 加载外部弹药，与内置弹药合并。
+ *
+ * @date 2026-05-14 (初始) / 2026-05-15 (两轮架构) / 2026-05-19 (Line A 外部加载)
+ */
+
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
+import { trackUsageDB } from '../../harness/harness-store';
+import { createLogger } from '../../infra/logger';
+
+const log = createLogger('engine-server/pipeline/phase-b/ammo-depot');
+
+// ================================================================
+// 动态弹药持久化
+// ================================================================
+
+const DYNAMIC_AMMO_FILE = path.join(os.homedir(), '.claworg', 'harness', 'ammo-dynamic.json');
+
+/** 从持久化文件加载动态弹药条目 */
+function loadDynamicAmmo(): AmmoEntry[] {
+  try {
+    if (!fs.existsSync(DYNAMIC_AMMO_FILE)) return [];
+    const raw = fs.readFileSync(DYNAMIC_AMMO_FILE, 'utf-8');
+    return JSON.parse(raw) as AmmoEntry[];
+  } catch (err) {
+    log.warn('[ammo-depot] 加载动态弹药失败:', (err as Error).message);
+    return [];
+  }
+}
+
+/** 持久化动态弹药条目（原子写入） */
+function saveDynamicAmmo(entries: AmmoEntry[]): void {
+  try {
+    const dir = path.dirname(DYNAMIC_AMMO_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const tmp = DYNAMIC_AMMO_FILE + '.tmp';
+    fs.writeFileSync(tmp, JSON.stringify(entries, null, 2), 'utf-8');
+    fs.renameSync(tmp, DYNAMIC_AMMO_FILE);
+  } catch (err) {
+    log.warn('[ammo-depot] 保存动态弹药失败:', (err as Error).message);
+  }
+}
+
+let _dynamicAmmo: AmmoEntry[] | null = null;
+
+function getDynamicAmmo(): AmmoEntry[] {
+  if (_dynamicAmmo === null) {
+    _dynamicAmmo = loadDynamicAmmo();
+  }
+  return _dynamicAmmo;
+}
+
+/** 追加一条动态弹药并持久化（供进化反馈使用） */
+export function appendDynamicAmmo(entry: AmmoEntry): void {
+  const dyn = getDynamicAmmo();
+  // 1. 精确 id 匹配 → 跳过
+  if (dyn.some(a => a.id === entry.id)) return;
+
+  // 2. 语义去重：keywords 重叠度 > 0.85 时合并而非新增
+  const SIMILARITY_THRESHOLD = 0.85;
+  for (const existing of dyn) {
+    const overlap = entry.keywords.filter(k => existing.keywords.includes(k)).length;
+    const similarity = overlap / Math.max(entry.keywords.length, existing.keywords.length);
+    if (similarity > SIMILARITY_THRESHOLD) {
+      existing.usageCount = (existing.usageCount ?? 0) + 1;
+      existing.lastUsedAt = new Date().toISOString();
+      existing.heatLevel = 1 - Math.exp(-(existing.usageCount ?? 0) / 10);
+      existing.effectiveness = Math.min(1, (existing.effectiveness ?? 0.5) + 0.05);
+      const mergedKeywords = new Set([...existing.keywords, ...entry.keywords]);
+      existing.keywords = Array.from(mergedKeywords);
+      if (entry.factText && !existing.factText.includes(entry.factText)) {
+        existing.factText += ' | ' + entry.factText;
+      }
+      saveDynamicAmmo(dyn);
+      return;
+    }
+  }
+
+  // 3. 无重复 → 新增
+  entry.usageCount = entry.usageCount ?? 1;
+  entry.effectiveness = entry.effectiveness ?? 0.5;
+  entry.heatLevel = 1 - Math.exp(-(entry.usageCount ?? 1) / 10);
+  entry.lastUsedAt = entry.lastUsedAt ?? new Date().toISOString();
+  dyn.push(entry);
+  saveDynamicAmmo(dyn);
+}
+
+/** 重新加载动态弹药（测试/诊断用） */
+export function reloadDynamicAmmo(): void {
+  _dynamicAmmo = loadDynamicAmmo();
+}
+
+/** P0-2: Phase B 选中弹药时调用，写入 ammo_usage 表并更新内存统计 */
+export function recordAmmoUsage(ammoId: string, blueprintId: string): void {
+  // 1. SQLite 埋点（harness-store 提供，有降级保护）
+  try {
+    trackUsageDB(blueprintId, 'ammo.selected', { ammoId, timestamp: new Date().toISOString() });
+  } catch (err) {
+    log.warn('[ammo-depot] recordAmmoUsage SQLite 埋点失败:', (err as Error).message);
+  }
+
+  // 2. 更新内存中该弹药的统计
+  const dyn = getDynamicAmmo();
+  const entry = dyn.find(a => a.id === ammoId);
+  if (entry) {
+    entry.usageCount = (entry.usageCount ?? 0) + 1;
+    entry.lastUsedAt = new Date().toISOString();
+    entry.heatLevel = 1 - Math.exp(-(entry.usageCount ?? 0) / 10);
+    entry.effectiveness = Math.min(1, (entry.effectiveness ?? 0.5) + 0.02);
+    saveDynamicAmmo(dyn);
+  }
+}
+
+export interface AmmoEntry {
+  id: string;
+  industry: string;
+  subdomain?: string;
+  keywords: string[];
+  factText: string;
+  confidence: 'verified' | 'public_source' | 'llm_generated';
+  sources?: string[];
+  updatedAt: string;
+  /** V1.3: 弹药类型 — 决定匹配策略和注入时机 */
+  matchType: 'industry' | 'organization';
+  /** V1.3: 组织类弹药的结构匹配条件（仅 matchType='organization' 时有效） */
+  structuralConditions?: {
+    maxRoleCount?: number;
+    minRoleCount?: number;
+    hasLayer?: string[];            // 必须包含的治理层，如 ['L2', 'L3']
+    hasCrossCultural?: boolean;     // 是否跨文化场景
+    hasExternalDependency?: boolean; // 是否依赖外部供应商/合作伙伴
+    sameLayerRoleCount?: number;    // 同一治理层角色数阈值
+  };
+
+  // ── P0-2: 使用追踪字段 ──────────────────────────────────────
+  /** 被 Phase B 选中的次数（动态弹药自动维护） */
+  usageCount?: number;
+  /** 有效性评分 0-1（纯静态弹药默认 0.5） */
+  effectiveness?: number;
+  /** 热度 0-1，基于最近使用频率 */
+  heatLevel?: number;
+  /** 最后被选中的时间，ISO 格式 */
+  lastUsedAt?: string;
+}
+
+// 仅匹配行业类型的弹药（matchType='industry'），组织类型弹药通过 matchOrgAmmo 按结构属性匹配
+export const AMMO_DEPOT: AmmoEntry[] = [
+  // ═══════════════════════════════════════════
+  // 行业1：跨境电商
+  // ═══════════════════════════════════════════
+  {
+    id: 'ecom-mx-cosmetics-nom',
+    industry: '跨境电商',
+    subdomain: '美妆',
+    keywords: ['墨西哥', '化妆品', '标签', '合规', 'NOM', 'COFEPRIS'],
+    factText: '墨西哥化妆品受COFEPRIS监管，须符合NOM-141-SSA1标签标准。进口化妆品需提供原产国自由销售证明(CFS)和墨西哥本地责任人(Responsable Sanitario)。标签须含西班牙语成分表、净含量、进口商信息。',
+    confidence: 'public_source',
+    sources: ['https://www.gob.mx/cofepris/acciones-y-programas/cosmeticos'],
+    updatedAt: '2026-05-14',
+    matchType: 'industry',
+  },
+  {
+    id: 'ecom-mx-payment',
+    industry: '跨境电商',
+    subdomain: '支付',
+    keywords: ['墨西哥', '支付', 'OXXO', 'Spei', 'Mercado Pago'],
+    factText: '墨西哥主流本地支付方式：OXXO(现金支付，覆盖率最高，约40%线上交易)、Spei(银行转账，政府/大额B2B首选)、Mercado Pago(电子钱包，类似支付宝)。信用卡渗透率仅15%，纯信用卡方案会损失大量客户。',
+    confidence: 'public_source',
+    sources: [],
+    updatedAt: '2026-05-14',
+    matchType: 'industry',
+  },
+  {
+    id: 'ecom-sea-logistics',
+    industry: '跨境电商',
+    subdomain: '物流',
+    keywords: ['东南亚', '物流', '仓储', '配送', '跨境'],
+    factText: '东南亚跨境电商物流复杂度高：多国海关独立、岛屿地理分散（印尼17000+岛屿）、最后一公里履约成本高。主流模式：Lazada/Shopee平台物流(FBL/FBS)适合起步，自建仓储适合月单量>5000，第三方海外仓(J&T极兔、NinjaVan)为折中方案。',
+    confidence: 'public_source',
+    sources: [],
+    updatedAt: '2026-05-14',
+    matchType: 'industry',
+  },
+  {
+    id: 'ecom-sea-marketplaces',
+    industry: '跨境电商',
+    subdomain: '平台',
+    keywords: ['东南亚', 'Shopee', 'Lazada', 'Tokopedia', '电商平台'],
+    factText: '东南亚电商平台格局：Shopee(六国覆盖，移动优先，C2C+B2C)、Lazada(阿里系，B2C为主，品牌旗舰店模式)、Tokopedia(印尼本土，占印尼电商市场35%)。进入策略：先Shopee验证品类需求，再Lazada做品牌溢价，印尼市场必须走Tokopedia。',
+    confidence: 'public_source',
+    sources: [],
+    updatedAt: '2026-05-14',
+    matchType: 'industry',
+  },
+  {
+    id: 'ecom-vn-food-safety',
+    industry: '跨境电商',
+    subdomain: '食品',
+    keywords: ['越南', '食品', '安全', '认证', 'HACCP'],
+    factText: '越南食品出口须满足进口国食品安全标准。出口中国须通过海关总署注册(GACC注册号)；出口欧盟须符合EU 2017/625官方控制法规。越南本地食品企业须取得食品安全条件合格证(卫生部/农业与农村发展部/工商部三部门分管)。HACCP认证在欧美市场为事实必需。',
+    confidence: 'public_source',
+    sources: [],
+    updatedAt: '2026-05-14',
+    matchType: 'industry',
+  },
+  {
+    id: 'ecom-sea-tariffs',
+    industry: '跨境电商',
+    subdomain: '关税',
+    keywords: ['东南亚', '关税', 'RCEP', '东盟', '原产地'],
+    factText: 'RCEP框架下东南亚国家间关税优惠：利用FORM E原产地证书可享受东盟内部零关税或优惠税率。但各国非关税壁垒差异大——印尼要求清真认证(Halal)、泰国有食品添加剂白名单、越南有本地化率要求。不了解各国非关税壁垒是跨境电商最常见的合规失败原因。',
+    confidence: 'public_source',
+    sources: [],
+    updatedAt: '2026-05-14',
+    matchType: 'industry',
+  },
+
+  // ═══════════════════════════════════════════
+  // 行业2：餐饮连锁
+  // ═══════════════════════════════════════════
+  {
+    id: 'food-chain-scm',
+    industry: '餐饮连锁',
+    subdomain: '供应链',
+    keywords: ['餐饮', '供应链', '食材', '冷链', '中央厨房'],
+    factText: '餐饮连锁的供应链核心是中央厨房+冷链配送。中央厨房标准化切配加工可降低门店后厨面积30-50%和人力成本20-35%。冷链断裂是最大风险：生鲜食材在0-4°C下保质期通常24-72小时，冷链温度波动超过±2°C即加速变质。供应链成本通常占营收35-42%。',
+    confidence: 'public_source',
+    sources: [],
+    updatedAt: '2026-05-14',
+    matchType: 'industry',
+  },
+  {
+    id: 'food-chain-unit-econ',
+    industry: '餐饮连锁',
+    subdomain: '单店模型',
+    keywords: ['餐饮', '单店', '坪效', '翻台率', '盈亏平衡'],
+    factText: '餐饮单店经济模型：月坪效(营收/面积)低于2000元/㎡通常不可持续。翻台率快餐型目标2.5-3.5，正餐型目标1.5-2.0。盈亏平衡点通常为：食材成本<35%、人力<20%、租金<15%、其他<15%、利润>15%。新店6个月内达到盈亏平衡为健康标准。',
+    confidence: 'public_source',
+    sources: [],
+    updatedAt: '2026-05-14',
+    matchType: 'industry',
+  },
+  {
+    id: 'food-chain-vn-local',
+    industry: '餐饮连锁',
+    subdomain: '本地化',
+    keywords: ['越南', '餐饮', '本地化', '口味', '食材'],
+    factText: '越南餐饮市场特点：河内偏清淡(北)、岘港适中(中)、胡志明市偏甜(南)——三国菜系差异要求连锁菜单有区域适配。本地食材供应链层级多(产地→集散→批发→门店)，直接对接农户可降成本15-25%但要求品控投入。越南人外出就餐频率高(日均1.8餐外食)，但客单价低(街边档<15元)。',
+    confidence: 'public_source',
+    sources: [],
+    updatedAt: '2026-05-14',
+    matchType: 'industry',
+  },
+  {
+    id: 'food-chain-licensing',
+    industry: '餐饮连锁',
+    subdomain: '证照',
+    keywords: ['餐饮', '许可证', '食品安全', '消防', '环保'],
+    factText: '中国餐饮连锁证照要求：食品经营许可证(市场监督管理)、消防安全检查合格证(消防)、环境影响登记表(环保，小型豁免)、从业人员健康证(全员)。连锁扩张中的证照陷阱：每店独立办理，办证周期15-45天不等，部分城市对餐饮选址有限制性规划(如距离住宅<20米)。',
+    confidence: 'public_source',
+    sources: [],
+    updatedAt: '2026-05-14',
+    matchType: 'industry',
+  },
+
+  // ═══════════════════════════════════════════
+  // 行业3：SaaS 创业
+  // ═══════════════════════════════════════════
+  {
+    id: 'saas-pricing',
+    industry: 'SaaS',
+    subdomain: '定价',
+    keywords: ['SaaS', '定价', '订阅', 'ARR', 'MRR', '付费'],
+    factText: 'SaaS定价策略：PLG(产品驱动增长)模式用免费版转化付费，免费→付费转化率业界基准3-8%；SLG(销售驱动)模式以ACV>$10K的客户为目标。定价锚点：每人每月$10-50(小企业)、$50-200(中型)、$200+(企业级)。折扣率超过30%通常损害LTV。隐性成本：客户获取成本(CAC)应在12个月MRR内回收。',
+    confidence: 'public_source',
+    sources: [],
+    updatedAt: '2026-05-14',
+    matchType: 'industry',
+  },
+  {
+    id: 'saas-metrics',
+    industry: 'SaaS',
+    subdomain: '指标',
+    keywords: ['SaaS', '留存', 'churn', 'LTV', 'CAC', '增长率'],
+    factText: 'SaaS关键健康指标：月流失率(churn)<3%(B2B中小客户)、<1%(企业级)；LTV/CAC >3:1；年度营收留存率(NDR)>100%为健康(现有客户扩量超过流失)；季度环比增长率>10%为高增长。Rule of 40：增长率+利润率>40%为健康SaaS公司。初期不追求盈利，追求PMF(产品市场契合)信号。',
+    confidence: 'public_source',
+    sources: [],
+    updatedAt: '2026-05-14',
+    matchType: 'industry',
+  },
+  {
+    id: 'saas-us-market',
+    industry: 'SaaS',
+    subdomain: '出海',
+    keywords: ['SaaS', '美国', '出海', '市场', '合规'],
+    factText: '中国SaaS出海美国的关键挑战：GDPR/CCPA数据合规要求(罚款可达全球年营收4%)、SOC2审计(企业客户采购前提条件，首次认证6-12个月)、英语本土化(非机器翻译，需母语者校对)、美国客户支持时区(需24小时或至少美国工作时间覆盖)。云基础设施建议用AWS/Azure美区而非中国云厂商海外节点(降低客户安全审查阻力)。',
+    confidence: 'public_source',
+    sources: [],
+    updatedAt: '2026-05-14',
+    matchType: 'industry',
+  },
+
+  // ═══════════════════════════════════════════
+  // 行业4：智慧农业
+  // ═══════════════════════════════════════════
+  {
+    id: 'agri-iot',
+    industry: '农业',
+    subdomain: '物联网',
+    keywords: ['农业', '物联网', '传感器', 'IoT', '精准农业'],
+    factText: '农业物联网核心投入：土壤传感器(温湿度/pH/NPK)、气象站、无人机巡检(多光谱/可见光)。传感器成本：单套土壤站500-3000元，覆盖范围10-50亩。关键约束：田间无WiFi→必须用LoRa/NB-IoT低功耗广域网，电池寿命要求≥6个月，设备需IP67防护等级(防尘防水)。',
+    confidence: 'public_source',
+    sources: [],
+    updatedAt: '2026-05-14',
+    matchType: 'industry',
+  },
+  {
+    id: 'agri-subsidies',
+    industry: '农业',
+    subdomain: '政策',
+    keywords: ['农业', '补贴', '政策', '合作社', '土地'],
+    factText: '中国农业补贴路径：农机购置补贴(中央财政，补贴率≤30%)、种粮直补(按承包面积)、农业保险保费补贴(中央+地方补贴80%)。获取关键：项目须经县级以上农业农村局备案，家庭农场/合作社身份比个人更易获得补贴。集体土地流转须有村委会书面同意，流转合同不超过承包期剩余年限。',
+    confidence: 'public_source',
+    sources: [],
+    updatedAt: '2026-05-14',
+    matchType: 'industry',
+  },
+  {
+    id: 'agri-seasonality',
+    industry: '农业',
+    subdomain: '周期',
+    keywords: ['农业', '季节', '周期', '种植', '收获'],
+    factText: '农业的季节性约束：单一作物的现金流集中在收获季节(通常2-3个月)，其余月份只有支出。解决方案：①多季轮作(如水稻+冬小麦)拉平现金流；②设施农业(温室)突破季节限制但投入高(日光温室造价5-15万元/亩)；③种养结合(种植+禽畜)形成内部资源循环。团队设计须考虑季节性人力波动——农忙季临时工需求可达日常3-5倍。',
+    confidence: 'public_source',
+    sources: [],
+    updatedAt: '2026-05-14',
+    matchType: 'industry',
+  },
+
+  // ═══════════════════════════════════════════
+  // 组织事实弹药（matchType='organization'，Phase A→B 之间按结构属性匹配）
+  // ═══════════════════════════════════════════
+  {
+    id: 'org-small-team-dynamics',
+    industry: '组织行为',
+    subdomain: '团队规模',
+    keywords: ['小团队', '精英', '紧密协作', '扁平'],
+    factText: '小团队(≤5人)的信息传递效率是大团队的3-5倍。每个新增成员使沟通链路增加(n²-n)/2条。5人以下团队可维持全员互知的"共享心智模型"，超过7人后天然分裂为子群体。协作协议设计：≤5人适用full_mesh信息拓扑，≥7人应降级为star或hierarchical。',
+    confidence: 'public_source',
+    sources: ['Dunbar 1992', 'Brooks 1975 The Mythical Man-Month'],
+    updatedAt: '2026-05-15',
+    matchType: 'organization',
+    structuralConditions: { maxRoleCount: 5 },
+  },
+  {
+    id: 'org-large-team-coordination',
+    industry: '组织行为',
+    subdomain: '团队规模',
+    keywords: ['大团队', '多人', '协调', '规模'],
+    factText: '大团队(≥8人)的协调成本占有效工时的15-25%。管理层级每增加一层，决策时延增加2-3倍，信息失真率增加10-15%。建议≥8人团队采用loose_federation或federal权力结构，按子团队拆分决策域，降低全局同步频率至每日≤1次。',
+    confidence: 'public_source',
+    sources: ['Mintzberg 1979 The Structuring of Organizations', 'Galbraith 1973 Designing Complex Organizations'],
+    updatedAt: '2026-05-15',
+    matchType: 'organization',
+    structuralConditions: { minRoleCount: 8 },
+  },
+  {
+    id: 'org-governance-layers-latency',
+    industry: '组织行为',
+    subdomain: '治理层级',
+    keywords: ['治理层', '层级', '决策', '审批'],
+    factText: '多治理层团队(L1+L2+L3三层俱全)的决策周期比双层团队长2-3倍。当L3治理层≥2个角色时，须明确deciderRoleId，否则易陷入"双重签字"僵局。建议用cross_check_balance或escalation冲突策略，deadlockTimeoutSeconds设600秒(双层团队的2倍)。',
+    confidence: 'public_source',
+    sources: ['Weber 1947 Theory of Social and Economic Organization', 'Williamson 1975 Markets and Hierarchies'],
+    updatedAt: '2026-05-15',
+    matchType: 'organization',
+    structuralConditions: { hasLayer: ['L3_governance'], minRoleCount: 4 },
+  },
+  {
+    id: 'org-cross-cultural-power-distance',
+    industry: '组织行为',
+    subdomain: '跨文化',
+    keywords: ['跨文化', '多市场', '本地化', '国际', '权力距离'],
+    factText: '跨文化团队的组织设计须考虑Hofstede权力距离维度。高权力距离文化(中国/越南/墨西哥/印尼，PDI≥70)的团队成员期望明确的等级权威，flat或loose_federation可能被感知为"无领导"而导致执行混乱。建议权威结构选择hierarchical或domain_based，veto权保留在L3角色。低权力距离文化(欧盟/澳洲，PDI≤40)则相反。',
+    confidence: 'public_source',
+    sources: ['Hofstede 2001 Culture\'s Consequences', 'GLOBE Study 2004'],
+    updatedAt: '2026-05-15',
+    matchType: 'organization',
+    structuralConditions: { hasCrossCultural: true, minRoleCount: 3 },
+  },
+  {
+    id: 'org-external-dependency-boundary',
+    industry: '组织行为',
+    subdomain: '外部依赖',
+    keywords: ['供应商', '外包', '合作伙伴', '外部接口', '多平台'],
+    factText: '高度依赖外部供应商/合作伙伴的团队（交易成本理论: 外部协调成本>内部管理成本时需要边界重划），应将externalInterface策略设为ambassador或buffer模式，指定1-2个authorizedRoles作为对外接口。若无明确外部接口角色，每个成员自行与外部沟通会让交易成本指数级增长。外部依赖场景下canBypassProtocol应设为false。',
+    confidence: 'public_source',
+    sources: ['Williamson 1985 The Economic Institutions of Capitalism', 'Coase 1937 The Nature of the Firm'],
+    updatedAt: '2026-05-15',
+    matchType: 'organization',
+    structuralConditions: { hasExternalDependency: true, minRoleCount: 2 },
+  },
+  {
+    id: 'org-same-layer-conflict',
+    industry: '组织行为',
+    subdomain: '同层竞争',
+    keywords: ['同层', '竞争', '冲突', '资源', '并行'],
+    factText: '同一治理层有≥3个角色时，角色间竞争（Kahn角色冲突理论）概率显著升高——资源争夺、职责边界模糊、绩效归因争议。建议：① conflictResolution设为单决策者(single_decider)或升级(escalation)策略，指定L3角色为decider；② divisionOfLabor设为fixed模式，明确每个角色的不可替代域；③ 避免同一层角色间的incentiveAlignment使用零和激励(penalty)。',
+    confidence: 'public_source',
+    sources: ['Kahn et al. 1964 Organizational Stress', 'Pfeffer & Salancik 1978 External Control of Organizations'],
+    updatedAt: '2026-05-15',
+    matchType: 'organization',
+    structuralConditions: { sameLayerRoleCount: 3 },
+  },
+  {
+    id: 'org-new-venture-uncertainty',
+    industry: '组织行为',
+    subdomain: '新创',
+    keywords: ['新创', '从零', '冷启动', '创业', '探索'],
+    factText: '从零起步的团队面临高不确定性，组织设计应优先适应性而非效率。建议：① trustModel初始信任设为medium(非high)——新团队无共享经验，须通过merit_based逐步建立信任；② knowledgeSharing策略设为free_for_all，syncInterval≤12小时；③ divisionOfLabor设为flexible或morphing——新创角色边界会随验证快速变化；④ 若追求速度验证，tencent_internal_race(内部赛马)模式优于iron_captain。',
+    confidence: 'public_source',
+    sources: ['Ries 2011 The Lean Startup', 'Blank 2013 The Four Steps to the Epiphany', 'March 1991 Exploration and Exploitation'],
+    updatedAt: '2026-05-15',
+    matchType: 'organization',
+    structuralConditions: { minRoleCount: 2, maxRoleCount: 6 },
+  },
+  {
+    id: 'org-flat-vs-hierarchy',
+    industry: '组织行为',
+    subdomain: '结构',
+    keywords: ['扁平', '层级', '架构', '组织'],
+    factText: '扁平组织(L3≤1个角色，L2占多数)的信息流动速度比层级组织快2-3倍，但角色模糊风险更高。扁平时informationFlow应选full_mesh拓扑+free_form同步，但conflictResolution须设single_decider以防无主僵局。层级组织(L3≥2，L1/L2/L3俱全)应选hierarchical拓扑+moderated同步，powerDistribution设为hierarchical或domain_based。Chandler的"结构跟随战略"原则：战略确定性高→层级，战略探索期→扁平。',
+    confidence: 'public_source',
+    sources: ['Chandler 1962 Strategy and Structure', 'Burns & Stalker 1961 Management of Innovation'],
+    updatedAt: '2026-05-15',
+    matchType: 'organization',
+    structuralConditions: { minRoleCount: 3 },
+  },
+
+  // ═══════════════════════════════════════════
+  // 行业5：AI安全
+  // ═══════════════════════════════════════════
+  {
+    id: 'aisec-redteaming',
+    industry: 'AI安全',
+    subdomain: '红队',
+    keywords: ['AI', '安全', '红队', '对抗', '攻击'],
+    factText: 'AI安全红队测试框架：越狱攻击(Jailbreak)测试LLM是否违反安全策略、提示注入(Prompt Injection)测试系统指令是否被覆盖、数据投毒测试训练数据中隐藏后门的可能性、成员推理测试模型是否泄露训练数据中的个人信息。红队不是QA——需要攻击思维，最优红队成员是"前黑客+安全研究员"混合背景。',
+    confidence: 'public_source',
+    sources: [],
+    updatedAt: '2026-05-14',
+    matchType: 'industry',
+  },
+  {
+    id: 'aisec-governance',
+    industry: 'AI安全',
+    subdomain: '治理',
+    keywords: ['AI', '安全', '治理', '护栏', 'guardrail'],
+    factText: 'AI安全治理的工业实践：NVIDIA NeMo Guardrails(输入/输出护栏，话题/安全/事实核查)、Anthropic Constitutional AI(宪法训练+Trusted Monitor)、微软Azure AI Content Safety(文本/图像/语音安全过滤)。护栏局限性：仅能拦截明确模式，无法检测隐蔽的社会工程攻击或目标漂移。有效的AI安全需要"护栏+审计+红队"三层叠加。',
+    confidence: 'public_source',
+    sources: [],
+    updatedAt: '2026-05-14',
+    matchType: 'industry',
+  },
+  {
+    id: 'aisec-compliance',
+    industry: 'AI安全',
+    subdomain: '合规',
+    keywords: ['AI', '安全', '合规', 'GDPR', '算法备案', '欧盟AI法案'],
+    factText: 'AI合规要求(2026)：中国《生成式人工智能服务管理暂行办法》要求算法备案(网信办)+安全评估+内容过滤；欧盟AI法案分四级风险(禁止/高风险/有限风险/最小风险)，高风险系统需CE标志+合规评估+人类监督；美国各州立法碎片化(科罗拉多AI法案/加州AB-2013等)但联邦层面尚无统一框架。',
+    confidence: 'public_source',
+    sources: [],
+    updatedAt: '2026-05-14',
+    matchType: 'industry',
+  },
+
+  // ═══════════════════════════════════════════
+  // 行业6：教育科技（QA缺口反哺）
+  // ═══════════════════════════════════════════
+  {
+    id: 'edtech-interactive-teaching',
+    industry: '教育科技',
+    subdomain: '互动教学',
+    keywords: ['教育', '培训', '编程', '学员', '教学', '互动', '在线', '基础薄弱'],
+    factText: '针对基础薄弱学员的在线教学设计要点：① 互动率>被动率——每10分钟视频插入1次主动练习(quiz/编程练习/讨论)，互动率低于20%的课程完课率通常<15%；② 即时反馈循环——编程练习须在提交后<30秒内返回结果/提示，超过此阈值学员流失率翻倍；③ 项目驱动优于知识驱动——以可运行的产出为里程碑，而非语法讲解；④ 同伴学习——pair programming或小组项目可提升完成率20-35%。',
+    confidence: 'public_source',
+    sources: [],
+    updatedAt: '2026-05-19',
+    matchType: 'industry',
+  },
+  {
+    id: 'edtech-curriculum-design',
+    industry: '教育科技',
+    subdomain: '课程设计',
+    keywords: ['教育', '课程', '定价', '训练营', '在线教育', '转化'],
+    factText: '在线编程训练营经济模型：CAC(获客成本)通过内容营销+免费试听可控制在¥200-800/人(LTV/CAC需>3:1)；转化漏斗——免费内容浏览→免费试听课→付费课程，典型转化率3-8%；课程定价锚点：自学录播课¥500-2000、直播小班课¥3000-8000、1v1辅导¥8000-20000；完课率是核心留存指标——低于30%需检查课程难度梯度与学员基础匹配度。',
+    confidence: 'public_source',
+    sources: [],
+    updatedAt: '2026-05-19',
+    matchType: 'industry',
+  },
+
+  // ═══════════════════════════════════════════
+  // 行业7：农业科技（QA缺口补充）
+  // ═══════════════════════════════════════════
+  {
+    id: 'agri-farmer-adoption',
+    industry: '农业',
+    subdomain: '技术推广',
+    keywords: ['农业', '农民', '技术接受', '推广', '培训', '接受度'],
+    factText: '农业技术推广的"最后一公里"瓶颈：农民新技术接受度受风险感知(怕绝收/怕卖不掉)和示范效应(看到邻居成功才跟进)主导。解决策略：① 示范田模式——在目标村设2-5亩示范田，让农民"眼见为实"，示范成功后自发跟种率可达50-70%；② 渐进式推广——第一季免费供种/供设备+保底收购降低风险感，第二季正常收费；③ 合作社/种植大户为早期采用者——他们风险承受力高于小农户，成功后形成示范效应。推广周期通常需1-2个种植季。',
+    confidence: 'public_source',
+    sources: ['Rogers 1962 Diffusion of Innovations', 'Feder & Umali 1993 Adoption of Agricultural Innovations'],
+    updatedAt: '2026-05-19',
+    matchType: 'industry',
+  },
+  {
+    id: 'agri-scale-irrigation',
+    industry: '农业',
+    subdomain: '规模经营',
+    keywords: ['农业', '种植面积', '灌溉', '规模化', '1000亩', '土地'],
+    factText: '规模化种植(≥500亩)的关键运营参数：1000亩约合66.7公顷，相当于1-2个标准家庭农场的10-20倍。基础设施维度——灌溉系统：1000亩滴灌铺设成本约¥50-100万元(含首部枢纽+主管+支管+滴头)，年维护费约5-10%，人工灌溉成本为滴灌的2-3倍但初期投入低；机械化：须配备拖拉机(≥100马力，¥15-30万/台)、收割机、植保无人机，机械购置总投入约¥100-200万。团队配置：1000亩日常需3-5名固定工+农忙季20-30名临时工。',
+    confidence: 'public_source',
+    sources: [],
+    updatedAt: '2026-05-19',
+    matchType: 'industry',
+  },
+
+  // ═══════════════════════════════════════════
+  // 行业8：制造业/订单波动（QA缺口反哺）
+  // ═══════════════════════════════════════════
+  {
+    id: 'mfg-order-fluctuation',
+    industry: '制造业',
+    subdomain: '排产',
+    keywords: ['制造', '订单', '排产', '波动', 'PMC', '生产计划'],
+    factText: '订单波动下的生产排程策略：当订单预测误差>30%时(典型的"客户订单波动大"场景)，传统MTS(按库存生产)易导致库存积压或缺货。建议：① 混合模式——MTS做基础款(波动小的常青品)，MTO(按订单生产)做变体款(波动大的客户定制品)；② 安全库存公式——安全库存=Z×σ×√LT(Z=服务水平系数，1.65对应95%服务水平，σ=需求标准差，LT=补货提前期)；③ 产能弹性——保留10-15%产能余量应对急单，或与代工厂签订弹性产能协议(基础产能+上浮30%的弹性条款)。',
+    confidence: 'public_source',
+    sources: [],
+    updatedAt: '2026-05-19',
+    matchType: 'industry',
+  },
+  {
+    id: 'mfg-lean-sme',
+    industry: '制造业',
+    subdomain: '精益',
+    keywords: ['制造', '精益', '微型工厂', '浪费', '5S', '流程', '小型'],
+    factText: '小型/微型工厂(≤30人)的精益改造要点：5S(整理/整顿/清扫/清洁/素养)是最低门槛的切入点，实施周期2-4周即可见效；七大浪费(等待/搬运/动作/加工/库存/过量生产/不良)中，小型工厂最常见的3种是"等待"(机器故障/换模/缺料)、"库存"(原材料/半成品堆积)、"不良"(缺乏品控标准)；价值流图(VSM)绘制是诊断起点，改进优先级按"瓶颈工序>等待时间>搬运距离"排序。精益改造的快速成效：OEE(设备综合效率)提升15-25%、在制品库存降低30-50%。',
+    confidence: 'public_source',
+    sources: ['Womack & Jones 1996 Lean Thinking', '大野耐一 1978 丰田生产方式'],
+    updatedAt: '2026-05-19',
+    matchType: 'industry',
+  },
+];
+
+// ── 外部弹药加载系统（ammo-factory entries/ 目录）──
+
+/** 运行时外部弹药条目缓存（增量加载，id 重复时覆盖内置） */
+let _externalAmmoEntries: AmmoEntry[] = [];
+let _externalLoaded = false;
+
+/**
+ * 获取弹药库全部条目（内置 + 已加载的外部补充）。
+ * 外部条目若 id 与内置重复则覆盖内置条目。
+ * 初次调用时返回内置 AMMO_DEPOT 的副本。
+ */
+export function getAmmoDepot(): AmmoEntry[] {
+  const merged = new Map<string, AmmoEntry>();
+  // 优先级：动态弹药 > 外部弹药 > 内置弹药
+  // 所有弹药附加上默认运行时字段（不修改内置 AMMO_DEPOT 数组中的原始引用）
+  for (const e of AMMO_DEPOT) {
+    merged.set(e.id, {
+      ...e,
+      usageCount: 0,
+      effectiveness: 0.5,
+      heatLevel: 0,
+    });
+  }
+  for (const e of _externalAmmoEntries) {
+    merged.set(e.id, {
+      ...e,
+      usageCount: e.usageCount ?? 0,
+      effectiveness: e.effectiveness ?? 0.5,
+      heatLevel: e.heatLevel ?? 0,
+    });
+  }
+  for (const e of getDynamicAmmo()) {
+    merged.set(e.id, {
+      ...e,
+      usageCount: e.usageCount ?? 0,
+      effectiveness: e.effectiveness ?? 0.5,
+      heatLevel: e.heatLevel ?? 0,
+    });
+  }
+  const result = Array.from(merged.values());
+  // 按 effectiveness 降序排列（高有效性弹药优先）
+  result.sort((a, b) => (b.effectiveness ?? 0.5) - (a.effectiveness ?? 0.5));
+  return result;
+}
+
+/**
+ * 从 research/ammo-factory/entries/ 加载外部弹药 JSON 文件并合并到缓存。
+ * 可以多次调用——每次重新扫描目录重建外部缓存。
+ * @returns 成功加载的外部条目数量
+ */
+export async function loadAmmoDepot(): Promise<number> {
+  const entriesDir = path.resolve(process.cwd(), '..', 'research', 'ammo-factory', 'entries');
+  let count = 0;
+  try {
+    await fs.promises.mkdir(entriesDir, { recursive: true });
+    const files = await fs.promises.readdir(entriesDir);
+    const loaded: AmmoEntry[] = [];
+    for (const file of files) {
+      if (!file.endsWith('.json')) continue;
+      try {
+        const raw = await fs.promises.readFile(path.join(entriesDir, file), 'utf-8');
+        const entry: AmmoEntry = JSON.parse(raw);
+        if (!entry.id) continue;
+        loaded.push(entry);
+        count++;
+      } catch {
+        log.warn(`[ammo-depot] 跳过无效弹药文件: ${file}`);
+      }
+    }
+    _externalAmmoEntries = loaded;
+    _externalLoaded = true;
+    log.info(`[ammo-depot] 外部弹药加载完毕: ${count} 条`);
+  } catch (err) {
+    log.warn(`[ammo-depot] 加载外部弹药失败: ${(err as Error).message}`);
+  }
+  return count;
+}
+
+/**
+ * 强制重新加载：清空已加载外部条目缓存，重新扫描目录。
+ * @returns 成功加载的外部条目数量
+ */
+export async function reloadAmmoDepot(): Promise<number> {
+  _externalAmmoEntries = [];
+  _externalLoaded = false;
+  return loadAmmoDepot();
+}

@@ -1,0 +1,194 @@
+/**
+ * 反模式推导器 (Anti-Pattern Deriver)
+ *
+ * S5: 从决策类型中推导角色最常犯的3-5个错误
+ * 每个反模式对应一个心智模型的'用错了会怎样'
+ *
+ * QA-07 修复点B: 角色反模式兜底
+ * - 当 relatedFailureModes 为空时, 从角色名+决策类型名推导通用反模式
+ * - 保证每个角色至少 2 个反模式 (QC-02 门槛)
+ *
+ * @date 2026-05-08
+ * @date 2026-05-09 修复点B
+ */
+
+import type { DecisionType } from './decision-extractor';
+import type { MatchedFramework } from './framework-matcher';
+
+export interface AntiPattern {
+  id: string;
+  name: string;
+  causalChain: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  linkedFrameworkId: string;
+  remediation: string;
+}
+
+/** 角色关键词 -> 通用反模式 */
+const ROLE_ANTI_PATTERNS: Record<string, Array<{ name: string; sev: AntiPattern['severity']; chain: string; fix: string }>> = {
+  '供应链': [
+    { name: '过度压价损害长期关系', sev: 'high', chain: '为追求短期成本最优过度压价 -> 供应商降低质量或断供 -> 长期合作信任瓦解', fix: '应用安全边际: 永远留出第二个供应商选项' },
+    { name: '忽视供应链中断风险', sev: 'critical', chain: '过度依赖单一供应商或单一运输路线 -> 突发事件导致断供 -> 无法履约', fix: '应用冗余备份: 关键环节始终保留B方案' },
+    { name: '信息不对称导致误判', sev: 'high', chain: '信任供应商的自我报告 -> 未交叉验证质量和交期 -> 真实情况与报告差距过大', fix: '应用信任但验证: 第三方质检+多信源交叉验证' },
+  ],
+  '运营': [
+    { name: '资源过度分散', sev: 'high', chain: '同时推进过多项目 -> 每个都资源不足 -> 所有项目都延期或质量差', fix: '应用帕累托原则: 集中资源做20%最关键的事' },
+    { name: '忽视流程瓶颈', sev: 'high', chain: '局部优化各环节 -> 瓶颈环节未被识别 -> 整体效率不升反降', fix: '应用反馈回路: 监控端到端指标而非局部指标' },
+    { name: '危机响应迟缓', sev: 'critical', chain: '突发问题未及时升级 -> 信息延迟导致决策滞后 -> 小问题扩展成系统事故', fix: '应用事前验尸: 提前为最可能的失败场景准备响应预案' },
+  ],
+  '合规': [
+    { name: '过度合规错失速度优势', sev: 'high', chain: '追求100%合规 -> 决策周期过长 -> 被竞争者抢先', fix: '应用风险分层: 区分"必须合规"和"可承担风险' },
+    { name: '忽视合规导致业务瘫痪', sev: 'critical', chain: '为追求速度绕过合规 -> 被监管处罚 -> 业务被勒令停止', fix: '应用事前验尸+合规前置: 合规审查必须是发版门禁' },
+    { name: '法规盲区判断失误', sev: 'critical', chain: '新市场法规不明确 -> 按国内经验主观判断 -> 实际违规被罚', fix: '应用圈外能力: 当地律师+行业合规顾问并行审查' },
+  ],
+  '产品': [
+    { name: '功能膨胀症', sev: 'high', chain: '不断添加新功能 -> 核心体验被稀释 -> 产品复杂到用户放弃', fix: '应用奥卡姆剃刀: 砍掉非核心功能, 聚焦最重要的一个场景' },
+    { name: '伪造的PMF', sev: 'critical', chain: '把早期用户的好评当作PMF信号 -> 大规模投入 -> 发现只是小众需求', fix: '应用基础概率: 检查同类产品的真实存活率和用户留存基准线' },
+    { name: '忽视执行可行性', sev: 'high', chain: '过度考虑用户理想需求 -> 设计出无法在预算和时间线内交付的方案 -> 团队士气崩溃', fix: '应用二阶思考: 先问"这个方案团队真的能做出来吗"' },
+  ],
+  '研发': [
+    { name: '过度设计', sev: 'high', chain: '为未来可能的扩展过度设计 -> 实现时间翻倍 -> 错过市场窗口', fix: '应用奥卡姆剃刀: 当前需求不需要的, 不要写' },
+    { name: '技术债雪崩', sev: 'high', chain: '持续跳过技术债偿还 -> 代码质量持续下降 -> 新功能开发速度趋近于0', fix: '应用复利效应: 每轮迭代偿还20%技术债' },
+    { name: '追求技术完美', sev: 'medium', chain: '为追求技术方案的完美 -> 反复重构 -> 产品交付延迟', fix: '应用帕累托原则: 80分的方案今天交付 > 100分的方案下周交付' },
+  ],
+  '客户': [
+    { name: '过度承诺', sev: 'critical', chain: '为满足客户需求过度承诺 -> 团队无法交付 -> 客户信任崩塌', fix: '应用诚实边界: 答应能做到的, 拒绝做不到的, 说明为什么' },
+    { name: '忽视客户信号', sev: 'high', chain: '忽略客户的委婉负面反馈 -> 以为一切良好 -> 客户悄悄流失', fix: '应用基础概率: 关注续费率/净推荐值而非口头好评' },
+    { name: '救火式服务', sev: 'medium', chain: '只处理客户投诉不分析根因 -> 同样问题反复出现 -> 客服资源被耗尽', fix: '应用反馈回路: 每次投诉后追问根因并推动修复' },
+  ],
+  '增长': [
+    { name: '追逐虚荣指标', sev: 'high', chain: '聚焦下载/注册/DAU等表面指标 -> 忽视留存和付费 -> 烧钱无产出', fix: '应用事后验尸: 追问"这个指标提升真的代表用户价值增加吗"' },
+    { name: '过早扩张', sev: 'critical', chain: 'PMF尚未验证就大规模买量 -> 用户来了就流失 -> 资金烧尽', fix: '应用安全边际: 留存率>X且口碑>Y才能开启增长引擎' },
+    { name: '忽视有机增长', sev: 'medium', chain: '过度依赖付费渠道 -> 忽视产品自传播 -> 买量成本持续上升直到不可持续', fix: '应用复利效应: 投资于能自我强化的增长引擎' },
+  ],
+  '安全': [
+    { name: '安全审查成为瓶颈', sev: 'high', chain: '安全审查流程过重 -> 发版节奏被拖慢 -> 业务方绕过安全流程', fix: '应用风险分层: 高风险变更深度审查, 低风险变更快速通道' },
+    { name: '忽视新型攻击面', sev: 'critical', chain: '只防范已知攻击 -> 新技术带来新攻击面 -> 漏洞被利用造成重大损失', fix: '应用逆向思考: 定期从攻击者视角审视系统' },
+  ],
+  '红队': [
+    { name: '只测试已知漏洞', sev: 'high', chain: '围绕已知漏洞类型测试 -> 新型攻击手法被忽略 -> 系统存在隐蔽漏洞', fix: '应用逆向思考: 从"如果我是攻击者会怎么做"重新规划TEST CASES' },
+    { name: '修复建议过于理想化', sev: 'medium', chain: '建议完美修复方案 -> 实施成本过高 -> 团队选择忽略 -> 漏洞依然存在', fix: '应用实用主义: 分级建议: 立即修/下次修/监控' },
+  ],
+  '监控': [
+    { name: '告警疲劳', sev: 'high', chain: '阈值设置过低 -> 大量无关告警 -> 真正重要的告警被忽略', fix: '应用基础概率: 按事件的历史基线设置动态阈值' },
+    { name: '忽视弱信号', sev: 'critical', chain: '只关注触发阈值的明显异常 -> 缓慢的趋势漂移被忽略 -> 系统逐渐偏离安全状态', fix: '应用反馈回路: 不仅看阈值, 看长期趋势' },
+  ],
+  '技术总监': [
+    { name: '技术战略与业务脱节', sev: 'critical', chain: '追求技术先进性 -> 与技术团队讨论技术 -> 忽视业务能否变现', fix: '应用二阶思考: 技术领先但业务死掉的概率远高于反过来的情况' },
+    { name: '团队结构失衡', sev: 'high', chain: '按技术栈划分团队 -> 跨栈任务需要多团队协调 -> 交付周期爆炸', fix: '应用康威定律: 按交付单元组织团队' },
+  ],
+  '社区': [
+    { name: '社区治理过严', sev: 'high', chain: '过度控制贡献标准 -> 潜在贡献者被劝退 -> 社区活跃度持续下降', fix: '应用可选性: 维护宽松的入门门槛, 严格的核心审查' },
+    { name: '核心贡献者倦怠', sev: 'critical', chain: '审查维护工作压在少数人身上 -> 持续过载 -> 关键人物退出', fix: '应用冗余备份: 每个核心模块至少2个维护者' },
+  ],
+};
+
+/** 从角色名和决策类型推导通用反模式 */
+function deriveGenericAntiPatterns(
+  roleName: string, 
+  decisions: DecisionType[], 
+  matchedFrameworks: MatchedFramework[],
+): AntiPattern[] {
+  const lowerRole = roleName.toLowerCase();
+  const antiPatterns: AntiPattern[] = [];
+
+  // 匹配角色关键词
+  for (const [keyword, patterns] of Object.entries(ROLE_ANTI_PATTERNS)) {
+    if (lowerRole.includes(keyword.toLowerCase())) {
+      for (let i = 0; i < patterns.length; i++) {
+        const p = patterns[i]!;
+        antiPatterns.push({
+          id: `anti_${roleName.replace(/[^a-zA-Z0-9\u4e00-\u9fff]/g, '_')}_generic_${i}`,
+          name: p.name,
+          causalChain: `${roleName}: ${p.chain}`,
+          severity: p.sev,
+          linkedFrameworkId: matchedFrameworks.length > 0 
+            ? matchedFrameworks[0]!.framework.id 
+            : 'role_generic',
+          remediation: p.fix,
+        });
+      }
+      break; // 匹配到第一个关键词后就停止
+    }
+  }
+
+  // 如果没有角色匹配，从失败模式通用词汇反推
+  if (antiPatterns.length === 0) {
+    const genericAnti = [
+      { name: '忽视核心约束', sev: 'high' as const, chain: '在决策过程中忽略关键约束条件 -> 做出的决策在现实中无法执行', fix: '每个决策前列出3个核心约束' },
+      { name: '过度简化复杂问题', sev: 'high' as const, chain: '将多维问题简化为单维度判断 -> 忽视关键变量 -> 决策系统性偏差', fix: '应用二阶思考: 追问"这个方案的第二层后果是什么"' },
+    ];
+    genericAnti.forEach((p, i) => {
+      antiPatterns.push({
+        id: `anti_${roleName.replace(/[^a-zA-Z0-9\u4e00-\u9fff]/g, '_')}_generic_${i}`,
+        name: p.name,
+        causalChain: `${roleName}: ${p.chain}`,
+        severity: p.sev,
+        linkedFrameworkId: matchedFrameworks.length > 0 
+          ? matchedFrameworks[0]!.framework.id 
+          : 'generic',
+        remediation: p.fix,
+      });
+    });
+  }
+
+  return antiPatterns;
+}
+
+/**
+ * 从决策类型和已匹配框架推导反模式 (双通道)
+ *
+ * 通道1: relatedFailureModes -> 精准反模式 (原有逻辑)
+ * 通道2: 角色关键词 -> 通用反模式 (QA-07 修复点B)
+ */
+export function deriveAntiPatterns(
+  decisions: DecisionType[],
+  matchedFrameworks: MatchedFramework[],
+  roleName?: string,
+): AntiPattern[] {
+  const patterns: AntiPattern[] = [];
+
+  // 通道1: 从决策类型的失败模式推导
+  for (const decision of decisions) {
+    for (const failureMode of decision.relatedFailureModes) {
+      const matchingFramework = matchedFrameworks.find(mf => mf.decisionTypeId === decision.id);
+
+      patterns.push({
+        id: `anti_${decision.id}_${patterns.length + 1}`,
+        name: failureMode,
+        causalChain: `在${decision.name}场景中, 决策者${failureMode}, 导致${decision.description}失误, 最终造成可避免的损失.`,
+        severity: decision.severity,
+        linkedFrameworkId: matchingFramework?.framework.id || 'unknown',
+        remediation: matchingFramework
+          ? `应用${matchingFramework.framework.name}思维: ${matchingFramework.framework.coreInsight.substring(0, 50)}`
+          : '需要补充对应心智模型',
+      });
+    }
+  }
+
+  // 通道2: 如果通道1产出不足 (<2), 从角色名推导通用反模式
+  let withFailures = patterns;
+
+  // 按 severity 去重
+  const severityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+  const seen = new Set<string>();
+  const unique = withFailures.filter(p => {
+    const key = p.name.substring(0, 10);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  if (unique.length < 2 && roleName) {
+    const generics = deriveGenericAntiPatterns(roleName, decisions, matchedFrameworks);
+    for (const g of generics) {
+      const key = g.name.substring(0, 10);
+      if (!seen.has(key)) {
+        seen.add(key);
+        unique.push(g);
+      }
+    }
+  }
+
+  return unique.sort((a, b) => (severityOrder[a.severity] ?? 99) - (severityOrder[b.severity] ?? 99)).slice(0, 5);
+}

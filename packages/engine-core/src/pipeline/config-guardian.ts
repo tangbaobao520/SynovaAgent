@@ -1,0 +1,567 @@
+/**
+ * harness/config-guardian.ts — 用户修改配置的风险分析引擎
+ *
+ * 职责：在用户修改协作模式或 Agent 配置之前，分析变更影响和风险等级。
+ *
+ * 核心原则：
+ *   - 硬编码影响矩阵，不调 LLM（确定性、可测试、零延迟）
+ *   - 只读分析，不执行任何写操作
+ *   - 返回结构化风险报告，供前端 ChangeConsequenceModal 展示
+ *
+ * @packageDocumentation
+ */
+
+import type {
+  CollaborationModeBlue,
+  CollaborationMode,
+  GapDivisionOfLabor,
+  GapInformationFlow,
+  GapAuthorityGovernance,
+  GapTrustIncentive,
+  GapKnowledgeSharing,
+  GapExternalInterface,
+  SafetyBaseline,
+} from '../types';
+
+// ====================================================================
+// 类型定义
+// ====================================================================
+
+export type GapDimension =
+  | 'division_of_labor'
+  | 'information_flow'
+  | 'authority_governance'
+  | 'trust_incentive'
+  | 'knowledge_sharing'
+  | 'external_interface';
+
+export const GAP_LABELS: Record<GapDimension, string> = {
+  division_of_labor: '分工方式',
+  information_flow: '信息流',
+  authority_governance: '权限治理',
+  trust_incentive: '信任与激励',
+  knowledge_sharing: '知识共享',
+  external_interface: '外部接口',
+};
+
+export interface GapDiffResult {
+  gap: GapDimension;
+  label: string;
+  fromValue: string;
+  toValue: string;
+  fromDetail: string;
+  toDetail: string;
+  impact: 'info' | 'warning' | 'critical';
+  summary: string;
+}
+
+export interface ModeSwitchRiskAssessment {
+  overall: 'info' | 'warning' | 'critical';
+  teamSizeIssues: string[];
+  gapChanges: GapDiffResult[];
+  decisionSpeedImpact: string;
+  safetyBaselineChanges: string[];
+}
+
+export interface EditRisk {
+  file: string;
+  section: string;
+  severity: 'info' | 'warning' | 'critical';
+  message: string;
+  suggestion: string;
+}
+
+export interface IronRuleCheck {
+  intact: boolean;
+  missingRules: string[];
+  severity: 'critical' | 'warning' | 'info';
+}
+
+// ====================================================================
+// 团队规模阈值（取自 phase-c-select-mode.ts）
+// ====================================================================
+
+export const MODE_SIZE_THRESHOLDS: Record<string, { minTotal: number; minL2: number; maxTotal?: number }> = {
+  iron_captain: { minTotal: 1, minL2: 1, maxTotal: 5 },
+  democratic_council: { minTotal: 4, minL2: 3 },
+  loose_federation: { minTotal: 6, minL2: 2 },
+  cross_check_balance: { minTotal: 3, minL2: 2 },
+  bytedance_flat: { minTotal: 10, minL2: 5 },
+  haier_ren_dan_he_yi: { minTotal: 8, minL2: 3 },
+};
+
+// ====================================================================
+// 1. 模式差异对比
+// ====================================================================
+
+export function diffCollaborationMode(
+  from: CollaborationModeBlue,
+  to: CollaborationModeBlue,
+): GapDiffResult[] {
+  const diffs: GapDiffResult[] = [];
+
+  // --- 分工方式 ---
+  diffs.push({
+    gap: 'division_of_labor',
+    label: '分工方式',
+    fromValue: modeLabel(from.divisionOfLabor.mode),
+    toValue: modeLabel(to.divisionOfLabor.mode),
+    fromDetail: buildDivisionDetail(from.divisionOfLabor),
+    toDetail: buildDivisionDetail(to.divisionOfLabor),
+    impact: divisionImpact(from.divisionOfLabor.mode, to.divisionOfLabor.mode),
+    summary: divisionSummary(from.divisionOfLabor.mode, to.divisionOfLabor.mode),
+  });
+
+  // --- 信息流 ---
+  diffs.push({
+    gap: 'information_flow',
+    label: '信息流',
+    fromValue: topoLabel(from.informationFlow.topology),
+    toValue: topoLabel(to.informationFlow.topology),
+    fromDetail: `${from.informationFlow.topology} / ${syncLabel(from.informationFlow.syncMode)}`,
+    toDetail: `${to.informationFlow.topology} / ${syncLabel(to.informationFlow.syncMode)}`,
+    impact: topoImpact(from.informationFlow.topology, to.informationFlow.topology),
+    summary: topoSummary(from.informationFlow.topology, to.informationFlow.topology),
+  });
+
+  // --- 权限治理（冲突解决 + 权力分布 合并）---
+  diffs.push({
+    gap: 'authority_governance',
+    label: '权限治理',
+    fromValue: `${conflictLabel(from.authorityGovernance.strategy)} / ${authLabel(from.authorityGovernance.authority)}`,
+    toValue: `${conflictLabel(to.authorityGovernance.strategy)} / ${authLabel(to.authorityGovernance.authority)}`,
+    fromDetail: `超时 ${from.authorityGovernance.deadlockTimeoutSeconds}s, 否决权: ${from.authorityGovernance.hasVeto ? '有' : '无'}`,
+    toDetail: `超时 ${to.authorityGovernance.deadlockTimeoutSeconds}s, 否决权: ${to.authorityGovernance.hasVeto ? '有' : '无'}`,
+    impact: conflictImpact(from.authorityGovernance.strategy, to.authorityGovernance.strategy),
+    summary: conflictSummary(from.authorityGovernance.strategy, to.authorityGovernance.strategy),
+  });
+
+  // --- 信任与激励（激励对齐 + 信任模型 合并）---
+  diffs.push({
+    gap: 'trust_incentive',
+    label: '信任与激励',
+    fromValue: `${alignLabel(from.trustIncentive.alignment)} / ${trustLabel(from.trustIncentive.initialTrust)}`,
+    toValue: `${alignLabel(to.trustIncentive.alignment)} / ${trustLabel(to.trustIncentive.initialTrust)}`,
+    fromDetail: `成功信号: ${from.trustIncentive.successSignal}, 更新: ${from.trustIncentive.updateMechanism}`,
+    toDetail: `成功信号: ${to.trustIncentive.successSignal}, 更新: ${to.trustIncentive.updateMechanism}`,
+    impact: alignImpact(from.trustIncentive.alignment, to.trustIncentive.alignment),
+    summary: alignSummary(from.trustIncentive.alignment, to.trustIncentive.alignment),
+  });
+
+  // --- 知识共享 ---
+  diffs.push({
+    gap: 'knowledge_sharing',
+    label: '知识共享',
+    fromValue: ksLabel(from.knowledgeSharing.strategy),
+    toValue: ksLabel(to.knowledgeSharing.strategy),
+    fromDetail: `同步: ${from.knowledgeSharing.syncIntervalHours}h`,
+    toDetail: `同步: ${to.knowledgeSharing.syncIntervalHours}h`,
+    impact: ksImpact(from.knowledgeSharing.strategy, to.knowledgeSharing.strategy),
+    summary: ksSummary(from.knowledgeSharing.strategy, to.knowledgeSharing.strategy),
+  });
+
+  // --- 外部接口 ---
+  diffs.push({
+    gap: 'external_interface',
+    label: '外部接口',
+    fromValue: extLabel(from.externalInterface.strategy),
+    toValue: extLabel(to.externalInterface.strategy),
+    fromDetail: extDetail(from.externalInterface),
+    toDetail: extDetail(to.externalInterface),
+    impact: extImpact(from.externalInterface.strategy, to.externalInterface.strategy),
+    summary: extSummary(from.externalInterface.strategy, to.externalInterface.strategy),
+  });
+
+  return diffs;
+}
+
+// ====================================================================
+// 2. 模式切换风险评估
+// ====================================================================
+
+export function assessModeSwitchRisk(
+  fromMode: CollaborationMode,
+  toMode: CollaborationMode,
+  teamSize: number,
+  l2Count: number,
+): { teamSizeIssues: string[]; overall: ModeSwitchRiskAssessment['overall'] } {
+  const issues: string[] = [];
+  const threshold = MODE_SIZE_THRESHOLDS[toMode];
+
+  if (threshold) {
+    if (teamSize < threshold.minTotal) {
+      issues.push(`新模式要求团队规模 ≥ ${threshold.minTotal} 人，当前只有 ${teamSize} 人`);
+    }
+    if (l2Count < threshold.minL2) {
+      issues.push(`新模式要求至少 ${threshold.minL2} 个 L2 执行层角色，当前只有 ${l2Count} 个`);
+    }
+    if (threshold.maxTotal && teamSize > threshold.maxTotal) {
+      issues.push(`新模式更适合 ≤ ${threshold.maxTotal} 人的小团队，当前 ${teamSize} 人偏大`);
+    }
+  }
+
+  // 硬编码的交叉制衡 → 铁腕船长：安全下降
+  let overall: ModeSwitchRiskAssessment['overall'] = 'info';
+  if (
+    (fromMode === 'cross_check_balance' && toMode !== 'cross_check_balance') ||
+    (fromMode === 'cross_check_balance' && toMode === 'iron_captain')
+  ) {
+    overall = 'critical';
+    issues.push('从交叉制衡切换到其他模式将失去全员否决权和互相审核机制');
+  } else if (
+    fromMode === 'democratic_council' && toMode === 'iron_captain'
+  ) {
+    overall = 'warning';
+    issues.push('从民主议会切换到铁腕船长：决策速度提升，但失去投票制和集体讨论机制');
+  } else if (issues.length > 1) {
+    overall = 'warning';
+  }
+
+  return { teamSizeIssues: issues, overall };
+}
+
+// ====================================================================
+// 3. Agent 编辑风险验证
+// ====================================================================
+
+export function validateAgentEdit(
+  _agentId: string,
+  fileName: string,
+  oldContent: string,
+  newContent: string,
+): EditRisk[] {
+  const risks: EditRisk[] = [];
+
+  switch (fileName) {
+    case 'SOUL.md': {
+      const oldCheck = checkIronRuleIntegrity(oldContent);
+      const newCheck = checkIronRuleIntegrity(newContent);
+
+      if (!newCheck.intact) {
+        risks.push({
+          file: 'SOUL.md',
+          section: 'Synova 信息诚实铁律',
+          severity: 'critical',
+          message: `以下铁律被删除或修改：${newCheck.missingRules.join('、')}。移除这些规则可能导致 Agent 给出过度自信或不准确的回答，且无法区分已知事实、推断和猜测。`,
+          suggestion: '建议保留所有 4 条信息诚实铁律。你可以扩展内容，但不要删除现有规则。',
+        });
+      }
+
+      // 检测角色特定规则是否被大幅删减
+      const oldLineCount = oldContent.split('\n').length;
+      const newLineCount = newContent.split('\n').length;
+      if (newLineCount < oldLineCount * 0.5) {
+        risks.push({
+          file: 'SOUL.md',
+          section: '角色认知配置',
+          severity: 'warning',
+          message: `文件从 ${oldLineCount} 行缩减到 ${newLineCount} 行（删减超过 50%）。可能丢失了 OCEAN 人格配置或认知基因。`,
+          suggestion: '如果只想修改特定部分，建议使用"增量保存"模式而非全文替换。',
+        });
+      }
+      break;
+    }
+
+    case 'IDENTITY.md': {
+      const oldHasVeto = /hasVeto["']?\s*:\s*true/i.test(oldContent);
+      const newHasVeto = /hasVeto["']?\s*:\s*true/i.test(newContent);
+      const oldMaxAutonomy = oldContent.match(/maxAutonomyLevel["']?\s*:\s*"(\w+)"/)?.[1];
+      const newMaxAutonomy = newContent.match(/maxAutonomyLevel["']?\s*:\s*"(\w+)"/)?.[1];
+
+      if (oldHasVeto && !newHasVeto) {
+        risks.push({
+          file: 'IDENTITY.md',
+          section: '否决权配置',
+          severity: 'warning',
+          message: '此角色的否决权被移除。该角色原本可以否决关键决策，移除后可能降低安全检查能力。',
+          suggestion: '确认此角色不再需要否决权后再保存。',
+        });
+      }
+
+      if (oldMaxAutonomy === 'low' && newMaxAutonomy && newMaxAutonomy !== 'low') {
+        risks.push({
+          file: 'IDENTITY.md',
+          section: '自主权级别',
+          severity: 'warning',
+          message: `自主权级别从 "low" 提升到 "${newMaxAutonomy}"。该角色将获得更多自主操作权限，可能绕过人工审批。`,
+          suggestion: '仅对信任度高的角色提升自主权级别。',
+        });
+      }
+      break;
+    }
+
+    case 'TOOLS.md': {
+      const oldBanned = extractBannedTools(oldContent);
+      const newBanned = extractBannedTools(newContent);
+      const removedBans = oldBanned.filter(t => !newBanned.includes(t));
+
+      if (removedBans.length > 0) {
+        risks.push({
+          file: 'TOOLS.md',
+          section: '工具权限边界',
+          severity: 'warning',
+          message: `以下原先禁止的操作被移除了限制：${removedBans.join('、')}。Agent 将获得这些操作的执行权限。`,
+          suggestion: '确认这些权限确实需要开放后再保存。',
+        });
+      }
+      break;
+    }
+
+    case 'HEARTBEAT.md': {
+      const oldAudit = /auditLogEnabled["']?\s*:\s*true/i.test(oldContent);
+      const newAudit = /auditLogEnabled["']?\s*:\s*true/i.test(newContent);
+      if (oldAudit && !newAudit) {
+        risks.push({
+          file: 'HEARTBEAT.md',
+          section: '审计日志',
+          severity: 'info',
+          message: '审计日志被禁用。该 Agent 的操作将不再被记录，影响事后追溯能力。',
+          suggestion: '建议保持审计日志开启，除非有明确的性能或隐私需求。',
+        });
+      }
+      break;
+    }
+
+    case 'USER.md':
+      // USER.md 始终低风险 — 用户自己的文件
+      break;
+  }
+
+  return risks;
+}
+
+// ====================================================================
+// 4. 铁律完整性检查
+// ====================================================================
+
+const IRON_RULES = [
+  {
+    name: '区分已知和推断',
+    patterns: [/区分.*已知.*推断/, /confirmed.*inferred/, /基于数据.*事实/],
+  },
+  {
+    name: '不确定时坦然承认',
+    patterns: [/不确定.*坦然承认/, /不知道.*直接说/],
+  },
+  {
+    name: '摘要不可决策',
+    patterns: [/摘要.*不可.*决策/, /summary.*not.*decision/],
+  },
+  {
+    name: '不编造来源',
+    patterns: [/不编造.*来源/, /来源.*真实/, /来源.*可靠/],
+  },
+];
+
+export function checkIronRuleIntegrity(content: string): IronRuleCheck {
+  const missingRules: string[] = [];
+
+  for (const rule of IRON_RULES) {
+    const found = rule.patterns.some(p => p.test(content));
+    if (!found) {
+      missingRules.push(rule.name);
+    }
+  }
+
+  return {
+    intact: missingRules.length === 0,
+    missingRules,
+    severity: missingRules.length >= 2 ? 'critical' : missingRules.length === 1 ? 'warning' : 'info',
+  };
+}
+
+// ====================================================================
+// 标签映射（英文值 → 中文展示）
+// ====================================================================
+
+function modeLabel(m: string): string {
+  const map: Record<string, string> = {
+    fixed: '固定分工',
+    flexible: '弹性分工',
+    morphing: '动态分工',
+  };
+  return map[m] || m;
+}
+function buildDivisionDetail(g: GapDivisionOfLabor): string {
+  return `可替代: ${g.substitutable ? '是' : '否'}`;
+}
+function divisionImpact(f: string, t: string): GapDiffResult['impact'] {
+  if (f === t) return 'info';
+  if ((f === 'fixed' && t === 'morphing') || (f === 'morphing' && t === 'fixed')) return 'warning';
+  return 'warning';
+}
+function divisionSummary(f: string, t: string): string {
+  if (f === t) return '分工方式不变';
+  if (f === 'fixed' && t === 'flexible') return '从固定分工变为弹性分工——角色可互相替代，灵活度提升但责任边界模糊';
+  if (f === 'fixed' && t === 'morphing') return '从固定分工变为动态分工——各角色获得高度自治，但失去固定责任锚点';
+  if (f === 'flexible' && t === 'fixed') return '从弹性分工变为固定分工——职责边界明确，但失去灵活性';
+  return `分工方式从 ${modeLabel(f)} 变为 ${modeLabel(t)}`;
+}
+
+function topoLabel(t: string): string {
+  const map: Record<string, string> = {
+    chain: '链式',
+    star: '星型',
+    full_mesh: '全网格',
+    hierarchical: '层级式',
+  };
+  return map[t] || t;
+}
+function syncLabel(s: string): string {
+  const map: Record<string, string> = {
+    round_robin: '轮询',
+    free_form: '自由',
+    moderated: '审核',
+  };
+  return map[s] || s;
+}
+function topoImpact(f: string, t: string): GapDiffResult['impact'] {
+  if (f === t) return 'info';
+  if ((f === 'star' && t === 'full_mesh') || (f === 'full_mesh' && t === 'star')) return 'warning';
+  if ((f === 'chain' && t === 'star') || (f === 'star' && t === 'chain')) return 'warning';
+  return 'info';
+}
+function topoSummary(f: string, t: string): string {
+  if (f === t) return '信息流拓扑不变';
+  if (f === 'star' && t === 'full_mesh') return '从星型变为全网格——所有角色互见，透明度大幅提升，但信息量激增';
+  if (f === 'full_mesh' && t === 'star') return '从全网格变为星型——信息集中到中心节点，保密性增强但透明度下降';
+  if (f === 'chain' && t === 'star') return '从链式变为星型——信息不再逐跳传递，集中到中心节点统一分发';
+  return `信息流拓扑从 ${topoLabel(f)} 变为 ${topoLabel(t)}`;
+}
+
+function conflictLabel(s: string): string {
+  const map: Record<string, string> = {
+    single_decider: '单人裁决',
+    majority_vote: '多数投票',
+    consensus: '全体共识',
+    escalation: '逐级上报',
+  };
+  return map[s] || s;
+}
+function conflictImpact(f: string, t: string): GapDiffResult['impact'] {
+  if (f === t) return 'info';
+  if (f === 'single_decider' && (t === 'majority_vote' || t === 'consensus')) return 'warning';
+  if (f === 'consensus' && t === 'single_decider') return 'critical';
+  return 'info';
+}
+function conflictSummary(f: string, t: string): string {
+  if (f === t) return '冲突解决方式不变';
+  if (f === 'single_decider' && t === 'majority_vote')
+    return '从单人裁决变为多数投票——决策速度下降但多方意见被纳入，交叉验证增强';
+  if (f === 'single_decider' && t === 'consensus')
+    return '从单人裁决变为全体共识——决策需要所有人同意，速度大幅下降但质量提升';
+  if (f === 'consensus' && t === 'single_decider')
+    return '从全体共识变为单人裁决——决策速度大幅提升，但失去制衡，存在独断风险';
+  if (f === 'majority_vote' && t === 'single_decider')
+    return '从多数投票变为单人裁决——少数意见可能被忽略';
+  return `冲突解决从 ${conflictLabel(f)} 变为 ${conflictLabel(t)}`;
+}
+
+function authLabel(a: string): string {
+  const map: Record<string, string> = {
+    flat: '扁平化',
+    hierarchical: '层级制',
+    domain_based: '领域制',
+    federal: '联邦制',
+    collegial: '合议制',
+    decentralized: '去中心化',
+  };
+  return map[a] || a;
+}
+function authImpact(f: string, t: string): GapDiffResult['impact'] {
+  if (f === t) return 'info';
+  if ((f === 'hierarchical' && t === 'flat') || (f === 'flat' && t === 'hierarchical')) return 'warning';
+  if (f === 'flat' && t === 'hierarchical') return 'warning';
+  return 'info';
+}
+function authSummary(f: string, t: string): string {
+  if (f === t) return '权力分布不变';
+  if (f === 'hierarchical' && t === 'flat') return '从层级制变为扁平化——失去集中指挥链，但团队自主权提升';
+  if (f === 'flat' && t === 'hierarchical') return '从扁平化变为层级制——建立明确指挥链，但可能降低响应速度';
+  if (f === 'hierarchical' && t === 'domain_based') return '从层级制变为领域制——各角色在自己的领域获得高度自治权，但跨领域协调成本增加';
+  return `权力分布从 ${authLabel(f)} 变为 ${authLabel(t)}`;
+}
+
+function alignLabel(a: string): string {
+  const map: Record<string, string> = { reward: '奖励导向', penalty: '惩罚导向', mixed: '混合' };
+  return map[a] || a;
+}
+function alignImpact(f: string, t: string): GapDiffResult['impact'] {
+  if (f === t) return 'info';
+  return 'info';
+}
+function alignSummary(f: string, t: string): string {
+  if (f === t) return '激励对齐方式不变';
+  return `激励对齐从 ${alignLabel(f)} 变为 ${alignLabel(t)}`;
+}
+
+function trustLabel(t: string): string {
+  const map: Record<string, string> = { low: '低信任', medium: '中信任', high: '高信任' };
+  return map[t] || t;
+}
+function trustImpact(f: string, t: string): GapDiffResult['impact'] {
+  if (f === t) return 'info';
+  if ((f === 'high' && t === 'low') || (f === 'low' && t === 'high')) return 'warning';
+  return 'info';
+}
+function trustSummary(f: string, t: string): string {
+  if (f === t) return '信任模型不变';
+  if (f === 'high' && t === 'low') return '从高信任变为低信任——Agent 间协作门槛提高，需要更多验证步骤';
+  if (f === 'low' && t === 'high') return '从低信任变为高信任——协作门槛降低，效率提升但风险增加';
+  return `信任模型从 ${trustLabel(f)} 变为 ${trustLabel(t)}`;
+}
+
+function ksLabel(s: string): string {
+  const map: Record<string, string> = {
+    central_repo: '中央仓库',
+    pair_sharing: '结对共享',
+    downward_pour: '向下灌输',
+    free_for_all: '自由共享',
+  };
+  return map[s] || s;
+}
+function ksImpact(f: string, t: string): GapDiffResult['impact'] {
+  if (f === t) return 'info';
+  return 'info';
+}
+function ksSummary(f: string, t: string): string {
+  if (f === t) return '知识共享方式不变';
+  return `知识共享从 ${ksLabel(f)} 变为 ${ksLabel(t)}`;
+}
+
+function extLabel(s: string): string {
+  const map: Record<string, string> = {
+    gatekeeper: '守门人',
+    ambassador: '大使模式',
+    buffer: '缓冲模式',
+    open_door: '开放模式',
+  };
+  return map[s] || s;
+}
+function extDetail(g: GapExternalInterface): string {
+  return `绕过协议: ${g.canBypassProtocol ? '允许' : '禁止'}, 审计: ${g.auditLogEnabled ? '开启' : '关闭'}`;
+}
+function extImpact(f: string, t: string): GapDiffResult['impact'] {
+  if (f === t) return 'info';
+  if ((f === 'gatekeeper' && t === 'open_door') || (f === 'buffer' && t === 'open_door')) return 'critical';
+  if (f === 'open_door' && (t === 'gatekeeper' || t === 'buffer')) return 'warning';
+  return 'info';
+}
+function extSummary(f: string, t: string): string {
+  if (f === t) return '外部接口策略不变';
+  if ((f === 'gatekeeper' || f === 'buffer') && t === 'open_door')
+    return `从 ${extLabel(f)} 变为开放模式——外部访问限制大幅放宽，存在信息安全风险`;
+  if (f === 'open_door' && (t === 'gatekeeper' || t === 'buffer'))
+    return `从开放模式变为 ${extLabel(t)}——外部访问收紧，安全性提升但对外沟通效率下降`;
+  return `外部接口策略从 ${extLabel(f)} 变为 ${extLabel(t)}`;
+}
+
+// ====================================================================
+// 辅助
+// ====================================================================
+
+function extractBannedTools(content: string): string[] {
+  const match = content.match(/禁止调用[：:]\s*([^\n]+)/);
+  if (!match) return [];
+  return match[1].split(/[,，、]/).map(t => t.trim()).filter(Boolean);
+}

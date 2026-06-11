@@ -1,0 +1,431 @@
+/**
+ * diagnosis/goal-alignment.ts — 目标对齐度分析 (SOG v1.0, P1)
+ *
+ * 量化组织、团队、个人与战略目标的对齐强度。
+ * 基于 SOG Goal 节点 + ALIGNS_WITH 边 + Team/Person/Process 节点。
+ *
+ * 算法：
+ *   1. 遍历每个 Goal 节点
+ *   2. 收集所有入边和出边的 ALIGNS_WITH
+ *   3. 对每个相连实体计算 alignmentStrength 均值，按类型分组
+ *   4. 标记 alignmentType: 'conflicting' 的边为未对齐
+ *   5. 组织对齐指数 = 所有 Goal 的 overallStrength 均值
+ *
+ * 纯函数核心 + GraphStore 集成包装器。
+ * 零 LLM 调用，confidenceModel: 'deterministic'。
+ */
+
+import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
+import type { DiagnosticModule } from './module-registry';
+import { createLogger } from '../../infra/logger';
+import { getEngineContext } from '../../engine-context';
+import { createGraphStore } from './graph-store';
+import type { GraphStore } from './graph-store';
+
+const log = createLogger('engine-server/pipeline/diagnosis/goal-alignment');
+
+// ════════════════════════════════════════════════════════════════
+// Types
+// ════════════════════════════════════════════════════════════════
+
+/** An entity (Person/Team/Process/Agent) aligned with a goal. */
+export interface GoalAlignmentEntity {
+  /** Entity node ID in the SOG graph */
+  entityId: string;
+  /** SOG node type: Person, Team, Process, Agent */
+  entityType: string;
+  /** Alignment strength 0-1 */
+  strength: number;
+}
+
+/** Per-entity-type alignment summary within a single goal. */
+export interface GoalAlignmentTypeGroup {
+  /** Entity type (e.g. 'Person', 'Team', 'Process') */
+  entityType: string;
+  /** Number of aligned entities of this type */
+  count: number;
+  /** Mean alignmentStrength for entities of this type */
+  meanStrength: number;
+}
+
+/** A misaligned entity — its edge has alignmentType: 'conflicting'. */
+export interface GoalMisalignedEntity {
+  entityId: string;
+  entityType: string;
+  conflictReason: string;
+}
+
+/** Per-goal alignment analysis result. */
+export interface GoalAlignmentGoal {
+  goalId: string;
+  description: string;
+  /** Entities with non-conflicting ALIGNS_WITH edges */
+  alignedEntities: GoalAlignmentEntity[];
+  /** Entities with conflicting ALIGNS_WITH edges */
+  misalignedEntities: GoalMisalignedEntity[];
+  /** Grouped alignment statistics by entity type */
+  alignmentByType: GoalAlignmentTypeGroup[];
+  /** Mean alignmentStrength across all connected entities (0-1). Conflicting edges count as 0. */
+  overallStrength: number;
+}
+
+/** Top-level report returned by computeGoalAlignment. */
+export interface GoalAlignmentReport {
+  /** Per-goal breakdown */
+  goals: GoalAlignmentGoal[];
+  /** Mean of all Goal.overallStrength (0-1). 0 when no goals exist. */
+  organizationAlignmentIndex: number;
+  /** Human-readable interpretation in Chinese */
+  interpretation: string;
+  /** Degraded modules list (iron law 31) */
+  degradedModules?: string[];
+}
+
+// ════════════════════════════════════════════════════════════════
+// Input types (pure-function interface)
+// ════════════════════════════════════════════════════════════════
+
+/** Simplified Goal node for the pure function. */
+export interface GoalNode {
+  id: string;
+  goalType: 'mission' | 'vision' | 'okr' | 'north_star';
+  description: string;
+  progress?: number;
+}
+
+/** Simplified ALIGNS_WITH edge for the pure function. */
+export interface AlignEdge {
+  from: string;
+  to: string;
+  type: SOGEdgeType;
+  /** 0-1 alignment strength (maps to AlignsWithEdgeProps.alignmentStrength) */
+  strength?: number;
+  /** 'direct' | 'indirect' | 'conflicting' (maps to AlignsWithEdgeProps.alignmentType) */
+  alignmentType?: string;
+}
+
+// ════════════════════════════════════════════════════════════════
+// Core computation (pure function — testable with zero I/O)
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Compute goal alignment from SOG subgraph data.
+ *
+ * Pure function — accepts explicit data, performs zero I/O.
+ * This is the primary entry point for both direct callers and the GraphStore wrapper.
+ *
+ * @param goals        - Goal nodes from the ontology
+ * @param alignEdges   - ALIGNS_WITH edges (pre-filtered by caller)
+ * @param entityTypes  - Map from entity node ID to its SOGNodeType (Person/Team/Process/Agent)
+ * @returns GoalAlignmentReport with per-goal breakdown and organization alignment index
+ */
+export function computeGoalAlignment(
+  goals: GoalNode[],
+  alignEdges: AlignEdge[],
+  entityTypes: Record<string, string>,
+): GoalAlignmentReport {
+  // ── Empty graph ──
+  if (goals.length === 0) {
+    return {
+      goals: [],
+      organizationAlignmentIndex: 0,
+      interpretation:
+        '组织图谱中无 Goal 节点，无法计算目标对齐度。请先通过诊断访谈或手动配置建立组织目标。',
+    };
+  }
+
+  const goalIds = new Set(goals.map(g => g.id));
+  const goalResults: GoalAlignmentGoal[] = [];
+
+  for (const goal of goals) {
+    // Find edges connected to this goal (inbound + outbound)
+    const connectedEdges = alignEdges.filter(
+      e => e.from === goal.id || e.to === goal.id,
+    );
+
+    const alignedEntities: GoalAlignmentEntity[] = [];
+    const misalignedEntities: GoalMisalignedEntity[] = [];
+    const seenEntities = new Set<string>();
+
+    for (const edge of connectedEdges) {
+      const entityId = edge.from === goal.id ? edge.to : edge.from;
+
+      // Skip inter-goal edges (goal-to-goal is a separate concern)
+      if (goalIds.has(entityId)) continue;
+      // Skip duplicates (same entity connected via multiple edges to the same goal)
+      if (seenEntities.has(entityId)) continue;
+      seenEntities.add(entityId);
+
+      const entityType = entityTypes[entityId] ?? 'Unknown';
+      const strength = typeof edge.strength === 'number' ? edge.strength : 0.5;
+      const alignmentType = edge.alignmentType ?? 'direct';
+
+      if (alignmentType === 'conflicting') {
+        misalignedEntities.push({
+          entityId,
+          entityType,
+          conflictReason: `alignmentType=conflicting, strength=${strength.toFixed(2)}`,
+        });
+      } else {
+        alignedEntities.push({
+          entityId,
+          entityType,
+          strength,
+        });
+      }
+    }
+
+    // ── Compute alignmentByType (group by entity type, compute mean strength) ──
+    const typeBuckets = new Map<string, number[]>();
+    for (const e of alignedEntities) {
+      const bucket = typeBuckets.get(e.entityType) ?? [];
+      bucket.push(e.strength);
+      typeBuckets.set(e.entityType, bucket);
+    }
+    // Conflicting entities contribute 0 to the type bucket for mean calculation
+    for (const m of misalignedEntities) {
+      const bucket = typeBuckets.get(m.entityType) ?? [];
+      bucket.push(0);
+      typeBuckets.set(m.entityType, bucket);
+    }
+
+    const alignmentByType: GoalAlignmentTypeGroup[] = [];
+    for (const [entityType, strengths] of typeBuckets) {
+      alignmentByType.push({
+        entityType,
+        count: strengths.length,
+        meanStrength:
+          Math.round((strengths.reduce((a, b) => a + b, 0) / strengths.length) * 1000) / 1000,
+      });
+    }
+
+    // ── Overall strength for this goal ──
+    // Conflicting edges contribute 0 strength
+    const allStrengths = [
+      ...alignedEntities.map(e => e.strength),
+      ...misalignedEntities.map(() => 0),
+    ];
+    const overallStrength =
+      allStrengths.length > 0
+        ? allStrengths.reduce((a, b) => a + b, 0) / allStrengths.length
+        : 0;
+
+    goalResults.push({
+      goalId: goal.id,
+      description: goal.description,
+      alignedEntities,
+      misalignedEntities,
+      alignmentByType,
+      overallStrength: Math.round(overallStrength * 1000) / 1000,
+    });
+  }
+
+  // ── Organization alignment index = mean of all Goal.overallStrength ──
+  const orgIndex =
+    goalResults.reduce((sum, g) => sum + g.overallStrength, 0) / goalResults.length;
+
+  // ── Build interpretation ──
+  const totalMisaligned = goalResults.reduce(
+    (sum, g) => sum + g.misalignedEntities.length,
+    0,
+  );
+  const totalAligned = goalResults.reduce(
+    (sum, g) => sum + g.alignedEntities.length,
+    0,
+  );
+
+  let interpretation = `组织对齐指数 ${(orgIndex * 100).toFixed(0)}%（${goals.length} 个目标）。`;
+
+  if (orgIndex >= 0.7) {
+    interpretation += ' 目标对齐良好——多数实体与战略目标方向一致。';
+  } else if (orgIndex >= 0.4) {
+    interpretation += ' 存在中等程度的目标偏离，建议审查低对齐度的目标。';
+  } else {
+    interpretation += ' 目标对齐度偏低——组织存在显著的策略分散风险。';
+  }
+
+  if (totalMisaligned > 0) {
+    interpretation += ` ${totalMisaligned} 个实体与目标明确冲突，需优先处理。`;
+  }
+
+  if (totalAligned === 0 && totalMisaligned === 0) {
+    interpretation +=
+      ' 注意：目标节点缺少 ALIGNS_WITH 连接——图谱中目标与团队/人员之间没有建立对齐关系。';
+  }
+
+  return {
+    goals: goalResults,
+    organizationAlignmentIndex: Math.round(orgIndex * 1000) / 1000,
+    interpretation,
+  };
+}
+
+// ════════════════════════════════════════════════════════════════
+// GraphStore-integrated wrapper (follows intent-alignment pattern)
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Compute goal alignment by querying the SOG graph store.
+ *
+ * Follows the same pattern as computeIntentAlignmentFromSOG():
+ *   1. Resolve database via engine context
+ *   2. Create GraphStore
+ *   3. Query Goal nodes + ALIGNS_WITH edges + entity type resolution
+ *   4. Delegate to pure function computeGoalAlignment()
+ *
+ * Returns null when the graph store or required data is unavailable.
+ */
+function computeGoalAlignmentFromGraph(teamId: string): GoalAlignmentReport | null {
+  // ── 1. Get database + create graph store ──
+  let db: unknown;
+  try {
+    db = getEngineContext().database.getDb();
+  } catch {
+    log.debug('[goal-alignment] Database not injected — skipping SOG path');
+    return null;
+  }
+
+  let store: GraphStore;
+  try {
+    store = createGraphStore('sqlite', db);
+  } catch (err) {
+    log.warn({ err, teamId }, '[goal-alignment] Failed to create GraphStore — skipping SOG path');
+    return null;
+  }
+
+  // ── 2. Query Goal nodes ──
+  let goalNodes: Array<{ id: string; type: string; props: Record<string, unknown> }>;
+  try {
+    goalNodes = store.queryNodes(SOGNodeType.GOAL, undefined, teamId);
+  } catch (err) {
+    log.warn({ err, teamId }, '[goal-alignment] Failed to query Goal nodes');
+    return null;
+  }
+
+  if (goalNodes.length === 0) {
+    log.debug('[goal-alignment] No Goal nodes found in SOG graph');
+    return computeGoalAlignment([], [], {});
+  }
+
+  // ── 3. Convert to pure-function input types ──
+  const goals: GoalNode[] = goalNodes.map(n => ({
+    id: n.id,
+    goalType: (n.props.goalType as GoalNode['goalType']) ?? 'okr',
+    description: String(n.props.description ?? n.props.name ?? n.id),
+    progress: typeof n.props.progress === 'number' ? n.props.progress : undefined,
+  }));
+
+  const goalIds = new Set(goals.map(g => g.id));
+
+  // ── 4. Query ALIGNS_WITH edges ──
+  let alignEdgesRaw: Array<{
+    id: string; type: string; from: string; to: string; weight: number;
+    props: Record<string, unknown>;
+  }>;
+  try {
+    alignEdgesRaw = store.queryEdges(SOGEdgeType.ALIGNS_WITH, undefined, undefined, teamId);
+  } catch (err) {
+    log.warn({ err, teamId }, '[goal-alignment] Failed to query ALIGNS_WITH edges');
+    return null;
+  }
+
+  const alignEdges: AlignEdge[] = [];
+  const entityIdsToResolve = new Set<string>();
+
+  for (const e of alignEdgesRaw) {
+    alignEdges.push({
+      from: e.from,
+      to: e.to,
+      type: SOGEdgeType.ALIGNS_WITH,
+      strength: typeof e.props.alignmentStrength === 'number'
+        ? e.props.alignmentStrength
+        : 0.5,
+      alignmentType: typeof e.props.alignmentType === 'string'
+        ? e.props.alignmentType
+        : 'direct',
+    });
+
+    // Collect non-Goal entity IDs for type resolution
+    if (!goalIds.has(e.from)) entityIdsToResolve.add(e.from);
+    if (!goalIds.has(e.to)) entityIdsToResolve.add(e.to);
+  }
+
+  // ── 5. Resolve entity types (lazy, with cache) ──
+  const entityTypes: Record<string, string> = {};
+  const nodeTypeCache = new Map<string, string | null>();
+
+  for (const entityId of entityIdsToResolve) {
+    if (nodeTypeCache.has(entityId)) {
+      const t = nodeTypeCache.get(entityId);
+      if (t) entityTypes[entityId] = t;
+      continue;
+    }
+    try {
+      const node = store.getNode(entityId, teamId);
+      if (node) {
+        nodeTypeCache.set(entityId, node.type);
+        entityTypes[entityId] = node.type;
+      } else {
+        nodeTypeCache.set(entityId, null);
+      }
+    } catch {
+      nodeTypeCache.set(entityId, null);
+    }
+  }
+
+  // ── 6. Delegate to pure function ──
+  return computeGoalAlignment(goals, alignEdges, entityTypes);
+}
+
+// ════════════════════════════════════════════════════════════════
+// DiagnosticModule-compatible compute (iron law 31: degraded signal)
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Module compute function — DiagnosticModule-compatible.
+ *
+ * PRIMARY: GraphStore-based (SOG Goal nodes + ALIGNS_WITH edges).
+ * FALLBACK: Returns an empty report with interpretation guidance.
+ *
+ * Iron law 31: Degraded signal propagated via degradedModules[].
+ */
+async function goalAlignmentCompute(teamId: string): Promise<GoalAlignmentReport> {
+  const degradedModules: string[] = [];
+
+  // ── PRIMARY: SOG graph-based alignment ──
+  try {
+    const sogResult = computeGoalAlignmentFromGraph(teamId);
+    if (sogResult !== null) {
+      return sogResult;
+    }
+  } catch (err) {
+    log.warn({ err, teamId }, '[goal-alignment] Graph-based computation failed');
+    degradedModules.push('goal-alignment:sog');
+  }
+
+  // ── FALLBACK: empty report ──
+  log.warn({ teamId, degradedModules }, '[goal-alignment] No SOG data available — returning empty report');
+  return {
+    goals: [],
+    organizationAlignmentIndex: 0,
+    interpretation:
+      '无法计算目标对齐度：组织图谱中无 Goal 节点或图存储不可用。请先通过诊断访谈建立组织目标。',
+    degradedModules,
+  };
+}
+
+// ════════════════════════════════════════════════════════════════
+// DiagnosticModule declaration
+// ════════════════════════════════════════════════════════════════
+
+export const goalAlignmentModule: DiagnosticModule = {
+  id: 'goal-alignment',
+  version: '1.0.0',
+  priority: 'P1',
+  requiredDataSources: {},
+  confidenceModel: 'deterministic',
+  label: '目标对齐度',
+  description: 'SOG v1.0: 基于 Goal/ALIGNS_WITH 的组织-团队-个人目标对齐量化',
+  ontologyRole: 'analyzer',
+  compute: goalAlignmentCompute,
+};

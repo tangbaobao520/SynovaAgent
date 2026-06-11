@@ -14,9 +14,9 @@ export default defineConfig({
       { find: '@synova/knowledge-ingest', replacement: path.join(packagesRoot, 'knowledge-ingest/src/index.ts') },
       { find: '@synova/engine-auth', replacement: path.join(packagesRoot, 'engine-auth/src/index.ts') },
       { find: '@synova/diagnosis-engine', replacement: path.join(packagesRoot, 'diagnosis-engine/src/index.ts') },
-      // engine-core: map src/ subpath imports to dist/ (TS source → compiled JS)
-      { find: '@synova/engine-core/src', replacement: path.resolve(__dirname, '../server/vendor/@synova/engine-core/dist') },
-      { find: '@synova/engine-core', replacement: path.resolve(__dirname, '../server/vendor/@synova/engine-core/dist/index') },
+      // engine-core: direct source imports (tsx compiles on-the-fly)
+      { find: '@synova/engine-core/src', replacement: path.join(packagesRoot, 'engine-core/src') },
+      { find: '@synova/engine-core', replacement: path.join(packagesRoot, 'engine-core/src/index.ts') },
     ],
   },
   test: {

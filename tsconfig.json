@@ -1,25 +1,32 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "commonjs",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
     "lib": ["ES2022"],
-    "strict": true,
+    "jsx": "react",
     "esModuleInterop": true,
+    "strict": true,
     "skipLibCheck": true,
     "noImplicitAny": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "declaration": true,
     "sourceMap": true,
-    "moduleResolution": "node",
     "outDir": "./dist",
     "paths": {
-      "@synova/sog-core": ["../packages/sog-core/src/index.ts"],
-      "@synova/engine-auth": ["../packages/engine-auth/src/index.ts"],
-      "@synova/engine-core": ["../server/vendor/@synova/engine-core/dist/index"],
-      "@synova/engine-core/src/*": ["../server/vendor/@synova/engine-core/dist/*"]
+      "@synova/sog-core": ["./packages/sog-core/src/index.ts"],
+      "@synova/engine-auth": ["./packages/engine-auth/src/index.ts"],
+      "@synova/engine-core": ["./packages/engine-core/src/index.ts"],
+      "@synova/engine-core/src/*": ["./packages/engine-core/src/*"],
+      "@synova/logger": ["./packages/logger/src/index.ts"],
+      "@synova/error-types": ["./packages/error-types/src/index.ts"],
+      "@synova/connector-registry": ["./packages/connector-registry/src/index.ts"],
+      "@synova/extension-registry": ["./packages/extension-registry/src/index.ts"],
+      "@synova/knowledge-ingest": ["./packages/knowledge-ingest/src/index.ts"],
+      "@synova/diagnosis-engine": ["./packages/diagnosis-engine/src/index.ts"]
     }
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": ["node_modules", "dist", "tests"]
 }

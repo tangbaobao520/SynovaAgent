@@ -1,0 +1,196 @@
+// 三态熔断器 — 保护 LLM 调用
+// 位置: E:\scenario-forge-v2\src\protocol-engine\circuit-breaker.ts
+// Phase B
+//
+// 状态机:
+//   CLOSED ──[failures≥5 in 60s]──→ OPEN (30s)
+//   OPEN   ──[timeout 30s]────────→ HALF_OPEN
+//   HALF_OPEN ──[3 consecutive success]→ CLOSED
+//   HALF_OPEN ──[any failure]──────────→ OPEN
+//
+// 重要：规则引擎异常不触发熔断（独立错误计数器+告警）
+//       仅保护 LLM 调用等外部依赖
+
+import type { CircuitState, CircuitBreakerConfig, CircuitBreakerState } from './types';
+
+const DEFAULT_CONFIG: CircuitBreakerConfig = {
+  failureThreshold: 5,
+  windowMs: 60_000,
+  openTimeoutMs: 30_000,
+  successThreshold: 3,
+  halfOpenMaxRequests: 1,
+};
+
+export class CircuitBreaker {
+  private config: CircuitBreakerConfig;
+  private state: CircuitBreakerState;
+  private failureTimestamps: number[] = [];
+  private onStateChange?: (from: CircuitState, to: CircuitState) => void;
+  private _onTrip?: () => void;
+
+  constructor(config?: Partial<CircuitBreakerConfig>) {
+    this.config = { ...DEFAULT_CONFIG, ...config };
+    this.state = {
+      state: 'CLOSED',
+      failures: 0,
+      lastFailureTime: 0,
+      consecutiveSuccesses: 0,
+      halfOpenRequests: 0,
+      openedAt: null,
+    };
+  }
+
+  /** 注册状态变化回调 */
+  onChange(fn: (from: CircuitState, to: CircuitState) => void): void {
+    this.onStateChange = fn;
+  }
+
+  /** 注册熔断触发回调 */
+  onTrip(fn: () => void): void {
+    this._onTrip = fn;
+  }
+
+  /**
+   * 检查请求是否允许通过
+   * @returns true=允许通过, false=拒绝（应走降级路径）
+   */
+  allowRequest(): boolean {
+    this.pruneFailures();
+
+    switch (this.state.state) {
+      case 'CLOSED':
+        return true;
+
+      case 'OPEN': {
+        const elapsed = Date.now() - (this.state.openedAt || 0);
+        if (elapsed >= this.config.openTimeoutMs) {
+          this.transitionTo('HALF_OPEN');
+          return this.allowHalfOpenRequest();
+        }
+        return false;
+      }
+
+      case 'HALF_OPEN':
+        return this.allowHalfOpenRequest();
+
+      default:
+        return true;
+    }
+  }
+
+  /** 记录成功 */
+  recordSuccess(): void {
+    this.pruneFailures();
+
+    if (this.state.state === 'CLOSED') {
+      // CLOSED 状态成功：重置计数
+      // 不重置——等滑动窗口自然过期
+    }
+
+    if (this.state.state === 'HALF_OPEN') {
+      this.state.consecutiveSuccesses++;
+      if (this.state.consecutiveSuccesses >= this.config.successThreshold) {
+        this.transitionTo('CLOSED');
+      }
+    }
+  }
+
+  /** 记录失败 */
+  recordFailure(): void {
+    const now = Date.now();
+    this.failureTimestamps.push(now);
+    this.state.failures++;
+    this.state.lastFailureTime = now;
+
+    this.pruneFailures();
+
+    if (this.state.state === 'CLOSED' && this.failureTimestamps.length >= this.config.failureThreshold) {
+      this.transitionTo('OPEN');
+    }
+
+    if (this.state.state === 'HALF_OPEN') {
+      // 半开状态下任何失败都回到 OPEN
+      this.state.halfOpenRequests = 0;
+      this.transitionTo('OPEN');
+    }
+  }
+
+  /** 当前状态 */
+  get currentState(): CircuitState {
+    return this.state.state;
+  }
+
+  /** 统计信息 */
+  get stats() {
+    return {
+      state: this.state.state,
+      failures: this.state.failures,
+      failureCount: this.failureTimestamps.length,
+      consecutiveSuccesses: this.state.consecutiveSuccesses,
+      openedAt: this.state.openedAt,
+      openDuration: this.state.openedAt ? Date.now() - this.state.openedAt : 0,
+    };
+  }
+
+  /** 重置熔断器 */
+  reset(): void {
+    this.state = {
+      state: 'CLOSED',
+      failures: 0,
+      lastFailureTime: 0,
+      consecutiveSuccesses: 0,
+      halfOpenRequests: 0,
+      openedAt: null,
+    };
+    this.failureTimestamps = [];
+  }
+
+  // ============================================================
+  // 内部
+  // ============================================================
+
+  private transitionTo(newState: CircuitState): void {
+    const oldState = this.state.state;
+    if (oldState === newState) return;
+
+    this.state.state = newState;
+
+    if (newState === 'OPEN') {
+      this.state.openedAt = Date.now();
+      this.state.halfOpenRequests = 0;
+      this._onTrip?.();
+    }
+
+    if (newState === 'HALF_OPEN') {
+      this.state.consecutiveSuccesses = 0;
+      this.state.halfOpenRequests = 0;
+      this.state.openedAt = null;
+    }
+
+    if (newState === 'CLOSED') {
+      this.state.failures = 0;
+      this.state.consecutiveSuccesses = 0;
+      this.state.halfOpenRequests = 0;
+      this.state.openedAt = null;
+      this.failureTimestamps = [];
+    }
+
+    this.onStateChange?.(oldState, newState);
+  }
+
+  private allowHalfOpenRequest(): boolean {
+    if (this.state.halfOpenRequests < this.config.halfOpenMaxRequests) {
+      this.state.halfOpenRequests++;
+      return true;
+    }
+    return false;
+  }
+
+  /** 清理过期的失败记录（滑动窗口外） */
+  private pruneFailures(): void {
+    const cutoff = Date.now() - this.config.windowMs;
+    const before = this.failureTimestamps.length;
+    this.failureTimestamps = this.failureTimestamps.filter(t => t > cutoff);
+    this.state.failures = this.failureTimestamps.length;
+  }
+}

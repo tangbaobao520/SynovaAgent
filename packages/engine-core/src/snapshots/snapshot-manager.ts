@@ -1,0 +1,427 @@
+/**
+ * harness/snapshot-manager.ts — 配置快照与回滚管理器
+ *
+ * 在用户执行破坏性修改之前自动保存当前状态，
+ * 支持修改后 30s 内一键回滚，或从快照历史中手动恢复。
+ *
+ * V3: SQLite 持久化 → harness_snapshots 表，重启不丢失。
+ * SQLite 不可用时降级为内存 Map + console.warn。
+ *
+ * @packageDocumentation
+ */
+
+import type { CollaborationModeBlue } from '../types';
+import {
+  saveSnapshotDB,
+  loadSnapshotsDB,
+  deleteSnapshotDB,
+} from '../storage';
+
+// ====================================================================
+// 类型
+// ====================================================================
+
+export interface Snapshot {
+  snapshotId: string;
+  teamId: string;
+  createdAt: string;
+  reason: string;
+  /** 模式切换时保存完整协议 */
+  protocol?: CollaborationModeBlue;
+  /** Agent 文件编辑时保存文件内容: roleSlug → fileName → content */
+  agentFiles?: Record<string, Record<string, string>>;
+  /** 上一次快照 ID，用于链表追溯 */
+  previousSnapshotId?: string;
+}
+
+export interface SnapshotSummary {
+  snapshotId: string;
+  teamId: string;
+  createdAt: string;
+  reason: string;
+  fileCount: number;
+}
+
+// ====================================================================
+// 存储（内存缓存 + SQLite 持久化）
+// ====================================================================
+
+const MAX_SNAPSHOTS_PER_TEAM = 5;
+
+const snapshots = new Map<string, Snapshot[]>();
+
+function ensureTeam(teamId: string): Snapshot[] {
+  let list = snapshots.get(teamId);
+  if (!list) {
+    list = loadSnapshotsDB(teamId);
+    snapshots.set(teamId, list);
+  }
+  return list;
+}
+
+// ====================================================================
+// 公开 API
+// ====================================================================
+
+/** 生成唯一快照 ID */
+export function generateSnapshotId(): string {
+  return `snap_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/**
+ * 保存快照。
+ * 自动限制每团队最多 5 个，超出删除最旧的。
+ * 返回 snapshotId 供后续回滚使用。
+ */
+export function saveSnapshot(
+  teamId: string,
+  reason: string,
+  protocol?: CollaborationModeBlue,
+  agentFiles?: Record<string, Record<string, string>>,
+): string {
+  const list = ensureTeam(teamId);
+
+  const snapshot: Snapshot = {
+    snapshotId: generateSnapshotId(),
+    teamId,
+    createdAt: new Date().toISOString(),
+    reason,
+    protocol: protocol ? JSON.parse(JSON.stringify(protocol)) : undefined,
+    agentFiles: agentFiles ? JSON.parse(JSON.stringify(agentFiles)) : undefined,
+    previousSnapshotId: list.length > 0 ? list[list.length - 1].snapshotId : undefined,
+  };
+
+  list.push(snapshot);
+
+  // 超出上限时删除最旧的
+  while (list.length > MAX_SNAPSHOTS_PER_TEAM) {
+    list.shift();
+  }
+
+  // SQLite 持久化
+  saveSnapshotDB(snapshot);
+  return snapshot.snapshotId;
+}
+
+/**
+ * 软回滚：只读返回快照数据，不删除历史。
+ * GAP-5 新增——保留完整快照链，允许"回滚后撤销"。
+ * @param snapshotId 指定快照 ID，不传则恢复最近一次
+ * @returns 恢复的快照，或 null（无可用快照）
+ */
+export function restoreSnapshotSoft(
+  teamId: string,
+  snapshotId?: string,
+): Snapshot | null {
+  const list = snapshots.get(teamId);
+  if (!list || list.length === 0) return null;
+
+  if (snapshotId) {
+    return list.find(s => s.snapshotId === snapshotId) ?? null;
+  }
+  return list[list.length - 1] ?? null;
+}
+
+/**
+ * 硬回滚：删除回滚点及其之后的所有快照。
+ * 保留向后兼容——需显式调用，不建议新代码使用。
+ * @param snapshotId 指定快照 ID，不传则恢复最近一次
+ * @returns 恢复的快照，或 null（无可用快照）
+ */
+export function restoreSnapshotHard(
+  teamId: string,
+  snapshotId?: string,
+): Snapshot | null {
+  const list = snapshots.get(teamId);
+  if (!list || list.length === 0) return null;
+
+  let snapshot: Snapshot | undefined;
+
+  if (snapshotId) {
+    snapshot = list.find(s => s.snapshotId === snapshotId);
+  } else {
+    snapshot = list[list.length - 1];
+  }
+
+  if (!snapshot) return null;
+
+  const idx = list.indexOf(snapshot);
+  if (idx >= 0) {
+    const removed = list.splice(idx);
+    for (const s of removed) {
+      deleteSnapshotDB(teamId, s.snapshotId);
+    }
+  }
+
+  return snapshot;
+}
+
+/**
+ * 默认回滚（软回滚）。
+ * @deprecated 直接使用 restoreSnapshotSoft 或 restoreSnapshotHard。
+ */
+export const restoreSnapshot = restoreSnapshotSoft;
+
+/**
+ * 列出所有可用快照（不含文件内容，仅元数据）。
+ */
+export function listSnapshots(teamId: string): SnapshotSummary[] {
+  const list = snapshots.get(teamId);
+  if (!list) return [];
+
+  return list.map(s => ({
+    snapshotId: s.snapshotId,
+    teamId: s.teamId,
+    createdAt: s.createdAt,
+    reason: s.reason,
+    fileCount: s.agentFiles ? Object.values(s.agentFiles).reduce((sum, f) => sum + Object.keys(f).length, 0) : 0,
+  }));
+}
+
+/**
+ * 获取指定快照的完整内容（用于恢复时读取）。
+ */
+export function getSnapshot(teamId: string, snapshotId: string): Snapshot | undefined {
+  const list = snapshots.get(teamId);
+  if (!list) return undefined;
+  return list.find(s => s.snapshotId === snapshotId);
+}
+
+/**
+ * 获取最近一次快照。
+ */
+export function getLatestSnapshot(teamId: string): Snapshot | undefined {
+  const list = snapshots.get(teamId);
+  if (!list || list.length === 0) return undefined;
+  return list[list.length - 1];
+}
+
+/**
+ * 删除指定快照。
+ */
+export function deleteSnapshot(teamId: string, snapshotId: string): boolean {
+  const list = snapshots.get(teamId);
+  if (!list) return false;
+  const idx = list.findIndex(s => s.snapshotId === snapshotId);
+  if (idx < 0) return false;
+  list.splice(idx, 1);
+  deleteSnapshotDB(teamId, snapshotId);
+  return true;
+}
+
+/**
+ * 清空某团队所有快照。
+ */
+export function clearSnapshots(teamId: string): void {
+  snapshots.delete(teamId);
+  // 从 SQLite 中删除该团队所有快照
+  const list = loadSnapshotsDB(teamId);
+  for (const s of list) {
+    deleteSnapshotDB(teamId, s.snapshotId);
+  }
+}
+
+// ====================================================================
+// 快照 Diff（GAP-5 新增）
+// ====================================================================
+
+export interface ProtoDiffEntry {
+  path: string;
+  changeType: 'modified' | 'added' | 'removed';
+  from?: unknown;
+  to?: unknown;
+}
+
+export interface AgentFileDiffEntry {
+  roleSlug: string;
+  fileName: string;
+  changeType: 'added' | 'removed' | 'modified' | 'unchanged';
+  from?: string;
+  to?: string;
+}
+
+export interface SnapshotDiff {
+  fromId: string;
+  toId: string;
+  fromCreatedAt: string;
+  toCreatedAt: string;
+  protocolChanges: ProtoDiffEntry[];
+  agentFileChanges: AgentFileDiffEntry[];
+  summary: {
+    totalChanges: number;
+    protocolChanges: number;
+    agentFileChanges: number;
+    addedFiles: number;
+    removedFiles: number;
+    modifiedFiles: number;
+  };
+}
+
+function deepDiffProtocol(
+  protoA: Record<string, unknown> | undefined,
+  protoB: Record<string, unknown> | undefined,
+): ProtoDiffEntry[] {
+  const changes: ProtoDiffEntry[] = [];
+  const objA = protoA ?? {};
+  const objB = protoB ?? {};
+
+  const allKeys = new Set([...Object.keys(objA), ...Object.keys(objB)]);
+  for (const key of allKeys) {
+    if (!(key in objA)) {
+      changes.push({ path: key, changeType: 'added', from: undefined, to: objB[key] });
+    } else if (!(key in objB)) {
+      changes.push({ path: key, changeType: 'removed', from: objA[key], to: undefined });
+    } else {
+      walkDiff(objA[key], objB[key], key, changes);
+    }
+  }
+  return changes;
+}
+
+function walkDiff(
+  a: unknown, b: unknown, path: string, changes: ProtoDiffEntry[],
+): void {
+  if (typeof a !== typeof b) {
+    changes.push({ path, changeType: 'modified', from: a, to: b });
+    return;
+  }
+  if (a === null || b === null || typeof a !== 'object' || typeof b !== 'object') {
+    if (a !== b) {
+      changes.push({ path, changeType: 'modified', from: a, to: b });
+    }
+    return;
+  }
+  const recA = a as Record<string, unknown>;
+  const recB = b as Record<string, unknown>;
+  const keys = new Set([...Object.keys(recA), ...Object.keys(recB)]);
+  for (const k of keys) {
+    const childPath = `${path}.${k}`;
+    if (!(k in recA)) {
+      changes.push({ path: childPath, changeType: 'added', from: undefined, to: recB[k] });
+    } else if (!(k in recB)) {
+      changes.push({ path: childPath, changeType: 'removed', from: recA[k], to: undefined });
+    } else {
+      walkDiff(recA[k], recB[k], childPath, changes);
+    }
+  }
+}
+
+function diffAgentFiles(
+  filesA: Record<string, Record<string, string>> | undefined,
+  filesB: Record<string, Record<string, string>> | undefined,
+): AgentFileDiffEntry[] {
+  const result: AgentFileDiffEntry[] = [];
+  const mapA = filesA ?? {};
+  const mapB = filesB ?? {};
+
+  const allRoles = new Set([...Object.keys(mapA), ...Object.keys(mapB)]);
+  for (const role of allRoles) {
+    const roleA = mapA[role] ?? {};
+    const roleB = mapB[role] ?? {};
+    const allFiles = new Set([...Object.keys(roleA), ...Object.keys(roleB)]);
+
+    for (const file of allFiles) {
+      if (!(file in roleA)) {
+        result.push({ roleSlug: role, fileName: file, changeType: 'added', from: undefined, to: roleB[file] });
+      } else if (!(file in roleB)) {
+        result.push({ roleSlug: role, fileName: file, changeType: 'removed', from: roleA[file], to: undefined });
+      } else if (roleA[file] !== roleB[file]) {
+        result.push({ roleSlug: role, fileName: file, changeType: 'modified', from: roleA[file], to: roleB[file] });
+      } else {
+        result.push({ roleSlug: role, fileName: file, changeType: 'unchanged' });
+      }
+    }
+  }
+  return result;
+}
+
+/**
+ * 比较两个快照，返回结构化 diff。
+ * @returns SnapshotDiff 或 null（任一快照不存在）
+ */
+export function diffSnapshots(
+  teamId: string,
+  snapIdA: string,
+  snapIdB: string,
+): SnapshotDiff | null {
+  const snapA = getSnapshot(teamId, snapIdA);
+  const snapB = getSnapshot(teamId, snapIdB);
+  if (!snapA || !snapB) return null;
+
+  const protocolChanges = deepDiffProtocol(
+    snapA.protocol as unknown as Record<string, unknown> | undefined,
+    snapB.protocol as unknown as Record<string, unknown> | undefined,
+  );
+  const agentFileChanges = diffAgentFiles(snapA.agentFiles, snapB.agentFiles);
+
+  const addedFiles = agentFileChanges.filter(f => f.changeType === 'added').length;
+  const removedFiles = agentFileChanges.filter(f => f.changeType === 'removed').length;
+  const modifiedFiles = agentFileChanges.filter(f => f.changeType === 'modified').length;
+
+  return {
+    fromId: snapIdA,
+    toId: snapIdB,
+    fromCreatedAt: snapA.createdAt,
+    toCreatedAt: snapB.createdAt,
+    protocolChanges,
+    agentFileChanges,
+    summary: {
+      totalChanges: protocolChanges.length + addedFiles + removedFiles + modifiedFiles,
+      protocolChanges: protocolChanges.length,
+      agentFileChanges: addedFiles + removedFiles + modifiedFiles,
+      addedFiles,
+      removedFiles,
+      modifiedFiles,
+    },
+  };
+}
+
+/**
+ * 清理过期快照。遍历所有团队，删除超过 maxAgeDays 天的快照（默认 30 天）。
+ * 每个团队至少保留最近 1 个快照（即使已过期）。
+ * 返回清理总数。
+ */
+export function cleanupExpiredSnapshots(maxAgeDays = 30): number {
+  const cutoff = Date.now() - maxAgeDays * 24 * 60 * 60 * 1000;
+  let cleaned = 0;
+
+  for (const [teamId, list] of snapshots.entries()) {
+    // 确保从 DB 加载了最新数据
+    const fresh = loadSnapshotsDB(teamId);
+    const merged = fresh.length > 0 ? fresh : list;
+
+    // 按时间排序（最旧的在前）
+    merged.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+    // 保留至少最后一个
+    const toDelete: Snapshot[] = [];
+    for (let i = 0; i < merged.length - 1; i++) {
+      if (new Date(merged[i].createdAt).getTime() < cutoff) {
+        toDelete.push(merged[i]);
+      }
+    }
+
+    for (const snap of toDelete) {
+      deleteSnapshotDB(teamId, snap.snapshotId);
+      const idx = list.findIndex(s => s.snapshotId === snap.snapshotId);
+      if (idx >= 0) list.splice(idx, 1);
+      cleaned++;
+    }
+  }
+
+  return cleaned;
+}
+
+/**
+ * 获取当前内存中所有有快照的团队 ID 列表。
+ */
+export function getAllSnapshotTeamIds(): string[] {
+  return [...snapshots.keys()];
+}
+
+/**
+ * 重置所有快照（测试用）。
+ */
+export function resetAllSnapshots(): void {
+  snapshots.clear();
+}

@@ -1,0 +1,167 @@
+/**
+ * synthesizer.ts — 专家报告合成器 (Step 4)
+ *
+ * 对标 Hermes MoA aggregator + curator _parse_structured_summary。
+ * 6 份 ExpertReport → crossReference分析 → highContention标记 → 假设卡片。
+ */
+import type { DiagnosisLLMClient } from './diagnosis-orchestrator';
+import type { ExpertReport, SynthesisReport, DiagnosisHypothesis, DiagnosisEvidence, ExpertType } from './types';
+import { createLogger } from '../../infra/logger';
+
+const log = createLogger('diagnosis/synthesizer');
+
+export async function synthesizeExpertReports(
+  reports: ExpertReport[],
+  evidencePool: DiagnosisEvidence[],
+  llmClient: DiagnosisLLMClient,
+): Promise<SynthesisReport> {
+  const successful = reports.filter(r => r.status === 'completed');
+  const failed = reports.filter(r => r.status !== 'completed');
+
+  // ── 1. crossReference 分析 ──
+  const allRefs = successful.flatMap(r => (r.crossReferences || []).map(cr => ({ ...cr, fromExpert: r.expertType })));
+  const dimRefs = new Map<string, { experts: Set<string>; maxPriority: number }>();
+  for (const ref of allRefs) {
+    if (!dimRefs.has(ref.dimension)) dimRefs.set(ref.dimension, { experts: new Set(), maxPriority: 0 });
+    const entry = dimRefs.get(ref.dimension)!;
+    entry.experts.add(ref.fromExpert);
+    entry.experts.add(ref.expertType);
+    const prioVal = ref.priority === 'critical' ? 3 : ref.priority === 'important' ? 2 : 1;
+    entry.maxPriority = Math.max(entry.maxPriority, prioVal);
+  }
+  const highContentionDims = [...dimRefs.entries()]
+    .filter(([, v]) => v.experts.size >= 2)
+    .map(([dim]) => dim);
+
+  // ── 2. 矛盾深度对比 ──
+  const contradictions: SynthesisReport['crossExpertContradictions'] = [];
+  for (const dim of highContentionDims) {
+    const dimEvidence = evidencePool.filter(e => e.dimension === dim && !e.supersededBy);
+    const relevantReports = successful.filter(r =>
+      r.findings.some(f => f.dimension === dim) ||
+      (r.conflictingSignals || []).some(cs => cs.dimension === dim));
+
+    if (relevantReports.length >= 2) {
+      const findings = relevantReports.flatMap(r =>
+        (r.findings || []).filter(f => f.dimension === dim).map(f => ({ report: r, finding: f })));
+      if (findings.length >= 2) {
+        const sorted = findings.sort((a, b) => b.finding.confidence - a.finding.confidence);
+        contradictions.push({
+          expertA: sorted[0].report.expertType,
+          findingA: sorted[0].finding.statement.slice(0, 100),
+          expertB: sorted[1].report.expertType,
+          findingB: sorted[1].finding.statement.slice(0, 100),
+          dimension: dim,
+          resolution: dimEvidence.length > 0
+            ? `证据池含${dimEvidence.length}条相关证据, 建议人工复核`
+            : '证据不足, 无法判定',
+        });
+      }
+    }
+  }
+
+  // ── 3. conflictingSignals 直接纳入 ──
+  for (const report of successful) {
+    for (const cs of (report.conflictingSignals || [])) {
+      if (!contradictions.some(c => c.dimension === cs.dimension)) {
+        contradictions.push({
+          expertA: report.expertType,
+          findingA: cs.myFinding.slice(0, 100),
+          expertB: (cs.potentialOpposingExpert || 'strategic_analyst') as ExpertType,
+          findingB: `(专家${cs.potentialOpposingExpert || '未知'}可能持相反观点)`,
+          dimension: cs.dimension,
+          resolution: cs.reason,
+        });
+      }
+    }
+  }
+
+  // ── 4. LLM 合成假设 ──
+  const synthesisPrompt = buildSynthesisPrompt(successful, contradictions, highContentionDims);
+  const response = await llmClient.consult(synthesisPrompt, buildSynthesisUserMessage(successful, contradictions));
+
+  const hypotheses = parseHypothesesFromSynthesis(response.content);
+  const crossDimLinks = extractCrossDimensionLinks(successful);
+
+  // ── 5. 专家贡献度 ──
+  const expertContributions = successful.map(r => ({
+    expertType: r.expertType,
+    contribution: `${r.findings.length}条发现, 置信度均值${(r.findings.reduce((s,f) => s+f.confidence, 0) / Math.max(r.findings.length, 1)).toFixed(2)}`,
+    weight: r.findings.length > 0 ? Math.min(r.findings.length / 3, 1) : 0.3,
+  }));
+
+  return {
+    synthesisId: `synth_${Date.now().toString(36)}`,
+    diagnosisId: successful[0]?.diagnosisId || '',
+    hypotheses,
+    crossExpertContradictions: contradictions,
+    crossDimensionLinks: crossDimLinks,
+    expertContributions,
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+// ═══ Prompt ═══
+
+function buildSynthesisPrompt(reports: ExpertReport[], contradictions: SynthesisReport['crossExpertContradictions'], highContentionDims: string[]): string {
+  return `你是 Synova 诊断引擎的总编辑。你收到 ${reports.length} 份来自不同专家的独立分析报告。
+
+你的任务不是重复每份报告的结论——而是交叉验证、发现矛盾、建立跨维度关联。
+
+原则:
+1. 矛盾优先: 两个专家对同一维度给出不同判断 → 这是最有价值的诊断信号, 优先展示
+2. 跨维度关联: 营销专家发现定位模糊 × 组织专家发现市场部和产品部不协作 → 根因可能不是营销文案而是组织结构
+3. 不确定标注: 证据不足时标注置信度, 不编造
+
+${highContentionDims.length > 0 ? `⚠️ 以下维度存在跨专家争议, 请重点关注: ${highContentionDims.join('、')}` : ''}
+${contradictions.length > 0 ? `已检测到 ${contradictions.length} 个矛盾信号。` : ''}
+
+输出3-5条假设卡片, JSON格式:
+[{"statement":"...","confidence":0.8,"dimensions":["..."],"supportingEvidence":["ev-xxx"],"contradictionSignal":{"dimension":"...","severity":0.7},"crossDimensionLinks":[{"dimension":"...","relationship":"..."}]}]`;
+}
+
+function buildSynthesisUserMessage(reports: ExpertReport[], contradictions: SynthesisReport['crossExpertContradictions']): string {
+  const summaries = reports.map(r =>
+    `[${r.expertName}] ${r.overallAssessment.slice(0, 200)}。主要发现: ${r.findings.slice(0, 3).map(f => `${f.dimension}:${f.statement.slice(0, 80)}`).join(' | ')}。不确定: ${(r.uncertainties||[]).length}项。冲突标记: ${(r.conflictingSignals||[]).length}项。`
+  ).join('\n\n');
+
+  return `## 专家报告摘要\n${summaries}\n\n## 已检测矛盾\n${contradictions.map(c => `[${c.dimension}] ${c.expertA}:"${c.findingA}" ↔ ${c.expertB}:"${c.findingB}" → ${c.resolution}`).join('\n')}`;
+}
+
+function parseHypothesesFromSynthesis(content: string): DiagnosisHypothesis[] {
+  try {
+    const json = JSON.parse(content.trim());
+    const items = Array.isArray(json) ? json : (json.hypotheses || []);
+    return items.map((h: any, i: number) => ({
+      id: `synth-hyp-${i}`,
+      statement: h.statement || '',
+      dimensions: h.dimensions || [],
+      confidence: h.confidence || 0.5,
+      supportingEvidence: h.supportingEvidence || [],
+      refutingEvidence: [],
+      status: 'active' as const,
+      generatedInPhase: 2,
+      contradictionSignal: h.contradictionSignal,
+      crossDimensionLinks: h.crossDimensionLinks,
+    }));
+  } catch {
+    const match = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (match) {
+      try { return parseHypothesesFromSynthesis(match[1].trim()); } catch {} /* nosec: intentional fallthrough */
+    }
+    return [];
+  }
+}
+
+function extractCrossDimensionLinks(reports: ExpertReport[]): SynthesisReport['crossDimensionLinks'] {
+  const links: SynthesisReport['crossDimensionLinks'] = [];
+  const allDims = new Set(reports.flatMap(r => r.findings.map(f => f.dimension)));
+  for (const report of reports) {
+    for (const ref of (report.crossReferences || [])) {
+      if (allDims.has(ref.dimension)) {
+        links.push({ dimension: ref.dimension, relatedDimension: ref.dimension, relationship: ref.reason, evidenceCount: 1 });
+      }
+    }
+  }
+  return links.slice(0, 10);
+}

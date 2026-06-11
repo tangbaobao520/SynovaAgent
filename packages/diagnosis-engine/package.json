@@ -8,7 +8,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@synova/engine-core": "file:../../../server/vendor/@synova/engine-core",
     "@synova/sog-core": "file:../sog-core"
   },
   "devDependencies": {

@@ -1,0 +1,261 @@
+import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
+/**
+ * evidence-manager.ts — 诊断证据池管理器
+ *
+ * 提供：
+ *   - 证据 CRUD
+ *   - 去重（相同 source + dimension 的证据合并）
+ *   - 矛盾检测（跨角色认知差异）
+ *   - 隐私标记
+ *   - 过期清理
+ *   - 来源追溯
+ */
+
+import {
+  DiagnosisEvidence,
+  ContradictionSignal,
+  EvidenceFilter,
+} from './types';
+import type { GraphStore } from './graph-store';
+
+// ====================================================================
+// EvidenceManager
+// ====================================================================
+
+export class EvidenceManager {
+  private evidence: Map<string, DiagnosisEvidence> = new Map();
+
+  private graphStore: GraphStore | null = null;
+  private ontologyEnabled = false;
+
+  /** 启用本体同步 (Phase A: 证据→三元组自动转换) */
+  enableOntology(store: GraphStore): void {
+    this.graphStore = store;
+    this.ontologyEnabled = true;
+  }
+
+  /** 添加证据（自动去重 + 可选本体同步） */
+  add(evidence: DiagnosisEvidence): this {
+    const key = this.dedupKey(evidence);
+    const existing = this.findDuplicate(key);
+    if (existing) {
+      if (evidence.confidence > existing.confidence) {
+        this.evidence.set(existing.id, { ...evidence, id: existing.id });
+      }
+      if (this.ontologyEnabled && this.graphStore && evidence.supersededBy) {
+        this.syncEvidenceToGraph(existing, true); // mark old as superseded
+      }
+      return this;
+    }
+    this.evidence.set(evidence.id, evidence);
+    if (this.ontologyEnabled && this.graphStore) {
+      this.syncEvidenceToGraph(evidence, false);
+    }
+    return this;
+  }
+
+  /** 将证据同步到本体图 */
+  private syncEvidenceToGraph(ev: DiagnosisEvidence, isSuperseded: boolean): void {
+    if (!this.graphStore) return;
+    const graph = (ev as any).orgId;
+    if (!graph) {
+      log.warn({ evidenceId: ev.id }, '[evidence-manager] 证据缺少 orgId，跳过本体图同步');
+      return;
+    }
+    // Evidence → Event 节点
+    const nodeId = this.graphStore.createNode(SOGNodeType.EVENT, {
+      type: isSuperseded ? 'evidence_superseded' : 'evidence_collected',
+      content: ev.content.slice(0, 200),
+      confidence: ev.confidence,
+      dimension: ev.dimension,
+      source: ev.source,
+      timestamp: ev.timestamp,
+      isPrivate: ev.isPrivate,
+      evidenceId: ev.id,
+    }, graph);
+    // Dimension → PERTAINS_TO 边
+    const dimNodes = this.graphStore.queryNodes(SOGNodeType.TEAM, { name: ev.dimension }, graph);
+    if (dimNodes.length === 0) {
+      this.graphStore.createNode(SOGNodeType.TEAM, { name: ev.dimension, type: 'dimension' }, graph);
+    }
+    // Superseded: mark old evidence as superseded
+    if (isSuperseded && ev.supersededBy) {
+      this.graphStore.createEdge(SOGEdgeType.CORRESPONDS_TO, nodeId, ev.supersededBy, 0.3, { type: 'superseded' }, graph);
+      // Mark the superseding relationship
+      this.graphStore.createEdge(SOGEdgeType.CORRESPONDS_TO, ev.supersededBy, nodeId, 0.8, { type: 'supersedes' }, graph);
+    }
+  }
+
+  /** 批量添加 */
+  addAll(evidenceList: DiagnosisEvidence[]): this {
+    for (const e of evidenceList) this.add(e);
+    return this;
+  }
+
+  /** 按 ID 获取 */
+  getById(id: string): DiagnosisEvidence | null {
+    return this.evidence.get(id) ?? null;
+  }
+
+  /** 查询 */
+  query(filter: EvidenceFilter = {}): DiagnosisEvidence[] {
+    let results = [...this.evidence.values()];
+
+    if (filter.dimension) {
+      results = results.filter(e => e.dimension === filter.dimension);
+    }
+    if (filter.phase !== undefined) {
+      results = results.filter(e => e.phase === filter.phase);
+    }
+    if (filter.source) {
+      results = results.filter(e => e.source === filter.source);
+    }
+    if (filter.minConfidence !== undefined) {
+      const minConf = filter.minConfidence;
+      results = results.filter(e => e.confidence >= minConf);
+    }
+    if (filter.isPrivate !== undefined) {
+      results = results.filter(e => e.isPrivate === filter.isPrivate);
+    }
+
+    return results;
+  }
+
+  /** 矛盾检测：跨角色/来源的认知差异 */
+  detectContradictions(): ContradictionSignal[] {
+    const contradictions: ContradictionSignal[] = [];
+    const byDim = new Map<string, DiagnosisEvidence[]>();
+
+    for (const e of this.evidence.values()) {
+      const list = byDim.get(e.dimension) ?? [];
+      list.push(e);
+      byDim.set(e.dimension, list);
+    }
+
+    for (const [, dimEvidence] of byDim) {
+      // 模块 vs 访谈对比
+      const moduleEv = dimEvidence.filter(e => e.source === 'module');
+      const intervieweeEv = dimEvidence.filter(e => e.source === 'interviewee');
+
+      if (moduleEv.length > 0 && intervieweeEv.length > 0) {
+        const moduleAvg = moduleEv.reduce((s, e) => s + e.confidence, 0) / moduleEv.length;
+        const intervieweeAvg = intervieweeEv.reduce((s, e) => s + e.confidence, 0) / intervieweeEv.length;
+
+        if (Math.abs(moduleAvg - intervieweeAvg) > 0.3) {
+          contradictions.push({
+            evidenceA: moduleEv[0].id,
+            evidenceB: intervieweeEv[0].id,
+            dimension: dimEvidence[0].dimension,
+            severity: Math.abs(moduleAvg - intervieweeAvg),
+            description: `模块计算（avg=${moduleAvg.toFixed(2)}）与访谈反馈（avg=${intervieweeAvg.toFixed(2)}）存在显著差异`,
+          });
+        }
+      }
+
+      // 角色间对比
+      const byRole = new Map<string, DiagnosisEvidence[]>();
+      for (const e of intervieweeEv) {
+        const role = e.roleId ?? 'unknown';
+        const list = byRole.get(role) ?? [];
+        list.push(e);
+        byRole.set(role, list);
+      }
+
+      if (byRole.size >= 2) {
+        const roleEntries = [...byRole.entries()];
+        for (let i = 0; i < roleEntries.length - 1; i++) {
+          for (let j = i + 1; j < roleEntries.length; j++) {
+            const [roleA, evA] = roleEntries[i];
+            const [roleB, evB] = roleEntries[j];
+            const avgA = evA.reduce((s, e) => s + e.confidence, 0) / evA.length;
+            const avgB = evB.reduce((s, e) => s + e.confidence, 0) / evB.length;
+            if (Math.abs(avgA - avgB) > 0.35) {
+              contradictions.push({
+                evidenceA: evA[0].id,
+                evidenceB: evB[0].id,
+                dimension: dimEvidence[0].dimension,
+                severity: Math.abs(avgA - avgB),
+                description: `${roleA}（avg=${avgA.toFixed(2)}）与 ${roleB}（avg=${avgB.toFixed(2)}）在 ${dimEvidence[0].dimension} 维度认知差异显著`,
+              });
+            }
+          }
+        }
+      }
+    }
+
+    return contradictions;
+  }
+
+  /** 计算证据置信度（考虑新鲜度衰减） */
+  computeConfidence(evidence: DiagnosisEvidence): number {
+    const ageDays = (Date.now() - new Date(evidence.timestamp).getTime()) / (1000 * 60 * 60 * 24);
+    // 超过 7 天的证据置信度衰减
+    const decay = Math.max(0.5, 1 - ageDays * 0.05);
+    return Math.round(evidence.confidence * decay * 100) / 100;
+  }
+
+  /** 标记证据为私有 */
+  markPrivate(id: string, reason: string): boolean {
+    const ev = this.evidence.get(id);
+    if (!ev) return false;
+    ev.isPrivate = true;
+    ev.privateReason = reason;
+    return true;
+  }
+
+  /** 来源追溯 */
+  traceSource(id: string): { phase: number; moduleId?: string; roleId?: string } | null {
+    const ev = this.evidence.get(id);
+    if (!ev) return null;
+    return {
+      phase: ev.phase,
+      moduleId: ev.moduleId,
+      roleId: ev.roleId,
+    };
+  }
+
+  /** 过期清理 */
+  expireByAge(maxAgeMs: number): number {
+    const cutoff = Date.now() - maxAgeMs;
+    let removed = 0;
+    for (const [id, ev] of this.evidence) {
+      if (new Date(ev.timestamp).getTime() < cutoff) {
+        this.evidence.delete(id);
+        removed++;
+      }
+    }
+    return removed;
+  }
+
+  /** 证据总数 */
+  get count(): number {
+    return this.evidence.size;
+  }
+
+  /** 按维度分组统计 */
+  countByDimension(): Record<string, number> {
+    const counts: Record<string, number> = {};
+    for (const e of this.evidence.values()) {
+      counts[e.dimension] = (counts[e.dimension] ?? 0) + 1;
+    }
+    return counts;
+  }
+
+  /** 清空 */
+  clear(): void {
+    this.evidence.clear();
+  }
+
+  // ── 内部 ──
+
+  private dedupKey(e: DiagnosisEvidence): string {
+    return `${e.source}:${e.dimension}:${e.roleId ?? ''}:${e.moduleId ?? ''}`;
+  }
+
+  private findDuplicate(key: string): DiagnosisEvidence | null {
+    for (const e of this.evidence.values()) {
+      if (this.dedupKey(e) === key) return e;
+    }
+    return null;
+  }
+}

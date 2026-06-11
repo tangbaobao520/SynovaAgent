@@ -1,0 +1,37 @@
+import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
+import type { OntologyTemplate } from './index';
+
+export const generalEnterprise: OntologyTemplate = {
+  id: 'general-enterprise', name: '通用企业模板', industry: '通用', version: '1.0',
+  nodeTypes: [
+    { type: SOGNodeType.PERSON, label: '员工/成员', description: '组织内的个人', exampleProps: { name: '张三', email: 'zhang@company.com', role: 'engineer', department: 'Engineering' } },
+    { type: SOGNodeType.TEAM, label: '团队/部门', description: '组织内的团队或部门', exampleProps: { name: '产品部', memberCount: 12, function: 'product' } },
+    { type: SOGNodeType.AGENT, label: 'AI Agent', description: '内部或外部的AI代理', exampleProps: { name: 'CodeReviewBot', type: 'internal', model: 'claude-sonnet-4-6' } },
+    { type: SOGNodeType.TOOL, label: '软件工具', description: '企业使用的软件', exampleProps: { name: '飞书', category: 'communication', vendor: '字节跳动' } },
+    { type: SOGNodeType.CLIENT, label: '客户', description: '外部客户组织', exampleProps: { name: '星辰科技', industry: 'SaaS', size: '50-100' } },
+    { type: SOGNodeType.PROCESS, label: '流程', description: '业务流程', exampleProps: { name: '需求评审', type: 'approval', owner: '产品部' } },
+    { type: SOGNodeType.EVENT, label: '事件', description: '业务事件', exampleProps: { type: 'deployment', description: '生产部署v2.3.1', severity: 'normal' } },
+    { type: SOGNodeType.DOCUMENT, label: '文档', description: '企业文档', exampleProps: { name: 'Q2战略规划', type: 'prd', author: 'CEO' } },
+    { type: SOGNodeType.FINANCIAL, label: '财务实体', description: '成本/收入/Token', exampleProps: { type: 'cost_center', name: 'Engineering成本', amount: 500000, currency: 'CNY', period: '2026Q2' } },
+  ],
+  edgeTypes: [
+    { type: SOGEdgeType.INTERACTS_WITH, label: '交互', description: '人员/Agent之间的通信', fromNodes: [SOGNodeType.PERSON,SOGNodeType.AGENT], toNodes: [SOGNodeType.PERSON,SOGNodeType.AGENT] },
+    { type: SOGEdgeType.BELONGS_TO, label: '归属', description: '层级归属关系', fromNodes: [SOGNodeType.PERSON,SOGNodeType.TEAM,SOGNodeType.AGENT,SOGNodeType.TOOL,SOGNodeType.DOCUMENT], toNodes: [SOGNodeType.TEAM] },
+    { type: SOGEdgeType.OWNS, label: '负责', description: '责任归属', fromNodes: [SOGNodeType.PERSON,SOGNodeType.TEAM], toNodes: [SOGNodeType.PROCESS,SOGNodeType.CLIENT,SOGNodeType.TOOL] },
+    { type: SOGEdgeType.TRIGGERS, label: '触发', description: '事件触发关系', fromNodes: [SOGNodeType.EVENT], toNodes: [SOGNodeType.EVENT,SOGNodeType.PROCESS] },
+    { type: SOGEdgeType.AFFECTS, label: '影响', description: '财务影响', fromNodes: [SOGNodeType.EVENT], toNodes: [SOGNodeType.FINANCIAL,SOGNodeType.CLIENT] },
+    { type: SOGEdgeType.DEPENDS_ON, label: '依赖', description: '资源依赖', fromNodes: [SOGNodeType.PROCESS,SOGNodeType.TOOL,SOGNodeType.AGENT], toNodes: [SOGNodeType.TOOL,SOGNodeType.AGENT,SOGNodeType.PROCESS] },
+    { type: SOGEdgeType.CORRESPONDS_TO, label: '对应', description: '跨源映射', fromNodes: [SOGNodeType.EVENT,SOGNodeType.DOCUMENT], toNodes: [SOGNodeType.EVENT,SOGNodeType.DOCUMENT] },
+    { type: SOGEdgeType.CONSUMES, label: '消耗', description: 'Token/资源消耗', fromNodes: [SOGNodeType.AGENT,SOGNodeType.PROCESS], toNodes: [SOGNodeType.FINANCIAL] },
+  ],
+  keyMetrics: [
+    { id: 'info_flow_score', name: '信息流健康度', formula: 'INTERACTS_WITH边权重均值', unit: '0-1', threshold_warning: 0.4, threshold_critical: 0.25 },
+    { id: 'decision_speed', name: '决策速度', formula: 'Process节点完成时间P50', unit: '小时', threshold_warning: 48, threshold_critical: 96 },
+    { id: 'collab_density', name: '协作密度', formula: 'INTERACTS_WITH边数/Person数', unit: '条/人', threshold_warning: 1.5, threshold_critical: 0.8 },
+  ],
+  diagnosticRules: [
+    { id: 'rule-isolation', name: '信息孤岛检测', condition: 'Person节点度数=0', severity: 'high', recommendation: '该成员未参与任何交互，可能存在信息孤岛风险' },
+    { id: 'rule-overload', name: '协作过载', condition: 'Person节点度数>均值2σ', severity: 'medium', recommendation: '该成员协作密度过高，建议检查是否承担过多桥梁角色' },
+    { id: 'rule-silo', name: '部门墙', condition: 'Team间INTERACTS_WITH边权<0.3', severity: 'high', recommendation: '跨部门协作薄弱，建议建立跨部门同步机制' },
+  ],
+};

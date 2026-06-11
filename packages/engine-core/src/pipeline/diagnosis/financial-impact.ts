@@ -1,0 +1,432 @@
+/**
+ * diagnosis/financial-impact.ts — 财务归因引擎 (ARCH-07, SOG v1.0 适配)
+ *
+ * 将诊断指标映射为财务金额。核心原理：
+ *   1. 归因：组织健康指标变化 → 财务影响估算（按 financialType 分类）
+ *   2. 预测：诊断趋势 → 未来财务风险/机会
+ *
+ * 纯算术 + 规则，零 LLM 调用。消费 FullDiagnosis + FinancialBaseline。
+ * SOG v1.0: 区分 cost_center / revenue / cost / token_account 四种财务类型。
+ */
+
+import type {
+  FinancialImpactReport,
+  CostBreakdown,
+  FinancialBaseline,
+  FullDiagnosis,
+  FullDiagnosisV2,
+  GraphNode,
+  SubGraph,
+} from './types';
+import {
+  saveFinancialBaselineToDb,
+  loadFinancialBaselineFromDb,
+  loadAllFinancialBaselines,
+} from './persistence';
+import { SOGNodeType } from '@synova/sog-core';
+import type { FinancialProps } from '@synova/sog-core';
+
+// ====================================================================
+// Default financial baseline (conservative estimates for Chinese market)
+// ====================================================================
+
+const DEFAULT_BASELINE: FinancialBaseline = {
+  humanHourlyCost: 100,       // ¥100/hr per person (all-in cost)
+  agentHourlyCost: 20,         // ¥20/hr for agent operation
+  delayCostRate: 5000,         // ¥5,000/day for delayed delivery
+  averageErrorCost: 10000,     // ¥10,000 per critical error
+  opportunityCostRate: 3000,   // ¥3,000/day for missed opportunity
+  modelPricing: [],
+  defaultTokenPricePer1M: 15,  // ¥15 per million tokens
+};
+
+// ====================================================================
+// FinancialBaseline storage (write-through cache: in-memory Map + SQLite)
+// ====================================================================
+
+const teamBaselines = new Map<string, FinancialBaseline>();
+let _baselinesLoaded = false;
+
+function ensureBaselinesLoaded(): void {
+  if (_baselinesLoaded) return;
+  _baselinesLoaded = true;
+  const persisted = loadAllFinancialBaselines();
+  for (const [teamId, baseline] of persisted) {
+    if (!teamBaselines.has(teamId)) {
+      teamBaselines.set(teamId, baseline);
+    }
+  }
+}
+
+/** Load FinancialBaseline for a team. Returns full baseline or undefined if not configured. */
+export function loadFinancialBaseline(teamId: string): FinancialBaseline | undefined {
+  ensureBaselinesLoaded();
+  return teamBaselines.get(teamId);
+}
+
+/** Save FinancialBaseline for a team (write-through: memory + SQLite). */
+export function saveFinancialBaseline(teamId: string, baseline: FinancialBaseline): void {
+  teamBaselines.set(teamId, baseline);
+  saveFinancialBaselineToDb(teamId, baseline);
+}
+
+// ====================================================================
+// SOG Financial Node helpers (SOG v1.0)
+// ====================================================================
+
+/** Lightweight representation of a SOG Financial node for cost attribution. */
+export interface GraphFinancialNode {
+  id: string;
+  financialType: FinancialProps['financialType'];
+  amount?: number;
+  currency?: string;
+}
+
+/** Categorize Financial nodes by financialType. */
+export function categorizeByFinancialType(
+  nodes: GraphFinancialNode[],
+): Record<FinancialProps['financialType'], GraphFinancialNode[]> {
+  const buckets: Record<FinancialProps['financialType'], GraphFinancialNode[]> = {
+    cost_center: [],
+    revenue: [],
+    cost: [],
+    token_account: [],
+  };
+  for (const node of nodes) {
+    buckets[node.financialType]?.push(node);
+  }
+  return buckets;
+}
+
+/** Compute total amount for a financialType bucket. */
+export function sumFinancialAmount(
+  nodes: GraphFinancialNode[],
+): number {
+  return nodes.reduce((sum, n) => sum + (n.amount ?? 0), 0);
+}
+
+/** Recognised financialType values for validation. */
+const VALID_FINANCIAL_TYPES = new Set<string>(['cost_center', 'revenue', 'cost', 'token_account']);
+
+/**
+ * Extract Financial-type nodes from a raw SOG graph (GraphNode[] or SubGraph).
+ *
+ * Filters graph nodes for SOGNodeType.FINANCIAL, validates that each node's
+ * props contain a recognised financialType, and returns lightweight
+ * GraphFinancialNode objects suitable for cost attribution.
+ *
+ * @param graph - Raw graph nodes, a SubGraph, or null/undefined
+ * @returns Array of GraphFinancialNode (empty if no Financial nodes found)
+ */
+export function extractFinancialNodesFromGraph(
+  graph: GraphNode[] | SubGraph | null | undefined,
+): GraphFinancialNode[] {
+  if (!graph) return [];
+
+  const nodeList: GraphNode[] = Array.isArray(graph) ? graph : (graph.nodes ?? []);
+
+  const result: GraphFinancialNode[] = [];
+  for (const node of nodeList) {
+    if (node.type !== SOGNodeType.FINANCIAL) continue;
+
+    const props = node.props as Record<string, unknown>;
+    const financialType = props?.financialType as FinancialProps['financialType'] | undefined;
+
+    if (!financialType || !VALID_FINANCIAL_TYPES.has(financialType)) {
+      continue;
+    }
+
+    result.push({
+      id: node.id,
+      financialType,
+      amount: typeof props?.amount === 'number' ? props.amount : undefined,
+      currency: typeof props?.currency === 'string' ? props.currency : undefined,
+    });
+  }
+
+  return result;
+}
+
+/**
+ * Create a SOG ontology patch for ingesting a new Financial node.
+ *
+ * Produces an OntologyEvent-compatible payload with:
+ *   - One node of type 'Financial' with the given financialType and optional amount/currency
+ *   - An optional CONSUMES edge linking the Financial node from a source entity
+ *     (e.g. an Agent or Process that incurs the cost)
+ *
+ * The caller is responsible for persisting the patch via the ontology adapter.
+ *
+ * @param params.id - Unique ID for the new Financial node
+ * @param params.financialType - One of cost_center, revenue, cost, token_account
+ * @param params.amount - Optional monetary amount
+ * @param params.currency - Optional currency code (defaults to 'CNY')
+ * @param params.graph - Team/organization graph identifier
+ * @param params.linkedFromNodeId - Optional ID of the node that incurs this cost (for CONSUMES edge)
+ * @returns An object with nodes and edges arrays, ready for ontology ingestion
+ */
+export function createFinancialOntologyPatch(params: {
+  id: string;
+  financialType: FinancialProps['financialType'];
+  amount?: number;
+  currency?: string;
+  graph: string;
+  linkedFromNodeId?: string;
+}): {
+  id: string;
+  source: string;
+  timestamp: string;
+  graph: string;
+  nodes: Array<{ type: string; props: Record<string, unknown> }>;
+  edges: Array<{ type: string; from: string; to: string; weight?: number; props?: Record<string, unknown> }>;
+} {
+  const patchId = `fin-patch-${params.id}-${Date.now()}`;
+
+  const financialProps: Record<string, unknown> = {
+    financialType: params.financialType,
+  };
+  if (params.amount !== undefined) {
+    financialProps.amount = params.amount;
+  }
+  if (params.currency !== undefined) {
+    financialProps.currency = params.currency;
+  } else {
+    financialProps.currency = 'CNY';
+  }
+
+  const nodes: Array<{ type: string; props: Record<string, unknown> }> = [
+    { type: SOGNodeType.FINANCIAL, props: financialProps },
+  ];
+
+  const edges: Array<{ type: string; from: string; to: string; weight?: number; props?: Record<string, unknown> }> = [];
+  if (params.linkedFromNodeId) {
+    edges.push({
+      type: 'CONSUMES',
+      from: params.linkedFromNodeId,
+      to: params.id,
+      weight: 1,
+      props: { amount: params.amount ?? 0, period: 'P1M' },
+    });
+  }
+
+  return {
+    id: patchId,
+    source: 'financial-impact-engine',
+    timestamp: new Date().toISOString(),
+    graph: params.graph,
+    nodes,
+    edges,
+  };
+}
+
+// ====================================================================
+// Public API
+// ====================================================================
+
+/**
+ * Compute financial impact from diagnosis data.
+ *
+ * @param diagnosis - Full diagnosis output (V1 or V2)
+ * @param baseline - User-configured financial parameters (uses defaults if partial)
+ * @param financialNodes - Optional SOG Financial graph nodes (SOG v1.0) for financialType-aware attribution
+ * @returns Financial impact report
+ */
+export function computeFinancialImpact(
+  diagnosis: FullDiagnosisV2,
+  baseline?: Partial<FinancialBaseline>,
+  financialNodes?: GraphFinancialNode[],
+): FinancialImpactReport {
+  const b: FinancialBaseline = { ...DEFAULT_BASELINE, ...baseline };
+
+  const now = new Date();
+  const period = {
+    start: new Date(now.getTime() - 30 * 86400000).toISOString(),
+    end: now.toISOString(),
+  };
+
+  const breakdown: CostBreakdown[] = [];
+  let isEstimated = !baseline || Object.keys(baseline).length < 3;
+
+  // Categorize graph Financial nodes if provided
+  const finBuckets = financialNodes && financialNodes.length > 0
+    ? categorizeByFinancialType(financialNodes)
+    : null;
+
+  // ── 1. Information flow delay cost → revenue ──
+  // Delayed information flow → missed revenue opportunities
+  const infoFlow = diagnosis.gaps.gaps.information_flow;
+  if (infoFlow && typeof infoFlow.engineScore === 'number') {
+    const delayFactor = Math.max(0, (5 - infoFlow.engineScore) / 5);
+    const monthlyDelayCost = Math.round(delayFactor * b.delayCostRate * 15);
+    breakdown.push({
+      label: '信息流延迟成本',
+      monthlyCost: monthlyDelayCost,
+      sourceDimension: 'information_flow',
+      financialType: 'revenue',
+      basis: `信息流得分 ${infoFlow.engineScore}/10 → 延迟系数 ${delayFactor.toFixed(2)}`,
+    } as CostBreakdown);
+  }
+
+  // ── 2. IPU Overload efficiency loss → cost_center ──
+  // Information processing overload → internal operational inefficiency
+  const ipuOverload = diagnosis.ipu?.overloadScore;
+  if (typeof ipuOverload === 'number' && ipuOverload > 0.2) {
+    const overloadExcess = ipuOverload - 0.2;
+    const efficiencyLoss = overloadExcess * 0.3;
+    const monthlyEfficiencyCost = Math.round(
+      efficiencyLoss * (5 * 160 * b.humanHourlyCost * 0.5 + 5 * 160 * b.agentHourlyCost * 0.5),
+    );
+    breakdown.push({
+      label: 'IPU 过载效率损失',
+      monthlyCost: monthlyEfficiencyCost,
+      sourceDimension: 'ipu_overload',
+      financialType: 'cost_center',
+      basis: `过载得分 ${(ipuOverload * 100).toFixed(0)}% → 效率衰减 ${(efficiencyLoss * 100).toFixed(0)}%`,
+    } as CostBreakdown);
+  }
+
+  // ── 3. Trust miscalibration → cost ──
+  const hacdHitlRatio = diagnosis.hacd?.hitlRatio;
+  if (typeof hacdHitlRatio === 'number') {
+    const errorAcceptRate = Math.max(0, hacdHitlRatio - 0.3);
+    const monthlyDecisionCount = 200;
+    const monthlyErrorCost = Math.round(errorAcceptRate * monthlyDecisionCount * b.averageErrorCost);
+    if (monthlyErrorCost > 0) {
+      breakdown.push({
+        label: '信任未校准错误成本',
+        monthlyCost: monthlyErrorCost,
+        sourceDimension: 'trust',
+        financialType: 'cost',
+        basis: `HITL 比例 ${(hacdHitlRatio * 100).toFixed(0)}% → 超出基线 ${(errorAcceptRate * 100).toFixed(0)}%`,
+      } as CostBreakdown);
+    }
+  }
+
+  // ── 4. Protocol missing coordination cost → cost_center ──
+  const cpcScore = diagnosis.cpc?.completenessScore;
+  if (typeof cpcScore === 'number' && cpcScore < 0.7) {
+    const protocolGap = 0.7 - cpcScore;
+    const extraCoordinationHours = Math.round(protocolGap * 40);
+    const monthlyCoordinationCost = Math.round(
+      extraCoordinationHours * (b.humanHourlyCost + b.agentHourlyCost) / 2,
+    );
+    breakdown.push({
+      label: '协作协议缺失协调成本',
+      monthlyCost: monthlyCoordinationCost,
+      sourceDimension: 'cpc',
+      financialType: 'cost_center',
+      basis: `协议完备度 ${(cpcScore * 100).toFixed(0)}% → 额外协调 ${extraCoordinationHours}h/月`,
+    } as CostBreakdown);
+  }
+
+  // ── 5. Elastic boundary opportunity cost → revenue ──
+  const extInterface = diagnosis.gaps.gaps.external_interface;
+  if (extInterface && typeof extInterface.engineScore === 'number' && extInterface.engineScore < 5) {
+    const boundaryGap = (5 - extInterface.engineScore) / 10;
+    const monthlyOpportunityCost = Math.round(boundaryGap * b.opportunityCostRate * 10);
+    breakdown.push({
+      label: '弹性不足机会成本',
+      monthlyCost: monthlyOpportunityCost,
+      sourceDimension: 'external_interface',
+      financialType: 'revenue',
+      basis: `外部接口得分 ${extInterface.engineScore}/10 → 弹性缺口 ${boundaryGap.toFixed(2)}`,
+    } as CostBreakdown);
+  }
+
+  // ── 6. Graph Financial node attribution (SOG v1.0) ──
+  let finAttribution: Record<string, number> = {};
+  if (finBuckets) {
+    const costTotal = sumFinancialAmount(finBuckets.cost);
+    const revenueTotal = sumFinancialAmount(finBuckets.revenue);
+    const tokenTotal = sumFinancialAmount(finBuckets.token_account);
+    finAttribution = {
+      cost_center: sumFinancialAmount(finBuckets.cost_center),
+      cost: costTotal,
+      revenue: revenueTotal,
+      token_account: tokenTotal,
+    };
+  }
+
+  // ── Aggregate ──
+  const totalInefficiencyCost = breakdown.reduce((s, c) => s + c.monthlyCost, 0);
+
+  // SOG v1.0: 按 financialType 汇总
+  const financialTypeSummary: Record<string, number> = {
+    cost_center: 0, revenue: 0, cost: 0, token_account: 0,
+  };
+  for (const item of breakdown) {
+    const ft = (item as any).financialType as string | undefined;
+    if (ft && ft in financialTypeSummary) {
+      financialTypeSummary[ft] += item.monthlyCost;
+    }
+  }
+  // Merge graph Financial node totals
+  if (finAttribution) {
+    for (const ft of Object.keys(financialTypeSummary)) {
+      financialTypeSummary[ft] += (finAttribution as any)[ft] ?? 0;
+    }
+  }
+
+  const top3Cost = [...breakdown]
+    .sort((a, b) => b.monthlyCost - a.monthlyCost)
+    .slice(0, 3);
+  const top3Savings = top3Cost.reduce((s, c) => s + c.monthlyCost, 0);
+  const improvementPotential = Math.round(top3Savings * 0.8);
+  const roi = totalInefficiencyCost > 0
+    ? Math.round((improvementPotential * 12) / Math.max(totalInefficiencyCost, 1) * 100) / 100
+    : null;
+
+  return {
+    period,
+    totalInefficiencyCost,
+    breakdown,
+    improvementPotential,
+    roi,
+    isEstimated,
+    financialTypeSummary,
+    interpretation: totalInefficiencyCost > 0
+      ? `月度组织低效成本约 ¥${totalInefficiencyCost.toLocaleString()}。` +
+        `前 ${top3Cost.length} 项改善可预计节约 ¥${improvementPotential.toLocaleString()}/月` +
+        (roi !== null ? `（年化 ROI ${(roi * 100).toFixed(0)}%）。` : '。')
+      : '未检测到显著组织低效成本。诊断数据可能不完整，建议运行完整引擎管线。',
+  } as FinancialImpactReport;
+}
+
+/**
+ * Simulate improvement scenario for "what-if" analysis.
+ */
+export function simulateImprovement(
+  diagnosis: FullDiagnosisV2,
+  improvements: Partial<Record<string, number>>,
+  baseline?: Partial<FinancialBaseline>,
+): FinancialImpactReport {
+  const cloned = JSON.parse(JSON.stringify(diagnosis)) as FullDiagnosisV2;
+
+  // Apply hypothetical improvements
+  if (improvements.information_flow && cloned.gaps.gaps.information_flow) {
+    cloned.gaps.gaps.information_flow.engineScore = Math.min(
+      10,
+      cloned.gaps.gaps.information_flow.engineScore + improvements.information_flow,
+    );
+  }
+  if (improvements.cpc && cloned.cpc) {
+    cloned.cpc.completenessScore = Math.min(
+      1,
+      cloned.cpc.completenessScore + improvements.cpc,
+    );
+  }
+  if (improvements.ipu && cloned.ipu) {
+    cloned.ipu.overloadScore = Math.max(
+      0,
+      cloned.ipu.overloadScore - improvements.ipu,
+    );
+  }
+  if (improvements.external_interface && cloned.gaps.gaps.external_interface) {
+    cloned.gaps.gaps.external_interface.engineScore = Math.min(
+      10,
+      cloned.gaps.gaps.external_interface.engineScore + improvements.external_interface,
+    );
+  }
+
+  return computeFinancialImpact(cloned, baseline);
+}
