@@ -11,8 +11,8 @@ if [ ! -f "$DEBT_FILE" ]; then
 fi
 
 # 统计未解决项
-TOTAL=$(grep -c '^\- \[ \]' "$DEBT_FILE" 2>/dev/null || echo 0)
-RESOLVED=$(grep -c '^\- \[x\]' "$DEBT_FILE" 2>/dev/null || echo 0)
+TOTAL=$(grep -c '^\- \[ \]' "$DEBT_FILE" 2>/dev/null) || TOTAL=0
+RESOLVED=$(grep -c '^\- \[x\]' "$DEBT_FILE" 2>/dev/null) || RESOLVED=0
 
 if [ "$TOTAL" -eq 0 ]; then
   echo "  ✅ 技术债务: 0 项待解决"
