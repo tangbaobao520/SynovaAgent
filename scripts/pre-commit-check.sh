@@ -130,15 +130,74 @@ hard_check "铁律 33: 新测试文件命名不符合规范" "$NEW_TESTS"
 PRE_EXISTING=$(grep -rn "pre.existing\|known.failure\|FIXME.*test\|skip.*broken\|TODO.*fix.*test" tests/ src/ --include="*.ts" 2>/dev/null | grep -v "node_modules" || true)
 hard_check "Anthropic: 禁止 pre-existing/known-failure 标记" "$PRE_EXISTING"
 
+# ═══ 铁律 0-2: 单模块提交 ═══
+# 一次 commit 最多 1 个新 impl 文件（非 test / .d.ts / 辅助文件）
+NEW_IMPL=$(git diff --cached --name-only --diff-filter=A 2>/dev/null \
+  | grep "^src/" | grep "\.ts$" | grep -v "\.test\." | grep -v "\.d\.ts" \
+  | grep -v "types\.ts$\|index\.ts$\|helpers\.ts$\|builtins\.ts$" || true)
+NEW_IMPL_COUNT=$(echo "$NEW_IMPL" | grep -c . 2>/dev/null) || NEW_IMPL_COUNT=0
+if [ "${NEW_IMPL_COUNT:-0}" -gt 1 ]; then
+  hard_check "铁律 0-2: 单模块提交 — 1 次最多 1 个新 impl 文件 (当前 ${NEW_IMPL_COUNT})" "$NEW_IMPL"
+fi
+
+# ═══ 铁律 0-2: 新文件配对 — impl 必须同 commit 有 test ═══
+IMPL_PAIRS=""
+if [ -n "$NEW_IMPL" ]; then
+  while IFS= read -r impl; do
+    [ -z "$impl" ] && continue
+    test_path=$(echo "$impl" | sed 's|^src/|tests/|; s|\.ts$|.test.ts|')
+    if ! git diff --cached --name-only 2>/dev/null | grep -q "^${test_path}$"; then
+      # 检查测试文件是否已存在（存量测试覆盖）
+      if [ ! -f "$test_path" ]; then
+        IMPL_PAIRS="${IMPL_PAIRS}${impl} → 缺少 ${test_path}\n"
+      fi
+    fi
+  done <<< "$NEW_IMPL"
+fi
+if [ -n "$IMPL_PAIRS" ]; then
+  hard_check "铁律 0-2: 新文件配对 — impl 必须同 commit 有 test" "$IMPL_PAIRS"
+fi
+
+# ═══ 铁律 24+31: 空 catch 无 log — 硬阻断 ═══
+RAW_CATCH=$(grep -rn "catch\s*{" src/ --include="*.ts" 2>/dev/null \
+  | grep -v "node_modules" | grep -v "\.test\." || true)
+EMPTY_CATCH_BLOCK=""
+if [ -n "$RAW_CATCH" ]; then
+  while IFS= read -r line; do
+    FILE=$(echo "$line" | cut -d: -f1)
+    LINE_NUM=$(echo "$line" | cut -d: -f2)
+    CTX=$(sed -n "${LINE_NUM},$((LINE_NUM + 2))p" "$FILE" 2>/dev/null || echo "")
+    # 本行+后续2行无 log./logger./console. → 空吞
+    if ! echo "$CTX" | grep -q "log\.\|logger\.\|console\."; then
+      if ! echo "$CTX" | grep -q "JSON.parse\|ENOENT\|\.destroy\|\.end\|\.detach\|setRawMode\|best-effort\|already closed\|keep original\|return '0\|items\s*="; then
+        EMPTY_CATCH_BLOCK="${EMPTY_CATCH_BLOCK}${FILE}:${LINE_NUM}: 空 catch (无 log)\n"
+      fi
+    fi
+  done <<< "$RAW_CATCH"
+fi
+hard_check "铁律 24+31: 空 catch 无 log (静默吞异常)" "${EMPTY_CATCH_BLOCK:-}"
+
+# ═══ 铁律 0-2 Step 4: src/ tsc 零错误 ═══
+TSC_OUT=$(npx tsc --noEmit 2>&1 | grep "^src/" || true)
+TSC_COUNT=$(echo "$TSC_OUT" | grep -c . 2>/dev/null) || TSC_COUNT=0
+hard_check "铁律 0-2: src/ tsc 零错误 (当前 ${TSC_COUNT})" "${TSC_OUT:-}"
+
+# ═══ 禁止 --no-verify 绕过 ═══
+NV_LOG=".git/no-verify.log"
+NV_TODAY=$(grep -c "$(date +%Y-%m-%d)" "$NV_LOG" 2>/dev/null) || NV_TODAY=0
+if [ "${NV_TODAY:-0}" -ge 2 ]; then
+  hard_check "铁律 34: 禁止 --no-verify 连续使用 (今日已 ${NV_TODAY} 次)" "24h 内禁止提交 — 修复所有硬阻断后再试"
+fi
+
 # ═══ 自动化诚实门禁 ═══
 # P1-2: DiagnosticModule 已 @deprecated — 禁止新增注册 (铁律 35: 编译器级阻断)
-# 基线: 8 处 registerModule() (4 批: 通用/FDE/营销/SOG v1)
+# 基线: 6 处 registerModule() (通用/FDE — 营销/SOG v1 空壳已清理 P1-3)
 DM_COUNT=$(grep -c "registerModule(" packages/engine-core/src/pipeline/diagnosis/module-registry.ts 2>/dev/null) || DM_COUNT=0
-if [ "${DM_COUNT:-0}" -gt 8 ]; then
-  hard_check "P1-2: 新增 DiagnosticModule 注册 (已 @deprecated → 迁移到 Sentinel 接口)" "发现 ${DM_COUNT} 处 (基线 8)"
+if [ "${DM_COUNT:-0}" -gt 6 ]; then
+  hard_check "P1-2: 新增 DiagnosticModule 注册 (已 @deprecated → 迁移到 Sentinel 接口)" "发现 ${DM_COUNT} 处 (基线 6)"
 fi
-if [ "${DM_COUNT:-0}" -eq 8 ]; then
-  echo -e "  ${GREEN}✅ P1-2: DiagnosticModule 注册数保持基线 (8)${RESET}"
+if [ "${DM_COUNT:-0}" -eq 6 ]; then
+  echo -e "  ${GREEN}✅ P1-2: DiagnosticModule 注册数保持基线 (6)${RESET}"
 fi
 
 # 每处违规 = 硬阻断。不靠 CLAUDE.md 提醒，靠编译器级强制执行。

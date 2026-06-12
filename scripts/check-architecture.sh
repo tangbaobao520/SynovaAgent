@@ -31,6 +31,55 @@ else
   echo -e "  ${GREEN}✅ L2→L4 边界: 无直接引用${RESET}"
 fi
 
+# ═══ 1b. L1→L3 跨层引用 ═══
+# L1 (routes/ / server.ts) 不得直接 import L3 (l3/ / sentinel/ / evidence/ / expert/)
+L1_L3=$(grep -rn "from.*\.\.\/l3\/\|from.*\/sentinel\/\|from.*\/evidence\/\|from.*\/expert\/" src/routes/ src/server.ts --include="*.ts" 2>/dev/null \
+  | grep -v "node_modules" | grep -v "\.test\." \
+  | grep -v "agent-observer\|//.*L1.*L3\|铁律.*39" \
+  || true)
+L1_L3_COUNT=$(echo "$L1_L3" | grep -c . 2>/dev/null) || L1_L3_COUNT=0
+if [ "${L1_L3_COUNT:-0}" -gt 0 ]; then
+  echo -e "  ${RED}❌ L1→L3 跨层引用: ${L1_L3_COUNT} 处${RESET}"
+  echo "$L1_L3" | while read -r line; do echo "     ${line}"; done
+  echo "     铁律 39: L1 只能依赖 L2。sentinel/l3/evidence/expert 是 L3 层。"
+  echo "     正确做法: L1 → L2 (synova-agent.ts / conversation-engine.ts) → L3"
+  FAIL=$((FAIL + 1))
+else
+  echo -e "  ${GREEN}✅ L1→L3 边界: 无直接引用${RESET}"
+fi
+
+# ═══ 1c. L1→L4 跨层引用 ═══
+# L1 不得直接 import L4 (GraphStore / KnowledgeStore / l4/)
+L1_L4=$(grep -rn "from.*\.\.\/l4\/\|from.*GraphStore\|from.*KnowledgeStore" src/routes/ src/server.ts --include="*.ts" 2>/dev/null \
+  | grep -v "node_modules" | grep -v "\.test\." \
+  | grep -v "//.*L1.*L4\|铁律.*39" \
+  || true)
+L1_L4_COUNT=$(echo "$L1_L4" | grep -c . 2>/dev/null) || L1_L4_COUNT=0
+if [ "${L1_L4_COUNT:-0}" -gt 0 ]; then
+  echo -e "  ${RED}❌ L1→L4 跨层引用: ${L1_L4_COUNT} 处${RESET}"
+  echo "$L1_L4" | while read -r line; do echo "     ${line}"; done
+  echo "     铁律 39: L1 不得直接访问 L4。必须通过 L2 编排层。"
+  FAIL=$((FAIL + 1))
+else
+  echo -e "  ${GREEN}✅ L1→L4 边界: 无直接引用${RESET}"
+fi
+
+# ═══ 1d. L1→L5 跨层引用 ═══
+# L1 不得直接操作数据库 (better-sqlite3 / db.prepare)
+L1_L5=$(grep -rn "better-sqlite3\|\.prepare(\|db\.run\|db\.exec" src/routes/ src/server.ts --include="*.ts" 2>/dev/null \
+  | grep -v "import type" | grep -v "node_modules" | grep -v "\.test\." \
+  | grep -v "//.*DI\|//.*注入\|铁律.*39" \
+  || true)
+L1_L5_COUNT=$(echo "$L1_L5" | grep -c . 2>/dev/null) || L1_L5_COUNT=0
+if [ "${L1_L5_COUNT:-0}" -gt 0 ]; then
+  echo -e "  ${RED}❌ L1→L5 跨层引用: ${L1_L5_COUNT} 处${RESET}"
+  echo "$L1_L5" | while read -r line; do echo "     ${line}"; done
+  echo "     铁律 39: L1 不得直接操作数据库。必须通过 L4 接口。"
+  FAIL=$((FAIL + 1))
+else
+  echo -e "  ${GREEN}✅ L1→L5 边界: 无直接数据库操作${RESET}"
+fi
+
 # ═══ 2. L3→L5 跨层引用 ═══
 # L3 (l3/) 不得直接操作数据库 (.prepare / db.run / db.exec / better-sqlite3)
 # 例外: import { getDatabase } 是 DI 注入, 用于构造 L4 实例 (new KnowledgeStore(getDatabase()))
