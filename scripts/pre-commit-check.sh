@@ -53,6 +53,17 @@ echo "════════════════════════�
 echo ""
 
 # ═══════════════════════════════════════════════════════════
+# 门禁 ⓪: 任务开始决策树 (硬阻断)
+# Anthropic 铁律 0-2: 做任务前必须先跑决策树，生成 task brief。
+# 没有今日 task brief = 你不知道自己在做什么 = 不准提交。
+# ═══════════════════════════════════════════════════════════
+TODAY=$(date +%Y-%m-%d)
+TODAY_BRIEF=$(find "$(git rev-parse --show-toplevel)/.claude/task-briefs/" -name "${TODAY}*" 2>/dev/null | head -1)
+if [ -z "$TODAY_BRIEF" ]; then
+  hard_check "铁律 0-2: Anthropic 决策树 — 今日无 task brief" "运行: bash scripts/workflow/task-start.sh \"你的任务描述\""
+fi
+
+# ═══════════════════════════════════════════════════════════
 # 门禁 ①: SPEC 先行 (硬阻断)
 # Anthropic 铁律 0-2 Step 1: 没有 spec 的代码不准进仓库
 # ═══════════════════════════════════════════════════════════
