@@ -56,6 +56,7 @@ export class SQLiteGraphStore implements GraphStore {
   constructor(database: any) { this.db = database; this.initSchema(); }
 
   private initSchema(): void {
+    // Phase 1: 建表 (不含依赖 valid_to 的索引, 旧表可能缺少此列)
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS graph_nodes (
         id TEXT NOT NULL, type TEXT NOT NULL, graph TEXT NOT NULL,
@@ -67,7 +68,6 @@ export class SQLiteGraphStore implements GraphStore {
       );
       CREATE INDEX IF NOT EXISTS idx_gn_type ON graph_nodes(graph, type);
       CREATE INDEX IF NOT EXISTS idx_gn_name ON graph_nodes(graph, name);
-      CREATE INDEX IF NOT EXISTS idx_gn_valid ON graph_nodes(graph, valid_to);
 
       CREATE TABLE IF NOT EXISTS graph_triples (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -82,15 +82,18 @@ export class SQLiteGraphStore implements GraphStore {
       CREATE INDEX IF NOT EXISTS idx_gt_object ON graph_triples(graph, object_type, object_id);
       CREATE INDEX IF NOT EXISTS idx_gt_predicate ON graph_triples(graph, predicate);
       CREATE INDEX IF NOT EXISTS idx_gt_weight ON graph_triples(graph, predicate, weight);
-      CREATE INDEX IF NOT EXISTS idx_gt_valid ON graph_triples(graph, valid_from, valid_to);
     `);
 
-    // Schema migrations: 为旧数据库补加 valid_to 列 (双时序原则, pre-2026-06 创建的库缺少此列)
+    // Phase 2: 为旧数据库迁移 (valid_to 列 + 缺失列)
     try { this.db.exec('ALTER TABLE graph_nodes ADD COLUMN valid_to TEXT'); } catch { /* 列已存在 */ }
     try { this.db.exec('ALTER TABLE graph_triples ADD COLUMN valid_to TEXT'); } catch { /* 列已存在 */ }
     try { this.db.exec('ALTER TABLE graph_nodes ADD COLUMN updated_at TEXT NOT NULL DEFAULT (datetime(\'now\'))'); } catch { /* 列已存在 */ }
     try { this.db.exec('ALTER TABLE graph_triples ADD COLUMN confidence REAL DEFAULT 1.0'); } catch { /* 列已存在 */ }
     try { this.db.exec('ALTER TABLE graph_triples ADD COLUMN source TEXT'); } catch { /* 列已存在 */ }
+
+    // Phase 3: 索引 (迁移完成后 valid_to 列一定存在)
+    try { this.db.exec('CREATE INDEX IF NOT EXISTS idx_gn_valid ON graph_nodes(graph, valid_to)'); } catch { /* ok */ }
+    try { this.db.exec('CREATE INDEX IF NOT EXISTS idx_gt_valid ON graph_triples(graph, valid_from, valid_to)'); } catch { /* ok */ }
   }
 
   // ═══ Nodes ═══
