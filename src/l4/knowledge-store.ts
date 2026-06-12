@@ -257,6 +257,14 @@ export class KnowledgeStore {
     );
   }
 
+  /** 获取长文本块 (Gear6 知识提取使用) */
+  getLongChunks(minLength = 2000, limit = 20): Array<{ id: string; text: string }> {
+    const rows = this.db.prepare(
+      'SELECT id, text FROM knowledge_chunks WHERE LENGTH(text) > ? LIMIT ?'
+    ).all(minLength, limit) as Array<Record<string, unknown>>;
+    return rows.map(r => ({ id: r.id as string, text: r.text as string }));
+  }
+
   /** 删除知识条目 */
   delete(id: string): void {
     this.db.prepare('DELETE FROM knowledge_chunks WHERE id=?').run(id);

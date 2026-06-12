@@ -7,7 +7,6 @@
  * @frozen 2026-06-03 — 拆包前冻结。ExtensionType/ExtensionState 枚举只增不删。
  * @since 0.1.0
  */
- */
 
 /** Extension type — what kind of capability is being extended */
 export type ExtensionType =

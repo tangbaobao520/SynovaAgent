@@ -20,7 +20,7 @@ L2_L4=$(grep -rn "from.*l4/" src/agent/ src/orchestrator/ --include="*.ts" 2>/de
   | grep -v "node_modules" | grep -v "\.test\." \
   | grep -v "conversation-engine.ts\|engine-context.ts\|diagnosis-launcher.ts" \
   || true)
-L2_L4_COUNT=$(echo "$L2_L4" | grep -c . 2>/dev/null || echo 0)
+L2_L4_COUNT=$(echo "$L2_L4" | grep -c . 2>/dev/null) || L2_L4_COUNT=0
 
 if [ "$L2_L4_COUNT" -gt 0 ]; then
   echo -e "  ${RED}❌ L2→L4 跨层引用: ${L2_L4_COUNT} 处${RESET}"
@@ -32,14 +32,15 @@ else
 fi
 
 # ═══ 2. L3→L5 跨层引用 ═══
-# L3 (l3/) 不得直接操作数据库 (better-sqlite3 import / Database type / .prepare / db.run)
-L3_DB=$(grep -rn "better-sqlite3\|import.*Database\|\.prepare(\|db\.run\|\.exec(" src/l3/ --include="*.ts" 2>/dev/null \
+# L3 (l3/) 不得直接操作数据库 (.prepare / db.run / db.exec / better-sqlite3)
+# 例外: import { getDatabase } 是 DI 注入, 用于构造 L4 实例 (new KnowledgeStore(getDatabase()))
+L3_DB=$(grep -rn "better-sqlite3\|\.prepare(\|db\.run\|\.exec(" src/l3/ --include="*.ts" 2>/dev/null \
   | grep -v "import type" \
   | grep -v "import { KnowledgeStore }" \
   | grep -v "node_modules" | grep -v "\.test\." \
   | grep -v "executeQuery\|//.*bridge\|//.*query" \
   || true)
-L3_DB_COUNT=$(echo "$L3_DB" | grep -c . 2>/dev/null || echo 0)
+L3_DB_COUNT=$(echo "$L3_DB" | grep -c . 2>/dev/null) || L3_DB_COUNT=0
 
 if [ "$L3_DB_COUNT" -gt 0 ]; then
   echo -e "  ${RED}❌ L3→L5 跨层引用: ${L3_DB_COUNT} 处${RESET}"
@@ -54,7 +55,7 @@ fi
 # 只允许 graph-bridge.ts 声明 GraphStore。禁止在其他文件新增声明。
 GS_DECLARATIONS=$(grep -rn "export interface GraphStore " src/ --include="*.ts" 2>/dev/null \
   | grep -v "node_modules" | grep -v "\.test\." || true)
-GS_COUNT=$(echo "$GS_DECLARATIONS" | grep -c . 2>/dev/null || echo 0)
+GS_COUNT=$(echo "$GS_DECLARATIONS" | grep -c . 2>/dev/null) || GS_COUNT=0
 if [ "$GS_COUNT" -gt 1 ]; then
   echo -e "  ${RED}❌ GraphStore 接口多处声明: ${GS_COUNT} 处${RESET}"
   echo "$GS_DECLARATIONS" | while read -r line; do echo "     ${line}"; done
@@ -84,7 +85,7 @@ MISSING_GRAPH=$(grep -rn "queryNodes\|queryEdges" src/l4/ --include="*.ts" 2>/de
   | grep -v "graph" \
   | grep -v "node_modules" | grep -v "\.test\." \
   || true)
-MISSING_GRAPH_COUNT=$(echo "$MISSING_GRAPH" | grep -c . 2>/dev/null || echo 0)
+MISSING_GRAPH_COUNT=$(echo "$MISSING_GRAPH" | grep -c . 2>/dev/null) || MISSING_GRAPH_COUNT=0
 
 if [ "$MISSING_GRAPH_COUNT" -gt 0 ]; then
   echo -e "  ${YELLOW}⚠  多租户安全: ${MISSING_GRAPH_COUNT} 处 queryNodes/queryEdges 调用待审查 graph 参数${RESET}"

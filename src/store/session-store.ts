@@ -156,6 +156,17 @@ export class SessionStore {
     }));
   }
 
+  /** 列出有诊断状态的会话 (state_json IS NOT NULL), Gear6 知识提取使用 */
+  listSessionsWithState(limit = 10): SessionRow[] {
+    const rows = this.db.prepare(
+      'SELECT s.*, (SELECT COUNT(*) FROM agent_messages WHERE session_id=s.id) as msg_count FROM agent_sessions s WHERE s.state_json IS NOT NULL ORDER BY s.updated_at DESC LIMIT ?'
+    ).all(limit) as SqliteRow[];
+    return rows.map(r => ({
+      id: r.id as string, orgId: r.org_id as string, phase: r.phase as number,
+      stateJson: r.state_json as string | null, createdAt: r.created_at as string, updatedAt: r.updated_at as string,
+    }));
+  }
+
   deleteSession(id: string): void {
     this.db.prepare('DELETE FROM agent_messages WHERE session_id=?').run(id);
     this.db.prepare('DELETE FROM agent_sessions WHERE id=?').run(id);

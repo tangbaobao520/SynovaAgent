@@ -14,6 +14,7 @@ import { createLogger } from '../logger';
 import { KnowledgeStore } from '../l4/knowledge-store';
 import type { KnowledgeChunk } from '../l4/knowledge-store';
 import { getDatabase } from '../init/engine-context';
+import { SessionStore } from '../store/session-store';
 import { getCurrentFilterClause } from '../services/request-context';
 import type { FilterClause } from '../l4/knowledge-store';
 
@@ -450,12 +451,13 @@ export function createKnowledgeAgent(config: KnowledgeAgentConfig = {}): Knowled
       const store = new KnowledgeStore(getDatabase());
 
       try {
-        // 1. 扫描 Phase 0 诊断数据
-        const db = getDatabase();
-        const sessions = (db.prepare('SELECT id, org_id, state_json FROM agent_sessions WHERE state_json IS NOT NULL ORDER BY updated_at DESC LIMIT 10').all() as Array<Record<string, unknown>>) || [];
+        // 1. 扫描 Phase 0 诊断数据 — 通过 SessionStore (L4) 接口
+        const sessionStore = new SessionStore(getDatabase());
+        const sessions = sessionStore.listSessionsWithState(10);
         for (const s of sessions) {
+          if (!s.stateJson) continue;
           try {
-            const state = JSON.parse(s.state_json as string || '{}');
+            const state = JSON.parse(s.stateJson);
             const messages: Array<{ role: string; content: string }> = state.messages || [];
             const longMessages = messages.filter(m => m.content && m.content.length > 200);
             for (const msg of longMessages.slice(0, 3)) {
@@ -465,7 +467,7 @@ export function createKnowledgeAgent(config: KnowledgeAgentConfig = {}): Knowled
                 sourceId: `session:${s.id}`,
                 authorityLevel: 'reference',
                 accessLevel: 'team',
-                accessTeamId: (s.org_id as string) || 'default',
+                accessTeamId: s.orgId || 'default',
                 accessSensitivity: 'normal',
               });
               extracted++;
@@ -473,8 +475,8 @@ export function createKnowledgeAgent(config: KnowledgeAgentConfig = {}): Knowled
           } catch { log.debug('Gear6: 会话状态解析失败 — 跳过'); }
         }
 
-        // 2. 扫描长文档 (knowledge_chunks 中的原始文本)
-        const chunks = (db.prepare('SELECT id, text FROM knowledge_chunks WHERE LENGTH(text) > 2000 LIMIT 20').all() as Array<Record<string, unknown>>) || [];
+        // 2. 扫描长文档 — 通过 KnowledgeStore (L4) 接口
+        const chunks = store.getLongChunks(2000, 20);
         for (const c of chunks) {
           const text = c.text as string;
           if (text.length > 2000) {
