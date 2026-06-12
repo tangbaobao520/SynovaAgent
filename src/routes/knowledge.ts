@@ -8,11 +8,11 @@
  * 铁律 39: L1 交互层，委托 L4 KnowledgeStore 执行查询
  */
 import { Router, type Request, type Response } from 'express';
-import { KnowledgeStore } from '../l4/knowledge-store';
+import { KnowledgeStore } from '../agent/knowledge-bridge-service';
 import { getDatabase } from '../init/engine-context';
 import { getCurrentFilterClause } from '../services/request-context';
 import { createLogger } from '../logger';
-import type { KnowledgeChunk, FilterClause } from '../l4/knowledge-store';
+import type { KnowledgeChunk, FilterClause } from '../agent/knowledge-bridge-service';
 
 const log = createLogger('routes/knowledge');
 const router = Router();

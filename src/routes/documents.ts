@@ -6,7 +6,7 @@
  * GET  /api/documents/:id    — 获取文档详情和分块
  */
 import { Router, type Request, type Response } from 'express';
-import { KnowledgeStore } from '../l4/knowledge-store';
+import { KnowledgeStore } from '../agent/knowledge-bridge-service';
 import { getDatabase } from '../init/engine-context';
 import { createLogger } from '../logger';
 

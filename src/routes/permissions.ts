@@ -10,7 +10,7 @@
  * 铁律 31: 降级信号传播 — 所有错误返回 degraded 标记。
  */
 import { Router, type Request, type Response } from 'express';
-import { KnowledgeStore } from '../l4/knowledge-store';
+import { KnowledgeStore } from '../agent/knowledge-bridge-service';
 import { getDatabase } from '../init/engine-context';
 import { getCurrentUser } from '../services/request-context';
 import { createLogger } from '../logger';
