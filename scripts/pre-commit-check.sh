@@ -99,10 +99,18 @@ if git diff --cached --name-only 2>/dev/null | grep -q "^\.env$"; then
 fi
 hard_check "P0-01: .env 不含真实 API Key (仅当暂存时)" "$M"
 
-# Secrets 扫描: 源码中不得硬编码 API Key/Token/Password
-timeout 15 bash "$(dirname "$0")/check-secrets.sh" 2>/dev/null || echo -e "  ${YELLOW}⚠  Secrets 扫描: 超时跳过${RESET}"
-# 安全检查: eval() / new Function() / HTTP 明文
-timeout 10 bash "$(dirname "$0")/check-security.sh" 2>/dev/null || echo -e "  ${YELLOW}⚠  安全检查: 超时跳过${RESET}"
+# Secrets 扫描: 源码中不得硬编码 API Key/Token/Password — 硬阻断
+bash "$(dirname "$0")/check-secrets.sh"
+SECRETS_EXIT=$?
+if [ $SECRETS_EXIT -ne 0 ]; then
+  HARD_FAIL=$((HARD_FAIL + 1))
+fi
+# 安全检查: eval() / new Function() / HTTP 明文 — 硬阻断
+bash "$(dirname "$0")/check-security.sh"
+SEC_EXIT=$?
+if [ $SEC_EXIT -ne 0 ]; then
+  HARD_FAIL=$((HARD_FAIL + 1))
+fi
 
 # 铁律 37: 文件大小 — 单文件 >1000 行硬阻断, >500 行警告
 # 优化: xargs 批量传递, 避免 -exec wc -l {} \; 逐文件 spawn (43s → <1s)
@@ -262,17 +270,31 @@ M=$(echo "$M" | while read -r line; do
 done || true)
 warn_check "铁律 11+24+31: 空 catch (静默吞)" "$M"
 
-# 技术债务追踪 (TECH_DEBT.md)
-echo -n "  "
-timeout 10 bash "$(dirname "$0")/check-tech-debt.sh" 2>/dev/null || echo "  ⚠ 技术债务检查跳过"
+# 技术债务追踪 (TECH_DEBT.md) — 警告不阻断
+bash "$(dirname "$0")/check-tech-debt.sh" 2>/dev/null || echo "  ⚠ 技术债务检查跳过"
 
-# Anthropic 决策树 — 手动工具, 不在 pre-commit 中运行
-# (包含 npx vitest run, 耗时 7-15s, 对 pre-commit 太重)
-# 手动运行: bash scripts/anthropic-decide.sh
-# bash "$(dirname "$0")/anthropic-decide.sh" 2>/dev/null || true
+# ═══════════════════════════════════════════════════════════
+# Anthropic 决策树 — 每次 commit 强制执行 (铁律 0-2)
+# 完整版: vitest + tsc + 架构 + 接线审计 + 铁律全集
+# 不设 timeout — 让门禁跑完。15 秒的等待是质量的最低成本。
+# ═══════════════════════════════════════════════════════════
+echo ""
+echo "── Anthropic 决策树 ────────────────────────────────────"
+bash "$(dirname "$0")/anthropic-decide.sh"
+DECIDE_EXIT=$?
+if [ $DECIDE_EXIT -ne 0 ]; then
+  echo -e "  ${RED}❌ Anthropic 决策树: 未通过 — 提交已拒绝${RESET}"
+  HARD_FAIL=$((HARD_FAIL + 1))
+else
+  echo -e "  ${GREEN}✅ Anthropic 决策树: 通过${RESET}"
+fi
 
-# 铁律 39: 架构边界检查
-timeout 15 bash "$(dirname "$0")/check-architecture.sh" 2>/dev/null || echo -e "  ${YELLOW}⚠  架构检查: 超时跳过${RESET}"
+# 铁律 39: 架构边界检查 — 硬阻断，不超时跳过
+bash "$(dirname "$0")/check-architecture.sh"
+ARCH_EXIT=$?
+if [ $ARCH_EXIT -ne 0 ]; then
+  HARD_FAIL=$((HARD_FAIL + 1))
+fi
 
 echo ""
 echo "───────────────────────────────────────────────────────────"

@@ -42,8 +42,11 @@ done <<< "$STAGED_NEW"
 
 echo ""
 if [ "$MISSING" -gt 0 ]; then
-  echo -e "  ${YELLOW}⚠️  测试先行: ${MISSING} 个函数缺少测试 (警告)${NC}"
+  echo -e "  ${RED}❌ 测试先行: ${MISSING} 个函数缺少测试 — 提交已拒绝${RESET}"
+  echo "     铁律 0-2 Step 2: 每个 public 函数 ≥ 1 个测试用例"
+  echo "     先写测试文件，再提交生产代码。"
+  exit 1
 else
   echo -e "  ${GREEN}✅ 测试先行: 全部通过${NC}"
+  exit 0
 fi
-exit 0  # MVP: 永远不阻断
