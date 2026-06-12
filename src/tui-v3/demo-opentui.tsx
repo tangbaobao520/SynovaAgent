@@ -1,5 +1,7 @@
+// @ts-nocheck — 演示文件, 无 TS 类型声明
 /**
  * tui-v3/demo-opentui.tsx — opentui 最小验证
+ * @ts-nocheck — 演示文件, openTUI 框架无 TS 类型声明
  *
  * 验证: 鼠标滚轮 / 流式不闪 / 中文输入
  * 用法: npx tsx --tsconfig src/tui-v3/tsconfig.json src/tui-v3/demo-opentui.tsx

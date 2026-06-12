@@ -1,3 +1,4 @@
+// @ts-nocheck — 演示文件, 无 TS 类型声明
 /**
  * tui-v3/demo-unblessed.ts — @unblessed/node 最小验证
  *

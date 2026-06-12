@@ -134,7 +134,7 @@ ${dimList}
     }),
   });
 
-  const extractData: { choices?: Array<{ message?: { content?: string } }> } = await extractRes.json();
+  const extractData = await extractRes.json() as { choices?: Array<{ message?: { content?: string } }> };
   const extractText = extractData.choices?.[0]?.message?.content || '';
   const jsonMatch = extractText.match(/\[[\s\S]*\]/);
   const dimensions = jsonMatch
