@@ -7,6 +7,8 @@
 import type { DataConnector, ConnectorMessage, ConnectorMember, ConnectorEvent, OntologyMapping } from './types';
 import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
 import { createLogger } from '../logger';
+import { feishuHealthCheck } from './feishu-bridge';
+import type { FeishuMember } from './feishu-bridge';
 
 const log = createLogger('connectors/feishu');
 
@@ -16,10 +18,17 @@ export interface FeishuConfig {
   tenantKey?: string;
 }
 
+/** 从环境变量加载飞书配置 (P0-2) */
+export function loadFeishuConfig(): FeishuConfig {
+  return {
+    appId: process.env.FEISHU_APP_ID || '',
+    appSecret: process.env.FEISHU_APP_SECRET || '',
+  };
+}
+
 /**
- * 飞书数据连接器。
- * Phase B: 生产实现对接飞书服务端 API（消息、通讯录、审批）。
- * 当前 Phase A: 返回空数据 + 完整的映射逻辑骨架，验证接口可行。
+ * 飞书数据连接器 (P0-2: 已激活真实 API)。
+ * 对接飞书服务端 API（消息、通讯录、审批），映射为 SOG 本体事件。
  */
 export class FeishuConnector implements DataConnector {
   readonly id = 'feishu-connector';
@@ -28,33 +37,64 @@ export class FeishuConnector implements DataConnector {
 
   private config: FeishuConfig;
 
-  constructor(config: FeishuConfig) {
-    this.config = config;
+  constructor(config?: FeishuConfig) {
+    this.config = config || loadFeishuConfig();
   }
 
   async healthCheck(): Promise<{ healthy: boolean; error?: string }> {
     if (!this.config.appId || !this.config.appSecret) {
-      return { healthy: false, error: '飞书 App ID 或 App Secret 未配置' };
+      return { healthy: false, error: '飞书 App ID 或 App Secret 未配置 (设置 FEISHU_APP_ID / FEISHU_APP_SECRET 环境变量)' };
     }
-    // Phase B: 调用飞书 tenant_access_token API 验证凭证
-    return { healthy: true };
+    const ok = await feishuHealthCheck(this.config.appId, this.config.appSecret);
+    return ok ? { healthy: true } : { healthy: false, error: '飞书 API 连接失败 (检查 App ID/Secret 或网络)' };
   }
 
   async fetchMessages(orgId: string, since: string, until?: string): Promise<ConnectorMessage[]> {
-    // P1: 激活 Python 连接器 — synova_worker/connectors/feishu.py 已就绪
-    // 激活路径: PythonBridge.run('connectors.feishu', 'fetch_messages', { orgId, since, until })
-    // 需要有效飞书 App ID + App Secret (配置在 .env 中)
-    log.info({ orgId, since, until }, '[feishu] 获取消息 — 待激活 (Python 连接器就绪)');
-    return [];
+    if (!this.config.appId || !this.config.appSecret) {
+      log.warn('[feishu] 凭证未配置 — 返回空');
+      return [];
+    }
+    try {
+      const { getPythonBridge } = await import('../providers/python-bridge');
+      const bridge = getPythonBridge();
+      const result = await bridge.run<{ messages: ConnectorMessage[] }>(
+        'connectors.feishu', 'connector_feishu_fetch_messages',
+        { appId: this.config.appId, appSecret: this.config.appSecret, orgId, since, until },
+      );
+      log.info({ orgId, count: result.messages?.length || 0 }, '[feishu] 消息获取完成');
+      return result.messages || [];
+    } catch (err) {
+      log.warn({ err, orgId }, '[feishu] 消息获取失败 — 返回空 (degraded)');
+      return [];
+    }
   }
 
   async fetchMembers(orgId: string): Promise<ConnectorMember[]> {
-    log.info({ orgId }, '[feishu] 获取成员 — 待激活 (Python 连接器就绪)');
-    return [];
+    if (!this.config.appId || !this.config.appSecret) {
+      log.warn('[feishu] 凭证未配置 — 返回空');
+      return [];
+    }
+    try {
+      const { getPythonBridge } = await import('../providers/python-bridge');
+      const bridge = getPythonBridge();
+      const result = await bridge.run<{ members: FeishuMember[] }>(
+        'connectors.feishu', 'connector_feishu_fetch_members',
+        { appId: this.config.appId, appSecret: this.config.appSecret },
+      );
+      const members: ConnectorMember[] = (result.members || []).map(m => ({
+        id: m.id, name: m.name, email: m.email, department: m.departmentIds?.[0] || '',
+        title: m.title, status: m.status,
+      }));
+      log.info({ orgId, count: members.length }, '[feishu] 成员获取完成');
+      return members;
+    } catch (err) {
+      log.warn({ err, orgId }, '[feishu] 成员获取失败 — 返回空 (degraded)');
+      return [];
+    }
   }
 
   async fetchEvents(orgId: string, since: string, until?: string): Promise<ConnectorEvent[]> {
-    log.info({ orgId, since, until }, '[feishu] 获取事件 — 待激活 (Python 连接器就绪)');
+    log.info({ orgId, since, until }, '[feishu] 获取事件 — 待激活');
     return [];
   }
 

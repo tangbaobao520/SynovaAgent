@@ -30,12 +30,16 @@ export async function syncFeishuMembersToSOG(
     { appId, appSecret },
   );
 
-  // Map to SOG nodes
+  // Map to SOG nodes (兜底空值 — SOG Person 必填 name)
   let nodeCount = 0;
   for (const m of result.members) {
     store.createNode('Person', {
-      name: m.name, email: m.email, mobile: m.mobile,
-      title: m.title, employeeType: m.employeeType, status: m.status,
+      name: m.name || `FeishuUser_${m.id}`,
+      email: m.email || '',
+      mobile: m.mobile || '',
+      title: m.title || '',
+      employeeType: m.employeeType || 'employee',
+      status: m.status || 'active',
       sourceId: m.id, source: 'feishu',
     }, orgId);
     nodeCount++;

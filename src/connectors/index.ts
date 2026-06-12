@@ -6,6 +6,6 @@
  *
  * 两个轨都实现 DataConnector 接口——诊断引擎代码完全统一。
  */
-export { FeishuConnector } from './feishu';
+export { FeishuConnector, loadFeishuConfig } from './feishu';
 export type { FeishuConfig } from './feishu';
 export type { DataConnector, ConnectorMessage, ConnectorMember, ConnectorEvent, OntologyMapping } from './types';
