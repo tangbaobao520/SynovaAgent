@@ -332,17 +332,8 @@ function registerBuiltinModules(): void {
       label: '异质节点网络',
       description: 'Agent 交互网络密度、中心性、结构类型',
     },
-    {
-      id: 'capability-gap',
-      version: '1.0.0',
-      priority: 'P1',
-      requiredDataSources: {},
-      compute: (_teamId: string) => null, // Requires SOG graph data via orchestrator
-      confidenceModel: 'deterministic',
-      label: '能力缺口',
-      description: 'SOG v1.0: Capability/PROVIDES/DEPENDS_ON 能力覆盖度与缺口识别',
-      ontologyRole: 'observer',
-    },
+    // capability-gap 注册已移除 — compute() 始终返回 null。
+    // 文件保留 (analyzeCapabilityGaps() 被 graph-bridge.ts 直接调用)。
     {
       id: 'intent-alignment',
       version: '1.0.0',
@@ -474,84 +465,16 @@ function registerBuiltinModules(): void {
   }
 
   // ── Marketing Modules (ARCH-19) ──
-  const marketingModules: DiagnosticModule[] = [
-    {
-      id: 'category-clarity',
-      version: '1.0.0',
-      priority: 'P1',
-      requiredDataSources: { questionnaire: true },
-      compute: (teamId: string) => {
-        // Requires customer survey responses stored per team.
-        // Returns null when < 3 responses available.
-        return null;
-      },
-      confidenceModel: 'statistical',
-      label: '品类认知清晰度',
-      description: '客户用同一个品类词描述公司吗？主导词一致性比例 + 混乱度判定',
-    },
-    {
-      id: 'positioning-consistency',
-      version: '1.0.0',
-      priority: 'P1',
-      requiredDataSources: { questionnaire: true },
-      compute: (teamId: string) => {
-        // Requires three-party positioning data (external claims, internal descriptions, customer perceptions).
-        // Returns null when any party data is empty.
-        return null;
-      },
-      confidenceModel: 'statistical',
-      label: '定位三方一致性',
-      description: '对外声称 vs 内部共识 vs 客户感知的三方对齐度，含缺口诊断',
-    },
-    {
-      id: 'differentiation-validation',
-      version: '1.0.0',
-      priority: 'P1',
-      requiredDataSources: { questionnaire: true, humanEvents: true },
-      compute: (teamId: string) => {
-        // Requires claimed differentiation + customer perception data.
-        // Rule-based overlap + optional LLM semantic equivalence refinement.
-        return null;
-      },
-      confidenceModel: 'llm_inferred',
-      label: '差异化实质性验证',
-      description: '公司声称的差异化是否被客户感知 + 组织能力是否支撑',
-    },
-  ];
+  // 注意: category-clarity / positioning-consistency / differentiation-validation
+  // 的 DiagnosticModule 注册已移除 —— compute() 始终返回 null（需要客户问卷数据）。
+  // 模块文件本身保留（导出真实工具函数，被 diagnosis-assembler 等使用）。
+  // 对应的哨兵能力在 Phase 2 规划中 (P2-3 市场感知哨兵)。
 
-  for (const mod of marketingModules) {
-    registerModule(mod);
-  }
-
-  // ── SOG v1.0 新模块 (Goal Alignment, Risk Aggregator, Compliance, Location) ──
-  const sogV1Modules: DiagnosticModule[] = [
-    {
-      id: 'goal-alignment',
-      version: '1.0.0',
-      priority: 'P1',
-      requiredDataSources: {},
-      compute: (_teamId: string) => null, // Requires SOG graph data
-      confidenceModel: 'deterministic',
-      label: '目标对齐度',
-      description: 'SOG v1.0: Goal/ALIGNS_WITH 组织-团队-个人目标对齐量化',
-      ontologyRole: 'analyzer',
-    },
-    {
-      id: 'risk-aggregator',
-      version: '1.0.0',
-      priority: 'P1',
-      requiredDataSources: {},
-      compute: (_teamId: string) => null, // Requires SOG graph data
-      confidenceModel: 'deterministic',
-      label: '风险聚合',
-      description: 'SOG v1.0: Risk 节点遍历→风险概览+热力图+topN 排序',
-      ontologyRole: 'analyzer',
-    },
-  ];
-
-  for (const mod of sogV1Modules) {
-    registerModule(mod);
-  }
+  // ── SOG v1.0 模块 ──
+  // 注意: goal-alignment / risk-aggregator 的 DiagnosticModule 注册已移除
+  // —— compute() 始终返回 null（需要 SOG 图数据）。
+  // 模块文件本身保留（导出真实算法函数，被 graph-bridge / diagnosis-launcher 使用）。
+  // 对应的哨兵能力在 Phase 2 规划中。
 
   // ── P2 Modules (ARCH-08 Benchmark + Enricher) ──
   const p2Modules: DiagnosticModule[] = [
