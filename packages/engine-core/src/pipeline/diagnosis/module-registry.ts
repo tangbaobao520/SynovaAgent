@@ -30,6 +30,17 @@ export interface DiagnosticDataSourceRequirements {
 /** 本体角色 (ARCH-20 Phase A6) */
 export type OntologyRole = 'observer' | 'analyzer' | 'hybrid';
 
+/**
+ * @deprecated 自 P1-1 Sentinel 接口引入后, DiagnosticModule 不再接受新注册。
+ * 新诊断能力应实现 {@link ../../../../../src/sentinel/types.ts#Sentinel} 接口,
+ * 通过 SentinelRegistry + SentinelRunner + CronScheduler 调度运行。
+ *
+ * 迁移路径:
+ *   旧: registerModule({ id: 'x', compute: async (teamId) => {...} })
+ *   新: getSentinelRegistry().register({ config: {...}, check: async (ctx) => {...} })
+ *
+ * 存量模块继续工作但不再扩展。pre-commit hook 阻断新增注册。
+ */
 export interface DiagnosticModule {
   /** 唯一模块 ID */
   id: string;

@@ -123,6 +123,16 @@ PRE_EXISTING=$(grep -rn "pre.existing\|known.failure\|FIXME.*test\|skip.*broken\
 hard_check "Anthropic: 禁止 pre-existing/known-failure 标记" "$PRE_EXISTING"
 
 # ═══ 自动化诚实门禁 ═══
+# P1-2: DiagnosticModule 已 @deprecated — 禁止新增注册 (铁律 35: 编译器级阻断)
+# 基线: 8 处 registerModule() (4 批: 通用/FDE/营销/SOG v1)
+DM_COUNT=$(grep -c "registerModule(" packages/engine-core/src/pipeline/diagnosis/module-registry.ts 2>/dev/null) || DM_COUNT=0
+if [ "${DM_COUNT:-0}" -gt 8 ]; then
+  hard_check "P1-2: 新增 DiagnosticModule 注册 (已 @deprecated → 迁移到 Sentinel 接口)" "发现 ${DM_COUNT} 处 (基线 8)"
+fi
+if [ "${DM_COUNT:-0}" -eq 8 ]; then
+  echo -e "  ${GREEN}✅ P1-2: DiagnosticModule 注册数保持基线 (8)${RESET}"
+fi
+
 # 每处违规 = 硬阻断。不靠 CLAUDE.md 提醒，靠编译器级强制执行。
 bash "$(dirname "$0")/check-reality.sh" || { echo -e "  ${RED}❌ 诚实门禁: 存在违规项${RESET}"; HARD_FAIL=$((HARD_FAIL + 1)); }
 echo ""
