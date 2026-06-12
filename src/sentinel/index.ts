@@ -21,3 +21,11 @@ export {
   getSentinelRegistry,
   destroySentinelRegistry,
 } from './registry';
+
+export {
+  SentinelRunner,
+} from './runner';
+export type {
+  SentinelRunRecord,
+  SentinelRunnerStats,
+} from './runner';
