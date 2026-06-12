@@ -68,7 +68,12 @@ export class SentinelRunner {
       this.scheduleSentinel(sentinel, cron);
     }
 
-    log.info({ count: cronSentinels.length }, '[runner] 所有 cron 哨兵已启动');
+    // 信号聚合 — 每小时整点过 5 分运行 (在所有哨兵之后)
+    this.scheduler.schedule('SignalAggregator', '5 * * * *', async () => {
+      await this.aggregateAndDispatch();
+    });
+
+    log.info({ count: cronSentinels.length }, '[runner] 所有 cron 哨兵 + 信号聚合已启动');
   }
 
   /**
@@ -114,6 +119,43 @@ export class SentinelRunner {
       warningFindings: allFindings.filter(f => f.severity === 'warning').length,
       lastRunAt: lastRecord?.result.checkedAt ?? null,
     };
+  }
+
+  /**
+   * 信号聚合 — 收集所有哨兵最新结果，交叉关联，输出聚合信号。
+   * 每小时调用一次 (在所有哨兵 cron tick 之后)。
+   */
+  async aggregateAndDispatch(): Promise<void> {
+    try {
+      const results: SentinelCheckResult[] = [];
+      for (const [, history] of this.records) {
+        if (history.length > 0) {
+          results.push(history[history.length - 1].result);
+        }
+      }
+      if (results.length === 0) return;
+
+      const { aggregateSignals } = await import('./signal-aggregator');
+      const { signals, stats } = aggregateSignals(results);
+
+      if (stats.criticalSignals > 0) {
+        log.warn({
+          totalFindings: stats.totalFindings,
+          aggregatedSignals: stats.aggregatedSignals,
+          criticalSignals: stats.criticalSignals,
+          signals: signals.slice(0, 3).map(s => ({ id: s.id, severity: s.severity, experts: s.recommendedExperts })),
+        }, '[runner] 聚合信号 — 发现 critical 信号');
+      } else if (signals.length > 0) {
+        log.info({ signals: signals.length, critical: 0 }, '[runner] 聚合完成 — 无 critical 信号');
+      }
+    } catch (err: unknown) {
+      log.error({ err }, '[runner] 信号聚合失败');
+    }
+  }
+
+  /** 获取最近哨兵运行记录 (供外部 API 查询) */
+  getRecentResults(): Map<string, SentinelRunRecord[]> {
+    return this.records;
   }
 
   // ═══ Private ═══
