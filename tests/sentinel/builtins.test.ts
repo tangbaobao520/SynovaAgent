@@ -28,6 +28,8 @@ vi.mock('../../src/sentinel/adapters/self-awareness-sentinel', () => ({ selfAwar
 vi.mock('../../src/sentinel/adapters/seven-powers-sentinel', () => ({ sevenPowersSentinel: makeMockSentinel('sentinel-seven-powers', 'strategy', '0 9 1 * *') }));
 vi.mock('../../src/sentinel/adapters/eob-sentinel', () => ({ eobSentinel: makeMockSentinel('sentinel-eob', 'capability', '0 9 * * 2') }));
 vi.mock('../../src/sentinel/adapters/hona-sentinel', () => ({ honaSentinel: makeMockSentinel('sentinel-hona', 'collaboration', '0 9 * * 1') }));
+vi.mock('../../src/sentinel/adapters/key-person-risk-sentinel', () => ({ keyPersonRiskSentinel: makeMockSentinel('sentinel-key-person-risk', 'risk', '0 9 * * 1') }));
+vi.mock('../../src/sentinel/adapters/token-economics-sentinel', () => ({ tokenEconomicsSentinel: makeMockSentinel('sentinel-token-economics', 'capability', '0 9 * * 1') }));
 
 import { getSentinelRegistry, destroySentinelRegistry } from '../../src/sentinel/registry';
 import { registerBuiltinSentinels } from '../../src/sentinel/builtins';
@@ -37,15 +39,15 @@ describe('registerBuiltinSentinels', () => {
     destroySentinelRegistry();
   });
 
-  it('Given 9 个适配器全部加载成功 → 注册 9 个哨兵', async () => {
+  it('Given 9 个适配器全部加载成功 → 注册 11 个哨兵', async () => {
     await registerBuiltinSentinels();
-    expect(getSentinelRegistry().count()).toBe(9);
+    expect(getSentinelRegistry().count()).toBe(11);
   });
 
-  it('Given 9 个 cron sentinel → listCronSentinels() 返回 9 个', async () => {
+  it('Given 9 个 cron sentinel → listCronSentinels() 返回 11 个', async () => {
     await registerBuiltinSentinels();
     const cronList = getSentinelRegistry().listCronSentinels();
-    expect(cronList.length).toBe(9);
+    expect(cronList.length).toBe(11);
     for (const { sentinel, cron } of cronList) {
       expect(sentinel.config.mode).toBe('cron');
       expect(cron).toBeTruthy();
@@ -55,7 +57,7 @@ describe('registerBuiltinSentinels', () => {
   it('Given 注册后 → 每个哨兵有唯一 ID 和有效类别', async () => {
     await registerBuiltinSentinels();
     const ids = new Set<string>();
-    const validCategories = new Set(['collaboration', 'capability', 'strategy']);
+    const validCategories = new Set(['collaboration', 'capability', 'strategy', 'risk']);
     for (const s of getSentinelRegistry().list()) {
       expect(ids.has(s.config.id)).toBe(false);
       ids.add(s.config.id);
@@ -69,6 +71,6 @@ describe('registerBuiltinSentinels', () => {
   it('Given 第二次调用 registerBuiltinSentinels → 覆盖旧哨兵但仍为 9 个', async () => {
     await registerBuiltinSentinels();
     await registerBuiltinSentinels();
-    expect(getSentinelRegistry().count()).toBe(9);
+    expect(getSentinelRegistry().count()).toBe(11);
   });
 });

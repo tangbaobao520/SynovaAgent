@@ -30,6 +30,8 @@ export async function registerBuiltinSentinels(): Promise<void> {
     { name: 'SevenPowers', loader: () => import('./adapters/seven-powers-sentinel'), key: 'sevenPowersSentinel' },
     { name: 'EOB', loader: () => import('./adapters/eob-sentinel'), key: 'eobSentinel' },
     { name: 'HONA', loader: () => import('./adapters/hona-sentinel'), key: 'honaSentinel' },
+    { name: 'KeyPersonRisk', loader: () => import('./adapters/key-person-risk-sentinel'), key: 'keyPersonRiskSentinel' },
+    { name: 'TokenEconomics', loader: () => import('./adapters/token-economics-sentinel'), key: 'tokenEconomicsSentinel' },
   ];
 
   let registered = 0;
