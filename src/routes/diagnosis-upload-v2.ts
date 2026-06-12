@@ -82,10 +82,7 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
   const { DocExtractor } = await import('../../packages/engine-core/src/pipeline/diagnosis/doc-extractor');
   const graphStore = await createRealGraphStore(jobId);
   // GraphStore 已通过 createRealGraphStore 创建 (P0-1 修复)
-  const extractor = new DocExtractor(
-    graphStore as unknown as Parameters<typeof DocExtractor.prototype.constructor>[0],
-    llmClient,
-  );
+  const extractor = new (DocExtractor as any)(graphStore, llmClient);
   const { SOGNodeType } = await import('@synova/sog-core');
   const docId = graphStore.createNode(SOGNodeType.DOCUMENT, { name: `interview_${jobId}`, content }, teamId);
   const extraction = await extractor.extract(docId, content, teamId);
