@@ -16,6 +16,7 @@ import { Router, type Request, type Response } from 'express';
 import { createProvider } from '../providers';
 import { loadConfig } from '../config';
 import { createLogger } from '../logger';
+import { getDatabase } from '../init/engine-context';
 
 const log = createLogger('routes/diagnosis-upload');
 const router = Router();
@@ -79,8 +80,8 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
   // Step 1: 八维度提取
   job.status = 'extracting';
   const { DocExtractor } = await import('../../packages/engine-core/src/pipeline/diagnosis/doc-extractor');
-  const graphStore = createMemoryGraphStore();
-  // 类型断言: createMemoryGraphStore 实现 GraphStore 接口，但不需要完整 SQLiteGraphStore
+  const graphStore = await createRealGraphStore(jobId);
+  // GraphStore 已通过 createRealGraphStore 创建 (P0-1 修复)
   const extractor = new DocExtractor(
     graphStore as unknown as Parameters<typeof DocExtractor.prototype.constructor>[0],
     llmClient,
@@ -393,6 +394,20 @@ async function syncDiagnosisToGraph(
 }
 
 function esc(t: string): string { return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+/** P0-1: 创建真实 SQLite GraphStore，失败时回退到内存存储 */
+async function createRealGraphStore(jobId: string): Promise<any> {
+  try {
+    const db = getDatabase();
+    const { createGraphStore } = await import('@synova/diagnosis-engine');
+    const store = createGraphStore('sqlite', db);
+    log.debug({ jobId }, 'GraphStore (SQLite) 已连接');
+    return store;
+  } catch (err: any) {
+    log.warn({ jobId, err: err.message }, '数据库不可用 — 降级为内存 GraphStore');
+    return createMemoryGraphStore();
+  }
+}
 
 function createMemoryGraphStore() {
   const nodes = new Map<string, any[]>(); const edges: any[] = [];
