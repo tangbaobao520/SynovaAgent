@@ -40,12 +40,14 @@ export interface SentinelRunnerStats {
 
 export class SentinelRunner {
   private scheduler: CronScheduler;
+  private db: unknown;
   private records = new Map<string, SentinelRunRecord[]>();
   private cronJobIds = new Map<string, string>();
   private totalRuns = 0;
 
-  constructor(scheduler: CronScheduler) {
+  constructor(scheduler: CronScheduler, db: unknown) {
     this.scheduler = scheduler;
+    this.db = db;
   }
 
   /**
@@ -133,7 +135,7 @@ export class SentinelRunner {
     try {
       // 构造上下文 — 哨兵通过 context.db 访问数据库
       const ctx = {
-        db: (this.scheduler as any).db,
+        db: this.db,
         now: new Date(),
         registry: getSentinelRegistry(),
       };

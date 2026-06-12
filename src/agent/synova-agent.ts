@@ -50,7 +50,7 @@ export class SynovaAgent {
     });
 
     // SentinelRunner — 启动所有 cron 哨兵 (P1-4)
-    this.sentinelRunner = new SentinelRunner(this.scheduler);
+    this.sentinelRunner = new SentinelRunner(this.scheduler, this.db);
     this.sentinelRunner.start();
 
     log.info({ port: config.port }, 'SynovaAgent 已启动');
