@@ -29,3 +29,7 @@ export type {
   SentinelRunRecord,
   SentinelRunnerStats,
 } from './runner';
+
+export {
+  registerBuiltinSentinels,
+} from './builtins';

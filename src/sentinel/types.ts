@@ -16,12 +16,15 @@ import type { DiagnosisErrorCode } from '../../packages/engine-core/src/pipeline
 
 /** 哨兵类别 */
 export type SentinelCategory =
-  | 'health'        // 系统健康 (数据库连接、API 可用性)
-  | 'data-quality'  // 数据质量 (缺失字段、过期数据、异常值)
-  | 'risk'          // 风险监测 (关键人离职、客户集中度)
-  | 'evolution'     // 进化追踪 (组织变化速度、适应性)
-  | 'compliance'    // 合规检查
-  | 'custom';       // 用户自定义
+  | 'health'         // 系统健康 (数据库连接、API 可用性)
+  | 'data-quality'   // 数据质量 (缺失字段、过期数据、异常值)
+  | 'risk'           // 风险监测 (关键人离职、客户集中度)
+  | 'evolution'      // 进化追踪 (组织变化速度、适应性)
+  | 'compliance'     // 合规检查
+  | 'collaboration'  // 人+Agent 协作信号 (D3: 信任、协作深度、自知偏差)
+  | 'capability'     // 组织能力信号 (D2: 缝隙、协议完备性、路径依赖)
+  | 'strategy'       // 战略健康信号 (D6: 竞争壁垒)
+  | 'custom';        // 用户自定义
 
 /** 哨兵优先级 */
 export type SentinelPriority = 'P0' | 'P1' | 'P2' | 'P3';

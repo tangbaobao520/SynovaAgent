@@ -49,6 +49,10 @@ export class SynovaAgent {
       }
     });
 
+    // 注册内置哨兵 (必须在 SentinelRunner 启动前——否则 Runner 找不到哨兵)
+    const { registerBuiltinSentinels } = await import('../sentinel/builtins');
+    await registerBuiltinSentinels();
+
     // SentinelRunner — 启动所有 cron 哨兵 (P1-4)
     this.sentinelRunner = new SentinelRunner(this.scheduler, this.db);
     this.sentinelRunner.start();
