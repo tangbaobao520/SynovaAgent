@@ -33,3 +33,25 @@ export type {
 export {
   registerBuiltinSentinels,
 } from './builtins';
+
+// 信号聚合引擎 (B1)
+export {
+  aggregateSignals,
+  collectAndAggregate,
+} from './signal-aggregator';
+export type {
+  AggregatedSignal,
+  SignalAggregatorStats,
+} from './signal-aggregator';
+
+// 基线管理 (B2)
+export {
+  BaselineStore,
+  getBaselineStore,
+  destroyBaselineStore,
+} from './baseline-store';
+export type {
+  BaselineRecord,
+  BaselineStats,
+  BaselineComparison,
+} from './baseline-store';

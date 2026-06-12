@@ -13,6 +13,7 @@
 import type { CronScheduler } from '../cron/scheduler';
 import type { Sentinel, SentinelCheckResult } from './types';
 import { getSentinelRegistry } from './registry';
+import { getBaselineStore } from './baseline-store';
 import { createLogger } from '../logger';
 
 const log = createLogger('sentinel/runner');
@@ -160,6 +161,23 @@ export class SentinelRunner {
       this.totalRuns++;
 
       // 记录发现
+      // 基线记录 + 对比 (B2)
+      try {
+        const baselineStore = getBaselineStore();
+        baselineStore.record(sentinel.config.id, result.findings);
+        const comparison = baselineStore.compare(sentinel.config.id, result.findings);
+        if (comparison.deviation.findingCountRatio > 2 && comparison.baseline.baselineReady) {
+          log.warn({
+            sentinelId: sentinel.config.id,
+            ratio: comparison.deviation.findingCountRatio.toFixed(1),
+            baseline: comparison.baseline.avgFindingCount.toFixed(1),
+            current: comparison.current.findingCount,
+          }, '[runner] 基线偏离 — finding 数量异常');
+        }
+      } catch (baselineErr: any) {
+        log.debug({ err: baselineErr.message }, '[runner] 基线记录失败 (非阻断)');
+      }
+
       if (result.findings.length > 0) {
         const critical = result.findings.filter(f => f.severity === 'critical').length;
         const warning = result.findings.filter(f => f.severity === 'warning').length;
