@@ -1,5 +1,6 @@
 /**
  * sentinel/adapters/hacd-sentinel.ts — 人机协作深度哨兵 (D3)
+ * @state: real
  *
  * 包装 computeHACD()，监测协作深度等级和 HITL 比率。
  * 每日巡检 (高频信号)。

@@ -1,5 +1,6 @@
 /**
  * sentinel/adapters/hona-sentinel.ts — 异质节点网络哨兵 (D3)
+ * @state: real
  *
  * 包装 computeHONA()，监测 Agent 交互网络的密度、中心性和拓扑结构。
  * 每周一 9:00 巡检。

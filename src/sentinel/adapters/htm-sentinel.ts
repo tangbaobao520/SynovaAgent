@@ -1,5 +1,6 @@
 /**
  * sentinel/adapters/htm-sentinel.ts — 混合信任模型哨兵 (D3: 人+Agent 协作)
+ * @state: real
  *
  * 包装 engine-core 的 computeHTM()，将 HTMReport 转换为 SentinelFinding[]。
  *

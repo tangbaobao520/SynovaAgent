@@ -1,5 +1,6 @@
 /**
  * sentinel/adapters/helpers.ts — 哨兵适配器辅助函数
+ * @state: real
  *
  * 提供 DB 上下文切换 + 团队发现 + 报告→Finding 转换工具。
  * 所有引擎模块通过 getEngineContext().database.getDb() 访问 DB，

@@ -1,5 +1,6 @@
 /**
  * sentinel/adapters/self-awareness-sentinel.ts — 自知偏差哨兵 (D3)
+ * @state: real
  *
  * 包装 computeSelfAwareness()，对比引擎观测 vs 人类自评的认知偏差。
  * 每周一 9:00 巡检。

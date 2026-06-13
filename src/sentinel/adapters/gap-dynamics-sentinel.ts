@@ -1,5 +1,6 @@
 /**
  * sentinel/adapters/gap-dynamics-sentinel.ts — 缝隙动力学哨兵 (D2)
+ * @state: real
  *
  * 包装 computeDynamics()，监测组织能力缝隙的变化速度和粘性维度。
  * 每周一 9:00 巡检。

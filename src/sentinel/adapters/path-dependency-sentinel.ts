@@ -1,5 +1,6 @@
 /**
  * sentinel/adapters/path-dependency-sentinel.ts — 路径依赖检测哨兵 (D2)
+ * @state: real
  *
  * 包装 detectPathDependency()，检测组织是否因历史原因僵化在某个维度。
  * 每周一 9:00 巡检。

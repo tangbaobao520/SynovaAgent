@@ -1,5 +1,6 @@
 /**
  * sentinel/adapters/seven-powers-sentinel.ts — 7 Powers 竞争壁垒哨兵 (D6)
+ * @state: real
  *
  * 包装 computeSevenPowers()，评估企业护城河的 7 种力量。
  * 每月 1 日 9:00 巡检 (低频——战略壁垒变化慢)。

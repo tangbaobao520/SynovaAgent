@@ -1,5 +1,6 @@
 /**
  * sentinel/adapters/eob-sentinel.ts — 组织弹性边界哨兵 (D2)
+ * @state: real
  *
  * 包装 computeEOB()，监测 Agent 流失率、弹性扩展延迟、僵尸权限。
  * 每周二 9:00 巡检 (避免与周一的 capability sentinels 同时触发)。

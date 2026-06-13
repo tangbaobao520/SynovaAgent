@@ -1,5 +1,6 @@
 /**
  * sentinel/adapters/cpc-sentinel.ts — 协作协议完备性哨兵 (D2)
+ * @state: real
  *
  * 包装 computeCPC()，监测组织协作协议的完备程度。
  * 每周一 9:00 巡检。
