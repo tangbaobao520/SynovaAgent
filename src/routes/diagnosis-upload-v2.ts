@@ -60,6 +60,60 @@ router.get('/report/:jobId', (req: Request, res: Response) => {
   else { res.json({ jobId: job.jobId, status: job.status }); }
 });
 
+// P0-3: 管线进度页 — FDE 提交后可以看到实时阶段变化
+router.get('/status/:jobId', (req: Request, res: Response) => {
+  const jid = Array.isArray(req.params.jobId) ? req.params.jobId[0] : req.params.jobId;
+  const job = jobStore.get(jid);
+  if (!job) { res.status(404).json({ error: '诊断任务未找到' }); return; }
+
+  const STAGES = ['extracting', 'measuring', 'reasoning', 'building', 'complete'] as const;
+  const STAGE_LABELS: Record<string, string> = {
+    extracting: '八维度提取', measuring: '测量管道', reasoning: '专家推理',
+    building: '报告生成', complete: '完成', failed: '失败',
+  };
+  const currentIdx = STAGES.indexOf(job.status as typeof STAGES[number]);
+
+  const progressPct = job.status === 'complete' ? 100
+    : job.status === 'failed' ? 0
+    : Math.round(((currentIdx >= 0 ? currentIdx : 0) / STAGES.length) * 100);
+
+  res.type('html').send(`<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta http-equiv="refresh" content="3">
+<title>诊断进度 — Synova</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,"Microsoft YaHei",sans-serif;background:#0d1117;color:#c9d1d9;display:flex;justify-content:center;align-items:center;min-height:100vh}
+.card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:2rem;max-width:500px;width:90%}
+h1{font-size:1.2rem;margin-bottom:1.5rem;color:#58a6ff}
+.stage{display:flex;align-items:center;margin-bottom:0.75rem;font-size:0.9rem}
+.stage-dot{width:12px;height:12px;border-radius:50%;margin-right:0.75rem;flex-shrink:0}
+.done .stage-dot{background:#3fb950}
+.active .stage-dot{background:#58a6ff;animation:pulse 1s infinite}
+.pending .stage-dot{background:#30363d}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.stage-label{flex:1}
+.done .stage-label{color:#3fb950}
+.pending .stage-label{color:#484f58}
+.bar{height:4px;background:#30363d;border-radius:2px;margin:1.5rem 0;overflow:hidden}
+.bar-fill{height:100%;background:#58a6ff;border-radius:2px;transition:width 1s}
+.pct{text-align:center;font-size:2rem;font-weight:700;color:#58a6ff;margin-bottom:0.5rem}
+.status-msg{text-align:center;color:#8b949e;font-size:0.85rem}
+.failed .stage-dot{background:#f85149}
+.failed{color:#f85149}
+</style></head><body>
+<div class="card">
+<h1>Synova 组织诊断</h1>
+${STAGES.map((s, i) => {
+  const cls = job.status === 'complete' || i < currentIdx ? 'done' : i === currentIdx ? 'active' : 'pending';
+  return `<div class="stage ${cls}"><span class="stage-dot"></span><span class="stage-label">${STAGE_LABELS[s]}</span></div>`;
+}).join('')}
+${job.status === 'failed' ? `<div class="stage failed"><span class="stage-dot"></span>❌ ${job.error || '诊断失败'}</div>` : ''}
+<div class="bar"><div class="bar-fill" style="width:${progressPct}%"></div></div>
+<div class="pct">${progressPct}%</div>
+<div class="status-msg">${job.status === 'complete' ? '✅ 诊断完成 — <a href="/api/diagnosis/report/' + jid + '" style="color:#58a6ff">查看报告</a>' : job.status === 'failed' ? '诊断失败，请重试' : '页面每 3 秒自动刷新'}</div>
+</div></body></html>`);
+});
+
 // ═══ Pipeline ═══
 
 async function runDiagnosisPipeline(jobId: string, content: string, teamId: string, orgName: string): Promise<void> {
