@@ -30,6 +30,10 @@ vi.mock('../../src/sentinel/adapters/eob-sentinel', () => ({ eobSentinel: makeMo
 vi.mock('../../src/sentinel/adapters/hona-sentinel', () => ({ honaSentinel: makeMockSentinel('sentinel-hona', 'collaboration', '0 9 * * 1') }));
 vi.mock('../../src/sentinel/adapters/key-person-risk-sentinel', () => ({ keyPersonRiskSentinel: makeMockSentinel('sentinel-key-person-risk', 'risk', '0 9 * * 1') }));
 vi.mock('../../src/sentinel/adapters/token-economics-sentinel', () => ({ tokenEconomicsSentinel: makeMockSentinel('sentinel-token-economics', 'capability', '0 9 * * 1') }));
+vi.mock('../../src/sentinel/adapters/financial-impact-sentinel', () => ({ financialImpactSentinel: makeMockSentinel('sentinel-financial-impact', 'risk', '0 9 1 * *') }));
+vi.mock('../../src/sentinel/adapters/financial-snapshot-sentinel', () => ({ financialSnapshotSentinel: makeMockSentinel('sentinel-financial-snapshot', 'risk', '0 9 1 * *') }));
+vi.mock('../../src/sentinel/adapters/goal-alignment-sentinel', () => ({ goalAlignmentSentinel: makeMockSentinel('sentinel-goal-alignment', 'capability', '0 9 * * 1') }));
+vi.mock('../../src/sentinel/adapters/risk-aggregator-sentinel', () => ({ riskAggregatorSentinel: makeMockSentinel('sentinel-risk-aggregator', 'risk', '0 9 * * 1') }));
 
 import { getSentinelRegistry, destroySentinelRegistry } from '../../src/sentinel/registry';
 import { registerBuiltinSentinels } from '../../src/sentinel/builtins';
@@ -39,15 +43,15 @@ describe('registerBuiltinSentinels', () => {
     destroySentinelRegistry();
   });
 
-  it('Given 9 个适配器全部加载成功 → 注册 11 个哨兵', async () => {
+  it('Given 9 个适配器全部加载成功 → 注册 15 个哨兵', async () => {
     await registerBuiltinSentinels();
-    expect(getSentinelRegistry().count()).toBe(11);
+    expect(getSentinelRegistry().count()).toBe(15);
   });
 
-  it('Given 9 个 cron sentinel → listCronSentinels() 返回 11 个', async () => {
+  it('Given 9 个 cron sentinel → listCronSentinels() 返回 15 个', async () => {
     await registerBuiltinSentinels();
     const cronList = getSentinelRegistry().listCronSentinels();
-    expect(cronList.length).toBe(11);
+    expect(cronList.length).toBe(15);
     for (const { sentinel, cron } of cronList) {
       expect(sentinel.config.mode).toBe('cron');
       expect(cron).toBeTruthy();
@@ -71,6 +75,6 @@ describe('registerBuiltinSentinels', () => {
   it('Given 第二次调用 registerBuiltinSentinels → 覆盖旧哨兵但仍为 9 个', async () => {
     await registerBuiltinSentinels();
     await registerBuiltinSentinels();
-    expect(getSentinelRegistry().count()).toBe(11);
+    expect(getSentinelRegistry().count()).toBe(15);
   });
 });
