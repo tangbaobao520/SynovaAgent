@@ -38,7 +38,7 @@ export class EngineCoreVendorAdapter implements DiagnosisEngine {
       try {
         const { getDatabase, initEngineContext } = await import('../init/engine-context');
         try { getDatabase(); } catch { initEngineContext(); }
-      } catch {}
+      } catch { log.warn('engine-context 初始化跳过 (非阻断)'); }
 
       const llmClient = createDiagnosisLLMClient(this.provider);
       const toolExecutor = createToolExecutorAdapter(this.toolRegistry);

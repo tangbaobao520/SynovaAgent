@@ -31,7 +31,7 @@ export const measureEffectivenessTool: ToolDefinition = {
         const d = await r.json() as { results?: unknown[] };
         return { orgId, previousDiagnoses: d.results?.length || 0, hasHistory: (d.results?.length ?? 0) > 0, recommendation: (d.results?.length ?? 0) > 0 ? `对比上次行动项效果，评估改善幅度。` : '首次诊断——无历史数据可对比。' };
       }
-    } catch {
+    } catch { log.warn("action expert tool 执行失败"); 
       log.debug('Action expert 工具调用失败');
       // 会话 API 不可达 — 降级为无历史数据模式
     }

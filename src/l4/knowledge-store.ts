@@ -399,7 +399,7 @@ export class KnowledgeStore {
         }
       }
       return count;
-    } catch { return 0; }
+    } catch { log.warn("PKB count 查询失败"); return 0; }
   }
 
   /** 应用诊断反馈 — 调整知识置信度 */
@@ -421,7 +421,7 @@ export class KnowledgeStore {
       }
       this.db.prepare('UPDATE diagnosis_feedback SET processed = 1 WHERE processed = 0').run();
       return rows.length;
-    } catch { return 0; }
+    } catch { log.warn("PKB 活跃 count 查询失败"); return 0; }
   }
 
   // ═══ 权限管理 (M2 — 对话变更权限) ═══

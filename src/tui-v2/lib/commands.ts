@@ -47,7 +47,7 @@ export async function handleCommand(input: string, ctx: CommandContext): Promise
     if (ctx.convRef.current) ctx.store.saveState(ctx.sessionId, ctx.convRef.current.serialize());
     const scheduler = ctx.getGlobalScheduler(ctx.db);
     scheduler.stop();
-    try { ctx.db.pragma('wal_checkpoint(TRUNCATE)'); } catch {}
+    try { ctx.db.pragma('wal_checkpoint(TRUNCATE)'); } catch { /* WAL checkpoint 不可用 — 非阻塞 */ }
     ctx.db.close();
     ctx.exit();
     return { handled: true };

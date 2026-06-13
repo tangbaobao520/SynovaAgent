@@ -60,7 +60,7 @@ export async function setupTerminalEncoding() {
       if (cp !== 65001) {
         try { execSync('chcp 65001', { timeout: 3000 }); } catch { /* 静默 */ }
       }
-    } catch {
+    } catch { /* chcp 不可用 — 非 Windows 环境 */ }
       // chcp 不可用（Windows Terminal / Git Bash 默认 UTF-8，无需处理）
     }
   }

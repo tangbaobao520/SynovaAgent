@@ -15,7 +15,7 @@ let segmenter: Intl.Segmenter | null = null;
 if (hasSegmenter) {
   try {
     segmenter = new Intl.Segmenter('zh-Hans', { granularity: 'grapheme' });
-  } catch {
+  } catch { /* grapheme 分割失败 — 退化到字符级 */ }
     // 回退到 grapheme-splitter
   }
 }

@@ -77,7 +77,7 @@ async function runPipeline(
       const m = line.match(/^(\w+)\s*=\s*(.+)/);
       if (m) env[m[1]] = m[2].trim();
     }
-  } catch {}
+  } catch { log.warn("MVP server doc extraction 失败"); }
 
   const API_KEY = env.LLM_API_KEY || '';
   const API_BASE = env.LLM_BASE_URL || 'https://api.deepseek.com';

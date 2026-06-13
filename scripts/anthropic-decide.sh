@@ -69,8 +69,8 @@ fi
 
 # ═══ Question 4: User-visible gaps? ═══
 # Check if FederalReporter is instantiated/called anywhere (not just defined)
-FED_DEFINED=$(grep -rn "class FederalReporter\|export class FederalReporter" "$ROOT/../server/vendor/@synova/engine-core/src/" --include="*.ts" 2>/dev/null | wc -l | tr -d '[:space:]')
-FED_CALLED=$(grep -rn "new FederalReporter\|FederalReporter(" "$ROOT/src/" "$ROOT/../server/vendor/" --include="*.ts" 2>/dev/null | grep -v "federal-reporter.ts" | grep -v "\.test\." | wc -l | tr -d '[:space:]')
+FED_DEFINED=$(grep -rn "class FederalReporter\|export class FederalReporter" "$ROOT/../server/vendor/@synova/engine-core/src/" --include="*.ts" 2>/dev/null | wc -l | tr -d '[:space:]') || FED_DEFINED=0
+FED_CALLED=$(grep -rn "new FederalReporter\|FederalReporter(" "$ROOT/src/" "$ROOT/../server/vendor/" --include="*.ts" 2>/dev/null | grep -v "federal-reporter.ts" | grep -v "\.test\." | wc -l | tr -d '[:space:]') || FED_CALLED=0
 # Defined but never called = unwired
 FED_WIRED=$FED_CALLED
 

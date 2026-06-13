@@ -83,9 +83,7 @@ export class SentinelRunner {
     for (const [sentinelId, cronJobId] of this.cronJobIds) {
       try {
         this.scheduler.remove(cronJobId);
-      } catch {
-        log.debug({ sentinelId }, '[runner] 取消 cron 任务失败 (可能已停止)');
-      }
+      } catch { log.warn({ sentinelId }, '[runner] cron 取消失败 (可能已停止)'); }
     }
     this.cronJobIds.clear();
     log.info('[runner] 所有哨兵已停止');

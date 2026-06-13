@@ -149,7 +149,7 @@ export class AlertRuleEngine {
 
       if (triggered) {
         this.lastTriggered.set(rule.name, now);
-        try { this.db?.prepare('INSERT OR REPLACE INTO alert_cooldowns (rule_name, last_triggered_at) VALUES (?,?)').run(rule.name, now); } catch {}
+        try { this.db?.prepare('INSERT OR REPLACE INTO alert_cooldowns (rule_name, last_triggered_at) VALUES (?,?)').run(rule.name, now); } catch { log.warn("alert cooldown 写入失败"); }
         triggers.push({
           rule,
           currentValue: value,
@@ -170,7 +170,7 @@ export class AlertRuleEngine {
   /** Reset all cooldowns (for testing) */
   resetCooldowns(): void {
     this.lastTriggered.clear();
-    try { this.db?.prepare('DELETE FROM alert_cooldowns').run(); } catch {}
+    try { this.db?.prepare('DELETE FROM alert_cooldowns').run(); } catch { log.warn("alert cooldown 清理失败"); }
   }
 }
 
