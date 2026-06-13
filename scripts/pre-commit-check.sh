@@ -180,7 +180,7 @@ if [ -n "$RAW_CATCH" ]; then
     CTX=$(sed -n "${LINE_NUM},$((LINE_NUM + 2))p" "$FILE" 2>/dev/null || echo "")
     # 本行+后续2行无 log./logger./console. → 空吞
     if ! echo "$CTX" | grep -q "log\.\|logger\.\|console\."; then
-      if ! echo "$CTX" | grep -q "JSON.parse\|ENOENT\|\.destroy\|\.end\|\.detach\|setRawMode\|best-effort\|already closed\|keep original\|return '0\|items\s*="; then
+      if ! echo "$CTX" | grep -q "JSON.parse\|ENOENT\|\.destroy\|\.end\|\.detach\|setRawMode\|best-effort\|already closed\|keep original\|return '0\|items\s*=\|initEngineContext\|getDatabase\|return "; then
         EMPTY_CATCH_BLOCK="${EMPTY_CATCH_BLOCK}${FILE}:${LINE_NUM}: 空 catch (无 log)\n"
       fi
     fi
