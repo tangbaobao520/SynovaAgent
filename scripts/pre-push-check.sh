@@ -80,7 +80,7 @@ if [ -n "$DIFF_COMMITS" ]; then
     for name in $NEW_EXPORTS; do
       [ -z "$name" ] && continue
       # 在生产入口文件中搜索 (排除自身定义行)
-      WIRED=$(grep -rn "\b${name}\b" "$ROOT/src/server.ts" "$ROOT/src/index.ts" "$ROOT/src/cli.ts" "$ROOT/src/agent/" --include="*.ts" 2>/dev/null | grep -v "export.*${name}" | grep -v "\.test\." | head -1 || true)
+      WIRED=$(grep -rn "\b${name}\b" "$ROOT/src/server.ts" "$ROOT/src/index.ts" "$ROOT/src/cli.ts" "$ROOT/src/agent/" "$ROOT/src/sentinel/builtins.ts" "$ROOT/src/routes/" --include="*.ts" 2>/dev/null | grep -v "export.*${name}" | grep -v "\.test\." | head -1 || true)
       if [ -z "$WIRED" ]; then
         echo -e "  ${RED}❌ ${name} — 未接线${RESET}"; WIRE_FAIL=$((WIRE_FAIL + 1))
       fi
