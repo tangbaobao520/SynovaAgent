@@ -379,7 +379,71 @@ async function syncDiagnosisToGraph(
       }
     }
 
-    log.info({ jobId, diagId, signals: signalIds.length }, 'GraphBridge 同步完成');
+    // Step 6: 社区检测 (P0-1: detectCommunities)
+    let communityCount = 0;
+    try {
+      const { detectCommunities } = await import(
+        '../../packages/engine-core/src/pipeline/diagnosis/graph-query'
+      );
+      const communities = detectCommunities(graphStore, 2, teamId);
+      for (const c of communities) {
+        const commId = graphStore.createNode(
+          'Community',
+          { name: `community_${c.id}`, members: c.members, modularity: c.modularity },
+          teamId,
+        );
+        graphStore.createEdge('HAS_COMMUNITY', diagId, commId, 1.0, {}, teamId);
+        communityCount++;
+      }
+      if (communityCount > 0) {
+        log.info({ jobId, communities: communityCount }, '社区检测完成');
+      }
+    } catch (commErr: any) {
+      log.warn({ jobId, err: commErr.message }, '社区检测失败（非阻断）');
+    }
+
+    // Step 7: 实体解析 (P0-1: L2 entity resolution)
+    let resolvedCount = 0;
+    try {
+      const { generateL2Candidates } = await import(
+        '../../packages/engine-core/src/pipeline/diagnosis/entity-resolver-l2'
+      );
+      // 从 Signal 节点名生成候选
+      const signalNames = signalIds.map((sid) => {
+        const node = graphStore.getNode(sid, teamId);
+        return { id: sid, name: node?.props?.name || sid };
+      }).filter((n) => n.name);
+      // 查询已有实体（Person/Team 节点）
+      const persons = graphStore.queryNodes('Person', undefined, teamId);
+      const teams = graphStore.queryNodes('Team', undefined, teamId);
+      const existingNodes = [...persons, ...teams].map((n: any) => ({
+        id: n.id, name: n.props?.name || n.id, type: n.type,
+      }));
+      if (signalNames.length > 0 && existingNodes.length > 0) {
+        const candidates = generateL2Candidates(
+          [...signalNames, ...existingNodes] as any,
+          0.6,
+        );
+        for (const c of candidates) {
+          if (c.confidence > 0.7) {
+            const linkId = graphStore.createNode(
+              'EntityLink',
+              { name: `resolved_${c.nodeA}_${c.nodeB}`, confidence: c.confidence, reason: c.reason },
+              teamId,
+            );
+            graphStore.createEdge('RESOLVED_TO', diagId, linkId, c.confidence, {}, teamId);
+            resolvedCount++;
+          }
+        }
+        if (resolvedCount > 0) {
+          log.info({ jobId, resolved: resolvedCount }, '实体解析完成');
+        }
+      }
+    } catch (resErr: any) {
+      log.warn({ jobId, err: resErr.message }, '实体解析失败（非阻断）');
+    }
+
+    log.info({ jobId, diagId, signals: signalIds.length, communities: communityCount, resolved: resolvedCount }, 'GraphBridge 同步完成');
   } catch (err: any) {
     // 铁律24: 区分错误类型, 打log + degraded
     const msg = err?.message || String(err);
