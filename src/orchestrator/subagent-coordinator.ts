@@ -7,7 +7,7 @@
 import type { LLMClient } from './diagnosis-orchestrator';
 import type { Evidence } from '../evidence/types';
 import { createLogger } from '../logger';
-import { ExpertDispatcher } from '../l3/expert-dispatcher';
+import { ExpertDispatcher, setGlobalExpertDispatcher } from '../l3/expert-dispatcher';
 import type { QueryAPI } from '../l3/expert-autonomy';
 
 const log = createLogger('orchestrator/subagent-coordinator');
@@ -60,6 +60,7 @@ export class SubAgentCoordinator {
     this.llmClient = llmClient;
     this.policies = policies;
     this.dispatcher = new ExpertDispatcher({ llmClient, policies });
+    setGlobalExpertDispatcher(this.dispatcher);
   }
 
   /** Enable expert autonomy with graph query (delegates to L3 ExpertDispatcher) */

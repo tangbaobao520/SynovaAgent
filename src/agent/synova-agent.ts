@@ -15,7 +15,7 @@ import type { Server } from 'http';
 import type Database from 'better-sqlite3';
 import { createServer } from '../server';
 import { CronScheduler, getGlobalScheduler, destroyGlobalScheduler } from '../cron/scheduler';
-import { SentinelRunner } from '../sentinel';
+import { SentinelRunner, setGlobalSentinelRunner } from '../sentinel';
 import { loadConfig } from '../config';
 import { createLogger } from '../logger';
 
@@ -55,6 +55,7 @@ export class SynovaAgent {
 
     // SentinelRunner — 启动所有 cron 哨兵 (P1-4)
     this.sentinelRunner = new SentinelRunner(this.scheduler, this.db);
+    setGlobalSentinelRunner(this.sentinelRunner);
     this.sentinelRunner.start();
 
     log.info({ port: config.port }, 'SynovaAgent 已启动');
@@ -62,7 +63,7 @@ export class SynovaAgent {
     // 资源清理
     const cleanup = () => {
       log.info('正在关闭...');
-      if (this.sentinelRunner) { this.sentinelRunner.stop(); this.sentinelRunner = null; }
+      if (this.sentinelRunner) { this.sentinelRunner.stop(); setGlobalSentinelRunner(null); this.sentinelRunner = null; }
       destroyGlobalScheduler();
       this.scheduler = null;
       if (this.server) { this.server.close(); this.server = null; }

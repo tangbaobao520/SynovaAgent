@@ -98,6 +98,14 @@ echo ""
 echo -e "${CYAN}── 6/6 架构边界 ──────────────────────────────────────${RESET}"
 bash "$SCRIPT_DIR/check-architecture.sh" || { FAIL=1; }
 
+# ═══ 7. ArchitectureAuditor (可选深度审计) ═══
+# ArchitectureAuditor 默认启用。设置 RUN_ARCH_AUDIT=0 跳过。
+if [ "${RUN_ARCH_AUDIT:-1}" = "1" ]; then
+  echo ""
+  echo -e "${CYAN}── 7/7 ArchitectureAuditor ─────────────────────────${RESET}"
+  bash "$SCRIPT_DIR/workflow/run-auditor.sh" || { FAIL=1; }
+fi
+
 # ═══ 结果 ═══
 echo ""
 echo "───────────────────────────────────────────────────────────"

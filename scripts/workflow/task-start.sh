@@ -78,36 +78,10 @@ if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
   echo ""
 fi
 
-# ═══ 生成 Task Brief ═══
-mkdir -p "$(dirname "$BRIEF_FILE")"
-cat > "$BRIEF_FILE" << HEREDOC
-# Task Brief: ${TASK_DESC}
-
-> 生成时间: $(date '+%Y-%m-%d %H:%M:%S')
-> 分支: ${BRANCH}
-> 代码库状态: tsc=${TSC_COUNT} errors, as any=${AS_ANY}, 测试=${TEST_OUTPUT}
-
-## 用户旅程
-<!-- 用产品语言描述: 谁→什么场景→做了什么→看到什么结果 -->
-
-## 影响范围
-<!-- 从 Q2 复制 -->
-
-## 测试计划
-<!-- 需要新建/更新哪些测试? happy + sad 各 ≥ 1 -->
-
-## 文档计划
-<!-- 需要更新 docs/INDEX.md? 需要新建设计文档? -->
-
-## Done 标准
-<!-- 铁律 7: 入口可触达 + 完整链路走通 + 结果可见 -->
-
-## 验证命令
-\`\`\`bash
-bash scripts/workflow/checkpoint-impl.sh <新函数名>
-\`\`\`
-HEREDOC
-
+# ═══ 生成 Task Brief (迷你设计文档) ═══
+# 固定头部 + 6 个必填字段。PreToolUse hook 物理强制全部非空。
+	mkdir -p "$(dirname "$BRIEF_FILE")"
+	BRIEF_FILE="$BRIEF_FILE" TASK_DESC="$TASK_DESC" BRANCH="$BRANCH" TSC_COUNT="$TSC_COUNT" AS_ANY="$AS_ANY" TEST_OUTPUT="$TEST_OUTPUT" python3 "$ROOT/scripts/workflow/generate-task-brief.py"
 echo -e "${GREEN}✅ Task Brief 已生成: .claude/task-briefs/${TIMESTAMP}-${TASK_SLUG}.md${RESET}"
 echo ""
 echo -e "${CYAN}────────────────────────────────────────────────────────────${RESET}"

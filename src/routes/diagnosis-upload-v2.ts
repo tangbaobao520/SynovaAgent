@@ -138,7 +138,8 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
   // GraphStore 已通过 createRealGraphStore 创建 (P0-1 修复)
   // FIXME: CJS 动态导入与 TS 类型约束不兼容 — engine-core 迁移到 ESM 后移除此行
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const extractor = new (DocExtractor as any)(graphStore, llmClient);
+  // CJS 动态导入无 TS 类型 — 用 Record 替代 as any
+  const extractor = new (DocExtractor as new (graphStore: unknown, llmClient: unknown) => { extract: (docId: string, content: string, teamId: string) => Promise<{ dimensions: Array<{ dimensionKey: string; dimensionLabel: string; confidence: number; sufficient: boolean; summary?: string; content?: string }>; insufficientDimensions: string[] }> })(graphStore, llmClient);
   const { SOGNodeType } = await import('@synova/sog-core');
   const docId = graphStore.createNode(SOGNodeType.DOCUMENT, { name: `interview_${jobId}`, content }, teamId);
   const extraction = await extractor.extract(docId, content, teamId);
@@ -147,6 +148,33 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
   const dims = extraction.dimensions;
   const covered = dims.filter((d: { sufficient: boolean }) => d.sufficient).length;
   log.info({ jobId, covered: `${covered}/8`, insufficient: extraction.insufficientDimensions }, '八维度提取完成');
+
+  // 提取结果写入 SOG 图节点 (修复专家工具桩 — 数据不再只存在 DOCUMENT 节点属性中)
+  const DIM_TO_NODE_TYPE: Record<string, string> = {
+    mission: 'GOAL', market: 'GOAL', competition: 'GOAL',
+    team: 'TEAM', finance: 'FINANCIAL', client: 'CLIENT',
+    risk: 'RISK', technology: 'CAPABILITY',
+  };
+  const sufficients = dims.filter((d: { sufficient: boolean }) => d.sufficient);
+  for (const dim of sufficients) {
+    const nodeType = DIM_TO_NODE_TYPE[dim.dimensionKey];
+    if (nodeType) {
+      try {
+        graphStore.createNode(nodeType as unknown as string, {
+          name: `extracted_${dim.dimensionKey}_${jobId}`,
+          dimensionKey: dim.dimensionKey,
+          dimensionLabel: dim.dimensionLabel,
+          content: dim.summary || dim.content || '',
+          confidence: dim.confidence || 0.5,
+          source: 'document_extraction',
+          extractedAt: new Date().toISOString(),
+        }, teamId);
+      } catch (nodeErr: unknown) {
+        log.warn({ dim: dim.dimensionKey, err: (nodeErr as Error)?.message }, '维度节点创建失败（非阻断）');
+      }
+    }
+  }
+  log.info({ jobId, nodesCreated: sufficients.length }, '提取维度已写入SOG图节点');
 
   // Step 2: 测量管道 (7个真实测量器)
   job.status = 'measuring';
@@ -475,7 +503,7 @@ async function syncDiagnosisToGraph(
       }));
       if (signalNames.length > 0 && existingNodes.length > 0) {
         const candidates = generateL2Candidates(
-          [...signalNames, ...existingNodes] as any,
+          [...signalNames, ...existingNodes] as string[],
           0.6,
         );
         for (const c of candidates) {

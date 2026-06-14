@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# check-test-first.sh — 门禁 ②: 测试先行 (MVP 警告, Phase 2 硬阻断)
+# check-test-first.sh — 门禁 ②: 测试先行 (硬阻断)
 #
 # 铁律 0-2 Step 2: 先写测试。每个 public 函数 ≥ 1 个用例。
-# MVP 阶段: 警告不阻断。Phase 2: 升级为硬阻断。
+# 硬阻断：缺少测试的 export 拒绝提交。
 #
 set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -34,7 +34,7 @@ while IFS= read -r file; do
     if [ "$TEST_REFS" -eq 0 ]; then
       echo -e "  ${YELLOW}⚠️  测试先行: ${file} 中的 export ${name} 在测试文件中零引用${NC}"
       echo "     铁律 0-2 Step 2: 每个 public 函数 ≥ 1 个测试用例"
-      echo "     [MVP 阶段: 警告不阻断 / Phase 2: 升级为硬阻断]"
+      echo "     铁律 0-2 Step 2: 每个 public 函数 ≥ 1 个测试用例 — 硬阻断"
       MISSING=$((MISSING + 1))
     fi
   done

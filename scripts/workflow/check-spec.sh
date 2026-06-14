@@ -10,9 +10,9 @@ BRANCH=$(git branch --show-current 2>/dev/null || echo "main")
 VIOLATIONS=0
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
 
-# 只在 feat/ fix/ 分支上强制 SPEC
-if ! echo "$BRANCH" | grep -qE '^(feat|fix)/'; then
-  echo -e "  ${GREEN}✅ SPEC 门禁: 非功能分支 (${BRANCH})，跳过${NC}"
+# 所有分支强制 SPEC（main 除外——main 只接受 merge，不直接 commit 新代码）
+if [ "$BRANCH" = "main" ]; then
+  echo -e "  ${GREEN}✅ SPEC 门禁: main 分支（仅 merge），跳过${NC}"
   exit 0
 fi
 

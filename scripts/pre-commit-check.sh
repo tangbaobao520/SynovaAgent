@@ -57,24 +57,84 @@ echo ""
 # Anthropic 铁律 0-2: 做任务前必须先跑决策树，生成 task brief。
 # 没有今日 task brief = 你不知道自己在做什么 = 不准提交。
 # ═══════════════════════════════════════════════════════════
+ROOT="$(git rev-parse --show-toplevel)"
 TODAY=$(date +%Y-%m-%d)
-TODAY_BRIEF=$(find "$(git rev-parse --show-toplevel)/.claude/task-briefs/" -name "${TODAY}*" 2>/dev/null | head -1)
+TODAY_BRIEF=$(find "$ROOT/.claude/task-briefs/" -name "${TODAY}*" 2>/dev/null | head -1)
 if [ -z "$TODAY_BRIEF" ]; then
-  hard_check "铁律 0-2: Anthropic 决策树 — 今日无 task brief" "运行: bash scripts/workflow/task-start.sh \"你的任务描述\""
+  hard_check "铁律 0-2: 今日无 task brief — 节点① 未执行" \
+    "运行: bash scripts/workflow/task-start.sh \"你的任务描述\""
+else
+  # 质量检查: "用户旅程" 和 "Done 标准" 必须填写，不能是模板占位符
+  BRIEF_QUALITY=""
+  # 用户旅程: 排除 HTML 注释占位符后检查是否有实际内容
+  JOURNEY_CONTENT=$(grep -A3 "用户旅程" "$TODAY_BRIEF" 2>/dev/null | sed 's/<!--.*-->//g' | tr -d ' \n\r\t' || true)
+  if [ -z "$JOURNEY_CONTENT" ] || [ ${#JOURNEY_CONTENT} -lt 10 ]; then
+    BRIEF_QUALITY="${BRIEF_QUALITY}  用户旅程 字段为空或未填写\n"
+  fi
+  # Done 标准: 检查是否有勾选框或实际内容
+  DONE_CONTENT=$(grep -A5 "Done 标准" "$TODAY_BRIEF" 2>/dev/null | sed 's/<!--.*-->//g' | tr -d ' \n\r\t' || true)
+  if [ -z "$DONE_CONTENT" ] || [ ${#DONE_CONTENT} -lt 10 ]; then
+    BRIEF_QUALITY="${BRIEF_QUALITY}  Done 标准 字段为空或未填写\n"
+  fi
+  if [ -n "$BRIEF_QUALITY" ]; then
+    hard_check "铁律 0-2: Task Brief 质量 — 必填字段未填写 (${TODAY_BRIEF})" "${BRIEF_QUALITY}"
+  else
+    echo -e "  ${GREEN}✅ 铁律 0-2: Task Brief 存在且已填写 (${TODAY_BRIEF})${RESET}"
+  fi
 fi
 
 # ═══════════════════════════════════════════════════════════
 # 门禁 ①: SPEC 先行 (硬阻断)
-# Anthropic 铁律 0-2 Step 1: 没有 spec 的代码不准进仓库
+# Anthropic 铁律 0-2 Step 1: 没有 spec 的代码不准进仓库。
+# 所有分支强制 (main 除外——main 只接受 merge)。
 # ═══════════════════════════════════════════════════════════
 bash "$(dirname "$0")/workflow/check-spec.sh" || { HARD_FAIL=$((HARD_FAIL + 1)); }
 echo ""
 
 # ═══════════════════════════════════════════════════════════
-# 门禁 ②: 测试先行 (MVP 警告, Phase 2 硬阻断)
-# Anthropic 铁律 0-2 Step 2: 先写测试
+# 门禁 ②: 测试先行 (硬阻断)
+# Anthropic 铁律 0-2 Step 2: 每个 public 函数 ≥ 1 个测试用例。
+# 新增 ts 文件必须有对应测试引用——否则拒绝提交。
 # ═══════════════════════════════════════════════════════════
-bash "$(dirname "$0")/workflow/check-test-first.sh" 2>/dev/null || true
+bash "$(dirname "$0")/workflow/check-test-first.sh" || { HARD_FAIL=$((HARD_FAIL + 1)); }
+echo ""
+
+# ═══════════════════════════════════════════════════════════
+# 门禁 ②b: 设计文档强制 (硬阻断, feat/ 分支)
+# Anthropic 铁律 2: 设计文档中每个能力必须带"触发定义"和"结果呈现"。
+# feat/ 分支必须有设计文档，且含触发定义 + 结果呈现两个必填字段。
+# ═══════════════════════════════════════════════════════════
+if echo "$BRANCH" | grep -qE '^feat/'; then
+  DESIGN_FILE=""
+  for candidate in \
+    "$ROOT/docs/specs/${BRANCH//\//-}.md" \
+    "$ROOT/docs/research/${BRANCH//\//-}.md" \
+    "$ROOT/docs/research/${BRANCH//\//-}.html"; do
+    if [ -f "$candidate" ]; then DESIGN_FILE="$candidate"; break; fi
+  done
+  if [ -z "$DESIGN_FILE" ]; then
+    # 检查 git diff 中是否有新建设计文档
+    DESIGN_IN_DIFF=$(git diff --cached --name-only 2>/dev/null | grep "^docs/" || true)
+    if [ -z "$DESIGN_IN_DIFF" ]; then
+      hard_check "铁律 2: feat/ 分支缺少设计文档" \
+        "在 docs/specs/ 或 docs/research/ 下创建设计文档（含触发定义+结果呈现）"
+    fi
+  else
+    # 检查设计文档是否包含"触发定义"和"结果呈现"
+    MISSING_FIELDS=""
+    if ! grep -qi "触发定义\|触发方式\|谁来触发\|trigger" "$DESIGN_FILE" 2>/dev/null; then
+      MISSING_FIELDS="${MISSING_FIELDS}  缺少 '触发定义' (谁来触发？何时触发？触发入口？)\n"
+    fi
+    if ! grep -qi "结果呈现\|用户.*看到\|result.*present\|display\|呈现" "$DESIGN_FILE" 2>/dev/null; then
+      MISSING_FIELDS="${MISSING_FIELDS}  缺少 '结果呈现' (用户在哪看到？什么形式？)\n"
+    fi
+    if [ -n "$MISSING_FIELDS" ]; then
+      hard_check "铁律 2: 设计文档缺少必填字段 (${DESIGN_FILE})" "${MISSING_FIELDS}"
+    else
+      echo -e "  ${GREEN}✅ 铁律 2: 设计文档存在且完整 (${DESIGN_FILE})${RESET}"
+    fi
+  fi
+fi
 echo ""
 
 # ═══════════════════════════════════════════════════════════
@@ -169,6 +229,31 @@ if [ -n "$IMPL_PAIRS" ]; then
   hard_check "铁律 0-2: 新文件配对 — impl 必须同 commit 有 test" "$IMPL_PAIRS"
 fi
 
+# ═══ 铁律 0-2 Step 5: 接线审计 — 新文件 export 必须接入生产入口 ═══
+# 每个新生产文件中的 export function/class/const 必须出现在入口文件引用中
+UNWIRED_EXPORTS=""
+if [ -n "$NEW_IMPL" ]; then
+  while IFS= read -r file; do
+    [ -z "$file" ] && continue
+    [ ! -f "$file" ] && continue
+    EXPORTS=$(grep -oP 'export (function|class|const) \K\w+' "$file" 2>/dev/null || true)
+    for name in $EXPORTS; do
+      [ -z "$name" ] && continue
+      # 跳过 mock/fake/internal/deprecated/type
+      if echo "$name" | grep -qi 'mock\|fake\|_internal\|_deprecated\|^[A-Z].*Props$\|^[A-Z].*Config$\|^[A-Z].*State$'; then continue; fi
+      # 检查是否在入口文件中有引用 (排除 export 行自身和 import 行)
+      WIRED=$(grep -rn "\b${name}\b" src/server.ts src/index.ts src/cli.ts src/agent/ src/routes/ src/sentinel/builtins.ts --include="*.ts" 2>/dev/null \
+        | grep -v "export.*${name}" | grep -v "import.*${name}" | grep -v "$file" | head -1 || true)
+      if [ -z "$WIRED" ]; then
+        UNWIRED_EXPORTS="${UNWIRED_EXPORTS}${file}: export ${name} — 未在生产入口中接线\n"
+      fi
+    done
+  done <<< "$NEW_IMPL"
+fi
+if [ -n "$UNWIRED_EXPORTS" ]; then
+  hard_check "铁律 0-2 Step 5: 接线审计 — 新 export 未接线" "${UNWIRED_EXPORTS}"
+fi
+
 # ═══ 铁律 24+31: 空 catch 无 log — 硬阻断 ═══
 RAW_CATCH=$(grep -rn "catch\s*{" src/ --include="*.ts" 2>/dev/null \
   | grep -v "node_modules" | grep -v "\.test\." || true)
@@ -216,7 +301,7 @@ bash "$(dirname "$0")/check-reality.sh" || { echo -e "  ${RED}❌ 诚实门禁: 
 echo ""
 
 # Anthropic 标准: engine-core vendor Critical bug 不得延期
-SOG_DELETE=$(grep -n "DELETE FROM graph_nodes" ../server/vendor/@synova/engine-core/src/pipeline/diagnosis/graph-store.ts 2>/dev/null || true)
+SOG_DELETE=$(grep -n "DELETE FROM graph_nodes" packages/engine-core/src/pipeline/diagnosis/graph-store.ts 2>/dev/null || true)
 hard_check "Anthropic: SOG-001 deleteNode 物理删除 (不得延期)" "$SOG_DELETE"
 
 # 铁律 34: 分支命名 — feat/ fix/ chore/ docs/ test/ refactor/
@@ -342,6 +427,11 @@ warn_check "铁律 11+24+31: 空 catch (静默吞)" "$M"
 
 # 技术债务追踪 (TECH_DEBT.md) — 警告不阻断
 bash "$(dirname "$0")/check-tech-debt.sh" 2>/dev/null || echo "  ⚠ 技术债务检查跳过"
+
+# ═══════════════════════════════════════════════════════════
+# 数据流对账 — 警告 (检查代码改动是否含 task brief 数据流关键词)
+# ═══════════════════════════════════════════════════════════
+bash "$(dirname "$0")/workflow/check-dataflow-alignment.sh" 2>/dev/null || true
 
 # ═══════════════════════════════════════════════════════════
 # Anthropic 决策树 — 每次 commit 强制执行 (铁律 0-2)

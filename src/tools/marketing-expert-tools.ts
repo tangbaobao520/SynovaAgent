@@ -1,4 +1,4 @@
-/** tools/marketing-expert-tools.ts — 营销专家工具链 (Phase C6, SOG 数据填充) */
+/** tools/marketing-expert-tools.ts — 营销专家工具链 (数据源: 文档提取 + 连接器) */
 import type { ToolDefinition } from '../agent/tools';
 import { SOGNodeType } from '@synova/sog-core';
 import { createLogger } from '../logger';
@@ -54,7 +54,7 @@ export const goToMarketAuditTool: ToolDefinition = {
       orgId: p.orgId, status: processes.length > 0 ? 'ok' : 'limited',
       processCount: processes.length, clientCount: clients.length,
       channels: ['直销', '渠道合作', '线上营销', '内容营销'],
-      hint: processes.length === 0 ? 'SOG 中无 PROCESS 节点。接入项目/CRM 连接器后自动填充。' : undefined,
+      hint: processes.length === 0 ? 'SOG 中无 PROCESS 节点。上传含流程描述的文档后自动填充。' : undefined,
     };
   },
 };

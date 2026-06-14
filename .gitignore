@@ -20,3 +20,4 @@ STATE.md
 docs/*.html
 docs/research/*.html
 docs/research/*.md
+.claude/loop-state.json

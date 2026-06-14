@@ -33,8 +33,8 @@ fi
 # ═══ Question 2: Any blocked commits? ═══
 BLOCKED=""
 # engine-core SOG-001
-if [ -f "$ROOT/../server/vendor/@synova/engine-core/src/pipeline/diagnosis/graph-store.ts" ]; then
-  if grep -q "DELETE FROM graph_nodes" "$ROOT/../server/vendor/@synova/engine-core/src/pipeline/diagnosis/graph-store.ts" 2>/dev/null; then
+if [ -f "$ROOT/packages/engine-core/src/pipeline/diagnosis/graph-store.ts" ]; then
+  if grep -q "DELETE FROM graph_nodes" "$ROOT/packages/engine-core/src/pipeline/diagnosis/graph-store.ts" 2>/dev/null; then
     BLOCKED="${BLOCKED}SOG-001 "
   fi
 fi
@@ -53,10 +53,10 @@ fi
 # SOG-004: GraphStore 接口 graph? 误导 (已添加文档注释 2026-06-05)
 VENDOR_CRITICAL=0
 # Check: Any remaining empty catch blocks in vendor that silently swallow errors
-EMPTY_CATCHES=$(grep -rn "\.catch(() => {})" "$ROOT/../server/vendor/@synova/engine-core/src/" --include="*.ts" 2>/dev/null | grep -v "\.test\." | wc -l | tr -d '[:space:]') || true
+EMPTY_CATCHES=$(grep -rn "\.catch(() => {})" "$ROOT/packages/engine-core/src/" --include="*.ts" 2>/dev/null | grep -v "\.test\." | wc -l | tr -d '[:space:]') || true
 VENDOR_CRITICAL=$((VENDOR_CRITICAL + ${EMPTY_CATCHES:-0}))
 # Check: Any hard deletes (physical DELETE FROM)
-HARD_DELETES=$(grep -rn "DELETE FROM" "$ROOT/../server/vendor/@synova/engine-core/src/" --include="*.ts" 2>/dev/null | grep -v "\.test\." | wc -l | tr -d '[:space:]') || true
+HARD_DELETES=$(grep -rn "DELETE FROM" "$ROOT/packages/engine-core/src/" --include="*.ts" 2>/dev/null | grep -v "\.test\." | wc -l | tr -d '[:space:]') || true
 VENDOR_CRITICAL=$((VENDOR_CRITICAL + ${HARD_DELETES:-0}))
 
 if [ "$VENDOR_CRITICAL" -gt 0 ]; then
@@ -69,8 +69,8 @@ fi
 
 # ═══ Question 4: User-visible gaps? ═══
 # Check if FederalReporter is instantiated/called anywhere (not just defined)
-FED_DEFINED=$(grep -rn "class FederalReporter\|export class FederalReporter" "$ROOT/../server/vendor/@synova/engine-core/src/" --include="*.ts" 2>/dev/null | wc -l | tr -d '[:space:]') || FED_DEFINED=0
-FED_CALLED=$(grep -rn "new FederalReporter\|FederalReporter(" "$ROOT/src/" "$ROOT/../server/vendor/" --include="*.ts" 2>/dev/null | grep -v "federal-reporter.ts" | grep -v "\.test\." | wc -l | tr -d '[:space:]') || FED_CALLED=0
+FED_DEFINED=$(grep -rn "class FederalReporter\|export class FederalReporter" "$ROOT/packages/engine-core/src/" --include="*.ts" 2>/dev/null | wc -l | tr -d '[:space:]') || FED_DEFINED=0
+FED_CALLED=$(grep -rn "new FederalReporter\|FederalReporter(" "$ROOT/src/" "$ROOT/packages/" --include="*.ts" 2>/dev/null | grep -v "federal-reporter.ts" | grep -v "\.test\." | wc -l | tr -d '[:space:]') || FED_CALLED=0
 # Defined but never called = unwired
 FED_WIRED=$FED_CALLED
 

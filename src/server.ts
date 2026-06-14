@@ -39,6 +39,7 @@ import documentRoutes from './routes/documents';
 import permissionRoutes from './routes/permissions';
 import diagnosisUploadRoutes from './routes/diagnosis-upload-v2';
 import sentinelHealthRoutes from './routes/sentinel-health';
+import sentinelRoutes from './routes/sentinel';
 import type { ServiceContainer } from './services/container';
 
 export async function createServer(): Promise<Server> {
@@ -287,6 +288,7 @@ app.use(credentialRoutes);  // POST /api/credentials/:provider | GET /api/creden
 app.use(documentRoutes);   // POST /api/documents/upload | GET /api/documents/list
 app.use(permissionRoutes); // POST /api/permissions/update | POST /api/permissions/bulk | GET /api/permissions/audit
 app.use('/api/sentinel', sentinelHealthRoutes); // GET /api/sentinel/health
+app.use('/api/sentinel', sentinelRoutes);       // GET /api/sentinel/findings | /api/sentinel/signals | POST /api/sentinel/run/:id
 
   // ═══ A2: Connector Pipeline — 手动触发 + 定时同步 ═══
   app.post('/api/connector/sync', async (req, res) => {

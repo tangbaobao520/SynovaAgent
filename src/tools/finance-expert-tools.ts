@@ -1,4 +1,4 @@
-/** tools/finance-expert-tools.ts — 财务专家工具链 (Phase C4, SOG 数据填充) */
+/** tools/finance-expert-tools.ts — 财务专家工具链 (数据源: 文档提取 + 连接器) */
 import type { ToolDefinition } from '../agent/tools';
 import { SOGNodeType } from '@synova/sog-core';
 import { createLogger } from '../logger';
@@ -38,7 +38,7 @@ export const assessRevenueQualityTool: ToolDefinition = {
     return {
       orgId: p.orgId, status: clients.length > 0 ? 'ok' : 'limited',
       clientCount: clients.length, revenueSources: revenueNodes.length,
-      hint: clients.length === 0 ? 'SOG 图中无 CLIENT 节点。接入 CRM 连接器后自动填充。' : undefined,
+      hint: clients.length === 0 ? 'SOG 图中无 CLIENT 节点。上传含客户数据的文档后自动填充。' : undefined,
     };
   },
 };

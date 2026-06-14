@@ -37,7 +37,7 @@ echo -e "${CYAN}[2/5] 构建 Docker 镜像...${RESET}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-# Docker build 需要 monorepo 上下文 (engine-core 在 ../server/vendor/)
+# Docker build (engine-core 在 packages/engine-core/，已合并到本项目)
 cd "$ROOT/.."
 docker build -t synova-agent:latest -f synova-agent/Dockerfile .
 

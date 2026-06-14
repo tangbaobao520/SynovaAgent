@@ -410,4 +410,16 @@ export class ExpertDispatcher {
   }
 }
 
+// ═══ Global Singleton ═══
+
+let _globalDispatcher: ExpertDispatcher | null = null;
+
+export function getGlobalExpertDispatcher(): ExpertDispatcher | null {
+  return _globalDispatcher;
+}
+
+export function setGlobalExpertDispatcher(dispatcher: ExpertDispatcher | null): void {
+  _globalDispatcher = dispatcher;
+}
+
 // Expert prompts moved to ExpertRegistry (src/l3/expert-registry.ts) — Task 3

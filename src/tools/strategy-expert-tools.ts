@@ -1,4 +1,4 @@
-/** tools/strategy-expert-tools.ts — 战略专家工具链 (Phase C3, SOG 数据填充) */
+/** tools/strategy-expert-tools.ts — 战略专家工具链 (数据源: 文档提取 + 连接器) */
 import type { ToolDefinition } from '../agent/tools';
 import { SOGNodeType } from '@synova/sog-core';
 import { createLogger } from '../logger';
@@ -22,7 +22,7 @@ export const scanIndustryLandscapeTool: ToolDefinition = {
       orgId: p.orgId, status: goals.length > 0 ? 'ok' : 'limited',
       goals: goals.length, clients: clients.length, teams: teams.length,
       industry: p.industry || (industryTerms.includes('saas') ? 'SaaS' : industryTerms.includes('制造') ? '制造业' : '待确认'),
-      hint: goals.length === 0 ? 'SOG 中无 GOAL 节点。完成 Phase 0 访谈后自动填充。' : undefined,
+      hint: goals.length === 0 ? 'SOG 中无 GOAL 节点。上传战略文档或完成访谈后自动填充。' : undefined,
     };
   },
 };
@@ -55,7 +55,7 @@ export const analyzeBusinessModelTool: ToolDefinition = {
     return {
       orgId: p.orgId, status: financials.length > 0 ? 'ok' : 'limited',
       revenueSources: revenueData.length, clientCount: clients.length, goals: goals.length,
-      hint: financials.length === 0 ? 'SOG 中无 FINANCIAL 节点。接入财务系统连接器后自动填充。' : undefined,
+      hint: financials.length === 0 ? 'SOG 中无 FINANCIAL 节点。上传含财务数据的文档后自动填充。' : undefined,
     };
   },
 };

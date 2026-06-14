@@ -119,7 +119,7 @@ fi
 
 # ═══ 4. Anthropic 标准: engine-core vendor 目录的 Critical 问题不得延期 ═══
 # SOG-001: deleteNode 物理删除 — 违反双时序原则
-SOG_DELETE=$(grep -n "DELETE FROM graph_nodes" ../server/vendor/@synova/engine-core/src/pipeline/diagnosis/graph-store.ts 2>/dev/null || true)
+SOG_DELETE=$(grep -n "DELETE FROM graph_nodes" packages/engine-core/src/pipeline/diagnosis/graph-store.ts 2>/dev/null || true)
 if [ -n "$SOG_DELETE" ]; then
   echo -e "  ${RED}🔴 SOG-001: engine-core deleteNode 仍为物理删除 (graph-store.ts)$RESET"
   echo "     DELETE FROM graph_nodes 违反双时序'永不删除'原则"
