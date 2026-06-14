@@ -81,6 +81,40 @@ describe('ExpertRegistry prompt independence', () => {
     expect(prompt).toContain('不编造');
   });
 
+  // ── Slice 0-3: 剩余3个专家的独立prompt ──
+
+  it('tech expert prompt should contain its own methodology', () => {
+    const prompt = registry.getPrompt('tech');
+    expect(prompt).toBeDefined();
+    expect(prompt).toContain('技术专家');
+    expect(prompt).toContain('连接器');
+    expect(prompt).toContain('不可做的事');
+  });
+
+  it('action expert prompt should contain its own methodology', () => {
+    const prompt = registry.getPrompt('action');
+    expect(prompt).toBeDefined();
+    expect(prompt).toContain('行动');
+    expect(prompt).toContain('不可做的事');
+  });
+
+  it('knowledge expert prompt should contain its own methodology', () => {
+    const prompt = registry.getPrompt('knowledge');
+    expect(prompt).toBeDefined();
+    expect(prompt).toContain('知识');
+    expect(prompt).toContain('不可做的事');
+  });
+
+  // ── 所有7个专家都必须有"不可做的事"段 ──
+
+  it('all 7 experts should have 不可做的事 section', () => {
+    const types = ['strategy', 'org', 'finance', 'marketing', 'tech', 'action', 'knowledge'];
+    for (const t of types) {
+      const prompt = registry.getPrompt(t);
+      expect(prompt).toContain('不可做的事');
+    }
+  });
+
   // ── 扩展性：运行时注册 ──
 
   it('should support runtime registration of new expert types', () => {
