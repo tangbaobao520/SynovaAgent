@@ -223,6 +223,7 @@ export const EDGE_ENDPOINT_MAP: Record<SOGEdgeType, { from: SOGNodeType[]; to: S
   [SOGEdgeType.CONSUMES]:        { from: [SOGNodeType.AGENT, SOGNodeType.PROCESS],                                          to: [SOGNodeType.FINANCIAL] },
   [SOGEdgeType.ALIGNS_WITH]:     { from: [SOGNodeType.GOAL, SOGNodeType.TEAM, SOGNodeType.PERSON, SOGNodeType.PROCESS],     to: [SOGNodeType.GOAL, SOGNodeType.TEAM, SOGNodeType.PERSON, SOGNodeType.PROCESS] },
   [SOGEdgeType.PROVIDES]:        { from: [SOGNodeType.PERSON, SOGNodeType.TEAM, SOGNodeType.TOOL, SOGNodeType.AGENT],       to: [SOGNodeType.CAPABILITY] },
+  [SOGEdgeType.HAS_ACCESS_TO]:  { from: [SOGNodeType.USER, SOGNodeType.AGENT],                                             to: [SOGNodeType.DOCUMENT, SOGNodeType.TOOL, SOGNodeType.PROCESS] },
 };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -269,21 +270,24 @@ export const NODE_VALIDATORS: Record<SOGNodeType, (props: unknown) => boolean> =
   [SOGNodeType.CAPABILITY]:  (p): p is CapabilityProps    => hasString(p, 'name') && hasCapCategory(p),
   [SOGNodeType.RISK]:        (p): p is RiskProps          => hasString(p, 'riskType') && hasSeverity(p) && hasRiskStatus(p),
   [SOGNodeType.COMPLIANCE]:  (p): p is ComplianceProps    => hasString(p, 'name') && hasComplianceType(p) && hasComplianceStatus(p),
+  [SOGNodeType.USER]:        (p): p is Record<string, unknown> => hasString(p, 'name'),
+  [SOGNodeType.KNOWLEDGE_CHUNK]: (p): p is Record<string, unknown> => hasString(p, 'content'),
 };
 
 // ── Edge validators ──
 
 export const EDGE_VALIDATORS: Record<SOGEdgeType, (props: unknown) => boolean> = {
   [SOGEdgeType.INTERACTS_WITH]:  (p): p is InteractsWithEdgeProps  => hasChannel(p),
-  [SOGEdgeType.BELONGS_TO]:      (): p is BelongsToEdgeProps       => true, // role + joinedAt 都是可选
+  [SOGEdgeType.BELONGS_TO]:      (_p): _p is BelongsToEdgeProps      => true, // role + joinedAt 都是可选
   [SOGEdgeType.OWNS]:            (p): p is OwnsEdgeProps           => hasOwnershipType(p),
-  [SOGEdgeType.TRIGGERS]:        (): p is TriggersEdgeProps        => true, // delay + causalStrength 都是可选
+  [SOGEdgeType.TRIGGERS]:        (_p): _p is TriggersEdgeProps       => true, // delay + causalStrength 都是可选
   [SOGEdgeType.AFFECTS]:         (p): p is AffectsEdgeProps        => hasDirection(p),
   [SOGEdgeType.DEPENDS_ON]:      (p): p is DependsOnEdgeProps      => hasCriticality(p),
   [SOGEdgeType.CORRESPONDS_TO]:  (p): p is CorrespondsToEdgeProps  => hasCorrespondenceType(p) && hasConfidence(p),
   [SOGEdgeType.CONSUMES]:        (p): p is ConsumesEdgeProps       => typeof (p as any)?.amount === 'number' && hasString(p, 'period'),
   [SOGEdgeType.ALIGNS_WITH]:     (p): p is AlignsWithEdgeProps     => hasAlignmentStrength(p) && hasAlignmentType(p),
-  [SOGEdgeType.PROVIDES]:        (): p is ProvidesEdgeProps        => true, // proficiencyLevel + capacity 都是可选
+  [SOGEdgeType.PROVIDES]:        (_p): _p is ProvidesEdgeProps       => true, // proficiencyLevel + capacity 都是可选
+  [SOGEdgeType.HAS_ACCESS_TO]:  (p): p is Record<string, unknown>  => hasString(p, 'resourceType') && hasString(p, 'permission'),
 };
 
 // ═══════════════════════════════════════════════════════════════════

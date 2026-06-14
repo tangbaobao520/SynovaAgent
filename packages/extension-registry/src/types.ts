@@ -46,6 +46,9 @@ export interface ExtensionManifest {
   /** Dependencies on other extensions (by name) */
   dependencies?: string[];
 
+  /** Entry point path (resolved at load time) */
+  entryPoint?: string;
+
   /** Custom metadata blob */
   metadata?: Record<string, unknown>;
 }
