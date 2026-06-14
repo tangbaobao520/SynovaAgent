@@ -6,9 +6,6 @@
  */
 export type {
   DataConnector,
-  ConnectorTool,
-  ConnectorStatus,
-  ConnectorHealth,
   ToolRegistryInterface,
 } from './types';
 

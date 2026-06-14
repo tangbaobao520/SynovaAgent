@@ -54,10 +54,10 @@ export class FeishuOntologyAdapter implements OntologyAdapter {
     if (this.publisher) {
       this.mockEvents((event) => {
         for (const n of event.nodes) {
-          this.publisher.publishNodeCreated(n.type, n.props, event.graph).catch((err) => { log.warn({ err }, '[feishu-adapter] publishNodeCreated failed'); });
+          this.publisher.publishNodeCreated(n.type, n.props, event.graph).catch((err: unknown) => { log.warn({ err }, '[feishu-adapter] publishNodeCreated failed'); });
         }
         for (const e of event.edges) {
-          this.publisher.publishEdgeCreated(e.type, e.from, e.to, e.weight || 1, e.props || {}, event.graph).catch((err) => { log.warn({ err }, '[feishu-adapter] publishEdgeCreated failed'); });
+          this.publisher.publishEdgeCreated(e.type, e.from, e.to, e.weight || 1, e.props || {}, event.graph).catch((err: unknown) => { log.warn({ err }, '[feishu-adapter] publishEdgeCreated failed'); });
         }
         onEvent(event);
       }, graph);

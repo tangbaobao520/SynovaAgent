@@ -27,13 +27,11 @@ export { ingestDocument } from '../../engine-core/src/pipeline/diagnosis/ontolog
 
 // ═══ 六阶段诊断管线 ═══
 export {
-  runModules,
   createFdeToolExecutor,
-  getGapTimeline,
 } from '../../engine-core/src/pipeline/diagnosis/fde-toolset';
 
 // ═══ 会话追踪 ═══
-export { MemorySessionTracer } from '../../engine-core/src/pipeline/diagnosis/diagnosis-session-store';
+// MemorySessionTracer 已移除 — fde-toolset 不再导出 (迁移到 Sentinel 接口)
 export { DiagnosisEventStream } from '../../engine-core/src/pipeline/diagnosis/diagnosis-event-stream';
 
 // ═══ 类型 ═══
