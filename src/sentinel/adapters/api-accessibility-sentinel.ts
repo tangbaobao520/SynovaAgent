@@ -43,7 +43,7 @@ export const apiAccessibilitySentinel: Sentinel = {
           const resp = await fetch(url, { method: 'HEAD', signal: controller.signal });
           clearTimeout(to);
           if (resp.ok) { reachable.push(sys.name); } else { unreachable.push(`${sys.name} (HTTP ${resp.status})`); }
-        } catch { unreachable.push(`${sys.name} (不可达)`); }
+        } catch { log.debug({ sys: sys.name }, 'API 可达性检查失败'); unreachable.push(`${sys.name} (不可达)`); }
       }
       const rate = reachable.length / systems.length;
       const findings: SentinelFinding[] = [];
