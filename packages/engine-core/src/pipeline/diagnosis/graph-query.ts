@@ -12,7 +12,7 @@ import type { EdgeType, OntologyPath, SubGraph } from './types';
 
 export function shortestPath(
   store: GraphStore, from: string, to: string,
-  edgeType?: EdgeType, graph: string,
+  edgeType?: EdgeType, graph?: string,
 ): OntologyPath | null {
   if (from === to) return { nodes: [from], edges: [], totalWeight: 0, length: 0 };
   const visited = new Set<string>([from]);

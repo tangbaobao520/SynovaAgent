@@ -18,13 +18,11 @@ import {
 } from './pipeline-config';
 import type { LLMChatCompletionResponse } from './types/llm';
 
-// 使用 node-fetch 替代内置 fetch（Windows 环境下内置 fetch 可能不可用）
-import nodeFetch from 'node-fetch';
 import { createLogger } from './infra/logger';
 import { getEngineContext, CircuitOpenError, type CircuitBreakerLike } from './engine-context';
 
 const log = createLogger('engine-server/llm-client');
-const _fetch = typeof fetch !== 'undefined' ? fetch : nodeFetch;
+const _fetch = fetch;
 
 // ================================================================
 // 熔断器（每 endpoint 独立）

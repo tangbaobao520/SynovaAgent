@@ -1,4 +1,8 @@
 import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
+import { createLogger } from '../../infra/logger';
+
+const log = createLogger('evidence-manager');
+
 /**
  * evidence-manager.ts — 诊断证据池管理器
  *
