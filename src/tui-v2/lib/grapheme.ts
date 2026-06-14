@@ -18,7 +18,6 @@ if (hasSegmenter) {
   } catch { /* grapheme 分割失败 — 退化到字符级 */ }
     // 回退到 grapheme-splitter
   }
-}
 
 const splitter = !segmenter ? new GraphemeSplitter() : null;
 

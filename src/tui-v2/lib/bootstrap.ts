@@ -64,7 +64,6 @@ export async function setupTerminalEncoding() {
       // chcp 不可用（Windows Terminal / Git Bash 默认 UTF-8，无需处理）
     }
   }
-}
 
 // ═══ 初始化结果 ═══
 
