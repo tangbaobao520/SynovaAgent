@@ -58,9 +58,9 @@ export async function setupTerminalEncoding() {
       const cpMatch = out.match(/(\d+)/);
       const cp = cpMatch ? parseInt(cpMatch[1]) : 0;
       if (cp !== 65001) {
-        try { execSync('chcp 65001', { timeout: 3000 }); } catch { /* 静默 */ }
+        try { execSync('chcp 65001', { timeout: 3000 }); } catch { console.debug('chcp 65001 切换失败 — 非阻塞'); }
       }
-    } catch { /* chcp 不可用 — 非 Windows 环境 */ }
+    } catch { console.debug('chcp 不可用 — 非 Windows 环境'); }
       // chcp 不可用（Windows Terminal / Git Bash 默认 UTF-8，无需处理）
     }
   }

@@ -203,17 +203,34 @@ export class ExpertDispatcher {
   }
 
   /** Run a single expert sub-agent with full L3 pipeline (returns rich ExpertReport) */
-  async runExpert(type: ExpertType, evidence: Evidence[]): Promise<ExpertReport | null> {
-    const policy = this.policies.find(p => p.expertType === type);
-    if (!policy) return null;
-
+  async runExpert(type: ExpertType, evidence: Evidence[]): Promise<ExpertReport> {
     const startTime = Date.now();
+    const policy = this.policies.find(p => p.expertType === type);
+    if (!policy) {
+      log.warn({ expertType: type }, '专家无匹配策略 — degraded');
+      return {
+        expertType: type, hypothesis: '', confidence: 0,
+        evidenceUsed: 0, durationMs: Date.now() - startTime,
+        degraded: true, degradedReason: `无数据访问策略 (${type})`,
+      };
+    }
+
     const filtered = this.filterEvidence(evidence, policy);
     // PII 脱敏: 证据出站到云 LLM 前脱敏 (S4移除 + S3脱敏 + S2角色掩盖)
     if (this.piiScrubber) {
       for (const e of filtered) {
         e.content = this.piiScrubber.scrub(e.content, 'S2').cleaned;
       }
+    }
+
+    // 无可用证据 — degraded
+    if (filtered.length === 0) {
+      log.warn({ expertType: type }, '专家无可用证据 — degraded');
+      return {
+        expertType: type, hypothesis: '', confidence: 0,
+        evidenceUsed: 0, durationMs: Date.now() - startTime,
+        degraded: true, degradedReason: '无可用证据',
+      };
     }
 
     try {
@@ -248,7 +265,15 @@ export class ExpertDispatcher {
               hypothesis, evidenceRefs: filtered.slice(0, 5).map(e => e.id),
               confidence, expertType: type,
             });
-            if (!qr.passed) hypothesis = `[低质量-已过滤] ${hypothesis}`;
+            if (!qr.passed) {
+              log.warn({ expertType: type, rejections: qr.rejections }, '防火墙拒绝 — degraded');
+              return {
+                expertType: type, hypothesis: '', confidence: qr.adjustedConfidence,
+                evidenceUsed: filtered.length, durationMs: Date.now() - startTime,
+                autonomyRounds: autonomyResult.roundsUsed, qualityWarnings: qr.warnings,
+                degraded: true, degradedReason: `防火墙拒绝: ${qr.rejections.join('; ')}`,
+              };
+            }
             confidence = qr.adjustedConfidence;
             qWarnings = qr.warnings;
           }
@@ -282,17 +307,52 @@ export class ExpertDispatcher {
 
         // EC-07: zod Schema 校验 — LLM 输出不符合 Schema 时标记 degraded
         const validation = validateExpertOutput(parsed as Record<string, unknown>);
-        if (!validation.valid) {
+        const schemaFailed = !validation.valid;
+        if (schemaFailed) {
           log.warn({ expertType: type, errors: validation.errors }, 'Expert output schema 校验失败 — degraded');
         }
 
+        // Gear 4: QualityFirewall — 证据引用、置信度、过时、矛盾校验
+        let qWarnings: string[] = [];
+        let firewallRejected = false;
+        let firewallReasons: string[] = [];
+        if (this.graphStoreForFirewall) {
+          const hypothesis = validation.output.overallAssessment?.slice(0, 200) || response.content.slice(0, 200);
+          const confidence = validation.output.findings?.length
+            ? validation.output.findings.reduce((sum: number, f: { confidence: number }) => sum + f.confidence, 0) / validation.output.findings.length
+            : 0.6;
+          const firewall = new QualityFirewall(this.graphStoreForFirewall, 'default');
+          const qr = await firewall.validate({
+            hypothesis,
+            evidenceRefs: filtered.slice(0, 5).map(e => e.id),
+            confidence,
+            expertType: type,
+          });
+          if (!qr.passed) {
+            firewallRejected = true;
+            firewallReasons = qr.rejections;
+            log.warn({ expertType: type, rejections: qr.rejections }, 'Fallback防火墙拒绝 — degraded');
+          }
+          qWarnings = qr.warnings;
+        }
+
+        const isDegraded = schemaFailed || firewallRejected;
+
         return {
           expertType: type,
-          hypothesis: validation.output.overallAssessment?.slice(0, 200) || response.content.slice(0, 200),
+          hypothesis: !firewallRejected
+            ? (validation.output.overallAssessment?.slice(0, 200) || response.content.slice(0, 200))
+            : '',
           confidence: validation.output.findings?.length
             ? validation.output.findings.reduce((sum: number, f: { confidence: number }) => sum + f.confidence, 0) / validation.output.findings.length
             : 0.6,
           evidenceUsed: filtered.length, durationMs: Date.now() - startTime,
+          degraded: isDegraded || undefined,
+          degradedReason: firewallRejected
+            ? `防火墙拒绝: ${firewallReasons.join('; ')}`
+            : schemaFailed
+              ? `Schema校验失败: ${validation.errors?.join('; ') || '格式错误'}`
+              : undefined,
           findings: validation.output.findings?.map(f => ({
             id: f.id, dimension: f.dimension, statement: f.statement,
             confidence: f.confidence, evidenceRefs: f.evidenceRefs,
@@ -313,12 +373,17 @@ export class ExpertDispatcher {
             reason: c.reason || '', priority: c.priority,
           })),
           ontologyPatches,
+          qualityWarnings: qWarnings,
           model: response.model,
         };
       }, type);
     } catch (err: any) {
-      log.warn({ err, expertType: type }, '专家执行失败');
-      return null;
+      log.warn({ err, expertType: type }, '专家执行失败 — degraded');
+      return {
+        expertType: type, hypothesis: '', confidence: 0,
+        evidenceUsed: 0, durationMs: Date.now() - startTime,
+        degraded: true, degradedReason: `执行异常: ${err.message?.slice(0, 100) || '未知错误'}`,
+      };
     }
   }
 

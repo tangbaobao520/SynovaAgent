@@ -85,10 +85,15 @@ afterAll(() => {
 
 describe('E2E: Phase 2 Expert Autonomy', () => {
   it('Given evidence posted, When /api/test/phase2-autonomy called, Then all 6 experts produce hypotheses through ReAct', async () => {
+    // 提供覆盖全部6种 DataAccessPolicy 的证据类型
     const evidence: Evidence[] = [
-      { id:'ev1', source:'interviewee', sourceId:'org-1', type:'goal_alignment', content:'战略目标传达不畅', confidence:0.8, collectedAt:new Date().toISOString(), orgId:'org-1' },
-      { id:'ev2', source:'interviewee', sourceId:'org-1', type:'risk', content:'CTO是单点瓶颈', confidence:0.9, collectedAt:new Date().toISOString(), orgId:'org-1' },
-      { id:'ev3', source:'interviewee', sourceId:'org-1', type:'cost', content:'沟通损耗约15%工时', confidence:0.75, collectedAt:new Date().toISOString(), orgId:'org-1' },
+      { id:'ev1', source:'interviewee', sourceId:'org-1', type:'goal_alignment', content:'战略目标传达不畅', confidence:0.8, collectedAt:new Date().toISOString(), orgId:'org-1', sessionId:'s1' },
+      { id:'ev2', source:'interviewee', sourceId:'org-1', type:'risk', content:'CTO是单点瓶颈', confidence:0.9, collectedAt:new Date().toISOString(), orgId:'org-1', sessionId:'s1' },
+      { id:'ev3', source:'interviewee', sourceId:'org-1', type:'cost', content:'沟通损耗约15%工时', confidence:0.75, collectedAt:new Date().toISOString(), orgId:'org-1', sessionId:'s1' },
+      { id:'ev4', source:'interviewee', sourceId:'org-1', type:'team_structure', content:'团队按职能划分', confidence:0.7, collectedAt:new Date().toISOString(), orgId:'org-1', sessionId:'s1' },
+      { id:'ev5', source:'interviewee', sourceId:'org-1', type:'tool_chain', content:'使用Jira和Confluence', confidence:0.6, collectedAt:new Date().toISOString(), orgId:'org-1', sessionId:'s1' },
+      { id:'ev6', source:'interviewee', sourceId:'org-1', type:'positioning', content:'市场定位高端', confidence:0.65, collectedAt:new Date().toISOString(), orgId:'org-1', sessionId:'s1' },
+      { id:'ev7', source:'interviewee', sourceId:'org-1', type:'priority', content:'首要任务是增长', confidence:0.8, collectedAt:new Date().toISOString(), orgId:'org-1', sessionId:'s1' },
     ];
 
     const res = await fetch('http://localhost:3097/api/test/phase2-autonomy', {
@@ -102,7 +107,7 @@ describe('E2E: Phase 2 Expert Autonomy', () => {
     expect(body.ok).toBe(true);
     expect(body.expertCount).toBe(6);
 
-    // All 6 experts should produce hypotheses
+    // All 6 experts should produce hypotheses (non-degraded with evidence)
     for (const h of body.hypotheses) {
       expect(h.expert).toBeTruthy();
       expect(h.hypothesis.length).toBeGreaterThan(0);
@@ -114,7 +119,7 @@ describe('E2E: Phase 2 Expert Autonomy', () => {
     expect(hasAutonomy).toBe(true);
   });
 
-  it('Given no evidence, When /api/test/phase2-autonomy called, Then returns empty results gracefully', async () => {
+  it('Given no evidence, When /api/test/phase2-autonomy called, Then returns empty results (dispatch short-circuits)', async () => {
     const res = await fetch('http://localhost:3097/api/test/phase2-autonomy', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -123,12 +128,20 @@ describe('E2E: Phase 2 Expert Autonomy', () => {
 
     expect(res.status).toBe(200);
     const body = await res.json() as any;
+    // 空证据时所有专家降级但不返回空列表
     expect(body.expertCount).toBe(0);
+    expect(body.hypotheses.length).toBe(0);
   });
 
   it('E2E User Journey: expert autonomy produces distinct hypotheses per expert type', async () => {
+    // 提供覆盖全部6种策略的证据
     const evidence: Evidence[] = [
-      { id:'ev1', source:'interviewee', sourceId:'org-1', type:'goal_alignment', content:'战略不清晰', confidence:0.7, collectedAt:new Date().toISOString(), orgId:'org-1' },
+      { id:'ev1', source:'interviewee', sourceId:'org-1', type:'goal_alignment', content:'战略不清晰', confidence:0.7, collectedAt:new Date().toISOString(), orgId:'org-1', sessionId:'s1' },
+      { id:'ev2', source:'interviewee', sourceId:'org-1', type:'team_structure', content:'组织层级深', confidence:0.6, collectedAt:new Date().toISOString(), orgId:'org-1', sessionId:'s1' },
+      { id:'ev3', source:'interviewee', sourceId:'org-1', type:'cost', content:'成本偏高', confidence:0.7, collectedAt:new Date().toISOString(), orgId:'org-1', sessionId:'s1' },
+      { id:'ev4', source:'interviewee', sourceId:'org-1', type:'tool_chain', content:'工具老旧', confidence:0.6, collectedAt:new Date().toISOString(), orgId:'org-1', sessionId:'s1' },
+      { id:'ev5', source:'interviewee', sourceId:'org-1', type:'positioning', content:'市场定位不明', confidence:0.5, collectedAt:new Date().toISOString(), orgId:'org-1', sessionId:'s1' },
+      { id:'ev6', source:'interviewee', sourceId:'org-1', type:'priority', content:'提升效率优先', confidence:0.7, collectedAt:new Date().toISOString(), orgId:'org-1', sessionId:'s1' },
     ];
 
     const res = await fetch('http://localhost:3097/api/test/phase2-autonomy', {

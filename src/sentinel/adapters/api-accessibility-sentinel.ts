@@ -30,7 +30,7 @@ export const apiAccessibilitySentinel: Sentinel = {
             const props = typeof r.props === 'string' ? JSON.parse(r.props as string) : (r.props || {});
             if (props.url || props.endpoint) { systems.push({ id: r.id as string, name: (props.name || r.id) as string, url: (props.url || props.endpoint) as string }); }
           }
-        } catch { /* 表不存在或无数据 */ }
+        } catch { log.debug('API 可访问性: 表不存在或无数据'); }
       }
       if (systems.length === 0) {
         return { sentinelId: config.id, ok: true, findings: [], durationMs: Date.now() - startTime, checkedAt, degraded: true };
