@@ -136,7 +136,7 @@ export class MCPBridge {
           }
           this.pendingRequests.delete(response.id);
         }
-      } catch { /* skip non-JSON lines */ }
+      } catch { log.debug('MCP bridge: 跳过非 JSON 行'); }
     });
 
     proc.stderr?.on('data', (d: Buffer) => {

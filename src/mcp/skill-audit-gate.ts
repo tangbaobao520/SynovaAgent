@@ -167,7 +167,7 @@ function readAllFiles(dir: string): Array<{ relativePath: string; content: strin
       try {
         const content = fs.readFileSync(fullPath, 'utf-8');
         results.push({ relativePath: entry.name, content });
-      } catch { /* binary file */ }
+      } catch { log.debug('Skill audit: 跳过二进制文件'); }
     }
   }
   return results;

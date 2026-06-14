@@ -98,7 +98,7 @@ export function createOpenAICompatibleProvider(cfg: ProviderAdapterConfig): LLMP
             const c = JSON.parse(d);
             const tok = c?.choices?.[0]?.delta?.content;
             if (tok) { full += tok; cb.onToken(tok); }
-          } catch { /* SSE chunk parse — benign, high volume */ }
+          } catch { console.debug('SSE chunk parse — benign, high volume'); }
         }
       }
     } finally { reader.releaseLock(); }

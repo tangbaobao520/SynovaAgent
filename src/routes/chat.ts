@@ -522,7 +522,7 @@ async function send() {
             // If event type is embedded in JSON, use it; otherwise use SSE event field
             if (!evt.type && currentEventType) evt.type = currentEventType;
             handleSSEEvent(evt);
-          } catch { /* SSE 解析失败 — 跳过损坏的 chunk */ }
+          } catch { log.debug('SSE 解析失败 — 跳过损坏的 chunk'); }
           currentEventType = '';
         }
         // Empty line = SSE event boundary — reset

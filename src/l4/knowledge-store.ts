@@ -417,7 +417,7 @@ export class KnowledgeStore {
           if (!current) continue;
           const newConf = Math.max(0, Math.min(1, (current.pkb_confidence as number || 0.7) + (r.delta as number)));
           this.update(id, { pkb_confidence: newConf, pkb_status: newConf < 0.5 ? 'deprecated' : 'active' });
-        } catch { /* skip malformed */ }
+        } catch { log.debug('知识库: 跳过损坏的反馈记录'); }
       }
       this.db.prepare('UPDATE diagnosis_feedback SET processed = 1 WHERE processed = 0').run();
       return rows.length;

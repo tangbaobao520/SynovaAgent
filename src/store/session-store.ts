@@ -106,7 +106,7 @@ export class SessionStore {
     } catch (err) { log.debug({ err }, '会话表已存在 — 跳过创建'); }
 
     // M1-Slice2: 迁移旧数据库 (添加 user_id 列，幂等)
-    try { this.db.exec('ALTER TABLE agent_sessions ADD COLUMN user_id TEXT'); } catch { /* already exists */ }
+    try { this.db.exec('ALTER TABLE agent_sessions ADD COLUMN user_id TEXT'); } catch { log.debug('user_id 列已存在 — 跳过迁移'); }
 
     // FTS5 同步触发器 (幂等——触发器已存在时报错忽略)
     this.db.exec(`
