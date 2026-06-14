@@ -56,6 +56,23 @@ export class SentinelRunner {
    * 从 SentinelRegistry 读取, 为每个 cron 哨兵注册定时任务。
    */
   start(): void {
+    // 哨兵工单表 (L3 闭环)
+    try {
+      (this.db as { exec(sql: string): void }).exec(`
+        CREATE TABLE IF NOT EXISTS sentinel_tickets (
+          id TEXT PRIMARY KEY,
+          signal_id TEXT NOT NULL,
+          severity TEXT NOT NULL CHECK(severity IN ('critical','warning','info')),
+          expert_type TEXT NOT NULL,
+          diagnosis TEXT,
+          suggested_actions TEXT,
+          status TEXT NOT NULL DEFAULT 'open' CHECK(status IN ('open','acknowledged','resolved','dismissed')),
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          resolved_at TEXT
+        );
+      `);
+    } catch { /* 表已存在或 db 不可用 */ }
+
     const registry = getSentinelRegistry();
     const cronSentinels = registry.listCronSentinels();
 
@@ -141,14 +158,106 @@ export class SentinelRunner {
           totalFindings: stats.totalFindings,
           aggregatedSignals: stats.aggregatedSignals,
           criticalSignals: stats.criticalSignals,
-          signals: signals.slice(0, 3).map(s => ({ id: s.id, severity: s.severity, experts: s.recommendedExperts })),
-        }, '[runner] 聚合信号 — 发现 critical 信号');
+        }, '[runner] 聚合信号 — 发现 critical 信号，准备路由专家');
       } else if (signals.length > 0) {
         log.info({ signals: signals.length, critical: 0 }, '[runner] 聚合完成 — 无 critical 信号');
+      }
+
+      // ═══ 接线: 信号 → 专家 (复用 Track A 的 ExpertDispatcher) ═══
+      const criticalOrWarning = signals.filter(s => s.severity === 'critical' || s.severity === 'warning');
+      if (criticalOrWarning.length > 0) {
+        await this.dispatchSignalsToExperts(criticalOrWarning);
       }
     } catch (err: unknown) {
       log.error({ err }, '[runner] 信号聚合失败');
     }
+  }
+
+  /**
+   * 将聚合信号转换为 Evidence，调用 ExpertDispatcher 启动专家推理。
+   * 铁律 31: 专家不可用时降级 (log.error + degraded)，不阻断哨兵调度。
+   */
+  private async dispatchSignalsToExperts(
+    signals: Array<{ id: string; severity: string; title: string; sources: Array<any>; entities: string[]; recommendedExperts: string[] }>,
+  ): Promise<void> {
+    const { getGlobalExpertDispatcher } = await import('../l3/expert-dispatcher');
+    const dispatcher = getGlobalExpertDispatcher();
+
+    if (!dispatcher) {
+      log.warn('[runner] ExpertDispatcher 未初始化 — 信号无法路由专家（非阻断）');
+      return;
+    }
+
+    const EXPERT_TYPE_MAP: Record<string, string> = {
+      org: 'org', strategic: 'strategy', finance: 'finance',
+      tech: 'tech', marketing: 'marketing', action: 'action',
+    };
+
+    for (const signal of signals) {
+      const evidenceItems = signal.sources.map((src: any, i: number) => ({
+        id: 'sentinel-' + signal.id + '-' + i,
+        source: 'diagnosis' as const,
+        sourceId: src.sentinelId,
+        type: 'sentinel-' + src.sentinelId,
+        content: '[' + src.finding.severity + '] ' + src.finding.title + ': ' + src.finding.description,
+        confidence: 0.7,
+        collectedAt: src.finding.detectedAt,
+        orgId: signal.entities[0] || 'default',
+        sessionId: 'sentinel-' + signal.id,
+      }));
+
+      for (const rec of signal.recommendedExperts) {
+        const expertType = EXPERT_TYPE_MAP[rec];
+        if (!expertType) continue;
+
+        try {
+          log.info({ signal: signal.id, expert: expertType, evidenceCount: evidenceItems.length },
+            '[runner] 信号路由专家 → 启动推理');
+          const report = await dispatcher.runExpert(
+            expertType as 'strategy' | 'org' | 'finance' | 'tech' | 'marketing' | 'action',
+            evidenceItems as Array<{ id: string; source: string; sourceId: string; type: string; content: string; confidence: number; collectedAt: string; orgId: string; sessionId: string }>,
+          );
+          if (report) {
+            log.info({ signalId: signal.id, expert: expertType, findings: (report as Record<string, unknown> | null)?.findings ? (Array.isArray((report as Record<string, unknown>).findings) ? ((report as Record<string, unknown>).findings as Array<unknown>).length : 0) : 0 },
+              '[runner] 专家诊断完成');
+            this.storeExpertReport(signal.id, expertType, report, signal.severity);
+          }
+        } catch (expertErr: unknown) {
+          log.error({ signalId: signal.id, expert: expertType, err: (expertErr as Error)?.message },
+            '[runner] 专家调用失败 — 降级继续（不阻断其他信号）');
+        }
+      }
+    }
+  }
+
+  /** 存储专家报告（内存，供 API 查询） */
+  private expertReports: Array<{ signalId: string; expertType: string; report: unknown; storedAt: string }> = [];
+
+  private storeExpertReport(signalId: string, expertType: string, report: unknown, severity?: string): void {
+    this.expertReports.push({ signalId, expertType, report, storedAt: new Date().toISOString() });
+    if (this.expertReports.length > 50) this.expertReports.shift();
+
+    // L3 闭环: critical 信号自动创建工单
+    if (severity === 'critical') {
+      try {
+        const ticketId = `ticket-${signalId}-${expertType}`;
+        const r = report as Record<string, unknown>;
+        (this.db as { prepare(sql: string): { run(...args: unknown[]): void } }).prepare(
+          `INSERT OR REPLACE INTO sentinel_tickets (id, signal_id, severity, expert_type, diagnosis, suggested_actions, status, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, 'open', datetime('now'))`
+        ).run(
+          ticketId, signalId, severity, expertType,
+          JSON.stringify(r),
+          Array.isArray(r?.suggestedActions) ? (r.suggestedActions as string[]).join('; ') : null
+        );
+        log.info({ ticketId, signalId, expertType }, '[runner] 工单已创建');
+      } catch (err) { log.warn({ err }, '[runner] 工单创建失败 (非阻断)'); }
+    }
+  }
+
+  /** 获取专家报告 (供 API 查询) */
+  getExpertReports(): Array<{ signalId: string; expertType: string; report: unknown; storedAt: string }> {
+    return this.expertReports;
   }
 
   /** 获取最近哨兵运行记录 (供外部 API 查询) */
@@ -254,4 +363,16 @@ export class SentinelRunner {
       };
     }
   }
+}
+
+// ═══ Global Singleton ═══
+
+let _globalRunner: SentinelRunner | null = null;
+
+export function getGlobalSentinelRunner(): SentinelRunner | null {
+  return _globalRunner;
+}
+
+export function setGlobalSentinelRunner(runner: SentinelRunner | null): void {
+  _globalRunner = runner;
 }

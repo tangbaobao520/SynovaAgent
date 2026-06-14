@@ -4,8 +4,8 @@
  * Iron Law 33: *.test.ts = 单元测试
  *
  * 测试:
- *   Given: 注册全部 7 个哨兵 → Then: registry.count() === 7
- *   Given: 7 个哨兵全为 cron mode → Then: listCronSentinels() 返回 7 个
+ *   Given: 注册全部 23 个哨兵 → Then: registry.count() === 23
+ *   Given: 23 个哨兵全为 cron mode → Then: listCronSentinels() 返回 23 个
  *   Given: 注册后 → Then: 每个哨兵有唯一 ID、有效 cron、明确类别
  */
 
@@ -34,6 +34,14 @@ vi.mock('../../src/sentinel/adapters/financial-impact-sentinel', () => ({ financ
 vi.mock('../../src/sentinel/adapters/financial-snapshot-sentinel', () => ({ financialSnapshotSentinel: makeMockSentinel('sentinel-financial-snapshot', 'risk', '0 9 1 * *') }));
 vi.mock('../../src/sentinel/adapters/goal-alignment-sentinel', () => ({ goalAlignmentSentinel: makeMockSentinel('sentinel-goal-alignment', 'capability', '0 9 * * 1') }));
 vi.mock('../../src/sentinel/adapters/risk-aggregator-sentinel', () => ({ riskAggregatorSentinel: makeMockSentinel('sentinel-risk-aggregator', 'risk', '0 9 * * 1') }));
+vi.mock('../../src/sentinel/adapters/api-accessibility-sentinel', () => ({ apiAccessibilitySentinel: makeMockSentinel('sentinel-api-accessibility', 'health', '0 9 * * *') }));
+vi.mock('../../src/sentinel/adapters/data-readiness-sentinel', () => ({ dataReadinessSentinel: makeMockSentinel('sentinel-data-readiness', 'data-quality', '0 9 * * 1') }));
+vi.mock('../../src/sentinel/adapters/protocol-coverage-sentinel', () => ({ protocolCoverageSentinel: makeMockSentinel('sentinel-protocol-coverage', 'health', '0 9 * * 1') }));
+vi.mock('../../src/sentinel/adapters/revenue-decomposition-sentinel', () => ({ revenueDecompositionSentinel: makeMockSentinel('sentinel-revenue-decomposition', 'capability', '0 9 1 * *') }));
+vi.mock('../../src/sentinel/adapters/customer-dynamics-sentinel', () => ({ customerDynamicsSentinel: makeMockSentinel('sentinel-customer-dynamics', 'risk', '0 9 * * 1') }));
+vi.mock('../../src/sentinel/adapters/cash-flow-sentinel', () => ({ cashFlowSentinel: makeMockSentinel('sentinel-cash-flow', 'risk', '0 9 * * *') }));
+vi.mock('../../src/sentinel/adapters/integration-health-sentinel', () => ({ integrationHealthSentinel: makeMockSentinel('sentinel-integration-health', 'health', '0 9 * * *') }));
+vi.mock('../../src/sentinel/adapters/data-silos-sentinel', () => ({ dataSilosSentinel: makeMockSentinel('sentinel-data-silos', 'data-quality', '0 9 1 * *') }));
 
 import { getSentinelRegistry, destroySentinelRegistry } from '../../src/sentinel/registry';
 import { registerBuiltinSentinels } from '../../src/sentinel/builtins';
@@ -43,15 +51,15 @@ describe('registerBuiltinSentinels', () => {
     destroySentinelRegistry();
   });
 
-  it('Given 9 个适配器全部加载成功 → 注册 15 个哨兵', async () => {
+  it('Given 全部适配器全部加载成功 → 注册 15 个哨兵', async () => {
     await registerBuiltinSentinels();
-    expect(getSentinelRegistry().count()).toBe(15);
+    expect(getSentinelRegistry().count()).toBe(23);
   });
 
-  it('Given 9 个 cron sentinel → listCronSentinels() 返回 15 个', async () => {
+  it('Given 全部 cron sentinel → listCronSentinels() 返回 15 个', async () => {
     await registerBuiltinSentinels();
     const cronList = getSentinelRegistry().listCronSentinels();
-    expect(cronList.length).toBe(15);
+    expect(cronList.length).toBe(23);
     for (const { sentinel, cron } of cronList) {
       expect(sentinel.config.mode).toBe('cron');
       expect(cron).toBeTruthy();
@@ -61,7 +69,7 @@ describe('registerBuiltinSentinels', () => {
   it('Given 注册后 → 每个哨兵有唯一 ID 和有效类别', async () => {
     await registerBuiltinSentinels();
     const ids = new Set<string>();
-    const validCategories = new Set(['collaboration', 'capability', 'strategy', 'risk']);
+    const validCategories = new Set(['collaboration', 'capability', 'strategy', 'risk', 'health', 'data-quality']);
     for (const s of getSentinelRegistry().list()) {
       expect(ids.has(s.config.id)).toBe(false);
       ids.add(s.config.id);
@@ -72,9 +80,9 @@ describe('registerBuiltinSentinels', () => {
     }
   });
 
-  it('Given 第二次调用 registerBuiltinSentinels → 覆盖旧哨兵但仍为 9 个', async () => {
+  it('Given 第二次调用 registerBuiltinSentinels → 覆盖旧哨兵但仍为 全部', async () => {
     await registerBuiltinSentinels();
     await registerBuiltinSentinels();
-    expect(getSentinelRegistry().count()).toBe(15);
+    expect(getSentinelRegistry().count()).toBe(23);
   });
 });

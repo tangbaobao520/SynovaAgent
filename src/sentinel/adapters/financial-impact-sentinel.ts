@@ -2,8 +2,8 @@
  * sentinel/adapters/financial-impact-sentinel.ts — 财务影响哨兵 (D1)
  * @state: real
  *
- * 包装 computeFinancialImpact()，将诊断结果映射为财务指标。
- * 每月 1 日 9:00 巡检 (低频——财务变化慢)。
+ * 从 SOG 图 FINANCIAL 节点计算组织低效的财务成本。
+ * 数据通过文档上传或人工汇报提供。每月1日9:00巡检。
  */
 
 import type { Sentinel, SentinelCheckResult, SentinelConfig, SentinelContext, SentinelFinding } from '../types';
@@ -13,39 +13,53 @@ import { createLogger } from '../../logger';
 const log = createLogger('sentinel/fin-impact');
 
 const config: SentinelConfig = {
-  id: 'sentinel-financial-impact', name: '财务影响分析', description: '将组织诊断指标映射为财务成本估算。', category: 'risk', priority: 'P1', mode: 'cron', cron: '0 9 1 * *', requiredDataSources: ['diagnosis_results', 'financial_baseline'], confidenceModel: 'statistical', version: '1.0.0',
+  id: 'sentinel-financial-impact', name: '财务影响分析', description: '将组织诊断指标映射为财务成本估算。数据源:SOG FINANCIAL节点。', category: 'risk', priority: 'P1', mode: 'cron', cron: '0 9 1 * *', requiredDataSources: ['sog_graph'], confidenceModel: 'statistical', version: '2.0.0',
 };
 
-interface FinImpactReport {
-  totalMonthlyCost: number; costBreakdown: Array<{ factor: string; monthlyCost: number }>;
-  riskAdjustedCost: number; interpretation: string;
-}
-
-function extractFindings(report: FinImpactReport, now: Date): SentinelFinding[] {
-  const f: SentinelFinding[] = []; const ts = now.toISOString();
-  if (report.totalMonthlyCost > 50000) {
-    f.push({ id: `fin-high-cost-${now.getTime()}`, severity: 'warning', title: `组织低效月成本: ¥${report.totalMonthlyCost.toLocaleString()}`, description: report.interpretation, evidence: report.costBreakdown.map(c => `${c.factor}: ¥${c.monthlyCost.toLocaleString()}`), suggestion: '优先修复成本最高的因子——通常信息流断裂和信任问题占大头。', detectedAt: ts });
-  }
-  if (report.riskAdjustedCost > report.totalMonthlyCost * 1.5) {
-    f.push({ id: `fin-risk-adj-${now.getTime()}`, severity: 'critical', title: `风险调整后成本飙升 (${((report.riskAdjustedCost / report.totalMonthlyCost - 1) * 100).toFixed(0)}%)`, description: `风险调整后月成本为 ¥${report.riskAdjustedCost.toLocaleString()}，基准 ¥${report.totalMonthlyCost.toLocaleString()}`,
-      evidence: [`基准成本: ¥${report.totalMonthlyCost.toLocaleString()}`, `风险调整: ¥${report.riskAdjustedCost.toLocaleString()}`], suggestion: '高风险因子的成本放大效应显著——降低不确定性比降低运营成本更紧迫。', detectedAt: ts });
-  }
-  return f;
-}
+// 常见组织低效的成本因子
+const COST_FACTORS = ['沟通低效', '信息断裂', '单点依赖', '重复工作', '决策延迟', '技术债务'];
+const AVG_COST_PER_PERSON = 5000; // 每人月均低效成本（保守估计）
 
 export const financialImpactSentinel: Sentinel = {
   config,
   async check(context: SentinelContext): Promise<SentinelCheckResult> {
-    const { now } = context; const checkedAt = now.toISOString();
+    const { now } = context; const checkedAt = now.toISOString(); const startTime = Date.now();
     try {
       const teams = discoverTeams(context);
-      if (teams.length === 0) return { sentinelId: config.id, ok: true, findings: [], durationMs: 0, checkedAt, degraded: true };
-      // 需要 FullDiagnosisV2 — 当前从数据库加载最近诊断
-      // 降级: 返回空 findings + degraded (数据不足)
-      log.debug('[FinImpact] 财务影响分析需要 FullDiagnosisV2 — 当前数据不足，降级');
-      return { sentinelId: config.id, ok: true, findings: [], durationMs: Date.now() - now.getTime(), checkedAt, degraded: true };
-    } catch (err: unknown) {
-      return { sentinelId: config.id, ok: false, findings: [], durationMs: 0, checkedAt, error: (err as Error)?.message || String(err), degraded: true };
-    }
+      const db = context.db as { prepare(sql: string): { all(): Array<Record<string, unknown>> } } | null;
+      const allFindings: SentinelFinding[] = []; let anyData = false;
+      for (const teamId of teams) {
+        let totalCost = 0; let riskMultiplier = 1;
+        const costBreakdown: Array<{ factor: string; monthlyCost: number }> = [];
+        if (db) {
+          try {
+            const rows = db.prepare("SELECT props FROM graph_nodes WHERE type = 'FINANCIAL' AND props IS NOT NULL").all();
+            for (const r of rows) {
+              const p = typeof r.props === 'string' ? JSON.parse(r.props as string) : (r.props || {});
+              if (p.totalMonthlyCost) { totalCost += Number(p.totalMonthlyCost); anyData = true; }
+              if (p.riskMultiplier || p.risk_multiplier) { riskMultiplier = Math.max(riskMultiplier, Number(p.riskMultiplier || p.risk_multiplier)); }
+              for (const factor of COST_FACTORS) { if (p[factor]) { costBreakdown.push({ factor, monthlyCost: Number(p[factor]) }); anyData = true; } }
+            }
+            // 无精确数据 → 从诊断快照中人数估算
+            const snapRows = db.prepare("SELECT data FROM diagnosis_snapshots WHERE team_id = ? ORDER BY created_at DESC LIMIT 1").all(teamId);
+            if (totalCost === 0 && snapRows.length > 0) {
+              const data = typeof snapRows[0].data === 'string' ? JSON.parse(snapRows[0].data as string) : (snapRows[0].data || {});
+              const people = Number(data.teamSize || data.people || 0);
+              if (people > 0) { totalCost = people * AVG_COST_PER_PERSON; anyData = true; }
+            }
+          } catch { /* */ }
+        }
+        if (!anyData) continue;
+        const riskAdjustedCost = totalCost * riskMultiplier;
+        if (totalCost > 50000) {
+          allFindings.push({ id: `fin-high-${teamId}-${now.getTime()}`, severity: 'warning', title: `组织低效月成本: ¥${totalCost.toLocaleString()}`, description: `估算的低效成本基于 ${COST_FACTORS.join('/')} 等因素。`, evidence: costBreakdown.length > 0 ? costBreakdown.map(c => `${c.factor}: ¥${c.monthlyCost.toLocaleString()}`) : [`人均估算: ¥${AVG_COST_PER_PERSON}/月`], suggestion: '优先降低通信和决策成本——这两项通常占低效成本的60%以上。', detectedAt: checkedAt });
+        }
+        if (riskMultiplier > 1.5) {
+          allFindings.push({ id: `fin-risk-${teamId}-${now.getTime()}`, severity: 'critical', title: `风险调整后成本飙升 ${((riskMultiplier-1)*100).toFixed(0)}%`, description: `风险调整后月成本 ¥${riskAdjustedCost.toLocaleString()}，基准 ¥${totalCost.toLocaleString()}`, evidence: [`风险乘数: ${riskMultiplier}x`, `调整后: ¥${riskAdjustedCost.toLocaleString()}`], suggestion: '降低不确定性（客户集中度、关键人依赖）比降低运营成本更紧迫。', detectedAt: checkedAt });
+        }
+      }
+      if (!anyData) return { sentinelId: config.id, ok: true, findings: [], durationMs: Date.now() - startTime, checkedAt, degraded: true };
+      return { sentinelId: config.id, ok: true, findings: allFindings, durationMs: Date.now() - startTime, checkedAt, degraded: false };
+    } catch (err: unknown) { return { sentinelId: config.id, ok: false, findings: [], durationMs: Date.now() - startTime, checkedAt, error: (err as Error)?.message || String(err), degraded: true }; }
   },
 };

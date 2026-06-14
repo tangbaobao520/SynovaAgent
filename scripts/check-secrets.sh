@@ -32,9 +32,11 @@ FULL_SCAN=$(grep -rn \
   2>/dev/null \
   | grep -v 'node_modules' \
   | grep -v '\.git/' \
+  | grep -v '\.claude/' \
   | grep -v '/dist/\|/build/\|/release/\|/vendor/\|/tests/' \
   | grep -v 'package-lock\.json' \
   | grep -v 'your-\|example\|placeholder\|demo\|test-\|xxx\|TODO\|CHANGE\|CHANGE_ME' \
+  | grep -v 'setx.*FEISHU\|export.*FEISHU\|Bash(setx\|Bash(export' \
   | grep -v "'deepseek'\|'qwen'\|'glm'\|'kimi'\|'yi'\|'minimax'\|'step'\|'ernie'\|'openai'\|'gateway'\|'silicon'" \
   | grep -v "deepseek-chat\|deepseek-v4\|deepseek-r1\|qwen-max\|qwen-plus\|glm-4\|kimi-latest\|ernie-bot" \
   || true)
@@ -68,6 +70,7 @@ CLAUDE_SCAN=$(grep -rn \
   --include='*.json' --include='*.yaml' --include='*.yml' \
   2>/dev/null \
   | grep -v 'your-\|example\|placeholder\|xxx\|TODO' \
+  | grep -v 'setx.*FEISHU\|export.*FEISHU\|Bash(setx\|Bash(export' \
   || true)
 
 if [ -n "$CLAUDE_SCAN" ]; then

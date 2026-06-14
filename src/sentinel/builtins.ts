@@ -36,6 +36,14 @@ export async function registerBuiltinSentinels(): Promise<void> {
     { name: 'FinancialSnapshot', loader: () => import('./adapters/financial-snapshot-sentinel'), key: 'financialSnapshotSentinel' },
     { name: 'GoalAlignment', loader: () => import('./adapters/goal-alignment-sentinel'), key: 'goalAlignmentSentinel' },
     { name: 'RiskAggregator', loader: () => import('./adapters/risk-aggregator-sentinel'), key: 'riskAggregatorSentinel' },
+    { name: 'APIAccess', loader: () => import('./adapters/api-accessibility-sentinel'), key: 'apiAccessibilitySentinel' },
+    { name: 'DataReadiness', loader: () => import('./adapters/data-readiness-sentinel'), key: 'dataReadinessSentinel' },
+    { name: 'ProtocolCoverage', loader: () => import('./adapters/protocol-coverage-sentinel'), key: 'protocolCoverageSentinel' },
+    { name: 'RevenueDecomposition', loader: () => import('./adapters/revenue-decomposition-sentinel'), key: 'revenueDecompositionSentinel' },
+    { name: 'CustomerDynamics', loader: () => import('./adapters/customer-dynamics-sentinel'), key: 'customerDynamicsSentinel' },
+    { name: 'CashFlow', loader: () => import('./adapters/cash-flow-sentinel'), key: 'cashFlowSentinel' },
+    { name: 'IntegrationHealth', loader: () => import('./adapters/integration-health-sentinel'), key: 'integrationHealthSentinel' },
+    { name: 'DataSilos', loader: () => import('./adapters/data-silos-sentinel'), key: 'dataSilosSentinel' },
   ];
 
   let registered = 0;

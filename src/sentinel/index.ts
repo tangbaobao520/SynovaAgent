@@ -24,6 +24,8 @@ export {
 
 export {
   SentinelRunner,
+  getGlobalSentinelRunner,
+  setGlobalSentinelRunner,
 } from './runner';
 export type {
   SentinelRunRecord,
@@ -37,7 +39,6 @@ export {
 // 信号聚合引擎 (B1)
 export {
   aggregateSignals,
-  collectAndAggregate,
 } from './signal-aggregator';
 export type {
   AggregatedSignal,
