@@ -57,7 +57,7 @@ router.get('/signals', (_req: Request, res: Response) => {
 
 router.post('/run/:id', async (req: Request, res: Response) => {
   try {
-    const sentinelId = req.params.id;
+    const sentinelId = String(req.params.id);
     if (!sentinelId) {
       res.status(400).json({ ok: false, sentinelId: '', result: null, error: '缺少 sentinelId' });
       return;

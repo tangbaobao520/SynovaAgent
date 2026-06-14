@@ -20,7 +20,7 @@ export const dataSilosSentinel: Sentinel = {
   async check(context: SentinelContext): Promise<SentinelCheckResult> {
     const { now } = context; const checkedAt = now.toISOString(); const startTime = Date.now();
     try {
-      const db = context.db as { prepare(sql: string): { all(): Array<Record<string, unknown>> } } | null;
+      const db = context.db as { prepare(sql: string): { all(...params: unknown[]): Array<Record<string, unknown>> } } | null;
       if (!db) return { sentinelId: config.id, ok: true, findings: [], durationMs: 0, checkedAt, degraded: true };
       let toolCount = 0; let isolatedTools: string[] = [];
       try {

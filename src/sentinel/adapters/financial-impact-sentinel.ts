@@ -26,7 +26,7 @@ export const financialImpactSentinel: Sentinel = {
     const { now } = context; const checkedAt = now.toISOString(); const startTime = Date.now();
     try {
       const teams = discoverTeams(context);
-      const db = context.db as { prepare(sql: string): { all(): Array<Record<string, unknown>> } } | null;
+      const db = context.db as { prepare(sql: string): { all(...params: unknown[]): Array<Record<string, unknown>> } } | null;
       const allFindings: SentinelFinding[] = []; let anyData = false;
       for (const teamId of teams) {
         let totalCost = 0; let riskMultiplier = 1;
