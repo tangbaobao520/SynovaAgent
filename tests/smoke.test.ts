@@ -112,8 +112,9 @@ describe('Diagnosis API', () => {
     // 完整诊断流程需真实 LLM >3min, 这里只验证 HTTP 响应格式
     const ctrl = new AbortController();
     setTimeout(() => ctrl.abort(), 3000); // 3s 后中断 — 只验证连接建立
+    let res: Response | undefined;
     try {
-      const res = await fetch(`${BASE}/api/diagnosis/consult`, {
+      res = await fetch(`${BASE}/api/diagnosis/consult`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -129,7 +130,7 @@ describe('Diagnosis API', () => {
       if (err.name === 'AbortError' || err.name === 'TypeError') return; // 预期中断
       throw err;
     }
-    await res.text();
+    if (res) await res.text();
   });
 
   it('GET /api/diagnosis/consult/nonexistent/status → 404', async () => {
