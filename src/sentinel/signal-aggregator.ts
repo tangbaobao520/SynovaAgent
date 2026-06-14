@@ -165,30 +165,6 @@ export function aggregateSignals(
   return { signals, stats };
 }
 
-/**
- * 从所有已注册哨兵收集最新结果并聚合。
- * 供 SentinelRunner 在每次 cron tick 后调用。
- */
-export async function collectAndAggregate(
-  runnerStats: { totalRuns: number; totalFindings: number },
-  now: Date = new Date(),
-): Promise<{ signals: AggregatedSignal[]; stats: SignalAggregatorStats }> {
-  // 哨兵结果由 SentinelRunner 在内存中维护 (最近 50 条/哨兵)
-  // 此处收集所有哨兵的最新结果
-  try {
-    // NOTE: 需要从 SentinelRunner.records 读取最新结果
-    // 这是聚合引擎与 Runner 的集成点
-    const emptyResults: SentinelCheckResult[] = [];
-    return aggregateSignals(emptyResults, now);
-  } catch (err: unknown) {
-    log.error({ err }, '[aggregator] 收集哨兵结果失败');
-    return {
-      signals: [],
-      stats: { totalFindings: 0, aggregatedSignals: 0, criticalSignals: 0, degraded: true },
-    };
-  }
-}
-
 // ═══ Helpers ═══
 
 /** 从 finding 中提取实体关键词 (简化版: 取标题前 30 字符) */

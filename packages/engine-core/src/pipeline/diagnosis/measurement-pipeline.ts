@@ -4,6 +4,10 @@
  *
  * L3 模块：数据进入 → N个测量器依次计算 → 聚合结果 → 输出
  * 管道不关心测量逻辑——它只负责加载、执行、收集、聚合。
+ *
+ * 当前状态 (2026-06-14): 管道框架就绪但零真实测量器注册。
+ * 测量能力已迁移到 Sentinel 接口 (src/sentinel/)。详见 docs/SENTINEL-GAP-D1-D4-D5.md。
+ * diagnosis-upload-v2.ts 中调用本管道但正确降级 (degraded=true)。
  */
 
 // ═══ Types ═══

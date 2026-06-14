@@ -3,6 +3,8 @@
  * ARCH-20: 可替换后端, 接口预留 SurrealDB
  *
  * @deprecated 公共 API 已迁移到 @synova/diagnosis-engine 包。
+ * 注意: 本类直接操作 SQLite (绕过 StorageBackend 接口)。
+ * 迁移方向: 通过 setStorageBackend() 注入, 让 engine-core 的 storage.ts 管理所有持久化。
  * 新代码请从 '@synova/diagnosis-engine' import { createGraphStore }。
  * 本文件保留作为 engine-core 内部实现。
  */

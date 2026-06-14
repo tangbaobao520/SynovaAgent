@@ -517,6 +517,9 @@ let _modulesRegistered = false;
 
 export function ensureModulesRegistered(): void {
   if (_modulesRegistered) return;
-  registerBuiltinModules();
+  // @deprecated: ModuleRegistry 已被 Sentinel 接口替代 (P1-1)。
+  // 24 个 DiagnosticModule 不再自动注册。新能力请实现 Sentinel 接口。
+  // 如需恢复旧行为：取消下面注释
+  // registerBuiltinModules();
   _modulesRegistered = true;
 }
