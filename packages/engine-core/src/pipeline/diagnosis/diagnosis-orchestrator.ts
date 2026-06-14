@@ -65,7 +65,8 @@ import { EXPERT_REPORT_SCHEMA } from './expert-subagent-executor';
 import { synthesizeExpertReports } from './synthesizer';
 import { saveExpertReport } from './expert-report-store';
 import { extractSessionBrief } from './phase0-prompts';
-import type { ExpertType } from './types';
+import type { ExpertType, ExpertReport } from './types';
+import type { ExpertContext } from './expert-subsystem-interface';
 import { createLogger } from '../../infra/logger';
 import { getEngineContext } from '../../engine-context';
 
@@ -592,7 +593,7 @@ export class DiagnosisOrchestrator<
 
     // EC-02 Sprint A: 依赖注入 — 优先使用注入的 executor, 否则默认 ExpertSubAgentExecutor
     const executor: ExpertSubsystem = this.expertExecutor
-      || new ExpertSubAgentExecutor(this.llmClient, this.toolExecutor);
+      || new ExpertSubAgentExecutor(this.llmClient, this.toolExecutor) as unknown as ExpertSubsystem;
     const expertTypes: ExpertType[] = ['strategic_analyst','org_diagnostician','financial_analyst','tech_architect','marketing_analyst','action_advisor'];
 
     const contexts: ExpertSubAgentContext[] = expertTypes.map(type => {
@@ -617,9 +618,9 @@ export class DiagnosisOrchestrator<
     });
 
     // ── 2. 并行执行 6 专家 ──
-    const reports = await executor.executeAll(contexts);
+    const reports = await executor.executeAll(contexts as unknown as ExpertContext[]);
     for (const r of reports) {
-      saveExpertReport(r);
+      saveExpertReport(r as unknown as ExpertReport);
       this.tracer.trace({ type: 'expert_report_completed', expertType: r.expertType, status: r.status, timestamp: new Date().toISOString() } as any);
     }
 
@@ -638,7 +639,7 @@ export class DiagnosisOrchestrator<
     // ── 3. 合成 ──
     let synthesis: Awaited<ReturnType<typeof synthesizeExpertReports>>;
     try {
-      synthesis = await synthesizeExpertReports(reports, filteredEvidence, this.llmClient);
+      synthesis = await synthesizeExpertReports(reports as unknown as ExpertReport[], filteredEvidence, this.llmClient);
     } catch (err) {
       log.warn({ err }, '[orchestrator] 合成失败, 回退到规则引擎');
       return this.generateRuleBasedHypotheses(filteredEvidence);
@@ -928,7 +929,7 @@ export class DiagnosisOrchestrator<
         diagnosisId: `diag_${teamId}_${Date.now().toString(36)}`,
         overallRating: null, // 用户后续补充
         adoptionRate: null,  // 等待行动项执行结果
-        mostValuableInsight: report.keyFindings?.[0]?.description || null,
+        mostValuableInsight: (report.keyFindings?.[0] as unknown as Record<string, unknown> | undefined)?.description as string || null,
         mostInaccurateInsight: null,
         improvementSuggestions: null,
       });

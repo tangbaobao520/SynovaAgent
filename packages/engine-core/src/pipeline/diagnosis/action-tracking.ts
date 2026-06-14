@@ -164,6 +164,10 @@ export interface EvolutionSignal {
   generatedAt: string;
   /** 是否已提交到联邦进化 */
   submittedToFederation: boolean;
+  /** 工具采纳率 0-1 (联邦报告用) */
+  adoptionRate?: number;
+  /** 改进率 0-1 (联邦报告用) */
+  improvementRate?: number;
 }
 
 // ====================================================================

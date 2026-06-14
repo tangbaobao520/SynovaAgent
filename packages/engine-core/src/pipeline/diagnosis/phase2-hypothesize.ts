@@ -12,7 +12,9 @@ import { buildExpertSystemPrompt } from './expert-prompts';
 import { synthesizeExpertReports } from './synthesizer';
 import { saveExpertReport } from './expert-report-store';
 import { extractSessionBrief } from './phase0-prompts';
-import type { ExpertType, DiagnosisEvidence, DiagnosisHypothesis, DiagnosisScope } from './types';
+import type { ExpertType, DiagnosisEvidence, DiagnosisHypothesis, DiagnosisScope, ExpertReport } from './types';
+import type { ExpertContext } from './expert-subsystem-interface';
+import type { Phase0State } from './phase0-prompts';
 import { createLogger } from '../../infra/logger';
 
 const log = createLogger('diagnosis/phase2');
@@ -44,13 +46,13 @@ export async function phase2Hypothesize(
   const diagnosisId = `diag_${Date.now().toString(36)}`;
 
   const sessionBrief = extractSessionBrief(
-    { ...(deps.phase0State || {}), orgName: scope.teamId, teamSize: '' },
+    { ...(deps.phase0State || {}), orgName: scope.teamId, teamSize: '' } as unknown as Phase0State,
     { dimensions: scope.dimensions, depth: scope.depth },
   );
   sessionBrief.diagnosisId = diagnosisId;
 
   const executor: ExpertSubsystem = deps.expertExecutor
-    || new ExpertSubAgentExecutor(deps.llmClient as any, deps.toolExecutor as any);
+    || new ExpertSubAgentExecutor(deps.llmClient as any, deps.toolExecutor as any) as unknown as ExpertSubsystem;
   const expertTypes: ExpertType[] = ['strategic_analyst','org_diagnostician','financial_analyst','tech_architect','marketing_analyst','action_advisor'];
 
   const contexts: ExpertSubAgentContext[] = expertTypes.map(type => {
@@ -69,9 +71,9 @@ export async function phase2Hypothesize(
     };
   });
 
-  const reports = await executor.executeAll(contexts);
+  const reports = await executor.executeAll(contexts as unknown as ExpertContext[]);
   for (const r of reports) {
-    saveExpertReport(r);
+    saveExpertReport(r as unknown as ExpertReport);
     deps.tracer.trace({ type: 'expert_report_completed', expertType: r.expertType, status: r.status, timestamp: new Date().toISOString() });
   }
 
@@ -84,7 +86,7 @@ export async function phase2Hypothesize(
 
   let synthesis: Awaited<ReturnType<typeof synthesizeExpertReports>>;
   try {
-    synthesis = await synthesizeExpertReports(reports, filteredEvidence, deps.llmClient as any);
+    synthesis = await synthesizeExpertReports(reports as unknown as ExpertReport[], filteredEvidence, deps.llmClient as any);
   } catch (err) {
     log.warn({ err }, '合成失败, 回退到规则引擎');
     return generateRuleBasedHypotheses(filteredEvidence);
@@ -124,5 +126,7 @@ function generateRuleBasedHypotheses(evidence: DiagnosisEvidence[]): DiagnosisHy
     confidence: 0.4,
     status: 'active' as const,
     supportingEvidence: evidence.filter(e => e.dimension === dim).slice(0, 3).map(e => e.id),
-  }));
+    refutingEvidence: [],
+    generatedInPhase: 2,
+  })) as unknown as DiagnosisHypothesis[];
 }

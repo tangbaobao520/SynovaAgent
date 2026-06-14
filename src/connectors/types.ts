@@ -9,9 +9,6 @@
  * 与连接器接口定义不重复 — 它们描述连接器产出的数据形状。
  */
 export type {
-  ConnectorTool,
-  ConnectorStatus,
-  ConnectorHealth,
   ToolRegistryInterface,
 } from '@synova/connector-registry';
 
