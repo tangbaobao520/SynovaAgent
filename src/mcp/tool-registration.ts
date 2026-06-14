@@ -21,50 +21,60 @@ const log = createLogger('mcp/tool-registration');
 export async function registerMCPTools(registry: ToolRegistry): Promise<void> {
   const bridge = getMCPBridge();
 
-  // ── Task 2: Brave Search (all experts can use) ──
-  try {
-    const braveTools = await bridge.connect('brave-search');
-    for (const tool of braveTools) {
-      registry.register({
-        name: `brave_${tool.name}`,
-        description: `[Brave Search] ${tool.description}`,
-        parameters: { type: 'object', properties: tool.parameters as Record<string, ToolParameter> },
-        operationType: 'read',
-        sideEffects: 'none',
-        executionMode: 'connector',
-        connectorName: 'brave-search',
-        handler: async (params) => {
-          const result = await bridge.callTool('brave-search', tool.name, params);
-          return { content: result.content?.[0]?.text || JSON.stringify(result) };
-        },
-      });
-    }
-    log.info({ toolCount: braveTools.length }, 'Brave Search 工具已注册');
-  } catch (err: any) {
-    log.warn({ err: err.message }, 'Brave Search 注册失败 — degraded (BRAVE_API_KEY 未配置)');
-  }
+  // ── 并行连接 Brave Search + GitHub MCP servers (不阻塞启动) ──
+  const serverResults = await Promise.allSettled([
+    (async () => {
+      try {
+        const braveTools = await bridge.connect('brave-search');
+        for (const tool of braveTools) {
+          registry.register({
+            name: `brave_${tool.name}`,
+            description: `[Brave Search] ${tool.description}`,
+            parameters: { type: 'object', properties: tool.parameters as Record<string, ToolParameter> },
+            operationType: 'read',
+            sideEffects: 'none',
+            executionMode: 'connector',
+            connectorName: 'brave-search',
+            handler: async (params) => {
+              const result = await bridge.callTool('brave-search', tool.name, params);
+              return { content: result.content?.[0]?.text || JSON.stringify(result) };
+            },
+          });
+        }
+        log.info({ toolCount: braveTools.length }, 'Brave Search 工具已注册');
+      } catch (err: any) {
+        log.warn({ err: err.message }, 'Brave Search 注册失败 — degraded (BRAVE_API_KEY 未配置)');
+      }
+    })(),
+    (async () => {
+      try {
+        const ghTools = await bridge.connect('github');
+        for (const tool of ghTools) {
+          registry.register({
+            name: `github_${tool.name}`,
+            description: `[GitHub] ${tool.description}`,
+            parameters: { type: 'object', properties: tool.parameters as Record<string, ToolParameter> },
+            operationType: 'read',
+            sideEffects: 'none',
+            executionMode: 'connector',
+            connectorName: 'github',
+            handler: async (params) => {
+              const result = await bridge.callTool('github', tool.name, params);
+              return { content: result.content?.[0]?.text || JSON.stringify(result) };
+            },
+          });
+        }
+        log.info({ toolCount: ghTools.length }, 'GitHub 工具已注册');
+      } catch (err: any) {
+        log.warn({ err: err.message }, 'GitHub 注册失败 — degraded (GITHUB_TOKEN 未配置)');
+      }
+    })(),
+  ]);
 
-  // ── Task 4: GitHub MCP (tech expert) ──
-  try {
-    const ghTools = await bridge.connect('github');
-    for (const tool of ghTools) {
-      registry.register({
-        name: `github_${tool.name}`,
-        description: `[GitHub] ${tool.description}`,
-        parameters: { type: 'object', properties: tool.parameters as Record<string, ToolParameter> },
-        operationType: 'read',
-        sideEffects: 'none',
-        executionMode: 'connector',
-        connectorName: 'github',
-        handler: async (params) => {
-          const result = await bridge.callTool('github', tool.name, params);
-          return { content: result.content?.[0]?.text || JSON.stringify(result) };
-        },
-      });
-    }
-    log.info({ toolCount: ghTools.length }, 'GitHub 工具已注册');
-  } catch (err: any) {
-    log.warn({ err: err.message }, 'GitHub 注册失败 — degraded (GITHUB_TOKEN 未配置)');
+  // 检查是否有连接完全失败 (非 degraded)
+  const failures = serverResults.filter(r => r.status === 'rejected');
+  if (failures.length > 0) {
+    log.warn({ failures: failures.length }, '部分 MCP server 连接异常 (非阻断)');
   }
 
   // ── Task 3: query_sog_graph (dynamic SOG graph query) ──

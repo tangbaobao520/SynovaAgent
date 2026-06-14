@@ -15,6 +15,7 @@ import * as fs from 'fs';
 const log = createLogger('init/engine-context');
 
 let db: Database.Database | null = null;
+let _initialized = false;
 
 export function getDatabase(): Database.Database {
   if (!db) throw new Error('数据库未初始化，请先调用 initEngineContext()');
@@ -22,6 +23,8 @@ export function getDatabase(): Database.Database {
 }
 
 export function initEngineContext(): void {
+  // 幂等：SynovaAgent.start() 和 createServer() 都可能调用
+  if (_initialized) return;
   const config = loadConfig();
 
   // 1. 初始化 SQLite
@@ -56,6 +59,7 @@ export function initEngineContext(): void {
 
   // 3. 设置存储后端 (Slice 2.2: SQLite 持久化替换内存模式)
   const storageBackend = new SqliteStorageBackend(db!);
+  _initialized = true;
   log.info('EngineContext 注入完成 (SQLite 持久化存储模式)');
 }
 
