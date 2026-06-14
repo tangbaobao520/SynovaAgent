@@ -22,7 +22,7 @@ export interface L2Candidate {
   reviewedAt?: string;
 }
 
-interface L2Node {
+export interface L2Node {
   id: string;
   type: string;
   props: Record<string, unknown>;

@@ -17,6 +17,8 @@ import { createProvider } from '../providers';
 import { loadConfig } from '../config';
 import { createLogger } from '../logger';
 import { getDatabase } from '../init/engine-context';
+import type { ExtractionResult } from '../../packages/engine-core/src/pipeline/diagnosis/doc-extractor';
+import type { L2Node } from '../../packages/engine-core/src/pipeline/diagnosis/entity-resolver-l2';
 
 const log = createLogger('routes/diagnosis-upload');
 const router = Router();
@@ -139,7 +141,7 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
   // FIXME: CJS 动态导入与 TS 类型约束不兼容 — engine-core 迁移到 ESM 后移除此行
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   // CJS 动态导入无 TS 类型 — 用 Record 替代 as any
-  const extractor = new (DocExtractor as new (graphStore: unknown, llmClient: unknown) => { extract: (docId: string, content: string, teamId: string) => Promise<{ dimensions: Array<{ dimensionKey: string; dimensionLabel: string; confidence: number; sufficient: boolean; summary?: string; content?: string }>; insufficientDimensions: string[] }> })(graphStore, llmClient);
+  const extractor = new (DocExtractor as unknown as new (graphStore: unknown, llmClient: unknown) => { extract: (docId: string, content: string, teamId: string) => Promise<ExtractionResult> })(graphStore, llmClient);
   const { SOGNodeType } = await import('@synova/sog-core');
   const docId = graphStore.createNode(SOGNodeType.DOCUMENT, { name: `interview_${jobId}`, content }, teamId);
   const extraction = await extractor.extract(docId, content, teamId);
@@ -164,7 +166,7 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
           name: `extracted_${dim.dimensionKey}_${jobId}`,
           dimensionKey: dim.dimensionKey,
           dimensionLabel: dim.dimensionLabel,
-          content: dim.summary || dim.content || '',
+          content: dim.content || '',
           confidence: dim.confidence || 0.5,
           source: 'document_extraction',
           extractedAt: new Date().toISOString(),
@@ -503,7 +505,7 @@ async function syncDiagnosisToGraph(
       }));
       if (signalNames.length > 0 && existingNodes.length > 0) {
         const candidates = generateL2Candidates(
-          [...signalNames, ...existingNodes] as string[],
+          [...signalNames, ...existingNodes] as unknown as L2Node[],
           0.6,
         );
         for (const c of candidates) {
