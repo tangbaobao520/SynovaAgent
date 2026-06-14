@@ -12,6 +12,7 @@
 
 import type { CronScheduler } from '../cron/scheduler';
 import type { Sentinel, SentinelCheckResult } from './types';
+import type { Evidence } from '../evidence/types';
 import { getSentinelRegistry } from './registry';
 import { getBaselineStore } from './baseline-store';
 import { createLogger } from '../logger';
@@ -215,10 +216,10 @@ export class SentinelRunner {
             '[runner] 信号路由专家 → 启动推理');
           const report = await dispatcher.runExpert(
             expertType as 'strategy' | 'org' | 'finance' | 'tech' | 'marketing' | 'action',
-            evidenceItems as Array<{ id: string; source: string; sourceId: string; type: string; content: string; confidence: number; collectedAt: string; orgId: string; sessionId: string }>,
+            evidenceItems as unknown as Evidence[],
           );
           if (report) {
-            log.info({ signalId: signal.id, expert: expertType, findings: (report as Record<string, unknown> | null)?.findings ? (Array.isArray((report as Record<string, unknown>).findings) ? ((report as Record<string, unknown>).findings as Array<unknown>).length : 0) : 0 },
+            log.info({ signalId: signal.id, expert: expertType, findings: (report as unknown as Record<string, unknown> | null)?.findings ? (Array.isArray((report as unknown as Record<string, unknown>).findings) ? ((report as unknown as Record<string, unknown>).findings as Array<unknown>).length : 0) : 0 },
               '[runner] 专家诊断完成');
             this.storeExpertReport(signal.id, expertType, report, signal.severity);
           }
