@@ -10,7 +10,7 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# 复制 monorepo 依赖结构 (engine-core 在 parent/server/vendor/)
+# 复制 monorepo 依赖结构 (engine-core 在 packages/，culture-forge 在 server/vendor/)
 COPY package.json package-lock.json ./
 COPY packages/ ./packages/
 COPY server/vendor/ ./vendor/

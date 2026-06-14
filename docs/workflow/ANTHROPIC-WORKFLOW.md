@@ -8,14 +8,29 @@
 
 ## 〇、背景
 
-### 我们已有的 (2/7 节点)
+### 我们已有的 (7/7 节点 — 2026-06-14 全量物理强制)
 
 ```
 任务开始 ──→ 设计 ──→ 实现 ──→ 提交 ──→ 推送 ──→ 部署 ──→ 线上
-                                     │         │
-                                  ✅ 铁律    ✅ tsc
-                                     门禁      +vitest
+    │          │         │         │         │         │         │
+  ✅ pre-   ✅ pre-   ✅ pre-   ✅ git   ✅ git   ✅ 人工  ✅ cron
+   commit    commit    commit    hook     hook
+  Gate 0    Gate 1    Gate 2    33项     6道门
+  task      SPEC+     接线      硬阻断    禁
+  brief     设计文档   审计
 ```
+
+### 强制方式
+
+| 节点 | 强制方式 | 阻断条件 |
+|------|---------|---------|
+| ① | pre-commit Gate 0 | task brief 不存在或未填写 → 拒绝提交 |
+| ② | pre-commit Gate 1 + Gate 2b | SPEC.md 缺失 / 设计文档无触发定义+结果呈现 → 拒绝提交 |
+| ③ | pre-commit Gate 2 + 2a | 接线审计失败 / tsc 非零 / 新文件无 test → 拒绝提交 |
+| ④ | pre-commit 33 hard gates | 无超时逃生舱，无分支跳过 |
+| ⑤ | pre-push 6 gates | 决策树 + tsc + vitest + iron laws + wire + arch |
+| ⑥ | 人工 + post-commit 提醒 | 不可物理强制（需外部 curl） |
+| ⑦ | Cron | checkpoint-runtime.sh 每 30 分钟 |
 
 ### Anthropic 的标准 (7 节点全覆盖)
 
@@ -347,26 +362,31 @@ docs/workflow/
 
 ## 四、对比总结
 
-| | 现在 | 设计后 |
+| | 旧状态 (2026-06-13) | 新状态 (2026-06-14) |
 |---|------|--------|
-| 节点数 | 2/7 (④⑤) | 7/7 全覆盖 |
-| 接线检查 | 人工记忆 | ③ 节点 grep 硬阻断 |
-| 测试时机 | commit 时 | ③ 节点 write code 后立即 |
+| 节点数 | 2/7 (④⑤) | **7/7 全覆盖** |
+| 接线检查 | 人工记忆 | pre-commit grep 硬阻断 |
+| 测试时机 | commit 时 | pre-commit 强制 test-first |
 | 部署验证 | 手动 curl | ⑥ 节点自动脚本 |
-| 任务开始 | 直接写代码 | ① 节点生成 Task Brief |
-| 设计评审 | 无 | ② 节点 Go/No-Go |
-| 降级追踪 | 漏掉 | ③ 节点 checklist |
-| 旧代码清理 | 忘记 | ③ 节点自动提醒 |
+| 任务开始 | 直接写代码 | pre-commit Gate 0: task brief 强制 |
+| 设计评审 | 无 | pre-commit Gate 1+2b: SPEC+设计文档强制 |
+| 降级追踪 | 漏掉 | pre-commit 空 catch 硬阻断 |
+| 旧代码清理 | 忘记 | pre-commit 自动提醒 |
+| 逃生舱 | timeout 放行 / 分支跳过 | **零逃生舱** |
+| AI 自律 | ①②③ 全部自律 | **零 AI 自律** |
 
 ---
 
-## 五、实施优先级
+## 五、实施状态
 
-| Phase | 内容 | 工时 | 影响 |
-|-------|------|------|------|
-| **Phase 1** | ③ checkpoint-impl.sh + wire-check.sh | 0.5h | 🔴 最大: 防止接线遗漏 |
-| **Phase 2** | ① task-start.sh + Task Brief 模板 | 0.5h | 🟡 中: 任务规划 |
-| **Phase 3** | ② checkpoint-design.sh | 0.3h | 🟡 中: 设计评审 |
+| Phase | 内容 | 状态 |
+|-------|------|------|
+| **Phase 1** | ③ checkpoint-impl.sh + wire-check.sh | ✅ 已并入 pre-commit |
+| **Phase 2** | ① task-start.sh + Task Brief 模板 | ✅ 已并入 pre-commit Gate 0 |
+| **Phase 3** | ② checkpoint-design.sh | ✅ 已并入 pre-commit Gate 1+2b |
+| **Phase 4** | ⑥ checkpoint-deploy.sh | ✅ 脚本就绪 (人工触发) |
+| **Phase 5** | ⑦ checkpoint-runtime.sh | ✅ 脚本就绪 (Cron) |
+| **Phase 6** | CLAUDE.md + Claude Code hooks | ✅ 2026-06-14 完成 |
 | **Phase 4** | ⑥ checkpoint-deploy.sh | 0.3h | 🟡 中: 部署验证 |
 | **Phase 5** | ⑦ checkpoint-runtime.sh | 0.3h | 🟢 低: 运行时监控 |
 | **Phase 6** | CLAUDE.md 更新 + Claude Code 集成 | 0.2h | 自动化触发 |

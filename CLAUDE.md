@@ -1,7 +1,36 @@
-# CLAUDE.md — SynovaAgent 组织智能诊断
+# CLAUDE.md — SynovaAgent
 
-> 独立 Agent 进程。六阶段诊断 → 组织数字孪生 → 持续进化。
-> 不依赖 Novis/ClawOrg 桌面端、Gateway 或前端。
+> 组织数字孪生诊断 + 持续增长导航系统。诊断是手段，目的是增长。
+> 核心问题：这家企业的增长卡在哪里？现在该做什么？
+> Agent，不是 ChatBot。驻扎企业，持续观测，主动发现，自动诊断，给出行动建议，跟踪执行。
+> 独立 API 进程。HTTP + MCP 对外服务。
+
+---
+
+## 数据流总览（每次任务必回顾）
+
+```
+原始数据 → 本体层(电子病历) → 7维度×25测量器(compute)
+                                     ↓
+                    按需(FDE触发)          定时(Cron触发)
+                    runModules()          Sentinel.check()
+                         ↓                      ↓
+                    Evidence池           SentinelFinding[]
+                         ↓                      ↓
+                    信号聚合引擎 ←←←←←←←←←←←←←
+                         ↓
+                    交叉关联 + 严重度升级 + 专家路由
+                         ↓
+              6位专家(strategy/org/finance/tech/marketing/action)
+                         ↓
+                    ReAct推理 + 交叉验证
+                         ↓
+                    综合诊断报告
+                         ↓
+                    FDE 收到警报 + 报告
+                    GET /api/sentinel/reports
+                    GET /api/sentinel/tickets
+```
 
 ---
 
@@ -128,30 +157,61 @@ pre-commit 警告：`.tsx` 文件注释中出现 `*/`（非行尾的块注释结
 
 ## 项目身份
 
-**产品**: SynovaAgent — 组织数字孪生诊断引擎
-**定位**: 独立 Agent 进程，通过 HTTP API + MCP 对外服务
-**市场**: 5-300 人团队的组织诊断
+**产品**: SynovaAgent — 组织数字孪生诊断 + 持续增长导航系统。
+**定位**: 独立 Agent 进程，通过 HTTP API + MCP 对外服务。不依赖任何前端或桌面端。
+**市场**: 5-300 人团队的组织诊断与增长导航。
+
+**两大核心系统**:
+1. **FDE 按需诊断** — 用户触发，6阶段管道，全部测量器+专家 → 综合诊断报告
+2. **Sentinel 定时哨兵** — Cron 自动，基线对比+异常检测 → 信号聚合 → 专家 → 工单
 
 **五层架构**:
 ```
-src/
-├── l1-interaction/   L1 交互层 (ViewAdapter 接口)
-├── agent/            L2 编排层 (ConversationEngine, ToolLoop)
-├── l3/               L3 洞察层 (ExpertAutonomy, QualityFirewall)
-├── l4/               L4 本体层 (GraphBridge, EntityResolver, CommunityReports)
-├── orchestrator/     L2-L3 桥接 (SubAgentCoordinator, ModuleRunner)
-├── providers/        LLM Provider (DeepSeek, OpenAI, Gateway)
-├── routes/           HTTP API (diagnosis, ontology, sessions, chat)
-├── store/            持久化 (SessionStore)
-├── cron/             定时任务 (CronScheduler)
-├── evidence/         证据引擎 (Collector, Corroboration)
-├── security/         安全 (PIIScrubber, DataBoundary)
-├── tui/              TUI 终端界面 (neo-blessed)
-├── mcp/              MCP 协议服务
-└── services/         基础设施 (update-checker)
+L1 交互    → routes/ (API), tui/ (终端), mcp/ (MCP协议)
+L2 编排    → agent/ (ConversationEngine, diagnosis-launcher, sentinel-service)
+              orchestrator/ (SubAgentCoordinator, ModuleRunner)
+L3 洞察    → l3/ (ExpertDispatcher, ExpertAutonomy, QualityFirewall)
+              sentinel/ (Runner, SignalAggregator, Registry, 15哨兵适配器)
+              expert-platform/ (ExpertStore, Validator)
+L4 本体    → l4/ (GraphBridge, EntityResolver, CommunityReports)
+              evidence/ (Collector, Corroboration, EvidenceStore)
+L5 存储    → store/ (SessionStore, SQLite)
+              cron/ (CronScheduler, 持久化作业)
+引擎       → packages/engine-core/ (543文件, 25测量器+6专家+本体层)
+安全       → security/ (PIIScrubber, DataBoundary)
+LLM       → providers/ (DeepSeek, OpenAI, Gateway)
 ```
 
-**引擎依赖**: `../server/vendor/@synova/engine-core/` (772 文件，动态 import 加载)
+**架构规则**: 只能向下依赖相邻层。L1禁触L3/L4/L5。L2禁触L4/L5。pre-commit `check-architecture.sh` 检测违规。
+
+---
+
+## Loop Engineering 系统
+
+### L1: 会话内自动循环（写一步验一步）
+
+```
+Write → PostToolUse hook → verify-incremental.sh
+  → vitest --related + 接线审计
+  → 失败 → 错误输出终端 → AI修正 → 再次Write → 再次验证
+  → .claude/loop-state.json 记录轮次 (最多5轮)
+```
+
+### L2: 双智能体交叉验证
+
+```
+pre-push → RUN_ARCH_AUDIT=1 → ArchitectureAuditor Agent
+  → 接口真实性 / 架构边界 / 数据流完整性 / 哨兵信号消费
+  → FAIL → 拒绝推送
+```
+
+### L3: 哨兵工单闭环
+
+```
+Cron → Sentinel → SignalAggregator → ExpertDispatcher
+  → critical → 自动创建工单 (SQLite sentinel_tickets)
+  → GET /api/sentinel/tickets → FDE 查询
+```
 
 ---
 
@@ -178,28 +238,27 @@ npm run workflow:deploy   # 部署后验证
 
 > 详细设计: `docs/workflow/ANTHROPIC-WORKFLOW.md`
 
-### 触发机制
+### 触发机制 — 全部物理强制，零 AI 自律
 
 ```
-① 任务开始 → AI 自律 (CLAUDE.md 指令)
-② 设计完成 → 人工触发
-③ 实现完成 → AI 自律 (CLAUDE.md 指令) ← 最关键
-④ 提交前   → Git Hook (.git/hooks/pre-commit)
-⑤ 推送前   → Git Hook (.git/hooks/pre-push)
-⑥ 部署后   → 人工触发
+① 任务开始 → pre-commit 强制 (Gate 0: task brief 不存在 + 未填写 → 拒绝提交)
+② 设计完成 → pre-commit 强制 (Gate 1: SPEC.md + 设计文档不存在 → 拒绝提交)
+③ 实现完成 → pre-commit 强制 (Gate 2: 接线审计 + tsc + test-first + 铁律门禁)
+④ 提交前   → Git Hook (.git/hooks/pre-commit) 33 项硬阻断，无超时逃生舱
+⑤ 推送前   → Git Hook (.git/hooks/pre-push) 6 道门禁
+⑥ 部署后   → 人工触发 (checkpoint-deploy.sh)
 ⑦ 线上     → Cron
 ```
 
-### AI 自律指令 (每次启动自动执行)
+### 物理强制说明
 
-```
-⚠️ 每次接受新任务时，必须先执行:
-   bash scripts/workflow/task-start.sh "任务描述"
-   → 生成 Task Brief → 确认用户旅程 → 确认 Done 标准 → 才能写代码
-
-⚠️ 声称"完成"之前，必须执行:
-   bash scripts/workflow/checkpoint-impl.sh <新函数名>
-   → 接线审计 → 测试全绿 → tsc 零错误 → 铁律门禁 → 才能 commit
+> pre-commit 是唯一物理阻断点。①②③ 的产出物检查已全部集成到 pre-commit：
+> - 无 task brief → 不准 commit
+> - 无 SPEC.md / 设计文档 → 不准 commit
+> - 新 export 未接线 → 不准 commit
+> - 新文件无测试 → 不准 commit
+>
+> SessionStart + PostToolUse hooks 在写代码时持续提醒。
 
 ⚠️ 每次 git push 成功后，必须提醒:
    "部署已完成。请运行: bash scripts/workflow/checkpoint-deploy.sh [服务器URL]"
@@ -220,22 +279,36 @@ crontab -e  # 添加: */30 * * * * bash /path/to/scripts/workflow/checkpoint-run
 
 ---
 
-## Git Hooks (自动触发)
+## 门禁系统 (全部物理强制，零 AI 自律)
+
+### PreToolUse Hook (写代码前)
+- Task brief 存在 + 6 字段质量检查
+- 接口真实性反向验证（grep 确认函数签名真实存在）
+- 例外: `.claude/task-briefs/` `.claude/settings` `scripts/workflow/hook-`
+
+### PostToolUse Hook (写代码后)
+- `verify-incremental.sh`: vitest --related + 接线审计
+- `.claude/loop-state.json`: 循环计数，最多5轮
+
+### Git Hooks
 
 | Hook | 触发时机 | 内容 |
 |------|---------|------|
-| pre-commit | `git commit` | 6 硬阻断 (as any/Mock/CJS/.only/.env/console) + 架构检查 + 技术债务提醒 |
-| commit-msg | `git commit` | Conventional Commits 格式强制 (`feat:` `fix:` `chore:`) |
-| pre-push | `git push` | tsc + vitest + iron-laws 三道门禁 |
+| pre-commit | `git commit` | 33 项硬阻断 (as any/Mock/CJS/.only/secrets/file size/wire/tsc/空catch/TUI铁律/决策树/架构边界/SPEC/task brief/test-first/单模块/new-file-pairing...) |
+| commit-msg | `git commit` | Conventional Commits 格式强制 |
+| post-commit | `git commit` | 决策流程建议 (decide-next.sh) |
+| pre-push | `git push` | 6 道门禁 (决策树+tsc+vitest+iron-laws+接线审计+架构边界) + ArchitectureAuditor (RUN_ARCH_AUDIT=1 启用) |
 
 ---
 
 ## 执行原则
 
-- **先读再改** — 不假设代码内容
-- **任务启动先跑 workflow** — `bash scripts/workflow/task-start.sh "任务"`
-- **每批验证** — `npx vitest run` 全绿 + `npm run check:iron-laws` 通过
-- **接线审计是硬门禁** — `bash scripts/workflow/wire-check.sh <函数名>` 零结果=未完成
+- **先读再改** — 不假设代码内容。读 CLAUDE.md + task brief + 全量对齐手册相关章节
+- **task brief 必须先填** — PreToolUse hook 强制。6字段(项目身份/架构层级/文档引用/接口审计/数据流/用户旅程) 全部非空才能写代码
+- **接口审计从代码 grep，不凭记忆** — hook 反向验证，虚假接口拒绝写代码
+- **每写一个文件，自动验证** — PostToolUse hook 跑 vitest --related + 接线审计。失败自动进入修正循环
+- **循环最多5轮** — verify-incremental.sh 记录轮次，5轮不过停止等人工
+- **接线审计是硬门禁** — 新 export 必须在生产入口有引用
 - **逐项 commit** — 单模块独立提交，不批量
 - **改完列清单** — 文件 + 行号 + 为什么改
 - **部署后验证** — `bash scripts/workflow/checkpoint-deploy.sh` curl 外部 URL
