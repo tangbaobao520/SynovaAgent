@@ -18,7 +18,7 @@ const log = createLogger('l2/expert-router');
 // ═══ Types ═══
 
 /** 专家 ID */
-export type ExpertId = 'strategy' | 'org' | 'finance' | 'tech' | 'marketing' | 'action' | 'knowledge';
+export type ExpertId = 'strategy' | 'org' | 'finance' | 'tech' | 'marketing' | 'action' | 'knowledge' | 'business_model';
 
 /** 路由模式 */
 export type RouteMode = 'none' | 'selective' | 'all' | 'knowledge';
@@ -48,7 +48,7 @@ export interface LLMClassifier {
 
 // ═══ Constants ═══
 
-const ALL_EXPERTS: ExpertId[] = ['strategy', 'org', 'finance', 'tech', 'marketing', 'action'];
+const ALL_EXPERTS: ExpertId[] = ['strategy', 'org', 'finance', 'tech', 'marketing', 'action', 'business_model'];
 
 // ═══ ExpertRouter ═══
 

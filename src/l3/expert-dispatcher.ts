@@ -462,7 +462,7 @@ export class ExpertDispatcher {
 
   /** Hermes P0-3: 6 专家并行执行 — 诊断速度 3-6x */
   async runAllExperts(evidence: Evidence[]): Promise<ExpertReport[]> {
-    const expertTypes: ExpertType[] = ['strategy', 'org', 'finance', 'tech', 'marketing', 'action'];
+    const expertTypes: ExpertType[] = ['strategy', 'org', 'finance', 'tech', 'marketing', 'action', 'business_model'];
     // KnowledgeAgent 是后台知识引擎, 不参与诊断 (L1 qa-router 按需调度)
 
     const results = await Promise.allSettled(

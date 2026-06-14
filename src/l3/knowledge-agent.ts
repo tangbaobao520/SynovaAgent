@@ -532,6 +532,7 @@ function detectDomain(text: string): string | null {
   if (/营销|客户|销售|品牌|广告|获客|转化|渠道/.test(lower)) return 'marketing';
   if (/技术|系统|工具|软件|开发|自动化|代码|架构/.test(lower)) return 'tech';
   if (/执行|项目|任务|进度|计划|交付|流程|OKR|KPI/.test(lower)) return 'action';
+  if (/商业模式|盈利模式|收入模型|价值主张|画布|定价权|订阅制|平台模式|免费增值/.test(lower)) return 'business_model';
   return null;
 }
 

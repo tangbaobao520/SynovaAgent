@@ -176,7 +176,7 @@ describe('Phase 2 Hypothesis — SubAgentCoordinator接入', () => {
     expect(results).toHaveLength(0); // No evidence → no reports
   });
 
-  it('Given 6 expert types, When dispatch, Then all 6 produce reports', async () => {
+  it('Given 7 expert types, When dispatch, Then all 7 produce reports', async () => {
     const coordinator = new SubAgentCoordinator(fakeLLM, policies);
     const evidence = [
       makeEvidence({ id: 'e1', type: 'goal_alignment', content: '目标对齐度低' }),
@@ -184,10 +184,10 @@ describe('Phase 2 Hypothesis — SubAgentCoordinator接入', () => {
       makeEvidence({ id: 'e3', type: 'team_structure', content: '跨部门协作不畅' }),
     ];
 
-    const results = await coordinator.dispatch(evidence, 6);
-    expect(results.length).toBe(6);
+    const results = await coordinator.dispatch(evidence, 7);
+    expect(results.length).toBe(7);
     const types = results.map(r => r.expertType).sort();
-    expect(types).toEqual(['action', 'finance', 'marketing', 'org', 'strategy', 'tech']);
+    expect(types).toEqual(['action', 'business_model', 'finance', 'marketing', 'org', 'strategy', 'tech']);
   });
 
   it('Given marketing expert, When evidence has cost_data, Then filtered out per prohibitedFields', () => {

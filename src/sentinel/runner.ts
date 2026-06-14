@@ -192,6 +192,7 @@ export class SentinelRunner {
     const EXPERT_TYPE_MAP: Record<string, string> = {
       org: 'org', strategic: 'strategy', finance: 'finance',
       tech: 'tech', marketing: 'marketing', action: 'action',
+      business_model: 'business_model',
     };
 
     for (const signal of signals) {

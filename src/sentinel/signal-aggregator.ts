@@ -43,14 +43,16 @@ export interface AggregatedSignal {
 
 /** 信号→专家路由表 (规则驱动，不是 LLM) */
 const SIGNAL_TO_EXPERT: Record<string, string[]> = {
-  collaboration: ['org'],           // 协作信号 → 组织专家
-  capability: ['org', 'tech'],      // 能力信号 → 组织+技术
-  strategy: ['strategic'],          // 战略信号 → 战略专家
-  risk: ['strategic', 'finance'],   // 风险信号 → 战略+财务
-  health: ['tech'],                 // 健康信号 → 技术
-  'data-quality': ['tech'],         // 数据质量 → 技术
-  evolution: ['org'],               // 进化 → 组织
-  compliance: ['strategic'],        // 合规 → 战略
+  collaboration: ['org'],                          // 协作信号 → 组织专家
+  capability: ['org', 'tech'],                     // 能力信号 → 组织+技术
+  strategy: ['strategic', 'business_model'],       // 战略信号 → 战略+商业模式
+  risk: ['strategic', 'finance', 'business_model'], // 风险信号 → 战略+财务+商业模式
+  health: ['tech'],                                // 健康信号 → 技术
+  'data-quality': ['tech'],                        // 数据质量 → 技术
+  evolution: ['org'],                              // 进化 → 组织
+  compliance: ['strategic'],                       // 合规 → 战略
+  revenue: ['finance', 'business_model'],          // 收入信号 → 财务+商业模式
+  financial: ['finance', 'business_model'],         // 财务信号 → 财务+商业模式
 };
 
 /** 严重度升级规则: 同一实体被 N 个哨兵标记 */

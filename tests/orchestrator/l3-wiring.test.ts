@@ -105,7 +105,7 @@ describe('SubAgentCoordinator → Phase 2 wiring', () => {
     async consult() { return { content: '{"hypothesis":"根因是排班制度","confidence":0.85}', model: 'fake' }; },
   };
 
-  it('Given Phase 1 evidence, When SubAgentCoordinator dispatches, Then all 6 experts produce reports', async () => {
+  it('Given Phase 1 evidence, When SubAgentCoordinator dispatches, Then all 7 experts produce reports', async () => {
     const coordinator = new SubAgentCoordinator(fakeLLM);
     const evidence: Evidence[] = [
       { id:'e1', source:'interviewee', sourceId:'org-1', type:'goal_alignment', content:'目标模糊', confidence:0.8, collectedAt:new Date().toISOString(), orgId:'org-1' },
@@ -113,8 +113,8 @@ describe('SubAgentCoordinator → Phase 2 wiring', () => {
       { id:'e3', source:'interviewee', sourceId:'org-1', type:'team_structure', content:'跨部门协作不畅', confidence:0.75, collectedAt:new Date().toISOString(), orgId:'org-1' },
     ];
 
-    const reports = await coordinator.dispatch(evidence, 6);
-    expect(reports.length).toBe(6);
+    const reports = await coordinator.dispatch(evidence, 7);
+    expect(reports.length).toBe(7);
   });
 });
 

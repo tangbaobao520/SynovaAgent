@@ -14,7 +14,7 @@ const log = createLogger('orchestrator/subagent-coordinator');
 
 // ═══ Types (L2 接口定义) ═══
 
-export type ExpertType = 'strategy' | 'org' | 'finance' | 'tech' | 'marketing' | 'action';
+export type ExpertType = 'strategy' | 'org' | 'finance' | 'tech' | 'marketing' | 'action' | 'business_model';
 // 'knowledge' 是后台知识引擎，不参与诊断: 负责检索/沉淀/验证/文档管理
 
 export interface AnonymizationRule { field: string; replace: string; }
@@ -51,6 +51,7 @@ const DEFAULT_POLICIES: DataAccessPolicy[] = [
   { expertType: 'tech', allowedDimensions: ['tool_chain', 'technical_debt', 'automation', 'architecture', 'rd_efficiency'], prohibitedFields: [], anonymizationRules: [] },
   { expertType: 'marketing', allowedDimensions: ['positioning', 'differentiation', 'market_analysis', 'competitive_landscape', 'customer_insight'], prohibitedFields: ['salary', 'cost_data'], anonymizationRules: [] },
   { expertType: 'action', allowedDimensions: ['priority', 'feasibility', 'urgency', 'impact', 'resource_requirement'], prohibitedFields: [], anonymizationRules: [] },
+  { expertType: 'business_model', allowedDimensions: ['revenue_streams', 'cost_structure', 'value_proposition', 'business_model_defensibility', 'innovation_opportunities', 'customer_segments', 'key_resources', 'key_activities', 'key_partnerships'], prohibitedFields: ['salary', 'personal_email', 'phone', 'id_number'], anonymizationRules: [{ field: 'person_name', replace: 'role_label' }] },
 ];
 
 // ═══ SubAgentCoordinator (L2 编排) ═══
@@ -83,7 +84,7 @@ export class SubAgentCoordinator {
   async dispatch(evidence: Evidence[], maxConcurrency = 6): Promise<SubAgentReport[]> {
     if (evidence.length === 0) return [];
 
-    const expertTypes: ExpertType[] = ['strategy', 'org', 'finance', 'tech', 'marketing', 'action'];
+    const expertTypes: ExpertType[] = ['strategy', 'org', 'finance', 'tech', 'marketing', 'action', 'business_model'];
     // KnowledgeAgent 是后台引擎, 不参与诊断 (检索/沉淀/验证/文档管理)
     const tasks = expertTypes.map(type => this.dispatcher.runExpert(type, evidence));
 

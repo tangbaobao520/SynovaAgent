@@ -49,6 +49,12 @@ export const DEFAULT_DOMAIN_KEYWORDS: Record<string, DomainKeywordSet> = {
       'Sprint', '回顾', '复盘', '甘特图', 'WBS', '关键路径'],
     weak:   ['任务', '计划', '跟踪', '推进', '落地', '交付物'],
   },
+  business_model: {
+    strong: ['商业模式', '盈利模式', '收入模型', '价值主张', '单位经济学', '画布',
+      '收入来源', '成本结构', '赚钱', '定价权', '订阅制', '平台模式',
+      '免费增值', '交叉补贴', '特许经营', '双边市场', '交易市场'],
+    weak:   ['定价', '订阅', '平台', '收费', '变现', '付费', '佣金', '抽成'],
+  },
 };
 
 /** 领域 → 专家 ID 映射 */
@@ -59,6 +65,7 @@ export const DOMAIN_EXPERT_MAP: Record<string, string> = {
   tech: 'tech',
   marketing: 'marketing',
   action: 'action',
+  business_model: 'business_model',
 };
 
 /** 允许运行时注册领域关键词（ExtensionRegistry 注入） */

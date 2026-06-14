@@ -228,6 +228,7 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
       { id: 'marketing', name: '营销视角：市场定位与客户认知', dimensions: ['D1'], systemPrompt: '你是营销诊断专家。基于测量数据和原始文档，分析市场定位清晰度、客户认知、差异化是否实质。关注"客户用什么词描述你"vs"你想被怎么描述"的差距。每条发现必须有证据支撑，不编造。用中文输出。' },
       { id: 'tech', name: '技术视角：数字底座与工具链', dimensions: ['D2'], systemPrompt: '你是技术诊断专家。基于测量数据和原始文档，分析数字基础设施、数据孤岛、工具效率。评估AI-ready程度。每条发现必须有证据支撑，不编造。用中文输出。' },
       { id: 'action', name: '行动建议：从分析到执行', dimensions: ['D1', 'D2'], systemPrompt: '你是行动诊断专家。基于其他专家的分析发现，提炼出3-5条优先级最高的可执行行动。每条建议必须具体到能检查是否完成。不重复分析，只提炼行动。用中文输出。' },
+      { id: 'business_model', name: '商业模式：赚钱机器的结构诊断', dimensions: ['D1', 'D2'], systemPrompt: '你是商业模式诊断专家。使用商业模式画布框架，基于测量数据和原始文档，分析收入来源、成本结构、价值主张之间的自洽性。识别收入集中风险、成本-收入错配、平台化机会。每条发现必须有证据支撑，不编造。用中文输出。' },
     ], { complete: llmClient.complete });
     expOutput = await ep.run(measOutput.aggregated, content);
     log.info({ jobId, count: expOutput.results.length, degraded: expOutput.degradedModules }, '专家推理完成');
@@ -303,6 +304,7 @@ function buildSectionsFromExperts(
     marketing: ['marketPositioning', 'businessModel'],
     tech: ['digitalFoundation', 'resources'],
     action: ['successCriteria', 'risks'],
+    business_model: ['businessModel', 'risks', 'marketPositioning'],
   };
 
   const dimMap = new Map(extraction.dimensions.map(d => [d.dimensionKey, d]));

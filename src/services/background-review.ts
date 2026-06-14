@@ -23,7 +23,7 @@ const QUALITY_REVIEW_PROMPT = `Review the diagnosis report above and evaluate it
 Focus on:
 1. Evidence sufficiency — Are there enough independent data sources to support each conclusion? (minimum 3 sources per major finding)
 2. Contradiction marking — Were conflicting signals flagged? Were they resolved or escalated?
-3. Dimension coverage — Were all 6 expert dimensions (strategy, org, finance, tech, marketing, action) adequately covered?
+3. Dimension coverage — Were all 7 expert dimensions (strategy, org, finance, tech, marketing, action, business_model) adequately covered?
 4. Actionability — Can the recommendations be executed by a non-technical manager?
 
 Output JSON:
