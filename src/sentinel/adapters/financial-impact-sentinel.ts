@@ -47,7 +47,7 @@ export const financialImpactSentinel: Sentinel = {
               const people = Number(data.teamSize || data.people || 0);
               if (people > 0) { totalCost = people * AVG_COST_PER_PERSON; anyData = true; }
             }
-          } catch { /* */ }
+          } catch { log.debug('财务影响: JSON 解析失败 — 非阻塞'); }
         }
         if (!anyData) continue;
         const riskAdjustedCost = totalCost * riskMultiplier;

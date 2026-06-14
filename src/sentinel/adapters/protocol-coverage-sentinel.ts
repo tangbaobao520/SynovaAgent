@@ -32,7 +32,7 @@ export const protocolCoverageSentinel: Sentinel = {
             const props = typeof r.props === 'string' ? JSON.parse(r.props as string) : (r.props || {});
             tools.push({ id: r.id as string, name: (props.name || r.id) as string, protocol: props.protocol as string | undefined });
           }
-        } catch { /* 表不存在 */ }
+        } catch { log.debug('协议覆盖: 表不存在或无数据'); }
       }
       if (tools.length === 0) {
         return { sentinelId: config.id, ok: true, findings: [], durationMs: Date.now() - startTime, checkedAt, degraded: true };

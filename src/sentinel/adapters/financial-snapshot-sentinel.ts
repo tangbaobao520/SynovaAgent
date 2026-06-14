@@ -38,7 +38,7 @@ export const financialsnapshotSentinel: Sentinel = {
             }
             const personRows = db.prepare("SELECT COUNT(*) as c FROM graph_nodes WHERE type = 'PERSON'").all();
             personCount = (personRows[0]?.c as number) || 0;
-          } catch { /* */ }
+          } catch { log.debug('财务快照: 人员计数查询失败 — 非阻塞'); }
         }
         if (!anyData) continue;
         const revenue = metrics.revenue || 0;

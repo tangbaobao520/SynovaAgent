@@ -72,7 +72,7 @@ export class SentinelRunner {
           resolved_at TEXT
         );
       `);
-    } catch { /* 表已存在或 db 不可用 */ }
+    } catch { log.debug('哨兵工单表初始化失败 — 可能已存在或 db 不可用'); }
 
     const registry = getSentinelRegistry();
     const cronSentinels = registry.listCronSentinels();
