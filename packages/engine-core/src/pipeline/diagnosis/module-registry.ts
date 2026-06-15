@@ -219,7 +219,6 @@ import { computeHACD } from './hacd';
 import { computeCPC } from './cpc';
 import { computeIPU } from './ipu-overload';
 import { computeHONA } from './hona';
-import { analyzeCapabilityGaps } from './capability-gap';
 import { computeIntentAlignment } from './intent-alignment';
 import { computeGoalAlignment } from './goal-alignment';
 import { computeRiskAggregation } from './risk-aggregator';
