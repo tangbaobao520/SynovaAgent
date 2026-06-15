@@ -299,6 +299,15 @@ fi
 # 每处违规 = 硬阻断。不靠 CLAUDE.md 提醒，靠编译器级强制执行。
 bash "$(dirname "$0")/check-reality.sh" || { echo -e "  ${RED}❌ 诚实门禁: 存在违规项${RESET}"; HARD_FAIL=$((HARD_FAIL + 1)); }
 echo ""
+	# ═══ Loop Engineering v2.5: 空壳模块检测 ═══
+	bash "$(dirname "$0")/checks/check-empty-modules.sh"
+	if [ $? -ne 0 ]; then HARD_FAIL=$((HARD_FAIL + 1)); fi
+	echo ""
+
+	# ═══ Loop Engineering v2.5: 测试质量检测 ═══
+	bash "$(dirname "$0")/checks/check-test-quality.sh"
+	if [ $? -ne 0 ]; then HARD_FAIL=$((HARD_FAIL + 1)); fi
+	echo ""
 
 # Anthropic 标准: engine-core vendor Critical bug 不得延期
 SOG_DELETE=$(grep -n "DELETE FROM graph_nodes" packages/engine-core/src/pipeline/diagnosis/graph-store.ts 2>/dev/null || true)
@@ -455,6 +464,15 @@ ARCH_EXIT=$?
 if [ $ARCH_EXIT -ne 0 ]; then
   HARD_FAIL=$((HARD_FAIL + 1))
 fi
+	# ═══ Loop Engineering v2.5: 手册漂移检测 ═══
+	bash "$(dirname "$0")/checks/check-manual-drift.sh"
+	if [ $? -ne 0 ]; then HARD_FAIL=$((HARD_FAIL + 1)); fi
+	echo ""
+
+	# ═══ Loop Engineering v2.5: 全量接线审计 ═══
+	bash "$(dirname "$0")/checks/check-wire-full.sh"
+	WIRE_EXIT=$?
+	if [ $WIRE_EXIT -ne 0 ]; then HARD_FAIL=$((HARD_FAIL + 1)); fi
 
 echo ""
 echo "───────────────────────────────────────────────────────────"

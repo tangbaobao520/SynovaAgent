@@ -1,9 +1,15 @@
 #!/bin/bash
-# verify-incremental.sh — PostToolUse 增量验证
-# vitest(--related) + 接线审计 + 循环计数
-# tsc --noEmit 留给 pre-commit (全量太慢)
+# ═══════════════════════════════════════════════════════════════════════════════
+# verify-incremental.sh — PostToolUse 分层增量验证 (Loop Engineering v2.5)
+#
+# L1: oxlint 语法检查 (< 1s, 改动文件)
+# L2: tsc --noEmit --incremental (利用 .tsbuildinfo 缓存, 5-15s)
+# L3: vitest run --changed (仅匹配的测试文件, 5-30s)
+# L4: 接线审计 + 暗默失败 + 架构边界
+#
 # exit 0 = 全部通过 (清除循环计数)
 # exit 1 = 验证失败 (AI 在同一会话内看到输出并修正)
+# ═══════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
 
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
@@ -29,15 +35,48 @@ fi
 
 python3 -c "
 import json
-json.dump({'iteration': $ITER, 'maxIterations': $MAX}, open('$STATE_FILE', 'w'))
+json.dump({'iteration': $ITER, 'maxIterations': $MAX, 'lastRun': '$(date -u +%Y-%m-%dT%H:%M:%SZ)'}, open('$STATE_FILE', 'w'))
 " 2>/dev/null
 
-echo -e "${CYAN}[VERIFY $ITER/$MAX] 增量验证开始...${RESET}"
-
-# ═══ 2. vitest --related (增量测试, 含类型检查) ═══
-# tsc --noEmit 全量太慢 (30s+) → 留给 pre-commit
-# vitest: 查找改动文件对应的测试文件
+echo -e "${CYAN}[VERIFY $ITER/$MAX] 分层增量验证开始...${RESET}"
 CHANGED_SRC=$(git diff --name-only 2>/dev/null | grep '\.ts$' | grep -v '\.test\.' | grep -v '\.d\.ts' || true)
+
+# ═══ L1: oxlint 语法检查 (< 1s) ═══
+if [ -n "$CHANGED_SRC" ]; then
+  echo -e "${CYAN}[L1] oxlint 语法检查...${RESET}"
+  OXLINT_AVAILABLE=$(which oxlint 2>/dev/null || echo "")
+  if [ -n "$OXLINT_AVAILABLE" ]; then
+    OXLINT_FILES=$(echo "$CHANGED_SRC" | tr '\n' ' ')
+    if npx oxlint $OXLINT_FILES --silent 2>&1; then
+      echo -e "${GREEN}  L1 语法: 通过${RESET}"
+    else
+      echo -e "${RED}[FAIL] L1 语法检查失败 — 请修正语法错误${RESET}"
+      exit 1
+    fi
+  else
+    echo -e "${YELLOW}  L1 语法: oxlint 未安装, 跳过 (建议: npm install -D oxlint)${RESET}"
+  fi
+else
+  echo -e "${CYAN}[L1] 无 .ts 文件改动, 跳过语法检查${RESET}"
+fi
+
+# ═══ L2: tsc --noEmit --incremental (利用 .tsbuildinfo 缓存) ═══
+if [ -n "$CHANGED_SRC" ]; then
+  echo -e "${CYAN}[L2] tsc 类型检查 (incremental)...${RESET}"
+  # 使用 --incremental 利用 .tsbuildinfo 缓存, 只检查改动文件
+  if npx tsc --noEmit --incremental 2>&1 | grep -E "^src/|^tests/" | head -20; then
+    TSC_ERRORS=$(npx tsc --noEmit --incremental 2>&1 | grep -cE "^src/|^tests/" || echo 0)
+    if [ "${TSC_ERRORS:-0}" -gt 0 ]; then
+      echo -e "${RED}[FAIL] L2 类型检查: ${TSC_ERRORS} 个错误${RESET}"
+      exit 1
+    fi
+  fi
+  echo -e "${GREEN}  L2 类型: 通过${RESET}"
+else
+  echo -e "${CYAN}[L2] 无 .ts 文件改动, 跳过类型检查${RESET}"
+fi
+
+# ═══ L3: vitest run --changed (增量测试) ═══
 if [ -n "$CHANGED_SRC" ]; then
   # 映射 src/xxx.ts → tests/xxx.test.ts
   TEST_FILES=""
@@ -50,24 +89,26 @@ if [ -n "$CHANGED_SRC" ]; then
   done <<< "$CHANGED_SRC"
 
   if [ -n "$TEST_FILES" ]; then
-    echo -e "${CYAN}[VERIFY $ITER/$MAX] vitest ($(echo $TEST_FILES | wc -w) test files)...${RESET}"
+    echo -e "${CYAN}[L3] vitest ($(echo $TEST_FILES | wc -w) test files)...${RESET}"
     if npx vitest run $TEST_FILES 2>&1; then
-      echo -e "${GREEN}  相关测试: 通过${RESET}"
+      echo -e "${GREEN}  L3 测试: 通过${RESET}"
     else
-      echo -e "${RED}[FAIL] 相关测试失败 — 请修正后重新保存文件${RESET}"
+      echo -e "${RED}[FAIL] L3 测试失败 — 请修正后重新保存文件${RESET}"
       exit 1
     fi
   else
-    echo -e "${CYAN}[VERIFY $ITER/$MAX] 无对应测试文件，跳过测试${RESET}"
+    echo -e "${CYAN}[L3] 无对应测试文件, 跳过${RESET}"
   fi
 else
-  echo -e "${CYAN}[VERIFY $ITER/$MAX] 无 .ts 文件改动，跳过测试${RESET}"
+  echo -e "${CYAN}[L3] 无 .ts 文件改动, 跳过测试${RESET}"
 fi
 
-# ═══ 4. 接线审计 (新文件 export 验证) ═══
+# ═══ L4: 综合门禁 (接线 + 架构 + 暗默失败 + 用户可见) ═══
+echo -e "${CYAN}[L4] 综合门禁...${RESET}"
+
+# L4a. 接线审计 (新文件 export 验证)
 NEW_FILES=$(git diff --cached --name-only --diff-filter=A 2>/dev/null | grep '^src/.*\.ts$' | grep -v '\.test\.' | grep -v '\.d\.ts' || true)
 if [ -n "$NEW_FILES" ]; then
-  echo -e "${CYAN}[VERIFY $ITER/$MAX] 接线审计...${RESET}"
   UNWIRED=""
   while IFS= read -r file; do
     [ -z "$file" ] && continue
@@ -87,35 +128,28 @@ if [ -n "$NEW_FILES" ]; then
     echo "请在入口文件 (server.ts/routes/agent/) 中 import 并调用。"
     exit 1
   fi
-  echo -e "${GREEN}  接线审计: 通过${RESET}"
-else
-  echo -e "${CYAN}[VERIFY $ITER/$MAX] 无新增文件，跳过接线审计${RESET}"
 fi
 
-# ═══ 5. 增量架构边界 (跨层引用) ═══
-CHANGED_SRC=$(git diff --name-only 2>/dev/null | grep '^src/.*\.ts$' | grep -v '\.test\.' | grep -v '\.d\.ts' || true)
-if [ -n "$CHANGED_SRC" ]; then
-  echo -e "${CYAN}[VERIFY $ITER/$MAX] 增量架构边界...${RESET}"
+# L4b. 增量架构边界 (跨层引用)
+CHANGED_SRC2=$(git diff --name-only 2>/dev/null | grep '^src/.*\.ts$' | grep -v '\.test\.' | grep -v '\.d\.ts' || true)
+if [ -n "$CHANGED_SRC2" ]; then
   if bash "$ROOT/scripts/workflow/check-boundaries-incremental.sh" 2>&1; then
-    echo -e "${GREEN}  架构边界: 通过${RESET}"
+    :  # passed
   else
     echo -e "${RED}[FAIL] 架构边界违规 — 请重构为 L2 桥接服务${RESET}"
     exit 1
   fi
 fi
 
-# ═══ 6. 暗默失败检查 (新增/修改的 .ts 文件 catch 无 log) ═══
+# L4c. 暗默失败检查 (新增 catch 无 log)
 TS_DIFF=$(git diff -- '*.ts' '*.tsx' 2>/dev/null || true)
 if [ -n "$TS_DIFF" ]; then
   NEW_CATCHES=$(echo "$TS_DIFF" | grep "^\+.*catch\s*(" 2>/dev/null || true)
-  # 排除: catch 后紧跟 log / throw / degraded / 注释说明
   NEW_CATCHES=$(echo "$NEW_CATCHES" | grep -v "catch.*log\.\|catch.*logger\|catch.*//.*log\|catch.*/\*.*log\|catch.*throw\|catch.*degraded" || true)
   if [ -n "$NEW_CATCHES" ]; then
-    echo -e "${CYAN}[VERIFY $ITER/$MAX] 暗默失败检查...${RESET}"
     SILENT=""
     while IFS= read -r catch_line; do
       [ -z "$catch_line" ] && continue
-      # 在 diff 中找这个 catch 后面的上下文
       AFTER=$(echo "$TS_DIFF" | grep -A3 "$catch_line" | tail -3)
       if ! echo "$AFTER" | grep -qE "log\.|logger\.|console\.|throw |return.*degraded"; then
         SILENT="${SILENT}  ${catch_line}\n"
@@ -127,11 +161,10 @@ if [ -n "$TS_DIFF" ]; then
       echo "请在 catch 块中添加 log.warn/log.error"
       exit 1
     fi
-    echo -e "${GREEN}  暗默失败: 通过${RESET}"
   fi
 fi
 
-# ═══ 7. 用户可见缺口检查 (新增 export 无对应 API 变更) ═══
+# L4d. 用户可见缺口检查 (新增 export 无对应 API 变更)
 NEW_EXPORTS_ALL=$(git diff --name-only 2>/dev/null | grep '^src/.*\.ts$' | grep -v '\.test\.' | grep -v '\.d\.ts' || true)
 ROUTE_CHANGED=$(git diff --name-only 2>/dev/null | grep '^src/routes/' || true)
 if [ -n "$NEW_EXPORTS_ALL" ] && [ -z "$ROUTE_CHANGED" ]; then

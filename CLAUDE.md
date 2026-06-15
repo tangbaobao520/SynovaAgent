@@ -186,9 +186,27 @@ LLM       → providers/ (DeepSeek, OpenAI, Gateway)
 
 ---
 
-## Loop Engineering 系统 (v2.0 — 8阶段Gate模型)
+## Loop Engineering 系统 (v2.5 — 8阶段Gate + 物理执法)
 
-> 2026-06-15 升级。基于自检报告发现的缺口：vitest --related无效、Windows超时、记忆失能。
+> 2026-06-15 v2.0→v2.5 升级。6 个新脚本实现物理执法：
+> hook-check-memory (G2自动注入) / check-empty-modules (空壳阻断) / check-manual-drift (手册漂移)
+> / check-test-quality (测试质量) / check-wire-full (全量接线) / verify-incremental (分层验证)
+
+### 执法架构: 三层阻断
+
+```
+PreToolUse (写前)      → hook-check-memory.sh  [G2 自动注入教训, 不阻断]
+                         hook-check-brief.sh    [G1 task brief 存在性]
+
+PostToolUse (写后)     → verify-incremental.sh  [L1 oxlint → L2 tsc-incremental → L3 vitest → L4 接线+架构+暗默]
+                         loop-state.json        [最多 5 轮 fix-retry]
+
+pre-commit (提交前)    → 33 项硬阻断 + 4 项新增:
+                         check-empty-modules.sh   [空壳模块, 增量阻断]
+                         check-manual-drift.sh    [手册漂移, 物理阻断]
+                         check-test-quality.sh    [测试断言覆盖, 增量阻断]
+                         check-wire-full.sh       [新export接线+桥接激活]
+```
 
 ### 开发循环: G0→G7
 
@@ -202,37 +220,59 @@ G4:编码      → G5:自测验证   → G6:接线审计 → G7:提交+回顾
 |------|------|------|---------|
 | **G0** 方向对齐 | 任务请求 | 决策树方向一致 + 不违宪章 | SessionStart hook |
 | **G1** 上下文加载 | G0通过 | CLAUDE.md+memory/+task brief已读 | hook-check-brief.sh |
-| **G2** 错误预防 | G1通过 | memory/中相关历史错误已标记 | 新增 hook-check-memory.sh |
+| **G2** 错误预防 | G1通过 | memory/相关教训 **自动注入上下文** | **hook-check-memory.sh (v2.5 新增)** |
 | **G3** 任务分解 | G2通过 | TaskCreate子任务+Done标准明确 | task brief Done标准 |
 | **G4** 编码 | G3通过 | 单模块修改, as any=0, 空catch=0 | PreToolUse hook |
-| **G5** 自测验证 | G4通过 | vitest run --changed通过+tsc零错误 | PostToolUse hook |
-| **G6** 接线审计 | G5通过 | grep -rn新函数名src/有结果 | PostToolUse hook |
-| **G7** 提交+回顾 | G6通过 | Conventional Commits+新教训写入memory/ | post-commit hook |
+| **G5** 自测验证 | G4通过 | **L1→L2→L3 分层通过** | **PostToolUse: verify-incremental.sh (v2.5 分层)** |
+| **G6** 接线审计 | G5通过 | grep新函数+桥接激活+**测试有断言** | PostToolUse + pre-commit |
+| **G7** 提交+回顾 | G6通过 | **空壳=0 + 手册不漂移 + 接线完整** | **pre-commit 37项 (v2.5 新增4项)** |
 
-### L1: 会话内自动循环（写一步验一步）
+### L1: 会话内自动循环（分层验证, 写一步验一步）
 
 ```
-Write → PostToolUse hook → verify-incremental.sh
-  → vitest run (git diff 匹配的测试文件) + 接线审计
+Write → PostToolUse hook → verify-incremental.sh (分层)
+  → L1: oxlint 语法 (< 1s, 改动文件)
+  → L2: tsc --noEmit --incremental (利用 .tsbuildinfo 缓存, 5-15s)
+  → L3: vitest run (git diff 匹配的测试文件, 5-30s)
+  → L4: 接线审计 + 架构边界 + 暗默失败
   → 失败 → 错误输出终端 → AI修正 → 再次Write → 再次验证
   → .claude/loop-state.json 记录轮次 (最多5轮)
 ```
 
-### L2: 双智能体交叉验证
+### L2: pre-commit 全部门禁 (37项, v2.5 新增4项)
 
 ```
-pre-push → RUN_ARCH_AUDIT=1 → ArchitectureAuditor Agent
-  → 接口真实性 / 架构边界 / 数据流完整性 / 哨兵信号消费
+git commit → pre-commit hook:
+  存量检查: as any / Mock / CJS / .only / .env / 空catch / 文件大小 / 测试命名 / 单模块 / 新文件配对
+  v2.5 新增: 空壳模块 / 手册漂移 / 测试质量 / 全量接线
+  → 任一失败 → 拒绝提交 (物理阻断, 零裁量)
+```
+
+### L3: pre-push 交叉验证
+
+```
+pre-push → tsc + vitest全量 + iron-laws + 接线审计 + 架构边界
+  → RUN_ARCH_AUDIT=1 → ArchitectureAuditor Agent
   → FAIL → 拒绝推送
 ```
 
-### L3: 哨兵工单闭环
+### 执法脚本清单 (v2.5)
 
-```
-Cron → Sentinel → SignalAggregator → ExpertDispatcher
-  → critical → 自动创建工单 (SQLite sentinel_tickets)
-  → GET /api/sentinel/tickets → FDE 查询
-```
+| 脚本 | 挂在 | 功能 | 阻断 |
+|------|------|------|------|
+| `scripts/hooks/hook-check-memory.sh` | PreToolUse | 从 memory/ 自动匹配+注入教训到上下文 | 不阻断 |
+| `scripts/checks/check-empty-modules.sh` | pre-commit | 检测 compute() 返回 null 的空壳模块 | 增量阻断 |
+| `scripts/checks/check-manual-drift.sh` | pre-commit | 手册数字断言 vs 代码实际计数对比 | 阻断 |
+| `scripts/checks/check-test-quality.sh` | pre-commit | 新 export 在测试中是否缺 expect() 断言 | 增量阻断 |
+| `scripts/checks/check-wire-full.sh` | pre-commit | 新 export 接线 + bridge 激活检查 | 增量阻断 |
+| `scripts/workflow/verify-incremental.sh` | PostToolUse | L1→L4 分层增量验证 | 阻断+自动修正 |
+
+### 设计原则 (v2.5 凝固)
+
+1. **每个规则配一个脚本** — 脚本返回非零=阻断。零人类裁量权。
+2. **阻断点越早越好** — PreToolUse > PostToolUse > pre-commit > pre-push
+3. **增量阻断, 存量警告** — 一刀切阻断存量会阻塞所有工作
+4. **阻断带修复指引** — 必须输出: 哪个文件、哪一行、违反什么、怎么修
 
 ### Windows 兼容性说明
 
