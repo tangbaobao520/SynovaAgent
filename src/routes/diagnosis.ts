@@ -184,4 +184,30 @@ router.post('/api/diagnosis/consult/:consultId/interrupt', (req: Request, res: R
   res.json({ ok: true, consultId, interrupted: true });
 });
 
+// ═══ POST /consult/:id/resume — P2 Loop Engineering 缺口修复 ═══
+
+router.post('/api/diagnosis/consult/:consultId/resume', async (req: Request, res: Response) => {
+  const { consultId } = req.params as { consultId: string };
+  const active = activeConsultations.get(consultId);
+  if (!active || !active.aborted) {
+    return res.status(404).json({ ok: false, error: '诊断不存在或未中断', code: 'NOT_FOUND' });
+  }
+  // 从 SessionStore 加载检查点
+  try {
+    const { SessionStore } = await import('../store/session-store');
+    const store = new SessionStore((req.app.locals.orchestration as { db: unknown })?.db as never);
+    const checkpoint = store.getDiagnosisCheckpoint ? store.getDiagnosisCheckpoint(consultId) : null;
+    active.aborted = false;
+    res.json({
+      ok: true, consultId, resumed: true,
+      checkpoint: checkpoint || null,
+      message: checkpoint ? '已从检查点恢复' : '检查点不可用，从头开始',
+    });
+  } catch (err: unknown) {
+    log.warn({ err, consultId }, '[diagnosis] resume 加载检查点失败 — degraded');
+    active.aborted = false;
+    res.json({ ok: true, consultId, resumed: true, checkpoint: null, message: '检查点加载失败，从头开始' });
+  }
+});
+
 export default router;

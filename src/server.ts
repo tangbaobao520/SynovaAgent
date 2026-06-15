@@ -180,6 +180,18 @@ export async function createServer(): Promise<Server> {
   if (credentialPool) app.locals.credentialPool = credentialPool;
   if (piiScrubber) app.locals.piiScrubber = piiScrubber;
 
+  // ═══ P0 Phase Gate Check — 诊断质量门禁 (Loop Engineering 自检缺口修复) ═══
+  // 注册 onPhaseEnter 回调：Phase 1→2 数据完整性、Phase 2→3 假设置信度、Phase 4→5 报告完整性
+  const phaseGateTracking = { evidenceCount: 0, expertResults: [] as Array<{ expertType: string; confidence: number; hypothesis: string; degraded?: boolean }> };
+  app.locals.phaseGateTracking = phaseGateTracking;
+  const { registerPhaseGateChecks } = await import('./orchestrator/phase-gate-check');
+  registerPhaseGateChecks(
+    phaseStateMachine,
+    { minEvidenceCount: 3, minHypothesisConfidence: 0.5, minExpertsPassed: 4 },
+    () => phaseGateTracking.evidenceCount,
+    () => phaseGateTracking.expertResults,
+  );
+
   // 基础中间件
   app.use(cors());
   app.use(express.json({ limit: '10mb' }));
