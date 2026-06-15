@@ -47,6 +47,7 @@
     "check:manual-drift": "bash scripts/checks/check-manual-drift.sh",
     "check:test-quality": "bash scripts/checks/check-test-quality.sh",
     "check:wire-full": "bash scripts/checks/check-wire-full.sh",
+    "check:vertical-slice": "bash scripts/checks/check-vertical-slice.sh",
     "hooks:install": "bash scripts/install-hooks.sh",
     "hooks:test": "echo 'feat(test): verify hook' | bash scripts/commit-msg-check.sh /dev/stdin"
   },

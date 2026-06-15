@@ -224,8 +224,8 @@ G4:编码      → G5:自测验证   → G6:接线审计 → G7:提交+回顾
 | **G3** 任务分解 | G2通过 | TaskCreate子任务+Done标准明确 | task brief Done标准 |
 | **G4** 编码 | G3通过 | 单模块修改, as any=0, 空catch=0 | PreToolUse hook |
 | **G5** 自测验证 | G4通过 | **L1→L2→L3 分层通过** | **PostToolUse: verify-incremental.sh (v2.5 分层)** |
-| **G6** 接线审计 | G5通过 | grep新函数+桥接激活+**测试有断言** | PostToolUse + pre-commit |
-| **G7** 提交+回顾 | G6通过 | **空壳=0 + 手册不漂移 + 接线完整** | **pre-commit 37项 (v2.5 新增4项)** |
+| **G6** 接线审计 | G5通过 | grep新函数+桥接激活+**测试有断言**+**垂直切片完整** | PostToolUse + pre-commit |
+| **G7** 提交+回顾 | G6通过 | **空壳=0 + 手册不漂移 + 接线完整 + 切片三环节** | **pre-commit 38项 (v2.5 新增5项)** |
 
 ### L1: 会话内自动循环（分层验证, 写一步验一步）
 
@@ -239,12 +239,12 @@ Write → PostToolUse hook → verify-incremental.sh (分层)
   → .claude/loop-state.json 记录轮次 (最多5轮)
 ```
 
-### L2: pre-commit 全部门禁 (37项, v2.5 新增4项)
+### L2: pre-commit 全部门禁 (38项, v2.5 新增5项)
 
 ```
 git commit → pre-commit hook:
   存量检查: as any / Mock / CJS / .only / .env / 空catch / 文件大小 / 测试命名 / 单模块 / 新文件配对
-  v2.5 新增: 空壳模块 / 手册漂移 / 测试质量 / 全量接线
+  v2.5 新增: 空壳模块 / 手册漂移 / 测试质量 / 全量接线 / 垂直切片
   → 任一失败 → 拒绝提交 (物理阻断, 零裁量)
 ```
 
@@ -265,6 +265,7 @@ pre-push → tsc + vitest全量 + iron-laws + 接线审计 + 架构边界
 | `scripts/checks/check-manual-drift.sh` | pre-commit | 手册数字断言 vs 代码实际计数对比 | 阻断 |
 | `scripts/checks/check-test-quality.sh` | pre-commit | 新 export 在测试中是否缺 expect() 断言 | 增量阻断 |
 | `scripts/checks/check-wire-full.sh` | pre-commit | 新 export 接线 + bridge 激活检查 | 增量阻断 |
+| `scripts/checks/check-vertical-slice.sh` | pre-commit | 入口→交互→结果 三环节完整性 | 增量阻断 |
 | `scripts/workflow/verify-incremental.sh` | PostToolUse | L1→L4 分层增量验证 | 阻断+自动修正 |
 
 ### 设计原则 (v2.5 凝固)

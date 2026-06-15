@@ -474,6 +474,9 @@ fi
 	WIRE_EXIT=$?
 	if [ $WIRE_EXIT -ne 0 ]; then HARD_FAIL=$((HARD_FAIL + 1)); fi
 
+	# ═══ Loop Engineering v2.5: 垂直切片完整性 ═══
+	bash "$(dirname "$0")/checks/check-vertical-slice.sh"
+	if [ $? -ne 0 ]; then HARD_FAIL=$((HARD_FAIL + 1)); fi
 echo ""
 echo "───────────────────────────────────────────────────────────"
 
