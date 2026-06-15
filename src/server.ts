@@ -192,6 +192,11 @@ export async function createServer(): Promise<Server> {
     () => phaseGateTracking.expertResults,
   );
 
+  // ═══ P0 AgentMemoryStore — Agent 级记忆系统 (Loop Engineering 自检缺口修复) ═══
+  const { getAgentMemoryStore } = await import('./l4/agent-memory-store');
+  const agentMemory = getAgentMemoryStore(db);
+  app.locals.agentMemory = agentMemory;
+
   // 基础中间件
   app.use(cors());
   app.use(express.json({ limit: '10mb' }));
