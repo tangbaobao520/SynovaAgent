@@ -35,6 +35,7 @@ export enum SOGNodeType {
   COMPLIANCE = 'Compliance',
 	USER = 'User',            // Auth M1: 系统用户
 	KNOWLEDGE_CHUNK = 'KnowledgeChunk', // Auth M1: 知识片段
+	BUSINESS_MODEL = 'BusinessModel',  // P1: 商业模式画布节点
 }
 
 export enum SOGEdgeType {
@@ -49,6 +50,9 @@ export enum SOGEdgeType {
   ALIGNS_WITH = 'ALIGNS_WITH',
   PROVIDES = 'PROVIDES',
 	HAS_ACCESS_TO = 'HAS_ACCESS_TO', // Auth M1: 用户→资源访问权限
+	REVENUE_FROM = 'REVENUE_FROM',       // P1: 收入来源→客户细分
+	COST_DRIVEN_BY = 'COST_DRIVEN_BY',   // P1: 成本→活动/资源驱动
+	VALUE_PROPOSITION = 'VALUE_PROPOSITION', // P1: 价值主张→目标客户
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -142,12 +146,25 @@ export interface ComplianceProps {
   status: 'compliant' | 'non_compliant' | 'partial';
 }
 
+export interface BusinessModelProps {
+  name: string;
+  canvasType: 'subscription' | 'transactional' | 'advertising' | 'freemium' | 'platform' | 'hybrid' | 'other';
+  description?: string;
+  /** 商业模式健康度评分 0-1 */
+  healthScore?: number;
+  /** 收入集中度 — 最大单一来源占比 */
+  revenueConcentration?: number;
+  /** 固定成本占比 */
+  fixedCostRatio?: number;
+}
+
 /** 所有节点属性联合类型 */
 export type SOGNodeProps =
   | PersonProps | TeamProps | AgentProps | ToolProps
   | ClientProps | ProcessProps | EventProps | DocumentProps
   | FinancialProps | LocationProps | GoalProps
-  | CapabilityProps | RiskProps | ComplianceProps;
+  | CapabilityProps | RiskProps | ComplianceProps
+  | BusinessModelProps;
 
 // ═══════════════════════════════════════════════════════════════════
 // EDGE PROP INTERFACES — 每种边独立接口, 0 处 any
@@ -201,12 +218,34 @@ export interface ProvidesEdgeProps {
   capacity?: number;
 }
 
+export interface RevenueFromEdgeProps {
+  /** 收入贡献占比 0-1 */
+  share?: number;
+  /** 收入类型: 交易/订阅/广告/平台/服务 */
+  revenueType?: 'transaction' | 'subscription' | 'advertising' | 'platform_fee' | 'service';
+}
+
+export interface CostDrivenByEdgeProps {
+  /** 成本占比 0-1 */
+  share?: number;
+  /** 成本类型: 固定/可变 */
+  costType?: 'fixed' | 'variable';
+}
+
+export interface ValuePropositionEdgeProps {
+  /** 匹配强度 0-1 */
+  alignmentStrength?: number;
+  /** 价值主张是否已通过定价实现 */
+  monetized?: boolean;
+}
+
 /** 所有边属性联合类型 */
 export type SOGEdgeProps =
   | InteractsWithEdgeProps | BelongsToEdgeProps | OwnsEdgeProps
   | TriggersEdgeProps | AffectsEdgeProps | DependsOnEdgeProps
   | CorrespondsToEdgeProps | ConsumesEdgeProps
-  | AlignsWithEdgeProps | ProvidesEdgeProps;
+  | AlignsWithEdgeProps | ProvidesEdgeProps
+  | RevenueFromEdgeProps | CostDrivenByEdgeProps | ValuePropositionEdgeProps;
 
 // ═══════════════════════════════════════════════════════════════════
 // EDGE ENDPOINT MATRIX — 权威定义, 覆盖全部 10 种边
@@ -223,7 +262,10 @@ export const EDGE_ENDPOINT_MAP: Record<SOGEdgeType, { from: SOGNodeType[]; to: S
   [SOGEdgeType.CONSUMES]:        { from: [SOGNodeType.AGENT, SOGNodeType.PROCESS],                                          to: [SOGNodeType.FINANCIAL] },
   [SOGEdgeType.ALIGNS_WITH]:     { from: [SOGNodeType.GOAL, SOGNodeType.TEAM, SOGNodeType.PERSON, SOGNodeType.PROCESS],     to: [SOGNodeType.GOAL, SOGNodeType.TEAM, SOGNodeType.PERSON, SOGNodeType.PROCESS] },
   [SOGEdgeType.PROVIDES]:        { from: [SOGNodeType.PERSON, SOGNodeType.TEAM, SOGNodeType.TOOL, SOGNodeType.AGENT],       to: [SOGNodeType.CAPABILITY] },
-  [SOGEdgeType.HAS_ACCESS_TO]:  { from: [SOGNodeType.USER, SOGNodeType.AGENT],                                             to: [SOGNodeType.DOCUMENT, SOGNodeType.TOOL, SOGNodeType.PROCESS] },
+  [SOGEdgeType.HAS_ACCESS_TO]:    { from: [SOGNodeType.USER, SOGNodeType.AGENT],                                             to: [SOGNodeType.DOCUMENT, SOGNodeType.TOOL, SOGNodeType.PROCESS] },
+  [SOGEdgeType.REVENUE_FROM]:     { from: [SOGNodeType.FINANCIAL],                                                        to: [SOGNodeType.CLIENT] },
+  [SOGEdgeType.COST_DRIVEN_BY]:   { from: [SOGNodeType.FINANCIAL],                                                        to: [SOGNodeType.PROCESS, SOGNodeType.CAPABILITY, SOGNodeType.TOOL] },
+  [SOGEdgeType.VALUE_PROPOSITION]:{ from: [SOGNodeType.GOAL],                                                             to: [SOGNodeType.CLIENT] },
 };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -272,6 +314,7 @@ export const NODE_VALIDATORS: Record<SOGNodeType, (props: unknown) => boolean> =
   [SOGNodeType.COMPLIANCE]:  (p): p is ComplianceProps    => hasString(p, 'name') && hasComplianceType(p) && hasComplianceStatus(p),
   [SOGNodeType.USER]:        (p): p is Record<string, unknown> => hasString(p, 'name'),
   [SOGNodeType.KNOWLEDGE_CHUNK]: (p): p is Record<string, unknown> => hasString(p, 'content'),
+  [SOGNodeType.BUSINESS_MODEL]:  (p): p is BusinessModelProps   => hasString(p, 'name') && hasCanvasType(p),
 };
 
 // ── Edge validators ──
@@ -287,7 +330,10 @@ export const EDGE_VALIDATORS: Record<SOGEdgeType, (props: unknown) => boolean> =
   [SOGEdgeType.CONSUMES]:        (p): p is ConsumesEdgeProps       => typeof (p as any)?.amount === 'number' && hasString(p, 'period'),
   [SOGEdgeType.ALIGNS_WITH]:     (p): p is AlignsWithEdgeProps     => hasAlignmentStrength(p) && hasAlignmentType(p),
   [SOGEdgeType.PROVIDES]:        (_p): _p is ProvidesEdgeProps       => true, // proficiencyLevel + capacity 都是可选
-  [SOGEdgeType.HAS_ACCESS_TO]:  (p): p is Record<string, unknown>  => hasString(p, 'resourceType') && hasString(p, 'permission'),
+  [SOGEdgeType.HAS_ACCESS_TO]:    (p): p is Record<string, unknown>     => hasString(p, 'resourceType') && hasString(p, 'permission'),
+  [SOGEdgeType.REVENUE_FROM]:     (_p): _p is RevenueFromEdgeProps       => true, // share + revenueType 可选
+  [SOGEdgeType.COST_DRIVEN_BY]:   (_p): _p is CostDrivenByEdgeProps      => true, // share + costType 可选
+  [SOGEdgeType.VALUE_PROPOSITION]:(_p): _p is ValuePropositionEdgeProps  => true, // alignmentStrength + monetized 可选
 };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -380,4 +426,8 @@ function hasAlignmentStrength(p: unknown): boolean {
 
 function hasAlignmentType(p: unknown): boolean {
   return ['direct', 'indirect', 'conflicting'].includes((p as any)?.alignmentType);
+}
+
+function hasCanvasType(p: unknown): boolean {
+  return ['subscription', 'transactional', 'advertising', 'freemium', 'platform', 'hybrid', 'other'].includes((p as any)?.canvasType);
 }
