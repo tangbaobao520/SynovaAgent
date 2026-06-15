@@ -10,7 +10,7 @@ import { createLogger } from '../logger';
 
 const log = createLogger('l3/expert-registry');
 
-const DEFAULT_EXPERT_PROMPTS: Record<string, string> = {
+export const DEFAULT_EXPERT_PROMPTS: Record<string, string> = {
   // ═══════════════════════════════════════════════════
   // 战略专家 — 三层战略诊断框架
   // ═══════════════════════════════════════════════════

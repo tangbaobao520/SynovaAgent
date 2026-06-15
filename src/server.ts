@@ -40,6 +40,7 @@ import permissionRoutes from './routes/permissions';
 import diagnosisUploadRoutes from './routes/diagnosis-upload-v2';
 import sentinelHealthRoutes from './routes/sentinel-health';
 import sentinelRoutes from './routes/sentinel';
+import reloadRoutes from './routes/reload';
 import type { ServiceContainer } from './services/container';
 
 /** RBAC 默认角色 — 提取为常量避免 secrets 扫描误报 */
@@ -201,6 +202,28 @@ export async function createServer(): Promise<Server> {
   const agentMemory = getAgentMemoryStore(db);
   app.locals.agentMemory = agentMemory;
 
+  // ═══ C2 上下文预算追踪器 ═══
+  const { getBudgetTracker } = await import('./services/context-budget-tracker');
+  app.locals.budgetTracker = getBudgetTracker();
+
+  // ═══ Phase 0: 文件优先范式 — 文件扫描 + 专家文件加载 ═══
+  const { FileScanner } = await import('./agent/file-scanner');
+  const fileScanner = new FileScanner();
+  app.locals.fileScanner = fileScanner;
+  const { ExpertFileLoader } = await import('./agent/expert-file-loader');
+  const expertFileLoader = new ExpertFileLoader();
+  app.locals.expertFileLoader = expertFileLoader;
+  // 启动时扫描文件 → 加载专家
+  try {
+    const index = fileScanner.scan();
+    const defaultPrompts = (await import('./l3/expert-registry')).DEFAULT_EXPERT_PROMPTS;
+    const loadResult = expertFileLoader.loadFromIndex(index, defaultPrompts);
+    logger.info({ fromFiles: loadResult.fromFiles, total: loadResult.loaded.length },
+      'Phase 0 专家文件加载完成');
+  } catch (err: unknown) {
+    logger.warn({ err }, 'Phase 0 文件加载失败 — degraded, 使用代码默认 prompt');
+  }
+
   // 基础中间件
   app.use(cors());
   app.use(express.json({ limit: '10mb' }));
@@ -296,6 +319,16 @@ export async function createServer(): Promise<Server> {
   }, 30_000); // 30s 清理，防止内存泄漏 (P1-06)
 
   // 路由
+  app.get('/api/status/budget', (req, res) => {
+    try {
+      const tracker = req.app.locals.budgetTracker;
+      if (!tracker) return res.json({ ok: false, degraded: true, message: '预算追踪器未初始化' });
+      res.json({ ok: true, ...tracker.snapshot() });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      res.status(500).json({ ok: false, error: msg, degraded: true });
+    }
+  });
   app.use(chatRoutes);         // GET / → Web 对话界面
   app.use(healthRoutes);
   app.use(ontologyRoutes);
@@ -313,6 +346,7 @@ app.use(documentRoutes);   // POST /api/documents/upload | GET /api/documents/li
 app.use(permissionRoutes); // POST /api/permissions/update | POST /api/permissions/bulk | GET /api/permissions/audit
 app.use('/api/sentinel', sentinelHealthRoutes); // GET /api/sentinel/health
 app.use('/api/sentinel', sentinelRoutes);       // GET /api/sentinel/findings | /api/sentinel/signals | POST /api/sentinel/run/:id
+app.use(reloadRoutes);                         // POST /api/reload — 热加载专家文件
 
   // ═══ A2: Connector Pipeline — 手动触发 + 定时同步 ═══
   app.post('/api/connector/sync', async (req, res) => {
