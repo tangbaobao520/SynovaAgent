@@ -8,4 +8,6 @@
  */
 export { FeishuConnector, loadFeishuConfig } from './feishu';
 export type { FeishuConfig } from './feishu';
+export { syncFeishuMembersToSOG, feishuHealthCheck } from './feishu-bridge';
+export type { FeishuMember, FeishuMessage } from './feishu-bridge';
 export type { DataConnector, ConnectorMessage, ConnectorMember, ConnectorEvent, OntologyMapping } from './types';
