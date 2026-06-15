@@ -16,6 +16,8 @@ import { createLogger } from '../logger';
 import { EngineCoreVendorAdapter } from '../adapters/engine-core-adapter';
 import type { DiagnosisEngine, DiagnosisEvent, ConsultationResult } from '../l2-interfaces/diagnosis-engine';
 import { ToolRegistry } from '../agent/tools';
+import type { GraphStore } from '../l4/graph-bridge';
+import type { CommunityReport } from '../l4/community-reports';
 
 const log = createLogger('routes/diagnosis');
 const router = Router();
@@ -138,6 +140,72 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
         });
       },
     );
+
+    // ═══ P0-1: 诊断后处理 — GraphBridge 同步 + 社区报告 + 实体解析 ═══
+    // 此前 HTTP 路径跑完诊断但没有把结果写回本体层。
+    // 铁律 24+31: 每步独立 try/catch, 单个失败不阻断整体。
+    if (!active.aborted) {
+      const graphStore = req.app.locals?.graphStore as GraphStore | undefined;
+      if (graphStore) {
+        // 延迟导入 — 仅在 graphStore 可用时加载
+        const [{ createGraphBridge }, { generateCommunityReports }, { resolveEntitiesL3 }] = await Promise.all([
+          import('../l4/graph-bridge'),
+          import('../l4/community-reports'),
+          import('../l4/entity-resolver'),
+        ]);
+        const graphBridge = createGraphBridge(graphStore, teamId);
+
+        // 关键人风险同步
+        try {
+          const report = result.report as Record<string, unknown>;
+          const findings = (report?.keyFindings || report?.findings) as Array<Record<string, unknown>> | undefined;
+          if (findings?.length) {
+            const risks = findings
+              .filter(f => f.riskLevel)
+              .map(f => ({
+                roleId: (f.entity || f.roleId || '') as string,
+                riskLevel: (f.riskLevel || 'medium') as string,
+                knowledgeDomains: (f.domains || []) as string[],
+                busFactor: (f.busFactor || 1) as number,
+              }));
+            if (risks.length > 0) graphBridge.upsertFromKeyPersonRisk(risks);
+          }
+        } catch (err: unknown) { log.warn({ err }, 'GraphBridge keyPersonRisk sync failed — degraded'); }
+
+        // 社区报告生成
+        try {
+          const communities = generateCommunityReports(graphStore, teamId);
+          if (communities.length > 0) {
+            log.info({ teamId, count: communities.length }, 'P0-1 社区报告已生成');
+            sseWrite(res, {
+              type: 'community_reports', phase: result.report ? 5 : 2,
+              message: `发现 ${communities.length} 个协作圈`,
+              findings: communities.slice(0, 3).map((c: CommunityReport) => ({
+                moduleId: c.id || 'community',
+                summary: c.summary || `协作圈 ${c.nodeCount || 0} 人`,
+                confidence: 0.7,
+              })),
+              confidence: 0.7,
+            });
+          }
+        } catch (err: unknown) { log.warn({ err }, 'CommunityReports failed — degraded'); }
+
+        // 实体解析
+        try {
+          const resolution = await resolveEntitiesL3(graphStore, teamId);
+          if (resolution.autoMerged > 0 || resolution.queuedForReview > 0) {
+            log.info({ teamId, autoMerged: resolution.autoMerged, queued: resolution.queuedForReview }, 'P0-1 实体解析完成');
+            sseWrite(res, {
+              type: 'entity_resolution', phase: result.report ? 5 : 3,
+              message: `发现 ${resolution.autoMerged} 对重复实体(自动合并), ${resolution.queuedForReview} 对待审核`,
+              confidence: 0.8,
+            });
+          }
+        } catch (err: unknown) { log.warn({ err }, 'EntityResolution failed — degraded'); }
+      } else {
+        log.debug('GraphStore 不可用 — 跳过后处理 (degraded)');
+      }
+    }
 
     if (!active.aborted) {
       sseClose(res, result);

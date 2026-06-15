@@ -139,10 +139,12 @@ export async function createServer(): Promise<Server> {
   }
 
   // ═══ A3: OntologyEventBus — L5 进程内事件总线初始化 ═══
+  let graphStore: unknown = null;
   try {
     // GraphStore 由 engine-core adapter 创建，注入到总线
     const { EngineCoreVendorAdapter } = await import('./adapters/engine-core-adapter');
     const store = await EngineCoreVendorAdapter.createGraphStore(db);
+    graphStore = store;
     getOntologyEventBus(store as unknown as import('./l4/graph-bridge').GraphStore);
     logger.info('OntologyEventBus 已初始化 (L5 进程内事件总线)');
   } catch (err: any) {
@@ -172,6 +174,8 @@ export async function createServer(): Promise<Server> {
   // 可选组件 (可能因配置/环境而缺失)
   if (connectorToolRegistry) container.connectorToolRegistry = connectorToolRegistry;
   app.locals.container = container;
+  // P0-1: GraphStore 存入 app.locals — HTTP 诊断路由后处理需要
+  if (graphStore) app.locals.graphStore = graphStore;
   // 兼容旧代码 (逐步迁移到 container)
   app.locals.orchestration = { eventBus, hookRunner, sessionManager, stateMachine: phaseStateMachine, wiring, db, eventStore };
   app.locals.federalAdapter = federalAdapter;
