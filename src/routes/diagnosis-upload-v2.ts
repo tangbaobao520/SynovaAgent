@@ -31,6 +31,77 @@ interface DiagnosisJob {
 const jobStore = new Map<string, DiagnosisJob>();
 
 router.post('/upload', async (req: Request, res: Response) => {
+	// P0-3: FDE 采访文档上传界面
+	router.get('/upload', (_req: Request, res: Response) => {
+	  const html = `<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Synova FDE Demo</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,"Microsoft YaHei",sans-serif;background:#0d1117;color:#c9d1d9;display:flex;justify-content:center;align-items:center;min-height:100vh}
+.card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:2rem;max-width:680px;width:90%}
+h1{font-size:1.3rem;color:#58a6ff;margin-bottom:.5rem}
+.sub{color:#8b949e;font-size:.85rem;margin-bottom:1.5rem}
+label{display:block;font-size:.9rem;margin-bottom:.4rem}
+input,textarea{width:100%;padding:.6rem;margin-bottom:1rem;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#c9d1d9;font-size:.9rem;font-family:inherit}
+textarea{min-height:200px;resize:vertical}
+button{width:100%;padding:.75rem;background:#238636;color:#fff;border:none;border-radius:6px;font-size:1rem;cursor:pointer;font-weight:600}
+button:hover{background:#2ea043}
+.dims{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:1rem}
+.dim{background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:.5rem;font-size:.8rem;color:#8b949e}
+.dim strong{color:#c9d1d9}
+#result{margin-top:1rem;padding:1rem;border-radius:6px;display:none}
+.success{background:#1b3a1b;border:1px solid #3fb950;display:block!important}
+.error{background:#3a1b1b;border:1px solid #f85149;display:block!important}
+a{color:#58a6ff}
+</style></head><body>
+<div class="card">
+<h1>Synova FDE Demo</h1>
+<p class="sub">FDE input -> 8D extraction -> measurement -> expert reasoning -> report</p>
+<form id="f">
+<label>Org Name</label><input name="orgName" value="Demo org" required>
+<label>Team ID</label><input name="teamId" value="demo-team" required>
+<div class="dims">
+<div class="dim"><strong>1.Goal</strong> vision, strategy</div>
+<div class="dim"><strong>2.Value</strong> business, proposition</div>
+<div class="dim"><strong>3.Status</strong> org structure, assets</div>
+<div class="dim"><strong>4.Constraint</strong> budget, people, time</div>
+<div class="dim"><strong>5.Risk</strong> worries, past failures</div>
+<div class="dim"><strong>6.Success</strong> north star metric</div>
+<div class="dim"><strong>7.Market</strong> positioning, differentiation</div>
+<div class="dim"><strong>8.Digital</strong> systems, tools, efficiency</div>
+</div>
+<label>Interview Notes</label>
+<textarea name="content" placeholder="Paste FDE interview notes..." required></textarea>
+<button type="submit">Start Diagnosis</button>
+</form>
+<div id="result"></div>
+</div>
+<script>
+document.getElementById('f').addEventListener('submit',async(e)=>{
+e.preventDefault();
+const r=document.getElementById('result');
+r.style.display='block';r.className='';
+r.innerHTML='<p style=color:#58a6ff>Submitting...</p>';
+try{
+const fd=new FormData(e.target);
+const b=Object.fromEntries(fd.entries());
+const resp=await fetch('/api/diagnosis/upload',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});
+const d=await resp.json();
+if(d.jobId){
+r.className='success';
+r.innerHTML='<p>Job: <code>'+d.jobId+'</code></p><p style=margin-top:1rem><a href=/api/diagnosis/status/'+d.jobId+'>View Progress</a></p>';
+setTimeout(()=>{window.location.href='/api/diagnosis/status/'+d.jobId;},2000);
+}else{
+r.className='error';
+r.innerHTML='<p>Error: '+(d.error||'unknown')+'</p>';
+}
+}catch(err){r.className='error';r.innerHTML='<p>'+err.message+'</p>';}
+});
+</script></body></html>`;
+	  res.type('html').send(html);
+	});
+
   try {
     const { content, teamId = 'mvp-default', orgName = '企业' } = req.body as {
       content?: string; teamId?: string; orgName?: string;

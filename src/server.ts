@@ -306,7 +306,7 @@ export async function createServer(): Promise<Server> {
   app.use(expertRoutes);        // POST/GET /api/expert
 app.use(agentObserverRoutes); // POST /api/agent-observer/report
 app.use(imRoutes);          // POST /api/im/feishu/webhook | GET /api/im/health
-app.use(diagnosisUploadRoutes); // POST /api/diagnosis/upload | GET /api/diagnosis/report/:jobId
+app.use('/api/diagnosis', diagnosisUploadRoutes); // POST /api/diagnosis/upload | GET /api/diagnosis/report/:jobId | GET /api/diagnosis/status/:jobId
 app.use(knowledgeRoutes);   // POST /api/knowledge/search | POST /api/knowledge/ingest
 app.use(credentialRoutes);  // POST /api/credentials/:provider | GET /api/credentials
 app.use(documentRoutes);   // POST /api/documents/upload | GET /api/documents/list
