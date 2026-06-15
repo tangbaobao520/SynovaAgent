@@ -21,7 +21,7 @@
                          ↓
                     交叉关联 + 严重度升级 + 专家路由
                          ↓
-              6位专家(strategy/org/finance/tech/marketing/action)
+              8位专家(strategy/org/finance/tech/marketing/action/business_model/knowledge)
                          ↓
                     ReAct推理 + 交叉验证
                          ↓
@@ -171,7 +171,7 @@ L1 交互    → routes/ (API), tui/ (终端), mcp/ (MCP协议)
 L2 编排    → agent/ (ConversationEngine, diagnosis-launcher, sentinel-service)
               orchestrator/ (SubAgentCoordinator, ModuleRunner)
 L3 洞察    → l3/ (ExpertDispatcher, ExpertAutonomy, QualityFirewall)
-              sentinel/ (Runner, SignalAggregator, Registry, 15哨兵适配器)
+              sentinel/ (Runner, SignalAggregator, Registry, 20哨兵适配器)
               expert-platform/ (ExpertStore, Validator)
 L4 本体    → l4/ (GraphBridge, EntityResolver, CommunityReports)
               evidence/ (Collector, Corroboration, EvidenceStore)
@@ -186,13 +186,34 @@ LLM       → providers/ (DeepSeek, OpenAI, Gateway)
 
 ---
 
-## Loop Engineering 系统
+## Loop Engineering 系统 (v2.0 — 8阶段Gate模型)
+
+> 2026-06-15 升级。基于自检报告发现的缺口：vitest --related无效、Windows超时、记忆失能。
+
+### 开发循环: G0→G7
+
+```
+G0:方向对齐 → G1:上下文加载 → G2:错误预防 → G3:任务分解
+     ↓              ↓              ↓              ↓
+G4:编码      → G5:自测验证   → G6:接线审计 → G7:提交+回顾
+```
+
+| 阶段 | 准入 | 准出 | 强制方式 |
+|------|------|------|---------|
+| **G0** 方向对齐 | 任务请求 | 决策树方向一致 + 不违宪章 | SessionStart hook |
+| **G1** 上下文加载 | G0通过 | CLAUDE.md+memory/+task brief已读 | hook-check-brief.sh |
+| **G2** 错误预防 | G1通过 | memory/中相关历史错误已标记 | 新增 hook-check-memory.sh |
+| **G3** 任务分解 | G2通过 | TaskCreate子任务+Done标准明确 | task brief Done标准 |
+| **G4** 编码 | G3通过 | 单模块修改, as any=0, 空catch=0 | PreToolUse hook |
+| **G5** 自测验证 | G4通过 | vitest run --changed通过+tsc零错误 | PostToolUse hook |
+| **G6** 接线审计 | G5通过 | grep -rn新函数名src/有结果 | PostToolUse hook |
+| **G7** 提交+回顾 | G6通过 | Conventional Commits+新教训写入memory/ | post-commit hook |
 
 ### L1: 会话内自动循环（写一步验一步）
 
 ```
 Write → PostToolUse hook → verify-incremental.sh
-  → vitest --related + 接线审计
+  → vitest run (git diff 匹配的测试文件) + 接线审计
   → 失败 → 错误输出终端 → AI修正 → 再次Write → 再次验证
   → .claude/loop-state.json 记录轮次 (最多5轮)
 ```
@@ -212,6 +233,12 @@ Cron → Sentinel → SignalAggregator → ExpertDispatcher
   → critical → 自动创建工单 (SQLite sentinel_tickets)
   → GET /api/sentinel/tickets → FDE 查询
 ```
+
+### Windows 兼容性说明
+
+- pre-commit/pre-push 在 Windows 上因 tsc 全量扫描耗时 30-40s，可通过 `--no-verify` 绕过（门禁需手动在前台验证）
+- `vitest --related` 已替换为 `vitest run --changed` (vitest 4.1+ 支持)
+- 严禁 `taskkill //IM node.exe` — 会杀死所有 Node 进程（含其他 Claude Code 实例）
 
 ---
 
