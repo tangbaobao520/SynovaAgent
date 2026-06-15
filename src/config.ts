@@ -5,6 +5,7 @@
  * 所有值都有合理默认值，适合本地开发和客户部署。
  */
 import { createLogger } from './logger';
+import { loadFileConfig } from './config-file';
 
 const log = createLogger('config');
 
@@ -21,6 +22,16 @@ export interface SynovaConfig {
 }
 
 export function loadConfig(): SynovaConfig {
+  // C5: 优先加载 synova.json, 失败降级到环境变量
+  let filePort: number | undefined;
+  try {
+    const fileCfg = loadFileConfig();
+    filePort = fileCfg.server.port;
+    log.info({ port: filePort, source: 'synova.json' }, '使用文件配置');
+  } catch {
+    log.debug('synova.json 不可用, 使用环境变量');
+  }
+
   const devMode = process.env.DEV_MODE === 'true';
 
   // LLM 配置 — 多 Provider 支持
@@ -46,7 +57,7 @@ export function loadConfig(): SynovaConfig {
   const dbPath = process.env.SYNOVA_DB_PATH ||
     (dataDir ? `${dataDir}/synova.db` : './data/synova.db');
 
-  const port = parseInt(process.env.PORT || '3000', 10);
+  const port = filePort || parseInt(process.env.PORT || '3000', 10);
 
   if (!devMode && !llmApiKey && !gatewayHost) {
     log.warn('⚠️  未设置 LLM_API_KEY 且未设置 OPENCLAW_GATEWAY_HOST');

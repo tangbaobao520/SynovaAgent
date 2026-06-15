@@ -10,6 +10,7 @@
 import type { LLMProvider } from '../providers/types';
 import { ToolRegistry } from './tools';
 import { createLogger } from '../logger';
+import { getBudgetTracker } from '../services/context-budget-tracker';
 
 const log = createLogger('agent/orchestrator-adapter');
 
@@ -59,6 +60,15 @@ export function createDiagnosisLLMClient(provider: LLMProvider): DiagnosisLLMCli
           { role: 'user', content: userMessage },
         ],
       );
+      // C2: 记录 token 消耗到预算追踪器
+      try {
+        const tracker = getBudgetTracker();
+        tracker.record({
+          promptTokens: systemPrompt.length + userMessage.length,
+          completionTokens: result.content.length,
+          totalTokens: systemPrompt.length + userMessage.length + result.content.length,
+        }, result.model || 'unknown');
+      } catch { /* 非阻断 — 预算追踪失败不影响诊断 */ }
       return {
         content: result.content,
         model: result.model || 'unknown',

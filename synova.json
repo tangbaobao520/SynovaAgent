@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "server": {
+    "port": 18789
+  },
+  "llm": {
+    "provider": "deepseek",
+    "model": "deepseek-chat",
+    "baseUrl": "https://api.deepseek.com/v1"
+  },
+  "database": {
+    "path": "./data/synova.db"
+  },
+  "diagnosis": {
+    "maxExpertConcurrency": 6,
+    "maxToolRounds": 3,
+    "toolTimeoutMs": 60000
+  },
+  "context": {
+    "compressionStrategy": "sliding-window",
+    "maxMessagesBeforeCompression": 30,
+    "windowSize": 20
+  },
+  "devMode": false
+}
