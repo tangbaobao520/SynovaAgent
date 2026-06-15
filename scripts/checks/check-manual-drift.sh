@@ -47,15 +47,15 @@ if grep -q "14 种节点\|14种节点" "$MANUAL" 2>/dev/null; then
 fi
 
 # ── 检查 3: 调度框架存在性 ──
-# 手册说"尚未建设" → 代码已实现?
-if grep -q "尚未建设\|未建设\|未实现\|不存在" "$MANUAL" 2>/dev/null; then
-  if grep -q "CronScheduler\|SentinelRunner\|调度框架" "$MANUAL" 2>/dev/null; then
-    if [ -f "src/sentinel/runner.ts" ] && grep -q "class SentinelRunner" src/sentinel/runner.ts 2>/dev/null; then
-      if [ -f "src/cron/scheduler.ts" ] && grep -q "class CronScheduler" src/cron/scheduler.ts 2>/dev/null; then
-        DRIFTS="${DRIFTS}  手册: '调度框架尚未建设' → 代码: SentinelRunner + CronScheduler 已实现"$'\n'
-        DRIFTS="${DRIFTS}    需更新: 第7/10/15/20 章 ($(grep -c '尚未建设\|未建设' "$MANUAL" 2>/dev/null | tr -d ' ') 处需修正)"$'\n'
-        HAD_DRIFT=1
-      fi
+# 只在 "调度框架" 和 "尚未建设/未建设" 出现在同一行时才报警
+SCHEDULER_DRIFT=$(grep -n "调度框架.*尚未建设\|调度框架.*未建设\|CronScheduler.*尚未建设\|SentinelRunner.*未建设" "$MANUAL" 2>/dev/null || true)
+if [ -n "$SCHEDULER_DRIFT" ]; then
+  if [ -f "src/sentinel/runner.ts" ] && grep -q "class SentinelRunner" src/sentinel/runner.ts 2>/dev/null; then
+    if [ -f "src/cron/scheduler.ts" ] && grep -q "class CronScheduler" src/cron/scheduler.ts 2>/dev/null; then
+      DRIFT_COUNT=$(echo "$SCHEDULER_DRIFT" | grep -c . 2>/dev/null) || DRIFT_COUNT=0
+      DRIFTS="${DRIFTS}  手册: '调度框架尚未建设' → 代码: SentinelRunner + CronScheduler 已实现"$'\n'
+      DRIFTS="${DRIFTS}    需更新: (${DRIFT_COUNT} 处需修正)"$'\n'
+      HAD_DRIFT=1
     fi
   fi
 fi
