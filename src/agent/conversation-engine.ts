@@ -90,6 +90,8 @@ export interface EngineConfig {
   diagnosisEngine?: import('../l2-interfaces/diagnosis-engine').DiagnosisEngine;
   /** FED-001: 联邦进化适配器 */
   federalAdapter?: import('../adapters/federal-adapter').FederalAdapter;
+  /** P1 Phase Gate Check: 证据和专家状态跟踪 (供 onPhaseEnter 回调读取) */
+  phaseGateTracking?: { evidenceCount: number; expertResults: Array<{ expertType: string; confidence: number; hypothesis: string; degraded?: boolean }> };
 }
 
 export interface ProcessResult {
@@ -260,6 +262,7 @@ export class ConversationEngine {
   private corroborationEngine: CorroborationEngine | null = null;
   private onDecision: ((decision: DecisionInput) => Promise<DecisionResult>) | null = null;
   private sessionId: string = '';
+  private phaseGateTracking: { evidenceCount: number; expertResults: Array<{ expertType: string; confidence: number; hypothesis: string; degraded?: boolean }> } | null = null;
   // L4 本体层组件
   private graphStore: GraphStore | null = null;
   private enableEntityResolution: boolean = false;
@@ -300,6 +303,8 @@ export class ConversationEngine {
     this.corroborationEngine = config.corroborationEngine || null;
     this.onDecision = config.onDecision || null;
     this.sessionId = config.sessionId || '';
+    // P1 Phase Gate Check: 证据/专家状态跟踪
+    this.phaseGateTracking = config.phaseGateTracking || null;
     // L4 本体层接线
     this.graphStore = config.graphStore || null;
     this.enableEntityResolution = config.enableEntityResolution ?? false;
@@ -367,9 +372,16 @@ export class ConversationEngine {
 
   /** Advance to next phase (Hermes P0-2: 重建 system prompt 以更新上下文层) */
   advancePhase(): void {
-    this.phase++;
+    // P1 Loop Engineering: 通过 PhaseStateMachine 驱动，触发 Gate Check 回调
+    if (this.phaseStateMachine && this.phaseStateMachine.getState() === 'running') {
+      const result = this.phaseStateMachine.advance();
+      this.phase = result.phase;
+      log.info({ phase: result.phase, label: result.label }, 'PhaseStateMachine 推进 → Gate Check 已触发');
+    } else {
+      this.phase++;
+      log.debug({ phase: this.phase }, 'Phase 推进 (无状态机, 降级)');
+    }
     this.messages[0] = { role: 'system', content: buildSystemPrompt(this.phase, this.turnCount, this.dimensionCoverage, this.dimensionRegistry) };
-    log.debug({ phase: this.phase }, 'Phase 推进, system prompt 已更新');
   }
 
   /** Get message history (shallow copy) */
@@ -510,9 +522,11 @@ export class ConversationEngine {
         // Batch 2: PhaseStateMachine 驱动 — 替代硬编码 phase=1
         if (this.phaseStateMachine) {
           const next = this.phaseStateMachine.advance();
-          log.info({ nextPhase: next.phase, label: next.label }, '状态机推进');
+          this.phase = next.phase;
+          log.info({ nextPhase: next.phase, label: next.label }, '状态机推进 → Phase 0 完成');
+        } else {
+          this.phase = 1;
         }
-        this.phase = 1;
 
         // GNS v2.0: Phase 0 完成 → 持久化 InterviewSummary 到 GraphStore
         this.persistInterviewSummary(coveredCount).catch(err => {
