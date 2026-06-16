@@ -1,7 +1,7 @@
 {
   "version": 1,
   "server": {
-    "port": 18789
+    "port": 18790
   },
   "llm": {
     "provider": "deepseek",

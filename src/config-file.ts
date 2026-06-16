@@ -42,7 +42,7 @@ const LAST_GOOD_PATH = () => DEFAULT_CONFIG_PATH() + '.last-good';
 
 export const DEFAULT_CONFIG: SynovaFileConfig = {
   version: 1,
-  server: { port: 18789 },
+  server: { port: 18790 },
   llm: {
     provider: 'deepseek',
     model: 'deepseek-chat',
