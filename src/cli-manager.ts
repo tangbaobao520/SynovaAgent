@@ -8,6 +8,7 @@
  * 铁律 39: L1 交互层 — 不直接操作 L3/L4/L5。
  */
 
+import { fileURLToPath } from 'node:url';
 import { createLogger } from './logger';
 import { createExpertCommand } from './cli/commands/expert';
 import { createMeasurerCommand } from './cli/commands/measurer';
@@ -80,7 +81,8 @@ ${Array.from(this.commands.values())
 
 // ═══ Main Entry (if run directly) ═══
 
-if (require.main === module) {
+const isMain = process.argv[1] === fileURLToPath(import.meta.url);
+if (isMain) {
   const manager = new CLIManager();
   registerDefaultCommands(manager);
   manager.execute(process.argv).catch(err => {
@@ -111,22 +113,15 @@ function createStatusCommand(): CLICommand {
       const { loadConfig: loadCfg } = await import('./config');
       const config = loadCfg();
       const port = config.port;
-      const http = await import('http');
 
       try {
-        const data = await new Promise<string>((resolve, reject) => {
-          http.get(`http://127.0.0.1:${port}/api/status/budget`, (res: any) => {
-            let body = '';
-            res.on('data', (chunk: string) => body += chunk);
-            res.on('end', () => resolve(body));
-          }).on('error', reject);
-        });
-        const result = JSON.parse(data);
+        const res = await fetch(`http://127.0.0.1:${port}/api/status/budget`);
+        const result = await res.json() as Record<string, unknown>;
         console.log('\n系统状态:');
-        console.log(`  预算消耗: ${result.totalSpent || 'N/A'} tokens`);
-        console.log(`  调用次数: ${result.callCount || 'N/A'}`);
-        console.log(`  缓存命中率: ${(result.cacheHitRate * 100).toFixed(1)}%`);
-        console.log(`  消耗速率: ${result.burnRate?.toFixed(0) || 'N/A'} tokens/min`);
+        console.log(`  预算消耗: ${result.totalSpent ?? 'N/A'} tokens`);
+        console.log(`  调用次数: ${result.callCount ?? 'N/A'}`);
+        console.log(`  缓存命中率: ${((result.cacheHitRate as number) * 100).toFixed(1)}%`);
+        console.log(`  消耗速率: ${((result.burnRate as number) ?? 0).toFixed(0)} tokens/min`);
         if (result.degraded) console.log('  ⚠️  预算追踪器未初始化 (degraded 模式)');
       } catch {
         console.log('\n⚠️  无法连接到 Synova 服务器 (127.0.0.1:' + port + ')');
@@ -145,21 +140,10 @@ function createReloadCommand(): CLICommand {
       const { loadConfig: loadCfg } = await import('./config');
       const config = loadCfg();
       const port = config.port;
-      const http = await import('http');
 
       try {
-        const data = await new Promise<string>((resolve, reject) => {
-          const req = http.request(`http://127.0.0.1:${port}/api/reload`, {
-            method: 'POST',
-          }, (res: any) => {
-            let body = '';
-            res.on('data', (chunk: string) => body += chunk);
-            res.on('end', () => resolve(body));
-          });
-          req.on('error', reject);
-          req.end();
-        });
-        const result = JSON.parse(data);
+        const res = await fetch(`http://127.0.0.1:${port}/api/reload`, { method: 'POST' });
+        const result = await res.json() as Record<string, unknown>;
         if (result.ok) {
           console.log('✅ 配置已热加载');
         } else {
