@@ -214,7 +214,7 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
   // CJS 动态导入无 TS 类型 — 用 Record 替代 `as-any`
   const extractor = new (DocExtractor as unknown as new (graphStore: unknown, llmClient: unknown) => { extract: (docId: string, content: string, teamId: string) => Promise<ExtractionResult> })(graphStore, llmClient);
   const { SOGNodeType } = await import('@synova/sog-core');
-  const docId = graphStore.createNode(SOGNodeType.DOCUMENT, { name: `interview_${jobId}`, content }, teamId);
+  const docId = graphStore.createNode(SOGNodeType.DOCUMENT, { name: `interview_${jobId}`, docType: 'meeting_notes', content }, teamId);
   const extraction = await extractor.extract(docId, content, teamId);
 
   // ── 提取结果准备 ──
@@ -224,9 +224,9 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
 
   // 提取结果写入 SOG 图节点 (修复专家工具桩 — 数据不再只存在 DOCUMENT 节点属性中)
   const DIM_TO_NODE_TYPE: Record<string, string> = {
-    mission: 'GOAL', market: 'GOAL', competition: 'GOAL',
-    team: 'TEAM', finance: 'FINANCIAL', client: 'CLIENT',
-    risk: 'RISK', technology: 'CAPABILITY',
+    mission: 'Goal', market: 'Goal', competition: 'Goal',
+    team: 'Team', finance: 'Financial', client: 'Client',
+    risk: 'Risk', technology: 'Capability',
   };
   const sufficients = dims.filter((d: { sufficient: boolean }) => d.sufficient);
   for (const dim of sufficients) {
