@@ -36,7 +36,7 @@ if [ -z "$BRIEF" ]; then
   exit 1
 fi
 
-# ═══ 6 个质量检查 (全部非空 = 全部硬阻断) ═══
+# ═══ 7 个质量检查 (全部非空 = 全部硬阻断) ═══
 FAIL=0
 
 # 1. 项目身份：必须含 "增长导航"（确保重读了核心定位）
@@ -80,11 +80,19 @@ if [ -z "$JOURNEY" ] || [ ${#JOURNEY} -lt 10 ]; then
   FAIL=1
 fi
 
+# 7. Anthropic 决策思路：非空 + 含关键思考标记（证明思考了先做什么后做什么）
+ANTHROPIC=$(grep -A10 "Anthropic 决策思路" "$BRIEF" 2>/dev/null | sed 's/<!--.*-->//g' | tr -d '[:space:]' || true)
+if [ -z "$ANTHROPIC" ] || [ ${#ANTHROPIC} -lt 10 ]; then
+  echo "⛔ Task Brief 质量 — 'Anthropic 决策思路' 未填写"
+  echo "   先回答: 如果 Anthropic 团队做这个任务，先做什么、后做什么、步骤是什么？"
+  FAIL=1
+fi
+
 if [ "$FAIL" -gt 0 ]; then
   echo ""
   echo "  文件: ${BRIEF}"
   echo "  被阻止的文件: ${FILE}"
-  echo "  必填: 项目身份 / 本任务在哪一层 / 文档引用 / 接口审计 / 数据流 / 用户旅程"
+  echo "  必填: 项目身份 / Anthropic 决策思路 / 本任务在哪一层 / 文档引用 / 接口审计 / 数据流 / 用户旅程"
   exit 1
 fi
 

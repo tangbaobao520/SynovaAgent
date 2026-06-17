@@ -27,6 +27,18 @@ echo "  任务: ${TASK_DESC}"
 echo "  时间: $(date '+%Y-%m-%d %H:%M:%S')"
 echo ""
 
+# ═══ Q0: Anthropic 决策思路（任务最开始的问题） ═══
+echo -e "${CYAN}📋 Q0: Anthropic 决策思路 — 如果 Anthropic 团队做这个任务，他们会怎么做？${RESET}"
+echo ""
+echo "  先想清楚再动手:"
+echo "    1. 这个任务有人做过类似的事情吗？社区/业界的最佳实践是什么？"
+echo "    2. 先做什么？后做什么？完整的步骤是什么？"
+echo "    3. 什么可以不做？什么是最简可行方案？"
+echo "    4. 先读什么代码？先确认什么接口？"
+echo ""
+echo "  ⚡ 在 task brief 的 'Anthropic 决策思路' 字段中记录你的答案"
+echo ""
+
 # ═══ Q1: 代码库健康 ═══
 echo -e "${CYAN}📋 Q1: 代码库当前健康状态${RESET}"
 cd "$ROOT"
@@ -79,13 +91,13 @@ if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
 fi
 
 # ═══ 生成 Task Brief (迷你设计文档) ═══
-# 固定头部 + 6 个必填字段。PreToolUse hook 物理强制全部非空。
+# 固定头部 + 7 个必填字段。PreToolUse hook 物理强制全部非空。
 	mkdir -p "$(dirname "$BRIEF_FILE")"
 	BRIEF_FILE="$BRIEF_FILE" TASK_DESC="$TASK_DESC" BRANCH="$BRANCH" TSC_COUNT="$TSC_COUNT" AS_ANY="$AS_ANY" TEST_OUTPUT="$TEST_OUTPUT" python3 "$ROOT/scripts/workflow/generate-task-brief.py"
 echo -e "${GREEN}✅ Task Brief 已生成: .claude/task-briefs/${TIMESTAMP}-${TASK_SLUG}.md${RESET}"
 echo ""
 echo -e "${CYAN}────────────────────────────────────────────────────────────${RESET}"
-echo "  下一步: 填写 Task Brief 中的用户旅程和 Done 标准"
+echo "  下一步: 填写 Task Brief 中的用户旅程、Anthropic 决策思路 和 Done 标准"
 echo "          然后开始写代码"
 echo -e "${CYAN}────────────────────────────────────────────────────────────${RESET}"
 echo ""

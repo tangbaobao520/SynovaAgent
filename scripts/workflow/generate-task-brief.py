@@ -30,8 +30,14 @@ content = f"""# Task Brief: {task}
     ├─ 按需(FDE触发): runModules() → Evidence池 → 专家 → 诊断报告
     └─ 定时(Cron触发): Sentinel.check() → SentinelFinding → 信号聚合
                                                               ↓
-  信号聚合引擎 → 交叉关联+严重度升级+专家路由 → 6位专家(strategy/org/finance/tech/marketing/action)
+  信号聚合引擎 → 交叉关联+严重度升级+专家路由 → 8位专家(strategy/org/finance/tech/marketing/action/business_model/knowledge)
        → ReAct推理+交叉验证 → 综合诊断报告 → FDE收到警报+报告
+
+## Anthropic 决策思路
+<!-- 如果 Anthropic 团队做这个任务，先做什么，后做什么，步骤是什么？ -->
+<!-- 这个任务是否有人做过类似的事情？社区/业界的最佳实践是什么？ -->
+<!-- 什么可以不做？什么是最简可行方案？ -->
+<!-- 示例: 先 grep 确认接口签名 → 再读现有测试 → 写新测试 → 实现 → 接线 → verify-incremental -->
 
 ## 本任务在哪一层
 <!-- L1/L2/L3/L4/L5？触及哪几层？有没有跨层风险？ -->
