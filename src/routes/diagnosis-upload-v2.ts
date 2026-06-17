@@ -211,7 +211,7 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
   // GraphStore 已通过 createRealGraphStore 创建 (P0-1 修复)
   // FIXME: CJS 动态导入与 TS 类型约束不兼容 — engine-core 迁移到 ESM 后移除此行
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  // CJS 动态导入无 TS 类型 — 用 Record 替代 as any
+  // CJS 动态导入无 TS 类型 — 用 Record 替代 `as-any`
   const extractor = new (DocExtractor as unknown as new (graphStore: unknown, llmClient: unknown) => { extract: (docId: string, content: string, teamId: string) => Promise<ExtractionResult> })(graphStore, llmClient);
   const { SOGNodeType } = await import('@synova/sog-core');
   const docId = graphStore.createNode(SOGNodeType.DOCUMENT, { name: `interview_${jobId}`, content }, teamId);

@@ -120,7 +120,7 @@ export class KnowledgeFileImporter {
           const sourceId = `knowledge_file_${knowledge.industry}_${entry.relativePath.replace(/[/\\]/g, '_')}`;
 
           if (!dryRun) {
-            // 铁律 38: 用 Record 替代 as any — PKB 字段在 DB schema 中存在但 TS 类型未覆盖
+            // 铁律 38: 用 Record 替代 `as-any` — PKB 字段在 DB schema 中存在但 TS 类型未覆盖
             const chunkData: Record<string, unknown> = {
               text: entry.content,
               sourceType: 'markdown',

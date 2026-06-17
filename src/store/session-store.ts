@@ -16,7 +16,7 @@ const log = createLogger('store/session-store');
 
 // ═══ Types ═══
 
-/** Raw SQLite row (P1-02: 替代 as any) */
+/** Raw SQLite row (P1-02: 替代 `as-any`) */
 type SqliteRow = Record<string, unknown>;
 
 export interface SessionRow {

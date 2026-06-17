@@ -1,6 +1,6 @@
 import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
 
-/** Graph API JSON response (P1-02: 替代 as any) */
+/** Graph API JSON response (P1-02: 替代 `as-any`) */
 interface GraphData {
   nodes?: Array<{ id?: string; type?: string; props?: Record<string, unknown> }>;
   edges?: Array<{ to?: string; from?: string; type?: string; weight?: number }>;

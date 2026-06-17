@@ -60,7 +60,7 @@ export interface ProviderConfig {
   model?: string;
 }
 
-// ═══ API Response Types (P1-02: 消除 as any) ═══
+// ═══ API Response Types (P1-02: 消除 `as-any`) ═══
 
 export interface ChatCompletionResponse {
   choices: Array<{
