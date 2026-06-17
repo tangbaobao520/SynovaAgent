@@ -1,11 +1,11 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# 节点 ①: 任务启动 (Task Start)
+# Loop Engineering v3.0 — 任务启动 (Task Start)
 #
-# 触发: CLAUDE.md 指令 — 每次接受新任务时先运行
-# 用法: bash scripts/workflow/task-start.sh "任务描述"
+# 这是整个系统最重要的环节。
+# 在写任何代码之前，先回答 3 个问题，把"自然语言意图"翻译成"可执行的规格"。
 #
-# Anthropic 原则: 写代码之前先问"做什么、影响哪里、怎么验证"
+# 用法: bash scripts/workflow/task-start.sh "你的任务描述"
 # ═══════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
 
@@ -20,86 +20,71 @@ BRIEF_FILE="$ROOT/.claude/task-briefs/${TIMESTAMP}-${TASK_SLUG}.md"
 
 echo ""
 echo -e "${CYAN}════════════════════════════════════════════════════════════${RESET}"
-echo -e "${CYAN}  Anthropic Task Start — 写任何代码之前${RESET}"
+echo -e "${CYAN}  Loop Engineering v3.0 — 任务启动${RESET}"
+echo -e "${CYAN}  先想清楚，再动手。${RESET}"
 echo -e "${CYAN}════════════════════════════════════════════════════════════${RESET}"
 echo ""
 echo "  任务: ${TASK_DESC}"
 echo "  时间: $(date '+%Y-%m-%d %H:%M:%S')"
 echo ""
 
-# ═══ Q0: Anthropic 决策思路（任务最开始的问题） ═══
-echo -e "${CYAN}📋 Q0: Anthropic 决策思路 — 如果 Anthropic 团队做这个任务，他们会怎么做？${RESET}"
-echo ""
-echo "  先想清楚再动手:"
-echo "    1. 这个任务有人做过类似的事情吗？社区/业界的最佳实践是什么？"
-echo "    2. 先做什么？后做什么？完整的步骤是什么？"
-echo "    3. 什么可以不做？什么是最简可行方案？"
-echo "    4. 先读什么代码？先确认什么接口？"
-echo ""
-echo "  ⚡ 在 task brief 的 'Anthropic 决策思路' 字段中记录你的答案"
-echo ""
-
-# ═══ Q1: 代码库健康 ═══
-echo -e "${CYAN}📋 Q1: 代码库当前健康状态${RESET}"
+# ═══ 自动健康检查 (不提问，只展示) ═══
+echo -e "${CYAN}📊 代码库快照${RESET}"
 cd "$ROOT"
 
-# 快速 vitest (只跑结果)
-TEST_OUTPUT=$(npx vitest run --reporter=basic 2>&1 | tail -5 || echo "测试运行失败")
-TSC_COUNT=$(npx tsc --noEmit 2>&1 | grep -v "server/vendor/" | grep -v "packages/" | grep -c "error TS" 2>/dev/null || echo "0")
-AS_ANY=$(grep -rn "as any" src/ --include="*.ts" 2>/dev/null | grep -v "\.test\." | grep -v "node_modules" | wc -l | tr -d '[:space:]') || AS_ANY=0
-
-echo "  测试: $(echo "$TEST_OUTPUT" | head -1)"
-echo "  tsc: ${TSC_COUNT} errors"
-echo "  as any: ${AS_ANY} 处"
-
-if [ "${TSC_COUNT:-0}" -gt 0 ] || [ "${AS_ANY:-0}" -gt 0 ]; then
-  echo -e "  ${RED}⚠ 代码库不健康 — 建议先修复基础问题再开始新任务${RESET}"
-fi
-echo ""
-
-# ═══ Q2: 影响范围 ═══
-echo -e "${CYAN}📋 Q2: 影响范围分析${RESET}"
-echo "  任务关键词:"
-IFS=' ' read -ra KWS <<< "$TASK_DESC"
-for kw in "${KWS[@]}"; do
-  if [ ${#kw} -gt 2 ]; then
-    SRC_COUNT=$(grep -rl "$kw" "$ROOT/src/" --include="*.ts" 2>/dev/null | grep -v "node_modules" | wc -l | tr -d '[:space:]') || SRC_COUNT=0
-    TEST_COUNT=$(grep -rl "$kw" "$ROOT/tests/" --include="*.ts" 2>/dev/null | wc -l | tr -d '[:space:]') || TEST_COUNT=0
-    echo "    \"$kw\": ${SRC_COUNT} 源文件, ${TEST_COUNT} 测试文件"
-  fi
-done
-echo ""
-
-# ═══ Q3: 铁律检查清单 ═══
-echo -e "${CYAN}📋 Q3: 关键铁律提醒${RESET}"
-echo ""
-echo "  本次任务需关注:"
-echo "    [ ] 铁律 0: 对齐了吗？用户旅程确认了吗？"
-echo "    [ ] 铁律 1: 这是垂直切片还是水平分层？"
-echo "    [ ] 铁律 0-2: 测试先写了吗？接线检查做了吗？"
-echo "    [ ] 铁律 7: Done 标准是什么？入口→链路→结果？"
-echo "    [ ] 铁律 34: 在 feature branch 上吗？"
-echo ""
-
-# ═══ Q4: 分支检查 ═══
 BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
+AS_ANY=$(grep -rn "as any" src/ --include="*.ts" 2>/dev/null | grep -v "\.test\." | grep -v "node_modules" | wc -l | tr -d ' ') || AS_ANY=0
+echo "  分支: ${BRANCH}  |  as any: ${AS_ANY}"
+
 if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
-  echo -e "  ${RED}⚠ 当前在 ${BRANCH} 分支!${RESET}"
-  echo -e "  ${RED}  铁律 34: 禁止直接在 main 上 commit。${RESET}"
+  echo -e "  ${RED}⚠ 当前在 ${BRANCH} 分支！铁律 34: 禁止直接在 main 上 commit。${RESET}"
   echo "  请先: git checkout -b feat/<任务名>"
-  echo ""
 fi
 
-# ═══ 生成 Task Brief (迷你设计文档) ═══
-# 固定头部 + 7 个必填字段。PreToolUse hook 物理强制全部非空。
-	mkdir -p "$(dirname "$BRIEF_FILE")"
-	BRIEF_FILE="$BRIEF_FILE" TASK_DESC="$TASK_DESC" BRANCH="$BRANCH" TSC_COUNT="$TSC_COUNT" AS_ANY="$AS_ANY" TEST_OUTPUT="$TEST_OUTPUT" python3 "$ROOT/scripts/workflow/generate-task-brief.py"
+if [ "${AS_ANY:-0}" -gt 0 ]; then
+  echo -e "  ${YELLOW}⚠ 仓库中有 ${AS_ANY} 处 as any，建议先清理${RESET}"
+fi
+echo ""
+
+# ═══ 3 个问题 ═══
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+echo -e "${CYAN}  请在 task brief 中回答以下 3 个问题后再开始写代码${RESET}"
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+echo ""
+
+echo -e "${YELLOW}Q1: 调研 — 这件事以前怎么做的？${RESET}"
+echo ""
+echo "  a) 你的训练数据里，业界对这类问题有什么最佳实践？"
+echo "     有哪些已知的设计模式、库、架构方案？"
+echo "  b) 如果是 Anthropic 或世界顶级工程团队拿到这个任务，"
+echo "     他们会怎么分解？先做什么、后做什么？"
+echo "  c) 在 memory/ 里搜索相关关键词，"
+echo "     我们以前做过类似的事吗？犯过什么错？"
+echo ""
+
+echo -e "${YELLOW}Q2: 范围 — 最简方案是什么？${RESET}"
+echo ""
+echo "  最小可行实现是什么？什么可以不做？"
+echo "  MVP 的边界在哪里？哪些是锦上添花、可以后续迭代的？"
+echo ""
+
+echo -e "${YELLOW}Q3: 验收 — 做完后用户能看到什么？${RESET}"
+echo ""
+echo "  从哪条路径触发？入口是什么？"
+echo "  中间经过哪些步骤？结果在哪呈现？"
+echo "  入口 → 交互 → 结果，三环节各是什么？"
+echo ""
+
+echo -e "${CYAN}────────────────────────────────────────────────────────────${RESET}"
+echo ""
+
+# ═══ 生成 Task Brief ═══
+mkdir -p "$(dirname "$BRIEF_FILE")"
+BRIEF_FILE="$BRIEF_FILE" TASK_DESC="$TASK_DESC" BRANCH="$BRANCH" AS_ANY="$AS_ANY" python3 "$ROOT/scripts/workflow/generate-task-brief.py"
+
 echo -e "${GREEN}✅ Task Brief 已生成: .claude/task-briefs/${TIMESTAMP}-${TASK_SLUG}.md${RESET}"
 echo ""
-echo -e "${CYAN}────────────────────────────────────────────────────────────${RESET}"
-echo "  下一步: 填写 Task Brief 中的用户旅程、Anthropic 决策思路 和 Done 标准"
-echo "          然后开始写代码"
-echo -e "${CYAN}────────────────────────────────────────────────────────────${RESET}"
+echo "  填写 Q1/Q2/Q3 和 Done 标准后，开始写代码。"
+echo "  pre-commit 会在提交时物理检查 task brief 是否存在。"
 echo ""
-
 exit 0

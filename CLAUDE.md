@@ -186,100 +186,92 @@ LLM       → providers/ (DeepSeek, OpenAI, Gateway)
 
 ---
 
-## Loop Engineering 系统 (v2.5 — 8阶段Gate + 物理执法)
+## Loop Engineering v3.0 — 精简物理执法 + Agent 自检
 
-> 2026-06-15 v2.0→v2.5 升级。6 个新脚本实现物理执法：
-> hook-check-memory (G2自动注入) / check-empty-modules (空壳阻断) / check-manual-drift (手册漂移)
-> / check-test-quality (测试质量) / check-wire-full (全量接线) / verify-incremental (分层验证)
+> 2026-06-17 v2.5 → v3.0 重构。核心变化：
+> **从"每犯一错加一脚本"→"找到根源，用一个机制防一类错"。**
+> **从"bash 替 agent 思考"→"agent 自问 + bash 查硬伤"。**
 
-### 执法架构: 三层阻断
+### 设计哲学
 
-```
-PreToolUse (写前)      → hook-check-memory.sh  [G2 自动注入教训, 不阻断]
-                         hook-check-brief.sh    [G1 task brief 存在性]
+v2.5 的 38 项 pre-commit + 12 脚本 + 3 次 tsc/vitest 重跑，
+导致 `--no-verify` 泛滥——一个被绕过的门禁 = 没有门禁。
 
-PostToolUse (写后)     → verify-incremental.sh  [L1 oxlint → L2 tsc-incremental → L3 vitest → L4 接线+架构+暗默]
-                         loop-state.json        [最多 5 轮 fix-retry]
+v3.0 只设 5 项物理阻断（全 <1s），其他交给 agent 自检和 PostToolUse 自动化。
+**越少越会被执行。**
 
-pre-commit (提交前)    → 33 项硬阻断 + 4 项新增:
-                         check-empty-modules.sh   [空壳模块, 增量阻断]
-                         check-manual-drift.sh    [手册漂移, 物理阻断]
-                         check-test-quality.sh    [测试断言覆盖, 增量阻断]
-                         check-wire-full.sh       [新export接线+桥接激活]
-```
-
-### 开发循环: G0→G7
+### 执法架构: 五层精简
 
 ```
-G0:方向对齐 → G1:上下文加载 → G2:错误预防 → G3:任务分解
-     ↓              ↓              ↓              ↓
-G4:编码      → G5:自测验证   → G6:接线审计 → G7:提交+回顾
+📋 任务启动 (人工)   →  task-start.sh — 3 问翻译意图→规格
+🧠 写前注入 (自动)    →  hook-check-memory.sh — 历史教训
+✍️ 写后验证 (自动)    →  verify-incremental.sh — L1 oxlint → L2 tsc → L3 vitest → L4 接线
+🔴 提交阻断 (自动)    →  pre-commit 5 项 — 全部 <1s
+🚀 推送阻断 (自动)    →  pre-push 1 项 — secrets 终扫
 ```
 
-| 阶段 | 准入 | 准出 | 强制方式 |
-|------|------|------|---------|
-| **G0** 方向对齐 | 任务请求 | 决策树方向一致 + 不违宪章 | SessionStart hook |
-| **G1** 上下文加载 | G0通过 | CLAUDE.md+memory/+task brief已读 | hook-check-brief.sh |
-| **G2** 错误预防 | G1通过 | memory/相关教训 **自动注入上下文** | **hook-check-memory.sh (v2.5 新增)** |
-| **G3** 任务分解 | G2通过 | TaskCreate子任务+Done标准明确 | task brief Done标准 |
-| **G4** 编码 | G3通过 | 单模块修改, as any=0, 空catch=0 | PreToolUse hook |
-| **G5** 自测验证 | G4通过 | **L1→L2→L3 分层通过** | **PostToolUse: verify-incremental.sh (v2.5 分层)** |
-| **G6** 接线审计 | G5通过 | grep新函数+桥接激活+**测试有断言**+**垂直切片完整** | PostToolUse + pre-commit |
-| **G7** 提交+回顾 | G6通过 | **空壳=0 + 手册不漂移 + 接线完整 + 切片三环节** | **pre-commit 38项 (v2.5 新增5项)** |
-
-### L1: 会话内自动循环（分层验证, 写一步验一步）
-
-```
-Write → PostToolUse hook → verify-incremental.sh (分层)
-  → L1: oxlint 语法 (< 1s, 改动文件)
-  → L2: tsc --noEmit --incremental (利用 .tsbuildinfo 缓存, 5-15s)
-  → L3: vitest run (git diff 匹配的测试文件, 5-30s)
-  → L4: 接线审计 + 架构边界 + 暗默失败
-  → 失败 → 错误输出终端 → AI修正 → 再次Write → 再次验证
-  → .claude/loop-state.json 记录轮次 (最多5轮)
-```
-
-### L2: pre-commit 全部门禁 (38项, v2.5 新增5项)
-
-```
-git commit → pre-commit hook:
-  存量检查: as any / Mock / CJS / .only / .env / 空catch / 文件大小 / 测试命名 / 单模块 / 新文件配对
-  v2.5 新增: 空壳模块 / 手册漂移 / 测试质量 / 全量接线 / 垂直切片
-  → 任一失败 → 拒绝提交 (物理阻断, 零裁量)
-```
-
-### L3: pre-push 交叉验证
-
-```
-pre-push → tsc + vitest全量 + iron-laws + 接线审计 + 架构边界
-  → RUN_ARCH_AUDIT=1 → ArchitectureAuditor Agent
-  → FAIL → 拒绝推送
-```
-
-### 执法脚本清单 (v2.5)
-
-| 脚本 | 挂在 | 功能 | 阻断 |
+| 时机 | 脚本 | 阻断 | 耗时 |
 |------|------|------|------|
-| `scripts/hooks/hook-check-memory.sh` | PreToolUse | 从 memory/ 自动匹配+注入教训到上下文 | 不阻断 |
-| `scripts/checks/check-empty-modules.sh` | pre-commit | 检测 compute() 返回 null 的空壳模块 | 增量阻断 |
-| `scripts/checks/check-manual-drift.sh` | pre-commit | 手册数字断言 vs 代码实际计数对比 | 阻断 |
-| `scripts/checks/check-test-quality.sh` | pre-commit | 新 export 在测试中是否缺 expect() 断言 | 增量阻断 |
-| `scripts/checks/check-wire-full.sh` | pre-commit | 新 export 接线 + bridge 激活检查 | 增量阻断 |
-| `scripts/checks/check-vertical-slice.sh` | pre-commit | 入口→交互→结果 三环节完整性 | 增量阻断 |
-| `scripts/workflow/verify-incremental.sh` | PostToolUse | L1→L4 分层增量验证 | 阻断+自动修正 |
+| PreToolUse | hook-check-memory.sh (教训注入) | 不阻断 | <1s |
+| PreToolUse | hook-block-write.sh (task brief 字段) | 🔴 阻断 | <1s |
+| PreToolUse | hook-enforce-v25.sh (loop-state) | 🔴 阻断 | <1s |
+| PostToolUse | verify-incremental.sh (L1→L4) | 🔴 阻断 | 5-30s |
+| pre-commit | pre-commit-check.sh (5 项) | 🔴 阻断 | <5s |
+| pre-push | pre-push-check.sh (secrets 终扫) | 🔴 阻断 | <3s |
 
-### 设计原则 (v2.5 凝固)
+### pre-commit 5 项硬阻断
 
-1. **每个规则配一个脚本** — 脚本返回非零=阻断。零人类裁量权。
-2. **阻断点越早越好** — PreToolUse > PostToolUse > pre-commit > pre-push
-3. **增量阻断, 存量警告** — 一刀切阻断存量会阻塞所有工作
-4. **阻断带修复指引** — 必须输出: 哪个文件、哪一行、违反什么、怎么修
+| # | 检查 | 历史事故 | 耗时 |
+|---|------|---------|------|
+| 1 | `as any` = 0 | 47 次 | <1s |
+| 2 | empty catch 有 log.warn | 静默吞异常 | <1s |
+| 3 | secrets 扫描 | API key 暴露 | <1s |
+| 4 | 新文件有测试 | 4 次接线失败 | <1s |
+| 5 | 新 export 有调用方 | 4 次接线失败 | <1s |
 
-### Windows 兼容性说明
+### ⚡ Agent 自检 5 问（每次写完代码必答）
 
-- pre-commit/pre-push 在 Windows 上因 tsc 全量扫描耗时 30-40s，可通过 `--no-verify` 绕过（门禁需手动在前台验证）
-- `vitest --related` 已替换为 `vitest run --changed` (vitest 4.1+ 支持)
+> 以下检查由 agent 在 CLAUDE.md 指令下自我执行，不依赖 bash 脚本。
+> agent 能做语义理解——bash 只会 grep 模式匹配（误报如 `'community'` 被识别为硬编码凭证）。
+
+写完代码后，必须在回复中逐项回答：
+
+```
+1. 接线检查: 新 export 谁调用？（grep 确认调用方存在）
+2. 异常处理: 每个 catch 有 log + degraded？（铁律 24+31）
+3. 类型安全: as any = 0？（铁律 38）
+4. 测试覆盖: 测试有 expect() 断言？（不是空壳）
+5. 残留清理: 有死代码吗？旧文件删了？旧函数还有引用？
+```
+
+**Why agent 自检比 bash 好**: agent 知道 `'community'` 是模块 ID 不是密码。
+grep 脚本会产生误报，误报会产生噪音，噪音会导致整条门禁链被绕过。
+
+### task-start.sh 3 问（任务启动时回答）
+
+```
+Q1 调研: a) 业界最佳实践 b) 顶级团队怎么做 c) memory/ 里我们犯过的错
+Q2 范围: 最简实现是什么？什么可以不做？
+Q3 验收: 入口→交互→结果，三环节各是什么？
+```
+
+### Windows 兼容性
+
+- pre-commit 仅含 grep（<5s），不含 tsc/vitest（已由 PostToolUse 跑）
 - 严禁 `taskkill //IM node.exe` — 会杀死所有 Node 进程（含其他 Claude Code 实例）
+- `--no-verify` 在 v3.0 下不应再需要（pre-commit <5s）
+
+### 删除的脚本（v3.0 清理）
+
+| 脚本 | 删除原因 |
+|------|---------|
+| check-manual-drift.sh | 文档硬编码数字 → 每次改代码都要改文档 |
+| check-vertical-slice.sh | 入口→结果 三环节 → agent 自检 Q3 验收 |
+| generate-state-md.sh | STATE.md 无人阅读 |
+| check-reality.sh | @state 注释 ≠ 正确性 |
+| hook-check-brief.sh | task brief 提醒被 task-start.sh 覆盖 |
+
+**净效果: 12 脚本 → 8 脚本, 38 项检查 → 5 项, 提交耗时 90s → <5s。**
 
 ---
 
