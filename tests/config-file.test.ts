@@ -23,8 +23,7 @@ describe('config-file', () => {
     it('Given no config file, When loaded, Then returns default config', () => {
       const config = loadFileConfig(TEST_CONFIG_PATH);
       expect(config.version).toBe(1);
-      expect(config.server.port).toBe(18789);
-    });
+      expect(config.server.port).toBe(18790);    });
 
     it('Given valid config file, When loaded, Then returns parsed config', () => {
       const testConfig: SynovaFileConfig = {

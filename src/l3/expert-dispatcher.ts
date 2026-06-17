@@ -22,6 +22,7 @@ import { QualityFirewall } from './quality-firewall';
 import { validateExpertOutput } from './expert-output-schema';
 import { getExpertRegistry } from './expert-registry';
 import { createLogger } from '../logger';
+import { getSkillLoader } from '../agent/skill-lazy-loader';
 
 const log = createLogger('l3/expert-dispatcher');
 
@@ -289,11 +290,17 @@ export class ExpertDispatcher {
       // Fallback: structured LLM consult with output schema
       return await this.runWithRetry(async () => {
         const prompt = getExpertRegistry().getPrompt(type) || '你是组织诊断专家。';
+        // C3: 渐进式技能 — 注入当前专家可用的技能目录
+        let skillCatalog = '';
+        try {
+          const catalog = getSkillLoader().buildCatalogText(type);
+          if (catalog) skillCatalog = '\n\n' + catalog;
+        } catch { log.warn('Skill catalog build failed, continuing without it'); }
         const evidenceSummary = filtered.slice(0, 10).map(e =>
           `[${e.type}] ${e.content.slice(0, 100)} (置信度: ${e.confidence})`,
         ).join('\n');
 
-        const systemPrompt = `${prompt}\n\n## 输出格式 (必须严格遵守)\n只输出纯 JSON, 不要 Markdown 代码块包裹。\n${EXPERT_REPORT_SCHEMA}`;
+        const systemPrompt = `${prompt}${skillCatalog}\n\n## 输出格式 (必须严格遵守)\n只输出纯 JSON, 不要 Markdown 代码块包裹。\n${EXPERT_REPORT_SCHEMA}`;
         const userMessage = `## 可用证据\n${evidenceSummary || '无证据'}\n\n## 本体图更新 (可选)\n如果你发现了证据中未出现的新实体或关系，请在 ontologyPatches 字段中输出。格式: "ontologyPatches": [{ "createNodes": [...], "createEdges": [...] }]`;
 
         const response = await Promise.race([

@@ -203,3 +203,14 @@ function extractKeywords(content: string): string[] {
     .filter(w => w.length > 2 && !['the', 'and', 'for', 'are', 'this', 'that', 'with', 'from'].includes(w));
   return [...new Set(words)].slice(0, 20);
 }
+
+// ═══ Singleton ═══
+
+let _skillLoader: SkillLazyLoader | null = null;
+
+export function getSkillLoader(): SkillLazyLoader {
+  if (!_skillLoader) {
+    _skillLoader = new SkillLazyLoader();
+  }
+  return _skillLoader;
+}

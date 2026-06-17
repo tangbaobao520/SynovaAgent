@@ -37,6 +37,7 @@ import { DiagnosisLauncher, type DiagnosisEvent, type ConsultationResult } from 
 import { OntologySyncer, type OntologySyncResult } from './ontology-syncer';
 import type { EngineContext } from './engine-context';
 import { EngineCoreVendorAdapter } from '../adapters/engine-core-adapter';
+import { ContextCompressor } from '../orchestrator/context-compressor';
 
 const log = createLogger('agent/conversation-engine');
 
@@ -455,6 +456,23 @@ export class ConversationEngine {
     const input = this.piiScrubber?.scrub(userInput, 'S2').cleaned ?? userInput;
     // Hermes P0-2: 易变层追加到 user message — 保护 Prefix Cache
     this.messages.push({ role: 'user', content: `${input}\n\n${buildVolatileLayer(this.turnCount, this.phase)}` });
+
+    // C4: 上下文压缩 — 消息数超阈值时自动压缩
+    const COMPRESS_THRESHOLD = 30;
+    if (this.messages.length > COMPRESS_THRESHOLD) {
+      try {
+        const compressor = new ContextCompressor();
+        const originalLen = this.messages.length;
+        const result = compressor.compress(this.messages, '', {
+          strategy: 'sliding-window',
+          windowSize: 20,
+        });
+        this.messages = result.messages;
+        log.debug({ before: originalLen, after: result.messages.length, discarded: result.discardedCount }, '上下文已压缩');
+      } catch (err: unknown) {
+        log.warn({ err }, '上下文压缩失败 — 非阻断');
+      }
+    }
 
     // L3 接线: EvidenceCollector — Phase 0 证据自动采集
     if (this.phase === 0 && this.evidenceCollector) {
