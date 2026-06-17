@@ -44,6 +44,8 @@ export async function registerBuiltinSentinels(): Promise<void> {
     { name: 'CashFlow', loader: () => import('./adapters/cash-flow-sentinel'), key: 'cashFlowSentinel' },
     { name: 'IntegrationHealth', loader: () => import('./adapters/integration-health-sentinel'), key: 'integrationHealthSentinel' },
     { name: 'DataSilos', loader: () => import('./adapters/data-silos-sentinel'), key: 'dataSilosSentinel' },
+    { name: 'SaaSUtilization', loader: () => import('./adapters/saas-utilization-sentinel'), key: 'saasUtilizationSentinel' },
+    { name: 'ShadowIT', loader: () => import('./adapters/shadow-it-sentinel'), key: 'shadowITSentinel' },
   ];
 
   let registered = 0;
