@@ -10,7 +10,8 @@ import { Router, type Request, type Response } from 'express';
 import { createLogger } from '../logger';
 import type { FileScanner } from '../agent/file-scanner';
 import type { ExpertFileLoader } from '../agent/expert-file-loader';
-import type { ExpertRegistry } from '../l3/expert-registry';
+// 铁律 39: L1 不直接引用 L3。ExpertRegistry 由 app.locals DI 注入，运行时由 L2 调用。
+// 此处仅需 existence check，不需要具体类型。
 
 const log = createLogger('routes/reload');
 const router = Router();
@@ -28,7 +29,7 @@ router.post('/api/reload', async (req: Request, res: Response) => {
     // 从 app.locals 获取注入的组件
     const scanner = req.app.locals?.fileScanner as FileScanner | undefined;
     const loader = req.app.locals?.expertFileLoader as ExpertFileLoader | undefined;
-    const registry = req.app.locals?.container?.expertRegistry as ExpertRegistry | undefined;
+    const registry = req.app.locals?.container?.expertRegistry as { getPrompt?: (type: string) => string | null } | undefined;
 
     if (!scanner) {
       res.status(500).json({ ok: false, error: 'FileScanner 未初始化', code: 'SCANNER_NOT_READY', degraded: true });

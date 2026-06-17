@@ -9,7 +9,13 @@
  */
 import { createLogger } from '../logger';
 import type { FileIndex, KnowledgeFile, ScannedFile } from './file-scanner';
-import type { KnowledgeStore } from '../l4/knowledge-store';
+
+// ═══ L4 接口镜像 (铁律 39) ═══
+// KnowledgeFileImporter 是 L2→L4 的合法桥接层 (与 knowledge-bridge-service.ts 同级)。
+// 不直接 import KnowledgeStore (L4)，而是在此声明所需子集。
+interface KnowledgeStoreLike {
+  insert(data: Record<string, unknown>): void;
+}
 
 const log = createLogger('agent/knowledge-file-importer');
 
@@ -77,9 +83,9 @@ function parseMarkdown(content: string): ParsedDoc {
 // ═══ KnowledgeFileImporter ═══
 
 export class KnowledgeFileImporter {
-  private store: KnowledgeStore;
+  private store: KnowledgeStoreLike;
 
-  constructor(store: KnowledgeStore) {
+  constructor(store: KnowledgeStoreLike) {
     this.store = store;
   }
 
@@ -129,7 +135,7 @@ export class KnowledgeFileImporter {
               pkbSource: entry.relativePath,
               knowledgeLevel: 2,
             };
-            this.store.insert(chunkData as unknown as Parameters<typeof this.store.insert>[0]);
+            this.store.insert(chunkData);
           }
 
           // 每个 ## 段落也作为独立知识块 (小粒度, 便于精确检索)
