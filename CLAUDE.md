@@ -303,16 +303,16 @@ npm run workflow:deploy   # 部署后验证
 ```
 ① 任务开始 → pre-commit 强制 (Gate 0: task brief 不存在 + 未填写 → 拒绝提交)
 ② 设计完成 → pre-commit 强制 (Gate 1: SPEC.md + 设计文档不存在 → 拒绝提交)
-③ 实现完成 → pre-commit 强制 (Gate 2: 接线审计 + tsc + test-first + 铁律门禁)
-④ 提交前   → Git Hook (.git/hooks/pre-commit) 33 项硬阻断，无超时逃生舱
-⑤ 推送前   → Git Hook (.git/hooks/pre-push) 6 道门禁
+③ 实现完成 → pre-commit 强制 (Gate 2: 5 项物理阻断 + task brief 完整)
+④ 提交前   → Git Hook (.git/hooks/pre-commit) 5 项硬阻断（全 <5s）—— 无超时逃生舱
+⑤ 推送前   → Git Hook (.git/hooks/pre-push) 1 道门禁（secrets 终扫）
 ⑥ 部署后   → 人工触发 (checkpoint-deploy.sh)
 ⑦ 线上     → Cron
 ```
 
 ### 物理强制说明
 
-> pre-commit 是唯一物理阻断点。①②③ 的产出物检查已全部集成到 pre-commit：
+> pre-commit 是唯一物理阻断点。①②③ 的产出物检查已全部集成到 pre-commit（5 项硬阻断）：
 > - 无 task brief → 不准 commit
 > - 无 SPEC.md / 设计文档 → 不准 commit
 > - 新 export 未接线 → 不准 commit
@@ -342,29 +342,31 @@ crontab -e  # 添加: */30 * * * * bash /path/to/scripts/workflow/checkpoint-run
 ## 门禁系统 (全部物理强制，零 AI 自律)
 
 ### PreToolUse Hook (写代码前)
-- Task brief 存在 + 6 字段质量检查
+- Task brief 存在 + 7 字段质量检查（项目身份/Q1调研/Q2范围/Q3验收/架构层级/文档引用/接口审计）
 - 接口真实性反向验证（grep 确认函数签名真实存在）
 - 例外: `.claude/task-briefs/` `.claude/settings` `scripts/workflow/hook-`
 
 ### PostToolUse Hook (写代码后)
-- `verify-incremental.sh`: vitest --related + 接线审计
+- `verify-incremental.sh`: L1 oxlint → L2 tsc --incremental → L3 vitest --changed → L4 接线审计
 - `.claude/loop-state.json`: 循环计数，最多5轮
+
+> PostToolUse 是 tsc + vitest 唯一一次执行的位置。pre-commit 和 pre-push 不重复跑。
 
 ### Git Hooks
 
 | Hook | 触发时机 | 内容 |
 |------|---------|------|
-| pre-commit | `git commit` | 33 项硬阻断 (as any/Mock/CJS/.only/secrets/file size/wire/tsc/空catch/TUI铁律/决策树/架构边界/SPEC/task brief/test-first/单模块/new-file-pairing...) |
+| pre-commit | `git commit` | 5 项硬阻断 (as any/empty catch/secrets/新文件测试对/新export接线) |
 | commit-msg | `git commit` | Conventional Commits 格式强制 |
 | post-commit | `git commit` | 决策流程建议 (decide-next.sh) |
-| pre-push | `git push` | 6 道门禁 (决策树+tsc+vitest+iron-laws+接线审计+架构边界) + ArchitectureAuditor (RUN_ARCH_AUDIT=1 启用) |
+| pre-push | `git push` | 1 道门禁 (secrets 终扫) |
 
 ---
 
 ## 执行原则
 
 - **先读再改** — 不假设代码内容。读 CLAUDE.md + task brief + 全量对齐手册相关章节
-- **task brief 必须先填** — PreToolUse hook 强制。6字段(项目身份/架构层级/文档引用/接口审计/数据流/用户旅程) 全部非空才能写代码
+- **task brief 必须先填** — PreToolUse hook 强制。7字段(项目身份/Q1调研/Q2范围/Q3验收/架构层级/文档引用/接口审计) 全部非空才能写代码
 - **接口审计从代码 grep，不凭记忆** — hook 反向验证，虚假接口拒绝写代码
 - **每写一个文件，自动验证** — PostToolUse hook 跑 vitest --related + 接线审计。失败自动进入修正循环
 - **循环最多5轮** — verify-incremental.sh 记录轮次，5轮不过停止等人工

@@ -1,7 +1,13 @@
 #!/bin/bash
-# PreToolUse hook: 写代码前强制检查 task brief 质量
+# ═══════════════════════════════════════════════════════════════════════════════
+# Loop Engineering v3.0 — PreToolUse: task brief 质量检查
+#
+# 挂在 PreToolUse → Edit|Write 上，在 hook-check-memory.sh 之后运行。
+# 7 项字段质量检查 + 接口真实性反向验证 + 层级确认。
+#
 # 例外：允许写 .claude/ 和 scripts/workflow/hook- 目录（避免鸡生蛋死锁）
 # 从 stdin JSON 读取 tool_input.file_path 判断目标文件
+# ═══════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
 
 INPUT=$(cat 2>/dev/null || echo '{}')
@@ -45,46 +51,48 @@ if ! grep -qi "增长导航" "$BRIEF" 2>/dev/null; then
   FAIL=1
 fi
 
-# 2. 架构层级：必须含 L1/L2/L3/L4/L5 之一
+# 2. Q1 调研：非空，证明思考了业界/顶级团队/历史教训
+Q1=$(grep -A10 "^## Q1" "$BRIEF" 2>/dev/null | sed 's/<!--.*-->//g' | tr -d '[:space:]' || true)
+if [ -z "$Q1" ] || [ ${#Q1} -lt 10 ]; then
+  echo "⛔ Task Brief 质量 — 'Q1: 调研' 未填写"
+  echo "   必须回答: a) 业界最佳实践 b) 顶级团队怎么做 c) memory/ 里我们犯过的错"
+  FAIL=1
+fi
+
+# 3. Q2 范围：非空，证明思考了 MVP 边界
+Q2=$(grep -A5 "^## Q2" "$BRIEF" 2>/dev/null | sed 's/<!--.*-->//g' | tr -d '[:space:]' || true)
+if [ -z "$Q2" ] || [ ${#Q2} -lt 5 ]; then
+  echo "⛔ Task Brief 质量 — 'Q2: 范围' 未填写"
+  echo "   必须回答: 最简实现是什么？什么可以不做？MVP 边界在哪？"
+  FAIL=1
+fi
+
+# 4. Q3 验收：非空，证明定义了入口→交互→结果
+Q3=$(grep -A5 "^## Q3" "$BRIEF" 2>/dev/null | sed 's/<!--.*-->//g' | tr -d '[:space:]' || true)
+if [ -z "$Q3" ] || [ ${#Q3} -lt 5 ]; then
+  echo "⛔ Task Brief 质量 — 'Q3: 验收' 未填写"
+  echo "   必须回答: 入口→交互→结果，三环节各是什么？"
+  FAIL=1
+fi
+
+# 5. 架构层级：必须含 L1/L2/L3/L4/L5 之一
 CONTENT=$(sed 's/<!--.*-->//g' "$BRIEF" | tr -d '[:space:]')
 if ! echo "$CONTENT" | grep -qE 'L[1-5]' 2>/dev/null; then
   echo "⛔ Task Brief 质量 — '本任务在哪一层' 未填写（必须含 L1-L5 层级标注）"
   FAIL=1
 fi
 
-# 3. 文档引用：非纯注释，有实际内容
+# 6. 文档引用：非纯注释，有实际内容
 DOC_REF=$(grep -A5 "文档引用" "$BRIEF" 2>/dev/null | sed 's/<!--.*-->//g' | tr -d '[:space:]' || true)
 if [ -z "$DOC_REF" ] || [ ${#DOC_REF} -lt 5 ]; then
   echo "⛔ Task Brief 质量 — '文档引用' 未填写（必须引用全量对齐手册具体章节）"
   FAIL=1
 fi
 
-# 4. 接口审计：必须含 "文件名:" 格式的行（证明 grep 了代码）
+# 7. 接口审计：必须含 "文件名:" 格式的行（证明 grep 了代码）
 IFACE=$(grep -A10 "接口审计" "$BRIEF" 2>/dev/null | sed 's/<!--.*-->//g' | tr -d '[:space:]' || true)
 if [ -z "$IFACE" ] || [ ${#IFACE} -lt 5 ]; then
   echo "⛔ Task Brief 质量 — '接口审计' 未填写（必须从代码 grep 函数签名，格式: 文件名:函数名）"
-  FAIL=1
-fi
-
-# 5. 数据流：必须含 → 箭头（证明追踪了完整链路）
-DATAFLOW=$(grep -A10 "数据流" "$BRIEF" 2>/dev/null | sed 's/<!--.*-->//g' || true)
-if ! echo "$DATAFLOW" | grep -q '→' 2>/dev/null; then
-  echo "⛔ Task Brief 质量 — '数据流' 未填写（必须含 → 箭头追踪完整链路）"
-  FAIL=1
-fi
-
-# 6. 用户旅程：非空（已有检查，保持）
-JOURNEY=$(grep -A3 "用户旅程" "$BRIEF" 2>/dev/null | sed 's/<!--.*-->//g' | tr -d '[:space:]' || true)
-if [ -z "$JOURNEY" ] || [ ${#JOURNEY} -lt 10 ]; then
-  echo "⛔ Task Brief 质量 — '用户旅程' 未填写"
-  FAIL=1
-fi
-
-# 7. Anthropic 决策思路：非空 + 含关键思考标记（证明思考了先做什么后做什么）
-ANTHROPIC=$(grep -A10 "Anthropic 决策思路" "$BRIEF" 2>/dev/null | sed 's/<!--.*-->//g' | tr -d '[:space:]' || true)
-if [ -z "$ANTHROPIC" ] || [ ${#ANTHROPIC} -lt 10 ]; then
-  echo "⛔ Task Brief 质量 — 'Anthropic 决策思路' 未填写"
-  echo "   先回答: 如果 Anthropic 团队做这个任务，先做什么、后做什么、步骤是什么？"
   FAIL=1
 fi
 
@@ -92,7 +100,7 @@ if [ "$FAIL" -gt 0 ]; then
   echo ""
   echo "  文件: ${BRIEF}"
   echo "  被阻止的文件: ${FILE}"
-  echo "  必填: 项目身份 / Anthropic 决策思路 / 本任务在哪一层 / 文档引用 / 接口审计 / 数据流 / 用户旅程"
+  echo "  必填: 项目身份 / Q1调研 / Q2范围 / Q3验收 / 本任务在哪一层 / 文档引用 / 接口审计"
   exit 1
 fi
 
