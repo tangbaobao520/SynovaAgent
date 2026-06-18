@@ -33,51 +33,24 @@ interface SignalRoute {
   crossValidateAt: 'medium' | 'high' | 'emergency';
 }
 
-const SIGNAL_ROUTING_TABLE: SignalRoute[] = [
-  // D1 增长动力
-  { sentinelId: 'sentinel-revenue-decomposition', match: 'exact', experts: ['finance', 'strategy'], crossValidateAt: 'high' },
-  { sentinelId: 'sentinel-customer-dynamics', match: 'exact', experts: ['marketing', 'strategy'], crossValidateAt: 'high' },
-  { sentinelId: 'sentinel-cash-flow', match: 'exact', experts: ['finance'], crossValidateAt: 'emergency' },
-  { sentinelId: 'sentinel-token-economics', match: 'exact', experts: ['finance', 'strategy'], crossValidateAt: 'high' },
-  // D2 组织能力
-  { sentinelId: 'sentinel-gap-dynamics', match: 'exact', experts: ['org'], crossValidateAt: 'high' },
-  { sentinelId: 'sentinel-cpc', match: 'exact', experts: ['org', 'tech'], crossValidateAt: 'high' },
-  { sentinelId: 'sentinel-path-dependency', match: 'exact', experts: ['org', 'strategy'], crossValidateAt: 'medium' },
-  { sentinelId: 'sentinel-self-awareness', match: 'exact', experts: ['org'], crossValidateAt: 'medium' },
-  { sentinelId: 'sentinel-goal-alignment', match: 'exact', experts: ['org', 'strategy'], crossValidateAt: 'high' },
-  // D3 人+Agent
-  { sentinelId: 'sentinel-htm', match: 'exact', experts: ['org'], crossValidateAt: 'high' },
-  { sentinelId: 'sentinel-hacd', match: 'exact', experts: ['org', 'tech'], crossValidateAt: 'high' },
-  { sentinelId: 'sentinel-hona', match: 'exact', experts: ['org'], crossValidateAt: 'medium' },
-  { sentinelId: 'sentinel-eob', match: 'exact', experts: ['org'], crossValidateAt: 'medium' },
-  // D4 软件生态
-  { sentinelId: 'sentinel-integration-health', match: 'exact', experts: ['tech'], crossValidateAt: 'high' },
-  { sentinelId: 'sentinel-data-silos', match: 'exact', experts: ['tech'], crossValidateAt: 'high' },
-  { sentinelId: 'sentinel-saas-utilization', match: 'exact', experts: ['tech', 'finance'], crossValidateAt: 'medium' },
-  { sentinelId: 'sentinel-shadow-it', match: 'exact', experts: ['tech'], crossValidateAt: 'high' },
-  // D5 软件-Agent适配
-  { sentinelId: 'sentinel-api-accessibility', match: 'exact', experts: ['tech'], crossValidateAt: 'high' },
-  { sentinelId: 'sentinel-data-readiness', match: 'exact', experts: ['tech'], crossValidateAt: 'medium' },
-  { sentinelId: 'sentinel-protocol-coverage', match: 'exact', experts: ['tech'], crossValidateAt: 'medium' },
-  // D6 战略健康
-  { sentinelId: 'sentinel-seven-powers', match: 'exact', experts: ['strategy'], crossValidateAt: 'high' },
-  // D7 风险预警
-  { sentinelId: 'sentinel-key-person-risk', match: 'exact', experts: ['org'], crossValidateAt: 'emergency' },
-  { sentinelId: 'sentinel-risk-aggregator', match: 'exact', experts: ['org', 'strategy', 'finance'], crossValidateAt: 'emergency' },
-  { sentinelId: 'sentinel-financial-impact', match: 'exact', experts: ['finance'], crossValidateAt: 'high' },
-  { sentinelId: 'sentinel-financial-snapshot', match: 'exact', experts: ['finance'], crossValidateAt: 'medium' },
-];
+/** 根据哨兵 ID 查找路由规则：优先级 sentinel.config.route > 维度默认映射 */
+function findSignalRoute(sentinelId: string): { experts: string[]; crossValidateAt: string } | undefined {
+  const registry = getSentinelRegistry();
+  const sentinel = registry.get(sentinelId);
+  if (!sentinel) return undefined;
 
-/** 根据哨兵 ID 查找路由规则 */
-function findSignalRoute(sentinelId: string): SignalRoute | undefined {
-  return SIGNAL_ROUTING_TABLE.find(r =>
-    r.match === 'exact' ? r.sentinelId === sentinelId : sentinelId.startsWith(r.sentinelId)
-  );
-}
+  // 1. 哨兵自身配置了 route（无限扩展：加新哨兵时在 config 中声明路由）
+  const route = (sentinel.config as unknown as Record<string, unknown>).route as { experts?: string[]; crossValidateAt?: string } | undefined;
+  if (route?.experts?.length) return { experts: route.experts, crossValidateAt: route.crossValidateAt || 'high' };
 
-/** 获取所有路由覆盖的哨兵 ID 列表 */
-export function getRoutedSentinelIds(): string[] {
-  return SIGNAL_ROUTING_TABLE.map(r => r.sentinelId);
+  // 2. 从 category/priority 推导默认路由
+  const DEFAULT_EXPERTS: Record<string, string[]> = {
+    risk: ['org', 'finance'], capability: ['org'], collaboration: ['org', 'tech'],
+    health: ['tech'], 'data-quality': ['tech'], strategy: ['strategy'],
+  };
+  const experts = DEFAULT_EXPERTS[sentinel.config.category] || ['org'];
+  const crossValidateAt = sentinel.config.priority === 'P0' ? 'emergency' : sentinel.config.priority === 'P1' ? 'high' : 'medium';
+  return { experts, crossValidateAt };
 }
 
 // ═══ Types ═══
@@ -250,7 +223,8 @@ export class SentinelRunner {
       return;
     }
 
-    const VALID_EXPERTS = new Set(['strategy', 'org', 'finance', 'tech', 'marketing', 'action', 'business_model']);
+    const { getExpertRegistry } = await import('../l3/expert-registry');
+    const VALID_EXPERTS = new Set(getExpertRegistry().listTypes());
 
     for (const signal of signals) {
       // 手册 §19.1: 优先用预定义路由表，fallback 到信号自带的 recommendedExperts

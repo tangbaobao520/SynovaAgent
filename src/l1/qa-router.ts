@@ -8,10 +8,10 @@
  * 权限: 根据用户角色过滤知识 (L1→request-context)
  */
 import { createLogger } from '../logger';
-import { KnowledgeStore } from '../l4/knowledge-store';
+import { KnowledgeStore } from '../agent/knowledge-bridge-service';
+import type { FilterClause } from '../agent/knowledge-bridge-service';
 import { getDatabase } from '../init/engine-context';
 import { getCurrentFilterClause } from '../services/request-context';
-import type { FilterClause } from '../l4/knowledge-store';
 
 const log = createLogger('l1/qa-router');
 

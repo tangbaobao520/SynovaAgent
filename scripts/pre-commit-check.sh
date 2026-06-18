@@ -144,6 +144,24 @@ fi
 hard_check "Task Brief: 编码变更必须有今日 task brief" "${TASK_BRIEF_MISSING:-}"
 hard_check "Task Brief: Q1/Q2/Q3 必须填写" "${TASK_BRIEF_EMPTY:-}"
 
+# ═══ 8. 跨层引用检测 (铁律 39) ═══
+# L1(routes/l1) 不得直接 import L4/L5; L2(agent) 不得直接 import L5
+CROSS_LAYER=""
+if [ -n "$STAGED_SRC" ]; then
+  # L1(routes/l1/l1-interaction) → L4(l4) or L5(store/init)
+  L1_TO_L4=$(echo "$STAGED_SRC" | grep -E '^src/(routes/|l1/|l1-interaction/)' | xargs grep -l "from '\.\./l4/\|from '\.\./\.\./l4/\|from '\.\./store/\|from '\.\./\.\./store/" 2>/dev/null | grep -v "knowledge-bridge-service\|\.test\." || true)
+  if [ -n "$L1_TO_L4" ]; then CROSS_LAYER="${CROSS_LAYER}L1→L4/L5: ${L1_TO_L4}\n"; fi
+
+  # L2(agent) → L5(store/init) — 排除动态 import + type-only
+  L2_TO_L5=$(echo "$STAGED_SRC" | grep -E '^src/agent/' | xargs grep -l "from '\.\./store/\|from '\.\./init/" 2>/dev/null | grep -v "knowledge-bridge-service\|\.test\.\|import type" || true)
+  if [ -n "$L2_TO_L5" ]; then CROSS_LAYER="${CROSS_LAYER}L2→L5: ${L2_TO_L5}\n"; fi
+
+  # 哨兵(L3/sentinel) → engine-core 包 (违规)
+  L3_TO_ENGINE=$(echo "$STAGED_SRC" | grep -E '^src/sentinel/' | xargs grep -l "from '\.\./\.\./\.\./packages/engine-core/" 2>/dev/null | grep -v "import type\|\.test\." || true)
+  if [ -n "$L3_TO_ENGINE" ]; then CROSS_LAYER="${CROSS_LAYER}L3→engine-core: ${L3_TO_ENGINE}\n"; fi
+fi
+hard_check "架构边界: 禁止跨层引用 (铁律 39)" "${CROSS_LAYER:-}"
+
 # ═══ 结果 ═══
 echo ""
 if [ "$HARD_FAIL" -gt 0 ]; then
