@@ -199,8 +199,20 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
       const messages: Array<{role: 'system'|'user'|'assistant'; content: string}> = [];
       if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
       messages.push({ role: 'user', content: prompt });
-      const response = await provider.chat(messages);
-      return Array.isArray(response.content) ? response.content.join('') : (response.content || '');
+      // Day1降级: LLM 超时 120s + 一次重试
+      let lastErr: Error | null = null;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('LLM 超时 (120s)')), 120_000));
+          const response = await Promise.race([provider.chat(messages), timeout]);
+          return Array.isArray(response.content) ? response.content.join('') : (response.content || '');
+        } catch (err: any) {
+          lastErr = err;
+          if (attempt === 0) log.warn({ err: err.message, attempt }, 'LLM 调用失败 — 重试中');
+        }
+      }
+      log.error({ err: lastErr?.message }, 'LLM 调用失败 (2次重试后) — 降级返回空');
+      return ''; // 降级: 不崩，返回空字符串让 pipeline 继续
     },
   };
 
@@ -215,7 +227,13 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
   const extractor = new (DocExtractor as unknown as new (graphStore: unknown, llmClient: unknown) => { extract: (docId: string, content: string, teamId: string) => Promise<ExtractionResult> })(graphStore, llmClient);
   const { SOGNodeType } = await import('@synova/sog-core');
   const docId = graphStore.createNode(SOGNodeType.DOCUMENT, { name: `interview_${jobId}`, docType: 'meeting_notes', content }, teamId);
-  const extraction = await extractor.extract(docId, content, teamId);
+  let extraction: ExtractionResult;
+  try {
+    extraction = await extractor.extract(docId, content, teamId);
+  } catch (extractErr: any) {
+    log.error({ jobId, err: extractErr.message }, '八维度提取失败 — 降级为空提取');
+    extraction = { documentId: docId, extractedAt: new Date().toISOString(), dimensions: [], coveredCount: 0, totalCount: 8, insufficientDimensions: ['extraction_failed'] } as unknown as ExtractionResult;
+  }
 
   // ── 提取结果准备 ──
   const dims = extraction.dimensions;
