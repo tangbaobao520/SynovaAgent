@@ -87,4 +87,13 @@ echo ""
 echo "  填写 Q1/Q2/Q3 和 Done 标准后，开始写代码。"
 echo "  pre-commit 会在提交时物理检查 task brief 是否存在。"
 echo ""
+
+# ── v3.1: 自动触发产品对齐检查 ──
+SCOPE_CHECK="$ROOT/scripts/workflow/scope-check.sh"
+if [ -x "$SCOPE_CHECK" ]; then
+  bash "$SCOPE_CHECK"
+else
+  echo -e "${YELLOW}⚠ scope-check.sh 未就绪 — 跳过产品对齐检查${RESET}"
+fi
+
 exit 0
