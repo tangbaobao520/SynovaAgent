@@ -60,6 +60,25 @@ export function getSentinelFindings(query: FindingsQuery = {}): FindingsResponse
     return { ok: false, total: 0, findings: [] };
   }
 
+  // Week 4: D3 数据采集 — FDE 查看哨兵报告 = 一次人-AI 协作事件
+  try {
+    const { recordCollaborationEvent } = require('../../packages/engine-core/src/pipeline/collaboration-collector') as {
+      recordCollaborationEvent: (e: { timestamp: string; gapDimension: string; eventType: string; roles: { from: string; to: string }; data: { modeUsed: string; outcome: string; durationMs?: number; humanIntervention?: boolean } }) => void;
+    };
+    recordCollaborationEvent({
+      timestamp: new Date().toISOString(),
+      gapDimension: 'information_flow',
+      eventType: 'flow',
+      roles: { from: 'fde', to: 'sentinel-runner' },
+      data: {
+        modeUsed: 'sentinel-findings-view',
+        outcome: 'resolved',
+        durationMs: 0,
+        humanIntervention: false,
+      },
+    });
+  } catch { log.debug('collaboration-collector 不可用 — 非阻断'); }
+
   const records = runner.getRecentResults();
   const all: FindingsResponse['findings'] = [];
 
@@ -166,6 +185,7 @@ export function getSentinelTickets(status?: string): { ok: boolean; total: numbe
       : reports;
     return { ok: true, total: filtered.length, tickets: filtered };
   } catch {
+    log.warn('sentinel tickets 查询失败 — degraded');
     return { ok: false, total: 0, tickets: [] };
   }
 }

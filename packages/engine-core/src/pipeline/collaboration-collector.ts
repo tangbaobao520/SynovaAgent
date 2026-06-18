@@ -78,15 +78,38 @@ export function recordCollaborationEvent(event: RuntimeCollaborationEvent): void
     eventLog.splice(0, eventLog.length - MAX_EVENT_LOG);
   }
 
+  // SQLite 持久化 (Week 4: D3 数据采集)
+  try {
+    const { getEngineContext } = require('../infra/engine-context') as {
+      getEngineContext: () => { database: { getDb(): { prepare(sql: string): { run(...args: unknown[]): void } } } } | null;
+    };
+    const ctx = getEngineContext();
+    const db = ctx?.database?.getDb();
+    if (db) {
+      db.prepare(
+        `INSERT INTO collaboration_events (event_type, source_agent_id, target_agent_id, outcome, human_intervention, duration_ms, gap_dimension, mode_used)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      ).run(
+        event.eventType === 'flow' ? 'agent_to_agent' : 'hitl_correction',
+        event.roles?.from || null,
+        event.roles?.to || null,
+        event.data.outcome || null,
+        event.data.humanIntervention ? 1 : 0,
+        event.data.durationMs || null,
+        event.gapDimension || null,
+        event.data.modeUsed || null,
+      );
+    }
+  } catch { /* DB 不可用 — 不阻断采集 */ }
+
   // HONA feeder: record agent-to-agent interaction
   if (event.roles?.from && event.roles?.to) {
     try {
-      // Lazy import to avoid circular dependency
       const { recordAgentInteraction } = require('./diagnosis/hona') as {
         recordAgentInteraction: (from: string, to: string) => void;
       };
       recordAgentInteraction(event.roles.from, event.roles.to);
-    } catch { log.debug('[collaboration-collector] HONA unavailable, skipping agent interaction recording'); /* HONA unavailable — ignore */ }
+    } catch { log.debug('[collaboration-collector] HONA unavailable, skipping agent interaction recording'); }
   }
 }
 

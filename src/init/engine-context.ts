@@ -36,6 +36,25 @@ export function initEngineContext(): void {
   db = new Database(config.dbPath);
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
+
+  // Week 4: D3 哨兵数据采集表 (collaboration_events)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS collaboration_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      event_type TEXT NOT NULL CHECK(event_type IN ('hitl_correction','auto_accept','agent_to_agent','routing_decision','task_completed','task_failed','team_change','permission_change')),
+      source_agent_id TEXT,
+      target_agent_id TEXT,
+      outcome TEXT,
+      human_intervention INTEGER NOT NULL DEFAULT 0,
+      duration_ms INTEGER,
+      gap_dimension TEXT,
+      mode_used TEXT,
+      details TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_collab_events_type ON collaboration_events(event_type, created_at);
+  `);
+
   log.info({ path: config.dbPath }, 'SQLite 数据库已打开');
 
   // 2. 注入 EngineContext。pino child() 返回类型与 AppLogger 的递归类型不兼容 — 运行时兼容。

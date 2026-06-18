@@ -21,7 +21,41 @@ import { getAllStats, getRecentEvents } from '../collaboration-collector';
  */
 export function computeHACD(teamId: string): HACDReport | null {
   const stats = getAllStats();
-  const allDimensions = Object.values(stats);
+  let allDimensions = Object.values(stats);
+
+  // Week 4: SQLite fallback — 内存为空时从 collaboration_events 表读取
+  if (allDimensions.length === 0) {
+    try {
+      const { getEngineContext } = require('../infra/engine-context') as {
+        getEngineContext: () => { database: { getDb(): { prepare(sql: string): { all(): Array<Record<string,unknown>> } } } } | null;
+      };
+      const db = getEngineContext()?.database?.getDb();
+      if (db) {
+        const rows = db.prepare(
+          `SELECT gap_dimension, mode_used, outcome, human_intervention, duration_ms, event_type
+           FROM collaboration_events ORDER BY created_at DESC LIMIT 1000`
+        ).all();
+        if (rows.length > 0) {
+          // 从 SQLite 重构内存统计
+          const dimMap = new Map<string, { totalEvents: number; humanInterventions: number; outcomes: { resolved: number; escalated: number; deadlocked: number }; totalDurationMs: number; modeUsed: string }>();
+          for (const r of rows) {
+            const dim = (r.gap_dimension as string) || 'information_flow';
+            let d = dimMap.get(dim);
+            if (!d) { d = { totalEvents: 0, humanInterventions: 0, outcomes: { resolved: 0, escalated: 0, deadlocked: 0 }, totalDurationMs: 0, modeUsed: (r.mode_used as string) || 'unknown' }; dimMap.set(dim, d); }
+            d.totalEvents++;
+            if (r.human_intervention) d.humanInterventions++;
+            const o = (r.outcome as string) || 'resolved';
+            if (o === 'escalated') d.outcomes.escalated++;
+            else if (o === 'deadlocked') d.outcomes.deadlocked++;
+            else d.outcomes.resolved++;
+            d.totalDurationMs += (r.duration_ms as number) || 0;
+          }
+          allDimensions = [...dimMap.values()] as unknown as typeof allDimensions;
+        }
+      }
+    } catch { /* SQLite fallback 不可用 */ }
+  }
+
   if (allDimensions.length === 0) return null;
 
   // Aggregate across all dimensions
