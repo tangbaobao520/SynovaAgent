@@ -21,5 +21,11 @@
     "maxMessagesBeforeCompression": 30,
     "windowSize": 20
   },
+  "sentinel": {
+    "baselineMinRuns": 3,
+    "findingCountRatioWarning": 2.0,
+    "findingCountRatioCritical": 3.0,
+    "perSentinel": {}
+  },
   "devMode": true
 }

@@ -32,6 +32,12 @@ export interface SynovaFileConfig {
     maxMessagesBeforeCompression: number;
     windowSize: number;
   };
+  sentinel?: {
+    baselineMinRuns: number;
+    findingCountRatioWarning: number;
+    findingCountRatioCritical: number;
+    perSentinel?: Record<string, { warningRatio?: number; criticalRatio?: number; minRuns?: number }>;
+  };
   devMode: boolean;
 }
 
@@ -58,6 +64,12 @@ export const DEFAULT_CONFIG: SynovaFileConfig = {
     compressionStrategy: 'sliding-window',
     maxMessagesBeforeCompression: 30,
     windowSize: 20,
+  },
+  sentinel: {
+    baselineMinRuns: 3,
+    findingCountRatioWarning: 2.0,
+    findingCountRatioCritical: 3.0,
+    perSentinel: {},
   },
   devMode: false,
 };

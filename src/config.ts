@@ -19,14 +19,22 @@ export interface SynovaConfig {
   engineTokens: string;
   gatewayHost: string;
   llmConfigured: boolean;
+  sentinel?: {
+    baselineMinRuns: number;
+    findingCountRatioWarning: number;
+    findingCountRatioCritical: number;
+    perSentinel?: Record<string, { warningRatio?: number; criticalRatio?: number; minRuns?: number }>;
+  };
 }
 
 export function loadConfig(): SynovaConfig {
   // C5: 优先加载 synova.json, 失败降级到环境变量
   let filePort: number | undefined;
+  let fileSentinel: SynovaConfig['sentinel'] | undefined;
   try {
     const fileCfg = loadFileConfig();
     filePort = fileCfg.server.port;
+    fileSentinel = fileCfg.sentinel;
     log.info({ port: filePort, source: 'synova.json' }, '使用文件配置');
   } catch {
     log.debug('synova.json 不可用, 使用环境变量');
@@ -68,5 +76,5 @@ export function loadConfig(): SynovaConfig {
 
   log.info({ port, devMode, dbPath, model: llmModel, llmConfigured }, '配置加载完成');
 
-  return { port, devMode, dbPath, llmApiKey, llmBaseUrl, llmModel, engineTokens, gatewayHost, llmConfigured };
+  return { port, devMode, dbPath, llmApiKey, llmBaseUrl, llmModel, engineTokens, gatewayHost, llmConfigured, sentinel: fileSentinel };
 }

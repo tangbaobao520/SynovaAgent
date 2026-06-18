@@ -19,6 +19,67 @@ import { createLogger } from '../logger';
 
 const log = createLogger('sentinel/runner');
 
+// ═══ 信号路由表 (手册 §19.1) ═══
+// 哨兵 → 专家 预定义映射。规则驱动，只有模糊场景丢给 LLM。
+// 信号级别: Low(只记录) / Medium(通知专家) / High(交叉验证) / Emergency(告警FDE)
+
+interface SignalRoute {
+  sentinelId: string;
+  /** 匹配模式: exact(精确ID) | prefix(ID前缀) */
+  match: 'exact' | 'prefix';
+  /** 路由到哪些专家 */
+  experts: string[];
+  /** 触发交叉验证的最低信号级别 (medium=通知不交叉, high/emergency=交叉验证) */
+  crossValidateAt: 'medium' | 'high' | 'emergency';
+}
+
+const SIGNAL_ROUTING_TABLE: SignalRoute[] = [
+  // D1 增长动力
+  { sentinelId: 'sentinel-revenue-decomposition', match: 'exact', experts: ['finance', 'strategy'], crossValidateAt: 'high' },
+  { sentinelId: 'sentinel-customer-dynamics', match: 'exact', experts: ['marketing', 'strategy'], crossValidateAt: 'high' },
+  { sentinelId: 'sentinel-cash-flow', match: 'exact', experts: ['finance'], crossValidateAt: 'emergency' },
+  { sentinelId: 'sentinel-token-economics', match: 'exact', experts: ['finance', 'strategy'], crossValidateAt: 'high' },
+  // D2 组织能力
+  { sentinelId: 'sentinel-gap-dynamics', match: 'exact', experts: ['org'], crossValidateAt: 'high' },
+  { sentinelId: 'sentinel-cpc', match: 'exact', experts: ['org', 'tech'], crossValidateAt: 'high' },
+  { sentinelId: 'sentinel-path-dependency', match: 'exact', experts: ['org', 'strategy'], crossValidateAt: 'medium' },
+  { sentinelId: 'sentinel-self-awareness', match: 'exact', experts: ['org'], crossValidateAt: 'medium' },
+  { sentinelId: 'sentinel-goal-alignment', match: 'exact', experts: ['org', 'strategy'], crossValidateAt: 'high' },
+  // D3 人+Agent
+  { sentinelId: 'sentinel-htm', match: 'exact', experts: ['org'], crossValidateAt: 'high' },
+  { sentinelId: 'sentinel-hacd', match: 'exact', experts: ['org', 'tech'], crossValidateAt: 'high' },
+  { sentinelId: 'sentinel-hona', match: 'exact', experts: ['org'], crossValidateAt: 'medium' },
+  { sentinelId: 'sentinel-eob', match: 'exact', experts: ['org'], crossValidateAt: 'medium' },
+  // D4 软件生态
+  { sentinelId: 'sentinel-integration-health', match: 'exact', experts: ['tech'], crossValidateAt: 'high' },
+  { sentinelId: 'sentinel-data-silos', match: 'exact', experts: ['tech'], crossValidateAt: 'high' },
+  { sentinelId: 'sentinel-saas-utilization', match: 'exact', experts: ['tech', 'finance'], crossValidateAt: 'medium' },
+  { sentinelId: 'sentinel-shadow-it', match: 'exact', experts: ['tech'], crossValidateAt: 'high' },
+  // D5 软件-Agent适配
+  { sentinelId: 'sentinel-api-accessibility', match: 'exact', experts: ['tech'], crossValidateAt: 'high' },
+  { sentinelId: 'sentinel-data-readiness', match: 'exact', experts: ['tech'], crossValidateAt: 'medium' },
+  { sentinelId: 'sentinel-protocol-coverage', match: 'exact', experts: ['tech'], crossValidateAt: 'medium' },
+  // D6 战略健康
+  { sentinelId: 'sentinel-seven-powers', match: 'exact', experts: ['strategy'], crossValidateAt: 'high' },
+  // D7 风险预警
+  { sentinelId: 'sentinel-key-person-risk', match: 'exact', experts: ['org'], crossValidateAt: 'emergency' },
+  { sentinelId: 'sentinel-risk-aggregator', match: 'exact', experts: ['org', 'strategy', 'finance'], crossValidateAt: 'emergency' },
+  { sentinelId: 'sentinel-financial-impact', match: 'exact', experts: ['finance'], crossValidateAt: 'high' },
+  { sentinelId: 'sentinel-financial-snapshot', match: 'exact', experts: ['finance'], crossValidateAt: 'medium' },
+];
+
+/** 根据哨兵 ID 查找路由规则 */
+function findSignalRoute(sentinelId: string): SignalRoute | undefined {
+  return SIGNAL_ROUTING_TABLE.find(r =>
+    r.match === 'exact' ? r.sentinelId === sentinelId : sentinelId.startsWith(r.sentinelId)
+  );
+}
+
+/** 获取所有路由覆盖的哨兵 ID 列表 */
+export function getRoutedSentinelIds(): string[] {
+  return SIGNAL_ROUTING_TABLE.map(r => r.sentinelId);
+}
+
 // ═══ Types ═══
 
 export interface SentinelRunRecord {
@@ -189,13 +250,10 @@ export class SentinelRunner {
       return;
     }
 
-    const EXPERT_TYPE_MAP: Record<string, string> = {
-      org: 'org', strategic: 'strategy', finance: 'finance',
-      tech: 'tech', marketing: 'marketing', action: 'action',
-      business_model: 'business_model',
-    };
+    const VALID_EXPERTS = new Set(['strategy', 'org', 'finance', 'tech', 'marketing', 'action', 'business_model']);
 
     for (const signal of signals) {
+      // 手册 §19.1: 优先用预定义路由表，fallback 到信号自带的 recommendedExperts
       const evidenceItems = signal.sources.map((src: any, i: number) => ({
         id: 'sentinel-' + signal.id + '-' + i,
         source: 'diagnosis' as const,
@@ -208,20 +266,33 @@ export class SentinelRunner {
         sessionId: 'sentinel-' + signal.id,
       }));
 
-      for (const rec of signal.recommendedExperts) {
-        const expertType = EXPERT_TYPE_MAP[rec];
+      // 查找路由表匹配的专家
+      const sourceSentinelId = signal.sources[0]?.sentinelId || '';
+      const route = findSignalRoute(sourceSentinelId);
+      const routedExperts = route?.experts || signal.recommendedExperts;
+
+      // 交叉验证: 信号严重度 >= 路由阈值时，激活相关专家并行推理
+      const severityRank = { info: 0, warning: 1, critical: 2, emergency: 3 };
+      const thresholdRank = { medium: 1, high: 2, emergency: 3 };
+      const shouldCrossValidate = (severityRank[signal.severity as keyof typeof severityRank] || 0)
+        >= (thresholdRank[route?.crossValidateAt as keyof typeof thresholdRank] || 2);
+      const targetExperts = shouldCrossValidate
+        ? [...new Set([...routedExperts, ...signal.recommendedExperts])]
+        : routedExperts;
+
+      for (const rec of targetExperts) {
+        const expertType = VALID_EXPERTS.has(rec) ? rec : null;
         if (!expertType) continue;
 
         try {
-          log.info({ signal: signal.id, expert: expertType, evidenceCount: evidenceItems.length },
+          log.info({ signal: signal.id, expert: expertType, evidenceCount: evidenceItems.length, crossValidate: shouldCrossValidate },
             '[runner] 信号路由专家 → 启动推理');
           const report = await dispatcher.runExpert(
             expertType as 'strategy' | 'org' | 'finance' | 'tech' | 'marketing' | 'action',
             evidenceItems as unknown as Evidence[],
           );
           if (report) {
-            log.info({ signalId: signal.id, expert: expertType, findings: (report as unknown as Record<string, unknown> | null)?.findings ? (Array.isArray((report as unknown as Record<string, unknown>).findings) ? ((report as unknown as Record<string, unknown>).findings as Array<unknown>).length : 0) : 0 },
-              '[runner] 专家诊断完成');
+            log.info({ signalId: signal.id, expert: expertType }, '[runner] 专家诊断完成');
             this.storeExpertReport(signal.id, expertType, report, signal.severity);
           }
         } catch (expertErr: unknown) {

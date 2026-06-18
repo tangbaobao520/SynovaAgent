@@ -49,6 +49,16 @@ export class SynovaAgent {
       }
     });
 
+    // 基线存储 — SQLite 持久化 + 可配置阈值 (Week 2 Day 1-2)
+    const { getBaselineStore } = await import('../sentinel/baseline-store');
+    const baselineStore = getBaselineStore();
+    baselineStore.setDatabase(this.db);
+    // 从 synova.json 加载哨兵阈值配置
+    if (config.sentinel) {
+      baselineStore.updateConfig(config.sentinel);
+      log.info({ baselineMinRuns: config.sentinel.baselineMinRuns }, '[baseline] 哨兵阈值配置已加载');
+    }
+
     // 注册内置哨兵 (必须在 SentinelRunner 启动前——否则 Runner 找不到哨兵)
     const { registerBuiltinSentinels } = await import('../sentinel/builtins');
     await registerBuiltinSentinels();
