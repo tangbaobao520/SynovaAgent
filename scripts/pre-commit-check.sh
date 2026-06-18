@@ -121,6 +121,29 @@ hard_check "接线审计: 新 export 必须有调用方" "${UNWIRED:-}"
 NEW_DIAG_REG=$(git diff --cached 2>/dev/null | grep "^+.*DiagnosticModule" | grep -v "scripts/pre-commit-check.sh\|//\|@deprecated\|import type\|^+++\|hard_check\|═══\|禁止新 DiagnosticModule" || true)
 hard_check "禁止 DiagnosticModule: 新模块必须实现 Sentinel 接口" "${NEW_DIAG_REG:-}"
 
+# ═══ 7. Task Brief 强制: 编码任务必须有今日 task brief (Q1/Q2/Q3 已填) ═══
+TODAY=$(date +%Y-%m-%d)
+STAGED_SRC=$(git diff --cached --name-only 2>/dev/null | grep -E '^src/|^tests/|^packages/|^scripts/' | grep -v 'scripts/pre-commit-check.sh\|scripts/check-secrets.sh\|scripts/workflow/' || true)
+TASK_BRIEF_MISSING=""
+TASK_BRIEF_EMPTY=""
+if [ -n "$STAGED_SRC" ]; then
+  BRIEF=$(find "$ROOT/.claude/task-briefs/" -name "${TODAY}*" 2>/dev/null | head -1)
+  if [ -z "$BRIEF" ]; then
+    TASK_BRIEF_MISSING="今日无 task brief。请先运行: bash scripts/workflow/task-start.sh \"任务描述\""
+  else
+    # 检查 Q1/Q2/Q3 已填写 (非空且非纯注释)
+    for q in "Q1: 调研" "Q2: 范围" "Q3: 验收"; do
+      SECTION=$(sed -n "/^## $q/,/^##/p" "$BRIEF" 2>/dev/null)
+      FILLED=$(echo "$SECTION" | grep -v "^##\|^<!--\|^$" | head -1)
+      if [ -z "$FILLED" ]; then
+        TASK_BRIEF_EMPTY="${TASK_BRIEF_EMPTY}  $q 未填写\n"
+      fi
+    done
+  fi
+fi
+hard_check "Task Brief: 编码变更必须有今日 task brief" "${TASK_BRIEF_MISSING:-}"
+hard_check "Task Brief: Q1/Q2/Q3 必须填写" "${TASK_BRIEF_EMPTY:-}"
+
 # ═══ 结果 ═══
 echo ""
 if [ "$HARD_FAIL" -gt 0 ]; then
@@ -128,7 +151,7 @@ if [ "$HARD_FAIL" -gt 0 ]; then
   echo ""
   exit 1
 else
-  echo -e "  ${GREEN}✅ 6/6 全部通过${RESET}"
+  echo -e "  ${GREEN}✅ 全部通过 (含 task brief 强制)${RESET}"
   echo ""
   exit 0
 fi
