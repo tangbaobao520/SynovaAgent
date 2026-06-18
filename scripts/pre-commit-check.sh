@@ -127,13 +127,13 @@ STAGED_SRC=$(git diff --cached --name-only 2>/dev/null | grep -E '^src/|^tests/|
 TASK_BRIEF_MISSING=""
 TASK_BRIEF_EMPTY=""
 if [ -n "$STAGED_SRC" ]; then
-  BRIEF=$(find "$ROOT/.claude/task-briefs/" -name "${TODAY}*" 2>/dev/null | head -1)
+  BRIEF=$(find "$ROOT/.claude/task-briefs/" -type f -name "${TODAY}*" 2>/dev/null | xargs ls -t 2>/dev/null | head -1)
   if [ -z "$BRIEF" ]; then
     TASK_BRIEF_MISSING="今日无 task brief。请先运行: bash scripts/workflow/task-start.sh \"任务描述\""
   else
-    # 检查 Q1/Q2/Q3 已填写 (非空且非纯注释)
-    for q in "Q1: 调研" "Q2: 范围" "Q3: 验收"; do
-      SECTION=$(sed -n "/^## $q/,/^##/p" "$BRIEF" 2>/dev/null)
+    # 检查 Q1/Q2/Q3 已填写 (非空且非纯注释, ^## 匹配 h2 不匹配 ###)
+    for q in "Q1:" "Q2:" "Q3:"; do
+      SECTION=$(sed -n "/^## $q/,/^## /p" "$BRIEF" 2>/dev/null)
       FILLED=$(echo "$SECTION" | grep -v "^##\|^<!--\|^$" | head -1)
       if [ -z "$FILLED" ]; then
         TASK_BRIEF_EMPTY="${TASK_BRIEF_EMPTY}  $q 未填写\n"

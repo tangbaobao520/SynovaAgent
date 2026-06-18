@@ -24,11 +24,19 @@ interface TokenEconReport {
 
 function extractFindings(report: TokenEconReport, now: Date): SentinelFinding[] {
   const f: SentinelFinding[] = []; const ts = now.toISOString();
-  if (report.costEfficiencyScore < 0.4) {
-    f.push({ id: `te-high-cost-${now.getTime()}`, severity: 'warning', title: `Token 成本效率偏低 (${(report.costEfficiencyScore * 100).toFixed(0)}%)`, description: `单次诊断 Token 成本: $${report.tokenCostPerDiagnosis.toFixed(4)}。${report.interpretation}`, evidence: [`总成本: $${report.totalTokenCost.toFixed(2)}`, `单次诊断成本: $${report.tokenCostPerDiagnosis.toFixed(4)}`, `利润率估算: ${(report.marginEstimate * 100).toFixed(0)}%`], suggestion: '审查 LLM 调用链路——是否存在冗余调用或过长的 prompt。', detectedAt: ts });
+  // 成本效率
+  if (report.costEfficiencyScore < 0.3) {
+    f.push({ id: `te-critical-${now.getTime()}`, severity: 'critical', title: `Token 成本效率严重偏低 (${(report.costEfficiencyScore * 100).toFixed(0)}%)`, description: `单次诊断 Token 成本: $${report.tokenCostPerDiagnosis.toFixed(4)}。${report.interpretation}`, evidence: [`总成本: $${report.totalTokenCost.toFixed(2)}`, `单次诊断: $${report.tokenCostPerDiagnosis.toFixed(4)}`, `利润率: ${(report.marginEstimate * 100).toFixed(0)}%`], suggestion: '立即审查 LLM 调用链路——压缩 prompt、合并冗余调用、考虑降级到更小模型。', detectedAt: ts });
+  } else if (report.costEfficiencyScore < 0.5) {
+    f.push({ id: `te-high-cost-${now.getTime()}`, severity: 'warning', title: `Token 成本效率偏低 (${(report.costEfficiencyScore * 100).toFixed(0)}%)`, description: `单次诊断 Token 成本: $${report.tokenCostPerDiagnosis.toFixed(4)}。${report.interpretation}`, evidence: [`总成本: $${report.totalTokenCost.toFixed(2)}`, `单次诊断: $${report.tokenCostPerDiagnosis.toFixed(4)}`, `利润率: ${(report.marginEstimate * 100).toFixed(0)}%`], suggestion: '审查 prompt 长度和调用频率，考虑缓存策略。', detectedAt: ts });
   }
+  // 趋势
   if (report.trend === 'declining') {
-    f.push({ id: `te-trend-down-${now.getTime()}`, severity: 'info', title: 'Token 成本呈上升趋势', description: report.interpretation, evidence: [`趋势: ${report.trend}`], suggestion: '监测未来 2 周——如持续上升，需审查模型选择或 prompt 长度。', detectedAt: ts });
+    f.push({ id: `te-trend-down-${now.getTime()}`, severity: 'warning', title: '单位经济学持续恶化', description: report.interpretation, evidence: [`趋势: ${report.trend}`, `效率分: ${(report.costEfficiencyScore * 100).toFixed(0)}%`], suggestion: '如连续 3 周恶化，需审查模型选择、prompt 策略或诊断频次。', detectedAt: ts });
+  }
+  // 健康
+  if (f.length === 0 && report.costEfficiencyScore >= 0.5) {
+    f.push({ id: `te-healthy-${now.getTime()}`, severity: 'info', title: `单位经济学健康 (效率 ${(report.costEfficiencyScore * 100).toFixed(0)}%)`, description: `单次诊断成本 $${report.tokenCostPerDiagnosis.toFixed(4)}，趋势 ${report.trend}。`, evidence: [`总成本: $${report.totalTokenCost.toFixed(2)}`, `利润率: ${(report.marginEstimate * 100).toFixed(0)}%`], suggestion: '维持当前策略，持续监控。', detectedAt: ts });
   }
   return f;
 }
