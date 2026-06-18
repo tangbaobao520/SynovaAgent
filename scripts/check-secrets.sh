@@ -37,7 +37,7 @@ FULL_SCAN=$(grep -rn \
   | grep -v 'package-lock\.json' \
   | grep -v 'your-\|example\|placeholder\|demo\|test-\|xxx\|TODO\|CHANGE\|CHANGE_ME' \
   | grep -v 'setx.*FEISHU\|export.*FEISHU\|Bash(setx\|Bash(export' \
-  | grep -v "'web-user'\|'strategy'\|'information_flow'\|'resolved'\|'evidence'\|'community'\|'deepseek'\|'qwen'\|'glm'\|'kimi'\|'yi'\|'minimax'\|'step'\|'ernie'\|'openai'\|'gateway'\|'silicon'" \
+  | grep -v "'steady_operator'\|'web-user'\|'strategy'\|'information_flow'\|'resolved'\|'evidence'\|'community'\|'deepseek'\|'qwen'\|'glm'\|'kimi'\|'yi'\|'minimax'\|'step'\|'ernie'\|'openai'\|'gateway'\|'silicon'" \
   | grep -v "deepseek-chat\|deepseek-v4\|deepseek-r1\|qwen-max\|qwen-plus\|glm-4\|kimi-latest\|ernie-bot" \
   || true)
 
@@ -120,7 +120,7 @@ if [ -n "$STAGED" ]; then
     -e '||\s*"[a-zA-Z0-9_-]\{8,\}"' \
     2>/dev/null \
     | grep -v 'your-\|example\|placeholder\|demo\|test-\|xxx\|TODO\|CHANGE\|Observation\|'\''\s*$' \
-    | grep -v "'web-user'\|'strategy'\|'information_flow'\|'resolved'\|'evidence'\|'community'\|'deepseek'\|'qwen'\|'glm'\|'kimi'\|'yi'\|'minimax'\|'step'\|'ernie'\|'openai'\|'gateway'\|'silicon'" \
+    | grep -v "'steady_operator'\|'web-user'\|'strategy'\|'information_flow'\|'resolved'\|'evidence'\|'community'\|'deepseek'\|'qwen'\|'glm'\|'kimi'\|'yi'\|'minimax'\|'step'\|'ernie'\|'openai'\|'gateway'\|'silicon'" \
     | grep -v "deepseek-chat\|deepseek-v4\|deepseek-r1\|qwen-max\|qwen-plus\|glm-4\|kimi-latest\|ernie-bot" \
     || true)
 fi

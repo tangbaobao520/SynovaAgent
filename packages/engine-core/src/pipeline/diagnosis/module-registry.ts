@@ -1,13 +1,14 @@
 /**
- * diagnosis/module-registry.ts — 诊断模块插件注册表
+ * diagnosis/module-registry.ts — ⛔ 已废弃 (2026-06-18)
  *
- * 统一注册所有诊断 compute 函数，支持按需编排执行。
- * 每个模块独立 compute，失败不影响其他模块。
+ * 所有诊断模块已迁移到 Sentinel 接口（src/sentinel/adapters/）。
+ * 哨兵 = 一个 compute()，两种调用模式（Cron 定时 + FDE 按需）。
  *
- * 注册表使得：
- *   1. 第三方可通过 registerModule() 接入新诊断维度
- *   2. /plan 端点可按优先级/依赖顺序编排执行
- *   3. 前端可动态列出可用模块及状态
+ * 新模块直接创建 xxx-sentinel.ts → 自动注册（builtins.ts 目录扫描）。
+ * 不要再使用 DiagnosticModule 接口或 registerModule()。
+ *
+ * 保留此文件仅供: agent-tool-registry.ts / diagnosis-orchestrator.ts 兼容旧引用。
+ * 迁移完成后删除本文件（Phase 1）。
  */
 
 // ── Types ──

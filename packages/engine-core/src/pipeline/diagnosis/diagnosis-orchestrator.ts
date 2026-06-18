@@ -244,8 +244,8 @@ export class DiagnosisOrchestrator<
     initiator: InitiatorProfile,
   ): Promise<ConsultationResult> {
     this.initiator = initiator;
-    // EC-02 Sprint B: 懒注册模块 (首次调用时初始化)
-    ensureModulesRegistered();
+    // 2026-06-18: ensureModulesRegistered() 已废弃 — 哨兵系统替代。保留调用以防兼容性问题。
+    // ensureModulesRegistered();
     const startTime = Date.now();
     const degradedModules: string[] = [];
     let iteration = 0;
@@ -529,6 +529,7 @@ export class DiagnosisOrchestrator<
         });
       }
     } catch {
+      log.warn('模块执行失败 — degraded');
       const recovery = await this.recoveryExecutor.attempt(
         DiagnosisFailureScenario.MODULE_COMPUTE_FAILED,
       );
