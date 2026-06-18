@@ -58,6 +58,25 @@ export function computeHTM(teamId: string): HTMReport | null {
     totalInterventions += dim.humanInterventions;
   }
 
+  // Week 4: SQLite fallback — 内存为空时从 collaboration_events 表读取
+  if (totalEvents === 0 && db) {
+    try {
+      const rows = db.prepare(
+        `SELECT outcome, human_intervention, duration_ms, gap_dimension, mode_used
+         FROM collaboration_events ORDER BY created_at DESC LIMIT 1000`
+      ).all() as Array<{ outcome: string; human_intervention: number; duration_ms: number; gap_dimension: string; mode_used: string }>;
+      if (rows.length > 0) {
+        totalEvents = rows.length;
+        for (const r of rows) {
+          if (r.outcome === 'resolved') totalResolved++;
+          else if (r.outcome === 'escalated') totalEscalated++;
+          else if (r.outcome === 'deadlocked') totalDeadlocked++;
+          if (r.human_intervention) totalInterventions++;
+        }
+      }
+    } catch { /* fallback 不可用 */ }
+  }
+
   if (totalEvents === 0) return null;
 
   const autoAcceptRate = totalResolved / Math.max(totalEvents, 1);

@@ -37,7 +37,7 @@ export function initEngineContext(): void {
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
 
-  // Week 4: D3 哨兵数据采集表 (collaboration_events)
+  // Week 4: D3 哨兵数据采集表
   db.exec(`
     CREATE TABLE IF NOT EXISTS collaboration_events (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -53,6 +53,49 @@ export function initEngineContext(): void {
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
     CREATE INDEX IF NOT EXISTS idx_collab_events_type ON collaboration_events(event_type, created_at);
+
+    CREATE TABLE IF NOT EXISTS routing_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      source_agent_id TEXT NOT NULL,
+      target_agent_id TEXT NOT NULL,
+      route_count INTEGER NOT NULL DEFAULT 1,
+      dependency_concentration REAL DEFAULT 0,
+      risk_level TEXT CHECK(risk_level IN ('critical','high','moderate','low')),
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_routing_events_src ON routing_events(source_agent_id, created_at);
+
+    CREATE TABLE IF NOT EXISTS agent_metrics (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      agent_id TEXT NOT NULL,
+      tasks_completed INTEGER NOT NULL DEFAULT 0,
+      tasks_failed INTEGER NOT NULL DEFAULT 0,
+      auto_accept_count INTEGER NOT NULL DEFAULT 0,
+      correction_count INTEGER NOT NULL DEFAULT 0,
+      health_score REAL DEFAULT 0.7,
+      recorded_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_agent_metrics_aid ON agent_metrics(agent_id, recorded_at);
+
+    CREATE TABLE IF NOT EXISTS agent_contracts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      agent_id TEXT NOT NULL,
+      permission_scope TEXT NOT NULL,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      last_used_at TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_agent_contracts_aid ON agent_contracts(agent_id, is_active);
+
+    CREATE TABLE IF NOT EXISTS team_changes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      change_type TEXT NOT NULL CHECK(change_type IN ('add_role','remove_role','add_agent','remove_agent','permission_grant','permission_revoke')),
+      entity_id TEXT NOT NULL,
+      entity_type TEXT NOT NULL CHECK(entity_type IN ('agent','person','team','permission')),
+      details TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_team_changes_type ON team_changes(change_type, created_at);
   `);
 
   log.info({ path: config.dbPath }, 'SQLite 数据库已打开');

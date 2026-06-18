@@ -453,6 +453,41 @@ export function computeHONA(teamId: string): HONAReport | null {
     }
   }
 
+  // Week 4: SOG graph fallback — 内存为空时从本体图读取 AGENT 节点 + INTERACTS_WITH 边
+  if (nodeIds.size === 0) {
+    try {
+      const { getEngineContext } = require('../infra/engine-context') as {
+        getEngineContext: () => { database: { getDb(): { prepare(sql: string): { all(): Array<Record<string,unknown>> } } } } | null;
+      };
+      const db = getEngineContext()?.database?.getDb();
+      if (db) {
+        // 读取 AGENT/PERSON 节点 (graph_nodes schema: type/name/props_json)
+        const agentRows = db.prepare(
+          `SELECT name, props_json FROM graph_nodes WHERE type IN ('AGENT','PERSON') AND props_json IS NOT NULL`
+        ).all();
+        for (const r of agentRows) {
+          const name = (r.name || '') as string;
+          const p = typeof r.props_json === 'string' ? JSON.parse(r.props_json as string) : (r.props_json || {}) as Record<string, unknown>;
+          const id = name || (p.id || p.agent_id || '') as string;
+          if (id) { nodeIds.add(id); typedInteractions.push({ from: id, to: id, fromType: SOGNodeType.AGENT, toType: SOGNodeType.AGENT, edgeType: SOGEdgeType.INTERACTS_WITH, count: 1, lastSeen: new Date().toISOString() }); }
+        }
+
+        // 读取 INTERACTS_WITH 边 (graph_triples schema: subject_id/predicate/object_id)
+        const edgeRows = db.prepare(
+          `SELECT subject_id, object_id FROM graph_triples WHERE predicate = 'INTERACTS_WITH' LIMIT 500`
+        ).all();
+        for (const r of edgeRows) {
+          const from = r.subject_id as string;
+          const to = r.object_id as string;
+          if (from && to) {
+            nodeIds.add(from); nodeIds.add(to);
+            typedInteractions.push({ from, to, fromType: SOGNodeType.AGENT, toType: SOGNodeType.AGENT, edgeType: SOGEdgeType.INTERACTS_WITH, count: 1, lastSeen: new Date().toISOString() });
+          }
+        }
+      }
+    } catch { /* SOG fallback 不可用 */ }
+  }
+
   if (nodeIds.size === 0) return null;
 
   const agentList = [...nodeIds];
