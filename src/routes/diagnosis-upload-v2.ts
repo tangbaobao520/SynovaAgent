@@ -30,10 +30,9 @@ interface DiagnosisJob {
 }
 const jobStore = new Map<string, DiagnosisJob>();
 
-router.post('/upload', async (req: Request, res: Response) => {
-	// P0-3: FDE 采访文档上传界面
-	router.get('/upload', (_req: Request, res: Response) => {
-	  const html = `<!DOCTYPE html>
+// P0-3: FDE 采访文档上传界面
+router.get('/upload', (_req: Request, res: Response) => {
+  const html = `<!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Synova FDE Demo</title>
 <style>
@@ -57,7 +56,7 @@ a{color:#58a6ff}
 </style></head><body>
 <div class="card">
 <h1>Synova FDE Demo</h1>
-<p class="sub">FDE input -> 8D extraction -> measurement -> expert reasoning -> report</p>
+<p class="sub">FDE input → 8D extraction → measurement → expert reasoning → report</p>
 <form id="f">
 <label>Org Name</label><input name="orgName" value="Demo org" required>
 <label>Team ID</label><input name="teamId" value="demo-team" required>
@@ -99,9 +98,10 @@ r.innerHTML='<p>Error: '+(d.error||'unknown')+'</p>';
 }catch(err){r.className='error';r.innerHTML='<p>'+err.message+'</p>';}
 });
 </script></body></html>`;
-	  res.type('html').send(html);
-	});
+  res.type('html').send(html);
+});
 
+router.post('/upload', async (req: Request, res: Response) => {
   try {
     const { content, teamId = 'mvp-default', orgName = '企业' } = req.body as {
       content?: string; teamId?: string; orgName?: string;

@@ -227,14 +227,18 @@ export function createKnowledgeAgent(config: KnowledgeAgentConfig = {}): Knowled
         sideEffects: 'none',
         handler: async (params: Record<string, unknown>) => {
           try {
-            const BASE = `http://localhost:${process.env.PORT || 3000}`;
+            // 铁律 39: L3 → L4 通过 GraphStore 接口访问，不跨层调 L1 HTTP 路由
+            const { SQLiteGraphStore } = await import('../../packages/engine-core/src/pipeline/diagnosis/graph-store');
+            const db = getDatabase();
+            const graphStore = new SQLiteGraphStore(db);
             const orgId = String(params.orgId || 'default');
             const nodeType = params.nodeType as string | undefined;
-            const res = await fetch(`${BASE}/api/ontology/graph/${orgId}`);
-            if (!res.ok) return { error: '本体 API 不可达' };
-            const data = await res.json() as { nodes?: Array<{ type: string; props: Record<string, unknown> }> };
-            let nodes = (data.nodes || [])
-              .filter(n => !nodeType || n.type === nodeType);
+            const { SOGNodeType } = await import('@synova/sog-core');
+            // 用户输入字符串 → SOGNodeType 枚举，不匹配则默认 PERSON
+            const nodeTypeValues: Record<string, string> = Object.entries(SOGNodeType).reduce((acc, [k, v]) => { acc[k] = v as string; acc[v as string] = v as string; return acc; }, {} as Record<string, string>);
+            const resolvedType: string = nodeType && nodeTypeValues[nodeType] ? nodeTypeValues[nodeType] : SOGNodeType.PERSON;
+            const rawNodes = graphStore.queryNodes(resolvedType as unknown as typeof SOGNodeType.PERSON, undefined, orgId);
+            let nodes = rawNodes.filter(n => !nodeType || n.type === nodeType);
             if (params.keywords) {
               const kw = String(params.keywords).toLowerCase();
               nodes = nodes.filter(n => JSON.stringify(n.props).toLowerCase().includes(kw));

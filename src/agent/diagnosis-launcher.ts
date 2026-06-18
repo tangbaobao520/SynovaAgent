@@ -7,8 +7,7 @@
 import type { EngineContext } from './engine-context';
 import type { DiagnosisEngine, DiagnosisEvent, ConsultationResult } from '../l2-interfaces/diagnosis-engine';
 import { createLogger } from '../logger';
-import { resolveEntitiesL3 } from '../l4/entity-resolver';
-import { generateCommunityReports } from '../l4/community-reports';
+// L4 访问: 运行时动态 import — 避免静态跨层依赖 (铁律 39, 审计 P0-20260618)
 import { runSafetyGate } from '../security/safety-guardrails';
 import { getFaultRecovery } from '../services/fault-recovery';
 import type { SessionStore } from '../store/session-store';
@@ -206,7 +205,8 @@ export class DiagnosisLauncher {
 
         if (flags.enableCommunityReports && graphStore) {
           try {
-            const communities = generateCommunityReports(graphStore, teamId);
+            const { generateCommunityReports: genCR } = await import('../l4/community-reports');
+            const communities = genCR(graphStore, teamId);
             log.info({ communityCount: communities.length }, '社区报告已生成');
             onEvent?.({ type: 'community_reports', phase: 2, message: `发现 ${communities.length} 个协作圈`, findings: communities.slice(0, 3).map((c: any) => ({ moduleId: c.id || 'community', summary: c.label || `协作圈 ${c.size || 0} 人`, confidence: c.confidence || 0.7 })), confidence: 0.7 });
           } catch (err: any) {
@@ -217,7 +217,8 @@ export class DiagnosisLauncher {
 
       if (flags.enableEntityResolution && graphStore) {
         try {
-          const resolution = await resolveEntitiesL3(graphStore, teamId);
+          const { resolveEntitiesL3: resolveL3 } = await import('../l4/entity-resolver');
+          const resolution = await resolveL3(graphStore, teamId);
           log.info({ autoMerged: resolution.autoMerged, queued: resolution.queuedForReview }, 'L3 实体解析完成');
           if (resolution.autoMerged > 0 || resolution.queuedForReview > 0) {
             onEvent?.({ type: 'entity_resolution', phase: 3,

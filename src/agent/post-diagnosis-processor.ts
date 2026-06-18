@@ -43,6 +43,11 @@ export interface CommunityReportLike {
 
 export interface PostProcessResult {
   keyPersonRisksSynced: boolean;
+  honaSynced: boolean;
+  financialImpactSynced: boolean;
+  capabilityGapSynced: boolean;
+  sevenPowersSynced: boolean;
+  cpcSynced: boolean;
   communityCount: number;
   autoMerged: number;
   queuedForReview: number;
@@ -68,6 +73,11 @@ export async function runPostDiagnosisProcessing(
 ): Promise<PostProcessResult> {
   const result: PostProcessResult = {
     keyPersonRisksSynced: false,
+    honaSynced: false,
+    financialImpactSynced: false,
+    capabilityGapSynced: false,
+    sevenPowersSynced: false,
+    cpcSynced: false,
     communityCount: 0,
     autoMerged: 0,
     queuedForReview: 0,
@@ -104,6 +114,76 @@ export async function runPostDiagnosisProcessing(
     const msg = err instanceof Error ? err.message : String(err);
     result.errors.push(`GraphBridge: ${msg}`);
     log.warn({ err: msg }, 'GraphBridge keyPersonRisk sync failed — degraded');
+  }
+
+  // 1b. HONA — 人-组织网络分析同步
+  try {
+    const honaData = (report as { hona?: any; humanOrganization?: any }).hona
+      || (report as { humanOrganization?: any }).humanOrganization;
+    if (honaData?.people?.length > 0) {
+      graphBridge.upsertFromHONA(honaData.people, honaData.interactions || honaData.edges || []);
+      result.honaSynced = true;
+    }
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    result.errors.push(`GraphBridge(HONA): ${msg}`);
+    log.warn({ err: msg }, 'GraphBridge HONA sync failed — degraded');
+  }
+
+  // 1c. FinancialImpact — 财务影响分析同步
+  try {
+    const finData = (report as { financialImpact?: any; financial?: any }).financialImpact
+      || (report as { financial?: any }).financial;
+    if (finData?.items?.length > 0) {
+      graphBridge.upsertFromFinancialImpact(finData.items);
+      result.financialImpactSynced = true;
+    }
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    result.errors.push(`GraphBridge(FinancialImpact): ${msg}`);
+    log.warn({ err: msg }, 'GraphBridge FinancialImpact sync failed — degraded');
+  }
+
+  // 1d. CapabilityGap — 能力缺口分析同步
+  try {
+    const capData = (report as { capabilityGap?: any; capabilities?: any }).capabilityGap
+      || (report as { capabilities?: any }).capabilities;
+    if (capData?.gaps?.length > 0) {
+      graphBridge.upsertFromCapabilityGap(capData.gaps);
+      result.capabilityGapSynced = true;
+    }
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    result.errors.push(`GraphBridge(CapabilityGap): ${msg}`);
+    log.warn({ err: msg }, 'GraphBridge CapabilityGap sync failed — degraded');
+  }
+
+  // 1e. SevenPowers — 七力战略分析同步
+  try {
+    const stratData = (report as { sevenPowers?: any; strategy?: any }).sevenPowers
+      || (report as { strategy?: any }).strategy;
+    if (stratData?.powers?.length > 0) {
+      graphBridge.upsertFromSevenPowers(stratData.powers);
+      result.sevenPowersSynced = true;
+    }
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    result.errors.push(`GraphBridge(SevenPowers): ${msg}`);
+    log.warn({ err: msg }, 'GraphBridge SevenPowers sync failed — degraded');
+  }
+
+  // 1f. CPC — 关键流程链同步
+  try {
+    const cpcData = (report as { cpc?: any; processes?: any }).cpc
+      || (report as { processes?: any }).processes;
+    if (cpcData?.processes?.length > 0) {
+      graphBridge.upsertFromCPC(cpcData.processes);
+      result.cpcSynced = true;
+    }
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    result.errors.push(`GraphBridge(CPC): ${msg}`);
+    log.warn({ err: msg }, 'GraphBridge CPC sync failed — degraded');
   }
 
   // 2. 社区报告生成

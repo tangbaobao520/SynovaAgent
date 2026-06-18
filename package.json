@@ -21,6 +21,8 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
+    "test:expert-quality": "vitest run tests/expert-quality/",
+    "test:expert-quality:l2": "vitest run tests/expert-quality/layer2-judge.test.ts",
     "lint": "tsc --noEmit",
     "check:iron-laws": "bash scripts/pre-commit-check.sh",
     "check:as-any": "bash scripts/check-as-any.sh",

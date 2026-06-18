@@ -116,6 +116,11 @@ if [ -n "$NEW_IMPL" ]; then
 fi
 hard_check "接线审计: 新 export 必须有调用方" "${UNWIRED:-}"
 
+# ═══ 6. 禁止新 DiagnosticModule 注册 (Sentinel 替代) ═══
+# 排除本脚本自身的 self-match (注释/标题/hard_check) + import type
+NEW_DIAG_REG=$(git diff --cached 2>/dev/null | grep "^+.*DiagnosticModule" | grep -v "scripts/pre-commit-check.sh\|//\|@deprecated\|import type\|^+++\|hard_check\|═══\|禁止新 DiagnosticModule" || true)
+hard_check "禁止 DiagnosticModule: 新模块必须实现 Sentinel 接口" "${NEW_DIAG_REG:-}"
+
 # ═══ 结果 ═══
 echo ""
 if [ "$HARD_FAIL" -gt 0 ]; then
@@ -123,7 +128,7 @@ if [ "$HARD_FAIL" -gt 0 ]; then
   echo ""
   exit 1
 else
-  echo -e "  ${GREEN}✅ 5/5 全部通过${RESET}"
+  echo -e "  ${GREEN}✅ 6/6 全部通过${RESET}"
   echo ""
   exit 0
 fi
