@@ -20,9 +20,11 @@ import { createOrchestrationWiring } from './orchestrator/wiring';
 import { initFederalReporter, getFederalAdapter, FederalAdapter } from './adapters/federal-adapter';
 import { bindConnectorTools } from './init/connector-binding';
 import { ToolRegistry } from './agent/tools';
+import { KnowledgeInjector, KnowledgeConflictHandler, AtomicWriter } from './agent/index';
 // Code Review A1+A3: 凭证加密 + L5 事件总线初始化
 import { CredentialVault } from './security/credential-vault';
 import { getOntologyEventBus } from './l5/ontology-event-bus';
+import homeRoutes from './routes/home';
 import chatRoutes from './routes/chat';
 import healthRoutes from './routes/health';
 import ontologyRoutes from './routes/ontology';
@@ -62,6 +64,13 @@ export async function createServer(): Promise<Server> {
   };
   const wasEncrypted = autoDecryptOnStartup(encryptionConfig);
   if (wasEncrypted) logger.info('数据库启动时已解密');
+
+  // ═══ v2.1: 知识注入器 + 冲突处理器 + 原子写入 (延迟初始化) ═══
+  const knowledgeInjector = new KnowledgeInjector(process.cwd());
+  const knowledgeConflicts = new KnowledgeConflictHandler(db);
+  const atomicWriter = new AtomicWriter(process.cwd());
+  // 清理残留的 .tmp 文件
+  atomicWriter.cleanup();
 
   // ═══ C3: 编排层初始化 — EventBus + StateMachine + Session (审计 P0-20260604) ═══
   const eventStore = new EventStore(db);
@@ -329,7 +338,8 @@ export async function createServer(): Promise<Server> {
       res.status(500).json({ ok: false, error: msg, degraded: true });
     }
   });
-  app.use(chatRoutes);         // GET / → Web 对话界面
+  app.use(homeRoutes);         // GET / → 首页 (双入口)
+  app.use(chatRoutes);         // GET /chat → Web 对话界面
   app.use(healthRoutes);
   app.use(ontologyRoutes);
   app.use(diagnosisRoutes);

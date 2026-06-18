@@ -61,9 +61,9 @@ router.post('/api/proposal/:id/resolve', (req: Request, res: Response) => {
   res.json({ ok: true, proposal: result.proposal });
 });
 
-// ═══ Web 对话界面 ═══
+// ═══ Web 对话界面 (GET /chat) ═══
 
-router.get('/', (_req: Request, res: Response) => {
+router.get('/chat', (_req: Request, res: Response) => {
   const html = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
