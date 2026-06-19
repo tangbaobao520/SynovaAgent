@@ -128,7 +128,11 @@ router.get('/report/:jobId', (req: Request, res: Response) => {
   const jid = Array.isArray(req.params.jobId) ? req.params.jobId[0] : req.params.jobId;
   const job = jobStore.get(jid);
   if (!job) { res.status(404).json({ error: '诊断任务未找到' }); return; }
-  if (job.status === 'complete') { res.type('html').send(job.report!); }
+  if (job.status === 'complete') {
+    // Day4: 报告外壳 — 深色/浅色主题 + 导航 + 打印优化
+    const wrapped = '<!DOCTYPE html>\n<html lang="zh-CN" class="dark">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width,initial-scale=1.0">\n<title>Synova 诊断报告</title>\n<style>\n:root{--bg:#0d1117;--text:#e6edf3;--muted:#8b949e;--accent:#58a6ff;--border:#30363d;--card:#161b22}\n.light{--bg:#fff;--text:#1f2328;--muted:#656d76;--accent:#0969da;--border:#d0d7de;--card:#f6f8fa}\nbody{font-family:-apple-system,"Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);margin:0;padding:0}\n.report-toolbar{background:var(--card);border-bottom:1px solid var(--border);padding:.6rem 1.5rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;gap:1rem;flex-wrap:wrap}\n.report-toolbar a{color:var(--accent);text-decoration:none;font-size:.85rem}\n.report-toolbar button{background:var(--card);border:1px solid var(--border);color:var(--text);padding:.3rem .8rem;border-radius:6px;cursor:pointer;font-size:.8rem}\n.report-body{padding:0}\n@media print{.report-toolbar{display:none}body{background:#fff;color:#000}}\n</style>\n</head>\n<body>\n<div class="report-toolbar">\n  <div><a href="/">← 首页</a> &nbsp; <a href="/chat">对话诊断</a> &nbsp; <a href="/api/diagnosis/upload">文档诊断</a></div>\n  <div><button onclick="toggleTheme()" id="theme-btn">🌙 深色</button> &nbsp; <button onclick="window.print()">🖨️ 打印</button></div>\n</div>\n<div class="report-body">\n' + (job.report || '') + '\n</div>\n<script>\nfunction toggleTheme(){var h=document.documentElement,b=document.getElementById("theme-btn");if(h.classList.contains("light")){h.classList.remove("light");h.classList.add("dark");b.textContent="🌙 深色"}else{h.classList.remove("dark");h.classList.add("light");b.textContent="☀️ 浅色"}}\n</script>\n</body>\n</html>';
+    res.type('html').send(wrapped);
+  }
   else if (job.status === 'failed') { res.status(500).json({ error: job.error || '诊断失败' }); }
   else { res.json({ jobId: job.jobId, status: job.status }); }
 });
