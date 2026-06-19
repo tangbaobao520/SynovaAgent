@@ -105,3 +105,45 @@ ls packages/engine-core/src/pipeline/diagnosis/ | wc -l  # 确认减少了7个�
 ✅ npx tsc --noEmit 零错误
 ✅ pre-commit 8 项全过
 ```
+
+---
+
+## 补充：上次执行的遗留问题（必须本次解决）
+
+上次执行注释了调用但**没删 import**，导致死引用残留。本次必须清理：
+
+### 补充 Step 0: 清理上次遗留的死 import
+
+**0a. diagnosis-assembler.ts** — 删除 3 行死 import：
+```
+L43: import { computePositioningConsistency } from './positioning-consistency';
+L44: import { computeCategoryClarity } from './category-clarity';
+L45: import { validateDifferentiation } from './differentiation-validation';
+```
+（调用已注释，import 没删）
+
+**0b. agent-tool-registry.ts** — 删除 module-registry 引用：
+```
+L13: import { listModules, runModule, type DiagnosticModule } from './module-registry';
+L50: 注释中 "DiagnosticModule" → "Sentinel"
+L120: function moduleToTool(mod: DiagnosticModule) → 改为 function moduleToTool(mod: { id: string; ... })
+```
+
+**0c. goal-alignment.ts** — 删除 DiagnosticModule 导出：
+```
+L19: import type { DiagnosticModule } from './module-registry'; → 删除
+L421: export const goalAlignmentModule: DiagnosticModule = { ... }; → 删除整个导出
+```
+
+**0d. index.ts** — 删除废弃模块的 re-export（关键——外部代码通过它引用废弃模块）：
+```
+L155-156: export { computeGoalAlignment, goalAlignmentModule } from './goal-alignment'; → 删除
+L186:   DiagnosticModule, → 删除（在 re-export 列表中）
+L193: } from './module-registry'; → 删除整个 re-export 块
+L397: export { computeCategoryClarity, ... } from './category-clarity'; → 删除
+（同时检查 positioning-consistency, differentiation-validation, risk-aggregator 的 re-export）
+```
+
+**验证**: `grep -rn "capability-gap\|category-clarity\|positioning-consistency\|differentiation-validation\|goal-alignment\|risk-aggregator\|module-registry" packages/engine-core/src/pipeline/diagnosis/index.ts` → 零结果
+
+### Step 0 验收后再执行 Step 1-5
