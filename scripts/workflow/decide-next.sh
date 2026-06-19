@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# decide-next.sh — Loop Engineering v3.1: 每次提交后智能决策建议
+# decide-next.sh — Loop Engineering v3.2: 每次提交后智能决策建议
 # post-commit 自动触发。必须瞬时完成 (<2s)。
-# v3.1: 从"工作区干净"→接实际项目状态，给具体建议。
+# v3.2: 从"工作区干净"→接实际项目状态，给具体建议。
 set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; RED='\033[0;31m'; NC='\033[0m'
 
 echo ""
 echo "═══════════════════════════════════════════════════════════"
-echo "  Anthropic 决策流程 — 下一步行动建议 (v3.1)"
+echo "  Anthropic 决策流程 — 下一步行动建议 (v3.2)"
 echo "═══════════════════════════════════════════════════════════"
 echo ""
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Loop Engineering v3.1 — scope-check.sh (产品对齐 4 问)
+# Loop Engineering v3.2 — scope-check.sh (产品对齐 4 问)
 #
 # 在 task-start.sh 之后、写代码之前运行。
 # 这不是门禁——这是给 Claude 读的上下文注入。
@@ -16,7 +16,7 @@ TODAY=$(date +%Y-%m-%d)
 
 echo ""
 echo -e "${CYAN}════════════════════════════════════════════════════════════${RESET}"
-echo -e "${CYAN}  Loop Engineering v3.1 — 产品对齐检查${RESET}"
+echo -e "${CYAN}  Loop Engineering v3.2 — 产品对齐检查${RESET}"
 echo -e "${CYAN}  写代码之前，先确认你在做对的事。${RESET}"
 echo -e "${CYAN}════════════════════════════════════════════════════════════${RESET}"
 echo ""
@@ -25,7 +25,7 @@ echo ""
 BRIEF=$(find "$ROOT/.claude/task-briefs/" -type f -name "${TODAY}*" 2>/dev/null | xargs ls -t 2>/dev/null | head -1)
 
 # ═══════════════════════════════════════════════════════════════
-# 项目全貌仪表盘 (v3.1: 每次任务前强制注入)
+# 项目全貌仪表盘 (v3.2: 每次任务前强制注入)
 # ═══════════════════════════════════════════════════════════════
 
 echo -e "${CYAN}━━━ 🏗️ 项目全貌 — 我们在盖什么？━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
