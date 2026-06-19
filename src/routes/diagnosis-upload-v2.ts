@@ -34,7 +34,8 @@ const jobStore = new Map<string, DiagnosisJob>();
 router.get('/upload', (_req: Request, res: Response) => {
   const html = `<!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Synova FDE Demo</title>
+<title>Synova · 文档诊断</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='28' font-size='28'>🔍</text></svg>">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,"Microsoft YaHei",sans-serif;background:#0d1117;color:#c9d1d9;display:flex;justify-content:center;align-items:center;min-height:100vh}
@@ -55,11 +56,11 @@ button:hover{background:#2ea043}
 a{color:#58a6ff}
 </style></head><body>
 <div class="card">
-<h1>Synova FDE Demo</h1>
-<p class="sub">FDE input → 8D extraction → measurement → expert reasoning → report</p>
+<h1>Synova · 文档诊断</h1>
+<p class="sub">上传企业访谈记录 → 八维提取 → 8位专家并行推理 → 诊断报告</p>
 <form id="f">
-<label>Org Name</label><input name="orgName" value="Demo org" required>
-<label>Team ID</label><input name="teamId" value="demo-team" required>
+<label>企业名称</label><input name="orgName" value="示例企业" required>
+<label>团队标识</label><input name="teamId" value="demo-team" required>
 <div class="dims">
 <div class="dim"><strong>1.Goal</strong> vision, strategy</div>
 <div class="dim"><strong>2.Value</strong> business, proposition</div>
@@ -70,9 +71,9 @@ a{color:#58a6ff}
 <div class="dim"><strong>7.Market</strong> positioning, differentiation</div>
 <div class="dim"><strong>8.Digital</strong> systems, tools, efficiency</div>
 </div>
-<label>Interview Notes</label>
-<textarea name="content" placeholder="Paste FDE interview notes..." required></textarea>
-<button type="submit">Start Diagnosis</button>
+<label>访谈记录</label>
+<textarea name="content" placeholder="在此粘贴企业访谈记录..." required></textarea>
+<button type="submit">开始诊断</button>
 </form>
 <div id="result"></div>
 </div>
@@ -81,7 +82,7 @@ document.getElementById('f').addEventListener('submit',async(e)=>{
 e.preventDefault();
 const r=document.getElementById('result');
 r.style.display='block';r.className='';
-r.innerHTML='<p style=color:#58a6ff>Submitting...</p>';
+r.innerHTML='<p style=color:#58a6ff>提交中...</p>';
 try{
 const fd=new FormData(e.target);
 const b=Object.fromEntries(fd.entries());

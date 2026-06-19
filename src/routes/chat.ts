@@ -70,6 +70,7 @@ router.get('/chat', (_req: Request, res: Response) => {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Synova · 增长导航</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='28' font-size='28'>🔍</text></svg>">
 <style>
 :root{
   --bg:#0f0f14;--panel:#1a1a24;--border:#2a2a3a;--text:#e0e0e0;--dim:#888;
@@ -210,7 +211,7 @@ header .status{font-size:11px;color:var(--dim)}
   </div>
 </div>
 <div id="quick-actions">
-  <button class="q-btn" onclick="quickDiag('公司诊断')">🔍 诊断我的公司</button>
+  <button class="q-btn" onclick="quickDiag(\\'公司诊断\\')">🔍 诊断我的公司</button>
   <button class="q-btn" onclick="quickDiag('团队协作分析')">👥 团队协作分析</button>
   <button class="q-btn" onclick="quickDiag('关键人风险评估')">⚠️ 关键人风险</button>
   <button class="q-btn" onclick="toggleGraph()" style="background:var(--accent);color:#fff">📊 团队全景图</button>
@@ -273,7 +274,7 @@ async function init() {
       const skipBtn = document.getElementById('quick-actions');
       if (skipBtn) {
         skipBtn.innerHTML = '<button class="q-btn" onclick="skipPhase0()" style="background:var(--accent);color:#fff">🚀 跳过访谈，直接开始</button>' +
-          '<button class="q-btn" onclick="quickDiag('公司诊断')">🔍 先了解我的组织</button>';
+          '<button class="q-btn" onclick="quickDiag(\\'公司诊断\\')">🔍 先了解我的组织</button>';
       }
     } else {
       addSystem('msg', '👋 我是 Synova，你的 AI 组织诊断助手。<br>点击下方按钮开始，或直接输入你的组织名称。');
