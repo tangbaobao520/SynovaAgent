@@ -124,8 +124,8 @@ header .status{font-size:11px;color:var(--dim)}
 .msg.degraded{align-self:center;background:#2d1f1f;border:1px solid #5c2a2a;color:#e0a0a0;font-size:11px;padding:8px 14px;border-radius:6px;max-width:90%}
 /* ── Input ── */
 #input-area{background:var(--panel);border-top:1px solid var(--border);padding:10px 20px;display:flex;gap:10px;flex-shrink:0}
-#input-area input{flex:1;background:var(--input);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;outline:none}
-#input-area input:focus{border-color:var(--accent)}
+#input-area textarea{flex:1;background:var(--input);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;outline:none;font-family:inherit}
+#input-area textarea:focus{border-color:var(--accent)}
 #input-area button{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;cursor:pointer;font-weight:600;white-space:nowrap}
 #input-area button:hover{background:var(--accent2)}
 #input-area button:disabled{opacity:.5;cursor:default}
@@ -216,7 +216,7 @@ header .status{font-size:11px;color:var(--dim)}
   <button class="q-btn" onclick="toggleGraph()" style="background:var(--accent);color:#fff">📊 团队全景图</button>
 </div>
 <div id="input-area">
-  <input id="user-input" type="text" placeholder="描述你的组织问题..." />
+  <textarea id="user-input" placeholder="描述你的组织问题..." rows="2" style="flex:1;background:var(--input);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;outline:none;resize:none;font-family:inherit" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send()}"></textarea>
   <button id="send-btn" onclick="send()">发送</button>
 </div>
 
