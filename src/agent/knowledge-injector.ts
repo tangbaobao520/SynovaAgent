@@ -242,3 +242,17 @@ export class KnowledgeInjector {
     return conflicts;
   }
 }
+
+// ═══ Singleton (v2.1: ExpertDispatcher 调用) ═══
+
+let _injector: KnowledgeInjector | null = null;
+
+export function getKnowledgeInjector(rootDir?: string): KnowledgeInjector {
+  if (!_injector && rootDir) {
+    _injector = new KnowledgeInjector(rootDir);
+  }
+  if (!_injector) {
+    _injector = new KnowledgeInjector(process.cwd());
+  }
+  return _injector;
+}

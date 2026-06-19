@@ -290,17 +290,31 @@ export class ExpertDispatcher {
       // Fallback: structured LLM consult with output schema
       return await this.runWithRetry(async () => {
         const prompt = getExpertRegistry().getPrompt(type) || '你是组织诊断专家。';
-        // C3: 渐进式技能 — 注入当前专家可用的技能目录
+        // v2.1: 渐进式技能 — 注入当前专家可用的技能目录
         let skillCatalog = '';
         try {
           const catalog = getSkillLoader().buildCatalogText(type);
           if (catalog) skillCatalog = '\n\n' + catalog;
-        } catch { log.warn('Skill catalog build failed, continuing without it'); }
+        } catch { /* skill catalog build failed — degraded */ }
+
+        // v2.1: PKB 知识注入 — 注入行业+客户知识到专家上下文
+        let knowledgeContext = '';
+        try {
+          const { getKnowledgeInjector } = await import('../agent/knowledge-injector');
+          const injector = getKnowledgeInjector();
+          const result = injector.inject();
+          if (result.contexts.length > 0) {
+            knowledgeContext = '\n\n## 行业知识库\n\n' + result.contexts
+              .filter(c => c.validated)
+              .map(c => c.content)
+              .join('\n\n---\n\n');
+          }
+        } catch { /* knowledge injection failed — degraded */ }
         const evidenceSummary = filtered.slice(0, 10).map(e =>
           `[${e.type}] ${e.content.slice(0, 100)} (置信度: ${e.confidence})`,
         ).join('\n');
 
-        const systemPrompt = `${prompt}${skillCatalog}\n\n## 输出格式 (必须严格遵守)\n只输出纯 JSON, 不要 Markdown 代码块包裹。\n${EXPERT_REPORT_SCHEMA}`;
+        const systemPrompt = `${prompt}${skillCatalog}${knowledgeContext}\n\n## 输出格式 (必须严格遵守)\n只输出纯 JSON, 不要 Markdown 代码块包裹。\n${EXPERT_REPORT_SCHEMA}`;
         const userMessage = `## 可用证据\n${evidenceSummary || '无证据'}\n\n## 本体图更新 (可选)\n如果你发现了证据中未出现的新实体或关系，请在 ontologyPatches 字段中输出。格式: "ontologyPatches": [{ "createNodes": [...], "createEdges": [...] }]`;
 
         const response = await Promise.race([

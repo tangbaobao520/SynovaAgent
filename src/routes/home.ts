@@ -74,6 +74,10 @@ footer a{color:var(--accent);text-decoration:none}
 </nav>
 
 <div class="hero">
+  <div id="llm-badge" style="display:inline-flex;align-items:center;gap:6px;padding:.3rem 1rem;border-radius:20px;font-size:.8rem;margin-bottom:1rem;font-weight:600;background:var(--card);border:1px solid var(--border);">
+    <span style="width:7px;height:7px;border-radius:50%;background:var(--muted);"></span>
+    <span id="llm-status-text">检测中...</span>
+  </div>
   <h1>您的企业，<span>7×24 小时</span>都有专家在看护</h1>
   <p class="sub">
     Synova 不是 ChatBot，是一个<strong>驻扎在企业内部的 AI 诊断 Agent</strong>。<br>
@@ -132,6 +136,28 @@ function toggleTheme(){
     btn.textContent='☀️ 浅色';
   }
 }
+// Day6: LLM状态检测
+(async function(){
+  const badge=document.getElementById('llm-badge');
+  const dot=badge?.querySelector('span');
+  const text=document.getElementById('llm-status-text');
+  try{
+    const r=await fetch('/api/status');
+    const s=await r.json();
+    if(s.llmConfigured){
+      if(dot)dot.style.background='var(--green)';
+      if(text)text.textContent='LLM 就绪 · 实时诊断可用';
+    }else{
+      if(dot)dot.style.background='var(--orange)';
+      if(text)text.textContent='演示模式 · LLM未配置';
+      if(badge)badge.style.borderColor='var(--orange)';
+    }
+  }catch(e){
+    if(dot)dot.style.background='var(--red)';
+    if(text)text.textContent='离线模式 · 服务未启动';
+    if(badge)badge.style.borderColor='var(--red)';
+  }
+})();
 </script>
 </body>
 </html>`;
