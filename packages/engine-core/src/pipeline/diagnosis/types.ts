@@ -363,11 +363,8 @@ export interface FullDiagnosisV2 extends FullDiagnosis {
   /** 组织弹性边界（无团队变更数据时为 null） */
   eob?: EOBReport | null;
   /** 品类认知清晰度（无客户访谈数据时为 null） */
-  categoryClarity?: import('./category-clarity').CategoryClarityResult | null;
   /** 差异化实质性验证（无差异化主张或客户感知数据时为 null） */
-  differentiationValidation?: import('./differentiation-validation').DifferentiationValidationResult | null;
   /** 定位三方一致性（三方数据不完整时为 null） */
-  positioningConsistency?: import('./positioning-consistency').PositioningConsistencyResult | null;
 }
 
 // ====================================================================

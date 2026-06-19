@@ -66,7 +66,7 @@ export const pathDependencySentinel: Sentinel = {
     const { now } = context;
     try {
       const teams = discoverTeams(context);
-      const mod = await import('../../../packages/engine-core/src/pipeline/diagnosis/path-dependency') as { detectPathDependency(t: string): PathDep[] };
+      const mod = await import('../../sentinel/compute/path-dependency') as { detectPathDependency(t: string): PathDep[] };
       const allFindings: SentinelFinding[] = []; let anyFailed = false, anyData = false; const errors: string[] = [];
       for (const tid of teams) {
         const r = await checkTeam(config.id, tid, now, (t) => mod.detectPathDependency(t), (rep) => extractFindings(rep as PathDep[], now), 'PathDep');

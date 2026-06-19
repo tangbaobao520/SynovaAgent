@@ -62,7 +62,7 @@ export function getSentinelFindings(query: FindingsQuery = {}): FindingsResponse
 
   // Week 4: D3 数据采集 — FDE 查看哨兵报告 = 一次人-AI 协作事件
   try {
-    const { recordCollaborationEvent } = require('../../packages/engine-core/src/pipeline/collaboration-collector') as {
+    const { recordCollaborationEvent } = require('../pipeline/collaboration-collector') as {
       recordCollaborationEvent: (e: { timestamp: string; gapDimension: string; eventType: string; roles: { from: string; to: string }; data: { modeUsed: string; outcome: string; durationMs?: number; humanIntervention?: boolean } }) => void;
     };
     recordCollaborationEvent({

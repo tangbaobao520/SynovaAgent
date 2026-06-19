@@ -28,7 +28,7 @@ export const htmSentinel: Sentinel = {
       const teams = discoverTeams(context);
       if (teams.length === 0) return { sentinelId: config.id, ok: true, findings: [], durationMs: 0, checkedAt, degraded: true };
 
-      const htmMod = await import('../../../packages/engine-core/src/pipeline/diagnosis/htm') as { computeHTM(teamId: string): HTMReport | null };
+      const htmMod = await import('../../sentinel/compute/htm') as { computeHTM(teamId: string): HTMReport | null };
       const allFindings: SentinelFinding[] = []; let anyTeamHadData = false, anyTeamFailed = false; const errors: string[] = [];
 
       for (const teamId of teams) {

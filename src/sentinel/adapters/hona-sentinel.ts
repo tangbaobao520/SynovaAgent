@@ -93,7 +93,7 @@ export const honaSentinel: Sentinel = {
     const restore = swapDbForContext(context); const { now } = context;
     try {
       const teams = discoverTeams(context);
-      const mod = await import('../../../packages/engine-core/src/pipeline/diagnosis/hona') as unknown as { computeHONA(t: string): HONAReport | null };
+      const mod = await import('../../sentinel/compute/hona') as unknown as { computeHONA(t: string): HONAReport | null };
       const allFindings: SentinelFinding[] = []; let anyFailed = false, anyData = false; const errors: string[] = [];
       for (const tid of teams) {
         const r = await checkTeam(config.id, tid, now, (t) => mod.computeHONA(t), (rep) => extractFindings(rep as HONAReport, now), 'HONA');

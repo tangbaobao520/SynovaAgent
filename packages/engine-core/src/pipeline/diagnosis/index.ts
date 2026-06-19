@@ -152,8 +152,6 @@ export { computeHONA, recordAgentInteraction, clearAgentInteractions } from './h
 // ── V2 Extension Modules (ARCH-06) ──
 export { computeCapabilitySpectrum } from './capability-spectrum';
 export { computeIntentAlignment } from './intent-alignment';
-export { computeGoalAlignment, goalAlignmentModule } from './goal-alignment';
-export type { GoalAlignmentReport } from './goal-alignment';
 export { computeSevenPowers } from './seven-powers';
 
 // ── Trust & Boundary Modules (ARCH-06 P2) ──
@@ -183,14 +181,12 @@ export {
   getModule,
   runModule,
   runModules,
-} from './module-registry';
 export type {
   DiagnosticModule,
   DiagnosticPriority,
   ConfidenceModel,
   DiagnosticDataSourceRequirements,
   ModuleRunResult,
-} from './module-registry';
 
 // ── Persistence ──
 export {
@@ -206,8 +202,6 @@ export {
 } from './persistence';
 
 // ── FDE Modules (ARCH-08) ──
-export { generateMultiRoleNarrative } from './auto-interpreter';
-export { generateActionPlan } from './auto-action';
 export { pushActionItems } from './task-integration';
 
 // ── FDE Toolset (Agent 工具注册) ──
@@ -394,12 +388,6 @@ export {
 export type { IntervieweeRoleType, DecisionAuthority, CommunicationPreference, IntervieweeProfile, ProfileBuildInput } from './interviewee-profile';
 
 // ── Marketing Modules (ARCH-19) ──
-export { computeCategoryClarity, computeCategoryClarityForTeam } from './category-clarity';
-export type { CategoryClarityResult } from './category-clarity';
-export { validateDifferentiation, refineWithLLM } from './differentiation-validation';
-export type { DifferentiationValidationResult, OrgCapabilityCheck } from './differentiation-validation';
-export { computePositioningConsistency } from './positioning-consistency';
-export type { PositioningConsistencyResult, ConsistencyGap } from './positioning-consistency';
 export { loadMarketingData, saveMarketingData, deleteMarketingData } from './marketing-data-store';
 export type { MarketingDataRecord, MarketingDataInput } from './marketing-data-store';
 

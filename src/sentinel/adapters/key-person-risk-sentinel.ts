@@ -33,7 +33,7 @@ function extractFindings(report: KPRReport, now: Date): SentinelFinding[] {
 
 async function loadKPRData(teamId: string, _ctx: SentinelContext): Promise<any> {
   // 延迟加载 engine-core cjs 模块
-  const mod = await import('../../../packages/engine-core/src/pipeline/diagnosis/key-person-risk') as unknown as {
+  const mod = await import('../../sentinel/compute/key-person-risk') as unknown as {
     analyzeKeyPersonRisk(p: any): KPRReport;
     buildDependenciesFromRoles(roles: Array<{ roleId: string; roleName: string; responsibilities: string[]; teamIds: string[] }>): any[];
     buildKnowledgeDomains(domains: Array<{ name: string; holders: string[]; criticality: string; documentationUrl: string }>): any[];

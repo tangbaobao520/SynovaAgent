@@ -90,7 +90,7 @@ export const gapDynamicsSentinel: Sentinel = {
     const { now } = context;
     try {
       const teams = discoverTeams(context);
-      const mod = await import('../../../packages/engine-core/src/pipeline/diagnosis/gap-dynamics') as { computeDynamics(t: string): GapDynamics | null };
+      const mod = await import('../../sentinel/compute/gap-dynamics') as { computeDynamics(t: string): GapDynamics | null };
       const allFindings: SentinelFinding[] = []; let anyFailed = false, anyData = false; const errors: string[] = [];
       for (const tid of teams) {
         const r = await checkTeam(config.id, tid, now, (t) => mod.computeDynamics(t), (rep) => extractFindings(rep as GapDynamics, now), 'GapDynamics');

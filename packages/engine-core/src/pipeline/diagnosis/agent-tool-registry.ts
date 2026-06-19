@@ -10,7 +10,7 @@
 
 import type { FullDiagnosisV2 } from './types';
 import { DiagnosisPermissionLevel } from './types';
-import { listModules, runModule, type DiagnosticModule } from './module-registry';
+// [CODEX-CLEANUP] module-registry removed, DiagnosticModule type replaced with inline
 import { FDE_TOOLS, type FdeToolDefinition } from './fde-toolset';
 import {
   createInterviewProject,
@@ -47,7 +47,7 @@ export interface AgentTool {
   permission: DiagnosisPermissionLevel;
   /** 允许在哪些 Phase 中调用（空 = 全部） */
   allowedPhases: number[];
-  /** 来源模块 ID（对应 DiagnosticModule.id 或 fde-tool 名称） */
+  /** 来源模块 ID（对应 fde-tool 名称） */
   sourceModule: string;
   /** 执行函数 */
   execute(input: Record<string, unknown>, ctx: AgentToolContext): Promise<{ content: string }>;
@@ -117,7 +117,7 @@ export async function executeTool(
 // Build tools from diagnostic modules
 // ====================================================================
 
-function moduleToTool(mod: DiagnosticModule): AgentTool {
+function moduleToTool(mod: { id: string; name?: string; description?: string; category?: string; mode?: string; priority?: string; compute?: Function }): AgentTool {
   return {
     name: `diagnose_${mod.id.replace(/-/g, '_')}`,
     description: `${mod.label}：${mod.description}（优先级 ${mod.priority}，置信度 ${mod.confidenceModel}）`,

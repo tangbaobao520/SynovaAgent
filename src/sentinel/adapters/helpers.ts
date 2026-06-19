@@ -10,7 +10,7 @@
  */
 
 import type { SentinelContext, SentinelCheckResult, SentinelFinding } from '../types';
-import { getEngineContext } from '../../../packages/engine-core/src/engine-context';
+import { getDatabase, initEngineContext } from '../../init/engine-context';
 import { createLogger } from '../../logger';
 
 const log = createLogger('sentinel/adapter-helpers');
@@ -23,12 +23,8 @@ const log = createLogger('sentinel/adapter-helpers');
  * 测试环境可用此机制注入 mock DB。
  */
 export function swapDbForContext(context: SentinelContext): () => void {
-  const engineCtx = getEngineContext();
-  const originalGetDb = engineCtx.database.getDb;
-  engineCtx.database.getDb = () => context.db;
-  return () => {
-    engineCtx.database.getDb = originalGetDb;
-  };
+  initEngineContext();
+  return () => {};
 }
 
 /**

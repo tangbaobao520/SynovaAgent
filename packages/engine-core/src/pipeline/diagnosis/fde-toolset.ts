@@ -49,108 +49,24 @@ export interface FdeToolDefinition {
 // Tool 1: auto-interpreter — 多角色解读
 // ====================================================================
 
+// [CODEX-CLEANUP] autoInterpreterTool removed - auto-interpreter module deleted
 const autoInterpreterTool: FdeToolDefinition = {
   name: 'generate_multi_role_narrative',
-  description: `为诊断结果生成 CEO、团队负责人、HRBP 三个角色的自然语言解读。
-每个角色约 150-250 字中文，从各自视角分析诊断发现的关键问题。
-调用时机：Phase 2（假设生成阶段，需要多角度理解诊断数据时）或 Phase 5（交付阶段，生成报告时）。`,
-  inputSchema: {
-    type: 'object',
-    properties: {
-      /** 可指定只生成特定角色，默认全部三个 */
-      roles: {
-        type: 'array',
-        items: { type: 'string', enum: ['ceo', 'teamLead', 'hrbp'] },
-        description: '要生成解读的角色列表。空数组或省略 = 全部生成。',
-      },
-    },
-  },
-  async execute(_input, diagnosis, _teamId) {
-    const { generateMultiRoleNarrative } = await import('./auto-interpreter');
-    const result = await generateMultiRoleNarrative(diagnosis);
-
-    if (!result) {
-      return { content: JSON.stringify({ error: '无足够数据生成解读', fallback: true }) };
-    }
-
-    return {
-      content: JSON.stringify({
-        ceoSummary: result.ceoSummary,
-        teamLeadGuidance: result.teamLeadGuidance,
-        hrBPActionItems: result.hrBPActionItems,
-        fallback: result.fallback,
-        generatedAt: result.generatedAt,
-      }),
-    };
-  },
+  description: '[REMOVED]',
+  inputSchema: { type: 'object', properties: {} },
+  async execute() { throw new Error('auto-interpreter removed'); },
 };
 
 // ====================================================================
 // Tool 2: auto-action — 行动方案生成
 // ====================================================================
 
+// [CODEX-CLEANUP] autoActionTool removed - auto-action module deleted
 const autoActionTool: FdeToolDefinition = {
   name: 'generate_action_plan',
-  description: `基于诊断数据生成具体可操作的改进行动方案。
-两阶段生成：先运行 20+ 条确定性规则匹配，再用 LLM 补充规则未覆盖的异常发现。
-返回按优先级（critical > high > medium > low）排序的行动项列表，经过去重。
-调用时机：Phase 3（根因分析后，需要将根因转化为行动时）或 Phase 5（交付报告中的建议部分）。`,
-  inputSchema: {
-    type: 'object',
-    properties: {
-      /** 可选的多角色解读，用于增强 LLM 上下文 */
-      includeNarrative: {
-        type: 'boolean',
-        description: '是否先生成多角色解读以增强行动建议的上下文。默认 false。',
-        default: false,
-      },
-      /** 限制返回的优先级 */
-      minPriority: {
-        type: 'string',
-        enum: ['critical', 'high', 'medium', 'low'],
-        description: '最低优先级过滤。例如 "medium" 返回 critical+high+medium。省略 = 全部。',
-      },
-    },
-  },
-  async execute(input, diagnosis, _teamId) {
-    const { generateActionPlan } = await import('./auto-action');
-
-    let narrative: MultiRoleNarrative | null = null;
-    if (input.includeNarrative) {
-      const { generateMultiRoleNarrative } = await import('./auto-interpreter');
-      narrative = await generateMultiRoleNarrative(diagnosis);
-    }
-
-    const plan = await generateActionPlan(diagnosis, narrative);
-
-    // 按 minPriority 过滤
-    let items = plan.items;
-    const minPriority = input.minPriority as string | undefined;
-    if (minPriority) {
-      const order = { critical: 0, high: 1, medium: 2, low: 3 };
-      const minLevel = order[minPriority as keyof typeof order] ?? 0;
-      items = items.filter(i => order[i.priority] <= minLevel);
-    }
-
-    return {
-      content: JSON.stringify({
-        teamId: plan.teamId,
-        itemCount: items.length,
-        items: items.map(i => ({
-          id: i.id,
-          title: i.title,
-          priority: i.priority,
-          targetSystem: i.targetSystem,
-          estimatedEffortHours: i.estimatedEffortHours,
-          sourceDimension: i.sourceDimension,
-          description: i.description.slice(0, 200),
-          suggestion: i.suggestion,
-        })),
-        degradedModules: plan.degradedModules,
-        generatedAt: plan.generatedAt,
-      }),
-    };
-  },
+  description: '[REMOVED]',
+  inputSchema: { type: 'object', properties: {} },
+  async execute() { throw new Error('auto-action removed'); },
 };
 
 // ====================================================================

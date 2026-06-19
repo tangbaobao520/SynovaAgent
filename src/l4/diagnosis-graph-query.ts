@@ -269,3 +269,8 @@ export function detectAnomalousPatterns(store: GraphStoreRO, graph: string): Ano
 
   return patterns;
 }
+
+
+// Bridge for engine-core graph-query functions (CODEX-ENGINE-CORE-SPLIT)
+import { detectCommunities as _detect } from '../../packages/engine-core/src/pipeline/diagnosis/graph-query';
+export const detectCommunities = _detect;

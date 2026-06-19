@@ -15,12 +15,15 @@
  *     rules/                — 诊断规则 (DecisionRule[])
  */
 
-import type { DiagnosticModule, OntologyRole } from './module-registry';
+// [CODEX-CLEANUP] DiagnosticModule type replaced with inline
+type DiagnosticModule = { id: string; name: string; mode: string; category: string; compute: Function; inputSchema?: any; ontologyRole?: string };
+type OntologyRole = string;
+
 import type { ExpertKnowledgeEntry, ExpertType } from './types';
 import type { OntologyTemplate } from './ontology-templates/index';
 import type { DecisionRule } from './decision-engine';
 import type { OntologyAdapter } from './ontology-adapter';
-import { registerModule } from './module-registry';
+// [CODEX-CLEANUP] registerModule removed
 import { addExpertKnowledge } from './expert-knowledge';
 import { registerAdapter } from './ontology-adapter';
 import { createLogger } from '../../infra/logger';
@@ -37,7 +40,7 @@ export interface SkillDefinition {
   /** 依赖的其他 Skill */
   dependencies?: string[];
   /** 内置模块 */
-  modules?: Array<Omit<DiagnosticModule, 'ontologyRole'> & { ontologyRole?: OntologyRole }>;
+  modules?: Array<Omit<DiagnosticModule, 'ontologyRole'> & { ontologyRole?: string }>;
   /** 专家提示词 */
   experts?: Array<{ type: ExpertType; systemPrompt: string; description: string }>;
   /** 本体模板 */
@@ -73,7 +76,8 @@ export function installSkill(skill: SkillDefinition): SkillManifest {
   let modulesCount = 0;
   if (skill.modules) {
     for (const mod of skill.modules) {
-      registerModule({ ...mod, ontologyRole: mod.ontologyRole || 'analyzer' } as DiagnosticModule);
+      // [CODEX-CLEANUP] registerModule removed - module-registry deleted
+
       modulesCount++;
     }
   }

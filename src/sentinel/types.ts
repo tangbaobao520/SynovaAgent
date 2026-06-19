@@ -10,7 +10,7 @@
  * @state: real — 接口契约, 编译器强制执行
  */
 
-import type { DiagnosisErrorCode } from '../../packages/engine-core/src/pipeline/diagnosis/types';
+import type { DiagnosisErrorCode } from '../types/engine-core-types';
 
 // ═══ Sentinel 元数据 ═══
 

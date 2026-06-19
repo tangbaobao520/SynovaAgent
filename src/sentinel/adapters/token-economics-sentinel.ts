@@ -47,7 +47,7 @@ export const tokenEconomicsSentinel: Sentinel = {
     const restore = swapDbForContext(context); const { now } = context;
     try {
       const teams = discoverTeams(context);
-      const mod = await import('../../../packages/engine-core/src/pipeline/diagnosis/token-economics') as unknown as { computeTokenEconomics(t: string, b?: any, n?: any): TokenEconReport | null };
+      const mod = await import('../../sentinel/compute/token-economics') as unknown as { computeTokenEconomics(t: string, b?: any, n?: any): TokenEconReport | null };
       const allFindings: SentinelFinding[] = []; let anyFailed = false, anyData = false; const errors: string[] = [];
       for (const tid of teams) {
         const r = await checkTeam(config.id, tid, now, (t) => mod.computeTokenEconomics(t), (rep) => extractFindings(rep as TokenEconReport, now), 'TokenEcon');

@@ -40,9 +40,6 @@ import { computeFinancialImpact, loadFinancialBaseline } from './financial-impac
 import { computeTokenEconomics } from './token-economics';
 import { computeHTM } from './htm';
 import { computeEOB } from './eob';
-import { computePositioningConsistency } from './positioning-consistency';
-import { computeCategoryClarity } from './category-clarity';
-import { validateDifferentiation } from './differentiation-validation';
 import { loadMarketingData } from './marketing-data-store';
 import { getEngineContext } from '../../engine-context';
 
@@ -396,7 +393,7 @@ export function assembleFullDiagnosisV2(teamId: string): FullDiagnosisV2 {
 
   return {
     ...result, htm, eob, financialImpact, tokenEconomics,
-    categoryClarity, positioningConsistency, differentiationValidation,
+    // [CODEX-CLEANUP] fields removed
     degradedModules,
   };
 }

@@ -76,7 +76,7 @@ export const hacdSentinel: Sentinel = {
     const restore = swapDbForContext(context); const { now } = context;
     try {
       const teams = discoverTeams(context);
-      const mod = await import('../../../packages/engine-core/src/pipeline/diagnosis/hacd') as { computeHACD(t: string): HACDReport | null };
+      const mod = await import('../../sentinel/compute/hacd') as { computeHACD(t: string): HACDReport | null };
       const allFindings: SentinelFinding[] = []; let anyFailed = false, anyData = false; const errors: string[] = [];
       for (const tid of teams) {
         const r = await checkTeam(config.id, tid, now, (t) => mod.computeHACD(t), (rep) => extractFindings(rep as HACDReport, now), 'HACD');

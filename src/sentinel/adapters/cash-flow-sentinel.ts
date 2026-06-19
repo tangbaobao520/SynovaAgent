@@ -7,7 +7,7 @@
  */
 
 import type { Sentinel, SentinelCheckResult, SentinelConfig, SentinelContext, SentinelFinding } from '../types';
-import type { FinancialEntry } from '../../../packages/engine-core/src/pipeline/diagnosis/financial-snapshot';
+import type { FinancialEntry } from '../../sentinel/compute/financial-snapshot';
 import { discoverTeams } from './helpers';
 import { createLogger } from '../../logger';
 
@@ -39,7 +39,7 @@ export const cashFlowSentinel: Sentinel = {
 
       // 映射 SOG props → FinancialEntry (动态 import — 铁律 39)
       const { computeFinancialSnapshot } = await import(
-        '../../../packages/engine-core/src/pipeline/diagnosis/financial-snapshot'
+        '../../sentinel/compute/financial-snapshot'
       );
       const entries: FinancialEntry[] = [];
       for (const r of rawEntries) {

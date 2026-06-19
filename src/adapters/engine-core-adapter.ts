@@ -46,7 +46,7 @@ export class EngineCoreVendorAdapter implements DiagnosisEngine {
       // PDE 手动完成访谈后创建初始 snapshot — 首次诊断的数据种子
       try {
         const { getLatestSnapshot, recordGapSnapshot } = await import(
-          '../../packages/engine-core/src/pipeline/diagnosis/gap-recorder'
+          '../pipeline/gap-recorder'
         );
         if (!getLatestSnapshot(teamId)) {
           const GAP_DIMS = [

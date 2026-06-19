@@ -228,7 +228,7 @@ export function createKnowledgeAgent(config: KnowledgeAgentConfig = {}): Knowled
         handler: async (params: Record<string, unknown>) => {
           try {
             // 铁律 39: L3 → L4 通过 GraphStore 接口访问，不跨层调 L1 HTTP 路由
-            const { SQLiteGraphStore } = await import('../../packages/engine-core/src/pipeline/diagnosis/graph-store');
+            const { SQLiteGraphStore } = await import('../l4/engine-graph-store');
             const db = getDatabase();
             const graphStore = new SQLiteGraphStore(db);
             const orgId = String(params.orgId || 'default');

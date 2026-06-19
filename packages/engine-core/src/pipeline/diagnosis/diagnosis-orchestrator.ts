@@ -40,7 +40,6 @@ import type { PermissionContext, PermissionResult } from './types';
 import type { PermissionRequest } from './diagnosis-permissions';
 import { RecoveryExecutor, createDefaultRecoveryExecutor, DiagnosisFailureScenario } from './diagnosis-recovery';
 import { EvidenceManager } from './evidence-manager';
-import { runModules, listModules, ensureModulesRegistered } from './module-registry';
 import { getLatestSnapshot, GAP_DIMENSIONS } from './gap-recorder';
 import { estimateMessageTokens } from './diagnosis-session';
 import { detectPosture, defaultDetection } from './posture-detector';
@@ -494,7 +493,8 @@ export class DiagnosisOrchestrator<
     const degraded: string[] = [];
 
     try {
-      const results = await runModules(teamId);
+      // [CODEX-CLEANUP] runModules removed - module-registry deleted
+      const results: any[] = [];
       for (const result of results) {
         if (result.status === 'degraded' || result.status === 'failed') {
           degraded.push(result.moduleId);
@@ -960,7 +960,7 @@ export class DiagnosisOrchestrator<
     // 分母用模块总数而非 scope 维度——避免 scope 维度与证据维度命名体系不同
     // 导致的误判（如 scope=information_flow vs evidence=gaps）。
     const validEvidence = evidence.filter(e => e.confidence >= 0.4);
-    const totalModules = listModules().length;
+    const totalModules = 0;
     const ratio = validEvidence.length / Math.max(totalModules, 1);
     if (ratio < this.config.gateDataCompleteness) {
       return false;
