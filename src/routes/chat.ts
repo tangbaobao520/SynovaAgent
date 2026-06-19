@@ -273,7 +273,7 @@ async function init() {
       const skipBtn = document.getElementById('quick-actions');
       if (skipBtn) {
         skipBtn.innerHTML = '<button class="q-btn" onclick="skipPhase0()" style="background:var(--accent);color:#fff">🚀 跳过访谈，直接开始</button>' +
-          '<button class="q-btn" onclick="quickDiag(\\'公司诊断\\')">🔍 先了解我的组织</button>';
+          '<button class="q-btn" onclick="quickDiag('公司诊断')">🔍 先了解我的组织</button>';
       }
     } else {
       addSystem('msg', '👋 我是 Synova，你的 AI 组织诊断助手。<br>点击下方按钮开始，或直接输入你的组织名称。');

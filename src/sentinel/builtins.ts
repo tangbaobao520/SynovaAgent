@@ -9,7 +9,8 @@
  */
 
 import { readdirSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { getSentinelRegistry } from './registry';
 import { createLogger } from '../logger';
 
@@ -32,6 +33,8 @@ function filenameToExportKey(filename: string): string {
  */
 export async function registerBuiltinSentinels(): Promise<void> {
   const registry = getSentinelRegistry();
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = dirname(__filename);
   const adaptersDir = join(__dirname, 'adapters');
 
   let sentinelFiles: string[];
