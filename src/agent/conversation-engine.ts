@@ -553,6 +553,15 @@ export class ConversationEngine {
         // Slice 5.1: 自动同步 SOG 本体
         this.syncToSOG().then(r => { this._lastOntologyResult = r; }).catch(() => {});
 
+        // 审计 P0-20260620: Phase 0 完成后自动启动诊断管线
+        this.startDiagnosis('FDE', '用户').then(result => {
+          if (result) {
+            log.info({ teamId: result.teamId, durationMs: result.totalDurationMs }, '诊断管线已完成');
+          }
+        }).catch(err => {
+          log.warn({ err }, '诊断管线启动失败 — degraded');
+        });
+
         return { reply, phaseComplete: true };
       }
 
