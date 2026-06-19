@@ -100,6 +100,14 @@ header .status{font-size:11px;color:var(--dim)}
 .msg.user{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:3px}
 .msg.agent{align-self:flex-start;background:var(--panel);border:1px solid var(--border);border-bottom-left-radius:3px}
 .msg.system{align-self:center;background:transparent;color:var(--dim);font-size:11px;text-align:center;max-width:100%}
+/* ── Dimension + Expert labels (Day3) ── */
+.dim-tag{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600;margin-right:4px}
+.dim-tag.covered{background:#0a2a0a;color:var(--green)}
+.dim-tag.missing{background:#2a0a0a;color:var(--red)}
+.dim-tag.partial{background:#2a1a0a;color:var(--orange)}
+.expert-watching{font-size:10px;color:var(--dim);margin-top:4px;display:flex;gap:6px;flex-wrap:wrap}
+.expert-watching span{background:var(--panel);border:1px solid var(--border);padding:1px 6px;border-radius:3px}
+.intent-notice{font-size:10px;color:var(--orange);margin-top:2px;font-style:italic}
 /* ── Interim Finding Card (L1-P0-3) ── */
 .card-finding{align-self:flex-start;background:#0d1a1a;border:1px solid #1a3a3a;border-left:3px solid var(--cyan);border-radius:8px;padding:10px 14px;font-size:12px;line-height:1.6;max-width:90%}
 .card-finding .card-title{font-weight:600;color:var(--cyan);margin-bottom:4px;font-size:13px;display:flex;align-items:center;gap:6px}
@@ -163,6 +171,13 @@ header .status{font-size:11px;color:var(--dim)}
 <body>
 <header>
   <h1><span class="dot" id="status-dot"></span>Synova</h1>
+  <div id="dimension-bar" style="display:flex;align-items:center;gap:8px;font-size:11px;">
+    <span style="color:var(--dim)">维度</span>
+    <span id="dim-count" style="color:var(--accent2);font-weight:600">0/8</span>
+    <div style="width:80px;height:4px;background:#1a1a2a;border-radius:2px;overflow:hidden">
+      <div id="dim-fill" style="height:100%;background:var(--accent);border-radius:2px;transition:width .3s;width:0%"></div>
+    </div>
+  </div>
   <span class="status" id="status-text">连接中...</span>
 </header>
 <div id="progress-bar-container">
@@ -294,6 +309,40 @@ function addMsg(role, text) {
   const d = document.createElement('div');
   d.className = 'msg ' + role;
   d.textContent = text;
+  messages.appendChild(d);
+  scrollDown();
+}
+
+// ═══ Day3: 维度覆盖 + 专家标注 + 意图识别 ═══
+function updateDimCoverage(covered, total) {
+  total = total || 8;
+  const el = document.getElementById('dim-count');
+  const fill = document.getElementById('dim-fill');
+  if (el) el.textContent = covered + '/' + total;
+  if (fill) fill.style.width = (covered / total * 100) + '%';
+}
+
+function addAgentMsg(text, dimKey, experts) {
+  const d = document.createElement('div');
+  d.className = 'msg agent';
+  d.innerHTML = text.replace(/\\n/g,'<br>');
+  if (dimKey || experts) {
+    const meta = document.createElement('div');
+    meta.className = 'expert-watching';
+    if (dimKey) meta.innerHTML += '<span class=\\'dim-tag covered\\'>' + esc(dimKey) + '</span>';
+    if (experts && experts.length) {
+      experts.forEach(function(e) { meta.innerHTML += '<span>' + esc(e) + '</span>'; });
+    }
+    d.appendChild(meta);
+  }
+  messages.appendChild(d);
+  scrollDown();
+}
+
+function addIntentNotice(text) {
+  const d = document.createElement('div');
+  d.className = 'msg system';
+  d.innerHTML = '<span class=\\'intent-notice\\'>' + esc(text) + '</span>';
   messages.appendChild(d);
   scrollDown();
 }
@@ -456,9 +505,19 @@ function handleSSEEvent(evt) {
       addProposalCard(evt);
       break;
 
+    // ── Day3: 维度覆盖更新 + 专家标注 ──
+    case 'dimension_covered':
+      if (evt.covered !== undefined) updateDimCoverage(evt.covered, evt.total || 8);
+      break;
+    case 'agent_thinking':
+      addAgentMsg(evt.message || evt.text || '', evt.dimension, evt.experts);
+      break;
+    case 'intent_notice':
+      addIntentNotice(evt.message || '');
+      break;
+
     // ── Unknown ──
     default:
-      // Forward any unrecognized events as JSON for debugging
       if (evt.type && evt.type !== 'token' && evt.type !== 'agent_message') break;
   }
 }
