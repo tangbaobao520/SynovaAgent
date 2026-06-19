@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering v3.0 — PreToolUse: task brief 质量检查
+# Loop Engineering v3.1 — PreToolUse: task brief 质量检查
 #
 # 挂在 PreToolUse → Edit|Write 上，在 hook-check-memory.sh 之后运行。
 # 7 项字段质量检查 + 接口真实性反向验证 + 层级确认。

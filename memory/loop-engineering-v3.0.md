@@ -1,13 +1,13 @@
 ---
-name: loop-engineering-v3.0
-description: Loop Engineering v3.0 — 精简执法架构 (5项阻断) + Agent自检5问
+name: loop-engineering-v3.1
+description: Loop Engineering v3.1 — 精简执法架构 (5项阻断) + Agent自检5问 + 产品对齐检查
 metadata:
   type: project
 ---
 
-# Loop Engineering v3.0 — 精简物理执法 + Agent 自检
+# Loop Engineering v3.1 — 精简物理执法 + Agent 自检 + 产品对齐
 
-> 2026-06-17 v2.5 → v3.0 重构。
+> 2026-06-17 v2.5 → v3.0 重构 → 2026-06-19 v3.1 (+产品对齐检查Q1-Q4)。
 > 核心翻转：从"每犯一错加一脚本"→"找到根源，用一个机制防一类错"。
 > 从"bash 替 agent 思考"→"agent 自问 + bash 查硬伤"。
 

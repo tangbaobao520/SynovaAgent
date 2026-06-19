@@ -186,11 +186,12 @@ LLM       → providers/ (DeepSeek, OpenAI, Gateway)
 
 ---
 
-## Loop Engineering v3.0 — 精简物理执法 + Agent 自检
+## Loop Engineering v3.1 — 精简物理执法 + Agent 自检 + 产品对齐
 
-> 2026-06-17 v2.5 → v3.0 重构。核心变化：
+> 2026-06-17 v2.5 → v3.0 重构 → 2026-06-19 v3.1。核心变化：
 > **从"每犯一错加一脚本"→"找到根源，用一个机制防一类错"。**
 > **从"bash 替 agent 思考"→"agent 自问 + bash 查硬伤"。**
+> **v3.1: +产品对齐检查——task-start 后强制回答 Q1-Q4 才能写代码。**
 
 ### 设计哲学
 

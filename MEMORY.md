@@ -1,6 +1,6 @@
 - [Session 2026-06-17](memory/session-2026-06-17.md) — v3.0 改造: hook-block-write + CLAUDE.md + 清理
 - [Project State 2026-06-17](memory/project-state-2026-06-17.md) — v3.0 状态快照 (5项阻断, 8脚本)
-- [Loop Engineering v3.0](memory/loop-engineering-v3.0.md) — 精简执法架构 + Agent自检5问
+- [Loop Engineering v3.1](memory/loop-engineering-v3.0.md) — 精简执法架构 + Agent自检5问 + 产品对齐检查(v3.1)
 - [Session 2026-06-16](memory/session-2026-06-16.md) — feat/prompt-architecture 完整交付记录 (16 commits, 61 files)
 - [Project State 2026-06-16](memory/project-state-2026-06-16.md) — 分支/质量/架构/待办快照（旧，保留历史参考）
 - [Loop Engineering v2.5](memory/loop-engineering-v2.5.md) — 三层阻断 + 38项 pre-commit（旧，保留历史参考）
