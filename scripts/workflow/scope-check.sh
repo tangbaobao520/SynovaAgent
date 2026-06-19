@@ -21,9 +21,83 @@ echo -e "${CYAN}  写代码之前，先确认你在做对的事。${RESET}"
 echo -e "${CYAN}════════════════════════════════════════════════════════════${RESET}"
 echo ""
 
-# ── 找到今日 task brief ──
+# ── 找到今日 task brief (仪表盘需要用到) ──
 BRIEF=$(find "$ROOT/.claude/task-briefs/" -type f -name "${TODAY}*" 2>/dev/null | xargs ls -t 2>/dev/null | head -1)
-if [ -z "$BRIEF" ]; then
+
+# ═══════════════════════════════════════════════════════════════
+# 项目全貌仪表盘 (v3.1: 每次任务前强制注入)
+# ═══════════════════════════════════════════════════════════════
+
+echo -e "${CYAN}━━━ 🏗️ 项目全貌 — 我们在盖什么？━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+echo ""
+
+# ── 产品身份 ──
+echo -e "  ${GREEN}产品:${RESET} Synova — AI 诊断 Agent"
+echo "  定位: 驻扎企业内部的 7×24 诊断系统。Agent 不是 ChatBot。"
+echo "  用户: FDE(前线部署工程师) → 企业主(最终受益者)"
+echo "  核心问题: 这家企业的增长卡在哪里？现在该做什么？"
+echo ""
+
+# ── 当前阶段 ──
+DEADLINE="2026-06-25"
+DAYS_LEFT=$(( ($(date -d "$DEADLINE" +%s 2>/dev/null || date -j -f "%Y-%m-%d" "$DEADLINE" +%s 2>/dev/null || echo 0) - $(date +%s)) / 86400 ))
+[ "$DAYS_LEFT" -lt 0 ] && DAYS_LEFT="?"
+
+echo -e "  ${YELLOW}当前阶段:${RESET} Phase 0 — 6月25日演示冲刺"
+echo -e "  ${YELLOW}剩余天数:${RESET} ${RED}${DAYS_LEFT} 天${RESET}"
+echo -e "  ${YELLOW}目标:${RESET} 黄学松独立完成客户诊断全流程"
+echo ""
+
+# ── 架构地图 (我们盖的是五层楼，每层有不同住户) ──
+echo -e "  ${CYAN}五层架构 (你在哪层施工？):${RESET}"
+echo "    L1 交互 ← 你在这 (Web首页 / 对话页 / 报告展示)"
+echo "    L2 编排 ← ConversationEngine (另一个Claude)"
+echo "    L3 洞察 ← 8专家 + 25哨兵 (已完成)"
+echo "    L4 本体 ← GraphStore + 知识库 (另一个Claude)"
+echo "    L5 存储 ← SQLite (基础设施，勿动)"
+echo ""
+
+# ── 当前任务拼图 (从 task brief 推断) ──
+if [ -n "${BRIEF:-}" ]; then
+  TASK_LINE=$(head -1 "$BRIEF" 2>/dev/null | sed 's/^# //' | head -c 60)
+  echo -e "  ${GREEN}本次任务:${RESET} ${TASK_LINE:-未指定}"
+else
+  echo -e "  ${RED}⚠ 未找到今日 task brief — 请先运行 task-start.sh${RESET}"
+fi
+echo ""
+
+# ── 我的职责边界 (Claude Code/DeepSeek 负责的部分) ──
+echo -e "  ${CYAN}我的职责 (前端+稳定性+全链路):${RESET}"
+echo "    ✅ Day1: LLM降级处理"
+echo "    ✅ Day2: Web首页 + 双入口 + 主题"
+echo "    ⏳ Day3: 对话诊断页 (Agent访谈UI+意图识别)"
+echo "    ⏳ Day4: 诊断报告展示页"
+echo "    ⏳ Day5: 端到端联调 (真实客户数据)"
+echo "    ⏳ Day6: 降级方案 + 黄学松独立跑通"
+echo ""
+
+echo -e "  ${CYAN}另一个 Claude 的职责 (专家体系+报告+文件化):${RESET}"
+echo "    ✅ 专家 SOUL/RULES/KNOWLEDGE 文件"
+echo "    ✅ 核心理论体系 v2.1"
+echo "    ✅ 文件优先引擎升级"
+echo "    ✅ 技能体系扩展"
+echo "    ⏳ 诊断报告 HTML 模板美化"
+echo "    ⏳ 八维提取准确度优化"
+echo ""
+
+# ── 明确边界：绝对不能碰的 ──
+echo -e "  ${RED}🚫 禁止触碰:${RESET}"
+echo "    ❌ expert/ 目录下的 SOUL/RULES/KNOWLEDGE 文件 (另一个Claude)"
+echo "    ❌ packages/engine-core/ 诊断管线 (另一个Claude)"
+echo "    ❌ src/l3/ 专家逻辑 (除非修崩溃bug)"
+echo "    ❌ L5 存储层 / 数据库 schema"
+echo ""
+
+echo -e "${CYAN}────────────────────────────────────────────────────────────${RESET}"
+echo ""
+
+# ── 校验 task brief ──
+if [ -z "${BRIEF:-}" ]; then
   echo -e "${RED}⚠ 未找到今日 task brief。${RESET}"
   echo "  请先运行: bash scripts/workflow/task-start.sh \"你的任务描述\""
   exit 1
