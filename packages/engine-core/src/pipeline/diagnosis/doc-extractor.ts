@@ -14,16 +14,16 @@ const log = createLogger('diagnosis/doc-extractor');
 
 // ═══ Types ═══
 
-/** 八维度定义 */
+/** 八维度定义（v2.1 增强——含子维度提示，提升不同行业提取准确度） */
 export const EIGHT_DIMENSIONS = [
-  { key: 'mission',          label: '任务目标',   question: '长期愿景和近期战略目标是什么？' },
-  { key: 'businessModel',    label: '业务价值',   question: '主营业务、价值主张、盈利模式？' },
-  { key: 'currentState',     label: '现状起点',   question: '现有组织架构、已有资产、团队规模？' },
-  { key: 'resources',        label: '资源约束',   question: '预算、人员、技术栈限制？' },
-  { key: 'risks',            label: '风险瓶颈',   question: '最担心什么？踩过哪些坑？' },
-  { key: 'successCriteria',  label: '成功标准',   question: '北极星指标是什么？怎么衡量成功？' },
-  { key: 'marketPositioning',label: '市场定位',   question: '客户用什么词描述你？差异化是否实质？' },
-  { key: 'digitalFoundation',label: '数字底座',   question: '日常运转用哪些系统和工具？效率如何？' },
+  { key: 'mission', label: '任务目标', question: '长期愿景是什么？未来1-3年的具体战略目标是什么？（如营收目标、市场地位、产品里程碑）。创始人或CEO的核心意图是什么？' },
+  { key: 'businessModel', label: '业务价值', question: '主营业务是什么？怎么收费？（产品/项目/订阅/平台/分销）。价值主张：客户为什么选你而不是竞品？毛利率和净利率大概多少？收入结构：哪些产品/客户贡献主要收入？' },
+  { key: 'currentState', label: '现状起点', question: '团队多少人？组织架构是怎样的？核心资产有哪些（设备/技术/品牌/客户关系）？成立多久？目前处于什么发展阶段？' },
+  { key: 'resources', label: '资源约束', question: '预算是否紧张？核心人员是否充足？技术或设备有没有瓶颈？时间窗口有没有压力？有什么"想做但没资源做"的事？' },
+  { key: 'risks', label: '风险瓶颈', question: '创始人最担心的事是什么？过去踩过什么坑？有没有单一客户/单一供应商/单一人力依赖？现金流有没有压力？竞争对手在做什么？' },
+  { key: 'successCriteria', label: '成功标准', question: '怎么定义成功？（营收/利润/市场份额/客户数/续约率）。3年后理想状态是什么样的？有哪些可量化的里程碑？' },
+  { key: 'marketPositioning', label: '市场定位', question: '客户怎么评价你们？和竞品比，差异化是什么？（品质/价格/服务/速度/定制化）。差异化是实质性的还是嘴上说的？客户续约率或复购率大概多少？' },
+  { key: 'digitalFoundation', label: '数字底座', question: '日常运转用哪些系统和工具？（ERP/CRM/飞书/钉钉/Excel）。数据准不准？系统之间通不通？有没有数字化瓶颈？（如手工排期、数据孤岛）。用AI工具了吗？' },
 ] as const;
 
 export interface DimensionExtraction {
@@ -100,32 +100,64 @@ export class DocExtractor {
       .map(d => `${d.label}(${d.key}): ${d.question}`)
       .join('\n');
 
-    const prompt = `你是一位企业诊断顾问。请从以下文档中提取八维度关键信息。
+    const prompt = `你是一位资深企业诊断顾问。你正在分析一份企业访谈文档，需要从中提取八个维度的关键信息。
 
-文档内容：
+## 文档内容
 """
 ${content.slice(0, 16000)}
 """
 
-你要提取的八个维度：
+## 需要提取的八个维度
 ${dimensionList}
 
-返回 JSON 数组（只返回 JSON，不要其他文字）：
+## 输出格式
+返回 JSON 数组（只返回 JSON，不要 Markdown 代码块包裹）：
 [{
   "dimensionKey": "mission",
   "dimensionLabel": "任务目标",
-  "content": "提取到的具体信息（引用原文关键句）",
+  "content": "提取到的具体信息——引用原文关键句或数据。如果文档中完全没有涉及，写'未提及'",
   "confidence": "high|medium|low",
   "sufficient": true/false
 }, ...]
 
-规则：
-- 每个维度独立提取。如果文档中没有涉及该维度的信息，content 写"未提及"，confidence 为"low"，sufficient 为 false
-- 不要编造文档中没有的信息
-- 置信度 high = 有明确数据或陈述，medium = 有模糊提及，low = 推断或未提及`;
+## 置信度标准
+- high: 文档中有明确的数字、原话、具体陈述支撑该维度（如"目标3年5000万""毛利率45%"）
+- medium: 文档中有模糊提及或可合理推断，但缺乏具体数据
+- low: 文档中未涉及或完全基于猜测
+
+## sufficient 标准
+- true: 提取到的信息足够支撑一位诊断专家做出有信心的判断
+- false: 信息太少或太模糊——即使给诊断专家，也无法据此给出可靠结论
+
+## 提取原则
+1. 每个维度独立提取，不交叉污染
+2. 优先引用原文中的具体数字和原话（如"王总原话：..."）
+3. 不编造文档中没有的信息。如果文档没提到，诚实写"未提及"
+4. 注意区分"创始人说的"和"可以从数据推断的"——不要混淆
+5. 对于制造业/零售/餐饮等实体行业，特别注意产能利用率、库存周转、翻台率等行业特定指标
+6. 对于SaaS/服务业，特别注意续费率、LTV/CAC、核心人依赖等指标
+
+## 高质量提取示例
+输入文档片段: "王总说3年要做到西南头部，营收从2000万涨到5000万。我们毛利率45%，但净利只有15%。核心讲师就3个，张老师一个人扛60%的课。"
+
+正确提取:
+{
+  "dimensionKey": "mission",
+  "content": "3年成为西南企业服务头部。年营收2000万→5000万。王总原话：'要做到西南头部'",
+  "confidence": "high",
+  "sufficient": true
+}
+
+错误提取（编造）:
+{
+  "dimensionKey": "mission",
+  "content": "目标3年IPO上市",  ← 文档未提及IPO
+  "confidence": "high",
+  "sufficient": true
+}`;
 
     const response = await this.llm.complete(prompt,
-      '你是一位严谨的企业诊断专家。只提取文档中实际存在的信息，不编造。');
+      '你是一位严谨的企业诊断专家。你的唯一任务是忠实提取文档中的信息——不编造、不遗漏、不推理过度。每条提取要么引用原文，要么诚实标注"未提及"。');
 
     try {
       // Extract JSON from response (handle markdown code blocks)
