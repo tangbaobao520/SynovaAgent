@@ -1,0 +1,451 @@
+{
+  "timestamp": "2026-06-18T12:43:30.107Z",
+  "enterprises": 5,
+  "experts": 7,
+  "globalAvg": 4.14,
+  "minScore": 2.7,
+  "maxScore": 5,
+  "passRate": 97,
+  "aGrade": 30,
+  "bGrade": 4,
+  "cOrBelow": 1,
+  "industries": [
+    {
+      "name": "XX科技",
+      "industry": "企业培训和管理咨询",
+      "businessModelType": "项目制",
+      "avgScore": 4.7,
+      "topExpert": "finance",
+      "bottomExpert": "org",
+      "experts": [
+        {
+          "expert": "strategy",
+          "diagnosisScore": 3,
+          "judgeScore": 4.1,
+          "grade": "A",
+          "findings": 5,
+          "conclusion": "XX科技当前战略方向与组织能力严重错配：在缺乏核心壁垒和关键人依赖极高的情况下，追求3倍营收增长将放大现有风险，战略目标不可持续。",
+          "keyStrength": "精确匹配企业数据：所有关键claim均有数据支撑，如'张老师一人承担60%课程量'、'前3客户占营收55%'等。",
+          "keyWeakness": "轻微不精确：'毛利率45%，低于行业优秀水平（50-60%）'——行业优秀水平无企业数据支撑，属于外部推断。"
+        },
+        {
+          "expert": "org",
+          "diagnosisScore": 3,
+          "judgeScore": 4.1,
+          "grade": "A",
+          "findings": 6,
+          "conclusion": "组织能力严重依赖关键个人，增长战略面临极高的执行风险，需立即进行组织能力建设与风险分散。",
+          "keyStrength": "关键人依赖风险的诊断精准——直接引用王总原话'他走了研发就停了'，并给出具体建议（知识资产化、角色转变、降低交付占比），证据充分且建议可执行。",
+          "keyWeakness": "轻微过度推断——'运营团队20人无明确管理层级'在企业数据中未明确说明，仅从'组织扁平'推断，属于轻微不精确。"
+        },
+        {
+          "expert": "finance",
+          "diagnosisScore": 4,
+          "judgeScore": 5,
+          "grade": "A",
+          "findings": 6,
+          "conclusion": "现金流健康但结构脆弱，增长目标与财务支撑力之间存在显著缺口，核心风险集中在客户集中度、关键人依赖和回款周期上。",
+          "keyStrength": "所有 claim 精确匹配企业数据，零幻觉，如'张老师一人承担60%课程量'直接引用企业数据。",
+          "keyWeakness": "未发现明显缺陷。所有维度均达到满分标准。"
+        },
+        {
+          "expert": "tech",
+          "diagnosisScore": 3,
+          "judgeScore": 5,
+          "grade": "A",
+          "findings": 5,
+          "conclusion": "XX科技的核心风险不在技术，而在业务结构——关键人依赖和现金流压力是生存威胁，数字化建设应优先服务于风险缓解而非效率提升。",
+          "keyStrength": "事实精确性极高——所有关键数字和陈述都有企业数据或访谈原话支撑，如'张老师一人承担60%课程量'、'净利率15%'、'前3客户占营收55%'等。",
+          "keyWeakness": "无——该输出在所有维度上均达到最高标准，未发现任何缺陷。"
+        },
+        {
+          "expert": "marketing",
+          "diagnosisScore": 4,
+          "judgeScore": 4.4,
+          "grade": "A",
+          "findings": 5,
+          "conclusion": "XX科技的增长瓶颈不在市场，而在组织——核心讲师单点依赖、客户集中度过高、数字化基础薄弱，导致增长杠杆无法同时转动，营收翻倍目标面临结构性风险。",
+          "keyStrength": "建议高度具体且可执行：如'6个月内实现核心课程至少1人可替代'、'设定客户集中度红线：任何单一客户占比不超过15%'，企业负责人拿到就能开工。",
+          "keyWeakness": "第4个finding中'续约率70%但未提及转介绍机制'——'未提及'并非企业数据中的明确证据，属于合理推断但稍显主观。"
+        },
+        {
+          "expert": "action",
+          "diagnosisScore": 4,
+          "judgeScore": 5,
+          "grade": "A",
+          "findings": 6,
+          "conclusion": "XX科技处于成长期瓶颈，核心风险高度集中（关键人依赖、客户集中、现金流脆弱），需立即从‘人治’转向‘系统化’运营，否则增长目标难以实现。",
+          "keyStrength": "事实准确性极高：所有 claim 均精确匹配企业数据，如'张老师承担60%课程量'、'前3客户占营收55%'等，零幻觉。",
+          "keyWeakness": "无显著缺陷：所有维度均达到满分标准，未发现任何事实错误、证据缺失、推理不足、建议模糊、越界或表达问题。"
+        },
+        {
+          "expert": "business_model",
+          "diagnosisScore": 4,
+          "judgeScore": 5,
+          "grade": "A",
+          "findings": 7,
+          "conclusion": "XX科技当前商业模式存在三个结构性缺陷：核心人依赖、客户集中、现金流时序倒挂，导致增长天花板明显且抗风险能力弱。",
+          "keyStrength": "所有关键claim精确匹配企业数据，无任何幻觉或过度推断，factualAccuracy达到满分。",
+          "keyWeakness": "无显著缺陷。所有维度均达到满分标准，输出质量极高。"
+        }
+      ]
+    },
+    {
+      "name": "XX精密制造有限公司",
+      "industry": "精密模具制造和注塑成型",
+      "businessModelType": "制造/产品型",
+      "avgScore": 4.1,
+      "topExpert": "business_model",
+      "bottomExpert": "action",
+      "experts": [
+        {
+          "expert": "strategy",
+          "diagnosisScore": 3,
+          "judgeScore": 4.1,
+          "grade": "A",
+          "findings": 6,
+          "conclusion": "企业当前的核心矛盾是：代工时代的组织能力无法支撑品牌化战略，关键人依赖和客户集中度构成生存风险，战略方向正确但执行路径需要大幅调整。",
+          "keyStrength": "诊断精准抓住了核心矛盾：'代工时代的组织能力无法支撑品牌化战略'，并给出了清晰的因果链（如张工依赖→研发停滞→品牌化受阻）。",
+          "keyWeakness": "个别 finding 证据引用不足：'品牌化转型缺乏渠道和营销能力'仅引用1条证据（'目前为零'），证据质量稍弱。"
+        },
+        {
+          "expert": "org",
+          "diagnosisScore": 3,
+          "judgeScore": 4.1,
+          "grade": "A",
+          "findings": 6,
+          "conclusion": "组织能力严重依赖单点，转型战略与现有组织架构之间存在结构性断层，需立即干预关键人风险并补足缺失能力。",
+          "keyStrength": "诊断精准识别了核心风险：'核心设计师单点依赖（Bus Factor = 1）'，并引用'技术团队仅1个资深模具设计师（张工）'和'客户评价精度±0.005mm依赖其个人经验'作为证据。",
+          "keyWeakness": "轻微事实不精确：'Agent化机会'中可行性评分9分未在企业数据中找到直接来源，属于专家自身评估。"
+        },
+        {
+          "expert": "finance",
+          "diagnosisScore": 4,
+          "judgeScore": 4.1,
+          "grade": "A",
+          "findings": 5,
+          "conclusion": "财务结构脆弱，现金流紧张，转型缺乏财务支撑，核心风险集中在客户集中和关键人才依赖上。",
+          "keyStrength": "因果链清晰：从'大客户A占40%营收'推理出'代工转品牌过程中，大客户可能因竞争关系流失'，连接了客户集中与转型风险。",
+          "keyWeakness": "部分证据依赖外部行业经验：如'客户集中度超过行业安全线（20%）'和'品牌转型初期营销投入通常占营收10-15%'，未在企业数据中明确给出，降低了证据质量。"
+        },
+        {
+          "expert": "tech",
+          "diagnosisScore": 3,
+          "judgeScore": 4.1,
+          "grade": "A",
+          "findings": 5,
+          "conclusion": "技术基础薄弱但设备数据潜力大，核心风险在人才单点依赖和系统集成缺失，需优先解决数据孤岛和关键人风险。",
+          "keyStrength": "诊断精准识别了核心设计师单点依赖风险，并给出了具体建议（知识沉淀、引入助理），直接关联企业数据。",
+          "keyWeakness": "在'代工转品牌缺乏技术支撑'中，将品牌转型瓶颈归因于技术，但企业数据明确提到瓶颈是'渠道和营销能力'，存在轻微过度推断。"
+        },
+        {
+          "expert": "marketing",
+          "diagnosisScore": 3,
+          "judgeScore": 4.2,
+          "grade": "A",
+          "findings": 6,
+          "conclusion": "XX精密制造从代工向自主品牌转型，核心瓶颈不在制造能力，而在营销能力几乎为零、客户集中度过高、技术依赖单点，增长杠杆全部未启动。",
+          "keyStrength": "诊断结论精准：'核心瓶颈不在制造能力，而在营销能力几乎为零、客户集中度过高、技术依赖单点'，直接点出企业转型的关键障碍。",
+          "keyWeakness": "部分 claim 略显绝对：如'增长杠杆全部未启动'，企业当前依赖代工老客户，代工本身也是一种增长方式，'全部未启动'不够精确。"
+        },
+        {
+          "expert": "action",
+          "diagnosisScore": 4,
+          "judgeScore": 4.1,
+          "grade": "A",
+          "findings": 5,
+          "conclusion": "企业从代工向自主品牌转型的核心瓶颈不是设备或订单，而是技术能力高度依赖单一个体、生产管理依赖手工、数字化基础薄弱，导致规模化复制和品牌建设缺乏支撑。",
+          "keyStrength": "诊断发现精准匹配企业数据，如'核心技术能力单点依赖'直接引用'仅1名资深模具设计师'和'他走了研发就停了'，无幻觉。",
+          "keyWeakness": "证据引用缺乏交叉验证或多源支撑，如未引用其他数据源佐证张工离职风险或客户集中度影响。"
+        },
+        {
+          "expert": "business_model",
+          "diagnosisScore": 3,
+          "judgeScore": 4.3,
+          "grade": "A",
+          "findings": 5,
+          "conclusion": "当前商业模式存在结构性缺陷：核心资源高度依赖单一关键人，客户集中度过高，且从代工向品牌转型所需的渠道与营销能力为零，这架赚钱机器的传动结构在关键齿轮处存在断裂风险。",
+          "keyStrength": "深层因果推理：在核心资源依赖张工的问题上，不仅指出风险，还分析了'新客户开发、现有产品改进、甚至生产异常处理都会瘫痪'的连锁后果，并引用段永平概念增强说服力。",
+          "keyWeakness": "轻微主观语气：在描述毛利率时使用'仅35%'，带有主观判断，虽然数据准确但语气可更中性。"
+        }
+      ]
+    },
+    {
+      "name": "CloudDesk",
+      "industry": "企业SaaS — 智能客服平台",
+      "businessModelType": "订阅/SaaS",
+      "avgScore": 3.6,
+      "topExpert": "action",
+      "bottomExpert": "business_model",
+      "experts": [
+        {
+          "expert": "strategy",
+          "diagnosisScore": 3.5,
+          "judgeScore": 3.5,
+          "grade": "B",
+          "findings": 5,
+          "conclusion": "CloudDesk 当前战略方向（1年内做到细分赛道前3）与组织能力、财务健康度严重不匹配，核心问题是增长效率低、竞争壁垒弱、组织内耗严重，需优先止血和建立竞争壁垒，而非盲目追求排名。",
+          "keyStrength": "从财务数据（月净亏100万、跑道18个月）直接推导出'需优先止血'，诊断与证据紧密挂钩",
+          "keyWeakness": "多处引用'客户评价'产品好用但太贵'——企业数据中无此证据，属于无据推断或幻觉"
+        },
+        {
+          "expert": "org",
+          "diagnosisScore": 3,
+          "judgeScore": 4.1,
+          "grade": "A",
+          "findings": 6,
+          "conclusion": "CloudDesk 的组织能力严重滞后于其激进增长目标，核心瓶颈在于销售与研发的协作断裂、客户成功团队过载以及关键人依赖风险，若不立即干预，18个月跑道内难以实现月营收300万的目标。",
+          "keyStrength": "因果推理清晰：从“销售承诺的功能研发做不出来”诊断出“员工治理问题”，并给出具体机制建议。",
+          "keyWeakness": "轻微过度推断：在“关键人依赖风险”中，从“无其他技术负责人信息”推断 Bus Factor = 1，但企业数据未明确说明无其他负责人。"
+        },
+        {
+          "expert": "finance",
+          "diagnosisScore": 3,
+          "judgeScore": 4.1,
+          "grade": "A",
+          "findings": 5,
+          "conclusion": "CloudDesk 现金流严重失血，单位经济学勉强及格，若不立即止血并优化获客效率，18个月跑道不足以支撑10倍营收增长目标。",
+          "keyStrength": "现金流分析精准：直接引用'月支出180万，月收入80万，净亏损100万'并关联到18个月跑道，诊断核心问题。",
+          "keyWeakness": "年续费率计算存在轻微不精确：'0.91^12≈68%'是理论值，实际年续费率可能因客户生命周期分布不同而有差异，未标注不确定性。"
+        },
+        {
+          "expert": "tech",
+          "diagnosisScore": 4,
+          "judgeScore": 3.2,
+          "grade": "B",
+          "findings": 5,
+          "conclusion": "CloudDesk 技术栈割裂严重，Agent 就绪度低，且销售承诺与研发能力脱节，是当前增长和客户留存的核心瓶颈。",
+          "keyStrength": "准确识别了核心问题：内部工具割裂导致销售承诺无法兑现（finding 1），这是企业数据中明确提到的冲突点。",
+          "keyWeakness": "编造了客户评价（'产品好用但太贵，小公司用不起'），企业数据中无此信息，属于事实性错误。"
+        },
+        {
+          "expert": "marketing",
+          "diagnosisScore": 4,
+          "judgeScore": 3.5,
+          "grade": "B",
+          "findings": 5,
+          "conclusion": "CloudDesk 的营销漏斗在获客和留存环节存在严重漏点，且增长杠杆单一（仅依赖内容+销售），在烧钱速度过快、竞品压境的背景下，必须优先修复定价策略和客户成功效率，否则无法在18个月内实现月营收30",
+          "keyStrength": "因果推理清晰：从定价过高推导出获客转化率低，并引用锚定效应和选择悖论，逻辑连贯",
+          "keyWeakness": "事实准确性有瑕疵：如平均客单价计算未考虑企业版客户，客户评价未明确指向基础版，存在过度推断"
+        },
+        {
+          "expert": "action",
+          "diagnosisScore": 4,
+          "judgeScore": 4.2,
+          "grade": "A",
+          "findings": 6,
+          "conclusion": "CloudDesk 面临生存危机：烧钱速度过快、产品-销售脱节、客户成功瓶颈，必须在 18 个月内实现月营收 300 万，否则跑道耗尽。",
+          "keyStrength": "现金流危机的描述精确匹配企业数据，如'月净亏 100 万，跑道仅剩 18 个月'，并直接引用月收支和融资额。",
+          "keyWeakness": "获客成本高的证据中引用了'客户评价产品好用但太贵'，该信息无企业数据支撑，属于编造或推测。"
+        },
+        {
+          "expert": "business_model",
+          "diagnosisScore": 3,
+          "judgeScore": 2.7,
+          "grade": "C",
+          "findings": 7,
+          "conclusion": "CloudDesk 的商业模式存在结构性缺陷：高获客成本、低续费率、烧钱速度过快，且缺乏定价权和护城河，导致增长不可持续。",
+          "keyStrength": "专家识别了关键风险点，如‘现金流时序危险’和‘客户成功团队瓶颈’，这些与企业数据高度相关。",
+          "keyWeakness": "存在多处编造事实，如‘客户评价‘产品好用但太贵，小公司用不起’’，属于严重幻觉，损害了诊断的可信度。"
+        }
+      ]
+    },
+    {
+      "name": "自然主义",
+      "industry": "天然护肤品",
+      "businessModelType": "分销/零售",
+      "avgScore": 4.1,
+      "topExpert": "strategy",
+      "bottomExpert": "tech",
+      "experts": [
+        {
+          "expert": "strategy",
+          "diagnosisScore": 4,
+          "judgeScore": 4.4,
+          "grade": "A",
+          "findings": 6,
+          "conclusion": "自然主义当前的核心战略风险不是增长不够快，而是增长路径依赖单一渠道和单一供应商，导致战略弹性极低，3年10亿目标缺乏结构性支撑。",
+          "keyStrength": "深层诊断：专家在conclusion中明确指出'核心战略风险不是增长不够快，而是增长路径依赖单一渠道和单一供应商'，超越了表面问题，展现了差异化思考。",
+          "keyWeakness": "客单价推断：'客单价仅120元'在企业数据中无直接证据，虽合理但属于轻微过度推断。"
+        },
+        {
+          "expert": "org",
+          "diagnosisScore": 4,
+          "judgeScore": 4.1,
+          "grade": "A",
+          "findings": 5,
+          "conclusion": "组织能力严重依赖电商基因，线下战略转型面临能力断层和关键人依赖双重风险，需立即干预。",
+          "keyStrength": "因果链清晰：从团队构成（电商背景）直接推导出线下能力缺失，并链接到战略目标无法实现，逻辑严密。",
+          "keyWeakness": "部分推断措辞稍强：如 '所有关键配方决策都需李总拍板' 在企业数据中未明确说明，属于合理推断但可标注不确定性。"
+        },
+        {
+          "expert": "finance",
+          "diagnosisScore": 4,
+          "judgeScore": 4.1,
+          "grade": "A",
+          "findings": 6,
+          "conclusion": "现金流健康但增长目标与财务支撑力严重不匹配，3年10亿目标需要外部融资或大幅调整增长路径",
+          "keyStrength": "增长目标与财务支撑力的量化分析非常精准，直接指出3年10亿需要3亿增量资金，而内部积累仅400万/年，差距巨大。",
+          "keyWeakness": "LTV/CAC 计算中客单价120元未在企业数据中明确给出，属于合理推断但未标注不确定性，可能被质疑。"
+        },
+        {
+          "expert": "tech",
+          "diagnosisScore": 3,
+          "judgeScore": 3.5,
+          "grade": "B",
+          "findings": 5,
+          "conclusion": "技术栈薄弱且Agent就绪度低，线下扩张将暴露数据孤岛和集成短板，需优先构建可扩展的技术基座。",
+          "keyStrength": "因果推理清晰：从'渠道依赖天猫京东'到'平台规则变化冲击营收'再到'需搭建私域和CRM/CDP'，逻辑连贯。",
+          "keyWeakness": "轻微过度推断：从'未提及企业级软件系统'直接推断'不存在'，缺乏证据支撑。"
+        },
+        {
+          "expert": "marketing",
+          "diagnosisScore": 5,
+          "judgeScore": 4.2,
+          "grade": "A",
+          "findings": 6,
+          "conclusion": "增长引擎过度依赖流量红利和单一渠道，品牌定位与线下扩张之间存在结构性矛盾，若不重构增长杠杆组合，3年10亿目标将面临系统性风险。",
+          "keyStrength": "诊断结论精准：'增长引擎过度依赖流量红利和单一渠道，品牌定位与线下扩张之间存在结构性矛盾'——直接点出核心问题，与企业数据高度吻合。",
+          "keyWeakness": "转介绍率推测无直接证据：'推测低于20%（行业健康线）'——企业数据中无转介绍率信息，属于合理推断但缺乏支撑，轻微影响事实准确性。"
+        },
+        {
+          "expert": "action",
+          "diagnosisScore": 5.5,
+          "judgeScore": 4.1,
+          "grade": "A",
+          "findings": 5,
+          "conclusion": "企业处于从线上向全渠道转型的关键期，核心瓶颈在于供应链单一依赖、线下能力缺失和SKU管理粗放，需优先解决生存风险再谈增长目标。",
+          "keyStrength": "事实准确性高：所有关键claim（如单一供应商、线下占比15%、SKU结构、渠道占比、复购率）均精确匹配企业数据，无幻觉。",
+          "keyWeakness": "客单价120元无直接证据：企业数据中未明确提及客单价，属于合理推断但缺乏直接支撑，轻微影响事实准确性。"
+        },
+        {
+          "expert": "business_model",
+          "diagnosisScore": 5,
+          "judgeScore": 4.2,
+          "grade": "A",
+          "findings": 6,
+          "conclusion": "当前商业模式存在结构性脆弱：渠道依赖、供应链单一、SKU过长，但毛利率和复购率尚可，具备从‘卖货’转向‘品牌资产’的潜力。",
+          "keyStrength": "所有关键claim均有企业数据精确支撑，如'天猫+京东占营收60%'、'核心原料由一家云南供应商独家供应'等，无幻觉。",
+          "keyWeakness": "客单价120元无直接数据支撑，属于合理推断但未标注不确定性，轻微影响factualAccuracy。"
+        }
+      ]
+    },
+    {
+      "name": "一碗好面",
+      "industry": "连锁面馆",
+      "businessModelType": "连锁服务",
+      "avgScore": 4.2,
+      "topExpert": "business_model",
+      "bottomExpert": "marketing",
+      "experts": [
+        {
+          "expert": "strategy",
+          "diagnosisScore": 4,
+          "judgeScore": 4.1,
+          "grade": "A",
+          "findings": 6,
+          "conclusion": "一碗好面当前的核心战略风险不是市场容量或产品力，而是组织能力与扩张速度之间的严重不匹配——店长流失率高、关键人依赖重、数字化基础薄弱，导致3年100家店的扩张目标缺乏可执行的支撑体系。",
+          "keyStrength": "因果链清晰：从店长流失率22%推导出无培养体系→扩张目标不可执行，逻辑连贯",
+          "keyWeakness": "缺少优先级排序：6个 finding 中 critical 和 warning 未区分紧急程度，企业负责人不知从何开始"
+        },
+        {
+          "expert": "org",
+          "diagnosisScore": 4,
+          "judgeScore": 4.4,
+          "grade": "A",
+          "findings": 5,
+          "conclusion": "一碗好面当前的组织能力无法支撑3年100店的扩张目标，核心瓶颈在店长供给、供应链半径和数字化基础，需优先解决关键人依赖和人才培养体系，否则扩张将导致品质失控和亏损扩大。",
+          "keyStrength": "factualAccuracy高：所有关键claim精确匹配企业数据，如'23家店去年走了5个店长'、'汤底配方只有张总和厨师长两人知道'。",
+          "keyWeakness": "factualAccuracy轻微不精确：'店长流失率高达22%'严格计算为21.7%，四舍五入可接受但略有偏差。"
+        },
+        {
+          "expert": "finance",
+          "diagnosisScore": 4,
+          "judgeScore": 4.1,
+          "grade": "A",
+          "findings": 5,
+          "conclusion": "一碗好面财务健康但扩张风险高：现金流支撑不足、单位经济模型未验证跨区域可行性、关键人才和供应链瓶颈将直接拖垮财务表现。",
+          "keyStrength": "finding1 精确计算了扩张资金需求（6160-9240万）并与年利润对比，直观展示现金流缺口，证据引用充分。",
+          "keyWeakness": "年利润在结论中写'约900万'，但企业数据净利润率12-15%对应720-900万，取上限未说明范围，轻微不精确。"
+        },
+        {
+          "expert": "tech",
+          "diagnosisScore": 1,
+          "judgeScore": 4.1,
+          "grade": "A",
+          "findings": 5,
+          "conclusion": "一碗好面的数字化基础薄弱，Agent就绪度极低，当前扩张战略面临严重的系统性风险，技术债务和人才瓶颈是最大障碍。",
+          "keyStrength": "诊断发现与企业数据高度吻合，如'软件生态极度单一'直接引用'收银用美团系统、无会员体系、无中央厨房数字化、排班靠Excel'，事实准确。",
+          "keyWeakness": "轻微不精确：'年利润约900万'——企业数据计算得净利润720-900万，专家取上限，可更精确表述为'约720-900万'。"
+        },
+        {
+          "expert": "marketing",
+          "diagnosisScore": 4,
+          "judgeScore": 4.1,
+          "grade": "A",
+          "findings": 5,
+          "conclusion": "一碗好面的核心增长瓶颈不在产品，而在组织能力和数字化基建——店长流失和供应链半径是扩张的硬天花板，会员体系缺失导致无法做用户留存和复购，增长杠杆过于单一（仅靠门店自然流量）。",
+          "keyStrength": "诊断发现与企业数据高度吻合，如店长流失率22%、供应链半径限制等，事实准确性强。",
+          "keyWeakness": "部分 claim 缺乏直接证据支撑，如‘无中央厨房数字化’和‘排班靠Excel’在企业数据中未提及，属于推断。"
+        },
+        {
+          "expert": "action",
+          "diagnosisScore": 5,
+          "judgeScore": 4.2,
+          "grade": "A",
+          "findings": 5,
+          "conclusion": "一碗好面正处于从‘单店模型验证成功’到‘连锁化规模扩张’的关键转型期，但组织能力、供应链和数字化基础均未准备好支撑3年100店的目标，核心瓶颈是店长培养和供应链半径，而非产品本身。",
+          "keyStrength": "诊断结论精准：'核心瓶颈是店长培养和供应链半径，而非产品本身'，直接点出企业扩张的关键障碍。",
+          "keyWeakness": "未追问深层原因：如店长流失率高，未分析薪酬、文化或晋升路径等根本原因。"
+        },
+        {
+          "expert": "business_model",
+          "diagnosisScore": 5,
+          "judgeScore": 4.5,
+          "grade": "A",
+          "findings": 6,
+          "conclusion": "一碗好面的商业模式在单店层面体质健康，但扩张模式存在结构性缺陷——店长培养速度与供应链半径是硬约束，当前模式无法线性复制到100家店，必须重构扩张逻辑。",
+          "keyStrength": "深层诊断：将店长流失率诊断为'扩张的硬瓶颈'，并分析了被同行挖角的市场原因，而非简单归因于管理不善。",
+          "keyWeakness": "部分证据为推断而非原始数据：如'新建中央厨房需500-800万/个'、'每年培养3-5个店长'未在企业数据中明确给出，虽合理但证据强度稍弱。"
+        }
+      ]
+    }
+  ],
+  "expertStability": [
+    {
+      "expert": "org",
+      "avgScore": 4.16,
+      "stddev": 0.12
+    },
+    {
+      "expert": "strategy",
+      "avgScore": 4.04,
+      "stddev": 0.29
+    },
+    {
+      "expert": "marketing",
+      "avgScore": 4.08,
+      "stddev": 0.31
+    },
+    {
+      "expert": "action",
+      "avgScore": 4.32,
+      "stddev": 0.34
+    },
+    {
+      "expert": "finance",
+      "avgScore": 4.28,
+      "stddev": 0.36
+    },
+    {
+      "expert": "tech",
+      "avgScore": 3.98,
+      "stddev": 0.62
+    },
+    {
+      "expert": "business_model",
+      "avgScore": 4.14,
+      "stddev": 0.77
+    }
+  ]
+}

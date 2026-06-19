@@ -42,10 +42,13 @@ export interface ExpertLoadResult {
  *
  * 结构:
  *   [IDENTITY] → 角色定义 (最高优先级, 放最前面)
+ *   [THEORY]   → 理论基础
  *   [SOUL]     → 诊断风格 + 方法论
  *   [RULES]    → 诊断规则 + 评分指南
  *   [TOOLS]    → 可用工具列表 (注入到 TOOLS 区域)
+ *   [STAGE_LOGIC] → 规模自适应逻辑
  *   [KNOWLEDGE] → 依赖的领域知识
+ *   [CROSS_EXPERT] → 跨专家协同协议
  */
 function assemblePrompt(files: ExpertFiles['files']): { prompt: string; sources: string[]; missing: string[] } {
   const sections: string[] = [];
@@ -62,10 +65,13 @@ function assemblePrompt(files: ExpertFiles['files']): { prompt: string; sources:
   };
 
   append('IDENTITY', files.IDENTITY, '角色定义');
+  append('THEORY', files.THEORY, '理论基础');
   append('SOUL', files.SOUL, '诊断风格与方法论');
   append('RULES', files.RULES, '诊断规则与评分指南');
   append('TOOLS', files.TOOLS, '可用工具');
+  append('STAGE_LOGIC', files.STAGE_LOGIC, '规模自适应逻辑');
   append('KNOWLEDGE', files.KNOWLEDGE, '领域知识');
+  append('CROSS_EXPERT', files.CROSS_EXPERT, '跨专家协同协议');
 
   return {
     prompt: sections.join('\n\n---\n\n'),

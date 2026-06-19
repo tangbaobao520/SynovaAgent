@@ -5,7 +5,7 @@
  * 每个文件解析失败独立隔离 — 一个坏文件不影响其他文件加载。
  *
  * 扫描目录:
- *   expert/{name}/  → IDENTITY.md, SOUL.md, TOOLS.md, RULES.md, KNOWLEDGE.md
+ *   expert/{name}/  → IDENTITY.md, SOUL.md, TOOLS.md, RULES.md, KNOWLEDGE.md, THEORY.md, STAGE_LOGIC.md, CROSS_EXPERT.md
  *   measurers/*.yml → 测量器配置
  *   knowledge/{行业}/*.md → 行业知识
  */
@@ -33,8 +33,8 @@ export interface ScannedFile {
 export interface ExpertFiles {
   /** 专家名称 (目录名), e.g. "strategy" */
   name: string;
-  /** 文件映射: "IDENTITY" | "SOUL" | "TOOLS" | "RULES" | "KNOWLEDGE" → ScannedFile */
-  files: Partial<Record<'IDENTITY' | 'SOUL' | 'TOOLS' | 'RULES' | 'KNOWLEDGE', ScannedFile>>;
+  /** 文件映射: IDENTITY/SOUL/TOOLS/RULES/KNOWLEDGE/THEORY/STAGE_LOGIC/CROSS_EXPERT → ScannedFile */
+  files: Partial<Record<'IDENTITY' | 'SOUL' | 'TOOLS' | 'RULES' | 'KNOWLEDGE' | 'THEORY' | 'STAGE_LOGIC' | 'CROSS_EXPERT', ScannedFile>>;
 }
 
 export interface MeasurerConfig {
@@ -69,10 +69,11 @@ export interface FileIndex {
 
 // ═══ Constants ═══
 
-const EXPERT_FILE_NAMES = ['IDENTITY.md', 'SOUL.md', 'TOOLS.md', 'RULES.md', 'KNOWLEDGE.md'] as const;
+const EXPERT_FILE_NAMES = ['IDENTITY.md', 'SOUL.md', 'TOOLS.md', 'RULES.md', 'KNOWLEDGE.md', 'THEORY.md', 'STAGE_LOGIC.md', 'CROSS_EXPERT.md'] as const;
 const FILE_KEY_MAP: Record<string, string> = {
   'IDENTITY.md': 'IDENTITY', 'SOUL.md': 'SOUL', 'TOOLS.md': 'TOOLS',
   'RULES.md': 'RULES', 'KNOWLEDGE.md': 'KNOWLEDGE',
+  'THEORY.md': 'THEORY', 'STAGE_LOGIC.md': 'STAGE_LOGIC', 'CROSS_EXPERT.md': 'CROSS_EXPERT',
 };
 
 // ═══ FileScanner ═══
@@ -122,6 +123,119 @@ export class FileScanner {
   /** 列出所有专家名 */
   listExpertNames(): string[] {
     return this.index?.experts.map(e => e.name) || [];
+  }
+
+  // ═══ Hot Reload & File Snapshot (Loop Engineering v3) ═══
+
+  private watchMode: boolean = false;
+  private watcher: fs.FSWatcher | null = null;
+
+  /** 启用文件监听（开发环境默认开启，生产环境由管理员配置） */
+  enableWatch(onChange?: (path: string) => void): void {
+    if (this.watcher) return;
+    this.watchMode = true;
+
+    const expertDir = path.join(this.rootDir, 'expert');
+    const knowledgeDir = path.join(this.rootDir, 'knowledge');
+
+    const dirsToWatch = [expertDir, knowledgeDir].filter(d => fs.existsSync(d));
+
+    this.watcher = fs.watch(
+      dirsToWatch[0],
+      { recursive: true },
+      (_eventType, filename) => {
+        if (!filename || !filename.endsWith('.md')) return;
+        const fullPath = path.join(dirsToWatch[0], filename);
+        log.info({ file: fullPath }, '检测到文件变更');
+        try {
+          this.reloadFile(fullPath);
+          if (onChange) onChange(fullPath);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          log.error({ file: fullPath, err: msg }, '热加载失败');
+        }
+      },
+    );
+
+    log.info({ dirs: dirsToWatch, watchMode: true }, '文件监听已启用');
+  }
+
+  /** 禁用文件监听 */
+  disableWatch(): void {
+    if (this.watcher) { this.watcher.close(); this.watcher = null; }
+    this.watchMode = false;
+    log.info('文件监听已禁用');
+  }
+
+  /** 生成文件快照——记录文件路径+内容哈希+版本，写入诊断日志 */
+  generateSnapshot(): Map<string, { hash: string; version: string; lastModified: string }> {
+    const crypto = require('crypto');
+    const snapshot = new Map<string, { hash: string; version: string; lastModified: string }>();
+
+    if (!this.index) return snapshot;
+
+    for (const expert of this.index.experts) {
+      for (const [key, file] of Object.entries(expert.files)) {
+        if (!file) continue;
+        const hash = crypto.createHash('sha256').update(file.content).digest('hex').slice(0, 16);
+        // 从 YAML front matter 中提取 version
+        const parts = file.content.split('---');
+        let version = 'unknown';
+        if (parts.length >= 3) {
+          const vMatch = parts[1].match(/version:\s*"([^"]+)"/);
+          if (vMatch) version = vMatch[1];
+        }
+        snapshot.set(file.relativePath, {
+          hash,
+          version,
+          lastModified: file.lastModified,
+        });
+      }
+    }
+
+    return snapshot;
+  }
+
+  /** 热加载单个文件——校验通过后更新索引 */
+  reloadFile(filePath: string): boolean {
+    if (!fs.existsSync(filePath)) {
+      log.warn({ file: filePath }, '文件不存在——热加载跳过');
+      return false;
+    }
+
+    const content = fs.readFileSync(filePath, 'utf-8');
+    const stat = fs.statSync(filePath);
+
+    // 简单校验: 必须有 YAML front matter
+    const parts = content.split('---');
+    if (parts.length < 3) {
+      log.error({ file: filePath }, 'YAML front matter 缺失——热加载拒绝');
+      return false;
+    }
+
+    // 更新索引中的对应文件
+    const relativePath = path.relative(this.rootDir, filePath);
+    if (this.index) {
+      for (const expert of this.index.experts) {
+        for (const [key, file] of Object.entries(expert.files)) {
+          if (file && file.relativePath === relativePath) {
+            expert.files = { ...expert.files, [key]: {
+              relativePath,
+              absolutePath: filePath,
+              content,
+              size: stat.size,
+              lastModified: stat.mtime.toISOString(),
+            } };
+            log.info({ file: relativePath, size: stat.size }, '文件热加载成功');
+            return true;
+          }
+        }
+      }
+    }
+
+    // 如果索引中没有记录但文件存在——触发全量重扫
+    log.info({ file: relativePath }, '新文件检测——建议全量重扫');
+    return false;
   }
 
   // ── Private scanners ──
