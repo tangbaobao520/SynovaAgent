@@ -17,8 +17,9 @@ import { createProvider } from '../providers';
 import { loadConfig } from '../config';
 import { createLogger } from '../logger';
 import { getDatabase } from '../init/engine-context';
-import type { ExtractionResult } from '../../packages/engine-core/src/pipeline/diagnosis/doc-extractor';
-import type { L2Node } from '../../packages/engine-core/src/pipeline/diagnosis/entity-resolver-l2';
+import type { ExtractionResult } from '../pipeline/doc-extractor';
+// 本地类型镜像 — 避免 L1 静态跨层依赖 (铁律 39, 审计 2026-06-20)
+interface L2EntityNode { id: string; type: string; name: string; props: Record<string, unknown>; confidence: number }
 
 const log = createLogger('routes/diagnosis-upload');
 const router = Router();
@@ -223,7 +224,7 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
 
   // Step 1: 八维度提取
   job.status = 'extracting';
-  const { DocExtractor } = await import('../../packages/engine-core/src/pipeline/diagnosis/doc-extractor');
+  const { DocExtractor } = await import('../pipeline/doc-extractor');
   const graphStore = await createRealGraphStore(jobId);
   // GraphStore 已通过 createRealGraphStore 创建 (P0-1 修复)
   // engine-core 为 CJS 模块，动态导入无 TS 类型约束 — 运行时结构子类型兼容。
@@ -277,10 +278,10 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
   let measOutput: { results: Array<{ measurerId: string; score?: number }>; aggregated: Record<string, unknown>; degradedModules: string[] };
   try {
     const { MeasurementPipeline } = await import(
-      '../../packages/engine-core/src/pipeline/diagnosis/measurement-pipeline'
+      '../pipeline/measurement-pipeline'
     );
     const { createMeasurers } = await import(
-      '../../packages/engine-core/src/pipeline/diagnosis/real-measurers'
+      '../pipeline/real-measurers'
     );
     // CJS 模块无 TS 类型声明 — 内联接口
     const PipeFactory = MeasurementPipeline as unknown as {
@@ -304,7 +305,7 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
   }>; degradedModules: string[] };
   try {
     const { ExpertPipeline } = await import(
-      '../../packages/engine-core/src/pipeline/diagnosis/expert-pipeline'
+      '../pipeline/expert-pipeline'
     );
     // CJS 模块无 TS 类型声明 — 内联接口
     const ExpertFactory = ExpertPipeline as unknown as {
@@ -341,7 +342,7 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
   log.info({ jobId }, '构建报告');
 
   const { ReportBuilder } = await import(
-    '../../packages/engine-core/src/pipeline/diagnosis/report-builder'
+    '../pipeline/report-builder'
   );
   const sections = buildSectionsFromExperts(extraction, expOutput, allDegraded);
 
@@ -562,7 +563,7 @@ async function syncDiagnosisToGraph(
     let communityCount = 0;
     try {
       const { detectCommunities } = await import(
-        '../../packages/engine-core/src/pipeline/diagnosis/graph-query'
+        '../l4/diagnosis-graph-query'
       );
       const communities = detectCommunities(graphStore, 2, teamId);
       for (const c of communities) {
@@ -585,7 +586,7 @@ async function syncDiagnosisToGraph(
     let resolvedCount = 0;
     try {
       const { generateL2Candidates } = await import(
-        '../../packages/engine-core/src/pipeline/diagnosis/entity-resolver-l2'
+        '../l4/entity-resolver-l2'
       );
       // 从 Signal 节点名生成候选
       const signalNames = signalIds.map((sid) => {
@@ -600,7 +601,7 @@ async function syncDiagnosisToGraph(
       }));
       if (signalNames.length > 0 && existingNodes.length > 0) {
         const candidates = generateL2Candidates(
-          [...signalNames, ...existingNodes] as unknown as L2Node[],
+          [...signalNames, ...existingNodes] as unknown as L2EntityNode[],
           0.6,
         );
         for (const c of candidates) {
