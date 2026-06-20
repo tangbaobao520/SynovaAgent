@@ -21,7 +21,7 @@ const log = createLogger('l4/agent-memory-store');
 
 // ═══ Types ═══
 
-export type MemoryType = 'fact' | 'preference' | 'decision' | 'pattern' | 'entity';
+export type MemoryType = 'fact' | 'preference' | 'decision' | 'pattern' | 'entity' | 'enterprise_fact';
 
 export interface MemoryEntry {
   id: string;
@@ -36,6 +36,12 @@ export interface MemoryEntry {
   updatedAt: string;
   expiresAt: string | null; // TTL, null = 永不过期
   accessCount: number;
+  // v1.6 Slice 8: 企业事实层——版本链字段
+  version?: number;
+  supersededBy?: string | null;
+  changeReason?: string;
+  changedBy?: string;
+  effectiveFrom?: string;
 }
 
 export interface MemoryQuery {
@@ -271,7 +277,7 @@ export class AgentMemoryStore {
         org_id TEXT NOT NULL,
         key TEXT NOT NULL,
         value TEXT NOT NULL,
-        type TEXT NOT NULL CHECK(type IN ('fact','preference','decision','pattern','entity')),
+        type TEXT NOT NULL CHECK(type IN ('fact','preference','decision','pattern','entity','enterprise_fact')),
         confidence REAL NOT NULL DEFAULT 0.5,
         source TEXT NOT NULL DEFAULT 'manual',
         tags TEXT NOT NULL DEFAULT '[]',
@@ -317,7 +323,7 @@ export class AgentMemoryStore {
 
   private rowToEntry(row: Record<string, unknown>): MemoryEntry {
     let tags: string[] = [];
-    try { tags = JSON.parse(row.tags as string); } catch { tags = []; }
+    try { tags = JSON.parse(row.tags as string); } catch { /* expected: tags may be malformed */ tags = []; }
 
     return {
       id: row.id as string,

@@ -64,6 +64,13 @@ function assemblePrompt(files: ExpertFiles['files']): { prompt: string; sources:
     }
   };
 
+  // v1.6 Slice 8: 企业事实注入 (hard constraints — 必须在最前面)
+  const facts = (files as Record<string, unknown>)._enterpriseFacts;
+  if (typeof facts === 'string' && facts.trim()) {
+    sections.push(`## 企业事实（硬约束——你必须基于以下事实推理）\n\n${facts.trim()}`);
+    sources.push('agent-memory-store (enterprise_facts)');
+  }
+
   append('IDENTITY', files.IDENTITY, '角色定义');
   append('THEORY', files.THEORY, '理论基础');
   append('SOUL', files.SOUL, '诊断风格与方法论');
