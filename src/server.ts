@@ -26,6 +26,8 @@ import { CredentialVault } from './security/credential-vault';
 import { getOntologyEventBus } from './l5/ontology-event-bus';
 import homeRoutes from './routes/home';
 import chatRoutes from './routes/chat';
+import workspaceRoutes from './routes/workspace';
+import workspacesApiRoutes from './routes/workspaces-api';
 import healthRoutes from './routes/health';
 import ontologyRoutes from './routes/ontology';
 import diagnosisRoutes from './routes/diagnosis';
@@ -339,7 +341,9 @@ export async function createServer(): Promise<Server> {
     }
   });
   app.use(homeRoutes);         // GET / → 首页 (双入口)
-  app.use(chatRoutes);         // GET /chat → Web 对话界面
+  app.use(chatRoutes);            // GET /chat → Web 对话界面
+  app.use(workspaceRoutes);       // GET /workspace → 三栏布局 (PRD v1.6 Slice 1)
+  app.use(workspacesApiRoutes);   // /api/workspaces → 工作区 CRUD (PRD v1.6 Slice 2)
   app.use(healthRoutes);
   app.use(ontologyRoutes);
   app.use(diagnosisRoutes);

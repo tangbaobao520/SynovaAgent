@@ -133,7 +133,7 @@ if [ -n "$STAGED_SRC" ]; then
   else
     # 检查 Q1/Q2/Q3 已填写 (非空且非纯注释, ^## 匹配 h2 不匹配 ###)
     for q in "Q1:" "Q2:" "Q3:"; do
-      SECTION=$(sed -n "/^## $q/,/^## /p" "$BRIEF" 2>/dev/null)
+      SECTION=$(awk "/^## $q/{found=1; next} /^## /{if(found) exit} found" "$BRIEF" 2>/dev/null)
       FILLED=$(echo "$SECTION" | grep -v "^##\|^<!--\|^$" | head -1)
       if [ -z "$FILLED" ]; then
         TASK_BRIEF_EMPTY="${TASK_BRIEF_EMPTY}  $q 未填写\n"
