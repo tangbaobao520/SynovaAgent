@@ -68,15 +68,27 @@ export interface ExpertReport extends SubAgentReport {
   model?: string;
 }
 
-// ═══ Output Schema (from engine-core ExpertSubAgentExecutor) ═══
+// ═══ Output Schema (v3.3: 对齐 OUTPUT_SPEC 金字塔结构) ═══
 
 export const EXPERT_REPORT_SCHEMA = JSON.stringify({
+  // Layer 1: 一句话核心判断（CEO 读完这句就知道结论）
+  governingThought: '≤50字。格式: [企业名]的[维度]核心问题是[根因]，表现为[关键信号]。',
+  // Layer 2: 3个关键判断——每个回答一个"为什么"
+  keyJudgments: [{
+    judgment: '判断陈述（一句话，企业负责人能听懂）',
+    severity: 'critical|warning|info',
+    evidence: [{ fact: '数据事实——引用企业数据和访谈原话', type: 'data|infer|predict' }],
+    impact: '如果不解决，12个月内的量化影响',
+    ruledOut: '考虑过但排除的替代解释',
+    confidence: 0.0,
+  }],
+  // Layer 3: 保留兼容——传统findings格式
   findings: [{
     id: 'f1', dimension: '...', statement: '≤200字',
     confidence: 0.8, evidenceRefs: ['ev-xxx'],
     severity: 'critical|high|medium|low', suggestedActions: ['...'],
   }],
-  overallAssessment: '≤300字',
+  overallAssessment: '≤300字。综合判断摘要。',
   uncertainties: [{
     description: '...', reason: '数据不足|超出领域|需要人工判断',
     suggestedNextStep: '...',
@@ -481,13 +493,18 @@ export class ExpertDispatcher {
     }
   }
 
-  /** 从 Registry 动态读取所有诊断专家（排除后台引擎 knowledge）并行执行 */
+  /** 从 Registry + expert-registry.yaml 动态读取诊断专家并行执行 */
   async runAllExperts(evidence: Evidence[]): Promise<ExpertReport[]> {
     const { getExpertRegistry } = await import('./expert-registry');
+    const { getBackgroundExperts, getEnabledDiagnosticExperts } = await import('../agent/expert-config-loader');
     const allTypes = getExpertRegistry().listTypes();
-    // 后台引擎不参与诊断 (knowledge = 知识引擎, 只在 qa-router 按需调度)
-    const BACKGROUND_EXPERTS = new Set(['knowledge']);
-    const expertTypes = allTypes.filter(t => !BACKGROUND_EXPERTS.has(t)) as ExpertType[];
+    // v3.3: 后台专家从 expert-registry.yaml 读取，不再硬编码
+    const BACKGROUND_EXPERTS = getBackgroundExperts();
+    const enabledFromConfig = getEnabledDiagnosticExperts();
+    // 如果 yaml 配置为空 → 回退到 Registry 全部专家（排除 background）
+    const expertTypes = enabledFromConfig.length > 0
+      ? allTypes.filter(t => enabledFromConfig.includes(t) && !BACKGROUND_EXPERTS.has(t))
+      : allTypes.filter(t => !BACKGROUND_EXPERTS.has(t));
 
     const results = await Promise.allSettled(
       expertTypes.map(type => this.runExpert(type, evidence)),

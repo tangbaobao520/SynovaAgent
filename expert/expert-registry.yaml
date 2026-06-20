@@ -1,0 +1,54 @@
+# Synova Expert Registry v1.0
+# 声明式专家配置。加新专家 = 加一个条目 + 创建目录 → 自动注册。
+# 不需要改任何 TypeScript 文件。
+
+version: 1
+
+experts:
+  strategy:
+    enabled: true
+    background: false
+    model: default
+    tools: [seven_powers, goal_alignment, market_gravity]
+
+  org:
+    enabled: true
+    background: false
+    model: default
+    tools: [bus_factor, agent_readiness, capability_entropy]
+
+  finance:
+    enabled: true
+    background: false
+    model: default
+    tools: [cashflow_analysis, unit_economics, financial_snapshot]
+
+  marketing:
+    enabled: true
+    background: false
+    model: default
+    tools: [aarrr_funnel, jtbd_interview]
+
+  tech:
+    enabled: true
+    background: false
+    model: default
+    tools: [software_ecosystem_scan, connector_blueprint]
+
+  action:
+    enabled: true
+    background: false
+    model: default
+    tools: [priority_matrix]
+
+  business_model:
+    enabled: true
+    background: false
+    model: default
+    tools: [canvas_nine]
+
+  knowledge:
+    enabled: true
+    background: true
+    model: default
+    tools: [query_graph, manage_permissions, add_pkb_entry]

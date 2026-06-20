@@ -43,7 +43,12 @@ router.post('/api/reload', async (req: Request, res: Response) => {
       report.push(`⚠️ ${index.errors.length} 个文件读取失败`);
     }
 
-    // 2. 重新加载专家
+    // 2. v3.3: 清除 yaml 配置缓存
+    const { clearExpertConfigCache, loadExpertConfig } = await import('../agent/expert-config-loader');
+    clearExpertConfigCache();
+    loadExpertConfig(); // 重新加载
+
+    // 3. 重新加载专家文件
     if (loader && registry) {
       const result = loader.loadFromIndex(index, DEFAULT_EXPERT_PROMPTS);
       report.push(`专家加载: ${result.fromFiles} 从文件, ${result.fromDefaults} 默认, ${result.errors.length} 失败`);
