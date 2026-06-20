@@ -24,6 +24,7 @@ import { KnowledgeInjector, KnowledgeConflictHandler, AtomicWriter } from './age
 import { BossMailbox } from './agent/boss-mailbox';
 import { rbacMiddleware, extractRbacContext, canAccessWorkspace, canModifyWorkspace } from './middleware/rbac';
 import { buildInheritedContext, detectConflicts } from './agent/workspace-service';
+import { WorkspaceContextBridge } from './agent/workspace-context-bridge';
 // Code Review A1+A3: 凭证加密 + L5 事件总线初始化
 import { CredentialVault } from './security/credential-vault';
 import { getOntologyEventBus } from './l5/ontology-event-bus';
@@ -86,6 +87,7 @@ export async function createServer(): Promise<Server> {
   const rbacCtx = extractRbacContext({ headers: { 'x-synova-token': 'admin::dev' } }); // Slice 7 RBAC
   void canAccessWorkspace(rbacCtx, { visibility: 'global' });
   void canModifyWorkspace(rbacCtx, { visibility: 'global' });
+  // v3.3 context bridge — Phase 2 接入 AgentMemoryStore
 
   // ═══ C3: 编排层初始化 — EventBus + StateMachine + Session (审计 P0-20260604) ═══
   const eventStore = new EventStore(db);
