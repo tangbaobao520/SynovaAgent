@@ -121,7 +121,7 @@ hard_check "接线审计: 新 export 必须有调用方" "${UNWIRED:-}"
 NEW_DIAG_REG=$(git diff --cached -- "*.ts" "*.js" 2>/dev/null | grep "^+.*DiagnosticModule" | grep -Ev "scripts/pre-commit-check.sh|.md|.html|//|@deprecated|import type|^+++|hard_check|禁止新 DiagnosticModule|不要再使用 DiagnosticModule" || true)
 hard_check "禁止 DiagnosticModule: 新模块必须实现 Sentinel 接口" "${NEW_DIAG_REG:-}"
 
-# ═══ 7. Task Brief 强制: 编码任务必须有今日 task brief (Q1/Q2/Q3 已填) ═══
+# ═══ 7. Task Brief 强制: 11 字段全部物理阻断 ═══
 TODAY=$(date +%Y-%m-%d)
 STAGED_SRC=$(git diff --cached --name-only 2>/dev/null | grep -E '^src/|^tests/|^packages/|^scripts/' | grep -v 'scripts/pre-commit-check.sh\|scripts/check-secrets.sh\|scripts/workflow/' || true)
 TASK_BRIEF_MISSING=""
@@ -131,18 +131,31 @@ if [ -n "$STAGED_SRC" ]; then
   if [ -z "$BRIEF" ]; then
     TASK_BRIEF_MISSING="今日无 task brief。请先运行: bash scripts/workflow/task-start.sh \"任务描述\""
   else
-    # 检查 Q1/Q2/Q3 已填写 (非空且非纯注释, ^## 匹配 h2 不匹配 ###)
-    for q in "Q1:" "Q2:" "Q3:"; do
+    # ── 检查所有 11 个字段 (非空且非纯注释) ──
+    for q in "Q1:" "Q2:" "Q3:" "本任务在哪一层" "文档引用" "接口审计" "数据流" "Done 标准"; do
       SECTION=$(awk "/^## $q/{found=1; next} /^## /{if(found) exit} found" "$BRIEF" 2>/dev/null)
       FILLED=$(echo "$SECTION" | grep -v "^<!--\|^$" | tr -d "[:space:]" | head -1)
-      if [ -z "$FILLED" ] || [ ${#FILLED} -lt 5 ]; then
+      if [ -z "$FILLED" ] || [ ${#FILLED} -lt 3 ]; then
         TASK_BRIEF_EMPTY="${TASK_BRIEF_EMPTY}  $q 未填写\n"
       fi
     done
+    # ── 接口审计专项: 必须含至少一行 "文件名:函数名" 格式 ──
+    API_SECTION=$(awk "/^## 接口审计/,/^## /" "$BRIEF" 2>/dev/null)
+    API_LINES=$(echo "$API_SECTION" | grep -cE '^[a-zA-Z0-9_/\-]+\.(ts|js):[a-zA-Z0-9_]+' || true)
+    if [ "${API_LINES:-0}" -eq 0 ]; then
+      TASK_BRIEF_EMPTY="${TASK_BRIEF_EMPTY}  接口审计: 缺少 '文件名:函数名' 格式\n"
+    fi
+    # ── Done 标准专项: 必须至少填了一项 ──
+    DONE_SECTION=$(awk "/^## Done 标准/,/^## /" "$BRIEF" 2>/dev/null)
+    DONE_CHECKED=$(echo "$DONE_SECTION" | grep -cE '^\s*- \[x\]' || true)
+    DONE_EMPTY=$(echo "$DONE_SECTION" | grep -v "^##\|^<!--\|^$" | wc -l)
+    if [ "${DONE_CHECKED:-0}" -eq 0 ] && [ "${DONE_EMPTY:-0}" -le 1 ]; then
+      TASK_BRIEF_EMPTY="${TASK_BRIEF_EMPTY}  Done 标准: 至少需定义一条完成标准\n"
+    fi
   fi
 fi
 hard_check "Task Brief: 编码变更必须有今日 task brief" "${TASK_BRIEF_MISSING:-}"
-hard_check "Task Brief: Q1/Q2/Q3 必须填写" "${TASK_BRIEF_EMPTY:-}"
+hard_check "Task Brief: 11 字段必须全部填写 (含接口审计+Done标准)" "${TASK_BRIEF_EMPTY:-}"
 
 # ═══ 8. 跨层引用检测 (铁律 39) ═══
 # L1(routes/l1) 不得直接 import L4/L5; L2(agent) 不得直接 import L5
