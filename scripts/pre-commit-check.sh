@@ -175,6 +175,17 @@ if [ -n "$STAGED_SRC" ]; then
 fi
 hard_check "架构边界: 禁止跨层引用 (铁律 39)" "${CROSS_LAYER:-}"
 
+# ═══ 9. 专家配置校验 (v3.3) ═══
+EXPERT_CONFIG_VALID=$(bash "$ROOT/scripts/validate-expert-config.sh" 2>&1 || true)
+EXPERT_CONFIG_OK=$?
+if [ "$EXPERT_CONFIG_OK" -ne 0 ]; then
+  HARD_FAIL=$((HARD_FAIL + 1))
+  echo -e "  ${RED}❌ 专家配置校验: yaml引用断裂  [硬阻断]${RESET}"
+  echo "$EXPERT_CONFIG_VALID" | while read -r line; do [ -n "$line" ] && echo "     ${line}"; done
+else
+  echo -e "  ${GREEN}✅ 专家配置校验${RESET}"
+fi
+
 # ═══ 结果 ═══
 echo ""
 if [ "$HARD_FAIL" -gt 0 ]; then
