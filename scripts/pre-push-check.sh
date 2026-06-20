@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering v3.2 — pre-push (1 道门: secrets 终扫)
+# Loop Engineering v3.3 — pre-push (1 道门: secrets 终扫)
 #
 # 设计原则:
 #   - pre-commit 已跑 5 项物理阻断 → 不重复
@@ -21,7 +21,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 echo ""
 echo "═══════════════════════════════════════════════════════════"
-echo "  Loop Engineering v3.2 — pre-push (secrets 终扫)"
+echo "  Loop Engineering v3.3 — pre-push (secrets 终扫)"
 echo "═══════════════════════════════════════════════════════════"
 echo ""
 

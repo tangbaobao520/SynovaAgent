@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering v3.2 — PreToolUse: task brief 质量检查
+# Loop Engineering v3.3 — PreToolUse: task brief 质量检查
 #
 # 挂在 PreToolUse → Edit|Write 上，在 hook-check-memory.sh 之后运行。
 # 7 项字段质量检查 + 接口真实性反向验证 + 层级确认。
@@ -96,11 +96,57 @@ if [ -z "$IFACE" ] || [ ${#IFACE} -lt 5 ]; then
   FAIL=1
 fi
 
+# ═══ v3.3: 语义质量检查（不只检查长度，检查内容） ═══
+
+# 8. Q1 必须引用至少 1 个来源
+Q1_FULL=$(grep -A20 "^## Q1" "$BRIEF" 2>/dev/null | sed 's/<!--.*-->//g' || true)
+if ! echo "$Q1_FULL" | grep -qiE '(https?://|[a-zA-Z0-9_]+\.(md|ts|js|py|sh)|memory/|packages/|src/)' 2>/dev/null; then
+  echo "⛔ Task Brief 质量 — Q1 未引用任何来源（URL/文件路径/memory/）"
+  echo "   必须引用至少 1 个：业界实践链接、参考文件路径、memory/相关记录"
+  FAIL=1
+fi
+
+# 9. Q2 必须包含至少 1 个排除项（明确不做什么）
+Q2_FULL=$(grep -A10 "^## Q2" "$BRIEF" 2>/dev/null | sed 's/<!--.*-->//g' || true)
+if ! echo "$Q2_FULL" | grep -qiE '(不做|排除|不包括|不涉及|不在.*范围|本任务不|MVP.*边界)' 2>/dev/null; then
+  echo "⛔ Task Brief 质量 — Q2 未列出排除项（必须明确本任务不做什么）"
+  echo "   请写明: 本任务不做什么（至少 1 项明确的排除）"
+  FAIL=1
+fi
+
+# 10. Q3 必须描述用户旅程（入口→处理→结果）
+Q3_FULL=$(grep -A10 "^## Q3" "$BRIEF" 2>/dev/null | sed 's/<!--.*-->//g' || true)
+if ! echo "$Q3_FULL" | grep -qiE '(入口|触发|展示|→|->|结果.*呈现|用户.*看到|API.*响应)' 2>/dev/null; then
+  echo "⛔ Task Brief 质量 — Q3 未描述用户旅程（入口→处理→结果）"
+  echo "   请写明: 从哪触发 → 中间经过什么 → 最终在哪看到结果"
+  FAIL=1
+fi
+
+# 11. 反敷衍检测——禁止"已研究无需补充""略过"等空洞填充词
+CONTENT_FULL=$(sed 's/<!--.*-->//g' "$BRIEF" | tr -d '[:space:]')
+if echo "$CONTENT_FULL" | grep -qiE '(已研究.*无需.*补充|略过|不适用.*跳过|无需.*额外.*调研|没有.*犯过.*错|没有.*相关.*经验)' 2>/dev/null; then
+  echo "⛔ Task Brief 质量 — 检测到敷衍填充词（'已研究无需补充'/'略过'等）"
+  echo "   请填写实质内容。如果确实没有问题，请具体说明原因（而非用一句话跳过）"
+  FAIL=1
+fi
+
+# 12. Q4 历史教训检查——如果 scope-check 匹配到 memory/ 但 brief 未引用
+SCOPE_MEMORY_MATCHES=$(grep -c "📋" "$ROOT/.claude/.scope-check-last" 2>/dev/null || echo 0)
+if [ "${SCOPE_MEMORY_MATCHES:-0}" -gt 0 ]; then
+  Q4_FULL=$(grep -A10 "^## Q4\|### c)" "$BRIEF" 2>/dev/null | sed 's/<!--.*-->//g' | tr -d '[:space:]' || true)
+  if [ -z "$Q4_FULL" ] || [ ${#Q4_FULL} -lt 10 ]; then
+    echo "⛔ Task Brief 质量 — scope-check 匹配到 ${SCOPE_MEMORY_MATCHES} 条历史教训，但 Q4 未填写"
+    echo "   请检查 scope-check 输出的 memory/ 匹配结果，在 Q4 中说明如何避免重复犯错"
+    FAIL=1
+  fi
+fi
+
 if [ "$FAIL" -gt 0 ]; then
   echo ""
   echo "  文件: ${BRIEF}"
   echo "  被阻止的文件: ${FILE}"
-  echo "  必填: 项目身份 / Q1调研 / Q2范围 / Q3验收 / 本任务在哪一层 / 文档引用 / 接口审计"
+  echo "  必填: 项目身份 / Q1调研(含来源引用) / Q2范围(含排除项) / Q3验收(含用户旅程) / 本任务在哪一层 / 文档引用 / 接口审计"
+  echo "  禁止: Q1空洞敷衍 / Q2无排除项 / Q3无用户旅程 / 敷衍填充词 / Q4无视历史教训"
   exit 1
 fi
 

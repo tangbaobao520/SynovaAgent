@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering v3.2 — pre-commit 物理阻断 (5 项, 全部 <1s)
+# Loop Engineering v3.3 — pre-commit 物理阻断 (5 项, 全部 <1s)
 #
 # 设计原则:
 #   - 只阻断 agent 确实会偷懒的项（有历史事故支撑）
@@ -44,7 +44,7 @@ STAGED=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep '\.
 
 echo ""
 echo "═══════════════════════════════════════════════════════════"
-echo "  Loop Engineering v3.2 — pre-commit (5 项)"
+echo "  Loop Engineering v3.3 — pre-commit (5 项)"
 echo "═══════════════════════════════════════════════════════════"
 echo ""
 

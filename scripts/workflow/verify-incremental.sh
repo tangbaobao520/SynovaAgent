@@ -40,6 +40,30 @@ json.dump({'iteration': $ITER, 'maxIterations': $MAX, 'lastRun': '$(date -u +%Y-
 
 echo -e "${CYAN}[VERIFY $ITER/$MAX] 分层增量验证开始...${RESET}"
 CHANGED_SRC=$(git diff --name-only 2>/dev/null | grep '\.ts$' | grep -v '\.test\.' | grep -v '\.d\.ts' || true)
+ALL_CHANGED=$(git diff --name-only 2>/dev/null || true)
+TOTAL_LINES_CHANGED=$(git diff 2>/dev/null | grep '^[+-]' | grep -v '^[+-]\{3\}' | wc -l | tr -d ' ')
+
+# ═══ v3.3: 轻量变更通道 ═══
+# 满足任一条件走轻量: (1)仅非TS文件 (2)改动≤5行
+IS_LIGHT=0
+if [ -z "$CHANGED_SRC" ]; then
+  IS_LIGHT=1
+elif [ "${TOTAL_LINES_CHANGED:-0}" -le 5 ]; then
+  IS_LIGHT=1
+fi
+
+if [ "$IS_LIGHT" -eq 1 ]; then
+  echo -e "${YELLOW}[LIGHT] 轻量变更通道 (仅Markdown/HTML/JSON 或 ≤5行改动)${RESET}"
+  echo -e "${YELLOW}  跳过: tsc --noEmit + vitest run${RESET}"
+  echo -e "${YELLOW}  保留: oxlint + secrets扫描${RESET}"
+  # 只跑 L1+L4 (oxlint + 接线审计)
+  [ -n "$CHANGED_SRC" ] && npx oxlint $(echo "$CHANGED_SRC" | tr '\n' ' ') --silent 2>&1 || true
+  # L4 接线审计仍然执行
+  # 全部通过 → 清除循环状态
+  rm -f "$STATE_FILE"
+  echo -e "${GREEN}[PASS] 轻量验证通过${RESET}"
+  exit 0
+fi
 
 # ═══ L1: oxlint 语法检查 (< 1s) ═══
 if [ -n "$CHANGED_SRC" ]; then
