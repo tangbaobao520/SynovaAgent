@@ -35,6 +35,7 @@ import workspacesApiRoutes from './routes/workspaces-api';
 import gaDiagnosisRoutes from './routes/ga-diagnosis';
 import knowledgeAskRoutes from './routes/knowledge-ask';
 import deptWorkspaceRoutes from './routes/department-workspace';
+import actionsApiRoutes from './routes/actions-api';
 import healthRoutes from './routes/health';
 import ontologyRoutes from './routes/ontology';
 import diagnosisRoutes from './routes/diagnosis';
@@ -363,6 +364,7 @@ export async function createServer(): Promise<Server> {
   app.use(knowledgeAskRoutes);    // /api/knowledge/ask → 知识问答 (PRD v1.6 Slice 6)
   app.use(rbacMiddleware);        // RBAC 权限注入 (PRD v1.6 Slice 7)
   app.use(deptWorkspaceRoutes);   // GET /dept → 部门工作台 (PRD v1.6 Slice 7)
+  app.use(actionsApiRoutes);      // /api/actions → 行动项 CRUD (PRD §7, v3.5)
   app.use(healthRoutes);
   app.use(ontologyRoutes);
   app.use(diagnosisRoutes);
