@@ -18,7 +18,7 @@ echo ""
 #       diagnosis-launcher 通过 engine-context 访问 L4 (DI 注入, 非直接依赖)
 L2_L4=$(grep -rn "from.*l4/" src/agent/ src/orchestrator/ --include="*.ts" 2>/dev/null \
   | grep -v "node_modules" | grep -v "\.test\." \
-  | grep -v "conversation-engine.ts\|engine-context.ts\|diagnosis-launcher.ts\|knowledge-bridge-service.ts\|review-service.ts\|sentinel-health-service.ts" \
+  | grep -v "conversation-engine.ts\|engine-context.ts\|diagnosis-launcher.ts\|knowledge-bridge-service.ts\|review-service.ts\|sentinel-health-service.ts\|workspace-context-bridge.ts" \
   || true)
 L2_L4_COUNT=$(echo "$L2_L4" | grep -c . 2>/dev/null) || L2_L4_COUNT=0
 
