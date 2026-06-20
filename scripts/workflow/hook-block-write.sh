@@ -24,12 +24,61 @@ except:
 
 # 例外：允许写入 .claude/ 和 task-briefs 和 settings 和 plans 和 worktrees
 if echo "$FILE" | grep -qE '\.claude/(task-briefs|settings|plans|specs|worktrees)/'; then
+  # v3.3: task brief 被编辑时自动标记 brief-filled
+  if echo "$FILE" | grep -qE "\.claude/task-briefs/"; then
+    ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+    WF_STATE="$ROOT/.claude/workflow-state.json"
+    if [ -f "$WF_STATE" ]; then
+      python3 -c "import json; d=json.load(open('$WF_STATE')); d['step']='brief-filled'; json.dump(d, open('$WF_STATE','w'))" 2>/dev/null
+    fi
+  fi
   exit 0
 fi
 
 # 例外：允许写入 hooks 和 workflow 脚本本身
 if echo "$FILE" | grep -qE 'scripts/workflow/hook-'; then
   exit 0
+fi
+
+# ═══ v3.3: 工作流状态物理强制 (task-start→scope-check→brief-filled 不可跳过) ═══
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+WORKFLOW_STATE="$ROOT/.claude/workflow-state.json"
+
+if [ ! -f "$WORKFLOW_STATE" ]; then
+  echo "⛔ 写代码前物理阻断 — 未启动 Loop Engineering 工作流"
+  echo "   必须先运行: bash scripts/workflow/task-start.sh \"你的任务描述\""
+  echo "   被阻止的文件: ${FILE}"
+  exit 1
+fi
+
+WF_STEP=$(python3 -c "import json; print(json.load(open("$WORKFLOW_STATE")).get("step",""))" 2>/dev/null || echo "unknown")
+WF_TS=$(python3 -c "import json; print(json.load(open("$WORKFLOW_STATE")).get("ts",""))" 2>/dev/null || echo "")
+
+if [ "$WF_STEP" = "task-started" ]; then
+  echo "⛔ 写代码前物理阻断 — 工作流未完成 (当前: task-started)"
+  echo "   必须先完成: bash scripts/workflow/scope-check.sh → 回答 Q1-Q4 → 填写 brief"
+  echo "   被阻止的文件: ${FILE}"
+  exit 1
+fi
+
+if [ "$WF_STEP" = "scope-checked" ]; then
+  echo "⛔ 写代码前物理阻断 — 工作流未完成 (当前: scope-checked)"
+  echo "   task brief 已生成但 Q1/Q2/Q3/Q4 尚未填写完毕"
+  echo "   被阻止的文件: ${FILE}"
+  exit 1
+fi
+
+# 会话过期检查: brief 超过 30 分钟未完成 → 要求重新 task-start
+if [ -n "$WF_TS" ] && [ "$WF_STEP" != "brief-filled" ]; then
+  WF_EPOCH=$(date -d "$WF_TS" +%s 2>/dev/null || echo 0)
+  NOW_EPOCH=$(date +%s)
+  ELAPSED=$((NOW_EPOCH - WF_EPOCH))
+  if [ "${ELAPSED:-0}" -gt 1800 ]; then
+    echo "⛔ 写代码前物理阻断 — 工作流会话已过期 (${ELAPSED}s > 30min)"
+    echo "   请重新运行: bash scripts/workflow/task-start.sh \"你的任务\""
+    rm -f "$WORKFLOW_STATE"
+    exit 1
+  fi
 fi
 
 TODAY=$(date +%Y-%m-%d)

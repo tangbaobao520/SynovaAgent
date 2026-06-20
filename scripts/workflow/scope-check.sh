@@ -195,5 +195,11 @@ echo ""
 echo -e "${CYAN}────────────────────────────────────────────────────────────${RESET}"
 echo -e "${GREEN}  回答完 Q1-Q4 后，开始写代码。${RESET}"
 echo -e "${GREEN}  pre-commit 会在提交时物理检查 task brief 是否存在。${RESET}"
+
+# v3.3: 更新工作流状态 (scope-checked)
+WORKFLOW_STATE="$ROOT/.claude/workflow-state.json"
+if [ -f "$WORKFLOW_STATE" ]; then
+  python3 -c "import json; d=json.load(open("$WORKFLOW_STATE")); d["step"]="scope-checked"; json.dump(d, open("$WORKFLOW_STATE","w"))" 2>/dev/null
+fi
 echo ""
 exit 0

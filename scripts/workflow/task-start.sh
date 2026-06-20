@@ -94,6 +94,10 @@ if [ -x "$SCOPE_CHECK" ]; then
   bash "$SCOPE_CHECK"
 else
   echo -e "${YELLOW}⚠ scope-check.sh 未就绪 — 跳过产品对齐检查${RESET}"
+
+# v3.3: 写入工作流状态 (task-started)
+WORKFLOW_STATE="$ROOT/.claude/workflow-state.json"
+python3 -c "import json; json.dump({"step":"task-started","brief":"${TIMESTAMP}-${TASK_SLUG}.md","ts":"$(date -u +%Y-%m-%dT%H:%M:%SZ)"}, open("$WORKFLOW_STATE","w"))" 2>/dev/null
 fi
 
 exit 0
