@@ -89,6 +89,8 @@ export interface EngineConfig {
   enableTripleReflection?: boolean;
   /** 铁律 39: L2 通过 DiagnosisEngine 接口调用引擎 */
   diagnosisEngine?: import('../l2-interfaces/diagnosis-engine').DiagnosisEngine;
+  /** v3.3: L4 AgentMemoryStore — 加载已确认判断 */
+  memoryStore?: import('../l4/agent-memory-store').AgentMemoryStore;
   /** FED-001: 联邦进化适配器 */
   federalAdapter?: import('../adapters/federal-adapter').FederalAdapter;
   /** P1 Phase Gate Check: 证据和专家状态跟踪 (供 onPhaseEnter 回调读取) */
@@ -266,6 +268,7 @@ export class ConversationEngine {
   private phaseGateTracking: { evidenceCount: number; expertResults: Array<{ expertType: string; confidence: number; hypothesis: string; degraded?: boolean }> } | null = null;
   // L4 本体层组件
   private graphStore: GraphStore | null = null;
+  private memoryStore: import('../l4/agent-memory-store').AgentMemoryStore | null = null;
   private enableEntityResolution: boolean = false;
   private enableCommunityReports: boolean = false;
   private enableTripleReflection: boolean = false;
@@ -308,6 +311,7 @@ export class ConversationEngine {
     this.phaseGateTracking = config.phaseGateTracking || null;
     // L4 本体层接线
     this.graphStore = config.graphStore || null;
+    this.memoryStore = config.memoryStore || null;
     this.enableEntityResolution = config.enableEntityResolution ?? false;
     this.enableCommunityReports = config.enableCommunityReports ?? false;
     this.enableTripleReflection = config.enableTripleReflection ?? false;
@@ -463,10 +467,11 @@ export class ConversationEngine {
       try {
         const compressor = new ContextCompressor();
         const originalLen = this.messages.length;
+        const confirmedFacts = await this.loadConfirmedFacts();
         const result = compressor.compress(this.messages, '', {
           strategy: 'summary',
           maxSummaryTokens: 1500,
-        });
+        }, confirmedFacts);
         this.messages = result.messages;
         log.debug({ before: originalLen, after: result.messages.length, discarded: result.discardedCount }, '上下文已压缩');
       } catch (err: unknown) {
@@ -672,6 +677,19 @@ export class ConversationEngine {
     engine.phase = state.phase;
     engine.messages = [...state.messages];
     return engine;
+  }
+
+  /** v3.3: 从企业事实层加载本工作区的已确认判断 */
+  private async loadConfirmedFacts(): Promise<string[] | undefined> {
+    if (!this.memoryStore || !this.orgId) return undefined;
+    try {
+      const entries = this.memoryStore.list({
+        orgId: this.orgId,
+        type: 'enterprise_fact' as import('../l4/agent-memory-store').MemoryType,
+      });
+      if (entries.length === 0) return undefined;
+      return entries.map((f: { key: string; value: string }) => `${f.key}: ${f.value}`);
+    } catch { /* memoryStore unavailable — degraded */ return undefined; }
   }
 
   // ═══ Private: LLM + Tool Loop (delegated to ToolLoopExecutor) ═══

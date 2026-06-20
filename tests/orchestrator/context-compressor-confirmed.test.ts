@@ -102,4 +102,79 @@ describe('ContextCompressor with confirmedFacts', () => {
     expect(result.messages.length).toBeLessThan(40);
     expect(result.discardedCount).toBeGreaterThan(0);
   });
+
+  it('summary策略+confirmedFacts: 事实注入到压缩输出顶部', () => {
+    const messages: LLMMessage[] = [];
+    for (let i = 0; i < 35; i++) {
+      messages.push(msg('user', `问题${i}`));
+      messages.push(msg('assistant', `回答${i}`));
+    }
+
+    const facts = ['根因: 采购流程异常(FDE确认)', '建议: 暂不催收'];
+
+    // 直接调用 compress() 传入 confirmedFacts
+    const result = compressor.compress(messages, '', {
+      strategy: 'summary',
+      maxSummaryTokens: 1500,
+    }, facts);
+
+    // 第一条消息应该是 system 角色的已确认判断
+    expect(result.messages[0].role).toBe('system');
+    expect(result.messages[0].content).toContain('已确认的判断');
+    expect(result.messages[0].content).toContain('采购流程异常');
+    expect(result.messages[0].content).toContain('暂不催收');
+    expect(result.messages[0].content).toContain('永不丢失');
+
+    // 已确认判断不应该在后续消息中丢失
+    const allContent = result.messages.map(m => m.content).join(' ');
+    expect(allContent).toContain('采购流程异常');
+  });
+
+  it('summary策略+空confirmedFacts: 不注入系统消息', () => {
+    const messages: LLMMessage[] = [];
+    for (let i = 0; i < 35; i++) {
+      messages.push(msg('user', `问题${i}`));
+      messages.push(msg('assistant', `回答${i}`));
+    }
+
+    const result = compressor.compress(messages, '', {
+      strategy: 'summary',
+      maxSummaryTokens: 1500,
+    }, []);  // 空数组
+
+    // 第一条消息不应该是 system 角色
+    expect(result.messages[0].role).not.toBe('system');
+  });
+
+  it('summary策略+undefined confirmedFacts: 不注入', () => {
+    const messages: LLMMessage[] = [];
+    for (let i = 0; i < 35; i++) {
+      messages.push(msg('user', `问题${i}`));
+      messages.push(msg('assistant', `回答${i}`));
+    }
+
+    const result = compressor.compress(messages, '', {
+      strategy: 'summary',
+      maxSummaryTokens: 1500,
+    });  // 不传 confirmedFacts
+
+    expect(result.messages[0].role).not.toBe('system');
+  });
+
+  it('sliding-window+confirmedFacts: 事实仍然注入', () => {
+    const messages: LLMMessage[] = [];
+    for (let i = 0; i < 40; i++) {
+      messages.push(msg('user', `问题${i}`));
+    }
+
+    const facts = ['重要事实: 不容丢失'];
+    const result = compressor.compress(messages, '', {
+      strategy: 'sliding-window',
+      windowSize: 20,
+    }, facts);
+
+    // 即使 sliding-window 策略，confirmedFacts 也应该注入
+    expect(result.messages[0].role).toBe('system');
+    expect(result.messages[0].content).toContain('重要事实');
+  });
 });
