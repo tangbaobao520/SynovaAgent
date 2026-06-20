@@ -19,8 +19,8 @@ export interface RbacContext {
 }
 
 /** 从请求中提取 RBAC 上下文 (Phase 1: token/session 中读取; Phase 2: JWT) */
-export function extractRbacContext(req: Request): RbacContext {
-  const token = String(req.headers['x-synova-token'] || req.query.token || '');
+export function extractRbacContext(req: { headers?: Record<string, unknown>; query?: Record<string, unknown> }): RbacContext {
+  const token = String((req.headers?.['x-synova-token'] as string) || (req.query?.token as string) || '');
   // Token 格式: role:department:userId
   if (token && token.includes(':')) {
     const parts = token.split(':');

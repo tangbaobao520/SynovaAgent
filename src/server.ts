@@ -22,7 +22,7 @@ import { bindConnectorTools } from './init/connector-binding';
 import { ToolRegistry } from './agent/tools';
 import { KnowledgeInjector, KnowledgeConflictHandler, AtomicWriter } from './agent/index';
 import { BossMailbox } from './agent/boss-mailbox';
-import { rbacMiddleware, extractRbacContext, canAccessWorkspace } from './middleware/rbac';
+import { rbacMiddleware, extractRbacContext, canAccessWorkspace, canModifyWorkspace } from './middleware/rbac';
 import { buildInheritedContext, detectConflicts } from './agent/workspace-service';
 // Code Review A1+A3: 凭证加密 + L5 事件总线初始化
 import { CredentialVault } from './security/credential-vault';
@@ -83,9 +83,9 @@ export async function createServer(): Promise<Server> {
   // PRD v1.6 Slice 7: workspace-service 接线
   buildInheritedContext({ parentId: 'init', department: 'dept', title: 'init', source: 'boss_assigned', parentSummary: 'init' });
   detectConflicts([]); // Slice 7 冲突检测初始化
-  const rbacCtx = extractRbacContext({ headers: { 'x-synova-token': 'admin::dev' } } as unknown as Request); // Slice 7 RBAC
-  canAccessWorkspace(rbacCtx, { visibility: 'global' });
-  canModifyWorkspace(rbacCtx, { visibility: 'global' });
+  const rbacCtx = extractRbacContext({ headers: { 'x-synova-token': 'admin::dev' } }); // Slice 7 RBAC
+  void canAccessWorkspace(rbacCtx, { visibility: 'global' });
+  void canModifyWorkspace(rbacCtx, { visibility: 'global' });
 
   // ═══ C3: 编排层初始化 — EventBus + StateMachine + Session (审计 P0-20260604) ═══
   const eventStore = new EventStore(db);
