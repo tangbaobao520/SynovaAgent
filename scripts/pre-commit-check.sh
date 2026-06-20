@@ -186,6 +186,10 @@ else
   echo -e "  ${GREEN}✅ 专家配置校验${RESET}"
 fi
 
+# ═══ 10. 硬编码检测 (v3.3 无限扩展审计) ═══
+# 警告不阻断——但让问题可见，无法"没注意到"
+bash "$ROOT/scripts/check-hardcoded.sh" 2>/dev/null || true
+
 # ═══ 结果 ═══
 echo ""
 if [ "$HARD_FAIL" -gt 0 ]; then
