@@ -28,6 +28,7 @@ import homeRoutes from './routes/home';
 import chatRoutes from './routes/chat';
 import workspaceRoutes from './routes/workspace';
 import workspacesApiRoutes from './routes/workspaces-api';
+import gaDiagnosisRoutes from './routes/ga-diagnosis';
 import healthRoutes from './routes/health';
 import ontologyRoutes from './routes/ontology';
 import diagnosisRoutes from './routes/diagnosis';
@@ -344,6 +345,7 @@ export async function createServer(): Promise<Server> {
   app.use(chatRoutes);            // GET /chat → Web 对话界面
   app.use(workspaceRoutes);       // GET /workspace → 三栏布局 (PRD v1.6 Slice 1)
   app.use(workspacesApiRoutes);   // /api/workspaces → 工作区 CRUD (PRD v1.6 Slice 2)
+  app.use(gaDiagnosisRoutes);     // GET /ga → GA 诊断入口 (PRD v1.6 Slice 4·6/25演示)
   app.use(healthRoutes);
   app.use(ontologyRoutes);
   app.use(diagnosisRoutes);
