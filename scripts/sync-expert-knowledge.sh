@@ -1,50 +1,30 @@
 #!/bin/bash
-# Loop Engineering v3.3 — sync-expert-knowledge.sh
-# 检查专家 KNOWLEDGE.md 中引用的 knowledge/shared/ 文件是否真实存在。
-# 引用格式: 参见 knowledge/shared/xxx.md
-# 用法: bash scripts/sync-expert-knowledge.sh [--fix]
+# v3.5 PRD §20.2: 同步共享知识到各专家 KNOWLEDGE.md 的引用
+# 确保8位专家的KNOWLEDGE.md引用knowledge/shared/而非复制
 set -euo pipefail
-
-ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SHARED_DIR="$ROOT/knowledge/shared"
-FAIL=0
+EXPERT_DIR="$ROOT/expert"
 
-if [ ! -d "$SHARED_DIR" ]; then
-  echo "⚠ knowledge/shared/ 目录不存在 — 跳过同步检查"
-  exit 0
-fi
-
-echo "=== 专家知识引用同步检查 ==="
-echo ""
-
-# 扫描所有 expert/*/KNOWLEDGE.md 中的 shared/ 引用
-for know_file in "$ROOT/expert"/*/KNOWLEDGE.md; do
-  [ ! -f "$know_file" ] && continue
-  expert_name=$(basename "$(dirname "$know_file")")
-
-  # 提取引用: 参见 knowledge/shared/xxx.md
-  refs=$(grep -oP 'knowledge/shared/[a-zA-Z0-9_-]+\.md' "$know_file" 2>/dev/null || true)
-
-  if [ -z "$refs" ]; then
-    echo "  $expert_name: 无 shared/ 引用"
-    continue
-  fi
-
-  for ref in $refs; do
-    ref_path="$ROOT/$ref"
-    if [ -f "$ref_path" ]; then
-      echo "  ✅ $expert_name → $ref"
-    else
-      echo "  ❌ $expert_name → $ref (文件不存在)"
-      FAIL=1
+echo "=== Syncing shared knowledge references ==="
+count=0
+for expert_dir in "$EXPERT_DIR"/*/; do
+  name=$(basename "$expert_dir")
+  [ "$name" = "_template" ] && continue
+  KNOWLEDGE_FILE="$expert_dir/KNOWLEDGE.md"
+  [ ! -f "$KNOWLEDGE_FILE" ] && continue
+  
+  for shared_file in "$SHARED_DIR"/*.md; do
+    [ ! -f "$shared_file" ] && continue
+    sf_name=$(basename "$shared_file")
+    # Check if already referenced
+    if grep -q "knowledge/shared/$sf_name" "$KNOWLEDGE_FILE" 2>/dev/null; then
+      continue
     fi
+    # Add reference
+    echo "  $name → $sf_name"
+    echo "参见 knowledge/shared/$sf_name" >> "$KNOWLEDGE_FILE"
+    count=$((count + 1))
   done
 done
-
-echo ""
-if [ "$FAIL" -eq 0 ]; then
-  echo "✅ 所有知识引用有效"
-else
-  echo "❌ 存在断裂引用 — 请修复 KNOWLEDGE.md 或创建 shared/ 文件"
-  exit 1
-fi
+echo "Done: $count references synced"
