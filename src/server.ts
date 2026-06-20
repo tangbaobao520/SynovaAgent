@@ -21,6 +21,7 @@ import { initFederalReporter, getFederalAdapter, FederalAdapter } from './adapte
 import { bindConnectorTools } from './init/connector-binding';
 import { ToolRegistry } from './agent/tools';
 import { KnowledgeInjector, KnowledgeConflictHandler, AtomicWriter } from './agent/index';
+import { BossMailbox } from './agent/boss-mailbox';
 // Code Review A1+A3: 凭证加密 + L5 事件总线初始化
 import { CredentialVault } from './security/credential-vault';
 import { getOntologyEventBus } from './l5/ontology-event-bus';
@@ -29,6 +30,7 @@ import chatRoutes from './routes/chat';
 import workspaceRoutes from './routes/workspace';
 import workspacesApiRoutes from './routes/workspaces-api';
 import gaDiagnosisRoutes from './routes/ga-diagnosis';
+import knowledgeAskRoutes from './routes/knowledge-ask';
 import healthRoutes from './routes/health';
 import ontologyRoutes from './routes/ontology';
 import diagnosisRoutes from './routes/diagnosis';
@@ -74,6 +76,7 @@ export async function createServer(): Promise<Server> {
   const atomicWriter = new AtomicWriter(process.cwd());
   // 清理残留的 .tmp 文件
   atomicWriter.cleanup();
+  const bossMailbox = new BossMailbox(); // PRD v1.6 Slice 5
 
   // ═══ C3: 编排层初始化 — EventBus + StateMachine + Session (审计 P0-20260604) ═══
   const eventStore = new EventStore(db);
@@ -346,6 +349,7 @@ export async function createServer(): Promise<Server> {
   app.use(workspaceRoutes);       // GET /workspace → 三栏布局 (PRD v1.6 Slice 1)
   app.use(workspacesApiRoutes);   // /api/workspaces → 工作区 CRUD (PRD v1.6 Slice 2)
   app.use(gaDiagnosisRoutes);     // GET /ga → GA 诊断入口 (PRD v1.6 Slice 4·6/25演示)
+  app.use(knowledgeAskRoutes);    // /api/knowledge/ask → 知识问答 (PRD v1.6 Slice 6)
   app.use(healthRoutes);
   app.use(ontologyRoutes);
   app.use(diagnosisRoutes);
