@@ -39,8 +39,10 @@ L2编排层。不改L1/L3/L4
 已填写
 
 ## 接口审计
-已填写
-已填写
+subagent-coordinator.ts:ExpertType (type alias)
+expert-registry.ts:register(type,prompt)→void
+expert-registry.ts:listTypes()→string[]
+expert-dispatcher.ts:runExpert(type,evidence)→ExpertReport
 
 ## 数据流
 已填写
