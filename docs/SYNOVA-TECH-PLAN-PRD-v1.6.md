@@ -289,7 +289,64 @@ PUT  /api/workspaces/:id/status   → 更新状态
 
 ---
 
-## 十一、v1.6 新增切片（3 个）
+## 十一、架构审计与修正（2026-06-20 自检）
+
+### 1. 架构合规
+
+| 切片 | 层级 | 合规? | 修正 |
+|------|------|:--:|------|
+| 1: 三栏布局 | L1 HTML页面 | ✅ | — |
+| 2: 工作区API | 原计划 L1 routes | ⚠️ | API放 `src/routes/`，**业务逻辑必须放 `src/agent/workspace-service.ts`（L2）** |
+| 3: Agent回复 | L1 渲染 + L3 叙事生成 | ✅ | — |
+| 4: GA诊断 | L1 表单 → 复用 L2 diagnosis-launcher | ✅ | — |
+| 5: 老板信箱 | 原计划 `src/services/` | ⚠️ | → 改放 `src/agent/boss-mailbox.ts`（L2），不直接调 L4 |
+| 6: 知识问答 | L1 UI + 已有 qa-router | ✅ | qa-router 需加 HTTP 路由包装 |
+| 7: 部门协作 | L1 页面 + L2 权限 | ✅ | 权限中间件放 `src/middleware/rbac.ts` |
+| 8: 企业事实层 | L4 存储 + L3 prompt注入 | ✅ | — |
+| 9: 诊断节奏 | 配置文件 | ✅ | 扩展现有 STAGE_LOGIC.md，不新建文件 |
+
+### 2. 模块化（无限扩展）
+
+| 风险点 | 修正 |
+|--------|------|
+| 工作区状态枚举硬编码 | ❌ 历史教训（信号路由表硬编码）。状态列表存 `synova.json` 或配置文件 |
+| 专家事实类别硬编码 | ❌ 类别从 `expert/*/RULES.md` 的 category 字段读取 |
+| 部门权限矩阵 | ⚠️ RBAC 角色从配置文件读取，不硬编码 `owner/manager/employee` |
+
+### 3. 文件优先评估
+
+| 内容 | 应该文件化? | 理由 |
+|------|:--:|------|
+| 诊断节奏规则 | ✅ 文件 | 已有 STAGE_LOGIC.md，加一列即可 |
+| 专家建议级别 | ✅ 文件 | 放在 RULES.md，GA 可修改 |
+| 叙事模板 | ✅ 文件 | `expert/*/NARRATIVE.md`（新），GA 可定制表达风格 |
+| 工作区状态机 | ❌ 代码 | 状态流转有逻辑依赖，文件化会导致隐性bug |
+| RBAC 权限矩阵 | ✅ 文件 | `synova.json` 或 `permissions.yml`，企业部署时配置 |
+| 企业事实 Schema | ❌ 代码 | 字段有数据库约束，文件化无意义 |
+
+### 4. 接口就绪度
+
+| 切片依赖的接口 | 当前状态 | 需要做什么 |
+|---------------|---------|-----------|
+| SessionStore（工作区） | 无 `workspaceType`/`status`/`priority` 字段 | SQLite migration：ALTER TABLE 加 3 列 |
+| AgentMemoryStore（事实层） | 5 种类型，无 `enterprise_fact` | Migration：加 CHECK constraint |
+| qa-router HTTP 暴露 | `answerQuestion()` 函数存在，无路由 | 加 `GET/POST /api/knowledge/ask` |
+| NarrativeGenerator | 不存在 | 新建 `src/pipeline/narrative-generator.ts` |
+| BossMailbox | 不存在 | 新建 `src/agent/boss-mailbox.ts` |
+
+### 5. 历史教训应用
+
+| 历史错误 | 这次怎么避免 |
+|---------|------------|
+| 信号路由表硬编码（Week2） | 工作区状态、专家类别、RBAC——全部从配置文件读取 |
+| 增强哨兵不查数据源（Week3-4） | 每个切片开始前：`grep` 确认依赖模块的字段真实存在 |
+| `&apos;` 引号bug（Day2-3） | 新 HTML 页面用独立 `.html` 文件，不内联在 TS 模板字面量里 |
+| engine-core 一刀切（上周） | 一个切片一个模块。不建桥接层——直接迁移文件 |
+| 跳过 task-start（Week1-2） | 每个切片严格 Loop Engineering v3.2 |
+
+---
+
+## 十二、v1.6 新增切片（3 个）
 
 ### Slice 7: 部门负责人独立协作空间（§17）
 
@@ -361,7 +418,7 @@ category, value, version, superseded_by, change_reason, changed_by, effective_fr
 
 ---
 
-## 十二、更新后切片总览
+## 十三、更新后切片总览
 
 | Slice | PRD | 工时 | 6/25前? |
 |-------|-----|------|:--:|
