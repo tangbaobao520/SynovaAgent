@@ -139,14 +139,14 @@ if [ -n "$STAGED_SRC" ]; then
         TASK_BRIEF_EMPTY="${TASK_BRIEF_EMPTY}  $q 未填写\n"
       fi
     done
-    # ── 接口审计专项: 必须含至少一行 "文件名:函数名" 格式 ──
-    API_SECTION=$(awk "/^## 接口审计/,/^## /" "$BRIEF" 2>/dev/null)
-    API_LINES=$(echo "$API_SECTION" | grep -cE '^[a-zA-Z0-9_/\-]+\.(ts|js):[a-zA-Z0-9_]+' || true)
+    # ── 接口审计专项: v3.5 修复awk自匹配bug ──
+    API_SECTION=$(awk "/^## 接口审计/{found=1; next} /^## /{if(found) exit} found" "$BRIEF" 2>/dev/null)
+    API_LINES=$(echo "$API_SECTION" | grep -cE '\.(ts|js):[a-zA-Z0-9_]+' || true)
     if [ "${API_LINES:-0}" -eq 0 ]; then
       TASK_BRIEF_EMPTY="${TASK_BRIEF_EMPTY}  接口审计: 缺少 '文件名:函数名' 格式\n"
     fi
-    # ── Done 标准专项: 必须至少填了一项 ──
-    DONE_SECTION=$(awk "/^## Done 标准/,/^## /" "$BRIEF" 2>/dev/null)
+    # ── Done 标准专项: v3.5 修复awk自匹配bug ──
+    DONE_SECTION=$(awk "/^## Done 标准/{found=1; next} /^## /{if(found) exit} found" "$BRIEF" 2>/dev/null)
     DONE_CHECKED=$(echo "$DONE_SECTION" | grep -cE '^\s*- \[x\]' || true)
     DONE_EMPTY=$(echo "$DONE_SECTION" | grep -v "^##\|^<!--\|^$" | wc -l)
     if [ "${DONE_CHECKED:-0}" -eq 0 ] && [ "${DONE_EMPTY:-0}" -le 1 ]; then

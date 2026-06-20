@@ -83,7 +83,11 @@ async function selectWs(id,ctx){
   document.getElementById('main-title').textContent='工作区 · '+id.slice(-6);
   const msgs=document.getElementById('messages');
   if(ctx){msgs.innerHTML='<div class="msg context">'+ctx+'</div>'}
-  document.getElementById('right-panel').innerHTML='<h3>可访问数据</h3><div class=goal-card>竞品数据库<br><span style=font-size:10px;color:var(--dim)>客户调研报告 · 历史定价</span></div>';
+  // v3.5 PRD §17: 动态加载工作区上下文数据
+  try{const r=await fetch(API+'/api/workspaces/'+id+'/context');const d=await r.json();
+    const sources=d.sources||['本部门数据', '竞品数据库', '客户调研报告'];
+    document.getElementById('right-panel').innerHTML='<h3>可访问数据</h3>'+sources.map(s=>'<div class=goal-card>'+s+'</div>').join('');
+  }catch(e){document.getElementById('right-panel').innerHTML='<h3>可访问数据</h3><div class=goal-card>数据加载中...</div>';}
   msgs.scrollTop=msgs.scrollHeight;
 }
 async function newWorkspace(){

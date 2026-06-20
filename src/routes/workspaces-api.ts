@@ -106,6 +106,17 @@ router.post('/api/workspaces/:id/messages', (req: Request, res: Response) => {
   res.json({ ok: true, reply, workspaceId: ws.id });
 });
 
+// v3.5 PRD §17: 工作区上下文数据（部门可访问的数据源）
+router.get('/api/workspaces/:id/context', (req: Request, res: Response) => {
+  const id = String(req.params.id);
+  const ws = store.get(id);
+  if (!ws) return res.status(404).json({ ok: false, error: 'workspace not found' });
+  const sources = ws.department
+    ? ['本部门数据', '竞品数据库', '客户调研报告']
+    : ['全局诊断报告', '财务数据', '行业基准'];
+  res.json({ ok: true, sources, workspaceId: ws.id, department: ws.department });
+});
+
 // ═══ PRD v1.6 Slice 7: 部门协作扩展 ═══
 
 // 创建子工作区 (Agent建议 或 老板手动分配)

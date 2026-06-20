@@ -99,4 +99,34 @@ export class BossMailbox {
     text += '\n— Synova Agent 自动生成';
     return text;
   }
+
+  /**
+   * v3.5 PRD §12.4: 飞书 Webhook 推送
+   * @param report 周报对象
+   * @param webhookUrl 飞书机器人 webhook URL
+   */
+  async pushToFeishu(report: WeeklyReport, webhookUrl: string): Promise<boolean> {
+    try {
+      const text = this.renderText(report);
+      const payload = {
+        msg_type: 'text',
+        content: { text },
+      };
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        log.warn({ status: response.status }, '飞书推送失败');
+        return false;
+      }
+      log.info({ subject: report.subject }, '飞书推送成功');
+      return true;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg }, '飞书推送异常');
+      return false;
+    }
+  }
 }

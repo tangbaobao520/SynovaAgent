@@ -683,12 +683,13 @@ export class ConversationEngine {
   private async loadConfirmedFacts(): Promise<string[] | undefined> {
     if (!this.memoryStore || !this.orgId) return undefined;
     try {
-      const entries = this.memoryStore.list({
-        orgId: this.orgId,
-        type: 'enterprise_fact' as import('../l4/agent-memory-store').MemoryType,
-      });
-      if (entries.length === 0) return undefined;
-      return entries.map((f: { key: string; value: string }) => `${f.key}: ${f.value}`);
+      // v3.5: 使用 WorkspaceContextBridge 加载本区+跨区已确认判断
+      const { WorkspaceContextBridge } = await import('./workspace-context-bridge');
+      const bridge = new WorkspaceContextBridge(this.memoryStore);
+      const ctx = await bridge.loadContextForWorkspace(this.orgId);
+      const facts = [...ctx.ownFacts, ...ctx.relatedFacts];
+      if (facts.length === 0) return undefined;
+      return facts;
     } catch { /* memoryStore unavailable — degraded */ return undefined; }
   }
 
