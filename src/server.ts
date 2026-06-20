@@ -82,6 +82,16 @@ export async function createServer(): Promise<Server> {
   // 清理残留的 .tmp 文件
   atomicWriter.cleanup();
   const bossMailbox = new BossMailbox(); // PRD v1.6 Slice 5
+  // v3.5 PRD §12.4: 老板信箱定时推送 (周一 9:00)
+  setInterval(() => {
+    const now = new Date();
+    if (now.getDay() === 1 && now.getHours() === 9 && now.getMinutes() === 0) {
+      const webhookUrl = process.env.FEISHU_WEBHOOK_URL || '';
+      if (!webhookUrl) return;
+      const report = bossMailbox.generateReport('Synova', `W${Math.ceil(now.getDate()/7)}`, [], []);
+      bossMailbox.pushToFeishu(report, webhookUrl).catch(() => {});
+    }
+  }, 60000); // 每分钟检查
   // PRD v1.6 Slice 7: workspace-service 接线
   buildInheritedContext({ parentId: 'init', department: 'dept', title: 'init', source: 'boss_assigned', parentSummary: 'init' });
   detectConflicts([]); // Slice 7 冲突检测初始化

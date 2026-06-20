@@ -683,10 +683,12 @@ export class ConversationEngine {
   private async loadConfirmedFacts(): Promise<string[] | undefined> {
     if (!this.memoryStore || !this.orgId) return undefined;
     try {
-      // v3.5: 使用 WorkspaceContextBridge 加载本区+跨区已确认判断
+      // v3.5: 从最近消息提取tags → 传递给Bridge做跨区匹配
+      const recentMsgs = this.messages.slice(-5).map(m => typeof m.content === 'string' ? m.content : '').join(' ');
+      const tags = recentMsgs.split(/[\s,，。！？]+/).filter(w => w.length >= 2).slice(0, 5);
       const { WorkspaceContextBridge } = await import('./workspace-context-bridge');
       const bridge = new WorkspaceContextBridge(this.memoryStore);
-      const ctx = await bridge.loadContextForWorkspace(this.orgId);
+      const ctx = await bridge.loadContextForWorkspace(this.orgId, tags);
       const facts = [...ctx.ownFacts, ...ctx.relatedFacts];
       if (facts.length === 0) return undefined;
       return facts;

@@ -40,8 +40,20 @@ type: "prompt"
 | 2-3 (50-299人) | 完整三层。建议对象为管理团队 |
 | 4+ (300-500人) | 完整三层 + 附录(数据来源+方法论) |
 
+## strategy 专家专属字段 (PRD §20.1)
+
+每个 Key Judgment 必须额外包含以下战略维度：
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| sevenPowers | PowerStrength[] | 7种力量逐项评分，每项{name,score,applicable} |
+| marketGravity | number | 市场引力指数 0-1，赛道结构性利润空间 |
+| flywheelStage | 'building'\|'accelerating'\|'mature'\|'declining' | 飞轮阶段 |
+| disruptionRisk | number | 颠覆风险 0-1，边缘创新威胁 |
+| moatStrength | number | 综合护城河强度，加权7Powers得分 |
+
 ## 禁止项
-- 内部术语泄漏(D1-D7/测量器/GapDimension/本体层)
+- 内部术语泄漏
 - 超过50字的Governing Thought
 - 没有evidence的critical finding
 - 给Stage 0-1公司建议"建立事业部制"

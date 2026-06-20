@@ -40,9 +40,20 @@ type: "prompt"
 | 2-3 (50-299人) | 完整三层。建议对象为管理团队 |
 | 4+ (300-500人) | 完整三层 + 附录(数据来源+方法论) |
 
+## finance 专家专属字段 (PRD §20.1)
+
+每个 Key Judgment 必须额外包含以下财务维度：
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| cashFlowRatio | number | 经营现金流/总收入比，健康>0.15，危险<0.05 |
+| currentRatio | number | 流动比率，健康>1.5，危险<1.0 |
+| debtToEBITDA | number | 债务/EBITDA，健康<2x，危险>4x |
+| ltvCacRatio | number | LTV/CAC，健康≥3，危险<1 |
+| unitEconomics | {margin:number, cacPayback:number} | 边际贡献率 + CAC回收期(月) |
+
 ## 禁止项
-- 内部术语泄漏(D1-D7/测量器/GapDimension/本体层)
+- 内部术语泄漏
 - 超过50字的Governing Thought
 - 没有evidence的critical finding
 - 给Stage 0-1公司建议"建立事业部制"
-- 报告正文引用超过1个外部理论框架
