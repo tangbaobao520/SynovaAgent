@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering v3.4 — PreToolUse: task brief 质量检查
+# Loop Engineering v3.5 — PreToolUse: task brief 质量检查
 #
 # 挂在 PreToolUse → Edit|Write 上，在 hook-check-memory.sh 之后运行。
 # 7 项字段质量检查 + 接口真实性反向验证 + 层级确认。
@@ -24,7 +24,7 @@ except:
 
 # 例外：允许写入 .claude/ 和 task-briefs 和 settings 和 plans 和 worktrees
 if echo "$FILE" | grep -qE '\.claude/(task-briefs|settings|plans|specs|worktrees)/'; then
-  # v3.4: task brief 被编辑时自动标记 brief-filled
+  # v3.5: task brief 被编辑时自动标记 brief-filled
   if echo "$FILE" | grep -qE "\.claude/task-briefs/"; then
     ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
     WF_STATE="$ROOT/.claude/workflow-state.json"
@@ -40,7 +40,7 @@ if echo "$FILE" | grep -qE 'scripts/workflow/hook-'; then
   exit 0
 fi
 
-# ═══ v3.4: 工作流状态物理强制 (task-start→scope-check→brief-filled 不可跳过) ═══
+# ═══ v3.5: 工作流状态物理强制 (task-start→scope-check→brief-filled 不可跳过) ═══
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 WORKFLOW_STATE="$ROOT/.claude/workflow-state.json"
 
@@ -145,7 +145,7 @@ if [ -z "$IFACE" ] || [ ${#IFACE} -lt 5 ]; then
   FAIL=1
 fi
 
-# ═══ v3.4: 语义质量检查（不只检查长度，检查内容） ═══
+# ═══ v3.5: 语义质量检查（不只检查长度，检查内容） ═══
 
 # 8. Q1 必须引用至少 1 个来源
 Q1_FULL=$(grep -A20 "^## Q1" "$BRIEF" 2>/dev/null | sed 's/<!--.*-->//g' || true)

@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering v3.4 — pre-commit 物理阻断 (5 项, 全部 <1s)
+# Loop Engineering v3.5 — pre-commit 物理阻断 (5 项, 全部 <1s)
 #
 # 设计原则:
 #   - 只阻断 agent 确实会偷懒的项（有历史事故支撑）
@@ -44,7 +44,7 @@ STAGED=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep '\.
 
 echo ""
 echo "═══════════════════════════════════════════════════════════"
-echo "  Loop Engineering v3.4 — pre-commit (5 项)"
+echo "  Loop Engineering v3.5 — pre-commit (5 项)"
 echo "═══════════════════════════════════════════════════════════"
 echo ""
 
@@ -175,7 +175,7 @@ if [ -n "$STAGED_SRC" ]; then
 fi
 hard_check "架构边界: 禁止跨层引用 (铁律 39)" "${CROSS_LAYER:-}"
 
-# ═══ 9. 专家配置校验 (v3.4) ═══
+# ═══ 9. 专家配置校验 (v3.5) ═══
 EXPERT_CONFIG_VALID=$(bash "$ROOT/scripts/validate-expert-config.sh" 2>&1 || true)
 EXPERT_CONFIG_OK=$?
 if [ "$EXPERT_CONFIG_OK" -ne 0 ]; then
@@ -186,11 +186,11 @@ else
   echo -e "  ${GREEN}✅ 专家配置校验${RESET}"
 fi
 
-# ═══ 10. 硬编码检测 (v3.4 无限扩展审计) ═══
+# ═══ 10. 硬编码检测 (v3.5 无限扩展审计) ═══
 # 警告不阻断——但让问题可见，无法"没注意到"
 bash "$ROOT/scripts/check-hardcoded.sh" 2>/dev/null || true
 
-# ═══ 11. v3.4: 接线深度检查 — 新export必须被调用(非仅import) ═══
+# ═══ 11. v3.5: 接线深度检查 — 新export必须被调用(非仅import) ═══
 DEEP_WIRING_FAIL=""
 if [ -n "$NEW_IMPL" ]; then
   for file in $NEW_IMPL; do
@@ -209,9 +209,9 @@ if [ -n "$NEW_IMPL" ]; then
     done
   done
 fi
-hard_check "v3.4 接线深度: 新export必须被调用(非仅import)" "${DEEP_WIRING_FAIL:-}"
+hard_check "v3.5 接线深度: 新export必须被调用(非仅import)" "${DEEP_WIRING_FAIL:-}"
 
-# ═══ 12. v3.4: 桩测试检测 — 新测试文件必须≥3个expect() ═══
+# ═══ 12. v3.5: 桩测试检测 — 新测试文件必须≥3个expect() ═══
 STUB_TEST_FAIL=""
 STAGED_TESTS=$(git diff --cached --name-only --diff-filter=A 2>/dev/null | grep '^tests/.*\.test\.ts$' || true)
 if [ -n "$STAGED_TESTS" ]; then
@@ -224,9 +224,9 @@ if [ -n "$STAGED_TESTS" ]; then
     fi
   done
 fi
-hard_check "v3.4 桩测试: 新测试需≥3 expect()" "${STUB_TEST_FAIL:-}"
+hard_check "v3.5 桩测试: 新测试需≥3 expect()" "${STUB_TEST_FAIL:-}"
 
-# ═══ 13. v3.4: 硬编码业务数据扫描 — 新HTML/路由不得硬编码业务字段 ═══
+# ═══ 13. v3.5: 硬编码业务数据扫描 — 新HTML/路由不得硬编码业务字段 ═══
 HARDCODE_DATA_FAIL=""
 STAGED_HTML=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep -E '\.(html|ts)$' | grep -v node_modules | grep -v '\.test\.' || true)
 if [ -n "$STAGED_HTML" ]; then
@@ -240,9 +240,9 @@ if [ -n "$STAGED_HTML" ]; then
     fi
   done
 fi
-hard_check "v3.4 硬编码扫描: 禁止硬编码业务数据" "${HARDCODE_DATA_FAIL:-}"
+hard_check "v3.5 硬编码扫描: 禁止硬编码业务数据" "${HARDCODE_DATA_FAIL:-}"
 
-# ═══ 14. v3.4: --no-verify 审计 ═══
+# ═══ 14. v3.5: --no-verify 审计 ═══
 NO_VERIFY_LOG="$ROOT/.claude/no-verify.log"
 NO_VERIFY_COUNT=0
 if [ -f "$NO_VERIFY_LOG" ]; then
@@ -250,13 +250,77 @@ if [ -f "$NO_VERIFY_LOG" ]; then
   NO_VERIFY_COUNT=$(grep -c "$(date +%Y-%m-%d)" "$NO_VERIFY_LOG" 2>/dev/null || echo 0)
 fi
 if [ "${NO_VERIFY_COUNT:-0}" -ge 3 ]; then
-  echo -e "  ${RED}❌ v3.4 --no-verify审计: 24h内使用${NO_VERIFY_COUNT}次—已超限  [硬阻断]${RESET}"
+  echo -e "  ${RED}❌ v3.5 --no-verify审计: 24h内使用${NO_VERIFY_COUNT}次—已超限  [硬阻断]${RESET}"
   echo "    连续使用--no-verify超过2次后，第3次起必须修复根因而非绕过"
   HARD_FAIL=$((HARD_FAIL + 1))
 elif [ "${NO_VERIFY_COUNT:-0}" -ge 2 ]; then
-  echo -e "  ${YELLOW}⚠️  v3.4 --no-verify审计: 24h内使用${NO_VERIFY_COUNT}次—警告${RESET}"
+  echo -e "  ${YELLOW}⚠️  v3.5 --no-verify审计: 24h内使用${NO_VERIFY_COUNT}次—警告${RESET}"
   echo "    再次使用--no-verify将阻断提交"
 fi
+
+# ═══ 15. v3.5: PRD对照清单 — Done标准必须引用PRD章节号 ═══
+PRD_REF_FAIL=""
+if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
+  DONE_SECTION=$(awk "/^## Done 标准/,/^## /" "$BRIEF" 2>/dev/null)
+  # 检查Done标准中是否包含PRD章节引用 (§X.Y或PRD §)
+  if ! echo "$DONE_SECTION" | grep -qE '§[0-9]+\.[0-9]+|PRD.*§' 2>/dev/null; then
+    PRD_REF_FAIL="Done 标准未引用 PRD 章节号 (§X.Y 格式)。请标注本任务对应 PRD 的哪个章节"
+  fi
+fi
+hard_check "v3.5 PRD对照: Done标准需引用PRD章节" "${PRD_REF_FAIL:-}"
+
+# ═══ 16. v3.5: 文件位置校验 — 新文件路径必须与brief声明匹配 ═══
+FILE_LOC_FAIL=""
+if [ -n "$NEW_IMPL" ] && [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
+  # 从brief提取声明的文件路径
+  DECLARED_FILES=$(grep -oP '`[a-z_/]+\.(ts|md|sh|html)`' "$BRIEF" 2>/dev/null | tr -d '`' || true)
+  for nf in $NEW_IMPL; do
+    [ -z "$nf" ] && continue
+    # 检查新文件是否在brief中被声明
+    if ! echo "$DECLARED_FILES" | grep -qF "$nf" 2>/dev/null; then
+      FILE_LOC_FAIL="${FILE_LOC_FAIL}  ${nf}: 新文件未在 task brief 中声明\n"
+    fi
+  done
+fi
+# 不阻断——警告模式（很多文件是自动生成的）
+if [ -n "$FILE_LOC_FAIL" ]; then
+  echo -e "  ${YELLOW}⚠️  v3.5 文件位置: 新文件未在brief声明${RESET}"
+  echo -e "$FILE_LOC_FAIL"
+fi
+
+# ═══ 17. v3.5: 跨模块集成测试 — 涉及≥2层的新功能须有.integration.test.ts ═══
+CROSS_MOD_FAIL=""
+if [ -n "$NEW_IMPL" ]; then
+  for nf in $NEW_IMPL; do
+    [ -z "$nf" ] && continue
+    # 检测是否涉及跨层（文件名含 bridge/context/inject 等关键词）
+    if echo "$nf" | grep -qiE 'bridge|context|inject|dispatch|connect'; then
+      # 检查是否有对应的集成测试
+      INTG_TEST=$(echo "$nf" | sed 's|^src/|tests/|; s|\.ts$|.integration.test.ts|')
+      if [ ! -f "$INTG_TEST" ]; then
+        CROSS_MOD_FAIL="${CROSS_MOD_FAIL}  ${nf}: 跨模块文件缺少集成测试 → ${INTG_TEST}\n"
+      fi
+    fi
+  done
+fi
+hard_check "v3.5 跨模块集成: bridge/context类需集成测试" "${CROSS_MOD_FAIL:-}"
+
+# ═══ 18. v3.5: 数据流自检 — 生成文件含真实API调用证据 ═══
+DATA_FLOW_FAIL=""
+STAGED_ROUTES=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep -E '^src/routes/.*\.ts$' | grep -v '.test.' || true)
+if [ -n "$STAGED_ROUTES" ]; then
+  for rf in $STAGED_ROUTES; do
+    [ -z "$rf" ] && continue
+    [ ! -f "$rf" ] && continue
+    # 检测路由文件中是否只有硬编码数据而没有 fetch/API 调用
+    HAS_API_CALL=$(grep -c "fetch(\|await.*import\|getDatabase()\|\.search(\|\.list(\|\.recall(" "$rf" 2>/dev/null || echo 0)
+    HAS_HARDCODE=$(grep -c "'marketing'\|'sales'\|'finance'\|'研发部'\|'市场部'\|'销售部'" "$rf" 2>/dev/null || echo 0)
+    if [ "${HAS_API_CALL:-0}" -eq 0 ] && [ "${HAS_HARDCODE:-0}" -gt 0 ]; then
+      DATA_FLOW_FAIL="${DATA_FLOW_FAIL}  ${rf}: 含硬编码业务数据但无API调用——可能为静态模板\n"
+    fi
+  done
+fi
+hard_check "v3.5 数据流: 路由文件需含API调用证据" "${DATA_FLOW_FAIL:-}"
 
 # ═══ 结果 ═══
 echo ""
