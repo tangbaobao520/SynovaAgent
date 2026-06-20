@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering v3.3 — 任务启动 (Task Start)
+# Loop Engineering v3.4 — 任务启动 (Task Start)
 #
 # 这是整个系统最重要的环节。
 # 在写任何代码之前，先回答 3 个问题，把"自然语言意图"翻译成"可执行的规格"。
@@ -20,7 +20,7 @@ BRIEF_FILE="$ROOT/.claude/task-briefs/${TIMESTAMP}-${TASK_SLUG}.md"
 
 echo ""
 echo -e "${CYAN}════════════════════════════════════════════════════════════${RESET}"
-echo -e "${CYAN}  Loop Engineering v3.3 — 任务启动${RESET}"
+echo -e "${CYAN}  Loop Engineering v3.4 — 任务启动${RESET}"
 echo -e "${CYAN}  先想清楚，再动手。${RESET}"
 echo -e "${CYAN}════════════════════════════════════════════════════════════${RESET}"
 echo ""
@@ -95,7 +95,7 @@ if [ -x "$SCOPE_CHECK" ]; then
 else
   echo -e "${YELLOW}⚠ scope-check.sh 未就绪 — 跳过产品对齐检查${RESET}"
 
-# v3.3: 写入工作流状态 (task-started)
+# v3.4: 写入工作流状态 (task-started)
 WORKFLOW_STATE="$ROOT/.claude/workflow-state.json"
 python3 -c "import json; json.dump({"step":"task-started","brief":"${TIMESTAMP}-${TASK_SLUG}.md","ts":"$(date -u +%Y-%m-%dT%H:%M:%SZ)"}, open("$WORKFLOW_STATE","w"))" 2>/dev/null
 fi

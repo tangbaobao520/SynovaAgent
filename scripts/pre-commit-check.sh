@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering v3.3 — pre-commit 物理阻断 (5 项, 全部 <1s)
+# Loop Engineering v3.4 — pre-commit 物理阻断 (5 项, 全部 <1s)
 #
 # 设计原则:
 #   - 只阻断 agent 确实会偷懒的项（有历史事故支撑）
@@ -44,7 +44,7 @@ STAGED=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep '\.
 
 echo ""
 echo "═══════════════════════════════════════════════════════════"
-echo "  Loop Engineering v3.3 — pre-commit (5 项)"
+echo "  Loop Engineering v3.4 — pre-commit (5 项)"
 echo "═══════════════════════════════════════════════════════════"
 echo ""
 
@@ -175,7 +175,7 @@ if [ -n "$STAGED_SRC" ]; then
 fi
 hard_check "架构边界: 禁止跨层引用 (铁律 39)" "${CROSS_LAYER:-}"
 
-# ═══ 9. 专家配置校验 (v3.3) ═══
+# ═══ 9. 专家配置校验 (v3.4) ═══
 EXPERT_CONFIG_VALID=$(bash "$ROOT/scripts/validate-expert-config.sh" 2>&1 || true)
 EXPERT_CONFIG_OK=$?
 if [ "$EXPERT_CONFIG_OK" -ne 0 ]; then
@@ -186,9 +186,77 @@ else
   echo -e "  ${GREEN}✅ 专家配置校验${RESET}"
 fi
 
-# ═══ 10. 硬编码检测 (v3.3 无限扩展审计) ═══
+# ═══ 10. 硬编码检测 (v3.4 无限扩展审计) ═══
 # 警告不阻断——但让问题可见，无法"没注意到"
 bash "$ROOT/scripts/check-hardcoded.sh" 2>/dev/null || true
+
+# ═══ 11. v3.4: 接线深度检查 — 新export必须被调用(非仅import) ═══
+DEEP_WIRING_FAIL=""
+if [ -n "$NEW_IMPL" ]; then
+  for file in $NEW_IMPL; do
+    [ -z "$file" ] && continue
+    [ ! -f "$file" ] && continue
+    EXPORTS=$(grep -oP 'export (function|class|const) \K\w+' "$file" 2>/dev/null || true)
+    for name in $EXPORTS; do
+      [ -z "$name" ] && continue
+      echo "$name" | grep -qi 'mock\|fake\|_internal\|_deprecated' && continue
+      # 检查入口文件中该函数名是否出现在非import行（即被真正调用）
+      CALL_SITES=$(grep -rn "\b${name}\b" src/server.ts src/index.ts src/agent/synova-agent.ts --include="*.ts" 2>/dev/null | grep -v "import.*${name}\b" | grep -v "export.*${name}\b" | grep -v "^\s*//\|^\s*\*" | head -1 || true)
+      IMPORT_ONLY=$(grep -rn "import.*\b${name}\b" src/server.ts src/index.ts src/agent/synova-agent.ts --include="*.ts" 2>/dev/null | head -1 || true)
+      if [ -z "$CALL_SITES" ] && [ -n "$IMPORT_ONLY" ]; then
+        DEEP_WIRING_FAIL="${DEEP_WIRING_FAIL}  ${file}: export ${name} — 已import但从未调用（空import绕过检测）\n"
+      fi
+    done
+  done
+fi
+hard_check "v3.4 接线深度: 新export必须被调用(非仅import)" "${DEEP_WIRING_FAIL:-}"
+
+# ═══ 12. v3.4: 桩测试检测 — 新测试文件必须≥3个expect() ═══
+STUB_TEST_FAIL=""
+STAGED_TESTS=$(git diff --cached --name-only --diff-filter=A 2>/dev/null | grep '^tests/.*\.test\.ts$' || true)
+if [ -n "$STAGED_TESTS" ]; then
+  for tf in $STAGED_TESTS; do
+    [ -z "$tf" ] && continue
+    [ ! -f "$tf" ] && continue
+    EXPECT_COUNT=$(grep -c 'expect(' "$tf" 2>/dev/null || echo 0)
+    if [ "${EXPECT_COUNT:-0}" -lt 3 ]; then
+      STUB_TEST_FAIL="${STUB_TEST_FAIL}  ${tf}: 仅有 ${EXPECT_COUNT} 个expect() — 可能为桩测试（需≥3个真实断言）\n"
+    fi
+  done
+fi
+hard_check "v3.4 桩测试: 新测试需≥3 expect()" "${STUB_TEST_FAIL:-}"
+
+# ═══ 13. v3.4: 硬编码业务数据扫描 — 新HTML/路由不得硬编码业务字段 ═══
+HARDCODE_DATA_FAIL=""
+STAGED_HTML=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep -E '\.(html|ts)$' | grep -v node_modules | grep -v '\.test\.' || true)
+if [ -n "$STAGED_HTML" ]; then
+  for hf in $STAGED_HTML; do
+    [ -z "$hf" ] && continue
+    [ ! -f "$hf" ] && continue
+    # 检测硬编码的部门名/业务数据模式(非import/export上下文)
+    DEPS_HARDCODED=$(grep -n "'marketing'\|'sales'\|'finance'\|'研发部'\|'市场部'\|'销售部'" "$hf" 2>/dev/null | grep -v "import\|export\|//\|/\*\|token.split\|dept.*=" | head -3 || true)
+    if [ -n "$DEPS_HARDCODED" ]; then
+      HARDCODE_DATA_FAIL="${HARDCODE_DATA_FAIL}  ${hf}: 可能硬编码业务数据(如部门名)\n"
+    fi
+  done
+fi
+hard_check "v3.4 硬编码扫描: 禁止硬编码业务数据" "${HARDCODE_DATA_FAIL:-}"
+
+# ═══ 14. v3.4: --no-verify 审计 ═══
+NO_VERIFY_LOG="$ROOT/.claude/no-verify.log"
+NO_VERIFY_COUNT=0
+if [ -f "$NO_VERIFY_LOG" ]; then
+  # 统计最近24小时内的 --no-verify 使用次数
+  NO_VERIFY_COUNT=$(grep -c "$(date +%Y-%m-%d)" "$NO_VERIFY_LOG" 2>/dev/null || echo 0)
+fi
+if [ "${NO_VERIFY_COUNT:-0}" -ge 3 ]; then
+  echo -e "  ${RED}❌ v3.4 --no-verify审计: 24h内使用${NO_VERIFY_COUNT}次—已超限  [硬阻断]${RESET}"
+  echo "    连续使用--no-verify超过2次后，第3次起必须修复根因而非绕过"
+  HARD_FAIL=$((HARD_FAIL + 1))
+elif [ "${NO_VERIFY_COUNT:-0}" -ge 2 ]; then
+  echo -e "  ${YELLOW}⚠️  v3.4 --no-verify审计: 24h内使用${NO_VERIFY_COUNT}次—警告${RESET}"
+  echo "    再次使用--no-verify将阻断提交"
+fi
 
 # ═══ 结果 ═══
 echo ""
