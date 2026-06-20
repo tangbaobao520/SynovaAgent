@@ -85,9 +85,10 @@ export class SubAgentCoordinator {
   async dispatch(evidence: Evidence[], maxConcurrency = 6): Promise<SubAgentReport[]> {
     if (evidence.length === 0) return [];
 
-    // v3.3: 从 Registry 动态读取，不再硬编码
+    // v3.3: 从 Registry + yaml 动态读取
     const { getExpertRegistry } = await import('../l3/expert-registry');
-    const BACKGROUND_EXPERTS = new Set(['knowledge']);
+    const { getBackgroundExperts } = await import('../agent/expert-config-loader');
+    const BACKGROUND_EXPERTS = getBackgroundExperts();
     const expertTypes = getExpertRegistry().listTypes().filter(t => !BACKGROUND_EXPERTS.has(t));
     const tasks = expertTypes.map(type => this.dispatcher.runExpert(type, evidence));
 

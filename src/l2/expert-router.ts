@@ -17,8 +17,8 @@ const log = createLogger('l2/expert-router');
 
 // ═══ Types ═══
 
-/** 专家 ID */
-export type ExpertId = 'strategy' | 'org' | 'finance' | 'tech' | 'marketing' | 'action' | 'knowledge' | 'business_model';
+/** 专家 ID — v3.3: string（加专家不需要改类型） */
+export type ExpertId = string;
 
 /** 路由模式 */
 export type RouteMode = 'none' | 'selective' | 'all' | 'knowledge';
@@ -48,7 +48,13 @@ export interface LLMClassifier {
 
 // ═══ Constants ═══
 
-const ALL_EXPERTS: ExpertId[] = ['strategy', 'org', 'finance', 'tech', 'marketing', 'action', 'business_model'];
+// v3.3: 从 Registry 动态读取，不再硬编码
+async function getAllExperts(): Promise<string[]> {
+  const { getExpertRegistry } = await import('../l3/expert-registry');
+  const { getBackgroundExperts } = await import('../agent/expert-config-loader');
+  const bg = getBackgroundExperts();
+  return getExpertRegistry().listTypes().filter(t => !bg.has(t));
+}
 
 // ═══ ExpertRouter ═══
 
@@ -73,7 +79,8 @@ export class ExpertRouter {
     }
     if (context.phase >= 2) {
       log.debug('Phase ≥2 — 全调专家');
-      return { mode: 'all', experts: ALL_EXPERTS, knowledgeAgent: true, matchedBy: 'phase' };
+      const experts = await getAllExperts();
+      return { mode: 'all', experts, knowledgeAgent: true, matchedBy: 'phase' };
     }
 
     // ═══ Layer 2: 关键词快路径 ═══

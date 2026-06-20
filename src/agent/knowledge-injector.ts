@@ -58,7 +58,16 @@ export interface InjectionResult {
 // ═══ Constants ═══
 
 const MAX_FILE_SIZE = 50 * 1024; // 50KB
-const ALLOWED_SCOPE_VALUES = ['global', 'org', 'knowledge', 'expert:strategy', 'expert:business_model', 'expert:org', 'expert:finance', 'expert:marketing', 'expert:tech', 'expert:action', 'expert:knowledge'];
+// v3.3: 动态生成——从 Registry 获取专家列表，加固定前缀
+function getBaseScopes(): string[] { return ['global', 'org', 'knowledge']; }
+function isAllowedScope(scope: string): boolean {
+  if (getBaseScopes().includes(scope)) return true;
+  if (scope.startsWith('expert:')) {
+    const { getExpertRegistry } = require('../l3/expert-registry') as { getExpertRegistry: () => { listTypes: () => string[] } };
+    return getExpertRegistry().listTypes().includes(scope.replace('expert:', ''));
+  }
+  return false;
+}
 
 // ═══ KnowledgeInjector ═══
 
@@ -189,7 +198,7 @@ export class KnowledgeInjector {
           errors.push('YAML front matter 缺少 scope 字段');
         } else {
           const scopeMatch = frontMatter.match(/scope:\s*"([^"]+)"/) || frontMatter.match(/scope:\s*(\S+)/);
-          if (scopeMatch && !ALLOWED_SCOPE_VALUES.includes(scopeMatch[1])) {
+          if (scopeMatch && !isAllowedScope(scopeMatch[1])) {
             scopeValid = false;
             errors.push(`scope 值不合法: ${scopeMatch[1]}`);
           }
