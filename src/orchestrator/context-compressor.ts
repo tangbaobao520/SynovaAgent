@@ -49,6 +49,7 @@ export class ContextCompressor {
     messages: LLMMessage[],
     _systemPrompt: string,
     config: CompressionConfig,
+    confirmedFacts?: string[],
   ): CompressionResult {
     this.activeStrategy = config.strategy;
     const total = messages.length;
@@ -59,13 +60,22 @@ export class ContextCompressor {
         result = this.compressSlidingWindow(messages, config.windowSize ?? Math.max(20, Math.floor(total * 0.6)));
         break;
       case 'summary':
-        result = this.compressSummary(messages, config);
+        result = this.compressSummary(messages, config, confirmedFacts);
         break;
       case 'selective':
         result = this.compressSelective(messages, config.selectiveKeywords ?? []);
         break;
       default:
         result = messages;
+    }
+
+    // v3.3: 注入已确认判断到压缩输出顶部（任何策略都保留）
+    if (confirmedFacts && confirmedFacts.length > 0 && result.length > 0) {
+      const factMsg: LLMMessage = {
+        role: 'system',
+        content: `[已确认的判断（永不丢失——来自企业事实层）]:\n${confirmedFacts.map(f => `- ${f}`).join('\n')}`,
+      };
+      result = [factMsg, ...result];
     }
 
     return {
@@ -119,7 +129,7 @@ export class ContextCompressor {
    * Summary: 合并历史消息为一条 summary 消息。
    * 保留最近 1/3 的消息, 前面的合并为一条 user 消息。
    */
-  private compressSummary(messages: LLMMessage[], config: CompressionConfig): LLMMessage[] {
+  private compressSummary(messages: LLMMessage[], config: CompressionConfig, _confirmedFacts?: string[]): LLMMessage[] {
     const total = messages.length;
     if (total <= 10) return messages; // 太短无需压缩
 

@@ -464,8 +464,8 @@ export class ConversationEngine {
         const compressor = new ContextCompressor();
         const originalLen = this.messages.length;
         const result = compressor.compress(this.messages, '', {
-          strategy: 'sliding-window',
-          windowSize: 20,
+          strategy: 'summary',
+          maxSummaryTokens: 1500,
         });
         this.messages = result.messages;
         log.debug({ before: originalLen, after: result.messages.length, discarded: result.discardedCount }, '上下文已压缩');
