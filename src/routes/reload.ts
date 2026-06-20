@@ -16,10 +16,7 @@ import type { ExpertFileLoader } from '../agent/expert-file-loader';
 const log = createLogger('routes/reload');
 const router = Router();
 
-/** 默认专家 prompt — 当文件不存在时兜底 (与 expert-registry.ts 中的 DEFAULT_EXPERT_PROMPTS 一致) */
-const DEFAULT_EXPERT_PROMPTS: Record<string, string> = {
-  strategy: '', org: '', finance: '', tech: '', marketing: '', action: '', business_model: '', knowledge: '',
-};
+// v3.3 F3: DEFAULT_EXPERT_PROMPTS 已删除。文件优先——无fallback。
 
 router.post('/api/reload', async (req: Request, res: Response) => {
   const startedAt = Date.now();
@@ -50,7 +47,7 @@ router.post('/api/reload', async (req: Request, res: Response) => {
 
     // 3. 重新加载专家文件
     if (loader && registry) {
-      const result = loader.loadFromIndex(index, DEFAULT_EXPERT_PROMPTS);
+      const result = loader.loadFromIndex(index, {}); // v3.3: 无fallback
       report.push(`专家加载: ${result.fromFiles} 从文件, ${result.fromDefaults} 默认, ${result.errors.length} 失败`);
     }
 

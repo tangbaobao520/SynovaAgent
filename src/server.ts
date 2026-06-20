@@ -242,8 +242,8 @@ export async function createServer(): Promise<Server> {
   // 启动时扫描文件 → 加载专家
   try {
     const index = fileScanner.scan();
-    const defaultPrompts = (await import('./l3/expert-registry')).DEFAULT_EXPERT_PROMPTS;
-    const loadResult = expertFileLoader.loadFromIndex(index, defaultPrompts);
+    // v3.3 F3: DEFAULT_EXPERT_PROMPTS 已删除。文件优先——加载失败即拒绝启动。
+    const loadResult = expertFileLoader.loadFromIndex(index, {}); // v3.3: 无fallback——文件优先
     logger.info({ fromFiles: loadResult.fromFiles, total: loadResult.loaded.length },
       'Phase 0 专家文件加载完成');
   } catch (err: unknown) {

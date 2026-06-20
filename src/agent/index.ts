@@ -8,3 +8,4 @@ export type { KnowledgeContext, KnowledgeConflict, InjectionResult } from './kno
 export { KnowledgeConflictHandler } from './knowledge-conflict-handler';
 export { AtomicWriter } from './atomic-write';
 export type { AtomicWriteResult } from './atomic-write';
+export { getEnabledDiagnosticExperts, getBackgroundExperts } from './expert-config-loader';
