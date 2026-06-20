@@ -20,8 +20,25 @@ interface Workspace {
   status: 'pending' | 'analyzing' | 'confirmed' | 'executing' | 'resolved' | 'shelved';
   priority: 'critical' | 'high' | 'medium' | 'low';
   expert?: string;
+  // PRD v1.6 Slice 7: 部门协作扩展
+  department?: string;
+  parentWsId?: string;
+  owner?: string;
+  visibility: 'global' | 'department' | 'private';
+  source?: 'agent_suggested' | 'boss_assigned' | 'self_created';
+  inheritedContext?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+interface WorkspaceConflict {
+  id: string;
+  type: 'numeric' | 'temporal' | 'resource';
+  dimension: string;
+  workspaceA: { id: string; department: string; value: string; evidence: string };
+  workspaceB: { id: string; department: string; value: string; evidence: string };
+  detectedAt: string;
+  status: 'open' | 'escalated' | 'resolved';
 }
 
 // In-memory store (Phase 1; Phase 2 → SQLite via SessionStore)
@@ -41,7 +58,8 @@ router.post('/api/workspaces', (req: Request, res: Response) => {
   const id = `ws_${Date.now().toString(36)}`;
   const now = new Date().toISOString();
   const ws: Workspace = {
-    id, title, type, status: 'pending', priority: 'medium', createdAt: now, updatedAt: now,
+    id, title, type, status: 'pending', priority: 'medium',
+    visibility: 'global', createdAt: now, updatedAt: now,
   };
   store.set(id, ws);
   log.info({ id, title }, '工作区已创建');
@@ -80,6 +98,101 @@ router.post('/api/workspaces/:id/messages', (req: Request, res: Response) => {
   // Phase 1: simple echo (Phase 2 → ConversationEngine)
   const reply = `[${ws.title}] 收到: ${content.slice(0, 200)}。诊断引擎将在 Phase 2 接入。`;
   res.json({ ok: true, reply, workspaceId: ws.id });
+});
+
+// ═══ PRD v1.6 Slice 7: 部门协作扩展 ═══
+
+// 创建子工作区 (Agent建议 或 老板手动分配)
+router.post('/api/workspaces/:id/sub', (req: Request, res: Response) => {
+  const parentId = String(req.params.id);
+  const parent = store.get(parentId);
+  if (!parent) return res.status(404).json({ ok: false, error: 'parent workspace not found' });
+
+  const { department, title } = req.body as { department?: string; title?: string };
+  if (!department || !title) return res.status(400).json({ ok: false, error: 'department and title required' });
+
+  const id = `ws_sub_${Date.now().toString(36)}`;
+  const now = new Date().toISOString();
+  const subWs: Workspace = {
+    id, title, type: 'manual', status: 'pending', priority: parent.priority,
+    department, parentWsId: parentId, owner: 'agent', visibility: 'department',
+    source: req.body.agentSuggested ? 'agent_suggested' : 'boss_assigned',
+    inheritedContext: `从全局方案"${parent.title}"分配。目标: ${parent.title}。状态: ${parent.status}。`,
+    createdAt: now, updatedAt: now,
+  };
+  store.set(id, subWs);
+  log.info({ id, department, parentId }, '子工作区已创建');
+  res.json({ ok: true, workspace: subWs });
+});
+
+// 按部门过滤
+router.get('/api/workspaces/by-dept/:dept', (req: Request, res: Response) => {
+  const dept = req.params.dept;
+  const list = Array.from(store.values())
+    .filter(w => w.department === dept || w.visibility === 'global')
+    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+  res.json({ ok: true, workspaces: list, department: dept });
+});
+
+// 获取当前用户可见的工作区
+router.get('/api/workspaces/mine', (req: Request, res: Response) => {
+  // Phase 1: 从 token 获取角色 (Phase 2: JWT)
+  const token = String(req.headers['x-synova-token'] || '');
+  const role = token.includes('admin') ? 'admin' : token.includes('liaison') ? 'liaison' : 'manager';
+  const dept = token.split(':')[1] || '';
+
+  let list: Workspace[];
+  if (role === 'admin' || role === 'liaison') {
+    list = Array.from(store.values());
+  } else {
+    list = Array.from(store.values()).filter(w =>
+      w.department === dept || w.owner === token.split(':')[2] || w.visibility === 'global',
+    );
+  }
+  list.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+  res.json({ ok: true, workspaces: list, role, department: dept });
+});
+
+// 冲突检测 (对接人)
+router.get('/api/workspaces/conflicts', (_req: Request, res: Response) => {
+  const conflicts: WorkspaceConflict[] = [];
+  const all = Array.from(store.values()).filter(w => w.status === 'confirmed');
+
+  for (let i = 0; i < all.length; i++) {
+    for (let j = i + 1; j < all.length; j++) {
+      const a = all[i]; const b = all[j];
+      if (a.department === b.department) continue;
+      // 简单数值型冲突: 同title的confirmed workspace跨部门 → 标记冲突
+      if (a.title.includes(b.title.slice(0, 5)) || b.title.includes(a.title.slice(0, 5))) {
+        conflicts.push({
+          id: `conflict_${Date.now().toString(36)}`,
+          type: 'numeric',
+          dimension: a.title,
+          workspaceA: { id: a.id, department: a.department || 'unknown', value: a.title, evidence: '' },
+          workspaceB: { id: b.id, department: b.department || 'unknown', value: b.title, evidence: '' },
+          detectedAt: new Date().toISOString(),
+          status: 'open',
+        });
+      }
+    }
+  }
+  res.json({ ok: true, conflicts, count: conflicts.length });
+});
+
+// 子工作区方案汇入全局
+router.put('/api/workspaces/:id/merge', (req: Request, res: Response) => {
+  const id = String(req.params.id);
+  const ws = store.get(id);
+  if (!ws || !ws.parentWsId) return res.status(400).json({ ok: false, error: 'not a sub-workspace' });
+
+  const parent = store.get(ws.parentWsId);
+  if (!parent) return res.status(404).json({ ok: false, error: 'parent not found' });
+
+  ws.status = 'resolved';
+  ws.updatedAt = new Date().toISOString();
+  store.set(id, ws);
+  log.info({ id, parentId: ws.parentWsId }, '子工作区方案已汇入全局');
+  res.json({ ok: true, workspace: ws, parentTitle: parent.title });
 });
 
 export default router;

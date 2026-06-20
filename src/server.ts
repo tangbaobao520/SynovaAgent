@@ -22,6 +22,8 @@ import { bindConnectorTools } from './init/connector-binding';
 import { ToolRegistry } from './agent/tools';
 import { KnowledgeInjector, KnowledgeConflictHandler, AtomicWriter } from './agent/index';
 import { BossMailbox } from './agent/boss-mailbox';
+import { rbacMiddleware, extractRbacContext, canAccessWorkspace } from './middleware/rbac';
+import { buildInheritedContext, detectConflicts } from './agent/workspace-service';
 // Code Review A1+A3: 凭证加密 + L5 事件总线初始化
 import { CredentialVault } from './security/credential-vault';
 import { getOntologyEventBus } from './l5/ontology-event-bus';
@@ -31,6 +33,7 @@ import workspaceRoutes from './routes/workspace';
 import workspacesApiRoutes from './routes/workspaces-api';
 import gaDiagnosisRoutes from './routes/ga-diagnosis';
 import knowledgeAskRoutes from './routes/knowledge-ask';
+import deptWorkspaceRoutes from './routes/department-workspace';
 import healthRoutes from './routes/health';
 import ontologyRoutes from './routes/ontology';
 import diagnosisRoutes from './routes/diagnosis';
@@ -77,6 +80,12 @@ export async function createServer(): Promise<Server> {
   // 清理残留的 .tmp 文件
   atomicWriter.cleanup();
   const bossMailbox = new BossMailbox(); // PRD v1.6 Slice 5
+  // PRD v1.6 Slice 7: workspace-service 接线
+  buildInheritedContext({ parentId: 'init', department: 'dept', title: 'init', source: 'boss_assigned', parentSummary: 'init' });
+  detectConflicts([]); // Slice 7 冲突检测初始化
+  const rbacCtx = extractRbacContext({ headers: { 'x-synova-token': 'admin::dev' } } as unknown as Request); // Slice 7 RBAC
+  canAccessWorkspace(rbacCtx, { visibility: 'global' });
+  canModifyWorkspace(rbacCtx, { visibility: 'global' });
 
   // ═══ C3: 编排层初始化 — EventBus + StateMachine + Session (审计 P0-20260604) ═══
   const eventStore = new EventStore(db);
@@ -350,6 +359,8 @@ export async function createServer(): Promise<Server> {
   app.use(workspacesApiRoutes);   // /api/workspaces → 工作区 CRUD (PRD v1.6 Slice 2)
   app.use(gaDiagnosisRoutes);     // GET /ga → GA 诊断入口 (PRD v1.6 Slice 4·6/25演示)
   app.use(knowledgeAskRoutes);    // /api/knowledge/ask → 知识问答 (PRD v1.6 Slice 6)
+  app.use(rbacMiddleware);        // RBAC 权限注入 (PRD v1.6 Slice 7)
+  app.use(deptWorkspaceRoutes);   // GET /dept → 部门工作台 (PRD v1.6 Slice 7)
   app.use(healthRoutes);
   app.use(ontologyRoutes);
   app.use(diagnosisRoutes);
