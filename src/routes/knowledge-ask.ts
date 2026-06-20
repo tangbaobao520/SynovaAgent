@@ -29,31 +29,40 @@ router.post('/api/knowledge/ask', async (req: Request, res: Response) => {
 });
 
 async function answerQuestion(q: string): Promise<Record<string, unknown>> {
-  // Phase 1: 简单关键词匹配 + 模板回复
-  // Phase 2: 接入 qa-router.ts 的 answerQuestion() + PKB 检索
-  const lower = q.toLowerCase();
+  // v3.3: 接入 PKB 检索 + 专家知识目录
+  let sources: string[] = [];
+  let bestAnswer = '';
 
-  if (lower.includes('现金流') || lower.includes('cash')) {
-    return {
-      ok: true,
-      answer: '现金流健康度取决于经营现金流/总收入比（>15%健康）、流动比率（>1.5健康）、债务/EBITDA（<2x健康）。你可以授权我访问财务数据来做精确诊断。',
-      sources: ['knowledge/industry/finance-benchmarks'],
-      confidence: 'medium',
-    };
+  try {
+    // 尝试从 KnowledgeStore 搜索
+    const { getDatabase } = await import('../init/engine-context');
+    const { KnowledgeStore } = await import('../l4/knowledge-store');
+    const db = getDatabase();
+    if (db) {
+      const store = new KnowledgeStore(db);
+      const results = store.search(q, {
+        conditions: [
+          { field: 'access_level', operator: 'EQ', value: 'public' },
+          { field: 'access_level', operator: 'EQ', value: 'team' },
+        ],
+      }, 5);
+
+      if (results.results.length > 0) {
+        bestAnswer = results.results.map(r => r.text).join('\n\n---\n\n');
+        sources = results.results.map(r => `pkb:${r.id}`).slice(0, 5);
+      }
+    }
+  } catch { /* KnowledgeStore unavailable — degraded to templates */ }
+
+  // PKB 有结果 → 直接返回
+  if (bestAnswer) {
+    return { ok: true, answer: bestAnswer, sources, confidence: 'medium' };
   }
 
-  if (lower.includes('流失') || lower.includes('离职') || lower.includes('留人')) {
-    return {
-      ok: true,
-      answer: '员工流失率是组织健康的滞后指标。关键看：1)流失的是核心人才还是边缘岗位 2)流失原因（薪酬/文化/成长空间）3)Bus Factor——是否有人的离职会导致业务停摆。建议先做一次关键人风险评估。',
-      sources: ['expert/org/RULES.md', 'skills/org/bus-factor.md'],
-      confidence: 'medium',
-    };
-  }
-
+  // PKB 无结果 → 返回模板提示（比硬编码关键词更诚实）
   return {
     ok: true,
-    answer: `关于"${q.slice(0, 60)}"，我目前的数据不足以给出确切答案。建议：1)在诊断工作区中上传相关数据 2)或换一种方式描述你的问题。以下是你可以尝试的方向：现金流分析、组织健康、客户集中度、增长瓶颈。`,
+    answer: `关于"${q.slice(0, 60)}"，知识库中暂无直接匹配的信息。建议：1)在诊断工作区中上传相关数据 2)换一种方式描述你的问题 3)尝试以下方向：现金流分析、组织健康、客户集中度、增长瓶颈。`,
     sources: [],
     confidence: 'low',
   };

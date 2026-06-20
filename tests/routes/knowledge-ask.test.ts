@@ -30,23 +30,25 @@ describe('knowledge-ask route', () => {
     expect(body.error).toContain('too short');
   });
 
-  it('GET ?q=现金流 → 200 + 含现金流', async () => {
+  it('GET ?q=任意问题 → 200 + ok (PKB回退模板)', async () => {
     if (!getHandler) return;
     let body: any = null;
     const res = { json: (b: any) => { body = b; } };
     await getHandler({ query: { q: '现金流' } }, res);
     expect(body.ok).toBe(true);
-    expect(body.answer).toContain('现金流');
-    expect(body.confidence).toBe('medium');
+    expect(body.answer.length).toBeGreaterThan(20);
+    // PKB为空时回退到模板——confidence为low是正确的
+    expect(body.confidence).toBe('low');
   });
 
-  it('GET ?q=离职 → 200 + 含关键人风险', async () => {
+  it('GET ?q=离职 → 200 + 不含硬编码内容', async () => {
     if (!getHandler) return;
     let body: any = null;
     const res = { json: (b: any) => { body = b; } };
     await getHandler({ query: { q: '离职' } }, res);
     expect(body.ok).toBe(true);
-    expect(body.answer).toContain('Bus Factor');
+    // PKB检索——不再返回硬编码关键词匹配
+    expect(body.confidence).toBe('low');
   });
 
   it('GET ?q=未知问题 → 200 + confidence=low', async () => {

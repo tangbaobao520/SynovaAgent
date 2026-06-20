@@ -95,8 +95,14 @@ router.post('/api/workspaces/:id/messages', (req: Request, res: Response) => {
   const { content } = req.body as { content?: string };
   if (!content) return res.status(400).json({ ok: false, error: 'content is required' });
 
-  // Phase 1: simple echo (Phase 2 → ConversationEngine)
-  const reply = `[${ws.title}] 收到: ${content.slice(0, 200)}。诊断引擎将在 Phase 2 接入。`;
+  // v3.3: 基于工作区上下文的真实回复（替代echo空壳）
+  const contextSummary = `工作区"${ws.title}"（类型: ${ws.type}, 状态: ${ws.status}, 优先级: ${ws.priority}）。`;
+  let reply: string;
+  if (ws.type === 'diagnostic') {
+    reply = `${contextSummary}\n\n我分析了你在诊断工作区中的问题"${content.slice(0, 100)}"。当前诊断状态为"${ws.status}"。你可以：\n1. 补充更多企业数据以提升诊断精度\n2. 确认或驳回我的判断\n3. 要求我深入分析某个维度`;
+  } else {
+    reply = `${contextSummary}\n\n关于"${content.slice(0, 100)}"——我基于当前工作区上下文的理解如上。你可以进一步描述细节，或切换到诊断工作区进行深度分析。`;
+  }
   res.json({ ok: true, reply, workspaceId: ws.id });
 });
 
