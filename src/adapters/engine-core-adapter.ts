@@ -1,10 +1,14 @@
 /**
- * adapters/engine-core-adapter.ts — engine-core 适配器
+ * adapters/engine-core-adapter.ts — engine-core 适配器 (旧引擎)
  *
  * 铁律 39: 唯一知道 server/vendor/ 路径的文件。
  * 实现 DiagnosisEngine 接口，封装动态 import + 适配器创建。
  *
- * 如果换引擎实现（如 mock engine 用于测试），只需替换此适配器。
+ * ═══ Step 3 迁移 (待执行) ═══
+ * 替换为新引擎: SynovaDiagnosisEngineImpl + createSynovaDiagnosisEngine
+ *   import { SynovaDiagnosisEngineImpl, createSynovaDiagnosisEngine } from '../l3/synova-diagnosis-engine-impl';
+ *   const engine = createSynovaDiagnosisEngine(llmClient, toolExecutor, config);
+ * 切换后本文件可删除。
  */
 import type { DiagnosisEngine, DiagnosisEvent, ConsultationResult } from '../l2-interfaces/diagnosis-engine';
 import type { LLMProvider } from '../providers/types';

@@ -62,6 +62,7 @@ export async function createServer(): Promise<Server> {
   const config = loadConfig();
 
   // 初始化 engine-core (DB + 服务注入)
+  // Step 3: SynovaDiagnosisEngineImpl + createSynovaDiagnosisEngine 替换旧引擎
   initEngineContext();
   const db = getDatabase();
 
