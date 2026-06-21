@@ -18,6 +18,8 @@ import type { DiagnosisEngine, DiagnosisEvent, ConsultationResult } from '../l2-
 import { ToolRegistry } from '../agent/tools';
 // 铁律 39: L1 不直接引用 L4。GraphStoreLike 由 L2 post-diagnosis-processor 声明。
 import type { GraphStoreLike, CommunityReportLike, PostProcessEvents } from '../agent/post-diagnosis-processor';
+// Slice 3: 判断卡片生成器
+import { generateJudgmentCard, formatForSSE } from '../pipeline/judgment-card';
 
 const log = createLogger('routes/diagnosis');
 const router = Router();
@@ -141,6 +143,28 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
           nodesCreated: event.nodesCreated,
           edgesCreated: event.edgesCreated,
         });
+
+        // Slice 3: 专家假设/发现 → 生成判断卡片 SSE 事件
+        if (
+          event.type === 'expert_hypothesis' ||
+          event.type === 'hypothesis_generated' ||
+          event.type === 'interim_finding'
+        ) {
+          try {
+            const card = generateJudgmentCard({
+              message: event.message,
+              findings: event.findings,
+              confidence: event.confidence,
+              phase: event.phase,
+              label: event.label,
+            });
+            if (card) {
+              sseWrite(res, formatForSSE(card));
+            }
+          } catch (cardErr: unknown) {
+            log.warn({ cardErr, eventType: event.type }, '判断卡片生成失败 — degraded');
+          }
+        }
       },
     );
 

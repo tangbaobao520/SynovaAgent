@@ -118,6 +118,30 @@ header .status{font-size:11px;color:var(--dim)}
 .card-confidence.high{background:#0a2a0a;color:var(--green)}
 .card-confidence.medium{background:#2a1a0a;color:var(--orange)}
 .card-confidence.low{background:#2a0a0a;color:var(--red)}
+/* ── Judgment Card (Slice 3: Agent 结构化回复) ── */
+.card-judgment{align-self:flex-start;background:var(--panel);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:10px;padding:14px 16px;font-size:13px;line-height:1.7;max-width:88%;animation:fadeIn .35s}
+.card-judgment.confirmed{border-left-color:var(--green);background:#0a1a0a}
+.card-judgment .jc-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.card-judgment .jc-title{font-weight:600;font-size:14px;color:var(--text);display:flex;align-items:center;gap:6px}
+.card-judgment .jc-experts{display:flex;gap:4px;flex-wrap:wrap;margin-left:auto}
+.card-judgment .jc-expert-tag{font-size:10px;padding:2px 8px;border-radius:10px;background:#1a1a2a;color:var(--accent2);border:1px solid #2a2a4a}
+.card-judgment .jc-section{margin-bottom:10px}
+.card-judgment .jc-label{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px}
+.card-judgment .jc-root-cause{color:var(--text);font-size:13px;padding:8px 10px;background:var(--bg);border-radius:6px;border-left:3px solid var(--orange)}
+.card-judgment .jc-suggestion{color:var(--text);font-size:13px;padding:8px 10px;background:var(--bg);border-radius:6px;border-left:3px solid var(--cyan)}
+.card-judgment .jc-confidence-bar{height:5px;background:#1a1a2a;border-radius:3px;overflow:hidden;margin-top:4px}
+.card-judgment .jc-confidence-fill{height:100%;border-radius:3px;transition:width .5s ease}
+.card-judgment .jc-confidence-fill.high{background:var(--green)}
+.card-judgment .jc-confidence-fill.medium{background:var(--orange)}
+.card-judgment .jc-confidence-fill.low{background:var(--red)}
+.card-judgment .jc-meta{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--dim);margin-top:6px}
+.card-judgment .jc-actions{display:flex;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--border)}
+.card-judgment .jc-actions button{padding:6px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
+.card-judgment .jc-btn-confirm{background:#0a2a0a;color:var(--green);border:1px solid var(--green)}
+.card-judgment .jc-btn-confirm:hover{background:var(--green);color:#000}
+.card-judgment .jc-btn-discuss{background:var(--bg);color:var(--accent2);border:1px solid var(--accent2)}
+.card-judgment .jc-btn-discuss:hover{background:var(--accent2);color:var(--bg)}
+.card-judgment .jc-confirmed-badge{display:inline-flex;align-items:center;gap:4px;background:#0a2a0a;color:var(--green);padding:4px 10px;border-radius:4px;font-size:11px;font-weight:600}
 /* ── Phase Event ── */
 .msg.phase{background:#1a1a2e;border:1px solid #2a2a4e;border-left:3px solid var(--accent2);padding:8px 12px;font-size:12px;color:var(--accent2);border-radius:6px;align-self:flex-start;max-width:90%}
 .msg.phase.completed{background:#0a1a0a;border-color:#1a3a1a;border-left-color:var(--green);color:var(--green)}
@@ -376,6 +400,92 @@ function addFindingCard(data) {
   scrollDown();
 }
 
+// ═══ Slice 3: 判断卡片渲染 + 互动 ═══
+
+function addJudgmentCard(data) {
+  const card = document.createElement('div');
+  card.className = 'card-judgment';
+  card.id = 'jc-' + (data.cardId || Date.now().toString(36));
+
+  const confPct = Math.round((data.confidence || 0.7) * 100);
+  const confClass = data.confidenceLevel || (confPct >= 70 ? 'high' : confPct >= 40 ? 'medium' : 'low');
+  const experts = (data.experts && data.experts.length) ? data.experts : ['诊断专家'];
+  const expertTags = experts.map(function(e) {
+    return '<span class="jc-expert-tag">' + esc(e) + '</span>';
+  }).join('');
+
+  card.innerHTML =
+    // 头部：标题 + 专家标签
+    '<div class="jc-header">' +
+      '<div class="jc-title">🔍 诊断判断</div>' +
+      '<div class="jc-experts">' + expertTags + '</div>' +
+    '</div>' +
+    // 根因
+    '<div class="jc-section">' +
+      '<div class="jc-label">📌 根因</div>' +
+      '<div class="jc-root-cause">' + esc(data.root_cause || '正在分析中...') + '</div>' +
+    '</div>' +
+    // 建议
+    '<div class="jc-section">' +
+      '<div class="jc-label">💡 建议</div>' +
+      '<div class="jc-suggestion">' + esc(data.suggestion || '建议进一步分析以确定具体方案。') + '</div>' +
+    '</div>' +
+    // 置信度
+    '<div class="jc-section">' +
+      '<div class="jc-label">📊 置信度 ' + confPct + '%</div>' +
+      '<div class="jc-confidence-bar">' +
+        '<div class="jc-confidence-fill ' + confClass + '" style="width:' + confPct + '%"></div>' +
+      '</div>' +
+    '</div>' +
+    // 操作按钮
+    '<div class="jc-actions" id="' + card.id + '-actions">' +
+      '<button class="jc-btn-confirm" onclick="confirmJudgment(\'' + card.id + '\')">✅ 采纳此方案</button>' +
+      '<button class="jc-btn-discuss" onclick="discussJudgment(\'' + card.id + '\', \'' +
+        esc(data.suggestion || data.root_cause || '') + '\')">💬 继续讨论</button>' +
+    '</div>';
+
+  messages.appendChild(card);
+  scrollDown();
+}
+
+function confirmJudgment(cardId) {
+  var card = document.getElementById(cardId);
+  if (!card) return;
+  // 添加 "已确认" 状态
+  card.classList.add('confirmed');
+  // 替换操作按钮为已确认徽章
+  var actions = document.getElementById(cardId + '-actions');
+  if (actions) {
+    actions.innerHTML = '<span class="jc-confirmed-badge">✅ 已采纳</span>' +
+      '<span style="font-size:10px;color:var(--dim);margin-left:8px">方案已记录，将在后续诊断中自动引用</span>';
+  }
+  // 通知服务器（fire-and-forget）
+  try {
+    fetch(API + '/api/proposal/' + encodeURIComponent(cardId) + '/resolve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'confirm', feedback: '用户采纳了判断卡片方案' }),
+    }).catch(function() { /* fire-and-forget — 本地状态已更新, degraded */ });
+  } catch(e) { console.warn('确认请求失败 — degraded:', e); }
+}
+
+function discussJudgment(cardId, context) {
+  var input = document.getElementById('user-input');
+  if (!input) return;
+  // 预填追问文本
+  var prefix = '关于"' + context.slice(0, 50) + '"，我想进一步了解：';
+  input.value = prefix;
+  input.focus();
+  // 滚动到输入框
+  input.scrollIntoView({ behavior: 'smooth' });
+  // 高亮卡片
+  var card = document.getElementById(cardId);
+  if (card) {
+    card.style.boxShadow = '0 0 12px rgba(108,92,231,0.3)';
+    setTimeout(function() { card.style.boxShadow = ''; }, 1500);
+  }
+}
+
 function addDegraded(msg) {
   const d = document.createElement('div');
   d.className = 'msg degraded';
@@ -496,6 +606,11 @@ function handleSSEEvent(evt) {
     // ── Degraded ──
     case 'degraded':
       addDegraded(evt.message || '部分模块降级');
+      break;
+
+    // ── Slice 3: 判断卡片 ──
+    case 'judgment_card':
+      addJudgmentCard(evt);
       break;
 
     // ── GNS v2.0: 右边栏更新 ──
