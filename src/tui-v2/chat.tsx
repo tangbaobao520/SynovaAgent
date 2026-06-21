@@ -266,7 +266,7 @@ function TuiApp({ bctx }: { bctx: BootstrapResult }) {
     addAgentMessage(welcome);
 
     // 全局告警桥接
-    (globalThis as any).__synovaAlerts = {
+    (globalThis as Record<string, unknown>).__synovaAlerts = {
       pushAlert(_level: string, title: string, _data: string, _suggestion: string) {
         sidebarAggRef.current.addLegacy({ title });
         syncSidebar();

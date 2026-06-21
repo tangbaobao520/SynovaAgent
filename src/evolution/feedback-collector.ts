@@ -50,9 +50,10 @@ export async function collectFeedback(
       const confidence = input.decision === 'confirm' ? 0.9 : input.decision === 'modify' ? 0.7 : 0.5;
       memoryStore.remember({
         orgId: input.actionId, key: `feedback_${id}`,
-        value: JSON.stringify(record), type: 'enterprise_fact' as MemoryType,
+        value: JSON.stringify(record), type: 'enterprise_fact',
         confidence, source: 'user_feedback', tags: ['feedback', input.decision],
-      } as any);
+        expiresAt: null,
+      });
       persisted = true;
     } catch (err: unknown) {
       log.warn({ err }, 'feedback写入AgentMemoryStore失败——degraded');
