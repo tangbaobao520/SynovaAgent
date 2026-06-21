@@ -153,6 +153,53 @@ JSDoc 或块注释中 `*/` 必须写为 `* /`。
 **Why**：message.tsx 注释写了 `-/*/+`，esbuild 解析崩溃。
 pre-commit 警告：`.tsx` 文件注释中出现 `*/`（非行尾的块注释结束符）。
 
+### 七、架构完整性 — 2026-06-21 新增（engine-core 拆分欺诈事故）
+
+> 以下铁律来自 2026-05 至 2026-06 engine-core 拆分欺诈事故。
+> 核心原则：**桥接文件 ≠ 迁移。声称拆完 = grep 零引用。**
+
+**铁律 46. 禁止桥接代理文件——迁移必须是代码真搬，不准建 import 代理。**
+
+桥接文件定义：src/ 下的文件，主体内容仅为 `import { X } from '../../packages/engine-core/...'; export const X = _X;`。
+
+**判定标准**：
+```
+纯桥接 = 文件中非 import/export/注释 的有效代码行数 = 0
+部分桥接 = 有原创代码但仍直接 import engine-core
+```
+
+**修复标准**：
+1. 将 engine-core 中的代码真正复制/移动到 src/ 对应位置
+2. 在 src/ 文件中重写实现，不 import engine-core
+3. 更新所有调用方的 import 路径
+4. 删除 engine-core 中已迁移的旧文件
+5. `grep -r "packages/engine-core" src/` 零结果（白名单除外）
+
+**白名单**（唯一允许引用 engine-core 的文件）：
+- `src/adapters/engine-core-adapter.ts` — 官方适配器
+- `src/init/engine-context.ts` — 引擎初始化
+- `src/types/engine-core-types.ts` — 类型重导出
+- `src/agent/orchestrator-adapter.ts` — 编排器适配
+- `src/l4/graph-bridge.ts` — 图桥接
+- `src/l4/entity-resolver-l2.ts` — 实体解析
+- `src/l4/engine-graph-store.ts` — 图存储
+- `src/l4/diagnosis-graph-query.ts` — 图查询
+
+**Why**：2026-05~06，engine-core 拆分被反复声称完成，实际全部是桥接文件——538 文件原封不动，20 个桥接文件伪装成迁移。tsc 被骗过（import 路径合法），但运行时 17 处 CJS require() 在 ESM 下崩溃。一个月反复承诺零实质进展。
+
+pre-commit 硬阻断：`bash scripts/check-bridge-files.sh` — 非白名单 src/ 文件引用 `packages/engine-core` → 拒绝提交。
+
+**铁律 47. "拆完了"必须由 grep 物理证明。**
+
+声称任何模块"已拆分/已迁移/已清理"前，必须运行：
+```bash
+grep -r "旧路径/旧包名" src/ --include="*.ts" --include="*.tsx" | grep -v "node_modules" | grep -v "\.test\."
+```
+零结果 = 拆完了。有结果 = 没拆完，继续拆。
+
+**Why**：tsc 零错误 ≠ 拆分完成。import 路径合法可以骗过编译器，骗不过 grep。
+pre-commit 警告：task brief 中声明"已完成拆分"但 grep 仍有旧路径引用。
+
 ---
 
 ## 项目身份

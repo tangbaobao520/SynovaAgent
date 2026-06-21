@@ -322,6 +322,45 @@ if [ -n "$STAGED_ROUTES" ]; then
 fi
 hard_check "v3.5 数据流: 路由文件需含API调用证据" "${DATA_FLOW_FAIL:-}"
 
+# ═══ 19. v3.5 + 铁律 46: 桥接文件欺诈检测 ═══
+BRIDGE_FAIL=""
+# 仅检查暂存区中新增或修改的 src/ 文件
+STAGED_SRC=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep -E '^src/.*\.ts$' | grep -v '\.test\.' || true)
+# 白名单——唯一允许引用 engine-core 的文件
+BRIDGE_ALLOWED="src/adapters/engine-core-adapter.ts|src/init/engine-context.ts|src/types/engine-core-types.ts|src/agent/orchestrator-adapter.ts|src/l4/graph-bridge.ts|src/l4/entity-resolver-l2.ts|src/l4/engine-graph-store.ts|src/l4/diagnosis-graph-query.ts"
+if [ -n "$STAGED_SRC" ]; then
+  for file in $STAGED_SRC; do
+    [ -z "$file" ] && continue
+    if echo "$file" | grep -qE "$BRIDGE_ALLOWED"; then
+      continue  # 白名单
+    fi
+    # 检查此文件是否新增了 engine-core 引用
+    if grep -q "packages/engine-core" "$file" 2>/dev/null; then
+      BRIDGE_FAIL="${BRIDGE_FAIL}  ${file}: 直接引用 packages/engine-core/ (铁律46)\n"
+    fi
+  done
+fi
+hard_check "铁律46: 桥接文件欺诈" "${BRIDGE_FAIL:-}"
+
+# ═══ 20. 铁律 47: 声称拆分完必须 grep 零旧引用 ═══
+CLEANUP_CLAIM_FAIL=""
+if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
+  if grep -qi "拆分\|迁移\|清理\|删除.*完成\|已拆\|已迁移\|已清理" "$BRIEF" 2>/dev/null; then
+    # task brief 声称已完成拆分/迁移/清理 → 验证
+    if [ -n "$ENGINE_CORE_REFS" ]; then
+      NON_WHITELIST=$(echo "$ENGINE_CORE_REFS" | grep -vE "$BRIDGE_ALLOWED" || true)
+      if [ -n "$NON_WHITELIST" ]; then
+        CLEANUP_CLAIM_FAIL="${CLEANUP_CLAIM_FAIL}  task brief 声称拆分完成但仍有 $(echo "$NON_WHITELIST" | wc -l) 个文件引用 engine-core\n"
+      fi
+    fi
+  fi
+fi
+# 不阻断——警告模式（避免把历史 task brief 卡住）
+if [ -n "$CLEANUP_CLAIM_FAIL" ]; then
+  echo -e "  ${RED}⚠️  铁律47: 声称拆分完成但 grep 仍有旧引用${RESET}"
+  echo -e "$CLEANUP_CLAIM_FAIL"
+fi
+
 # ═══ 结果 ═══
 echo ""
 if [ "$HARD_FAIL" -gt 0 ]; then
