@@ -100,7 +100,42 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
       model: config.llmModel,
     });
     const toolRegistry = new ToolRegistry();
-    const engine = new EngineCoreVendorAdapter(provider, toolRegistry);
+    let engine: DiagnosisEngine;
+
+    // Step 3: Feature flag — SYNOVA_USE_NEW_ENGINE 原子切换新旧引擎
+    if (process.env.SYNOVA_USE_NEW_ENGINE === 'true') {
+      log.info({ consultId }, '使用 Synova 自研引擎');
+      const { createSynovaDiagnosisEngine } = await import('../l3/synova-diagnosis-engine-impl');
+      const newEngine = createSynovaDiagnosisEngine(
+        {
+          async chat(messages, opts) {
+            const result = await provider.chat(
+              messages as Array<{ role: 'system' | 'user' | 'assistant' | 'tool'; content: string }>,
+              opts as Record<string, unknown> | undefined,
+            );
+            return {
+              content: result.content || '',
+              toolCalls: result.toolCalls?.map(tc => ({
+                name: tc.function.name,
+                arguments: JSON.parse(tc.function.arguments) as Record<string, unknown>,
+              })),
+            };
+          },
+        },
+        {
+          async execute(name, args) { const r = await toolRegistry.execute(name, args); return { result: r }; },
+          listTools() { return toolRegistry.listTools().map(t => ({ name: t.name, description: t.description, parameters: (t.parameters || {}) as Record<string, unknown> })); },
+        },
+        { maxToolRounds: 4, gateDataCompleteness: 0.3, gateMinHypothesisConfidence: 0.5 },
+      );
+      engine = {
+        async runConsultation(teamId, initiator, onEvent) {
+          return newEngine.runConsultation(teamId, initiator, undefined, onEvent as Parameters<typeof newEngine.runConsultation>[3]);
+        },
+      };
+    } else {
+      engine = new EngineCoreVendorAdapter(provider, toolRegistry);
+    }
 
     const active: ActiveConsultation = {
       consultId, teamId, phase: 0, aborted: false,
