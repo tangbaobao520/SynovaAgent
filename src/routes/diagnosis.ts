@@ -102,8 +102,10 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
     const toolRegistry = new ToolRegistry();
     let engine: DiagnosisEngine;
 
-    // Step 3: Feature flag — SYNOVA_USE_NEW_ENGINE 原子切换新旧引擎
-    if (process.env.SYNOVA_USE_NEW_ENGINE === 'true') {
+    // Step 4: 默认新引擎 — SYNOVA_USE_OLD_ENGINE=true 回退旧引擎
+    if (process.env.SYNOVA_USE_OLD_ENGINE === 'true') {
+      engine = new EngineCoreVendorAdapter(provider, toolRegistry);
+    } else {
       log.info({ consultId }, '使用 Synova 自研引擎');
       const { createSynovaDiagnosisEngine } = await import('../l3/synova-diagnosis-engine-impl');
       const newEngine = createSynovaDiagnosisEngine(
@@ -133,8 +135,6 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
           return newEngine.runConsultation(teamId, initiator, undefined, onEvent as Parameters<typeof newEngine.runConsultation>[3]);
         },
       };
-    } else {
-      engine = new EngineCoreVendorAdapter(provider, toolRegistry);
     }
 
     const active: ActiveConsultation = {
