@@ -180,12 +180,12 @@ export async function createServer(): Promise<Server> {
   // ═══ A3: OntologyEventBus — L5 进程内事件总线初始化 ═══
   let graphStore: unknown = null;
   try {
-    // GraphStore 由 engine-core adapter 创建，注入到总线
-    const { EngineCoreVendorAdapter } = await import('./adapters/engine-core-adapter');
-    const store = await EngineCoreVendorAdapter.createGraphStore(db);
+    // SynovaGraphStore — 纯 ESM，零 engine-core 依赖
+    const { createSynovaGraphStore } = await import('./l4/synova-graph-store');
+    const store = createSynovaGraphStore(db as unknown as import('./l4/synova-graph-store').SqliteDb);
     graphStore = store;
     getOntologyEventBus(store as unknown as import('./l4/graph-bridge').GraphStore);
-    logger.info('OntologyEventBus 已初始化 (L5 进程内事件总线)');
+    logger.info('OntologyEventBus 已初始化 (SynovaGraphStore)');
   } catch (err: any) {
     logger.warn({ err }, 'OntologyEventBus 初始化失败 — degraded, 连接器管线不可用');
   }
@@ -481,8 +481,8 @@ app.use(reloadRoutes);                         // POST /api/reload — 热加载
     scheduler.schedule('daily-briefing', '0 19 * * *', async () => {
       try {
         const { BriefingGenerator } = await import('./l3/briefing-generator');
-        const { EngineCoreVendorAdapter } = await import('./adapters/engine-core-adapter');
-        const store = await EngineCoreVendorAdapter.createGraphStore(db);
+        const { createSynovaGraphStore } = await import('./l4/synova-graph-store');
+        const store = createSynovaGraphStore(db as unknown as import('./l4/synova-graph-store').SqliteDb);
         const gen = new BriefingGenerator(store as {
           queryNodes(type: string, filters?: Record<string, unknown>, graph?: string): Array<{ id: string; props: Record<string, unknown> }>;
           queryEdges(type?: string, from?: string, to?: string, graph?: string): Array<{ from: string; to: string; type: string; props: Record<string, unknown> }>;
