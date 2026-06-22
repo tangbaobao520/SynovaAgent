@@ -1,8 +1,8 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering v3.7 — pre-commit 8 组硬阻断 (全部 <8s)
+# Loop Engineering v3.8 — pre-commit 8 组硬阻断 (全部 <8s)
 #
-# v3.6 → v3.7 核心变化 (2026-06-23):
+# v3.6 → v3.8 核心变化 (2026-06-23):
 #   + plan.json 支持: 分阶段任务可 deferred wiring/test_pairing 检查
 #   + 双日志: pre-commit-failures.log (门禁正常拒绝) vs bypass.log (--no-verify 绕过)
 #   + as any 跳过注释行 (不再把 "Iron law #38: as any = 0" 误报为违规)
@@ -54,7 +54,7 @@ warn_check() {
   fi
 }
 
-# V3.7: plan.json 感知的"硬阻断或降级警告"检查
+# V3.8: plan.json 感知的"硬阻断或降级警告"检查
 # 如果文件在 plan.json 中声明了 defer → 降级为警告，不阻断
 plan_aware_check() {
   local name="$1" matches="$2" deferred_list="$3"
@@ -89,7 +89,7 @@ plan_aware_check() {
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 STAGED=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep '\.ts$' | grep -v node_modules || true)
 
-# ═══ V3.7: plan.json — 分阶段任务支持 ═══
+# ═══ V3.8: plan.json — 分阶段任务支持 ═══
 # Anthropic 原则: 架构步骤不是偷懒。当 plan.json 声明某文件处于 create 阶段
 # 且 wiring 标记为 deferred，接线检查对该文件降级为警告。
 PLAN_FILE="$ROOT/.claude/plan.json"
@@ -131,7 +131,7 @@ NEW_IMPL=$(git diff --cached --name-only --diff-filter=A 2>/dev/null | grep "^sr
 
 echo ""
 echo "═══════════════════════════════════════════════════════════"
-echo "  Loop Engineering v3.7 — pre-commit (8 组)"
+echo "  Loop Engineering v3.8 — pre-commit (8 组)"
 echo "═══════════════════════════════════════════════════════════"
 echo ""
 
@@ -147,7 +147,7 @@ echo ""
 # ═══════════════════════════════════════════════════════════════════
 echo -e "${CYAN}── 组 1/8: 类型安全 + 硬编码数据 ──${RESET}"
 
-# 1a. as any 零容忍 (V3.7: 跳过注释行 — 行首是 // 或 * 或 /* 的行不检查)
+# 1a. as any 零容忍 (V3.8: 跳过注释行 — 行首是 // 或 * 或 /* 的行不检查)
 # Anthropic 原则: bash 只做模式匹配，不判断语义。注释行不属于"代码中的 as any"。
 M=$(grep -rn 'as any\b' src/ --include="*.ts" 2>/dev/null \
   | grep -v "node_modules" | grep -v "\.test\." | grep -v "\.d\.ts" \
@@ -192,7 +192,7 @@ if [ -n "$STAGED" ]; then
       while IFS= read -r cline; do
         linenum=$(echo "$cline" | cut -d: -f1); [ -z "$linenum" ] && continue
         ctx=$(sed -n "${linenum},$((linenum + 2))p" "$file" 2>/dev/null || echo "")
-        # V3.7: 空 catch 接收 log.|degraded|throw|/\*|// — 有任一项即非"静默吞异常"
+        # V3.8: 空 catch 接收 log.|degraded|throw|/\*|// — 有任一项即非"静默吞异常"
         if ! echo "$ctx" | grep -qE "log\.|logger\.|console\.|degraded|throw\s|/\*|//"; then
           EMPTY="${EMPTY}${file}:${linenum}: 空 catch (无 log/degraded/throw)\n"
         fi
@@ -215,7 +215,7 @@ if [ -n "$NEW_IMPL" ]; then
     fi
   done <<< "$NEW_IMPL"
 fi
-# V3.7: plan.json 感知 — deferred test 文件降级为警告
+# V3.8: plan.json 感知 — deferred test 文件降级为警告
 if [ "$PLAN_ACTIVE" -eq 1 ] && [ -n "$DEFERRED_TEST_FILES" ]; then
   plan_aware_check "新文件配对: impl 须同 commit 有 test" "${MISSING_TEST:-}" "$DEFERRED_TEST_FILES"
 else
@@ -278,7 +278,7 @@ bash "$ROOT/scripts/check-secrets.sh"
 echo ""
 echo -e "${CYAN}── 组 4/8: 接线完整性 ──${RESET}"
 
-# 4a. 新 export 被引用 (V3.7 简化: bash 只验证"被引用"这个物理事实)
+# 4a. 新 export 被引用 (V3.8 简化: bash 只验证"被引用"这个物理事实)
 # Anthropic 原则: bash 退回到物理事实——"这个符号在文件外部出现过吗？"
 # 调用链正确性、分阶段接线 → agent 自检和 plan.json 负责。
 UNWIRED=""
@@ -289,14 +289,14 @@ if [ -n "$NEW_IMPL" ]; then
     for name in $EXPORTS; do
       [ -z "$name" ] && continue
       echo "$name" | grep -qi 'mock\|fake\|_internal\|_deprecated' && continue
-      # V3.7: 搜索范围扩大——任何 src/ 下的文件引用了就算"已接线"
+      # V3.8: 搜索范围扩大——任何 src/ 下的文件引用了就算"已接线"
       WIRED=$(grep -rn "\b${name}\b" src/ --include="*.ts" 2>/dev/null \
         | grep -v "export.*${name}" | grep -v "$file" | grep -v "\.test\." | head -1 || true)
       [ -z "$WIRED" ] && UNWIRED="${UNWIRED}${file}: export ${name} — 未被任何 src/ 文件引用\n"
     done
   done <<< "$NEW_IMPL"
 fi
-# V3.7: plan.json 感知 — deferred wiring 文件降级为警告
+# V3.8: plan.json 感知 — deferred wiring 文件降级为警告
 if [ "$PLAN_ACTIVE" -eq 1 ] && [ -n "$DEFERRED_WIRING_FILES" ]; then
   plan_aware_check "接线审计: 新 export 必须被引用" "${UNWIRED:-}" "$DEFERRED_WIRING_FILES"
 else
@@ -381,7 +381,7 @@ warn_check "铁律 47: 声称完成须 grep 物理证明" "${CLEANUP_CLAIM:-}"
 #
 # Anthropic 决策: 原则 0 "协作对齐前置" — task brief 是 agent 和人类的接口契约。
 #   没有 brief → agent 会假设共识 → 假设错误 → 做了一堆没人要的东西。
-#   v3.7: 6 核心字段 (Q0定位/Q1调研/Q2范围/Q3验收/架构层/Done)，v3.6 曾删到 5 字段，
+#   v3.8: 6 核心字段 (Q0定位/Q1调研/Q2范围/Q3验收/架构层/Done)，v3.6 曾删到 5 字段，
 #   删除"可以后续补充"的部分 (PRD 章节引用、文件位置——已降级为警告)。
 #   越少字段 → 越可能被完整填写 → 门禁越有效。
 #   历史: 多个 task brief 因 11 字段太重在快速迭代时被跳过 (--no-verify 绕过)。
@@ -397,7 +397,7 @@ if [ -n "$STAGED_SRC" ]; then
   if [ -z "$BRIEF" ]; then
     TASK_BRIEF_MISSING="今日无 task brief。请先运行: bash scripts/workflow/task-start.sh \"任务描述\""
   else
-    # v3.7: 6 核心字段 (新增 Q0 文件审计)
+    # v3.8: 6 核心字段 (新增 Q0 文件审计)
     for q in "Q0:" "Q1:" "Q2:" "Q3:" "本任务在哪一层" "Done 标准"; do
       SECTION=$(awk "/^## $q/{found=1; next} /^## /{if(found) exit} found" "$BRIEF" 2>/dev/null)
       FILLED=$(echo "$SECTION" | grep -v "^<!--\|^$" | tr -d "[:space:]" | head -1)
@@ -455,7 +455,7 @@ else
   HARD_FAIL=$((HARD_FAIL + 1))
 fi
 
-# 7c. V3.7 双日志审计 — 门禁故障 vs 人为绕过分离
+# 7c. V3.8 双日志审计 — 门禁故障 vs 人为绕过分离
 #   门禁故障日志 → 用于发现门禁本身的 bug（误报率 = 门禁需要修）
 #   绕过日志     → 用于发现开发者绕过模式（频繁绕过 = 门禁太重/开发者偷懒）
 FAILURE_LOG="$ROOT/.claude/pre-commit-failures.log"

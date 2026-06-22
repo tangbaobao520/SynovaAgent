@@ -212,7 +212,7 @@ Agent，不是 ChatBot。驻扎企业，持续观测，主动发现，自动诊�
 **目标**: 成为组织诊断的 AWS。每个新客户、新行业、新数据源 → 加文件即可，不改代码。
 能文件化的必须文件化。不能文件化的必须有明确的扩展点。
 
-**流程约束**: V3.7 — task brief 6 字段强制 + plan.json 分阶段 + pre-commit 8 组物理阻断。
+**流程约束**: V3.8 — task brief 6 字段强制 + 项目身份物理注入 + plan.json 分阶段 + pre-commit 8 组物理阻断。
 
 **数据流**:
 ```
@@ -285,9 +285,9 @@ evolution/ (SessionLearningEngine, FeedbackCollector, OntologyAdapter)
 
 ---
 
-## Loop Engineering v3.7 — bash 退位 + agent 进位 + plan.json
+## Loop Engineering v3.8 — bash 退位 + agent 进位 + plan.json + 项目身份物理注入
 
-> 2026-06-17 v2.5 → v3.0 → v3.1 → v3.5 → v3.6 → **v3.7 (2026-06-23)**。
+> 2026-06-17 v2.5 → v3.0 → v3.1 → v3.5 → v3.6 → v3.7 → **v3.8 (2026-06-23)**。
 >
 > **v3.6 的核心教训**：把需要语义理解的事交给 grep = 17 次折腾才提交成功。
 > 不是 V3.6 不好——是它没区分"偷懒"和"架构步骤"。
