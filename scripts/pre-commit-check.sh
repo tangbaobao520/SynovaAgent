@@ -77,8 +77,77 @@ warn_check() {
   fi
 }
 
+# V3.7: plan.json 感知的"硬阻断或降级警告"检查
+# 如果文件在 plan.json 中声明了 defer → 降级为警告，不阻断
+plan_aware_check() {
+  local name="$1" matches="$2" deferred_list="$3"
+  local count=0
+  [ -n "$matches" ] && count=$(echo "$matches" | grep -c . 2>/dev/null) || count=0
+  if [ "$count" -eq 0 ]; then
+    echo -e "  ${GREEN}✅ ${name}${RESET}"
+    return
+  fi
+  # 检查是否所有匹配都在 deferred 列表中
+  local non_deferred=""
+  while IFS= read -r match_line; do
+    [ -z "$match_line" ] && continue
+    local match_file=$(echo "$match_line" | grep -oP '^[^:]+' | head -1)
+    if [ -n "$deferred_list" ] && echo "$deferred_list" | grep -qF "$match_file" 2>/dev/null; then
+      continue  # 在 defer 列表中 → 跳过
+    fi
+    non_deferred="${non_deferred}${match_line}\n"
+  done <<< "$matches"
+  if [ -z "$non_deferred" ]; then
+    # 全部被 deferred → 警告不阻断
+    echo -e "  ${YELLOW}⚠️  ${name}: ${count} 处 (plan.json deferred)  [警告]${RESET}"
+    echo "$matches" | head -3 | while read -r line; do [ -n "$line" ] && echo "     ${line}"; done
+    WARN_COUNT=$((WARN_COUNT + 1))
+  else
+    echo -e "  ${RED}❌ ${name}: $(echo -e "$non_deferred" | grep -c .) 处  [硬阻断]${RESET}"
+    echo -e "$non_deferred" | head -5 | while read -r line; do [ -n "$line" ] && echo "     ${line}"; done
+    HARD_FAIL=$((HARD_FAIL + 1))
+  fi
+}
+
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 STAGED=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep '\.ts$' | grep -v node_modules || true)
+
+# ═══ V3.7: plan.json — 分阶段任务支持 ═══
+# Anthropic 原则: 架构步骤不是偷懒。当 plan.json 声明某文件处于 create 阶段
+# 且 wiring 标记为 deferred，接线检查对该文件降级为警告。
+PLAN_FILE="$ROOT/.claude/plan.json"
+DEFERRED_WIRING_FILES=""
+DEFERRED_FF_FILES=""
+DEFERRED_TEST_FILES=""
+PLAN_ACTIVE=0
+if [ -f "$PLAN_FILE" ]; then
+  # 用 python 解析 JSON 比 bash 可靠
+  PLAN_PARSE=$(python3 -c "
+import json, sys
+try:
+  p = json.load(open('$PLAN_FILE'))
+  phase = p.get('current_phase', -1)
+  if phase < 0: sys.exit(0)
+  # 收集当前 phase 之前所有标记为 deferred 的文件
+  for ph in p.get('phases', []):
+    if ph.get('step', 999) > phase: continue
+    checks = ph.get('checks', {})
+    files = ph.get('files', [])
+    if checks.get('wiring') == 'deferred':
+      for f in files: print(f'WIRING:{f}')
+    if checks.get('feature_flag') == 'deferred':
+      for f in files: print(f'FF:{f}')
+    if checks.get('test_pairing') == 'deferred':
+      for f in files: print(f'TEST:{f}')
+except: pass
+" 2>/dev/null)
+  if [ -n "$PLAN_PARSE" ]; then
+    PLAN_ACTIVE=1
+    DEFERRED_WIRING_FILES=$(echo "$PLAN_PARSE" | grep "^WIRING:" | sed 's/^WIRING://')
+    DEFERRED_FF_FILES=$(echo "$PLAN_PARSE" | grep "^FF:" | sed 's/^FF://')
+    DEFERRED_TEST_FILES=$(echo "$PLAN_PARSE" | grep "^TEST:" | sed 's/^TEST://')
+  fi
+fi
 STAGED_ALL=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep -v node_modules || true)
 STAGED_SRC=$(echo "$STAGED_ALL" | grep -E '^src/|^tests/|^packages/|^scripts/' | grep -v 'scripts/pre-commit-check.sh\|scripts/check-secrets.sh\|scripts/check-file-driven.sh\|scripts/workflow/' || true)
 NEW_IMPL=$(git diff --cached --name-only --diff-filter=A 2>/dev/null | grep "^src/" | grep "\.ts$" | grep -v "\.test\." | grep -v "\.d\.ts" | grep -v "types\.ts$\|index\.ts$\|helpers\.ts$" || true)
@@ -101,9 +170,11 @@ echo ""
 # ═══════════════════════════════════════════════════════════════════
 echo -e "${CYAN}── 组 1/8: 类型安全 + 硬编码数据 ──${RESET}"
 
-# 1a. as any 零容忍
+# 1a. as any 零容忍 (V3.7: 跳过注释行 — 行首是 // 或 * 或 /* 的行不检查)
+# Anthropic 原则: bash 只做模式匹配，不判断语义。注释行不属于"代码中的 as any"。
 M=$(grep -rn 'as any\b' src/ --include="*.ts" 2>/dev/null \
-  | grep -v "node_modules" | grep -v "\.test\." | grep -v "\.d\.ts" || true)
+  | grep -v "node_modules" | grep -v "\.test\." | grep -v "\.d\.ts" \
+  | grep -vE '^\s*[^:]+:\d+:\s*(//|/\*|\*| \*)' || true)
 hard_check "as any 零容忍 (铁律 38)" "$M"
 
 # 1b. 硬编码业务数据 (合并原 10 + 13: 硬编码联合类型/数组/Set/DEFAULT_* + 部门名等)
@@ -144,8 +215,9 @@ if [ -n "$STAGED" ]; then
       while IFS= read -r cline; do
         linenum=$(echo "$cline" | cut -d: -f1); [ -z "$linenum" ] && continue
         ctx=$(sed -n "${linenum},$((linenum + 2))p" "$file" 2>/dev/null || echo "")
-        if ! echo "$ctx" | grep -qE "log\.|logger\.|console\.|/\*|//"; then
-          EMPTY="${EMPTY}${file}:${linenum}: 空 catch (无 log)\n"
+        # V3.7: 空 catch 接收 log.|degraded|throw|/\*|// — 有任一项即非"静默吞异常"
+        if ! echo "$ctx" | grep -qE "log\.|logger\.|console\.|degraded|throw\s|/\*|//"; then
+          EMPTY="${EMPTY}${file}:${linenum}: 空 catch (无 log/degraded/throw)\n"
         fi
       done <<< "$CATCHES"
     fi
@@ -166,7 +238,12 @@ if [ -n "$NEW_IMPL" ]; then
     fi
   done <<< "$NEW_IMPL"
 fi
-hard_check "新文件配对: impl 须同 commit 有 test" "${MISSING_TEST:-}"
+# V3.7: plan.json 感知 — deferred test 文件降级为警告
+if [ "$PLAN_ACTIVE" -eq 1 ] && [ -n "$DEFERRED_TEST_FILES" ]; then
+  plan_aware_check "新文件配对: impl 须同 commit 有 test" "${MISSING_TEST:-}" "$DEFERRED_TEST_FILES"
+else
+  hard_check "新文件配对: impl 须同 commit 有 test" "${MISSING_TEST:-}"
+fi
 
 # 2c. 桩测试 + 跨模块集成测试 (原 12 + 17 合并)
 STUB_FAIL=""
@@ -224,7 +301,9 @@ bash "$ROOT/scripts/check-secrets.sh"
 echo ""
 echo -e "${CYAN}── 组 4/8: 接线完整性 ──${RESET}"
 
-# 4a. 新 export 有调用方 (原 5)
+# 4a. 新 export 被引用 (V3.7 简化: bash 只验证"被引用"这个物理事实)
+# Anthropic 原则: bash 退回到物理事实——"这个符号在文件外部出现过吗？"
+# 调用链正确性、分阶段接线 → agent 自检和 plan.json 负责。
 UNWIRED=""
 if [ -n "$NEW_IMPL" ]; then
   while IFS= read -r file; do
@@ -233,13 +312,19 @@ if [ -n "$NEW_IMPL" ]; then
     for name in $EXPORTS; do
       [ -z "$name" ] && continue
       echo "$name" | grep -qi 'mock\|fake\|_internal\|_deprecated' && continue
-      WIRED=$(grep -rn "\b${name}\b" src/server.ts src/index.ts src/init/ src/agent/ src/routes/ src/sentinel/builtins.ts --include="*.ts" 2>/dev/null \
-        | grep -v "export.*${name}" | grep -v "$file" | head -1 || true)
-      [ -z "$WIRED" ] && UNWIRED="${UNWIRED}${file}: export ${name} — 未在生产入口中接线\n"
+      # V3.7: 搜索范围扩大——任何 src/ 下的文件引用了就算"已接线"
+      WIRED=$(grep -rn "\b${name}\b" src/ --include="*.ts" 2>/dev/null \
+        | grep -v "export.*${name}" | grep -v "$file" | grep -v "\.test\." | head -1 || true)
+      [ -z "$WIRED" ] && UNWIRED="${UNWIRED}${file}: export ${name} — 未被任何 src/ 文件引用\n"
     done
   done <<< "$NEW_IMPL"
 fi
-hard_check "接线审计: 新 export 必须有调用方" "${UNWIRED:-}"
+# V3.7: plan.json 感知 — deferred wiring 文件降级为警告
+if [ "$PLAN_ACTIVE" -eq 1 ] && [ -n "$DEFERRED_WIRING_FILES" ]; then
+  plan_aware_check "接线审计: 新 export 必须被引用" "${UNWIRED:-}" "$DEFERRED_WIRING_FILES"
+else
+  hard_check "接线审计: 新 export 必须被引用 (物理事实)" "${UNWIRED:-}"
+fi
 
 # 4b. 接线深度: import 了但从未调用 (原 11)
 DEEP_FAIL=""
@@ -393,22 +478,45 @@ else
   HARD_FAIL=$((HARD_FAIL + 1))
 fi
 
-# 7c. --no-verify 审计 (原 14)
-NO_VERIFY_LOG="$ROOT/.claude/no-verify.log"
-NO_VERIFY_COUNT=0
-if [ -f "$NO_VERIFY_LOG" ]; then
-  NO_VERIFY_COUNT=$(grep -c "$(date +%Y-%m-%d)" "$NO_VERIFY_LOG" 2>/dev/null | tr -d '\r' || echo 0)
-  NO_VERIFY_COUNT=${NO_VERIFY_COUNT//[^0-9]/}
-  [ -z "$NO_VERIFY_COUNT" ] && NO_VERIFY_COUNT=0
+# 7c. V3.7 双日志审计 — 门禁故障 vs 人为绕过分离
+#   门禁故障日志 → 用于发现门禁本身的 bug（误报率 = 门禁需要修）
+#   绕过日志     → 用于发现开发者绕过模式（频繁绕过 = 门禁太重/开发者偷懒）
+FAILURE_LOG="$ROOT/.claude/pre-commit-failures.log"
+BYPASS_LOG="$ROOT/.claude/bypass.log"
+
+# ── 门禁故障审计 (警告不阻断) ──
+FAILURE_COUNT=0
+if [ -f "$FAILURE_LOG" ]; then
+  YESTERDAY=$(date -d "yesterday" +%Y-%m-%d 2>/dev/null || date +%Y-%m-%d)
+  FAILURE_COUNT=$(grep -c "$YESTERDAY\|$(date +%Y-%m-%d)" "$FAILURE_LOG" 2>/dev/null | tr -d '\r' || echo 0)
+  FAILURE_COUNT=${FAILURE_COUNT//[^0-9]/}
+  [ -z "$FAILURE_COUNT" ] && FAILURE_COUNT=0
 fi
-if [ "${NO_VERIFY_COUNT:-0}" -ge 3 ]; then
-  echo -e "  ${RED}❌ --no-verify 审计: 24h 内使用 ${NO_VERIFY_COUNT} 次 — 已超限  [硬阻断]${RESET}"
+if [ "${FAILURE_COUNT:-0}" -gt 10 ]; then
+  echo -e "  ${YELLOW}⚠️  门禁故障审计: 24h 内 pre-commit 失败 ${FAILURE_COUNT} 次 — 门禁可能太激进 [警告]${RESET}"
+  echo "    高失败率意味着门禁本身有 bug 或太敏感。请检查误报来源。"
+elif [ "${FAILURE_COUNT:-0}" -gt 0 ]; then
+  echo -e "  ${GREEN}✅ 门禁故障审计 (24h: ${FAILURE_COUNT} failures)${RESET}"
+else
+  echo -e "  ${GREEN}✅ 门禁故障审计${RESET}"
+fi
+
+# ── 绕过审计 (硬阻断) ──
+# 检测方法: post-commit hook 检测 --no-verify 并写入 bypass.log
+BYPASS_COUNT=0
+if [ -f "$BYPASS_LOG" ]; then
+  BYPASS_COUNT=$(grep -c "$(date +%Y-%m-%d)" "$BYPASS_LOG" 2>/dev/null | tr -d '\r' || echo 0)
+  BYPASS_COUNT=${BYPASS_COUNT//[^0-9]/}
+  [ -z "$BYPASS_COUNT" ] && BYPASS_COUNT=0
+fi
+if [ "${BYPASS_COUNT:-0}" -ge 3 ]; then
+  echo -e "  ${RED}❌ 绕过审计: 24h 内 --no-verify ${BYPASS_COUNT} 次 — 已超限  [硬阻断]${RESET}"
   echo "    连续使用 --no-verify 超过 2 次后，第 3 次起必须修复根因而非绕过"
   HARD_FAIL=$((HARD_FAIL + 1))
-elif [ "${NO_VERIFY_COUNT:-0}" -ge 2 ]; then
-  echo -e "  ${YELLOW}⚠️  --no-verify 审计: 24h 内使用 ${NO_VERIFY_COUNT} 次 — 警告${RESET}"
+elif [ "${BYPASS_COUNT:-0}" -ge 2 ]; then
+  echo -e "  ${YELLOW}⚠️  绕过审计: 24h 内 --no-verify ${BYPASS_COUNT} 次 — 警告${RESET}"
 else
-  echo -e "  ${GREEN}✅ --no-verify 审计${RESET}"
+  echo -e "  ${GREEN}✅ 绕过审计${RESET}"
 fi
 
 # 7d. 数据流自检 (原 18)

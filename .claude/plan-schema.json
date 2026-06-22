@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://synova.dev/schemas/plan-v1.json",
+  "title": "SynovaAgent Plan Schema",
+  "description": "机器可读的分阶段实施计划。由 EnterPlanMode 生成，人类审批后锁定。Agent 不能自己修改此文件。",
+  "type": "object",
+  "required": ["version", "created", "phases", "current_phase"],
+  "properties": {
+    "version": { "type": "string", "const": "1.0" },
+    "created": { "type": "string", "format": "date-time" },
+    "approved_by": { "type": "string", "description": "审批人标识（人类确认后填写）" },
+    "current_phase": { "type": "integer", "minimum": 0 },
+    "phases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["step", "action", "files"],
+        "properties": {
+          "step": { "type": "integer" },
+          "action": { "type": "string", "enum": ["create", "wire", "refactor", "delete"] },
+          "files": {
+            "type": "array",
+            "items": { "type": "string", "description": "精确相对路径，如 src/locale/locale-loader.ts" }
+          },
+          "checks": {
+            "type": "object",
+            "properties": {
+              "wiring": { "type": "string", "enum": ["enforce", "deferred"], "default": "enforce" },
+              "feature_flag": { "type": "string", "enum": ["enforce", "deferred"], "default": "enforce" },
+              "test_pairing": { "type": "string", "enum": ["enforce", "deferred"], "default": "enforce" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

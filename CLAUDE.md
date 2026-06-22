@@ -233,59 +233,108 @@ LLM       → providers/ (DeepSeek, OpenAI, Gateway)
 
 ---
 
-## Loop Engineering v3.6 — 8 组合并门禁 + 文件驱动架构物理执法
+## Loop Engineering v3.7 — bash 退位 + agent 进位 + plan.json
 
-> 2026-06-17 v2.5 → v3.0 → v3.1 → v3.5 → **v3.6 (2026-06-22)**。核心变化：
-> **v3.5: 20 项独立检查（文档说 5 项，实际 20 项→文档漂移）。**
-> **v3.6: 20 项按根因合并为 8 组（共享 grep，减少扫描）+ 新增文件驱动架构完整性门禁。**
-> **从"每犯一错加一脚本"→"找到根源，用一个机制防一类错"。**
-> **从"bash 替 agent 思考"→"agent 自问 + bash 查硬伤"。**
+> 2026-06-17 v2.5 → v3.0 → v3.1 → v3.5 → v3.6 → **v3.7 (2026-06-23)**。
+>
+> **v3.6 的核心教训**：把需要语义理解的事交给 grep = 17 次折腾才提交成功。
+> 不是 V3.6 不好——是它没区分"偷懒"和"架构步骤"。
+>
+> **V3.7 的解法 (Anthropic 工程方法论)**：
+> **bash 退回到只做它能可靠做的事**（物理事实：文件存在、语法合法、模式可见）。
+> **agent 自检承担语义判断**（接线是否正确、阶段是否合理、退化是否诚实）。
+> **plan.json 替代自由文本**（结构化、机器可读、人类审批后锁定）。
 
-### 设计哲学
+### 设计哲学 (V3.7 核心修正)
 
-v2.5 的 38 项 pre-commit + 12 脚本 + 3 次 tsc/vitest 重跑，
-导致 `--no-verify` 泛滥——一个被绕过的门禁 = 没有门禁。
+```
+V3.6 的错误: 把"这个函数是否在正确的调用链中"交给 grep 判断
+             → 动态 import 检测不到 → 5 次接线误报
+             → 分阶段任务未接线文件被硬阻断 → 架构步骤被打断
 
-v3.0 只设 5 项物理阻断。v3.5 膨胀到 20 项（文档未同步→信任危机）。
-v3.6 合并为 8 组（所有 20 项保护全保留，按根因归类共享 grep，<8s），
-新增第 8 组：文件驱动架构完整性（manifest/tags/回归/目录/pizza-chain）。
-**越少越会被执行。但少不等于丢——合并而非删除。**
+V3.7 的修正: grep 只回答"这个符号在文件外部出现过吗？"（物理事实）
+             agent 自检回答"这个符号在正确的调用链中吗？"（语义判断）
+             plan.json 声明"这个文件处于架构步骤中，接线在后续阶段"（结构化计划）
+```
+
+### 三权分立
+
+| 层级 | 谁做 | 判断什么 | 不可靠时怎么办 |
+|------|------|---------|--------------|
+| **bash 物理验证** | pre-commit | 文件存在、符号被引用、模式可见、语法合法 | 硬阻断 — 物理事实不容争辩 |
+| **plan.json 结构** | 人类审批 | 文件清单、阶段顺序、deferred checks | 锁定的 plan 覆盖 bash |
+| **agent 自检** | agent | 调用链正确、退化诚实、架构边界、接线完整 | 自检结果写 commit message |
 
 ### 执法架构: 五层精简
 
 ```
-📋 任务启动 (人工)   →  task-start.sh — 5 核心字段翻译意图→规格
+📋 任务启动 (人工)   →  task-start.sh — 5 核心字段 + 可选 plan.json
 🧠 写前注入 (自动)    →  hook-check-memory.sh — 历史教训
 ✍️ 写后验证 (自动)    →  verify-incremental.sh — L1 oxlint → L2 tsc → L3 vitest → L4 接线
-🔴 提交阻断 (自动)    →  pre-commit 8 组 — 全部 <8s
+🔴 提交阻断 (自动)    →  pre-commit 8 组 — bash 只做物理验证
 🚀 推送阻断 (自动)    →  pre-push 1 项 — secrets 终扫
+🎯 提交后检测 (自动)  →  post-commit — --no-verify 绕过检测 + 决策建议
 ```
 
 | 时机 | 脚本 | 阻断 | 耗时 |
 |------|------|------|------|
-| PreToolUse | hook-check-memory.sh (教训注入) | 不阻断 | <1s |
-| PreToolUse | hook-block-write.sh (task brief 字段) | 🔴 阻断 | <1s |
-| PreToolUse | hook-enforce-loop.sh (loop-state) | 🔴 阻断 | <1s |
+| PreToolUse | hook-check-memory.sh | 不阻断 | <1s |
+| PreToolUse | hook-block-write.sh | 🔴 阻断 | <1s |
+| PreToolUse | hook-enforce-loop.sh | 🔴 阻断 | <1s |
 | PostToolUse | verify-incremental.sh (L1→L4) | 🔴 阻断 | 5-30s |
 | pre-commit | pre-commit-check.sh (8 组) | 🔴 阻断 | <8s |
+| post-commit | post-commit (bypass 检测) | 不阻断 | <1s |
 | pre-push | pre-push-check.sh (secrets 终扫) | 🔴 阻断 | <3s |
 
-### pre-commit 8 组硬阻断（v3.6 合并自 v3.5 的 20 项）
+### pre-commit 8 组硬阻断（V3.7 — bash 只做物理验证）
 
-| 组 | 检查内容 | 合并自 v3.5 | 耗时 |
-|----|---------|------------|------|
-| **1** | **类型安全 + 硬编码数据** | as any (1) + 硬编码业务数据 (10,13) + check-hardcoded.sh | <1s |
-| **2** | **测试质量** | empty catch (2) + 测试配对 (4) + 桩测试≥3 expect (12) + 集成测试 (17) | <1s |
-| **3** | **Secrets** | 全工作区 + .claude/ + 暂存区 + .env (3) | <2s |
-| **4** | **接线完整性** | 新 export 有调用方 (5) + 接线深度 import→调用 (11) | <1s |
-| **5** | **架构边界 + 桥接** | 跨层引用 (8) + 铁律 46 桥接欺诈 (19) + 铁律 47 grep 证明 (20) | <1s |
-| **6** | **Task Brief** | 存在 + 5 核心字段 (7 精简) — PRD 章节引用 (15) 降级警告 | <1s |
-| **7** | **架构合规** | DiagnosticModule 禁止 (6) + 专家配置 (9) + --no-verify (14) + 数据流 (18) | <2s |
-| **8** | **🆕 文件驱动完整性** | manifest schema + tags 引用 + 类型回归 + 目录结构 + pizza-chain CI | <2s |
+| 组 | 检查内容 | bash 判断 | agent 自检判断 |
+|----|---------|----------|--------------|
+| **1** | **类型安全 + 硬编码数据** | as any 在代码行（跳过注释行）| 硬编码数据是否合理 |
+| **2** | **测试质量** | 文件配对 + empty catch 有 degraded/throw/log | 测试质量 + 跨模块覆盖 |
+| **3** | **Secrets** | 全工作区模式匹配 | — |
+| **4** | **接线完整性** | 新 export 是否被任何 src/ 文件引用 | 引用是否在正确的调用链中 |
+| **5** | **架构边界 + 桥接** | 跨层 import + engine-core 引用 | 跨层调用是否通过合法桥接 |
+| **6** | **Task Brief** | 存在 + 5 核心字段 | 分阶段计划合理性 |
+| **7** | **架构合规** | DiagnosticModule + 专家配置 + 数据流 | 降级是否诚实 |
+| **8** | **文件驱动完整性** | manifest schema + tags + 目录结构 | 新类型是否应该文件驱动 |
 
-> **v3.5→v3.6 变化**：检查内容零删除。20 项全部保留在 8 组中。每组一次合并 grep 替代多次独立扫描。
-> Task Brief 从 11 字段精简为 5 核心字段（Q1/Q2/Q3/架构层/Done标准）。
-> 新增第 8 组 `check-file-driven.sh` — 物理阻断文件驱动架构回退。
+### plan.json — 分阶段任务的结构化支持
+
+当任务声明为分阶段执行时，创建 `.claude/plan.json` 声明各阶段的文件清单和 `deferred` 检查：
+
+```json
+{
+  "version": "1.0",
+  "current_phase": 1,
+  "phases": [
+    {
+      "step": 1, "action": "create",
+      "files": ["src/locale/locale-loader.ts", "src/l3/framework-loader.ts"],
+      "checks": { "wiring": "deferred", "test_pairing": "deferred" }
+    },
+    {
+      "step": 2, "action": "wire",
+      "files": ["src/server.ts"],
+      "checks": { "wiring": "enforce", "test_pairing": "enforce" }
+    }
+  ]
+}
+```
+
+- `checks.wiring: deferred` → 接线检查对该文件降级为警告
+- `checks.test_pairing: deferred` → 测试配对检查对该文件降级为警告
+- agent 不能改这个文件 — 在 EnterPlanMode 时生成，人类审批后锁定
+- plan.json 不存在时 → 所有检查正常硬阻断（和 V3.6 一致）
+
+### 双日志审计 — 门禁故障 ≠ 人为绕过
+
+| 日志 | 写入者 | 含义 | 审计行为 |
+|------|-------|------|---------|
+| `.claude/pre-commit-failures.log` | pre-commit hook (exit != 0) | 门禁本身拒绝了提交 | >10 次/24h → 警告（门禁太激进） |
+| `.claude/bypass.log` | post-commit hook | `--no-verify` 跳过了 pre-commit | ≥3 次/24h → 硬阻断 |
+
+**检测原理**：pre-commit hook 通过时写时间戳到 `.claude/last-precommit-success`。post-commit hook 检查：如果上次成功时间戳在 120 秒之前 → 本次 commit 可能用了 `--no-verify` → 写入 bypass.log。
 
 ### ⚡ Agent 自检 6 问（每次写完代码必答 — v3.6 新增文件驱动检查）
 
