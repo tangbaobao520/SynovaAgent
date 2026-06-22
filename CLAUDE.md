@@ -204,30 +204,82 @@ pre-commit 警告：task brief 中声明"已完成拆分"但 grep 仍有旧路�
 
 ## 项目身份
 
-**产品**: SynovaAgent — 组织数字孪生诊断 + 持续增长导航系统。
-**定位**: 独立 Agent 进程，通过 HTTP API + MCP 对外服务。不依赖任何前端或桌面端。
-**市场**: 5-300 人团队的组织诊断与增长导航。
+SynovaAgent 是一个驻扎企业的 AI 诊断系统。
+诊断是手段，增长才是目的。
+核心问题：这家企业的增长卡在哪里？现在该做什么？
+Agent，不是 ChatBot。驻扎企业，持续观测，主动发现，自动诊断，给出行动建议，跟踪执行。
 
-**两大核心系统**:
-1. **FDE 按需诊断** — 用户触发，6阶段管道，全部测量器+专家 → 综合诊断报告
-2. **Sentinel 定时哨兵** — Cron 自动，基线对比+异常检测 → 信号聚合 → 专家 → 工单
+**目标**: 成为组织诊断的 AWS。每个新客户、新行业、新数据源 → 加文件即可，不改代码。
+能文件化的必须文件化。不能文件化的必须有明确的扩展点。
 
-**五层架构**:
+**流程约束**: V3.7 — task brief 6 字段强制 + plan.json 分阶段 + pre-commit 8 组物理阻断。
+
+**数据流**:
 ```
-L1 交互    → routes/ (API), tui/ (终端), mcp/ (MCP协议)
-L2 编排    → agent/ (ConversationEngine, diagnosis-launcher, sentinel-service)
-              orchestrator/ (SubAgentCoordinator, ModuleRunner)
-L3 洞察    → l3/ (ExpertDispatcher, ExpertAutonomy, QualityFirewall)
-              sentinel/ (Runner, SignalAggregator, Registry, 20哨兵适配器)
-              expert-platform/ (ExpertStore, Validator)
-L4 本体    → l4/ (GraphBridge, EntityResolver, CommunityReports)
-              evidence/ (Collector, Corroboration, EvidenceStore)
-L5 存储    → store/ (SessionStore, SQLite)
-              cron/ (CronScheduler, 持久化作业)
-引擎       → packages/engine-core/ (543文件, 25测量器+6专家+本体层)
-安全       → security/ (PIIScrubber, DataBoundary)
-LLM       → providers/ (DeepSeek, OpenAI, Gateway)
+L5 存储 → L4 本体 → L3 洞察(哨兵定时 + 诊断按需) → L2 编排 → L1 交互
+   ↑                                                              ↓
+   └─────── 反馈闭环 (GA评审/客户反馈 → 记忆层 → 数据层) ←────────┘
+                                                              ↓
+                        Sentinel Finding[] ──→ 诊断引擎 Phase 2 ──→ 专家解读
+                                                              ↓
+                                                       8 位文件驱动专家
+                                                     解读 Finding → 产出分析
 ```
+
+**L1 交互层入口**:
+- `POST /api/diagnosis/consult` — GA 诊断（六阶段→报告）
+- Cron → `Sentinel.check()` — 哨兵定时（发现异常→专家→工单）
+- `GET /chat` — Web 对话界面
+- MCP 协议 — 外部工具调用
+
+**五层架构** (只能向下依赖相邻层):
+```
+L1 交互: routes/ (API), tui/ (终端), mcp/ (MCP协议)
+L2 编排: agent/ (ConversationEngine, diagnosis-launcher, sentinel-service)
+         orchestrator/ (SubAgentCoordinator, ModuleRunner)
+L3 洞察: l3/ (ExpertDispatcher, ExpertAutonomy, QualityFirewall)
+         sentinel/ (Runner, SignalAggregator, Registry, 哨兵适配器)
+         expert-platform/ (ExpertStore, Validator)
+         expert/ (8 位文件驱动专家: strategy/org/finance/tech/marketing/action/business_model/knowledge)
+L4 本体: l4/ (GraphBridge, EntityResolver, CommunityReports)
+         evidence/ (Collector, Corroboration, EvidenceStore)
+         企业事实层: AgentMemoryStore (enterprise_fact, 版本化 + superseded_by 链)
+L5 存储: store/ (SessionStore, SQLite)
+         cron/ (CronScheduler)
+```
+
+**三层粒度** (专家→哨兵→计算):
+一个专家管理 N 个哨兵。一个哨兵包含 N 个 compute 指标。
+哨兵 = 可独立告警的最小子领域。compute = 纯数学函数，不碰数据库。
+例: 财务专家 → 成本哨兵/收入哨兵/现金流哨兵/利润哨兵 → 每个哨兵含 N 个 compute.ts
+
+**L0 进化** (独立于五层，自我迭代):
+```
+evolution/ (SessionLearningEngine, FeedbackCollector, OntologyAdapter)
+两路反馈 → 候选池 → 确认/执行验证 → 写入知识库/权重模型
+分歧记录 → 三个月后自动验证 → 更新/降级
+```
+
+**文件化扩展** (不改代码):
+- `expert/` — 新增专家 = 新建目录 + 8 个文件 → 自动注册
+- `expert/expert-registry.yaml` — 声明哪些专家启用、用什么工具
+- `knowledge/shared/` — 共享知识单源。专家 KNOWLEDGE.md 只引用不复制
+- `theory/` — 理论基础。每个文件对应一个学科模块
+
+**技能扩展**:
+- `skills/` — SKILL.md 定义完整方法论。按需加载。新增 skill = 新建目录 + SKILL.md → ExpertDispatcher 自动发现
+
+**数据安全**:
+- L0 公开摘要 — 所有人可见
+- L1 聚合信号 — GA + 客户可见
+- L2 脱敏证据 — GA + 客户可见（人名/金额已脱敏）
+- L3 原始数据 — 仅客户企业内部 Agent 可见。GA 永久不可见
+
+**引擎**: `packages/engine-core/` (Novis 遗产, 538文件, 逐步迁移到 src/l3 + src/l4)。
+禁止 src/ 新增 engine-core 引用（铁律 46）。pre-commit 物理阻断。
+
+**安全**: `security/` (PIIScrubber, DataBoundary)
+**LLM**: `providers/` (DeepSeek, OpenAI, Gateway)
 
 **架构规则**: 只能向下依赖相邻层。L1禁触L3/L4/L5。L2禁触L4/L5。pre-commit `check-architecture.sh` 检测违规。
 
@@ -358,12 +410,19 @@ grep 脚本会产生误报，误报会产生噪音，噪音会导致整条门禁
 ### task-start.sh 6 核心字段（任务启动时填写 — v3.7 新增 Q0 项目背景+文件审计）
 
 ```
-Q0 定位: a) 项目拼图 — Synova 是什么？当前本层(L1-L5)已有哪些模块在运行？
-             填: 涉及的层 | 该层已有模块清单 | 本任务是新增还是替换
-         b) 文件审计 — 本任务要做的能力，在 expert/sentinel/extensions/ 中已有吗？
-             填: 已有文件驱动模块 | 本任务和它们的关系 | 复用/扩展/新建
-         c) 如果已有模块能覆盖 → 必须复用，禁止新建硬编码版本。
-            如果要新建 → 必须走文件驱动，不准在代码里硬编码。
+Q0 定位: a) 项目拼图 — 
+             Synova = AI 诊断 Agent。五层架构 L1→L5。8 专家 7 维度。
+             本任务在哪一层？该层现在有哪些模块在运行？（列出文件名）
+             本任务的上下层各有哪些模块？（L(N-1) 和 L(N+1)）
+             本任务是新增、替换、还是扩展已有模块？
+         b) 文件审计 — 
+             grep 本任务涉及的关键词在 expert/ sentinel/ extensions/ 中。
+             列出找到的已有文件驱动模块。
+             本任务和它们的关系：复用 / 扩展（加文件）/ 新建（无覆盖）/ 冲突（重复了）
+         c) 决策 — 
+             已有覆盖 → 必须复用，不准新建硬编码替代。
+             无覆盖 → 新建走文件驱动（manifest.json + 独立文件），不准硬编码在 TS 里。
+             冲突 → 本任务取消，直接复用已有的。
 Q1 调研: a) 业界最佳实践 b) Anthropic 团队怎么做 c) memory/ 里我们犯过的错
 Q2 范围: 正确的最简方案是什么？必须符合现有架构、复用已有模块。明确列出不做的事。
 Q3 验收: 入口→交互→结果，三环节各是什么？
