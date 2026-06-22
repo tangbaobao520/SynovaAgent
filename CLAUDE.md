@@ -268,7 +268,7 @@ V3.7 的修正: grep 只回答"这个符号在文件外部出现过吗？"（物
 ### 执法架构: 五层精简
 
 ```
-📋 任务启动 (人工)   →  task-start.sh — 5 核心字段 + 可选 plan.json
+📋 任务启动 (人工)   →  task-start.sh — 6 核心字段 + 可选 plan.json
 🧠 写前注入 (自动)    →  hook-check-memory.sh — 历史教训
 ✍️ 写后验证 (自动)    →  verify-incremental.sh — L1 oxlint → L2 tsc → L3 vitest → L4 接线
 🔴 提交阻断 (自动)    →  pre-commit 8 组 — bash 只做物理验证
@@ -295,7 +295,7 @@ V3.7 的修正: grep 只回答"这个符号在文件外部出现过吗？"（物
 | **3** | **Secrets** | 全工作区模式匹配 | — |
 | **4** | **接线完整性** | 新 export 是否被任何 src/ 文件引用 | 引用是否在正确的调用链中 |
 | **5** | **架构边界 + 桥接** | 跨层 import + engine-core 引用 | 跨层调用是否通过合法桥接 |
-| **6** | **Task Brief** | 存在 + 5 核心字段 | 分阶段计划合理性 |
+| **6** | **Task Brief** | 存在 + 6 核心字段 (Q0/Q1/Q2/Q3/架构层/Done) | 分阶段计划合理性 |
 | **7** | **架构合规** | DiagnosticModule + 专家配置 + 数据流 | 降级是否诚实 |
 | **8** | **文件驱动完整性** | manifest schema + tags + 目录结构 | 新类型是否应该文件驱动 |
 
