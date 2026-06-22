@@ -1,0 +1,24 @@
+{
+  "$schema": "https://synova.dev/schemas/extension-manifest-v1.json",
+  "name": "revenue-health",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "收入健康哨兵",
+  "description": "监控收入增长质量。输出 Finding: '收入增长放缓，客户集中度 CR5=X%，超出 warning 阈值。'",
+  "schedule": "0 */6 * * *",
+  "expert": "finance",
+  "priority": "P0",
+  "computes": ["revenue-growth", "customer-concentration", "avg-deal-size"],
+  "thresholds": {
+    "revenue_growth": { "warning": 0.05, "critical": -0.05 },
+    "customer_concentration": { "warning": 0.5, "critical": 0.7 },
+    "avg_deal_size": { "warning": -0.1, "critical": -0.2 }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": ["sog_graph", "financial_baseline"],
+    "dataAccess": { "allowedDimensions": ["financial"], "sensitiveAccess": "read" }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "revenueHealthSentinel"
+}

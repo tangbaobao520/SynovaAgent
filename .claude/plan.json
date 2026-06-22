@@ -1,0 +1,49 @@
+{
+  "version": "1.0",
+  "created": "2026-06-23T00:00:00Z",
+  "current_phase": 1,
+  "phases": [
+    {
+      "step": 0,
+      "owner": "file-driven-claude",
+      "action": "create",
+      "files": [
+        "extensions/sentinels/manifest.json",
+        "extensions/sentinels/cost-health/manifest.json",
+        "extensions/sentinels/revenue-health/manifest.json",
+        "extensions/sentinels/cash-runway/manifest.json",
+        "extensions/sentinels/profit-health/manifest.json",
+        "src/init/file-driven-loaders.ts"
+      ],
+      "checks": { "wiring": "deferred", "test_pairing": "deferred" }
+    },
+    {
+      "step": 1,
+      "owner": "file-driven-claude",
+      "action": "wire",
+      "files": [
+        "src/init/file-driven-loaders.ts"
+      ],
+      "checks": { "wiring": "enforce", "test_pairing": "enforce" }
+    },
+    {
+      "step": 2,
+      "owner": "engine-claude",
+      "action": "create",
+      "files": [
+        "src/sentinel/registry.ts",
+        "tests/sentinel/registry.test.ts"
+      ],
+      "checks": { "wiring": "deferred", "test_pairing": "enforce" }
+    },
+    {
+      "step": 3,
+      "owner": "engine-claude",
+      "action": "wire",
+      "files": [
+        "src/l3/synova-diagnosis-engine-impl.ts"
+      ],
+      "checks": { "wiring": "enforce", "test_pairing": "enforce" }
+    }
+  ]
+}

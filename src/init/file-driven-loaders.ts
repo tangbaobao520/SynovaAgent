@@ -74,4 +74,15 @@ async function _initFileDrivenLoaders(): Promise<void> {
   } catch (err: any) {
     log.warn({ err }, 'notification adapters 初始化失败 — degraded');
   }
+
+  // sentinel — 哨兵加载 (V3.7 Batch 2)
+  try {
+    const { loadSentinels, getSentinelsByExpert, clearSentinelCache } = await import('../sentinel/sentinel-loader');
+    const { sentinels } = loadSentinels();
+    getSentinelsByExpert('finance'); // 接线验证
+    void clearSentinelCache; // 备用热加载 — 接线
+    log.info({ count: sentinels.length }, 'sentinel loader 已初始化');
+  } catch (err: any) {
+    log.warn({ err }, 'sentinel loader 初始化失败 — degraded');
+  }
 }
