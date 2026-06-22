@@ -113,6 +113,55 @@ L4 本体    → 封装"数据在哪"，提供语义查询
 L5 存储    → SQLite，只在 L4 内部访问
 ```
 
+### 数据流（Palantir 模式）
+
+```
+L5 数据层 → L4 本体层 → L3 哨兵 → L3 专家 → L2 编排 → L1 交互
+               ↑                        ↑
+          原始数据                   诊断引擎按需
+        变成语义对象               调哨兵获取证据
+```
+
+**四跳，不是五跳。** 计算不是独立的一跳——它在哨兵内部。
+
+### 计算模块和哨兵的关系（已决策）
+
+**合并。不设独立 compute 层。**
+
+证据：12 个哨兵、12 个 compute 函数，一一对应，零复用。分层不提供价值，只提供 import 链和故障点。
+
+```
+之前（错）: 哨兵适配器 → import compute 函数 → compute 内部查 SQLite
+之后（对）: 哨兵 = 计算 + 基线对比 + 阈值判断 + 专家路由（一个完整单元）
+```
+
+哨兵目录结构：
+```
+extensions/sentinels/
+├── cash-flow/
+│   ├── manifest.json       ← schedule, thresholds, expert路由
+│   ├── compute.ts          ← 纯计算（manifest 指向此文件）
+│   └── test-data.json
+├── key-person-risk/
+│   └── ...
+└── shared/                 ← 工具库，不是层
+    ├── baseline.ts         ← 基线对比（所有哨兵共用）
+    ├── threshold.ts        ← 阈值判断（所有哨兵共用）
+    └── stats.ts            ← 统计工具
+```
+
+**哨兵是扩展单元，计算是它的内部文件。** 不是两个独立的扩展维度。
+
+### 诊断引擎如何使用哨兵
+
+引擎不调 compute 函数，调整个哨兵：
+
+```typescript
+// Phase 2: 收集证据
+const findings = await registry.listForTeam(teamId).map(s => s.check(teamId, context));
+// Finding[] → 注入 LLM prompt 作为证据
+```
+
 ---
 
 ## 六、18 维度状态表
@@ -120,7 +169,7 @@ L5 存储    → SQLite，只在 L4 内部访问
 | # | 维度 | 当前 | 你做什么 |
 |------|------|:--:|------|
 | 1 | 专家 | ✅ 文件 | 已完成，不动 |
-| 2 | 哨兵 | ✅ 文件 | 已完成，不动。compute 函数合并进哨兵 |
+| 2 | 哨兵 | ✅ 文件 | 已完成注册表文件化。⚠️ compute 函数合并进哨兵（每哨兵含 compute.ts），取消 src/sentinel/compute/ 目录 |
 | 3 | 本体节点/边 | ❌ enum | JSON Schema → extensions/ontology/ |
 | 4 | LLM 提供商 | ❌ switch | manifest + adapter → extensions/llm-providers/ |
 | 5 | IM 连接器 | ❌ | manifest + connector → extensions/connectors/ |
@@ -179,13 +228,15 @@ engine.runConsultation(teamId, initiator, scope, (event) => {
 
 ```
 第一批（不依赖任何人，今天就能做）:
+  - 哨兵 compute 合并（12 个 compute 函数合并进对应哨兵，取消 src/sentinel/compute/ 目录）
+    注意：compute 函数不能用 engine-core 版本（含 CJS require + L3→L5 违规）
+    需要从 L4 GraphStore 接口拿数据，在哨兵内做纯计算
   - 国际化（纯字符串提取，无代码依赖）
   - 报告模板（HTML/CSS 文件化，不改逻辑）
   - 合规框架库（85 个 TS → JSON，机械转换）
   - 通知渠道（独立 manifest + adapter）
 
 第二批（需要和哨兵对接）:
-  - 哨兵文件化 + compute 合并
   - 诊断规则文件化
   - 信号聚合规则文件化
   - 数据访问策略文件化
