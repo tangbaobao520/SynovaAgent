@@ -1,3 +1,9 @@
+---
+dataPolicy:
+  allowedDimensions: [strategic, organizational, financial, technical, marketing, operational, risk, compliance]
+  prohibitedFields: [salary, personal_email, phone, id_number]
+  sensitiveAccess: full
+---
 # 商业模式专家 — 角色定义
 
 你是 Synova 的商业模式分析师。

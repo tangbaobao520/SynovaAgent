@@ -15,7 +15,7 @@
 #   3. Secrets                   (全工作区 + .claude/ + 暂存区 + .env)
 #   4. 接线完整性               (新 export 有调用方[可 deferred] + 接线深度)
 #   5. 架构边界 + 桥接文件      (跨层引用 + 铁律 46/47)
-#   6. Task Brief                (存在 + 5 核心字段)
+#   6. Task Brief                (存在 + 6 核心字段: Q0/Q1/Q2/Q3/架构层/Done)
 #   7. 架构合规                  (DiagnosticModule + 专家配置 + 数据流)
 #   8. 文件驱动架构完整性       (manifest/tags/回归/目录/feature-flag)
 #
@@ -131,7 +131,7 @@ NEW_IMPL=$(git diff --cached --name-only --diff-filter=A 2>/dev/null | grep "^sr
 
 echo ""
 echo "═══════════════════════════════════════════════════════════"
-echo "  Loop Engineering v3.6 — pre-commit (8 组)"
+echo "  Loop Engineering v3.7 — pre-commit (8 组)"
 echo "═══════════════════════════════════════════════════════════"
 echo ""
 
@@ -377,7 +377,7 @@ fi
 warn_check "铁律 47: 声称完成须 grep 物理证明" "${CLEANUP_CLAIM:-}"
 
 # ═══════════════════════════════════════════════════════════════════
-# 组 6: Task Brief (精简为 5 核心字段 — 原 7 简化 + 原 15/16 降级)
+# 组 6: Task Brief (6 核心字段: Q0审计/Q1调研/Q2范围/Q3验收/架构层/Done)
 #
 # Anthropic 决策: 原则 0 "协作对齐前置" — task brief 是 agent 和人类的接口契约。
 #   没有 brief → agent 会假设共识 → 假设错误 → 做了一堆没人要的东西。
@@ -389,7 +389,7 @@ warn_check "铁律 47: 声称完成须 grep 物理证明" "${CLEANUP_CLAIM:-}"
 #         task brief 字段不完整而非实质质量问题。
 # ═══════════════════════════════════════════════════════════════════
 echo ""
-echo -e "${CYAN}── 组 6/8: Task Brief (5 核心字段) ──${RESET}"
+echo -e "${CYAN}── 组 6/8: Task Brief (6 核心字段) ──${RESET}"
 
 TASK_BRIEF_MISSING=""
 TASK_BRIEF_EMPTY=""
@@ -397,8 +397,8 @@ if [ -n "$STAGED_SRC" ]; then
   if [ -z "$BRIEF" ]; then
     TASK_BRIEF_MISSING="今日无 task brief。请先运行: bash scripts/workflow/task-start.sh \"任务描述\""
   else
-    # v3.6: 精简为 5 核心字段 (从 11 字段砍半)
-    for q in "Q1:" "Q2:" "Q3:" "本任务在哪一层" "Done 标准"; do
+    # v3.7: 6 核心字段 (新增 Q0 文件审计)
+    for q in "Q0:" "Q1:" "Q2:" "Q3:" "本任务在哪一层" "Done 标准"; do
       SECTION=$(awk "/^## $q/{found=1; next} /^## /{if(found) exit} found" "$BRIEF" 2>/dev/null)
       FILLED=$(echo "$SECTION" | grep -v "^<!--\|^$" | tr -d "[:space:]" | head -1)
       if [ -z "$FILLED" ] || [ ${#FILLED} -lt 3 ]; then
@@ -415,7 +415,7 @@ if [ -n "$STAGED_SRC" ]; then
   fi
 fi
 hard_check "Task Brief: 编码变更须有今日 task brief" "${TASK_BRIEF_MISSING:-}"
-hard_check "Task Brief: 5 核心字段必须填写 (Q1/Q2/Q3/架构层/Done)" "${TASK_BRIEF_EMPTY:-}"
+hard_check "Task Brief: 6 核心字段必须填写 (Q0/Q1/Q2/Q3/架构层/Done)" "${TASK_BRIEF_EMPTY:-}"
 
 # v3.6 降级为警告 (原 15: PRD 章节引用, 原 16: 文件位置)
 PRD_REF=""

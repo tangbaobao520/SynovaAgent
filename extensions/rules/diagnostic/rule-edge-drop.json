@@ -1,0 +1,13 @@
+{
+  "$id": "rule/diagnostic/edge-drop",
+  "name": "跨团队协作断裂",
+  "type": "rule",
+  "domain": "organizational",
+  "category": "graph_alert",
+  "severity": "critical",
+  "description": "跨团队 INTERACTS_WITH 边权重显著下降，团队间协作强度减弱",
+  "condition": { "triggerOn": "edge_weight_low", "edgeType": "INTERACTS_WITH", "minSeverity": "high" },
+  "action": { "title": "检查跨团队协作断裂", "priority": "P0", "assigneeRole": "团队负责人", "estimatedHours": 4 },
+  "cooldownMs": 86400000,
+  "metadata": { "source": "engine_calibrated", "confidence": 0.85, "status": "active" }
+}

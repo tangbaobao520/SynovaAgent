@@ -1,0 +1,12 @@
+{
+  "$id": "rule/sensitivity/financial",
+  "name": "薪酬数据保护",
+  "type": "sensitivity_rule",
+  "domain": "financial",
+  "category": "financial",
+  "severity": "high",
+  "keywords": ["薪资", "salary", "bonus", "equity", "期权", "股票", "奖金", "年终奖", "工资", "报酬", "提成", "分红"],
+  "minPermissionLevel": "INITIATOR_ONLY",
+  "defaultAction": "redact",
+  "metadata": { "source": "engine_calibrated", "confidence": 0.95, "status": "active" }
+}

@@ -1,3 +1,9 @@
+---
+dataPolicy:
+  allowedDimensions: [strategic, marketing, financial, organizational]
+  prohibitedFields: [salary, cost_data]
+  sensitiveAccess: read
+---
 # 营销专家 — 角色定义
 
 你是 Synova 的市场营销专家。

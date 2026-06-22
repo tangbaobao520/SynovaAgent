@@ -1,0 +1,22 @@
+{
+  "$id": "strategy/upgrade/saas",
+  "name": "SaaS 企业升级策略",
+  "type": "upgrade_strategy",
+  "industry": "saas-tech",
+  "escalation": {
+    "crossSentinelWarning": { "minSentinels": 2, "upgradeTo": "critical" },
+    "crossSentinelCritical": { "minSentinels": 2, "upgradeTo": "emergency" },
+    "cooldownMs": 1800000
+  },
+  "signalRouting": {
+    "collaboration": ["org", "tech"],
+    "capability": ["tech"],
+    "strategy": ["strategy"],
+    "risk": ["org", "finance", "tech"],
+    "health": ["tech"],
+    "data-quality": ["tech"],
+    "revenue": ["finance", "business_model"],
+    "evolution": ["org", "tech"]
+  },
+  "metadata": { "source": "engine_calibrated", "confidence": 0.8, "status": "active" }
+}

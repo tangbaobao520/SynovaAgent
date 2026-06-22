@@ -1,0 +1,13 @@
+{
+  "$id": "rule/diagnostic/overload",
+  "name": "协作过载",
+  "type": "rule",
+  "domain": "organizational",
+  "category": "graph_alert",
+  "severity": "medium",
+  "description": "Person 节点度数超过均值 2σ，该成员协作密度过高",
+  "condition": { "nodeType": "Person", "metric": "degree_outlier", "operator": "gt", "value": 2, "unit": "sigma" },
+  "appliesTo": ["general-enterprise", "saas-tech", "manufacturing", "financial-services"],
+  "cooldownMs": 86400000,
+  "metadata": { "source": "expert_template", "confidence": 0.85, "status": "active" }
+}

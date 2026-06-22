@@ -1,0 +1,21 @@
+{
+  "$id": "strategy/upgrade/manufacturing",
+  "name": "制造业升级策略",
+  "type": "upgrade_strategy",
+  "industry": "manufacturing",
+  "escalation": {
+    "crossSentinelWarning": { "minSentinels": 2, "upgradeTo": "critical" },
+    "crossSentinelCritical": { "minSentinels": 2, "upgradeTo": "emergency" },
+    "cooldownMs": 900000
+  },
+  "signalRouting": {
+    "collaboration": ["org"],
+    "capability": ["org"],
+    "strategy": ["strategy"],
+    "risk": ["org", "finance"],
+    "health": ["tech"],
+    "data-quality": ["tech"],
+    "financial": ["finance", "business_model"]
+  },
+  "metadata": { "source": "engine_calibrated", "confidence": 0.8, "status": "active" }
+}
