@@ -265,6 +265,20 @@ export class SynovaDiagnosisEngineImpl implements SynovaDiagnosisEngine {
           }
         }
 
+        // Phase 2b: 维度分析 — 每个维度独立 LLM 判断
+        let analysisContext = '';
+        try {
+          const { runAnalysis, formatAnalysisForLLM } = await import('./analyst');
+          const analysisResult = await runAnalysis(
+            { chat: (msgs) => this.llm.chat(msgs as Parameters<typeof this.llm.chat>[0]) },
+            teamId,
+            findings as SentinelFinding[],
+          );
+          analysisContext = '\n' + formatAnalysisForLLM(analysisResult);
+        } catch (analysisErr: unknown) {
+          log.warn({ err: analysisErr }, '维度分析失败 — degraded, 使用哨兵原始数据');
+        }
+
         const messages = [
           { role: 'system', content: DIAGNOSIS_SYSTEM_PROMPT },
           {
@@ -277,7 +291,8 @@ export class SynovaDiagnosisEngineImpl implements SynovaDiagnosisEngine {
               `- 诊断深度: ${depth}`,
               `- 分析维度: ${dimensions}`,
               sentinelContext,
-              '请按 JSON 格式输出诊断结果。',
+              analysisContext,
+              '请综合以上哨兵数据和维度分析，按 JSON 格式输出诊断结果。',
             ].filter(Boolean).join('\n'),
           },
         ];

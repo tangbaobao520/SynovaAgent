@@ -44,6 +44,25 @@
         "src/l3/synova-diagnosis-engine-impl.ts"
       ],
       "checks": { "wiring": "enforce", "test_pairing": "enforce" }
+    },
+    {
+      "step": 4,
+      "owner": "engine-claude",
+      "action": "create",
+      "files": [
+        "src/l3/analyst.ts",
+        "tests/l3/analyst.test.ts"
+      ],
+      "checks": { "wiring": "deferred", "test_pairing": "enforce" }
+    },
+    {
+      "step": 5,
+      "owner": "engine-claude",
+      "action": "wire",
+      "files": [
+        "src/l3/synova-diagnosis-engine-impl.ts"
+      ],
+      "checks": { "wiring": "enforce", "test_pairing": "enforce" }
     }
   ]
 }
