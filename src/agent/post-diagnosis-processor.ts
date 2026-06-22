@@ -54,6 +54,15 @@ export interface PostProcessResult {
   errors: string[];
 }
 
+export interface GraphBridgeLike {
+  upsertFromKeyPersonRisk(risks: Array<{ roleId: string; riskLevel: string; knowledgeDomains: string[]; busFactor: number }>): void;
+  upsertFromHONA(people: Array<Record<string, unknown>>, edges: Array<Record<string, unknown>>): void;
+  upsertFromFinancialImpact(items: Array<Record<string, unknown>>): void;
+  upsertFromCapabilityGap(gaps: Array<Record<string, unknown>>): void;
+  upsertFromSevenPowers(powers: Array<Record<string, unknown>>): void;
+  upsertFromCPC(processes: Array<Record<string, unknown>>): void;
+}
+
 export interface PostProcessEvents {
   onCommunityReports?: (count: number, communities: CommunityReportLike[]) => void;
   onEntityResolution?: (autoMerged: number, queuedForReview: number) => void;
@@ -85,13 +94,31 @@ export async function runPostDiagnosisProcessing(
   };
 
   // 延迟导入 L4 模块 (运行时加载, 避免静态跨层依赖)
-  const [{ createGraphBridge }, { generateCommunityReports }, { resolveEntitiesL3 }] = await Promise.all([
-    import('../l4/graph-bridge'),
-    import('../l4/community-reports'),
-    import('../l4/entity-resolver'),
-  ]);
+  // Step 4 fix: import 可能因 engine-core ESM 兼容问题失败 → 降级不阻断诊断
+  let graphBridge: GraphBridgeLike | null = null;
+  let generateCommunityReports: ((store: GraphStoreLike, teamId: string) => CommunityReportLike[]) | null = null;
+  let resolveEntitiesL3: ((store: GraphStoreLike, teamId: string) => Promise<{ autoMerged: number; queuedForReview: number }>) | null = null;
 
-  const graphBridge = createGraphBridge(graphStore, teamId);
+  try {
+    const [bridgeMod, communityMod, entityMod] = await Promise.all([
+      import('../l4/graph-bridge'),
+      import('../l4/community-reports'),
+      import('../l4/entity-resolver'),
+    ]);
+    graphBridge = bridgeMod.createGraphBridge(graphStore, teamId) as unknown as GraphBridgeLike;
+    generateCommunityReports = communityMod.generateCommunityReports as unknown as typeof generateCommunityReports;
+    resolveEntitiesL3 = entityMod.resolveEntitiesL3 as unknown as typeof resolveEntitiesL3;
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log.warn({ err: msg }, 'L4 模块加载失败 — post-processing 降级, 诊断结果不受影响');
+    result.errors.push(`L4 modules unavailable: ${msg}`);
+    return result;
+  }
+
+  if (!graphBridge) {
+    result.errors.push('GraphBridge: module not loaded');
+    return result;
+  }
 
   // 1. 关键人风险同步
   try {
@@ -188,7 +215,7 @@ export async function runPostDiagnosisProcessing(
 
   // 2. 社区报告生成
   try {
-    const communities = generateCommunityReports(graphStore, teamId);
+    const communities = generateCommunityReports!(graphStore, teamId);
     result.communityCount = communities.length;
     if (communities.length > 0) {
       log.info({ teamId, count: communities.length }, 'P0-1 社区报告已生成');
@@ -202,7 +229,7 @@ export async function runPostDiagnosisProcessing(
 
   // 3. 实体解析
   try {
-    const resolution = await resolveEntitiesL3(graphStore, teamId);
+    const resolution = await resolveEntitiesL3!(graphStore, teamId);
     result.autoMerged = resolution.autoMerged;
     result.queuedForReview = resolution.queuedForReview;
     if (resolution.autoMerged > 0 || resolution.queuedForReview > 0) {
