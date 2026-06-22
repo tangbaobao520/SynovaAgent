@@ -124,33 +124,95 @@ L5 数据层 → L4 本体层 → L3 哨兵 → L3 专家 → L2 编排 → L1 �
 
 **四跳，不是五跳。** 计算不是独立的一跳——它在哨兵内部。
 
-### 计算模块和哨兵的关系（已决策）
+### 计算模块和哨兵的关系（已决策 — 2026-06-22 更新）
 
-**合并。不设独立 compute 层。**
+**哨兵 = 1 个子领域 + N 个计算指标。不是 1:1，也不是 1:∞。**
 
-证据：12 个哨兵、12 个 compute 函数，一一对应，零复用。分层不提供价值，只提供 import 链和故障点。
+#### 三层粒度
 
 ```
-之前（错）: 哨兵适配器 → import compute 函数 → compute 内部查 SQLite
-之后（对）: 哨兵 = 计算 + 基线对比 + 阈值判断 + 专家路由（一个完整单元）
+专家 — 领域（解读 N 个哨兵的 Finding）
+  ├── 哨兵 — 子领域（综合 M 个指标，判断"这个子领域出问题没有"）
+  │     ├── 计算 — 指标（纯数学，盯一个数）
+  │     └── 计算 — 指标
+  └── 哨兵 — 子领域
+        ├── 计算
+        └── 计算
 ```
 
-哨兵目录结构：
+#### 以财务专家为例
+
+```
+财务专家
+  ├── 成本哨兵 → Finding: "成本结构恶化，固定成本占比上升"
+  │     ├── 毛利率变化率
+  │     ├── 固定/变动成本比
+  │     └── 人均成本趋势
+  ├── 收入哨兵 → Finding: "收入增长放缓，客户集中度危险"
+  │     ├── 收入增长率
+  │     ├── 客户集中度
+  │     └── 客单价趋势
+  ├── 现金流哨兵 → Finding: "现金流紧张，跑道 3 个月"
+  │     ├── 现金跑道
+  │     ├── 应收逾期率
+  │     └── 经营现金流 vs 净利润
+  └── 利润哨兵
+        ├── 利润率变化
+        └── 毛利率 vs 行业基准
+```
+
+#### 哨兵的正确粒度
+
+| 太粗 ❌ | 正确 ✅ | 太细 ❌ |
+|------|------|------|
+| 一个哨兵盯整个财务 | 成本哨兵、收入哨兵、现金流哨兵各自独立 | 一个哨兵只算毛利率 |
+| 输出："财务有点问题" | 输出："成本结构恶化，具体是 X/Y/Z" | 输出："毛利率跌了 2%"(本身不值得告警) |
+
+**边界规则**：哨兵 = "可以独立说'这里出问题了'的最小子领域"。不是整个领域（太粗），不是一个指标（太细）。
+
+#### 哨兵文件结构
+
 ```
 extensions/sentinels/
-├── cash-flow/
-│   ├── manifest.json       ← schedule, thresholds, expert路由
-│   ├── compute.ts          ← 纯计算（manifest 指向此文件）
-│   └── test-data.json
-├── key-person-risk/
+├── cost-health/              ← 成本哨兵
+│   ├── manifest.json         ← schedule, thresholds, expert: "finance"
+│   ├── computes/             ← N 个计算指标
+│   │   ├── gross-margin.ts
+│   │   ├── fixed-variable-ratio.ts
+│   │   └── cost-per-head.ts
+│   └── aggregate.ts          ← 如何从 N 个指标合成 1 条 Finding
+├── revenue-health/           ← 收入哨兵
 │   └── ...
-└── shared/                 ← 工具库，不是层
-    ├── baseline.ts         ← 基线对比（所有哨兵共用）
-    ├── threshold.ts        ← 阈值判断（所有哨兵共用）
-    └── stats.ts            ← 统计工具
+├── cash-runway/              ← 现金流哨兵
+│   └── ...
+└── shared/                   ← 工具库，不是层
+    ├── baseline.ts
+    ├── threshold.ts
+    └── stats.ts
 ```
 
-**哨兵是扩展单元，计算是它的内部文件。** 不是两个独立的扩展维度。
+manifest.json 示例：
+```json
+{
+  "name": "成本健康",
+  "schedule": "0 */6 * * *",
+  "expert": "finance",
+  "computes": ["gross-margin", "fixed-variable-ratio", "cost-per-head"],
+  "thresholds": {
+    "gross_margin": { "warning": -0.05, "critical": -0.15 },
+    "fixed_ratio": { "warning": 0.6, "critical": 0.75 }
+  },
+  "aggregation": "worst_first"
+}
+```
+
+#### 和当前代码的关系
+
+当前 12 个哨兵都是 1:1（一个哨兵 → 一个 compute 函数）。这不是设计意图——是 engine-core 遗留的粗糙实现。重构时应该：
+
+1. 按子领域合并哨兵（如合并多个财务相关指标 → 4 个财务哨兵）
+2. 旧哨兵中没价值的砍掉
+3. 先做哨兵结构，再逐步填充 compute 文件（不需要一次填满）
 
 ### 诊断引擎如何使用哨兵
 
@@ -228,29 +290,36 @@ engine.runConsultation(teamId, initiator, scope, (event) => {
 
 ```
 第一批（不依赖任何人，今天就能做）:
-  - 哨兵 compute 合并（12 个 compute 函数合并进对应哨兵，取消 src/sentinel/compute/ 目录）
-    注意：compute 函数不能用 engine-core 版本（含 CJS require + L3→L5 违规）
-    需要从 L4 GraphStore 接口拿数据，在哨兵内做纯计算
   - 国际化（纯字符串提取，无代码依赖）
   - 报告模板（HTML/CSS 文件化，不改逻辑）
   - 合规框架库（85 个 TS → JSON，机械转换）
   - 通知渠道（独立 manifest + adapter）
 
-第二批（需要和哨兵对接）:
-  - 诊断规则文件化
+第二批（哨兵重构 — 和架构决策对齐）:
+  - 哨兵子领域拆分：按财务/组织/技术等专家，识别子领域
+    财务: 成本哨兵 / 收入哨兵 / 现金流哨兵 / 利润哨兵
+    组织: 关键人哨兵 / 协作健康哨兵 / 自知偏差哨兵
+    技术: 路径依赖哨兵 / 竞争壁垒哨兵
+    每个哨兵 = 1 manifest + N computes + aggregate
+  - 从 engine-core 提取计算逻辑重写为纯函数
+    不能用 engine-core 版本（含 CJS require + L3→L5 违规）
+    通过 L4 GraphStore 接口拿数据，哨兵内做纯计算
+  - 取消 src/sentinel/compute/ 目录（合并进哨兵）
+
+第三批（和哨兵对接）:
+  - 诊断规则文件化（按行业拆分阈值）
   - 信号聚合规则文件化
   - 数据访问策略文件化
 
-第三批（对外扩展）:
-  - 行业本体模板
+第四批（对外扩展）:
+  - 行业本体模板（参照 engine-core ontology-templates/ 结构）
   - 本体节点/边 JSON Schema
   - 业务模型类型
 
-第四批（引擎对接）:
-  - 引擎配置外部化（和我的接口对接）
+第五批（引擎对接）:
+  - 引擎配置外部化（extensions/engine/diagnosis.json）
   - LLM 提供商文件化
-  - IM 连接器文件化
-  - 数据源文件化
+  - IM 连接器 / 数据源文件化
 ```
 
 ---
