@@ -246,26 +246,20 @@ export class SynovaDiagnosisEngineImpl implements SynovaDiagnosisEngine {
         const dimensions = scope?.dimensions?.join(', ') || '全部 7 个维度';
         const depth = scope?.depth || DEFAULT_DEPTH;
 
-        // 哨兵切片: 调用关键人风险哨兵，注入证据
+        // Phase 2: 调哨兵获取客观数据 → 注入 LLM prompt
         let sentinelContext = '';
         if (this.graphStore) {
           try {
-            const { checkKeyPersonRisk, formatRiskForLLM } = await import('./key-person-risk');
-            const riskResult = checkKeyPersonRisk(
-              this.graphStore as { queryNodes(type: string, filters?: Record<string, unknown>, graph?: string): Array<{ id: string; type: string; props: Record<string, unknown> }> },
-              teamId,
-            );
-            if (riskResult.findings.length > 0) {
-              for (const f of riskResult.findings) {
-                emit({
-                  type: 'expert_hypothesis', phase: 2, timestamp: now(),
-                  expert: 'org', message: f.description,
-                  findings: [{ moduleId: 'D3', summary: f.title, confidence: 0.85 }],
-                  confidence: 0.85,
-                });
+            const { SentinelRunner, formatFindingsForLLM } = await import('../sentinel/sentinel-runner');
+            const runner = new SentinelRunner();
+            const store = this.graphStore as { queryNodes(type: string, filters?: Record<string, unknown>, graph?: string): Array<{ id: string; type: string; props: Record<string, unknown> }> };
+            const findings = await runner.runForTeam(teamId, store);
+            if (findings.length > 0) {
+              for (const f of findings) {
+                emit({ type: 'expert_hypothesis', phase: 2, timestamp: now(), expert: 'org', message: f.description, findings: [{ moduleId: 'D3', summary: f.title, confidence: 0.85 }], confidence: 0.85 });
               }
             }
-            sentinelContext = '\n' + formatRiskForLLM(riskResult);
+            sentinelContext = '\n' + formatFindingsForLLM(findings);
           } catch (sentinelErr: unknown) {
             log.warn({ err: sentinelErr }, '哨兵调用失败 — degraded');
           }
