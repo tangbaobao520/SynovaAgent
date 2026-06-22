@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="{{lang}}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{report.title}} — {{org_name}}</title>
+<style>
+  :root {
+    --bg: #0d1117; --fg: #c9d1d9; --accent: #58a6ff;
+    --green: #3fb950; --red: #f85149; --yellow: #d2991d;
+    --border: #30363d; --card-bg: #161b22;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    font-size: 15px; line-height: 1.7; max-width: 960px; margin: 0 auto; padding: 40px 24px 80px;
+  }
+  h1 { font-size: 1.8rem; color: #f0f6fc; border-bottom: 2px solid var(--accent); padding-bottom: 12px; margin-bottom: 16px; }
+  h2 { font-size: 1.25rem; color: #e6edf3; margin: 32px 0 12px; padding-left: 8px; border-left: 4px solid var(--accent); }
+  h3 { font-size: 1.05rem; color: #e6edf3; margin: 20px 0 8px; }
+  .meta { color: #8b949e; font-size: 0.88em; margin-bottom: 24px; }
+  .score-bar { height: 8px; border-radius: 4px; background: var(--border); margin: 8px 0 16px; }
+  .score-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+  .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin-bottom: 12px; }
+  .card.critical { border-left: 3px solid var(--red); }
+  .card.warning { border-left: 3px solid var(--yellow); }
+  .card.info { border-left: 3px solid var(--accent); }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.78em; font-weight: 600; }
+  .tag-p0 { background: rgba(248,81,73,0.18); color: var(--red); }
+  .tag-p1 { background: rgba(210,153,29,0.18); color: var(--yellow); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .dimension-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px; text-align: center; }
+  .footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--border); color: #8b949e; font-size: 0.82em; text-align: center; }
+</style>
+</head>
+<body>
+
+<h1>{{report.title}}</h1>
+<div class="meta">
+  <p>{{report.generated_at}}: {{generated_at}} · {{report.duration}}: {{duration}}</p>
+</div>
+
+<!-- CEO Summary -->
+<h2>{{report.ceo_summary}}</h2>
+<div class="card">
+  <p>{{ceo_summary_text}}</p>
+</div>
+
+<!-- Overall Score -->
+<h2>{{report.core_conclusion}}</h2>
+<div class="card">
+  <p><strong>{{report.score.overall}}: {{overall_score}}/100</strong></p>
+  <div class="score-bar"><div class="score-fill" style="width:{{overall_score}}%; background:{{score_color}};"></div></div>
+  <p>{{report.how_to_read}}: {{conclusion_narrative}}</p>
+</div>
+
+<!-- Dimension Scores -->
+<h2>{{report.dimension_scores}}</h2>
+<div class="grid">
+  {{#dimensions}}
+  <div class="dimension-card">
+    <strong>{{name}}</strong>
+    <div style="font-size:1.5rem; margin:8px 0;">{{score}}/100</div>
+    <span style="color:{{trend_color}};">{{trend}}</span>
+  </div>
+  {{/dimensions}}
+</div>
+
+<!-- Key Findings -->
+<h2>{{report.key_findings}}</h2>
+{{#findings}}
+<div class="card {{severity_class}}">
+  <span class="tag tag-{{priority}}">{{priority}}</span>
+  <strong>{{title}}</strong>
+  <p>{{description}}</p>
+  {{#evidence}}
+  <p style="font-size:0.85em; color:#8b949e;">{{evidence}}</p>
+  {{/evidence}}
+</div>
+{{/findings}}
+{{^findings}}
+<div class="card info">
+  <p>{{report.no_urgent_issues}}</p>
+</div>
+{{/findings}}
+
+<!-- Root Cause -->
+{{#root_causes}}
+<h2>{{report.root_cause}}</h2>
+{{#causes}}
+<div class="card">
+  <p><strong>{{cause}}</strong> → {{effect}}</p>
+  <p style="font-size:0.85em; color:#8b949e;">{{report.confidence}}: {{confidence_label}}</p>
+</div>
+{{/causes}}
+{{/root_causes}}
+
+<!-- Evidence Chain -->
+{{#evidence_chain}}
+<h2>{{report.evidence_chain}}</h2>
+{{#items}}
+<div class="card">
+  <p><strong>{{source}}</strong>: {{finding}}</p>
+  <p style="font-size:0.85em; color:#8b949e;">{{report.coverage}}: {{coverage_label}}</p>
+</div>
+{{/items}}
+{{/evidence_chain}}
+
+<!-- Action Recommendations -->
+{{#actions}}
+<h2>{{report.action_recommendations}}</h2>
+{{#items}}
+<div class="card {{severity_class}}">
+  <span class="tag tag-{{priority}}">{{priority}}</span>
+  <strong>{{action}}</strong>
+  <p>{{rationale}}</p>
+  <p style="font-size:0.85em; color:#8b949e;">{{owner}} · {{timeline}}</p>
+</div>
+{{/items}}
+{{/actions}}
+
+<!-- Data Notes -->
+{{#data_notes}}
+<h2>{{report.data_notes}}</h2>
+<div class="card">
+  <p><strong>{{report.data_sources}}:</strong> {{sources_list}}</p>
+  {{#gaps}}
+  <p style="color: var(--yellow);"><strong>{{report.data_gaps}}:</strong> {{gaps_list}}</p>
+  {{/gaps}}
+  <p style="font-size:0.85em; color:#8b949e;">{{report.follow_up}}</p>
+</div>
+{{/data_notes}}
+
+{{#degraded_modules}}
+<div class="card" style="border:1px solid var(--yellow); margin-top:20px;">
+  <p style="color: var(--yellow);">{{report.degraded_notice}}</p>
+  <ul>{{#modules}}<li>{{.}}</li>{{/modules}}</ul>
+</div>
+{{/degraded_modules}}
+
+<div class="footer">
+  <p>{{report.footer}}</p>
+</div>
+
+</body>
+</html>

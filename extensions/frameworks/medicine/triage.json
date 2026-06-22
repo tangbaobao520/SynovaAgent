@@ -1,0 +1,68 @@
+{
+  "id": "triage",
+  "name": "分诊原则",
+  "category": "medicine",
+  "coreInsight": "按紧急程度和可治疗性分配资源，而非按到达顺序。有些问题不值得投入最佳资源。",
+  "applicableDecisionTypes": [
+    "客户投诉处理",
+    "多项目资源分配",
+    "危机管理"
+  ],
+  "constraintPatterns": [
+    "优先级",
+    "紧急",
+    "资源分配",
+    "排序",
+    "有限",
+    "筛选",
+    "分级",
+    "分类"
+  ],
+  "applicableRoles": [
+    "运营管理",
+    "资源调度",
+    "优先级管理",
+    "危机协调"
+  ],
+  "limitations": [
+    "需要准确的快速诊断能力",
+    "在公平性要求高的场景中不适用"
+  ],
+  "skillPatterns": [
+    {
+      "name": "紧急度分级系统",
+      "summary": "基于分诊原则建立四级紧急度矩阵（危重/紧急/一般/可延迟），优化资源分配",
+      "category": "运营管理",
+      "tags": [
+        "分级",
+        "紧急",
+        "资源"
+      ],
+      "isMarketplaceSkill": true,
+      "prerequisites": [],
+      "failureModes": [],
+      "sourceTier": "inferred",
+      "dependsOn": [],
+      "conflictsWith": [],
+      "triggers": []
+    },
+    {
+      "name": "资源调度框架",
+      "summary": "按可治疗性×紧急度双维度排序任务，确保有限资源聚焦高价值事项",
+      "category": "项目管理",
+      "tags": [
+        "调度",
+        "优先级",
+        "资源"
+      ],
+      "isMarketplaceSkill": true,
+      "prerequisites": [],
+      "failureModes": [],
+      "sourceTier": "inferred",
+      "dependsOn": [],
+      "conflictsWith": [],
+      "triggers": []
+    }
+  ],
+  "$id": "framework/medicine/triage"
+}

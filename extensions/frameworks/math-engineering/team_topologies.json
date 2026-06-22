@@ -1,0 +1,30 @@
+{
+  "id": "team_topologies",
+  "name": "Team Topologies",
+  "category": "math-engineering",
+  "coreInsight": "四种基本团队拓扑：流对齐、赋能、平台、复杂子系统。团队交互模式三选一：协作、X-as-a-Service、促进。",
+  "applicableDecisionTypes": [
+    "组织设计",
+    "团队边界",
+    "平台策略"
+  ],
+  "constraintPatterns": [
+    "TeamTopologies",
+    "团队拓扑",
+    "流对齐",
+    "赋能团队",
+    "平台团队",
+    "认知负载"
+  ],
+  "applicableRoles": [
+    "流对齐团队成员",
+    "平台工程师",
+    "赋能教练"
+  ],
+  "limitations": [
+    "从传统组织转型需要时间",
+    "认知负载测量缺乏标准工具",
+    "平台团队容易被当作共享服务滥用"
+  ],
+  "$id": "framework/math-engineering/team_topologies"
+}

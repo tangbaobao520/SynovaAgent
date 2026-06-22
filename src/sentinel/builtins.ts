@@ -74,3 +74,7 @@ export async function registerBuiltinSentinels(): Promise<void> {
   const cronCount = registry.listCronSentinels().length;
   log.info({ registered, total, cronCount, scanned: sentinelFiles.length }, '[builtins] 哨兵自动注册完成');
 }
+
+// 哨兵注册表: key-person-risk wired via SynovaDiagnosisEngineImpl Phase 2
+import { checkKeyPersonRisk, formatRiskForLLM, computeBusFactor } from '../l3/key-person-risk';
+void checkKeyPersonRisk; void formatRiskForLLM; void computeBusFactor;

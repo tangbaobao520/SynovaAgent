@@ -1,0 +1,30 @@
+{
+  "id": "design_thinking",
+  "name": "设计思维",
+  "category": "psychology",
+  "coreInsight": "以人为中心的创新方法论。共情→定义→创想→原型→测试，五阶段非线性迭代。",
+  "applicableDecisionTypes": [
+    "产品设计",
+    "用户体验",
+    "创新策略"
+  ],
+  "constraintPatterns": [
+    "设计",
+    "创新",
+    "用户体验",
+    "以用户为中心",
+    "共情",
+    "原型"
+  ],
+  "applicableRoles": [
+    "用户体验研究员",
+    "交互设计师",
+    "创新教练"
+  ],
+  "limitations": [
+    "耗时长不适合紧急问题",
+    "对组织文化有要求",
+    "过度依赖共情导致样本偏差"
+  ],
+  "$id": "framework/psychology/design_thinking"
+}

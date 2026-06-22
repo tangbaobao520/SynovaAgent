@@ -1,0 +1,32 @@
+{
+  "id": "disruption_detection",
+  "name": "颠覆性创新识别",
+  "category": "economics",
+  "coreInsight": "颠覆者从主流玩家\"不屑于服务\"的边缘市场切入。判断一个新兴供应商是真的\"便宜\"还是在构建你的竞争对手的下一条供应链。",
+  "applicableDecisionTypes": [
+    "市场进入策略",
+    "供应商评估",
+    "新业务决策"
+  ],
+  "constraintPatterns": [
+    "创新",
+    "颠覆",
+    "竞争",
+    "边缘",
+    "新兴",
+    "替代",
+    "威胁",
+    "战略"
+  ],
+  "applicableRoles": [
+    "市场分析",
+    "战略规划",
+    "竞争情报",
+    "创新管理"
+  ],
+  "limitations": [
+    "颠覆的识别是后验的——当时看不清",
+    "被\"颠覆\"的常常是当时的行业领袖"
+  ],
+  "$id": "framework/economics/disruption_detection"
+}

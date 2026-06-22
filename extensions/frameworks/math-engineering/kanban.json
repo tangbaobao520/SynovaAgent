@@ -1,0 +1,30 @@
+{
+  "id": "kanban",
+  "name": "看板方法",
+  "category": "math-engineering",
+  "coreInsight": "可视化工作流、限制在制品、让瓶颈自己暴露出来。不改变现有角色，只改变工作方式。",
+  "applicableDecisionTypes": [
+    "流程优化",
+    "产能规划",
+    "瓶颈识别"
+  ],
+  "constraintPatterns": [
+    "看板",
+    "WIP",
+    "在制品",
+    "流动",
+    "可视化",
+    "瓶颈"
+  ],
+  "applicableRoles": [
+    "流程经理",
+    "运营协调",
+    "看板管理员"
+  ],
+  "limitations": [
+    "不适合固定时间承诺的场景",
+    "对管理层要求放权意识",
+    "WIP限制需要纪律执行"
+  ],
+  "$id": "framework/math-engineering/kanban"
+}

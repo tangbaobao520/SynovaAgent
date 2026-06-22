@@ -19,6 +19,7 @@ import { PhaseStateMachine } from './orchestrator/phase-state-machine';
 import { createOrchestrationWiring } from './orchestrator/wiring';
 import { initFederalReporter, getFederalAdapter, FederalAdapter } from './adapters/federal-adapter';
 import { bindConnectorTools } from './init/connector-binding';
+import { initFileDrivenLoaders } from './init/file-driven-loaders'; // v3.6 Batch 1 — 文件驱动加载器
 import { ToolRegistry } from './agent/tools';
 import { KnowledgeInjector, KnowledgeConflictHandler, AtomicWriter } from './agent/index';
 import { BossMailbox } from './agent/boss-mailbox';
@@ -133,6 +134,13 @@ export async function createServer(): Promise<Server> {
     connectorToolRegistry = new ToolRegistry();
     bindConnectorTools(connectorToolRegistry);
     logger.info('Connector 工具绑定完成');
+
+    // v3.6 Batch 1 — 初始化文件驱动加载器 (i18n/报告/框架/通知)
+    try {
+      await initFileDrivenLoaders();
+    } catch (err: any) {
+      logger.warn({ err }, '文件驱动加载器初始化失败 — degraded');
+    }
   } catch (err: any) {
     logger.warn({ err }, 'Connector 工具绑定失败 — degraded');
   }

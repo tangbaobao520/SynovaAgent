@@ -1,0 +1,32 @@
+{
+  "id": "local_team_empowerment",
+  "name": "本地团队赋能",
+  "category": "psychology",
+  "coreInsight": "离市场最近的运营团队应拥有限额内自主决策权。信任前置减少决策延迟，微管理增加隐性成本",
+  "applicableDecisionTypes": [
+    "delegation",
+    "operations",
+    "customer_service"
+  ],
+  "constraintPatterns": [
+    "授权",
+    "本地",
+    "决策",
+    "运营",
+    "信任",
+    "敏捷",
+    "赋能",
+    "自主"
+  ],
+  "applicableRoles": [
+    "本地运营",
+    "区域管理",
+    "授权管理",
+    "一线决策"
+  ],
+  "limitations": [
+    "授权边界不清可能导致失控",
+    "需要建立有效的监督机制"
+  ],
+  "$id": "framework/psychology/local_team_empowerment"
+}

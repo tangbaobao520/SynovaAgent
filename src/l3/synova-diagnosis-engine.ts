@@ -385,5 +385,7 @@ export type DiagnosisEngineFactory = (
     gateDataCompleteness?: number;
     /** 最小假设置信度 */
     gateMinHypothesisConfidence?: number;
+    /** L4 GraphStore — 哨兵数据源 */
+    graphStore?: Record<string, unknown>;
   },
 ) => SynovaDiagnosisEngine;

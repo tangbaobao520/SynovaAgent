@@ -1,0 +1,32 @@
+{
+  "id": "opportunity_cost",
+  "name": "机会成本",
+  "category": "economics",
+  "coreInsight": "选择一个选项的真正成本是放弃的最佳替代选项。做减法比做加法更重要。",
+  "applicableDecisionTypes": [
+    "资源分配",
+    "产品线选择",
+    "供应链优化"
+  ],
+  "constraintPatterns": [
+    "资源",
+    "预算",
+    "优先级",
+    "选择",
+    "取舍",
+    "有限",
+    "聚焦",
+    "集中"
+  ],
+  "applicableRoles": [
+    "资源分配",
+    "策略规划",
+    "投资决策",
+    "产品经理"
+  ],
+  "limitations": [
+    "机会成本不可精确量化",
+    "过度关注机会成本会导致决策瘫痪"
+  ],
+  "$id": "framework/economics/opportunity_cost"
+}

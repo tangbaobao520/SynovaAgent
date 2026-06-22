@@ -1,0 +1,32 @@
+{
+  "id": "network_effect",
+  "name": "网络效应",
+  "category": "economics",
+  "coreInsight": "一个产品或服务的价值随使用人数增加而指数增长。先发优势在强网络效应市场中极难被打破。",
+  "applicableDecisionTypes": [
+    "市场选择",
+    "平台策略",
+    "渠道建设"
+  ],
+  "constraintPatterns": [
+    "平台",
+    "用户增长",
+    "市场",
+    "双边",
+    "社区",
+    "社交",
+    "生态",
+    "规模"
+  ],
+  "applicableRoles": [
+    "增长策略",
+    "平台运营",
+    "社区管理",
+    "市场拓展"
+  ],
+  "limitations": [
+    "网络效应也可能反向（用户越多体验越差）",
+    "某些市场没有网络效应"
+  ],
+  "$id": "framework/economics/network_effect"
+}

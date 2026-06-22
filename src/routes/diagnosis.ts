@@ -128,7 +128,7 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
           async execute(name, args) { const r = await toolRegistry.execute(name, args); return { result: r }; },
           listTools() { return toolRegistry.listTools().map(t => ({ name: t.name, description: t.description, parameters: (t.parameters || {}) as Record<string, unknown> })); },
         },
-        { maxToolRounds: 4, gateDataCompleteness: 0.3, gateMinHypothesisConfidence: 0.5 },
+        { maxToolRounds: 4, gateDataCompleteness: 0.3, gateMinHypothesisConfidence: 0.5, graphStore: req.app.locals?.graphStore },
       );
       engine = {
         async runConsultation(teamId, initiator, onEvent) {

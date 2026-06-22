@@ -1,0 +1,34 @@
+{
+  "id": "incentive_compatibility",
+  "name": "激励相容",
+  "category": "economics",
+  "coreInsight": "机制设计的核心原则：每个参与者追求自身利益最大化时，恰好也实现了系统目标。多同层级角色并存时，纯奖励机制会引发过度竞争，纯惩罚机制会引发风险规避——混合机制（底线约束+超额分享）最稳定。",
+  "applicableDecisionTypes": [
+    "激励设计",
+    "绩效考核",
+    "薪酬结构",
+    "协议参数"
+  ],
+  "constraintPatterns": [
+    "激励",
+    "绩效",
+    "多角色",
+    "同层级",
+    "竞争",
+    "合作",
+    "奖惩",
+    "报酬"
+  ],
+  "applicableRoles": [
+    "激励设计",
+    "机制设计",
+    "绩效管理",
+    "组织设计"
+  ],
+  "limitations": [
+    "最优激励合同需要精确信息（现实中不可得）",
+    "混合机制设计复杂度随角色数指数增长",
+    "某些人类动机（使命感/工匠精神）超出激励模型"
+  ],
+  "$id": "framework/economics/incentive_compatibility"
+}

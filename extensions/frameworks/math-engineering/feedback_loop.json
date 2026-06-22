@@ -1,0 +1,68 @@
+{
+  "id": "feedback_loop",
+  "name": "反馈回路",
+  "category": "math-engineering",
+  "coreInsight": "系统的输出会反过来影响其输入。正反馈加速变化，负反馈维持稳定。",
+  "applicableDecisionTypes": [
+    "质量控制流程",
+    "客户反馈系统",
+    "绩效考核设计"
+  ],
+  "constraintPatterns": [
+    "质量",
+    "客户反馈",
+    "迭代",
+    "改进",
+    "数据驱动",
+    "优化",
+    "监控",
+    "用户"
+  ],
+  "applicableRoles": [
+    "质量监控",
+    "数据分析",
+    "产品优化",
+    "客户体验"
+  ],
+  "limitations": [
+    "反馈延迟会削弱系统稳定性",
+    "正反馈可能导致失控"
+  ],
+  "skillPatterns": [
+    {
+      "name": "数据驱动迭代框架",
+      "summary": "基于反馈回路原理建立\"度量→分析→改进\"的持续优化循环",
+      "category": "产品管理",
+      "tags": [
+        "迭代",
+        "数据",
+        "优化"
+      ],
+      "isMarketplaceSkill": true,
+      "prerequisites": [],
+      "failureModes": [],
+      "sourceTier": "inferred",
+      "dependsOn": [],
+      "conflictsWith": [],
+      "triggers": []
+    },
+    {
+      "name": "质量反馈闭环",
+      "summary": "将客户反馈系统性接入质检和产品设计流程，形成修正链路",
+      "category": "运营管理",
+      "tags": [
+        "反馈",
+        "质量",
+        "闭环"
+      ],
+      "isMarketplaceSkill": true,
+      "prerequisites": [],
+      "failureModes": [],
+      "sourceTier": "inferred",
+      "dependsOn": [],
+      "conflictsWith": [],
+      "triggers": []
+    }
+  ],
+  "$id": "framework/math-engineering/feedback_loop"
+}

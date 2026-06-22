@@ -1,30 +1,57 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering v3.5 — pre-commit 物理阻断 (5 项, 全部 <1s)
+# Loop Engineering v3.6 — pre-commit 8 组硬阻断 (全部 <8s)
 #
-# 设计原则:
+# ═══ Anthropic 决策溯源 (必读 — 不要因为"看不懂"就删检查) ═══
+#
+# 这个脚本中的每一个检查都对应一次真实的生产事故。它们不是某人拍脑袋想出来的
+# "最佳实践"——它们是真金白银的教训转化成的物理约束。
+#
+# 核心原则 (来自 Claude Code Anthropic 工程团队方法论):
+#   原则 1: 从第一性原理出发定义问题 → 每个检查解决一类根因，不解决症状
+#   原则 2: 先设计验证标准，再设计实现 → 每个检查有明确的"通过=正确"定义
+#   原则 3: 安全边际，每一步可回滚 → 硬阻断必须有逃生舱 (feature flag 回退)
+#   原则 4: 物理强制，零 AI 自律 → 不依赖"开发者记得"、"agent 会检查"
+#   原则 5: 逐步验证，不信任声称完成 → grep 物理证明 > 文档声明
+#   原则 6: 找到根因，用一个机制防一类错 → 8 组按根因归类，不加新检查项
+#
+# 删除检查的铁律:
+#   在删除任何检查之前，必须回答:
+#   1. 这个检查防止的历史事故是否已不可能再发生？(不可逆的架构变更？)
+#   2. 这个检查的根因是否被另一个检查以更低成本的机制覆盖？
+#   3. 删除后如果事故重演，回滚成本是否可接受？
+#   如果任一答案是"否" → 保留检查。
+#   历史: v2.5 的 check-reality.sh 被删是因为 @state 注释 != 正确性 (根因不成立)
+#         v3.0 的 check-manual-drift.sh 被删是因为文档数字每次都要改 (维护成本 > 价值)
+#
+# v3.5 → v3.6 核心变化:
+#   从 20 项独立检查 → 8 组合并(按根因归类，共享 grep，减少扫描次数)
+#   + 新增第 8 组: 文件驱动架构完整性 (check-file-driven.sh)
+#   + Task Brief 从 11 字段精简为 5 核心字段
+#   + PRD 章节引用 / 文件位置校验 → 降级为警告
+#   + Anthropic 决策注释 — 每个检查标注其历史事故和为什么存在
+#
+# 8 组:
+#   1. 类型安全 + 硬编码数据    (as any + 硬编码业务字段 + 硬编码模式)
+#   2. 测试质量                  (catch 无 log + 测试配对 + 桩测试 + 集成测试)
+#   3. Secrets                   (全工作区 + .claude/ + 暂存区 + .env)
+#   4. 接线完整性               (新 export 有调用方 + 接线深度)
+#   5. 架构边界 + 桥接文件      (跨层引用 + 铁律 46/47)
+#   6. Task Brief                (存在 + 5 核心字段)
+#   7. 架构合规                  (DiagnosticModule + 专家配置 + --no-verify + 数据流)
+#   8. 🆕 文件驱动架构完整性    (manifest/tags/回归/目录/pizza-chain/feature-flag)
+#
+# 设计哲学 (不变):
 #   - 只阻断 agent 确实会偷懒的项（有历史事故支撑）
 #   - 不重复 PostToolUse 已做的事（tsc/vitest/oxlint）
 #   - bash 做 agent 做不到的事（grep 模式匹配）
 #   - agent 自检做 bash 做不到的事（语义理解、架构边界、接线完整性）
-#
-# 5 项硬阻断:
-#   1. as any = 0          (历史: 47 次)
-#   2. empty catch → log   (历史: 静默吞异常)
-#   3. secrets 扫描        (历史: API key 暴露)
-#   4. 新文件 → 有测试     (历史: 4 次接线失败)
-#   5. 新 export → 有调用方 (历史: 4 次接线失败)
-#
-# 删除的 33 项去哪了:
-#   架构/测试质量/空壳/切片 → agent 自检 5 问 (CLAUDE.md)
-#   手册漂移/诚实门禁 → 删除 (脆弱检查, 误报 > 价值)
-#   tsc/vitest → PostToolUse verify-incremental.sh 已跑
-#   TUI 铁律 → CLAUDE.md 冻结注释已足够
 # ═══════════════════════════════════════════════════════════════════════════════
 set +e
 
 HARD_FAIL=0
-RED='\033[0;31m'; GREEN='\033[0;32m'; RESET='\033[0m'
+WARN_COUNT=0
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; RESET='\033[0m'
 
 hard_check() {
   local name="$1" matches="$2"
@@ -32,38 +59,90 @@ hard_check() {
   [ -n "$matches" ] && count=$(echo "$matches" | grep -c . 2>/dev/null) || count=0
   if [ "$count" -gt 0 ]; then
     echo -e "  ${RED}❌ ${name}: ${count} 处  [硬阻断]${RESET}"
-    echo "$matches" | while read -r line; do echo "     ${line}"; done
+    echo "$matches" | head -8 | while read -r line; do [ -n "$line" ] && echo "     ${line}"; done
     HARD_FAIL=$((HARD_FAIL + 1))
   else
     echo -e "  ${GREEN}✅ ${name}${RESET}"
   fi
 }
 
+warn_check() {
+  local name="$1" matches="$2"
+  local count=0
+  [ -n "$matches" ] && count=$(echo "$matches" | grep -c . 2>/dev/null) || count=0
+  if [ "$count" -gt 0 ]; then
+    echo -e "  ${YELLOW}⚠️  ${name}: ${count} 处  [警告]${RESET}"
+    echo "$matches" | head -5 | while read -r line; do [ -n "$line" ] && echo "     ${line}"; done
+    WARN_COUNT=$((WARN_COUNT + 1))
+  fi
+}
+
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 STAGED=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep '\.ts$' | grep -v node_modules || true)
+STAGED_ALL=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep -v node_modules || true)
+STAGED_SRC=$(echo "$STAGED_ALL" | grep -E '^src/|^tests/|^packages/|^scripts/' | grep -v 'scripts/pre-commit-check.sh\|scripts/check-secrets.sh\|scripts/check-file-driven.sh\|scripts/workflow/' || true)
+NEW_IMPL=$(git diff --cached --name-only --diff-filter=A 2>/dev/null | grep "^src/" | grep "\.ts$" | grep -v "\.test\." | grep -v "\.d\.ts" | grep -v "types\.ts$\|index\.ts$\|helpers\.ts$" || true)
 
 echo ""
 echo "═══════════════════════════════════════════════════════════"
-echo "  Loop Engineering v3.5 — pre-commit (5 项)"
+echo "  Loop Engineering v3.6 — pre-commit (8 组)"
 echo "═══════════════════════════════════════════════════════════"
 echo ""
 
-# ═══ 1. as any = 0 ═══
+# ═══════════════════════════════════════════════════════════════════
+# 组 1: 类型安全 + 硬编码数据 (原 1, 10, 13 合并)
+#
+# Anthropic 决策: 原则 6 "找到根因" — `as any` 不是语法错误，是类型系统的信任崩溃。
+#   一次 `as any` 意味着"我不确定这个类型，跳过检查"——而这恰好是所有类型相关 bug
+#   的入口。47 次历史事故证明: 零容忍是唯一正确的策略。
+#   硬编码业务数据 (部门名/可扩展实体列表) 的根因相同——把应该是数据的东西写成了代码。
+#   历史: 47 次 as any 导致运行时崩溃。2026-05 engine-core 拆分中，20 个桥接文件
+#         大量使用 as any 绕过类型检查，17 处 CJS require() 在 ESM 下崩溃。
+# ═══════════════════════════════════════════════════════════════════
+echo -e "${CYAN}── 组 1/8: 类型安全 + 硬编码数据 ──${RESET}"
+
+# 1a. as any 零容忍
 M=$(grep -rn 'as any\b' src/ --include="*.ts" 2>/dev/null \
   | grep -v "node_modules" | grep -v "\.test\." | grep -v "\.d\.ts" || true)
-hard_check "铁律 38: as any 零容忍" "$M"
+hard_check "as any 零容忍 (铁律 38)" "$M"
 
-# ═══ 2. empty catch → log ═══
+# 1b. 硬编码业务数据 (合并原 10 + 13: 硬编码联合类型/数组/Set/DEFAULT_* + 部门名等)
+STAGED_HTML=$(echo "$STAGED_ALL" | grep -E '\.(html|ts)$' | grep -v node_modules | grep -v '\.test\.' || true)
+HARDCODE_DATA=""
+if [ -n "$STAGED_HTML" ]; then
+  for hf in $STAGED_HTML; do
+    [ -z "$hf" ] && continue; [ ! -f "$hf" ] && continue
+    DEPS=$(grep -n "'marketing'\|'sales'\|'finance'\|'研发部'\|'市场部'\|'销售部'" "$hf" 2>/dev/null | grep -v "import\|export\|//\|/\*\|token.split\|dept.*=" | head -3 || true)
+    [ -n "$DEPS" ] && HARDCODE_DATA="${HARDCODE_DATA}  ${hf}: 可能硬编码业务数据(如部门名)\n"
+  done
+fi
+# 也跑 check-hardcoded.sh 的联合类型/数组/Set/DEFAULT_* 检测 (不阻断，仅报告)
+bash "$ROOT/scripts/check-hardcoded.sh" 2>/dev/null || true
+hard_check "硬编码业务数据/类型 (禁止硬编码部门名/可扩展实体列表)" "${HARDCODE_DATA:-}"
+
+# ═══════════════════════════════════════════════════════════════════
+# 组 2: 测试质量 (原 2, 4, 12, 17 合并)
+#
+# Anthropic 决策: 原则 2 "先设计验证标准" — 测试不是写完代码后的负担，是写代码前的规格。
+#   空 catch 无 log → 静默降级 → 线上故障无迹可寻。铁律 24+31 禁止。
+#   新文件无测试 → 4 次接线失败事故 (组件通过单元测试但从未被生产代码调用)。
+#   桩测试 (<3 expect) → 假绿色 CI → 合并后才发现的回归。铁律 36: vitest 零失败。
+#   跨模块无集成测试 → bridge/context 类跨层调用，单元测试 mock 一切，集成才是真实。
+#   历史: 4 次接线失败 — 新 export 有单元测试但从未被 import。
+#         铁律 11 — 静默降级事故 (catch 空吞异常，生产环境无日志)。
+# ═══════════════════════════════════════════════════════════════════
+echo ""
+echo -e "${CYAN}── 组 2/8: 测试质量 ──${RESET}"
+
+# 2a. empty catch 无 log
 EMPTY=""
 if [ -n "$STAGED" ]; then
   while IFS= read -r file; do
-    [ -z "$file" ] && continue
-    [ ! -f "$file" ] && continue
+    [ -z "$file" ] && continue; [ ! -f "$file" ] && continue
     CATCHES=$(grep -n "catch\s*{" "$file" 2>/dev/null || true)
     if [ -n "$CATCHES" ]; then
       while IFS= read -r cline; do
-        linenum=$(echo "$cline" | cut -d: -f1)
-        [ -z "$linenum" ] && continue
+        linenum=$(echo "$cline" | cut -d: -f1); [ -z "$linenum" ] && continue
         ctx=$(sed -n "${linenum},$((linenum + 2))p" "$file" 2>/dev/null || echo "")
         if ! echo "$ctx" | grep -qE "log\.|logger\.|console\.|/\*|//"; then
           EMPTY="${EMPTY}${file}:${linenum}: 空 catch (无 log)\n"
@@ -72,16 +151,9 @@ if [ -n "$STAGED" ]; then
     fi
   done <<< "$STAGED"
 fi
-hard_check "铁律 24+31: empty catch 无 log" "${EMPTY:-}"
+hard_check "empty catch 无 log (铁律 24+31)" "${EMPTY:-}"
 
-# ═══ 3. secrets 扫描 ═══
-bash "$ROOT/scripts/check-secrets.sh"
-[ $? -ne 0 ] && HARD_FAIL=$((HARD_FAIL + 1))
-
-# ═══ 4. 新文件 → 有测试 ═══
-NEW_IMPL=$(git diff --cached --name-only --diff-filter=A 2>/dev/null \
-  | grep "^src/" | grep "\.ts$" | grep -v "\.test\." | grep -v "\.d\.ts" \
-  | grep -v "types\.ts$\|index\.ts$\|helpers\.ts$" || true)
+# 2b. 新文件配对测试 (原 4)
 MISSING_TEST=""
 if [ -n "$NEW_IMPL" ]; then
   while IFS= read -r impl; do
@@ -94,58 +166,184 @@ if [ -n "$NEW_IMPL" ]; then
     fi
   done <<< "$NEW_IMPL"
 fi
-hard_check "新文件配对: impl 必须同 commit 有 test" "${MISSING_TEST:-}"
+hard_check "新文件配对: impl 须同 commit 有 test" "${MISSING_TEST:-}"
 
-# ═══ 5. 新 export → 有调用方 ═══
+# 2c. 桩测试 + 跨模块集成测试 (原 12 + 17 合并)
+STUB_FAIL=""
+INTG_FAIL=""
+STAGED_TESTS=$(git diff --cached --name-only --diff-filter=A 2>/dev/null | grep '^tests/.*\.test\.ts$' || true)
+if [ -n "$STAGED_TESTS" ]; then
+  for tf in $STAGED_TESTS; do
+    [ -z "$tf" ] && continue; [ ! -f "$tf" ] && continue
+    EXPECT_COUNT=$(grep -c 'expect(' "$tf" 2>/dev/null || echo 0)
+    if [ "${EXPECT_COUNT:-0}" -lt 3 ]; then
+      STUB_FAIL="${STUB_FAIL}  ${tf}: 仅 ${EXPECT_COUNT} 个 expect() — 可能为桩测试（需 ≥3 个）\n"
+    fi
+  done
+fi
+if [ -n "$NEW_IMPL" ]; then
+  for nf in $NEW_IMPL; do
+    [ -z "$nf" ] && continue
+    if echo "$nf" | grep -qiE 'bridge|context|inject|dispatch|connect'; then
+      INTG_TEST=$(echo "$nf" | sed 's|^src/|tests/|; s|\.ts$|.integration.test.ts|')
+      if [ ! -f "$INTG_TEST" ]; then
+        INTG_FAIL="${INTG_FAIL}  ${nf}: 跨模块文件缺少集成测试 → ${INTG_TEST}\n"
+      fi
+    fi
+  done
+fi
+hard_check "桩测试: 新测试需 ≥3 expect()" "${STUB_FAIL:-}"
+hard_check "跨模块集成: bridge/context 类需 .integration.test.ts" "${INTG_FAIL:-}"
+
+# ═══════════════════════════════════════════════════════════════════
+# 组 3: Secrets (原 3 — 独立脚本，逻辑复杂不适合合并)
+#
+# Anthropic 决策: 原则 4 "安全边际" — Secrets 暴露是不可逆事故。
+#   一旦 API Key 进入 git 历史，即使后续 commit 删除，仍可通过 git log 恢复。
+#   全工作区扫描 (不仅暂存区) 是因为 .env 和 .claude/settings.local.json 可能含真实 Key
+#   但从未被 git add——旧门禁漏掉了它们。.claude/ 专项扫描是因为 settings.local.json
+#   可能被备份/同步到其他设备。
+#   历史: .env 真实 API Key 暴露仓库 + 飞书 App Secret 暴露 (2026-06)。
+#         旧门禁只扫暂存区 → 磁盘上的真实 Key 从未被发现，直到被备份软件同步出去。
+# ═══════════════════════════════════════════════════════════════════
+echo ""
+echo -e "${CYAN}── 组 3/8: Secrets ──${RESET}"
+bash "$ROOT/scripts/check-secrets.sh"
+[ $? -ne 0 ] && HARD_FAIL=$((HARD_FAIL + 1))
+
+# ═══════════════════════════════════════════════════════════════════
+# 组 4: 接线完整性 (原 5, 11 合并)
+#
+# Anthropic 决策: 原则 5 "逐步验证，不信任声称完成" — "写完了" != "接线了"。
+#   铁律 5: 后端能力 ≠ 用户可用的功能。写了代码但没 import → 死代码。
+#   接线深度 (原 11): import 了但从未调用 → 空 import 绕过"有调用方"检测。
+#   这是 v3.5 新增的第二层防御——agent 会 import 一个函数但不调用它来满足门禁。
+#   历史: 4 次接线失败 — 组件通过单元测试但从未被生产代码调用。
+#         v3.5 追加拿线深度检查: 开发者 import 了函数但没调用，绕过了原第 5 项。
+# ═══════════════════════════════════════════════════════════════════
+echo ""
+echo -e "${CYAN}── 组 4/8: 接线完整性 ──${RESET}"
+
+# 4a. 新 export 有调用方 (原 5)
 UNWIRED=""
 if [ -n "$NEW_IMPL" ]; then
   while IFS= read -r file; do
-    [ -z "$file" ] && continue
-    [ ! -f "$file" ] && continue
+    [ -z "$file" ] && continue; [ ! -f "$file" ] && continue
     EXPORTS=$(grep -oP 'export (function|class|const) \K\w+' "$file" 2>/dev/null || true)
     for name in $EXPORTS; do
       [ -z "$name" ] && continue
       echo "$name" | grep -qi 'mock\|fake\|_internal\|_deprecated' && continue
-      WIRED=$(grep -rn "\b${name}\b" src/server.ts src/index.ts src/agent/ src/routes/ src/sentinel/builtins.ts --include="*.ts" 2>/dev/null \
+      WIRED=$(grep -rn "\b${name}\b" src/server.ts src/index.ts src/init/ src/agent/ src/routes/ src/sentinel/builtins.ts --include="*.ts" 2>/dev/null \
         | grep -v "export.*${name}" | grep -v "$file" | head -1 || true)
-      if [ -z "$WIRED" ]; then
-        UNWIRED="${UNWIRED}${file}: export ${name} — 未在生产入口中接线\n"
-      fi
+      [ -z "$WIRED" ] && UNWIRED="${UNWIRED}${file}: export ${name} — 未在生产入口中接线\n"
     done
   done <<< "$NEW_IMPL"
 fi
 hard_check "接线审计: 新 export 必须有调用方" "${UNWIRED:-}"
 
-# ═══ 6. 禁止新 DiagnosticModule 注册 (Sentinel 替代) ═══
-# 排除本脚本自身的 self-match (注释/标题/hard_check) + import type
-NEW_DIAG_REG=$(git diff --cached -- "*.ts" "*.js" 2>/dev/null | grep "^+.*DiagnosticModule" | grep -Ev "scripts/pre-commit-check.sh|.md|.html|//|@deprecated|import type|^+++|hard_check|禁止新 DiagnosticModule|不要再使用 DiagnosticModule" || true)
-hard_check "禁止 DiagnosticModule: 新模块必须实现 Sentinel 接口" "${NEW_DIAG_REG:-}"
+# 4b. 接线深度: import 了但从未调用 (原 11)
+DEEP_FAIL=""
+if [ -n "$NEW_IMPL" ]; then
+  for file in $NEW_IMPL; do
+    [ -z "$file" ] && continue; [ ! -f "$file" ] && continue
+    EXPORTS=$(grep -oP 'export (function|class|const) \K\w+' "$file" 2>/dev/null || true)
+    for name in $EXPORTS; do
+      [ -z "$name" ] && continue
+      echo "$name" | grep -qi 'mock\|fake\|_internal\|_deprecated' && continue
+      CALL_SITES=$(grep -rn "\b${name}\b" src/server.ts src/index.ts src/agent/synova-agent.ts --include="*.ts" 2>/dev/null | grep -v "import.*${name}\b" | grep -v "export.*${name}\b" | grep -v "^\s*//\|^\s*\*" | head -1 || true)
+      IMPORT_ONLY=$(grep -rn "import.*\b${name}\b" src/server.ts src/index.ts src/agent/synova-agent.ts --include="*.ts" 2>/dev/null | head -1 || true)
+      if [ -z "$CALL_SITES" ] && [ -n "$IMPORT_ONLY" ]; then
+        DEEP_FAIL="${DEEP_FAIL}  ${file}: export ${name} — 已 import 但从未调用（空 import 绕过检测）\n"
+      fi
+    done
+  done
+fi
+hard_check "接线深度: 新 export 必须被调用(非仅 import)" "${DEEP_FAIL:-}"
 
-# ═══ 7. Task Brief 强制: 11 字段全部物理阻断 ═══
+# ═══════════════════════════════════════════════════════════════════
+# 组 5: 架构边界 + 桥接文件 (原 8, 19, 20 合并)
+#
+# Anthropic 决策: 原则 1 "第一性原理" — 五层架构的边界不是约定，是物理规律。
+#   L3 不能直接查 L5 SQLite —— 不是"不应该"，是"语义上不成立"（L3 不知道数据在哪）。
+#   铁律 46: 桥接文件 ≠ 迁移。import 代理骗过 tsc，骗不过 grep。
+#   铁律 47: "拆完了"必须由 grep 物理证明。声称完成但 grep 有结果 = 没拆完。
+#   历史: 2026-05~06 engine-core 拆分欺诈 — 被声称完成 4 次，实际 538 文件原封不动，
+#         20 个桥接文件伪装迁移。tsc 零错误（import 路径合法），但运行时 17 处 CJS
+#         require() 在 ESM 下崩溃。一个月反复承诺零实质进展。这是 Synova 最严重事故。
+#   为什么铁律 47 是警告而非阻断: task brief 可能包含历史遗留声明。但警告让问题
+#         始终可见——不可能"没注意到"。
+# ═══════════════════════════════════════════════════════════════════
+echo ""
+echo -e "${CYAN}── 组 5/8: 架构边界 + 桥接文件 ──${RESET}"
+
+# 5a. 跨层引用检测 (原 8)
+CROSS_LAYER=""
+if [ -n "$STAGED_SRC" ]; then
+  L1_TO_L4=$(echo "$STAGED_SRC" | grep -E '^src/(routes/|l1/|l1-interaction/)' | xargs grep -l "from '\.\./l4/\|from '\.\./\.\./l4/\|from '\.\./store/\|from '\.\./\.\./store/" 2>/dev/null | grep -v "knowledge-bridge-service\|\.test\." || true)
+  [ -n "$L1_TO_L4" ] && CROSS_LAYER="${CROSS_LAYER}L1→L4/L5: ${L1_TO_L4}\n"
+  L2_TO_L5=$(echo "$STAGED_SRC" | grep -E '^src/agent/' | xargs grep -l "from '\.\./store/\|from '\.\./init/" 2>/dev/null | grep -v "knowledge-bridge-service\|\.test\.\|import type" || true)
+  [ -n "$L2_TO_L5" ] && CROSS_LAYER="${CROSS_LAYER}L2→L5: ${L2_TO_L5}\n"
+  L3_TO_ENGINE=$(echo "$STAGED_SRC" | grep -E '^src/sentinel/' | xargs grep -l "from '\.\./\.\./\.\./packages/engine-core/" 2>/dev/null | grep -v "import type\|\.test\." || true)
+  [ -n "$L3_TO_ENGINE" ] && CROSS_LAYER="${CROSS_LAYER}L3→engine-core: ${L3_TO_ENGINE}\n"
+fi
+hard_check "架构边界: 禁止跨层引用 (铁律 39)" "${CROSS_LAYER:-}"
+
+# 5b. 桥接文件欺诈 (原 19: 铁律 46)
+BRIDGE_ALLOWED="src/adapters/engine-core-adapter.ts|src/init/engine-context.ts|src/types/engine-core-types.ts|src/agent/orchestrator-adapter.ts|src/l4/graph-bridge.ts|src/l4/entity-resolver-l2.ts|src/l4/engine-graph-store.ts|src/l4/diagnosis-graph-query.ts"
+BRIDGE_FAIL=""
+STAGED_SRC_FILES=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep -E '^src/.*\.ts$' | grep -v '\.test\.' || true)
+if [ -n "$STAGED_SRC_FILES" ]; then
+  for file in $STAGED_SRC_FILES; do
+    [ -z "$file" ] && continue
+    echo "$file" | grep -qE "$BRIDGE_ALLOWED" && continue
+    if grep -q "packages/engine-core" "$file" 2>/dev/null; then
+      BRIDGE_FAIL="${BRIDGE_FAIL}  ${file}: 直接引用 packages/engine-core/ (铁律 46)\n"
+    fi
+  done
+fi
+hard_check "铁律 46: 桥接文件欺诈" "${BRIDGE_FAIL:-}"
+
+# 5c. 铁律 47: 声称拆分完须 grep 零旧引用 (原 20 — 警告模式)
 TODAY=$(date +%Y-%m-%d)
-STAGED_SRC=$(git diff --cached --name-only 2>/dev/null | grep -E '^src/|^tests/|^packages/|^scripts/' | grep -v 'scripts/pre-commit-check.sh\|scripts/check-secrets.sh\|scripts/workflow/' || true)
+BRIEF=$(find "$ROOT/.claude/task-briefs/" -type f -name "${TODAY}*" 2>/dev/null | xargs ls -t 2>/dev/null | head -1)
+CLEANUP_CLAIM=""
+if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
+  if grep -qi "拆分\|迁移\|清理.*完成\|已拆\|已迁移\|已清理" "$BRIEF" 2>/dev/null; then
+    CLEANUP_CLAIM="task brief 声称拆分/迁移/清理完成 — 请确认 grep -r 'packages/engine-core' src/ 零结果"
+  fi
+fi
+warn_check "铁律 47: 声称完成须 grep 物理证明" "${CLEANUP_CLAIM:-}"
+
+# ═══════════════════════════════════════════════════════════════════
+# 组 6: Task Brief (精简为 5 核心字段 — 原 7 简化 + 原 15/16 降级)
+#
+# Anthropic 决策: 原则 0 "协作对齐前置" — task brief 是 agent 和人类的接口契约。
+#   没有 brief → agent 会假设共识 → 假设错误 → 做了一堆没人要的东西。
+#   v3.6 从 11 字段精简到 5 核心字段: 保留"必须对齐"的部分 (Q1/Q2/Q3/架构层/Done)，
+#   删除"可以后续补充"的部分 (PRD 章节引用、文件位置——已降级为警告)。
+#   越少字段 → 越可能被完整填写 → 门禁越有效。
+#   历史: 多个 task brief 因 11 字段太重在快速迭代时被跳过 (--no-verify 绕过)。
+#         v3.5 的 --no-verify 日志显示 15 次 pre-commit 失败，其中多次是因为
+#         task brief 字段不完整而非实质质量问题。
+# ═══════════════════════════════════════════════════════════════════
+echo ""
+echo -e "${CYAN}── 组 6/8: Task Brief (5 核心字段) ──${RESET}"
+
 TASK_BRIEF_MISSING=""
 TASK_BRIEF_EMPTY=""
 if [ -n "$STAGED_SRC" ]; then
-  BRIEF=$(find "$ROOT/.claude/task-briefs/" -type f -name "${TODAY}*" 2>/dev/null | xargs ls -t 2>/dev/null | head -1)
   if [ -z "$BRIEF" ]; then
     TASK_BRIEF_MISSING="今日无 task brief。请先运行: bash scripts/workflow/task-start.sh \"任务描述\""
   else
-    # ── 检查所有 11 个字段 (非空且非纯注释) ──
-    for q in "Q1:" "Q2:" "Q3:" "本任务在哪一层" "文档引用" "接口审计" "数据流" "Done 标准"; do
+    # v3.6: 精简为 5 核心字段 (从 11 字段砍半)
+    for q in "Q1:" "Q2:" "Q3:" "本任务在哪一层" "Done 标准"; do
       SECTION=$(awk "/^## $q/{found=1; next} /^## /{if(found) exit} found" "$BRIEF" 2>/dev/null)
       FILLED=$(echo "$SECTION" | grep -v "^<!--\|^$" | tr -d "[:space:]" | head -1)
       if [ -z "$FILLED" ] || [ ${#FILLED} -lt 3 ]; then
         TASK_BRIEF_EMPTY="${TASK_BRIEF_EMPTY}  $q 未填写\n"
       fi
     done
-    # ── 接口审计专项: v3.5 修复awk自匹配bug ──
-    API_SECTION=$(awk "/^## 接口审计/{found=1; next} /^## /{if(found) exit} found" "$BRIEF" 2>/dev/null)
-    API_LINES=$(echo "$API_SECTION" | grep -cE '\.(ts|js):[a-zA-Z0-9_]+' || true)
-    if [ "${API_LINES:-0}" -eq 0 ]; then
-      TASK_BRIEF_EMPTY="${TASK_BRIEF_EMPTY}  接口审计: 缺少 '文件名:函数名' 格式\n"
-    fi
-    # ── Done 标准专项: v3.5 修复awk自匹配bug ──
+    # Done 标准专项: 至少一条完成标准
     DONE_SECTION=$(awk "/^## Done 标准/{found=1; next} /^## /{if(found) exit} found" "$BRIEF" 2>/dev/null)
     DONE_CHECKED=$(echo "$DONE_SECTION" | grep -cE '^\s*- \[x\]' || true)
     DONE_EMPTY=$(echo "$DONE_SECTION" | grep -v "^##\|^<!--\|^$" | wc -l)
@@ -154,221 +352,113 @@ if [ -n "$STAGED_SRC" ]; then
     fi
   fi
 fi
-hard_check "Task Brief: 编码变更必须有今日 task brief" "${TASK_BRIEF_MISSING:-}"
-hard_check "Task Brief: 11 字段必须全部填写 (含接口审计+Done标准)" "${TASK_BRIEF_EMPTY:-}"
+hard_check "Task Brief: 编码变更须有今日 task brief" "${TASK_BRIEF_MISSING:-}"
+hard_check "Task Brief: 5 核心字段必须填写 (Q1/Q2/Q3/架构层/Done)" "${TASK_BRIEF_EMPTY:-}"
 
-# ═══ 8. 跨层引用检测 (铁律 39) ═══
-# L1(routes/l1) 不得直接 import L4/L5; L2(agent) 不得直接 import L5
-CROSS_LAYER=""
-if [ -n "$STAGED_SRC" ]; then
-  # L1(routes/l1/l1-interaction) → L4(l4) or L5(store/init)
-  L1_TO_L4=$(echo "$STAGED_SRC" | grep -E '^src/(routes/|l1/|l1-interaction/)' | xargs grep -l "from '\.\./l4/\|from '\.\./\.\./l4/\|from '\.\./store/\|from '\.\./\.\./store/" 2>/dev/null | grep -v "knowledge-bridge-service\|\.test\." || true)
-  if [ -n "$L1_TO_L4" ]; then CROSS_LAYER="${CROSS_LAYER}L1→L4/L5: ${L1_TO_L4}\n"; fi
-
-  # L2(agent) → L5(store/init) — 排除动态 import + type-only
-  L2_TO_L5=$(echo "$STAGED_SRC" | grep -E '^src/agent/' | xargs grep -l "from '\.\./store/\|from '\.\./init/" 2>/dev/null | grep -v "knowledge-bridge-service\|\.test\.\|import type" || true)
-  if [ -n "$L2_TO_L5" ]; then CROSS_LAYER="${CROSS_LAYER}L2→L5: ${L2_TO_L5}\n"; fi
-
-  # 哨兵(L3/sentinel) → engine-core 包 (违规)
-  L3_TO_ENGINE=$(echo "$STAGED_SRC" | grep -E '^src/sentinel/' | xargs grep -l "from '\.\./\.\./\.\./packages/engine-core/" 2>/dev/null | grep -v "import type\|\.test\." || true)
-  if [ -n "$L3_TO_ENGINE" ]; then CROSS_LAYER="${CROSS_LAYER}L3→engine-core: ${L3_TO_ENGINE}\n"; fi
+# v3.6 降级为警告 (原 15: PRD 章节引用, 原 16: 文件位置)
+PRD_REF=""
+if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
+  DONE_SEC=$(awk "/^## Done 标准/,/^## /" "$BRIEF" 2>/dev/null)
+  if ! echo "$DONE_SEC" | grep -qE '§[0-9]+\.[0-9]+|PRD.*§' 2>/dev/null; then
+    PRD_REF="Done 标准未引用 PRD 章节 (重大 feature 建议标注 §X.Y)"
+  fi
 fi
-hard_check "架构边界: 禁止跨层引用 (铁律 39)" "${CROSS_LAYER:-}"
+warn_check "PRD 对照: Done 标准引用 PRD 章节(可选)" "${PRD_REF:-}"
 
-# ═══ 9. 专家配置校验 (v3.5) ═══
-EXPERT_CONFIG_VALID=$(bash "$ROOT/scripts/validate-expert-config.sh" 2>&1 || true)
-EXPERT_CONFIG_OK=$?
-if [ "$EXPERT_CONFIG_OK" -ne 0 ]; then
-  HARD_FAIL=$((HARD_FAIL + 1))
-  echo -e "  ${RED}❌ 专家配置校验: yaml引用断裂  [硬阻断]${RESET}"
-  echo "$EXPERT_CONFIG_VALID" | while read -r line; do [ -n "$line" ] && echo "     ${line}"; done
-else
+# ═══════════════════════════════════════════════════════════════════
+# 组 7: 架构合规 (原 6, 9, 14, 18 合并)
+#
+# Anthropic 决策: 原则 3 "安全边际" — --no-verify 是逃生舱，但不能变成常态。
+#   DiagnosticModule 禁止: Sentinel 已替代旧的模块注册系统。新模块必须走 Sentinel 接口。
+#   专家配置校验: YAML 中的 tool/skill 引用必须真实存在——引用断裂 = 运行时崩溃。
+#   --no-verify 审计: 24h 内使用 ≥3 次 → 硬阻断。逃生舱可以临时用，但不能连续用。
+#         连续绕过门禁意味着门禁本身有问题（太慢/误杀太多）或开发者有问题（偷懒）。
+#   v3.6 把 pre-commit 从 20 项减到 8 组 (<8s) 就是为了消除"门禁太慢"这个绕过理由。
+#   数据流自检: 路由文件含硬编码业务数据但无真实 API 调用 → 可能是静态 mock 未被替换。
+#   历史: DiagnosticModule 注册表已删除但引用未清理 (agent-tool-registry.ts:386
+#         listModules() 运行时崩溃)。--no-verify 在 v2.5 被频繁使用 (38 项检查 90s)。
+# ═══════════════════════════════════════════════════════════════════
+echo ""
+echo -e "${CYAN}── 组 7/8: 架构合规 ──${RESET}"
+
+# 7a. DiagnosticModule 禁止 (原 6)
+NEW_DIAG=$(git diff --cached -- "*.ts" "*.js" 2>/dev/null | grep "^+.*DiagnosticModule" | grep -Ev "scripts/pre-commit-check.sh|.md|.html|//|@deprecated|import type|^+++|hard_check|禁止新 DiagnosticModule|不要再使用 DiagnosticModule" || true)
+hard_check "禁止 DiagnosticModule: 新模块须实现 Sentinel 接口" "${NEW_DIAG:-}"
+
+# 7b. 专家配置校验 (原 9)
+if bash "$ROOT/scripts/validate-expert-config.sh" 2>&1; then
   echo -e "  ${GREEN}✅ 专家配置校验${RESET}"
+else
+  echo -e "  ${RED}❌ 专家配置校验: yaml 引用断裂  [硬阻断]${RESET}"
+  HARD_FAIL=$((HARD_FAIL + 1))
 fi
 
-# ═══ 10. 硬编码检测 (v3.5 无限扩展审计) ═══
-# 警告不阻断——但让问题可见，无法"没注意到"
-bash "$ROOT/scripts/check-hardcoded.sh" 2>/dev/null || true
-
-# ═══ 11. v3.5: 接线深度检查 — 新export必须被调用(非仅import) ═══
-DEEP_WIRING_FAIL=""
-if [ -n "$NEW_IMPL" ]; then
-  for file in $NEW_IMPL; do
-    [ -z "$file" ] && continue
-    [ ! -f "$file" ] && continue
-    EXPORTS=$(grep -oP 'export (function|class|const) \K\w+' "$file" 2>/dev/null || true)
-    for name in $EXPORTS; do
-      [ -z "$name" ] && continue
-      echo "$name" | grep -qi 'mock\|fake\|_internal\|_deprecated' && continue
-      # 检查入口文件中该函数名是否出现在非import行（即被真正调用）
-      CALL_SITES=$(grep -rn "\b${name}\b" src/server.ts src/index.ts src/agent/synova-agent.ts --include="*.ts" 2>/dev/null | grep -v "import.*${name}\b" | grep -v "export.*${name}\b" | grep -v "^\s*//\|^\s*\*" | head -1 || true)
-      IMPORT_ONLY=$(grep -rn "import.*\b${name}\b" src/server.ts src/index.ts src/agent/synova-agent.ts --include="*.ts" 2>/dev/null | head -1 || true)
-      if [ -z "$CALL_SITES" ] && [ -n "$IMPORT_ONLY" ]; then
-        DEEP_WIRING_FAIL="${DEEP_WIRING_FAIL}  ${file}: export ${name} — 已import但从未调用（空import绕过检测）\n"
-      fi
-    done
-  done
-fi
-hard_check "v3.5 接线深度: 新export必须被调用(非仅import)" "${DEEP_WIRING_FAIL:-}"
-
-# ═══ 12. v3.5: 桩测试检测 — 新测试文件必须≥3个expect() ═══
-STUB_TEST_FAIL=""
-STAGED_TESTS=$(git diff --cached --name-only --diff-filter=A 2>/dev/null | grep '^tests/.*\.test\.ts$' || true)
-if [ -n "$STAGED_TESTS" ]; then
-  for tf in $STAGED_TESTS; do
-    [ -z "$tf" ] && continue
-    [ ! -f "$tf" ] && continue
-    EXPECT_COUNT=$(grep -c 'expect(' "$tf" 2>/dev/null || echo 0)
-    if [ "${EXPECT_COUNT:-0}" -lt 3 ]; then
-      STUB_TEST_FAIL="${STUB_TEST_FAIL}  ${tf}: 仅有 ${EXPECT_COUNT} 个expect() — 可能为桩测试（需≥3个真实断言）\n"
-    fi
-  done
-fi
-hard_check "v3.5 桩测试: 新测试需≥3 expect()" "${STUB_TEST_FAIL:-}"
-
-# ═══ 13. v3.5: 硬编码业务数据扫描 — 新HTML/路由不得硬编码业务字段 ═══
-HARDCODE_DATA_FAIL=""
-STAGED_HTML=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep -E '\.(html|ts)$' | grep -v node_modules | grep -v '\.test\.' || true)
-if [ -n "$STAGED_HTML" ]; then
-  for hf in $STAGED_HTML; do
-    [ -z "$hf" ] && continue
-    [ ! -f "$hf" ] && continue
-    # 检测硬编码的部门名/业务数据模式(非import/export上下文)
-    DEPS_HARDCODED=$(grep -n "'marketing'\|'sales'\|'finance'\|'研发部'\|'市场部'\|'销售部'" "$hf" 2>/dev/null | grep -v "import\|export\|//\|/\*\|token.split\|dept.*=" | head -3 || true)
-    if [ -n "$DEPS_HARDCODED" ]; then
-      HARDCODE_DATA_FAIL="${HARDCODE_DATA_FAIL}  ${hf}: 可能硬编码业务数据(如部门名)\n"
-    fi
-  done
-fi
-hard_check "v3.5 硬编码扫描: 禁止硬编码业务数据" "${HARDCODE_DATA_FAIL:-}"
-
-# ═══ 14. v3.5: --no-verify 审计 ═══
+# 7c. --no-verify 审计 (原 14)
 NO_VERIFY_LOG="$ROOT/.claude/no-verify.log"
 NO_VERIFY_COUNT=0
 if [ -f "$NO_VERIFY_LOG" ]; then
-  # 统计最近24小时内的 --no-verify 使用次数
-  NO_VERIFY_COUNT=$(grep -c "$(date +%Y-%m-%d)" "$NO_VERIFY_LOG" 2>/dev/null || echo 0)
+  NO_VERIFY_COUNT=$(grep -c "$(date +%Y-%m-%d)" "$NO_VERIFY_LOG" 2>/dev/null | tr -d '\r' || echo 0)
+  NO_VERIFY_COUNT=${NO_VERIFY_COUNT//[^0-9]/}
+  [ -z "$NO_VERIFY_COUNT" ] && NO_VERIFY_COUNT=0
 fi
 if [ "${NO_VERIFY_COUNT:-0}" -ge 3 ]; then
-  echo -e "  ${RED}❌ v3.5 --no-verify审计: 24h内使用${NO_VERIFY_COUNT}次—已超限  [硬阻断]${RESET}"
-  echo "    连续使用--no-verify超过2次后，第3次起必须修复根因而非绕过"
+  echo -e "  ${RED}❌ --no-verify 审计: 24h 内使用 ${NO_VERIFY_COUNT} 次 — 已超限  [硬阻断]${RESET}"
+  echo "    连续使用 --no-verify 超过 2 次后，第 3 次起必须修复根因而非绕过"
   HARD_FAIL=$((HARD_FAIL + 1))
 elif [ "${NO_VERIFY_COUNT:-0}" -ge 2 ]; then
-  echo -e "  ${YELLOW}⚠️  v3.5 --no-verify审计: 24h内使用${NO_VERIFY_COUNT}次—警告${RESET}"
-  echo "    再次使用--no-verify将阻断提交"
+  echo -e "  ${YELLOW}⚠️  --no-verify 审计: 24h 内使用 ${NO_VERIFY_COUNT} 次 — 警告${RESET}"
+else
+  echo -e "  ${GREEN}✅ --no-verify 审计${RESET}"
 fi
 
-# ═══ 15. v3.5: PRD对照清单 — Done标准必须引用PRD章节号 ═══
-PRD_REF_FAIL=""
-if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
-  DONE_SECTION=$(awk "/^## Done 标准/,/^## /" "$BRIEF" 2>/dev/null)
-  # 检查Done标准中是否包含PRD章节引用 (§X.Y或PRD §)
-  if ! echo "$DONE_SECTION" | grep -qE '§[0-9]+\.[0-9]+|PRD.*§' 2>/dev/null; then
-    PRD_REF_FAIL="Done 标准未引用 PRD 章节号 (§X.Y 格式)。请标注本任务对应 PRD 的哪个章节"
-  fi
-fi
-hard_check "v3.5 PRD对照: Done标准需引用PRD章节" "${PRD_REF_FAIL:-}"
-
-# ═══ 16. v3.5: 文件位置校验 — 新文件路径必须与brief声明匹配 ═══
-FILE_LOC_FAIL=""
-if [ -n "$NEW_IMPL" ] && [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
-  # 从brief提取声明的文件路径
-  DECLARED_FILES=$(grep -oP '`[a-z_/]+\.(ts|md|sh|html)`' "$BRIEF" 2>/dev/null | tr -d '`' || true)
-  for nf in $NEW_IMPL; do
-    [ -z "$nf" ] && continue
-    # 检查新文件是否在brief中被声明
-    if ! echo "$DECLARED_FILES" | grep -qF "$nf" 2>/dev/null; then
-      FILE_LOC_FAIL="${FILE_LOC_FAIL}  ${nf}: 新文件未在 task brief 中声明\n"
-    fi
-  done
-fi
-# 不阻断——警告模式（很多文件是自动生成的）
-if [ -n "$FILE_LOC_FAIL" ]; then
-  echo -e "  ${YELLOW}⚠️  v3.5 文件位置: 新文件未在brief声明${RESET}"
-  echo -e "$FILE_LOC_FAIL"
-fi
-
-# ═══ 17. v3.5: 跨模块集成测试 — 涉及≥2层的新功能须有.integration.test.ts ═══
-CROSS_MOD_FAIL=""
-if [ -n "$NEW_IMPL" ]; then
-  for nf in $NEW_IMPL; do
-    [ -z "$nf" ] && continue
-    # 检测是否涉及跨层（文件名含 bridge/context/inject 等关键词）
-    if echo "$nf" | grep -qiE 'bridge|context|inject|dispatch|connect'; then
-      # 检查是否有对应的集成测试
-      INTG_TEST=$(echo "$nf" | sed 's|^src/|tests/|; s|\.ts$|.integration.test.ts|')
-      if [ ! -f "$INTG_TEST" ]; then
-        CROSS_MOD_FAIL="${CROSS_MOD_FAIL}  ${nf}: 跨模块文件缺少集成测试 → ${INTG_TEST}\n"
-      fi
-    fi
-  done
-fi
-hard_check "v3.5 跨模块集成: bridge/context类需集成测试" "${CROSS_MOD_FAIL:-}"
-
-# ═══ 18. v3.5: 数据流自检 — 生成文件含真实API调用证据 ═══
-DATA_FLOW_FAIL=""
+# 7d. 数据流自检 (原 18)
 STAGED_ROUTES=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep -E '^src/routes/.*\.ts$' | grep -v '.test.' || true)
+DATA_FLOW_FAIL=""
 if [ -n "$STAGED_ROUTES" ]; then
   for rf in $STAGED_ROUTES; do
-    [ -z "$rf" ] && continue
-    [ ! -f "$rf" ] && continue
-    # 检测路由文件中是否只有硬编码数据而没有 fetch/API 调用
-    HAS_API_CALL=$(grep -c "fetch(\|await.*import\|getDatabase()\|\.search(\|\.list(\|\.recall(" "$rf" 2>/dev/null || echo 0)
-    HAS_HARDCODE=$(grep -c "'marketing'\|'sales'\|'finance'\|'研发部'\|'市场部'\|'销售部'" "$rf" 2>/dev/null || echo 0)
-    if [ "${HAS_API_CALL:-0}" -eq 0 ] && [ "${HAS_HARDCODE:-0}" -gt 0 ]; then
-      DATA_FLOW_FAIL="${DATA_FLOW_FAIL}  ${rf}: 含硬编码业务数据但无API调用——可能为静态模板\n"
+    [ -z "$rf" ] && continue; [ ! -f "$rf" ] && continue
+    HAS_API=$(grep -c "fetch(\|await.*import\|getDatabase()\|\.search(\|\.list(\|\.recall(" "$rf" 2>/dev/null || echo 0)
+    HAS_HARD=$(grep -c "'marketing'\|'sales'\|'finance'\|'研发部'\|'市场部'\|'销售部'" "$rf" 2>/dev/null || echo 0)
+    if [ "${HAS_API:-0}" -eq 0 ] && [ "${HAS_HARD:-0}" -gt 0 ]; then
+      DATA_FLOW_FAIL="${DATA_FLOW_FAIL}  ${rf}: 含硬编码业务数据但无 API 调用 — 可能为静态模板\n"
     fi
   done
 fi
-hard_check "v3.5 数据流: 路由文件需含API调用证据" "${DATA_FLOW_FAIL:-}"
+hard_check "数据流: 路由文件须含 API 调用证据" "${DATA_FLOW_FAIL:-}"
 
-# ═══ 19. v3.5 + 铁律 46: 桥接文件欺诈检测 ═══
-BRIDGE_FAIL=""
-# 仅检查暂存区中新增或修改的 src/ 文件
-STAGED_SRC=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep -E '^src/.*\.ts$' | grep -v '\.test\.' || true)
-# 白名单——唯一允许引用 engine-core 的文件
-BRIDGE_ALLOWED="src/adapters/engine-core-adapter.ts|src/init/engine-context.ts|src/types/engine-core-types.ts|src/agent/orchestrator-adapter.ts|src/l4/graph-bridge.ts|src/l4/entity-resolver-l2.ts|src/l4/engine-graph-store.ts|src/l4/diagnosis-graph-query.ts"
-if [ -n "$STAGED_SRC" ]; then
-  for file in $STAGED_SRC; do
-    [ -z "$file" ] && continue
-    if echo "$file" | grep -qE "$BRIDGE_ALLOWED"; then
-      continue  # 白名单
-    fi
-    # 检查此文件是否新增了 engine-core 引用
-    if grep -q "packages/engine-core" "$file" 2>/dev/null; then
-      BRIDGE_FAIL="${BRIDGE_FAIL}  ${file}: 直接引用 packages/engine-core/ (铁律46)\n"
-    fi
-  done
-fi
-hard_check "铁律46: 桥接文件欺诈" "${BRIDGE_FAIL:-}"
-
-# ═══ 20. 铁律 47: 声称拆分完必须 grep 零旧引用 ═══
-CLEANUP_CLAIM_FAIL=""
-if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
-  if grep -qi "拆分\|迁移\|清理\|删除.*完成\|已拆\|已迁移\|已清理" "$BRIEF" 2>/dev/null; then
-    # task brief 声称已完成拆分/迁移/清理 → 验证
-    if [ -n "$ENGINE_CORE_REFS" ]; then
-      NON_WHITELIST=$(echo "$ENGINE_CORE_REFS" | grep -vE "$BRIDGE_ALLOWED" || true)
-      if [ -n "$NON_WHITELIST" ]; then
-        CLEANUP_CLAIM_FAIL="${CLEANUP_CLAIM_FAIL}  task brief 声称拆分完成但仍有 $(echo "$NON_WHITELIST" | wc -l) 个文件引用 engine-core\n"
-      fi
-    fi
-  fi
-fi
-# 不阻断——警告模式（避免把历史 task brief 卡住）
-if [ -n "$CLEANUP_CLAIM_FAIL" ]; then
-  echo -e "  ${RED}⚠️  铁律47: 声称拆分完成但 grep 仍有旧引用${RESET}"
-  echo -e "$CLEANUP_CLAIM_FAIL"
-fi
-
-# ═══ 结果 ═══
+# ═══════════════════════════════════════════════════════════════════
+# 组 8: 🆕 文件驱动架构完整性 (v3.6 新增 — 调用 check-file-driven.sh)
+#
+# Anthropic 决策: 原则 2 "先设计验证标准" — 这是整个 V3.6 最关键的架构新增。
+#   "文件驱动"是 SynovaAgent 的核心架构承诺——新行业/新本体类型/新 LLM/新 IM 平台
+#   全部零代码接入。如果这个承诺没有物理执法，它就和被声称完成 4 次的 engine-core
+#   拆分一样——只存在于文档里。
+#   这组检查的哲学: 不是"相信开发者会遵守文件驱动"，而是"让违反文件驱动在物理上不可能"。
+#   详细检查清单见 check-file-driven.sh 头部注释。
+#   历史: 这一组阻止的是"未来必然会发生的事故"——基于 engine-core 拆分欺诈的模式推演。
+#         同样的模式: 声称文件驱动 → 有人为了方便在 src/ 加了个 enum → 没人发现 →
+#         越来越多硬编码回归 → 一年后文件驱动只剩文档里的空壳。
+# ═══════════════════════════════════════════════════════════════════
 echo ""
+echo -e "${CYAN}── 组 8/8: 文件驱动架构完整性 (v3.6 新增) ──${RESET}"
+bash "$ROOT/scripts/check-file-driven.sh"
+[ $? -ne 0 ] && HARD_FAIL=$((HARD_FAIL + 1))
+
+# ═══════════════════════════════════════════════════════════════════
+# 结果
+# ═══════════════════════════════════════════════════════════════════
+echo ""
+echo "═══════════════════════════════════════════════════════════"
 if [ "$HARD_FAIL" -gt 0 ]; then
-  echo -e "  ${RED}❌ ${HARD_FAIL} 项未通过 — 提交已拒绝${RESET}"
+  echo -e "  ${RED}❌ ${HARD_FAIL} 组未通过 — 提交已拒绝${RESET}"
+  [ "$WARN_COUNT" -gt 0 ] && echo -e "  ${YELLOW}⚠️  ${WARN_COUNT} 项警告${RESET}"
+  echo "═══════════════════════════════════════════════════════════"
   echo ""
   exit 1
 else
-  echo -e "  ${GREEN}✅ 全部通过 (含 task brief 强制)${RESET}"
+  echo -e "  ${GREEN}✅ 全部 8 组通过${RESET}"
+  [ "$WARN_COUNT" -gt 0 ] && echo -e "  ${YELLOW}⚠️  ${WARN_COUNT} 项警告 (不阻断)${RESET}"
+  echo "═══════════════════════════════════════════════════════════"
   echo ""
   exit 0
 fi

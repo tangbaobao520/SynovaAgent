@@ -1,0 +1,30 @@
+{
+  "id": "agile_scrum",
+  "name": "敏捷 Scrum",
+  "category": "math-engineering",
+  "coreInsight": "通过短周期迭代、每日站会和回顾机制，在不确定性中快速交付价值。自组织团队比外部指挥更能产生高质量成果。",
+  "applicableDecisionTypes": [
+    "团队规模",
+    "协作模式",
+    "迭代规划"
+  ],
+  "constraintPatterns": [
+    "敏捷",
+    "迭代",
+    "快速交付",
+    "Scrum",
+    "Sprint",
+    "站会"
+  ],
+  "applicableRoles": [
+    "ScrumMaster",
+    "ProductOwner",
+    "敏捷教练"
+  ],
+  "limitations": [
+    "需要团队自组织能力",
+    "大规模需要扩展框架",
+    "固定价格合同适配性差"
+  ],
+  "$id": "framework/math-engineering/agile_scrum"
+}

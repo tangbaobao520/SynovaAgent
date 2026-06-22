@@ -1,0 +1,29 @@
+{
+  "id": "open_collaboration",
+  "name": "内部开放协作",
+  "category": "law-governance",
+  "coreInsight": "将开源社区方法论（开放访问、PR式贡献、治理委员会）应用于共享知识库。Agent 对共享知识的修改应通过可追溯的提议-审查-合并流程，而非直接覆写。",
+  "applicableDecisionTypes": [
+    "代码共享",
+    "跨团队协作",
+    "知识管理"
+  ],
+  "constraintPatterns": [
+    "开放协作",
+    "PR",
+    "知识共享",
+    "跨团队贡献",
+    "审查",
+    "合并"
+  ],
+  "applicableRoles": [
+    "知识库维护者",
+    "贡献审查者",
+    "治理委员"
+  ],
+  "limitations": [
+    "贡献者激励不易设计",
+    "安全合规审查需要额外流程"
+  ],
+  "$id": "framework/law-governance/open_collaboration"
+}

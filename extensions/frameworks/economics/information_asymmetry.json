@@ -1,0 +1,69 @@
+{
+  "id": "information_asymmetry",
+  "name": "信息不对称",
+  "category": "economics",
+  "coreInsight": "交易双方掌握的信息不对等会使市场失效。最了解产品的人不一定最愿意说真话。",
+  "applicableDecisionTypes": [
+    "供应商筛选",
+    "跨境采购",
+    "合作伙伴尽职调查"
+  ],
+  "constraintPatterns": [
+    "信息",
+    "市场",
+    "供应商",
+    "跨境",
+    "合作伙伴",
+    "数据",
+    "质量",
+    "信任",
+    "验证"
+  ],
+  "applicableRoles": [
+    "市场洞察",
+    "供应商管理",
+    "数据分析",
+    "尽职调查"
+  ],
+  "limitations": [
+    "信息不对称可以通过信誉机制部分缓解",
+    "过度披露可能损害竞争优势"
+  ],
+  "skillPatterns": [
+    {
+      "name": "供应商尽职调查",
+      "summary": "基于信息不对称理论，系统评估供应商的真实能力和风险",
+      "category": "采购管理",
+      "tags": [
+        "供应商",
+        "尽调",
+        "风险"
+      ],
+      "isMarketplaceSkill": true,
+      "prerequisites": [],
+      "failureModes": [],
+      "sourceTier": "inferred",
+      "dependsOn": [],
+      "conflictsWith": [],
+      "triggers": []
+    },
+    {
+      "name": "信息验证工作流",
+      "summary": "建立多层验证机制，降低信息不对称带来的质量风险",
+      "category": "质量管理",
+      "tags": [
+        "验证",
+        "质量",
+        "审核"
+      ],
+      "isMarketplaceSkill": true,
+      "prerequisites": [],
+      "failureModes": [],
+      "sourceTier": "inferred",
+      "dependsOn": [],
+      "conflictsWith": [],
+      "triggers": []
+    }
+  ],
+  "$id": "framework/economics/information_asymmetry"
+}

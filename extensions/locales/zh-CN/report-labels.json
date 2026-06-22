@@ -1,0 +1,42 @@
+{
+  "$id": "locale/zh-CN/report-labels",
+  "language": "zh-CN",
+  "sections": {
+    "ceo_summary": "CEO 摘要",
+    "dimension_scores": "诊断维度得分",
+    "key_findings": "关键发现",
+    "root_cause_analysis": "根因分析",
+    "evidence_chain": "证据链",
+    "action_recommendations": "行动建议",
+    "data_trust": "数据可信度",
+    "cross_validation": "交叉验证",
+    "expert_sections": "专家详细诊断"
+  },
+  "dimensions": {
+    "strategic": "战略",
+    "organizational": "组织",
+    "financial": "财务",
+    "technical": "技术",
+    "marketing": "营销",
+    "operational": "运营",
+    "risk": "风险",
+    "compliance": "合规"
+  },
+  "status": {
+    "improving": "↗ 改善中",
+    "declining": "↘ 恶化中",
+    "stable": "→ 稳定",
+    "critical": "🔴 紧急",
+    "warning": "🟡 需关注",
+    "info": "🟢 信息",
+    "degraded": "⚠️ 降级运行"
+  },
+  "marketing": {
+    "category_clarity": "品类认知清晰度",
+    "category_clear": "认知清晰",
+    "category_blurred": "认知模糊",
+    "positioning_consistency": "定位一致性",
+    "differentiation": "差异化验证",
+    "three_party_alignment": "三方对齐"
+  }
+}

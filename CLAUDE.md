@@ -187,7 +187,7 @@ pre-commit 警告：`.tsx` 文件注释中出现 `*/`（非行尾的块注释结
 
 **Why**：2026-05~06，engine-core 拆分被反复声称完成，实际全部是桥接文件——538 文件原封不动，20 个桥接文件伪装成迁移。tsc 被骗过（import 路径合法），但运行时 17 处 CJS require() 在 ESM 下崩溃。一个月反复承诺零实质进展。
 
-pre-commit 硬阻断：`bash scripts/check-bridge-files.sh` — 非白名单 src/ 文件引用 `packages/engine-core` → 拒绝提交。
+pre-commit 硬阻断：`bash scripts/pre-commit-check.sh` — 非白名单 src/ 文件引用 `packages/engine-core` → 第 5 组硬阻断，拒绝提交。
 
 **铁律 47. "拆完了"必须由 grep 物理证明。**
 
@@ -233,28 +233,31 @@ LLM       → providers/ (DeepSeek, OpenAI, Gateway)
 
 ---
 
-## Loop Engineering v3.1 — 精简物理执法 + Agent 自检 + 产品对齐
+## Loop Engineering v3.6 — 8 组合并门禁 + 文件驱动架构物理执法
 
-> 2026-06-17 v2.5 → v3.0 重构 → 2026-06-19 v3.1。核心变化：
+> 2026-06-17 v2.5 → v3.0 → v3.1 → v3.5 → **v3.6 (2026-06-22)**。核心变化：
+> **v3.5: 20 项独立检查（文档说 5 项，实际 20 项→文档漂移）。**
+> **v3.6: 20 项按根因合并为 8 组（共享 grep，减少扫描）+ 新增文件驱动架构完整性门禁。**
 > **从"每犯一错加一脚本"→"找到根源，用一个机制防一类错"。**
 > **从"bash 替 agent 思考"→"agent 自问 + bash 查硬伤"。**
-> **v3.1: +产品对齐检查——task-start 后强制回答 Q1-Q4 才能写代码。**
 
 ### 设计哲学
 
 v2.5 的 38 项 pre-commit + 12 脚本 + 3 次 tsc/vitest 重跑，
 导致 `--no-verify` 泛滥——一个被绕过的门禁 = 没有门禁。
 
-v3.0 只设 5 项物理阻断（全 <1s），其他交给 agent 自检和 PostToolUse 自动化。
-**越少越会被执行。**
+v3.0 只设 5 项物理阻断。v3.5 膨胀到 20 项（文档未同步→信任危机）。
+v3.6 合并为 8 组（所有 20 项保护全保留，按根因归类共享 grep，<8s），
+新增第 8 组：文件驱动架构完整性（manifest/tags/回归/目录/pizza-chain）。
+**越少越会被执行。但少不等于丢——合并而非删除。**
 
 ### 执法架构: 五层精简
 
 ```
-📋 任务启动 (人工)   →  task-start.sh — 3 问翻译意图→规格
+📋 任务启动 (人工)   →  task-start.sh — 5 核心字段翻译意图→规格
 🧠 写前注入 (自动)    →  hook-check-memory.sh — 历史教训
 ✍️ 写后验证 (自动)    →  verify-incremental.sh — L1 oxlint → L2 tsc → L3 vitest → L4 接线
-🔴 提交阻断 (自动)    →  pre-commit 5 项 — 全部 <1s
+🔴 提交阻断 (自动)    →  pre-commit 8 组 — 全部 <8s
 🚀 推送阻断 (自动)    →  pre-push 1 项 — secrets 终扫
 ```
 
@@ -262,22 +265,29 @@ v3.0 只设 5 项物理阻断（全 <1s），其他交给 agent 自检和 PostTo
 |------|------|------|------|
 | PreToolUse | hook-check-memory.sh (教训注入) | 不阻断 | <1s |
 | PreToolUse | hook-block-write.sh (task brief 字段) | 🔴 阻断 | <1s |
-| PreToolUse | hook-enforce-v25.sh (loop-state) | 🔴 阻断 | <1s |
+| PreToolUse | hook-enforce-loop.sh (loop-state) | 🔴 阻断 | <1s |
 | PostToolUse | verify-incremental.sh (L1→L4) | 🔴 阻断 | 5-30s |
-| pre-commit | pre-commit-check.sh (5 项) | 🔴 阻断 | <5s |
+| pre-commit | pre-commit-check.sh (8 组) | 🔴 阻断 | <8s |
 | pre-push | pre-push-check.sh (secrets 终扫) | 🔴 阻断 | <3s |
 
-### pre-commit 5 项硬阻断
+### pre-commit 8 组硬阻断（v3.6 合并自 v3.5 的 20 项）
 
-| # | 检查 | 历史事故 | 耗时 |
-|---|------|---------|------|
-| 1 | `as any` = 0 | 47 次 | <1s |
-| 2 | empty catch 有 log.warn | 静默吞异常 | <1s |
-| 3 | secrets 扫描 | API key 暴露 | <1s |
-| 4 | 新文件有测试 | 4 次接线失败 | <1s |
-| 5 | 新 export 有调用方 | 4 次接线失败 | <1s |
+| 组 | 检查内容 | 合并自 v3.5 | 耗时 |
+|----|---------|------------|------|
+| **1** | **类型安全 + 硬编码数据** | as any (1) + 硬编码业务数据 (10,13) + check-hardcoded.sh | <1s |
+| **2** | **测试质量** | empty catch (2) + 测试配对 (4) + 桩测试≥3 expect (12) + 集成测试 (17) | <1s |
+| **3** | **Secrets** | 全工作区 + .claude/ + 暂存区 + .env (3) | <2s |
+| **4** | **接线完整性** | 新 export 有调用方 (5) + 接线深度 import→调用 (11) | <1s |
+| **5** | **架构边界 + 桥接** | 跨层引用 (8) + 铁律 46 桥接欺诈 (19) + 铁律 47 grep 证明 (20) | <1s |
+| **6** | **Task Brief** | 存在 + 5 核心字段 (7 精简) — PRD 章节引用 (15) 降级警告 | <1s |
+| **7** | **架构合规** | DiagnosticModule 禁止 (6) + 专家配置 (9) + --no-verify (14) + 数据流 (18) | <2s |
+| **8** | **🆕 文件驱动完整性** | manifest schema + tags 引用 + 类型回归 + 目录结构 + pizza-chain CI | <2s |
 
-### ⚡ Agent 自检 5 问（每次写完代码必答）
+> **v3.5→v3.6 变化**：检查内容零删除。20 项全部保留在 8 组中。每组一次合并 grep 替代多次独立扫描。
+> Task Brief 从 11 字段精简为 5 核心字段（Q1/Q2/Q3/架构层/Done标准）。
+> 新增第 8 组 `check-file-driven.sh` — 物理阻断文件驱动架构回退。
+
+### ⚡ Agent 自检 6 问（每次写完代码必答 — v3.6 新增文件驱动检查）
 
 > 以下检查由 agent 在 CLAUDE.md 指令下自我执行，不依赖 bash 脚本。
 > agent 能做语义理解——bash 只会 grep 模式匹配（误报如 `'community'` 被识别为硬编码凭证）。
@@ -290,24 +300,34 @@ v3.0 只设 5 项物理阻断（全 <1s），其他交给 agent 自检和 PostTo
 3. 类型安全: as any = 0？（铁律 38）
 4. 测试覆盖: 测试有 expect() 断言？（不是空壳）
 5. 残留清理: 有死代码吗？旧文件删了？旧函数还有引用？
+6. 🆕 文件驱动: 新增了硬编码类型吗？新扩展有 manifest.json 吗？tags 在 tags.json 中吗？
 ```
 
 **Why agent 自检比 bash 好**: agent 知道 `'community'` 是模块 ID 不是密码。
 grep 脚本会产生误报，误报会产生噪音，噪音会导致整条门禁链被绕过。
 
-### task-start.sh 3 问（任务启动时回答）
+### task-start.sh 5 核心字段（任务启动时填写 — v3.6 从 11 字段精简）
 
 ```
 Q1 调研: a) 业界最佳实践 b) 顶级团队怎么做 c) memory/ 里我们犯过的错
 Q2 范围: 最简实现是什么？什么可以不做？
 Q3 验收: 入口→交互→结果，三环节各是什么？
+架构层级: 本任务涉及哪几层？（L1-L5）
+Done 标准: 至少一条可验证的完成标准
 ```
 
 ### Windows 兼容性
 
-- pre-commit 仅含 grep（<5s），不含 tsc/vitest（已由 PostToolUse 跑）
+- pre-commit 8 组合并 grep（<8s），不含 tsc/vitest（已由 PostToolUse 跑）
 - 严禁 `taskkill //IM node.exe` — 会杀死所有 Node 进程（含其他 Claude Code 实例）
-- `--no-verify` 在 v3.0 下不应再需要（pre-commit <5s）
+- `--no-verify` 在 v3.6 下不应再需要（pre-commit <8s）
+- 轻量变更（≤5 行或纯非 TS 文件）跳过 tsc/vitest，仍跑 oxlint + 接线审计
+
+### v3.6 新增脚本
+
+| 脚本 | 用途 |
+|------|------|
+| check-file-driven.sh | 文件驱动架构完整性（manifest/tags/回归/目录/pizza-chain）— pre-commit 第 8 组 |
 
 ### 删除的脚本（v3.0 清理）
 
@@ -319,7 +339,7 @@ Q3 验收: 入口→交互→结果，三环节各是什么？
 | check-reality.sh | @state 注释 ≠ 正确性 |
 | hook-check-brief.sh | task brief 提醒被 task-start.sh 覆盖 |
 
-**净效果: 12 脚本 → 8 脚本, 38 项检查 → 5 项, 提交耗时 90s → <5s。**
+**净效果: v2.5 38 项 → v3.0 5 项 → v3.5 20 项（漂移）→ v3.6 8 组（合并归位）。提交耗时 v2.5 90s → v3.6 <8s。**
 
 ---
 
@@ -351,8 +371,8 @@ npm run workflow:deploy   # 部署后验证
 ```
 ① 任务开始 → pre-commit 强制 (Gate 0: task brief 不存在 + 未填写 → 拒绝提交)
 ② 设计完成 → pre-commit 强制 (Gate 1: SPEC.md + 设计文档不存在 → 拒绝提交)
-③ 实现完成 → pre-commit 强制 (Gate 2: 5 项物理阻断 + task brief 完整)
-④ 提交前   → Git Hook (.git/hooks/pre-commit) 5 项硬阻断（全 <5s）—— 无超时逃生舱
+③ 实现完成 → pre-commit 强制 (Gate 2: 8 组物理阻断 + task brief 完整)
+④ 提交前   → Git Hook (.git/hooks/pre-commit) 8 组硬阻断（全 <8s）—— 无超时逃生舱
 ⑤ 推送前   → Git Hook (.git/hooks/pre-push) 1 道门禁（secrets 终扫）
 ⑥ 部署后   → 人工触发 (checkpoint-deploy.sh)
 ⑦ 线上     → Cron
@@ -360,11 +380,12 @@ npm run workflow:deploy   # 部署后验证
 
 ### 物理强制说明
 
-> pre-commit 是唯一物理阻断点。①②③ 的产出物检查已全部集成到 pre-commit（5 项硬阻断）：
+> pre-commit 是唯一物理阻断点。①②③ 的产出物检查已全部集成到 pre-commit（8 组硬阻断）：
 > - 无 task brief → 不准 commit
 > - 无 SPEC.md / 设计文档 → 不准 commit
 > - 新 export 未接线 → 不准 commit
 > - 新文件无测试 → 不准 commit
+> - 🆕 manifest 不完整 / tags 非法 / 硬编码类型回归 → 不准 commit
 >
 > SessionStart + PostToolUse hooks 在写代码时持续提醒。
 
@@ -390,7 +411,7 @@ crontab -e  # 添加: */30 * * * * bash /path/to/scripts/workflow/checkpoint-run
 ## 门禁系统 (全部物理强制，零 AI 自律)
 
 ### PreToolUse Hook (写代码前)
-- Task brief 存在 + 7 字段质量检查（项目身份/Q1调研/Q2范围/Q3验收/架构层级/文档引用/接口审计）
+- Task brief 存在 + 5 核心字段质量检查（Q1调研/Q2范围/Q3验收/架构层级/Done标准）— v3.6 从 7 字段精简
 - 接口真实性反向验证（grep 确认函数签名真实存在）
 - 例外: `.claude/task-briefs/` `.claude/settings` `scripts/workflow/hook-`
 

@@ -1,0 +1,33 @@
+{
+  "id": "quality_lot_decision",
+  "name": "整批退决策框架",
+  "category": "math-engineering",
+  "coreInsight": "质量瑕疵是偶然还是系统性？连续批跟踪：单批瑕疵→让步接收，连续3批瑕疵→停止合作。单点抽样不足以区分信号和噪声。",
+  "applicableDecisionTypes": [
+    "质检标准",
+    "退货处理",
+    "供应商评估"
+  ],
+  "constraintPatterns": [
+    "质量",
+    "批次",
+    "检测",
+    "抽样",
+    "退货",
+    "缺陷",
+    "统计",
+    "标准"
+  ],
+  "applicableRoles": [
+    "质量检测",
+    "质检员",
+    "供应商评估",
+    "品质管理"
+  ],
+  "limitations": [
+    "连续批跟踪需要时间积累",
+    "小批量采购无法建立统计显著",
+    "食品/医药行业单次瑕疵即致命"
+  ],
+  "$id": "framework/math-engineering/quality_lot_decision"
+}

@@ -1,0 +1,32 @@
+{
+  "id": "localization_logistics_triangle",
+  "name": "本地化物流三角",
+  "category": "economics",
+  "coreInsight": "跨境直发/海外仓/本地仓——关税优惠、时效、成本的三角不可同时最优。选择取决于品类和阶段",
+  "applicableDecisionTypes": [
+    "logistics",
+    "supply_chain",
+    "cost_optimization"
+  ],
+  "constraintPatterns": [
+    "物流",
+    "仓储",
+    "跨境",
+    "海外仓",
+    "配送",
+    "时效",
+    "成本",
+    "本地"
+  ],
+  "applicableRoles": [
+    "物流管理",
+    "供应链",
+    "仓储规划",
+    "跨境运营"
+  ],
+  "limitations": [
+    "三角模型是简化，实际有更多变量",
+    "政策变化可能打破既有最优选择"
+  ],
+  "$id": "framework/economics/localization_logistics_triangle"
+}

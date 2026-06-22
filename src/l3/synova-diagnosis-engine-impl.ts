@@ -123,6 +123,7 @@ export class SynovaDiagnosisEngineImpl implements SynovaDiagnosisEngine {
   private llm: LLMClient;
   private tools: ToolExecutor;
   private config: EngineConfig;
+  private graphStore: Record<string, unknown> | null;
 
   constructor(
     llm: LLMClient,
@@ -131,13 +132,18 @@ export class SynovaDiagnosisEngineImpl implements SynovaDiagnosisEngine {
       maxToolRounds?: number;
       gateDataCompleteness?: number;
       gateMinHypothesisConfidence?: number;
+      /** L4 GraphStore — 哨兵数据源。未提供时哨兵降级跳过。 */
+      graphStore?: Record<string, unknown>;
     },
   ) {
     this.llm = llm;
     this.tools = tools;
+    this.graphStore = options?.graphStore || null;
     this.config = {
       ...DEFAULT_CONFIG,
-      ...options,
+      maxToolRounds: options?.maxToolRounds ?? DEFAULT_CONFIG.maxToolRounds,
+      gateDataCompleteness: options?.gateDataCompleteness ?? DEFAULT_CONFIG.gateDataCompleteness,
+      gateMinHypothesisConfidence: options?.gateMinHypothesisConfidence ?? DEFAULT_CONFIG.gateMinHypothesisConfidence,
     };
   }
 
@@ -174,9 +180,7 @@ export class SynovaDiagnosisEngineImpl implements SynovaDiagnosisEngine {
     const allRecommendations: DiagnosisReport['recommendations'] = [];
 
     const emit = (event: DiagnosisEvent): void => {
-      try { onEvent?.(event); } catch {
-        // 事件发射失败不阻断诊断
-      }
+      try { onEvent?.(event); } catch { /* degraded — event emission failure is non-blocking */ }
     };
 
     const now = (): string => new Date().toISOString();
@@ -191,6 +195,21 @@ export class SynovaDiagnosisEngineImpl implements SynovaDiagnosisEngine {
           initiator = { ...initiator, concerns: ['组织健康状况评估'] };
         }
         log.info({ teamId, concerns: initiator.concerns }, 'Phase 0: 访谈数据就绪');
+
+        // 哨兵切片: 写入 Person 节点到 L4 GraphStore
+        if (this.graphStore) {
+          try {
+            const gs = this.graphStore as { createNode(type: string, props: Record<string, unknown>, graph: string): string };
+            gs.createNode('Person', {
+              name: initiator.name,
+              teamId,
+              role: initiator.role,
+              concerns: initiator.concerns,
+            }, 'default');
+          } catch (nodeErr: unknown) {
+            log.warn({ err: nodeErr }, 'GraphStore Person 节点写入失败 — degraded');
+          }
+        }
       } catch (err: unknown) {
         log.warn({ err, teamId }, 'Phase 0 失败 — degraded');
         degradedModules.push('phase0_interview');
@@ -227,6 +246,31 @@ export class SynovaDiagnosisEngineImpl implements SynovaDiagnosisEngine {
         const dimensions = scope?.dimensions?.join(', ') || '全部 7 个维度';
         const depth = scope?.depth || DEFAULT_DEPTH;
 
+        // 哨兵切片: 调用关键人风险哨兵，注入证据
+        let sentinelContext = '';
+        if (this.graphStore) {
+          try {
+            const { checkKeyPersonRisk, formatRiskForLLM } = await import('./key-person-risk');
+            const riskResult = checkKeyPersonRisk(
+              this.graphStore as { queryNodes(type: string, filters?: Record<string, unknown>, graph?: string): Array<{ id: string; type: string; props: Record<string, unknown> }> },
+              teamId,
+            );
+            if (riskResult.findings.length > 0) {
+              for (const f of riskResult.findings) {
+                emit({
+                  type: 'expert_hypothesis', phase: 2, timestamp: now(),
+                  expert: 'org', message: f.description,
+                  findings: [{ moduleId: 'D3', summary: f.title, confidence: 0.85 }],
+                  confidence: 0.85,
+                });
+              }
+            }
+            sentinelContext = '\n' + formatRiskForLLM(riskResult);
+          } catch (sentinelErr: unknown) {
+            log.warn({ err: sentinelErr }, '哨兵调用失败 — degraded');
+          }
+        }
+
         const messages = [
           { role: 'system', content: DIAGNOSIS_SYSTEM_PROMPT },
           {
@@ -238,9 +282,9 @@ export class SynovaDiagnosisEngineImpl implements SynovaDiagnosisEngine {
               `- 关注问题: ${concerns}`,
               `- 诊断深度: ${depth}`,
               `- 分析维度: ${dimensions}`,
-              '',
+              sentinelContext,
               '请按 JSON 格式输出诊断结果。',
-            ].join('\n'),
+            ].filter(Boolean).join('\n'),
           },
         ];
 
@@ -276,7 +320,7 @@ export class SynovaDiagnosisEngineImpl implements SynovaDiagnosisEngine {
         if (jsonMatch) {
           parsed = JSON.parse(jsonMatch[0]);
         }
-      } catch {
+      } catch { /* degraded — 非 JSON 输出降级为原始文本 */
         log.warn({ teamId }, 'LLM 输出非 JSON — 使用原始文本');
         parsed = { summary: llmResult.content.slice(0, 500) };
       }
@@ -490,6 +534,7 @@ export const createSynovaDiagnosisEngine: DiagnosisEngineFactory = (
     maxToolRounds?: number;
     gateDataCompleteness?: number;
     gateMinHypothesisConfidence?: number;
+    graphStore?: Record<string, unknown>;
   },
 ): SynovaDiagnosisEngine => {
   return new SynovaDiagnosisEngineImpl(llm, tools, options);

@@ -1,0 +1,32 @@
+{
+  "id": "multi_channel_redundancy",
+  "name": "多渠道冗余策略",
+  "category": "economics",
+  "coreInsight": "单一渠道=单点风险。多个独立渠道并行运作时，任一渠道中断不影响全局。但渠道数增加会指数级提升管理复杂度——通常 3 个独立渠道是平衡点。",
+  "applicableDecisionTypes": [
+    "channel_strategy",
+    "marketing",
+    "resource_allocation"
+  ],
+  "constraintPatterns": [
+    "多渠道",
+    "冗余",
+    "平台",
+    "销售",
+    "流量",
+    "品牌",
+    "分发",
+    "营销"
+  ],
+  "applicableRoles": [
+    "渠道管理",
+    "运营策略",
+    "平台管理",
+    "营销推广"
+  ],
+  "limitations": [
+    "全渠道运营成本高",
+    "各渠道规则冲突可能导致策略矛盾"
+  ],
+  "$id": "framework/economics/multi_channel_redundancy"
+}

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://synova.dev/schemas/extension-manifest-v1.json",
+  "name": "reports",
+  "version": "1.0.0",
+  "type": "report-template",
+  "displayName": "诊断报告模板",
+  "description": "SynovaAgent 诊断报告 HTML 模板。支持 {{key}} 占位符替换。客户自定义模板优先级高于默认模板。",
+  "entryPoint": "../src/l3/report-template-loader.ts",
+  "exportKey": "loadTemplate",
+  "templates": {
+    "default": "default.hbs",
+    "executive-summary": "executive-summary.hbs"
+  },
+  "templateResolution": {
+    "priority": ["knowledge/custom/{client_id}/report.hbs", "extensions/reports/{name}.hbs", "hardcoded-fallback"],
+    "description": "客户自定义 > 行业模板 > 硬编码兜底"
+  }
+}

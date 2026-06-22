@@ -1,0 +1,33 @@
+{
+  "id": "trust_verification",
+  "name": "可信承诺验证",
+  "category": "economics",
+  "coreInsight": "口头承诺不可信时交叉验证。三证法：合同条款 + 样品检测 + 第三方背书，任一单腿站不稳。",
+  "applicableDecisionTypes": [
+    "供应商筛选",
+    "供应商评估",
+    "合作伙伴尽职调查"
+  ],
+  "constraintPatterns": [
+    "供应商",
+    "验证",
+    "信任",
+    "审核",
+    "筛选",
+    "背书",
+    "认证",
+    "检测"
+  ],
+  "applicableRoles": [
+    "供应商审核",
+    "尽职调查",
+    "质量验证",
+    "合规审查"
+  ],
+  "limitations": [
+    "验证成本可能超出收益",
+    "过度验证会延迟交易窗口",
+    "第三方背书也可能被伪造"
+  ],
+  "$id": "framework/economics/trust_verification"
+}

@@ -1,0 +1,32 @@
+{
+  "id": "second_order_thinking",
+  "name": "二阶思考",
+  "category": "economics",
+  "coreInsight": "不仅考虑决策的直接结果，还要考虑结果之后的结果。一阶思考人人会，二阶思考才产生优势。",
+  "applicableDecisionTypes": [
+    "定价策略",
+    "激励设计",
+    "供应链决策"
+  ],
+  "constraintPatterns": [
+    "战略",
+    "长期",
+    "政策",
+    "复杂",
+    "决策",
+    "规划",
+    "市场",
+    "竞争"
+  ],
+  "applicableRoles": [
+    "策略师",
+    "决策顾问",
+    "CEO",
+    "战略规划"
+  ],
+  "limitations": [
+    "二阶链越长越不可靠",
+    "过度分析可能导致决策瘫痪"
+  ],
+  "$id": "framework/economics/second_order_thinking"
+}

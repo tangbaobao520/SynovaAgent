@@ -1,0 +1,28 @@
+{
+  "id": "mckinsey_7s",
+  "name": "麦肯锡 7S 模型",
+  "category": "psychology",
+  "coreInsight": "组织成功的七个要素：战略、结构、系统、共同价值观、风格、人员、技能。共同价值观是中心。",
+  "applicableDecisionTypes": [
+    "组织诊断",
+    "变革管理",
+    "战略对齐"
+  ],
+  "constraintPatterns": [
+    "7S",
+    "麦肯锡",
+    "组织诊断",
+    "战略对齐",
+    "变革"
+  ],
+  "applicableRoles": [
+    "组织发展顾问",
+    "战略顾问",
+    "HRBP"
+  ],
+  "limitations": [
+    "7S是诊断框架不是行动方案",
+    "要素之间没有优先级"
+  ],
+  "$id": "framework/psychology/mckinsey_7s"
+}

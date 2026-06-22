@@ -1,0 +1,32 @@
+{
+  "id": "modular_vs_integrated",
+  "name": "模块化 vs 集成化",
+  "category": "math-engineering",
+  "coreInsight": "行业成熟时模块化（标准接口+可替换供应商）取代集成化（深度绑定）。标准化品类用模块化（多家比价），定制品类用集成化（深度合作）。",
+  "applicableDecisionTypes": [
+    "供应链策略",
+    "供应商选择",
+    "产品架构设计"
+  ],
+  "constraintPatterns": [
+    "架构",
+    "标准化",
+    "定制",
+    "模块",
+    "接口",
+    "供应链",
+    "集成",
+    "解耦"
+  ],
+  "applicableRoles": [
+    "架构设计",
+    "供应链策略",
+    "产品架构",
+    "标准化管理"
+  ],
+  "limitations": [
+    "模块化与集成化的边界渐进而非突变",
+    "过度模块化导致产品同质化"
+  ],
+  "$id": "framework/math-engineering/modular_vs_integrated"
+}

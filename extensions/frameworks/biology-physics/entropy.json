@@ -1,0 +1,32 @@
+{
+  "id": "entropy",
+  "name": "熵增定律",
+  "category": "biology-physics",
+  "coreInsight": "封闭系统自发趋向混乱。任何组织如果不投入能量维持秩序，就会自然衰退。",
+  "applicableDecisionTypes": [
+    "组织架构设计",
+    "流程管理",
+    "文化建设"
+  ],
+  "constraintPatterns": [
+    "流程",
+    "维护",
+    "组织",
+    "制度",
+    "纪律",
+    "秩序",
+    "持续",
+    "运营"
+  ],
+  "applicableRoles": [
+    "流程管理",
+    "运营维护",
+    "制度建设",
+    "组织发展"
+  ],
+  "limitations": [
+    "过度对抗熵增会消耗过多资源",
+    "适度混乱可能激发创新"
+  ],
+  "$id": "framework/biology-physics/entropy"
+}

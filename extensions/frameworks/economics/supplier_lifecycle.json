@@ -1,0 +1,33 @@
+{
+  "id": "supplier_lifecycle",
+  "name": "供应商生命周期管理",
+  "category": "economics",
+  "coreInsight": "区分战略性供应商（长期锁定，深度协作，共用研发）和交易型供应商（一把一清，纯价格驱动）。两者不可用同一套KPI——前者考核响应速度，后者考核单价。",
+  "applicableDecisionTypes": [
+    "供应商更换",
+    "供应商策略",
+    "合作伙伴选择"
+  ],
+  "constraintPatterns": [
+    "供应商",
+    "生命周期",
+    "采购",
+    "战略",
+    "长期",
+    "合作",
+    "关系",
+    "KPI"
+  ],
+  "applicableRoles": [
+    "供应商管理",
+    "采购策略",
+    "战略采购",
+    "合作关系管理"
+  ],
+  "limitations": [
+    "战略性供应商的判断边界模糊",
+    "交易型→战略型升级路径不易设计",
+    "同一供应商可能兼具两种属性"
+  ],
+  "$id": "framework/economics/supplier_lifecycle"
+}

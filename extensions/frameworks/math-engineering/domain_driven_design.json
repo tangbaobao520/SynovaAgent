@@ -1,0 +1,29 @@
+{
+  "id": "domain_driven_design",
+  "name": "领域驱动设计",
+  "category": "math-engineering",
+  "coreInsight": "复杂软件设计应围绕业务领域建模。限界上下文是微服务拆分的核心依据。",
+  "applicableDecisionTypes": [
+    "软件架构",
+    "服务拆分",
+    "业务建模"
+  ],
+  "constraintPatterns": [
+    "DDD",
+    "领域驱动",
+    "限界上下文",
+    "事件风暴",
+    "通用语言"
+  ],
+  "applicableRoles": [
+    "领域架构师",
+    "技术负责人",
+    "业务分析师"
+  ],
+  "limitations": [
+    "学习曲线陡峭",
+    "过度建模风险",
+    "需要领域专家深度参与"
+  ],
+  "$id": "framework/math-engineering/domain_driven_design"
+}

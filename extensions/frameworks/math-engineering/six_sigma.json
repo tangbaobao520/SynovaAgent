@@ -1,0 +1,28 @@
+{
+  "id": "six_sigma",
+  "name": "六西格玛",
+  "category": "math-engineering",
+  "coreInsight": "DMAIC流程改进方法论。用数据和统计分析替代直觉做决策。目标是将缺陷率降低到3.4/百万。",
+  "applicableDecisionTypes": [
+    "质量改进",
+    "流程优化",
+    "缺陷减少"
+  ],
+  "constraintPatterns": [
+    "六西格玛",
+    "DMAIC",
+    "质量",
+    "黑带",
+    "统计分析"
+  ],
+  "applicableRoles": [
+    "六西格玛黑带",
+    "质量经理",
+    "流程改进工程师"
+  ],
+  "limitations": [
+    "DMAIC周期长不适合快速变化场景",
+    "过度强调数据忽略质化因素"
+  ],
+  "$id": "framework/math-engineering/six_sigma"
+}

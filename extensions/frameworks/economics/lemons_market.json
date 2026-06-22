@@ -1,0 +1,33 @@
+{
+  "id": "lemons_market",
+  "name": "柠檬市场（逆向选择）",
+  "category": "economics",
+  "coreInsight": "买家无法区分质量时好货被劣货驱逐。一味压价只能筛选出最敢偷工减料的供应商。出价合理反而能降低真实成本——好供应商愿意以合理价格长期合作。",
+  "applicableDecisionTypes": [
+    "供应商筛选",
+    "定价策略",
+    "采购谈判"
+  ],
+  "constraintPatterns": [
+    "供应商",
+    "筛选",
+    "质量",
+    "定价",
+    "采购",
+    "信息",
+    "评估",
+    "选择"
+  ],
+  "applicableRoles": [
+    "供应商筛选",
+    "采购评估",
+    "质量审查",
+    "定价分析"
+  ],
+  "limitations": [
+    "高价不等于高质量",
+    "信息不对称下价格信号可能被操纵",
+    "柠檬市场效应需要足够大的参与者池"
+  ],
+  "$id": "framework/economics/lemons_market"
+}

@@ -1,0 +1,32 @@
+{
+  "id": "sunk_cost",
+  "name": "沉没成本谬误",
+  "category": "economics",
+  "coreInsight": "已经投入且不可收回的成本不应影响未来决策。但人天然倾向于为已经投入的成本继续投入。",
+  "applicableDecisionTypes": [
+    "项目终止决策",
+    "库存清理",
+    "供应商关系调整"
+  ],
+  "constraintPatterns": [
+    "项目",
+    "投资",
+    "终止",
+    "放弃",
+    "转型",
+    "退出",
+    "止损",
+    "清理"
+  ],
+  "applicableRoles": [
+    "项目评估",
+    "投资决策",
+    "资产处置",
+    "战略审核"
+  ],
+  "limitations": [
+    "承诺与一致性也是重要社会规范",
+    "完全忽略沉没成本在长期关系中不现实"
+  ],
+  "$id": "framework/economics/sunk_cost"
+}

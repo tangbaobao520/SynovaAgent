@@ -1,0 +1,20 @@
+{
+  "$schema": "https://synova.dev/schemas/extension-manifest-v1.json",
+  "name": "frameworks",
+  "version": "1.0.0",
+  "type": "framework",
+  "displayName": "认知框架库",
+  "description": "85 个跨学科多元思维模型。来自 Novis 项目遗产，为 Agent 提供多学科诊断视角。6 大类别：心理学、经济学、数学工程、医学、生物物理、法律治理。",
+  "source": "packages/engine-core/src/pipeline/phase-b/framework-library.ts (机械转换，内容不变)",
+  "totalCount": 85,
+  "categories": {
+    "psychology": 24,
+    "economics": 24,
+    "math-engineering": 18,
+    "medicine": 3,
+    "biology-physics": 4,
+    "law-governance": 12
+  },
+  "entryPoint": "../src/l3/framework-loader.ts",
+  "exportKey": "loadFrameworks"
+}

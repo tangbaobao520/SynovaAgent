@@ -1,0 +1,32 @@
+{
+  "id": "price_war_death_spiral",
+  "name": "价格战死亡螺旋",
+  "category": "economics",
+  "coreInsight": "小家电同质化→价格竞争→利润归零→无法创新→更低价格。唯一出路是差异化或成本结构优势",
+  "applicableDecisionTypes": [
+    "pricing",
+    "product_strategy",
+    "competitive_analysis"
+  ],
+  "constraintPatterns": [
+    "竞争",
+    "定价",
+    "差异化",
+    "同质化",
+    "利润",
+    "创新",
+    "成本",
+    "价格"
+  ],
+  "applicableRoles": [
+    "竞争策略",
+    "产品差异化",
+    "成本优化",
+    "创新管理"
+  ],
+  "limitations": [
+    "短期价格战有时是必要的市场策略",
+    "差异化需要持续投入"
+  ],
+  "$id": "framework/economics/price_war_death_spiral"
+}

@@ -1,0 +1,32 @@
+{
+  "id": "window_of_opportunity",
+  "name": "窗口期管理",
+  "category": "law-governance",
+  "coreInsight": "外部约束变更（法规/认证/标准）有时间窗口。窗口期内行动成本远低于窗口期后补救。忽视窗口期=被动承担数倍成本。",
+  "applicableDecisionTypes": [
+    "compliance",
+    "supply_chain",
+    "timeline_planning"
+  ],
+  "constraintPatterns": [
+    "合规",
+    "时效",
+    "窗口",
+    "截止",
+    "认证",
+    "法规",
+    "变更",
+    "期限"
+  ],
+  "applicableRoles": [
+    "合规管理",
+    "时间规划",
+    "风险预警",
+    "变更跟踪"
+  ],
+  "limitations": [
+    "外部变化不可预测",
+    "过度关注窗口期可能导致决策犹豫"
+  ],
+  "$id": "framework/law-governance/window_of_opportunity"
+}

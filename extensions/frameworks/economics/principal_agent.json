@@ -1,0 +1,69 @@
+{
+  "id": "principal_agent",
+  "name": "代理人问题",
+  "category": "economics",
+  "coreInsight": "当代理人（执行者）的利益与委托人（决策者）不一致时，代理人会优先服务自己的利益。",
+  "applicableDecisionTypes": [
+    "团队管理",
+    "外包管理",
+    "跨层级授权"
+  ],
+  "constraintPatterns": [
+    "团队",
+    "管理",
+    "外包",
+    "代理",
+    "授权",
+    "信任",
+    "监督",
+    "激励",
+    "委托"
+  ],
+  "applicableRoles": [
+    "项目经理",
+    "团队管理",
+    "监督者",
+    "激励设计"
+  ],
+  "limitations": [
+    "严格的监控会损害信任和创造力",
+    "完全一致的利益不可能实现"
+  ],
+  "skillPatterns": [
+    {
+      "name": "代理成本评估",
+      "summary": "基于代理人理论评估委托-代理结构中的利益偏离和监控成本",
+      "category": "组织设计",
+      "tags": [
+        "代理",
+        "成本",
+        "治理"
+      ],
+      "isMarketplaceSkill": true,
+      "prerequisites": [],
+      "failureModes": [],
+      "sourceTier": "inferred",
+      "dependsOn": [],
+      "conflictsWith": [],
+      "triggers": []
+    },
+    {
+      "name": "委托代理合规框架",
+      "summary": "设计监督机制和激励兼容契约，防范代理人道德风险",
+      "category": "项目管理",
+      "tags": [
+        "合规",
+        "监督",
+        "契约"
+      ],
+      "isMarketplaceSkill": true,
+      "prerequisites": [],
+      "failureModes": [],
+      "sourceTier": "inferred",
+      "dependsOn": [],
+      "conflictsWith": [],
+      "triggers": []
+    }
+  ],
+  "$id": "framework/economics/principal_agent"
+}

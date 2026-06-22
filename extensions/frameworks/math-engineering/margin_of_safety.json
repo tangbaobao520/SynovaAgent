@@ -1,0 +1,70 @@
+{
+  "id": "margin_of_safety",
+  "name": "安全边际",
+  "category": "math-engineering",
+  "coreInsight": "永远给自己留比看起来需要的更多的余量。桥梁设计承重×3，质检标准设为客户要求的1.2倍。",
+  "applicableDecisionTypes": [
+    "质检标准",
+    "库存缓冲",
+    "供应商备选数量",
+    "交付时间估算"
+  ],
+  "constraintPatterns": [
+    "供应链",
+    "质量",
+    "安全",
+    "库存",
+    "风险",
+    "缓冲",
+    "冗余",
+    "时间",
+    "资源储备"
+  ],
+  "applicableRoles": [
+    "供应链管理",
+    "质量监控",
+    "风险控制",
+    "库存规划"
+  ],
+  "limitations": [
+    "过度冗余会增加不必要的成本",
+    "在快节奏行业安全边际可能成为竞争劣势"
+  ],
+  "skillPatterns": [
+    {
+      "name": "安全库存规划",
+      "summary": "基于安全边际原理计算最优库存缓冲，平衡成本与断货风险",
+      "category": "供应链管理",
+      "tags": [
+        "库存",
+        "安全",
+        "缓冲"
+      ],
+      "isMarketplaceSkill": true,
+      "prerequisites": [],
+      "failureModes": [],
+      "sourceTier": "inferred",
+      "dependsOn": [],
+      "conflictsWith": [],
+      "triggers": []
+    },
+    {
+      "name": "质量冗余设计",
+      "summary": "在质量标准和交付时间中嵌入安全因子，降低缺陷率",
+      "category": "质量控制",
+      "tags": [
+        "质量",
+        "冗余",
+        "标准"
+      ],
+      "isMarketplaceSkill": true,
+      "prerequisites": [],
+      "failureModes": [],
+      "sourceTier": "inferred",
+      "dependsOn": [],
+      "conflictsWith": [],
+      "triggers": []
+    }
+  ],
+  "$id": "framework/math-engineering/margin_of_safety"
+}

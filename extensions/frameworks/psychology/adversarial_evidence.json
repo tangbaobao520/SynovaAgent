@@ -1,0 +1,36 @@
+{
+  "id": "adversarial_evidence",
+  "name": "对立证据强制检索",
+  "category": "psychology",
+  "coreInsight": "任何决策前必须主动检索对立证据。如果找不到反面论点，说明检索不充分而非命题为真。适用于任何有界信息 Agent。",
+  "applicableDecisionTypes": [
+    "风险评估",
+    "投资判断",
+    "安全评估",
+    "代码审查",
+    "实验设计",
+    "产品验证",
+    "合同审查"
+  ],
+  "constraintPatterns": [
+    "反面证据",
+    "对立论点",
+    "反驳",
+    "推翻",
+    "质疑",
+    "挑战假设",
+    "证伪",
+    "反面案例"
+  ],
+  "applicableRoles": [
+    "安全审计",
+    "风险评估",
+    "代码审查",
+    "决策审核"
+  ],
+  "limitations": [
+    "反面证据检索有成本上限",
+    "某些领域缺少可检索的反面证据"
+  ],
+  "$id": "framework/psychology/adversarial_evidence"
+}

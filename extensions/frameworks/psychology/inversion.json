@@ -1,0 +1,32 @@
+{
+  "id": "inversion",
+  "name": "逆向思考",
+  "category": "psychology",
+  "coreInsight": "解决一个问题，先问\"什么会导致失败\"而不是\"如何成功\"。从终局反推比正向规划更清晰。",
+  "applicableDecisionTypes": [
+    "风险评估",
+    "项目规划",
+    "供应商选择"
+  ],
+  "constraintPatterns": [
+    "风险",
+    "安全",
+    "防御",
+    "失败",
+    "逆向",
+    "漏洞",
+    "攻击",
+    "危机"
+  ],
+  "applicableRoles": [
+    "风险控制",
+    "安全顾问",
+    "质量保障",
+    "应急规划"
+  ],
+  "limitations": [
+    "过度关注负面可能导致保守",
+    "逆向思考需要跳出常规路径"
+  ],
+  "$id": "framework/psychology/inversion"
+}

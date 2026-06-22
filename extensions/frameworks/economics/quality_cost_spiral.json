@@ -1,0 +1,32 @@
+{
+  "id": "quality_cost_spiral",
+  "name": "质量-成本螺旋",
+  "category": "economics",
+  "coreInsight": "纯价格竞争→利润压缩→质量下降→更低价→恶性循环。差异化或成本结构优势是唯一出路。目标不是最便宜，是性价比最高。",
+  "applicableDecisionTypes": [
+    "pricing",
+    "product_strategy",
+    "market_positioning"
+  ],
+  "constraintPatterns": [
+    "定价",
+    "低价",
+    "质量",
+    "利润",
+    "性价比",
+    "竞争",
+    "差异化",
+    "螺旋"
+  ],
+  "applicableRoles": [
+    "定价策略",
+    "产品策略",
+    "质量监控",
+    "竞争分析"
+  ],
+  "limitations": [
+    "低价策略在初期确实能获取用户",
+    "需要区分\"价格竞争\"和\"性价比竞争\""
+  ],
+  "$id": "framework/economics/quality_cost_spiral"
+}

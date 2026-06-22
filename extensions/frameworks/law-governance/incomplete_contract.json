@@ -1,0 +1,32 @@
+{
+  "id": "incomplete_contract",
+  "name": "不完全契约",
+  "category": "law-governance",
+  "coreInsight": "合同永远写不全。\"关系契约\"（默契、共同利益、声誉）比\"正式契约\"（法律条款）更重要。选择供应商时看对方是否在乎未来合作，而非合同条款多长。",
+  "applicableDecisionTypes": [
+    "合同条款设计",
+    "供应商关系维护",
+    "合作伙伴选择"
+  ],
+  "constraintPatterns": [
+    "合同",
+    "关系",
+    "合作",
+    "长期",
+    "信任",
+    "法务",
+    "条款",
+    "协议"
+  ],
+  "applicableRoles": [
+    "合同管理",
+    "法务",
+    "合作关系",
+    "供应商维护"
+  ],
+  "limitations": [
+    "关系契约在法律上不可强制执行",
+    "企业文化差异影响\"默契\"解读"
+  ],
+  "$id": "framework/law-governance/incomplete_contract"
+}

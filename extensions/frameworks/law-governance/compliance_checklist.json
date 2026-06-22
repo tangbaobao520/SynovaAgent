@@ -1,0 +1,34 @@
+{
+  "id": "compliance_checklist",
+  "name": "合规前置检查清单",
+  "category": "law-governance",
+  "coreInsight": "跨境三道防线：关税分类（HS Code）+ 产品认证（CE/UL/FDA）+ 制裁筛查。事前检查成本通常不到事后赎货成本的1/10。",
+  "applicableDecisionTypes": [
+    "合规风险判断",
+    "供应商评估",
+    "市场进入策略"
+  ],
+  "constraintPatterns": [
+    "合规",
+    "认证",
+    "跨境",
+    "关税",
+    "法规",
+    "出口",
+    "进口",
+    "海关",
+    "制裁"
+  ],
+  "applicableRoles": [
+    "合规专员",
+    "法务",
+    "认证管理",
+    "跨境运营"
+  ],
+  "limitations": [
+    "法规变化不可预测",
+    "不同国家认证标准不互通",
+    "过度合规错失市场机会"
+  ],
+  "$id": "framework/law-governance/compliance_checklist"
+}

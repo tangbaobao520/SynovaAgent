@@ -1,0 +1,32 @@
+{
+  "id": "homogeneous_decision_risk",
+  "name": "同质化决策风险",
+  "category": "psychology",
+  "coreInsight": "同质化 Agent 群体收敛到错误共识的速度比异质化群体更快。当多个 Agent 共享相同模型/训练数据/提示模式时，它们的一致性不是\"验证\"而是\"同义反复\"。多样性不仅是公平问题——是决策安全的基础设施。",
+  "applicableDecisionTypes": [
+    "团队决策",
+    "风险评估",
+    "战略规划"
+  ],
+  "constraintPatterns": [
+    "同质化",
+    "共识",
+    "多样性",
+    "从众",
+    "异议",
+    "收敛",
+    "不同模型",
+    "独立判断"
+  ],
+  "applicableRoles": [
+    "决策分析师",
+    "多样性检查",
+    "团队设计",
+    "风险评估"
+  ],
+  "limitations": [
+    "异质化群体决策速度较慢",
+    "适度的同质化是效率的来源"
+  ],
+  "$id": "framework/psychology/homogeneous_decision_risk"
+}

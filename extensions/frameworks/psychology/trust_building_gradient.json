@@ -1,0 +1,32 @@
+{
+  "id": "trust_building_gradient",
+  "name": "信任建立梯度",
+  "category": "psychology",
+  "coreInsight": "信任不是二值变量——它沿梯度递增。关系型协作（信任基于互动历史）和契约型协作（信任基于可验证承诺）各有适用场景。错配信任模型=隐性协作成本。",
+  "applicableDecisionTypes": [
+    "partnership",
+    "negotiation",
+    "collaboration_model"
+  ],
+  "constraintPatterns": [
+    "信任",
+    "关系",
+    "契约",
+    "协作",
+    "长期",
+    "合作",
+    "梯度",
+    "渐进"
+  ],
+  "applicableRoles": [
+    "合作关系管理",
+    "协作模式设计",
+    "信任评估",
+    "长期合作策略"
+  ],
+  "limitations": [
+    "关系信任可能被滥用",
+    "契约条款仍然是最终保障"
+  ],
+  "$id": "framework/psychology/trust_building_gradient"
+}

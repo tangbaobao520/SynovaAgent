@@ -1,0 +1,32 @@
+{
+  "id": "collaborative_supplier_verification",
+  "name": "协同过滤式供应商验证",
+  "category": "psychology",
+  "coreInsight": "1个供应商说好可能是假=骗。3+客户的供应链主管都推荐同一家=可信。质量靠交叉验证，不是靠第一次见面",
+  "applicableDecisionTypes": [
+    "supplier_selection",
+    "trust_assessment",
+    "partnership"
+  ],
+  "constraintPatterns": [
+    "供应商",
+    "验证",
+    "推荐",
+    "交叉",
+    "口碑",
+    "审核",
+    "筛选",
+    "调查"
+  ],
+  "applicableRoles": [
+    "供应商审核",
+    "采购调查",
+    "供应链情报",
+    "尽职调查"
+  ],
+  "limitations": [
+    "推荐人可能有利益关联",
+    "小品类供应商圈子小，交叉验证样本不足"
+  ],
+  "$id": "framework/psychology/collaborative_supplier_verification"
+}

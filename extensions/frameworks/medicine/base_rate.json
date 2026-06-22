@@ -1,0 +1,32 @@
+{
+  "id": "base_rate",
+  "name": "基础概率",
+  "category": "medicine",
+  "coreInsight": "做判断时必须考虑事件的基础发生概率，而非只看个案特征。罕见病的阳性检测结果大概率是误报。",
+  "applicableDecisionTypes": [
+    "供应商可靠性评估",
+    "市场潜力估算",
+    "风险量化"
+  ],
+  "constraintPatterns": [
+    "数据",
+    "评估",
+    "预测",
+    "概率",
+    "统计",
+    "分析",
+    "量化",
+    "估算"
+  ],
+  "applicableRoles": [
+    "数据分析",
+    "风险评估",
+    "市场研究",
+    "决策支持"
+  ],
+  "limitations": [
+    "基础概率有时难以获取",
+    "某些情境下个案信息比基础概率更重要"
+  ],
+  "$id": "framework/medicine/base_rate"
+}
