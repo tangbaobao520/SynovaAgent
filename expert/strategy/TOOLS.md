@@ -13,3 +13,19 @@
 ## 受限工具 (需FDE确认)
 - strategy_positioning: 战略定位建议 — 必须全维度数据齐备才可调用
 - competitor_benchmark: 竞品对标分析 — 需客户提供竞争数据
+
+## 路径锁定检测 (PathDependency)
+
+当检测到组织僵化、变革阻力时调用。
+
+### 六维度锁定评估
+- division_of_labor: 基线 0.5 次/90d
+- information_flow: 基线 1.2 次/90d
+- authority_governance: 基线 0.3 次/90d
+- trust_incentive: 基线 0.4 次/90d
+- knowledge_sharing: 基线 0.8 次/90d
+- external_interface: 基线 0.6 次/90d
+
+### 输出
+- stickinessScore: 0-1 (越高越锁定)
+- lockedDimensions: 超过基线 2σ 的维度列表
