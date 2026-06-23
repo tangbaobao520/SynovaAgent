@@ -30,3 +30,18 @@ finance **不改变核心方程的数值**——它是验证器。用财务数�
 - strategy 说"赛道好" → finance 看利润率趋势是否支撑
 - biz_model 说"有定价权" → finance 看毛利率是否稳中有升
 - org 说"组织能力弱" → finance 看人力成本增速是否超过营收增速
+
+## 财务健康评估框架 (FinancialSnapshot)
+
+### 核心指标
+- 毛利率 = (收入 - 成本) / 收入
+- 人均收入 = 总收入 / 团队人数
+- 人均成本 = 总成本 / 团队人数
+
+### 健康度阈值
+- 毛利率 < 10%: critical
+- 毛利率 10-30%: warning
+- 毛利率 > 30%: ok
+
+### 数据来源
+L4 GraphStore FINANCIAL 节点（revenue/cost/token_account 类型）
