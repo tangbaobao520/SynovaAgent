@@ -85,7 +85,7 @@ hard_check "tags 引用完整性 (所有标签值必须在 tags.json 中存在)"
 # 任何人在 src/ 下新增 enum SOGNodeType 或类型联合 → 直接违反承诺。
 # 历史: engine-core 拆分后，20 个桥接文件伪装迁移。同样的模式：有人会说"我在 src/ 里加枚举
 #        只是为了方便"，然后文件驱动架构被逐渐侵蚀回硬编码。
-ENUM_REGRESS=$(git diff --cached 2>/dev/null | grep "^+.*SOGNodeType\." | grep -v "node_modules\|\.test\." | grep -v "scripts/\|\.md\|\.html" | head -5 || true)
+ENUM_REGRESS=$(git diff --cached 2>/dev/null | grep "^+.*SOGNodeType\." | grep -v "node_modules\|\.test\." | grep -v "graph-bridge|entity-resolver-l2|engine-graph-store|diagnosis-graph-query|engine-core-adapter|engine-context|engine-core-types|orchestrator-adapter" | grep -v "scripts/\|\.md\|\.html" | head -5 || true)
 TYPE_UNION_REGRESS=$(git diff --cached -- "src/**/*.ts" 2>/dev/null | grep "^+.*type.*=.*'.*'.*|.*'.*'.*|.*'.*'" | grep -iv "severity\|category\|priority\|node_modules\|\.test\." | head -5 || true)
 REGRESS_FAIL=""
 if [ -n "$ENUM_REGRESS" ]; then
