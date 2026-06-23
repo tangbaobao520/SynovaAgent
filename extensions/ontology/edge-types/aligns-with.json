@@ -1,0 +1,1 @@
+{"$id":"edge-type/aligns-with","label":"ALIGNS_WITH","tags":["strategic","organizational"],"allowedFrom":["Goal","Team","Person","Process"],"allowedTo":["Goal","Team","Person","Process"],"requiredProps":["alignmentStrength","alignmentType"],"description":"对齐关系。"}

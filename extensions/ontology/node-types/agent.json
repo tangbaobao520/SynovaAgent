@@ -1,0 +1,1 @@
+{"$id":"node-type/agent","label":"Agent","tags":["technical","machine","generic"],"requiredProps":["name"],"optionalProps":{"agentType":{"enum":["internal","external"]},"model":"string","platform":"string","status":{"enum":["active","idle","error","offline"]}},"description":"AI Agent (内部/外部)。"}

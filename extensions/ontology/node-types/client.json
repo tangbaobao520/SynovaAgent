@@ -1,0 +1,1 @@
+{"$id":"node-type/client","label":"Client","tags":["marketing","legal_entity","generic"],"requiredProps":["name"],"optionalProps":{"entityType":{"enum":["internal","external"]}},"description":"外部客户组织。"}

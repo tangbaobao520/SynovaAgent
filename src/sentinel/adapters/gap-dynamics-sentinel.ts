@@ -1,3 +1,4 @@
+import { loadComputeDegraded } from '../compute-degraded';
 /**
  * sentinel/adapters/gap-dynamics-sentinel.ts — 缝隙动力学哨兵 (D2)
  * @state: real
@@ -90,7 +91,7 @@ export const gapDynamicsSentinel: Sentinel = {
     const { now } = context;
     try {
       const teams = discoverTeams(context);
-      const mod = await import('../../sentinel/compute/gap-dynamics') as { computeDynamics(t: string): GapDynamics | null };
+      const mod = loadComputeDegraded('degraded')  as { computeDynamics(t: string): GapDynamics | null };
       const allFindings: SentinelFinding[] = []; let anyFailed = false, anyData = false; const errors: string[] = [];
       for (const tid of teams) {
         const r = await checkTeam(config.id, tid, now, (t) => mod.computeDynamics(t), (rep) => extractFindings(rep as GapDynamics, now), 'GapDynamics');

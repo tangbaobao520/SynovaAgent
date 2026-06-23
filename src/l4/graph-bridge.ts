@@ -29,7 +29,10 @@ const log = createLogger('l4/graph-bridge');
 export interface GraphStore {
   createNode(type: string, props: Record<string,unknown>, graph: string): string;
   createNodes(nodes: Array<{type:string, props:Record<string,unknown>}>, graph: string): string[];
+  /** @deprecated 使用 queryByTags 替代。标签查询支持新增类型而不需知道枚举值。 */
   queryNodes(type: string, filters?: Record<string,unknown>, graph?: string): Array<{id:string, type:string, props:Record<string,unknown>}>;
+  /** V3.8: 按标签查询节点/边。标签来自 extensions/ontology/tags.json。 */
+  queryByTags?(tags: string[], options?: { matchMode?: 'any'|'all'; graph?: string }): Array<{id:string, type:string, props:Record<string,unknown>}>;
   queryEdges(type?: string, from?: string, to?: string, graph?: string): Array<{id:string, type:string, from:string, to:string, weight:number, props:Record<string,unknown>}>;
   createEdge(type: string, from: string, to: string, weight?: number, props?: Record<string,unknown>, graph?: string): string;
   createEdges(edges: Array<{type:string, from:string, to:string, weight?:number, props?:Record<string,unknown>}>, graph: string): string[];

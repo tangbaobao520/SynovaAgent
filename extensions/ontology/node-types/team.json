@@ -1,0 +1,1 @@
+{"$id":"node-type/team","label":"Team","tags":["organizational","human","generic"],"requiredProps":["name"],"optionalProps":{"teamType":{"enum":["permanent","temporary"]}},"description":"组织内团队/部门。"}

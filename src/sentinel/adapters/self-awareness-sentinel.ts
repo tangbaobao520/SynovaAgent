@@ -1,3 +1,4 @@
+import { loadComputeDegraded } from '../compute-degraded';
 /**
  * sentinel/adapters/self-awareness-sentinel.ts — 自知偏差哨兵 (D3)
  * @state: real
@@ -75,7 +76,7 @@ export const selfAwarenessSentinel: Sentinel = {
     const { now } = context;
     try {
       const teams = discoverTeams(context);
-      const mod = await import('../../sentinel/compute/self-awareness') as unknown as { computeSelfAwareness(t: string): SelfAwarenessReport };
+      const mod = loadComputeDegraded('degraded')  as unknown as { computeSelfAwareness(t: string): SelfAwarenessReport };
       const allFindings: SentinelFinding[] = []; let anyFailed = false, anyData = false; const errors: string[] = [];
       for (const tid of teams) {
         const r = await checkTeam(config.id, tid, now, (t) => mod.computeSelfAwareness(t), (rep) => extractFindings(rep as SelfAwarenessReport, now), 'SelfAwareness');

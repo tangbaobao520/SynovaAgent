@@ -1,0 +1,1 @@
+{"$id":"node-type/financial","label":"Financial","tags":["financial","financial_entity","generic"],"requiredProps":["financialType"],"optionalProps":{"amount":"number","currency":"string"},"description":"财务实体。"}

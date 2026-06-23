@@ -388,7 +388,7 @@ V3.7 的修正: grep 只回答"这个符号在文件外部出现过吗？"（物
 
 **检测原理**：pre-commit hook 通过时写时间戳到 `.claude/last-precommit-success`。post-commit hook 检查：如果上次成功时间戳在 120 秒之前 → 本次 commit 可能用了 `--no-verify` → 写入 bypass.log。
 
-### ⚡ Agent 自检 6 问（每次写完代码必答 — v3.6 新增文件驱动检查）
+### ⚡ Agent 自检 6 问（每次写完代码必答 — v3.7 新增文件驱动检查）
 
 > 以下检查由 agent 在 CLAUDE.md 指令下自我执行，不依赖 bash 脚本。
 > agent 能做语义理解——bash 只会 grep 模式匹配（误报如 `'community'` 被识别为硬编码凭证）。
@@ -434,10 +434,10 @@ Done 标准: 至少一条可验证的完成标准
 
 - pre-commit 8 组合并 grep（<8s），不含 tsc/vitest（已由 PostToolUse 跑）
 - 严禁 `taskkill //IM node.exe` — 会杀死所有 Node 进程（含其他 Claude Code 实例）
-- `--no-verify` 在 v3.6 下不应再需要（pre-commit <8s）
+- `--no-verify` 在 V3.8 下不应再需要（pre-commit <8s）
 - 轻量变更（≤5 行或纯非 TS 文件）跳过 tsc/vitest，仍跑 oxlint + 接线审计
 
-### v3.6 新增脚本
+### V3.6/V3.7 新增脚本
 
 | 脚本 | 用途 |
 |------|------|
@@ -525,7 +525,7 @@ crontab -e  # 添加: */30 * * * * bash /path/to/scripts/workflow/checkpoint-run
 ## 门禁系统 (全部物理强制，零 AI 自律)
 
 ### PreToolUse Hook (写代码前)
-- Task brief 存在 + 5 核心字段质量检查（Q1调研/Q2范围/Q3验收/架构层级/Done标准）— v3.6 从 7 字段精简
+- Task brief 存在 + 6 核心字段质量检查（Q0定位/Q1调研/Q2范围/Q3验收/架构层级/Done标准）— V3.8 全面升级 Q0 为项目拼图+文件审计
 - 接口真实性反向验证（grep 确认函数签名真实存在）
 - 例外: `.claude/task-briefs/` `.claude/settings` `scripts/workflow/hook-`
 
@@ -539,7 +539,7 @@ crontab -e  # 添加: */30 * * * * bash /path/to/scripts/workflow/checkpoint-run
 
 | Hook | 触发时机 | 内容 |
 |------|---------|------|
-| pre-commit | `git commit` | 5 项硬阻断 (as any/empty catch/secrets/新文件测试对/新export接线) |
+| pre-commit | `git commit` | 8 组硬阻断 (类型安全+测试+Secrets+接线+架构+TaskBrief+合规+文件驱动) |
 | commit-msg | `git commit` | Conventional Commits 格式强制 |
 | post-commit | `git commit` | 决策流程建议 (decide-next.sh) |
 | pre-push | `git push` | 1 道门禁 (secrets 终扫) |
@@ -549,7 +549,7 @@ crontab -e  # 添加: */30 * * * * bash /path/to/scripts/workflow/checkpoint-run
 ## 执行原则
 
 - **先读再改** — 不假设代码内容。读 CLAUDE.md + task brief + 全量对齐手册相关章节
-- **task brief 必须先填** — PreToolUse hook 强制。7字段(项目身份/Q1调研/Q2范围/Q3验收/架构层级/文档引用/接口审计) 全部非空才能写代码
+- **task brief 必须先填** — PreToolUse hook 强制。6核心字段(Q0定位/Q1调研/Q2范围/Q3验收/架构层级/Done标准) 全部非空才能写代码
 - **接口审计从代码 grep，不凭记忆** — hook 反向验证，虚假接口拒绝写代码
 - **每写一个文件，自动验证** — PostToolUse hook 跑 vitest --related + 接线审计。失败自动进入修正循环
 - **循环最多5轮** — verify-incremental.sh 记录轮次，5轮不过停止等人工

@@ -1,0 +1,1 @@
+{"$id":"node-type/person","label":"Person","tags":["organizational","human","generic"],"requiredProps":["name"],"optionalProps":{"email":"string","role":"string"},"description":"组织内个人。对应枚举 PERSON。"}

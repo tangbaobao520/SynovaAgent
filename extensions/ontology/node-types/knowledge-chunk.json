@@ -1,0 +1,1 @@
+{"$id":"node-type/knowledge-chunk","label":"KnowledgeChunk","tags":["knowledge","data","generic"],"requiredProps":["content"],"description":"知识片段 (Auth M1 扩展)。"}

@@ -1,3 +1,4 @@
+import { loadComputeDegraded } from '../compute-degraded';
 /**
  * sentinel/adapters/seven-powers-sentinel.ts — 7 Powers 竞争壁垒哨兵 (D6)
  * @state: real
@@ -92,7 +93,7 @@ export const sevenPowersSentinel: Sentinel = {
     const { now } = context;
     try {
       const teams = discoverTeams(context);
-      const mod = await import('../../sentinel/compute/seven-powers') as { computeSevenPowers(t: string): SevenPowersReport | null };
+      const mod = loadComputeDegraded('degraded')  as { computeSevenPowers(t: string): SevenPowersReport | null };
       const allFindings: SentinelFinding[] = []; let anyFailed = false, anyData = false; const errors: string[] = [];
       for (const tid of teams) {
         const r = await checkTeam(config.id, tid, now, (t) => mod.computeSevenPowers(t), (rep) => extractFindings(rep as SevenPowersReport, now), '7Powers');

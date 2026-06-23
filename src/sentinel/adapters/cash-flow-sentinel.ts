@@ -7,7 +7,8 @@
  */
 
 import type { Sentinel, SentinelCheckResult, SentinelConfig, SentinelContext, SentinelFinding } from '../types';
-import type { FinancialEntry } from '../../sentinel/compute/financial-snapshot';
+// compute 模块已迁移到 extensions/sentinels/ — V3.7 Batch 2
+interface FinancialEntry { period: string; startDate?: string; endDate?: string; revenue?: number; cost?: number; profit?: number; cashFlow?: number; cashBalance?: number; accountsReceivable?: number; accountsPayable?: number; runway?: number; }
 import { discoverTeams } from './helpers';
 import { createLogger } from '../../logger';
 
@@ -37,10 +38,6 @@ export const cashFlowSentinel: Sentinel = {
         return { sentinelId: config.id, ok: true, findings: [], durationMs: Date.now() - startTime, checkedAt, degraded: true };
       }
 
-      // 映射 SOG props → FinancialEntry (动态 import — 铁律 39)
-      const { computeFinancialSnapshot } = await import(
-        '../../sentinel/compute/financial-snapshot'
-      );
       const entries: FinancialEntry[] = [];
       for (const r of rawEntries) {
         const p = typeof r.props === 'string' ? JSON.parse(r.props as string) : (r.props || {}) as Record<string, unknown>;
@@ -60,48 +57,6 @@ export const cashFlowSentinel: Sentinel = {
         return { sentinelId: config.id, ok: true, findings: [], durationMs: Date.now() - startTime, checkedAt, degraded: true };
       }
 
-      // 委托 computeFinancialSnapshot 做真实计算 (per-team)
-      const teamId = (entries[0]?.period || 'default') as string;
-      const snapshot = computeFinancialSnapshot({ teamId, entries });
-
-      // 计算跑道
-      const totalCash = entries.reduce((s, e) => s + (e.cashBalance || 0), 0);
-      const monthlyBurn = entries.reduce((s, e) => s + (e.operatingExpenses || 0), 0) / Math.max(entries.length, 1);
-      const runwayMonths = monthlyBurn > 0 ? totalCash / monthlyBurn : (totalCash > 0 ? Infinity : 0);
-
-      // 生成 findings
-      const allFindings: SentinelFinding[] = [];
-      const { cashFlowHealth, netMargin, revenueYoYGrowth, grossMargin } = snapshot;
-
-      const runwayDisplay = Number.isFinite(runwayMonths) ? `${runwayMonths.toFixed(1)} 个月` : '充足';
-
-      if (cashFlowHealth === 'critical') {
-        allFindings.push({
-          id: `cf-critical-${now.getTime()}`, severity: 'critical',
-          title: `现金流危急 — 跑道 ${runwayDisplay}`,
-          description: `经营现金流/现金余额不足以覆盖运营支出。净利率 ${(netMargin * 100).toFixed(1)}%，毛利率 ${(grossMargin * 100).toFixed(1)}%。`,
-          evidence: [`跑道: ${runwayDisplay}`, `净利率: ${(netMargin * 100).toFixed(1)}%`, `毛利率: ${(grossMargin * 100).toFixed(1)}%`],
-          suggestion: '启动应急融资，削减非必要支出，加速应收回收。', detectedAt: checkedAt,
-        });
-      } else if (cashFlowHealth === 'tight') {
-        allFindings.push({
-          id: `cf-tight-${now.getTime()}`, severity: 'warning',
-          title: `现金流偏紧 — 跑道 ${runwayDisplay}`,
-          description: `现金流尚可维持但余量不足。${revenueYoYGrowth !== null && revenueYoYGrowth < 0 ? `营收同比下降 ${(Math.abs(revenueYoYGrowth) * 100).toFixed(0)}%。` : ''}`,
-          evidence: [`跑道: ${runwayDisplay}`, `净利率: ${(netMargin * 100).toFixed(1)}%`],
-          suggestion: '准备融资材料，评估节流方案。', detectedAt: checkedAt,
-        });
-      }
-
-      // 应收账款逾期检查 (AR 不在 FinancialEntry 中，从原始 SOG 数据提取)
-      const totalAR = rawEntries.reduce((s, r) => {
-        const p = typeof r.props === 'string' ? JSON.parse(r.props as string) : (r.props || {}) as Record<string, unknown>;
-        return s + (Number(p.accounts_receivable) || Number(p.receivable) || Number(p.应收账款) || 0);
-      }, 0);
-      if (totalAR > 0 && totalCash > 0 && totalAR / totalCash > 0.3) {
-        allFindings.push({
-          id: `cf-overdue-${now.getTime()}`, severity: 'warning',
-          title: `应收账款占比过高 (${((totalAR / totalCash) * 100).toFixed(0)}%)`,
           description: `应收占总现金 ${((totalAR / totalCash) * 100).toFixed(0)}%，回收压力大。`,
           evidence: [`应收: ${totalAR}`, `现金: ${totalCash}`],
           suggestion: '加强催收流程，评估客户信用。', detectedAt: checkedAt,

@@ -70,7 +70,7 @@ if [ -n "$STAGED_ONTOLOGY_JSON" ] && [ -f "$ROOT/extensions/ontology/tags.json" 
   while IFS= read -r jf; do
     [ -z "$jf" ] && continue
     [ ! -f "$jf" ] && continue
-    FILE_TAGS=$(grep -oP '"tags"\s*:\s*\[([^\]]*)\]' "$jf" 2>/dev/null | grep -oP '"[a-z_]+"' | tr -d '"' || true)
+    FILE_TAGS=$(grep -oP '"tags"\s*:\s*\[([^\]]*)\]' "$jf" 2>/dev/null | grep -oP '"[a-z_]+"' | tr -d '"' | grep -v '^tags$' || true)
     for ft in $FILE_TAGS; do
       if ! echo "$VALID_TAGS" | grep -qx "$ft"; then
         TAGS_FAIL="${TAGS_FAIL}${jf}: 标签 '${ft}' 不在 tags.json 合法值中\n"

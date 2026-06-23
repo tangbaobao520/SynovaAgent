@@ -1,0 +1,1 @@
+{"$schema":"https://synova.dev/schemas/extension-manifest-v1.json","name":"industries","version":"1.0.0","type":"industry-template","displayName":"行业模板","entryPoint":"../src/l4/industry-loader.ts","exportKey":"loadIndustries","industries":4}

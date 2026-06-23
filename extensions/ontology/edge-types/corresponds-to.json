@@ -1,0 +1,1 @@
+{"$id":"edge-type/corresponds-to","label":"CORRESPONDS_TO","tags":["knowledge","data"],"allowedFrom":["Event","Document"],"allowedTo":["Event","Document","Goal"],"requiredProps":["correspondenceType","confidence"],"description":"跨源映射/关联。"}

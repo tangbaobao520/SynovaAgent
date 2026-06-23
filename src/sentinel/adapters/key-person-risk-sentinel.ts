@@ -32,14 +32,9 @@ function extractFindings(report: KPRReport, now: Date): SentinelFinding[] {
 }
 
 async function loadKPRData(teamId: string, _ctx: SentinelContext): Promise<any> {
-  // 延迟加载 engine-core cjs 模块
-  const mod = await import('../../sentinel/compute/key-person-risk') as unknown as {
-    analyzeKeyPersonRisk(p: any): KPRReport;
-    buildDependenciesFromRoles(roles: Array<{ roleId: string; roleName: string; responsibilities: string[]; teamIds: string[] }>): any[];
-    buildKnowledgeDomains(domains: Array<{ name: string; holders: string[]; criticality: string; documentationUrl: string }>): any[];
-  };
-  // 简化场景: 从 DB 加载角色和知识域 (回退到空数组)
-  return { mod, roles: [], domains: [] };
+  // compute 已迁移到 extensions/sentinels/ — V3.7 Batch 2
+  // KeyPersonRisk 已有 src/l3/key-person-risk.ts 独立实现，通过 L4 GraphStore 工作
+  return { mod: null, roles: [], domains: [] };
 }
 
 export const keyPersonRiskSentinel: Sentinel = {

@@ -1,0 +1,1 @@
+{"$id":"edge-type/consumes","label":"CONSUMES","tags":["financial","technical"],"allowedFrom":["Agent","Process"],"allowedTo":["Financial"],"requiredProps":["amount","period"],"description":"资源消耗 (Token/金钱)。"}

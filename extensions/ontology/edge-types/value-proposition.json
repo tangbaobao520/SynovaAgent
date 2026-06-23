@@ -1,0 +1,1 @@
+{"$id":"edge-type/value-proposition","label":"VALUE_PROPOSITION","tags":["strategic","marketing"],"allowedFrom":["Goal"],"allowedTo":["Client"],"optionalProps":{"alignmentStrength":"number","monetized":"boolean"},"description":"价值主张→目标客户 (P1)。"}

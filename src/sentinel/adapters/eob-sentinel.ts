@@ -1,3 +1,4 @@
+import { loadComputeDegraded } from '../compute-degraded';
 /**
  * sentinel/adapters/eob-sentinel.ts — 组织弹性边界哨兵 (D3)
  * @state: real — 2026-06-18 Week 4: 增强 finding 提取
@@ -100,7 +101,7 @@ export const eobSentinel: Sentinel = {
     const restore = swapDbForContext(context); const { now } = context;
     try {
       const teams = discoverTeams(context);
-      const mod = await import('../../sentinel/compute/eob') as unknown as { computeEOB(t: string): EOBReport | null };
+      const mod = loadComputeDegraded('degraded')  as unknown as { computeEOB(t: string): EOBReport | null };
       const allFindings: SentinelFinding[] = []; let anyFailed = false, anyData = false; const errors: string[] = [];
       for (const tid of teams) {
         const r = await checkTeam(config.id, tid, now, (t) => mod.computeEOB(t), (rep) => extractFindings(rep as EOBReport, now), 'EOB');

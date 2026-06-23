@@ -1,0 +1,1 @@
+{"$id":"edge-type/cost-driven-by","label":"COST_DRIVEN_BY","tags":["financial","operational"],"allowedFrom":["Financial"],"allowedTo":["Process","Capability","Tool"],"optionalProps":{"share":"number","costType":{"enum":["fixed","variable"]}},"description":"成本驱动 (P1)。"}

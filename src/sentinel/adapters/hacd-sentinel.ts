@@ -1,3 +1,4 @@
+import { loadComputeDegraded } from '../compute-degraded';
 /**
  * sentinel/adapters/hacd-sentinel.ts — 人机协作深度哨兵 (D3)
  * @state: real — 2026-06-18 Week 4: 增强 finding 提取
@@ -76,7 +77,7 @@ export const hacdSentinel: Sentinel = {
     const restore = swapDbForContext(context); const { now } = context;
     try {
       const teams = discoverTeams(context);
-      const mod = await import('../../sentinel/compute/hacd') as { computeHACD(t: string): HACDReport | null };
+      const mod = loadComputeDegraded('degraded')  as { computeHACD(t: string): HACDReport | null };
       const allFindings: SentinelFinding[] = []; let anyFailed = false, anyData = false; const errors: string[] = [];
       for (const tid of teams) {
         const r = await checkTeam(config.id, tid, now, (t) => mod.computeHACD(t), (rep) => extractFindings(rep as HACDReport, now), 'HACD');

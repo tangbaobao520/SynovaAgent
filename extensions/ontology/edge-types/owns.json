@@ -1,0 +1,1 @@
+{"$id":"edge-type/owns","label":"OWNS","tags":["organizational"],"allowedFrom":["Person","Team","Agent"],"allowedTo":["Process","Client","Tool","Document"],"requiredProps":["ownershipType"],"description":"所有权/责任关系。"}

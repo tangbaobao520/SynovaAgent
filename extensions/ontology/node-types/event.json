@@ -1,0 +1,1 @@
+{"$id":"node-type/event","label":"Event","tags":["operational","process","generic"],"requiredProps":["eventType","timestamp"],"description":"业务事件。"}

@@ -1,0 +1,1 @@
+{"$id":"edge-type/belongs-to","label":"BELONGS_TO","tags":["organizational"],"allowedFrom":["Person","Team","Agent","Tool"],"allowedTo":["Team"],"optionalProps":{"role":"string","joinedAt":"string"},"description":"层级归属关系。"}

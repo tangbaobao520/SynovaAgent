@@ -1,0 +1,1 @@
+{"$schema":"https://synova.dev/schemas/extension-manifest-v1.json","name":"financial-services","version":"1.0.0","type":"industry-template","displayName":"金融服务","extends":"general-enterprise","entryPoint":"./manifest.json"}

@@ -1,0 +1,1 @@
+{"$id":"edge-type/affects","label":"AFFECTS","tags":["operational","financial","risk"],"allowedFrom":["Event","Process"],"allowedTo":["Financial","Client","Risk"],"requiredProps":["direction"],"optionalProps":{"magnitude":"number"},"description":"影响关系 (正/负)。"}

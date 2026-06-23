@@ -1,0 +1,1 @@
+{"$id":"node-type/process","label":"Process","tags":["operational","process","generic"],"requiredProps":["name"],"optionalProps":{"processType":{"enum":["approval","deployment","meeting","other"]}},"description":"业务流程。"}
