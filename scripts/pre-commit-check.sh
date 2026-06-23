@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering v3.8 — pre-commit 8 组硬阻断 (全部 <8s)
+# Loop Engineering V3.9 — pre-commit 8 组硬阻断 (全部 <10s)
 #
 # v3.6 → v3.8 核心变化 (2026-06-23):
 #   + plan.json 支持: 分阶段任务可 deferred wiring/test_pairing 检查
@@ -131,7 +131,7 @@ NEW_IMPL=$(git diff --cached --name-only --diff-filter=A 2>/dev/null | grep "^sr
 
 echo ""
 echo "═══════════════════════════════════════════════════════════"
-echo "  Loop Engineering v3.8 — pre-commit (8 组)"
+echo "  Loop Engineering V3.9 — pre-commit (8 组 + 3 承诺验证)"
 echo "═══════════════════════════════════════════════════════════"
 echo ""
 
@@ -417,6 +417,14 @@ fi
 hard_check "Task Brief: 编码变更须有今日 task brief" "${TASK_BRIEF_MISSING:-}"
 hard_check "Task Brief: 6 核心字段必须填写 (Q0/Q1/Q2/Q3/架构层/Done)" "${TASK_BRIEF_EMPTY:-}"
 
+# V3.9: Done 可证伪性 — 每个 - [x] 必须包含 verify: 命令
+bash "$ROOT/scripts/check-verifiable-done.sh"
+[ $? -ne 0 ] && HARD_FAIL=$((HARD_FAIL + 1))
+
+# V3.9: Q0c 取消跟踪 — 取消的任务必须有 follow_up
+bash "$ROOT/scripts/check-q0c-tracking.sh"
+[ $? -ne 0 ] && HARD_FAIL=$((HARD_FAIL + 1))
+
 # v3.6 降级为警告 (原 15: PRD 章节引用, 原 16: 文件位置)
 PRD_REF=""
 if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
@@ -525,7 +533,10 @@ hard_check "数据流: 路由文件须含 API 调用证据" "${DATA_FLOW_FAIL:-}
 #         越来越多硬编码回归 → 一年后文件驱动只剩文档里的空壳。
 # ═══════════════════════════════════════════════════════════════════
 echo ""
-echo -e "${CYAN}── 组 8/8: 文件驱动架构完整性 (v3.6 新增) ──${RESET}"
+echo -e "${CYAN}── 组 8/8: 文件驱动架构完整性 (V3.9) ──${RESET}"
+# V3.9: 能力验收 CI — 验收测试必须通过 CI
+bash "$ROOT/scripts/check-acceptance-ci.sh"
+[ $? -ne 0 ] && HARD_FAIL=$((HARD_FAIL + 1))
 bash "$ROOT/scripts/check-file-driven.sh"
 [ $? -ne 0 ] && HARD_FAIL=$((HARD_FAIL + 1))
 

@@ -53,25 +53,16 @@ async function _initFileDrivenLoaders(): Promise<void> {
     log.warn({ err }, 'framework loader 初始化失败 — degraded');
   }
 
-  // 通知渠道 — 注册内置适配器 + 全 API 接线
+  // 通知渠道 — 文件驱动自动发现 (V3.8)
   try {
-    const { registerNotificationAdapter, unregisterNotificationAdapter, listNotificationChannels, listActiveAdapters, clearNotificationRegistry } = await import('../notifications/registry');
-    // Jira adapter
-    try {
-      const { jiraNotificationAdapter } = await import('../../extensions/notifications/jira/adapter');
-      registerNotificationAdapter(jiraNotificationAdapter);
-    } catch { /* Jira adapter not available — degraded, non-critical */ }
-    // Linear adapter
-    try {
-      const { linearNotificationAdapter } = await import('../../extensions/notifications/linear/adapter');
-      registerNotificationAdapter(linearNotificationAdapter);
-    } catch { /* Linear adapter not available — degraded */ }
+    const { loadAndRegisterNotificationAdapters } = await import('../notifications/notification-loader');
+    const { listNotificationChannels, listActiveAdapters } = await import('../notifications/registry');
+    const { registered, errors } = await loadAndRegisterNotificationAdapters();
+    if (errors.length > 0) log.warn({ errors }, '部分通知适配器注册失败 — degraded');
     listNotificationChannels();
     listActiveAdapters();
-    void unregisterNotificationAdapter; // 接线
-    void clearNotificationRegistry; // 备用热加载 — 接线
-    log.info('notification adapters 已初始化');
-  } catch (err: any) {
+    log.info({ registered }, 'notification adapters 已初始化');
+  } catch (err: unknown) {
     log.warn({ err }, 'notification adapters 初始化失败 — degraded');
   }
 
@@ -111,12 +102,14 @@ async function _initFileDrivenLoaders(): Promise<void> {
     log.warn({ err }, 'ontology loader 初始化失败 — degraded');
   }
 
-  // 适配器 (V3.8 Batch 5)
+  // 适配器 — 加载 + 接线验证 (V3.8)
   try {
     const { loadAdapters, clearAdapterCache } = await import('../l4/adapter-loader');
-    loadAdapters();
+    const { adapters, errors } = loadAdapters();
+    if (errors.length > 0) log.warn({ errors }, '部分适配器加载失败 — degraded');
     void clearAdapterCache;
-  } catch (err: any) {
+    log.info({ count: adapters.length }, 'adapter loader 已初始化');
+  } catch (err: unknown) {
     log.warn({ err }, 'adapter loader 初始化失败 — degraded');
   }
 
