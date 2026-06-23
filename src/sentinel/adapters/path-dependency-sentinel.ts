@@ -1,4 +1,3 @@
-import { loadComputeDegraded } from '../compute-degraded';
 /**
  * sentinel/adapters/path-dependency-sentinel.ts — 路径依赖检测哨兵 (D2)
  * @state: real
@@ -67,7 +66,7 @@ export const pathDependencySentinel: Sentinel = {
     const { now } = context;
     try {
       const teams = discoverTeams(context);
-      const mod = loadComputeDegraded('degraded')  as { detectPathDependency(t: string): PathDep[] };
+      const mod = await import('../../sentinel/compute/path-dependency') as { detectPathDependency(t: string): PathDep[] };
       const allFindings: SentinelFinding[] = []; let anyFailed = false, anyData = false; const errors: string[] = [];
       for (const tid of teams) {
         const r = await checkTeam(config.id, tid, now, (t) => mod.detectPathDependency(t), (rep) => extractFindings(rep as PathDep[], now), 'PathDep');

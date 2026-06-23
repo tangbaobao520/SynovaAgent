@@ -250,10 +250,9 @@ export class SynovaDiagnosisEngineImpl implements SynovaDiagnosisEngine {
         let sentinelContext = '';
         if (this.graphStore) {
           try {
-            const { SentinelRunner, formatFindingsForLLM } = await import('../sentinel/sentinel-runner');
-            const runner = new SentinelRunner();
+            const { runSentinelForTeam, formatFindingsForLLM } = await import('../sentinel/sentinel-runner');
             const store = this.graphStore as { queryNodes(type: string, filters?: Record<string, unknown>, graph?: string): Array<{ id: string; type: string; props: Record<string, unknown> }> };
-            const findings = await runner.runForTeam(teamId, store);
+            const findings = await runSentinelForTeam(teamId, store);
             if (findings.length > 0) {
               for (const f of findings) {
                 emit({ type: 'expert_hypothesis', phase: 2, timestamp: now(), expert: 'org', message: f.description, findings: [{ moduleId: 'D3', summary: f.title, confidence: 0.85 }], confidence: 0.85 });

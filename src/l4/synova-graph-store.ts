@@ -32,6 +32,8 @@ export interface SynovaGraphStore {
   createNode(type: string, props: Record<string, unknown>, graph: string): string;
   createNodes(nodes: Array<{ type: string; props: Record<string, unknown> }>, graph: string): string[];
   queryNodes(type: string, filters?: Record<string, unknown>, graph?: string): Array<{ id: string; type: string; props: Record<string, unknown> }>;
+  /** V3.8: 按标签查询节点。标签来自 extensions/ontology/tags.json。matchMode: 'any' 只要有任一标签匹配, 'all' 全部标签匹配。 */
+  queryByTags(tags: string[], options?: { matchMode?: 'any' | 'all'; graph?: string }): Array<{ id: string; type: string; props: Record<string, unknown> }>;
   queryEdges(type?: string, from?: string, to?: string, graph?: string): Array<{ id: string; type: string; from: string; to: string; weight: number; props: Record<string, unknown> }>;
   createEdge(type: string, from: string, to: string, weight?: number, props?: Record<string, unknown>, graph?: string): string;
   createEdges(edges: Array<{ type: string; from: string; to: string; weight?: number; props?: Record<string, unknown> }>, graph: string): string[];
@@ -161,6 +163,34 @@ class SynovaGraphStoreImpl implements SynovaGraphStore {
       }));
     } catch (err: unknown) {
       log.warn({ err, type }, 'queryNodes 失败');
+      return [];
+    }
+  }
+
+  queryByTags(tags: string[], options?: { matchMode?: 'any' | 'all'; graph?: string }): Array<{ id: string; type: string; props: Record<string, unknown> }> {
+    try {
+      const g = options?.graph || 'default';
+      const matchMode = options?.matchMode || 'any';
+
+      // 从 ontology-loader 获取匹配标签的节点类型
+      const { getTypesByTags } = require('./ontology-loader') as { getTypesByTags: (t: string[], m: 'any'|'all') => { nodes: Array<{label: string}> } };
+      const { nodes } = getTypesByTags(tags, matchMode);
+      const types = nodes.map(n => n.label);
+
+      if (types.length === 0) return [];
+
+      const placeholders = types.map(() => '?').join(',');
+      const sql = `SELECT id, type, props FROM graph_nodes WHERE graph = ? AND type IN (${placeholders}) AND valid_to IS NULL`;
+      const params: unknown[] = [g, ...types];
+
+      const rows = this.db.prepare(sql).all(...params);
+      return rows.map(r => ({
+        id: r.id as string,
+        type: r.type as string,
+        props: this.safeJsonParse(r.props as string),
+      }));
+    } catch (err: unknown) {
+      log.warn({ err, tags }, 'queryByTags 失败');
       return [];
     }
   }

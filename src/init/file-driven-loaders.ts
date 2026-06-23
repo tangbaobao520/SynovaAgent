@@ -88,10 +88,9 @@ async function _initFileDrivenLoaders(): Promise<void> {
 
   // 规则 — 诊断规则 + 升级策略 + 信号路由 (V3.7 Batch 3)
   try {
-    const { loadRules, getUpgradeStrategy, getSignalRouting, clearRuleCache } = await import('../l3/rule-loader');
+    const { loadRules, getUpgradeStrategy, clearRuleCache } = await import('../l3/rule-loader');
     const { rules } = loadRules();
     getUpgradeStrategy('general-enterprise'); // 接线验证
-    getSignalRouting(); // 接线验证
     void clearRuleCache; // 备用热加载 — 接线
     log.info({ diag: rules.diagnostic.length, sens: rules.sensitivity.length, strategies: rules.upgradeStrategies.length }, 'rule loader 已初始化');
   } catch (err: any) {
@@ -110,36 +109,4 @@ async function _initFileDrivenLoaders(): Promise<void> {
     log.warn({ err }, 'ontology loader 初始化失败 — degraded');
   }
 
-  // 行业模板 — 4 行业 + extends 继承 (V3.8 Batch 4)
-  try {
-    const { loadIndustries, getIndustry, listIndustries, clearIndustryCache } = await import('../l4/industry-loader');
-    loadIndustries();
-    getIndustry('saas-tech'); // 接线验证
-    listIndustries(); // 接线验证
-    void clearIndustryCache; // 接线
-    log.info('industry loader 已初始化');
-  } catch (err: any) {
-    log.warn({ err }, 'industry loader 初始化失败 — degraded');
-  }
-
-  // 商业模式 — 7 画布类型 → PKB (V3.8 Batch 4)
-  try {
-    const { loadBusinessModels, clearBusinessModelCache } = await import('../l3/business-model-loader');
-    loadBusinessModels();
-    void clearBusinessModelCache; // 接线
-    log.info('business model loader 已初始化');
-  } catch (err: any) {
-    log.warn({ err }, 'business model loader 初始化失败 — degraded');
-  }
-
-  // LLM 提供商 — 10 提供商 manifest (V3.8 Batch 4)
-  try {
-    const { loadLLMProviders, getLLMProvider, clearLLMProviderCache } = await import('../providers/llm-provider-loader');
-    const { providers } = loadLLMProviders();
-    getLLMProvider('deepseek'); // 接线验证
-    void clearLLMProviderCache; // 接线
-    log.info({ count: providers.length }, 'LLM provider loader 已初始化');
-  } catch (err: any) {
-    log.warn({ err }, 'LLM provider loader 初始化失败 — degraded');
-  }
 }

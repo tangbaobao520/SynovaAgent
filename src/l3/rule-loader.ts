@@ -103,24 +103,16 @@ export function loadRules(): { rules: LoadedRules; degraded: boolean; errors: st
 
   try {
     const diagnostic = scanDir<DiagnosticRule>(join(RULES_DIR, 'diagnostic'));
-    const sensitivity = scanDir<SensitivityRule>(join(RULES_DIR, 'diagnostic'));
     const upgradeStrategies = scanDir<UpgradeStrategy>(join(RULES_DIR, 'upgrade-strategies'));
-    const signalRouting = readJSON<SignalRouting>(join(RULES_DIR, 'signal-routing.json'));
 
     const rules: LoadedRules = {
       diagnostic: diagnostic.filter(r => r.type === 'rule'),
-      sensitivity: sensitivity.filter(r => r.type === 'sensitivity_rule') as unknown as SensitivityRule[],
+      sensitivity: [],
       upgradeStrategies,
-      signalRouting,
+      signalRouting: null,
     };
 
-    log.info({
-      diagnostic: rules.diagnostic.length,
-      sensitivity: rules.sensitivity.length,
-      strategies: rules.upgradeStrategies.length,
-      signalRouting: rules.signalRouting ? 'loaded' : 'missing',
-    }, '规则加载完成');
-
+    log.info({ diagnostic: rules.diagnostic.length, strategies: rules.upgradeStrategies.length }, '规则加载完成');
     cache = rules;
     return { rules, degraded: errors.length > 0, errors };
   } catch (err: any) {

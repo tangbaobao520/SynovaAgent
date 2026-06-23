@@ -1,4 +1,3 @@
-import { loadComputeDegraded } from '../compute-degraded';
 /**
  * sentinel/adapters/htm-sentinel.ts — 混合信任模型哨兵 (D3: 人+Agent)
  * @state: real — 2026-06-18 Week 4: 增强 finding 提取
@@ -29,7 +28,7 @@ export const htmSentinel: Sentinel = {
       const teams = discoverTeams(context);
       if (teams.length === 0) return { sentinelId: config.id, ok: true, findings: [], durationMs: 0, checkedAt, degraded: true };
 
-      const htmMod = loadComputeDegraded('degraded')  as { computeHTM(teamId: string): HTMReport | null };
+      const htmMod = await import('../../sentinel/compute/htm') as { computeHTM(teamId: string): HTMReport | null };
       const allFindings: SentinelFinding[] = []; let anyTeamHadData = false, anyTeamFailed = false; const errors: string[] = [];
 
       for (const teamId of teams) {

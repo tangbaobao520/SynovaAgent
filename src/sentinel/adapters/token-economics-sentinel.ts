@@ -1,4 +1,3 @@
-import { loadComputeDegraded } from '../compute-degraded';
 /**
  * sentinel/adapters/token-economics-sentinel.ts — 单位经济学哨兵 (D1)
  * @state: real
@@ -48,7 +47,7 @@ export const tokenEconomicsSentinel: Sentinel = {
     const restore = swapDbForContext(context); const { now } = context;
     try {
       const teams = discoverTeams(context);
-      const mod = loadComputeDegraded('degraded')  as unknown as { computeTokenEconomics(t: string, b?: any, n?: any): TokenEconReport | null };
+      const mod = await import('../../sentinel/compute/token-economics') as unknown as { computeTokenEconomics(t: string, b?: any, n?: any): TokenEconReport | null };
       const allFindings: SentinelFinding[] = []; let anyFailed = false, anyData = false; const errors: string[] = [];
       for (const tid of teams) {
         const r = await checkTeam(config.id, tid, now, (t) => mod.computeTokenEconomics(t), (rep) => extractFindings(rep as TokenEconReport, now), 'TokenEcon');

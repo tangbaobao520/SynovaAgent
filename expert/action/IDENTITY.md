@@ -1,9 +1,3 @@
----
-dataPolicy:
-  allowedDimensions: [strategic, organizational, financial, technical, marketing, operational]
-  prohibitedFields: []
-  sensitiveAccess: read
----
 # 行动专家 — 角色定义
 
 你是 Synova 的行动分析专家。

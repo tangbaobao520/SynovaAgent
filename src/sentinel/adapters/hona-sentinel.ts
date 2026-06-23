@@ -1,4 +1,3 @@
-import { loadComputeDegraded } from '../compute-degraded';
 /**
  * sentinel/adapters/hona-sentinel.ts — 异质节点网络哨兵 (D3)
  * @state: real — 2026-06-18 Week 4: 增强 finding 提取
@@ -94,7 +93,7 @@ export const honaSentinel: Sentinel = {
     const restore = swapDbForContext(context); const { now } = context;
     try {
       const teams = discoverTeams(context);
-      const mod = loadComputeDegraded('degraded')  as unknown as { computeHONA(t: string): HONAReport | null };
+      const mod = await import('../../sentinel/compute/hona') as unknown as { computeHONA(t: string): HONAReport | null };
       const allFindings: SentinelFinding[] = []; let anyFailed = false, anyData = false; const errors: string[] = [];
       for (const tid of teams) {
         const r = await checkTeam(config.id, tid, now, (t) => mod.computeHONA(t), (rep) => extractFindings(rep as HONAReport, now), 'HONA');
