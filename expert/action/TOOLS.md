@@ -13,3 +13,19 @@
 ## 受限工具 (需FDE确认)
 - resource_allocation: 资源分配建议 — 需客户预算和人员数据
 - timeline_planning: 时间线规划 — 需客户确认优先级
+
+## 缝隙动力学分析 (GapDynamics)
+
+### 六维度变化追踪
+- division_of_labor: 分工结构变化
+- information_flow: 信息流拓扑变化
+- authority_governance: 权威治理模式变化
+- trust_incentive: 信任激励体系变化
+- knowledge_sharing: 知识共享策略变化
+- external_interface: 外部接口模式变化
+
+### 输出
+- overallChangeRate: 整体变化率
+- stickyDimensions: 僵化维度数
+- 高于基线 → 说明组织在主动调整
+- 低于基线 → 说明组织僵化或稳定

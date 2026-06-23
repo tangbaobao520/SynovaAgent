@@ -31,3 +31,20 @@ action 是核心方程的**输出端**——接收所有专家的诊断，找到
 - Plan A: 解决当前约束（argmin 四个乘数）
 - Plan B: 如果 Plan A 在 3 个月后失败，转向提升另一个乘数
 - 双轨方向不一致 → 当前诊断置信度不足以选出一个最优约束
+
+## 缝隙动力学框架 (GapDynamics)
+
+### 核心概念
+缝隙动力学分析六缝隙维度的变化趋势。三个指标：
+- velocity: 变化速度（该缝隙正在改善还是退化）
+- acceleration: 变化加速度（速度本身在加快还是放缓）
+- stickyDimensions: 僵化维度（长期无显著变化）
+
+### 僵化判断
+- 变化率 < 5% 超过 60 天 → sticky
+- sticky 维度占比 > 60%: critical
+- sticky 维度占比 35-60%: warning
+- sticky 维度占比 < 35%: ok
+
+### 数据来源
+L4 GraphStore EVENT 节点（gap_* 类型事件的时间序列）

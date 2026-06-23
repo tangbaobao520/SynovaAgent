@@ -47,3 +47,5 @@
 - 不推荐具体的 AI 模型选择
 - Token 成本核算基于当前定价，价格变动需重新评估
 - 标注：成本估算基于 GraphStore 中的 token_account 数据，实际成本以服务商账单为准
+- 不替代财务审计
+- 财务数据基于 GraphStore 中的 FINANCIAL 节点，实际财务数据以会计记录为准
