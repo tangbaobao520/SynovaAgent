@@ -135,11 +135,21 @@ export async function createServer(): Promise<Server> {
     bindConnectorTools(connectorToolRegistry);
     logger.info('Connector 工具绑定完成');
 
-    // v3.6 Batch 1 — 初始化文件驱动加载器 (i18n/报告/框架/通知)
+    // V3.8 — 初始化文件驱动加载器 (i18n/报告/框架/通知/哨兵/规则/本体/适配器)
     try {
       await initFileDrivenLoaders();
     } catch (err: any) {
       logger.warn({ err }, '文件驱动加载器初始化失败 — degraded');
+    }
+
+    // V3.8 Batch 5 — ExtensionRegistry: 扫描 extensions/ 目录发现扩展
+    try {
+      const { getExtensionRegistry } = await import('@synova/extension-registry');
+      const registry = getExtensionRegistry();
+      const manifests = await registry.discover('extensions');
+      logger.info({ count: manifests.length }, 'ExtensionRegistry discover 完成');
+    } catch (err: any) {
+      logger.warn({ err }, 'ExtensionRegistry discover 失败 — degraded');
     }
   } catch (err: any) {
     logger.warn({ err }, 'Connector 工具绑定失败 — degraded');
