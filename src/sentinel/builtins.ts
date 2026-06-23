@@ -75,6 +75,5 @@ export async function registerBuiltinSentinels(): Promise<void> {
   log.info({ registered, total, cronCount, scanned: sentinelFiles.length }, '[builtins] 哨兵自动注册完成');
 }
 
-// 哨兵注册表: key-person-risk wired via SynovaDiagnosisEngineImpl Phase 2
-import { checkKeyPersonRisk, formatRiskForLLM, computeBusFactor } from '../l3/key-person-risk';
-void checkKeyPersonRisk; void formatRiskForLLM; void computeBusFactor;
+// 哨兵注册表: 文件驱动哨兵由 sentinel-loader.ts 自动发现注册 (V3.8)
+// 新增哨兵 = extensions/sentinels/{name}/manifest.json + aggregate.ts → 零代码变更

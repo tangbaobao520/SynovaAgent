@@ -75,14 +75,16 @@ async function _initFileDrivenLoaders(): Promise<void> {
     log.warn({ err }, 'notification adapters 初始化失败 — degraded');
   }
 
-  // sentinel — 哨兵加载 (V3.7 Batch 2)
+  // sentinel — 哨兵加载 + 注册 (V3.8 文件驱动化)
   try {
-    const { loadSentinels, getSentinelsByExpert, clearSentinelCache } = await import('../sentinel/sentinel-loader');
+    const { loadSentinels, registerLoadedSentinels, getSentinelsByExpert, clearSentinelCache } = await import('../sentinel/sentinel-loader');
     const { sentinels } = loadSentinels();
+    const { registered, errors } = await registerLoadedSentinels();
+    if (errors.length > 0) log.warn({ errors }, '部分哨兵注册失败 — degraded');
     getSentinelsByExpert('finance'); // 接线验证
-    void clearSentinelCache; // 备用热加载 — 接线
-    log.info({ count: sentinels.length }, 'sentinel loader 已初始化');
-  } catch (err: any) {
+    void clearSentinelCache; // 备用热加载
+    log.info({ count: sentinels.length, registered }, 'sentinel loader 已初始化');
+  } catch (err: unknown) {
     log.warn({ err }, 'sentinel loader 初始化失败 — degraded');
   }
 

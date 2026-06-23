@@ -1,0 +1,22 @@
+{
+  "$schema": "https://synova.dev/schemas/extension-manifest-v1.json",
+  "name": "key-person-risk",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "关键人风险哨兵",
+  "description": "检测组织中独占知识域的关键人员。Bus Factor < 2 → 高风险。",
+  "schedule": "0 3 * * *",
+  "expert": "org",
+  "priority": "P0",
+  "computes": ["bus-factor"],
+  "thresholds": {
+    "bus_factor": { "warning": 2, "critical": 1 }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": ["sog_graph"],
+    "dataAccess": { "allowedDimensions": ["D3"], "sensitiveAccess": "read" }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "default"
+}

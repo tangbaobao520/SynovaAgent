@@ -74,6 +74,18 @@
         "src/l3/synova-diagnosis-engine-impl.ts"
       ],
       "checks": { "wiring": "enforce", "test_pairing": "enforce" }
+    },
+    {
+      "step": 6,
+      "owner": "engine-claude",
+      "action": "wire",
+      "files": [
+        "src/sentinel/sentinel-loader.ts",
+        "src/init/file-driven-loaders.ts",
+        "extensions/sentinels/key-person-risk/manifest.json",
+        "src/sentinel/registry.ts"
+      ],
+      "checks": { "wiring": "enforce", "test_pairing": "enforce" }
     }
   ]
 }
