@@ -59,3 +59,26 @@ L4: 完全自主 — Agent独立决策
 
 ### 应用
 引擎不假设自评比观测更准。报告两个值之间的差距。
+
+## 异质节点网络分析 (HONA)
+
+评估组织中不同类型节点（人/Agent/工具/流程）之间的网络拓扑健康度。
+
+### 指标
+- 平均度数: 每个节点的平均连接数
+- 桥接节点: 度数 > 均值×1.5 的节点（承担过多连接）
+- 孤立节点: 无任何连接的节点
+
+### 健康度评分
+healthScore = 1 - 孤立节点率 - 桥接过载率×0.5
+孤立率 >30%: critical, healthScore <0.5: warning
+
+## 关键人风险检测 (KeyPersonRisk)
+
+### Bus Factor 计算
+- 统计每个知识域有多少人掌握
+- Bus Factor = 共享知识域数 + 1
+- 独占知识域 >=3: critical, >=2: high, >=1: medium
+
+### 数据来源
+L4 GraphStore Person节点（knowledge/domains/skills属性）
