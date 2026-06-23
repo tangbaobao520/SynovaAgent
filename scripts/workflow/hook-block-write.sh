@@ -94,6 +94,21 @@ fi
 # ═══ 7 个质量检查 (全部非空 = 全部硬阻断) ═══
 FAIL=0
 
+# 0. Q0 审计：项目拼图 + 文件审计（V3.8 — 写代码前必须想清楚）
+Q0A=$(awk '/^### a\)/{found=1; next} /^### b\)/{if(found) exit} found' "$BRIEF" 2>/dev/null | grep -v "^<!--\|^$" | tr -d "[:space:]" | head -1)
+Q0B=$(awk '/^### b\)/{found=1; next} /^### c\)/{if(found) exit} found' "$BRIEF" 2>/dev/null | grep -v "^<!--\|^$" | tr -d "[:space:]" | head -1)
+if [ -z "$Q0A" ] || [ ${#Q0A} -lt 10 ]; then
+  echo "⛔ Task Brief 质量 — 'Q0a: 项目拼图' 未填写"
+  echo "   必须回答: 本任务在产品的哪一块？触及哪层？该层现有模块？新增/替换/扩展？"
+  echo "   重读 CLAUDE.md §项目身份 全部内容后再回答。"
+  FAIL=1
+fi
+if [ -z "$Q0B" ] || [ ${#Q0B} -lt 10 ]; then
+  echo "⛔ Task Brief 质量 — 'Q0b: 文件审计' 未填写"
+  echo "   必须: grep 关键词在 expert/ sentinel/ extensions/ → 列出已有模块 → 复用/扩展/新建/冲突"
+  FAIL=1
+fi
+
 # 1. 项目身份：必须含 "增长导航"（确保重读了核心定位）
 if ! grep -qi "增长导航" "$BRIEF" 2>/dev/null; then
   echo "⛔ Task Brief 质量 — 缺少 '项目身份' 或未重读核心定位（必须含 '增长导航'）"
