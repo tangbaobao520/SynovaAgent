@@ -70,3 +70,17 @@
   - 需客户提供定价实验数据或支付意愿调研
 - **partner_contract_audit**: 合作伙伴条款审计
   - 需客户提供合作协议/合同条款
+
+## 组织弹性边界分析 (EOB)
+
+诊断人+Agent混合组织的动态边界管理能力。
+
+### 核心信号
+1. Agent流失率 — inactive/offline Agent占比
+2. 弹性响应速度 — 任务激增到新Agent上线的时间
+3. 外部比例 — external Agent占比
+4. 僵尸权限风险 — 已停用Agent仍有关联边
+
+### 边界健康度
+boundaryHealth = 1 - churnRate×0.4 - zombieRisk×0.3 - |externalRatio-0.3|×0.3
+流失率>30%或僵尸风险>50%: critical, healthScore<0.5: warning
