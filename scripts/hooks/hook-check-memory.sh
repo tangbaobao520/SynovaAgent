@@ -87,6 +87,71 @@ done <<< "$MATCHED_MEMORIES"
 echo "╚══════════════════════════════════════════════════════════════╝"
 echo ""
 
+# ═══ V4.1: 免疫细胞自动执行 ═══
+# 读取每个匹配 memory 的 constraint 字段 → 执行 bash → 比较 expected
+# severity=block → exit 1 阻断 Write
+# severity=warn → 写入 STATE.md
+IMMUNE_BLOCK=0
+STATE_FILE="$ROOT/STATE.md"
+TODAY=$(date +%Y-%m-%d)
+NOW=$(date +%H:%M)
+
+while IFS= read -r memfile; do
+  [ -z "$memfile" ] && continue
+  CONSTRAINT=$(awk '/^constraint:/{gsub(/^constraint: *"/,""); gsub(/"$/,""); print; exit}' "$memfile" 2>/dev/null || true)
+  [ -z "$CONSTRAINT" ] && continue
+
+  EXPECTED=$(awk '/^expected:/{gsub(/^expected: */,""); print; exit}' "$memfile" 2>/dev/null || true)
+  SEVERITY=$(awk '/^severity:/{gsub(/^severity: */,""); print; exit}' "$memfile" 2>/dev/null || echo "warn")
+  CLASS=$(awk '/^class:/{gsub(/^class: */,""); print; exit}' "$memfile" 2>/dev/null || echo "unknown")
+
+  # 执行约束命令
+  ACTUAL=$(eval "$CONSTRAINT" 2>/dev/null || echo "ERROR")
+  # 去除空白字符
+  ACTUAL=$(echo "$ACTUAL" | tr -d '[:space:]')
+  EXPECTED=$(echo "$EXPECTED" | tr -d '[:space:]')
+
+  if [ "$ACTUAL" != "$EXPECTED" ]; then
+    # 更新 occurrences
+    OCCURRENCES=$(awk '/^occurrences:/{gsub(/^occurrences: */,""); print; exit}' "$memfile" 2>/dev/null || echo "0")
+    OCCURRENCES=$((OCCURRENCES + 1))
+    sed -i "s/^occurrences:.*/occurrences: $OCCURRENCES/" "$memfile" 2>/dev/null || true
+
+    if [ "$SEVERITY" = "block" ]; then
+      echo ""
+      echo "╔══════════════════════════════════════════════════════════════╗"
+      echo "║  🛡️  V4.1 免疫阻断 — 历史错误模式检测到                          ║"
+      echo "╠══════════════════════════════════════════════════════════════╣"
+      echo "║  错误类别: $CLASS"
+      echo "║  约束命令: ${CONSTRAINT:0:60}..."
+      echo "║  期望输出: $EXPECTED"
+      echo "║  实际输出: ${ACTUAL:0:60}..."
+      echo "║  累计次数: $OCCURRENCES"
+      echo "║  来源: $(basename $memfile)"
+      echo "╚══════════════════════════════════════════════════════════════╝"
+      echo ""
+      IMMUNE_BLOCK=1
+    else
+      # severity=warn → 写入 STATE.md
+      if [ ! -f "$STATE_FILE" ]; then
+        echo "# SynovaAgent STATE — Loop Engineering 运行状态" > "$STATE_FILE"
+        echo "" >> "$STATE_FILE"
+        echo "## 免疫警告" >> "$STATE_FILE"
+        echo "" >> "$STATE_FILE"
+        echo "| 时间 | 错误类别 | 约束输出 | 累计次数 |" >> "$STATE_FILE"
+        echo "|------|---------|---------|---------|" >> "$STATE_FILE"
+      fi
+      echo "| ${TODAY} ${NOW} | ${CLASS} | ${ACTUAL:0:40} | ${OCCURRENCES} |" >> "$STATE_FILE"
+      echo "[hook-check-memory] ⚠️ 免疫警告: $CLASS (第 ${OCCURRENCES} 次) → STATE.md"
+    fi
+  fi
+done <<< "$MATCHED_MEMORIES"
+
+if [ "$IMMUNE_BLOCK" -eq 1 ]; then
+  echo "[hook-check-memory] 🛡️ 免疫阻断 — 禁止写代码"
+  exit 1
+fi
+
 # ── 5. 输出匹配计数 (供 harness 日志) ──
 MATCH_COUNT=$(echo "$MATCHED_MEMORIES" | grep -c . 2>/dev/null) || MATCH_COUNT=0
 echo "[hook-check-memory] 注入 ${MATCH_COUNT} 条相关教训到上下文"
