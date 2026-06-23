@@ -109,4 +109,13 @@ async function _initFileDrivenLoaders(): Promise<void> {
     log.warn({ err }, 'ontology loader 初始化失败 — degraded');
   }
 
+  // 适配器 (V3.8 Batch 5)
+  try {
+    const { loadAdapters, clearAdapterCache } = await import('../l4/adapter-loader');
+    loadAdapters();
+    void clearAdapterCache;
+  } catch (err: any) {
+    log.warn({ err }, 'adapter loader 初始化失败 — degraded');
+  }
+
 }

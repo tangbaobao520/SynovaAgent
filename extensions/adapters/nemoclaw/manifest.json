@@ -1,0 +1,11 @@
+{
+  "$schema": "https://synova.dev/schemas/extension-manifest-v1.json",
+  "name": "nemoclaw-adapter",
+  "version": "1.0.0",
+  "type": "adapter",
+  "platform": "nemoclaw",
+  "displayName": "NemoClaw 连接器",
+  "description": "MCP-based 连接器。Stub 实现，待后续填充。",
+  "entryPoint": "./adapter.ts",
+  "exportKey": "nemoclawAdapter"
+}

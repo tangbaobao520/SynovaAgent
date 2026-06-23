@@ -1,0 +1,17 @@
+{
+  "$schema": "https://synova.dev/schemas/extension-manifest-v1.json",
+  "name": "feishu-adapter",
+  "version": "1.0.0",
+  "type": "adapter",
+  "platform": "feishu",
+  "displayName": "飞书连接器",
+  "description": "飞书组织架构 + 消息 + 文档数据源。通过 Python Bridge 获取数据，映射到 SOG 本体。",
+  "entryPoint": "./adapter.ts",
+  "exportKey": "feishuAdapter",
+  "config": {
+    "credentialSchema": {
+      "FEISHU_APP_ID": { "type": "string", "required": true },
+      "FEISHU_APP_SECRET": { "type": "string", "required": true, "sensitive": true }
+    }
+  }
+}
