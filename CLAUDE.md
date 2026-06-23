@@ -212,7 +212,7 @@ Agent，不是 ChatBot。驻扎企业，持续观测，主动发现，自动诊�
 **目标**: 成为组织诊断的 AWS。每个新客户、新行业、新数据源 → 加文件即可，不改代码。
 能文件化的必须文件化。不能文件化的必须有明确的扩展点。
 
-**流程约束**: V3.8 — task brief 6 字段强制 + 项目身份物理注入 + plan.json 分阶段 + pre-commit 8 组物理阻断。
+**流程约束**: V4.1 — task brief 6 字段强制 + 免疫系统 (memory/ constraint) + plan.json 分阶段 + pre-commit 8 组物理阻断。
 
 **数据流**:
 ```
@@ -285,17 +285,13 @@ evolution/ (SessionLearningEngine, FeedbackCollector, OntologyAdapter)
 
 ---
 
-## Loop Engineering v3.8 — bash 退位 + agent 进位 + plan.json + 项目身份物理注入
+## Loop Engineering V4.1 — 免疫系统 + bash 退位 + agent 进位 + plan.json + 项目身份物理注入
 
-> 2026-06-17 v2.5 → v3.0 → v3.1 → v3.5 → v3.6 → v3.7 → **v3.8 (2026-06-23)**。
+> 2026-06-17 v2.5 → v3.0 → v3.1 → v3.5 → v3.6 → v3.7 → v3.8 → v3.9 → **V4.1 (2026-06-24)**。
 >
 > **v3.6 的核心教训**：把需要语义理解的事交给 grep = 17 次折腾才提交成功。
-> 不是 V3.6 不好——是它没区分"偷懒"和"架构步骤"。
->
-> **V3.7 的解法 (Anthropic 工程方法论)**：
-> **bash 退回到只做它能可靠做的事**（物理事实：文件存在、语法合法、模式可见）。
-> **agent 自检承担语义判断**（接线是否正确、阶段是否合理、退化是否诚实）。
-> **plan.json 替代自由文本**（结构化、机器可读、人类审批后锁定）。
+> **V3.9 的核心教训**：硬阻断 100% 有效，软机制 0% 有效。信息注入型检查对 agent 不可见。
+> **V4.1 的解法**：每次记录一个错误 → 植入一个免疫细胞（bash constraint）。
 
 ### 设计哲学 (V3.7 核心修正)
 
@@ -434,7 +430,7 @@ Done 标准: 至少一条可验证的完成标准
 
 - pre-commit 8 组合并 grep（<8s），不含 tsc/vitest（已由 PostToolUse 跑）
 - 严禁 `taskkill //IM node.exe` — 会杀死所有 Node 进程（含其他 Claude Code 实例）
-- `--no-verify` 在 V3.8 下不应再需要（pre-commit <8s）
+- `--no-verify` 在 V4.1 下不应再需要（pre-commit <8s）
 - 轻量变更（≤5 行或纯非 TS 文件）跳过 tsc/vitest，仍跑 oxlint + 接线审计
 
 ### V3.6/V3.7 新增脚本
