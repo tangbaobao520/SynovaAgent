@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering V3.9 — pre-commit 8 组硬阻断 (全部 <10s)
+# Loop Engineering V4.1 — pre-commit 8 组硬阻断 (全部 <10s) + 免疫系统
 #
 # v3.6 → v3.8 核心变化 (2026-06-23):
 #   + plan.json 支持: 分阶段任务可 deferred wiring/test_pairing 检查
@@ -131,7 +131,7 @@ NEW_IMPL=$(git diff --cached --name-only --diff-filter=A 2>/dev/null | grep "^sr
 
 echo ""
 echo "═══════════════════════════════════════════════════════════"
-echo "  Loop Engineering V3.9 — pre-commit (8 组 + 3 承诺验证)"
+echo "  Loop Engineering V4.1 — pre-commit (8 组 + 免疫 + plan-integrity)"
 echo "═══════════════════════════════════════════════════════════"
 echo ""
 
@@ -416,6 +416,10 @@ if [ -n "$STAGED_SRC" ]; then
 fi
 hard_check "Task Brief: 编码变更须有今日 task brief" "${TASK_BRIEF_MISSING:-}"
 hard_check "Task Brief: 6 核心字段必须填写 (Q0/Q1/Q2/Q3/架构层/Done)" "${TASK_BRIEF_EMPTY:-}"
+
+# V4.1: plan-integrity — Q1a/Q1b/Q2 承诺可验证
+bash "$ROOT/scripts/check-plan-integrity.sh"
+[ $? -ne 0 ] && HARD_FAIL=$((HARD_FAIL + 1))
 
 # V3.9: Done 可证伪性 — 每个 - [x] 必须包含 verify: 命令
 bash "$ROOT/scripts/check-verifiable-done.sh"
