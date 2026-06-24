@@ -1,4 +1,5 @@
 /**
+ * @deprecated 使用 extensions/sentinels/path-dependency/ 替代。新功能在此目录下开发。
  * sentinel/adapters/path-dependency-sentinel.ts — 路径依赖检测哨兵 (D2)
  * @state: real
  *

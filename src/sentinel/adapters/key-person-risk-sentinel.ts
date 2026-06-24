@@ -1,4 +1,5 @@
 /**
+ * @deprecated 使用 extensions/sentinels/key-person-risk/ 替代。新功能在此目录下开发。
  * sentinel/adapters/key-person-risk-sentinel.ts — 关键人风险哨兵 (D2)
  * @state: real
  *

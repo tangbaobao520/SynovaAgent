@@ -1,4 +1,5 @@
 /**
+ * @deprecated 使用 extensions/sentinels/self-awareness/ 替代。新功能在此目录下开发。
  * sentinel/adapters/self-awareness-sentinel.ts — 自知偏差哨兵 (D3)
  * @state: real
  *

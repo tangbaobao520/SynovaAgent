@@ -188,3 +188,12 @@
 | 国际化 | en-US 缺 expert-prompts | A1 |
 | 通知 | 缺 email/feishu-approval | A3 |
 | 哨兵 | 11 缺 manifest+aggregate | B1-B4 |
+
+## V4.2.3 (2026-06-24) — 旧适配器映射标记
+
+### 新增
+- **check-deprecated-mapping.sh** — 检查旧 `src/sentinel/adapters/*-sentinel.ts` 是否标注 `@deprecated` 对应 `extensions/sentinels/{name}/`
+- **11 个旧适配器已标注 @deprecated** — 新开发方向指向 extensions/sentinels/
+
+### 修复
+- B4 收尾：旧适配器文件标记废弃映射，避免双数据源死灰复燃

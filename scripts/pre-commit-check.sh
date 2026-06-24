@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering V4.1.2 — pre-commit 8 组硬阻断 (全部 <10s) + 免疫系统
+# Loop Engineering V4.2.3 — pre-commit 8 组硬阻断 (全部 <10s) + 免疫系统
 #
 # v3.6 → v3.8 核心变化 (2026-06-23):
 #   + plan.json 支持: 分阶段任务可 deferred wiring/test_pairing 检查
@@ -131,7 +131,7 @@ NEW_IMPL=$(git diff --cached --name-only --diff-filter=A 2>/dev/null | grep -E "
 
 echo ""
 echo "═══════════════════════════════════════════════════════════"
-echo "  Loop Engineering V4.1.2 — pre-commit (8 组 + 免疫 + plan-integrity)"
+echo "  Loop Engineering V4.2.3 — pre-commit (8 组 + 免疫 + plan-integrity)"
 echo "═══════════════════════════════════════════════════════════"
 echo ""
 
@@ -167,6 +167,9 @@ fi
 # 也跑 check-hardcoded.sh 的联合类型/数组/Set/DEFAULT_* 检测 (不阻断，仅报告)
 bash "$ROOT/scripts/check-hardcoded.sh" 2>/dev/null || true
 hard_check "硬编码业务数据/类型 (禁止硬编码部门名/可扩展实体列表)" "${HARDCODE_DATA:-}"
+
+# V4.2.3: 旧适配器废弃映射检查 (不阻断)
+bash "$ROOT/scripts/check-deprecated-mapping.sh"
 
 # ═══════════════════════════════════════════════════════════════════
 # 组 2: 测试质量 (原 2, 4, 12, 17 合并)

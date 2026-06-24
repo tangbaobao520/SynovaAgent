@@ -1,4 +1,5 @@
 /**
+ * @deprecated 使用 extensions/sentinels/seven-powers/ 替代。新功能在此目录下开发。
  * sentinel/adapters/seven-powers-sentinel.ts — 7 Powers 竞争壁垒哨兵 (D6)
  * @state: real
  *

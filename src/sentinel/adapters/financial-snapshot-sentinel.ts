@@ -1,4 +1,5 @@
 /**
+ * @deprecated 使用 extensions/sentinels/financial-snapshot/ 替代。新功能在此目录下开发。
  * sentinel/adapters/financial-snapshot-sentinel.ts — 财务快照哨兵 (D7)
  * @state: real
  *
