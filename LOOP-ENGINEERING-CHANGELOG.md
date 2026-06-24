@@ -161,6 +161,15 @@
 
 ---
 
+## V4.2.2 (2026-06-24) — engine-core 桥接清零
+
+### 变更
+- **免疫细胞 #11: engine-core-bridge-files** (block) — src/ 中 engine-core 引用数必须=0（白名单除外）。声称完成前自动 grep，非零则阻断。
+- **删除 8 个 pipeline 桥接文件** — `src/pipeline/` 下 8 个纯桥接全部删除（铁律 46 清理）。collaboration-collector/doc-extractor/expert-pipeline/federal-reporter/gap-recorder/measurement-pipeline/real-measurers/report-builder
+- **engine-core 存量引用**: 289 文件 → 0 违规引用（仅剩 4 个白名单文件）
+
+---
+
 ## V4.2.1 (2026-06-24) — 免疫系统增强
 
 ### 新增
