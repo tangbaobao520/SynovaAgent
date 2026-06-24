@@ -15,3 +15,29 @@
 - The Knowledge-Creating Company (Nonaka & Takeuchi, 1995): 组织知识创造理论
 - Building a Second Brain (Forte, 2022): 个人知识管理 — 适用知识提取方法论
 - How to Take Smart Notes (Ahrens, 2017): Zettelkasten方法 — 适用知识链接和结构化
+
+## 管理经济学知识索引
+
+SynovaAgent 8 位专家已注入以下管理经济学知识，供交叉引用和按需查询：
+
+| 知识领域 | 注入位置 | 专家 |
+|---------|---------|------|
+| 委托-代理框架（代理问题识别+代理成本+道德风险检测） | THEORY.md + TOOLS.md | org |
+| 激励理论（效率工资+锦标赛+搭便车检测） | TOOLS.md + RULES.md | org |
+| 信息不对称 + 柠檬市场 + 信号发送 | THEORY.md | tech |
+| 市场结构四象限 + HHI指数 | THEORY.md | strategy |
+| 博弈论（囚徒困境+协调+鹰鸽+重复博弈） | TOOLS.md | strategy |
+| 7 Powers 竞争壁垒评估 | TOOLS.md | strategy |
+| 交易成本分析（四来源+治理矩阵） | THEORY.md | business_model |
+| 价值链解构 + 利润池迁移 | TOOLS.md | business_model |
+| 资本预算（NPV/IRR/回收期/PI） | THEORY.md | finance |
+| 成本结构分析（固变识别+规模经济+盈亏平衡） | TOOLS.md | finance |
+| Token 成本核算 | TOOLS.md | finance |
+| 需求弹性 + 交叉弹性 | TOOLS.md | marketing |
+| 行为经济学（前景理论+锚定+现状偏误） | TOOLS.md | marketing |
+| 缝隙动力学（六维度变化追踪） | THEORY.md + TOOLS.md | action |
+
+### 跨专家调用规则
+- 战略诊断发现市场集中度问题 → 调 finance（成本结构）+ business_model（价值链）
+- 组织诊断发现代理问题 → 调 action（差距变化趋势）+ strategy（战略对齐）
+- 技术诊断发现信息不对称 → 调 org（委托-代理）+ action（执行差距）
