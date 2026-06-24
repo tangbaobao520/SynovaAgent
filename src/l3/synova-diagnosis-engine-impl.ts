@@ -437,6 +437,26 @@ export class SynovaDiagnosisEngineImpl implements SynovaDiagnosisEngine {
         }
       }
 
+      // V4.2.3: 右栏数据更新 — 发射 right_column_update
+      emit({
+        type: 'right_column_update', timestamp: now(),
+        rightColumn: {
+          goals: allRootCauses.slice(0, 3).map(rc => ({
+            id: rc.dimension, name: rc.description.slice(0, 50),
+            progress: Math.round(rc.confidence * 100), status: 'identifying' as const,
+          })),
+          alerts: allRootCauses.slice(0, 5).map(rc => ({
+            id: rc.dimension, description: rc.description.slice(0, 100),
+            priority: rc.confidence >= 0.8 ? 'high' as const : rc.confidence >= 0.6 ? 'medium' as const : 'low' as const,
+            confidence: rc.confidence, raisedAt: now(),
+          })),
+          obstacles: allRootCauses.slice(0, 3).map(rc => ({
+            id: rc.dimension, description: rc.description.slice(0, 100),
+            status: 'tracking' as const, updatedAt: now(),
+          })),
+        },
+      });
+
       emit({
         type: 'phase_completed', phase: 5, timestamp: now(),
         durationMs: totalDurationMs, degradedModules: [...degradedModules],
