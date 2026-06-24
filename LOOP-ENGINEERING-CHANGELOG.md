@@ -197,3 +197,19 @@
 
 ### 修复
 - B4 收尾：旧适配器文件标记废弃映射，避免双数据源死灰复燃
+
+## V4.2.4 (2026-06-25) — engine-core 全面清零
+
+### 变更
+- **删除了全部 4 个铁律46白名单桥接文件：**
+  - `src/types/engine-core-types.ts` — DiagnosisErrorCode 内联到 sentinel/types.ts
+  - `src/l4/engine-graph-store.ts` — 替换为 synova-graph-store.ts 的 createSynovaGraphStore()
+  - `src/l4/entity-resolver-l2.ts` — 删除（仅旧 Novis 演示路径使用）
+  - `src/l4/diagnosis-graph-query.ts` — 删除（community-reports.ts 已有独立 detectCommunities）
+- **6 个消费者文件修复**：conversation-engine、knowledge-bridge-service、l4/index、mcp/tool-registration、diagnosis-upload-v2、sentinel/types
+- **engine-core: 289文件 → 0引用** — src/ 中彻底清零。packages/engine-core/ 保留为历史参考，不引用。
+
+### 文件
+- `src/sentinel/types.ts` 🔧 内联 DiagnosisErrorCode
+- 4 个白名单桥接文件 ❌ 删除
+- 6 个消费者文件 🔧 修复

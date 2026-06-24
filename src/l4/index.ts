@@ -10,4 +10,4 @@ export type {
 export { resolveEntitiesL3 } from './entity-resolver';
 export { reflectOnTriples } from './triple-reflection';
 export { captureDecision } from './decision-capture';
-export type { GraphDiff, GraphStoreRO } from './diagnosis-graph-query';
+// V4.2.3: diagnosis-graph-query.ts 已删除 — type export 移除

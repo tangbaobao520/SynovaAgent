@@ -27,7 +27,7 @@ import type { GraphStore } from '../l4/graph-bridge';
 import type { createGraphBridge } from '../l4/graph-bridge';
 import type { ReportGraphAdapter } from '../l4/report-graph-adapter';
 import type { DecisionInput, DecisionResult } from '../l4/decision-capture';
-import type { DiagnosticPath, SubgraphSummary, BrokerNode, GraphDiff } from '../l4/diagnosis-graph-query';
+// V4.2.3: diagnosis-graph-query.ts 已删除 — L4 图查询类型移除
 import type { Triple, ReflectionResult } from '../l4/triple-reflection';
 import type { L3ResolutionResult } from '../l4/entity-resolver';
 import type { CommunityReport } from '../l4/community-reports';

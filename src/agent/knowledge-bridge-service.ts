@@ -14,4 +14,4 @@ export { KnowledgeStore } from '../l4/knowledge-store';
 export type { KnowledgeChunk, FilterClause } from '../l4/knowledge-store';
 
 // 诊断图查询
-export { summarizeSubgraph, findCrossDimensionalBrokers, getGraphDiff } from '../l4/diagnosis-graph-query';
+// V4.2.3: diagnosis-graph-query.ts 已删除 — re-export 移除
