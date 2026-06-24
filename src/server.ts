@@ -104,7 +104,24 @@ export async function createServer(): Promise<Server> {
         }
       } catch (err: unknown) { logger.warn({ err }, '老板信箱获取信号失败 — degraded'); }
 
-      const report = bossMailbox.generateReport('Synova', `W${Math.ceil(now.getDate()/7)}`, signals, []);
+      // 从 AgentMemoryStore 获取行动项
+      let actions: Array<{ title: string; status: 'completed' | 'in_progress' | 'stalled'; detail: string }> = [];
+      try {
+        const { getAgentMemoryStore } = await import('./l4/agent-memory-store');
+        const { getDatabase } = await import('./init/engine-context');
+        const memStore = getAgentMemoryStore(getDatabase());
+        const records = memStore.recall({ orgId: '', type: 'enterprise_fact', tags: ['action'], limit: 10 } as never) as Array<{ value: string }>;
+        if (records && records.length > 0) {
+          actions = records.map(r => {
+            try {
+              const item = JSON.parse(r.value) as { title?: string; description: string; status: string };
+              return { title: item.title || item.description, status: item.status === 'completed' ? 'completed' as const : item.status === 'in_progress' ? 'in_progress' as const : 'stalled' as const, detail: item.description };
+            } catch { return { title: '行动项', status: 'in_progress' as const, detail: '' }; }
+          });
+        }
+      } catch (err: unknown) { logger.warn({ err }, '老板信箱获取行动项失败 — degraded'); }
+
+      const report = bossMailbox.generateReport('Synova', `W${Math.ceil(now.getDate()/7)}`, signals, actions);
       bossMailbox.pushToFeishu(report, webhookUrl).catch(() => {});
     } catch (err: unknown) { logger.warn({ err }, '老板信箱推送失败 — degraded'); }
   }, 60000); // 每分钟检查

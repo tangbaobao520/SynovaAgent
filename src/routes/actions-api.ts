@@ -55,6 +55,20 @@ router.post('/api/actions', (req: Request, res: Response) => {
 
 router.get('/api/actions', (req: Request, res: Response) => {
   const wsId = String(req.query.workspaceId || '');
+  // 如果内存为空, 从 AgentMemoryStore 恢复
+  if (store.size === 0) {
+    try {
+      const { getAgentMemoryStore } = require('../l4/agent-memory-store');
+      const { getDatabase } = require('../init/engine-context');
+      const memStore = getAgentMemoryStore(getDatabase());
+      const records = memStore.recall({ orgId: wsId, type: 'enterprise_fact', tags: ['action'], limit: 50 } as never) as Array<{ value: string }>;
+      if (records && records.length > 0) {
+        for (const r of records) {
+          try { const item = JSON.parse(r.value) as ActionItem; store.set(item.id, item); } catch { /* skip corrupt */ }
+        }
+      }
+    } catch { /* AgentMemoryStore 不可用 — degraded */ }
+  }
   const list = Array.from(store.values())
     .filter(a => !wsId || a.workspaceId === wsId)
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
