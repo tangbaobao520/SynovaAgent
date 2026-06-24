@@ -1,4 +1,5 @@
 /**
+ * @deprecated 使用 extensions/sentinels/gap-dynamics/ 替代。新功能在此目录下开发。
  * sentinel/adapters/gap-dynamics-sentinel.ts — 缝隙动力学哨兵 (D2)
  * @state: real
  *

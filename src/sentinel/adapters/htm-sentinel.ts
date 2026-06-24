@@ -1,4 +1,5 @@
 /**
+ * @deprecated 使用 extensions/sentinels/htm/ 替代。新功能在此目录下开发。
  * sentinel/adapters/htm-sentinel.ts — 混合信任模型哨兵 (D3: 人+Agent)
  * @state: real — 2026-06-18 Week 4: 增强 finding 提取
  *

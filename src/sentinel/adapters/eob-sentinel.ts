@@ -1,4 +1,5 @@
 /**
+ * @deprecated 使用 extensions/sentinels/eob/ 替代。新功能在此目录下开发。
  * sentinel/adapters/eob-sentinel.ts — 组织弹性边界哨兵 (D3)
  * @state: real — 2026-06-18 Week 4: 增强 finding 提取
  *

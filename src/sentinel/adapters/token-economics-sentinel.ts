@@ -1,4 +1,5 @@
 /**
+ * @deprecated 使用 extensions/sentinels/token-economics/ 替代。新功能在此目录下开发。
  * sentinel/adapters/token-economics-sentinel.ts — 单位经济学哨兵 (D1)
  * @state: real
  *

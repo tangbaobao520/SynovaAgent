@@ -1,4 +1,5 @@
 /**
+ * @deprecated 使用 extensions/sentinels/hacd/ 替代。新功能在此目录下开发。
  * sentinel/adapters/hacd-sentinel.ts — 人机协作深度哨兵 (D3)
  * @state: real — 2026-06-18 Week 4: 增强 finding 提取
  *
