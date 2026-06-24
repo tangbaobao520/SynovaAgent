@@ -1,4 +1,5 @@
 {
+  "model": "deepseek-v4-flash",
   "hooks": {
     "PreToolUse": [
       {
