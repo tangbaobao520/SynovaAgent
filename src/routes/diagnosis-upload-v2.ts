@@ -565,7 +565,7 @@ async function syncDiagnosisToGraph(
     let communityCount = 0;
     try {
       const { detectCommunities } = await import(
-        '../l4/diagnosis-graph-query'
+      // V4.2.3: 桥接已删除 — 降级跳过
       );
       const communities = detectCommunities(graphStore, 2, teamId);
       for (const c of communities) {
@@ -588,7 +588,7 @@ async function syncDiagnosisToGraph(
     let resolvedCount = 0;
     try {
       const { generateL2Candidates } = await import(
-        '../l4/entity-resolver-l2'
+      // V4.2.3: 桥接已删除 — 降级跳过
       );
       // 从 Signal 节点名生成候选
       const signalNames = signalIds.map((sid) => {

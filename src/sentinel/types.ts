@@ -10,7 +10,18 @@
  * @state: real — 接口契约, 编译器强制执行
  */
 
-import type { DiagnosisErrorCode } from '../types/engine-core-types';
+// V4.2.3: engine-core 桥接已删除 — 类型内联
+export enum DiagnosisErrorCode {
+  EVIDENCE_INSUFFICIENT = "EVIDENCE_INSUFFICIENT",
+  LLM_TIMEOUT = "LLM_TIMEOUT",
+  GATE_CHECK_FAILED = "GATE_CHECK_FAILED",
+  PERMISSION_DENIED = "PERMISSION_DENIED",
+  RECOVERY_EXHAUSTED = "RECOVERY_EXHAUSTED",
+  SESSION_CORRUPTED = "SESSION_CORRUPTED",
+  MODULE_FAILED = "MODULE_FAILED",
+  TOOL_TIMEOUT = "TOOL_TIMEOUT",
+  SUBAGENT_LOST = "SUBAGENT_LOST",
+}
 
 // ═══ Sentinel 元数据 ═══
 

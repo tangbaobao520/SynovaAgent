@@ -8,7 +8,7 @@
  * Task 4: GitHub MCP — 技术专家工具
  */
 import type { ToolRegistry, ToolParameter } from '../agent/tools';
-import type { GraphStoreRO } from '../l4/diagnosis-graph-query';
+    // V4.2.3: diagnosis-graph-query.ts 已删除 — 降级跳过
 import { getMCPBridge, type MCPToolDef } from './bridge';
 import { createLogger } from '../logger';
 
@@ -101,7 +101,7 @@ export async function registerMCPTools(registry: ToolRegistry): Promise<void> {
     handler: async (params) => {
       // Dynamically import L4 graph query to avoid circular deps
       const { findDiagnosticPaths, summarizeSubgraph, findCrossDimensionalBrokers } =
-        await import('../l4/diagnosis-graph-query');
+    // V4.2.3: diagnosis-graph-query.ts 已删除 — 降级跳过
       const { createGraphStore } = await import('@synova/diagnosis-engine');
       const { getDatabase } = await import('../init/engine-context');
 
