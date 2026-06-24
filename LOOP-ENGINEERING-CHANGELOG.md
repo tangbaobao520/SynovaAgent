@@ -158,3 +158,24 @@
 - 3 层阻断（PreToolUse → PostToolUse → pre-commit）
 - 提交耗时 40-90 秒
 - 1,862 行 bash 脚本
+
+---
+
+## V4.2.1 (2026-06-24) — 免疫系统增强
+
+### 新增
+- **免疫细胞 #9: plan-actual-closure** (warn) — 声明完成但从未对比文档与代码的 gap
+- **免疫细胞 #2: q0c-cancelled-without-followup 升级** (block) — 取消任务必须补完
+- **修复提示字段** — 所有免疫细胞现在带 `remediation:` 字段，告诉 agent 怎么做才对
+
+### 已知缺口（当前文件驱动覆盖率 45%）
+| 维度 | 缺口 | 计划 |
+|------|------|------|
+| 行业模板 | 4 个行业 0 子目录 | C1 |
+| 报告格式 | 0 .hbs 文件 | A2 |
+| 数据策略 | policies/ 不存在 | D2 |
+| 引擎配置 | engine/ 不存在 | D1 |
+| 专家工具 | tools/ 不存在 | E1 |
+| 国际化 | en-US 缺 expert-prompts | A1 |
+| 通知 | 缺 email/feishu-approval | A3 |
+| 哨兵 | 11 缺 manifest+aggregate | B1-B4 |
