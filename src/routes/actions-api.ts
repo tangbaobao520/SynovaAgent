@@ -22,6 +22,25 @@ interface ActionItem {
 
 const store = new Map<string, ActionItem>();
 
+// V4.2.1: 从 AgentMemoryStore 持久化恢复
+function persistAction(id: string, item: ActionItem): void {
+  try {
+    const { getAgentMemoryStore } = require('../l4/agent-memory-store');
+    const { getDatabase } = require('../init/engine-context');
+    const memStore = getAgentMemoryStore(getDatabase());
+    memStore.remember({
+      orgId: item.workspaceId,
+      key: `action_${id}`,
+      value: JSON.stringify(item),
+      type: 'enterprise_fact',
+      confidence: 0.9,
+      source: 'user_confirmed',
+      tags: ['action', item.status],
+      expiresAt: null,
+    });
+  } catch { /* AgentMemoryStore 不可用 — degraded, 仅内存存储 */ }
+}
+
 router.post('/api/actions', (req: Request, res: Response) => {
   const { workspaceId, title, description, priority } = req.body as Record<string, string>;
   if (!workspaceId || !title) return res.status(400).json({ ok: false, error: 'workspaceId and title required' });
@@ -29,6 +48,7 @@ router.post('/api/actions', (req: Request, res: Response) => {
   const now = new Date().toISOString();
   const item: ActionItem = { id, workspaceId, title, description: description || '', status: 'pending', priority: (priority as ActionItem['priority']) || 'medium', createdAt: now, updatedAt: now };
   store.set(id, item);
+  persistAction(id, item);
   log.info({ id, title }, '行动项已创建');
   res.json({ ok: true, action: item });
 });
@@ -52,6 +72,7 @@ router.put('/api/actions/:id/status', (req: Request, res: Response) => {
   item.status = status as ActionItem['status'];
   item.updatedAt = new Date().toISOString();
   store.set(id, item);
+  persistAction(id, item);
   log.info({ id, status }, '行动项状态已更新');
   res.json({ ok: true, action: item });
 });
