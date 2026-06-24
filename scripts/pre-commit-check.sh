@@ -127,7 +127,7 @@ except: pass
 fi
 STAGED_ALL=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep -v node_modules || true)
 STAGED_SRC=$(echo "$STAGED_ALL" | grep -E '^src/|^tests/|^packages/|^scripts/' | grep -v 'scripts/pre-commit-check.sh\|scripts/check-secrets.sh\|scripts/check-file-driven.sh\|scripts/workflow/' || true)
-NEW_IMPL=$(git diff --cached --name-only --diff-filter=A 2>/dev/null | grep "^src/" | grep "\.ts$" | grep -v "\.test\." | grep -v "\.d\.ts" | grep -v "types\.ts$\|index\.ts$\|helpers\.ts$" | grep -v "src/sentinel/compute/" || true)
+NEW_IMPL=$(git diff --cached --name-only --diff-filter=A 2>/dev/null | grep -E "^src/|^extensions/" | grep "\.ts$" | grep -v "\.test\." | grep -v "\.d\.ts" | grep -v "types\.ts$\|index\.ts$\|helpers\.ts$" | grep -v "src/sentinel/compute/" || true)
 
 echo ""
 echo "═══════════════════════════════════════════════════════════"
@@ -207,7 +207,8 @@ MISSING_TEST=""
 if [ -n "$NEW_IMPL" ]; then
   while IFS= read -r impl; do
     [ -z "$impl" ] && continue
-    test_path=$(echo "$impl" | sed 's|^src/|tests/|; s|\.ts$|.test.ts|')
+    # 映射: src/xxx.ts→tests/xxx.test.ts, extensions/sentinels/{name}/aggregate.ts→tests/sentinels/{name}.test.ts, extensions/sentinels/{name}/computes/{fn}.ts→tests/sentinels/{name}/{fn}.test.ts
+    test_path=$(echo "$impl" | sed 's|^src/|tests/|; s|^extensions/sentinels/\([^/]*\)/aggregate\.ts$|tests/sentinels/\1.test.ts|; s|^extensions/sentinels/\([^/]*\)/computes/\([^/]*\)\.ts$|tests/sentinels/\1/\2.test.ts|; s|\.ts$|.test.ts|')
     if ! git diff --cached --name-only 2>/dev/null | grep -q "^${test_path}$"; then
       if [ ! -f "$test_path" ]; then
         MISSING_TEST="${MISSING_TEST}${impl} → 缺少 ${test_path}\n"
