@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering V4.1.1 — PreToolUse: task brief 质量检查
+# Loop Engineering V4.1.2 — PreToolUse: task brief 质量检查
 #
 # 挂在 PreToolUse → Edit|Write 上，在 hook-check-memory.sh 之后运行。
 # 7 项字段质量检查 + 接口真实性反向验证 + 层级确认。
@@ -30,14 +30,31 @@ if echo "$FILE" | grep -qE '\.claude/(task-briefs|settings|plans|specs|worktrees
     WF_STATE="$ROOT/.claude/workflow-state.json"
     if [ -f "$WF_STATE" ]; then
       python3 -c "import json; d=json.load(open('$WF_STATE')); d['step']='brief-filled'; json.dump(d, open('$WF_STATE','w'))" 2>/dev/null
+    rm -f "$ROOT/.claude/session-locked" 2>/dev/null
     fi
   fi
   exit 0
 fi
 
 # 例外：允许写入 hooks 和 workflow 脚本本身
-if echo "$FILE" | grep -qE 'scripts/workflow/hook-'; then
+if echo "$FILE" | grep -qE 'scripts/workflow/hook-|scripts/hooks/'; then
   exit 0
+fi
+
+# ═══ V4.1.2: SessionStart 流程锁 — 硬阻断 ═══
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+LOCK_FILE="$ROOT/.claude/session-locked"
+if [ -f "$LOCK_FILE" ]; then
+  # 只允许 task-start/scope-check/Read 操作
+  if echo "$FILE" | grep -qE 'scripts/workflow/task-start|scripts/workflow/scope-check|\.claude/task-briefs/|\.claude/settings'; then
+    # 这些操作在锁定时允许——它们用于解锁
+    :
+  else
+    echo "⛔ V4.1.2 Session Lock — 请先运行 task-start 完成 Q0-Q3"
+    echo "   bash scripts/workflow/task-start.sh \"你的任务描述\""
+    echo "   被阻止: ${FILE}"
+    exit 1
+  fi
 fi
 
 # ═══ v3.5: 工作流状态物理强制 (task-start→scope-check→brief-filled 不可跳过) ═══
