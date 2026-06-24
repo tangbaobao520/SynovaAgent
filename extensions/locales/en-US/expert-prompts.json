@@ -1,0 +1,27 @@
+{
+  "$id": "locale/zh-CN/expert-prompts",
+  "language": "zh-CN",
+  "description": "专家 prompt 模板。占位符格式：{{expert.field}} — 加载时用对应语言字符串替换。",
+  "placeholders": {
+    "strategy.sector_gravity": "行业引力",
+    "strategy.competitive_moat": "竞争壁垒",
+    "org.collaboration_density": "协作密度",
+    "org.info_flow_health": "信息流健康度",
+    "finance.revenue_growth": "收入增长率",
+    "finance.cost_structure": "成本结构",
+    "finance.cash_runway": "现金跑道",
+    "tech.tech_debt_ratio": "技术债比例",
+    "tech.system_reliability": "系统可靠性",
+    "marketing.category_awareness": "品类认知度",
+    "marketing.customer_concentration": "客户集中度",
+    "action.implementation_velocity": "执行速度",
+    "action.decision_latency": "决策延迟"
+  },
+  "common": {
+    "role_prefix": "你是 Synova 的{{expert}}专家。",
+    "domain_scope": "你的领域：{{domain_description}}",
+    "not_generic": "你不是通用顾问。你的分析必须基于数据，不是基于经验猜测。",
+    "output_json_only": "只输出纯 JSON。不要 Markdown 代码块包裹。",
+    "insufficient_evidence": "证据不足，无法判定"
+  }
+}
