@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering V4.1 — check-plan-integrity.sh
+# Loop Engineering V4.2.1 — check-plan-integrity.sh
 # 统一验证 plan.json 的 Q1/Q2 产出是否被物理执行。
 # pre-commit 组 6 调用。全部 <1s。
 #

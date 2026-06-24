@@ -1,6 +1,6 @@
 # SynovaAgent STATE — Loop Engineering 运行状态
 
-> V4.1 免疫系统。warn 触发时自动追加。累计 ≥2 → 考虑升级 block。累计 ≥3 → 修约束本身。
+> V4.2.1 免疫系统。warn 触发时自动追加。累计 ≥2 → 考虑升级 block。累计 ≥3 → 修约束本身。
 
 ## 活跃免疫细胞
 
@@ -250,3 +250,23 @@
 | 2026-06-24 14:20 | knowledge-asset-not-backed-up | 0 | 59 |
 | 2026-06-24 14:20 | claimed-completion-without-verification | ERROR | 63 |
 | 2026-06-24 14:20 | cancelled-module-without-replacement | ERROR | 70 |
+| 2026-06-24 14:28 | soft-mechanism-treated-as-noise | ERROR | 1058 |
+| 2026-06-24 14:28 | knowledge-asset-not-backed-up | 0 | 60 |
+| 2026-06-24 14:28 | claimed-completion-without-verification | ERROR | 64 |
+| 2026-06-24 14:28 | cancelled-module-without-replacement | ERROR | 71 |
+| 2026-06-24 14:31 | soft-mechanism-treated-as-noise | ERROR | 1059 |
+| 2026-06-24 14:31 | knowledge-asset-not-backed-up | 0 | 61 |
+| 2026-06-24 14:31 | claimed-completion-without-verification | ERROR | 65 |
+| 2026-06-24 14:31 | cancelled-module-without-replacement | ERROR | 72 |
+| 2026-06-24 15:07 | soft-mechanism-treated-as-noise | ERROR | 1060 |
+| 2026-06-24 15:07 | knowledge-asset-not-backed-up | 0 | 62 |
+| 2026-06-24 15:07 | declared-done-without-checklist-verification | 0 | 1 |
+| 2026-06-24 15:07 | claimed-completion-without-verification | ERROR | 66 |
+| 2026-06-24 15:11 | soft-mechanism-treated-as-noise | ERROR | 1061 |
+| 2026-06-24 15:11 | knowledge-asset-not-backed-up | 0 | 63 |
+| 2026-06-24 15:11 | declared-done-without-checklist-verification | 0 | 2 |
+| 2026-06-24 15:11 | claimed-completion-without-verification | ERROR | 67 |
+| 2026-06-24 15:14 | soft-mechanism-treated-as-noise | ERROR | 1062 |
+| 2026-06-24 15:14 | knowledge-asset-not-backed-up | 0 | 64 |
+| 2026-06-24 15:14 | declared-done-without-checklist-verification | 0 | 3 |
+| 2026-06-24 15:14 | claimed-completion-without-verification | ERROR | 68 |
