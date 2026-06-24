@@ -285,15 +285,15 @@ evolution/ (SessionLearningEngine, FeedbackCollector, OntologyAdapter)
 
 ---
 
-## Loop Engineering V4.1.1 — 免疫系统 + pre-commit extensions/ 覆盖 + 测试门禁扩展
+## Loop Engineering V4.1.2 — 免疫系统 + pre-commit extensions/ 覆盖 + 测试门禁扩展
 
-> 2026-06-17 v2.5 → v3.0 → v3.1 → v3.5 → v3.6 → v3.7 → v3.8 → v3.9 → V4.1 → **V4.1.1 (2026-06-24)**。
+> 2026-06-17 v2.5 → v3.0 → v3.1 → v3.5 → v3.6 → v3.7 → v3.8 → v3.9 → V4.1 → **V4.1.2 (2026-06-24)**。
 >
 > **v3.6 的核心教训**：把需要语义理解的事交给 grep = 17 次折腾才提交成功。
 > **V3.9 的核心教训**：硬阻断 100% 有效，软机制 0% 有效。信息注入型检查对 agent 不可见。
 > **V4.1 的解法**：每次记录一个错误 → 植入一个免疫细胞（bash constraint）。
 >
-> ### V4.1.1 变更 (2026-06-24)
+> ### V4.1.2 变更 (2026-06-24)
 > - pre-commit NEW_IMPL 从 `^src/` 扩展为 `^src/|^extensions/`（测试配对门禁覆盖 extensions/）
 > - 测试路径映射支持 `extensions/sentinels/{name}/(aggregate|computes/{fn}).ts` → `tests/sentinels/`
 > - 15 个 compute+aggregate 测试（45 tests 全部通过）

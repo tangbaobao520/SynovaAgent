@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering V4.1.1 — 任务启动 (Task Start)
+# Loop Engineering V4.1.2 — 任务启动 (Task Start)
 #
 # 这是整个系统最重要的环节。
 # 在写任何代码之前，先回答 3 个问题，把"自然语言意图"翻译成"可执行的规格"。
@@ -20,7 +20,7 @@ BRIEF_FILE="$ROOT/.claude/task-briefs/${TIMESTAMP}-${TASK_SLUG}.md"
 
 echo ""
 echo -e "${CYAN}════════════════════════════════════════════════════════════${RESET}"
-echo -e "${CYAN}  Loop Engineering V4.1.1 — 任务启动${RESET}"
+echo -e "${CYAN}  Loop Engineering V4.1.2 — 任务启动${RESET}"
 echo -e "${CYAN}  先想清楚，再动手。${RESET}"
 echo -e "${CYAN}════════════════════════════════════════════════════════════${RESET}"
 echo ""
@@ -81,6 +81,9 @@ echo ""
 # ═══ 生成 Task Brief ═══
 mkdir -p "$(dirname "$BRIEF_FILE")"
 BRIEF_FILE="$BRIEF_FILE" TASK_DESC="$TASK_DESC" BRANCH="$BRANCH" AS_ANY="$AS_ANY" python3 "$ROOT/scripts/workflow/generate-task-brief.py"
+# V4.1.2: 清除 SessionStart 流程锁
+rm -f "$ROOT/.claude/session-locked" 2>/dev/null
+
 
 echo -e "${GREEN}✅ Task Brief 已生成: .claude/task-briefs/${TIMESTAMP}-${TASK_SLUG}.md${RESET}"
 echo ""
