@@ -1,0 +1,1 @@
+﻿{"$id":"edge-type/sells-to","label":"SELLS_TO","tags":["operational","financial"],"allowedFrom":["Product"],"allowedTo":["Client"],"optionalProps":{"annualContractValue":"number","startDate":"string","endDate":"string","penetration":"number"},"description":"产品卖给客户。是收入归因、客户价值分析、产品渗透率分析的基础边。"}
