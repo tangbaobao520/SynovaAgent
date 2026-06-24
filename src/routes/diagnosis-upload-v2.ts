@@ -17,7 +17,9 @@ import { createProvider } from '../providers';
 import { loadConfig } from '../config';
 import { createLogger } from '../logger';
 import { getDatabase } from '../init/engine-context';
-import type { ExtractionResult } from '../pipeline/doc-extractor';
+// V4.2.2: doc-extractor 桥接已删除（铁律46）
+export type ExtractionResult = { content: string; metadata: Record<string, unknown> };
+
 // 本地类型镜像 — 避免 L1 静态跨层依赖 (铁律 39, 审计 2026-06-20)
 interface L2EntityNode { id: string; type: string; name: string; props: Record<string, unknown>; confidence: number }
 
@@ -224,7 +226,7 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
 
   // Step 1: 八维度提取
   job.status = 'extracting';
-  const { DocExtractor } = await import('../pipeline/doc-extractor');
+  const DocExtractor = null; /* doc-extractor 桥接已删除 */
   const graphStore = await createRealGraphStore(jobId);
   // GraphStore 已通过 createRealGraphStore 创建 (P0-1 修复)
   // engine-core 为 CJS 模块，动态导入无 TS 类型约束 — 运行时结构子类型兼容。
