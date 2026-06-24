@@ -1,0 +1,275 @@
+﻿<!-- CONTENT START -->
+
+<h1>企业增长动力学诊断模型</h1>
+<p style="font-size:1.2rem;color:var(--accent);margin-bottom:8px;">SynovaAgent Growth Diagnostics Framework v1.0</p>
+<p style="color:var(--muted);margin-bottom:24px;">技术白皮书 · 2026年6月 · 基于60+篇学术文献 · 34个可计算哨兵 · 7个理论层级</p>
+
+<div class="principle">
+<strong>核心命题：</strong>企业的增长瓶颈可以被科学诊断。不是靠经验直觉，不是靠管理咨询模板，而是靠扎根于经济学、演化理论、网络科学与行为科学的、逻辑自洽的、可计算的诊断体系。<br>
+<strong>最终交付：</strong>一个企业家读完诊断报告后，能回答两个问题——<em>我的增长卡在哪里？现在该做什么？</em>
+</div>
+
+<div class="toc">
+<h3 style="margin-top:0;">目录</h3>
+<ul>
+<li><a href="#s1">一、引言：为什么传统的管理诊断会失败</a></li>
+<li><a href="#s2">二、设计哲学：从"企业为什么能增长"出发</a></li>
+<li><a href="#s3">三、增长动力学模型：七层全景</a></li>
+<li><a href="#s4">四、顶层校准：技术-经济范式分析（佩雷斯，2002）</a></li>
+<li><a href="#s5">五、外部层面：环境诊断（6哨兵）</a></li>
+<li><a href="#s6">六、资本健康层：公司金融诊断（5哨兵）</a></li>
+<li><a href="#s7">七、界面层面：生态位诊断（13哨兵）</a></li>
+<li><a href="#s8">八、战略-组织匹配度层（3哨兵）</a></li>
+<li><a href="#s9">九、内部层面：组织动力学诊断（10哨兵）</a></li>
+<li><a href="#s10">十、诊断模型的自省：盲点与局限</a></li>
+<li><a href="#s11">十一、附录：完整参考文献（按学科分类）</a></li>
+</ul>
+</div>
+
+<hr class="divider">
+
+<h2 id="s1">一、引言：为什么传统的管理诊断会失败</h2>
+
+<h3>1.1 管理咨询的"模块拼盘"困境</h3>
+<p>过去五十年，企业管理诊断的主流范式是将企业按职能拆分为"战略、组织、财务、营销、技术"等模块，然后为每个模块分配一套指标（如市场份额、员工满意度、毛利率、NPS）。这种方法有三个致命缺陷：</p>
+<ol>
+<li><strong>因果链断裂。</strong> 各模块的指标独立运行，但企业的增长瓶颈本质上是一个跨模块的系统性问题。营销不佳可能是因为产品方向错误；产品方向错误可能是因为组织内没人敢说真话。模块化诊断无法追踪跨模块的因果链。</li>
+<li><strong>缺乏第一性原理。</strong> 大多数诊断指标是从"我们通常测量什么"推导出来的，而非从"企业为什么在市场经济中能够增长"推导出来的。柯达在被颠覆的前夕，所有传统诊断指标都显示它是一家"优秀的公司"——它的知识管理做得好，以致于它比任何人都更早发明了数码相机。</li>
+<li><strong>重描述、轻诊断。</strong> 大量指标描述的是状态（"毛利率 = 35%"），而非瓶颈（"毛利率的趋势表明，你的价值捕获能力在过去8个季度持续弱化，原因不是定价问题，而是你的生态位正在被两个新进入者从低端挤压"）。</li>
+</ol>
+
+<h3>1.2 本框架的根本性差异</h3>
+<p>本框架不从任何现成的管理咨询模板出发。它从追问"在现代经济中，一个企业为什么能够持续增长？"这个第一性问题开始。</p>
+
+<p>它的理论基座不是"管理学的常识"，而是以下七个学科的深层理论：</p>
+
+<table>
+<tr><th>理论来源</th><th>核心贡献</th><th>关键文献</th></tr>
+<tr><td><strong>演化经济学</strong></td><td>增长源于组织惯例的变异-选择-保留循环。企业不是优化机器，而是演化系统。</td><td>Nelson &amp; Winter (1982); March (1991)</td></tr>
+<tr><td><strong>生态位理论</strong></td><td>企业的生存空间由其生态位决定（n维超体积）。增长上限 = 生态位的宽度、深度与壁垒。</td><td>Hutchinson (1957); Hannan &amp; Freeman (1977)</td></tr>
+<tr><td><strong>交易成本经济学</strong></td><td>企业边界由内部协调成本与市场交易成本的均衡点决定。规模增长的自然上限 = 当内部成本 > 市场成本时停止。</td><td>Coase (1937); Williamson (1985)</td></tr>
+<tr><td><strong>信息论</strong></td><td>企业的本质是一个信息处理系统。增长的隐形瓶颈 = 信道容量不足 + 信息失真。</td><td>Shannon (1948); Arrow (1974)</td></tr>
+<tr><td><strong>网络科学</strong></td><td>企业的价值捕获能力由其结构位置（结构洞、中心性）决定，不仅仅是其内部能力。</td><td>Burt (1992); Barabási (2002)</td></tr>
+<tr><td><strong>行为经济学</strong></td><td>增长最隐形的杀手是系统性决策偏见——损失厌恶、沉没成本、确认偏误。</td><td>Kahneman &amp; Tversky (1979); Thaler (1980)</td></tr>
+<tr><td><strong>技术-经济范式理论</strong></td><td>每一次技术革命都会创造新范式。AI时代的组织形态将与工业时代根本不同。</td><td>Perez (2002); Freeman &amp; Perez (1988)</td></tr>
+</table>
+
+<p>然后，本框架将这些理论转化为<strong>34个可计算的哨兵指标</strong>，每个哨兵都有：理论溯源、计算公式、数据源与本体层节点/边映射、阈值建议、适用边界。</p>
+
+<h3>1.3 哨兵系统的三层颗粒度</h3>
+<p>哨兵不是简单的一个"分数"。每个哨兵按以下三层组织：</p>
+<ol>
+<li><strong>计算层（Compute）</strong>：纯数学函数，输入本体层数据，输出数值。类型包括确定性计算（如HHI指数）、启发式评分（如生态位挤压指数）、推理推导（如人+Agent混合边界效率——目前为前瞻性哨兵）。</li>
+<li><strong>哨兵层（Sentinel）</strong>：业务判断层，将数值转化为信号（正常/预警/严重），并标注置信度。具有适用边界判断能力——例如"权力结构刚性"哨兵在企业规模 < 20人时不适用。</li>
+<li><strong>专家层（Expert）</strong>：跨哨兵聚合推理。8位文件化专家（strategy/org/finance/tech/marketing/action/business_model/knowledge）各自负责解读相关哨兵信号，进行交叉验证，产出诊断报告。</li>
+</ol>
+
+<hr class="divider">
+
+<h2 id="s2">二、设计哲学：从"企业为什么能增长"出发</h2>
+
+<h3>2.1 增长的充分必要条件</h3>
+<p>一个企业要持续增长，需要三个充分必要条件同时成立：</p>
+<ol>
+<li><strong>有能力创造增长：</strong> 企业内部的惯例（产品、流程、商业模式）必须不断产生新的价值。这是演化经济学的变异-选择-保留循环。</li>
+<li><strong>能捕获自己创造的价值：</strong> 不被竞争者模仿、不被供应商/客户压价。这取决于企业在价值网络中的生态位和壁垒强度。</li>
+<li><strong>不被自身复杂性压垮：</strong> 增长本身是一种成本——更多的员工、更长的决策链、更多的内部协调。当增长的边际成本超过边际收益，企业自然停滞。这是交易成本经济学和信息论的贡献。</li>
+</ol>
+
+<p>任何增长停滞，必然是因为以上三个条件中至少一个被破坏。这是本框架的逻辑基础。</p>
+
+<div class="card">
+<h3>增长动力学方程（框架级）</h3>
+<pre>企业可持续增长 = f(环境条件, 生态位质量, 资本燃料, 战略-组织匹配度, 内部演化能力)
+
+其中每一项都是一个向量，由多个哨兵指标组成。增长停滞发生在任何一个向量降至临界阈值以下。</pre>
+</div>
+
+<h3>2.2 为什么用生态位作为界面层的第一性原理</h3>
+<p>生态位（Hutchinson, 1957）的定义是：一个物种在多维环境空间中能够持续生存的区域。每个环境维度（温度、湿度、食物来源）都有该物种能够容忍的区间。映射到企业：</p>
+<ul>
+<li><strong>生态位的宽度</strong> = 企业在多少个客户群、价格带、地理区域、产品品类中拥有可行的盈利位置。</li>
+<li><strong>生态位的深度</strong> = 在每个位置上的盈利能力和市场份额。</li>
+<li><strong>生态位的壁垒</strong> = 阻止竞争者侵入的力量（对应战略7力）。</li>
+<li><strong>生态位的实现方式</strong> = 企业用什么方式占据这个生态位（商业模式、自制/外购边界）。</li>
+</ul>
+<p>选择生态位作为界面层的第一性原理，而非直接使用Porter五力或商业模式画布，是因为它提供了一个更底层的统一框架——它能同时解释"位置的质量"（这是Porter的贡献）和"位置的实现方式"（这是商业模式理论和交易成本理论的贡献）。</p>
+
+<h3>2.3 与杨三角的融合</h3>
+<p>内部层使用Nelson &amp; Winter的变异-选择-保留-处理框架作为动力学术语，同时将杨国安教授的"杨三角"（员工能力×员工思维×员工治理）作为管理实践锚点：</p>
+<table>
+<tr><th>杨三角维度</th><th>演化经济学机制</th><th>对应哨兵</th></tr>
+<tr><td>员工能力（能不能做）</td><td>保留（Retention）：组织记忆的存储和可调用性</td><td>关键知识可调用性、惯例扩散速度</td></tr>
+<tr><td>员工思维（愿不愿做）</td><td>选择（Selection）：微观决策的激励方向和质量</td><td>激励增长对齐度</td></tr>
+<tr><td>员工治理（容不容许做）</td><td>处理（Processing）：信息带宽和决策速度</td><td>组织信道容量、信息失真率</td></tr>
+</table>
+
+<hr class="divider">
+
+<h2 id="s3">三、增长动力学模型：七层全景</h2>
+
+<h3>3.1 七层架构总览</h3>
+
+<div class="card">
+<pre style="margin:0;white-space:pre-wrap;">
+顶层校准：技术-经济范式分析（Perez, 2002） — 定位企业所处的技术革命阶段
+  ↓ 校准所有下层哨兵的阈值和判断标准
+
+<span class="badge b-env">外部层</span>  环境诊断（6哨兵）— PEST-CC框架驱动
+            → 市场还有空间吗？窗口在打开还是关闭？竞争和客户在怎么变？
+  ↓
+<span class="badge b-cap">资本层</span>  公司金融诊断（5哨兵）— 公司金融理论驱动
+            → 增长的燃料够吗？钱用对了吗？增长在创造价值还是毁灭价值？
+  ↓
+<span class="badge b-iface">界面层</span>  生态位诊断（13哨兵）— 生态位理论第一性原理 + 战略7力 + 商业模式
+            → 生态位有多宽？壁垒有多强？商业模式可持续吗？边界划对了吗？
+  ↓
+<span class="badge b-align">匹配层</span>  战略-组织匹配度（3哨兵）— 杨国安：企业成果 = 战略 × 组织能力
+            → 战略需要的能力，组织实际具备吗？资源在往战略方向流吗？
+  ↓
+<span class="badge b-inner">内部层</span>  组织动力学诊断（10哨兵）— 演化经济学 + 杨三角锚点
+            → 惯例在进化吗？决策机制健康吗？知识在流动吗？组织能自我修复吗？
+</pre>
+</div>
+
+<h3>3.2 哨兵全景表（34个哨兵）</h3>
+
+<table class="sentinel-table">
+<tr><th>层级</th><th>哨兵ID</th><th>诊断问题</th><th>理论来源</th><th>计算类型</th></tr>
+<tr><td><span class="badge b-env">环境</span></td><td>E1 市场天花板与生命周期</td><td>市场还有多大增长空间？</td><td>Gort &amp; Klepper (1982); Klepper (1996)</td><td>确定性</td></tr>
+<tr><td><span class="badge b-env">环境</span></td><td>E2 结构性机会窗口</td><td>是否错过就不再有的时机？</td><td>Tushman &amp; Anderson (1986); Perez (2002)</td><td>启发式</td></tr>
+<tr><td><span class="badge b-env">环境</span></td><td>E3 竞争格局变化</td><td>对手在怎么变？</td><td>Porter (1979); PEST-CC (C1)</td><td>确定性</td></tr>
+<tr><td><span class="badge b-env">环境</span></td><td>E4 客户需求迁移</td><td>客户想要的东西在变吗？</td><td>Christensen (1997) JTBD; PEST-CC (C2)</td><td>启发式</td></tr>
+<tr><td><span class="badge b-env">环境</span></td><td>E5 环境红利依赖性</td><td>增长多少靠运气？</td><td>从Barney VRIN反面推导</td><td>确定性</td></tr>
+<tr><td><span class="badge b-env">环境</span></td><td>E6 底层结构变化</td><td>游戏规则是否在永久改变？</td><td>Perez (2002); Schumpeter (1942)</td><td>启发式</td></tr>
+<tr><td><span class="badge b-cap">资本</span></td><td>F1 融资约束指数</td><td>增长是否受制于资金不足？</td><td>Fazzari et al. (1988); Kaplan &amp; Zingales (1997)</td><td>确定性</td></tr>
+<tr><td><span class="badge b-cap">资本</span></td><td>F2 资本结构健康度</td><td>债权vs股权结构合理吗？</td><td>Modigliani &amp; Miller (1958); Myers (1984)</td><td>确定性</td></tr>
+<tr><td><span class="badge b-cap">资本</span></td><td>F3 资本配置效率</td><td>钱投到了最高回报的地方吗？</td><td>Stein (1997); ROIC/WACC框架</td><td>确定性</td></tr>
+<tr><td><span class="badge b-cap">资本</span></td><td>F4 增长质量指数</td><td>增长在创造价值还是毁灭价值？</td><td>Penman (2013); Copeland et al.</td><td>确定性</td></tr>
+<tr><td><span class="badge b-cap">资本</span></td><td>F5 资本周转效率</td><td>资本转得够快吗？</td><td>DuPont分析; Soliman (2008)</td><td>确定性</td></tr>
+<tr><td><span class="badge b-iface">界面</span></td><td>I1 生态位宽度与深度</td><td>生态位覆盖了多少维度和深度？</td><td>Hutchinson (1957); Levins (1968)</td><td>启发式</td></tr>
+<tr><td><span class="badge b-iface">界面</span></td><td>I2 生态位挤压指数</td><td>生态位是否正在被挤压？</td><td>Porter (1979); Hannan &amp; Freeman (1977)</td><td>确定性</td></tr>
+<tr><td><span class="badge b-iface">界面</span></td><td>I3 护城河结构性强度</td><td>可量化的壁垒强度（规模/网络/切换/流程）</td><td>Helmer (2016) 7 Powers (4/7聚合)</td><td>确定性</td></tr>
+<tr><td><span class="badge b-iface">界面</span></td><td>I4 护城河感知强度</td><td>定性壁垒强度（品牌/独占资源/反向定位）</td><td>Helmer (2016) 7 Powers (3/7聚合)</td><td>启发式</td></tr>
+<tr><td><span class="badge b-iface">界面</span></td><td>I5 网络权力指数</td><td>在价值网络中的议价能力？</td><td>Burt (1992); Barabási (2002)</td><td>实验性</td></tr>
+<tr><td><span class="badge b-iface">界面</span></td><td>I6 价值捕获效率</td><td>创造的价值保留了多少？</td><td>Brandenburger &amp; Stuart (1996)</td><td>实验性</td></tr>
+<tr><td><span class="badge b-iface">界面</span></td><td>I7 商业模式一致性</td><td>商业模式各要素是否自洽？</td><td>Osterwalder &amp; Pigneur (2010); 段永平三问</td><td>启发式</td></tr>
+<tr><td><span class="badge b-iface">界面</span></td><td>I8 护城河依赖度</td><td>当前赚钱方式对护城河的依赖程度？</td><td>段永平三问（引用I3/I4结果）</td><td>聚合</td></tr>
+<tr><td><span class="badge b-iface">界面</span></td><td>I9 时间穿透力</td><td>十年后这个赚钱方式还在吗？</td><td>段永平三问 + 技术替代风险</td><td>启发式</td></tr>
+<tr><td><span class="badge b-iface">界面</span></td><td>I10 单位经济可持续性</td><td>单客/单笔交易是否正向盈利？</td><td>Ries (2011); Mauboussin</td><td>确定性</td></tr>
+<tr><td><span class="badge b-iface">界面</span></td><td>I11 内部交易成本增长率</td><td>规模扩大的协调成本是否失控？</td><td>Coase (1937); Williamson (1985)</td><td>确定性</td></tr>
+<tr><td><span class="badge b-iface">界面</span></td><td>I12 自制/外购决策健康度</td><td>核心vs非核心活动分类是否准确？</td><td>Williamson资产专用性; Prahalad &amp; Hamel (1990)</td><td>启发式</td></tr>
+<tr><td><span class="badge b-iface">界面</span></td><td>I13 人+Agent混合边界效率</td><td>AI时代的自制vs外购效率如何？</td><td>第一性原理推导（前瞻性）</td><td>推理推导</td></tr>
+<tr><td><span class="badge b-align">匹配</span></td><td>S1 战略-能力一致性</td><td>组织的肌肉记忆是否支持战略方向？</td><td>杨国安; Teece et al. (1997)</td><td>启发式</td></tr>
+<tr><td><span class="badge b-align">匹配</span></td><td>S2 战略调适速度</td><td>战略需要调整时，组织多快能跟上？</td><td>Teece et al. (1997) 动态能力</td><td>确定性</td></tr>
+<tr><td><span class="badge b-align">匹配</span></td><td>S3 资源错配指数</td><td>说的和做的之间差距多大？</td><td>基于Goal节点 vs 实际资源流</td><td>确定性</td></tr>
+<tr><td><span class="badge b-inner">内部</span></td><td>O1 探索-利用平衡</td><td>资源在探索未来vs维护现在的分配？</td><td>March (1991); Uotila et al. (2009)</td><td>确定性</td></tr>
+<tr><td><span class="badge b-inner">内部</span></td><td>O2 惯例变异率</td><td>新的做事方式产生的频率和多样性？</td><td>Nelson &amp; Winter (1982)</td><td>确定性</td></tr>
+<tr><td><span class="badge b-inner">内部</span></td><td>O3 激励增长对齐度</td><td>KPI在激励增长还是维护现状？</td><td>杨国安员工思维; Jensen &amp; Meckling (1976)</td><td>启发式</td></tr>
+<tr><td><span class="badge b-inner">内部</span></td><td>O4 关键知识可调用性</td><td>离职一个人，丢失多少不可替代知识？</td><td>Szulanski (1996); 杨国安员工能力</td><td>确定性</td></tr>
+<tr><td><span class="badge b-inner">内部</span></td><td>O5 惯例扩散速度</td><td>一个好做法多久能被全公司学到？</td><td>Rogers (1962); Szulanski (1996)</td><td>确定性</td></tr>
+<tr><td><span class="badge b-inner">内部</span></td><td>O6 组织信道容量</td><td>信息流动的带宽是否被层级堵塞？</td><td>Shannon (1948); Galbraith (1974)</td><td>确定性</td></tr>
+<tr><td><span class="badge b-inner">内部</span></td><td>O7 信息失真率</td><td>信息在传递中变形了多少？</td><td>Arrow (1974); Kahneman (2011)</td><td>启发式</td></tr>
+<tr><td><span class="badge b-inner">内部</span></td><td>O8 组织修复能力</td><td>从发现问题到有效行动的平均周期？</td><td>Argyris &amp; Sch&amp;ouml;n (1978)</td><td>确定性</td></tr>
+<tr><td><span class="badge b-inner">内部</span></td><td>O9 权力结构刚性</td><td>关键决策权在多大程度上集中于顶层？</td><td>Pfeffer (1981, 1992)</td><td>启发式</td></tr>
+<tr><td><span class="badge b-inner">内部</span></td><td>O10 人才密度</td><td>高绩效员工占比变化趋势？</td><td>Hastings &amp; Meyer (2020); Becker (1964)</td><td>确定性</td></tr>
+</table>
+
+<p style="color:var(--muted);font-size:0.85em;">注：I5、I6标注为"实验性"（理论基础扎实但量化共识有限）；I13标注为"推理推导"（前瞻性领域，从第一性原理推导）。决策偏见审计已退级为专家定性维度，不设独立自动化哨兵。</p>
+
+<hr class="divider">
+
+<!-- CHAPTER 4: TECHNO-ECONOMIC PARADIGM -->
+<h2 id="s4">四、顶层校准：技术-经济范式分析</h2>
+
+<h3>4.1 理论基础</h3>
+<p>卡萝塔·佩雷斯（Carlota Perez, 2002）在<em>《技术革命与金融资本》</em>中论证：每一次技术革命都遵循相同的模式——新技术出现，金融资本涌入（泡沫期），泡沫破裂，技术渗透到整个经济（黄金期），新的技术-经济范式确立，新的组织形态和制度框架随之形成。历史上有五次技术革命：</p>
+
+<table>
+<tr><th>技术革命</th><th>关键生产要素</th><th>新组织形态</th><th>时间</th></tr>
+<tr><td>工业革命</td><td>棉花、生铁</td><td>工厂制</td><td>1771-</td></tr>
+<tr><td>蒸汽与铁路</td><td>铁、煤</td><td>股份公司、职业经理人</td><td>1829-</td></tr>
+<tr><td>钢铁与重工</td><td>钢</td><td>现代公司、卡特尔</td><td>1875-</td></tr>
+<tr><td>石油与汽车</td><td>石油、塑料</td><td>福特制、大规模生产</td><td>1908-</td></tr>
+<tr><td>信息时代</td><td>芯片、软件</td><td>网络化组织、平台</td><td>1971-</td></tr>
+<tr><td style="color:var(--accent);font-weight:bold;">AI时代</td><td style="color:var(--accent);">智能/算力</td><td style="color:var(--accent);">人+Agent混合组织（？）</td><td style="color:var(--accent);">2023+</td></tr>
+</table>
+
+<p>佩雷斯的范式模型对整个诊断框架的贡献在于：<strong>它不是一个哨兵，而是所有哨兵阈值的"校准器"。</strong></p>
+
+<div class="note">
+<strong>范式阶段对诊断的影响：</strong>
+<ul>
+<li><strong>导入期（Installation）</strong>：创新活跃，金融泡沫高 → 哨兵阈值偏向"高容忍"（如现金跑道阈值降低，因为融资成本低；竞争强度阈值放宽，因为新进入者多但大多数会失败）</li>
+<li><strong>转折点（Turning Point）</strong>：泡沫破裂，制度重建 → 融资约束指数成为核心哨兵；环境红利依赖性急剧上升</li>
+<li><strong>协同期（Deployment）</strong>：技术成熟，格局稳定 → 哨兵阈值偏向"高要求"（市场集中度阈值提高，因为赢者通吃；流程效率阈值收紧）</li>
+</ul>
+</div>
+
+<p>在本框架中，技术-经济范式分析作为一个<strong>元数据字段附加在每个环境层哨兵上</strong>（<code>techno-economic-phase</code>），校准该哨兵的阈值。它不产生独立的哨兵编号。</p>
+
+<h3>4.2 范式分析的关键指标</h3>
+<ul>
+<li><strong>AI渗透率：</strong>企业各业务环节中使用AI/LLM工具的比例变化（来源：Tool节点 + Agent节点的 `agentType` 字段）</li>
+<li><strong>人-Agent协作密度：</strong>内部通信图中Person↔Agent的INTERACTS_WITH边的权重变化趋势</li>
+<li><strong>组织形态变化：</strong>团队结构的重组频率、管理层级深度的变化趋势</li>
+<li><strong>算力投入占比：</strong>企业总成本中AI/算力相关支出的比例（FINANCIAL节点 + COST_DRIVEN_BY → Tool节点的边）</li>
+</ul>
+
+<hr class="divider">
+
+<!-- CHAPTER 5: ENVIRONMENT LAYER -->
+<h2 id="s5">五、外部层面：环境诊断（6哨兵）</h2>
+<p>环境层使用杨国安教授扩展的<strong>PEST-CC框架</strong>（政治、经济、社会、技术 + 竞争态势、客户需求变化）作为分析输入，输出6个诊断哨兵。</p>
+
+<!-- E1 -->
+<div class="card">
+<h3><span class="badge b-env">E1</span> 市场天花板与生命周期</h3>
+<p><strong>诊断问题：</strong>这个市场还有多大增长空间？当前处于产业生命周期的哪个阶段？</p>
+
+<h4>理论根基</h4>
+<p>Gort &amp; Klepper (1982) 首次系统定义了产业生命周期的五个阶段（导入→成长→震荡→成熟→衰退），指出不同阶段的增长逻辑完全不同。Klepper (1996) 发现：在成长期，进入者数量激增且创新活跃；在震荡期，大量企业退出，行业集中度急剧上升。Agarwal &amp; Gort (1996) 提供了生存率估计方法。</p>
+
+<h4>计算公式</h4>
+<pre>
+生命周期阶段判定 = f(行业增速, 进入者数量变化率, 退出者数量变化率, 价格竞争强度变化)
+
+其中：
+- 行业增速 = (行业总营收_t - 行业总营收_t-1) / 行业总营收_t-1
+- 净进入率 = (新进入者数 - 退出者数) / 总企业数
+
+判定规则（基于Klepper 1996）：
+  导入期：行业增速 > 30% 且净进入率 > 0 且竞争者数 < 20
+  成长期：行业增速 15-30% 且净进入率 > 0
+  震荡期：行业增速 5-15% 且退出者数 > 进入者数
+  成熟期：行业增速 < 5% 且净进入率 ≈ 0
+  衰退期：行业增速 < 0 且持续2年以上
+
+市场天花板 = TAM × (1 - 当前渗透率)
+其中 TAM（总可寻址市场）建议来源：行业报告/Gartner/Frost &amp; Sullivan
+</pre>
+
+<h4>数据源与本体映射</h4>
+<table>
+<tr><th>数据项</th><th>本体节点/边</th><th>字段</th></tr>
+<tr><td>企业营收（行业总营收）</td><td>FINANCIAL 节点</td><td>amount, 累加同行业所有企业</td></tr>
+<tr><td>竞争者数量</td><td>Market 节点 + COMPETES_WITH 边</td><td>通过 COMPETES_WITH 关系计数</td></tr>
+<tr><td>客户数据</td><td>Client 节点 + SELLS_TO 边</td><td>penetration（渗透率）</td></tr>
+<tr><td>TAM/SAM估算</td><td>Market 节点</td><td>segment, region 字段 → 匹配行业报告数据</td></tr>
+</table>
+
+<h4>适用边界</h4>
+<ul>
+<li><strong>适用：</strong>所有行业。但TAM估算对小众B2B利基市场精度较低。</li>
+<li><strong>不适用：</strong>全新品类（没有可参照的行业数据），此时应使用E2（结构性机会窗口）替代阶段性判断。</li>
+<li><strong>技术-经济范式校准：</strong>在AI革命导入期，行业增速阈值的"正常"范围应上浮10-15个百分点，因为技术驱动的市场扩张速度远超传统周期的预期。</li>
+</ul>
+
+<h4>关键文献</h4>
+<ol>
+<li>Gort, M. &amp; Klepper, S. (1982). "Time Paths in the Diffusion of Product Innovations." <em>The Economic Journal</em>, 92(367): 630–653.</li>
+<li>Klepper, S. (1996). "Entry, Exit, Growth, and Innovation over the Product Life Cycle." <em>The American Economic Review</em>, 86(3): 562–583.</li>
+<li>Agarwal, R. &amp; Gort, M. (1996). "The Evolution of Markets and Entry, Exit and Survival of Firms." <em>The Review of Economics and Statistics</em>, 78(3): 489–498.</li>
+<li>Abernathy, W.J. &amp; Utterback, J.M. (1978). "Patterns of Industrial Innovation." <em>Technology Review</em>, 80(7): 40–47.</li>
+</ol>
+</div>

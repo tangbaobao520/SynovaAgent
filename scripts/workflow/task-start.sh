@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering V4.1.2 — 任务启动 (Task Start)
+# Loop Engineering V4.2.1 — 任务启动 (Task Start)
 #
 # 这是整个系统最重要的环节。
 # 在写任何代码之前，先回答 3 个问题，把"自然语言意图"翻译成"可执行的规格"。
@@ -20,7 +20,7 @@ BRIEF_FILE="$ROOT/.claude/task-briefs/${TIMESTAMP}-${TASK_SLUG}.md"
 
 echo ""
 echo -e "${CYAN}════════════════════════════════════════════════════════════${RESET}"
-echo -e "${CYAN}  Loop Engineering V4.1.2 — 任务启动${RESET}"
+echo -e "${CYAN}  Loop Engineering V4.2.1 — 任务启动${RESET}"
 echo -e "${CYAN}  先想清楚，再动手。${RESET}"
 echo -e "${CYAN}════════════════════════════════════════════════════════════${RESET}"
 echo ""
