@@ -14,7 +14,9 @@
   "diagnosis": {
     "maxExpertConcurrency": 6,
     "maxToolRounds": 3,
-    "toolTimeoutMs": 60000
+    "toolTimeoutMs": 60000,
+    "gateDataCompleteness": 0.3,
+    "gateMinHypothesisConfidence": 0.5
   },
   "context": {
     "compressionStrategy": "sliding-window",

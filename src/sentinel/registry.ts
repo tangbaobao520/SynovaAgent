@@ -60,6 +60,11 @@ export class SentinelRegistryImpl implements SentinelRegistry {
       .map(s => ({ sentinel: s, cron: s.config.cron! }));
   }
 
+  /** 按团队列出哨兵 — 当前所有哨兵全局适用, 团队过滤在 check() 内部通过 discoverTeams 实现 */
+  listForTeam(_teamId: string): Sentinel[] {
+    return this.list();
+  }
+
   /** 运行所有哨兵 (按需诊断用), 返回 Finding[]。每哨兵独立降级。 */
   async runAll(context: SentinelContext): Promise<SentinelFinding[]> {
     const all: SentinelFinding[] = [];
