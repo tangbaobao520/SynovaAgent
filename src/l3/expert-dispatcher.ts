@@ -144,6 +144,7 @@ export class ExpertDispatcher {
   private maxRetries: number;
   private piiScrubber: import('../security/pii-scrubber').PIIScrubber | null = null;
   private toolRegistry: import('../agent/tools').ToolRegistry | null = null;
+  private factsContext = ''; // V4.2.1: 企业事实约束
 
   constructor(config: ExpertDispatcherConfig) {
     this.llmClient = config.llmClient;
@@ -326,7 +327,7 @@ export class ExpertDispatcher {
           `[${e.type}] ${e.content.slice(0, 100)} (置信度: ${e.confidence})`,
         ).join('\n');
 
-        const systemPrompt = `${prompt}${skillCatalog}${knowledgeContext}\n\n## 输出格式 (必须严格遵守)\n只输出纯 JSON, 不要 Markdown 代码块包裹。\n${EXPERT_REPORT_SCHEMA}`;
+        const systemPrompt = `${this.factsContext}${prompt}${skillCatalog}${knowledgeContext}\n\n## 输出格式 (必须严格遵守)\n只输出纯 JSON, 不要 Markdown 代码块包裹。\n${EXPERT_REPORT_SCHEMA}`;
         const userMessage = `## 可用证据\n${evidenceSummary || '无证据'}\n\n## 本体图更新 (可选)\n如果你发现了证据中未出现的新实体或关系，请在 ontologyPatches 字段中输出。格式: "ontologyPatches": [{ "createNodes": [...], "createEdges": [...] }]`;
 
         const response = await Promise.race([
@@ -494,7 +495,24 @@ export class ExpertDispatcher {
   }
 
   /** 从 Registry + expert-registry.yaml 动态读取诊断专家并行执行 */
-  async runAllExperts(evidence: Evidence[]): Promise<ExpertReport[]> {
+  async runAllExperts(evidence: Evidence[], teamId?: string): Promise<ExpertReport[]> {
+    // V4.2.1: 加载企业事实层 — 已确认制度/规则/工具
+    this.factsContext = '';
+    if (teamId) {
+      try {
+        const { getAgentMemoryStore } = await import('../l4/agent-memory-store');
+        const { getDatabase } = await import('../init/engine-context');
+        const db = getDatabase();
+        const store = getAgentMemoryStore(db);
+        const facts = store.recall({ orgId: teamId, type: 'enterprise_fact', limit: 20 } as never) as Array<{ key: string; value: string }>;
+        if (facts && facts.length > 0) {
+          this.factsContext = `\n[企业事实约束 — 以下为本企业已确认制度/规则/工具，推理时必须遵守]\n${
+            facts.map(f => `- ${f.key}: ${f.value}`).join('\n')
+          }\n`;
+        }
+      } catch { /* enterprise_fact 不可用 — degraded */ }
+    }
+
     const { getExpertRegistry } = await import('./expert-registry');
     const { getBackgroundExperts, getEnabledDiagnosticExperts } = await import('../agent/expert-config-loader');
     const allTypes = getExpertRegistry().listTypes();
