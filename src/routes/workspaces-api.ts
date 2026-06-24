@@ -79,7 +79,22 @@ router.put('/api/workspaces/:id/status', (req: Request, res: Response) => {
   if (!ws) return res.status(404).json({ ok: false, error: 'workspace not found' });
 
   const { status, priority } = req.body as { status?: Workspace['status']; priority?: Workspace['priority'] };
-  if (status) ws.status = status;
+  if (status) {
+    // V4.2.3: 状态流转验证 — PRD §8 工作区生命周期
+    const validTransitions: Record<string, string[]> = {
+      pending: ['analyzing'],
+      analyzing: ['confirmed', 'pending'],
+      confirmed: ['executing', 'analyzing'],
+      executing: ['resolved', 'shelved', 'confirmed'],
+      shelved: ['pending', 'resolved'],
+      resolved: [],
+    };
+    const allowed = validTransitions[ws.status];
+    if (!allowed || !allowed.includes(status)) {
+      return res.status(400).json({ ok: false, error: `无效状态流转: ${ws.status} → ${status}` });
+    }
+    ws.status = status;
+  }
   if (priority) ws.priority = priority;
   ws.updatedAt = new Date().toISOString();
   store.set(id, ws);
