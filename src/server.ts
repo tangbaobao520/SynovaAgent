@@ -84,15 +84,29 @@ export async function createServer(): Promise<Server> {
   // 清理残留的 .tmp 文件
   atomicWriter.cleanup();
   const bossMailbox = new BossMailbox(); // PRD v1.6 Slice 5
-  // v3.5 PRD §12.4: 老板信箱定时推送 (周一 9:00)
-  setInterval(() => {
-    const now = new Date();
-    if (now.getDay() === 1 && now.getHours() === 9 && now.getMinutes() === 0) {
+  // v3.5 PRD §12.4: 老板信箱定时推送 (周一 9:00) — V4.2.1: 注入真实信号+行动数据
+  setInterval(async () => {
+    try {
+      const now = new Date();
+      if (now.getDay() !== 1 || now.getHours() !== 9 || now.getMinutes() !== 0) return;
       const webhookUrl = process.env.FEISHU_WEBHOOK_URL || '';
       if (!webhookUrl) return;
-      const report = bossMailbox.generateReport('Synova', `W${Math.ceil(now.getDate()/7)}`, [], []);
+
+      // 从哨兵系统获取信号
+      let signals: Array<{ severity: 'critical' | 'warning' | 'info'; title: string; description: string }> = [];
+      try {
+        const { getSentinelRegistry } = await import('./sentinel/registry');
+        const { aggregateSignals } = await import('./sentinel/signal-aggregator');
+        const findings = await getSentinelRegistry().runAll({ db, now: new Date(), registry: getSentinelRegistry() });
+        if (findings.length > 0) {
+          const aggregated = aggregateSignals(findings);
+          signals = aggregated.aggregatedSignals.map(s => ({ severity: s.severity, title: s.title, description: s.description }));
+        }
+      } catch (err: unknown) { logger.warn({ err }, '老板信箱获取信号失败 — degraded'); }
+
+      const report = bossMailbox.generateReport('Synova', `W${Math.ceil(now.getDate()/7)}`, signals, []);
       bossMailbox.pushToFeishu(report, webhookUrl).catch(() => {});
-    }
+    } catch (err: unknown) { logger.warn({ err }, '老板信箱推送失败 — degraded'); }
   }, 60000); // 每分钟检查
   // PRD v1.6 Slice 7: workspace-service 接线
   buildInheritedContext({ parentId: 'init', department: 'dept', title: 'init', source: 'boss_assigned', parentSummary: 'init' });
