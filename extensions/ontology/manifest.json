@@ -9,5 +9,7 @@
   "exportKey": "loadOntology",
   "nodeTypes": 17,
   "edgeTypes": 14,
-  "tagsFile": "tags.json"
+  "tagsFile": "tags.json",
+  "authority": "runtime",
+  "note": "JSON Schema files are the authoritative runtime data source. sog-core-schema.ts enum is deprecated reference."
 }
