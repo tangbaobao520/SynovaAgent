@@ -1,0 +1,1 @@
+{"name":"general-enterprise","version":"1.0.0","type":"industry-template","displayName":"通用企业","extends":"base","description":"通用企业诊断模板", "entryPoint": "./manifest.json"}
