@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering v3.6 — check-file-driven.sh
+# Loop Engineering V4.2.1 — check-file-driven.sh
 # 文件驱动架构完整性门禁。pre-commit 第8组调用。全部 <2s。
 #
 # ═══ Anthropic 决策溯源 ═══
