@@ -58,6 +58,15 @@ router.post('/api/proposal/:id/resolve', (req: Request, res: Response) => {
   if (!result.ok) {
     return res.status(404).json(result);
   }
+  // V4.2.1: 反馈收集 — collectFeedback 持久化用户决策
+  try {
+    const { collectFeedback } = require('../evolution/feedback-collector');
+    collectFeedback({
+      actionId: id,
+      decision: action === 'confirm' ? 'confirm' : action === 'reject' ? 'reject' : 'modify',
+      reason: feedback || undefined,
+    }).catch(() => {});
+  } catch { /* feedback collector unavailable — degraded */ }
   res.json({ ok: true, proposal: result.proposal });
 });
 
