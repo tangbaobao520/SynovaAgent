@@ -212,7 +212,7 @@ Agent，不是 ChatBot。驻扎企业，持续观测，主动发现，自动诊�
 **目标**: 成为组织诊断的 AWS。每个新客户、新行业、新数据源 → 加文件即可，不改代码。
 能文件化的必须文件化。不能文件化的必须有明确的扩展点。
 
-**流程约束**: V4.1 — task brief 6 字段强制 + 免疫系统 (memory/ constraint) + plan.json 分阶段 + pre-commit 8 组物理阻断。
+**流程约束**: V4.1.2 — task brief 6 字段强制 + 免疫系统 (memory/ constraint) + plan.json 分阶段 + pre-commit 8 组物理阻断。
 
 **数据流**:
 ```

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Loop Engineering V4.1 — 生成 task brief (6 核心字段 + 项目身份物理注入)."""
+"""Loop Engineering V4.1.2 — 生成 task brief (6 核心字段 + 项目身份物理注入)."""
 import os
 from datetime import datetime
 
