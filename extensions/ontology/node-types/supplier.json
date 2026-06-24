@@ -1,0 +1,1 @@
+{"$id":"node-type/supplier","label":"Supplier","tags":["generic","financial"],"requiredProps":["name"],"optionalProps":{"tier":"string","relationship":"string"},"description":"组织的供应商/合作伙伴。"}
