@@ -212,7 +212,7 @@ Agent，不是 ChatBot。驻扎企业，持续观测，主动发现，自动诊�
 **目标**: 成为组织诊断的 AWS。每个新客户、新行业、新数据源 → 加文件即可，不改代码。
 能文件化的必须文件化。不能文件化的必须有明确的扩展点。
 
-**流程约束**: V4.2.1 — task brief 6 字段强制 + 免疫系统 (memory/ constraint) + plan.json 分阶段 + pre-commit 8 组物理阻断 + Plan-Actual 闭合。
+**流程约束: V4.2.2 — task brief 6字段 + 免疫系统 + plan.json + 8组物理阻断 + Plan-Actual闭合 + engine-core清零
 
 **数据流**:
 ```
@@ -285,15 +285,15 @@ evolution/ (SessionLearningEngine, FeedbackCollector, OntologyAdapter)
 
 ---
 
-## Loop Engineering V4.2.1 — 免疫系统 + Plan-Actual 闭合 + 缺口追踪 + 修复提示
+## Loop Engineering V4.2.2 — 免疫系统 + Plan-Actual 闭合 + 缺口追踪 + 修复提示
 
-> 2026-06-17 v2.5 → v3.0 → v3.1 → v3.5 → v3.6 → v3.7 → v3.8 → v3.9 → V4.1 → V4.1.1 → V4.1.2 → **V4.2.1 (2026-06-24)**。
+> 2026-06-17 v2.5 → v3.0 → v3.1 → v3.5 → v3.6 → v3.7 → v3.8 → v3.9 → V4.1 → V4.1.1 → V4.1.2 → **V4.2.2 (2026-06-24)**。
 >
 > **v3.6 的核心教训**：把需要语义理解的事交给 grep = 17 次折腾才提交成功。
 > **V3.9 的核心教训**：硬阻断 100% 有效，软机制 0% 有效。信息注入型检查对 agent 不可见。
 > **V4.1 的解法**：每次记录一个错误 → 植入一个免疫细胞（bash constraint）。
 >
-> ### V4.2.1 变更 (2026-06-24)
+> ### V4.2.2 变更 (2026-06-24)
 > - 新增免疫细胞 #9: plan-actual-closure（声明完成须对比文档）
 > - q0c-cancelled-without-followup 升级 warn→block（取消不补＝不准提交）
 > - 所有 9 个免疫细胞增加 remediation 字段（"怎么做才对"修复提示）
