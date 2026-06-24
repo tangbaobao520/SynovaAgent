@@ -26,6 +26,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;backg
 .ws-item.active{background:rgba(108,92,231,.15);border:1px solid var(--accent)}
 .ws-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .ws-dot.critical{background:var(--red)}.ws-dot.warning{background:var(--orange)}.ws-dot.ok{background:var(--green)}
+.search-bar{display:flex;padding:8px 16px;background:var(--panel);border-bottom:1px solid var(--border);gap:8px;align-items:center}
+.search-bar input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;outline:none}
+.search-bar input:focus{border-color:var(--accent)}
+.search-bar button{background:var(--accent);color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:12px;cursor:pointer}
 .main{flex:1;display:flex;flex-direction:column;min-width:0}
 .main-header{padding:12px 20px;border-bottom:1px solid var(--border);font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
 .main-header .expert-tag{font-size:11px;background:rgba(108,92,231,.2);color:var(--accent2);padding:2px 8px;border-radius:4px}
@@ -47,6 +51,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;backg
 </style>
 </head>
 <body>
+<div class="search-bar"><input type="text" id="global-search" placeholder="向 Synova 提问...  示例: 上个月客户流失率 / 张三部门人员变动" onkeydown="if(event.key==='Enter'){searchAsk()}"><button onclick="searchAsk()">搜索</button></div>
 <div class="sidebar">
   <div class="sidebar-header"><button onclick="newWorkspace()">+ 新建工作区</button></div>
   <div class="workspace-list" id="ws-list">
@@ -101,6 +106,20 @@ async function sendMsg(){
   msgs.scrollTop=msgs.scrollHeight;
 }
 loadWorkspaces();
+function searchAsk() {
+  const q = document.getElementById('global-search').value.trim();
+  if (!q) return;
+  fetch('/api/knowledge/ask', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({question: q}) })
+    .then(r => r.json()).then(data => {
+      const mid = document.getElementById('messages');
+      if (!mid) return;
+      const d = document.createElement('div');
+      d.className = 'msg agent';
+      d.innerHTML = '<b>🔍 ' + esc(q) + '</b><br><br>' + (data.answer || '暂无结果');
+      mid.appendChild(d);
+      mid.scrollTop = mid.scrollHeight;
+    }).catch(() => {});
+}
 </script>
 </body>
 </html>`);
