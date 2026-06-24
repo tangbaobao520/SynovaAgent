@@ -10,7 +10,8 @@ import { createLogger } from '../logger';
 // L4 访问: 运行时动态 import — 避免静态跨层依赖 (铁律 39, 审计 P0-20260618)
 import { runSafetyGate } from '../security/safety-guardrails';
 import { getFaultRecovery } from '../services/fault-recovery';
-import type { SessionStore } from '../store/session-store';
+// V4.2.4: 内联 SessionStore 类型 — 避免 L2→L5 直接 import (铁律 39)
+interface SessionStoreLike { saveDiagnosisCheckpoint?: (cp: { sessionId: string; phase: number; completedModules: string[]; partialReport: unknown; savedAt: string }) => void; }
 
 // 诊断检查点 — 每个 Phase 完成后保存状态到 SessionStore
 interface DiagnosisCheckpoint {
@@ -99,7 +100,7 @@ export class DiagnosisLauncher {
       // 诊断检查点保存 — 每个 Phase 完成后写入 SessionStore
       const saveCheckpoint = (phase: number, modules: string[], report: unknown) => {
         try {
-          const store: SessionStore | undefined = (this.ctx as { sessionStore?: SessionStore }).sessionStore;
+          const store: SessionStoreLike | undefined = (this.ctx as { sessionStore?: SessionStoreLike }).sessionStore;
           if (store) {
             store.saveDiagnosisCheckpoint?.({
               sessionId: this.ctx.sessionId, phase, completedModules: modules,
@@ -148,16 +149,7 @@ export class DiagnosisLauncher {
         // C6: 接入剩余 5 个 upsert 方法 (审计 P0-20260604)
         // 每个独立 try/catch — 单个数据段失败不影响其他
 
-        // HONA — 人-组织网络分析
-        try {
-          const honaData = (report as { hona?: any; humanOrganization?: any }).hona
-            || (report as { humanOrganization?: any }).humanOrganization;
-          if (honaData?.people?.length > 0) {
-            const result = graphBridge.upsertFromHONA(honaData.people, honaData.interactions || honaData.edges || []);
-            if (result.errors.length > 0) log.warn({ errors: result.errors }, 'HONA sync — some errors');
-            log.debug({ nodes: result.nodesCreated, edges: result.edgesCreated }, 'HONA 已同步到本体图');
-          }
-        } catch (err: any) { log.warn({ err }, 'HONA GraphBridge sync failed — degraded'); }
+        // HONA — V4.2.4: hona 哨兵已删除 — 跳过
 
         // FinancialImpact — 财务影响分析
         try {

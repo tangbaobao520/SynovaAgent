@@ -18,9 +18,9 @@ const log = createLogger('sentinel/builtins');
 
 /**
  * 从文件名推导导出键名。
- * htm-sentinel.ts → htmSentinel
- * revenue-decomposition-sentinel.ts → revenueDecompositionSentinel
- * gap-dynamics-sentinel.ts → gapDynamicsSentinel
+ * cost-health-sentinel.ts → costHealthSentinel
+ * revenue-health-sentinel.ts → revenueHealthSentinel
+ * gap-dynamics: 已删除(V4.2.4)
  */
 function filenameToExportKey(filename: string): string {
   const base = filename.replace(/-sentinel\.ts$/, '').replace(/\.ts$/, '');

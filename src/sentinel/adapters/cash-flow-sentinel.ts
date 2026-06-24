@@ -1,13 +1,13 @@
 /**
  * sentinel/adapters/cash-flow-sentinel.ts — 现金流哨兵 (D1)
- * @state: real — 2026-06-18 Week 3: 接线 computeFinancialSnapshot()
+ * @state: real — V4.2.4: 内联 computeCashFlowMetrics 替代已删除桥接
  *
  * 数据源: SOG FINANCIAL 节点 + diagnosis_snapshots。
- * 每日 9:00 巡检。核心 compute 逻辑委托给 financial-snapshot.ts。
+  // V4.2.4: financial-snapshot 桥接已删除，内联实现
  */
 
 import type { Sentinel, SentinelCheckResult, SentinelConfig, SentinelContext, SentinelFinding } from '../types';
-import type { FinancialEntry } from '../../sentinel/compute/financial-snapshot';
+  // V4.2.4: financial-snapshot 桥接已删除
 import { discoverTeams } from './helpers';
 import { createLogger } from '../../logger';
 
@@ -16,6 +16,43 @@ const log = createLogger('sentinel/cashflow');
 const config: SentinelConfig = {
   id: 'sentinel-cash-flow', name: '现金流', description: '现金流预测/跑道/应收逾期。数据源: SOG FINANCIAL 节点 + diagnosis_snapshots。', category: 'risk', priority: 'P0', mode: 'cron', cron: '0 9 * * *', requiredDataSources: ['sog_graph'], confidenceModel: 'statistical', version: '2.0.0',
 };
+
+/** 内联现金流指标计算 (V4.2.4: 替代已删除的 financial-snapshot 桥接) */
+function computeCashFlowMetrics(
+  entries: Array<{ revenue: number; cost: number; operatingExpenses: number; cashBalance: number; period: string }>
+): { cashFlowHealth: 'critical' | 'tight' | 'healthy'; netMargin: number; revenueYoYGrowth: number | null; grossMargin: number } {
+  const totalRevenue = entries.reduce((s, e) => s + (e.revenue || 0), 0);
+  const totalCost = entries.reduce((s, e) => s + (e.cost || 0), 0);
+  const totalOpEx = entries.reduce((s, e) => s + (e.operatingExpenses || 0), 0);
+  const totalCash = entries.reduce((s, e) => s + (e.cashBalance || 0), 0);
+  const count = entries.length;
+
+  const netMargin = totalRevenue > 0 ? (totalRevenue - totalCost - totalOpEx) / totalRevenue : 0;
+  const grossMargin = totalRevenue > 0 ? (totalRevenue - totalCost) / totalRevenue : 0;
+
+  // Year-over-year: compare first vs last period revenue
+  let revenueYoYGrowth: number | null = null;
+  if (entries.length >= 2) {
+    const sorted = [...entries].sort((a, b) => (a.period || '').localeCompare(b.period || ''));
+    const first = sorted[0].revenue || 0;
+    const last = sorted[sorted.length - 1].revenue || 0;
+    revenueYoYGrowth = first > 0 ? (last - first) / first : 0;
+  }
+
+  // 现金流健康度：基于跑道月数和净利率
+  const monthlyBurn = count > 0 ? (totalOpEx + totalCost) / count : 0;
+  const runwayMonths = monthlyBurn > 0 ? totalCash / monthlyBurn : (totalCash > 0 ? Infinity : 0);
+  let cashFlowHealth: 'critical' | 'tight' | 'healthy';
+  if (runwayMonths < 3 || netMargin < -0.2) {
+    cashFlowHealth = 'critical';
+  } else if (runwayMonths < 12 || netMargin < 0) {
+    cashFlowHealth = 'tight';
+  } else {
+    cashFlowHealth = 'healthy';
+  }
+
+  return { cashFlowHealth, netMargin, revenueYoYGrowth, grossMargin };
+}
 
 export const cashFlowSentinel: Sentinel = {
   config,
@@ -37,11 +74,12 @@ export const cashFlowSentinel: Sentinel = {
         return { sentinelId: config.id, ok: true, findings: [], durationMs: Date.now() - startTime, checkedAt, degraded: true };
       }
 
-      // 映射 SOG props → FinancialEntry (动态 import — 铁律 39)
-      const { computeFinancialSnapshot } = await import(
-        '../../sentinel/compute/financial-snapshot'
-      );
-      const entries: FinancialEntry[] = [];
+      // 映射 SOG props → 内部财务条目
+      const entries: Array<{
+        period: string; startDate: string; endDate: string;
+        revenue: number; cost: number; operatingExpenses: number;
+        cashBalance: number; headcount: number; operatingCashFlow: number | undefined;
+      }> = [];
       for (const r of rawEntries) {
         const p = typeof r.props === 'string' ? JSON.parse(r.props as string) : (r.props || {}) as Record<string, unknown>;
         entries.push({
@@ -60,9 +98,8 @@ export const cashFlowSentinel: Sentinel = {
         return { sentinelId: config.id, ok: true, findings: [], durationMs: Date.now() - startTime, checkedAt, degraded: true };
       }
 
-      // 委托 computeFinancialSnapshot 做真实计算 (per-team)
-      const teamId = (entries[0]?.period || 'default') as string;
-      const snapshot = computeFinancialSnapshot({ teamId, entries });
+      // 内联现金流计算 (V4.2.4: financial-snapshot 桥接已删除)
+      const snapshot = computeCashFlowMetrics(entries);
 
       // 计算跑道
       const totalCash = entries.reduce((s, e) => s + (e.cashBalance || 0), 0);
@@ -93,7 +130,7 @@ export const cashFlowSentinel: Sentinel = {
         });
       }
 
-      // 应收账款逾期检查 (AR 不在 FinancialEntry 中，从原始 SOG 数据提取)
+      // 应收账款逾期检查 (AR 不在财务条目中，从原始 SOG 数据提取)
       const totalAR = rawEntries.reduce((s, r) => {
         const p = typeof r.props === 'string' ? JSON.parse(r.props as string) : (r.props || {}) as Record<string, unknown>;
         return s + (Number(p.accounts_receivable) || Number(p.receivable) || Number(p.应收账款) || 0);

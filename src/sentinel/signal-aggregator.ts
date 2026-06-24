@@ -180,9 +180,9 @@ function extractEntityKey(finding: SentinelFinding): string {
 
 /** 从哨兵 ID 推断类别 */
 function inferCategory(sentinelId: string): string {
-  if (sentinelId.includes('htm') || sentinelId.includes('hacd') || sentinelId.includes('hona') || sentinelId.includes('self-awareness')) return 'collaboration';
-  if (sentinelId.includes('gap') || sentinelId.includes('cpc') || sentinelId.includes('path') || sentinelId.includes('eob') || sentinelId.includes('token')) return 'capability';
-  if (sentinelId.includes('seven-powers')) return 'strategy';
+  // V4.2.4: htm/hacd/hona/self-awareness 已删除
+  if (sentinelId.includes("gap") || sentinelId.includes("cpc") || sentinelId.includes("path") || sentinelId.includes("token")) return "capability";
+  // V4.2.4: seven-powers 已删除
   if (sentinelId.includes('key-person') || sentinelId.includes('risk')) return 'risk';
   return 'health';
 }
