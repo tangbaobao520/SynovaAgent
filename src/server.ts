@@ -127,7 +127,7 @@ export async function createServer(): Promise<Server> {
   }, 60000); // 每分钟检查
   // PRD v1.6 Slice 7: workspace-service 接线
   buildInheritedContext({ parentId: 'init', department: 'dept', title: 'init', source: 'boss_assigned', parentSummary: 'init' });
-  detectConflicts([]); // Slice 7 冲突检测初始化
+  detectConflicts([]); // Slice 7 冲突检测初始化 — 运行时由 workspace changes 触发
   const rbacCtx = extractRbacContext({ headers: { 'x-synova-token': 'admin::dev' } }); // Slice 7 RBAC
   void canAccessWorkspace(rbacCtx, { visibility: 'global' });
   void canModifyWorkspace(rbacCtx, { visibility: 'global' });
