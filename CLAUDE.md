@@ -212,7 +212,7 @@ Agent，不是 ChatBot。驻扎企业，持续观测，主动发现，自动诊�
 **目标**: 成为组织诊断的 AWS。每个新客户、新行业、新数据源 → 加文件即可，不改代码。
 能文件化的必须文件化。不能文件化的必须有明确的扩展点。
 
-**流程约束: V4.2.2 — task brief 6字段 + 免疫系统 + plan.json + 8组物理阻断 + Plan-Actual闭合 + engine-core清零
+**流程约束: V4.2.3 — task brief 6字段 + 免疫系统 + plan.json + 8组物理阻断 + Plan-Actual闭合 + engine-core清零 + 旧适配器映射检查
 
 **数据流**:
 ```
@@ -285,7 +285,7 @@ evolution/ (SessionLearningEngine, FeedbackCollector, OntologyAdapter)
 
 ---
 
-## Loop Engineering V4.2.2 — 免疫系统 + Plan-Actual 闭合 + 缺口追踪 + 修复提示
+## Loop Engineering V4.2.3 — 免疫系统 + Plan-Actual 闭合 + 缺口追踪 + 修复提示 + 旧适配器映射检查
 
 > 2026-06-17 v2.5 → v3.0 → v3.1 → v3.5 → v3.6 → v3.7 → v3.8 → v3.9 → V4.1 → V4.1.1 → V4.1.2 → **V4.2.2 (2026-06-24)**。
 >
