@@ -1,0 +1,1 @@
+{"$id":"node-type/market","label":"Market","tags":["generic","strategic"],"requiredProps":["name"],"optionalProps":{"segment":"string","region":"string"},"description":"组织所处的市场/行业。"}
