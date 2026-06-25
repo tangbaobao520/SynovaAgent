@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering V4.2.1 — PreToolUse: task brief 质量检查
+# Loop Engineering V4.2.5 — PreToolUse: task brief 质量检查
 #
 # 挂在 PreToolUse → Edit|Write 上，在 hook-check-memory.sh 之后运行。
 # 7 项字段质量检查 + 接口真实性反向验证 + 层级确认。
@@ -228,6 +228,13 @@ if [ "$FAIL" -gt 0 ]; then
   echo "  被阻止的文件: ${FILE}"
   echo "  必填: 项目身份 / Q1调研(含来源引用) / Q2范围(含排除项) / Q3验收(含用户旅程) / 本任务在哪一层 / 文档引用 / 接口审计"
   echo "  禁止: Q1空洞敷衍 / Q2无排除项 / Q3无用户旅程 / 敷衍填充词 / Q4无视历史教训"
+  # V4.2.5: PreToolUse exit code 在 VSCode Extension 中被忽略（不阻断 Write）。
+  # 但脚本仍然执行——记录证据到 /tmp/（git 无法 checkout 抹掉）。
+  # pre-commit 组 6 检查此文件，存在则硬阻断。
+  EVI_FILE="/tmp/.synova-before-brief"
+  echo "$(date -Iseconds) | FILE=${FILE} | BRIEF=${BRIEF} | 代码在 brief 填写前写入" >> "$EVI_FILE"
+  echo "  ⚠️  证据已记录: ${EVI_FILE}"
+  echo "  ⚠️  提交时 pre-commit 组 6 将硬阻断，直到你 rm 此文件并重新 task-start。"
   exit 1
 fi
 

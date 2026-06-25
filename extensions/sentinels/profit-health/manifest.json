@@ -1,1 +1,23 @@
-{"$schema":"https://synova.dev/schemas/extension-manifest-v1.json","name":"profit-health","version":"1.0.0","type":"sentinel","displayName":"利润健康哨兵","schedule":"0 9 * * 1","expert":"finance","priority":"P1","computes":["profit-margin-change","margin-vs-benchmark"],"thresholds":{"profit_margin_change":{"warning":-0.02,"critical":-0.05},"margin_vs_benchmark":{"warning":-0.05,"critical":-0.15}},"aggregation":"worst_first","context":{"requiredDataSources":["sog_graph","financial_baseline"],"dataAccess":{"allowedDimensions":["financial"],"sensitiveAccess":"read"}},"entryPoint":"./aggregate.ts","exportKey":"profitHealthSentinel"}
+{
+  "$schema": "https://synova.dev/schemas/extension-manifest-v1.json",
+  "name": "profit-health",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "利润健康哨兵",
+  "description": "监控利润率变化趋势与行业基准对比。输出 Finding: '利润率下降 X%，落后行业基准 Y%。'",
+  "schedule": "0 9 * * 1",
+  "expert": "finance",
+  "priority": "P1",
+  "computes": ["profit-margin-change", "margin-vs-benchmark"],
+  "thresholds": {
+    "profit_margin_change": { "warning": -0.02, "critical": -0.05 },
+    "margin_vs_benchmark": { "warning": -0.05, "critical": -0.15 }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": ["sog_graph", "financial_baseline"],
+    "dataAccess": { "allowedDimensions": ["financial"], "sensitiveAccess": "read" }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "profitHealthSentinel"
+}
