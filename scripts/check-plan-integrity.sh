@@ -15,7 +15,7 @@ HARD_FAIL=0
 
 PLAN_FILE="$ROOT/.claude/plan.json"
 TODAY=$(date +%Y-%m-%d)
-BRIEF=$(find "$ROOT/.claude/task-briefs/" -name "${TODAY}*" 2>/dev/null | head -1)
+BRIEF=$(find "$ROOT/.claude/task-briefs/" -name "${TODAY}*" 2>/dev/null | xargs ls -t 2>/dev/null | head -1)
 
 if [ ! -f "$PLAN_FILE" ]; then
   echo -e "  ${GREEN}✅ plan-integrity (无 plan.json)${RESET}"

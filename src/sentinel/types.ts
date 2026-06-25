@@ -175,3 +175,6 @@ import type { computeDataSiloScore as _dataSiloCheck } from '../../extensions/se
 import type { softwareHealthSentinel as _swHealthTypeCheck } from '../../extensions/sentinels/software-health/aggregate';
 import type { computeSaasUsageScore as _saasCheck } from '../../extensions/sentinels/software-health/computes/saas-usage-score';
 import type { computeShadowItScore as _shadowCheck } from '../../extensions/sentinels/software-health/computes/shadow-it-score';
+import type { customerDemandShiftSentinel as _custDemandCheck } from '../../extensions/sentinels/customer-demand-shift/aggregate';
+import type { computeCustomerChurnRisk as _custChurnCheck } from '../../extensions/sentinels/customer-demand-shift/computes/customer-churn-risk';
+import type { computeCustomerConcentration as _custConcCheck } from '../../extensions/sentinels/customer-demand-shift/computes/customer-concentration';
