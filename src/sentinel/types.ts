@@ -172,3 +172,6 @@ import type { computeProtocolCoverage as _protoCoverageCheck } from '../../exten
 import type { dataHealthSentinel as _dataHealthTypeCheck } from '../../extensions/sentinels/data-health/aggregate';
 import type { computeDataReadiness as _dataReadinessCheck } from '../../extensions/sentinels/data-health/computes/data-readiness-score';
 import type { computeDataSiloScore as _dataSiloCheck } from '../../extensions/sentinels/data-health/computes/data-silo-score';
+import type { softwareHealthSentinel as _swHealthTypeCheck } from '../../extensions/sentinels/software-health/aggregate';
+import type { computeSaasUsageScore as _saasCheck } from '../../extensions/sentinels/software-health/computes/saas-usage-score';
+import type { computeShadowItScore as _shadowCheck } from '../../extensions/sentinels/software-health/computes/shadow-it-score';
