@@ -212,7 +212,7 @@ Agent，不是 ChatBot。驻扎企业，持续观测，主动发现，自动诊�
 **目标**: 成为组织诊断的 AWS。每个新客户、新行业、新数据源 → 加文件即可，不改代码。
 能文件化的必须文件化。不能文件化的必须有明确的扩展点。
 
-**流程约束: V4.2.5 — task brief 6字段 + 免疫系统 + plan.json + 8组物理阻断 + Plan-Actual闭合 + engine-core清零 + 时间戳顺序检查
+**流程约束: V4.2.6 — task brief 6字段 + 免疫系统 + plan.json + 8组物理阻断 + Plan-Actual闭合 + engine-core清零 + 时间戳顺序检查 + Q2排除项验证 + verify执行
 
 **数据流**:
 ```
@@ -285,9 +285,9 @@ evolution/ (SessionLearningEngine, FeedbackCollector, OntologyAdapter)
 
 ---
 
-## Loop Engineering V4.2.5 — 免疫系统 + Plan-Actual 闭合 + 缺口追踪 + 修复提示 + 时间戳顺序检查 + 三层解耦项目身份
+## Loop Engineering V4.2.6 — 免疫系统 + Plan-Actual 闭合 + 缺口追踪 + 修复提示 + 时间戳顺序检查 + 三层解耦项目身份 + Q2排除项验证 + verify执行
 
-> 2026-06-17 v2.5 → v3.0 → v3.1 → v3.5 → v3.6 → v3.7 → v3.8 → v3.9 → V4.1 → V4.1.1 → V4.1.2 → V4.2.2 → V4.2.3 → V4.2.4 → **V4.2.5 (2026-06-25)**。
+> 2026-06-17 v2.5 → v3.0 → v3.1 → v3.5 → v3.6 → v3.7 → v3.8 → v3.9 → V4.1 → V4.1.1 → V4.1.2 → V4.2.2 → V4.2.3 → V4.2.4 → V4.2.5 → **V4.2.6 (2026-06-26)**。
 >
 > **v3.6 的核心教训**：把需要语义理解的事交给 grep = 17 次折腾才提交成功。
 > **V3.9 的核心教训**：硬阻断 100% 有效，软机制 0% 有效。信息注入型检查对 agent 不可见。
@@ -313,6 +313,12 @@ evolution/ (SessionLearningEngine, FeedbackCollector, OntologyAdapter)
 > - **项目身份重构：** 新增三层解耦体系（纵向五层物理隔离 / 横向 Monorepo 包 / 扩展文件驱动）。Q0 增加三层解耦勾选项。Q1 重构为 Anthropic 决策链（5 步序：SPEC→测试→实现→接线→验证）+ 执行约束（plan.json principles）。
 > - 模板 `generate-task-brief.py` 更新为 V4.2.5 新格式
 > - 版本号 CLAUDE.md/STATE.md/pre-commit/hook 全部同步到 V4.2.5
+>
+> ### V4.2.6 变更 (2026-06-26)
+> - **Q2排除项物理验证（新免疫细胞 #19）：** pre-commit 自动解析 Q2 中「不改 X」模式，提取文件路径，检查 git diff 是否包含这些文件。包含则硬阻断。
+> - **verify命令自动生成与执行（新免疫细胞 #20）：** Q2排除项、Q3验收项中的可验证内容自动生成 bash verify 命令，在 pre-commit 组 6 执行。
+> - **check-verifiable-done.sh 解析bug修复：** awk 范围模式 /^## Done 标准/,/^## / 中开始行也匹配结束条件，Done 内容从未被读取。修复为从匹配行之后开始。
+> - **版本号统一：** scripts/ 中 10 个残留 V4.2.1 文件全部同步到 V4.2.6
 
 ### 设计哲学 (V3.7 核心修正)
 

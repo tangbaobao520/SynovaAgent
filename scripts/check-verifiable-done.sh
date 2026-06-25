@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering V4.2.1 — check-verifiable-done.sh
+# Loop Engineering V4.2.6 — check-verifiable-done.sh
 # Done 标准可证伪性检查。pre-commit 第 6 组调用。全部 <1s。
 #
 # Anthropic 原则 2: 先设计验证标准，再设计实现。
@@ -25,7 +25,7 @@ if [ -z "$BRIEF" ]; then
 fi
 
 # 提取 Done 标准段落
-DONE_SECTION=$(awk "/^## Done 标准/,/^## /" "$BRIEF" 2>/dev/null)
+DONE_SECTION=$(awk '/^## Done 标准/{found=1; next} found && /^## /{exit} found' "$BRIEF" 2>/dev/null)
 
 # 统计 - [x] 项
 CHECKED=$(echo "$DONE_SECTION" | grep -cE '^\s*- \[x\]' 2>/dev/null | tr -d '\r' || echo 0)
