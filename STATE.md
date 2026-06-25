@@ -1,6 +1,6 @@
 # SynovaAgent STATE — Loop Engineering 运行状态
 
-> V4.2.5 免疫系统。warn 触发时自动追加。累计≥2 → 考虑升级 block。累计 ≥3 → 修约束本身。
+> V4.2.6 免疫系统。warn 触发时自动追加。累计≥2 → 考虑升级 block。累计 ≥3 → 修约束本身。
 
 ## 活跃免疫细胞
 

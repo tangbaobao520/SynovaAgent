@@ -1,5 +1,5 @@
 #!/bin/bash
-# Loop Engineering V4.2.1 — scope-check.sh (产品对齐 4 问)
+# Loop Engineering V4.2.6 — scope-check.sh (产品对齐 4 问)
 #
 # 在 task-start.sh 之后、写代码之前运行。
 # 这不是门禁——这是给 Claude 读的上下文注入。

@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering V4.2.1 — check-plan-integrity.sh
+# Loop Engineering V4.2.6 — check-plan-integrity.sh
 # 统一验证 plan.json 的 Q1/Q2 产出是否被物理执行。
 # pre-commit 组 6 调用。全部 <1s。
 #
@@ -89,9 +89,109 @@ else
   echo -e "  ${YELLOW}⚠️  plan.memory_refs 为空 — Q1a 未引用 memory/ 文件  [警告]${RESET}"
 fi
 
+
+# ═══ 4. Q2 排除项检查 —「不改 X」是否真的没改 ═══
+if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
+  Q2_SEC=$(awk '/^## Q2:/{found=1; next} /^## /{if(found) exit} found' "$BRIEF" 2>/dev/null)
+  if [ -n "$Q2_SEC" ]; then
+    EXCLUDED_FILES=$(echo "$Q2_SEC" | grep -oiE '(不改|不修改|不动)\s+\S+' | sed 's/^[^ ]* //' | tr -d '[:space:]' | grep -v "^$" || true)
+    if [ -n "$EXCLUDED_FILES" ]; then
+      STAGED=$(git diff --cached --name-only 2>/dev/null || true)
+      VIOLATIONS=""
+      while IFS= read -r excl; do
+        [ -z "$excl" ] && continue
+        if echo "$STAGED" | grep -qiE "(^|/)${excl}(/|$)" 2>/dev/null; then
+          VIOLATIONS="${VIOLATIONS}  Q2 排除项 '${excl}' 在本次提交中被修改\n"
+        fi
+      done <<< "$EXCLUDED_FILES"
+      if [ -n "$VIOLATIONS" ]; then
+        echo -e "  ${RED}❌ Q2 排除项验证: 声明不改的文件被修改了  [硬阻断]${RESET}"
+        echo -e "$VIOLATIONS"
+        HARD_FAIL=$((HARD_FAIL + 1))
+      else
+        echo -e "  ${GREEN}✅ Q2 排除项: 声明不改的文件未在本次提交中出现${RESET}"
+      fi
+    fi
+  fi
+fi
+
+# ═══ 5. 执行 verify 命令（从 Done 标准提取） ═══
+VERIFY_FAIL=0
+if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
+  VERIFY_CMDS=$(grep -E '^\s*- \[x\].*verify:|^\s+verify:' "$BRIEF" 2>/dev/null | sed 's/.*verify:[[:space:]]*//' | sed 's/^"//;s/"$//' || true)
+  if [ -n "$VERIFY_CMDS" ]; then
+    while IFS= read -r cmd; do
+      [ -z "$cmd" ] && continue
+      cmd_trimmed=$(echo "$cmd" | xargs)
+      if echo "$cmd_trimmed" | grep -qiE '(入口|链路|结果|触达|通过|展示)' 2>/dev/null; then
+        continue
+      fi
+      echo "    执行: $cmd_trimmed"
+      if ! bash -c "$cmd_trimmed" 2>/dev/null; then
+        echo -e "  ${RED}    ❌ verify 失败: $cmd_trimmed${RESET}"
+        VERIFY_FAIL=1
+      fi
+    done <<< "$VERIFY_CMDS"
+  fi
+fi
+if [ "$VERIFY_FAIL" -gt 0 ]; then
+  echo -e "  ${RED}❌ verify 命令执行: 存在未通过的验证  [硬阻断]${RESET}"
+  HARD_FAIL=$((HARD_FAIL + 1))
+fi
+
+
+# === 4. Q2 exclusion check - "don't modify X" really not modified ===
+if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
+  Q2_SEC=$(awk '/^## Q2:/{found=1; next} /^## /{if(found) exit} found' "$BRIEF" 2>/dev/null)
+  if [ -n "$Q2_SEC" ]; then
+    EXCLUDED_FILES=$(echo "$Q2_SEC" | grep -oiE '(不改|不修改|不动|unmodify|dont.modify|not.change|keep.untouched)[[:space:]]+[^ ]+' | sed 's/^[^ ]* //' | tr -d '[:space:]' | grep -v "^$" || true)
+    if [ -n "$EXCLUDED_FILES" ]; then
+      STAGED=$(git diff --cached --name-only 2>/dev/null || true)
+      VIOLATIONS=""
+      while IFS= read -r excl; do
+        [ -z "$excl" ] && continue
+        if echo "$STAGED" | grep -qiE "(^|/)${excl}(/|$)" 2>/dev/null; then
+          VIOLATIONS="${VIOLATIONS}  Q2 exclude '${excl}' modified in this commit\n"
+        fi
+      done <<< "$EXCLUDED_FILES"
+      if [ -n "$VIOLATIONS" ]; then
+        echo -e "  ${RED}[FAIL] Q2 exclusion: declared files should not be modified  [HARD_BLOCK]${RESET}"
+        echo -e "$VIOLATIONS"
+        HARD_FAIL=$((HARD_FAIL + 1))
+      else
+        echo -e "  ${GREEN}[OK] Q2 exclusion: none of the excluded files were changed${RESET}"
+      fi
+    fi
+  fi
+fi
+
+# === 5. Execute verify commands from Done section ===
+VERIFY_FAIL=0
+if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
+  VERIFY_CMDS=$(grep -E '^\s*- \[x\].*verify:|^\s+verify:' "$BRIEF" 2>/dev/null | sed 's/.*verify:[[:space:]]*//' | sed 's/^"//;s/"$//' || true)
+  if [ -n "$VERIFY_CMDS" ]; then
+    while IFS= read -r cmd; do
+      [ -z "$cmd" ] && continue
+      cmd_trimmed=$(echo "$cmd" | xargs)
+      if echo "$cmd_trimmed" | grep -qiE '(entry|path|link|result|reachable|pass|display)' 2>/dev/null; then
+        continue
+      fi
+      echo "    verify: $cmd_trimmed"
+      if ! bash -c "$cmd_trimmed" 2>/dev/null; then
+        echo -e "  ${RED}    [FAIL] verify failed: $cmd_trimmed${RESET}"
+        VERIFY_FAIL=1
+      fi
+    done <<< "$VERIFY_CMDS"
+  fi
+fi
+if [ "$VERIFY_FAIL" -gt 0 ]; then
+  echo -e "  ${RED}[FAIL] verify commands: some verifications did not pass  [HARD_BLOCK]${RESET}"
+  HARD_FAIL=$((HARD_FAIL + 1))
+fi
+
 if [ "$HARD_FAIL" -gt 0 ]; then
   echo ""
-  echo -e "  ${RED}plan-integrity: ${HARD_FAIL} 项未通过 — 提交已拒绝${RESET}"
+  echo -e "  ${RED}plan-integrity: ${HARD_FAIL} items failed - commit rejected${RESET}"
   exit 1
 fi
 exit 0
