@@ -17,6 +17,7 @@
   },
   "sentinels": {
     "finance": ["cost-health", "revenue-health", "cash-runway", "profit-health"],
-    "org": ["key-person-risk"]
+    "org": ["key-person-risk"],
+    "tech": ["api-coverage"]
   }
 }

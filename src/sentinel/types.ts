@@ -164,3 +164,8 @@ export interface SentinelRegistry {
   /** 获取哨兵总数 */
   count(): number;
 }
+
+// V4.2.5: 编译时验证 — extensions/sentinels/{name}/aggregate.ts 的 exportKey
+// 哨兵通过 sentinel-loader.ts 动态加载，静态 import type 确保 tsc 零失败
+import type { apiCoverageSentinel as _apiCoverageTypeCheck } from '../../extensions/sentinels/api-coverage/aggregate';
+import type { computeProtocolCoverage as _protoCoverageCheck } from '../../extensions/sentinels/api-coverage/computes/protocol-coverage';
