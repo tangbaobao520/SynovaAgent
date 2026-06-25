@@ -18,5 +18,5 @@
     "dataAccess": { "allowedDimensions": ["D3"], "sensitiveAccess": "read" }
   },
   "entryPoint": "./aggregate.ts",
-  "exportKey": "default"
+  "exportKey": "keyPersonRiskSentinel"
 }

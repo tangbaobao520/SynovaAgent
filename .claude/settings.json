@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash scripts/hook-block-no-q0.sh"
+            "command": "bash scripts/workflow/hook-block-write.sh"
           }
         ]
       }

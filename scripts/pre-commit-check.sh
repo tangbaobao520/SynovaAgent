@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering V4.2.3 — pre-commit 8 组硬阻断 (全部 <10s) + 免疫系统
+# Loop Engineering V4.2.5 — pre-commit 8 组硬阻断 (全部 <10s) + 免疫系统
 #
 # v3.6 → v3.8 核心变化 (2026-06-23):
 #   + plan.json 支持: 分阶段任务可 deferred wiring/test_pairing 检查
@@ -131,7 +131,7 @@ NEW_IMPL=$(git diff --cached --name-only --diff-filter=A 2>/dev/null | grep -E "
 
 echo ""
 echo "═══════════════════════════════════════════════════════════"
-echo "  Loop Engineering V4.2.3 — pre-commit (8 组 + 免疫 + plan-integrity)"
+echo "  Loop Engineering V4.2.5 — pre-commit (8 组 + 免疫 + plan-integrity)"
 echo "═══════════════════════════════════════════════════════════"
 echo ""
 
@@ -168,7 +168,7 @@ fi
 bash "$ROOT/scripts/check-hardcoded.sh" 2>/dev/null || true
 hard_check "硬编码业务数据/类型 (禁止硬编码部门名/可扩展实体列表)" "${HARDCODE_DATA:-}"
 
-# V4.2.3: 旧适配器废弃映射检查 (不阻断)
+# V4.2.5: 旧适配器废弃映射检查 (不阻断)
 bash "$ROOT/scripts/check-deprecated-mapping.sh"
 
 # ═══════════════════════════════════════════════════════════════════
@@ -421,6 +421,16 @@ fi
 hard_check "Task Brief: 编码变更须有今日 task brief" "${TASK_BRIEF_MISSING:-}"
 hard_check "Task Brief: 6 核心字段必须填写 (Q0/Q1/Q2/Q3/架构层/Done)" "${TASK_BRIEF_EMPTY:-}"
 
+# V4.2.5: 时间戳顺序检查 — PreToolUse 发现 brief 未填就写代码时记录证据到 /tmp/
+# 此文件在 git 之外，不能被 git checkout 抹掉。必须显式 rm 才能解除阻断。
+BEFORE_BRIEF_EVI="/tmp/.synova-before-brief"
+BEFORE_BRIEF_MSG=""
+if [ -f "$BEFORE_BRIEF_EVI" ]; then
+  EVI_CONTENT=$(head -5 "$BEFORE_BRIEF_EVI" 2>/dev/null)
+  BEFORE_BRIEF_MSG="代码在 brief 填写前已写入:\n${EVI_CONTENT}\n解决方法: rm ${BEFORE_BRIEF_EVI} && git checkout -- . && bash scripts/workflow/task-start.sh"
+fi
+hard_check "时间戳顺序: brief 必须早于代码写入" "${BEFORE_BRIEF_MSG:-}"
+
 # V4.1: plan-integrity — Q1a/Q1b/Q2 承诺可验证
 bash "$ROOT/scripts/check-plan-integrity.sh"
 [ $? -ne 0 ] && HARD_FAIL=$((HARD_FAIL + 1))
@@ -436,9 +446,9 @@ bash "$ROOT/scripts/check-q0c-tracking.sh"
 # v3.6 降级为警告 (原 15: PRD 章节引用, 原 16: 文件位置)
 PRD_REF=""
 if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
-  DONE_SEC=$(awk "/^## Done 标准/,/^## /" "$BRIEF" 2>/dev/null)
-  if ! echo "$DONE_SEC" | grep -qE '§[0-9]+\.[0-9]+|PRD.*§' 2>/dev/null; then
-    PRD_REF="Done 标准未引用 PRD 章节 (重大 feature 建议标注 §X.Y)"
+  DONE_SEC=$(sed -n '/^## Done 标准/,/^## /p' "$BRIEF" 2>/dev/null)
+  if ! echo "$DONE_SEC" | grep -qE 'sec[0-9]+\.[0-9]+|PRD.*sec' 2>/dev/null; then
+    PRD_REF="Done 标准未引用 PRD 章节 - 重大 feature 建议标注 secX.Y"
   fi
 fi
 warn_check "PRD 对照: Done 标准引用 PRD 章节(可选)" "${PRD_REF:-}"

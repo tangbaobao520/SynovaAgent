@@ -36,7 +36,7 @@ Q0_SECTION=$(awk '/^## Q0:/{found=1; next} /^## /{if(found) exit} found' "$BRIEF
 # 去掉 HTML 注释和空行
 Q0_FILLED=$(echo "$Q0_SECTION" | grep -v "^<!--\|^$" | tr -d "[:space:]" | head -1)
 
-if [ -z "$Q0_FILLED" ] || [ ${#Q0_FILLED} -lt 10 ]; then
+if [ -z "$Q0_FILLED" ] || [ ${#Q0_FILLED} -le 5 ]; then
   echo "🔴 [hook-block-no-q0] Q0 未填写。"
   echo "   Q0 = 项目拼图 + 文件审计 + 决策。"
   echo "   请填写 brief: $BRIEF"

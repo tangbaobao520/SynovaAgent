@@ -12,7 +12,7 @@ interface GraphStoreReader {
   }>;
 }
 
-export default {
+export const keyPersonRiskSentinel = {
   async check(store: GraphStoreReader, teamId: string): Promise<SentinelFinding[]> {
     const result = checkKeyPersonRisk(store, teamId);
     return result.findings;
