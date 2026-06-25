@@ -2,7 +2,7 @@
   "version": "1.0",
   "created": "2026-06-25T21:24:41Z",
   "current_phase": 1,
-  "principles": ["新增字段必须是可选类型，不破坏已有 manifest", "sentinel-loader 解析新字段时不验证，存在就传，不存在 undefined"],
+  "principles": ["新哨兵必须自包含目录内静态 import compute", "旧适配器删除后 grep 零残留"],
   "approach": "rewrite",
   "memory_refs": ["memory/file-first-paradigm.md", "memory/engine-core-bridge-files.md"],
   "phases": [

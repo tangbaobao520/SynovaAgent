@@ -211,7 +211,11 @@ if [ -n "$NEW_IMPL" ]; then
   while IFS= read -r impl; do
     [ -z "$impl" ] && continue
     # 映射: src/xxx.ts→tests/xxx.test.ts, extensions/sentinels/{name}/aggregate.ts→tests/sentinels/{name}.test.ts, extensions/sentinels/{name}/computes/{fn}.ts→tests/sentinels/{name}/{fn}.test.ts
-    test_path=$(echo "$impl" | sed 's|^src/|tests/|; s|^extensions/sentinels/\([^/]*\)/aggregate\.ts$|tests/sentinels/\1.test.ts|; s|^extensions/sentinels/\([^/]*\)/computes/\([^/]*\)\.ts$|tests/sentinels/\1/\2.test.ts|; s|\.ts$|.test.ts|')
+    test_path=$(echo "$impl" | sed 's|^src/|tests/|; s|^extensions/sentinels/\([^/]*\)/aggregate\.ts$|tests/sentinels/\1.test.ts|; s|^extensions/sentinels/\([^/]*\)/computes/\([^/]*\)\.ts$|tests/sentinels/\1/\2.test.ts|')
+    # 追加 .test.ts — 但跳过已以 .test.ts 结尾的路径（extensions 映射已生成 .test.ts）
+    if ! echo "$test_path" | grep -q '\.test\.ts$'; then
+      test_path="${test_path%.ts}.test.ts"
+    fi
     if ! git diff --cached --name-only 2>/dev/null | grep -q "^${test_path}$"; then
       if [ ! -f "$test_path" ]; then
         MISSING_TEST="${MISSING_TEST}${impl} → 缺少 ${test_path}\n"

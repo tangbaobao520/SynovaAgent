@@ -1,0 +1,25 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "api-coverage",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "API可达性与协议覆盖",
+  "description": "T2: 检测企业TOOL节点的API可达率与标准协议覆盖率。数据源: SOG TOOL节点。",
+  "schedule": "0 9 * * *",
+  "expert": "tech",
+  "priority": "P1",
+  "layer": "technology",
+  "computeKind": "deterministic",
+  "computes": ["api-availability", "protocol-coverage"],
+  "thresholds": {
+    "api_availability": { "warning": 0.8, "critical": 0.6 },
+    "protocol_coverage": { "warning": 0.6, "critical": 0.3 }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": ["sog_graph"],
+    "dataAccess": { "allowedDimensions": ["technology"], "sensitiveAccess": "read" }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "apiCoverageSentinel"
+}
