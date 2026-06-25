@@ -17,7 +17,7 @@ ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 RED='\033[0;31m'; GREEN='\033[0;32m'; RESET='\033[0m'
 
 TODAY=$(date +%Y-%m-%d)
-BRIEF=$(find "$ROOT/.claude/task-briefs/" -name "${TODAY}*" 2>/dev/null | head -1)
+BRIEF=$(find "$ROOT/.claude/task-briefs/" -name "${TODAY}*" 2>/dev/null | xargs ls -t 2>/dev/null | head -1)
 
 if [ -z "$BRIEF" ]; then
   echo -e "  ${GREEN}✅ Done 可证伪性 (无 brief, 跳过)${RESET}"
