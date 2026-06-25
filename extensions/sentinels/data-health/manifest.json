@@ -1,0 +1,25 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "data-health",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "数据健康度",
+  "description": "T3: 评估本体层数据质量与系统间数据连通性。数据源: SOG 节点+边。",
+  "schedule": "0 9 * * 1",
+  "expert": "tech",
+  "priority": "P1",
+  "layer": "technology",
+  "computeKind": "deterministic",
+  "computes": ["data-readiness-score", "data-silo-score"],
+  "thresholds": {
+    "data_readiness": { "warning": 0.6, "critical": 0.3 },
+    "silo_rate": { "warning": 0.3, "critical": 0.5 }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": ["sog_graph"],
+    "dataAccess": { "allowedDimensions": ["technology"], "sensitiveAccess": "read" }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "dataHealthSentinel"
+}
