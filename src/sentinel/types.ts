@@ -169,3 +169,6 @@ export interface SentinelRegistry {
 // 哨兵通过 sentinel-loader.ts 动态加载，静态 import type 确保 tsc 零失败
 import type { apiCoverageSentinel as _apiCoverageTypeCheck } from '../../extensions/sentinels/api-coverage/aggregate';
 import type { computeProtocolCoverage as _protoCoverageCheck } from '../../extensions/sentinels/api-coverage/computes/protocol-coverage';
+import type { dataHealthSentinel as _dataHealthTypeCheck } from '../../extensions/sentinels/data-health/aggregate';
+import type { computeDataReadiness as _dataReadinessCheck } from '../../extensions/sentinels/data-health/computes/data-readiness-score';
+import type { computeDataSiloScore as _dataSiloCheck } from '../../extensions/sentinels/data-health/computes/data-silo-score';

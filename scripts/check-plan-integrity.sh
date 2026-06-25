@@ -115,32 +115,11 @@ if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
   fi
 fi
 
-# ═══ 5. 执行 verify 命令（从 Done 标准提取） ═══
+# === 5. Execute verify commands from Done section ===
 VERIFY_FAIL=0
 if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
-  VERIFY_CMDS=$(grep -E '^\s*- \[x\].*verify:|^\s+verify:' "$BRIEF" 2>/dev/null | sed 's/.*verify:[[:space:]]*//' | sed 's/^"//;s/"$//' || true)
-  if [ -n "$VERIFY_CMDS" ]; then
-    while IFS= read -r cmd; do
-      [ -z "$cmd" ] && continue
-      cmd_trimmed=$(echo "$cmd" | xargs)
-      if echo "$cmd_trimmed" | grep -qiE '(入口|链路|结果|触达|通过|展示)' 2>/dev/null; then
-        continue
-      fi
-      echo "    执行: $cmd_trimmed"
-      if ! bash -c "$cmd_trimmed" 2>/dev/null; then
-        echo -e "  ${RED}    ❌ verify 失败: $cmd_trimmed${RESET}"
-        VERIFY_FAIL=1
-      fi
-    done <<< "$VERIFY_CMDS"
-  fi
-fi
-if [ "$VERIFY_FAIL" -gt 0 ]; then
-  echo -e "  ${RED}❌ verify 命令执行: 存在未通过的验证  [硬阻断]${RESET}"
-  HARD_FAIL=$((HARD_FAIL + 1))
-fi
-
-
-# === 4. Q2 exclusion check - "don't modify X" really not modified ===
+  # 仅从 Done 标准段提取 verify:（避免 Q1b 模板示例被误提取）
+  DONE_SEC=$(awk '/^## Done 标准/{found=1; next} found && /^## /{exit} found' "$BRIEF" 2>/dev/null)
 if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
   Q2_SEC=$(awk '/^## Q2:/{found=1; next} /^## /{if(found) exit} found' "$BRIEF" 2>/dev/null)
   if [ -n "$Q2_SEC" ]; then
@@ -168,7 +147,7 @@ fi
 # === 5. Execute verify commands from Done section ===
 VERIFY_FAIL=0
 if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
-  VERIFY_CMDS=$(grep -E '^\s*- \[x\].*verify:|^\s+verify:' "$BRIEF" 2>/dev/null | sed 's/.*verify:[[:space:]]*//' | sed 's/^"//;s/"$//' || true)
+  VERIFY_CMDS=$(echo "$DONE_SEC" | grep -E '^\s*- \[x\].*verify:|^\s+verify:' 2>/dev/null | sed 's/.*verify:[[:space:]]*//' | sed 's/^"//;s/"$//' || true)
   if [ -n "$VERIFY_CMDS" ]; then
     while IFS= read -r cmd; do
       [ -z "$cmd" ] && continue
