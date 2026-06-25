@@ -117,9 +117,11 @@ fi
 
 # === 5. Execute verify commands from Done section ===
 VERIFY_FAIL=0
+DONE_SEC=""
 if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
   # 仅从 Done 标准段提取 verify:（避免 Q1b 模板示例被误提取）
   DONE_SEC=$(awk '/^## Done 标准/{found=1; next} found && /^## /{exit} found' "$BRIEF" 2>/dev/null)
+fi
 if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
   Q2_SEC=$(awk '/^## Q2:/{found=1; next} /^## /{if(found) exit} found' "$BRIEF" 2>/dev/null)
   if [ -n "$Q2_SEC" ]; then
