@@ -31,6 +31,11 @@ export interface SentinelManifest {
   };
   entryPoint: string;
   exportKey: string;
+  // V4.2.5: 增长动力学 8 层模型
+  layer?: 'environment' | 'capital' | 'interface' | 'alignment' | 'internal' | 'technology';
+  auxiliaryExperts?: string[];
+  computeKind?: 'deterministic' | 'heuristic' | 'conditional' | 'inferred' | 'aggregate';
+  technoEconomicPhaseCalibration?: boolean;
 }
 
 export interface LoadedSentinel {
