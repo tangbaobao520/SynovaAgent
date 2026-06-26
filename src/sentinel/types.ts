@@ -185,3 +185,4 @@ import type { computeLifecycleStage as _lifecycleCheck } from '../../extensions/
 import type { opportunityWindowSentinel as _oppWinCheck } from '../../extensions/sentinels/opportunity-window/aggregate';
 import type { computeOpportunityWindowScore as _oppScoreCheck } from '../../extensions/sentinels/opportunity-window/computes/opportunity-window-score';
 import type { computeCapitalTurnover as _capTurnCheck } from '../../extensions/sentinels/capital-efficiency/computes/capital-turnover';
+import type { competitiveDynamicsSentinel as _compDynCheck } from "../../extensions/sentinels/competitive-dynamics/aggregate";
