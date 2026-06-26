@@ -1,0 +1,25 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "environment-rent-dependency",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "环境红利依赖性",
+  "description": "E5: 评估企业对不可控外部环境红利的依赖程度——政策补贴、资源禀赋、市场准入壁垒。",
+  "schedule": "0 0 1 * *",
+  "expert": "strategy",
+  "auxiliaryExperts": ["finance"],
+  "priority": "P1",
+  "layer": "environment",
+  "computeKind": "deterministic",
+  "computes": ["rent-dependency-index"],
+  "thresholds": {
+    "rent_dependency": { "warning": 0.3, "critical": 0.5 }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": ["sog_graph"],
+    "dataAccess": { "allowedDimensions": ["strategic", "financial"], "sensitiveAccess": "read" }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "environmentRentDependencySentinel"
+}
