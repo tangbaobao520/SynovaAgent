@@ -178,3 +178,6 @@ import type { computeShadowItScore as _shadowCheck } from '../../extensions/sent
 import type { customerDemandShiftSentinel as _custDemandCheck } from '../../extensions/sentinels/customer-demand-shift/aggregate';
 import type { computeCustomerChurnRisk as _custChurnCheck } from '../../extensions/sentinels/customer-demand-shift/computes/customer-churn-risk';
 import type { computeCustomerConcentration as _custConcCheck } from '../../extensions/sentinels/customer-demand-shift/computes/customer-concentration';
+import type { capitalEfficiencySentinel as _capEffCheck } from '../../extensions/sentinels/capital-efficiency/aggregate';
+import type { computeRoicWaccSpread as _roicCheck } from '../../extensions/sentinels/capital-efficiency/computes/roic-wacc-spread';
+import type { computeCapitalTurnover as _capTurnCheck } from '../../extensions/sentinels/capital-efficiency/computes/capital-turnover';
