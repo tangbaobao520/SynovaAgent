@@ -1,0 +1,24 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "market-lifecycle",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "市场天花板与生命周期",
+  "description": "E1: 基于Klepper(1996)规则判定产业生命周期阶段。数据源: Market节点 + COMPETES_WITH边。",
+  "schedule": "0 0 1 * *",
+  "expert": "strategy",
+  "priority": "P1",
+  "layer": "environment",
+  "computeKind": "deterministic",
+  "computes": ["lifecycle-stage"],
+  "thresholds": {
+    "lifecycle_risk": { "warning": 0.3, "critical": 0.6 }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": ["sog_graph"],
+    "dataAccess": { "allowedDimensions": ["strategic", "financial"], "sensitiveAccess": "read" }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "marketLifecycleSentinel"
+}

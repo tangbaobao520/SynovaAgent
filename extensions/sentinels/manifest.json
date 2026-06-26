@@ -20,6 +20,7 @@
     "org": ["key-person-risk"],
     "tech": ["api-coverage", "data-health", "software-health"],
     "marketing": ["customer-demand-shift"],
-    "finance": ["cost-health", "revenue-health", "cash-runway", "profit-health", "capital-efficiency"]
+    "finance": ["cost-health", "revenue-health", "cash-runway", "profit-health", "capital-efficiency"],
+    "strategy": ["market-lifecycle"]
   }
 }

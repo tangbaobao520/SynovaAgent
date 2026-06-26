@@ -180,4 +180,6 @@ import type { computeCustomerChurnRisk as _custChurnCheck } from '../../extensio
 import type { computeCustomerConcentration as _custConcCheck } from '../../extensions/sentinels/customer-demand-shift/computes/customer-concentration';
 import type { capitalEfficiencySentinel as _capEffCheck } from '../../extensions/sentinels/capital-efficiency/aggregate';
 import type { computeRoicWaccSpread as _roicCheck } from '../../extensions/sentinels/capital-efficiency/computes/roic-wacc-spread';
+import type { marketLifecycleSentinel as _marketLifecycleCheck } from '../../extensions/sentinels/market-lifecycle/aggregate';
+import type { computeLifecycleStage as _lifecycleCheck } from '../../extensions/sentinels/market-lifecycle/computes/lifecycle-stage';
 import type { computeCapitalTurnover as _capTurnCheck } from '../../extensions/sentinels/capital-efficiency/computes/capital-turnover';
