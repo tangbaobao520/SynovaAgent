@@ -1,0 +1,25 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "opportunity-window",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "结构性机会窗口",
+  "description": "E2: 检测技术变革/法规变化/竞争行动等结构性机会信号。数据源: Event, Market, Tool节点。",
+  "schedule": "0 0 1 * *",
+  "expert": "strategy",
+  "auxiliaryExperts": ["knowledge"],
+  "priority": "P1",
+  "layer": "environment",
+  "computeKind": "heuristic",
+  "computes": ["opportunity-window-score"],
+  "thresholds": {
+    "opportunity_score": { "warning": 0.4, "critical": 0.2 }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": ["sog_graph"],
+    "dataAccess": { "allowedDimensions": ["strategic"], "sensitiveAccess": "read" }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "opportunityWindowSentinel"
+}
