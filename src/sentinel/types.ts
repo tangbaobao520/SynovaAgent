@@ -186,3 +186,4 @@ import type { opportunityWindowSentinel as _oppWinCheck } from '../../extensions
 import type { computeOpportunityWindowScore as _oppScoreCheck } from '../../extensions/sentinels/opportunity-window/computes/opportunity-window-score';
 import type { computeCapitalTurnover as _capTurnCheck } from '../../extensions/sentinels/capital-efficiency/computes/capital-turnover';
 import type { competitiveDynamicsSentinel as _compDynCheck } from "../../extensions/sentinels/competitive-dynamics/aggregate";
+import type { environmentRentDependencySentinel as _rentDepCheck } from "../../extensions/sentinels/environment-rent-dependency/aggregate";
