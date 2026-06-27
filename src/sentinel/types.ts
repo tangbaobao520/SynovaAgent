@@ -209,3 +209,4 @@ import type { businessModelCoherenceSentinel as _bmcCheck } from "../../extensio
 import type { unitEconomicsSentinel as _ueCheck } from "../../extensions/sentinels/unit-economics/aggregate";
 import type { internalTransactionCostSentinel as _itcCheck } from "../../extensions/sentinels/internal-transaction-cost/aggregate";
 import type { networkPowerSentinel as _npCheck } from "../../extensions/sentinels/network-power/aggregate";
+import type { valueCaptureSentinel as _vcCheck } from "../../extensions/sentinels/value-capture/aggregate";
