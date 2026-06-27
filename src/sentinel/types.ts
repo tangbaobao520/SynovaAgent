@@ -225,3 +225,16 @@ import type { aiecosystemfitSentinel as _aiecosystemfitCheck } from "../../exten
 import type { agentdeploymentmaturitySentinel as _agentdeploymentmaturityCheck } from "../../extensions/sentinels/agent-deployment-maturity/aggregate";
 import type { aiinvestmentreturnSentinel as _aiinvestmentreturnCheck } from "../../extensions/sentinels/ai-investment-return/aggregate";
 import type { humanagentboundarySentinel as _humanagentboundaryCheck } from "../../extensions/sentinels/human-agent-boundary/aggregate";
+import type { StrategyCapabilityFitSentinel as _strategycapabilityfitCheck } from "../../extensions/sentinels/strategy-capability-fit/aggregate";
+import type { AdaptationVelocitySentinel as _adaptationvelocityCheck } from "../../extensions/sentinels/adaptation-velocity/aggregate";
+import type { ResourceMisallocationSentinel as _resourcemisallocationCheck } from "../../extensions/sentinels/resource-misallocation/aggregate";
+import type { ExploreExploitBalanceSentinel as _exploreexploitbalanceCheck } from "../../extensions/sentinels/explore-exploit-balance/aggregate";
+import type { RoutineMutationSentinel as _routinemutationCheck } from "../../extensions/sentinels/routine-mutation/aggregate";
+import type { IncentiveAlignmentSentinel as _incentivealignmentCheck } from "../../extensions/sentinels/incentive-alignment/aggregate";
+import type { KnowledgeAccessibilitySentinel as _knowledgeaccessibilityCheck } from "../../extensions/sentinels/knowledge-accessibility/aggregate";
+import type { RoutineDiffusionSentinel as _routinediffusionCheck } from "../../extensions/sentinels/routine-diffusion/aggregate";
+import type { ChannelCapacitySentinel as _channelcapacityCheck } from "../../extensions/sentinels/channel-capacity/aggregate";
+import type { InfoDistortionSentinel as _infodistortionCheck } from "../../extensions/sentinels/info-distortion/aggregate";
+import type { OrgRepairabilitySentinel as _orgrepairabilityCheck } from "../../extensions/sentinels/org-repairability/aggregate";
+import type { PowerRigiditySentinel as _powerrigidityCheck } from "../../extensions/sentinels/power-rigidity/aggregate";
+import type { TalentDensitySentinel as _talentdensityCheck } from "../../extensions/sentinels/talent-density/aggregate";
