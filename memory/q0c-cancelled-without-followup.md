@@ -4,7 +4,7 @@ class: cancelled-module-without-replacement
 constraint: "python3 -c 'import json; p=json.load(open(\".claude/plan.json\",encoding=\"utf-8\")); phs=[ph for ph in p.get(\"phases\",[]) if ph.get(\"action\") in (\"cancel\",\"cancelled\") and not ph.get(\"follow_up\")]; print(len(phs))' 2>/dev/null || echo 0"
 expected: "0"
 severity: block
-occurrences: 225
+occurrences: 230
 first_seen: 2026-06-23
 upgraded_to_block: 2026-06-24
 remediation: |
