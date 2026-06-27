@@ -86,6 +86,8 @@ rm -f "$ROOT/.claude/session-locked" 2>/dev/null
 
 
 echo -e "${GREEN}✅ Task Brief 已生成: .claude/task-briefs/${TIMESTAMP}-${TASK_SLUG}.md${RESET}"
+# V4.2.7: 记录当前任务 brief 路径（pre-commit 从此读取，不再 find -name）
+echo "${TIMESTAMP}-${TASK_SLUG}.md" > "$ROOT/.claude/current-brief"
 echo ""
 echo "  填写 Q1/Q2/Q3 和 Done 标准后，开始写代码。"
 echo "  pre-commit 会在提交时物理检查 task brief 是否存在。"
