@@ -33,3 +33,6 @@
 - Agent可以低成本验证质量（实时监控、自动审计）
 - 但Agent生产的内容需要独立验证
 - 标注：AI筛查辅助判断，最终决策需要人工确认
+
+# T4-T9 tools
+- hybrid_boundary_efficiency(teamId) → {a_b_ratio, assumptions, confidence}

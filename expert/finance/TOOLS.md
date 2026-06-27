@@ -58,3 +58,9 @@ BEP = 固定成本/(单价-单位变动成本)
 - Agent可以降低变动成本（替代计件工、客服等）但固定成本不变（系统维护）
 - 产品化软件的增量成本几乎为零——这是典型的规模经济
 - 当人工转换为自动化与Agent化后，成本结构将发生深层重组，盈亏平衡点需重新校定
+
+# F1-F5 tools (46 sentinel)
+- kz_index(teamId) → number
+- capital_structure_health(teamId) → {score, signals}
+- roic_wacc_spread(teamId) → number
+- growth_quality(teamId) → {score, organic_pct, cash_conversion}
