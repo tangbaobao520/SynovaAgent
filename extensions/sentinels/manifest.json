@@ -17,7 +17,7 @@
   },
   "sentinels": {
     "finance": ["cost-health", "revenue-health", "cash-runway", "profit-health", "capital-efficiency", "financing-constraint", "capital-structure", "growth-quality", "capital-turnover", "unit-economics"],
-    "org": ["key-person-risk"],
+    "org": ["key-person-risk", "internal-transaction-cost"],
     "tech": ["api-coverage", "data-health", "software-health"],
     "marketing": ["customer-demand-shift"],
     "strategy": ["market-lifecycle", "opportunity-window", "competitive-dynamics", "environment-rent-dependency", "structural-change", "niche-breadth", "niche-squeeze", "competitive-moat-structural", "competitive-moat-perceptual"],

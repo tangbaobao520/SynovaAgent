@@ -207,3 +207,4 @@ import type { competitiveMoatStructuralSentinel as _cmsCheck } from "../../exten
 import type { competitiveMoatPerceptualSentinel as _cmpCheck } from "../../extensions/sentinels/competitive-moat-perceptual/aggregate";
 import type { businessModelCoherenceSentinel as _bmcCheck } from "../../extensions/sentinels/business-model-coherence/aggregate";
 import type { unitEconomicsSentinel as _ueCheck } from "../../extensions/sentinels/unit-economics/aggregate";
+import type { internalTransactionCostSentinel as _itcCheck } from "../../extensions/sentinels/internal-transaction-cost/aggregate";
