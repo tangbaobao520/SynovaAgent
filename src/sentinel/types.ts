@@ -238,3 +238,4 @@ import type { InfoDistortionSentinel as _infodistortionCheck } from "../../exten
 import type { OrgRepairabilitySentinel as _orgrepairabilityCheck } from "../../extensions/sentinels/org-repairability/aggregate";
 import type { PowerRigiditySentinel as _powerrigidityCheck } from "../../extensions/sentinels/power-rigidity/aggregate";
 import type { TalentDensitySentinel as _talentdensityCheck } from "../../extensions/sentinels/talent-density/aggregate";
+import type { computeFlywheelSpeeds as _fwCheck } from "../../src/sentinel/flywheel-aggregator";
