@@ -1,0 +1,36 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "connector-coverage",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "T4 \u8fde\u63a5\u5668\u8986\u76d6\u7387",
+  "description": "T4: T4 \u8fde\u63a5\u5668\u8986\u76d6\u7387",
+  "schedule": "0 0 1 * *",
+  "expert": "tech",
+  "priority": "P1",
+  "layer": "technology",
+  "computeKind": "deterministic",
+  "computes": [
+    "compute-connector-coverage"
+  ],
+  "thresholds": {
+    "score": {
+      "warning": 0.4,
+      "critical": 0.2
+    }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": [
+      "sog_graph"
+    ],
+    "dataAccess": {
+      "allowedDimensions": [
+        "technology"
+      ],
+      "sensitiveAccess": "read"
+    }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "ConnectorcoverageSentinel"
+}

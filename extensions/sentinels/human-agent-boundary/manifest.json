@@ -1,0 +1,36 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "human-agent-boundary",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "T9 \u4ebaAgent\u6df7\u5408\u8fb9\u754c\u6548\u7387",
+  "description": "T9: T9 \u4ebaAgent\u6df7\u5408\u8fb9\u754c\u6548\u7387",
+  "schedule": "0 0 1 * *",
+  "expert": "tech",
+  "priority": "P1",
+  "layer": "technology",
+  "computeKind": "inferred",
+  "computes": [
+    "compute-human-agent-boundary"
+  ],
+  "thresholds": {
+    "score": {
+      "warning": 0.4,
+      "critical": 0.2
+    }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": [
+      "sog_graph"
+    ],
+    "dataAccess": {
+      "allowedDimensions": [
+        "technology"
+      ],
+      "sensitiveAccess": "read"
+    }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "HumanagentboundarySentinel"
+}

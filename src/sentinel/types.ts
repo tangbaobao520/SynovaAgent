@@ -213,3 +213,15 @@ import type { valueCaptureSentinel as _vcCheck } from "../../extensions/sentinel
 import type { moatDependencySentinel as _mdCheck } from "../../extensions/sentinels/moat-dependency/aggregate";
 import type { timePenetrationSentinel as _tpCheck } from "../../extensions/sentinels/time-penetration/aggregate";
 import type { makeOrBuySentinel as _mobCheck } from "../../extensions/sentinels/make-or-buy/aggregate";
+import type { ConnectorcoverageSentinel as _connectorcoverageCheck } from "../../extensions/sentinels/connector-coverage/aggregate";
+import type { ProcessaireadinessSentinel as _processaireadinessCheck } from "../../extensions/sentinels/process-ai-readiness/aggregate";
+import type { AiecosystemfitSentinel as _aiecosystemfitCheck } from "../../extensions/sentinels/ai-ecosystem-fit/aggregate";
+import type { AgentdeploymentmaturitySentinel as _agentdeploymentmaturityCheck } from "../../extensions/sentinels/agent-deployment-maturity/aggregate";
+import type { AiinvestmentreturnSentinel as _aiinvestmentreturnCheck } from "../../extensions/sentinels/ai-investment-return/aggregate";
+import type { HumanagentboundarySentinel as _humanagentboundaryCheck } from "../../extensions/sentinels/human-agent-boundary/aggregate";
+import type { connectorcoverageSentinel as _connectorcoverageCheck } from "../../extensions/sentinels/connector-coverage/aggregate";
+import type { processaireadinessSentinel as _processaireadinessCheck } from "../../extensions/sentinels/process-ai-readiness/aggregate";
+import type { aiecosystemfitSentinel as _aiecosystemfitCheck } from "../../extensions/sentinels/ai-ecosystem-fit/aggregate";
+import type { agentdeploymentmaturitySentinel as _agentdeploymentmaturityCheck } from "../../extensions/sentinels/agent-deployment-maturity/aggregate";
+import type { aiinvestmentreturnSentinel as _aiinvestmentreturnCheck } from "../../extensions/sentinels/ai-investment-return/aggregate";
+import type { humanagentboundarySentinel as _humanagentboundaryCheck } from "../../extensions/sentinels/human-agent-boundary/aggregate";
