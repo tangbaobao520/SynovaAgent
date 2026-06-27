@@ -1,3 +1,4 @@
+// @deprecated — 能力被I4+I7覆盖，Phase 3上线时删除
 /**
  * sentinel/adapters/cpc-sentinel.ts — 协作协议完备性哨兵 (D2)
  * @state: real

@@ -1,3 +1,4 @@
+// @deprecated — 能力被I11覆盖，Phase 3上线时删除
 /**
  * sentinel/adapters/integration-health-sentinel.ts — 集成健康度哨兵 (D4)
  * @state: real

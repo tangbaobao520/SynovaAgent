@@ -1,3 +1,4 @@
+// @deprecated — 能力被S1覆盖，Phase 5上线时删除
 /**
  * sentinel/adapters/goal-alignment-sentinel.ts — 目标对齐度哨兵 (D2)
  * @state: real

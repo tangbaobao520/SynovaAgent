@@ -1134,3 +1134,7 @@
 | 2026-06-27 15:38 | knowledge-asset-not-backed-up | 0 | 279 |
 | 2026-06-27 15:38 | declared-done-without-checklist-verification | 0 | 218 |
 | 2026-06-27 15:38 | claimed-completion-without-verification | ERROR | 283 |
+| 2026-06-27 15:45 | soft-mechanism-treated-as-noise | ERROR | 1278 |
+| 2026-06-27 15:45 | knowledge-asset-not-backed-up | 0 | 280 |
+| 2026-06-27 15:45 | declared-done-without-checklist-verification | 0 | 219 |
+| 2026-06-27 15:45 | claimed-completion-without-verification | ERROR | 284 |
