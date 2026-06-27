@@ -197,3 +197,5 @@ import type { computeDebtEquityRatio as _deCheck } from "../../extensions/sentin
 import type { computeInterestCoverage as _icCheck } from "../../extensions/sentinels/capital-structure/computes/interest-coverage";
 import type { growthQualitySentinel as _gqCheck } from "../../extensions/sentinels/growth-quality/aggregate";
 import type { computeCashConversionRate as _ccrCheck } from "../../extensions/sentinels/growth-quality/computes/cash-conversion-rate";
+import type { capitalTurnoverSentinel as _ctCheck } from "../../extensions/sentinels/capital-turnover/aggregate";
+import type { computeAssetTurnover as _atCheck } from "../../extensions/sentinels/capital-turnover/computes/asset-turnover";
