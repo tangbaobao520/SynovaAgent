@@ -192,3 +192,6 @@ import type { computeStructuralChangeSignal as _structSigCheck } from "../../ext
 
 import type { financingConstraintSentinel as _finConCheck } from "../../extensions/sentinels/financing-constraint/aggregate";
 import type { financingConstraintSentinel as _finConCheck } from "../../extensions/sentinels/financing-constraint/aggregate";
+import type { capitalStructureSentinel as _capStructCheck } from "../../extensions/sentinels/capital-structure/aggregate";
+import type { computeDebtEquityRatio as _deCheck } from "../../extensions/sentinels/capital-structure/computes/debt-equity-ratio";
+import type { computeInterestCoverage as _icCheck } from "../../extensions/sentinels/capital-structure/computes/interest-coverage";
