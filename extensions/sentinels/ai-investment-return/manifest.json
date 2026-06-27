@@ -1,0 +1,36 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "ai-investment-return",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "T8 AI\u6295\u5165\u4ea7\u51fa\u6bd4",
+  "description": "T8: T8 AI\u6295\u5165\u4ea7\u51fa\u6bd4",
+  "schedule": "0 0 1 * *",
+  "expert": "tech",
+  "priority": "P1",
+  "layer": "technology",
+  "computeKind": "deterministic",
+  "computes": [
+    "compute-ai-investment-return"
+  ],
+  "thresholds": {
+    "score": {
+      "warning": 0.4,
+      "critical": 0.2
+    }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": [
+      "sog_graph"
+    ],
+    "dataAccess": {
+      "allowedDimensions": [
+        "technology"
+      ],
+      "sensitiveAccess": "read"
+    }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "AiinvestmentreturnSentinel"
+}
