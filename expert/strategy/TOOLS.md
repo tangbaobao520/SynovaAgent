@@ -66,3 +66,9 @@
 - Agent之间在同样的训练规则下天然倾向合作
 - 人对Agent有不信任倾向，即使在合作条件下也可能采取背叛
 - 标注"存在Agent非理性背叛的风险"
+
+# I1-I4 tools (46 sentinel)
+- lifecycle_stage(teamId) → LifecycleResult
+- niche_breadth(teamId) → {B, D, V}
+- niche_squeeze(teamId) → number
+- moat_strength(teamId) → {structural, perceptual}

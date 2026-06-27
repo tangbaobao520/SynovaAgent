@@ -77,3 +77,9 @@ org 是体系中最复杂的专家——它负责核心方程中的**两个乘�
 - Agent作为"代理人"时，不产生传统意义上的代理成本（Agent不会"偷懒"）
 - 但Agent可能产生新的"对齐成本"——训练目标和真实目标不一致导致的偏差
 - 对齐成本的检测方式：Agent输出与实际表现不一致时，标注"possible alignment drift"
+
+## 46 sentinel theory
+- 演化经济学(Nelson & Winter 1982)
+- 探索-利用平衡(March 1991)
+- 知识粘性(Szulanski 1996)
+- 网络科学(Burt 1992)

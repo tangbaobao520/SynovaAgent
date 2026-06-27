@@ -69,3 +69,9 @@ HHI = Σ(Si²)
 - Agent驱动的定价算法会自动学会隐性合谋
 - 共享相似的定价训练数据可能会诱发定价趋同
 - 标注"存在算法共谋的可能性"
+
+## 46 sentinel theory additions
+- 产业生命周期理论(Gort & Klepper 1982)
+- 生态位理论(Hutchinson 1957)
+- SLM公式(Helmer 2016)
+- 结构洞理论(Burt 1992)

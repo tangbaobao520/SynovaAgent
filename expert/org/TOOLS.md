@@ -108,3 +108,18 @@ L4 GraphStore Person节点（knowledge/domains/skills属性）
 2. 加入peer evaluation（同事评价）
 3. 混合激励（50%团队+50%个人）
 4. 对明确的个体贡献额外奖励
+
+# O1-O10 tools (46 sentinel)
+- exploration_exploitation_balance(teamId)
+- routine_mutation_rate(teamId)
+- incentive_alignment(teamId)
+- knowledge_accessibility(teamId)
+- routine_diffusion_speed(teamId)
+- channel_capacity(teamId)
+- info_distortion(teamId)
+- org_repairability(teamId)
+- power_rigidity(teamId)
+- talent_density(teamId)
+- strategy_capability_alignment(teamId)
+- adaptation_velocity(teamId)
+- resource_misallocation(teamId)
