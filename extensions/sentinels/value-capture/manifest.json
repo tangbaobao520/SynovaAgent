@@ -1,0 +1,20 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "value-capture",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "价值捕获效率",
+  "description": "I6: 评估利润留存率、定价权、毛利率趋势。数据源: FINANCIAL节点。",
+  "schedule": "0 0 1 * *",
+  "expert": "finance",
+  "auxiliaryExperts": ["strategy"],
+  "priority": "P1",
+  "layer": "interface",
+  "computeKind": "heuristic",
+  "computes": ["value-capture-score"],
+  "thresholds": { "capture_index": { "warning": 0.4, "critical": 0.2 } },
+  "aggregation": "worst_first",
+  "context": { "requiredDataSources": ["sog_graph"], "dataAccess": { "allowedDimensions": ["financial"], "sensitiveAccess": "read" } },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "valueCaptureSentinel"
+}
