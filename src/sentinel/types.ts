@@ -195,3 +195,5 @@ import type { financingConstraintSentinel as _finConCheck } from "../../extensio
 import type { capitalStructureSentinel as _capStructCheck } from "../../extensions/sentinels/capital-structure/aggregate";
 import type { computeDebtEquityRatio as _deCheck } from "../../extensions/sentinels/capital-structure/computes/debt-equity-ratio";
 import type { computeInterestCoverage as _icCheck } from "../../extensions/sentinels/capital-structure/computes/interest-coverage";
+import type { growthQualitySentinel as _gqCheck } from "../../extensions/sentinels/growth-quality/aggregate";
+import type { computeCashConversionRate as _ccrCheck } from "../../extensions/sentinels/growth-quality/computes/cash-conversion-rate";

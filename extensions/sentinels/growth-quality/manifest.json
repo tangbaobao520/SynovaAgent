@@ -1,0 +1,25 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "growth-quality",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "增长质量指数",
+  "description": "F4: 评估增长质量——现金流转化率、有机增长比例、应收账款健康度。数据源: FINANCIAL, Client节点。",
+  "schedule": "0 0 1 * *",
+  "expert": "finance",
+  "priority": "P1",
+  "layer": "capital",
+  "computeKind": "deterministic",
+  "computes": ["cash-conversion-rate", "organic-growth-pct"],
+  "thresholds": {
+    "cash_conversion": { "warning": 0.7, "critical": 0.5 },
+    "organic_growth": { "warning": 0.5, "critical": 0.3 }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": ["sog_graph"],
+    "dataAccess": { "allowedDimensions": ["financial"], "sensitiveAccess": "read" }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "growthQualitySentinel"
+}
