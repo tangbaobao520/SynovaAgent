@@ -1,0 +1,20 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "business-model-coherence",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "商业模式一致性",
+  "description": "I7: 评估价值主张-收入结构-成本结构的三角一致性。数据源: BusinessModel, Goal, FINANCIAL, Channel, Capability节点。",
+  "schedule": "0 0 1 * *",
+  "expert": "business_model",
+  "auxiliaryExperts": ["strategy"],
+  "priority": "P1",
+  "layer": "interface",
+  "computeKind": "heuristic",
+  "computes": ["model-consistency-score"],
+  "thresholds": { "coherence": { "warning": 0.4, "critical": 0.2 } },
+  "aggregation": "worst_first",
+  "context": { "requiredDataSources": ["sog_graph"], "dataAccess": { "allowedDimensions": ["strategic", "financial"], "sensitiveAccess": "read" } },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "businessModelCoherenceSentinel"
+}
