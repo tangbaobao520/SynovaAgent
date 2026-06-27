@@ -15,7 +15,15 @@ HARD_FAIL=0
 
 PLAN_FILE="$ROOT/.claude/plan.json"
 TODAY=$(date +%Y-%m-%d)
-BRIEF=$(find "$ROOT/.claude/task-briefs/" -name "*.md" -type f 2>/dev/null | xargs ls -t 2>/dev/null | head -1)
+CUR_BRIEF="$ROOT/.claude/current-brief"
+BRIEF=""
+if [ -f "$CUR_BRIEF" ]; then
+  BNAME=$(cat "$CUR_BRIEF" 2>/dev/null | tr -d '[:space:]')
+  [ -n "$BNAME" ] && BRIEF="$ROOT/.claude/task-briefs/$BNAME"
+fi
+if [ -z "$BRIEF" ] || [ ! -f "$BRIEF" ]; then
+  BRIEF=$(find "$ROOT/.claude/task-briefs/" -type f -name "*.md" 2>/dev/null | xargs ls -t 2>/dev/null | head -1)
+fi
 
 if [ ! -f "$PLAN_FILE" ]; then
   echo -e "  ${GREEN}✅ plan-integrity (无 plan.json)${RESET}"
@@ -89,8 +97,43 @@ else
   echo -e "  ${YELLOW}⚠️  plan.memory_refs 为空 — Q1a 未引用 memory/ 文件  [警告]${RESET}"
 fi
 
+# ═══ 4. 模板残留检查 — brief 是否认真填了 ═══
+if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
+  TEMPLATE_RESIDUE=$(grep -c '<!--' "$BRIEF" 2>/dev/null || echo 0)
+  if [ "${TEMPLATE_RESIDUE:-0}" -gt 0 ]; then
+    echo -e "  ${RED}❌ brief 模板残留: 发现 ${TEMPLATE_RESIDUE} 处未填注释 (<!--)  [硬阻断]${RESET}"
+    HARD_FAIL=$((HARD_FAIL + 1))
+  else
+    echo -e "  ${GREEN}✅ brief 模板已清理 (无 <!-- 残留)${RESET}"
+  fi
+fi
 
-# ═══ 4. Q2 排除项检查 —「不改 X」是否真的没改 ═══
+# ═══ 5. Q2 排除项必须含文件路径 ═══
+if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
+  Q2_SEC=$(awk '/^## Q2:/{found=1; next} /^## /{if(found) exit} found' "$BRIEF" 2>/dev/null)
+  if [ -n "$Q2_SEC" ]; then
+    EXCLUDED=$(echo "$Q2_SEC" | grep -oiE '(不改|不修改|不动)\s+\S+' || true)
+    if [ -n "$EXCLUDED" ]; then
+      BAD=""
+      while IFS= read -r line; do
+        [ -z "$line" ] && continue
+        # 排除项必须包含文件扩展名（.ts/.sh/.json/.py/.md）或完整路径
+        if ! echo "$line" | grep -qiE '(\.ts|\.sh|\.json|\.py|\.md|\.yaml|/\S+)' 2>/dev/null; then
+          BAD="${BAD}  ${line}\n"
+        fi
+      done <<< "$EXCLUDED"
+      if [ -n "$BAD" ]; then
+        echo -e "  ${RED}❌ Q2 排除项缺少文件路径: 必须引用具体文件名 (如 sentinel-loader.ts)  [硬阻断]${RESET}"
+        echo -e "$BAD"
+        HARD_FAIL=$((HARD_FAIL + 1))
+      else
+        echo -e "  ${GREEN}✅ Q2 排除项均含文件路径${RESET}"
+      fi
+    fi
+  fi
+fi
+
+# ═══ 6. Q2 排除项 —「不改 X」git diff 验证 ═══
 if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
   Q2_SEC=$(awk '/^## Q2:/{found=1; next} /^## /{if(found) exit} found' "$BRIEF" 2>/dev/null)
   if [ -n "$Q2_SEC" ]; then
@@ -155,6 +198,12 @@ if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
       [ -z "$cmd" ] && continue
       cmd_trimmed=$(echo "$cmd" | xargs)
       if echo "$cmd_trimmed" | grep -qiE '(entry|path|link|result|reachable|pass|display)' 2>/dev/null; then
+        continue
+      fi
+      # 禁止 trivially passing 命令（永远 exit 0，不验证任何东西）
+      if echo "$cmd_trimmed" | grep -qiE '^(echo|true|:)\b' 2>/dev/null; then
+        echo -e "  ${RED}    ❌ verify 命令不可执行: '$cmd_trimmed' 永远通过，不验证任何东西  [硬阻断]${RESET}"
+        VERIFY_FAIL=1
         continue
       fi
       echo "    verify: $cmd_trimmed"

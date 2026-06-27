@@ -1058,3 +1058,15 @@
 | 2026-06-27 13:43 | knowledge-asset-not-backed-up | 0 | 260 |
 | 2026-06-27 13:43 | declared-done-without-checklist-verification | 0 | 199 |
 | 2026-06-27 13:43 | claimed-completion-without-verification | ERROR | 264 |
+| 2026-06-27 14:16 | soft-mechanism-treated-as-noise | ERROR | 1259 |
+| 2026-06-27 14:16 | knowledge-asset-not-backed-up | 0 | 261 |
+| 2026-06-27 14:16 | declared-done-without-checklist-verification | 0 | 200 |
+| 2026-06-27 14:16 | claimed-completion-without-verification | ERROR | 265 |
+| 2026-06-27 14:23 | soft-mechanism-treated-as-noise | ERROR | 1260 |
+| 2026-06-27 14:23 | knowledge-asset-not-backed-up | 0 | 262 |
+| 2026-06-27 14:23 | declared-done-without-checklist-verification | 0 | 201 |
+| 2026-06-27 14:23 | claimed-completion-without-verification | ERROR | 266 |
+| 2026-06-27 14:26 | soft-mechanism-treated-as-noise | ERROR | 1261 |
+| 2026-06-27 14:26 | knowledge-asset-not-backed-up | 0 | 263 |
+| 2026-06-27 14:26 | declared-done-without-checklist-verification | 0 | 202 |
+| 2026-06-27 14:26 | claimed-completion-without-verification | ERROR | 267 |
