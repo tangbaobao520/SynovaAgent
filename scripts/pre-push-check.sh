@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering V4.2.6 — pre-push (1 道门: secrets 终扫)
+# Loop Engineering V4.2.7 — pre-push (1 道门: secrets 终扫)
 #
 # 设计原则:
 #   - pre-commit 已跑 5 项物理阻断 → 不重复
