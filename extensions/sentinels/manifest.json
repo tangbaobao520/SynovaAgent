@@ -20,7 +20,7 @@
     "org": ["key-person-risk", "internal-transaction-cost", "network-power"],
     "tech": ["api-coverage", "data-health", "software-health"],
     "marketing": ["customer-demand-shift"],
-    "strategy": ["market-lifecycle", "opportunity-window", "competitive-dynamics", "environment-rent-dependency", "structural-change", "niche-breadth", "niche-squeeze", "competitive-moat-structural", "competitive-moat-perceptual"],
-    "business_model": ["business-model-coherence"]
+    "strategy": ["market-lifecycle", "opportunity-window", "competitive-dynamics", "environment-rent-dependency", "structural-change", "niche-breadth", "niche-squeeze", "competitive-moat-structural", "competitive-moat-perceptual", "moat-dependency"],
+    "business_model": ["business-model-coherence", "time-penetration", "make-or-buy"]
   }
 }

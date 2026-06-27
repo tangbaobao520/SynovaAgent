@@ -210,3 +210,6 @@ import type { unitEconomicsSentinel as _ueCheck } from "../../extensions/sentine
 import type { internalTransactionCostSentinel as _itcCheck } from "../../extensions/sentinels/internal-transaction-cost/aggregate";
 import type { networkPowerSentinel as _npCheck } from "../../extensions/sentinels/network-power/aggregate";
 import type { valueCaptureSentinel as _vcCheck } from "../../extensions/sentinels/value-capture/aggregate";
+import type { moatDependencySentinel as _mdCheck } from "../../extensions/sentinels/moat-dependency/aggregate";
+import type { timePenetrationSentinel as _tpCheck } from "../../extensions/sentinels/time-penetration/aggregate";
+import type { makeOrBuySentinel as _mobCheck } from "../../extensions/sentinels/make-or-buy/aggregate";
