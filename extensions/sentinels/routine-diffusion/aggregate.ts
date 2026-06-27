@@ -1,14 +1,68 @@
-import type { SentinelFinding } from "../../../src/sentinel/types";
-import { computeRoutinediffusion } from "./computes/compute-routine-diffusion";
-import { createLogger } from "../../../src/logger";
-const log = createLogger("sentinel/routine-diffusion");
-interface GSR { queryNodes(t:string,f?:Record<string,unknown>,g?:string): Array<{id:string;type:string;props:Record<string,unknown>}> }
+import type { SentinelFinding } from '../../../src/sentinel/types';
+import { computeRoutineDiffusion } from './computes/compute-routine-diffusion';
+import { createLogger } from '../../../src/logger';
+
+const log = createLogger('sentinel/routine-diffusion');
+
+interface GraphStoreReader {
+  queryNodes(type: string, filters?: Record<string, unknown>, graph?: string): Array<{
+    id: string; type: string; props: Record<string, unknown>;
+  }>;
+}
+
 export const routineDiffusionSentinel = {
-  async check(s: GSR, tid: string): Promise<SentinelFinding[]> {
-    const n = new Date(); const ca = n.toISOString();
-    try { const nodes = s.queryNodes("ALL",{tid}); const r = computeRoutinediffusion(nodes.length);
-      if (r.score<0.2) return [{id:"o5-${n.getTime()}",severity:"critical" as const,title:"O5��",description:"��Ľ�",evidence:[`${(r.score*100).toFixed(0)}%`],suggestion:"������",detectedAt:ca}];
-      return [];
-    } catch(e: unknown) { log.error({e},"["+tid+"]ʧ��"); return [{id:"e-${n.getTime()}",severity:"warning" as const,title:"�쳣",description:`${(e as Error)?.message||String(e)}`,evidence:[],suggestion:"��顣",detectedAt:ca}]; }
+  async check(store: GraphStoreReader, teamId: string): Promise<SentinelFinding[]> {
+    const now = new Date();
+    const checkedAt = now.toISOString();
+
+    try {
+      const processNodes = store.queryNodes('Process', { teamId });
+      const teamNodes = store.queryNodes('Team', { teamId });
+
+      const result = computeRoutineDiffusion(processNodes.length, teamNodes.length);
+      log.debug({ score: result.score, assessment: result.assessment }, '惯例扩散计算完成');
+
+      if (result.degraded) {
+        return [{
+          id: `o5-nodata-${now.getTime()}`, severity: 'info',
+          title: '扩散数据不足',
+          description: '未检测到 Process 或 Team 节点。',
+          evidence: [], suggestion: '添加工序和团队数据。', detectedAt: checkedAt,
+        }];
+      }
+
+      const sp = (result.score * 100).toFixed(0);
+
+      if (result.assessment === 'slow') {
+        return [{
+          id: `o5-crit-${now.getTime()}`, severity: 'warning',
+          title: `惯例扩散缓慢 (${sp}%)`,
+          description: `${result.totalProcesses} 个流程在团队中使用率低。`,
+          evidence: [`扩散: ${sp}%`, `流程/团队: ${result.processesPerTeam}`],
+          suggestion: '推广最佳实践，降低跨团队协作壁垒。', detectedAt: checkedAt,
+        }];
+      }
+
+      if (result.assessment === 'moderate') {
+        return [{
+          id: `o5-warn-${now.getTime()}`, severity: 'info',
+          title: `惯例扩散中等 (${sp}%)`,
+          description: '部分流程已跨团队推广。', evidence: [`扩散: ${sp}%`],
+          suggestion: '识别尚未采纳关键流程的团队。', detectedAt: checkedAt,
+        }];
+      }
+
+      return [{
+        id: `o5-healthy-${now.getTime()}`, severity: 'info',
+        title: `惯例扩散快速 (${sp}%)`,
+        description: '新惯例在各团队间快速扩散。', evidence: [`扩散: ${sp}%`],
+        suggestion: '维持知识共享机制。', detectedAt: checkedAt,
+      }];
+    } catch (err: unknown) {
+      log.error({ err }, '[routine-diffusion] 失败');
+      return [{ id: `o5-error-${now.getTime()}`, severity: 'warning',
+        title: '检测异常', description: `${(err as Error)?.message || String(err)}`,
+        evidence: [], suggestion: '检查数据。', detectedAt: checkedAt }];
+    }
   },
 };
