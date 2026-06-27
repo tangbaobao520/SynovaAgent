@@ -1,0 +1,25 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "structural-change",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "底层结构变化",
+  "description": "E6: 检测技术-经济范式层面的底层结构变化信号。数据源: Event, Compliance, FINANCIAL节点。",
+  "schedule": "0 0 1 * *",
+  "expert": "strategy",
+  "auxiliaryExperts": ["knowledge"],
+  "priority": "P1",
+  "layer": "environment",
+  "computeKind": "heuristic",
+  "computes": ["structural-change-signal"],
+  "thresholds": {
+    "structural_change_score": { "warning": 0.5, "critical": 0.7 }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": ["sog_graph"],
+    "dataAccess": { "allowedDimensions": ["strategic"], "sensitiveAccess": "read" }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "structuralChangeSentinel"
+}

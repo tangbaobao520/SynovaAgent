@@ -375,7 +375,7 @@ hard_check "铁律 46: 桥接文件欺诈" "${BRIDGE_FAIL:-}"
 
 # 5c. 铁律 47: 声称拆分完须 grep 零旧引用 (原 20 — 警告模式)
 TODAY=$(date +%Y-%m-%d)
-BRIEF=$(find "$ROOT/.claude/task-briefs/" -type f -name "${TODAY}*" 2>/dev/null | xargs ls -t 2>/dev/null | head -1)
+BRIEF=$(find "$ROOT/.claude/task-briefs/" -type f -name "*.md" 2>/dev/null | xargs ls -t 2>/dev/null | head -1)
 CLEANUP_CLAIM=""
 if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
   if grep -qi "拆分\|迁移\|清理.*完成\|已拆\|已迁移\|已清理" "$BRIEF" 2>/dev/null; then
