@@ -1,0 +1,3 @@
+export function computeResourcemisallocation(v: number): {score: number;degraded: boolean} {
+ return {score: Math.min(v/100,1), degraded: v===0};
+}
