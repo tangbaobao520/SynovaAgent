@@ -1,0 +1,20 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "competitive-moat-structural",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "护城河结构性强度",
+  "description": "I3: 聚合六种可量化的竞争壁垒力量——规模经济、网络效应、切换成本、流程威力、SLM公式、独占资源。",
+  "schedule": "0 0 1 * *",
+  "expert": "strategy",
+  "auxiliaryExperts": ["tech"],
+  "priority": "P1",
+  "layer": "interface",
+  "computeKind": "deterministic",
+  "computes": ["scale-economy-score", "network-effect-score", "switching-cost-score", "process-power-score", "counter-positioning-slm", "cornered-resource-score"],
+  "thresholds": { "moat_strength": { "warning": 0.5, "critical": 0.3 } },
+  "aggregation": "weighted_average",
+  "context": { "requiredDataSources": ["sog_graph", "financial_baseline"], "dataAccess": { "allowedDimensions": ["strategic", "financial"], "sensitiveAccess": "read" } },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "competitiveMoatStructuralSentinel"
+}
