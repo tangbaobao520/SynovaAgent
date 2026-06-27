@@ -204,3 +204,4 @@ import type { computeLevinsBreadth as _levinsCheck } from "../../extensions/sent
 import type { nicheSqueezeSentinel as _nsCheck } from "../../extensions/sentinels/niche-squeeze/aggregate";
 import type { computeNicheSqueezeIndex as _nsIdxCheck } from "../../extensions/sentinels/niche-squeeze/computes/niche-squeeze-index";
 import type { competitiveMoatStructuralSentinel as _cmsCheck } from "../../extensions/sentinels/competitive-moat-structural/aggregate";
+import type { competitiveMoatPerceptualSentinel as _cmpCheck } from "../../extensions/sentinels/competitive-moat-perceptual/aggregate";
