@@ -205,3 +205,4 @@ import type { nicheSqueezeSentinel as _nsCheck } from "../../extensions/sentinel
 import type { computeNicheSqueezeIndex as _nsIdxCheck } from "../../extensions/sentinels/niche-squeeze/computes/niche-squeeze-index";
 import type { competitiveMoatStructuralSentinel as _cmsCheck } from "../../extensions/sentinels/competitive-moat-structural/aggregate";
 import type { competitiveMoatPerceptualSentinel as _cmpCheck } from "../../extensions/sentinels/competitive-moat-perceptual/aggregate";
+import type { businessModelCoherenceSentinel as _bmcCheck } from "../../extensions/sentinels/business-model-coherence/aggregate";
