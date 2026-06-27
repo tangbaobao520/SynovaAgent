@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Loop Engineering V4.2.6 — 生成 task brief (6 核心字段 + 三层解耦项目身份 + 决策链)."""
+"""Loop Engineering V4.2.7 — 生成 task brief (6 核心字段 + 三层解耦项目身份 + 决策链)."""
 import os
 from datetime import datetime
 
@@ -38,7 +38,7 @@ Agent，不是 ChatBot。驻扎企业，持续观测，主动发现，自动诊�
 - 新行业 = 加行业目录（基准数据+阈值+案例库）→ 1-2 天上线，零 TypeScript 改动
 - 新本体实体类型 = 加 JSON Schema 文件
 
-流程约束: V4.2.6 — task brief 6 字段强制 + 免疫系统 + plan.json + 8 组物理阻断 + Plan-Actual 闭合 + engine-core 清零 + 时间戳顺序检查。
+流程约束: V4.2.7 — task brief 6 字段强制 + 免疫系统 + plan.json + 8 组物理阻断 + Plan-Actual 闭合 + engine-core 清零 + 时间戳顺序检查。
 
 数据流: L5 存储 → L4 本体 → L3 洞察(哨兵定时+诊断按需) → L2 编排 → L1 交互
         反馈闭环: GA评审/客户反馈 → 记忆层 → 数据层

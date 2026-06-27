@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering V4.2.6 — check-verifiable-done.sh
+# Loop Engineering V4.2.7 — check-verifiable-done.sh
 # Done 标准可证伪性检查。pre-commit 第 6 组调用。全部 <1s。
 #
 # Anthropic 原则 2: 先设计验证标准，再设计实现。

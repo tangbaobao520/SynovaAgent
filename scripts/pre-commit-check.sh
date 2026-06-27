@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering V4.2.6 — pre-commit 8 组硬阻断 (全部 <10s) + 免疫系统
+# Loop Engineering V4.2.7 — pre-commit 8 组硬阻断 (全部 <10s) + 免疫系统
 #
 # v3.6 → v3.8 核心变化 (2026-06-23):
 #   + plan.json 支持: 分阶段任务可 deferred wiring/test_pairing 检查
@@ -131,7 +131,7 @@ NEW_IMPL=$(git diff --cached --name-only --diff-filter=A 2>/dev/null | grep -E "
 
 echo ""
 echo "═══════════════════════════════════════════════════════════"
-echo "  Loop Engineering V4.2.6 — pre-commit (8 组 + 免疫 + plan-integrity)"
+echo "  Loop Engineering V4.2.7 — pre-commit (8 组 + 免疫 + plan-integrity)"
 echo "═══════════════════════════════════════════════════════════"
 echo ""
 
@@ -168,7 +168,7 @@ fi
 bash "$ROOT/scripts/check-hardcoded.sh" 2>/dev/null || true
 hard_check "硬编码业务数据/类型 (禁止硬编码部门名/可扩展实体列表)" "${HARDCODE_DATA:-}"
 
-# V4.2.6: 旧适配器废弃映射检查 (不阻断)
+# V4.2.7: 旧适配器废弃映射检查 (不阻断)
 bash "$ROOT/scripts/check-deprecated-mapping.sh"
 
 # ═══════════════════════════════════════════════════════════════════
@@ -425,7 +425,7 @@ fi
 hard_check "Task Brief: 编码变更须有今日 task brief" "${TASK_BRIEF_MISSING:-}"
 hard_check "Task Brief: 6 核心字段必须填写 (Q0/Q1/Q2/Q3/架构层/Done)" "${TASK_BRIEF_EMPTY:-}"
 
-# V4.2.6: 时间戳顺序检查 — PreToolUse 发现 brief 未填就写代码时记录证据到 /tmp/
+# V4.2.7: 时间戳顺序检查 — PreToolUse 发现 brief 未填就写代码时记录证据到 /tmp/
 # 此文件在 git 之外，不能被 git checkout 抹掉。必须显式 rm 才能解除阻断。
 BEFORE_BRIEF_EVI="/tmp/.synova-before-brief"
 BEFORE_BRIEF_MSG=""
