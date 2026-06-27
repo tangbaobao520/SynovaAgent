@@ -17,6 +17,7 @@ import {
   getSentinelExpertReports,
   getSentinelTickets,
 } from '../agent/sentinel-service';
+import { computeFlywheelSpeeds } from '../sentinel/flywheel-aggregator';
 import { createLogger } from '../logger';
 
 const log = createLogger('routes/sentinel');
@@ -76,10 +77,12 @@ router.post('/run/:id', async (req: Request, res: Response) => {
 router.get('/reports', (_req: Request, res: Response) => {
   try {
     const result = getSentinelExpertReports();
-    res.json(result);
+    const findings = getSentinelFindings({ limit: 200 });
+    const flywheel = computeFlywheelSpeeds(findings.findings);
+    res.json({ ...result, flywheel });
   } catch (err: unknown) {
     log.error({ err }, '[sentinel] reports 查询失败');
-    res.status(500).json({ ok: false, total: 0, reports: [] });
+    res.status(500).json({ ok: false, total: 0, reports: [], flywheel: null });
   }
 });
 

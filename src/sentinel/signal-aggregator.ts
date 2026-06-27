@@ -2,10 +2,13 @@
  * sentinel/signal-aggregator.ts — 信号聚合引擎 (L3)
  * @state: real
  *
- * 消费 SentinelCheckResult[] → 交叉关联 → 严重度升级 → 专家路由。
+ * 消费 SentinelCheckResult[] → 交叉关联 → 严重度升级 → 专家路由 → 飞轮聚合。
  *
  * 手册 §7.4: "三个信号指向同一团队——这不是噪音，是这个团队要出问题"
  * 手册 §8.2: 信号→专家映射为预定义规则，不是 LLM 判断
+ *
+ * V4.2.7 / Phase 7: 集成飞轮聚合引擎，输出三飞轮转速+瓶颈。
+ * 飞轮数据嵌入诊断报告，供 L1 交互层渲染 CEO 仪表盘。
  *
  * 铁律 24: 每个 catch 带 log.warn/error + degraded
  * 铁律 31: degraded 信号传播到调用链顶端
