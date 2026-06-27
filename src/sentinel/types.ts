@@ -208,3 +208,4 @@ import type { competitiveMoatPerceptualSentinel as _cmpCheck } from "../../exten
 import type { businessModelCoherenceSentinel as _bmcCheck } from "../../extensions/sentinels/business-model-coherence/aggregate";
 import type { unitEconomicsSentinel as _ueCheck } from "../../extensions/sentinels/unit-economics/aggregate";
 import type { internalTransactionCostSentinel as _itcCheck } from "../../extensions/sentinels/internal-transaction-cost/aggregate";
+import type { networkPowerSentinel as _npCheck } from "../../extensions/sentinels/network-power/aggregate";
