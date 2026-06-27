@@ -189,3 +189,6 @@ import type { competitiveDynamicsSentinel as _compDynCheck } from "../../extensi
 import type { environmentRentDependencySentinel as _rentDepCheck } from "../../extensions/sentinels/environment-rent-dependency/aggregate";
 import type { structuralChangeSentinel as _structChangeCheck } from "../../extensions/sentinels/structural-change/aggregate";
 import type { computeStructuralChangeSignal as _structSigCheck } from "../../extensions/sentinels/structural-change/computes/structural-change-signal";
+
+import type { financingConstraintSentinel as _finConCheck } from "../../extensions/sentinels/financing-constraint/aggregate";
+import type { financingConstraintSentinel as _finConCheck } from "../../extensions/sentinels/financing-constraint/aggregate";
