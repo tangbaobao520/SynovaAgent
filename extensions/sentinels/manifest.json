@@ -16,7 +16,7 @@
     "boundary_rule": "哨兵 = 可以独立说'这里出问题了'的最小子领域。不是整个领域（太粗），不是一个指标（太细）。"
   },
   "sentinels": {
-    "finance": ["cost-health", "revenue-health", "cash-runway", "profit-health", "capital-efficiency", "financing-constraint", "capital-structure", "growth-quality", "capital-turnover"],
+    "finance": ["cost-health", "revenue-health", "cash-runway", "profit-health", "capital-efficiency", "financing-constraint", "capital-structure", "growth-quality", "capital-turnover", "unit-economics"],
     "org": ["key-person-risk"],
     "tech": ["api-coverage", "data-health", "software-health"],
     "marketing": ["customer-demand-shift"],

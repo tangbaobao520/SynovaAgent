@@ -1,0 +1,20 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "unit-economics",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "单位经济可持续性",
+  "description": "I10: LTV/CAC比、单位毛利率。数据源: FINANCIAL, Client节点。",
+  "schedule": "0 0 1 * *",
+  "expert": "finance",
+  "auxiliaryExperts": ["marketing"],
+  "priority": "P1",
+  "layer": "interface",
+  "computeKind": "deterministic",
+  "computes": ["ltv-cac-ratio", "gross-margin-per-unit"],
+  "thresholds": { "unit_health": { "warning": 0.5, "critical": 0.3 } },
+  "aggregation": "worst_first",
+  "context": { "requiredDataSources": ["sog_graph"], "dataAccess": { "allowedDimensions": ["financial", "marketing"], "sensitiveAccess": "read" } },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "unitEconomicsSentinel"
+}
