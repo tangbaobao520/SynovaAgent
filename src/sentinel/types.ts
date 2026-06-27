@@ -201,3 +201,5 @@ import type { capitalTurnoverSentinel as _ctCheck } from "../../extensions/senti
 import type { computeAssetTurnover as _atCheck } from "../../extensions/sentinels/capital-turnover/computes/asset-turnover";
 import type { nicheBreadthSentinel as _nbCheck } from "../../extensions/sentinels/niche-breadth/aggregate";
 import type { computeLevinsBreadth as _levinsCheck } from "../../extensions/sentinels/niche-breadth/computes/levins-breadth";
+import type { nicheSqueezeSentinel as _nsCheck } from "../../extensions/sentinels/niche-squeeze/aggregate";
+import type { computeNicheSqueezeIndex as _nsIdxCheck } from "../../extensions/sentinels/niche-squeeze/computes/niche-squeeze-index";
