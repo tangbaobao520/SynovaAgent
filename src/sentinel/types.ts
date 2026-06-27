@@ -187,3 +187,5 @@ import type { computeOpportunityWindowScore as _oppScoreCheck } from '../../exte
 import type { computeCapitalTurnover as _capTurnCheck } from '../../extensions/sentinels/capital-efficiency/computes/capital-turnover';
 import type { competitiveDynamicsSentinel as _compDynCheck } from "../../extensions/sentinels/competitive-dynamics/aggregate";
 import type { environmentRentDependencySentinel as _rentDepCheck } from "../../extensions/sentinels/environment-rent-dependency/aggregate";
+import type { structuralChangeSentinel as _structChangeCheck } from "../../extensions/sentinels/structural-change/aggregate";
+import type { computeStructuralChangeSignal as _structSigCheck } from "../../extensions/sentinels/structural-change/computes/structural-change-signal";
