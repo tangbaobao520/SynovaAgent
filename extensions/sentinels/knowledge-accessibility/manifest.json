@@ -32,5 +32,8 @@
     }
   },
   "entryPoint": "./aggregate.ts",
-  "exportKey": "knowledgeAccessibilitySentinel"
+  "exportKey": "knowledgeAccessibilitySentinel",
+  "auxiliaryExperts": [
+    "knowledge"
+  ]
 }

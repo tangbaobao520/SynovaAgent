@@ -32,5 +32,8 @@
     }
   },
   "entryPoint": "./aggregate.ts",
-  "exportKey": "routineMutationSentinel"
+  "exportKey": "routineMutationSentinel",
+  "auxiliaryExperts": [
+    "knowledge"
+  ]
 }

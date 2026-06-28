@@ -32,5 +32,8 @@
     }
   },
   "entryPoint": "./aggregate.ts",
-  "exportKey": "resourceMisallocationSentinel"
+  "exportKey": "resourceMisallocationSentinel",
+  "auxiliaryExperts": [
+    "strategy"
+  ]
 }

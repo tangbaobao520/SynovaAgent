@@ -32,5 +32,8 @@
     }
   },
   "entryPoint": "./aggregate.ts",
-  "exportKey": "HumanagentboundarySentinel"
+  "exportKey": "HumanagentboundarySentinel",
+  "auxiliaryExperts": [
+    "org"
+  ]
 }

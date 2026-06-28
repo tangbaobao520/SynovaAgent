@@ -7,12 +7,18 @@ export const ProcessAiReadinessSentinel = {
   async check(s: GSR, tid: string): Promise<SentinelFinding[]> {
     const now = new Date(); const ca = now.toISOString();
     try {
-      const nodes = s.queryNodes("Tool",{tid});
-      const connected = nodes.filter(n => n.props.protocol || n.props.connector || n.props.integration).length;
-      const r = computeProcessAiReadiness(nodes.length, connected);
-      if (r.degraded) return [{id:"t-na-${now.getTime()}",severity:"info",title:"Œﬁ ˝æ›",evidence:[],suggestion:"",detectedAt:ca}];
-      if (r.score < 0.3) return [{id:"t-pro-${now.getTime()}",severity:"warning",title:"PRO∏≤∏«¬ µÕ",description:"µÕ”⁄30%",evidence:[`∏≤∏«: ${(r.score*100).toFixed(0)}%`],suggestion:"∆¿π¿°£",detectedAt:ca}];
+      const tools = s.queryNodes("Tool",{tid});
+      const processes = s.queryNodes("Process",{tid});
+      const connectors = tools.filter(t => t.props.protocol || t.props.connector);
+      const r = computeProcessAiReadiness({
+        structuredDataRatio: tools.length > 0 ? connectors.length / tools.length : 0,
+        digitizedProcesses: processes.filter(p => p.props.digitized === true || p.props.automated === true).length,
+        totalProcesses: processes.length,
+        teamSkillAvg: 3,
+      });
+      if (r.degraded) return [{id:`t-na-${now.getTime()}`,severity:"info",title:"Êó†ÊµÅÁ®ãÊï∞ÊçÆ",evidence:[],suggestion:"",detectedAt:ca}];
+      if (r.score < 0.3) return [{id:`t-pro-${now.getTime()}`,severity:"warning",title:"ÊµÅÁ®ãAIÂ∞±Áª™Â∫¶ÂÅè‰Ωé",description:`Â∞±Áª™Â∫¶${(r.score*100).toFixed(0)}%`,evidence:[`Â∞±Áª™Â∫¶: ${(r.score*100).toFixed(0)}%`],suggestion:"ÊèêÂçáÊï∞ÊçÆÁªìÊûÑÂíåÊµÅÁ®ãÊï∞Â≠óÂåñÊ∞¥Âπ≥",detectedAt:ca}];
       return [];
-    } catch(e: unknown) { log.error({e}); return [{id:"e-${now.getTime()}",severity:"warning",title:"“Ï≥£",description:`${(e as Error)?.message||""}`,evidence:[],suggestion:"",detectedAt:ca}]; }
+    } catch(e: unknown) { log.error({e}); return [{id:`e-${now.getTime()}`,severity:"warning",title:"ÂºÇÂ∏∏",description:`${(e as Error)?.message||""}`,evidence:[],suggestion:"",detectedAt:ca}]; }
   },
 };

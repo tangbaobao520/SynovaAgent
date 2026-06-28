@@ -32,5 +32,8 @@
     }
   },
   "entryPoint": "./aggregate.ts",
-  "exportKey": "orgRepairabilitySentinel"
+  "exportKey": "orgRepairabilitySentinel",
+  "auxiliaryExperts": [
+    "knowledge"
+  ]
 }

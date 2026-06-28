@@ -32,5 +32,8 @@
     }
   },
   "entryPoint": "./aggregate.ts",
-  "exportKey": "infoDistortionSentinel"
+  "exportKey": "infoDistortionSentinel",
+  "auxiliaryExperts": [
+    "knowledge"
+  ]
 }

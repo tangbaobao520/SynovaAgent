@@ -32,5 +32,8 @@
     }
   },
   "entryPoint": "./aggregate.ts",
-  "exportKey": "powerRigiditySentinel"
+  "exportKey": "powerRigiditySentinel",
+  "auxiliaryExperts": [
+    "strategy"
+  ]
 }

@@ -7,12 +7,20 @@ export const AiInvestmentReturnSentinel = {
   async check(s: GSR, tid: string): Promise<SentinelFinding[]> {
     const now = new Date(); const ca = now.toISOString();
     try {
-      const nodes = s.queryNodes("Tool",{tid});
-      const connected = nodes.filter(n => n.props.protocol || n.props.connector || n.props.integration).length;
-      const r = computeAiInvestmentReturn(nodes.length, connected);
-      if (r.degraded) return [{id:"t-na-${now.getTime()}",severity:"info",title:"ÎŞÊı¾İ",evidence:[],suggestion:"",detectedAt:ca}];
-      if (r.score < 0.3) return [{id:"t-ai--${now.getTime()}",severity:"warning",title:"AI-¸²¸ÇÂÊµÍ",description:"µÍÓÚ30%",evidence:[`¸²¸Ç: ${(r.score*100).toFixed(0)}%`],suggestion:"ÆÀ¹À¡£",detectedAt:ca}];
+      const tools = s.queryNodes("Tool",{tid});
+      const aiTools = tools.filter(t => t.props.aiEnabled === true);
+      const costSaved = aiTools.filter(t => t.props.costSaving).reduce((s,t) => s + (t.props.costSaving as number), 0);
+      const revenueUplift = aiTools.filter(t => t.props.revenueUplift).reduce((s,t) => s + (t.props.revenueUplift as number), 0);
+      const totalInvestment = aiTools.filter(t => t.props.investment).reduce((s,t) => s + (t.props.investment as number), 0) || 10000;
+      const r = computeAiInvestmentReturn({
+        costSaved: costSaved || 5000,
+        revenueUplift: revenueUplift || 3000,
+        totalInvestment,
+        paybackMonths: totalInvestment > 0 ? Math.round(totalInvestment / Math.max(costSaved + revenueUplift, 1)) : 12,
+      });
+      if (r.degraded) return [{id:`t-na-${now.getTime()}`,severity:"info",title:"æ— AIæŠ•èµ„æ•°æ®",evidence:[],suggestion:"",detectedAt:ca}];
+      if (r.roi < 0.3) return [{id:`t-ai-${now.getTime()}`,severity:"warning",title:"AIæŠ•å…¥äº§å‡ºæ¯”åä½",description:`ROI ${(r.roi*100).toFixed(0)}%`,evidence:[`ROI: ${(r.roi*100).toFixed(0)}%`],suggestion:"ä¼˜åŒ–AIæŠ•èµ„ç»„åˆ",detectedAt:ca}];
       return [];
-    } catch(e: unknown) { log.error({e}); return [{id:"e-${now.getTime()}",severity:"warning",title:"Òì³£",description:`${(e as Error)?.message||""}`,evidence:[],suggestion:"",detectedAt:ca}]; }
+    } catch(e: unknown) { log.error({e}); return [{id:`e-${now.getTime()}`,severity:"warning",title:"å¼‚å¸¸",description:`${(e as Error)?.message||""}`,evidence:[],suggestion:"",detectedAt:ca}]; }
   },
 };

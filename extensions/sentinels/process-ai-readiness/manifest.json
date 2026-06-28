@@ -32,5 +32,8 @@
     }
   },
   "entryPoint": "./aggregate.ts",
-  "exportKey": "ProcessaireadinessSentinel"
+  "exportKey": "ProcessaireadinessSentinel",
+  "auxiliaryExperts": [
+    "org"
+  ]
 }

@@ -8,11 +8,15 @@ export const ConnectorCoverageSentinel = {
     const now = new Date(); const ca = now.toISOString();
     try {
       const nodes = s.queryNodes("Tool",{tid});
-      const connected = nodes.filter(n => n.props.protocol || n.props.connector || n.props.integration).length;
-      const r = computeConnectorCoverage(nodes.length, connected);
-      if (r.degraded) return [{id:"t-na-${now.getTime()}",severity:"info",title:"ÎŞÊı¾İ",evidence:[],suggestion:"",detectedAt:ca}];
-      if (r.score < 0.3) return [{id:"t-con-${now.getTime()}",severity:"warning",title:"CON¸²¸ÇÂÊµÍ",description:"µÍÓÚ30%",evidence:[`¸²¸Ç: ${(r.score*100).toFixed(0)}%`],suggestion:"ÆÀ¹À¡£",detectedAt:ca}];
+      const processes = nodes.map(n => ({
+        name: n.id,
+        hasConnector: !!(n.props.protocol || n.props.connector || n.props.integration),
+        isKeyProcess: n.type === 'Process' || n.props.critical === true,
+      }));
+      const r = computeConnectorCoverage({ processes });
+      if (r.degraded) return [{id:`t-na-${now.getTime()}`,severity:"info",title:"æ— è¿æ¥å™¨æ•°æ®",evidence:[],suggestion:"",detectedAt:ca}];
+      if (r.coverage < 0.3) return [{id:`t-con-${now.getTime()}`,severity:"warning",title:"è¿æ¥å™¨è¦†ç›–ç‡åä½",description:`è¦†ç›–${(r.coverage*100).toFixed(0)}%`,evidence:[`è¦†ç›–ç‡: ${(r.coverage*100).toFixed(0)}%`],suggestion:"å¢åŠ å…³é”®ä¸šåŠ¡æµç¨‹çš„APIè¿æ¥å™¨",detectedAt:ca}];
       return [];
-    } catch(e: unknown) { log.error({e}); return [{id:"e-${now.getTime()}",severity:"warning",title:"Òì³£",description:`${(e as Error)?.message||""}`,evidence:[],suggestion:"",detectedAt:ca}]; }
+    } catch(e: unknown) { log.error({e}); return [{id:`e-${now.getTime()}`,severity:"warning",title:"å¼‚å¸¸",description:`${(e as Error)?.message||""}`,evidence:[],suggestion:"",detectedAt:ca}]; }
   },
 };

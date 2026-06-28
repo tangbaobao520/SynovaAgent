@@ -7,12 +7,19 @@ export const AiEcosystemFitSentinel = {
   async check(s: GSR, tid: string): Promise<SentinelFinding[]> {
     const now = new Date(); const ca = now.toISOString();
     try {
-      const nodes = s.queryNodes("Tool",{tid});
-      const connected = nodes.filter(n => n.props.protocol || n.props.connector || n.props.integration).length;
-      const r = computeAiEcosystemFit(nodes.length, connected);
-      if (r.degraded) return [{id:"t-na-${now.getTime()}",severity:"info",title:"Œﬁ ˝æ›",evidence:[],suggestion:"",detectedAt:ca}];
-      if (r.score < 0.3) return [{id:"t-ai--${now.getTime()}",severity:"warning",title:"AI-∏≤∏«¬ µÕ",description:"µÕ”⁄30%",evidence:[`∏≤∏«: ${(r.score*100).toFixed(0)}%`],suggestion:"∆¿π¿°£",detectedAt:ca}];
+      const tools = s.queryNodes("Tool",{tid});
+      const aiApis = tools.filter(t => t.props.aiEnabled === true || t.props.protocol?.includes('ai'));
+      const aiPlatforms = [...new Set(tools.filter(t => t.props.platform).map(t => t.props.platform as string))];
+      const r = computeAiEcosystemFit({
+        apiCompatible: aiApis.length,
+        totalApis: tools.length,
+        platformsCovered: aiPlatforms.length,
+        totalPlatforms: 5,
+        devEcosystemScore: Math.min(aiPlatforms.length / 3, 1),
+      });
+      if (r.degraded) return [{id:`t-na-${now.getTime()}`,severity:"info",title:"Êó†AIÁîüÊÄÅÊï∞ÊçÆ",evidence:[],suggestion:"",detectedAt:ca}];
+      if (r.score < 0.3) return [{id:`t-ai-${now.getTime()}`,severity:"warning",title:"AIÁîüÊÄÅÂåπÈÖçÂ∫¶ÂÅè‰Ωé",description:`ÂåπÈÖçÂ∫¶${(r.score*100).toFixed(0)}%`,evidence:[`ÂåπÈÖçÂ∫¶: ${(r.score*100).toFixed(0)}%`],suggestion:"Â¢ûÂä†ÂØπ‰∏ªÊµÅAIÂπ≥Âè∞ÁöÑAPIÂÖºÂÆπÊÄß",detectedAt:ca}];
       return [];
-    } catch(e: unknown) { log.error({e}); return [{id:"e-${now.getTime()}",severity:"warning",title:"“Ï≥£",description:`${(e as Error)?.message||""}`,evidence:[],suggestion:"",detectedAt:ca}]; }
+    } catch(e: unknown) { log.error({e}); return [{id:`e-${now.getTime()}`,severity:"warning",title:"ÂºÇÂ∏∏",description:`${(e as Error)?.message||""}`,evidence:[],suggestion:"",detectedAt:ca}]; }
   },
 };

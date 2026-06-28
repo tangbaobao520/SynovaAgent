@@ -32,5 +32,8 @@
     }
   },
   "entryPoint": "./aggregate.ts",
-  "exportKey": "AgentdeploymentmaturitySentinel"
+  "exportKey": "AgentdeploymentmaturitySentinel",
+  "auxiliaryExperts": [
+    "org"
+  ]
 }

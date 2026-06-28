@@ -32,5 +32,8 @@
     }
   },
   "entryPoint": "./aggregate.ts",
-  "exportKey": "incentiveAlignmentSentinel"
+  "exportKey": "incentiveAlignmentSentinel",
+  "auxiliaryExperts": [
+    "finance"
+  ]
 }
