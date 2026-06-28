@@ -72,3 +72,17 @@
 - niche_breadth(teamId) → {B, D, V}
 - niche_squeeze(teamId) → number
 - moat_strength(teamId) → {structural, perceptual}
+
+## 46 Sentinel Tools (E1-E6 + I1-I6)
+- market_lifecycle_stage -> LifecycleResult
+- opportunity_window -> {score, signals}
+- competitive_dynamics -> {hhi, intensity}
+- customer_demand_shift -> {churn, concentration}
+- environment_rent_dependency -> {index, signals}
+- structural_change -> {score, signals}
+- niche_breadth -> {B, D, V}
+- niche_squeeze -> {squeeze, hhi}
+- competitive_moat_structural -> {score, forces}
+- competitive_moat_perceptual -> {premium, loyalty}
+- network_power -> {powerIndex, keyNodes}
+- value_capture -> {captureIndex, margin}

@@ -6,15 +6,35 @@
   "displayName": "内部交易成本增长率",
   "description": "I11: 评估管理成本率、协调成本趋势、组织复杂度。数据源: FINANCIAL, Person, Team, Event节点。",
   "schedule": "0 0 1 * *",
-  "expert": "org",
-  "auxiliaryExperts": ["finance"],
+  "expert": "business_model",
+  "auxiliaryExperts": [
+    "finance"
+  ],
   "priority": "P1",
   "layer": "interface",
   "computeKind": "deterministic",
-  "computes": ["transaction-cost-trend"],
-  "thresholds": { "cost_trend": { "warning": 0.05, "critical": 0.1 } },
+  "computes": [
+    "transaction-cost-trend"
+  ],
+  "thresholds": {
+    "cost_trend": {
+      "warning": 0.05,
+      "critical": 0.1
+    }
+  },
   "aggregation": "worst_first",
-  "context": { "requiredDataSources": ["sog_graph"], "dataAccess": { "allowedDimensions": ["organizational", "financial"], "sensitiveAccess": "read" } },
+  "context": {
+    "requiredDataSources": [
+      "sog_graph"
+    ],
+    "dataAccess": {
+      "allowedDimensions": [
+        "organizational",
+        "financial"
+      ],
+      "sensitiveAccess": "read"
+    }
+  },
   "entryPoint": "./aggregate.ts",
   "exportKey": "internalTransactionCostSentinel"
 }

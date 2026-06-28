@@ -122,3 +122,8 @@ boundaryHealth = 1 - churnRate×0.4 - zombieRisk×0.3 - |externalRatio-0.3|×0.3
 - 比较过去 12 个月各环节的利润贡献变化趋势
 - 利润在向某个环节迁移 → 标注"利润池迁移中"
 - 建议：迁移方向的分析 + 应对策略
+
+## I7-I13 Sentinel Tools
+- model_coherence -> {score, vpRevFit, revCostFit}
+- make_or_buy -> {health, outsourcedCore}
+- transaction_cost_trend -> {trend, adminCostRatio}
