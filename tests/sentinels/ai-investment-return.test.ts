@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { computeAiinvestmentreturn } from "../../extensions/sentinels/ai-investment-return/computes/compute-ai-investment-return";
+import { computeAiInvestmentReturn } from "../../extensions/sentinels/ai-investment-return/computes/compute-ai-investment-return";
 describe("ai-investment-return",()=>{
-  it("空degraded",()=>{expect(computeAiinvestmentreturn(0).degraded).toBe(true);});
-  it("正常",()=>{expect(computeAiinvestmentreturn(50).score).toBe(0.5);});
+  it("空degraded",()=>{expect(computeAiInvestmentReturn(0,0).degraded).toBe(true);});
+  it("全连接=1",()=>{const r=computeAiInvestmentReturn(10,10);expect(r.score).toBe(1);expect(r.degraded).toBe(false);});
 });

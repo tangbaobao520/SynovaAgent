@@ -1,3 +1,4 @@
-export function computeHumanagentboundary(v: number): {score: number;degraded: boolean} {
-  return {score: Math.min(v/100,1), degraded: v===0};
+export function computeHumanAgentBoundary(total: number, hasConnector: number): {score: number;degraded: boolean} {
+  if (total === 0) return {score: 0.5, degraded: true};
+  return {score: Math.round(hasConnector/total*100)/100, degraded: false};
 }

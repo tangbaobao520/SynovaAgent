@@ -1,14 +1,18 @@
 import type { SentinelFinding } from "../../../src/sentinel/types";
-import { computeAgentdeploymentmaturity } from "./computes/compute-agent-deployment-maturity";
+import { computeAgentDeploymentMaturity } from "./computes/compute-agent-deployment-maturity";
 import { createLogger } from "../../../src/logger";
 const log = createLogger("sentinel/agent-deployment-maturity");
 interface GSR { queryNodes(t:string,f?:Record<string,unknown>,g?:string): Array<{id:string;type:string;props:Record<string,unknown>}> }
-export const AgentdeploymentmaturitySentinel = {
+export const AgentDeploymentMaturitySentinel = {
   async check(s: GSR, tid: string): Promise<SentinelFinding[]> {
-    const n = new Date(); const ca = n.toISOString();
-    try { const r = computeAgentdeploymentmaturity(s.queryNodes("Tool",{tid}).length*10);
-      if (r.score<0.2) return [{id:"t7-${n.getTime()}",severity:"critical" as const,title:"T7 Agent部署成熟度低",description:"需改进",evidence:[`${(r.score*100).toFixed(0)}%`],suggestion:"评估改进。",detectedAt:ca}];
+    const now = new Date(); const ca = now.toISOString();
+    try {
+      const nodes = s.queryNodes("Tool",{tid});
+      const connected = nodes.filter(n => n.props.protocol || n.props.connector || n.props.integration).length;
+      const r = computeAgentDeploymentMaturity(nodes.length, connected);
+      if (r.degraded) return [{id:"t-na-${now.getTime()}",severity:"info",title:"无数据",evidence:[],suggestion:"",detectedAt:ca}];
+      if (r.score < 0.3) return [{id:"t-age-${now.getTime()}",severity:"warning",title:"AGE覆盖率低",description:"低于30%",evidence:[`覆盖: ${(r.score*100).toFixed(0)}%`],suggestion:"评估。",detectedAt:ca}];
       return [];
-    } catch(e: unknown) { log.error({e},"["+tid+"]失败"); return [{id:"e-${n.getTime()}",severity:"warning" as const,title:"异常",description:`${(e as Error)?.message||String(e)}`,evidence:[],suggestion:"检查。",detectedAt:ca}]; }
+    } catch(e: unknown) { log.error({e}); return [{id:"e-${now.getTime()}",severity:"warning",title:"异常",description:`${(e as Error)?.message||""}`,evidence:[],suggestion:"",detectedAt:ca}]; }
   },
 };

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { computeAgentdeploymentmaturity } from "../../extensions/sentinels/agent-deployment-maturity/computes/compute-agent-deployment-maturity";
+import { computeAgentDeploymentMaturity } from "../../extensions/sentinels/agent-deployment-maturity/computes/compute-agent-deployment-maturity";
 describe("agent-deployment-maturity",()=>{
-  it("空degraded",()=>{expect(computeAgentdeploymentmaturity(0).degraded).toBe(true);});
-  it("正常",()=>{expect(computeAgentdeploymentmaturity(50).score).toBe(0.5);});
+  it("空degraded",()=>{expect(computeAgentDeploymentMaturity(0,0).degraded).toBe(true);});
+  it("全连接=1",()=>{const r=computeAgentDeploymentMaturity(10,10);expect(r.score).toBe(1);expect(r.degraded).toBe(false);});
 });
