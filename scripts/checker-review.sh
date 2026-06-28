@@ -91,15 +91,17 @@ if [ -z "$RECENT_BRIEFS" ]; then
   echo -e "  ${GREEN}✅ 无近期 brief 需检查${RESET}"
 else
   BRIEF_FAIL=0
-  for brief in $RECENT_BRIEFS; do
-    [ -f "$brief" ] || continue
-    if grep -c '<!--' "$brief" 2>/dev/null | grep -qv '^0$'; then
-      echo -e "  ${RED}❌ $(basename "$brief"): 有 <!-- 模板残留${RESET}"
+  # 只检查被 CURRENT-BRIEF 指向的 brief，以及本次提交新增的 brief
+  CURRENT_BRIEF=$(cat "$ROOT/.claude/current-brief" 2>/dev/null | tr -d '[:space:]' || true)
+  CURRENT_FILE="$ROOT/.claude/task-briefs/$CURRENT_BRIEF"
+  if [ -f "$CURRENT_FILE" ]; then
+    if grep -c '<!--' "$CURRENT_FILE" 2>/dev/null | grep -qv '^0$'; then
+      echo -e "  ${RED}❌ $(basename "$CURRENT_FILE): 有 <!-- 模板残留${RESET}"
       BRIEF_FAIL=1
     fi
-  done
+  fi
   if [ "$BRIEF_FAIL" -eq 0 ]; then
-    echo -e "  ${GREEN}✅ 近期 brief 无模板残留${RESET}"
+    echo -e "  ${GREEN}✅ current brief 无模板残留${RESET}"
   else
     FAIL=1
   fi
