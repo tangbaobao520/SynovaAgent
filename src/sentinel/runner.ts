@@ -43,12 +43,45 @@ function findSignalRoute(sentinelId: string): { experts: string[]; crossValidate
   const route = (sentinel.config as unknown as Record<string, unknown>).route as { experts?: string[]; crossValidateAt?: string } | undefined;
   if (route?.experts?.length) return { experts: route.experts, crossValidateAt: route.crossValidateAt || 'high' };
 
-  // 2. 从 category/priority 推导默认路由
-  const DEFAULT_EXPERTS: Record<string, string[]> = {
-    risk: ['org', 'finance'], capability: ['org'], collaboration: ['org', 'tech'],
-    health: ['tech'], 'data-quality': ['tech'], strategy: ['strategy'],
+  // 2. 从 layer + priority 推导默认路由（技术方案 §7）
+  // 优先使用 manifest 中的 layer 字段，fallback 到旧 category
+  const config = sentinel.config as unknown as Record<string, unknown>;
+  const layer = (config.layer as string) || sentinel.config.category;
+
+  const LAYER_EXPERTS: Record<string, string[]> = {
+    environment: ['strategy'],
+    capital: ['finance'],
+    interface: ['strategy'],
+    technology: ['tech'],
+    alignment: ['org'],
+    internal: ['org'],
+    // layer fallback: 旧 category 兼容
+    risk: ['org', 'finance'],
+    capability: ['org'],
+    collaboration: ['org', 'tech'],
+    health: ['tech'],
+    'data-quality': ['tech'],
+    strategy: ['strategy'],
   };
-  const experts = DEFAULT_EXPERTS[sentinel.config.category] || ['org'];
+  const experts = LAYER_EXPERTS[layer] || ['org'];
+
+  // 根据哨兵 ID 细化 interface 层路由
+  if (layer === 'interface' || layer === 'interface') {
+    const sid = sentinel.config.id.toLowerCase();
+    if (sid.includes('value-capture') || sid.includes('unit-economics') || sid.includes('ltv')) {
+      return { experts: ['finance'], crossValidateAt: 'high' };
+    }
+    if (sid.includes('niche') || sid.includes('moat') || sid.includes('competitive')) {
+      return { experts: ['strategy'], crossValidateAt: 'high' };
+    }
+    if (sid.includes('network') || sid.includes('transaction-cost') || sid.includes('power')) {
+      return { experts: ['org', 'finance'], crossValidateAt: 'high' };
+    }
+    if (sid.includes('business') || sid.includes('make-or-buy') || sid.includes('time')) {
+      return { experts: ['business_model', 'strategy'], crossValidateAt: 'high' };
+    }
+  }
+
   const crossValidateAt = sentinel.config.priority === 'P0' ? 'emergency' : sentinel.config.priority === 'P1' ? 'high' : 'medium';
   return { experts, crossValidateAt };
 }
