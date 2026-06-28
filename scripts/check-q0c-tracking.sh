@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering V4.2.7 — check-q0c-tracking.sh
+# Loop Engineering V4.2.8 — check-q0c-tracking.sh
 # Q0c 取消跟踪。pre-commit 第 6 组调用。全部 <1s。
 #
 # Anthropic 原则: 冲突→取消是正确的。但取消产生缺口——必须有人追。
