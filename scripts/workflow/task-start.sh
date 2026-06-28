@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering V4.2.7 — 任务启动 (Task Start)
+# Loop Engineering V4.2.8 — 任务启动 (Task Start)
 #
 # 这是整个系统最重要的环节。
 # 在写任何代码之前，先回答 3 个问题，把"自然语言意图"翻译成"可执行的规格"。
@@ -20,7 +20,7 @@ BRIEF_FILE="$ROOT/.claude/task-briefs/${TIMESTAMP}-${TASK_SLUG}.md"
 
 echo ""
 echo -e "${CYAN}════════════════════════════════════════════════════════════${RESET}"
-echo -e "${CYAN}  Loop Engineering V4.2.7 — 任务启动${RESET}"
+echo -e "${CYAN}  Loop Engineering V4.2.8 — 任务启动${RESET}"
 echo -e "${CYAN}  先想清楚，再动手。${RESET}"
 echo -e "${CYAN}════════════════════════════════════════════════════════════${RESET}"
 echo ""
@@ -86,7 +86,7 @@ rm -f "$ROOT/.claude/session-locked" 2>/dev/null
 
 
 echo -e "${GREEN}✅ Task Brief 已生成: .claude/task-briefs/${TIMESTAMP}-${TASK_SLUG}.md${RESET}"
-# V4.2.7: 记录当前任务 brief 路径（pre-commit 从此读取，不再 find -name）
+# V4.2.8: 记录当前任务 brief 路径（pre-commit 从此读取，不再 find -name）
 echo "${TIMESTAMP}-${TASK_SLUG}.md" > "$ROOT/.claude/current-brief"
 echo ""
 echo "  填写 Q1/Q2/Q3 和 Done 标准后，开始写代码。"

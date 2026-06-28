@@ -1,5 +1,5 @@
 #!/bin/bash
-# Loop Engineering V4.2.7 — validate-expert-config.sh
+# Loop Engineering V4.2.8 — validate-expert-config.sh
 # 校验 expert-registry.yaml 中引用的 tools/skills/output_schema 是否真实存在。
 # pre-commit 第9项调用。全部 <1s。
 set -euo pipefail
