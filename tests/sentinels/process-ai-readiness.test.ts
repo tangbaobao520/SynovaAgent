@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { computeProcessaireadiness } from "../../extensions/sentinels/process-ai-readiness/computes/compute-process-ai-readiness";
+import { computeProcessAiReadiness } from "../../extensions/sentinels/process-ai-readiness/computes/compute-process-ai-readiness";
 describe("process-ai-readiness",()=>{
-  it("空degraded",()=>{expect(computeProcessaireadiness(0).degraded).toBe(true);});
-  it("正常",()=>{expect(computeProcessaireadiness(50).score).toBe(0.5);});
+  it("空degraded",()=>{expect(computeProcessAiReadiness(0,0).degraded).toBe(true);});
+  it("全连接=1",()=>{const r=computeProcessAiReadiness(10,10);expect(r.score).toBe(1);expect(r.degraded).toBe(false);});
 });

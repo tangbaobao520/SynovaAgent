@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { computeAiecosystemfit } from "../../extensions/sentinels/ai-ecosystem-fit/computes/compute-ai-ecosystem-fit";
+import { computeAiEcosystemFit } from "../../extensions/sentinels/ai-ecosystem-fit/computes/compute-ai-ecosystem-fit";
 describe("ai-ecosystem-fit",()=>{
-  it("空degraded",()=>{expect(computeAiecosystemfit(0).degraded).toBe(true);});
-  it("正常",()=>{expect(computeAiecosystemfit(50).score).toBe(0.5);});
+  it("空degraded",()=>{expect(computeAiEcosystemFit(0,0).degraded).toBe(true);});
+  it("全连接=1",()=>{const r=computeAiEcosystemFit(10,10);expect(r.score).toBe(1);expect(r.degraded).toBe(false);});
 });

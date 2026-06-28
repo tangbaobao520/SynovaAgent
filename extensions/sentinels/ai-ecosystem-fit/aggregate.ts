@@ -1,14 +1,18 @@
 import type { SentinelFinding } from "../../../src/sentinel/types";
-import { computeAiecosystemfit } from "./computes/compute-ai-ecosystem-fit";
+import { computeAiEcosystemFit } from "./computes/compute-ai-ecosystem-fit";
 import { createLogger } from "../../../src/logger";
 const log = createLogger("sentinel/ai-ecosystem-fit");
 interface GSR { queryNodes(t:string,f?:Record<string,unknown>,g?:string): Array<{id:string;type:string;props:Record<string,unknown>}> }
-export const AiecosystemfitSentinel = {
+export const AiEcosystemFitSentinel = {
   async check(s: GSR, tid: string): Promise<SentinelFinding[]> {
-    const n = new Date(); const ca = n.toISOString();
-    try { const r = computeAiecosystemfit(s.queryNodes("Tool",{tid}).length*10);
-      if (r.score<0.2) return [{id:"t6-${n.getTime()}",severity:"critical" as const,title:"T6 AI软件生态匹配度低",description:"需改进",evidence:[`${(r.score*100).toFixed(0)}%`],suggestion:"评估改进。",detectedAt:ca}];
+    const now = new Date(); const ca = now.toISOString();
+    try {
+      const nodes = s.queryNodes("Tool",{tid});
+      const connected = nodes.filter(n => n.props.protocol || n.props.connector || n.props.integration).length;
+      const r = computeAiEcosystemFit(nodes.length, connected);
+      if (r.degraded) return [{id:"t-na-${now.getTime()}",severity:"info",title:"无数据",evidence:[],suggestion:"",detectedAt:ca}];
+      if (r.score < 0.3) return [{id:"t-ai--${now.getTime()}",severity:"warning",title:"AI-覆盖率低",description:"低于30%",evidence:[`覆盖: ${(r.score*100).toFixed(0)}%`],suggestion:"评估。",detectedAt:ca}];
       return [];
-    } catch(e: unknown) { log.error({e},"["+tid+"]失败"); return [{id:"e-${n.getTime()}",severity:"warning" as const,title:"异常",description:`${(e as Error)?.message||String(e)}`,evidence:[],suggestion:"检查。",detectedAt:ca}]; }
+    } catch(e: unknown) { log.error({e}); return [{id:"e-${now.getTime()}",severity:"warning",title:"异常",description:`${(e as Error)?.message||""}`,evidence:[],suggestion:"",detectedAt:ca}]; }
   },
 };

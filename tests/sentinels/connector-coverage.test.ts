@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { computeConnectorcoverage } from "../../extensions/sentinels/connector-coverage/computes/compute-connector-coverage";
+import { computeConnectorCoverage } from "../../extensions/sentinels/connector-coverage/computes/compute-connector-coverage";
 describe("connector-coverage",()=>{
-  it("空degraded",()=>{expect(computeConnectorcoverage(0).degraded).toBe(true);});
-  it("正常",()=>{expect(computeConnectorcoverage(50).score).toBe(0.5);});
+  it("空degraded",()=>{expect(computeConnectorCoverage(0,0).degraded).toBe(true);});
+  it("全连接=1",()=>{const r=computeConnectorCoverage(10,10);expect(r.score).toBe(1);expect(r.degraded).toBe(false);});
 });

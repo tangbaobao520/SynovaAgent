@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { computeHumanagentboundary } from "../../extensions/sentinels/human-agent-boundary/computes/compute-human-agent-boundary";
+import { computeHumanAgentBoundary } from "../../extensions/sentinels/human-agent-boundary/computes/compute-human-agent-boundary";
 describe("human-agent-boundary",()=>{
-  it("空degraded",()=>{expect(computeHumanagentboundary(0).degraded).toBe(true);});
-  it("正常",()=>{expect(computeHumanagentboundary(50).score).toBe(0.5);});
+  it("空degraded",()=>{expect(computeHumanAgentBoundary(0,0).degraded).toBe(true);});
+  it("全连接=1",()=>{const r=computeHumanAgentBoundary(10,10);expect(r.score).toBe(1);expect(r.degraded).toBe(false);});
 });
