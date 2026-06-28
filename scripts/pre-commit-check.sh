@@ -160,7 +160,7 @@ HARDCODE_DATA=""
 if [ -n "$STAGED_HTML" ]; then
   for hf in $STAGED_HTML; do
     [ -z "$hf" ] && continue; [ ! -f "$hf" ] && continue
-    DEPS=$(grep -n "'marketing'\|'sales'\|'finance'\|'研发部'\|'市场部'\|'销售部'" "$hf" 2>/dev/null | grep -v "import\|export\|//\|/\*\|token.split\|dept.*=" | head -3 || true)
+    DEPS=$(grep -n "'marketing'\|'sales'\|'finance'\|'研发部'\|'市场部'\|'销售部'" "$hf" 2>/dev/null | grep -v "import\|export\|//\|/\*\|token.split\|dept.*=\|LAYER_EXPERTS\|experts:\|'org'\|'tech'\|'strategy'\|'knowledge'\|'business_model'\|: \[" | head -3 || true)
     [ -n "$DEPS" ] && HARDCODE_DATA="${HARDCODE_DATA}  ${hf}: 可能硬编码业务数据(如部门名)\n"
   done
 fi

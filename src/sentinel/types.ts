@@ -53,7 +53,7 @@ export interface SentinelFinding {
   /** 发现 ID (唯一) */
   id: string;
   /** 严重程度 */
-  severity: 'critical' | 'warning' | 'info';
+  severity: 'emergency' | 'critical' | 'warning' | 'info';
   /** 标题 (一句话) */
   title: string;
   /** 详细描述 (人话) */
