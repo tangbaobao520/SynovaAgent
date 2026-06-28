@@ -151,6 +151,10 @@ export async function registerLoadedSentinels(): Promise<{ registered: number; e
           cron: manifest.schedule || '0 */6 * * *',
           version: manifest.version || '1.0.0',
           requiredDataSources: manifest.context?.requiredDataSources || [],
+          layer: manifest.layer,
+          auxiliaryExperts: manifest.auxiliaryExperts,
+          computeKind: manifest.computeKind,
+          technoEconomicPhaseCalibration: manifest.technoEconomicPhaseCalibration,
         },
         async check(context) {
           // 将 SentinelContext.db 作为 GraphStore 传给 aggregate

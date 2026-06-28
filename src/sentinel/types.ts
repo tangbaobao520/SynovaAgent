@@ -110,6 +110,14 @@ export interface SentinelConfig {
   confidenceModel: 'deterministic' | 'statistical' | 'llm';
   /** 版本 */
   version: string;
+  /** 诊断层 (技术方案 §5) */
+  layer?: 'environment' | 'capital' | 'interface' | 'technology' | 'alignment' | 'internal';
+  /** 辅助专家列表 */
+  auxiliaryExperts?: string[];
+  /** 计算类型 */
+  computeKind?: 'deterministic' | 'heuristic' | 'conditional' | 'inferred' | 'aggregate';
+  /** 是否需要技术-经济范式阶段校准阈值 */
+  technoEconomicPhaseCalibration?: boolean;
 }
 
 /**
