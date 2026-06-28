@@ -32,5 +32,8 @@
     }
   },
   "entryPoint": "./aggregate.ts",
-  "exportKey": "strategyCapabilityFitSentinel"
+  "exportKey": "strategyCapabilityFitSentinel",
+  "auxiliaryExperts": [
+    "strategy"
+  ]
 }

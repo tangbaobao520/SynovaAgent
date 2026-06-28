@@ -32,5 +32,8 @@
     }
   },
   "entryPoint": "./aggregate.ts",
-  "exportKey": "channelCapacitySentinel"
+  "exportKey": "channelCapacitySentinel",
+  "auxiliaryExperts": [
+    "knowledge"
+  ]
 }

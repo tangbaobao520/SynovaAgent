@@ -32,5 +32,8 @@
     }
   },
   "entryPoint": "./aggregate.ts",
-  "exportKey": "AiinvestmentreturnSentinel"
+  "exportKey": "AiinvestmentreturnSentinel",
+  "auxiliaryExperts": [
+    "finance"
+  ]
 }

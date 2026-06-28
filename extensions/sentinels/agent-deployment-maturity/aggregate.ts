@@ -7,12 +7,22 @@ export const AgentDeploymentMaturitySentinel = {
   async check(s: GSR, tid: string): Promise<SentinelFinding[]> {
     const now = new Date(); const ca = now.toISOString();
     try {
-      const nodes = s.queryNodes("Tool",{tid});
-      const connected = nodes.filter(n => n.props.protocol || n.props.connector || n.props.integration).length;
-      const r = computeAgentDeploymentMaturity(nodes.length, connected);
-      if (r.degraded) return [{id:"t-na-${now.getTime()}",severity:"info",title:"Œﬁ ˝æ›",evidence:[],suggestion:"",detectedAt:ca}];
-      if (r.score < 0.3) return [{id:"t-age-${now.getTime()}",severity:"warning",title:"AGE∏≤∏«¬ µÕ",description:"µÕ”⁄30%",evidence:[`∏≤∏«: ${(r.score*100).toFixed(0)}%`],suggestion:"∆¿π¿°£",detectedAt:ca}];
+      const agents = s.queryNodes("Agent",{tid});
+      const tools = s.queryNodes("Tool",{tid});
+      const monitoredAgents = agents.filter(a => a.props.monitored === true).length;
+      const recentErrors = tools.filter(t => t.props.error === true || t.props.failing === true).length;
+      const totalOps = tools.length || 1;
+      const r = computeAgentDeploymentMaturity({
+        agentCount: agents.length,
+        autonomyLevel: 2,
+        monitoredAgents,
+        totalAgents: agents.length || 1,
+        recentErrors,
+        totalOperations: totalOps,
+      });
+      if (r.degraded) return [{id:`t-na-${now.getTime()}`,severity:"info",title:"Êó†AgentÊï∞ÊçÆ",evidence:[],suggestion:"",detectedAt:ca}];
+      if (r.score < 0.3) return [{id:`t-age-${now.getTime()}`,severity:"warning",title:"AgentÈÉ®ÁΩ≤ÊàêÁÜüÂ∫¶ÂÅè‰Ωé",description:`ÊàêÁÜüÂ∫¶${(r.score*100).toFixed(0)}%`,evidence:[`ÊàêÁÜüÂ∫¶: ${(r.score*100).toFixed(0)}%`],suggestion:"Â¢ûÂä†AgentÁõëÊéßÂíåËá™Ê≤ªÁ≠âÁ∫ß",detectedAt:ca}];
       return [];
-    } catch(e: unknown) { log.error({e}); return [{id:"e-${now.getTime()}",severity:"warning",title:"“Ï≥£",description:`${(e as Error)?.message||""}`,evidence:[],suggestion:"",detectedAt:ca}]; }
+    } catch(e: unknown) { log.error({e}); return [{id:`e-${now.getTime()}`,severity:"warning",title:"ÂºÇÂ∏∏",description:`${(e as Error)?.message||""}`,evidence:[],suggestion:"",detectedAt:ca}]; }
   },
 };

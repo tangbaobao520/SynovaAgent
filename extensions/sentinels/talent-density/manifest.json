@@ -32,5 +32,8 @@
     }
   },
   "entryPoint": "./aggregate.ts",
-  "exportKey": "talentDensitySentinel"
+  "exportKey": "talentDensitySentinel",
+  "auxiliaryExperts": [
+    "knowledge"
+  ]
 }

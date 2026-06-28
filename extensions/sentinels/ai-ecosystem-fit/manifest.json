@@ -32,5 +32,8 @@
     }
   },
   "entryPoint": "./aggregate.ts",
-  "exportKey": "AiecosystemfitSentinel"
+  "exportKey": "AiecosystemfitSentinel",
+  "auxiliaryExperts": [
+    "strategy"
+  ]
 }

@@ -3,22 +3,46 @@
   "name": "cost-health",
   "version": "1.0.0",
   "type": "sentinel",
-  "displayName": "成本健康哨兵",
-  "description": "监控成本结构健康度。输出 Finding: '成本结构恶化，固定成本占比 X%→Y%，超出 critical 阈值 Z%。'",
+  "displayName": "\u6210\u672c\u5065\u5eb7\u54e8\u5175",
+  "description": "\u76d1\u63a7\u6210\u672c\u7ed3\u6784\u5065\u5eb7\u5ea6\u3002\u8f93\u51fa Finding: '\u6210\u672c\u7ed3\u6784\u6076\u5316\uff0c\u56fa\u5b9a\u6210\u672c\u5360\u6bd4 X%\u2192Y%\uff0c\u8d85\u51fa critical \u9608\u503c Z%\u3002'",
   "schedule": "0 */6 * * *",
   "expert": "finance",
   "priority": "P1",
-  "computes": ["gross-margin", "fixed-variable-ratio", "cost-per-head"],
+  "computes": [
+    "gross-margin",
+    "fixed-variable-ratio",
+    "cost-per-head"
+  ],
   "thresholds": {
-    "gross_margin": { "warning": -0.05, "critical": -0.15 },
-    "fixed_ratio": { "warning": 0.6, "critical": 0.75 },
-    "cost_per_head": { "warning": 0.1, "critical": 0.25 }
+    "gross_margin": {
+      "warning": -0.05,
+      "critical": -0.15
+    },
+    "fixed_ratio": {
+      "warning": 0.6,
+      "critical": 0.75
+    },
+    "cost_per_head": {
+      "warning": 0.1,
+      "critical": 0.25
+    }
   },
   "aggregation": "worst_first",
   "context": {
-    "requiredDataSources": ["sog_graph", "financial_baseline"],
-    "dataAccess": { "allowedDimensions": ["financial"], "sensitiveAccess": "read" }
+    "requiredDataSources": [
+      "sog_graph",
+      "financial_baseline"
+    ],
+    "dataAccess": {
+      "allowedDimensions": [
+        "financial"
+      ],
+      "sensitiveAccess": "read"
+    }
   },
   "entryPoint": "./aggregate.ts",
-  "exportKey": "costHealthSentinel"
+  "exportKey": "costHealthSentinel",
+  "auxiliaryExperts": [
+    "strategy"
+  ]
 }

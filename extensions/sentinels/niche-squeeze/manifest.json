@@ -3,19 +3,37 @@
   "name": "niche-squeeze",
   "version": "1.0.0",
   "type": "sentinel",
-  "displayName": "生态位挤压指数",
-  "description": "I2: 计算竞争挤压程度——HHI集中度、竞争者密度、价格压力。数据源: Market, Client, Supplier节点。",
+  "displayName": "\u751f\u6001\u4f4d\u6324\u538b\u6307\u6570",
+  "description": "I2: \u8ba1\u7b97\u7ade\u4e89\u6324\u538b\u7a0b\u5ea6\u2014\u2014HHI\u96c6\u4e2d\u5ea6\u3001\u7ade\u4e89\u8005\u5bc6\u5ea6\u3001\u4ef7\u683c\u538b\u529b\u3002\u6570\u636e\u6e90: Market, Client, Supplier\u8282\u70b9\u3002",
   "schedule": "0 0 1 * *",
   "expert": "strategy",
   "priority": "P1",
   "layer": "interface",
   "computeKind": "deterministic",
-  "computes": ["niche-squeeze-index"],
+  "computes": [
+    "niche-squeeze-index"
+  ],
   "thresholds": {
-    "squeeze_index": { "warning": 0.5, "critical": 0.7 }
+    "squeeze_index": {
+      "warning": 0.5,
+      "critical": 0.7
+    }
   },
   "aggregation": "worst_first",
-  "context": { "requiredDataSources": ["sog_graph"], "dataAccess": { "allowedDimensions": ["strategic"], "sensitiveAccess": "read" } },
+  "context": {
+    "requiredDataSources": [
+      "sog_graph"
+    ],
+    "dataAccess": {
+      "allowedDimensions": [
+        "strategic"
+      ],
+      "sensitiveAccess": "read"
+    }
+  },
   "entryPoint": "./aggregate.ts",
-  "exportKey": "nicheSqueezeSentinel"
+  "exportKey": "nicheSqueezeSentinel",
+  "auxiliaryExperts": [
+    "marketing"
+  ]
 }

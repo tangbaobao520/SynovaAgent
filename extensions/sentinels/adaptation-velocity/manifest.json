@@ -32,5 +32,8 @@
     }
   },
   "entryPoint": "./aggregate.ts",
-  "exportKey": "adaptationVelocitySentinel"
+  "exportKey": "adaptationVelocitySentinel",
+  "auxiliaryExperts": [
+    "strategy"
+  ]
 }

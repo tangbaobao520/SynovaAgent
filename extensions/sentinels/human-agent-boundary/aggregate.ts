@@ -7,12 +7,22 @@ export const HumanAgentBoundarySentinel = {
   async check(s: GSR, tid: string): Promise<SentinelFinding[]> {
     const now = new Date(); const ca = now.toISOString();
     try {
-      const nodes = s.queryNodes("Tool",{tid});
-      const connected = nodes.filter(n => n.props.protocol || n.props.connector || n.props.integration).length;
-      const r = computeHumanAgentBoundary(nodes.length, connected);
-      if (r.degraded) return [{id:"t-na-${now.getTime()}",severity:"info",title:"ÎŞÊı¾İ",evidence:[],suggestion:"",detectedAt:ca}];
-      if (r.score < 0.3) return [{id:"t-hum-${now.getTime()}",severity:"warning",title:"HUM¸²¸ÇÂÊµÍ",description:"µÍÓÚ30%",evidence:[`¸²¸Ç: ${(r.score*100).toFixed(0)}%`],suggestion:"ÆÀ¹À¡£",detectedAt:ca}];
+      const tools = s.queryNodes("Tool",{tid});
+      const processes = s.queryNodes("Process",{tid});
+      const automatedPct = tools.length > 0 ? tools.filter(t => t.props.automated === true).length / tools.length : 0;
+      const handoffs = tools.filter(t => t.props.handoff === true);
+      const r = computeHumanAgentBoundary({
+        automatedTasks: tools.filter(t => t.props.automated === true).length,
+        totalTasks: tools.length || 1,
+        successfulHandoffs: handoffs.filter(t => t.props.successful === true).length,
+        totalHandoffs: handoffs.length || 1,
+        preAgentThroughput: 100,
+        postAgentThroughput: 100 * (1 + automatedPct * 0.5),
+        satisfactionScore: 0.7,
+      });
+      if (r.degraded) return [{id:`t-na-${now.getTime()}`,severity:"info",title:"æ— æ··åˆè¾¹ç•Œæ•°æ®",evidence:[],suggestion:"",detectedAt:ca}];
+      if (r.score < 0.3) return [{id:`t-hum-${now.getTime()}`,severity:"warning",title:"äººæœºååŒæ•ˆç‡åä½",description:`æ•ˆç‡${(r.score*100).toFixed(0)}%`,evidence:[`æ•ˆç‡: ${(r.score*100).toFixed(0)}%`],suggestion:"ä¼˜åŒ–äººæœºä»»åŠ¡åˆ†é…",detectedAt:ca}];
       return [];
-    } catch(e: unknown) { log.error({e}); return [{id:"e-${now.getTime()}",severity:"warning",title:"Òì³£",description:`${(e as Error)?.message||""}`,evidence:[],suggestion:"",detectedAt:ca}]; }
+    } catch(e: unknown) { log.error({e}); return [{id:`e-${now.getTime()}`,severity:"warning",title:"å¼‚å¸¸",description:`${(e as Error)?.message||""}`,evidence:[],suggestion:"",detectedAt:ca}]; }
   },
 };

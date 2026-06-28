@@ -5,6 +5,10 @@ export interface ReceivableTurnoverResult {
   avgReceivables: number;
   degraded: boolean;
 }
+/**
+ * Calculate accounts receivable turnover ratio and days sales outstanding.
+ * Higher turnover = faster cash collection. Lower DSO = better working capital.
+ */
 export function computeReceivableTurnover(financials: Array<{ revenue: number; accountsReceivable: number }>): ReceivableTurnoverResult {
   if (financials.length === 0) return { turnoverRatio: 0, daysOutstanding: 0, totalRevenue: 0, avgReceivables: 0, degraded: true };
   const tr = financials.reduce((s, f) => s + f.revenue, 0);

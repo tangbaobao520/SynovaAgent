@@ -32,5 +32,8 @@
     }
   },
   "entryPoint": "./aggregate.ts",
-  "exportKey": "routineDiffusionSentinel"
+  "exportKey": "routineDiffusionSentinel",
+  "auxiliaryExperts": [
+    "knowledge"
+  ]
 }
