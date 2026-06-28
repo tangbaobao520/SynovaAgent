@@ -41,3 +41,10 @@ SynovaAgent 8 位专家已注入以下管理经济学知识，供交叉引用和
 - 战略诊断发现市场集中度问题 → 调 finance（成本结构）+ business_model（价值链）
 - 组织诊断发现代理问题 → 调 action（差距变化趋势）+ strategy（战略对齐）
 - 技术诊断发现信息不对称 → 调 org（委托-代理）+ action（执行差距）
+
+## 跨专家调用规则（六层模型）
+- E3竞争格局变化 -> finance(F3) + business_model(I11)
+- O3激励对齐度 -> strategy(S1) + action
+- T1-T4信息不对称 -> org(O6+O7) + business_model(I12)
+- I1-I2生态位收窄 -> strategy(E2) + marketing(E4)
+- F1融资约束-> action + business_model(I10) + strategy(E5)
