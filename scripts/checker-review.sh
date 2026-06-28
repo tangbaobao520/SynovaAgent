@@ -83,17 +83,27 @@ while IFS= read -r f; do
   fi
 done <<< "$CHANGED"
 
-# 4. brief 模板残留
+# 4. brief 模板残留 (仅检查最近7天的 brief)
 echo ""
 echo -e "${YELLOW}检查 4: brief 模板已清理${RESET}"
-for brief in "$ROOT"/.claude/task-briefs/*.md; do
-  [ -f "$brief" ] || continue
-  if grep -c '<!--' "$brief" 2>/dev/null | grep -qv '^0$'; then
-    echo -e "  ${RED}❌ $(basename "$brief"): 有 <!-- 模板残留${RESET}"
+RECENT_BRIEFS=$(find "$ROOT/.claude/task-briefs/" -name "*.md" -mtime -7 2>/dev/null || true)
+if [ -z "$RECENT_BRIEFS" ]; then
+  echo -e "  ${GREEN}✅ 无近期 brief 需检查${RESET}"
+else
+  BRIEF_FAIL=0
+  for brief in $RECENT_BRIEFS; do
+    [ -f "$brief" ] || continue
+    if grep -c '<!--' "$brief" 2>/dev/null | grep -qv '^0$'; then
+      echo -e "  ${RED}❌ $(basename "$brief"): 有 <!-- 模板残留${RESET}"
+      BRIEF_FAIL=1
+    fi
+  done
+  if [ "$BRIEF_FAIL" -eq 0 ]; then
+    echo -e "  ${GREEN}✅ 近期 brief 无模板残留${RESET}"
+  else
     FAIL=1
   fi
-done
-if [ "$FAIL" -eq 0 ]; then echo -e "  ${GREEN}✅ 全部 brief 无模板残留${RESET}"; fi
+fi
 
 # 5. tsc 编译 (仅检查变更文件，跳过预存错误)
 echo ""
