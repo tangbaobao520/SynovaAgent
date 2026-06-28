@@ -45,6 +45,20 @@ jobs:
       - name: GraphStore compatibility
         run: npx vitest run tests/architecture/
 
+  checker-review:
+    name: Checker Review (maker/checker)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: 'npm' }
+      - run: npm ci
+      - name: Run checker review
+        run: bash scripts/checker-review.sh
+
   audit:
     name: npm audit
     runs-on: ubuntu-latest
