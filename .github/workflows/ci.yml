@@ -48,7 +48,7 @@ jobs:
   checker-review:
     name: Checker Review (maker/checker)
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || startsWith(github.ref, 'refs/heads/feat/')
     steps:
       - uses: actions/checkout@v4
         with:
