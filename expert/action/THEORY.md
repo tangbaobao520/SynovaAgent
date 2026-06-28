@@ -1,64 +1,41 @@
 ---
-version: "1.0.0"
-updated: "2026-06-19"
+version: "1.1.0"
+updated: "2026-06-28"
 scope: "expert:action"
-source: "SYNOVA-THEORY-v2-20260618.html §10"
-status: "stable"
+source: "GROWTH_DIAGNOSTICS_WHITEPAPER.html"
+status: "updated"
 inputs: ["theory/CORE.md"]
-exports: ["行动层理论支柱", "约束驱动逻辑", "PlanAB双轨"]
+exports: ["行动专家理论基础", "瓶颈识别逻辑", "行动转化框架"]
 type: "prompt"
 ---
 
-# 行动专家理论基础（行动层）
+# 行动专家理论基础
 
 ## 诊断定位
 
-action 是核心方程的**输出端**——接收所有专家的诊断，找到那个最接近零的乘数因子，转化为 CEO 可执行的行动方案。
+行动专家是增长动力学诊断体系的**输出端**——接收所有六层诊断的发现，识别最限制增长的瓶颈层，转化为 CEO 可执行的行动方案。不是 20 条建议——是 1-3 个 90 天行动。
 
-不是 20 条建议——是 **1-3 个 90 天行动**。
+## 瓶颈识别逻辑
 
-## 理论支柱
+```
+输入: 六层的健康度得分
+  environmentScore = aggregate(E1..E6)
+  capitalScore     = aggregate(F1..F5)
+  interfaceScore   = aggregate(I1..I13)
+  technologyScore  = aggregate(T1..T9)
+  alignmentScore   = aggregate(S1..S3)
+  internalScore    = aggregate(O1..O10)
 
-| 理论 | 来源 | 核心问题 |
-|------|------|---------|
-| 约束理论 | 高德拉特 (1984) | Throughput = min(T1,...,Tn)——只解决瓶颈 |
-| 五个聚焦步骤 | 高德拉特 | 识别→挖尽→服从→提升→重复 |
-| 100天计划 | 贝恩咨询实践 | 诊断的目的不是报告，是行动 |
-| 90天行动框架 | Synova 设计 | W1-2快赢 + W3-6核心行动 + W7-12系统建设 |
+bottleneckLayer = argmin(scores)
 
-## Plan A / Plan B 双轨
+当多个层得分相近（差距 < 0.1）时，优先级:
+  environment > capital > interface > internal > technology > alignment
+```
 
-- Plan A: 解决当前约束（argmin 四个乘数）
-- Plan B: 如果 Plan A 在 3 个月后失败，转向提升另一个乘数
-- 双轨方向不一致 → 当前诊断置信度不足以选出一个最优约束
+## 五个聚焦步骤
 
-## 缝隙动力学框架 (GapDynamics)
-
-### 核心概念
-缝隙动力学分析六缝隙维度的变化趋势。三个指标：
-- velocity: 变化速度（该缝隙正在改善还是退化）
-- acceleration: 变化加速度（速度本身在加快还是放缓）
-- stickyDimensions: 僵化维度（长期无显著变化）
-
-### 僵化判断
-- 变化率 < 5% 超过 60 天 → sticky
-- sticky 维度占比 > 60%: critical
-- sticky 维度占比 35-60%: warning
-- sticky 维度占比 < 35%: ok
-
-### 数据来源
-L4 GraphStore EVENT 节点（gap_* 类型事件的时间序列）
-
-## 差距动力学深入分析
-
-### 六维度变化追踪的解读方法
-| 指标 | 正向信号 | 负向信号 |
-|------|---------|---------|
-| velocity > 0 | 该维度在改善 | 该维度在退化 |
-| acceleration > 0 | 改善速度在加快 | 退化速度在加快 |
-| sticky（僵化）| 稳定锚点—该维度设计稳定 | 僵化—该维度需要变革 |
-
-### 僵化维度 vs 稳定锚点的区分规则
-- 维度 60 天无变化 + 当前评分 > 0.7 → 稳定锚点（健康）
-- 维度 60 天无变化 + 当前评分 < 0.4 → 僵化信号（不健康）
-- 维度 60 天无变化 + 当前评分 0.4-0.7 → 需进一步调查
+1. 识别 -> 找到健康度最低的诊断层
+2. 挖尽 -> 在该层内找到评分最低的哨兵
+3. 服从 -> 检查该哨兵是否对其他层产生级联影响
+4. 提升 -> 生成 90 天行动计划
+5. 重复 -> 下一诊断周期重新评估
