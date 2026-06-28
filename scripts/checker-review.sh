@@ -83,28 +83,26 @@ while IFS= read -r f; do
   fi
 done <<< "$CHANGED"
 
-# 4. brief 模板残留 (仅检查最近7天的 brief)
+# 4. brief 模板残留 — 仅检查 current-brief 指向的文件
 echo ""
 echo -e "${YELLOW}检查 4: brief 模板已清理${RESET}"
-RECENT_BRIEFS=$(find "$ROOT/.claude/task-briefs/" -name "*.md" -mtime -7 2>/dev/null || true)
-if [ -z "$RECENT_BRIEFS" ]; then
-  echo -e "  ${GREEN}✅ 无近期 brief 需检查${RESET}"
-else
-  BRIEF_FAIL=0
-  # 只检查被 CURRENT-BRIEF 指向的 brief，以及本次提交新增的 brief
-  CURRENT_BRIEF=$(cat "$ROOT/.claude/current-brief" 2>/dev/null | tr -d '[:space:]' || true)
-  CURRENT_FILE="$ROOT/.claude/task-briefs/$CURRENT_BRIEF"
-  if [ -f "$CURRENT_FILE" ]; then
-    if grep -c '<!--' "$CURRENT_FILE" 2>/dev/null | grep -qv '^0$'; then
-      echo -e "  ${RED}❌ $(basename "$CURRENT_FILE): 有 <!-- 模板残留${RESET}"
+BRIEF_FAIL=0
+CUR_BRIEF_FILE="$ROOT/.claude/current-brief"
+if [ -f "$CUR_BRIEF_FILE" ]; then
+  BRIEF_NAME=$(cat "$CUR_BRIEF_FILE" | tr '\n' ' ')
+  BRIEF_PATH="$ROOT/.claude/task-briefs/$BRIEF_NAME"
+  if [ -f "$BRIEF_PATH" ]; then
+    HAS_TEMPLATE=$(grep -c '<!--' "$BRIEF_PATH" 2>/dev/null || echo 0)
+    if [ "$HAS_TEMPLATE" -gt 0 ]; then
+      echo -e "  ${RED}❌ $(basename "$BRIEF_PATH"): 有 <!-- 模板残留${RESET}"
       BRIEF_FAIL=1
     fi
   fi
-  if [ "$BRIEF_FAIL" -eq 0 ]; then
-    echo -e "  ${GREEN}✅ current brief 无模板残留${RESET}"
-  else
-    FAIL=1
-  fi
+fi
+if [ "$BRIEF_FAIL" -eq 0 ]; then
+  echo -e "  ${GREEN}✅ current brief 无模板残留${RESET}"
+else
+  FAIL=1
 fi
 
 # 5. tsc 编译 (仅检查变更文件，跳过预存错误)
