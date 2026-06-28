@@ -6,15 +6,34 @@
   "displayName": "网络权力指数",
   "description": "I5: 基于网络科学计算介数中心性和结构洞。数据源: Person, Agent, Client, Supplier节点。",
   "schedule": "0 0 1 * *",
-  "expert": "org",
-  "auxiliaryExperts": ["strategy"],
+  "expert": "strategy",
+  "auxiliaryExperts": [
+    "strategy"
+  ],
   "priority": "P1",
   "layer": "interface",
   "computeKind": "deterministic",
-  "computes": ["betweenness-centrality"],
-  "thresholds": { "power_index": { "warning": 0.6, "critical": 0.8 } },
+  "computes": [
+    "betweenness-centrality"
+  ],
+  "thresholds": {
+    "power_index": {
+      "warning": 0.6,
+      "critical": 0.8
+    }
+  },
   "aggregation": "worst_first",
-  "context": { "requiredDataSources": ["sog_graph"], "dataAccess": { "allowedDimensions": ["organizational"], "sensitiveAccess": "read" } },
+  "context": {
+    "requiredDataSources": [
+      "sog_graph"
+    ],
+    "dataAccess": {
+      "allowedDimensions": [
+        "organizational"
+      ],
+      "sensitiveAccess": "read"
+    }
+  },
   "entryPoint": "./aggregate.ts",
   "exportKey": "networkPowerSentinel"
 }
