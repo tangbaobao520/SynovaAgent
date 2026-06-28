@@ -1,10 +1,10 @@
 {
-  "$schema": "https://synova.dev/schemas/extension-manifest-v1.json",
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
   "name": "revenue-health",
   "version": "1.0.0",
   "type": "sentinel",
-  "displayName": "\u6536\u5165\u5065\u5eb7\u54e8\u5175",
-  "description": "\u76d1\u63a7\u6536\u5165\u8d28\u91cf\u4e0e\u5ba2\u6237\u96c6\u4e2d\u5ea6\u3002\u8f93\u51fa Finding: '\u6536\u5165\u589e\u957f\u653e\u7f13\uff08X%\uff09\uff0c\u5ba2\u6237\u96c6\u4e2d\u5ea6 Y%\uff0c\u8d85\u51fa\u4e34\u754c\u9608\u503c Z%\u3002'",
+  "displayName": "收入健康哨兵",
+  "description": "监控收入质量与客户集中度。输出 Finding: '收入增长放缓（X%），客户集中度 Y%，超出临界阈值 Z%。'",
   "schedule": "0 */6 * * *",
   "expert": "finance",
   "priority": "P0",
@@ -39,5 +39,8 @@
   "exportKey": "revenueHealthSentinel",
   "auxiliaryExperts": [
     "strategy"
-  ]
+  ],
+  "layer": "capital",
+  "computeKind": "deterministic",
+  "technoEconomicPhaseCalibration": true
 }

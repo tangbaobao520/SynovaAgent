@@ -1,10 +1,10 @@
 {
-  "$schema": "https://synova.dev/schemas/extension-manifest-v1.json",
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
   "name": "cash-runway",
   "version": "1.0.0",
   "type": "sentinel",
-  "displayName": "\u73b0\u91d1\u6d41\u54e8\u5175",
-  "description": "\u76d1\u63a7\u73b0\u91d1\u8dd1\u9053\u4e0e\u5e94\u6536\u903e\u671f\u98ce\u9669\u3002\u8f93\u51fa Finding: '\u73b0\u91d1\u8dd1\u9053\u4e0d\u8db3\uff08X\u4e2a\u6708\uff09\uff0c\u4f4e\u4e8e\u5b89\u5168\u9608\u503c Y \u4e2a\u6708\u3002'",
+  "displayName": "现金流哨兵",
+  "description": "监控现金跑道与应收逾期风险。输出 Finding: '现金跑道不足（X个月），低于安全阈值 Y 个月。'",
   "schedule": "0 9 * * *",
   "expert": "finance",
   "priority": "P0",
@@ -39,5 +39,7 @@
   "exportKey": "cashRunwaySentinel",
   "auxiliaryExperts": [
     "strategy"
-  ]
+  ],
+  "layer": "capital",
+  "computeKind": "deterministic"
 }

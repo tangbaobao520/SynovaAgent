@@ -4,7 +4,7 @@ class: claimed-engine-core-cleaned-without-evidence
 constraint: "grep -rn 'packages/engine-core\\|@synova/engine-core' src/ --include='*.ts' --include='*.js' 2>/dev/null | grep -v 'node_modules' | grep -v '.test.' | grep -v '//.*engine-core\\|\\*.*engine-core' | wc -l | tr -d '[:space:]'"
 expected: "0"
 severity: block
-occurrences: 357
+occurrences: 368
 first_seen: 2026-05-28
 upgraded_to_block: 2026-06-24
 remediation: |

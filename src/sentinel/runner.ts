@@ -33,8 +33,14 @@ interface SignalRoute {
   crossValidateAt: 'medium' | 'high' | 'emergency';
 }
 
+interface SignalRouteResult {
+  experts: string[];
+  crossValidateAt: string;
+  auxiliaryExperts?: string[];
+}
+
 /** 根据哨兵 ID 查找路由规则：优先级 sentinel.config.route > 维度默认映射 */
-function findSignalRoute(sentinelId: string): { experts: string[]; crossValidateAt: string } | undefined {
+function findSignalRoute(sentinelId: string): SignalRouteResult | undefined {
   const registry = getSentinelRegistry();
   const sentinel = registry.get(sentinelId);
   if (!sentinel) return undefined;
@@ -83,7 +89,9 @@ function findSignalRoute(sentinelId: string): { experts: string[]; crossValidate
   }
 
   const crossValidateAt = sentinel.config.priority === 'P0' ? 'emergency' : sentinel.config.priority === 'P1' ? 'high' : 'medium';
-  return { experts, crossValidateAt };
+  // 读取 auxiliaryExperts（manifest 声明的辅助专家）
+  const auxiliaryExperts = (config.auxiliaryExperts as string[]) || undefined;
+  return { experts, crossValidateAt, auxiliaryExperts };
 }
 
 // ═══ Types ═══
@@ -130,7 +138,7 @@ export class SentinelRunner {
         CREATE TABLE IF NOT EXISTS sentinel_tickets (
           id TEXT PRIMARY KEY,
           signal_id TEXT NOT NULL,
-          severity TEXT NOT NULL CHECK(severity IN ('critical','warning','info')),
+          severity TEXT NOT NULL CHECK(severity IN ('emergency','critical','warning','info')),
           expert_type TEXT NOT NULL,
           diagnosis TEXT,
           suggested_actions TEXT,
@@ -283,9 +291,11 @@ export class SentinelRunner {
       const thresholdRank = { medium: 1, high: 2, emergency: 3 };
       const shouldCrossValidate = (severityRank[signal.severity as keyof typeof severityRank] || 0)
         >= (thresholdRank[route?.crossValidateAt as keyof typeof thresholdRank] || 2);
+      // 合并 auxiliaryExperts（manifest 声明的辅助专家）到目标专家列表
+      const auxExperts = route?.auxiliaryExperts || [];
       const targetExperts = shouldCrossValidate
-        ? [...new Set([...routedExperts, ...signal.recommendedExperts])]
-        : routedExperts;
+        ? [...new Set([...routedExperts, ...auxExperts, ...signal.recommendedExperts])]
+        : [...new Set([...routedExperts, ...auxExperts])];
 
       for (const rec of targetExperts) {
         const expertType = VALID_EXPERTS.has(rec) ? rec : null;
@@ -317,8 +327,8 @@ export class SentinelRunner {
     this.expertReports.push({ signalId, expertType, report, storedAt: new Date().toISOString() });
     if (this.expertReports.length > 50) this.expertReports.shift();
 
-    // L3 闭环: critical 信号自动创建工单
-    if (severity === 'critical') {
+    // L3 闭环: emergency/critical 信号自动创建工单
+    if (severity === 'emergency' || severity === 'critical') {
       try {
         const ticketId = `ticket-${signalId}-${expertType}`;
         const r = report as Record<string, unknown>;
