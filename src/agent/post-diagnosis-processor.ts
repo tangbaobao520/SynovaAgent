@@ -245,8 +245,8 @@ export async function runPostDiagnosisProcessing(
   // ═══ P0-2: L0 组织自适应 — 纠错处理 + 阈值自适应 ═══
   try {
     const { OrgAdapter } = await import('@synova/evolution');
-    const { getAgentMemoryStore } = await import('./l4/agent-memory-store');
-    const { getDatabase } = await import('./init/engine-context');
+    const { getAgentMemoryStore } = await import('../l4/agent-memory-store');
+    const { getDatabase } = await import('../init/engine-context');
     const db = getDatabase();
     const memoryStore = getAgentMemoryStore(db);
     const adapter = new OrgAdapter({

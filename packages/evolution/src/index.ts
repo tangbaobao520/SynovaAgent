@@ -52,3 +52,7 @@ export {
 
 // org-adapter 导出
 export { OrgAdapter } from './org-adapter';
+
+// session-learner 导出
+export { SessionLearner } from './session-learner';
+export type { HypothesisFeedback, WeightEntry } from './session-learner';
