@@ -35,5 +35,14 @@
     "knowledge"
   ],
   "layer": "internal",
-  "computeKind": "heuristic"
+  "computeKind": "heuristic",
+  "dependsOn": {
+    "nodeTypes": [
+      "Financial"
+    ],
+    "edgeTypes": [],
+    "requiredFields": [
+      "amount"
+    ]
+  }
 }

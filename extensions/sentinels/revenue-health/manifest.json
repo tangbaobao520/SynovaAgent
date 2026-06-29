@@ -42,5 +42,14 @@
   ],
   "layer": "capital",
   "computeKind": "deterministic",
-  "technoEconomicPhaseCalibration": true
+  "technoEconomicPhaseCalibration": true,
+  "dependsOn": {
+    "nodeTypes": [
+      "Financial"
+    ],
+    "edgeTypes": [],
+    "requiredFields": [
+      "amount"
+    ]
+  }
 }
