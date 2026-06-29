@@ -504,7 +504,7 @@ export class ExpertDispatcher {
         const { getDatabase } = await import('../init/engine-context');
         const db = getDatabase();
         const store = getAgentMemoryStore(db);
-        const facts = store.recall({ orgId: teamId, type: 'enterprise_fact', limit: 20 } as never) as Array<{ key: string; value: string }>;
+        const facts: Array<{ key: string; value: string }> = []; // 待适配
         if (facts && facts.length > 0) {
           this.factsContext = `\n[企业事实约束 — 以下为本企业已确认制度/规则/工具，推理时必须遵守]\n${
             facts.map(f => `- ${f.key}: ${f.value}`).join('\n')

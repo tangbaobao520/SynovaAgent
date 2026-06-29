@@ -126,17 +126,18 @@ export function aggregateSignals(
 
     // 3. 严重度升级
     let severity: 'critical' | 'warning' | 'info' = 'info';
-    const maxSourceSeverity = items.reduce((max, i) => {
-      const order = { critical: 3, warning: 2, info: 1 };
-      return order[i.finding.severity] > order[max] ? i.finding.severity : max;
-    }, 'info' as 'critical' | 'warning' | 'info');
+    const sevOrder: Record<string, number> = { emergency: 4, critical: 3, warning: 2, info: 1 };
+    const maxSourceSeverity = items.reduce<'critical' | 'warning' | 'info'>((max, i) => {
+      const cur = sevOrder[i.finding.severity] || 1;
+      return cur > (sevOrder[max] || 1) ? (i.finding.severity as 'critical' | 'warning' | 'info') : max;
+    }, 'info');
 
     if (distinctSentinels >= ESCALATION_RULES.crossSentinelCritical) {
       severity = 'critical';
     } else if (distinctSentinels >= ESCALATION_RULES.crossSentinelWarning && maxSourceSeverity === 'warning') {
       severity = 'critical'; // 多哨兵 warning → 升级为 critical
     } else {
-      severity = maxSourceSeverity;
+      severity = maxSourceSeverity as 'critical' | 'warning' | 'info';
     }
 
     signals.push({

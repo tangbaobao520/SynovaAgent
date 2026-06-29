@@ -19,6 +19,11 @@ export interface SynovaConfig {
   engineTokens: string;
   gatewayHost: string;
   llmConfigured: boolean;
+  diagnosis?: {
+    maxToolRounds?: number;
+    gateDataCompleteness?: number;
+    gateMinHypothesisConfidence?: number;
+  };
   sentinel?: {
     baselineMinRuns: number;
     findingCountRatioWarning: number;

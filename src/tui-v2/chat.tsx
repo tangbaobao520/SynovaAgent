@@ -55,7 +55,7 @@ async function loadGoalsIntoAggregator(agg: SidebarAggregator, db: unknown): Pro
   } catch (err: any) {
     // 静默降级 — GraphStore 不可用时右边栏目标区为空
     if (err?.code !== 'ERR_MODULE_NOT_FOUND') {
-      (await import('../logger')).createLogger('tui-v2').warn({ err: err.message }, '加载增长目标失败');
+      (await import('@synova/logger')).createLogger('tui-v2').warn({ err: err.message }, '加载增长目标失败');
     }
   }
 }

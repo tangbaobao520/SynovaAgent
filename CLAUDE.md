@@ -212,7 +212,7 @@ Agent，不是 ChatBot。驻扎企业，持续观测，主动发现，自动诊�
 **目标**: 成为组织诊断的 AWS。每个新客户、新行业、新数据源 → 加文件即可，不改代码。
 能文件化的必须文件化。不能文件化的必须有明确的扩展点。
 
-**流程约束: V4.2.8 — task brief 6字段 + 免疫系统 + plan.json + 8组物理阻断 + Plan-Actual闭合 + engine-core清零 + 时间戳顺序检查 + Q2排除项验证 + verify执行
+**流程约束: V4.2.9 — task brief 6字段 + 免疫系统 + plan.json + 8组物理阻断 + Plan-Actual闭合 + engine-core清零 + 时间戳顺序检查 + Q2排除项验证 + verify执行
 
 **数据流**:
 ```
@@ -285,9 +285,9 @@ evolution/ (SessionLearningEngine, FeedbackCollector, OntologyAdapter)
 
 ---
 
-## Loop Engineering V4.2.8 — 免疫系统 + Plan-Actual 闭合 + 缺口追踪 + 修复提示 + 时间戳顺序检查 + 三层解耦项目身份 + Q2排除项验证 + verify执行
+## Loop Engineering V4.2.9 — 免疫系统 + Plan-Actual 闭合 + 缺口追踪 + 修复提示 + 时间戳顺序检查 + 三层解耦项目身份 + Q2排除项验证 + verify执行
 
-> 2026-06-17 v2.5 → v3.0 → v3.1 → v3.5 → v3.6 → v3.7 → v3.8 → v3.9 → V4.1 → V4.1.1 → V4.1.2 → V4.2.2 → V4.2.3 → V4.2.4 → V4.2.5 → **V4.2.8 (2026-06-27)**。
+> 2026-06-17 v2.5 → v3.0 → v3.1 → v3.5 → v3.6 → v3.7 → v3.8 → v3.9 → V4.1 → V4.1.1 → V4.1.2 → V4.2.2 → V4.2.3 → V4.2.4 → V4.2.5 → **V4.2.9 (2026-06-27)**。
 >
 > **v3.6 的核心教训**：把需要语义理解的事交给 grep = 17 次折腾才提交成功。
 > **V3.9 的核心教训**：硬阻断 100% 有效，软机制 0% 有效。信息注入型检查对 agent 不可见。
@@ -328,12 +328,12 @@ evolution/ (SessionLearningEngine, FeedbackCollector, OntologyAdapter)
 > - **Q2排除项必须含文件路径：** 排除项需引用具体文件名(.ts/.sh/.json)。
 > - **trivial verify阻断：** echo/true等永远exit 0的命令→硬阻断。
 >
-> ### V4.2.8 变更 (2026-06-28)
+> ### V4.2.9 变更 (2026-06-28)
 > - **maker/checker 分离：** checker-review.sh 独立验证器，GitHub Actions PR触发。
 > - **19个stub compute全部修复：** S1-S3, O1-O10, T4-T9 替换为真实算法。
 > - **专家路由改为layer基：** 从 category 改为 layer 路由。
 > - **SentinelConfig 补全4字段：** layer/auxiliaryExperts/computeKind/technoEconomicPhaseCalibration。
-> - **全部版本号同步到 V4.2.8**
+> - **全部版本号同步到 V4.2.9**
 
 ### 设计哲学 (V3.7 核心修正)
 

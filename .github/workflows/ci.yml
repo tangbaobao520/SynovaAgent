@@ -58,6 +58,8 @@ jobs:
       - run: npm ci
       - name: Run checker review
         run: bash scripts/checker-review.sh
+      - name: Brief vs Code consistency
+        run: bash scripts/check-brief-vs-code.sh
 
   audit:
     name: npm audit

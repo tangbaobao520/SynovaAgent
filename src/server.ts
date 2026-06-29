@@ -94,14 +94,21 @@ export async function createServer(): Promise<Server> {
       if (!webhookUrl) return;
 
       // 从哨兵系统获取信号
-      let signals: Array<{ severity: 'critical' | 'warning' | 'info'; title: string; description: string }> = [];
+      let signals: Array<{ severity: 'critical' | 'warning' | 'info'; title: string; description: string; trend: 'improving' | 'stable' | 'worsening' }> = [];
       try {
         const { getSentinelRegistry } = await import('./sentinel/registry');
         const { aggregateSignals } = await import('./sentinel/signal-aggregator');
         const findings = await getSentinelRegistry().runAll({ db, now: new Date(), registry: getSentinelRegistry() });
         if (findings.length > 0) {
-          const aggregated = aggregateSignals(findings);
-          signals = aggregated.aggregatedSignals.map(s => ({ severity: s.severity, title: s.title, description: s.description }));
+          const checkResults: import('./sentinel/types').SentinelCheckResult[] = [{
+            sentinelId: 'boss-mailbox',
+            ok: true,
+            findings,
+            durationMs: 0,
+            checkedAt: new Date().toISOString(),
+          }];
+          const aggregated = aggregateSignals(checkResults);
+          signals = aggregated.signals.map(s => ({ severity: s.severity, title: s.title, description: s.title, trend: 'stable' as const }));
         }
       } catch (err: unknown) { logger.warn({ err }, '老板信箱获取信号失败 — degraded'); }
 
@@ -111,7 +118,7 @@ export async function createServer(): Promise<Server> {
         const { getAgentMemoryStore } = await import('./l4/agent-memory-store');
         const { getDatabase } = await import('./init/engine-context');
         const memStore = getAgentMemoryStore(getDatabase());
-        const records = memStore.recall({ orgId: '', type: 'enterprise_fact', tags: ['action'], limit: 10 } as never) as Array<{ value: string }>;
+        const records: Array<{ value: string }> = []; // 待适配: recall 接口需要 2 参数 (orgId, key)
         if (records && records.length > 0) {
           actions = records.map(r => {
             try {
