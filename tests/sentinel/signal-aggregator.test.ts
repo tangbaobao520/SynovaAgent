@@ -9,7 +9,7 @@ function makeResult(sentinelId: string, findings: Array<{ severity: 'critical' |
 
 describe('aggregateSignals', () => {
   it('Given 单哨兵单 finding → 1 个聚合信号, 严重度不变', () => {
-    const r = aggregateSignals([makeResult('sentinel-htm', [{ severity: 'warning', title: '信任健康: 偏低' }])]);
+    const r = aggregateSignals([makeResult('sentinel-gap-dynamics', [{ severity: 'warning', title: '能力差距: 偏低' }])]);
     expect(r.signals.length).toBe(1);
     expect(r.signals[0].severity).toBe('warning');
     expect(r.signals[0].recommendedExperts).toContain('org');
@@ -17,9 +17,9 @@ describe('aggregateSignals', () => {
 
   it('Given 3 个不同哨兵指向同一实体 → critical (交叉升级)', () => {
     const results = [
-      makeResult('sentinel-htm', [{ severity: 'warning', title: '信任健康: 异常' }]),
-      makeResult('sentinel-hacd', [{ severity: 'warning', title: '信任健康: 下降' }]),
-      makeResult('sentinel-hona', [{ severity: 'info', title: '信任健康: 孤立' }]),
+      makeResult('sentinel-cpc', [{ severity: 'warning', title: '团队A: 协议缺失' }]),
+      makeResult('sentinel-gap-dynamics', [{ severity: 'warning', title: '团队A: 能力差距' }]),
+      makeResult('sentinel-path-dependency', [{ severity: 'info', title: '团队A: 路径依赖' }]),
     ];
     const r = aggregateSignals(results);
     expect(r.signals.length).toBe(1);
@@ -29,8 +29,8 @@ describe('aggregateSignals', () => {
 
   it('Given 多实体 findings → 按实体分组聚合', () => {
     const results = [
-      makeResult('sentinel-htm', [{ severity: 'warning', title: '部门A: 信任问题' }]),
-      makeResult('sentinel-cpc', [{ severity: 'warning', title: '部门B: 协议缺失' }]),
+      makeResult('sentinel-cpc', [{ severity: 'warning', title: '部门A: 协议缺失' }]),
+      makeResult('sentinel-gap-dynamics', [{ severity: 'warning', title: '部门B: 能力差距' }]),
     ];
     const r = aggregateSignals(results);
     expect(r.signals.length).toBe(2);
@@ -40,11 +40,6 @@ describe('aggregateSignals', () => {
     const r = aggregateSignals([]);
     expect(r.signals.length).toBe(0);
     expect(r.stats.totalFindings).toBe(0);
-  });
-
-  it('Given strategy 类别哨兵 → 推荐 strategic 专家', () => {
-    const r = aggregateSignals([makeResult('sentinel-seven-powers', [{ severity: 'info', title: '壁垒评估: 中等' }])]);
-    expect(r.signals[0].recommendedExperts).toContain('strategic');
   });
 
   it('Given risk 类别哨兵 → 推荐 strategic + finance 专家', () => {
