@@ -1,6 +1,6 @@
 import type { SentinelFinding } from '../../../src/sentinel/types';
 import { computeOrgRepairability } from './computes/compute-org-repairability';
-import { createLogger } from '../../../src/logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/org-repairability');
 

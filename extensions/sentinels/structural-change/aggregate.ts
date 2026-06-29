@@ -3,7 +3,7 @@
  */
 import type { SentinelFinding } from '../../../src/sentinel/types';
 import { computeStructuralChangeSignal } from './computes/structural-change-signal';
-import { createLogger } from '../../../src/logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/structural-change');
 

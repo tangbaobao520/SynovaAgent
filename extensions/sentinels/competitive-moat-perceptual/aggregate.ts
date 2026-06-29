@@ -1,7 +1,7 @@
 import type { SentinelFinding } from '../../../src/sentinel/types';
 import { computeBrandPremium } from './computes/brand-premium';
 import { computeCustomerLoyalty } from './computes/customer-loyalty';
-import { createLogger } from '../../../src/logger';
+import { createLogger } from '@synova/logger';
 const log = createLogger('sentinel/moat-perceptual');
 interface GraphStoreReader { queryNodes(t: string, f?: Record<string, unknown>, g?: string): Array<{ id: string; type: string; props: Record<string, unknown> }>; }
 export const competitiveMoatPerceptualSentinel = {

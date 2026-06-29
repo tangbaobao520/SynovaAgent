@@ -8,7 +8,7 @@
  */
 import type { ViewAdapter } from './types';
 import type { Response } from 'express';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('l1/web-adapter');
 

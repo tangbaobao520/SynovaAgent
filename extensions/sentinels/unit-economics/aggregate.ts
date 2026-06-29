@@ -1,7 +1,7 @@
 import type { SentinelFinding } from '../../../src/sentinel/types';
 import { computeLtvCac } from './computes/ltv-cac-ratio';
 import { computeUnitMargin } from './computes/gross-margin-per-unit';
-import { createLogger } from '../../../src/logger';
+import { createLogger } from '@synova/logger';
 const log = createLogger('sentinel/unit-economics');
 interface GraphStoreReader { queryNodes(t: string, f?: Record<string, unknown>, g?: string): Array<{ id: string; type: string; props: Record<string, unknown> }>; }
 export const unitEconomicsSentinel = {

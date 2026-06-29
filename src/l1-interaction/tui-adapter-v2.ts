@@ -5,7 +5,7 @@ import type { ViewAdapter } from './types';
 import type { EventBus } from '../orchestrator/event-bus';
 import type { OrchestrationEvent } from '../orchestrator/types';
 import type { TuiState } from '../tui-v2/types';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('l1-interaction/tui-adapter-v2');
 

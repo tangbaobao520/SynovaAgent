@@ -1,6 +1,6 @@
 import type { SentinelFinding } from '../../../src/sentinel/types';
 import { computeTalentDensity } from './computes/compute-talent-density';
-import { createLogger } from '../../../src/logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/talent-density');
 

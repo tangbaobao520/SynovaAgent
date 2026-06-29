@@ -1,6 +1,6 @@
 import type { SentinelFinding } from '../../../src/sentinel/types';
 import { computeIncentiveAlignment } from './computes/compute-incentive-alignment';
-import { createLogger } from '../../../src/logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/incentive-alignment');
 

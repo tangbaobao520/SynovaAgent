@@ -51,6 +51,27 @@ export interface RunOnceResponse {
   error?: string;
 }
 
+export interface ExpertReportsResponse {
+  ok: boolean;
+  reports: Array<{
+    sentinelId: string;
+    expert: string;
+    summary: string;
+    confidence: number;
+    checkedAt: string;
+  }>;
+}
+
+export interface TicketsResponse {
+  ok: boolean;
+  tickets: Array<{
+    id: string;
+    title: string;
+    severity: 'critical' | 'warning' | 'info';
+    createdAt: string;
+  }>;
+}
+
 // ═══ Service ═══
 
 /** 查询哨兵发现列表 */
@@ -60,7 +81,97 @@ export function getSentinelFindings(query: FindingsQuery = {}): FindingsResponse
     return { ok: false, total: 0, findings: [] };
   }
 
-  // V4.2.2: collaboration-collector 桥接已删除（铁律46）— 降级跳过
-  // 保留空函数体，返回空结果
-  return { ok: false, total: 0, findings: [] };
+  try {
+    const records = runner.getRecentResults();
+    const all: Array<{ sentinelId: string; sentinelName: string; finding: SentinelFinding; checkedAt: string }> = [];
+
+    for (const [sentinelId, runs] of records) {
+      for (const run of runs) {
+        if (!run.result.findings) continue;
+        for (const finding of run.result.findings) {
+          if (query.severity && finding.severity !== query.severity) continue;
+          all.push({
+            sentinelId,
+            sentinelName: run.sentinelName,
+            finding,
+            checkedAt: new Date(run.result.durationMs).toISOString(),
+          });
+        }
+      }
+    }
+
+    // 排序: critical 优先, 按 detectedAt
+    all.sort((a, b) => {
+      const sev = { critical: 0, warning: 1, info: 2 };
+      const sa = sev[a.finding.severity] ?? 3;
+      const sb = sev[b.finding.severity] ?? 3;
+      if (sa !== sb) return sa - sb;
+      return b.finding.detectedAt.localeCompare(a.finding.detectedAt);
+    });
+
+    const total = all.length;
+    const limit = query.limit ?? 50;
+    const offset = query.offset ?? 0;
+    const findings = all.slice(offset, offset + limit);
+
+    return { ok: true, total, findings };
+  } catch (err: unknown) {
+    log.warn({ err }, 'getSentinelFindings 失败 — degraded');
+    return { ok: false, total: 0, findings: [] };
+  }
+}
+
+/** 获取聚合信号 */
+export function getAggregatedSignals(): SignalsResponse {
+  const runner = getGlobalSentinelRunner();
+  if (!runner) return { ok: false, total: 0, criticalCount: 0, warningCount: 0, signals: [] };
+
+  try {
+    const allFindings: SentinelFinding[] = [];
+    for (const runs of runner.getRecentResults().values()) {
+      for (const run of runs) {
+        if (run.result.findings) allFindings.push(...run.result.findings);
+      }
+    }
+    if (allFindings.length === 0) return { ok: true, total: 0, criticalCount: 0, warningCount: 0, signals: [] };
+
+    const aggregated = aggregateSignals(allFindings);
+    return {
+      ok: true,
+      total: aggregated.aggregatedSignals.length,
+      criticalCount: aggregated.criticalSignals,
+      warningCount: aggregated.warningSignals,
+      signals: aggregated.aggregatedSignals,
+    };
+  } catch (err: unknown) {
+    log.warn({ err }, 'getAggregatedSignals 失败 — degraded');
+    return { ok: false, total: 0, criticalCount: 0, warningCount: 0, signals: [] };
+  }
+}
+
+/** 手动触发单个哨兵运行 */
+export async function runSentinelOnce(sentinelId: string): Promise<RunOnceResponse> {
+  try {
+    const { getSentinelRegistry } = await import('../sentinel/registry');
+    const registry = getSentinelRegistry();
+    const sentinel = registry.get(sentinelId);
+    if (!sentinel) return { ok: false, sentinelId, result: null, error: `哨兵不存在: ${sentinelId}` };
+
+    const context = { db: undefined, now: new Date(), registry };
+    const result = await sentinel.check(context);
+    return { ok: true, sentinelId, result };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { ok: false, sentinelId, result: null, error: msg };
+  }
+}
+
+/** 获取专家报告 (当前为占位) */
+export function getSentinelExpertReports(): ExpertReportsResponse {
+  return { ok: true, reports: [] };
+}
+
+/** 获取哨兵工单 (当前为占位) */
+export function getSentinelTickets(): TicketsResponse {
+  return { ok: true, tickets: [] };
 }

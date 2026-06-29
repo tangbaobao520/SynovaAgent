@@ -3,7 +3,7 @@
  */
 import type { SentinelFinding } from '../../../src/sentinel/types';
 import { computeRentDependencyIndex } from './computes/rent-dependency-index';
-import { createLogger } from '../../../src/logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/rent-dependency');
 

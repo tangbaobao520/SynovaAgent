@@ -9,7 +9,7 @@
  */
 
 import { fileURLToPath } from 'node:url';
-import { createLogger } from './logger';
+import { createLogger } from '@synova/logger';
 import { createExpertCommand } from './cli/commands/expert';
 import { createMeasurerCommand } from './cli/commands/measurer';
 import { createKnowledgeCommand } from './cli/commands/knowledge';

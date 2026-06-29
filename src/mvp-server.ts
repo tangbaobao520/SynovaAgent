@@ -6,7 +6,7 @@
  */
 import express from 'express';
 import cors from 'cors';
-import { createLogger } from './logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('mvp-server');
 

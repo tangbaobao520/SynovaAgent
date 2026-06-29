@@ -1,6 +1,6 @@
 import type { SentinelFinding } from '../../../src/sentinel/types';
 import { computeRoutineMutation } from './computes/compute-routine-mutation';
-import { createLogger } from '../../../src/logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/routine-mutation');
 

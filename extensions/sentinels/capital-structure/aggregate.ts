@@ -4,7 +4,7 @@
 import type { SentinelFinding } from '../../../src/sentinel/types';
 import { computeDebtEquityRatio } from './computes/debt-equity-ratio';
 import { computeInterestCoverage } from './computes/interest-coverage';
-import { createLogger } from '../../../src/logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/capital-structure');
 interface GraphStoreReader { queryNodes(type: string, f?: Record<string, unknown>, g?: string): Array<{ id: string; type: string; props: Record<string, unknown>; }>; }

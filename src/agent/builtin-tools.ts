@@ -7,7 +7,7 @@
 import type { ToolRegistry } from './tools';
 import type { SessionStore } from '../store/session-store';
 import { ACCURACY_TOOLS, ORG_EXPERT_TOOLS, TECH_EXPERT_TOOLS, STRATEGY_EXPERT_TOOLS, FINANCE_EXPERT_TOOLS, ACTION_EXPERT_TOOLS, MARKETING_EXPERT_TOOLS } from '../tools';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import { registerPandocTools } from '../../vendor/pandoc-skill/synova-tools';
 
 const log = createLogger('agent/builtin-tools');

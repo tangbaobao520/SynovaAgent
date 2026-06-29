@@ -1,6 +1,6 @@
 import type { SentinelFinding } from '../../../src/sentinel/types';
 import { computeValueCaptureScore } from './computes/value-capture-score';
-import { createLogger } from '../../../src/logger';
+import { createLogger } from '@synova/logger';
 const log = createLogger('sentinel/value-capture');
 interface GraphStoreReader { queryNodes(t: string, f?: Record<string, unknown>, g?: string): Array<{ id: string; type: string; props: Record<string, unknown> }>; }
 export const valueCaptureSentinel = {

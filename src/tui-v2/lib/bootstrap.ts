@@ -21,7 +21,7 @@ import { HookRunner } from '../../orchestrator/hook-runner';
 import { SessionManager } from '../../orchestrator/session-manager';
 import { PhaseStateMachine } from '../../orchestrator/phase-state-machine';
 import { createOrchestrationWiring } from '../../orchestrator/wiring';
-import { createLogger } from '../../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('tui-v2:bootstrap');
 

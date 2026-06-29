@@ -1,7 +1,7 @@
 /** revenue-health aggregate — 收入健康哨兵。综合N个指标→1条Finding。V3.8 T3 */
 import type { GraphStoreReader, SentinelManifest } from '../../../src/sentinel/sentinel-loader';
 import type { SentinelFinding } from '../../../src/sentinel/types';
-import { createLogger } from '../../../src/logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/revenue-health');
 

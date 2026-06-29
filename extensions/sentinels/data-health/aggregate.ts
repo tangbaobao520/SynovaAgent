@@ -8,7 +8,7 @@ import type { SentinelFinding } from '../../../src/sentinel/types';
 import { computeDataReadiness } from './computes/data-readiness-score';
 import { computeDataSiloScore } from './computes/data-silo-score';
 import type { DataFlowEdge } from './computes/data-silo-score';
-import { createLogger } from '../../../src/logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/data-health');
 

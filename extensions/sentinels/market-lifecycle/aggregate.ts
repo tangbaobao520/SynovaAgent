@@ -3,7 +3,7 @@
  */
 import type { SentinelFinding } from '../../../src/sentinel/types';
 import { computeLifecycleStage } from './computes/lifecycle-stage';
-import { createLogger } from '../../../src/logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/market-lifecycle');
 

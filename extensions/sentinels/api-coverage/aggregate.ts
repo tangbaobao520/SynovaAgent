@@ -7,7 +7,7 @@
 import type { SentinelFinding } from '../../../src/sentinel/types';
 import { computeApiAvailability } from './computes/api-availability';
 import { computeProtocolCoverage } from './computes/protocol-coverage';
-import { createLogger } from '../../../src/logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/api-coverage');
 

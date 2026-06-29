@@ -1,7 +1,7 @@
 import type { SentinelFinding } from '../../../src/sentinel/types';
 import { computeAssetTurnover } from './computes/asset-turnover';
 import { computeReceivableTurnover } from './computes/receivable-turnover';
-import { createLogger } from '../../../src/logger';
+import { createLogger } from '@synova/logger';
 const log = createLogger('sentinel/capital-turnover');
 interface GraphStoreReader { queryNodes(t: string, f?: Record<string, unknown>, g?: string): Array<{ id: string; type: string; props: Record<string, unknown> }>; }
 export const capitalTurnoverSentinel = {

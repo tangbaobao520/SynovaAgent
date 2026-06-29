@@ -4,7 +4,7 @@
 import type { SentinelFinding } from '../../../src/sentinel/types';
 import { computeHhiIndex } from './computes/hhi-index';
 import { computeCompetitiveIntensity } from './computes/competitive-intensity';
-import { createLogger } from '../../../src/logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/competitive-dynamics');
 

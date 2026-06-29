@@ -9,7 +9,7 @@ import Database from 'better-sqlite3';
 export interface FilterClause {
   conditions: Array<{ field: string; operator: 'IN' | 'EQ' | 'NOT_EQ' | 'CONTAINS'; value: unknown }>;
 }
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('l4/knowledge-store');
 

@@ -10,7 +10,7 @@ import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { render, Box, useApp, useStdin, useStdout, Text, useInput } from 'ink';
 import { bootstrap, type BootstrapResult } from './lib/bootstrap';
 import { handleCommand, tryConfigureKey, type CommandContext } from './lib/commands';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import { getGlobalScheduler } from '../cron/scheduler';
 import { checkForUpdates, formatUpdateMessage, type UpdateCheckResult } from '../services/update-checker';
 import { getCostTracker, formatCost } from '../services/llm-cost';

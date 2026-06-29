@@ -3,7 +3,7 @@
  */
 import type { SentinelFinding } from '../../../src/sentinel/types';
 import { computeOpportunityWindowScore } from './computes/opportunity-window-score';
-import { createLogger } from '../../../src/logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/opportunity-window');
 

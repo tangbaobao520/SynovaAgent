@@ -7,7 +7,7 @@
  * v3.6 Batch 1 — 通知渠道文件化
  */
 import type { NotificationAdapter, Notification, NotificationResult } from '../../../src/notifications/types';
-import { createLogger } from '../../../src/logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('notifications/jira');
 

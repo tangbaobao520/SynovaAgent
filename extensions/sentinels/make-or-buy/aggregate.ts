@@ -1,6 +1,6 @@
 import type { SentinelFinding } from '../../../src/sentinel/types';
 import { computeMakeOrBuyScore } from './computes/make-or-buy-score';
-import { createLogger } from '../../../src/logger';
+import { createLogger } from '@synova/logger';
 const log = createLogger('sentinel/make-or-buy');
 interface GraphStoreReader { queryNodes(t: string, f?: Record<string, unknown>, g?: string): Array<{ id: string; type: string; props: Record<string, unknown> }>; }
 export const makeOrBuySentinel = {

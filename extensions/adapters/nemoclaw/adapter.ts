@@ -3,7 +3,7 @@
  * V3.8 Batch 5
  */
 import type { DataConnector } from '../../../src/connectors/types';
-import { createLogger } from '../../../src/logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('adapters/nemoclaw');
 

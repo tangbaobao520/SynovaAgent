@@ -12,7 +12,7 @@
  *   5. 推荐动作
  */
 import { getReportTemplateRegistry } from './report-templates';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('l3/briefing-generator');
 

@@ -4,7 +4,7 @@
 import type { SentinelFinding } from '../../../src/sentinel/types';
 import { computeCashConversionRate } from './computes/cash-conversion-rate';
 import { computeOrganicGrowthPct } from './computes/organic-growth-pct';
-import { createLogger } from '../../../src/logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/growth-quality');
 interface GraphStoreReader { queryNodes(type: string, f?: Record<string, unknown>, g?: string): Array<{ id: string; type: string; props: Record<string, unknown>; }>; }

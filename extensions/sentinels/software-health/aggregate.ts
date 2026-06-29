@@ -7,7 +7,7 @@
 import type { SentinelFinding } from '../../../src/sentinel/types';
 import { computeSaasUsageScore } from './computes/saas-usage-score';
 import { computeShadowItScore } from './computes/shadow-it-score';
-import { createLogger } from '../../../src/logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/software-health');
 
