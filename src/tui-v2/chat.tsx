@@ -37,8 +37,8 @@ const STATUS_HINTS = '↑↓ 滚动 │ PgUp/PgDn 翻页 │ /setup │ /balance
 
 async function loadGoalsIntoAggregator(agg: SidebarAggregator, db: unknown): Promise<void> {
   try {
-    const { createGraphStore } = await import('@synova/diagnosis-engine');
-    const store = createGraphStore('sqlite', db) as {
+    const { createSynovaGraphStore } = await import('@synova/graph-store');
+    const store = createSynovaGraphStore(db as import('@synova/graph-store').SqliteDb) as unknown as {
       queryNodes(type: string, filters?: Record<string, unknown>, graph?: string): Array<{ id: string; props: Record<string, unknown> }>;
     };
     const goals = store.queryNodes('Goal', { status: 'active' }, 'default');
