@@ -539,10 +539,8 @@ async function syncDiagnosisToGraph(
     // Step 6: 社区检测 (P0-1: detectCommunities)
     let communityCount = 0;
     try {
-      const { detectCommunities } = await import(
-      // V4.2.3: 桥接已删除 — 降级跳过
-      );
-      const communities = detectCommunities(graphStore, 2, teamId);
+      // V4.2.3: detectCommunities 桥接已删除 — 降级跳过
+      const communities: Array<{ id: string; name: string; size: number }> = [];
       for (const c of communities) {
         const commId = graphStore.createNode(
           'Community',
@@ -562,9 +560,7 @@ async function syncDiagnosisToGraph(
     // Step 7: 实体解析 (P0-1: L2 entity resolution)
     let resolvedCount = 0;
     try {
-      const { generateL2Candidates } = await import(
-      // V4.2.3: 桥接已删除 — 降级跳过
-      );
+      // V4.2.3: generateL2Candidates 桥接已删除 — 降级跳过
       // 从 Signal 节点名生成候选
       const signalNames = signalIds.map((sid) => {
         const node = graphStore.getNode(sid, teamId);
@@ -576,11 +572,9 @@ async function syncDiagnosisToGraph(
       const existingNodes = [...persons, ...teams].map((n: any) => ({
         id: n.id, name: n.props?.name || n.id, type: n.type,
       }));
+      // generateL2Candidates 已删除 — 降级跳过
       if (signalNames.length > 0 && existingNodes.length > 0) {
-        const candidates = generateL2Candidates(
-          [...signalNames, ...existingNodes] as unknown as L2EntityNode[],
-          0.6,
-        );
+        const candidates: Array<{ nodeA: string; nodeB: string; confidence: number; reason: string }> = [];
         for (const c of candidates) {
           if (c.confidence > 0.7) {
             const linkId = graphStore.createNode(
