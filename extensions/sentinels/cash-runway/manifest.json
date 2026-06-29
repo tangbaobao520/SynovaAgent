@@ -41,5 +41,14 @@
     "strategy"
   ],
   "layer": "capital",
-  "computeKind": "deterministic"
+  "computeKind": "deterministic",
+  "dependsOn": {
+    "nodeTypes": [
+      "Financial"
+    ],
+    "edgeTypes": [],
+    "requiredFields": [
+      "amount"
+    ]
+  }
 }
