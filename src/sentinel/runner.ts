@@ -373,7 +373,7 @@ export class SentinelRunner {
   private async executeSentinel(sentinel: Sentinel): Promise<SentinelCheckResult> {
     const startTime = Date.now();
     try {
-      // V4.2.8: 构造上下文 — 包装 raw SQLite 为 GraphStore 供哨兵 queryNodes()
+      // V4.2.9: 构造上下文 — 包装 raw SQLite 为 GraphStore 供哨兵 queryNodes()
       let graphCtx: Record<string, unknown>;
       if (typeof this.db === 'object' && this.db !== null && 'queryNodes' in this.db) {
         graphCtx = this.db as Record<string, unknown>;
