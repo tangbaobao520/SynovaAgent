@@ -5,7 +5,7 @@
  * 铁律 0-2: 每个 public 函数 >= 2 个用例 (happy + sad)
  */
 import { describe, it, expect } from 'vitest';
-import { logger, createLogger } from '../src/logger';
+import { logger, createLogger } from '@synova/logger';
 
 describe('@synova/logger', () => {
   // ── logger singleton ──
