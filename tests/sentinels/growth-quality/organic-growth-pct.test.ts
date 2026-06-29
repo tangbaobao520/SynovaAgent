@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { computeCashConversionRate } from '../../extensions/sentinels/growth-quality/computes/cash-conversion-rate';
-import { computeOrganicGrowthPct } from '../../extensions/sentinels/growth-quality/computes/organic-growth-pct';
+import { computeCashConversionRate } from '../../../extensions/sentinels/growth-quality/computes/cash-conversion-rate';
+import { computeOrganicGrowthPct } from '../../../extensions/sentinels/growth-quality/computes/organic-growth-pct';
 describe('computeCashConversionRate', () => {
   it('空degraded', () => { expect(computeCashConversionRate([]).degraded).toBe(true); });
   it('全转化=1', () => {

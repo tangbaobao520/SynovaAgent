@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeTokenCost } from '../../../extensions/sentinels/token-economics/computes/cost.ts';
+import { computeTokenCost } from '../../../../extensions/sentinels/token-economics/computes/cost.ts';
 
 const mockStore = {
   queryNodes: () => [],

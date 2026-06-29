@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeStructuralChangeSignal } from '../../extensions/sentinels/structural-change/computes/structural-change-signal';
+import { computeStructuralChangeSignal } from '../../../extensions/sentinels/structural-change/computes/structural-change-signal';
 
 describe('computeStructuralChangeSignal', () => {
   it('空degraded', () => {

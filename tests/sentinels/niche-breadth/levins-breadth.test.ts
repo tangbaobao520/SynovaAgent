@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeLevinsBreadth } from '../../extensions/sentinels/niche-breadth/computes/levins-breadth';
+import { computeLevinsBreadth } from '../../../extensions/sentinels/niche-breadth/computes/levins-breadth';
 describe('computeLevinsBreadth', () => {
   it('空degraded', () => { expect(computeLevinsBreadth([]).degraded).toBe(true); });
   it('均匀分布=高B', () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeSaasUsageScore } from '../../../extensions/sentinels/software-health/computes/saas-usage-score';
+import { computeSaasUsageScore } from '../../../../extensions/sentinels/software-health/computes/saas-usage-score';
 
 describe('computeSaasUsageScore', () => {
   it('空返回 degraded', () => {

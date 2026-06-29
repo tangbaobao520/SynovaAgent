@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeFinancialSnapshot } from '../../../extensions/sentinels/financial-snapshot/computes/snapshot.ts';
+import { computeFinancialSnapshot } from '../../../../extensions/sentinels/financial-snapshot/computes/snapshot.ts';
 
 const mockStore = {
   queryNodes: () => [],

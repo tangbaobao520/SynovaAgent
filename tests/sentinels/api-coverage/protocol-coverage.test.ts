@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeProtocolCoverage } from '../../extensions/sentinels/api-coverage/computes/protocol-coverage';
+import { computeProtocolCoverage } from '../../../extensions/sentinels/api-coverage/computes/protocol-coverage';
 
 describe('computeProtocolCoverage', () => {
   it('应返回标准协议覆盖率', () => {

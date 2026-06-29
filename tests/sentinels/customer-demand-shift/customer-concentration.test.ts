@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeCustomerConcentration } from '../../../extensions/sentinels/customer-demand-shift/computes/customer-concentration';
+import { computeCustomerConcentration } from '../../../../extensions/sentinels/customer-demand-shift/computes/customer-concentration';
 
 describe('computeCustomerConcentration', () => {
   it('空列表 degraded', () => {

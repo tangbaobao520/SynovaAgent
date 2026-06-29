@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeShadowItScore } from '../../../extensions/sentinels/software-health/computes/shadow-it-score';
+import { computeShadowItScore } from '../../../../extensions/sentinels/software-health/computes/shadow-it-score';
 
 describe('computeShadowItScore', () => {
   it('空返回 degraded', () => {

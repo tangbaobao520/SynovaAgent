@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeCapitalTurnover } from '../../../extensions/sentinels/capital-efficiency/computes/capital-turnover';
+import { computeCapitalTurnover } from '../../../../extensions/sentinels/capital-efficiency/computes/capital-turnover';
 
 describe('computeCapitalTurnover', () => {
   it('空列表 degraded', () => {

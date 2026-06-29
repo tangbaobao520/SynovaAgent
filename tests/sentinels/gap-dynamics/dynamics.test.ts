@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeGapDynamics } from '../../../extensions/sentinels/gap-dynamics/computes/dynamics.ts';
+import { computeGapDynamics } from '../../../../extensions/sentinels/gap-dynamics/computes/dynamics.ts';
 
 const mockStore = {
   queryNodes: () => [],

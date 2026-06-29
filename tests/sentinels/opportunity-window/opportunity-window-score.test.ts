@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeOpportunityWindowScore } from '../../extensions/sentinels/opportunity-window/computes/opportunity-window-score';
+import { computeOpportunityWindowScore } from '../../../extensions/sentinels/opportunity-window/computes/opportunity-window-score';
 
 describe('computeOpportunityWindowScore', () => {
   it('空事件degraded', () => {
