@@ -244,6 +244,14 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
     }
 
     if (!active.aborted) {
+      // V4.2.8: 按 scope.depth 组装报告颗粒度
+      if (scope?.depth && scope.depth !== 'raw') {
+        try {
+          const { assembleReport } = await import('../agent/report-assembler');
+          const assembled = assembleReport(result.report as import('../l3/synova-diagnosis-engine').DiagnosisReport, scope.depth as 'ceo' | 'flywheel' | 'expert');
+          (result.report as Record<string, unknown>).assembled = assembled;
+        } catch { /* 组装失败 — 原始报告已包含在 result 中 */ }
+      }
       sseClose(res, result);
     }
   } catch (err: any) {
