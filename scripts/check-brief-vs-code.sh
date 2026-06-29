@@ -172,7 +172,7 @@ echo -e "${CYAN}── Q1: 调研 ──${RESET}"
 Q1=$(extract_section "Q1")
 
 # 检查是否引用 memory/ 文件
-MEMORY_REFS=$(echo "$Q1" | grep -oP 'memory/[a-zA-Z0-9_-]+\.md' | sort -u || true)
+MEMORY_REFS=$(echo "$Q1" | grep -oP 'memory/[a-zA-Z0-9_-]+\.md' | sed 's|^memory/||' | sort -u || true)
 if [ -n "$MEMORY_REFS" ]; then
   MISSING_MEM=""
   while IFS= read -r mem; do
