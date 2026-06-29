@@ -1,6 +1,6 @@
 /**
  * src/l4/industry-loader.ts — 行业模板加载器
- * V3.8 Batch 4 — 行业模板文件化。扫描 extensions/industries/*/manifest.json。
+ * V3.8 Batch 4 — 行业模板文件化。扫描 extensions/industries/* /manifest.json。
  * 支持 extends 继承。冲突不静默 — 生成告警日志。
  */
 import { readdirSync, readFileSync, existsSync } from 'fs';

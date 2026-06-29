@@ -20,7 +20,7 @@ export const HumanAgentBoundarySentinel = {
         postAgentThroughput: 100 * (1 + automatedPct * 0.5),
         satisfactionScore: 0.7,
       });
-      if (r.degraded) return [{id:`t-na-${now.getTime()}`,severity:"info",title:"无混合边界数据",evidence:[],suggestion:"",detectedAt:ca}];
+      if (r.degraded) return [{description:'',id:`t-na-${now.getTime()}`,severity:"info",title:"无混合边界数据",evidence:[],suggestion:"",detectedAt:ca}];
       if (r.score < 0.3) return [{id:`t-hum-${now.getTime()}`,severity:"warning",title:"人机协同效率偏低",description:`效率${(r.score*100).toFixed(0)}%`,evidence:[`效率: ${(r.score*100).toFixed(0)}%`],suggestion:"优化人机任务分配",detectedAt:ca}];
       return [];
     } catch(e: unknown) { log.error({e}); return [{id:`e-${now.getTime()}`,severity:"warning",title:"异常",description:`${(e as Error)?.message||""}`,evidence:[],suggestion:"",detectedAt:ca}]; }

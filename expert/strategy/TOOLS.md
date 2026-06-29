@@ -86,3 +86,7 @@
 - competitive_moat_perceptual -> {premium, loyalty}
 - network_power -> {powerIndex, keyNodes}
 - value_capture -> {captureIndex, margin}
+
+## 通用哨兵工具 (V4.2.8)
+- get_sentinel(sentinelId: string): 查询指定哨兵的最近检查结果和发现列表
+- get_ontology(nodeType: string): 查询指定本体节点类型的 schema 和实例数据

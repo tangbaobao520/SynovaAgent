@@ -1,1 +1,0 @@
-{"$id":"node-type/oven","label":"厨房设备","tags":["operational","machine","food_service"],"requiredProps":["equipmentType","status"],"optionalProps":{"equipmentType":{"enum":["oven","fryer","mixer"]},"status":{"enum":["operational","maintenance","offline"]}}}

@@ -18,7 +18,7 @@ export const AiInvestmentReturnSentinel = {
         totalInvestment,
         paybackMonths: totalInvestment > 0 ? Math.round(totalInvestment / Math.max(costSaved + revenueUplift, 1)) : 12,
       });
-      if (r.degraded) return [{id:`t-na-${now.getTime()}`,severity:"info",title:"无AI投资数据",evidence:[],suggestion:"",detectedAt:ca}];
+      if (r.degraded) return [{description:'',id:`t-na-${now.getTime()}`,severity:"info",title:"无AI投资数据",evidence:[],suggestion:"",detectedAt:ca}];
       if (r.roi < 0.3) return [{id:`t-ai-${now.getTime()}`,severity:"warning",title:"AI投入产出比偏低",description:`ROI ${(r.roi*100).toFixed(0)}%`,evidence:[`ROI: ${(r.roi*100).toFixed(0)}%`],suggestion:"优化AI投资组合",detectedAt:ca}];
       return [];
     } catch(e: unknown) { log.error({e}); return [{id:`e-${now.getTime()}`,severity:"warning",title:"异常",description:`${(e as Error)?.message||""}`,evidence:[],suggestion:"",detectedAt:ca}]; }

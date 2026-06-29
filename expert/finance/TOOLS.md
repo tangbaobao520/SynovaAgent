@@ -64,3 +64,7 @@ BEP = 固定成本/(单价-单位变动成本)
 - capital_structure_health(teamId) → {score, signals}
 - roic_wacc_spread(teamId) → number
 - growth_quality(teamId) → {score, organic_pct, cash_conversion}
+
+## 通用哨兵工具 (V4.2.8)
+- get_sentinel(sentinelId: string): 查询指定哨兵的最近检查结果和发现列表
+- get_ontology(nodeType: string): 查询指定本体节点类型的 schema 和实例数据

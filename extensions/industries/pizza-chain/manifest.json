@@ -1,5 +1,0 @@
-{
-  "name": "pizza-chain", "version": "1.0.0", "type": "industry-template",
-  "displayName": "连锁餐饮", "extends": "general-enterprise",
-  "tags": ["food_service", "retail"]
-}
