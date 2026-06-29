@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeDataReadiness } from '../../../extensions/sentinels/data-health/computes/data-readiness-score';
+import { computeDataReadiness } from '../../../../extensions/sentinels/data-health/computes/data-readiness-score';
 
 describe('computeDataReadiness', () => {
   it('空列表 degraded', () => {

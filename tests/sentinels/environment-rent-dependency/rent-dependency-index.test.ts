@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeRentDependencyIndex } from '../../extensions/sentinels/environment-rent-dependency/computes/rent-dependency-index';
+import { computeRentDependencyIndex } from '../../../extensions/sentinels/environment-rent-dependency/computes/rent-dependency-index';
 
 describe('computeRentDependencyIndex', () => {
   it('空数据degraded', () => {

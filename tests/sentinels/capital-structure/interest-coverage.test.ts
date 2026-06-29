@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { computeDebtEquityRatio } from '../../extensions/sentinels/capital-structure/computes/debt-equity-ratio';
-import { computeInterestCoverage } from '../../extensions/sentinels/capital-structure/computes/interest-coverage';
+import { computeDebtEquityRatio } from '../../../extensions/sentinels/capital-structure/computes/debt-equity-ratio';
+import { computeInterestCoverage } from '../../../extensions/sentinels/capital-structure/computes/interest-coverage';
 describe('computeDebtEquityRatio', () => {
   it('空degraded', () => { expect(computeDebtEquityRatio([]).degraded).toBe(true); });
   it('D/E计算', () => {

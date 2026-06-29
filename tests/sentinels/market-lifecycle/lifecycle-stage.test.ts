@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeLifecycleStage } from '../../../extensions/sentinels/market-lifecycle/computes/lifecycle-stage';
+import { computeLifecycleStage } from '../../../../extensions/sentinels/market-lifecycle/computes/lifecycle-stage';
 
 describe('computeLifecycleStage', () => {
   it('高增长=growth', () => {

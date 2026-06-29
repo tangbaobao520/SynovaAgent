@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeRoicWaccSpread } from '../../../extensions/sentinels/capital-efficiency/computes/roic-wacc-spread';
+import { computeRoicWaccSpread } from '../../../../extensions/sentinels/capital-efficiency/computes/roic-wacc-spread';
 
 describe('computeRoicWaccSpread', () => {
   it('空列表 degraded', () => {

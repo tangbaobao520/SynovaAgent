@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { computeLtvCac } from '../../extensions/sentinels/unit-economics/computes/ltv-cac-ratio';
-import { computeUnitMargin } from '../../extensions/sentinels/unit-economics/computes/gross-margin-per-unit';
+import { computeLtvCac } from '../../../extensions/sentinels/unit-economics/computes/ltv-cac-ratio';
+import { computeUnitMargin } from '../../../extensions/sentinels/unit-economics/computes/gross-margin-per-unit';
 describe('computeLtvCac', () => {
   it('空degraded', () => { expect(computeLtvCac([]).degraded).toBe(true); });
   it('健康=3x+', () => { const r = computeLtvCac([{customerLifetimeValue:300,customerAcquisitionCost:100}]); expect(r.ltvCac).toBe(3); });

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeKzIndex } from '../../extensions/sentinels/financing-constraint/computes/kz-index';
+import { computeKzIndex } from '../../../extensions/sentinels/financing-constraint/computes/kz-index';
 describe('computeKzIndex', () => {
   it('空degraded', () => { expect(computeKzIndex([]).degraded).toBe(true); });
   it('高杠杆=高KZ', () => {

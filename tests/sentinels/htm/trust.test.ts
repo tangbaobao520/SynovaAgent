@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeHTM } from '../../../extensions/sentinels/htm/computes/trust.ts';
+import { computeHTM } from '../../../../extensions/sentinels/htm/computes/trust.ts';
 
 const mockStore = {
   queryNodes: () => [],
