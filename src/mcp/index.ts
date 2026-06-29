@@ -155,15 +155,23 @@ async function handleToolCall(name: string, params: Record<string, unknown>): Pr
     }
     case 'flywheel_speeds': {
       try {
-        const { getSentinelRegistry } = await import('../sentinel/registry');
-        const reg = getSentinelRegistry();
-        const allSentinels = reg.list();
-        const byLayer: Record<string, number> = {};
-        for (const s of allSentinels) {
-          const layer = (s.config as unknown as Record<string, unknown>).layer as string || 'unknown';
-          byLayer[layer] = (byLayer[layer] || 0) + 1;
+        const { getGlobalSentinelRunner } = await import('../sentinel/runner');
+        const runner = getGlobalSentinelRunner();
+        const allFindings: import('../sentinel/types').SentinelFinding[] = [];
+        if (runner) {
+          for (const runs of runner.getRecentResults().values()) {
+            for (const run of runs) {
+              if (run.result.findings) allFindings.push(...run.result.findings);
+            }
+          }
         }
-        return JSON.stringify({ ok: true, layers: byLayer, total: allSentinels.length });
+        if (allFindings.length === 0) {
+          return JSON.stringify({ ok: true, valueCreation: 50, valueCapture: 50, valueRegeneration: 50, bottleneck: 'environment', findings: 0 });
+        }
+        // 按严重度汇总
+        const sev: Record<string, number> = { emergency: 0, critical: 0, warning: 50, info: 100 };
+        const score = Math.round(allFindings.reduce((s, f) => s + (sev[f.severity] ?? 50), 0) / allFindings.length);
+        return JSON.stringify({ ok: true, overall: score, critical: allFindings.filter(f => f.severity === 'critical').length, warning: allFindings.filter(f => f.severity === 'warning').length, findings: allFindings.length });
       } catch (err: unknown) {
         return JSON.stringify({ ok: false, error: String(err) });
       }
