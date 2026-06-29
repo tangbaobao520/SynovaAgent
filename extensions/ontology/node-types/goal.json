@@ -1,1 +1,1 @@
-{"$id":"node-type/goal","label":"Goal","tags":["strategic","intangible_asset","generic"],"requiredProps":["goalType","description"],"optionalProps":{"targetDate":"string","progress":"number"},"description":"目标/OKR。"}
+{"$id":"node-type/goal","label":"Goal","tags":["strategic","intangible_asset","generic"],"requiredProps":["goalType","description"],"optionalProps":{"targetDate":"string","progress":"number","goalType":{"enum":["innovation","optimization","strategic","operational"]}},"description":"目标/OKR。"}

@@ -1,1 +1,1 @@
-{"$id":"node-type/event","label":"Event","tags":["operational","process","generic"],"requiredProps":["eventType","timestamp"],"description":"业务事件。"}
+{"$id":"node-type/event","label":"Event","tags":["operational","process","generic"],"requiredProps":["eventType","timestamp"],"optionalProps":{"eventType":{"enum":["technology_change","regulatory_change","competitive_action","client_churn","project_launch","process_change","problem_detected","human_override","departure"]}},"description":"业务事件。"}
