@@ -45,6 +45,10 @@ export interface DiagnosisScope {
   layers?: string[];
   /** 报告语言 */
   language?: 'zh' | 'en';
+  /** 限定哨兵 (按 sentinelId 过滤), 不传 = 全部 */
+  sentinelIds?: string[];
+  /** 历史对比基准: 'last_quarter' | 'last_month' | 'baseline' */
+  compareWith?: 'last_quarter' | 'last_month' | 'baseline';
 }
 
 // ═══ 事件类型 (discriminated union) ═══
