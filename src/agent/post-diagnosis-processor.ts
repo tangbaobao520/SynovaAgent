@@ -242,5 +242,29 @@ export async function runPostDiagnosisProcessing(
     log.warn({ err: msg }, 'EntityResolution failed — degraded');
   }
 
+  // ═══ P0-2: L0 组织自适应 — 纠错处理 + 阈值自适应 ═══
+  try {
+    const { OrgAdapter } = await import('@synova/evolution');
+    const { getAgentMemoryStore } = await import('./l4/agent-memory-store');
+    const { getDatabase } = await import('./init/engine-context');
+    const db = getDatabase();
+    const memoryStore = getAgentMemoryStore(db);
+    const adapter = new OrgAdapter({
+      graphStore: graphStore as import('@synova/evolution').GraphStoreLike,
+      memoryStore: memoryStore as unknown as import('@synova/evolution').AgentMemoryStoreLike,
+      l3: null, // L3WriteAPI 将在 Phase P1-1 注入
+    });
+    const adaptResult = await adapter.afterDiagnosis(teamId);
+    if (adaptResult.degraded) {
+      log.warn({ teamId, errors: adaptResult.errors }, '组织自适应降级');
+    }
+    if (adaptResult.correctionsProcessed > 0 || adaptResult.thresholdsAdjusted.length > 0) {
+      log.info({ teamId, corrections: adaptResult.correctionsProcessed, adjustments: adaptResult.thresholdsAdjusted.length }, '组织自适应完成');
+    }
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log.warn({ err: msg, teamId }, 'L0 组织自适应失败 — 降级 (不阻断诊断)');
+  }
+
   return result;
 }
