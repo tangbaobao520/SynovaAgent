@@ -261,8 +261,8 @@ export class SynovaDiagnosisEngineImpl implements SynovaDiagnosisEngine {
               for (const f of findings) {
                 // 若 SessionLearner 有该假设的权重记录, 调整置信度
                 let confidence = 0.85;
-                if (sessionLearner) {
-                  const weight = sessionLearner.getWeight(f.title);
+                if (this._sessionLearner) {
+                  const weight = this._sessionLearner.getWeight(f.title);
                   if (weight !== 0) {
                     confidence = Math.max(0.1, Math.min(1.0, 0.85 + weight * 0.3));
                   }
@@ -276,7 +276,7 @@ export class SynovaDiagnosisEngineImpl implements SynovaDiagnosisEngine {
           }
         }
         // 标记 SessionLearner 会话结束
-        sessionLearner?.endSession();
+        this._sessionLearner?.endSession();
 
         const messages = [
           { role: 'system', content: DIAGNOSIS_SYSTEM_PROMPT },
