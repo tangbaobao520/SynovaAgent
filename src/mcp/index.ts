@@ -182,7 +182,17 @@ async function handleToolCall(name: string, params: Record<string, unknown>): Pr
         try { getDatabase(); } catch { initEngineContext(); }
         const db = getDatabase();
         const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as Array<{ name: string }>;
-        return JSON.stringify({ ok: true, connected: true, tables: tables.map(t => t.name) });
+        // 本体层覆盖情况
+        let nodeTypes: Array<{ id: string; label: string; fields: number }> = [];
+        try {
+          const { loadOntology } = await import('../l4/ontology-loader');
+          const { ontology } = loadOntology();
+          nodeTypes = ontology.nodeTypes.map(n => ({
+            id: n.$id, label: n.label,
+            fields: Object.keys(n.optionalProps || {}).length + (n.requiredProps || []).length,
+          }));
+        } catch { /* ontology unavailable */ }
+        return JSON.stringify({ ok: true, connected: true, tables: tables.slice(0, 30).map(t => t.name), nodeTypes, nodeCount: nodeTypes.length });
       } catch (err: unknown) {
         return JSON.stringify({ ok: false, error: String(err), connected: false });
       }
