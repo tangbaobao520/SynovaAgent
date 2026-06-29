@@ -37,6 +37,7 @@ export interface SentinelManifest {
   auxiliaryExperts?: string[];
   computeKind?: 'deterministic' | 'heuristic' | 'conditional' | 'inferred' | 'aggregate';
   technoEconomicPhaseCalibration?: boolean;
+  dependsOn?: { nodeTypes?: string[]; edgeTypes?: string[]; requiredFields?: string[] };
 }
 
 export interface LoadedSentinel {
@@ -135,6 +136,30 @@ export async function registerLoadedSentinels(): Promise<{ registered: number; e
       if (!sentinelObj || typeof sentinelObj.check !== 'function') {
         errors.push(`哨兵 ${manifest.name} 缺少 check() 方法`);
         continue;
+      }
+
+      // V4.2.9: dependsOn 数据依赖校验
+      if (manifest.dependsOn) {
+        try {
+          const { loadOntology } = await import('../l4/ontology-loader');
+          const { ontology } = loadOntology();
+          const typeNames = manifest.dependsOn.nodeTypes || [];
+          const fields = manifest.dependsOn.requiredFields || [];
+          for (const nodeType of typeNames) {
+            const found = ontology.nodeTypes.find(n => n.$id === `node-type/${nodeType.toLowerCase()}` || n.label === nodeType);
+            if (!found) {
+              log.warn({ sentinel: manifest.name, nodeType }, '哨兵依赖的节点类型在本体中不存在 — degraded');
+              continue;
+            }
+            for (const f of fields) {
+              const hasField = (found.requiredProps || []).includes(f) ||
+                Object.keys(found.optionalProps || {}).includes(f);
+              if (!hasField) {
+                log.warn({ sentinel: manifest.name, nodeType, field: f }, '哨兵依赖的字段在本体节点类型中不存在 — degraded');
+              }
+            }
+          }
+        } catch { /* dependsOn 检查失败 — degraded */ }
       }
 
       // 动态导入 registry 避免循环依赖
