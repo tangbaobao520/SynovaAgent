@@ -174,12 +174,58 @@ export async function runSentinelOnce(sentinelId: string): Promise<RunOnceRespon
   }
 }
 
-/** 获取专家报告 (当前为占位) */
+/** 获取专家报告 (从最近哨兵运行结果提取) */
 export function getSentinelExpertReports(): ExpertReportsResponse {
-  return { ok: true, reports: [] };
+  const runner = getGlobalSentinelRunner();
+  if (!runner) return { ok: true, reports: [] };
+  try {
+    const reports: ExpertReportsResponse['reports'] = [];
+    for (const [sentinelId, runs] of runner.getRecentResults()) {
+      for (const run of runs) {
+        if (!run.result.findings) continue;
+        for (const f of run.result.findings) {
+          reports.push({
+            sentinelId,
+            expert: f.relatedNodeId || '专家',
+            summary: f.description.slice(0, 200),
+            confidence: 0.7,
+            checkedAt: f.detectedAt,
+          });
+        }
+      }
+    }
+    return { ok: true, reports: reports.slice(0, 50) };
+  } catch (err: unknown) {
+    log.warn({ err }, 'getSentinelExpertReports 失败 — degraded');
+    return { ok: true, reports: [] };
+  }
 }
 
-/** 获取哨兵工单 (当前为占位) */
+/** 获取哨兵工单 */
 export function getSentinelTickets(): TicketsResponse {
-  return { ok: true, tickets: [] };
+  const runner = getGlobalSentinelRunner();
+  if (!runner) return { ok: true, tickets: [] };
+  try {
+    // 从上轮运行结果提取 tickets
+    const tickets: TicketsResponse['tickets'] = [];
+    for (const [sentinelId, runs] of runner.getRecentResults()) {
+      for (const run of runs) {
+        if (!run.result.findings) continue;
+        for (const f of run.result.findings) {
+          if (f.severity === 'critical' || f.severity === 'warning') {
+            tickets.push({
+              id: `${sentinelId}_${f.id}`,
+              title: f.title,
+              severity: f.severity === 'critical' ? 'critical' : 'warning',
+              createdAt: f.detectedAt,
+            });
+          }
+        }
+      }
+    }
+    return { ok: true, tickets: tickets.slice(0, 20) };
+  } catch (err: unknown) {
+    log.warn({ err }, 'getSentinelTickets 失败 — degraded');
+    return { ok: true, tickets: [] };
+  }
 }
