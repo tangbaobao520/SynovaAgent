@@ -93,6 +93,72 @@ export class ToolNotFoundError extends DiagnosticAgentError {
 
 // ═══ Storage Errors ═══
 
+// ═══ Pipeline Errors ═══
+
+/** 证据不足 — 不可重试 (需补充数据) */
+export class EvidenceInsufficientError extends DiagnosticAgentError {
+  constructor(dimension: string, phase = 3) {
+    super('EVIDENCE_INSUFFICIENT', `维度证据不足: ${dimension}`, phase, false);
+    this.name = 'EvidenceInsufficientError';
+  }
+}
+
+/** 门禁检查未通过 — 不可重试 */
+export class GateCheckFailedError extends DiagnosticAgentError {
+  constructor(gate: string, details: string, phase = 0) {
+    super('GATE_CHECK_FAILED', `${gate}: ${details}`, phase, false);
+    this.name = 'GateCheckFailedError';
+  }
+}
+
+/** 权限拒绝 — 不可重试 */
+export class PermissionDeniedError extends DiagnosticAgentError {
+  constructor(resource: string, phase = 0) {
+    super('PERMISSION_DENIED', `权限不足: ${resource}`, phase, false);
+    this.name = 'PermissionDeniedError';
+  }
+}
+
+/** 恢复次数耗尽 — 不可重试 */
+export class RecoveryExhaustedError extends DiagnosticAgentError {
+  constructor(operation: string, attempts: number, phase = 0) {
+    super('RECOVERY_EXHAUSTED', `${operation} 已重试 ${attempts} 次仍未恢复`, phase, false);
+    this.name = 'RecoveryExhaustedError';
+  }
+}
+
+/** 会话状态损坏 — 不可重试 */
+export class SessionCorruptedError extends DiagnosticAgentError {
+  constructor(sessionId: string, phase = 2) {
+    super('SESSION_CORRUPTED', `会话状态损坏: ${sessionId}`, phase, false);
+    this.name = 'SessionCorruptedError';
+  }
+}
+
+/** 模块执行失败 — 取决于具体原因 */
+export class ModuleFailedError extends DiagnosticAgentError {
+  constructor(moduleName: string, reason: string, phase = 0, retryable = false) {
+    super('MODULE_FAILED', `${moduleName}: ${reason}`, phase, retryable);
+    this.name = 'ModuleFailedError';
+  }
+}
+
+/** 工具超时 — 可重试 1 次 */
+export class ToolTimeoutError extends DiagnosticAgentError {
+  constructor(toolName: string, timeoutMs: number, phase = 0) {
+    super('TOOL_TIMEOUT', `${toolName} 超时 ${timeoutMs}ms`, phase, true);
+    this.name = 'ToolTimeoutError';
+  }
+}
+
+/** 子 Agent 失联 — 可重试 1 次 */
+export class SubAgentLostError extends DiagnosticAgentError {
+  constructor(agentId: string, phase = 0) {
+    super('SUBAGENT_LOST', `子 Agent 失联: ${agentId}`, phase, true);
+    this.name = 'SubAgentLostError';
+  }
+}
+
 /** 存储操作失败 — 取决于具体原因 */
 export class StorageError extends DiagnosticAgentError {
   constructor(operation: string, message: string, retryable = false) {
