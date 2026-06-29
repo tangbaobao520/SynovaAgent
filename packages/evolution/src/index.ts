@@ -1,0 +1,39 @@
+/**
+ * @synova/evolution — Synova L0 自我进化引擎
+ *
+ * 三层进化结构:
+ *   第一层: 会话内学习 (SessionLearner) — 仅内存, 不持久化
+ *   第二层: 组织自适应 (OrgAdapter) — 持久化到 AgentMemoryStore
+ *   第三层: 全局进化 (GlobalAnalyzer) — 行业聚合 + 规则版本管理
+ *
+ * 架构定位: L0 横向切面, 不改变五层架构。
+ * L0 读: L1 用户反馈, L3 哨兵结果/专家报告, L4 本体数据
+ * L0 写: L3 阈值, L4 事实/基线, 扩展文件(行业模板/专家配置)
+ */
+
+// 类型导出
+export type {
+  // 通用
+  EvolutionConfig,
+  // 第一层
+  SessionFeedback,
+  SessionWeight,
+  // 第二层
+  CorrectionMemoryType,
+  UserCorrection,
+  ExtractedFact,
+  ThresholdAdjustment,
+  OrgAdaptationResult,
+  // 第三层
+  PerSentinelStats,
+  IndustryBaseline,
+  IndustryPattern,
+  // L0 接口
+  L3WriteAPI,
+  EvolutionEngineOptions,
+  GraphStoreLike,
+  AgentMemoryStoreLike,
+  IndustryLoaderLike,
+} from './evolution-types';
+
+export { DEFAULT_EVOLUTION_CONFIG } from './evolution-types';

@@ -1,0 +1,21 @@
+{
+  "name": "@synova/evolution",
+  "version": "0.1.0",
+  "description": "Synova L0 自我进化引擎 — 会话内学习 / 组织自适应 / 全局进化",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "dependencies": {
+    "@synova/logger": "file:../logger",
+    "@synova/error-types": "file:../error-types"
+  },
+  "license": "UNLICENSED",
+  "private": true
+}
