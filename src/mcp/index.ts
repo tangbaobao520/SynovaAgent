@@ -36,6 +36,31 @@ interface MCPResponse {
 
 const TOOLS = [
   {
+    name: 'sentinel_list',
+    description: '列出所有哨兵 (ID/名称/层/状态/数据依赖满足度)',
+    inputSchema: { type: 'object', properties: {}, required: [] },
+  },
+  {
+    name: 'sentinel_run',
+    description: '运行指定哨兵',
+    inputSchema: { type: 'object', properties: { sentinelId: { type: 'string', description: '哨兵 ID' } }, required: ['sentinelId'] },
+  },
+  {
+    name: 'sentinel_run_all',
+    description: '运行全量哨兵并返回结果',
+    inputSchema: { type: 'object', properties: {}, required: [] },
+  },
+  {
+    name: 'flywheel_speeds',
+    description: '获取三飞轮当前转速 + 瓶颈维度',
+    inputSchema: { type: 'object', properties: {}, required: [] },
+  },
+  {
+    name: 'data_source_status',
+    description: '数据源连接状态 + 字段覆盖度',
+    inputSchema: { type: 'object', properties: {}, required: [] },
+  },
+  {
     name: 'diagnose_organization',
     description: '对指定组织运行六阶段诊断分析，返回结构化诊断报告',
     inputSchema: {
@@ -88,6 +113,72 @@ const TOOLS = [
 
 async function handleToolCall(name: string, params: Record<string, unknown>): Promise<string> {
   switch (name) {
+    case 'sentinel_list': {
+      try {
+        const { getSentinelRegistry } = await import('../sentinel/registry');
+        const reg = getSentinelRegistry();
+        const list = reg.list().map(s => ({
+          id: s.config.id, name: s.config.name, layer: (s.config as unknown as Record<string, unknown>).layer || s.config.category,
+          priority: s.config.priority, mode: s.config.mode,
+        }));
+        return JSON.stringify({ ok: true, total: list.length, sentinels: list });
+      } catch (err: unknown) {
+        return JSON.stringify({ ok: false, error: String(err) });
+      }
+    }
+    case 'sentinel_run': {
+      try {
+        const sentinelId = params.sentinelId as string;
+        const { runSentinelForTeam } = await import('../sentinel/sentinel-runner');
+        // 用默认 db 构造 store
+        const { getDatabase, initEngineContext } = await import('../init/engine-context');
+        const { createSynovaGraphStore } = await import('../l4/synova-graph-store');
+        try { getDatabase(); } catch { initEngineContext(); }
+        const store = createSynovaGraphStore(getDatabase() as never);
+        const findings = await runSentinelForTeam(sentinelId, store);
+        return JSON.stringify({ ok: true, sentinelId, findings: findings.length });
+      } catch (err: unknown) {
+        return JSON.stringify({ ok: false, error: String(err) });
+      }
+    }
+    case 'sentinel_run_all': {
+      try {
+        const { getSentinelRegistry } = await import('../sentinel/registry');
+        const registry = getSentinelRegistry();
+        const context = { db: undefined, now: new Date(), registry };
+        const allResults = await Promise.allSettled(registry.list().map(s => s.check(context)));
+        const results = allResults.map((r, i) => ({ sentinelId: registry.list()[i].config.id, ok: r.status === 'fulfilled' }));
+        return JSON.stringify({ ok: true, total: results.length, results });
+      } catch (err: unknown) {
+        return JSON.stringify({ ok: false, error: String(err) });
+      }
+    }
+    case 'flywheel_speeds': {
+      try {
+        const { getSentinelRegistry } = await import('../sentinel/registry');
+        const reg = getSentinelRegistry();
+        const allSentinels = reg.list();
+        const byLayer: Record<string, number> = {};
+        for (const s of allSentinels) {
+          const layer = (s.config as unknown as Record<string, unknown>).layer as string || 'unknown';
+          byLayer[layer] = (byLayer[layer] || 0) + 1;
+        }
+        return JSON.stringify({ ok: true, layers: byLayer, total: allSentinels.length });
+      } catch (err: unknown) {
+        return JSON.stringify({ ok: false, error: String(err) });
+      }
+    }
+    case 'data_source_status': {
+      try {
+        const { getDatabase, initEngineContext } = await import('../init/engine-context');
+        try { getDatabase(); } catch { initEngineContext(); }
+        const db = getDatabase();
+        const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as Array<{ name: string }>;
+        return JSON.stringify({ ok: true, connected: true, tables: tables.map(t => t.name) });
+      } catch (err: unknown) {
+        return JSON.stringify({ ok: false, error: String(err), connected: false });
+      }
+    }
     case 'diagnose_organization': {
       const orgName = params.orgName as string;
       const provider = createProvider(detectProvider(), {

@@ -68,7 +68,7 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
   const { teamId, initiator, scope } = req.body as {
     teamId?: string;
     initiator?: { role: string; name?: string; teamId?: string; concerns?: string[] };
-    scope?: { depth?: string; layers?: string[]; language?: string };
+    scope?: { depth?: string; layers?: string[]; language?: string; reportDepth?: string };
   };
 
   if (!teamId) {
@@ -253,7 +253,6 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
             result.report as import('../l3/synova-diagnosis-engine').DiagnosisReport,
             reportDepth,
             scope?.layers,
-            scope?.language,
           );
           (result.report as Record<string, unknown>).assembled = assembled;
         } catch { /* 组装失败 — 原始报告已包含在 result 中 */ }
