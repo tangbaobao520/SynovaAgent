@@ -12,20 +12,11 @@
  * Iron law #38: zero unsafe type casts.
  */
 import { createLogger } from '@synova/logger';
+import type { SqliteDb, GraphStore } from './types';
 
 const log = createLogger('l4/synova-graph-store');
 
 // ═══ 类型 ═══
-
-/** 数据库连接接口 — 只需要 exec/prepare 两个方法。server.ts 需要此类型做注入转换 */
-export interface SqliteDb {
-  exec(sql: string): void;
-  prepare(sql: string): {
-    run(...params: unknown[]): { changes: number; lastInsertRowid: number | bigint };
-    get(...params: unknown[]): Record<string, unknown> | undefined;
-    all(...params: unknown[]): Array<Record<string, unknown>>;
-  };
-}
 
 /** GraphStore 公开接口 — 匹配 GraphStoreLike */
 export interface SynovaGraphStore {
@@ -51,7 +42,7 @@ export interface SynovaGraphStore {
 
 let idCounter = 0;
 
-class SynovaGraphStoreImpl implements SynovaGraphStore {
+export class SynovaGraphStoreImpl implements SynovaGraphStore {
   private db: SqliteDb;
 
   constructor(db: SqliteDb) {

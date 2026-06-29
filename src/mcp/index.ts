@@ -132,7 +132,7 @@ async function handleToolCall(name: string, params: Record<string, unknown>): Pr
         const { runSentinelForTeam } = await import('../sentinel/sentinel-runner');
         // 用默认 db 构造 store
         const { getDatabase, initEngineContext } = await import('../init/engine-context');
-        const { createSynovaGraphStore } = await import('../l4/synova-graph-store');
+        const { createSynovaGraphStore } = await import('@synova/graph-store');
         try { getDatabase(); } catch { initEngineContext(); }
         const store = createSynovaGraphStore(getDatabase() as never);
         const findings = await runSentinelForTeam(sentinelId, store);

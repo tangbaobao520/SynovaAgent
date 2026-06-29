@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../dist/packages/graph-store",
+    "rootDir": "./src",
+    "composite": true
+  },
+  "include": ["src/**/*.ts"]
+}
