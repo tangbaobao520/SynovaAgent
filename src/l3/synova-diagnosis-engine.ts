@@ -39,6 +39,12 @@ export interface DiagnosisScope {
   dimensions?: string[];
   /** 限定专家，不传 = 全部 8 位 */
   experts?: string[];
+  /** 报告颗粒度: ceo/flywheel/expert/raw */
+  reportDepth?: 'ceo' | 'flywheel' | 'expert' | 'raw';
+  /** 过滤诊断层: environment|capital|interface|technology|alignment|internal */
+  layers?: string[];
+  /** 报告语言 */
+  language?: 'zh' | 'en';
 }
 
 // ═══ 事件类型 (discriminated union) ═══

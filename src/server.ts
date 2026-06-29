@@ -53,7 +53,7 @@ import permissionRoutes from './routes/permissions';
 import diagnosisUploadRoutes from './routes/diagnosis-upload-v2';
 import sentinelHealthRoutes from './routes/sentinel-health';
 import sentinelRoutes from './routes/sentinel';
-import dataRoutes from './routes/data'; // V4.2.8 — 数据上传 API
+import dataRoutes from './routes/data'; // V4.2.9 — 数据上传 API
 import reloadRoutes from './routes/reload';
 import type { ServiceContainer } from './services/container';
 
@@ -124,7 +124,7 @@ export async function createServer(): Promise<Server> {
             try {
               const item = JSON.parse(r.value) as { title?: string; description: string; status: string };
               return { title: item.title || item.description, status: item.status === 'completed' ? 'completed' as const : item.status === 'in_progress' ? 'in_progress' as const : 'stalled' as const, detail: item.description };
-            } catch { return { title: '行动项', status: 'in_progress' as const, detail: '' }; }
+            } catch (e) { logger.warn({ err: e }, '解析行动项失败 — degraded'); return { title: '行动项', status: 'in_progress' as const, detail: '' }; }
           });
         }
       } catch (err: unknown) { logger.warn({ err }, '老板信箱获取行动项失败 — degraded'); }
@@ -433,7 +433,7 @@ export async function createServer(): Promise<Server> {
   app.use(rbacMiddleware);        // RBAC 权限注入 (PRD v1.6 Slice 7)
   app.use(deptWorkspaceRoutes);   // GET /dept → 部门工作台 (PRD v1.6 Slice 7)
   app.use(actionsApiRoutes);      // /api/actions → 行动项 CRUD (PRD §7, v3.5)
-  app.use(dataRoutes);           // POST /api/data/upload — 数据上传入口 (V4.2.8)
+  app.use(dataRoutes);           // POST /api/data/upload — 数据上传入口 (V4.2.9)
   app.use(healthRoutes);
   app.use(ontologyRoutes);
   app.use(diagnosisRoutes);

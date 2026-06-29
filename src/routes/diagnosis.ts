@@ -68,7 +68,7 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
   const { teamId, initiator, scope } = req.body as {
     teamId?: string;
     initiator?: { role: string; name?: string; teamId?: string; concerns?: string[] };
-    scope?: { depth?: string };
+    scope?: { depth?: string; layers?: string[]; language?: string };
   };
 
   if (!teamId) {
@@ -244,11 +244,17 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
     }
 
     if (!active.aborted) {
-      // V4.2.8: 按 scope.depth 组装报告颗粒度
-      if (scope?.depth && scope.depth !== 'raw') {
+      // V4.2.9: 按 scope.depth/layers/language 组装报告
+      const reportDepth = (scope?.reportDepth || scope?.depth || 'raw') as 'ceo' | 'flywheel' | 'expert' | 'raw';
+      if (reportDepth !== 'raw') {
         try {
           const { assembleReport } = await import('../agent/report-assembler');
-          const assembled = assembleReport(result.report as import('../l3/synova-diagnosis-engine').DiagnosisReport, scope.depth as 'ceo' | 'flywheel' | 'expert');
+          const assembled = assembleReport(
+            result.report as import('../l3/synova-diagnosis-engine').DiagnosisReport,
+            reportDepth,
+            scope?.layers,
+            scope?.language,
+          );
           (result.report as Record<string, unknown>).assembled = assembled;
         } catch { /* 组装失败 — 原始报告已包含在 result 中 */ }
       }
