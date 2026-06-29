@@ -4,7 +4,7 @@
  * Phase 1: 并行执行 engine-core 29 诊断模块 (computeModule).
  * 每个模块独立超时，失败模块 → degradedModules[] + 其他继续。
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('orchestrator/module-runner');
 

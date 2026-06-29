@@ -10,7 +10,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import { auditSkillDirectory } from './skill-audit-gate';
 import type { SkillAuditReport } from './skill-audit-gate';
 

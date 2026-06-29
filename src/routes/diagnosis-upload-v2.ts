@@ -15,7 +15,7 @@
 import { Router, type Request, type Response } from 'express';
 import { createProvider } from '../providers';
 import { loadConfig } from '../config';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import { getDatabase } from '../init/engine-context';
 // V4.2.2: doc-extractor 桥接已删除（铁律46）
 export type ExtractionResult = { content: string; metadata: Record<string, unknown> };

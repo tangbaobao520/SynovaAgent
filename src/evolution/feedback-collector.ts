@@ -2,7 +2,7 @@
  * feedback-collector.ts — 确认反馈接收器 (PRD §11.4, v3.5)
  * 接收人对建议的确认/修改/拒绝，写入 Evolution Engine
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import type { AgentMemoryStore, MemoryType } from '../l4/agent-memory-store';
 
 const log = createLogger('evolution/feedback-collector');

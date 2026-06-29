@@ -9,7 +9,7 @@
 import { readdirSync, readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { pathToFileURL } from 'url';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import { registerNotificationAdapter, listNotificationChannels } from './registry';
 import type { NotificationAdapter } from './types';
 

@@ -5,7 +5,7 @@
  * POST /api/knowledge/ask → { question } → 返回答案+来源+可选操作
  */
 import { Router, type Request, type Response } from 'express';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('routes/knowledge-ask');
 const router = Router();

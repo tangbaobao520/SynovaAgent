@@ -8,7 +8,7 @@
  * 支持: * 通配符, 具体数字, 列表 (逗号分隔)
  */
 import type Database from 'better-sqlite3';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('cron/scheduler');
 

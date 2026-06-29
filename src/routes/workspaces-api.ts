@@ -8,7 +8,7 @@
  * POST /api/workspaces/:id/messages → 发送消息
  */
 import { Router, type Request, type Response } from 'express';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('routes/workspaces-api');
 const router = Router();

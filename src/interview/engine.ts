@@ -5,7 +5,7 @@
  * MASTER-REPORT 裁决"必须实现"
  */
 import type { InterviewRole } from './roles';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('interview/engine');
 

@@ -9,7 +9,7 @@
  * S3 受限: 手机号、身份证号、薪资、绩效
  * S4 禁止: 密码、Token、私钥 — 不回显、不存储、不传输
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('security/pii-scrubber');
 

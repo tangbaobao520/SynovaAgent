@@ -9,7 +9,7 @@
 
 import type { Sentinel, SentinelCheckResult, SentinelConfig, SentinelContext, SentinelFinding } from '../types';
 import { discoverTeams } from './helpers';
-import { createLogger } from '../../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/goal-alignment');
 

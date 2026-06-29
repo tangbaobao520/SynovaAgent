@@ -11,7 +11,7 @@
  */
 
 import type { SentinelFinding } from './types';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/baseline-store');
 

@@ -13,7 +13,7 @@
  *   6. 数据文件损坏 → detect ENOENT vs JSON.parse vs checksum
  *   7. 不可恢复错误 → error event + SSE close + user-friendly message
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import { DiagnosticAgentError, ErrorCode, isRetryable } from '../errors/types';
 
 const log = createLogger('services/fault-recovery');

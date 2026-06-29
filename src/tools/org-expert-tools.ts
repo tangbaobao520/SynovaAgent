@@ -15,7 +15,7 @@ interface GraphData {
  * 依赖: DataConnector + GraphStore + graph-query
  */
 import type { ToolDefinition } from '../agent/tools';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 const log = createLogger('tools/org-expert');
 
 // ═══ build_org_graph ═══

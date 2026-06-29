@@ -6,7 +6,7 @@
  */
 import { Router, type Request, type Response } from 'express';
 import { loadConfig } from '../config';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import { getProposalManager } from '../l2/proposal-manager';
 
 const log = createLogger('routes/chat');

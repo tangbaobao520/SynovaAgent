@@ -4,7 +4,7 @@
  * 维度不是硬编码 6 个。不同行业/场景通过 Extension Registry 注册新维度。
  * LLM 根据对话上下文自主决定激活哪些维度。
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('orchestrator/dimension-registry');
 

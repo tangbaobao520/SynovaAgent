@@ -4,7 +4,7 @@
  * 诊断结果 → ontologyPatches → 本体自动更新 (新节点/边、属性修正)
  * 参考: engine-core evolution/ 模块
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('evolution/l0');
 

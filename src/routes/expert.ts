@@ -7,7 +7,7 @@
  * GET  /api/expert/marketplace?industry=... — 按行业浏览模板
  */
 import { Router, type Request, type Response } from 'express';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import { TemplateValidator } from '../expert-platform/validator';
 import { ExpertStore } from '../expert-platform/store';
 import { getDatabase } from '../init/engine-context';

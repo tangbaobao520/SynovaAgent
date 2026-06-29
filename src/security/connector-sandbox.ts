@@ -16,7 +16,7 @@
  *
  * 安全审计: 7 步静态分析
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('security/connector-sandbox');
 

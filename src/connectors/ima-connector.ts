@@ -12,7 +12,7 @@
  *
  * API 文档: https://ima.qq.com/agent-interface
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('connectors/ima');
 

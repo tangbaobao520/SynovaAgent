@@ -11,7 +11,7 @@
 
 import type { SentinelContext, SentinelCheckResult, SentinelFinding } from '../types';
 import { getDatabase, initEngineContext } from '../../init/engine-context';
-import { createLogger } from '../../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/adapter-helpers');
 

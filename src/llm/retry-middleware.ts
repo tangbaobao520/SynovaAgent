@@ -11,7 +11,7 @@
  */
 import type { LLMProvider, ChatResult, ChatOptions } from '../providers/types';
 import { isRetryableError, computeBackoff, DEFAULT_LLM_CALL_OPTIONS } from './types';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('llm/retry-middleware');
 

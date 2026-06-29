@@ -8,7 +8,7 @@
  */
 import type { LLMProvider } from '../providers/types';
 import type { ExpertContribution, ExpertTemplate } from './types';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('expert-platform/extractor');
 

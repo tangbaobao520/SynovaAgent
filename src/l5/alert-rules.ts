@@ -10,7 +10,7 @@
  *   - pattern: 模式匹配 (如: 连续3次下降)
  */
 import Database from 'better-sqlite3';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('l5/alert-rules');
 

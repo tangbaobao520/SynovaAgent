@@ -7,7 +7,7 @@
  * 铁律 31: reload 失败返回 degraded 标记, 不影响已运行的引擎。
  */
 import { Router, type Request, type Response } from 'express';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import type { FileScanner } from '../agent/file-scanner';
 import type { ExpertFileLoader } from '../agent/expert-file-loader';
 // 铁律 39: L1 不直接引用 L3。ExpertRegistry 由 app.locals DI 注入，运行时由 L2 调用。

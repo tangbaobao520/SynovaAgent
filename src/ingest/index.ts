@@ -6,7 +6,7 @@
  */
 import { readFileContent, extractEntities } from '@synova/knowledge-ingest';
 import type { IngestResult } from '@synova/knowledge-ingest';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 export type { IngestResult };
 

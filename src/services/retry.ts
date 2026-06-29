@@ -5,7 +5,7 @@
  * 用于: connector-pipeline, LLM calls, external API calls
  */
 
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('services/retry');
 

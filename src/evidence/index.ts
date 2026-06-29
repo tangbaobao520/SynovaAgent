@@ -9,7 +9,7 @@ export type { Evidence, EvidenceFilter, EvidenceSource, ContradictionSignal, Cor
 
 import type { Evidence, EvidenceFilter, ContradictionSignal, CorroborationResult } from './types';
 import { EvidenceStore } from './evidence-store';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('evidence');
 

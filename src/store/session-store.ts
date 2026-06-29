@@ -10,7 +10,7 @@
  * 会话数据属于 Agent 进程层，本体数据属于 engine-core 层。
  */
 import Database from 'better-sqlite3';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('store/session-store');
 

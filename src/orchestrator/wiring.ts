@@ -16,7 +16,7 @@ import { SessionManager } from './session-manager';
 import { PhaseStateMachine } from './phase-state-machine';
 import type { LLMClient } from './diagnosis-orchestrator';
 import type { LLMProvider } from '../providers/types';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('orchestrator/wiring');
 

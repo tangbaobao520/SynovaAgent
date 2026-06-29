@@ -9,7 +9,7 @@
 
 import { Router, type Request, type Response } from 'express';
 import { getSentinelHealthReport } from '../agent/sentinel-health-service';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('routes/sentinel-health');
 const router = Router();

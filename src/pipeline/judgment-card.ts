@@ -7,7 +7,7 @@
  * Iron law #24: 所有 catch 有 log + degraded 标记。
  * Iron law #38: zero unsafe type casts.
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('pipeline/judgment-card');
 

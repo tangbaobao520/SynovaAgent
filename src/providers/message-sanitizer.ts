@@ -8,7 +8,7 @@
  *
  * 用户从 CRM/Excel 复制的数据可能含不可见字符导致 LLM API 400。
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('providers/message-sanitizer');
 

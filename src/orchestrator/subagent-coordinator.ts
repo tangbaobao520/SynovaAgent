@@ -6,7 +6,7 @@
  */
 import type { LLMClient } from './diagnosis-orchestrator';
 import type { Evidence } from '../evidence/types';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import { ExpertDispatcher, setGlobalExpertDispatcher } from '../l3/expert-dispatcher';
 import type { QueryAPI } from '../l3/expert-autonomy';
 

@@ -6,7 +6,7 @@
  */
 import Database from 'better-sqlite3';
 import { setEngineContext } from '@synova/diagnosis-engine';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import { loadConfig } from '../config';
 import { SqliteStorageBackend } from '../store/storage-backend';
 import * as path from 'path';

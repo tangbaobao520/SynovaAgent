@@ -5,7 +5,7 @@
  * 参考: OpenClaw agent-tools.policy.ts + audit-extra.sync.ts
  */
 import Database from 'better-sqlite3';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('security');
 

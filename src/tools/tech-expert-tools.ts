@@ -3,7 +3,7 @@ import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
  * tools/tech-expert-tools.ts — 技术专家工具链 (Phase C2)
  */
 import type { ToolDefinition } from '../agent/tools';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 const log = createLogger('tools/tech-expert');
 
 export const scanSoftwareEcosystemTool: ToolDefinition = {

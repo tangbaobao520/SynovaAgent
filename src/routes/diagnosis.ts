@@ -12,7 +12,7 @@ import { Router, type Request, type Response } from 'express';
 import { createProvider } from '../providers';
 import { detectProvider } from '../providers/detect';
 import { loadConfig } from '../config';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import { EngineCoreVendorAdapter } from '../adapters/engine-core-adapter';
 import type { DiagnosisEngine, DiagnosisEvent, ConsultationResult } from '../l2-interfaces/diagnosis-engine';
 import { ToolRegistry } from '../agent/tools';

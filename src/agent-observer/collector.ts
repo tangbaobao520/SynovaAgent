@@ -10,7 +10,7 @@
  */
 
 import { SOGNodeType } from '@synova/sog-core';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import type { GraphStore } from '../l4/graph-bridge';
 import type { AgentActivity, ReportResponse } from './types';
 

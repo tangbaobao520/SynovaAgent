@@ -17,7 +17,7 @@ import {
   getSentinelExpertReports,
   getSentinelTickets,
 } from '../agent/sentinel-service';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('routes/sentinel');
 const router = Router();

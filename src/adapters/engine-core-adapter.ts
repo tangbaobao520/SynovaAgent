@@ -13,7 +13,7 @@
 import type { DiagnosisEngine, DiagnosisEvent, ConsultationResult } from '../l2-interfaces/diagnosis-engine';
 import type { LLMProvider } from '../providers/types';
 import type { ToolRegistry } from '../agent/tools';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('adapters/engine-core');
 

@@ -1,6 +1,6 @@
 /** tools/action-expert-tools.ts — 行动专家工具链 (Phase C5) */
 import type { ToolDefinition } from '../agent/tools';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 const log = createLogger('tools/action-expert');
 
 export const prioritizeByImpactTool: ToolDefinition = {

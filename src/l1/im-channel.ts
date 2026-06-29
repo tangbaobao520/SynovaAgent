@@ -5,7 +5,7 @@
  * 各平台 (飞书/企微/Slack/Teams) 实现此接口后注册到 IMRegistry。
  * 用户可在对话中切换 IM 通道。
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('l1/im-channel');
 

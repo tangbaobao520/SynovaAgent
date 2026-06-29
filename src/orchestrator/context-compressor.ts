@@ -8,7 +8,7 @@
  */
 
 import type { LLMMessage } from '../providers/types';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('orchestrator/context-compressor');
 

@@ -5,7 +5,7 @@
  */
 import { readdirSync, readFileSync, existsSync } from 'fs';
 import { join } from 'path';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('providers/llm-loader');
 const LLM_DIR = join(process.cwd(), 'extensions', 'llm-providers');

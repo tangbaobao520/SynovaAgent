@@ -12,7 +12,7 @@
  * 白名单: /health, /api/status 不检查。
  */
 import type { Request, Response, NextFunction } from 'express';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('middleware/sanitize-check');
 
