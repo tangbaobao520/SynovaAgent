@@ -31,21 +31,7 @@ import type {
 
 const log = createLogger('l3/synova-engine');
 
-// ═══ 错误类型 (铁律 32) ═══
-
-class DiagnosisError extends Error {
-  code: string;
-  phase: number;
-  retryable: boolean;
-
-  constructor(code: string, phase: number, message: string, retryable: boolean) {
-    super(message);
-    this.name = 'DiagnosisError';
-    this.code = code;
-    this.phase = phase;
-    this.retryable = retryable;
-  }
-}
+// ═══ 错误类型 (铁律 32) — 使用 @synova/error-types 的 DiagnosticAgentError ═══
 
 // ═══ 诊断引擎配置 ═══
 
