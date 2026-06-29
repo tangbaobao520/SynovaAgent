@@ -110,6 +110,8 @@ export class SynovaDiagnosisEngineImpl implements SynovaDiagnosisEngine {
   private tools: ToolExecutor;
   private config: EngineConfig;
   private graphStore: Record<string, unknown> | null;
+  /** Phase P0-3: 会话内学习引擎 — 纯内存, 仅当前诊断会话 */
+  private _sessionLearner: import('@synova/evolution').SessionLearner | null = null;
 
   constructor(
     llm: LLMClient,
@@ -131,6 +133,11 @@ export class SynovaDiagnosisEngineImpl implements SynovaDiagnosisEngine {
       gateDataCompleteness: options?.gateDataCompleteness ?? DEFAULT_CONFIG.gateDataCompleteness,
       gateMinHypothesisConfidence: options?.gateMinHypothesisConfidence ?? DEFAULT_CONFIG.gateMinHypothesisConfidence,
     };
+  }
+
+  /** Phase P0-3: 获取当前会话的学习引擎 (可能为 null) */
+  getSessionLearner(): import('@synova/evolution').SessionLearner | null {
+    return this._sessionLearner;
   }
 
   /** Builder 模式: 设置最大工具调用轮数 */
@@ -225,6 +232,17 @@ export class SynovaDiagnosisEngineImpl implements SynovaDiagnosisEngine {
       // ═══ Phase 2: 假设生成 ═══
       emit({ type: 'phase_started', phase: 2, timestamp: now(), label: '假设生成' });
 
+      // P0-3: SessionLearner — 会话内权重学习 (纯内存, 懒加载, 降级安全)
+      try {
+        const { SessionLearner } = await import('@synova/evolution');
+        this._sessionLearner = new SessionLearner();
+        log.debug({ teamId: this._sessionLearner.isActive() }, 'SessionLearner 已启动');
+      } catch (slErr: unknown) {
+        const msg = slErr instanceof Error ? slErr.message : String(slErr);
+        log.warn({ err: msg }, 'SessionLearner 不可用 — degraded');
+        this._sessionLearner = null;
+      }
+
       let llmResult: { content: string; toolCalls?: Array<{ name: string; arguments: Record<string, unknown> }> } | null = null;
 
       try {
@@ -241,7 +259,15 @@ export class SynovaDiagnosisEngineImpl implements SynovaDiagnosisEngine {
             const findings = await runSentinelForTeam(teamId, store);
             if (findings.length > 0) {
               for (const f of findings) {
-                emit({ type: 'expert_hypothesis', phase: 2, timestamp: now(), expert: 'org', message: f.description, findings: [{ moduleId: 'D3', summary: f.title, confidence: 0.85 }], confidence: 0.85 });
+                // 若 SessionLearner 有该假设的权重记录, 调整置信度
+                let confidence = 0.85;
+                if (sessionLearner) {
+                  const weight = sessionLearner.getWeight(f.title);
+                  if (weight !== 0) {
+                    confidence = Math.max(0.1, Math.min(1.0, 0.85 + weight * 0.3));
+                  }
+                }
+                emit({ type: 'expert_hypothesis', phase: 2, timestamp: now(), expert: 'org', message: f.description, findings: [{ moduleId: 'D3', summary: f.title, confidence }], confidence });
               }
             }
             sentinelContext = '\n' + formatFindingsForLLM(findings);
@@ -249,6 +275,8 @@ export class SynovaDiagnosisEngineImpl implements SynovaDiagnosisEngine {
             log.warn({ err: sentinelErr }, '哨兵调用失败 — degraded');
           }
         }
+        // 标记 SessionLearner 会话结束
+        sessionLearner?.endSession();
 
         const messages = [
           { role: 'system', content: DIAGNOSIS_SYSTEM_PROMPT },
