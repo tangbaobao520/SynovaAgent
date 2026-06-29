@@ -5177,3 +5177,7 @@ Last auto-update: 2026-06-28 14:00 UTC
 | 2026-06-29 09:40 | knowledge-asset-not-backed-up | 0 | 465 |
 | 2026-06-29 09:40 | declared-done-without-checklist-verification | 0 | 404 |
 | 2026-06-29 09:40 | claimed-completion-without-verification | ERROR | 469 |
+| 2026-06-29 11:58 | soft-mechanism-treated-as-noise | ERROR | 1464 |
+| 2026-06-29 11:58 | knowledge-asset-not-backed-up | 0 | 466 |
+| 2026-06-29 11:58 | declared-done-without-checklist-verification | 0 | 405 |
+| 2026-06-29 11:58 | claimed-completion-without-verification | ERROR | 470 |
