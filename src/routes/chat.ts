@@ -29,10 +29,10 @@ router.get('/api/status', (_req: Request, res: Response) => {
 /** GNS v2.0: 检测用户状态 — 决定显示 Phase 0 还是直接进入默认循环 */
 router.get('/api/user-state', async (_req: Request, res: Response) => {
   try {
-    const { createGraphStore } = await import('@synova/diagnosis-engine');
+    const { createSynovaGraphStore } = await import('@synova/graph-store');
     const { getDatabase } = await import('../init/engine-context');
     const db = getDatabase();
-    const store = createGraphStore('sqlite', db) as { queryNodes(type: string, filters?: Record<string,unknown>, graph?: string): Array<{id:string, props:Record<string,unknown>}> };
+    const store = createSynovaGraphStore(db) as unknown as { queryNodes(type: string, filters?: Record<string,unknown>, graph?: string): Array<{id:string, props:Record<string,unknown>}> };
     const summaries = store.queryNodes('Goal', { goalType: 'mission' }, 'default')
       .filter(n => (n.props as { name?: string })?.name?.startsWith('Phase0_Interview'));
     res.json({

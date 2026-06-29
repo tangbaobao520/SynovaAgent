@@ -619,8 +619,8 @@ function esc(t: string): string { return t.replace(/&/g,'&amp;').replace(/</g,'&
 async function createRealGraphStore(jobId: string): Promise<any> {
   try {
     const db = getDatabase();
-    const { createGraphStore } = await import('@synova/diagnosis-engine');
-    const store = createGraphStore('sqlite', db);
+    const { createSynovaGraphStore } = await import('@synova/graph-store');
+    const store = createSynovaGraphStore(db);
     log.debug({ jobId }, 'GraphStore (SQLite) 已连接');
     return store;
   } catch (err: any) {
