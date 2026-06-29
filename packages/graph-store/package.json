@@ -1,0 +1,21 @@
+{
+  "name": "@synova/graph-store",
+  "version": "1.0.0",
+  "description": "Synova graph store — L4 本体图存储",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./src/index.ts"
+    }
+  },
+  "dependencies": {
+    "@synova/logger": "*",
+    "@synova/error-types": "*"
+  },
+  "peerDependencies": {
+    "better-sqlite3": "^11.0.0"
+  }
+}

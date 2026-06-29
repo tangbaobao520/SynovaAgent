@@ -5,7 +5,7 @@
  * engine-core 的所有模块依赖这些基础设施。
  */
 import Database from 'better-sqlite3';
-import { setEngineContext } from '@synova/diagnosis-engine';
+// setEngineContext 已随 engine-core 弃用 — 引擎上下文由 initEngineContext 直接管理
 import { createLogger } from '@synova/logger';
 import { loadConfig } from '../config';
 import { SqliteStorageBackend } from '../store/storage-backend';
@@ -116,8 +116,7 @@ export function initEngineContext(): void {
     },
   };
   // pino child() 返回类型与 engine-core AppLogger 递归类型不兼容 — 运行时兼容
-  // pre-commit: 类型桥接豁免，非业务逻辑
-  setEngineContext(engineCtx as unknown as Record<string, unknown> as Parameters<typeof setEngineContext>[0]);
+  // engine-core 弃用 — 引擎上下文不再注入
 
   // 3. 设置存储后端 (Slice 2.2: SQLite 持久化替换内存模式)
   const storageBackend = new SqliteStorageBackend(db!);

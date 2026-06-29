@@ -239,8 +239,8 @@ export async function createServer(): Promise<Server> {
   let graphStore: unknown = null;
   try {
     // SynovaGraphStore — 纯 ESM，零 engine-core 依赖
-    const { createSynovaGraphStore } = await import('./l4/synova-graph-store');
-    const store = createSynovaGraphStore(db as unknown as import('./l4/synova-graph-store').SqliteDb);
+    const { createSynovaGraphStore } = await import('@synova/graph-store');
+    const store = createSynovaGraphStore(db as unknown as import('@synova/graph-store').SqliteDb);
     graphStore = store;
     getOntologyEventBus(store as unknown as import('./l4/graph-bridge').GraphStore);
     logger.info('OntologyEventBus 已初始化 (SynovaGraphStore)');
@@ -541,8 +541,8 @@ app.use(reloadRoutes);                         // POST /api/reload — 热加载
     scheduler.schedule('daily-briefing', '0 19 * * *', async () => {
       try {
         const { BriefingGenerator } = await import('./l3/briefing-generator');
-        const { createSynovaGraphStore } = await import('./l4/synova-graph-store');
-        const store = createSynovaGraphStore(db as unknown as import('./l4/synova-graph-store').SqliteDb);
+        const { createSynovaGraphStore } = await import('@synova/graph-store');
+        const store = createSynovaGraphStore(db as unknown as import('@synova/graph-store').SqliteDb);
         const gen = new BriefingGenerator(store as {
           queryNodes(type: string, filters?: Record<string, unknown>, graph?: string): Array<{ id: string; props: Record<string, unknown> }>;
           queryEdges(type?: string, from?: string, to?: string, graph?: string): Array<{ from: string; to: string; type: string; props: Record<string, unknown> }>;

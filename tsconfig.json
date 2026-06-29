@@ -24,6 +24,7 @@
       "@synova/connector-registry": ["./packages/connector-registry/src/index.ts"],
       "@synova/extension-registry": ["./packages/extension-registry/src/index.ts"],
       "@synova/knowledge-ingest": ["./packages/knowledge-ingest/src/index.ts"],
+      "@synova/graph-store": ["./packages/graph-store/src/index.ts"],
       "@synova/diagnosis-engine": ["./packages/diagnosis-engine/src/index.ts"]
     }
   },

@@ -379,8 +379,8 @@ export class SentinelRunner {
         graphCtx = this.db as Record<string, unknown>;
       } else {
         try {
-          const { createSynovaGraphStore } = await import('../l4/synova-graph-store');
-          graphCtx = createSynovaGraphStore(this.db as import('../l4/synova-graph-store').SqliteDb) as unknown as Record<string, unknown>;
+          const { createSynovaGraphStore } = await import('@synova/graph-store');
+          graphCtx = createSynovaGraphStore(this.db as import('@synova/graph-store').SqliteDb) as unknown as Record<string, unknown>;
         } catch { graphCtx = this.db as Record<string, unknown>; } // degraded
       }
       const ctx = {

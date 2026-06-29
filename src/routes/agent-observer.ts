@@ -8,7 +8,7 @@
  */
 
 import { Router, type Request, type Response } from 'express';
-import { createGraphStore } from '@synova/diagnosis-engine';
+import { createSynovaGraphStore } from '@synova/graph-store';
 import { getDatabase } from '../init/engine-context';
 import { createLogger } from '@synova/logger';
 import { collectActivity, collectActivities } from '../agent-observer/collector';
@@ -92,7 +92,7 @@ router.post('/api/agent-observer/report', (req: Request, res: Response) => {
     }
 
     // 创建 GraphStore 并收集活动
-    const store = createGraphStore('sqlite', getDatabase());
+    const store = createSynovaGraphStore(getDatabase());
 
     if (activities.length === 1) {
       const result = collectActivity(store, activities[0]);

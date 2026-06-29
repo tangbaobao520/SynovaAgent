@@ -7,13 +7,15 @@
  */
 import { Router, type Request, type Response } from 'express';
 import { createLogger } from '@synova/logger';
+import { createSynovaGraphStore } from '@synova/graph-store';
+import { getDatabase } from '../init/engine-context';
 
 const router = Router();
 const log = createLogger('routes/ontology');
 
 // V4.2.9: 从 server.ts 注入的 app.locals.graphStore 获取 — 避免 L1→L4 跨层
-function getStoreFromLocals(req: Request): ReturnType<typeof import('../l4/synova-graph-store').createSynovaGraphStore> {
-  const gs = (req.app.locals as Record<string, unknown>).graphStore as ReturnType<typeof import('../l4/synova-graph-store').createSynovaGraphStore>;
+function getStoreFromLocals(req: Request): ReturnType<typeof import('@synova/graph-store').createSynovaGraphStore> {
+  const gs = (req.app.locals as Record<string, unknown>).graphStore as ReturnType<typeof import('@synova/graph-store').createSynovaGraphStore>;
   if (!gs) throw new Error('GraphStore 不可用 — server.ts 未初始化');
   return gs;
 }
