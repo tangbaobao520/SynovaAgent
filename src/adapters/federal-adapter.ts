@@ -30,11 +30,13 @@ let _instance: FederalAdapter = noopAdapter;
 /** Initialize federal reporting with engine-core FederalReporter */
 export async function initFederalReporter(db: unknown, config?: { epsilon?: number; optOut?: boolean }): Promise<FederalAdapter> {
   try {
-    const { FederalReporter } = await import('../pipeline/federal-reporter');
-    const reporter = new FederalReporter(db, {
-      epsilon: config?.epsilon ?? 1.0,
-      optOut: config?.optOut ?? false,
-    });
+    // FederalReporter 已从 engine-core 迁移 — 使用无操作降级实现
+    const reporter = {
+      reportQuality: async (_s: unknown) => {},
+      reportTelemetry: async (_t: unknown) => {},
+      reportDiagnosisQuality: async (_s: unknown) => {},
+      getAggregatedMetrics: () => ({}),
+    };
 
     _instance = {
       async reportQuality(signal) {
