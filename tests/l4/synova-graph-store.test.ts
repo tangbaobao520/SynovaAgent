@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createSynovaGraphStore, type SynovaGraphStore } from '../../src/l4/synova-graph-store';
+import { createSynovaGraphStore, type SynovaGraphStore } from '@synova/graph-store';
 
 // 内存 SQLite — 使用 better-sqlite3
 function createTestDb() {
