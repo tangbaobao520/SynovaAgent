@@ -1,6 +1,6 @@
 import type { SentinelFinding } from "../../../src/sentinel/types";
 import { computeProcessAiReadiness } from "./computes/compute-process-ai-readiness";
-import { createLogger } from "../../../src/logger";
+import { createLogger } from "@synova/logger";
 const log = createLogger("sentinel/process-ai-readiness");
 interface GSR { queryNodes(t:string,f?:Record<string,unknown>,g?:string): Array<{id:string;type:string;props:Record<string,unknown>}> }
 export const ProcessAiReadinessSentinel = {

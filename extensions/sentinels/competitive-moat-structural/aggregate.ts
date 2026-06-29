@@ -5,7 +5,7 @@ import { computeSwitchingCost } from './computes/switching-cost-score';
 import { computeProcessPower } from './computes/process-power-score';
 import { computeCounterPositioningSlm } from './computes/counter-positioning-slm';
 import { computeCorneredResource } from './computes/cornered-resource-score';
-import { createLogger } from '../../../src/logger';
+import { createLogger } from '@synova/logger';
 const log = createLogger('sentinel/moat-structural');
 interface GraphStoreReader { queryNodes(t: string, f?: Record<string, unknown>, g?: string): Array<{ id: string; type: string; props: Record<string, unknown> }>; }
 export const competitiveMoatStructuralSentinel = {

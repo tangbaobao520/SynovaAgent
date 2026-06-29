@@ -7,7 +7,7 @@
 import type { SentinelFinding } from '../../../src/sentinel/types';
 import { computeRoicWaccSpread } from './computes/roic-wacc-spread';
 import { computeCapitalTurnover } from './computes/capital-turnover';
-import { createLogger } from '../../../src/logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/capital-efficiency');
 

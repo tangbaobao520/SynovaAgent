@@ -1,6 +1,6 @@
 import type { SentinelFinding } from "../../../src/sentinel/types";
 import { computeHumanAgentBoundary } from "./computes/compute-human-agent-boundary";
-import { createLogger } from "../../../src/logger";
+import { createLogger } from "@synova/logger";
 const log = createLogger("sentinel/human-agent-boundary");
 interface GSR { queryNodes(t:string,f?:Record<string,unknown>,g?:string): Array<{id:string;type:string;props:Record<string,unknown>}> }
 export const HumanAgentBoundarySentinel = {

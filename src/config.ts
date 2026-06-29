@@ -4,7 +4,7 @@
  * 最小必需: DEV_MODE=true 或 (LLM_API_KEY + ENGINE_API_TOKENS)
  * 所有值都有合理默认值，适合本地开发和客户部署。
  */
-import { createLogger } from './logger';
+import { createLogger } from '@synova/logger';
 import { loadFileConfig } from './config-file';
 
 const log = createLogger('config');

@@ -1,6 +1,6 @@
 import type { SentinelFinding } from "../../../src/sentinel/types";
 import { computeAgentDeploymentMaturity } from "./computes/compute-agent-deployment-maturity";
-import { createLogger } from "../../../src/logger";
+import { createLogger } from "@synova/logger";
 const log = createLogger("sentinel/agent-deployment-maturity");
 interface GSR { queryNodes(t:string,f?:Record<string,unknown>,g?:string): Array<{id:string;type:string;props:Record<string,unknown>}> }
 export const AgentDeploymentMaturitySentinel = {

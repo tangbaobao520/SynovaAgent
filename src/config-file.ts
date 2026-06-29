@@ -11,7 +11,7 @@
 
 import { readFileSync, writeFileSync, existsSync, copyFileSync, renameSync } from 'fs';
 import { join } from 'path';
-import { createLogger } from './logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('services/config-file');
 

@@ -10,7 +10,7 @@
  *   query_graph — SOG 实时数据查询
  *   search_external — 外部知识源 (M3 接入)
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import { KnowledgeStore } from '../l4/knowledge-store';
 import type { KnowledgeChunk } from '../l4/knowledge-store';
 import { getDatabase } from '../init/engine-context';

@@ -1,6 +1,6 @@
 import type { SentinelFinding } from "../../../src/sentinel/types";
 import { computeAiEcosystemFit } from "./computes/compute-ai-ecosystem-fit";
-import { createLogger } from "../../../src/logger";
+import { createLogger } from "@synova/logger";
 const log = createLogger("sentinel/ai-ecosystem-fit");
 interface GSR { queryNodes(t:string,f?:Record<string,unknown>,g?:string): Array<{id:string;type:string;props:Record<string,unknown>}> }
 export const AiEcosystemFitSentinel = {

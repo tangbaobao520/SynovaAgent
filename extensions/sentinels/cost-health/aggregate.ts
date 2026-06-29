@@ -8,7 +8,7 @@
  */
 import type { GraphStoreReader, SentinelManifest } from '../../../src/sentinel/sentinel-loader';
 import type { SentinelFinding } from '../../../src/sentinel/types';
-import { createLogger } from '../../../src/logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/cost-health');
 

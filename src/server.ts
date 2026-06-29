@@ -9,7 +9,7 @@ import cors from 'cors';
 import type { Server } from 'http';
 import { loadConfig } from './config';
 import { initEngineContext, getDatabase } from './init/engine-context';
-import { logger } from './logger';
+import { logger } from '@synova/logger';
 // C2+C3+C4: 编排层接线 (审计 P0-20260604)
 import { EventStore } from './orchestrator/event-store';
 import { EventBus } from './orchestrator/event-bus';

@@ -7,7 +7,7 @@
 import type { SentinelFinding } from '../../../src/sentinel/types';
 import { computeCustomerConcentration } from './computes/customer-concentration';
 import { computeCustomerChurnRisk } from './computes/customer-churn-risk';
-import { createLogger } from '../../../src/logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/customer-demand');
 
