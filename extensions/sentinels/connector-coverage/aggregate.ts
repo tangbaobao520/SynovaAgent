@@ -14,7 +14,7 @@ export const ConnectorCoverageSentinel = {
         isKeyProcess: n.type === 'Process' || n.props.critical === true,
       }));
       const r = computeConnectorCoverage({ processes });
-      if (r.degraded) return [{id:`t-na-${now.getTime()}`,severity:"info",title:"无连接器数据",evidence:[],suggestion:"",detectedAt:ca}];
+      if (r.degraded) return [{id:`t-na-${now.getTime()}`,severity:"info",title:"无连接器数据",description:"",evidence:[],suggestion:"",detectedAt:ca}];
       if (r.coverage < 0.3) return [{id:`t-con-${now.getTime()}`,severity:"warning",title:"连接器覆盖率偏低",description:`覆盖${(r.coverage*100).toFixed(0)}%`,evidence:[`覆盖率: ${(r.coverage*100).toFixed(0)}%`],suggestion:"增加关键业务流程的API连接器",detectedAt:ca}];
       return [];
     } catch(e: unknown) { log.error({e}); return [{id:`e-${now.getTime()}`,severity:"warning",title:"异常",description:`${(e as Error)?.message||""}`,evidence:[],suggestion:"",detectedAt:ca}]; }

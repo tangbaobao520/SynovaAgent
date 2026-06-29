@@ -127,3 +127,7 @@ boundaryHealth = 1 - churnRate×0.4 - zombieRisk×0.3 - |externalRatio-0.3|×0.3
 - model_coherence -> {score, vpRevFit, revCostFit}
 - make_or_buy -> {health, outsourcedCore}
 - transaction_cost_trend -> {trend, adminCostRatio}
+
+## 通用哨兵工具 (V4.2.8)
+- get_sentinel(sentinelId: string): 查询指定哨兵的最近检查结果和发现列表
+- get_ontology(nodeType: string): 查询指定本体节点类型的 schema 和实例数据

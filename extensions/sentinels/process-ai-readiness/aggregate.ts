@@ -16,7 +16,7 @@ export const ProcessAiReadinessSentinel = {
         totalProcesses: processes.length,
         teamSkillAvg: 3,
       });
-      if (r.degraded) return [{id:`t-na-${now.getTime()}`,severity:"info",title:"无流程数据",evidence:[],suggestion:"",detectedAt:ca}];
+      if (r.degraded) return [{description:'',id:`t-na-${now.getTime()}`,severity:"info",title:"无流程数据",evidence:[],suggestion:"",detectedAt:ca}];
       if (r.score < 0.3) return [{id:`t-pro-${now.getTime()}`,severity:"warning",title:"流程AI就绪度偏低",description:`就绪度${(r.score*100).toFixed(0)}%`,evidence:[`就绪度: ${(r.score*100).toFixed(0)}%`],suggestion:"提升数据结构和流程数字化水平",detectedAt:ca}];
       return [];
     } catch(e: unknown) { log.error({e}); return [{id:`e-${now.getTime()}`,severity:"warning",title:"异常",description:`${(e as Error)?.message||""}`,evidence:[],suggestion:"",detectedAt:ca}]; }

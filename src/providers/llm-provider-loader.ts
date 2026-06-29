@@ -1,6 +1,6 @@
 /**
  * src/providers/llm-provider-loader.ts — LLM 提供商加载器
- * V3.8 Batch 4 — 扫描 extensions/llm-providers/*/manifest.json。
+ * V3.8 Batch 4 — 扫描 extensions/llm-providers/* /manifest.json。
  * ProviderType union 保留为 fallback，不删。
  */
 import { readdirSync, readFileSync, existsSync } from 'fs';

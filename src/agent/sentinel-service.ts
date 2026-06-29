@@ -61,6 +61,6 @@ export function getSentinelFindings(query: FindingsQuery = {}): FindingsResponse
   }
 
   // V4.2.2: collaboration-collector 桥接已删除（铁律46）— 降级跳过
-    return { ok: false, total: 0, tickets: [] };
-  }
+  // 保留空函数体，返回空结果
+  return { ok: false, total: 0, findings: [] };
 }

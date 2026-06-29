@@ -100,8 +100,7 @@ export async function registerMCPTools(registry: ToolRegistry): Promise<void> {
     executionMode: 'local',
     handler: async (params) => {
       // Dynamically import L4 graph query to avoid circular deps
-      const { findDiagnosticPaths, summarizeSubgraph, findCrossDimensionalBrokers } =
-    // V4.2.3: diagnosis-graph-query.ts 已删除 — 降级跳过
+      // V4.2.3: diagnosis-graph-query.ts 已删除 — 降级跳过，函数在 switch 内直接 import
       const { createGraphStore } = await import('@synova/diagnosis-engine');
       const { getDatabase } = await import('../init/engine-context');
 
@@ -111,6 +110,7 @@ export async function registerMCPTools(registry: ToolRegistry): Promise<void> {
 
       switch (params.operation) {
         case 'findPath': {
+          const { findDiagnosticPaths } = await import('@synova/diagnosis-engine');
           const paths = findDiagnosticPaths(
             store,
             graph,
@@ -120,6 +120,7 @@ export async function registerMCPTools(registry: ToolRegistry): Promise<void> {
           return { paths };
         }
         case 'summarize': {
+          const { summarizeSubgraph } = await import('@synova/diagnosis-engine');
           const summary = summarizeSubgraph(
             store,
             graph,
@@ -129,6 +130,7 @@ export async function registerMCPTools(registry: ToolRegistry): Promise<void> {
           return { summary };
         }
         case 'brokers': {
+          const { findCrossDimensionalBrokers } = await import('@synova/diagnosis-engine');
           const brokers = findCrossDimensionalBrokers(
             store,
             graph,

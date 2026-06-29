@@ -53,3 +53,7 @@ EXY = (ΔQX / Q₀X) / (ΔPY / P₀Y)
 ### 现状偏误
 - 人们倾向于维持现状，即使改变是理性的
 - 诊断应用：组织变革建议被拒绝时，区分"理性反对"和"现状偏误"
+
+## 通用哨兵工具 (V4.2.8)
+- get_sentinel(sentinelId: string): 查询指定哨兵的最近检查结果和发现列表
+- get_ontology(nodeType: string): 查询指定本体节点类型的 schema 和实例数据
