@@ -5,7 +5,7 @@
  */
 import { readdirSync, readFileSync, existsSync } from 'fs';
 import { join } from 'path';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('l4/adapter-loader');
 

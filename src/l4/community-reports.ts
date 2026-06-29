@@ -7,7 +7,7 @@
  * 简化 Leiden 社区检测 + 结构化报告生成。
  */
 import { SOGNodeType } from '@synova/sog-core';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('l4/community-reports');
 

@@ -9,7 +9,7 @@
  *   2. 扫描长文档 → 自动分块
  *   3. 检测过期 FAQ → 标记待验证 (未来)
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import { createKnowledgeAgent } from './knowledge-agent';
 
 const log = createLogger('l3/gear6-scheduler');

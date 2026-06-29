@@ -8,7 +8,7 @@
  */
 import { readFileSync, readdirSync, existsSync } from 'fs';
 import { join } from 'path';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('l3/framework-loader');
 

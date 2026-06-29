@@ -5,7 +5,7 @@
  * 校验失败 → 拒绝写入 + 日志告警 + 返回错误（degraded，不崩）。
  * 和 expert output_schema 用同一套类型守卫模式。
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('l4/sog-schema-validator');
 

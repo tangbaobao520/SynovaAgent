@@ -4,7 +4,7 @@
  */
 import { readdirSync, readFileSync, existsSync } from 'fs';
 import { join } from 'path';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('l3/business-model-loader');
 const BM_DIR = join(process.cwd(), 'extensions', 'business-models');

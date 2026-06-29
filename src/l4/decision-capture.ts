@@ -5,7 +5,7 @@
  * 这是 Palantir 对标: Action as First-Class Citizen。
  */
 import { SOGNodeType } from '@synova/sog-core';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('l4/decision-capture');
 

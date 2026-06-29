@@ -10,7 +10,7 @@
  * Iron law #24: catch + log + degraded.
  * Iron law #38: zero unsafe type casts.
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import type { SentinelFinding } from '../sentinel/types';
 
 const log = createLogger('l3/key-person-risk');

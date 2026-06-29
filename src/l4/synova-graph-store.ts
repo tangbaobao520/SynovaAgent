@@ -11,7 +11,7 @@
  * Iron law #31: 降级信号传播。
  * Iron law #38: zero unsafe type casts.
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('l4/synova-graph-store');
 

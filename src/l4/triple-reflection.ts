@@ -4,7 +4,7 @@
  * 诊断完成后，LLM 反思三元组质量，生成"修正/补充/删除"建议。
  */
 import type { LLMClient } from '../orchestrator/diagnosis-orchestrator';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('l4/triple-reflection');
 

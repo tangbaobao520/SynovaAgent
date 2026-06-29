@@ -13,7 +13,7 @@
  */
 import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
 import { pinyin } from 'pinyin-pro';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('l4/entity-resolver');
 

@@ -21,7 +21,7 @@ import type { QueryAPI } from './expert-autonomy';
 import { QualityFirewall } from './quality-firewall';
 import { validateExpertOutput } from './expert-output-schema';
 import { getExpertRegistry } from './expert-registry';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import { getSkillLoader } from '../agent/skill-lazy-loader';
 
 const log = createLogger('l3/expert-dispatcher');
