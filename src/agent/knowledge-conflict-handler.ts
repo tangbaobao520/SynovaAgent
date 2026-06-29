@@ -7,7 +7,7 @@
  * 铁律 39: L2 编排层——通过 KnowledgeStore(L4) 操作数据。
  */
 import Database from 'better-sqlite3';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('agent/knowledge-conflict-handler');
 

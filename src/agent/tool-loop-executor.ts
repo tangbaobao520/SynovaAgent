@@ -9,7 +9,7 @@
  */
 import type { LLMMessage } from '../providers/types';
 import type { EngineContext } from './engine-context';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import { ToolGuardrails } from './tools';
 import * as crypto from 'crypto';
 

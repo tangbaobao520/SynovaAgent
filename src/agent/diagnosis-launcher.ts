@@ -6,7 +6,7 @@
  */
 import type { EngineContext } from './engine-context';
 import type { DiagnosisEngine, DiagnosisEvent, ConsultationResult } from '../l2-interfaces/diagnosis-engine';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 // L4 访问: 运行时动态 import — 避免静态跨层依赖 (铁律 39, 审计 P0-20260618)
 import { runSafetyGate } from '../security/safety-guardrails';
 import { getFaultRecovery } from '../services/fault-recovery';

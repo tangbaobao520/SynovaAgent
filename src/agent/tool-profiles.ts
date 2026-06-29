@@ -7,7 +7,7 @@
  * 铁律 39: L2 编排层 — 控制工具执行权限。
  */
 
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('agent/tool-profiles');
 

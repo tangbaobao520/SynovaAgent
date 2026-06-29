@@ -12,7 +12,7 @@ import type { SentinelFinding, SentinelCheckResult } from '../sentinel/types';
 import type { AggregatedSignal } from '../sentinel/signal-aggregator';
 import { getGlobalSentinelRunner } from '../sentinel/runner';
 import { aggregateSignals } from '../sentinel/signal-aggregator';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('agent/sentinel-service');
 

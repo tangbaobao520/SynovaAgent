@@ -3,7 +3,7 @@
  *
  * 子工作区创建 / 上下文继承 / 冲突检测
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('agent/workspace-service');
 

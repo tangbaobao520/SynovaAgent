@@ -12,7 +12,7 @@
  */
 import type { LLMProvider, LLMMessage } from '../providers/types';
 import { ToolRegistry } from './tools';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import type { ViewAdapter } from '../l1-interaction/types';
 import type { IntentRouter } from '../orchestrator/intent-router';
 import type { DimensionRegistry } from '../orchestrator/dimension-registry';
