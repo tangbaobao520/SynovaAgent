@@ -49,3 +49,6 @@ export {
   getFeedbackByAction,
   getFeedbackByOrg,
 } from './feedback-collector';
+
+// org-adapter 导出
+export { OrgAdapter } from './org-adapter';
