@@ -37,6 +37,7 @@ import { DiagnosisLauncher, type DiagnosisEvent, type ConsultationResult } from 
 import { OntologySyncer, type OntologySyncResult } from './ontology-syncer';
 import type { EngineContext } from './engine-context';
 import { EngineCoreVendorAdapter } from '../adapters/engine-core-adapter';
+import { getGlobalSentinelRunner } from '../sentinel/runner';
 import { ContextCompressor } from '../orchestrator/context-compressor';
 
 const log = createLogger('agent/conversation-engine');
@@ -218,8 +219,20 @@ const DIMENSION_NAMES = [
   'market_positioning', 'digital_foundation',
 ];
 
-function buildVolatileLayer(turnCount: number, phase: number): string {
-  return `[轮次: ${turnCount}] [阶段: ${phase}/5]`;
+function buildVolatileLayer(turnCount: number, phase: number, teamId?: string): string {
+  let sentinelInfo = '';
+  if (teamId && turnCount === 1) {
+    try {
+      const runner = getGlobalSentinelRunner();
+      if (runner) {
+        const stats = runner.getStats();
+        if (stats.totalFindings > 0) {
+          sentinelInfo = `\n[哨兵监测]: ${stats.totalFindings} 条发现 (critical: ${stats.criticalFindings}, warning: ${stats.warningFindings})`;
+        }
+      }
+    } catch { /* degraded — 哨兵数据不可用 */ }
+  }
+  return `[轮次: ${turnCount}] [阶段: ${phase}/5]${sentinelInfo}`;
 }
 
 function buildSystemPrompt(
