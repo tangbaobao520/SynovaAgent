@@ -10376,3 +10376,8 @@ Last auto-update: 2026-06-28 14:00 UTC
 | 2026-06-29 15:09 | soft-mechanism-treated-as-noise | ERROR | 1477 |
 | 2026-06-29 15:09 | knowledge-asset-not-backed-up | 0 | 479 |
 | 2026-06-29 15:09 | declared-done-without-checklist-verification | 0 | 418 |
+| 2026-06-29 15:09 | claimed-completion-without-verification | ERROR | 483 |
+| 2026-06-29 15:13 | soft-mechanism-treated-as-noise | ERROR | 1478 |
+| 2026-06-29 15:13 | knowledge-asset-not-backed-up | 0 | 480 |
+| 2026-06-29 15:13 | declared-done-without-checklist-verification | 0 | 419 |
+| 2026-06-29 15:13 | claimed-completion-without-verification | ERROR | 484 |
