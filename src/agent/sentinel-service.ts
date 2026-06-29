@@ -157,12 +157,17 @@ export function getAggregatedSignals(): SignalsResponse {
   }
 }
 
-/** 手动触发单个哨兵运行 */
+/** 手动触发单个哨兵运行 (ID 兼容: 同时接受 'sentinel-xxx' 和 'xxx' 格式) */
 export async function runSentinelOnce(sentinelId: string): Promise<RunOnceResponse> {
   try {
     const { getSentinelRegistry } = await import('../sentinel/registry');
     const registry = getSentinelRegistry();
-    const sentinel = registry.get(sentinelId);
+    // 先尝试原始 ID, 再尝试带 sentinel- 前缀的完整 ID
+    let sentinel = registry.get(sentinelId);
+    if (!sentinel && !sentinelId.startsWith('sentinel-')) {
+      sentinel = registry.get(`sentinel-${sentinelId}`);
+      if (sentinel) sentinelId = `sentinel-${sentinelId}`;
+    }
     if (!sentinel) return { ok: false, sentinelId, result: null, error: `哨兵不存在: ${sentinelId}` };
 
     const context = { db: undefined, now: new Date(), registry };
