@@ -2,7 +2,7 @@
  * narrative-generator.ts — 叙事生成器 (PRD §9.3, v3.5)
  * 将哨兵信号翻译为人类可理解的判断文本
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('pipeline/narrative-generator');
 

@@ -5,7 +5,7 @@
  * 所有 Python 连接器通过此桥梁调用。
  */
 import { spawn } from 'child_process';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import * as crypto from 'crypto';
 
 const log = createLogger('providers/python-bridge');

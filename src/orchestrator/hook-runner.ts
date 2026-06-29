@@ -8,7 +8,7 @@
  *
  * 内置 Hooks: PermissionHook, AuditHook, EvidenceHook, OntologyHook
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('orchestrator/hook-runner');
 

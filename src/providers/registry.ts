@@ -7,7 +7,7 @@
  */
 import type { LLMProvider, LLMMessage, ChatOptions, ChatResult, StreamCallback, HealthCheckResult } from './types';
 import { createProvider, type ProviderType } from './index';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('providers/registry');
 

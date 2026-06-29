@@ -11,7 +11,7 @@
  *
  * 铁律 31: 降级信号传播 — 任何环节失败返回 degraded
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import type { PIIScrubber } from '../security/pii-scrubber';
 
 // L1 本地类型镜像 — 避免静态跨层依赖 (铁律 39, 审计 2026-06-18)

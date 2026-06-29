@@ -9,7 +9,7 @@
 import type { Sentinel, SentinelCheckResult, SentinelConfig, SentinelContext, SentinelFinding } from '../types';
   // V4.2.4: financial-snapshot 桥接已删除
 import { discoverTeams } from './helpers';
-import { createLogger } from '../../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/cashflow');
 

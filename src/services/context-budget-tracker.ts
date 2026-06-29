@@ -7,7 +7,7 @@
  * 铁律 39: L5 存储层 — 数据持久化 + 统计计算。
  */
 
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('services/context-budget');
 

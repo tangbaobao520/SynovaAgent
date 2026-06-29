@@ -3,7 +3,7 @@
  * POST /api/actions → 创建 | GET /api/actions → 列表 | PUT /api/actions/:id/status → 状态流转
  */
 import { Router, type Request, type Response } from 'express';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('routes/actions-api');
 const router = Router();

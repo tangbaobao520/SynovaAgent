@@ -6,7 +6,7 @@
  * P1 Loop Engineering 修复: endSession() 不再丢弃调整，改为写入 SQLite。
  * 下次会话通过 AgentMemoryStore.recallEntity() 加载历史学习。
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import type { AgentMemoryStore } from '../l4/agent-memory-store';
 
 const log = createLogger('evolution/l1');

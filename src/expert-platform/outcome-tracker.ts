@@ -4,7 +4,7 @@
  * 跟踪诊断建议执行后的实际效果 (30/60/90天),
  * 更新模板 confirmationRate。
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import type { ExpertTemplate } from './types';
 import { TemplateValidator } from './validator';
 

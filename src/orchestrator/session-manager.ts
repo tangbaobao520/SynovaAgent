@@ -9,7 +9,7 @@
  *
  * 参考: Claw-Code compact.rs (boundary protection, LLM summarization)
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('orchestrator/session-manager');
 

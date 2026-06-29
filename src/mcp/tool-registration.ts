@@ -10,7 +10,7 @@
 import type { ToolRegistry, ToolParameter } from '../agent/tools';
     // V4.2.3: diagnosis-graph-query.ts 已删除 — 降级跳过
 import { getMCPBridge, type MCPToolDef } from './bridge';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('mcp/tool-registration');
 

@@ -5,7 +5,7 @@
  * 保留发布/消费/DLQ/健康检查架构，不引入外部依赖。
  * engine-core 的 NatsOntologyPublisher/Consumer 接口在此得到完整实现。
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import type { GraphStore } from '../l4/graph-bridge';
 
 const log = createLogger('l5/event-bus');

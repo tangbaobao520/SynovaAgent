@@ -4,7 +4,7 @@
  * 铁律 39: 封装 vendor engine-core 的 FederalReporter。
  * FED-001: 接线联邦进化系统 — 诊断完成后上报质量信号。
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('adapters/federal');
 

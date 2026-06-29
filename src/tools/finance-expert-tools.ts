@@ -1,7 +1,7 @@
 /** tools/finance-expert-tools.ts — 财务专家工具链 (数据源: 文档提取 + 连接器) */
 import type { ToolDefinition } from '../agent/tools';
 import { SOGNodeType } from '@synova/sog-core';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 const log = createLogger('tools/finance-expert');
 
 interface GraphData { nodes?: Array<{ type: string; props?: Record<string, unknown> }>; }

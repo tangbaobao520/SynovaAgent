@@ -7,7 +7,7 @@
  *
  * v3.6 Batch 1 — 通知渠道文件化
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import type { NotificationAdapter, Notification, NotificationResult } from './types';
 
 const log = createLogger('notifications/registry');

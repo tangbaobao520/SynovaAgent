@@ -5,7 +5,7 @@
  * 将飞书通讯录+消息数据写入 SOG 本体图。
  */
 import { getPythonBridge } from '../providers/python-bridge';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import type { GraphStore } from '../l4/graph-bridge';
 
 const log = createLogger('connectors/feishu-bridge');

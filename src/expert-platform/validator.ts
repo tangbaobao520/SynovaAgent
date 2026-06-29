@@ -6,7 +6,7 @@
  *
  * 区分原理层 (why, timeless) 和方案层 (how, context)。
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import type { ExpertTemplate, TemplateStatus, TemplateValidation, TemplateEvolutionEvent } from './types';
 
 const log = createLogger('expert-platform/validator');

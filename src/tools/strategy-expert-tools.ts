@@ -1,7 +1,7 @@
 /** tools/strategy-expert-tools.ts — 战略专家工具链 (数据源: 文档提取 + 连接器) */
 import type { ToolDefinition } from '../agent/tools';
 import { SOGNodeType } from '@synova/sog-core';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 const log = createLogger('tools/strategy-expert');
 
 interface GraphData { nodes?: Array<{ type: string; props?: Record<string, unknown> }>; }

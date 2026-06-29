@@ -7,7 +7,7 @@
  * Iron law #31: 所有操作返回 {value, degraded} 标记。
  */
 import Database from 'better-sqlite3';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('store/storage-backend');
 

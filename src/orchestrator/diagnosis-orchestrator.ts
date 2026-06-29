@@ -14,7 +14,7 @@
 import { PhaseStateMachine } from './phase-state-machine';
 import type { PhaseConfig } from './phase-state-machine';
 import type { EventBus } from './event-bus';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('orchestrator');
 

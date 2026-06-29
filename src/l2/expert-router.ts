@@ -10,7 +10,7 @@
  *   - orchestrator/subagent-coordinator.ts (接收 ExpertSelection)
  */
 
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import { DEFAULT_DOMAIN_KEYWORDS, DOMAIN_EXPERT_MAP } from './domain-keywords';
 
 const log = createLogger('l2/expert-router');

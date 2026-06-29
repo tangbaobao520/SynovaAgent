@@ -15,7 +15,7 @@ import type { Sentinel, SentinelCheckResult } from './types';
 import type { Evidence } from '../evidence/types';
 import { getSentinelRegistry } from './registry';
 import { getBaselineStore } from './baseline-store';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/runner');
 
@@ -373,9 +373,18 @@ export class SentinelRunner {
   private async executeSentinel(sentinel: Sentinel): Promise<SentinelCheckResult> {
     const startTime = Date.now();
     try {
-      // 构造上下文 — 哨兵通过 context.db 访问数据库
+      // V4.2.8: 构造上下文 — 包装 raw SQLite 为 GraphStore 供哨兵 queryNodes()
+      let graphCtx: typeof import('../l4/synova-graph-store').SqliteDb;
+      if (typeof this.db === 'object' && this.db !== null && 'queryNodes' in this.db) {
+        graphCtx = this.db as typeof graphCtx;
+      } else {
+        try {
+          const { createSynovaGraphStore } = await import('../l4/synova-graph-store');
+          graphCtx = createSynovaGraphStore(this.db as typeof graphCtx);
+        } catch { graphCtx = this.db as typeof graphCtx; } // degraded
+      }
       const ctx = {
-        db: this.db,
+        db: graphCtx,
         now: new Date(),
         registry: getSentinelRegistry(),
       };

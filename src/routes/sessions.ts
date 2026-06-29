@@ -9,7 +9,7 @@
  */
 import { Router, type Request, type Response } from 'express';
 import { SessionStore } from '../store/session-store';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import { getDatabase } from '../init/engine-context';
 
 const router = Router();

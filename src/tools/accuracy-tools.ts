@@ -5,7 +5,7 @@
  * cross_validate / trace_lineage / match_pattern / verify_closure / request_human
  */
 import type { ToolDefinition } from '../agent/tools';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('tools/accuracy');
 

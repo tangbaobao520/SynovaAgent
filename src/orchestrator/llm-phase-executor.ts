@@ -9,7 +9,7 @@
 import type { LLMClient, ToolExecutor } from './diagnosis-orchestrator';
 import { HookRunner } from './hook-runner';
 import type { LLMMessage } from '../providers/types';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('orchestrator/llm-phase-executor');
 

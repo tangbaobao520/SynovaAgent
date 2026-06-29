@@ -8,7 +8,7 @@
 import { Router, type Request, type Response } from 'express';
 import { KnowledgeStore } from '../agent/knowledge-bridge-service';
 import { getDatabase } from '../init/engine-context';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('routes/documents');
 const router = Router();

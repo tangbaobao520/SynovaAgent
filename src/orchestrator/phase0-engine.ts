@@ -12,7 +12,7 @@
  */
 import { IntentRouter, type IntentResult } from './intent-router';
 import { DimensionRegistry, type DiagnosticDimension, type DimensionCoverage } from './dimension-registry';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('orchestrator/phase0');
 

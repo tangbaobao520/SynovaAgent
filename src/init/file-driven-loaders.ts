@@ -6,7 +6,7 @@
  *
  * v3.6 Batch 1 — 基础设施接线
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('init/file-driven-loaders');
 

@@ -5,7 +5,7 @@
  */
 import Database from 'better-sqlite3';
 import type { Evidence, EvidenceFilter } from './types';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('evidence/store');
 

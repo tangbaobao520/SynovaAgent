@@ -10,7 +10,7 @@
 import { Router, type Request, type Response } from 'express';
 import { createGraphStore } from '@synova/diagnosis-engine';
 import { getDatabase } from '../init/engine-context';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import { collectActivity, collectActivities } from '../agent-observer/collector';
 import type { AgentActivity, BatchReportResponse, ReportResponse } from '../agent-observer/types';
 

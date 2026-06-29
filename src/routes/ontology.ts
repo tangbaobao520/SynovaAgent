@@ -8,7 +8,7 @@
 import { Router, type Request, type Response } from 'express';
 import { createGraphStore, ingestDocument } from '@synova/diagnosis-engine';
 import { getDatabase } from '../init/engine-context';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import { summarizeSubgraph, findCrossDimensionalBrokers, getGraphDiff } from '../agent/knowledge-bridge-service';
 
 const router = Router();

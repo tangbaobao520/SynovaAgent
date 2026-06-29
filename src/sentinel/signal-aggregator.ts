@@ -15,7 +15,7 @@
  */
 
 import type { SentinelFinding, SentinelCheckResult } from './types';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/signal-aggregator');
 

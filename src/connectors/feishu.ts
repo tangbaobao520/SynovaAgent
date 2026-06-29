@@ -6,7 +6,7 @@
  */
 import type { DataConnector, ConnectorMessage, ConnectorMember, ConnectorEvent, OntologyMapping } from './types';
 import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import { feishuHealthCheck } from './feishu-bridge';
 import type { FeishuMember } from './feishu-bridge';
 

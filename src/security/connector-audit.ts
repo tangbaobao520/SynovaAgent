@@ -5,7 +5,7 @@
  * SQLite 持久化, 不可篡改 (append-only).
  */
 import Database from 'better-sqlite3';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('security/connector-audit');
 

@@ -11,7 +11,7 @@
  */
 import { getConnectorRegistry } from '../connectors/registry';
 import type { ToolRegistry } from '../agent/tools';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('init/connector-binding');
 

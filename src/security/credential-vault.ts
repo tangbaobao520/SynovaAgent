@@ -5,7 +5,7 @@
  */
 import * as crypto from 'crypto';
 import Database from 'better-sqlite3';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('security/credential-vault');
 

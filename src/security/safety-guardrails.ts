@@ -12,7 +12,7 @@
  * R16: 单决策者 + 多人否决权 → critical
  */
 import type { DiagnosisEvent } from '../l2-interfaces/diagnosis-engine';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('security/safety-guardrails');
 

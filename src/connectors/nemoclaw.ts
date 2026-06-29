@@ -1,7 +1,7 @@
 /** connectors/nemoclaw.ts — NemoClaw MCP 连接器 (Batch 3 #8) · 国际轨 */
 import type { DataConnector, ConnectorMessage, ConnectorMember, ConnectorEvent, OntologyMapping } from './types';
 import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('connectors/nemoclaw');
 

@@ -7,7 +7,7 @@
  * 每日 9:00 巡检。数据源: SOG 图节点属性。
  */
 import type { Sentinel, SentinelCheckResult, SentinelConfig, SentinelContext, SentinelFinding } from '../types';
-import { createLogger } from '../../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/integration-health');
 

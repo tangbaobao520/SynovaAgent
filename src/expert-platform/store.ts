@@ -4,7 +4,7 @@
  * 替换 routes/expert.ts 的内存 Map。进程重启后数据不丢失。
  */
 import Database from 'better-sqlite3';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('expert-platform/store');
 

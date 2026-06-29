@@ -7,7 +7,7 @@
  * 铁律 31: 降级模式 — 消息处理失败仍返回 200 (避免 IM 平台重试风暴)
  */
 import { Router, type Request, type Response } from 'express';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import { handleInboundMessage } from '../l1/im-inbound';
 import { runWithContext } from '../services/request-context';
 

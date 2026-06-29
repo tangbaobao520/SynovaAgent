@@ -11,7 +11,7 @@ import { Router, type Request, type Response } from 'express';
 import { KnowledgeStore } from '../agent/knowledge-bridge-service';
 import { getDatabase } from '../init/engine-context';
 import { getCurrentFilterClause } from '../services/request-context';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import type { KnowledgeChunk, FilterClause } from '../agent/knowledge-bridge-service';
 
 const log = createLogger('routes/knowledge');
