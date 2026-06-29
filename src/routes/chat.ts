@@ -47,7 +47,7 @@ router.get('/api/user-state', async (_req: Request, res: Response) => {
 });
 
 /** GNS v2.0: 提议确认/拒绝/看法 */
-router.post('/api/proposal/:id/resolve', (req: Request, res: Response) => {
+router.post('/api/proposal/:id/resolve', async (req: Request, res: Response) => {
   const { id } = req.params as { id: string };
   const { action, feedback } = req.body as { action?: string; feedback?: string };
   if (!action || !['confirm', 'reject', 'opinion'].includes(action)) {
@@ -59,14 +59,16 @@ router.post('/api/proposal/:id/resolve', (req: Request, res: Response) => {
     return res.status(404).json(result);
   }
   // V4.2.1: 反馈收集 — collectFeedback 持久化用户决策
+  // Phase P0-1: 迁移到 @synova/evolution, 增加 orgId
   try {
-    const { collectFeedback } = require('../evolution/feedback-collector');
+    const { collectFeedback } = await import('@synova/evolution');
     collectFeedback({
+      orgId: (req.body as Record<string, unknown>)?.orgId as string || 'default',
       actionId: id,
       decision: action === 'confirm' ? 'confirm' : action === 'reject' ? 'reject' : 'modify',
       reason: feedback || undefined,
     }).catch(() => {});
-  } catch { /* feedback collector unavailable — degraded */ }
+  } catch { log.debug('feedback collector unavailable — degraded'); }
   res.json({ ok: true, proposal: result.proposal });
 });
 

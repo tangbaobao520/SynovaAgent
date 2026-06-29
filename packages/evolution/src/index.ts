@@ -37,3 +37,15 @@ export type {
 } from './evolution-types';
 
 export { DEFAULT_EVOLUTION_CONFIG } from './evolution-types';
+
+// feedback-collector 类型 + 函数导出
+export type {
+  FeedbackInput,
+  FeedbackRecord,
+} from './feedback-collector';
+
+export {
+  collectFeedback,
+  getFeedbackByAction,
+  getFeedbackByOrg,
+} from './feedback-collector';
