@@ -7,7 +7,7 @@
  * 接线: diagnosis.ts POST /api/diagnosis/consult 诊断完成后调用此服务。
  */
 // @state: real
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('agent/post-diagnosis-processor');
 

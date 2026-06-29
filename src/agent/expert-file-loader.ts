@@ -7,7 +7,7 @@
  * 铁律 24+31: 每个文件/专家加载失败独立降级, 不阻断其他专家。
  * 铁律 32: 错误带 .code + .phase + .retryable
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import type { FileIndex, ExpertFiles, ScannedFile } from './file-scanner';
 import { getExpertRegistry } from '../l3/expert-registry';
 

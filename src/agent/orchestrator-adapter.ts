@@ -9,7 +9,7 @@
  */
 import type { LLMProvider } from '../providers/types';
 import { ToolRegistry } from './tools';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import { getBudgetTracker } from '../services/context-budget-tracker';
 
 const log = createLogger('agent/orchestrator-adapter');

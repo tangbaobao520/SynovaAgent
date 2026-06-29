@@ -8,7 +8,7 @@
  * 铁律 39: L2 编排层 — 管理技能生命周期，不直接操作 L4/L5。
  */
 
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 

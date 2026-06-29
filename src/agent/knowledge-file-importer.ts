@@ -7,7 +7,7 @@
  * 铁律 24+31: 每个文件导入失败独立降级, 不阻断其他文件。
  * 铁律 32: 错误带 .code + .phase + .retryable
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import type { FileIndex, KnowledgeFile, ScannedFile } from './file-scanner';
 
 // ═══ L4 接口镜像 (铁律 39) ═══

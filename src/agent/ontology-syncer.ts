@@ -7,7 +7,7 @@
  * Iron law #31: engine-core 不可用时静默降级——返回空结果，不阻断对话。
  */
 import type { EngineContext } from './engine-context';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('agent/ontology-syncer');
 

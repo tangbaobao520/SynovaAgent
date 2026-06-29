@@ -6,7 +6,7 @@
  *
  * 流程: LLM → tool call → ToolRegistry.execute() → result → LLM → 最终回复
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import { getProfileForRole } from './tool-profiles';
 
 const log = createLogger('agent/tools');

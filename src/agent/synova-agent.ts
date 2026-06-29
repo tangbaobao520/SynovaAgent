@@ -17,7 +17,7 @@ import { createServer } from '../server';
 import { CronScheduler, getGlobalScheduler, destroyGlobalScheduler } from '../cron/scheduler';
 import { SentinelRunner, setGlobalSentinelRunner } from '../sentinel';
 import { loadConfig } from '../config';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('agent/synova-agent');
 

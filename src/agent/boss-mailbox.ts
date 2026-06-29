@@ -4,7 +4,7 @@
  * 每周一 9:00 Cron 触发 → 从信号+方案进展生成周报 → 通过飞书/SMTP发送
  * Phase 1: 生成周报文本 (Phase 2: 飞书/SMTP 集成)
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('agent/boss-mailbox');
 
