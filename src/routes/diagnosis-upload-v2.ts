@@ -540,7 +540,7 @@ async function syncDiagnosisToGraph(
     let communityCount = 0;
     try {
       // V4.2.3: detectCommunities 桥接已删除 — 降级跳过
-      const communities: Array<{ id: string; name: string; size: number }> = [];
+      const communities: Array<{ id: string; name: string; size: number; members: string[]; modularity: number }> = [];
       for (const c of communities) {
         const commId = graphStore.createNode(
           'Community',
