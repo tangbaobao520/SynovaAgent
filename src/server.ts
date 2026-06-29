@@ -53,6 +53,7 @@ import permissionRoutes from './routes/permissions';
 import diagnosisUploadRoutes from './routes/diagnosis-upload-v2';
 import sentinelHealthRoutes from './routes/sentinel-health';
 import sentinelRoutes from './routes/sentinel';
+import dataRoutes from './routes/data'; // V4.2.8 — 数据上传 API
 import reloadRoutes from './routes/reload';
 import type { ServiceContainer } from './services/container';
 
@@ -425,6 +426,7 @@ export async function createServer(): Promise<Server> {
   app.use(rbacMiddleware);        // RBAC 权限注入 (PRD v1.6 Slice 7)
   app.use(deptWorkspaceRoutes);   // GET /dept → 部门工作台 (PRD v1.6 Slice 7)
   app.use(actionsApiRoutes);      // /api/actions → 行动项 CRUD (PRD §7, v3.5)
+  app.use(dataRoutes);           // POST /api/data/upload — 数据上传入口 (V4.2.8)
   app.use(healthRoutes);
   app.use(ontologyRoutes);
   app.use(diagnosisRoutes);
