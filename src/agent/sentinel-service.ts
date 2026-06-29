@@ -102,7 +102,7 @@ export function getSentinelFindings(query: FindingsQuery = {}): FindingsResponse
 
     // 排序: critical 优先, 按 detectedAt
     all.sort((a, b) => {
-      const sev = { critical: 0, warning: 1, info: 2 };
+      const sev: Record<string, number> = { emergency: 0, critical: 0, warning: 1, info: 2 };
       const sa = sev[a.finding.severity] ?? 3;
       const sb = sev[b.finding.severity] ?? 3;
       if (sa !== sb) return sa - sb;
@@ -135,13 +135,21 @@ export function getAggregatedSignals(): SignalsResponse {
     }
     if (allFindings.length === 0) return { ok: true, total: 0, criticalCount: 0, warningCount: 0, signals: [] };
 
-    const aggregated = aggregateSignals(allFindings);
+    // 包装为 SentinelCheckResult 供 aggregateSignals 消费
+    const checkResults: import('../sentinel/types').SentinelCheckResult[] = [{
+      sentinelId: 'sentinel-service',
+      ok: true,
+      findings: allFindings,
+      durationMs: 0,
+      checkedAt: new Date().toISOString(),
+    }];
+    const aggregated = aggregateSignals(checkResults);
     return {
       ok: true,
-      total: aggregated.aggregatedSignals.length,
-      criticalCount: aggregated.criticalSignals,
-      warningCount: aggregated.warningSignals,
-      signals: aggregated.aggregatedSignals,
+      total: aggregated.signals.length,
+      criticalCount: aggregated.stats.criticalSignals,
+      warningCount: aggregated.signals.filter(s => s.severity === 'warning').length,
+      signals: aggregated.signals,
     };
   } catch (err: unknown) {
     log.warn({ err }, 'getAggregatedSignals 失败 — degraded');

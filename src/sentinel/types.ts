@@ -35,6 +35,7 @@ export type SentinelCategory =
   | 'collaboration'  // 人+Agent 协作信号 (D3: 信任、协作深度、自知偏差)
   | 'capability'     // 组织能力信号 (D2: 缝隙、协议完备性、路径依赖)
   | 'strategy'       // 战略健康信号 (D6: 竞争壁垒)
+  | 'growth'         // 增长诊断 (46哨兵增长动力学)
   | 'custom';        // 用户自定义
 
 /** 哨兵优先级 */
@@ -199,7 +200,6 @@ import type { structuralChangeSentinel as _structChangeCheck } from "../../exten
 import type { computeStructuralChangeSignal as _structSigCheck } from "../../extensions/sentinels/structural-change/computes/structural-change-signal";
 
 import type { financingConstraintSentinel as _finConCheck } from "../../extensions/sentinels/financing-constraint/aggregate";
-import type { financingConstraintSentinel as _finConCheck } from "../../extensions/sentinels/financing-constraint/aggregate";
 import type { capitalStructureSentinel as _capStructCheck } from "../../extensions/sentinels/capital-structure/aggregate";
 import type { computeDebtEquityRatio as _deCheck } from "../../extensions/sentinels/capital-structure/computes/debt-equity-ratio";
 import type { computeInterestCoverage as _icCheck } from "../../extensions/sentinels/capital-structure/computes/interest-coverage";
@@ -221,29 +221,23 @@ import type { valueCaptureSentinel as _vcCheck } from "../../extensions/sentinel
 import type { moatDependencySentinel as _mdCheck } from "../../extensions/sentinels/moat-dependency/aggregate";
 import type { timePenetrationSentinel as _tpCheck } from "../../extensions/sentinels/time-penetration/aggregate";
 import type { makeOrBuySentinel as _mobCheck } from "../../extensions/sentinels/make-or-buy/aggregate";
-import type { ConnectorcoverageSentinel as _connectorcoverageCheck } from "../../extensions/sentinels/connector-coverage/aggregate";
-import type { ProcessaireadinessSentinel as _processaireadinessCheck } from "../../extensions/sentinels/process-ai-readiness/aggregate";
-import type { AiecosystemfitSentinel as _aiecosystemfitCheck } from "../../extensions/sentinels/ai-ecosystem-fit/aggregate";
-import type { AgentdeploymentmaturitySentinel as _agentdeploymentmaturityCheck } from "../../extensions/sentinels/agent-deployment-maturity/aggregate";
-import type { AiinvestmentreturnSentinel as _aiinvestmentreturnCheck } from "../../extensions/sentinels/ai-investment-return/aggregate";
-import type { HumanagentboundarySentinel as _humanagentboundaryCheck } from "../../extensions/sentinels/human-agent-boundary/aggregate";
-import type { connectorcoverageSentinel as _connectorcoverageCheck } from "../../extensions/sentinels/connector-coverage/aggregate";
-import type { processaireadinessSentinel as _processaireadinessCheck } from "../../extensions/sentinels/process-ai-readiness/aggregate";
-import type { aiecosystemfitSentinel as _aiecosystemfitCheck } from "../../extensions/sentinels/ai-ecosystem-fit/aggregate";
-import type { agentdeploymentmaturitySentinel as _agentdeploymentmaturityCheck } from "../../extensions/sentinels/agent-deployment-maturity/aggregate";
-import type { aiinvestmentreturnSentinel as _aiinvestmentreturnCheck } from "../../extensions/sentinels/ai-investment-return/aggregate";
-import type { humanagentboundarySentinel as _humanagentboundaryCheck } from "../../extensions/sentinels/human-agent-boundary/aggregate";
-import type { StrategyCapabilityFitSentinel as _strategycapabilityfitCheck } from "../../extensions/sentinels/strategy-capability-fit/aggregate";
-import type { AdaptationVelocitySentinel as _adaptationvelocityCheck } from "../../extensions/sentinels/adaptation-velocity/aggregate";
-import type { ResourceMisallocationSentinel as _resourcemisallocationCheck } from "../../extensions/sentinels/resource-misallocation/aggregate";
-import type { ExploreExploitBalanceSentinel as _exploreexploitbalanceCheck } from "../../extensions/sentinels/explore-exploit-balance/aggregate";
-import type { RoutineMutationSentinel as _routinemutationCheck } from "../../extensions/sentinels/routine-mutation/aggregate";
-import type { IncentiveAlignmentSentinel as _incentivealignmentCheck } from "../../extensions/sentinels/incentive-alignment/aggregate";
-import type { KnowledgeAccessibilitySentinel as _knowledgeaccessibilityCheck } from "../../extensions/sentinels/knowledge-accessibility/aggregate";
-import type { RoutineDiffusionSentinel as _routinediffusionCheck } from "../../extensions/sentinels/routine-diffusion/aggregate";
-import type { ChannelCapacitySentinel as _channelcapacityCheck } from "../../extensions/sentinels/channel-capacity/aggregate";
-import type { InfoDistortionSentinel as _infodistortionCheck } from "../../extensions/sentinels/info-distortion/aggregate";
-import type { OrgRepairabilitySentinel as _orgrepairabilityCheck } from "../../extensions/sentinels/org-repairability/aggregate";
-import type { PowerRigiditySentinel as _powerrigidityCheck } from "../../extensions/sentinels/power-rigidity/aggregate";
-import type { TalentDensitySentinel as _talentdensityCheck } from "../../extensions/sentinels/talent-density/aggregate";
+import type { ConnectorCoverageSentinel as _ccCheck } from "../../extensions/sentinels/connector-coverage/aggregate";
+import type { ProcessAiReadinessSentinel as _parCheck } from "../../extensions/sentinels/process-ai-readiness/aggregate";
+import type { AiEcosystemFitSentinel as _aefCheck } from "../../extensions/sentinels/ai-ecosystem-fit/aggregate";
+import type { AgentDeploymentMaturitySentinel as _admCheck } from "../../extensions/sentinels/agent-deployment-maturity/aggregate";
+import type { AiInvestmentReturnSentinel as _airCheck } from "../../extensions/sentinels/ai-investment-return/aggregate";
+import type { HumanAgentBoundarySentinel as _habCheck } from "../../extensions/sentinels/human-agent-boundary/aggregate";
+import type { strategyCapabilityFitSentinel as _scfCheck } from "../../extensions/sentinels/strategy-capability-fit/aggregate";
+import type { adaptationVelocitySentinel as _avCheck } from "../../extensions/sentinels/adaptation-velocity/aggregate";
+import type { resourceMisallocationSentinel as _rmCheck } from "../../extensions/sentinels/resource-misallocation/aggregate";
+import type { exploreExploitBalanceSentinel as _eebCheck } from "../../extensions/sentinels/explore-exploit-balance/aggregate";
+import type { routineMutationSentinel as _rmutCheck } from "../../extensions/sentinels/routine-mutation/aggregate";
+import type { incentiveAlignmentSentinel as _iaCheck } from "../../extensions/sentinels/incentive-alignment/aggregate";
+import type { knowledgeAccessibilitySentinel as _kaCheck } from "../../extensions/sentinels/knowledge-accessibility/aggregate";
+import type { routineDiffusionSentinel as _rdCheck } from "../../extensions/sentinels/routine-diffusion/aggregate";
+import type { channelCapacitySentinel as _ccapCheck } from "../../extensions/sentinels/channel-capacity/aggregate";
+import type { infoDistortionSentinel as _idCheck } from "../../extensions/sentinels/info-distortion/aggregate";
+import type { orgRepairabilitySentinel as _orCheck } from "../../extensions/sentinels/org-repairability/aggregate";
+import type { powerRigiditySentinel as _prCheck } from "../../extensions/sentinels/power-rigidity/aggregate";
+import type { talentDensitySentinel as _tdCheck } from "../../extensions/sentinels/talent-density/aggregate";
 import type { computeFlywheelSpeeds as _fwCheck } from "../../src/sentinel/flywheel-aggregator";

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Loop Engineering V4.2.8 — 生成 task brief (6 核心字段 + 三层解耦项目身份 + 决策链)."""
+"""Loop Engineering V4.2.9 — 生成 task brief (6 核心字段 + 三层解耦项目身份 + 决策链)."""
 import os
 from datetime import datetime
 
@@ -28,7 +28,7 @@ Agent，不是 ChatBot。驻扎企业，持续观测，主动发现，自动诊�
 **纵向解耦：五层物理隔离**
 代码按 L1-L5 架构分层，每层只与相邻层通信。L1 交互层不知道 L4 用什么数据库，L3 洞察层不知道 L5 数据存在哪。换底层存储，上层零改动。pre-commit 物理阻断跨层 import——L2→L4 的代码提交不进去。
 
-**横向解耦：20 个独立 Monorepo 包**
+**横向解耦：11 个独立 Monorepo 包**
 五层内部拆为独立包：@synova/sog-core（本体图类型）、@synova/sentinel-engine（哨兵调度）、@synova/expert-platform（专家加载）、@synova/connector-registry（数据连接器）。每个包接口边界明确，拆卸一个不影响其余 19 个。核心包已落地运行；已存在的功能规划从 src/ 迁移到独立包；未来新增须遵循此结构。
 
 **扩展解耦：文件驱动，不改代码**
@@ -38,7 +38,7 @@ Agent，不是 ChatBot。驻扎企业，持续观测，主动发现，自动诊�
 - 新行业 = 加行业目录（基准数据+阈值+案例库）→ 1-2 天上线，零 TypeScript 改动
 - 新本体实体类型 = 加 JSON Schema 文件
 
-流程约束: V4.2.8 — task brief 6 字段强制 + 免疫系统 + plan.json + 8 组物理阻断 + Plan-Actual 闭合 + engine-core 清零 + 时间戳顺序检查。
+流程约束: V4.2.9 — task brief 6 字段强制 + 免疫系统 + plan.json + 8 组物理阻断 + Plan-Actual 闭合 + engine-core 清零 + 时间戳顺序检查。
 
 数据流: L5 存储 → L4 本体 → L3 洞察(哨兵定时+诊断按需) → L2 编排 → L1 交互
         反馈闭环: GA评审/客户反馈 → 记忆层 → 数据层

@@ -374,14 +374,14 @@ export class SentinelRunner {
     const startTime = Date.now();
     try {
       // V4.2.8: 构造上下文 — 包装 raw SQLite 为 GraphStore 供哨兵 queryNodes()
-      let graphCtx: typeof import('../l4/synova-graph-store').SqliteDb;
+      let graphCtx: Record<string, unknown>;
       if (typeof this.db === 'object' && this.db !== null && 'queryNodes' in this.db) {
-        graphCtx = this.db as typeof graphCtx;
+        graphCtx = this.db as Record<string, unknown>;
       } else {
         try {
           const { createSynovaGraphStore } = await import('../l4/synova-graph-store');
-          graphCtx = createSynovaGraphStore(this.db as typeof graphCtx);
-        } catch { graphCtx = this.db as typeof graphCtx; } // degraded
+          graphCtx = createSynovaGraphStore(this.db as import('../l4/synova-graph-store').SqliteDb) as unknown as Record<string, unknown>;
+        } catch { graphCtx = this.db as Record<string, unknown>; } // degraded
       }
       const ctx = {
         db: graphCtx,

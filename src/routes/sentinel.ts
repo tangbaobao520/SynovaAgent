@@ -88,7 +88,7 @@ router.get('/reports', (_req: Request, res: Response) => {
 router.get('/tickets', (req: Request, res: Response) => {
   try {
     const status = typeof req.query.status === 'string' ? req.query.status : undefined;
-    const result = getSentinelTickets(status);
+    const result = getSentinelTickets();
     res.json(result);
   } catch (err: unknown) {
     log.error({ err }, '[sentinel] tickets 查询失败');

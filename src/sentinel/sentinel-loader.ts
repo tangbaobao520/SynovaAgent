@@ -10,6 +10,7 @@ import { readdirSync, readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { pathToFileURL } from 'url';
 import { createLogger } from '@synova/logger';
+import type { SentinelFinding, SentinelCheckResult } from './types';
 
 const log = createLogger('sentinel/loader');
 
@@ -150,6 +151,7 @@ export async function registerLoadedSentinels(): Promise<{ registered: number; e
           mode: 'cron',
           cron: manifest.schedule || '0 */6 * * *',
           version: manifest.version || '1.0.0',
+          confidenceModel: (manifest.computeKind === 'deterministic' ? 'deterministic' : (manifest.computeKind === 'heuristic' ? 'statistical' : 'llm')) as 'deterministic' | 'statistical' | 'llm',
           requiredDataSources: manifest.context?.requiredDataSources || [],
           layer: manifest.layer,
           auxiliaryExperts: manifest.auxiliaryExperts,
@@ -158,13 +160,14 @@ export async function registerLoadedSentinels(): Promise<{ registered: number; e
         },
         async check(context) {
           // 将 SentinelContext.db 作为 GraphStore 传给 aggregate
+          const ctx = context as unknown as Record<string, unknown>;
           const raw = await sentinelObj.check(
-            context.db as Record<string, unknown>,
-            (context as Record<string, unknown>).teamId || 'default',
+            (context.db ?? {}) as Record<string, unknown>,
+            (ctx.teamId as string) || 'default',
           );
           // 兼容两种返回格式: SentinelFinding[] 或 { findings: SentinelFinding[] }
-          const findings: SentinelFinding[] = Array.isArray(raw) ? raw : (raw?.findings || []);
-          return { sentinelId: `sentinel-${manifest.name}`, ok: true, findings, durationMs: 0 };
+          const findings: SentinelFinding[] = Array.isArray(raw) ? raw : ((raw as Record<string, unknown>)?.findings as SentinelFinding[]) || [];
+          return { sentinelId: `sentinel-${manifest.name}`, ok: true, findings, durationMs: 0, checkedAt: new Date().toISOString() };
         },
       });
 
