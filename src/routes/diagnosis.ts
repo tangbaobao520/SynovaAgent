@@ -68,7 +68,7 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
   const { teamId, initiator, scope } = req.body as {
     teamId?: string;
     initiator?: { role: string; name?: string; teamId?: string; concerns?: string[] };
-    scope?: { depth?: string; layers?: string[]; language?: string; reportDepth?: string };
+    scope?: { depth?: string; layers?: string[]; language?: string; reportDepth?: string; sentinelIds?: string[]; compareWith?: string };
   };
 
   if (!teamId) {
