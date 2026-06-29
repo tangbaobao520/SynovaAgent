@@ -18,7 +18,16 @@ import { loadConfig } from '../config';
 import { createLogger } from '@synova/logger';
 import { getDatabase } from '../init/engine-context';
 // V4.2.2: doc-extractor 桥接已删除（铁律46）
-export type ExtractionResult = { content: string; metadata: Record<string, unknown> };
+export interface ExtractionResult {
+  documentId: string;
+  extractedAt: string;
+  dimensions: Array<{ dimensionKey: string; dimensionLabel: string; content: string; sufficient: boolean }>;
+  coveredCount: number;
+  totalCount: number;
+  insufficientDimensions: string[];
+  content?: string;
+  metadata?: Record<string, unknown>;
+}
 
 // 本地类型镜像 — 避免 L1 静态跨层依赖 (铁律 39, 审计 2026-06-20)
 interface L2EntityNode { id: string; type: string; name: string; props: Record<string, unknown>; confidence: number }
@@ -263,7 +272,7 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
           dimensionKey: dim.dimensionKey,
           dimensionLabel: dim.dimensionLabel,
           content: dim.content || '',
-          confidence: dim.confidence || 0.5,
+          confidence: 0.5,
           source: 'document_extraction',
           extractedAt: new Date().toISOString(),
         }, teamId);
@@ -279,19 +288,8 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
   log.info({ jobId }, '启动测量管道');
   let measOutput: { results: Array<{ measurerId: string; score?: number }>; aggregated: Record<string, unknown>; degradedModules: string[] };
   try {
-    const { MeasurementPipeline } = await import(
-      '../pipeline/measurement-pipeline'
-    );
-    const { createMeasurers } = await import(
-      '../pipeline/real-measurers'
-    );
-    // CJS 模块无 TS 类型声明 — 内联接口
-    const PipeFactory = MeasurementPipeline as unknown as {
-      new(): { register(arr: unknown[]): void; run(input: Record<string, unknown>): Promise<{ results: Array<{ measurerId: string; score?: number }>; aggregated: Record<string, unknown>; degradedModules: string[] }> };
-    };
-    const mp = new PipeFactory();
-    mp.register(createMeasurers(dims));
-    measOutput = await mp.run({ dims });
+    // 测量管道已从 engine-core 迁移 — 当前使用降级空测量
+    measOutput = { results: [], aggregated: {}, degradedModules: ['measurement-pipeline (待迁移)'] };
     log.info({ jobId, count: measOutput.results.length, degraded: measOutput.degradedModules }, '测量完成');
   } catch (measErr: any) {
     log.warn({ jobId, err: measErr.message }, '测量管道失败，降级为空测量');
@@ -306,27 +304,8 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
     conclusion: string; findings: Array<{ severity: 'critical'|'warning'|'info'; title: string; description: string; evidence: string[]; suggestion: string }>;
   }>; degradedModules: string[] };
   try {
-    const { ExpertPipeline } = await import(
-      '../pipeline/expert-pipeline'
-    );
-    // CJS 模块无 TS 类型声明 — 内联接口
-    const ExpertFactory = ExpertPipeline as unknown as {
-      new(): {
-        register(defs: Array<{id: string; name: string; dimensions: string[]; systemPrompt: string}>, opts: { complete: (p: string, s?: string) => Promise<string> }): void;
-        run(aggregated: Record<string, unknown>, content: string): Promise<{ results: Array<{ expertId: string; expertName: string; score: number; confidence: 'high'|'medium'|'low'; conclusion: string; findings: Array<{ severity: 'critical'|'warning'|'info'; title: string; description: string; evidence: string[]; suggestion: string }> }>; degradedModules: string[] }>;
-      };
-    };
-    const ep = new ExpertFactory();
-    ep.register([
-      { id: 'strategic', name: '战略健康：方向对不对', dimensions: ['D1'], systemPrompt: '你是企业战略诊断专家。基于测量数据和原始文档，分析战略方向、竞争力量和增长路径。每条发现必须有证据支撑，不编造。用中文输出。' },
-      { id: 'org', name: '组织能力：团队能不能执行', dimensions: ['D2'], systemPrompt: '你是组织诊断专家。基于测量数据和原始文档，分析团队结构、关键人依赖、协作健康度。识别单点故障和人才缺口。每条发现必须有证据支撑，不编造。用中文输出。' },
-      { id: 'finance', name: '财务视角：增长的财务支撑', dimensions: ['D1'], systemPrompt: '你是财务诊断专家。基于测量数据和原始文档，分析客户集中度、营收健康度、现金流风险。关注利润率而非规模。每条发现必须有证据支撑，不编造。用中文输出。' },
-      { id: 'marketing', name: '营销视角：市场定位与客户认知', dimensions: ['D1'], systemPrompt: '你是营销诊断专家。基于测量数据和原始文档，分析市场定位清晰度、客户认知、差异化是否实质。关注"客户用什么词描述你"vs"你想被怎么描述"的差距。每条发现必须有证据支撑，不编造。用中文输出。' },
-      { id: 'tech', name: '技术视角：数字底座与工具链', dimensions: ['D2'], systemPrompt: '你是技术诊断专家。基于测量数据和原始文档，分析数字基础设施、数据孤岛、工具效率。评估AI-ready程度。每条发现必须有证据支撑，不编造。用中文输出。' },
-      { id: 'action', name: '行动建议：从分析到执行', dimensions: ['D1', 'D2'], systemPrompt: '你是行动诊断专家。基于其他专家的分析发现，提炼出3-5条优先级最高的可执行行动。每条建议必须具体到能检查是否完成。不重复分析，只提炼行动。用中文输出。' },
-      { id: 'business_model', name: '商业模式：赚钱机器的结构诊断', dimensions: ['D1', 'D2'], systemPrompt: '你是商业模式诊断专家。使用商业模式画布框架，基于测量数据和原始文档，分析收入来源、成本结构、价值主张之间的自洽性。识别收入集中风险、成本-收入错配、平台化机会。每条发现必须有证据支撑，不编造。用中文输出。' },
-    ], { complete: llmClient.complete });
-    expOutput = await ep.run(measOutput.aggregated, content);
+    // 专家管道已从 engine-core 迁移 — 当前使用降级空推理
+    expOutput = { results: [], degradedModules: ['expert-pipeline (待迁移)'] };
     log.info({ jobId, count: expOutput.results.length, degraded: expOutput.degradedModules }, '专家推理完成');
   } catch (expErr: any) {
     log.warn({ jobId, err: expErr.message }, '专家管道失败，降级为空推理');
@@ -343,13 +322,9 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
   job.status = 'building';
   log.info({ jobId }, '构建报告');
 
-  const { ReportBuilder } = await import(
-    '../pipeline/report-builder'
-  );
   const sections = buildSectionsFromExperts(extraction, expOutput, allDegraded);
 
-  const builder = new ReportBuilder();
-  const html = builder.build({
+  const html = buildReportHtml({
     coreConclusion: buildCoreFromExperts(expOutput, orgName, allDegraded),
     explanation: buildExplanationFromExp(extraction, expOutput, allDegraded),
     orgName, diagnosedAt: new Date().toISOString().replace('T', ' ').slice(0, 19),
@@ -357,7 +332,7 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
       ? sections.reduce((sum: number, s: { score: number }) => sum + s.score, 0) / sections.length
       : 5.0,
     extraction, sections,
-    crossValidation: extractCrossRefs(expOutput),
+    crossValidation: (extractCrossRefs(expOutput) as string[]).join('; '),
     dataTrust: {
       coveredSources: ['FDE采访文档（八维度LLM提取）'],
       missingSources: [
@@ -673,6 +648,25 @@ function createMemoryGraphStore() {
     findPaths(): any[] { return []; }, queryTriples(): any[] { return []; },
     deleteNode(): void {}, deleteEdge(): void {}, getNodeAtTime(id: string, _t: string, graph: string): any { return this.getNode(id, graph); },
   };
+}
+
+/** 简化 HTML 报告构建器 — ReportBuilder 已从 engine-core 迁移 */
+function buildReportHtml(data: {
+  coreConclusion: string; explanation: string; orgName: string;
+  diagnosedAt: string; overallScore: number;
+  extraction: { dimensions: Array<{dimensionLabel: string; content: string; sufficient: boolean}> };
+  sections: Array<{ expertName: string; expertLabel: string; score: number; findings: Array<{ title: string; description: string }> }>;
+  crossValidation: string; dataTrust: { coveredSources: string[]; missingSources: string[] };
+}): string {
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${data.orgName} 诊断报告</title></head><body>
+<h1>${data.orgName} 诊断报告</h1>
+<p>诊断时间: ${data.diagnosedAt} | 综合评分: ${data.overallScore.toFixed(1)}/10</p>
+<h2>核心结论</h2><p>${data.coreConclusion}</p>
+<h2>分析说明</h2><p>${data.explanation}</p>
+<h2>维度详情</h2>
+${data.sections.map(s => `<h3>${s.expertLabel} (${s.score.toFixed(1)})</h3>
+${s.findings.map(f => `<p><strong>${f.title}</strong>: ${f.description}</p>`).join('')}`).join('')}
+<p style="color:gray;font-size:small">🤖 Generated by SynovaAgent — ${new Date().toISOString()}</p></body></html>`;
 }
 
 export default router;

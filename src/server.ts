@@ -39,6 +39,7 @@ import deptWorkspaceRoutes from './routes/department-workspace';
 import actionsApiRoutes from './routes/actions-api';
 import healthRoutes from './routes/health';
 import ontologyRoutes from './routes/ontology';
+import ontologyAdminRoutes from './routes/ontology-admin';
 import diagnosisRoutes from './routes/diagnosis';
 import sessionsRoutes from './routes/sessions';
 import metricsRoutes from './monitoring/routes';
@@ -436,6 +437,7 @@ export async function createServer(): Promise<Server> {
   app.use(dataRoutes);           // POST /api/data/upload — 数据上传入口 (V4.2.9)
   app.use(healthRoutes);
   app.use(ontologyRoutes);
+app.use(ontologyAdminRoutes);
   app.use(diagnosisRoutes);
   app.use(sessionsRoutes);
   app.use(metricsRoutes);
