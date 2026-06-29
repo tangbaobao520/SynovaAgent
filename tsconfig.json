@@ -25,7 +25,8 @@
       "@synova/extension-registry": ["./packages/extension-registry/src/index.ts"],
       "@synova/knowledge-ingest": ["./packages/knowledge-ingest/src/index.ts"],
       "@synova/graph-store": ["./packages/graph-store/src/index.ts"],
-      "@synova/diagnosis-engine": ["./packages/diagnosis-engine/src/index.ts"]
+      "@synova/diagnosis-engine": ["./packages/diagnosis-engine/src/index.ts"],
+      "@synova/evolution": ["./packages/evolution/src/index.ts"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],
