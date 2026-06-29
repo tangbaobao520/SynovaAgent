@@ -6,12 +6,17 @@
  * GET  /api/ontology/graph/:orgId.html — 可视化页面
  */
 import { Router, type Request, type Response } from 'express';
-import { getDatabase } from '../init/engine-context';
 import { createLogger } from '@synova/logger';
-import { createSynovaGraphStore } from '../l4/synova-graph-store';
 
 const router = Router();
 const log = createLogger('routes/ontology');
+
+// V4.2.9: 从 server.ts 注入的 app.locals.graphStore 获取 — 避免 L1→L4 跨层
+function getStoreFromLocals(req: Request): ReturnType<typeof import('../l4/synova-graph-store').createSynovaGraphStore> {
+  const gs = (req.app.locals as Record<string, unknown>).graphStore as ReturnType<typeof import('../l4/synova-graph-store').createSynovaGraphStore>;
+  if (!gs) throw new Error('GraphStore 不可用 — server.ts 未初始化');
+  return gs;
+}
 
 // ═══ Validation (Slice 6.2: M7 fix — orgId 格式校验) ═══
 
@@ -42,7 +47,7 @@ router.post('/api/ontology/ingest', (req: Request, res: Response) => {
 
     let store;
     try {
-      store = createSynovaGraphStore(getDatabase());
+      store = getStoreFromLocals(req);
     } catch (dbErr: any) {
       log.error({ err: dbErr }, '数据库连接失败');
       return res.status(500).json({ ok: false, error: '数据库连接失败', code: 'GRAPH_DB', degraded: ['graph-store'] });
@@ -72,7 +77,7 @@ router.get('/api/ontology/graph/:orgId.html', (req: Request, res: Response) => {
     if (orgIdErr) {
       return res.status(400).json({ ok: false, error: orgIdErr, code: 'VALIDATION_ERROR' });
     }
-    const store = createSynovaGraphStore(getDatabase());
+    const store = getStoreFromLocals(req);
 
     const types: string[] = ['Person', 'Team', 'Agent', 'Tool', 'Client', 'Process', 'Event', 'Document', 'Financial'];
     const nodes: Array<{ id?: unknown; type?: unknown; props?: unknown }> = [];
@@ -132,7 +137,7 @@ router.get('/api/ontology/graph/:orgId', (req: Request, res: Response) => {
     if (orgIdErr) {
       return res.status(400).json({ ok: false, error: orgIdErr, code: 'VALIDATION_ERROR' });
     }
-    const store = createSynovaGraphStore(getDatabase());
+    const store = getStoreFromLocals(req);
 
     const types: string[] = ['Person', 'Team', 'Agent', 'Tool', 'Client', 'Process', 'Event', 'Document', 'Financial'];
     const nodes: Array<{ id?: unknown; type?: unknown; props?: unknown }> = [];
@@ -162,7 +167,7 @@ router.get('/api/ontology/graph/:orgId/summary', (req: Request, res: Response) =
     const orgIdErr = validateOrgId(orgId);
     if (orgIdErr) return res.status(400).json({ ok: false, error: orgIdErr, code: 'VALIDATION_ERROR' });
 
-    const store = createSynovaGraphStore(getDatabase());
+    const store = getStoreFromLocals(req);
     const g = (orgId || 'default') as string;
 
     const summary = {
@@ -184,7 +189,7 @@ router.get('/api/ontology/graph/:orgId/brokers', (req: Request, res: Response) =
     const orgIdErr = validateOrgId(orgId);
     if (orgIdErr) return res.status(400).json({ ok: false, error: orgIdErr, code: 'VALIDATION_ERROR' });
 
-    const store = createSynovaGraphStore(getDatabase());
+    const store = getStoreFromLocals(req);
     // 跨维度桥接节点查找已从 engine-core 迁移 — 当前返回空列表
     const brokers: Array<{ id: string; type: string; betweenness: number }> = [];
     res.json({ ok: true, brokers });
@@ -202,7 +207,7 @@ router.get('/api/ontology/graph/:orgId/diff', (req: Request, res: Response) => {
     const orgIdErr = validateOrgId(orgId);
     if (orgIdErr) return res.status(400).json({ ok: false, error: orgIdErr, code: 'VALIDATION_ERROR' });
 
-    const store = createSynovaGraphStore(getDatabase());
+    const store = getStoreFromLocals(req);
     // 图差异比较已从 engine-core 迁移 — 当前返回空 diff
     const diff = { fromDate, toDate, added: 0, removed: 0, changed: 0, message: '图差异功能待迁移' };
     res.json({ ok: true, diff });
