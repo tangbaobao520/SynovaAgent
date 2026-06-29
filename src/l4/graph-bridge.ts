@@ -16,7 +16,7 @@
  *   createEdge(type, from, to, weight?, props?, graph?) → returns auto-id
  */
 import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('l4/graph-bridge');
 

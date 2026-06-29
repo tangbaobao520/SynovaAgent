@@ -7,7 +7,7 @@
  */
 import { KnowledgeStore } from '../l4/knowledge-store';
 import type Database from 'better-sqlite3';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('l3/pkb-lifecycle');
 

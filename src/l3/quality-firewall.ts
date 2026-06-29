@@ -7,7 +7,7 @@
  *   3. 无其他专家反驳? → 矛盾→标记人工审核
  *   4. 证据未过时? → valid_to > 30天→标记"可能过时", 置信度-0.2
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('l3/quality-firewall');
 

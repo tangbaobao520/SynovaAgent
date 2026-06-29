@@ -17,7 +17,7 @@
  * Iron law #32: 错误分类 — .code + .phase + .retryable。
  * Iron law #38: zero unsafe type casts.
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import type {
   SynovaDiagnosisEngine,
   InitiatorProfile,

@@ -5,7 +5,7 @@
  * 非硬编码模板。图空时降级为模板默认。
  */
 import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('l4/report-graph-adapter');
 

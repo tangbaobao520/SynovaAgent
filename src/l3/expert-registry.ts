@@ -6,7 +6,7 @@
  *
  * Slice 0-1: 每位专家拥有独立的系统提示词，不再共享模板。
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('l3/expert-registry');
 

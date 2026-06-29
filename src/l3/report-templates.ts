@@ -4,7 +4,7 @@
  * 简报/诊断报告的不同排版模板。可运行时注册新模板。
  * 当前提供: daily_briefing, weekly_summary, diagnosis_report, executive_summary
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('l3/report-templates');
 
