@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeEOB } from '../../../../extensions/sentinels/eob/computes/boundary.ts';
+import { computeEOB } from '../../../extensions/sentinels/eob/computes/boundary.ts';
 
 const mockStore = {
   queryNodes: () => [],

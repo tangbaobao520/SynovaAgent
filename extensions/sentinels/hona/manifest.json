@@ -1,0 +1,25 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "hona",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "异质节点网络 (HONA)",
+  "description": "D3: 分析组织中节点类型的异质性和网络结构多样性，评估跨类型协作的健康度。",
+  "schedule": "0 9 * * 1",
+  "expert": "org",
+  "priority": "P2",
+  "layer": "collaboration",
+  "computeKind": "graph",
+  "computes": ["network"],
+  "thresholds": {
+    "network_heterogeneity": { "warning": 0.4, "critical": 0.2 }
+  },
+  "aggregation": "average",
+  "context": {
+    "requiredDataSources": ["sog_graph"],
+    "dataAccess": { "allowedDimensions": ["collaboration"], "sensitiveAccess": "read" }
+  },
+  "entryPoint": "./computes/network.ts",
+  "exportKey": "honaSentinel",
+  "auxiliaryExperts": ["knowledge"]
+}

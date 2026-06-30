@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeHONA } from '../../../../extensions/sentinels/hona/computes/network.ts';
+import { computeHONA } from '../../../extensions/sentinels/hona/computes/network.ts';
 
 const mockStore = {
   queryNodes: () => [],

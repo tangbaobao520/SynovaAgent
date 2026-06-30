@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeHACD } from '../../../../extensions/sentinels/hacd/computes/density.ts';
+import { computeHACD } from '../../../extensions/sentinels/hacd/computes/density.ts';
 
 const mockStore = {
   queryNodes: () => [],
