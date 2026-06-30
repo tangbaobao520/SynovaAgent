@@ -1,0 +1,13 @@
+{
+  "industry": "manufacturing",
+  "aggregatedAt": "2026-06-30T00:00:00.000Z",
+  "thresholdOverrides": {
+    "F1_KZ": { "warning": 1.8, "critical": 2.5 },
+    "F2_runway": { "warning": 9, "critical": 4 },
+    "F3_revenue_quality": { "warning": 0.25, "critical": 0.1 },
+    "F4_profit_quality": { "warning": 0.25, "critical": 0.1 },
+    "F5_cash_conversion": { "warning": 0.4, "critical": 0.2 },
+    "O1_info_distortion": { "warning": 0.5, "critical": 0.7 },
+    "T1_software_health": { "warning": 0.3, "critical": 0.5 }
+  }
+}
