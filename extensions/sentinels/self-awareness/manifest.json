@@ -1,0 +1,23 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "self-awareness",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "自知偏差 (Self-Awareness Bias)",
+  "description": "D2: 评估组织的自我认知偏差——成员自评与客观绩效数据之间的差距。偏差越大，认知越不准确。",
+  "schedule": "0 9 * * 1",
+  "expert": "org",
+  "priority": "P2",
+  "layer": "capability",
+  "computeKind": "graph",
+  "computes": ["bias"],
+  "thresholds": { "bias_score": { "warning": 0.3, "critical": 0.5 } },
+  "aggregation": "average",
+  "context": {
+    "requiredDataSources": ["sog_graph"],
+    "dataAccess": { "allowedDimensions": ["collaboration"], "sensitiveAccess": "read" }
+  },
+  "entryPoint": "./computes/bias.ts",
+  "exportKey": "selfAwarenessSentinel",
+  "auxiliaryExperts": ["knowledge"]
+}
