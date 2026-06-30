@@ -63,3 +63,7 @@ export {
   writeIndustryThresholds,
   aggregateAllIndustries,
 } from './global-analyzer';
+
+// rule-version-manager 导出
+export { RuleVersionManager } from './rule-version-manager';
+export type { SnapshotEntry, RollbackResult, GradualRolloutInput } from './rule-version-manager';
