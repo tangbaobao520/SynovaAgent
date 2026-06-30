@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeDataSiloScore } from '../../../../extensions/sentinels/data-health/computes/data-silo-score';
+import { computeDataSiloScore } from '../../../extensions/sentinels/data-health/computes/data-silo-score';
 
 describe('computeDataSiloScore', () => {
   it('空系统 degraded', () => {

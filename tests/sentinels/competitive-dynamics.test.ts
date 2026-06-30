@@ -10,7 +10,7 @@ describe('computeHhiIndex', () => {
   });
 
   it('均匀分布=低集中', () => {
-    const r = computeHhiIndex([{ name: 'A', revenue: 10 }, { name: 'B', revenue: 10 }, { name: 'C', revenue: 10 }]);
+    const r = computeHhiIndex(Array.from({length:10},(_,i)=>({name:String.fromCharCode(65+i),revenue:10})));
     expect(r.hhi).toBeLessThan(2000);
   });
 

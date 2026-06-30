@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeCustomerChurnRisk } from '../../../../extensions/sentinels/customer-demand-shift/computes/customer-churn-risk';
+import { computeCustomerChurnRisk } from '../../../extensions/sentinels/customer-demand-shift/computes/customer-churn-risk';
 
 describe('computeCustomerChurnRisk', () => {
   it('空列表 degraded', () => {
