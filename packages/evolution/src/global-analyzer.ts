@@ -148,26 +148,21 @@ export function writeIndustryThresholds(industry: string, baseline: IndustryBase
  * 批量聚合所有已注册行业的基线。
  * 由 Cron 定时触发 (每月)。
  */
-export async function aggregateAllIndustries(l3: L3WriteAPI): Promise<IndustryBaseline[]> {
-  try {
-    const { listIndustries } = await import('../l4/industry-loader');
-    const industries = listIndustries();
-    const results: IndustryBaseline[] = [];
+export async function aggregateAllIndustries(
+  l3: L3WriteAPI,
+  industries: string[],
+): Promise<IndustryBaseline[]> {
+  const results: IndustryBaseline[] = [];
 
-    for (const industry of industries) {
-      try {
-        const baseline = await aggregateIndustryBaseline(industry, l3);
-        results.push(baseline);
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        log.warn({ err: msg, industry }, '行业聚合失败 — 降级继续');
-      }
+  for (const industry of industries) {
+    try {
+      const baseline = await aggregateIndustryBaseline(industry, l3);
+      results.push(baseline);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg, industry }, '行业聚合失败 — 降级继续');
     }
-
-    return results;
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    log.error({ err: msg }, '批量行业聚合失败');
-    return [];
   }
+
+  return results;
 }
