@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { computeAiInvestmentReturn } from "../../extensions/sentinels/ai-investment-return/computes/compute-ai-investment-return";
 describe("ai-investment-return",()=>{
-  it("¿Õdegraded",()=>{expect(computeAiInvestmentReturn(0,0).degraded).toBe(true);});
-  it("È«Á¬½Ó=1",()=>{const r=computeAiInvestmentReturn(10,10);expect(r.score).toBe(1);expect(r.degraded).toBe(false);});
+  it("ç©ºdegraded",()=>{expect(computeAiInvestmentReturn({costSaved:0,revenueUplift:0,totalInvestment:0,paybackMonths:0}).degraded).toBe(true);});
+  it("å…¨æ»¡åˆ†=1",()=>{const r=computeAiInvestmentReturn({costSaved:20,revenueUplift:10,totalInvestment:10,paybackMonths:12});expect(r.roi).toBe(1);expect(r.degraded).toBe(false);});
 });

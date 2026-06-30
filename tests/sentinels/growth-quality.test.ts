@@ -12,11 +12,17 @@ describe('computeCashConversionRate', () => {
 describe('computeOrganicGrowthPct', () => {
   it('空degraded', () => { expect(computeOrganicGrowthPct([]).degraded).toBe(true); });
   it('纯有机增长', () => {
-    const r = computeOrganicGrowthPct([{ revenue: 120, previousRevenue: 100, acquisitionRevenue: 0 }]);
+    const r = computeOrganicGrowthPct([
+      { revenue: 100, previousRevenue: 90, acquisitionRevenue: 0 },
+      { revenue: 120, previousRevenue: 100, acquisitionRevenue: 0 },
+    ]);
     expect(r.organicPct).toBeGreaterThan(0.9);
   });
   it('并购依赖', () => {
-    const r = computeOrganicGrowthPct([{ revenue: 200, previousRevenue: 100, acquisitionRevenue: 80 }]);
+    const r = computeOrganicGrowthPct([
+      { revenue: 100, previousRevenue: 90, acquisitionRevenue: 0 },
+      { revenue: 200, previousRevenue: 100, acquisitionRevenue: 80 },
+    ]);
     expect(r.organicPct).toBeLessThan(0.5);
   });
 });

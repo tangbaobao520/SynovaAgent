@@ -56,3 +56,10 @@ export { OrgAdapter } from './org-adapter';
 // session-learner 导出
 export { SessionLearner } from './session-learner';
 export type { HypothesisFeedback, WeightEntry } from './session-learner';
+
+// global-analyzer 导出
+export {
+  aggregateIndustryBaseline,
+  writeIndustryThresholds,
+  aggregateAllIndustries,
+} from './global-analyzer';
