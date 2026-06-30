@@ -128,6 +128,42 @@ export interface IndustryPattern {
   orgCount: number;
 }
 
+// ═══ Phase P2: 进化提案 ═══
+
+export interface ThresholdChange {
+  sentinelId: string;
+  from: { warning: number; critical: number };
+  to: { warning: number; critical: number };
+}
+
+export type ProposalStatus = 'pending' | 'approved' | 'rejected' | 'applied';
+
+export interface EvolutionProposal {
+  id: string;
+  /** 提案类型: 阈值调整 / 模式发现 */
+  type: 'threshold_adjustment' | 'pattern_discovery';
+  title: string;
+  description: string;
+  /** 关联行业 */
+  industry: string;
+  /** 具体的阈值变更列表 */
+  changes: ThresholdChange[];
+  /** 风险评估: 影响多少个 org */
+  risk: 'low' | 'medium' | 'high';
+  /** 影响范围评估 */
+  impactEstimate: { orgCount: number; sentinelIds: string[] };
+  /** 证据 / 为什么需要此变更 */
+  evidence: string;
+  /** 状态机: pending → approved/rejected → applied */
+  status: ProposalStatus;
+  createdAt: string;
+  updatedAt: string;
+  /** 审批通过后被应用的快照 ID */
+  appliedSnapshotId?: string;
+  /** 灰度百分比历史 */
+  rolloutPercentage?: number;
+}
+
 // ═══ L3 Write API 类型 (由 sentinel/runner.ts 实现) ═══
 
 export interface L3WriteAPI {
