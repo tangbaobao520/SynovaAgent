@@ -355,6 +355,144 @@ export class SentinelRunner {
     return this.records;
   }
 
+  // ═══ Phase P1-1: L3WriteAPI (L0 进化层接口) ═══
+
+  /**
+   * 返回 L3WriteAPI 实现，供 L0 进化层调用。
+   * 每个方法独立 try/catch，降级安全。
+   */
+  getL0API(): import('@synova/evolution').L3WriteAPI {
+    const self = this;
+    return {
+      async closeTicket(orgId: string, sentinelId: string): Promise<number> {
+        try {
+          const result = (self.db as { prepare(sql: string): { run(...args: unknown[]): { changes: number } } }).prepare(
+            `UPDATE sentinel_tickets SET status = 'resolved', resolved_at = datetime('now')
+             WHERE signal_id LIKE ? AND status = 'open'`
+          ).run(`%${sentinelId}%`);
+          if (result.changes > 0) {
+            log.info({ orgId, sentinelId, closed: result.changes }, '[L3WriteAPI] 工单已关闭');
+          }
+          return result.changes;
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          log.warn({ err: msg, orgId, sentinelId }, '[L3WriteAPI] closeTicket 失败 — degraded');
+          return 0;
+        }
+      },
+
+      async getThreshold(orgId: string, sentinelId: string): Promise<{ warning: number; critical: number } | null> {
+        try {
+          // 1. 先查 AgentMemoryStore 中的自定义阈值
+          const { getAgentMemoryStore } = await import('../l4/agent-memory-store');
+          const { getDatabase } = await import('../init/engine-context');
+          const db = getDatabase();
+          const memStore = getAgentMemoryStore(db);
+          const stored = memStore.recall(orgId, `threshold_${sentinelId}`);
+          if (stored) {
+            const parsed = JSON.parse(stored.value) as { newThreshold?: { warning: number; critical: number } };
+            if (parsed.newThreshold) return parsed.newThreshold;
+          }
+        } catch { /* degraded — fallback to manifest */ }
+
+        // 2. Fallback 到 SentinelManifest 默认阈值
+        try {
+          const { loadSentinels } = await import('./sentinel-loader');
+          const { sentinels } = loadSentinels();
+          const sentinel = sentinels.find((s: { manifest: { name: string } }) => s.manifest.name === sentinelId || s.manifest.name === sentinelId.replace('sentinel-', ''));
+          if (sentinel?.manifest.thresholds) {
+            const key = Object.keys(sentinel.manifest.thresholds)[0];
+            if (key) return sentinel.manifest.thresholds[key];
+          }
+        } catch { /* degraded */ }
+
+        // 3. 通用默认值
+        return { warning: 0.5, critical: 1.0 };
+      },
+
+      async updateThreshold(orgId: string, sentinelId: string, threshold: { warning?: number; critical?: number }): Promise<void> {
+        try {
+          const existing = await this.getThreshold(orgId, sentinelId);
+          const { getAgentMemoryStore } = await import('../l4/agent-memory-store');
+          const { getDatabase } = await import('../init/engine-context');
+          const db = getDatabase();
+          const memStore = getAgentMemoryStore(db);
+          memStore.remember({
+            orgId,
+            key: `threshold_${sentinelId}`,
+            value: JSON.stringify({
+              sentinelId,
+              newThreshold: {
+                warning: threshold.warning ?? existing?.warning ?? 0.5,
+                critical: threshold.critical ?? existing?.critical ?? 1.0,
+              },
+              adjustedAt: new Date().toISOString(),
+            }),
+            type: 'enterprise_fact',
+            confidence: 0.8,
+            source: 'l3_write_api',
+            tags: ['threshold_adjustment', sentinelId],
+            expiresAt: null,
+          });
+          log.info({ orgId, sentinelId, threshold }, '[L3WriteAPI] 阈值已更新');
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          log.warn({ err: msg, orgId, sentinelId }, '[L3WriteAPI] updateThreshold 失败 — degraded');
+        }
+      },
+
+      async getSentinelStats(industry: string): Promise<import('@synova/evolution').PerSentinelStats[]> {
+        try {
+          const { getAgentMemoryStore } = await import('../l4/agent-memory-store');
+          const { getDatabase } = await import('../init/engine-context');
+          const db = getDatabase();
+          const memStore = getAgentMemoryStore(db);
+
+          // 按 industry:{name} 标签查询所有组织的哨兵得分
+          const memories = memStore.list({
+            orgId: 'global',
+            tags: [`industry:${industry}`],
+            limit: 200,
+          });
+
+          // 聚合: 按 sentinelId 分组统计
+          const sentinelMap = new Map<string, number[]>();
+          for (const mem of memories) {
+            try {
+              const data = JSON.parse(mem.value) as { sentinelId?: string; score?: number };
+              if (data.sentinelId && typeof data.score === 'number') {
+                const list = sentinelMap.get(data.sentinelId) || [];
+                list.push(data.score);
+                sentinelMap.set(data.sentinelId, list);
+              }
+            } catch { /* 跳过损坏数据 */ }
+          }
+
+          const stats: import('@synova/evolution').PerSentinelStats[] = [];
+          for (const [sentinelId, values] of sentinelMap) {
+            const sorted = [...values].sort((a, b) => a - b);
+            const n = sorted.length;
+            stats.push({
+              sentinelId,
+              name: sentinelId,
+              orgCount: n,
+              values: sorted,
+              median: n > 0 ? sorted[Math.floor(n / 2)] : 0,
+              p25: n > 0 ? sorted[Math.floor(n * 0.25)] : 0,
+              p75: n > 0 ? sorted[Math.floor(n * 0.75)] : 0,
+            });
+          }
+
+          return stats;
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          log.warn({ err: msg, industry }, '[L3WriteAPI] getSentinelStats 失败 — degraded');
+          return [];
+        }
+      },
+    };
+  }
+
   // ═══ Private ═══
 
   private scheduleSentinel(sentinel: Sentinel, cron: string): void {
