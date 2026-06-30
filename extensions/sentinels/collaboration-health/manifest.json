@@ -1,0 +1,23 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "collaboration-health",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "协作协议完备性 (CPC)",
+  "description": "D2: 检视 6 个协作维度的协议覆盖度——分工、信息流、权限、信任、知识、外部接口。",
+  "schedule": "0 9 * * 1",
+  "expert": "org",
+  "priority": "P2",
+  "layer": "capability",
+  "computeKind": "graph",
+  "computes": ["cpc"],
+  "thresholds": { "protocol_coverage": { "warning": 0.5, "critical": 0.3 } },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": ["sog_graph"],
+    "dataAccess": { "allowedDimensions": ["collaboration"], "sensitiveAccess": "read" }
+  },
+  "entryPoint": "./computes/cpc.ts",
+  "exportKey": "cpcSentinel",
+  "auxiliaryExperts": ["knowledge"]
+}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeSelfAwareness } from '../../../../extensions/sentinels/self-awareness/computes/bias.ts';
+import { computeSelfAwareness } from '../../../extensions/sentinels/self-awareness/computes/bias.ts';
 
 const mockStore = {
   queryNodes: () => [],

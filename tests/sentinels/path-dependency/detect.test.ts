@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { detectPathDependency } from '../../../../extensions/sentinels/path-dependency/computes/detect.ts';
+import { detectPathDependency } from '../../../extensions/sentinels/path-dependency/computes/detect.ts';
 
 const mockStore = {
   queryNodes: () => [],

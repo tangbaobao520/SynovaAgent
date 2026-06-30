@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeCPC } from '../../../../extensions/sentinels/collaboration-health/computes/cpc.ts';
+import { computeCPC } from '../../../extensions/sentinels/collaboration-health/computes/cpc.ts';
 
 const mockStore = {
   queryNodes: () => [],
