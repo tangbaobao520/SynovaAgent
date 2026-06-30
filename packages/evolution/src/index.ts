@@ -28,6 +28,9 @@ export type {
   PerSentinelStats,
   IndustryBaseline,
   IndustryPattern,
+  EvolutionProposal,
+  ThresholdChange,
+  ProposalStatus,
   // L0 接口
   L3WriteAPI,
   EvolutionEngineOptions,
@@ -62,6 +65,11 @@ export {
   aggregateIndustryBaseline,
   writeIndustryThresholds,
   aggregateAllIndustries,
+  discoverIndustryPatterns,
+  generateThresholdProposal,
+  listProposals,
+  approveProposal,
+  rejectProposal,
 } from './global-analyzer';
 
 // rule-version-manager 导出
