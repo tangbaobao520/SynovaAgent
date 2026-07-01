@@ -59,8 +59,6 @@ import sentinelHealthRoutes from './routes/sentinel-health';
 import sentinelRoutes from './routes/sentinel';
 import dataRoutes from './routes/data'; // V4.2.9 — 数据上传 API
 import reloadRoutes from './routes/reload';
-import auditRoutes from './routes/audit';
-import { AuditService } from './services/audit-service';
 import type { ServiceContainer } from './services/container';
 // Phase 0.1: 全局错误兜底 — uncaughtException + unhandledRejection
 import { registerGlobalErrorHandlers, unregisterGlobalErrorHandlers } from './services/runtime-global-handlers';
@@ -72,9 +70,6 @@ export async function createServer(): Promise<Server> {
   // Step 3: SynovaDiagnosisEngineImpl + createSynovaDiagnosisEngine 替换旧引擎
   initEngineContext();
   const db = getDatabase();
-
-  // Phase 0.3: 初始化审计日志服务
-  AuditService.init(db);
 
   // P0-5.3: 数据库启动时自动解密
   const { autoDecryptOnStartup, autoEncryptOnShutdown } = await import('./services/db-encryption');
@@ -426,7 +421,6 @@ app.use(permissionRoutes); // POST /api/permissions/update | POST /api/permissio
 app.use('/api/sentinel', sentinelHealthRoutes); // GET /api/sentinel/health
 app.use('/api/sentinel', sentinelRoutes);       // GET /api/sentinel/findings | /api/sentinel/signals | POST /api/sentinel/run/:id
 app.use(reloadRoutes);                         // POST /api/reload — 热加载专家文件
-app.use(auditRoutes);                          // GET /api/audit — 审计日志 (Phase 0.3)
 
   // ═══ A2: Connector Pipeline — 手动触发 + 定时同步 ═══
   app.post('/api/connector/sync', async (req, res) => {
