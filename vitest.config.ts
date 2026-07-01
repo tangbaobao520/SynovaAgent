@@ -35,11 +35,8 @@ export default defineConfig({
           'tests/e2e/**',
           'tests/acceptance/**',
           'tests/l3/e2e-*.test.ts',
-          'tests/l4/industry-loader.test.ts',      // Needs industry files
-          'tests/orchestrator/l3-wiring.test.ts',   // Needs full L3 setup
           'tests/orchestrator/phase1-diagnosis-wiring.test.ts',  // Needs DB
           'tests/data-pipeline.*.integration.test.ts',  // Feishu API
-          'tests/agent/*.integration.test.ts',   // Expert file loader
           'tests/smoke.test.ts',     // Needs full app stack
           'tests/circular-dependency.test.ts',  // Node 24 import resolution
         ]
