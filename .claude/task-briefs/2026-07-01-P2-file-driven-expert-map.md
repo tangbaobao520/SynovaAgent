@@ -73,7 +73,7 @@ SynovaAgent 目标：能文件化的必须文件化，不能文件化的必须�
 结果：F1_KZ → finance（与硬编码版本一致）
 
 ## 本任务在哪一层
-L0（packages/evolution/src/expert-evolution.ts）
+L0 + L4（packages/evolution/src/expert-evolution.ts + extensions/evolution/ — 扩展 JSON 属于 L4 文件驱动范畴）
 
 ## Done 标准
 - [x] verify: grep -q '_expertMap' packages/evolution/src/expert-evolution.ts
