@@ -75,3 +75,10 @@ export {
 // rule-version-manager 导出
 export { RuleVersionManager } from './rule-version-manager';
 export type { SnapshotEntry, RollbackResult, GradualRolloutInput } from './rule-version-manager';
+
+// expert-evolution 导出
+export {
+  analyzeExpertCorrections,
+  generateExpertProposal,
+} from './expert-evolution';
+export type { ExpertCorrectionStats, ExpertEvolutionAnalysis } from './expert-evolution';
