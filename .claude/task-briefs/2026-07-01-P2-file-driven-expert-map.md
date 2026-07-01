@@ -61,10 +61,10 @@ SynovaAgent 目标：能文件化的必须文件化，不能文件化的必须�
 4. 添加模块级缓存
 
 不做什么：
-- 不改 sentinel manifest 文件（expert 字段已在每个 manifest 中）
-- 不改 runner.ts（LAYER_EXPERTS 保持不变）
-- 不改 sentinel-loader.ts
-- 不改 fallback 逻辑（首字母推断保留作为安全网）
+- 不改 extensions/sentinels/*/manifest.json（expert 字段已在每个 manifest 中）
+- 不改 src/sentinel/runner.ts（LAYER_EXPERTS 保持不变）
+- 不改 src/sentinel/sentinel-loader.ts
+- 不改 packages/evolution/src/expert-evolution.ts（fallback 首字母推断保留）
 
 ## Q3: 验收 — 入口 → 交互 → 结果
 
