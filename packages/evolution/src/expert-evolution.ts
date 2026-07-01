@@ -16,6 +16,8 @@
  * 铁律 46: 不引用 engine-core
  */
 
+import { readFileSync, existsSync } from 'fs';
+import { join } from 'path';
 import { createLogger } from '@synova/logger';
 import type {
   AgentMemoryStoreLike,
@@ -34,76 +36,74 @@ const EXP_MARKETING = 'mar' + 'keting';
 const EXP_BUSINESS_MODEL = 'bus' + 'iness_model';
 const EXP_ACTION = 'act' + 'ion';
 
-// ═══ 哨兵 ID → 专家类型映射 ═══
-// 镜像 runner.ts 的 LAYER_EXPERTS + sentinel 命名约定。
-// 前缀匹配: F* → finance, E* → strategy, O* → org, T* → tech, I* → strategy, S* → org
-// 精确匹配: 已知的特定哨兵 ID
+// ═══ 文件驱动哨兵→专家映射 ═══
+// 读取 extensions/evolution/sentinel-expert-map.json。
+// 新增哨兵时在此 JSON 文件中添加映射条目即可，无需改 TS 代码。
+// fallback: 按首字母推断（F→finance, T→tech 等），保障未知哨兵也能映射。
 
-const SENTINEL_EXPERT_MAP: Array<{ pattern: string; expert: string }> = [
-  // 资本层 → finance (F1-F5)
-  { pattern: 'F1_', expert: EXP_FINANCE },
-  { pattern: 'F2_', expert: EXP_FINANCE },
-  { pattern: 'F3_', expert: EXP_FINANCE },
-  { pattern: 'F4_', expert: EXP_FINANCE },
-  { pattern: 'F5_', expert: EXP_FINANCE },
-  // 环境层 → strategy (E1-E6)
-  { pattern: 'E1_', expert: EXP_STRATEGY },
-  { pattern: 'E2_', expert: EXP_STRATEGY },
-  { pattern: 'E3_', expert: EXP_STRATEGY },
-  { pattern: 'E4_', expert: EXP_MARKETING },
-  { pattern: 'E5_', expert: EXP_STRATEGY },
-  { pattern: 'E6_', expert: EXP_STRATEGY },
-  // 内部层 → org (O1-O10, S1-S3)
-  { pattern: 'O1_', expert: EXP_ORG },
-  { pattern: 'O2_', expert: EXP_ORG },
-  { pattern: 'O3_', expert: EXP_ORG },
-  { pattern: 'O4_', expert: EXP_ORG },
-  { pattern: 'O5_', expert: EXP_ORG },
-  { pattern: 'O6_', expert: EXP_ORG },
-  { pattern: 'O7_', expert: EXP_ORG },
-  { pattern: 'O8_', expert: EXP_ORG },
-  { pattern: 'O9_', expert: EXP_ORG },
-  { pattern: 'O10', expert: EXP_ORG },
-  { pattern: 'S1_', expert: EXP_ORG },
-  { pattern: 'S2_', expert: EXP_ORG },
-  { pattern: 'S3_', expert: EXP_ORG },
-  // 技术层 → tech (T1-T9)
-  { pattern: 'T1_', expert: EXP_TECH },
-  { pattern: 'T2_', expert: EXP_TECH },
-  { pattern: 'T3_', expert: EXP_TECH },
-  { pattern: 'T4_', expert: EXP_TECH },
-  { pattern: 'T5_', expert: EXP_TECH },
-  { pattern: 'T6_', expert: EXP_TECH },
-  { pattern: 'T7_', expert: EXP_TECH },
-  { pattern: 'T8_', expert: EXP_TECH },
-  { pattern: 'T9_', expert: EXP_TECH },
-  // 界面层 → strategy / business_model (I1-I12)
-  { pattern: 'I1_', expert: EXP_STRATEGY },
-  { pattern: 'I2_', expert: EXP_STRATEGY },
-  { pattern: 'I3_', expert: EXP_STRATEGY },
-  { pattern: 'I4_', expert: EXP_STRATEGY },
-  { pattern: 'I5_', expert: EXP_STRATEGY },
-  { pattern: 'I6_', expert: EXP_FINANCE },
-  { pattern: 'I7_', expert: EXP_BUSINESS_MODEL },
-  { pattern: 'I8_', expert: EXP_STRATEGY },
-  { pattern: 'I9_', expert: EXP_BUSINESS_MODEL },
-  { pattern: 'I10', expert: EXP_FINANCE },
-  { pattern: 'I11', expert: EXP_STRATEGY },
-  { pattern: 'I12', expert: EXP_BUSINESS_MODEL },
-];
+interface ExpertMapEntry {
+  pattern: string;
+  expert: string;
+  prefix?: boolean;
+}
+
+interface ExpertMapFile {
+  version: string;
+  mappings: ExpertMapEntry[];
+}
+
+const EXPERT_MAP_PATH = join(process.cwd(), 'extensions', 'evolution', 'sentinel-expert-map.json');
+let _expertMapCache: Array<{ pattern: string; expert: string; prefix: boolean }> | null = null;
+
+/**
+ * 加载哨兵→专家映射表。
+ * 优先级：JSON 文件 > 运行时 fallback（sentinelToExpert 中处理）。
+ * 缓存到模块级变量，进程内复用。
+ */
+function loadExpertMap(): Array<{ pattern: string; expert: string; prefix: boolean }> {
+  if (_expertMapCache) return _expertMapCache;
+
+  try {
+    if (existsSync(EXPERT_MAP_PATH)) {
+      const raw = readFileSync(EXPERT_MAP_PATH, 'utf-8');
+      const parsed = JSON.parse(raw) as ExpertMapFile;
+      if (parsed.mappings && parsed.mappings.length > 0) {
+        // 将专家字符串转为运行时值（EXP_* 常量）
+        _expertMapCache = parsed.mappings.map(m => ({
+          pattern: m.pattern,
+          expert: m.expert,
+          prefix: m.prefix ?? false,
+        }));
+        log.debug({ path: EXPERT_MAP_PATH, count: _expertMapCache.length }, '哨兵→专家映射已加载');
+        return _expertMapCache;
+      }
+    }
+  } catch (err: unknown) {
+    log.warn({ err, path: EXPERT_MAP_PATH }, '专家映射 JSON 加载失败 — 使用 fallback');
+  }
+
+  _expertMapCache = [];
+  return _expertMapCache;
+}
 
 /** 根据哨兵 ID 推算所属专家类型 */
 function sentinelToExpert(sentinelId: string): string {
-  for (const { pattern, expert } of SENTINEL_EXPERT_MAP) {
-    if (sentinelId.startsWith(pattern)) return expert;
-  }
-  // 默认 mapping: 按首字母推断
+  // 1. 先查文件驱动的映射表（精确匹配优先，前缀匹配其次）
+  const mappings = loadExpertMap();
+  // 精确匹配
+  const exact = mappings.find(m => !m.prefix && m.pattern === sentinelId);
+  if (exact) return exact.expert;
+  // 前缀匹配
+  const prefix = mappings.find(m => m.prefix && sentinelId.startsWith(m.pattern));
+  if (prefix) return prefix.expert;
+
+  // 2. 默认 mapping: 按首字母推断
   if (sentinelId.startsWith('F')) return EXP_FINANCE;
   if (sentinelId.startsWith('E')) return EXP_STRATEGY;
   if (sentinelId.startsWith('O') || sentinelId.startsWith('S')) return EXP_ORG;
   if (sentinelId.startsWith('T')) return EXP_TECH;
   if (sentinelId.startsWith('I')) return EXP_STRATEGY;
-  return EXP_ACTION; // fallback
+  return EXP_ACTION;
 }
 
 // ═══ 类型 ═══
