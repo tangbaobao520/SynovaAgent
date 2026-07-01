@@ -19,8 +19,14 @@ import type {
   ExtractedFact,
 } from './evolution-types';
 import { DEFAULT_EVOLUTION_CONFIG } from './evolution-types';
+import { EvolutionMetrics } from './evolution-metrics';
 
 const log = createLogger('evolution/org-adapter');
+
+// ═══ 阈值边界 ═══
+// 防止阈值无限下调或暴涨导致哨兵永不再告警或永远告警。
+const MIN_THRESHOLD = 0.05;   // 硬下界: 任何阈值不低于 5%
+const MAX_THRESHOLD_MULTIPLIER = 5;  // 硬上界: 不超过原始值的 5 倍
 
 // ═══ 数值正则 (用于从用户纠错文本中提取数字) ═══
 const NUMBER_RE = /(\d+[.\d]*)\s*(万|亿|千万|百万|%|元|美元|人|个)?/g;
@@ -87,7 +93,13 @@ export class OrgAdapter {
   private l3: L3WriteAPI | null;
   private graphStore: GraphStoreLike | null;
   private memoryStore: AgentMemoryStoreLike | null;
-  private config: { minCorrectionsForThresholdAdjustment: number; thresholdAdjustmentRatio: number };
+  private metrics: EvolutionMetrics;
+  private config: {
+    minCorrectionsForThresholdAdjustment: number;
+    thresholdAdjustmentRatio: number;
+    /** 冷却期（小时）：同一哨兵被调整后，在此时间内不再调整 */
+    coolingPeriodHours: number;
+  };
 
   constructor(opts: {
     l3?: L3WriteAPI | null;
@@ -95,13 +107,16 @@ export class OrgAdapter {
     memoryStore?: AgentMemoryStoreLike | null;
     minCorrectionsForThresholdAdjustment?: number;
     thresholdAdjustmentRatio?: number;
+    coolingPeriodHours?: number;
   }) {
     this.l3 = opts.l3 ?? null;
     this.graphStore = opts.graphStore ?? null;
     this.memoryStore = opts.memoryStore ?? null;
+    this.metrics = EvolutionMetrics.getInstance();
     this.config = {
       minCorrectionsForThresholdAdjustment: opts.minCorrectionsForThresholdAdjustment ?? DEFAULT_EVOLUTION_CONFIG.minCorrectionsForThresholdAdjustment,
       thresholdAdjustmentRatio: opts.thresholdAdjustmentRatio ?? DEFAULT_EVOLUTION_CONFIG.thresholdAdjustmentRatio,
+      coolingPeriodHours: opts.coolingPeriodHours ?? 24,
     };
   }
 
@@ -217,6 +232,7 @@ export class OrgAdapter {
         }
 
         correctionsProcessed++;
+        this.metrics.recordCorrection();
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         errors.push(`解析纠错记录失败: ${msg}`);
@@ -260,15 +276,46 @@ export class OrgAdapter {
       if (count >= this.config.minCorrectionsForThresholdAdjustment) {
         // 读取已有阈值调整记录
         const existing = this.memoryStore.recall(orgId, `threshold_${sentinelId}`);
-        let oldCritical = 1.0; // 默认 critical 阈值
+        let oldCritical = 1.0;
+        let lastAdjustedAt = 0;
+
         if (existing) {
           try {
-            const parsed = JSON.parse(existing.value) as { newThreshold?: { critical: number } };
+            const parsed = JSON.parse(existing.value) as {
+              newThreshold?: { critical: number };
+              adjustedAt?: string;
+            };
             if (parsed.newThreshold?.critical) oldCritical = parsed.newThreshold.critical;
+            if (parsed.adjustedAt) lastAdjustedAt = new Date(parsed.adjustedAt).getTime();
           } catch { /* 使用默认值 */ }
         }
 
-        const newCritical = Math.round(oldCritical * (1 - this.config.thresholdAdjustmentRatio) * 100) / 100;
+        // ═══ 冷却期检查（ARCH-13 §6.5）═══
+        if (lastAdjustedAt > 0) {
+          const hoursSinceAdjust = (Date.now() - lastAdjustedAt) / (1000 * 60 * 60);
+          if (hoursSinceAdjust < this.config.coolingPeriodHours) {
+            log.info({ sentinelId, hoursSinceAdjust: hoursSinceAdjust.toFixed(1), coolingPeriod: this.config.coolingPeriodHours }, '冷却期 — 跳过阈值调整');
+            this.metrics.recordCoolingSkip(sentinelId, hoursSinceAdjust);
+            continue;
+          }
+        }
+
+        // ═══ 计算新阈值 ═══
+        let newCritical = Math.round(oldCritical * (1 - this.config.thresholdAdjustmentRatio) * 100) / 100;
+
+        // ═══ 阈值边界保护 ═══
+        const rawNew = newCritical;
+        // 下界: 不低于 MIN_THRESHOLD
+        newCritical = Math.max(MIN_THRESHOLD, newCritical);
+        // 上界: 不超过 original * MAX_THRESHOLD_MULTIPLIER
+        const originalCritical = 1.0;
+        const upperBound = Math.round(originalCritical * MAX_THRESHOLD_MULTIPLIER * 100) / 100;
+        newCritical = Math.min(upperBound, newCritical);
+
+        if (rawNew !== newCritical) {
+          log.info({ sentinelId, attempted: rawNew, clamped: newCritical }, '阈值边界保护 — 调整值被钳制');
+          this.metrics.recordBoundProtection(sentinelId, rawNew, newCritical);
+        }
 
         // 写入阈值调整记忆
         this.memoryStore.remember({
@@ -299,6 +346,7 @@ export class OrgAdapter {
         }
 
         adjusted.push({ sentinelId, old: oldCritical, new: newCritical });
+        this.metrics.recordThresholdAdjustment(sentinelId, oldCritical, newCritical);
         log.info({ orgId, sentinelId, old: oldCritical, new: newCritical, count }, '阈值自适应 — 上调');
       }
     }
