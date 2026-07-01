@@ -22,6 +22,7 @@ function makeMemoryStore(initial: Array<{ key: string; value: string; tags: stri
     list: (query: { orgId: string; type?: string; tags?: string[]; limit?: number }) => {
       const results = Array.from(store.values())
         .filter(item => query.type ? item.type === query.type : true)
+        .filter(item => query.tags && query.tags.length > 0 ? query.tags.every(t => item.tags.includes(t)) : true)
         .slice(0, query.limit || 50);
       return results.map(r => ({ value: r.value, tags: r.tags, type: r.type }));
     },
@@ -76,7 +77,7 @@ describe('OrgAdapter', () => {
   describe('processCorrections — 事实提取', () => {
     it('从纠错文本提取现金流', async () => {
       const memStore = makeMemoryStore([
-        { key: 'correction_f1_fb1', value: JSON.stringify({ reason: '现金流实际500万', actionId: 'prop_1', sentinelId: 'F1' }), tags: ['correction', 'reject', 'F1'], type: 'user_correction' },
+        { key: 'correction_f1_fb1', value: JSON.stringify({ reason: '现金流实际500万', actionId: 'prop_1', sentinelId: 'F1' }), tags: ['user_correction', 'correction', 'reject', 'F1'], type: 'enterprise_fact' },
       ]);
       const graphStore = makeGraphStore();
       const adapter = new OrgAdapter({ graphStore, memoryStore: memStore });
@@ -87,7 +88,7 @@ describe('OrgAdapter', () => {
 
     it('从纠错文本提取营收', async () => {
       const memStore = makeMemoryStore([
-        { key: 'correction_f3_fb2', value: JSON.stringify({ reason: '营收大约2亿', actionId: 'prop_2', sentinelId: 'F3' }), tags: ['correction', 'modify', 'F3'], type: 'user_correction' },
+        { key: 'correction_f3_fb2', value: JSON.stringify({ reason: '营收大约2亿', actionId: 'prop_2', sentinelId: 'F3' }), tags: ['user_correction', 'correction', 'modify', 'F3'], type: 'enterprise_fact' },
       ]);
       const adapter = new OrgAdapter({
         graphStore: makeGraphStore(),
@@ -100,7 +101,7 @@ describe('OrgAdapter', () => {
 
     it('无数字的纠错文本 → 不提取事实', async () => {
       const memStore = makeMemoryStore([
-        { key: 'correction_o1_fb3', value: JSON.stringify({ reason: '这个判断不对，我们组织架构合理', actionId: 'prop_3', sentinelId: 'O1' }), tags: ['correction', 'reject', 'O1'], type: 'user_correction' },
+        { key: 'correction_o1_fb3', value: JSON.stringify({ reason: '这个判断不对，我们组织架构合理', actionId: 'prop_3', sentinelId: 'O1' }), tags: ['user_correction', 'correction', 'reject', 'O1'], type: 'enterprise_fact' },
       ]);
       const adapter = new OrgAdapter({
         graphStore: makeGraphStore(),
@@ -115,7 +116,7 @@ describe('OrgAdapter', () => {
   describe('adjustThresholds — 阈值自适应', () => {
     it('单次纠错 → 不触发阈值调整 (需≥3次)', async () => {
       const memStore = makeMemoryStore([
-        { key: 'c1', value: JSON.stringify({ reason: '现金流不符', actionId: 'a1', sentinelId: 'F1' }), tags: ['correction', 'reject', 'F1'], type: 'user_correction' },
+        { key: 'c1', value: JSON.stringify({ reason: '现金流不符', actionId: 'a1', sentinelId: 'F1' }), tags: ['user_correction', 'correction', 'reject', 'F1'], type: 'enterprise_fact' },
       ]);
       const adapter = new OrgAdapter({
         graphStore: makeGraphStore(),
@@ -132,8 +133,8 @@ describe('OrgAdapter', () => {
         entries.push({
           key: `c_f1_${i}`,
           value: JSON.stringify({ reason: `现金流不符#${i}`, actionId: `a${i}`, sentinelId: 'F1' }),
-          tags: ['correction', 'reject', 'F1'],
-          type: 'user_correction',
+          tags: ['user_correction', 'correction', 'reject', 'F1'],
+          type: 'enterprise_fact',
         });
       }
       const memStore = makeMemoryStore(entries);

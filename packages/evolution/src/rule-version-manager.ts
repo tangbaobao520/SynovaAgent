@@ -114,7 +114,8 @@ export class RuleVersionManager {
         try {
           const adjustments = this.memoryStore.list({
             orgId,
-            type: 'threshold_adjustment',
+            type: 'enterprise_fact',
+            tags: ['threshold_adjustment'],
             limit: 200,
           });
           for (const adj of adjustments) {
@@ -143,7 +144,8 @@ export class RuleVersionManager {
       // 2. 读取所有行业基线
       const baselines_raw = this.memoryStore.list({
         orgId: 'global',
-        type: 'industry_baseline',
+        type: 'enterprise_fact',
+        tags: ['industry_baseline'],
         limit: 100,
       });
       for (const bl of baselines_raw) {
@@ -174,7 +176,7 @@ export class RuleVersionManager {
         orgId: 'global',
         key: `snapshot_${id}`,
         value: JSON.stringify(snapshot),
-        type: 'evolution_snapshot',
+        type: 'enterprise_fact',
         confidence: 1.0,
         source: 'rule_version_manager',
         tags: ['evolution_snapshot', `desc:${description}`],
@@ -207,7 +209,8 @@ export class RuleVersionManager {
     try {
       const entries = this.memoryStore.list({
         orgId: 'global',
-        type: 'evolution_snapshot',
+        type: 'enterprise_fact',
+        tags: ['evolution_snapshot'],
         limit: 100,
       });
 
@@ -281,7 +284,7 @@ export class RuleVersionManager {
               reason: `回滚: ${snapshot.description} — ${t.reason}`,
               adjustedAt: new Date().toISOString(),
             }),
-            type: 'threshold_adjustment',
+            type: 'enterprise_fact',
             confidence: 0.9,
             source: 'rule_version_manager',
             tags: ['threshold_adjustment', t.sentinelId, 'rollback'],
@@ -308,7 +311,7 @@ export class RuleVersionManager {
               restoredFrom: snapshotId,
               restoredAt: new Date().toISOString(),
             }),
-            type: 'industry_baseline',
+            type: 'enterprise_fact',
             confidence: 0.9,
             source: 'rule_version_manager',
             tags: ['industry_baseline', b.industry, 'rollback'],
@@ -372,7 +375,7 @@ export class RuleVersionManager {
               reason: `灰度发布 (${percentage}%): ${targetOrgs.length}/${orgPool.length} 组织`,
               adjustedAt: new Date().toISOString(),
             }),
-            type: 'threshold_adjustment',
+            type: 'enterprise_fact',
             confidence: 0.8,
             source: 'gradual_rollout',
             tags: ['threshold_adjustment', t.sentinelId, 'gradual_rollout'],

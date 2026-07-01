@@ -85,10 +85,10 @@ export async function collectFeedback(
         orgId: input.orgId,
         key: `correction_${sentinelTag}_${id}`,
         value: JSON.stringify(record),
-        type: 'user_correction',
+        type: 'enterprise_fact',
         confidence,
         source: 'user_feedback',
-        tags: ['correction', input.decision, sentinelTag],
+        tags: ['user_correction', input.decision, sentinelTag],
         expiresAt: null, // 永久保留
       });
       persisted = true;

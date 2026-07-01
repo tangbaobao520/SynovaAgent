@@ -22,6 +22,7 @@ function makeMemoryStore() {
       return Array.from(store.values())
         .filter(item => item.orgId === query.orgId)
         .filter(item => query.type ? item.type === query.type : true)
+        .filter(item => query.tags && query.tags.length > 0 ? query.tags.every(t => item.tags.includes(t)) : true)
         .slice(0, query.limit || 50)
         .map(r => ({ value: r.value, tags: r.tags, type: r.type }));
     },
@@ -52,7 +53,7 @@ describe('RuleVersionManager', () => {
       mem.remember({
         orgId: 'global', key: 'threshold_F1',
         value: JSON.stringify({ sentinelId: 'F1', orgId: 'org1', newThreshold: { warning: 1.0, critical: 0.5 }, reason: '用户纠错' }),
-        type: 'threshold_adjustment', confidence: 0.8, source: 'org_adapter',
+        type: 'enterprise_fact', confidence: 0.8, source: 'org_adapter',
         tags: ['threshold_adjustment', 'F1'], expiresAt: null,
       });
 
@@ -96,7 +97,7 @@ describe('RuleVersionManager', () => {
       mem.remember({
         orgId: 'global', key: 'threshold_F1',
         value: JSON.stringify({ sentinelId: 'F1', orgId: 'org1', newThreshold: { warning: 1.0, critical: 0.5 }, reason: '用户纠错' }),
-        type: 'threshold_adjustment', confidence: 0.8, source: 'org_adapter',
+        type: 'enterprise_fact', confidence: 0.8, source: 'org_adapter',
         tags: ['threshold_adjustment', 'F1'], expiresAt: null,
       });
 

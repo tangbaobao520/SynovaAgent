@@ -153,7 +153,8 @@ export async function analyzeExpertCorrections(
     try {
       const corrections = memoryStore.list({
         orgId,
-        type: 'user_correction',
+        type: 'enterprise_fact',
+        tags: ['user_correction'],
         limit: 200,
       });
 
