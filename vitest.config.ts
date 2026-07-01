@@ -32,9 +32,14 @@ export default defineConfig({
     include: ['./tests/**/*.test.ts', './tests/**/*.integration.test.ts'],
     exclude: process.env.CI
       ? [
-          'tests/e2e/**',            // E2E tests require full app
-          'tests/acceptance/**',     // Acceptance tests need industry files
-          'tests/l3/e2e-*.test.ts',  // Integration tests need DB
+          'tests/e2e/**',
+          'tests/acceptance/**',
+          'tests/l3/e2e-*.test.ts',
+          'tests/l4/**',             // L4 tests need graph store
+          'tests/orchestrator/**',   // Orchestrator tests need DB
+          'tests/data-pipeline.*.integration.test.ts',  // Feishu API
+          'tests/smoke.test.ts',     // Needs full app stack
+          'tests/circular-dependency.test.ts',  // Node 24 import resolution
         ]
       : [],
     coverage: {
