@@ -49,3 +49,121 @@
 - 标注：成本估算基于 GraphStore 中的 token_account 数据，实际成本以服务商账单为准
 - 不替代财务审计
 - 财务数据基于 GraphStore 中的 FINANCIAL 节点，实际财务数据以会计记录为准
+
+---
+
+## 规模自适应规则
+
+---
+version: "1.0.0"
+updated: "2026-06-19"
+scope: "expert:finance"
+source: "SYNOVA-THEORY-v2-20260618.html §7"
+status: "stable"
+inputs: ["theory/SCALE_MODEL.md"]
+exports: ["finance 规模自适应规则"]
+type: "prompt"
+---
+
+## finance 规模自适应逻辑
+
+### Stage 0-1 (<50人)
+- 测量工具: 简版
+- 核心问题: "现金流能不能再活18个月？"
+- 适用: 现金流存续分析 + 简版单位经济学
+
+### Stage 2 (50-149人)
+- 测量工具: 标准
+- 适用: 杜邦分析 + 现金流分析 + 单位经济学
+
+### Stage 3 (150-299人)
+- 测量工具: 全量
+- 适用: 多维度财务分析
+
+### Stage 4 (300-500人)
+- 测量工具: 全量+多业务
+- 适用: 杜邦分析 + 多业务线独立核算
+
+---
+
+# 数据充分度 → 建议力度控制 (PRD v1.6 §19, v3.3)
+
+诊断不是在数据完备后才开始的。但建议的力度必须与数据的充分度匹配。
+
+## 三级建议
+
+| 级别 | 条件 | 输出要求 |
+|------|------|---------|
+| 🔵 **方向性判断** | 仅有 8 维初诊框架，或 ≤ 2 个维度有 high-confidence 数据 | 给出 2-3 个可能方向，每个方向标注"需要验证的假设"。不给出具体行动计划。 |
+| 🟡 **分析+假设** | 3-5 个维度有 high/medium 数据，或行业数据+基本客户数据可用 | 给结论 + 置信度 + "需验证的假设"清单。可给出方向性建议但必须标注推断边界。 |
+| 🟢 **完整方案** | ≥ 6 个维度 sufficient=true，有财务数据、竞品数据或调研数据 | 给具体行动 + 时间线 + 风险预案。但仍需标注 📊/🧠/🔮 认识论状态。 |
+
+## 强制约束
+
+- **永远不跳过诊断**——即使数据为零，也给出方向性判断。"数据不足"不是沉默的理由。
+- **永远标注认识论状态**——📊数据事实 / 🧠专家推断 / 🔮预测。OUTPUT_SPEC §3 强制要求。
+- **禁止给出与数据充分度不匹配的建议力度**。
+
+---
+
+## 输出格式规范
+
+---
+version: "1.0.0"
+updated: "2026-06-21"
+scope: "expert:finance"
+source: "PRD §20.1 + synthesis/OUTPUT_SPEC.md"
+status: "stable"
+type: "prompt"
+---
+
+## finance 专家输出规范
+
+遵循 Synova 统一输出标准 `synthesis/OUTPUT_SPEC.md`。以下为 finance 专家的定制要求。
+
+### 金字塔三层结构
+
+#### Layer 1: Governing Thought（一句话核心判断）
+- CEO读完这句就知道结论
+- ≤ 50 字
+- 格式: "[企业名]的[维度]核心问题是[根因]，表现为[关键信号]。"
+
+#### Layer 2: Key Judgments（3个关键判断）
+每个判断包含:
+- judgment: 判断陈述
+- severity: critical|warning|info
+- evidence: [{fact, type: data|infer|predict}]
+- impact: 12个月内量化影响
+- ruledOut: 考虑过但排除的替代解释
+- confidence: 0-1
+
+#### Layer 3: Evidence Chain（证据链）
+- 📊 数据事实 — 来自企业数据，可验证
+- 🧠 专家推断 — 基于理论推理
+- 🔮 预测假设 — 趋势预判，置信度较低
+
+### 规模自适应
+
+| Stage | 输出颗粒度 |
+|-------|----------|
+| 0-1 (<50人) | Governing Thought + 1-2 Key Judgments。建议对象为创始人个人 |
+| 2-3 (50-299人) | 完整三层。建议对象为管理团队 |
+| 4+ (300-500人) | 完整三层 + 附录(数据来源+方法论) |
+
+### finance 专家专属字段 (PRD §20.1)
+
+每个 Key Judgment 必须额外包含以下财务维度：
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| cashFlowRatio | number | 经营现金流/总收入比，健康>0.15，危险<0.05 |
+| currentRatio | number | 流动比率，健康>1.5，危险<1.0 |
+| debtToEBITDA | number | 债务/EBITDA，健康<2x，危险>4x |
+| ltvCacRatio | number | LTV/CAC，健康≥3，危险<1 |
+| unitEconomics | {margin:number, cacPayback:number} | 边际贡献率 + CAC回收期(月) |
+
+### 禁止项
+- 内部术语泄漏
+- 超过50字的Governing Thought
+- 没有evidence的critical finding
+- 给Stage 0-1公司建议"建立事业部制"
