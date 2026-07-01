@@ -30,6 +30,13 @@ export default defineConfig({
     //   *.integration.test.ts → 集成测试 (API + DB, 真实 SQLite)
     //   *.e2e.test.ts → 端到端测试 (完整用户旅程)
     include: ['./tests/**/*.test.ts', './tests/**/*.integration.test.ts'],
+    exclude: process.env.CI
+      ? [
+          'tests/e2e/**',            // E2E tests require full app
+          'tests/acceptance/**',     // Acceptance tests need industry files
+          'tests/l3/e2e-*.test.ts',  // Integration tests need DB
+        ]
+      : [],
     coverage: {
       provider: 'v8',
       include: ['./src/**/*.ts'],
