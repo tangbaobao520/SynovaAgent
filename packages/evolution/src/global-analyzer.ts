@@ -12,7 +12,7 @@
  * 文件驱动: 产出写入 extensions/industries/{name}/ 目录, 不改 TypeScript。
  */
 
-import { writeFileSync, existsSync, mkdirSync } from 'fs';
+import { writeFileSync, existsSync, mkdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { createLogger } from '@synova/logger';
 import type {
@@ -25,25 +25,66 @@ import { RuleVersionManager } from './rule-version-manager';
 
 const log = createLogger('evolution/global-analyzer');
 
-// ═══ 行业扩展目录 ═══
+// ═══ 扩展目录 ═══
 
 const INDUSTRIES_DIR = join(process.cwd(), 'extensions', 'industries');
+const EVOLUTION_DIR = join(process.cwd(), 'extensions', 'evolution');
+const THRESHOLDS_FILE = join(EVOLUTION_DIR, 'default-thresholds.json');
 
-/** 通用默认哨兵阈值 (作为行业阈值偏离的参考基线) */
-const GENERAL_THRESHOLDS: Record<string, { warning: number; critical: number }> = {
+// ═══ 文件驱动阈值加载 ═══
+// 优先读取 `extensions/evolution/default-thresholds.json`。
+// 文件不存在或解析失败时静默降级到编译期默认值。
+// 缓存到模块级变量，进程内复用。
+
+interface ThresholdsFile {
+  version: string;
+  thresholds: Record<string, { warning: number; critical: number }>;
+}
+
+/** 编译期 fallback 阈值（JSON 文件不可用时的安全网） */
+const THRESHOLDS_FALLBACK: Record<string, { warning: number; critical: number }> = {
   F1_KZ: { warning: 1.5, critical: 2.0 },
   F2_runway: { warning: 12, critical: 6 },
   F3_revenue_quality: { warning: 0.3, critical: 0.15 },
   F4_profit_quality: { warning: 0.3, critical: 0.15 },
   F5_cash_conversion: { warning: 0.5, critical: 0.3 },
-  // 组织维度
   O1_info_distortion: { warning: 0.4, critical: 0.6 },
   O2_explore_exploit: { warning: 0.3, critical: 0.5 },
   O3_talent_density: { warning: 0.3, critical: 0.5 },
-  // 技术维度
   T1_software_health: { warning: 0.4, critical: 0.6 },
   T2_connector_coverage: { warning: 0.3, critical: 0.5 },
 };
+
+/** 运行时缓存 */
+let _thresholdsCache: Record<string, { warning: number; critical: number }> | null = null;
+
+/**
+ * 加载通用默认哨兵阈值。
+ * 优先级：JSON 文件 > 编译期 fallback
+ * 缓存：首次读取后缓存到进程结束
+ */
+function loadDefaultThresholds(): Record<string, { warning: number; critical: number }> {
+  if (_thresholdsCache) return _thresholdsCache;
+
+  try {
+    if (existsSync(THRESHOLDS_FILE)) {
+      const raw = readFileSync(THRESHOLDS_FILE, 'utf-8');
+      const parsed = JSON.parse(raw) as ThresholdsFile;
+      if (parsed.thresholds && Object.keys(parsed.thresholds).length > 0) {
+        _thresholdsCache = parsed.thresholds;
+        log.debug({ path: THRESHOLDS_FILE, count: Object.keys(parsed.thresholds).length }, '默认阈值已加载');
+        return _thresholdsCache;
+      }
+      log.warn({ path: THRESHOLDS_FILE }, 'JSON 中 thresholds 为空 — 使用 fallback');
+    }
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log.warn({ err: msg, path: THRESHOLDS_FILE }, '阈值 JSON 加载失败 — 使用 fallback');
+  }
+
+  _thresholdsCache = THRESHOLDS_FALLBACK;
+  return _thresholdsCache;
+}
 
 // ═══ 核心函数 ═══
 
@@ -74,7 +115,7 @@ export async function aggregateIndustryBaseline(
   // 对比通用阈值, 生成调整建议
   const suggestions: IndustryBaseline['thresholdSuggestions'] = [];
   for (const stat of stats) {
-    const general = GENERAL_THRESHOLDS[stat.sentinelId];
+    const general = loadDefaultThresholds()[stat.sentinelId];
     if (!general) continue;
 
     // 如果行业中位数与通用临界值偏差 > 20% → 建议调整
@@ -122,7 +163,7 @@ export function writeIndustryThresholds(industry: string, baseline: IndustryBase
 
   // 从哨兵统计提取行业中位数作为阈值
   for (const stat of baseline.sentinelStats) {
-    const defaultThreshold = GENERAL_THRESHOLDS[stat.sentinelId];
+    const defaultThreshold = loadDefaultThresholds()[stat.sentinelId];
     thresholds[stat.sentinelId] = {
       warning: defaultThreshold?.warning ?? 0.5,
       critical: defaultThreshold?.critical ?? 1.0,
