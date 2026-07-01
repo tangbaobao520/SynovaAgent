@@ -1,0 +1,23 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "financial-snapshot",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "财务快照 (Financial Snapshot)",
+  "description": "D7: 汇总企业核心财务指标的快照——营收、成本、利润、现金流、资产负债率。提供财务状况的一目了然视图。",
+  "schedule": "0 0 1 * *",
+  "expert": "finance",
+  "priority": "P1",
+  "layer": "financial",
+  "computeKind": "graph",
+  "computes": ["snapshot"],
+  "thresholds": { "financial_health": { "warning": 0.4, "critical": 0.2 } },
+  "aggregation": "average",
+  "context": {
+    "requiredDataSources": ["sog_graph"],
+    "dataAccess": { "allowedDimensions": ["financial"], "sensitiveAccess": "read" }
+  },
+  "entryPoint": "./computes/snapshot.ts",
+  "exportKey": "financialSnapshotSentinel",
+  "auxiliaryExperts": ["knowledge"]
+}

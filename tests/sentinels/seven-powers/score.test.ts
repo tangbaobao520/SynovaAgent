@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeSevenPowers } from '../../../../extensions/sentinels/seven-powers/computes/score.ts';
+import { computeSevenPowers } from '../../../extensions/sentinels/seven-powers/computes/score.ts';
 
 const mockStore = {
   queryNodes: () => [],
