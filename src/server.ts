@@ -24,6 +24,8 @@ import { ToolRegistry } from './agent/tools';
 import { KnowledgeInjector, KnowledgeConflictHandler, AtomicWriter } from './agent/index';
 import { BossMailbox } from './agent/boss-mailbox';
 import { rbacMiddleware, extractRbacContext, canAccessWorkspace, canModifyWorkspace } from './middleware/rbac';
+import { jwtAuthMiddleware } from './middleware/auth';
+import authRoutes from './routes/auth';
 import { buildInheritedContext, detectConflicts } from './agent/workspace-service';
 import { WorkspaceContextBridge } from './agent/workspace-context-bridge';
 // Code Review A1+A3: 凭证加密 + L5 事件总线初始化
@@ -58,9 +60,6 @@ import sentinelRoutes from './routes/sentinel';
 import dataRoutes from './routes/data'; // V4.2.9 — 数据上传 API
 import reloadRoutes from './routes/reload';
 import type { ServiceContainer } from './services/container';
-
-/** RBAC 默认角色 — 提取为常量避免 secrets 扫描误报 */
-const DEFAULT_RBAC_ROLE = 'employee';
 
 export async function createServer(): Promise<Server> {
   const config = loadConfig();
@@ -329,64 +328,12 @@ export async function createServer(): Promise<Server> {
   const { sanitizeCheckMiddleware } = await import('./middleware/sanitize-check');
   app.use(sanitizeCheckMiddleware);
 
-  // Token 认证 + RBAC 中间件 (内联 — 避免 tsx workspace 包解析问题)
-  const whiteListed = (path: string) =>
-    path === '/health' || path === '/' || path.startsWith('/api/status') ||
-    path.startsWith('/assets/') || path.endsWith('.html') || path.endsWith('.js') || path.endsWith('.css');
+  // Phase 0.1: JWT 认证中间件（替换旧内联 auth）
+  // 保持向后兼容：DEV_MODE=true 且无 JWT_SECRET 时自动 admin 上下文
+  app.use(jwtAuthMiddleware);
 
-  // 内联 RBAC: 根据角色生成 FilterClause
-  const buildFilterClause = (ctx: { auth: { roles: string[]; teamId: string } }) => {
-    const maxRole = ctx.auth.roles.includes('admin') ? 'admin'
-      : ctx.auth.roles.includes('manager') ? 'manager' : 'employee';
-    if (maxRole === 'admin') return { conditions: [] as Array<{ field: string; operator: string; value: unknown }> };
-    const c: Array<{ field: string; operator: string; value: unknown }> = [
-      { field: 'access.level', operator: 'IN', value: ['public', 'team'] },
-      { field: 'access.teamId', operator: 'EQ', value: ctx.auth.teamId },
-      { field: 'access.sensitivity', operator: 'NOT_EQ', value: 'restricted' },
-    ];
-    return { conditions: c };
-  };
-
-  app.use(async (req, res, next) => {
-    if (whiteListed(req.path)) return next();
-    const token = req.headers['authorization']?.replace('Bearer ', '') || (req.query.token as string);
-
-    // DevMode: admin 上下文
-    if (config.devMode) {
-      const { runWithContext } = await import('./services/request-context');
-      const ctx = {
-        userId: 'dev-admin',
-        identity: { openId: 'dev', email: 'dev@localhost', name: 'Dev Admin', source: 'api' as const },
-        auth: { roles: ['admin' as const], teamId: 'default', tenantId: 'default', sensitivity: 'normal' as const },
-        permissions: { version: 1, expiresAt: Date.now() + 86400000 },
-      };
-      runWithContext({ user: ctx, authProvider: { getPermissionFilter: async () => ({ conditions: [] }) } as never }, async () => { next(); });
-        return;
-      }
-
-      if (!token) {
-        return res.status(401).json({ ok: false, code: 'UNAUTHORIZED', message: '缺少 API Token' });
-    }
-
-    const parts = token.split(':');
-    const tenantId = parts[0] || 'default';
-    const role = parts[1] || DEFAULT_RBAC_ROLE;
-    const ctx = {
-      userId: token,
-      identity: { openId: token, email: `${token}@${tenantId}`, name: token, source: 'api' as const },
-      auth: { roles: [role] as string[], teamId: tenantId, tenantId, sensitivity: 'normal' as const },
-      permissions: { version: 1, expiresAt: Date.now() + 86400000 },
-    };
-    const filter = buildFilterClause(ctx);
-    const authProvider = { getPermissionFilter: async () => filter };
-
-    const { runWithContext } = await import('./services/request-context');
-    if (req.query.token) {
-      const { token: _, ...cleanQuery } = req.query;
-      Object.defineProperty(req, 'query', { value: cleanQuery, writable: true, configurable: true });
-    }
-    runWithContext({ user: ctx, authProvider: authProvider as never }, async () => { next(); });
-  });
+  // Phase 0.1: JWT 认证路由（登录/刷新/撤销）
+  app.use(authRoutes);
 
   // Slice 6.2: 简易速率限制 (100 req/min per IP)
   const rateLimitMap = new Map<string, { count: number; resetAt: number }>();

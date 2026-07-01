@@ -93,4 +93,33 @@ describe('canModifyWorkspace', () => {
   it('liaison CANNOT modify', () => {
     expect(canModifyWorkspace(r('liaison'), { department: 'marketing' })).toBe(false);
   });
+
+  // ═══ Phase 0.1: GA 角色 ═══
+
+  it('GA token → role=ga', () => {
+    const ctx = extractRbacContext({ auth: { sub: 'ga_001', role: 'ga', orgId: 'org-1' } } as any);
+    expect(ctx.role).toBe('ga');
+    expect(ctx.userId).toBe('ga_001');
+  });
+
+  it('GA can access all workspaces (like liaison)', () => {
+    expect(canAccessWorkspace(r('ga'), { visibility: 'global' })).toBe(true);
+    expect(canAccessWorkspace(r('ga'), { visibility: 'department', department: 'sales' })).toBe(true);
+    expect(canAccessWorkspace(r('ga'), { visibility: 'private', owner: 'bob' })).toBe(true);
+  });
+
+  it('GA CANNOT modify workspace (403)', () => {
+    expect(canModifyWorkspace(r('ga'), { department: 'marketing' })).toBe(false);
+    expect(canModifyWorkspace(r('ga'), { department: 'sales', owner: 'ga_001' })).toBe(false);
+  });
+
+  it('extractRbacContext: JWT auth takes priority over x-synova-token', () => {
+    const ctx = extractRbacContext({
+      headers: { 'x-synova-token': 'admin:dev:user1' },
+      auth: { sub: 'ga_001', role: 'ga', orgId: 'org-1' },
+    } as any);
+    // JWT auth should take priority → role=ga, not admin
+    expect(ctx.role).toBe('ga');
+    expect(ctx.userId).toBe('ga_001');
+  });
 });
