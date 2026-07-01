@@ -4,9 +4,10 @@
  * 对标 Claw-Code: Given/When/Then + 手写 fake
  * 铁律 0-2: 每个 public 函数 >= 2 用例
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
 import { ModuleRunner, type ModuleTask, type ModuleResult } from '../../src/orchestrator/module-runner';
 import { SubAgentCoordinator } from '../../src/orchestrator/subagent-coordinator';
+import { getExpertRegistry } from '../../src/l3/expert-registry';
 import type { DataAccessPolicy } from '../../src/orchestrator/subagent-coordinator';
 import type { LLMClient } from '../../src/orchestrator/diagnosis-orchestrator';
 import type { Evidence } from '../../src/evidence/types';
@@ -98,6 +99,13 @@ describe('SubAgentCoordinator', () => {
     { expertType: 'finance', allowedDimensions: ['cost', 'revenue'], prohibitedFields: ['person_name', 'salary'], anonymizationRules: [] },
     { expertType: 'org', allowedDimensions: ['team_structure', 'collaboration'], prohibitedFields: ['salary'], anonymizationRules: [{ field: 'person_name', replace: 'role_label' }] },
   ];
+
+  beforeAll(() => {
+    const registry = getExpertRegistry();
+    registry.registerDefault('strategy', '你是战略专家。\n不可做的事: 不做财务分析');
+    registry.registerDefault('finance', '你是财务专家。\n不可做的事: 不编造数据');
+    registry.registerDefault('org', '你是组织专家。\n不可做的事: 不做技术选型');
+  });
 
   function makeEvidence(overrides: Partial<Evidence> = {}): Evidence {
     return {

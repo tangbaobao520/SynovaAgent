@@ -17,6 +17,7 @@
  */
 import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
 import { createLogger } from '@synova/logger';
+import { validateAndLog } from './sog-schema-validator';
 
 const log = createLogger('l4/graph-bridge');
 
@@ -73,17 +74,18 @@ export function createGraphBridge(store: GraphStore, graph: string, onGraphUpdat
   const notify = () => onGraphUpdated?.();
 
   // v3.3 20.5: SOG schema 校验 — 包装 createNode/updateNode
-  const { validateAndLog } = require('./sog-schema-validator') as { validateAndLog: (t: string, p: Record<string,unknown>) => boolean };
   const _createNode = store.createNode.bind(store);
-  const _updateNode = store.updateNode.bind(store);
+  const _updateNode = store.updateNode?.bind(store);
   store.createNode = (type: string, props: Record<string,unknown>, g: string): string => {
     validateAndLog(type, props);
     return _createNode(type, props, g);
   };
-  store.updateNode = (id: string, props: Record<string,unknown>, g: string): void => {
-    // updateNode 不传 type — 校验跳过（无法在更新时获取节点类型）
-    _updateNode(id, props, g);
-  };
+  if (_updateNode) {
+    store.updateNode = (id: string, props: Record<string,unknown>, g: string): void => {
+      // updateNode 不传 type — 校验跳过（无法在更新时获取节点类型）
+      _updateNode(id, props, g);
+    };
+  }
 
   return {
     upsertFromHONA(people: HONAInput[], interactions: HONAEdge[]): BridgeResult {
