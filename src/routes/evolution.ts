@@ -66,6 +66,27 @@ router.get('/api/evolution/proposals', async (req: Request, res: Response) => {
  * 审批通过一个 pending 提案。
  * 触发: snapshot → gradualRollout(10%) → 标记 approved
  */
+// ═══ GET /api/evolution/status ═══
+
+/**
+ * 进化引擎运行状态。返回 metrics 快照 + 操作日志。
+ * 零外部依赖，纯内存计数器。
+ */
+router.get('/api/evolution/status', async (_req: Request, res: Response) => {
+  try {
+    const { EvolutionMetrics } = await import('@synova/evolution');
+    const metrics = EvolutionMetrics.getInstance();
+    const snapshot = metrics.getSnapshot();
+    res.json({ ok: true, ...snapshot });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log.warn({ err: msg }, 'GET /api/evolution/status 失败 — degraded');
+    res.status(200).json({ ok: true, degraded: true, counters: {}, recentLogs: [] });
+  }
+});
+
+// ═══ POST /api/evolution/proposals/:id/approve ═══
+
 router.post('/api/evolution/proposals/:id/approve', async (req: Request, res: Response) => {
   const { id } = req.params as { id: string };
   try {
@@ -95,6 +116,9 @@ router.post('/api/evolution/proposals/:id/approve', async (req: Request, res: Re
       return;
     }
 
+    const { EvolutionMetrics } = await import('@synova/evolution');
+    EvolutionMetrics.getInstance().recordProposalApprove(id);
+
     res.json({ ok: true, proposal });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -118,6 +142,10 @@ router.post('/api/evolution/proposals/:id/reject', async (req: Request, res: Res
       res.status(404).json({ ok: false, error: '提案不存在或状态不允许拒绝' });
       return;
     }
+
+    const { EvolutionMetrics } = await import('@synova/evolution');
+    EvolutionMetrics.getInstance().recordProposalReject(id);
+
     res.json({ ok: true, proposal });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);

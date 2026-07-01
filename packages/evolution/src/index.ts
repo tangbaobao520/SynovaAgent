@@ -76,6 +76,10 @@ export {
 export { RuleVersionManager } from './rule-version-manager';
 export type { SnapshotEntry, RollbackResult, GradualRolloutInput } from './rule-version-manager';
 
+// evolution-metrics 导出
+export { EvolutionMetrics } from './evolution-metrics';
+export type { MetricsSnapshot, OperationLogEntry } from './evolution-metrics';
+
 // expert-evolution 导出
 export {
   analyzeExpertCorrections,
