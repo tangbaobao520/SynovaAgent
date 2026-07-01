@@ -32,8 +32,21 @@ export class ExpertRegistry {
     return [...this.prompts.keys()];
   }
 
-  /** Remove an expert type — v3.3: 允许运行时增删 */
+  /** Track whether a type was registered as default */
+  private _defaults = new Set<string>();
+
+  /** Register a default expert type (protected from unregister) */
+  registerDefault(type: string, prompt: string): void {
+    this.register(type, prompt);
+    this._defaults.add(type);
+  }
+
+  /** Remove an expert type — v3.3: 允许运行时增删。默认专家不可删除 */
   unregister(type: string): void {
+    if (this._defaults.has(type)) {
+      log.warn({ type }, '默认专家不可删除 — 忽略 unregister 调用');
+      return;
+    }
     this.prompts.delete(type);
   }
 

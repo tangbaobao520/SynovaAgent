@@ -4,10 +4,9 @@ import express from 'express';
 import homeRoutes from '../../src/routes/home';
 
 describe('GET / — 首页', () => {
-  it('返回 200 + HTML 包含 Synova', async () => {
+  it('注册了 GET / 路由', async () => {
     const app = express();
     app.use(homeRoutes);
-    const res = await fetch('http://localhost:1/'); // won't actually connect
     // Test that the router exports correctly and has GET /
     const routes = (homeRoutes as unknown as { stack?: Array<{ route?: { path: string; methods: Record<string,boolean> } }> }).stack || [];
     const hasGetRoot = routes.some((r: any) => r.route?.path === '/' && r.route?.methods?.get);

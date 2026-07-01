@@ -70,7 +70,7 @@ export function loadConfig(): SynovaConfig {
   const dbPath = process.env.SYNOVA_DB_PATH ||
     (dataDir ? `${dataDir}/synova.db` : './data/synova.db');
 
-  const port = filePort || parseInt(process.env.PORT || '3000', 10);
+  const port = parseInt(process.env.PORT || String(filePort || 3000), 10);
 
   if (!devMode && !llmApiKey && !gatewayHost) {
     log.warn('⚠️  未设置 LLM_API_KEY 且未设置 OPENCLAW_GATEWAY_HOST');
