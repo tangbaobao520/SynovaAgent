@@ -74,10 +74,24 @@ export function loadOntology(): { ontology: LoadedOntology; degraded: boolean; e
   if (cache) return { ontology: cache, degraded: false, errors: [] };
 
   try {
+    // 1. 加载基础本体 (extensions/ontology/)
     const nodeTypes = scanDir<NodeTypeDef>(join(ONTOLOGY_DIR, 'node-types'));
     const edgeTypes = scanDir<EdgeTypeDef>(join(ONTOLOGY_DIR, 'edge-types'));
 
-    // 从 edgeTypes 动态构建 EDGE_ENDPOINT_MAP
+    // 2. 加载行业扩展类型 (extensions/industries/{name}/node-types/ 等)
+    const INDUSTRIES_DIR = join(process.cwd(), 'extensions', 'industries');
+    if (existsSync(INDUSTRIES_DIR)) {
+      const industryDirs = readdirSync(INDUSTRIES_DIR, { withFileTypes: true })
+        .filter(d => d.isDirectory()).map(d => d.name);
+      for (const dir of industryDirs) {
+        const indNodeTypes = scanDir<NodeTypeDef>(join(INDUSTRIES_DIR, dir, 'node-types'));
+        const indEdgeTypes = scanDir<EdgeTypeDef>(join(INDUSTRIES_DIR, dir, 'edge-types'));
+        nodeTypes.push(...indNodeTypes);
+        edgeTypes.push(...indEdgeTypes);
+      }
+    }
+
+    // 3. 从 edgeTypes 动态构建 EDGE_ENDPOINT_MAP
     const edgeEndpointMap: Record<string, { from: string[]; to: string[] }> = {};
     for (const e of edgeTypes) {
       edgeEndpointMap[e.label] = {

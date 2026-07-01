@@ -9,7 +9,7 @@ import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
 
 function fakeStore(nodes: Array<{id:string, type:string}> = [], edges: Array<{id:string, type:string, from:string, to:string, weight:number}> = []) {
   return {
-    queryNodes(type: string) { return nodes.filter(n => n.type === type).map(n => ({...n, props:{}})); },
+    queryNodes(type: string) { return nodes.filter(n => !type || n.type === type).map(n => ({...n, props:{}})); },
     queryEdges(_type?: string, from?: string, to?: string) {
       return edges.filter(e =>
         (!_type || e.type === _type) &&

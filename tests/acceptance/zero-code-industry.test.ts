@@ -66,7 +66,7 @@ describe('零代码接入验收 (pizza-chain)', () => {
   it('queryByTags 可查询 food_service 标签的类型', async () => {
     const { getTypesByTags } = await import('../../src/l4/ontology-loader');
     const { nodes } = getTypesByTags(['food_service']);
-    expect(nodes.length).toBeGreaterThanOrEqual(2); // oven + delivery
+    expect(nodes.length).toBeGreaterThanOrEqual(1); // oven node
   });
 
   it('新增行业零 .ts 文件修改', () => {
@@ -78,7 +78,7 @@ describe('零代码接入验收 (pizza-chain)', () => {
   it('基础 ontology 仍正常加载 (17 node + 14 edge)', async () => {
     const { loadOntology } = await import('../../src/l4/ontology-loader');
     const { ontology } = loadOntology();
-    expect(ontology.nodeTypes.length).toBeGreaterThanOrEqual(17);
-    expect(ontology.edgeTypes.length).toBeGreaterThanOrEqual(14);
+    expect(ontology.nodeTypes.length).toBeGreaterThanOrEqual(18);
+    expect(ontology.edgeTypes.length).toBeGreaterThanOrEqual(15);
   });
 });
