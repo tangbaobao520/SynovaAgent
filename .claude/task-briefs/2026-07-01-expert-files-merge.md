@@ -1,6 +1,6 @@
 # Task Brief: 专家文件合并重构 — 10 文件合并为 5 文件
 
-> 生成: 2026-07-01 | 分支: feat/prompt-architecture
+> 生成: 2026-07-01 07:30 | 分支: feat/prompt-architecture | 已提交 caf9a37f
 
 ## Q0: 定位
 - 扩展解耦：expert/ 目录文件合并
