@@ -5,7 +5,7 @@
  * 哨兵消费 GraphStoreReader 只读子集。
  */
 
-/** 数据库连接接口 — 只需要 exec/prepare 两个方法 */
+/** 数据库连接接口 — 只需要 exec/prepare/pragma 三个方法 */
 export interface SqliteDb {
   exec(sql: string): void;
   prepare(sql: string): {
@@ -13,6 +13,12 @@ export interface SqliteDb {
     get(...params: unknown[]): Record<string, unknown> | undefined;
     all(...params: unknown[]): Array<Record<string, unknown>>;
   };
+  /**
+   * 执行 PRAGMA 语句。
+   * better-sqlite3 兼容: db.pragma('journal_mode = WAL') 返回 [{ journal_mode: 'wal' }]
+   * opts.simple = true 时返回字符串 'wal'
+   */
+  pragma(sql: string, opts?: { simple?: boolean }): unknown;
 }
 
 /** GraphStore 只读查询接口 (哨兵消费) */

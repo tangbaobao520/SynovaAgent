@@ -17,6 +17,34 @@ const log = createLogger('init/engine-context');
 let db: Database.Database | null = null;
 let _initialized = false;
 
+// ═══ WAL 降级 (Phase 0.2) ═══
+
+/**
+ * 启用 SQLite WAL 模式，NFS/SMB 不可用时降级 DELETE 模式。
+ * 这是 engine-context 的内联版本，接收 Database.Database 类型。
+ *
+ * @param database - better-sqlite3 Database 实例
+ * @param dbPath - 数据库路径（用于日志）
+ */
+function enableWAL(database: Database.Database, dbPath: string): void {
+  try {
+    database.pragma('journal_mode = WAL');
+    database.pragma('synchronous = NORMAL');
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('locking protocol') || msg.includes('not authorized')) {
+      log.warn({ path: dbPath, err: msg }, 'WAL 不可用(可能是网络文件系统) — 降级 DELETE 模式. 并发性能会降低.');
+      try {
+        database.pragma('journal_mode = DELETE');
+      } catch {
+        log.warn({ path: dbPath }, 'DELETE 模式也失败 — 使用 SQLite 默认日志模式');
+      }
+    } else {
+      throw err;
+    }
+  }
+}
+
 export function getDatabase(): Database.Database {
   if (!db) throw new Error('数据库未初始化，请先调用 initEngineContext()');
   return db;
@@ -34,7 +62,8 @@ export function initEngineContext(): void {
   }
 
   db = new Database(config.dbPath);
-  db.pragma('journal_mode = WAL');
+  // Phase 0.2: WAL 降级 — NFS/SMB 不可用时自动回退 DELETE
+  enableWAL(db, config.dbPath);
   db.pragma('foreign_keys = ON');
 
   // Week 4: D3 哨兵数据采集表

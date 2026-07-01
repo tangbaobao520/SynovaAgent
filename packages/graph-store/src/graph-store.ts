@@ -52,11 +52,51 @@ function checkDeletePermission(operation: string): void {
   if (!globalDeletePermissionChecker) return;
   const result = globalDeletePermissionChecker();
   if (!result.allowed) {
-    throw new PermissionDeniedError(`${operation}: ${result.reason || 'Forbidden'}`, 4);
+    const reason = result.reason || 'permission denied by checker';
+    throw new PermissionDeniedError(`${operation}: ${reason}`, 4);
   }
 }
 
 const log = createLogger('l4/synova-graph-store');
+
+// ═══ WAL 降级 (Phase 0.2) ═══
+
+/**
+ * 启用 SQLite WAL 模式，NFS/SMB 不可用时降级到 DELETE 模式。
+ *
+ * 铁律 24: 降级路径有 log.warn
+ * 铁律 31: 错误不阻止启动 — 降级后继续
+ * 铁律 38: 纯类型安全
+ *
+ * @param db - SQLite 数据库连接
+ * @param dbPath - 数据库路径（用于日志去重警告）
+ */
+export function enableWAL(db: SqliteDb): void {
+  try {
+    const result = db.pragma('journal_mode = WAL', { simple: true });
+    if (result !== 'wal') {
+      // WAL 不可用（NFS/SMB/内存数据库）→ 降级 DELETE
+      db.pragma('journal_mode = DELETE', { simple: true });
+      log.warn({ pragmaResult: result }, 'WAL 不可用 — 降级到 DELETE 模式. 并发性能会降低.');
+      return;
+    }
+    db.pragma('synchronous = NORMAL');
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('locking protocol') || msg.includes('not authorized')) {
+      log.warn({ err: msg }, 'WAL 不可用(可能是网络文件系统) — 降级到 DELETE 模式. 并发性能会降低.');
+      try {
+        db.pragma('journal_mode = DELETE', { simple: true });
+      } catch {
+        // DELETE 模式也失败 — 非致命，继续使用默认模式
+        log.warn({ err: msg }, 'DELETE 模式也失败 — 使用 SQLite 默认日志模式');
+      }
+    } else {
+      // 其他错误（磁盘 I/O 等）向上传播
+      throw err;
+    }
+  }
+}
 
 // ═══ 类型 ═══
 
@@ -89,6 +129,7 @@ export class SynovaGraphStoreImpl implements SynovaGraphStore {
 
   constructor(db: SqliteDb) {
     this.db = db;
+    enableWAL(this.db);
     this.initSchema();
   }
 
