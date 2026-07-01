@@ -26,7 +26,7 @@ export function loadIndustries(): { industries: IndustryManifest[]; degraded: bo
     for (const entry of readdirSync(INDUSTRIES_DIR, { withFileTypes: true })) {
       if (!entry.isDirectory()) continue;
       const mf = join(INDUSTRIES_DIR, entry.name, 'manifest.json');
-      if (!existsSync(mf)) { errors.push(`${entry.name}: 缺 manifest.json`); continue; }
+      if (!existsSync(mf)) { log.warn({ dir: entry.name }, '行业目录缺 manifest.json — 跳过'); continue; }
       try { industries.push(JSON.parse(readFileSync(mf, 'utf-8')) as IndustryManifest); }
       catch (err: any) { errors.push(`${entry.name}: JSON 解析失败`); }
     }
