@@ -12,7 +12,49 @@
  * Iron law #38: zero unsafe type casts.
  */
 import { createLogger } from '@synova/logger';
+import { PermissionDeniedError } from '@synova/error-types';
 import type { SqliteDb, GraphStore } from './types';
+
+// ═══ 权限检查器 (Phase 0.2) ═══
+
+/**
+ * GraphStore 删除操作权限检查器。
+ * 返回 { allowed: true } 放行，{ allowed: false, reason } 拒绝并抛出 PermissionDeniedError。
+ */
+export type PermissionChecker = () => { allowed: boolean; reason?: string };
+
+/** 模块级全局删除权限检查器。由 server.ts 初始化时设置。 */
+let globalDeletePermissionChecker: PermissionChecker | null = null;
+
+/**
+ * 设置全局删除权限检查器。
+ * @param checker - 检查器函数，返回 { allowed, reason? }。设为 null 清除检查。
+ */
+export function setGraphStoreDeletePermissionChecker(checker: PermissionChecker | null): void {
+  globalDeletePermissionChecker = checker;
+}
+
+/**
+ * 清除全局删除权限检查器。
+ * 调用后 deleteNode/deleteEdge 恢复为无条件允许（向后兼容）。
+ */
+export function clearGraphStoreDeletePermissionChecker(): void {
+  globalDeletePermissionChecker = null;
+}
+
+/**
+ * 执行删除权限检查。
+ * 检查器不存在时放行。检查器拒绝时抛出 PermissionDeniedError。
+ * @param operation - 操作名称（'deleteNode' 或 'deleteEdge'）
+ * @throws {PermissionDeniedError} 权限不足时抛出
+ */
+function checkDeletePermission(operation: string): void {
+  if (!globalDeletePermissionChecker) return;
+  const result = globalDeletePermissionChecker();
+  if (!result.allowed) {
+    throw new PermissionDeniedError(`${operation}: ${result.reason || 'Forbidden'}`, 4);
+  }
+}
 
 const log = createLogger('l4/synova-graph-store');
 
@@ -215,10 +257,12 @@ export class SynovaGraphStoreImpl implements SynovaGraphStore {
 
   deleteNode(id: string, graph: string): void {
     try {
+      checkDeletePermission('deleteNode');
       this.db.prepare(
         `UPDATE graph_nodes SET valid_to = datetime('now') WHERE id = ? AND graph = ?`
       ).run(id, graph);
     } catch (err: unknown) {
+      if (err instanceof PermissionDeniedError) throw err;
       log.warn({ err, id }, 'deleteNode 失败');
     }
   }
@@ -296,10 +340,12 @@ export class SynovaGraphStoreImpl implements SynovaGraphStore {
 
   deleteEdge(id: string, graph: string): void {
     try {
+      checkDeletePermission('deleteEdge');
       this.db.prepare(
         `UPDATE graph_triples SET valid_to = datetime('now') WHERE id = ? AND graph = ?`
       ).run(id, graph);
     } catch (err: unknown) {
+      if (err instanceof PermissionDeniedError) throw err;
       log.warn({ err, id }, 'deleteEdge 失败');
     }
   }

@@ -1,0 +1,38 @@
+{
+  "version": "1.0",
+  "task": "Phase 0.2 GraphStore deleteNode/deleteEdge 权限检查",
+  "brief": "2026-07-01-2251-Phase-02-GraphStore-deleteNodedeleteEd.md",
+  "current_phase": 1,
+  "approach": "reuse",
+  "phases": [
+    {
+      "step": 1,
+      "action": "modify",
+      "description": "GraphStore 新增可注入权限检查器",
+      "files": [
+        "packages/graph-store/src/graph-store.ts",
+        "src/server.ts",
+        "tests/l4/synova-graph-store-permission.test.ts"
+      ],
+      "checks": {
+        "wiring": "enforce",
+        "test_pairing": "deferred"
+      }
+    }
+  ],
+  "principles": [
+    {
+      "rule": "deleteNode/deleteEdge 在权限不足时必须抛出 PermissionDeniedError",
+      "verify": "grep -rn PermissionDeniedError packages/graph-store/src/graph-store.ts"
+    },
+    {
+      "rule": "权限检查器未设置时 deleteNode/deleteEdge 必须向后兼容",
+      "verify": "grep -rn globalDeletePermissionChecker packages/graph-store/src/graph-store.ts"
+    },
+    {
+      "rule": "setGraphStoreDeletePermissionChecker 必须在 server.ts 中被调用",
+      "verify": "grep -rn setGraphStoreDeletePermissionChecker src/server.ts"
+    }
+  ],
+  "memory_refs": []
+}

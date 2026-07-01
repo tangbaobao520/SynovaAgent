@@ -243,6 +243,23 @@ export async function createServer(): Promise<Server> {
     const store = createSynovaGraphStore(db as unknown as import('@synova/graph-store').SqliteDb);
     graphStore = store;
     getOntologyEventBus(store as unknown as import('./l4/graph-bridge').GraphStore);
+
+    // Phase 0.2: GraphStore 删除权限检查
+    try {
+      const { setGraphStoreDeletePermissionChecker } = await import('@synova/graph-store');
+      const { getCurrentUser } = await import('./services/request-context');
+      setGraphStoreDeletePermissionChecker(() => {
+        const user = getCurrentUser();
+        if (!user) return { allowed: true };
+        if (user.auth.roles.includes('admin') || user.auth.roles.includes('owner')) return { allowed: true };
+        logger.warn({ userId: user.userId, roles: user.auth.roles }, 'GraphStore 删除被拒');
+        return { allowed: false, reason: '仅管理员可删除数据' };
+      });
+      logger.info('GraphStore 删除权限检查已启用');
+    } catch (err: unknown) {
+      logger.warn({ err }, 'GraphStore 删除权限检查初始化失败 — degraded');
+    }
+
     logger.info('OntologyEventBus 已初始化 (SynovaGraphStore)');
   } catch (err: any) {
     logger.warn({ err }, 'OntologyEventBus 初始化失败 — degraded, 连接器管线不可用');
@@ -524,6 +541,34 @@ app.use(reloadRoutes);                         // POST /api/reload — 热加载
       } catch (err: any) { logger.warn({ err }, '数据库备份异常'); }
     });
     logger.info('数据库备份调度已启动 (cron: 0 3 * * *, 保留 7 天)');
+
+    // Phase P1: L0 evolution engine — weekly industry aggregation (Sun 2am)
+    scheduler.schedule('evolution-aggregation', '0 2 * * 0', async () => {
+      try {
+        const { aggregateAllIndustries, RuleVersionManager } = await import('@synova/evolution');
+        const { getGlobalSentinelRunner } = await import('./sentinel/runner');
+        const { listIndustries } = await import('./l4/industry-loader');
+
+        const l3 = getGlobalSentinelRunner()?.getL0API();
+        if (!l3) { logger.warn('[cron] L3WriteAPI unavailable — skip aggregation'); return; }
+
+        const db2 = getDatabase();
+        const { getAgentMemoryStore } = await import('./l4/agent-memory-store');
+        const memStore = getAgentMemoryStore(db2);
+        const rvm = new RuleVersionManager(memStore as unknown as import('@synova/evolution').AgentMemoryStoreLike);
+
+        const snapId = await rvm.createSnapshot('weekly-industry-aggregation');
+        if (snapId) logger.info({ snapshotId: snapId }, '[cron] snapshot created before aggregation');
+
+        const industries = listIndustries();
+        const results = await aggregateAllIndustries(l3, industries);
+        logger.info({ industries: results.length, withSuggestions: results.filter(r => r.thresholdSuggestions.length > 0).length }, '[cron] industry aggregation complete');
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        logger.error({ err: msg }, '[cron] industry aggregation failed');
+      }
+    });
+    logger.info('[cron] evolution aggregation scheduled (0 2 * * 0)');
 
     // M2: 齿轮6 知识提取 (每6小时)
     try {
