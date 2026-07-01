@@ -14,6 +14,7 @@
  * 铁律 24+31: 每个 catch 有 log + degraded，单步失败不阻断整体
  */
 
+import { createHash } from 'crypto';
 import { createLogger } from '@synova/logger';
 import type { AgentMemoryStoreLike } from './evolution-types';
 
@@ -41,6 +42,8 @@ export interface SnapshotEntry {
       median: number;
     }>;
   };
+  /** 数据 SHA256 校验和 — 由 createSnapshot 写入，rollbackTo 验证 */
+  checksum?: string;
 }
 
 export interface RollbackResult {
@@ -163,13 +166,16 @@ export class RuleVersionManager {
         } catch { log.debug('跳过损坏的基线条目'); }
       }
 
-      // 3. 写入快照
+      // 3. 写入快照（含 SHA256 校验和）
+      const dataForChecksum = { thresholds, baselines };
+      const checksum = createHash('sha256').update(JSON.stringify(dataForChecksum)).digest('hex');
       const snapshot: SnapshotEntry = {
         id,
         description,
         version: SNAPSHOT_VERSION,
         createdAt: new Date().toISOString(),
-        data: { thresholds, baselines },
+        data: dataForChecksum,
+        checksum,
       };
 
       this.memoryStore.remember({
@@ -198,12 +204,40 @@ export class RuleVersionManager {
     }
   }
 
-  // ═══ ② 列出快照 ═══
+  // ═══ ② 校验快照 ═══
+
+  /**
+   * 验证快照的 SHA256 checksum。
+   * 对 data 字段重新计算哈希，与存储的 checksum 对比。
+   *
+   * @param snapshot 快照条目
+   * @returns true=校验通过, false=数据损坏
+   */
+  verifyChecksum(snapshot: SnapshotEntry): boolean {
+    if (!snapshot.checksum) {
+      log.debug({ id: snapshot.id }, '快照无 checksum（旧格式，跳过校验）');
+      return true; // 旧格式快照向后兼容
+    }
+    try {
+      const computed = createHash('sha256').update(JSON.stringify(snapshot.data)).digest('hex');
+      const valid = computed === snapshot.checksum;
+      if (!valid) {
+        log.error({ id: snapshot.id, expected: snapshot.checksum, actual: computed }, '快照 checksum 不匹配 — 数据可能损坏');
+      }
+      return valid;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg, id: snapshot.id }, '快照校验失败 — 降级通过');
+      return true; // 校验本身失败时不阻断（降级宽容）
+    }
+  }
+
+  // ═══ ③ 列出快照 ═══
 
   /**
    * 列出所有历史快照（摘要信息，不含全量数据）。
    */
-  listSnapshots(): Array<{ id: string; description: string; createdAt: string; thresholdCount: number; baselineCount: number }> {
+  listSnapshots(): Array<{ id: string; description: string; createdAt: string; thresholdCount: number; baselineCount: number; verified: boolean; corrupt: boolean }> {
     if (!this.memoryStore) return [];
 
     try {
@@ -217,16 +251,19 @@ export class RuleVersionManager {
       return entries.map(e => {
         try {
           const parsed = JSON.parse(e.value) as SnapshotEntry;
+          const verified = this.verifyChecksum(parsed);
           return {
             id: parsed.id,
-            description: parsed.description,
+            description: parsed.description + (verified ? '' : ' ⚠ 数据可能损坏'),
             createdAt: parsed.createdAt,
             thresholdCount: parsed.data?.thresholds?.length ?? 0,
             baselineCount: parsed.data?.baselines?.length ?? 0,
+            verified,
+            corrupt: !verified,
           };
         } catch (parseErr: unknown) {
           log.debug({ err: parseErr }, '快照条目解析失败');
-          return { id: 'parse_error', description: '损坏的快照', createdAt: '', thresholdCount: 0, baselineCount: 0 };
+          return { id: 'parse_error', description: '损坏的快照', createdAt: '', thresholdCount: 0, baselineCount: 0, verified: false, corrupt: true };
         }
       }).filter(s => s.id !== 'parse_error');
     } catch (err: unknown) {
@@ -270,6 +307,14 @@ export class RuleVersionManager {
       }
 
       const snapshot = JSON.parse(stored.value) as SnapshotEntry;
+
+      // 1b. 校验 checksum（旧格式快照跳过）
+      if (snapshot.checksum && !this.verifyChecksum(snapshot)) {
+        result.errors.push(`快照 ${snapshotId} checksum 不匹配 — 数据可能损坏，拒绝回滚`);
+        result.degraded = true;
+        log.error({ snapshotId }, '回滚拒绝：快照 checksum 不匹配');
+        return result;
+      }
 
       // 2. 反写阈值
       for (const t of snapshot.data.thresholds) {
