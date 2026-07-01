@@ -45,8 +45,8 @@ describe('discoverIndustryPatterns', () => {
     mem.remember({
       orgId: 'org1', key: 'c1',
       value: JSON.stringify({ sentinelId: 'F1', reason: '现金流不符' }),
-      type: 'user_correction', confidence: 0.8, source: 'user_feedback',
-      tags: ['correction', 'F1'], expiresAt: null,
+      type: 'enterprise_fact', confidence: 0.8, source: 'user_feedback',
+      tags: ['user_correction', 'correction', 'F1'], expiresAt: null,
     });
     const patterns = await discoverIndustryPatterns(mem as never, ['org1']);
     expect(patterns).toEqual([]);
@@ -58,8 +58,8 @@ describe('discoverIndustryPatterns', () => {
       mem.remember({
         orgId: `org${i}`, key: `c_f1_${i}`,
         value: JSON.stringify({ sentinelId: 'F1', reason: 'KZ指数不对' }),
-        type: 'user_correction', confidence: 0.8, source: 'user_feedback',
-        tags: ['correction', 'F1'], expiresAt: null,
+        type: 'enterprise_fact', confidence: 0.8, source: 'user_feedback',
+        tags: ['user_correction', 'correction', 'F1'], expiresAt: null,
       });
     }
     const patterns = await discoverIndustryPatterns(mem as never, ['org0', 'org1', 'org2']);

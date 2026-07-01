@@ -17,6 +17,7 @@ function makeMemoryStore() {
       return Array.from(store.values())
         .filter(item => item.orgId === query.orgId)
         .filter(item => query.type ? item.type === query.type : true)
+        .filter(item => query.tags && query.tags.length > 0 ? query.tags.every(t => item.tags.includes(t)) : true)
         .slice(0, query.limit || 50)
         .map(r => ({ value: r.value, tags: r.tags, type: r.type }));
     },
@@ -37,8 +38,8 @@ describe('analyzeExpertCorrections', () => {
     mem.remember({
       orgId: 'org1', key: 'c1',
       value: JSON.stringify({ sentinelId: 'F1_KZ', reason: 'KZ指数算错了' }),
-      type: 'user_correction', confidence: 0.8, source: 'user_feedback',
-      tags: ['correction', 'F1'], expiresAt: null,
+      type: 'enterprise_fact', confidence: 0.8, source: 'user_feedback',
+      tags: ['user_correction', 'correction', 'F1'], expiresAt: null,
     });
     const result = await analyzeExpertCorrections(mem as never, ['org1']);
     expect(result.experts.length).toBeGreaterThanOrEqual(1);
@@ -53,8 +54,8 @@ describe('analyzeExpertCorrections', () => {
     mem.remember({
       orgId: 'org1', key: 'c2',
       value: JSON.stringify({ sentinelId: 'O1_info_distortion', reason: '信息失真率不对' }),
-      type: 'user_correction', confidence: 0.8, source: 'user_feedback',
-      tags: ['correction', 'O1'], expiresAt: null,
+      type: 'enterprise_fact', confidence: 0.8, source: 'user_feedback',
+      tags: ['user_correction', 'correction', 'O1'], expiresAt: null,
     });
     const result = await analyzeExpertCorrections(mem as never, ['org1']);
     const orgExpert = result.experts.find(e => e.expert === 'org');
@@ -67,16 +68,16 @@ describe('analyzeExpertCorrections', () => {
       mem.remember({
         orgId: `org${i}`, key: `c_f1_${i}`,
         value: JSON.stringify({ sentinelId: 'F1_KZ', reason: '阈值问题' }),
-        type: 'user_correction', confidence: 0.8, source: 'user_feedback',
-        tags: ['correction', 'F1'], expiresAt: null,
+        type: 'enterprise_fact', confidence: 0.8, source: 'user_feedback',
+        tags: ['user_correction', 'correction', 'F1'], expiresAt: null,
       });
     }
     for (let i = 0; i < 3; i++) {
       mem.remember({
         orgId: `org${i}`, key: `c_t1_${i}`,
         value: JSON.stringify({ sentinelId: 'T1_software_health', reason: '软件评分不对' }),
-        type: 'user_correction', confidence: 0.8, source: 'user_feedback',
-        tags: ['correction', 'T1'], expiresAt: null,
+        type: 'enterprise_fact', confidence: 0.8, source: 'user_feedback',
+        tags: ['user_correction', 'correction', 'T1'], expiresAt: null,
       });
     }
     const result = await analyzeExpertCorrections(mem as never, ['org0', 'org1', 'org2', 'org3', 'org4']);

@@ -198,7 +198,8 @@ export class OrgAdapter {
     // 读取该组织未处理的 user_correction 记忆
     const corrections = this.memoryStore.list({
       orgId,
-      type: 'user_correction',
+      type: 'enterprise_fact',
+      tags: ['user_correction'],
       limit: 50,
     });
 
@@ -254,10 +255,11 @@ export class OrgAdapter {
 
     if (!this.memoryStore) return adjusted;
 
-    // 读取所有 user_correction
+    // 读取所有 user_correction (实际存储为 enterprise_fact + tag)
     const allCorrections = this.memoryStore.list({
       orgId,
-      type: 'user_correction',
+      type: 'enterprise_fact',
+      tags: ['user_correction'],
       limit: 100,
     });
 
@@ -265,7 +267,7 @@ export class OrgAdapter {
     const sentinelCount = new Map<string, number>();
     for (const entry of allCorrections) {
       const tags = entry.tags || [];
-      const sentinelTag = tags.find(t => t !== 'correction' && t !== 'confirm' && t !== 'reject' && t !== 'modify');
+      const sentinelTag = tags.find(t => t !== 'user_correction' && t !== 'correction' && t !== 'confirm' && t !== 'reject' && t !== 'modify');
       if (sentinelTag) {
         sentinelCount.set(sentinelTag, (sentinelCount.get(sentinelTag) || 0) + 1);
       }
@@ -329,7 +331,7 @@ export class OrgAdapter {
             reason: `${count} 次用户纠错触发阈值自适应`,
             adjustedAt: new Date().toISOString(),
           }),
-          type: 'threshold_adjustment',
+          type: 'enterprise_fact',
           confidence: 0.8,
           source: 'org_adapter',
           tags: ['threshold_adjustment', sentinelId],
@@ -370,7 +372,8 @@ export class OrgAdapter {
 
     const corrections = this.memoryStore.list({
       orgId,
-      type: 'user_correction',
+      type: 'enterprise_fact',
+      tags: ['user_correction'],
       limit: 50,
     });
 
