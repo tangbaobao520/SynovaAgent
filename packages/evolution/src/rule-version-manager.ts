@@ -105,7 +105,7 @@ export class RuleVersionManager {
       return null;
     }
 
-    const id = `snap_${Date.now().toString(36)}`;
+    const id = `snap_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
     const thresholds: SnapshotEntry['data']['thresholds'] = [];
     const baselines: SnapshotEntry['data']['baselines'] = [];
 
@@ -385,6 +385,61 @@ export class RuleVersionManager {
     }
 
     return result;
+  }
+
+  // ═══ ⑤ 快照 TTL 清理 ═══
+
+  /**
+   * 清理过期快照。保留最新的 maxCount 个，可选删除超过 maxAgeDays 的。
+   * 在 Cron 聚合后自动执行。
+   */
+  async cleanupSnapshots(maxCount = 10, maxAgeDays?: number): Promise<number> {
+    let deleted = 0;
+    if (!this.memoryStore) return 0;
+
+    try {
+      const entries = this.memoryStore.list({
+        orgId: 'global', type: 'enterprise_fact',
+        tags: ['evolution_snapshot'], limit: 100,
+      });
+
+      const snapshots: Array<{ id: string; createdAt: string; key: string }> = [];
+      for (const e of entries) {
+        try {
+          const parsed = JSON.parse(e.value) as SnapshotEntry;
+          snapshots.push({ id: parsed.id, createdAt: parsed.createdAt, key: 'snapshot_' + parsed.id });
+        } catch { /* skip corrupt */ }
+      }
+      snapshots.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+      const toDelete = new Set<string>();
+
+      if (snapshots.length > maxCount) {
+        for (let i = maxCount; i < snapshots.length; i++) toDelete.add(snapshots[i].key);
+      }
+
+      if (maxAgeDays && maxAgeDays > 0) {
+        const cutoff = Date.now() - maxAgeDays * 86400000;
+        for (const snap of snapshots) {
+          if (new Date(snap.createdAt).getTime() < cutoff) toDelete.add(snap.key);
+        }
+        if (toDelete.size >= snapshots.length && snapshots.length > 0) {
+          toDelete.delete(snapshots[0].key);
+          log.warn({ newestId: snapshots[0].id }, '保留最新快照防止全部删除');
+        }
+      }
+
+      for (const key of toDelete) {
+        try { this.memoryStore.forget('global', key); deleted++; }
+        catch (err: unknown) { log.warn({ err, key }, '快照删除失败'); }
+      }
+
+      if (deleted > 0) log.info({ total: snapshots.length, deleted, remain: snapshots.length - deleted }, '快照清理完成');
+    } catch (err: unknown) {
+      log.warn({ err }, '快照清理失败 — degraded');
+    }
+
+    return deleted;
   }
 
   // ═══ ④ 灰度发布 ═══

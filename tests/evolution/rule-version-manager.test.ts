@@ -162,4 +162,42 @@ describe('RuleVersionManager', () => {
       expect(result).toEqual([]);
     });
   });
+
+  describe('cleanupSnapshots', () => {
+    it('无 memoryStore → 返回 0', async () => {
+      const mgr = new RuleVersionManager(null);
+      const r = await mgr.cleanupSnapshots(10);
+      expect(r).toBe(0);
+    });
+
+    it('无快照 → 返回 0', async () => {
+      const mem = makeMemoryStore();
+      const mgr = new RuleVersionManager(mem);
+      const r = await mgr.cleanupSnapshots(10);
+      expect(r).toBe(0);
+    });
+
+    it('3 个快照保留 2 个 → 删除 1 个', async () => {
+      const mem = makeMemoryStore();
+      const mgr = new RuleVersionManager(mem);
+      // 加延迟确保唯一的时间戳 ID
+      await mgr.createSnapshot('第一次');
+      await new Promise(r => setTimeout(r, 5));
+      await mgr.createSnapshot('第二次');
+      await new Promise(r => setTimeout(r, 5));
+      await mgr.createSnapshot('第三次');
+      const deleted = await mgr.cleanupSnapshots(2);
+      expect(deleted).toBe(1);
+      const remaining = mgr.listSnapshots();
+      expect(remaining.length).toBe(2);
+    });
+
+    it('maxAgeDays=0 → 不受时间影响', async () => {
+      const mem = makeMemoryStore();
+      const mgr = new RuleVersionManager(mem);
+      await mgr.createSnapshot('s1');
+      const deleted = await mgr.cleanupSnapshots(10, 0);
+      expect(deleted).toBe(0);
+    });
+  });
 });

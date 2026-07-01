@@ -562,6 +562,10 @@ app.use(reloadRoutes);                         // POST /api/reload — 热加载
         const snapId = await rvm.createSnapshot('weekly-industry-aggregation');
         if (snapId) logger.info({ snapshotId: snapId }, '[cron] snapshot created before aggregation');
 
+        // 聚合后清理过期快照（保留最近 10 个）
+        const cleaned = await rvm.cleanupSnapshots(10);
+        if (cleaned > 0) logger.info({ cleaned }, '[cron] old snapshots cleaned');
+
         const industries = listIndustries();
         const results = await aggregateAllIndustries(l3, industries);
         logger.info({ industries: results.length, withSuggestions: results.filter(r => r.thresholdSuggestions.length > 0).length }, '[cron] industry aggregation complete');

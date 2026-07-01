@@ -1,21 +1,18 @@
 {
   "version": "1.0",
-  "task": "Phase 0.3 审计日志服务 AuditStore + AuditService",
-  "brief": "2026-07-02-0018-Phase-03--AuditStore-.md",
+  "task": "Phase 0.4 GA行为监控 BehaviorMonitor",
+  "brief": "2026-07-02-0547-Phase-04-GA-BehaviorMonitor.md",
   "current_phase": 1,
   "approach": "rewrite",
   "phases": [
     {
       "step": 1,
-      "action": "create",
-      "description": "审计日志存储 + 服务 + API + 接线",
+      "action": "modify",
+      "description": "BehaviorMonitor + AuditService 接线",
       "files": [
-        "src/l4/audit-store.ts",
+        "src/services/behavior-monitor.ts",
         "src/services/audit-service.ts",
-        "src/routes/audit.ts",
-        "src/server.ts",
-        "tests/l4/audit-store.test.ts",
-        "tests/routes/audit.test.ts"
+        "tests/services/behavior-monitor.test.ts"
       ],
       "checks": {
         "wiring": "enforce",
@@ -25,16 +22,12 @@
   ],
   "principles": [
     {
-      "rule": "审计日志仅追加，不支持 UPDATE/DELETE",
-      "verify": "grep -rn INSERT.*INTO.*audit_log src/l4/audit-store.ts"
+      "rule": "BehaviorMonitor.evaluate 必须降级安全",
+      "verify": "grep -rn try|catch src/services/behavior-monitor.ts"
     },
     {
-      "rule": "审计路由只允许 admin/owner 访问",
-      "verify": "grep -rn FORBIDDEN src/routes/audit.ts"
-    },
-    {
-      "rule": "审计日志写入失败不能影响主业务流程（降级）",
-      "verify": "grep -rn degraded src/services/audit-service.ts"
+      "rule": "4 条规则各自独立实现",
+      "verify": "grep -rn checkBulkModification|checkOffHoursActivity|checkRapidCorrections|checkThresholdManipulation src/services/behavior-monitor.ts"
     }
   ],
   "memory_refs": []

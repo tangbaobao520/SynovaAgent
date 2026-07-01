@@ -9,6 +9,7 @@
  */
 import { createLogger } from '@synova/logger';
 import { AuditStore, type AuditEntryInput, type AuditEntry, type AuditQuery } from '../l4/audit-store';
+import { BehaviorMonitor } from './behavior-monitor';
 
 const log = createLogger('services/audit-service');
 
@@ -48,6 +49,11 @@ export class AuditService {
       return;
     }
     _store.log(entry);
+
+    // Phase 0.4: 异步触发 GA 行为监控
+    BehaviorMonitor.evaluate(entry, _store).catch(() => {
+      // 异步错误已被 evaluate 内部消化，这里仅保险
+    });
   }
 
   /**

@@ -169,6 +169,22 @@ export class AuditStore {
   }
 
   /**
+   * 原始 SQL 查询（只读）。
+   * 用于 BehaviorMonitor 等需要灵活时间范围查询的场景。
+   * 仅允许 SELECT 语句。
+   */
+  rawQuery(sql: string, params: unknown[]): unknown[] {
+    try {
+      const upper = sql.trim().toUpperCase();
+      if (!upper.startsWith('SELECT')) throw new Error('仅允许 SELECT 查询');
+      return this.db.prepare(sql).all(...params);
+    } catch (err: unknown) {
+      log.warn({ err }, 'audit_store.rawQuery 失败 — degraded');
+      return [];
+    }
+  }
+
+  /**
    * SQLite 行 → camelCase AuditEntry
    */
   private rowToEntry(row: Record<string, unknown>): AuditEntry {
