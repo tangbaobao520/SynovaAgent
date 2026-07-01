@@ -1,18 +1,21 @@
 {
   "version": "1.0",
-  "task": "Phase 0.2 GraphStore deleteNode/deleteEdge 权限检查",
-  "brief": "2026-07-01-2251-Phase-02-GraphStore-deleteNodedeleteEd.md",
+  "task": "Phase 0.3 审计日志服务 AuditStore + AuditService",
+  "brief": "2026-07-02-0018-Phase-03--AuditStore-.md",
   "current_phase": 1,
-  "approach": "reuse",
+  "approach": "rewrite",
   "phases": [
     {
       "step": 1,
-      "action": "modify",
-      "description": "GraphStore 新增可注入权限检查器",
+      "action": "create",
+      "description": "审计日志存储 + 服务 + API + 接线",
       "files": [
-        "packages/graph-store/src/graph-store.ts",
+        "src/l4/audit-store.ts",
+        "src/services/audit-service.ts",
+        "src/routes/audit.ts",
         "src/server.ts",
-        "tests/l4/synova-graph-store-permission.test.ts"
+        "tests/l4/audit-store.test.ts",
+        "tests/routes/audit.test.ts"
       ],
       "checks": {
         "wiring": "enforce",
@@ -22,16 +25,16 @@
   ],
   "principles": [
     {
-      "rule": "deleteNode/deleteEdge 在权限不足时必须抛出 PermissionDeniedError",
-      "verify": "grep -rn PermissionDeniedError packages/graph-store/src/graph-store.ts"
+      "rule": "审计日志仅追加，不支持 UPDATE/DELETE",
+      "verify": "grep -rn INSERT.*INTO.*audit_log src/l4/audit-store.ts"
     },
     {
-      "rule": "权限检查器未设置时 deleteNode/deleteEdge 必须向后兼容",
-      "verify": "grep -rn globalDeletePermissionChecker packages/graph-store/src/graph-store.ts"
+      "rule": "审计路由只允许 admin/owner 访问",
+      "verify": "grep -rn FORBIDDEN src/routes/audit.ts"
     },
     {
-      "rule": "setGraphStoreDeletePermissionChecker 必须在 server.ts 中被调用",
-      "verify": "grep -rn setGraphStoreDeletePermissionChecker src/server.ts"
+      "rule": "审计日志写入失败不能影响主业务流程（降级）",
+      "verify": "grep -rn degraded src/services/audit-service.ts"
     }
   ],
   "memory_refs": []
