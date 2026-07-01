@@ -35,6 +35,8 @@ export default defineConfig({
           'tests/e2e/**',
           'tests/acceptance/**',
           'tests/l3/e2e-*.test.ts',
+          'tests/l3/graphbridge-wiring.test.ts',   // Needs graph store
+          'tests/l3/rule-loader.test.ts',           // Needs rule files
           'tests/l4/**',             // L4 tests need graph store
           'tests/orchestrator/**',   // Orchestrator tests need DB
           'tests/data-pipeline.*.integration.test.ts',  // Feishu API
