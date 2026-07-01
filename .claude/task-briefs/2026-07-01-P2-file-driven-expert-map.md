@@ -76,7 +76,8 @@ SynovaAgent 目标：能文件化的必须文件化，不能文件化的必须�
 L0（packages/evolution/src/expert-evolution.ts）
 
 ## Done 标准
-- [x] verify: grep -c 'SENTINEL_EXPERT_MAP' packages/evolution/src/expert-evolution.ts 2>&1 | head -1 | grep 0
-- [x] verify: grep -q 'readdirSync\|readFileSync' packages/evolution/src/expert-evolution.ts
-- [x] verify: grep -q 'cache\|_expertMap' packages/evolution/src/expert-evolution.ts
+- [x] verify: grep -q '_expertMap' packages/evolution/src/expert-evolution.ts
+- [x] verify: grep 'SENTINEL_EXPERT_MAP' packages/evolution/src/expert-evolution.ts; test $? -eq 1
+- [x] verify: grep -q 'readFileSync' packages/evolution/src/expert-evolution.ts
+- [x] verify: grep -q 'existsSync' packages/evolution/src/expert-evolution.ts
 - [x] verify: npx vitest run tests/evolution/expert-evolution.test.ts 2>&1 | tail -5 | grep -q 'Tests'
