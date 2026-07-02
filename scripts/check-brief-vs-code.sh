@@ -75,7 +75,7 @@ DECISION=$(echo "$Q0A" | grep -iE '新增|替换|扩展|复用' | head -1 || tru
 
 # 检查声明的层和实际改动文件是否匹配（支持多层: L1+L2+L3）
 declare -A LAYER_PATTERNS
-LAYER_PATTERNS[L1]='^src/routes/|^src/tui/|^src/mcp/|^scripts/|^packages/'
+LAYER_PATTERNS[L1]='^src/routes/|^src/tui/|^src/mcp/|^scripts/|^packages/|^electron-renderer/'
 LAYER_PATTERNS[L2]='^src/agent/|^src/orchestrator/'
 LAYER_PATTERNS[L3]='^src/l3/|^src/sentinel/|^src/expert-platform/'
 LAYER_PATTERNS[L4]='^src/l4/|^extensions/ontology/|^extensions/sentinels/'
