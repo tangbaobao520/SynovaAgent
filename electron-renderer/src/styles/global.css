@@ -1600,3 +1600,25 @@ body {
 .theme-light .notif-item.unread:hover {
   background: rgba(108, 92, 231, 0.08);
 }
+
+
+/* ═══ GA KPI Cards (Phase 3.1) ═══ */
+
+.ga-kpi-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 10px;
+  text-align: center;
+}
+
+.ga-kpi-value {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.ga-kpi-label {
+  font-size: 10px;
+  color: var(--dim);
+  margin-top: 2px;
+}
