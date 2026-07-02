@@ -1,12 +1,17 @@
 /**
- * components/MessageItem.tsx — 单条消息渲染 (Phase 1.1)
+ * components/MessageItem.tsx — 单条消息渲染 (Phase 1.1 + 1.2)
+ *
+ * 四种消息:
+ *   user      — 右对齐紫色气泡
+ *   assistant — 左对齐灰底 + ExpertAttribution
+ *   thinking  — 可折叠思考块
+ *   system    — 居中系统提示
  */
 import React, { useState } from 'react';
+import ExpertAttribution from './ExpertAttribution';
 import type { ChatMessage, ThinkingBlock } from '../types/chat';
 
-interface Props {
-  message: ChatMessage;
-}
+interface Props { message: ChatMessage; }
 
 const MessageItem: React.FC<Props> = ({ message }) => {
   switch (message.type) {
@@ -23,20 +28,14 @@ const MessageItem: React.FC<Props> = ({ message }) => {
         <div className="msg msg-agent fade-in">
           <div className="msg-content">{message.content}</div>
           {message.expertAttribution && message.expertAttribution.length > 0 && (
-            <div className="msg-expert-attribution">
-              {message.expertAttribution.map((exp, i) => (
-                <span key={i} className="msg-expert-tag" title={exp.methodology}>
-                  {exp.name} · {Math.round(exp.confidence * 100)}%
-                </span>
-              ))}
-            </div>
+            <ExpertAttribution experts={message.expertAttribution} />
           )}
           <div className="msg-time">{fmt(message.timestamp)}</div>
         </div>
       );
 
     case 'thinking':
-      return <ThinkingBlock block={message} />;
+      return <ThinkingBlockComponent block={message} />;
 
     case 'system':
       return (
@@ -52,7 +51,7 @@ const MessageItem: React.FC<Props> = ({ message }) => {
 
 // ═══ 可折叠思考块 ═══
 
-const ThinkingBlock: React.FC<{ block: ThinkingBlock }> = ({ block }) => {
+const ThinkingBlockComponent: React.FC<{ block: ThinkingBlock }> = ({ block }) => {
   const [collapsed, setCollapsed] = useState(block.collapsed);
 
   return (
@@ -78,9 +77,7 @@ const ThinkingBlock: React.FC<{ block: ThinkingBlock }> = ({ block }) => {
 function fmt(ts: string): string {
   try {
     return new Date(ts).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-  } catch {
-    return '';
-  }
+  } catch { return ''; }
 }
 
 export default React.memo(MessageItem);

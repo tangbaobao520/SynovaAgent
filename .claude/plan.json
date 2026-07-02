@@ -1,18 +1,19 @@
 {
   "version": "1.0",
-  "task": "Phase 1.1 欢迎页+消息系统",
-  "brief": "2026-07-02-2110-Phase-11--Welcome.md",
+  "task": "Phase 1.2 Composer+ExpertAttribution+SSE",
+  "brief": "2026-07-02-2144-Phase-12-ComposerExpertAttributionuse.md",
   "current_phase": 1,
   "approach": "rewrite",
   "phases": [
     {
       "step": 1,
-      "action": "create",
-      "description": "WelcomeScreen + MessageItem + conversation-store",
+      "action": "create+modify",
+      "description": "Composer + ExpertAttribution + useStreaming + CenterPanel 接线",
       "files": [
-        "electron-renderer/src/types/chat.ts",
+        "electron-renderer/src/components/ExpertAttribution.tsx",
+        "electron-renderer/src/components/Composer.tsx",
+        "electron-renderer/src/hooks/useStreaming.ts",
         "electron-renderer/src/stores/conversation-store.ts",
-        "electron-renderer/src/components/WelcomeScreen.tsx",
         "electron-renderer/src/components/MessageItem.tsx",
         "electron-renderer/src/components/CenterPanel.tsx",
         "electron-renderer/src/styles/global.css"
@@ -25,12 +26,12 @@
   ],
   "principles": [
     {
-      "rule": "消息联合类型定义",
-      "verify": "grep -rn \"type.*Message\" electron-renderer/src/types/chat.ts"
+      "rule": "useStreaming buffer+16ms flush",
+      "verify": "grep -rn bufferRef electron-renderer/src/hooks/useStreaming.ts"
     },
     {
-      "rule": "WelcomeScreen 三态覆盖",
-      "verify": "grep -rn \"firstLaunch\\|hasConfigNoData\\|ready\" electron-renderer/src/components/WelcomeScreen.tsx"
+      "rule": "ExpertAttribution 可折叠",
+      "verify": "grep -rn collapsed electron-renderer/src/components/ExpertAttribution.tsx"
     }
   ],
   "memory_refs": []
