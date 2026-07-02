@@ -33,6 +33,8 @@ export default defineConfig({
     exclude: process.env.CI
       ? [
           'tests/acceptance/**',  // "零 .ts 文件修改" depends on uncommitted state
+          'tests/circular-dependency.test.ts',  // Node 24 import resolution
+          'tests/e2e/**',  // Needs LLM API
         ]
       : [],
     coverage: {
