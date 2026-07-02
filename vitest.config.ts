@@ -35,7 +35,6 @@ export default defineConfig({
           'tests/e2e/**',
           'tests/acceptance/**',
           'tests/l3/e2e-*.test.ts',
-          'tests/orchestrator/phase1-diagnosis-wiring.test.ts',  // Needs DB
           'tests/data-pipeline.*.integration.test.ts',  // Feishu API
           'tests/smoke.test.ts',     // Needs full app stack
           'tests/circular-dependency.test.ts',  // Node 24 import resolution

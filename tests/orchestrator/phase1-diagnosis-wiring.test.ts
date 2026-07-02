@@ -1,3 +1,4 @@
+import { getExpertRegistry } from "../../src/l3/expert-registry";
 /**
  * orchestrator/phase1-diagnosis-wiring.test.ts — Iter 5 接线: ModuleRunner + SubAgentCoordinator 接入 Phase 1/2
  *
@@ -126,6 +127,15 @@ describe('Phase 1 Diagnosis — ModuleRunner接入', () => {
 // ═══ Phase 2: SubAgentCoordinator Wiring ═══
 
 describe('Phase 2 Hypothesis — SubAgentCoordinator接入', () => {
+  beforeAll(() => {
+    const registry = getExpertRegistry();
+    for (const t of ['strategy','org','finance','marketing','tech','action']) {
+      registry.registerDefault(t, `你是${t}专家。\n不可做的事: 不做其他领域分析`);
+    }
+    // 补充测试需要的额外类型
+    registry.registerDefault('business_model', '你是商业模式专家。\n不可做的事: 不做财务分析');
+  });
+
   const fakeLLM: LLMClient = {
     async consult() { return { content: '{"hypothesis":"根因是排班制度","confidence":0.85}', model: 'fake' }; },
   };
