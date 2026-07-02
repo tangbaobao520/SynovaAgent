@@ -50,7 +50,7 @@
 4. restart-recovery.ts — 增加专家推理扫描结果字段
 
 不做什么：
-- ❌ 不改 ConversationEngine 内部逻辑（只加注册/注销）
+- ❌ 不改 src/orchestrator/conversation-engine.ts 内部逻辑（只加注册/注销）
 - ❌ 不改其他模块（cli.ts, tui, routes 等—后续迭代）
 - ❌ 不涉及 LLM AbortController（需要独立的基础设施）
 - ❌ 不使用 as any
