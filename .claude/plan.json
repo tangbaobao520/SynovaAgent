@@ -1,19 +1,21 @@
 {
   "version": "1.0",
-  "task": "Phase 0.6 浅色主题",
-  "brief": "2026-07-02-1444-Phase-06--Light-Theme-for-D.md",
+  "task": "Phase 1.1 欢迎页+消息系统",
+  "brief": "2026-07-02-2110-Phase-11--Welcome.md",
   "current_phase": 1,
-  "approach": "reuse",
+  "approach": "rewrite",
   "phases": [
     {
       "step": 1,
-      "action": "modify",
-      "description": "light theme CSS + store + toggle",
+      "action": "create",
+      "description": "WelcomeScreen + MessageItem + conversation-store",
       "files": [
-        "electron-renderer/src/styles/global.css",
-        "electron-renderer/src/stores/app-store.ts",
-        "electron-renderer/src/App.tsx",
-        "electron-renderer/src/components/TitleBar.tsx"
+        "electron-renderer/src/types/chat.ts",
+        "electron-renderer/src/stores/conversation-store.ts",
+        "electron-renderer/src/components/WelcomeScreen.tsx",
+        "electron-renderer/src/components/MessageItem.tsx",
+        "electron-renderer/src/components/CenterPanel.tsx",
+        "electron-renderer/src/styles/global.css"
       ],
       "checks": {
         "wiring": "enforce",
@@ -23,8 +25,12 @@
   ],
   "principles": [
     {
-      "rule": ".theme-light CSS 变量覆盖实现",
-      "verify": "grep -rn .theme-light electron-renderer/src/styles/global.css"
+      "rule": "消息联合类型定义",
+      "verify": "grep -rn \"type.*Message\" electron-renderer/src/types/chat.ts"
+    },
+    {
+      "rule": "WelcomeScreen 三态覆盖",
+      "verify": "grep -rn \"firstLaunch\\|hasConfigNoData\\|ready\" electron-renderer/src/components/WelcomeScreen.tsx"
     }
   ],
   "memory_refs": []
