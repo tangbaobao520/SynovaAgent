@@ -99,7 +99,7 @@ fi
 
 # ═══ 4. 模板残留检查 — brief 是否认真填了 ═══
 if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
-  TEMPLATE_RESIDUE=$(grep -c '<!--' "$BRIEF" 2>/dev/null || echo 0)
+  TEMPLATE_RESIDUE=$(grep -c '<!--' "$BRIEF" 2>/dev/null | tr -d '\r' || echo 0)
   if [ "${TEMPLATE_RESIDUE:-0}" -gt 0 ]; then
     echo -e "  ${RED}❌ brief 模板残留: 发现 ${TEMPLATE_RESIDUE} 处未填注释 (<!--)  [硬阻断]${RESET}"
     HARD_FAIL=$((HARD_FAIL + 1))
