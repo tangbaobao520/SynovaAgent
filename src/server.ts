@@ -41,6 +41,7 @@ import deptWorkspaceRoutes from './routes/department-workspace';
 import actionsApiRoutes from './routes/actions-api';
 import healthRoutes from './routes/health';
 import evolutionRoutes from './routes/evolution';
+import gaEvolutionRoutes from './routes/ga-evolution';
 import ontologyRoutes from './routes/ontology';
 import ontologyAdminRoutes from './routes/ontology-admin';
 import diagnosisRoutes from './routes/diagnosis';
@@ -404,6 +405,7 @@ export async function createServer(): Promise<Server> {
   app.use(dataRoutes);           // POST /api/data/upload — 数据上传入口 (V4.2.9)
   app.use(healthRoutes);
   app.use(evolutionRoutes);   // /api/evolution/* — L0 进化引擎管理 (Phase P2)
+  app.use(gaEvolutionRoutes);  // /ga/evolution — GA 进化引擎管理面板 (Phase P2)
   app.use(ontologyRoutes);
 app.use(ontologyAdminRoutes);
   app.use(diagnosisRoutes);
