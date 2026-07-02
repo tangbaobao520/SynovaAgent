@@ -42,7 +42,10 @@ SynovaAgent — AI 诊断系统。
 ## Q2: 范围 — 正确的最简方案是什么？
 
 做什么：light theme CSS 变量 + store + toggle + build
-不做什么：不改变暗色主题，不改变布局，不改变行为
+不做什么：
+- 不改 `electron-renderer/src/components/` 其他组件
+- 不改 `electron-renderer/src/styles/global.css` 的暗色主题变量
+- 不改 `electron-renderer/src/ipc/` 和 `electron-renderer/src/hooks/`
 
 ## Q3: 验收 — 入口 → 交互 → 结果
 
@@ -51,7 +54,7 @@ SynovaAgent — AI 诊断系统。
 结果：UI 从暗色切换到浅色，所有面板/文字/边框颜色更新
 
 ## 本任务在哪一层
-Layer1（electron-renderer/ UI 层 — 仅修改 CSS 变量 + Store + TSX 组件）
+L1（electron-renderer/ UI 界面层）
 
 ## Done 标准
 - [ ] 点击 ☀️ 按钮切换到浅色主题

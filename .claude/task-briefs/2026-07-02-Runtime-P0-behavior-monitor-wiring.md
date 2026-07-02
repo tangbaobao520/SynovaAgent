@@ -65,4 +65,4 @@ L1（src/server.ts）
 
 ## Done 标准
 - [x] verify: grep -q 'await import.*behavior-monitor' src/server.ts
-- [x] verify: grep -q 'BehaviorMonitor\|4 rules' src/server.ts
+- [x] verify: grep -q 'BehaviorMonitor' src/server.ts
