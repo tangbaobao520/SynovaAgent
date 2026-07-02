@@ -111,7 +111,7 @@ grep behavior-monitor 在 src/ → 0 匹配。全新文件。
 结果：返回 BehaviorAlert[]，记录到 logger
 
 ## 本任务在哪一层
-L2（src/services/）+ L4（src/l4/audit-store.ts 新增 rawQuery）
+L2（src/services/）+ L4（src/l4/audit-store.ts 新增 rawQuery）+ L4（src/l4/audit-store.ts 新增 rawQuery）
 
 ## Done 标准
 - [ ] checkBulkModification: 5 分钟内同 actor >10 次操作 → alert
