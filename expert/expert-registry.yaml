@@ -5,45 +5,51 @@
 version: 1
 
 experts:
-  strategy:
+  host:
     enabled: true
     background: false
+    model: default
+    tools: [route_to_expert, summarize_findings, escalate, query_memory, query_knowledge, get_sentinel_status]
+
+  strategy:
+    enabled: true
+    background: true
     model: default
     tools: [seven_powers, goal_alignment, market_gravity]
 
   org:
     enabled: true
-    background: false
+    background: true
     model: default
     tools: [bus_factor, agent_readiness, capability_entropy]
 
   finance:
     enabled: true
-    background: false
+    background: true
     model: default
     tools: [cashflow_analysis, unit_economics, financial_snapshot]
 
   marketing:
     enabled: true
-    background: false
+    background: true
     model: default
     tools: [aarrr_funnel, jtbd_interview]
 
   tech:
     enabled: true
-    background: false
+    background: true
     model: default
     tools: [software_ecosystem_scan, connector_blueprint]
 
   action:
     enabled: true
-    background: false
+    background: true
     model: default
     tools: [priority_matrix]
 
   business_model:
     enabled: true
-    background: false
+    background: true
     model: default
     tools: [canvas_nine]
 
