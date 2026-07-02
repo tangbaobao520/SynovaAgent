@@ -87,9 +87,67 @@ const GADashboard: React.FC = () => {
   );
 };
 
+/** 方案预览卡片 */
+const SolutionPreview: React.FC<{
+  pattern: { name: string; description: string; skills: Array<{ name: string; duration: string; owner: string }>; prerequisites: string[]; riskFactors: string[] };
+  onConfirm: () => void;
+}> = ({ pattern, onConfirm }) => (
+  <div className="solution-preview fade-in">
+    <div className="solution-preview-header">
+      <span className="solution-preview-title">{pattern.name}</span>
+    </div>
+    <div className="solution-preview-desc">{pattern.description}</div>
+
+    <div className="solution-preview-section">
+      <div className="solution-preview-section-title">技能清单</div>
+      {pattern.skills.map((s, i) => (
+        <div key={i} className="solution-preview-skill">
+          <span>{s.name}</span>
+          <span style={{ fontSize: 10, color: 'var(--dim)' }}>{s.duration} · {s.owner}</span>
+        </div>
+      ))}
+    </div>
+
+    <div className="solution-preview-section">
+      <div className="solution-preview-section-title">前置条件</div>
+      {pattern.prerequisites.map((p, i) => (
+        <div key={i} className="solution-preview-item">• {p}</div>
+      ))}
+    </div>
+
+    <div className="solution-preview-section">
+      <div className="solution-preview-section-title">风险因素</div>
+      {pattern.riskFactors.map((r, i) => (
+        <div key={i} className="solution-preview-item" style={{ color: 'var(--orange)' }}>⚠ {r}</div>
+      ))}
+    </div>
+
+    <button className="solution-confirm-btn" onClick={onConfirm}>
+      确认方案 · 推送给对接人
+    </button>
+  </div>
+);
+
 /** GA 工作区 3 标签 */
 const GAWorkspaceTabs: React.FC = () => {
   const [tab, setTab] = useState<'action' | 'sentinel' | 'pattern'>('action');
+  const [showSolution, setShowSolution] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
+
+  const mockPattern = {
+    name: '信息扭曲校正',
+    description: '建立透明化机制和跨部门同步流程，减少信息传递失真',
+    skills: [
+      { name: '组织透明化审计', duration: '1-2周', owner: '组织专家' },
+      { name: '跨部门同步流程设计', duration: '2-3周', owner: '行动顾问' },
+    ],
+    prerequisites: ['已建立基础通讯工具', '有跨部门协作痛点'],
+    riskFactors: ['中层管理者可能的抵触情绪', '需要高层明确支持'],
+  };
+
+  const handleGeneratePlan = () => setShowSolution(true);
+  const handleConfirmPlan = () => { setConfirmed(true); setShowSolution(false); };
+
   return (
     <>
       <div className="right-panel-tabs">
@@ -99,9 +157,44 @@ const GAWorkspaceTabs: React.FC = () => {
           </button>
         ))}
       </div>
-      {tab === 'action' && <Section title="✅ 行动项"><Empty /></Section>}
-      {tab === 'sentinel' && <Section title="📊 哨兵数据"><Empty /></Section>}
-      {tab === 'pattern' && <Section title="📋 落地模式"><Empty /></Section>}
+
+      {tab === 'action' && (
+        <>
+          <Section title="✅ 行动项"><Empty /></Section>
+        </>
+      )}
+
+      {tab === 'sentinel' && (
+        <Section title="📊 哨兵数据"><Empty /></Section>
+      )}
+
+      {tab === 'pattern' && (
+        <>
+          {confirmed ? (
+            <Section title="📋 已确认方案">
+              <div style={{ fontSize: 11, color: 'var(--green)', textAlign: 'center', padding: 8 }}>
+                ✅ 方案已推送给对接人
+              </div>
+            </Section>
+          ) : showSolution ? (
+            <SolutionPreview pattern={mockPattern} onConfirm={handleConfirmPlan} />
+          ) : (
+            <Section title="📋 落地模式匹配">
+              <div className="empty-state" style={{ padding: '12px 8px' }}>
+                <div className="empty-state-text" style={{ fontSize: 11 }}>
+                  已匹配 1 个落地模式
+                </div>
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--dim)', padding: '4px 0', lineHeight: 1.5 }}>
+                信息扭曲校正 — 当企业存在信息传递失真时适用
+              </div>
+              <button className="solution-generate-btn" onClick={handleGeneratePlan}>
+                📋 生成落地方案
+              </button>
+            </Section>
+          )}
+        </>
+      )}
     </>
   );
 };

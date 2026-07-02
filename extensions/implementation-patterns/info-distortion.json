@@ -1,0 +1,32 @@
+{
+  "$schema": "./pattern-schema.json",
+  "name": "info-distortion",
+  "version": "1.0.0",
+  "type": "implementation-pattern",
+  "entryPoint": "pattern.ts",
+  "description": "信息扭曲校正 — 当企业存在信息传递失真时，建立透明化机制和跨部门同步流程",
+  "sentinelIds": ["O3", "O6", "D2"],
+  "dataDependencies": [
+    { "field": "communication.channels", "description": "跨部门沟通渠道数量", "coverage": 0.6 },
+    { "field": "communication.frequency", "description": "信息同步频率", "coverage": 0.4 },
+    { "field": "org.layerCount", "description": "管理层级深度", "coverage": 0.8 },
+    { "field": "decision.accuracy", "description": "决策准确率", "coverage": 0.3 }
+  ],
+  "skills": [
+    { "name": "组织透明化审计", "duration": "1-2周", "owner": "组织专家" },
+    { "name": "跨部门同步流程设计", "duration": "2-3周", "owner": "行动顾问" },
+    { "name": "信息仪表盘搭建", "duration": "3-4周", "owner": "技术专家" }
+  ],
+  "estimatedImpact": {
+    "improvement": "决策准确率预计提升 15-25%",
+    "timeline": "4-6周可初见成效"
+  },
+  "prerequisites": [
+    "企业已建立基础通讯工具（飞书/企业微信）",
+    "有跨部门协作的真实痛点案例"
+  ],
+  "riskFactors": [
+    "中层管理者可能的抵触情绪",
+    "信息透明化需要高层明确支持"
+  ]
+}

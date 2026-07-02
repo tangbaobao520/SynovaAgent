@@ -1,21 +1,21 @@
 {
   "version": "1.0",
-  "task": "Phase 3.1 GA客户切换+仪表盘",
-  "brief": "2026-07-03-0224-Phase-31-GA.md",
+  "task": "Phase 3.2",
+  "brief": "task-briefs\\2026-07-03-0306-Phase-32-.md",
   "current_phase": 1,
   "approach": "rewrite",
   "phases": [
     {
       "step": 1,
       "action": "create+modify",
-      "description": "ga-admin routes + store + LeftPanel + RightPanel + server",
+      "description": "correction+pattern+plan",
       "files": [
-        "src/routes/ga-admin.ts",
-        "electron-renderer/src/stores/app-store.ts",
-        "electron-renderer/src/components/LeftPanel.tsx",
+        "src/routes/ga-corrections.ts",
+        "src/l4/agent-memory-store.ts",
+        "extensions/implementation-patterns/info-distortion.json",
+        "src/services/pattern-matcher.ts",
         "electron-renderer/src/components/RightPanel.tsx",
-        "src/server.ts",
-        "electron-renderer/src/styles/global.css"
+        "src/server.ts"
       ],
       "checks": {
         "wiring": "enforce",
@@ -25,12 +25,12 @@
   ],
   "principles": [
     {
-      "rule": "GA 切换客户 activeOrgId 变化",
-      "verify": "grep -rn setActiveOrgId electron-renderer/src/stores/app-store.ts"
+      "rule": "纠错写入 AgentMemoryStore",
+      "verify": "grep -rn ga_correction src/routes/ga-corrections.ts"
     },
     {
-      "rule": "ga-admin 路由注册在 server.ts",
-      "verify": "grep -rn gaAdminRoutes src/server.ts"
+      "rule": "落地模式 JSON",
+      "verify": "grep -rn schema extensions/implementation-patterns/info-distortion.json"
     }
   ],
   "memory_refs": []
