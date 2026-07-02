@@ -99,9 +99,10 @@ grep behavior-monitor 在 src/ → 0 匹配。全新文件。
    - log() 末尾异步调用 BehaviorMonitor.evaluate()
 
 **不做什么：**
-- 不创建通知推送渠道（Phase 4 处理）
-- 不修改 src/l4/audit-store.ts
-- 不涉及 packages/
+- 不创建 `src/notifications/` 通知推送渠道（Phase 4 处理）
+- 不修改 `src/l4/audit-store.ts` 的 audit_log schema 或已有方法（仅新增 rawQuery）
+- 不涉及 `packages/` 下的任何文件
+- 不修改 `src/routes/` 或 `src/server.ts`
 
 ## Q3: 验收 — 入口 → 交互 → 结果
 
@@ -110,7 +111,7 @@ grep behavior-monitor 在 src/ → 0 匹配。全新文件。
 结果：返回 BehaviorAlert[]，记录到 logger
 
 ## 本任务在哪一层
-L2（src/services/）
+L2（src/services/）+ L4（src/l4/audit-store.ts 新增 rawQuery）
 
 ## Done 标准
 - [ ] checkBulkModification: 5 分钟内同 actor >10 次操作 → alert

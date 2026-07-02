@@ -173,7 +173,7 @@ Phase 0.2 — WAL 降级：
   - 日志可见（首次警告，后续静默）
 
 ## 本任务在哪一层
-横切：Phase 0.1 在 L1（server.ts 进程级），Phase 0.2 在 L4（packages/graph-store）+ L2（engine-context 初始化）
+横切 L1+L5: Phase 0.1 全局错误处理器在 L5（src/server.ts 进程级）+ Phase 0.2 WAL 降级在 L1（packages/graph-store 包）和 L5（src/init/engine-context 初始化）。src/services/runtime-global-handlers.ts 是基础设施横切服务。
 
 ## Done 标准
 - [ ] 入口可触达: process.on('uncaughtException') 和 process.on('unhandledRejection') 在 createServer() 中注册
