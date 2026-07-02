@@ -2,7 +2,7 @@
  * tests/orchestrator/context-compressor-confirmed.test.ts
  * 测试: 压缩不丢失已确认判断 (上下文管理优化任务 Step 1)
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { ContextCompressor } from '../../src/orchestrator/context-compressor';
 import type { LLMMessage } from '../../src/providers/types';
 
@@ -11,6 +11,10 @@ function msg(role: 'user' | 'assistant' | 'system', content: string): LLMMessage
 }
 
 const compressor = new ContextCompressor();
+
+beforeEach(() => {
+  compressor.resetCooldown();
+});
 
 describe('ContextCompressor with confirmedFacts', () => {
   it('summary策略: confirmedFacts 出现在压缩输出中', () => {

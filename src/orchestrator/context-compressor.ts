@@ -195,6 +195,11 @@ export class ContextCompressor {
     return { lastCompressAt: this.lastCompressAt, compressCount: this.compressCount };
   }
 
+  /** 重置冷却（测试用） */
+  resetCooldown(): void {
+    this.lastCompressAt = 0;
+  }
+
   // ═══ Private Strategies ═══
 
   private compressSlidingWindow(messages: LLMMessage[], windowSize: number): LLMMessage[] {
