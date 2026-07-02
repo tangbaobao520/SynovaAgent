@@ -199,7 +199,7 @@ export interface AgentMemoryStoreLike {
     expiresAt: string | null;
   }): unknown;
   recall(orgId: string, key: string): { value: string } | null;
-  list(query: { orgId: string; type?: string; tags?: string[]; limit?: number }): Array<{ value: string; tags: string[]; type: string }>;
+  list(query: { orgId: string; type?: string; tags?: string[]; limit?: number }): Array<{ value: string; tags: string[]; type: string; key: string }>;
   forget(orgId: string, key: string): boolean;
 }
 

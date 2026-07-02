@@ -266,5 +266,13 @@ export async function runPostDiagnosisProcessing(
     log.warn({ err: msg, teamId }, 'L0 组织自适应失败 — 降级 (不阻断诊断)');
   }
 
+  // Codex #8: record baseline count after each diagnosis
+  try {
+    const { getBaselineStore } = await import('../sentinel/baseline-store');
+    getBaselineStore().record('org-baseline-' + teamId, []);
+  } catch (blErr: unknown) {
+    log.warn({ err: blErr, teamId }, 'baseline record failed — degraded');
+  }
+
   return result;
 }

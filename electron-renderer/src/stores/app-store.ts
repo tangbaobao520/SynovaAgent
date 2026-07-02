@@ -2,6 +2,7 @@ import { create } from 'zustand';
 
 export type OnlineStatus = 'connected' | 'disconnected' | 'connecting';
 export type ActiveView = 'chat' | 'dashboard' | 'settings';
+export type ThemeMode = 'dark' | 'light';
 
 export interface AppState {
   leftPanelOpen: boolean;
@@ -14,6 +15,7 @@ export interface AppState {
   lastDiagnosisTime: string | null;
   dimensionCovered: number;
   dimensionTotal: number;
+  theme: ThemeMode;
 
   toggleLeftPanel: () => void;
   toggleRightPanel: () => void;
@@ -23,6 +25,7 @@ export interface AppState {
   setLeftPanelWidth: (width: number) => void;
   setRightPanelWidth: (width: number) => void;
   setDiagnosisInfo: (time: string, covered: number, total: number) => void;
+  toggleTheme: () => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -36,6 +39,7 @@ export const useAppStore = create<AppState>((set) => ({
   lastDiagnosisTime: null,
   dimensionCovered: 0,
   dimensionTotal: 8,
+  theme: 'dark',
 
   toggleLeftPanel: () => set((s) => ({ leftPanelOpen: !s.leftPanelOpen })),
   toggleRightPanel: () => set((s) => ({ rightPanelOpen: !s.rightPanelOpen })),
@@ -47,4 +51,5 @@ export const useAppStore = create<AppState>((set) => ({
   setDiagnosisInfo: (time, covered, total) => set({
     lastDiagnosisTime: time, dimensionCovered: covered, dimensionTotal: total,
   }),
+  toggleTheme: () => set((s) => ({ theme: s.theme === 'dark' ? 'light' : 'dark' })),
 }));

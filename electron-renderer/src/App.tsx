@@ -24,6 +24,7 @@ import { isElectron, getAppVersion } from './ipc/bridge';
 const App: React.FC = () => {
   const toggleLeftPanel = useAppStore((s) => s.toggleLeftPanel);
   const setOnlineStatus = useAppStore((s) => s.setOnlineStatus);
+  const theme = useAppStore((s) => s.theme);
 
   // 稳定引用避免 hooks 重复执行
   const handlers = useMemo(() => ({
@@ -60,7 +61,7 @@ const App: React.FC = () => {
   }, []);
 
   return (
-    <div className="app-layout">
+    <div className={`app-layout${theme === 'light' ? ' theme-light' : ''}`}>
       <TitleBar />
       <div className="app-body">
         <LeftPanel />

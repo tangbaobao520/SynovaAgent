@@ -1,18 +1,19 @@
 {
   "version": "1.0",
-  "task": "Phase 0.4 GA行为监控 BehaviorMonitor",
-  "brief": "2026-07-02-0547-Phase-04-GA-BehaviorMonitor.md",
+  "task": "Phase 0.6 浅色主题",
+  "brief": "2026-07-02-1444-Phase-06--Light-Theme-for-D.md",
   "current_phase": 1,
-  "approach": "rewrite",
+  "approach": "reuse",
   "phases": [
     {
       "step": 1,
       "action": "modify",
-      "description": "BehaviorMonitor + AuditService 接线",
+      "description": "light theme CSS + store + toggle",
       "files": [
-        "src/services/behavior-monitor.ts",
-        "src/services/audit-service.ts",
-        "tests/services/behavior-monitor.test.ts"
+        "electron-renderer/src/styles/global.css",
+        "electron-renderer/src/stores/app-store.ts",
+        "electron-renderer/src/App.tsx",
+        "electron-renderer/src/components/TitleBar.tsx"
       ],
       "checks": {
         "wiring": "enforce",
@@ -22,12 +23,8 @@
   ],
   "principles": [
     {
-      "rule": "BehaviorMonitor.evaluate 必须降级安全",
-      "verify": "grep -rn try|catch src/services/behavior-monitor.ts"
-    },
-    {
-      "rule": "4 条规则各自独立实现",
-      "verify": "grep -rn checkBulkModification|checkOffHoursActivity|checkRapidCorrections|checkThresholdManipulation src/services/behavior-monitor.ts"
+      "rule": ".theme-light CSS 变量覆盖实现",
+      "verify": "grep -rn .theme-light electron-renderer/src/styles/global.css"
     }
   ],
   "memory_refs": []

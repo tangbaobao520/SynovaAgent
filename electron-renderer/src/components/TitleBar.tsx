@@ -11,6 +11,8 @@ const TitleBar: React.FC = () => {
   const alertCount = useAppStore((s) => s.alertCount);
   const dimensionCovered = useAppStore((s) => s.dimensionCovered);
   const dimensionTotal = useAppStore((s) => s.dimensionTotal);
+  const theme = useAppStore((s) => s.theme);
+  const toggleTheme = useAppStore((s) => s.toggleTheme);
 
   const dimPercent = dimensionTotal > 0
     ? Math.round((dimensionCovered / dimensionTotal) * 100)
@@ -61,6 +63,9 @@ const TitleBar: React.FC = () => {
               {alertCount > 99 ? '99+' : alertCount}
             </span>
           )}
+        </button>
+        <button className="titlebar-btn" title="切换主题" onClick={toggleTheme}>
+          {theme === 'dark' ? '☀️' : '🌙'}
         </button>
         <button className="titlebar-btn" title="设置" onClick={() => {}}>
           ⚙️

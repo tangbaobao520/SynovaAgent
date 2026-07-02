@@ -34,6 +34,71 @@
   --right-panel-expanded: 320px;
 }
 
+/* ═══ Light Theme (Phase 0.6) ═══ */
+
+.theme-light {
+  --bg: #ffffff;
+  --panel: #f5f5f7;
+  --border: #e5e5e7;
+  --text: #1d1d1f;
+  --dim: #86868b;
+  --accent: #6c5ce7;
+  --accent2: #8b7cf7;
+  --red: #dc3545;
+  --green: #28a745;
+  --orange: #fd7e14;
+  --cyan: #17a2b8;
+  --input: #f0f0f2;
+}
+
+.theme-light .statusbar-item .dot { box-shadow: 0 0 1px rgba(0,0,0,0.2); }
+
+.theme-light .titlebar {
+  border-bottom-color: #e5e5e7;
+}
+
+.theme-light .dimension-track {
+  background: #e5e5e7;
+}
+
+.theme-light .center-input-area textarea {
+  border-color: #e5e5e7;
+}
+
+.theme-light .panel-item:hover {
+  background: #eaeaea;
+}
+
+.theme-light .panel-item.active {
+  background: rgba(108, 92, 231, 0.1);
+}
+
+.theme-light .sb-section {
+  background: #ffffff;
+  border: 1px solid #e5e5e7;
+}
+
+.theme-light .left-panel-header .icon-btn:hover {
+  background: #eaeaea;
+}
+
+.theme-light .titlebar-btn:hover {
+  background: #eaeaea;
+}
+
+.theme-light .center-input-area textarea:focus {
+  border-color: var(--accent);
+}
+
+.theme-light ::-webkit-scrollbar-thumb {
+  background: #d0d0d2;
+}
+
+.theme-light ::-webkit-scrollbar-thumb:hover {
+  background: #b0b0b2;
+}
+
+
 * {
   margin: 0;
   padding: 0;

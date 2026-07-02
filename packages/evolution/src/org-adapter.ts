@@ -234,6 +234,22 @@ export class OrgAdapter {
 
         correctionsProcessed++;
         this.metrics.recordCorrection();
+
+        // Codex #7: supersededBy chain — mark entry as processed
+        if (this.memoryStore && entry.key) {
+          try {
+            const currentVal = JSON.parse(entry.value) as Record<string, unknown>;
+            currentVal.supersededBy = record.actionId || '';
+            currentVal.processedAt = new Date().toISOString();
+            this.memoryStore.remember({
+              orgId, key: entry.key, value: JSON.stringify(currentVal),
+              type: 'enterprise_fact', confidence: 0.9, source: 'org_adapter',
+              tags: entry.tags || ['user_correction'], expiresAt: null,
+            });
+          } catch (supErr: unknown) {
+            log.warn({ err: supErr, key: entry.key }, 'supersededBy write failed — degraded');
+          }
+        }
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         errors.push(`解析纠错记录失败: ${msg}`);
