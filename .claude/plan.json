@@ -1,21 +1,18 @@
 {
   "version": "1.0",
-  "task": "Phase 1.2 Composer+ExpertAttribution+SSE",
-  "brief": "2026-07-02-2144-Phase-12-ComposerExpertAttributionuse.md",
+  "task": "Phase 2.1 面板增强+上下文感知",
+  "brief": "2026-07-03-0000-Phase-21--R.md",
   "current_phase": 1,
   "approach": "rewrite",
   "phases": [
     {
       "step": 1,
-      "action": "create+modify",
-      "description": "Composer + ExpertAttribution + useStreaming + CenterPanel 接线",
+      "action": "modify",
+      "description": "app-store + LeftPanel + RightPanel + CSS",
       "files": [
-        "electron-renderer/src/components/ExpertAttribution.tsx",
-        "electron-renderer/src/components/Composer.tsx",
-        "electron-renderer/src/hooks/useStreaming.ts",
-        "electron-renderer/src/stores/conversation-store.ts",
-        "electron-renderer/src/components/MessageItem.tsx",
-        "electron-renderer/src/components/CenterPanel.tsx",
+        "electron-renderer/src/stores/app-store.ts",
+        "electron-renderer/src/components/LeftPanel.tsx",
+        "electron-renderer/src/components/RightPanel.tsx",
         "electron-renderer/src/styles/global.css"
       ],
       "checks": {
@@ -26,12 +23,12 @@
   ],
   "principles": [
     {
-      "rule": "useStreaming buffer+16ms flush",
-      "verify": "grep -rn bufferRef electron-renderer/src/hooks/useStreaming.ts"
+      "rule": "role+workspaceId 决定右栏视图",
+      "verify": "grep -rn resolveRightPanelView electron-renderer/src/components/RightPanel.tsx"
     },
     {
-      "rule": "ExpertAttribution 可折叠",
-      "verify": "grep -rn collapsed electron-renderer/src/components/ExpertAttribution.tsx"
+      "rule": "GA 三标签",
+      "verify": "grep -rn \"行动跟踪\\|哨兵数据\\|落地模式\" electron-renderer/src/components/RightPanel.tsx"
     }
   ],
   "memory_refs": []

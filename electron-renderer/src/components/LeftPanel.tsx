@@ -1,38 +1,57 @@
 /**
- * components/LeftPanel.tsx — 左栏面板
+ * components/LeftPanel.tsx — 左栏面板 (Phase 2.1)
  *
- * 折叠态：40px 图标条（搜索、工作区、通知、设置）
- * 展开态：240px 面板（全局搜索 → 会话历史 → 工作区列表）
- *
- * 支持 Ctrl+B 快捷键切换折叠/展开。
+ * 折叠态: 44px 图标条
+ * 展开态: 搜索输入框 → 对话列表 → 工作区列表 → (GA) 客户列表
  */
 import React from 'react';
 import { useAppStore } from '../stores/app-store';
 
-const iconItems = [
+const ICON_ITEMS = [
   { icon: '🔍', label: '搜索', id: 'search' },
   { icon: '💬', label: '对话', id: 'conversations' },
   { icon: '📁', label: '工作区', id: 'workspaces' },
   { icon: '🔔', label: '通知', id: 'notifications' },
 ];
 
+const MOCK_GA_CLIENTS = [
+  { id: 'c-1', name: 'Acme Corp', industry: '制造' },
+  { id: 'c-2', name: 'TechFlow', industry: '科技' },
+  { id: 'c-3', name: '健康之路', industry: '医疗' },
+];
+
 const LeftPanel: React.FC = () => {
   const open = useAppStore((s) => s.leftPanelOpen);
-  const [activeItem, setActiveItem] = React.useState('conversations');
+  const searchQuery = useAppStore((s) => s.searchQuery);
+  const setSearchQuery = useAppStore((s) => s.setSearchQuery);
+  const workspaces = useAppStore((s) => s.workspaces);
+  const conversations = useAppStore((s) => s.conversations);
+  const userRole = useAppStore((s) => s.userRole);
+  const activeWorkspaceId = useAppStore((s) => s.activeWorkspaceId);
+  const setActiveWorkspaceId = useAppStore((s) => s.setActiveWorkspaceId);
+
+  const [activeSection, setActiveSection] = React.useState('conversations');
+
+  const filteredConvs = conversations.filter(
+    (c) => !searchQuery || c.title.includes(searchQuery),
+  );
+  const filteredWss = workspaces.filter(
+    (w) => !searchQuery || w.title.includes(searchQuery),
+  );
 
   return (
     <nav className={`panel-left ${open ? 'open' : 'closed'}`}>
-      {/* Header 区域：展开时显示标题，折叠时显示图标按钮 */}
+      {/* 图标栏 */}
       <div className="left-panel-header">
-        {iconItems.slice(0, 4).map((item) => (
+        {ICON_ITEMS.map((item) => (
           <button
             key={item.id}
             className="icon-btn"
             title={item.label}
-            onClick={() => setActiveItem(item.id)}
+            onClick={() => setActiveSection(item.id)}
             style={{
-              background: activeItem === item.id ? 'var(--border)' : undefined,
-              color: activeItem === item.id ? 'var(--text)' : undefined,
+              background: activeSection === item.id ? 'var(--border)' : undefined,
+              color: activeSection === item.id ? 'var(--text)' : undefined,
             }}
           >
             {item.icon}
@@ -40,42 +59,75 @@ const LeftPanel: React.FC = () => {
         ))}
       </div>
 
-      {/* 展开时的详细内容 */}
+      {/* 展开内容 */}
       {open && (
         <div className="left-panel-content fade-in">
-          {/* 全局搜索 */}
+          {/* 搜索 */}
           <div className="panel-section-title">搜索</div>
-          <div
-            className="panel-item"
-            style={{ background: 'var(--input)', margin: '0 0 8px', cursor: 'default' }}
-          >
-            <span className="panel-item-icon">🔍</span>
-            <span style={{ color: 'var(--dim)', fontSize: 12 }}>
-              搜索工作区或对话...
-            </span>
+          <div className="left-panel-search">
+            <input
+              className="left-search-input"
+              type="text"
+              placeholder="搜索工作区或对话..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
 
-          {/* 会话历史 */}
+          {/* 对话列表 */}
           <div className="panel-section-title">最近对话</div>
-          <div className="panel-item" onClick={() => setActiveItem('conv1')}>
-            <span className="panel-item-icon">💬</span>
-            <span>为什么现金流在恶化？</span>
-          </div>
-          <div className="panel-item" onClick={() => setActiveItem('conv2')}>
-            <span className="panel-item-icon">💬</span>
-            <span>团队协作分析</span>
-          </div>
+          {filteredConvs.length === 0 && (
+            <div className="panel-item" style={{ color: 'var(--dim)', cursor: 'default' }}>
+              无匹配对话
+            </div>
+          )}
+          {filteredConvs.map((conv) => (
+            <div key={conv.id} className="panel-item">
+              <span className="panel-item-icon">💬</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {conv.title}
+                </div>
+                <div style={{ fontSize: 10, color: 'var(--dim)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {conv.preview}
+                </div>
+              </div>
+            </div>
+          ))}
 
           {/* 工作区列表 */}
           <div className="panel-section-title">工作区</div>
-          <div className="panel-item" onClick={() => setActiveItem('ws1')}>
-            <span className="panel-item-icon">📁</span>
-            <span>默认工作区</span>
-          </div>
-          <div className="panel-item" onClick={() => setActiveItem('ws2')}>
-            <span className="panel-item-icon">📁</span>
-            <span>财务诊断</span>
-          </div>
+          {filteredWss.map((ws) => (
+            <div
+              key={ws.id}
+              className={`panel-item${activeWorkspaceId === ws.id ? ' active' : ''}`}
+              onClick={() => setActiveWorkspaceId(ws.id)}
+            >
+              <span className="panel-item-icon">📁</span>
+              <span>{ws.title}</span>
+              {ws.type === 'diagnostic' && (
+                <span style={{ marginLeft: 'auto', fontSize: 9, color: 'var(--accent2)' }}>
+                  诊断
+                </span>
+              )}
+            </div>
+          ))}
+
+          {/* GA 客户列表 */}
+          {userRole === 'ga' && (
+            <>
+              <div className="panel-section-title">客户列表</div>
+              {MOCK_GA_CLIENTS.map((client) => (
+                <div key={client.id} className="panel-item">
+                  <span className="panel-item-icon">🏢</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12 }}>{client.name}</div>
+                    <div style={{ fontSize: 10, color: 'var(--dim)' }}>{client.industry}</div>
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
         </div>
       )}
     </nav>
