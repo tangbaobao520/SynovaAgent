@@ -26,6 +26,7 @@ module.exports = {
 
   files: [
     'electron-main.ts',
+    'electron-renderer/**/*',
     'src/**/*.ts',
     'src/**/*.js',
     'package.json',
