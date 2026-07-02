@@ -32,13 +32,7 @@ export default defineConfig({
     include: ['./tests/**/*.test.ts', './tests/**/*.integration.test.ts'],
     exclude: process.env.CI
       ? [
-          'tests/e2e/**',
-          'tests/acceptance/**',
-          'tests/l3/e2e-*.test.ts',
-          'tests/data-pipeline.*.integration.test.ts',  // Feishu API
-          'tests/smoke.test.ts',     // Needs full app stack
-          'tests/circular-dependency.test.ts',  // Node 24 import resolution
-          'tests/routes/ga-evolution.test.ts',  // Pre-existing HTML render failure
+          'tests/acceptance/**',  // "零 .ts 文件修改" depends on uncommitted state
         ]
       : [],
     coverage: {
