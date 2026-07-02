@@ -57,9 +57,9 @@
 2. `src/server.ts` Cron handler 末尾添加 `rvm.cleanupSnapshots(10)`
 
 不做什么：
-- 不改 listSnapshots 的返回格式
-- 不改 createSnapshot 的签名
-- 不改 AgentMemoryStore
+- 不改 packages/evolution/src/rule-version-manager.ts（listSnapshots 返回格式） 的返回格式
+- 不改 packages/evolution/src/rule-version-manager.ts（createSnapshot 签名） 的签名
+- 不改 src/l4/agent-memory-store.ts
 - 不改任何测试 mock
 
 ## Q3: 验收 — 入口 → 交互 → 结果
