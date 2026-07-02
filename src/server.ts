@@ -368,32 +368,10 @@ export async function createServer(): Promise<Server> {
   // Phase 0.1: JWT 认证路由（登录/刷新/撤销）
   app.use(authRoutes);
 
-  // Slice 6.2: 简易速率限制 (100 req/min per IP)
-  const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-  app.use((req, res, next) => {
-    const ip = req.ip || req.socket.remoteAddress || 'unknown';
-    const now = Date.now();
-    const entry = rateLimitMap.get(ip);
-
-    if (entry && now < entry.resetAt) {
-      if (entry.count >= 100) {
-        res.status(429).json({ ok: false, code: 'RATE_LIMITED', message: '请求过于频繁，请稍后再试' });
-        return;
-      }
-      entry.count++;
-    } else {
-      rateLimitMap.set(ip, { count: 1, resetAt: now + 60000 });
-    }
-    next();
-  });
-
-  // 定期清理过期 IP 条目
-  setInterval(() => {
-    const now = Date.now();
-    for (const [ip, entry] of rateLimitMap) {
-      if (now >= entry.resetAt) rateLimitMap.delete(ip);
-    }
-  }, 30_000); // 30s 清理，防止内存泄漏 (P1-06)
+  // Phase 3.1: 三层速率限制 (替换旧 inline rateLimitMap)
+  const { createFixedWindowLimiter } = await import('./middleware/rate-limit');
+  const rateLimitMiddleware = createFixedWindowLimiter(100, 60_000);
+  app.use(rateLimitMiddleware);
 
   // 路由
   app.get('/api/status/budget', (req, res) => {

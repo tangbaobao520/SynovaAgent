@@ -212,7 +212,7 @@ Agent，不是 ChatBot。驻扎企业，持续观测，主动发现，自动诊�
 **目标**: 成为组织诊断的 AWS。每个新客户、新行业、新数据源 → 加文件即可，不改代码。
 能文件化的必须文件化。不能文件化的必须有明确的扩展点。
 
-**流程约束: V4.2.9 — task brief 6字段 + 免疫系统 + plan.json + 8组物理阻断 + Plan-Actual闭合 + engine-core清零 + 时间戳顺序检查 + Q2排除项验证 + verify执行
+**流程约束: V4.3.0 — task brief 6字段 + 免疫系统 + plan.json + 8组物理阻断 + Plan-Actual闭合 + engine-core清零 + 时间戳顺序检查 + Q2排除项验证 + verify执行
 
 **数据流**:
 ```
@@ -285,9 +285,9 @@ evolution/ (SessionLearningEngine, FeedbackCollector, OntologyAdapter)
 
 ---
 
-## Loop Engineering V4.2.9 — 免疫系统 + Plan-Actual 闭合 + 缺口追踪 + 修复提示 + 时间戳顺序检查 + 三层解耦项目身份 + Q2排除项验证 + verify执行
+## Loop Engineering V4.3.0 — L4 本体层图遍历哲学 + 免疫系统 + Plan-Actual 闭合
 
-> 2026-06-17 v2.5 → v3.0 → v3.1 → v3.5 → v3.6 → v3.7 → v3.8 → v3.9 → V4.1 → V4.1.1 → V4.1.2 → V4.2.2 → V4.2.3 → V4.2.4 → V4.2.5 → **V4.2.9 (2026-06-27)**。
+> 2026-06-17 v2.5 → v3.0 → v3.1 → v3.5 → v3.6 → v3.7 → v3.8 → v3.9 → V4.1 → V4.1.1 → V4.1.2 → V4.2.2 → V4.2.3 → V4.2.4 → V4.2.5 → **V4.3.0 (2026-07-03)**。
 >
 > **v3.6 的核心教训**：把需要语义理解的事交给 grep = 17 次折腾才提交成功。
 > **V3.9 的核心教训**：硬阻断 100% 有效，软机制 0% 有效。信息注入型检查对 agent 不可见。
@@ -334,6 +334,12 @@ evolution/ (SessionLearningEngine, FeedbackCollector, OntologyAdapter)
 > - **专家路由改为layer基：** 从 category 改为 layer 路由。
 > - **SentinelConfig 补全4字段：** layer/auxiliaryExperts/computeKind/technoEconomicPhaseCalibration。
 > - **全部版本号同步到 V4.2.9**
+>
+> ### V4.3.0 变更 (2026-07-03)
+> - **L4 本体层设计哲学明确化**：本体层是企业知识图谱（22 节点类型 + 17 边类型），compute 函数必须使用图遍历思维，不能退化为 KV 读取。
+> - **compute 函数签名标准化**：`(store: GraphStoreReader, teamId: string) => ComputeResult`，store 提供 queryNodes/queryEdges/traverse 三个图操作原语。
+> - **已知问题与演进方向**：Financial 节点 17 个 optionalProps 需拆分为语义子节点；5 条缺失边类型需补充。
+> - **全部版本号同步到 V4.3.0**
 
 ### 设计哲学 (V3.7 核心修正)
 
@@ -346,6 +352,21 @@ V3.7 的修正: grep 只回答"这个符号在文件外部出现过吗？"（物
              agent 自检回答"这个符号在正确的调用链中吗？"（语义判断）
              plan.json 声明"这个文件处于架构步骤中，接线在后续阶段"（结构化计划）
 ```
+
+### L4 本体层设计哲学（V4.3.0）
+
+本体层不是 KV 数据库，是一张**企业知识图谱**。22 种节点类型（Financial/Client/Person/Process/Tool/Goal/Market/Product...）和 17 种边类型（COST_DRIVEN_BY/REVENUE_FROM/OWNS/PROVIDES/DEPENDS_ON/INTERACTS_WITH/TRIGGERS...）共同构成对一家企业的语义建模。
+
+设计哲学：边承载语义，节点承载状态。
+
+- 哨兵问"融资约束如何"——不是读 Financial.operatingCashFlow，而是沿 GENERATES 边找现金流子节点、沿 OWES 边找债务结构、沿 BACKED_BY 边找权益，在图遍历结果上运行 KZ 公式
+- 哨兵问"砍掉低产客户群会怎样"——不是读 revenue 数字，而是沿 REVENUE_FROM 边找客户收入贡献，沿 COST_DRIVEN_BY 边追踪成本线归属
+
+compute 函数签名统一为 `(store: GraphStoreReader, teamId: string) => ComputeResult`。store 提供 queryNodes/queryEdges/traverse 三个图操作原语。compute 不应该自己"知道"数据在哪——它应该沿图中已定义的边走过去。
+
+**已知问题与演进方向**：
+- Financial 节点 17 个 optionalProps 需拆分为 CashFlowStatement/BalanceSheet/IncomeStatement/CapitalStructure/CostCenter 等语义子节点
+- 缺失 5 条边类型：COMPENSATES/ALLOCATES_TO/BUDGETS/PARTICIPATES_IN/GENERATES
 
 ### 三权分立
 
