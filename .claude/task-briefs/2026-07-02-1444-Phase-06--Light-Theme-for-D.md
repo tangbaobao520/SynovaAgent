@@ -3,7 +3,7 @@
 > 生成: 2026-07-02 14:44:41 | 分支: feat/prompt-architecture | as any: 0
 
 ## 项目身份
-SynovaAgent — 驻扎企业的 AI 诊断系统。
+SynovaAgent — AI 诊断系统。
 诊断是手段，增长才是目的。
 核心问题：这家企业的增长卡在哪里？现在该做什么？
 五层架构: L1交互 → L2编排 → L3洞察 → L4本体 → L5存储
