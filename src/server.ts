@@ -60,6 +60,8 @@ import sentinelHealthRoutes from './routes/sentinel-health';
 import sentinelRoutes from './routes/sentinel';
 import dataRoutes from './routes/data'; // V4.2.9 — 数据上传 API
 import reloadRoutes from './routes/reload';
+import auditRoutes from './routes/audit';
+import { AuditService } from './services/audit-service';
 import type { ServiceContainer } from './services/container';
 // Phase 0.1: 全局错误兜底 — uncaughtException + unhandledRejection
 import { registerGlobalErrorHandlers, unregisterGlobalErrorHandlers } from './services/runtime-global-handlers';
@@ -71,6 +73,9 @@ export async function createServer(): Promise<Server> {
   // Step 3: SynovaDiagnosisEngineImpl + createSynovaDiagnosisEngine 替换旧引擎
   initEngineContext();
   const db = getDatabase();
+
+  // Phase 0.3+0.4: 初始化审计日志服务 + GA 行为监控
+  AuditService.init(db);
 
   // P0-5.3: 数据库启动时自动解密
   const { autoDecryptOnStartup, autoEncryptOnShutdown } = await import('./services/db-encryption');
@@ -144,6 +149,14 @@ export async function createServer(): Promise<Server> {
   void canAccessWorkspace(rbacCtx, { visibility: 'global' });
   void canModifyWorkspace(rbacCtx, { visibility: 'global' });
   // v3.3 context bridge — Phase 2 接入 AgentMemoryStore
+
+  // ═══ Runtime P0: 显式加载 GA 行为监控 ═══
+  try {
+    await import('./services/behavior-monitor');
+    logger.info('[monitor] BehaviorMonitor loaded — 4 rules active');
+  } catch (bmErr: unknown) {
+    logger.warn({ err: bmErr }, '[monitor] BehaviorMonitor 加载失败 — degraded');
+  }
 
   // ═══ C3: 编排层初始化 — EventBus + StateMachine + Session (审计 P0-20260604) ═══
   const eventStore = new EventStore(db);
@@ -423,6 +436,7 @@ app.use(permissionRoutes); // POST /api/permissions/update | POST /api/permissio
 app.use('/api/sentinel', sentinelHealthRoutes); // GET /api/sentinel/health
 app.use('/api/sentinel', sentinelRoutes);       // GET /api/sentinel/findings | /api/sentinel/signals | POST /api/sentinel/run/:id
 app.use(reloadRoutes);                         // POST /api/reload — 热加载专家文件
+app.use(auditRoutes);                          // GET /api/audit — 审计日志 (Phase 0.3)
 
   // ═══ A2: Connector Pipeline — 手动触发 + 定时同步 ═══
   app.post('/api/connector/sync', async (req, res) => {
