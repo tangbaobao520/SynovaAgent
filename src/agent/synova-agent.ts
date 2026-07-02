@@ -84,6 +84,33 @@ export class SynovaAgent {
     setGlobalSentinelRunner(this.sentinelRunner);
     this.sentinelRunner.start();
 
+    // Phase 2.1: 启动时排干未投递消息
+    try {
+      const { DeliveryQueueStore } = await import('../l4/delivery-queue-store');
+      const { DeliveryQueue } = await import('../services/delivery-queue');
+      const store = new DeliveryQueueStore(this.db);
+      const queue = new DeliveryQueue(store);
+      await queue.drain();
+    } catch (err: unknown) {
+      log.warn({ err }, '投递队列排干失败 — degraded, 继续启动');
+    }
+
+    // Phase 2.2: 卡住会话检测 (每分钟)
+    this.scheduler.schedule('stuck-session-detector', '* * * * *', async () => {
+      try {
+        const { SessionStore } = await import('../store/session-store');
+        const { getAgentMemoryStore } = await import('../l4/agent-memory-store');
+        const { StuckSessionDetector } = await import('../services/stuck-session-detector');
+        const sessionStore = new SessionStore(this.db);
+        const memoryStore = getAgentMemoryStore(this.db);
+        const detector = new StuckSessionDetector(sessionStore, memoryStore);
+        await detector.detect();
+      } catch (err: unknown) {
+        log.warn({ err }, '[cron] stuck-session-detector 执行失败 — degraded');
+      }
+    });
+    log.info('[cron] stuck-session-detector 已注册 (每 60 秒)');
+
     log.info({ port: config.port }, 'SynovaAgent 已启动');
 
     // 资源清理
