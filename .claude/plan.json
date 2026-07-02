@@ -1,18 +1,20 @@
 {
   "version": "1.0",
-  "task": "Phase 2.1 面板增强+上下文感知",
-  "brief": "2026-07-03-0000-Phase-21--R.md",
+  "task": "Phase 2.2 CommandPalette+NotificationCenter",
+  "brief": "2026-07-03-0038-Phase-22-CommandPalette--NotificationC.md",
   "current_phase": 1,
   "approach": "rewrite",
   "phases": [
     {
       "step": 1,
-      "action": "modify",
-      "description": "app-store + LeftPanel + RightPanel + CSS",
+      "action": "create+modify",
+      "description": "CommandPalette + NotificationCenter + useKeyboard + TitleBar + App",
       "files": [
-        "electron-renderer/src/stores/app-store.ts",
-        "electron-renderer/src/components/LeftPanel.tsx",
-        "electron-renderer/src/components/RightPanel.tsx",
+        "electron-renderer/src/components/CommandPalette.tsx",
+        "electron-renderer/src/components/NotificationCenter.tsx",
+        "electron-renderer/src/hooks/useKeyboard.ts",
+        "electron-renderer/src/components/TitleBar.tsx",
+        "electron-renderer/src/App.tsx",
         "electron-renderer/src/styles/global.css"
       ],
       "checks": {
@@ -23,12 +25,12 @@
   ],
   "principles": [
     {
-      "rule": "role+workspaceId 决定右栏视图",
-      "verify": "grep -rn resolveRightPanelView electron-renderer/src/components/RightPanel.tsx"
+      "rule": "Ctrl+K 打开命令面板",
+      "verify": "grep -rn \"ctrlKey.*k\" electron-renderer/src/hooks/useKeyboard.ts"
     },
     {
-      "rule": "GA 三标签",
-      "verify": "grep -rn \"行动跟踪\\|哨兵数据\\|落地模式\" electron-renderer/src/components/RightPanel.tsx"
+      "rule": "通知按优先级排序",
+      "verify": "grep -rn \"critical\" electron-renderer/src/components/NotificationCenter.tsx"
     }
   ],
   "memory_refs": []

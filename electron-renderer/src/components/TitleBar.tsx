@@ -1,12 +1,16 @@
 /**
- * components/TitleBar.tsx — 标题栏
+ * components/TitleBar.tsx — 标题栏 (Phase 2.2)
  *
- * 显示企业名、在线状态指示灯、维度覆盖度、通知铃铛。
+ * 显示企业名、在线状态、维度覆盖度、通知铃铛（未读计数 + 点击开/关通知中心）。
  */
 import React from 'react';
 import { useAppStore } from '../stores/app-store';
 
-const TitleBar: React.FC = () => {
+interface TitleBarProps {
+  onToggleNotifications: () => void;
+}
+
+const TitleBar: React.FC<TitleBarProps> = ({ onToggleNotifications }) => {
   const onlineStatus = useAppStore((s) => s.onlineStatus);
   const alertCount = useAppStore((s) => s.alertCount);
   const dimensionCovered = useAppStore((s) => s.dimensionCovered);
@@ -15,13 +19,10 @@ const TitleBar: React.FC = () => {
   const toggleTheme = useAppStore((s) => s.toggleTheme);
 
   const dimPercent = dimensionTotal > 0
-    ? Math.round((dimensionCovered / dimensionTotal) * 100)
-    : 0;
+    ? Math.round((dimensionCovered / dimensionTotal) * 100) : 0;
 
   const statusLabels: Record<string, string> = {
-    connected: '连接正常',
-    disconnected: '已断开',
-    connecting: '连接中...',
+    connected: '连接正常', disconnected: '已断开', connecting: '连接中...',
   };
 
   return (
@@ -36,14 +37,9 @@ const TitleBar: React.FC = () => {
       <div className="titlebar-center">
         <div className="dimension-bar">
           <span style={{ color: 'var(--dim)' }}>维度</span>
-          <span className="dimension-count">
-            {dimensionCovered}/{dimensionTotal}
-          </span>
+          <span className="dimension-count">{dimensionCovered}/{dimensionTotal}</span>
           <div className="dimension-track">
-            <div
-              className="dimension-fill"
-              style={{ width: `${dimPercent}%` }}
-            />
+            <div className="dimension-fill" style={{ width: `${dimPercent}%` }} />
           </div>
         </div>
         <span style={{ color: 'var(--dim)', fontSize: 11 }}>
@@ -52,11 +48,7 @@ const TitleBar: React.FC = () => {
       </div>
 
       <div className="titlebar-right">
-        <button
-          className="titlebar-btn"
-          title="通知"
-          onClick={() => {}}
-        >
+        <button className="titlebar-btn" title="通知" onClick={onToggleNotifications}>
           🔔
           {alertCount > 0 && (
             <span className="notification-badge">
@@ -67,8 +59,8 @@ const TitleBar: React.FC = () => {
         <button className="titlebar-btn" title="切换主题" onClick={toggleTheme}>
           {theme === 'dark' ? '☀️' : '🌙'}
         </button>
-        <button className="titlebar-btn" title="设置" onClick={() => {}}>
-          ⚙️
+        <button className="titlebar-btn" title="快捷键" onClick={() => {}}>
+          ⌨️
         </button>
       </div>
     </header>
