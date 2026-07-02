@@ -60,10 +60,10 @@ Phase 3.3 — 上下文压缩增强（修改 `src/orchestrator/context-compresso
 4. 压缩统计（lastCompressAt, compressCount）
 
 不做什么：
-- ❌ 不迁移 session-store 的建表逻辑（已有手动 ALTER TABLE 模式）
-- ❌ 不涉及 packages/engine-core 引用
-- ❌ 不实现真正的 LLM 副模型调用（只定义接口和桩）
-- ❌ 不使用 as any
+- ❌ 不迁移 session-store 的建表逻辑 — src/store/session-store.ts 已有手动 ALTER TABLE 模式
+- ❌ 不涉及 packages/engine-core 引用（铁律 46）
+- ❌ 不实现真正的 LLM 副模型调用 — src/orchestrator/context-compressor.ts 只定义接口和桩
+- ❌ 不使用 as any — 铁律 38，pre-commit 硬阻断
 
 ## Q3: 验收
 

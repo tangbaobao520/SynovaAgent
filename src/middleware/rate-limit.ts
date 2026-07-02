@@ -92,7 +92,7 @@ export function createAuthRateLimiter(): AuthRateLimiter {
       return;
     }
 
-    const scope = (req as any).scope || 'default';
+    const scope = String((req.headers['x-synova-scope'] as string) || 'default');
     const clientIp = req.ip || 'unknown';
     const key = `${scope}:${clientIp}`;
     const now = Date.now();
@@ -117,8 +117,8 @@ export function createAuthRateLimiter(): AuthRateLimiter {
         return;
       }
     } else {
-      attempts.set(key, { count: 1, lockUntil: 0 } as any);
-      (attempts.get(key) as any).createdAt = now;
+      const newEntry: { count: number; lockUntil: number; createdAt: number } = { count: 1, lockUntil: 0, createdAt: now };
+      attempts.set(key, newEntry);
     }
     next();
   };
@@ -151,7 +151,7 @@ export function createLLMRateLimiter(): LLMRateLimiter {
   if (cleanup.unref) cleanup.unref();
 
   const middleware = (req: Request, res: Response, next: NextFunction) => {
-    const orgId = (req as any).orgId || 'default';
+    const orgId = String((req as Request & { orgId?: string }).orgId || 'default');
     const now = Date.now();
     const entry = counts.get(orgId);
 
