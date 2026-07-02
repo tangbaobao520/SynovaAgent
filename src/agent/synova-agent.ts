@@ -87,7 +87,7 @@ export class SynovaAgent {
     // Phase 2.1: 启动时排干未投递消息
     try {
       const { DeliveryQueueStore } = await import('../l4/delivery-queue-store');
-      const { DeliveryQueue } = await import('../services/delivery-queue');
+      const { DeliveryQueue } = await import('../l4/delivery-queue');
       const store = new DeliveryQueueStore(this.db);
       const queue = new DeliveryQueue(store);
       await queue.drain();

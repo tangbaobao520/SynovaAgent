@@ -39,7 +39,7 @@ function createMockStore() {
   };
 }
 
-import { DeliveryQueue } from '../../src/services/delivery-queue';
+import { DeliveryQueue } from '../../src/l4/delivery-queue';
 
 describe('DeliveryQueue — enqueue', () => {
   it('enqueue 应委托给 store', () => {
