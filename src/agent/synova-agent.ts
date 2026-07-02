@@ -20,7 +20,7 @@ import { loadConfig } from '../config';
 import { createLogger } from '@synova/logger';
 // Phase 1: 启动恢复 + 优雅关闭
 import { RestartRecovery } from '../services/restart-recovery';
-import { GracefulShutdown } from '../services/graceful-shutdown';
+import { GracefulShutdown, setGlobalGracefulShutdown } from '../services/graceful-shutdown';
 
 const log = createLogger('agent/synova-agent');
 
@@ -35,6 +35,7 @@ export class SynovaAgent {
   constructor(db: Database.Database) {
     this.db = db;
     this.gracefulShutdown = new GracefulShutdown();
+    setGlobalGracefulShutdown(this.gracefulShutdown);
   }
 
   async start(): Promise<void> {
@@ -101,7 +102,9 @@ export class SynovaAgent {
   async stop(): Promise<void> {
     // Phase 1.2: 优雅关闭 — 排干活跃会话
     try {
-      await this.gracefulShutdown.drain();
+      const { SessionStore } = await import('../store/session-store');
+      const sessionStore = new SessionStore(this.db);
+      await this.gracefulShutdown.drain(sessionStore);
     } catch (err: unknown) {
       log.warn({ err }, '优雅关闭排干失败 — degraded');
     }

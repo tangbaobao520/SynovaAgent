@@ -12,6 +12,7 @@
  */
 import type { LLMProvider, LLMMessage } from '../providers/types';
 import { ToolRegistry } from './tools';
+import { getGlobalGracefulShutdown } from '../services/graceful-shutdown';
 import { createLogger } from '@synova/logger';
 import type { ViewAdapter } from '../l1-interaction/types';
 import type { IntentRouter } from '../orchestrator/intent-router';
@@ -468,6 +469,11 @@ export class ConversationEngine {
    * @returns ProcessResult with reply text and phase completion signal
    */
   async processMessage(userInput: string): Promise<ProcessResult> {
+    // Phase 1.2: 注册活跃会话到优雅关闭追踪
+    if (this.sessionId) {
+      try { getGlobalGracefulShutdown().noteActive(this.sessionId, { orgId: this.orgId, phase: this.phase }); }
+      catch { /* 非阻断 */ }
+    }
     this.turnCount++;
     // PII 脱敏: 出站到云 LLM 前脱敏 (S4移除 + S3脱敏 + S2角色掩盖)
     const input = this.piiScrubber?.scrub(userInput, 'S2').cleaned ?? userInput;
