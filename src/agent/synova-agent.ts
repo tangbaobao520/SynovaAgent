@@ -18,6 +18,9 @@ import { CronScheduler, getGlobalScheduler, destroyGlobalScheduler } from '../cr
 import { SentinelRunner, setGlobalSentinelRunner } from '../sentinel';
 import { loadConfig } from '../config';
 import { createLogger } from '@synova/logger';
+// Phase 1: 启动恢复 + 优雅关闭
+import { RestartRecovery } from '../services/restart-recovery';
+import { GracefulShutdown } from '../services/graceful-shutdown';
 
 const log = createLogger('agent/synova-agent');
 
@@ -26,10 +29,12 @@ export class SynovaAgent {
   private scheduler: CronScheduler | null = null;
   private sentinelRunner: SentinelRunner | null = null;
   private db: Database.Database;
+  private gracefulShutdown: GracefulShutdown;
   private cleanupHandlers: Array<() => void> = [];
 
   constructor(db: Database.Database) {
     this.db = db;
+    this.gracefulShutdown = new GracefulShutdown();
   }
 
   async start(): Promise<void> {
@@ -63,6 +68,16 @@ export class SynovaAgent {
     const { registerBuiltinSentinels } = await import('../sentinel/builtins');
     await registerBuiltinSentinels();
 
+    // Phase 1.1: 崩溃后恢复未完成会话
+    try {
+      const { SessionStore } = await import('../store/session-store');
+      const sessionStore = new SessionStore(this.db);
+      const recovery = new RestartRecovery(sessionStore);
+      await recovery.recoverInterruptedSessions();
+    } catch (err: unknown) {
+      log.warn({ err }, '启动恢复失败 — degraded, 继续启动');
+    }
+
     // SentinelRunner — 启动所有 cron 哨兵 (P1-4)
     this.sentinelRunner = new SentinelRunner(this.scheduler, this.db);
     setGlobalSentinelRunner(this.sentinelRunner);
@@ -84,6 +99,13 @@ export class SynovaAgent {
   }
 
   async stop(): Promise<void> {
+    // Phase 1.2: 优雅关闭 — 排干活跃会话
+    try {
+      await this.gracefulShutdown.drain();
+    } catch (err: unknown) {
+      log.warn({ err }, '优雅关闭排干失败 — degraded');
+    }
+
     for (const h of this.cleanupHandlers) h();
     this.cleanupHandlers = [];
     log.info('SynovaAgent 已停止');
@@ -91,4 +113,5 @@ export class SynovaAgent {
 
   getServer(): Server | null { return this.server; }
   getScheduler(): CronScheduler | null { return this.scheduler; }
+  getGracefulShutdown(): GracefulShutdown { return this.gracefulShutdown; }
 }
