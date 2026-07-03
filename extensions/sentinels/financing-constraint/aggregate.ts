@@ -3,6 +3,7 @@
  */
 import type { SentinelFinding } from '../../../src/sentinel/types';
 import { computeKzIndex } from './computes/kz-index';
+import { computeCashRunway } from './computes/cash-runway';
 import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/financing-constraint');

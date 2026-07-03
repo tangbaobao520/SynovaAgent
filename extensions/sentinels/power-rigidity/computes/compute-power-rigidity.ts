@@ -1,45 +1,94 @@
 /**
- * power-rigidity/computes/compute-power-rigidity.ts — 权力结构刚性
+ * compute-power-rigidity.ts — O9 哨兵 compute 函数
  *
- * 基于 Pfeffer (1981) 权力结构理论，评估组织权力集中程度。
- * 管理者/总人数比越高 = 权力越集中 = 结构越刚性。
- * 刚性过高 = 决策缓慢、一线声音无法上达。
- * 刚性过低 = 缺乏方向、执行无力。
+ * Finkelstein 权力结构指数 — 四维度权力集中度评估
+ * 1. 结构权力: CEO/Founder 的决策审批事件占比
+ * 2. 所有权权力: 创始人持股比例
+ * 3. 专家权力: 关键知识在少数人中的集中度
+ * 4. 声望权力: 董事会中有声望背景的成员占比
+ *
+ * 来源: Finkelstein (1992) — 高层管理团队权力
+ *
+ * 边界: Person 总数 < 20 → stage0_exempt (创业阶段权力集中是正常现象)
+ *
+ * 阈值(非豁免时): >0.8严重 | 0.5-0.8预警 | <0.5健康
  */
-export interface RigidityResult {
-  rigidityIndex: number;        // 0-1, 权力刚性指数
-  managerRatio: number;         // 管理者占比
-  totalPeople: number;
+export interface FinkelsteinPowerResult {
+  powerIndex: number;
+  structuralPower: number;
+  ownershipPower: number;
+  expertisePower: number;
+  prestigePower: number;
+  managerRatio: number;
   managerCount: number;
-  assessment: 'balanced' | 'rigid' | 'loose' | 'insufficient';
+  totalPeople: number;
+  signal: 'critical' | 'warning' | 'healthy' | 'stage0_exempt';
+  stageExempt: boolean;
   degraded: boolean;
+  warnings: string[];
 }
 
-export function computePowerRigidity(
-  totalPeople: number,
-  managerCount: number
-): RigidityResult {
-  if (totalPeople === 0) {
-    return { rigidityIndex: 0.5, managerRatio: 0, totalPeople: 0, managerCount: 0, assessment: 'insufficient', degraded: true };
+export function computeFinkelsteinPowerIndex(params: {
+  totalPeople: number;
+  ceoDecisionApprovals: number;
+  totalDecisionApprovals: number;
+  founderEquity: number;
+  keyKnowledgeHolders?: Array<{ knowledgeCoverage: number }>;
+  boardMembersWithPrestige?: number;
+  totalBoardMembers?: number;
+  managerCount?: number;
+}): FinkelsteinPowerResult {
+  const warnings: string[] = [];
+  const { totalPeople, ceoDecisionApprovals, totalDecisionApprovals, founderEquity, keyKnowledgeHolders, boardMembersWithPrestige, totalBoardMembers, managerCount } = params;
+
+  if (totalPeople <= 0) {
+    return { powerIndex: 0, structuralPower: 0, ownershipPower: 0, expertisePower: 0, prestigePower: 0, managerRatio: 0, managerCount: 0, totalPeople: 0, signal: 'healthy', stageExempt: false, degraded: true, warnings: ['No person data available'] };
   }
 
-  const managerRatio = managerCount / totalPeople;
+  const stageExempt = totalPeople < 20;
 
-  // 管理比 < 10% = 松散
-  // 管理比 10%-20% = 平衡（理想）
-  // 管理比 > 20% = 刚性（过度管理）
-  let assessment: 'balanced' | 'rigid' | 'loose' | 'insufficient';
-  if (managerRatio > 0.2) {
-    assessment = 'rigid';
-  } else if (managerRatio < 0.1) {
-    assessment = 'loose';
-  } else {
-    assessment = 'balanced';
+  const structuralPower = totalDecisionApprovals > 0 ? Math.min(ceoDecisionApprovals / totalDecisionApprovals, 1) : 0.5;
+  const ownershipPower = Math.min(Math.max(founderEquity, 0), 1);
+
+  let expertisePower = 0.5;
+  if (keyKnowledgeHolders && keyKnowledgeHolders.length > 0) {
+    const sorted = [...keyKnowledgeHolders].sort((a, b) => b.knowledgeCoverage - a.knowledgeCoverage);
+    let cumulative = 0, personsNeeded = 0;
+    for (const holder of sorted) { cumulative += holder.knowledgeCoverage; personsNeeded++; if (cumulative >= 0.6) break; }
+    expertisePower = personsNeeded <= 1 ? 0.9 : personsNeeded <= 3 ? 0.7 : personsNeeded <= 5 ? 0.5 : 0.3;
   }
 
-  // 刚性指数: 0 = 完全松散, 1 = 完全刚性
-  // 管理比 15% 为最理想（0.5）
-  const rigidityIndex = Math.round(Math.min(managerRatio * 3, 1) * 100) / 100;
+  let prestigePower = 0.5;
+  if (boardMembersWithPrestige !== undefined && totalBoardMembers && totalBoardMembers > 0) {
+    prestigePower = Math.min(boardMembersWithPrestige / totalBoardMembers, 1);
+  }
 
-  return { rigidityIndex, managerRatio: Math.round(managerRatio * 100) / 100, totalPeople, managerCount, assessment, degraded: false };
+  const dimensions = [structuralPower, ownershipPower, expertisePower, prestigePower];
+  const powerIndex = dimensions.reduce((s, d) => s + d * d, 0);
+
+  let signal: 'critical' | 'warning' | 'healthy' | 'stage0_exempt';
+  if (stageExempt) { signal = 'stage0_exempt'; }
+  else if (powerIndex > 0.8) { signal = 'critical'; }
+  else if (powerIndex > 0.5) { signal = 'warning'; }
+  else { signal = 'healthy'; }
+
+  const mgrCount = managerCount ?? 0;
+  const mgrRatio = totalPeople > 0 ? mgrCount / totalPeople : 0;
+
+  if (stageExempt) warnings.push(`Organization has ${totalPeople} people (<20) — stage 0-1 exemption applied`);
+
+  return {
+    powerIndex: Math.round(powerIndex * 100) / 100,
+    structuralPower: Math.round(structuralPower * 100) / 100,
+    ownershipPower: Math.round(ownershipPower * 100) / 100,
+    expertisePower: Math.round(expertisePower * 100) / 100,
+    prestigePower: Math.round(prestigePower * 100) / 100,
+    managerRatio: Math.round(mgrRatio * 100) / 100,
+    managerCount: mgrCount,
+    totalPeople,
+    signal,
+    stageExempt,
+    degraded: false,
+    warnings,
+  };
 }

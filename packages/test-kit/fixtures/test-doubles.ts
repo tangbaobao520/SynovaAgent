@@ -45,6 +45,48 @@ export function createTestDatabase(dbLib: typeof import('better-sqlite3')): Data
   return db;
 }
 
+// ═══ GraphStoreReader 接口与 Mock ═══
+interface GraphStoreNode { id: string; type: string; props: Record<string, unknown>; }
+interface GraphStoreEdge { id: string; type: string; from: string; to: string; weight: number; props: Record<string, unknown>; }
+
+export interface MockGraphStoreReader {
+  queryNodes(type: string, filters?: Record<string, unknown>, graph?: string): GraphStoreNode[];
+  queryEdges(type?: string, from?: string, to?: string, graph?: string): GraphStoreEdge[];
+  getNode(id: string, graph: string): GraphStoreNode | null;
+}
+
+/**
+ * 创建可复用的 Mock GraphStoreReader。
+ * queryNodes 按 type + 可选 filters (AND 匹配) 过滤。
+ */
+export function createMockGraphStoreReader(data: {
+  nodes?: Record<string, GraphStoreNode[]>;
+  edges?: Record<string, GraphStoreEdge[]>;
+}): MockGraphStoreReader {
+  const allNodes: GraphStoreNode[] = [];
+  const allEdges: GraphStoreEdge[] = [];
+  if (data.nodes) for (const ns of Object.values(data.nodes)) allNodes.push(...ns);
+  if (data.edges) for (const es of Object.values(data.edges)) allEdges.push(...es);
+
+  return {
+    queryNodes(type: string, filters?: Record<string, unknown>, _g?: string): GraphStoreNode[] {
+      let r = allNodes.filter(n => n.type === type);
+      if (filters) for (const [k, v] of Object.entries(filters)) r = r.filter(n => n.props[k] === v);
+      return r;
+    },
+    queryEdges(type?: string, from?: string, to?: string, _g?: string): GraphStoreEdge[] {
+      let r = allEdges;
+      if (type) r = r.filter(e => e.type === type);
+      if (from) r = r.filter(e => e.from === from);
+      if (to) r = r.filter(e => e.to === to);
+      return r;
+    },
+    getNode(id: string, _g: string): GraphStoreNode | null {
+      return allNodes.find(n => n.id === id) || null;
+    },
+  };
+}
+
 /** Mock SessionStore */
 export function createMockSessionStore() {
   const sessions = new Map();

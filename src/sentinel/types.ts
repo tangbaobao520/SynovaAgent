@@ -195,6 +195,17 @@ import type { growthQualitySentinel as _gqCheck } from "../../extensions/sentine
 import type { computeCashConversionRate as _ccrCheck } from "../../extensions/sentinels/growth-quality/computes/cash-conversion-rate";
 import type { capitalTurnoverSentinel as _ctCheck } from "../../extensions/sentinels/capital-turnover/aggregate";
 import type { computeAssetTurnover as _atCheck } from "../../extensions/sentinels/capital-turnover/computes/asset-turnover";
+import type { computeCashConversionCycle as _cccCheck } from "../../extensions/sentinels/capital-turnover/computes/cash-conversion-cycle";
+import type { computeCashRunway as _crCheck } from "../../extensions/sentinels/financing-constraint/computes/cash-runway";
+import type { computeWacc as _waccCheck } from "../../extensions/sentinels/capital-efficiency/computes/wacc";
+import type { computeVariableCosts as _vcCheck } from "../../extensions/sentinels/unit-economics/computes/variable-costs";
+import type { computeMarginalContribution as _mcCheck } from "../../extensions/sentinels/unit-economics/computes/marginal-contribution";
+import type { computeFixedCostRigidity as _fcrCheck } from "../../extensions/sentinels/unit-economics/computes/fixed-cost-rigidity";
+import type { computeScenarioSimulation as _ssCheck } from "../../extensions/sentinels/unit-economics/computes/scenario-simulation";
+import type { computeBreakEven as _beCheck } from "../../extensions/sentinels/unit-economics/computes/break-even";
+import type { computeProblemActionCycle as _pacCheck } from "../../extensions/sentinels/org-repairability/computes/compute-problem-action-cycle";
+import type { computeFinkelsteinPowerIndex as _fpiCheck } from "../../extensions/sentinels/power-rigidity/computes/compute-power-rigidity";
+import type { computeExploreExploitBalanceV2 as _eebv2Check } from "../../extensions/sentinels/explore-exploit-balance/computes/compute-explore-exploit-balance";
 import type { nicheBreadthSentinel as _nbCheck } from "../../extensions/sentinels/niche-breadth/aggregate";
 import type { computeLevinsBreadth as _levinsCheck } from "../../extensions/sentinels/niche-breadth/computes/levins-breadth";
 import type { nicheSqueezeSentinel as _nsCheck } from "../../extensions/sentinels/niche-squeeze/aggregate";
