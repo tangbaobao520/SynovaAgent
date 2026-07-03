@@ -1,37 +1,38 @@
 #!/bin/bash
-# 安装所有 Git hooks — 将 scripts/ 下的 check 脚本链接到 .git/hooks/
+# ═══════════════════════════════════════════════════════════════════════════════
+# install-hooks.sh — V4.3.0 Git Hooks 安装脚本
+#
+# 用法: bash scripts/install-hooks.sh
+#
+# 作用:
+#   将 .git/hooks/ 中的 git hook 设为从 scripts/hooks/ 加载。
+#   scripts/hooks/ 被 git 跟踪，修改后所有 session 同步。
+# ═══════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 
-HOOKS_DIR="$(cd "$(dirname "$0")/.." && pwd)/.git/hooks"
-SCRIPTS_DIR="$(cd "$(dirname "$0")" && pwd)"
+echo "=== SynovaAgent V4.3.0 Git Hooks 安装 ==="
+mkdir -p "$ROOT/scripts/hooks"
 
-echo "安装 Git hooks → ${HOOKS_DIR}"
-
-# pre-commit: 铁律硬阻断
-cat > "$HOOKS_DIR/pre-commit" << 'EOF'
+install_hook() {
+  local name="$1"
+  local tracked="$ROOT/scripts/hooks/${name}.sh"
+  local target="$ROOT/.git/hooks/$name"
+  if [ ! -f "$tracked" ]; then
+    echo "  !! $tracked 不存在 — 跳过"
+    return
+  fi
+  cat > "$target" <<SCRIPT
 #!/bin/bash
-bash "$(git rev-parse --show-toplevel)/scripts/pre-commit-check.sh"
-EOF
-chmod +x "$HOOKS_DIR/pre-commit"
+exec bash "$tracked"
+SCRIPT
+  chmod +x "$target"
+  echo "  ✅ $name"
+}
 
-# commit-msg: Conventional Commits
-cat > "$HOOKS_DIR/commit-msg" << 'EOF'
-#!/bin/bash
-bash "$(git rev-parse --show-toplevel)/scripts/commit-msg-check.sh" "$1"
-EOF
-chmod +x "$HOOKS_DIR/commit-msg"
-
-# pre-push: tsc + vitest + iron laws
-cat > "$HOOKS_DIR/pre-push" << 'EOF'
-#!/bin/bash
-bash "$(git rev-parse --show-toplevel)/scripts/pre-push-check.sh"
-EOF
-chmod +x "$HOOKS_DIR/pre-push"
+install_hook "post-commit"
+# 后续新增 hook 在这里加: install_hook "pre-commit"
 
 echo ""
-echo "✅ Git hooks 安装完成:"
-echo "   pre-commit  → bash scripts/pre-commit-check.sh"
-echo "   commit-msg  → bash scripts/commit-msg-check.sh"
-echo "   pre-push    → bash scripts/pre-push-check.sh"
-echo ""
-echo "运行 npm run hooks:install 可重新安装。"
+echo "✅ 安装完成。当前 hooks:"
+ls -la "$ROOT/.git/hooks/" | grep -v ".sample"
