@@ -152,6 +152,12 @@ export async function createServer(): Promise<Server> {
 
       const report = bossMailbox.generateReport('Synova', `W${Math.ceil(now.getDate()/7)}`, signals, actions);
       bossMailbox.pushToFeishu(report, webhookUrl).catch(() => {});
+
+      // Phase 4.2: SMTP 邮件发送（与飞书并行，独立降级）
+      const emailTo = process.env.BOSS_EMAIL || '';
+      if (emailTo) {
+        bossMailbox.sendEmail(report, emailTo).catch(() => {});
+      }
     } catch (err: unknown) { logger.warn({ err }, '老板信箱推送失败 — degraded'); }
   }, 60000); // 每分钟检查
   // PRD v1.6 Slice 7: workspace-service 接线

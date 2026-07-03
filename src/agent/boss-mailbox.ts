@@ -1,10 +1,12 @@
 /**
- * boss-mailbox.ts — 老板信箱 (PRD v1.6 Slice 5)
+ * agent/boss-mailbox.ts — 老板信箱 (PRD v1.6 Slice 5, Phase 4.2)
  *
- * 每周一 9:00 Cron 触发 → 从信号+方案进展生成周报 → 通过飞书/SMTP发送
- * Phase 1: 生成周报文本 (Phase 2: 飞书/SMTP 集成)
+ * 每周一 9:00 触发 → 生成周报 → 飞书推送 + 邮件发送
+ *
+ * 铁律 24+31: 所有错误路径有 log + degraded。
  */
 import { createLogger } from '@synova/logger';
+import { sendEmail, renderHtmlReport } from '../services/email-service';
 
 const log = createLogger('agent/boss-mailbox');
 
@@ -30,9 +32,6 @@ export interface WeeklyReport {
 }
 
 export class BossMailbox {
-  /**
-   * 生成周报文本
-   */
   generateReport(
     orgName: string,
     week: string,
@@ -42,7 +41,6 @@ export class BossMailbox {
     const worseningSignals = signals.filter(s => s.trend === 'worsening');
     const needsAttention: string[] = [];
 
-    // Auto-detect items needing attention
     for (const s of worseningSignals) {
       needsAttention.push(`${s.title}: ${s.description.slice(0, 80)}`);
     }
@@ -59,9 +57,6 @@ export class BossMailbox {
     };
   }
 
-  /**
-   * 渲染为邮件文本 (Phase 2: HTML 邮件模板)
-   */
   renderText(report: WeeklyReport): string {
     const criticalSignals = report.signals.filter(s => s.severity === 'critical');
     const warningSignals = report.signals.filter(s => s.severity === 'warning');
@@ -100,18 +95,10 @@ export class BossMailbox {
     return text;
   }
 
-  /**
-   * v3.5 PRD §12.4: 飞书 Webhook 推送
-   * @param report 周报对象
-   * @param webhookUrl 飞书机器人 webhook URL
-   */
   async pushToFeishu(report: WeeklyReport, webhookUrl: string): Promise<boolean> {
     try {
       const text = this.renderText(report);
-      const payload = {
-        msg_type: 'text',
-        content: { text },
-      };
+      const payload = { msg_type: 'text', content: { text } };
       const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -126,6 +113,33 @@ export class BossMailbox {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       log.warn({ err: msg }, '飞书推送异常');
+      return false;
+    }
+  }
+
+  /**
+   * Phase 4.2: 通过 SMTP 发送周报邮件。
+   * 配置 EMAIL_HOST 环境变量启用。缺失时降级。
+   */
+  async sendEmail(report: WeeklyReport, to: string): Promise<boolean> {
+    try {
+      const text = this.renderText(report);
+      const html = renderHtmlReport(report);
+      const result = await sendEmail({
+        to,
+        subject: report.subject,
+        text,
+        html,
+      });
+      if (result) {
+        log.info({ to, subject: report.subject }, '周报邮件发送成功');
+      } else {
+        log.warn({ to, subject: report.subject }, '周报邮件发送降级');
+      }
+      return result;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg }, '周报邮件发送异常 — degraded');
       return false;
     }
   }
