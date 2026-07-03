@@ -194,6 +194,8 @@ import type { computeInterestCoverage as _icCheck } from "../../extensions/senti
 import type { growthQualitySentinel as _gqCheck } from "../../extensions/sentinels/growth-quality/aggregate";
 import type { computeCashConversionRate as _ccrCheck } from "../../extensions/sentinels/growth-quality/computes/cash-conversion-rate";
 import type { capitalTurnoverSentinel as _ctCheck } from "../../extensions/sentinels/capital-turnover/aggregate";
+import type { computeDebtStructure as _dsCheck } from "../../extensions/sentinels/capital-structure/computes/debt-structure";
+import type { computeIntegrationHealth as _ihCheck } from "../../extensions/sentinels/software-health/computes/integration-health";
 import type { computeAssetTurnover as _atCheck } from "../../extensions/sentinels/capital-turnover/computes/asset-turnover";
 import type { computeCashConversionCycle as _cccCheck } from "../../extensions/sentinels/capital-turnover/computes/cash-conversion-cycle";
 import type { computeCashRunway as _crCheck } from "../../extensions/sentinels/financing-constraint/computes/cash-runway";

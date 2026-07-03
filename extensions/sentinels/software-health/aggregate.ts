@@ -7,6 +7,7 @@
 import type { SentinelFinding } from '../../../src/sentinel/types';
 import { computeSaasUsageScore } from './computes/saas-usage-score';
 import { computeShadowItScore } from './computes/shadow-it-score';
+import { computeIntegrationHealth } from './computes/integration-health';
 import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/software-health');
@@ -33,6 +34,7 @@ export const softwareHealthSentinel = {
         name: (n.props.name as string) || n.id,
         status: (n.props.status || n.props.usageStatus || 'unknown') as string,
         category: (n.props.category && n.props.category !== '' ? String(n.props.category) : 'cat_unknown') as string,
+        hasUrl: !!(n.props.url || n.props.endpoint || n.props.apiEndpoint),
       }));
 
       // 2. SaaS 利用率
@@ -103,6 +105,33 @@ export const softwareHealthSentinel = {
             description: `${shadow.unauthorizedCount} 个工具有潜在合规风险。`,
             evidence: [`未授权率: ${siPct}%`],
             suggestion: '启动软件审计，确认未授权工具的合规性。',
+            detectedAt: checkedAt,
+          });
+        }
+      }
+
+      // 4. 集成健康度 (T1c)
+      const ihInput = allTools.map(t => ({ id: t.id, hasOutEdge: t.hasUrl }));
+      const ih = computeIntegrationHealth(ihInput);
+      log.debug({ connectivityRate: ih.connectivityRate }, '集成健康度计算完成');
+
+      if (!ih.degraded && ih.totalSystems > 0) {
+        if (ih.signal === 'critical') {
+          findings.push({
+            id: `t1-ih-crit-${now.getTime()}`, severity: 'critical',
+            title: `数据孤岛严重 — ${(ih.connectivityRate * 100).toFixed(0)}% 系统已连通`,
+            description: `${ih.totalSystems} 个系统中仅 ${ih.connectedSystems} 个有 API 连接。`,
+            evidence: [`连通率: ${(ih.connectivityRate * 100).toFixed(0)}%`, `孤立系统: ${ih.isolatedSystems.slice(0, 5).join(', ')}`],
+            suggestion: '推进系统间 API 集成，消除数据孤岛。',
+            detectedAt: checkedAt,
+          });
+        } else if (ih.signal === 'warning') {
+          findings.push({
+            id: `t1-ih-warn-${now.getTime()}`, severity: 'warning',
+            title: `系统连通率偏低 (${(ih.connectivityRate * 100).toFixed(0)}%)`,
+            description: `${ih.totalSystems} 个系统中 ${ih.isolatedSystems.length} 个可能处于孤立状态。`,
+            evidence: [`连通率: ${(ih.connectivityRate * 100).toFixed(0)}%`],
+            suggestion: '评估孤立系统的数据交换需求，优先集成高价值系统。',
             detectedAt: checkedAt,
           });
         }
