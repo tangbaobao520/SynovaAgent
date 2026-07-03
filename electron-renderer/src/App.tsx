@@ -14,12 +14,13 @@ import CommandPalette from './components/CommandPalette';
 import NotificationCenter from './components/NotificationCenter';
 import { useAppStore } from './stores/app-store';
 import { useKeyboard } from './hooks/useKeyboard';
-import { isElectron, getAppVersion } from './ipc/bridge';
+import { isElectron, getAppVersion, updateTrayState } from './ipc/bridge';
 
 const App: React.FC = () => {
   const toggleLeftPanel = useAppStore((s) => s.toggleLeftPanel);
   const setOnlineStatus = useAppStore((s) => s.setOnlineStatus);
   const theme = useAppStore((s) => s.theme);
+  const alertCount = useAppStore((s) => s.alertCount);
   const leftPanelWidth = useAppStore((s) => s.leftPanelWidth);
   const rightPanelWidth = useAppStore((s) => s.rightPanelWidth);
   const leftPanelOpen = useAppStore((s) => s.leftPanelOpen);
@@ -53,6 +54,13 @@ const App: React.FC = () => {
     const interval = setInterval(checkHealth, 30000);
     return () => clearInterval(interval);
   }, [setOnlineStatus]);
+
+  // sync alert count to tray
+  useEffect(() => {
+    if (!isElectron()) return;
+    if (alertCount > 0) updateTrayState('unread', alertCount);
+    else updateTrayState('normal');
+  }, [alertCount]);
 
   useEffect(() => {
     if (isElectron()) getAppVersion().then((v) => console.log(`[Synova] v${v}`));

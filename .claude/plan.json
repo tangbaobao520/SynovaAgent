@@ -1,21 +1,22 @@
 {
   "version": "1.0",
-  "task": "Phase 3.2",
-  "brief": "task-briefs\\2026-07-03-0306-Phase-32-.md",
+  "task": "Phase 4.1 系统托盘+通知推送",
+  "brief": "task-briefs\\2026-07-03-1709-Phase-41-.md",
   "current_phase": 1,
   "approach": "rewrite",
   "phases": [
     {
       "step": 1,
       "action": "create+modify",
-      "description": "correction+pattern+plan",
+      "description": "tray enhancement + notification adapter + IPC",
       "files": [
-        "src/routes/ga-corrections.ts",
-        "src/l4/agent-memory-store.ts",
-        "extensions/implementation-patterns/info-distortion.json",
-        "src/services/pattern-matcher.ts",
-        "electron-renderer/src/components/RightPanel.tsx",
-        "src/server.ts"
+        "electron-main.ts",
+        "electron-renderer/preload.js",
+        "electron-renderer/src/ipc/bridge.ts",
+        "src/notifications/electron-adapter.ts",
+        "src/notifications/types.ts",
+        "src/server.ts",
+        "electron-renderer/src/App.tsx"
       ],
       "checks": {
         "wiring": "enforce",
@@ -25,12 +26,12 @@
   ],
   "principles": [
     {
-      "rule": "纠错写入 AgentMemoryStore",
-      "verify": "grep -rn ga_correction src/routes/ga-corrections.ts"
+      "rule": "托盘三色状态",
+      "verify": "grep -rn trayImage\\|tray-colors electron-main.ts"
     },
     {
-      "rule": "落地模式 JSON",
-      "verify": "grep -rn schema extensions/implementation-patterns/info-distortion.json"
+      "rule": "NotificationAdapter 接口",
+      "verify": "grep -rn implements.*NotificationAdapter src/notifications/"
     }
   ],
   "memory_refs": []

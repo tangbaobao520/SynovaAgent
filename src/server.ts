@@ -79,6 +79,16 @@ export async function createServer(): Promise<Server> {
   // Phase 0.3+0.4: 初始化审计日志服务 + GA 行为监控
   AuditService.init(db);
 
+  // Phase 4.1: 注册 Electron 通知适配器
+  try {
+    const { ElectronNotificationAdapter } = await import('./notifications/electron-adapter');
+    const { registerNotificationAdapter } = await import('./notifications/registry');
+    registerNotificationAdapter(new ElectronNotificationAdapter());
+    logger.info('Electron 通知适配器已注册');
+  } catch (err: unknown) {
+    logger.warn({ err }, 'Electron 通知适配器注册失败 — degraded');
+  }
+
   // P0-5.3: 数据库启动时自动解密
   const { autoDecryptOnStartup, autoEncryptOnShutdown } = await import('./services/db-encryption');
   const encryptionConfig = {

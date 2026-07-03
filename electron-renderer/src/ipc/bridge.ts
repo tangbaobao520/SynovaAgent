@@ -1,50 +1,46 @@
 /**
- * ipc/bridge.ts — Electron IPC 桥接
- *
- * 渲染进程通过 preload.ts 暴露的 window.electronAPI 与主进程通信。
- * Phase 0.5: 窗口操作（最小化到托盘）
- * Phase 4+: 通知推送、免打扰
+ * ipc/bridge.ts — Electron IPC 桥接 (Phase 4.1)
  */
 export interface ElectronAPI {
   minimizeToTray: () => void;
-  notificationClick: (callback: (notificationId: string) => void) => void;
   getAppVersion: () => Promise<string>;
+  showNotification: (title: string, body: string, id?: string) => void;
+  pauseNotifications: (durationMs: number) => void;
+  resumeNotifications: () => void;
+  updateTrayState: (state: 'normal' | 'unread' | 'critical', count?: number) => void;
+  onNotificationClick: (callback: (id: string) => void) => void;
+  onNavigate: (callback: (view: string) => void) => void;
 }
 
 declare global {
-  interface Window {
-    electronAPI?: ElectronAPI;
-  }
+  interface Window { electronAPI?: ElectronAPI; }
 }
 
-/**
- * 检查是否运行在 Electron 环境中。
- */
 export function isElectron(): boolean {
   return typeof window !== 'undefined' && !!window.electronAPI;
 }
 
-/**
- * 最小化到系统托盘。
- */
-export function minimizeToTray(): void {
-  window.electronAPI?.minimizeToTray();
-}
-
-/**
- * 注册通知点击回调。
- */
-export function onNotificationClick(callback: (id: string) => void): void {
-  window.electronAPI?.notificationClick(callback);
-}
-
-/**
- * 获取应用版本号。
- */
+export function minimizeToTray(): void { window.electronAPI?.minimizeToTray(); }
 export async function getAppVersion(): Promise<string> {
-  try {
-    return await window.electronAPI?.getAppVersion() || '0.1.0';
-  } catch {
-    return '0.1.0';
-  }
+  try { return await window.electronAPI?.getAppVersion() || '0.1.0'; } catch { return '0.1.0'; }
+}
+
+/** 弹出系统通知 */
+export function showNotification(title: string, body: string, id?: string): void {
+  window.electronAPI?.showNotification(title, body, id);
+}
+
+/** 更新托盘状态 */
+export function updateTrayState(state: 'normal' | 'unread' | 'critical', count?: number): void {
+  window.electronAPI?.updateTrayState(state, count);
+}
+
+/** 暂停通知 */
+export function pauseNotifications(durationMs: number): void {
+  window.electronAPI?.pauseNotifications(durationMs);
+}
+
+/** 恢复通知 */
+export function resumeNotifications(): void {
+  window.electronAPI?.resumeNotifications();
 }
