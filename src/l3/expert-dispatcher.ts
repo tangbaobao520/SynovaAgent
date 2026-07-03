@@ -590,7 +590,7 @@ export async function getReportWithCorrections(
     const merged = JSON.parse(JSON.stringify(original)) as Record<string, unknown>;
     if (corrections.length > 0 && Array.isArray(merged.findings)) {
       const correctedStatements = new Set(corrections.map((c: any) => c.originalFinding));
-      merged.findings = (merged.findings as any[]).map((f: any) => {
+      merged.findings = (merged.findings as Array<Record<string, unknown>>).map((f: Record<string, unknown>) => {
         if (correctedStatements.has(f.statement || f.description)) {
           return { ...f, _corrected: true, _correctionCount: corrections.filter((c: any) => c.originalFinding === (f.statement || f.description)).length };
         }
