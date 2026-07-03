@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering V4.2.8 — check-plan-integrity.sh
+# Loop Engineering v4.3.0 — check-plan-integrity.sh
 # 统一验证 plan.json 的 Q1/Q2 产出是否被物理执行。
 # pre-commit 组 6 调用。全部 <1s。
 #
@@ -38,7 +38,7 @@ principles = p.get('principles', [])
 print(len(principles))
 for pp in principles: print(pp)
 " 2>/dev/null)
-PRIN_COUNT=$(echo "$PRINCIPLES" | head -1 | tr -d '[:space:]')
+PRIN_COUNT=$(echo "$PRINCIPLES" | head -1 | tr -d '[:space:]' | grep -o '[0-9]\+' || echo 0)
 if [ "${PRIN_COUNT:-0}" -eq 0 ]; then
   echo -e "  ${RED}❌ plan.principles 为空 — Q1b 未回答 Anthropic 决策链路  [硬阻断]${RESET}"
   HARD_FAIL=$((HARD_FAIL + 1))
@@ -99,7 +99,8 @@ fi
 
 # ═══ 4. 模板残留检查 — brief 是否认真填了 ═══
 if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
-  TEMPLATE_RESIDUE=$(grep -c '<!--' "$BRIEF" 2>/dev/null | tr -d '\r' || echo 0)
+  TEMPLATE_RESIDUE=$(grep -c '<!--' "$BRIEF" 2>/dev/null | tr -d '\r\n' || echo 0)
+  TEMPLATE_RESIDUE=${TEMPLATE_RESIDUE//[!0-9]/}
   if [ "${TEMPLATE_RESIDUE:-0}" -gt 0 ]; then
     echo -e "  ${RED}❌ brief 模板残留: 发现 ${TEMPLATE_RESIDUE} 处未填注释 (<!--)  [硬阻断]${RESET}"
     HARD_FAIL=$((HARD_FAIL + 1))

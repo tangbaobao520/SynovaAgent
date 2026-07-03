@@ -1,5 +1,5 @@
 #!/bin/bash
-# V4.2.3 — check-deprecated-mapping.sh
+# v4.3.0 — check-deprecated-mapping.sh
 # 检查旧哨兵适配器是否已标注 @deprecated 对应新哨兵路径
 # pre-commit 组 2 调用。全部 <500ms。
 set +e

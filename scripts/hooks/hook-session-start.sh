@@ -1,12 +1,12 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering V4.1.2 — SessionStart: 流程锁前置
+# Loop Engineering v4.3.0 — SessionStart: 流程锁前置
 #
 # Anthropic 原则 5: 物理强制，零 AI 自律。
-# 根因: V4.1.2 的 PreToolUse hook 只拦截 Write/Edit。Bash/Git/文件检查等操作
+# 根因: v4.3.0 的 PreToolUse hook 只拦截 Write/Edit。Bash/Git/文件检查等操作
 #       完全绕过。两个 agent 在没跑 task-start 的情况下做了破坏性操作。
 #
-# V4.1.2 解法: 流程锁前置到 SessionStart。
+# v4.3.0 解法: 流程锁前置到 SessionStart。
 #   SessionStart → 检查 workflow-state.json 是否为 brief-filled
 #     ├─ 是 → 正常放行
 #     └─ 否 → 写入 .claude/session-locked 标记
@@ -37,5 +37,5 @@ fi
 
 # 工作流未完成 → 写入锁文件
 echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) session-locked: workflow not brief-filled" > "$LOCK_FILE"
-echo "[V4.1.2] SessionStart: 流程未完成 — 已锁定。请先运行 task-start.sh。"
+echo "[v4.3.0] SessionStart: 流程未完成 — 已锁定。请先运行 task-start.sh。"
 exit 0
