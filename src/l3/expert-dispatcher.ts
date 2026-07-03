@@ -546,4 +546,64 @@ export function setGlobalExpertDispatcher(dispatcher: ExpertDispatcher | null): 
   _globalDispatcher = dispatcher;
 }
 
+// ════════════════════════════════════════════════════════════════
+// Phase 3.3: 纠错叠加层 — 读取报告时合并 GA 纠错
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * 获取叠加了 GA 纠错后的专家报告。
+ * 先查原始报告 → 再查纠错叠加层 → 合并展示。
+ *
+ * @param reportId - 原始报告 ID
+ * @param orgId - 组织 ID
+ * @returns 合并后的报告内容，或在原始报告不可用时返回 null
+ */
+export async function getReportWithCorrections(
+  reportId: string,
+  orgId = 'default',
+): Promise<{ original: Record<string, unknown>; corrections: Record<string, unknown>[]; merged: Record<string, unknown> } | null> {
+  try {
+    const { getAgentMemoryStore } = await import('../l4/agent-memory-store');
+    const { getDatabase } = await import('../init/engine-context');
+    const store = getAgentMemoryStore(getDatabase());
+
+    // 读取原始报告
+    const originalEntry = store.recall(orgId, `expert_report:${reportId}`);
+    if (!originalEntry) return null;
+
+    let original: Record<string, unknown>;
+    try { original = JSON.parse(originalEntry.value); } catch { original = { content: originalEntry.value }; }
+
+    // 查询该报告的所有纠错
+    const listResult = store.list({ orgId, tags: ['ga_correction', reportId] });
+    const corrections: Record<string, unknown>[] = [];
+
+    for (const entry of listResult) {
+      if (entry.type !== 'ga_correction') continue;
+      try {
+        const corr = JSON.parse(entry.value);
+        corrections.push({ ...corr, correctionId: entry.key, correctedAt: entry.createdAt });
+      } catch { continue; }
+    }
+
+    // 合并：将纠错标注到原始报告的 findings 中
+    const merged = JSON.parse(JSON.stringify(original)) as Record<string, unknown>;
+    if (corrections.length > 0 && Array.isArray(merged.findings)) {
+      const correctedStatements = new Set(corrections.map((c: any) => c.originalFinding));
+      merged.findings = (merged.findings as any[]).map((f: any) => {
+        if (correctedStatements.has(f.statement || f.description)) {
+          return { ...f, _corrected: true, _correctionCount: corrections.filter((c: any) => c.originalFinding === (f.statement || f.description)).length };
+        }
+        return f;
+      });
+    }
+
+    return { original, corrections, merged };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log.warn({ err: msg, reportId }, 'getReportWithCorrections 失败 — degraded');
+    return null;
+  }
+}
+
 // Expert prompts moved to ExpertRegistry (src/l3/expert-registry.ts) — Task 3

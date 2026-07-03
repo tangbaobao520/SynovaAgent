@@ -1,22 +1,18 @@
 {
   "version": "1.0",
-  "task": "Phase 4.1 系统托盘+通知推送",
-  "brief": "task-briefs\\2026-07-03-1709-Phase-41-.md",
+  "task": "Phase 3.3 纠错叠加层",
+  "brief": "task-briefs\\2026-07-04-0351-Phase-33--expert-dispatc.md",
   "current_phase": 1,
   "approach": "rewrite",
   "phases": [
     {
       "step": 1,
-      "action": "create+modify",
-      "description": "tray enhancement + notification adapter + IPC",
+      "action": "modify",
+      "description": "ga-corrections AgentMemoryStore + expert-dispatcher overlay",
       "files": [
-        "electron-main.ts",
-        "electron-renderer/preload.js",
-        "electron-renderer/src/ipc/bridge.ts",
-        "src/notifications/electron-adapter.ts",
-        "src/notifications/types.ts",
-        "src/server.ts",
-        "electron-renderer/src/App.tsx"
+        "src/routes/ga-corrections.ts",
+        "src/l3/expert-dispatcher.ts",
+        "src/server.ts"
       ],
       "checks": {
         "wiring": "enforce",
@@ -26,12 +22,12 @@
   ],
   "principles": [
     {
-      "rule": "托盘三色状态",
-      "verify": "grep -rn trayImage\\|tray-colors electron-main.ts"
+      "rule": "ga-corrections 用 AgentMemoryStore",
+      "verify": "grep -rn getAgentMemoryStore src/routes/ga-corrections.ts"
     },
     {
-      "rule": "NotificationAdapter 接口",
-      "verify": "grep -rn implements.*NotificationAdapter src/notifications/"
+      "rule": "expert-dispatcher 叠加纠错",
+      "verify": "grep -rn getReportWithCorrections src/l3/expert-dispatcher.ts"
     }
   ],
   "memory_refs": []
