@@ -1,0 +1,1 @@
+{"$id":"outcome/competitive","label":"COMPETITIVE_OUTCOME","tags":["outcome","market","strategic"],"requiredProps":["period"],"optionalProps":{"market_share_rank":"number","market_share_delta":"number","relative_growth_rate":"number","competitor_count":"number","new_entrants_12m":"number","hhi_delta":"number"},"description":"竞争结果。企业在竞争格局中的相对位置变化。"}

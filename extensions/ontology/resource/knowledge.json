@@ -1,0 +1,1 @@
+{"$id":"resource/knowledge","label":"KNOWLEDGE","tags":["resource","intangible","core"],"requiredProps":["content_hash"],"optionalProps":{"title":"string","knowledge_type":"string","author_id":"string","accessibility":"number","stickiness":"number"},"description":"知识资源。组织的知识资产，含可调用性和粘性。"}

@@ -1,0 +1,1 @@
+{"$id":"resource/person","label":"PERSON","tags":["resource","human","core"],"requiredProps":["name"],"optionalProps":{"email":"string","role":"string","competency_vector":"string","tenure_months":"number","is_key_person":"boolean"},"description":"人力资源。组织内的个人，包含技能向量和关键人标记。"}

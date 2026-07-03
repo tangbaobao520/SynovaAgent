@@ -1,0 +1,1 @@
+{"$id":"activity/compliance","label":"COMPLIANCE","tags":["activity","organizational","control"],"requiredProps":["name"],"optionalProps":{"compliance_type":"string","regulatory_body":"string","risk_level":"string","annual_compliance_cost":"number"},"description":"合规活动。满足法律法规和行业标准的合规管理活动。"}

@@ -1,0 +1,1 @@
+{"$id":"resource/agent","label":"AGENT","tags":["resource","technical","ai"],"requiredProps":["name"],"optionalProps":{"model":"string","platform":"string","autonomy_level":"number","cost_per_task":"number","tasks_per_day":"number","status":"string","deploy_scope":"string"},"description":"AI代理资源。具备自主性和任务处理能力的数字劳动力。"}

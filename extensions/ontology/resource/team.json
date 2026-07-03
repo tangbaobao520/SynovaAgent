@@ -1,0 +1,1 @@
+{"$id":"resource/team","label":"TEAM","tags":["resource","organizational","core"],"requiredProps":["name"],"optionalProps":{"team_type":"string","headcount":"number","talent_density":"number","bus_factor":"number","collaboration_density":"number","parent_team_id":"string"},"description":"团队资源。具备人才密度和协作密度的组织单元。"}

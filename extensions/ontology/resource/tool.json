@@ -1,0 +1,1 @@
+{"$id":"resource/tool","label":"TOOL","tags":["resource","technical","core"],"requiredProps":["name","category"],"optionalProps":{"vendor":"string","annual_cost":"number","url":"string","api_endpoint":"string","protocol":"string","authorization":"string","status":"string"},"description":"工具资源。企业使用的软件/硬件工具，含API可达性和授权状态。"}

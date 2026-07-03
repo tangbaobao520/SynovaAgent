@@ -1,0 +1,1 @@
+{"$id":"outcome/risk","label":"RISK_OUTCOME","tags":["outcome","risk","control"],"requiredProps":["period"],"optionalProps":{"client_concentration_top3":"number","key_person_bus_factor":"number","regulatory_risk_level":"string","technical_debt_score":"number"},"description":"风险结果。企业经营风险的量化评估。"}

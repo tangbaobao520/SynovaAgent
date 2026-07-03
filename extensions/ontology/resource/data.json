@@ -1,0 +1,1 @@
+{"$id":"resource/data","label":"DATA","tags":["resource","technical","intangible"],"requiredProps":["name"],"optionalProps":{"data_type":"string","volume_mb":"number","completeness":"number","has_pii":"boolean","silo_status":"string","refresh_frequency":"string","owner_system":"string"},"description":"数据资源。企业的数据资产，含完整性、孤岛状态和PII标记。"}

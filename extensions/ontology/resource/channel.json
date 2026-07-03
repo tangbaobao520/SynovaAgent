@@ -1,0 +1,1 @@
+{"$id":"resource/channel","label":"CHANNEL","tags":["resource","market","distribution"],"requiredProps":["name"],"optionalProps":{"channel_type":"string","status":"string","exclusivity":"string","coverage_region":"string","cost_per_acquisition":"number","conversion_rate":"number","partners_count":"number"},"description":"渠道资源。产品/服务的分发通路，含获客成本和转化率。"}

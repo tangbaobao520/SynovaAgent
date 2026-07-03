@@ -1,0 +1,1 @@
+{"$id":"outcome/financial","label":"FINANCIAL_OUTCOME","tags":["outcome","financial","core"],"requiredProps":["period"],"optionalProps":{"total_revenue":"number","gross_profit":"number","net_profit":"number","ebit":"number","ebitda":"number","operating_cashflow":"number","free_cashflow":"number","roic":"number","eva":"number"},"description":"财务结果。企业经营的最终财务表现指标集合。"}

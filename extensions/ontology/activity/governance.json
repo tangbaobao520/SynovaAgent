@@ -1,0 +1,1 @@
+{"$id":"activity/governance","label":"GOVERNANCE","tags":["activity","organizational","control"],"requiredProps":["name"],"optionalProps":{"governance_type":"string","decision_maker_count":"number","decision_cycle_days":"number","reversal_count":"number"},"description":"治理活动。战略决策、资源配置和方向把控的管理活动。"}

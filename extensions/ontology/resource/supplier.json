@@ -1,0 +1,1 @@
+{"$id":"resource/supplier","label":"SUPPLIER","tags":["resource","supply_chain","operational"],"requiredProps":["name"],"optionalProps":{"supplier_type":"string","annual_spend":"number","substitutability":"number","concentration_risk":"number","payment_terms_days":"number"},"description":"供应商。外部供应链资源，含可替代性和集中度风险。"}
