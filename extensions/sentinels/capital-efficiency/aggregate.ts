@@ -30,8 +30,8 @@ export const capitalEfficiencySentinel = {
         revenue: Number(n.props.revenue) || Number(n.props.totalRevenue) || 0,
         cost: Number(n.props.cost) || Number(n.props.costs) || 0,
         operatingExpenses: Number(n.props.operatingExpenses) || 0,
-        totalDebt: Number(n.props.totalDebt) || undefined,
-        equity: Number(n.props.equity) || undefined,
+        totalDebt: Number(n.props.totalDebt) || 0,
+        equity: Number(n.props.equity) || 0,
         taxRate: Number(n.props.taxRate) || 0,
         waccOverride: Number(n.props.wacc) || undefined,
       }));

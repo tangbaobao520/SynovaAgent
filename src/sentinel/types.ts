@@ -198,7 +198,7 @@ import type { computeAssetTurnover as _atCheck } from "../../extensions/sentinel
 import type { computeCashConversionCycle as _cccCheck } from "../../extensions/sentinels/capital-turnover/computes/cash-conversion-cycle";
 import type { computeCashRunway as _crCheck } from "../../extensions/sentinels/financing-constraint/computes/cash-runway";
 import type { computeWacc as _waccCheck } from "../../extensions/sentinels/capital-efficiency/computes/wacc";
-import type { computeVariableCosts as _vcCheck } from "../../extensions/sentinels/unit-economics/computes/variable-costs";
+import type { computeVariableCosts as _varcCheck } from "../../extensions/sentinels/unit-economics/computes/variable-costs";
 import type { computeMarginalContribution as _mcCheck } from "../../extensions/sentinels/unit-economics/computes/marginal-contribution";
 import type { computeFixedCostRigidity as _fcrCheck } from "../../extensions/sentinels/unit-economics/computes/fixed-cost-rigidity";
 import type { computeScenarioSimulation as _ssCheck } from "../../extensions/sentinels/unit-economics/computes/scenario-simulation";
