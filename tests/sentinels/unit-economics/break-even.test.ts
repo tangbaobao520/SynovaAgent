@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeBreakEven } from './break-even';
+import { computeBreakEven } from '../../../extensions/sentinels/unit-economics/computes/break-even';
 
 describe('computeBreakEven', () => {
   it('should compute correct break-even point', () => {

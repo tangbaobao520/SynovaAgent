@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeFixedCostRigidity } from './fixed-cost-rigidity';
+import { computeFixedCostRigidity } from '../../../extensions/sentinels/unit-economics/computes/fixed-cost-rigidity';
 
 describe('computeFixedCostRigidity', () => {
   it('should classify factory rent as rigid', () => {

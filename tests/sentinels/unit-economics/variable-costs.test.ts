@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeVariableCosts } from './variable-costs';
+import { computeVariableCosts } from '../../../extensions/sentinels/unit-economics/computes/variable-costs';
 
 describe('computeVariableCosts', () => {
   it('should classify variable vs fixed costs', () => {

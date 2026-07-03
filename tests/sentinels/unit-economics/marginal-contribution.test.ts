@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeMarginalContribution } from './marginal-contribution';
+import { computeMarginalContribution } from '../../../extensions/sentinels/unit-economics/computes/marginal-contribution';
 
 describe('computeMarginalContribution', () => {
   it('should compute MC per group', () => {

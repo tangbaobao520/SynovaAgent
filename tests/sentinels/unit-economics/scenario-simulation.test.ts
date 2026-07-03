@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeScenarioSimulation } from './scenario-simulation';
+import { computeScenarioSimulation } from '../../../extensions/sentinels/unit-economics/computes/scenario-simulation';
 
 const groups = [
   { groupId: 'g1', revenue: 100000, variableCost: 40000, marginalContribution: 60000, mcRatio: 0.6, isPositive: true },

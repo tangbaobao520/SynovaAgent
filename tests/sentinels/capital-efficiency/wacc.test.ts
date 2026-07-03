@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeWacc } from './wacc';
+import { computeWacc } from '../../../extensions/sentinels/capital-efficiency/computes/wacc';
 
 describe('computeWacc', () => {
   it('should compute WACC for standard inputs', () => {

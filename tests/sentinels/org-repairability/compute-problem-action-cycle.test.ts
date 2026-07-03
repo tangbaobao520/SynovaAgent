@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeProblemActionCycle } from './compute-problem-action-cycle';
+import { computeProblemActionCycle } from '../../../extensions/sentinels/org-repairability/computes/compute-problem-action-cycle';
 
 describe('computeProblemActionCycle', () => {
   it('should score lower for slow repair with high recurrence', () => {

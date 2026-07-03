@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeCashRunway } from './cash-runway';
+import { computeCashRunway } from '../../../extensions/sentinels/financing-constraint/computes/cash-runway';
 
 describe('computeCashRunway', () => {
   it('should return healthy for >12mo runway', () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeFinkelsteinPowerIndex } from './compute-power-rigidity';
+import { computeFinkelsteinPowerIndex } from '../../../extensions/sentinels/power-rigidity/computes/compute-power-rigidity';
 
 describe('computeFinkelsteinPowerIndex', () => {
   it('should detect strong power concentration', () => {

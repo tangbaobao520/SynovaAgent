@@ -27,7 +27,7 @@ export const powerRigiditySentinel = {
         return type.includes('decision_approval') || type.includes('approval') || type.includes('decision');
       });
       const ceoApprovals = decisionApprovals.filter(n => {
-        const initiator = (n.props.initiator || n.props.initiatedBy || '' as string).toLowerCase();
+        const initiator = String(n.props.initiator || n.props.initiatedBy || '').toLowerCase();
         return initiator.includes('ceo') || initiator.includes('founder') || initiator.includes('owner');
       });
 

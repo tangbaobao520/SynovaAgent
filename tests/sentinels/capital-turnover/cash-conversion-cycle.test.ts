@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeCashConversionCycle } from './cash-conversion-cycle';
+import { computeCashConversionCycle } from '../../../extensions/sentinels/capital-turnover/computes/cash-conversion-cycle';
 
 describe('computeCashConversionCycle', () => {
   it('should compute CCC for standard inputs', () => {
@@ -16,9 +16,9 @@ describe('computeCashConversionCycle', () => {
     expect(r.degraded).toBe(true);
   });
 
-  it('should warn when CCC > 90 days', () => {
+  it('should be critical when CCC > 120 days', () => {
     const r = computeCashConversionCycle({ cogs: 100000, inventory: 80000, accountsReceivable: 70000, accountsPayable: 10000, revenue: 200000 });
-    expect(r.signal).toBe('warning');
-    expect(r.cccDays).toBeGreaterThanOrEqual(90);
+    expect(r.signal).toBe('critical');
+    expect(r.cccDays).toBeGreaterThan(120);
   });
 });
