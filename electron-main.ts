@@ -9,8 +9,10 @@
  */
 import { app, BrowserWindow, Tray, Menu, shell, dialog, ipcMain, Notification } from 'electron';
 import { spawn, type ChildProcess } from 'child_process';
+import { autoUpdater } from 'electron-updater';
 import * as path from 'path';
 import * as http from 'http';
+import * as fs from 'fs';
 
 let serverProcess: ChildProcess | null = null;
 let mainWindow: BrowserWindow | null = null;
@@ -24,6 +26,37 @@ const SERVER_URL = `http://localhost:${PORT}`;
 const RENDERER_DEV_URL = 'http://localhost:5173';
 const isDev = process.env.NODE_ENV === 'development' || process.argv.includes('--dev');
 const ASSETS_DIR = path.join(__dirname, 'assets');
+const STATE_FILE = path.join(app.getPath('userData'), 'synova-state.json');
+
+// ═══ Phase 5.1: autoUpdater 配置 ═══
+autoUpdater.autoDownload = false;
+autoUpdater.autoInstallOnAppQuit = true;
+
+// ═══ App State 保存/恢复 ═══
+interface AppState {
+  activeOrgId?: string;
+  lastMsgId?: string;
+  unreadCount?: number;
+  savedAt: string;
+}
+
+function saveAppState(state: AppState): void {
+  try {
+    fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('[synova] Failed to save state:', err);
+  }
+}
+
+function restoreAppState(): AppState | null {
+  try {
+    if (!fs.existsSync(STATE_FILE)) return null;
+    const raw = fs.readFileSync(STATE_FILE, 'utf-8');
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
 
 // ═══ Tray 图标状态 ═══
 // 使用内置图标+颜色叠加（无外部图片依赖）
@@ -189,6 +222,12 @@ function createTray(): void {
         tray?.setContextMenu(buildMenu());
       }},
       { type: 'separator' },
+      { label: '检查更新', click: () => {
+        autoUpdater.checkForUpdates().catch((err: Error) => {
+          dialog.showErrorBox('检查更新失败', err.message);
+        });
+        dialog.showMessageBox({ title: '检查更新', message: '正在检查更新...' });
+      }},
       { label: '关于', click: () => dialog.showMessageBox({
         title: 'SynovaAgent', message: '组织数字孪生诊断 Agent',
         detail: `版本: ${app.getVersion()}\n本地服务: ${SERVER_URL}`,
@@ -224,6 +263,22 @@ function setupIPC(): void {
   ipcMain.on('window:minimize-to-tray', () => mainWindow?.hide());
   ipcMain.handle('app:get-version', () => app.getVersion());
 
+  // Phase 5.1: 强制检查更新
+  ipcMain.handle('update:check', async () => {
+    try {
+      await autoUpdater.checkForUpdates();
+      return { checking: true };
+    } catch (err: unknown) {
+      return { checking: false, error: String(err) };
+    }
+  });
+
+  // Phase 5.1: 安装更新并重启
+  ipcMain.on('update:install', () => {
+    saveAppState({ activeOrgId: '', lastMsgId: '', unreadCount: 0, savedAt: new Date().toISOString() });
+    autoUpdater.quitAndInstall();
+  });
+
   // 渲染进程通知主进程: 更新托盘状态
   ipcMain.on('tray:update-state', (_event, state: TrayState, count: number) => {
     updateTrayState(state, count);
@@ -250,6 +305,57 @@ function setupIPC(): void {
 
 // ═══ App Lifecycle ═══
 
+// ═══ Phase 5.1: AutoUpdater 事件 ═══
+
+autoUpdater.on('checking-for-update', () => {
+  console.log('[synova] Checking for updates...');
+});
+
+autoUpdater.on('update-available', (info) => {
+  console.log(`[synova] Update available: ${info.version}`);
+  // 下载更新
+  autoUpdater.downloadUpdate().catch((err: Error) => {
+    console.error('[synova] Download failed:', err.message);
+  });
+});
+
+autoUpdater.on('update-not-available', () => {
+  console.log('[synova] No updates available.');
+});
+
+autoUpdater.on('download-progress', (progress) => {
+  if (progress.percent % 25 === 0) { // 每 25% 日志一次
+    console.log(`[synova] Download progress: ${Math.round(progress.percent)}%`);
+  }
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+  console.log(`[synova] Update ${info.version} downloaded, notifying user...`);
+
+  // 系统通知: 新版本就绪
+  try {
+    const notif = new Notification({
+      title: 'Synova 更新就绪',
+      body: `版本 ${info.version} 已下载。点击重启以安装更新。`,
+      urgency: 'critical',
+    });
+    notif.on('click', () => {
+      // 保存当前状态
+      const state = restoreAppState() || {};
+      saveAppState({ ...state, savedAt: new Date().toISOString() });
+      // 退出并安装
+      autoUpdater.quitAndInstall();
+    });
+    notif.show();
+  } catch (err) {
+    console.error('[synova] Update notification failed:', err);
+  }
+});
+
+autoUpdater.on('error', (err) => {
+  console.error('[synova] Auto-updater error:', err.message);
+});
+
 app.whenReady().then(async () => {
   console.log('[synova] Starting Express server...');
   startServer();
@@ -260,6 +366,28 @@ app.whenReady().then(async () => {
     setupIPC();
     createWindow();
     createTray();
+
+    // Phase 5.1: 启动时检查更新（非开发模式）
+    if (!isDev) {
+      setTimeout(() => {
+        autoUpdater.checkForUpdates().catch((err: Error) => {
+          console.error('[synova] Update check failed:', err.message);
+        });
+      }, 5000); // 延迟 5 秒，确保服务器就绪
+
+      // 24 小时周期检查
+      setInterval(() => {
+        autoUpdater.checkForUpdates().catch((err: Error) => {
+          console.error('[synova] Periodic update check failed:', err.message);
+        });
+      }, 86_400_000); // 24h
+
+      // 恢复保存的状态
+      const savedState = restoreAppState();
+      if (savedState) {
+        console.log(`[synova] Restored state: org=${savedState.activeOrgId}, unread=${savedState.unreadCount}`);
+      }
+    }
   } else {
     dialog.showErrorBox('启动失败', 'SynovaAgent 服务未能在 30 秒内启动。');
     app.quit();
