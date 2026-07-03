@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# hook-enforce-v25.sh — PreToolUse 物理强制 (Loop Engineering V4.2.9)
+# hook-enforce-v25.sh — PreToolUse 物理强制 (Loop Engineering V4.3.0)
 #
 # 挂在 PreToolUse → Edit|Write 上，在 hook-block-write.sh 之后运行。
 # 强制: 每轮 Write 前必须通过 verify-incremental.sh 验证。

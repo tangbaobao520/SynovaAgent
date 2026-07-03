@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# decide-next.sh — Loop Engineering V4.2.9: 每次提交后智能决策建议
+# decide-next.sh — Loop Engineering V4.3.0: 每次提交后智能决策建议
 # post-commit 自动触发。必须瞬时完成 (<2s)。
 # v3.2: 从"工作区干净"→接实际项目状态，给具体建议。
 set -euo pipefail
