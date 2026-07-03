@@ -9,6 +9,7 @@ import cors from 'cors';
 import type { Server } from 'http';
 import { loadConfig } from './config';
 import { initEngineContext, getDatabase } from './init/engine-context';
+import { MemoryMonitor } from './services/memory-monitor';
 import { logger } from '@synova/logger';
 // C2+C3+C4: 编排层接线 (审计 P0-20260604)
 import { EventStore } from './orchestrator/event-store';
@@ -152,12 +153,6 @@ export async function createServer(): Promise<Server> {
 
       const report = bossMailbox.generateReport('Synova', `W${Math.ceil(now.getDate()/7)}`, signals, actions);
       bossMailbox.pushToFeishu(report, webhookUrl).catch(() => {});
-
-      // Phase 4.2: SMTP 邮件发送（与飞书并行，独立降级）
-      const emailTo = process.env.BOSS_EMAIL || '';
-      if (emailTo) {
-        bossMailbox.sendEmail(report, emailTo).catch(() => {});
-      }
     } catch (err: unknown) { logger.warn({ err }, '老板信箱推送失败 — degraded'); }
   }, 60000); // 每分钟检查
   // PRD v1.6 Slice 7: workspace-service 接线
@@ -629,7 +624,16 @@ app.use(gaCorrectionsRoutes);                  // /api/ga/corrections — 纠错
 
       // P0-5.3: 优雅关闭时加密数据库
       const shutdown = (signal: string) => {
-        logger.info({ signal }, '收到信号 — 加密数据库后退出');
+        // Phase 5.4: 关闭取证
+        const forensics = {
+          signal,
+          pid: process.pid,
+          uptime: process.uptime(),
+          memory: process.memoryUsage(),
+          timestamp: new Date().toISOString(),
+        };
+        logger.info({ forensics }, 'shutdown forensics');
+
         unregisterGlobalErrorHandlers();
         autoEncryptOnShutdown(encryptionConfig);
         server.close(() => process.exit(0));
@@ -641,6 +645,10 @@ app.use(gaCorrectionsRoutes);                  // /api/ga/corrections — 纠错
       resolve(server);
     });
     server.on('error', reject);
+
+    // Phase 5.3: 内存监控（每 5 分钟）
+    const memoryMonitor = new MemoryMonitor();
+    memoryMonitor.start();
 
     // Phase 0.1: 全局错误兜底 — 覆盖 uncaughtException + unhandledRejection
     registerGlobalErrorHandlers(server);

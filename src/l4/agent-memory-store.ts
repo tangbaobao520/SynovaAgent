@@ -201,7 +201,30 @@ export class AgentMemoryStore {
     return rows.map(r => this.rowToEntry(r));
   }
 
-  /** FTS5 全文搜索记忆 */
+  /** 检测查询是否含中文字符 */
+  private _containsCJK(text: string): boolean {
+    return /[一-鿿㐀-䶿]/.test(text);
+  }
+
+  /** Phase 5.2: 双 FTS5 智能路由搜索 — 中文自动使用 trigram */
+  searchMemory(orgId: string, query: string, limit = 20): MemoryEntry[] {
+    if (this._containsCJK(query)) {
+      // CJK → trigram 子串搜索
+      const rows = this.db.prepare(`
+        SELECT m.* FROM agent_memory m
+        INNER JOIN memory_fts_trigram f ON m.id = f.id
+        WHERE f.value MATCH ? AND m.org_id = ?
+          AND (m.expires_at IS NULL OR m.expires_at > datetime('now'))
+        ORDER BY rank
+        LIMIT ?
+      `).all(query, orgId, limit) as Record<string, unknown>[];
+      return rows.map(r => this.rowToEntry(r));
+    }
+    // 拉丁 → unicode61 标准搜索
+    return this.search(orgId, query, limit);
+  }
+
+  /** FTS5 全文搜索记忆（unicode61 — 拉丁文本） */
   search(orgId: string, query: string, limit = 20): MemoryEntry[] {
     const rows = this.db.prepare(`
       SELECT m.* FROM agent_memory m
@@ -292,30 +315,43 @@ export class AgentMemoryStore {
       CREATE INDEX IF NOT EXISTS idx_agent_memory_type ON agent_memory(org_id, type);
       CREATE INDEX IF NOT EXISTS idx_agent_memory_expires ON agent_memory(expires_at);
 
-      -- FTS5 全文搜索
+      -- Phase 5.2: 双 FTS5 索引
+      -- FTS5 unicode61 — 拉丁文本全文搜索
       CREATE VIRTUAL TABLE IF NOT EXISTS agent_memory_fts USING fts5(
-        id UNINDEXED,
-        key,
-        value,
-        content='agent_memory',
-        content_rowid='rowid'
+        id UNINDEXED, key, value,
+        content='agent_memory', content_rowid='rowid'
       );
 
-      -- FTS5 同步触发器
+      -- FTS5 trigram — CJK 子串搜索
+      CREATE VIRTUAL TABLE IF NOT EXISTS memory_fts_trigram USING fts5(
+        id UNINDEXED, key, value,
+        content='agent_memory', content_rowid='rowid',
+        tokenize='trigram'
+      );
+
+      -- FTS5 同步触发器 (两个表同时更新)
       CREATE TRIGGER IF NOT EXISTS agent_memory_ai AFTER INSERT ON agent_memory BEGIN
         INSERT INTO agent_memory_fts(rowid, id, key, value)
+        VALUES (new.rowid, new.id, new.key, new.value);
+        INSERT INTO memory_fts_trigram(rowid, id, key, value)
         VALUES (new.rowid, new.id, new.key, new.value);
       END;
 
       CREATE TRIGGER IF NOT EXISTS agent_memory_ad AFTER DELETE ON agent_memory BEGIN
         INSERT INTO agent_memory_fts(agent_memory_fts, rowid, id, key, value)
         VALUES ('delete', old.rowid, old.id, old.key, old.value);
+        INSERT INTO memory_fts_trigram(memory_fts_trigram, rowid, id, key, value)
+        VALUES ('delete', old.rowid, old.id, old.key, old.value);
       END;
 
       CREATE TRIGGER IF NOT EXISTS agent_memory_au AFTER UPDATE ON agent_memory BEGIN
         INSERT INTO agent_memory_fts(agent_memory_fts, rowid, id, key, value)
         VALUES ('delete', old.rowid, old.id, old.key, old.value);
+        INSERT INTO memory_fts_trigram(memory_fts_trigram, rowid, id, key, value)
+        VALUES ('delete', old.rowid, old.id, old.key, old.value);
         INSERT INTO agent_memory_fts(rowid, id, key, value)
+        VALUES (new.rowid, new.id, new.key, new.value);
+        INSERT INTO memory_fts_trigram(rowid, id, key, value)
         VALUES (new.rowid, new.id, new.key, new.value);
       END;
     `);
