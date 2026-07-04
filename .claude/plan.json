@@ -3,12 +3,12 @@
   "current_phase": 1,
   "principles": [
     {
-      "rule": "traverse() must BFS traverse from start node",
-      "verify": "grep -q \"traverse\" src/l4/graph-traversal.ts && echo PASS || echo FAIL"
+      "rule": "must compute diffPercent and classify",
+      "verify": "grep -c diffPercent src/l4/migration-validator.ts | grep -q 1"
     },
     {
-      "rule": "TemporalBaseline must detect decelerating/stable trend",
-      "verify": "grep -q \"decelerating\\|stable\" src/l4/temporal-baseline.ts && echo PASS || echo FAIL"
+      "rule": "every catch has log",
+      "verify": "grep -c catch src/l4/migration-validator.ts | grep -q 1"
     }
   ],
   "approach": "reuse",
@@ -21,10 +21,8 @@
       "step": 1,
       "action": "create",
       "files": [
-        "src/l4/graph-traversal.ts",
-        "src/l4/temporal-baseline.ts",
-        "tests/l4/graph-traversal.test.ts",
-        "tests/l4/temporal-baseline.test.ts"
+        "src/l4/migration-validator.ts",
+        "tests/l4/migration-validator.test.ts"
       ],
       "checks": {
         "wiring": "deferred",

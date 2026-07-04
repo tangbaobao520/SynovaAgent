@@ -11,3 +11,5 @@ export { resolveEntitiesL3 } from './entity-resolver';
 export { reflectOnTriples } from './triple-reflection';
 export { captureDecision } from './decision-capture';
 // V4.2.3: diagnosis-graph-query.ts 已删除 — type export 移除
+export { validateMigration, validateAll } from './migration-validator';
+export type { ValidationReport, ValidationStatus } from './migration-validator';
