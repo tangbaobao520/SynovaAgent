@@ -1,34 +1,35 @@
 {
   "version": "1.0",
-  "task": "Phase 3.3 纠错叠加层",
-  "brief": "2026-07-04-0358-Task-21--Schema--.md",
   "current_phase": 1,
-  "approach": "rewrite",
+  "principles": [
+    {
+      "rule": "traverse() must BFS traverse from start node",
+      "verify": "grep -q \"traverse\" src/l4/graph-traversal.ts && echo PASS || echo FAIL"
+    },
+    {
+      "rule": "TemporalBaseline must detect decelerating/stable trend",
+      "verify": "grep -q \"decelerating\\|stable\" src/l4/temporal-baseline.ts && echo PASS || echo FAIL"
+    }
+  ],
+  "approach": "reuse",
+  "memory_refs": [
+    "memory/stub-implementation-pattern.md",
+    "memory/engine-core-bridge-files.md"
+  ],
   "phases": [
     {
       "step": 1,
-      "action": "modify",
-      "description": "ga-corrections AgentMemoryStore + expert-dispatcher overlay",
+      "action": "create",
       "files": [
-        "src/routes/ga-corrections.ts",
-        "src/l3/expert-dispatcher.ts",
-        "src/server.ts"
+        "src/l4/graph-traversal.ts",
+        "src/l4/temporal-baseline.ts",
+        "tests/l4/graph-traversal.test.ts",
+        "tests/l4/temporal-baseline.test.ts"
       ],
       "checks": {
-        "wiring": "enforce",
-        "test_pairing": "deferred"
+        "wiring": "deferred",
+        "test_pairing": "enforce"
       }
     }
-  ],
-  "principles": [
-    {
-      "rule": "ga-corrections 用 AgentMemoryStore",
-      "verify": "grep -rn getAgentMemoryStore src/routes/ga-corrections.ts"
-    },
-    {
-      "rule": "expert-dispatcher 叠加纠错",
-      "verify": "grep -rn getReportWithCorrections src/l3/expert-dispatcher.ts"
-    }
-  ],
-  "memory_refs": []
+  ]
 }
