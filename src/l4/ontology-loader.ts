@@ -1,11 +1,10 @@
 /**
  * src/l4/ontology-loader.ts — 本体类型加载器
  *
- * 从 extensions/ontology/node-types/*.json + edge-types/*.json 加载类型定义。
+ * 从 extensions/ontology/resource/*.json + activity/*.json + outcome/*.json + edge-types/*.json 加载类型定义。
  * 动态构建 NODE_VALIDATORS / EDGE_VALIDATORS / EDGE_ENDPOINT_MAP。
- * 旧 sog-core-schema.ts 枚举保留为 source of truth。
  *
- * V3.8 Batch 4 — 本体类型文件化
+ * V4.3.0 — 本体层重建: 从 resource/activity/outcome/edge-types 四目录加载
  */
 import { readdirSync, readFileSync, existsSync } from 'fs';
 import { join } from 'path';
@@ -30,6 +29,7 @@ export interface EdgeTypeDef {
   allowedTo: string[];
   requiredProps?: string[];
   optionalProps?: Record<string, unknown>;
+  consumed_by_sentinels?: string[];
   description: string;
 }
 
@@ -74,8 +74,13 @@ export function loadOntology(): { ontology: LoadedOntology; degraded: boolean; e
   if (cache) return { ontology: cache, degraded: false, errors: [] };
 
   try {
-    // 1. 加载基础本体 (extensions/ontology/)
-    const nodeTypes = scanDir<NodeTypeDef>(join(ONTOLOGY_DIR, 'node-types'));
+    // 1. 加载新本体实体 (extensions/ontology/resource/ + activity/ + outcome/)
+    const nodeTypes: NodeTypeDef[] = [];
+    const ENTITY_DIRS = ['resource', 'activity', 'outcome'];
+    for (const dir of ENTITY_DIRS) {
+      const entities = scanDir<NodeTypeDef>(join(ONTOLOGY_DIR, dir));
+      nodeTypes.push(...entities);
+    }
     const edgeTypes = scanDir<EdgeTypeDef>(join(ONTOLOGY_DIR, 'edge-types'));
 
     // 2. 加载行业扩展类型 (extensions/industries/{name}/node-types/ 等)
