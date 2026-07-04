@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 {
   "version": "1.0",
   "task": "Phase 0: Inject GraphTraversal into SentinelContext + sentinel-loader",
@@ -48,3 +49,37 @@
     "memory/engine-core-bridge-files.md"
   ]
 }
+=======
+{
+  "version": "1.0",
+  "task": "Phase 3.3 纠错叠加层",
+  "brief": "2026-07-04-0358-Task-21--Schema--.md",
+  "current_phase": 1,
+  "approach": "rewrite",
+  "phases": [
+    {
+      "step": 1,
+      "action": "modify",
+      "files": [
+        "src/routes/ga-corrections.ts",
+        "src/l3/expert-dispatcher.ts"
+      ],
+      "checks": {
+        "wiring": "enforce",
+        "test_pairing": "deferred"
+      }
+    }
+  ],
+  "principles": [
+    {
+      "rule": "ga-corrections 用 AgentMemoryStore",
+      "verify": "grep -rn getAgentMemoryStore src/routes/ga-corrections.ts"
+    },
+    {
+      "rule": "expert-dispatcher 叠加纠错",
+      "verify": "grep -rn getReportWithCorrections src/l3/expert-dispatcher.ts"
+    }
+  ],
+  "memory_refs": []
+}
+>>>>>>> edc5556 (fix: 恢复 ga-corrections.ts（被误写为空文件）)
