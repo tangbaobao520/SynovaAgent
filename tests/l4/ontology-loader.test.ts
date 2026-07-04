@@ -23,9 +23,9 @@ describe('loadOntology', () => {
 });
 
 describe('getTypesByTags', () => {
-  it('any 模式: human 标签返回 Person 等', () => {
+  it('any 模式: human 标签返回 PERSON 等', () => {
     const { nodes } = getTypesByTags(['human']);
-    expect(nodes.some(n => n.label === 'Person')).toBe(true);
+    expect(nodes.some(n => n.label === 'PERSON')).toBe(true);
   });
   it('all 模式: organizational+human 精确匹配', () => {
     const { nodes } = getTypesByTags(['organizational', 'human'], 'all');
