@@ -1,1 +1,0 @@
-{"$id":"node-type/tool","label":"Tool","tags":["technical","machine","generic"],"requiredProps":["name","category"],"optionalProps":{"parentToolId":"string"},"description":"软件工具。"}

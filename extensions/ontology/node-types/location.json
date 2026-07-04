@@ -1,1 +1,0 @@
-{"$id":"node-type/location","label":"Location","tags":["operational","physical_asset","generic"],"requiredProps":["locationType"],"optionalProps":{"address":"string","timezone":"string"},"description":"物理/虚拟位置。"}

@@ -1,1 +1,0 @@
-{"$id":"node-type/risk","label":"Risk","tags":["risk","intangible_asset","generic"],"requiredProps":["riskType","severity","status"],"optionalProps":{},"description":"风险因素。"}

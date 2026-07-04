@@ -1,1 +1,0 @@
-{"$id":"node-type/compliance","label":"Compliance","tags":["compliance","legal_entity","generic"],"requiredProps":["name","complianceType","status"],"optionalProps":{"jurisdiction":"string","effectiveDate":"string"},"description":"合规/监管项。"}

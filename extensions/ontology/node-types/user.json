@@ -1,1 +1,0 @@
-{"$id":"node-type/user","label":"User","tags":["organizational","human","generic"],"requiredProps":["name"],"description":"系统用户 (Auth M1 扩展)。"}

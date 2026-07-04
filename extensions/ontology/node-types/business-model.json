@@ -1,1 +1,0 @@
-{"$id":"node-type/business-model","label":"BusinessModel","tags":["strategic","intangible_asset","generic"],"requiredProps":["name","canvasType"],"optionalProps":{"description":"string","healthScore":"number","revenueConcentration":"number","fixedCostRatio":"number"},"description":"商业模式画布节点 (P1 扩展)。"}

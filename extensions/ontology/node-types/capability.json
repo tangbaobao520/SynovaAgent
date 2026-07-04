@@ -1,1 +1,0 @@
-{"$id":"node-type/capability","label":"Capability","tags":["strategic","intangible_asset","generic"],"requiredProps":["name","category"],"optionalProps":{"proficiencyLevel":"number"},"description":"能力。"}
