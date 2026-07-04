@@ -83,15 +83,14 @@ export function loadOntology(): { ontology: LoadedOntology; degraded: boolean; e
     }
     const edgeTypes = scanDir<EdgeTypeDef>(join(ONTOLOGY_DIR, 'edge-types'));
 
-    // 2. 加载行业扩展类型 (extensions/industries/{name}/node-types/ 等)
+    // 2. 加载行业扩展类型 (extensions/industries/{name}/edge-types/)
+    // 注意: 行业模板使用新实体 ID 空间，不读旧 node-types/ 目录
     const INDUSTRIES_DIR = join(process.cwd(), 'extensions', 'industries');
     if (existsSync(INDUSTRIES_DIR)) {
       const industryDirs = readdirSync(INDUSTRIES_DIR, { withFileTypes: true })
         .filter(d => d.isDirectory()).map(d => d.name);
       for (const dir of industryDirs) {
-        const indNodeTypes = scanDir<NodeTypeDef>(join(INDUSTRIES_DIR, dir, 'node-types'));
         const indEdgeTypes = scanDir<EdgeTypeDef>(join(INDUSTRIES_DIR, dir, 'edge-types'));
-        nodeTypes.push(...indNodeTypes);
         edgeTypes.push(...indEdgeTypes);
       }
     }

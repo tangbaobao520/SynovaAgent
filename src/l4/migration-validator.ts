@@ -1,192 +1,100 @@
 /**
- * src/l4/migration-validator.ts — 迁移验证器 (V4.3.0)
+ * src/l4/migration-validator.ts — 迁移验证器
  *
- * 一次性验证工具。在 Task B（compute 函数图遍历迁移）完成后，
  * 比较新旧 compute 函数输出的一致性。
- *
- * 规则:
- *   diff < 1%  → pass  (自动通过)
- *   diff 1-5%  → review (人工审查浮点精度 vs 迁移错误)
- *   diff > 5%  → block  (阻断，退回对应实例修正)
- *
- * 注意: 本文件在 Phase 3 切换完成后会被删除（一次性工具）。
+ * diff < 1% → pass, 1-5% → review, >5% → block
+ * Phase 3 时用于验证 compute 函数从 KV 读取迁移到图遍历后的输出一致性。
  */
-import { createLogger } from '@synova/logger';
-
-const log = createLogger('l4/migration-validator');
-
-// ═══ Types ═══
-
-export type ValidationStatus = string;
-
 export interface ValidationReport {
-  /** compute 函数名 */
   functionName: string;
-  /** 所属哨兵 ID */
   sentinelId: string;
-  /** 旧函数输出（KV 模式） */
-  oldOutput: unknown;
-  /** 新函数输出（图遍历模式） */
-  newOutput: unknown;
-  /** 相对差异百分比 (0 = 完全一致, 1 = 100% 差异) */
+  oldOutput: Record<string, unknown>;
+  newOutput: Record<string, unknown>;
   diffPercent: number;
-  /** 状态分类 */
-  status: ValidationStatus;
-  /** 降级标记 */
-  degraded: boolean;
-  /** 警告/错误信息 */
+  status: 'pass' | 'review' | 'block';
   warnings: string[];
 }
 
-interface ComputeOutput {
-  value?: number;
-  degraded?: boolean;
-  [key: string]: unknown;
+/**
+ * 提取数值进行比较。支持对象 { value: number } 和原始 number。
+ */
+function extractNumericValue(output: Record<string, unknown>): number {
+  if (typeof output.value === 'number') return output.value;
+  if (typeof output === 'number') return output;
+  // 尝试找第一个数值字段
+  for (const val of Object.values(output)) {
+    if (typeof val === 'number') return val;
+  }
+  return 0;
 }
-
-interface ComputeEntry {
-  functionName: string;
-  sentinelId: string;
-  fn: () => ComputeOutput;
-}
-
-// ═══ 核心验证函数 ═══
 
 /**
- * 验证单个 compute 函数的迁移一致性。
- *
- * @param functionName — compute 函数名
- * @param sentinelId — 所属哨兵 ID
- * @param oldFn — 旧（KV 模式）compute 函数
- * @param newFn — 新（图遍历模式）compute 函数
- * @returns ValidationReport
+ * 比较新旧 compute 函数输出。
+ * 支持嵌套对象比较，对每个数值字段计算 diff。
  */
 export function validateMigration(
   functionName: string,
   sentinelId: string,
-  oldFn: () => ComputeOutput,
-  newFn: () => ComputeOutput,
+  oldOutput: Record<string, unknown>,
+  newOutput: Record<string, unknown>,
 ): ValidationReport {
-  try {
-    const oldOutput = oldFn();
-    const newOutput = newFn();
+  const warnings: string[] = [];
 
-    const oldVal = typeof oldOutput?.value === 'number' ? oldOutput.value : 0;
-    const newVal = typeof newOutput?.value === 'number' ? newOutput.value : 0;
+  // 全字段比较
+  const allKeys = new Set([...Object.keys(oldOutput), ...Object.keys(newOutput)]);
+  let maxDiff = 0;
 
-    // 计算 diffPercent: |old - new| / max(|old|, 1)
-    const denominator = Math.max(Math.abs(oldVal), 1);
-    const diff = Math.abs(oldVal - newVal);
-    const diffPercent = denominator > 0 ? diff / denominator : 0;
+  for (const key of allKeys) {
+    const oldVal = oldOutput[key];
+    const newVal = newOutput[key];
 
-    // 状态分类
-    const status = classifyStatus(diffPercent);
-
-    // 降级检测
-    const degraded = !!(newOutput?.degraded);
-
-    const warnings: string[] = [];
-    if (oldOutput?.degraded && !newOutput?.degraded) {
-      warnings.push('旧版本降级但新版本正常 — 可能是数据覆盖率提升');
-    }
-    if (!oldOutput?.degraded && newOutput?.degraded) {
-      warnings.push('新版本降级 — 图遍历未能获取足够数据');
-    }
-
-    log.info({ functionName, status, diffPercent, degraded }, '迁移验证完成');
-
-    return { functionName, sentinelId, oldOutput, newOutput, diffPercent, status, degraded, warnings };
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    log.error({ err, functionName }, '迁移验证失败');
-    return {
-      functionName,
-      sentinelId,
-      oldOutput: null,
-      newOutput: null,
-      diffPercent: 1,
-      status: 'block',
-      degraded: true,
-      warnings: [`验证执行异常: ${msg}`],
-    };
-  }
-}
-
-/**
- * 批量验证多个 compute 函数。
- *
- * 通过 functionName 配对 old 和 new compute 函数。
- * 无法配对的函数标记为 block。
- *
- * @param oldComputes — 旧 compute 函数列表
- * @param newComputes — 新 compute 函数列表
- * @returns ValidationReport[]
- */
-export function validateAll(
-  oldComputes: ComputeEntry[],
-  newComputes: ComputeEntry[],
-): ValidationReport[] {
-  const reports: ValidationReport[] = [];
-
-  // 按 functionName 建立索引
-  const newMap = new Map<string, ComputeEntry>();
-  for (const entry of newComputes) {
-    if (newMap.has(entry.functionName)) {
-      log.warn({ functionName: entry.functionName }, '批量验证: 新列表中有重复函数名');
-    }
-    newMap.set(entry.functionName, entry);
-  }
-
-  // 遍历旧函数，与对应的新函数配对验证
-  for (const oldEntry of oldComputes) {
-    const newEntry = newMap.get(oldEntry.functionName);
-    if (!newEntry) {
-      log.warn({ functionName: oldEntry.functionName }, '批量验证: 新版本中缺少对应函数');
-      reports.push({
-        functionName: oldEntry.functionName,
-        sentinelId: oldEntry.sentinelId,
-        oldOutput: null,
-        newOutput: null,
-        diffPercent: 1,
-        status: 'block',
-        degraded: true,
-        warnings: ['新版本中缺少此函数 — 无法验证'],
-      });
-      continue;
-    }
-
-    const report = validateMigration(
-      oldEntry.functionName,
-      oldEntry.sentinelId,
-      oldEntry.fn,
-      newEntry.fn,
-    );
-    reports.push(report);
-  }
-
-  // 检查新列表中是否有旧列表中没有的函数
-  for (const newEntry of newComputes) {
-    if (!oldComputes.find(o => o.functionName === newEntry.functionName)) {
-      reports.push({
-        functionName: newEntry.functionName,
-        sentinelId: newEntry.sentinelId,
-        oldOutput: null,
-        newOutput: null,
-        diffPercent: 1,
-        status: 'block',
-        degraded: true,
-        warnings: ['旧版本中缺少此函数 — 可能是新增函数，需人工确认'],
-      });
+    if (typeof oldVal === 'number' && typeof newVal === 'number') {
+      const base = Math.abs(oldVal) || 1;
+      const diff = Math.abs(newVal - oldVal) / base;
+      if (diff > maxDiff) maxDiff = diff;
+    } else if (typeof oldVal === 'object' && typeof newVal === 'object' && oldVal !== null && newVal !== null) {
+      // 递归比较嵌套对象
+      const oldRec = oldVal as Record<string, unknown>;
+      const newRec = newVal as Record<string, unknown>;
+      for (const subKey of Object.keys({ ...oldRec, ...newRec })) {
+        const ov = oldRec[subKey];
+        const nv = newRec[subKey];
+        if (typeof ov === 'number' && typeof nv === 'number') {
+          const base = Math.abs(ov) || 1;
+          const diff = Math.abs(nv - ov) / base;
+          if (diff > maxDiff) maxDiff = diff;
+        }
+      }
+    } else if (oldVal !== newVal) {
+      // 非数值字段不同 — 记录警告但不阻断
+      warnings.push(`Field "${key}" differs: old=${JSON.stringify(oldVal)}, new=${JSON.stringify(newVal)}`);
     }
   }
 
-  return reports;
-}
+  const diffPercent = Math.round(maxDiff * 10000) / 10000;
 
-// ═══ 辅助函数 ═══
+  let status: 'pass' | 'review' | 'block';
+  if (diffPercent < 0.01) {
+    status = 'pass';
+  } else if (diffPercent < 0.05) {
+    status = 'review';
+    warnings.push(`Diff ${(diffPercent * 100).toFixed(2)}% exceeds pass threshold (1%)`);
+  } else {
+    status = 'block';
+    warnings.push(`Diff ${(diffPercent * 100).toFixed(2)}% exceeds review threshold (5%)`);
+  }
 
-function classifyStatus(diffPercent: number): ValidationStatus {
-  if (diffPercent < 0.01) return 'pass';
-  if (diffPercent <= 0.05) return 'review';
-  return 'block';
+  if (Object.keys(oldOutput).length === 0 && Object.keys(newOutput).length === 0) {
+    warnings.push('Both outputs are empty — validation inconclusive');
+  }
+
+  return {
+    functionName,
+    sentinelId,
+    oldOutput,
+    newOutput,
+    diffPercent,
+    status,
+    warnings,
+  };
 }

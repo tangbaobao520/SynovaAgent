@@ -1,118 +1,121 @@
 /**
- * src/l4/temporal-baseline.ts — 时序基线 (V4.3.0)
+ * src/l4/temporal-baseline.ts — 时序基线 (Holt-Winters 指数平滑)
  *
- * Holt-Winters 指数平滑算法，计算时序参数的 window 统计和 trend 方向。
- * 用于 compute 函数的时序数据分析和图遍历中的 getTemporalParams。
+ * 实现带季节性分量的三重指数平滑。
+ * alpha=0.3 (level), beta=0.1 (trend), gamma=0.1 (seasonal)
+ * 返回 current, window_3m/window_12m 的 mean/slope/variance, trend 方向
  *
- * 参数: alpha=0.3 (level), beta=0.1 (trend), gamma=0.1 (seasonal)
+ * V4.3.0 — 本体层重建
  */
-import { createLogger } from '@synova/logger';
-
-const log = createLogger('l4/temporal-baseline');
-
 export interface TemporalParams {
   current: number;
-  window_3m: {
-    mean: number;
-    slope: number;
-    variance: number;
-  };
-  window_12m: {
-    mean: number;
-    slope: number;
-    variance: number;
-  };
+  window_3m: { mean: number; slope: number; variance: number };
+  window_12m: { mean: number; slope: number; variance: number };
   trend: 'accelerating' | 'decelerating' | 'stable' | 'reversing';
 }
 
 /**
- * 计算时序基线。
- * @param timeSeries — 按时间排序的数值数组（最近的在最后）
- * @returns TemporalParams
+ * Holt-Winters 三重指数平滑。
+ *
+ * 公式:
+ *   level(t) = alpha * (value(t) - season(t-period)) + (1-alpha) * (level(t-1) + trend(t-1))
+ *   trend(t) = beta * (level(t) - level(t-1)) + (1-beta) * trend(t-1)
+ *   season(t) = gamma * (value(t) - level(t)) + (1-gamma) * season(t-period)
+ *
+ * @param timeSeries - 按时间排序的数值数组（至少 2*period 个点才能启用季节性）
+ * @param period - 季节周期长度（默认 4，适用于季度数据）
+ * @param alpha - 水平平滑系数 (0-1)
+ * @param beta - 趋势平滑系数 (0-1)
+ * @param gamma - 季节平滑系数 (0-1, 0=禁用季节性)
  */
-export function computeTemporalBaseline(timeSeries: number[]): TemporalParams {
+export function computeTemporalBaseline(
+  timeSeries: number[],
+  period: number = 4,
+  alpha: number = 0.3,
+  beta: number = 0.1,
+  gamma: number = 0.1,
+): TemporalParams {
   if (timeSeries.length === 0) {
-    log.warn('空时序 — 返回默认基线');
-    return {
-      current: 0,
-      window_3m: { mean: 0, slope: 0, variance: 0 },
-      window_12m: { mean: 0, slope: 0, variance: 0 },
-      trend: 'stable',
-    };
+    return { current: 0, window_3m: { mean: 0, slope: 0, variance: 0 }, window_12m: { mean: 0, slope: 0, variance: 0 }, trend: 'stable' };
   }
 
-  const n = timeSeries.length;
-  const current = timeSeries[n - 1];
+  const current = timeSeries[timeSeries.length - 1];
 
-  // === Holt-Winters 平滑 ===
-  const alpha = 0.3;
-  const beta = 0.1;
-  const gamma = 0.1;
+  // 初始化水平、趋势和季节分量
+  let level = timeSeries[0];
+  let trend = timeSeries.length > 1 ? timeSeries[1] - timeSeries[0] : 0;
 
-  const level: number[] = [timeSeries[0]];
-  const trend: number[] = [timeSeries[1] - timeSeries[0] || 0];
-  const seasonal: number[] = [0];
-
-  for (let i = 1; i < n; i++) {
-    const prevLevel = level[i - 1];
-    const prevTrend = trend[i - 1];
-    const prevSeasonal = seasonal[i - 1] || 0;
-
-    const newLevel = alpha * (timeSeries[i] - prevSeasonal) + (1 - alpha) * (prevLevel + prevTrend);
-    const newTrend = beta * (newLevel - prevLevel) + (1 - beta) * prevTrend;
-    const newSeasonal = gamma * (timeSeries[i] - newLevel) + (1 - gamma) * prevSeasonal;
-
-    level.push(newLevel);
-    trend.push(newTrend);
-    seasonal.push(newSeasonal);
-  }
-
-  // === Window 统计 ===
-  const window3m = n >= 3 ? timeSeries.slice(-3) : timeSeries;
-  const window12m = n >= 12 ? timeSeries.slice(-12) : timeSeries;
-
-  const mean3m = window3m.reduce((s, v) => s + v, 0) / window3m.length;
-  const mean12m = window12m.reduce((s, v) => s + v, 0) / window12m.length;
-
-  const variance3m = window3m.reduce((s, v) => s + (v - mean3m) ** 2, 0) / window3m.length;
-  const variance12m = window12m.reduce((s, v) => s + (v - mean12m) ** 2, 0) / window12m.length;
-
-  // === Trend 方向判定 (V4.3.0) ===
-  // 直接用窗口斜率判定趋势方向，使用相对阈值（基于均值比例）
-  const recentSlope = n >= 3 ? (timeSeries[n - 1] - timeSeries[n - 3]) / 2 : (n >= 2 ? timeSeries[n - 1] - timeSeries[0] : 0);
-  const overallSlope = n >= 2 ? (timeSeries[n - 1] - timeSeries[0]) / (n - 1) : 0;
-  const absSlope = Math.abs(recentSlope);
-  const recentMean = (window3m.reduce((s, v) => s + v, 0) / window3m.length) || 1;
-  // 相对斜率: 斜率绝对值 / 均值。小于 2% 视为稳定
-  const relativeSlope = absSlope / Math.abs(recentMean);
-
-  let direction: 'accelerating' | 'decelerating' | 'stable' | 'reversing';
-
-  if (relativeSlope < 0.02) {
-    direction = 'stable';
-  } else if (recentSlope > 0) {
-    direction = 'accelerating';
+  // 初始化季节分量（从第一个周期估算）
+  const initialSeason: number[] = [];
+  if (gamma > 0 && timeSeries.length >= period * 2) {
+    // 用第一个完整周期的去趋势值初始化季节分量
+    const firstCycle = timeSeries.slice(0, period);
+    const cycleAvg = firstCycle.reduce((s, v) => s + v, 0) / period;
+    for (let i = 0; i < period; i++) {
+      initialSeason[i] = firstCycle[i] - cycleAvg;
+    }
   } else {
-    direction = 'decelerating';
+    gamma = 0; // 数据不足时禁用季节性
   }
 
-  // 如果最近趋势与整体趋势方向相反，标记为 reversing
-  if (overallSlope * recentSlope < 0 && relativeSlope > 0.05) {
-    direction = 'reversing';
+  // 为每个时间点复制季节分量（循环使用）
+  const season: number[] = [];
+  for (let i = 0; i < timeSeries.length; i++) {
+    if (i < initialSeason.length) {
+      season[i] = initialSeason[i];
+    } else {
+      season[i] = 0;
+    }
+  }
+
+  // Holt-Winters 迭代
+  for (let i = 1; i < timeSeries.length; i++) {
+    const seasonalIdx = gamma > 0 ? i % period : -1;
+    const seasonalVal = seasonalIdx >= 0 && seasonalIdx < initialSeason.length ? initialSeason[seasonalIdx] : 0;
+
+    // 去季节性后的值
+    const deseasonalized = gamma > 0 ? timeSeries[i] - seasonalVal : timeSeries[i];
+
+    const oldLevel = level;
+    level = alpha * deseasonalized + (1 - alpha) * (level + trend);
+    trend = beta * (level - oldLevel) + (1 - beta) * trend;
+
+    // 更新季节分量
+    if (gamma > 0 && seasonalIdx >= 0) {
+      initialSeason[seasonalIdx] = gamma * (timeSeries[i] - level) + (1 - gamma) * seasonalVal;
+    }
+  }
+
+  // 窗口计算 (近期数据的滑动统计)
+  const w3m = timeSeries.slice(-Math.min(3, timeSeries.length));
+  const w12m = timeSeries.slice(-Math.min(12, timeSeries.length));
+
+  const w3mMean = w3m.length > 0 ? w3m.reduce((s, v) => s + v, 0) / w3m.length : 0;
+  const w12mMean = w12m.length > 0 ? w12m.reduce((s, v) => s + v, 0) / w12m.length : 0;
+
+  const w3mSlope = w3m.length >= 2 ? (w3m[w3m.length - 1] - w3m[0]) / w3m.length : 0;
+  const w12mSlope = w12m.length >= 2 ? (w12m[w12m.length - 1] - w12m[0]) / w12m.length : 0;
+
+  const w3mVariance = w3m.length > 0 ? w3m.reduce((s, v) => s + (v - w3mMean) ** 2, 0) / w3m.length : 0;
+  const w12mVariance = w12m.length > 0 ? w12m.reduce((s, v) => s + (v - w12mMean) ** 2, 0) / w12m.length : 0;
+
+  // 趋势判定
+  let trendLabel: 'accelerating' | 'decelerating' | 'stable' | 'reversing';
+  const slopeMagnitude = Math.abs(w12mSlope);
+  const meanMagnitude = Math.abs(w12mMean) || 1;
+
+  if (slopeMagnitude / meanMagnitude < 0.02) {
+    trendLabel = 'stable';
+  } else if (w12mSlope > 0) {
+    trendLabel = w3mSlope > w12mSlope * 0.5 ? 'accelerating' : 'decelerating';
+  } else {
+    trendLabel = w12mSlope < 0 && w3mSlope > 0 ? 'reversing' : 'decelerating';
   }
 
   return {
-    current,
-    window_3m: {
-      mean: Math.round(mean3m * 100) / 100,
-      slope: Math.round(recentSlope * 100) / 100,
-      variance: Math.round(variance3m * 100) / 100,
-    },
-    window_12m: {
-      mean: Math.round(mean12m * 100) / 100,
-      slope: Math.round((overallSlope) * 100) / 100,
-      variance: Math.round(variance12m * 100) / 100,
-    },
-    trend: direction,
+    current: Math.round(current * 100) / 100,
+    window_3m: { mean: Math.round(w3mMean * 100) / 100, slope: Math.round(w3mSlope * 100) / 100, variance: Math.round(w3mVariance * 100) / 100 },
+    window_12m: { mean: Math.round(w12mMean * 100) / 100, slope: Math.round(w12mSlope * 100) / 100, variance: Math.round(w12mVariance * 100) / 100 },
+    trend: trendLabel,
   };
 }
