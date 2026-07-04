@@ -16,8 +16,9 @@ describe('loadOntology', () => {
   });
   it('edgeEndpointMap 从 edge types 动态构建', () => {
     const { ontology } = loadOntology();
-    expect(ontology.edgeEndpointMap['INTERACTS_WITH']).toBeDefined();
-    expect(ontology.edgeEndpointMap['INTERACTS_WITH'].from).toContain('Person');
+    expect(ontology.edgeEndpointMap['DEPLOYS']).toBeDefined();
+    expect(ontology.edgeEndpointMap['DEPLOYS'].from).toContain('resource/money');
+    expect(ontology.edgeEndpointMap['DEPLOYS'].to).toContain('activity/production');
   });
 });
 
@@ -33,10 +34,13 @@ describe('getTypesByTags', () => {
 });
 
 describe('validateEdgeEndpoints', () => {
-  it('INTERACTS_WITH Person→Agent 合法', () => {
-    expect(validateEdgeEndpoints('INTERACTS_WITH', 'Person', 'Agent')).toBe(true);
+  it('DEPLOYS resource/money→activity/production 合法', () => {
+    expect(validateEdgeEndpoints('DEPLOYS', 'resource/money', 'activity/production')).toBe(true);
   });
-  it('INTERACTS_WITH Team→Document 非法', () => {
-    expect(validateEdgeEndpoints('INTERACTS_WITH', 'Team', 'Document')).toBe(false);
+  it('DEPLOYS resource/money→outcome/financial 非法 (outcome 不在 DEPLOYS 的 to 中)', () => {
+    expect(validateEdgeEndpoints('DEPLOYS', 'resource/money', 'outcome/financial')).toBe(false);
+  });
+  it('PRODUCES activity/production→outcome/financial 合法', () => {
+    expect(validateEdgeEndpoints('PRODUCES', 'activity/production', 'outcome/financial')).toBe(true);
   });
 });
