@@ -23,7 +23,7 @@ describe('loadOntology', () => {
 });
 
 describe('getTypesByTags', () => {
-  it('any 模式: human 标签返回 Person 等', () => {
+  it('any 模式: human 标签返回 PERSON 等', () => {
     const { nodes } = getTypesByTags(['human']);
     expect(nodes.some(n => n.label === 'PERSON')).toBe(true);
   });
