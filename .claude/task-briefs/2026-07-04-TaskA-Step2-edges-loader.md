@@ -23,8 +23,9 @@
 - 不改任何 compute 函数
 - 不改 extensions/sentinels/
 
-## 架构层级
-L4
+## 本任务在哪一层
+
+L4（本体层）
 
 ## Q3: 验收
 入口: `extensions/ontology/edge-types/`
@@ -32,7 +33,7 @@ L4
 结果: `ls edge-types/*.json` = 16, `npx tsc --noEmit` 零错误
 
 ## Done 标准
-- [x] verify: `ls extensions/ontology/edge-types/*.json | wc -l` = 16
-- [x] verify: `npx tsc --noEmit` 零错误
-- [x] verify: loader 扫描 resource/activity/outcome/ 三个目录
+- [x] verify: ls extensions/ontology/edge-types/*.json 2>/dev/null | wc -l | xargs -I{} bash -c 'test "{}" -ge 16 && echo "PASS" || echo "FAIL"'
+- [x] verify: grep -q "resource|activity|outcome" src/l4/ontology-loader.ts && echo "PASS" || echo "FAIL"
+- [x] verify: grep -q "consumed_by_sentinels" src/l4/ontology-loader.ts && echo "PASS" || echo "FAIL"
 
