@@ -8,11 +8,17 @@
     {
       "step": 1,
       "action": "modify",
+<<<<<<< HEAD
       "description": "ga-corrections AgentMemoryStore + expert-dispatcher overlay",
       "files": [
         "src/routes/ga-corrections.ts",
         "src/l3/expert-dispatcher.ts",
         "src/server.ts"
+=======
+      "files": [
+        "src/routes/ga-corrections.ts",
+        "src/l3/expert-dispatcher.ts"
+>>>>>>> 8461188 (fix: Phase 3.3 ga-corrections + plan.json)
       ],
       "checks": {
         "wiring": "enforce",
