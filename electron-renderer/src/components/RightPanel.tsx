@@ -1,7 +1,7 @@
 /**
- * components/RightPanel.tsx — 右栏面板 (Phase 3.1)
+ * components/RightPanel.tsx — 右栏面板 (Phase 3.4)
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAppStore } from '../stores/app-store';
 
 // ═══ 视图解析 ═══
@@ -128,25 +128,103 @@ const SolutionPreview: React.FC<{
   </div>
 );
 
-/** GA 工作区 3 标签 */
-const GAWorkspaceTabs: React.FC = () => {
-  const [tab, setTab] = useState<'action' | 'sentinel' | 'pattern'>('action');
-  const [showSolution, setShowSolution] = useState(false);
-  const [confirmed, setConfirmed] = useState(false);
+// ═══ API 基础路径 ═══
+const API_BASE = '';
 
-  const mockPattern = {
-    name: '信息扭曲校正',
-    description: '建立透明化机制和跨部门同步流程，减少信息传递失真',
-    skills: [
-      { name: '组织透明化审计', duration: '1-2周', owner: '组织专家' },
-      { name: '跨部门同步流程设计', duration: '2-3周', owner: '行动顾问' },
-    ],
-    prerequisites: ['已建立基础通讯工具', '有跨部门协作痛点'],
-    riskFactors: ['中层管理者可能的抵触情绪', '需要高层明确支持'],
+async function apiFetch<T>(path: string, opts?: RequestInit): Promise<T | null> {
+  try {
+    const res = await fetch(`${API_BASE}${path}`, {
+      headers: { 'Content-Type': 'application/json' },
+      ...opts,
+    });
+    if (!res.ok) return null;
+    return await res.json() as T;
+  } catch {
+    return null;
+  }
+}
+
+// ═══ 类型 ═══
+
+interface SolutionData {
+  id: string;
+  title: string;
+  description: string;
+  status: string;
+  patternName: string;
+  sentinelIds: string[];
+  recommendations: Array<{ action: string; priority: string; expert: string }>;
+  skills: Array<{ name: string; duration: string; owner: string }>;
+  prerequisites: string[];
+  riskFactors: string[];
+  estimatedImpact: { improvement: string; timeline: string };
+  pushedAt: string | null;
+  createdAt: string;
+}
+
+interface SolutionsResponse {
+  ok: boolean;
+  solutions: SolutionData[];
+  degraded?: boolean;
+}
+
+/** GA 工作区 3 标签 — 真实 API 驱动 (Phase 3.4) */
+const GAWorkspaceTabs: React.FC = () => {
+  const [tab, setTab] = useState<'action' | 'sentinel' | 'pattern'>('pattern');
+  const [solutions, setSolutions] = useState<SolutionData[]>([]);
+  const [showSolution, setShowSolution] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [degraded, setDegraded] = useState(false);
+  const currentReportId = useAppStore((s) => s.currentReportId);
+  const activeOrgId = useAppStore((s) => s.activeOrgId);
+
+  // 加载方案列表
+  const loadSolutions = useCallback(async () => {
+    if (!currentReportId) return;
+    setLoading(true);
+    const res = await apiFetch<SolutionsResponse>(`/api/solutions?reportId=${currentReportId}`);
+    if (res?.ok && res.solutions) {
+      setSolutions(res.solutions);
+      if (res.degraded) setDegraded(true);
+    }
+    setLoading(false);
+  }, [currentReportId]);
+
+  useEffect(() => {
+    loadSolutions();
+  }, [loadSolutions]);
+
+  // 生成方案
+  const handleGeneratePlan = async () => {
+    if (!currentReportId) return;
+    setLoading(true);
+    const res = await apiFetch<SolutionsResponse>('/api/solutions/generate', {
+      method: 'POST',
+      body: JSON.stringify({ reportId: currentReportId, sentinelIds: [], recommendations: [] }),
+    });
+    if (res?.ok && res.solutions.length > 0) {
+      setSolutions(res.solutions);
+      setShowSolution(true);
+    }
+    setLoading(false);
   };
 
-  const handleGeneratePlan = () => setShowSolution(true);
-  const handleConfirmPlan = () => { setConfirmed(true); setShowSolution(false); };
+  // 推送方案
+  const handlePushSolution = async (solutionId: string) => {
+    const res = await apiFetch<{ ok: boolean }>(`/api/solutions/${solutionId}/push`, {
+      method: 'POST',
+      body: JSON.stringify({ channels: ['electron'] }),
+    });
+    if (res?.ok) {
+      // 刷新状态
+      loadSolutions();
+    }
+    setShowSolution(false);
+  };
+
+  const pendingSolutions = solutions.filter(s => s.status === 'draft' || s.status === 'confirmed');
+  const executingSolutions = solutions.filter(s => s.status === 'executing');
+  const completedSolutions = solutions.filter(s => s.status === 'completed');
 
   return (
     <>
@@ -159,9 +237,21 @@ const GAWorkspaceTabs: React.FC = () => {
       </div>
 
       {tab === 'action' && (
-        <>
-          <Section title="✅ 行动项"><Empty /></Section>
-        </>
+        <Section title="✅ 行动跟踪">
+          {executingSolutions.map((s) => (
+            <div key={s.id} className="sb-item" style={{ padding: '8px', margin: '4px 0', borderRadius: 6, background: 'var(--bg2)', fontSize: 11, lineHeight: 1.5 }}>
+              <div style={{ fontWeight: 600, marginBottom: 2 }}>{s.title}</div>
+              <div style={{ color: 'var(--blue)', fontSize: 10 }}>执行中 · {s.estimatedImpact.timeline}</div>
+            </div>
+          ))}
+          {completedSolutions.map((s) => (
+            <div key={s.id} className="sb-item" style={{ padding: '8px', margin: '4px 0', borderRadius: 6, background: 'var(--bg2)', fontSize: 11, lineHeight: 1.5 }}>
+              <div style={{ fontWeight: 600, marginBottom: 2 }}>{s.title}</div>
+              <div style={{ color: 'var(--green)', fontSize: 10 }}>✅ 已完成</div>
+            </div>
+          ))}
+          {executingSolutions.length === 0 && completedSolutions.length === 0 && <Empty text="无进行中的行动项" />}
+        </Section>
       )}
 
       {tab === 'sentinel' && (
@@ -170,27 +260,97 @@ const GAWorkspaceTabs: React.FC = () => {
 
       {tab === 'pattern' && (
         <>
-          {confirmed ? (
-            <Section title="📋 已确认方案">
-              <div style={{ fontSize: 11, color: 'var(--green)', textAlign: 'center', padding: 8 }}>
-                ✅ 方案已推送给对接人
-              </div>
-            </Section>
-          ) : showSolution ? (
-            <SolutionPreview pattern={mockPattern} onConfirm={handleConfirmPlan} />
-          ) : (
-            <Section title="📋 落地模式匹配">
-              <div className="empty-state" style={{ padding: '12px 8px' }}>
-                <div className="empty-state-text" style={{ fontSize: 11 }}>
-                  已匹配 1 个落地模式
+          {loading && <div style={{ padding: 8, fontSize: 11, color: 'var(--dim)' }}>加载中...</div>}
+          {degraded && <div style={{ padding: '4px 8px', fontSize: 10, color: 'var(--orange)' }}>⚠ 部分服务降级</div>}
+
+          {showSolution && pendingSolutions.length > 0 ? (
+            // 显示所有待审阅方案
+            pendingSolutions.map((sol) => (
+              <Section key={sol.id} title={`📋 ${sol.title}`}>
+                <div style={{ fontSize: 11, color: 'var(--dim)', lineHeight: 1.5, padding: '4px 0' }}>
+                  {sol.description}
                 </div>
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--dim)', padding: '4px 0', lineHeight: 1.5 }}>
-                信息扭曲校正 — 当企业存在信息传递失真时适用
-              </div>
-              <button className="solution-generate-btn" onClick={handleGeneratePlan}>
-                📋 生成落地方案
-              </button>
+                {sol.skills.length > 0 && (
+                  <div style={{ marginTop: 8 }}>
+                    <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--fg2)', marginBottom: 4 }}>技能清单</div>
+                    {sol.skills.map((sk, i) => (
+                      <div key={i} className="solution-preview-skill" style={{ fontSize: 11 }}>
+                        <span>{sk.name}</span>
+                        <span style={{ fontSize: 10, color: 'var(--dim)' }}> — {sk.duration} · {sk.owner}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {sol.prerequisites.length > 0 && (
+                  <div style={{ marginTop: 8 }}>
+                    <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--fg2)', marginBottom: 4 }}>前置条件</div>
+                    {sol.prerequisites.map((p, i) => (
+                      <div key={i} style={{ fontSize: 11, padding: '1px 0' }}>• {p}</div>
+                    ))}
+                  </div>
+                )}
+                {sol.riskFactors.length > 0 && (
+                  <div style={{ marginTop: 8 }}>
+                    <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--orange)', marginBottom: 4 }}>风险因素</div>
+                    {sol.riskFactors.map((r, i) => (
+                      <div key={i} style={{ fontSize: 11, color: 'var(--orange)', padding: '1px 0' }}>⚠ {r}</div>
+                    ))}
+                  </div>
+                )}
+                <div style={{ marginTop: 8, fontSize: 11, color: 'var(--accent2)' }}>
+                  预期效果: {sol.estimatedImpact.improvement} · {sol.estimatedImpact.timeline}
+                </div>
+                <button className="solution-confirm-btn" onClick={() => handlePushSolution(sol.id)} style={{ marginTop: 8 }}>
+                  ✅ 确认方案 · 推送给对接人
+                </button>
+              </Section>
+            ))
+          ) : solutions.length > 0 ? (
+            // 已有方案，显示状态
+            <>
+              <Section title="📋 已生成方案">
+                {solutions.map((s) => (
+                  <div key={s.id} style={{ padding: '8px', margin: '4px 0', borderRadius: 6, background: 'var(--bg2)', fontSize: 11, lineHeight: 1.5 }}>
+                    <div style={{ fontWeight: 600, marginBottom: 2 }}>{s.title}</div>
+                    <div style={{ color: 'var(--dim)', fontSize: 10 }}>
+                      {s.status === 'draft' && '📝 草稿'}
+                      {s.status === 'confirmed' && '✅ 已确认'}
+                      {s.status === 'executing' && '🔄 执行中'}
+                      {s.status === 'completed' && '🎉 已完成'}
+                      {s.status === 'rejected' && '❌ 已拒绝'}
+                      {s.pushedAt ? ` · 已推送` : ''}
+                    </div>
+                    {(s.status === 'draft' || s.status === 'confirmed') && (
+                      <button className="solution-generate-btn" onClick={() => setShowSolution(true)} style={{ marginTop: 4, fontSize: 10 }}>
+                        {s.pushedAt ? '重新推送' : '推送方案'}
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </Section>
+              {pendingSolutions.length === 0 && (
+                <button className="solution-generate-btn" onClick={handleGeneratePlan} style={{ margin: '8px 0' }}>
+                  📋 重新生成方案
+                </button>
+              )}
+            </>
+          ) : (
+            // 无方案，显示生成入口
+            <Section title="📋 落地模式匹配">
+              {currentReportId ? (
+                <>
+                  <div className="empty-state" style={{ padding: '12px 8px' }}>
+                    <div className="empty-state-text" style={{ fontSize: 11 }}>
+                      诊断报告已就绪，可生成落地解决方案
+                    </div>
+                  </div>
+                  <button className="solution-generate-btn" onClick={handleGeneratePlan} disabled={loading}>
+                    {loading ? '生成中...' : '📋 生成落地方案'}
+                  </button>
+                </>
+              ) : (
+                <Empty text="请先进行一次诊断" />
+              )}
             </Section>
           )}
         </>

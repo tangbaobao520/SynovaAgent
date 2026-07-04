@@ -1,1 +1,63 @@
-{"version":"1.0","task":"Task A: ontology rebuild — graph-traversal + utils","brief":"","current_phase":1,"approach":"rewrite","phases":[{"step":1,"action":"modify","description":"all task A steps","files":["src/l4/graph-traversal.ts","src/l4/temporal-baseline.ts","src/l4/migration-validator.ts","scripts/validate-ontology.ts","tests/l4/"],"checks":{"wiring":"deferred","test_pairing":"deferred"}}],"principles":[{"rule":"graph-traversal compiles","verify":"npx tsc --noEmit 2>&1 | head -3"},{"rule":"tests pass","verify":"npx vitest run tests/l4/ 2>&1 | grep -q passed"}],"memory_refs":["memory/engine-core-bridge-files.md"]}
+{
+  "version": "1.0",
+  "task": "Phase 3.4 方案生成完整链路",
+  "brief": "2026-07-04-Phase-34-solution-delivery-chain.md",
+  "current_phase": 1,
+  "approach": "rewrite",
+  "phases": [
+    {
+      "step": 1,
+      "action": "create",
+      "files": [
+        "src/services/solution-generator.ts",
+        "src/routes/solutions.ts"
+      ],
+      "checks": {
+        "wiring": "deferred",
+        "test_pairing": "deferred"
+      }
+    },
+    {
+      "step": 2,
+      "action": "modify",
+      "files": [
+        "src/server.ts",
+        "electron-renderer/src/components/RightPanel.tsx"
+      ],
+      "checks": {
+        "wiring": "enforce",
+        "test_pairing": "deferred"
+      }
+    },
+    {
+      "step": 3,
+      "action": "create",
+      "files": [
+        "tests/routes/solutions.integration.test.ts"
+      ],
+      "checks": {
+        "wiring": "deferred",
+        "test_pairing": "enforce"
+      }
+    }
+  ],
+  "principles": [
+    {
+      "rule": "方案写入 AgentMemoryStore type=implementation_plan",
+      "verify": "grep -rn 'implementation_plan' src/services/solution-generator.ts"
+    },
+    {
+      "rule": "POST /api/solutions/generate 路由存在",
+      "verify": "grep -rn 'solutions/generate' src/routes/solutions.ts"
+    },
+    {
+      "rule": "solutions 路由在 server.ts 注册",
+      "verify": "grep -rn 'solutionsRoutes\\|solutions' src/server.ts"
+    },
+    {
+      "rule": "前端方案 UI 调用真实 API",
+      "verify": "grep -rn 'api/solutions' electron-renderer/src/components/RightPanel.tsx"
+    }
+  ],
+  "memory_refs": []
+}

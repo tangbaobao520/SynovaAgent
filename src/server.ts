@@ -64,6 +64,7 @@ import reloadRoutes from './routes/reload';
 import auditRoutes from './routes/audit';
 import gaAdminRoutes from './routes/ga-admin';
 import gaCorrectionsRoutes from './routes/ga-corrections';
+import solutionsRoutes from './routes/solutions';
 import { AuditService } from './services/audit-service';
 import type { ServiceContainer } from './services/container';
 // Phase 0.1: 全局错误兜底 — uncaughtException + unhandledRejection
@@ -430,6 +431,7 @@ app.use(reloadRoutes);                         // POST /api/reload — 热加载
 app.use(auditRoutes);                          // GET /api/audit — 审计日志 (Phase 0.3)
 app.use(gaAdminRoutes);                        // /api/ga/* — GA 管理 API (Phase 3.1)
 app.use(gaCorrectionsRoutes);                  // /api/ga/corrections — 纠错 (Phase 3.2)
+app.use(solutionsRoutes);                        // /api/solutions/* — 方案生成链路 (Phase 3.4)
 
   // ═══ A2: Connector Pipeline — 手动触发 + 定时同步 ═══
   app.post('/api/connector/sync', async (req, res) => {

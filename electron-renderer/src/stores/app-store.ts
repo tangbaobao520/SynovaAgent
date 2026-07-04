@@ -49,6 +49,7 @@ export interface AppState {
 
   // 诊断
   lastDiagnosisTime: string | null;
+  currentReportId: string | null;  // Phase 3.4: 最近诊断的报告 ID
   dimensionCovered: number;
   dimensionTotal: number;
 
@@ -65,6 +66,7 @@ export interface AppState {
   setLeftPanelWidth: (w: number) => void;
   setRightPanelWidth: (w: number) => void;
   setDiagnosisInfo: (t: string, c: number, tot: number) => void;
+  setCurrentReportId: (id: string) => void;
 
   // GA Actions (Phase 3.1)
   setGaClients: (clients: ClientInfo[]) => void;
@@ -92,7 +94,7 @@ export const useAppStore = create<AppState>((set) => ({
   gaClients: [],
 
   workspaces: MOCK_WORKSPACES, conversations: MOCK_CONVERSATIONS,
-  lastDiagnosisTime: null, dimensionCovered: 0, dimensionTotal: 8,
+  lastDiagnosisTime: null, currentReportId: null, dimensionCovered: 0, dimensionTotal: 8,
 
   toggleLeftPanel: () => set((s) => ({ leftPanelOpen: !s.leftPanelOpen })),
   toggleRightPanel: () => set((s) => ({ rightPanelOpen: !s.rightPanelOpen })),
@@ -108,6 +110,7 @@ export const useAppStore = create<AppState>((set) => ({
   setDiagnosisInfo: (time, covered, total) => set({
     lastDiagnosisTime: time, dimensionCovered: covered, dimensionTotal: total,
   }),
+  setCurrentReportId: (reportId) => set({ currentReportId: reportId }),
 
   setGaClients: (gaClients) => set({ gaClients }),
   setActiveOrgId: (orgId) => set((s) => ({
