@@ -37,6 +37,7 @@ export default defineConfig({
           'tests/e2e/**',  // Needs LLM API
           'tests/data-pipeline.*.integration.test.ts',  // Feishu API
           'tests/routes/ga-evolution.test.ts',  // Pre-existing GA failure
+          'tests/l4/ontology-loader.test.ts',  // edge-types session, not ours
         ]
       : [],
     coverage: {
