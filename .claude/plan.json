@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
 {
   "version": "1.0",
   "task": "Phase 0: Inject GraphTraversal into SentinelContext + sentinel-loader",
@@ -50,40 +48,3 @@
     "memory/engine-core-bridge-files.md"
   ]
 }
-=======
-{
-  "version": "1.0",
-  "task": "Phase 3.3 纠错叠加层",
-  "brief": "2026-07-04-0358-Task-21--Schema--.md",
-  "current_phase": 1,
-  "approach": "rewrite",
-  "phases": [
-    {
-      "step": 1,
-      "action": "modify",
-      "files": [
-        "src/routes/ga-corrections.ts",
-        "src/l3/expert-dispatcher.ts"
-      ],
-      "checks": {
-        "wiring": "enforce",
-        "test_pairing": "deferred"
-      }
-    }
-  ],
-  "principles": [
-    {
-      "rule": "ga-corrections 用 AgentMemoryStore",
-      "verify": "grep -rn getAgentMemoryStore src/routes/ga-corrections.ts"
-    },
-    {
-      "rule": "expert-dispatcher 叠加纠错",
-      "verify": "grep -rn getReportWithCorrections src/l3/expert-dispatcher.ts"
-    }
-  ],
-  "memory_refs": []
-}
->>>>>>> edc5556 (fix: 恢复 ga-corrections.ts（被误写为空文件）)
-=======
-{"version":"1.0","task":"Task A: ontology rebuild — graph-traversal + utils","brief":"","current_phase":1,"approach":"rewrite","phases":[{"step":1,"action":"modify","description":"all task A steps","files":["src/l4/graph-traversal.ts","src/l4/temporal-baseline.ts","src/l4/migration-validator.ts","scripts/validate-ontology.ts","tests/l4/"],"checks":{"wiring":"deferred","test_pairing":"deferred"}}],"principles":[{"rule":"graph-traversal compiles","verify":"npx tsc --noEmit 2>&1 | head -3"},{"rule":"tests pass","verify":"npx vitest run tests/l4/ 2>&1 | grep -q passed"}],"memory_refs":["memory/engine-core-bridge-files.md"]}
->>>>>>> e0a7577 (fix(ci): update plan.json and brief for Task A L4 consistency)
