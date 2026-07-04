@@ -1,1 +1,0 @@
-{"$id":"edge-type/depends-on","label":"DEPENDS_ON","tags":["operational","technical"],"allowedFrom":["Process","Tool","Agent"],"allowedTo":["Tool","Agent","Process"],"requiredProps":["criticality"],"description":"资源依赖。"}

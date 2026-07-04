@@ -1,1 +1,0 @@
-{"$id":"edge-type/has-access-to","label":"HAS_ACCESS_TO","tags":["technical","compliance"],"allowedFrom":["User","Agent"],"allowedTo":["Document","Tool","Process"],"requiredProps":["resourceType","permission"],"description":"访问权限 (Auth M1)。"}

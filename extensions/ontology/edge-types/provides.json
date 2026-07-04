@@ -1,1 +1,0 @@
-{"$id":"edge-type/provides","label":"PROVIDES","tags":["strategic","organizational"],"allowedFrom":["Person","Team","Tool","Agent"],"allowedTo":["Capability"],"optionalProps":{"proficiencyLevel":"number","capacity":"number"},"description":"能力供给。"}

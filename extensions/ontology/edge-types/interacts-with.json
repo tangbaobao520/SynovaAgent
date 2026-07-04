@@ -1,1 +1,0 @@
-{"$id":"edge-type/interacts-with","label":"INTERACTS_WITH","tags":["organizational"],"allowedFrom":["Person","Agent"],"allowedTo":["Person","Agent"],"optionalProps":{"channel":{"enum":["public_channel","direct_message","email","meeting","other"]},"weight":"number"},"description":"人员/Agent 之间的通信。"}

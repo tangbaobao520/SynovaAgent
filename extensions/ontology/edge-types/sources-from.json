@@ -1,1 +1,0 @@
-﻿{"$id":"edge-type/sources-from","label":"SOURCES_FROM","tags":["operational","strategic"],"allowedFrom":["Supplier"],"allowedTo":["Client","Process"],"optionalProps":{"annualValue":"number","frequency":{"enum":["one_time","monthly","quarterly","annual"]},"switchDays":"number","contractEndDate":"string"},"description":"企业从供应商采购。是交易成本分析、供应链依赖评估的基础边。"}

@@ -1,1 +1,0 @@
-{"$id":"edge-type/revenue-from","label":"REVENUE_FROM","tags":["financial","marketing"],"allowedFrom":["Financial"],"allowedTo":["Client"],"optionalProps":{"share":"number","revenueType":{"enum":["transaction","subscription","advertising","platform_fee","service"]}},"description":"收入来源→客户细分 (P1)。"}

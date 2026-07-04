@@ -1,1 +1,0 @@
-{"$id":"edge-type/triggers","label":"TRIGGERS","tags":["operational"],"allowedFrom":["Event"],"allowedTo":["Event","Process"],"optionalProps":{"delay":"number","causalStrength":"number"},"description":"事件触发关系。"}
