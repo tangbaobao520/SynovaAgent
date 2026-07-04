@@ -1,1 +1,0 @@
-{"$id":"node-type/document","label":"Document","tags":["knowledge","data","generic"],"requiredProps":["name"],"optionalProps":{"docType":{"enum":["prd","meeting_notes","report","contract","other"]}},"description":"企业文档。"}

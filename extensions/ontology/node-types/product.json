@@ -1,1 +1,0 @@
-{"$id":"node-type/product","label":"Product","tags":["generic","organizational"],"requiredProps":["name"],"optionalProps":{"category":"string","version":"string"},"description":"组织提供的产品或服务。"}
