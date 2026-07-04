@@ -34,13 +34,13 @@ describe('getTypesByTags', () => {
 });
 
 describe('validateEdgeEndpoints', () => {
-  it('DEPLOYS resource/money→activity/production 合法', () => {
+  it('DEPLOYS resource/money->activity/production 合法', () => {
     expect(validateEdgeEndpoints('DEPLOYS', 'resource/money', 'activity/production')).toBe(true);
   });
-  it('DEPLOYS resource/money→outcome/financial 非法 (outcome 不在 DEPLOYS 的 to 中)', () => {
+  it('DEPLOYS resource/money->outcome/financial 非法', () => {
     expect(validateEdgeEndpoints('DEPLOYS', 'resource/money', 'outcome/financial')).toBe(false);
   });
-  it('PRODUCES activity/production→outcome/financial 合法', () => {
+  it('PRODUCES activity/production->outcome/financial 合法', () => {
     expect(validateEdgeEndpoints('PRODUCES', 'activity/production', 'outcome/financial')).toBe(true);
   });
 });

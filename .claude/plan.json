@@ -1,54 +1,34 @@
 {
   "version": "1.0",
+  "task": "Phase 3.3 纠错叠加层",
+  "brief": "2026-07-04-0358-Task-21--Schema--.md",
   "current_phase": 1,
-  "principles": [
-    {
-      "rule": "每个新边 JSON 必须含 allowedFrom/allowedTo/requiredProps，引用新实体类型",
-      "verify": "for f in deploys funds produces replenishes depends_on substitutes augments locks_in; do python3 -c \"import json; d=json.load(open('extensions/ontology/edge-types/$f.json')); assert 'allowedFrom' in d; assert 'allowedTo' in d; assert 'requiredProps' in d; print('PASS: $f')\" || exit 1; done"
-    },
-    {
-      "rule": "新边 $id 使用 edge/xxx 命名空间",
-      "verify": "grep -h '\"$id\"' extensions/ontology/edge-types/deploys.json extensions/ontology/edge-types/funds.json extensions/ontology/edge-types/produces.json extensions/ontology/edge-types/replenishes.json extensions/ontology/edge-types/depends_on.json extensions/ontology/edge-types/substitutes.json extensions/ontology/edge-types/augments.json extensions/ontology/edge-types/locks_in.json | grep -v '\"edge/' && echo 'FAIL' || echo 'PASS'"
-    },
-    {
-      "rule": "删除的旧边文件在代码中无引用",
-      "verify": "for f in consumes affects aligns-with belongs-to competes-with corresponds-to has-access-to interacts-with; do test ! -f \"extensions/ontology/edge-types/$f.json\" || echo \"FAIL: $f.json 残留\"; done; echo 'CHECK DONE'"
-    }
-  ],
-  "approach": "reuse",
-  "memory_refs": [
-    "memory/stub-implementation-pattern.md",
-    "memory/engine-core-split-fraud.md"
-  ],
+  "approach": "rewrite",
   "phases": [
     {
       "step": 1,
-      "action": "create+delete",
-      "description": "创建8个新边类型JSON + 删除8个旧边类型JSON",
+      "action": "modify",
+      "description": "ga-corrections AgentMemoryStore + expert-dispatcher overlay",
       "files": [
-        "extensions/ontology/edge-types/deploys.json",
-        "extensions/ontology/edge-types/funds.json",
-        "extensions/ontology/edge-types/produces.json",
-        "extensions/ontology/edge-types/replenishes.json",
-        "extensions/ontology/edge-types/depends_on.json",
-        "extensions/ontology/edge-types/substitutes.json",
-        "extensions/ontology/edge-types/augments.json",
-        "extensions/ontology/edge-types/locks_in.json"
-      ],
-      "deletes": [
-        "extensions/ontology/edge-types/consumes.json",
-        "extensions/ontology/edge-types/affects.json",
-        "extensions/ontology/edge-types/aligns-with.json",
-        "extensions/ontology/edge-types/belongs-to.json",
-        "extensions/ontology/edge-types/competes-with.json",
-        "extensions/ontology/edge-types/corresponds-to.json",
-        "extensions/ontology/edge-types/has-access-to.json",
-        "extensions/ontology/edge-types/interacts-with.json"
+        "src/routes/ga-corrections.ts",
+        "src/l3/expert-dispatcher.ts",
+        "src/server.ts"
       ],
       "checks": {
-        "wiring": "deferred",
+        "wiring": "enforce",
         "test_pairing": "deferred"
       }
     }
-  ]
+  ],
+  "principles": [
+    {
+      "rule": "ga-corrections 用 AgentMemoryStore",
+      "verify": "grep -rn getAgentMemoryStore src/routes/ga-corrections.ts"
+    },
+    {
+      "rule": "expert-dispatcher 叠加纠错",
+      "verify": "grep -rn getReportWithCorrections src/l3/expert-dispatcher.ts"
+    }
+  ],
+  "memory_refs": []
 }
