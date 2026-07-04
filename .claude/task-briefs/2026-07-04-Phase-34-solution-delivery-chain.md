@@ -6,7 +6,7 @@
 ## Q0: 定位
 
 ### a) 项目拼图
-- [x] 纵向（L1 路由 + L2 服务 + L1 前端组件 + L5 服务器入口）
+- [x] 纵向（L1 路由 + L2 服务 + L1 前端组件）
 
 Phase 3.4: 方案生成完整交付链路。
 前置依赖：Phase 3.2（pattern-matcher + 落地模式 JSON）、Phase 3.3（纠错叠加层）、Phase 4.1（Electron 通知）、Phase 4.2（邮件服务）。
