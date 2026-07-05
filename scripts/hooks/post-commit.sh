@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# hooks/post-commit.sh — V4.3.0 提交后处理
+# hooks/post-commit.sh — V4.4.0 提交后处理
 #
 # 被 .git/hooks/post-commit 调用 (通过 core.hooksPath 或委托脚本)。
 # 所有 session 共用同一份，修改即同步。

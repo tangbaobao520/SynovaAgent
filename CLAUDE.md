@@ -212,7 +212,7 @@ Agent，不是 ChatBot。驻扎企业，持续观测，主动发现，自动诊�
 **目标**: 成为组织诊断的 AWS。每个新客户、新行业、新数据源 → 加文件即可，不改代码。
 能文件化的必须文件化。不能文件化的必须有明确的扩展点。
 
-**流程约束: V4.3.0 — task brief 6字段 + 免疫系统 + plan.json + 8组物理阻断 + Plan-Actual闭合 + engine-core清零 + 时间戳顺序检查 + Q2排除项验证 + verify执行
+**流程约束: V4.4.0 — task brief 6字段 + 免疫系统 + plan.json + 8组物理阻断 + Plan-Actual闭合 + engine-core清零 + 时间戳顺序检查 + Q2排除项验证 + verify执行
 
 **数据流**:
 ```
@@ -285,9 +285,9 @@ evolution/ (SessionLearningEngine, FeedbackCollector, OntologyAdapter)
 
 ---
 
-## Loop Engineering V4.3.0 — L4 本体层图遍历哲学 + 免疫系统 + Plan-Actual 闭合
+## Loop Engineering V4.4.0 — 脚本版本统一 + check-brief-vs-code 路径修复
 
-> 2026-06-17 v2.5 → v3.0 → v3.1 → v3.5 → v3.6 → v3.7 → v3.8 → v3.9 → V4.1 → V4.1.1 → V4.1.2 → V4.2.2 → V4.2.3 → V4.2.4 → V4.2.5 → **V4.3.0 (2026-07-03)**。
+> 2026-06-17 v2.5 → v3.0 → v3.1 → v3.5 → v3.6 → v3.7 → v3.8 → v3.9 → V4.1 → V4.1.1 → V4.1.2 → V4.2.2 → V4.2.3 → V4.2.4 → V4.2.5 → V4.3.0 → **V4.4.0 (2026-07-05)**。
 >
 > **v3.6 的核心教训**：把需要语义理解的事交给 grep = 17 次折腾才提交成功。
 > **V3.9 的核心教训**：硬阻断 100% 有效，软机制 0% 有效。信息注入型检查对 agent 不可见。
@@ -340,6 +340,12 @@ evolution/ (SessionLearningEngine, FeedbackCollector, OntologyAdapter)
 > - **compute 函数签名标准化**：`(store: GraphStoreReader, teamId: string) => ComputeResult`，store 提供 queryNodes/queryEdges/traverse 三个图操作原语。
 > - **已知问题与演进方向**：Financial 节点 17 个 optionalProps 需拆分为语义子节点；5 条缺失边类型需补充。
 > - **全部版本号同步到 V4.3.0**
+>
+> ### V4.4.0 变更 (2026-07-05)
+> - **check-brief-vs-code 路径匹配修复**：`sentinel/\S+` → `src/sentinel/\S+`，避免从 `src/sentinel/types.ts` 提取 `sentinel/types.ts` 导致文件不存在误报。
+> - **层检查排除 scripts/**：`^scripts/workflow/` → `^scripts/`，避免修改 CI 脚本触发层不匹配误报。
+> - **版本号统一**：pre-commit-check.sh、task-start.sh、loop-context.sh、loop-score.sh、loop-sync.sh、post-merge-cleanup.sh、verify-incremental.sh 全部同步到 V4.4.0。
+> - **CLAUDE.md 同步到 V4.4.0**
 
 ### 设计哲学 (V3.7 核心修正)
 
