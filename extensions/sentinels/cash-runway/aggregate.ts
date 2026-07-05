@@ -20,7 +20,7 @@ export const cashRunwaySentinel = {
       try {
         if (traversal) {
           const result = traversal.traverse([teamId], ['FUNDS']);
-          if (result.nodes.length > 0) {
+          if (result.nodes[0]) {
             totalCash = result.nodes.reduce((s, n) => s + (Number(n.props.cash_balance) || Number(n.props.total_revenue) || 0), 0);
             monthlyBurn = result.nodes.reduce((s, n) => s + (Number(n.props.monthly_burn) || Number(n.props.total_cost) || 0), 0);
             receivable = result.nodes.reduce((s, n) => s + (Number(n.props.accounts_receivable) || 0), 0);
@@ -34,7 +34,7 @@ export const cashRunwaySentinel = {
       // 降级: queryNodes 旧路径
       if (!hasData) {
         const nodes = store.queryNodes('Financial', { teamId });
-        if (nodes.length === 0) { log.info({ teamId }, '无财务数据'); return []; }
+        if (!nodes[0]) { log.info({ teamId }, '无财务数据'); return []; }
         totalCash = nodes.reduce((s, n) => s + (Number(n.props.cashBalance) || 0), 0);
         monthlyBurn = nodes.reduce((s, n) => s + (Number(n.props.operatingExpenses) || Number(n.props.amount) || 0), 0);
         receivable = nodes.reduce((s, n) => s + (Number(n.props.accountsReceivable) || 0), 0);
