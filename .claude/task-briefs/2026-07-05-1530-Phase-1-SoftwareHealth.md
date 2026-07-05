@@ -44,7 +44,9 @@
 **做什么**: extensions/sentinels/software-health/aggregate.ts — 加 traversal? 第 3 参，加图遍历路径，保留 fallback
 
 **不做什么**:
-- 不改 3 个 compute 函数（纯函数，不改数据访问）
+- 不改 `extensions/sentinels/software-health/computes/saas-usage-score.ts`（纯函数）
+- 不改 `extensions/sentinels/software-health/computes/shadow-it-score.ts`（纯函数）
+- 不改 `extensions/sentinels/software-health/computes/integration-health.ts`（纯函数）
 - 不改 `src/sentinel/sentinel-loader.ts`
 - 不改 `extensions/sentinels/software-health/manifest.json`
 - 不改其他 aggregate
