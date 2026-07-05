@@ -51,7 +51,7 @@ LLM: providers/ (DeepSeek, OpenAI, Gateway)
 ## Q0: 定位 — 项目拼图 + 文件审计
 
 ### a) 项目拼图
-- [x] 纵向（改 L3 代码）— sentinel/types.ts + sentinel/sentinel-loader.ts
+- [x] 纵向（改 L3 代码）— src/sentinel/types.ts + src/sentinel/sentinel-loader.ts
 
 **系统**: 哨兵基础设施 — L3 洞察层。
 **本任务**: 在 SentinelContext 增加 traversal 字段，让 sentinel-loader.ts 构建 GraphTraversal 实例并注入到 aggregate 的 check() 调用中。
@@ -89,7 +89,7 @@ LLM: providers/ (DeepSeek, OpenAI, Gateway)
   - 铁律 7: 入口可触达（哨兵加载时通过 sentinel-loader） + 完整链路走通 + 结果可见
   - 铁律 24+31: traversal 构建失败 → log.warn + 不传 traversal（旧路径继续工作，降级但不静默）
   - 铁律 38: as any 零容忍 — GraphStore 转型用类型守卫
-  - memory/engine-core-split-fraud: 桥接文件事故教训 — 本任务是合法 L3→L4 调用，不建代理
+  - `memory/engine-core-bridge-files.md`: 桥接文件事故教训 — 本任务是合法 L3→L4 调用，不建代理
 
 ### b) 本任务执行约束
 
@@ -123,7 +123,7 @@ LLM: providers/ (DeepSeek, OpenAI, Gateway)
 
 ## Q3: 验收 — 入口 → 交互 → 结果
 
-**入口**: `sentinel-loader.ts` 的 `registerLoadedSentinels()` 在加载每个延伸哨兵时调用 check() wrapper。
+**入口**: `src/sentinel/sentinel-loader.ts` 的 `registerLoadedSentinels()` 在加载每个延伸哨兵时调用 check() wrapper。
 **处理**: wrapper 从 context.db 构建 GraphTraversal → 传入 `sentinelObj.check(store, teamId, traversal)`。
 **结果**: aggregate 的 check() 收到第 3 个参数 traversal（类型 `GraphTraversal | undefined`）。旧 aggregate 不受影响。
 
