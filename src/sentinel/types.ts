@@ -141,6 +141,10 @@ export interface SentinelContext {
   now: Date;
   /** 哨兵注册中心 (哨兵间可互查) */
   registry?: SentinelRegistry;
+  /** V4.3.0: 图遍历实例 (可选 — 旧 aggregate 不收也能工作) */
+  traversal?: import('../l4/graph-traversal').GraphTraversal;
+  /** V4.3.0: 团队 ID (上下文透传) */
+  teamId?: string;
 }
 
 // ═══ SentinelRegistry 接口 ═══

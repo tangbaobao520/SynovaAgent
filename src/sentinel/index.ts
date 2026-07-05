@@ -16,6 +16,9 @@ export type {
   SentinelCheckResult,
 } from './types';
 
+// V4.3.0: GraphTraversal 类型导出（供 aggregate 迁移使用）
+export type { GraphTraversal, TraversalResult, EdgeEval } from '../l4/graph-traversal';
+
 export {
   SentinelRegistryImpl,
   getSentinelRegistry,
