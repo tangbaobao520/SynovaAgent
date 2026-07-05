@@ -54,11 +54,11 @@ LLM: providers/ (DeepSeek, OpenAI, Gateway)
 - [x] 纵向（改 L3 代码）— src/sentinel/types.ts + src/sentinel/sentinel-loader.ts
 
 **系统**: 哨兵基础设施 — L3 洞察层。
-**本任务**: 在 SentinelContext 增加 traversal 字段，让 sentinel-loader.ts 构建 GraphTraversal 实例并注入到 aggregate 的 check() 调用中。
+**本任务**: 在 SentinelContext 增加 traversal 字段，让 src/sentinel/sentinel-loader.ts 构建 GraphTraversal 实例并注入到 aggregate 的 check() 调用中。
 - 当前: `sentinelObj.check(store, teamId)` 
 - 改为: `sentinelObj.check(store, teamId, traversal?)`
 - traversal 是第 3 个可选参数。JavaScript 忽略多余实参，旧 aggregate 不收它也能继续工作。
-- 本层现有模块: types.ts (接口)、sentinel-loader.ts (动态加载)、registry.ts (注册中心)、runner.ts (Cron 调度)
+- 本层现有模块: src/sentinel/types.ts (接口)、src/sentinel/sentinel-loader.ts (动态加载)、src/sentinel/registry.ts (注册中心)、src/sentinel/runner.ts (Cron 调度)
 
 **本任务是新增能力**（给已有接口加字段），不是替换或扩展已有模块。
 
