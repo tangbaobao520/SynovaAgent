@@ -2,6 +2,7 @@
  * competitive-dynamics/aggregate.ts — E3 竞争格局变化哨兵
  */
 import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeHhiIndex } from './computes/hhi-index';
 import { computeCompetitiveIntensity } from './computes/competitive-intensity';
 import { createLogger } from '@synova/logger';
@@ -15,14 +16,17 @@ interface GraphStoreReader {
 }
 
 export const competitiveDynamicsSentinel = {
-  async check(store: GraphStoreReader, teamId: string): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date();
     const checkedAt = now.toISOString();
     const findings: SentinelFinding[] = [];
 
     try {
-      const marketNodes = store.queryNodes('Market', { teamId });
-      const finNodes = store.queryNodes('FINANCIAL', { teamId });
+      let marketNodes: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
+      let finNodes: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
+      let usedTraversal = false;
+      try { if (traversal) { const r = traversal.traverse([teamId], ['PRODUCES', 'INFORMS']); if (r.nodes[0]) { marketNodes = r.nodes.filter(n => n.type === 'MARKET_OUTCOME' || n.type === 'COMPETITIVE_OUTCOME'); finNodes = r.nodes; usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
+      if (!usedTraversal) { marketNodes = store.queryNodes('Market', { teamId }); finNodes = store.queryNodes('FINANCIAL', { teamId }); }
 
       const competitors = [...marketNodes, ...finNodes].map(n => ({
         name: (n.props.name as string) || n.id,

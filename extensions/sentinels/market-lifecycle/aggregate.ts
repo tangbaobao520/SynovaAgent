@@ -2,6 +2,7 @@
  * market-lifecycle/aggregate.ts — E1 市场天花板与生命周期哨兵
  */
 import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeLifecycleStage } from './computes/lifecycle-stage';
 import { createLogger } from '@synova/logger';
 
@@ -14,14 +15,17 @@ interface GraphStoreReader {
 }
 
 export const marketLifecycleSentinel = {
-  async check(store: GraphStoreReader, teamId: string): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date();
     const checkedAt = now.toISOString();
     const findings: SentinelFinding[] = [];
+    let marketNodes: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
+    let finNodes: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
+    let usedTraversal = false;
 
     try {
-      const marketNodes = store.queryNodes('Market', { teamId });
-      const finNodes = store.queryNodes('FINANCIAL', { teamId });
+      try { if (traversal) { const r = traversal.traverse([teamId], ['PRODUCES', 'INFORMS']); if (r.nodes[0]) { marketNodes = r.nodes.filter(n => n.type === 'MARKET_OUTCOME'); finNodes = r.nodes; usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
+      if (!usedTraversal) { marketNodes = store.queryNodes('Market', { teamId }); finNodes = store.queryNodes('FINANCIAL', { teamId }); }
 
       if (marketNodes.length === 0 || finNodes.length === 0) {
         return [{
