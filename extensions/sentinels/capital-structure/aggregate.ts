@@ -2,6 +2,7 @@
  * capital-structure/aggregate.ts — F2 资本结构健康度哨兵
  */
 import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeDebtEquityRatio } from './computes/debt-equity-ratio';
 import { computeInterestCoverage } from './computes/interest-coverage';
 import { computeDebtStructure } from './computes/debt-structure';
@@ -11,10 +12,13 @@ const log = createLogger('sentinel/capital-structure');
 interface GraphStoreReader { queryNodes(type: string, f?: Record<string, unknown>, g?: string): Array<{ id: string; type: string; props: Record<string, unknown>; }>; }
 
 export const capitalStructureSentinel = {
-  async check(store: GraphStoreReader, teamId: string): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date(); const checkedAt = now.toISOString();
+    let finNodes: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
+    let usedTraversal = false;
     try {
-      const finNodes = store.queryNodes('FINANCIAL', { teamId });
+      try { if (traversal) { const r = traversal.traverse([teamId], ['FUNDS']); if (r.nodes[0]) { finNodes = r.nodes; usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
+      if (!usedTraversal) { finNodes = store.queryNodes('FINANCIAL', { teamId }); }
       const financials = finNodes.map(n => ({
         totalDebt: Number(n.props.totalDebt) || 0,
         shortTermDebt: Number(n.props.shortTermDebt) || Number(n.props.shortTermBorrowing) || 0,
