@@ -74,6 +74,8 @@
  # 如果 brief 的 Q2 没有任何文件声明，跳过此检查（允许纯文档/纯配置任务）
  if [ -z "$DECLARED_FILES" ]; then
    echo -e "  ${YELLOW}Q2 未声明具体文件路径 (可能是纯文档任务) — 跳过文件范围检查${RESET}"
+ elif [ -z "$ACTUAL_FILES" ]; then
+   echo -e "  ${YELLOW}无实际变更文件 (CI 检出场景) — 跳过文件范围检查${RESET}"
  else
    # 找出 ACTUAL 中有但 DECLARED 中没有的文件
    EXTRA_FILES=""
