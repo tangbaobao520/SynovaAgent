@@ -1,20 +1,24 @@
 /** profit-health aggregate — 利润健康哨兵。综合N个指标→1条Finding。V3.8 T3 */
 import type { GraphStoreReader, SentinelManifest } from '../../../src/sentinel/sentinel-loader';
 import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/profit-health');
 
 export const profitHealthSentinel = {
   manifest: null as SentinelManifest | null,
-  async check(store: GraphStoreReader, teamId: string): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const findings: SentinelFinding[] = [];
+    let finNodes: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
+    let usedTraversal = false;
     try {
-      const nodes = store.queryNodes('Financial', { teamId });
-      if (nodes.length === 0) { log.info({ teamId }, '无财务数据'); return []; }
+      try { if (traversal) { const r = traversal.traverse([teamId], ['FUNDS']); if (r.nodes[0]) { finNodes = r.nodes; usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
+      if (!usedTraversal) { finNodes = store.queryNodes('Financial', { teamId }); }
+      if (!finNodes[0]) { log.info({ teamId }, '无财务数据'); return []; }
 
-      const revenue = nodes.filter(n => n.props.financialType === 'revenue').reduce((s, n) => s + (Number(n.props.amount) || 0), 0);
-      const cost = nodes.filter(n => n.props.financialType === 'cost').reduce((s, n) => s + (Number(n.props.amount) || 0), 0);
+      const revenue = finNodes.filter(n => n.props.financialType === 'revenue').reduce((s, n) => s + (Number(n.props.amount) || 0), 0);
+      const cost = finNodes.filter(n => n.props.financialType === 'cost').reduce((s, n) => s + (Number(n.props.amount) || 0), 0);
       const profitMargin = revenue > 0 ? (revenue - cost) / revenue : 0;
       // 行业基准简单估算
       const benchmarkMargin = 0.25; // 通用基准25%

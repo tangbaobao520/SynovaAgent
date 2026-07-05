@@ -8,6 +8,7 @@
  */
 import type { GraphStoreReader, SentinelManifest } from '../../../src/sentinel/sentinel-loader';
 import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/cost-health');
@@ -15,12 +16,17 @@ const log = createLogger('sentinel/cost-health');
 export const costHealthSentinel = {
   manifest: null as SentinelManifest | null, // 由 loader 注入
 
-  async check(store: GraphStoreReader, teamId: string): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const findings: SentinelFinding[] = [];
+    let financialNodes: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
+    let usedTraversal = false;
 
     try {
+      try { if (traversal) { const r = traversal.traverse([teamId], ['FUNDS']); if (r.nodes[0]) { financialNodes = r.nodes; usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
+      if (!usedTraversal) { financialNodes = store.queryNodes('FINANCIAL', { teamId }); }
       // 1. 毛利率变化率
-      const financialNodes = store.queryNodes('FINANCIAL', { teamId });
+      const costNodes = financialNodes.filter(n => (n.props.financialType as string) === 'cost');
+      const revenueNodes = financialNodes.filter(n => (n.props.financialType as string) === 'revenue');
       const costNodes = financialNodes.filter(n => (n.props.financialType as string) === 'cost');
       const revenueNodes = financialNodes.filter(n => (n.props.financialType as string) === 'revenue');
 
