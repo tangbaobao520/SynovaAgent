@@ -56,7 +56,7 @@
  
  # 提取 Q2 中声明的文件路径 (支持: - `path/to/file` 和 `path/to/file` 格式)
  DECLARED_FILES=$(sed -n '/^## Q2:/,/^## Q3:/p' "$BRIEF" 2>/dev/null \
-   | grep -oP '(?<=[`-] )[\w./-]+\.(ts|tsx|js|json|sh|md|yaml|yml|html|css|py)' \
+   | grep -oP '(?<=\`)[\w./-]+\.(ts|tsx|js|json|sh|md|yaml|yml|html|css|py)' \
    | grep -v 'node_modules\|\.test\.' \
    | sort -u || true)
  
