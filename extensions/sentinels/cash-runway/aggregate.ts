@@ -34,7 +34,7 @@ export const cashRunwaySentinel = {
       // 降级: queryNodes 旧路径
       if (!hasData) {
         const nodes = store.queryNodes('Financial', { teamId });
-        if (nodes.length === 0) { log.info({ teamId }, '无财务数据'); return []; }
+        if (!nodes || nodes.length === 0) { log.info({ teamId }, '无财务数据'); return []; }
         totalCash = nodes.reduce((s, n) => s + (Number(n.props.cashBalance) || 0), 0);
         monthlyBurn = nodes.reduce((s, n) => s + (Number(n.props.operatingExpenses) || Number(n.props.amount) || 0), 0);
         receivable = nodes.reduce((s, n) => s + (Number(n.props.accountsReceivable) || 0), 0);
