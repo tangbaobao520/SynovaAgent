@@ -195,7 +195,7 @@ export async function registerLoadedSentinels(): Promise<{ registered: number; e
             const { createGraphTraversal } = await import('../l4/graph-traversal');
             // GraphStore 接口 check: 确保 store 有 queryNodes 方法
             if (typeof (store as { queryNodes?: unknown }).queryNodes === 'function') {
-              traversal = createGraphTraversal(store as unknown as import('../l4/graph-bridge').GraphStore);
+              traversal = createGraphTraversal(store as unknown as import('../l4/graph-traversal').GraphStoreReader);
             }
           } catch (err: unknown) {
             log.warn({ err }, 'GraphTraversal 构建失败 — 降级，不使用图遍历');

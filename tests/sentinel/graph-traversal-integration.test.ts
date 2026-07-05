@@ -72,8 +72,8 @@ describe('GraphTraversal construction from GraphStore', () => {
     expect(result.nodes.length).toBe(1);
     expect(result.nodes[0].id).toBe('activity-1');
     expect(result.nodes[0].type).toBe('activity/production');
-    expect(result.path).toContain('money-1');
     expect(result.path).toContain('activity-1');
+    expect(result.path).not.toContain('money-1'); // start node excluded from path
   });
 
   it('scanOutliers returns empty array when no nodes found', async () => {
