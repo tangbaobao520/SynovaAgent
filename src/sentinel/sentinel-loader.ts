@@ -186,10 +186,22 @@ export async function registerLoadedSentinels(): Promise<{ registered: number; e
         async check(context) {
           // 将 SentinelContext.db 作为 GraphStore 传给 aggregate
           const ctx = context as unknown as Record<string, unknown>;
-          const raw = await sentinelObj.check(
-            (context.db ?? {}) as Record<string, unknown>,
-            (ctx.teamId as string) || 'default',
-          );
+          const store = (context.db ?? {}) as Record<string, unknown>;
+          const teamId = (ctx.teamId as string) || 'default';
+
+          // V4.3.0: 从 store 构建 GraphTraversal 实例，作为第 3 参注入 aggregate
+          let traversal: import('../l4/graph-traversal').GraphTraversal | undefined;
+          try {
+            const { createGraphTraversal } = await import('../l4/graph-traversal');
+            // GraphStore 接口 check: 确保 store 有 queryNodes 方法
+            if (typeof (store as { queryNodes?: unknown }).queryNodes === 'function') {
+              traversal = createGraphTraversal(store as unknown as import('../l4/graph-bridge').GraphStore);
+            }
+          } catch (err: unknown) {
+            log.warn({ err }, 'GraphTraversal 构建失败 — 降级，不使用图遍历');
+          }
+
+          const raw = await sentinelObj.check(store, teamId, traversal);
           // 兼容两种返回格式: SentinelFinding[] 或 { findings: SentinelFinding[] }
           const findings: SentinelFinding[] = Array.isArray(raw) ? raw : ((raw as Record<string, unknown>)?.findings as SentinelFinding[]) || [];
           return { sentinelId: `sentinel-${manifest.name}`, ok: true, findings, durationMs: 0, checkedAt: new Date().toISOString() };
