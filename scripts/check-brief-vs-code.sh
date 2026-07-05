@@ -90,7 +90,7 @@ if [ -n "$LAYER" ]; then
     fi
   done
   QRY="${QRY%|}"  # 去掉末尾的 |
-  OUTSIDE=$(echo "$DIFF_ALL" | grep -vE "$QRY" | grep -vE '^\.claude/|^scripts/workflow/|^docs/|^tests/|\.md$|^tsconfig\.json|^\.github/|^package\.json|^package-lock\.json|^synova\.json|^vitest\.config' || true)
+  OUTSIDE=$(echo "$DIFF_ALL" | grep -vE "$QRY" | grep -vE '^\.claude/|^scripts/|^docs/|^tests/|\.md$|^tsconfig\.json|^\.github/|^package\.json|^package-lock\.json|^synova\.json|^vitest\.config' || true)
   if [ -n "$OUTSIDE" ]; then
     hard_check "声明 ${LAYER} 但改动了其他层" "$(echo "$OUTSIDE" | head -5)"
   else
