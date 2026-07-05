@@ -27,8 +27,6 @@ export const costHealthSentinel = {
       // 1. 毛利率变化率
       const costNodes = financialNodes.filter(n => (n.props.financialType as string) === 'cost');
       const revenueNodes = financialNodes.filter(n => (n.props.financialType as string) === 'revenue');
-      const costNodes = financialNodes.filter(n => (n.props.financialType as string) === 'cost');
-      const revenueNodes = financialNodes.filter(n => (n.props.financialType as string) === 'revenue');
 
       if (revenueNodes.length > 0 && costNodes.length > 0) {
         const revenue = (revenueNodes[0].props.amount as number) || 0;
