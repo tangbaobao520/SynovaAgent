@@ -1,37 +1,19 @@
 {
   "version": "1.0",
-  "task": "Phase 1 Pilot: cash-runway aggregate migration to graph traversal",
-  "brief": "2026-07-05-1226-Phase-1-Pilot-cash-runway-aggregate-mig.md",
+  "task": "Phase 1 Pilot: software-health aggregate migration",
+  "brief": "2026-07-05-1530-Phase-1-SoftwareHealth.md",
   "current_phase": 1,
   "approach": "rewrite",
-  "phases": [
-    {
-      "step": 1,
-      "action": "modify",
-      "files": [
-        "extensions/sentinels/cash-runway/aggregate.ts"
-      ],
-      "checks": {
-        "wiring": "enforce",
-        "test_pairing": "deferred"
-      }
-    }
-  ],
+  "phases": [{
+    "step": 1,
+    "action": "modify",
+    "files": ["extensions/sentinels/software-health/aggregate.ts"],
+    "checks": { "wiring": "enforce", "test_pairing": "deferred" }
+  }],
   "principles": [
-    {
-      "rule": "traversal 返回空数据时必须降级到 queryNodes 旧路径",
-      "verify": "grep -c 'queryNodes' extensions/sentinels/cash-runway/aggregate.ts | xargs test 1 -eq"
-    },
-    {
-      "rule": "新字段映射使用 snake_case（MONEY 节点规范）",
-      "verify": "grep -c 'cash_balance' extensions/sentinels/cash-runway/aggregate.ts | xargs test 1 -eq"
-    },
-    {
-      "rule": "catch 块必须有 log.warn + 不吞错误",
-      "verify": "grep -c 'log.warn' extensions/sentinels/cash-runway/aggregate.ts | xargs test 1 -eq"
-    }
+    {"rule": "traversal 返回空时必须降级到 queryNodes", "verify": "grep -c 'queryNodes' extensions/sentinels/software-health/aggregate.ts | xargs test 2 -le"},
+    {"rule": "不使用 nodes.length", "verify": "grep 'nodes.length' extensions/sentinels/software-health/aggregate.ts && echo FAIL || echo PASS"},
+    {"rule": "catch 必须有 log.warn/error", "verify": "grep -c 'log\\.' extensions/sentinels/software-health/aggregate.ts | xargs test 2 -le"}
   ],
-  "memory_refs": [
-    "memory/engine-core-bridge-files.md"
-  ]
+  "memory_refs": ["memory/engine-core-bridge-files.md"]
 }

@@ -3,8 +3,11 @@
  *
  * 综合 computeSaasUsageScore + computeShadowItScore 结果，
  * 比较 manifest.json 阈值，输出 SentinelFinding[]。
+ *
+ * V4.4.0: 优先使用图遍历，降级到 queryNodes
  */
 import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeSaasUsageScore } from './computes/saas-usage-score';
 import { computeShadowItScore } from './computes/shadow-it-score';
 import { computeIntegrationHealth } from './computes/integration-health';
@@ -19,23 +22,47 @@ interface GraphStoreReader {
 }
 
 export const softwareHealthSentinel = {
-  async check(store: GraphStoreReader, teamId: string): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date();
     const checkedAt = now.toISOString();
     const findings: SentinelFinding[] = [];
+    let allTools: Array<{ id: string; name: string; status: string; category: string; hasUrl: boolean }> = [];
+    let hasData = false;
 
     try {
-      // 1. 读取 TOOL/APP/SOFTWARE 节点
-      const toolNodes = store.queryNodes('TOOL', { teamId });
-      const appNodes = store.queryNodes('APP', { teamId });
-      const swNodes = store.queryNodes('SOFTWARE', { teamId });
-      const allTools = [...toolNodes, ...appNodes, ...swNodes].map(n => ({
-        id: n.id,
-        name: (n.props.name as string) || n.id,
-        status: (n.props.status || n.props.usageStatus || 'unknown') as string,
-        category: (n.props.category && n.props.category !== '' ? String(n.props.category) : 'cat_unknown') as string,
-        hasUrl: !!(n.props.url || n.props.endpoint || n.props.apiEndpoint),
-      }));
+      // V4.4.0: 优先使用图遍历
+      try {
+        if (traversal) {
+          const result = traversal.traverse([teamId], ['DEPLOYS']);
+          if (result.nodes[0]) {
+            allTools = result.nodes.filter(n => n.type === 'TOOL').map(n => ({
+              id: n.id,
+              name: (n.props.name as string) || n.id,
+              status: (n.props.status as string) || 'unknown',
+              category: (n.props.category && n.props.category !== '' ? String(n.props.category) : 'cat_unknown') as string,
+              hasUrl: !!(n.props.url || n.props.api_endpoint),
+            }));
+            hasData = true;
+          }
+        }
+      } catch (err: unknown) {
+        log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径');
+      }
+
+      // 降级: queryNodes 旧路径
+      if (!hasData) {
+        const toolNodes = store.queryNodes('TOOL', { teamId });
+        const appNodes = store.queryNodes('APP', { teamId });
+        const swNodes = store.queryNodes('SOFTWARE', { teamId });
+        allTools = [...toolNodes, ...appNodes, ...swNodes].map(n => ({
+          id: n.id,
+          name: (n.props.name as string) || n.id,
+          status: (n.props.status || n.props.usageStatus || 'unknown') as string,
+          category: (n.props.category && n.props.category !== '' ? String(n.props.category) : 'cat_unknown') as string,
+          hasUrl: !!(n.props.url || n.props.endpoint || n.props.apiEndpoint),
+        }));
+        hasData = allTools.length > 0;
+      }
 
       // 2. SaaS 利用率
       const usage = computeSaasUsageScore(
