@@ -15,6 +15,7 @@ import type { Sentinel, SentinelCheckResult } from './types';
 import type { Evidence } from '../evidence/types';
 import { getSentinelRegistry } from './registry';
 import { getBaselineStore } from './baseline-store';
+import { EscalationEngine, type EscalationRule } from '../services/escalation-engine';
 import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/runner');
@@ -121,6 +122,8 @@ export class SentinelRunner {
   private records = new Map<string, SentinelRunRecord[]>();
   private cronJobIds = new Map<string, string>();
   private totalRuns = 0;
+  /** G3: 升级链引擎 — 对接人忽略告警后自动升级到上级 */
+  readonly escalationEngine = new EscalationEngine();
 
   constructor(scheduler: CronScheduler, db: unknown) {
     this.scheduler = scheduler;
@@ -243,6 +246,32 @@ export class SentinelRunner {
       const criticalOrWarning = signals.filter(s => s.severity === 'critical' || s.severity === 'warning');
       if (criticalOrWarning.length > 0) {
         await this.dispatchSignalsToExperts(criticalOrWarning);
+      }
+
+      // G3: 升级链评估 — 对每个聚合信号检查是否需升级
+      for (const signal of signals) {
+        try {
+          // 查找该 signal 的忽略记录（简化: 首次评估无历史，后续由外部触发 recordIgnore）
+          const decision = this.escalationEngine.evaluate({
+            alertId: signal.id,
+            sentinelId: signal.sources?.[0]?.sentinelId ?? signal.id,
+            severity: signal.severity === 'critical' ? 'critical' as const
+              : signal.severity === 'warning' ? 'warning' as const
+              : 'info' as const,
+            firstIgnoredAt: null,
+            cumulativeIgnores: 0,
+            dataImproved: false,
+          });
+          if (decision?.shouldEscalate) {
+            log.warn({
+              signalId: signal.id,
+              escalateTo: decision.escalateTo,
+              reason: decision.reason,
+            }, '[runner] 升级链触发 — 需升级到上级');
+          }
+        } catch (err: unknown) {
+          log.warn({ err, signalId: signal.id }, '[runner] 升级链评估失败 — 非阻断');
+        }
       }
     } catch (err: unknown) {
       log.error({ err }, '[runner] 信号聚合失败');

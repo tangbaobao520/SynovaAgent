@@ -1,0 +1,35 @@
+{
+  "$id": "escalation-rules/default",
+  "version": 1,
+  "description": "默认升级规则 — 对接人连续忽略告警后自动升级到上级。数据改善才停，不是已读就停。",
+  "rules": [
+    {
+      "severity": "critical",
+      "ignoreDays": 3,
+      "escalateTo": "owner",
+      "channels": ["electron", "email"],
+      "description": "critical 告警被忽略 3 天 → 推送老板 Electron + 邮件"
+    },
+    {
+      "severity": "warning",
+      "ignoreDays": 7,
+      "escalateTo": "department_head",
+      "channels": ["electron"],
+      "description": "warning 告警被忽略 7 天 → 推送部门主管 Electron"
+    },
+    {
+      "severity": "warning",
+      "cumulativeIgnores": 3,
+      "escalateTo": "owner",
+      "channels": ["email"],
+      "description": "warning 累计忽略 3 次 → 推送老板邮件"
+    },
+    {
+      "severity": "info",
+      "cumulativeIgnores": 5,
+      "escalateTo": "liaison",
+      "channels": ["weekly_report"],
+      "description": "info 累计忽略 5 次 → 对接人周报汇总"
+    }
+  ]
+}
