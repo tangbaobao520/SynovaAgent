@@ -69,7 +69,7 @@
    | grep -E '\.(ts|tsx|js|json|sh|md|yaml|yml|html|css|py)$' \
    | grep -v 'node_modules\|\.test\.\|\.d\.ts\|package-lock\|\.claude/' \
    | sort -u || true)
- ACTUAL_FILES=$(echo -e "${ACTUAL_FILES_STAGED}\n${ACTUAL_FILES_UNSTAGED}" | sort -u | grep -v '^$')
+ ACTUAL_FILES=$(echo -e "${ACTUAL_FILES_STAGED}\n${ACTUAL_FILES_UNSTAGED}" | sort -u | grep -v '^$' || true)
  
  # 如果 brief 的 Q2 没有任何文件声明，跳过此检查（允许纯文档/纯配置任务）
  if [ -z "$DECLARED_FILES" ]; then
