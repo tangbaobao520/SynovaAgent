@@ -147,7 +147,7 @@ elif echo "$RELATION" | grep -qi "扩展"; then
 fi
 
 # 检查 brief 中列出的已有模块是否真实存在
-LISTED_MODULES=$(echo "$Q0B" | grep -oP 'expert/\S+|sentinel/\S+|extensions/\S+|knowledge/\S+|theory/\S+|skills/\S+' | tr -d '`' | head -5 || true)
+LISTED_MODULES=$(echo "$Q0B" | grep -oP 'src/(expert|sentinel|knowledge|theory|skills)/\S+|extensions/\S+' | tr -d '`' | head -5 || true)
 if [ -n "$LISTED_MODULES" ]; then
   MISSING=""
   while IFS= read -r mod; do
