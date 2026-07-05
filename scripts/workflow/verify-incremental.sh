@@ -149,7 +149,7 @@ if [ -n "$NEW_FILES" ]; then
   if [ -n "$UNWIRED" ]; then
     echo -e "${RED}[FAIL] 接线审计失败:${RESET}"
     echo -e "$UNWIRED"
-    echo "请在入口文件 (server.ts/routes/agent/) �?import 并调用�?
+    echo "请在入口文件 (server.ts/routes/agent/) 中 import 并调用"�?import 并调用�?
     exit 1
   fi
 fi
@@ -216,5 +216,5 @@ fi
 rm -f "$STATE_FILE"
 echo -e "${GREEN}[PASS] 增量验证全部通过 �?循环计数已重�?{RESET}"
 echo ""
-echo "如果修改了接口签名，请更�?task brief 的接口审计字段�?
+echo "如果修改了接口签名，请更新 task brief 的接口审计字段"�?task brief 的接口审计字段�?
 exit 0

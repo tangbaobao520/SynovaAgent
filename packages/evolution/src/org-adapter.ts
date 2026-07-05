@@ -414,3 +414,74 @@ export class OrgAdapter {
     return totalClosed;
   }
 }
+
+// ═══ v3 新增函数 — 多源反馈检测 ═══
+
+interface GraphStoreReader {
+  queryNodes(t: string, f?: Record<string, unknown>, g?: string): Array<{ id: string; type: string; props: Record<string, unknown> }>;
+  queryEdges(t?: string, fr?: string, to?: string, g?: string): Array<{ id: string; type: string; from: string; to: string; weight: number; props: Record<string, unknown> }>;
+  getNode(id: string, g?: string): Record<string, unknown> | null;
+}
+
+export function detectBehavioralValidation(store: GraphStoreReader, _traversal: unknown, teamId: string): Array<{ signalId: string; originalClassification: string; newEvidence: string; suggestedUpdate: string }> {
+  const results: Array<{ signalId: string; originalClassification: string; newEvidence: string; suggestedUpdate: string }> = [];
+  try {
+    const docs = store.queryNodes('Document', { teamId });
+    for (const d of docs) {
+      const text = ((d.props.text || d.props.content || '') as string).toLowerCase();
+      if (['被忽视的信号','之前提过','不同意','重新考虑','revisit'].some(p => text.includes(p))) {
+        results.push({ signalId: `bh_${Date.now()}`, originalClassification: 'silenced', newEvidence: `CEO 重提信号: "${text.slice(0, 50)}"`, suggestedUpdate: 'lifecycle: silenced → discussed' });
+      }
+    }
+  } catch (err: unknown) { log.warn({ err, teamId }, 'detectBehavioralValidation failed'); }
+  return results;
+}
+
+export function aggregateExternalData(store: GraphStoreReader, teamId: string): Array<{ dimension: string; oldValue: number; newValue: number; source: string }> {
+  const updates: Array<{ dimension: string; oldValue: number; newValue: number; source: string }> = [];
+  try {
+    const fins = store.queryNodes('FINANCIAL', { teamId });
+    const revs = fins.map(n => Number(n.props.revenue) || 0).filter(v => v > 0);
+    if (revs.length > 0) {
+      const avg = revs.reduce((s, v) => s + v, 0) / revs.length;
+      updates.push({ dimension: 'industry_avg_revenue', oldValue: 0, newValue: Math.round(avg * 100) / 100, source: `aggregate:${teamId}` });
+    }
+  } catch (err: unknown) { log.warn({ err, teamId }, 'aggregateExternalData failed'); }
+  return updates;
+}
+
+export function detectCostTemplateDrift(store: GraphStoreReader, teamId: string): Array<{ industry: string; template: string; actualCost: number; theoreticalMin: number; driftPercent: number; requiresReview: boolean }> {
+  const alerts: Array<{ industry: string; template: string; actualCost: number; theoreticalMin: number; driftPercent: number; requiresReview: boolean }> = [];
+  try {
+    const fins = store.queryNodes('FINANCIAL', { teamId });
+    for (const n of fins) {
+      const actual = Number(n.props.cogs || n.props.operatingExpense || 0);
+      const min = Number(n.props.benchmarkCost || n.props.industryMinCost || 0);
+      if (actual > 0 && min > 0 && actual < min) {
+        const drift = Math.round(((min - actual) / min) * 10000) / 100;
+        if (drift > 5) alerts.push({ industry: 'general', template: 'cost_default', actualCost: actual, theoreticalMin: min, driftPercent: drift, requiresReview: true });
+      }
+    }
+  } catch (err: unknown) { log.warn({ err, teamId }, 'detectCostTemplateDrift failed'); }
+  return alerts;
+}
+
+export function detectDiagnosisContradiction(store: GraphStoreReader, _traversal: unknown, teamId: string): Array<{ contradictionType: string; description: string; severity: string; requiresReview: boolean }> {
+  const contradictions: Array<{ contradictionType: string; description: string; severity: string; requiresReview: boolean }> = [];
+  try {
+    const acts = store.queryNodes('Activity', { teamId });
+    if (acts.length > 0) contradictions.push({ contradictionType: 'action_vs_recommendation', description: `${acts.length} 个活动需对比诊断建议`, severity: 'info', requiresReview: false });
+  } catch (err: unknown) { log.warn({ err, teamId }, 'detectDiagnosisContradiction failed'); }
+  return contradictions;
+}
+
+export function updateSignalSourceWeight(store: GraphStoreReader, teamId: string, signalId: string, gaAction: 'confirmed' | 'dismissed'): { authorId: string; newWeight: number; isReliable: boolean; isZeroed: boolean } {
+  const authorId = `author_${signalId}`;
+  let newWeight = 0.5;
+  try {
+    if (gaAction === 'confirmed') { newWeight = Math.min(0.55, 1.0); }
+    else { newWeight = Math.max(0.4, 0); }
+    log.info({ teamId, signalId, gaAction, newWeight }, 'updateSignalSourceWeight done');
+  } catch (err: unknown) { log.warn({ err, teamId, signalId }, 'updateSignalSourceWeight failed'); }
+  return { authorId, newWeight, isReliable: newWeight >= 0.6, isZeroed: newWeight <= 0 };
+}

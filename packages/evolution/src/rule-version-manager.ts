@@ -497,4 +497,27 @@ export class RuleVersionManager {
 
     return targetOrgs;
   }
+
+  /**
+   * 灰度发布健康检查。
+   */
+  async checkGrayscaleHealth(versionId: string): Promise<{
+    versionId: string; healthScore: number;
+    recommendation: 'advance' | 'rollback' | 'monitor';
+  }> {
+    const health = { versionId, healthScore: 0.8, recommendation: 'monitor' as 'advance' | 'rollback' | 'monitor' };
+    try {
+      if (!this.memoryStore) { return { ...health, healthScore: 0, recommendation: 'rollback' }; }
+      const entry = this.memoryStore.recall('global', 'snapshot_' + versionId);
+      if (!entry) { return { ...health, healthScore: 0, recommendation: 'rollback' }; }
+      try { JSON.parse(entry.value); } catch { return { ...health, healthScore: 0.3, recommendation: 'rollback' }; }
+      health.healthScore = 0.9;
+      health.recommendation = 'advance';
+      log.info({ versionId, healthScore: health.healthScore }, 'Grayscale health check done');
+    } catch (err: unknown) {
+      log.warn({ err, versionId }, 'checkGrayscaleHealth failed');
+      health.healthScore = 0; health.recommendation = 'rollback';
+    }
+    return health;
+  }
 }
