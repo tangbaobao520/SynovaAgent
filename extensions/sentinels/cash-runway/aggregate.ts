@@ -1,24 +1,48 @@
 /** cash-runway aggregate — 现金流哨兵。综合N个指标→1条Finding。V3.8 T3 */
 import type { GraphStoreReader, SentinelManifest } from '../../../src/sentinel/sentinel-loader';
 import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/cash-runway');
 
 export const cashRunwaySentinel = {
   manifest: null as SentinelManifest | null,
-  async check(store: GraphStoreReader, teamId: string): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const findings: SentinelFinding[] = [];
     try {
-      const nodes = store.queryNodes('Financial', { teamId });
-      if (nodes.length === 0) { log.info({ teamId }, '无财务数据'); return []; }
+      let totalCash = 0;
+      let monthlyBurn = 0;
+      let receivable = 0;
+      let hasData = false;
 
-      const totalCash = nodes.reduce((s, n) => s + (Number(n.props.cashBalance) || 0), 0);
-      const monthlyBurn = nodes.reduce((s, n) => s + (Number(n.props.operatingExpenses) || Number(n.props.amount) || 0), 0) / Math.max(nodes.length, 1);
+      // V4.3.0: 优先使用图遍历
+      try {
+        if (traversal) {
+          const result = traversal.traverse([teamId], ['FUNDS']);
+          if (result.nodes.length > 0) {
+            totalCash = result.nodes.reduce((s, n) => s + (Number(n.props.cash_balance) || Number(n.props.total_revenue) || 0), 0);
+            monthlyBurn = result.nodes.reduce((s, n) => s + (Number(n.props.monthly_burn) || Number(n.props.total_cost) || 0), 0) / Math.max(result.nodes.length, 1);
+            receivable = result.nodes.reduce((s, n) => s + (Number(n.props.accounts_receivable) || 0), 0);
+            hasData = true;
+          }
+        }
+      } catch (err: unknown) {
+        log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径');
+      }
+
+      // 降级: queryNodes 旧路径
+      if (!hasData) {
+        const nodes = store.queryNodes('Financial', { teamId });
+        if (nodes.length === 0) { log.info({ teamId }, '无财务数据'); return []; }
+        totalCash = nodes.reduce((s, n) => s + (Number(n.props.cashBalance) || 0), 0);
+        monthlyBurn = nodes.reduce((s, n) => s + (Number(n.props.operatingExpenses) || Number(n.props.amount) || 0), 0) / Math.max(nodes.length, 1);
+        receivable = nodes.reduce((s, n) => s + (Number(n.props.accountsReceivable) || 0), 0);
+      }
+
       const runwayMonths = monthlyBurn > 0 ? totalCash / monthlyBurn : (totalCash > 0 ? Infinity : 0);
       const display = Number.isFinite(runwayMonths) ? `${runwayMonths.toFixed(1)}个月` : '充足';
       // 应收逾期率
-      const receivable = nodes.reduce((s, n) => s + (Number(n.props.accountsReceivable) || 0), 0);
       const overdueRate = totalCash > 0 ? receivable / totalCash : 0;
 
       if (this.manifest) {
@@ -33,7 +57,7 @@ export const cashRunwaySentinel = {
         }
       }
       if (findings.length) log.info({ teamId, count: findings.length }, '现金流检查完成');
-    } catch (err: any) { log.warn({ err, teamId }, '现金流检查失败'); }
+    } catch (err: unknown) { log.warn({ err, teamId }, '现金流检查失败'); }
     return findings;
   },
 };
