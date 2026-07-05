@@ -1,19 +1,19 @@
 {
   "version": "1.0",
-  "task": "Phase 1 Pilot: software-health aggregate migration",
-  "brief": "2026-07-05-1530-Phase-1-SoftwareHealth.md",
+  "task": "Phase 1 Pilot: unit-economics aggregate migration",
+  "brief": "2026-07-05-1608-Phase-1-UnitEconomics.md",
   "current_phase": 1,
   "approach": "rewrite",
   "phases": [{
     "step": 1,
     "action": "modify",
-    "files": ["extensions/sentinels/software-health/aggregate.ts"],
+    "files": ["extensions/sentinels/unit-economics/aggregate.ts"],
     "checks": { "wiring": "enforce", "test_pairing": "deferred" }
   }],
   "principles": [
-    {"rule": "traversal 返回空时必须降级到 queryNodes", "verify": "grep -c 'queryNodes' extensions/sentinels/software-health/aggregate.ts | xargs test 2 -le"},
-    {"rule": "不使用 nodes.length", "verify": "grep 'nodes.length' extensions/sentinels/software-health/aggregate.ts && echo FAIL || echo PASS"},
-    {"rule": "catch 必须有 log.warn/error", "verify": "grep -c 'log\\.' extensions/sentinels/software-health/aggregate.ts | xargs test 2 -le"}
+    {"rule": "traversal 返回空时必须降级到 queryNodes", "verify": "grep -c 'queryNodes' extensions/sentinels/unit-economics/aggregate.ts | xargs test 2 -le"},
+    {"rule": "不使用 nodes.length", "verify": "grep 'nodes.length' extensions/sentinels/unit-economics/aggregate.ts && echo FAIL || echo PASS"},
+    {"rule": "catch 必须有 log.warn/error", "verify": "grep -c 'log\\.' extensions/sentinels/unit-economics/aggregate.ts | xargs test 2 -le"}
   ],
   "memory_refs": ["memory/engine-core-bridge-files.md"]
 }

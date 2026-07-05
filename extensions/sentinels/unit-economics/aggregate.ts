@@ -11,6 +11,7 @@
  *   ⑦ break-even           — 盈亏平衡分析 (P0新增)
  */
 import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeLtvCac } from './computes/ltv-cac-ratio';
 import { computeUnitMargin } from './computes/gross-margin-per-unit';
 import { computeVariableCosts } from './computes/variable-costs';
@@ -27,13 +28,32 @@ interface GraphStoreReader {
 }
 
 export const unitEconomicsSentinel = {
-  async check(store: GraphStoreReader, teamId: string): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date(); const checkedAt = now.toISOString();
     const findings: SentinelFinding[] = [];
+    let usedTraversal = false;
 
     try {
-      const finNodes = store.queryNodes('FINANCIAL', { teamId });
-      const clientNodes = store.queryNodes('CLIENT', { teamId });
+      // V4.4.0: 优先使用图遍历
+      let finNodes: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
+      let clientNodes: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
+      try {
+        if (traversal) {
+          const finResult = traversal.traverse([teamId], ['FUNDS']);
+          const clientResult = traversal.traverse([teamId], ['DEPLOYS']);
+          if (finResult.nodes[0] || clientResult.nodes[0]) {
+            finNodes = finResult.nodes;
+            clientNodes = clientResult.nodes.filter(n => n.type === 'CLIENT');
+            usedTraversal = true;
+          }
+        }
+      } catch (err: unknown) {
+        log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径');
+      }
+      if (!usedTraversal) {
+        finNodes = store.queryNodes('FINANCIAL', { teamId });
+        clientNodes = store.queryNodes('CLIENT', { teamId });
+      }
 
       const fin = finNodes.map(n => ({
         customerLifetimeValue: Number(n.props.customerLifetimeValue) || Number(n.props.ltv) || 0,
