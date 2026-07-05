@@ -1,13 +1,17 @@
 import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeModelCoherence } from './computes/model-consistency-score';
 import { createLogger } from '@synova/logger';
 const log = createLogger('sentinel/bizmodel-coherence');
 interface GraphStoreReader { queryNodes(t: string, f?: Record<string, unknown>, g?: string): Array<{ id: string; type: string; props: Record<string, unknown> }>; }
 export const businessModelCoherenceSentinel = {
-  async check(store: GraphStoreReader, teamId: string): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date(); const checkedAt = now.toISOString();
+    let allNodes: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
+    let usedTraversal = false;
     try {
-      const allNodes = (store.queryNodes('BusinessModel', { teamId }) || []).concat(store.queryNodes('Goal', { teamId })).concat(store.queryNodes('Channel', { teamId })).concat(store.queryNodes('Capability', { teamId })).concat(store.queryNodes('FINANCIAL', { teamId }));
+      try { if (traversal) { const r = traversal.traverse([teamId], ['FUNDS', 'DEPLOYS', 'PRODUCES']); if (r.nodes[0]) { allNodes = r.nodes; usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
+      if (!usedTraversal) { allNodes = (store.queryNodes('BusinessModel', { teamId }) || []).concat(store.queryNodes('Goal', { teamId })).concat(store.queryNodes('Channel', { teamId })).concat(store.queryNodes('Capability', { teamId })).concat(store.queryNodes('FINANCIAL', { teamId })); }
       const r = computeModelCoherence(allNodes);
       log.debug({ coherence: r.score }, '商业模式一致性计算完成');
       if (r.score < 0.2) return [{ id: `i7-crit-${now.getTime()}`, severity: 'critical', title: `商业模式一致性低 (${(r.score*100).toFixed(0)}%)`, description: '价值主张-收入-成本结构存在明显不一致。', evidence: [`一致性: ${(r.score*100).toFixed(0)}%`, ...r.signals], suggestion: '审视核心价值主张与收入模式的匹配度。', detectedAt: checkedAt }];

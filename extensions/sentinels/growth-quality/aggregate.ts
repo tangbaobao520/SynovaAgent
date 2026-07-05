@@ -2,6 +2,7 @@
  * growth-quality/aggregate.ts — F4 增长质量指数哨兵
  */
 import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeCashConversionRate } from './computes/cash-conversion-rate';
 import { computeOrganicGrowthPct } from './computes/organic-growth-pct';
 import { createLogger } from '@synova/logger';
@@ -10,10 +11,13 @@ const log = createLogger('sentinel/growth-quality');
 interface GraphStoreReader { queryNodes(type: string, f?: Record<string, unknown>, g?: string): Array<{ id: string; type: string; props: Record<string, unknown>; }>; }
 
 export const growthQualitySentinel = {
-  async check(store: GraphStoreReader, teamId: string): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date(); const checkedAt = now.toISOString();
+    let finNodes: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
+    let usedTraversal = false;
     try {
-      const finNodes = store.queryNodes('FINANCIAL', { teamId });
+      try { if (traversal) { const r = traversal.traverse([teamId], ['FUNDS', 'PRODUCES']); if (r.nodes[0]) { finNodes = r.nodes; usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
+      if (!usedTraversal) { finNodes = store.queryNodes('FINANCIAL', { teamId }); }
       const financials = finNodes.map(n => ({
         operatingCashFlow: Number(n.props.operatingCashFlow) || 0,
         netIncome: Number(n.props.netIncome) || Number(n.props.profit) || 0,

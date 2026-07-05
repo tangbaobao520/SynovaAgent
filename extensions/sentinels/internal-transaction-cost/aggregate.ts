@@ -1,15 +1,19 @@
 import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeTransactionCostTrend } from './computes/transaction-cost-trend';
 import { createLogger } from '@synova/logger';
 const log = createLogger('sentinel/transaction-cost');
 interface GraphStoreReader { queryNodes(t: string, f?: Record<string, unknown>, g?: string): Array<{ id: string; type: string; props: Record<string, unknown> }>; }
 export const internalTransactionCostSentinel = {
-  async check(store: GraphStoreReader, teamId: string): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date(); const checkedAt = now.toISOString();
+    let fin: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
+    let teams: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
+    let events: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
+    let usedTraversal = false;
     try {
-      const fin = store.queryNodes('FINANCIAL', { teamId });
-      const teams = store.queryNodes('Team', { teamId });
-      const events = store.queryNodes('Event', { teamId });
+      try { if (traversal) { const r = traversal.traverse([teamId], ['FUNDS', 'DEPLOYS', 'SIGNAL_TRANSMITS']); if (r.nodes[0]) { fin = r.nodes; teams = r.nodes.filter(n => n.type === 'TEAM'); events = r.nodes.filter(n => n.type === 'EVENT'); usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
+      if (!usedTraversal) { fin = store.queryNodes('FINANCIAL', { teamId }); teams = store.queryNodes('Team', { teamId }); events = store.queryNodes('Event', { teamId }); }
       const totalCost = fin.reduce((s, n) => s + (Number(n.props.totalCost) || Number(n.props.cost) || 0), 0);
       const adminCost = fin.reduce((s, n) => s + (Number(n.props.adminCost) || Number(n.props.adminExpense) || 0), 0);
       const r = computeTransactionCostTrend({ totalCost, adminCost, teamCount: teams.length, eventCount: events.length, previousAdminCost: adminCost * 0.9, previousTotalCost: totalCost * 0.9 });
