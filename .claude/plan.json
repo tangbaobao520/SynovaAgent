@@ -1,21 +1,27 @@
 {
   "version": "1.0",
-  "task": "Phase 3.2",
-  "brief": "task-briefs\\2026-07-03-0306-Phase-32-.md",
   "current_phase": 1,
-  "approach": "rewrite",
   "phases": [
     {
       "step": 1,
-      "action": "create+modify",
-      "description": "correction+pattern+plan",
+      "action": "create",
       "files": [
-        "src/routes/ga-corrections.ts",
-        "src/l4/agent-memory-store.ts",
-        "extensions/implementation-patterns/info-distortion.json",
-        "src/services/pattern-matcher.ts",
-        "electron-renderer/src/components/RightPanel.tsx",
-        "src/server.ts"
+        "src/l3/tool-guard.ts",
+        "extensions/frameworks/fts5-cjk-tokenizer.json",
+        "tests/fixtures/jsonl-runner.ts",
+        "tests/fixtures/jsonl/sample-diagnosis.jsonl",
+        "tests/l3/tool-guard.test.ts"
+      ],
+      "checks": {
+        "wiring": "enforce",
+        "test_pairing": "enforce"
+      }
+    },
+    {
+      "step": 2,
+      "action": "wire",
+      "files": [
+        "src/agent/tool-loop-executor.ts"
       ],
       "checks": {
         "wiring": "enforce",
@@ -23,15 +29,26 @@
       }
     }
   ],
+  "memory_refs": [
+    "memory/stub-implementation-pattern.md",
+    "memory/plan-actual-closure.md"
+  ],
   "principles": [
     {
-      "rule": "纠错写入 AgentMemoryStore",
-      "verify": "grep -rn ga_correction src/routes/ga-corrections.ts"
+      "rule": "ToolGuard 必须与 ToolGuardrails 独立，不桥接不继承",
+      "reason": "ToolGuardrails 在 L2 且 API 不匹配，新建 L3 ToolGuard 不走 import 桥接(铁律46)",
+      "verify": "grep -rn 'ToolGuardrails' src/l3/tool-guard.ts"
     },
     {
-      "rule": "落地模式 JSON",
-      "verify": "grep -rn schema extensions/implementation-patterns/info-distortion.json"
+      "rule": "ToolGuard 在 tool-loop-executor.ts 中替换 guardrails.check() 调用",
+      "reason": "文档要求 L3 守卫接管工具调用安全，L2 不再直接调用 ToolGuardrails",
+      "verify": "grep -c 'toolGuard.beforeCall' src/agent/tool-loop-executor.ts && test $(grep -c 'toolGuard.beforeCall' src/agent/tool-loop-executor.ts) -eq 2"
+    },
+    {
+      "rule": "FTS5 配置是纯 JSON，零 TS 改动",
+      "reason": "文件驱动：改配置不改代码",
+      "verify": "grep -rn 'fts5.*cjk' src/ --include='*.ts' 2>/dev/null; test $? -eq 1"
     }
   ],
-  "memory_refs": []
+  "approach": "rewrite"
 }

@@ -1,0 +1,19 @@
+{
+  "$id": "context-strategy/default",
+  "version": 1,
+  "maxTokens": 8000,
+  "triggers": {
+    "tokenThreshold": 6400,
+    "messageCountThreshold": 40
+  },
+  "retention": {
+    "keepSystemPrompt": true,
+    "keepLastNMessages": 10,
+    "keepExpertConclusions": true,
+    "keepSentinelFindings": true
+  },
+  "fallback": {
+    "whenLLMUnavailable": "truncate_oldest",
+    "whenTimeout": "skip_compression"
+  }
+}

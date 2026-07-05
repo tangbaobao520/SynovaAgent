@@ -1,0 +1,34 @@
+{
+  "$id": "fts5-cjk-tokenizer/default",
+  "version": 1,
+  "description": "CJK 全文搜索分词器配置 — SQLite FTS5 + 自定义 tokenizer",
+  "tokenizer": {
+    "type": "cjk",
+    "minTokenLength": 2,
+    "maxTokenLength": 16,
+    "removePunctuation": true,
+    "normalizeWidth": true,
+    "normalizeCase": true,
+    "stopWords": [
+      "的", "了", "在", "是", "我", "有", "和", "就", "不", "人",
+      "都", "一", "一个", "上", "也", "很", "到", "说", "要", "去",
+      "你", "会", "着", "没有", "看", "好", "自己", "这", "他", "她",
+      "它", "们", "那", "什么", "怎么", "如何", "为", "与", "及", "等"
+    ]
+  },
+  "index": {
+    "contentColumns": ["title", "content", "summary"],
+    "prefixLengths": [2, 3, 4],
+    "languageIdColumn": "lang",
+    "contentRowIdColumn": "rowid"
+  },
+  "query": {
+    "defaultMode": "phrase",
+    "boostTitle": 3.0,
+    "boostSummary": 1.5,
+    "maxResults": 50,
+    "highlightBefore": "<mark>",
+    "highlightAfter": "</mark>",
+    "highlightEllipsis": "…"
+  }
+}
