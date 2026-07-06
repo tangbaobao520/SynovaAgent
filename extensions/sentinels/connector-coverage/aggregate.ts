@@ -1,12 +1,14 @@
 import type { SentinelFinding } from "../../../src/sentinel/types";
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeConnectorCoverage } from "./computes/compute-connector-coverage";
 import { createLogger } from "@synova/logger";
 const log = createLogger("sentinel/connector-coverage");
 interface GSR { queryNodes(t:string,f?:Record<string,unknown>,g?:string): Array<{id:string;type:string;props:Record<string,unknown>}> }
 export const ConnectorCoverageSentinel = {
-  async check(s: GSR, tid: string): Promise<SentinelFinding[]> {
+  async check(s: GSR, tid: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date(); const ca = now.toISOString();
     try {
+      if (traversal) { const r = traversal.traverse([tid], ['DEPLOYS']); if (!r.nodes[0]) return []; }
       const nodes = s.queryNodes("Tool",{tid});
       const processes = nodes.map(n => ({
         name: n.id,

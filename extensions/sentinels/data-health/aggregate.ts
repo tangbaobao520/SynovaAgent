@@ -5,6 +5,7 @@
  * 比较 manifest.json 阈值，输出 SentinelFinding[]。
  */
 import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeDataReadiness } from './computes/data-readiness-score';
 import { computeDataSiloScore } from './computes/data-silo-score';
 import type { DataFlowEdge } from './computes/data-silo-score';
@@ -19,12 +20,13 @@ interface GraphStoreReader {
 }
 
 export const dataHealthSentinel = {
-  async check(store: GraphStoreReader, teamId: string): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date();
     const checkedAt = now.toISOString();
     const findings: SentinelFinding[] = [];
 
     try {
+      if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (!r.nodes[0]) return []; }
       // 1. 读取所有节点（数据就绪度）
       const allNodes = store.queryNodes('ALL', { teamId });
       const readiness = computeDataReadiness(allNodes);

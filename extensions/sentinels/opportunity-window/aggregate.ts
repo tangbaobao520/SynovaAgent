@@ -2,6 +2,7 @@
  * opportunity-window/aggregate.ts — E2 结构性机会窗口哨兵
  */
 import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeOpportunityWindowScore } from './computes/opportunity-window-score';
 import { createLogger } from '@synova/logger';
 
@@ -14,12 +15,13 @@ interface GraphStoreReader {
 }
 
 export const opportunityWindowSentinel = {
-  async check(store: GraphStoreReader, teamId: string): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date();
     const checkedAt = now.toISOString();
     const findings: SentinelFinding[] = [];
 
     try {
+      if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (!r.nodes[0]) return []; }
       const eventNodes = store.queryNodes('Event', { teamId });
       const toolNodes = store.queryNodes('Tool', { teamId });
 

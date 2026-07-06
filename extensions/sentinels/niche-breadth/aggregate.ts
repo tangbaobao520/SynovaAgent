@@ -1,12 +1,14 @@
 import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeLevinsBreadth } from './computes/levins-breadth';
 import { createLogger } from '@synova/logger';
 const log = createLogger('sentinel/niche-breadth');
 interface GraphStoreReader { queryNodes(t: string, f?: Record<string, unknown>, g?: string): Array<{ id: string; type: string; props: Record<string, unknown> }>; }
 export const nicheBreadthSentinel = {
-  async check(store: GraphStoreReader, teamId: string): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date(); const checkedAt = now.toISOString();
     try {
+      if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (!r.nodes[0]) return []; }
       const clientNodes = store.queryNodes('Client', { teamId });
       const locationNodes = store.queryNodes('Location', { teamId });
       const marketNodes = store.queryNodes('Market', { teamId });

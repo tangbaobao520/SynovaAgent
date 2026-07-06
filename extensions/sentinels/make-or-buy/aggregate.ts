@@ -1,12 +1,14 @@
 import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeMakeOrBuyScore } from './computes/make-or-buy-score';
 import { createLogger } from '@synova/logger';
 const log = createLogger('sentinel/make-or-buy');
 interface GraphStoreReader { queryNodes(t: string, f?: Record<string, unknown>, g?: string): Array<{ id: string; type: string; props: Record<string, unknown> }>; }
 export const makeOrBuySentinel = {
-  async check(store: GraphStoreReader, teamId: string): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date(); const checkedAt = now.toISOString();
     try {
+      if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (!r.nodes[0]) return []; }
       const capNodes = store.queryNodes('Capability', { teamId });
       const caps = capNodes.map(n => ({ category: (n.props.category as string) || 'supporting', inHouse: n.props.inHouse !== false }));
       const r = computeMakeOrBuyScore(caps);
