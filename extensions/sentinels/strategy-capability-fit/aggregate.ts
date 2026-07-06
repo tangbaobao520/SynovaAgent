@@ -1,4 +1,5 @@
 import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeStrategyCapabilityFit } from './computes/compute-strategy-capability-fit';
 import { createLogger } from '@synova/logger';
 
@@ -12,11 +13,12 @@ interface GraphStoreReader {
 
 /** S1: 战略-能力一致性。读取 Goal + Capability 节点评估匹配度。 */
 export const strategyCapabilityFitSentinel = {
-  async check(store: GraphStoreReader, teamId: string): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date();
     const checkedAt = now.toISOString();
 
     try {
+      if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (!r.nodes[0]) return []; }
       const goalNodes = store.queryNodes('Goal', { teamId });
       const capNodes = store.queryNodes('Capability', { teamId });
 

@@ -1,12 +1,14 @@
 import type { SentinelFinding } from "../../../src/sentinel/types";
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeAiEcosystemFit } from "./computes/compute-ai-ecosystem-fit";
 import { createLogger } from "@synova/logger";
 const log = createLogger("sentinel/ai-ecosystem-fit");
 interface GSR { queryNodes(t:string,f?:Record<string,unknown>,g?:string): Array<{id:string;type:string;props:Record<string,unknown>}> }
 export const AiEcosystemFitSentinel = {
-  async check(s: GSR, tid: string): Promise<SentinelFinding[]> {
+  async check(s: GSR, tid: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date(); const ca = now.toISOString();
     try {
+      if (traversal) { const r = traversal.traverse([tid], ['DEPLOYS']); if (!r.nodes[0]) return []; }
       const tools = s.queryNodes("Tool",{tid});
       const aiApis = tools.filter(t => t.props.aiEnabled === true || (t.props.protocol as string || '')?.includes('ai'));
       const aiPlatforms = [...new Set(tools.filter(t => t.props.platform).map(t => t.props.platform as string))];

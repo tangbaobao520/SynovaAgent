@@ -1,4 +1,5 @@
 import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeResourceMisallocation } from './computes/compute-resource-misallocation';
 import { createLogger } from '@synova/logger';
 
@@ -11,11 +12,12 @@ interface GraphStoreReader {
 }
 
 export const resourceMisallocationSentinel = {
-  async check(store: GraphStoreReader, teamId: string): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date();
     const checkedAt = now.toISOString();
 
     try {
+      if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (!r.nodes[0]) return []; }
       const goalNodes = store.queryNodes('Goal', { teamId });
       const personNodes = store.queryNodes('Person', { teamId });
       const finNodes = store.queryNodes('FINANCIAL', { teamId });

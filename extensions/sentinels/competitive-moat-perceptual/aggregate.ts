@@ -1,13 +1,15 @@
 import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeBrandPremium } from './computes/brand-premium';
 import { computeCustomerLoyalty } from './computes/customer-loyalty';
 import { createLogger } from '@synova/logger';
 const log = createLogger('sentinel/moat-perceptual');
 interface GraphStoreReader { queryNodes(t: string, f?: Record<string, unknown>, g?: string): Array<{ id: string; type: string; props: Record<string, unknown> }>; }
 export const competitiveMoatPerceptualSentinel = {
-  async check(store: GraphStoreReader, teamId: string): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date(); const checkedAt = now.toISOString();
     try {
+      if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (!r.nodes[0]) return []; }
       const productNodes = store.queryNodes('Product', { teamId });
       const clientNodes = store.queryNodes('Client', { teamId });
       const products = productNodes.map(n => ({ name: (n.props.name as string) || n.id, price: Number(n.props.price) || 0, category: (n.props.category as string) || 'default' }));

@@ -1,4 +1,5 @@
 import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeRoutineMutation } from './computes/compute-routine-mutation';
 import { createLogger } from '@synova/logger';
 
@@ -11,11 +12,12 @@ interface GraphStoreReader {
 }
 
 export const routineMutationSentinel = {
-  async check(store: GraphStoreReader, teamId: string): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date();
     const checkedAt = now.toISOString();
 
     try {
+      if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (!r.nodes[0]) return []; }
       const processNodes = store.queryNodes('Process', { teamId });
       const eventNodes = store.queryNodes('Event', { teamId });
 

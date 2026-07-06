@@ -5,6 +5,7 @@
  */
 import { checkKeyPersonRisk } from '../../../src/l3/key-person-risk';
 import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 
 interface GraphStoreReader {
   queryNodes(type: string, filters?: Record<string, unknown>, graph?: string): Array<{
@@ -13,7 +14,7 @@ interface GraphStoreReader {
 }
 
 export const keyPersonRiskSentinel = {
-  async check(store: GraphStoreReader, teamId: string): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const result = checkKeyPersonRisk(store, teamId);
     return result.findings;
   },
