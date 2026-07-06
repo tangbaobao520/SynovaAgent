@@ -48,10 +48,17 @@ export const competitiveDynamicsSentinel = {
         }
       }
 
+      // 从 marketNodes 中提取竞争动态数据
+      const recentEntries = marketNodes.reduce((s, n) => s + (Number(n.props.recentEntries) || 0), 0);
+      const recentExits = marketNodes.reduce((s, n) => s + (Number(n.props.recentExits) || 0), 0);
+      const marketGrowth = marketNodes.length > 0
+        ? marketNodes.reduce((s, n) => s + (Number(n.props.growthRate) || Number(n.props.amount) || 0), 0) / marketNodes.length
+        : 0.05;
       const intensity = computeCompetitiveIntensity({
         competitorCount: competitors.length,
-        recentEntries: 1, recentExits: 1,
-        marketGrowth: 0.05,
+        recentEntries: recentEntries || 1,
+        recentExits: recentExits || 1,
+        marketGrowth: marketGrowth || 0.05,
       });
       log.debug({ intensity: intensity.intensity }, '竞争强度计算');
 
