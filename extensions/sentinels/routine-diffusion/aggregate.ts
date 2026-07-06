@@ -1,4 +1,5 @@
 import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeRoutineDiffusion } from './computes/compute-routine-diffusion';
 import { createLogger } from '@synova/logger';
 
@@ -11,11 +12,16 @@ interface GraphStoreReader {
 }
 
 export const routineDiffusionSentinel = {
-  async check(store: GraphStoreReader, teamId: string): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date();
     const checkedAt = now.toISOString();
 
     try {
+    let allNodeData: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
+    let usedTraversal = false;
+    try {
+      if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (r.nodes[0]) { allNodeData = r.nodes; usedTraversal = true; } }
+    } catch (err: unknown) { log.warn({ err, teamId }, 'graph traversal failed - fallback'); }
       const processNodes = store.queryNodes('Process', { teamId });
       const teamNodes = store.queryNodes('Team', { teamId });
 

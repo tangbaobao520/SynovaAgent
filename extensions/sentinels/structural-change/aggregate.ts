@@ -2,6 +2,7 @@
  * structural-change/aggregate.ts — E6 底层结构变化哨兵
  */
 import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeStructuralChangeSignal } from './computes/structural-change-signal';
 import { createLogger } from '@synova/logger';
 
@@ -10,9 +11,14 @@ const log = createLogger('sentinel/structural-change');
 interface GraphStoreReader { queryNodes(type: string, f?: Record<string, unknown>, g?: string): Array<{ id: string; type: string; props: Record<string, unknown>; }>; }
 
 export const structuralChangeSentinel = {
-  async check(store: GraphStoreReader, teamId: string): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date(); const checkedAt = now.toISOString();
     try {
+    let allNodeData: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
+    let usedTraversal = false;
+    try {
+      if (traversal) { const r = traversal.traverse([teamId], ['SIGNAL_TRANSMITS', 'INFORMS']); if (r.nodes[0]) { allNodeData = r.nodes; usedTraversal = true; } }
+    } catch (err: unknown) { log.warn({ err, teamId }, 'graph traversal failed - fallback'); }
       const eventNodes = store.queryNodes('Event', { teamId });
       const complianceNodes = store.queryNodes('Compliance', { teamId });
       const events = [...eventNodes, ...complianceNodes].map(n => ({ eventType: n.props.eventType as string, description: JSON.stringify(n.props) }));

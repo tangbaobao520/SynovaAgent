@@ -1,12 +1,18 @@
 import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeNetworkPower } from './computes/betweenness-centrality';
 import { createLogger } from '@synova/logger';
 const log = createLogger('sentinel/network-power');
 interface GraphStoreReader { queryNodes(t: string, f?: Record<string, unknown>, g?: string): Array<{ id: string; type: string; props: Record<string, unknown> }>; }
 export const networkPowerSentinel = {
-  async check(store: GraphStoreReader, teamId: string): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date(); const checkedAt = now.toISOString();
     try {
+    let allNodeData: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
+    let usedTraversal = false;
+    try {
+      if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (r.nodes[0]) { allNodeData = r.nodes; usedTraversal = true; } }
+    } catch (err: unknown) { log.warn({ err, teamId }, 'graph traversal failed - fallback'); }
       const nodes = [...store.queryNodes('Person', { teamId }), ...store.queryNodes('Agent', { teamId }), ...store.queryNodes('Client', { teamId }), ...store.queryNodes('Supplier', { teamId })];
       const r = computeNetworkPower(nodes);
       log.debug({ powerIndex: r.powerIndex }, '网络权力计算完成');
