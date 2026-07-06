@@ -26,6 +26,7 @@ export const moatDependencySentinel = {
         ? clientNodes.reduce((s, n) => s + (Number(n.props.nps) || 0) / 100, 0) / clientNodes.length
         : 0.3;
       const r = computeMoatDependency(structuralStrength, perceptualStrength);
+      if (r.degraded) { log.warn({ teamId }, 'compute degraded — skipping threshold'); return []; }
       if (r.dependency > 0.8) return [{ id: `i8-crit-${now.getTime()}`, severity: 'critical', title: `护城河结构vs感知差距大 (${(r.dependency*100).toFixed(0)}%)`, description: '结构性壁垒强但感知弱，价值未被市场认知。', evidence: [`差距: ${(r.dependency*100).toFixed(0)}%`], suggestion: '加强品牌和市场沟通。', detectedAt: checkedAt }];
       if (r.dependency > 0.6) return [{ id: `i8-warn-${now.getTime()}`, severity: 'warning', title: `护城河认知差距 (${(r.dependency*100).toFixed(0)}%)`, description: '结构性壁垒强于感知壁垒。', evidence: [`差距: ${(r.dependency*100).toFixed(0)}%`], suggestion: '评估是否需要加强市场认知。', detectedAt: checkedAt }];
       return [];

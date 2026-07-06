@@ -23,6 +23,7 @@ export const structuralChangeSentinel = {
       const complianceNodes = store.queryNodes('Event', { teamId });
       const events = [...eventNodes, ...complianceNodes].map(n => ({ eventType: n.props.eventType as string, description: JSON.stringify(n.props) }));
       const result = computeStructuralChangeSignal(events);
+      if (result.degraded) { log.warn({ teamId }, 'compute degraded — data incomplete'); return []; }
       log.debug({ score: result.score }, '结构变化检测完成');
 
       if (result.score > 0.7) {

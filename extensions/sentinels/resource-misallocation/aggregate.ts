@@ -45,6 +45,7 @@ export const resourceMisallocationSentinel = {
       ];
 
       const result = computeResourceMisallocation(goals, resources);
+      if (result.degraded) { log.warn({ teamId }, 'compute degraded — data incomplete'); return []; }
       log.debug({ index: result.index }, '资源错配计算完成');
 
       if (result.index > 0.5) {

@@ -31,6 +31,7 @@ export const opportunityWindowSentinel = {
       ];
 
       const result = computeOpportunityWindowScore(events);
+      if (result.degraded) { log.warn({ teamId }, 'compute degraded — data incomplete'); return []; }
       log.debug({ score: result.score, signals: result.signals.length }, '机会窗口评分完成');
 
       const scorePct = (result.score * 100).toFixed(0);

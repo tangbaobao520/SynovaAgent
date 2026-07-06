@@ -17,6 +17,7 @@ export const nicheBreadthSentinel = {
         value: Number(n.props.revenue) || Number(n.props.amount) || 1,
       }));
       const r = computeLevinsBreadth(segments);
+      if (r.degraded) { log.warn({ teamId }, 'compute degraded — skipping threshold'); return []; }
       log.debug({ breadth: r.breadth, depth: r.depth, volume: r.volume }, '生态位计算完成');
       const f: SentinelFinding[] = [];
       if (r.breadth < 1.0) {
