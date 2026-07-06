@@ -113,6 +113,17 @@ export class SynovaAgent {
 
     log.info({ port: config.port }, 'SynovaAgent 已启动');
 
+    // Phase 4.3: CommandLanes — 工具执行路径隔离（高风险工具走独立 lane）
+    try {
+      const { CommandLanes } = require('../infra/command-lanes');
+      const lanes = new CommandLanes({ defaultTimeoutMs: 60_000 });
+      (this as Record<string, unknown>).__commandLanes = lanes;
+      log.info('CommandLanes 已初始化（高风险工具隔离）');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg }, 'CommandLanes 初始化失败 — degraded');
+    }
+
     // 资源清理
     const cleanup = () => {
       log.info('正在关闭...');

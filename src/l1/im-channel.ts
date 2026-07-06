@@ -91,8 +91,9 @@ export function createFeishuWebhookChannel(webhookUrl: string): IMChannel {
           }),
         });
         return { ok: res.ok, error: res.ok ? undefined : `HTTP ${res.status}` };
-      } catch (err: any) {
-        return { ok: false, error: err.message };
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { ok: false, error: msg };
       }
     },
 
@@ -119,8 +120,9 @@ export function createFeishuWebhookChannel(webhookUrl: string): IMChannel {
           }),
         });
         return { ok: res.ok };
-      } catch (err: any) {
-        return { ok: false, error: err.message };
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { ok: false, error: msg };
       }
     },
 

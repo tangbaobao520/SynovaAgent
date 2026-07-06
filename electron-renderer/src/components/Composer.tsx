@@ -45,6 +45,7 @@ const Composer: React.FC<ComposerProps> = ({
   const [mentionQuery, setMentionQuery] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
   const [mentions, setMentions] = useState<string[]>([]);
+  const [isComposing, setIsComposing] = useState(false); // Phase 5.4: IME 组合态
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const mentionIndex = useRef(-1);
 
@@ -102,6 +103,9 @@ const Composer: React.FC<ComposerProps> = ({
   }, [value, disabled, mentions, onSend]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    // Phase 5.4: IME 组合态不发送
+    if (isComposing) return;
+
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -110,7 +114,7 @@ const Composer: React.FC<ComposerProps> = ({
       setShowMentions(false);
       setShowCommands(false);
     }
-  }, [handleSend]);
+  }, [handleSend, isComposing]);
 
   // 文件拖拽
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -202,6 +206,8 @@ const Composer: React.FC<ComposerProps> = ({
           value={value}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
+          onCompositionStart={() => setIsComposing(true)}
+          onCompositionEnd={() => setIsComposing(false)}
           placeholder={placeholder}
           rows={2}
           disabled={disabled}

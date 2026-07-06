@@ -75,7 +75,7 @@ const CenterPanel: React.FC = () => {
           </div>
         ) : (
           messages.map((msg, idx) => (
-            <MessageItem key={(msg as any)._id || idx} message={msg} />
+            <MessageItem key={msg._id ?? idx} message={msg} />
           ))
         )}
         <div ref={messagesEndRef} />

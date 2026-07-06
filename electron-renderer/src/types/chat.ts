@@ -45,8 +45,8 @@ export interface SystemMessage {
   timestamp: string;
 }
 
-/** 联合消息类型 */
-export type ChatMessage = UserMessage | ThinkingBlock | AgentMessage | SystemMessage;
+/** 联合消息类型（conversation-store 运行时注入 _id） */
+export type ChatMessage = (UserMessage | ThinkingBlock | AgentMessage | SystemMessage) & { _id?: number };
 
 /** 对话阶段 */
 export type ConversationPhase = 'idle' | 'loading' | 'thinking' | 'streaming' | 'done' | 'error';
