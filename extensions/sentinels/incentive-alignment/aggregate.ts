@@ -1,4 +1,5 @@
 import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeIncentiveAlignment } from './computes/compute-incentive-alignment';
 import { createLogger } from '@synova/logger';
 
@@ -11,13 +12,16 @@ interface GraphStoreReader {
 }
 
 export const incentiveAlignmentSentinel = {
-  async check(store: GraphStoreReader, teamId: string): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date();
     const checkedAt = now.toISOString();
+    let goalNodes: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
+    let eventNodes: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
+    let usedTraversal = false;
 
     try {
-      const goalNodes = store.queryNodes('Goal', { teamId });
-      const eventNodes = store.queryNodes('Event', { teamId });
+      try { if (traversal) { const r = traversal.traverse([teamId], ['INFORMS', 'SIGNAL_TRANSMITS']); if (r.nodes[0]) { goalNodes = r.nodes.filter(n => n.type === 'GOAL'); eventNodes = r.nodes.filter(n => n.type === 'EVENT'); usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
+      if (!usedTraversal) { goalNodes = store.queryNodes('Goal', { teamId }); eventNodes = store.queryNodes('Event', { teamId }); }
 
       const goals = goalNodes.map(n => ({
         goalType: n.props.goalType as string | undefined,
