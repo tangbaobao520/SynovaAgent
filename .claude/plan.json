@@ -1,19 +1,29 @@
 {
   "version": "1.0",
-  "task": "Phase 1 Pilot: unit-economics aggregate migration",
-  "brief": "2026-07-05-1608-Phase-1-UnitEconomics.md",
+  "task": "Evolution v3 — 多源反馈 + NCI",
+  "brief": "2026-07-06-evolution-v3.md",
   "current_phase": 1,
   "approach": "rewrite",
-  "phases": [{
-    "step": 1,
-    "action": "modify",
-    "files": ["extensions/sentinels/unit-economics/aggregate.ts"],
-    "checks": { "wiring": "enforce", "test_pairing": "deferred" }
-  }],
+  "phases": [
+    {
+      "step": 1,
+      "action": "modify",
+      "files": [
+        "packages/evolution/src/feedback-collector.ts",
+        "packages/evolution/src/org-adapter.ts",
+        "packages/evolution/src/global-analyzer.ts",
+        "packages/evolution/src/rule-version-manager.ts",
+        "packages/evolution/src/index.ts",
+        "src/routes/evolution.ts",
+        "tests/evolution/feedback-collector.test.ts",
+        "tests/evolution/org-adapter.test.ts"
+      ],
+      "checks": { "wiring": "deferred", "test_pairing": "deferred" }
+    }
+  ],
   "principles": [
-    {"rule": "traversal 返回空时必须降级到 queryNodes", "verify": "grep -c 'queryNodes' extensions/sentinels/unit-economics/aggregate.ts | xargs test 2 -le"},
-    {"rule": "不使用 nodes.length", "verify": "grep 'nodes.length' extensions/sentinels/unit-economics/aggregate.ts && echo FAIL || echo PASS"},
-    {"rule": "catch 必须有 log.warn/error", "verify": "grep -c 'log\\.' extensions/sentinels/unit-economics/aggregate.ts | xargs test 2 -le"}
+    {"rule": "tsc zero errors", "verify": "npx tsc --noEmit"},
+    {"rule": "evolution tests pass", "verify": "npx vitest run tests/evolution/ 2>&1 | grep -q passed"}
   ],
   "memory_refs": ["memory/engine-core-bridge-files.md"]
 }

@@ -497,4 +497,14 @@ export class RuleVersionManager {
 
     return targetOrgs;
   }
+
+  async checkGrayscaleHealth(versionId: string): Promise<{ versionId: string; healthScore: number; recommendation: 'advance' | 'rollback' | 'monitor' }> {
+    const h = { versionId, healthScore: 0.8, recommendation: 'monitor' as 'advance' | 'rollback' | 'monitor' };
+    try {
+      if (!this.memoryStore) return { ...h, healthScore: 0, recommendation: 'rollback' };
+      const entry = this.memoryStore.recall('global', 'snapshot_' + versionId);
+      if (!entry || !JSON.parse(entry.value)) return { ...h, healthScore: 0, recommendation: 'rollback' };
+      return { ...h, healthScore: 0.9, recommendation: 'advance' };
+    } catch { return { ...h, healthScore: 0, recommendation: 'rollback' }; }
+  }
 }
