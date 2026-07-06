@@ -23,7 +23,7 @@ export const costHealthSentinel = {
 
     try {
       try { if (traversal) { const r = traversal.traverse([teamId], ['FUNDS']); if (r.nodes[0]) { financialNodes = r.nodes; usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
-      if (!usedTraversal) { financialNodes = store.queryNodes('FINANCIAL', { teamId }); }
+      if (!usedTraversal) { financialNodes = store.queryNodes('Financial', { teamId }); }
       // 1. 毛利率变化率
       const costNodes = financialNodes.filter(n => (n.props.financialType as string) === 'cost');
       const revenueNodes = financialNodes.filter(n => (n.props.financialType as string) === 'revenue');

@@ -10,9 +10,9 @@ export const nicheBreadthSentinel = {
     try {
       if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (!r.nodes[0]) return []; }
       const clientNodes = store.queryNodes('Client', { teamId });
-      const locationNodes = store.queryNodes('Location', { teamId });
-      const marketNodes = store.queryNodes('Market', { teamId });
-      const segments = [...clientNodes, ...locationNodes, ...marketNodes].map(n => ({
+      const eventNodes = store.queryNodes('Event', { teamId });
+      // 生态位分段：客户群 + 事件区域
+      const segments = [...clientNodes, ...eventNodes].map(n => ({
         name: (n.props.name as string) || n.id,
         value: Number(n.props.revenue) || Number(n.props.amount) || 1,
       }));

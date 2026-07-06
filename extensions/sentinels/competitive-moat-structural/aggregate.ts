@@ -17,7 +17,7 @@ export const competitiveMoatStructuralSentinel = {
     let usedTraversal = false;
     try {
       try { if (traversal) { const r = traversal.traverse([teamId], ['FUNDS', 'PRODUCES', 'DEPLOYS']); if (r.nodes[0]) { finNodes = r.nodes; allNodes = r.nodes; usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
-      if (!usedTraversal) { finNodes = store.queryNodes('FINANCIAL', { teamId }); allNodes = store.queryNodes('ALL', { teamId }); }
+      if (!usedTraversal) { finNodes = store.queryNodes('Financial', { teamId }); allNodes = store.queryNodes('ALL', { teamId }); }
       const financials = finNodes.map(n => ({ revenue: Number(n.props.revenue) || 0, totalAssets: Number(n.props.totalAssets) || 0 }));
       const se = computeScaleEconomy(financials);
       const ne = computeNetworkEffect(allNodes);

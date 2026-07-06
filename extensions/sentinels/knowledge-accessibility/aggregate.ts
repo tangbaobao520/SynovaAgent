@@ -16,19 +16,22 @@ export const knowledgeAccessibilitySentinel = {
     const now = new Date();
     const checkedAt = now.toISOString();
     let docNodes: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
-    let knowledgeNodes: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
-    let capNodes: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
     let personNodes: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
     let usedTraversal = false;
 
     try {
-      try { if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS', 'AUGMENTS']); if (r.nodes[0]) { docNodes = r.nodes.filter(n => n.type === 'DOCUMENT'); knowledgeNodes = r.nodes.filter(n => n.type === 'KNOWLEDGECHUNK'); capNodes = r.nodes.filter(n => n.type === 'CAPABILITY'); personNodes = r.nodes.filter(n => n.type === 'PERSON'); usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
-      if (!usedTraversal) { docNodes = store.queryNodes('Document', { teamId }); knowledgeNodes = store.queryNodes('KnowledgeChunk', { teamId }); capNodes = store.queryNodes('Capability', { teamId }); personNodes = store.queryNodes('Person', { teamId }); }
+      try { if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS', 'AUGMENTS']); if (r.nodes[0]) { docNodes = r.nodes.filter(n => n.type === 'DOCUMENT'); personNodes = r.nodes.filter(n => n.type === 'PERSON'); usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
+      if (!usedTraversal) { docNodes = store.queryNodes('Document', { teamId }); personNodes = store.queryNodes('Person', { teamId }); }
 
+      // 能力广度从 Person.skills/competency_vector 计算
+      const skillCount = personNodes.reduce((s, n) => {
+        const skills = (n.props.skills as string) || (n.props.competencyVector as string) || '';
+        return s + (skills ? skills.split(',').filter(Boolean).length : 1);
+      }, 0);
       const result = computeKnowledgeAccessibility(
         docNodes.length,
-        knowledgeNodes.length,
-        capNodes.length,
+        docNodes.length,
+        skillCount,
         personNodes.length
       );
       log.debug({ score: result.score, assessment: result.assessment }, '知识可调用性计算完成');

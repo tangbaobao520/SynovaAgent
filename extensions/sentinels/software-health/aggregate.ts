@@ -51,10 +51,9 @@ export const softwareHealthSentinel = {
 
       // 降级: queryNodes 旧路径
       if (!hasData) {
-        const toolNodes = store.queryNodes('TOOL', { teamId });
-        const appNodes = store.queryNodes('APP', { teamId });
-        const swNodes = store.queryNodes('SOFTWARE', { teamId });
-        allTools = [...toolNodes, ...appNodes, ...swNodes].map(n => ({
+        const toolNodes = store.queryNodes('Tool', { teamId });
+        // APP/SOFTWARE 统一用 Tool 类型替代
+        allTools = toolNodes.map(n => ({
           id: n.id,
           name: (n.props.name as string) || n.id,
           status: (n.props.status || n.props.usageStatus || 'unknown') as string,

@@ -10,9 +10,9 @@ export const competitiveMoatPerceptualSentinel = {
     const now = new Date(); const checkedAt = now.toISOString();
     try {
       if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (!r.nodes[0]) return []; }
-      const productNodes = store.queryNodes('Product', { teamId });
+      const toolNodes = store.queryNodes('Tool', { teamId });
       const clientNodes = store.queryNodes('Client', { teamId });
-      const products = productNodes.map(n => ({ name: (n.props.name as string) || n.id, price: Number(n.props.price) || 0, category: (n.props.category as string) || 'default' }));
+      const products = toolNodes.map(n => ({ name: (n.props.name as string) || n.id, price: Number(n.props.price) || 0, category: (n.props.category as string) || 'default' }));
       const clients = clientNodes.map(n => ({ nps: Number(n.props.nps) || undefined, tenure: Number(n.props.tenure) || undefined, revenue: Number(n.props.revenue) || 0 }));
       const bp = computeBrandPremium(products);
       const cl = computeCustomerLoyalty(clients);

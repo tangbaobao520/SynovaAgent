@@ -9,7 +9,7 @@ export const nicheSqueezeSentinel = {
     const now = new Date(); const checkedAt = now.toISOString();
     try {
       if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (!r.nodes[0]) return []; }
-      const nodes = [...store.queryNodes('Market', { teamId }), ...store.queryNodes('Client', { teamId }), ...store.queryNodes('Supplier', { teamId })];
+      const nodes = [...store.queryNodes('Client', { teamId }), ...store.queryNodes('Agent', { teamId })];
       const competitors = nodes.map(n => ({ name: (n.props.name as string) || n.id, revenue: Number(n.props.revenue) || Number(n.props.amount) || 0 }));
       const r = computeNicheSqueezeIndex(competitors);
       log.debug({ squeeze: r.squeeze, hhi: r.hhi }, '挤压指数计算完成');

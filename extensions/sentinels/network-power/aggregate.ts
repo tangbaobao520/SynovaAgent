@@ -13,7 +13,7 @@ export const networkPowerSentinel = {
     try {
       if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (r.nodes[0]) { allNodeData = r.nodes; usedTraversal = true; } }
     } catch (err: unknown) { log.warn({ err, teamId }, 'graph traversal failed - fallback'); }
-      const nodes = [...store.queryNodes('Person', { teamId }), ...store.queryNodes('Agent', { teamId }), ...store.queryNodes('Client', { teamId }), ...store.queryNodes('Supplier', { teamId })];
+      const nodes = [...store.queryNodes('Person', { teamId }), ...store.queryNodes('Agent', { teamId }), ...store.queryNodes('Client', { teamId }), ...store.queryNodes('Agent', { teamId })];
       const r = computeNetworkPower(nodes);
       log.debug({ powerIndex: r.powerIndex }, '网络权力计算完成');
       if (r.powerIndex > 0.8) return [{ id: `i5-crit-${now.getTime()}`, severity: 'critical', title: `网络权力集中 (指数${r.powerIndex.toFixed(2)})`, description: '权力或信息流高度集中在少数节点。', evidence: [`权力指数: ${r.powerIndex.toFixed(2)}`, `关键节点: ${r.keyNodes.join(', ')}`], suggestion: '分散关键决策权，降低单点故障风险。', detectedAt: checkedAt }];

@@ -18,15 +18,18 @@ export const resourceMisallocationSentinel = {
 
     try {
       if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (!r.nodes[0]) return []; }
-      const goalNodes = store.queryNodes('Goal', { teamId });
+      const eventNodes = store.queryNodes('Event', { teamId });
       const personNodes = store.queryNodes('Person', { teamId });
-      const finNodes = store.queryNodes('FINANCIAL', { teamId });
+      const finNodes = store.queryNodes('Financial', { teamId });
 
-      const goals = goalNodes.map(n => ({
-        name: (n.props.name as string) || n.id,
-        priority: n.props.priority !== undefined ? Number(n.props.priority) : 3,
-        area: (n.props.area as string) || (n.props.category as string) || '',
-      }));
+      // 战略目标从 Event 节点中筛选（eventType 包含 goal/objective/strategic）
+      const goals = eventNodes
+        .filter(n => { const t = (n.props.eventType as string || '').toLowerCase(); return t.includes('goal') || t.includes('objective') || t.includes('strategic'); })
+        .map(n => ({
+          name: (n.props.name as string) || n.id,
+          priority: n.props.priority !== undefined ? Number(n.props.priority) : 3,
+          area: (n.props.area as string) || (n.props.category as string) || '',
+        }));
 
       const resources = [
         ...personNodes.map(n => ({

@@ -16,25 +16,29 @@ export const adaptationVelocitySentinel = {
     const now = new Date();
     const checkedAt = now.toISOString();
     let eventNodes: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
-    let goalNodes: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
     let usedTraversal = false;
 
     try {
-      try { if (traversal) { const r = traversal.traverse([teamId], ['SIGNAL_TRANSMITS', 'INFORMS']); if (r.nodes[0]) { eventNodes = r.nodes.filter(n => n.type === 'EVENT'); goalNodes = r.nodes.filter(n => n.type === 'GOAL'); usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
-      if (!usedTraversal) { eventNodes = store.queryNodes('Event', { teamId }); goalNodes = store.queryNodes('Goal', { teamId }); }
+      try { if (traversal) { const r = traversal.traverse([teamId], ['SIGNAL_TRANSMITS', 'INFORMS']); if (r.nodes[0]) { eventNodes = r.nodes.filter(n => n.type === 'EVENT'); usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
+      if (!usedTraversal) { eventNodes = store.queryNodes('Event', { teamId }); }
 
-      const events = [
-        ...eventNodes.map(n => ({
-          eventType: n.props.eventType as string | undefined,
-          timestamp: n.props.timestamp as string | undefined,
-        })),
-        ...goalNodes.map(n => ({
-          eventType: 'strategic',
-          timestamp: n.props.timestamp as string | undefined,
-        })),
-      ];
+      const events = eventNodes.map(n => ({
+        eventType: n.props.eventType as string | undefined,
+        timestamp: n.props.timestamp as string | undefined,
+      }));
 
-      const result = computeAdaptationVelocity(events);
+      // 从 events 中筛选战略相关事件（eventType 包含 strategic/goal/objective 的事件）
+      const strategicEvents = events.filter(e => {
+        const t = (e.eventType || '').toLowerCase();
+        return t.includes('strategic') || t.includes('goal') || t.includes('objective');
+      });
+      // 补充战略事件标记（原先从 Goal 节点获取的数据）
+      const enrichedEvents = [...events, ...strategicEvents.map(e => ({
+        eventType: 'strategic' as string | undefined,
+        timestamp: e.timestamp,
+      }))];
+
+      const result = computeAdaptationVelocity(enrichedEvents);
       log.debug({ score: result.score, adaptations: result.adaptationEvents }, '调适速度计算完成');
 
       const scorePct = (result.score * 100).toFixed(0);

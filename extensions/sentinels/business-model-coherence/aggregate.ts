@@ -11,7 +11,7 @@ export const businessModelCoherenceSentinel = {
     let usedTraversal = false;
     try {
       try { if (traversal) { const r = traversal.traverse([teamId], ['FUNDS', 'DEPLOYS', 'PRODUCES']); if (r.nodes[0]) { allNodes = r.nodes; usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
-      if (!usedTraversal) { allNodes = (store.queryNodes('BusinessModel', { teamId }) || []).concat(store.queryNodes('Goal', { teamId })).concat(store.queryNodes('Channel', { teamId })).concat(store.queryNodes('Capability', { teamId })).concat(store.queryNodes('FINANCIAL', { teamId })); }
+      if (!usedTraversal) { allNodes = (store.queryNodes('Event', { teamId }) || []).concat(store.queryNodes('Tool', { teamId })).concat(store.queryNodes('Client', { teamId })).concat(store.queryNodes('Person', { teamId })).concat(store.queryNodes('Financial', { teamId })); }
       const r = computeModelCoherence(allNodes);
       log.debug({ coherence: r.score }, '商业模式一致性计算完成');
       if (r.score < 0.2) return [{ id: `i7-crit-${now.getTime()}`, severity: 'critical', title: `商业模式一致性低 (${(r.score*100).toFixed(0)}%)`, description: '价值主张-收入-成本结构存在明显不一致。', evidence: [`一致性: ${(r.score*100).toFixed(0)}%`, ...r.signals], suggestion: '审视核心价值主张与收入模式的匹配度。', detectedAt: checkedAt }];

@@ -61,7 +61,7 @@ export function getFinancialValue(
   field: string,
   teamId: string,
 ): number | null {
-  const nodes = store.queryNodes('FINANCIAL', { financialType, teamId });
+  const nodes = store.queryNodes('Financial', { financialType, teamId });
   if (nodes.length === 0) return null;
   const value = nodes[0].props[field];
   if (typeof value === 'number') return value;

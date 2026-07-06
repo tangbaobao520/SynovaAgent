@@ -20,7 +20,7 @@ export const structuralChangeSentinel = {
       if (traversal) { const r = traversal.traverse([teamId], ['SIGNAL_TRANSMITS', 'INFORMS']); if (r.nodes[0]) { allNodeData = r.nodes; usedTraversal = true; } }
     } catch (err: unknown) { log.warn({ err, teamId }, 'graph traversal failed - fallback'); }
       const eventNodes = store.queryNodes('Event', { teamId });
-      const complianceNodes = store.queryNodes('Compliance', { teamId });
+      const complianceNodes = store.queryNodes('Event', { teamId });
       const events = [...eventNodes, ...complianceNodes].map(n => ({ eventType: n.props.eventType as string, description: JSON.stringify(n.props) }));
       const result = computeStructuralChangeSignal(events);
       log.debug({ score: result.score }, '结构变化检测完成');

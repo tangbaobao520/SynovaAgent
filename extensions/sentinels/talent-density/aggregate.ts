@@ -23,7 +23,6 @@ export const talentDensitySentinel = {
       if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS', 'AUGMENTS']); if (r.nodes[0]) { allNodeData = r.nodes; usedTraversal = true; } }
     } catch (err: unknown) { log.warn({ err, teamId }, 'graph traversal failed - fallback'); }
       const personNodes = store.queryNodes('Person', { teamId });
-      const capNodes = store.queryNodes('Capability', { teamId });
 
       // 高技能人才: 有技能数组或 proficiencyLevel >= 3
       const highSkill = personNodes.filter(n => {

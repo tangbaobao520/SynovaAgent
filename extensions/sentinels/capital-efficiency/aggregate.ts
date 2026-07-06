@@ -34,7 +34,7 @@ export const capitalEfficiencySentinel = {
           if (result.nodes[0]) { finNodes = result.nodes; usedTraversal = true; }
         }
       } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
-      if (!usedTraversal) { finNodes = store.queryNodes('FINANCIAL', { teamId }); }
+      if (!usedTraversal) { finNodes = store.queryNodes('Financial', { teamId }); }
       const financials = finNodes.map(n => ({
         revenue: Number(n.props.revenue) || Number(n.props.totalRevenue) || 0,
         cost: Number(n.props.cost) || Number(n.props.costs) || 0,

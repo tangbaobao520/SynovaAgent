@@ -51,8 +51,8 @@ export const unitEconomicsSentinel = {
         log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径');
       }
       if (!usedTraversal) {
-        finNodes = store.queryNodes('FINANCIAL', { teamId });
-        clientNodes = store.queryNodes('CLIENT', { teamId });
+        finNodes = store.queryNodes('Financial', { teamId });
+        clientNodes = store.queryNodes('Client', { teamId });
       }
 
       const fin = finNodes.map(n => ({

@@ -27,7 +27,7 @@ export const apiCoverageSentinel = {
     try {
       if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (!r.nodes[0]) return []; }
       // 1. 从本体层读取 TOOL 节点
-      const toolNodes = store.queryNodes('TOOL', { teamId });
+      const toolNodes = store.queryNodes('Tool', { teamId });
       const tools = toolNodes.map(n => ({
         id: n.id,
         name: (n.props.name as string) || n.id,

@@ -27,7 +27,7 @@ export const customerDemandShiftSentinel = {
     try {
       if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (!r.nodes[0]) return []; }
       // 1. 读取 CLIENT 节点
-      const clientNodes = store.queryNodes('CLIENT', { teamId });
+      const clientNodes = store.queryNodes('Client', { teamId });
       const clients = clientNodes.map(n => ({
         name: (n.props.name as string) || n.id,
         revenue: Number(n.props.revenue) || 0,

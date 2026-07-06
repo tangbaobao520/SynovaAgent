@@ -13,7 +13,7 @@ export const capitalTurnoverSentinel = {
     let usedTraversal = false;
     try {
       try { if (traversal) { const r = traversal.traverse([teamId], ['FUNDS']); if (r.nodes[0]) { finNodes = r.nodes; usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
-      if (!usedTraversal) { finNodes = store.queryNodes('FINANCIAL', { teamId }); }
+      if (!usedTraversal) { finNodes = store.queryNodes('Financial', { teamId }); }
       const f = finNodes.map(n => ({ revenue: Number(n.props.revenue) || 0, totalAssets: Number(n.props.totalAssets) || 0, currentAssets: Number(n.props.currentAssets) || 0, accountsReceivable: Number(n.props.accountsReceivable) || 0 }));
       const at = computeAssetTurnover(f); const rt = computeReceivableTurnover(f); const r: SentinelFinding[] = [];
       if (!at.degraded && at.totalTurnover < 0.5) r.push({ id: `f5-at-crit-${now.getTime()}`, severity: 'critical', title: `总资产周转率过低 (${at.totalTurnover.toFixed(2)})`, description: '每单位资产营收不足 0.5。', evidence: [`周转率: ${at.totalTurnover.toFixed(2)}`, `营收: ${at.totalRevenue}`, `总资产: ${at.totalAssets}`], suggestion: '审查资产效率，处置低效资产。', detectedAt: checkedAt });

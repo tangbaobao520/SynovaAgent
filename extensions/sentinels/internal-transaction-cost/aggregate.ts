@@ -13,7 +13,7 @@ export const internalTransactionCostSentinel = {
     let usedTraversal = false;
     try {
       try { if (traversal) { const r = traversal.traverse([teamId], ['FUNDS', 'DEPLOYS', 'SIGNAL_TRANSMITS']); if (r.nodes[0]) { fin = r.nodes; teams = r.nodes.filter(n => n.type === 'TEAM'); events = r.nodes.filter(n => n.type === 'EVENT'); usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
-      if (!usedTraversal) { fin = store.queryNodes('FINANCIAL', { teamId }); teams = store.queryNodes('Team', { teamId }); events = store.queryNodes('Event', { teamId }); }
+      if (!usedTraversal) { fin = store.queryNodes('Financial', { teamId }); teams = store.queryNodes('Team', { teamId }); events = store.queryNodes('Event', { teamId }); }
       const totalCost = fin.reduce((s, n) => s + (Number(n.props.totalCost) || Number(n.props.cost) || 0), 0);
       const adminCost = fin.reduce((s, n) => s + (Number(n.props.adminCost) || Number(n.props.adminExpense) || 0), 0);
       const r = computeTransactionCostTrend({ totalCost, adminCost, teamCount: teams.length, eventCount: events.length, previousAdminCost: adminCost * 0.9, previousTotalCost: totalCost * 0.9 });

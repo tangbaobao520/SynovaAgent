@@ -17,7 +17,7 @@ export const environmentRentDependencySentinel = {
     let usedTraversal = false;
     try {
       try { if (traversal) { const r = traversal.traverse([teamId], ['FUNDS', 'PRODUCES']); if (r.nodes[0]) { finNodes = r.nodes; usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
-      if (!usedTraversal) { finNodes = store.queryNodes('FINANCIAL', { teamId }); }
+      if (!usedTraversal) { finNodes = store.queryNodes('Financial', { teamId }); }
       const financials = finNodes.map(n => ({ type: (n.props.financialType as string) || (n.props.type as string) || 'revenue', value: Number(n.props.amount) || 0 }));
       const result = computeRentDependencyIndex(financials);
       log.debug({ index: result.index }, '环境红利依赖计算完成');

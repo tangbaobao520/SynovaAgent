@@ -9,7 +9,7 @@ export const valueCaptureSentinel = {
     const now = new Date(); const checkedAt = now.toISOString();
     try {
       if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (!r.nodes[0]) return []; }
-      const finNodes = store.queryNodes('FINANCIAL', { teamId });
+      const finNodes = store.queryNodes('Financial', { teamId });
       const financials = finNodes.map(n => ({ revenue: Number(n.props.revenue) || 0, cost: Number(n.props.cost) || 0, netProfit: Number(n.props.netProfit) || Number(n.props.profit) || 0, previousRevenue: Number(n.props.previousRevenue) || 0 }));
       const r = computeValueCaptureScore(financials);
       log.debug({ captureIndex: r.captureIndex }, '价值捕获计算完成');

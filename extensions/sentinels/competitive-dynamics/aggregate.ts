@@ -26,7 +26,7 @@ export const competitiveDynamicsSentinel = {
       let finNodes: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
       let usedTraversal = false;
       try { if (traversal) { const r = traversal.traverse([teamId], ['PRODUCES', 'INFORMS']); if (r.nodes[0]) { marketNodes = r.nodes.filter(n => n.type === 'MARKET_OUTCOME' || n.type === 'COMPETITIVE_OUTCOME'); finNodes = r.nodes; usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
-      if (!usedTraversal) { marketNodes = store.queryNodes('Market', { teamId }); finNodes = store.queryNodes('FINANCIAL', { teamId }); }
+      if (!usedTraversal) { marketNodes = store.queryNodes('Event', { teamId }); finNodes = store.queryNodes('Financial', { teamId }); }
 
       const competitors = [...marketNodes, ...finNodes].map(n => ({
         name: (n.props.name as string) || n.id,

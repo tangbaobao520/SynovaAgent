@@ -15,17 +15,20 @@ export const incentiveAlignmentSentinel = {
   async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date();
     const checkedAt = now.toISOString();
-    let goalNodes: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
+    let personNodes: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
     let eventNodes: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
     let usedTraversal = false;
 
     try {
-      try { if (traversal) { const r = traversal.traverse([teamId], ['INFORMS', 'SIGNAL_TRANSMITS']); if (r.nodes[0]) { goalNodes = r.nodes.filter(n => n.type === 'GOAL'); eventNodes = r.nodes.filter(n => n.type === 'EVENT'); usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
-      if (!usedTraversal) { goalNodes = store.queryNodes('Goal', { teamId }); eventNodes = store.queryNodes('Event', { teamId }); }
+      try { if (traversal) { const r = traversal.traverse([teamId], ['INFORMS', 'SIGNAL_TRANSMITS']); if (r.nodes[0]) { personNodes = r.nodes.filter(n => n.type === 'PERSON'); eventNodes = r.nodes.filter(n => n.type === 'EVENT'); usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
+      if (!usedTraversal) { personNodes = store.queryNodes('Person', { teamId }); eventNodes = store.queryNodes('Event', { teamId }); }
 
-      const goals = goalNodes.map(n => ({
-        goalType: n.props.goalType as string | undefined,
-      }));
+      // 激励数据从 Person 节点的 incentive_type/compensation_model 字段读取
+      const goals = personNodes
+        .filter(n => n.props.incentiveType || n.props.compensationModel || n.props.role)
+        .map(n => ({
+          goalType: (n.props.incentiveType as string) || (n.props.compensationModel as string) || (n.props.role as string) || 'unknown',
+        }));
       const events = eventNodes.map(n => ({
         eventType: n.props.eventType as string | undefined,
       }));
@@ -37,8 +40,8 @@ export const incentiveAlignmentSentinel = {
         return [{
           id: `o3-nodata-${now.getTime()}`, severity: 'info',
           title: '激励与目标数据不足',
-          description: '未检测到 Goal 或 Event 节点。',
-          evidence: [], suggestion: '上传战略目标和激励考核数据。',
+          description: '未检测到 Person 或 Event 节点。',
+          evidence: [], suggestion: '补充人员激励和事件数据。',
           detectedAt: checkedAt,
         }];
       }

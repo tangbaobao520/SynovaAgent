@@ -11,7 +11,7 @@ interface GraphStoreReader {
   }>;
 }
 
-/** S1: 战略-能力一致性。读取 Goal + Capability 节点评估匹配度。 */
+/** S1: 战略-能力一致性。读取 Event + Person 节点评估匹配度。 */
 export const strategyCapabilityFitSentinel = {
   async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date();
@@ -19,25 +19,29 @@ export const strategyCapabilityFitSentinel = {
 
     try {
       if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (!r.nodes[0]) return []; }
-      const goalNodes = store.queryNodes('Goal', { teamId });
-      const capNodes = store.queryNodes('Capability', { teamId });
+      const eventNodes = store.queryNodes('Event', { teamId });
+      const personNodes = store.queryNodes('Person', { teamId });
 
-      const goals = goalNodes.map(n => ({
-        name: (n.props.name as string) || n.id,
-        goalType: n.props.goalType as string | undefined,
-      }));
+      // 战略目标从 Event 节点中筛选（eventType 包含 strategic/goal/objective）
+      const goals = eventNodes
+        .filter(n => { const t = (n.props.eventType as string || '').toLowerCase(); return t.includes('strategic') || t.includes('goal') || t.includes('objective'); })
+        .map(n => ({
+          name: (n.props.name as string) || n.id,
+          goalType: n.props.eventType as string | undefined,
+        }));
 
-      const capabilities = capNodes.map(n => ({
+      // 能力数据从 Person 节点的 skills/competency_vector 中提取
+      const capabilities = personNodes.map(n => ({
         name: (n.props.name as string) || n.id,
-        category: n.props.category as string | undefined,
-        level: n.props.level !== undefined ? Number(n.props.level) : undefined,
+        category: (n.props.skills as string) || (n.props.competencyVector as string) || (n.props.role as string) || 'general',
+        level: n.props.skillLevel !== undefined ? Number(n.props.skillLevel) : undefined,
       }));
 
       const result = computeStrategyCapabilityFit(goals, capabilities);
       log.debug({ score: result.score, gaps: result.alignmentGaps.length }, '战略-能力一致性计算完成');
 
       if (result.degraded) {
-        return [{ id: `s1-nodata-${now.getTime()}`, severity: 'info', title: '战略与能力数据不足', description: '缺少 Goal 或 Capability 节点，无法评估一致性。', evidence: [], suggestion: '上传战略目标与核心能力数据。', detectedAt: checkedAt }];
+        return [{ id: `s1-nodata-${now.getTime()}`, severity: 'info', title: '战略与能力数据不足', description: '缺少 Event 或 Person 节点，无法评估一致性。', evidence: [], suggestion: '上传事件与人员能力数据。', detectedAt: checkedAt }];
       }
 
       const scorePct = (result.score * 100).toFixed(0);
