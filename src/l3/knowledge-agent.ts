@@ -234,7 +234,7 @@ export function createKnowledgeAgent(config: KnowledgeAgentConfig = {}): Knowled
             const orgId = String(params.orgId || 'default');
             const nodeType = params.nodeType as string | undefined;
             const { NodeType } = await import('@synova/ontology');
-            // 用户输入字符串 → SOGNodeType 枚举，不匹配则默认 PERSON
+            // 用户输入字符串 → NodeType 枚举，不匹配则默认 RESOURCE_PERSON
             const nodeTypeValues: Record<string, string> = Object.entries(NodeType).reduce((acc, [k, v]) => { acc[k] = v as string; acc[v as string] = v as string; return acc; }, {} as Record<string, string>);
             const resolvedType: string = nodeType && nodeTypeValues[nodeType] ? nodeTypeValues[nodeType] : NodeType.RESOURCE_PERSON;
             const rawNodes = graphStore.queryNodes(resolvedType as unknown as typeof NodeType.RESOURCE_PERSON, undefined, orgId);
