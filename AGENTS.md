@@ -1,5 +1,5 @@
-# AGENTS.md — SynovaAgent
-> V4.4.0 | 2026-07-05 | Loop Engineering
+﻿# AGENTS.md — SynovaAgent
+> V4.4.2 | 2026-07-07 | Loop Engineering + 测试契约
 
 > 组织数字孪生诊断 + 持续增长导航系统。诊断是手段，目的是增长。
 > 核心问题：这家企业的增长卡在哪里？现在该做什么？
@@ -47,7 +47,13 @@
 Step 5 WIRE CHECK 是硬门禁：`grep -rn "新函数名" src/` — 零结果 = 未完成。
 历史：4 次接线失败（组件通过单元测试但从未被生产代码调用）。
 
+
+**铁律 47. 契约优先。** 新增 compute 函数必须先定义输入/输出/降级契约（JSDoc），再实现。参见 SYNOVA-ARCH-质量与测试体系-20260707.md §二。
+**铁律 48. 测试不可为空壳。** 测试文件必须有 expect() 断言。空壳测试 → commit 阻断。每个 compute 函数至少覆盖：正常路径 + 降级路径 + 边界条件。
+
 ### 一、接线铁律
+
+**铁律 1. 垂直切片交付。** 按用户可见的行为拆，不按技术层拆。
 
 **铁律 1. 垂直切片交付。** 按用户可见的行为拆，不按技术层拆。
 **铁律 4. 交付不完整——写了代码没接线。** 入口 → 交互 → 结果，三环节缺一不可交付。
@@ -94,65 +100,6 @@ L5 存储 (SQLite) → L4
 ```
 pre-commit `check-architecture.sh` 检测 L2→L4 / L3→L5 跨层违规。
 
-### 六、TUI V2 铁律（2026-06-07 新增 — 基于闪烁修复+流式事故）
-
-> 以下铁律来自 2026-06-07 TUI V2 闪烁修复和流式 Pipeline 事故。
-> 核心原则：**ink 补丁层已经解决了闪烁，React 层不要过度工程化。**
-
-**铁律 40. 闪烁修复不可回退（冻结）。**
-
-任何修改 TUI V2 时，必须确认以下冻结项完好：
-```
-[ ] patches/ink+5.2.1.patch 存在
-[ ] package.json "postinstall": "patch-package" 存在
-[ ] React.memo 在 Message/StreamingText 上
-[ ] 没有引入全量重渲染（forceUpdate / 逐 token 的 setState）
-[ ] 没有 fallback 到旧的 useStreaming 实现
-```
-pre-commit 硬阻断：patch 文件缺失、postinstall 缺失、React.memo 被移除。
-
-**铁律 41. 流式 Pipeline 简单直接 — 禁止过度工程化。**
-
-`useStreaming` hook 只能用 `bufferRef += token` + `setTimeout(flush, 16)` 模式。
-禁止引入：`LineBuffer` / `FrameRateLimiter` / `StreamChunker` 多层嵌套。
-ink 补丁层已解决闪烁，React 层只需简单的 buffer + 60fps flush。
-
-**Why**：LineBuffer 要求换行才提交→无换行文本永远不可见。三层嵌套→buffer 永远来不及 flush。
-pre-commit 硬阻断：`use-streaming.ts` 中出现 `LineBuffer`/`FrameRateLimiter`/`StreamChunker` 类名。
-
-**铁律 42. 逐字流必须有延迟。**
-
-非流式 API 模拟流式时，`for (const ch of content) onToken(ch)` 必须配合 `await sleep(5)`。
-每字符至少 5ms 间隔，留出 UI flush 时间。
-
-**Why**：零延迟→所有 token 几毫秒内传完→buffer 来不及显示→用户看到空白。
-pre-commit 警告：`tool-loop-executor.ts` 中 `for (const ch of` 后无 `sleep`。
-
-**铁律 43. finishStreaming 调用顺序不可反。**
-
-必须是：
-```
-flushBuffer() → addAgentMessage(reply) → setState({ isStreaming: false })
-```
-先 `isStreaming=false` 后 `addAgentMessage` → 中间有一帧空白。
-
-**Why**：顺序反了会在流式结束和新消息之间出现空白帧。
-pre-commit 警告：检测 `setState({ ... isStreaming: false })` 在 `addAgentMessage` 之前。
-
-**铁律 44. ChatPanel 禁止 `justifyContent="flex-end"`。**
-
-ink 不支持真正的滚动。flex-end 会把旧消息推出可见区域。
-正确做法：消息截断算法 + `⋯ 上方还有 N 条消息`。
-
-pre-commit 硬阻断：`chat-panel.tsx` 中出现 `justifyContent.*flex-end`。
-
-**铁律 45. 注释中 `*/` 必须加空格。**
-
-JSDoc 或块注释中 `*/` 必须写为 `* /`。
-否则 esbuild 把 `*/` 识别为块注释结束符→编译失败。
-
-**Why**：message.tsx 注释写了 `-/*/+`，esbuild 解析崩溃。
-pre-commit 警告：`.tsx` 文件注释中出现 `*/`（非行尾的块注释结束符）。
 
 ---
 
@@ -199,8 +146,8 @@ LLM       → providers/ (DeepSeek, OpenAI, Gateway)
 v2.5 的 38 项 pre-commit + 12 脚本 + 3 次 tsc/vitest 重跑，
 导致 `--no-verify` 泛滥——一个被绕过的门禁 = 没有门禁。
 
-v3.0 只设 5 项物理阻断（全 <1s），其他交给 agent 自检和 PostToolUse 自动化。
-**越少越会被执行。**
+v3.0 只设 5 项物理阻断 → v4.4.2 扩展到 7 项。新增：契约优先（铁律47）、测试非空壳（铁律48）。
+**从代码规范执法 → 行为契约执法。测试不是写完代码后的验证——在代码被写出来之前，对和错的标准已经被定义。**
 
 ### 执法架构: 五层精简
 
@@ -217,11 +164,11 @@ v3.0 只设 5 项物理阻断（全 <1s），其他交给 agent 自检和 PostTo
 | PreToolUse | hook-check-memory.sh (教训注入) | 不阻断 | <1s |
 | PreToolUse | hook-block-write.sh (task brief 字段) | 🔴 阻断 | <1s |
 | PreToolUse | hook-enforce-v25.sh (loop-state) | 🔴 阻断 | <1s |
-| PostToolUse | verify-incremental.sh (L1→L4) | 🔴 阻断 | 5-30s |
+| PostToolUse | verify-incremental.sh (L1→L4) + check-baseline.sh (L5) | 🔴 阻断 | 5-30s |
 | pre-commit | pre-commit-check.sh (5 项) | 🔴 阻断 | <5s |
 | pre-push | pre-push-check.sh (secrets 终扫) | 🔴 阻断 | <3s |
 
-### pre-commit 5 项硬阻断
+### pre-commit 7 项硬阻断
 
 | # | 检查 | 历史事故 | 耗时 |
 |---|------|---------|------|
@@ -230,11 +177,12 @@ v3.0 只设 5 项物理阻断（全 <1s），其他交给 agent 自检和 PostTo
 | 3 | secrets 扫描 | API key 暴露 | <1s |
 | 4 | 新文件有测试 | 4 次接线失败 | <1s |
 | 5 | 新 export 有调用方 | 4 次接线失败 | <1s |
+| 6 | 新增 compute 函数有测试 + expect 断言 | 铁律 47/48 | <1s |
+| 7 | 新增哨兵 aggregate.ts 有集成测试 | 铁律 47/48 | <1s |
 
 ### ⚡ Agent 自检 5 问（每次写完代码必答）
 
-> 以下检查由 agent 在 AGENTS.md 指令下自我执行，不依赖 bash 脚本。
-> agent 能做语义理解——bash 只会 grep 模式匹配（误报如 `'community'` 被识别为硬编码凭证）。
+> 铁律 47/48（契约优先+测试非空壳）的内容已在 task-start Q4 中前置——写代码前定义，不等到写完再补。
 
 写完代码后，必须在回复中逐项回答：
 
@@ -242,38 +190,25 @@ v3.0 只设 5 项物理阻断（全 <1s），其他交给 agent 自检和 PostTo
 1. 接线检查: 新 export 谁调用？（grep 确认调用方存在）
 2. 异常处理: 每个 catch 有 log + degraded？（铁律 24+31）
 3. 类型安全: as any = 0？（铁律 38）
-4. 测试覆盖: 测试有 expect() 断言？（不是空壳）
+4. 测试质量: 有 expect() 断言？覆盖正常/降级/边界？（铁律 48。不是空壳）
 5. 残留清理: 有死代码吗？旧文件删了？旧函数还有引用？
 ```
 
 **Why agent 自检比 bash 好**: agent 知道 `'community'` 是模块 ID 不是密码。
 grep 脚本会产生误报，误报会产生噪音，噪音会导致整条门禁链被绕过。
 
-### task-start.sh 3 问（任务启动时回答）
+### task-start.sh 4 问（任务启动时回答）
 
 ```
 Q1 调研: a) 业界最佳实践 b) 顶级团队怎么做 c) memory/ 里我们犯过的错
 Q2 范围: 最简实现是什么？什么可以不做？
 Q3 验收: 入口→交互→结果，三环节各是什么？
+Q4 契约与测试: 新模块的输入/输出/降级契约是什么？测试怎么验证？（铁律 47+48，写代码前定义）
 ```
 
-### Windows 兼容性
 
-- pre-commit 仅含 grep（<5s），不含 tsc/vitest（已由 PostToolUse 跑）
-- 严禁 `taskkill //IM node.exe` — 会杀死所有 Node 进程（含其他 Codex 实例）
-- `--no-verify` 在 v3.0 下不应再需要（pre-commit <5s）
 
-### 删除的脚本（v3.0 清理）
 
-| 脚本 | 删除原因 |
-|------|---------|
-| check-manual-drift.sh | 文档硬编码数字 → 每次改代码都要改文档 |
-| check-vertical-slice.sh | 入口→结果 三环节 → agent 自检 Q3 验收 |
-| generate-state-md.sh | STATE.md 无人阅读 |
-| check-reality.sh | @state 注释 ≠ 正确性 |
-| hook-check-brief.sh | task brief 提醒被 task-start.sh 覆盖 |
-
-**净效果: 12 脚本 → 8 脚本, 38 项检查 → 5 项, 提交耗时 90s → <5s。**
 
 ---
 
@@ -352,7 +287,8 @@ crontab -e  # 添加: */30 * * * * bash /path/to/scripts/workflow/checkpoint-run
 - `verify-incremental.sh`: L1 oxlint → L2 tsc --incremental → L3 vitest --changed → L4 接线审计
 - `.Codex/loop-state.json`: 循环计数，最多5轮
 
-> PostToolUse 是 tsc + vitest 唯一一次执行的位置。pre-commit 和 pre-push 不重复跑。
+> PostToolUse 是 tsc + vitest + baseline 唯一一次执行的位置。pre-commit 和 pre-push 不重复跑。
+> check-baseline.sh：跑基准测试，输出和上次提交对比。有偏差→告警（不阻断，需 agent 说明原因）。
 
 ### Git Hooks
 
@@ -361,7 +297,7 @@ crontab -e  # 添加: */30 * * * * bash /path/to/scripts/workflow/checkpoint-run
 | pre-commit | `git commit` | 5 项硬阻断 (as any/empty catch/secrets/新文件测试对/新export接线) |
 | commit-msg | `git commit` | Conventional Commits 格式强制 |
 | post-commit | `git commit` | 决策流程建议 (decide-next.sh) |
-| pre-push | `git push` | 1 道门禁 (secrets 终扫) |
+| pre-push | `git push` | 2 道门禁 (secrets 终扫 + 覆盖率不降) |
 
 ---
 
@@ -376,3 +312,8 @@ crontab -e  # 添加: */30 * * * * bash /path/to/scripts/workflow/checkpoint-run
 - **逐项 commit** — 单模块独立提交，不批量
 - **改完列清单** — 文件 + 行号 + 为什么改
 - **部署后验证** — `bash scripts/workflow/checkpoint-deploy.sh` curl 外部 URL
+
+
+
+
+
