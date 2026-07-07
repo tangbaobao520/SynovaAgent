@@ -475,6 +475,26 @@ bash "$ROOT/scripts/check-verifiable-done.sh"
 bash "$ROOT/scripts/check-q0c-tracking.sh"
 [ $? -ne 0 ] && HARD_FAIL=$((HARD_FAIL + 1))
 
+# V4.4.2 (本体迁移): 禁止旧 SOG 枚举引用潜入 src/
+SOG_NODE_REFS=$(grep -rn "SOGNodeType\." src/ --include="*.ts" 2>/dev/null | grep -v "node_modules" | head -10 || true)
+if [ -n "$SOG_NODE_REFS" ]; then
+  echo -e "${RED}  ❌ 旧 SOGNodeType 枚举仍被引用 — 本体迁移未完成${RESET}"
+  echo "$SOG_NODE_REFS"
+  HARD_FAIL=$((HARD_FAIL + 1))
+fi
+SOG_EDGE_REFS=$(grep -rn "SOGEdgeType\." src/ --include="*.ts" 2>/dev/null | grep -v "node_modules" | head -10 || true)
+if [ -n "$SOG_EDGE_REFS" ]; then
+  echo -e "${RED}  ❌ 旧 SOGEdgeType 枚举仍被引用 — 本体迁移未完成${RESET}"
+  echo "$SOG_EDGE_REFS"
+  HARD_FAIL=$((HARD_FAIL + 1))
+fi
+SOG_IMPORTS=$(grep -rn "from '@synova/sog-core'" src/ --include="*.ts" 2>/dev/null | grep -v "node_modules" | head -10 || true)
+if [ -n "$SOG_IMPORTS" ]; then
+  echo -e "${RED}  ❌ @synova/sog-core 仍被 src/ 引用 — 本体迁移未完成${RESET}"
+  echo "$SOG_IMPORTS"
+  HARD_FAIL=$((HARD_FAIL + 1))
+fi
+
 # v3.6 降级为警告 (原 15: PRD 章节引用, 原 16: 文件位置)
 PRD_REF=""
 if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
