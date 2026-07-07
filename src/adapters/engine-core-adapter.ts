@@ -32,8 +32,8 @@ export class EngineCoreVendorAdapter implements DiagnosisEngine {
     onEvent?: (event: DiagnosisEvent) => void,
   ): Promise<ConsultationResult> {
     try {
-      // 铁律 39: 通过 @synova/diagnosis-engine 包访问 (不再直连 vendor 路径)
-      const { DiagnosisOrchestrator } = await import('@synova/diagnosis-engine');
+      // 铁律 39+46: 直接 import engine-core (V4.4.2: 壳包 @synova/diagnosis-engine 已删除)
+      const { DiagnosisOrchestrator } = await import('../../packages/engine-core/src/pipeline/diagnosis/diagnosis-orchestrator');
       const { createDiagnosisLLMClient, createToolExecutorAdapter } = await import(
         '../agent/orchestrator-adapter'
       );

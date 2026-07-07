@@ -213,3 +213,73 @@
 - `src/sentinel/types.ts` 🔧 内联 DiagnosisErrorCode
 - 4 个白名单桥接文件 ❌ 删除
 - 6 个消费者文件 🔧 修复
+
+---
+
+## V4.2.5 (2026-06-25) — 时间戳顺序检查 + 项目身份重构
+
+### 新增
+- **免疫细胞 #18: 时间戳顺序检查** — PreToolUse hook 在 brief 未填而写代码时，记录证据到 `/tmp/.synova-before-brief`（git 外不可抹除）。pre-commit 组 6 检查此文件，存在则硬阻断。
+- **项目身份重构** — 新增三层解耦体系（纵向五层物理隔离 / 横向 Monorepo 包 / 扩展文件驱动）。Q0 增加三层解耦勾选项。Q1 重构为 Anthropic 决策链（5 步序）+ 执行约束。
+
+### 变更
+- 模板 `generate-task-brief.py` 更新为 V4.2.5 新格式
+
+---
+
+## V4.2.6 (2026-06-26) — Q2 验证 + Verify 自动生成
+
+### 新增
+- **免疫细胞 #19: Q2排除项物理验证** — pre-commit 自动解析 Q2 排除项中的文件路径，检查 git diff 是否包含。
+- **免疫细胞 #20: verify命令自动生成与执行** — Q2排除项、Q3验收项可验证内容自动生成 bash verify 命令。
+
+### 修复
+- **check-verifiable-done.sh 解析bug修复** — awk 范围模式修复
+
+---
+
+## V4.2.7 (2026-06-27) — 日期边界修复 + 模板残留检查
+
+### 修复
+- 日期边界bug、层字段检查修复、current-brief 绑定、模板残留检查、Q2排除项必须含文件路径、trivial verify阻断
+
+---
+
+## V4.2.9 (2026-06-28) — Maker/Checker 分离 + Stub Compute 清零
+
+### 新增
+- **maker/checker 分离** — checker-review.sh 独立验证器，GitHub Actions PR触发。
+- **19个stub compute全部修复** — S1-S3, O1-O10, T4-T9 替换为真实算法。
+- **专家路由改为layer基** — 从 category 改为 layer 路由。
+- **SentinelConfig 补全4字段** — layer/auxiliaryExperts/computeKind/technoEconomicPhaseCalibration。
+
+---
+
+## V4.3.0 (2026-07-03) — L4 本体层设计哲学
+
+### 变更
+- **L4 本体层设计哲学明确化** — 本体层是企业知识图谱（22 节点类型 + 17 边类型），compute 函数必须使用图遍历思维。
+- **compute 函数签名标准化** — `(store: GraphStoreReader, teamId: string) => ComputeResult`
+- **已知问题** — Financial 节点 17 个 optionalProps 需拆分；5 条缺失边类型需补充。
+
+---
+
+## V4.4.0 (2026-07-05) — 路径匹配修复 + 版本号统一
+
+### 修复
+- check-brief-vs-code 路径匹配修复、层检查排除 scripts/、全部版本号同步到 V4.4.0
+
+---
+
+## V4.4.2 (2026-07-07) — Engine-Core 引用全面加固 + 壳包检测
+
+> 背景：2026-07-06 Codex 审计发现 `@synova/diagnosis-engine` 是 42 行纯 re-export shell，
+> 通过 packages/ 目录绕过了铁律 46 的 `src/` 扫描。三个漏洞同时修复。
+
+### 修复
+- **漏洞 1: 扫描范围扩展到 packages/** — `STAGED_ALL_FILES` 同时覆盖 `src/` 和 `packages/`
+- **漏洞 2: 匹配任意 engine-core 引用** — 字面量 + 相对路径三重匹配
+- **漏洞 3: 壳包检测** — `packages/*/src/` 下仅 index.ts + export from + <50行 + 引用 engine-core → 壳包硬阻断
+
+### 变更
+- **check-bridge-files.sh 同步加固** — 独立验证器同样覆盖 packages/ + 相对路径 + 壳包检测

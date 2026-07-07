@@ -5,7 +5,7 @@
  * 映射为 SOG 本体事件。国内轨独立自研，不依赖 NemoClaw。
  */
 import type { DataConnector, ConnectorMessage, ConnectorMember, ConnectorEvent, OntologyMapping } from './types';
-import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
+import { NodeType, EdgeType } from '@synova/ontology';
 import { createLogger } from '@synova/logger';
 import { feishuHealthCheck } from './feishu-bridge';
 import type { FeishuMember } from './feishu-bridge';
@@ -109,13 +109,13 @@ export class FeishuConnector implements DataConnector {
     // 1. 成员 → Person 节点
     for (const m of members) {
       mapping.nodes.push({
-        type: SOGNodeType.PERSON,
+        type: NodeType.RESOURCE_PERSON,
         props: { name: m.name, email: m.email || undefined },
       });
       if (m.department) {
         // 部门 → Team 节点
         mapping.nodes.push({
-          type: SOGNodeType.TEAM,
+          type: NodeType.RESOURCE_TEAM,
           props: { name: m.department, teamType: 'permanent' },
         });
       }
@@ -125,7 +125,7 @@ export class FeishuConnector implements DataConnector {
     // (需要节点 ID 映射——由 graph-store 在持久化时分配)
     for (const msg of messages) {
       mapping.edges.push({
-        type: SOGEdgeType.INTERACTS_WITH,
+        type: EdgeType.INFORMS /* ONTOLOGY-MIGRATION: EdgeType.INFORMS -> INFORMS (approximate). */,
         from: msg.senderId,
         to: msg.recipientIds?.[0] || msg.senderId,
         weight: 1,
@@ -136,12 +136,12 @@ export class FeishuConnector implements DataConnector {
     // 3. 事件 → Event 节点 + 关联边
     for (const evt of events) {
       mapping.nodes.push({
-        type: SOGNodeType.EVENT,
+        type: NodeType.ACTIVITY_LEARNING /* ONTOLOGY-MIGRATION: NodeType.ACTIVITY_LEARNING has no direct match. Store as edge annotation. */,
         props: { eventType: evt.eventType, timestamp: evt.timestamp },
       });
       for (const relatedId of evt.relatedEntityIds || []) {
         mapping.edges.push({
-          type: SOGEdgeType.CORRESPONDS_TO,
+          type: EdgeType.INFORMS /* ONTOLOGY-MIGRATION: EdgeType.INFORMS no direct match. Using INFORMS. */,
           from: evt.id,
           to: relatedId,
           weight: 0.7,
