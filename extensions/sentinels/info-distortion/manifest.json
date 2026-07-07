@@ -35,5 +35,6 @@
   "exportKey": "infoDistortionSentinel",
   "auxiliaryExperts": [
     "knowledge"
-  ]
+  ],
+  "id": "sentinel-info-distortion"
 }

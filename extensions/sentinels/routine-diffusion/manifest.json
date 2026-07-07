@@ -35,5 +35,6 @@
   "exportKey": "routineDiffusionSentinel",
   "auxiliaryExperts": [
     "knowledge"
-  ]
+  ],
+  "id": "sentinel-routine-diffusion"
 }

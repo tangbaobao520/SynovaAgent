@@ -35,5 +35,6 @@
   "exportKey": "incentiveAlignmentSentinel",
   "auxiliaryExperts": [
     "finance"
-  ]
+  ],
+  "id": "sentinel-incentive-alignment"
 }

@@ -3,8 +3,8 @@
   "name": "process-ai-readiness",
   "version": "1.0.0",
   "type": "sentinel",
-  "displayName": "T5 \u6d41\u7a0bAI\u5316\u5c31\u7eea\u5ea6",
-  "description": "T5: T5 \u6d41\u7a0bAI\u5316\u5c31\u7eea\u5ea6",
+  "displayName": "T5 流程AI化就绪度",
+  "description": "T5: T5 流程AI化就绪度",
   "schedule": "0 0 1 * *",
   "expert": "tech",
   "priority": "P1",
@@ -35,5 +35,6 @@
   "exportKey": "ProcessaireadinessSentinel",
   "auxiliaryExperts": [
     "org"
-  ]
+  ],
+  "id": "sentinel-process-ai-readiness"
 }

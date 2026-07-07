@@ -35,5 +35,6 @@
   "exportKey": "routineMutationSentinel",
   "auxiliaryExperts": [
     "knowledge"
-  ]
+  ],
+  "id": "sentinel-routine-mutation"
 }

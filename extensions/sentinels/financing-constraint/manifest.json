@@ -3,8 +3,8 @@
   "name": "financing-constraint",
   "version": "1.0.0",
   "type": "sentinel",
-  "displayName": "\u878d\u8d44\u7ea6\u675f\u6307\u6570",
-  "description": "F1: \u57fa\u4e8eKZ\u6307\u6570(Kaplan-Zingales)\u8bc4\u4f30\u4f01\u4e1a\u878d\u8d44\u7ea6\u675f\u7a0b\u5ea6\u3002\u6570\u636e\u6e90: FINANCIAL\u8282\u70b9\u3002",
+  "displayName": "融资约束指数",
+  "description": "F1: 基于KZ指数(Kaplan-Zingales)评估企业融资约束程度。数据源: FINANCIAL节点。",
   "schedule": "0 0 1 * *",
   "expert": "finance",
   "priority": "P1",
@@ -35,5 +35,6 @@
   "exportKey": "financingConstraintSentinel",
   "auxiliaryExperts": [
     "strategy"
-  ]
+  ],
+  "id": "sentinel-financing-constraint"
 }

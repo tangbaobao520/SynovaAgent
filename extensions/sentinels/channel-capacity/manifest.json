@@ -35,5 +35,6 @@
   "exportKey": "channelCapacitySentinel",
   "auxiliaryExperts": [
     "knowledge"
-  ]
+  ],
+  "id": "sentinel-channel-capacity"
 }

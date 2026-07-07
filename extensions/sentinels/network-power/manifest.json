@@ -35,5 +35,6 @@
     }
   },
   "entryPoint": "./aggregate.ts",
-  "exportKey": "networkPowerSentinel"
+  "exportKey": "networkPowerSentinel",
+  "id": "sentinel-network-power"
 }

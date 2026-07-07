@@ -35,5 +35,6 @@
   "exportKey": "strategyCapabilityFitSentinel",
   "auxiliaryExperts": [
     "strategy"
-  ]
+  ],
+  "id": "sentinel-strategy-capability-fit"
 }

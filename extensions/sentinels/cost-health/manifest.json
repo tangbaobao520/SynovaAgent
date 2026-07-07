@@ -55,5 +55,6 @@
     "requiredFields": [
       "amount"
     ]
-  }
+  },
+  "id": "sentinel-cost-health"
 }

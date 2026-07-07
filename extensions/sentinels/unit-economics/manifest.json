@@ -38,5 +38,6 @@
     }
   },
   "entryPoint": "./aggregate.ts",
-  "exportKey": "unitEconomicsSentinel"
+  "exportKey": "unitEconomicsSentinel",
+  "id": "sentinel-unit-economics"
 }

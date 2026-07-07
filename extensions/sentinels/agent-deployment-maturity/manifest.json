@@ -3,8 +3,8 @@
   "name": "agent-deployment-maturity",
   "version": "1.0.0",
   "type": "sentinel",
-  "displayName": "T7 Agent\u90e8\u7f72\u6210\u719f\u5ea6",
-  "description": "T7: T7 Agent\u90e8\u7f72\u6210\u719f\u5ea6",
+  "displayName": "T7 Agent部署成熟度",
+  "description": "T7: T7 Agent部署成熟度",
   "schedule": "0 0 1 * *",
   "expert": "tech",
   "priority": "P1",
@@ -35,5 +35,6 @@
   "exportKey": "AgentdeploymentmaturitySentinel",
   "auxiliaryExperts": [
     "org"
-  ]
+  ],
+  "id": "sentinel-agent-deployment-maturity"
 }

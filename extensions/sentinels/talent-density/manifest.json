@@ -35,5 +35,6 @@
   "exportKey": "talentDensitySentinel",
   "auxiliaryExperts": [
     "knowledge"
-  ]
+  ],
+  "id": "sentinel-talent-density"
 }

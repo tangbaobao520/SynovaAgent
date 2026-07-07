@@ -35,5 +35,6 @@
   "exportKey": "resourceMisallocationSentinel",
   "auxiliaryExperts": [
     "strategy"
-  ]
+  ],
+  "id": "sentinel-resource-misallocation"
 }

@@ -3,8 +3,8 @@
   "name": "moat-dependency",
   "version": "1.0.0",
   "type": "sentinel",
-  "displayName": "\u62a4\u57ce\u6cb3\u4f9d\u8d56\u5ea6",
-  "description": "I8: \u805a\u5408\u54e8\u5175\uff0c\u5f15\u7528I3+I4\u7ed3\u679c\u8bc4\u4f30\u62a4\u57ce\u6cb3\u4f9d\u8d56\u5ea6\u3002",
+  "displayName": "护城河依赖度",
+  "description": "I8: 聚合哨兵，引用I3+I4结果评估护城河依赖度。",
   "schedule": "0 0 1 * *",
   "expert": "strategy",
   "priority": "P1",
@@ -35,5 +35,6 @@
   "exportKey": "moatDependencySentinel",
   "auxiliaryExperts": [
     "strategy"
-  ]
+  ],
+  "id": "sentinel-moat-dependency"
 }

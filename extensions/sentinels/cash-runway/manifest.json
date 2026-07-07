@@ -50,5 +50,6 @@
     "requiredFields": [
       "amount"
     ]
-  }
+  },
+  "id": "sentinel-cash-runway"
 }

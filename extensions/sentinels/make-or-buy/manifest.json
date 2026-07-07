@@ -1,1 +1,41 @@
-{"$schema":"https://synova.dev/schemas/sentinel-manifest-v1.json","name":"make-or-buy","version":"1.0.0","type":"sentinel","displayName":"自制外购决策健康度","description":"I12: 评估核心vs外围能力的自制/外购决策健康度。","schedule":"0 0 1 * *","expert":"business_model","auxiliaryExperts":["tech"],"priority":"P1","layer":"interface","computeKind":"heuristic","computes":["make-or-buy-score"],"thresholds":{"make_or_buy_health":{"warning":0.4,"critical":0.2}},"aggregation":"worst_first","context":{"requiredDataSources":["sog_graph"],"dataAccess":{"allowedDimensions":["strategic","technology"],"sensitiveAccess":"read"}},"entryPoint":"./aggregate.ts","exportKey":"makeOrBuySentinel"}
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "make-or-buy",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "自制外购决策健康度",
+  "description": "I12: 评估核心vs外围能力的自制/外购决策健康度。",
+  "schedule": "0 0 1 * *",
+  "expert": "business_model",
+  "auxiliaryExperts": [
+    "tech"
+  ],
+  "priority": "P1",
+  "layer": "interface",
+  "computeKind": "heuristic",
+  "computes": [
+    "make-or-buy-score"
+  ],
+  "thresholds": {
+    "make_or_buy_health": {
+      "warning": 0.4,
+      "critical": 0.2
+    }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": [
+      "sog_graph"
+    ],
+    "dataAccess": {
+      "allowedDimensions": [
+        "strategic",
+        "technology"
+      ],
+      "sensitiveAccess": "read"
+    }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "makeOrBuySentinel",
+  "id": "sentinel-make-or-buy"
+}

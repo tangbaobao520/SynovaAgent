@@ -35,5 +35,6 @@
     }
   },
   "entryPoint": "./aggregate.ts",
-  "exportKey": "valueCaptureSentinel"
+  "exportKey": "valueCaptureSentinel",
+  "id": "sentinel-value-capture"
 }

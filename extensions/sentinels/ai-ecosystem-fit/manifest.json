@@ -3,8 +3,8 @@
   "name": "ai-ecosystem-fit",
   "version": "1.0.0",
   "type": "sentinel",
-  "displayName": "T6 AI\u8f6f\u4ef6\u751f\u6001\u5339\u914d\u5ea6",
-  "description": "T6: T6 AI\u8f6f\u4ef6\u751f\u6001\u5339\u914d\u5ea6",
+  "displayName": "T6 AI软件生态匹配度",
+  "description": "T6: T6 AI软件生态匹配度",
   "schedule": "0 0 1 * *",
   "expert": "tech",
   "priority": "P1",
@@ -35,5 +35,6 @@
   "exportKey": "AiecosystemfitSentinel",
   "auxiliaryExperts": [
     "strategy"
-  ]
+  ],
+  "id": "sentinel-ai-ecosystem-fit"
 }
