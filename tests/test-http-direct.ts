@@ -59,8 +59,8 @@ async function main() {
 
         const gs = memGraphStore();
         const extractor = new DocExtractor(gs as any, llmClient as any);
-        const { SOGNodeType } = await import('../packages/sog-core/src/sog-core-schema');
-        const docId = gs.createNode(SOGNodeType.DOCUMENT, { name: 'interview', content }, teamId);
+        const { NodeType } = await import('../packages/sog-core/src/sog-core-schema');
+        const docId = gs.createNode(NodeType.RESOURCE_KNOWLEDGE /* ONTOLOGY-MIGRATION: SOGNodeType.DOCUMENT -> resource/knowledge or resource/data? Check context. */, { name: 'interview', content }, teamId);
         const extraction = await extractor.extract(docId, content, teamId);
 
         console.log(`[${jobId}] 提取完成: ${extraction.coveredCount}/8`);

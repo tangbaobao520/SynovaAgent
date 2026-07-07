@@ -9,7 +9,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createGraphBridge } from '../../src/l4/graph-bridge';
 import type { GraphStore } from '../../src/l4/graph-bridge';
-import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
+import { NodeType, EdgeType } from '@synova/ontology';
 
 // ═══ Fake GraphStore (matches REAL engine-core interface) ═══
 
@@ -86,8 +86,8 @@ describe('GraphBridge — 6 upsert methods with real GraphStore API', () => {
     expect(result.nodesCreated).toBe(2);
     expect(result.edgesCreated).toBe(1);
     expect(result.degraded).toBe(false);
-    expect(store.nodes.filter(n => n.type === SOGNodeType.PERSON)).toHaveLength(2);
-    expect(store.edges.filter(e => e.type === SOGEdgeType.INTERACTS_WITH)).toHaveLength(1);
+    expect(store.nodes.filter(n => n.type === NodeType.RESOURCE_PERSON)).toHaveLength(2);
+    expect(store.edges.filter(e => e.type === EdgeType.INFORMS /* ONTOLOGY-MIGRATION: SOGEdgeType.INTERACTS_WITH -> INFORMS (approximate). */)).toHaveLength(1);
   });
 
   it('Given empty HONA input, When upsertFromHONA, Then returns zero counts', () => {
@@ -101,8 +101,8 @@ describe('GraphBridge — 6 upsert methods with real GraphStore API', () => {
 
   it('Given key person risk profiles, When upsertFromKeyPersonRisk, Then creates Risk nodes + AFFECTS edges to matching Person', () => {
     // First create matching Person nodes in the store
-    store.createNode(SOGNodeType.PERSON, { name: 'cto' }, orgId);
-    store.createNode(SOGNodeType.PERSON, { name: 'lead-dev' }, orgId);
+    store.createNode(NodeType.RESOURCE_PERSON, { name: 'cto' }, orgId);
+    store.createNode(NodeType.RESOURCE_PERSON, { name: 'lead-dev' }, orgId);
 
     const result = bridge.upsertFromKeyPersonRisk([
       { roleId: 'cto', riskLevel: 'critical', knowledgeDomains: ['architecture', 'security'], busFactor: 1 },
@@ -110,8 +110,8 @@ describe('GraphBridge — 6 upsert methods with real GraphStore API', () => {
     ]);
     expect(result.nodesCreated).toBe(2);
     expect(result.degraded).toBe(false);
-    expect(store.nodes.filter(n => n.type === SOGNodeType.RISK)).toHaveLength(2);
-    expect(store.edges.filter(e => e.type === SOGEdgeType.AFFECTS).length).toBeGreaterThanOrEqual(1);
+    expect(store.nodes.filter(n => n.type === NodeType.OUTCOME_RISK)).toHaveLength(2);
+    expect(store.edges.filter(e => e.type === EdgeType.DEPENDS_ON /* ONTOLOGY-MIGRATION: SOGEdgeType.AFFECTS -> DEPENDS_ON + INFORMS (combination). */).length).toBeGreaterThanOrEqual(1);
   });
 
   it('Given empty risk input, When upsertFromKeyPersonRisk, Then returns zero counts', () => {
@@ -129,7 +129,7 @@ describe('GraphBridge — 6 upsert methods with real GraphStore API', () => {
     ]);
     expect(result.nodesCreated).toBe(2);
     expect(result.degraded).toBe(false);
-    expect(store.nodes.filter(n => n.type === SOGNodeType.FINANCIAL)).toHaveLength(2);
+    expect(store.nodes.filter(n => n.type === NodeType.OUTCOME_FINANCIAL /* ONTOLOGY-MIGRATION: SOGNodeType.FINANCIAL -> outcome/financial or resource/money? Context-dependent. */)).toHaveLength(2);
   });
 
   // ── upsertFromCapabilityGap ──
@@ -140,7 +140,7 @@ describe('GraphBridge — 6 upsert methods with real GraphStore API', () => {
     ]);
     expect(result.nodesCreated).toBe(1);
     expect(result.degraded).toBe(false);
-    expect(store.nodes.filter(n => n.type === SOGNodeType.CAPABILITY)).toHaveLength(1);
+    expect(store.nodes.filter(n => n.type === NodeType.RESOURCE_KNOWLEDGE /* ONTOLOGY-MIGRATION: SOGNodeType.CAPABILITY has no direct match. Using resource/knowledge. */)).toHaveLength(1);
   });
 
   // ── upsertFromSevenPowers ──
@@ -152,7 +152,7 @@ describe('GraphBridge — 6 upsert methods with real GraphStore API', () => {
     ]);
     expect(result.nodesCreated).toBe(2);
     expect(result.degraded).toBe(false);
-    expect(store.nodes.filter(n => n.type === SOGNodeType.GOAL)).toHaveLength(2);
+    expect(store.nodes.filter(n => n.type === NodeType.ACTIVITY_GOVERNANCE /* ONTOLOGY-MIGRATION: SOGNodeType.GOAL has no direct match. Using activity/governance (strategic alignment). */)).toHaveLength(2);
   });
 
   // ── Partial failure: one upsert throws, others continue ──
@@ -176,7 +176,7 @@ describe('GraphBridge — 6 upsert methods with real GraphStore API', () => {
     ]);
     expect(result.nodesCreated).toBe(2);
     expect(result.degraded).toBe(false);
-    expect(store.nodes.filter(n => n.type === SOGNodeType.PROCESS)).toHaveLength(2);
+    expect(store.nodes.filter(n => n.type === NodeType.ACTIVITY_PRODUCTION /* ONTOLOGY-MIGRATION: SOGNodeType.PROCESS is approximate. Check processType and map to correct activity type. */)).toHaveLength(2);
   });
 
   it('Given empty CPC input, When upsertFromCPC, Then returns zero counts', () => {

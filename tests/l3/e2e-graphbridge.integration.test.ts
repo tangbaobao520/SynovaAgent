@@ -8,7 +8,7 @@ import express from 'express';
 import type { Server } from 'http';
 import Database from 'better-sqlite3';
 import { createGraphBridge } from '../../src/l4/graph-bridge';
-import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
+import { NodeType, EdgeType } from '@synova/ontology';
 
 let server: Server;
 let db: Database.Database;
@@ -93,7 +93,7 @@ describe('E2E: GraphBridge → Phase 1 auto-sync', () => {
     const body = await res.json() as any;
     expect(body.ok).toBe(true);
     expect(body.totalNodesCreated).toBeGreaterThan(0);
-    expect(body.graphNodes.some((n: any) => n.type === SOGNodeType.PERSON)).toBe(true);
+    expect(body.graphNodes.some((n: any) => n.type === NodeType.RESOURCE_PERSON)).toBe(true);
   });
 
   it('Given risk module completes, When GraphBridge syncs, Then Risk nodes created', async () => {
@@ -107,7 +107,7 @@ describe('E2E: GraphBridge → Phase 1 auto-sync', () => {
 
     const body = await res.json() as any;
     expect(body.ok).toBe(true);
-    expect(body.graphNodes.some((n: any) => n.type === SOGNodeType.RISK)).toBe(true);
+    expect(body.graphNodes.some((n: any) => n.type === NodeType.OUTCOME_RISK)).toBe(true);
   });
 
   it('Given financial module completes, When GraphBridge syncs, Then Financial nodes created', async () => {
@@ -121,7 +121,7 @@ describe('E2E: GraphBridge → Phase 1 auto-sync', () => {
 
     const body = await res.json() as any;
     expect(body.ok).toBe(true);
-    expect(body.graphNodes.some((n: any) => n.type === SOGNodeType.FINANCIAL)).toBe(true);
+    expect(body.graphNodes.some((n: any) => n.type === NodeType.OUTCOME_FINANCIAL /* ONTOLOGY-MIGRATION: SOGNodeType.FINANCIAL -> outcome/financial or resource/money? Context-dependent. */)).toBe(true);
     expect(body.anyDegraded).toBe(false);
   });
 
@@ -142,8 +142,8 @@ describe('E2E: GraphBridge → Phase 1 auto-sync', () => {
     expect(body.ok).toBe(true);
     expect(body.totalNodesCreated).toBe(3);
     const types = body.graphNodes.map((n: any) => n.type).sort();
-    expect(types).toContain(SOGNodeType.PERSON);
-    expect(types).toContain(SOGNodeType.RISK);
-    expect(types).toContain(SOGNodeType.FINANCIAL);
+    expect(types).toContain(NodeType.RESOURCE_PERSON);
+    expect(types).toContain(NodeType.OUTCOME_RISK);
+    expect(types).toContain(NodeType.OUTCOME_FINANCIAL /* ONTOLOGY-MIGRATION: SOGNodeType.FINANCIAL -> outcome/financial or resource/money? Context-dependent. */);
   });
 });

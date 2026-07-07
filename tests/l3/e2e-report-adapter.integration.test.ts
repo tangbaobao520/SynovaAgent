@@ -7,7 +7,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import express from 'express';
 import type { Server } from 'http';
 import { ReportGraphAdapter } from '../../src/l4/report-graph-adapter';
-import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
+import { NodeType, EdgeType } from '@synova/ontology';
 
 let server: Server;
 let PORT: number;
@@ -22,18 +22,18 @@ beforeAll(async () => {
     const fakeStore = {
       queryNodes(type: string) {
         const all = [
-          { id:'p1', type:SOGNodeType.PERSON, props:{name:'Alice'}},
-          { id:'p2', type:SOGNodeType.PERSON, props:{name:'Bob'}},
-          { id:'t1', type:SOGNodeType.TEAM, props:{name:'Engineering'}},
-          { id:'r1', type:SOGNodeType.RISK, props:{severity:'critical', riskType:'key_person', name:'Bus Factor=1'}},
-          { id:'r2', type:SOGNodeType.RISK, props:{severity:'high', riskType:'technical_debt', name:'技术债'}},
-          { id:'f1', type:SOGNodeType.FINANCIAL, props:{amount:5000, financialType:'cost'}},
+          { id:'p1', type:NodeType.RESOURCE_PERSON, props:{name:'Alice'}},
+          { id:'p2', type:NodeType.RESOURCE_PERSON, props:{name:'Bob'}},
+          { id:'t1', type:NodeType.RESOURCE_TEAM, props:{name:'Engineering'}},
+          { id:'r1', type:NodeType.OUTCOME_RISK, props:{severity:'critical', riskType:'key_person', name:'Bus Factor=1'}},
+          { id:'r2', type:NodeType.OUTCOME_RISK, props:{severity:'high', riskType:'technical_debt', name:'技术债'}},
+          { id:'f1', type:NodeType.OUTCOME_FINANCIAL /* ONTOLOGY-MIGRATION: SOGNodeType.FINANCIAL -> outcome/financial or resource/money? Context-dependent. */, props:{amount:5000, financialType:'cost'}},
         ];
         return all.filter(n => n.type === type).map(n => ({...n}));
       },
       queryEdges() {
         return [
-          { id:'e1', type:SOGEdgeType.AFFECTS, from:'r1', to:'p1', weight:0.9, props:{} },
+          { id:'e1', type:EdgeType.DEPENDS_ON /* ONTOLOGY-MIGRATION: SOGEdgeType.AFFECTS -> DEPENDS_ON + INFORMS (combination). */, from:'r1', to:'p1', weight:0.9, props:{} },
         ];
       },
       traverse(id: string) {

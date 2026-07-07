@@ -6,7 +6,7 @@
  *
  * 简化 Leiden 社区检测 + 结构化报告生成。
  */
-import { SOGNodeType } from '@synova/sog-core';
+import { ALL_NODE_TYPES, NodeType } from '@synova/ontology';
 import { createLogger } from '@synova/logger';
 
 const log = createLogger('l4/community-reports');
@@ -119,7 +119,7 @@ export function generateCommunityReports(store: GraphStoreRO, graph: string): Co
     const typeCount = new Map<string, number>();
     for (const nodeId of nodes) {
       // Look up node type from all node types
-      for (const ntype of Object.values(SOGNodeType)) {
+      for (const ntype of ALL_NODE_TYPES) {
         const found = store.queryNodes(ntype, undefined, graph);
         if (found.some(n => n.id === nodeId)) {
           typeCount.set(ntype, (typeCount.get(ntype) || 0) + 1);
