@@ -17,13 +17,25 @@ export const competitiveMoatStructuralSentinel = {
     let usedTraversal = false;
     try {
       try { if (traversal) { const r = traversal.traverse([teamId], ['FUNDS', 'PRODUCES', 'DEPLOYS']); if (r.nodes[0]) { finNodes = r.nodes; allNodes = r.nodes; usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
-      if (!usedTraversal) { finNodes = store.queryNodes('FINANCIAL', { teamId }); allNodes = store.queryNodes('ALL', { teamId }); }
+      if (!usedTraversal) { finNodes = store.queryNodes('Financial', { teamId }); allNodes = store.queryNodes('ALL', { teamId }); }
       const financials = finNodes.map(n => ({ revenue: Number(n.props.revenue) || 0, totalAssets: Number(n.props.totalAssets) || 0 }));
       const se = computeScaleEconomy(financials);
       const ne = computeNetworkEffect(allNodes);
       const sc = computeSwitchingCost(allNodes);
       const pp = computeProcessPower(allNodes);
-      const slm = computeCounterPositioningSlm({ incumbentMargin: 0.6, incumbentPrice: 100, ourPrice: 60, ourRevenue: 100, incumbentRevenue: 5000 });
+      // 从节点数据提取 SLM 参数，替代硬编码
+      const marketOutcomeNodes = allNodes.filter(n => n.type === 'MARKET_OUTCOME' || n.type === 'COMPETITIVE_OUTCOME');
+      const ourFinancial = financials.length > 0 ? financials[0] : { revenue: 0, totalAssets: 0 };
+      const ourRevenue = ourFinancial.revenue;
+      const ourPrice = allNodes.reduce((s, n) => s + (Number(n.props.price) || 0), 0) / Math.max(allNodes.length, 1);
+      const marketData = marketOutcomeNodes.reduce((acc, n) => ({
+        margin: acc.margin + (Number(n.props.incumbentMargin) || 0),
+        price: acc.price + (Number(n.props.incumbentPrice) || 0),
+        count: acc.count + 1
+      }), { margin: 0, price: 0, count: 0 });
+      const incumbentMargin = marketData.count > 0 ? marketData.margin / marketData.count : 0.3;
+      const incumbentPrice = marketData.count > 0 ? marketData.price / marketData.count : 100;
+      const slm = computeCounterPositioningSlm({ incumbentMargin, incumbentPrice, ourPrice: ourPrice || 60, ourRevenue: ourRevenue || 100, incumbentRevenue: 0 });
       const cr = computeCorneredResource(allNodes);
       const score = (se.score + ne.score + sc.score + pp.score + (slm.applicable ? slm.slm : 0) + cr.score) / 6;
       const scores = `规模${(se.score*100).toFixed(0)}% 网络${(ne.score*100).toFixed(0)}% 切换${(sc.score*100).toFixed(0)}% 流程${(pp.score*100).toFixed(0)}% SLM${slm.applicable ? (slm.slm*100).toFixed(0)+'%' : 'N/A'} 资源${(cr.score*100).toFixed(0)}%`;

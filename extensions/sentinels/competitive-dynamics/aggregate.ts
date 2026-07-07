@@ -26,7 +26,7 @@ export const competitiveDynamicsSentinel = {
       let finNodes: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
       let usedTraversal = false;
       try { if (traversal) { const r = traversal.traverse([teamId], ['PRODUCES', 'INFORMS']); if (r.nodes[0]) { marketNodes = r.nodes.filter(n => n.type === 'MARKET_OUTCOME' || n.type === 'COMPETITIVE_OUTCOME'); finNodes = r.nodes; usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
-      if (!usedTraversal) { marketNodes = store.queryNodes('Market', { teamId }); finNodes = store.queryNodes('FINANCIAL', { teamId }); }
+      if (!usedTraversal) { marketNodes = store.queryNodes('Event', { teamId }); finNodes = store.queryNodes('Financial', { teamId }); }
 
       const competitors = [...marketNodes, ...finNodes].map(n => ({
         name: (n.props.name as string) || n.id,
@@ -48,10 +48,17 @@ export const competitiveDynamicsSentinel = {
         }
       }
 
+      // 从 marketNodes 中提取竞争动态数据
+      const recentEntries = marketNodes.reduce((s, n) => s + (Number(n.props.recentEntries) || 0), 0);
+      const recentExits = marketNodes.reduce((s, n) => s + (Number(n.props.recentExits) || 0), 0);
+      const marketGrowth = marketNodes.length > 0
+        ? marketNodes.reduce((s, n) => s + (Number(n.props.growthRate) || Number(n.props.amount) || 0), 0) / marketNodes.length
+        : 0.05;
       const intensity = computeCompetitiveIntensity({
         competitorCount: competitors.length,
-        recentEntries: 1, recentExits: 1,
-        marketGrowth: 0.05,
+        recentEntries: recentEntries || 1,
+        recentExits: recentExits || 1,
+        marketGrowth: marketGrowth || 0.05,
       });
       log.debug({ intensity: intensity.intensity }, '竞争强度计算');
 

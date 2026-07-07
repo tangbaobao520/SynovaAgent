@@ -5,6 +5,7 @@
  * 比较 manifest.json 阈值，输出 SentinelFinding[]。
  */
 import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeDataReadiness } from './computes/data-readiness-score';
 import { computeDataSiloScore } from './computes/data-silo-score';
 import type { DataFlowEdge } from './computes/data-silo-score';
@@ -19,14 +20,18 @@ interface GraphStoreReader {
 }
 
 export const dataHealthSentinel = {
-  async check(store: GraphStoreReader, teamId: string): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date();
     const checkedAt = now.toISOString();
     const findings: SentinelFinding[] = [];
 
     try {
-      // 1. 读取所有节点（数据就绪度）
-      const allNodes = store.queryNodes('ALL', { teamId });
+      if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (!r.nodes[0]) return []; }
+      // 1. 读取多种合法实体类型（数据就绪度：从 Tool/Process/Document 综合评估）
+      const allToolNodes = store.queryNodes('Tool', { teamId });
+      const allProcessNodes = store.queryNodes('Process', { teamId });
+      const allDocNodes = store.queryNodes('Document', { teamId });
+      const allNodes = [...allToolNodes, ...allProcessNodes, ...allDocNodes];
       const readiness = computeDataReadiness(allNodes);
       log.debug({ readiness: readiness.readiness, total: readiness.totalNodes }, '数据就绪度计算完成');
 
@@ -63,11 +68,10 @@ export const dataHealthSentinel = {
         }
       }
 
-      // 2. 读取系统节点和数据流边（数据孤岛）
-      const toolNodes = store.queryNodes('TOOL', { teamId });
-      const appNodes = store.queryNodes('APP', { teamId });
-      const sysNodes = store.queryNodes('SYSTEM', { teamId });
-      const allSystems = [...toolNodes, ...appNodes, ...sysNodes].map(n => ({
+      // 2. 读取系统节点和数据流边（数据孤岛）：所有工具和流程视为系统
+      const sysToolNodes = store.queryNodes('Tool', { teamId });
+      const sysProcessNodes = store.queryNodes('Process', { teamId });
+      const allSystems = [...sysToolNodes, ...sysProcessNodes].map(n => ({
         id: n.id,
         name: (n.props.name as string) || n.id,
       }));

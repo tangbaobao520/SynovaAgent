@@ -1,5 +1,7 @@
 # CLAUDE.md — SynovaAgent
 
+> V4.4.2 | 2026-07-07 | Loop Engineering + 测试契约
+
 > 组织数字孪生诊断 + 持续增长导航系统。诊断是手段，目的是增长。
 > 核心问题：这家企业的增长卡在哪里？现在该做什么？
 > Agent，不是 ChatBot。驻扎企业，持续观测，主动发现，自动诊断，给出行动建议，跟踪执行。
@@ -153,7 +155,18 @@ JSDoc 或块注释中 `*/` 必须写为 `* /`。
 **Why**：message.tsx 注释写了 `-/*/+`，esbuild 解析崩溃。
 pre-commit 警告：`.tsx` 文件注释中出现 `*/`（非行尾的块注释结束符）。
 
-### 七、架构完整性 — 2026-06-21 新增（engine-core 拆分欺诈事故）
+### 七、测试契约与质量 — 2026-07-07 新增（V4.4.2 测试契约）
+
+> 以下铁律来自 2026-07 测试质量审计。
+> 核心原则：**新增能力必须先定义契约（JSDoc 输入/输出/降级），再实现。测试必须有真实断言。**
+
+**铁律 47. 契约优先。** 新增 compute 函数必须先定义输入/输出/降级契约（JSDoc），再实现。参见 SYNOVA-ARCH-质量与测试体系-20260707.md §二。
+pre-commit 硬阻断：新增 compute 函数无 JSDoc → 第 2 组拒绝提交。
+
+**铁律 48. 测试不可为空壳。** 测试文件必须有 expect() 断言。空壳测试 → commit 阻断。每个 compute 函数至少覆盖：正常路径 + 降级路径 + 边界条件。
+pre-commit 硬阻断：新测试文件无 expect() → 第 2 组拒绝提交。
+
+### 八、架构完整性 — 2026-06-21 新增（engine-core 拆分欺诈事故）
 
 > 以下铁律来自 2026-05 至 2026-06 engine-core 拆分欺诈事故。
 > 核心原则：**桥接文件 ≠ 迁移。声称拆完 = grep 零引用。**
@@ -212,7 +225,7 @@ Agent，不是 ChatBot。驻扎企业，持续观测，主动发现，自动诊�
 **目标**: 成为组织诊断的 AWS。每个新客户、新行业、新数据源 → 加文件即可，不改代码。
 能文件化的必须文件化。不能文件化的必须有明确的扩展点。
 
-**流程约束: V4.4.0 — task brief 6字段 + 免疫系统 + plan.json + 8组物理阻断 + Plan-Actual闭合 + engine-core清零 + 时间戳顺序检查 + Q2排除项验证 + verify执行
+**流程约束: V4.4.2 — task brief 6字段 + 免疫系统 + plan.json + 8组物理阻断 + Plan-Actual闭合 + engine-core清零 + 时间戳顺序检查 + Q2排除项验证 + verify执行 + 全仓库engine-core扫描 + 壳包检测
 
 **数据流**:
 ```
@@ -285,9 +298,9 @@ evolution/ (SessionLearningEngine, FeedbackCollector, OntologyAdapter)
 
 ---
 
-## Loop Engineering V4.4.0 — 脚本版本统一 + check-brief-vs-code 路径修复
+## Loop Engineering V4.4.2 — 全仓库 engine-core 引用加固 + 壳包检测
 
-> 2026-06-17 v2.5 → v3.0 → v3.1 → v3.5 → v3.6 → v3.7 → v3.8 → v3.9 → V4.1 → V4.1.1 → V4.1.2 → V4.2.2 → V4.2.3 → V4.2.4 → V4.2.5 → V4.3.0 → **V4.4.0 (2026-07-05)**。
+> 2026-06-17 v2.5 → v3.0 → v3.1 → v3.5 → v3.6 → v3.7 → v3.8 → v3.9 → V4.1 → V4.1.1 → V4.1.2 → V4.2.2 → V4.2.3 → V4.2.4 → V4.2.5 → V4.3.0 → V4.4.0 (2026-07-05) → **V4.4.2 (2026-07-07)**。
 >
 > **v3.6 的核心教训**：把需要语义理解的事交给 grep = 17 次折腾才提交成功。
 > **V3.9 的核心教训**：硬阻断 100% 有效，软机制 0% 有效。信息注入型检查对 agent 不可见。
@@ -346,6 +359,16 @@ evolution/ (SessionLearningEngine, FeedbackCollector, OntologyAdapter)
 > - **层检查排除 scripts/**：`^scripts/workflow/` → `^scripts/`，避免修改 CI 脚本触发层不匹配误报。
 > - **版本号统一**：pre-commit-check.sh、task-start.sh、loop-context.sh、loop-score.sh、loop-sync.sh、post-merge-cleanup.sh、verify-incremental.sh 全部同步到 V4.4.0。
 > - **CLAUDE.md 同步到 V4.4.0**
+>
+> ### V4.4.2 变更 (2026-07-07) — engine-core 引用全面加固
+> > 背景：2026-07-06 Codex 审计发现 `@synova/diagnosis-engine` 是 42 行纯 re-export shell，
+> > 通过 packages/ 目录绕过了铁律 46 的 `src/` 扫描。三个漏洞同时修复。
+>
+> - **漏洞 1 修复：扫描范围扩展到 packages/**。`STAGED_ALL_FILES` 同时覆盖 `src/` 和 `packages/`，堵住"藏到包目录"的绕过模式。
+> - **漏洞 2 修复：匹配任意 engine-core 引用**。从字面量 `packages/engine-core` 改为 `packages/engine-core + ../../engine-core/ + ../engine-core/` 三重匹配，堵住"用相对路径绕过"的漏洞。
+> - **漏洞 3 修复：壳包检测**。`packages/*/src/` 下只有 index.ts 且全为 `export from`、行数 <50、引用 engine-core → 判定为壳包 → 硬阻断。
+> - **check-bridge-files.sh 同步加固**：独立验证器同样覆盖 packages/ + 相对路径 + 壳包检测。
+> - **全部版本号同步到 V4.4.2**
 
 ### 设计哲学 (V3.7 核心修正)
 

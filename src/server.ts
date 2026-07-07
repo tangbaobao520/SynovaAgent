@@ -65,6 +65,7 @@ import auditRoutes from './routes/audit';
 import gaAdminRoutes from './routes/ga-admin';
 import gaCorrectionsRoutes from './routes/ga-corrections';
 import solutionsRoutes from './routes/solutions';
+import notificationsRoutes from './routes/notifications';
 import { AuditService } from './services/audit-service';
 import type { ServiceContainer } from './services/container';
 // Phase 0.1: 全局错误兜底 — uncaughtException + unhandledRejection
@@ -80,6 +81,18 @@ export async function createServer(): Promise<Server> {
 
   // Phase 0.3+0.4: 初始化审计日志服务 + GA 行为监控
   AuditService.init(db);
+
+  // Phase 4.2: 配置恢复验证 — 启动时检查配置文件完整性
+  try {
+    const { ConfigRecovery } = require('./services/config-recovery');
+    const result = ConfigRecovery.verify(config.dbPath + '.config.json');
+    if (!result.ok && result.corrupted) {
+      logger.warn({ result }, '配置文件损坏 — 已降级默认配置');
+    }
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.warn({ err: msg }, '配置恢复检查失败 — degraded');
+  }
 
   // Phase 4.1: 注册 Electron 通知适配器
   try {
@@ -432,6 +445,7 @@ app.use(auditRoutes);                          // GET /api/audit — 审计日�
 app.use(gaAdminRoutes);                        // /api/ga/* — GA 管理 API (Phase 3.1)
 app.use(gaCorrectionsRoutes);                  // /api/ga/corrections — 纠错 (Phase 3.2)
 app.use(solutionsRoutes);                        // /api/solutions/* — 方案生成链路 (Phase 3.4)
+app.use(notificationsRoutes);                    // /api/notifications/* — 通知系统 (Phase 2.1)
 
   // ═══ A2: Connector Pipeline — 手动触发 + 定时同步 ═══
   app.post('/api/connector/sync', async (req, res) => {

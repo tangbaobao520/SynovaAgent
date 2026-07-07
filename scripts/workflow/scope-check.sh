@@ -1,5 +1,5 @@
 #!/bin/bash
-# Loop Engineering V4.4.0 — scope-check.sh (产品对齐 4 问)
+# Loop Engineering V4.4.2 — scope-check.sh (产品对齐 4 问)
 #
 # 在 task-start.sh 之后、写代码之前运行。
 # 这不是门禁——这是给 Claude 读的上下文注入。
@@ -16,7 +16,7 @@ TODAY=$(date +%Y-%m-%d)
 
 echo ""
 echo -e "${CYAN}════════════════════════════════════════════════════════════${RESET}"
-echo -e "${CYAN}  Loop Engineering V4.3.0 — 产品对齐检查${RESET}"
+echo -e "${CYAN}  Loop Engineering V4.4.2 — 产品对齐检查${RESET}"
 echo -e "${CYAN}  写代码之前，先确认你在做对的事。${RESET}"
 echo -e "${CYAN}════════════════════════════════════════════════════════════${RESET}"
 echo ""

@@ -1,12 +1,14 @@
 import type { SentinelFinding } from "../../../src/sentinel/types";
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeHumanAgentBoundary } from "./computes/compute-human-agent-boundary";
 import { createLogger } from "@synova/logger";
 const log = createLogger("sentinel/human-agent-boundary");
 interface GSR { queryNodes(t:string,f?:Record<string,unknown>,g?:string): Array<{id:string;type:string;props:Record<string,unknown>}> }
 export const HumanAgentBoundarySentinel = {
-  async check(s: GSR, tid: string): Promise<SentinelFinding[]> {
+  async check(s: GSR, tid: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date(); const ca = now.toISOString();
     try {
+      if (traversal) { const r = traversal.traverse([tid], ['DEPLOYS']); if (!r.nodes[0]) return []; }
       const tools = s.queryNodes("Tool",{tid});
       const processes = s.queryNodes("Process",{tid});
       const automatedPct = tools.length > 0 ? tools.filter(t => t.props.automated === true).length / tools.length : 0;

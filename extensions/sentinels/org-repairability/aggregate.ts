@@ -1,4 +1,5 @@
 import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeProblemActionCycle } from './computes/compute-problem-action-cycle';
 import { createLogger } from '@synova/logger';
 
@@ -11,12 +12,15 @@ interface GraphStoreReader {
 }
 
 export const orgRepairabilitySentinel = {
-  async check(store: GraphStoreReader, teamId: string): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date();
     const checkedAt = now.toISOString();
+    let eventNodes: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
+    let usedTraversal = false;
 
     try {
-      const eventNodes = store.queryNodes('Event', { teamId });
+      try { if (traversal) { const r = traversal.traverse([teamId], ['SIGNAL_TRANSMITS']); if (r.nodes[0]) { eventNodes = r.nodes.filter(n => n.type === 'EVENT'); usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
+      if (!usedTraversal) { eventNodes = store.queryNodes('Event', { teamId }); }
 
       // 提取事件数据 (含 problemCategory 和时间戳)
       const events = eventNodes.map(n => ({

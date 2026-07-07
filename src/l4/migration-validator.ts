@@ -1,6 +1,7 @@
 /**
- * src/l4/migration-validator.ts — 迁移验证器
+ * src/l4/migration-validator.ts — 迁移验证器（一次性工具）
  *
+ * ⚠️ 一次性工具: 不接入生产路径。Phase 3 哨兵迁移时手动调用。
  * 比较新旧 compute 函数输出的一致性。
  * diff < 1% → pass, 1-5% → review, >5% → block
  * Phase 3 时用于验证 compute 函数从 KV 读取迁移到图遍历后的输出一致性。

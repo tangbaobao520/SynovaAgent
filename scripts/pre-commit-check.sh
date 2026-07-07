@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering V4.3.0 — pre-commit 8 组硬阻断 (全部 <10s) + 免疫系统
+# Loop Engineering V4.4.2 — pre-commit 8 组硬阻断 (全部 <10s) + 免疫系统
 #
 # v3.6 → v3.8 核心变化 (2026-06-23):
 #   + plan.json 支持: 分阶段任务可 deferred wiring/test_pairing 检查
@@ -131,7 +131,7 @@ NEW_IMPL=$(git diff --cached --name-only --diff-filter=A 2>/dev/null | grep -E "
 
 echo ""
 echo "═══════════════════════════════════════════════════════════"
-echo "  Loop Engineering V4.3.0 — pre-commit (8 组 + 免疫 + plan-integrity)"
+echo "  Loop Engineering V4.4.2 — pre-commit (8 组 + 免疫 + plan-integrity)"
 echo "═══════════════════════════════════════════════════════════"
 echo ""
 
@@ -168,7 +168,7 @@ fi
 bash "$ROOT/scripts/check-hardcoded.sh" 2>/dev/null || true
 hard_check "硬编码业务数据/类型 (禁止硬编码部门名/可扩展实体列表)" "${HARDCODE_DATA:-}"
 
-# V4.3.0: 旧适配器废弃映射检查 (不阻断)
+# V4.4.2: 旧适配器废弃映射检查 (不阻断)
 bash "$ROOT/scripts/check-deprecated-mapping.sh"
 
 # ═══════════════════════════════════════════════════════════════════
@@ -358,20 +358,40 @@ if [ -n "$STAGED_SRC" ]; then
 fi
 hard_check "架构边界: 禁止跨层引用 (铁律 39)" "${CROSS_LAYER:-}"
 
-# 5b. 桥接文件欺诈 (原 19: 铁律 46)
+# 5b. 桥接文件欺诈 + 包级 engine-core 引用 + shell 包检测 (铁律 46 — V4.4.2 全面加固)
 BRIDGE_ALLOWED="src/adapters/engine-core-adapter.ts|src/init/engine-context.ts|src/types/engine-core-types.ts|src/agent/orchestrator-adapter.ts|src/l4/graph-bridge.ts|src/l4/entity-resolver-l2.ts|src/l4/engine-graph-store.ts|src/l4/diagnosis-graph-query.ts|src/sentinel/compute/"
 BRIDGE_FAIL=""
-STAGED_SRC_FILES=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep -E '^src/.*\.ts$' | grep -v '\.test\.' || true)
-if [ -n "$STAGED_SRC_FILES" ]; then
-  for file in $STAGED_SRC_FILES; do
+
+# 5b-i: 全仓库扫描（src/ + packages/）— 堵住"藏到 packages/ 目录下"的漏洞
+STAGED_ALL_FILES=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep -E '^(src|packages)/.*\.ts$' | grep -v '\.test\.' || true)
+if [ -n "$STAGED_ALL_FILES" ]; then
+  for file in $STAGED_ALL_FILES; do
     [ -z "$file" ] && continue
     echo "$file" | grep -qE "$BRIDGE_ALLOWED" && continue
-    if grep -q "packages/engine-core" "$file" 2>/dev/null; then
-      BRIDGE_FAIL="${BRIDGE_FAIL}  ${file}: 直接引用 packages/engine-core/ (铁律 46)\n"
+    # 匹配任意形式的 engine-core 引用：包名路径 + 相对路径
+    if grep -qE "packages/engine-core|\.\./engine-core|\.\./\.\./engine-core" "$file" 2>/dev/null; then
+      BRIDGE_FAIL="${BRIDGE_FAIL}  ${file}: 引用 engine-core (铁律 46 — 含相对路径)\n"
     fi
   done
 fi
-hard_check "铁律 46: 桥接文件欺诈" "${BRIDGE_FAIL:-}"
+
+# 5b-ii: 壳包检测 — packages/*/ 下只有 index.ts 且全部是 export from → 桥接包
+for pkg_dir in packages/*/; do
+  [ ! -d "$pkg_dir/src" ] && continue
+  pkg_src_files=$(find "$pkg_dir/src" -name "*.ts" 2>/dev/null)
+  src_count=$(echo "$pkg_src_files" | grep -c . 2>/dev/null || echo 0)
+  if [ "$src_count" -eq 1 ] && [ -f "${pkg_dir}src/index.ts" ]; then
+    reexport_lines=$(grep -c "^export.*from" "${pkg_dir}src/index.ts" 2>/dev/null || echo 0)
+    total_lines=$(wc -l < "${pkg_dir}src/index.ts" 2>/dev/null || echo 0)
+    if [ "$reexport_lines" -gt 0 ] && [ "$total_lines" -lt 50 ]; then
+      # 检查是否引用了 engine-core
+      if grep -q "engine-core" "${pkg_dir}src/index.ts" 2>/dev/null; then
+        BRIDGE_FAIL="${BRIDGE_FAIL}  ${pkg_dir}src/index.ts: 壳包 — 仅 ${total_lines} 行且全部是 export from engine-core (铁律 46)\n"
+      fi
+    fi
+  fi
+done
+hard_check "铁律 46: 桥接文件欺诈 + 包级 engine-core + 壳包检测" "${BRIDGE_FAIL:-}"
 
 # 5c. 铁律 47: 声称拆分完须 grep 零旧引用 (原 20 — 警告模式)
 TODAY=$(date +%Y-%m-%d)
@@ -433,7 +453,7 @@ fi
 hard_check "Task Brief: 编码变更须有今日 task brief" "${TASK_BRIEF_MISSING:-}"
 hard_check "Task Brief: 6 核心字段必须填写 (Q0/Q1/Q2/Q3/架构层/Done)" "${TASK_BRIEF_EMPTY:-}"
 
-# V4.3.0: 时间戳顺序检查 — PreToolUse 发现 brief 未填就写代码时记录证据到 /tmp/
+# V4.4.2: 时间戳顺序检查 — PreToolUse 发现 brief 未填就写代码时记录证据到 /tmp/
 # 此文件在 git 之外，不能被 git checkout 抹掉。必须显式 rm 才能解除阻断。
 BEFORE_BRIEF_EVI="/tmp/.synova-before-brief"
 BEFORE_BRIEF_MSG=""

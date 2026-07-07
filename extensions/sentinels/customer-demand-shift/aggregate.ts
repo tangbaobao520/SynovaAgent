@@ -5,6 +5,7 @@
  * 比较 manifest.json 阈值，输出 SentinelFinding[]。
  */
 import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeCustomerConcentration } from './computes/customer-concentration';
 import { computeCustomerChurnRisk } from './computes/customer-churn-risk';
 import { createLogger } from '@synova/logger';
@@ -18,14 +19,15 @@ interface GraphStoreReader {
 }
 
 export const customerDemandShiftSentinel = {
-  async check(store: GraphStoreReader, teamId: string): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date();
     const checkedAt = now.toISOString();
     const findings: SentinelFinding[] = [];
 
     try {
+      if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (!r.nodes[0]) return []; }
       // 1. 读取 CLIENT 节点
-      const clientNodes = store.queryNodes('CLIENT', { teamId });
+      const clientNodes = store.queryNodes('Client', { teamId });
       const clients = clientNodes.map(n => ({
         name: (n.props.name as string) || n.id,
         revenue: Number(n.props.revenue) || 0,

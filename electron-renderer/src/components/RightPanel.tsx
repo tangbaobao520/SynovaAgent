@@ -139,7 +139,8 @@ async function apiFetch<T>(path: string, opts?: RequestInit): Promise<T | null> 
     });
     if (!res.ok) return null;
     return await res.json() as T;
-  } catch {
+  } catch (err: unknown) {
+    console.warn('[RightPanel] apiFetch failed', err instanceof Error ? err.message : String(err));
     return null;
   }
 }
@@ -186,6 +187,8 @@ const GAWorkspaceTabs: React.FC = () => {
     if (res?.ok && res.solutions) {
       setSolutions(res.solutions);
       if (res.degraded) setDegraded(true);
+    } else if (res === null) {
+      setDegraded(true);
     }
     setLoading(false);
   }, [currentReportId]);
@@ -205,6 +208,8 @@ const GAWorkspaceTabs: React.FC = () => {
     if (res?.ok && res.solutions.length > 0) {
       setSolutions(res.solutions);
       setShowSolution(true);
+    } else if (res === null) {
+      setDegraded(true);
     }
     setLoading(false);
   };
@@ -218,6 +223,8 @@ const GAWorkspaceTabs: React.FC = () => {
     if (res?.ok) {
       // 刷新状态
       loadSolutions();
+    } else if (res === null) {
+      setDegraded(true);
     }
     setShowSolution(false);
   };

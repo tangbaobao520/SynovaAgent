@@ -18,7 +18,7 @@ export const capitalStructureSentinel = {
     let usedTraversal = false;
     try {
       try { if (traversal) { const r = traversal.traverse([teamId], ['FUNDS']); if (r.nodes[0]) { finNodes = r.nodes; usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
-      if (!usedTraversal) { finNodes = store.queryNodes('FINANCIAL', { teamId }); }
+      if (!usedTraversal) { finNodes = store.queryNodes('Financial', { teamId }); }
       const financials = finNodes.map(n => ({
         totalDebt: Number(n.props.totalDebt) || 0,
         shortTermDebt: Number(n.props.shortTermDebt) || Number(n.props.shortTermBorrowing) || 0,

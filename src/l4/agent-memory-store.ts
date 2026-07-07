@@ -201,6 +201,15 @@ export class AgentMemoryStore {
     return rows.map(r => this.rowToEntry(r));
   }
 
+  /** 按类型列出所有记忆（跨组织 — 用于通知系统等全局查询） */
+  listByType(type: string, limit = 50, offset = 0): MemoryEntry[] {
+    const rows = this.db.prepare(
+      `SELECT * FROM agent_memory WHERE type = ? AND (expires_at IS NULL OR expires_at > datetime('now'))
+       ORDER BY updated_at DESC LIMIT ? OFFSET ?`
+    ).all(type, limit, offset) as Record<string, unknown>[];
+    return rows.map(r => this.rowToEntry(r));
+  }
+
   /** 检测查询是否含中文字符 */
   private _containsCJK(text: string): boolean {
     return /[一-鿿㐀-䶿]/.test(text);

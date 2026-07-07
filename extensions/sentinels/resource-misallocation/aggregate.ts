@@ -1,4 +1,5 @@
 import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeResourceMisallocation } from './computes/compute-resource-misallocation';
 import { createLogger } from '@synova/logger';
 
@@ -11,20 +12,24 @@ interface GraphStoreReader {
 }
 
 export const resourceMisallocationSentinel = {
-  async check(store: GraphStoreReader, teamId: string): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date();
     const checkedAt = now.toISOString();
 
     try {
-      const goalNodes = store.queryNodes('Goal', { teamId });
+      if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (!r.nodes[0]) return []; }
+      const eventNodes = store.queryNodes('Event', { teamId });
       const personNodes = store.queryNodes('Person', { teamId });
-      const finNodes = store.queryNodes('FINANCIAL', { teamId });
+      const finNodes = store.queryNodes('Financial', { teamId });
 
-      const goals = goalNodes.map(n => ({
-        name: (n.props.name as string) || n.id,
-        priority: n.props.priority !== undefined ? Number(n.props.priority) : 3,
-        area: (n.props.area as string) || (n.props.category as string) || '',
-      }));
+      // 战略目标从 Event 节点中筛选（eventType 包含 goal/objective/strategic）
+      const goals = eventNodes
+        .filter(n => { const t = (n.props.eventType as string || '').toLowerCase(); return t.includes('goal') || t.includes('objective') || t.includes('strategic'); })
+        .map(n => ({
+          name: (n.props.name as string) || n.id,
+          priority: n.props.priority !== undefined ? Number(n.props.priority) : 3,
+          area: (n.props.area as string) || (n.props.category as string) || '',
+        }));
 
       const resources = [
         ...personNodes.map(n => ({
@@ -40,6 +45,7 @@ export const resourceMisallocationSentinel = {
       ];
 
       const result = computeResourceMisallocation(goals, resources);
+      if (result.degraded) { log.warn({ teamId }, 'compute degraded — data incomplete'); return []; }
       log.debug({ index: result.index }, '资源错配计算完成');
 
       if (result.index > 0.5) {

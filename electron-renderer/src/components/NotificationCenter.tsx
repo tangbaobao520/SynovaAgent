@@ -1,40 +1,16 @@
 /**
- * components/NotificationCenter.tsx — 通知中心 (Phase 2.2)
+ * components/NotificationCenter.tsx — 通知中心 (Phase 2.2 + 2.3)
  *
- * 标题栏铃铛图标点击展开.
- * 显示最近 20 条通知, 按优先级排序 (critical → warning → info).
- * 未读通知高亮, 点击标记已读.
+ * 标题栏铃铛图标点击展开。
+ * 使用 useNotifications hook 获取真实数据，30s 轮询。
+ * 通知点击 → 导航到对应工作区。
  */
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import { useAppStore } from '../stores/app-store';
-
-interface AppNotification {
-  id: string;
-  type: 'alert' | 'update' | 'complete' | 'correction';
-  priority: 'critical' | 'warning' | 'info';
-  title: string;
-  body: string;
-  workspaceId?: string;
-  createdAt: string;
-  read: boolean;
-}
-
-const MOCK_NOTIFICATIONS: AppNotification[] = [
-  { id: 'n1', type: 'alert', priority: 'critical', title: '现金流预警', body: '现金流健康度降至 0.3，低于警戒线', createdAt: new Date().toISOString(), read: false },
-  { id: 'n2', type: 'alert', priority: 'warning', title: '组织风险', body: '关键岗位离职率上升 15%', createdAt: new Date(Date.now() - 3600000).toISOString(), read: false },
-  { id: 'n3', type: 'complete', priority: 'info', title: '诊断完成', body: '财务诊断报告已生成', createdAt: new Date(Date.now() - 7200000).toISOString(), read: true },
-  { id: 'n4', type: 'update', priority: 'info', title: '方案更新', body: '增长方案 v2 已更新', createdAt: new Date(Date.now() - 86400000).toISOString(), read: true },
-  { id: 'n5', type: 'correction', priority: 'warning', title: '纠错通知', body: 'GA 对"市场定位"结论提交了纠错', createdAt: new Date(Date.now() - 172800000).toISOString(), read: false },
-];
-
-const PRIORITY_ORDER: Record<string, number> = { critical: 0, warning: 1, info: 2 };
-
-function sortByPriority(a: AppNotification, b: AppNotification): number {
-  return (PRIORITY_ORDER[a.priority] ?? 9) - (PRIORITY_ORDER[b.priority] ?? 9);
-}
+import { useNotifications, type AppNotification } from '../hooks/useNotifications';
 
 const TYPE_ICONS: Record<string, string> = {
-  alert: '🚨', update: '📋', complete: '✅', correction: '✏️',
+  critical: '🚨', warning: '⚠️', info: '🔔',
 };
 
 interface NotificationCenterProps {
@@ -43,28 +19,26 @@ interface NotificationCenterProps {
 }
 
 const NotificationCenter: React.FC<NotificationCenterProps> = ({ open, onClose }) => {
-  const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
-  const setAlertCount = useAppStore((s) => s.setAlertCount);
+  const setActiveWorkspaceId = useAppStore((s) => s.setActiveWorkspaceId);
+  const { notifications, unreadCount, markAsRead, markAllRead, loading } = useNotifications();
 
-  // 按优先级排序取前 20
-  const sorted = [...notifications].sort(sortByPriority).slice(0, 20);
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  // 按 severity 排序取前 20
+  const PRIORITY_ORDER: Record<string, number> = { critical: 0, warning: 1, info: 2 };
+  const sorted = [...notifications]
+    .sort((a, b) => (PRIORITY_ORDER[a.severity] ?? 9) - (PRIORITY_ORDER[b.severity] ?? 9))
+    .slice(0, 20);
 
-  const markAsRead = useCallback((id: string) => {
-    setNotifications((prev) => {
-      const next = prev.map((n) => (n.id === id ? { ...n, read: true } : n));
-      setAlertCount(next.filter((n) => !n.read).length);
-      return next;
-    });
-  }, [setAlertCount]);
+  const handleClick = (n: AppNotification) => {
+    markAsRead(n.id);
+    if (n.workspaceId) {
+      setActiveWorkspaceId(n.workspaceId);
+      onClose();
+    }
+  };
 
-  const markAllRead = useCallback(() => {
-    setNotifications((prev) => {
-      const next = prev.map((n) => ({ ...n, read: true }));
-      setAlertCount(0);
-      return next;
-    });
-  }, [setAlertCount]);
+  const handleMarkAll = () => {
+    markAllRead();
+  };
 
   if (!open) return null;
 
@@ -74,7 +48,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ open, onClose }
         <div className="notif-header">
           <span className="notif-title">通知{unreadCount > 0 ? ` (${unreadCount})` : ''}</span>
           {unreadCount > 0 && (
-            <button className="notif-mark-all-btn" onClick={markAllRead}>
+            <button className="notif-mark-all-btn" onClick={handleMarkAll}>
               全部已读
             </button>
           )}
@@ -82,23 +56,29 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ open, onClose }
         </div>
 
         <div className="notif-list">
+          {loading && sorted.length === 0 && (
+            <div className="notif-empty fade-in">
+              <div className="notif-empty-text">加载中...</div>
+            </div>
+          )}
+
           {sorted.map((n) => (
             <div
               key={n.id}
-              className={`notif-item${n.read ? '' : ' unread'} priority-${n.priority}`}
-              onClick={() => markAsRead(n.id)}
+              className={`notif-item${n.read ? '' : ' unread'} priority-${n.severity}`}
+              onClick={() => handleClick(n)}
             >
-              <div className="notif-item-icon">{TYPE_ICONS[n.type] || '📌'}</div>
+              <div className="notif-item-icon">{TYPE_ICONS[n.severity] || '📌'}</div>
               <div className="notif-item-body">
                 <div className="notif-item-title">{n.title}</div>
                 <div className="notif-item-body-text">{n.body}</div>
                 <div className="notif-item-time">{fmtRelative(n.createdAt)}</div>
               </div>
-              <div className={`notif-priority-dot priority-${n.priority}`} />
+              <div className={`notif-priority-dot priority-${n.severity}`} />
             </div>
           ))}
 
-          {sorted.length === 0 && (
+          {!loading && sorted.length === 0 && (
             <div className="notif-empty fade-in">
               <div className="notif-empty-icon">🔔</div>
               <div className="notif-empty-text">暂无通知</div>

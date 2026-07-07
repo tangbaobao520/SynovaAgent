@@ -1,12 +1,14 @@
 import type { SentinelFinding } from "../../../src/sentinel/types";
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeProcessAiReadiness } from "./computes/compute-process-ai-readiness";
 import { createLogger } from "@synova/logger";
 const log = createLogger("sentinel/process-ai-readiness");
 interface GSR { queryNodes(t:string,f?:Record<string,unknown>,g?:string): Array<{id:string;type:string;props:Record<string,unknown>}> }
 export const ProcessAiReadinessSentinel = {
-  async check(s: GSR, tid: string): Promise<SentinelFinding[]> {
+  async check(s: GSR, tid: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date(); const ca = now.toISOString();
     try {
+      if (traversal) { const r = traversal.traverse([tid], ['DEPLOYS']); if (!r.nodes[0]) return []; }
       const tools = s.queryNodes("Tool",{tid});
       const processes = s.queryNodes("Process",{tid});
       const connectors = tools.filter(t => t.props.protocol || t.props.connector);

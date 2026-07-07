@@ -1,12 +1,14 @@
 import type { SentinelFinding } from "../../../src/sentinel/types";
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeAgentDeploymentMaturity } from "./computes/compute-agent-deployment-maturity";
 import { createLogger } from "@synova/logger";
 const log = createLogger("sentinel/agent-deployment-maturity");
 interface GSR { queryNodes(t:string,f?:Record<string,unknown>,g?:string): Array<{id:string;type:string;props:Record<string,unknown>}> }
 export const AgentDeploymentMaturitySentinel = {
-  async check(s: GSR, tid: string): Promise<SentinelFinding[]> {
+  async check(s: GSR, tid: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date(); const ca = now.toISOString();
     try {
+      if (traversal) { const r = traversal.traverse([tid], ['DEPLOYS']); if (!r.nodes[0]) return []; }
       const agents = s.queryNodes("Agent",{tid});
       const tools = s.queryNodes("Tool",{tid});
       const monitoredAgents = agents.filter(a => a.props.monitored === true).length;

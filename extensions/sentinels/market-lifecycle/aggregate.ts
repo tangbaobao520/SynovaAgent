@@ -25,7 +25,7 @@ export const marketLifecycleSentinel = {
 
     try {
       try { if (traversal) { const r = traversal.traverse([teamId], ['PRODUCES', 'INFORMS']); if (r.nodes[0]) { marketNodes = r.nodes.filter(n => n.type === 'MARKET_OUTCOME'); finNodes = r.nodes; usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
-      if (!usedTraversal) { marketNodes = store.queryNodes('Market', { teamId }); finNodes = store.queryNodes('FINANCIAL', { teamId }); }
+      if (!usedTraversal) { marketNodes = store.queryNodes('Event', { teamId }); finNodes = store.queryNodes('Financial', { teamId }); }
 
       if (marketNodes.length === 0 || finNodes.length === 0) {
         return [{
@@ -40,13 +40,17 @@ export const marketLifecycleSentinel = {
 
       const revenues = finNodes.map(n => Number(n.props.revenue) || Number(n.props.amount) || 0).filter(r => r > 0);
       const currentRevenue = revenues.reduce((a, b) => a + b, 0);
-      const previousRevenue = currentRevenue * 0.85; // 简化: 假设上年为当前85%
+      const previousRevenue = Number(finNodes[0]?.props?.previousRevenue) || currentRevenue;
+
+      // 从 marketNodes(Event) 中提取竞争进入/退出数据
+      const competitorEntries = marketNodes.reduce((s, n) => s + (Number(n.props.recentEntries) || Number(n.props.entries) || 0), 0) || 1;
+      const competitorExits = marketNodes.reduce((s, n) => s + (Number(n.props.recentExits) || Number(n.props.exits) || 0), 0);
 
       const result = computeLifecycleStage({
         currentRevenue,
         previousRevenue,
-        competitorEntries: 1,
-        competitorExits: 0,
+        competitorEntries,
+        competitorExits,
         totalCompetitors: marketNodes.length,
       });
 

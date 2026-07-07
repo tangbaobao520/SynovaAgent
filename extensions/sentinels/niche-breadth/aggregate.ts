@@ -1,20 +1,23 @@
 import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeLevinsBreadth } from './computes/levins-breadth';
 import { createLogger } from '@synova/logger';
 const log = createLogger('sentinel/niche-breadth');
 interface GraphStoreReader { queryNodes(t: string, f?: Record<string, unknown>, g?: string): Array<{ id: string; type: string; props: Record<string, unknown> }>; }
 export const nicheBreadthSentinel = {
-  async check(store: GraphStoreReader, teamId: string): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date(); const checkedAt = now.toISOString();
     try {
+      if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (!r.nodes[0]) return []; }
       const clientNodes = store.queryNodes('Client', { teamId });
-      const locationNodes = store.queryNodes('Location', { teamId });
-      const marketNodes = store.queryNodes('Market', { teamId });
-      const segments = [...clientNodes, ...locationNodes, ...marketNodes].map(n => ({
+      const eventNodes = store.queryNodes('Event', { teamId });
+      // 生态位分段：客户群 + 事件区域
+      const segments = [...clientNodes, ...eventNodes].map(n => ({
         name: (n.props.name as string) || n.id,
         value: Number(n.props.revenue) || Number(n.props.amount) || 1,
       }));
       const r = computeLevinsBreadth(segments);
+      if (r.degraded) { log.warn({ teamId }, 'compute degraded — skipping threshold'); return []; }
       log.debug({ breadth: r.breadth, depth: r.depth, volume: r.volume }, '生态位计算完成');
       const f: SentinelFinding[] = [];
       if (r.breadth < 1.0) {

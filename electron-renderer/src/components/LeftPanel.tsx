@@ -4,7 +4,7 @@
  * 折叠态: 44px 图标条
  * 展开态: 搜索 → 对话 → 工作区 → (GA) 客户列表可切换
  */
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAppStore } from '../stores/app-store';
 
 const ICON_ITEMS = [
@@ -29,21 +29,25 @@ const LeftPanel: React.FC = () => {
   const setGaClients = useAppStore((s) => s.setGaClients);
 
   const [activeSection, setActiveSection] = React.useState('conversations');
+  const [clientLoadError, setClientLoadError] = useState<string | null>(null);
 
   // 加载 GA 客户列表
   useEffect(() => {
     if (userRole === 'ga' && gaClients.length === 0) {
       fetch('/api/ga/clients')
         .then((r) => r.json())
-        .then((d) => { if (d.ok) setGaClients(d.clients); })
-        .catch(() => {});
+        .then((d) => { if (d.ok) setGaClients(d.clients); setClientLoadError(null); })
+        .catch((err) => { console.warn('[LeftPanel] 加载客户列表失败', err); setClientLoadError('加载客户列表失败，请重试'); });
     }
   }, [userRole, gaClients.length, setGaClients]);
 
   const handleSwitchOrg = (orgId: string) => {
-    fetch(`/api/ga/switch/${orgId}`, { method: 'POST' }).catch(() => {});
-    setActiveOrgId(orgId);
-    setActiveWorkspaceId(null);
+    fetch(`/api/ga/switch/${orgId}`, { method: 'POST' })
+      .then(() => {
+        setActiveOrgId(orgId);
+        setActiveWorkspaceId(null);
+      })
+      .catch((err) => { console.warn('[LeftPanel] 组织切换失败', err); });
   };
 
   const filteredConvs = conversations.filter(
@@ -127,8 +131,8 @@ const LeftPanel: React.FC = () => {
                 </div>
               ))}
               {gaClients.length === 0 && (
-                <div className="panel-item" style={{ color: 'var(--dim)', cursor: 'default' }}>
-                  加载客户列表...
+                <div className="panel-item" style={{ color: clientLoadError ? 'var(--red)' : 'var(--dim)', cursor: 'default' }}>
+                  {clientLoadError || '加载客户列表...'}
                 </div>
               )}
             </>

@@ -127,6 +127,15 @@ export function initEngineContext(): void {
     CREATE INDEX IF NOT EXISTS idx_team_changes_type ON team_changes(change_type, created_at);
   `);
 
+  // Phase 4.4: Schema 版本化迁移（必须在任何 query 前执行）
+  try {
+    const { reconcileSchema } = require('../store/schema-migration');
+    reconcileSchema(db);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log.warn({ err: msg }, 'Schema 迁移失败 — degraded');
+  }
+
   log.info({ path: config.dbPath }, 'SQLite 数据库已打开');
 
   // 2. 注入 EngineContext。pino child() 返回类型与 AppLogger 的递归类型不兼容 — 运行时兼容。

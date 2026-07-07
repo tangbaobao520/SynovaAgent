@@ -8,6 +8,7 @@
  *   system    — 居中系统提示
  */
 import React, { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 import ExpertAttribution from './ExpertAttribution';
 import type { ChatMessage, ThinkingBlock } from '../types/chat';
 
@@ -26,7 +27,7 @@ const MessageItem: React.FC<Props> = ({ message }) => {
     case 'assistant':
       return (
         <div className="msg msg-agent fade-in">
-          <div className="msg-content">{message.content}</div>
+          <div className="msg-content"><ReactMarkdown>{message.content}</ReactMarkdown></div>
           {message.expertAttribution && message.expertAttribution.length > 0 && (
             <ExpertAttribution experts={message.expertAttribution} />
           )}
@@ -77,7 +78,7 @@ const ThinkingBlockComponent: React.FC<{ block: ThinkingBlock }> = ({ block }) =
 function fmt(ts: string): string {
   try {
     return new Date(ts).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-  } catch { return ''; }
+  } catch { console.warn('[MessageItem] date format failed'); return ''; }
 }
 
 export default React.memo(MessageItem);

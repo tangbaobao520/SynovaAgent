@@ -1,4 +1,5 @@
 import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeTalentDensity } from './computes/compute-talent-density';
 import { createLogger } from '@synova/logger';
 
@@ -11,13 +12,17 @@ interface GraphStoreReader {
 }
 
 export const talentDensitySentinel = {
-  async check(store: GraphStoreReader, teamId: string): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date();
     const checkedAt = now.toISOString();
 
     try {
+    let allNodeData: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
+    let usedTraversal = false;
+    try {
+      if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS', 'AUGMENTS']); if (r.nodes[0]) { allNodeData = r.nodes; usedTraversal = true; } }
+    } catch (err: unknown) { log.warn({ err, teamId }, 'graph traversal failed - fallback'); }
       const personNodes = store.queryNodes('Person', { teamId });
-      const capNodes = store.queryNodes('Capability', { teamId });
 
       // 高技能人才: 有技能数组或 proficiencyLevel >= 3
       const highSkill = personNodes.filter(n => {

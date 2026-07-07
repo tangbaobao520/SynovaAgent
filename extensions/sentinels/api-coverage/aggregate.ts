@@ -5,6 +5,7 @@
  * 比较 manifest.json 阈值，输出 SentinelFinding[]。
  */
 import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeApiAvailability } from './computes/api-availability';
 import { computeProtocolCoverage } from './computes/protocol-coverage';
 import { createLogger } from '@synova/logger';
@@ -18,14 +19,15 @@ interface GraphStoreReader {
 }
 
 export const apiCoverageSentinel = {
-  async check(store: GraphStoreReader, teamId: string): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date();
     const checkedAt = now.toISOString();
     const findings: SentinelFinding[] = [];
 
     try {
+      if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (!r.nodes[0]) return []; }
       // 1. 从本体层读取 TOOL 节点
-      const toolNodes = store.queryNodes('TOOL', { teamId });
+      const toolNodes = store.queryNodes('Tool', { teamId });
       const tools = toolNodes.map(n => ({
         id: n.id,
         name: (n.props.name as string) || n.id,
