@@ -10,7 +10,7 @@
   "priority": "P2",
   "layer": "capability",
   "computeKind": "graph",
-  "computes": ["detect"],
+  "computes": ["detect-path-dependency"],
   "thresholds": { "dependency_score": { "warning": 0.4, "critical": 0.7 } },
   "aggregation": "worst_first",
   "context": {

@@ -4,12 +4,15 @@
  * 综合 N 个计算指标 → 1 条 Finding。
  * 数据通过 L4 GraphStore 接口获取，不直接查 SQLite。
  *
- * V3.7 Batch 2
+ * V4.4.2 — compute 函数抽取
  */
 import type { GraphStoreReader, SentinelManifest } from '../../../src/sentinel/sentinel-loader';
 import type { SentinelFinding } from '../../../src/sentinel/types';
 import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { createLogger } from '@synova/logger';
+import { computeGrossMargin } from './computes/compute-gross-margin';
+import { computeFixedVariableRatio } from './computes/compute-fixed-variable-ratio';
+import { computeCostPerHead } from './computes/compute-cost-per-head';
 
 const log = createLogger('sentinel/cost-health');
 
@@ -18,37 +21,56 @@ export const costHealthSentinel = {
 
   async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const findings: SentinelFinding[] = [];
-    let financialNodes: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
-    let usedTraversal = false;
 
     try {
-      try { if (traversal) { const r = traversal.traverse([teamId], ['FUNDS']); if (r.nodes[0]) { financialNodes = r.nodes; usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
-      if (!usedTraversal) { financialNodes = store.queryNodes('FINANCIAL', { teamId }); }
+      const [grossMarginResult, fixedRatioResult] = await Promise.all([
+        computeGrossMargin(store, { teamId, traversal }),
+        computeFixedVariableRatio(store, { teamId, traversal }),
+      ]);
+
       // 1. 毛利率变化率
-      const costNodes = financialNodes.filter(n => (n.props.financialType as string) === 'cost');
-      const revenueNodes = financialNodes.filter(n => (n.props.financialType as string) === 'revenue');
+      if (this.manifest && !grossMarginResult.degraded) {
+        const t = this.manifest.thresholds.gross_margin;
+        if (grossMarginResult.value <= t.critical) {
+          findings.push({
+            id: 'cost_gross_margin_critical',
+            severity: 'critical',
+            title: '毛利率严重下降',
+            description: `毛利率 ${(grossMarginResult.value * 100).toFixed(1)}%，低于 critical 阈值 ${(t.critical * 100).toFixed(0)}%。`,
+            detectedAt: new Date().toISOString(),
+          });
+        } else if (grossMarginResult.value <= t.warning) {
+          findings.push({
+            id: 'cost_gross_margin_warning',
+            severity: 'warning',
+            title: '毛利率下降',
+            description: `毛利率 ${(grossMarginResult.value * 100).toFixed(1)}%，低于 warning 阈值 ${(t.warning * 100).toFixed(0)}%。`,
+            detectedAt: new Date().toISOString(),
+          });
+        }
+      }
 
-      if (revenueNodes.length > 0 && costNodes.length > 0) {
-        const revenue = (revenueNodes[0].props.amount as number) || 0;
-        const cost = (costNodes[0].props.amount as number) || 0;
-        const grossMargin = revenue > 0 ? (revenue - cost) / revenue : 0;
-
-        if (this.manifest) {
-          const t = this.manifest.thresholds.gross_margin;
-          if (grossMargin <= t.critical) {
+      // 3. 人均成本
+      if (!grossMarginResult.degraded) {
+        const costPerHeadResult = await computeCostPerHead(store, { teamId, traversal });
+        if (this.manifest && !costPerHeadResult.degraded) {
+          const t = this.manifest.thresholds.cost_per_head;
+          if (costPerHeadResult.value >= t.critical) {
             findings.push({
-              id: 'cost_gross_margin_critical',
+              id: 'cost_per_head_critical',
               severity: 'critical',
-              title: '毛利率严重下降',
-              description: `毛利率 ${(grossMargin * 100).toFixed(1)}%，低于 critical 阈值 ${(t.critical * 100).toFixed(0)}%。`,
+              title: '人均成本过高',
+              description: `人均成本 ${costPerHeadResult.value.toFixed(0)}，超出 critical 阈值 ${t.critical}。`,
+              evidence: costPerHeadResult.evidence,
+              suggestion: '审查人员结构和成本效率。',
               detectedAt: new Date().toISOString(),
             });
-          } else if (grossMargin <= t.warning) {
+          } else if (costPerHeadResult.value >= t.warning) {
             findings.push({
-              id: 'cost_gross_margin_warning',
+              id: 'cost_per_head_warning',
               severity: 'warning',
-              title: '毛利率下降',
-              description: `毛利率 ${(grossMargin * 100).toFixed(1)}%，低于 warning 阈值 ${(t.warning * 100).toFixed(0)}%。`,
+              title: '人均成本偏高',
+              description: `人均成本 ${costPerHeadResult.value.toFixed(0)}，超出 warning 阈值 ${t.warning}。`,
               detectedAt: new Date().toISOString(),
             });
           }
@@ -56,27 +78,24 @@ export const costHealthSentinel = {
       }
 
       // 2. 固定/变动成本比
-      const fixedCost = costNodes.reduce((s, n) => s + ((n.props.fixedAmount as number) || 0), 0);
-      const totalCost = costNodes.reduce((s, n) => s + ((n.props.amount as number) || 0), 0);
-      if (totalCost > 0 && this.manifest) {
-        const fixedRatio = fixedCost / totalCost;
+      if (this.manifest && !fixedRatioResult.degraded) {
         const t = this.manifest.thresholds.fixed_ratio;
-        if (fixedRatio >= t.critical) {
+        if (fixedRatioResult.value >= t.critical) {
           findings.push({
             id: 'cost_fixed_ratio_critical',
             severity: 'critical',
             title: '固定成本占比过高',
-            description: `固定成本占比 ${(fixedRatio * 100).toFixed(1)}%，超出 critical 阈值 ${(t.critical * 100).toFixed(0)}%。成本结构僵化。`,
-            evidence: [`固定成本: ${fixedCost}`, `总成本: ${totalCost}`],
+            description: `固定成本占比 ${(fixedRatioResult.value * 100).toFixed(1)}%，超出 critical 阈值 ${(t.critical * 100).toFixed(0)}%。成本结构僵化。`,
+            evidence: fixedRatioResult.evidence,
             suggestion: '审查固定成本构成，寻找可变成本化机会（外包、按需资源）。',
             detectedAt: new Date().toISOString(),
           });
-        } else if (fixedRatio >= t.warning) {
+        } else if (fixedRatioResult.value >= t.warning) {
           findings.push({
             id: 'cost_fixed_ratio_warning',
             severity: 'warning',
             title: '固定成本占比偏高',
-            description: `固定成本占比 ${(fixedRatio * 100).toFixed(1)}%，超出 warning 阈值 ${(t.warning * 100).toFixed(0)}%。`,
+            description: `固定成本占比 ${(fixedRatioResult.value * 100).toFixed(1)}%，超出 warning 阈值 ${(t.warning * 100).toFixed(0)}%。`,
             detectedAt: new Date().toISOString(),
           });
         }
