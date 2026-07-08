@@ -167,7 +167,7 @@ router.get('/api/ga/annotations', async (req: Request, res: Response) => {
         try {
           const val = JSON.parse(r.value);
           return val.findingId === findingId;
-        } catch { return false; }
+        } catch { log.debug({ entry: r.id }, '解析标注数据失败 — findingId筛选跳过'); return false; }
       });
     }
 
@@ -179,7 +179,7 @@ router.get('/api/ga/annotations', async (req: Request, res: Response) => {
 
     const annotations = paginated.map((r: any) => {
       let val: Record<string, unknown> = {};
-      try { val = JSON.parse(r.value) as Record<string, unknown>; } catch { /* ignore */ }
+      try { val = JSON.parse(r.value) as Record<string, unknown>; } catch { log.debug({ err: r.id }, '解析标注数据失败 — 跳过'); }
       return {
         id: r.id,
         findingId: (val.findingId as string) || '',
@@ -229,7 +229,7 @@ router.get('/api/ga/annotations/stats', async (req: Request, res: Response) => {
 
     for (const r of results) {
       let val: Record<string, unknown> = {};
-      try { val = JSON.parse(r.value); } catch { continue; }
+      try { val = JSON.parse(r.value); } catch { log.debug({ entry: r.id }, '解析标注数据失败 — stats跳过'); continue; }
       const sentinelId = (val.sentinelId as string) || 'unknown';
       const annotationType = (val.annotation as string) || '';
 
