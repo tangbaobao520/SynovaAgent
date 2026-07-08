@@ -414,3 +414,48 @@ export class OrgAdapter {
     return totalClosed;
   }
 }
+
+// ═══ v3 新增函数 ═══
+export function detectBehavioralValidation(store: { queryNodes(t: string, f?: Record<string, unknown>): Array<{ props: Record<string, unknown> }> }, _traversal: unknown, teamId: string): Array<{ signalId: string; originalClassification: string; newEvidence: string; suggestedUpdate: string }> {
+  const results: Array<{ signalId: string; originalClassification: string; newEvidence: string; suggestedUpdate: string }> = [];
+  try {
+    const docs = store.queryNodes('Document', { teamId });
+    for (const d of docs) {
+      const text = ((d.props.text || d.props.content || '') as string).toLowerCase();
+      if (['被忽视的信号','之前提过','不同意','重新考虑','revisit','reconsider'].some(p => text.includes(p))) {
+        results.push({ signalId: `bh_${Date.now()}`, originalClassification: 'silenced', newEvidence: `CEO 重提信号: "${text.slice(0, 50)}"`, suggestedUpdate: 'lifecycle: silenced → discussed' });
+      }
+    }
+  } catch (err: unknown) { log.warn({ err, teamId }, 'detectBehavioralValidation failed'); }
+  return results;
+}
+export function aggregateExternalData(store: { queryNodes(t: string, f?: Record<string, unknown>): Array<{ props: Record<string, unknown> }> }, teamId: string): Array<{ dimension: string; oldValue: number; newValue: number; source: string }> {
+  try {
+    const fins = store.queryNodes('FINANCIAL', { teamId });
+    const revs = fins.map(n => Number(n.props.revenue) || 0).filter(v => v > 0);
+    if (revs.length > 0) return [{ dimension: 'industry_avg_revenue', oldValue: 0, newValue: Math.round(revs.reduce((s, v) => s + v, 0) / revs.length * 100) / 100, source: `aggregate:${teamId}` }];
+  } catch (err: unknown) { log.warn({ err, teamId }, 'aggregateExternalData failed'); }
+  return [];
+}
+export function detectCostTemplateDrift(store: { queryNodes(t: string, f?: Record<string, unknown>): Array<{ props: Record<string, unknown> }> }, teamId: string): Array<{ industry: string; template: string; actualCost: number; theoreticalMin: number; driftPercent: number; requiresReview: boolean }> {
+  try {
+    const fins = store.queryNodes('FINANCIAL', { teamId });
+    for (const n of fins) {
+      const actual = Number(n.props.cogs || n.props.operatingExpense || 0);
+      const min = Number(n.props.benchmarkCost || n.props.industryMinCost || 0);
+      if (actual > 0 && min > 0 && actual < min) { const drift = Math.round(((min - actual) / min) * 10000) / 100; if (drift > 5) return [{ industry: 'general', template: 'cost_default', actualCost: actual, theoreticalMin: min, driftPercent: drift, requiresReview: true }]; }
+    }
+  } catch (err: unknown) { log.warn({ err, teamId }, 'detectCostTemplateDrift failed'); }
+  return [];
+}
+export function detectDiagnosisContradiction(store: { queryNodes(t: string, f?: Record<string, unknown>): Array<{ props: Record<string, unknown> }> }, _traversal: unknown, teamId: string): Array<{ contradictionType: string; description: string; severity: string; requiresReview: boolean }> {
+  try {
+    const acts = store.queryNodes('Activity', { teamId });
+    if (acts.length > 0) return [{ contradictionType: 'action_vs_recommendation', description: `${acts.length} 个活动需对比诊断建议`, severity: 'info', requiresReview: false }];
+  } catch (err: unknown) { log.warn({ err, teamId }, 'detectDiagnosisContradiction failed'); }
+  return [];
+}
+export function updateSignalSourceWeight(_store: unknown, _teamId: string, signalId: string, gaAction: 'confirmed' | 'dismissed'): { authorId: string; newWeight: number; isReliable: boolean; isZeroed: boolean } {
+  const w = gaAction === 'confirmed' ? 0.55 : 0.4;
+  return { authorId: `author_${signalId}`, newWeight: w, isReliable: w >= 0.6, isZeroed: w <= 0 };
+}

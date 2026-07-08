@@ -39,7 +39,7 @@ import { OntologySyncer, type OntologySyncResult } from './ontology-syncer';
 import type { EngineContext } from './engine-context';
 import { createSynovaGraphStore } from '@synova/graph-store';
 import { getGlobalSentinelRunner } from '../sentinel/runner';
-import { ContextCompressor } from '../orchestrator/context-compressor';
+import { ContextEngine } from '../orchestrator/context-engine';
 
 const log = createLogger('agent/conversation-engine');
 
@@ -293,6 +293,7 @@ export class ConversationEngine {
   private toolLoop: ToolLoopExecutor;
   private diagnosisLauncher: DiagnosisLauncher;
   private ontologySyncer: OntologySyncer;
+  private contextEngine: ContextEngine;
 
   constructor(provider: LLMProvider, config: EngineConfig = {}) {
     this.provider = provider;
@@ -323,6 +324,7 @@ export class ConversationEngine {
     this.sessionId = config.sessionId || '';
     // P1 Phase Gate Check: 证据/专家状态跟踪
     this.phaseGateTracking = config.phaseGateTracking || null;
+    this.contextEngine = new ContextEngine({ provider: this.provider });
     // L4 本体层接线
     this.graphStore = config.graphStore || null;
     this.memoryStore = config.memoryStore || null;
@@ -480,19 +482,18 @@ export class ConversationEngine {
     // Hermes P0-2: 易变层追加到 user message — 保护 Prefix Cache
     this.messages.push({ role: 'user', content: `${input}\n\n${buildVolatileLayer(this.turnCount, this.phase)}` });
 
-    // C4: 上下文压缩 — 消息数超阈值时自动压缩
-    const COMPRESS_THRESHOLD = 30;
-    if (this.messages.length > COMPRESS_THRESHOLD) {
+    // G1: 上下文可插拔引擎 — 文件驱动策略，LLM 不可用降级
+    const estimatedTokens = this.messages.reduce((sum, m) => sum + m.content.length, 0);
+    if (this.contextEngine.shouldCompress(this.messages, estimatedTokens)) {
       try {
-        const compressor = new ContextCompressor();
-        const originalLen = this.messages.length;
         const confirmedFacts = await this.loadConfirmedFacts();
-        const result = compressor.compress(this.messages, '', {
-          strategy: 'summary',
-          maxSummaryTokens: 1500,
-        }, confirmedFacts);
+        const result = await this.contextEngine.compress(this.messages, estimatedTokens, confirmedFacts);
         this.messages = result.messages;
-        log.debug({ before: originalLen, after: result.messages.length, discarded: result.discardedCount }, '上下文已压缩');
+        log.debug({
+          before: result.messages.length + result.stats.discardedCount,
+          after: result.messages.length,
+          degraded: result.stats.degraded,
+        }, '上下文已压缩');
       } catch (err: unknown) {
         log.warn({ err }, '上下文压缩失败 — 非阻断');
       }

@@ -1,0 +1,6 @@
+{"role":"system","content":"你是 Synova AI 诊断 Agent。核心问题：这家企业的增长卡在哪里？现在该做什么？"}
+{"role":"user","content":"请分析我们公司当前的财务健康状况。我们是一家 SaaS 企业，年营收 5000 万，毛利率 72%，但现金流为负。"}
+{"role":"assistant","content":"好的，我来分析贵公司的财务健康状况。从你提供的数据看，有几个关键信号需要深入探查：\n\n1. **毛利率 72%** — 行业标准水平，说明产品定价和成本结构合理\n2. **现金流为负** — 这是最值得关注的预警信号\n\n让我调取财务哨兵数据进行更深入的分析。"}
+{"role":"tool","tool_call_id":"call_001","content":"{\"sentinel\":\"F1\",\"metrics\":{\"operatingCashFlow\":-120,\"revenue\":5000,\"grossMargin\":0.72,\"burnRate\":85,\"runway\":14}}"}
+{"role":"tool","tool_call_id":"call_002","content":"{\"sentinel\":\"F3\",\"metrics\":{\"revenueGrowth\":0.25,\"arpu\":24000,\"churnRate\":0.08,\"cac\":18000,\"ltv\":120000}}"}
+{"role":"assistant","content":"## 财务健康分析结果\n\n综合哨兵数据，发现以下关键问题：\n\n### 🔴 紧急：现金流为负\n- 运营现金流：-120 万/季\n- 烧钱率：85 万/月\n- 跑道：仅 14 个月\n\n### 🟡 关注：LTV/CAC 比仅 6.7\n- LTV 12 万 vs CAC 1.8 万\n- 属于健康范围但低于行业顶级水平（>10x）\n\n### 🟢 健康：营收增长 25%\n- 年营收 5000 万\n- 增长高于行业平均\n\n建议优先解决现金流问题：1) 优化应收账款周期 2) 考虑融资 3) 控制成本。"}

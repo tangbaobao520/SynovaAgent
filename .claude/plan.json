@@ -1,88 +1,29 @@
 {
   "version": "1.0",
-  "task": "哨兵空壳清理",
-  "brief": "2026-07-08-0043-unnamed-task.md",
+  "task": "Evolution v3 — 多源反馈 + NCI",
+  "brief": "2026-07-06-evolution-v3.md",
   "current_phase": 1,
-  "approach": "reuse",
+  "approach": "rewrite",
   "phases": [
     {
       "step": 1,
-      "action": "delete",
-      "files": [
-        "extensions/sentinels/token-economics/manifest.json",
-        "extensions/sentinels/seven-powers/manifest.json",
-        "extensions/sentinels/financial-snapshot/manifest.json",
-        "extensions/sentinels/collaboration-health/manifest.json",
-        "extensions/sentinels/eob/manifest.json",
-        "extensions/sentinels/hacd/manifest.json",
-        "extensions/sentinels/hona/manifest.json",
-        "extensions/sentinels/htm/manifest.json",
-        "extensions/sentinels/path-dependency/manifest.json",
-        "extensions/sentinels/self-awareness/manifest.json",
-        "extensions/sentinels/gap-dynamics/manifest.json"
-      ],
-      "checks": {
-        "wiring": "deferred",
-        "test_pairing": "deferred"
-      }
-    },
-    {
-      "step": 2,
-      "action": "rename",
-      "files": [
-        "extensions/sentinels/token-economics → _archive-token-economics",
-        "extensions/sentinels/seven-powers → _archive-seven-powers",
-        "extensions/sentinels/financial-snapshot → _archive-financial-snapshot",
-        "extensions/sentinels/collaboration-health → _archive-collaboration-health",
-        "extensions/sentinels/eob → _archive-eob",
-        "extensions/sentinels/hacd → _archive-hacd",
-        "extensions/sentinels/hona → _archive-hona",
-        "extensions/sentinels/htm → _archive-htm",
-        "extensions/sentinels/path-dependency → _archive-path-dependency",
-        "extensions/sentinels/self-awareness → _archive-self-awareness",
-        "extensions/sentinels/gap-dynamics → _archive-gap-dynamics"
-      ],
-      "checks": {
-        "wiring": "deferred",
-        "test_pairing": "deferred"
-      }
-    },
-    {
-      "step": 3,
-      "action": "delete",
-      "files": [
-        "packages/diagnosis-engine/"
-      ],
-      "checks": {
-        "wiring": "deferred",
-        "test_pairing": "deferred"
-      }
-    },
-    {
-      "step": 4,
       "action": "modify",
       "files": [
-        "src/adapters/engine-core-adapter.ts"
+        "packages/evolution/src/feedback-collector.ts",
+        "packages/evolution/src/org-adapter.ts",
+        "packages/evolution/src/global-analyzer.ts",
+        "packages/evolution/src/rule-version-manager.ts",
+        "packages/evolution/src/index.ts",
+        "src/routes/evolution.ts",
+        "tests/evolution/feedback-collector.test.ts",
+        "tests/evolution/org-adapter.test.ts"
       ],
-      "checks": {
-        "wiring": "deferred",
-        "test_pairing": "deferred"
-      }
+      "checks": { "wiring": "deferred", "test_pairing": "deferred" }
     }
   ],
   "principles": [
-    {
-      "rule": "目录重命名为 _archive- 前缀后，loader 自动跳过（_ 前缀约定），computes/ 保留",
-      "verify": "for s in token-economics seven-powers financial-snapshot collaboration-health eob hacd hona htm path-dependency self-awareness gap-dynamics; do test -d extensions/sentinels/_archive-$s/computes && echo OK: _archive-$s/computes preserved || echo FAIL: $s/computes missing; done"
-    },
-    {
-      "rule": "sentinel 加载 errors=0，degraded=false",
-      "verify": "npx vitest run tests/sentinel/sentinel-loader.test.ts 2>&1 | grep -q 'Tests.*5 passed' && echo 'OK: sentinel-loader tests pass' || echo 'FAIL'"
-    },
-    {
-      "rule": "壳包 @synova/diagnosis-engine 删除后，直接 import engine-core",
-      "verify": "grep -rn '@synova/diagnosis-engine' src/ --include='*.ts' && echo 'FAIL: still has shell package ref' || echo 'OK: no shell package refs'"
-    }
+    {"rule": "tsc zero errors", "verify": "npx tsc --noEmit"},
+    {"rule": "evolution tests pass", "verify": "npx vitest run tests/evolution/ 2>&1 | grep -q passed"}
   ],
-  "memory_refs": ["memory/dual-source-fraud.md", "memory/engine-core-bridge-files.md"]
+  "memory_refs": ["memory/engine-core-bridge-files.md"]
 }

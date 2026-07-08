@@ -86,3 +86,8 @@ export {
   generateExpertProposal,
 } from './expert-evolution';
 export type { ExpertCorrectionStats, ExpertEvolutionAnalysis } from './expert-evolution';
+export type { FeedbackEvent, CollectResult } from './feedback-collector';
+export { collectAllFeedback } from './feedback-collector';
+export { detectBehavioralValidation, aggregateExternalData, detectCostTemplateDrift, detectDiagnosisContradiction, updateSignalSourceWeight } from './org-adapter';
+export type { GlobalAnalysisReport, NciGlobalPattern } from './global-analyzer';
+export { analyzeGlobalPatterns, detectNciGlobalPatterns } from './global-analyzer';

@@ -205,4 +205,19 @@ router.post('/api/evolution/aggregate/:industry', async (req: Request, res: Resp
   }
 });
 
+
+router.post('/api/evolution/feedback/collect', async (_req, res) => {
+  try { const { collectAllFeedback } = await import('@synova/evolution'); const r = await collectAllFeedback(); res.json({ ok: true, events: r.events.length }); }
+  catch { res.status(500).json({ ok: false, error: 'feedback failed', degraded: true }); }
+});
+router.post('/api/evolution/signal/update-weight', async (req, res) => {
+  try { const { updateSignalSourceWeight } = await import('@synova/evolution'); const { teamId, signalId, action } = req.body;
+    if (!teamId || !signalId || !action) { res.status(400).json({ ok: false }); return; }
+    res.json({ ok: true, newWeight: updateSignalSourceWeight(null, teamId, signalId, action).newWeight }); }
+  catch { res.status(500).json({ ok: false, error: 'update weight failed', degraded: true }); }
+});
+router.get('/api/evolution/global/analyze', async (req, res) => {
+  try { const { analyzeGlobalPatterns } = await import('@synova/evolution'); res.json({ ok: true, analyzedAt: analyzeGlobalPatterns({ industries: req.query.industries ? (req.query.industries as string).split(',') : undefined }).analyzedAt }); }
+  catch { res.status(500).json({ ok: false, error: 'global analyze failed', degraded: true }); }
+});
 export default router;

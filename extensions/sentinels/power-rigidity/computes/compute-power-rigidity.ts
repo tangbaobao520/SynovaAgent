@@ -92,3 +92,6 @@ export function computeFinkelsteinPowerIndex(params: {
     warnings,
   };
 }
+
+// 别名 — manifest 声明 "compute-power-rigidity" 映射到 computeFinkelsteinPowerIndex
+export { computeFinkelsteinPowerIndex as computePowerRigidity };
