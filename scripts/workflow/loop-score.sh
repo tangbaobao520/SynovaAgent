@@ -1,5 +1,5 @@
  #!/bin/bash
- # Loop Engineering V4.4.0 �?Loop Ready Score (0-100)
+ # Loop Engineering V4.4.4 �?Loop Ready Score (0-100)
  #
  # 基于实际基础设施的量化自评。每个维度有明确的检查项和分值�?
  # 评分维度:

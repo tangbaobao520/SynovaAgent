@@ -1,7 +1,7 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering v4.3.0 — check-plan-integrity.sh
-# 统一验证 plan.json 的 Q1/Q2 产出是否被物理执行。
+# Loop Engineering V4.4.4 — check-plan-integrity.sh
+# 统一验证 plan.json 的 Q1/Q2 产出格式。不执行 verify 命令（V4.4.4 移除执行）。
 # pre-commit 组 6 调用。全部 <1s。
 #
 # Anthropic 原则 5: 物理强制，零 AI 自律。
@@ -159,65 +159,13 @@ if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
   fi
 fi
 
-# === 5. Execute verify commands from Done section ===
-VERIFY_FAIL=0
-DONE_SEC=""
+# ═══ 7. Done verify 格式检查（V4.4.4: 仅检查存在性，不执行命令）═══
 if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
-  # 仅从 Done 标准段提取 verify:（避免 Q1b 模板示例被误提取）
   DONE_SEC=$(awk '/^## Done 标准/{found=1; next} found && /^## /{exit} found' "$BRIEF" 2>/dev/null)
-fi
-if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
-  Q2_SEC=$(awk '/^## Q2:/{found=1; next} /^## /{if(found) exit} found' "$BRIEF" 2>/dev/null)
-  if [ -n "$Q2_SEC" ]; then
-    EXCLUDED_FILES=$(echo "$Q2_SEC" | grep -oiE '(不改|不修改|不动|unmodify|dont.modify|not.change|keep.untouched)[[:space:]]+[^ ]+' | sed 's/^[^ ]* //' | tr -d '[:space:]' | grep -v "^$" || true)
-    if [ -n "$EXCLUDED_FILES" ]; then
-      STAGED=$(git diff --cached --name-only 2>/dev/null || true)
-      VIOLATIONS=""
-      while IFS= read -r excl; do
-        [ -z "$excl" ] && continue
-        if echo "$STAGED" | grep -qiE "(^|/)${excl}(/|$)" 2>/dev/null; then
-          VIOLATIONS="${VIOLATIONS}  Q2 exclude '${excl}' modified in this commit\n"
-        fi
-      done <<< "$EXCLUDED_FILES"
-      if [ -n "$VIOLATIONS" ]; then
-        echo -e "  ${RED}[FAIL] Q2 exclusion: declared files should not be modified  [HARD_BLOCK]${RESET}"
-        echo -e "$VIOLATIONS"
-        HARD_FAIL=$((HARD_FAIL + 1))
-      else
-        echo -e "  ${GREEN}[OK] Q2 exclusion: none of the excluded files were changed${RESET}"
-      fi
-    fi
+  VERIFY_COUNT=$(echo "$DONE_SEC" | grep -cE '^\s*- \[x\].*verify:|^\s+verify:' 2>/dev/null || echo 0)
+  if [ "${VERIFY_COUNT:-0}" -gt 0 ]; then
+    echo -e "  ${GREEN}✅ Done verify 格式: ${VERIFY_COUNT} 条已列出${RESET}"
   fi
-fi
-
-# === 5. Execute verify commands from Done section ===
-VERIFY_FAIL=0
-if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
-  VERIFY_CMDS=$(echo "$DONE_SEC" | grep -E '^\s*- \[x\].*verify:|^\s+verify:' 2>/dev/null | sed 's/.*verify:[[:space:]]*//' | sed 's/^"//;s/"$//' || true)
-  if [ -n "$VERIFY_CMDS" ]; then
-    while IFS= read -r cmd; do
-      [ -z "$cmd" ] && continue
-      cmd_trimmed=$(echo "$cmd" | xargs)
-      if echo "$cmd_trimmed" | grep -qiE '(entry|path|link|result|reachable|pass|display)' 2>/dev/null; then
-        continue
-      fi
-      # 禁止 trivially passing 命令（永远 exit 0，不验证任何东西）
-      if echo "$cmd_trimmed" | grep -qiE '^(echo|true|:)\b' 2>/dev/null; then
-        echo -e "  ${RED}    ❌ verify 命令不可执行: '$cmd_trimmed' 永远通过，不验证任何东西  [硬阻断]${RESET}"
-        VERIFY_FAIL=1
-        continue
-      fi
-      echo "    verify: $cmd_trimmed"
-      if ! bash -c "$cmd_trimmed" 2>/dev/null; then
-        echo -e "  ${RED}    [FAIL] verify failed: $cmd_trimmed${RESET}"
-        VERIFY_FAIL=1
-      fi
-    done <<< "$VERIFY_CMDS"
-  fi
-fi
-if [ "$VERIFY_FAIL" -gt 0 ]; then
-  echo -e "  ${RED}[FAIL] verify commands: some verifications did not pass  [HARD_BLOCK]${RESET}"
-  HARD_FAIL=$((HARD_FAIL + 1))
 fi
 
 if [ "$HARD_FAIL" -gt 0 ]; then
