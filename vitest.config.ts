@@ -16,6 +16,7 @@ export default defineConfig({
       { find: '@synova/graph-store', replacement: path.join(packagesRoot, 'graph-store/src/index.ts') },
       { find: '@synova/diagnosis-engine', replacement: path.join(packagesRoot, 'diagnosis-engine/src/index.ts') },
       { find: '@synova/evolution', replacement: path.join(packagesRoot, 'evolution/src/index.ts') },
+      { find: '@synova/ontology', replacement: path.join(packagesRoot, 'ontology/src/index.ts') },
       // engine-core: direct source imports (tsx compiles on-the-fly)
       { find: '@synova/engine-core/src', replacement: path.join(packagesRoot, 'engine-core/src') },
       { find: '@synova/engine-core', replacement: path.join(packagesRoot, 'engine-core/src/index.ts') },
