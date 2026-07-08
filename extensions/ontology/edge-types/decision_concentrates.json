@@ -1,1 +1,36 @@
-{"$id":"edge/decision-concentrates","label":"DECISION_CONCENTRATES","tags":["causal","defensive","governance"],"allowedFrom":["activity/governance","activity/coordination"],"allowedTo":["activity/learning","activity/maintenance","activity/innovation"],"requiredProps":["concentration_index","reversal_cost"],"optionalProps":{"independent_oversight_ratio":{"type":"number","minimum":0,"maximum":1}},"consumed_by_sentinels":["O9","O8","O6","I11"],"description":"决策集中。权力集中度及其对组织纠错能力的影响。"}
+{
+  "$id": "edge/decision-concentrates",
+  "label": "DECISION_CONCENTRATES",
+  "tags": [
+    "causal",
+    "defensive",
+    "governance"
+  ],
+  "allowedFrom": [
+    "activity/governance",
+    "activity/coordination"
+  ],
+  "allowedTo": [
+    "activity/learning",
+    "activity/maintenance",
+    "activity/innovation"
+  ],
+  "requiredProps": [
+    "concentration_index",
+    "reversal_cost"
+  ],
+  "optionalProps": {
+    "independent_oversight_ratio": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    }
+  },
+  "consumed_by_sentinels": [
+    "sentinel-routine-diffusion",
+    "sentinel-routine-mutation",
+    "sentinel-internal-transaction-cost",
+    "sentinel-incentive-alignment"
+  ],
+  "description": "决策集中。权力集中度及其对组织纠错能力的影响。"
+}

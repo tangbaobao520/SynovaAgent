@@ -1,1 +1,39 @@
-{"$id":"edge/incentive-binds","label":"INCENTIVE_BINDS","tags":["causal","defensive","governance"],"allowedFrom":["activity/governance"],"allowedTo":["activity/production","activity/acquisition","activity/innovation","activity/coordination","activity/learning","activity/maintenance"],"requiredProps":["metric_behavior_gap","risk_horizon_mismatch"],"optionalProps":{"perverse_incentive_score":{"type":"number","minimum":0,"maximum":1}},"consumed_by_sentinels":["O3","O8","F2","F4","I11"],"description":"激励绑定。KPI和薪酬结构对管理层行为的影响。"}
+{
+  "$id": "edge/incentive-binds",
+  "label": "INCENTIVE_BINDS",
+  "tags": [
+    "causal",
+    "defensive",
+    "governance"
+  ],
+  "allowedFrom": [
+    "activity/governance"
+  ],
+  "allowedTo": [
+    "activity/production",
+    "activity/acquisition",
+    "activity/innovation",
+    "activity/coordination",
+    "activity/learning",
+    "activity/maintenance"
+  ],
+  "requiredProps": [
+    "metric_behavior_gap",
+    "risk_horizon_mismatch"
+  ],
+  "optionalProps": {
+    "perverse_incentive_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    }
+  },
+  "consumed_by_sentinels": [
+    "sentinel-talent-density",
+    "sentinel-routine-mutation",
+    "sentinel-capital-structure",
+    "sentinel-revenue-health",
+    "sentinel-incentive-alignment"
+  ],
+  "description": "激励绑定。KPI和薪酬结构对管理层行为的影响。"
+}

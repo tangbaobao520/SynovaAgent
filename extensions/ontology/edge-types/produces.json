@@ -1,1 +1,45 @@
-{"$id":"edge/produces","label":"PRODUCES","tags":["causal","core"],"allowedFrom":["activity/production","activity/acquisition","activity/innovation","activity/coordination","activity/learning","activity/governance","activity/maintenance","activity/compliance"],"allowedTo":["outcome/financial","outcome/market","outcome/operational","outcome/people","outcome/innovation","outcome/risk","outcome/competitive","outcome/external"],"requiredProps":["marginal_contribution","period"],"optionalProps":{"output_type":"string","quantity":"number","quality":"number","attribution":"string"},"consumed_by_sentinels":["I10","F4","O1","I6"],"description":"活动产出结果。"}
+{
+  "$id": "edge/produces",
+  "label": "PRODUCES",
+  "tags": [
+    "causal",
+    "core"
+  ],
+  "allowedFrom": [
+    "activity/production",
+    "activity/acquisition",
+    "activity/innovation",
+    "activity/coordination",
+    "activity/learning",
+    "activity/governance",
+    "activity/maintenance",
+    "activity/compliance"
+  ],
+  "allowedTo": [
+    "outcome/financial",
+    "outcome/market",
+    "outcome/operational",
+    "outcome/people",
+    "outcome/innovation",
+    "outcome/risk",
+    "outcome/competitive",
+    "outcome/external"
+  ],
+  "requiredProps": [
+    "marginal_contribution",
+    "period"
+  ],
+  "optionalProps": {
+    "output_type": "string",
+    "quantity": "number",
+    "quality": "number",
+    "attribution": "string"
+  },
+  "consumed_by_sentinels": [
+    "sentinel-human-agent-boundary",
+    "sentinel-revenue-health",
+    "sentinel-structural-change",
+    "sentinel-data-health"
+  ],
+  "description": "活动产出结果。"
+}

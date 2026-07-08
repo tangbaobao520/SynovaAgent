@@ -1,1 +1,51 @@
-{"$id":"edge/funds","label":"FUNDS","tags":["causal","financial"],"allowedFrom":["resource/money"],"allowedTo":["activity/production","activity/acquisition","activity/innovation","activity/coordination","activity/learning","activity/governance","activity/maintenance","activity/compliance"],"requiredProps":["amount","allocation_period"],"optionalProps":{"expected_roi":{"type":"number"},"actual_roi":{"type":"number"},"allocation_type":{"enum":["capex","rd","mna","buyback","dividend","retain"]},"decision_maker_id":"string"},"consumed_by_sentinels":["F3","F4","S3","I7"],"description":"资金分配到活动。"}
+{
+  "$id": "edge/funds",
+  "label": "FUNDS",
+  "tags": [
+    "causal",
+    "financial"
+  ],
+  "allowedFrom": [
+    "resource/money"
+  ],
+  "allowedTo": [
+    "activity/production",
+    "activity/acquisition",
+    "activity/innovation",
+    "activity/coordination",
+    "activity/learning",
+    "activity/governance",
+    "activity/maintenance",
+    "activity/compliance"
+  ],
+  "requiredProps": [
+    "amount",
+    "allocation_period"
+  ],
+  "optionalProps": {
+    "expected_roi": {
+      "type": "number"
+    },
+    "actual_roi": {
+      "type": "number"
+    },
+    "allocation_type": {
+      "enum": [
+        "capex",
+        "rd",
+        "mna",
+        "buyback",
+        "dividend",
+        "retain"
+      ]
+    },
+    "decision_maker_id": "string"
+  },
+  "consumed_by_sentinels": [
+    "sentinel-cash-runway",
+    "sentinel-revenue-health",
+    "sentinel-business-model-coherence",
+    "sentinel-connector-coverage"
+  ],
+  "description": "资金分配到活动。"
+}
