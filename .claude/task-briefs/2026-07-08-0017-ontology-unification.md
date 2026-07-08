@@ -116,12 +116,12 @@ grep 结果 (counts):
 8. 添加 pre-commit 门禁：禁止旧 SOG 枚举引用
 
 **不做什么**:
-- ❌ 不迁移 packages/engine-core/（322+处，Novis遗产，后续清理）
-- ❌ 不迁移 packages/connector-registry/ packages/test-kit/ 
-- ❌ 不删除 packages/sog-core/（保留归档，只删其枚举导出）
-- ❌ 不处理 v2.4 规范缺失边（Phase 5 再做）
-- ❌ 不改 SQLite 数据（queryNodes 双格式兼容）
-- ❌ 不做 props 接口迁移（Phase 5）
+- ❌ 不迁移 packages/engine-core/src/（322+处，Novis遗产，后续清理）
+- ❌ 不迁移 packages/connector-registry/src/ packages/test-kit/
+- ❌ 不删除 packages/sog-core/package.json（保留归档，只删 index.ts 枚举导出）
+- ❌ 不处理 v2.4 规范缺失边 edge-types/*.json（Phase 5 再做）
+- ❌ 不改 src/l4/engine-graph-store.ts（queryNodes 双格式兼容）
+- ❌ 不做 Props 接口迁移 src/l4/ontology-loader.ts（Phase 5）
 
 ## Q3: 验收 — 入口 → 交互 → 结果
 
