@@ -106,22 +106,24 @@ grep 结果 (counts):
 ## Q2: 范围 — 正确的最简方案是什么？
 
 **做什么**:
-1. 修复 task-start.sh 编码损坏（当前乱码导致 exit 2）
-2. 创建 packages/ontology/ 包（NodeType/EdgeType 字符串常量，as const）
-3. 编写迁移脚本 scripts/migrate-ontology.ts 替换 src/ 下旧枚举
-4. 迁移 src/ 下 17 个使用 SOGNodeType 的文件 + 8 个使用 SOGEdgeType 的文件
-5. 修复 62 个哨兵 manifest.json（补充 id: sentinel-{目录名}）
-6. 修复 16 个边 JSON 的 consumed_by_sentinels 字段
-7. 更新 extensions/ontology/manifest.json 节点计数（17→29）
-8. 添加 pre-commit 门禁：禁止旧 SOG 枚举引用
+1. 修复 task-start.sh 编码损坏 — `scripts/workflow/task-start.sh`
+2. 创建 packages/ontology/ 包 — `packages/ontology/src/index.ts`, `packages/ontology/package.json`
+3. 编写迁移脚本 — `scripts/migrate-sog-to-ontology.py`
+4. 迁移 src/ 下 SOG 枚举引用 — `src/l4/graph-bridge.ts`, `src/l4/entity-resolver.ts`, `src/connectors/*.ts`, `src/tools/*.ts`, `src/agent/*.ts`
+5. 修复哨兵 manifest — `extensions/sentinels/*/manifest.json`
+6. 修复边 JSON 的 consumed_by_sentinels — `extensions/ontology/edge-types/*.json`
+7. 更新 manifest.json 计数 — `extensions/ontology/manifest.json`
+8. 添加 pre-commit 门禁 — `scripts/pre-commit-check.sh`
+9. 删除 old SOG enum exports — `packages/sog-core/src/index.ts`
+10. 添加 CI 路径映射 — `tsconfig.json`, `vitest.config.ts`
 
 **不做什么**:
-- ❌ 不迁移 packages/engine-core/src/（322+处，Novis遗产，后续清理）
-- ❌ 不迁移 packages/connector-registry/src/ packages/test-kit/
-- ❌ 不删除 packages/sog-core/package.json（保留归档，只删 index.ts 枚举导出）
-- ❌ 不处理 v2.4 规范缺失边 edge-types/*.json（Phase 5 再做）
-- ❌ 不改 src/l4/engine-graph-store.ts（queryNodes 双格式兼容）
-- ❌ 不做 Props 接口迁移 src/l4/ontology-loader.ts（Phase 5）
+- ❌ 不迁移 packages/engine-core/（322+处，Novis遗产，后续清理）
+- ❌ 不迁移 packages/connector-registry/ packages/test-kit/
+- ❌ 不删除 packages/sog-core/（保留归档，只删 index.ts 枚举导出）
+- ❌ 不处理 v2.4 规范缺失边（Phase 5 再做）
+- ❌ 不改 SQLite 数据（queryNodes 双格式兼容）
+- ❌ 不做 Props 接口迁移（Phase 5）
 
 ## Q3: 验收 — 入口 → 交互 → 结果
 

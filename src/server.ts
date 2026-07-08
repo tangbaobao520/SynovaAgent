@@ -64,6 +64,7 @@ import reloadRoutes from './routes/reload';
 import auditRoutes from './routes/audit';
 import gaAdminRoutes from './routes/ga-admin';
 import gaCorrectionsRoutes from './routes/ga-corrections';
+import gaAnnotationsRoutes from './routes/ga-annotations';
 import solutionsRoutes from './routes/solutions';
 import notificationsRoutes from './routes/notifications';
 import { AuditService } from './services/audit-service';
@@ -444,6 +445,7 @@ app.use(reloadRoutes);                         // POST /api/reload — 热加载
 app.use(auditRoutes);                          // GET /api/audit — 审计日志 (Phase 0.3)
 app.use(gaAdminRoutes);                        // /api/ga/* — GA 管理 API (Phase 3.1)
 app.use(gaCorrectionsRoutes);                  // /api/ga/corrections — 纠错 (Phase 3.2)
+app.use(gaAnnotationsRoutes);                  // /api/ga/annotations — 标注 (T3)
 app.use(solutionsRoutes);                        // /api/solutions/* — 方案生成链路 (Phase 3.4)
 app.use(notificationsRoutes);                    // /api/notifications/* — 通知系统 (Phase 2.1)
 
