@@ -9,7 +9,7 @@
  * GraphStore 的 createNode 不支持显式 ID，因此用 props 匹配。
  */
 
-import { SOGNodeType } from '@synova/sog-core';
+import { NodeType } from '@synova/ontology';
 import { createLogger } from '@synova/logger';
 import type { GraphStore } from '../l4/graph-bridge';
 import type { AgentActivity, ReportResponse } from './types';
@@ -48,7 +48,7 @@ export function collectActivity(
     if (activity.model) props.model = activity.model;
 
     // 按 name + platform 查找已有节点 (一个 platform+agentId 组合应该只有一个)
-    const existing = store.queryNodes(SOGNodeType.AGENT, {
+    const existing = store.queryNodes(NodeType.RESOURCE_AGENT, {
       agentId: activity.agentId,
       platform: activity.platform,
     }, graph);
@@ -66,7 +66,7 @@ export function collectActivity(
 
     // 创建新节点
     props.activityCount = 1;
-    const newNodeId = store.createNode(SOGNodeType.AGENT, props, graph);
+    const newNodeId = store.createNode(NodeType.RESOURCE_AGENT, props, graph);
     log.info({ nodeId: newNodeId, lookupKey, graph },
       'AGENT 节点已创建');
     return { ok: true, agentNodeId: newNodeId, action: 'created', degraded: false, errors: [] };

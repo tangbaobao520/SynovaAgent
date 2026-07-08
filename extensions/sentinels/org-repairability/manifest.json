@@ -35,5 +35,6 @@
   "exportKey": "orgRepairabilitySentinel",
   "auxiliaryExperts": [
     "knowledge"
-  ]
+  ],
+  "id": "sentinel-org-repairability"
 }

@@ -41,5 +41,6 @@
   },
   "entryPoint": "./aggregate.ts",
   "exportKey": "capitalEfficiencySentinel",
-  "technoEconomicPhaseCalibration": true
+  "technoEconomicPhaseCalibration": true,
+  "id": "sentinel-capital-efficiency"
 }

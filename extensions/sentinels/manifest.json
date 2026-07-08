@@ -16,11 +16,68 @@
     "boundary_rule": "哨兵 = 可以独立说'这里出问题了'的最小子领域。不是整个领域（太粗），不是一个指标（太细）。"
   },
   "sentinels": {
-    "finance": ["cost-health", "revenue-health", "cash-runway", "profit-health", "capital-efficiency", "financing-constraint", "capital-structure", "growth-quality", "capital-turnover", "unit-economics", "value-capture"],
-    "org": ["key-person-risk", "internal-transaction-cost", "network-power", "strategy-capability-fit", "adaptation-velocity", "resource-misallocation", "explore-exploit-balance", "routine-mutation", "incentive-alignment", "knowledge-accessibility", "routine-diffusion", "channel-capacity", "info-distortion", "org-repairability", "power-rigidity", "talent-density"],
-    "tech": ["api-coverage", "data-health", "software-health", "connector-coverage", "process-ai-readiness", "ai-ecosystem-fit", "agent-deployment-maturity", "ai-investment-return", "human-agent-boundary"],
-    "marketing": ["customer-demand-shift"],
-    "strategy": ["market-lifecycle", "opportunity-window", "competitive-dynamics", "environment-rent-dependency", "structural-change", "niche-breadth", "niche-squeeze", "competitive-moat-structural", "competitive-moat-perceptual", "moat-dependency"],
-    "business_model": ["business-model-coherence", "time-penetration", "make-or-buy"]
-  }
+    "finance": [
+      "cost-health",
+      "revenue-health",
+      "cash-runway",
+      "profit-health",
+      "capital-efficiency",
+      "financing-constraint",
+      "capital-structure",
+      "growth-quality",
+      "capital-turnover",
+      "unit-economics",
+      "value-capture"
+    ],
+    "org": [
+      "key-person-risk",
+      "internal-transaction-cost",
+      "network-power",
+      "strategy-capability-fit",
+      "adaptation-velocity",
+      "resource-misallocation",
+      "explore-exploit-balance",
+      "routine-mutation",
+      "incentive-alignment",
+      "knowledge-accessibility",
+      "routine-diffusion",
+      "channel-capacity",
+      "info-distortion",
+      "org-repairability",
+      "power-rigidity",
+      "talent-density"
+    ],
+    "tech": [
+      "api-coverage",
+      "data-health",
+      "software-health",
+      "connector-coverage",
+      "process-ai-readiness",
+      "ai-ecosystem-fit",
+      "agent-deployment-maturity",
+      "ai-investment-return",
+      "human-agent-boundary"
+    ],
+    "marketing": [
+      "customer-demand-shift"
+    ],
+    "strategy": [
+      "market-lifecycle",
+      "opportunity-window",
+      "competitive-dynamics",
+      "environment-rent-dependency",
+      "structural-change",
+      "niche-breadth",
+      "niche-squeeze",
+      "competitive-moat-structural",
+      "competitive-moat-perceptual",
+      "moat-dependency"
+    ],
+    "business_model": [
+      "business-model-coherence",
+      "time-penetration",
+      "make-or-buy"
+    ]
+  },
+  "id": "sentinel-sentinels"
 }

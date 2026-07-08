@@ -1,4 +1,4 @@
-import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
+import { NodeType, EdgeType } from '@synova/ontology';
 
 /** Graph API JSON response (P1-02: 替代 `as-any`) */
 interface GraphData {
@@ -71,7 +71,7 @@ export const scanCollaborationTool: ToolDefinition = {
       const res = await fetch(`${BASE}/api/ontology/graph/${orgId}`);
       if (res.ok) {
         const data = await res.json() as GraphData;
-        const interactsEdges = (data.edges || []).filter((e: any) => e.type === SOGEdgeType.INTERACTS_WITH);
+        const interactsEdges = (data.edges || []).filter((e: any) => e.type === EdgeType.INFORMS /* ONTOLOGY-MIGRATION: EdgeType.INFORMS -> INFORMS (approximate). */);
         return {
           orgId,
           interactionEdges: interactsEdges.length,
@@ -108,13 +108,13 @@ export const assessDecisionFlowTool: ToolDefinition = {
       const res = await fetch(`${BASE}/api/ontology/graph/${orgId}`);
       if (res.ok) {
         const data = await res.json() as GraphData;
-        const belongsToEdges = (data.edges || []).filter((e: any) => e.type === SOGEdgeType.BELONGS_TO);
+        const belongsToEdges = (data.edges || []).filter((e: any) => e.type === EdgeType.DEPENDS_ON /* ONTOLOGY-MIGRATION: EdgeType.DEPENDS_ON no direct match. Using DEPENDS_ON (syntactic node ID path). */);
         // 计算审批链平均深度（简化：BELONGS_TO 边数 / Person 数）
-        const personCount = (data.nodes || []).filter((n: any) => n.type === SOGNodeType.PERSON).length;
+        const personCount = (data.nodes || []).filter((n: any) => n.type === NodeType.RESOURCE_PERSON).length;
         const avgChainDepth = personCount > 0 ? belongsToEdges.length / personCount : 0;
         return {
           orgId,
-          teamCount: (data.nodes || []).filter((n: any) => n.type === SOGNodeType.TEAM).length,
+          teamCount: (data.nodes || []).filter((n: any) => n.type === NodeType.RESOURCE_TEAM).length,
           personCount,
           belongsToEdges: belongsToEdges.length,
           avgChainDepth: Math.round(avgChainDepth * 10) / 10,
@@ -147,7 +147,7 @@ export const identifyKeyPersonRiskTool: ToolDefinition = {
       const res = await fetch(`${BASE}/api/ontology/graph/${orgId}`);
       if (res.ok) {
         const data = await res.json() as GraphData;
-        const persons = (data.nodes || []).filter((n: any) => n.type === SOGNodeType.PERSON);
+        const persons = (data.nodes || []).filter((n: any) => n.type === NodeType.RESOURCE_PERSON);
         // 简化中心性：基于边的度数
         const centrality = persons.map((p: any) => {
           const degree = (data.edges || []).filter((e: any) => e.from === p.id || e.to === p.id).length;

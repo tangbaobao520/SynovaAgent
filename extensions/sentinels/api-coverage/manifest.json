@@ -3,8 +3,8 @@
   "name": "api-coverage",
   "version": "1.0.0",
   "type": "sentinel",
-  "displayName": "API\u53ef\u8fbe\u6027\u4e0e\u534f\u8bae\u8986\u76d6",
-  "description": "T2: \u68c0\u6d4b\u4f01\u4e1aTOOL\u8282\u70b9\u7684API\u53ef\u8fbe\u7387\u4e0e\u6807\u51c6\u534f\u8bae\u8986\u76d6\u7387\u3002\u6570\u636e\u6e90: SOG TOOL\u8282\u70b9\u3002",
+  "displayName": "API可达性与协议覆盖",
+  "description": "T2: 检测企业TOOL节点的API可达率与标准协议覆盖率。数据源: SOG TOOL节点。",
   "schedule": "0 9 * * *",
   "expert": "tech",
   "priority": "P1",
@@ -40,5 +40,6 @@
   "exportKey": "apiCoverageSentinel",
   "auxiliaryExperts": [
     "strategy"
-  ]
+  ],
+  "id": "sentinel-api-coverage"
 }

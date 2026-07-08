@@ -3,8 +3,8 @@
   "name": "capital-structure",
   "version": "1.0.0",
   "type": "sentinel",
-  "displayName": "\u8d44\u672c\u7ed3\u6784\u5065\u5eb7\u5ea6",
-  "description": "F2: \u8bc4\u4f30\u8d44\u672c\u7ed3\u6784\u5065\u5eb7\u5ea6\u2014\u2014\u8d1f\u503a\u6743\u76ca\u6bd4\u3001\u5229\u606f\u8986\u76d6\u500d\u6570\u3001\u957f\u671f\u8d1f\u503a\u5360\u6bd4\u3002\u6570\u636e\u6e90: FINANCIAL\u8282\u70b9\u3002",
+  "displayName": "资本结构健康度",
+  "description": "F2: 评估资本结构健康度——负债权益比、利息覆盖倍数、长期负债占比。数据源: FINANCIAL节点。",
   "schedule": "0 0 1 * *",
   "expert": "finance",
   "priority": "P1",
@@ -40,5 +40,6 @@
   "exportKey": "capitalStructureSentinel",
   "auxiliaryExperts": [
     "strategy"
-  ]
+  ],
+  "id": "sentinel-capital-structure"
 }

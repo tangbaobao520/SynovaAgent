@@ -34,6 +34,18 @@ textarea{resize:vertical;min-height:80px}
 #progress{display:none;text-align:center;padding:1rem;color:var(--accent2)}
 #results{display:none}
 .hint{font-size:.75rem;color:var(--dim);margin-top:.3rem}
+.ann-card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:.8rem;margin:.5rem 0;font-size:13px}
+.ann-card .finding-title{font-weight:600;margin-bottom:.3rem}
+.ann-card .finding-meta{font-size:.75rem;color:var(--dim);margin-bottom:.5rem}
+.ann-btn{padding:4px 12px;border-radius:4px;border:1px solid var(--border);cursor:pointer;font-size:12px;margin-right:6px;background:transparent;color:var(--text)}
+.ann-btn:hover{opacity:.8}
+.ann-btn.active-confirmed{background:var(--green);color:#fff;border-color:var(--green)}
+.ann-btn.active-false-alarm{background:var(--red);color:#fff;border-color:var(--red)}
+.ann-btn.active-uncertain{background:var(--orange);color:#fff;border-color:var(--orange)}
+.ann-btn:disabled{opacity:.5;cursor:default}
+.ann-note{width:100%;background:#12121a;border:1px solid var(--border);border-radius:4px;padding:6px 10px;color:var(--text);font-size:12px;margin-top:.4rem;font-family:inherit;outline:none;display:none}
+.ann-status{font-size:.75rem;color:var(--dim);margin-top:.3rem}
+.ann-error{font-size:.75rem;color:var(--red);margin-top:.3rem}
 </style>
 </head>
 <body>
@@ -94,6 +106,20 @@ textarea{resize:vertical;min-height:80px}
 <div id="progress">⏳ 诊断进行中... <span id="phaseLabel"></span></div>
 <div id="results"></div>
 
+<!-- ═══ T3: GA 标注工具 ═══ -->
+<div id="annotations-section" style="display:none;margin-top:2rem">
+<div class="step">
+<h3>📌 Findings 标注 · 帮助提升哨兵精度</h3>
+<div id="annotation-loading" style="display:none;color:var(--dim);padding:.5rem">加载 Findings 列表...</div>
+<div id="annotation-error" style="display:none;color:var(--red);padding:.5rem"></div>
+<div id="findings-list"></div>
+<div id="batch-actions" style="display:none;margin-top:1rem">
+  <button class="btn" id="batchConfirmBtn" onclick="batchConfirmAll()" style="background:var(--green)">✅ 全部确认（N条）</button>
+</div>
+<div id="annotation-status" style="margin-top:.5rem;font-size:.8rem;color:var(--dim)"></div>
+</div>
+</div>
+
 <script>
 function fillTag(text){document.getElementById('content').value=text}
 async function startDiagnosis(){
@@ -123,10 +149,206 @@ async function pollResults(jobId){
     document.getElementById('progress').style.display='none';
     document.getElementById('results').style.display='block';
     document.getElementById('results').innerHTML='<h2>诊断报告</h2><div style=background:var(--panel);border-radius:10px;padding:1rem>'+html.slice(0,8000)+'</div>';
+    // 加载标注面板
+    setTimeout(loadAnnotationPanel, 500);
   }catch(e){
     document.getElementById('phaseLabel').textContent='报告生成中...';
     setTimeout(()=>pollResults(jobId),5000);
   }
+}
+
+// ═══ T3: GA 标注工具 ═══
+
+let _currentFindings = [];
+
+async function loadAnnotationPanel() {
+  const section = document.getElementById('annotations-section');
+  section.style.display = 'block';
+  document.getElementById('annotation-loading').style.display = 'block';
+  document.getElementById('annotation-error').style.display = 'none';
+  try {
+    // 获取最近的 findings
+    const r = await fetch('/api/sentinel/findings?limit=50');
+    if (!r.ok) throw new Error('获取 findings 失败');
+    const data = await r.json();
+    const findings = data.findings || [];
+    _currentFindings = findings;
+
+    // 获取已有标注
+    let existingMap = {};
+    try {
+      const ar = await fetch('/api/ga/annotations?limit=200');
+      if (ar.ok) {
+        const ad = await ar.json();
+        // 保留每个 finding 的最新标注
+        for (const ann of (ad.annotations || [])) {
+          existingMap[ann.findingId] = ann;
+        }
+      }
+    } catch(e) { /* 标注加载失败不影响展示 */ }
+
+    document.getElementById('annotation-loading').style.display = 'none';
+    const list = document.getElementById('findings-list');
+    list.innerHTML = '';
+
+    if (findings.length === 0) {
+      list.innerHTML = '<div style="color:var(--dim);padding:.5rem">暂无 Finding 数据</div>';
+      return;
+    }
+
+    for (const f of findings) {
+      const card = createFindingCard(f, existingMap[f.id]);
+      list.appendChild(card);
+    }
+
+    // 更新批量按钮
+    const batchBtn = document.getElementById('batchConfirmBtn');
+    batchBtn.textContent = '✅ 全部确认（' + findings.length + '条）';
+    document.getElementById('batch-actions').style.display = 'block';
+    updateAnnotationStatus();
+  } catch(e) {
+    document.getElementById('annotation-loading').style.display = 'none';
+    document.getElementById('annotation-error').style.display = 'block';
+    document.getElementById('annotation-error').textContent = '获取 Findings 失败: ' + e.message;
+  }
+}
+
+function createFindingCard(finding, existingAnn) {
+  const card = document.createElement('div');
+  card.className = 'ann-card';
+  card.dataset.findingId = finding.id;
+
+  const sentinelId = finding.sentinelId || 'unknown';
+  const severity = finding.severity || 'info';
+  const title = finding.title || '未命名 Finding';
+
+  const ann = existingAnn ? existingAnn.annotation : null;
+  const annActive = function(typ) { return ann === typ ? 'active-' + typ : ''; };
+
+  card.innerHTML =
+    '<div class="finding-title">' + title + '</div>' +
+    '<div class="finding-meta">' + finding.id + ' · ' + severity + ' · ' + sentinelId + '</div>' +
+    '<div class="ann-buttons">' +
+      '<button class="ann-btn ' + annActive('confirmed') + '" data-ann="confirmed" onclick="selectAnnotation(\'' + finding.id + '\',\'' + sentinelId + '\',\'' + severity.replace(/'/g,"\\'") + '\',\'' + title.replace(/'/g,"\\'") + '\',\'confirmed\',this)">✅ 确认</button>' +
+      '<button class="ann-btn ' + annActive('false_alarm') + '" data-ann="false_alarm" onclick="selectAnnotation(\'' + finding.id + '\',\'' + sentinelId + '\',\'' + severity.replace(/'/g,"\\'") + '\',\'' + title.replace(/'/g,"\\'") + '\',\'false_alarm\',this)">❌ 误报</button>' +
+      '<button class="ann-btn ' + annActive('uncertain') + '" data-ann="uncertain" onclick="selectAnnotation(\'' + finding.id + '\',\'' + sentinelId + '\',\'' + severity.replace(/'/g,"\\'") + '\',\'' + title.replace(/'/g,"\\'") + '\',\'uncertain\',this)">❓ 不确定</button>' +
+    '</div>' +
+    '<textarea class="ann-note" id="note-' + finding.id + '" placeholder="纠错说明（可选）" ' + (existingAnn && (existingAnn.annotation === 'false_alarm' || existingAnn.annotation === 'uncertain') ? 'style=display:block' : '') + '>' + (existingAnn && existingAnn.correctionNote ? existingAnn.correctionNote : '') + '</textarea>' +
+    '<div class="ann-status" id="status-' + finding.id + '">' + (existingAnn ? '已标注: ' + existingAnn.annotation + ' @ ' + (existingAnn.annotatedAt || '').slice(0,10) : '尚未标注') + '</div>' +
+    '<div class="ann-error" id="error-' + finding.id + '"></div>';
+
+  return card;
+}
+
+async function selectAnnotation(findingId, sentinelId, severity, title, annotation, btn) {
+  const card = btn.closest('.ann-card');
+  const statusEl = document.getElementById('status-' + findingId);
+  const errorEl = document.getElementById('error-' + findingId);
+  const noteEl = document.getElementById('note-' + findingId);
+  const buttons = card.querySelectorAll('.ann-btn');
+
+  // 禁用所有按钮（提交去重保护）
+  buttons.forEach(b => b.disabled = true);
+
+  // 高亮选中按钮
+  buttons.forEach(b => {
+    b.classList.remove('active-confirmed', 'active-false-alarm', 'active-uncertain');
+  });
+  btn.classList.add('active-' + annotation);
+
+  // 展开/折叠纠错说明
+  if (noteEl) {
+    noteEl.style.display = (annotation === 'false_alarm' || annotation === 'uncertain') ? 'block' : 'none';
+  }
+  statusEl.textContent = '提交中...';
+  statusEl.style.color = 'var(--accent)';
+  errorEl.textContent = '';
+
+  try {
+    const body = {
+      findingId: findingId,
+      sentinelId: sentinelId,
+      severity: severity,
+      title: title,
+      annotation: annotation,
+    };
+    if (noteEl && noteEl.value.trim()) {
+      body.correctionNote = noteEl.value.trim();
+    }
+
+    const r = await fetch('/api/ga/annotations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.message || '提交失败');
+
+    statusEl.textContent = '已标注: ' + annotation + ' @ ' + new Date().toISOString().slice(0,10);
+    statusEl.style.color = 'var(--dim)';
+    updateAnnotationStatus();
+  } catch(e) {
+    statusEl.textContent = '尚未标注';
+    statusEl.style.color = 'var(--dim)';
+    errorEl.textContent = '⚠ 标注提交失败: ' + e.message + '，请重试';
+    // 恢复按钮选中状态
+    buttons.forEach(b => b.disabled = false);
+    btn.classList.remove('active-' + annotation);
+  }
+  buttons.forEach(b => b.disabled = false);
+}
+
+async function batchConfirmAll() {
+  const count = _currentFindings.length;
+  if (count === 0) return;
+  if (!confirm('确认本报告中全部 ' + count + ' 条 Finding？')) return;
+
+  const batchBtn = document.getElementById('batchConfirmBtn');
+  batchBtn.disabled = true;
+  batchBtn.textContent = '提交中...';
+  document.getElementById('annotation-error').style.display = 'none';
+
+  let success = 0, fail = 0, errors = [];
+  for (const f of _currentFindings) {
+    try {
+      const r = await fetch('/api/ga/annotations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          findingId: f.id,
+          sentinelId: f.sentinelId || 'unknown',
+          severity: f.severity || 'info',
+          title: f.title || '',
+          annotation: 'confirmed',
+        }),
+      });
+      if (r.ok) { success++; }
+      else {
+        const d = await r.json();
+        fail++; errors.push(f.id + ': ' + (d.message || ''));
+      }
+    } catch(e) {
+      fail++; errors.push(f.id + ': ' + e.message);
+    }
+  }
+
+  // 刷新标注面板
+  await loadAnnotationPanel();
+
+  batchBtn.disabled = false;
+  batchBtn.textContent = '✅ 全部确认（' + count + '条）';
+
+  if (fail > 0) {
+    document.getElementById('annotation-error').style.display = 'block';
+    document.getElementById('annotation-error').textContent = success + '条成功，' + fail + '条失败：' + errors.slice(0,3).join('; ');
+  }
+}
+
+function updateAnnotationStatus() {
+  const count = document.querySelectorAll('.ann-card .ann-status').length;
+  const annotated = document.querySelectorAll('.ann-card .ann-status:not(:empty)').length;
+  const el = document.getElementById('annotation-status');
+  if (el) el.textContent = '已标注 ' + annotated + ' / ' + count + ' 条 Finding';
 }
 </script>
 </body>

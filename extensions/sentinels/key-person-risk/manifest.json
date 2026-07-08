@@ -44,5 +44,6 @@
     "requiredFields": [
       "amount"
     ]
-  }
+  },
+  "id": "sentinel-key-person-risk"
 }

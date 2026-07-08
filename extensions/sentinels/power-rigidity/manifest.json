@@ -35,5 +35,6 @@
   "exportKey": "powerRigiditySentinel",
   "auxiliaryExperts": [
     "strategy"
-  ]
+  ],
+  "id": "sentinel-power-rigidity"
 }

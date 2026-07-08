@@ -3,8 +3,8 @@
   "name": "ai-investment-return",
   "version": "1.0.0",
   "type": "sentinel",
-  "displayName": "T8 AI\u6295\u5165\u4ea7\u51fa\u6bd4",
-  "description": "T8: T8 AI\u6295\u5165\u4ea7\u51fa\u6bd4",
+  "displayName": "T8 AI投入产出比",
+  "description": "T8: T8 AI投入产出比",
   "schedule": "0 0 1 * *",
   "expert": "tech",
   "priority": "P1",
@@ -35,5 +35,6 @@
   "exportKey": "AiinvestmentreturnSentinel",
   "auxiliaryExperts": [
     "finance"
-  ]
+  ],
+  "id": "sentinel-ai-investment-return"
 }

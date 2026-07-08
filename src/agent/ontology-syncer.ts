@@ -66,7 +66,7 @@ export class OntologySyncer {
 
     // 铁律 39: 通过 adapter 获取 GraphStore, 不直接 import vendor
     try {
-      const { SOGNodeType } = await import('@synova/sog-core');
+      const { NodeType } = await import('@synova/ontology');
       const { getDatabase } = await import('../init/engine-context');
       const db = getDatabase();
       if (!this.ctx.createGraphStore) {
@@ -76,14 +76,14 @@ export class OntologySyncer {
       const store = await this.ctx.createGraphStore(db) as { createNode: (type: string, props: Record<string, unknown>, graph: string) => string };
 
       // Create Team node
-      store.createNode(SOGNodeType.TEAM, {
+      store.createNode(NodeType.RESOURCE_TEAM, {
         name: this.ctx.orgId || '默认组织',
         teamType: 'permanent',
       }, this.ctx.orgId || 'default');
 
       // Create Person nodes from extracted names
       for (const name of personNames) {
-        store.createNode(SOGNodeType.PERSON, { name }, this.ctx.orgId || 'default');
+        store.createNode(NodeType.RESOURCE_PERSON, { name }, this.ctx.orgId || 'default');
       }
 
       result.created = true;

@@ -3,8 +3,8 @@
   "name": "capital-turnover",
   "version": "1.0.0",
   "type": "sentinel",
-  "displayName": "\u8d44\u672c\u5468\u8f6c\u6548\u7387",
-  "description": "F5: \u8bc4\u4f30\u8d44\u672c\u5468\u8f6c\u6548\u7387\u2014\u2014\u603b\u8d44\u4ea7\u5468\u8f6c\u7387\u3001\u6d41\u52a8\u8d44\u4ea7\u5468\u8f6c\u7387\u3001\u5e94\u6536\u5468\u8f6c\u5929\u6570\u3002",
+  "displayName": "资本周转效率",
+  "description": "F5: 评估资本周转效率——总资产周转率、流动资产周转率、应收周转天数。",
   "schedule": "0 0 1 * *",
   "expert": "finance",
   "priority": "P1",
@@ -40,5 +40,6 @@
   "exportKey": "capitalTurnoverSentinel",
   "auxiliaryExperts": [
     "strategy"
-  ]
+  ],
+  "id": "sentinel-capital-turnover"
 }

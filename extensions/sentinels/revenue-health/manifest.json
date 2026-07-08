@@ -51,5 +51,6 @@
     "requiredFields": [
       "amount"
     ]
-  }
+  },
+  "id": "sentinel-revenue-health"
 }

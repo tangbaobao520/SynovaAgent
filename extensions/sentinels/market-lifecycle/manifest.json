@@ -3,8 +3,8 @@
   "name": "market-lifecycle",
   "version": "1.0.0",
   "type": "sentinel",
-  "displayName": "\u5e02\u573a\u5929\u82b1\u677f\u4e0e\u751f\u547d\u5468\u671f",
-  "description": "E1: \u57fa\u4e8eKlepper(1996)\u89c4\u5219\u5224\u5b9a\u4ea7\u4e1a\u751f\u547d\u5468\u671f\u9636\u6bb5\u3002\u6570\u636e\u6e90: Market\u8282\u70b9 + COMPETES_WITH\u8fb9\u3002",
+  "displayName": "市场天花板与生命周期",
+  "description": "E1: 基于Klepper(1996)规则判定产业生命周期阶段。数据源: Market节点 + COMPETES_WITH边。",
   "schedule": "0 0 1 * *",
   "expert": "strategy",
   "priority": "P1",
@@ -36,5 +36,6 @@
   "exportKey": "marketLifecycleSentinel",
   "auxiliaryExperts": [
     "knowledge"
-  ]
+  ],
+  "id": "sentinel-market-lifecycle"
 }

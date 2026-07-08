@@ -35,5 +35,6 @@
   "exportKey": "knowledgeAccessibilitySentinel",
   "auxiliaryExperts": [
     "knowledge"
-  ]
+  ],
+  "id": "sentinel-knowledge-accessibility"
 }

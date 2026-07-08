@@ -3,8 +3,8 @@
   "name": "data-health",
   "version": "1.0.0",
   "type": "sentinel",
-  "displayName": "\u6570\u636e\u5065\u5eb7\u5ea6",
-  "description": "T3: \u8bc4\u4f30\u672c\u4f53\u5c42\u6570\u636e\u8d28\u91cf\u4e0e\u7cfb\u7edf\u95f4\u6570\u636e\u8fde\u901a\u6027\u3002\u6570\u636e\u6e90: SOG \u8282\u70b9+\u8fb9\u3002",
+  "displayName": "数据健康度",
+  "description": "T3: 评估本体层数据质量与系统间数据连通性。数据源: SOG 节点+边。",
   "schedule": "0 9 * * 1",
   "expert": "tech",
   "priority": "P1",
@@ -40,5 +40,6 @@
   "exportKey": "dataHealthSentinel",
   "auxiliaryExperts": [
     "strategy"
-  ]
+  ],
+  "id": "sentinel-data-health"
 }

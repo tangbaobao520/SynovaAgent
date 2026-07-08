@@ -21,7 +21,7 @@ const log = createLogger('l4/agent-memory-store');
 
 // ═══ Types ═══
 
-export type MemoryType = 'fact' | 'preference' | 'decision' | 'pattern' | 'entity' | 'enterprise_fact' | 'ga_correction' | 'implementation_plan';
+export type MemoryType = 'fact' | 'preference' | 'decision' | 'pattern' | 'entity' | 'enterprise_fact' | 'ga_correction' | 'implementation_plan' | 'sentinel_annotation';
 
 export interface MemoryEntry {
   id: string;
@@ -309,7 +309,7 @@ export class AgentMemoryStore {
         org_id TEXT NOT NULL,
         key TEXT NOT NULL,
         value TEXT NOT NULL,
-        type TEXT NOT NULL CHECK(type IN ('fact','preference','decision','pattern','entity','enterprise_fact')),
+        type TEXT NOT NULL CHECK(type IN ('fact','preference','decision','pattern','entity','enterprise_fact','ga_correction','implementation_plan','sentinel_annotation')),
         confidence REAL NOT NULL DEFAULT 0.5,
         source TEXT NOT NULL DEFAULT 'manual',
         tags TEXT NOT NULL DEFAULT '[]',

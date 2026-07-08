@@ -36,5 +36,6 @@
     }
   },
   "entryPoint": "./aggregate.ts",
-  "exportKey": "internalTransactionCostSentinel"
+  "exportKey": "internalTransactionCostSentinel",
+  "id": "sentinel-internal-transaction-cost"
 }

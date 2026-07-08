@@ -35,5 +35,6 @@
   "exportKey": "adaptationVelocitySentinel",
   "auxiliaryExperts": [
     "strategy"
-  ]
+  ],
+  "id": "sentinel-adaptation-velocity"
 }

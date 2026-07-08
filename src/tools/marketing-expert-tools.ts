@@ -1,6 +1,6 @@
 /** tools/marketing-expert-tools.ts — 营销专家工具链 (数据源: 文档提取 + 连接器) */
 import type { ToolDefinition } from '../agent/tools';
-import { SOGNodeType } from '@synova/sog-core';
+import { NodeType } from '@synova/ontology';
 import { createLogger } from '@synova/logger';
 const log = createLogger('tools/marketing-expert');
 
@@ -14,9 +14,9 @@ export const collectPositioningDataTool: ToolDefinition = {
   parameters: { type:'object', properties:{ orgId:{type:'string'} }, required:['orgId'] },
   handler: async (p) => {
     const g = await getGraph(p.orgId as string);
-    const goals = g ? (g.nodes || []).filter((n: any) => n.type === SOGNodeType.GOAL) : [];
-    const clients = g ? (g.nodes || []).filter((n: any) => n.type === SOGNodeType.CLIENT) : [];
-    const capabilities = g ? (g.nodes || []).filter((n: any) => n.type === SOGNodeType.CAPABILITY) : [];
+    const goals = g ? (g.nodes || []).filter((n: any) => n.type === NodeType.ACTIVITY_GOVERNANCE /* ONTOLOGY-MIGRATION: NodeType.ACTIVITY_GOVERNANCE has no direct match. Using activity/governance (strategic alignment). */) : [];
+    const clients = g ? (g.nodes || []).filter((n: any) => n.type === NodeType.RESOURCE_CLIENT) : [];
+    const capabilities = g ? (g.nodes || []).filter((n: any) => n.type === NodeType.RESOURCE_KNOWLEDGE /* ONTOLOGY-MIGRATION: NodeType.RESOURCE_KNOWLEDGE has no direct match. Using resource/knowledge. */) : [];
     return {
       orgId: p.orgId, status: goals.length > 0 ? 'ok' : 'limited',
       goals: goals.length, clients: clients.length, capabilities: capabilities.length,
@@ -33,8 +33,8 @@ export const competitiveLandscapeTool: ToolDefinition = {
     let comps: Array<{ name: string; features: string; price: string }> = [];
     try { comps = JSON.parse(p.competitors as string || '[]'); } catch { log.debug('competitors JSON 解析失败 — 使用空数组'); comps = []; }
     const g = await getGraph(p.orgId as string);
-    const persons = g ? (g.nodes || []).filter((n: any) => n.type === SOGNodeType.PERSON).length : 0;
-    const teams = g ? (g.nodes || []).filter((n: any) => n.type === SOGNodeType.TEAM).length : 0;
+    const persons = g ? (g.nodes || []).filter((n: any) => n.type === NodeType.RESOURCE_PERSON).length : 0;
+    const teams = g ? (g.nodes || []).filter((n: any) => n.type === NodeType.RESOURCE_TEAM).length : 0;
     return {
       orgId: p.orgId, teamSize: persons, teamCount: teams,
       competitors: comps.length > 0 ? comps : [{ name: '竞品A', features: '待填写', price: '待填写' }],
@@ -48,8 +48,8 @@ export const goToMarketAuditTool: ToolDefinition = {
   parameters: { type:'object', properties:{ orgId:{type:'string'} }, required:['orgId'] },
   handler: async (p) => {
     const g = await getGraph(p.orgId as string);
-    const processes = g ? (g.nodes || []).filter((n: any) => n.type === SOGNodeType.PROCESS) : [];
-    const clients = g ? (g.nodes || []).filter((n: any) => n.type === SOGNodeType.CLIENT) : [];
+    const processes = g ? (g.nodes || []).filter((n: any) => n.type === NodeType.ACTIVITY_PRODUCTION /* ONTOLOGY-MIGRATION: NodeType.ACTIVITY_PRODUCTION is approximate. Check processType and map to correct activity type. */) : [];
+    const clients = g ? (g.nodes || []).filter((n: any) => n.type === NodeType.RESOURCE_CLIENT) : [];
     return {
       orgId: p.orgId, status: processes.length > 0 ? 'ok' : 'limited',
       processCount: processes.length, clientCount: clients.length,

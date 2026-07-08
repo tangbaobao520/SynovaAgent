@@ -1,22 +1,22 @@
 /**
- * @synova/sog-core — Synova Ontology Graph Core Schema v1.0
+ * @synova/sog-core — Synova Ontology Graph Core Schema v1.0 [DEPRECATED]
  *
- * 公开 API:
- *   - SOGNodeType, SOGEdgeType (frozen enums — 14 nodes + 10 edges)
+ * ⚠️  This package is DEPRECATED. Use @synova/ontology instead.
+ *     src/ 已全部迁移到 @synova/ontology。此包仅保留以满足 packages/ 中
+ *     engine-core/connector-registry 等遗留模块的编译依赖。
+ *
+ * 公开 API (deprecated):
+ *   - SOGNodeType, SOGEdgeType — use @synova/ontology NodeType/EdgeType
  *   - Node props interfaces: PersonProps, TeamProps, AgentProps, ...
  *   - Edge props interfaces: BelongsToProps, AffectsProps, ...
  *   - Validators: NODE_VALIDATORS, EDGE_VALIDATORS, validateSOGNode, validateSOGEdge
  *   - Endpoint map: EDGE_ENDPOINT_MAP, validateEdgeEndpoints
  *   - Metadata: validateTemplateManifest, validateAdapterManifest
  *   - Certification: certifyTemplate, certifyAdapter
- *
- * SOG enum 只增不删 (iron law #15) + 运行时 Extension Registry 支持新类型。
  */
 
-// ── Core Schema ──
+// ── Core Schema (保留以供 packages/ 遗留模块编译) ──
 export {
-  SOGNodeType,
-  SOGEdgeType,
   SOG_CORE_VERSION,
   EDGE_ENDPOINT_MAP,
   NODE_VALIDATORS,
@@ -24,6 +24,11 @@ export {
   SOGValidationError,
   validateEdgeEndpoints,
 } from './sog-core-schema';
+
+/** @deprecated Use @synova/ontology NodeType instead. Kept for packages/ legacy compat. */
+export { SOGNodeType } from './sog-core-schema';
+/** @deprecated Use @synova/ontology EdgeType instead. Kept for packages/ legacy compat. */
+export { SOGEdgeType } from './sog-core-schema';
 
 export type {
   PersonProps,

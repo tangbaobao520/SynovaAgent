@@ -15,7 +15,7 @@
  *   createNode(type, props, graph) → returns auto-id
  *   createEdge(type, from, to, weight?, props?, graph?) → returns auto-id
  */
-import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
+import { NodeType, EdgeType } from '@synova/ontology';
 import { createLogger } from '@synova/logger';
 import { validateAndLog } from './sog-schema-validator';
 
@@ -95,7 +95,7 @@ export function createGraphBridge(store: GraphStore, graph: string, onGraphUpdat
       try {
         // Batch create Person nodes
         const nodeIds = store.createNodes(
-          people.map(p => ({ type: SOGNodeType.PERSON, props: { name: p.name, role: p.role || 'unknown' } })),
+          people.map(p => ({ type: NodeType.RESOURCE_PERSON, props: { name: p.name, role: p.role || 'unknown' } })),
           graph,
         );
         result.nodesCreated = nodeIds.length;
@@ -103,7 +103,7 @@ export function createGraphBridge(store: GraphStore, graph: string, onGraphUpdat
         // Create INTERACTS_WITH edges
         for (const ia of interactions) {
           try {
-            store.createEdge(SOGEdgeType.INTERACTS_WITH, ia.from, ia.to, ia.weight || 0.5, {}, graph);
+            store.createEdge(EdgeType.INFORMS /* ONTOLOGY-MIGRATION: EdgeType.INFORMS -> INFORMS (approximate). */, ia.from, ia.to, ia.weight || 0.5, {}, graph);
             result.edgesCreated++;
           } catch (err: any) {
             result.errors.push(`HONA edge failed: ${err.message}`);
@@ -123,7 +123,7 @@ export function createGraphBridge(store: GraphStore, graph: string, onGraphUpdat
 
       try {
         for (const p of profiles) {
-          const riskNodeId = store.createNode(SOGNodeType.RISK, {
+          const riskNodeId = store.createNode(NodeType.OUTCOME_RISK, {
             name: `关键人风险: ${p.roleId}`,
             severity: p.riskLevel,
             riskType: 'key_person',
@@ -133,9 +133,9 @@ export function createGraphBridge(store: GraphStore, graph: string, onGraphUpdat
           result.nodesCreated++;
 
           // AFFECTS edges to Person nodes matching roleId
-          const persons = store.queryNodes(SOGNodeType.PERSON, { name: p.roleId }, graph);
+          const persons = store.queryNodes(NodeType.RESOURCE_PERSON, { name: p.roleId }, graph);
           for (const person of persons) {
-            store.createEdge(SOGEdgeType.AFFECTS, riskNodeId, person.id, 0.8, {}, graph);
+            store.createEdge(EdgeType.DEPENDS_ON /* ONTOLOGY-MIGRATION: EdgeType.DEPENDS_ON + EdgeType.INFORMS -> DEPENDS_ON + INFORMS (combination). */, riskNodeId, person.id, 0.8, {}, graph);
             result.edgesCreated++;
           }
         }
@@ -154,7 +154,7 @@ export function createGraphBridge(store: GraphStore, graph: string, onGraphUpdat
 
       try {
         for (const item of items) {
-          store.createNode(SOGNodeType.FINANCIAL, {
+          store.createNode(NodeType.OUTCOME_FINANCIAL /* ONTOLOGY-MIGRATION: NodeType.OUTCOME_FINANCIAL -> outcome/financial or resource/money? Context-dependent. */, {
             name: item.dimension,
             amount: item.amount,
             financialType: item.financialType,
@@ -175,7 +175,7 @@ export function createGraphBridge(store: GraphStore, graph: string, onGraphUpdat
 
       try {
         for (const gap of gaps) {
-          store.createNode(SOGNodeType.CAPABILITY, {
+          store.createNode(NodeType.RESOURCE_KNOWLEDGE /* ONTOLOGY-MIGRATION: NodeType.RESOURCE_KNOWLEDGE has no direct match. Using resource/knowledge. */, {
             name: gap.name,
             category: gap.category,
             proficiencyLevel: 1 - gap.severity,
@@ -197,7 +197,7 @@ export function createGraphBridge(store: GraphStore, graph: string, onGraphUpdat
 
       try {
         for (const p of powers) {
-          store.createNode(SOGNodeType.GOAL, {
+          store.createNode(NodeType.ACTIVITY_GOVERNANCE /* ONTOLOGY-MIGRATION: NodeType.ACTIVITY_GOVERNANCE has no direct match. Using activity/governance (strategic alignment). */, {
             name: p.power,
             goalType: 'north_star',
             description: p.recommendation || '',
@@ -218,16 +218,16 @@ export function createGraphBridge(store: GraphStore, graph: string, onGraphUpdat
 
       try {
         for (const proc of processes) {
-          const nodeId = store.createNode(SOGNodeType.PROCESS, {
+          const nodeId = store.createNode(NodeType.ACTIVITY_PRODUCTION /* ONTOLOGY-MIGRATION: NodeType.ACTIVITY_PRODUCTION is approximate. Check processType and map to correct activity type. */, {
             name: proc.processName,
             processType: 'workflow',
           }, graph);
           result.nodesCreated++;
 
           // BELONGS_TO edge to team
-          const teams = store.queryNodes(SOGNodeType.TEAM, { name: proc.teamId }, graph);
+          const teams = store.queryNodes(NodeType.RESOURCE_TEAM, { name: proc.teamId }, graph);
           for (const team of teams) {
-            store.createEdge(SOGEdgeType.BELONGS_TO, nodeId, team.id, 1, {}, graph);
+            store.createEdge(EdgeType.DEPENDS_ON /* ONTOLOGY-MIGRATION: EdgeType.DEPENDS_ON no direct match. Using DEPENDS_ON (syntactic node ID path). */, nodeId, team.id, 1, {}, graph);
             result.edgesCreated++;
           }
         }

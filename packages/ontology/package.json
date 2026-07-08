@@ -1,0 +1,26 @@
+{
+  "name": "@synova/ontology",
+  "version": "1.0.0",
+  "description": "Synova Ontology — 29 node types + 16 edge types, string constants derived from extensions/ontology/ JSON Schema",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist/",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": ["synova", "ontology", "node-type", "edge-type", "organization-graph"],
+  "license": "UNLICENSED",
+  "private": true
+}

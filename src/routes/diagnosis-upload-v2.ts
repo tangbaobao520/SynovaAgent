@@ -241,8 +241,8 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
   // engine-core 为 CJS 模块，动态导入无 TS 类型约束 — 运行时结构子类型兼容。
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const extractor = new (DocExtractor as unknown as new (graphStore: unknown, llmClient: unknown) => { extract: (docId: string, content: string, teamId: string) => Promise<ExtractionResult> })(graphStore, llmClient);
-  const { SOGNodeType } = await import('@synova/sog-core');
-  const docId = graphStore.createNode(SOGNodeType.DOCUMENT, { name: `interview_${jobId}`, docType: 'meeting_notes', content }, teamId);
+  const { NodeType } = await import('@synova/ontology');
+  const docId = graphStore.createNode(NodeType.RESOURCE_KNOWLEDGE /* ONTOLOGY-MIGRATION: NodeType.RESOURCE_KNOWLEDGE -> resource/knowledge or resource/data? Check context. */, { name: `interview_${jobId}`, docType: 'meeting_notes', content }, teamId);
   let extraction: ExtractionResult;
   try {
     extraction = await extractor.extract(docId, content, teamId);
@@ -479,7 +479,7 @@ async function syncDiagnosisToGraph(
   graphStore: any,
 ): Promise<void> {
   try {
-    const { SOGNodeType } = await import('@synova/sog-core');
+    const { NodeType } = await import('@synova/ontology');
     const now = new Date().toISOString();
 
     // 创建 Diagnosis 节点

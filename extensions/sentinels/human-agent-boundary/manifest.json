@@ -3,8 +3,8 @@
   "name": "human-agent-boundary",
   "version": "1.0.0",
   "type": "sentinel",
-  "displayName": "T9 \u4ebaAgent\u6df7\u5408\u8fb9\u754c\u6548\u7387",
-  "description": "T9: T9 \u4ebaAgent\u6df7\u5408\u8fb9\u754c\u6548\u7387",
+  "displayName": "T9 人Agent混合边界效率",
+  "description": "T9: T9 人Agent混合边界效率",
   "schedule": "0 0 1 * *",
   "expert": "tech",
   "priority": "P1",
@@ -35,5 +35,6 @@
   "exportKey": "HumanagentboundarySentinel",
   "auxiliaryExperts": [
     "org"
-  ]
+  ],
+  "id": "sentinel-human-agent-boundary"
 }
