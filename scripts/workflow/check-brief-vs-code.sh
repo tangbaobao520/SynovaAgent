@@ -1,6 +1,6 @@
  #!/bin/bash
  # ============================================================
- # Loop Engineering V4.4.0 — check-brief-vs-code.sh
+ # Loop Engineering V4.4.4 — check-brief-vs-code.sh
  # Task Brief 声明 vs 实际代码变更 一致性物理验证
  #
  # 设计哲学:
@@ -56,7 +56,8 @@
  
  # 提取 Q2 中声明的文件路径 (支持: - `path/to/file` 和 `path/to/file` 格式)
  DECLARED_FILES=$(sed -n '/^## Q2:/,/^## Q3:/p' "$BRIEF" 2>/dev/null \
-   | grep -oP '(?<=\`)[\w./-]+\.(ts|tsx|js|json|sh|md|yaml|yml|html|css|py)' \
+   | grep -oE '\`[^\`]+\.[a-z]{2,5}\`' \
+   | sed 's/\`//g' \
    | grep -v 'node_modules\|\.test\.' \
    | sort -u || true)
  
@@ -187,7 +188,7 @@
  # 提取 Q2 "不做什么" 区域的关键路径
  NO_GO_ZONES=$(sed -n '/^## Q2:/,/^## Q3:/p' "$BRIEF" 2>/dev/null \
    | grep -i '不做\|不修改\|不动\|不改\|不碰\|不涉及' \
-   | grep -oP '[\w./-]+\.(ts|tsx|js|json|sh|md)' \
+   | grep -oE '[\w./-]+\.(ts|tsx|js|json|sh|md)' \
    | sort -u || true)
  
  if [ -n "$NO_GO_ZONES" ]; then
