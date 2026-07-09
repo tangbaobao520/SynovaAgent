@@ -17,6 +17,7 @@ export { computeCustomerProfitability } from './l2-value/compute-customer-profit
 export { computeChannelROI } from './l2-value/compute-channel-roi';
 export { computeCustomerValueScore } from './l2-value/compute-customer-value-score';
 export { computeCustomerDemandStructure } from './l2-value/compute-customer-demand-structure';
+export { computeBrandROI } from './l2-value/compute-brand-roi';
 
 // l3-causal
 export { computeShapleyAttribution } from './l3-causal/compute-shapley-attribution';
