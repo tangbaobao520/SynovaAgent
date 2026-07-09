@@ -1,0 +1,16 @@
+{
+  "$id": "edge/brand_building",
+  "label": "BRAND_BUILDING",
+  "tags": ["causal", "first_order", "stage_3"],
+  "allowedFrom": ["pool/activity"],
+  "allowedTo": ["pool/brand"],
+  "requiredProps": ["brand_investment", "awareness_lift", "lag_months"],
+  "optionalProps": {
+    "premium_ratio_change": "number — 溢价率变化",
+    "nps_change": "number — NPS变化",
+    "attribution_model": "string — 归因模型"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "品牌投入产生客户信任与溢价——活动池中的品牌/营销活动积累品牌资产。"
+}

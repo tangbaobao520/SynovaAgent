@@ -1,0 +1,16 @@
+{
+  "$id": "edge/channel_delivery",
+  "label": "CHANNEL_DELIVERY",
+  "tags": ["causal", "first_order", "stage_4"],
+  "allowedFrom": ["outcome/financial", "outcome/market", "outcome/operational"],
+  "allowedTo": ["outcome/market"],
+  "requiredProps": ["channel_coverage", "delivery_cost_ratio", "reach_efficiency"],
+  "optionalProps": {
+    "channel_count": "number — 渠道数量",
+    "partner_quality_score": "number (0-1) — 伙伴质量",
+    "channel_conflict_index": "number (0-1) — 渠道冲突指数"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "通过渠道送达客户——产品/服务通过销售渠道触达目标客户。"
+}

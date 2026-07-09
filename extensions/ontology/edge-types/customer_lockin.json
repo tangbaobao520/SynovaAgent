@@ -1,0 +1,16 @@
+{
+  "$id": "edge/customer_lockin",
+  "label": "CUSTOMER_LOCKIN",
+  "tags": ["causal", "first_order", "stage_4"],
+  "allowedFrom": ["pool/brand", "outcome/people"],
+  "allowedTo": ["outcome/market"],
+  "requiredProps": ["switching_cost", "retention_rate", "lock_in_strength"],
+  "optionalProps": {
+    "nps_score": "number — NPS评分",
+    "multi_product_adoption": "number — 多产品采用数",
+    "contract_term_months": "number — 合同期限"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "客户不容易离开——品牌资产和客户满意度产生切换成本壁垒（取代原LOCKS_IN的客户部分）。"
+}

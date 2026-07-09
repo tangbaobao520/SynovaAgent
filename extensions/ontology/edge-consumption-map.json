@@ -1,87 +1,63 @@
 {
   "$id": "edge-consumption-map",
-  "description": "每条边被哪些哨兵/诊断模块消费。为T9哨兵精度基线提供数据。V2修正。",
-  "version": "1.0",
+  "description": "42条池-阀因果边的消费追踪。为哨兵精度基线提供数据。V2 — I2阶段1重写。",
+  "version": "2.0",
   "edges": {
-    "PRODUCES": {
-      "label": "PRODUCES",
-      "consumed_by": ["revenue-health", "cost-health", "profit-health", "growth-quality", "competitive-dynamics", "market-lifecycle", "business-model-coherence", "competitive-moat-structural", "environment-rent-dependency", "capital-efficiency"],
-      "status": "active"
-    },
-    "DEPLOYS": {
-      "label": "DEPLOYS",
-      "consumed_by": ["adaptation-velocity", "agent-deployment-maturity", "ai-ecosystem-fit", "ai-investment-return", "api-coverage", "business-model-coherence", "channel-capacity", "competitive-moat-perceptual", "competitive-moat-structural", "connector-coverage", "customer-demand-shift", "data-health", "explore-exploit-balance", "growth-quality", "human-agent-boundary", "info-distortion", "internal-transaction-cost", "knowledge-accessibility", "make-or-buy", "market-lifecycle", "moat-dependency", "network-power", "niche-breadth", "niche-squeeze", "opportunity-window", "power-rigidity", "process-ai-readiness", "resource-misallocation", "revenue-health", "routine-diffusion", "routine-mutation", "software-health", "strategy-capability-fit", "talent-density", "unit-economics", "value-capture"],
-      "status": "active"
-    },
-    "FUNDS": {
-      "label": "FUNDS",
-      "consumed_by": ["business-model-coherence", "capital-efficiency", "capital-structure", "capital-turnover", "cash-runway", "competitive-moat-structural", "cost-health", "environment-rent-dependency", "financing-constraint", "growth-quality", "internal-transaction-cost", "profit-health", "revenue-health", "unit-economics"],
-      "status": "active"
-    },
-    "DEPENDS_ON": {
-      "label": "DEPENDS_ON",
-      "consumed_by": ["graph-bridge"],
-      "status": "active"
-    },
-    "SIGNAL_TRANSMITS": {
-      "label": "SIGNAL_TRANSMITS",
-      "consumed_by": ["adaptation-velocity", "channel-capacity", "incentive-alignment", "info-distortion", "internal-transaction-cost", "org-repairability", "power-rigidity", "structural-change", "time-penetration"],
-      "status": "active"
-    },
-    "INFORMS": {
-      "label": "INFORMS",
-      "consumed_by": ["adaptation-velocity", "competitive-dynamics", "incentive-alignment", "market-lifecycle", "structural-change"],
-      "status": "active"
-    },
-    "AUGMENTS": {
-      "label": "AUGMENTS",
-      "consumed_by": ["knowledge-accessibility", "talent-density"],
-      "status": "active"
-    },
-    "SUBSTITUTES": {
-      "label": "SUBSTITUTES",
-      "consumed_by": ["competitive-moat-structural"],
-      "status": "active"
-    },
-    "METRIC_BINDS": {
-      "label": "METRIC_BINDS",
-      "consumed_by": ["profit-health"],
-      "status": "active"
-    },
-    "INCENTIVE_BINDS": {
-      "label": "INCENTIVE_BINDS",
-      "consumed_by": ["cost-health"],
-      "status": "active"
-    },
-    "DECISION_CONCENTRATES": {
-      "label": "DECISION_CONCENTRATES",
-      "consumed_by": ["key-person-risk"],
-      "status": "active"
-    },
-    "EXTERNAL_ASSUMPTION_BINDS": {
-      "label": "EXTERNAL_ASSUMPTION_BINDS",
-      "consumed_by": ["assumption-monitor"],
-      "status": "active"
-    },
-    "LOCKS_IN": {
-      "label": "LOCKS_IN",
-      "consumed_by": ["competitive-moat-structural"],
-      "status": "active"
-    },
-    "CONSTRAINS": {
-      "label": "CONSTRAINS",
-      "consumed_by": ["cash-runway"],
-      "status": "active"
-    },
-    "DEPENDS_ON_PLATFORM": {
-      "label": "DEPENDS_ON_PLATFORM",
-      "consumed_by": ["platform-dependency-check"],
-      "status": "active"
-    },
-    "REPLENISHES": {
-      "label": "REPLENISHES",
-      "consumed_by": ["cash-runway"],
-      "status": "active"
-    }
+    "PRODUCES": { "label": "PRODUCES", "consumed_by": ["revenue-health", "cost-health", "profit-health", "growth-quality", "competitive-dynamics", "market-lifecycle", "business-model-coherence", "competitive-moat-structural", "environment-rent-dependency", "capital-efficiency"], "status": "active" },
+    "DEPLOYS": { "label": "DEPLOYS", "consumed_by": ["adaptation-velocity", "agent-deployment-maturity", "ai-ecosystem-fit", "ai-investment-return", "api-coverage", "business-model-coherence", "channel-capacity", "competitive-moat-perceptual", "competitive-moat-structural", "connector-coverage", "customer-demand-shift", "data-health", "explore-exploit-balance", "growth-quality", "human-agent-boundary", "info-distortion", "internal-transaction-cost", "knowledge-accessibility", "make-or-buy", "market-lifecycle", "moat-dependency", "network-power", "niche-breadth", "niche-squeeze", "opportunity-window", "power-rigidity", "process-ai-readiness", "resource-misallocation", "revenue-health", "routine-diffusion", "routine-mutation", "software-health", "strategy-capability-fit", "talent-density", "unit-economics", "value-capture"], "status": "active" },
+    "FUNDS": { "label": "FUNDS", "consumed_by": ["business-model-coherence", "capital-efficiency", "capital-structure", "capital-turnover", "cash-runway", "competitive-moat-structural", "cost-health", "environment-rent-dependency", "financing-constraint", "growth-quality", "internal-transaction-cost", "profit-health", "revenue-health", "unit-economics"], "status": "active" },
+    "SIGNAL_TRANSMITS": { "label": "SIGNAL_TRANSMITS", "consumed_by": ["adaptation-velocity", "channel-capacity", "incentive-alignment", "info-distortion", "internal-transaction-cost", "org-repairability", "power-rigidity", "structural-change", "time-penetration"], "status": "active" },
+    "AUGMENTS": { "label": "AUGMENTS", "consumed_by": ["knowledge-accessibility", "talent-density"], "status": "active" },
+    "INCENTIVE_BINDS": { "label": "INCENTIVE_BINDS", "consumed_by": ["cost-health"], "status": "active" },
+    "DECISION_CONCENTRATES": { "label": "DECISION_CONCENTRATES", "consumed_by": ["key-person-risk"], "status": "active" },
+    "EXTERNAL_ASSUMPTION_BINDS": { "label": "EXTERNAL_ASSUMPTION_BINDS", "consumed_by": ["assumption-monitor"], "status": "active" },
+    "LOCKS_IN": { "label": "LOCKS_IN", "consumed_by": ["competitive-moat-structural"], "status": "active" },
+    "CONSTRAINS": { "label": "CONSTRAINS", "consumed_by": ["cash-runway"], "status": "active" },
+    "BRAND_BUILDS": { "label": "BRAND_BUILDS", "consumed_by": [], "status": "active" },
+    "COUPLES": { "label": "COUPLES", "consumed_by": [], "status": "active" },
+    "CUMULATIVE_LEARNING": { "label": "CUMULATIVE_LEARNING", "consumed_by": [], "status": "active" },
+
+    "ENVIRONMENTAL_SCAN": { "consumed_by": [], "status": "active" },
+    "SIGNAL_UPWARD_PASS": { "consumed_by": [], "status": "active" },
+    "EXTERNAL_FEEDBACK": { "consumed_by": [], "status": "active" },
+    "SENSING_CALIBRATION": { "consumed_by": [], "status": "active" },
+    "CAPITAL_ACQUISITION": { "consumed_by": [], "status": "active" },
+    "CAPITAL_SOURCE_MIX": { "consumed_by": [], "status": "active" },
+    "TALENT_ACQUISITION": { "consumed_by": [], "status": "active" },
+    "TALENT_FILTER": { "consumed_by": [], "status": "active" },
+    "DATA_COLLECTION": { "consumed_by": [], "status": "active" },
+    "EQUIPMENT_ACQUISITION": { "consumed_by": [], "status": "active" },
+    "REPUTATION_ATTRACTION": { "consumed_by": [], "status": "active" },
+    "EFFICIENCY_ATTRACTION": { "consumed_by": [], "status": "active" },
+    "CAPITAL_ALLOCATION": { "consumed_by": [], "status": "active" },
+    "DECISION_AUTHORITY": { "consumed_by": [], "status": "active" },
+    "TALENT_DEPLOYMENT": { "consumed_by": [], "status": "active" },
+    "INFORMATION_FLOW": { "consumed_by": [], "status": "active" },
+    "INCENTIVE_ALIGNMENT": { "consumed_by": [], "status": "active" },
+    "RULE_CONSTRAINT": { "consumed_by": [], "status": "active" },
+    "ORGANIZATIONAL_LEARNING": { "consumed_by": [], "status": "active" },
+    "KNOWLEDGE_SHARING": { "consumed_by": [], "status": "active" },
+    "TRUST_FRICTION_REDUCTION": { "consumed_by": [], "status": "active" },
+    "ROUTINE_RIGIDITY": { "consumed_by": [], "status": "active" },
+    "OPERATIONAL_EXECUTION": { "consumed_by": [], "status": "active" },
+    "INNOVATION_OUTPUT": { "consumed_by": [], "status": "active" },
+    "BRAND_BUILDING": { "consumed_by": [], "status": "active" },
+    "DEMAND_TO_SPEC": { "consumed_by": [], "status": "active" },
+    "SERVICE_SUPPORT": { "consumed_by": [], "status": "active" },
+    "CROSS_FUNCTIONAL_SYNERGY": { "consumed_by": [], "status": "active" },
+    "TECH_INFRASTRUCTURE": { "consumed_by": [], "status": "active" },
+    "VALUE_PRICING": { "consumed_by": [], "status": "active" },
+    "CUSTOMER_LOCKIN": { "consumed_by": [], "status": "active" },
+    "CHANNEL_DELIVERY": { "consumed_by": [], "status": "active" },
+    "COMPETITIVE_POSITIONING": { "consumed_by": [], "status": "active" },
+    "PROCUREMENT_BARGAINING": { "consumed_by": [], "status": "active" },
+    "CUSTOMER_DATA_LOOP": { "consumed_by": [], "status": "active" },
+    "MARKET_SHARE_CAPTURE": { "consumed_by": [], "status": "active" },
+    "PROFIT_REINVESTMENT": { "consumed_by": [], "status": "active" },
+    "TALENT_RETENTION": { "consumed_by": [], "status": "active" },
+    "KNOWLEDGE_REUSE": { "consumed_by": [], "status": "active" },
+    "REPUTATION_FLYWHEEL": { "consumed_by": [], "status": "active" },
+    "RETENTION_PROTECTS_KNOWLEDGE": { "consumed_by": [], "status": "active" },
+    "ASSUMPTION_TRIGGERED_REALLOCATION": { "consumed_by": [], "status": "active" }
   }
 }

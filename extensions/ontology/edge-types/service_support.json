@@ -1,0 +1,16 @@
+{
+  "$id": "edge/service_support",
+  "label": "SERVICE_SUPPORT",
+  "tags": ["causal", "first_order", "stage_3"],
+  "allowedFrom": ["pool/activity"],
+  "allowedTo": ["outcome/people"],
+  "requiredProps": ["service_response_time_hours", "customer_satisfaction_score"],
+  "optionalProps": {
+    "first_call_resolution_rate": "number (0-1) — 首次解决率",
+    "service_channel_count": "number — 服务渠道数量",
+    "csat_trend": "number — 满意度趋势"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "产品售出后的服务支持——活动池中的售后/维护活动影响客户满意度和留存。"
+}

@@ -1,0 +1,16 @@
+{
+  "$id": "edge/profit_reinvestment",
+  "label": "PROFIT_REINVESTMENT",
+  "tags": ["causal", "first_order", "stage_5"],
+  "allowedFrom": ["pool/revenue"],
+  "allowedTo": ["pool/capital"],
+  "requiredProps": ["profit_margin", "reinvestment_rate"],
+  "optionalProps": {
+    "dividend_payout_ratio": "number (0-1) — 分红支付率",
+    "reinvestment_roi": "number — 再投资回报率",
+    "capital_allocation_efficiency": "number (0-1) — 资本配置效率"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "利润再投资——收入池中的利润通过再投资回注到资本池（取代原REPLENISHES）。"
+}

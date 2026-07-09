@@ -1,0 +1,15 @@
+{
+  "$id": "edge/signal_upward_pass",
+  "label": "SIGNAL_UPWARD_PASS",
+  "tags": ["causal", "first_order", "stage_0"],
+  "allowedFrom": ["external/baseline"],
+  "allowedTo": ["pool/sensing"],
+  "requiredProps": ["upward_filter_loss", "n_layers"],
+  "optionalProps": {
+    "signal_to_noise_ratio": "number (0-1) — 信噪比",
+    "escalation_threshold": "number — 向上汇报触发阈值"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "被动信号向上传递——外部冲击事件通过组织结构逐层传递到决策层注意力的过程。"
+}

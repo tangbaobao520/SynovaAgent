@@ -1,0 +1,16 @@
+{
+  "$id": "edge/tech_infrastructure",
+  "label": "TECH_INFRASTRUCTURE",
+  "tags": ["causal", "second_order", "stage_3"],
+  "allowedFrom": ["pool/activity"],
+  "allowedTo": ["pool/activity"],
+  "requiredProps": ["infrastructure_investment", "digitization_level", "automation_rate"],
+  "optionalProps": {
+    "system_integration_score": "number (0-1) — 系统集成度",
+    "data_platform_maturity": "number (0-1) — 数据平台成熟度",
+    "infrastructure_resilience": "number (0-1) — 基础设施韧性"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "IT系统/数据平台提升效率(二阶)——技术投资改善多个一阶阀的运行环境（取代原AUGMENTS）。"
+}

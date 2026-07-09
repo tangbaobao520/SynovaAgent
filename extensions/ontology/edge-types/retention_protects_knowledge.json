@@ -1,0 +1,16 @@
+{
+  "$id": "edge/retention_protects_knowledge",
+  "label": "RETENTION_PROTECTS_KNOWLEDGE",
+  "tags": ["causal", "second_order", "stage_5"],
+  "allowedFrom": ["outcome/people"],
+  "allowedTo": ["pool/knowledge"],
+  "requiredProps": ["knowledge_loss_rate", "retention_impact_factor"],
+  "optionalProps": {
+    "succession_planning_score": "number (0-1) — 继任规划评分",
+    "critical_knowledge_at_risk": "number — 关键知识风险数",
+    "documentation_transfer_rate": "number (0-1) — 文档交接率"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "人才留存保护知识资产(二阶)——人才留存防止核心知识随人员流失而流失。"
+}

@@ -1,0 +1,16 @@
+{
+  "$id": "edge/value_pricing",
+  "label": "VALUE_PRICING",
+  "tags": ["causal", "first_order", "stage_4"],
+  "allowedFrom": ["outcome/financial", "outcome/market", "outcome/operational"],
+  "allowedTo": ["pool/revenue"],
+  "requiredProps": ["price_point", "unit_sales", "revenue_realized"],
+  "optionalProps": {
+    "pricing_power_index": "number (0-1) — 定价权指数",
+    "price_elasticity": "number — 价格弹性",
+    "discount_rate": "number (0-1) — 折扣率"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "价值转化为购买价格——产品/服务的产出价值通过定价机制转化为收入池。"
+}

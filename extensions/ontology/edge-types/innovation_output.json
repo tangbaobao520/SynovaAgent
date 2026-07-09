@@ -1,0 +1,16 @@
+{
+  "$id": "edge/innovation_output",
+  "label": "INNOVATION_OUTPUT",
+  "tags": ["causal", "first_order", "stage_3"],
+  "allowedFrom": ["pool/activity"],
+  "allowedTo": ["outcome/innovation"],
+  "requiredProps": ["rd_spend", "new_product_count", "patent_filed"],
+  "optionalProps": {
+    "innovation_success_rate": "number (0-1) — 创新成功率",
+    "time_to_market_months": "number — 上市时间",
+    "rd_pipeline_value": "number — 研发管线价值"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "研发投入转化为新产品/技术——活动池中的研发活动产生创新成果的价值输出阀。"
+}

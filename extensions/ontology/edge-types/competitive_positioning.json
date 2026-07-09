@@ -1,0 +1,20 @@
+{
+  "$id": "edge/competitive_positioning",
+  "label": "COMPETITIVE_POSITIONING",
+  "tags": ["causal", "first_order", "stage_4"],
+  "allowedFrom": ["pool/activity"],
+  "allowedTo": ["outcome/competitive"],
+  "requiredProps": ["seven_powers_score", "competitive_moat_depth"],
+  "optionalProps": {
+    "switching_cost_score": "number (0-1) — 切换成本评分",
+    "network_effect_strength": "number (0-1) — 网络效应强度",
+    "scale_economy_score": "number (0-1) — 规模经济评分",
+    "counter_positioning_capability": "number (0-1) — 反定位能力",
+    "brand_moat_score": "number (0-1) — 品牌壁垒评分",
+    "captive_resource_score": "number (0-1) — 独占资源评分",
+    "process_advantage_score": "number (0-1) — 流程优势评分"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "竞争位势评估(七力)——企业位置通过七力框架(切换成本/网络效应/规模经济/反定位/品牌/独占资源/流程优势)评估竞争壁垒深度。"
+}

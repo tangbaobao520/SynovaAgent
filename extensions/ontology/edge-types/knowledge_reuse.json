@@ -1,0 +1,16 @@
+{
+  "$id": "edge/knowledge_reuse",
+  "label": "KNOWLEDGE_REUSE",
+  "tags": ["causal", "first_order", "stage_5"],
+  "allowedFrom": ["pool/knowledge"],
+  "allowedTo": ["pool/knowledge"],
+  "requiredProps": ["reuse_rate", "knowledge_durability_months"],
+  "optionalProps": {
+    "codification_effort_hours": "number — 知识编码工时",
+    "reuse_saving_percentage": "number (0-1) — 复用节省比例",
+    "knowledge_base_completeness": "number (0-1) — 知识库完整度"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "知识复用——项目经验沉淀到知识池，减少重复学习成本。"
+}
