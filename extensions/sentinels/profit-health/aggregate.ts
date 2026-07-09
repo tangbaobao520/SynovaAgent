@@ -5,6 +5,7 @@ import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { createLogger } from '@synova/logger';
 import { computeProfitMarginChange } from './computes/compute-profit-margin-change';
 import { computeMarginVsBenchmark } from './computes/compute-margin-vs-benchmark';
+import { computeMetricBindDivergence } from './computes/compute-metric-bind-divergence';
 
 const log = createLogger('sentinel/profit-health');
 
@@ -13,9 +14,10 @@ export const profitHealthSentinel = {
   async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const findings: SentinelFinding[] = [];
     try {
-      const [marginResult, benchmarkResult] = await Promise.all([
+      const [marginResult, benchmarkResult, metricBindResult] = await Promise.all([
         computeProfitMarginChange(store, { teamId, traversal }),
         computeMarginVsBenchmark(store, { teamId, traversal }),
+        computeMetricBindDivergence(store, { teamId, traversal }),
       ]);
 
       const profitMargin = marginResult.value;
@@ -50,7 +52,32 @@ export const profitHealthSentinel = {
         }
       }
       if (findings.length) log.info({ teamId, count: findings.length }, '利润健康检查完成');
-    } catch (err: any) { log.warn({ err, teamId }, '利润健康检查失败'); }
+      // T7b: METRIC_BINDS — KPI与现金流偏离
+      if (!metricBindResult.degraded) {
+        if (metricBindResult.value > 0.5) {
+          findings.push({
+            id: 'profit_metric_divergence', severity: 'critical',
+            title: 'KPI与现金流严重偏离',
+            description: `KPI-现金流偏离度 ${(metricBindResult.value * 100).toFixed(0)}% > 50%，指标体系可能失真。`,
+            evidence: metricBindResult.evidence,
+            suggestion: '审查KPI体系的cash alignment，减少CustomAdj指标。',
+            detectedAt: new Date().toISOString(),
+          });
+        } else if (metricBindResult.value > 0.3) {
+          findings.push({
+            id: 'profit_metric_divergence_warn', severity: 'warning',
+            title: 'KPI与现金流偏离偏高',
+            description: `KPI-现金流偏离度 ${(metricBindResult.value * 100).toFixed(0)}% > 30%，建议关注。`,
+            detectedAt: new Date().toISOString(),
+          });
+        }
+      }
+    } catch (err: unknown) {
+      log.error({ err, teamId }, '[profit-health] check失败');
+      return [{ id: `ph-error-${Date.now()}`, severity: 'warning' as const,
+        title: '利润健康检测异常', description: `${(err as Error)?.message || String(err)}`,
+        evidence: [], suggestion: '检查Financial节点数据源。', detectedAt: new Date().toISOString() }];
+    }
     return findings;
   },
 };

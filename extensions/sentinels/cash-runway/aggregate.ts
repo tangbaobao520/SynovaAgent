@@ -5,6 +5,8 @@ import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { createLogger } from '@synova/logger';
 import { computeCashRunwayMonths } from './computes/compute-cash-runway-months';
 import { computeReceivableOverdueRate } from './computes/compute-receivable-overdue-rate';
+import { computeConstraintImpact } from './computes/compute-constraint-impact';
+import { computeReplenishRate } from './computes/compute-replenish-rate';
 
 const log = createLogger('sentinel/cash-runway');
 
@@ -13,9 +15,11 @@ export const cashRunwaySentinel = {
   async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const findings: SentinelFinding[] = [];
     try {
-      const [runwayResult, overdueResult] = await Promise.all([
+      const [runwayResult, overdueResult, constraintResult, replenishResult] = await Promise.all([
         computeCashRunwayMonths(store, { teamId, traversal }),
         computeReceivableOverdueRate(store, { teamId, traversal }),
+        computeConstraintImpact(store, { teamId, traversal }),
+        computeReplenishRate(store, { teamId, traversal }),
       ]);
 
       const runwayMonths = runwayResult.value;
@@ -48,8 +52,35 @@ export const cashRunwaySentinel = {
           });
         }
       }
+      // T7b: CONSTRAINS — 外部约束影响
+      if (constraintResult.value > 0.6) {
+        findings.push({
+          id: 'cash_constraint_high', severity: 'warning',
+          title: '外部约束强度高',
+          description: `外部约束magnitude ${(constraintResult.value * 100).toFixed(0)}% > 60%，可能限制资金使用。`,
+          evidence: constraintResult.evidence,
+          suggestion: '评估约束来源，制定应对策略。',
+          detectedAt: new Date().toISOString(),
+        });
+      }
+      // T7b: REPLENISHES — 资金回流率检查
+      if (!replenishResult.degraded && replenishResult.value < 0.2) {
+        findings.push({
+          id: 'cash_low_replenish', severity: 'warning',
+          title: '资金回流率低',
+          description: `再投资率 ${(replenishResult.value * 100).toFixed(0)}% < 20%，资金补充不足。`,
+          evidence: replenishResult.evidence,
+          suggestion: '审视盈利能力，优化现金流循环。',
+          detectedAt: new Date().toISOString(),
+        });
+      }
       if (findings.length) log.info({ teamId, count: findings.length }, '现金流检查完成');
-    } catch (err: unknown) { log.warn({ err, teamId }, '现金流检查失败'); }
+    } catch (err: unknown) {
+      log.error({ err, teamId }, '[cash-runway] check失败');
+      return [{ id: `cr-error-${Date.now()}`, severity: 'warning' as const,
+        title: '现金流检测异常', description: `${(err as Error)?.message || String(err)}`,
+        evidence: [], suggestion: '检查Financial节点数据源。', detectedAt: new Date().toISOString() }];
+    }
     return findings;
   },
 };

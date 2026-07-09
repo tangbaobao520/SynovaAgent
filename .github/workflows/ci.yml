@@ -32,13 +32,15 @@ jobs:
         shard: [1/2, 2/2]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with: { node-version: '20', cache: 'npm' }
       - run: npm ci
       - name: Run tests
         run: |
-          CHANGED=$(git diff --name-only HEAD~1..HEAD 2>/dev/null || echo "")
-          OUTPUT=$(npx vitest run --shard=${{ matrix.shard }} --reporter=verbose 2>&1; echo "EXIT:$?")
+          CHANGED=$(git diff --name-only HEAD~1..HEAD 2>/dev/null || git diff --name-only origin/main..HEAD 2>/dev/null || echo "")
+          OUTPUT=$(npx vitest run --shard=${{ matrix.shard }} --reporter=verbose --color=false 2>&1; echo "EXIT:$?")
           echo "$OUTPUT"
           EXIT_CODE=$(echo "$OUTPUT" | grep "EXIT:" | sed 's/.*EXIT://')
           if [ "$EXIT_CODE" = "0" ]; then exit 0; fi

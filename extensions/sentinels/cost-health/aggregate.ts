@@ -13,6 +13,7 @@ import { createLogger } from '@synova/logger';
 import { computeGrossMargin } from './computes/compute-gross-margin';
 import { computeFixedVariableRatio } from './computes/compute-fixed-variable-ratio';
 import { computeCostPerHead } from './computes/compute-cost-per-head';
+import { computeIncentiveBindGap } from './computes/compute-incentive-bind';
 
 const log = createLogger('sentinel/cost-health');
 
@@ -23,9 +24,10 @@ export const costHealthSentinel = {
     const findings: SentinelFinding[] = [];
 
     try {
-      const [grossMarginResult, fixedRatioResult] = await Promise.all([
+      const [grossMarginResult, fixedRatioResult, incentiveResult] = await Promise.all([
         computeGrossMargin(store, { teamId, traversal }),
         computeFixedVariableRatio(store, { teamId, traversal }),
+        computeIncentiveBindGap(store, { teamId, traversal }),
       ]);
 
       // 1. 毛利率变化率
@@ -101,13 +103,26 @@ export const costHealthSentinel = {
         }
       }
 
+      // T7b: INCENTIVE_BINDS — 激励行为差距检查
+      if (!incentiveResult.degraded && incentiveResult.value > 0.4) {
+        findings.push({
+          id: 'cost_incentive_gap', severity: 'warning',
+          title: '激励行为差距大',
+          description: `KPI-行为差距 ${(incentiveResult.value * 100).toFixed(0)}% > 40%，激励可能扭曲成本行为。`,
+          evidence: incentiveResult.evidence,
+          suggestion: '审查KPI与成本行为的对齐度。',
+          detectedAt: new Date().toISOString(),
+        });
+      }
       if (findings.length > 0) {
         log.info({ teamId, count: findings.length }, '成本健康检查完成');
       }
-    } catch (err: any) {
-      log.warn({ err, teamId }, '成本健康检查失败 — degraded');
+    } catch (err: unknown) {
+      log.error({ err, teamId }, '[cost-health] check失败');
+      return [{ id: `ch-error-${Date.now()}`, severity: 'warning' as const,
+        title: '成本健康检测异常', description: `${(err as Error)?.message || String(err)}`,
+        evidence: [], suggestion: '检查Financial节点数据源。', detectedAt: new Date().toISOString() }];
     }
-
     return findings;
   },
 };

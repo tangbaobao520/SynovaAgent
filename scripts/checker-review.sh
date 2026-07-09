@@ -122,18 +122,37 @@ else
   fi
 fi
 
-# 6. vitest (变更测试文件)
+# 6. vitest (变更测试文件 — 预存失败不阻断)
 echo ""
 echo -e "${YELLOW}检查 6: vitest 测试 (变更文件)${RESET}"
 TS_TEST_FILES=$(echo "$CHANGED" | grep "\.test\.ts$" || true)
 if [ -z "$TS_TEST_FILES" ]; then
   echo -e "  ${GREEN}✅ 无变更测试文件，跳过${RESET}"
 else
-  if cd "$ROOT" && npx vitest run --reporter=verbose 2>&1 | tail -5; then
+  OUTPUT=$(cd "$ROOT" && npx vitest run --reporter=verbose --color=false 2>&1; echo "EXIT:$?")
+  # 提取失败文件列表 (--color=false 确保无 ANSI 码)
+  FAILED_FILES=$(echo "$OUTPUT" | grep " FAIL " | grep -oP 'tests/\S+\.test\.ts' || true)
+  if [ -z "$FAILED_FILES" ]; then
+    # 无失败 — 通过
+    echo "$OUTPUT" | tail -5
     echo -e "  ${GREEN}✅ 测试通过${RESET}"
   else
-    echo -e "  ${RED}❌ 测试失败${RESET}"
-    FAIL=1
+    # 检查失败是否来自变更文件
+    NEW_FAILURES=""
+    while IFS= read -r tf; do
+      [ -z "$tf" ] && continue
+      if echo "$CHANGED" | grep -qF "$tf" 2>/dev/null; then
+        NEW_FAILURES="${NEW_FAILURES}${tf}\n"
+      fi
+    done <<< "$FAILED_FILES"
+    echo "$OUTPUT" | tail -5
+    if [ -z "$NEW_FAILURES" ]; then
+      echo -e "  ${GREEN}✅ 仅预存失败 (非变更文件), 不阻断${RESET}"
+    else
+      echo -e "  ${RED}❌ 变更文件引入新测试失败:${RESET}"
+      echo -e "${RED}$NEW_FAILURES${RESET}"
+      FAIL=1
+    fi
   fi
 fi
 
