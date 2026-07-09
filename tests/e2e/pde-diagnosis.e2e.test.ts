@@ -14,7 +14,7 @@ import * as fs from 'fs';
 import { createProvider } from '../../src/providers';
 import { detectProvider } from '../../src/providers/detect';
 import { isLLMConfigured } from '../../src/setup';
-import { createLogger } from '../../src/logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('test:pde-e2e');
 

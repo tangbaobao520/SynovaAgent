@@ -177,7 +177,7 @@ describe('GET /api/ontology/graph — AGENT node visible', () => {
     expect(body.ok).toBe(true);
 
     const agentNode = body.nodes.find((n: { type: string; props: Record<string, unknown> }) =>
-      n.type === 'Agent' && n.props.name === 'E2E测试Agent',
+      n.type === 'resource/agent' && n.props.name === 'E2E测试Agent',
     );
     expect(agentNode).toBeDefined();
     expect(agentNode.props.platform).toBe('claude-code');

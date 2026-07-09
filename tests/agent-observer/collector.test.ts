@@ -93,7 +93,7 @@ describe('collectActivity — create', () => {
     expect(nodes.has(result.agentNodeId)).toBe(true);
 
     const node = nodes.get(result.agentNodeId)!;
-    expect(node.type).toBe('Agent');
+    expect(node.type).toBe('resource/agent');
     expect(node.props.name).toBe('测试 Agent');
     expect(node.props.platform).toBe('claude-code');
     expect(node.props.agentType).toBe('external');

@@ -7,7 +7,7 @@
  * 注入: GraphStore entities + GapSnapshot → 引擎可以完整分析
  */
 import { initEngineContext, getDatabase } from '../../src/init/engine-context';
-import { createLogger } from '../../src/logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('test:pde-seed');
 

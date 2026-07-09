@@ -133,8 +133,8 @@ describe('ReportGraphAdapter → Phase 4 wiring', () => {
   it('Given Phase 3 root causes in GraphStore, When ReportGraphAdapter queries, Then returns report data', () => {
     const fakeStore = {
       queryNodes(type: string) {
-        if (type === 'Person') return [{ id:'p1', type:'Person', props:{name:'Alice'}}, { id:'p2', type:'Person', props:{name:'Bob'}}];
-        if (type === 'Risk') return [{ id:'r1', type:'Risk', props:{severity:'high', name:'单点故障'}}];
+        if (type === 'resource/person') return [{ id:'p1', type:'resource/person', props:{name:'Alice'}}, { id:'p2', type:'resource/person', props:{name:'Bob'}}];
+        if (type === 'outcome/risk') return [{ id:'r1', type:'outcome/risk', props:{severity:'high', name:'单点故障'}}];
         return [];
       },
       queryEdges() { return []; },

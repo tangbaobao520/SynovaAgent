@@ -9,6 +9,7 @@ import { Router, type Request, type Response } from 'express';
 import { createLogger } from '@synova/logger';
 import { createSynovaGraphStore } from '@synova/graph-store';
 import { getDatabase } from '../init/engine-context';
+import { ALL_NODE_TYPES } from '@synova/ontology';
 
 const router = Router();
 const log = createLogger('routes/ontology');
@@ -141,10 +142,15 @@ router.get('/api/ontology/graph/:orgId', (req: Request, res: Response) => {
     }
     const store = getStoreFromLocals(req);
 
-    const types: string[] = ['Person', 'Team', 'Agent', 'Tool', 'Client', 'Process', 'Event', 'Document', 'Financial'];
     const nodes: Array<{ id?: unknown; type?: unknown; props?: unknown }> = [];
-    for (const t of types) {
-      nodes.push(...store.queryNodes(t as unknown as Parameters<typeof store.queryNodes>[0], undefined, orgId as string));
+    // 查询所有本体类型 + 遗留类型（兼容旧 ingest 创建的数据）
+    const queryTypes = [...ALL_NODE_TYPES, 'Document', 'Person', 'Team', 'Agent', 'Tool', 'Client', 'Process', 'Event', 'Financial'];
+    const seen = new Set<string>();
+    for (const t of queryTypes) {
+      const found = store.queryNodes(t as unknown as Parameters<typeof store.queryNodes>[0], undefined, orgId as string);
+      for (const n of found) {
+        if (!seen.has(n.id as string)) { seen.add(n.id as string); nodes.push(n); }
+      }
     }
     const edges = store.queryEdges(undefined, undefined, undefined, orgId as string);
 
