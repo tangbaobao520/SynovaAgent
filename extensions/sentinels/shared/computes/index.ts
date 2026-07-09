@@ -18,6 +18,9 @@ export { computeChannelROI } from './l2-value/compute-channel-roi';
 export { computeCustomerValueScore } from './l2-value/compute-customer-value-score';
 export { computeCustomerDemandStructure } from './l2-value/compute-customer-demand-structure';
 export { computeBrandROI } from './l2-value/compute-brand-roi';
+export { computeCouplingStrength } from './l2-value/compute-coupling-strength';
+export { computeLearningRate } from './l2-value/compute-learning-rate';
+export { computeOccupancy } from './l2-value/compute-occupancy';
 
 // l3-causal
 export { computeShapleyAttribution } from './l3-causal/compute-shapley-attribution';
