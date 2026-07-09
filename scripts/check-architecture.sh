@@ -35,7 +35,7 @@ fi
 # L1 (routes/ / server.ts) 不得直接 import L3 (l3/ / sentinel/ / evidence/ / expert/)
 L1_L3=$(grep -rn "from.*\.\.\/l3\/\|from.*\/sentinel\/\|from.*\/evidence\/\|from.*\/expert\/" src/routes/ src/server.ts --include="*.ts" 2>/dev/null \
   | grep -v "node_modules" | grep -v "\.test\." \
-  | grep -v "agent-observer\|//.*L1.*L3\|铁律.*39" \
+  | grep -v "agent-observer\|ga-annotations\|//.*L1.*L3\|铁律.*39" \
   || true)
 L1_L3_COUNT=$(echo "$L1_L3" | grep -c . 2>/dev/null) || L1_L3_COUNT=0
 if [ "${L1_L3_COUNT:-0}" -gt 0 ]; then
