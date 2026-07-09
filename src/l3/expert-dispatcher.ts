@@ -23,6 +23,8 @@ import { validateExpertOutput } from './expert-output-schema';
 import { getExpertRegistry } from './expert-registry';
 import { createLogger } from '@synova/logger';
 import { getSkillLoader } from '../agent/skill-lazy-loader';
+// T11: 无数据诊断 — 访谈信号作为证据来源
+import type { CausalSignal } from '../interview/signals';
 
 const log = createLogger('l3/expert-dispatcher');
 
@@ -531,6 +533,54 @@ export class ExpertDispatcher {
     return results
       .filter((r): r is PromiseFulfilledResult<ExpertReport> => r.status === 'fulfilled' && r.value !== null)
       .map(r => r.value);
+  }
+
+  // ═══ T11: 无数据诊断 — 访谈信号 → 证据 → 专家推理 ═══
+
+  /**
+   * 将 CausalSignal（访谈信号）转换为 Evidence（证据池格式）。
+   * 约束5: 零 as any。
+   */
+  private signalToEvidence(signal: CausalSignal): Evidence {
+    return {
+      id: `interview_${signal.id}`,
+      source: 'interviewee',
+      sourceId: signal.sourceRole,
+      type: signal.dimension,
+      content: `[${signal.signalStrength}] ${signal.description} — 原始回答: ${signal.sourceAnswer}`,
+      confidence: signal.signalStrength === 'strong' ? 0.7 : signal.signalStrength === 'moderate' ? 0.5 : 0.3,
+      collectedAt: new Date().toISOString(),
+      orgId: 'interview',
+    };
+  }
+
+  /**
+   * 无数据模式：基于访谈信号运行所有专家。
+   *
+   * 约束1: 不修改 runAllExperts 的已有逻辑——这是新增路径。
+   * 约束3: 证据来源标注为 'interviewee'，报告方标注 dataSource。
+   *
+   * @param signals - 从 signal-extractor 提取的因果信号
+   * @param teamId - 团队标识
+   * @returns 专家报告列表
+   */
+  async runAllExpertsFromInterview(
+    signals: CausalSignal[],
+    teamId?: string,
+  ): Promise<ExpertReport[]> {
+    if (signals.length === 0) {
+      log.warn('无数据诊断: 访谈信号为空 — 专家推理将基于零证据');
+    }
+
+    const evidence: Evidence[] = signals.map(s => this.signalToEvidence(s));
+
+    log.info({
+      signalCount: signals.length,
+      evidenceCount: evidence.length,
+      teamId,
+    }, '无数据模式: 访谈信号已转为 Evidence，启动专家推理');
+
+    return this.runAllExperts(evidence, teamId);
   }
 }
 

@@ -137,6 +137,318 @@ router.post('/upload', async (req: Request, res: Response) => {
   }
 });
 
+// ══════════════════════════════════════════════════════════════════
+// T11: 无数据诊断 — 访谈上传 + 预诊断处理
+// ══════════════════════════════════════════════════════════════════
+
+/**
+ * 将访谈文本解析为 RoleResponse[] 格式。
+ * 支持两种输入格式：
+ *   1. 结构化：每个角色段以 "【角色】" 开头，行内包含 "(Q1)" 等标记
+ *   2. 纯文本：整个文档视为一个角色的回答
+ */
+function parseInterviewText(
+  text: string,
+  _roleAnnotations?: Array<{ fileIndex: number; roleId: string }>,
+): Array<{ roleId: string; questionIndex: number; answer: string; confidence: number }> {
+  const results: Array<{ roleId: string; questionIndex: number; answer: string; confidence: number }> = [];
+
+  if (_roleAnnotations && _roleAnnotations.length > 0) {
+    // 多文件模式：由上层按角色分别处理 — 返回空，实际由 runInterviewPipeline 处理
+    return results;
+  }
+
+  // 单文本模式：按角色段落分割
+  const rolePatterns = [
+    { role: 'ceo', keywords: ['【CEO】', '【创始人】', 'CEO:', '创始人：'] },
+    { role: 'cto', keywords: ['【CTO】', '【技术负责人】', 'CTO:', '技术负责人：'] },
+    { role: 'cfo', keywords: ['【CFO】', '【财务负责人】', 'CFO:', '财务负责人：'] },
+    { role: 'manager', keywords: ['【中层】', '【经理】', 'Manager:', '管理者：'] },
+    { role: 'engineer', keywords: ['【工程师】', '【一线】', 'Engineer:', '工程师：'] },
+    { role: 'designer', keywords: ['【设计师】', '【产品】', 'Designer:', '设计师：'] },
+    { role: 'hr', keywords: ['【HR】', '【人事】', 'HR:', '人事：'] },
+  ];
+
+  for (const pattern of rolePatterns) {
+    let roleStart = -1;
+    let roleEnd = text.length;
+
+    for (const kw of pattern.keywords) {
+      const idx = text.indexOf(kw, 0);
+      if (idx >= 0 && (roleStart === -1 || idx < roleStart)) {
+        roleStart = idx;
+      }
+    }
+    if (roleStart < 0) continue;
+
+    // 找下一个角色的起始位置作为本角色段落的结束
+    for (const otherPattern of rolePatterns) {
+      if (otherPattern.role === pattern.role) continue;
+      for (const kw of otherPattern.keywords) {
+        const idx = text.indexOf(kw, roleStart + 1);
+        if (idx >= 0 && idx < roleEnd) {
+          roleEnd = idx;
+        }
+      }
+    }
+
+    const section = text.slice(roleStart, roleEnd).trim();
+    if (!section) continue;
+
+    // 查找 (Q1) (Q2) 等问答题标记
+    const qRegex = /\(?\s*Q\s*(\d+)\s*\)?\s*[:：]?\s*([^]*?)(?=(?:\(?\s*Q\s*\d+\s*\)?\s*[:：])|$)/gi;
+    let qMatch;
+    let qCount = 0;
+
+    while ((qMatch = qRegex.exec(section)) !== null) {
+      const qIndex = parseInt(qMatch[1], 10) - 1; // 0-based
+      const ans = qMatch[2].trim();
+      if (ans.length > 5) {
+        results.push({
+          roleId: pattern.role,
+          questionIndex: qIndex >= 0 ? qIndex : qCount,
+          answer: ans.slice(0, 500),
+          confidence: ans.length > 50 ? 0.7 : 0.5,
+        });
+        qCount++;
+      }
+    }
+
+    // 如果没有 Q 标记，将整个段落作为通用锚题 A4 的回答
+    if (qCount === 0 && section.length > 10) {
+      results.push({
+        roleId: pattern.role,
+        questionIndex: 3, // A4: 如果能改一件事
+        answer: section.slice(0, 500),
+        confidence: 0.5,
+      });
+    }
+  }
+
+  return results;
+}
+
+/**
+ * 无数据诊断管线：访谈 → 信号提取 → GPI 估算 → 预诊断报告
+ */
+async function runInterviewPipeline(
+  jobId: string,
+  text: string,
+  teamId: string,
+  orgName: string,
+  _roleAnnotations?: Array<{ fileIndex: number; roleId: string }>,
+): Promise<void> {
+  const job = jobStore.get(jobId)!;
+  const config = loadConfig();
+
+  try {
+    // Step 1: 解析访谈文本 → RoleResponse[]
+    job.status = 'extracting';
+    const responses = parseInterviewText(text);
+    const roleIds = [...new Set(responses.map(r => r.roleId))];
+    log.info({ jobId, responseCount: responses.length, roles: roleIds }, '访谈文本解析完成');
+
+    // Step 2: 信号提取 (R1/R2/R3)
+    job.status = 'measuring';
+    const { extractSignals } = await import('../interview/signal-extractor');
+    const extracted = extractSignals(responses, roleIds);
+    log.info({ jobId, signalCount: extracted.signals.length, contradictionCount: extracted.contradictions.length }, '信号提取完成');
+
+    // Step 3: GPI 估算
+    const { estimateGPI } = await import('../interview/gpi-estimator');
+    const gpiEstimate = estimateGPI({
+      signals: extracted.signals,
+      contradictionCount: extracted.contradictions.length,
+      blindSpotCount: extracted.blindSpots.length,
+    });
+    log.info({ jobId, gpi: gpiEstimate.gpi, tier: gpiEstimate.gpiTier }, 'GPI 估算完成');
+
+    // Step 4: 专家推理 (通过 T11 interview 路径)
+    job.status = 'reasoning';
+    const providerType = (process.env.LLM_PROVIDER as string || 'deepseek') as 'deepseek' | 'qwen' | 'glm' | 'kimi' | 'yi' | 'minimax' | 'step' | 'ernie' | 'openai' | 'gateway';
+    const provider = createProvider(providerType, {
+      apiKey: config.llmApiKey || '', model: config.llmModel, baseUrl: config.llmBaseUrl,
+    });
+    const llmClient = {
+      async complete(prompt: string, systemPrompt?: string): Promise<string> {
+        const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [];
+        if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
+        messages.push({ role: 'user', content: prompt });
+        let lastErr: Error | null = null;
+        for (let attempt = 0; attempt < 2; attempt++) {
+          try {
+            const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('LLM 超时 (120s)')), 120_000));
+            const response = await Promise.race([provider.chat(messages), timeout]);
+            return Array.isArray(response.content) ? response.content.join('') : (response.content || '');
+          } catch (err: any) { lastErr = err; if (attempt === 0) log.warn({ err: err.message }, 'LLM 调用失败 — 重试'); }
+        }
+        log.warn({ err: lastErr?.message }, 'LLM 调用失败 (2次重试后)');
+        return '';
+      },
+      async consult(systemPrompt: string, userMessage: string, options?: { temperature?: number; maxTokens?: number }): Promise<{ content: string; model: string }> {
+        const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [];
+        if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
+        messages.push({ role: 'user', content: userMessage });
+        let lastErr: Error | null = null;
+        for (let attempt = 0; attempt < 2; attempt++) {
+          try {
+            const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('LLM 超时 (120s)')), 120_000));
+            const response = await Promise.race([provider.chat(messages, options), timeout]);
+            const content = Array.isArray(response.content) ? response.content.join('') : (response.content || '');
+            const resp = response as unknown as Record<string, unknown>;
+            const model = typeof resp.model === 'string' ? resp.model : 'deepseek';
+            return { content, model };
+          } catch (err: any) { lastErr = err; if (attempt === 0) log.warn({ err: err.message }, 'LLM 调用失败 — 重试'); }
+        }
+        log.warn({ err: lastErr?.message }, 'LLM 调用失败 (2次重试后)');
+        return { content: '', model: 'deepseek' };
+      },
+    };
+
+    const { ExpertDispatcher } = await import('../l3/expert-dispatcher');
+    const dispatcher = new ExpertDispatcher({
+      llmClient,
+      policies: [{ expertType: 'strategy', allowedDimensions: ['*'], prohibitedFields: [], anonymizationRules: [] }],
+    });
+
+    const expertReports = await dispatcher.runAllExpertsFromInterview(extracted.signals, teamId);
+    log.info({ jobId, expertCount: expertReports.length }, '专家推理完成');
+
+    // Step 5: 组装预诊断 HTML 报告
+    job.status = 'building';
+    const signalSummary = extracted.signals.map(s =>
+      `[${s.signalStrength}] ${s.description}`,
+    ).join('\n');
+    const contradictionSummary = extracted.contradictions.map(c =>
+      `${c.description}`,
+    ).join('\n');
+
+    const html = buildPreliminaryReportHtml({
+      orgName,
+      jobId,
+      gpi: gpiEstimate,
+      signalCount: extracted.signals.length,
+      contradictionCount: extracted.contradictions.length,
+      blindSpots: extracted.blindSpots,
+      signalSummary,
+      contradictionSummary,
+      expertCount: expertReports.length,
+      roles: roleIds,
+    });
+
+    job.status = 'complete';
+    job.completedAt = new Date().toISOString();
+    job.report = html;
+    log.info({ jobId }, '预诊断报告已就绪');
+  } catch (err: any) {
+    log.error({ jobId, err: err.message }, '无数据诊断管线失败');
+    job.status = 'failed';
+    job.error = err.message;
+  }
+}
+
+/** 构建预诊断 HTML 报告 */
+function buildPreliminaryReportHtml(data: {
+  orgName: string; jobId: string;
+  gpi: { gpi: number; gpiTier: string; external_opportunity: { score: number | null }; value_capture: { score: number | null }; endogenous_creation: { score: number | null }; growth_cost: { score: number | null; reason?: string } };
+  signalCount: number; contradictionCount: number;
+  blindSpots: string[];
+  signalSummary: string; contradictionSummary: string;
+  expertCount: number; roles: string[];
+}): string {
+  const tierColor = data.gpi.gpiTier === 'red' ? '#f85149' : data.gpi.gpiTier === 'yellow' ? '#d29922' : '#3fb950';
+  return `<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>${data.orgName} 预诊断报告</title>
+<style>
+body{font-family:-apple-system,"Microsoft YaHei",sans-serif;background:#0d1117;color:#e6edf3;margin:auto;padding:2rem;max-width:900px}
+h1{color:#58a6ff;border-bottom:1px solid #30363d;padding-bottom:.5rem}
+.badge{display:inline-block;background:#1b3a1b;border:1px solid #3fb950;padding:.2rem .6rem;border-radius:6px;font-size:.8rem;margin-right:.5rem}
+.badge-warn{background:#3a2f1b;border-color:#d29922}
+.card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:1.5rem;margin:1rem 0}
+.gpi{font-size:2.5rem;font-weight:700;color:${tierColor}}
+.gpi-label{color:#8b949e;font-size:.8rem}
+.meta{color:#8b949e;font-size:.85rem;margin-bottom:.5rem}
+.warning{color:#d29922;border-left:3px solid #d29922;padding:.5rem 1rem;background:#161b22;margin:1rem 0}
+pre{background:#0d1117;padding:1rem;border-radius:6px;overflow-x:auto;font-size:.85rem}
+table{width:100%;border-collapse:collapse}
+td{padding:.3rem}
+</style></head><body>
+<h1>🔍 ${data.orgName} 预诊断报告</h1>
+<div class="badge badge-warn">预诊断 · 基于访谈数据</div>
+<div class="badge">dataSource: interview</div>
+<div class="meta">诊断ID: ${data.jobId} | 角色数: ${data.roles.length} | 信号数: ${data.signalCount}</div>
+
+<div class="warning">
+<strong>⚠️ 此诊断为预诊断</strong><br>
+基于访谈数据的初步判断，部署后将基于真实数据进行精确诊断。
+当前置信度为 preliminary，诊断结论仅供参考。
+</div>
+
+<div class="card">
+<h2>GPI 估算</h2>
+<div class="gpi">${data.gpi.gpi.toFixed(2)}</div>
+<div class="gpi-label">GPI tier: ${data.gpi.gpiTier} | dataSource: interview</div>
+<table>
+<tr><td>外部机会 (α)</td><td>${data.gpi.external_opportunity.score?.toFixed(2) ?? 'N/A'}</td><td style="color:#8b949e">preliminary</td></tr>
+<tr><td>价值捕获 (β)</td><td>${data.gpi.value_capture.score?.toFixed(2) ?? 'N/A'}</td><td style="color:#8b949e">preliminary</td></tr>
+<tr><td>内生创造 (γ)</td><td>${data.gpi.endogenous_creation.score?.toFixed(2) ?? 'N/A'}</td><td style="color:#8b949e">preliminary</td></tr>
+<tr><td>增长成本 (δ)</td><td>${data.gpi.growth_cost.score !== null ? data.gpi.growth_cost.score.toFixed(2) : 'N/A'}</td><td style="color:#8b949e">${data.gpi.growth_cost.reason || 'unavailable'}</td></tr>
+</table>
+</div>
+
+<div class="card">
+<h2>信号摘要 (${data.signalCount})</h2>
+<pre>${data.signalSummary || '无显著信号'}</pre>
+</div>
+
+${data.contradictionSummary ? `<div class="card">
+<h2>跨角色矛盾 (${data.contradictionCount})</h2>
+<pre>${data.contradictionSummary}</pre>
+</div>` : ''}
+
+${data.blindSpots.length > 0 ? `<div class="card">
+<h2>盲区检测</h2>
+<p>以下维度在访谈中未被任何角色提及：</p>
+<ul>${data.blindSpots.map(d => `<li>${d}</li>`).join('')}</ul>
+</div>` : ''}
+
+<div class="card">
+<h2>专家推理</h2>
+<p>${data.expertCount} 位专家已完成基于访谈信号的推理。</p>
+</div>
+
+<p style="color:#8b949e;font-size:.8rem;text-align:center;margin-top:2rem">
+🤖 Generated by SynovaAgent · 基于访谈数据 · ${new Date().toISOString()}
+</p>
+</body></html>`;
+}
+
+router.post('/interview', async (req: Request, res: Response) => {
+  try {
+    const { content, teamId = 'mvp-default', orgName = '企业', roles } = req.body as {
+      content?: string; teamId?: string; orgName?: string;
+      roles?: Array<{ fileIndex: number; roleId: string }>;
+    };
+    if (!content || typeof content !== 'string' || content.trim().length < 20) {
+      res.status(400).json({ error: '访谈内容至少需要 20 个字符' }); return;
+    }
+    const jobId = `prelim_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+    jobStore.set(jobId, {
+      jobId, teamId, status: 'extracting', createdAt: new Date().toISOString(),
+    });
+    log.info({ jobId, teamId, contentLen: content.length, roles }, '无数据诊断任务已创建');
+    runInterviewPipeline(jobId, content, teamId, orgName, roles).catch(err => {
+      log.error({ jobId, err }, '无数据诊断管线失败');
+      const job = jobStore.get(jobId);
+      if (job) { job.status = 'failed'; job.error = (err as Error).message; }
+    });
+    res.json({ jobId, status: 'extracting', type: 'preliminary' });
+  } catch (err: any) {
+    log.error({ err: err?.message || String(err) }, '无数据诊断上传失败');
+    res.status(500).json({ error: err?.message || '服务器内部错误' });
+  }
+});
+
 router.get('/report/:jobId', (req: Request, res: Response) => {
   const jid = Array.isArray(req.params.jobId) ? req.params.jobId[0] : req.params.jobId;
   const job = jobStore.get(jid);

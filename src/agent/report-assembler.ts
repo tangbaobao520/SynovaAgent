@@ -65,12 +65,15 @@ function assembleRaw(report: DiagnosisReport): Record<string, unknown> {
 
 /**
  * 按指定深度组装报告。
+ * T11: 新增 mode:'preliminary' 用于无数据预诊断模式。
  */
 export function assembleReport(
   report: DiagnosisReport,
   depth: ReportDepth = 'flywheel',
   _layers?: string[],
+  _mode?: 'standard' | 'preliminary',
 ): AssembledReport {
+  const isPreliminary = _mode === 'preliminary';
   let summary: string;
   let data: Record<string, unknown>;
 
@@ -78,11 +81,24 @@ export function assembleReport(
     switch (depth) {
       case 'ceo':
         summary = assembleCeo(report);
+        if (isPreliminary) {
+          summary = '【预诊断】此诊断为基于访谈数据的初步判断，部署后将基于真实数据进行精确诊断。\n\n' + summary;
+        }
         data = { rootCause: report.rootCauses[0] || null };
+        if (isPreliminary) {
+          (data as Record<string, unknown>).dataSource = 'interview';
+          (data as Record<string, unknown>).diagnosisType = 'preliminary';
+        }
         break;
       case 'flywheel':
-        summary = report.summary;
+        summary = isPreliminary
+          ? '【预诊断】此诊断为基于访谈数据的初步判断。' + (report.summary || '')
+          : report.summary;
         data = assembleFlywheel(report);
+        if (isPreliminary) {
+          (data as Record<string, unknown>).dataSource = 'interview';
+          (data as Record<string, unknown>).diagnosisType = 'preliminary';
+        }
         break;
       case 'expert':
         summary = report.summary;
