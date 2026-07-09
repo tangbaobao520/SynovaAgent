@@ -22,7 +22,7 @@ describe('tech/THEORY.md 注入验证', () => {
   });
 
   it('包含混合组织修正', () => {
-    expect(theory).toContain('Agent 可以大幅降低信息不对称');
+    expect(theory).toContain('Agent 可大幅降低信息不对称');
     expect(theory).toContain('Agent 的诊断过程必须可审计');
   });
 
