@@ -10,6 +10,10 @@ import { createLogger } from '@synova/logger';
 // L4 访问: 运行时动态 import — 避免静态跨层依赖 (铁律 39, 审计 P0-20260618)
 import { runSafetyGate } from '../security/safety-guardrails';
 import { getFaultRecovery } from '../services/fault-recovery';
+// V4.4.4 T7b: L3 诊断模块 — 外部假设监控 + 平台依赖检查
+import { checkExternalAssumptions } from '../l3/assumption-monitor';
+import { checkPlatformDependencies } from '../l3/platform-dependency-check';
+import { createGraphTraversal } from '../l4/graph-traversal';
 // V4.2.4: 内联 SessionStore 类型 — 避免 L2→L5 直接 import (铁律 39)
 interface SessionStoreLike { saveDiagnosisCheckpoint?: (cp: { sessionId: string; phase: number; completedModules: string[]; partialReport: unknown; savedAt: string }) => void; }
 
@@ -119,6 +123,18 @@ export class DiagnosisLauncher {
       }, onEvent);
 
       log.info({ teamId, durationMs: result.totalDurationMs, degraded: result.degradedModules.length }, '诊断完成');
+
+      // T7b: L3 诊断模块 — 外部假设监控 + 平台依赖检查 (通过 runModules 消费)
+      if (graphStore && typeof graphStore.queryNodes === 'function') {
+        const store = graphStore as Parameters<typeof checkExternalAssumptions>[0];
+        const traversal = createGraphTraversal(store);
+        checkExternalAssumptions(store, teamId, traversal)
+          .then(ar => log.info({ teamId, totalAssumptions: ar.totalAssumptions, findings: ar.findings.length }, '外部假设监控完成'))
+          .catch(err => log.warn({ err, teamId }, '[assumption-monitor] 异步失败'));
+        checkPlatformDependencies(store, teamId, traversal)
+          .then(pr => log.info({ teamId, totalDependencies: pr.totalDependencies, findings: pr.findings.length }, '平台依赖检查完成'))
+          .catch(err => log.warn({ err, teamId }, '[platform-dependency-check] 异步失败'));
+      }
 
       // FED-001: 联邦进化 — 诊断完成后上报质量信号 (差分隐私+加密)
       if (this.ctx.federalAdapter) {
