@@ -12,12 +12,15 @@
 
 // ═══ 请求类型 ═══
 
+/** 标注类型 — 四态枚举。运行时验证见 ga-annotations.ts VALID_ANNOTATIONS */
+export type AnnotationType = string;
+
 /** POST /api/ga/annotations 请求体 */
 export interface CreateAnnotationRequest {
   /** SentinelFinding.id */
   findingId: string;
-  /** 标注类型: confirmed(确认) | false_alarm(误报) | uncertain(不确定) */
-  annotation: 'confirmed' | 'false_alarm' | 'uncertain';
+  /** 标注类型: confirmed(确认) | false_alarm(误报) | uncertain(不确定) | correction(修正) */
+  annotation: AnnotationType;
   /** 纠错说明，可选，上限2000字符 */
   correctionNote?: string;
 }
@@ -29,7 +32,7 @@ export interface ListAnnotationsQuery {
   /** 按哨兵ID筛选 */
   sentinelId?: string;
   /** 按标注类型筛选 */
-  annotation?: 'confirmed' | 'false_alarm' | 'uncertain';
+  annotation?: AnnotationType;
   /** 每页条数，默认50，最大200 */
   limit?: number;
   /** 偏移量，默认0 */
@@ -51,7 +54,7 @@ export interface AnnotationRecord {
   /** Finding原始title */
   title: string;
   /** 标注类型 */
-  annotation: 'confirmed' | 'false_alarm' | 'uncertain';
+  annotation: AnnotationType;
   /** 纠错说明 */
   correctionNote?: string;
   /** GA用户ID */
@@ -86,7 +89,7 @@ export interface SentinelAnnotation {
   sentinelId: string;
   severity: string;
   title: string;
-  annotation: 'confirmed' | 'false_alarm' | 'uncertain';
+  annotation: AnnotationType;
   correctionNote?: string;
   gaId: string;
   orgId: string;
@@ -95,24 +98,44 @@ export interface SentinelAnnotation {
 
 // ═══ 统计类型 ═══
 
-/** 单哨兵标注统计 */
+/** 单哨兵标注统计（含四态） */
 export interface SentinelAnnotationStats {
   total: number;
   confirmed: number;
   falseAlarm: number;
   uncertain: number;
+  correction: number;
+}
+
+/** 哨兵精度基线（来自 sentinel-accuracy.ts） */
+export interface SentinelAccuracyEntry {
+  precision: number;
+  recall: number;
+  f1: number;
+  uncertainRate: number;
+  degraded: boolean;
+}
+
+/** 哨兵统计 + 精度 */
+export interface SentinelStatsWithAccuracy extends SentinelAnnotationStats {
+  accuracy: SentinelAccuracyEntry;
 }
 
 /** GET /api/ga/annotations/stats 响应 */
 export interface AnnotationStatsResponse {
   ok: true;
-  /** 按哨兵ID分组的统计 */
-  bySentinel: Record<string, SentinelAnnotationStats>;
-  /** 总体统计 */
+  /** 按哨兵ID分组的统计（含精度） */
+  bySentinel: Record<string, SentinelStatsWithAccuracy>;
+  /** 总体统计（含精度汇总） */
   overall: {
     totalAnnotations: number;
     confirmedRate: number;
     falseAlarmRate: number;
     uncertainRate: number;
+    correctionRate: number;
+    /** 所有哨兵的精度均值（加权） */
+    avgPrecision: number;
+    avgRecall: number;
+    avgF1: number;
   };
 }

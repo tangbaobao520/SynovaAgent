@@ -151,7 +151,7 @@ echo -e "${CYAN}── 组 1/8: 类型安全 + 硬编码数据 ──${RESET}"
 # Anthropic 原则: bash 只做模式匹配，不判断语义。注释行不属于"代码中的 as any"。
 M=$(grep -rn 'as any\b' src/ --include="*.ts" 2>/dev/null \
   | grep -v "node_modules" | grep -v "\.test\." | grep -v "\.d\.ts" \
-  | grep -vE '^\s*[^:]+:\d+:\s*(//|/\*|\*| \*)' || true)
+  | grep -vE '^[^:]+:[0-9]+:[ \t]*(//|/\*|\*)' || true)
 hard_check "as any 零容忍 (铁律 38)" "$M"
 
 # 1b. 硬编码业务数据 (合并原 10 + 13: 硬编码联合类型/数组/Set/DEFAULT_* + 部门名等)

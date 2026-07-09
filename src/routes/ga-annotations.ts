@@ -22,7 +22,11 @@ import type {
   CreateAnnotationResponse,
   ListAnnotationsResponse,
   AnnotationStatsResponse,
+  SentinelAnnotationStats,
+  SentinelStatsWithAccuracy,
 } from './ga-annotations-types';
+import { computeSentinelAccuracy } from '../sentinel/sentinel-accuracy';
+import type { AnnotationRecord as AccuracyAnnotation } from '../sentinel/sentinel-accuracy';
 
 const log = createLogger('routes/ga-annotations');
 const router = Router();
@@ -70,7 +74,7 @@ router.post('/api/ga/annotations', async (req: Request, res: Response) => {
     }
 
     // 验证 annotation 值
-    const VALID_ANNOTATIONS = ['confirmed', 'false_alarm', 'uncertain'] as const;
+    const VALID_ANNOTATIONS = ['confirmed', 'false_alarm', 'uncertain', 'correction'] as const;
     if (!annotation || !VALID_ANNOTATIONS.includes(annotation as typeof VALID_ANNOTATIONS[number])) {
       return res.status(400).json({
         ok: false,
@@ -150,7 +154,7 @@ router.get('/api/ga/annotations', async (req: Request, res: Response) => {
     // 收集筛选条件
     const tags: string[] = ['sentinel_annotation'];
     if (sentinelId) tags.push(sentinelId);
-    if (annotation && ['confirmed', 'false_alarm', 'uncertain'].includes(annotation)) {
+    if (annotation && ['confirmed', 'false_alarm', 'uncertain', 'correction'].includes(annotation)) {
       tags.push(annotation);
     }
 
@@ -222,44 +226,49 @@ router.get('/api/ga/annotations/stats', async (req: Request, res: Response) => {
       offset: 0,
     });
 
-    const bySentinel: Record<string, { total: number; confirmed: number; falseAlarm: number; uncertain: number }> = {};
-    let totalConfirmed = 0;
-    let totalFalseAlarm = 0;
-    let totalUncertain = 0;
+    const bySentinel: Record<string, SentinelAnnotationStats> = {};
+    const annotationsBySentinel: Record<string, AccuracyAnnotation[]> = {};
+    let totalConfirmed = 0, totalFalseAlarm = 0, totalUncertain = 0, totalCorrection = 0;
 
     for (const r of results) {
       let val: Record<string, unknown> = {};
       try { val = JSON.parse(r.value); } catch { log.debug({ entry: r.id }, '解析标注数据失败 — stats跳过'); continue; }
-      const sentinelId = (val.sentinelId as string) || 'unknown';
-      const annotationType = (val.annotation as string) || '';
+      const sid = (val.sentinelId as string) || 'unknown';
+      const at = (val.annotation as string) || '';
 
-      if (!bySentinel[sentinelId]) {
-        bySentinel[sentinelId] = { total: 0, confirmed: 0, falseAlarm: 0, uncertain: 0 };
-      }
-      bySentinel[sentinelId].total++;
+      if (!bySentinel[sid]) bySentinel[sid] = { total: 0, confirmed: 0, falseAlarm: 0, uncertain: 0, correction: 0 };
+      if (!annotationsBySentinel[sid]) annotationsBySentinel[sid] = [];
+      bySentinel[sid].total++;
+      annotationsBySentinel[sid].push({ annotation: at as AccuracyAnnotation['annotation'] });
 
-      if (annotationType === 'confirmed') {
-        bySentinel[sentinelId].confirmed++;
-        totalConfirmed++;
-      } else if (annotationType === 'false_alarm') {
-        bySentinel[sentinelId].falseAlarm++;
-        totalFalseAlarm++;
-      } else if (annotationType === 'uncertain') {
-        bySentinel[sentinelId].uncertain++;
-        totalUncertain++;
-      }
+      if (at === 'confirmed') { bySentinel[sid].confirmed++; totalConfirmed++; }
+      else if (at === 'false_alarm') { bySentinel[sid].falseAlarm++; totalFalseAlarm++; }
+      else if (at === 'uncertain') { bySentinel[sid].uncertain++; totalUncertain++; }
+      else if (at === 'correction') { bySentinel[sid].correction++; totalCorrection++; }
     }
 
-    const totalAnnotations = totalConfirmed + totalFalseAlarm + totalUncertain;
+    const totalAnnotations = totalConfirmed + totalFalseAlarm + totalUncertain + totalCorrection;
+
+    const bySentinelWithAccuracy: Record<string, SentinelStatsWithAccuracy> = {};
+    let twp = 0, twr = 0, twf = 0, ws = 0;
+    for (const [sid, stats] of Object.entries(bySentinel)) {
+      const acc = computeSentinelAccuracy(sid, annotationsBySentinel[sid] || []);
+      bySentinelWithAccuracy[sid] = { ...stats, accuracy: { precision: acc.precision, recall: acc.recall, f1: acc.f1, uncertainRate: acc.uncertainRate, degraded: acc.degraded } };
+      if (!acc.degraded && stats.total > 0) { twp += acc.precision * stats.total; twr += acc.recall * stats.total; twf += acc.f1 * stats.total; ws += stats.total; }
+    }
 
     res.json({
       ok: true,
-      bySentinel,
+      bySentinel: bySentinelWithAccuracy,
       overall: {
         totalAnnotations,
         confirmedRate: totalAnnotations > 0 ? totalConfirmed / totalAnnotations : 0,
         falseAlarmRate: totalAnnotations > 0 ? totalFalseAlarm / totalAnnotations : 0,
         uncertainRate: totalAnnotations > 0 ? totalUncertain / totalAnnotations : 0,
+        correctionRate: totalAnnotations > 0 ? totalCorrection / totalAnnotations : 0,
+        avgPrecision: ws > 0 ? Math.round((twp / ws) * 100) / 100 : 0,
+        avgRecall: ws > 0 ? Math.round((twr / ws) * 100) / 100 : 0,
+        avgF1: ws > 0 ? Math.round((twf / ws) * 100) / 100 : 0,
       },
     });
   } catch (err: unknown) {
