@@ -10,7 +10,7 @@ export const businessModelCoherenceSentinel = {
     let allNodes: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
     let usedTraversal = false;
     try {
-      try { if (traversal) { const r = traversal.traverse([teamId], ['FUNDS', 'DEPLOYS', 'PRODUCES']); if (r.nodes[0]) { allNodes = r.nodes; usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
+      try { if (traversal) { const r = traversal.traverse([teamId], ['FUNDS', 'DEPLOYS', 'OPERATIONAL_EXECUTION']); if (r.nodes[0]) { allNodes = r.nodes; usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
       if (!usedTraversal) { allNodes = (store.queryNodes('Event', { teamId }) || []).concat(store.queryNodes('Tool', { teamId })).concat(store.queryNodes('Client', { teamId })).concat(store.queryNodes('Person', { teamId })).concat(store.queryNodes('Financial', { teamId })); }
       const r = computeModelCoherence(allNodes);
       log.debug({ coherence: r.score }, '商业模式一致性计算完成');

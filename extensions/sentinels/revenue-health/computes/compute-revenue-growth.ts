@@ -44,7 +44,7 @@ export async function computeRevenueGrowth(
   try {
     if (input.traversal) {
       try {
-        const result = input.traversal.traverse([input.teamId], ['FUNDS', 'PRODUCES']);
+        const result = input.traversal.traverse([input.teamId], ['FUNDS', 'OPERATIONAL_EXECUTION']);
         if (result.nodes[0]) {
           revenueNodes = result.nodes.filter(n => n.props.financialType === 'revenue' || n.props.total_revenue);
           hasData = true;

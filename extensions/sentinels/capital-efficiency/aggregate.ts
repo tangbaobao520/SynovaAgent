@@ -30,7 +30,7 @@ export const capitalEfficiencySentinel = {
     try {
       try {
         if (traversal) {
-          const result = traversal.traverse([teamId], ['FUNDS', 'PRODUCES']);
+          const result = traversal.traverse([teamId], ['FUNDS', 'OPERATIONAL_EXECUTION']);
           if (result.nodes[0]) { finNodes = result.nodes; usedTraversal = true; }
         }
       } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }

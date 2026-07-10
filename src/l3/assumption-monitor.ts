@@ -45,7 +45,7 @@ export async function checkExternalAssumptions(
   try {
     if (traversal) {
       try {
-        const result = traversal.traverse([teamId], ['EXTERNAL_ASSUMPTION_BINDS']);
+        const result = traversal.traverse([teamId], ['ASSUMPTION_TRIGGERED_REALLOCATION']);
         if (result.edges.length > 0) {
           for (const edge of result.edges) {
             totalAssumptions++;

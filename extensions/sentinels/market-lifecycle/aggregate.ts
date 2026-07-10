@@ -24,7 +24,7 @@ export const marketLifecycleSentinel = {
     let usedTraversal = false;
 
     try {
-      try { if (traversal) { const r = traversal.traverse([teamId], ['PRODUCES', 'INFORMS']); if (r.nodes[0]) { marketNodes = r.nodes.filter(n => n.type === 'MARKET_OUTCOME'); finNodes = r.nodes; usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
+      try { if (traversal) { const r = traversal.traverse([teamId], ['OPERATIONAL_EXECUTION', 'INFORMS']); if (r.nodes[0]) { marketNodes = r.nodes.filter(n => n.type === 'MARKET_OUTCOME'); finNodes = r.nodes; usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
       if (!usedTraversal) { marketNodes = store.queryNodes('Event', { teamId }); finNodes = store.queryNodes('Financial', { teamId }); }
 
       if (marketNodes.length === 0 || finNodes.length === 0) {

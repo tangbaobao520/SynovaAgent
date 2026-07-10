@@ -16,7 +16,7 @@ export const growthQualitySentinel = {
     let finNodes: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
     let usedTraversal = false;
     try {
-      try { if (traversal) { const r = traversal.traverse([teamId], ['FUNDS', 'PRODUCES']); if (r.nodes[0]) { finNodes = r.nodes; usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
+      try { if (traversal) { const r = traversal.traverse([teamId], ['FUNDS', 'OPERATIONAL_EXECUTION']); if (r.nodes[0]) { finNodes = r.nodes; usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
       if (!usedTraversal) { finNodes = store.queryNodes('Financial', { teamId }); }
       const financials = finNodes.map(n => ({
         operatingCashFlow: Number(n.props.operatingCashFlow) || 0,
