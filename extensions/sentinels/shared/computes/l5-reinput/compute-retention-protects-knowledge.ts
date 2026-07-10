@@ -1,7 +1,7 @@
 /**
  * compute-retention-protects-knowledge.ts — 人才留存保护知识资产 (5.5)
  *
- * 契约ID: COMPUTE-RETENTION-PROTECTS-KNOWLEDGE-v1
+ * @contract COMPUTE-RETENTION-PROTECTS-KNOWLEDGE-v1 {RetentionProtectsKnowledgeInput} {value,confidence,evidence,degraded,warnings} {无数据 → degraded:true, warnings:['无数据 — retentionRate或knowledgeLossRate未配置']}
  * 模块: l5-reinput/retention_protects_knowledge
  * 消费边: RETENTION_PROTECTS_KNOWLEDGE
  * 输入: retentionRate(0-1), knowledgeLossRate(0-1)

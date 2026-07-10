@@ -1,7 +1,7 @@
 /**
  * compute-value-pricing.ts — 把价值转化为购买价格 (4.1)
  *
- * 契约ID: COMPUTE-VALUE-PRICING-v1
+ * @contract COMPUTE-VALUE-PRICING-v1 {ValuePricingInput} {value,confidence,evidence,degraded,warnings} {无定价数据 → degraded:true, warnings:['无定价数据 — pricingPower或priceElasticityFactor未配置']}
  * 模块: l4-capture/value_pricing
  * 消费边: VALUE_PRICING
  * 输入: pricingPower(0-1), priceElasticityFactor(0-1)

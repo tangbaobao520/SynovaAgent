@@ -1,7 +1,7 @@
 /**
  * compute-competitive-positioning.ts — 从竞品手中夺取或守住份额 (4.4)
  *
- * 契约ID: COMPUTE-COMPETITIVE-POSITIONING-v1
+ * @contract COMPUTE-COMPETITIVE-POSITIONING-v1 {CompetitivePositioningInput} {value,confidence,evidence,degraded,warnings} {无竞品数据 → degraded:true, warnings:['无竞品数据 — 七力指标中存在未配置项']}
  * 模块: l4-capture/competitive_positioning
  * 消费边: COMPETITIVE_POSITIONING
  * 输入: switchingCost(0-1), networkEffect(0-1), scaleEconomy(0-1), counterPositioning(0-1), brandMoat(0-1), exclusiveResource(0-1), processAdvantage(0-1)

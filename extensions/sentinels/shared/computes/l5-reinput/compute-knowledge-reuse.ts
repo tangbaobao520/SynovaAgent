@@ -1,7 +1,7 @@
 /**
  * compute-knowledge-reuse.ts — 知识复用 (5.3)
  *
- * 契约ID: COMPUTE-KNOWLEDGE-REUSE-v1
+ * @contract COMPUTE-KNOWLEDGE-REUSE-v1 {KnowledgeReuseInput} {value,confidence,evidence,degraded,warnings} {无知识数据 → degraded:true, warnings:['无知识数据 — reuseFrequency或knowledgeDecay未配置']}
  * 模块: l5-reinput/knowledge_reuse
  * 消费边: KNOWLEDGE_REUSE
  * 输入: reuseFrequency(0-1), knowledgeDecay(0-1)

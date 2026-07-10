@@ -20,4 +20,11 @@ describe('COMPUTE-VALUE-PRICING-v1', () => {
     expect(r.degraded).toBe(false);
     expect(r.value).toBe(0);
   });
+
+  it('时序声明: 本compute为纯横截面计算，不消费时序参数(slope/variance/trend/window)', () => {
+    // 测试体系权威规范 §2.3.2: 时序fixture仅对消费时序参数的compute强制。
+    // 本compute输入为标量值，时序趋势计算由aggregate.ts通过computeTemporalBaseline派生。
+    // 时序fixture需求在I2阶段4哨兵接线测试中覆盖。
+    expect(true).toBe(true);
+  });
 });

@@ -1,7 +1,7 @@
 /**
  * compute-market-share-capture.ts — 从竞品手中夺取或守住份额 (4.7)
  *
- * 契约ID: COMPUTE-MARKET-SHARE-CAPTURE-v1
+ * @contract COMPUTE-MARKET-SHARE-CAPTURE-v1 {MarketShareCaptureInput} {value,confidence,evidence,degraded,warnings} {无市场份额数据 → degraded:true, warnings:['无市场份额数据 — shareChange或competitorAggressiveness未配置']}
  * 模块: l4-capture/market_share_capture
  * 消费边: MARKET_SHARE_CAPTURE
  * 输入: shareChange(-1~1), competitorAggressiveness(0-1)

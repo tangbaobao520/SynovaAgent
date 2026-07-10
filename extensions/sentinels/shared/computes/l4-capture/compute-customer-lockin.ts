@@ -1,7 +1,7 @@
 /**
  * compute-customer-lockin.ts — 让客户不容易离开 (4.2)
  *
- * 契约ID: COMPUTE-CUSTOMER-LOCKIN-v1
+ * @contract COMPUTE-CUSTOMER-LOCKIN-v1 {CustomerLockinInput} {value,confidence,evidence,degraded,warnings} {无客户数据 → degraded:true, warnings:['无客户数据 — switchingCost或lockTypeDepth未配置']}
  * 模块: l4-capture/customer_lockin
  * 消费边: CUSTOMER_LOCKIN
  * 输入: switchingCost(0-1), lockTypeDepth(0-1)

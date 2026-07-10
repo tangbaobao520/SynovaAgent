@@ -1,7 +1,7 @@
 /**
  * compute-reputation-flywheel.ts — 成功交付→好口碑→更多客户 (5.4)
  *
- * 契约ID: COMPUTE-REPUTATION-FLYWHEEL-v1
+ * @contract COMPUTE-REPUTATION-FLYWHEEL-v1 {ReputationFlywheelInput} {value,confidence,evidence,degraded,warnings} {无声誉数据 → degraded:true, warnings:['无声誉数据 — reputationScore或referralRate未配置']}
  * 模块: l5-reinput/reputation_flywheel
  * 消费边: REPUTATION_FLYWHEEL
  * 输入: reputationScore(0-1), referralRate(0-1)

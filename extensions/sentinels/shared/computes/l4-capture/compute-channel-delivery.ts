@@ -1,7 +1,7 @@
 /**
  * compute-channel-delivery.ts — 通过渠道送达客户 (4.3)
  *
- * 契约ID: COMPUTE-CHANNEL-DELIVERY-v1
+ * @contract COMPUTE-CHANNEL-DELIVERY-v1 {ChannelDeliveryInput} {value,confidence,evidence,degraded,warnings} {无渠道数据 → degraded:true, warnings:['无渠道数据 — channelEfficiency或reachRatio未配置']}
  * 模块: l4-capture/channel_delivery
  * 消费边: CHANNEL_DELIVERY
  * 输入: channelEfficiency(0-1), reachRatio(0-1)

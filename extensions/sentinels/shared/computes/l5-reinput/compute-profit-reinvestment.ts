@@ -1,7 +1,7 @@
 /**
  * compute-profit-reinvestment.ts — 利润再投资 (5.1)
  *
- * 契约ID: COMPUTE-PROFIT-REINVESTMENT-v1
+ * @contract COMPUTE-PROFIT-REINVESTMENT-v1 {ProfitReinvestmentInput} {value,confidence,evidence,degraded,warnings} {无利润数据 → degraded:true, warnings:['无利润数据 — reinvestmentRatio或profitGrowth未配置']}
  * 模块: l5-reinput/profit_reinvestment
  * 消费边: PROFIT_REINVESTMENT
  * 输入: reinvestmentRatio(0-1), profitGrowth(0-1)

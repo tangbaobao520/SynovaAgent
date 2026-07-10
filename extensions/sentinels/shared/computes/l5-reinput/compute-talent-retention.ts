@@ -1,7 +1,7 @@
 /**
  * compute-talent-retention.ts — 人才留存 (5.2)
  *
- * 契约ID: COMPUTE-TALENT-RETENTION-v1
+ * @contract COMPUTE-TALENT-RETENTION-v1 {TalentRetentionInput} {value,confidence,evidence,degraded,warnings} {无人事数据 → degraded:true, warnings:['无人事数据 — retentionRate或satisfactionScore未配置']}
  * 模块: l5-reinput/talent_retention
  * 消费边: TALENT_RETENTION
  * 输入: retentionRate(0-1), satisfactionScore(0-1)

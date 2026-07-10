@@ -1,7 +1,7 @@
 /**
  * compute-customer-data-loop.ts — 客户使用数据引导产品改进 (4.6)
  *
- * 契约ID: COMPUTE-CUSTOMER-DATA-LOOP-v1
+ * @contract COMPUTE-CUSTOMER-DATA-LOOP-v1 {CustomerDataLoopInput} {value,confidence,evidence,degraded,warnings} {无反馈数据 → degraded:true, warnings:['无反馈数据 — feedbackUtilization或improvementCycle未配置']}
  * 模块: l4-capture/customer_data_loop
  * 消费边: CUSTOMER_DATA_LOOP
  * 输入: feedbackUtilization(0-1), improvementCycle(0-1)

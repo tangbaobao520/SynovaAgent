@@ -1,7 +1,7 @@
 /**
  * compute-assumption-triggered-reallocation.ts — 假设被打破→触发资本配置阀关闭 (X.1)
  *
- * 契约ID: COMPUTE-ASSUMPTION-TRIGGERED-REALLOCATION-v1
+ * @contract COMPUTE-ASSUMPTION-TRIGGERED-REALLOCATION-v1 {AssumptionTriggeredReallocationInput} {value,confidence,evidence,degraded,warnings} {无假设数据 → degraded:true, warnings:['无假设数据 — assumptionBreachLevel或reallocationTriggerThreshold未配置']}
  * 模块: cross-cycle/assumption_triggered_reallocation
  * 消费边: ASSUMPTION_TRIGGERED_REALLOCATION
  * 输入: assumptionBreachLevel(0-1), reallocationTriggerThreshold(0-1)

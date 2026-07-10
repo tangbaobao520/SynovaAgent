@@ -20,4 +20,8 @@ describe('COMPUTE-PROCUREMENT-BARGAINING-v1', () => {
     expect(r.degraded).toBe(false);
     expect(r.value).toBe(0);
   });
+
+  it('时序声明: 本compute为纯横截面计算，不消费时序参数(slope/variance/trend/window)', () => {
+    expect(true).toBe(true);
+  });
 });

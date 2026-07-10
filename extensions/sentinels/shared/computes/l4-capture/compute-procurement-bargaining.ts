@@ -1,7 +1,7 @@
 /**
  * compute-procurement-bargaining.ts — 采购时压低供应商价格 (4.5)
  *
- * 契约ID: COMPUTE-PROCUREMENT-BARGAINING-v1
+ * @contract COMPUTE-PROCUREMENT-BARGAINING-v1 {ProcurementBargainingInput} {value,confidence,evidence,degraded,warnings} {无采购数据 → degraded:true, warnings:['无采购数据 — bargainingPower或costReductionRatio未配置']}
  * 模块: l4-capture/procurement_bargaining
  * 消费边: PROCUREMENT_BARGAINING
  * 输入: bargainingPower(0-1), costReductionRatio(0-1)
