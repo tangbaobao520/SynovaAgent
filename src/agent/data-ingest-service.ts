@@ -26,6 +26,12 @@ interface FieldMappingConfig {
   mappings: FieldMapping[];
 }
 
+/** Financial JSON Schema 结构 */
+interface FinancialSchema {
+  requiredProps: string[];
+  optionalProps: Record<string, string>;
+}
+
 /** 数据写入结果 */
 export interface IngestResult {
   ok: boolean;
@@ -50,6 +56,19 @@ export function loadFieldMapping(name: string): FieldMappingConfig | null {
 }
 
 /**
+ * 加载 financial.json Schema，用于校验写入字段。
+ */
+export function loadFinancialSchema(): FinancialSchema {
+  const path = join(process.cwd(), 'extensions', 'ontology', 'outcome', 'financial.json');
+  try {
+    return JSON.parse(readFileSync(path, 'utf-8')) as FinancialSchema;
+  } catch (err: unknown) {
+    log.warn({ err }, 'financial.json Schema 加载失败');
+    return { requiredProps: [], optionalProps: {} };
+  }
+}
+
+/**
  * 将一行数据写入 GraphStore。
  * @param store - GraphStore 实例（需有 createNode 方法）
  * @param mapping - 字段映射配置
@@ -62,11 +81,17 @@ export async function ingestRow(
   mapping: FieldMappingConfig,
   row: Record<string, unknown>,
   graph = 'default',
+  validProps?: Set<string>,
 ): Promise<{ nodeId: string; errors: string[] }> {
   const props: Record<string, unknown> = { financialType: mapping.name };
   const errors: string[] = [];
 
   for (const m of mapping.mappings) {
+    // D4: 字段名校验 — 不在 financial Schema 中则跳过
+    if (validProps && !validProps.has(m.prop)) {
+      log.warn({ prop: m.prop }, '字段不在financial Schema中→跳过');
+      continue;
+    }
     const raw = row[m.externalField];
     if (raw === undefined || raw === null) {
       errors.push(`缺少字段: ${m.externalField}`);
@@ -98,11 +123,15 @@ export async function ingestBatch(
   rows: Array<Record<string, unknown>>,
   graph = 'default',
 ): Promise<IngestResult> {
+  // D4: 加载 financial.json Schema 做字段校验
+  const schema = loadFinancialSchema();
+  const validPropNames = new Set([...Object.keys(schema.optionalProps), ...schema.requiredProps]);
+
   let nodesCreated = 0;
   const allErrors: string[] = [];
 
   for (const row of rows) {
-    const { nodeId, errors } = await ingestRow(store, mapping, row, graph);
+    const { nodeId, errors } = await ingestRow(store, mapping, row, graph, validPropNames);
     if (nodeId) nodesCreated++;
     allErrors.push(...errors);
   }
