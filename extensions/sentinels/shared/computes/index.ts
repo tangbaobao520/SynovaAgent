@@ -43,3 +43,24 @@ export { computeDataCollection } from './l1-input/compute-data-collection';
 export { computeEquipmentAcquisition } from './l1-input/compute-equipment-acquisition';
 export { computeReputationAttraction } from './l1-input/compute-reputation-attraction';
 export { computeEfficiencyAttraction } from './l1-input/compute-efficiency-attraction';
+
+// l2-internal — I2-3c: 环节2 内部转化 新边compute
+export { computeCapitalAllocation } from './l2-internal/compute-capital-allocation';
+export { computeDecisionAuthority } from './l2-internal/compute-decision-authority';
+export { computeTalentDeployment } from './l2-internal/compute-talent-deployment';
+export { computeInformationFlow } from './l2-internal/compute-information-flow';
+export { computeIncentiveAlignment } from './l2-internal/compute-incentive-alignment';
+export { computeRuleConstraint } from './l2-internal/compute-rule-constraint';
+export { computeOrganizationalLearning } from './l2-internal/compute-organizational-learning';
+export { computeKnowledgeSharing } from './l2-internal/compute-knowledge-sharing';
+export { computeTrustFrictionReduction } from './l2-internal/compute-trust-friction-reduction';
+export { computeRoutineRigidity } from './l2-internal/compute-routine-rigidity';
+
+// l3-output — I2-3c: 环节3 价值输出 新边compute
+export { computeOperationalExecution } from './l3-output/compute-operational-execution';
+export { computeInnovationOutput } from './l3-output/compute-innovation-output';
+export { computeBrandBuilding } from './l3-output/compute-brand-building';
+export { computeDemandToSpec } from './l3-output/compute-demand-to-spec';
+export { computeServiceSupport } from './l3-output/compute-service-support';
+export { computeCrossFunctionalSynergy } from './l3-output/compute-cross-functional-synergy';
+export { computeTechInfrastructure } from './l3-output/compute-tech-infrastructure';
