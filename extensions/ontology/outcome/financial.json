@@ -23,7 +23,9 @@
     "current_assets": "number",
     "current_liabilities": "number",
     "receivables": "number",
-    "inventory": "number"
+    "inventory": "number",
+    "fixed_cost_ratio": "number",
+    "unit_margin": "number"
   },
   "description": "财务结果。企业经营的最终财务表现指标集合。"
 }
