@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering V4.4.4 — check-acceptance-ci.sh
+# Loop Engineering V4.4.5 — check-acceptance-ci.sh
 # 能力验收测试 CI 守卫。pre-commit 第 8 组调用。全部 <1s。
 #
 # Anthropic 原则 2: 先设计验证标准。验收测试存在于文件系统 ≠ 验证通过。

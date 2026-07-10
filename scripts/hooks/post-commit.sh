@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# hooks/post-commit.sh — V4.4.4 提交后处理
+# hooks/post-commit.sh — V4.4.5 提交后处理
 #
 # 被 .git/hooks/post-commit 调用 (通过 core.hooksPath 或委托脚本)。
 # 所有 session 共用同一份，修改即同步。
@@ -23,7 +23,7 @@ else
   echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) detected-bypass no-precommit-marker" >> "$ROOT/.claude/bypass.log"
 fi
 
-# V4.4.4: STATE.md 已移除。证据链由 git log 提供。
+# V4.4.5: STATE.md 已移除。证据链由 git log 提供。
 # 不再写入 STATE.md。
 
 # ═══ 决策流程 ═══

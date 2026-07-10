@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# install-hooks.sh — V4.4.4 Git Hooks 安装脚本
+# install-hooks.sh — V4.4.5 Git Hooks 安装脚本
 #
 # 用法: bash scripts/install-hooks.sh
 #
@@ -11,7 +11,7 @@
 set -euo pipefail
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 
-echo "=== SynovaAgent V4.4.4 Git Hooks 安装 ==="
+echo "=== SynovaAgent V4.4.5 Git Hooks 安装 ==="
 mkdir -p "$ROOT/scripts/hooks"
 
 install_hook() {

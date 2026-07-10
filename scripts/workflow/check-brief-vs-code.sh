@@ -1,6 +1,6 @@
  #!/bin/bash
  # ============================================================
- # Loop Engineering V4.4.4 — check-brief-vs-code.sh
+ # Loop Engineering V4.4.5 — check-brief-vs-code.sh
  # Task Brief 声明 vs 实际代码变更 一致性物理验证
  #
  # 设计哲学:

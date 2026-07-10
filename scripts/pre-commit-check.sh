@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering V4.4.4 — pre-commit 8 组硬阻断 (全部 <10s) + 免疫系统
+# Loop Engineering V4.4.5 — pre-commit 8 组硬阻断 (全部 <10s) + 免疫系统
 #
 # v3.6 → v3.8 核心变化 (2026-06-23):
 #   + plan.json 支持: 分阶段任务可 deferred wiring/test_pairing 检查
@@ -131,7 +131,7 @@ NEW_IMPL=$(git diff --cached --name-only --diff-filter=A 2>/dev/null | grep -E "
 
 echo ""
 echo "═══════════════════════════════════════════════════════════"
-echo "  Loop Engineering V4.4.4 — pre-commit (8 组 + 免疫 + plan-integrity)"
+echo "  Loop Engineering V4.4.5 — pre-commit (8 组 + 免疫 + plan-integrity)"
 echo "═══════════════════════════════════════════════════════════"
 echo ""
 
@@ -168,7 +168,7 @@ fi
 bash "$ROOT/scripts/check-hardcoded.sh" 2>/dev/null || true
 hard_check "硬编码业务数据/类型 (禁止硬编码部门名/可扩展实体列表)" "${HARDCODE_DATA:-}"
 
-# V4.4.4: 旧适配器废弃映射检查 (不阻断)
+# V4.4.5: 旧适配器废弃映射检查 (不阻断)
 bash "$ROOT/scripts/check-deprecated-mapping.sh"
 
 # ═══════════════════════════════════════════════════════════════════
@@ -358,7 +358,7 @@ if [ -n "$STAGED_SRC" ]; then
 fi
 hard_check "架构边界: 禁止跨层引用 (铁律 39)" "${CROSS_LAYER:-}"
 
-# 5b. 桥接文件欺诈 + 包级 engine-core 引用 + shell 包检测 (铁律 46 — V4.4.4 全面加固)
+# 5b. 桥接文件欺诈 + 包级 engine-core 引用 + shell 包检测 (铁律 46 — V4.4.5 全面加固)
 BRIDGE_ALLOWED="src/adapters/engine-core-adapter.ts|src/init/engine-context.ts|src/types/engine-core-types.ts|src/agent/orchestrator-adapter.ts|src/l4/graph-bridge.ts|src/l4/entity-resolver-l2.ts|src/l4/engine-graph-store.ts|src/l4/diagnosis-graph-query.ts|src/sentinel/compute/"
 BRIDGE_FAIL=""
 
@@ -459,7 +459,7 @@ fi
 hard_check "Task Brief: 编码变更须有今日 task brief" "${TASK_BRIEF_MISSING:-}"
 hard_check "Task Brief: 6 核心字段必须填写 (Q0/Q1/Q2/Q3/架构层/Done)" "${TASK_BRIEF_EMPTY:-}"
 
-# V4.4.4: 时间戳顺序检查 — PreToolUse 发现 brief 未填就写代码时记录证据到 /tmp/
+# V4.4.5: 时间戳顺序检查 — PreToolUse 发现 brief 未填就写代码时记录证据到 /tmp/
 # 此文件在 git 之外，不能被 git checkout 抹掉。必须显式 rm 才能解除阻断。
 BEFORE_BRIEF_EVI="/tmp/.synova-before-brief"
 BEFORE_BRIEF_MSG=""
@@ -481,7 +481,7 @@ bash "$ROOT/scripts/check-verifiable-done.sh"
 bash "$ROOT/scripts/check-q0c-tracking.sh"
 [ $? -ne 0 ] && HARD_FAIL=$((HARD_FAIL + 1))
 
-# V4.4.4 (本体迁移): 禁止旧 SOG 枚举引用潜入 src/
+# V4.4.5 (本体迁移): 禁止旧 SOG 枚举引用潜入 src/
 SOG_NODE_REFS=$(grep -rn "SOGNodeType\." src/ --include="*.ts" 2>/dev/null | grep -v "node_modules" | head -10 || true)
 if [ -n "$SOG_NODE_REFS" ]; then
   echo -e "${RED}  ❌ 旧 SOGNodeType 枚举仍被引用 — 本体迁移未完成${RESET}"

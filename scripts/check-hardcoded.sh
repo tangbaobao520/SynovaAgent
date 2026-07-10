@@ -1,5 +1,5 @@
 #!/bin/bash
-# Loop Engineering V4.4.4 — check-hardcoded.sh
+# Loop Engineering V4.4.5 — check-hardcoded.sh
 # 检测阻碍无限扩展的硬编码模式。pre-commit 第10项。全 <1s。
 set -euo pipefail
 

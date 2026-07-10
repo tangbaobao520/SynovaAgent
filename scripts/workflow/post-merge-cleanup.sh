@@ -1,5 +1,5 @@
  #!/bin/bash
- # Loop Engineering V4.4.4 — Post-Merge Cleanup
+ # Loop Engineering V4.4.5 — Post-Merge Cleanup
  #
  # 在 git merge 到 main 后运行。扫描并报告:
  #   1. 残留 TODO/FIXME (无对应 Issue 编号的)
@@ -23,7 +23,7 @@
  ISSUES=0
  
  echo ""
- echo -e "${CYAN}Loop Engineering V4.4.4 — Post-Merge Cleanup${RESET}"
+ echo -e "${CYAN}Loop Engineering V4.4.5 — Post-Merge Cleanup${RESET}"
  echo -e "${CYAN}模式: $( $REPORT_ONLY && echo 'L1 仅报告' || echo 'L2 自动清理' )${RESET}"
  echo ""
  

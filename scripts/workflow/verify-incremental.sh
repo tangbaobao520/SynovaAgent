@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# verify-incremental.sh — PostToolUse 分层增量验证 (Loop Engineering V4.4.4)
+# verify-incremental.sh — PostToolUse 分层增量验证 (Loop Engineering V4.4.5)
 #
 # L1: oxlint 语法检查 (< 1s, 改动文件)
 # L2: tsc --noEmit --incremental (利用 .tsbuildinfo 缓存, 5-15s)

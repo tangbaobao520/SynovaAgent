@@ -1,7 +1,7 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering V4.4.4 — check-plan-integrity.sh
-# 统一验证 plan.json 的 Q1/Q2 产出格式。不执行 verify 命令（V4.4.4 移除执行）。
+# Loop Engineering V4.4.5 — check-plan-integrity.sh
+# 统一验证 plan.json 的 Q1/Q2 产出格式。不执行 verify 命令（V4.4.5 移除执行）。
 # pre-commit 组 6 调用。全部 <1s。
 #
 # Anthropic 原则 5: 物理强制，零 AI 自律。
@@ -159,7 +159,7 @@ if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
   fi
 fi
 
-# ═══ 7. Done verify 格式检查（V4.4.4: 仅检查存在性，不执行命令）═══
+# ═══ 7. Done verify 格式检查（V4.4.5: 仅检查存在性，不执行命令）═══
 if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
   DONE_SEC=$(awk '/^## Done 标准/{found=1; next} found && /^## /{exit} found' "$BRIEF" 2>/dev/null)
   VERIFY_COUNT=$(echo "$DONE_SEC" | grep -cE '^\s*- \[x\].*verify:|^\s+verify:' 2>/dev/null || echo 0)

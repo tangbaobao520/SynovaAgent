@@ -1,12 +1,12 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# check-bridge-files.sh — 桥接文件欺诈检测 (铁律 46, V4.4.4 全面加固)
+# check-bridge-files.sh — 桥接文件欺诈检测 (铁律 46, V4.4.5 全面加固)
 #
 # 检测 src/ + packages/ 下所有通过 import 引用 engine-core 的文件。
 # 涵盖三种绕过模式:
 #   1. 包名路径引用 (packages/engine-core/) — 旧检测
-#   2. 相对路径引用 (../../engine-core/) — V4.4.4 新增
-#   3. 壳包: packages/*/ 下只有 index.ts 且全部是 export from engine-core — V4.4.4 新增
+#   2. 相对路径引用 (../../engine-core/) — V4.4.5 新增
+#   3. 壳包: packages/*/ 下只有 index.ts 且全部是 export from engine-core — V4.4.5 新增
 #
 # exit 0 = 无欺诈桥接
 # exit 1 = 发现欺诈桥接文件
@@ -84,7 +84,7 @@ done
 
 if [ -n "$VIOLATIONS" ]; then
   echo -e "${RED}════════════════════════════════════════════════════════${RESET}"
-  echo -e "${RED}  铁律 46 违规: 桥接文件欺诈检测 (V4.4.4)${RESET}"
+  echo -e "${RED}  铁律 46 违规: 桥接文件欺诈检测 (V4.4.5)${RESET}"
   echo -e "${RED}════════════════════════════════════════════════════════${RESET}"
   echo ""
   echo -e "${RED}以下文件直接/间接引用 engine-core:${RESET}"

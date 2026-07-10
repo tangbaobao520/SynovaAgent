@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# check-brief-vs-code.sh — Task Brief vs 代码一致性验证 (V4.4.4)
+# check-brief-vs-code.sh — Task Brief vs 代码一致性验证 (V4.4.5)
 #
 # CI checker-review job 中运行。验证 task brief 中 Q0/Q1/Q2/Q3 的声明
 # 与实际代码改动物理匹配。可物理验证的就不要交给 agent 自律。
@@ -25,7 +25,7 @@ TODAY=$(date +%Y-%m-%d)
 echo -e "${CYAN}[check-brief-vs-code] 查找今日 brief (${TODAY})${RESET}"
 BRIEF=$(find "$ROOT/.claude/task-briefs/" -type f -name "${TODAY}*" 2>/dev/null | xargs ls -t 2>/dev/null | head -1)
 
-# 也检查 CLAUDE.md 中是否引用 V4.4.4
+# 也检查 CLAUDE.md 中是否引用 V4.4.5
 FLOW_CONSTRAINT=$(grep "流程约束" "$ROOT/CLAUDE.md" 2>/dev/null | grep -oP 'V[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)
 echo -e "  流程约束: ${FLOW_CONSTRAINT:-unknown}"
 
