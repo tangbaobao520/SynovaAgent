@@ -25,6 +25,7 @@ export const apiCoverageSentinel = {
     const findings: SentinelFinding[] = [];
 
     try {
+      // @deprecated — 语义迁移由D15处理
       if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (!r.nodes[0]) return []; }
       // 1. 从本体层读取 TOOL 节点
       const toolNodes = store.queryNodes('Tool', { teamId });

@@ -12,6 +12,7 @@ export const internalTransactionCostSentinel = {
     let events: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
     let usedTraversal = false;
     try {
+      // @deprecated — 语义迁移由D15处理
       try { if (traversal) { const r = traversal.traverse([teamId], ['FUNDS', 'DEPLOYS', 'SIGNAL_TRANSMITS']); if (r.nodes[0]) { fin = r.nodes; teams = r.nodes.filter(n => n.type === 'TEAM'); events = r.nodes.filter(n => n.type === 'EVENT'); usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
       if (!usedTraversal) { fin = store.queryNodes('Financial', { teamId }); teams = store.queryNodes('Team', { teamId }); events = store.queryNodes('Event', { teamId }); }
       const totalCost = fin.reduce((s, n) => s + (Number(n.props.totalCost) || Number(n.props.cost) || 0), 0);

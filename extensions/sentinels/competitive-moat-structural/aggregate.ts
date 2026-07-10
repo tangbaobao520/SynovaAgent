@@ -16,7 +16,8 @@ export const competitiveMoatStructuralSentinel = {
     let allNodes: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
     let usedTraversal = false;
     try {
-      try { if (traversal) { const r = traversal.traverse([teamId], ['FUNDS', 'OPERATIONAL_EXECUTION', 'DEPLOYS', 'SUBSTITUTES', 'LOCKS_IN']); if (r.nodes[0]) { finNodes = r.nodes; allNodes = r.nodes; usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
+      // @deprecated — 语义迁移由D15处理
+      try { if (traversal) { const r = traversal.traverse([teamId], ['FUNDS', 'OPERATIONAL_EXECUTION', 'DEPLOYS', 'LOCKS_IN']); if (r.nodes[0]) { finNodes = r.nodes; allNodes = r.nodes; usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
       if (!usedTraversal) { finNodes = store.queryNodes('Financial', { teamId }); allNodes = store.queryNodes('ALL', { teamId }); }
       const financials = finNodes.map(n => ({ revenue: Number(n.props.revenue) || 0, totalAssets: Number(n.props.totalAssets) || 0 }));
       const se = computeScaleEconomy(financials);
@@ -45,18 +46,10 @@ export const competitiveMoatStructuralSentinel = {
       const incumbentPrice = marketData.count > 0 ? marketData.price / marketData.count : 100;
       const slm = computeCounterPositioningSlm({ incumbentMargin, incumbentPrice, ourPrice, ourRevenue, incumbentRevenue: 0 });
       const cr = computeCorneredResource(allNodes);
-      // T7b: 从traversal结果中提取SUBSTITUTES和LOCKS_IN边属性
-      let subScore = 0, lockScore = 0;
+      // T7b: 从traversal结果中提取LOCKS_IN边属性（替代威胁已被COMPETITIVE_POSITIONING吸收）
+      let lockScore = 0;
       if (usedTraversal && traversal) {
-        try {
-          const subResult = traversal.traverse([teamId], ['SUBSTITUTES']);
-          const subEdges = subResult.edges;
-          if (subEdges.length > 0) {
-            const avgSubRate = subEdges.reduce((s, e) => s + (Number(e.props.substitution_rate) || 0), 0) / subEdges.length;
-            subScore = 1 - Math.min(avgSubRate, 1); // 替代率低 → 护城河强
-          } else { subScore = 0.5; } // 无替代数据 → 中性
-        } catch (_e) { subScore = 0.5; }
-        try {
+try {
           const lockResult = traversal.traverse([teamId], ['LOCKS_IN']);
           const lockEdges = lockResult.edges;
           if (lockEdges.length > 0) {
@@ -64,11 +57,11 @@ export const competitiveMoatStructuralSentinel = {
             lockScore = Math.min(avgLock, 1); // 锁定强 → 护城河强
           } else { lockScore = 0.5; }
         } catch (_e) { lockScore = 0.5; }
-      } else { subScore = 0.5; lockScore = 0.5; }
-      const score = (se.score + ne.score + sc.score + pp.score + (slm.applicable ? slm.slm : 0) + cr.score + subScore + lockScore) / 8;
-      const scores = `规模${(se.score*100).toFixed(0)}% 网络${(ne.score*100).toFixed(0)}% 切换${(sc.score*100).toFixed(0)}% 流程${(pp.score*100).toFixed(0)}% SLM${slm.applicable ? (slm.slm*100).toFixed(0)+'%' : 'N/A'} 资源${(cr.score*100).toFixed(0)}% 替代${(subScore*100).toFixed(0)}% 锁定${(lockScore*100).toFixed(0)}%`;
+      } else { lockScore = 0.5; }
+      const score = (se.score + ne.score + sc.score + pp.score + (slm.applicable ? slm.slm : 0) + cr.score + lockScore) / 7;
+      const scores = `规模${(se.score*100).toFixed(0)}% 网络${(ne.score*100).toFixed(0)}% 切换${(sc.score*100).toFixed(0)}% 流程${(pp.score*100).toFixed(0)}% SLM${slm.applicable ? (slm.slm*100).toFixed(0)+'%' : 'N/A'} 资源${(cr.score*100).toFixed(0)}% 锁定${(lockScore*100).toFixed(0)}%`;
       log.debug({ score }, '护城河强度计算完成');
-      if (score < 0.3) return [{ id: `i3-crit-${now.getTime()}`, severity: 'critical', title: `护城河结构性弱 (${(score*100).toFixed(0)}%)`, description: '六力聚合得分低于 30%。', evidence: [`总分: ${(score*100).toFixed(0)}%`, scores], suggestion: '系统性构建竞争壁垒。', detectedAt: checkedAt }];
+      if (score < 0.3) return [{ id: `i3-crit-${now.getTime()}`, severity: 'critical', title: `护城河结构性弱 (${(score*100).toFixed(0)}%)`, description: '七力聚合得分低于 30%。', evidence: [`总分: ${(score*100).toFixed(0)}%`, scores], suggestion: '系统性构建竞争壁垒。', detectedAt: checkedAt }];
       if (score < 0.5) return [{ id: `i3-warn-${now.getTime()}`, severity: 'warning', title: `护城河结构偏弱 (${(score*100).toFixed(0)}%)`, description: '壁垒不够坚实。', evidence: [`总分: ${(score*100).toFixed(0)}%`, scores], suggestion: '识别最弱的维度并针对性强化。', detectedAt: checkedAt }];
       return [];
     } catch (err: unknown) { log.error({ err }, '[moat-structural] 失败'); return [{ id: `i3-error-${now.getTime()}`, severity: 'warning', title: '检测异常', description: `${(err as Error)?.message || String(err)}`, evidence: [], suggestion: '检查数据源。', detectedAt: checkedAt }]; }

@@ -20,7 +20,7 @@ export const incentiveAlignmentSentinel = {
     let usedTraversal = false;
 
     try {
-      try { if (traversal) { const r = traversal.traverse([teamId], ['INFORMS', 'SIGNAL_TRANSMITS']); if (r.nodes[0]) { personNodes = r.nodes.filter(n => n.type === 'PERSON'); eventNodes = r.nodes.filter(n => n.type === 'EVENT'); usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
+      try { if (traversal) { const r = traversal.traverse([teamId], ['INFORMATION_FLOW', 'SIGNAL_TRANSMITS']); if (r.nodes[0]) { personNodes = r.nodes.filter(n => n.type === 'PERSON'); eventNodes = r.nodes.filter(n => n.type === 'EVENT'); usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
       if (!usedTraversal) { personNodes = store.queryNodes('Person', { teamId }); eventNodes = store.queryNodes('Event', { teamId }); }
 
       // 激励数据从 Person 节点的 incentive_type/compensation_model 字段读取

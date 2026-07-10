@@ -9,6 +9,7 @@ export const competitiveMoatPerceptualSentinel = {
   async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date(); const checkedAt = now.toISOString();
     try {
+      // @deprecated — 语义迁移由D15处理
       if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (!r.nodes[0]) return []; }
       const toolNodes = store.queryNodes('Tool', { teamId });
       const clientNodes = store.queryNodes('Client', { teamId });

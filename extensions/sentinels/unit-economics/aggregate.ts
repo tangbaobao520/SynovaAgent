@@ -39,7 +39,9 @@ export const unitEconomicsSentinel = {
       let clientNodes: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
       try {
         if (traversal) {
+          // @deprecated — 语义迁移由D15处理
           const finResult = traversal.traverse([teamId], ['FUNDS']);
+          // @deprecated — 语义迁移由D15处理
           const clientResult = traversal.traverse([teamId], ['DEPLOYS']);
           if (finResult.nodes[0] || clientResult.nodes[0]) {
             finNodes = finResult.nodes;

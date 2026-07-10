@@ -8,6 +8,7 @@ export const makeOrBuySentinel = {
   async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date(); const checkedAt = now.toISOString();
     try {
+      // @deprecated — 语义迁移由D15处理
       if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (!r.nodes[0]) return []; }
       const personNodes = store.queryNodes('Person', { teamId });
       // 核心能力从 Person 节点的 role/dept/skills 提取

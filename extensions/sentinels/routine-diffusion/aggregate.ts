@@ -20,6 +20,7 @@ export const routineDiffusionSentinel = {
     let allNodeData: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
     let usedTraversal = false;
     try {
+      // @deprecated — 语义迁移由D15处理
       if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (r.nodes[0]) { allNodeData = r.nodes; usedTraversal = true; } }
     } catch (err: unknown) { log.warn({ err, teamId }, 'graph traversal failed - fallback'); }
       const processNodes = store.queryNodes('Process', { teamId });

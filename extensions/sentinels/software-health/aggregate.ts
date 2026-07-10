@@ -33,6 +33,7 @@ export const softwareHealthSentinel = {
       // V4.4.0: 优先使用图遍历
       try {
         if (traversal) {
+          // @deprecated — 语义迁移由D15处理
           const result = traversal.traverse([teamId], ['DEPLOYS']);
           if (result.nodes[0]) {
             allTools = result.nodes.filter(n => n.type === 'TOOL').map(n => ({

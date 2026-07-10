@@ -19,7 +19,7 @@ export const adaptationVelocitySentinel = {
     let usedTraversal = false;
 
     try {
-      try { if (traversal) { const r = traversal.traverse([teamId], ['SIGNAL_TRANSMITS', 'INFORMS']); if (r.nodes[0]) { eventNodes = r.nodes.filter(n => n.type === 'EVENT'); usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
+      try { if (traversal) { const r = traversal.traverse([teamId], ['SIGNAL_TRANSMITS', 'INFORMATION_FLOW']); if (r.nodes[0]) { eventNodes = r.nodes.filter(n => n.type === 'EVENT'); usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
       if (!usedTraversal) { eventNodes = store.queryNodes('Event', { teamId }); }
 
       const events = eventNodes.map(n => ({

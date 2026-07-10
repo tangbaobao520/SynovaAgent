@@ -30,6 +30,7 @@ export const capitalEfficiencySentinel = {
     try {
       try {
         if (traversal) {
+          // @deprecated — 语义迁移由D15处理
           const result = traversal.traverse([teamId], ['FUNDS', 'OPERATIONAL_EXECUTION']);
           if (result.nodes[0]) { finNodes = result.nodes; usedTraversal = true; }
         }

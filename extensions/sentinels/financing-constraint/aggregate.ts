@@ -17,6 +17,7 @@ export const financingConstraintSentinel = {
     let finNodes: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
     let usedTraversal = false;
     try {
+      // @deprecated — 语义迁移由D15处理
       try { if (traversal) { const r = traversal.traverse([teamId], ['FUNDS']); if (r.nodes[0]) { finNodes = r.nodes; usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
       if (!usedTraversal) { finNodes = store.queryNodes('Financial', { teamId }); }
       const financials = finNodes.map(n => ({

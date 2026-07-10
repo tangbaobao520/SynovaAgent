@@ -20,7 +20,9 @@ export const revenueHealthSentinel = {
       // 图遍历或旧路径获取节点
       try {
         if (traversal) {
+          // @deprecated — 语义迁移由D15处理
           const finR = traversal.traverse([teamId], ['FUNDS', 'OPERATIONAL_EXECUTION']);
+          // @deprecated — 语义迁移由D15处理
           const clientR = traversal.traverse([teamId], ['DEPLOYS']);
           if (finR.nodes[0] || clientR.nodes[0]) {
             revenueNodes = finR.nodes.filter(n => n.props.financialType === 'revenue' || n.props.total_revenue);

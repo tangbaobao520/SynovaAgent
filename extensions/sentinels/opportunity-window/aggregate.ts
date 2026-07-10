@@ -21,6 +21,7 @@ export const opportunityWindowSentinel = {
     const findings: SentinelFinding[] = [];
 
     try {
+      // @deprecated — 语义迁移由D15处理
       if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (!r.nodes[0]) return []; }
       const eventNodes = store.queryNodes('Event', { teamId });
       const toolNodes = store.queryNodes('Tool', { teamId });

@@ -20,6 +20,7 @@ export const knowledgeAccessibilitySentinel = {
     let usedTraversal = false;
 
     try {
+      // @deprecated — 语义迁移由D15处理
       try { if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS', 'TECH_INFRASTRUCTURE']); if (r.nodes[0]) { docNodes = r.nodes.filter(n => n.type === 'DOCUMENT'); personNodes = r.nodes.filter(n => n.type === 'PERSON'); usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
       if (!usedTraversal) { docNodes = store.queryNodes('Document', { teamId }); personNodes = store.queryNodes('Person', { teamId }); }
 

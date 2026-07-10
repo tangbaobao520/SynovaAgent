@@ -8,6 +8,7 @@ export const nicheSqueezeSentinel = {
   async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date(); const checkedAt = now.toISOString();
     try {
+      // @deprecated — 语义迁移由D15处理
       if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (!r.nodes[0]) return []; }
       const nodes = [...store.queryNodes('Client', { teamId }), ...store.queryNodes('Agent', { teamId })];
       const competitors = nodes.map(n => ({ name: (n.props.name as string) || n.id, revenue: Number(n.props.revenue) || Number(n.props.amount) || 0 }));

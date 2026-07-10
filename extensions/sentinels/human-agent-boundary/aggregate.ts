@@ -8,6 +8,7 @@ export const HumanAgentBoundarySentinel = {
   async check(s: GSR, tid: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date(); const ca = now.toISOString();
     try {
+      // @deprecated — 语义迁移由D15处理
       if (traversal) { const r = traversal.traverse([tid], ['DEPLOYS']); if (!r.nodes[0]) return []; }
       const tools = s.queryNodes("Tool",{tid});
       const processes = s.queryNodes("Process",{tid});

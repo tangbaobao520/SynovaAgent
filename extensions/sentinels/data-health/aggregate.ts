@@ -26,6 +26,7 @@ export const dataHealthSentinel = {
     const findings: SentinelFinding[] = [];
 
     try {
+      // @deprecated — 语义迁移由D15处理
       if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (!r.nodes[0]) return []; }
       // 1. 读取多种合法实体类型（数据就绪度：从 Tool/Process/Document 综合评估）
       const allToolNodes = store.queryNodes('Tool', { teamId });

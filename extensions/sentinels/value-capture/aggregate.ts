@@ -8,6 +8,7 @@ export const valueCaptureSentinel = {
   async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
     const now = new Date(); const checkedAt = now.toISOString();
     try {
+      // @deprecated — 语义迁移由D15处理
       if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (!r.nodes[0]) return []; }
       const finNodes = store.queryNodes('Financial', { teamId });
       const financials = finNodes.map(n => ({ revenue: Number(n.props.revenue) || 0, cost: Number(n.props.cost) || 0, netProfit: Number(n.props.netProfit) || Number(n.props.profit) || 0, previousRevenue: Number(n.props.previousRevenue) || 0 }));
