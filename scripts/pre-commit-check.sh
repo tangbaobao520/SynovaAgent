@@ -433,14 +433,20 @@ if [ -n "$STAGED_SRC" ]; then
   if [ -z "$BRIEF" ]; then
     TASK_BRIEF_MISSING="今日无 task brief。请先运行: bash scripts/workflow/task-start.sh \"任务描述\""
   else
-    # v3.8: 6 核心字段 (新增 Q0 文件审计)
-    for q in "Q0:" "Q1:" "Q2:" "Q3:" "本任务在哪一层" "Done 标准"; do
-      SECTION=$(awk "/^## $q/{found=1; next} /^## /{if(found) exit} found" "$BRIEF" 2>/dev/null)
+    # v3.9: 兼容 ## Q0: 和 ## Q0 定位: 两种标题格式
+    for q in "Q0" "Q1" "Q2" "Q3"; do
+      SECTION=$(awk "/^## ${q}(:| )/{found=1; next} /^## /{if(found) exit} found" "$BRIEF" 2>/dev/null)
       FILLED=$(echo "$SECTION" | grep -v "^<!--\|^$" | tr -d "[:space:]" | head -1)
       if [ -z "$FILLED" ] || [ ${#FILLED} -lt 3 ]; then
-        TASK_BRIEF_EMPTY="${TASK_BRIEF_EMPTY}  $q 未填写\n"
+        TASK_BRIEF_EMPTY="${TASK_BRIEF_EMPTY}  ${q}: 未填写\n"
       fi
     done
+    # 架构层: 兼容 ## 本任务在哪一层 和 ## 架构层 两种写法
+    LAYER_SECTION=$(awk '/^## (本任务在哪一层|架构层)(:| )/{found=1; next} /^## /{if(found) exit} found' "$BRIEF" 2>/dev/null)
+    LAYER_FILLED=$(echo "$LAYER_SECTION" | grep -v "^<!--\|^$" | tr -d "[:space:]" | head -1)
+    if [ -z "$LAYER_FILLED" ] || [ ${#LAYER_FILLED} -lt 3 ]; then
+      TASK_BRIEF_EMPTY="${TASK_BRIEF_EMPTY}  架构层: 未填写\n"
+    fi
     # Done 标准专项: 至少一条完成标准
     DONE_SECTION=$(awk "/^## Done 标准/{found=1; next} /^## /{if(found) exit} found" "$BRIEF" 2>/dev/null)
     DONE_CHECKED=$(echo "$DONE_SECTION" | grep -cE '^\s*- \[x\]' || true)

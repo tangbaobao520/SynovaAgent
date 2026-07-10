@@ -31,7 +31,8 @@ if [ -z "$BRIEF" ]; then
 fi
 
 # 提取 Q0 段落到下一个 ## 标题
-Q0_SECTION=$(awk '/^## Q0:/{found=1; next} /^## /{if(found) exit} found' "$BRIEF" 2>/dev/null)
+# v3.9: 兼容 ## Q0: 和 ## Q0 定位: 两种标题格式
+Q0_SECTION=$(awk '/^## Q0(:| )/{found=1; next} /^## /{if(found) exit} found' "$BRIEF" 2>/dev/null)
 
 # 去掉 HTML 注释和空行
 Q0_FILLED=$(echo "$Q0_SECTION" | grep -v "^<!--\|^$" | tr -d "[:space:]" | head -1)
