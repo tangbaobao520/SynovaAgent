@@ -14,6 +14,7 @@ import type {
   LLMProvider, LLMMessage, ChatOptions, ChatResult,
   StreamCallback, HealthCheckResult, ProviderConfig, ChatCompletionResponse,
 } from './types';
+import { CircuitBreaker } from '../llm/circuit-breaker';
 
 // ═══ 子类需实现的配置接口 ═══
 
@@ -48,9 +49,15 @@ export function createOpenAICompatibleProvider(cfg: ProviderAdapterConfig): LLMP
   const modelsPath = cfg.modelsPath ?? '/models';
   const healthTimeout = cfg.healthTimeoutMs ?? 10_000;
 
+  // 熔断器实例 — D5: 统一LLM调用保护 (threshold=5, cooldown=30s)
+  const breaker = new CircuitBreaker({ threshold: 5, cooldownMs: 30_000 });
+
   /** 共享 HTTP POST 请求 — 消除 24 行重复 (块 B) */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async function makeRequest(messages: LLMMessage[] | LLMMessage[], opts?: ChatOptions, stream = false) {
+    if (breaker.isOpen()) {
+      throw new Error(`${cfg.name} CircuitBreaker OPEN — too many failures`);
+    }
     if (cfg.apiKey !== undefined && !cfg.apiKey) {
       throw new Error(`${cfg.name} API Key 未配置`);
     }
@@ -130,14 +137,20 @@ export function createOpenAICompatibleProvider(cfg: ProviderAdapterConfig): LLMP
     baseUrl,
 
     async chat(messages, opts) {
-      const msgs = cfg.beforeSend ? cfg.beforeSend(messages) : messages;
-      const res = await makeRequest(msgs, opts);
-      await checkResponse(res, 'API 错误');
-      const data = await res.json() as ChatCompletionResponse;
-      const content = data?.choices?.[0]?.message?.content;
-      if (!content) throw new Error(`${cfg.name} 返回缺少 content`);
-      const extra = cfg.afterResponse ? cfg.afterResponse(data, opts) : {};
-      return { content, model: data.model || model, ...extra };
+      try {
+        const msgs = cfg.beforeSend ? cfg.beforeSend(messages) : messages;
+        const res = await makeRequest(msgs, opts);
+        await checkResponse(res, 'API 错误');
+        const data = await res.json() as ChatCompletionResponse;
+        const content = data?.choices?.[0]?.message?.content;
+        if (!content) throw new Error(`${cfg.name} 返回缺少 content`);
+        const extra = cfg.afterResponse ? cfg.afterResponse(data, opts) : {};
+        breaker.recordSuccess();
+        return { content, model: data.model || model, ...extra };
+      } catch (err) {
+        breaker.recordFailure();
+        throw err;
+      }
     },
 
     async stream(messages, cb, opts) {
@@ -145,12 +158,15 @@ export function createOpenAICompatibleProvider(cfg: ProviderAdapterConfig): LLMP
         const res = await makeRequest(messages, opts, true);
         if (!res.ok) {
           await checkResponse(res, '流式错误').catch((err: Error) => { cb.onError?.(err); });
+          breaker.recordFailure();
           return;
         }
         await handleStream(res, cb, opts?.model || model);
+        breaker.recordSuccess();
       } catch (err: unknown) {
         const e = err instanceof Error ? err : new Error(String(err));
         cb.onError?.(cfg.onError ? cfg.onError(e, 'stream') : e);
+        breaker.recordFailure();
       }
     },
 
