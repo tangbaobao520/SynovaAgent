@@ -1,4 +1,4 @@
-/**
+﻿/**
  * sentinel/runner.ts — SentinelRunner 调度框架 (P1-4)
  *
  * 桥接 Sentinel 接口与 CronScheduler:
@@ -49,13 +49,12 @@ function findSignalRoute(sentinelId: string): SignalRouteResult | undefined {
   if (!sentinel) return undefined;
 
   // 1. 哨兵自身配置了 route（无限扩展：加新哨兵时在 config 中声明路由）
-  const route = (sentinel.config as unknown as Record<string, unknown>).route as { experts?: string[]; crossValidateAt?: string } | undefined;
+  const route = (sentinel.config as { route?: { experts?: string[]; crossValidateAt?: string } }).route;
   if (route?.experts?.length) return { experts: route.experts, crossValidateAt: route.crossValidateAt || 'high' };
 
   // 2. 从 layer + priority 推导默认路由（技术方案 §7）
   // 优先使用 manifest 中的 layer 字段，fallback 到旧 category
-  const config = sentinel.config as unknown as Record<string, unknown>;
-  const layer = (config.layer as string) || sentinel.config.category;
+  const layer: string = sentinel.config.layer || sentinel.config.category;
 
   const LAYER_EXPERTS: Record<string, string[]> = {
     environment: ['strategy'],
@@ -93,7 +92,7 @@ function findSignalRoute(sentinelId: string): SignalRouteResult | undefined {
 
   const crossValidateAt = sentinel.config.priority === 'P0' ? 'emergency' : sentinel.config.priority === 'P1' ? 'high' : 'medium';
   // 读取 auxiliaryExperts（manifest 声明的辅助专家）
-  const auxiliaryExperts = (config.auxiliaryExperts as string[]) || undefined;
+  const auxiliaryExperts = sentinel.config.auxiliaryExperts || undefined;
   return { experts, crossValidateAt, auxiliaryExperts };
 }
 
@@ -269,7 +268,7 @@ export class SentinelRunner {
           description: signal.title || signal.sources[0]?.finding?.description || '',
           priority: signal.severity === 'critical' ? 'P0' : 'P1',
           targetSystem: 'electron',
-          metadata: { severity: signal.severity, sentinelId, signalId: signal.id } as Record<string, unknown>,
+          metadata: { severity: signal.severity, sentinelId, signalId: signal.id },
           createdAt: new Date().toISOString(),
         });
         this.markNotificationSent(signal);
@@ -387,7 +386,7 @@ export class SentinelRunner {
     if (severity === 'emergency' || severity === 'critical') {
       try {
         const ticketId = `ticket-${signalId}-${expertType}`;
-        const r = report as Record<string, unknown>;
+        const r = report as { suggestedActions?: string[] };
         (this.db as { prepare(sql: string): { run(...args: unknown[]): void } }).prepare(
           `INSERT OR REPLACE INTO sentinel_tickets (id, signal_id, severity, expert_type, diagnosis, suggested_actions, status, created_at)
            VALUES (?, ?, ?, ?, ?, ?, 'open', datetime('now'))`
@@ -585,14 +584,14 @@ export class SentinelRunner {
     const startTime = Date.now();
     try {
       // V4.2.9: 构造上下文 — 包装 raw SQLite 为 GraphStore 供哨兵 queryNodes()
-      let graphCtx: Record<string, unknown>;
+      let graphCtx: unknown;
       if (typeof this.db === 'object' && this.db !== null && 'queryNodes' in this.db) {
-        graphCtx = this.db as Record<string, unknown>;
+        graphCtx = this.db;
       } else {
         try {
           const { createSynovaGraphStore } = await import('@synova/graph-store');
-          graphCtx = createSynovaGraphStore(this.db as import('@synova/graph-store').SqliteDb) as unknown as Record<string, unknown>;
-        } catch { graphCtx = this.db as Record<string, unknown>; } // degraded
+          graphCtx = createSynovaGraphStore(this.db as import('@synova/graph-store').SqliteDb);
+        } catch { graphCtx = this.db; } // degraded
       }
       const ctx = {
         db: graphCtx,
