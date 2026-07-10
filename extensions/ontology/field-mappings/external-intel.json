@@ -1,0 +1,14 @@
+{
+  "name": "external-intel",
+  "label": "外部环境数据",
+  "targetNodeType": "External",
+  "mappings": [
+    { "externalField": "行业增长率", "prop": "industry_growth_rate", "type": "number" },
+    { "externalField": "新创率", "prop": "birth_rate", "type": "number" },
+    { "externalField": "监管变化信号", "prop": "regulatory_change_signal", "type": "string" },
+    { "externalField": "技术颠覆信号", "prop": "technology_disruption_signal", "type": "string" },
+    { "externalField": "消费者信心指数", "prop": "consumer_confidence_index", "type": "number" },
+    { "externalField": "资本市场状况", "prop": "capital_market_condition", "type": "string" },
+    { "externalField": "期间", "prop": "period", "type": "string" }
+  ]
+}

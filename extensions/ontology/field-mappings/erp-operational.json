@@ -1,0 +1,15 @@
+{
+  "name": "erp-operational",
+  "label": "ERP运营导出",
+  "targetNodeType": "Operational",
+  "mappings": [
+    { "externalField": "准时交付率", "prop": "on_time_delivery_rate", "type": "number" },
+    { "externalField": "缺陷率", "prop": "defect_rate", "type": "number" },
+    { "externalField": "百万机会缺陷数", "prop": "dpmo", "type": "number" },
+    { "externalField": "平均周期", "prop": "avg_cycle_time_hours", "type": "number" },
+    { "externalField": "产能利用率", "prop": "capacity_utilization", "type": "number" },
+    { "externalField": "一次合格率", "prop": "first_pass_yield", "type": "number" },
+    { "externalField": "返工率", "prop": "rework_rate", "type": "number" },
+    { "externalField": "期间", "prop": "period", "type": "string" }
+  ]
+}

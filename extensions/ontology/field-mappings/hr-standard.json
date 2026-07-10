@@ -1,0 +1,14 @@
+{
+  "name": "hr-standard",
+  "label": "标准HR系统导出",
+  "targetNodeType": "People",
+  "mappings": [
+    { "externalField": "员工总数", "prop": "headcount", "type": "number" },
+    { "externalField": "离职率", "prop": "turnover_rate", "type": "number" },
+    { "externalField": "内部晋升率", "prop": "internal_promotion_rate", "type": "number" },
+    { "externalField": "人才密度", "prop": "talent_density", "type": "number" },
+    { "externalField": "员工净推荐值", "prop": "e_nps", "type": "number" },
+    { "externalField": "平均在职月数", "prop": "avg_tenure_months", "type": "number" },
+    { "externalField": "期间", "prop": "period", "type": "string" }
+  ]
+}

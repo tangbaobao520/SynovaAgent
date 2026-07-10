@@ -1,0 +1,12 @@
+{
+  "name": "innovation-pipeline",
+  "label": "创新管线数据",
+  "targetNodeType": "Innovation",
+  "mappings": [
+    { "externalField": "新产品上市数", "prop": "new_products_launched", "type": "number" },
+    { "externalField": "新专利申请数", "prop": "new_patents_filed", "type": "number" },
+    { "externalField": "研发转化率", "prop": "rd_conversion_rate", "type": "number" },
+    { "externalField": "创新收入比", "prop": "innovation_revenue_ratio", "type": "number" },
+    { "externalField": "期间", "prop": "period", "type": "string" }
+  ]
+}

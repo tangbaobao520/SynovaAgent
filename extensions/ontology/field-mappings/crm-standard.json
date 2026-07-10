@@ -1,0 +1,14 @@
+{
+  "name": "crm-standard",
+  "label": "标准CRM系统导出",
+  "targetNodeType": "Market",
+  "mappings": [
+    { "externalField": "市场份额", "prop": "market_share", "type": "number" },
+    { "externalField": "净推荐值", "prop": "nps", "type": "number" },
+    { "externalField": "客户满意度", "prop": "customer_satisfaction", "type": "number" },
+    { "externalField": "品牌知名度", "prop": "brand_awareness", "type": "number" },
+    { "externalField": "客户集中度", "prop": "client_concentration_hhi", "type": "number" },
+    { "externalField": "流失率", "prop": "churn_rate", "type": "number" },
+    { "externalField": "期间", "prop": "period", "type": "string" }
+  ]
+}
