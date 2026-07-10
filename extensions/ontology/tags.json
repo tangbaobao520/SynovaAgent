@@ -4,7 +4,7 @@
   "layers": {
     "domain": {
       "description": "本体类型所属的诊断领域",
-      "values": ["strategic", "organizational", "financial", "technical", "marketing", "operational", "risk", "compliance", "knowledge", "causal", "core", "structural", "competitive", "synergy"]
+      "values": ["outcome", "strategic", "organizational", "financial", "technical", "marketing", "operational", "risk", "compliance", "knowledge", "causal", "core", "structural", "competitive", "synergy"]
     },
     "object": {
       "description": "本体类型代表的企业对象类别",
