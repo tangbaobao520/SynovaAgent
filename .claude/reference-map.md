@@ -3,5 +3,5 @@
 | 符号 | 文件 | 行 | 内容 |
 |------|------|-----|------|
 
-## capital_allocation|decision_authority|talent_deployment|information_flow|incentive_alignment|rule_constraint|organizational_learning|knowledge_sharing|trust_friction_reduction|routine_rigidity|operational_execution|innovation_output|brand_building|demand_to_spec|service_support|cross_functional_synergy|tech_infrastructure
-| `capital_allocation|decision_authority|talent_deployment|information_flow|incentive_alignment|rule_constraint|organizational_learning|knowledge_sharing|trust_friction_reduction|routine_rigidity|operational_execution|innovation_output|brand_building|demand_to_spec|service_support|cross_functional_synergy|tech_infrastructure` | *(无引用)* | — | — |
+## value_pricing|customer_lockin|channel_delivery|competitive_positioning|procurement_bargaining|customer_data_loop|market_share_capture|profit_reinvestment|talent_retention|knowledge_reuse|reputation_flywheel|retention_protects_knowledge|assumption_triggered_reallocation
+| `value_pricing|customer_lockin|channel_delivery|competitive_positioning|procurement_bargaining|customer_data_loop|market_share_capture|profit_reinvestment|talent_retention|knowledge_reuse|reputation_flywheel|retention_protects_knowledge|assumption_triggered_reallocation` | *(无引用)* | — | — |

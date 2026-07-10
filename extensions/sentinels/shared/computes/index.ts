@@ -1,7 +1,7 @@
 /**
- * shared/computes/index.ts — 共享计算模块统一导出 (V4.4.3)
+ * shared/computes/index.ts — 共享计算模块统一导出 (I2-3d)
  *
- * 15个缺口compute函数，按层分组导出。
+ * 42边体系每边≥1个compute函数 → I2阶段3完成。
  * 消费边均使用代码真实边名（非JTBD边名）。
  */
 // l1-production
@@ -64,3 +64,22 @@ export { computeDemandToSpec } from './l3-output/compute-demand-to-spec';
 export { computeServiceSupport } from './l3-output/compute-service-support';
 export { computeCrossFunctionalSynergy } from './l3-output/compute-cross-functional-synergy';
 export { computeTechInfrastructure } from './l3-output/compute-tech-infrastructure';
+
+// l4-capture — I2-3d: 环节4 价值捕获 新边compute
+export { computeValuePricing } from './l4-capture/compute-value-pricing';
+export { computeCustomerLockin } from './l4-capture/compute-customer-lockin';
+export { computeChannelDelivery } from './l4-capture/compute-channel-delivery';
+export { computeCompetitivePositioning } from './l4-capture/compute-competitive-positioning';
+export { computeProcurementBargaining } from './l4-capture/compute-procurement-bargaining';
+export { computeCustomerDataLoop } from './l4-capture/compute-customer-data-loop';
+export { computeMarketShareCapture } from './l4-capture/compute-market-share-capture';
+
+// l5-reinput — I2-3d: 环节5 再输入 新边compute
+export { computeProfitReinvestment } from './l5-reinput/compute-profit-reinvestment';
+export { computeTalentRetention } from './l5-reinput/compute-talent-retention';
+export { computeKnowledgeReuse } from './l5-reinput/compute-knowledge-reuse';
+export { computeReputationFlywheel } from './l5-reinput/compute-reputation-flywheel';
+export { computeRetentionProtectsKnowledge } from './l5-reinput/compute-retention-protects-knowledge';
+
+// cross-cycle — I2-3d: 跨环节联动 新边compute
+export { computeAssumptionTriggeredReallocation } from './cross-cycle/compute-assumption-triggered-reallocation';
