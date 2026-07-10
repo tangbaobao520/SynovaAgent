@@ -305,4 +305,20 @@ if [ -n "$TASK_LAYER" ] && ! echo "$FILE" | grep -qE '\.claude/|scripts/workflow
   fi
 fi
 
+# ═══ V4.4.4: 改前先 grep 全仓库引用 — 物理阻断 ═══
+# 写代码前必须运行 grep-refs.sh 生成引用地图，否则拒绝 Write/Edit
+GATE="$ROOT/.claude/grep-verified"
+# 只检查代码文件（.ts/.tsx/.json），不检查文档/配置/memory
+if echo "$FILE" | grep -qE '.(ts|tsx|json)$' && 
+   echo "$FILE" | grep -qE '/(src|extensions|tests|packages)/'; then
+  if [ ! -f "$GATE" ]; then
+    echo "⛔ 改前先 grep — 未运行 grep-refs.sh"
+    echo "   在修改代码前，必须 grep 你要改的符号在全仓库的引用:"
+    echo "   bash scripts/workflow/grep-refs.sh "你要改的符号1" "符号2" ..."
+    echo "   然后在 .claude/reference-map.md 中逐项确认所有引用处"
+    echo "   被阻止: ${FILE}"
+    exit 1
+  fi
+fi
+
 exit 0
