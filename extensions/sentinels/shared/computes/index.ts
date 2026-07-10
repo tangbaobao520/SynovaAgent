@@ -29,3 +29,17 @@ export { computeInterventionEffect } from './l3-causal/compute-intervention-effe
 // l4-competition
 export { computeCompetitorPricingLandscape } from './l4-competition/compute-competitor-pricing-landscape';
 export { computeCompetitorFeatureThreat } from './l4-competition/compute-competitor-feature-threat';
+
+// l1-input — I2-3b: 环节0-1 新边compute
+export { computeEnvironmentalScan } from './l1-input/compute-environmental-scan';
+export { computeSignalUpwardPass } from './l1-input/compute-signal-upward-pass';
+export { computeExternalFeedback } from './l1-input/compute-external-feedback';
+export { computeSensingCalibration } from './l1-input/compute-sensing-calibration';
+export { computeCapitalAcquisition } from './l1-input/compute-capital-acquisition';
+export { computeCapitalSourceMix } from './l1-input/compute-capital-source-mix';
+export { computeTalentAcquisition } from './l1-input/compute-talent-acquisition';
+export { computeTalentFilter } from './l1-input/compute-talent-filter';
+export { computeDataCollection } from './l1-input/compute-data-collection';
+export { computeEquipmentAcquisition } from './l1-input/compute-equipment-acquisition';
+export { computeReputationAttraction } from './l1-input/compute-reputation-attraction';
+export { computeEfficiencyAttraction } from './l1-input/compute-efficiency-attraction';

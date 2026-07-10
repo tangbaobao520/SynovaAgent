@@ -1,10 +1,10 @@
 /**
  * src/l3/assumption-monitor.ts — 外部假设监控诊断模块 (L3)
  *
- * 通过 EXTERNAL_ASSUMPTION_BINDS 边遍历，检测经营模型对外部环境不变的赌注。
+ * 通过 ASSUMPTION_TRIGGERED_REALLOCATION 边遍历，检测经营模型对外部环境不变的赌注。
  * 不创建新哨兵目录（约束6），通过 runModules() 消费。
  *
- * 消费边: EXTERNAL_ASSUMPTION_BINDS
+ * 消费边: ASSUMPTION_TRIGGERED_REALLOCATION
  *
  * Iron law #24: catch + log + degraded.
  * Iron law #38: zero unsafe casts.
@@ -67,7 +67,7 @@ export async function checkExternalAssumptions(
           }
         }
       } catch (err: unknown) {
-        warnings.push(`EXTERNAL_ASSUMPTION_BINDS遍历失败: ${err instanceof Error ? err.message : String(err)}`);
+        warnings.push(`ASSUMPTION_TRIGGERED_REALLOCATION遍历失败: ${err instanceof Error ? err.message : String(err)}`);
       }
     }
 
