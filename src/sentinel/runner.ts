@@ -17,6 +17,8 @@ import { getSentinelRegistry } from './registry';
 import { getBaselineStore } from './baseline-store';
 import { EscalationEngine, type EscalationRule } from '../services/escalation-engine';
 import { createLogger } from '@synova/logger';
+import { dispatchNotification, registerNotificationAdapter } from '../notifications/registry';
+import { ElectronNotificationAdapter } from '../notifications/electron-adapter';
 
 const log = createLogger('sentinel/runner');
 
@@ -124,6 +126,9 @@ export class SentinelRunner {
   private totalRuns = 0;
   /** G3: 升级链引擎 — 对接人忽略告警后自动升级到上级 */
   readonly escalationEngine = new EscalationEngine();
+  /** D6: 哨兵通知去重 — 记录每个 sentinelId 的最后推送时间戳 */
+  private notificationSentTimestamps = new Map<string, number>();
+  private readonly NOTIFICATION_DEDUP_MS = 10 * 60 * 1000; // 10分钟去重窗口
 
   constructor(scheduler: CronScheduler, db: unknown) {
     this.scheduler = scheduler;
@@ -163,6 +168,11 @@ export class SentinelRunner {
     for (const { sentinel, cron } of cronSentinels) {
       this.scheduleSentinel(sentinel, cron);
     }
+
+    // D6: 注册桌面推送通知适配器
+    const electronAdapter = new ElectronNotificationAdapter();
+    registerNotificationAdapter(electronAdapter);
+    log.info('[runner] Electron 桌面推送适配器已注册');
 
     // 信号聚合 — 每小时整点过 5 分运行 (在所有哨兵之后)
     this.scheduler.schedule('SignalAggregator', '5 * * * *', async () => {
@@ -246,6 +256,23 @@ export class SentinelRunner {
       const criticalOrWarning = signals.filter(s => s.severity === 'critical' || s.severity === 'warning');
       if (criticalOrWarning.length > 0) {
         await this.dispatchSignalsToExperts(criticalOrWarning);
+      }
+
+      // ═══ D6: 信号 → 桌面推送通知 (critical/warning 推送到 Electron) ═══
+      for (const signal of criticalOrWarning) {
+        if (this.isNotificationDuplicate(signal)) continue;
+        const sentinelId = signal.sources[0]?.sentinelId || signal.id;
+        await dispatchNotification({
+          id: `notif-${signal.id}-${Date.now()}`,
+          orgId: signal.entities[0] || 'default',
+          title: `[${signal.severity.toUpperCase()}] ${sentinelId}`,
+          description: signal.title || signal.sources[0]?.finding?.description || '',
+          priority: signal.severity === 'critical' ? 'P0' : 'P1',
+          targetSystem: 'electron',
+          metadata: { severity: signal.severity, sentinelId, signalId: signal.id } as Record<string, unknown>,
+          createdAt: new Date().toISOString(),
+        });
+        this.markNotificationSent(signal);
       }
 
       // G3: 升级链评估 — 对每个聚合信号检查是否需升级
@@ -520,6 +547,23 @@ export class SentinelRunner {
         }
       },
     };
+  }
+
+  // ═══ D6: 通知去重 ═══
+
+  private isNotificationDuplicate(signal: { sources: Array<{ sentinelId: string }> }): boolean {
+    const sentinelId = signal.sources[0]?.sentinelId;
+    if (!sentinelId) return false;
+    const lastSent = this.notificationSentTimestamps.get(sentinelId);
+    if (!lastSent) return false;
+    return Date.now() - lastSent < this.NOTIFICATION_DEDUP_MS;
+  }
+
+  private markNotificationSent(signal: { sources: Array<{ sentinelId: string }> }): void {
+    const sentinelId = signal.sources[0]?.sentinelId;
+    if (sentinelId) {
+      this.notificationSentTimestamps.set(sentinelId, Date.now());
+    }
   }
 
   // ═══ Private ═══
