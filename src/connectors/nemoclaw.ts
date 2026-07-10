@@ -36,7 +36,7 @@ export class NemoClawConnector implements DataConnector {
       if (m.department) mapping.nodes.push({ type: NodeType.RESOURCE_TEAM, props: { name: m.department, teamType: 'permanent' } });
     }
     for (const msg of messages) {
-      mapping.edges.push({ type: EdgeType.INFORMS /* ONTOLOGY-MIGRATION: EdgeType.INFORMS -> INFORMS (approximate). */, from: msg.senderId, to: msg.recipientIds?.[0] || msg.senderId, weight: 1, props: { channel: msg.channel } });
+      mapping.edges.push({ type: EdgeType.INFORMATION_FLOW, from: msg.senderId, to: msg.recipientIds?.[0] || msg.senderId, weight: 1, props: { channel: msg.channel } });
     }
     for (const evt of events) {
       mapping.nodes.push({ type: NodeType.ACTIVITY_LEARNING /* ONTOLOGY-MIGRATION: NodeType.ACTIVITY_LEARNING has no direct match. Store as edge annotation. */, props: { eventType: evt.eventType, timestamp: evt.timestamp } });

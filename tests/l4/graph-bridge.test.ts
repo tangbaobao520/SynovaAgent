@@ -87,7 +87,7 @@ describe('GraphBridge — 6 upsert methods with real GraphStore API', () => {
     expect(result.edgesCreated).toBe(1);
     expect(result.degraded).toBe(false);
     expect(store.nodes.filter(n => n.type === NodeType.RESOURCE_PERSON)).toHaveLength(2);
-    expect(store.edges.filter(e => e.type === EdgeType.INFORMS /* ONTOLOGY-MIGRATION: SOGEdgeType.INTERACTS_WITH -> INFORMS (approximate). */)).toHaveLength(1);
+    expect(store.edges.filter(e => e.type === EdgeType.INFORMATION_FLOW)).toHaveLength(1);
   });
 
   it('Given empty HONA input, When upsertFromHONA, Then returns zero counts', () => {
@@ -111,7 +111,7 @@ describe('GraphBridge — 6 upsert methods with real GraphStore API', () => {
     expect(result.nodesCreated).toBe(2);
     expect(result.degraded).toBe(false);
     expect(store.nodes.filter(n => n.type === NodeType.OUTCOME_RISK)).toHaveLength(2);
-    expect(store.edges.filter(e => e.type === EdgeType.DEPENDS_ON /* ONTOLOGY-MIGRATION: SOGEdgeType.AFFECTS -> DEPENDS_ON + INFORMS (combination). */).length).toBeGreaterThanOrEqual(1);
+    expect(store.edges.filter(e => e.type === EdgeType.TALENT_DEPLOYMENT).length).toBeGreaterThanOrEqual(1);
   });
 
   it('Given empty risk input, When upsertFromKeyPersonRisk, Then returns zero counts', () => {

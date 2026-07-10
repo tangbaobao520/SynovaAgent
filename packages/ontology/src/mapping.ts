@@ -59,9 +59,9 @@ export function getAmbiguousNodeKeys(): string[] {
 }
 
 // ─── Old SOGEdgeType → New EdgeType ───
-const EDGE_1TO1: Record<string, EdgeType> = {
-  DEPENDS_ON: EdgeType.DEPENDS_ON,
-};
+// I2-Phase2: DEPENDS_ON removed (was DELETE edge). Old SOG data in graph store
+// uses string values directly; no TypeScript mapping needed.
+const EDGE_1TO1: Record<string, EdgeType> = {};
 
 const EDGE_AMBIGUOUS: Record<string, string> = {
   INTERACTS_WITH: 'Approximate → INFORMS (info feedback)',

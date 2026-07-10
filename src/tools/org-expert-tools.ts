@@ -71,7 +71,7 @@ export const scanCollaborationTool: ToolDefinition = {
       const res = await fetch(`${BASE}/api/ontology/graph/${orgId}`);
       if (res.ok) {
         const data = await res.json() as GraphData;
-        const interactsEdges = (data.edges || []).filter((e: any) => e.type === EdgeType.INFORMS /* ONTOLOGY-MIGRATION: EdgeType.INFORMS -> INFORMS (approximate). */);
+        const interactsEdges = (data.edges || []).filter((e: any) => e.type === EdgeType.INFORMATION_FLOW);
         return {
           orgId,
           interactionEdges: interactsEdges.length,
@@ -108,7 +108,7 @@ export const assessDecisionFlowTool: ToolDefinition = {
       const res = await fetch(`${BASE}/api/ontology/graph/${orgId}`);
       if (res.ok) {
         const data = await res.json() as GraphData;
-        const belongsToEdges = (data.edges || []).filter((e: any) => e.type === EdgeType.DEPENDS_ON /* ONTOLOGY-MIGRATION: EdgeType.DEPENDS_ON no direct match. Using DEPENDS_ON (syntactic node ID path). */);
+        const belongsToEdges = (data.edges || []).filter((e: any) => e.type === EdgeType.TALENT_DEPLOYMENT);
         // 计算审批链平均深度（简化：BELONGS_TO 边数 / Person 数）
         const personCount = (data.nodes || []).filter((n: any) => n.type === NodeType.RESOURCE_PERSON).length;
         const avgChainDepth = personCount > 0 ? belongsToEdges.length / personCount : 0;

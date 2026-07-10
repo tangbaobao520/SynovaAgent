@@ -103,7 +103,7 @@ export function createGraphBridge(store: GraphStore, graph: string, onGraphUpdat
         // Create INTERACTS_WITH edges
         for (const ia of interactions) {
           try {
-            store.createEdge(EdgeType.INFORMS /* ONTOLOGY-MIGRATION: EdgeType.INFORMS -> INFORMS (approximate). */, ia.from, ia.to, ia.weight || 0.5, {}, graph);
+            store.createEdge(EdgeType.INFORMATION_FLOW, ia.from, ia.to, ia.weight || 0.5, {}, graph);
             result.edgesCreated++;
           } catch (err: any) {
             result.errors.push(`HONA edge failed: ${err.message}`);
@@ -135,7 +135,7 @@ export function createGraphBridge(store: GraphStore, graph: string, onGraphUpdat
           // AFFECTS edges to Person nodes matching roleId
           const persons = store.queryNodes(NodeType.RESOURCE_PERSON, { name: p.roleId }, graph);
           for (const person of persons) {
-            store.createEdge(EdgeType.DEPENDS_ON /* ONTOLOGY-MIGRATION: EdgeType.DEPENDS_ON + EdgeType.INFORMS -> DEPENDS_ON + INFORMS (combination). */, riskNodeId, person.id, 0.8, {}, graph);
+            store.createEdge(EdgeType.TALENT_DEPLOYMENT, riskNodeId, person.id, 0.8, {}, graph);
             result.edgesCreated++;
           }
         }
@@ -227,7 +227,7 @@ export function createGraphBridge(store: GraphStore, graph: string, onGraphUpdat
           // BELONGS_TO edge to team
           const teams = store.queryNodes(NodeType.RESOURCE_TEAM, { name: proc.teamId }, graph);
           for (const team of teams) {
-            store.createEdge(EdgeType.DEPENDS_ON /* ONTOLOGY-MIGRATION: EdgeType.DEPENDS_ON no direct match. Using DEPENDS_ON (syntactic node ID path). */, nodeId, team.id, 1, {}, graph);
+            store.createEdge(EdgeType.TALENT_DEPLOYMENT, nodeId, team.id, 1, {}, graph);
             result.edgesCreated++;
           }
         }

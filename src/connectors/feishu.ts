@@ -125,7 +125,7 @@ export class FeishuConnector implements DataConnector {
     // (需要节点 ID 映射——由 graph-store 在持久化时分配)
     for (const msg of messages) {
       mapping.edges.push({
-        type: EdgeType.INFORMS /* ONTOLOGY-MIGRATION: EdgeType.INFORMS -> INFORMS (approximate). */,
+        type: EdgeType.INFORMATION_FLOW,
         from: msg.senderId,
         to: msg.recipientIds?.[0] || msg.senderId,
         weight: 1,
@@ -141,7 +141,7 @@ export class FeishuConnector implements DataConnector {
       });
       for (const relatedId of evt.relatedEntityIds || []) {
         mapping.edges.push({
-          type: EdgeType.INFORMS /* ONTOLOGY-MIGRATION: EdgeType.INFORMS no direct match. Using INFORMS. */,
+          type: EdgeType.INFORMATION_FLOW,
           from: evt.id,
           to: relatedId,
           weight: 0.7,
