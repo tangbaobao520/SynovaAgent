@@ -44,6 +44,28 @@ export const NodeType = {
   RESOURCE_LOCATION: 'resource/location',
   RESOURCE_CHANNEL: 'resource/channel',
   RESOURCE_SUPPLIER: 'resource/supplier',
+
+  // ─── Pool Types: 存量池(9) — 15概念节点池体系 §一 ───
+  POOL_CAPITAL: 'pool/capital',
+  POOL_HUMAN_CAPITAL: 'pool/human_capital',
+  POOL_EQUIPMENT_CAPACITY: 'pool/equipment_capacity',
+  POOL_KNOWLEDGE: 'pool/knowledge',
+  POOL_BRAND: 'pool/brand',
+  POOL_REPUTATION: 'pool/reputation',
+  POOL_DATA: 'pool/data',
+  POOL_REVENUE: 'pool/revenue',
+  POOL_SENSING: 'pool/sensing',
+
+  // ─── Pool Types: 活动池(6) — 统一引用为 pool/activity ───
+  POOL_ACTIVITY_PRODUCTION: 'pool/activity',
+  POOL_ACTIVITY_ACQUISITION: 'pool/activity',
+  POOL_ACTIVITY_INNOVATION: 'pool/activity',
+  POOL_ACTIVITY_GOVERNANCE: 'pool/activity',
+  POOL_ACTIVITY_LEARNING: 'pool/activity',
+  POOL_ACTIVITY_MAINTENANCE: 'pool/activity',
+
+  // ─── External Types (1) ───
+  EXTERNAL_BASELINE: 'external/baseline',
 } as const;
 
 /** Union type of all 29 node type string values */
@@ -88,9 +110,34 @@ export const RESOURCE_TYPES: readonly NodeType[] = [
   NodeType.RESOURCE_SUPPLIER,
 ] as const;
 
-/** All 29 node types in a flat array */
+// ─── Pool category arrays ───
+export const POOL_TYPES: readonly NodeType[] = [
+  NodeType.POOL_CAPITAL,
+  NodeType.POOL_HUMAN_CAPITAL,
+  NodeType.POOL_EQUIPMENT_CAPACITY,
+  NodeType.POOL_KNOWLEDGE,
+  NodeType.POOL_BRAND,
+  NodeType.POOL_REPUTATION,
+  NodeType.POOL_DATA,
+  NodeType.POOL_REVENUE,
+  NodeType.POOL_SENSING,
+  NodeType.POOL_ACTIVITY_PRODUCTION,
+  NodeType.POOL_ACTIVITY_ACQUISITION,
+  NodeType.POOL_ACTIVITY_INNOVATION,
+  NodeType.POOL_ACTIVITY_GOVERNANCE,
+  NodeType.POOL_ACTIVITY_LEARNING,
+  NodeType.POOL_ACTIVITY_MAINTENANCE,
+] as const;
+
+export const EXTERNAL_TYPES: readonly NodeType[] = [
+  NodeType.EXTERNAL_BASELINE,
+] as const;
+
+/** All 45 node types in a flat array (29 original + 16 new) */
 export const ALL_NODE_TYPES: readonly NodeType[] = [
   ...ACTIVITY_TYPES,
   ...OUTCOME_TYPES,
   ...RESOURCE_TYPES,
+  ...POOL_TYPES,
+  ...EXTERNAL_TYPES,
 ] as const;

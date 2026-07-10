@@ -9,6 +9,8 @@ export {
   ACTIVITY_TYPES,
   OUTCOME_TYPES,
   RESOURCE_TYPES,
+  POOL_TYPES,
+  EXTERNAL_TYPES,
   ALL_NODE_TYPES,
 } from './node-types.js';
 export type { NodeType as NodeTypeUnion } from './node-types.js';
