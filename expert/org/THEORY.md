@@ -146,7 +146,7 @@ Agent化机会分三类：可替代 / 可增强 / 暂不可Agent化。
 ### 基于 Synova 边检测能力的增强标记（Synova 定制增强）
 
 - **短期行为 → INCENTIVE_BINDS 边检测**：KPI 节点通过 INCENTIVE_BINDS 边连接到短期目标时，标注"KPI 结构鼓励短期行为"
-- **风险规避 → METRIC_BINDS 边检测**：KPI 与现金流贡献偏离时，标注"风险规避信号"
+- **风险规避 → INFORMATION_FLOW 边检测**：KPI 数据在传递中filtering_loss > 阈值时，标注"风险规避信号"
 - **偷懒 → SIGNAL_TRANSMITS 边检测**：信息在中层 SIGNAL_TRANSMITS 衰减时，标注"中层信息截留"
 - **在职消费 → 哨兵 cost-health 检测**：费用异常模式，标注"在职消费代理信号"
 
