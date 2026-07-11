@@ -61,6 +61,7 @@ import sentinelHealthRoutes from './routes/sentinel-health';
 import sentinelRoutes from './routes/sentinel';
 import dataRoutes from './routes/data'; // V4.2.9 — 数据上传 API
 import reloadRoutes from './routes/reload';
+import adaptersRoutes from './routes/adapters';
 import auditRoutes from './routes/audit';
 import gaAdminRoutes from './routes/ga-admin';
 import gaCorrectionsRoutes from './routes/ga-corrections';
@@ -442,6 +443,7 @@ app.use(permissionRoutes); // POST /api/permissions/update | POST /api/permissio
 app.use('/api/sentinel', sentinelHealthRoutes); // GET /api/sentinel/health
 app.use('/api/sentinel', sentinelRoutes);       // GET /api/sentinel/findings | /api/sentinel/signals | POST /api/sentinel/run/:id
 app.use(reloadRoutes);                         // POST /api/reload — 热加载专家文件
+app.use(adaptersRoutes);                       // GET /api/adapters + POST /api/adapters/reload — 适配器管理 (D36)
 app.use(auditRoutes);                          // GET /api/audit — 审计日志 (Phase 0.3)
 app.use(gaAdminRoutes);                        // /api/ga/* — GA 管理 API (Phase 3.1)
 app.use(gaCorrectionsRoutes);                  // /api/ga/corrections — 纠错 (Phase 3.2)

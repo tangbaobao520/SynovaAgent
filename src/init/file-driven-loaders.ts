@@ -113,4 +113,19 @@ async function _initFileDrivenLoaders(): Promise<void> {
     log.warn({ err }, 'adapter loader 初始化失败 — degraded');
   }
 
+  // D36: field-mappings 适配器自动发现 — 扫描 + 注册到 AdapterRegistry
+  try {
+    const { scanFieldMappings } = await import('../agent/adapter-scanner');
+    const { AdapterRegistry } = await import('../agent/adapter-registry');
+
+    const scanResult = scanFieldMappings();
+    const registry = AdapterRegistry.getInstance();
+    const { registered, errors } = registry.registerFromScan(scanResult.adapters);
+    if (errors.length > 0) log.warn({ errors }, '部分适配器注册失败 — degraded');
+    if (registered === 0) log.warn('零适配器被注册 — 数据接入可能异常');
+    log.info({ registered, total: scanResult.adapters.length }, 'field-mappings 适配器已自动发现并注册');
+  } catch (err: unknown) {
+    log.warn({ err }, 'field-mappings 适配器初始化失败 — degraded');
+  }
+
 }

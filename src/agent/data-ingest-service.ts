@@ -13,14 +13,14 @@ import { getPIIScrubber } from '../security/pii-scrubber';
 const log = createLogger('agent/data-ingest');
 
 /** 字段映射条目 */
-interface FieldMapping {
+export interface FieldMapping {
   externalField: string;
   prop: string;
   type: string;
 }
 
 /** 字段映射配置 */
-interface FieldMappingConfig {
+export interface FieldMappingConfig {
   name: string;
   label: string;
   targetNodeType: string;
@@ -39,6 +39,43 @@ export interface IngestResult {
   nodeType: string;
   nodesCreated: number;
   errors: string[];
+}
+
+/**
+ * 获取所有可用适配器名称列表。
+ */
+export function getAvailableAdapters(): string[] {
+  try {
+    const { AdapterRegistry } = require('./adapter-registry');
+    const registry = AdapterRegistry.getInstance();
+    return registry.list().map((a: { name: string }) => a.name);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log.warn({ err: msg }, '获取适配器列表失败 — degraded');
+    return [];
+  }
+}
+
+/**
+ * 重新扫描 field-mappings/ 目录并刷新注册表。
+ */
+export function reloadAdapters(): { updated: number; errors: string[] } {
+  try {
+    const { scanFieldMappings } = require('./adapter-scanner');
+    const { AdapterRegistry } = require('./adapter-registry');
+
+    const scanResult = scanFieldMappings();
+    const registry = AdapterRegistry.getInstance();
+    registry.clear();
+
+    const result = registry.registerFromScan(scanResult.adapters);
+    log.info({ updated: result.registered, errors: result.errors.length }, '适配器重新加载完成');
+    return result;
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log.error({ err: msg }, '适配器重新加载失败');
+    return { updated: 0, errors: [msg] };
+  }
 }
 
 /** 加载字段映射配置 */
@@ -116,6 +153,12 @@ export async function ingestRow(
         props['pii_scrubbed'] = false;
       }
     }
+  }
+
+  // D29: 标准键冲突检测 — 用外部 period 字段生成 standardKey
+  const period = row['period'];
+  if (period !== undefined && period !== null) {
+    props.standardKey = `${graph}:${mapping.targetNodeType}:${String(period)}`;
   }
 
   try {
