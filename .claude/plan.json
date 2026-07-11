@@ -1,32 +1,36 @@
 {
   "version": "1.0",
-  "task": "D35: 数据管道可观测性",
-  "brief": "2026-07-11-D35-数据管道可观测性.md",
+  "task": "D36: 可插拔扩展机制",
+  "brief": "2026-07-11-D36-可插拔扩展机制.md",
   "current_phase": 1,
   "approach": "rewrite",
   "phases": [
     {
       "step": 1,
       "action": "create",
-      "files": ["src/monitoring/freshness-tracker.ts"],
-      "checks": { "wiring": "deferred", "test_pairing": "deferred" }
+      "files": [
+        "src/agent/adapter-scanner.ts",
+        "src/agent/adapter-registry.ts",
+        "src/routes/adapters.ts",
+        "extensions/ontology/custom-adapters/registry.ts"
+      ],
+      "checks": { "wiring": "deferred", "test_pairing": "enforce" }
     },
     {
       "step": 2,
-      "action": "create",
-      "files": ["src/monitoring/pipeline-monitor.ts"],
-      "checks": { "wiring": "enforce" }
-    },
-    {
-      "step": 3,
-      "action": "wire",
-      "files": ["src/routes/data.ts"],
-      "checks": { "wiring": "enforce" }
+      "action": "modify",
+      "files": [
+        "src/agent/data-ingest-service.ts",
+        "src/init/file-driven-loaders.ts",
+        "src/server.ts"
+      ],
+      "checks": { "wiring": "enforce", "test_pairing": "enforce" }
     }
   ],
   "principles": [
-    {"rule": "监控代码独立于被监控对象，不侵入ingest内部逻辑", "verify": "grep 'PipelineMonitor\|FreshnessTracker' src/agent/data-ingest-service.ts | wc -l | xargs test 0 -eq"},
-    {"rule": "复用 MetricsCollector + EventBus，不造新轮子", "verify": "grep 'class.*Collector\|class.*Bus' src/monitoring/ | grep -vc 'MetricsCollector\|EventBus' | xargs test 0 -eq"}
+    {"rule": "文件驱动自发现——新增适配器只需放入目录，不修改代码", "verify": "grep 'scanFieldMappings' src/agent/adapter-scanner.ts | wc -l | xargs test 1 -eq"},
+    {"rule": "不实现实时文件监听——用启动扫描 + reload API", "verify": "grep -c 'fs.watch' src/agent/adapter-scanner.ts | xargs test 0 -eq"},
+    {"rule": "零 as any", "verify": "grep -c 'as any' src/agent/adapter-scanner.ts src/agent/adapter-registry.ts src/routes/adapters.ts | grep ':0' | wc -l | xargs test 3 -eq"}
   ],
-  "memory_refs": ["memory/engine-core-bridge-files.md"]
+  "memory_refs": []
 }

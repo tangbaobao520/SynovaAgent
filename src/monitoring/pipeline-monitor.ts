@@ -26,7 +26,7 @@ export interface PipelineStats {
 }
 
 /** 合法通道名（运行时校验） */
-export const CHANNELS = ['connector', 'upload', 'api'] as const;
+const CHANNELS = ['connector', 'upload', 'api'] as const;
 export type Channel = string;
 
 // ═══ Global singleton ═══

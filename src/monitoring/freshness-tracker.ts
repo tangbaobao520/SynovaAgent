@@ -16,11 +16,11 @@ const log = createLogger('monitoring/freshness');
 // ═══ Types ═══ — 使用 string 而非联合类型（check-file-driven.sh 要求）
 
 /** 合法更新频率 */
-export const EXPECTED_FREQUENCIES = ['daily', 'weekly', 'monthly', 'quarterly'] as const;
+const EXPECTED_FREQUENCIES = ['daily', 'weekly', 'monthly', 'quarterly'] as const;
 export type ExpectedFrequency = string;
 
 /** 合法新鲜度状态 */
-export const FRESHNESS_STATUSES = ['green', 'yellow', 'orange', 'red'] as const;
+const FRESHNESS_STATUSES = ['green', 'yellow', 'orange', 'red'] as const;
 export type FreshnessStatus = string;
 
 export interface FreshnessRecord {
