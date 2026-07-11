@@ -1,29 +1,32 @@
 {
   "version": "1.0",
-  "task": "Evolution v3 — 多源反馈 + NCI",
-  "brief": "2026-07-06-evolution-v3.md",
+  "task": "D35: 数据管道可观测性",
+  "brief": "2026-07-11-D35-数据管道可观测性.md",
   "current_phase": 1,
   "approach": "rewrite",
   "phases": [
     {
       "step": 1,
-      "action": "modify",
-      "files": [
-        "packages/evolution/src/feedback-collector.ts",
-        "packages/evolution/src/org-adapter.ts",
-        "packages/evolution/src/global-analyzer.ts",
-        "packages/evolution/src/rule-version-manager.ts",
-        "packages/evolution/src/index.ts",
-        "src/routes/evolution.ts",
-        "tests/evolution/feedback-collector.test.ts",
-        "tests/evolution/org-adapter.test.ts"
-      ],
+      "action": "create",
+      "files": ["src/monitoring/freshness-tracker.ts"],
       "checks": { "wiring": "deferred", "test_pairing": "deferred" }
+    },
+    {
+      "step": 2,
+      "action": "create",
+      "files": ["src/monitoring/pipeline-monitor.ts"],
+      "checks": { "wiring": "enforce" }
+    },
+    {
+      "step": 3,
+      "action": "wire",
+      "files": ["src/routes/data.ts"],
+      "checks": { "wiring": "enforce" }
     }
   ],
   "principles": [
-    {"rule": "tsc zero errors", "verify": "npx tsc --noEmit"},
-    {"rule": "evolution tests pass", "verify": "npx vitest run tests/evolution/ 2>&1 | grep -q passed"}
+    {"rule": "监控代码独立于被监控对象，不侵入ingest内部逻辑", "verify": "grep 'PipelineMonitor\|FreshnessTracker' src/agent/data-ingest-service.ts | wc -l | xargs test 0 -eq"},
+    {"rule": "复用 MetricsCollector + EventBus，不造新轮子", "verify": "grep 'class.*Collector\|class.*Bus' src/monitoring/ | grep -vc 'MetricsCollector\|EventBus' | xargs test 0 -eq"}
   ],
   "memory_refs": ["memory/engine-core-bridge-files.md"]
 }

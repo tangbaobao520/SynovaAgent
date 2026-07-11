@@ -8,6 +8,7 @@
 import { Router, type Request, type Response } from 'express';
 import { createLogger } from '@synova/logger';
 import { getPIIScrubber } from '../security/pii-scrubber';
+import { getPipelineMonitor, type PipelineMonitor } from '../monitoring/pipeline-monitor';
 
 const log = createLogger('routes/data');
 const router = Router();
@@ -39,6 +40,9 @@ router.post('/api/data/upload', async (req: Request, res: Response) => {
       return res.status(503).json({ ok: false, error: 'GraphStore 不可用' });
     }
 
+    // D35: 管道可观测性 — 记录延迟
+    const pipeStart = Date.now();
+
     // D34: PII S4预检 — 检测密码/Token/私钥，含则拒绝写入
     const scrubber = getPIIScrubber();
     for (const row of rows) {
@@ -62,10 +66,15 @@ router.post('/api/data/upload', async (req: Request, res: Response) => {
       graph || 'default',
     );
 
+    // D35: 管道可观测性 — 记录成功
+    getPipelineMonitor().recordIngestion('upload', Date.now() - pipeStart, mapping, rows.length);
+
     log.info({ mapping, rows: rows.length, created: result.nodesCreated }, '数据上传完成');
     res.json(result);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
+    // D35: 管道可观测性 — 记录失败
+    getPipelineMonitor().recordFailure('upload', mapping || 'unknown', msg);
     log.warn({ err: msg }, '数据上传失败');
     res.status(500).json({ ok: false, error: msg });
   }
