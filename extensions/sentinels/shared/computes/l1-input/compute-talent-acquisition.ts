@@ -1,7 +1,7 @@
 /**
  * compute-talent-acquisition.ts — 获取人力 (1.3)
  *
- * 契约ID: COMPUTE-TALENT-ACQUISITION-v1
+ * @contract COMPUTE-TALENT-ACQUISITION-v1 TalentAcquisitionInput {value,confidence,evidence,degraded,warnings} hiresCount<0||avgQualityScore<0
  * 模块: l1-input/talent_acquisition
  * 消费边: TALENT_ACQUISITION
  * 输入: hiresCount(number), avgQualityScore(0-1), selectionThreshold(0-1)

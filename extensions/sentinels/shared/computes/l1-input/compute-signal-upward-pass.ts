@@ -1,7 +1,7 @@
 /**
  * compute-signal-upward-pass.ts — 被动信号向上传递 (0.2)
  *
- * 契约ID: COMPUTE-SIGNAL-UPWARD-PASS-v1
+ * @contract COMPUTE-SIGNAL-UPWARD-PASS-v1 SignalUpwardPassInput {value,confidence,evidence,degraded,warnings} nLayers<=0
  * 模块: l1-input/signal_upward_pass
  * 消费边: SIGNAL_UPWARD_PASS
  * 输入: upwardFilterLoss(0-1), nLayers(正整数)

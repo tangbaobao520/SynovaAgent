@@ -1,7 +1,7 @@
 /**
  * compute-organizational-learning.ts — 经验积累提升整体运行效率 (2.7)
  *
- * 契约ID: COMPUTE-ORGANIZATIONAL-LEARNING-v1
+ * @contract COMPUTE-ORGANIZATIONAL-LEARNING-v1 OrganizationalLearningInput {value,confidence,evidence,degraded,warnings} learningRate<0||knowledgeRetention<0
  * 模块: l2-internal/organizational_learning
  * 消费边: ORGANIZATIONAL_LEARNING
  * 输入: learningRate(0-1), knowledgeRetention(0-1)

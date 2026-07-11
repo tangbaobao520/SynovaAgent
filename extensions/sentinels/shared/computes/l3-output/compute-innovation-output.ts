@@ -1,7 +1,7 @@
 /**
  * compute-innovation-output.ts — 研发投入变为新产品/技术 (3.2)
  *
- * 契约ID: COMPUTE-INNOVATION-OUTPUT-v1
+ * @contract COMPUTE-INNOVATION-OUTPUT-v1 InnovationOutputInput {value,confidence,evidence,degraded,warnings} throughputRate<0||successProbability<0
  * 模块: l3-output/innovation_output
  * 消费边: INNOVATION_OUTPUT
  * 输入: throughputRate(0-1), successProbability(0-1)

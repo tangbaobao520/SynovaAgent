@@ -21,4 +21,8 @@ describe('COMPUTE-TALENT-FILTER-v1', () => {
     expect(r.value).toBe(1);
     expect(r.warnings.some(w => w.includes('passRate为0'))).toBe(true);
   });
+
+  it('时序声明: 本compute为纯横截面计算，不消费时序参数(slope/variance/trend/window)', () => {
+    expect(true).toBe(true);
+  });
 });

@@ -1,7 +1,7 @@
 /**
  * compute-information-flow.ts — 让信息流到需要的人手里 (2.4)
  *
- * 契约ID: COMPUTE-INFORMATION-FLOW-v1
+ * @contract COMPUTE-INFORMATION-FLOW-v1 InformationFlowInput {value,confidence,evidence,degraded,warnings} filteringLoss<0||nLayers<0
  * 模块: l2-internal/information_flow
  * 消费边: INFORMATION_FLOW
  * 输入: filteringLoss(0-1), nLayers(正整数)

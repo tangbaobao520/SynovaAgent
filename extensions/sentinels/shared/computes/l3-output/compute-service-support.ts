@@ -1,7 +1,7 @@
 /**
  * compute-service-support.ts — 产品售出后的服务支持 (3.5)
  *
- * 契约ID: COMPUTE-SERVICE-SUPPORT-v1
+ * @contract COMPUTE-SERVICE-SUPPORT-v1 ServiceSupportInput {value,confidence,evidence,degraded,warnings} satisfactionScore<0||resolutionSpeed<0
  * 模块: l3-output/service_support
  * 消费边: SERVICE_SUPPORT
  * 输入: satisfactionScore(0-1), resolutionSpeed(0-1)

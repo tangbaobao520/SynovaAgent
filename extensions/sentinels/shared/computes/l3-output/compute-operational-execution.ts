@@ -1,7 +1,7 @@
 /**
  * compute-operational-execution.ts — 把资源转化为产出 (3.1)
  *
- * 契约ID: COMPUTE-OPERATIONAL-EXECUTION-v1
+ * @contract COMPUTE-OPERATIONAL-EXECUTION-v1 OperationalExecutionInput {value,confidence,evidence,degraded,warnings} efficiencyRate<0||defectRate<0
  * 模块: l3-output/operational_execution
  * 消费边: OPERATIONAL_EXECUTION
  * 输入: efficiencyRate(0-1), defectRate(0-1)

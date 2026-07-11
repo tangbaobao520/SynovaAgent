@@ -7,6 +7,7 @@
  */
 import { Router, type Request, type Response } from 'express';
 import { createLogger } from '@synova/logger';
+import { getPIIScrubber } from '../security/pii-scrubber';
 
 const log = createLogger('routes/data');
 const router = Router();
@@ -36,6 +37,22 @@ router.post('/api/data/upload', async (req: Request, res: Response) => {
     const graphStore = (req.app.locals?.graphStore as { createNode?: Function } | undefined);
     if (!graphStore || typeof graphStore.createNode !== 'function') {
       return res.status(503).json({ ok: false, error: 'GraphStore 不可用' });
+    }
+
+    // D34: PII S4预检 — 检测密码/Token/私钥，含则拒绝写入
+    const scrubber = getPIIScrubber();
+    for (const row of rows) {
+      for (const val of Object.values(row)) {
+        if (typeof val === 'string') {
+          const result = scrubber.scrub(val, 'S4');
+          if (result.matches.length > 0) {
+            log.warn({ s4Type: result.matches[0].type }, '上传含S4敏感信息，拒绝写入');
+            return res.status(422).json({
+              ok: false, error: `数据包含S4敏感信息(${result.matches[0].type})，拒绝写入`,
+            });
+          }
+        }
+      }
     }
 
     const result = await ingestBatch(

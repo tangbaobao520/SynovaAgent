@@ -1,7 +1,7 @@
 /**
  * compute-reputation-attraction.ts — 声誉对外部资源的吸引 (1.7 二阶)
  *
- * 契约ID: COMPUTE-REPUTATION-ATTRACTION-v1
+ * @contract COMPUTE-REPUTATION-ATTRACTION-v1 ReputationAttractionInput {value,confidence,evidence,degraded,warnings} reputationScore<0
  * 模块: l1-input/reputation_attraction
  * 消费边: REPUTATION_ATTRACTION
  * 输入: reputationScore(0-1), attractionMultiplier(number)

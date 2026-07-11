@@ -1,7 +1,7 @@
 /**
  * compute-routine-rigidity.ts — "我们一直这样做"阻止调整 (2.10)
  *
- * 契约ID: COMPUTE-ROUTINE-RIGIDITY-v1
+ * @contract COMPUTE-ROUTINE-RIGIDITY-v1 RoutineRigidityInput {value,confidence,evidence,degraded,warnings} adjustmentFlexibility<0
  * 模块: l2-internal/routine_rigidity
  * 消费边: ROUTINE_RIGIDITY
  * 输入: adjustmentFlexibility(0-1)

@@ -1,7 +1,7 @@
 /**
  * compute-rule-constraint.ts — 用规则限制不可以做什么 (2.6)
  *
- * 契约ID: COMPUTE-RULE-CONSTRAINT-v1
+ * @contract COMPUTE-RULE-CONSTRAINT-v1 RuleConstraintInput {value,confidence,evidence,degraded,warnings} ruleAppropriateness<0||constraintEffectiveness<0
  * 模块: l2-internal/rule_constraint
  * 消费边: RULE_CONSTRAINT
  * 输入: ruleAppropriateness(0-1), constraintEffectiveness(0-1)

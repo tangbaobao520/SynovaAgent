@@ -1,7 +1,7 @@
 /**
  * compute-trust-friction-reduction.ts — 团队成员间的信任降低协作摩擦 (2.9)
  *
- * 契约ID: COMPUTE-TRUST-FRICTION-REDUCTION-v1
+ * @contract COMPUTE-TRUST-FRICTION-REDUCTION-v1 TrustFrictionReductionInput {value,confidence,evidence,degraded,warnings} trustLevel<0||collaborationEfficiency<0
  * 模块: l2-internal/trust_friction_reduction
  * 消费边: TRUST_FRICTION_REDUCTION
  * 输入: trustLevel(0-1), collaborationEfficiency(0-1)

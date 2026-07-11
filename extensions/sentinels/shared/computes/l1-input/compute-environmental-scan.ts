@@ -1,7 +1,7 @@
 /**
  * compute-environmental-scan.ts — 主动扫描外部环境 (0.1)
  *
- * 契约ID: COMPUTE-ENVIRONMENTAL-SCAN-v1
+ * @contract COMPUTE-ENVIRONMENTAL-SCAN-v1 EnvironmentalScanInput {value,confidence,evidence,degraded,warnings} scanBreadth<0||scanDepth<0
  * 模块: l1-input/environmental_scan
  * 消费边: ENVIRONMENTAL_SCAN
  * 输入: scanBreadth(0-1), scanDepth(0-1), filterBias(0-1)

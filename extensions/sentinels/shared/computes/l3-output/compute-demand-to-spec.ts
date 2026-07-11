@@ -1,7 +1,7 @@
 /**
  * compute-demand-to-spec.ts — 把市场需求转化为产品规格 (3.4)
  *
- * 契约ID: COMPUTE-DEMAND-TO-SPEC-v1
+ * @contract COMPUTE-DEMAND-TO-SPEC-v1 DemandToSpecInput {value,confidence,evidence,degraded,warnings} marketSignalAccuracy<0||specConversionRate<0
  * 模块: l3-output/demand_to_spec
  * 消费边: DEMAND_TO_SPEC
  * 输入: marketSignalAccuracy(0-1), specConversionRate(0-1)

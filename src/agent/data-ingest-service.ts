@@ -8,6 +8,7 @@
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { createLogger } from '@synova/logger';
+import { getPIIScrubber } from '../security/pii-scrubber';
 
 const log = createLogger('agent/data-ingest');
 
@@ -101,7 +102,19 @@ export async function ingestRow(
       const num = Number(raw);
       props[m.prop] = isNaN(num) ? raw : num;
     } else {
-      props[m.prop] = String(raw);
+      // D34: PII脱敏 — 字符串字段经scrub()处理后再写入 (数据层规范§4.1)
+      const rawStr = String(raw);
+      try {
+        const scrubResult = getPIIScrubber().scrub(rawStr);
+        props[m.prop] = scrubResult.cleaned;
+        if (scrubResult.matches.length > 0) {
+          props['pii_scrubbed'] = true;
+        }
+      } catch (err: unknown) {
+        log.error({ err, prop: m.prop }, 'PII脱敏失败，使用原始值（降级）');
+        props[m.prop] = rawStr;
+        props['pii_scrubbed'] = false;
+      }
     }
   }
 

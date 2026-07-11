@@ -1,7 +1,7 @@
 /**
  * compute-tech-infrastructure.ts — IT系统/数据平台提升效率 (3.7)
  *
- * 契约ID: COMPUTE-TECH-INFRASTRUCTURE-v1
+ * @contract COMPUTE-TECH-INFRASTRUCTURE-v1 TechInfrastructureInput {value,confidence,evidence,degraded,warnings} techLeverageRatio<0||systemUptime<0
  * 模块: l3-output/tech_infrastructure
  * 消费边: TECH_INFRASTRUCTURE
  * 输入: techLeverageRatio(0-1), systemUptime(0-1)

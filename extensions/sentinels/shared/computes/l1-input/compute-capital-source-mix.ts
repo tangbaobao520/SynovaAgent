@@ -1,7 +1,7 @@
 /**
  * compute-capital-source-mix.ts — 决定资金来源比例 (1.2)
  *
- * 契约ID: COMPUTE-CAPITAL-SOURCE-MIX-v1
+ * @contract COMPUTE-CAPITAL-SOURCE-MIX-v1 CapitalSourceMixInput {value,confidence,evidence,degraded,warnings} debtEquityRatio<0||sourceDiversification<0||总资本为0
  * 模块: l1-input/capital_source_mix
  * 消费边: CAPITAL_SOURCE_MIX
  * 输入: debtEquityRatio(number), sourceDiversification(0-1)

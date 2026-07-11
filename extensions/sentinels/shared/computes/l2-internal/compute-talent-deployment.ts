@@ -1,7 +1,7 @@
 /**
  * compute-talent-deployment.ts — 把人分配到任务中 (2.3)
  *
- * 契约ID: COMPUTE-TALENT-DEPLOYMENT-v1
+ * @contract COMPUTE-TALENT-DEPLOYMENT-v1 TalentDeploymentInput {value,confidence,evidence,degraded,warnings} personSkillMatch<0||teamCompositionScore<0
  * 模块: l2-internal/talent_deployment
  * 消费边: TALENT_DEPLOYMENT
  * 输入: personSkillMatch(0-1), teamCompositionScore(0-1)

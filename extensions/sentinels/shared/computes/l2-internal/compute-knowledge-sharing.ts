@@ -1,7 +1,7 @@
 /**
  * compute-knowledge-sharing.ts — 一个人的经验变成团队的能力 (2.8)
  *
- * 契约ID: COMPUTE-KNOWLEDGE-SHARING-v1
+ * @contract COMPUTE-KNOWLEDGE-SHARING-v1 KnowledgeSharingInput {value,confidence,evidence,degraded,warnings} sharingFrequency<0||absorptionCapacity<0
  * 模块: l2-internal/knowledge_sharing
  * 消费边: KNOWLEDGE_SHARING
  * 输入: sharingFrequency(0-1), absorptionCapacity(0-1)

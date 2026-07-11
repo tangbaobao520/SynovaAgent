@@ -1,14 +1,14 @@
 /**
  * compute-brand-building.ts — 品牌投入变为客户信任与溢价 (3.3)
  *
- * 契约ID: COMPUTE-BRAND-BUILDING-v1
+ * @contract COMPUTE-BRAND-BUILDING-v1 BrandBuildingInput {value,confidence,evidence,degraded,warnings} brandInvestment<0||brandElasticity<0
  * 模块: l3-output/brand_building
  * 消费边: BRAND_BUILDING
  * 输入: brandInvestment(0-1), brandElasticity(0-1)
  * 输出(正常): { value: brand_investment × brand_elasticity, confidence:'high'|'medium', evidence[], degraded:false }
  * 输出(降级): { value:0, confidence:'low', degraded:true, warnings:['无品牌数据'] }
  *
- * 算法: brand_investment × brand_elasticity  (lag 6-18月)
+ * 算法: brand_investment × brand_elasticity (lag 6-18月)
  */
 export interface BrandBuildingInput {
   brandInvestment: number;  // 品牌投入强度(0-1), -1=未配置

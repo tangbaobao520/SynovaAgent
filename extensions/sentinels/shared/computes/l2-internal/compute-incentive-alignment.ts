@@ -1,7 +1,7 @@
 /**
  * compute-incentive-alignment.ts — 让人的行为与组织目标一致 (2.5)
  *
- * 契约ID: COMPUTE-INCENTIVE-ALIGNMENT-v1
+ * @contract COMPUTE-INCENTIVE-ALIGNMENT-v1 IncentiveAlignmentInput {value,confidence,evidence,degraded,warnings} kpiGoalCongruence<0
  * 模块: l2-internal/incentive_alignment
  * 消费边: INCENTIVE_ALIGNMENT
  * 输入: kpiGoalCongruence(0-1), incentiveDistortion(0-1)

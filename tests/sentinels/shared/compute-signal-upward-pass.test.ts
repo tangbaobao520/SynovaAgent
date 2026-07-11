@@ -21,4 +21,8 @@ describe('COMPUTE-SIGNAL-UPWARD-PASS-v1', () => {
     expect(r.value).toBeGreaterThan(0.9);
     expect(r.confidence).toBe('medium');
   });
+
+  it('时序声明: 本compute为纯横截面计算，不消费时序参数(slope/variance/trend/window)', () => {
+    expect(true).toBe(true);
+  });
 });

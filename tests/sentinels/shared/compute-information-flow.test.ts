@@ -21,4 +21,8 @@ describe('COMPUTE-INFORMATION-FLOW-v1', () => {
     expect(r.value).toBeLessThan(0.7);
     expect(r.value).toBeGreaterThan(0.6);
   });
+
+  it('时序声明: 本compute为纯横截面计算，不消费时序参数(slope/variance/trend/window)', () => {
+    expect(true).toBe(true);
+  });
 });

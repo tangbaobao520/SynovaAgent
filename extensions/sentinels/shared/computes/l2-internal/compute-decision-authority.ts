@@ -1,7 +1,7 @@
 /**
  * compute-decision-authority.ts — 决定谁有权力分配资源 (2.2)
  *
- * 契约ID: COMPUTE-DECISION-AUTHORITY-v1
+ * @contract COMPUTE-DECISION-AUTHORITY-v1 DecisionAuthorityInput {value,confidence,evidence,degraded,warnings} concentrationIndex<0
  * 模块: l2-internal/decision_authority
  * 消费边: DECISION_AUTHORITY
  * 输入: concentrationIndex(0-1)

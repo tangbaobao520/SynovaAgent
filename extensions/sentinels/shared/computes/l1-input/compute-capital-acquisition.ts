@@ -1,7 +1,7 @@
 /**
  * compute-capital-acquisition.ts — 获取资本 (1.1)
  *
- * 契约ID: COMPUTE-CAPITAL-ACQUISITION-v1
+ * @contract COMPUTE-CAPITAL-ACQUISITION-v1 CapitalAcquisitionInput {value,confidence,evidence,degraded,warnings} targetCapital<=0
  * 模块: l1-input/capital_acquisition
  * 消费边: CAPITAL_ACQUISITION
  * 输入: capitalRaised(number), costOfCapital(number), targetCapital(number)

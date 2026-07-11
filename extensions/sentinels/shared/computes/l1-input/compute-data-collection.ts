@@ -1,7 +1,7 @@
 /**
  * compute-data-collection.ts — 采集内部经营信息 (1.5)
  *
- * 契约ID: COMPUTE-DATA-COLLECTION-v1
+ * @contract COMPUTE-DATA-COLLECTION-v1 DataCollectionInput {value,confidence,evidence,degraded,warnings} collectionCoverage<0
  * 模块: l1-input/data_collection
  * 消费边: DATA_COLLECTION
  * 输入: collectionCoverage(0-1), dataQuality(0-1), collectionFrequencyDays(number)

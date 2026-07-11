@@ -1,7 +1,7 @@
 /**
  * compute-capital-allocation.ts — 把钱分配到活动中 (2.1)
  *
- * 契约ID: COMPUTE-CAPITAL-ALLOCATION-v1
+ * @contract COMPUTE-CAPITAL-ALLOCATION-v1 CapitalAllocationInput {value,confidence,evidence,degraded,warnings} allocationRatio<0||reallocationFrequency<0
  * 模块: l2-internal/capital_allocation
  * 消费边: CAPITAL_ALLOCATION
  * 输入: allocationRatio(0-1), reallocationFrequency(0-1)

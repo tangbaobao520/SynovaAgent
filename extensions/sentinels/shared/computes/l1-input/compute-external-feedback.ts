@@ -1,7 +1,7 @@
 /**
  * compute-external-feedback.ts — 企业动作的外部回响 (0.3)
  *
- * 契约ID: COMPUTE-EXTERNAL-FEEDBACK-v1
+ * @contract COMPUTE-EXTERNAL-FEEDBACK-v1 ExternalFeedbackInput {value,confidence,evidence,degraded,warnings} competitorAggressiveness<0
  * 模块: l1-input/external_feedback
  * 消费边: EXTERNAL_FEEDBACK
  * 输入: competitorAggressiveness(0-1), responseLag(天数), feedbackCompleteness(0-1), maxLag?天数

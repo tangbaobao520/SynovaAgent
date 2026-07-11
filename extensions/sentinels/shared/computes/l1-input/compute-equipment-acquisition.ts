@@ -1,7 +1,7 @@
 /**
  * compute-equipment-acquisition.ts — 获取生产设备与设施 (1.6)
  *
- * 契约ID: COMPUTE-EQUIPMENT-ACQUISITION-v1
+ * @contract COMPUTE-EQUIPMENT-ACQUISITION-v1 EquipmentAcquisitionInput {value,confidence,evidence,degraded,warnings} avgUtilizationRate<0||totalCapacityAdded<0||unitsAcquired<0
  * 模块: l1-input/equipment_acquisition
  * 消费边: EQUIPMENT_ACQUISITION
  * 输入: unitsAcquired(number), totalCapacityAdded(number), avgUtilizationRate(0-1)

@@ -1,7 +1,7 @@
 /**
  * compute-cross-functional-synergy.ts — 不同部门协同提升产出质量 (3.6)
  *
- * 契约ID: COMPUTE-CROSS-FUNCTIONAL-SYNERGY-v1
+ * @contract COMPUTE-CROSS-FUNCTIONAL-SYNERGY-v1 CrossFunctionalSynergyInput {value,confidence,evidence,degraded,warnings} synergyCoefficient<0||coordinationEfficiency<0
  * 模块: l3-output/cross_functional_synergy
  * 消费边: CROSS_FUNCTIONAL_SYNERGY
  * 输入: synergyCoefficient(0-1), coordinationEfficiency(0-1)

@@ -1,7 +1,7 @@
 /**
  * compute-talent-filter.ts — 设定人才准入门槛 (1.4)
  *
- * 契约ID: COMPUTE-TALENT-FILTER-v1
+ * @contract COMPUTE-TALENT-FILTER-v1 TalentFilterInput {value,confidence,evidence,degraded,warnings} passRate<0
  * 模块: l1-input/talent_filter
  * 消费边: TALENT_FILTER
  * 输入: selectionThreshold(0-1), passRate(0-1)

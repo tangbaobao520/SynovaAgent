@@ -1,7 +1,7 @@
 /**
  * compute-efficiency-attraction.ts — 运营效率吸引资本 (1.8 二阶)
  *
- * 契约ID: COMPUTE-EFFICIENCY-ATTRACTION-v1
+ * @contract COMPUTE-EFFICIENCY-ATTRACTION-v1 EfficiencyAttractionInput {value,confidence,evidence,degraded,warnings} assetUtilizationRate<0||assetUtilizationRate===0
  * 模块: l1-input/efficiency_attraction
  * 消费边: EFFICIENCY_ATTRACTION
  * 输入: assetUtilizationRate(0-1), operatingMargin(0-1)

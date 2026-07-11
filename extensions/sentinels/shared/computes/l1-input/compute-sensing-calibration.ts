@@ -1,7 +1,7 @@
 /**
  * compute-sensing-calibration.ts — 感知经验的内化 (0.4 二阶)
  *
- * 契约ID: COMPUTE-SENSING-CALIBRATION-v1
+ * @contract COMPUTE-SENSING-CALIBRATION-v1 SensingCalibrationInput {value,confidence,evidence,degraded,warnings} learningFromPastMisjudgments<0
  * 模块: l1-input/sensing_calibration
  * 消费边: SENSING_CALIBRATION
  * 输入: learningFromPastMisjudgments(0-1), forgettingRate(0-1)
