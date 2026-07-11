@@ -12,7 +12,7 @@
 import { Router, type Request, type Response } from 'express';
 import { createLogger } from '@synova/logger';
 import { StandardOperations } from '../security/policy-engine';
-import { checkPolicy, executeExport, executePurge, queryPurgeStatus } from '../l3/data-lifecycle-service';
+import { checkPolicy, executeExport, executePurge, queryPurgeStatus } from '../agent/data-lifecycle-service';
 
 const log = createLogger('routes/data-lifecycle');
 const router = Router();

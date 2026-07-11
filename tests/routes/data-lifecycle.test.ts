@@ -2,7 +2,7 @@
  * tests/routes/data-lifecycle.test.ts — D40 数据生命周期路由集成测试
  *
  * 铁律 48: 测试必须有 expect() 断言
- * 覆盖: 路由注册 / checkPolicy 集成
+ * 覆盖: 路由注册 / checkPolicy 集成（通过 L2 入口）
  */
 import { describe, it, expect } from 'vitest';
 
@@ -16,14 +16,14 @@ describe('data-lifecycle 路由注册', () => {
   });
 
   it('checkPolicy GA 角色对 data.export 返回拒绝', async () => {
-    const { checkPolicy } = await import('../../src/l3/data-lifecycle-service');
+    const { checkPolicy } = await import('../../src/agent/data-lifecycle-service');
     const result = checkPolicy('ga', 'data.export');
     expect(result).not.toBeNull();
     expect(result).toContain('deny');
   });
 
   it('checkPolicy boss 角色对 data.export 返回通过', async () => {
-    const { checkPolicy } = await import('../../src/l3/data-lifecycle-service');
+    const { checkPolicy } = await import('../../src/agent/data-lifecycle-service');
     const result = checkPolicy('boss', 'data.export');
     expect(result).toBeNull();
   });

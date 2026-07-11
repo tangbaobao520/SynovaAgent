@@ -3,5 +3,5 @@
 | 符号 | 文件 | 行 | 内容 |
 |------|------|-----|------|
 
-## DataExporter|DataPurger|data.export|data.delete|purge|export
-| `DataExporter|DataPurger|data.export|data.delete|purge|export` | *(无引用)* | — | — |
+## getNodeConflictInfo|has_conflict|data_versions
+| `getNodeConflictInfo|has_conflict|data_versions` | *(无引用)* | — | — |
