@@ -7,7 +7,7 @@
  * 修复: GraphStore 接口不匹配（参数顺序/自生成ID）
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createGraphBridge } from '../../src/l4/graph-bridge';
+import { createGraphBridge, deriveValidFrom, deriveValidTo } from '../../src/l4/graph-bridge';
 import type { GraphStore } from '../../src/l4/graph-bridge';
 import { NodeType, EdgeType } from '@synova/ontology';
 
@@ -35,10 +35,17 @@ class FakeGraphStore implements GraphStore {
   }
 
   queryNodes(type: string, filters?: Record<string,unknown>, graph?: string) {
-    return this.nodes.filter(n => n.type === type && (!graph || n.graph === graph));
+    return this.nodes.filter(n =>
+      n.type === type &&
+      (!graph || n.graph === graph) &&
+      (!filters || Object.entries(filters).every(([k, v]) => n.props[k] === v))
+    );
   }
 
-  updateNode() {}
+  updateNode(id: string, props: Record<string,unknown>, graph: string) {
+    const node = this.nodes.find(n => n.id === id && n.graph === graph);
+    if (node) node.props = { ...node.props, ...props };
+  }
   deleteNode() {}
 
   createEdge(type: string, from: string, to: string, weight = 1, props: Record<string,unknown> = {}, graph = 'default'): string {
@@ -182,5 +189,129 @@ describe('GraphBridge — 6 upsert methods with real GraphStore API', () => {
   it('Given empty CPC input, When upsertFromCPC, Then returns zero counts', () => {
     const result = bridge.upsertFromCPC([]);
     expect(result.nodesCreated).toBe(0);
+  });
+});
+
+// ═══ D29: 数据冲突检测 ═══
+
+describe('GraphBridge — D29 createNode conflict detection', () => {
+  let store: FakeGraphStore;
+  let bridge: ReturnType<typeof createGraphBridge>;
+  const orgId = 'test-org';
+
+  beforeEach(() => {
+    store = new FakeGraphStore();
+    bridge = createGraphBridge(store, orgId);
+  });
+
+  it('Given new standardKey, When createNode, Then initializes data_versions and has_conflict', () => {
+    store.createNode('test_type', { standardKey: 'g:test_type:2026-Q1', name: 'first' }, orgId);
+    const node = store.nodes.find(n => n.props.name === 'first');
+    expect(node?.props).toMatchObject({
+      standardKey: 'g:test_type:2026-Q1',
+      name: 'first',
+      data_versions: [],
+      has_conflict: false,
+    });
+  });
+
+  it('Given same standardKey twice, When createNode second time, Then appends to data_versions and sets has_conflict', () => {
+    const key = 'g:test_type:2026-Q1';
+    const firstId = store.createNode('test_type', { standardKey: key, value: 100 }, orgId);
+    const secondId = store.createNode('test_type', { standardKey: key, value: 200 }, orgId);
+    expect(secondId).toBe(firstId);
+    const node = store.nodes.find(n => n.id === firstId);
+    expect(node?.props.has_conflict).toBe(true);
+    expect((node?.props.data_versions as Array<unknown>).length).toBe(1);
+    expect((node?.props.data_versions as Array<Record<string, unknown>>)[0].value).toMatchObject({ standardKey: key, value: 100 });
+    expect(node?.props.value).toBe(200);
+  });
+
+  it('Given createNode without standardKey, When createNode, Then no conflict fields added (backward compat)', () => {
+    const nodeId = store.createNode('test_type', { name: 'no-key' }, orgId);
+    const node = store.nodes.find(n => n.id === nodeId);
+    expect(node?.props.data_versions).toBeUndefined();
+    expect(node?.props.has_conflict).toBeUndefined();
+  });
+});
+
+// ═══ D33: 存储时间语义 ═══
+
+describe('GraphBridge — D33 time field derivation', () => {
+  it('Given quarter 2026-Q1, When deriveValidFrom, Then 2026-01-01', () => {
+    expect(deriveValidFrom('2026-Q1')).toBe('2026-01-01');
+  });
+  it('Given quarter 2026-Q3, When deriveValidFrom, Then 2026-07-01', () => {
+    expect(deriveValidFrom('2026-Q3')).toBe('2026-07-01');
+  });
+  it('Given month 2026-06, When deriveValidFrom, Then 2026-06-01', () => {
+    expect(deriveValidFrom('2026-06')).toBe('2026-06-01');
+  });
+  it('Given year 2026, When deriveValidFrom, Then 2026-01-01', () => {
+    expect(deriveValidFrom('2026')).toBe('2026-01-01');
+  });
+  it('Given exact date 2026-06-15, When deriveValidFrom, Then 2026-06-15', () => {
+    expect(deriveValidFrom('2026-06-15')).toBe('2026-06-15');
+  });
+
+  it('Given quarter 2026-Q1, When deriveValidTo, Then 2026-03-31', () => {
+    expect(deriveValidTo('2026-Q1')).toBe('2026-03-31');
+  });
+  it('Given quarter 2026-Q4, When deriveValidTo, Then 2026-12-31', () => {
+    expect(deriveValidTo('2026-Q4')).toBe('2026-12-31');
+  });
+  it('Given month 2026-02, When deriveValidTo, Then month last day', () => {
+    const result = deriveValidTo('2026-02');
+    expect(result).toMatch(/^2026-02-2[89]$/);
+  });
+  it('Given year 2026, When deriveValidTo, Then 2026-12-31', () => {
+    expect(deriveValidTo('2026')).toBe('2026-12-31');
+  });
+  it('Given exact date 2026-06-15, When deriveValidTo, Then same date', () => {
+    expect(deriveValidTo('2026-06-15')).toBe('2026-06-15');
+  });
+});
+
+describe('GraphBridge — D33 createNode time filling', () => {
+  let store: FakeGraphStore;
+  let bridge: ReturnType<typeof createGraphBridge>;
+  const orgId = 'test-org';
+
+  beforeEach(() => {
+    store = new FakeGraphStore();
+    bridge = createGraphBridge(store, orgId);
+  });
+
+  it('Given period Q1, When createNode, Then valid_from/valid_to/observed_at set', () => {
+    store.createNode('test_type', { period: '2026-Q1', standardKey: 'g:t:2026-Q1:2026-01-01', name: 'q1' }, orgId);
+    const node = store.nodes.find(n => n.props.name === 'q1');
+    expect(node?.props.valid_from).toBe('2026-01-01');
+    expect(node?.props.valid_to).toBe('2026-03-31');
+    expect(typeof node?.props.observed_at).toBe('string');
+  });
+
+  it('Given month period, When createNode, Then valid_from/valid_to correct', () => {
+    store.createNode('test_type', { period: '2026-06', standardKey: 'g:t:2026-06:2026-06-01', name: 'june' }, orgId);
+    const node = store.nodes.find(n => n.props.name === 'june');
+    expect(node?.props.valid_from).toBe('2026-06-01');
+    expect(node?.props.valid_to).toMatch(/^2026-06-3[01]$/);
+  });
+
+  it('Given no period, When createNode, Then observed_at set, valid_from/valid_to absent', () => {
+    store.createNode('test_type', { standardKey: 'g:t:noperiod', name: 'no-p' }, orgId);
+    const node = store.nodes.find(n => n.props.name === 'no-p');
+    expect(node?.props.valid_from).toBeUndefined();
+    expect(node?.props.valid_to).toBeUndefined();
+    expect(typeof node?.props.observed_at).toBe('string');
+  });
+
+  it('Given D29 conflict with time fields, When same standardKey, Then conflict detected', () => {
+    const key = 'g:t:2026-Q1:2026-01-01';
+    const firstId = store.createNode('test_type', { period: '2026-Q1', standardKey: key, value: 'a' }, orgId);
+    const secondId = store.createNode('test_type', { period: '2026-Q1', standardKey: key, value: 'b' }, orgId);
+    expect(secondId).toBe(firstId);
+    const node = store.nodes.find(n => n.id === firstId);
+    expect(node?.props.has_conflict).toBe(true);
+    expect((node?.props.data_versions as Array<unknown>).length).toBe(1);
   });
 });

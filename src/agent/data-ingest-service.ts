@@ -9,6 +9,7 @@ import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { createLogger } from '@synova/logger';
 import { getPIIScrubber } from '../security/pii-scrubber';
+import { deriveValidFrom } from '../l4/graph-bridge';
 
 const log = createLogger('agent/data-ingest');
 
@@ -156,9 +157,13 @@ export async function ingestRow(
   }
 
   // D29: 标准键冲突检测 — 用外部 period 字段生成 standardKey
+  // D33: standardKey 扩展为含 validFrom 时间维度
   const period = row['period'];
   if (period !== undefined && period !== null) {
-    props.standardKey = `${graph}:${mapping.targetNodeType}:${String(period)}`;
+    const periodStr = String(period);
+    const validFrom = deriveValidFrom(periodStr);
+    props.standardKey = `${graph}:${mapping.targetNodeType}:${periodStr}:${validFrom}`;
+    props.period = periodStr; // D33: 传递给 createNode 用于时间字段推导
   }
 
   try {

@@ -68,16 +68,89 @@ export interface SevenPowersInput { power: string; score: number; recommendation
 
 export interface CPCInput { processName: string; teamId: string; efficiency?: number }
 
+// ═══ D33: 时间字段推导 ═══
+// 数据层规范 §2.2: period → valid_from/valid_to 映射
+
+/** 从 period 推导 valid_from (起始日期) */
+export function deriveValidFrom(period: string): string {
+  const qMatch = period.match(/^(\d{4})-Q([1-4])$/);
+  if (qMatch) {
+    const quarters: Record<string, string> = { '1': '01-01', '2': '04-01', '3': '07-01', '4': '10-01' };
+    return `${qMatch[1]}-${quarters[qMatch[2]]}`;
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(period)) return period;
+  if (/^\d{4}-\d{2}$/.test(period)) return `${period}-01`;
+  if (/^\d{4}$/.test(period)) return `${period}-01-01`;
+  return period;
+}
+
+/** 从 period 推导 valid_to (结束日期) */
+export function deriveValidTo(period: string): string {
+  const qMatch = period.match(/^(\d{4})-Q([1-4])$/);
+  if (qMatch) {
+    const quarterEnds: Record<string, string> = { '1': '03-31', '2': '06-30', '3': '09-30', '4': '12-31' };
+    return `${qMatch[1]}-${quarterEnds[qMatch[2]]}`;
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(period)) return period;
+  if (/^\d{4}-\d{2}$/.test(period)) {
+    const [y, m] = period.split('-').map(Number);
+    const lastDay = new Date(y, m, 0).getDate();
+    return `${period}-${String(lastDay).padStart(2, '0')}`;
+  }
+  if (/^\d{4}$/.test(period)) return `${period}-12-31`;
+  return period;
+}
+
 // ═══ GraphBridge ═══
 
 export function createGraphBridge(store: GraphStore, graph: string, onGraphUpdated?: () => void) {
   const notify = () => onGraphUpdated?.();
 
   // v3.3 20.5: SOG schema 校验 — 包装 createNode/updateNode
+  // D29: 可选冲突检测 — props.standardKey 触发标准键查询 + data_versions 追加
+  // D33: 时间字段 — props.period 触发 valid_from/valid_to/observed_at 自动填充
   const _createNode = store.createNode.bind(store);
   const _updateNode = store.updateNode?.bind(store);
   store.createNode = (type: string, props: Record<string,unknown>, g: string): string => {
     validateAndLog(type, props);
+
+    // D33: 时间字段推导 — 从 period 映射 valid_from/valid_to
+    if (props?.period) {
+      const period = String(props.period);
+      props.valid_from = deriveValidFrom(period);
+      props.valid_to = deriveValidTo(period);
+    }
+    props.observed_at = props.observed_at || new Date().toISOString();
+
+    const standardKey = props?.standardKey;
+    if (standardKey) {
+      const existing = store.queryNodes(type, { standardKey: standardKey as string }, g);
+      if (existing.length > 0) {
+        const existingNode = existing[0];
+        const existingProps = existingNode.props;
+        const dataVersions = Array.isArray(existingProps.data_versions)
+          ? existingProps.data_versions as Array<Record<string, unknown>>
+          : [];
+        const existingCore: Record<string, unknown> = {};
+        for (const k of Object.keys(existingProps)) {
+          if (k !== 'data_versions' && k !== 'has_conflict') {
+            existingCore[k] = existingProps[k];
+          }
+        }
+        store.updateNode(existingNode.id, {
+          ...existingProps,
+          ...props,
+          data_versions: [
+            ...dataVersions,
+            { value: existingCore, recordedAt: new Date().toISOString() },
+          ],
+          has_conflict: true,
+        }, g);
+        return existingNode.id;
+      }
+      return _createNode(type, { ...props, data_versions: [], has_conflict: false }, g);
+    }
+
     return _createNode(type, props, g);
   };
   if (_updateNode) {

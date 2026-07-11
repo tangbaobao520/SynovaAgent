@@ -1,26 +1,24 @@
 {
   "version": "1.0",
-  "task": "D30: 数据质量门禁",
-  "brief": "2026-07-12-D30-数据质量门禁.md",
+  "task": "D39: TraversalPermissionFilter",
+  "brief": "2026-07-12-D39-TraversalPermissionFilter.md",
   "current_phase": 1,
   "approach": "rewrite",
   "phases": [
     {
       "step": 1,
       "action": "create",
-      "files": ["src/monitoring/data-quality-gate.ts"],
-      "checks": { "wiring": "deferred", "test_pairing": "deferred" }
-    },
-    {
-      "step": 2,
-      "action": "create",
-      "files": ["tests/monitoring/data-quality-gate.test.ts"],
+      "files": [
+        "src/l4/traversal-permission-filter.ts",
+        "tests/l4/traversal-permission-filter.test.ts"
+      ],
       "checks": { "wiring": "deferred", "test_pairing": "enforce" }
     }
   ],
   "principles": [
-    {"rule": "质量门禁不可阻断写入", "verify": "grep -E 'throw|process.exit' src/monitoring/data-quality-gate.ts | wc -l | xargs test 0 -eq"},
-    {"rule": "复用 FreshnessTracker + PipelineMonitor", "verify": "grep -E 'FreshnessTracker|PipelineMonitor' src/monitoring/data-quality-gate.ts | wc -l | xargs test 1 -ge"}
+    {"rule": "不修改 graph-traversal.ts 核心逻辑 — 外层包裹不侵入", "verify": "git diff --name-only HEAD src/l4/graph-traversal.ts | wc -l | xargs test 0 -eq"},
+    {"rule": "裁剪后 edges 无悬挂引用", "verify": "grep 'filteredNodeIds\|filteredEdges' src/l4/traversal-permission-filter.ts | wc -l | xargs test 2 -le"},
+    {"rule": "零 as any", "verify": "grep -c 'as any' src/l4/traversal-permission-filter.ts | xargs test 0 -eq"}
   ],
-  "memory_refs": ["memory/engine-core-bridge-files.md"]
+  "memory_refs": []
 }
