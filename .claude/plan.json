@@ -1,24 +1,26 @@
 {
   "version": "1.0",
-  "task": "D38: PolicyEngine权限引擎",
-  "brief": "2026-07-12-D38-PolicyEngine权限引擎.md",
+  "task": "D30: 数据质量门禁",
+  "brief": "2026-07-12-D30-数据质量门禁.md",
   "current_phase": 1,
   "approach": "rewrite",
   "phases": [
     {
       "step": 1,
       "action": "create",
-      "files": [
-        "src/security/policy-engine.ts",
-        "tests/security/policy-engine.test.ts"
-      ],
+      "files": ["src/monitoring/data-quality-gate.ts"],
+      "checks": { "wiring": "deferred", "test_pairing": "deferred" }
+    },
+    {
+      "step": 2,
+      "action": "create",
+      "files": ["tests/monitoring/data-quality-gate.test.ts"],
       "checks": { "wiring": "deferred", "test_pairing": "enforce" }
     }
   ],
   "principles": [
-    {"rule": "默认Deny (OWD=Private) — 无匹配规则时返回Deny", "verify": "grep 'deny_default' src/security/policy-engine.ts | wc -l | xargs test 1 -eq"},
-    {"rule": "接口签名与安全规范§3.4一致 — evaluate(AccessRequest): PolicyDecision", "verify": "grep 'evaluate.*AccessRequest.*PolicyDecision' src/security/policy-engine.ts | wc -l | xargs test 1 -eq"},
-    {"rule": "零 as any", "verify": "grep -c 'as any' src/security/policy-engine.ts | xargs test 1 -eq"}
+    {"rule": "质量门禁不可阻断写入", "verify": "grep -E 'throw|process.exit' src/monitoring/data-quality-gate.ts | wc -l | xargs test 0 -eq"},
+    {"rule": "复用 FreshnessTracker + PipelineMonitor", "verify": "grep -E 'FreshnessTracker|PipelineMonitor' src/monitoring/data-quality-gate.ts | wc -l | xargs test 1 -ge"}
   ],
-  "memory_refs": []
+  "memory_refs": ["memory/engine-core-bridge-files.md"]
 }
