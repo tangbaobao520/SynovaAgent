@@ -3,5 +3,5 @@
 | 符号 | 文件 | 行 | 内容 |
 |------|------|-----|------|
 
-## TraversalPermissionFilter|traverseFiltered|UserContext
-| `TraversalPermissionFilter|traverseFiltered|UserContext` | *(无引用)* | — | — |
+## DataExporter|DataPurger|data.export|data.delete|purge|export
+| `DataExporter|DataPurger|data.export|data.delete|purge|export` | *(无引用)* | — | — |

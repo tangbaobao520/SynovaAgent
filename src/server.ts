@@ -60,6 +60,7 @@ import diagnosisUploadRoutes from './routes/diagnosis-upload-v2';
 import sentinelHealthRoutes from './routes/sentinel-health';
 import sentinelRoutes from './routes/sentinel';
 import dataRoutes from './routes/data'; // V4.2.9 — 数据上传 API
+import dataLifecycleRoutes from './routes/data-lifecycle'; // D40 — GDPR 可携带权+被遗忘权
 import reloadRoutes from './routes/reload';
 import adaptersRoutes from './routes/adapters';
 import auditRoutes from './routes/audit';
@@ -423,6 +424,7 @@ export async function createServer(): Promise<Server> {
   app.use(deptWorkspaceRoutes);   // GET /dept → 部门工作台 (PRD v1.6 Slice 7)
   app.use(actionsApiRoutes);      // /api/actions → 行动项 CRUD (PRD §7, v3.5)
   app.use(dataRoutes);           // POST /api/data/upload — 数据上传入口 (V4.2.9)
+  app.use(dataLifecycleRoutes);  // POST /api/data/export + /purge — D40 GDPR 生命周期
   app.use(healthRoutes);
   app.use(evolutionRoutes);   // /api/evolution/* — L0 进化引擎管理 (Phase P2)
   app.use(gaEvolutionRoutes);  // /ga/evolution — GA 进化引擎管理面板 (Phase P2)
