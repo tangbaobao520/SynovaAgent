@@ -6,14 +6,13 @@
  * POST /api/diagnosis/consult/:id/interrupt → 中断诊断
  *
  * 铁律 39: L1 通过 DiagnosisEngine 接口调用引擎，不直接 import engine-core。
- * 审计 P0-20260604: 移除 @synova/engine-core 直接依赖 → 改用 EngineCoreVendorAdapter。
+ * D10: engine-core 退役 — 直接使用 SynovaDiagnosisEngineImpl。EngineCoreVendorAdapter 已 @deprecated。
  */
 import { Router, type Request, type Response } from 'express';
 import { createProvider } from '../providers';
 import { detectProvider } from '../providers/detect';
 import { loadConfig } from '../config';
 import { createLogger } from '@synova/logger';
-import { EngineCoreVendorAdapter } from '../adapters/engine-core-adapter';
 import type { DiagnosisEngine, DiagnosisEvent, ConsultationResult } from '../l2-interfaces/diagnosis-engine';
 import { ToolRegistry } from '../agent/tools';
 // 铁律 39: L1 不直接引用 L4。GraphStoreLike 由 L2 post-diagnosis-processor 声明。
@@ -91,7 +90,6 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
   });
 
   try {
-    // 铁律 39: L1 → L2 接口 — 通过 EngineCoreVendorAdapter (不直接 import engine-core)
     const config = loadConfig();
     const provider = createProvider(detectProvider(), {
       apiKey: config.llmApiKey,
@@ -100,47 +98,42 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
       model: config.llmModel,
     });
     const toolRegistry = new ToolRegistry();
-    let engine: DiagnosisEngine;
 
-    // Step 4: 默认新引擎 — SYNOVA_USE_OLD_ENGINE=true 回退旧引擎
-    if (process.env.SYNOVA_USE_OLD_ENGINE === 'true') {
-      engine = new EngineCoreVendorAdapter(provider, toolRegistry);
-    } else {
-      log.info({ consultId }, '使用 Synova 自研引擎');
-      const { createSynovaDiagnosisEngine } = await import('../l3/synova-diagnosis-engine-impl');
-      const newEngine = createSynovaDiagnosisEngine(
-        {
-          async chat(messages, opts) {
-            const result = await provider.chat(
-              messages as Array<{ role: 'system' | 'user' | 'assistant' | 'tool'; content: string }>,
-              opts as Record<string, unknown> | undefined,
-            );
-            return {
-              content: result.content || '',
-              toolCalls: result.toolCalls?.map(tc => ({
-                name: tc.function.name,
-                arguments: JSON.parse(tc.function.arguments) as Record<string, unknown>,
-              })),
-            };
-          },
+    // D10: engine-core 退役 — 始终使用 Synova 自研引擎
+    log.info({ consultId }, '使用 Synova 自研引擎');
+    const { createSynovaDiagnosisEngine } = await import('../l3/synova-diagnosis-engine-impl');
+    const newEngine = createSynovaDiagnosisEngine(
+      {
+        async chat(messages, opts) {
+          const result = await provider.chat(
+            messages as Array<{ role: 'system' | 'user' | 'assistant' | 'tool'; content: string }>,
+            opts as Record<string, unknown> | undefined,
+          );
+          return {
+            content: result.content || '',
+            toolCalls: result.toolCalls?.map(tc => ({
+              name: tc.function.name,
+              arguments: JSON.parse(tc.function.arguments) as Record<string, unknown>,
+            })),
+          };
         },
-        {
-          async execute(name, args) { const r = await toolRegistry.execute(name, args); return { result: r }; },
-          listTools() { return toolRegistry.listTools().map(t => ({ name: t.name, description: t.description, parameters: (t.parameters || {}) as Record<string, unknown> })); },
-        },
-        {
-          maxToolRounds: config.diagnosis?.maxToolRounds ?? 4,
-          gateDataCompleteness: config.diagnosis?.gateDataCompleteness ?? 0.3,
-          gateMinHypothesisConfidence: config.diagnosis?.gateMinHypothesisConfidence ?? 0.5,
-          graphStore: req.app.locals?.graphStore,
-        },
-      );
-      engine = {
-        async runConsultation(teamId, initiator, onEvent) {
-          return newEngine.runConsultation(teamId, initiator, undefined, onEvent as Parameters<typeof newEngine.runConsultation>[3]);
-        },
-      };
-    }
+      },
+      {
+        async execute(name, args) { const r = await toolRegistry.execute(name, args); return { result: r }; },
+        listTools() { return toolRegistry.listTools().map(t => ({ name: t.name, description: t.description, parameters: (t.parameters || {}) as Record<string, unknown> })); },
+      },
+      {
+        maxToolRounds: config.diagnosis?.maxToolRounds ?? 4,
+        gateDataCompleteness: config.diagnosis?.gateDataCompleteness ?? 0.3,
+        gateMinHypothesisConfidence: config.diagnosis?.gateMinHypothesisConfidence ?? 0.5,
+        graphStore: req.app.locals?.graphStore,
+      },
+    );
+    const engine: DiagnosisEngine = {
+      async runConsultation(teamId, initiator, onEvent) {
+        return newEngine.runConsultation(teamId, initiator, undefined, onEvent as Parameters<typeof newEngine.runConsultation>[3]);
+      },
+    };
 
     const active: ActiveConsultation = {
       consultId, teamId, phase: 0, aborted: false,

@@ -1,14 +1,11 @@
 /**
+ * @deprecated D10: engine-core 退役。SynovaDiagnosisEngineImpl 已替换所有运行时调用。
+ * 本文件保留为降级 fallback（一周观察期后删除）。
+ *
  * adapters/engine-core-adapter.ts — engine-core 适配器 (旧引擎)
  *
  * 铁律 39: 唯一知道 server/vendor/ 路径的文件。
  * 实现 DiagnosisEngine 接口，封装动态 import + 适配器创建。
- *
- * ═══ Step 3 迁移 (待执行) ═══
- * 替换为新引擎: SynovaDiagnosisEngineImpl + createSynovaDiagnosisEngine
- *   import { SynovaDiagnosisEngineImpl, createSynovaDiagnosisEngine } from '../l3/synova-diagnosis-engine-impl';
- *   const engine = createSynovaDiagnosisEngine(llmClient, toolExecutor, config);
- * 切换后本文件可删除。
  */
 import type { DiagnosisEngine, DiagnosisEvent, ConsultationResult } from '../l2-interfaces/diagnosis-engine';
 import type { LLMProvider } from '../providers/types';
@@ -17,6 +14,7 @@ import { createLogger } from '@synova/logger';
 
 const log = createLogger('adapters/engine-core');
 
+/** @deprecated D10: 使用 SynovaDiagnosisEngineImpl 替换 */
 export class EngineCoreVendorAdapter implements DiagnosisEngine {
   private provider: LLMProvider;
   private toolRegistry: ToolRegistry;
