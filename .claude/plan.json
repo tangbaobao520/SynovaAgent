@@ -1,24 +1,33 @@
 {
   "version": "1.0",
-  "task": "D39: TraversalPermissionFilter",
-  "brief": "2026-07-12-D39-TraversalPermissionFilter.md",
+  "task": "D33: 存储时间语义",
+  "brief": "2026-07-12-D33-存储时间语义.md",
   "current_phase": 1,
   "approach": "rewrite",
   "phases": [
     {
       "step": 1,
-      "action": "create",
-      "files": [
-        "src/l4/traversal-permission-filter.ts",
-        "tests/l4/traversal-permission-filter.test.ts"
-      ],
+      "action": "modify",
+      "files": ["src/l4/graph-bridge.ts"],
+      "checks": { "wiring": "deferred", "test_pairing": "enforce" }
+    },
+    {
+      "step": 2,
+      "action": "modify",
+      "files": ["src/agent/data-ingest-service.ts"],
+      "checks": { "wiring": "deferred", "test_pairing": "deferred" }
+    },
+    {
+      "step": 3,
+      "action": "modify",
+      "files": ["tests/l4/graph-bridge.test.ts"],
       "checks": { "wiring": "deferred", "test_pairing": "enforce" }
     }
   ],
   "principles": [
-    {"rule": "不修改 graph-traversal.ts 核心逻辑 — 外层包裹不侵入", "verify": "git diff --name-only HEAD src/l4/graph-traversal.ts | wc -l | xargs test 0 -eq"},
-    {"rule": "裁剪后 edges 无悬挂引用", "verify": "grep 'filteredNodeIds\|filteredEdges' src/l4/traversal-permission-filter.ts | wc -l | xargs test 2 -le"},
-    {"rule": "零 as any", "verify": "grep -c 'as any' src/l4/traversal-permission-filter.ts | xargs test 0 -eq"}
+    {"rule": "period→valid_from/valid_to 按数据层规范§2.2 四格式映射", "verify": "grep deriveValidFrom src/l4/graph-bridge.ts | wc -l | xargs test 1 -eq"},
+    {"rule": "无period时valid_from/valid_to不填充，仅observed_at=now", "verify": "grep observed_at src/l4/graph-bridge.ts | wc -l | xargs test 3 -eq"},
+    {"rule": "向后兼容 零as any", "verify": "grep -r as.any src/l4/graph-bridge.ts src/agent/data-ingest-service.ts | wc -l | xargs test 0 -eq"}
   ],
   "memory_refs": []
 }
