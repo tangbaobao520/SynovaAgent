@@ -9,7 +9,7 @@ import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { createLogger } from '@synova/logger';
 import { getPIIScrubber } from '../security/pii-scrubber';
-import { deriveValidFrom } from '../l4/graph-bridge';
+import { deriveValidFrom } from '../l3/period-utils';
 
 const log = createLogger('agent/data-ingest');
 

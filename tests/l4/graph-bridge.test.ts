@@ -7,7 +7,8 @@
  * 修复: GraphStore 接口不匹配（参数顺序/自生成ID）
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createGraphBridge, deriveValidFrom, deriveValidTo } from '../../src/l4/graph-bridge';
+import { createGraphBridge } from '../../src/l4/graph-bridge';
+import { deriveValidFrom, deriveValidTo } from '../../src/l3/period-utils';
 import type { GraphStore } from '../../src/l4/graph-bridge';
 import { NodeType, EdgeType } from '@synova/ontology';
 
