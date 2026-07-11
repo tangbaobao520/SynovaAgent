@@ -1,36 +1,39 @@
 {
   "version": "1.0",
-  "task": "D36: 可插拔扩展机制",
-  "brief": "2026-07-11-D36-可插拔扩展机制.md",
+  "task": "D29: 数据冲突机制",
+  "brief": "2026-07-11-D29-数据冲突机制.md",
   "current_phase": 1,
   "approach": "rewrite",
   "phases": [
     {
       "step": 1,
-      "action": "create",
-      "files": [
-        "src/agent/adapter-scanner.ts",
-        "src/agent/adapter-registry.ts",
-        "src/routes/adapters.ts",
-        "extensions/ontology/custom-adapters/registry.ts"
-      ],
+      "action": "modify",
+      "files": ["src/l4/graph-bridge.ts"],
       "checks": { "wiring": "deferred", "test_pairing": "enforce" }
     },
     {
       "step": 2,
       "action": "modify",
-      "files": [
-        "src/agent/data-ingest-service.ts",
-        "src/init/file-driven-loaders.ts",
-        "src/server.ts"
-      ],
-      "checks": { "wiring": "enforce", "test_pairing": "enforce" }
+      "files": ["src/agent/data-ingest-service.ts"],
+      "checks": { "wiring": "deferred", "test_pairing": "deferred" }
+    },
+    {
+      "step": 3,
+      "action": "modify",
+      "files": ["src/l4/agent-memory-store.ts"],
+      "checks": { "wiring": "deferred", "test_pairing": "deferred" }
+    },
+    {
+      "step": 4,
+      "action": "modify",
+      "files": ["tests/l4/graph-bridge.test.ts"],
+      "checks": { "wiring": "deferred", "test_pairing": "enforce" }
     }
   ],
   "principles": [
-    {"rule": "文件驱动自发现——新增适配器只需放入目录，不修改代码", "verify": "grep 'scanFieldMappings' src/agent/adapter-scanner.ts | wc -l | xargs test 1 -eq"},
-    {"rule": "不实现实时文件监听——用启动扫描 + reload API", "verify": "grep -c 'fs.watch' src/agent/adapter-scanner.ts | xargs test 0 -eq"},
-    {"rule": "零 as any", "verify": "grep -c 'as any' src/agent/adapter-scanner.ts src/agent/adapter-registry.ts src/routes/adapters.ts | grep ':0' | wc -l | xargs test 3 -eq"}
+    {"rule": "createNode现有调用方兼容", "verify": "grep -r store.createNode src/l4/graph-bridge.ts | grep -v standardKey | wc -l | xargs test 1 -eq"},
+    {"rule": "冲突时不覆盖旧值", "verify": "grep data_versions src/l4/graph-bridge.ts src/l4/agent-memory-store.ts | wc -l | xargs test 3 -lt"},
+    {"rule": "向后兼容 零as any", "verify": "grep -r as.any src/l4/graph-bridge.ts src/agent/data-ingest-service.ts src/l4/agent-memory-store.ts | wc -l | xargs test 0 -eq"}
   ],
   "memory_refs": []
 }
