@@ -1,0 +1,34 @@
+{
+  "name": "cross-expert-review",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "跨专家交叉验证",
+  "description": "让多位专家交叉验证同一发现，评估一致性和冲突程度，提高诊断置信度。",
+  "tier": "L3",
+  "complexity": "composite",
+  "expert": "host",
+  "tools": [
+    "cross-validate",
+    "query-graph"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "system"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": [
+      "finance",
+      "strategy",
+      "org",
+      "marketing",
+      "tech",
+      "action",
+      "business_model",
+      "knowledge"
+    ]
+  }
+}

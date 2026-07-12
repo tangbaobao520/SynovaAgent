@@ -1,0 +1,24 @@
+{
+  "name": "agent-self-health",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "Agent自我健康监控",
+  "description": "综合监控Agent系统健康状态，包括看门狗状态、哨兵心跳、数据库和LLM端点健康。",
+  "tier": "L7",
+  "complexity": "composite",
+  "expert": "host",
+  "tools": [
+    "query-graph"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "system"
+      ],
+      "sensitiveAccess": "none"
+    },
+    "crossExpert": []
+  }
+}

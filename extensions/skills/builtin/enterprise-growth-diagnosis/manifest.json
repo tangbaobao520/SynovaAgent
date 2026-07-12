@@ -1,0 +1,40 @@
+{
+  "name": "enterprise-growth-diagnosis",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "全企业增长诊断",
+  "description": "覆盖全部7维度和8位专家的全企业增长诊断，识别增长阻碍者并给出跨维度因果链。",
+  "tier": "L3",
+  "complexity": "expert",
+  "expert": "multi",
+  "tools": [
+    "cross-validate",
+    "query-graph"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "financial",
+        "customer",
+        "market",
+        "organizational",
+        "technology",
+        "execution",
+        "knowledge"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": [
+      "finance",
+      "strategy",
+      "org",
+      "marketing",
+      "tech",
+      "action",
+      "business_model",
+      "knowledge"
+    ]
+  }
+}

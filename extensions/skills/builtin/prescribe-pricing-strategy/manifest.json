@@ -1,0 +1,32 @@
+{
+  "name": "prescribe-pricing-strategy",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "定价策略建议",
+  "description": "基于需求弹性、边际成本和竞争格局生成最优定价策略，覆盖单一定价、二部定价、价格歧视、捆绑和峰时定价。",
+  "tier": "L4",
+  "complexity": "expert",
+  "expert": "marketing",
+  "tools": [
+    "compute-price-elasticity",
+    "compute-marginal-cost",
+    "compute-competitive-positioning",
+    "compute-optimal-price",
+    "compute-two-part-tariff",
+    "compute-price-discrimination",
+    "compute-bundling-optimal",
+    "compute-peak-load-pricing"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "customer",
+        "market"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": []
+  }
+}

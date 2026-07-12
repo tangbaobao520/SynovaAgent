@@ -1,0 +1,26 @@
+{
+  "name": "verify-hypothesis",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "假设验证测试",
+  "description": "对诊断中的因果假设进行统计验证，通过因果序列分析和干预效应评估确定假设成立与否。",
+  "tier": "L5",
+  "complexity": "expert",
+  "expert": "action",
+  "tools": [
+    "compute-causal-sequence",
+    "compute-intervention-effect",
+    "compute-shapley-attribution"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "execution"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": []
+  }
+}

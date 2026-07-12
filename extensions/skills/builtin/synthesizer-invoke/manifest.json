@@ -1,0 +1,26 @@
+{
+  "name": "synthesizer-invoke",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "综合诊断合成",
+  "description": "将多位专家的诊断结论合成为统一报告，解决冲突、生成统一行动方案。",
+  "tier": "L3",
+  "complexity": "expert",
+  "expert": "host",
+  "tools": [
+    "cross-validate",
+    "query-graph",
+    "query-knowledge"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "system"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": []
+  }
+}

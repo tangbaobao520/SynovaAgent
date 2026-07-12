@@ -1,0 +1,32 @@
+{
+  "name": "diagnose-churn-root-cause",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "客户流失根因分析",
+  "description": "通过多维度分析定位客户流失的根本原因，生成流失干预优先级排序。",
+  "tier": "L3",
+  "complexity": "expert",
+  "expert": "marketing",
+  "tools": [
+    "compute-customer-lockin",
+    "compute-customer-value-score",
+    "compute-customer-data-loop",
+    "compute-competitive-positioning",
+    "cross-validate"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "customer",
+        "market"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": [
+      "strategy",
+      "business_model"
+    ]
+  }
+}

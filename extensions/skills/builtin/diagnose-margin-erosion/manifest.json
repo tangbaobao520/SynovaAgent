@@ -1,0 +1,34 @@
+{
+  "name": "diagnose-margin-erosion",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "利润率下降根因分析",
+  "description": "从成本端、收入端、竞争端、结构端四维度定位利润率下降的根本原因，提供干预路径。",
+  "tier": "L3",
+  "complexity": "expert",
+  "expert": "finance",
+  "tools": [
+    "compute-dol",
+    "compute-break-even",
+    "compute-marginal-cost",
+    "compute-fixed-cost-rigidity",
+    "compute-price-elasticity",
+    "compute-competitive-positioning",
+    "cross-validate",
+    "query-graph"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "financial"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": [
+      "strategy",
+      "business_model"
+    ]
+  }
+}

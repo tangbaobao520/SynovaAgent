@@ -1,0 +1,24 @@
+{
+  "name": "manage-sentinel-config",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "哨兵配置管理",
+  "description": "管理哨兵配置状态，查看活跃哨兵、配置状态和执行延迟。",
+  "tier": "L7",
+  "complexity": "composite",
+  "expert": "host",
+  "tools": [
+    "query-graph"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "system"
+      ],
+      "sensitiveAccess": "none"
+    },
+    "crossExpert": []
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "name": "analyze-customer-value",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "客户价值评估",
+  "description": "综合评估客户价值，包括客户价值评分、盈利能力分层、需求浓度和LTV分布。",
+  "tier": "L2",
+  "complexity": "composite",
+  "expert": "marketing",
+  "tools": [
+    "compute-customer-value-score",
+    "compute-customer-profitability",
+    "compute-customer-demand-structure"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "customer",
+        "market"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": []
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "name": "diagnose-competitive-decay",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "竞争位势衰减诊断",
+  "description": "诊断竞争位势随时间衰减的方向和速度，识别护城河侵蚀信号，生成战略响应选项。",
+  "tier": "L3",
+  "complexity": "expert",
+  "expert": "strategy",
+  "tools": [
+    "compute-competitive-positioning",
+    "compute-competitor-feature-threat",
+    "compute-competitor-pricing-landscape",
+    "compute-market-share-capture",
+    "compute-hhi",
+    "cross-validate"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "market",
+        "competitive"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": [
+      "business_model"
+    ]
+  }
+}

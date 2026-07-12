@@ -1,0 +1,30 @@
+{
+  "name": "diagnose-org-health",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "组织健康扫描",
+  "description": "从信息流密度、激励一致性、信任摩擦、惯例刚性等多维扫描组织健康状况。",
+  "tier": "L3",
+  "complexity": "expert",
+  "expert": "org",
+  "tools": [
+    "compute-information-flow",
+    "compute-incentive-alignment",
+    "compute-trust-friction",
+    "compute-routine-rigidity",
+    "compute-decision-authority",
+    "compute-knowledge-sharing",
+    "cross-validate"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "organizational"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": []
+  }
+}

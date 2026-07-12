@@ -1,0 +1,25 @@
+{
+  "name": "detect-plan-deviation",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "方案偏差检测",
+  "description": "自动检测预计与实际执行之间的偏差，分析趋势并判断是否需要触发重新诊断。",
+  "tier": "L5",
+  "complexity": "expert",
+  "expert": "action",
+  "tools": [
+    "acquire-edge-data",
+    "query-graph"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "execution"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": []
+  }
+}

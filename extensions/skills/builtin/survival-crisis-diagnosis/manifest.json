@@ -1,0 +1,31 @@
+{
+  "name": "survival-crisis-diagnosis",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "生存危机应急诊断",
+  "description": "当企业触及生存危机边界时紧急启动的诊断：评估现金流 runway、识别紧急威胁、输出0-3个关键修复方案。",
+  "tier": "L3",
+  "complexity": "expert",
+  "expert": "multi",
+  "tools": [
+    "cross-validate",
+    "query-graph"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "financial",
+        "market",
+        "execution"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": [
+      "finance",
+      "strategy",
+      "action"
+    ]
+  }
+}

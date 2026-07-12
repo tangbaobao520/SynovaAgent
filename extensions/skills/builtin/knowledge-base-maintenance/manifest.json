@@ -1,0 +1,25 @@
+{
+  "name": "knowledge-base-maintenance",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "知识库维护",
+  "description": "维护知识库健康，检测过时知识、冲突条目和校准状态。",
+  "tier": "L6",
+  "complexity": "expert",
+  "expert": "knowledge",
+  "tools": [
+    "query-knowledge",
+    "query-graph"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "knowledge"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": []
+  }
+}

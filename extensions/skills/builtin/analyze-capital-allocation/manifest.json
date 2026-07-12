@@ -1,0 +1,26 @@
+{
+  "name": "analyze-capital-allocation",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "资本配置效率",
+  "description": "评估企业资本配置效率，计算资本周转率、NPV状态和利润再投资率。",
+  "tier": "L2",
+  "complexity": "composite",
+  "expert": "finance",
+  "tools": [
+    "compute-capital-allocation",
+    "compute-npv",
+    "compute-profit-reinvestment"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "financial"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": []
+  }
+}

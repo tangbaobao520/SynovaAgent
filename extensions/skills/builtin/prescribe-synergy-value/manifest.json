@@ -1,0 +1,28 @@
+{
+  "name": "prescribe-synergy-value",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "协同价值评估",
+  "description": "评估企业内部跨部门协同价值，量化知识溢出效应和交叉功能协同，推荐整合方案。",
+  "tier": "L4",
+  "complexity": "expert",
+  "expert": "business_model",
+  "tools": [
+    "compute-synergy",
+    "compute-cross-functional-synergy",
+    "compute-knowledge-sharing",
+    "query-graph"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "business-model",
+        "organizational"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": []
+  }
+}

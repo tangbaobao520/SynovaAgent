@@ -1,0 +1,25 @@
+{
+  "name": "distill-expert-knowledge",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "专家知识蒸馏",
+  "description": "从历史诊断和专家反馈中提取可复用的规则和模式，构建组织知识资产。",
+  "tier": "L6",
+  "complexity": "expert",
+  "expert": "knowledge",
+  "tools": [
+    "query-knowledge",
+    "query-graph"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "knowledge"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": []
+  }
+}

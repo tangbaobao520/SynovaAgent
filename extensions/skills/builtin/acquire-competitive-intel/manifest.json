@@ -1,0 +1,25 @@
+{
+  "name": "acquire-competitive-intel",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "获取竞争情报",
+  "description": "获取市场竞争力相关情报，包括市场份额、竞争价格和七力评估数据。",
+  "tier": "L1",
+  "complexity": "atomic",
+  "expert": "strategy",
+  "tools": [
+    "acquire-edge-data"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "market",
+        "competitive"
+      ],
+      "sensitiveAccess": "none"
+    },
+    "crossExpert": []
+  }
+}

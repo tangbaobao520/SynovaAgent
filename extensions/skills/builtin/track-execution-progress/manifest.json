@@ -1,0 +1,25 @@
+{
+  "name": "track-execution-progress",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "执行进度追踪",
+  "description": "追踪诊断方案的执行进度，检测停滞项和偏差，生成偏差警报。",
+  "tier": "L5",
+  "complexity": "composite",
+  "expert": "action",
+  "tools": [
+    "query-graph",
+    "acquire-edge-data"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "execution"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": []
+  }
+}

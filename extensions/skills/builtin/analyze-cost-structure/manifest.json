@@ -1,0 +1,25 @@
+{
+  "name": "analyze-cost-structure",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "成本结构诊断",
+  "description": "分析企业成本结构，计算固定成本比率、变动成本比率、边际成本和固定成本刚性。",
+  "tier": "L2",
+  "complexity": "composite",
+  "expert": "finance",
+  "tools": [
+    "compute-fixed-cost-rigidity",
+    "compute-marginal-cost"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "financial"
+      ],
+      "sensitiveAccess": "none"
+    },
+    "crossExpert": []
+  }
+}

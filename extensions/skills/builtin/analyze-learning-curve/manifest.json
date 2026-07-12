@@ -1,0 +1,25 @@
+{
+  "name": "analyze-learning-curve",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "学习曲线评估",
+  "description": "评估组织学习速率和知识复用效率，对比行业基准判断学习曲线位置。",
+  "tier": "L2",
+  "complexity": "composite",
+  "expert": "org",
+  "tools": [
+    "compute-learning-rate",
+    "compute-org-learning"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "organizational"
+      ],
+      "sensitiveAccess": "none"
+    },
+    "crossExpert": []
+  }
+}

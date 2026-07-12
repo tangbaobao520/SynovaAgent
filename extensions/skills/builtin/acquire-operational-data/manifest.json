@@ -1,0 +1,25 @@
+{
+  "name": "acquire-operational-data",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "获取运营数据",
+  "description": "获取运营效率数据，包括产能利用率、缺陷率、技术栈健康和IT基础设施评分。",
+  "tier": "L1",
+  "complexity": "atomic",
+  "expert": "tech",
+  "tools": [
+    "acquire-edge-data"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "technology",
+        "operational"
+      ],
+      "sensitiveAccess": "none"
+    },
+    "crossExpert": []
+  }
+}

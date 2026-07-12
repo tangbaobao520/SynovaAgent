@@ -1,0 +1,24 @@
+{
+  "name": "acquire-financial-data",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "获取财务数据",
+  "description": "从本体层获取企业财务数据，包括资本、收入、成本和现金流信息。不涉及推理，仅数据查询。",
+  "tier": "L1",
+  "complexity": "atomic",
+  "expert": "finance",
+  "tools": [
+    "acquire-edge-data"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "financial"
+      ],
+      "sensitiveAccess": "none"
+    },
+    "crossExpert": []
+  }
+}

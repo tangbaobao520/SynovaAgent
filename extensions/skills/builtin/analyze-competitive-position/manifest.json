@@ -1,0 +1,26 @@
+{
+  "name": "analyze-competitive-position",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "竞争位势评估",
+  "description": "基于七力框架和HHI指数评估企业竞争位势，识别市场结构类型和竞争威胁。",
+  "tier": "L2",
+  "complexity": "composite",
+  "expert": "strategy",
+  "tools": [
+    "compute-competitive-positioning",
+    "compute-hhi"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "market",
+        "competitive"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": []
+  }
+}

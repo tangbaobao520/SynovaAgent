@@ -1,0 +1,25 @@
+{
+  "name": "match-best-practice",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "最佳实践匹配",
+  "description": "将当前企业状况与行业最佳实践进行匹配分析，识别知识缺口和可复用模式。",
+  "tier": "L6",
+  "complexity": "expert",
+  "expert": "knowledge",
+  "tools": [
+    "query-knowledge",
+    "acquire-edge-data"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "knowledge"
+      ],
+      "sensitiveAccess": "none"
+    },
+    "crossExpert": []
+  }
+}

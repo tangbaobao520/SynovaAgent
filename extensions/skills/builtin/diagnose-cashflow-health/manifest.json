@@ -1,0 +1,31 @@
+{
+  "name": "diagnose-cashflow-health",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "现金流健康诊断",
+  "description": "四层追溯协议的现金流健康诊断：表层症状→中层传导→底层结构→根因定位。",
+  "tier": "L3",
+  "complexity": "expert",
+  "expert": "finance",
+  "tools": [
+    "acquire-edge-data",
+    "compute-break-even",
+    "compute-dol",
+    "compute-capital-allocation",
+    "cross-validate",
+    "query-graph"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "financial"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": [
+      "strategy"
+    ]
+  }
+}
