@@ -258,3 +258,111 @@ describe('AuditService', () => {
     expect(gaLogs.length).toBe(2);
   });
 });
+
+// ============================================================
+// D41: 审计哈希链 — computeAuditHash + log() 哈希链 + verifyChain
+// ============================================================
+
+describe('D41 审计哈希链', () => {
+  beforeEach(async () => {
+    await loadModules();
+  });
+
+  it('computeAuditHash: 相同输入 → 相同输出', async () => {
+    const { computeAuditHash } = await import('../../src/security/crypto-hash-utils');
+    const hash1 = computeAuditHash('node.create', 'u1', 'org-1', '2026-01-01T00:00:00.000Z', '0'.repeat(64), '{}');
+    const hash2 = computeAuditHash('node.create', 'u1', 'org-1', '2026-01-01T00:00:00.000Z', '0'.repeat(64), '{}');
+    expect(hash1).toBe(hash2);
+    expect(hash1.length).toBe(64);
+    expect(hash1).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it('computeAuditHash: 不同 prevHash → 不同输出', async () => {
+    const { computeAuditHash } = await import('../../src/security/crypto-hash-utils');
+    const hash1 = computeAuditHash('node.create', 'u1', 'org-1', '2026-01-01T00:00:00.000Z', '0'.repeat(64), '{}');
+    const hash2 = computeAuditHash('node.create', 'u1', 'org-1', '2026-01-01T00:00:00.000Z', 'a'.repeat(64), '{}');
+    expect(hash1).not.toBe(hash2);
+  });
+
+  it('log() 写入 → 记录含 prev_hash 和 current_hash', () => {
+    const db = createTestDb();
+    const store = new AuditStore(db);
+
+    store.log({
+      orgId: 'org-1', actorId: 'u1', actorRole: 'admin', action: 'node.create',
+      targetType: 'Person', targetId: 'n_001',
+    });
+
+    const row = db.prepare('SELECT prev_hash, current_hash FROM audit_log LIMIT 1').get() as Record<string, unknown>;
+    expect(row.prev_hash).toBe('0'.repeat(64)); // 创世块
+    expect(row.current_hash).toMatch(/^[0-9a-f]{64}$/);
+    expect((row.current_hash as string).length).toBe(64);
+  });
+
+  it('log() 两次写入 → 第二条的 prev_hash = 第一条的 current_hash', () => {
+    const db = createTestDb();
+    const store = new AuditStore(db);
+
+    store.log({ orgId: 'org-1', actorId: 'u1', actorRole: 'admin', action: 'entry.1' });
+    store.log({ orgId: 'org-1', actorId: 'u1', actorRole: 'admin', action: 'entry.2' });
+
+    const rows = db.prepare('SELECT prev_hash, current_hash FROM audit_log ORDER BY created_at ASC').all() as Array<Record<string, string>>;
+    expect(rows.length).toBe(2);
+    expect(rows[1].prev_hash).toBe(rows[0].current_hash);
+  });
+
+  it('verifyChain: 完整链 → {valid: true}', () => {
+    const db = createTestDb();
+    const store = new AuditStore(db);
+
+    store.log({ orgId: 'org-1', actorId: 'u1', actorRole: 'admin', action: 'entry.1' });
+    store.log({ orgId: 'org-1', actorId: 'u1', actorRole: 'admin', action: 'entry.2' });
+    store.log({ orgId: 'org-1', actorId: 'u1', actorRole: 'admin', action: 'entry.3' });
+
+    const result = store.verifyChain('org-1');
+    expect(result.valid).toBe(true);
+    expect(result.totalRecords).toBe(3);
+  });
+
+  it('verifyChain: 中间篡改 → {valid: false, brokenAt: N}', () => {
+    const db = createTestDb();
+    const store = new AuditStore(db);
+
+    store.log({ orgId: 'org-1', actorId: 'u1', actorRole: 'admin', action: 'entry.1' });
+    store.log({ orgId: 'org-1', actorId: 'u1', actorRole: 'admin', action: 'entry.2' });
+    store.log({ orgId: 'org-1', actorId: 'u1', actorRole: 'admin', action: 'entry.3' });
+
+    // 篡改第二条记录的 current_hash（模拟绕过 API 直接修改哈希链断裂）
+    db.prepare("UPDATE audit_log SET current_hash='tampered_hash_00000000000000000000000000' WHERE id IN (SELECT id FROM audit_log WHERE org_id='org-1' ORDER BY created_at ASC LIMIT 1 OFFSET 1)").run();
+
+    const result = store.verifyChain('org-1');
+    expect(result.valid).toBe(false);
+    expect(result.brokenAt).toBe(2); // 第三条记录的 prev_hash ≠ 第二条篡改后的 current_hash
+  });
+
+  it('verifyChain: 0 条记录 → {valid: true, totalRecords: 0}', () => {
+    const db = createTestDb();
+    const store = new AuditStore(db);
+
+    const result = store.verifyChain('empty-org');
+    expect(result.valid).toBe(true);
+    expect(result.totalRecords).toBe(0);
+  });
+
+  it('verifyChain: 不同 org 互不干扰', () => {
+    const db = createTestDb();
+    const store = new AuditStore(db);
+
+    store.log({ orgId: 'org-1', actorId: 'u1', actorRole: 'admin', action: 'entry.1' });
+    store.log({ orgId: 'org-2', actorId: 'u2', actorRole: 'admin', action: 'entry.a' });
+    store.log({ orgId: 'org-1', actorId: 'u1', actorRole: 'admin', action: 'entry.2' });
+
+    const r1 = store.verifyChain('org-1');
+    expect(r1.valid).toBe(true);
+    expect(r1.totalRecords).toBe(2);
+
+    const r2 = store.verifyChain('org-2');
+    expect(r2.valid).toBe(true);
+    expect(r2.totalRecords).toBe(1);
+  });
+});

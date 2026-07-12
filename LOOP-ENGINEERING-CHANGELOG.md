@@ -271,6 +271,35 @@
 
 ---
 
+## V4.4.5 (2026-07-10) — grep 物理门禁 + 侧翼修复自动化
+
+> 背景：发现时间黑洞在"侧翼修复"——删改符号前不知道哪些文件会断裂，tsc 报了才逐处修。
+
+### 修复
+- **改前先 grep — 物理阻断**：新增 `scripts/workflow/grep-refs.sh`，写代码前 grep 全仓库引用写入 `.claude/reference-map.md`
+- **Q0 格式统一**：CLAUDE.md 示例 `Q0 定位:` 改为 `## Q0:` 格式 + 醒目警告；hook/pre-commit awk 同时兼容两种写法
+
+### 变更
+- **写代码前三步曲**：① `bash scripts/workflow/grep-refs.sh "符号"` → ② 审查 `.claude/reference-map.md` → ③ Edit 代码
+- **全部版本号同步到 V4.4.5**
+
+---
+
+## V4.4.4 (2026-07-08) — vitest --changed 增量回归 + 版本同步
+
+> 背景：2026-07-08 同步扫描发现 CLAUDE.md 停留在 V4.4.2，脚本已全部更新但文档未同步。
+
+### 修复
+- **文档-代码版本漂移修复**：所有 .md 文件版本号同步到 V4.4.4，与脚本一致
+- **pre-push 增加 vitest --changed**：推送前执行增量回归测试
+- **verify-v444.sh 自身 bug**：check_version() 检查 `V4\.4\.2` 而非 `V4\.4\.4`，导致版本漂移永不被发现
+
+### 变更
+- **verify-incremental.sh 升级到 V4.4.4**：PostToolUse 四层验证同步
+- **全部版本号同步到 V4.4.4**
+
+---
+
 ## V4.4.2 (2026-07-07) — Engine-Core 引用全面加固 + 壳包检测
 
 > 背景：2026-07-06 Codex 审计发现 `@synova/diagnosis-engine` 是 42 行纯 re-export shell，

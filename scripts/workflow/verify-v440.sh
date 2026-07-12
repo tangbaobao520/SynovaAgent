@@ -1,7 +1,7 @@
 #!/bin/bash
-# Loop Engineering V4.4.5 ¡ª ÍêÕûĞÔ×Ô¼ì
-# ÓÃ·¨: bash scripts/workflow/verify-v440.sh
-# ÍË³ö 0 = ÍêÕû, ÍË³ö 1 = ²»ÍêÕû
+# Loop Engineering V4.4.5 â€” ç‰ˆæœ¬åŒæ­¥éªŒè¯å™¨ (v440 å…¼å®¹ç‰ˆ)
+# ç”¨æ³•: bash scripts/workflow/verify-v440.sh
+# é€€å‡º 0 = é€šè¿‡, é€€å‡º 1 = ç‰ˆæœ¬æœªåŒæ­¥
 
 set -euo pipefail
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
@@ -11,40 +11,40 @@ RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RESET='\033[0m'
 FAIL=0
 
 echo ""
-echo "Loop Engineering V4.4.5 ¡ª ÍêÕûĞÔ×Ô¼ì"
+echo "Loop Engineering V4.4.5 â€” ç‰ˆæœ¬åŒæ­¥éªŒè¯"
 echo ""
 
-# ÎÄ¼ş´æÔÚ¼ì²é
+# æ–‡ä»¶å­˜åœ¨æ€§æ£€æŸ¥
 check_file() {
   if [ -f "$1" ]; then
-    echo -e "  ${GREEN}?${RESET} $1"
+    echo -e "  ${GREEN}âœ“${RESET} $1"
   else
-    echo -e "  ${RED}?${RESET} $1 ¡ª È±Ê§"
+    echo -e "  ${RED}âœ—${RESET} $1 â€” ç¼ºå¤±"
     FAIL=1
   fi
 }
 
-# °æ±¾ºÅ¼ì²é
+# ç‰ˆæœ¬å·æ£€æŸ¥
 check_version() {
-  if grep -q "V4\.4\.0\|v4\.4\.0\|4\.4\.0" "$1" 2>/dev/null; then
-    echo -e "  ${GREEN}?${RESET} $1 (V4.4.5)"
+  if grep -q "V4\.4\.5\|v4\.4\.5\|4\.4\.5" "$1" 2>/dev/null; then
+    echo -e "  ${GREEN}âœ“${RESET} $1 (V4.4.5)"
   else
-    echo -e "  ${RED}?${RESET} $1 ¡ª °æ±¾ºÅ²»ÊÇ V4.4.5"
+    echo -e "  ${RED}âœ—${RESET} $1 â€” ç‰ˆæœ¬å·ä¸æ˜¯ V4.4.5"
     FAIL=1
   fi
 }
 
-# ÄÚÈİÌØÕ÷¼ì²é
+# å†…å®¹æ£€æŸ¥
 check_content() {
   if grep -q "$2" "$1" 2>/dev/null; then
-    echo -e "  ${GREEN}?${RESET} $1 ($3)"
+    echo -e "  ${GREEN}âœ“${RESET} $1 ($3)"
   else
-    echo -e "  ${RED}?${RESET} $1 ¡ª È±ÉÙ: $3"
+    echo -e "  ${RED}âœ—${RESET} $1 â€” ç¼ºå°‘: $3"
     FAIL=1
   fi
 }
 
-echo "--- ÎÄ¼ş´æÔÚ (14 ¸ö) ---"
+echo "--- æ–‡ä»¶å­˜åœ¨æ€§ (14 é¡¹) ---"
 check_file "AGENTS.md"
 check_file "CLAUDE.md"
 check_file "LOOP.md"
@@ -61,7 +61,7 @@ check_file "scripts/workflow/post-merge-cleanup.sh"
 check_file ".github/workflows/ci.yml"
 
 echo ""
-echo "--- °æ±¾ºÅ (10 ¸ö) ---"
+echo "--- ç‰ˆæœ¬å· (10 é¡¹) ---"
 check_version "AGENTS.md"
 check_version "CLAUDE.md"
 check_version "scripts/pre-commit-check.sh"
@@ -74,23 +74,23 @@ check_version "scripts/workflow/loop-sync.sh"
 check_version "scripts/workflow/post-merge-cleanup.sh"
 
 echo ""
-echo "--- ¹Ø¼ü¹¦ÄÜ ---"
-check_content "scripts/pre-commit-check.sh" "SKIP_AS_ANY" "SKIP_AS_ANY »·¾³±äÁ¿"
-check_content "scripts/pre-commit-check.sh" "SKIP_EMPTY_CATCH" "SKIP_EMPTY_CATCH »·¾³±äÁ¿"
-check_content "scripts/pre-commit-check.sh" "check-brief-vs-code.sh" "check-brief-vs-code µ÷ÓÃ"
+echo "--- å…³é”®å†…å®¹ ---"
+check_content "scripts/pre-commit-check.sh" "SKIP_AS_ANY" "SKIP_AS_ANY ç¯å¢ƒå˜é‡"
+check_content "scripts/pre-commit-check.sh" "SKIP_EMPTY_CATCH" "SKIP_EMPTY_CATCH ç¯å¢ƒå˜é‡"
+check_content "scripts/pre-commit-check.sh" "check-brief-vs-code.sh" "check-brief-vs-code å¼•ç”¨"
 check_content ".github/workflows/ci.yml" "SKIP_AS_ANY" "CI SKIP_AS_ANY"
 check_content ".github/workflows/ci.yml" "SKIP_EMPTY_CATCH" "CI SKIP_EMPTY_CATCH"
 check_content ".github/workflows/ci.yml" "check-brief-vs-code.sh --strict" "CI check-brief-vs-code --strict"
-check_content "scripts/workflow/task-start.sh" "check-brief-vs-code" "task-start ÌáÊ¾ check-brief-vs-code"
+check_content "scripts/workflow/task-start.sh" "check-brief-vs-code" "task-start æç¤º check-brief-vs-code"
 
 echo ""
 echo "=========================================="
 if [ "$FAIL" -gt 0 ]; then
-  echo -e "${RED}${FAIL} Ïî¼ì²éÊ§°Ü ¡ª °æ±¾²»ÍêÕû${RESET}"
-  echo "Çë´ÓÖ÷²Ö feat/prompt-architecture Í¬²½:"
+  echo -e "${RED}${FAIL} é¡¹å¤±è´¥ â€” ç‰ˆæœ¬æœªå®Œå…¨åŒæ­¥${RESET}"
+  echo "è¯·ä» feat/prompt-architecture åŒæ­¥:"
   echo "  git checkout feat/prompt-architecture -- AGENTS.md CLAUDE.md LOOP.md loop-run-log.md LOOP-ENGINEERING-CHANGELOG.md scripts/ .github/workflows/ci.yml"
   exit 1
 else
-  echo -e "${GREEN}È«²¿Í¨¹ı ¡ª Loop Engineering V4.4.5${RESET}"
+  echo -e "${GREEN}å…¨éƒ¨é€šè¿‡ â€” Loop Engineering V4.4.5${RESET}"
   exit 0
 fi
