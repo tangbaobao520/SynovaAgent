@@ -1,0 +1,56 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "competitive-moat",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "竞争护城河",
+  "description": "合并自 competitive-moat-perceptual + competitive-moat-structural。聚合品牌溢价/客户忠诚度(感知壁垒) + 规模经济/网络效应/切换成本/流程威力/SLM公式/独占资源(结构性壁垒)。",
+  "schedule": "0 0 1 * *",
+  "expert": "strategy",
+  "auxiliaryExperts": [
+    "marketing",
+    "tech"
+  ],
+  "priority": "P1",
+  "layer": "interface",
+  "computeKind": "deterministic",
+  "computes": [
+    "brand-premium",
+    "customer-loyalty",
+    "scale-economy-score",
+    "network-effect-score",
+    "switching-cost-score",
+    "process-power-score",
+    "counter-positioning-slm",
+    "cornered-resource-score"
+  ],
+  "thresholds": {
+    "perceptual_strength": {
+      "warning": 0.4,
+      "critical": 0.2
+    },
+    "moat_strength": {
+      "warning": 0.5,
+      "critical": 0.3
+    }
+  },
+  "aggregation": "weighted_average",
+  "context": {
+    "requiredDataSources": [
+      "sog_graph",
+      "financial_baseline"
+    ],
+    "dataAccess": {
+      "allowedDimensions": [
+        "strategic",
+        "financial",
+        "marketing"
+      ],
+      "sensitiveAccess": "read"
+    }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "competitiveMoatSentinel",
+  "technoEconomicPhaseCalibration": false,
+  "id": "sentinel-competitive-moat"
+}

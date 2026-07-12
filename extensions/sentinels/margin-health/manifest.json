@@ -1,0 +1,71 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "margin-health",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "利润健康",
+  "description": "合并自 cost-health + profit-health。监控成本结构(毛利率/固定变动比/人均成本)、利润率变化趋势与行业基准对比。",
+  "schedule": "0 */6 * * *",
+  "expert": "finance",
+  "auxiliaryExperts": [
+    "strategy"
+  ],
+  "priority": "P1",
+  "layer": "capital",
+  "computeKind": "deterministic",
+  "computes": [
+    "gross-margin",
+    "fixed-variable-ratio",
+    "cost-per-head",
+    "profit-margin-change",
+    "margin-vs-benchmark"
+  ],
+  "thresholds": {
+    "gross_margin": {
+      "warning": -0.05,
+      "critical": -0.15
+    },
+    "fixed_ratio": {
+      "warning": 0.6,
+      "critical": 0.75
+    },
+    "cost_per_head": {
+      "warning": 0.1,
+      "critical": 0.25
+    },
+    "profit_margin_change": {
+      "warning": -0.02,
+      "critical": -0.05
+    },
+    "margin_vs_benchmark": {
+      "warning": -0.05,
+      "critical": -0.15
+    }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": [
+      "sog_graph",
+      "financial_baseline"
+    ],
+    "dataAccess": {
+      "allowedDimensions": [
+        "financial"
+      ],
+      "sensitiveAccess": "read"
+    }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "marginHealthSentinel",
+  "technoEconomicPhaseCalibration": false,
+  "dependsOn": {
+    "nodeTypes": [
+      "Financial"
+    ],
+    "edgeTypes": [],
+    "requiredFields": [
+      "amount"
+    ]
+  },
+  "id": "sentinel-margin-health"
+}

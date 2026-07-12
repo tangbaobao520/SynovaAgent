@@ -1,0 +1,66 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "capital-health",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "资本健康",
+  "description": "合并自 capital-efficiency + capital-structure + capital-turnover。诊断资本配置效率(ROIC/WACC)、融资结构(负债权益比)和周转速度(资产周转率)。",
+  "schedule": "0 0 1 * *",
+  "expert": "finance",
+  "auxiliaryExperts": [
+    "strategy"
+  ],
+  "priority": "P1",
+  "layer": "capital",
+  "computeKind": "deterministic",
+  "computes": [
+    "roic-wacc-spread",
+    "capital-turnover",
+    "debt-equity-ratio",
+    "interest-coverage",
+    "asset-turnover",
+    "receivable-turnover"
+  ],
+  "thresholds": {
+    "roic_wacc_spread": {
+      "warning": 0,
+      "critical": -0.05
+    },
+    "capital_turnover": {
+      "warning": 0.8,
+      "critical": 0.4
+    },
+    "debt_equity": {
+      "warning": 1.5,
+      "critical": 2.5
+    },
+    "interest_coverage": {
+      "warning": 3.0,
+      "critical": 1.5
+    },
+    "asset_turnover": {
+      "warning": 0.8,
+      "critical": 0.5
+    },
+    "receivable_turnover_days": {
+      "warning": 60,
+      "critical": 90
+    }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": [
+      "sog_graph"
+    ],
+    "dataAccess": {
+      "allowedDimensions": [
+        "financial"
+      ],
+      "sensitiveAccess": "read"
+    }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "capitalHealthSentinel",
+  "technoEconomicPhaseCalibration": false,
+  "id": "sentinel-capital-health"
+}
