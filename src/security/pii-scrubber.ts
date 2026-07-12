@@ -154,6 +154,37 @@ export class PIIScrubber {
     }
     log.info({ count: masks.size }, '角色掩盖已批量注册');
   }
+
+  /**
+   * D42: 检测PII但不脱敏。返回匹配列表供PreUploadValidator判断。
+   * 与 scrub() 共享同一个模式库，但仅扫描不替换。
+   * @param text — 待检测文本
+   * @param level — 最低敏感度级别（默认 S2 = 检测 S2+S3+S4）
+   */
+  detectOnly(text: string, level: SensitivityLevel = 'S2'): PIIMatch[] {
+    const matches: PIIMatch[] = [];
+    const levelOrder: SensitivityLevel[] = ['S1', 'S2', 'S3', 'S4'];
+    const minIdx = levelOrder.indexOf(level);
+    if (minIdx === -1) return matches;
+
+    const collect = (patterns: ReadonlyArray<{ type: string; regex: RegExp }>, patternLevel: SensitivityLevel): void => {
+      if (levelOrder.indexOf(patternLevel) < minIdx) return;
+      for (const { type, regex } of patterns) {
+        // 克隆 regex 避免 lastIndex 干扰
+        const re = new RegExp(regex.source, regex.flags);
+        let m: RegExpExecArray | null;
+        while ((m = re.exec(text)) !== null) {
+          matches.push({ type, value: m[0], level: patternLevel, start: m.index, end: m.index + m[0].length });
+          if (m.index === re.lastIndex) re.lastIndex++; // 防止零长度匹配死循环
+        }
+      }
+    };
+
+    collect(this.S4_PATTERNS, 'S4');
+    collect(this.S3_PATTERNS, 'S3');
+    collect(this.S2_PATTERNS, 'S2');
+    return matches;
+  }
 }
 
 // Singleton

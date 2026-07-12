@@ -8,6 +8,8 @@
  * 铁律 32: 错误带 .code + .phase + .retryable
  */
 import { createLogger } from '@synova/logger';
+import { getPreUploadValidator, loadKeywordsFromFile } from '../security/pre-upload-validator';
+import type { PreUploadValidator } from '../security/pre-upload-validator';
 import type { FileIndex, KnowledgeFile, ScannedFile } from './file-scanner';
 
 // ═══ L4 接口镜像 (铁律 39) ═══
@@ -84,9 +86,11 @@ function parseMarkdown(content: string): ParsedDoc {
 
 export class KnowledgeFileImporter {
   private store: KnowledgeStoreLike;
+  private validator: PreUploadValidator;
 
-  constructor(store: KnowledgeStoreLike) {
+  constructor(store: KnowledgeStoreLike, validator?: PreUploadValidator) {
     this.store = store;
+    this.validator = validator ?? getPreUploadValidator();
   }
 
   /**
@@ -120,6 +124,14 @@ export class KnowledgeFileImporter {
           const sourceId = `knowledge_file_${knowledge.industry}_${entry.relativePath.replace(/[/\\]/g, '_')}`;
 
           if (!dryRun) {
+            // D42: 隐私预检 — blocked文件跳过并记录
+            const check = this.validator.validate(entry.content, orgId);
+            if (check.blocked) {
+              errors.push({ file: entry.relativePath, error: '隐私预检阻止: ' + check.warnings.join('; ') });
+              log.warn({ file: entry.relativePath, warnings: check.warnings }, '知识文件被隐私预检阻止');
+              continue;
+            }
+
             // 铁律 38: 用 Record 替代 `as-any` — PKB 字段在 DB schema 中存在但 TS 类型未覆盖
             const chunkData: Record<string, unknown> = {
               text: entry.content,
@@ -144,6 +156,14 @@ export class KnowledgeFileImporter {
             if (section.content.length < 20) continue; // 跳过太短的段落
 
             if (!dryRun) {
+              // D42: 章节级隐私预检
+              const sectionCheck = this.validator.validate(section.content, orgId);
+              if (sectionCheck.blocked) {
+                errors.push({ file: entry.relativePath, error: '章节隐私预检阻止: ' + sectionCheck.warnings.join('; ') });
+                log.warn({ file: entry.relativePath, heading: section.heading, warnings: sectionCheck.warnings }, '知识章节被隐私预检阻止');
+                continue;
+              }
+
               const sectionData: Record<string, unknown> = {
                 text: `## ${section.heading}\n\n${section.content}`,
                 sourceType: 'markdown',
