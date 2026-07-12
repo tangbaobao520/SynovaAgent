@@ -15,6 +15,34 @@ import type {
   StreamCallback, HealthCheckResult, ProviderConfig, ChatCompletionResponse,
 } from './types';
 import { CircuitBreaker } from '../llm/circuit-breaker';
+import { createLogger } from '@synova/logger';
+import { PromptInjectionDetector, PolicyDeniedError } from '../security/prompt-injection-detector';
+import { AuditService } from '../services/audit-service';
+
+const log = createLogger('providers/base');
+
+/** D43: 在 LLM 调用前检查用户消息是否包含提示注入攻击 */
+function checkPromptInjection(messages: LLMMessage[]): void {
+  if (!messages || messages.length === 0) return;
+  const detector = new PromptInjectionDetector();
+  for (const msg of messages) {
+    if (!msg.content) continue;
+    const result = detector.detect(msg.content);
+    if (result.injectionDetected) {
+      log.warn({ patterns: result.patterns, severity: result.severity }, '检测到提示注入攻击 — 拒绝请求');
+      AuditService.log({
+        orgId: 'system',
+        actorId: 'prompt_injection_detector',
+        actorRole: 'system',
+        action: 'prompt_injection_blocked',
+        targetType: 'llm_request',
+        targetId: `msg_${Date.now()}`,
+        newValue: JSON.stringify({ patterns: result.patterns, severity: result.severity }),
+      });
+      throw new PolicyDeniedError({ reason: `Prompt injection detected: ${result.patterns.join(', ')}` });
+    }
+  }
+}
 
 // ═══ 子类需实现的配置接口 ═══
 
@@ -137,6 +165,7 @@ export function createOpenAICompatibleProvider(cfg: ProviderAdapterConfig): LLMP
     baseUrl,
 
     async chat(messages, opts) {
+      checkPromptInjection(messages); // D43: 提示注入检测 — 在 sanitize 前对原始消息检测
       try {
         const msgs = cfg.beforeSend ? cfg.beforeSend(messages) : messages;
         const res = await makeRequest(msgs, opts);
@@ -155,6 +184,7 @@ export function createOpenAICompatibleProvider(cfg: ProviderAdapterConfig): LLMP
 
     async stream(messages, cb, opts) {
       try {
+        checkPromptInjection(messages); // D43: 提示注入检测 — 在 LLM 调用前对原始消息检测
         const res = await makeRequest(messages, opts, true);
         if (!res.ok) {
           await checkResponse(res, '流式错误').catch((err: Error) => { cb.onError?.(err); });
