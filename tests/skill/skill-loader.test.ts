@@ -8,7 +8,7 @@
  * - manifest.json解析失败 → errors[]
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdirSync, writeFileSync, rmSync, readdirSync } from 'fs';
+import { mkdirSync, writeFileSync, rmSync, readdirSync, existsSync } from 'fs';
 import { join } from 'path';
 
 import type { SkillManifest } from '../../src/skill/skill-loader';
@@ -44,6 +44,8 @@ function createEmptySkillDir(name: string): void {
 }
 
 function cleanupAllFixtures(): void {
+  // CI 上目录可能不存在（空目录不被 git 提交），此处优雅跳过
+  if (!existsSync(BUILTIN_ROOT)) return;
   const entries = readdirSync(BUILTIN_ROOT, { withFileTypes: true });
   for (const e of entries) {
     if (e.isDirectory() && e.name.startsWith('d65-test-')) {
