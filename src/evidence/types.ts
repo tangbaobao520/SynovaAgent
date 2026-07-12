@@ -25,6 +25,13 @@ export interface Evidence {
   orgId: string;
   /** 关联的诊断会话 ID */
   sessionId?: string;
+  /**
+   * D37: 数据冲突标记（1=有冲突, 0/undefined=无冲突）
+   * 写入时传 1, 查询时返回 0/1
+   */
+  hasConflict?: number;
+  /** D37: 冲突版本 JSON 列表（由 evidence-store DDL 扩展支持） */
+  conflictVersions?: string;
 }
 
 export interface EvidenceFilter {

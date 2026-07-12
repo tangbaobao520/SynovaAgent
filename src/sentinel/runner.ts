@@ -600,6 +600,10 @@ export class SentinelRunner {
       };
 
       const result = await sentinel.check(ctx);
+
+      // D37: 冲突检测注入 — 旁路增强（不阻断，不改变现有 aggregate 行为）
+      this.injectConflictFindings(result, graphCtx);
+
       const duration = Date.now() - startTime;
       result.durationMs = duration;
 
@@ -670,6 +674,45 @@ export class SentinelRunner {
         error: (err as Error).message || '未知错误',
         degraded: true,
       };
+    }
+  }
+
+  /**
+   * D37: 冲突检测注入 — 旁路增强。
+   * 对哨兵发现中关联的节点检测数据冲突，有冲突则追加 warning 发现。
+   * 不阻断执行，不修改现有 aggregate 行为。
+   */
+  private injectConflictFindings(result: SentinelCheckResult, graphCtx: unknown): void {
+    for (const finding of result.findings) {
+      if (!finding.relatedNodeId) continue;
+      try {
+        if (typeof graphCtx !== 'object' || graphCtx === null) continue;
+        const store = graphCtx as Record<string, unknown>;
+        if (typeof store.getNode !== 'function') continue;
+        const node = (store.getNode as (id: string, graph?: string) => unknown)(finding.relatedNodeId);
+        if (!node) continue;
+        const nodeObj = node as Record<string, unknown>;
+        const props = (nodeObj.props || {}) as Record<string, unknown>;
+        if (props.has_conflict === true) {
+          const versions = Array.isArray(props.data_versions)
+            ? (props.data_versions as unknown[]).length
+            : 0;
+          result.findings.push({
+            id: `conflict-${finding.relatedNodeId}-${Date.now()}`,
+            severity: 'warning',
+            title: `数据冲突: 节点 ${finding.relatedNodeId} 存在 ${versions} 个版本`,
+            description: '节点数据存在冲突版本，可能影响分析准确性',
+            evidence: [],
+            suggestion: '审查冲突数据版本并决定保留哪个',
+            detectedAt: new Date().toISOString(),
+            relatedNodeId: finding.relatedNodeId,
+          });
+          log.warn({ relatedNodeId: finding.relatedNodeId, versions },
+            '冲突检测: 节点存在数据冲突');
+        }
+      } catch {
+        log.debug({ relatedNodeId: finding.relatedNodeId }, '冲突检测失败 — 非阻断');
+      }
     }
   }
 }

@@ -7,7 +7,7 @@
  * 修复: GraphStore 接口不匹配（参数顺序/自生成ID）
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createGraphBridge } from '../../src/l4/graph-bridge';
+import { createGraphBridge, getNodeConflictInfo } from '../../src/l4/graph-bridge';
 import { deriveValidFrom, deriveValidTo } from '../../src/l3/period-utils';
 import type { GraphStore } from '../../src/l4/graph-bridge';
 import { NodeType, EdgeType } from '@synova/ontology';
@@ -314,5 +314,57 @@ describe('GraphBridge — D33 createNode time filling', () => {
     const node = store.nodes.find(n => n.id === firstId);
     expect(node?.props.has_conflict).toBe(true);
     expect((node?.props.data_versions as Array<unknown>).length).toBe(1);
+  });
+});
+
+// ═══ D37: 数据冲突只读查询 ═══
+
+describe('GraphBridge — D37 getNodeConflictInfo', () => {
+  let store: FakeGraphStore;
+  const orgId = 'test-org';
+
+  beforeEach(() => {
+    store = new FakeGraphStore();
+  });
+
+  it('无冲突节点 → {hasConflict:false, versions:[], currentVersion:{}}', () => {
+    const nodeId = store.createNode('test_type', { name: 'peaceful', value: 42 }, orgId);
+    const info = getNodeConflictInfo(nodeId, store, orgId);
+    expect(info.hasConflict).toBe(false);
+    expect(info.versions).toEqual([]);
+    expect(info.currentVersion).toMatchObject({ name: 'peaceful', value: 42 });
+  });
+
+  it('有冲突节点 → {hasConflict:true, versions.length>=1}', () => {
+    const nodeId = store.createNode('test_type', { standardKey: 'g:t:c1', value: 'v1' }, orgId);
+    // 手动设置冲突状态（D29 冲突检测在 createGraphBridge 包装层，本测试直接测只读查询）
+    store.updateNode(nodeId, {
+      has_conflict: true,
+      data_versions: [
+        { value: { value: 'v1' }, recordedAt: '2026-01-01' },
+        { value: { value: 'v2' }, recordedAt: '2026-06-01' },
+      ],
+    }, orgId);
+
+    const info = getNodeConflictInfo(nodeId, store, orgId);
+    expect(info.hasConflict).toBe(true);
+    expect(info.versions.length).toBeGreaterThanOrEqual(2);
+    expect(info.currentVersion).toMatchObject({ value: 'v1' });
+  });
+
+  it('不存在的节点 → {hasConflict:false, versions:[]}', () => {
+    const info = getNodeConflictInfo('non-existent-id', store, orgId);
+    expect(info.hasConflict).toBe(false);
+    expect(info.versions).toEqual([]);
+    expect(info.currentVersion).toEqual({});
+  });
+
+  it('已解决冲突（has_conflict被清除）→ {hasConflict:false}', () => {
+    const nodeId = store.createNode('test_type', { standardKey: 'g:t:resolved', value: 'v1' }, orgId);
+    store.updateNode(nodeId, { has_conflict: false }, orgId);
+
+    const info = getNodeConflictInfo(nodeId, store, orgId);
+    expect(info.hasConflict).toBe(false);
+    expect(info.versions).toEqual([]);
   });
 });

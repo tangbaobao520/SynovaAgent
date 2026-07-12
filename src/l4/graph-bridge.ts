@@ -280,3 +280,35 @@ export function createGraphBridge(store: GraphStore, graph: string, onGraphUpdat
     },
   };
 }
+
+// ═══ D37: 数据冲突只读查询 ═══
+
+export interface NodeConflictInfo {
+  hasConflict: boolean;
+  versions: Array<Record<string, unknown>>;
+  currentVersion: Record<string, unknown>;
+}
+
+/**
+ * 查询节点数据冲突信息（只读，不修改数据）。
+ * D29 在 createNode 时写入 has_conflict/data_versions，本函数暴露给 L3 层。
+ *
+ * @param nodeId - 节点 ID
+ * @param g - GraphStore 实例
+ * @param graph - 图名称（多租户）
+ * @returns {NodeConflictInfo} 冲突状态、版本列表、当前版本摘要
+ */
+export function getNodeConflictInfo(nodeId: string, g: GraphStore, graph: string): NodeConflictInfo {
+  const node = g.getNode(nodeId, graph);
+  if (!node) return { hasConflict: false, versions: [], currentVersion: {} };
+  const record = node as Record<string, unknown>;
+  const props = (record.props || {}) as Record<string, unknown>;
+  const versions = Array.isArray(props.data_versions)
+    ? props.data_versions as Array<Record<string, unknown>>
+    : [];
+  const current: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(props)) {
+    if (k !== 'data_versions' && k !== 'has_conflict') current[k] = v;
+  }
+  return { hasConflict: props.has_conflict === true, versions, currentVersion: current };
+}
