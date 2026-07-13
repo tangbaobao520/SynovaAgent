@@ -4,6 +4,10 @@
  * 第13份权威文档（增长导航系统工程规范）第一章 §3.1-§3.3。
  * Goal = 增长导航系统中可追踪、可闭环、可审计的改进项。
  *
+ * @wire-target — D72 (Proposal引擎) 消费 Goal 类型定义
+ * @wire-target — D77 (主Agent集成) 消费 StandardExpertReport→Goal 映射
+ * @wire-target — D73 (方案哨兵) 消费 Goal.goalId 注册方案哨兵
+ *
  * 契约:
  *   @input  — 28字段完整定义，全部字段 JSDoc 标注
  *   @output — 类型安全的封闭枚举

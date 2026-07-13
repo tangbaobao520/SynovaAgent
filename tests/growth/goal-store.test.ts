@@ -94,7 +94,7 @@ describe('GoalStore', () => {
       const { store } = createMockStore();
       const { audit } = createMockAudit();
       const goal: Goal = { ...BASE_GOAL, status: 'draft' };
-      const id = createGoal(goal, store);
+      const id = createGoal(goal, store, audit);
       expect(id).toBeTruthy();
       expect(typeof id).toBe('string');
     });
@@ -103,7 +103,7 @@ describe('GoalStore', () => {
       const { store } = createMockStore();
       const { audit } = createMockAudit();
       const goal: Goal = { ...BASE_GOAL, status: 'draft' };
-      const id = createGoal(goal, store);
+      const id = createGoal(goal, store, audit);
 
       const result = getGoal(id, store);
       expect(result).not.toBeNull();
@@ -122,9 +122,9 @@ describe('GoalStore', () => {
     it('按部门列出 Goal', () => {
       const { store } = createMockStore();
       const { audit } = createMockAudit();
-      createGoal({ ...BASE_GOAL, orgId: 'org-1', ownerDeptId: 'dept-a' }, store);
-      createGoal({ ...BASE_GOAL, orgId: 'org-1', ownerDeptId: 'dept-b' }, store);
-      createGoal({ ...BASE_GOAL, orgId: 'org-1', ownerDeptId: 'dept-a' }, store);
+      createGoal({ ...BASE_GOAL, orgId: 'org-1', ownerDeptId: 'dept-a' }, store, audit);
+      createGoal({ ...BASE_GOAL, orgId: 'org-1', ownerDeptId: 'dept-b' }, store, audit);
+      createGoal({ ...BASE_GOAL, orgId: 'org-1', ownerDeptId: 'dept-a' }, store, audit);
 
       const deptA = listGoalsByDept('dept-a', store);
       expect(deptA.length).toBe(2);
@@ -133,8 +133,8 @@ describe('GoalStore', () => {
     it('按组织列出 Goal', () => {
       const { store } = createMockStore();
       const { audit } = createMockAudit();
-      createGoal({ ...BASE_GOAL, orgId: 'org-1' }, store);
-      createGoal({ ...BASE_GOAL, orgId: 'org-2' }, store);
+      createGoal({ ...BASE_GOAL, orgId: 'org-1' }, store, audit);
+      createGoal({ ...BASE_GOAL, orgId: 'org-2' }, store, audit);
 
       const org1 = listGoalsByOrg('org-1', store);
       expect(org1.length).toBe(1);
@@ -146,7 +146,7 @@ describe('GoalStore', () => {
       const { store } = createMockStore();
       const { audit } = createMockAudit();
       const goal: Goal = { ...BASE_GOAL, status: 'draft' };
-      const id = createGoal(goal, store);
+      const id = createGoal(goal, store, audit);
 
       expect(() => updateGoalStatus(id, 'pending_ga', store, audit)).not.toThrow();
       const updated = getGoal(id, store);
@@ -157,7 +157,7 @@ describe('GoalStore', () => {
       const { store } = createMockStore();
       const { audit } = createMockAudit();
       const goal: Goal = { ...BASE_GOAL, status: 'pending_ga' };
-      const id = createGoal(goal, store);
+      const id = createGoal(goal, store, audit);
 
       expect(() => updateGoalStatus(id, 'active', store, audit)).not.toThrow();
     });
@@ -166,7 +166,7 @@ describe('GoalStore', () => {
       const { store } = createMockStore();
       const { audit } = createMockAudit();
       const goal: Goal = { ...BASE_GOAL, status: 'active', successCriteria: [] };
-      const id = createGoal(goal, store);
+      const id = createGoal(goal, store, audit);
 
       expect(() => updateGoalStatus(id, 'completed', store, audit)).toThrow('前置条件不满足');
     });
@@ -175,7 +175,7 @@ describe('GoalStore', () => {
       const { store } = createMockStore();
       const { audit } = createMockAudit();
       const goal: Goal = { ...BASE_GOAL, status: 'active' };
-      const id = createGoal(goal, store);
+      const id = createGoal(goal, store, audit);
 
       expect(() => updateGoalStatus(id, 'abandoned', store, audit)).not.toThrow();
     });
@@ -184,7 +184,7 @@ describe('GoalStore', () => {
       const { store } = createMockStore();
       const { audit } = createMockAudit();
       const goal: Goal = { ...BASE_GOAL, status: 'draft' };
-      const id = createGoal(goal, store);
+      const id = createGoal(goal, store, audit);
 
       // draft → completed 是非法转换（不在17条规则中）
       expect(() => updateGoalStatus(id, 'completed', store, audit)).toThrow('非法状态转换');
@@ -194,7 +194,7 @@ describe('GoalStore', () => {
       const { store } = createMockStore();
       const { audit } = createMockAudit();
       const goal: Goal = { ...BASE_GOAL, status: 'completed' };
-      const id = createGoal(goal, store);
+      const id = createGoal(goal, store, audit);
 
       expect(() => updateGoalStatus(id, 'archived', store, audit)).not.toThrow();
     });
@@ -205,11 +205,11 @@ describe('GoalStore', () => {
       const { store } = createMockStore();
       const { audit, entries } = createMockAudit();
       const goal: Goal = { ...BASE_GOAL, status: 'draft' };
-      const id = createGoal(goal, store);
+      const id = createGoal(goal, store, audit);
 
       updateGoalStatus(id, 'pending_ga', store, audit);
-      expect(entries.length).toBeGreaterThanOrEqual(1);
-      const logEntry = entries[0] as Record<string, unknown>;
+      expect(entries.length).toBeGreaterThanOrEqual(2);
+      const logEntry = entries[1] as Record<string, unknown>;
       expect(logEntry.action).toContain('goal.status');
       expect(logEntry.targetId).toBe(id);
     });
@@ -254,9 +254,9 @@ describe('GoalStore', () => {
       const g1: Goal = { ...BASE_GOAL, status: 'active' };
       const g2: Goal = { ...BASE_GOAL, status: 'draft' };
       const g3: Goal = { ...BASE_GOAL, status: 'active' };
-      createGoal(g1, store);
-      createGoal(g2, store);
-      createGoal(g3, store);
+      createGoal(g1, store, audit);
+      createGoal(g2, store, audit);
+      createGoal(g3, store, audit);
 
       const count = getActiveGoalCount('org-test', store);
       expect(count).toBe(2);

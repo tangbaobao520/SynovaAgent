@@ -67,7 +67,7 @@ describe('GoalLifecycle', () => {
     it('draft → pending_ga → active 完整流转', async () => {
       const { transitionGoal } = await import('../../src/growth/goal-lifecycle');
       const { store, audit, policy } = createMocks();
-      const id = createGoal(makeGoal({ status: 'draft' }), store);
+      const id = createGoal(makeGoal({ status: 'draft' }), store, audit);
 
       expect(() => transitionGoal(id, 'pending_ga', { role: 'manager' }, store, audit, policy)).not.toThrow();
       expect(getGoal(id, store)?.status).toBe('pending_ga');
@@ -79,7 +79,7 @@ describe('GoalLifecycle', () => {
     it('draft → abandoned（创建者废弃）', async () => {
       const { transitionGoal } = await import('../../src/growth/goal-lifecycle');
       const { store, audit, policy } = createMocks();
-      const id = createGoal(makeGoal({ status: 'draft' }), store);
+      const id = createGoal(makeGoal({ status: 'draft' }), store, audit);
 
       expect(() => transitionGoal(id, 'abandoned', { role: 'manager' }, store, audit, policy)).not.toThrow();
       expect(getGoal(id, store)?.status).toBe('abandoned');
@@ -91,7 +91,7 @@ describe('GoalLifecycle', () => {
       const policy: PolicyEngineLike = {
         evaluate: () => ({ allow: false, denyReason: 'deny_default: 无权限' }),
       };
-      const id = createGoal(makeGoal({ status: 'active' }), store);
+      const id = createGoal(makeGoal({ status: 'active' }), store, audit);
 
       expect(() => transitionGoal(id, 'abandoned', { role: 'staff' }, store, audit, policy))
         .toThrow('权限不足');
@@ -102,7 +102,7 @@ describe('GoalLifecycle', () => {
     it('闭环 Goal → 状态变为 completed', async () => {
       const { closeGoal } = await import('../../src/growth/goal-lifecycle');
       const { store, audit, policy } = createMocks();
-      const id = createGoal(makeGoal({ status: 'active', successCriteria: [{ criterion: '营收达标', verificationMethod: 'metric_threshold', verified: true }] }), store);
+      const id = createGoal(makeGoal({ status: 'active', successCriteria: [{ criterion: '营收达标', verificationMethod: 'metric_threshold', verified: true }] }), store, audit);
 
       expect(() => closeGoal(id, 'achieved', [{ metricName: '营收', currentValue: 15, targetValue: 15, unit: '%', computeContractId: 'C1' }], store, audit)).not.toThrow();
       expect(getGoal(id, store)?.status).toBe('completed');
@@ -111,7 +111,7 @@ describe('GoalLifecycle', () => {
     it('非 active 状态 → 抛出 Error', async () => {
       const { closeGoal } = await import('../../src/growth/goal-lifecycle');
       const { store, audit } = createMocks();
-      const id = createGoal(makeGoal({ status: 'draft' }), store);
+      const id = createGoal(makeGoal({ status: 'draft' }), store, audit);
 
       expect(() => closeGoal(id, 'achieved', [], store, audit)).toThrow('只能闭环 active 状态的 Goal');
     });
@@ -121,7 +121,7 @@ describe('GoalLifecycle', () => {
       const { store, audit } = createMocks();
       // 设置 createdAt 为 90 天前，确保 actualDurationDays > 0
       const pastDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
-      const id = createGoal(makeGoal({ status: 'active', createdAt: pastDate, successCriteria: [{ criterion: '营收达标', verificationMethod: 'metric_threshold', verified: true }] }), store);
+      const id = createGoal(makeGoal({ status: 'active', createdAt: pastDate, successCriteria: [{ criterion: '营收达标', verificationMethod: 'metric_threshold', verified: true }] }), store, audit);
 
       closeGoal(id, 'achieved', [{ metricName: '营收', currentValue: 15, targetValue: 15, unit: '%', computeContractId: 'C1' }], store, audit);
       const updated = getGoal(id, store);
@@ -133,7 +133,7 @@ describe('GoalLifecycle', () => {
     it('completed → archived', async () => {
       const { archiveGoal } = await import('../../src/growth/goal-lifecycle');
       const { store, audit, policy } = createMocks();
-      const id = createGoal(makeGoal({ status: 'completed', lastModifiedAt: '2025-01-01T00:00:00.000Z' }), store);
+      const id = createGoal(makeGoal({ status: 'completed', lastModifiedAt: '2025-01-01T00:00:00.000Z' }), store, audit);
 
       expect(() => archiveGoal(id, store, audit)).not.toThrow();
       expect(getGoal(id, store)?.status).toBe('archived');
@@ -142,7 +142,7 @@ describe('GoalLifecycle', () => {
     it('active 状态 → 抛出 Error（不可归档）', async () => {
       const { archiveGoal } = await import('../../src/growth/goal-lifecycle');
       const { store, audit } = createMocks();
-      const id = createGoal(makeGoal({ status: 'active' }), store);
+      const id = createGoal(makeGoal({ status: 'active' }), store, audit);
 
       expect(() => archiveGoal(id, store, audit)).toThrow('只有 completed 或 abandoned');
     });

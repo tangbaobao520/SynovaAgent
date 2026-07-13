@@ -1,0 +1,153 @@
+/**
+ * src/routes/backup.ts — 备份 API 路由 (D50, L1)
+ *
+ * 端点:
+ *   POST /api/backup/create    — 手动触发备份
+ *   GET  /api/backup/status     — 查询备份状态
+ *   POST /api/backup/restore    — 从恢复包恢复(需GA角色)
+ *   POST /api/backup/verify     — 验证指定恢复包
+ */
+import { Router, type Request, type Response } from 'express';
+import * as fs from 'fs';
+import { createLogger } from '@synova/logger';
+import { RecoveryPackBuilder } from '../deploy/recovery-pack';
+import { BackupScheduler } from '../deploy/backup-scheduler';
+import { verifyLocalBackup } from '../deploy/backup-verify';
+
+const log = createLogger('routes/backup');
+const router = Router();
+
+// 调度器单例
+let scheduler: BackupScheduler | null = null;
+
+function getScheduler(): BackupScheduler {
+  if (!scheduler) {
+    scheduler = new BackupScheduler();
+  }
+  return scheduler;
+}
+
+// ─── 管理员权限保护 ───
+
+/**
+ * 检查请求是否来自 GA 管理员。
+ * 简化版权限检查 — 实际接入 PolicyEngine(D38) 后可替换。
+ */
+function requireAdmin(req: Request, res: Response): boolean {
+  // 检查 JWT 中的角色
+  const user = (req as unknown as Record<string, unknown>).user as Record<string, unknown> | undefined;
+  if (user && (user.role === 'ga' || user.role === 'admin')) {
+    return true;
+  }
+
+  // 备用: 检查 x-admin-key header
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey === process.env['SYNOVA_ADMIN_KEY']) {
+    return true;
+  }
+
+  res.status(403).json({ error: '需要 GA 管理员权限', code: 'FORBIDDEN' });
+  return false;
+}
+
+// ─── POST /api/backup/create ───
+
+router.post('/api/backup/create', async (_req: Request, res: Response) => {
+  try {
+    const password = process.env['SYNOVA_BACKUP_PASSWORD'] || 'default-synova-recovery-key';
+    const builder = new RecoveryPackBuilder();
+    const result = builder.createRecoveryPack(password);
+
+    if (result.created) {
+      log.info({ path: result.path, size: result.size }, '手动备份完成');
+      res.json({ ok: true, path: result.path, size: result.size, meta: result.meta });
+    } else {
+      res.status(500).json({ ok: false, error: result.error || '备份创建失败' });
+    }
+  } catch (err: unknown) {
+    log.error({ err }, '手动备份异常');
+    res.status(500).json({ ok: false, error: (err as Error)?.message || String(err) });
+  }
+});
+
+// ─── GET /api/backup/status ───
+
+router.get('/api/backup/status', (_req: Request, res: Response) => {
+  try {
+    const s = getScheduler();
+    const status = s.getStatus();
+    res.json({ ok: true, ...status });
+  } catch (err: unknown) {
+    log.error({ err }, '查询备份状态异常');
+    res.status(500).json({ ok: false, error: (err as Error)?.message || String(err) });
+  }
+});
+
+// ─── POST /api/backup/restore (需管理员权限) ───
+
+router.post('/api/backup/restore', async (req: Request, res: Response) => {
+  if (!requireAdmin(req, res)) return;
+
+  try {
+    const { packPath, password, targetDir } = req.body as {
+      packPath?: string; password?: string; targetDir?: string;
+    };
+
+    if (!packPath) {
+      res.status(400).json({ ok: false, error: 'packPath 必填' });
+      return;
+    }
+
+    if (!password) {
+      res.status(400).json({ ok: false, error: 'password 必填' });
+      return;
+    }
+
+    const builder = new RecoveryPackBuilder();
+    const result = builder.restoreFromPack(packPath, password, targetDir);
+
+    if (result.success) {
+      log.info({ targetDir: result.targetDir, files: result.restoredFiles.length }, '恢复完成');
+      res.json({ ok: true, restoredFiles: result.restoredFiles, targetDir: result.targetDir });
+    } else {
+      res.status(500).json({ ok: false, error: result.error || '恢复失败', warnings: result.warnings });
+    }
+  } catch (err: unknown) {
+    log.error({ err }, '恢复操作异常');
+    res.status(500).json({ ok: false, error: (err as Error)?.message || String(err) });
+  }
+});
+
+// ─── POST /api/backup/verify ───
+
+router.post('/api/backup/verify', async (req: Request, res: Response) => {
+  try {
+    const { packPath, password } = req.body as { packPath?: string; password?: string };
+
+    if (!packPath) {
+      res.status(400).json({ ok: false, error: 'packPath 必填' });
+      return;
+    }
+
+    if (!fs.existsSync(packPath)) {
+      res.status(404).json({ ok: false, error: `恢复包不存在: ${packPath}` });
+      return;
+    }
+
+    const pwd = password || process.env['SYNOVA_BACKUP_PASSWORD'] || 'default-synova-recovery-key';
+    const result = await verifyLocalBackup(packPath, pwd);
+
+    res.json({
+      ok: result.valid,
+      valid: result.valid,
+      checksumMatch: result.checksumMatch,
+      meta: result.meta,
+      errors: result.errors,
+    });
+  } catch (err: unknown) {
+    log.error({ err }, '验证操作异常');
+    res.status(500).json({ ok: false, error: (err as Error)?.message || String(err) });
+  }
+});
+
+export default router;

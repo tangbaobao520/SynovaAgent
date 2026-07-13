@@ -87,10 +87,11 @@ export function checkCompletionPreconditions(goal: Goal): { valid: boolean; reas
  *
  * @param goal - 不含 goalId 的 Goal 数据（goalId 由本函数生成）
  * @param store - GraphBridge 实例
+ * @param audit - AuditStore 实例（用于记录创建审计事件）
  * @param graph - 图名称（默认 'growth'）
  * @returns 生成的 goalId
  */
-export function createGoal(goal: Goal, store: GraphBridgeLike, graph: string = 'growth'): string {
+export function createGoal(goal: Goal, store: GraphBridgeLike, audit: AuditStoreLike, graph: string = 'growth'): string {
   const goalId = randomUUID();
 
   const goalNode: Goal = {
@@ -105,6 +106,21 @@ export function createGoal(goal: Goal, store: GraphBridgeLike, graph: string = '
   try {
     store.createNode('GOAL', goalNode as unknown as Record<string, unknown>, graph);
     log.info({ goalId, title: goal.title }, 'Goal 已创建');
+
+    // 写入创建审计日志（fire-and-forget，失败不阻断）
+    audit.write({
+      orgId: goal.orgId,
+      actorId: 'system:goal-store',
+      actorRole: 'system',
+      action: 'goal.created',
+      targetType: 'GOAL',
+      targetId: goalId,
+      newValue: JSON.stringify({ title: goal.title, ownerDeptId: goal.ownerDeptId }),
+    }).catch((err: unknown) => {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg, goalId }, 'Goal 创建审计日志写入失败');
+    });
+
     return goalId;
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -177,6 +193,10 @@ export function getActiveGoalCount(orgId: string, store: GraphBridgeLike, graph:
  * 2. 验证前置条件（draft→pending_ga 检查字段完整性，active→completed 检查 criteria）
  * 3. 写入 AuditStore
  *
+ * 如果需要在状态变更的同时更新其他字段（如 closeGoal 的 metrics），
+ * 传入 extraProps。所有更新在一次 store.updateNode 中完成，保证原子性。
+ *
+ * @param extraProps - 可选。状态变更时同时更新的额外字段（如 metrics, actualDurationDays）
  * @throws Error — 非法转换或前置条件不满足时抛出
  */
 export function updateGoalStatus(
@@ -185,6 +205,7 @@ export function updateGoalStatus(
   store: GraphBridgeLike,
   audit: AuditStoreLike,
   graph: string = 'growth',
+  extraProps?: Partial<Goal>,
 ): void {
   const goal = getGoal(goalId, store, graph);
   if (!goal) {
@@ -212,8 +233,8 @@ export function updateGoalStatus(
     }
   }
 
-  // 3. 更新节点
-  const updatedProps = { ...goal, status: newStatus, lastModifiedAt: new Date().toISOString() };
+  // 3. 更新节点（含 extraProps，保证原子性）
+  const updatedProps = { ...goal, ...extraProps, status: newStatus, lastModifiedAt: new Date().toISOString() };
   try {
     store.updateNode(goalId, updatedProps as unknown as Record<string, unknown>, graph);
   } catch (err: unknown) {
@@ -223,6 +244,9 @@ export function updateGoalStatus(
   }
 
   // 4. 写入审计日志（fire-and-forget，失败仅 log.warn）
+  // 设计决策: 审计日志使用 fire-and-forget 模式。
+  // 审计写入失败不应阻塞 Goal 状态变更（铁律31降级传播）。
+  // 进程崩溃导致审计丢失是可接受风险——状态变更本身已持久化到 GraphStore。
   audit.write({
     orgId: goal.orgId,
     actorId: `system:goal-store`,

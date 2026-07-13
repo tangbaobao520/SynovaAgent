@@ -70,6 +70,7 @@ import gaCorrectionsRoutes from './routes/ga-corrections';
 import gaAnnotationsRoutes from './routes/ga-annotations';
 import solutionsRoutes from './routes/solutions';
 import notificationsRoutes from './routes/notifications';
+import backupRoutes from './routes/backup';
 import { AuditService } from './services/audit-service';
 import type { ServiceContainer } from './services/container';
 // Phase 0.1: 全局错误兜底 — uncaughtException + unhandledRejection
@@ -454,6 +455,7 @@ app.use(gaCorrectionsRoutes);                  // /api/ga/corrections — 纠错
 app.use(gaAnnotationsRoutes);                  // /api/ga/annotations — 标注 (T3)
 app.use(solutionsRoutes);                        // /api/solutions/* — 方案生成链路 (Phase 3.4)
 app.use(notificationsRoutes);                    // /api/notifications/* — 通知系统 (Phase 2.1)
+app.use(backupRoutes);                           // /api/backup/* — 备份恢复 (D50)
 
   // ═══ A2: Connector Pipeline — 手动触发 + 定时同步 ═══
   app.post('/api/connector/sync', async (req, res) => {

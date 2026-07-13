@@ -137,15 +137,41 @@ export class SystemHealthAudit {
     return Math.round((okCount / total) * 100);
   }
 
-  // ─── 指标 2: 上次备份（D50 待接入） ───
+  // ─── 指标 2: 上次备份 ───
 
   /**
    * 获取上次备份信息。
-   * 当前返回 null — D50 恢复包产出后接入。
+   * D50: 从调度器状态读取最近恢复包元数据。
    */
   private async collectLastBackup(): Promise<BackupInfo | null> {
-    // D50 TODO: 接入备份记录
-    return null;
+    try {
+      const statePath = path.join(this.dataDir, '_scheduler', 'scheduler-state.json');
+      if (!fs.existsSync(statePath)) return null;
+
+      const stateRaw = fs.readFileSync(statePath, 'utf-8');
+      const state = JSON.parse(stateRaw) as {
+        lastBackupAt?: string; lastBackupPath?: string; lastBackupSize?: number;
+      };
+
+      if (!state.lastBackupAt) return null;
+
+      // 如果恢复包文件存在，读取详细信息
+      let detail: string | undefined;
+      if (state.lastBackupPath && fs.existsSync(state.lastBackupPath)) {
+        const stat = fs.statSync(state.lastBackupPath);
+        detail = `${(stat.size / 1024).toFixed(0)}KB`;
+      }
+
+      return {
+        lastBackupAt: state.lastBackupAt,
+        success: true,
+        sizeBytes: state.lastBackupSize || 0,
+        detail,
+      };
+    } catch (err: unknown) {
+      log.warn({ err }, '读取备份状态失败');
+      return null;
+    }
   }
 
   // ─── 指标 3: 数据延迟次数 ───

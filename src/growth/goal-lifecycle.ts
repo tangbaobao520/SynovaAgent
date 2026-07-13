@@ -142,29 +142,14 @@ export function closeGoal(
     actualDurationDays: goal.actualDurationDays,
   }, 'Goal 闭环');
 
-  // 3. 更新 Goal 的状态为 completed
-  // 先更新 actualMetrics 和 actualDurationDays，再转换状态
+  // 3. 单次 updateGoalStatus（含 extraProps）保证原子性
   const startDate = new Date(goal.createdAt);
   const actualDays = Math.ceil((Date.now() - startDate.getTime()) / (1000 * 60 * 60 * 24));
 
-  const updatedGoal: Goal = {
-    ...goal,
+  updateGoalStatus(goalId, 'completed', store, audit, 'growth', {
     metrics: actualMetrics,
     actualDurationDays: actualDays,
-    lastModifiedAt: new Date().toISOString(),
-  };
-
-  // 直接通过 store 更新属性
-  try {
-    store.updateNode(goalId, updatedGoal as unknown as Record<string, unknown>, 'growth');
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    log.error({ err: msg, goalId }, 'Goal 闭环属性更新失败');
-    throw new Error(`闭环 Goal 数据更新失败: ${msg}`);
-  }
-
-  // 转换状态为 completed
-  updateGoalStatus(goalId, 'completed', store, audit);
+  });
 
   // 4. 预留 D76 知识提取接口
   // TODO(D76): extractGoalKnowledge(goal, outcome, metricComparisons)
