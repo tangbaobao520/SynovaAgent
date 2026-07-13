@@ -9,6 +9,7 @@ import { describe, it, expect } from 'vitest';
 import {
   assemblePrompt,
   detectExpertLoop,
+  resolvePromptMode,
   type ExpertManifest,
   type PromptContext,
 } from '../../src/agent/prompt-assembler';
@@ -336,5 +337,49 @@ describe('D55 — detectExpertLoop 循环检测', () => {
     expect(fnStr).not.toContain('fetch');
     expect(fnStr).not.toContain('readFile');
     expect(fnStr).not.toContain('import');
+  });
+});
+
+describe('D57 — M1四源Tone融合', () => {
+  it('M1含Tone声明和角色一致性', () => {
+    const ctx = makeContext();
+    const result = assemblePrompt('test-expert', ctx, testManifest);
+    expect(result.systemPrompt).toContain('专业客观');
+    expect(result.systemPrompt).toContain('温暖度');
+    expect(result.systemPrompt).toContain('性格表达');
+    expect(result.systemPrompt).toContain('角色一致性');
+    expect(result.systemPrompt).toContain('财务专家不说战略专家的语言');
+  });
+
+  it('报告场景下M1含散文约束', () => {
+    const ctx = makeContext({ mode: 'report' });
+    const result = assemblePrompt('test-expert', ctx, testManifest);
+    expect(result.systemPrompt).toContain('诊断报告用自然段落');
+  });
+});
+
+describe('D57 — M2对话约束', () => {
+  it('对话场景下M2含一次一问约束', () => {
+    const ctx = makeContext({ mode: 'conversation' });
+    const result = assemblePrompt('test-expert', ctx, testManifest);
+    expect(result.systemPrompt).toContain('一次只问一个问题');
+    expect(result.systemPrompt).toContain('不要在同一轮中追问多个问题');
+  });
+
+  it('报告场景下M2无对话约束', () => {
+    const ctx = makeContext({ mode: 'report' });
+    const result = assemblePrompt('test-expert', ctx, testManifest);
+    expect(result.systemPrompt).not.toContain('一次只问一个问题');
+  });
+
+  it('resolvePromptMode: 显式mode优先级最高', () => {
+    expect(resolvePromptMode({ mode: 'report' })).toBe('report');
+    expect(resolvePromptMode({ mode: 'conversation' })).toBe('conversation');
+  });
+
+  it('resolvePromptMode: teamId+reportId推断为report', () => {
+    expect(resolvePromptMode({ teamId: 't1', reportId: 'r1' })).toBe('report');
+    expect(resolvePromptMode({ teamId: 't1' })).toBe('conversation');
+    expect(resolvePromptMode({ reportId: 'r1' })).toBe('conversation');
   });
 });

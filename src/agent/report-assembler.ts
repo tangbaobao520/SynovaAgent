@@ -1,5 +1,5 @@
 /**
- * report-assembler.ts — 四层报告组装器 (L2)
+ * report-assembler.ts — 四层报告组装器 + Tone后处理 (L2 → D57)
  *
  * 将诊断结果按颗粒度切片:
  *   ceo: 瓶颈在哪 + 行动建议 (≤200字)
@@ -7,10 +7,13 @@
  *   expert: 每位专家完整推理
  *   raw: 完整数据
  *
+ * D57: return前调用 toneEnforcer.enforceReport(summary) 做散文化后处理。
+ *
  * 铁律24: catch + log + degraded
  */
 import { createLogger } from '@synova/logger';
 import type { DiagnosisReport } from '../l3/synova-diagnosis-engine';
+import { enforceReport } from '../l3/tone-enforcer';
 
 const log = createLogger('agent/report-assembler');
 
@@ -58,9 +61,34 @@ function assembleExpert(report: DiagnosisReport): Record<string, unknown> {
   };
 }
 
-/** 原始完整数据 */
+/** 原始完整数据 — D49: 注入系统健康审计 */
 function assembleRaw(report: DiagnosisReport): Record<string, unknown> {
-  return report as unknown as Record<string, unknown>;
+  const data = report as unknown as Record<string, unknown>;
+  // D49: 异步注入 systemHealth (失败不阻断主报告)
+  injectSystemHealth(data).catch((err: unknown) => {
+    log.warn({ err }, 'systemHealth 注入失败');
+  });
+  return data;
+}
+
+/**
+ * D49: 注入系统健康审计数据到 raw 报告。
+ * 使用 SystemHealthAudit 收集 7 项指标。
+ */
+async function injectSystemHealth(data: Record<string, unknown>): Promise<void> {
+  try {
+    const { SystemHealthAudit } = await import('../monitoring/system-health');
+    const auditor = new SystemHealthAudit();
+    const healthReport = await auditor.audit();
+    data.systemHealth = healthReport;
+    log.debug({ available: !!healthReport.uptime30d }, '系统健康审计注入完成');
+  } catch (err: unknown) {
+    log.warn({ err }, '系统健康审计注入失败 — degraded');
+    data.systemHealth = {
+      error: '审计不可用',
+      collectedAt: new Date().toISOString(),
+    };
+  }
 }
 
 /**
@@ -114,6 +142,16 @@ export function assembleReport(
     log.warn({ err }, '报告组装失败 — degraded');
     summary = report.summary || '诊断完成';
     data = {};
+  }
+
+  // D57: Tone后处理 — 散文化
+  const enforced = enforceReport(summary);
+  summary = enforced.text;
+  if (data.expertReports && Array.isArray(data.expertReports)) {
+    data.expertReports = data.expertReports.map((er: Record<string, unknown>) => ({
+      ...er,
+      report: typeof er.report === 'string' ? enforceReport(er.report).text : er.report,
+    }));
   }
 
   return {

@@ -65,6 +65,12 @@ export interface PromptContext {
   collaboratingExperts?: string[];
   /** 项目根目录覆盖（用于测试） */
   projectRoot?: string;
+  /** 提示词模式 — 'report'(报告场景) 或 'conversation'(对话场景) */
+  mode?: 'report' | 'conversation';
+  /** 团队ID（用于推断报告场景） */
+  teamId?: string;
+  /** 报告ID（与teamId同时存在时推断为报告场景） */
+  reportId?: string;
 }
 
 /** assemblePrompt 的返回类型 */
@@ -82,10 +88,18 @@ export interface AssembleResult {
 // ═══ Module builders ═══
 
 /**
- * M1: 角色定义
- * 从 manifest.json 注入 displayName/description/tone/frameworks
+ * M1: 角色定义 + 四源Tone融合 + 角色一致性 (D57 扩展)
+ *
+ * 注入四源Tone声明（§5.1/§5.2）:
+ *   P0(Professional objectivity) > P1(温暖度) > P2(性格表达)
+ * 角色一致性（§5.3）: 当前专家的语调，不模仿其他专家
+ * 散文格式（§5.4）: 报告用自然段落，而非Markdown列表
  */
-function buildM1(expert: ExpertManifest): string {
+function buildM1(expert: ExpertManifest, context: PromptContext): string {
+  const isReport = (context.mode ?? resolvePromptMode(context)) === 'report';
+  const proseRule = isReport
+    ? '\n- 报告输出格式：诊断报告用自然段落。复合发现写成"几个因素同时作用：首先……其次……"，不用层级缩进列表。每个发现独立成段。'
+    : '';
   return `## 你的角色
 你是${expert.displayName}。
 ${expert.description}
@@ -94,16 +108,36 @@ ${expert.description}
 ${expert.tone}
 
 ## 框架
-${expert.frameworks.map(f => `- ${f}`).join('\n')}`;
+${expert.frameworks.map(f => `- ${f}`).join('\n')}
+
+## Tone声明
+### P0 — 专业客观（最高优先级）
+准确性不可妥协。客观纠正 > 错误认同。避免过度赞扬。
+### P1 — 温暖度
+温暖但诚实。不预判用户能力。${isReport ? '散文而非列表/子弹点。' : ''}
+### P2 — 性格表达
+可以有意见、有偏好。公平呈现对立观点。在呈现数据冲突时，两个版本都呈现，不替用户选择"正确"版本。
+
+## 角色一致性（§5.3）
+你当前的语调是"${expert.tone}"。使用你的专业语言，不要模仿其他专家的语调。
+财务专家不说战略专家的语言，组织专家不说技术专家的语言。${proseRule}`;
 }
 
 /**
- * M2: 工具调用
- * 42边查询权限 + compute调用权限 + 禁止调用清单
+ * M2: 工具调用 + 对话场景约束 (D57 扩展)
+ *
+ * 对话场景（mode === 'conversation'）:
+ *   一次只问一个问题，等待用户回答后再继续
+ * 报告场景（mode === 'report'）:
+ *   每个发现独立成段
  */
-function buildM2(expert: ExpertManifest): string {
+function buildM2(expert: ExpertManifest, context: PromptContext): string {
   const edges = expert.edges.map(e => `  - ${e}`).join('\n');
   const computes = expert.computes.map(c => `  - ${c}`).join('\n');
+  const isConversation = (context.mode ?? resolvePromptMode(context)) === 'conversation';
+  const conversationRule = isConversation
+    ? '\n\n对话交互原则：一次只问一个问题。等待用户回答后再继续。不要在同一轮中追问多个问题。'
+    : '';
   return `## 工具调用
 你可以查询以下边参数:
 ${edges}
@@ -111,7 +145,7 @@ ${edges}
 可调用compute:
 ${computes}
 
-禁止调用其他专家的compute。每次工具调用后使用结构化引用格式。`;
+禁止调用其他专家的compute。每次工具调用后使用结构化引用格式。${conversationRule}`;
 }
 
 /**
@@ -272,6 +306,26 @@ const moduleBuilders: Record<string, ModuleBuilder> = {
 
 /** 代码级模块加载顺序（硬编码保证M2在M3之前） */
 const MODULE_ORDER: string[] = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6'];
+
+// ═══ Prompt mode resolution ═══
+
+/**
+ * 解析提示词模式：报告场景 vs 对话场景。
+ *
+ * 优先级:
+ *   1. context.mode 显式指定
+ *   2. context.teamId 和 context.reportId 同时存在 → 'report'
+ *   3. 默认 → 'conversation'
+ */
+export function resolvePromptMode(context: PromptContext): 'report' | 'conversation' {
+  if (context.mode === 'report' || context.mode === 'conversation') {
+    return context.mode;
+  }
+  if (context.teamId && context.reportId) {
+    return 'report';
+  }
+  return 'conversation';
+}
 
 // ═══ Expert loop detection ═══
 
