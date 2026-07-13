@@ -54,7 +54,7 @@ function requireAdmin(req: Request, res: Response): boolean {
 
 router.post('/api/backup/create', async (_req: Request, res: Response) => {
   try {
-    const password = process.env['SYNOVA_BACKUP_PASSWORD'] || 'default-synova-recovery-key';
+    const password = process.env['SYNOVA_BACKUP_PASSWORD'] || '';
     const builder = new RecoveryPackBuilder();
     const result = builder.createRecoveryPack(password);
 
@@ -134,7 +134,11 @@ router.post('/api/backup/verify', async (req: Request, res: Response) => {
       return;
     }
 
-    const pwd = password || process.env['SYNOVA_BACKUP_PASSWORD'] || 'default-synova-recovery-key';
+    const pwd = password || process.env['SYNOVA_BACKUP_PASSWORD'];
+    if (!pwd) {
+      res.status(400).json({ ok: false, error: 'password 必填或设置 SYNOVA_BACKUP_PASSWORD 环境变量' });
+      return;
+    }
     const result = await verifyLocalBackup(packPath, pwd);
 
     res.json({

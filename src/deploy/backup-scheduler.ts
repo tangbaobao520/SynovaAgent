@@ -114,8 +114,13 @@ export class BackupScheduler {
 
     this.running = true;
     try {
-      // 获取备份密码: 环境变量优先。如果没有设置密码，使用默认密钥。
-      const password = process.env[BACKUP_PASSWORD_ENV] || 'default-synova-recovery-key';
+      // 获取备份密码。未设置时跳过备份(不阻断启动)。
+      const password = process.env[BACKUP_PASSWORD_ENV];
+      if (!password) {
+        log.warn('SYNOVA_BACKUP_PASSWORD 未设置 — 跳过自动备份');
+        this.running = false;
+        return false;
+      }
 
       const builder = new RecoveryPackBuilder();
       const result = builder.createRecoveryPack(password);

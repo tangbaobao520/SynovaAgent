@@ -178,7 +178,8 @@ export class RecoveryPackBuilder {
     try {
       const pkg = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf-8'));
       return pkg.version || '0.0.0';
-    } catch {
+    } catch (err: unknown) {
+      log.warn({ err }, '获取版本号失败 — 默认 0.0.0');
       return '0.0.0';
     }
   }
@@ -326,7 +327,8 @@ export class RecoveryPackBuilder {
       let decrypted: Buffer;
       try {
         decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
-      } catch {
+      } catch (err: unknown) {
+        log.warn({ err }, '解密失败 — 密码错误或数据损坏');
         return { valid: false, errors: ['密码错误或数据损坏 — 解密失败'] };
       }
 
@@ -434,7 +436,8 @@ export class RecoveryPackBuilder {
         .filter(f => f.endsWith(PACK_EXTENSION))
         .map(f => path.join(packDir, f))
         .sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs);
-    } catch {
+    } catch (err: unknown) {
+      log.warn({ err }, '列出恢复包失败');
       return [];
     }
   }
