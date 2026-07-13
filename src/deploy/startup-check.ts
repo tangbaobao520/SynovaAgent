@@ -15,6 +15,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { createLogger } from '@synova/logger';
 import { getDataDirectory, registerDataDirectory } from './data-directory';
+import { checkSchemaCompatibility } from './schema-version';
+import { getComputeVersion, compareComputeCompatibility } from './compute-version';
+import { rollbackToSnapshot, listSnapshots } from './rollback';
 
 const log = createLogger('deploy/startup-check');
 

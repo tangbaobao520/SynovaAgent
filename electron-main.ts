@@ -14,6 +14,7 @@ import * as path from 'path';
 import * as http from 'http';
 import * as fs from 'fs';
 import { runStartupChecks } from './src/deploy/startup-check';
+import { checkSchemaCompatibility } from './src/deploy/schema-version';
 
 let serverProcess: ChildProcess | null = null;
 let mainWindow: BrowserWindow | null = null;
@@ -332,7 +333,31 @@ autoUpdater.on('download-progress', (progress) => {
 });
 
 autoUpdater.on('update-downloaded', (info) => {
-  console.log(`[synova] Update ${info.version} downloaded, notifying user...`);
+  console.log(`[synova] Update ${info.version} downloaded, checking schema compatibility...`);
+
+  // D48: 安装前执行 schema 兼容性检查
+  // 在生产环境中, migrations 从新版本的迁移文件读取。
+  // 这里先做空值安全检查 — 如果新版本包提供了 migrations 文件, 后续可注入。
+  try {
+    const schemaResult = checkSchemaCompatibility([]);
+    if (!schemaResult.compatible) {
+      console.warn(`[synova] Schema 不兼容 — 阻止升级: ${schemaResult.blockedReason}`);
+      try {
+        const notif = new Notification({
+          title: '升级已阻止',
+          body: `版本 ${info.version} 因 Schema 不兼容未能自动安装。${schemaResult.blockedReason || '请联系管理员。'}`,
+          urgency: 'critical',
+        });
+        notif.show();
+      } catch (notifErr) {
+        console.error('[synova] 升级阻止通知失败:', notifErr);
+      }
+      return;
+    }
+  } catch (err: unknown) {
+    // 检查本身失败不应阻断安装 — 降级为警告
+    console.warn(`[synova] Schema 检查异常 (降级继续安装): ${(err as Error)?.message || String(err)}`);
+  }
 
   // 系统通知: 新版本就绪
   try {
