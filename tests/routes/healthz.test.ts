@@ -66,7 +66,7 @@ describe('D49: healthz — HTTP 响应', () => {
     const res = await fetch(`http://localhost:${addr.port}/api/healthz`);
     const body = await res.json();
     const checkKeys = ['database', 'llm_connectivity', 'last_sentinel_run', 'disk_free_gb', 'data_freshness', 'watchdog_alive'];
-    for (const key of expected) {
+    for (const key of checkKeys) {
       expect(body.checks).toHaveProperty(key);
       expect(body.checks[key]).toHaveProperty('status');
       expect(body.checks[key]).toHaveProperty('detail');
