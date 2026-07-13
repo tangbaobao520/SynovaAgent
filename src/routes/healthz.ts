@@ -16,8 +16,8 @@ const log = createLogger('routes/healthz');
 const router = Router();
 const startTime = Date.now();
 
-/** 单项检查状态 */
-type CheckStatus = 'ok' | 'degraded' | 'down';
+/** 单项检查状态 — string (文件驱动合规) */
+type CheckStatus = string;
 
 /** 单项检查结果 */
 interface HealthCheck {

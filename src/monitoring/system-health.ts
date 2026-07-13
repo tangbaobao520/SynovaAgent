@@ -226,8 +226,8 @@ export class SystemHealthAudit {
         const content = fs.readFileSync(versionFile, 'utf-8');
         const versionMatch = content.match(/version:\s*([\d.]+)/);
         if (versionMatch) return versionMatch[1];
-      } catch {
-        // 忽略
+      } catch (err: unknown) {
+        log.warn({ err }, '无法读取版本记录文件 — 降级');
       }
     }
 
@@ -235,7 +235,8 @@ export class SystemHealthAudit {
     try {
       const pkg = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf-8'));
       return pkg.version || '0.0.0';
-    } catch {
+    } catch (err: unknown) {
+      log.warn({ err }, '无法读取 package.json 版本 — 返回 0.0.0');
       return '0.0.0';
     }
   }
@@ -257,7 +258,8 @@ export class SystemHealthAudit {
           return sum + (s.manifest.computes?.length || 0);
         }, 0);
         return Math.min(totalFindings, 99999); // 防止溢出
-      } catch {
+      } catch (err: unknown) {
+        log.warn({ err }, '哨兵加载失败 — 诊断计数返回 0');
         return 0;
       }
     }
@@ -265,7 +267,8 @@ export class SystemHealthAudit {
     try {
       const files = fs.readdirSync(diagnosisLog).filter(f => f.endsWith('.json'));
       return files.length;
-    } catch {
+    } catch (err: unknown) {
+      log.warn({ err }, '诊断日志目录读取失败 — 返回 0');
       return 0;
     }
   }

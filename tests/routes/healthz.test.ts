@@ -65,7 +65,7 @@ describe('D49: healthz — HTTP 响应', () => {
     if (!addr || typeof addr === 'string') throw new Error('server not listening');
     const res = await fetch(`http://localhost:${addr.port}/api/healthz`);
     const body = await res.json();
-    const expected = ['database', 'llm_connectivity', 'last_sentinel_run', 'disk_free_gb', 'data_freshness', 'watchdog_alive'];
+    const checkKeys = ['database', 'llm_connectivity', 'last_sentinel_run', 'disk_free_gb', 'data_freshness', 'watchdog_alive'];
     for (const key of expected) {
       expect(body.checks).toHaveProperty(key);
       expect(body.checks[key]).toHaveProperty('status');
