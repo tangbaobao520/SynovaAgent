@@ -13,6 +13,7 @@ import { autoUpdater } from 'electron-updater';
 import * as path from 'path';
 import * as http from 'http';
 import * as fs from 'fs';
+import { runStartupChecks } from './src/deploy/startup-check';
 
 let serverProcess: ChildProcess | null = null;
 let mainWindow: BrowserWindow | null = null;
@@ -54,6 +55,7 @@ function restoreAppState(): AppState | null {
     const raw = fs.readFileSync(STATE_FILE, 'utf-8');
     return JSON.parse(raw);
   } catch {
+    console.warn('[synova] Failed to restore state file, starting fresh');
     return null;
   }
 }
@@ -357,6 +359,17 @@ autoUpdater.on('error', (err) => {
 });
 
 app.whenReady().then(async () => {
+  // D47: 首次启动检查 — 在 startServer 前执行
+  const startupResult = await runStartupChecks();
+  if (startupResult.failed.length > 0) {
+    dialog.showErrorBox('启动失败', '数据库初始化失败。请检查数据目录和数据库文件。');
+    app.quit();
+    return;
+  }
+  for (const w of startupResult.warnings) {
+    console.warn(`[synova] 启动检查警告 [${w.name}]: ${w.detail || ''}`);
+  }
+
   console.log('[synova] Starting Express server...');
   startServer();
 
