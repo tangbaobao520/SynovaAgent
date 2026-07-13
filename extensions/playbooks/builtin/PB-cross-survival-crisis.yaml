@@ -1,0 +1,67 @@
+id: PB-cross-survival-crisis
+name: 生存危机应急剧本
+version: 1.0.0
+expert: multi
+type: playbook
+description: 当生存边界触及临界值时，finance/strategy/action三专家联合紧急诊断，评估现金流runway并输出0-3个关键修复方案。
+trigger:
+  sentinels:
+    - sentinel-survival-margin
+    - capital-health
+    - margin-health
+  condition: survival-margin critical + 多个哨兵同时critical
+steps:
+  - id: step-1
+    name: 危机确认
+    description: 确认多个哨兵同时critical
+    tools:
+      - query-graph
+      - cross-validate
+    timeout: 15
+  - id: step-2
+    name: 现金流紧急评估
+    description: 计算现金流runway天数和安全边际
+    skill: diagnose-cashflow-health
+    timeout: 30
+  - id: step-3
+    name: 资本危机评估
+    description: 评估资本结构和融资渠道紧急状态
+    skill: analyze-capital-allocation
+    timeout: 25
+  - id: step-4
+    name: 利润率诊断
+    description: 诊断利润率下降的即时驱动因素
+    skill: diagnose-margin-erosion
+    timeout: 30
+  - id: step-5
+    name: 战略威胁扫描
+    description: 扫描竞争和外部环境的即时威胁
+    tools:
+      - acquire-edge-data
+    timeout: 20
+    onFailure: skip
+  - id: step-6
+    name: 关键修复方案
+    description: 输出0-3个关键修复方案和沟通计划
+    skill: survival-crisis-diagnosis
+    timeout: 45
+onFailure: halt
+output: survival_crisis_report
+dependencies:
+  edges:
+    - E-1.1
+    - E-2.1
+    - E-5.1
+    - E-4.1
+    - E-X.1
+    - E-2.10
+  skills:
+    - diagnose-cashflow-health
+    - analyze-capital-allocation
+    - diagnose-margin-erosion
+    - survival-crisis-diagnosis
+  sentinels:
+    - sentinel-survival-margin
+    - capital-health
+    - margin-health
+crossExpert: true

@@ -1,0 +1,47 @@
+id: PB-tech-system-health
+name: 系统健康检查剧本
+version: 1.0.0
+expert: tech
+type: playbook
+description: 当tech-debt-scan异常时，检查IT系统、技术栈和设备全链路健康状态。
+trigger:
+  sentinels:
+    - tech-system-health
+  condition: tech-debt-scan异常
+steps:
+  - id: step-1
+    name: IT系统状态检查
+    description: 检查IT基础设施和系统运行状态
+    tools:
+      - acquire-edge-data
+      - query-graph
+    timeout: 20
+  - id: step-2
+    name: 技术栈健康评估
+    description: 评估技术栈陈旧度和维护成本
+    tools:
+      - acquire-edge-data
+    timeout: 20
+  - id: step-3
+    name: 设备与产能评估
+    description: 评估设备状态和产能利用率
+    tools:
+      - acquire-edge-data
+    timeout: 20
+    onFailure: degrade
+  - id: step-4
+    name: 改进建议输出
+    description: 输出系统改进建议和修复优先级
+    tools:
+      - cross-validate
+    timeout: 30
+onFailure: degrade
+output: system_health_report
+dependencies:
+  edges:
+    - E-3.7
+    - E-3.6
+    - E-1.6
+    - E-1.5
+  sentinels:
+    - tech-system-health

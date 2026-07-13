@@ -1,0 +1,69 @@
+id: PB-finance-profitability-root-cause
+name: 利润率下降根因剧本
+version: 1.0.0
+expert: finance
+type: playbook
+description: 当利润率连续下降时的7步根因分析。从成本端/收入端/竞争端/结构端四维诊断，定位根本原因。
+trigger:
+  sentinels:
+    - margin-health
+  condition: margin-health连续下降
+steps:
+  - id: step-1
+    name: 利润率趋势分析
+    description: 收集利润率连续下降的时序数据
+    skill: diagnose-margin-erosion
+    timeout: 30
+  - id: step-2
+    name: 成本端分析
+    description: 分析固定成本刚性和边际成本变化
+    skill: analyze-cost-structure
+    timeout: 25
+  - id: step-3
+    name: 收入端分析
+    description: 分析价格弹性和收入结构变化
+    skill: analyze-price-elasticity
+    timeout: 25
+  - id: step-4
+    name: 竞争端分析
+    description: 分析竞争位势变化对利润率的影响
+    skill: analyze-competitive-position
+    timeout: 30
+  - id: step-5
+    name: 经营杠杆分析
+    description: 评估经营杠杆放大效应
+    skill: analyze-operating-leverage
+    timeout: 20
+  - id: step-6
+    name: 交叉验证
+    description: 跨维度交叉验证根因定位
+    tools:
+      - cross-validate
+    timeout: 30
+    onFailure: degrade
+  - id: step-7
+    name: 根因报告
+    description: 输出根因定位和干预路径
+    tools:
+      - cross-validate
+    timeout: 60
+    onFailure: notify
+onFailure: degrade
+output: margin_erosion_report
+dependencies:
+  edges:
+    - E-2.1
+    - E-3.1
+    - E-4.1
+    - E-4.4
+    - E-3.6
+    - E-X.1
+  skills:
+    - diagnose-margin-erosion
+    - analyze-cost-structure
+    - analyze-price-elasticity
+    - analyze-competitive-position
+    - analyze-operating-leverage
+  sentinels:
+    - margin-health
+crossExpert: true

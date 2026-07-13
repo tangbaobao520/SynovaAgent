@@ -1,0 +1,54 @@
+id: PB-marketing-funnel-analysis
+name: 客户漏斗分析剧本
+version: 1.0.0
+expert: marketing
+type: playbook
+description: 当转化率下降时，从触达、转化、留存、口碑全漏斗分析，定位瓶颈环节。
+trigger:
+  sentinels:
+    - client-portfolio-concentration
+  condition: 转化率下降检测
+steps:
+  - id: step-1
+    name: 漏斗数据采集
+    description: 采集触达→转化→留存全链路数据
+    tools:
+      - acquire-edge-data
+    timeout: 20
+  - id: step-2
+    name: 转化瓶颈识别
+    description: 识别各环节转化率和流失率
+    skill: analyze-customer-value
+    timeout: 25
+  - id: step-3
+    name: 渠道效率分析
+    description: 分析各触达渠道的效率和ROI
+    tools:
+      - acquire-edge-data
+    timeout: 20
+    onFailure: degrade
+  - id: step-4
+    name: NPS与口碑分析
+    description: 分析NPS变化和口碑传播效率
+    tools:
+      - acquire-edge-data
+    timeout: 20
+    onFailure: degrade
+  - id: step-5
+    name: 优化建议输出
+    description: 输出漏斗优化优先级排序
+    tools:
+      - cross-validate
+    timeout: 30
+onFailure: continue
+output: funnel_analysis_report
+dependencies:
+  edges:
+    - E-4.1
+    - E-4.3
+    - E-4.2
+    - E-5.4
+  skills:
+    - analyze-customer-value
+  sentinels:
+    - client-portfolio-concentration

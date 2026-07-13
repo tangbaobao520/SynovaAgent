@@ -1,0 +1,66 @@
+id: PB-strategy-market-entry-assessment
+name: 市场进入评估剧本
+version: 1.0.0
+expert: strategy
+type: playbook
+description: GA手动触发的新市场进入评估。从市场吸引力、进入壁垒、竞争强度和需求预测四个维度分析。
+trigger:
+  manual: true
+  condition: GA手动触发
+steps:
+  - id: step-1
+    name: 市场结构诊断
+    description: 诊断目标市场的结构和竞争类型
+    tools:
+      - compute-market-structure-diagnosis
+    timeout: 30
+  - id: step-2
+    name: 竞争位势基线
+    description: 建立当前竞争位势基线
+    skill: analyze-competitive-position
+    timeout: 30
+  - id: step-3
+    name: 市场集中度分析
+    description: 计算HHI和Lerner指数
+    tools:
+      - compute-hhi
+      - compute-lerner-index
+    timeout: 20
+  - id: step-4
+    name: 需求预测
+    description: 预测目标市场需求增长趋势
+    tools:
+      - compute-demand-forecast
+    timeout: 30
+  - id: step-5
+    name: 外部环境分析
+    description: 扫描外部环境因素
+    tools:
+      - acquire-edge-data
+    timeout: 25
+    onFailure: skip
+  - id: step-6
+    name: 财务可行性
+    description: 评估资本需求和预期ROI
+    skill: analyze-capital-allocation
+    timeout: 30
+  - id: step-7
+    name: 进入策略输出
+    description: 输出市场进入策略和风险矩阵
+    skill: prescribe-market-entry
+    timeout: 40
+onFailure: continue
+output: market_entry_report
+dependencies:
+  edges:
+    - E-4.7
+    - E-4.4
+    - E-0.1
+    - E-0.3
+    - E-1.1
+  skills:
+    - analyze-competitive-position
+    - analyze-capital-allocation
+    - prescribe-market-entry
+  sentinels: []
+crossExpert: true

@@ -1,0 +1,74 @@
+id: PB-cross-margin-erosion
+name: 利润率连续下降联合诊断剧本
+version: 1.0.0
+expert: multi
+type: playbook
+description: 当利润率连续3个月下降时，finance/strategy/business_model三专家联合诊断，从成本、收入、竞争、结构四维定位根因。
+trigger:
+  sentinels:
+    - margin-health
+  condition: 利润率连续3月下降
+steps:
+  - id: step-1
+    name: 趋势确认
+    description: 确认利润率连续下降的趋势和幅度
+    tools:
+      - acquire-edge-data
+      - query-graph
+    timeout: 20
+  - id: step-2
+    name: 成本端根因分析
+    description: 分析固定成本和边际成本变化
+    skill: analyze-cost-structure
+    timeout: 25
+  - id: step-3
+    name: 竞争端根因分析
+    description: 分析竞争位势变化
+    skill: analyze-competitive-position
+    timeout: 25
+  - id: step-4
+    name: 收入端根因分析
+    description: 分析定价和收入结构
+    skill: analyze-price-elasticity
+    timeout: 25
+  - id: step-5
+    name: 结构端根因分析
+    description: 分析结构性变化
+    tools:
+      - acquire-edge-data
+    timeout: 25
+  - id: step-6
+    name: 交叉验证
+    description: 多专家交叉验证根因定位
+    tools:
+      - cross-validate
+    timeout: 30
+  - id: step-7
+    name: 经营杠杆分析
+    description: 评估经营杠杆对利润率的放大效应
+    skill: analyze-operating-leverage
+    timeout: 20
+  - id: step-8
+    name: 综合诊断报告
+    description: 输出综合根因分析和干预路径
+    skill: diagnose-margin-erosion
+    timeout: 45
+onFailure: degrade
+output: margin_erosion_joint_report
+dependencies:
+  edges:
+    - E-2.1
+    - E-3.1
+    - E-4.1
+    - E-4.4
+    - E-3.6
+    - E-X.1
+  skills:
+    - analyze-cost-structure
+    - analyze-competitive-position
+    - analyze-price-elasticity
+    - analyze-operating-leverage
+    - diagnose-margin-erosion
+  sentinels:
+    - margin-health
+crossExpert: true

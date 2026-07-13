@@ -1,0 +1,34 @@
+id: PB-action-priority-sort
+name: 行动优先级排序剧本
+version: 1.0.0
+expert: action
+type: playbook
+description: 当多个诊断发现同时生成时，按紧迫性、ROI和资源约束对行动建议进行优先级排序。
+trigger:
+  condition: 多诊断发现生成后
+steps:
+  - id: step-1
+    name: 行动收集与分类
+    description: 收集全部未执行的行动建议并按类型分类
+    tools:
+      - query-graph
+    timeout: 25
+  - id: step-2
+    name: 优先级评估
+    description: 按紧迫性、预期ROI和资源约束综合评分
+    tools:
+      - cross-validate
+    timeout: 30
+  - id: step-3
+    name: 排期计划输出
+    description: 输出优先级排序后的行动计划和依赖关系
+    tools:
+      - query-graph
+    timeout: 30
+onFailure: continue
+output: priority_sorted_action_plan
+dependencies:
+  edges: []
+  skills: []
+  sentinels: []
+crossExpert: true

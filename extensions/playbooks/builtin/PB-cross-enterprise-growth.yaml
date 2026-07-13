@@ -1,0 +1,78 @@
+id: PB-cross-enterprise-growth
+name: 全企业增长诊断剧本
+version: 1.0.0
+expert: multi
+type: playbook
+description: FDE触发的全维度增长诊断。覆盖全部7维度和8位专家，识别增长阻碍者并给出跨维度因果链。
+trigger:
+  manual: true
+  condition: FDE全维度请求
+steps:
+  - id: step-1
+    name: 全维度数据采集
+    description: 触发全部L1感知层Skill获取基础数据
+    tools:
+      - acquire-edge-data
+    timeout: 30
+  - id: step-2
+    name: 财务维度分析
+    description: 执行财务相关所有L2分析
+    skill: analyze-break-even
+    timeout: 30
+  - id: step-3
+    name: 市场客户分析
+    description: 执行市场和客户相关所有L2分析
+    skill: analyze-customer-value
+    timeout: 30
+  - id: step-4
+    name: 战略位势分析
+    description: 执行战略和竞争相关所有L2分析
+    skill: analyze-competitive-position
+    timeout: 30
+  - id: step-5
+    name: 组织与技术分析
+    description: 执行组织和技术相关L2分析
+    skill: analyze-learning-curve
+    timeout: 30
+  - id: step-6
+    name: 维度诊断
+    description: 各专家在各自维度执行L3诊断
+    skill: enterprise-growth-diagnosis
+    timeout: 60
+  - id: step-7
+    name: 跨维度因果链
+    description: 识别跨维度的因果传导关系
+    tools:
+      - cross-validate
+      - query-graph
+    timeout: 45
+  - id: step-8
+    name: 增长阻碍者定位
+    description: 整合定位核心增长阻碍者
+    skill: enterprise-growth-diagnosis
+    timeout: 45
+  - id: step-9
+    name: 优先级排序
+    description: 按影响力和紧迫性排序干预措施
+    tools:
+      - cross-validate
+    timeout: 30
+  - id: step-10
+    name: 综合报告输出
+    description: 输出全维度诊断报告和统一行动方案
+    tools:
+      - cross-validate
+      - query-knowledge
+    timeout: 60
+onFailure: degrade
+output: enterprise_growth_report
+dependencies:
+  edges: []
+  skills:
+    - analyze-break-even
+    - analyze-customer-value
+    - analyze-competitive-position
+    - analyze-learning-curve
+    - enterprise-growth-diagnosis
+  sentinels: []
+crossExpert: true

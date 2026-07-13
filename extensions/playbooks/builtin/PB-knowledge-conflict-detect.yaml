@@ -1,0 +1,35 @@
+id: PB-knowledge-conflict-detect
+name: 知识冲突检测剧本
+version: 1.0.0
+expert: knowledge
+type: playbook
+description: 当新知识写入时自动检测与现有知识的冲突，确保知识库一致性。
+trigger:
+  condition: 新知识写入时
+steps:
+  - id: step-1
+    name: 新知识解析
+    description: 解析新写入的知识条目
+    tools:
+      - query-knowledge
+    timeout: 15
+  - id: step-2
+    name: 冲突扫描
+    description: 扫描知识库中与新知识矛盾、重叠的条目
+    tools:
+      - query-knowledge
+    timeout: 25
+  - id: step-3
+    name: 冲突报告输出
+    description: 输出冲突条目列表和解决建议
+    tools:
+      - query-graph
+      - cross-validate
+    timeout: 25
+onFailure: continue
+output: knowledge_conflict_report
+dependencies:
+  edges:
+    - E-2.7
+    - E-5.3
+  sentinels: []

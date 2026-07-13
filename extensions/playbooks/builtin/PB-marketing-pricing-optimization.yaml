@@ -1,0 +1,52 @@
+id: PB-marketing-pricing-optimization
+name: 定价优化剧本
+version: 1.0.0
+expert: marketing
+type: playbook
+description: 当价格弹性告警或需要重新定价时，基于弹性系数、边际成本和竞争格局给出最优定价策略。
+trigger:
+  sentinels:
+    - sentinel-price-elasticity
+  manual: true
+  condition: price-elasticity告警
+steps:
+  - id: step-1
+    name: 弹性系数分析
+    description: 计算需求价格弹性系数和交叉弹性
+    skill: analyze-price-elasticity
+    timeout: 25
+  - id: step-2
+    name: 边际成本计算
+    description: 计算当前边际成本和变动成本结构
+    skill: analyze-cost-structure
+    timeout: 20
+  - id: step-3
+    name: 竞争位势评估
+    description: 评估竞品定价空间和市场份额
+    skill: analyze-competitive-position
+    timeout: 25
+  - id: step-4
+    name: 最优价格测算
+    description: 基于弹性、成本和竞争数据测算最优价格
+    tools:
+      - compute-optimal-price
+    timeout: 30
+  - id: step-5
+    name: 定价策略输出
+    description: 输出定价策略建议和预期收入影响
+    tools:
+      - cross-validate
+    timeout: 30
+onFailure: degrade
+output: pricing_strategy_report
+dependencies:
+  edges:
+    - E-4.1
+    - E-4.4
+    - E-3.1
+  skills:
+    - analyze-price-elasticity
+    - analyze-cost-structure
+    - analyze-competitive-position
+  sentinels:
+    - sentinel-price-elasticity

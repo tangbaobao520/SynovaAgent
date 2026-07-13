@@ -1,0 +1,62 @@
+id: PB-org-health-diagnosis
+name: 组织健康诊断剧本
+version: 1.0.0
+expert: org
+type: playbook
+description: 当org-health哨兵告警时，全面扫描组织健康6个维度（信息流、激励、信任、惯例、权力分配、知识共享），定位瓶颈部门。
+trigger:
+  sentinels:
+    - org-health
+  condition: org-health告警
+steps:
+  - id: step-1
+    name: 组织数据采集
+    description: 采集6维度组织数据
+    tools:
+      - acquire-edge-data
+    timeout: 25
+  - id: step-2
+    name: 信息流密度分析
+    description: 计算信息流密度和网络结构
+    tools:
+      - compute-information-flow
+    timeout: 20
+  - id: step-3
+    name: 激励一致性分析
+    description: 计算激励一致性和扭曲度
+    tools:
+      - compute-incentive-alignment
+    timeout: 20
+  - id: step-4
+    name: 信任摩擦评估
+    description: 评估信任摩擦水平和惯例刚性
+    tools:
+      - compute-trust-friction
+      - compute-routine-rigidity
+    timeout: 20
+  - id: step-5
+    name: 权力分配分析
+    description: 分析决策权分配合理性
+    tools:
+      - compute-decision-authority
+    timeout: 20
+  - id: step-6
+    name: 综合诊断输出
+    description: 整合诊断结论和瓶颈定位
+    skill: diagnose-org-health
+    timeout: 40
+onFailure: degrade
+output: org_health_report
+dependencies:
+  edges:
+    - E-2.2
+    - E-2.3
+    - E-2.4
+    - E-2.5
+    - E-2.6
+    - E-2.9
+    - E-2.10
+  skills:
+    - diagnose-org-health
+  sentinels:
+    - org-health

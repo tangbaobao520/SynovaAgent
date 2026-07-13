@@ -1,0 +1,42 @@
+id: PB-action-execution-track
+name: 执行追踪剧本
+version: 1.0.0
+expert: action
+type: playbook
+description: 行动方案生成后持续追踪执行进度，及时发现和报告执行偏差。
+trigger:
+  condition: 行动方案生成后
+steps:
+  - id: step-1
+    name: 执行基线设定
+    description: 为每个行动项设定执行基线和里程碑
+    tools:
+      - query-graph
+    timeout: 20
+  - id: step-2
+    name: 进度检查
+    description: 定期检查各行动项执行进度
+    skill: track-execution-progress
+    timeout: 20
+  - id: step-3
+    name: 偏差检测
+    description: 检测执行进度与计划的偏差
+    skill: detect-plan-deviation
+    timeout: 20
+  - id: step-4
+    name: 状态报告输出
+    description: 输出执行进度报告和偏差警报
+    tools:
+      - cross-validate
+    timeout: 30
+onFailure: continue
+output: execution_tracking_report
+dependencies:
+  edges:
+    - E-2.1
+    - E-3.1
+    - E-5.1
+  skills:
+    - track-execution-progress
+    - detect-plan-deviation
+  sentinels: []
