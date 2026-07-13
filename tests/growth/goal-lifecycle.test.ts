@@ -119,11 +119,13 @@ describe('GoalLifecycle', () => {
     it('闭环后记录 actualDurationDays', async () => {
       const { closeGoal } = await import('../../src/growth/goal-lifecycle');
       const { store, audit } = createMocks();
-      const id = createGoal(makeGoal({ status: 'active', successCriteria: [{ criterion: '营收达标', verificationMethod: 'metric_threshold', verified: true }] }), store);
+      // 设置 createdAt 为 90 天前，确保 actualDurationDays > 0
+      const pastDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+      const id = createGoal(makeGoal({ status: 'active', createdAt: pastDate, successCriteria: [{ criterion: '营收达标', verificationMethod: 'metric_threshold', verified: true }] }), store);
 
       closeGoal(id, 'achieved', [{ metricName: '营收', currentValue: 15, targetValue: 15, unit: '%', computeContractId: 'C1' }], store, audit);
       const updated = getGoal(id, store);
-      expect(updated?.actualDurationDays).toBeGreaterThan(0);
+      expect(updated?.actualDurationDays).toBeGreaterThan(80);
     });
   });
 
