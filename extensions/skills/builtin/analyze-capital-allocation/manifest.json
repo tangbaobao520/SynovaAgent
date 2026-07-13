@@ -22,5 +22,37 @@
       "sensitiveAccess": "read"
     },
     "crossExpert": []
-  }
+  },
+  "dependencies": {
+    "skills": [],
+    "edges": [
+      "E-1.1",
+      "E-2.1",
+      "E-5.1",
+      "E-X.1"
+    ],
+    "computes": [
+      "COMPUTE-CAPITAL-ALLOCATION-v1",
+      "COMPUTE-NPV-v1",
+      "COMPUTE-PROFIT-REINVESTMENT-v1"
+    ],
+    "sentinels": [
+      "capital-health",
+      "sentinel-npv-negative"
+    ]
+  },
+  "boundaries": {
+    "prohibitedDimensions": [
+      "organizational",
+      "technology",
+      "customer-segment"
+    ],
+    "degradedBehavior": "财务数据源不可用或部分边缺失时返回部分指标并标记 degraded:true",
+    "preconditions": [
+      "L1感知层数据已采集",
+      "对应compute函数可用"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
 }

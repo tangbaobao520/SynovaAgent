@@ -20,6 +20,28 @@ const log = createLogger('skill/loader');
 
 // ═══ Types ═══
 
+export interface SkillDependencies {
+  /** 依赖的下级 Skill 名称列表 */
+  skills?: string[];
+  /** 依赖的工具及版本约束 */
+  tools?: Record<string, string>;
+  /** 消费的42边 ID 列表 */
+  edges?: string[];
+  /** 消费的 compute 函数 ID 列表 */
+  computes?: string[];
+  /** 消费的哨兵名称列表 */
+  sentinels?: string[];
+}
+
+export interface SkillBoundaries {
+  /** 不可触碰的数据维度 */
+  prohibitedDimensions?: string[];
+  /** 降级时的行为描述 */
+  degradedBehavior?: string;
+  /** 运行前置条件 */
+  preconditions?: string[];
+}
+
 export interface SkillManifest {
   name: string;
   version: string;
@@ -36,6 +58,12 @@ export interface SkillManifest {
     dataAccess: { dimensions: string[]; sensitiveAccess: string };
     crossExpert: string[];
   };
+  /** 依赖声明 — edge/compute/sentinel 引用 */
+  dependencies?: SkillDependencies;
+  /** 边界声明 — 不可触碰的领域 */
+  boundaries?: SkillBoundaries;
+  lifecycle?: string;
+  loading?: string;
 }
 
 export interface LoadedSkill {

@@ -28,5 +28,44 @@
     "crossExpert": [
       "business_model"
     ]
-  }
+  },
+  "dependencies": {
+    "skills": [
+      "analyze-competitive-position"
+    ],
+    "edges": [
+      "E-4.7",
+      "E-4.4",
+      "E-4.5",
+      "E-0.3",
+      "E-3.6"
+    ],
+    "computes": [
+      "COMPUTE-COMPETITIVE-POSITIONING-v1",
+      "COMPUTE-COMPETITOR-FEATURE-THREAT-v1",
+      "COMPUTE-COMPETITOR-PRICING-LANDSCAPE-v1",
+      "COMPUTE-MARKET-SHARE-CAPTURE-v1",
+      "COMPUTE-HHI-v1"
+    ],
+    "sentinels": [
+      "competitive-position",
+      "competitive-moat",
+      "sentinel-hhi-concentration"
+    ]
+  },
+  "boundaries": {
+    "prohibitedDimensions": [
+      "financial-detail",
+      "operational",
+      "technology-implementation"
+    ],
+    "degradedBehavior": "竞争数据源不存在时返回 degraded:true，仅输出已有数据",
+    "preconditions": [
+      "下级L1-L2数据已就绪",
+      "相关compute函数可用",
+      "GraphStore连接正常"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
 }

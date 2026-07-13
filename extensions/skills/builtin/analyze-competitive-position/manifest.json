@@ -22,5 +22,37 @@
       "sensitiveAccess": "read"
     },
     "crossExpert": []
-  }
+  },
+  "dependencies": {
+    "skills": [],
+    "edges": [
+      "E-4.7",
+      "E-4.4",
+      "E-4.5",
+      "E-5.4"
+    ],
+    "computes": [
+      "COMPUTE-COMPETITIVE-POSITIONING-v1",
+      "COMPUTE-HHI-v1"
+    ],
+    "sentinels": [
+      "competitive-position",
+      "competitive-moat",
+      "sentinel-hhi-concentration"
+    ]
+  },
+  "boundaries": {
+    "prohibitedDimensions": [
+      "financial-detail",
+      "operational",
+      "technology-implementation"
+    ],
+    "degradedBehavior": "竞争数据源不存在时返回 degraded:true，仅输出已有数据",
+    "preconditions": [
+      "L1感知层数据已采集",
+      "对应compute函数可用"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
 }

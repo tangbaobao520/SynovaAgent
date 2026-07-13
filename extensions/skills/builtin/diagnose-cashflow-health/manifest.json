@@ -27,5 +27,47 @@
     "crossExpert": [
       "strategy"
     ]
-  }
+  },
+  "dependencies": {
+    "skills": [
+      "analyze-break-even",
+      "analyze-operating-leverage",
+      "analyze-capital-allocation"
+    ],
+    "edges": [
+      "E-1.1",
+      "E-1.2",
+      "E-2.1",
+      "E-5.1",
+      "E-4.1",
+      "E-X.1"
+    ],
+    "computes": [
+      "COMPUTE-BREAK-EVEN-v1",
+      "COMPUTE-DOL-v2",
+      "COMPUTE-CAPITAL-ALLOCATION-v1"
+    ],
+    "sentinels": [
+      "capital-health",
+      "margin-health",
+      "sentinel-breakeven",
+      "sentinel-operating-leverage",
+      "sentinel-survival-margin"
+    ]
+  },
+  "boundaries": {
+    "prohibitedDimensions": [
+      "organizational",
+      "technology",
+      "customer-segment"
+    ],
+    "degradedBehavior": "财务数据源不可用或部分边缺失时返回部分指标并标记 degraded:true",
+    "preconditions": [
+      "下级L1-L2数据已就绪",
+      "相关compute函数可用",
+      "GraphStore连接正常"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
 }

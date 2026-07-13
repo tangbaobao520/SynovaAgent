@@ -20,5 +20,29 @@
       "sensitiveAccess": "none"
     },
     "crossExpert": []
-  }
+  },
+  "dependencies": {
+    "skills": [],
+    "edges": [
+      "E-1.1",
+      "E-1.2",
+      "E-5.1",
+      "E-5.2"
+    ],
+    "computes": [],
+    "sentinels": []
+  },
+  "boundaries": {
+    "prohibitedDimensions": [
+      "organizational",
+      "technology",
+      "customer-segment"
+    ],
+    "degradedBehavior": "财务数据源不可用或部分边缺失时返回部分指标并标记 degraded:true",
+    "preconditions": [
+      "数据源连接可用"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
 }

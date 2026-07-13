@@ -21,5 +21,28 @@
       "sensitiveAccess": "none"
     },
     "crossExpert": []
-  }
+  },
+  "dependencies": {
+    "skills": [],
+    "edges": [
+      "E-0.1",
+      "E-0.3"
+    ],
+    "computes": [],
+    "sentinels": []
+  },
+  "boundaries": {
+    "prohibitedDimensions": [
+      "financial",
+      "operational",
+      "strategic-decision"
+    ],
+    "degradedBehavior": "知识库不可用时返回 degraded:true",
+    "preconditions": [
+      "下级Skill执行结果已就绪",
+      "GraphStore连接正常"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
 }

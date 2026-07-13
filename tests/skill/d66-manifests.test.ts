@@ -304,9 +304,10 @@ describe('D66 41出厂内置Skill manifest完整性', () => {
 
   // 额外: 验证 SKILL.md 存在
   describe('SKILL.md 存在性', () => {
-    it('每个 Skill 目录都包含 SKILL.md 文件', () => {
+    it('每个非测试 Skill 目录都包含 SKILL.md 文件', () => {
       const dirs = getSkillDirNames();
       for (const d of dirs) {
+        if (d.startsWith('d65-') || d.startsWith('d66-')) continue;
         const skillMdPath = join(BUILTIN_ROOT, d, 'SKILL.md');
         expect(existsSync(skillMdPath), `${d} 缺少 SKILL.md`).toBe(true);
       }
@@ -315,12 +316,100 @@ describe('D66 41出厂内置Skill manifest完整性', () => {
 
   // 额外: 验证 complexity 有效值
   describe('complexity 有效值', () => {
-    it('所有 complexity 均为 atomic/composite/expert 之一', () => {
-      const dirs = getSkillDirNames();
+    it('所有 real Skill complexity 均为 atomic/composite/expert 之一', () => {
+      const dirs = getSkillDirNames().filter(n => !n.startsWith('d65-') && !n.startsWith('d66-'));
       for (const d of dirs) {
         const raw = readFileSync(join(BUILTIN_ROOT, d, 'manifest.json'), 'utf-8');
         const manifest = JSON.parse(raw);
         expect(VALID_COMPLEXITIES.includes(manifest.complexity), `${d} complexity=${manifest.complexity} 不是有效值`).toBe(true);
+      }
+    });
+  });
+
+  // ── dependencies 完整性 ──
+  describe('dependencies 完整性', () => {
+    let manifests: { name: string; parsed: Record<string, unknown> }[];
+
+    beforeAll(() => {
+      manifests = getSkillDirNames().filter(n => !n.startsWith('d65-') && !n.startsWith('d66-')).map(d => ({
+        name: d,
+        parsed: JSON.parse(readFileSync(join(BUILTIN_ROOT, d, 'manifest.json'), 'utf-8')),
+      }));
+    });
+
+    it('每个 manifest 含 dependencies 字段', () => {
+      for (const m of manifests) {
+        expect(m.parsed.dependencies, `${m.name} 缺少 dependencies`).toBeDefined();
+      }
+    });
+
+    it('dependencies 结构包含 edges/computes/sentinels 数组', () => {
+      for (const m of manifests) {
+        const deps = m.parsed.dependencies as Record<string, unknown>;
+        expect(Array.isArray(deps?.edges), `${m.name}.dependencies.edges 不是数组`).toBe(true);
+        expect(Array.isArray(deps?.computes), `${m.name}.dependencies.computes 不是数组`).toBe(true);
+        expect(Array.isArray(deps?.sentinels), `${m.name}.dependencies.sentinels 不是数组`).toBe(true);
+      }
+    });
+  });
+
+  // ── boundaries 完整性 ──
+  describe('boundaries 完整性', () => {
+    let manifests: { name: string; parsed: Record<string, unknown> }[];
+
+    beforeAll(() => {
+      manifests = getSkillDirNames().filter(n => !n.startsWith('d65-') && !n.startsWith('d66-')).map(d => ({
+        name: d,
+        parsed: JSON.parse(readFileSync(join(BUILTIN_ROOT, d, 'manifest.json'), 'utf-8')),
+      }));
+    });
+
+    it('每个 manifest 含 boundaries 字段', () => {
+      for (const m of manifests) {
+        expect(m.parsed.boundaries, `${m.name} 缺少 boundaries`).toBeDefined();
+      }
+    });
+
+    it('boundaries.prohibitedDimensions 是数组', () => {
+      for (const m of manifests) {
+        const b = m.parsed.boundaries as Record<string, unknown>;
+        expect(Array.isArray(b?.prohibitedDimensions), `${m.name}.boundaries.prohibitedDimensions 不是数组`).toBe(true);
+      }
+    });
+
+    it('boundaries.degradedBehavior 非空字符串', () => {
+      for (const m of manifests) {
+        const b = m.parsed.boundaries as Record<string, unknown>;
+        expect(typeof b?.degradedBehavior).toBe('string');
+        expect((b?.degradedBehavior as string).length).toBeGreaterThan(0);
+      }
+    });
+
+    it('boundaries.preconditions 是数组', () => {
+      for (const m of manifests) {
+        const b = m.parsed.boundaries as Record<string, unknown>;
+        expect(Array.isArray(b?.preconditions), `${m.name}.boundaries.preconditions 不是数组`).toBe(true);
+      }
+    });
+  });
+
+  // ── loading/lifecycle ──
+  describe('loading/lifecycle 字段', () => {
+    it('loading 为 "on-demand"', () => {
+      const dirs = getSkillDirNames().filter(n => !n.startsWith('d65-') && !n.startsWith('d66-'));
+      for (const d of dirs) {
+        const raw = readFileSync(join(BUILTIN_ROOT, d, 'manifest.json'), 'utf-8');
+        const manifest = JSON.parse(raw);
+        expect(manifest.loading, `${d} loading 不是 on-demand`).toBe('on-demand');
+      }
+    });
+
+    it('lifecycle 为 "active"', () => {
+      const dirs = getSkillDirNames().filter(n => !n.startsWith('d65-') && !n.startsWith('d66-'));
+      for (const d of dirs) {
+        const raw = readFileSync(join(BUILTIN_ROOT, d, 'manifest.json'), 'utf-8');
+        const manifest = JSON.parse(raw);
+        expect(manifest.lifecycle, `${d} lifecycle 不是 active`).toBe('active');
       }
     });
   });

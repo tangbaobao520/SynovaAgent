@@ -21,5 +21,35 @@
       "sensitiveAccess": "none"
     },
     "crossExpert": []
-  }
+  },
+  "dependencies": {
+    "skills": [],
+    "edges": [
+      "E-2.7",
+      "E-2.8",
+      "E-5.3",
+      "E-5.5"
+    ],
+    "computes": [
+      "COMPUTE-LEARNING-RATE-v1",
+      "COMPUTE-ORGANIZATIONAL-LEARNING-v1"
+    ],
+    "sentinels": [
+      "sentinel-learning-curve"
+    ]
+  },
+  "boundaries": {
+    "prohibitedDimensions": [
+      "financial",
+      "market-pricing",
+      "technology-stack"
+    ],
+    "degradedBehavior": "组织数据采集失败时返回 degraded:true，跳过不可用维度",
+    "preconditions": [
+      "L1感知层数据已采集",
+      "对应compute函数可用"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
 }

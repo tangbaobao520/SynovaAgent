@@ -21,5 +21,31 @@
       "sensitiveAccess": "read"
     },
     "crossExpert": []
-  }
+  },
+  "dependencies": {
+    "skills": [
+      "track-execution-progress"
+    ],
+    "edges": [
+      "E-2.1",
+      "E-3.1",
+      "E-4.1",
+      "E-X.1"
+    ],
+    "computes": [],
+    "sentinels": []
+  },
+  "boundaries": {
+    "prohibitedDimensions": [
+      "financial-decision",
+      "strategic-direction"
+    ],
+    "degradedBehavior": "执行数据不足时返回 degraded:true，仅输出可用数据",
+    "preconditions": [
+      "下级Skill执行结果已就绪",
+      "GraphStore连接正常"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
 }

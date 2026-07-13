@@ -21,5 +21,34 @@
       "sensitiveAccess": "none"
     },
     "crossExpert": []
-  }
+  },
+  "dependencies": {
+    "skills": [],
+    "edges": [
+      "E-1.1",
+      "E-2.1",
+      "E-3.1",
+      "E-4.1"
+    ],
+    "computes": [
+      "COMPUTE-BREAK-EVEN-v1"
+    ],
+    "sentinels": [
+      "sentinel-breakeven"
+    ]
+  },
+  "boundaries": {
+    "prohibitedDimensions": [
+      "organizational",
+      "technology",
+      "customer-segment"
+    ],
+    "degradedBehavior": "财务数据源不可用或部分边缺失时返回部分指标并标记 degraded:true",
+    "preconditions": [
+      "L1感知层数据已采集",
+      "对应compute函数可用"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
 }

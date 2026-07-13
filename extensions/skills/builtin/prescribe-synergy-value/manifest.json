@@ -24,5 +24,33 @@
       "sensitiveAccess": "read"
     },
     "crossExpert": []
-  }
+  },
+  "dependencies": {
+    "skills": [],
+    "edges": [
+      "E-3.6",
+      "E-2.8",
+      "E-5.3"
+    ],
+    "computes": [
+      "COMPUTE-SYNERGY-v1",
+      "COMPUTE-CROSS-FUNCTIONAL-SYNERGY-v1",
+      "COMPUTE-KNOWLEDGE-SHARING-v1"
+    ],
+    "sentinels": []
+  },
+  "boundaries": {
+    "prohibitedDimensions": [
+      "financial-detail",
+      "technology-implementation"
+    ],
+    "degradedBehavior": "协同数据不可用时返回 degraded:true，跳过不可用维度",
+    "preconditions": [
+      "下级L1-L2数据已就绪",
+      "相关compute函数可用",
+      "GraphStore连接正常"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
 }

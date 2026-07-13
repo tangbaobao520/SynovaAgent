@@ -27,5 +27,36 @@
       "strategy",
       "action"
     ]
-  }
+  },
+  "dependencies": {
+    "skills": [
+      "diagnose-cashflow-health",
+      "diagnose-margin-erosion"
+    ],
+    "edges": [
+      "E-1.1",
+      "E-2.1",
+      "E-5.1",
+      "E-4.1",
+      "E-X.1",
+      "E-2.10"
+    ],
+    "computes": [],
+    "sentinels": [
+      "sentinel-survival-margin",
+      "capital-health",
+      "margin-health"
+    ]
+  },
+  "boundaries": {
+    "prohibitedDimensions": [],
+    "degradedBehavior": "部分专家不可用时降级为部分诊断，标记 degraded:true",
+    "preconditions": [
+      "下级L1-L2数据已就绪",
+      "相关compute函数可用",
+      "GraphStore连接正常"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
 }

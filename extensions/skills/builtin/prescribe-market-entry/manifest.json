@@ -25,5 +25,39 @@
       "sensitiveAccess": "read"
     },
     "crossExpert": []
-  }
+  },
+  "dependencies": {
+    "skills": [
+      "analyze-competitive-position"
+    ],
+    "edges": [
+      "E-4.7",
+      "E-4.4",
+      "E-0.1",
+      "E-0.3"
+    ],
+    "computes": [
+      "COMPUTE-MARKET-STRUCTURE-DIAGNOSIS-v1",
+      "COMPUTE-COMPETITIVE-POSITIONING-v1",
+      "COMPUTE-HHI-v1",
+      "COMPUTE-DEMAND-FORECAST-v1",
+      "COMPUTE-LERNER-INDEX-v1"
+    ],
+    "sentinels": []
+  },
+  "boundaries": {
+    "prohibitedDimensions": [
+      "financial-detail",
+      "operational",
+      "technology-implementation"
+    ],
+    "degradedBehavior": "竞争数据源不存在时返回 degraded:true，仅输出已有数据",
+    "preconditions": [
+      "下级L1-L2数据已就绪",
+      "相关compute函数可用",
+      "GraphStore连接正常"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
 }
