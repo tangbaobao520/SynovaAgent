@@ -467,6 +467,75 @@ function buildUserMessage(context: PromptContext): string {
   return parts.join('\n\n');
 }
 
+// ═══ Template loader (D58) ═══
+
+/**
+ * 加载 PROMPT.md 模板文件并替换占位符。
+ *
+ * 占位符: {displayName}, {tone}, {description}, {frameworks}, {boundaries}, {edges}, {computes}
+ * 降级路径: 文件不存在/空/异常 → 回退 + log.warn + degraded
+ *
+ * @returns 模板内容 + 降级标记 + 未替换占位符
+ */
+function loadPromptTemplate(
+  expert: ExpertManifest,
+  projectRoot?: string,
+): { content: string | null; degraded: boolean; unresolved: string[] } {
+  const templatePath = expert.promptTemplate as string | undefined;
+  if (!templatePath) {
+    return { content: null, degraded: false, unresolved: [] };
+  }
+
+  const root = projectRoot ?? process.cwd();
+  const fullPath = join(root, 'expert', expert.name, templatePath.replace('./', ''));
+
+  try {
+    if (!existsSync(fullPath)) {
+      log.warn({ expert: expert.name }, 'PROMPT.md 不存在 — 回退到 buildM*');
+      return { content: null, degraded: true, unresolved: [] };
+    }
+
+    const raw = readFileSync(fullPath, 'utf-8');
+    if (!raw.trim()) {
+      log.warn({ expert: expert.name }, 'PROMPT.md 为空 — 回退到 buildM*');
+      return { content: null, degraded: true, unresolved: [] };
+    }
+
+    const unresolved: string[] = [];
+    const placeholders: Record<string, string> = {
+      displayName: expert.displayName,
+      tone: expert.tone,
+      description: expert.description,
+      frameworks: expert.frameworks.join(', '),
+      boundaries: expert.boundaries.join(', '),
+      edges: expert.edges.join(', '),
+      computes: expert.computes.join(', '),
+    };
+
+    let content = raw;
+    const placeholderPattern = /\{(\w+)\}/g;
+    let match: RegExpExecArray | null;
+    while ((match = placeholderPattern.exec(raw)) !== null) {
+      const key = match[1];
+      const value = placeholders[key];
+      if (value !== undefined) {
+        content = content.replace(`{${key}}`, value);
+      } else {
+        unresolved.push(`{${key}}`);
+      }
+    }
+
+    if (unresolved.length > 0) {
+      log.warn({ expert: expert.name, unresolved }, 'PROMPT.md 存在未替换的占位符');
+    }
+
+    return { content, degraded: false, unresolved };
+  } catch (err) {
+    log.warn({ err, expert: expert.name }, 'PROMPT.md 读取失败 — 回退到 buildM*');
+    return { content: null, degraded: true, unresolved: [] };
+  }
+}
+
 // ═══ Manifest loader ═══
 
 function loadExpertManifest(expertType: string, projectRoot?: string): ExpertManifest {
@@ -553,65 +622,82 @@ export function assemblePrompt(
     };
   }
 
-  // Step 2: 按需选择模块
-  const moduleLoading = expert.moduleLoading ?? {
-    always: DEFAULT_ALWAYS_MODULES,
-    onDemand: DEFAULT_ON_DEMAND_MODULES,
-  };
+  // Step 2: 尝试加载 PROMPT.md 模板 (D58)
+  const template = loadPromptTemplate(expert, context.projectRoot);
+  let systemPrompt: string;
+  let modules: string[];
+  if (template.degraded) degraded = true;
 
-  const moduleSet = new Set<string>(moduleLoading.always ?? DEFAULT_ALWAYS_MODULES);
-
-  // 检查on-demand条件
-  for (const [modId] of Object.entries(moduleLoading.onDemand ?? {})) {
-    if (shouldLoadOnDemand(modId, context)) {
-      moduleSet.add(modId);
-    }
-  }
-
-  // Step 3: 排序（代码级保证 M2 在 M3 之前）
-  const modules = MODULE_ORDER.filter(m => moduleSet.has(m));
-
-  // 额外检查: M2必须在M3之前
-  const idxM2 = modules.indexOf('M2');
-  const idxM3 = modules.indexOf('M3');
-  if (idxM2 !== -1 && idxM3 !== -1 && idxM2 > idxM3) {
-    log.error({ expertType, modules }, '加载顺序违规: M2在M3之后 — 强制纠正');
-    // 从modules中取出M2放到M3前面
-    modules.splice(idxM2, 1);
-    const newIdxM3 = modules.indexOf('M3');
-    modules.splice(newIdxM3, 0, 'M2');
-    degraded = true;
-  }
-
-  // Step 4: 组装模块内容
-  const moduleContents: Record<string, string> = {};
-  for (const m of modules) {
-    const builder = moduleBuilders[m];
-    if (!builder) {
-      log.warn({ module: m }, '未知模块ID，跳过');
-      continue;
-    }
-    let content = builder(expert, context);
-    content = injectPlaceholders(content, context);
-    moduleContents[m] = content;
-  }
-
-  // Step 5: 预估Token预算，超限则截断M3
-  let systemPrompt = modules.map(m => moduleContents[m] ?? '').join('\n\n---\n\n');
-  const BUDGET_CHARS = 32000;
-
-  if (systemPrompt.length > BUDGET_CHARS && modules.includes('M3')) {
-    const truncatedM3 = truncateM3Content(
-      moduleBuilders.M3(expert, context),
-      context,
+  if (template.content) {
+    // 模板存在 → 使用模板内容，替换 {{PLACEHOLDER}}
+    systemPrompt = injectPlaceholders(template.content, context);
+    // 推断模块列表（仅用于 metadata）
+    modules = MODULE_ORDER.filter(m =>
+      (expert.moduleLoading?.always ?? DEFAULT_ALWAYS_MODULES).includes(m) ||
+      Object.entries(expert.moduleLoading?.onDemand ?? {}).some(([mod]) =>
+        shouldLoadOnDemand(mod, context))
     );
-    moduleContents.M3 = truncatedM3;
+    log.info({ expertType, moduleCount: modules.length }, '使用 PROMPT.md 模板 — 跳过 buildM*');
+  } else {
+    // 模板不存在 → 回退到 buildM* 硬编码
+
+    // Step 2a: 按需选择模块
+    const moduleLoading = expert.moduleLoading ?? {
+      always: DEFAULT_ALWAYS_MODULES,
+      onDemand: DEFAULT_ON_DEMAND_MODULES,
+    };
+
+    const moduleSet = new Set<string>(moduleLoading.always ?? DEFAULT_ALWAYS_MODULES);
+
+    for (const [modId] of Object.entries(moduleLoading.onDemand ?? {})) {
+      if (shouldLoadOnDemand(modId, context)) {
+        moduleSet.add(modId);
+      }
+    }
+
+    // Step 3: 排序（代码级保证 M2 在 M3 之前）
+    modules = MODULE_ORDER.filter(m => moduleSet.has(m));
+
+    const idxM2 = modules.indexOf('M2');
+    const idxM3 = modules.indexOf('M3');
+    if (idxM2 !== -1 && idxM3 !== -1 && idxM2 > idxM3) {
+      log.error({ expertType, modules }, '加载顺序违规: M2在M3之后 — 强制纠正');
+      modules.splice(idxM2, 1);
+      const newIdxM3 = modules.indexOf('M3');
+      modules.splice(newIdxM3, 0, 'M2');
+      degraded = true;
+    }
+
+    // Step 4: 组装模块内容
+    const moduleContents: Record<string, string> = {};
+    for (const m of modules) {
+      const builder = moduleBuilders[m];
+      if (!builder) {
+        log.warn({ module: m }, '未知模块ID，跳过');
+        continue;
+      }
+      let content = builder(expert, context);
+      content = injectPlaceholders(content, context);
+      moduleContents[m] = content;
+    }
+
     systemPrompt = modules.map(m => moduleContents[m] ?? '').join('\n\n---\n\n');
-    degraded = true;
-    log.warn(
-      { expertType, moduleCount: modules.length },
-      '提示词超32000字符 — M3已截断（保留推理链框架+最短占位符）',
-    );
+
+    // Step 5: Token预算控制
+    const BUDGET_CHARS = 32000;
+    if (systemPrompt.length > BUDGET_CHARS && modules.includes('M3')) {
+      const truncatedM3 = truncateM3Content(
+        moduleBuilders.M3(expert, context),
+        context,
+      );
+      moduleContents.M3 = truncatedM3;
+      systemPrompt = modules.map(m => moduleContents[m] ?? '').join('\n\n---\n\n');
+      degraded = true;
+      log.warn(
+        { expertType, moduleCount: modules.length },
+        '提示词超32000字符 — M3已截断',
+      );
+    }
   }
 
   const tokenCount = Math.ceil(systemPrompt.length / 4);

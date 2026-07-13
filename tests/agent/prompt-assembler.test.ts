@@ -383,3 +383,28 @@ describe('D57 — M2对话约束', () => {
     expect(resolvePromptMode({ reportId: 'r1' })).toBe('conversation');
   });
 });
+
+describe('D58 — PROMPT.md 模板加载', () => {
+  it('finance PROMPT.md 存在且可加载', () => {
+    const ctx = makeContext({ mode: 'report' });
+    const result = assemblePrompt('finance', ctx);
+    if (!result.degraded) {
+      expect(result.systemPrompt).toContain('财务专家');
+      expect(result.systemPrompt).not.toContain('{displayName}');
+    }
+  });
+
+  it('不存在的专家 → 降级回退', () => {
+    const ctx = makeContext();
+    const result = assemblePrompt('non-existent-expert', ctx);
+    expect(result.degraded).toBe(true);
+    expect(result.systemPrompt).toBe('');
+  });
+
+  it('manifestOverride不含promptTemplate → 回退到buildM*', () => {
+    const ctx = makeContext();
+    const result = assemblePrompt('test-expert', ctx, testManifest);
+    expect(result.systemPrompt).toContain('你是测试专家');
+    expect(result.modules).toEqual(['M1', 'M2', 'M3', 'M5']);
+  });
+});

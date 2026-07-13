@@ -84,5 +84,6 @@
     ]
   },
   "$schema": "https://synova.dev/schemas/expert-manifest-v1.json",
+  "promptTemplate": "./PROMPT.md",
   "entryPoint": "./business_model/IDENTITY.md"
 }

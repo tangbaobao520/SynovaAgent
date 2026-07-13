@@ -61,5 +61,6 @@
     "computes": []
   },
   "$schema": "https://synova.dev/schemas/expert-manifest-v1.json",
+  "promptTemplate": "./PROMPT.md",
   "entryPoint": "./host/IDENTITY.md"
 }
