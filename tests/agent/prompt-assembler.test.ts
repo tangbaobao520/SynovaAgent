@@ -232,20 +232,38 @@ describe('D54 — 模块内容验证', () => {
     expect(result.systemPrompt).toContain('循环引用');
   });
 
-  it('M5: 边界约束包含boundaries+crossDomainRule', () => {
+  it('M5: 边界约束+3级置信度+信息不足强制输出 (D56)', () => {
     const ctx = makeContext();
     const result = assemblePrompt('test-expert', ctx, testManifest);
     expect(result.systemPrompt).toContain('不替代专业财务审计');
     expect(result.systemPrompt).toContain('越界处理');
     expect(result.systemPrompt).toContain('这不在我的诊断范围内');
-    expect(result.systemPrompt).toContain('低置信度');
+    // 3级置信度标注
+    expect(result.systemPrompt).toContain('0.8');
+    expect(result.systemPrompt).toContain('直接陈述');
+    expect(result.systemPrompt).toContain('0.5-0.8');
+    expect(result.systemPrompt).toContain('推断');
+    expect(result.systemPrompt).toContain('0.5');
+    expect(result.systemPrompt).toContain('猜测');
+    // 信息不足强制输出
+    expect(result.systemPrompt).toContain('信息不足强制输出');
+    expect(result.systemPrompt).toContain('数据不足以支持');
   });
 
-  it('M6: 数据冲突感知包含冲突警告', () => {
+  it('M6: 数据冲突感知含4条规则+示例输出 (D56)', () => {
     const ctx = makeContext({ hasConflict: true });
     const result = assemblePrompt('test-expert', ctx, testManifest);
     expect(result.systemPrompt).toContain('数据冲突感知');
-    expect(result.systemPrompt).toContain('两个版本解读');
+    // 4条规则
+    expect(result.systemPrompt).toContain('告知歧义');
+    expect(result.systemPrompt).toContain('展示冲突版本');
+    expect(result.systemPrompt).toContain('分别诊断');
+    expect(result.systemPrompt).toContain('不默认选择');
+    // 示例输出
+    expect(result.systemPrompt).toContain('示例输出');
+    expect(result.systemPrompt).toContain('毛利率');
+    // hasConflict=true时注入冲突警告
+    expect(result.systemPrompt).toContain('数据冲突警告');
   });
 
   it('userMessage包含诊断上下文JSON', () => {
