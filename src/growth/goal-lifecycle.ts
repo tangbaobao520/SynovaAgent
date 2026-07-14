@@ -169,8 +169,19 @@ export function closeGoal(
     actualDurationDays: actualDays,
   });
 
-  // 4. 预留 D76 知识提取接口
-  // TODO(D76): extractGoalKnowledge(goal, outcome, metricComparisons)
+  // 4. D76: 提取 Goal 执行知识 → 写入 PKB
+  try {
+    const { extractGoalKnowledge, writeGoalKnowledge } = await import('./knowledge-feedback');
+    const knowledge = extractGoalKnowledge(goal, outcome, metricComparisons);
+    const KnowledgeStore = (await import('../l4/knowledge-store')).KnowledgeStore;
+    const { getDatabase } = await import('../init/engine-context');
+    const db = getDatabase();
+    const store = new KnowledgeStore(db);
+    writeGoalKnowledge(knowledge, store);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log.warn({ err: msg, goalId }, '知识提取/PKB 写入失败 — 降级（不阻断 Goal 关闭）');
+  }
 }
 
 /**
