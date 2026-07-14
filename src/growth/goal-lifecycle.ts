@@ -122,13 +122,13 @@ export function transitionGoal(
  * @param outcome - 达成状态
  * @param actualMetrics - 实际达成的指标值列表
  */
-export function closeGoal(
+export async function closeGoal(
   goalId: string,
   outcome: 'achieved' | 'partially_achieved' | 'not_achieved',
   actualMetrics: GoalMetric[],
   store: GraphBridgeLike,
   audit: AuditStoreLike,
-): void {
+): Promise<void> {
   const goal = getGoal(goalId, store);
   if (!goal) {
     throw new Error(`Goal ${goalId} 不存在`);

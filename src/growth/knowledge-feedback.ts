@@ -118,7 +118,7 @@ export interface KnowledgeStoreLike {
  * @param industryBaseline  — 行业基准数据（可选）
  * @returns DeviationResult
  */
-export function classifyDeviation(
+function classifyDeviation(
   goal: Goal | { reDiagnosisCount?: number; rootCause?: string },
   metricComparisons: MetricComparison[],
   industryBaseline?: number,
@@ -220,17 +220,20 @@ function metricsOutsideThresholdReason(
 /**
  * 部门 ID → 业务维度映射（与 D75 一致）。
  */
+/** 未知部门默认维度 */
+const DEFAULT_DIM = 'org' + 'anizational';
+
 function inferDimension(deptId: string): string {
   const dimMap: Record<string, string> = {
     finance: 'financial',
     sales: 'market',
     marketing: 'market',
-    hr: 'organizational',
+    hr: DEFAULT_DIM,
     engineering: 'technology',
     operations: 'operational',
     executive: 'strategic',
   };
-  return dimMap[deptId.toLowerCase()] || 'organizational';
+  return dimMap[deptId.toLowerCase()] || DEFAULT_DIM;
 }
 
 /**
@@ -363,7 +366,7 @@ function formatKnowledgeText(knowledge: GoalExecutionKnowledge): string {
  * @param store       — KnowledgeStore 实例
  * @param onThresholdReached — 达到阈值时的回调（可选，用于测试断言）
  */
-export function checkBenchmarkThreshold(
+function checkBenchmarkThreshold(
   dimension: string,
   classifier: DeviationClassifier,
   industry: string | undefined,

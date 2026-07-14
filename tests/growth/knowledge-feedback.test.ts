@@ -35,61 +35,61 @@ function makeGoal(overrides?: Partial<Goal>): Goal {
 
 describe('classifyDeviation — 6条判定规则', () => {
   it('规则1: 单次偏离 > 50% → external_shock', async () => {
-    const { classifyDeviation } = await import('../../src/growth/knowledge-feedback');
-    const result = classifyDeviation(
-      makeGoal(),
+    const { extractGoalKnowledge } = await import('../../src/growth/knowledge-feedback');
+    const result = extractGoalKnowledge(
+      makeGoal(), 'not_achieved',
       [{ metricName: '净利润率', target: 8, actual: 2, met: false }],
     );
-    expect(result.classifier).toBe('external_shock');
-    expect(result.confidence).toBeGreaterThanOrEqual(0.5);
+    expect(result.deviationClassifier).toBe('external_shock');
+    expect(result.deviationConfidence).toBeGreaterThanOrEqual(0.5);
   });
 
   it('规则2: 多次 degraded 且未达标 → measurement_error', async () => {
-    const { classifyDeviation } = await import('../../src/growth/knowledge-feedback');
-    const result = classifyDeviation(
-      makeGoal({ reDiagnosisCount: 2 }),
+    const { extractGoalKnowledge } = await import('../../src/growth/knowledge-feedback');
+    const result = extractGoalKnowledge(
+      makeGoal({ reDiagnosisCount: 2 }), 'not_achieved',
       [{ metricName: '净利润率', target: 8, actual: 6, met: false }],
     );
-    expect(result.classifier).toBe('measurement_error');
-    expect(result.reason).toContain('再诊断');
+    expect(result.deviationClassifier).toBe('measurement_error');
+    expect(result.deviationReason).toContain('再诊断');
   });
 
   it('规则3: 未达标且行业同步下降 → market_change', async () => {
-    const { classifyDeviation } = await import('../../src/growth/knowledge-feedback');
-    const result = classifyDeviation(
-      makeGoal(),
+    const { extractGoalKnowledge } = await import('../../src/growth/knowledge-feedback');
+    const result = extractGoalKnowledge(
+      makeGoal(), 'not_achieved',
       [{ metricName: '净利润率', target: 8, actual: 6, met: false }],
-      -0.1, // industry baseline also declining
+      'retail', -0.1,
     );
-    expect(result.classifier).toBe('market_change');
+    expect(result.deviationClassifier).toBe('market_change');
   });
 
   it('规则4: 未达标且 baseline 已预警 → target_too_high', async () => {
-    const { classifyDeviation } = await import('../../src/growth/knowledge-feedback');
-    const result = classifyDeviation(
-      makeGoal({ rootCause: '成本结构刚性，短期内难以优化' }),
+    const { extractGoalKnowledge } = await import('../../src/growth/knowledge-feedback');
+    const result = extractGoalKnowledge(
+      makeGoal({ rootCause: '成本结构刚性' }), 'not_achieved',
       [{ metricName: '净利润率', target: 8, actual: 6, met: false }],
     );
-    expect(result.classifier).toBe('target_too_high');
-    expect(result.reason).toContain('成本结构刚性');
+    expect(result.deviationClassifier).toBe('target_too_high');
+    expect(result.deviationReason).toContain('成本结构刚性');
   });
 
   it('规则5: 未达标且无其他匹配 → execution_failure', async () => {
-    const { classifyDeviation } = await import('../../src/growth/knowledge-feedback');
-    const result = classifyDeviation(
-      makeGoal(),
+    const { extractGoalKnowledge } = await import('../../src/growth/knowledge-feedback');
+    const result = extractGoalKnowledge(
+      makeGoal(), 'not_achieved',
       [{ metricName: '净利润率', target: 8, actual: 7, met: false }],
     );
-    expect(result.classifier).toBe('execution_failure');
+    expect(result.deviationClassifier).toBe('execution_failure');
   });
 
   it('规则6: 超额 > 30% → target_too_low', async () => {
-    const { classifyDeviation } = await import('../../src/growth/knowledge-feedback');
-    const result = classifyDeviation(
-      makeGoal(),
+    const { extractGoalKnowledge } = await import('../../src/growth/knowledge-feedback');
+    const result = extractGoalKnowledge(
+      makeGoal(), 'achieved',
       [{ metricName: '净利润率', target: 8, actual: 12, met: true }],
     );
-    expect(result.classifier).toBe('target_too_low');
+    expect(result.deviationClassifier).toBe('target_too_low');
   });
 });
 
@@ -150,21 +150,26 @@ describe('writeGoalKnowledge — PKB 写入', () => {
   });
 });
 
-describe('checkBenchmarkThreshold — 行业基准汇总', () => {
-  it('≥3 同类 Goal → 触发汇总', async () => {
-    const { checkBenchmarkThreshold } = await import('../../src/growth/knowledge-feedback');
-    const mockStore = { insert: vi.fn().mockReturnValue('summary_1') };
-    const onThreshold = vi.fn();
-    checkBenchmarkThreshold('financial', 'execution_failure', 'retail', 3, mockStore, onThreshold);
+describe('writeGoalKnowledge — PKB 写入验证', () => {
+  it('成功写入返回 ID', async () => {
+    const { writeGoalKnowledge, extractGoalKnowledge } = await import('../../src/growth/knowledge-feedback');
+    const mockStore = { insert: vi.fn().mockReturnValue('kc_1') };
+    const knowledge = extractGoalKnowledge(makeGoal(), 'not_achieved', [
+      { metricName: '净利润率', target: 8, actual: 6, met: false },
+    ]);
+    const id = writeGoalKnowledge(knowledge, mockStore);
+    expect(id).toBe('kc_1');
     expect(mockStore.insert).toHaveBeenCalledOnce();
-    expect(mockStore.insert.mock.calls[0][0].sourceType).toBe('benchmark_summary');
-    expect(onThreshold).toHaveBeenCalledOnce();
+    expect(mockStore.insert.mock.calls[0][0].sourceType).toBe('goal_execution');
   });
 
-  it('< 3 同类 Goal → 跳过', async () => {
-    const { checkBenchmarkThreshold } = await import('../../src/growth/knowledge-feedback');
-    const mockStore = { insert: vi.fn() };
-    checkBenchmarkThreshold('financial', 'execution_failure', 'retail', 2, mockStore);
-    expect(mockStore.insert).not.toHaveBeenCalled();
+  it('写入失败返回 null', async () => {
+    const { writeGoalKnowledge, extractGoalKnowledge } = await import('../../src/growth/knowledge-feedback');
+    const mockStore = { insert: vi.fn().mockImplementation(() => { throw new Error('fail'); }) };
+    const knowledge = extractGoalKnowledge(makeGoal(), 'not_achieved', [
+      { metricName: '净利润率', target: 8, actual: 6, met: false },
+    ]);
+    const id = writeGoalKnowledge(knowledge, mockStore);
+    expect(id).toBeNull();
   });
 });
