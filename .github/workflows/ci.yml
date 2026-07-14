@@ -77,6 +77,19 @@ jobs:
       - name: GraphStore compatibility
         run: npx vitest run tests/architecture/
 
+  
+
+  integration-check:
+    name: Integration Contract Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: 'npm' }
+      - run: npm ci
+      - name: L1+L2 integration checks
+        run: bash scripts/workflow/check-integration.sh
+
   checker-review:
     name: Checker Review (maker/checker)
     runs-on: ubuntu-latest
