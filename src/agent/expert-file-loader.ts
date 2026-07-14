@@ -72,6 +72,19 @@ function assemblePrompt(files: ExpertFiles['files']): { prompt: string; sources:
   }
 
   append('IDENTITY', files.IDENTITY, '角色定义');
+
+  // D70: 从 IDENTITY.md 提取 analytical_lens 作为独立提示段落
+  if (files.IDENTITY && files.IDENTITY.content.trim().length > 0) {
+    const identityContent = files.IDENTITY.content;
+    const lensSep = '## analytical_lens';
+    const lensIdx = identityContent.indexOf(lensSep);
+    if (lensIdx >= 0) {
+      const afterHeader = identityContent.substring(lensIdx + lensSep.length).trim();
+      const lensSection = afterHeader.split(/\n## /)[0];
+      sections.push('## 分析视角\n\n' + lensSection.trim());
+      sources.push(files.IDENTITY.relativePath + ' (analytical_lens)');
+    }
+  }
   append('THEORY', files.THEORY, '理论基础');
   append('SOUL', files.SOUL, '诊断风格与方法论');
   append('RULES', files.RULES, '诊断规则与评分指南');
