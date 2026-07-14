@@ -1,15 +1,22 @@
 /**
- * expert-prompts.ts — 6 个专家子 Agent 独立提示词
+ * expert-prompts.ts — 专家提示词构建器 (文件驱动 — D69)
  *
- * 对标 Claw-Code 的 conversation.rs 系统提示构建逻辑：
- *   - 每个专家有独立的角色定义、分析框架、边界约束、输出格式
- *   - 提示词是纯函数：输入诊断上下文 → 输出 { systemPrompt, userMessage }
- *   - 独立可测试——不依赖 LLM 调用即可验证提示词结构
+ * D53+D58 文件驱动重构：从硬编码 DEFINITIONS 改为从 expert/{name}/
+ * manifest.json + PROMPT.md 加载专家定义。
  *
- * P2-17: 每个专家含独立测试（expert-prompts.test.ts）
+ * 补充修正核心要求:
+ *   "expert-prompts.ts从持有者变为加载器"
+ *   "删除DEFINITIONS硬编码，改为readExpertManifest()从文件系统读取"
+ *
+ * 铁律 24+31: 降级路径 — manifest缺失/字段缺失 → log.warn + degraded + 默认值
+ * 铁律 38: 零 as any
  */
 
 import type { DiagnosisEvidence, DiagnosisHypothesis, ExpertType } from './types';
+import * as fs from 'fs';
+import * as path from 'path';
+
+// ═══ Types ═══
 
 export interface ExpertPromptContext {
   teamId: string;
@@ -29,153 +36,142 @@ export interface ExpertDefinition {
   description: string;
   tone: string;
   boundaries: string[];
-  /** 该专家使用的分析框架（如 7 Powers、六缝隙等） */
+  /** 该专家使用的分析框架 */
   frameworks: string[];
   /** 输出结构要求 */
   outputFormat: string;
 }
 
-// ====================================================================
-// Expert Definitions
-// ====================================================================
+// ═══ ExpertType → manifest name mapping ═══
 
-const DEFINITIONS: Record<ExpertType, ExpertDefinition> = {
-  strategic_analyst: {
-    type: 'strategic_analyst',
-    name: '战略专家',
-    description: '看方向——你现在走的路对不对，对手在哪，机会在哪',
-    tone: '宏观、锐利、前瞻性。用数据支撑判断，不回避风险信号，给出清晰的方向选择。',
-    boundaries: [
-      '不评价创始人个人能力',
-      '不预测市场涨跌',
-      '不确定的判断标注置信度',
-      '战略建议必须附带可验证的假设条件',
-    ],
-    frameworks: ['7 Powers (Hamilton Helmer)', '波特五力', '战略姿态矩阵 (生存突破/稳健经营/创新突围/生态构建)'],
-    outputFormat: [
-      '## 战略评估',
-      '1. 竞争定位（当前/目标）',
-      '2. 7 Powers 状态（增强/稳定/衰减）',
-      '3. 最大战略风险（≤3 条）',
-      '4. 战略建议（≤3 条，每条含：假设条件 / 置信度 / 6 个月里程碑）',
-    ].join('\n'),
-  },
-
-  org_diagnostician: {
-    type: 'org_diagnostician',
-    name: '组织专家',
-    description: '看内功——团队协作有没有摩擦，决策卡在哪一层',
-    tone: '系统化、客观、数据驱动。关注模式而非个例，关注交互而非个体。',
-    boundaries: [
-      '不点名具体个人',
-      '不归因于个人动机（用系统因素解释）',
-      '不泄露隐私数据',
-      '对比基准时注明数据来源和样本量',
-    ],
-    frameworks: ['六缝隙模型 (GapDimension × 6)', '协作健康度 (Collaboration Health)', '信息流拓扑'],
-    outputFormat: [
-      '## 组织诊断',
-      '1. 六缝隙状态（各维度当前得分/趋势）',
-      '2. 系统性缺陷（≥2 个缝隙交叉验证）',
-      '3. 信息流与决策权匹配度',
-      '4. 组织改进建议（≤3 条，每条含：目标维度 / 预期改善幅度 / 置信度）',
-    ].join('\n'),
-  },
-
-  financial_analyst: {
-    type: 'financial_analyst',
-    name: '财务专家',
-    description: '看家底——钱花得值不值，现金流能不能撑住',
-    tone: '精确、审慎、量化。每一项金额估算必须标明假设和误差范围。',
-    boundaries: [
-      '所有金额标注币种和估算误差范围（±%）',
-      '不替代专业财务审计',
-      'Token 成本拆解归因到具体模块',
-      '改善 ROI 必须标注回本周期假设',
-    ],
-    frameworks: ['诊断→财务映射矩阵', 'Token 经济学 (输入/输出/缓存命中)', 'ROI 排序 (改善成本 vs 年化节省)'],
-    outputFormat: [
-      '## 财务分析',
-      '1. 当前低效的财务量化（金额 + 误差范围）',
-      '2. Token 浪费归因（按模块拆解，各模块占比）',
-      '3. 改善优先级排序（按 ROI 从高到低）',
-      '4. 财务优化建议（≤3 条，每条含：估算金额 / 误差范围 / 回本周期 / 置信度）',
-    ].join('\n'),
-  },
-
-  tech_architect: {
-    type: 'tech_architect',
-    name: '技术专家',
-    description: '看武器——用的工具是帮你们还是拖你们，AI能不能省人',
-    tone: '务实、深入、工程视角。关注可实现性和技术债务，不追求技术时尚。',
-    boundaries: [
-      '技术建议必须考虑团队当前能力',
-      '不推荐团队无法维护的技术栈',
-      '基准对比标明同类团队样本量',
-      '迁移建议附带阶梯式路线图（每步可独立验证）',
-    ],
-    frameworks: ['能力谱系 (Capability Spectrum)', '基准对比 (Benchmark Engine)', '技术债务量化'],
-    outputFormat: [
-      '## 技术架构评估',
-      '1. 能力谱系缺口（按致命程度排序）',
-      '2. 基准对比位置（样本量 + 分位数）',
-      '3. 技术栈维护风险评估',
-      '4. 技术改进建议（≤3 条，每条含：阶梯路线图 / 团队能力要求 / 置信度）',
-    ].join('\n'),
-  },
-
-  action_advisor: {
-    type: 'action_advisor',
-    name: '行动专家',
-    description: '看落地——所有诊断不变成PPT，直接变成谁该做什么',
-    tone: '务实、具体、行动导向。每一项建议必须回答"谁、做什么、多久、怎么验证"。',
-    boundaries: [
-      '每项行动必须指定负责人角色（非个人名）',
-      '估算工时必须基于团队规模（标注假设团队人数）',
-      '必须包含验证标准（怎么算完成）',
-      '不推荐团队当前无法执行的行动',
-    ],
-    frameworks: ['SMART 目标', '优先级矩阵 (紧急/重要)', 'FDE 工具集 (auto-action/task-integration)'],
-    outputFormat: [
-      '## 行动方案',
-      '每项行动必须包含：',
-      '- 负责人角色',
-      '- 预估工时（基于 N 人团队）',
-      '- 优先级 (critical/high/medium/low)',
-      '- 目标系统 (jira/linear/manual)',
-      '- 验证标准（可量化，可观测）',
-      '- 前置依赖',
-      '按优先级排序，≤5 条',
-    ].join('\n'),
-  },
-
-  marketing_analyst: {
-    type: 'marketing_analyst',
-    name: '营销专家',
-    description: '看增长——客户怎么看你们，获客效率能不能再高一点',
-    tone: '具体、量化、行动导向。用数据支撑判断，区分"事实"和"推断"。聚焦可验证的结论。',
-    boundaries: [
-      '不确定的判断必须标注置信度（高/中/低）',
-      '数据不足时显式标注"需要客户访谈/问卷数据"而非推测',
-      '定位建议必须附带兑现该定位所需的前提条件',
-      '生存突破型战略不推荐大规模广告投放',
-      '所有差异化声称必须与组织能力诊断模块交叉验证',
-      '拒绝"认知大于事实"——品牌承诺与客户体验显著偏差时优先告警',
-    ],
-    frameworks: ['定位三方一致性', '品类认知清晰度', '差异化实质性验证', '四力模型 (感知/信任/扩散/锁定)'],
-    outputFormat: [
-      '## 营销效能分析',
-      '1. 定位一致性评估（对外↔内部↔客户三方对齐度 + 断裂点）',
-      '2. 品类认知清晰度（主导词/混乱度/客户原话样本）',
-      '3. 差异化实质性（声称 vs 能力支撑 vs 客户感知 vs 竞品对比）',
-      '4. 营销改进建议（≤3 条，每条含：预期影响 / 置信度 / 前提条件 / 验证指标）',
-    ].join('\n'),
-  },
+const EXPERT_TYPE_TO_MANIFEST: Record<string, string> = {
+  strategic_analyst: 'strategy',
+  org_diagnostician: 'org',
+  financial_analyst: 'finance',
+  tech_architect: 'tech',
+  action_advisor: 'action',
+  marketing_analyst: 'marketing',
 };
 
-// ====================================================================
-// Prompt Builders — 每个专家一个纯函数
-// ====================================================================
+// ═══ Manifest cache ═══
+
+const manifestCache = new Map<string, ExpertDefinition>();
+
+// ═══ Default definition factory ═══
+
+function getDefaultDefinition(type: ExpertType): ExpertDefinition {
+  return {
+    type,
+    name: type,
+    description: '',
+    tone: '',
+    boundaries: [],
+    frameworks: [],
+    outputFormat: '',
+  };
+}
+
+function buildOutputFormat(manifest: Record<string, unknown>): string {
+  const frameworks = Array.isArray(manifest.frameworks)
+    ? (manifest.frameworks as string[]).slice(0, 3).join('、')
+    : '';
+  return `根据分析框架(${frameworks})进行诊断。\n1. 发现总结\n2. 证据支撑\n3. 置信度标注（高/中/低）\n4. 建议`;
+}
+
+// ═══ File-driven loader ═══
+
+/**
+ * 从 expert/{name}/manifest.json 读取专家定义。
+ *
+ * 缓存: 已加载的 manifest 按 ExpertType 缓存，避免重复读盘。
+ * 降级:
+ *   manifest.json不存在或解析失败 → 返回最小默认定义 + log.warn + degraded
+ *   字段缺失 → 使用默认值填充
+ *
+ * @param type - ExpertType（如 'strategic_analyst'）
+ * @returns ExpertDefinition
+ */
+export function readExpertManifest(type: ExpertType): ExpertDefinition {
+  const cached = manifestCache.get(type);
+  if (cached) return cached;
+
+  const manifestName = EXPERT_TYPE_TO_MANIFEST[type];
+  if (!manifestName) {
+    console.warn('[expert-prompts] 未知ExpertType:', type);
+    const fallback = getDefaultDefinition(type);
+    manifestCache.set(type, fallback);
+    return fallback;
+  }
+
+  const manifestPath = path.join(__dirname, '..', '..', '..', '..', '..', 'expert', manifestName, 'manifest.json');
+
+  try {
+    if (!fs.existsSync(manifestPath)) {
+      console.warn('[expert-prompts] manifest.json不存在:', type, manifestPath);
+      const fallback = getDefaultDefinition(type);
+      manifestCache.set(type, fallback);
+      return fallback;
+    }
+
+    const raw = fs.readFileSync(manifestPath, 'utf-8');
+    const data = JSON.parse(raw) as Record<string, unknown>;
+
+    const def: ExpertDefinition = {
+      type,
+      name: (data.displayName as string) || manifestName,
+      description: (data.description as string) || '',
+      tone: (data.tone as string) || '',
+      boundaries: Array.isArray(data.boundaries) ? (data.boundaries as string[]) : [],
+      frameworks: Array.isArray(data.frameworks) ? (data.frameworks as string[]) : [],
+      outputFormat: buildOutputFormat(data),
+    };
+
+    manifestCache.set(type, def);
+    console.log('[expert-prompts] 专家定义已加载:', type, def.name);
+    return def;
+  } catch (err) {
+    console.warn('[expert-prompts] manifest.json读取失败:', type, err);
+    const fallback = getDefaultDefinition(type);
+    manifestCache.set(type, fallback);
+    return fallback;
+  }
+}
+
+/**
+ * 从 expert/{name}/IDENTITY.md 加载角色声明。
+ * 文件不存在 → 返回空字符串。
+ */
+export function loadIdentityMd(type: ExpertType): string {
+  const manifestName = EXPERT_TYPE_TO_MANIFEST[type];
+  if (!manifestName) return '';
+
+  const identityPath = path.join(__dirname, '..', '..', '..', '..', '..', 'expert', manifestName, 'IDENTITY.md');
+  try {
+    if (!fs.existsSync(identityPath)) return '';
+    return fs.readFileSync(identityPath, 'utf-8');
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * 从 expert/{name}/PROMPT.md 加载完整提示词模板（D58产物）。
+ * 文件不存在 → 返回空字符串（调用方应回退到buildSystemPrompt）。
+ */
+export function loadPromptTemplate(type: ExpertType): string {
+  const manifestName = EXPERT_TYPE_TO_MANIFEST[type];
+  if (!manifestName) return '';
+
+  const promptPath = path.join(__dirname, '..', '..', '..', '..', '..', 'expert', manifestName, 'PROMPT.md');
+  try {
+    if (!fs.existsSync(promptPath)) return '';
+    return fs.readFileSync(promptPath, 'utf-8');
+  } catch {
+    return '';
+  }
+}
+
+// ═══ Prompt Builders ═══
 
 /** 构建系统提示——所有专家共用模板，注入角色定义 */
 function buildSystemPrompt(def: ExpertDefinition, context: ExpertPromptContext): string {
@@ -242,12 +238,10 @@ function buildUserMessage(def: ExpertDefinition, context: ExpertPromptContext): 
   return lines.join('\n');
 }
 
-// ====================================================================
-// Public API — 每个专家一个独立入口函数
-// ====================================================================
+// ═══ Public API ═══
 
 export function buildStrategicAnalystPrompt(context: ExpertPromptContext): ExpertPrompt {
-  const def = DEFINITIONS.strategic_analyst;
+  const def = readExpertManifest('strategic_analyst');
   return {
     systemPrompt: buildSystemPrompt(def, context),
     userMessage: buildUserMessage(def, context),
@@ -255,7 +249,7 @@ export function buildStrategicAnalystPrompt(context: ExpertPromptContext): Exper
 }
 
 export function buildOrgDiagnosticianPrompt(context: ExpertPromptContext): ExpertPrompt {
-  const def = DEFINITIONS.org_diagnostician;
+  const def = readExpertManifest('org_diagnostician');
   return {
     systemPrompt: buildSystemPrompt(def, context),
     userMessage: buildUserMessage(def, context),
@@ -263,7 +257,7 @@ export function buildOrgDiagnosticianPrompt(context: ExpertPromptContext): Exper
 }
 
 export function buildFinancialAnalystPrompt(context: ExpertPromptContext): ExpertPrompt {
-  const def = DEFINITIONS.financial_analyst;
+  const def = readExpertManifest('financial_analyst');
   return {
     systemPrompt: buildSystemPrompt(def, context),
     userMessage: buildUserMessage(def, context),
@@ -271,7 +265,7 @@ export function buildFinancialAnalystPrompt(context: ExpertPromptContext): Exper
 }
 
 export function buildTechArchitectPrompt(context: ExpertPromptContext): ExpertPrompt {
-  const def = DEFINITIONS.tech_architect;
+  const def = readExpertManifest('tech_architect');
   return {
     systemPrompt: buildSystemPrompt(def, context),
     userMessage: buildUserMessage(def, context),
@@ -279,7 +273,7 @@ export function buildTechArchitectPrompt(context: ExpertPromptContext): ExpertPr
 }
 
 export function buildActionAdvisorPrompt(context: ExpertPromptContext): ExpertPrompt {
-  const def = DEFINITIONS.action_advisor;
+  const def = readExpertManifest('action_advisor');
   return {
     systemPrompt: buildSystemPrompt(def, context),
     userMessage: buildUserMessage(def, context),
@@ -287,7 +281,7 @@ export function buildActionAdvisorPrompt(context: ExpertPromptContext): ExpertPr
 }
 
 export function buildMarketingAnalystPrompt(context: ExpertPromptContext): ExpertPrompt {
-  const def = DEFINITIONS.marketing_analyst;
+  const def = readExpertManifest('marketing_analyst');
   return {
     systemPrompt: buildSystemPrompt(def, context),
     userMessage: buildUserMessage(def, context),
@@ -308,7 +302,7 @@ export function buildExpertPrompt(type: ExpertType, context: ExpertPromptContext
 
 /** 获取所有专家定义（用于 UI 展示、Agent 注册表等） */
 export function getExpertDefinition(type: ExpertType): ExpertDefinition {
-  return DEFINITIONS[type];
+  return readExpertManifest(type);
 }
 
 /** 列出所有专家类型 */
@@ -335,7 +329,6 @@ export function buildExpertSystemPrompt(
   if (!def) return '';
 
   return [
-    // Layer 1: 共享基座
     `# 角色: ${def.name}`,
     def.description,
     '',
@@ -348,13 +341,11 @@ export function buildExpertSystemPrompt(
     `## 框架`,
     def.frameworks.map((f, i) => `${i + 1}. ${f}`).join('\n'),
     '',
-    // Layer 2: 专家差异
     `## 诊断上下文`,
     `组织: ${context.sessionBrief?.orgName || context.teamId}`,
     `阶段: Phase ${context.phase}`,
     `证据: ${context.evidence?.length || 0} 条`,
     '',
-    // Layer 3: 输出格式
     `## 输出格式 (必须严格遵守)`,
     def.outputFormat || 'JSON',
     '',
