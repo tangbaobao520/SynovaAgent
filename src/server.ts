@@ -25,6 +25,7 @@ import { getOntologyEventBus } from './l5/ontology-event-bus';
 import homeRoutes from './routes/home';
 import chatRoutes from './routes/chat';
 import workspaceRoutes from './routes/workspace';
+import workspaceDataRoutes from './routes/workspace-data'; // D74 — 工作台数据 API
 import workspacesApiRoutes from './routes/workspaces-api';
 import gaDiagnosisRoutes from './routes/ga-diagnosis';
 import knowledgeAskRoutes from './routes/knowledge-ask';
@@ -291,6 +292,7 @@ export async function createServer(): Promise<Server> {
   app.use(homeRoutes);
   app.use(chatRoutes);
   app.use(workspaceRoutes);
+  app.use(workspaceDataRoutes); // D74 — 工作台数据 API
   app.use(workspacesApiRoutes);
   app.use(gaDiagnosisRoutes);
   app.use(knowledgeAskRoutes);
