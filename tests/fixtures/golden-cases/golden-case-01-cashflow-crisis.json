@@ -1,0 +1,23 @@
+{
+  "$schema": "https://synova.dev/schemas/golden-case-v1.json",
+  "id": "golden-case-01",
+  "title": "现金流危机",
+  "description": "企业现金流紧张，运营资金不足。预期根因为 CAPITAL_ACQUISITION 边。",
+  "frozenAt": "2026-07-14T00:00:00Z",
+  "DO_NOT_MODIFY": "Frozen snapshot — update expectations only on 42-edge major version change",
+  "input": {
+    "sentinelFindings": [
+      { "id": "F001", "sentinel": "cash-runway", "severity": "critical", "title": "现金流不足3个月", "matchedEdgeIds": ["E-05"], "detectedAt": "2026-07-13T00:00:00Z" },
+      { "id": "F002", "sentinel": "financing-constraint", "severity": "high", "title": "融资渠道受限", "matchedEdgeIds": ["E-05", "E-12"], "detectedAt": "2026-07-13T00:00:00Z" },
+      { "id": "F003", "sentinel": "unit-economics", "severity": "medium", "title": "单位经济亏损", "matchedEdgeIds": ["E-23"], "detectedAt": "2026-07-12T00:00:00Z" }
+    ],
+    "graphEdges": ["E-05", "E-12", "E-23", "E-31", "E-07", "E-33"]
+  },
+  "expected": {
+    "rootCauseEdgeIds": ["E-05"],
+    "rootCauseNodeTypes": ["CAPITAL_ACQUISITION"],
+    "severity": "critical",
+    "matchedEdgeIds": ["E-05", "E-12", "E-23"],
+    "explanation": "CAPITAL_ACQUISITION 边缺失→现金流不足→融资受限"
+  }
+}

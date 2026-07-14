@@ -99,3 +99,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: npm audit --audit-level=high
+
+  golden-case:
+    name: Golden Case F1 Gate
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: 'npm' }
+      - run: npm ci
+      - name: Run golden case F1 gate
+        run: npx tsx scripts/ci/golden-case-checker.ts

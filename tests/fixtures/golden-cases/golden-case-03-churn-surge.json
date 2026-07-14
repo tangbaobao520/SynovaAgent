@@ -1,0 +1,23 @@
+{
+  "$schema": "https://synova.dev/schemas/golden-case-v1.json",
+  "id": "golden-case-03",
+  "title": "客户流失潮",
+  "description": "客户流失率急剧上升，留存策略失效。预期根因为 CLIENT_RETENTION 边。",
+  "frozenAt": "2026-07-14T00:00:00Z",
+  "DO_NOT_MODIFY": "Frozen snapshot — update expectations only on 42-edge major version change",
+  "input": {
+    "sentinelFindings": [
+      { "id": "F007", "sentinel": "customer-demand-shift", "severity": "critical", "title": "客户流失率>15%", "matchedEdgeIds": ["E-31"], "detectedAt": "2026-07-13T00:00:00Z" },
+      { "id": "F008", "sentinel": "competitive-position", "severity": "high", "title": "市场份额被蚕食", "matchedEdgeIds": ["E-31", "E-33"], "detectedAt": "2026-07-13T00:00:00Z" },
+      { "id": "F009", "sentinel": "niche-squeeze", "severity": "medium", "title": "利基市场受挤压", "matchedEdgeIds": ["E-33"], "detectedAt": "2026-07-12T00:00:00Z" }
+    ],
+    "graphEdges": ["E-31", "E-33", "E-05", "E-23", "E-07", "E-12"]
+  },
+  "expected": {
+    "rootCauseEdgeIds": ["E-31"],
+    "rootCauseNodeTypes": ["CLIENT_RETENTION"],
+    "severity": "critical",
+    "matchedEdgeIds": ["E-31", "E-33"],
+    "explanation": "CLIENT_RETENTION 边缺失→客户流失无法预警→留存策略失效"
+  }
+}

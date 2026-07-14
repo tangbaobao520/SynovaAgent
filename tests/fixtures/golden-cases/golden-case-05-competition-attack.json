@@ -1,0 +1,23 @@
+{
+  "$schema": "https://synova.dev/schemas/golden-case-v1.json",
+  "id": "golden-case-05",
+  "title": "竞争冲击",
+  "description": "新进入者抢夺市场份额，竞争优势被削弱。预期根因为 MARKET_COMPETITION 边。",
+  "frozenAt": "2026-07-14T00:00:00Z",
+  "DO_NOT_MODIFY": "Frozen snapshot — update expectations only on 42-edge major version change",
+  "input": {
+    "sentinelFindings": [
+      { "id": "F013", "sentinel": "competitive-moat", "severity": "critical", "title": "竞争护城河削弱", "matchedEdgeIds": ["E-33"], "detectedAt": "2026-07-13T00:00:00Z" },
+      { "id": "F014", "sentinel": "competitive-position", "severity": "high", "title": "市场份额下降5%", "matchedEdgeIds": ["E-33", "E-31"], "detectedAt": "2026-07-13T00:00:00Z" },
+      { "id": "F015", "sentinel": "niche-breadth", "severity": "medium", "title": "利基宽度收缩", "matchedEdgeIds": ["E-33"], "detectedAt": "2026-07-12T00:00:00Z" }
+    ],
+    "graphEdges": ["E-33", "E-31", "E-05", "E-23", "E-07", "E-12"]
+  },
+  "expected": {
+    "rootCauseEdgeIds": ["E-33"],
+    "rootCauseNodeTypes": ["MARKET_COMPETITION"],
+    "severity": "critical",
+    "matchedEdgeIds": ["E-33", "E-31"],
+    "explanation": "MARKET_COMPETITION 边缺失→竞争冲击无法检测→护城河削弱"
+  }
+}
