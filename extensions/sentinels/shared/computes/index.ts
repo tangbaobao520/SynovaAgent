@@ -43,6 +43,7 @@ export { computeDataCollection } from './l1-input/compute-data-collection';
 export { computeEquipmentAcquisition } from './l1-input/compute-equipment-acquisition';
 export { computeReputationAttraction } from './l1-input/compute-reputation-attraction';
 export { computeEfficiencyAttraction } from './l1-input/compute-efficiency-attraction';
+export { computeEfficiencyFinancing } from './l1-input/compute-efficiency-financing';
 
 // l2-internal — I2-3c: 环节2 内部转化 新边compute
 export { computeCapitalAllocation } from './l2-internal/compute-capital-allocation';
@@ -54,6 +55,7 @@ export { computeRuleConstraint } from './l2-internal/compute-rule-constraint';
 export { computeOrganizationalLearning } from './l2-internal/compute-organizational-learning';
 export { computeKnowledgeSharing } from './l2-internal/compute-knowledge-sharing';
 export { computeTrustFrictionReduction } from './l2-internal/compute-trust-friction-reduction';
+export { computeOrgTrust } from './l2-internal/compute-org-trust';
 export { computeRoutineRigidity } from './l2-internal/compute-routine-rigidity';
 
 // l3-output — I2-3c: 环节3 价值输出 新边compute
@@ -73,13 +75,16 @@ export { computeCompetitivePositioning } from './l4-capture/compute-competitive-
 export { computeProcurementBargaining } from './l4-capture/compute-procurement-bargaining';
 export { computeCustomerDataLoop } from './l4-capture/compute-customer-data-loop';
 export { computeMarketShareCapture } from './l4-capture/compute-market-share-capture';
+export { computeTalentProtection } from './l4-capture/compute-talent-protection';
 
 // l5-reinput — I2-3d: 环节5 再输入 新边compute
 export { computeProfitReinvestment } from './l5-reinput/compute-profit-reinvestment';
 export { computeTalentRetention } from './l5-reinput/compute-talent-retention';
 export { computeKnowledgeReuse } from './l5-reinput/compute-knowledge-reuse';
 export { computeReputationFlywheel } from './l5-reinput/compute-reputation-flywheel';
+export { computeAssumptionLinkage } from './l5-reinput/compute-assumption-linkage';
 export { computeRetentionProtectsKnowledge } from './l5-reinput/compute-retention-protects-knowledge';
+
 
 // cross-cycle — I2-3d: 跨环节联动 新边compute
 export { computeAssumptionTriggeredReallocation } from './cross-cycle/compute-assumption-triggered-reallocation';
