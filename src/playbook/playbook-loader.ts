@@ -17,6 +17,7 @@ import { join, parse } from 'path';
 import { load as parseYaml } from 'js-yaml';
 import { createLogger } from '@synova/logger';
 import type { PlaybookDefinition } from './playbook-types';
+import type { PlaybookExecutionRecord } from './playbook-types';
 
 const log = createLogger('playbook/loader');
 
@@ -133,4 +134,24 @@ export async function registerLoadedPlaybooks(): Promise<{ registered: number; e
 
   if (registered > 0) log.info({ registered, errors: errors.length }, 'Playbook 已注册');
   return { registered, errors };
+}
+
+/**
+ * 记录 Playbook 执行结果（D80）。
+ *
+ * 在 Playbook 执行完成后调用，将执行轨迹写入 execution-store。
+ *
+ * 降级: 写入失败 → log.warn + 返回 false（不阻断上层流程）
+ */
+export function recordPlaybookExecution(
+  record: PlaybookExecutionRecord,
+  store: { createExecutionRecord(r: PlaybookExecutionRecord): string },
+): boolean {
+  try {
+    store.createExecutionRecord(record);
+    return true;
+  } catch (err) {
+    log.warn({ err, executionId: record.executionId }, 'Playbook执行记录写入失败 — 不阻断');
+    return false;
+  }
 }

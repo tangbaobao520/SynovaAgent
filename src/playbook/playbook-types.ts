@@ -69,3 +69,53 @@ export interface PlaybookDefinition {
   /** 是否跨专家协同 */
   crossExpert?: boolean;
 }
+
+// ═══ D80: PlaybookExecutionRecord ═══
+
+/** 单步执行结果 */
+export interface StepResult {
+  stepId: string;
+  stepIndex: number;
+  expert: string;
+  toolCalled: string;
+  startTime: string;
+  endTime: string;
+  durationMs: number;
+  status: 'success' | 'degraded' | 'skipped' | 'failed' | 'halted';
+  output?: { evidenceRefs?: string[]; confidence?: number; summary?: string };
+  error?: { code: string; message: string; retryable: boolean };
+  retryCount: number;
+}
+
+/** 专家间交互记录 */
+export interface CrossExpertInteraction {
+  fromExpert: string;
+  toExpert: string;
+  interactionType: 'RequestValidation' | 'Endorse' | 'Challenge';
+  timestamp: string;
+  findingRef: string;
+}
+
+/** Playbook 执行记录（15字段 — 第12份权威文档 §5） */
+export interface PlaybookExecutionRecord {
+  executionId: string;
+  playbookId: string;
+  playbookVersion: string;
+  enterpriseId: string;
+  triggerType: 'sentinel' | 'cron' | 'manual' | 'event';
+  triggerDetail: { sentinelId?: string; severity?: string; manualBy?: string };
+  startTime: string;
+  endTime: string;
+  durationMs: number;
+  appliedOverrides: Record<string, unknown>;
+  stepResults: StepResult[];
+  crossExpertInteractions: CrossExpertInteraction[];
+  finalOutput: {
+    reportRef: string;
+    confidence: number;
+    degradedSteps: number;
+    failedSteps: number;
+  };
+  tokenUsage: { totalInput: number; totalOutput: number };
+  costEstimate: number;
+}
