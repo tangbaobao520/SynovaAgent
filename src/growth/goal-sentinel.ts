@@ -129,7 +129,18 @@ export function computeDeviations(
  * @param state - 哨兵状态（含基线/采样/告警记录）
  * @returns Sentinel 实例
  */
-export function createGoalSentinel(goal: Goal, state: GoalSentinelState): Sentinel {
+/**
+ * 创建 Goal 方案哨兵。
+ *
+ * @param goal         — 关联的 Goal
+ * @param state        — 哨兵运行状态（基线/采样/告警周期）
+ * @param onEmergency  — 可选。检测到 emergency 告警时触发（D75 轻量级再诊断集成）
+ */
+export function createGoalSentinel(
+  goal: Goal,
+  state: GoalSentinelState,
+  onEmergency?: (goalId: string, findings: Array<{ severity: string; title: string; description: string }>) => void,
+): Sentinel {
   const priority = goal.priority || 'P1';
   const config: SentinelConfig = {
     id: `goal-${goal.goalId}`,
@@ -223,6 +234,27 @@ export function createGoalSentinel(goal: Goal, state: GoalSentinelState): Sentin
               detectedAt: new Date().toISOString(),
               relatedNodeId: goal.goalId,
             });
+
+            // D75: emergency 告警 → 触发轻量级再诊断（fire-and-forget）
+            if (onEmergency) {
+              try {
+                const emergencyFindings = findings
+                  .filter((f) => f.severity === 'emergency')
+                  .map((f) => ({ severity: f.severity, title: f.title, description: f.description }));
+                // 非阻塞触发，不等待再诊断完成
+                setImmediate(async () => {
+                  try {
+                    await onEmergency(goal.goalId, emergencyFindings);
+                  } catch (err: unknown) {
+                    const errMsg = err instanceof Error ? err.message : String(err);
+                    log.warn({ err: errMsg, goalId: goal.goalId }, '轻量级再诊断触发失败');
+                  }
+                });
+              } catch (triggerErr: unknown) {
+                const triggerMsg = triggerErr instanceof Error ? triggerErr.message : String(triggerErr);
+                log.warn({ err: triggerMsg, goalId: goal.goalId }, '轻量级再诊断触发异常');
+              }
+            }
           }
         }
 

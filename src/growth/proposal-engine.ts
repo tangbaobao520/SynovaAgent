@@ -254,6 +254,14 @@ export function startProposalExecution(
  *
  * @returns 是否自动触发了再诊断标记
  */
+/**
+ * 处理 Proposal 异议。
+ *
+ * 如果 Proposal 处于 selected 状态 → 进入 regenerating 状态，标记 needsReDiagnosis=true。
+ * 如果 Proposal 处于 confirmed 状态且变更次数未超限 → 进入 disputed 状态。
+ *
+ * @param onRediagnosis — 可选。当 needsReDiagnosis=true 时触发（D75 轻量级再诊断集成）
+ */
 export function handleDispute(
   proposalId: string,
   reason: string,
@@ -261,6 +269,7 @@ export function handleDispute(
   store: GraphBridgeLike,
   audit: AuditStoreLike,
   graph: string = 'growth',
+  onRediagnosis?: (goalIds: string[], reason: string) => void,
 ): { needsReDiagnosis: boolean; newStatus: ProposalStatus } {
   const proposal = getProposal(proposalId, store, graph);
   if (!proposal) {
@@ -299,6 +308,28 @@ export function handleDispute(
 
   const needsReDiagnosis = newStatus === 'regenerating';
   log.info({ proposalId, newStatus, needsReDiagnosis }, 'Proposal 异议已处理');
+
+  // D75: needsReDiagnosis=true → 触发轻量级再诊断
+  if (needsReDiagnosis && onRediagnosis) {
+    try {
+      // 从 Proposal 的 paths 中获取关联的 Goal ID 列表
+      const goalIds = (proposal.paths || []).flatMap((p) => p.goals || []);
+      if (goalIds.length > 0) {
+        // 非阻塞触发
+        setImmediate(async () => {
+          try {
+            await onRediagnosis(goalIds, reason);
+          } catch (err: unknown) {
+            const errMsg = err instanceof Error ? err.message : String(err);
+            log.warn({ err: errMsg, proposalId }, '轻量级再诊断（异议触发）失败');
+          }
+        });
+      }
+    } catch (triggerErr: unknown) {
+      const triggerMsg = triggerErr instanceof Error ? triggerErr.message : String(triggerErr);
+      log.warn({ err: triggerMsg, proposalId }, '轻量级再诊断触发异常');
+    }
+  }
 
   return { needsReDiagnosis, newStatus };
 }
