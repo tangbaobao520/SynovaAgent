@@ -11,6 +11,8 @@
 import { createLogger } from '@synova/logger';
 import type { Goal, GoalStatus, GoalMetric, GraphBridgeLike, AuditStoreLike, PolicyEngineLike } from './goal-types';
 import { getGoal, updateGoalStatus } from './goal-store';
+import { registerOnGoalActive, unregisterOnGoalClosed, pauseOnGoalPaused } from './goal-sentinel-lifecycle';
+import type { SentinelRegistry } from '../sentinel/types';
 
 const log = createLogger('growth/goal-lifecycle');
 
@@ -61,6 +63,7 @@ export function transitionGoal(
   store: GraphBridgeLike,
   audit: AuditStoreLike,
   policy: PolicyEngineLike,
+  sentinelRegistry?: SentinelRegistry,
 ): void {
   // 获取当前 Goal 以检查转换
   const goal = getGoal(goalId, store);
@@ -89,6 +92,21 @@ export function transitionGoal(
 
   // 委托给 goal-store 的 updateGoalStatus（含转换规则 + 审计日志）
   updateGoalStatus(goalId, toStatus, store, audit);
+
+  // D73: 方案哨兵生命周期钩子（可选 sentinelRegistry — 不阻断主流程）
+  if (sentinelRegistry) {
+    try {
+      if (toStatus === 'active' && goal.status !== 'active') {
+        registerOnGoalActive(goalId, store, sentinelRegistry);
+      } else if ((toStatus === 'completed' || toStatus === 'abandoned') && goal.status !== toStatus) {
+        unregisterOnGoalClosed(goalId, sentinelRegistry);
+      } else if (toStatus === 'paused' && goal.status !== 'paused') {
+        pauseOnGoalPaused(goalId, sentinelRegistry);
+      }
+    } catch {
+      log.warn({ goalId, toStatus }, '方案哨兵钩子执行失败 — 不阻断状态转换');
+    }
+  }
 }
 
 /**
