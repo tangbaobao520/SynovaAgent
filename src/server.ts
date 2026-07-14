@@ -2,24 +2,15 @@
  * server.ts — SynovaAgent HTTP 服务
  *
  * 最小 Express 服务器，只挂载必要路由。
+ * 初始化逻辑委托给 Bootstrap (src/deploy/bootstrap.ts)。
  * 不引入 Novis 的任何依赖。
  */
 import express from 'express';
 import cors from 'cors';
 import type { Server } from 'http';
-import { loadConfig } from './config';
-import { initEngineContext, getDatabase } from './init/engine-context';
 import { MemoryMonitor } from './services/memory-monitor';
 import { logger } from '@synova/logger';
 // C2+C3+C4: 编排层接线 (审计 P0-20260604)
-import { EventStore } from './orchestrator/event-store';
-import { EventBus } from './orchestrator/event-bus';
-import { HookRunner } from './orchestrator/hook-runner';
-import { SessionManager } from './orchestrator/session-manager';
-import { PhaseStateMachine } from './orchestrator/phase-state-machine';
-import { createOrchestrationWiring } from './orchestrator/wiring';
-import { initFederalReporter, getFederalAdapter, FederalAdapter } from './adapters/federal-adapter';
-import { bindConnectorTools } from './init/connector-binding';
 import { initFileDrivenLoaders } from './init/file-driven-loaders'; // v3.6 Batch 1 — 文件驱动加载器
 import { ToolRegistry } from './agent/tools';
 import { KnowledgeInjector, KnowledgeConflictHandler, AtomicWriter } from './agent/index';
@@ -28,7 +19,6 @@ import { rbacMiddleware, extractRbacContext, canAccessWorkspace, canModifyWorksp
 import { jwtAuthMiddleware } from './middleware/auth';
 import authRoutes from './routes/auth';
 import { buildInheritedContext, detectConflicts } from './agent/workspace-service';
-import { WorkspaceContextBridge } from './agent/workspace-context-bridge';
 // Code Review A1+A3: 凭证加密 + L5 事件总线初始化
 import { CredentialVault } from './security/credential-vault';
 import { getOntologyEventBus } from './l5/ontology-event-bus';
@@ -71,33 +61,59 @@ import gaAnnotationsRoutes from './routes/ga-annotations';
 import solutionsRoutes from './routes/solutions';
 import notificationsRoutes from './routes/notifications';
 import backupRoutes from './routes/backup';
-import { AuditService } from './services/audit-service';
 import type { ServiceContainer } from './services/container';
 // Phase 0.1: 全局错误兜底 — uncaughtException + unhandledRejection
 import { registerGlobalErrorHandlers, unregisterGlobalErrorHandlers } from './services/runtime-global-handlers';
 
+import { Bootstrap } from './deploy/bootstrap';
+import type { BootstrapResult } from './deploy/bootstrap';
+
 export async function createServer(): Promise<Server> {
-  const config = loadConfig();
+  // ═══ D83: Bootstrap 启动序列 — 6 Phase 统一初始化 ═══
+  // 替代原有的 ~300 行内联初始化代码
+  const boot = new Bootstrap();
+  const result: BootstrapResult = await boot.run();
 
-  // 初始化 engine-core (DB + 服务注入)
-  // Step 3: SynovaDiagnosisEngineImpl + createSynovaDiagnosisEngine 替换旧引擎
-  initEngineContext();
-  const db = getDatabase();
+  if (!result.ok) {
+    logger.error({
+      aborted: result.aborted,
+      phases: result.phaseResults.map((r) => ({
+        name: r.name,
+        status: r.status,
+        durationMs: r.durationMs,
+        errors: r.errors,
+      })),
+      degraded: result.services.degradedModules,
+    }, 'Bootstrap 启动失败 — 服务器将终止');
+    process.exit(1);
+  }
 
-  // Phase 0.3+0.4: 初始化审计日志服务 + GA 行为监控
-  AuditService.init(db);
+  if (result.degraded) {
+    logger.warn({
+      degradedModules: result.services.degradedModules,
+    }, 'Bootstrap 启动完成 — 部分模块降级运行');
+  }
+
+  // ═══ 从 Bootstrap 获取已初始化服务 ═══
+  const services = result.services;
+  const config = services.config;
+  const db = services.db;
+  const eventBus = services.eventBus;
+  const hookRunner = services.hookRunner;
+  const sessionManager = services.sessionManager;
+  const stateMachine = services.stateMachine;
+  const wiring = services.wiring;
+  const federalAdapter = services.federalAdapter;
+  const graphStore = services.graphStore;
+  const agentMemory = services.agentMemory;
+  const connectorToolRegistry = services.connectorToolRegistry;
+  const credentialVault = services.credentialVault;
+  const credentialPool = services.credentialPool;
+  const piiScrubber = services.piiScrubber;
 
   // Phase 4.2: 配置恢复验证 — 启动时检查配置文件完整性
-  try {
-    const { ConfigRecovery } = require('./services/config-recovery');
-    const result = ConfigRecovery.verify(config.dbPath + '.config.json');
-    if (!result.ok && result.corrupted) {
-      logger.warn({ result }, '配置文件损坏 — 已降级默认配置');
-    }
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    logger.warn({ err: msg }, '配置恢复检查失败 — degraded');
-  }
+  // (已在 Bootstrap Phase 4 中执行)
+  logger.info('Bootstrap 服务已就绪，开始 Express 设置');
 
   // Phase 4.1: 注册 Electron 通知适配器
   try {
@@ -109,22 +125,16 @@ export async function createServer(): Promise<Server> {
     logger.warn({ err }, 'Electron 通知适配器注册失败 — degraded');
   }
 
-  // P0-5.3: 数据库启动时自动解密
-  const { autoDecryptOnStartup, autoEncryptOnShutdown } = await import('./services/db-encryption');
-  const encryptionConfig = {
-    masterSecret: process.env.CREDENTIAL_MASTER_KEY || config.engineTokens || (config.devMode ? 'synova-dev-secret' : ''),
-    salt: config.dbPath,
-    dbPath: config.dbPath,
-  };
-  const wasEncrypted = autoDecryptOnStartup(encryptionConfig);
-  if (wasEncrypted) logger.info('数据库启动时已解密');
-
-  // ═══ v2.1: 知识注入器 + 冲突处理器 + 原子写入 (延迟初始化) ═══
+  // ═══ v2.1: 知识注入器 + 冲突处理器 + 原子写入 — 已在 Bootstrap Phase 4 初始化 ═══
+  // (server.ts 中保留这些引用供后续路由使用)
+  // 如果 bootstrap 未提供知识服务，在这里 fallback
   const knowledgeInjector = new KnowledgeInjector(process.cwd());
   const knowledgeConflicts = new KnowledgeConflictHandler(db);
   const atomicWriter = new AtomicWriter(process.cwd());
-  // 清理残留的 .tmp 文件
   atomicWriter.cleanup();
+
+  // BossMailbox — 已在 Bootstrap Phase 5 初始化
+  // 此处保持 setInterval 逻辑
   const bossMailbox = new BossMailbox(); // PRD v1.6 Slice 5
   // v3.5 PRD §12.4: 老板信箱定时推送 (周一 9:00) — V4.2.1: 注入真实信号+行动数据
   setInterval(async () => {
@@ -156,17 +166,18 @@ export async function createServer(): Promise<Server> {
       // 从 AgentMemoryStore 获取行动项
       let actions: Array<{ title: string; status: 'completed' | 'in_progress' | 'stalled'; detail: string }> = [];
       try {
-        const { getAgentMemoryStore } = await import('./l4/agent-memory-store');
-        const { getDatabase } = await import('./init/engine-context');
-        const memStore = getAgentMemoryStore(getDatabase());
-        const records: Array<{ value: string }> = []; // 待适配: recall 接口需要 2 参数 (orgId, key)
-        if (records && records.length > 0) {
-          actions = records.map(r => {
-            try {
-              const item = JSON.parse(r.value) as { title?: string; description: string; status: string };
-              return { title: item.title || item.description, status: item.status === 'completed' ? 'completed' as const : item.status === 'in_progress' ? 'in_progress' as const : 'stalled' as const, detail: item.description };
-            } catch (e) { logger.warn({ err: e }, '解析行动项失败 — degraded'); return { title: '行动项', status: 'in_progress' as const, detail: '' }; }
-          });
+        const am = agentMemory;
+        if (am) {
+          // AgentMemoryStore recall 接口
+          const records: Array<{ value: string }> = [];
+          if (records && records.length > 0) {
+            actions = records.map(r => {
+              try {
+                const item = JSON.parse(r.value) as { title?: string; description: string; status: string };
+                return { title: item.title || item.description, status: item.status === 'completed' ? 'completed' as const : item.status === 'in_progress' ? 'in_progress' as const : 'stalled' as const, detail: item.description };
+              } catch (e) { logger.warn({ err: e }, '解析行动项失败 — degraded'); return { title: '行动项', status: 'in_progress' as const, detail: '' }; }
+            });
+          }
         }
       } catch (err: unknown) { logger.warn({ err }, '老板信箱获取行动项失败 — degraded'); }
 
@@ -174,158 +185,35 @@ export async function createServer(): Promise<Server> {
       bossMailbox.pushToFeishu(report, webhookUrl).catch(() => {});
     } catch (err: unknown) { logger.warn({ err }, '老板信箱推送失败 — degraded'); }
   }, 60000); // 每分钟检查
+
   // PRD v1.6 Slice 7: workspace-service 接线
   buildInheritedContext({ parentId: 'init', department: 'dept', title: 'init', source: 'boss_assigned', parentSummary: 'init' });
-  detectConflicts([]); // Slice 7 冲突检测初始化 — 运行时由 workspace changes 触发
+  detectConflicts([]); // Slice 7 冲突检测初始化
   const rbacCtx = extractRbacContext({ headers: { 'x-synova-token': 'admin::dev' } }); // Slice 7 RBAC
   void canAccessWorkspace(rbacCtx, { visibility: 'global' });
   void canModifyWorkspace(rbacCtx, { visibility: 'global' });
-  // v3.3 context bridge — Phase 2 接入 AgentMemoryStore
-
-  // ═══ Runtime P0: 显式加载 GA 行为监控 ═══
-  try {
-    await import('./services/behavior-monitor');
-    logger.info('[monitor] BehaviorMonitor loaded — 4 rules active');
-  } catch (bmErr: unknown) {
-    logger.warn({ err: bmErr }, '[monitor] BehaviorMonitor 加载失败 — degraded');
-  }
-
-  // ═══ C3: 编排层初始化 — EventBus + StateMachine + Session (审计 P0-20260604) ═══
-  const eventStore = new EventStore(db);
-  const eventBus = new EventBus(eventStore);
-  const hookRunner = new HookRunner();
-  const sessionManager = new SessionManager();
-  const phaseStateMachine = new PhaseStateMachine({
-    0: { label: '目标访谈', required: true, maxDurationMs: 600_000 },
-    1: { label: '数据采集', required: true, maxDurationMs: 120_000 },
-    2: { label: '假设生成', required: true, maxDurationMs: 300_000 },
-    3: { label: '障碍分析', required: true, maxDurationMs: 180_000 },
-    4: { label: '简报生成', required: true, maxDurationMs: 60_000 },
-    5: { label: '交付', required: true, maxDurationMs: 120_000 },
-  });
-  const wiring = createOrchestrationWiring(eventBus, hookRunner, sessionManager, phaseStateMachine);
-  logger.info('编排层已初始化 (EventBus + PhaseStateMachine + SessionManager)');
-
-  // ═══ C2: 联邦进化 — 诊断完成后上报质量信号 (差分隐私+加密) ═══
-  let federalAdapter;
-  try {
-    federalAdapter = await initFederalReporter(db, { epsilon: 1.0, optOut: config.devMode });
-    logger.info('联邦进化上报已启用');
-  } catch (err: any) {
-    logger.warn({ err }, '联邦进化初始化失败 — degraded, 继续启动');
-    federalAdapter = getFederalAdapter();
-  }
-
-  // ═══ C4: Connector → ToolRegistry 桥接 ═══
-  let connectorToolRegistry: ToolRegistry | undefined;
-  try {
-    connectorToolRegistry = new ToolRegistry();
-    bindConnectorTools(connectorToolRegistry);
-    logger.info('Connector 工具绑定完成');
-
-    // V3.8 — 初始化文件驱动加载器 (i18n/报告/框架/通知/哨兵/规则/本体/适配器)
-    try {
-      await initFileDrivenLoaders();
-    } catch (err: any) {
-      logger.warn({ err }, '文件驱动加载器初始化失败 — degraded');
-    }
-
-    // V3.8 Batch 5 — ExtensionRegistry: 扫描 extensions/ 目录发现扩展
-    try {
-      const { getExtensionRegistry } = await import('@synova/extension-registry');
-      const registry = getExtensionRegistry();
-      const manifests = await registry.discover('extensions');
-      logger.info({ count: manifests.length }, 'ExtensionRegistry discover 完成');
-    } catch (err: any) {
-      logger.warn({ err }, 'ExtensionRegistry discover 失败 — degraded');
-    }
-  } catch (err: any) {
-    logger.warn({ err }, 'Connector 工具绑定失败 — degraded');
-  }
-
-  // ═══ A1: CredentialVault — 凭证加密存储 (替代 .env 明文) ═══
-  let credentialVault: CredentialVault | undefined;
-  try {
-    const masterSecret = process.env.CREDENTIAL_MASTER_KEY || config.engineTokens || (config.devMode ? 'synova-dev-secret' : '');
-    const salt = config.dbPath;
-    credentialVault = new CredentialVault(db, masterSecret, salt);
-    logger.info('CredentialVault 已初始化 (AES-256-GCM 凭证加密)');
-  } catch (err: any) {
-    logger.warn({ err }, 'CredentialVault 初始化失败 — degraded, 凭证仍走 .env');
-  }
-
-  // ═══ P6 接线: CredentialPool — 多凭据轮换 ═══
-  let credentialPool: import('./security/credential-vault').CredentialPool | undefined;
-  try {
-    const { CredentialPool: CP } = await import('./security/credential-vault');
-    credentialPool = new CP(); // DI: 显式构造替代 getCredentialPool()
-    // 从 vault 加载已存储凭据到 pool
-    if (credentialVault) {
-      for (const cred of credentialVault.list()) {
-        const decrypted = credentialVault.decryptForSubprocess(cred.id);
-        if (decrypted) {
-          try { credentialPool.register(cred.id, JSON.parse(decrypted)); } catch { logger.debug('凭证解密/注册失败 — 跳过'); }
-        }
-      }
-    }
-    logger.info('CredentialPool 已初始化 (多凭据轮换)');
-  } catch (err: any) {
-    logger.warn({ err }, 'CredentialPool 初始化失败 — degraded');
-  }
-
-  // ═══ PII 接线: PIIScrubber — 4级敏感度脱敏 ═══
-  let piiScrubber: import('./security/pii-scrubber').PIIScrubber | undefined;
-  try {
-    const { PIIScrubber: PS } = await import('./security/pii-scrubber');
-    piiScrubber = new PS(); // DI: 显式构造替代 getPIIScrubber()
-    logger.info('PIIScrubber 已初始化 (S1-S4 敏感度脱敏)');
-  } catch (err: any) {
-    logger.warn({ err }, 'PIIScrubber 初始化失败 — degraded');
-  }
-
-  // ═══ A3: OntologyEventBus — L5 进程内事件总线初始化 ═══
-  let graphStore: unknown = null;
-  try {
-    // SynovaGraphStore — 纯 ESM，零 engine-core 依赖
-    const { createSynovaGraphStore } = await import('@synova/graph-store');
-    const store = createSynovaGraphStore(db as unknown as import('@synova/graph-store').SqliteDb);
-    graphStore = store;
-    getOntologyEventBus(store as unknown as import('./l4/graph-bridge').GraphStore);
-
-    // Phase 0.2: GraphStore 删除权限检查
-    try {
-      const { setGraphStoreDeletePermissionChecker } = await import('@synova/graph-store');
-      const { getCurrentUser } = await import('./services/request-context');
-      setGraphStoreDeletePermissionChecker(() => {
-        const user = getCurrentUser();
-        if (!user) return { allowed: true };
-        if (user.auth.roles.includes('admin') || user.auth.roles.includes('owner')) return { allowed: true };
-        logger.warn({ userId: user.userId, roles: user.auth.roles }, 'GraphStore 删除被拒');
-        return { allowed: false, reason: '仅管理员可删除数据' };
-      });
-      logger.info('GraphStore 删除权限检查已启用');
-    } catch (err: unknown) {
-      logger.warn({ err }, 'GraphStore 删除权限检查初始化失败 — degraded');
-    }
-
-    logger.info('OntologyEventBus 已初始化 (SynovaGraphStore)');
-  } catch (err: any) {
-    logger.warn({ err }, 'OntologyEventBus 初始化失败 — degraded, 连接器管线不可用');
-  }
 
   const app = express();
 
+  // ═══ P0 Phase Gate Check — 诊断质量门禁 ═══
+  const phaseGateTracking = { evidenceCount: 0, expertResults: [] as Array<{ expertType: string; confidence: number; hypothesis: string; degraded?: boolean }> };
+  app.locals.phaseGateTracking = phaseGateTracking;
+  const { registerPhaseGateChecks } = await import('./orchestrator/phase-gate-check');
+  registerPhaseGateChecks(
+    stateMachine,
+    { minEvidenceCount: 3, minHypothesisConfidence: 0.5, minExpertsPassed: 4 },
+    () => phaseGateTracking.evidenceCount,
+    () => phaseGateTracking.expertResults,
+  );
+
   // ═══ P2 DI 深化: 统一服务容器 (单例生命周期管理) ═══
-  // 所有服务在此集中创建，Routes 通过 req.app.locals.container 访问。
-  // 兼容旧代码: app.locals.xxx 仍然可用，逐步迁移到 container。
-  // 集中创建所有服务 — 单一组合根
   const container: ServiceContainer = {
     db,
-    eventBus, hookRunner, sessionManager, stateMachine: phaseStateMachine,
-    piiScrubber: piiScrubber!,
-    credentialVault,
-    credentialPool,
-    federalAdapter,
+    eventBus, hookRunner, sessionManager, stateMachine,
+    piiScrubber: piiScrubber as never,
+    credentialVault: credentialVault as never,
+    credentialPool: credentialPool as never,
+    federalAdapter: federalAdapter as never,
     expertRegistry: new (await import('./l3/expert-registry')).ExpertRegistry(),
     proposalManager: new (await import('./l2/proposal-manager')).ProposalManager(db),
     reportTemplates: new (await import('./l3/report-templates')).ReportTemplateRegistry(),
@@ -333,39 +221,26 @@ export async function createServer(): Promise<Server> {
     faultRecovery: new (await import('./services/fault-recovery')).FaultRecovery(),
     mcpBridge: new (await import('./mcp/bridge')).MCPBridge(),
   };
-  // 可选组件 (可能因配置/环境而缺失)
+  // 可选组件
   if (connectorToolRegistry) container.connectorToolRegistry = connectorToolRegistry;
   app.locals.container = container;
-  // P0-1: GraphStore 存入 app.locals — HTTP 诊断路由后处理需要
   if (graphStore) app.locals.graphStore = graphStore;
-  // 兼容旧代码 (逐步迁移到 container)
-  app.locals.orchestration = { eventBus, hookRunner, sessionManager, stateMachine: phaseStateMachine, wiring, db, eventStore };
+  app.locals.orchestration = { eventBus, hookRunner, sessionManager, stateMachine, wiring, db, eventStore: services.eventStore };
   app.locals.federalAdapter = federalAdapter;
   if (connectorToolRegistry) app.locals.connectorToolRegistry = connectorToolRegistry;
   if (credentialVault) app.locals.credentialVault = credentialVault;
   if (credentialPool) app.locals.credentialPool = credentialPool;
   if (piiScrubber) app.locals.piiScrubber = piiScrubber;
-
-  // ═══ P0 Phase Gate Check — 诊断质量门禁 (Loop Engineering 自检缺口修复) ═══
-  // 注册 onPhaseEnter 回调：Phase 1→2 数据完整性、Phase 2→3 假设置信度、Phase 4→5 报告完整性
-  const phaseGateTracking = { evidenceCount: 0, expertResults: [] as Array<{ expertType: string; confidence: number; hypothesis: string; degraded?: boolean }> };
-  app.locals.phaseGateTracking = phaseGateTracking;
-  const { registerPhaseGateChecks } = await import('./orchestrator/phase-gate-check');
-  registerPhaseGateChecks(
-    phaseStateMachine,
-    { minEvidenceCount: 3, minHypothesisConfidence: 0.5, minExpertsPassed: 4 },
-    () => phaseGateTracking.evidenceCount,
-    () => phaseGateTracking.expertResults,
-  );
-
-  // ═══ P0 AgentMemoryStore — Agent 级记忆系统 (Loop Engineering 自检缺口修复) ═══
-  const { getAgentMemoryStore } = await import('./l4/agent-memory-store');
-  const agentMemory = getAgentMemoryStore(db);
-  app.locals.agentMemory = agentMemory;
+  if (agentMemory) app.locals.agentMemory = agentMemory;
 
   // ═══ C2 上下文预算追踪器 ═══
   const { getBudgetTracker } = await import('./services/context-budget-tracker');
   app.locals.budgetTracker = getBudgetTracker();
+
+  // ═══ P0 AgentMemoryStore — Agent 级记忆系统 ═══
+  if (agentMemory) {
+    app.locals.agentMemory = agentMemory;
+  }
 
   // ═══ Phase 0: 文件优先范式 — 文件扫描 + 专家文件加载 ═══
   const { FileScanner } = await import('./agent/file-scanner');
@@ -374,11 +249,9 @@ export async function createServer(): Promise<Server> {
   const { ExpertFileLoader } = await import('./agent/expert-file-loader');
   const expertFileLoader = new ExpertFileLoader();
   app.locals.expertFileLoader = expertFileLoader;
-  // 启动时扫描文件 → 加载专家
   try {
     const index = fileScanner.scan();
-    // v3.3 F3: DEFAULT_EXPERT_PROMPTS 已删除。文件优先——加载失败即拒绝启动。
-    const loadResult = expertFileLoader.loadFromIndex(index, {}); // v3.3: 无fallback——文件优先
+    const loadResult = expertFileLoader.loadFromIndex(index, {});
     logger.info({ fromFiles: loadResult.fromFiles, total: loadResult.loaded.length },
       'Phase 0 专家文件加载完成');
   } catch (err: unknown) {
@@ -389,18 +262,17 @@ export async function createServer(): Promise<Server> {
   app.use(cors());
   app.use(express.json({ limit: '10mb' }));
 
-  // P1-1.3: 输入脱敏检查 (S4 API Key/Token 硬阻断, S2-S3 告警放行)
+  // P1-1.3: 输入脱敏检查
   const { sanitizeCheckMiddleware } = await import('./middleware/sanitize-check');
   app.use(sanitizeCheckMiddleware);
 
-  // Phase 0.1: JWT 认证中间件（替换旧内联 auth）
-  // 保持向后兼容：DEV_MODE=true 且无 JWT_SECRET 时自动 admin 上下文
+  // Phase 0.1: JWT 认证中间件
   app.use(jwtAuthMiddleware);
 
-  // Phase 0.1: JWT 认证路由（登录/刷新/撤销）
+  // Phase 0.1: JWT 认证路由
   app.use(authRoutes);
 
-  // Phase 3.1: 三层速率限制 (替换旧 inline rateLimitMap)
+  // Phase 3.1: 三层速率限制
   const { createFixedWindowLimiter } = await import('./middleware/rate-limit');
   const rateLimitMiddleware = createFixedWindowLimiter(100, 60_000);
   app.use(rateLimitMiddleware);
@@ -416,55 +288,54 @@ export async function createServer(): Promise<Server> {
       res.status(500).json({ ok: false, error: msg, degraded: true });
     }
   });
-  app.use(homeRoutes);         // GET / → 首页 (双入口)
-  app.use(chatRoutes);            // GET /chat → Web 对话界面
-  app.use(workspaceRoutes);       // GET /workspace → 三栏布局 (PRD v1.6 Slice 1)
-  app.use(workspacesApiRoutes);   // /api/workspaces → 工作区 CRUD (PRD v1.6 Slice 2)
-  app.use(gaDiagnosisRoutes);     // GET /ga → GA 诊断入口 (PRD v1.6 Slice 4·6/25演示)
-  app.use(knowledgeAskRoutes);    // /api/knowledge/ask → 知识问答 (PRD v1.6 Slice 6)
-  app.use(rbacMiddleware);        // RBAC 权限注入 (PRD v1.6 Slice 7)
-  app.use(deptWorkspaceRoutes);   // GET /dept → 部门工作台 (PRD v1.6 Slice 7)
-  app.use(actionsApiRoutes);      // /api/actions → 行动项 CRUD (PRD §7, v3.5)
-  app.use(dataRoutes);           // POST /api/data/upload — 数据上传入口 (V4.2.9)
-  app.use(dataLifecycleRoutes);  // POST /api/data/export + /purge — D40 GDPR 生命周期
+  app.use(homeRoutes);
+  app.use(chatRoutes);
+  app.use(workspaceRoutes);
+  app.use(workspacesApiRoutes);
+  app.use(gaDiagnosisRoutes);
+  app.use(knowledgeAskRoutes);
+  app.use(rbacMiddleware);
+  app.use(deptWorkspaceRoutes);
+  app.use(actionsApiRoutes);
+  app.use(dataRoutes);
+  app.use(dataLifecycleRoutes);
   app.use(healthRoutes);
-  app.use(healthzRoutes); // D49: GET /api/healthz — 6项健康检查
-  app.use(evolutionRoutes);   // /api/evolution/* — L0 进化引擎管理 (Phase P2)
-  app.use(gaEvolutionRoutes);  // /ga/evolution — GA 进化引擎管理面板 (Phase P2)
+  app.use(healthzRoutes);
+  app.use(evolutionRoutes);
+  app.use(gaEvolutionRoutes);
   app.use(ontologyRoutes);
-app.use(ontologyAdminRoutes);
+  app.use(ontologyAdminRoutes);
   app.use(diagnosisRoutes);
   app.use(sessionsRoutes);
   app.use(metricsRoutes);
   app.use(reviewRoutes);
-  app.use(expertRoutes);        // POST/GET /api/expert
-app.use(agentObserverRoutes); // POST /api/agent-observer/report
-app.use(imRoutes);          // POST /api/im/feishu/webhook | GET /api/im/health
-app.use('/api/diagnosis', diagnosisUploadRoutes); // POST /api/diagnosis/upload | GET /api/diagnosis/report/:jobId | GET /api/diagnosis/status/:jobId
-app.use(knowledgeRoutes);   // POST /api/knowledge/search | POST /api/knowledge/ingest
-app.use(credentialRoutes);  // POST /api/credentials/:provider | GET /api/credentials
-app.use(documentRoutes);   // POST /api/documents/upload | GET /api/documents/list
-app.use(permissionRoutes); // POST /api/permissions/update | POST /api/permissions/bulk | GET /api/permissions/audit
-app.use('/api/sentinel', sentinelHealthRoutes); // GET /api/sentinel/health
-app.use('/api/sentinel', sentinelRoutes);       // GET /api/sentinel/findings | /api/sentinel/signals | POST /api/sentinel/run/:id
-app.use(reloadRoutes);                         // POST /api/reload — 热加载专家文件
-app.use(adaptersRoutes);                       // GET /api/adapters + POST /api/adapters/reload — 适配器管理 (D36)
-app.use(auditRoutes);                          // GET /api/audit — 审计日志 (Phase 0.3)
-app.use(gaAdminRoutes);                        // /api/ga/* — GA 管理 API (Phase 3.1)
-app.use(gaCorrectionsRoutes);                  // /api/ga/corrections — 纠错 (Phase 3.2)
-app.use(gaAnnotationsRoutes);                  // /api/ga/annotations — 标注 (T3)
-app.use(solutionsRoutes);                        // /api/solutions/* — 方案生成链路 (Phase 3.4)
-app.use(notificationsRoutes);                    // /api/notifications/* — 通知系统 (Phase 2.1)
-app.use(backupRoutes);                           // /api/backup/* — 备份恢复 (D50)
+  app.use(expertRoutes);
+  app.use(agentObserverRoutes);
+  app.use(imRoutes);
+  app.use('/api/diagnosis', diagnosisUploadRoutes);
+  app.use(knowledgeRoutes);
+  app.use(credentialRoutes);
+  app.use(documentRoutes);
+  app.use(permissionRoutes);
+  app.use('/api/sentinel', sentinelHealthRoutes);
+  app.use('/api/sentinel', sentinelRoutes);
+  app.use(reloadRoutes);
+  app.use(adaptersRoutes);
+  app.use(auditRoutes);
+  app.use(gaAdminRoutes);
+  app.use(gaCorrectionsRoutes);
+  app.use(gaAnnotationsRoutes);
+  app.use(solutionsRoutes);
+  app.use(notificationsRoutes);
+  app.use(backupRoutes);
 
-  // ═══ A2: Connector Pipeline — 手动触发 + 定时同步 ═══
+  // ═══ A2: Connector Pipeline — 手动触发 ═══
   app.post('/api/connector/sync', async (req, res) => {
     try {
       const { module: moduleName, orgId } = req.body as { module?: string; orgId?: string };
       if (!moduleName || !orgId) {
         return res.status(400).json({ ok: false, error: 'module 和 orgId 必填', code: 'VALIDATION_ERROR' });
       }
-      // 延迟 import 避免循环依赖
       const { runConnectorPipeline } = await import('./l5/connector-pipeline');
       const vault = req.app.locals.credentialVault;
       const credentials = vault
@@ -478,166 +349,7 @@ app.use(backupRoutes);                           // /api/backup/* — 备份恢�
     }
   });
 
-  // Cron: 每 30 分钟运行已注册的 Connector 管线 (替换 setInterval)
-  const { getGlobalScheduler } = await import('./cron/scheduler');
-  const scheduler = getGlobalScheduler(db);
-  try {
-    scheduler.schedule('connector-sync', '*/30 * * * *', async () => {
-      try {
-        const registry = connectorToolRegistry;
-        if (!registry) return;
-        const { runConnectorPipeline } = await import('./l5/connector-pipeline');
-        const connectors = registry.listTools().filter(t => t.executionMode === 'connector');
-        for (const tool of connectors) {
-          try {
-            const result = await runConnectorPipeline(tool.name, 'default', {});
-            if (result.degraded) logger.warn({ tool: tool.name, errors: result.errors }, 'Connector 同步 degraded');
-          } catch (err: any) { logger.warn({ err, tool: tool.name }, 'Connector 同步失败'); }
-        }
-      } catch { logger.debug('无可用连接器 — 跳过同步'); }
-    });
-    logger.info('Connector 同步调度已启动 (cron: */30 * * * *)');
-
-    // 文件安全守卫 — 连接器读写保护
-    const { getFileGuard } = await import('./security/file-guard');
-    app.locals.fileGuard = getFileGuard(config.dbPath);
-
-    // 连接器沙箱 — 安全等级判定
-    const { determineSandboxLevel } = await import('./security/connector-sandbox');
-    app.locals.determineSandboxLevel = determineSandboxLevel;
-
-    // 告警规则引擎 — 运行时注册检查
-    try {
-      const { getAlertRuleEngine } = await import('./l5/alert-rules');
-      getAlertRuleEngine(db);
-      logger.info('告警规则引擎已初始化');
-    } catch (err: any) { logger.warn({ err }, '告警规则引擎初始化失败 — degraded'); }
-
-    // IM 通道 — 注册飞书 Webhook (如果配置)
-    try {
-      const { getIMRegistry, createFeishuWebhookChannel } = await import('./l1/im-channel');
-      const imReg = getIMRegistry();
-      if (process.env.FEISHU_WEBHOOK_URL) {
-        imReg.register(createFeishuWebhookChannel(process.env.FEISHU_WEBHOOK_URL));
-        imReg.switchTo('feishu');
-        logger.info('飞书 IM 通道已注册');
-      }
-    } catch (err: any) { logger.warn({ err }, 'IM 通道初始化失败 — degraded'); }
-
-    // MCP 工具注册 — 自动连接 Brave Search + GitHub (如果 API Key 已配置)
-    // SYNOVA_SKIP_MCP=1 跳过 (测试环境)
-    // 铁律 24: MCP 注册失败不阻断服务器启动 — fire-and-forget 后台连接
-    if (process.env.SYNOVA_SKIP_MCP !== '1') {
-      const { registerMCPTools } = await import('./mcp/tool-registration');
-      const { ToolRegistry: MCPToolRegistry } = await import('./agent/tools');
-      const mcpRegistry = new MCPToolRegistry();
-      app.locals.mcpToolRegistry = mcpRegistry;
-      // 非阻塞: 后台并行连接 MCP servers，不延迟 app.listen()
-      registerMCPTools(mcpRegistry).then(() => {
-        logger.info('MCP 工具已注册');
-      }).catch((err: any) => {
-        logger.warn({ err: err.message }, 'MCP 工具注册失败 — degraded (需 BRAVE_API_KEY 或 GITHUB_TOKEN)');
-      });
-    }
-
-    // GNS M2-3: 每日 19:00 简报
-    scheduler.schedule('daily-briefing', '0 19 * * *', async () => {
-      try {
-        const { BriefingGenerator } = await import('./l3/briefing-generator');
-        const { createSynovaGraphStore } = await import('@synova/graph-store');
-        const store = createSynovaGraphStore(db as unknown as import('@synova/graph-store').SqliteDb);
-        const gen = new BriefingGenerator(store as {
-          queryNodes(type: string, filters?: Record<string, unknown>, graph?: string): Array<{ id: string; props: Record<string, unknown> }>;
-          queryEdges(type?: string, from?: string, to?: string, graph?: string): Array<{ from: string; to: string; type: string; props: Record<string, unknown> }>;
-        });
-        const briefing = await gen.generate('default');
-        const markdown = gen.formatMarkdown(briefing);
-        logger.info({ summary: briefing.summary }, '每日简报已生成');
-        // Future: IM 发送 markdown
-        logger.debug({ markdown: markdown.slice(0, 500) }, '简报内容 (预览)');
-      } catch (err: any) {
-        logger.warn({ err }, '每日简报生成失败 — degraded');
-      }
-    });
-    logger.info('每日简报调度已启动 (cron: 0 19 * * *)');
-
-    // P2: SQLite 每日备份 (凌晨 3:00)
-    scheduler.schedule('db-backup', '0 3 * * *', async () => {
-      try {
-        const { backupDatabase } = await import('./services/db-encryption');
-        const result = backupDatabase({
-          dbPath: config.dbPath,
-          backupDir: config.dbPath.replace(/[^/\\]+$/, '') + 'backups',
-          maxBackups: 7,
-          encryptBackups: true,
-          masterSecret: process.env.CREDENTIAL_MASTER_KEY || config.engineTokens || (config.devMode ? 'synova-dev-secret' : ''),
-          salt: config.dbPath,
-        });
-        if (result.ok) logger.info({ path: result.path }, '数据库备份完成');
-        else logger.warn({ error: result.error }, '数据库备份失败');
-      } catch (err: any) { logger.warn({ err }, '数据库备份异常'); }
-    });
-    logger.info('数据库备份调度已启动 (cron: 0 3 * * *, 保留 7 天)');
-
-    // Phase P1: L0 evolution engine — weekly industry aggregation (Sun 2am)
-    scheduler.schedule('evolution-aggregation', '0 2 * * 0', async () => {
-      try {
-        const { aggregateAllIndustries, RuleVersionManager } = await import('@synova/evolution');
-        const { getGlobalSentinelRunner } = await import('./sentinel/runner');
-        const { listIndustries } = await import('./l4/industry-loader');
-
-        const l3 = getGlobalSentinelRunner()?.getL0API();
-        if (!l3) { logger.warn('[cron] L3WriteAPI unavailable — skip aggregation'); return; }
-
-        const db2 = getDatabase();
-        const { getAgentMemoryStore } = await import('./l4/agent-memory-store');
-        const memStore = getAgentMemoryStore(db2);
-        const rvm = new RuleVersionManager(memStore as unknown as import('@synova/evolution').AgentMemoryStoreLike);
-
-        const snapId = await rvm.createSnapshot('weekly-industry-aggregation');
-        if (snapId) logger.info({ snapshotId: snapId }, '[cron] snapshot created before aggregation');
-
-        // 聚合后清理过期快照（保留最近 10 个）
-        const cleaned = await rvm.cleanupSnapshots(10);
-        if (cleaned > 0) logger.info({ cleaned }, '[cron] old snapshots cleaned');
-
-        const industries = listIndustries();
-        const results = await aggregateAllIndustries(l3, industries);
-        logger.info({ industries: results.length, withSuggestions: results.filter(r => r.thresholdSuggestions.length > 0).length }, '[cron] industry aggregation complete');
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        logger.error({ err: msg }, '[cron] industry aggregation failed');
-      }
-    });
-    logger.info('[cron] evolution aggregation scheduled (0 2 * * 0)');
-
-    // M2: 齿轮6 知识提取 (每6小时)
-    try {
-      const { startGear6Scheduler } = await import('./l3/gear6-scheduler');
-      startGear6Scheduler();
-      logger.info('齿轮6 知识提取调度已启动 (每6h)');
-
-    // PKB: 种子知识 + 生命周期
-    try {
-      const { seedPKB } = await import('./l3/pkb-seed');
-      const { inserted } = seedPKB(db);
-      if (inserted > 0) logger.info({ inserted }, 'PKB 种子知识已初始化');
-    } catch (err: any) { logger.warn({ err }, 'PKB 种子初始化失败 — degraded'); }
-  } catch (err: any) { logger.warn({ err }, '齿轮6 启动失败 — degraded'); }
-
-    // M2: KnowledgeAgent — 第7个专家 (注册工具到专家共享 ToolRegistry)
-    try {
-      const { createKnowledgeAgent } = await import('./l3/knowledge-agent');
-      const { ToolRegistry: TR } = await import('./agent/tools');
-      const expertTools = app.locals.expertToolRegistry || new TR();
-      const kAgent = createKnowledgeAgent();
-      kAgent.registerTo(expertTools);
-      app.locals.expertToolRegistry = expertTools;
-      logger.info('KnowledgeAgent 已注册 — 第7个专家 (knowledge) 就绪');
-    } catch (err: any) { logger.warn({ err }, 'KnowledgeAgent 注册失败 — degraded'); }
-  } catch (err: any) {
-    logger.warn({ err }, 'Cron 调度器初始化失败 — degraded');
-  }
+  // Cron 调度器 + 定时任务 — 已在 Bootstrap Phase 5 初始化
 
   // 404
   app.use((_req, res) => {
@@ -649,8 +361,13 @@ app.use(backupRoutes);                           // /api/backup/* — 备份恢�
       logger.info({ port: config.port }, `Synova-Agent → http://localhost:${config.port}`);
 
       // P0-5.3: 优雅关闭时加密数据库
+      const encryptionConfig = {
+        masterSecret: process.env.CREDENTIAL_MASTER_KEY || config.engineTokens || (config.devMode ? 'synova-dev-secret' : ''),
+        salt: config.dbPath,
+        dbPath: config.dbPath,
+      };
+
       const shutdown = (signal: string) => {
-        // Phase 5.4: 关闭取证
         const forensics = {
           signal,
           pid: process.pid,
@@ -661,7 +378,10 @@ app.use(backupRoutes);                           // /api/backup/* — 备份恢�
         logger.info({ forensics }, 'shutdown forensics');
 
         unregisterGlobalErrorHandlers();
-        autoEncryptOnShutdown(encryptionConfig);
+        // 关闭时加密数据库
+        import('./services/db-encryption').then(({ autoEncryptOnShutdown }) => {
+          autoEncryptOnShutdown(encryptionConfig);
+        }).catch(() => {});
         server.close(() => process.exit(0));
         setTimeout(() => process.exit(0), 5000);
       };
@@ -676,7 +396,7 @@ app.use(backupRoutes);                           // /api/backup/* — 备份恢�
     const memoryMonitor = new MemoryMonitor();
     memoryMonitor.start();
 
-    // Phase 0.1: 全局错误兜底 — 覆盖 uncaughtException + unhandledRejection
+    // Phase 0.1: 全局错误兜底
     registerGlobalErrorHandlers(server);
   });
 }
