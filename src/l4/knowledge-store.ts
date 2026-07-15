@@ -310,6 +310,30 @@ export class KnowledgeStore {
     };
   }
 
+  /**
+   * 按 SKILL 名称查询知识条目（D63 pull-mode）。
+   * 通过 pkb_type 精确匹配 SKILL 名称。
+   *
+   * @param skillName — SKILL 名称（如 me_pricing_strategy）
+   * @param limit — 最大返回条数
+   * @returns KnowledgeChunk[]
+   */
+  getBySkill(skillName: string, limit = 5): KnowledgeChunk[] {
+    try {
+      const rows = this.db.prepare(`
+        SELECT * FROM knowledge_chunks
+        WHERE pkb_type = ? AND pkb_status = 'active'
+        ORDER BY pkb_confidence DESC, knowledge_level ASC
+        LIMIT ?
+      `).all(skillName, limit) as Array<Record<string, unknown>>;
+      return rows.map(r => this.rowToChunk(r));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg, skillName }, 'getBySkill 查询失败 — 返回空');
+      return [];
+    }
+  }
+
   /** 获取 PKB 统计 */
   pkbStats(): { total: number; byDomain: Record<string, number>; averageConfidence: number } {
     const total = (this.db.prepare("SELECT COUNT(*) as c FROM knowledge_chunks WHERE pkb_domain IS NOT NULL").get() as Record<string, unknown>).c as number || 0;

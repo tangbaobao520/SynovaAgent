@@ -104,7 +104,7 @@ describe('GoalLifecycle', () => {
       const { store, audit, policy } = createMocks();
       const id = createGoal(makeGoal({ status: 'active', successCriteria: [{ criterion: '营收达标', verificationMethod: 'metric_threshold', verified: true }] }), store, audit);
 
-      expect(() => closeGoal(id, 'achieved', [{ metricName: '营收', currentValue: 15, targetValue: 15, unit: '%', computeContractId: 'C1' }], store, audit)).not.toThrow();
+      await expect(closeGoal(id, 'achieved', [{ metricName: '营收', currentValue: 15, targetValue: 15, unit: '%', computeContractId: 'C1' }], store, audit)).resolves.toBeUndefined();
       expect(getGoal(id, store)?.status).toBe('completed');
     });
 
@@ -113,7 +113,7 @@ describe('GoalLifecycle', () => {
       const { store, audit } = createMocks();
       const id = createGoal(makeGoal({ status: 'draft' }), store, audit);
 
-      expect(() => closeGoal(id, 'achieved', [], store, audit)).toThrow('只能闭环 active 状态的 Goal');
+      await expect(closeGoal(id, 'achieved', [], store, audit)).rejects.toThrow('只能闭环 active 状态的 Goal');
     });
 
     it('闭环后记录 actualDurationDays', async () => {
@@ -123,7 +123,7 @@ describe('GoalLifecycle', () => {
       const pastDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
       const id = createGoal(makeGoal({ status: 'active', createdAt: pastDate, successCriteria: [{ criterion: '营收达标', verificationMethod: 'metric_threshold', verified: true }] }), store, audit);
 
-      closeGoal(id, 'achieved', [{ metricName: '营收', currentValue: 15, targetValue: 15, unit: '%', computeContractId: 'C1' }], store, audit);
+      await closeGoal(id, 'achieved', [{ metricName: '营收', currentValue: 15, targetValue: 15, unit: '%', computeContractId: 'C1' }], store, audit);
       const updated = getGoal(id, store);
       expect(updated?.actualDurationDays).toBeGreaterThan(80);
     });
