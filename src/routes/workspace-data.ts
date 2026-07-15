@@ -17,7 +17,8 @@
  */
 import { Router, type Request, type Response } from 'express';
 import { createLogger } from '@synova/logger';
-import { buildDepartmentWorkspace } from '../growth/workspace-builder';
+import { buildDepartmentWorkspace } from"../growth/workspace-builder";
+import { feedbackCollector } from "../growth/feedback-collector"; '../growth/workspace-builder';
 import type { WorkspaceBuilderDeps } from '../growth/workspace-builder';
 
 const log = createLogger('routes/workspace-data');
@@ -130,12 +131,71 @@ router.get('/api/workspace/:deptId/next-action', (req: Request, res: Response) =
   }
 });
 
+// ═══ D93: PUT /api/workspace/goals/:goalId/target — 中层调整 Goal 目标值 ═══
+
+router.put("/api/workspace/goals/:goalId/target", (req: Request, res: Response) => {
+  try {
+    const goalId = String(req.params.goalId);
+    const newTarget = req.body?.targetValue;
+    
+    feedbackCollector.collectFeedback({
+      enterpriseId: "default",
+      actorId: (req.headers["x-user-id"] as string) || "unknown",
+      decision: "modify",
+      targetType: "goal",
+      targetId: goalId,
+      reason: (req.body?.reason as string) || "中层调整目标值",
+      evidenceRefs: newTarget !== undefined ? [String(newTarget)] : undefined,
+    });
+
+    log.info({ goalId, newTarget }, "Goal 目标值已调整 — 反馈已收集");
+    res.json({ ok: true, data: { goalId, adjusted: true } });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log.error({ err: msg, goalId: req.params.goalId }, "Goal 目标值调整失败");
+    res.status(500).json({ ok: false, error: msg, degraded: true });
+  }
+});
+
+// ═══ D93: POST /api/workspace/proposals/:proposalId/reject — 中层拒绝 Proposal ═══
+
+router.post("/api/workspace/proposals/:proposalId/reject", (req: Request, res: Response) => {
+  try {
+    const proposalId = String(req.params.proposalId);
+
+    feedbackCollector.collectFeedback({
+      enterpriseId: "default",
+      actorId: (req.headers["x-user-id"] as string) || "unknown",
+      decision: "reject_path",
+      targetType: "proposal",
+      targetId: proposalId,
+      reason: (req.body?.reason as string) || "中层拒绝提案",
+    });
+
+    log.info({ proposalId }, "Proposal 已拒绝 — 反馈已收集");
+    res.json({ ok: true, data: { proposalId, rejected: true } });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log.error({ err: msg, proposalId: req.params.proposalId }, "Proposal 拒绝失败");
+    res.status(500).json({ ok: false, error: msg, degraded: true });
+  }
+});
+
 // ═══ PUT /api/workspace/alerts/:id/dismiss — 消除告警 ═══
 
 router.put('/api/workspace/alerts/:id/dismiss', (req: Request, res: Response) => {
   try {
     const id = String(req.params.id);
     dismissedAlerts.set(id, { dismissedAt: new Date().toISOString() });
+    // D93: 收集中层反馈 — 误报
+    feedbackCollector.collectFeedback({
+      enterpriseId: "default",
+      actorId: req.headers["x-user-id"] as string || "unknown",
+      decision: "reject",
+      targetType: "sentinel_alert",
+      targetId: id,
+      reason: (req.body?.reason as string) || "中层标记为误报",
+    });
 
     log.info({ alertId: id }, '告警已消除');
     res.json({
