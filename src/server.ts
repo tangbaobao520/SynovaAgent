@@ -62,6 +62,8 @@ import gaAnnotationsRoutes from './routes/ga-annotations';
 import solutionsRoutes from './routes/solutions';
 import notificationsRoutes from './routes/notifications';
 import backupRoutes from './routes/backup';
+import selfOpsRoutes from './routes/self-ops';
+import overflowRoutes from './routes/overflow';
 import type { ServiceContainer } from './services/container';
 // Phase 0.1: 全局错误兜底 — uncaughtException + unhandledRejection
 import { registerGlobalErrorHandlers, unregisterGlobalErrorHandlers } from './services/runtime-global-handlers';
@@ -330,6 +332,7 @@ export async function createServer(): Promise<Server> {
   app.use(solutionsRoutes);
   app.use(notificationsRoutes);
   app.use(backupRoutes);
+  app.use(selfOpsRoutes);
 
   // ═══ A2: Connector Pipeline — 手动触发 ═══
   app.post('/api/connector/sync', async (req, res) => {
