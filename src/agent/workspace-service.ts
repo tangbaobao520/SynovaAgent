@@ -2,6 +2,9 @@
  * workspace-service.ts — 工作区业务逻辑 (L2, PRD v1.6 Slice 7)
  *
  * 子工作区创建 / 上下文继承 / 冲突检测
+ *
+ * @deprecated — D74 工作台数据聚合 (workspace-builder.ts) 已替代此模块。
+ *   旧代码保留不动，D77b 时统一删除。不修改此文件。
  */
 import { createLogger } from '@synova/logger';
 

@@ -997,6 +997,26 @@ export interface RootCauseTree {
 
 // --- 报告与交付（Phase 4/5 输出） ---
 
+/**
+ * 结构化行动建议（D77: 替换旧 string[] 类型）。
+ *
+ * 每条建议包含优先级、风险等级、预期影响和负责部门等字段。
+ */
+export interface ActionRecommendation {
+  /** 建议描述 */
+  description: string;
+  /** 优先级 */
+  priority: 'highest' | 'high' | 'medium' | 'low';
+  /** 预估成本（可选） */
+  estimatedCost?: { timeline: string; budget?: string };
+  /** 风险等级 */
+  riskLevel: 'high' | 'medium' | 'low';
+  /** 预期影响 */
+  expectedImpact: string;
+  /** 负责部门（可选） */
+  responsibleDepartment?: string;
+}
+
 /** 结构化诊断报告（Phase 4 输出，金字塔结构） */
 export interface StructuredDiagnosisReport {
   /** 顶层：CEO 一句话摘要 */
@@ -1009,8 +1029,8 @@ export interface StructuredDiagnosisReport {
   evidenceChain: DiagnosisEvidence[];
   /** 根因树 */
   rootCauseTree: RootCauseTree;
-  /** 行动建议 */
-  actionRecommendations: string[];
+  /** 行动建议（D77: 从 string[] 升级为结构化 ActionRecommendation[]） */
+  actionRecommendations: ActionRecommendation[];
   /** 生成时间 ISO-8601 */
   generatedAt: string;
   /** 诊断耗时 ms */

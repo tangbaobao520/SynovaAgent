@@ -3,6 +3,9 @@
  *
  * 给定 workspaceId → 返回该工作区的已确认判断 + 关联工作区事实
  *
+ * @deprecated — D74 工作台数据聚合 (workspace-builder.ts) 已替代此桥接。
+ *   旧代码保留不动，D77b 时统一删除。不修改此文件。
+ *
  * 架构例外(铁律39): L2→L4 直接访问 AgentMemoryStore。
  * 理由: ContextBridge 是轻量数据查询适配器——只读不写，不操作本体图，
  * 不绕过 L3 推理层。它只做"从这个 store 查几条事实"，等价于 L2 调用

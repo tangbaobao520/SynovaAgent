@@ -811,11 +811,17 @@ export class DiagnosisOrchestrator<
       };
     });
 
-    // 用姿态透镜翻译行动建议
-    const actions = this.generateDefaultActions(rootCauseTree).map((a, i) => {
+    // 用姿态透镜翻译行动建议（D77: 转换为 ActionRecommendation[]）
+    const defaultActions = this.generateDefaultActions(rootCauseTree);
+    const actions: import('./types').ActionRecommendation[] = defaultActions.map((a, i) => {
       const f = keyFindings[i];
-      if (f) return translateAction(postureConfig.posture, f.moduleId, f);
-      return a;
+      const text = f ? translateAction(postureConfig.posture, f.moduleId, f) : a;
+      return {
+        description: text,
+        priority: 'medium',
+        riskLevel: 'medium',
+        expectedImpact: '待评估',
+      };
     });
 
     return {
@@ -864,10 +870,16 @@ export class DiagnosisOrchestrator<
             systemPrompt,
             `基于以下诊断报告，生成具体可执行的行动建议：\n${JSON.stringify(report.keyFindings)}`,
           );
-          // 尝试将 LLM 建议合并到报告
-          const llmActions = this.parseActionItems(response.content);
-          if (llmActions.length > 0) {
-            report.actionRecommendations = [...new Set([...report.actionRecommendations, ...llmActions])];
+          // 尝试将 LLM 建议合并到报告（D77: 转换为 ActionRecommendation[]）
+          const llmActionTexts = this.parseActionItems(response.content);
+          if (llmActionTexts.length > 0) {
+            const llmActions: import('./types').ActionRecommendation[] = llmActionTexts.map((text) => ({
+              description: text,
+              priority: 'medium',
+              riskLevel: 'medium',
+              expectedImpact: '待评估',
+            }));
+            report.actionRecommendations = [...report.actionRecommendations, ...llmActions];
           }
           syncedToExternal = true;
         } catch {
@@ -896,7 +908,7 @@ export class DiagnosisOrchestrator<
       ],
       message: [
         `这不是一次性的诊断。下一次诊断建议在 ${nextDateStr}，引擎会自动检查：`,
-        ...report.actionRecommendations.slice(0, 3).map((a, i) => `  ${i + 1}. ${a.slice(0, 60)}...`),
+        ...report.actionRecommendations.slice(0, 3).map((a, i) => `  ${i + 1}. ${a.description.slice(0, 60)}...`),
         '',
         '你也可以随时在感觉"不对劲"的时候，发起一次快速诊断。我不需要预约，随时在线。',
       ].join('\n'),

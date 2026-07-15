@@ -1,6 +1,9 @@
 /**
  * department-workspace.ts — 部门独立工作区 (PRD v1.6 Slice 7)
  * GET /dept → 部门总监视角的独立工作区列表 + 对话
+ *
+ * @deprecated — D74 工作台数据 API (routes/workspace-data.ts) 已替代此路由。
+ *   旧代码保留不动，D77b 时统一删除。不修改此文件。
  */
 import { Router, type Request, type Response } from 'express';
 

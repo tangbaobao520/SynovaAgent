@@ -12,7 +12,8 @@
 // ═══ SOI 常量 — 安全规范 §3.1 ═══
 
 /**
- * 10 条标准操作指令 (Standard Operation Instructions)
+ * 13 条标准操作指令 (Standard Operation Instructions)
+ * D77: 新增 3 条 Goal 操作 SOI
  */
 export const StandardOperations = {
   GRAPH_TRAVERSE: 'graph.traverse',
@@ -25,6 +26,10 @@ export const StandardOperations = {
   KNOWLEDGE_UPLOAD: 'knowledge.upload',
   GA_CALIBRATE: 'ga.calibrate',
   ADMIN_CONFIGURE: 'admin.configure',
+  // D77: Goal 操作 SOI
+  GOAL_READ: 'goal.read',
+  GOAL_ADJUST: 'goal.adjust',
+  GOAL_ABANDON: 'goal.abandon',
 } as const;
 
 /** SOI 字面量类型 */
@@ -91,6 +96,7 @@ const READ_SOIS: readonly string[] = [
   StandardOperations.GRAPH_TRAVERSE,
   StandardOperations.SENTINEL_COMPUTE,
   StandardOperations.DIAGNOSIS_REPORT,
+  StandardOperations.GOAL_READ,
 ];
 
 function isWriteSoi(soi: string): boolean {
@@ -156,6 +162,25 @@ const BUILT_IN_RULES: PolicyRule[] = [
     name: 'allow_staff_own',
     priority: 7,
     match: { roles: ['staff'], dataLevels: ['S0', 'S1'] },
+    decision: 'allow',
+  },
+  // D77: Goal 操作规则
+  {
+    name: 'allow_manager_goal_read',
+    priority: 4,
+    match: { roles: ['manager'], sois: [StandardOperations.GOAL_READ], dataLevels: ['S0', 'S1', 'S2'] },
+    decision: 'allow',
+  },
+  {
+    name: 'allow_ga_goal_abandon',
+    priority: 5,
+    match: { roles: ['ga'], sois: [StandardOperations.GOAL_ABANDON], dataLevels: ['S3'] },
+    decision: 'allow',
+  },
+  {
+    name: 'allow_manager_goal_adjust',
+    priority: 6,
+    match: { roles: ['manager'], sois: [StandardOperations.GOAL_ADJUST], dataLevels: ['S0', 'S1', 'S2'] },
     decision: 'allow',
   },
   {
