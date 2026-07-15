@@ -21,15 +21,30 @@ export { computeBrandROI } from './l2-value/compute-brand-roi';
 export { computeCouplingStrength } from './l2-value/compute-coupling-strength';
 export { computeLearningRate } from './l2-value/compute-learning-rate';
 export { computeDOL } from './l2-value/compute-dol'; // D59
+export { computeTwoPartTariff } from './l2-value/compute-two-part-tariff'; // D60
+export { computePriceDiscrimination } from './l2-value/compute-price-discrimination'; // D60
+export { computeBundlingOptimal } from './l2-value/compute-bundling-optimal'; // D60
+export { computePeakLoadPricing } from './l2-value/compute-peak-load-pricing'; // D60
+export { computeOptimalPrice } from './l2-value/compute-optimal-price'; // D60
+export { computeSurvivalMargin } from './l2-value/compute-survival-margin'; // D60
+export { computeScaleEconomy } from './l2-value/compute-scale-economy'; // D60
+export { computeCrossPriceElasticity } from './l2-value/compute-cross-price-elasticity'; // D60
 
 // l3-causal
 export { computeShapleyAttribution } from './l3-causal/compute-shapley-attribution';
 export { computeCausalSequence } from './l3-causal/compute-causal-sequence';
 export { computeInterventionEffect } from './l3-causal/compute-intervention-effect';
+export { computeDemandForecast } from './l3-causal/compute-demand-forecast'; // D60
+export { computeConfidenceInterval } from './l3-causal/compute-confidence-interval'; // D60
+export { computeStatisticalSignificance } from './l3-causal/compute-statistical-significance'; // D60
+export { computeTimeSeriesDecomposition } from './l3-causal/compute-time-series-decomposition'; // D60
 
 // l4-competition
 export { computeCompetitorPricingLandscape } from './l4-competition/compute-competitor-pricing-landscape';
 export { computeCompetitorFeatureThreat } from './l4-competition/compute-competitor-feature-threat';
+export { computeMarketStructureDiagnosis } from './l4-competition/compute-market-structure-diagnosis'; // D60
+export { computeLernerIndex } from './l4-competition/compute-lerner-index'; // D60
+export { computeSynergy } from './l4-competition/compute-synergy'; // D60
 
 // l1-input — I2-3b: 环节0-1 新边compute
 export { computeEnvironmentalScan } from './l1-input/compute-environmental-scan';
@@ -60,6 +75,8 @@ export { computeOrgTrust } from './l2-internal/compute-org-trust';
 export { computeRoutineRigidity } from './l2-internal/compute-routine-rigidity';
 export { computeNPV } from './l2-internal/compute-npv'; // D59
 export { computeAgencyCost } from './l2-internal/compute-agency-cost'; // D59
+export { computeIRR } from './l2-internal/compute-irr'; // D60
+export { computeDisposalValue } from './l2-internal/compute-disposal-value'; // D60
 
 // l3-output — I2-3c: 环节3 价值输出 新边compute
 export { computeOperationalExecution } from './l3-output/compute-operational-execution';
