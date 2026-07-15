@@ -14,6 +14,8 @@ export { computeSupplierPerformance } from './l1-production/compute-supplier-per
 
 // l2-value
 export { computeCustomerProfitability } from './l2-value/compute-customer-profitability';
+export { computePriceElasticity } from './l2-value/compute-price-elasticity'; // D61
+export { computeMarginTrend } from './l2-value/compute-margin-trend'; // D61
 export { computeChannelROI } from './l2-value/compute-channel-roi';
 export { computeCustomerValueScore } from './l2-value/compute-customer-value-score';
 export { computeCustomerDemandStructure } from './l2-value/compute-customer-demand-structure';
@@ -42,6 +44,7 @@ export { computeTimeSeriesDecomposition } from './l3-causal/compute-time-series-
 // l4-competition
 export { computeCompetitorPricingLandscape } from './l4-competition/compute-competitor-pricing-landscape';
 export { computeCompetitorFeatureThreat } from './l4-competition/compute-competitor-feature-threat';
+export { computeHHI } from './l4-competition/compute-hhi'; // D59 ME Enhance
 export { computeMarketStructureDiagnosis } from './l4-competition/compute-market-structure-diagnosis'; // D60
 export { computeLernerIndex } from './l4-competition/compute-lerner-index'; // D60
 export { computeSynergy } from './l4-competition/compute-synergy'; // D60
@@ -57,6 +60,7 @@ export { computeTalentAcquisition } from './l1-input/compute-talent-acquisition'
 export { computeTalentFilter } from './l1-input/compute-talent-filter';
 export { computeDataCollection } from './l1-input/compute-data-collection';
 export { computeEquipmentAcquisition } from './l1-input/compute-equipment-acquisition';
+export { computeWorkingCapital } from './l1-input/compute-working-capital'; // D61
 export { computeReputationAttraction } from './l1-input/compute-reputation-attraction';
 export { computeEfficiencyAttraction } from './l1-input/compute-efficiency-attraction';
 export { computeEfficiencyFinancing } from './l1-input/compute-efficiency-financing';
