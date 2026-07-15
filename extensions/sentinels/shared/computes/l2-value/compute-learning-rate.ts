@@ -5,8 +5,13 @@
  * 模块: l2-value
  * 消费边: CUMULATIVE_LEARNING
  * 输入: unitCostT0(number), unitCostT(number), cumulativeOutput(number), routineRigidity?(number 0-1)
- * 输出(正常): { learningRate, experienceElasticity, routineRigidity, confidence, evidence, degraded:false }
- * 输出(降级): { learningRate:0, ... degraded:true, warnings:['...'] }
+ * 输出(正常): { learningRate, experienceElasticity, routineRigidity, confidence, evidence, economicInterpretation, degraded:false }
+ * 输出(降级): { learningRate:0, ... economicInterpretation, degraded:true, warnings:['...'] }
+ *
+ * D59 ME Enhance: 追加 economic_interpretation 字段
+ *   learningRateInterpretation: 'rapid' | 'moderate' | 'slow' | 'negative'
+ *   costReductionForecast: string
+ *   organizationalImplication: string
  *
  * 计算公式:
  *   Wright's Law（线性化）:
@@ -21,18 +26,30 @@
  */
 
 export interface LearningRateInput {
-  unitCostT0: number;          // 初始单位成本
-  unitCostT: number;           // 当前单位成本
-  cumulativeOutput: number;    // 累计产出量
-  routineRigidity?: number;    // 惯例刚性参数(0-1)
+  unitCostT0: number;
+  unitCostT: number;
+  cumulativeOutput: number;
+  routineRigidity?: number;
+}
+
+/** 管理经济学语义解读 */
+export interface LearningRateInterpretation {
+  /** 学习率解读: rapid / moderate / slow / negative */
+  learningRateInterpretation: string;
+  /** 成本降低预测 */
+  costReductionForecast: string;
+  /** 组织层面的启示 */
+  organizationalImplication: string;
 }
 
 export interface LearningRateResult {
-  learningRate: number;              // Wright's Law学习率
-  experienceElasticity: number;     // 累计产出翻倍时的成本下降比例
-  routineRigidity: number;           // 惯例刚性参数
+  learningRate: number;
+  experienceElasticity: number;
+  routineRigidity: number;
   confidence: 'high' | 'medium' | 'low';
   evidence: string[];
+  /** D59: 管理经济学语义解读 */
+  economicInterpretation: LearningRateInterpretation;
   degraded: boolean;
   warnings: string[];
 }
@@ -46,14 +63,26 @@ export function computeLearningRate(input: LearningRateInput): LearningRateResul
   if (cumulativeOutput < 2) {
     return {
       learningRate: 0, experienceElasticity: 0, routineRigidity,
-      confidence: 'low', evidence: [], degraded: true,
+      confidence: 'low', evidence: [],
+      economicInterpretation: {
+        learningRateInterpretation: 'negative',
+        costReductionForecast: '无法计算——输入数据无效',
+        organizationalImplication: '建议检查数据质量，确保累计产出和成本数据准确',
+      },
+      degraded: true,
       warnings: [`累计产出${cumulativeOutput}<2，无法计算学习率`],
     };
   }
   if (unitCostT0 <= 0 || unitCostT <= 0) {
     return {
       learningRate: 0, experienceElasticity: 0, routineRigidity,
-      confidence: 'low', evidence: [], degraded: true,
+      confidence: 'low', evidence: [],
+      economicInterpretation: {
+        learningRateInterpretation: 'negative',
+        costReductionForecast: '无法计算——输入数据无效',
+        organizationalImplication: '建议检查数据质量，确保累计产出和成本数据准确',
+      },
+      degraded: true,
       warnings: [`成本数据无效: unitCostT0=${unitCostT0}, unitCostT=${unitCostT}`],
     };
   }
@@ -84,6 +113,20 @@ export function computeLearningRate(input: LearningRateInput): LearningRateResul
     warnings.push(`学习率为负(${learningRate.toFixed(4)})——成本在上升，非学习效应`);
   }
 
+  // D59: 管理经济学语义解读
+  const lrInterpretation = learningRate > 0.1 ? 'rapid' :
+    learningRate > 0.05 ? 'moderate' :
+    learningRate > 0 ? 'slow' : 'negative';
+  const economicInterpretation: LearningRateInterpretation = {
+    learningRateInterpretation: lrInterpretation,
+    costReductionForecast: experienceElasticity > 0
+      ? `累计产出翻倍时成本预计下降${(experienceElasticity * 100).toFixed(1)}%`
+      : '成本未呈现下降趋势',
+    organizationalImplication: routineRigidity > 0.8
+      ? '惯例刚性较高可能阻碍学习效应，建议引入外部知识或流程再造'
+      : '学习效应正常发挥，可继续当前生产组织方式',
+  };
+
   const confidence = cumulativeOutput >= 10000 ? 'high' : cumulativeOutput >= 100 ? 'medium' : 'low';
 
   return {
@@ -92,6 +135,7 @@ export function computeLearningRate(input: LearningRateInput): LearningRateResul
     routineRigidity,
     confidence,
     evidence,
+    economicInterpretation,
     degraded,
     warnings,
   };

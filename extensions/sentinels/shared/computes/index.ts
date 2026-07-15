@@ -20,6 +20,7 @@ export { computeCustomerDemandStructure } from './l2-value/compute-customer-dema
 export { computeBrandROI } from './l2-value/compute-brand-roi';
 export { computeCouplingStrength } from './l2-value/compute-coupling-strength';
 export { computeLearningRate } from './l2-value/compute-learning-rate';
+export { computeDOL } from './l2-value/compute-dol'; // D59
 
 // l3-causal
 export { computeShapleyAttribution } from './l3-causal/compute-shapley-attribution';
@@ -57,6 +58,8 @@ export { computeKnowledgeSharing } from './l2-internal/compute-knowledge-sharing
 export { computeTrustFrictionReduction } from './l2-internal/compute-trust-friction-reduction';
 export { computeOrgTrust } from './l2-internal/compute-org-trust';
 export { computeRoutineRigidity } from './l2-internal/compute-routine-rigidity';
+export { computeNPV } from './l2-internal/compute-npv'; // D59
+export { computeAgencyCost } from './l2-internal/compute-agency-cost'; // D59
 
 // l3-output — I2-3c: 环节3 价值输出 新边compute
 export { computeOperationalExecution } from './l3-output/compute-operational-execution';
