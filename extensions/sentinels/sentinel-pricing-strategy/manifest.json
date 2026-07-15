@@ -1,0 +1,23 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "sentinel-pricing-strategy",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "定价策略哨兵",
+  "description": "监控定价策略合理性。消费margin-health + competitive-position finding。警告：统一定价但价格歧视可提升>15%利润；严重：价格<边际成本。",
+  "schedule": "0 0 * * 1",
+  "expert": "marketing",
+  "auxiliaryExperts": ["finance", "strategy"],
+  "priority": "P2",
+  "layer": "interface",
+  "computeKind": "deterministic",
+  "computes": [],
+  "thresholds": {
+    "pricing_rationality": { "warning": 0.15, "critical": -0.05 }
+  },
+  "aggregation": "worst_first",
+  "context": { "requiredDataSources": ["sog_graph"], "dataAccess": { "allowedDimensions": ["financial","marketing"], "sensitiveAccess": "read" } },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "pricingStrategySentinel",
+  "id": "sentinel-pricing-strategy"
+}

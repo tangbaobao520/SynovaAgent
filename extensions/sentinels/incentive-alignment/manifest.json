@@ -36,5 +36,12 @@
   "auxiliaryExperts": [
     "finance"
   ],
-  "id": "sentinel-incentive-alignment"
+  "id": "sentinel-incentive-alignment",
+  "post-processors": [
+    {
+      "compute": "COMPUTE-AGENCY-COST-v1",
+      "trigger": "agency_cost triggers critical",
+      "inject": "Agent-principal classification"
+    }
+  ]
 }

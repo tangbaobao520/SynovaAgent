@@ -36,5 +36,12 @@
   "auxiliaryExperts": [
     "knowledge"
   ],
-  "id": "sentinel-knowledge-accessibility"
+  "id": "sentinel-knowledge-accessibility",
+  "post-processors": [
+    {
+      "compute": "COMPUTE-LEARNING-RATE-v1",
+      "trigger": "learning_rate deviates >50%",
+      "inject": "Learning comparison + scale economy"
+    }
+  ]
 }

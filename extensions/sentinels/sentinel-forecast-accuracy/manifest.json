@@ -1,0 +1,24 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "sentinel-forecast-accuracy",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "预测精度哨兵",
+  "description": "监控需求预测精度。消费DemandForecast输出。警告：MAPE>20%或样本<15；严重：时间序列<4个月。",
+  "schedule": "0 0 * * 1",
+  "expert": "strategy",
+  "auxiliaryExperts": ["finance"],
+  "priority": "P2",
+  "layer": "capital",
+  "computeKind": "deterministic",
+  "computes": [],
+  "thresholds": {
+    "forecast_mape": { "warning": 0.2, "critical": 0.5 },
+    "forecast_samples": { "warning": 15, "critical": 4 }
+  },
+  "aggregation": "worst_first",
+  "context": { "requiredDataSources": ["sog_graph"], "dataAccess": { "allowedDimensions": ["financial"], "sensitiveAccess": "read" } },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "forecastAccuracySentinel",
+  "id": "sentinel-forecast-accuracy"
+}

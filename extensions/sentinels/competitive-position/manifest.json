@@ -49,5 +49,12 @@
   "entryPoint": "./aggregate.ts",
   "exportKey": "competitivePositionSentinel",
   "technoEconomicPhaseCalibration": false,
-  "id": "sentinel-competitive-position"
+  "id": "sentinel-competitive-position",
+  "post-processors": [
+    {
+      "compute": "COMPUTE-HHI-v1",
+      "trigger": "HHI > 2500",
+      "inject": "Market structure + pricing power"
+    }
+  ]
 }

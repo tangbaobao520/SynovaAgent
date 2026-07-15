@@ -67,5 +67,12 @@
       "amount"
     ]
   },
-  "id": "sentinel-margin-health"
+  "id": "sentinel-margin-health",
+  "post-processors": [
+    {
+      "compute": "COMPUTE-MARGINAL-CONTRIBUTION-v1",
+      "trigger": "MC > MR",
+      "inject": "Marginal profit + optimal volume"
+    }
+  ]
 }

@@ -62,5 +62,17 @@
   "entryPoint": "./aggregate.ts",
   "exportKey": "capitalHealthSentinel",
   "technoEconomicPhaseCalibration": false,
-  "id": "sentinel-capital-health"
+  "id": "sentinel-capital-health",
+  "post-processors": [
+    {
+      "compute": "COMPUTE-DOL-v1",
+      "trigger": "DOL > 2.0",
+      "inject": "Leverage class + direction amplification + risk"
+    },
+    {
+      "compute": "COMPUTE-NPV-v1",
+      "trigger": "NPV < 0",
+      "inject": "NPV interpretation + sensitivity"
+    }
+  ]
 }
