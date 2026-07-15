@@ -1,0 +1,35 @@
+{
+  "cycleId": "talent-cycle",
+  "name": "人才循环",
+  "description": "招聘→培养→留存的人才闭环。招聘质量影响培养成本，培养效果影响留存率，留存降低招聘压力。",
+  "version": "1.0.0",
+  "applicableIndustries": [],
+  "nodes": [
+    { "id": "hiring", "label": "人才招聘", "type": "flow", "initialValue": 3, "unit": "人/季度", "edgeRefs": ["E-1.5"] },
+    { "id": "training", "label": "人才培养", "type": "flow", "initialValue": 12, "unit": "小时/人/年", "edgeRefs": ["E-2.7"] },
+    { "id": "retention", "label": "人才留存", "type": "stock", "initialValue": 0.72, "unit": "比率", "edgeRefs": ["E-5.2"] },
+    { "id": "knowledge", "label": "知识资产", "type": "stock", "initialValue": 0.25, "unit": "复用率", "edgeRefs": ["E-5.3"] }
+  ],
+  "edges": [
+    { "from": "hiring", "to": "training", "polarity": "+", "delay": 1, "weight": 0.5 },
+    { "from": "training", "to": "retention", "polarity": "+", "delay": 3, "weight": 0.6 },
+    { "from": "retention", "to": "knowledge", "polarity": "+", "delay": 2, "weight": 0.8 },
+    { "from": "knowledge", "to": "hiring", "polarity": "-", "delay": 4, "weight": 0.3 }
+  ],
+  "overflowFormula": {
+    "condition": "retention.currentValue < 0.5",
+    "targetNode": "retention",
+    "formula": "retention.currentValue + 0.1",
+    "minDataMaturity": "medium"
+  },
+  "dataMaturity": "medium",
+  "mapping": [
+    { "nodeId": "hiring", "edgeId": "E-1.5", "weight": 0.7 },
+    { "nodeId": "training", "edgeId": "E-2.7", "weight": 0.8 },
+    { "nodeId": "retention", "edgeId": "E-5.2", "weight": 1.0 },
+    { "nodeId": "knowledge", "edgeId": "E-5.3", "weight": 0.9 }
+  ],
+  "crossCyclePropagation": [
+    { "targetCycleId": "customer-cycle", "viaEdge": "knowledge→service", "strength": 0.3 }
+  ]
+}
