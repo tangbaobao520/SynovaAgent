@@ -15,7 +15,7 @@ import * as path from 'path';
 // ═══ 类型定义 ═══
 
 /** 黄金案例 fixture 格式 */
-interface GoldenCase {
+export interface GoldenCase {
   id: string;
   title: string;
   description: string;
@@ -99,7 +99,7 @@ const EDGE_TO_NODE: Record<string, string> = {
  * @param expected — 预期结果(从fixture读取)
  * @returns F1Result
  */
-function computeF1Score(
+export function computeF1Score(
   actual: { rootCauseEdgeIds: string[]; severity: string; matchedEdgeIds: string[] },
   expected: GoldenCaseExpectation,
 ): F1Result {
@@ -152,7 +152,7 @@ function computeF1Score(
  * 在生产环境中，这里会调用真实的诊断管线。
  * 当前实现: 从 sentinelFindings 中的 matchedEdgeIds 和 severity 聚合。
  */
-function deriveActual(caseData: GoldenCase): {
+export function deriveActual(caseData: GoldenCase): {
   rootCauseEdgeIds: string[];
   severity: string;
   matchedEdgeIds: string[];
@@ -282,12 +282,16 @@ function runAllChecks(): CheckerReport {
 
 // ═══ 入口 ═══
 
-const report = runAllChecks();
+// 只在直接运行脚本时执行（不被 vitest import 时触发）
+const isMainModule = process.argv[1] && import.meta.url.includes(process.argv[1].replace(/\\/g, '/'));
+if (isMainModule) {
+  const report = runAllChecks();
 
-if (report.failedCases > 0) {
-  console.error(`\n[GATE] ${report.failedCases} 个黄金案例未通过 — F1 门禁拒绝`);
-  process.exit(1);
-} else {
-  console.log(`\n[GATE] 全部 ${report.totalCases} 个黄金案例通过 — F1 门禁开放`);
-  process.exit(0);
+  if (report.failedCases > 0) {
+    console.error(`\n[GATE] ${report.failedCases} 个黄金案例未通过 — F1 门禁拒绝`);
+    process.exit(1);
+  } else {
+    console.log(`\n[GATE] 全部 ${report.totalCases} 个黄金案例通过 — F1 门禁开放`);
+    process.exit(0);
+  }
 }
