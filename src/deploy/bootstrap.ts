@@ -344,6 +344,9 @@ export class Bootstrap {
     // Level 2: 2c (依赖 2b skill 注册)
     await this.runPhase2c(subResults);
 
+    // Level 3: 2e — 循环调度器注册 (D91)
+    await this.runPhase2e(subResults);
+
     log.info({
       subPhases: subResults.map((r) => ({ name: r.name, status: r.status, durationMs: r.durationMs })),
     }, 'Phase 2 子 Phase 完成');
@@ -494,6 +497,43 @@ export class Bootstrap {
       durationMs: Date.now() - start,
       errors: [],
     });
+  }
+
+  /**
+   * Phase 2e: 循环调度器注册 (D91 Multi-scale Trigger Matrix)。
+   * 注册 6 循环 × 3 尺度的触发配置到 LoopScheduler。
+   * 降级: LoopScheduler 不可用时仅记录日志，不阻断启动。
+   */
+  private async runPhase2e(subResults: PhaseResult[]): Promise<void> {
+    const start = Date.now();
+    try {
+      const { LoopScheduler } = await import('../loops/loop-scheduler');
+      const { getGlobalScheduler } = await import('../cron/scheduler');
+      const db = this.ctx.get<import('better-sqlite3').Database>('db');
+      const scheduler = db ? getGlobalScheduler(db) : undefined;
+      const loopScheduler = new LoopScheduler(scheduler);
+      const count = loopScheduler.registerDefaultLoops();
+      this.ctx.set('loopScheduler', loopScheduler);
+      log.info({ loops: count }, 'Phase 2e: 循环调度器注册完成');
+      subResults.push({
+        phaseId: 2,
+        name: 'loop-scheduler',
+        status: 'success',
+        durationMs: Date.now() - start,
+        errors: [],
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg }, 'Phase 2e: 循环调度器注册失败 — 降级');
+      this.ctx.addDegraded(2, 'loop-scheduler', msg);
+      subResults.push({
+        phaseId: 2,
+        name: 'loop-scheduler',
+        status: 'degraded',
+        durationMs: Date.now() - start,
+        errors: [msg],
+      });
+    }
   }
 
   /**
