@@ -15,6 +15,7 @@ import { createLogger } from '@synova/logger';
 import type { CycleRegistry } from './cycle-registry';
 import type { GraphStore } from '../l4/graph-bridge';
 import type { OverflowSnapshot } from './overflow-compute';
+import { validateOverflowSignals } from"./cross-scale-validator";
 import { getCycleSnapshots, getLatestSnapshot } from './overflow-graph-bridge';
 
 const log = createLogger('cycles/overflow-dashboard');
@@ -58,6 +59,15 @@ export interface OverflowDashboard {
   totalCycles: number;
   overflowCount: number;
   degraded: boolean;
+  crossScaleWarnings: Array<{
+    type: string;
+    fastCycleId: string;
+    fastCycleName: string;
+    slowCycleId: string;
+    slowCycleName: string;
+    verdict: string;
+    suggestion: string;
+  }>;
 }
 
 // ═══ 仪表盘生成 ═══
@@ -146,17 +156,14 @@ export function generateOverflowDashboard(
   // 只保留最近 12 个月
   const recentHeatmap = heatmap.slice(0, 12 * (cycles.length || 1));
 
-  const dashboard: OverflowDashboard = {
-    enterpriseId,
-    generatedAt: new Date().toISOString(),
-    rows,
-    heatmap: recentHeatmap,
-    conductionTimeline: allConductionSteps,
-    totalCycles: cycles.length,
-    overflowCount: rows.filter(r => r.hasOverflow).length,
-    degraded: false,
+  const crossScaleWarnings = validateOverflowSignals(enterpriseId, store);
+  const finalized: OverflowDashboard = {
+    enterpriseId, generatedAt: new Date().toISOString(), rows, heatmap: recentHeatmap,
+    conductionTimeline: allConductionSteps, totalCycles: cycles.length,
+    overflowCount: rows.filter(r => r.hasOverflow).length, degraded: false,
+    crossScaleWarnings,
   };
 
-  log.info({ enterpriseId, totalCycles: dashboard.totalCycles, overflowCount: dashboard.overflowCount }, '溢出仪表盘已生成');
-  return dashboard;
+  log.info({ enterpriseId, totalCycles: finalized.totalCycles, overflowCount: finalized.overflowCount, warnings: crossScaleWarnings.length }, '溢出仪表盘已生成');
+  return finalized;
 }
