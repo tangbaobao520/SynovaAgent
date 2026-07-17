@@ -17,8 +17,8 @@
  */
 import { Router, type Request, type Response } from 'express';
 import { createLogger } from '@synova/logger';
-import { buildDepartmentWorkspace } from"../growth/workspace-builder";
-import { feedbackCollector } from "../growth/feedback-collector"; '../growth/workspace-builder';
+import { buildDepartmentWorkspace } from "../growth/workspace-builder";
+import { feedbackCollector } from "../growth/feedback-collector";
 import type { WorkspaceBuilderDeps } from '../growth/workspace-builder';
 
 const log = createLogger('routes/workspace-data');

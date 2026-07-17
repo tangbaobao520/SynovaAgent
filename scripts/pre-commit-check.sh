@@ -154,6 +154,13 @@ M=$(grep -rn 'as any\b' src/ --include="*.ts" 2>/dev/null \
   | grep -vE '^[^:]+:[0-9]+:[ \t]*(//|/\*|\*)' || true)
 hard_check "as any 零容忍 (铁律 38)" "$M"
 
+# 1a-2. from" ???? (D93/D95 ????)
+# ??: Claude Code ?????? import ??????? from ?????
+# tsc ?????????? token??CI ?????: D93 + D95 ?????
+FROM_DAMAGE=$(grep -rn 'from"' src/ --include="*.ts" 2>/dev/null | grep -v "node_modules" | grep -v ".test." | grep -v ".d.ts" | grep -v '"import.*from"' | grep -v '".*from".*"' || true)
+hard_check "from ????: from??????? (D93/D95??)" "${FROM_DAMAGE:-}"
+
+
 # 1b. 硬编码业务数据 (合并原 10 + 13: 硬编码联合类型/数组/Set/DEFAULT_* + 部门名等)
 STAGED_HTML=$(echo "$STAGED_ALL" | grep -E '\.(html|ts)$' | grep -v node_modules | grep -v '\.test\.' || true)
 HARDCODE_DATA=""

@@ -15,7 +15,7 @@ import { createLogger } from '@synova/logger';
 import type { CycleRegistry } from './cycle-registry';
 import type { GraphStore } from '../l4/graph-bridge';
 import type { OverflowSnapshot } from './overflow-compute';
-import { validateOverflowSignals } from"./cross-scale-validator";
+import { validateOverflowSignals } from "./cross-scale-validator";
 import { getCycleSnapshots, getLatestSnapshot } from './overflow-graph-bridge';
 
 const log = createLogger('cycles/overflow-dashboard');

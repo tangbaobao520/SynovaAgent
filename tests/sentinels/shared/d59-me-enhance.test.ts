@@ -11,7 +11,7 @@ import { computeMarginalContribution } from '../../../extensions/sentinels/unit-
 import { computeLearningRate } from '../../../extensions/sentinels/shared/computes/l2-value/compute-learning-rate';
 import { computeDOL } from '../../../extensions/sentinels/shared/computes/l2-value/compute-dol';
 import { computeNPV } from '../../../extensions/sentinels/shared/computes/l2-internal/compute-npv';
-import { computeHHI } from '../../../extensions/sentinels/_extinct/competitive-dynamics/computes/compute-hhi';
+import { computeHHI } from '../../../extensions/sentinels/shared/computes/l4-competition/compute-hhi';
 import { computeAgencyCost } from '../../../extensions/sentinels/shared/computes/l2-internal/compute-agency-cost';
 
 describe('D59 — computeBreakEven ME interpretation', () => {

@@ -43,6 +43,8 @@ export interface MiddleFeedbackInput {
   /** 反馈理由（可选） */
   reason?: string;
   /** 证据引用（可选，相关快照/日志 ID） */
+  /** 操作者角色（D93b — 支持 D92 矛盾检测） */
+  actorRole?: string;
   evidenceRefs?: string[];
 }
 
@@ -64,6 +66,8 @@ export interface FeedbackRecord {
   reason: string;
   /** 证据引用（JSON 序列化数组） */
   evidenceRefs: string;
+  /** 操作者角色（D93b — 支持 D92 矛盾检测） */
+  actorRole: string;
   /** 创建时间 */
   createdAt: string;
 }
@@ -106,11 +110,14 @@ CREATE TABLE IF NOT EXISTS feedback_log (
   target_id     TEXT NOT NULL,
   reason        TEXT DEFAULT '',
   evidence_refs TEXT DEFAULT '[]',
+  actor_role    TEXT DEFAULT '',
   created_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_feedback_enterprise ON feedback_log(enterprise_id);
 CREATE INDEX IF NOT EXISTS idx_feedback_decision ON feedback_log(decision);
 CREATE INDEX IF NOT EXISTS idx_feedback_target ON feedback_log(target_type, target_id);
+-- D93b: migration
+INSERT OR IGNORE INTO schema_version (version) VALUES ('d93b_actor_role');
 `;
 
 // ═══ FeedbackCollector ═══
@@ -153,6 +160,7 @@ export class FeedbackCollector {
       targetId: input.targetId,
       reason: input.reason || '',
       evidenceRefs: JSON.stringify(input.evidenceRefs || []),
+      actorRole: input.actorRole || '',
       createdAt: now,
     };
 
@@ -164,7 +172,7 @@ export class FeedbackCollector {
     try {
       this.db.prepare(`
         INSERT INTO feedback_log (id, enterprise_id, actor_id, decision, target_type, target_id, reason, evidence_refs, created_at)
-        VALUES (@id, @enterpriseId, @actorId, @decision, @targetType, @targetId, @reason, @evidenceRefs, @createdAt)
+        VALUES (@id, @enterpriseId, @actorId, @decision, @targetType, @targetId, @reason, @evidenceRefs, @actorRole, @createdAt)
       `).run({
         id: record.id,
         enterpriseId: record.enterpriseId,
@@ -237,6 +245,7 @@ export class FeedbackCollector {
         targetId: r.target_id as string,
         reason: (r.reason as string) || '',
         evidenceRefs: (r.evidence_refs as string) || '[]',
+        actorRole: (r.actor_role as string) || '',
         createdAt: r.created_at as string,
       }));
     } catch (err: unknown) {
@@ -258,17 +267,18 @@ export class FeedbackCollector {
 
     try {
       const rows = this.db.prepare(`
-        SELECT decision, target_type, COUNT(*) as count, MAX(created_at) as latest, GROUP_CONCAT(target_id, ',') as targets
+        SELECT decision, target_type, actor_role, COUNT(*) as count, MAX(created_at) as latest, GROUP_CONCAT(target_id, ',') as targets
         FROM feedback_log
-        GROUP BY decision, target_type
+        GROUP BY decision, target_type, actor_role
         HAVING count >= @threshold
         ORDER BY count DESC
       `).all({ threshold }) as Array<Record<string, unknown>>;
 
       return rows.map(r => ({
-        key: `${r.decision}:${r.target_type}`,
+        key: `${r.decision}:${r.target_type}:${r.actor_role || ''}`,
         decision: r.decision as FeedbackDecision,
         targetType: r.target_type as FeedbackTargetType,
+        actorRoles: ((r.actor_role as string) || '').split(',').filter(Boolean),
         count: r.count as number,
         latestTimestamp: r.latest as string,
         targetIds: ((r.targets as string) || '').split(',').filter(Boolean),
