@@ -167,24 +167,76 @@ describe('D99: Full Pipeline E2E — 完整管线集成测试', () => {
     expect(typeof aggregated.stats.aggregatedSignals).toBe('number');
   });
 
-  it('Stage 5: 诊断管线 Phase 0-5 — 证据收集', async () => {
+  it('Stage 5a: Report assembler — sentinel findings → 报告组装', async () => {
+    const { assembleReport } = await import('../../src/agent/report-assembler');
+    const mockResponse = makeMockDiagnosisResponse();
+
+    const report = {
+      reportId: 'diag-test-001',
+      teamId: 'wani-baby',
+      generatedAt: new Date().toISOString(),
+      summary: mockResponse.ceoSummary,
+      expertReports: mockResponse.keyFindings.map((f) => ({ expert: f.moduleId, findings: [f.finding], confidence: f.confidence })),
+      rootCauses: [{ description: '利润率偏低导致经营风险', dimension: 'financial', confidence: 0.8 }],
+      recommendations: mockResponse.actionRecommendations.map((a) => ({
+        action: a.description,
+        priority: a.priority === 'highest' ? 'critical' as const : 'high' as const,
+        expert: a.responsibleDepartment || 'general',
+      })),
+      raw: {},
+    };
+
+    const assembled = assembleReport(report, 'flywheel');
+
+    expect(assembled).toBeDefined();
+    expect(assembled.summary).toBeTruthy();
+    expect(assembled.summary.length).toBeGreaterThanOrEqual(50);
+    expect(assembled.data).toBeDefined();
+    // flywheel 模式的数据在 assembled.data 中
+    if (assembled.data && typeof assembled.data === 'object') {
+      expect(Object.keys(assembled.data).length).toBeGreaterThan(0);
+    }
+  });
+
+  it('Stage 5b: 专家加载 — 所有 9 位专家 manifest + PROMPT.md', async () => {
     const fs = await import('fs');
-    const raw = fs.readFileSync('data/golden/wani-baby-v1.json', 'utf-8');
-    const golden = JSON.parse(raw);
+    const path = await import('path');
+    const expertDir = path.join(process.cwd(), 'expert');
+    const entries = fs.readdirSync(expertDir, { withFileTypes: true });
+    const experts = entries.filter((e) => e.isDirectory() && !e.name.startsWith('_'));
+    expect(experts.length).toBeGreaterThanOrEqual(9);
 
-    // 验证诊断管线使用的关键 infrastructure 正常
-    const { EvidenceCollector } = await import('../../src/evidence');
-    const { CorroborationEngine } = await import('../../src/evidence');
-    const { createLogger } = await import('@synova/logger');
+    for (const exp of experts) {
+      const manifestPath = path.join(expertDir, exp.name, 'manifest.json');
+      expect(fs.existsSync(manifestPath)).toBe(true);
 
-    // 就验证这些关键模块能正常 import 和实例化
-    expect(typeof EvidenceCollector).toBe('function');
-    expect(typeof CorroborationEngine).toBe('function');
-    expect(typeof createLogger).toBe('function');
+      const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+      expect(manifest.name).toBeTruthy();
+      expect(manifest.version).toBeTruthy();
 
-    // 验证 golden data 可用于诊断
-    expect(golden.financial.revenue.length).toBe(12);
-    expect(golden.enterprise.description.length).toBeGreaterThan(50);
+      const promptPath = path.join(expertDir, exp.name, 'PROMPT.md');
+      if (fs.existsSync(promptPath)) {
+        const promptContent = fs.readFileSync(promptPath, 'utf-8');
+        expect(promptContent.length).toBeGreaterThan(100);
+        expect(promptContent).not.toContain('{{');
+        expect(promptContent).not.toContain('TODO');
+        expect(promptContent).not.toContain('???');
+      }
+    }
+  });
+
+  it('Stage 5c: DiagnosisOrchestrator — 可实例化 with mock deps', async () => {
+    const { DiagnosisOrchestrator } = await import('../../packages/engine-core/src/pipeline/diagnosis/diagnosis-orchestrator');
+
+    const mockClient = { consult: vi.fn().mockResolvedValue({ content: JSON.stringify(makeMockDiagnosisResponse()) }) };
+    const mockTools = { execute: vi.fn().mockResolvedValue({ content: 'ok' }) };
+
+    expect(typeof DiagnosisOrchestrator).toBe('function');
+
+    const orch = new DiagnosisOrchestrator(mockClient, mockTools);
+    expect(orch).toBeDefined();
+    expect(typeof orch.withMaxIterations).toBe('function');
+    expect(typeof orch.withSessionTracer).toBe('function');
   });
 
   it('Stage 6: 报告结构验证 — ActionRecommendation / ceoSummary / findings', async () => {
