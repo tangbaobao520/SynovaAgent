@@ -1,0 +1,222 @@
+/* ══════════════════════════════════════════════════════
+   dashboard.css — Dashboard UI (D97)
+   ══════════════════════════════════════════════════════ */
+
+/* ── Dashboard Header ── */
+.dashboard-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.dashboard-header h1 { font-size: 24px; font-weight: 700; }
+.last-refresh { font-size: 12px; color: var(--text-secondary); }
+
+/* ── Health Cards (3-column grid) ── */
+.health-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.health-card {
+  padding: 20px;
+  border-radius: 10px;
+  border-left: 4px solid var(--border);
+  background: var(--bg-card);
+  transition: box-shadow 0.15s;
+}
+.health-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.health-card.border-green { border-left-color: var(--success); }
+.health-card.border-yellow { border-left-color: var(--warning); }
+.health-card.border-red { border-left-color: var(--error); }
+.health-card h3 { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; }
+.health-value {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.health-trend {
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.trend-up { color: var(--success); }
+.trend-down { color: var(--error); }
+.trend-stable { color: var(--text-secondary); }
+.health-warning {
+  font-size: 12px;
+  color: var(--warning);
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+
+/* ── Overview Grid (2-column) ── */
+.overview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.card-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── Goal List ── */
+.goal-item {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.goal-item:hover { border-color: var(--primary); }
+.goal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.goal-title { font-size: 14px; font-weight: 600; }
+.priority-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+.priority-P0 { background: #fef2f2; color: var(--error); }
+.priority-P1 { background: #fffbeb; color: var(--warning); }
+.priority-P2 { background: #f0fdf4; color: var(--success); }
+.goal-meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+  display: flex;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.progress-bar {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+.goal-detail {
+  display: none;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.goal-detail.expanded { display: block; }
+
+/* ── Alert List ── */
+.alert-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  background: var(--bg);
+}
+.severity-badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.severity-critical { background: #fef2f2; color: var(--error); }
+.severity-warning { background: #fffbeb; color: var(--warning); }
+.severity-info { background: #eff6ff; color: var(--primary); }
+.alert-body { flex: 1; }
+.alert-message { font-size: 13px; margin-bottom: 2px; }
+.alert-time { font-size: 11px; color: var(--text-secondary); }
+.alert-dismiss {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--text-secondary);
+  padding: 2px;
+  line-height: 1;
+}
+.alert-dismiss:hover { color: var(--error); }
+
+/* ── Quick Actions ── */
+.actions-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+  background: var(--bg-card);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+.btn-secondary {
+  display: inline-block;
+  padding: 10px 20px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text);
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.btn-secondary:hover { border-color: var(--primary); color: var(--primary); }
+.dept-hint { font-size: 12px; color: var(--text-secondary); margin-left: auto; }
+
+/* ── Skeleton Loading ── */
+.skeleton { position: relative; overflow: hidden; }
+.skeleton-pulse {
+  height: 100%;
+  background: linear-gradient(90deg, var(--border) 25%, #f0f0f0 50%, var(--border) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  min-height: 100px;
+  border-radius: 8px;
+}
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+.skeleton-list .skeleton-pulse { min-height: 60px; margin-bottom: 8px; }
+.card.skeleton { padding: 0; min-height: 120px; }
+
+/* ── Error / Retry ── */
+.error-card {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-secondary);
+}
+.error-card p { margin-bottom: 12px; }
+.retry-btn {
+  background: none;
+  border: 1px solid var(--border);
+  padding: 8px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.retry-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .health-grid { grid-template-columns: 1fr; }
+  .overview-grid { grid-template-columns: 1fr; }
+  .actions-row { flex-wrap: wrap; }
+  .dept-hint { margin-left: 0; }
+}

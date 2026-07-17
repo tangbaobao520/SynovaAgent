@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Synova — Dashboard</title>
+  <link rel="stylesheet" href="/app/css/app.css">
+  <link rel="stylesheet" href="/app/css/dashboard.css">
+</head>
+<body>
+  <header id="synova-shell"></header>
+  <div id="toast-container"></div>
+
+  <div class="page-content">
+    <div class="dashboard-header">
+      <h1>Dashboard</h1>
+      <span id="last-refresh" class="last-refresh"></span>
+    </div>
+
+    <!-- Section A: Health Indicators -->
+    <section id="health-cards" class="health-grid">
+      <div class="card skeleton" data-card="cash"><div class="skeleton-pulse"></div></div>
+      <div class="card skeleton" data-card="customer"><div class="skeleton-pulse"></div></div>
+      <div class="card skeleton" data-card="org"><div class="skeleton-pulse"></div></div>
+    </section>
+
+    <!-- Section B: Enterprise Overview -->
+    <section class="overview-grid">
+      <div class="card">
+        <h2 class="card-title">Active Goals</h2>
+        <div id="goals-container">
+          <div class="skeleton-list"><div class="skeleton-pulse"></div><div class="skeleton-pulse"></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2 class="card-title">Recent Alerts</h2>
+        <div id="alerts-container">
+          <div class="skeleton-list"><div class="skeleton-pulse"></div><div class="skeleton-pulse"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section C: Quick Actions -->
+    <section class="actions-row">
+      <button id="btn-diagnosis" class="btn-primary" onclick="triggerDiagnosis()">Generate Diagnosis Report</button>
+      <a href="/app/report.html" class="btn-secondary">View Latest Report</a>
+      <span class="dept-hint">Department Workspace (coming soon)</span>
+    </section>
+  </div>
+
+  <script src="/app/js/auth.js"></script>
+  <script src="/app/js/api-client.js"></script>
+  <script src="/app/js/shell.js"></script>
+  <script src="/app/js/dashboard.js"></script>
+</body>
+</html>
