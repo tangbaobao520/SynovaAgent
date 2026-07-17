@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Synova — Diagnosis Report</title>
+  <link rel="stylesheet" href="/app/css/app.css">
+  <link rel="stylesheet" href="/app/css/report.css">
+</head>
+<body>
+  <header id="synova-shell"></header>
+  <div id="toast-container"></div>
+
+  <div class="page-content">
+    <!-- Section A: Report Header -->
+    <div id="report-header" class="report-header">
+      <div class="report-title-row">
+        <h1 id="report-title">Growth Diagnosis Report</h1>
+        <span id="status-badge" class="status-badge status-loading">Loading...</span>
+      </div>
+      <div class="report-meta">
+        <span id="report-id-display">ID: —</span>
+        <span id="report-date">Date: —</span>
+        <span id="report-trigger">Trigger: —</span>
+      </div>
+    </div>
+
+    <!-- Section B: CEO One-Page Summary -->
+    <section id="ceo-summary" class="card">
+      <h2 class="card-title">Executive Summary</h2>
+      <div id="ceo-content" class="ceo-content">
+        <div class="skeleton-pulse" style="height:60px; width:100%;"></div>
+        <div class="skeleton-pulse" style="height:20px; width:60%; margin-top:12px;"></div>
+      </div>
+      <div id="ceo-metrics" class="metrics-row">
+        <div class="metric-card skeleton"><div class="skeleton-pulse"></div></div>
+        <div class="metric-card skeleton"><div class="skeleton-pulse"></div></div>
+        <div class="metric-card skeleton"><div class="skeleton-pulse"></div></div>
+      </div>
+    </section>
+
+    <!-- Phase Progress Bar -->
+    <div id="phase-progress" class="phase-progress">
+      <div class="phase-steps" id="phase-steps">
+        <div class="phase-step" data-phase="0">Scoping</div>
+        <div class="phase-step" data-phase="1">Interview</div>
+        <div class="phase-step" data-phase="2">Evidence</div>
+        <div class="phase-step" data-phase="3">Analysis</div>
+        <div class="phase-step" data-phase="4">Cross-Validate</div>
+        <div class="phase-step" data-phase="5">Report</div>
+      </div>
+      <div class="phase-bar-track">
+        <div id="phase-bar-fill" class="phase-bar-fill" style="width:0%"></div>
+      </div>
+      <div id="phase-description" class="phase-description">Preparing diagnosis...</div>
+    </div>
+
+    <!-- Section C: Detailed Findings -->
+    <section id="findings-section" class="card">
+      <h2 class="card-title">Detailed Findings</h2>
+      <div id="findings-container">
+        <div class="skeleton-pulse" style="height:80px;"></div>
+        <div class="skeleton-pulse" style="height:80px; margin-top:8px;"></div>
+      </div>
+    </section>
+
+    <!-- Evidence Chain -->
+    <section id="evidence-section" class="card">
+      <h2 class="card-title">Evidence Chain</h2>
+      <div id="evidence-container">
+        <div class="skeleton-pulse" style="height:60px;"></div>
+      </div>
+    </section>
+
+    <!-- Root Cause Tree -->
+    <section id="root-cause-section" class="card">
+      <h2 class="card-title">Root Cause Analysis</h2>
+      <div id="root-cause-container">
+        <div class="skeleton-pulse" style="height:80px;"></div>
+      </div>
+    </section>
+
+    <!-- Action Recommendations -->
+    <section id="recommendations-section" class="card">
+      <h2 class="card-title">Action Recommendations</h2>
+      <div id="recommendations-container">
+        <div class="skeleton-pulse" style="height:100px;"></div>
+      </div>
+    </section>
+
+    <!-- Section D: Report Actions -->
+    <section class="report-actions">
+      <button id="btn-export-pdf" class="btn-primary" style="width:auto; padding:10px 24px;" onclick="window.print()">Export PDF</button>
+      <a href="/app/dashboard.html" class="btn-secondary" style="padding:10px 24px;">Back to Dashboard</a>
+      <a href="/app/dashboard.html" class="btn-secondary" style="padding:10px 24px;">New Diagnosis</a>
+    </section>
+  </div>
+
+  <script src="/app/js/auth.js"></script>
+  <script src="/app/js/api-client.js"></script>
+  <script src="/app/js/shell.js"></script>
+  <script src="/app/js/report.js"></script>
+</body>
+</html>
