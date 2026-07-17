@@ -1,0 +1,200 @@
+/* ══════════════════════════════════════════════════════
+   app.css — Synova Brand + Shared Shell (D96)
+   ══════════════════════════════════════════════════════ */
+
+/* ── Brand Colors ── */
+:root {
+  --primary: #1a73e8;
+  --primary-dark: #1557b0;
+  --bg: #f5f7fa;
+  --bg-card: #ffffff;
+  --text: #1f2937;
+  --text-secondary: #6b7280;
+  --border: #e5e7eb;
+  --error: #ef4444;
+  --success: #22c55e;
+  --warning: #f59e0b;
+}
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ── Nav Shell ── */
+.synova-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+}
+.nav-left, .nav-center, .nav-right { display: flex; align-items: center; gap: 16px; }
+.nav-logo {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary);
+  text-decoration: none;
+}
+.nav-link {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 14px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: background 0.15s, color 0.15s;
+}
+.nav-link:hover { background: var(--bg); color: var(--text); }
+.nav-user { font-size: 13px; color: var(--text-secondary); }
+.nav-logout {
+  background: none;
+  border: 1px solid var(--border);
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text);
+  transition: border-color 0.15s;
+}
+.nav-logout:hover { border-color: var(--error); color: var(--error); }
+
+/* ── Page Content ── */
+.page-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+/* ── Login Page ── */
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+}
+.login-card {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 40px;
+  width: 380px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+}
+.login-card h1 {
+  text-align: center;
+  margin-bottom: 8px;
+  font-size: 24px;
+  color: var(--text);
+}
+.login-card .subtitle {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 28px;
+}
+.form-group { margin-bottom: 18px; }
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--text);
+}
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.15s;
+}
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(26,115,232,0.1);
+}
+.btn-primary {
+  width: 100%;
+  padding: 12px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Error States ── */
+.error-message {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: var(--error);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 16px;
+  display: none;
+}
+.error-message.visible { display: block; }
+
+/* ── Spinner ── */
+.spinner {
+  display: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  margin: 0 auto;
+}
+.spinner.visible { display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Toast Notifications ── */
+#toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.toast {
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  animation: slideIn 0.3s ease;
+}
+.toast-error { background: var(--error); }
+.toast-success { background: var(--success); }
+.toast-warning { background: var(--warning); }
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+/* ── Offline Banner ── */
+.offline-banner {
+  background: var(--warning);
+  color: #fff;
+  text-align: center;
+  padding: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}

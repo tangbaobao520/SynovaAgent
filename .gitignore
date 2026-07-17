@@ -9,6 +9,8 @@ coverage/
 .DS_Store
 Thumbs.db
 *.html
+!app/*.html
+!app/**/*.html
 *.ps1
 *.cmd
 Dockerfile

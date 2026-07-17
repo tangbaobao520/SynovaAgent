@@ -6,6 +6,7 @@
  * 不引入 Novis 的任何依赖。
  */
 import express from 'express';
+import * as path from 'path';
 import cors from 'cors';
 import type { Server } from 'http';
 import { MemoryMonitor } from './services/memory-monitor';
@@ -262,6 +263,11 @@ export async function createServer(): Promise<Server> {
   }
 
   // 基础中间件
+  // D96: 静态文件服务 — 前端 UI (login/dashboard/reports)
+  app.use('/app', express.static(path.join(__dirname, '..', 'app')));
+  app.get('/', (_req, res) => res.redirect('/app/index.html'));
+  app.get('/login', (_req, res) => res.redirect('/app/login.html'));
+
   app.use(cors());
   app.use(express.json({ limit: '10mb' }));
 
