@@ -347,6 +347,9 @@ export class Bootstrap {
     // Level 3: 2e — 循环调度器注册 (D91)
     await this.runPhase2e(subResults);
 
+    // Level 4: 2f — MainAgent 注册 (D8a)
+    await this.runPhase2f(subResults);
+
     log.info({
       subPhases: subResults.map((r) => ({ name: r.name, status: r.status, durationMs: r.durationMs })),
     }, 'Phase 2 子 Phase 完成');
@@ -529,6 +532,44 @@ export class Bootstrap {
       subResults.push({
         phaseId: 2,
         name: 'loop-scheduler',
+        status: 'degraded',
+        durationMs: Date.now() - start,
+        errors: [msg],
+      });
+    }
+  }
+
+  /**
+   * Phase 2f: MainAgent 注册 (D8a L2 Main Agent)。
+   * 从 LOOP_TRIGGER_MATRIX 注册 6 个循环到 MainAgent。
+   * 降级: MainAgent 初始化失败时仅记录日志，不阻断启动。
+   */
+  private async runPhase2f(subResults: PhaseResult[]): Promise<void> {
+    const start = Date.now();
+    try {
+      const { MainAgent } = await import('../agent/main-agent');
+      const { LOOP_TRIGGER_MATRIX } = await import('../loops/loop-trigger-config');
+      const scheduler = this.ctx.get<import('../loops/loop-scheduler').LoopScheduler>('loopScheduler');
+      const mainAgent = new MainAgent();
+      for (const config of LOOP_TRIGGER_MATRIX) {
+        mainAgent.registerLoop(config);
+      }
+      this.ctx.set('mainAgent', mainAgent);
+      log.info({ loops: LOOP_TRIGGER_MATRIX.length }, 'Phase 2f: MainAgent 注册完成');
+      subResults.push({
+        phaseId: 2,
+        name: 'main-agent',
+        status: 'success',
+        durationMs: Date.now() - start,
+        errors: [],
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg }, 'Phase 2f: MainAgent 注册失败 — 降级');
+      this.ctx.addDegraded(2, 'main-agent', msg);
+      subResults.push({
+        phaseId: 2,
+        name: 'main-agent',
         status: 'degraded',
         durationMs: Date.now() - start,
         errors: [msg],
