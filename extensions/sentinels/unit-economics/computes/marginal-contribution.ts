@@ -11,6 +11,11 @@
  * 来源: 管理经济学(托马斯) Ch6 — 边际分析
  *
  * 本体映射: Client节点按segment分组 | REVENUE_FROM::share | COST_DRIVEN_BY
+ *
+ * 契约:
+ *   @input — groups: Array<{groupId:string, revenue:number, variableCost:number}>
+ *   @output — MarginalContributionResult { groups, totalContribution, avgMcRatio, negativeMcGroups, economicInterpretation }
+ *   @degraded — groups.length===0 -> degraded:true + warnings
  */
 export interface MarginalGroup {
   groupId: string;

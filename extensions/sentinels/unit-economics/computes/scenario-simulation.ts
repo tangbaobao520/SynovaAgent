@@ -9,6 +9,11 @@
  *   因为固定成本(工厂28人、运营30人)无法随客户群缩减而减少
  *
  * 来源: 管理经济学(托马斯) Ch6 — 决策分析
+ *
+ * 契约:
+ *   @input — scenarios: Array<{name:string, assumptions:object}>, baseline(object)
+ *   @output — ScenarioSimulationResult { scenarios, recommended, sensitivity }
+ *   @degraded — scenarios.length===0 -> degraded:true + warnings
  */
 export interface ScenarioResult {
   dropCount: number;

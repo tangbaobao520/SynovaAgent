@@ -10,6 +10,11 @@
  * 来源: 管理经济学(托马斯) Ch6 — 盈亏平衡分析
  *
  * 本体映射: Financial(汇总) → 固定成本、单位价格、单位变动成本
+ *
+ * 契约:
+ *   @input — fixedCost(number), price(number), unitVarCost(number), currentUnits?(number)
+ *   @output — BreakEvenResult { breakEvenUnits, breakEvenRevenue, contributionMargin, safetyMargin, economicInterpretation }
+ *   @degraded — fixedCost<=0||price<=0||unitVarCost<0 -> degraded:true + warnings
  */
 
 /** 管理经济学语义解读 */

@@ -13,6 +13,11 @@
  * 来源: 管理经济学(托马斯) Ch6 — 成本结构分析
  *
  * 本体映射: COST_DRIVEN_BY::costType=fixed → CostItem
+ *
+ * 契约:
+ *   @input — fixedCost(number), totalCost(number), period(string)
+ *   @output — FixedCostRigidityResult { fixedCostRatio, rigidityLevel, trend }
+ *   @degraded — totalCost<=0 -> degraded:true + warnings
  */
 export interface RigidityItem {
   name: string;

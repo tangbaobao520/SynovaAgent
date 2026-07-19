@@ -8,6 +8,11 @@
  * 评分方法:
  * - unitMargin = (unitRevenue - unitCost) / unitRevenue
  * - margin ∈ [0,1], 越高越健康
+ *
+ * 契约:
+ *   @input — price(number), unitCost(number)
+ *   @output — GrossMarginResult { grossMargin, marginRatio, benchmark }
+ *   @degraded — price<=0||unitCost<0 -> degraded:true + warnings
  */
 export interface UnitMarginResult {
   margin: number;

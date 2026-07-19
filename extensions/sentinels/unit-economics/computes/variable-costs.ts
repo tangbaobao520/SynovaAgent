@@ -9,6 +9,11 @@
  *
  * 来源: 管理经济学(托马斯) Ch6 — 成本分类
  * 本体映射: COST_DRIVEN_BY::costType, share
+ *
+ * 契约:
+ *   @input — costItems: Array<{name:string, amount:number, type:string}>
+ *   @output — VariableCostsResult { totalVariableCost, costBreakdown, topCostDrivers }
+ *   @degraded — costItems.length===0 -> degraded:true + warnings
  */
 export interface CostItem {
   name: string;

@@ -8,6 +8,11 @@
  * - totalLTV: 所有客户生命周期价值之和
  * - totalCAC: 所有获客成本之和
  * - ltvCac = totalLTV / totalCAC, > 3 为健康
+ *
+ * 契约:
+ *   @input — ltv(number), cac(number)
+ *   @output — LtvCacResult { ratio, health, benchmark }
+ *   @degraded — cac<=0 -> degraded:true + warnings
  */
 export interface LtvCacResult {
   ltvCac: number;
