@@ -17,7 +17,7 @@ import { getSentinelRegistry } from './registry';
 import { getBaselineStore } from './baseline-store';
 import { EscalationEngine, type EscalationRule } from '../services/escalation-engine';
 import { createLogger } from '@synova/logger';
-import { ProactivePush } from"../agent/proactive-push";
+import { ProactivePush } from "../agent/proactive-push";
 import { dispatchNotification, registerNotificationAdapter } from '../notifications/registry';
 import { ElectronNotificationAdapter } from '../notifications/electron-adapter';
 
