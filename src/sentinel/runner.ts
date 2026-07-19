@@ -17,6 +17,7 @@ import { getSentinelRegistry } from './registry';
 import { getBaselineStore } from './baseline-store';
 import { EscalationEngine, type EscalationRule } from '../services/escalation-engine';
 import { createLogger } from '@synova/logger';
+import { ProactivePush } from"../agent/proactive-push";
 import { dispatchNotification, registerNotificationAdapter } from '../notifications/registry';
 import { ElectronNotificationAdapter } from '../notifications/electron-adapter';
 
@@ -272,6 +273,29 @@ export class SentinelRunner {
           createdAt: new Date().toISOString(),
         });
         this.markNotificationSent(signal);
+      }
+
+      // ═══ D17: P0 主动推送 (critical → Feishu/email/webhook, 含3次重试)
+      const proactivePush: ProactivePush | null = (this as Record<string, unknown>)["__proactivePush"] as ProactivePush | null;
+      if (proactivePush) {
+        for (const signal of criticalOrWarning) {
+          if (signal.severity === "critical") {
+            const src = signal.sources[0]?.finding;
+            const finding = {
+              id: signal.id,
+              sentinelId: signal.sources[0]?.sentinelId || signal.id,
+              sentinelName: signal.sources[0]?.sentinelName || signal.id,
+              severity: "critical" as const,
+              title: signal.title || src?.title || "",
+              description: src?.description,
+              suggestion: src?.suggestion,
+              detectedAt: src?.detectedAt || signal.aggregatedAt || new Date().toISOString(),
+            };
+            proactivePush.onP0Finding(finding).catch((err: Error) => {
+              log.warn({ err, signalId: signal.id }, "P0 主动推送异常 — 不阻断主流程");
+            });
+          }
+        }
       }
 
       // G3: 升级链评估 — 对每个聚合信号检查是否需升级
