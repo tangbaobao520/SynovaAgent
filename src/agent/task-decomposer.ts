@@ -236,22 +236,19 @@ export class TaskDecomposer {
 
   /**
    * 按维度执行默认 handler。
-   * MVP: 调用 D8a 的默认循环处理器。
+   * D8c: 使用 ExpertRouter 路由到对应专家。
    */
   private async runHandlerForDimension(dimension: string): Promise<{ success: boolean; output?: string; error?: string }> {
     try {
-      const { defaultDiagnosisHandler, defaultNavigationHandler, defaultEvolutionHandler, defaultOverflowHandler } = await import('./loop-handlers');
-      // 根据维度选择对应的 handler
-      const handlerMap: Record<string, typeof defaultDiagnosisHandler> = {
-        financial: defaultDiagnosisHandler,
-        market: defaultNavigationHandler,
-        organizational: defaultEvolutionHandler,
-        technology: defaultOverflowHandler,
-        strategic: defaultDiagnosisHandler,
-        operational: defaultNavigationHandler,
-      };
-      const handler = handlerMap[dimension] || defaultDiagnosisHandler;
-      return await handler('fast');
+      const { ExpertRouter } = await import('./expert-router');
+      const router = new ExpertRouter();
+      const response = await router.dispatch({
+        subTaskId: `dim-${dimension}-${Date.now()}`,
+        expertType: DIMENSION_EXPERT_MAP[dimension] || 'org',
+        inputFindings: [],
+        context: { enterpriseId: 'default', diagnosisId: 'auto' },
+      });
+      return { success: !response.degraded, output: response.analysis, error: response.error };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       return { success: false, error: msg };
