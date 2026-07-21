@@ -77,17 +77,16 @@ describe('ConvergenceEngine — analyzePrecedents', () => {
 });
 
 describe('ConflictArbitrator — 收敛集成', () => {
-  it('收敛规则命中 → 跳过仲裁', async () => {
+  it('收敛规则命中 → 跳过仲裁（注入共享引擎）', async () => {
     const { ConflictArbitrator } = await import('../../src/agent/conflict-arbitrator');
     const { ConvergenceEngine } = await import('../../src/agent/convergence-engine');
     const auditStore = { log: vi.fn() };
 
-    // 先建立收敛规则
+    // 建立收敛规则 + 注入到仲裁器
     const engine = new ConvergenceEngine(auditStore);
     engine.addRule(['finance', 'strategy'], 'E-23', 'finance', 3);
+    const arbitrator = new ConflictArbitrator(auditStore, { finance: 0.5, strategy: 0.5 }, engine);
 
-    // 创建仲裁器并注入相同审计存储
-    const arbitrator = new ConflictArbitrator(auditStore, { finance: 0.5, strategy: 0.5 });
     const summary = await arbitrator.arbitrate({
       conflicts: [{
         id: 'c1', experts: ['finance', 'strategy'] as [string, string],
@@ -101,7 +100,9 @@ describe('ConflictArbitrator — 收敛集成', () => {
       hasUnresolved: true,
       consensus: 'none',
     });
-    // 收敛规则可能被仲裁器检查到
-    expect(summary.totalAutoResolved + summary.totalEscalated).toBe(1);
+    // 收敛规则命中 → 自动裁决，无需 GA 升级
+    expect(summary.totalAutoResolved).toBe(1);
+    expect(summary.totalEscalated).toBe(0);
+    expect(summary.degraded).toBe(false);
   });
 });

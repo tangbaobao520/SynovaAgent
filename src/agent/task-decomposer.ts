@@ -53,6 +53,8 @@ export interface SubTask {
 export interface SubTaskResult {
   subTaskId: string;
   status: 'completed' | 'failed';
+  /** 路由到的专家类型（D8c ExpertRouter 设置） */
+  expertType?: string;
   output?: string;
   error?: string;
   durationMs: number;
@@ -183,6 +185,7 @@ export class TaskDecomposer {
       return {
         subTaskId: subTask.id,
         status: result.success ? 'completed' : 'failed',
+        expertType: subTask.expertType,
         output: result.output,
         error: result.error,
         durationMs,

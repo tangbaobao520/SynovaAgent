@@ -288,10 +288,11 @@ export class MainAgent {
         const validator = new CrossValidationTrigger();
         const expertResponses: import('./expert-router').ExpertResponse[] = [];
         for (const r of aggregated.results) {
-          if (r.status === 'completed' && (r as any).confidence !== undefined) {
+          if (r.status === 'completed') {
+            const sr = r as { expertType?: string; confidence: number; output?: string };
             expertResponses.push({
-              subTaskId: r.subTaskId, expertType: 'unknown', analysis: r.output || '', confidence: r.confidence || 0,
-              evidence: [], edgeIds: [], degraded: r.status === 'failed', durationMs: r.durationMs,
+              subTaskId: r.subTaskId, expertType: sr.expertType || 'unknown', analysis: sr.output || '', confidence: sr.confidence || 0,
+              evidence: [], edgeIds: [], degraded: false, durationMs: r.durationMs,
             });
           }
         }
