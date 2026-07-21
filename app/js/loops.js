@@ -1,91 +1,105 @@
 /**
- * app/js/loops.js — 循环状态可视化逻辑 (D20)
+ * app/js/loops.js — 循环状态可视化逻辑 (D20 v2 — 修复版)
  *
- * 获取 GET /api/loops/status 数据 → 渲染 6 张循环状态卡片
- * 自动刷新 30s + 手动刷新按钮
+ * 从 GET /api/loops/status 获取数据 → 渲染 6 张循环状态卡片
+ * 使用 api-client.js 获取数据（带 JWT + 重试）
+ * 客户端计算时间差（避免服务端 stale 数据）
  */
 
-let refreshTimer = null;
+(function () {
+  'use strict';
 
-/** 加载循环状态数据 */
-function loadLoopStatus() {
-  const container = document.getElementById('loops-container');
-  const errorContainer = document.getElementById('error-container');
+  let refreshTimer = null;
 
-  fetch('/api/loops/status')
-    .then(r => r.json())
-    .then(data => {
-      errorContainer.style.display = 'none';
+  function loadLoopStatus() {
+    const container = document.getElementById('loops-container');
+    const errorContainer = document.getElementById('error-container');
 
-      if (!data.ok || !data.loops) {
-        container.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#888;">无法获取循环状态</div>';
-        return;
-      }
-
-      if (data.loops.length === 0) {
-        container.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#888;">暂无可用的循环</div>';
-        return;
-      }
-
-      container.innerHTML = data.loops.map(renderLoopCard).join('');
-    })
-    .catch(() => {
-      errorContainer.style.display = 'block';
-      errorContainer.innerHTML = '<div class="error-banner">⚠️ 监控暂停 — 无法连接到服务器' +
-        '<br><button onclick="loadLoopStatus()" style="padding:6px 14px;background:#c62828;color:#fff;border:none;border-radius:4px;cursor:pointer;margin-top:8px;">重试</button></div>';
-      container.innerHTML = '';
-    });
-}
-
-/** 渲染单张循环卡片 */
-function renderLoopCard(loop) {
-  const statusClass = 'status-' + (loop.status || 'pending');
-  const statusLabel = { pending: '待命', running: '运行中', completed: '已完成', failed: '失败' }[loop.status] || '待命';
-
-  const lastExe = loop.lastExecution;
-  let lastRunText = '尚未执行';
-  if (lastExe) {
-    const ago = lastExe.lastRunAgoSeconds;
-    if (ago < 60) lastRunText = '刚刚';
-    else if (ago < 3600) lastRunText = Math.floor(ago / 60) + ' 分钟前';
-    else if (ago < 86400) lastRunText = Math.floor(ago / 3600) + ' 小时前';
-    else lastRunText = Math.floor(ago / 86400) + ' 天前';
-    lastRunText += '，耗时 ' + (lastExe.durationMs / 1000).toFixed(1) + 's';
+    api.get('/api/loops/status')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        errorContainer.style.display = 'none';
+        if (!data.ok || !data.loops) {
+          container.innerHTML = '<div class="empty-state">Unable to load loop status.</div>';
+          return;
+        }
+        if (data.loops.length === 0) {
+          container.innerHTML = '<div class="empty-state">No loops registered.</div>';
+          return;
+        }
+        container.innerHTML = data.loops.map(renderLoopCard).join('');
+      })
+      .catch(function () {
+        errorContainer.style.display = 'block';
+        errorContainer.innerHTML = '<div class="error-message visible">⚠️ Monitoring paused — cannot connect to server<br><button onclick="loadLoopStatus()" class="btn-secondary" style="margin-top:8px;">Retry</button></div>';
+        container.innerHTML = '';
+      });
   }
 
-  const scaleDots = (loop.scales || []).map(s => {
-    const dotClass = 'dot-' + (s.status || 'pending');
-    const typeLabels = { cron: '⏱', event: '⚡', hybrid: '🔄' };
-    return '<span class="scale-dot"><span class="dot ' + dotClass + '"></span> ' +
-      (typeLabels[s.triggerType] || '') + ' ' + s.name + '</span>';
-  }).join('');
+  function computeTimeAgo(isoString) {
+    if (!isoString) return null;
+    const diff = Date.now() - new Date(isoString).getTime();
+    if (diff < 0) return 'just now';
+    if (diff < 60000) return 'just now';
+    if (diff < 3600000) return Math.floor(diff / 60000) + ' min ago';
+    if (diff < 86400000) return Math.floor(diff / 3600000) + ' hr ago';
+    return Math.floor(diff / 86400000) + ' days ago';
+  }
 
-  const triggerTypes = [...new Set((loop.scales || []).map(s => s.triggerType))].join('/');
+  function renderLoopCard(loop) {
+    const statusClass = 'status-' + (loop.status || 'pending');
+    const statusLabels = { pending: 'Pending', running: 'Running', completed: 'Completed', failed: 'Failed' };
+    const statusLabel = statusLabels[loop.status] || 'Pending';
 
-  return '<div class="loop-card">' +
-    '<div class="loop-card-header">' +
-      '<span class="loop-card-title">' + escapeHtml(loop.loopName) + '</span>' +
-      '<span class="status-badge ' + statusClass + '">' + statusLabel + '</span>' +
-    '</div>' +
-    '<dl class="loop-meta">' +
-      '<dt>上次执行</dt><dd>' + lastRunText + '</dd>' +
-      '<dt>执行次数</dt><dd>' + (loop.executionCount || 0) + '</dd>' +
-      '<dt>触发方式</dt><dd>' + triggerTypes + '</dd>' +
-    '</dl>' +
-    '<div class="scale-indicators">' + scaleDots + '</div>' +
-  '</div>';
-}
+    const lastExe = loop.lastExecution;
+    let lastRunText = 'Not yet executed';
+    if (lastExe) {
+      const ago = computeTimeAgo(lastExe.startedAt);
+      lastRunText = ago + ', took ' + (lastExe.durationMs / 1000).toFixed(1) + 's';
+    }
 
-/** 自动刷新 */
-function startAutoRefresh(intervalMs) {
-  if (refreshTimer) clearInterval(refreshTimer);
-  refreshTimer = setInterval(loadLoopStatus, intervalMs);
-  const statusEl = document.getElementById('refresh-status');
-  if (statusEl) statusEl.textContent = '每 ' + (intervalMs / 1000) + 's 自动刷新';
-}
+    const triggerTypes = [...new Set((loop.scales || []).map(function (s) { return s.triggerType; }))].join('/');
 
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
+    const scaleDots = (loop.scales || []).map(function (s) {
+      const dotClass = 'dot-' + (s.status || 'pending');
+      const typeIcons = { cron: '⏱', event: '⚡', hybrid: '🔄' };
+      return '<span class="scale-dot"><span class="dot ' + dotClass + '"></span> '
+        + (typeIcons[s.triggerType] || '') + ' ' + escapeHtml(s.name)
+        + (s.nextAt ? '<br><small>next: ' + computeTimeAgo(s.nextAt) + '</small>' : '')
+        + '</span>';
+    }).join('');
+
+    return '<div class="loop-card">'
+      + '<div class="loop-card-header">'
+        + '<span class="loop-card-title">' + escapeHtml(loop.loopName) + '</span>'
+        + '<span class="loop-status-badge ' + statusClass + '">' + statusLabel + '</span>'
+      + '</div>'
+      + '<dl class="loop-meta">'
+        + '<dt>Last Run</dt><dd>' + lastRunText + '</dd>'
+        + '<dt>Executions</dt><dd>' + (loop.executionCount || 0) + '</dd>'
+        + '<dt>Trigger</dt><dd>' + triggerTypes + '</dd>'
+      + '</dl>'
+      + '<div class="scale-indicators">' + scaleDots + '</div>'
+    + '</div>';
+  }
+
+  function startAutoRefresh(intervalMs) {
+    if (refreshTimer) clearInterval(refreshTimer);
+    refreshTimer = setInterval(loadLoopStatus, intervalMs);
+    var el = document.getElementById('refresh-status');
+    if (el) el.textContent = 'Auto-refresh every ' + (intervalMs / 1000) + 's';
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // ── Init ──
+  document.addEventListener('DOMContentLoaded', function () {
+    loadLoopStatus();
+    startAutoRefresh(30000);
+  });
+})();

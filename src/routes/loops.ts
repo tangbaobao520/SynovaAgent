@@ -1,66 +1,111 @@
 /**
- * routes/loops.ts — 循环状态 API 端点 (D20)
+ * routes/loops.ts — 循环状态 API 端点 (D20 v2 — 修复版)
  *
  * GET /api/loops/status — 返回全部 6 个循环的当前状态
+ * JWT 认证保护。
  *
- * 从 MainAgent 读取已注册循环 + 执行记录。
  * 降级: MainAgent 不可用 → 返回空列表 + degraded:true
+ * 铁律 24+31: catch + log + degraded
+ * 铁律 38: 零 as any
  */
 import { Router } from 'express';
 import { createLogger } from '@synova/logger';
+import { jwtAuthMiddleware } from '../middleware/auth';
 
 const log = createLogger('routes/loops');
 const router = Router();
 
-// MainAgent 实例（由 server.ts 注入）
-let mainAgent: { listLoops: () => Array<{ config: { loopId: string; loopName: string; scales: Array<{ name: string; triggerType: string; period: string }> }; lastExecution?: { status: string; startedAt: string; completedAt?: string; durationMs: number }; executionCount: number }> } | null = null;
+// ═══ Types ═══
 
-export function setMainAgent(agent: typeof mainAgent): void {
+interface ScaleConfig {
+  name: string;
+  triggerType: string;
+  period: string;
+}
+
+interface ExecutionRecord {
+  status: string;
+  startedAt: string;
+  completedAt?: string;
+  durationMs: number;
+}
+
+interface LoopItem {
+  config: { loopId: string; loopName: string; scales: ScaleConfig[] };
+  lastExecution?: ExecutionRecord;
+  executionCount: number;
+}
+
+interface MainAgentLike {
+  listLoops(): LoopItem[];
+}
+
+// ═══ 依赖注入 ═══
+
+let mainAgent: MainAgentLike | null = null;
+
+export function setMainAgent(agent: MainAgentLike): void {
   mainAgent = agent;
 }
 
+// ═══ 辅助函数 ═══
+
+/**
+ * 推算下次触发时间（简化实现）。
+ * cron: 基于 period 字符串推算
+ * event: 等待事件触发（返回 null）
+ * hybrid: 按最短周期推算
+ */
+export function computeNextTrigger(triggerType: string, period: string): string | null {
+  if (triggerType === 'event') return null;
+  const now = Date.now();
+  const match = period.match(/(\d+)\s*(s|m|h|d)/);
+  if (!match) return new Date(now + 3600000).toISOString(); // default 1h
+
+  const val = parseInt(match[1], 10);
+  const unit = match[2];
+  const ms = unit === 's' ? val * 1000 : unit === 'm' ? val * 60000 : unit === 'h' ? val * 3600000 : val * 86400000;
+  return new Date(now + ms).toISOString();
+}
+
+// ═══ Routes ═══
+
 /**
  * GET /api/loops/status
- * 返回所有已注册循环的状态。
+ * 返回所有已注册循环的状态（含下次触发时间）。
  */
-router.get('/api/loops/status', (_req, res) => {
+router.get('/api/loops/status', jwtAuthMiddleware, (_req, res) => {
   try {
     if (!mainAgent) {
-      res.json({ ok: true, loops: [], degraded: true, message: 'MainAgent 未就绪' });
+      res.json({ ok: true, loops: [], degraded: true, message: 'MainAgent not ready' });
       return;
     }
 
-    const loops = mainAgent.listLoops().map(loop => {
-      const lastExe = loop.lastExecution;
-      const now = Date.now();
-      const lastRunAgo = lastExe ? Math.floor((now - new Date(lastExe.startedAt).getTime()) / 1000) : null;
-
-      return {
-        loopId: loop.config.loopId,
-        loopName: loop.config.loopName,
-        status: lastExe?.status || 'pending',
-        executionCount: loop.executionCount,
-        lastExecution: lastExe ? {
-          status: lastExe.status,
-          startedAt: lastExe.startedAt,
-          completedAt: lastExe.completedAt,
-          durationMs: lastExe.durationMs,
-          lastRunAgoSeconds: lastRunAgo,
-        } : null,
-        scales: loop.config.scales.map(s => ({
-          name: s.name,
-          triggerType: s.triggerType,
-          period: s.period,
-          status: 'pending' as const,
-        })),
-      };
-    });
+    const loops = mainAgent.listLoops().map(loop => ({
+      loopId: loop.config.loopId,
+      loopName: loop.config.loopName,
+      status: loop.lastExecution?.status || 'pending',
+      executionCount: loop.executionCount,
+      lastExecution: loop.lastExecution ? {
+        status: loop.lastExecution.status,
+        startedAt: loop.lastExecution.startedAt,
+        completedAt: loop.lastExecution.completedAt,
+        durationMs: loop.lastExecution.durationMs,
+      } : null,
+      scales: loop.config.scales.map(s => ({
+        name: s.name,
+        triggerType: s.triggerType,
+        period: s.period,
+        status: 'pending',
+        nextAt: computeNextTrigger(s.triggerType, s.period),
+      })),
+    }));
 
     res.json({ ok: true, loops, degraded: false });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    log.error({ err: msg }, '获取循环状态失败');
-    res.status(500).json({ ok: false, error: msg, degraded: true });
+    log.error({ err: msg }, 'Failed to get loop status');
+    res.status(500).json({ ok: false, loops: [], error: msg, degraded: true });
   }
 });
 

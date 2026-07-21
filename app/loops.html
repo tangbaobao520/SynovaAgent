@@ -1,59 +1,33 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>循环状态 — Synova</title>
-  <link rel="stylesheet" href="/assets/styles.css">
-  <script src="/js/shell.js"></script>
-  <script src="/js/loops.js"></script>
-  <style>
-    .loops-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 1200px; margin: 20px auto; padding: 0 20px; }
-    .loop-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-    .loop-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .loop-card-title { font-size: 16px; font-weight: 600; color: #1a1a2e; }
-    .status-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; }
-    .status-completed { background: #e8f5e9; color: #2e7d32; }
-    .status-running { background: #fff8e1; color: #f57f17; }
-    .status-pending { background: #f5f5f5; color: #757575; }
-    .status-failed { background: #ffebee; color: #c62828; }
-    .loop-meta { font-size: 13px; color: #666; margin-bottom: 10px; }
-    .loop-meta dt { font-weight: 500; color: #444; margin-top: 6px; }
-    .loop-meta dd { margin-left: 0; }
-    .scale-indicators { display: flex; gap: 8px; margin-top: 12px; }
-    .scale-dot { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #888; }
-    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-    .dot-completed { background: #4caf50; }
-    .dot-pending { background: #bdbdbd; }
-    .dot-running { background: #ff9800; }
-    .dot-failed { background: #f44336; }
-    .error-banner { background: #ffebee; border: 1px solid #ef9a9a; border-radius: 6px; padding: 16px; margin: 20px auto; max-width: 1160px; text-align: center; }
-    .error-banner button { margin-top: 8px; }
-    @media (max-width: 900px) { .loops-grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 600px) { .loops-grid { grid-template-columns: 1fr; } }
-  </style>
+  <title>Synova — Loop Status</title>
+  <link rel="stylesheet" href="/app/css/app.css">
+  <link rel="stylesheet" href="/app/css/loops.css">
 </head>
 <body>
-  <div id="shell-container"></div>
-  <div id="main-content">
-    <div style="max-width:1200px;margin:20px auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;">
-      <h1 style="margin:0;font-size:24px;color:#1a1a2e;">循环状态</h1>
-      <div>
-        <span id="refresh-status" style="font-size:13px;color:#888;margin-right:12px;"></span>
-        <button onclick="location.reload()" style="padding:8px 16px;background:#1a1a2e;color:#fff;border:none;border-radius:4px;cursor:pointer;">刷新</button>
+  <header id="synova-shell"></header>
+  <div id="toast-container"></div>
+
+  <div class="page-content">
+    <div class="loops-header">
+      <h1>Loop Status</h1>
+      <div class="loops-controls">
+        <span id="refresh-status" class="refresh-label">每 30s 自动刷新</span>
+        <button onclick="loadLoopStatus()" class="btn-secondary" style="padding:8px 16px;">Refresh</button>
       </div>
     </div>
     <div id="error-container" style="display:none;"></div>
     <div id="loops-container" class="loops-grid">
-      <div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#888;">加载中...</div>
+      <div class="loading-placeholder">Loading...</div>
     </div>
   </div>
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      initShell();
-      loadLoopStatus();
-      startAutoRefresh(30000);
-    });
-  </script>
+
+  <script src="/app/js/auth.js"></script>
+  <script src="/app/js/api-client.js"></script>
+  <script src="/app/js/shell.js"></script>
+  <script src="/app/js/loops.js"></script>
 </body>
 </html>

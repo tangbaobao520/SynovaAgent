@@ -1,0 +1,36 @@
+/* ═══ loops.css — D20 Loop Status Page ═══ */
+
+.loops-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+.loops-header h1 { font-size: 22px; font-weight: 700; }
+.loops-controls { display: flex; align-items: center; gap: 12px; }
+.refresh-label { font-size: 13px; color: var(--text-secondary); }
+
+.loops-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media (max-width: 900px) { .loops-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .loops-grid { grid-template-columns: 1fr; } }
+
+.loop-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+.loop-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.loop-card-title { font-size: 15px; font-weight: 600; color: var(--text); }
+
+.loop-status-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.loop-status-badge.status-completed { background: #dcfce7; color: #16a34a; }
+.loop-status-badge.status-running { background: #fef3c7; color: #d97706; }
+.loop-status-badge.status-pending { background: #f3f4f6; color: #6b7280; }
+.loop-status-badge.status-failed { background: #fef2f2; color: #dc2626; }
+
+.loop-meta { font-size: 13px; color: var(--text-secondary); margin-bottom: 10px; }
+.loop-meta dt { font-weight: 600; color: var(--text); margin-top: 6px; font-size: 12px; }
+.loop-meta dd { margin-left: 0; }
+
+.scale-indicators { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+.scale-dot { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-secondary); }
+.scale-dot small { color: var(--text-secondary); font-size: 10px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.dot-completed { background: #4caf50; }
+.dot-pending { background: #d1d5db; }
+.dot-running { background: #f59e0b; }
+.dot-failed { background: #ef4444; }
+
+.loading-placeholder { grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: var(--text-secondary); }
+.empty-state { grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: var(--text-secondary); font-size: 14px; }

@@ -69,6 +69,9 @@ import loopRoutes from "./routes/loops";
 import enterpriseRoutes from './routes/enterprise'; // D103
 import type { ServiceContainer } from './services/container';
 // Phase 0.1: 全局错误兜底 — uncaughtException + unhandledRejection
+import { setMainAgent } from"./routes/loops";
+import { MainAgent } from "./agent/main-agent";
+import { LOOP_TRIGGER_MATRIX } from "./loops/loop-trigger-config";
 import { registerGlobalErrorHandlers, unregisterGlobalErrorHandlers } from './services/runtime-global-handlers';
 
 import { Bootstrap } from './deploy/bootstrap';
@@ -372,6 +375,17 @@ export async function createServer(): Promise<Server> {
   });
 
   return new Promise((resolve, reject) => {
+    // D20: 注入 MainAgent 到 loops 路由
+    try {
+      const mainAgent = new MainAgent();
+      for (const loopConfig of LOOP_TRIGGER_MATRIX) {
+        mainAgent.registerLoop(loopConfig);
+      }
+      setMainAgent(mainAgent);
+    } catch (err) {
+      logger.warn({ err }, "MainAgent 初始化失败 — loops 路由降级");
+    }
+
     const server = app.listen(config.port, () => {
       logger.info({ port: config.port }, `Synova-Agent → http://localhost:${config.port}`);
 
