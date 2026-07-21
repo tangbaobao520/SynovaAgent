@@ -245,6 +245,24 @@ export class ConflictArbitrator {
   // ─── 内部方法 ───
 
   private async arbitrateConflict(conflict: Conflict, tieBreaker?: TieBreakerResult): Promise<ArbitrationResult> {
+    // D8f: 检查收敛规则 — 如果存在则跳过仲裁
+    try {
+      const { ConvergenceEngine } = await import('./convergence-engine');
+      const engine = new ConvergenceEngine(this.auditStore);
+      const convergence = engine.getConvergence(conflict.edgeId, conflict.experts);
+      if (convergence && convergence.confidence >= 0.7) {
+        log.info({ conflictId: conflict.id, winner: convergence.winner, ruleId: convergence.id }, '收敛规则命中 — 跳过仲裁');
+        return {
+          conflictId: conflict.id,
+          resolution: 'auto',
+          winner: convergence.winner,
+          reason: `收敛规则 ${convergence.id}: ${convergence.winner} 在 ${convergence.matchCount} 次先例中一致胜出，置信度 ${(convergence.confidence * 100).toFixed(0)}%`,
+          precedentRecorded: true,
+          timestamp: new Date().toISOString(),
+        };
+      }
+    } catch (_) { /* 收敛引擎降级 — 不阻断仲裁 */ }
+
     const auto = await this.autoResolve(conflict, tieBreaker);
 
     if (auto.gap > 0.3) {

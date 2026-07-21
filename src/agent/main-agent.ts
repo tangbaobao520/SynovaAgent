@@ -174,6 +174,15 @@ export class MainAgent {
       // 写入审计日志
       this.writeAuditLog(loopId, scale, record);
 
+      // D8f: 收敛规则分析 (loop-1/loop-3 诊断循环完成后)
+      if ((loopId === 'loop-1' || loopId === 'loop-3') && result.success) {
+        try {
+          const { ConvergenceEngine } = await import('./convergence-engine');
+          const engine = new ConvergenceEngine(this.auditStore);
+          engine.analyzePrecedents('default').catch(() => {});
+        } catch (_) { /* 收敛分析降级 — 不阻断主流程 */ }
+      }
+
       if (!result.success) {
         log.warn({ loopId, scale, error: result.error }, '循环执行失败 — 降级');
       } else {
