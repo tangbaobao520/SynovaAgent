@@ -75,8 +75,11 @@ export class MainAgent {
   /**
    * @param auditStore — 审计存储实例（可选，null 时降级）
    */
-  constructor(auditStore?: AuditStoreLike | null) {
+  private taskDecomposer: import('./task-decomposer').TaskDecomposer | null;
+
+  constructor(auditStore?: AuditStoreLike | null, taskDecomposer?: import('./task-decomposer').TaskDecomposer | null) {
     this.auditStore = auditStore ?? null;
+    this.taskDecomposer = taskDecomposer ?? null;
   }
 
   /**
@@ -142,6 +145,11 @@ export class MainAgent {
     const startTime = Date.now();
 
     try {
+      // D8b: 对于诊断循环 (loop-1)，使用任务分解
+      if (loopId === 'loop-1' && this.taskDecomposer) {
+        return await this.executeWithDecomposition(loopId, scale, startTime, startedAt, loop);
+      }
+
       // 选择对应处理器
       const handler = this.selectHandler(loopId);
       const result = await handler(scale);
@@ -233,6 +241,48 @@ export class MainAgent {
     }
     // 默认: 诊断处理器
     return defaultDiagnosisHandler;
+  }
+
+  /**
+   * 使用 TaskDecomposer 执行诊断循环（D8b）。
+   * 分解 → 并行执行子任务 → 聚合结果。
+   */
+  private async executeWithDecomposition(
+    loopId: string, scale: ScaleName, startTime: number, startedAt: string, loop: RegisteredLoop,
+  ): Promise<LoopExecutionRecord> {
+    try {
+      const scope = {
+        enterpriseId: 'default',
+        sentinelFindings: [],
+        triggeredBy: `loop:${loopId}:${scale}`,
+      };
+      const { subTasks } = this.taskDecomposer!.decompose(scope);
+      if (subTasks.length === 0) {
+        return {
+          loopId, scale, status: 'completed' as const, durationMs: Date.now() - startTime,
+          output: '诊断范围无异常，跳过分解', startedAt, completedAt: new Date().toISOString(), degraded: false,
+        };
+      }
+      const results = await Promise.allSettled(
+        subTasks.map((st) => this.taskDecomposer!.executeSubTask(st)),
+      );
+      const subResults = results.map((r, i) => {
+        if (r.status === 'fulfilled') return r.value;
+        return { subTaskId: subTasks[i].id, status: 'failed' as const, error: r.reason?.message || '未知错误', durationMs: 0, confidence: 0 };
+      });
+      const aggregated = this.taskDecomposer!.aggregate(subResults);
+      return {
+        loopId, scale, status: aggregated.status === 'completed' ? 'completed' as const : 'failed' as const,
+        durationMs: Date.now() - startTime, output: `子任务: ${aggregated.results.length}`, error: aggregated.degraded ? '部分子任务失败' : undefined,
+        startedAt, completedAt: new Date().toISOString(), degraded: aggregated.degraded,
+      };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return {
+        loopId, scale, status: 'failed' as const, durationMs: Date.now() - startTime,
+        error: msg, startedAt, completedAt: new Date().toISOString(), degraded: true,
+      };
+    }
   }
 
   /**
