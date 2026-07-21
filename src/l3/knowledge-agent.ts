@@ -10,6 +10,7 @@
  *   query_graph — SOG 实时数据查询
  *   search_external — 外部知识源 (M3 接入)
  */
+import { ImaClient } from"../connectors/ima";
 import { createLogger } from '@synova/logger';
 import { KnowledgeStore } from '../l4/knowledge-store';
 import type { KnowledgeChunk } from '../l4/knowledge-store';
@@ -33,7 +34,8 @@ export interface KnowledgeAgent {
   /** 注册知识检索工具到 ToolRegistry */
   registerTo(registry: { register: (tool: Record<string, unknown>) => void }): void;
   /** 执行齿轮6: 从文档/消息提取知识片段 */
-  runGear6(): Promise<{ extracted: number; errors: string[] }>;
+  runGear6(): Promise<{ extracted: number; errors: string[] 
+  imaDataSource(enterpriseId: string, filter?: { documentTypes?: string[]; limit?: number }): Promise<import("../connectors/ima").ExtractedPkbEntry[]>;}>;
 }
 
 export function createKnowledgeAgent(config: KnowledgeAgentConfig = {}): KnowledgeAgent {
@@ -448,7 +450,28 @@ export function createKnowledgeAgent(config: KnowledgeAgentConfig = {}): Knowled
       }
     },
 
-    /** 齿轮6: 从文档/消息中提取知识片段到知识库 */
+    /** ima 知识提取 */
+    async imaDataSource(
+      enterpriseId: string,
+      filter?: { documentTypes?: string[]; limit?: number },
+    ): Promise<import("../connectors/ima").ExtractedPkbEntry[]> {
+      const client = config.imaClient;
+      if (!client) { return []; }
+      try {
+        const docs = await client.scanDocuments({
+          documentTypes: (filter?.documentTypes || ["strategy", "operations", "meetings"]) as any,
+          limit: filter?.limit || 10,
+        });
+        const entries: import("../connectors/ima").ExtractedPkbEntry[] = [];
+        for (const doc of docs.slice(0, 5)) {
+          const entry = await client.extractContent(doc.id);
+          if (entry) entries.push(entry);
+        }
+        return entries;
+      } catch { return []; }
+    },
+
+    /** 齿轮6: 从文档/消息/ima中提取知识片段到知识库 */
     async runGear6() {
       const errors: string[] = [];
       let extracted = 0;
@@ -489,7 +512,9 @@ export function createKnowledgeAgent(config: KnowledgeAgentConfig = {}): Knowled
               store.insert({
                 text: parts[i],
                 sourceType: 'document',
-                sourceId: `chunk:${c.id}:#${i}`,
+                sourceId: `chunk:${c.id
+  imaClient?: ImaClient;
+  imaEnterpriseId?: string;}:#${i}`,
                 authorityLevel: 'reference',
                 accessLevel: 'team',
                 accessSensitivity: 'normal',
