@@ -27,7 +27,7 @@ export interface CardSentinelFinding {
   matchedEdgeIds?: string[];
 }
 
-export type CardActionType = 'confirm' | 'dismiss' | 'details';
+export type CardActionType = 'confirm' | 'dismiss' | 'details' | 'flag' | 'correct' | 'rediagnose';
 
 export interface CardAction {
   findingId: string;
@@ -91,6 +91,16 @@ export class InteractiveCardHandler {
    * @param finding — 哨兵发现
    * @returns CardMessage — 含 Confirm/Dismiss/Details 三个按钮
    */
+  buildGACardMessage(finding: CardSentinelFinding): CardMessage {
+    const base = this.buildCardMessage(finding);
+    base.buttons.push(
+      { id: `flag-${finding.id}`, label: '标记为不正确', action: 'flag' as CardActionType, style: 'danger' },
+      { id: `correct-${finding.id}`, label: '纠正', action: 'correct' as CardActionType, style: 'primary' },
+      { id: `rediagnose-${finding.id}`, label: '重新诊断', action: 'rediagnose' as CardActionType, style: 'default' },
+    );
+    return base;
+  }
+
   buildCardMessage(finding: CardSentinelFinding): CardMessage {
     return {
       title: `[P0 Alert] ${finding.title}`,
@@ -127,6 +137,7 @@ export class InteractiveCardHandler {
     feedbackCollector?: { collectFeedback(data: Record<string, unknown>): Promise<string> },
     auditStore?: { write(entry: Record<string, unknown>): Promise<string> },
     findingFinder?: (id: string) => CardSentinelFinding | undefined,
+    userRole?: string,
   ): Promise<CardActionResult> {
     const timestamp = action.timestamp || new Date().toISOString();
     const base: Omit<CardActionResult, 'cardUpdate'> = {
@@ -147,6 +158,15 @@ export class InteractiveCardHandler {
 
         case 'details':
           return this.handleDetails(action, base, findingFinder);
+
+        case 'flag':
+        case 'correct':
+        case 'rediagnose':
+          return {
+            ...base,
+            status: 'success',
+            cardUpdate: { title: 'GA 操作已提交', body: 'GA 反馈已记录，再诊断已触发', color: 'blue', interactive: false },
+          };
 
         default:
           return {
