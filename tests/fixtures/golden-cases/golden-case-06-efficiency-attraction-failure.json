@@ -1,0 +1,23 @@
+{
+  "$schema": "https://synova.dev/schemas/golden-case-v1.json",
+  "id": "golden-case-06",
+  "title": "效率吸引失效",
+  "description": "运营效率低下导致优质人才流失和资本撤退。预期根因为 EFFICIENCY_ATTRACTION 边。",
+  "frozenAt": "2026-07-20T00:00:00Z",
+  "DO_NOT_MODIFY": "Frozen snapshot — update expectations only on 42-edge major version change",
+  "input": {
+    "sentinelFindings": [
+      { "id": "F001", "sentinel": "talent-density", "severity": "critical", "title": "核心人才加速流失", "matchedEdgeIds": ["E-11"], "detectedAt": "2026-07-19T00:00:00Z" },
+      { "id": "F002", "sentinel": "unit-economics", "severity": "high", "title": "人均产出持续下降", "matchedEdgeIds": ["E-11", "E-23"], "detectedAt": "2026-07-18T00:00:00Z" },
+      { "id": "F003", "sentinel": "financing-constraint", "severity": "high", "title": "投资者信心下降", "matchedEdgeIds": ["E-11", "E-05"], "detectedAt": "2026-07-18T00:00:00Z" }
+    ],
+    "graphEdges": ["E-11", "E-23", "E-05", "E-07", "E-33", "E-31"]
+  },
+  "expected": {
+    "rootCauseEdgeIds": ["E-11"],
+    "rootCauseNodeTypes": ["EFFICIENCY_ATTRACTION"],
+    "severity": "critical",
+    "matchedEdgeIds": ["E-11", "E-23", "E-05"],
+    "explanation": "EFFICIENCY_ATTRACTION 边弱化→运营效率低→人才流失→资本撤退"
+  }
+}

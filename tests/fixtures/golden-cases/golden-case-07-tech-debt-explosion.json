@@ -1,0 +1,23 @@
+{
+  "$schema": "https://synova.dev/schemas/golden-case-v1.json",
+  "id": "golden-case-07",
+  "title": "技术债爆炸",
+  "description": "长期技术债积累导致交付速度下降和系统不稳定。预期根因为 TECH_INFRASTRUCTURE 边。",
+  "frozenAt": "2026-07-20T00:00:00Z",
+  "DO_NOT_MODIFY": "Frozen snapshot — update expectations only on 42-edge major version change",
+  "input": {
+    "sentinelFindings": [
+      { "id": "F001", "sentinel": "software-health", "severity": "low", "title": "系统可用性降至99%以下", "matchedEdgeIds": ["E-24"], "detectedAt": "2026-07-19T00:00:00Z" },
+      { "id": "F002", "sentinel": "process-ai-readiness", "severity": "medium", "title": "技术栈陈旧度超过60%", "matchedEdgeIds": ["E-24", "E-09"], "detectedAt": "2026-07-18T00:00:00Z" },
+      { "id": "F003", "sentinel": "growth-quality", "severity": "medium", "title": "功能交付周期延长40%", "matchedEdgeIds": ["E-24", "E-23"], "detectedAt": "2026-07-17T00:00:00Z" }
+    ],
+    "graphEdges": ["E-24", "E-09", "E-23", "E-07", "E-33", "E-31"]
+  },
+  "expected": {
+    "rootCauseEdgeIds": ["E-24"],
+    "rootCauseNodeTypes": ["TECH_INFRASTRUCTURE"],
+    "severity": "medium",
+    "matchedEdgeIds": ["E-24", "E-09", "E-23"],
+    "explanation": "TECH_INFRASTRUCTURE 边弱化→技术债累积→交付速度下降→系统不稳定"
+  }
+}

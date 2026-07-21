@@ -1,0 +1,25 @@
+{
+  "$schema": "https://synova.dev/schemas/golden-case-v1.json",
+  "id": "golden-case-09",
+  "title": "市场扩张失败",
+  "description": "新品进入市场无法获取预期份额。预期根因为 MARKET_SHARE_CAPTURE 边。",
+  "frozenAt": "2026-07-20T00:00:00Z",
+  "DO_NOT_MODIFY": "Frozen snapshot — update expectations only on 42-edge major version change",
+  "input": {
+    "sentinelFindings": [
+      { "id": "F001", "sentinel": "niche-squeeze", "severity": "medium", "title": "市场份额低于预期目标50%", "matchedEdgeIds": ["E-30"], "detectedAt": "2026-07-19T00:00:00Z" },
+      { "id": "F002", "sentinel": "competitive-position", "severity": "medium", "title": "竞争对手加速抢占渠道", "matchedEdgeIds": ["E-30", "E-33"], "detectedAt": "2026-07-18T00:00:00Z" },
+      { "id": "F003", "sentinel": "channel-capacity", "severity": "medium", "title": "渠道覆盖不足计划60%", "matchedEdgeIds": ["E-30", "E-04"], "detectedAt": "2026-07-17T00:00:00Z" },
+      { "id": "F004", "sentinel": "value-capture", "severity": "medium", "title": "定价策略未能支撑市场份额", "matchedEdgeIds": ["E-30", "E-01"], "detectedAt": "2026-07-16T00:00:00Z" },
+      { "id": "F005", "sentinel": "moat-dependency", "severity": "low", "title": "品牌认知度低于预期", "matchedEdgeIds": ["E-30"], "detectedAt": "2026-07-15T00:00:00Z" }
+    ],
+    "graphEdges": ["E-30", "E-33", "E-04", "E-01", "E-05", "E-11"]
+  },
+  "expected": {
+    "rootCauseEdgeIds": ["E-30"],
+    "rootCauseNodeTypes": ["MARKET_SHARE_CAPTURE"],
+    "severity": "medium",
+    "matchedEdgeIds": ["E-30", "E-33", "E-04", "E-01"],
+    "explanation": "MARKET_SHARE_CAPTURE 边弱化→新市场进入受阻→份额不及预期"
+  }
+}
