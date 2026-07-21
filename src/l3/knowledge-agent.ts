@@ -10,7 +10,7 @@
  *   query_graph — SOG 实时数据查询
  *   search_external — 外部知识源 (M3 接入)
  */
-import { ImaClient } from"../connectors/ima";
+import { ImaClient } from "../connectors/ima";
 import { createLogger } from '@synova/logger';
 import { KnowledgeStore } from '../l4/knowledge-store';
 import type { KnowledgeChunk } from '../l4/knowledge-store';
@@ -459,7 +459,7 @@ export function createKnowledgeAgent(config: KnowledgeAgentConfig = {}): Knowled
       if (!client) { return []; }
       try {
         const docs = await client.scanDocuments({
-          documentTypes: (filter?.documentTypes || ["strategy", "operations", "meetings"]) as any,
+          documentTypes: (filter?.documentTypes || ["strategy", "operations", "meetings"]) as string[],
           limit: filter?.limit || 10,
         });
         const entries: import("../connectors/ima").ExtractedPkbEntry[] = [];

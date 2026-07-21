@@ -137,7 +137,7 @@ export class ImaClient {
       );
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json() as { documents?: ImaDocument[] };
-      return (data.documents || []).filter(d => types.includes(d.type as any));
+      return (data.documents || []).filter(d => types.includes(d.type as string));
     } catch (err: unknown) {
       log.warn({ err: err instanceof Error ? err.message : String(err) }, 'ima 文档扫描失败 — 降级');
       return [];
