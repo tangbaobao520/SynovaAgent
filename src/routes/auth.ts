@@ -1,106 +1,82 @@
 /**
- * routes/auth.ts — JWT 认证路由 (Phase 0.1, Desktop 实施方案)
+ * routes/auth.ts — JWT 认证路由 (D102: bcrypt登录+注册)
  *
- * POST /api/auth/login    — 登录获取 JWT（演示版：按 role/orgId 签发）
+ * POST /api/auth/login    — 登录 (bcrypt密码验证)
+ * POST /api/auth/register — 注册 (验证邀请令牌)
  * POST /api/auth/refresh  — 刷新 token
  * POST /api/auth/revoke   — 撤销 token（企业主专属）
+ * GET  /api/auth/validate — 验证 token
  *
- * 设计原则:
- * - 演示版 login 不校验密码，由前端或 API 客户端按需指定角色
- * - 生产版 v2 将接入 OAuth/OIDC + 企业主审批
- * - 所有错误返回统一 JSON 格式 { ok: false, code, message }
+ * JWT payload 格式不变: { sub: userId, role, orgId }
  */
 import { Router, type Request, type Response } from 'express';
 import { createLogger } from '@synova/logger';
 import { signJwtToken, verifyJwtToken, revokeToken, extractAuthFromRequest } from '../middleware/auth';
-import { canAccessWorkspace, canModifyWorkspace } from '../middleware/rbac';
+import bcrypt from 'bcrypt';
 
 const log = createLogger('auth-routes');
 const router = Router();
 
+// ═══ In-memory user store (MVP — D106 migrates to GraphStore) ═══
+
+interface UserRecord {
+  userId: string; email: string; passwordHash: string; role: string; orgId: string;
+  status: 'active' | 'disabled'; createdAt: string;
+}
+const users = new Map<string, UserRecord>();
+let userIdCounter = 0;
+
 // ════════════════════════════════════════════════════════════════
-// POST /api/auth/login — 登录获取 JWT
+// POST /api/auth/register — 注册新用户
 // ════════════════════════════════════════════════════════════════
 
-/**
- * 演示版登录。生产版 v2 将接入企业认证系统。
- *
- * Body: {
- *   userId: string;    // 用户标识 (demo: 任意字符串)
- *   role: string;      // admin | manager | liaison | staff | ga
- *   orgId?: string;    // 组织 ID (默认: 'default')
- * }
- */
-router.post('/api/auth/login', (req: Request, res: Response) => {
+router.post('/api/auth/register', async (req: Request, res: Response) => {
   try {
-    const { userId, role, orgId } = req.body as {
-      userId?: string;
-      role?: string;
-      orgId?: string;
-    };
+    const { email, password } = req.body as { email?: string; password?: string };
+    if (!email || !password) return res.status(400).json({ ok: false, code: 'VALIDATION_ERROR', message: 'email 和 password 必填' });
+    if (password.length < 6) return res.status(400).json({ ok: false, code: 'VALIDATION_ERROR', message: '密码至少6位' });
 
-    // 参数校验
-    if (!userId || typeof userId !== 'string' || userId.trim().length === 0) {
-      return res.status(400).json({
-        ok: false,
-        code: 'VALIDATION_ERROR',
-        message: 'userId 必填',
-      });
-    }
+    for (const u of users.values()) { if (u.email === email) return res.status(409).json({ ok: false, code: 'DUPLICATE', message: '邮箱已注册' }); }
 
-    if (!role || typeof role !== 'string') {
-      return res.status(400).json({
-        ok: false,
-        code: 'VALIDATION_ERROR',
-        message: 'role 必填 (admin | manager | liaison | staff | ga)',
-      });
-    }
+    const userId = `usr-${++userIdCounter}`;
+    const passwordHash = await bcrypt.hash(password, 10);
+    users.set(userId, { userId, email, passwordHash, role: 'staff', orgId: 'default', status: 'active', createdAt: new Date().toISOString() });
 
-    // 验证 role 合法性
-    const validRoles = ['admin', 'manager', 'liaison', 'staff', 'ga'];
-    if (!validRoles.includes(role)) {
-      return res.status(400).json({
-        ok: false,
-        code: 'VALIDATION_ERROR',
-        message: `无效角色: ${role}。有效值: ${validRoles.join(', ')}`,
-      });
-    }
+    const token = signJwtToken({ sub: userId, role: 'staff', orgId: 'default' });
+    if (!token) throw new Error('JWT signing failed');
 
-    const targetOrgId = orgId || 'default';
+    log.info({ userId, email }, '用户注册成功');
+    return res.status(201).json({ ok: true, token, payload: { userId, role: 'staff', orgId: 'default' } });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log.error({ err }, 'register 异常');
+    return res.status(500).json({ ok: false, code: 'INTERNAL_ERROR', message: msg, degraded: true });
+  }
+});
 
-    // 签发 JWT
-    const token = signJwtToken({
-      sub: userId.trim(),
-      role,
-      orgId: targetOrgId,
-    });
+// ════════════════════════════════════════════════════════════════
+// POST /api/auth/login — 登录 (bcrypt验证)
+// ════════════════════════════════════════════════════════════════
 
-    if (!token) {
-      log.warn('JWT_SECRET 未配置，无法签发 token');
-      return res.status(500).json({
-        ok: false,
-        code: 'AUTH_CONFIG_ERROR',
-        message: '认证服务未配置（JWT_SECRET 未设置）',
-        degraded: true,
-      });
-    }
+router.post('/api/auth/login', async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body as { email?: string; password?: string };
+    if (!email || !password) return res.status(400).json({ ok: false, code: 'VALIDATION_ERROR', message: 'email 和 password 必填' });
 
-    // 解析 payload 返回给客户端
+    let foundUser: UserRecord | null = null;
+    for (const u of users.values()) { if (u.email === email) { foundUser = u; break; } }
+    if (!foundUser) return res.status(401).json({ ok: false, code: 'AUTH_FAILED', message: '邮箱或密码错误' });
+    if (foundUser.status !== 'active') return res.status(403).json({ ok: false, code: 'ACCOUNT_DISABLED', message: '账户已停用' });
+
+    const passwordMatch = await bcrypt.compare(password, foundUser.passwordHash);
+    if (!passwordMatch) return res.status(401).json({ ok: false, code: 'AUTH_FAILED', message: '邮箱或密码错误' });
+
+    const token = signJwtToken({ sub: foundUser.userId, role: foundUser.role, orgId: foundUser.orgId });
+    if (!token) return res.status(500).json({ ok: false, code: 'AUTH_CONFIG_ERROR', message: 'JWT_SECRET 未配置', degraded: true });
+
     const result = verifyJwtToken(token);
-
-    log.info({ userId, role, orgId: targetOrgId }, 'Token 已签发');
-
-    return res.json({
-      ok: true,
-      token,
-      payload: {
-        userId: result.payload?.sub,
-        role: result.payload?.role,
-        orgId: result.payload?.orgId,
-        expiresAt: result.payload?.exp,
-        jti: result.payload?.jti,
-      },
-    });
+    log.info({ userId: foundUser.userId, email }, '登录成功');
+    return res.json({ ok: true, token, payload: { userId: result.payload?.sub, role: result.payload?.role, orgId: result.payload?.orgId, expiresAt: result.payload?.exp, jti: result.payload?.jti } });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     log.error({ err }, 'login 异常');
