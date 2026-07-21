@@ -4,7 +4,7 @@
  * 覆盖 >=8: correct/flag/rediagnose/unknown/再诊断失败/collector未配置/CA按钮/CA操作
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { GAFeedbackHandler } from '../../src/l3/ga-collaboration';
+import { GAFeedbackHandler, GAFeedbackActionType } from '../../src/l3/ga-collaboration';
 import { InteractiveCardHandler } from '../../src/agent/interactive-card';
 
 describe('GAFeedbackHandler', () => {
@@ -42,7 +42,7 @@ describe('GAFeedbackHandler', () => {
 
     it('未知操作 → failed', async () => {
       const result = await handler.processFeedback({
-        findingId: 'f1', action: 'unknown' as any,
+        findingId: 'f1', action: 'unknown' as unknown as GAFeedbackActionType,
         gaUserId: 'ga-1', enterpriseId: 'e1',
       });
       expect(result.status).toBe('failed');
