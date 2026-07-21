@@ -96,4 +96,43 @@ router.get('/tickets', (req: Request, res: Response) => {
   }
 });
 
+// ═══ POST /api/sentinel/alerts/:id/action — 交互式卡片回复 (D18) ═══
+
+router.post('/alerts/:id/action', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params as { id: string };
+    const { action, userId, enterpriseId } = req.body as {
+      action: 'confirm' | 'dismiss' | 'details';
+      userId: string;
+      enterpriseId?: string;
+    };
+
+    if (!action || !userId) {
+      res.status(400).json({ ok: false, error: 'Missing required fields: action, userId' });
+      return;
+    }
+
+    const { InteractiveCardHandler } = await import('../agent/interactive-card');
+    const handler = new InteractiveCardHandler();
+
+    const result = await handler.handleAction(
+      { findingId: id, action, userId, enterpriseId: enterpriseId || 'synova' },
+    );
+
+    res.json({ ok: result.status === 'success', cardUpdate: result.cardUpdate });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log.warn({ err: msg, alertId: req.params.id }, '卡片操作处理失败');
+    res.status(500).json({
+      ok: false,
+      cardUpdate: {
+        title: '操作失败',
+        body: '处理卡片操作时出错，请重试。',
+        color: 'grey',
+        interactive: false,
+      },
+    });
+  }
+});
+
 export default router;

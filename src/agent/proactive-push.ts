@@ -17,8 +17,12 @@
  *   @degraded — 推送失败 → log.warn + retry → 最终写入审计
  */
 import { createLogger } from '@synova/logger';
+import { InteractiveCardHandler } from './interactive-card';
 
 const log = createLogger('agent/proactive-push');
+
+// D18: 交互式卡片处理器
+const cardHandler = new InteractiveCardHandler();
 
 // ═══ Types ═══
 
@@ -128,7 +132,17 @@ export class ProactivePush {
       }];
     }
 
-    const message = formatPushMessage(finding, this.dashboardUrl);
+    // D18: 使用交互式卡片替代纯文本
+    const cardMessage = cardHandler.buildCardMessage(finding);
+    const message: PushMessage = {
+      title: cardMessage.title,
+      body: cardMessage.body + '\n\n' + cardMessage.buttons.map(b =>
+        `[${b.label}](${cardMessage.callbackUrl}?action=${b.action})`
+      ).join(' | '),
+      severity: 'critical',
+      timestamp: finding.detectedAt,
+      link: cardMessage.callbackUrl,
+    };
     const results: PushResult[] = [];
 
     // 并行推送到所有通道
