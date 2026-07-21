@@ -65,6 +65,7 @@ import notificationsRoutes from './routes/notifications';
 import backupRoutes from './routes/backup';
 import selfOpsRoutes from './routes/self-ops';
 import overflowRoutes from './routes/overflow';
+import loopRoutes from "./routes/loops";
 import enterpriseRoutes from './routes/enterprise'; // D103
 import type { ServiceContainer } from './services/container';
 // Phase 0.1: 全局错误兜底 — uncaughtException + unhandledRejection
@@ -340,7 +341,8 @@ export async function createServer(): Promise<Server> {
   app.use(notificationsRoutes);
   app.use(backupRoutes);
   app.use(selfOpsRoutes);
-  app.use(enterpriseRoutes); // D103 — 企业路由
+  app.use(enterpriseRoutes);
+  app.use(loopRoutes); // D103 — 企业路由
 
   // ═══ A2: Connector Pipeline — 手动触发 ═══
   app.post('/api/connector/sync', async (req, res) => {

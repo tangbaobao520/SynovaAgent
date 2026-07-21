@@ -22,7 +22,9 @@
       </div>
       <div class="nav-center">
         <a href="/app/dashboard.html" class="nav-link">Dashboard</a>
-        <a href="/app/reports.html" class="nav-link">Reports</a>
+        <a href="/app/loops.html" class="nav-link">Loops</a>
+        <a href="/app/report.html" class="nav-link">Reports</a>
+        ${user && user.role === 'admin' ? '<a href="/app/admin.html" class="nav-link">Admin</a>' : ''}
       </div>
       <div class="nav-right">
         <span class="nav-user">${user ? user.userId + ' (' + user.role + ')' : ''}</span>
