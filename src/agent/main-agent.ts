@@ -271,9 +271,31 @@ export class MainAgent {
         return { subTaskId: subTasks[i].id, status: 'failed' as const, error: r.reason?.message || '未知错误', durationMs: 0, confidence: 0 };
       });
       const aggregated = this.taskDecomposer!.aggregate(subResults);
+
+      // D8d: 交叉验证 — 检测专家冲突
+      let cvInfo = '';
+      try {
+        const { CrossValidationTrigger } = await import('./cross-validator');
+        const validator = new CrossValidationTrigger();
+        const expertResponses: import('./expert-router').ExpertResponse[] = [];
+        for (const r of aggregated.results) {
+          if (r.status === 'completed' && (r as any).confidence !== undefined) {
+            expertResponses.push({
+              subTaskId: r.subTaskId, expertType: 'unknown', analysis: r.output || '', confidence: r.confidence || 0,
+              evidence: [], edgeIds: [], degraded: r.status === 'failed', durationMs: r.durationMs,
+            });
+          }
+        }
+        const cvResult = validator.detectConflicts(expertResponses);
+        if (cvResult.length > 0) {
+          cvInfo = `, 冲突: ${cvResult.length}`;
+        }
+      } catch (_) { /* 交叉验证降级 — 不阻断主流程 */ }
+
       return {
         loopId, scale, status: aggregated.status === 'completed' ? 'completed' as const : 'failed' as const,
-        durationMs: Date.now() - startTime, output: `子任务: ${aggregated.results.length}`, error: aggregated.degraded ? '部分子任务失败' : undefined,
+        durationMs: Date.now() - startTime, output: `子任务: ${aggregated.results.length}${cvInfo}`,
+        error: aggregated.degraded ? '部分子任务失败' : undefined,
         startedAt, completedAt: new Date().toISOString(), degraded: aggregated.degraded,
       };
     } catch (err: unknown) {
