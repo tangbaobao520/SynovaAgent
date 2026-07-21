@@ -115,4 +115,5 @@ const api = {
   get: (path) => apiFetch(path, { method: 'GET' }),
   post: (path, body) => apiFetch(path, { method: 'POST', body: JSON.stringify(body) }),
   put: (path, body) => apiFetch(path, { method: 'PUT', body: JSON.stringify(body) }),
+  del: (path) => apiFetch(path, { method: 'DELETE' }),
 };
