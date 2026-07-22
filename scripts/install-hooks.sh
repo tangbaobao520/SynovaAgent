@@ -36,8 +36,17 @@ install_hook "post-commit"
 # D201-FIX: 安装 synova-commit git alias（commit gatekeeper）
 SYNOVA_COMMIT="$ROOT/scripts/control-tower/synova-commit"
 if [ -f "$SYNOVA_COMMIT" ]; then
-  git config alias.synova-commit "!bash \"$SYNOVA_COMMIT\""
-  echo "  ✅ git alias synova-commit — $SYNOVA_COMMIT"
+  # Windows 需要 bash.exe 绝对路径；Linux/macOS 直接用 bash
+  if [ -f "/c/Program Files/Git/bin/bash.exe" ]; then
+    BASH_PATH="C:\Program Files\Git\bin\bash.exe"
+  elif command -v bash >/dev/null 2>&1; then
+    BASH_PATH="bash"
+  else
+    echo "  ⚠️  bash 未找到 — 跳过 synova-commit 安装"
+    exit 0
+  fi
+  git config alias.synova-commit "!\"$BASH_PATH\" \"$SYNOVA_COMMIT\""
+  echo "  ✅ git alias synova-commit — bash=$BASH_PATH"
 else
   echo "  ⚠️  synova-commit 不存在: $SYNOVA_COMMIT"
 fi
