@@ -55,7 +55,8 @@ export function getEnterpriseList(gaUserId?: string): GAClient[] {
 export function getEnterpriseDiagnosisReports(orgId: string): { orgId: string; reportCount: number; lastReportAt?: string } {
   const client = enterpriseStore.get(orgId);
   if (!client) return { orgId, reportCount: 0 };
-  return { orgId, reportCount: Math.max(0, Math.floor(Math.random() * 10)), lastReportAt: client.createdAt };
+  // @todo(D109-Phase2): GraphStore 集成后替换为真实诊断报告计数
+  return { orgId, reportCount: 0, lastReportAt: client.createdAt };
 }
 
 // ════════════════════════════════════════════════════════════════
