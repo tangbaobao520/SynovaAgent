@@ -327,6 +327,32 @@ export class MainAgent {
         log.warn({ err, loopId, scale }, '交叉验证异常 — 降级，不阻断主流程');
       }
 
+      // D8f v2: ConvergenceEngine 四步收敛 → 综合叙述
+      try {
+        const { ConvergenceEngine } = await import('./convergence-engine');
+        const engine = new ConvergenceEngine();
+        const expertResponses: import('./expert-router').ExpertResponse[] = [];
+        for (const r of aggregated.results) {
+          if (r.status === 'completed') {
+            const sr = r as { expertType?: string; confidence: number; output?: string };
+            expertResponses.push({
+              subTaskId: r.subTaskId, expertType: sr.expertType || UNKNOWN_EXPERT, analysis: sr.output || '', confidence: sr.confidence || 0,
+              evidence: [], edgeIds: [], degraded: false, durationMs: r.durationMs,
+            });
+          }
+        }
+        const synthesis = engine.synthesize(
+          expertResponses,
+          { conflicts: [], tieBreakers: [], consensus: aggregated.status === 'completed' ? 'full' : 'partial' },
+          [],
+        );
+        if (synthesis.narrative) {
+          cvInfo += `, 综合: ${synthesis.convergentFindings.filter((f) => f.consensus).length}项共识`;
+        }
+      } catch (err: unknown) {
+        log.warn({ err, loopId, scale }, '收敛合成异常 — 降级，不阻断主流程');
+      }
+
       return {
         loopId, scale, status: aggregated.status === 'completed' ? 'completed' as const : 'failed' as const,
         durationMs: Date.now() - startTime, output: `子任务: ${aggregated.results.length}${cvInfo}`,
