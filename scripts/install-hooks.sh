@@ -33,6 +33,15 @@ SCRIPT
 install_hook "post-commit"
 # 后续新增 hook 在这里加: install_hook "pre-commit"
 
+# D201-FIX: 安装 synova-commit git alias（commit gatekeeper）
+SYNOVA_COMMIT="$ROOT/scripts/control-tower/synova-commit"
+if [ -f "$SYNOVA_COMMIT" ]; then
+  git config alias.synova-commit "!bash \"$SYNOVA_COMMIT\""
+  echo "  ✅ git alias synova-commit — $SYNOVA_COMMIT"
+else
+  echo "  ⚠️  synova-commit 不存在: $SYNOVA_COMMIT"
+fi
+
 echo ""
 echo "✅ 安装完成。当前 hooks:"
 ls -la "$ROOT/.git/hooks/" | grep -v ".sample"
