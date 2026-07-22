@@ -1,5 +1,5 @@
 #!/bin/bash
-# Loop Engineering V4.4.5 — check-lessons-learned.sh
+# Loop Engineering V4.5.0 — check-lessons-learned.sh
 # 错误沉淀: Q0c 审计发现 → 写入 memory/ 条目 + class 去重
 # 用法: bash scripts/check-lessons-learned.sh "name" "class" "constraint" "expected" "description"
 set -euo pipefail

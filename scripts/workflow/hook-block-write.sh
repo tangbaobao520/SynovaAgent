@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering V4.4.5 — PreToolUse: task brief 质量检查
+# Loop Engineering V4.5.0 — PreToolUse: task brief 质量检查
 #
 # 挂在 PreToolUse → Edit|Write 上，在 hook-check-memory.sh 之后运行。
 # 7 项字段质量检查 + 接口真实性反向验证 + 层级确认。
@@ -41,7 +41,7 @@ if echo "$FILE" | grep -qE 'scripts/workflow/hook-|scripts/hooks/'; then
   exit 0
 fi
 
-# ═══ V4.4.5: SessionStart 流程锁 — 硬阻断 ═══
+# ═══ V4.5.0: SessionStart 流程锁 — 硬阻断 ═══
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 LOCK_FILE="$ROOT/.claude/session-locked"
 if [ -f "$LOCK_FILE" ]; then
@@ -50,7 +50,7 @@ if [ -f "$LOCK_FILE" ]; then
     # 这些操作在锁定时允许——它们用于解锁
     :
   else
-    echo "⛔ V4.4.5 Session Lock — 请先运行 task-start 完成 Q0-Q3"
+    echo "⛔ V4.5.0 Session Lock — 请先运行 task-start 完成 Q0-Q3"
     echo "   bash scripts/workflow/task-start.sh \"你的任务描述\""
     echo "   被阻止: ${FILE}"
     exit 1
@@ -228,7 +228,7 @@ if [ "$FAIL" -gt 0 ]; then
   echo "  被阻止的文件: ${FILE}"
   echo "  必填: 项目身份 / Q1调研(含来源引用) / Q2范围(含排除项) / Q3验收(含用户旅程) / 本任务在哪一层 / 文档引用 / 接口审计"
   echo "  禁止: Q1空洞敷衍 / Q2无排除项 / Q3无用户旅程 / 敷衍填充词 / Q4无视历史教训"
-  # V4.4.5: PreToolUse exit code 在 VSCode Extension 中被忽略（不阻断 Write）。
+  # V4.5.0: PreToolUse exit code 在 VSCode Extension 中被忽略（不阻断 Write）。
   # 但脚本仍然执行——记录证据到 /tmp/（git 无法 checkout 抹掉）。
   # pre-commit 组 6 检查此文件，存在则硬阻断。
   EVI_FILE="/tmp/.synova-before-brief"
@@ -305,7 +305,7 @@ if [ -n "$TASK_LAYER" ] && ! echo "$FILE" | grep -qE '\.claude/|scripts/workflow
   fi
 fi
 
-# ═══ V4.4.5: 改前先 grep 全仓库引用 — 物理阻断 ═══
+# ═══ V4.5.0: 改前先 grep 全仓库引用 — 物理阻断 ═══
 # 写代码前必须运行 grep-refs.sh 生成引用地图，否则拒绝 Write/Edit
 GATE="$ROOT/.claude/grep-verified"
 # 只检查代码文件（.ts/.tsx/.json），不检查文档/配置/memory

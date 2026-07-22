@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# grep-refs.sh — 改前先 grep 全仓库引用 (V4.4.5)
+# grep-refs.sh — 改前先 grep 全仓库引用 (V4.5.0)
 #
 # 用法: bash scripts/workflow/grep-refs.sh "符号1" "符号2" ...
 # 功能: grep 每个符号在 src/ extensions/ tests/ packages/ 中的全部引用,

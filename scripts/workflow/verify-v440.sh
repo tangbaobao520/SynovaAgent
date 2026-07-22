@@ -1,5 +1,5 @@
 #!/bin/bash
-# Loop Engineering V4.4.5 — 版本同步验证器 (v440 兼容版)
+# Loop Engineering V4.5.0 — 版本同步验证器 (v440 兼容版)
 # 用法: bash scripts/workflow/verify-v440.sh
 # 退出 0 = 通过, 退出 1 = 版本未同步
 
@@ -11,7 +11,7 @@ RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RESET='\033[0m'
 FAIL=0
 
 echo ""
-echo "Loop Engineering V4.4.5 — 版本同步验证"
+echo "Loop Engineering V4.5.0 — 版本同步验证"
 echo ""
 
 # 文件存在性检查
@@ -27,9 +27,9 @@ check_file() {
 # 版本号检查
 check_version() {
   if grep -q "V4\.4\.5\|v4\.4\.5\|4\.4\.5" "$1" 2>/dev/null; then
-    echo -e "  ${GREEN}✓${RESET} $1 (V4.4.5)"
+    echo -e "  ${GREEN}✓${RESET} $1 (V4.5.0)"
   else
-    echo -e "  ${RED}✗${RESET} $1 — 版本号不是 V4.4.5"
+    echo -e "  ${RED}✗${RESET} $1 — 版本号不是 V4.5.0"
     FAIL=1
   fi
 }
@@ -91,6 +91,6 @@ if [ "$FAIL" -gt 0 ]; then
   echo "  git checkout feat/prompt-architecture -- AGENTS.md CLAUDE.md LOOP.md loop-run-log.md LOOP-ENGINEERING-CHANGELOG.md scripts/ .github/workflows/ci.yml"
   exit 1
 else
-  echo -e "${GREEN}全部通过 — Loop Engineering V4.4.5${RESET}"
+  echo -e "${GREEN}全部通过 — Loop Engineering V4.5.0${RESET}"
   exit 0
 fi

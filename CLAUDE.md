@@ -1,6 +1,6 @@
 # CLAUDE.md — SynovaAgent
 
-> V4.4.5 | 2026-07-10 | grep 物理门禁 + 侧翼修复自动化
+> V4.5.0 "Main Agent" | 2026-07-22 | L2 MainAgent 决策中心 + 创始人控制塔三位一体防御
 
 > 组织数字孪生诊断 + 持续增长导航系统。诊断是手段，目的是增长。
 > 核心问题：这家企业的增长卡在哪里？现在该做什么？
@@ -225,7 +225,7 @@ Agent，不是 ChatBot。驻扎企业，持续观测，主动发现，自动诊�
 **目标**: 成为组织诊断的 AWS。每个新客户、新行业、新数据源 → 加文件即可，不改代码。
 能文件化的必须文件化。不能文件化的必须有明确的扩展点。
 
-**流程约束: V4.4.5 — task brief 6字段 + 免疫系统 + plan.json + 8组物理阻断 + Plan-Actual闭合 + engine-core清零 + 时间戳顺序检查 + Q2排除项验证 + verify执行 + 全仓库engine-core扫描 + 壳包检测 + vitest --changed 增量回归 + grep 物理门禁
+**流程约束: V4.5.0 — task brief 6字段 + 免疫系统 + plan.json + 8组物理阻断 + Plan-Actual闭合 + engine-core清零 + 时间戳顺序检查 + Q2排除项验证 + verify执行 + 全仓库engine-core扫描 + 壳包检测 + vitest --changed 增量回归 + grep 物理门禁
 
 **数据流**:
 ```
@@ -298,9 +298,9 @@ evolution/ (SessionLearningEngine, FeedbackCollector, OntologyAdapter)
 
 ---
 
-## Loop Engineering V4.4.5 — grep 物理门禁 + 侧翼修复自动化
+## Loop Engineering V4.5.0 — grep 物理门禁 + 侧翼修复自动化
 
-> 2026-06-17 v2.5 → v3.0 → v3.1 → v3.5 → v3.6 → v3.7 → v3.8 → v3.9 → V4.1 → V4.1.1 → V4.1.2 → V4.2.2 → V4.2.3 → V4.2.4 → V4.2.5 → V4.3.0 → V4.4.0 (2026-07-05) → V4.4.2 (2026-07-07) → V4.4.4 (2026-07-08) → **V4.4.5 (2026-07-10)**。
+> 2026-06-17 v2.5 → v3.0 → v3.1 → v3.5 → v3.6 → v3.7 → v3.8 → v3.9 → V4.1 → V4.1.1 → V4.1.2 → V4.2.2 → V4.2.3 → V4.2.4 → V4.2.5 → V4.3.0 → V4.4.0 (2026-07-05) → V4.4.2 (2026-07-07) → V4.4.4 (2026-07-08) → **V4.5.0 (2026-07-10)**。
 >
 > **v3.6 的核心教训**：把需要语义理解的事交给 grep = 17 次折腾才提交成功。
 > **V3.9 的核心教训**：硬阻断 100% 有效，软机制 0% 有效。信息注入型检查对 agent 不可见。
@@ -370,12 +370,12 @@ evolution/ (SessionLearningEngine, FeedbackCollector, OntologyAdapter)
 > - **check-bridge-files.sh 同步加固**：独立验证器同样覆盖 packages/ + 相对路径 + 壳包检测。
 > - **全部版本号同步到 V4.4.2**
 >
-> ### V4.4.5 变更 (2026-07-10) — grep 物理门禁 + 侧翼修复自动化
+> ### V4.5.0 变更 (2026-07-10) — grep 物理门禁 + 侧翼修复自动化
 > > 背景：发现时间黑洞在"侧翼修复"——删改符号前不知道哪些文件会断裂，tsc 报了才逐处修。
 > 
 > - **漏洞 1 修复：改前先 grep — 物理阻断**。新增 `scripts/workflow/grep-refs.sh`：改代码前 grep 全仓库引用写入 `.claude/reference-map.md`，创建 `.claude/grep-verified` 门禁。`hook-block-write.sh` 检查此文件——写代码文件时必须存在，否则 Write/Edit 被硬阻断。
 > - **漏洞 2 修复：Q0 格式统一**。CLAUDE.md 示例 `Q0 定位:` 与脚本解析 `^## Q0:` 不匹配。修复：示例改为 `## Q0:` 格式 + 醒目警告；hook/pre-commit awk 同时兼容两种写法。
-> - **全部版本号同步到 V4.4.5**
+> - **全部版本号同步到 V4.5.0**
 > - **流程改进：写代码前三步曲**：① `bash scripts/workflow/grep-refs.sh "符号"` → ② 审查 `.claude/reference-map.md` → ③ Edit 代码
 > 
 > > ### V4.4.4 变更 (2026-07-08) — vitest --changed 增量回归 + 版本同步

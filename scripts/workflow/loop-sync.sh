@@ -1,5 +1,5 @@
  #!/bin/bash
- # Loop Engineering V4.4.5 — STATE.md ↔ LOOP.md 漂移检测
+ # Loop Engineering V4.5.0 — STATE.md ↔ LOOP.md 漂移检测
  #
  # 检查 LOOP.md 中声明的活跃循环是否与实际 Git hooks / 脚本匹配。
  # 检查 STATE.md 的 Active Task 字段格式是否正确。
@@ -16,7 +16,7 @@
  DRIFT=0
  
  echo ""
- echo -e "${CYAN}Loop Engineering V4.4.5 — STATE.md ↔ LOOP.md 漂移检测${RESET}"
+ echo -e "${CYAN}Loop Engineering V4.5.0 — STATE.md ↔ LOOP.md 漂移检测${RESET}"
  echo ""
  
  # 1. LOOP.md 存在性

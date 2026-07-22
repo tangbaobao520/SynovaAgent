@@ -9,7 +9,7 @@ Usage:
   python3 scripts/migrate-sog-to-ontology.py          # dry-run (shows changes)
   python3 scripts/migrate-sog-to-ontology.py --apply   # apply changes
 
-Phase: Loop Engineering V4.4.5 — 本体层单轨重建
+Phase: Loop Engineering V4.5.0 — 本体层单轨重建
 """
 import os
 import re

@@ -1,7 +1,7 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering V4.4.5 — check-plan-integrity.sh
-# 统一验证 plan.json 的 Q1/Q2 产出格式。不执行 verify 命令（V4.4.5 移除执行）。
+# Loop Engineering V4.5.0 — check-plan-integrity.sh
+# 统一验证 plan.json 的 Q1/Q2 产出格式。不执行 verify 命令（V4.5.0 移除执行）。
 # pre-commit 组 6 调用。全部 <1s。
 #
 # Anthropic 原则 5: 物理强制，零 AI 自律。
@@ -31,7 +31,7 @@ if [ ! -f "$PLAN_FILE" ]; then
 fi
 
 # ═══ 1. principles 非空 — Q1b 是否回答了 ═══
-PRINCIPLES=$(python3 -c "
+PRINCIPLES=$(python -c "
 import json
 p = json.load(open('$PLAN_FILE', encoding='utf-8'))
 principles = p.get('principles', [])
@@ -58,7 +58,7 @@ else
 fi
 
 # ═══ 2. approach = rewrite/reuse — Q2 是否回答了 ═══
-APPROACH=$(python3 -c "import json; print(json.load(open('$PLAN_FILE', encoding='utf-8')).get('approach',''))" 2>/dev/null)
+APPROACH=$(python -c "import json; print(json.load(open('$PLAN_FILE', encoding='utf-8')).get('approach',''))" 2>/dev/null)
 if [ -z "$APPROACH" ] || [ "$APPROACH" = "None" ]; then
   echo -e "  ${RED}❌ plan.approach 为空 — Q2 未回答重写还是复用  [硬阻断]${RESET}"
   HARD_FAIL=$((HARD_FAIL + 1))
@@ -77,7 +77,7 @@ else
 fi
 
 # ═══ 3. memory_refs 的每个文件存在 — Q1a 是否真实 ═══
-MEMORY_REFS=$(python3 -c "
+MEMORY_REFS=$(python -c "
 import json, os
 p = json.load(open('$PLAN_FILE', encoding='utf-8'))
 refs = p.get('memory_refs', [])
@@ -159,7 +159,7 @@ if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
   fi
 fi
 
-# ═══ 7. Done verify 格式检查（V4.4.5: 仅检查存在性，不执行命令）═══
+# ═══ 7. Done verify 格式检查（V4.5.0: 仅检查存在性，不执行命令）═══
 if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
   DONE_SEC=$(awk '/^## Done 标准/{found=1; next} found && /^## /{exit} found' "$BRIEF" 2>/dev/null)
   VERIFY_COUNT=$(echo "$DONE_SEC" | grep -cE '^\s*- \[x\].*verify:|^\s+verify:' 2>/dev/null || echo 0)
