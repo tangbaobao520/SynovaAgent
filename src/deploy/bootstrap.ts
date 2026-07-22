@@ -549,7 +549,6 @@ export class Bootstrap {
     try {
       const { MainAgent } = await import('../agent/main-agent');
       const { LOOP_TRIGGER_MATRIX } = await import('../loops/loop-trigger-config');
-      const scheduler = this.ctx.get<import('../loops/loop-scheduler').LoopScheduler>('loopScheduler');
       const mainAgent = new MainAgent();
       for (const config of LOOP_TRIGGER_MATRIX) {
         mainAgent.registerLoop(config);
@@ -906,7 +905,7 @@ export class Bootstrap {
               const decrypted = vault.decryptForSubprocess(cred.id);
               if (decrypted) {
                 try { pool.register(cred.id, JSON.parse(decrypted)); } catch {
-                  // 单个凭证解析失败不影响其他
+                  log.warn({ credentialId: cred.id }, '单个凭证解析失败 — 跳过');
                 }
               }
             }

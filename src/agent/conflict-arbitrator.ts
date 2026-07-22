@@ -266,7 +266,9 @@ export class ConflictArbitrator {
             timestamp: new Date().toISOString(),
           };
         }
-      } catch (_) { /* 收敛引擎降级 — 不阻断仲裁 */ }
+      } catch (err: unknown) {
+        log.warn({ err, conflictId: conflict?.id }, '收敛引擎查询失败 — 使用评分仲裁');
+      }
     }
 
     const auto = await this.autoResolve(conflict, tieBreaker);

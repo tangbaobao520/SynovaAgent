@@ -18,12 +18,14 @@ describe('routes/ga-evolution', () => {
 
   it('HTML 中包含核心功能元素', async () => {
     const mod = await import('../../src/routes/ga-evolution');
-    const stack = (mod.default as { stack: Array<{ route: { path: string }; handle: (req: unknown, res: { send: (html: string) => void }) => void }> }).stack;
+    const stack = (mod.default as { stack: Array<{ route: { path: string }; stack: Array<{ handle: (req: unknown, res: { send: (html: string) => void }) => void }> }> }).stack;
     const handler = stack.find(l => l.route?.path === '/ga/evolution');
     expect(handler).toBeDefined();
 
     let renderedHtml = '';
-    handler!.handle({} as never, { send: (h: string) => { renderedHtml = h; } } as never);
+    // Express 5: route.stack[0].handle 是实际 handler，router.stack[0].handle 是 bound dispatch
+    const routeHandler = handler!.route.stack[0].handle;
+    routeHandler({} as never, { setHeader: () => {}, send: (h: string) => { renderedHtml = h; } });
 
     expect(renderedHtml).toContain('进化引擎');
     expect(renderedHtml).toContain('proposals');

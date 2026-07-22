@@ -4,9 +4,9 @@
 import { describe, it, expect } from 'vitest';
 
 describe('/api/notifications', () => {
-  it('路由模块被正确导出', () => {
+  it('路由模块被正确导出', async () => {
     // notifications.ts 导出 Express Router
-    const notificationsRoutes = require('../../src/routes/notifications').default;
+    const { default: notificationsRoutes } = await import('../../src/routes/notifications');
     expect(notificationsRoutes).toBeDefined();
     expect(typeof notificationsRoutes).toBe('function'); // Router 是函数
   });

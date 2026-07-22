@@ -28,14 +28,17 @@ export interface KnowledgeAgentConfig {
   defaultLimit?: number;
   /** 外部知识源 (M3 接入) */
   externalSources?: Array<{ name: string; search: (q: string, limit: number) => Promise<Array<{ title: string; snippet: string; url: string }>> }>;
+  /** ima 客户端实例 (D104+D105) */
+  imaClient?: ImaClient;
 }
 
 export interface KnowledgeAgent {
   /** 注册知识检索工具到 ToolRegistry */
   registerTo(registry: { register: (tool: Record<string, unknown>) => void }): void;
   /** 执行齿轮6: 从文档/消息提取知识片段 */
-  runGear6(): Promise<{ extracted: number; errors: string[] 
-  imaDataSource(enterpriseId: string, filter?: { documentTypes?: string[]; limit?: number }): Promise<import("../connectors/ima").ExtractedPkbEntry[]>;}>;
+  runGear6(): Promise<{ extracted: number; errors: string[] }>;
+  /** ima 知识提取 (D104+D105) */
+  imaDataSource(enterpriseId: string, filter?: { documentTypes?: string[]; limit?: number }): Promise<import("../connectors/ima").ExtractedPkbEntry[]>;
 }
 
 export function createKnowledgeAgent(config: KnowledgeAgentConfig = {}): KnowledgeAgent {
@@ -459,7 +462,7 @@ export function createKnowledgeAgent(config: KnowledgeAgentConfig = {}): Knowled
       if (!client) { return []; }
       try {
         const docs = await client.scanDocuments({
-          documentTypes: (filter?.documentTypes || ["strategy", "operations", "meetings"]) as string[],
+          documentTypes: (filter?.documentTypes || ["strategy", "operations", "meetings"]) as ("strategy" | "operations" | "meetings")[],
           limit: filter?.limit || 10,
         });
         const entries: import("../connectors/ima").ExtractedPkbEntry[] = [];
@@ -468,7 +471,10 @@ export function createKnowledgeAgent(config: KnowledgeAgentConfig = {}): Knowled
           if (entry) entries.push(entry);
         }
         return entries;
-      } catch { return []; }
+      } catch (err: unknown) {
+        log.warn({ err }, 'ima 扫描或提取失败 — 降级返回空');
+        return [];
+      }
     },
 
     /** 齿轮6: 从文档/消息/ima中提取知识片段到知识库 */
@@ -512,9 +518,7 @@ export function createKnowledgeAgent(config: KnowledgeAgentConfig = {}): Knowled
               store.insert({
                 text: parts[i],
                 sourceType: 'document',
-                sourceId: `chunk:${c.id
-  imaClient?: ImaClient;
-  imaEnterpriseId?: string;}:#${i}`,
+                sourceId: `chunk:${c.id}:#${i}`,
                 authorityLevel: 'reference',
                 accessLevel: 'team',
                 accessSensitivity: 'normal',

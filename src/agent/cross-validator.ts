@@ -23,6 +23,7 @@ import { createLogger } from '@synova/logger';
 import type { ExpertResponse } from './expert-router';
 
 const log = createLogger('agent/cross-validator');
+const UNKNOWN_EXPERT = 'unknown' as const;
 
 // ═══ 类型定义 ═══
 
@@ -181,10 +182,10 @@ export class CrossValidationTrigger {
       log.warn({ err: msg, conflictId: conflict.id }, '裁决执行失败 — 降级');
       return {
         conflictId: conflict.id,
-        tieBreakerExpert: 'unknown',
+        tieBreakerExpert: UNKNOWN_EXPERT,
         response: {
           subTaskId: `tiebreaker-${conflict.id}`,
-          expertType: 'unknown',
+          expertType: UNKNOWN_EXPERT,
           analysis: '',
           confidence: 0,
           evidence: [],
@@ -193,7 +194,7 @@ export class CrossValidationTrigger {
           error: msg,
           durationMs: 0,
         },
-        consensusExperts: [...conflict.experts, 'unknown'],
+        consensusExperts: [...conflict.experts, UNKNOWN_EXPERT],
         hasConsensus: false,
       };
     }
@@ -238,12 +239,12 @@ export class CrossValidationTrigger {
    * MVP 简化实现: 匹配关键词。
    */
   private inferSeverity(analysis: string): string {
-    if (!analysis) return 'unknown';
+    if (!analysis) return UNKNOWN_EXPERT;
     const lower = analysis.toLowerCase();
     if (lower.includes('critical') || lower.includes('严重')) return 'critical';
     if (lower.includes('warning') || lower.includes('警告') || lower.includes('注意')) return 'warning';
     if (lower.includes('info') || lower.includes('正常') || lower.includes('良好')) return 'info';
-    return 'unknown';
+    return UNKNOWN_EXPERT;
   }
 
   /**

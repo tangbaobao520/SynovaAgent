@@ -101,7 +101,9 @@ export function emitEvent(eventType: string, payload?: unknown): void {
   const listeners = eventListeners.get(eventType);
   if (!listeners || listeners.size === 0) return;
   for (const listener of listeners) {
-    try { listener(eventType, payload); } catch { /* 单个监听器失败不阻断 */ }
+    try { listener(eventType, payload); } catch (err: unknown) {
+      log.warn({ err, eventType }, '事件监听器执行失败 — 不阻断');
+    }
   }
 }
 
@@ -142,9 +144,9 @@ export class CronScheduler {
     `);
 
     // D94: 迁移旧表 — 安全地添加列（忽略已存在错误）
-    try { this.db.exec("ALTER TABLE cron_jobs ADD COLUMN trigger_type TEXT DEFAULT 'cron'"); } catch { /* 已存在 */ }
-    try { this.db.exec("ALTER TABLE cron_jobs ADD COLUMN event_types TEXT DEFAULT '[]'"); } catch { /* 已存在 */ }
-    try { this.db.exec("ALTER TABLE cron_jobs ADD COLUMN last_event_at TEXT"); } catch { /* 已存在 */ }
+    try { this.db.exec("ALTER TABLE cron_jobs ADD COLUMN trigger_type TEXT DEFAULT 'cron'"); } catch { log.warn({}, 'ALTER TABLE trigger_type 已存在或失败 — 跳过'); }
+    try { this.db.exec("ALTER TABLE cron_jobs ADD COLUMN event_types TEXT DEFAULT '[]'"); } catch { log.warn({}, 'ALTER TABLE event_types 已存在或失败 — 跳过'); }
+    try { this.db.exec("ALTER TABLE cron_jobs ADD COLUMN last_event_at TEXT"); } catch { log.warn({}, 'ALTER TABLE last_event_at 已存在或失败 — 跳过'); }
   }
 
   private restoreJobs(): void {
@@ -169,7 +171,10 @@ export class CronScheduler {
 
   private safeParseEventTypes(raw: string | undefined): string[] {
     if (!raw) return [];
-    try { return JSON.parse(raw); } catch { return []; }
+    try { return JSON.parse(raw); } catch {
+      log.warn({ raw }, 'event_types JSON 解析失败 — 返回空数组');
+      return [];
+    }
   }
 
   // ═══ D94: Event → Job 索引 ═══

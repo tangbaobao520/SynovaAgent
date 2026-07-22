@@ -117,6 +117,7 @@ CREATE INDEX IF NOT EXISTS idx_feedback_enterprise ON feedback_log(enterprise_id
 CREATE INDEX IF NOT EXISTS idx_feedback_decision ON feedback_log(decision);
 CREATE INDEX IF NOT EXISTS idx_feedback_target ON feedback_log(target_type, target_id);
 -- D93b: migration
+CREATE TABLE IF NOT EXISTS schema_version (version TEXT PRIMARY KEY);
 INSERT OR IGNORE INTO schema_version (version) VALUES ('d93b_actor_role');
 `;
 
@@ -171,7 +172,7 @@ export class FeedbackCollector {
 
     try {
       this.db.prepare(`
-        INSERT INTO feedback_log (id, enterprise_id, actor_id, decision, target_type, target_id, reason, evidence_refs, created_at)
+        INSERT INTO feedback_log (id, enterprise_id, actor_id, decision, target_type, target_id, reason, evidence_refs, actor_role, created_at)
         VALUES (@id, @enterpriseId, @actorId, @decision, @targetType, @targetId, @reason, @evidenceRefs, @actorRole, @createdAt)
       `).run({
         id: record.id,
@@ -182,6 +183,7 @@ export class FeedbackCollector {
         targetId: record.targetId,
         reason: record.reason,
         evidenceRefs: record.evidenceRefs,
+        actorRole: record.actorRole,
         createdAt: record.createdAt,
       });
       log.info({ id: record.id, decision: record.decision }, '反馈已收集');

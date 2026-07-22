@@ -241,7 +241,7 @@ export class TaskDecomposer {
    * 按维度执行默认 handler。
    * D8c: 使用 ExpertRouter 路由到对应专家。
    */
-  private async runHandlerForDimension(dimension: string): Promise<{ success: boolean; output?: string; error?: string }> {
+  private async runHandlerForDimension(dimension: string): Promise<{ success: boolean; output?: string; error?: string; degraded?: boolean }> {
     try {
       const { ExpertRouter } = await import('./expert-router');
       const router = new ExpertRouter();
@@ -254,7 +254,8 @@ export class TaskDecomposer {
       return { success: !response.degraded, output: response.analysis, error: response.error };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      return { success: false, error: msg };
+      log.warn({ err: msg, dimension }, '专家维度 handler 执行失败 — 降级');
+      return { success: false, error: msg, degraded: true };
     }
   }
 }

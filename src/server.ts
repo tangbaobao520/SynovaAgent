@@ -69,7 +69,7 @@ import loopRoutes from "./routes/loops";
 import enterpriseRoutes from './routes/enterprise'; // D103
 import type { ServiceContainer } from './services/container';
 // Phase 0.1: 全局错误兜底 — uncaughtException + unhandledRejection
-import { setMainAgent } from"./routes/loops";
+import { setMainAgent } from "./routes/loops";
 import { MainAgent } from "./agent/main-agent";
 import { LOOP_TRIGGER_MATRIX } from "./loops/loop-trigger-config";
 import { registerGlobalErrorHandlers, unregisterGlobalErrorHandlers } from './services/runtime-global-handlers';
@@ -191,7 +191,9 @@ export async function createServer(): Promise<Server> {
       } catch (err: unknown) { logger.warn({ err }, '老板信箱获取行动项失败 — degraded'); }
 
       const report = bossMailbox.generateReport('Synova', `W${Math.ceil(now.getDate()/7)}`, signals, actions);
-      bossMailbox.pushToFeishu(report, webhookUrl).catch(() => {});
+      bossMailbox.pushToFeishu(report, webhookUrl).catch((err: unknown) => {
+        logger.warn({ err }, '老板信箱飞书推送失败');
+      });
     } catch (err: unknown) { logger.warn({ err }, '老板信箱推送失败 — degraded'); }
   }, 60000); // 每分钟检查
 
@@ -344,8 +346,8 @@ export async function createServer(): Promise<Server> {
   app.use(notificationsRoutes);
   app.use(backupRoutes);
   app.use(selfOpsRoutes);
-  app.use(enterpriseRoutes);
-  app.use(loopRoutes); // D103 — 企业路由
+  app.use(enterpriseRoutes); // D103 — 企业路由
+  app.use(loopRoutes); // D20 — 循环状态 API
 
   // ═══ A2: Connector Pipeline — 手动触发 ═══
   app.post('/api/connector/sync', async (req, res) => {
@@ -362,8 +364,9 @@ export async function createServer(): Promise<Server> {
       const creds: Record<string, string> = JSON.parse(credentials);
       const result = await runConnectorPipeline(moduleName, orgId, creds);
       res.json({ ok: true, ...result });
-    } catch (err: any) {
-      res.status(500).json({ ok: false, error: err.message, code: 'PIPELINE_ERROR' });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      res.status(500).json({ ok: false, error: msg, code: 'PIPELINE_ERROR', degraded: true });
     }
   });
 
@@ -382,7 +385,7 @@ export async function createServer(): Promise<Server> {
         mainAgent.registerLoop(loopConfig);
       }
       setMainAgent(mainAgent);
-    } catch (err) {
+    } catch (err: unknown) {
       logger.warn({ err }, "MainAgent 初始化失败 — loops 路由降级");
     }
 
@@ -410,7 +413,9 @@ export async function createServer(): Promise<Server> {
         // 关闭时加密数据库
         import('./services/db-encryption').then(({ autoEncryptOnShutdown }) => {
           autoEncryptOnShutdown(encryptionConfig);
-        }).catch(() => {});
+        }).catch((err: unknown) => {
+          logger.error({ err }, 'Database encryption on shutdown failed');
+        });
         server.close(() => process.exit(0));
         setTimeout(() => process.exit(0), 5000);
       };

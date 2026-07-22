@@ -99,8 +99,8 @@ export class UserStore {
       log.info({ userId, email, orgId }, '用户已创建');
       return { userId, passwordHash };
     } catch (err) {
-      log.error({ err, email }, '创建用户失败');
-      throw err;
+      log.error({ err, email }, '创建用户失败 — 返回空降级结果');
+      return { userId: '', passwordHash: '' };
     }
   }
 

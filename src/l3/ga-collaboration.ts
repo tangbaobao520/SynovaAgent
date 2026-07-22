@@ -216,7 +216,7 @@ export class GAFeedbackHandler {
         targetId: findingId,
         reason: correction,
       });
-      const id = typeof result === 'object' && result !== null ? (result as { id: string }).id : 'recorded';
+      const id = typeof result === 'object' && result !== null && 'id' in result ? String((result as Record<string, unknown>).id) : 'recorded';
       log.info({ findingId, correctionId: id }, 'GA 纠正已写入 D93');
       return id;
     } catch (err: unknown) {
