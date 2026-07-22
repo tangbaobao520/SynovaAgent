@@ -16,6 +16,7 @@
  *   @output — PushResult[]
  *   @degraded — 推送失败 → log.warn + retry → 最终写入审计
  */
+import type { ActionStoreLike } from"../growth/action-types";
 import { createLogger } from '@synova/logger';
 import { InteractiveCardHandler } from './interactive-card';
 
@@ -99,6 +100,7 @@ function delay(ms: number): Promise<void> {
 export class ProactivePush {
   private channels: PushChannel[];
   private retryDelays: number[];
+  private actionStore: ActionStoreLike | null;
   private auditStore: { write(entry: Record<string, unknown>): Promise<string> } | null;
   private dashboardUrl: string;
 
@@ -109,11 +111,16 @@ export class ProactivePush {
   ) {
     this.channels = channels.filter(c => c.enabled);
     this.retryDelays = retryDelays || RETRY_DELAYS;
+    this.actionStore = null;
     this.auditStore = null;
     this.dashboardUrl = dashboardUrl || 'http://localhost:3000';
   }
 
   /** 注入审计存储 */
+  setActionStore(store: ActionStoreLike): void {
+    this.actionStore = store;
+  }
+
   setAuditStore(store: { write(entry: Record<string, unknown>): Promise<string> }): void {
     this.auditStore = store;
   }
@@ -144,6 +151,16 @@ export class ProactivePush {
       link: cardMessage.callbackUrl,
     };
     const results: PushResult[] = [];
+
+    // D21: 创建 Action（推送到通道前创建，保证因果锚点）
+    if (this.actionStore) {
+      try {
+        const action = this.actionStore.createAction(finding);
+        log.info({ actionId: action.id, signalId: finding.id }, "D21 Action 已从 P0 信号创建");
+      } catch (err) {
+        log.warn({ err, signalId: finding.id }, "D21 Action 创建失败 — 不阻断推送");
+      }
+    }
 
     // 并行推送到所有通道
     const pushResults = await Promise.allSettled(
