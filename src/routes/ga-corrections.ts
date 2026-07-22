@@ -28,7 +28,7 @@ router.post('/api/ga/corrections', async (req: Request, res: Response) => {
     const store = await getStore();
     store.remember({
       orgId: auth.orgId || 'default', key: `ga_correction:${reportId}:${Date.now()}`,
-      value: JSON.stringify({ reportId, expertType, originalFinding, correctedFinding, reason: reason || '', gaId: auth.userId }),
+      value: JSON.stringify({ reportId, expertType, originalFinding, correctedFinding, reason: reason || '', gaId: auth.userId, orgId: auth.orgId || 'default' }),
       type: 'ga_correction', confidence: 1.0, source: `ga:${auth.userId}`,
       tags: ['ga_correction', reportId, expertType], expiresAt: null,
     });
@@ -43,8 +43,9 @@ router.post('/api/ga/corrections', async (req: Request, res: Response) => {
 router.get('/api/ga/corrections', async (req: Request, res: Response) => {
   try {
     if (!requireGa(req, res)) return;
+    const auth = extractAuthFromRequest(req)!;
     const store = await getStore();
-    const results = store.list({ orgId: 'default', tags: ['ga_correction'] });
+    const results = store.list({ orgId: auth.orgId || 'default', tags: ['ga_correction'] });
     const corrections = results.filter((r: any) => r.type === 'ga_correction')
       .map((r: any) => ({ id: r.key, ...JSON.parse(r.value), createdAt: r.createdAt }));
     res.json({ ok: true, corrections, total: corrections.length });
