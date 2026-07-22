@@ -16,7 +16,7 @@
  *   @output — PushResult[]
  *   @degraded — 推送失败 → log.warn + retry → 最终写入审计
  */
-import type { ActionStoreLike } from"../growth/action-types";
+import type { ActionStoreLike } from "../growth/action-types";
 import { createLogger } from '@synova/logger';
 import { InteractiveCardHandler } from './interactive-card';
 
