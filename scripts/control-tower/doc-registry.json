@@ -1,0 +1,42 @@
+{
+  "$schema": "https://synova.dev/schemas/doc-registry-v1.json",
+  "version": "1.0.0",
+  "description": "权威文档 ID 到文件路径的映射表（权威文档 #17 §7）",
+  "docs": {
+    "Auth Doc #1": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/",
+    "Auth Doc #2": "docs/synova/research/哨兵-计算-本体三维映射-20260710/",
+    "Auth Doc #3": "docs/synova/research/权威文档03-哨兵-计算-本体-权威规范-20260710/",
+    "Auth Doc #4": "docs/synova/research/权威文档07-Agent工程能力对标-20260710/",
+    "Auth Doc #5": "docs/synova/research/权威文档05-Agent主动交互系统蓝图-20260710/",
+    "Auth Doc #6": "docs/synova/research/权威文档06-测试体系权威规范-20260710/",
+    "Auth Doc #7": "docs/synova/research/权威文档08-安全隐私权限权威规范-20260712/",
+    "Auth Doc #8": "docs/synova/research/权威文档09-部署运维权威规范-20260713/",
+    "Auth Doc #9": "docs/synova/research/权威文档09-部署运维权威规范-20260713/",
+    "Auth Doc #10": "docs/synova/research/权威文档10-专家提示词工程规范-20260713/",
+    "Auth Doc #11": "docs/synova/research/权威文档11-管理经济学权威规范-20260714/",
+    "Auth Doc #12": "docs/synova/research/权威文档12-Skill-Tool体系研究-20260714/",
+    "Auth Doc #13": "docs/synova/research/权威文档13-增长导航系统工程规范-20260714/",
+    "Auth Doc #14": "docs/synova/research/权威文档14-Synova系统集成与实施路线图-20260714/",
+    "Auth Doc #15": "docs/synova/research/权威文档15-企业循环溢出导航系统-20260714/",
+    "Auth Doc #16": "docs/synova/research/管理经济学融入研究-20260708/",
+    "Auth Doc #17": "docs/synova/research/创始人控制塔系统-20260722/"
+  },
+  "aliases": {
+    "权威文档 #1": "Auth Doc #1",
+    "权威文档 #3": "Auth Doc #3",
+    "权威文档 #4": "Auth Doc #4",
+    "权威文档 #5": "Auth Doc #5",
+    "权威文档 #6": "Auth Doc #6",
+    "权威文档 #7": "Auth Doc #7",
+    "权威文档 #8": "Auth Doc #8",
+    "权威文档 #9": "Auth Doc #9",
+    "权威文档 #10": "Auth Doc #10",
+    "权威文档 #11": "Auth Doc #11",
+    "权威文档 #12": "Auth Doc #12",
+    "权威文档 #13": "Auth Doc #13",
+    "权威文档 #14": "Auth Doc #14",
+    "权威文档 #15": "Auth Doc #15",
+    "权威文档 #16": "Auth Doc #16",
+    "权威文档 #17": "Auth Doc #17"
+  }
+}
