@@ -10,6 +10,7 @@
  * 铁律 38: 零 as any
  */
 import { createLogger } from '@synova/logger';
+import type { GAFeedbackHandler, GAFeedbackActionType } from '../l3/ga-collaboration';
 
 const log = createLogger('agent/interactive-card');
 
@@ -86,17 +87,18 @@ export class InteractiveCardHandler {
   }
 
   /**
-   * 构建带交互按钮的卡片消息。
+   * 构建带 GA 交互按钮的卡片消息。
+   * GA 反馈处理由 GAFeedbackHandler 接管 (D19)。
    *
    * @param finding — 哨兵发现
-   * @returns CardMessage — 含 Confirm/Dismiss/Details 三个按钮
+   * @returns CardMessage — 含 Confirm/Dismiss/Details 三个按钮 + GA 按钮
    */
   buildGACardMessage(finding: CardSentinelFinding): CardMessage {
     const base = this.buildCardMessage(finding);
     base.buttons.push(
-      { id: `flag-${finding.id}`, label: '标记为不正确', action: 'flag' as CardActionType, style: 'danger' },
-      { id: `correct-${finding.id}`, label: '纠正', action: 'correct' as CardActionType, style: 'primary' },
-      { id: `rediagnose-${finding.id}`, label: '重新诊断', action: 'rediagnose' as CardActionType, style: 'default' },
+      { id: `flag-${finding.id}`, label: '标记为不正确', action: 'flag', style: 'danger' },
+      { id: `correct-${finding.id}`, label: '纠正', action: 'correct', style: 'primary' },
+      { id: `rediagnose-${finding.id}`, label: '重新诊断', action: 'rediagnose', style: 'default' },
     );
     return base;
   }
@@ -138,6 +140,7 @@ export class InteractiveCardHandler {
     auditStore?: { write(entry: Record<string, unknown>): Promise<string> },
     findingFinder?: (id: string) => CardSentinelFinding | undefined,
     userRole?: string,
+    gaFeedbackHandler?: GAFeedbackHandler,
   ): Promise<CardActionResult> {
     const timestamp = action.timestamp || new Date().toISOString();
     const base: Omit<CardActionResult, 'cardUpdate'> = {
@@ -162,6 +165,25 @@ export class InteractiveCardHandler {
         case 'flag':
         case 'correct':
         case 'rediagnose':
+          if (gaFeedbackHandler) {
+            const gaResult = await gaFeedbackHandler.processFeedback({
+              action: action.action as GAFeedbackActionType,
+              findingId: action.findingId,
+              gaUserId: action.userId || 'unknown',
+              enterpriseId: 'default',
+            });
+            return {
+              ...base,
+              status: gaResult.status === 'success' ? 'success' : 'failed',
+              cardUpdate: {
+                title: gaResult.status === 'success' ? 'GA 操作已提交' : 'GA 操作失败',
+                body: gaResult.message || (gaResult.status === 'success' ? 'GA 反馈已记录' : 'GA 反馈处理异常 — 请重试'),
+                color: 'blue' as const,
+                interactive: false,
+              },
+            };
+          }
+          // 无 GAFeedbackHandler 时返回静态占位消息（优雅降级）
           return {
             ...base,
             status: 'success',

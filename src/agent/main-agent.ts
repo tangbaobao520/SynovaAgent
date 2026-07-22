@@ -18,8 +18,10 @@
 import { createLogger } from '@synova/logger';
 import type { LoopTriggerConfig, ScaleName } from '../loops/loop-trigger-config';
 import { defaultDiagnosisHandler, defaultNavigationHandler, defaultEvolutionHandler, defaultOverflowHandler } from './loop-handlers';
+import type { ConflictArbitrator } from './conflict-arbitrator';
 
 const log = createLogger('agent/main-agent');
+const UNKNOWN_EXPERT = 'unknown' as const;
 
 // ═══ 类型定义 ═══
 
@@ -76,10 +78,16 @@ export class MainAgent {
    * @param auditStore — 审计存储实例（可选，null 时降级）
    */
   private taskDecomposer: import('./task-decomposer').TaskDecomposer | null;
+  private conflictArbitrator: ConflictArbitrator | null;
 
-  constructor(auditStore?: AuditStoreLike | null, taskDecomposer?: import('./task-decomposer').TaskDecomposer | null) {
+  constructor(
+    auditStore?: AuditStoreLike | null,
+    taskDecomposer?: import('./task-decomposer').TaskDecomposer | null,
+    conflictArbitrator?: ConflictArbitrator | null,
+  ) {
     this.auditStore = auditStore ?? null;
     this.taskDecomposer = taskDecomposer ?? null;
+    this.conflictArbitrator = conflictArbitrator ?? null;
   }
 
   /**
@@ -179,8 +187,12 @@ export class MainAgent {
         try {
           const { ConvergenceEngine } = await import('./convergence-engine');
           const engine = new ConvergenceEngine(this.auditStore);
-          engine.analyzePrecedents('default').catch(() => {});
-        } catch (_) { /* 收敛分析降级 — 不阻断主流程 */ }
+          engine.analyzePrecedents('default').catch((err: unknown) => {
+            log.warn({ err, loopId, scale }, '收敛分析前置查询失败 — 降级，不阻断主流程');
+          });
+        } catch (err: unknown) {
+          log.warn({ err, loopId, scale }, '收敛分析异常 — 降级，不阻断主流程');
+        }
       }
 
       if (!result.success) {
@@ -291,7 +303,7 @@ export class MainAgent {
           if (r.status === 'completed') {
             const sr = r as { expertType?: string; confidence: number; output?: string };
             expertResponses.push({
-              subTaskId: r.subTaskId, expertType: sr.expertType || 'unknown', analysis: sr.output || '', confidence: sr.confidence || 0,
+              subTaskId: r.subTaskId, expertType: sr.expertType || UNKNOWN_EXPERT, analysis: sr.output || '', confidence: sr.confidence || 0,
               evidence: [], edgeIds: [], degraded: false, durationMs: r.durationMs,
             });
           }
@@ -299,8 +311,21 @@ export class MainAgent {
         const cvResult = validator.detectConflicts(expertResponses);
         if (cvResult.length > 0) {
           cvInfo = `, 冲突: ${cvResult.length}`;
+          // D8e: ConflictArbitrator 仲裁
+          if (this.conflictArbitrator) {
+            this.conflictArbitrator.arbitrate({
+              conflicts: cvResult,
+              tieBreakers: [],
+              hasUnresolved: cvResult.length > 0,
+              consensus: cvResult.length > 0 ? 'partial' : 'full',
+            }).catch((err: unknown) => {
+              log.warn({ err, loopId, scale }, '仲裁异常 — 不阻断主流程');
+            });
+          }
         }
-      } catch (_) { /* 交叉验证降级 — 不阻断主流程 */ }
+      } catch (err: unknown) {
+        log.warn({ err, loopId, scale }, '交叉验证异常 — 降级，不阻断主流程');
+      }
 
       return {
         loopId, scale, status: aggregated.status === 'completed' ? 'completed' as const : 'failed' as const,
@@ -310,6 +335,7 @@ export class MainAgent {
       };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg, loopId, scale }, '分解执行异常 — 降级');
       return {
         loopId, scale, status: 'failed' as const, durationMs: Date.now() - startTime,
         error: msg, startedAt, completedAt: new Date().toISOString(), degraded: true,

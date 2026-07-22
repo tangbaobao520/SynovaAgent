@@ -129,10 +129,17 @@ export class SentinelRunner {
   /** D6: 哨兵通知去重 — 记录每个 sentinelId 的最后推送时间戳 */
   private notificationSentTimestamps = new Map<string, number>();
   private readonly NOTIFICATION_DEDUP_MS = 10 * 60 * 1000; // 10分钟去重窗口
+  /** D17: P0 主动推送实例 (注入) */
+  private proactivePush: ProactivePush | null = null;
 
   constructor(scheduler: CronScheduler, db: unknown) {
     this.scheduler = scheduler;
     this.db = db;
+  }
+
+  /** 注入 ProactivePush 实例 (D17) */
+  setProactivePush(push: ProactivePush): void {
+    this.proactivePush = push;
   }
 
   /**
@@ -276,7 +283,7 @@ export class SentinelRunner {
       }
 
       // ═══ D17: P0 主动推送 (critical → Feishu/email/webhook, 含3次重试)
-      const proactivePush: ProactivePush | null = (this as Record<string, unknown>)["__proactivePush"] as ProactivePush | null;
+      const proactivePush = this.proactivePush;
       if (proactivePush) {
         for (const signal of criticalOrWarning) {
           if (signal.severity === "critical") {
@@ -472,7 +479,9 @@ export class SentinelRunner {
             const parsed = JSON.parse(stored.value) as { newThreshold?: { warning: number; critical: number } };
             if (parsed.newThreshold) return parsed.newThreshold;
           }
-        } catch { /* degraded — fallback to manifest */ }
+        } catch {
+          log.warn({ sentinelId }, 'getThreshold memory store 失败 — fallback to manifest');
+        }
 
         // 2. Fallback 到 SentinelManifest 默认阈值
         try {
@@ -483,7 +492,9 @@ export class SentinelRunner {
             const key = Object.keys(sentinel.manifest.thresholds)[0];
             if (key) return sentinel.manifest.thresholds[key];
           }
-        } catch { /* degraded */ }
+        } catch {
+          log.warn({ sentinelId }, 'getThreshold manifest fallback 失败 — 使用默认值');
+        }
 
         // 3. 通用默认值
         return { warning: 0.5, critical: 1.0 };
@@ -544,7 +555,9 @@ export class SentinelRunner {
                 list.push(data.score);
                 sentinelMap.set(data.sentinelId, list);
               }
-            } catch { /* 跳过损坏数据 */ }
+            } catch {
+              log.debug({ sentinelId: (mem?.value ? 'parse_failed' : 'no_value') }, '跳过损坏的哨兵分数数据');
+            }
           }
 
           const stats: import('@synova/evolution').PerSentinelStats[] = [];
@@ -615,7 +628,10 @@ export class SentinelRunner {
         try {
           const { createSynovaGraphStore } = await import('@synova/graph-store');
           graphCtx = createSynovaGraphStore(this.db as import('@synova/graph-store').SqliteDb);
-        } catch { graphCtx = this.db; } // degraded
+        } catch {
+          log.warn({ sentinelId: sentinel?.config?.id }, 'GraphStore 创建失败 — 降级至原始 db');
+          graphCtx = this.db;
+        }
       }
       const ctx = {
         db: graphCtx,
