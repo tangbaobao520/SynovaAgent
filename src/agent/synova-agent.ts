@@ -21,6 +21,8 @@ import { createLogger } from '@synova/logger';
 // Phase 1: 启动恢复 + 优雅关闭
 import { RestartRecovery } from '../services/restart-recovery';
 import { GracefulShutdown, setGlobalGracefulShutdown } from '../services/graceful-shutdown';
+import { ProactivePush } from './proactive-push';
+import { ActionStore } from '../growth/action-store';
 
 const log = createLogger('agent/synova-agent');
 
@@ -83,6 +85,11 @@ export class SynovaAgent {
     this.sentinelRunner = new SentinelRunner(this.scheduler, this.db);
     setGlobalSentinelRunner(this.sentinelRunner);
     this.sentinelRunner.start();
+
+    // D21-FIX: 创建 ProactivePush 实例 + 注入 ActionStore + 接线到 SentinelRunner
+    const proactivePush = new ProactivePush([]);  // 空通道 — 推送后续接线
+    proactivePush.setActionStore(new ActionStore());
+    this.sentinelRunner.setProactivePush(proactivePush);
 
     // Phase 2.1: 启动时排干未投递消息
     try {
