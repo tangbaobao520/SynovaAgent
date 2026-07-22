@@ -196,6 +196,13 @@ if [[ ! -f "$PRE_COMMIT" ]]; then
   git commit -m "$MESSAGE"
   EXIT_CODE=$?
   echo -e "${GREEN}✅ 提交完成（降级模式）${NC}"
+
+  # D202: 提交后运行外部审计（降级模式也运行）
+  AUDITOR_SCRIPT="$SCRIPT_DIR/external-auditor.sh"
+  if [[ -f "$AUDITOR_SCRIPT" ]]; then
+    bash "$AUDITOR_SCRIPT" --task-id "$TASK_ID" --diff "HEAD~1..HEAD" 2>/dev/null || true
+  fi
+
   exit 2
 fi
 
@@ -222,6 +229,15 @@ if [[ $PRECOMMIT_EXIT -eq 0 ]]; then
     echo -e "${GREEN}✅ 提交完成${NC}"
     # 记录到 bypass.log 作为正常提交证据
     echo "$(date -Iseconds) | COMMITTED | pre-commit PASS | TASK_ID=$TASK_ID | AGENT=$AGENT | HASH=$(git rev-parse HEAD 2>/dev/null)" >> "$BYPASS_LOG"
+
+    # D202: 提交后运行外部审计（非阻塞 — 不因审计失败而阻断）
+    AUDITOR_SCRIPT="$SCRIPT_DIR/external-auditor.sh"
+    if [[ -f "$AUDITOR_SCRIPT" ]]; then
+      bash "$AUDITOR_SCRIPT" --task-id "$TASK_ID" --diff "HEAD~1..HEAD" 2>/dev/null || true
+    else
+      echo "$(date -Iseconds) | AUDITOR_MISSING | external-auditor.sh not found | TASK_ID=$TASK_ID" >> "$BYPASS_LOG"
+    fi
+
     exit 0
   else
     echo -e "${RED}❌ git commit 失败（exit $COMMIT_EXIT）${NC}"

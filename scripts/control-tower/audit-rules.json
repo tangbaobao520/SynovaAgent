@@ -1,0 +1,83 @@
+{
+  "$schema": "https://synova.dev/schemas/audit-rules-v1.json",
+  "version": "1.0.0",
+  "description": "外部审计规则 — 映射铁律 0-5 23 项已知错误模式（权威文档 #17 第五章 §2）",
+  "rules": [
+    {
+      "id": "E001", "category": "EXCEPTION", "severity": "P0",
+      "name": "空 catch 块",
+      "pattern": "catch\\s*\\([^)]*\\)\\s*\\{\\s*\\}",
+      "description": "catch 块为空 — 没有 log.warn/error，也没有 degraded 信号",
+      "ironLawRef": "铁律 0-5 错误 #20 / 铁律 24"
+    },
+    {
+      "id": "E002", "category": "EXCEPTION", "severity": "P1",
+      "name": "catch 缺少 log.warn/error",
+      "pattern": "catch\\s*\\([^)]*\\)\\s*\\{[^{}]*\\}",
+      "negativePattern": "log\\.(warn|error)",
+      "description": "catch 块存在但未记录日志",
+      "ironLawRef": "铁律 24+31"
+    },
+    {
+      "id": "W001", "category": "WIRING", "severity": "P0",
+      "name": "新 export 缺少调用方",
+      "check": "grep_export_callers",
+      "description": "export 的函数/类在 src/ 中没有被任何其他文件引用",
+      "ironLawRef": "铁律 0-5 错误 #3 / 铁律 4+5"
+    },
+    {
+      "id": "W002", "category": "WIRING", "severity": "P1",
+      "name": "新文件缺少路由注册",
+      "check": "grep_route_mount",
+      "description": "routes/ 下的新文件未在 server.ts 中 app.use() 注册",
+      "ironLawRef": "铁律 0-5 错误 #12"
+    },
+    {
+      "id": "T001", "category": "TYPES", "severity": "P0",
+      "name": "生产代码中的 as any",
+      "pattern": "as\\s+any",
+      "filePattern": "src/",
+      "excludePatterns": ["\\.test\\.", "\\.d\\.ts", "//.*as any"],
+      "description": "生产代码中禁止使用 as any",
+      "ironLawRef": "铁律 38"
+    },
+    {
+      "id": "T001-A", "category": "TYPES", "severity": "P0",
+      "name": "engine-core 引用违规",
+      "check": "grep_engine_core",
+      "description": "非白名单 src/ 文件引用了 packages/engine-core",
+      "ironLawRef": "铁律 46"
+    },
+    {
+      "id": "S001", "category": "TEST", "severity": "P1",
+      "name": "新 src/ 文件缺失测试",
+      "check": "grep_test_pairing",
+      "description": "新增的 src/ 文件没有对应的测试文件",
+      "ironLawRef": "铁律 0-5 错误 #10 / 铁律 48"
+    },
+    {
+      "id": "S002", "category": "TEST", "severity": "P2",
+      "name": "空测试文件",
+      "pattern": "describe\\(|it\\(|expect\\(",
+      "negativePattern": "expect\\(",
+      "filePattern": "\\.test\\.ts$",
+      "description": "测试文件没有 expect() 断言",
+      "ironLawRef": "铁律 48"
+    },
+    {
+      "id": "C001", "category": "CONTRACT", "severity": "P1",
+      "name": "compute 缺少 JSDoc 契约",
+      "check": "grep_compute_jsdoc",
+      "description": "compute 函数没有 @input/@output/@degraded JSDoc",
+      "ironLawRef": "铁律 0-5 错误 #2 / 铁律 47"
+    },
+    {
+      "id": "C002", "category": "CONTRACT", "severity": "P2",
+      "name": "TODO 残留",
+      "pattern": "TODO|FIXME|HACK|XXX",
+      "excludePatterns": ["\\.md$", "//\\s*TODO.*D[0-9]"],
+      "description": "注意事项或临时代码",
+      "ironLawRef": "铁律 0-5 错误 #11"
+    }
+  ]
+}
