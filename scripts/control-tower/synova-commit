@@ -28,6 +28,10 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PRE_COMMIT="$PROJECT_ROOT/scripts/pre-commit-check.sh"
 BYPASS_LOG="$PROJECT_ROOT/.claude/bypass.log"
 TIMEOUT_SEC=120
+GATEKEEPER_STORE="$PROJECT_ROOT/.codex/settings/gatekeeper"
+HEALTH_CACHE="$GATEKEEPER_STORE/.health-check"
+DASHBOARD_SIGNAL="$GATEKEEPER_STORE/.dashboard-signal"
+DEGRADED_LOG="$GATEKEEPER_STORE/degraded-events.log"
 
 # ═══ 颜色（如果终端支持） ═══
 if [[ -t 1 ]]; then
@@ -95,6 +99,107 @@ health_check() {
     echo "{\"ok\":false,\"reason\":\"$reason_str\"}"
     exit 0
   fi
+}
+
+# ═══ 仪表盘信号写入 (D201-Phase2) ═══
+
+write_dashboard_signal() {
+  local color="$1" component="$2" reason="$3"
+  mkdir -p "$GATEKEEPER_STORE"
+  echo "${color}|${component}|$(date -u +%Y-%m-%dT%H:%M:%SZ)|${reason}" > "$DASHBOARD_SIGNAL"
+}
+
+# ═══ 健康缓存 (D201-Phase2) ═══
+
+check_health_cache() {
+  if [[ -f "$HEALTH_CACHE" ]]; then
+    local cached_time
+    cached_time=$(cat "$HEALTH_CACHE" 2>/dev/null || echo 0)
+    local now
+    now=$(date +%s)
+    local elapsed=$((now - cached_time))
+    if [[ $elapsed -lt 30 ]]; then return 0; fi
+  fi
+  return 1
+}
+
+update_health_cache() {
+  mkdir -p "$GATEKEEPER_STORE"
+  date +%s > "$HEALTH_CACHE"
+}
+
+# ═══ 降级事件日志 (D201-Phase2) ═══
+
+log_degraded() {
+  local component="$1" reason="$2"
+  mkdir -p "$GATEKEEPER_STORE"
+  echo "{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"component\":\"${component}\",\"reason\":\"${reason}\"}" >> "$DEGRADED_LOG"
+}
+
+# ═══ L8: 跨 Agent 契约一致性 (D201-Phase2) ═══
+
+check_l8_contract_consistency() {
+  local contract="$GATEKEEPER_STORE/contract.json"
+  if [[ ! -f "$contract" ]]; then
+    echo -e "  ${YELLOW}L8: SKIP — contract.json 缺失${NC}"
+    write_dashboard_signal "YELLOW" "gatekeeper_partial" "contract_json_missing"
+    log_degraded "L8" "contract.json missing"
+    return 0
+  fi
+  local failed=0
+  while IFS= read -r func_name; do
+    [[ -z "$func_name" ]] && continue
+    if ! grep -rn "export function $func_name\|export const $func_name" "$PROJECT_ROOT/src/" --include="*.ts" 2>/dev/null | head -1 > /dev/null; then
+      echo -e "  ${RED}L8: Contract function '$func_name' not found in src/${NC}"
+      failed=1
+    fi
+  done < <(node -e "try{const c=require('$contract');if(!c.modules)process.exit(0);for(const m of c.modules)if(m.exports)for(const e of m.exports)console.log(e.name||e)}catch(e){process.exit(1)}" 2>/dev/null || echo "")
+  if [[ $failed -eq 1 ]]; then
+    echo -e "  ${RED}L8: FAIL — contract consistency check failed${NC}"
+    write_dashboard_signal "RED" "gatekeeper_l8" "contract_mismatch"
+    return 1
+  fi
+  echo -e "  ${GREEN}L8: PASS — contract consistency check passed${NC}"
+  return 0
+}
+
+# ═══ L9: 已知错误模式自动扫描 (D201-Phase2) ═══
+
+check_l9_error_patterns() {
+  local patterns="$GATEKEEPER_STORE/known-error-patterns.json"
+  if [[ ! -f "$patterns" ]]; then
+    echo -e "  ${YELLOW}L9: SKIP — known-error-patterns.json 缺失${NC}"
+    write_dashboard_signal "YELLOW" "gatekeeper_partial" "error_patterns_missing"
+    log_degraded "L9" "known-error-patterns.json missing"
+    return 0
+  fi
+  local staged_files
+  staged_files=$(git diff --cached --name-only --diff-filter=ACM -- '*.ts' '*.tsx' '*.js' '*.sh' 2>/dev/null || true)
+  if [[ -z "$staged_files" ]]; then
+    echo -e "  ${GREEN}L9: No staged files to scan${NC}"
+    return 0
+  fi
+  local failed=0
+  while IFS= read -r entry; do
+    [[ -z "$entry" ]] && continue
+    local pid=$(echo "$entry" | cut -d'|' -f1)
+    local pat=$(echo "$entry" | cut -d'|' -f2)
+    local desc=$(echo "$entry" | cut -d'|' -f3)
+    echo "$staged_files" | while IFS= read -r file; do
+      [[ -z "$file" ]] && continue; [[ ! -f "$PROJECT_ROOT/$file" ]] && continue
+      if grep -qE "$pat" "$PROJECT_ROOT/$file" 2>/dev/null; then
+        echo -e "  ${RED}L9: $pid — $desc (in: $file)${NC}"
+        failed=1
+      fi
+    done
+  done < <(node -e "try{const p=require('$patterns');for(const i of p)if(i.auto_detectable)console.log(i.id+'|'+i.pattern+'|'+i.description)}catch(e){process.exit(0)}" 2>/dev/null || true)
+  if [[ $failed -eq 1 ]]; then
+    echo -e "  ${RED}L9: FAIL — known error patterns detected${NC}"
+    write_dashboard_signal "RED" "gatekeeper_l9" "known_error_pattern_detected"
+    return 1
+  fi
+  echo -e "  ${GREEN}L9: PASS — no known error patterns${NC}"
+  return 0
 }
 
 # ═══ 参数解析 ═══
@@ -182,6 +287,18 @@ echo "  synova-commit — 校验网守"
 echo "  任务: $TASK_ID | Agent: $AGENT"
 echo "  暂存文件: $STAGED_COUNT"
 echo "═══════════════════════════════════════════════════════════"
+echo ""
+
+# 健康缓存
+update_health_cache
+
+# D201-Phase2: L8 — 契约一致性检查
+echo "── L8/9: Enhanced Checks ──"
+check_l8_contract_consistency || exit 1
+echo ""
+
+# D201-Phase2: L9 — 已知错误模式扫描
+check_l9_error_patterns || exit 1
 echo ""
 
 if [[ ! -f "$PRE_COMMIT" ]]; then
