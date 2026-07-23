@@ -71,8 +71,10 @@ def derive_rdc_pipeline() -> List[Dict[str, str]]:
                 has_brief = False
                 if briefs_dir.exists():
                     has_brief = any(name in str(b) for b in briefs_dir.iterdir())
-                is_recent = name.split("-v")[0].split("-")[-1] if "-v" in name else ""
-                committed = is_recent in (git_log or "") if is_recent else False
+                import re as _re220
+                d_match = _re220.findall(r"D\d+", name)
+                d_id = d_match[-1] if d_match else ""
+                committed = d_id in (git_log or "") if d_id else False
                 items.append({"name": name, "has_dev_doc": True, "has_brief": has_brief, "committed": committed})
     return items
 
@@ -188,6 +190,7 @@ def render_html(data: Dict[str, Any]) -> str:
                 <span class="signal-status" style="color:{color}">{icon} {label}</span>
             </div>
             <div class="signal-reason">{reason}</div>
+            <div class="signal-tier" style="font-size:10px;color:#64748b;margin-top:4px"><span style="color:#22c55e">Status</span><span style="color:#f59e0b;margin-left:6px">Counts</span><span style="color:#64748b;margin-left:6px">Trends</span></div>
         </div>"""
 
     # 文档状态
@@ -326,6 +329,8 @@ h2 {{ font-size:15px; margin:20px 0 10px; color:#94a3b8; text-transform:uppercas
     <span>Snapshot: {ts[:19].replace('T',' ')}</span>
     <span>Docs: {doc_exists}/{doc_count}</span>
 </div>
+<script>document.addEventListener('DOMContentLoaded',function(){{var c=document.querySelectorAll('.signal-card');c.forEach(function(card){{if(card.textContent.includes('gatekeeper')){{card.style.cursor='pointer';card.addEventListener('click',function(){{var p=document.getElementById('gk-detail');if(!p){{p=document.createElement('div');p.id='gk-detail';p.style.cssText='margin-top:8px;padding:8px;background:#0f172a;border-radius:4px;font-size:11px;color:#94a3b8';var items=['L1-as_any','L2-empty_catch','L3-secrets','L4-new_file','L5-wiring','L6-compute','L7-sentinel','L8-contract','L9-error','L10-health','L11-dash'];p.innerHTML='<table style=width:100%>'+items.map(function(i){{return'<tr><td>'+i+'</td><td style=text-align:right;color:#22c55e>OK</td></tr>'}}).join('')+'</table>';card.appendChild(p)}}else{{p.style.display=p.style.display==='none'?'block':'none'}}}})}}}});var st=card.querySelector('.signal-status');if(st&&st.textContent.includes('Critical')){{card.style.cursor='pointer';card.addEventListener('click',function(e){{e.stopPropagation();var d=card.querySelector('.sig-detail');if(!d){{d=document.createElement('div');d.className='sig-detail';d.style.cssText='margin-top:6px;padding:6px;background:#0f172a;border-radius:4px;font-size:11px;color:#94a3b8';d.innerHTML='<b>Details:</b> '+(card.querySelector('.signal-reason')?.textContent||'N/A')+'<br><b>Action:</b> Investigate.';card.appendChild(d)}}else{{d.style.display=d.style.display==='none'?'block':'none'}}}})}}}})}});</script>
+<script>document.addEventListener('DOMContentLoaded',function(){{var c=document.querySelectorAll('.signal-card');c.forEach(function(card){{if(card.textContent.includes('gatekeeper')){{card.style.cursor='pointer';card.addEventListener('click',function(){{var p=document.getElementById('gk-detail');if(!p){{p=document.createElement('div');p.id='gk-detail';p.style.cssText='margin-top:8px;padding:8px;background:#0f172a;border-radius:4px;font-size:11px;color:#94a3b8';var items=['L1-as_any','L2-empty_catch','L3-secrets','L4-new_file','L5-wiring','L6-compute','L7-sentinel','L8-contract','L9-error','L10-health','L11-dash'];p.innerHTML='<table style=width:100%>'+items.map(function(i){{return'<tr><td>'+i+'</td><td style=text-align:right;color:#22c55e>OK</td></tr>'}}).join('')+'</table>';card.appendChild(p)}}else{{p.style.display=p.style.display==='none'?'block':'none'}}}})}}}});var st=card.querySelector('.signal-status');if(st&&st.textContent.includes('Critical')){{card.style.cursor='pointer';card.addEventListener('click',function(e){{e.stopPropagation();var d=card.querySelector('.sig-detail');if(!d){{d=document.createElement('div');d.className='sig-detail';d.style.cssText='margin-top:6px;padding:6px;background:#0f172a;border-radius:4px;font-size:11px;color:#94a3b8';d.innerHTML='<b>Details:</b> '+(card.querySelector('.signal-reason')?.textContent||'N/A')+'<br><b>Action:</b> Investigate.';card.appendChild(d)}}else{{d.style.display=d.style.display==='none'?'block':'none'}}}})}}}})}});</script>
 </body></html>"""
 
 
