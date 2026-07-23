@@ -136,6 +136,16 @@ def read_audit_summary() -> Dict[str, Any]:
     return {"findings": [], "summary": "No audit data"}
 
 
+def read_gate_status() -> Dict[str, Any]:
+    gate_path = PROJECT_ROOT / ".codex/signals/gate-status.json"
+    if gate_path.exists():
+        try:
+            return json.loads(gate_path.read_text(encoding="utf-8"))
+        except:
+            pass
+    return {"gates": [], "summary": {"passed": 0, "partial": 0, "failed": 0}}
+
+
 def read_env_status() -> Dict[str, Any]:
     """读取环境状态"""
     env_path = PROJECT_ROOT / ".codex/env-snapshot.json"
@@ -159,6 +169,7 @@ def collect_dashboard_data() -> Dict[str, Any]:
         "rdcPipeline": derive_rdc_pipeline(),
         "signals": read_component_signals(),
         "audit": read_audit_summary(),
+        "gates": read_gate_status(),
         "env": read_env_status(),
         "signalCount": 6,
     }
@@ -257,6 +268,21 @@ def render_html(data: Dict[str, Any]) -> str:
                 recent += f"<div class='recent-item'>{esc(line[:80])}</div>\n"
     except:  # noqa
         recent = "<div class='recent-item'>No git log</div>"
+
+    gd = data.get("gates", {})
+    gp = gd.get("summary", {}).get("passed", 0)
+    gpa = gd.get("summary", {}).get("partial", 0)
+    gf = gd.get("summary", {}).get("failed", 0)
+    gts = gd.get("gates", [])
+    gr = ""
+    for g in gts[:17]:
+        gs = g.get("status", "unknown")
+        gc = {"pass": "#22c55e", "partial": "#f59e0b", "failed": "#ef4444"}.get(gs, "#6b7280")
+        gl = {"pass": "Pass", "partial": "Partial", "failed": "Fail"}.get(gs, "Unknown")
+        gr += "<div style='display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px;border-bottom:1px solid #334155'><span style='color:" + gc + "'>\u25cf</span><span style='min-width:60px;font-weight:600'>" + g.get("dimension","") + "</span><span style='flex:1'>" + g.get("name","") + "</span><span style='color:" + gc + "'>" + gl + "</span></div>\n"
+    if not gr:
+        gr = "No gate data"
+    gsect = "<div class='card card-full'><h2>17 Product Gates \u2014 <span style='color:#22c55e'>" + str(gp) + "</span> Pass / <span style='color:#f59e0b'>" + str(gpa) + "</span> Partial / <span style='color:#ef4444'>" + str(gf) + "</span> Fail</h2><div class='gate-grid'>" + gr + "</div></div>" if gts else ""
 
     ts = data.get("timestamp", "")
     signal_count = sum(1 for v in signals.values() if v.get("status") != "unknown")
@@ -388,13 +414,24 @@ def serve(port: int = 8899):
                 # 注入 JS 自动刷新
                 refresh_html = html.replace("</body>", """
 <script>
-async function refresh() {
-    try {
-        const r = await fetch('/api/dashboard-data');
-        if (r.ok) location.reload();
-    } catch(e) {}
+async function refreshDashboard() {
+  try {
+    var r=await fetch('/api/dashboard-data');if(!r.ok)return;
+    var d=await r.json();
+    try{updateDocsBar(d);}catch(e){}
+    try{updatePipeline(d);}catch(e){}
+    try{updateSignals(d);}catch(e){}
+    try{updateBlocks(d);}catch(e){}
+    try{updateGates(d);}catch(e){}
+    try{var sb=document.querySelector('.status-bar');if(sb)sb.innerHTML='<span style=color:#22c55e>\\u25cf Signals: '+(d.signals?Object.keys(d.signals).length:0)+'/6</span><span>Snapshot: '+(d.timestamp||'').slice(0,19).replace('T',' ')+'</span>';}catch(e){}
+  }catch(e){console.warn('Refresh failed')}
 }
-setInterval(refresh, 300000);
+function updateDocsBar(d){var docs=d.authDocs||[];var bar=document.querySelector('.card:first-child .card-bar');if(bar)bar.style.width=(docs.length?Math.round(docs.filter(function(x){return x.exists}).length/docs.length*100):0)+'%';}
+function updatePipeline(d){var items=d.rdcPipeline||[];var r0=0,d0=0,c0=0;items.forEach(function(x){if(x.has_brief)r0++;if(x.has_dev_doc)d0++;if(x.committed)c0++;});var bar=document.querySelector('.card:nth-child(2) .pipeline-bar');if(bar)bar.innerHTML='<div style=flex:'+r0+';background:#22c55e;border-radius:3px></div><div style=flex:'+d0+';background:#f59e0b></div><div style=flex:'+c0+';background:#3b82f6;border-radius:3px></div>';}
+function updateSignals(d){var sig=d.signals||{};var el=document.querySelector('.sig-container');if(!el)return;var html='';['context-injector','gatekeeper','external-auditor','contract-archiver','dev-doc-gatekeeper','write-lock'].forEach(function(c){var s=sig[c]||{status:'unknown',reason:'N/A'};var st=s.status;var cl={green:'#22c55e',yellow:'#f59e0b',red:'#ef4444',unknown:'#6b7280'}[st]||'#6b7280';var lb={green:'Healthy',yellow:'Warning',red:'Critical',unknown:'Unknown'}[st]||'Unknown';html+='<div class=signal-card style=border-left:3px solid '+cl+'><div class=signal-header><span class=signal-name>'+c+'</span><span class=signal-status style=color:'+cl+'>\\u25cf '+lb+'</span></div><div class=signal-reason>'+(s.reason||'')+'</div></div>';});el.innerHTML=html;}
+function updateBlocks(d){var sig=d.signals||{};var bl=Object.keys(sig).filter(function(k){var s=sig[k].status;return s==='red'||s==='yellow'||s==='unknown';});var el=document.getElementById('blocks-container');if(!el)return;if(!bl.length){el.innerHTML='<div style=font-size:12px;color:#22c55e>All clear</div>';return;}el.innerHTML=bl.map(function(k){var b=sig[k];return '<div class=block-row><span class=sev-'+(b.status==='red'?'P0':'P1')+'>'+(b.status==='red'?'P0':'P1')+'</span><span>'+(b.component||k)+'</span><span>'+(b.reason||'')+'</span></div>';}).join('');}
+function updateGates(d){var gates=(d.gates&&d.gates.gates)||[];var el=document.querySelector('.gate-grid');if(!el)return;if(!gates.length){el.innerHTML='<div style=font-size:12px;color:#64748b>No gate data</div>';return;}el.innerHTML=gates.slice(0,17).map(function(g){var s=g.status||'unknown';var c={pass:'#22c55e',partial:'#f59e0b',failed:'#ef4444'}[s]||'#6b7280';var l={pass:'Pass',partial:'Partial',failed:'Fail'}[s]||'Unknown';return '<div style=display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px;border-bottom:1px solid #334155><span style=color:'+c+'>\\u25cf</span><span style=min-width:60px;font-weight:600>'+(g.dimension||'')+'</span><span style=flex:1>'+(g.name||'')+'</span><span style=color:'+c+'>'+l+'</span></div>';}).join('');}
+setInterval(refreshDashboard,300000);
 </script></body>""")
                 self.wfile.write(refresh_html.encode())
 
