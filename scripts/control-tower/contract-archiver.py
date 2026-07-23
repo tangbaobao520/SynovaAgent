@@ -230,7 +230,7 @@ class ContractArchiver:
                 try:
                     r = subprocess.run(
                         ["grep", "-r", name, "--include=*.ts", "--include=*.json",
-                         "extensions/sentinels/", "packages/ontology/"],
+                         "extensions/sentinels/", "packages/ontology/", "extensions/ontology/edge-types/"],
                         capture_output=True, text=True, cwd=self.project_root, timeout=10,
                     )
                     passed = r.returncode == 0
