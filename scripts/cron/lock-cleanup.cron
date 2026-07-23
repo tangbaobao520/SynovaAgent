@@ -1,0 +1,4 @@
+# D218: 孤儿锁扫描 — 每 60 秒运行一次
+# 权威文档 #17 Ch4 实现表 461
+# 安装: crontab scripts/cron/lock-cleanup.cron
+*/1 * * * * cd /D/novis-backup-20260526/Novis/synova-agent && bash scripts/lock/lock-scanner.sh >> .codex/locks/cleanup.log 2>&1
