@@ -196,8 +196,7 @@ class TestFormatReport(unittest.TestCase):
             "differences": [],
         }
         output = format_report(report)
-        self.assertIn("✅", output)
-        self.assertIn("一致", output)
+        self.assertIn("[PASS] Consistent", output)
 
     def test_format_fail_report(self):
         """不一致的报告包含差异详情。"""
@@ -218,14 +217,13 @@ class TestFormatReport(unittest.TestCase):
             ],
         }
         output = format_report(report)
-        self.assertIn("❌", output)
-        self.assertIn("不一致", output)
+        self.assertIn("[FAIL] Inconsistent", output)
         self.assertIn("node.version", output)
         self.assertIn("v20.0.0", output)
         self.assertIn("v24.16.0", output)
 
     def test_format_degraded_report(self):
-        """降级跳过的报告包含 ⚠ 标记。"""
+        """降级跳过的报告包含 [WARN] 标记。"""
         report = {
             "ok": True,
             "total_checks": 9,
@@ -243,8 +241,8 @@ class TestFormatReport(unittest.TestCase):
             ],
         }
         output = format_report(report)
-        self.assertIn("⚠", output)
-        self.assertIn("降级跳过", output)
+        self.assertIn("[WARN]", output)
+        self.assertIn("degraded, skipped", output)
         self.assertIn("typescript.version", output)
 
 
