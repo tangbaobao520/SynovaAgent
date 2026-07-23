@@ -26,6 +26,13 @@ fi
 # V4.5.0: STATE.md 已移除。证据链由 git log 提供。
 # 不再写入 STATE.md。
 
+# ═══ D210: 外部审计器 — 提交后自动扫描 ═══
+AUDITOR="$ROOT/scripts/control-tower/external-auditor.sh"
+if [ -f "$AUDITOR" ]; then
+  TASK_ID=$(git log -1 --pretty=%B | head -1 | grep -oP "(?<=D)\d+(?=[-FIX\s])" | head -1 || echo "unknown")
+  bash "$AUDITOR" --task-id "D${TASK_ID}" --diff HEAD~1..HEAD 2>&1 | tail -3
+fi
+
 # ═══ 决策流程 ═══
 bash "$ROOT/scripts/workflow/decide-next.sh" 2>/dev/null &
 exit 0
