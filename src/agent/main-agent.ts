@@ -19,6 +19,7 @@ import { createLogger } from '@synova/logger';
 import type { LoopTriggerConfig, ScaleName } from '../loops/loop-trigger-config';
 import { defaultDiagnosisHandler, defaultNavigationHandler, defaultEvolutionHandler, defaultOverflowHandler } from './loop-handlers';
 import type { ConflictArbitrator } from './conflict-arbitrator';
+import { BudgetTracker } from './cost-budget';
 
 const log = createLogger('agent/main-agent');
 const UNKNOWN_EXPERT = 'unknown' as const;
@@ -79,6 +80,7 @@ export class MainAgent {
    */
   private taskDecomposer: import('./task-decomposer').TaskDecomposer | null;
   private conflictArbitrator: ConflictArbitrator | null;
+  private budgetTracker: BudgetTracker;
 
   constructor(
     auditStore?: AuditStoreLike | null,
@@ -88,6 +90,7 @@ export class MainAgent {
     this.auditStore = auditStore ?? null;
     this.taskDecomposer = taskDecomposer ?? null;
     this.conflictArbitrator = conflictArbitrator ?? null;
+    this.budgetTracker = new BudgetTracker();
   }
 
   /**
@@ -149,13 +152,26 @@ export class MainAgent {
       };
     }
 
+    // D8g: 执行前预算检查
+    const budgetStatus = this.budgetTracker.checkBudget(loopId, scale);
+    if (budgetStatus.blocked) {
+      log.warn({ loopId, scale, cumulativeCost: budgetStatus.cumulativeCost }, "预算拦截 — 累计成本超出上限");
+      return {
+        loopId, scale, status: 'failed' as const, durationMs: 0, startedAt: new Date().toISOString(),
+        error: `预算拦截: 累计成本 ${budgetStatus.cumulativeCost} 超出上限 ${this.budgetTracker['config']?.cumulativeBudget || '?'}`,
+        degraded: true,
+      };
+    }
+
     const startedAt = new Date().toISOString();
     const startTime = Date.now();
 
     try {
       // D8b: 对于诊断循环 (loop-1)，使用任务分解
       if (loopId === 'loop-1' && this.taskDecomposer) {
-        return await this.executeWithDecomposition(loopId, scale, startTime, startedAt, loop);
+        const decoResult = await this.executeWithDecomposition(loopId, scale, startTime, startedAt, loop);
+        this.budgetTracker.trackExecution(loopId, scale, budgetStatus.estimatedTokens, budgetStatus.estimatedTokens);
+        return decoResult;
       }
 
       // 选择对应处理器
@@ -181,6 +197,9 @@ export class MainAgent {
 
       // 写入审计日志
       this.writeAuditLog(loopId, scale, record);
+
+      // D8g: 执行后成本追踪（使用预估 token 作为实际消耗）
+      this.budgetTracker.trackExecution(loopId, scale, budgetStatus.estimatedTokens, budgetStatus.estimatedTokens);
 
       // D8f: 收敛规则分析 (loop-1/loop-3 诊断循环完成后)
       if ((loopId === 'loop-1' || loopId === 'loop-3') && result.success) {
