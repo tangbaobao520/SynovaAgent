@@ -34,10 +34,13 @@ interface LoopItem {
   config: { loopId: string; loopName: string; scales: ScaleConfig[] };
   lastExecution?: ExecutionRecord;
   executionCount: number;
+  history?: ExecutionRecord[];
 }
 
 interface MainAgentLike {
   listLoops(): LoopItem[];
+  getLoopHistory?(loopId: string): ExecutionRecord[];
+  executeLoop?(loopId: string): Promise<{ ok: boolean; error?: string }>;
 }
 
 // ═══ 依赖注入 ═══
@@ -106,6 +109,42 @@ router.get('/api/loops/status', jwtAuthMiddleware, (_req, res) => {
     const msg = err instanceof Error ? err.message : String(err);
     log.error({ err: msg }, 'Failed to get loop status');
     res.status(500).json({ ok: false, loops: [], error: msg, degraded: true });
+  }
+});
+
+// ═══ GET /api/loops/:id/history — 循环执行历史 (D20 v2) ═══
+
+router.get('/api/loops/:id/history', jwtAuthMiddleware, (req, res) => {
+  try {
+    const loopId = req.params.id as string;
+    if (!mainAgent || !mainAgent.getLoopHistory) {
+      res.json({ ok: true, loopId, history: [], degraded: true });
+      return;
+    }
+    const history = mainAgent.getLoopHistory(loopId) || [];
+    res.json({ ok: true, loopId, history: history.slice(0, 10) });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log.error({ err: msg }, 'Failed to get loop history');
+    res.status(500).json({ ok: false, error: msg, degraded: true });
+  }
+});
+
+// ═══ POST /api/loops/:id/execute — 手动触发循环 (D20 v2) ═══
+
+router.post('/api/loops/:id/execute', jwtAuthMiddleware, async (req, res) => {
+  try {
+    const loopId = req.params.id as string;
+    if (!mainAgent || !mainAgent.executeLoop) {
+      res.status(400).json({ ok: false, error: 'MainAgent not ready', degraded: true });
+      return;
+    }
+    const result = await mainAgent.executeLoop(loopId);
+    res.json(result);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log.error({ err: msg }, 'Failed to execute loop');
+    res.status(500).json({ ok: false, error: msg, degraded: true });
   }
 });
 

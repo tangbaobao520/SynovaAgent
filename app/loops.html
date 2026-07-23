@@ -15,7 +15,7 @@
     <div class="loops-header">
       <h1>Loop Status</h1>
       <div class="loops-controls">
-        <span id="refresh-status" class="refresh-label">每 30s 自动刷新</span>
+        <span id="refresh-status" class="refresh-label">Auto-refresh every 30s</span>
         <button onclick="loadLoopStatus()" class="btn-secondary" style="padding:8px 16px;">Refresh</button>
       </div>
     </div>
@@ -23,6 +23,13 @@
     <div id="loops-container" class="loops-grid">
       <div class="loading-placeholder">Loading...</div>
     </div>
+
+    <section id="history-section" class="card" style="margin-top:24px;">
+      <h2 class="card-title">Recent Executions</h2>
+      <div id="history-list" class="history-list">
+        <div class="loading-placeholder">Loading execution history...</div>
+      </div>
+    </section>
   </div>
 
   <script src="/app/js/auth.js"></script>

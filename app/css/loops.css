@@ -1,4 +1,4 @@
-/* ═══ loops.css — D20 Loop Status Page ═══ */
+/* ═══ loops.css — D20 Loop Status Page v2 ═══ */
 
 .loops-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
 .loops-header h1 { font-size: 22px; font-weight: 700; }
@@ -13,7 +13,7 @@
 .loop-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 .loop-card-title { font-size: 15px; font-weight: 600; color: var(--text); }
 
-.loop-status-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.loop-status-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; white-space: nowrap; transition: all 0.3s; }
 .loop-status-badge.status-completed { background: #dcfce7; color: #16a34a; }
 .loop-status-badge.status-running { background: #fef3c7; color: #d97706; }
 .loop-status-badge.status-pending { background: #f3f4f6; color: #6b7280; }
@@ -27,10 +27,32 @@
 .scale-dot { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-secondary); }
 .scale-dot small { color: var(--text-secondary); font-size: 10px; }
 .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-.dot-completed { background: #4caf50; }
 .dot-pending { background: #d1d5db; }
 .dot-running { background: #f59e0b; }
+.dot-completed { background: #4caf50; }
 .dot-failed { background: #ef4444; }
 
+.btn-execute { margin-top: 12px; padding: 6px 16px; background: var(--primary); color: #fff; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; transition: background 0.15s; }
+.btn-execute:hover { background: var(--primary-dark); }
+.btn-execute:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── 执行历史时间线 ── */
+.history-list { display: flex; flex-direction: column; gap: 0; }
+.history-entry { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-left: 2px solid var(--border); margin-left: 8px; padding-left: 16px; position: relative; }
+.history-entry:last-child { border-left-color: transparent; }
+.history-timeline-dot { position: absolute; left: -6px; top: 14px; width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--bg-card); }
+.history-timeline-dot.hist-status-completed { background: #4caf50; }
+.history-timeline-dot.hist-status-failed { background: #ef4444; }
+.history-timeline-dot.hist-status-running { background: #f59e0b; }
+.history-timeline-dot.hist-status-pending { background: #d1d5db; }
+.history-content { flex: 1; }
+.history-header { display: flex; justify-content: space-between; align-items: center; }
+.history-header strong { font-size: 14px; color: var(--text); }
+.history-status { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+.history-status.hist-status-completed { background: #dcfce7; color: #16a34a; }
+.history-status.hist-status-failed { background: #fef2f2; color: #dc2626; }
+.history-status.hist-status-running { background: #fef3c7; color: #d97706; }
+.history-meta { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
 .loading-placeholder { grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: var(--text-secondary); }
-.empty-state { grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: var(--text-secondary); font-size: 14px; }
+.empty-state { text-align: center; padding: 40px 20px; color: var(--text-secondary); font-size: 14px; }
