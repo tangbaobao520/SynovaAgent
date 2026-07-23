@@ -8,7 +8,7 @@ import type { EngineContext } from './engine-context';
 import type { DiagnosisEngine, DiagnosisEvent, ConsultationResult } from '../l2-interfaces/diagnosis-engine';
 import { createLogger } from '@synova/logger';
 // L4 访问: 运行时动态 import — 避免静态跨层依赖 (铁律 39, 审计 P0-20260618)
-import { ContractGate } from"../contract/contract-gate";
+import { ContractGate } from "../contract/contract-gate";
 import { ContractStore } from "../contract/contract-store";
 import { runSafetyGate } from '../security/safety-guardrails';
 import { getFaultRecovery } from '../services/fault-recovery';
