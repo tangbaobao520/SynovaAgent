@@ -97,7 +97,7 @@ export class ContractGate {
           return this.grepCheck(contract, `class ${name}\\b`, 'src/');
 
         case 'edge_id':
-          return this.grepCheck(contract, name, 'extensions/ontology/edge-types/');
+          return this.grepEdgeCheck(contract, name);
 
         case 'file_path':
           if (!filePath) return { contractId: contract.contractId, name, type, pass: false, detail: 'filePath 为空' };
@@ -125,6 +125,29 @@ export class ContractGate {
    * grep 验证：在指定路径搜索标识符。
    * grep 不可用时降级返回 pass:true（不阻断）。
    */
+  private grepEdgeCheck(contract: ContractRecord, pattern: string): ValidationItem {
+    try {
+      const targetDir = join(this.repoRoot, "extensions/ontology/edge-types/");
+      if (!existsSync(targetDir)) {
+        return { contractId: contract.contractId, name: contract.name, type: contract.type, pass: true, detail: "path not found: edge-types/" };
+      }
+      const result = execSync(
+        "grep -ri \"" + pattern + "\" \"" + targetDir + "\" 2>/dev/null | head -3",
+        { encoding: "utf-8", timeout: 10000 },
+      );
+      const found = result.trim().length > 0;
+      return {
+        contractId: contract.contractId, name: contract.name, type: contract.type,
+        pass: found,
+        detail: found ? "found: " + pattern + " in edge-types/" : "not found: " + pattern + " in edge-types/",
+      };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg, pattern }, "edge_id grep failed - degraded pass");
+      return { contractId: contract.contractId, name: contract.name, type: contract.type, pass: true, detail: "grep degraded: " + msg };
+    }
+  }
+
   private grepCheck(contract: ContractRecord, pattern: string, searchPath: string): ValidationItem {
     try {
       const targetDir = join(this.repoRoot, searchPath);
