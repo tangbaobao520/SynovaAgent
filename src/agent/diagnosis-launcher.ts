@@ -8,6 +8,8 @@ import type { EngineContext } from './engine-context';
 import type { DiagnosisEngine, DiagnosisEvent, ConsultationResult } from '../l2-interfaces/diagnosis-engine';
 import { createLogger } from '@synova/logger';
 // L4 访问: 运行时动态 import — 避免静态跨层依赖 (铁律 39, 审计 P0-20260618)
+import { ContractGate } from"../contract/contract-gate";
+import { ContractStore } from "../contract/contract-store";
 import { runSafetyGate } from '../security/safety-guardrails';
 import { getFaultRecovery } from '../services/fault-recovery';
 // V4.4.4 T7b: L3 诊断模块 — 外部假设监控 + 平台依赖检查
@@ -60,7 +62,19 @@ export class DiagnosisLauncher {
 
     try {
       // ═══ Batch 2: 六阶段追踪 — 每阶段发射 phase_started 事件 ═══
-      const phaseLabels = [
+      // D215: 契约门禁 — 启动前验证接口契约
+    try {
+      const gate = new ContractGate(new ContractStore());
+      const validation = await gate.validateAll();
+      if (!validation.pass && !validation.degraded) {
+        throw new Error(`D215 契约门禁未通过: ${validation.failures.length} 项失败`);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg }, "D215 契约门禁跳过 — 降级");
+    }
+
+    const phaseLabels = [
         '组织访谈', '数据采集', '假设生成', '根因分析', '报告生成', '交付',
       ];
       // Phase 0 完成信号 (ConversationEngine 已在 Phase 0 完成后调用 startDiagnosis)
