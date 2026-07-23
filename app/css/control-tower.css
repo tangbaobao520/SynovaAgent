@@ -1,0 +1,175 @@
+/* ══════════════════════════════════════════════════════
+   control-tower.css — 控制塔仪表盘 (D213)
+   ══════════════════════════════════════════════════════ */
+
+/* ── Tower Header ── */
+.tower-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.tower-header h1 { font-size: 24px; font-weight: 700; }
+
+/* ── 6 组件健康卡片网格 ── */
+.tower-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.tower-card {
+  padding: 20px;
+  border-radius: 10px;
+  border-left: 4px solid #9ca3af;
+  background: var(--bg-card);
+  transition: box-shadow 0.15s;
+  position: relative;
+}
+.tower-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.tower-card.status-green { border-left-color: var(--success); }
+.tower-card.status-yellow { border-left-color: var(--warning); }
+.tower-card.status-red { border-left-color: var(--error); }
+.tower-card.status-unknown { border-left-color: #9ca3af; }
+
+.tower-card .card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.tower-card h3 { font-size: 14px; font-weight: 700; margin: 0; }
+
+/* ── 状态指示灯 ── */
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.status-dot.green { background: var(--success); }
+.status-dot.yellow { background: var(--warning); animation: pulse-slow 2s ease-in-out infinite; }
+.status-dot.red { background: var(--error); animation: pulse-fast 1s ease-in-out infinite; }
+.status-dot.gray { background: #9ca3af; }
+@keyframes pulse-slow { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+@keyframes pulse-fast { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+.tower-card .status-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.tower-card .status-label.green { color: var(--success); }
+.tower-card .status-label.yellow { color: var(--warning); }
+.tower-card .status-label.red { color: var(--error); }
+.tower-card .status-label.gray { color: #9ca3af; }
+
+.tower-card .card-meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 6px;
+}
+.tower-card .card-reason {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  padding: 4px 8px;
+  background: var(--bg);
+  border-radius: 4px;
+  word-break: break-all;
+}
+.tower-card .card-counts {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.count-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+.count-p0 { background: #fef2f2; color: var(--error); }
+.count-p1 { background: #fffbeb; color: var(--warning); }
+.count-p2 { background: #f0fdf4; color: var(--success); }
+
+/* ── Skeleton ── */
+.tower-card.skeleton { padding: 0; min-height: 120px; }
+.tower-card .skeleton-pulse {
+  height: 100%;
+  min-height: 120px;
+  background: linear-gradient(90deg, var(--border) 25%, #f0f0f0 50%, var(--border) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+/* ── 阻断清单 ── */
+.blocks-section, .audit-section {
+  margin-bottom: 24px;
+}
+.blocks-section h2, .audit-section h2 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.blocks-empty {
+  text-align: center;
+  padding: 30px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.block-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  background: var(--bg);
+  font-size: 13px;
+}
+.block-item .block-severity {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.block-severity.P0 { background: #fef2f2; color: var(--error); }
+.block-severity.P1 { background: #fffbeb; color: var(--warning); }
+.block-severity.P2 { background: #e0f2fe; color: #0284c7; }
+.block-item .block-component { font-weight: 600; min-width: 100px; }
+.block-item .block-reason { flex: 1; color: var(--text-secondary); }
+.block-item .block-time { font-size: 11px; color: var(--text-secondary); white-space: nowrap; }
+
+/* ── 审计摘要 ── */
+.audit-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  margin-bottom: 4px;
+  font-size: 12px;
+  background: var(--bg);
+}
+.audit-row .audit-check { font-weight: 600; min-width: 80px; }
+.audit-row .audit-result { font-weight: 600; }
+.audit-row .audit-result.pass { color: var(--success); }
+.audit-row .audit-result.fail { color: var(--error); }
+.audit-row .audit-detail { flex: 1; color: var(--text-secondary); }
+.audit-row .audit-time { font-size: 11px; color: var(--text-secondary); white-space: nowrap; }
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .tower-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .tower-grid { grid-template-columns: 1fr; }
+}

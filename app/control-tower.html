@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Synova — Control Tower</title>
+  <link rel="stylesheet" href="/app/css/app.css">
+  <link rel="stylesheet" href="/app/css/control-tower.css">
+</head>
+<body>
+  <header id="synova-shell"></header>
+  <div id="toast-container"></div>
+
+  <div class="page-content">
+    <div class="tower-header">
+      <h1>Control Tower</h1>
+      <span id="tower-last-refresh" class="last-refresh"></span>
+    </div>
+
+    <!-- 6 组件健康卡片 -->
+    <section id="tower-health" class="tower-grid">
+      <!-- JS 动态渲染 -->
+    </section>
+
+    <!-- 活跃阻断清单 -->
+    <section id="active-blocks" class="blocks-section">
+      <h2>Active Blocks</h2>
+      <div id="blocks-list" class="blocks-empty">No active blocks</div>
+    </section>
+
+    <!-- 24h 审计摘要 -->
+    <section id="audit-summary" class="audit-section">
+      <h2>24h Audit Summary</h2>
+      <div id="audit-content" class="blocks-empty">No audit data available</div>
+    </section>
+  </div>
+
+  <script src="/app/js/auth.js"></script>
+  <script src="/app/js/shell.js"></script>
+  <script src="/app/js/control-tower.js"></script>
+</body>
+</html>
