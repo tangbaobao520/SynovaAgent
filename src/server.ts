@@ -34,7 +34,6 @@ import deptWorkspaceRoutes from './routes/department-workspace';
 import actionsApiRoutes from './routes/actions-api';
 import healthRoutes from './routes/health';
 import healthzRoutes from './routes/healthz';
-import cockpitRoutes from './routes/cockpit'; // D220-PHASE3
 import evolutionRoutes from './routes/evolution';
 import gaEvolutionRoutes from './routes/ga-evolution';
 import ontologyRoutes from './routes/ontology';
@@ -68,6 +67,7 @@ import selfOpsRoutes from './routes/self-ops';
 import overflowRoutes from './routes/overflow';
 import loopRoutes from "./routes/loops";
 import enterpriseRoutes from './routes/enterprise'; // D103
+import cockpitRoutes from './routes/cockpit'; // D220-PHASE3
 import type { ServiceContainer } from './services/container';
 // Phase 0.1: 全局错误兜底 — uncaughtException + unhandledRejection
 import { setMainAgent } from "./routes/loops";
@@ -272,7 +272,7 @@ export async function createServer(): Promise<Server> {
 
   // 基础中间件
   // D96: 静态文件服务 — 前端 UI (login/dashboard/reports)
-  app.use('/app', express.static(path.join(__dirname, '..', 'app')));
+  app.use('/app', express.static(path.join(process.cwd(), 'app')));
   app.get('/', (_req, res) => res.redirect('/app/index.html'));
   app.get('/login', (_req, res) => res.redirect('/app/login.html'));
 
@@ -319,7 +319,6 @@ export async function createServer(): Promise<Server> {
   app.use(dataLifecycleRoutes);
   app.use(healthRoutes);
   app.use(healthzRoutes);
-  app.use(cockpitRoutes); // D220-PHASE3
   app.use(evolutionRoutes);
   app.use(gaEvolutionRoutes);
   app.use(ontologyRoutes);
@@ -350,6 +349,7 @@ export async function createServer(): Promise<Server> {
   app.use(selfOpsRoutes);
   app.use(enterpriseRoutes); // D103 — 企业路由
   app.use(loopRoutes); // D20 — 循环状态 API
+  app.use(cockpitRoutes); // D220-PHASE3 — 创始人仪表盘
 
   // ═══ A2: Connector Pipeline — 手动触发 ═══
   app.post('/api/connector/sync', async (req, res) => {
