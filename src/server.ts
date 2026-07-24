@@ -34,6 +34,7 @@ import deptWorkspaceRoutes from './routes/department-workspace';
 import actionsApiRoutes from './routes/actions-api';
 import healthRoutes from './routes/health';
 import healthzRoutes from './routes/healthz';
+import cockpitRoutes from './routes/cockpit'; // D220-PHASE3
 import evolutionRoutes from './routes/evolution';
 import gaEvolutionRoutes from './routes/ga-evolution';
 import ontologyRoutes from './routes/ontology';
@@ -318,6 +319,7 @@ export async function createServer(): Promise<Server> {
   app.use(dataLifecycleRoutes);
   app.use(healthRoutes);
   app.use(healthzRoutes);
+  app.use(cockpitRoutes); // D220-PHASE3
   app.use(evolutionRoutes);
   app.use(gaEvolutionRoutes);
   app.use(ontologyRoutes);

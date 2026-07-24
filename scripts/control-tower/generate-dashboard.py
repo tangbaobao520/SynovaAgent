@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 generate-dashboard.py — 创始人全局仪表盘 (D220)
 
@@ -193,7 +193,7 @@ def render_html(data: Dict[str, Any]) -> str:
     signal_cards = ""
     status_icons = {"green": "&#9679;", "yellow": "&#9679;", "red": "&#9679;", "unknown": "&#9678;"}
     status_colors = {"green": "#22c55e", "yellow": "#f59e0b", "red": "#ef4444", "unknown": "#6b7280"}
-    status_labels = {"green": "Healthy", "yellow": "Warning", "red": "Critical", "unknown": "Unknown"}
+    status_labels = {"green": "正常", "yellow": "警告", "red": "严重", "unknown": "未知"}
 
     for comp in ["context-injector", "gatekeeper", "external-auditor", "contract-archiver", "dev-doc-gatekeeper", "write-lock"]:
         sig = signals.get(comp, {"status": "unknown", "reason": "Signal file not found"})
@@ -216,7 +216,7 @@ def render_html(data: Dict[str, Any]) -> str:
                 <span class="signal-status" style="color:{color}">{icon} {label}</span>
             </div>
             <div class="signal-reason">{reason}</div>
-            <div class="signal-tier" style="font-size:10px;color:#64748b;margin-top:4px"><span style="color:#22c55e">{st_icon} Status</span><span style="color:#f59e0b;margin-left:8px">{cnt_icon} Counts</span><span style="color:#64748b;margin-left:8px">{tr_icon} Trends</span></div>
+            <div class="signal-tier" style="font-size:10px;color:#64748b;margin-top:4px"><span style="color:#22c55e">{st_icon} 状态</span><span style="color:#f59e0b;margin-left:8px">{cnt_icon} 计数</span><span style="color:#64748b;margin-left:8px">{tr_icon} 趋势</span></div>
         </div>"""
 
     # 文档状态
@@ -278,11 +278,11 @@ def render_html(data: Dict[str, Any]) -> str:
     for g in gts[:17]:
         gs = g.get("status", "unknown")
         gc = {"pass": "#22c55e", "partial": "#f59e0b", "failed": "#ef4444"}.get(gs, "#6b7280")
-        gl = {"pass": "Pass", "partial": "Partial", "failed": "Fail"}.get(gs, "Unknown")
+        gl = {"pass": "通过", "partial": "部分通过", "failed": "未通过"}.get(gs, "Unknown")
         gr += "<div style='display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px;border-bottom:1px solid #334155'><span style='color:" + gc + "'>\u25cf</span><span style='min-width:60px;font-weight:600'>" + g.get("dimension","") + "</span><span style='flex:1'>" + g.get("name","") + "</span><span style='color:" + gc + "'>" + gl + "</span></div>\n"
     if not gr:
-        gr = "No gate data"
-    gsect = "<div class='card card-full'><h2>17 Product Gates \u2014 <span style='color:#22c55e'>" + str(gp) + "</span> Pass / <span style='color:#f59e0b'>" + str(gpa) + "</span> Partial / <span style='color:#ef4444'>" + str(gf) + "</span> Fail</h2><div class='gate-grid'>" + gr + "</div></div>" if gts else ""
+        gr = "无门禁数据"
+    gsect = "<div class='card card-full'><h2>17 产品门禁 \u2014 <span style='color:#22c55e'>" + str(gp) + "</span> 通过 / <span style='color:#f59e0b'>" + str(gpa) + "</span> 部分通过 / <span style='color:#ef4444'>" + str(gf) + "</span> 未通过</h2><div class='gate-grid'>" + gr + "</div></div>" if gts else ""
 
     ts = data.get("timestamp", "")
     signal_count = sum(1 for v in signals.values() if v.get("status") != "unknown")
@@ -291,7 +291,7 @@ def render_html(data: Dict[str, Any]) -> str:
 <html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Synova — Founder Cockpit</title>
+<title>Synova — 创始人驾驶舱</title>
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 body {{ font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:#0f172a; color:#e2e8f0; padding:20px; }}
@@ -320,17 +320,17 @@ h2 {{ font-size:15px; margin:20px 0 10px; color:#94a3b8; text-transform:uppercas
 @@media (max-width:640px) {{ .grid {{ grid-template-columns:1fr; }} }}
 </style>
 </head><body>
-<h1>&#9672; Founder Cockpit <span style="font-size:12px;color:#64748b;font-weight:400">D220</span></h1>
+<h1>&#9672; 创始人驾驶舱 <span style="font-size:12px;color:#64748b;font-weight:400">D220</span></h1>
 
 <div class="grid">
     <div class="card">
-        <h2>Docs ({doc_exists}/{doc_count})</h2>
+        <h2>权威文档 ({doc_exists}/{doc_count})</h2>
         <div style="height:6px;background:#334155;border-radius:3px;overflow:hidden">
             <div style="height:100%;width:{doc_count>0 and doc_exists/doc_count*100 or 0}%;background:#22c55e;border-radius:3px"></div>
         </div>
     </div>
     <div class="card">
-        <h2>Pipeline R/{rdc_r}/D/{rdc_d}/C/{rdc_c}</h2>
+        <h2>流水线 R/{rdc_r}/D/{rdc_d}/C/{rdc_c}</h2>
         <div style="display:flex;gap:4px;height:6px">
             <div style="flex:{rdc_r};background:#22c55e;border-radius:3px 0 0 3px"></div>
             <div style="flex:{rdc_d};background:#f59e0b"></div>
@@ -341,14 +341,14 @@ h2 {{ font-size:15px; margin:20px 0 10px; color:#94a3b8; text-transform:uppercas
 
 <div class="grid">
     <div class="card card-full">
-        <h2>6 Component Signals</h2>
+        <h2>6 组件信号</h2>
         {signal_cards}
     </div>
 </div>
 
 <div class="grid">
     <div class="card card-full">
-        <h2>R/D/C Pipeline <span style="font-weight:400;color:#64748b;font-size:11px">&#9679;=Done &#9678;=Pending</span></h2>
+        <h2>R/D/C 流水线 <span style="font-weight:400;color:#64748b;font-size:11px">&#9679;=完成 &#9678;=待办</span></span></h2>
         <div class="rdc-header"><span class="rdc-name">Task</span><span style="width:20px;text-align:center">R</span><span style="width:20px;text-align:center">D</span><span style="width:20px;text-align:center">C</span></div>
         {rdc_rows}
     </div>
@@ -356,19 +356,19 @@ h2 {{ font-size:15px; margin:20px 0 10px; color:#94a3b8; text-transform:uppercas
 
 <div class="grid">
     <div class="card">
-        <h2>Active Blocks ({len(blocks)})</h2>
-        {block_rows or '<div style="font-size:12px;color:#22c55e">No active blocks</div>'}
+        <h2>活跃阻断 ({len(blocks)})</h2>
+        {block_rows or '<div style="font-size:12px;color:#22c55e">无活跃阻断</div>'}
     </div>
     <div class="card">
-        <h2>Recent Commits</h2>
+        <h2>最近提交</h2>
         {recent}
     </div>
 </div>
 
 <div class="status-bar">
     <span class="ok">&#9679; Signals: {signal_count}/6</span>
-    <span>Snapshot: {ts[:19].replace('T',' ')}</span>
-    <span>Docs: {doc_exists}/{doc_count}</span>
+    <span>快照: {ts[:19].replace('T',' ')}</span>
+    <span>文档: {doc_exists}/{doc_count}</span>
 </div>
 <script>document.addEventListener('DOMContentLoaded',function(){{var c=document.querySelectorAll('.signal-card');c.forEach(function(card){{if(card.textContent.includes('gatekeeper')){{card.style.cursor='pointer';card.addEventListener('click',function(){{var p=document.getElementById('gk-detail');if(!p){{p=document.createElement('div');p.id='gk-detail';p.style.cssText='margin-top:8px;padding:8px;background:#0f172a;border-radius:4px;font-size:11px;color:#94a3b8';var items=['L1-as_any','L2-empty_catch','L3-secrets','L4-new_file','L5-wiring','L6-compute','L7-sentinel','L8-contract','L9-error','L10-health','L11-dash'];p.innerHTML='<table style=width:100%>'+items.map(function(i){{return'<tr><td>'+i+'</td><td style=text-align:right;color:#22c55e>OK</td></tr>'}}).join('')+'</table>';card.appendChild(p)}}else{{p.style.display=p.style.display==='none'?'block':'none'}}}})}}}});var st=card.querySelector('.signal-status');if(st&&st.textContent.includes('Critical')){{card.style.cursor='pointer';card.addEventListener('click',function(e){{e.stopPropagation();var d=card.querySelector('.sig-detail');if(!d){{d=document.createElement('div');d.className='sig-detail';d.style.cssText='margin-top:6px;padding:6px;background:#0f172a;border-radius:4px;font-size:11px;color:#94a3b8';d.innerHTML='<b>Details:</b> '+(card.querySelector('.signal-reason')?.textContent||'N/A')+'<br><b>Action:</b> Investigate.';card.appendChild(d)}}else{{d.style.display=d.style.display==='none'?'block':'none'}}}})}}}})}});</script>
 </body></html>"""
@@ -401,7 +401,7 @@ def serve(port: int = 8899):
 
     class DashboardHandler(http.server.BaseHTTPRequestHandler):
         def do_GET(self):
-            if self.path == "/api/dashboard-data":
+            if self.path == "/api/cockpit/data":
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
                 self.send_header("Access-Control-Allow-Origin", "*")
@@ -416,14 +416,14 @@ def serve(port: int = 8899):
 <script>
 async function refreshDashboard() {
   try {
-    var r=await fetch('/api/dashboard-data');if(!r.ok)return;
+    var r=await fetch('/api/cockpit/data');if(!r.ok)return;
     var d=await r.json();
     try{updateDocsBar(d);}catch(e){}
     try{updatePipeline(d);}catch(e){}
     try{updateSignals(d);}catch(e){}
     try{updateBlocks(d);}catch(e){}
     try{updateGates(d);}catch(e){}
-    try{var sb=document.querySelector('.status-bar');if(sb)sb.innerHTML='<span style=color:#22c55e>\\u25cf Signals: '+(d.signals?Object.keys(d.signals).length:0)+'/6</span><span>Snapshot: '+(d.timestamp||'').slice(0,19).replace('T',' ')+'</span>';}catch(e){}
+    try{var sb=document.querySelector('.status-bar');if(sb)sb.innerHTML='<span style=color:#22c55e>\\u25cf Signals: '+(d.signals?Object.keys(d.signals).length:0)+'/6</span><span>快照: '+(d.timestamp||'').slice(0,19).replace('T',' ')+'</span>';}catch(e){}
   }catch(e){console.warn('Refresh failed')}
 }
 function updateDocsBar(d){var docs=d.authDocs||[];var bar=document.querySelector('.card:first-child .card-bar');if(bar)bar.style.width=(docs.length?Math.round(docs.filter(function(x){return x.exists}).length/docs.length*100):0)+'%';}
@@ -461,3 +461,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
