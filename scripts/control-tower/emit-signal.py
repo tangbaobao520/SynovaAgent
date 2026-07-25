@@ -47,8 +47,12 @@ def emit_signal(
     try:
         os.makedirs(SIGNALS_DIR, exist_ok=True)
         path = os.path.join(SIGNALS_DIR, f"{component}.json")
-        with open(path, "w", encoding="utf-8") as f:
+        # 原子写入：先写临时文件再 rename，避免 Windows 文件锁冲突
+        import tempfile
+        fd, tmp = tempfile.mkstemp(dir=SIGNALS_DIR, suffix=".tmp")
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
             json.dump(signal, f, indent=2, ensure_ascii=False)
+        os.replace(tmp, path)
     except OSError as e:
         print(f"[emit-signal] 警告: 信号写入失败 — {e}", file=sys.stderr)
         # 降级：不阻断调用方

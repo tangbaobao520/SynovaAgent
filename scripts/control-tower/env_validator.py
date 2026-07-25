@@ -160,11 +160,15 @@ class EnvValidator:
 
     @staticmethod
     def write_snapshot(data: dict, path: str = SNAPSHOT_PATH) -> None:
-        """Write snapshot file. Auto-create parent dir."""
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, "w", encoding="utf-8") as f:
+        """Write snapshot file. 原子写入避免 Windows 文件锁冲突。"""
+        import tempfile
+        d = os.path.dirname(path)
+        os.makedirs(d, exist_ok=True)
+        fd, tmp = tempfile.mkstemp(dir=d, suffix=".tmp")
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
             f.write("\n")
+        os.replace(tmp, path)
 
     # --─ Validation --─
 
@@ -253,19 +257,14 @@ def format_report(report: dict) -> str:
 
 
 def _emit_signal(status: str, reason: str, p0: int = 0) -> None:
-    """D214 信号发射 (写 .codex/signals/env-validator.json)"""
-    import datetime as _dt
-    signal = {
-        "component": "env-validator", "status": status,
-        "timestamp": _dt.datetime.now(_dt.timezone.utc).isoformat(),
-        "reason": reason, "p0_count": p0, "p1_count": 0, "p2_count": 0,
-    }
-    d = os.path.join(os.getcwd(), ".codex", "signals")
+    """D214 信号发射 (委托 emit-signal.py，原子写入)"""
+    import subprocess
     try:
-        os.makedirs(d, exist_ok=True)
-        with open(os.path.join(d, "env-validator.json"), "w", encoding="utf-8") as f:
-            json.dump(signal, f, indent=2, ensure_ascii=False)
-    except OSError:
+        script = os.path.join(os.path.dirname(__file__), "emit-signal.py")
+        subprocess.run([sys.executable, script, "env-validator", status, reason,
+                       "--p0", str(p0)], check=False,
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception:
         pass  # 降级
 
 

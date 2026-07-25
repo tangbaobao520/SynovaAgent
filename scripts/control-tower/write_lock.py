@@ -169,19 +169,14 @@ class WriteLock:
 # ═══ CLI ═══
 
 def _emit_signal(status: str, reason: str) -> None:
-    """D214 信号发射 (写 .codex/signals/write-lock.json)"""
-    import datetime as _dt
-    signal = {
-        "component": "write-lock", "status": status,
-        "timestamp": _dt.datetime.now(_dt.timezone.utc).isoformat(),
-        "reason": reason, "p0_count": 0, "p1_count": 0, "p2_count": 0,
-    }
-    d = os.path.join(os.getcwd(), ".codex", "signals")
+    """D214 信号发射 (委托 emit-signal.py，原子写入)"""
+    import subprocess
     try:
-        os.makedirs(d, exist_ok=True)
-        with open(os.path.join(d, "write-lock.json"), "w", encoding="utf-8") as f:
-            json.dump(signal, f, indent=2, ensure_ascii=False)
-    except OSError:
+        script = os.path.join(os.path.dirname(__file__), "emit-signal.py")
+        subprocess.run([sys.executable, script, "write-lock", status, reason],
+                       check=False,
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception:
         pass  # 降级
 
 

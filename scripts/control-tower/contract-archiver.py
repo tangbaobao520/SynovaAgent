@@ -253,12 +253,16 @@ class ContractArchiver:
     # ─── Save / Load ───
 
     def save(self, contracts: List[ContractRecord], output_path: str):
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        with open(output_path, "w", encoding="utf-8") as f:
+        d = os.path.dirname(output_path)
+        os.makedirs(d, exist_ok=True)
+        import tempfile
+        fd, tmp = tempfile.mkstemp(dir=d, suffix=".tmp")
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
             json.dump({"contracts": [c.to_dict() for c in contracts],
                        "extractedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(),
                        "totalCount": len(contracts)},
                       f, indent=2, ensure_ascii=False)
+        os.replace(tmp, output_path)
         print(f"[archiver] 已保存: {output_path} ({len(contracts)} 条契约)")
 
     def load(self, contract_path: str) -> List[Dict[str, Any]]:
@@ -270,20 +274,15 @@ class ContractArchiver:
 # ═══ CLI ═══
 
 def _emit_signal(status: str, reason: str, p0: int = 0) -> None:
-    """D214 信号发射 (直接写 JSON，避免进程开销)"""
-    import datetime as _dt
-    signal = {
-        "component": "contract-archiver", "status": status,
-        "timestamp": _dt.datetime.now(_dt.timezone.utc).isoformat(),
-        "reason": reason, "p0_count": p0, "p1_count": 0, "p2_count": 0,
-    }
-    signals_dir = os.path.join(os.getcwd(), ".codex", "signals")
-    os.makedirs(signals_dir, exist_ok=True)
+    """D214 信号发射 (委托 emit-signal.py，原子写入)"""
+    import subprocess
     try:
-        with open(os.path.join(signals_dir, "contract-archiver.json"), "w", encoding="utf-8") as f:
-            json.dump(signal, f, indent=2, ensure_ascii=False)
-    except OSError:
-        pass  # 降级: 不阻断
+        script = os.path.join(os.path.dirname(__file__), "emit-signal.py")
+        subprocess.run([sys.executable, script, "contract-archiver", status, reason,
+                       "--p0", str(p0)], check=False,
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception:
+        pass  # 降级
 
 
 def main():
