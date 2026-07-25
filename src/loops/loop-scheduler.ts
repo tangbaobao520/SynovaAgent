@@ -1,19 +1,17 @@
 /**
- * src/loops/loop-scheduler.ts — 多尺度循环调度器 (D91)
+ * src/loops/loop-scheduler.ts — 多尺度循环调度器 (D91 + D223)
  *
- * Auth Doc A1 LoopEng Amendment — Correction 1.
- * 消费 LoopTriggerConfig[] + CronScheduler，管理 6 循环 x 3 尺度的触发调度。
- *
- * 功能:
- *   - registerLoop(config): 注册循环的三个尺度
- *   - onEvent(eventType, payload): 事件驱动触发入口
- *   - getNextTrigger(loopId, scale): 查询下次触发时间
+ * D91: 消费 LoopTriggerConfig[] + CronScheduler，管理 6 循环 x 3 尺度的触发调度。
+ * D223: 追加心跳追踪 + 停滞检测 (Gate 13)。每个循环执行后记录心跳，
+ *       24h 周期性检查 → 超 3 周期无产出 → SYSTEM_SILENCE 告警。
  *
  * 契约:
  *   @input  — LoopTriggerConfig[] + CronScheduler 实例
- *   @output — 注册结果 / 触发响应 / 查询时间
- *   @degraded — CronScheduler 不可用时 log.warn + 降级
+ *   @output — 注册结果 / 触发响应 / 查询时间 / StagnationReport
+ *   @degraded — 心跳文件不可用 → 标记 unknown + degraded
  */
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { join } from 'path';
 import { createLogger } from '@synova/logger';
 import type { LoopTriggerConfig, TriggerScale, ScaleName, TriggerType } from './loop-trigger-config';
 import { validateLoopConfig, LOOP_TRIGGER_MATRIX } from './loop-trigger-config';
@@ -22,12 +20,10 @@ const log = createLogger('loops/loop-scheduler');
 
 // ═══ 类型定义 ═══
 
-/** 调度器最小依赖接口 */
 export interface CronSchedulerLike {
   schedule(name: string, cron: string, handler: () => Promise<void>): string;
 }
 
-/** 已注册的循环运行时状态 */
 interface RegisteredLoop {
   config: LoopTriggerConfig;
   scales: Map<ScaleName, RegisteredScale>;
@@ -35,18 +31,16 @@ interface RegisteredLoop {
 
 interface RegisteredScale {
   config: TriggerScale;
-  jobId?: string;       // CronScheduler job ID
-  lastEventAt?: Date;   // 最近事件触发时间
+  jobId?: string;
+  lastEventAt?: Date;
   nextScheduledAt?: Date;
 }
 
-/** 事件触发载荷 */
 export interface TriggerEvent {
-  type: string;          // 'sentinel:P0' | 'diagnosis:completed' | 'overflow:cash' | ...
+  type: string;
   payload?: unknown;
 }
 
-/** nextTrigger 查询结果 */
 export interface NextTriggerInfo {
   loopId: string;
   scale: ScaleName;
@@ -55,30 +49,145 @@ export interface NextTriggerInfo {
   remainingMs: number;
 }
 
+// ═══ D223: 心跳 & 停滞 ═══
+
+export interface HeartbeatRecord {
+  loopId: string;
+  loopName: string;
+  lastOutputAt: string;
+  cycleCount: number;
+}
+
+export interface StagnationReport {
+  stalled: string[];
+  healthy: string[];
+  unknown: string[];
+  degraded: boolean;
+  checkedAt: string;
+}
+
+const STALL_THRESHOLD_CYCLES = 3;
+const HEARTBEAT_DIR = join(process.cwd(), '.codex');
+const HEARTBEAT_FILE = join(HEARTBEAT_DIR, 'heartbeat.json');
+
 // ═══ LoopScheduler ═══
 
-/**
- * 多尺度循环调度器。
- * 管理 6 循环的触发注册、事件驱动、和下次触发查询。
- */
 export class LoopScheduler {
   private loops = new Map<string, RegisteredLoop>();
   private scheduler: CronSchedulerLike | null = null;
   private enabled = true;
 
-  /**
-   * @param scheduler — CronScheduler 实例（可选，为 null 时降级）
-   */
   constructor(scheduler?: CronSchedulerLike) {
     this.scheduler = scheduler ?? null;
+    this.initHeartbeatDir();
+    this.registerHeartbeatCheck();
+  }
+
+  /** 确保心跳目录存在 */
+  private initHeartbeatDir(): void {
+    try { mkdirSync(HEARTBEAT_DIR, { recursive: true }); } catch { /* 降级 */ }
   }
 
   /**
-   * 注册所有默认循环（从 LOOP_TRIGGER_MATRIX 加载）。
-   * 运行在 Bootstrap Phase 2e。
-   *
-   * @returns 注册的循环数
+   * D223: 注册 24h 停滞检测任务。
    */
+  private registerHeartbeatCheck(): void {
+    if (!this.scheduler) return;
+    try {
+      this.scheduler.schedule('system-heartbeat-check', '0 0 * * *', async () => {
+        const report = await this.checkStagnation();
+        if (report.stalled.length > 0) {
+          log.warn({ stalled: report.stalled, report }, 'SYSTEM_SILENCE — 检测到停滞循环');
+          // D214: emitSignal 预留（后续接入信号模块）
+        } else {
+          log.info({ healthy: report.healthy.length }, '心跳检查 — 全部循环正常');
+        }
+      });
+    } catch (err: unknown) {
+      log.warn({ err }, '停滞检测任务注册失败 — 降级');
+    }
+  }
+
+  /**
+   * D223: 记录循环心跳。
+   * 每次循环执行完成后调用。
+   */
+  recordHeartbeat(loopId: string): void {
+    try {
+      const records = this.loadHeartbeats();
+      const existing = records.find(r => r.loopId === loopId);
+      if (existing) {
+        existing.lastOutputAt = new Date().toISOString();
+        existing.cycleCount++;
+      } else {
+        records.push({
+          loopId,
+          loopName: this.loops.get(loopId)?.config.loopName || loopId,
+          lastOutputAt: new Date().toISOString(),
+          cycleCount: 1,
+        });
+      }
+      writeFileSync(HEARTBEAT_FILE, JSON.stringify(records, null, 2), 'utf-8');
+    } catch (err: unknown) {
+      log.warn({ err, loopId }, '心跳记录失败 — 降级');
+    }
+  }
+
+  /**
+   * D223: 检测停滞循环。
+   * 对比每循环最后心跳时间 vs 当前时间。
+   * 超 3 周期未产出 → 标记 stalled。
+   */
+  async checkStagnation(): Promise<StagnationReport> {
+    const records = this.loadHeartbeats();
+    const allLoopIds = [...this.loops.keys()];
+
+    const stalled: string[] = [];
+    const healthy: string[] = [];
+    const unknown: string[] = [];
+
+    for (const loopId of allLoopIds) {
+      const hb = records.find(r => r.loopId === loopId);
+      if (!hb) {
+        unknown.push(loopId);
+        continue;
+      }
+      const lastOutput = new Date(hb.lastOutputAt).getTime();
+      const elapsedHours = (Date.now() - lastOutput) / (1000 * 60 * 60);
+      // 3 周期 ≈ 72h 无产出（假设 24h/周期）
+      if (elapsedHours > STALL_THRESHOLD_CYCLES * 24) {
+        stalled.push(loopId);
+      } else {
+        healthy.push(loopId);
+      }
+    }
+
+    const report: StagnationReport = {
+      stalled, healthy, unknown,
+      degraded: records.length === 0,
+      checkedAt: new Date().toISOString(),
+    };
+
+    if (stalled.length > 0) {
+      log.warn({ stalled, report }, '检测到循环停滞 — SYSTEM_SILENCE');
+    }
+
+    return report;
+  }
+
+  /** 加载心跳记录 */
+  private loadHeartbeats(): HeartbeatRecord[] {
+    try {
+      if (!existsSync(HEARTBEAT_FILE)) return [];
+      const raw = readFileSync(HEARTBEAT_FILE, 'utf-8');
+      return JSON.parse(raw) as HeartbeatRecord[];
+    } catch {
+      return [];
+    }
+  }
+
+  /** 以下为 D91 原有方法（不变） */
+
   registerDefaultLoops(): number {
     let count = 0;
     for (const config of LOOP_TRIGGER_MATRIX) {
@@ -89,13 +198,6 @@ export class LoopScheduler {
     return count;
   }
 
-  /**
-   * 注册一个循环的三个尺度。
-   * 每个 cron/hybrid 尺度在 CronScheduler 中创建一个定时任务。
-   *
-   * @param config — 循环触发配置
-   * @returns true=注册成功, false=降级
-   */
   registerLoop(config: LoopTriggerConfig): boolean {
     try {
       const errors = validateLoopConfig([config]);
@@ -109,7 +211,6 @@ export class LoopScheduler {
       for (const scale of config.scales) {
         const registered: RegisteredScale = { config: scale };
 
-        // 注册 cron/hybrid 定时任务
         if (scale.triggerType === 'cron' || scale.triggerType === 'hybrid') {
           if (this.scheduler) {
             try {
@@ -118,7 +219,8 @@ export class LoopScheduler {
                 scale.period,
                 async () => {
                   log.info({ loopId: config.loopId, scale: scale.name }, '循环定时触发');
-                  // 执行 handler（当前为日志占位，后续集成具体逻辑）
+                  // D223: 循环执行后记录心跳
+                  this.recordHeartbeat(config.loopId);
                 },
               );
               registered.jobId = jobId;
@@ -145,13 +247,6 @@ export class LoopScheduler {
     }
   }
 
-  /**
-   * 事件驱动触发入口。
-   * 检查所有 event/hybrid 类型的 scale，匹配 eventSource 的触发。
-   *
-   * @param event — 触发事件
-   * @returns 匹配并触发的 scale 列表
-   */
   onEvent(event: TriggerEvent): { loopId: string; scale: ScaleName }[] {
     if (!this.enabled) {
       log.debug({ eventType: event.type }, '调度器已禁用，忽略事件');
@@ -162,7 +257,7 @@ export class LoopScheduler {
 
     for (const [loopId, loop] of this.loops) {
       for (const [scaleName, scale] of loop.scales) {
-        if (scale.config.triggerType === 'cron') continue; // cron 不过滤事件
+        if (scale.config.triggerType === 'cron') continue;
 
         if (scale.config.eventSource && event.type === scale.config.eventSource) {
           scale.lastEventAt = new Date();
@@ -179,13 +274,6 @@ export class LoopScheduler {
     return triggered;
   }
 
-  /**
-   * 查询指定循环+尺度的下次触发时间。
-   *
-   * @param loopId — 循环 ID
-   * @param scale — 尺度名称
-   * @returns NextTriggerInfo 或 null（未注册）
-   */
   getNextTrigger(loopId: string, scale: ScaleName): NextTriggerInfo | null {
     const loop = this.loops.get(loopId);
     if (!loop) return null;
@@ -195,34 +283,17 @@ export class LoopScheduler {
 
     const cfg = registered.config;
 
-    // 对于 event 类型，下次触发时间未知
     if (cfg.triggerType === 'event') {
-      return {
-        loopId,
-        scale,
-        triggerType: cfg.triggerType,
-        nextAt: null,
-        remainingMs: -1,
-      };
+      return { loopId, scale, triggerType: cfg.triggerType, nextAt: null, remainingMs: -1 };
     }
 
-    // 对于 cron/hybrid，使用下次 cron 触发时间
     const now = Date.now();
     const nextAt = registered.nextScheduledAt?.getTime() ?? (now + 3600000);
     const remainingMs = Math.max(0, nextAt - now);
 
-    return {
-      loopId,
-      scale,
-      triggerType: cfg.triggerType,
-      nextAt: new Date(nextAt).toISOString(),
-      remainingMs,
-    };
+    return { loopId, scale, triggerType: cfg.triggerType, nextAt: new Date(nextAt).toISOString(), remainingMs };
   }
 
-  /**
-   * 列出所有已注册循环。
-   */
   listLoops(): { loopId: string; loopName: string; scales: ScaleName[] }[] {
     return [...this.loops.values()].map((l) => ({
       loopId: l.config.loopId,
@@ -231,7 +302,6 @@ export class LoopScheduler {
     }));
   }
 
-  /** 启用/禁用调度器 */
   setEnabled(enabled: boolean): void {
     this.enabled = enabled;
     log.info({ enabled }, '循环调度器状态已更新');
