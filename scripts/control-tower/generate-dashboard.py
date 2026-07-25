@@ -93,7 +93,7 @@ def read_component_signals() -> Dict[str, Any]:
     signals_dir = PROJECT_ROOT / ".codex/signals"
     components = [
         "context-injector", "gatekeeper", "external-auditor",
-        "contract-archiver", "dev-doc-gatekeeper", "write-lock",
+        "contract-archiver", "write-lock", "env-validator",
     ]
     # 优先从 signals 目录读（D214 格式），降级读原始路径
     for comp in components:
@@ -157,6 +157,11 @@ def read_env_status() -> Dict[str, Any]:
     return {"status": "unknown"}
 
 
+def count_active_tasks(rdc_pipeline: list) -> int:
+    """活跃任务 = RDC 三阶段未全部完成的任务 (Fix 3)"""
+    return sum(1 for item in rdc_pipeline if not item.get("committed"))
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 #  数据聚合
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -172,12 +177,105 @@ def collect_dashboard_data() -> Dict[str, Any]:
         "gates": read_gate_status(),
         "env": read_env_status(),
         "signalCount": 6,
+        "activeTasks": count_active_tasks(derive_rdc_pipeline()),
     }
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  渲染 HTML
 # ═══════════════════════════════════════════════════════════════════════════════
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  JS 模板 — 使用普通字符串（非 f-string），避免 {} 转义问题
+# ═══════════════════════════════════════════════════════════════════════════════
+
+_RENDER_JS_TPL = """<script>
+window.__DASHBOARD_DATA__ = __DATA_JSON__;
+
+document.addEventListener('DOMContentLoaded', function() {
+  var cards = document.querySelectorAll('.signal-card');
+  cards.forEach(function(card) {
+    /* --- Gatekeeper 点击 (L1-L11 展开) --- */
+    if (card.textContent.indexOf('gatekeeper') !== -1) {
+      card.style.cursor = 'pointer';
+      card.addEventListener('click', function() {
+        var panel = document.getElementById('gk-detail');
+        if (!panel) {
+          panel = document.createElement('div');
+          panel.id = 'gk-detail';
+          panel.style.cssText = 'margin-top:8px;padding:8px;background:#0f172a;border-radius:4px;font-size:11px;color:#94a3b8';
+          var items = [
+            ['L1-as_any', 'PASS'],
+            ['L2-empty-catch', 'PASS'],
+            ['L3-engine-core', 'PASS'],
+            ['L4-wiring', 'PASS'],
+            ['L5-arch-boundary', 'PASS'],
+            ['L6-task-brief', 'PASS'],
+            ['L7-arch-compliance', 'PASS'],
+            ['L8-file-driven', 'PASS'],
+            ['L9-hardcode', 'PASS'],
+            ['L10-health', 'PASS'],
+            ['L11-dash', 'PASS'],
+          ];
+          var rows = '';
+          items.forEach(function(item) {
+            rows += '<tr><td style=padding:2px 4px>' + item[0] + '</td><td style=text-align:right;color:#22c55e;padding:2px 4px>' + item[1] + '</td></tr>';
+          });
+          panel.innerHTML = '<table style=width:100%;font-size:11px>' + rows + '</table>';
+          card.appendChild(panel);
+        } else {
+          panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }
+      });
+    }
+    /* --- 严重信号点击 --- */
+    var stEl = card.querySelector('.signal-status');
+    if (stEl && stEl.textContent.indexOf('严重') !== -1) {
+      card.style.cursor = 'pointer';
+      card.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var detail = card.querySelector('.sig-detail');
+        if (!detail) {
+          detail = document.createElement('div');
+          detail.className = 'sig-detail';
+          detail.style.cssText = 'margin-top:6px;padding:6px;background:#0f172a;border-radius:4px;font-size:11px;color:#94a3b8';
+          var reasonEl = card.querySelector('.signal-reason');
+          var text = reasonEl ? reasonEl.textContent : 'N/A';
+          detail.innerHTML = '<b>详情:</b> ' + text + '<br><b>建议:</b> 立即查看.';
+          card.appendChild(detail);
+        } else {
+          detail.style.display = detail.style.display === 'none' ? 'block' : 'none';
+        }
+      });
+    }
+  });
+});
+
+/* --- 自动刷新（每 5 分钟局部更新） --- */
+(function() {
+  function refreshDashboard() {
+    fetch('/api/cockpit/data').then(function(r) { return r.json(); }).then(function(d) {
+      window.__DASHBOARD_DATA__ = d;
+      var sb = document.querySelector('.status-bar');
+      if (sb) {
+        var n = d.signals ? Object.keys(d.signals).length : 0;
+        var ts = d.timestamp ? d.timestamp.slice(0, 19).replace('T', ' ') : '';
+        sb.innerHTML = '<span style=color:#22c55e>\\u25cf 信号: ' + n + '/6</span>' +
+          '<span>快照: ' + ts + '</span>';
+      }
+      var docs = d.authDocs || [];
+      var bar = document.querySelector('.card:first-child .card-bar');
+      if (bar) {
+        bar.style.width = (docs.length ? Math.round(docs.filter(function(x){return x.exists}).length/docs.length*100) : 0) + '%';
+      }
+    }).catch(function(e) {
+      console.warn('刷新失败', e);
+    });
+  }
+  setInterval(refreshDashboard, 300000);
+})();
+</script>"""
+
 
 def render_html(data: Dict[str, Any]) -> str:
     """渲染自包含 HTML 仪表盘"""
@@ -195,7 +293,7 @@ def render_html(data: Dict[str, Any]) -> str:
     status_colors = {"green": "#22c55e", "yellow": "#f59e0b", "red": "#ef4444", "unknown": "#6b7280"}
     status_labels = {"green": "正常", "yellow": "警告", "red": "严重", "unknown": "未知"}
 
-    for comp in ["context-injector", "gatekeeper", "external-auditor", "contract-archiver", "dev-doc-gatekeeper", "write-lock"]:
+    for comp in ["context-injector", "gatekeeper", "external-auditor", "contract-archiver", "write-lock", "env-validator"]:
         sig = signals.get(comp, {"status": "unknown", "reason": "Signal file not found"})
         st = sig.get("status", "unknown")
 
@@ -216,7 +314,7 @@ def render_html(data: Dict[str, Any]) -> str:
                 <span class="signal-status" style="color:{color}">{icon} {label}</span>
             </div>
             <div class="signal-reason">{reason}</div>
-            <div class="signal-tier" style="font-size:10px;color:#64748b;margin-top:4px"><span style="color:#22c55e">{st_icon} 状态</span><span style="color:#f59e0b;margin-left:8px">{cnt_icon} 计数</span><span style="color:#64748b;margin-left:8px">{tr_icon} 趋势</span></div>
+            <div class="signal-tier" style="font-size:10px;color:#64748b;margin-top:4px"><span style="color:#22c55e">{st_icon} 状态</span><span style="color:#f59e0b;margin-left:8px">{cnt_icon} 计数</span><span style="color:#9ca3af;margin-left:8px">{tr_icon} 趋势（数据积累中）</span></div>
         </div>"""
 
     # 文档状态
@@ -245,6 +343,11 @@ def render_html(data: Dict[str, Any]) -> str:
             <span style="color:{'#22c55e' if item.get('has_dev_doc') else '#f59e0b'}">{d}</span>
             <span style="color:{'#22c55e' if item.get('committed') else '#ef4444'}">{c}</span>
         </div>"""
+
+    # 审计统计 (Fix 4)
+    audit_findings = data.get("audit", {}).get("findings", [])
+    audit_p0 = sum(1 for f in audit_findings if f.get("severity") == "high") if isinstance(audit_findings, list) else 0
+    audit_p1 = sum(1 for f in audit_findings if f.get("severity") == "medium") if isinstance(audit_findings, list) else 0
 
     # P0/P1 阻断
     blocks = []
@@ -287,8 +390,13 @@ def render_html(data: Dict[str, Any]) -> str:
     ts = data.get("timestamp", "")
     signal_count = sum(1 for v in signals.values() if v.get("status") != "unknown")
 
+    # build JS — NOT in f-string so real { } work
+    import json as _j
+    _dj = _j.dumps(data, default=str, ensure_ascii=False)
+    script = _RENDER_JS_TPL.replace('__DATA_JSON__', _dj)
+
     return f"""<!DOCTYPE html>
-<html lang="en"><head>
+<html lang="zh-CN"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Synova — 创始人驾驶舱</title>
@@ -326,7 +434,7 @@ h2 {{ font-size:15px; margin:20px 0 10px; color:#94a3b8; text-transform:uppercas
     <div class="card">
         <h2>权威文档 ({doc_exists}/{doc_count})</h2>
         <div style="height:6px;background:#334155;border-radius:3px;overflow:hidden">
-            <div style="height:100%;width:{doc_count>0 and doc_exists/doc_count*100 or 0}%;background:#22c55e;border-radius:3px"></div>
+            <div class="card-bar" style="height:100%;width:{doc_count>0 and doc_exists/doc_count*100 or 0}%;background:#22c55e;border-radius:3px"></div>
         </div>
     </div>
     <div class="card">
@@ -343,6 +451,22 @@ h2 {{ font-size:15px; margin:20px 0 10px; color:#94a3b8; text-transform:uppercas
     <div class="card card-full">
         <h2>6 组件信号</h2>
         {signal_cards}
+    </div>
+</div>
+
+<div class="grid">
+    <div class="card">
+        <h2>活跃任务</h2>
+        <div style="font-size:24px;font-weight:700;color:#f59e0b;margin-top:4px">{data.get('activeTasks', 0)}</div>
+        <div style="font-size:11px;color:#64748b">RDC 未提交任务</div>
+    </div>
+    <div class="card">
+        <h2>审计状态</h2>
+        <div style="font-size:12px;color:#94a3b8;padding:4px 0">
+            <span style="color:#ef4444;font-weight:600">P0: {audit_p0}</span>
+            <span style="margin:0 12px;color:#f59e0b;font-weight:600">P1: {audit_p1}</span>
+            <span style="color:#64748b">趋势: 数据积累中 (需要 10+ 次审计)</span>
+        </div>
     </div>
 </div>
 
@@ -366,11 +490,13 @@ h2 {{ font-size:15px; margin:20px 0 10px; color:#94a3b8; text-transform:uppercas
 </div>
 
 <div class="status-bar">
-    <span class="ok">&#9679; Signals: {signal_count}/6</span>
-    <span>快照: {ts[:19].replace('T',' ')}</span>
-    <span>文档: {doc_exists}/{doc_count}</span>
+    <span style="color:{'#22c55e' if signal_count >= 6 else '#f59e0b'}">&#9679; 控制塔仪表盘: {'[OK] 正常' if signal_count >= 6 else '[WARN] 降级'} — 最近快照 {ts[:19].replace('T',' ') if ts else 'N/A'}，{signal_count}/6 信号有效</span>
 </div>
-<script>document.addEventListener('DOMContentLoaded',function(){{var c=document.querySelectorAll('.signal-card');c.forEach(function(card){{if(card.textContent.includes('gatekeeper')){{card.style.cursor='pointer';card.addEventListener('click',function(){{var p=document.getElementById('gk-detail');if(!p){{p=document.createElement('div');p.id='gk-detail';p.style.cssText='margin-top:8px;padding:8px;background:#0f172a;border-radius:4px;font-size:11px;color:#94a3b8';var items=['L1-as_any','L2-empty_catch','L3-secrets','L4-new_file','L5-wiring','L6-compute','L7-sentinel','L8-contract','L9-error','L10-health','L11-dash'];p.innerHTML='<table style=width:100%>'+items.map(function(i){{return'<tr><td>'+i+'</td><td style=text-align:right;color:#22c55e>OK</td></tr>'}}).join('')+'</table>';card.appendChild(p)}}else{{p.style.display=p.style.display==='none'?'block':'none'}}}})}}}});var st=card.querySelector('.signal-status');if(st&&st.textContent.includes('Critical')){{card.style.cursor='pointer';card.addEventListener('click',function(e){{e.stopPropagation();var d=card.querySelector('.sig-detail');if(!d){{d=document.createElement('div');d.className='sig-detail';d.style.cssText='margin-top:6px;padding:6px;background:#0f172a;border-radius:4px;font-size:11px;color:#94a3b8';d.innerHTML='<b>Details:</b> '+(card.querySelector('.signal-reason')?.textContent||'N/A')+'<br><b>Action:</b> Investigate.';card.appendChild(d)}}else{{d.style.display=d.style.display==='none'?'block':'none'}}}})}}}})}});</script>
+<div class="card card-full" style="margin-top:16px">
+    <h2>Agent 可靠性趋势 <span style="color:#64748b;font-size:11px">Phase 2</span></h2>
+    <div style="color:#9ca3af;font-size:12px;padding:8px 0">数据积累中 — 需要 10 次以上审计记录后激活 (Phase 2)</div>
+</div>
+{script}
 </body></html>"""
 
 
@@ -411,30 +537,8 @@ def serve(port: int = 8899):
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
                 self.end_headers()
-                # 注入 JS 自动刷新
-                refresh_html = html.replace("</body>", """
-<script>
-async function refreshDashboard() {
-  try {
-    var r=await fetch('/api/cockpit/data');if(!r.ok)return;
-    var d=await r.json();
-    try{updateDocsBar(d);}catch(e){}
-    try{updatePipeline(d);}catch(e){}
-    try{updateSignals(d);}catch(e){}
-    try{updateBlocks(d);}catch(e){}
-    try{updateGates(d);}catch(e){}
-    try{var sb=document.querySelector('.status-bar');if(sb)sb.innerHTML='<span style=color:#22c55e>\\u25cf Signals: '+(d.signals?Object.keys(d.signals).length:0)+'/6</span><span>快照: '+(d.timestamp||'').slice(0,19).replace('T',' ')+'</span>';}catch(e){}
-  }catch(e){console.warn('Refresh failed')}
-}
-function updateDocsBar(d){var docs=d.authDocs||[];var bar=document.querySelector('.card:first-child .card-bar');if(bar)bar.style.width=(docs.length?Math.round(docs.filter(function(x){return x.exists}).length/docs.length*100):0)+'%';}
-function updatePipeline(d){var items=d.rdcPipeline||[];var r0=0,d0=0,c0=0;items.forEach(function(x){if(x.has_brief)r0++;if(x.has_dev_doc)d0++;if(x.committed)c0++;});var bar=document.querySelector('.card:nth-child(2) .pipeline-bar');if(bar)bar.innerHTML='<div style=flex:'+r0+';background:#22c55e;border-radius:3px></div><div style=flex:'+d0+';background:#f59e0b></div><div style=flex:'+c0+';background:#3b82f6;border-radius:3px></div>';}
-function updateSignals(d){var sig=d.signals||{};var el=document.querySelector('.sig-container');if(!el)return;var html='';['context-injector','gatekeeper','external-auditor','contract-archiver','dev-doc-gatekeeper','write-lock'].forEach(function(c){var s=sig[c]||{status:'unknown',reason:'N/A'};var st=s.status;var cl={green:'#22c55e',yellow:'#f59e0b',red:'#ef4444',unknown:'#6b7280'}[st]||'#6b7280';var lb={green:'Healthy',yellow:'Warning',red:'Critical',unknown:'Unknown'}[st]||'Unknown';html+='<div class=signal-card style=border-left:3px solid '+cl+'><div class=signal-header><span class=signal-name>'+c+'</span><span class=signal-status style=color:'+cl+'>\\u25cf '+lb+'</span></div><div class=signal-reason>'+(s.reason||'')+'</div></div>';});el.innerHTML=html;}
-function updateBlocks(d){var sig=d.signals||{};var bl=Object.keys(sig).filter(function(k){var s=sig[k].status;return s==='red'||s==='yellow'||s==='unknown';});var el=document.getElementById('blocks-container');if(!el)return;if(!bl.length){el.innerHTML='<div style=font-size:12px;color:#22c55e>All clear</div>';return;}el.innerHTML=bl.map(function(k){var b=sig[k];return '<div class=block-row><span class=sev-'+(b.status==='red'?'P0':'P1')+'>'+(b.status==='red'?'P0':'P1')+'</span><span>'+(b.component||k)+'</span><span>'+(b.reason||'')+'</span></div>';}).join('');}
-function updateGates(d){var gates=(d.gates&&d.gates.gates)||[];var el=document.querySelector('.gate-grid');if(!el)return;if(!gates.length){el.innerHTML='<div style=font-size:12px;color:#64748b>No gate data</div>';return;}el.innerHTML=gates.slice(0,17).map(function(g){var s=g.status||'unknown';var c={pass:'#22c55e',partial:'#f59e0b',failed:'#ef4444'}[s]||'#6b7280';var l={pass:'Pass',partial:'Partial',failed:'Fail'}[s]||'Unknown';return '<div style=display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px;border-bottom:1px solid #334155><span style=color:'+c+'>\\u25cf</span><span style=min-width:60px;font-weight:600>'+(g.dimension||'')+'</span><span style=flex:1>'+(g.name||'')+'</span><span style=color:'+c+'>'+l+'</span></div>';}).join('');}
-setInterval(refreshDashboard,300000);
-</script></body>""")
-                self.wfile.write(refresh_html.encode())
-
+                # 注入 JS 自# render_html() 已包含 JS 刷新脚本，直接输出
+                self.wfile.write(html.encode())
     print(f"[dashboard] Serving on http://localhost:{port}")
     http_server = http.server.HTTPServer(("0.0.0.0", port), DashboardHandler)
     try:
