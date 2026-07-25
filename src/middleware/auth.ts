@@ -91,6 +91,8 @@ function isWhitelisted(path: string): boolean {
     path.endsWith('.css') ||
     path.endsWith('.ico') ||
     path === '/cockpit' ||
+    path === '/api/healthz' ||
+    path.startsWith('/api/sentinel/') ||
     path.startsWith('/api/cockpit/')
   );
 }

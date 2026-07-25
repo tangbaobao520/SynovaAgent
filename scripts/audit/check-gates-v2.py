@@ -767,15 +767,17 @@ class GateChecker:
 
         # C3: diagnosis-launcher.ts 触发全量诊断
         if self.file_exists("src/agent/diagnosis-launcher.ts"):
-            diag_fn = self.grep(r"export\s+(async\s+)?function\s+", "src/agent/diagnosis-launcher.ts")
-            if diag_fn:
+            # 匹配 export function / export class / export const (诊断引擎有多种导出风格)
+            diag_export = self.grep(r"export\s+(async\s+)?function\s+|export\s+class\s+|export\s+const\s+",
+                                   "src/agent/diagnosis-launcher.ts")
+            if diag_export:
                 info["passed"] += 1
-                parts.append("diagnosis-launcher.ts: 含诊断触发函数")
-                self.ok("diagnosis-launcher.ts: 含诊断触发函数")
+                parts.append(f"diagnosis-launcher.ts: 含 {len(diag_export)} 个导出声明")
+                self.ok(f"diagnosis-launcher.ts: 含 {len(diag_export)} 个导出声明")
             else:
                 info["partial"] += 1
-                parts.append("diagnosis-launcher.ts: 存在但无导出函数")
-                self.warn("diagnosis-launcher.ts: 无导出函数")
+                parts.append("diagnosis-launcher.ts: 存在但无导出声明")
+                self.warn("diagnosis-launcher.ts: 无导出声明")
         else:
             info["failed"] += 1
             parts.append("diagnosis-launcher.ts: 不存在")
@@ -1634,8 +1636,11 @@ class GateChecker:
         }
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, "w", encoding="utf-8") as f:
+        import tempfile
+        fd, tmp = tempfile.mkstemp(dir=str(output_path.parent), suffix=".json")
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
             json.dump(report, f, ensure_ascii=False, indent=2)
+        os.replace(tmp, str(output_path))
 
         self.log(f"\n{'=' * 50}")
         status_icons = {"pass": "✅", "partial": "⚠️", "fail": "❌", "unverifiable": "❓"}
