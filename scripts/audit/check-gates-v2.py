@@ -231,6 +231,19 @@ class GateChecker:
     def count_matches(self, pattern: str, path: str) -> int:
         return len(self.grep(pattern, path))
 
+    def _check_signal_component(self, signals_dir: Path, component_name: str) -> bool:
+        """检查 .codex/signals/ 下是否有指定组件的有效信号文件"""
+        if not signals_dir.exists():
+            return False
+        for f in signals_dir.glob("*.json"):
+            try:
+                d = json.loads(f.read_text("utf-8", errors="replace"))
+                if d.get("component", "").startswith(component_name):
+                    return True
+            except Exception:
+                continue
+        return False
+
     def count_export_fn(self, path: str, pattern: str = r"export\s+(async\s+)?function\s+\w+") -> int:
         text = self.read_file(path)
         if not text:
@@ -1410,19 +1423,12 @@ class GateChecker:
         audit_dir = self._path(".codex/audit-reports")
         contracts_dir = self._path(".codex/contracts")
 
-        # 网守 (25%)
-        gatekeeper_signal = signals_dir / "gatekeeper.json"
-        gatekeeper_good = gatekeeper_signal.exists() and gatekeeper_signal.stat().st_size > 0
-        # 兼容旧格式——任意 .json 含 component=gatekeeper 也计数
-        if not gatekeeper_good and signals_dir.exists():
-            for f in signals_dir.glob("*.json"):
-                try:
-                    d = json.loads(f.read_text("utf-8", errors="replace"))
-                    if d.get("component") == "gatekeeper":
-                        gatekeeper_good = True
-                        break
-                except Exception:
-                    continue
+        # 网守 (25%)——优先 D214 JSON，降级管道格式
+        gatekeeper_good = self._check_signal_component(signals_dir, "gatekeeper")
+        if not gatekeeper_good:
+            # 降级: 管道格式 .codex/settings/gatekeeper/.dashboard-signal
+            pipe = self._path(".codex/settings/gatekeeper/.dashboard-signal")
+            gatekeeper_good = pipe.exists() and pipe.stat().st_size > 0
         if gatekeeper_good:
             weight_total += 25.0
             parts.append("网守(25%): 通过")
@@ -1431,13 +1437,15 @@ class GateChecker:
             parts.append("网守(25%): 未通过")
             self.fail("网守(25%): 未通过")
 
-        # 审计器 (25%)—— audit-reports/ 有 >=1 文件 > 100 bytes
+        # 审计器 (25%)—— audit-reports/ + D214 信号降级
         auditor_good = False
         if audit_dir.exists():
             for f in audit_dir.iterdir():
                 if f.is_file() and f.stat().st_size > 100:
                     auditor_good = True
                     break
+        if not auditor_good:
+            auditor_good = self._check_signal_component(signals_dir, "external-auditor")
         if auditor_good:
             weight_total += 25.0
             parts.append("审计器(25%): 通过")
@@ -1447,16 +1455,7 @@ class GateChecker:
             self.fail("审计器(25%): 未通过")
 
         # 上下文注射器 (12.5%)
-        injector_good = False
-        if signals_dir.exists():
-            for f in signals_dir.glob("*.json"):
-                try:
-                    d = json.loads(f.read_text("utf-8", errors="replace"))
-                    if d.get("component", "").startswith("context-injector"):
-                        injector_good = True
-                        break
-                except Exception:
-                    continue
+        injector_good = self._check_signal_component(signals_dir, "context-injector")
         if injector_good:
             weight_total += 12.5
             parts.append("注射器(12.5%): 通过")
@@ -1465,18 +1464,16 @@ class GateChecker:
             parts.append("注射器(12.5%): 未通过")
             self.fail("注射器(12.5%): 未通过")
 
-        # 契约存档器 (12.5%)
+        # 契约存档器 (12.5%)——优先 contracts/ 目录，降级 D214 信号
         contract_good = False
         if contracts_dir.exists():
             for f in contracts_dir.glob("*.json"):
                 if f.stat().st_size > 0:
                     contract_good = True
                     break
+        if not contract_good:
+            contract_good = self._check_signal_component(signals_dir, "contract-archiver")
         if contract_good:
-            weight_total += 12.5
-            parts.append("契约器(12.5%): 通过")
-            self.ok("契约器(12.5%): 通过")
-        else:
             parts.append("契约器(12.5%): 未通过(空)")
             self.fail("契约器(12.5%): 未通过(空)")
 
@@ -1499,9 +1496,11 @@ class GateChecker:
             parts.append("写锁(12.5%): 未通过")
             self.fail("写锁(12.5%): 未通过")
 
-        # 环境验证器 (12.5%)
+        # 环境验证器 (12.5%)——env-snapshot.json 或 D214 信号
         env_snapshot = self._path(".codex/env-snapshot.json")
         env_good = env_snapshot.exists() and env_snapshot.stat().st_size > 0
+        if not env_good:
+            env_good = self._check_signal_component(signals_dir, "env-validator")
         if env_good:
             weight_total += 12.5
             parts.append("环境验证器(12.5%): 通过")

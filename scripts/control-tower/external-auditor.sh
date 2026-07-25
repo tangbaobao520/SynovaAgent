@@ -251,3 +251,16 @@ echo "════════════════════════�
 if [[ $CROSS_CHECK_FAILS -gt 0 ]]; then
   echo "⚠ Agent 自我报告与审计结果存在矛盾 — 建议人工审查"
 fi
+
+# ═══ D214 发射信号 ═══
+_SIGNAL_STATUS="green"
+_SIGNAL_REASON="audit_complete_no_findings"
+if [[ $P0_COUNT -gt 0 ]]; then
+  _SIGNAL_STATUS="red"
+  _SIGNAL_REASON="${P0_COUNT}_P0_findings"
+elif [[ $P1_COUNT -gt 0 || $P2_COUNT -gt 0 ]]; then
+  _SIGNAL_STATUS="yellow"
+  _SIGNAL_REASON="${P1_COUNT}_P1_${P2_COUNT}_P2_findings"
+fi
+python3 "$SCRIPT_DIR/emit-signal.py" external-auditor "$_SIGNAL_STATUS" "$_SIGNAL_REASON" \
+  --p0 "$P0_COUNT" --p1 "$P1_COUNT" --p2 "$P2_COUNT" 2>/dev/null || true

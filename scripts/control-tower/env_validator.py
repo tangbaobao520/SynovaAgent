@@ -252,6 +252,23 @@ def format_report(report: dict) -> str:
 # ═══ CLI Entry ═══
 
 
+def _emit_signal(status: str, reason: str, p0: int = 0) -> None:
+    """D214 信号发射 (写 .codex/signals/env-validator.json)"""
+    import datetime as _dt
+    signal = {
+        "component": "env-validator", "status": status,
+        "timestamp": _dt.datetime.now(_dt.timezone.utc).isoformat(),
+        "reason": reason, "p0_count": p0, "p1_count": 0, "p2_count": 0,
+    }
+    d = os.path.join(os.getcwd(), ".codex", "signals")
+    try:
+        os.makedirs(d, exist_ok=True)
+        with open(os.path.join(d, "env-validator.json"), "w", encoding="utf-8") as f:
+            json.dump(signal, f, indent=2, ensure_ascii=False)
+    except OSError:
+        pass  # 降级
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build argument parser."""
     parser = argparse.ArgumentParser(
@@ -302,6 +319,7 @@ def main() -> None:
         EnvValidator.write_snapshot(snap)
         print(f"[OK] Snapshot written to {SNAPSHOT_PATH}")
         print(f"      Sections: version / system / node / python / git / typescript / hooks")
+        _emit_signal("green", "snapshot_taken")
         return
 
     # --─ validate 命令 --─
@@ -315,6 +333,7 @@ def main() -> None:
 
         snap = EnvValidator.read_snapshot()
         if snap is None:
+            _emit_signal("red", "snapshot_missing")
             print(
                 f"[FAIL]  Snapshot file missing or corrupted ({SNAPSHOT_PATH})。\n"
                 "   Run `python env-validator.py snapshot`。",
@@ -324,7 +343,13 @@ def main() -> None:
 
         report = validator.validate_against(snap)
         print(format_report(report))
-        sys.exit(0 if report.get("ok", False) else 1)
+        if report.get("ok", False):
+            _emit_signal("green", "environment_consistent")
+            sys.exit(0)
+        else:
+            failed = report.get("failed_checks", 0)
+            _emit_signal("red", f"{failed}_checks_inconsistent", p0=failed)
+            sys.exit(1)
 
     # --─ No command -> help --─
     parser.print_help()

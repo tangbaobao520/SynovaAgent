@@ -339,6 +339,9 @@ if [[ $PRECOMMIT_EXIT -eq 0 ]]; then
   echo -e "${GREEN}✅ 全部 8 组检查通过${NC}"
   echo ""
 
+  # D214: 发射 gatekeeper 信号
+  python3 "$SCRIPT_DIR/emit-signal.py" gatekeeper green "all_checks_pass" 2>/dev/null || true
+
   git commit -m "$MESSAGE"
   COMMIT_EXIT=$?
 

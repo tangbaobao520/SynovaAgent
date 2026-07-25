@@ -15,6 +15,7 @@ import { join } from 'path';
 import { createLogger } from '@synova/logger';
 import type { LoopTriggerConfig, TriggerScale, ScaleName, TriggerType } from './loop-trigger-config';
 import { validateLoopConfig, LOOP_TRIGGER_MATRIX } from './loop-trigger-config';
+import { emitSignal } from '../control-tower/signal-emitter';
 
 const log = createLogger('loops/loop-scheduler');
 
@@ -98,9 +99,12 @@ export class LoopScheduler {
         const report = await this.checkStagnation();
         if (report.stalled.length > 0) {
           log.warn({ stalled: report.stalled, report }, 'SYSTEM_SILENCE — 检测到停滞循环');
-          // D214: emitSignal 预留（后续接入信号模块）
+          emitSignal('loop-scheduler', 'red', `${report.stalled.length} loops stalled`);
+        } else if (report.unknown.length > 0) {
+          emitSignal('loop-scheduler', 'yellow', `${report.unknown.length} loops unknown`);
         } else {
           log.info({ healthy: report.healthy.length }, '心跳检查 — 全部循环正常');
+          emitSignal('loop-scheduler', 'green', 'all_loops_healthy');
         }
       });
     } catch (err: unknown) {

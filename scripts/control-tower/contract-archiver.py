@@ -269,6 +269,23 @@ class ContractArchiver:
 
 # ═══ CLI ═══
 
+def _emit_signal(status: str, reason: str, p0: int = 0) -> None:
+    """D214 信号发射 (直接写 JSON，避免进程开销)"""
+    import datetime as _dt
+    signal = {
+        "component": "contract-archiver", "status": status,
+        "timestamp": _dt.datetime.now(_dt.timezone.utc).isoformat(),
+        "reason": reason, "p0_count": p0, "p1_count": 0, "p2_count": 0,
+    }
+    signals_dir = os.path.join(os.getcwd(), ".codex", "signals")
+    os.makedirs(signals_dir, exist_ok=True)
+    try:
+        with open(os.path.join(signals_dir, "contract-archiver.json"), "w", encoding="utf-8") as f:
+            json.dump(signal, f, indent=2, ensure_ascii=False)
+    except OSError:
+        pass  # 降级: 不阻断
+
+
 def main():
     parser = argparse.ArgumentParser(description="契约存档器 (D208) — 从 Agent 产出中提取结构化接口契约")
     sub = parser.add_subparsers(dest="command", help="子命令")
@@ -294,12 +311,14 @@ def main():
         records = archiver.extract(args.input)
         if records:
             archiver.save(records, args.output)
+        _emit_signal("green", f"extracted_{len(records)}_contracts")
         sys.exit(0)
 
     elif args.command == "validate":
         results = archiver.validate(args.contract)
         if not results:
             print("[archiver] 无验证结果")
+            _emit_signal("yellow", "no_results")
             sys.exit(0)
 
         failed = [r for r in results if not r.passed]
@@ -309,9 +328,11 @@ def main():
 
         if failed:
             print(f"\n[archiver] 验证未通过: {len(failed)}/{len(results)} 项失败")
+            _emit_signal("red", f"validate_{len(failed)}_failed", p0=len(failed))
             sys.exit(1)
         else:
             print(f"\n[archiver] 全部通过: {len(results)}/{len(results)}")
+            _emit_signal("green", f"validate_{len(results)}_passed")
             sys.exit(0)
 
 

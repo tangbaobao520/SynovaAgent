@@ -188,15 +188,18 @@ echo "════════════════════════�
 
 if $OVERALL_PASS; then
   echo -e "  ${GREEN}✅ ALL PASS${NC} — 文档可以通过分发"
+  python3 "$SCRIPT_DIR/emit-signal.py" dev-doc-gatekeeper green "all_checks_pass" 2>/dev/null || true
   echo ""
   exit 0
 elif $HAS_DEGRADED && $OVERALL_PASS; then
   echo -e "  ${YELLOW}⚠ ALL PASS (有降级)${NC} — 文档可以分发，但建议审查告警"
+  python3 "$SCRIPT_DIR/emit-signal.py" dev-doc-gatekeeper yellow "passed_with_degraded" 2>/dev/null || true
   echo ""
   exit 0
 else
   echo -e "  ${RED}❌ FAIL${NC} — 文档存在阻断项，不能分发"
   echo "  请修复上述 FAIL 项后重新运行"
+  python3 "$SCRIPT_DIR/emit-signal.py" dev-doc-gatekeeper red "checks_failed" 2>/dev/null || true
   echo ""
   exit 1
 fi

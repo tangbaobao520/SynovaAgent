@@ -168,6 +168,23 @@ class WriteLock:
 
 # ═══ CLI ═══
 
+def _emit_signal(status: str, reason: str) -> None:
+    """D214 信号发射 (写 .codex/signals/write-lock.json)"""
+    import datetime as _dt
+    signal = {
+        "component": "write-lock", "status": status,
+        "timestamp": _dt.datetime.now(_dt.timezone.utc).isoformat(),
+        "reason": reason, "p0_count": 0, "p1_count": 0, "p2_count": 0,
+    }
+    d = os.path.join(os.getcwd(), ".codex", "signals")
+    try:
+        os.makedirs(d, exist_ok=True)
+        with open(os.path.join(d, "write-lock.json"), "w", encoding="utf-8") as f:
+            json.dump(signal, f, indent=2, ensure_ascii=False)
+    except OSError:
+        pass  # 降级
+
+
 def main():
     import argparse
 
@@ -202,6 +219,17 @@ def main():
         result = lock.wait(args.file, timeout_sec=args.timeout)
     elif args.action == "is-locked":
         result = {"locked": lock.is_locked(args.file)}
+
+    # D214 信号
+    _sig_st = "green"
+    _sig_reason = f"{args.action}_ok"
+    if not result.get("acquired", True) or not result.get("released", True):
+        _sig_st = "red" if args.action == "wait" else "yellow"
+        _sig_reason = result.get("reason", f"{args.action}_failed")
+    elif result.get("degraded"):
+        _sig_st = "yellow"
+        _sig_reason = f"{args.action}_degraded"
+    _emit_signal(_sig_st, _sig_reason)
 
     print(json.dumps(result, ensure_ascii=False))
     sys.exit(0 if result.get("acquired") is not False and result.get("released") is not False else 1)

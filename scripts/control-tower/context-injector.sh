@@ -77,9 +77,11 @@ EXIT_CODE=$?
 if [[ $EXIT_CODE -eq 0 ]]; then
   echo ""
   echo "✅ 上下文注射完成"
+  python3 "$SCRIPT_DIR/emit-signal.py" context-injector green "injection_complete" 2>/dev/null || true
 else
   echo ""
   echo "⚠️  上下文注射完成（有降级）"
+  python3 "$SCRIPT_DIR/emit-signal.py" context-injector yellow "injection_degraded" 2>/dev/null || true
 fi
 
 exit $EXIT_CODE
