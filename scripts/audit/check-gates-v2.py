@@ -1477,6 +1477,9 @@ class GateChecker:
             weight_total += 12.5
             parts.append("契约器(12.5%): 通过")
             self.ok("契约器(12.5%): 通过")
+        else:
+            parts.append("契约器(12.5%): 未通过(无信号文件)")
+            self.fail("契约器(12.5%): 未通过")
 
         # 写入锁 (12.5%)
         write_lock_good = False
