@@ -1474,8 +1474,9 @@ class GateChecker:
         if not contract_good:
             contract_good = self._check_signal_component(signals_dir, "contract-archiver")
         if contract_good:
-            parts.append("契约器(12.5%): 未通过(空)")
-            self.fail("契约器(12.5%): 未通过(空)")
+            weight_total += 12.5
+            parts.append("契约器(12.5%): 通过")
+            self.ok("契约器(12.5%): 通过")
 
         # 写入锁 (12.5%)
         write_lock_good = False
