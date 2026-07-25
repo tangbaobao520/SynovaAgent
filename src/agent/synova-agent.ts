@@ -91,6 +91,31 @@ export class SynovaAgent {
     proactivePush.setActionStore(new ActionStore());
     this.sentinelRunner.setProactivePush(proactivePush);
 
+    // D224: UserStore 注入 enterprise 路由
+    try {
+      const { SqliteGraphStore } = await import('../adapters/sqlite-graph-store');
+      const { UserStore } = await import('../growth/user-store');
+      const { setUserStore } = await import('../routes/enterprise');
+      const graphStore = new SqliteGraphStore(this.db);
+      const userStore = new UserStore(graphStore);
+      setUserStore(userStore);
+      log.info('[wiring] UserStore 已注入 enterprise 路由');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg }, '[wiring] UserStore 注入失败 — degraded，继续启动');
+    }
+
+    // D224: LoopScheduler 注册核心循环
+    try {
+      const { LoopScheduler } = await import('../loops/loop-scheduler');
+      const loopScheduler = new LoopScheduler(this.scheduler ?? undefined);
+      const registered = loopScheduler.registerDefaultLoops();
+      log.info({ registered }, '[wiring] 核心循环已注册');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg }, '[wiring] 循环注册失败 — degraded，继续启动');
+    }
+
     // Phase 2.1: 启动时排干未投递消息
     try {
       const { DeliveryQueueStore } = await import('../l4/delivery-queue-store');
