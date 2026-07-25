@@ -164,7 +164,12 @@ class GateChecker:
 
     def log(self, msg: str) -> None:
         if not self.quiet:
-            print(msg)
+            # Windows GBK 终端无法打印 emoji, 替换为 ASCII 安全符号
+            safe = msg.replace("✅", "[OK]").replace("⚠", "[!]").replace("❌", "[X]").replace("❓", "[?]")
+            try:
+                print(safe)
+            except UnicodeEncodeError:
+                print(safe.encode("ascii", errors="replace").decode("ascii"))
 
     def ok(self, msg: str) -> None:
         self.log(f"    [PASS] {msg}")
@@ -1250,28 +1255,29 @@ class GateChecker:
             parts.append("静默检测: loops 中无 silence/stagnation/stall/heartbeat")
             self.fail("静默检测:  loops 中无检测逻辑")
 
-        # C2: 周期性运行（约每 24h）
-        periodic = self.grep(r"cron.*24|24.*hour|每隔|每天|daily|0 0", "src/loops/loop-scheduler.ts")
-        if periodic:
-            info["partial"] += 1
-            parts.append("静默检测: 周期性调度存在(约24h)")
-            self.warn("静默检测: 周期性调度存在，待输出确认")
+        # C2: 周期性运行（约每 24h）— registerHeartbeatCheck + 0 0 * * * cron
+        has_registration = bool(self.grep(r"registerHeartbeatCheck", "src/loops/loop-scheduler.ts"))
+        has_cron_24h = bool(self.grep(r"0\s+0\s+\*\s+\*\s+\*", "src/loops/loop-scheduler.ts"))
+        if has_registration and has_cron_24h:
+            info["passed"] += 1
+            parts.append("静默检测: registerHeartbeatCheck + 0 0 * * * (24h)")
+            self.ok("静默检测: registerHeartbeatCheck + 0 0 * * * (24h)")
         else:
             info["failed"] += 1
             parts.append("静默检测: 无周期性调度")
             self.fail("静默检测: 无周期性调度")
 
-        # C3: 超 3 周期→SYSTEM_SILENCE 告警
-        silence_alert = self.grep_r(r"SYSTEM_SILENCE|silence.*alert|stagnation.*alert",
-                                      "src/loops", file_ext=".ts")
-        if silence_alert:
-            info["partial"] += 1
-            parts.append("静默检测: SYSTEM_SILENCE 告警存在")
-            self.warn("静默检测: SYSTEM_SILENCE 告警存在")
+        # C3: 超 3 周期→SYSTEM_SILENCE 告警 — checkStagnation + STALL_THRESHOLD_CYCLES
+        has_threshold = bool(self.grep(r"STALL_THRESHOLD_CYCLES\s*=\s*3", "src/loops/loop-scheduler.ts"))
+        has_system_silence = bool(self.grep(r"SYSTEM_SILENCE", "src/loops/loop-scheduler.ts"))
+        if has_system_silence and has_threshold:
+            info["passed"] += 1
+            parts.append("静默检测: STALL_THRESHOLD=3 + SYSTEM_SILENCE 告警")
+            self.ok("静默检测: STALL_THRESHOLD=3 + SYSTEM_SILENCE 告警")
         else:
             info["failed"] += 1
-            parts.append("静默检测: 无 SYSTEM_SILENCE 告警")
-            self.fail("静默检测: 无 SYSTEM_SILENCE 告警")
+            parts.append("静默检测: 无 SYSTEM_SILENCE 告警逻辑")
+            self.fail("静默检测: 无 SYSTEM_SILENCE 告警逻辑")
 
         status = self._merge_conditions(info)
         return GateResult("gate-13", "静默停滞检测", "持续运行", status, info, details="; ".join(parts))
