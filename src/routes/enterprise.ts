@@ -1,5 +1,9 @@
 /**
- * src/routes/enterprise.ts — 企业管理路由 (D103)
+ * src/routes/enterprise.ts — 企业管理路由 (D103 + D106)
+ *
+ * D106: users Map → UserStore (GraphStore 持久化)。
+ * 其余 4 个 Map (enterprises/invitations/imaBindings/gaAccessTokens) 保持内存。
+ * UserStore 由外部通过 setUserStore() 注入（D224-WIRING）。
  *
  * 19 endpoints in 5 groups:
  *   Enterprise (2): register, status
@@ -14,17 +18,23 @@
 import { Router, type Request, type Response } from 'express';
 import { createLogger } from '@synova/logger';
 import { extractAuthFromRequest } from '../middleware/auth';
+import { UserStore } from '../growth/user-store';
 import bcrypt from 'bcrypt';
 
 const log = createLogger('enterprise-routes');
 const router = Router();
 
-// ═══ In-memory store (MVP — D106 migrates to GraphStore) ═══
+// ═══ D106: UserStore 注入 (GraphStore 持久化) ═══
 
-interface UserRecord {
-  userId: string; email: string; passwordHash: string; role: string; orgId: string;
-  status: 'active' | 'disabled'; createdAt: string;
+let _userStore: UserStore | null = null;
+export function setUserStore(store: UserStore): void { _userStore = store; }
+function getUserStore(): UserStore {
+  if (!_userStore) throw new Error('UserStore not initialized — 调用 setUserStore 注入');
+  return _userStore;
 }
+
+// ═══ D103: 其余 4 个存储保持内存 Map（enterprise/invitation/ima/ga-access） ═══
+
 interface EnterpriseRecord {
   orgId: string; name: string; adminId: string; createdAt: string; status: 'active' | 'suspended';
 }
@@ -39,7 +49,6 @@ interface GaAccessRecord {
   token: string; orgId: string; createdBy: string; expiresAt: string; status: 'active' | 'expired' | 'revoked';
 }
 
-const users = new Map<string, UserRecord>();
 const enterprises = new Map<string, EnterpriseRecord>();
 const invitations = new Map<string, InvitationRecord>();
 const imaBindings = new Map<string, ImaBindingRecord>();
@@ -76,19 +85,19 @@ router.post('/api/enterprise/register', async (req: Request, res: Response) => {
     if (!email || !password || !orgName) {
       return res.status(400).json({ ok: false, code: 'VALIDATION_ERROR', message: 'email, password, orgName 必填' });
     }
-    // Check duplicate
-    for (const u of users.values()) { if (u.email === email) return res.status(409).json({ ok: false, code: 'DUPLICATE', message: '邮箱已注册' }); }
+    // Check duplicate (D106: UserStore queryByEmail)
+    const existing = getUserStore().queryByEmail(email);
+    if (existing) return res.status(409).json({ ok: false, code: 'DUPLICATE', message: '邮箱已注册' });
 
     const orgId = nextId('org');
-    const userId = nextId('usr');
-    const passwordHash = await bcrypt.hash(password, 10);
     const now = new Date().toISOString();
 
-    enterprises.set(orgId, { orgId, name: orgName, adminId: userId, createdAt: now, status: 'active' });
-    users.set(userId, { userId, email, passwordHash, role: 'admin', orgId, status: 'active', createdAt: now });
+    // D106: UserStore.createUser — GraphStore 持久化，自生成 userId
+    const result = await getUserStore().createUser(email, password, 'admin', orgId);
+    enterprises.set(orgId, { orgId, name: orgName, adminId: result.userId, createdAt: now, status: 'active' });
 
-    log.info({ orgId, userId, email }, '企业注册成功');
-    return res.json({ ok: true, data: { orgId, userId, email, role: 'admin' } });
+    log.info({ orgId, userId: result.userId, email }, '企业注册成功');
+    return res.json({ ok: true, data: { orgId, userId: result.userId, email, role: 'admin' } });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     log.error({ err }, '企业注册失败');
@@ -192,16 +201,14 @@ router.post('/api/enterprise/invitation/accept', async (req: Request, res: Respo
     if (inv.status !== 'pending') return res.status(400).json({ ok: false, code: 'INVITATION_USED', message: '邀请已使用' });
     if (new Date(inv.expiresAt) < new Date()) return res.status(400).json({ ok: false, code: 'INVITATION_EXPIRED', message: '邀请已过期' });
 
-    const userId = nextId('usr');
-    const passwordHash = await bcrypt.hash(password, 10);
-    users.set(userId, {
-      userId, email: inv.email, passwordHash, role: inv.role, orgId: inv.orgId,
-      status: 'active', createdAt: new Date().toISOString(),
-    });
+    // D106: UserStore.createUser — GraphStore 持久化
+    const result = await getUserStore().createUser(
+      inv.email, password, inv.role as 'admin' | 'manager' | 'liaison' | 'staff', inv.orgId,
+    );
     inv.status = 'accepted';
 
-    log.info({ userId, email: inv.email, orgId: inv.orgId }, '邀请已接受');
-    return res.json({ ok: true, data: { userId, email: inv.email, role: inv.role, orgId: inv.orgId } });
+    log.info({ userId: result.userId, email: inv.email, orgId: inv.orgId }, '邀请已接受');
+    return res.json({ ok: true, data: { userId: result.userId, email: inv.email, role: inv.role, orgId: inv.orgId } });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     log.error({ err }, '接受邀请失败');
@@ -217,7 +224,7 @@ router.get('/api/enterprise/members', (req: Request, res: Response) => {
   try {
     if (!requireAdmin(req, res)) return;
     const orgId = getOrgId(req);
-    const list = Array.from(users.values()).filter(u => u.orgId === orgId);
+    const list = getUserStore().listByOrg(orgId);
     return res.json({ ok: true, data: list.map(u => ({ userId: u.userId, email: u.email, role: u.role, status: u.status, createdAt: u.createdAt })) });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -228,7 +235,7 @@ router.get('/api/enterprise/members', (req: Request, res: Response) => {
 
 router.get('/api/enterprise/members/:id', (req: Request, res: Response) => {
   try {
-    const user = users.get(req.params.id as string);
+    const user = getUserStore().getById(req.params.id as string);
     if (!user) return res.status(404).json({ ok: false, code: 'NOT_FOUND', message: '成员不存在' });
     return res.json({ ok: true, data: { userId: user.userId, email: user.email, role: user.role, status: user.status, createdAt: user.createdAt } });
   } catch (err: unknown) {
@@ -241,11 +248,14 @@ router.get('/api/enterprise/members/:id', (req: Request, res: Response) => {
 router.put('/api/enterprise/members/:id', (req: Request, res: Response) => {
   try {
     if (!requireAdmin(req, res)) return;
-    const user = users.get(req.params.id as string);
+    const userId = req.params.id as string;
+    const user = getUserStore().getById(userId);
     if (!user) return res.status(404).json({ ok: false, code: 'NOT_FOUND', message: '成员不存在' });
     const { role } = req.body as { role?: string };
-    if (role) user.role = role;
-    return res.json({ ok: true, data: { userId: user.userId, email: user.email, role: user.role, status: user.status } });
+    if (role) getUserStore().updateUser(userId, { role: role as 'admin' | 'manager' | 'staff' });
+    const updated = getUserStore().getById(userId);
+    if (!updated) return res.status(500).json({ ok: false, code: 'INTERNAL_ERROR', message: '更新后读取失败', degraded: true });
+    return res.json({ ok: true, data: { userId: updated.userId, email: updated.email, role: updated.role, status: updated.status } });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     log.error({ err }, '更新成员失败');
@@ -256,9 +266,10 @@ router.put('/api/enterprise/members/:id', (req: Request, res: Response) => {
 router.delete('/api/enterprise/members/:id', (req: Request, res: Response) => {
   try {
     if (!requireAdmin(req, res)) return;
-    const user = users.get(req.params.id as string);
+    const userId = req.params.id as string;
+    const user = getUserStore().getById(userId);
     if (!user) return res.status(404).json({ ok: false, code: 'NOT_FOUND', message: '成员不存在' });
-    user.status = 'disabled'; // soft-delete
+    getUserStore().deleteUser(userId); // soft-delete
     return res.json({ ok: true, message: '成员已停用' });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -371,7 +382,7 @@ router.get('/api/enterprise/ga-access/data/:type', (req: Request, res: Response)
     const orgId = getOrgId(req);
     // Simplified: return count-based mock data
     const data = {
-      members: users.size, invitations: invitations.size,
+      members: getUserStore().getTotalUserCount(), invitations: invitations.size,
       enterprises: enterprises.size, imaBindings: imaBindings.size,
     };
     return res.json({ ok: true, data: { type, orgId, stats: data } });

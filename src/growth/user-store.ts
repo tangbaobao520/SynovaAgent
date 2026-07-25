@@ -176,6 +176,30 @@ export class UserStore {
   }
 
   /**
+   * 软删除用户（设置 status='disabled'）。
+   */
+  deleteUser(userId: string): void {
+    try {
+      this.store.updateNode(userId, { status: 'disabled' } as Record<string, unknown>, USER_GRAPH);
+      log.info({ userId }, '用户已停用(软删除)');
+    } catch (err) {
+      log.warn({ err, userId }, '删除用户失败 — 降级');
+    }
+  }
+
+  /**
+   * 查询所有用户数量。
+   */
+  getTotalUserCount(): number {
+    try {
+      return this.store.queryNodes(NODE_TYPE, {}, USER_GRAPH).length;
+    } catch (err) {
+      log.warn({ err }, '查询用户总数失败 — 降级');
+      return 0;
+    }
+  }
+
+  /**
    * 按 orgId 列出成员。
    */
   listByOrg(orgId: string): UserRecord[] {
