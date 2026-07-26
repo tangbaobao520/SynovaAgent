@@ -203,21 +203,17 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!panel) {
           panel = document.createElement('div');
           panel.id = 'gk-detail';
-          panel.style.cssText = 'margin-top:8px;padding:8px;background:#0f172a;border-radius:4px;font-size:11px;color:#94a3b8';
-          var items = [
-            ['L1-as_any', 'PASS'],
-            ['L2-empty-catch', 'PASS'],
-            ['L3-engine-core', 'PASS'],
-            ['L4-wiring', 'PASS'],
-            ['L5-arch-boundary', 'PASS'],
-            ['L6-task-brief', 'PASS'],
-            ['L7-arch-compliance', 'PASS'],
-            ['L8-file-driven', 'PASS'],
-            ['L9-hardcode', 'PASS'],
-            ['L10-health', 'PASS'],
-            ['L11-dash', 'PASS'],
-          ];
+          var items = (window.__DASHBOARD_DATA__.gatekeeperChecks || []).map(function(c) {
+            var st = (c.status||'').toUpperCase();
+            var label = st === 'PASS' ? 'PASS' : (st === 'WARN' ? 'WARN('+(c.count||0)+')' : 'FAIL('+(c.count||0)+')');
+            var color = st === 'PASS' ? '#22c55e' : (st === 'WARN' ? '#f59e0b' : '#ef4444');
+            return [c.name || '', label, color];
+          });
+          if (items.length === 0) { items = [['网守尚未执行', '通过 git synova-commit 触发', '#6b7280']]; }
           var rows = '';
+          items.forEach(function(item) {
+            rows += '<tr><td style=padding:2px 4px>' + item[0] + '</td><td style=text-align:right;color:' + (item[2]||'#6b7280') + ';padding:2px 4px>' + item[1] + '</td></tr>';
+          });
           items.forEach(function(item) {
             rows += '<tr><td style=padding:2px 4px>' + item[0] + '</td><td style=text-align:right;color:#22c55e;padding:2px 4px>' + item[1] + '</td></tr>';
           });
@@ -298,11 +294,17 @@ def render_html(data: Dict[str, Any]) -> str:
         st = sig.get("status", "unknown")
 
 
-        st_icon = "\u25cf"  # always available
-        cnt_icon = "\u25cb"  # default: not available
-        tr_icon = "\u25cb"   # default: not available
+
+
+        st_icon = "●"  # always available
+        cnt_icon = "○"  # default: not available
+        tr_icon = "○"   # default: not available
+        cnt_color = "#6b7280"
+        cnt_tier = "数据积累中"
         if sig.get("p0") or sig.get("p1") or sig.get("p2"):
-            cnt_icon = "\u25cf"  # counts available
+            cnt_icon = "●"  # counts available
+            cnt_color = "#22c55e"
+            cnt_tier = "计数可用"
         color = status_colors.get(st, "#6b7280")
         icon = status_icons.get(st, "&#9678;")
         label = status_labels.get(st, "Unknown")
@@ -314,7 +316,7 @@ def render_html(data: Dict[str, Any]) -> str:
                 <span class="signal-status" style="color:{color}">{icon} {label}</span>
             </div>
             <div class="signal-reason">{reason}</div>
-            <div class="signal-tier" style="font-size:10px;color:#64748b;margin-top:4px"><span style="color:#22c55e">{st_icon} 状态</span><span style="color:#f59e0b;margin-left:8px">{cnt_icon} 计数</span><span style="color:#9ca3af;margin-left:8px">{tr_icon} 趋势（数据积累中）</span></div>
+            <div class="signal-tier" style="font-size:10px;color:#64748b;margin-top:4px"><span style="color:#22c55e">{st_icon} 🟢 当前可实现</span><span style="color:{cnt_color};margin-left:8px">{cnt_icon} {cnt_tier}</span><span style="color:#9ca3af;margin-left:8px">{tr_icon} ⚪ 数据积累中</span></div>
         </div>"""
 
     # 文档状态
