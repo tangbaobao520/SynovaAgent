@@ -72,6 +72,7 @@ import cockpitRoutes from './routes/cockpit'; // D220-PHASE3
 import type { ServiceContainer } from './services/container';
 // Phase 0.1: 全局错误兜底 — uncaughtException + unhandledRejection
 import { setMainAgent } from "./routes/loops";
+import { setGraphBridge } from "./routes/import"; // D231
 import { MainAgent } from "./agent/main-agent";
 import { LOOP_TRIGGER_MATRIX } from "./loops/loop-trigger-config";
 import { registerGlobalErrorHandlers, unregisterGlobalErrorHandlers } from './services/runtime-global-handlers';
@@ -389,6 +390,7 @@ export async function createServer(): Promise<Server> {
         mainAgent.registerLoop(loopConfig);
       }
       setMainAgent(mainAgent);
+      setGraphBridge(graphStore); // D231
     } catch (err: unknown) {
       logger.warn({ err }, "MainAgent 初始化失败 — loops 路由降级");
     }
