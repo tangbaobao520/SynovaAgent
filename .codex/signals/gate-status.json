@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-07-26T12:28:07Z",
+  "generatedAt": "2026-07-26T13:09:11Z",
   "scriptVersion": "v2.0",
-  "scanDurationMs": 484,
+  "scanDurationMs": 533,
   "gates": [
     {
       "id": "gate-0",
