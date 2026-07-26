@@ -77,16 +77,24 @@ export class LoopScheduler {
   private loops = new Map<string, RegisteredLoop>();
   private scheduler: CronSchedulerLike | null = null;
   private enabled = true;
+  private mainAgent: { executeLoop(loopId: string, scale: string): Promise<{ status: string }> } | null = null;
 
   constructor(scheduler?: CronSchedulerLike) {
     this.scheduler = scheduler ?? null;
     this.initHeartbeatDir();
     this.registerHeartbeatCheck();
+    this.registerBuiltinLoops();
+  }
+
+  /** 注入 MainAgent 实例（D8a），供内置循环执行调用 */
+  setMainAgent(agent: { executeLoop(loopId: string, scale: string): Promise<{ status: string }> }): void {
+    this.mainAgent = agent;
+    log.info('[wiring] MainAgent 已注入 LoopScheduler');
   }
 
   /** 确保心跳目录存在 */
   private initHeartbeatDir(): void {
-    try { mkdirSync(HEARTBEAT_DIR, { recursive: true }); } catch { /* 降级 */ }
+    try { mkdirSync(HEARTBEAT_DIR, { recursive: true }); } catch { log.warn({}, '心跳目录创建失败 — 降级'); }
   }
 
   /**
@@ -109,6 +117,62 @@ export class LoopScheduler {
       });
     } catch (err: unknown) {
       log.warn({ err }, '停滞检测任务注册失败 — 降级');
+    }
+  }
+
+  /**
+   * D9: 注册 2 个内置业务循环到 CronScheduler。
+   *
+   * loop-4 (system_self_check): 系统自检，每日 0 点 (0 0 * * *)
+   *   检查哨兵状态/专家状态/数据新鲜度。
+   * loop-5 (knowledge_accumulation): 知识积累，每周日 0 点 (0 0 * * 0)
+   *   从 PKB 提取 enterprise_facts、更新知识图谱。
+   *
+   * 降级: MainAgent 不可用 → log.warn + 跳过执行。
+   */
+  private registerBuiltinLoops(): void {
+    if (!this.scheduler) {
+      log.warn('[D9] CronScheduler 不可用 — 内置循环跳过');
+      return;
+    }
+
+    try {
+      // loop-4: 系统自检（每日 0 点）
+      this.scheduler.schedule('loop-4-self-check', '0 0 * * *', async () => {
+        if (!this.mainAgent) {
+          log.warn('[D9] MainAgent 未注入 — 跳过 loop-4 执行 (degraded)');
+          return;
+        }
+        try {
+          const result = await this.mainAgent.executeLoop('loop-4', 'fast');
+          this.recordHeartbeat('loop-4');
+          log.info({ status: result.status }, 'loop-4 系统自检完成');
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          log.warn({ err: msg }, 'loop-4 执行失败 — degraded');
+        }
+      });
+      log.info('[D9] loop-4-self-check 已注册 (0 0 * * *)');
+
+      // loop-5: 知识积累（每周日 0 点）
+      this.scheduler.schedule('loop-5-knowledge', '0 0 * * 0', async () => {
+        if (!this.mainAgent) {
+          log.warn('[D9] MainAgent 未注入 — 跳过 loop-5 执行 (degraded)');
+          return;
+        }
+        try {
+          const result = await this.mainAgent.executeLoop('loop-5', 'medium');
+          this.recordHeartbeat('loop-5');
+          log.info({ status: result.status }, 'loop-5 知识积累完成');
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          log.warn({ err: msg }, 'loop-5 执行失败 — degraded');
+        }
+      });
+      log.info('[D9] loop-5-knowledge 已注册 (0 0 * * 0)');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg }, '[D9] 内置循环注册失败 — 降级');
     }
   }
 
