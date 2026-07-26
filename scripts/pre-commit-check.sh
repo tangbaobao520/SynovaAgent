@@ -87,6 +87,20 @@ plan_aware_check() {
 }
 
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+
+
+# ═══ D201 L3: bypass 阻断 — 今日任何绕过记录 → 硬阻断 ═══
+BYPASS_LOG="$ROOT/.claude/bypass.log"
+if [ -f "$BYPASS_LOG" ]; then
+  TODAY=$(date -u +%Y-%m-%d)
+  BYPASS_COUNT=$(grep -c "$TODAY" "$BYPASS_LOG" 2>/dev/null || echo 0)
+  if [ "$BYPASS_COUNT" -gt 0 ]; then
+    echo "[GATEKEEPER] 检测到今日 ${BYPASS_COUNT} 次 --no-verify 绕过记录"
+    echo "[GATEKEEPER] 请使用: git synova-commit --task-id <D#> --agent claude-code --message '...'"
+    echo "[GATEKEEPER] 修复导致绕过的根因后，bypass.log 中今日记录将在次日自动清零"
+    exit 1
+  fi
+fi
 STAGED=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep '\.ts$' | grep -v node_modules || true)
 
 # ═══ V3.8: plan.json — 分阶段任务支持 ═══
@@ -641,3 +655,4 @@ else
   echo ""
   exit 0
 fi
+
