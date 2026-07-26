@@ -37,7 +37,7 @@
     "workflow:design": "bash scripts/workflow/checkpoint-design.sh",
     "workflow:deploy": "bash scripts/workflow/checkpoint-deploy.sh",
     "workflow:wire": "bash scripts/workflow/wire-check.sh",
-    "electron:dev": "electron electron-main.ts",
+    "electron:dev": "electron electron/main.js",
     "electron:build": "electron-builder --config build-synova.js",
     "electron:build:win": "electron-builder --config build-synova.js --win",
     "electron:build:mac": "electron-builder --config build-synova.js --mac",
