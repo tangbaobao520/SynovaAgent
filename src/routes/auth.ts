@@ -13,6 +13,8 @@ import { Router, type Request, type Response } from 'express';
 import { createLogger } from '@synova/logger';
 import { signJwtToken, verifyJwtToken, revokeToken, extractAuthFromRequest } from '../middleware/auth';
 import { UserStore, type UserProps } from '../growth/user-store';
+import { SqliteGraphStore } from '../adapters/sqlite-graph-store';
+import { getDatabase } from '../init/engine-context';
 import bcrypt from 'bcrypt';
 
 const log = createLogger('auth-routes');
@@ -27,15 +29,33 @@ interface UserRecord {
 const users = new Map<string, UserRecord>();
 let userIdCounter = 0;
 
-/** D106+D107: UserStore (GraphStore 持久化), 注入后替代内存 Map */
-let userStore: UserStore | null = null;
+/** D106+D107: UserStore (GraphStore 持久化), 替代内存 Map */
+let _userStore: UserStore | null = null;
+
+/**
+ * 获取 UserStore 实例（懒初始化）。
+ * 优先使用外部注入的实例（来自 synova-agent.ts），回退到本地从 SQLite 创建。
+ */
+function getUserStore(): UserStore | null {
+  if (_userStore) return _userStore;
+  // 尝试从全局数据库自初始化（使 auth.ts 不依赖外部注入）
+  try {
+    const db = getDatabase();
+    const graphStore = new SqliteGraphStore(db);
+    _userStore = new UserStore(graphStore);
+    log.info('UserStore 自初始化成功 (SqliteGraphStore)');
+  } catch {
+    log.warn('UserStore 自初始化失败 — 使用内存 Map 降级');
+  }
+  return _userStore;
+}
 
 /**
  * 注入 UserStore 实例。
- * 在 server.ts 初始化完成后调用。
+ * 由 synova-agent.ts (D224) 在启动时调用。
  */
 export function setUserStore(store: UserStore): void {
-  userStore = store;
+  _userStore = store;
   log.info('UserStore 已注入 auth 路由 — 用户持久化已启用');
 }
 
@@ -50,8 +70,9 @@ router.post('/api/auth/register', async (req: Request, res: Response) => {
     if (password.length < 6) return res.status(400).json({ ok: false, code: 'VALIDATION_ERROR', message: '密码至少6位' });
 
     // 检查重复邮箱 (UserStore 优先, 内存 Map 回退)
-    if (userStore) {
-      const existing = userStore.queryByEmail(email);
+    const registerUs = getUserStore();
+    if (registerUs) {
+      const existing = registerUs.queryByEmail(email);
       if (existing) return res.status(409).json({ ok: false, code: 'DUPLICATE', message: '邮箱已注册' });
     } else {
       for (const u of users.values()) { if (u.email === email) return res.status(409).json({ ok: false, code: 'DUPLICATE', message: '邮箱已注册' }); }
@@ -61,9 +82,9 @@ router.post('/api/auth/register', async (req: Request, res: Response) => {
     const userOrgId = orgId || 'default';
     let finalUserId: string;
 
-    if (userStore) {
+    if (registerUs) {
       // UserStore.createUser 内部 bcrypt hash + 生成 userId (需要原始 password)
-      const result = await userStore.createUser(email, password, userRole, userOrgId);
+      const result = await registerUs.createUser(email, password, userRole, userOrgId);
       finalUserId = result.userId;
     } else {
       finalUserId = `usr-${++userIdCounter}`;
@@ -74,7 +95,7 @@ router.post('/api/auth/register', async (req: Request, res: Response) => {
     const token = signJwtToken({ sub: finalUserId, role: userRole, orgId: userOrgId });
     if (!token) throw new Error('JWT signing failed');
 
-    log.info({ userId: finalUserId, email, store: userStore ? 'graph' : 'memory' }, '用户注册成功');
+    log.info({ userId: finalUserId, email, store: registerUs ? 'graph' : 'memory' }, '用户注册成功');
     return res.status(201).json({ ok: true, token, payload: { userId: finalUserId, role: userRole, orgId: userOrgId } });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -94,8 +115,9 @@ router.post('/api/auth/login', async (req: Request, res: Response) => {
 
     let foundUser: UserRecord | null = null;
     // UserStore 优先, 内存 Map 回退
-    if (userStore) {
-      const stored = userStore.queryByEmail(email);
+    const loginUs = getUserStore();
+    if (loginUs) {
+      const stored = loginUs.queryByEmail(email);
       if (stored) foundUser = stored as UserRecord;
     } else {
       for (const u of users.values()) { if (u.email === email) { foundUser = u; break; } }
@@ -110,7 +132,7 @@ router.post('/api/auth/login', async (req: Request, res: Response) => {
     if (!token) return res.status(500).json({ ok: false, code: 'AUTH_CONFIG_ERROR', message: 'JWT_SECRET 未配置', degraded: true });
 
     const result = verifyJwtToken(token);
-    log.info({ userId: foundUser.userId, email, store: userStore ? 'graph' : 'memory' }, '登录成功');
+    log.info({ userId: foundUser.userId, email, store: loginUs ? 'graph' : 'memory' }, '登录成功');
     return res.json({ ok: true, token, payload: { userId: result.payload?.sub, role: result.payload?.role, orgId: result.payload?.orgId, expiresAt: result.payload?.exp, jti: result.payload?.jti } });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
