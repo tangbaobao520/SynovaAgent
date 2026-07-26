@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Synova — Data Import</title>
+  <link rel="stylesheet" href="/app/css/app.css">
+  <link rel="stylesheet" href="/app/css/admin.css">
+</head>
+<body>
+  <header id="synova-shell"></header>
+  <div id="toast-container"></div>
+
+  <div class="page-content">
+    <div class="admin-header"><h1>Data Import</h1></div>
+
+    <div class="card">
+      <div id="drop-zone" class="drop-zone">
+        <p>Drag & drop a CSV file here, or click to select</p>
+        <input type="file" id="file-input" accept=".csv" hidden>
+      </div>
+    </div>
+
+    <div id="preview-section" class="card" style="display:none;">
+      <h2 class="card-title">Preview (first 10 rows)</h2>
+      <div id="preview-table"></div>
+      <button id="btn-import" class="btn-primary" style="width:auto;padding:10px 24px;margin-top:12px;">Import to GraphStore</button>
+    </div>
+
+    <div id="import-result"></div>
+  </div>
+
+  <script src="/app/js/auth.js"></script>
+  <script src="/app/js/api-client.js"></script>
+  <script src="/app/js/shell.js"></script>
+  <script src="/app/js/import.js"></script>
+</body>
+</html>

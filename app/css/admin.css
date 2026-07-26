@@ -33,3 +33,11 @@
 
 .skeleton-pulse { background: linear-gradient(90deg, var(--border) 25%, #f0f0f0 50%, var(--border) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 4px; }
 @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* D231: import page */
+.drop-zone { border: 2px dashed var(--border); border-radius: 12px; padding: 48px 24px; text-align: center; cursor: pointer; transition: all 0.2s; }
+.drop-zone:hover, .drop-zone.drag-over { border-color: var(--primary); background: #f0f7ff; }
+.drop-zone p { font-size: 15px; color: var(--text-secondary); margin: 0; }
+.import-success { background: #dcfce7; border: 1px solid #86efac; border-radius: 8px; padding: 16px; font-size: 15px; font-weight: 600; color: #16a34a; margin-top: 12px; }
+.import-warnings { background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 12px; font-size: 13px; margin-top: 8px; }
+.import-warnings ul { margin: 4px 0 0 16px; }

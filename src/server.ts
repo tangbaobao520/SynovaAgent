@@ -67,6 +67,7 @@ import selfOpsRoutes from './routes/self-ops';
 import overflowRoutes from './routes/overflow';
 import loopRoutes from "./routes/loops";
 import enterpriseRoutes from './routes/enterprise'; // D103
+import importRoutes from './routes/import'; // D231
 import cockpitRoutes from './routes/cockpit'; // D220-PHASE3
 import type { ServiceContainer } from './services/container';
 // Phase 0.1: 全局错误兜底 — uncaughtException + unhandledRejection
@@ -348,6 +349,7 @@ export async function createServer(): Promise<Server> {
   app.use(backupRoutes);
   app.use(selfOpsRoutes);
   app.use(enterpriseRoutes); // D103 — 企业路由
+  app.use(importRoutes); // D231
   app.use(loopRoutes); // D20 — 循环状态 API
   app.use(cockpitRoutes); // D220-PHASE3 — 创始人仪表盘
 
