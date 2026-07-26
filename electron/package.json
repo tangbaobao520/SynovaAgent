@@ -1,0 +1,5 @@
+{
+  "name": "synova-electron",
+  "main": "main.cjs",
+  "type": "commonjs"
+}
