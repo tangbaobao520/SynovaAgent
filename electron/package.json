@@ -1,5 +1,1 @@
-{
-  "name": "synova-electron",
-  "main": "main.cjs",
-  "type": "commonjs"
-}
+{"main":"main.cjs","type":"commonjs","devDependencies":{"electron":"^33.4.11"}}
