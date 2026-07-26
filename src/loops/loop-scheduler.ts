@@ -170,6 +170,40 @@ export class LoopScheduler {
         }
       });
       log.info('[D9] loop-5-knowledge 已注册 (0 0 * * 0)');
+
+      // loop-1: 企业诊断（季度 cron，slow 尺度—完整诊断管线）
+      this.scheduler.schedule('loop-1-diagnosis', '0 9 1 */3 *', async () => {
+        if (!this.mainAgent) {
+          log.warn('[D9] MainAgent 未注入 — 跳过 loop-1 (degraded)');
+          return;
+        }
+        try {
+          const result = await this.mainAgent.executeLoop('loop-1', 'slow');
+          this.recordHeartbeat('loop-1');
+          log.info({ status: result.status }, 'loop-1 企业诊断完成');
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          log.warn({ err: msg }, 'loop-1 执行失败 — degraded');
+        }
+      });
+      log.info('[D9] loop-1-diagnosis 已注册 (0 9 1 */3 *)');
+
+      // loop-2: 部门导航（周度 cron，medium 尺度）
+      this.scheduler.schedule('loop-2-navigation', '0 9 * * 1', async () => {
+        if (!this.mainAgent) {
+          log.warn('[D9] MainAgent 未注入 — 跳过 loop-2 (degraded)');
+          return;
+        }
+        try {
+          const result = await this.mainAgent.executeLoop('loop-2', 'medium');
+          this.recordHeartbeat('loop-2');
+          log.info({ status: result.status }, 'loop-2 部门导航完成');
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          log.warn({ err: msg }, 'loop-2 执行失败 — degraded');
+        }
+      });
+      log.info('[D9] loop-2-navigation 已注册 (0 9 * * 1)');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       log.warn({ err: msg }, '[D9] 内置循环注册失败 — 降级');
