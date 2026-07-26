@@ -301,6 +301,10 @@ def render_html(data: Dict[str, Any]) -> str:
         tr_icon = "○"   # default: not available
         cnt_color = "#6b7280"
         cnt_tier = "数据积累中"
+        if st != "unknown" and not (sig.get("p0") or sig.get("p1") or sig.get("p2")):
+            cnt_icon = "●"
+            cnt_color = "#f59e0b"
+            cnt_tier = "依赖升级"
         if sig.get("p0") or sig.get("p1") or sig.get("p2"):
             cnt_icon = "●"  # counts available
             cnt_color = "#22c55e"
@@ -427,6 +431,11 @@ h2 {{ font-size:15px; margin:20px 0 10px; color:#94a3b8; text-transform:uppercas
 .status-bar {{ display:flex; gap:20px; align-items:center; font-size:12px; color:#94a3b8; padding:10px 0; border-top:1px solid #334155; margin-top:16px; }}
 .status-bar .ok {{ color:#22c55e; }}
 .status-bar .warn {{ color:#f59e0b; }}
+.gate-grid {{ display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px; }}
+.gate-item {{ display:flex; align-items:center; gap:6px; padding:4px 8px; border-radius:4px; font-size:11px; background:#0f172a; }}
+.gate-item .name {{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }}
+.gate-pass {{ color:#22c55e; }} .gate-partial {{ color:#f59e0b; }} .gate-fail {{ color:#ef4444; }}
+.gate-dim {{ font-size:10px; color:#64748b; min-width:36px; }}
 @@media (max-width:640px) {{ .grid {{ grid-template-columns:1fr; }} }}
 </style>
 </head><body>
@@ -471,6 +480,8 @@ h2 {{ font-size:15px; margin:20px 0 10px; color:#94a3b8; text-transform:uppercas
         </div>
     </div>
 </div>
+
+{gsect}
 
 <div class="grid">
     <div class="card card-full">
