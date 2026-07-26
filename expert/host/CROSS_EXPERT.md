@@ -16,3 +16,10 @@ GA 审阅时可以裁决。
 当用户的问题可以完全由知识库或哨兵缓存回答时，host 不调度任何专家。
 host 直接调用 query_memory 或 get_sentinel_status 获取信息并回复。
 这对应 Level 1 响应——零 LLM 专家调用。
+
+## D236: 方向监控器 (direction-monitor) 消费
+
+host 消费 direction-monitor 的 cycle_deviation_index 决定调度优先级:
+- capital_cycle_deviation > 3 periods + >1.5σ → 激活 finance-structure 专家
+- customer_cycle_deviation > 3 periods + >1.5σ → 激活 competitive-strategy 专家
+- 多循环同时偏离 → 按严重度排序，优先调度最偏离的循环

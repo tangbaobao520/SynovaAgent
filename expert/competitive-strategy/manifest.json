@@ -1,0 +1,11 @@
+{
+  "name": "competitive-strategy",
+  "version": "1.0.0",
+  "type": "expert",
+  "displayName": "竞争与战略专家",
+  "description": "P0 激活深度竞争分析专家。当客户循环偏离>3周期+>1.5σ时激活",
+  "tier": "L4",
+  "complexity": "expert",
+  "activationType": "p0",
+  "activationCondition": "customer_cycle_deviation > 3 periods AND > 1.5σ"
+}
