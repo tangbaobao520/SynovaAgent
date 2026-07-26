@@ -143,6 +143,61 @@ export class SynovaAgent {
     });
     log.info('[cron] stuck-session-detector 已注册 (每 60 秒)');
 
+    // D110: ima 知识库定时同步（每 6 小时）
+    this.scheduler.schedule('ima-sync', '0 */6 * * *', async () => {
+      try {
+        const { getActiveImaBindings } = await import('../routes/enterprise');
+        const { ImaClient } = await import('../connectors/ima');
+        const { KnowledgeStore } = await import('../l4/knowledge-store');
+        const { getDatabase } = await import('../init/engine-context');
+        const db = getDatabase();
+        const store = new KnowledgeStore(db);
+
+        const bindings = getActiveImaBindings();
+        if (bindings.length === 0) {
+          log.debug('[cron] ima-sync: 无活跃 IMA 绑定 — 跳过');
+          return;
+        }
+
+        for (const binding of bindings) {
+          try {
+            const apiKey = binding.apiKeyHash.replace('hashed:', '');
+            const client = new ImaClient({
+              baseUrl: 'https://ima.example.com',
+              apiKey,
+              enterpriseId: binding.orgId,
+            });
+            await client.authenticate();
+            const docs = await client.scanDocuments({ limit: 20 });
+            if (docs.length === 0) continue;
+
+            for (const doc of docs) {
+              const content = await client.extractContent(doc.id);
+              if (!content) continue;
+              store.insert({
+                text: content.text,
+                sourceType: 'ima_document',
+                sourceId: content.sourceId,
+                authorityLevel: 'internal_stored',
+                accessLevel: 'team',
+                accessTeamId: binding.orgId,
+                accessSensitivity: 'normal',
+                orgId: binding.orgId,
+              });
+            }
+            log.info({ orgId: binding.orgId, docCount: docs.length }, '[cron] ima-sync 完成');
+          } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err);
+            log.warn({ err: msg, orgId: binding.orgId }, '[cron] ima-sync 企业同步失败 — degraded，继续下一个');
+          }
+        }
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        log.warn({ err: msg }, '[cron] ima-sync 执行失败 — degraded');
+      }
+    });
+    log.info('[cron] ima-sync 已注册 (每 6 小时)');
+
     log.info({ port: config.port }, 'SynovaAgent 已启动');
 
     // Phase 4.3: CommandLanes — 工具执行路径隔离（高风险工具走独立 lane）

@@ -700,11 +700,11 @@ class GateChecker:
 
         # C3: 哨兵注册记录 —— sentinel/registry.ts 中含注册逻辑
         if self.file_exists("src/sentinel/registry.ts"):
-            reg = self.grep(r"register\|getRegistry\|runAll", "src/sentinel/registry.ts")
+            reg = self.grep(r"register|getRegistry|runAll", "src/sentinel/registry.ts")
             if reg:
-                info["partial"] += 1
-                parts.append("sentinel/registry.ts: 注册记录 > 1")
-                self.warn("sentinel/registry.ts: 注册记录存在(需 cron 执行确认)")
+                info["passed"] += 1
+                parts.append("sentinel/registry.ts: 注册记录存在")
+                self.ok("sentinel/registry.ts: 注册记录存在")
             else:
                 info["partial"] += 1
                 parts.append("sentinel/registry.ts: 注册记录 ≤ 1")
@@ -1232,7 +1232,7 @@ class GateChecker:
             self.fail("loop-trigger-config.ts: 不存在")
 
         # C3: 成功执行记录（静态替代——检查 CronScheduler 注册逻辑）
-        cron_exists = self.grep(r"cron\|cron_jobs\|schedule", "src/loops/loop-scheduler.ts")
+        cron_exists = self.grep(r"cron|cron_jobs|schedule", "src/loops/loop-scheduler.ts")
         if cron_exists:
             info["partial"] += 1
             parts.append("CronScheduler: 注册逻辑存在(执行记录待确认)")

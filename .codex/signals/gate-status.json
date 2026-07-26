@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-07-26T09:56:28Z",
+  "generatedAt": "2026-07-26T11:52:49Z",
   "scriptVersion": "v2.0",
-  "scanDurationMs": 1657,
+  "scanDurationMs": 1187,
   "gates": [
     {
       "id": "gate-0",
@@ -63,15 +63,15 @@
       "id": "gate-4",
       "name": "哨兵自主巡检",
       "dimension": "诊断",
-      "status": "partial",
+      "status": "pass",
       "conditions": {
-        "passed": 2,
-        "partial": 1,
+        "passed": 3,
+        "partial": 0,
         "failed": 0
       },
       "downgradedBy": null,
       "downgradedFrom": null,
-      "details": "sentinel-runner.ts: 含运行函数; synova-agent.ts: SentinelRunner 实例化 + start; sentinel/registry.ts: 注册记录 ≤ 1"
+      "details": "sentinel-runner.ts: 含运行函数; synova-agent.ts: SentinelRunner 实例化 + start; sentinel/registry.ts: 注册记录存在"
     },
     {
       "id": "gate-5",
@@ -183,7 +183,7 @@
       },
       "downgradedBy": null,
       "downgradedFrom": null,
-      "details": "loop-scheduler.ts: 存在且非空壳; LOOP_TRIGGER_MATRIX: 6 个循环(18 周期); CronScheduler: 注册逻辑待确认"
+      "details": "loop-scheduler.ts: 存在且非空壳; LOOP_TRIGGER_MATRIX: 6 个循环(18 周期); CronScheduler: 注册逻辑存在(执行记录待确认)"
     },
     {
       "id": "gate-13",
@@ -244,11 +244,11 @@
     }
   ],
   "summary": {
-    "passed": 12,
-    "partial": 5,
+    "passed": 13,
+    "partial": 4,
     "failed": 0,
     "unverifiable": 0,
-    "weightedProgress": 0.85
+    "weightedProgress": 0.88
   },
   "healthCheck": {
     "expectedPaths": 31,

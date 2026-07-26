@@ -55,6 +55,17 @@ const imaBindings = new Map<string, ImaBindingRecord>();
 const gaAccessTokens = new Map<string, GaAccessRecord>();
 let userIdCounter = 0;
 
+/** 获取活跃 IMA 绑定列表（D110: cron 定时同步用） */
+export function getActiveImaBindings(): Array<{ orgId: string; apiKeyHash: string }> {
+  const result: Array<{ orgId: string; apiKeyHash: string }> = [];
+  for (const [orgId, binding] of imaBindings) {
+    if (binding.status === 'active') {
+      result.push({ orgId, apiKeyHash: binding.apiKeyHash });
+    }
+  }
+  return result;
+}
+
 function nextId(prefix: string): string {
   return `${prefix}-${++userIdCounter}-${Date.now().toString(36)}`;
 }
