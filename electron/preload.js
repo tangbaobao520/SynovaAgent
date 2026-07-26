@@ -8,6 +8,6 @@ const { contextBridge } = require('electron');
 const config = require('./config.json');
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  getServerUrl: () => config.serverUrl || 'http://localhost:3000',
+  getServerUrl: () => config.serverUrl || 'http://localhost:18790',
   getConfig: () => ({ ...config }),
 });
