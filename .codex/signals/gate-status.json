@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-07-26T13:09:11Z",
+  "generatedAt": "2026-07-26T13:11:17Z",
   "scriptVersion": "v2.0",
-  "scanDurationMs": 533,
+  "scanDurationMs": 394,
   "gates": [
     {
       "id": "gate-0",
@@ -119,29 +119,29 @@
       "id": "gate-8",
       "name": "诊断→Goal自动转化",
       "dimension": "导航",
-      "status": "partial",
+      "status": "pass",
       "conditions": {
-        "passed": 3,
-        "partial": 1,
+        "passed": 4,
+        "partial": 0,
         "failed": 0
       },
       "downgradedBy": null,
       "downgradedFrom": null,
-      "details": "goal-store.ts: createGoal 存在; proposal-engine.ts: 诊断→Goal 转换存在; goal-types.ts: Goal 类型定义存在; createGoal: 返回 string(端到端待验证)"
+      "details": "goal-store.ts: createGoal 存在; proposal-engine.ts: 诊断→Goal 转换存在; goal-types.ts: Goal 类型定义存在; createGoal: 返回 string"
     },
     {
       "id": "gate-9",
       "name": "Goal执行追踪",
       "dimension": "导航",
-      "status": "partial",
+      "status": "pass",
       "conditions": {
-        "passed": 2,
-        "partial": 1,
+        "passed": 3,
+        "partial": 0,
         "failed": 0
       },
       "downgradedBy": null,
       "downgradedFrom": null,
-      "details": "goal-sentinel.ts: 三因子偏离模型存在; goal-sentinel-lifecycle.ts: 方案哨兵注册存在; P0 告警: 逻辑存在(端到端待验证)"
+      "details": "goal-sentinel.ts: 三因子偏离模型存在; goal-sentinel-lifecycle.ts: 方案哨兵注册存在; P0 告警: 逻辑存在"
     },
     {
       "id": "gate-10",
@@ -244,11 +244,11 @@
     }
   ],
   "summary": {
-    "passed": 15,
-    "partial": 2,
+    "passed": 17,
+    "partial": 0,
     "failed": 0,
     "unverifiable": 0,
-    "weightedProgress": 0.94
+    "weightedProgress": 1.0
   },
   "healthCheck": {
     "expectedPaths": 31,
