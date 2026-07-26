@@ -34,6 +34,7 @@ export enum SOGNodeType {
   RISK = 'Risk',
   COMPLIANCE = 'Compliance',
 	USER = 'User',            // Auth M1: 系统用户
+	RESOURCE_USER = 'resource/user', // D107: 企业用户
 	KNOWLEDGE_CHUNK = 'KnowledgeChunk', // Auth M1: 知识片段
 	BUSINESS_MODEL = 'BusinessModel',  // P1: 商业模式画布节点
 }
@@ -313,6 +314,7 @@ export const NODE_VALIDATORS: Record<SOGNodeType, (props: unknown) => boolean> =
   [SOGNodeType.RISK]:        (p): p is RiskProps          => hasString(p, 'riskType') && hasSeverity(p) && hasRiskStatus(p),
   [SOGNodeType.COMPLIANCE]:  (p): p is ComplianceProps    => hasString(p, 'name') && hasComplianceType(p) && hasComplianceStatus(p),
   [SOGNodeType.USER]:        (p): p is Record<string, unknown> => hasString(p, 'name'),
+  [SOGNodeType.RESOURCE_USER]: (p): p is Record<string, unknown> => hasString(p, 'email'),
   [SOGNodeType.KNOWLEDGE_CHUNK]: (p): p is Record<string, unknown> => hasString(p, 'content'),
   [SOGNodeType.BUSINESS_MODEL]:  (p): p is BusinessModelProps   => hasString(p, 'name') && hasCanvasType(p),
 };
