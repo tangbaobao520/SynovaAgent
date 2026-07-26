@@ -217,3 +217,39 @@ export function listAdapters(): OntologyAdapter[] {
 // Register built-in adapters
 registerAdapter(new FeishuOntologyAdapter());
 registerAdapter(new GitOntologyAdapter());
+
+// ═══ D107: User 节点操作 ═══
+
+/**
+ * 创建 RESOURCE_USER 节点。
+ * @param email - 邮箱
+ * @param role  - 角色
+ * @param orgId - 组织 ID
+ * @param store - GraphStore 实例
+ * @returns 节点 ID
+ */
+export async function createUserNode(
+  email: string,
+  role: string,
+  orgId: string,
+  store: GraphStore,
+): Promise<string> {
+  return store.createNode(SOGNodeType.RESOURCE_USER, {
+    email, role, orgId,
+    createdAt: new Date().toISOString(),
+  }, 'enterprise');
+}
+
+/**
+ * 按邮箱查询 RESOURCE_USER 节点。
+ * @param email - 邮箱
+ * @param store - GraphStore 实例
+ * @returns 节点 props 或 null
+ */
+export async function queryUserByEmail(
+  email: string,
+  store: GraphStore,
+): Promise<Record<string, unknown> | null> {
+  const results = store.queryNodes(SOGNodeType.RESOURCE_USER, { email }, 'enterprise');
+  return results[0]?.props || null;
+}
