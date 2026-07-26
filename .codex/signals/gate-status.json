@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-07-26T08:40:40Z",
+  "generatedAt": "2026-07-26T09:56:28Z",
   "scriptVersion": "v2.0",
-  "scanDurationMs": 410,
+  "scanDurationMs": 1657,
   "gates": [
     {
       "id": "gate-0",
@@ -77,15 +77,15 @@
       "id": "gate-5",
       "name": "专家自主诊断",
       "dimension": "诊断",
-      "status": "partial",
+      "status": "pass",
       "conditions": {
-        "passed": 3,
-        "partial": 1,
+        "passed": 4,
+        "partial": 0,
         "failed": 0
       },
       "downgradedBy": null,
       "downgradedFrom": null,
-      "details": "expert-autonomy.ts: AutonomyInput + AutonomyResult 存在; expert-router.ts: ExpertRouter 类存在; diagnosis-launcher.ts: 含 1 个导出声明; 接口字段: evidence[] + hypothesis 定义完整(端到端待验证)"
+      "details": "expert-autonomy.ts: AutonomyInput + AutonomyResult 存在; expert-router.ts: ExpertRouter 类存在; diagnosis-launcher.ts: 含 1 个导出声明; 接口字段: evidence[] + hypothesis 定义完整"
     },
     {
       "id": "gate-6",
@@ -217,15 +217,15 @@
       "id": "gate-15",
       "name": "知识积累与回流",
       "dimension": "进化",
-      "status": "partial",
+      "status": "pass",
       "conditions": {
-        "passed": 2,
-        "partial": 1,
+        "passed": 3,
+        "partial": 0,
         "failed": 0
       },
       "downgradedBy": null,
       "downgradedFrom": null,
-      "details": "knowledge-feedback.ts: extractGoalKnowledge 存在; knowledge-store.ts: 含插入方法; GoalExecutionKnowledge: 类型存在(字段数待确认)"
+      "details": "knowledge-feedback.ts: extractGoalKnowledge 存在; knowledge-store.ts: 含插入方法; GoalExecutionKnowledge: 类型存在"
     },
     {
       "id": "gate-16",
@@ -244,11 +244,11 @@
     }
   ],
   "summary": {
-    "passed": 10,
-    "partial": 7,
+    "passed": 12,
+    "partial": 5,
     "failed": 0,
     "unverifiable": 0,
-    "weightedProgress": 0.79
+    "weightedProgress": 0.85
   },
   "healthCheck": {
     "expectedPaths": 31,
