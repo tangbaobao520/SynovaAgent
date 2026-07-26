@@ -11,8 +11,22 @@ echo   SynovaAgent Windows Starting...
 echo ========================================
 echo.
 
+REM ===== Step 0: Control Tower Signal Init (D230) =====
+echo [0/4] Control tower signal init...
+if exist "%ROOT%\scripts\control-tower\emit-signal.py" (
+    python "%ROOT%\scripts\control-tower\emit-signal.py" gatekeeper green "startup_check"
+    python "%ROOT%\scripts\control-tower\emit-signal.py" context-injector yellow "pending_first_injection"
+    python "%ROOT%\scripts\control-tower\emit-signal.py" contract-archiver yellow "pending_first_extract"
+    python "%ROOT%\scripts\control-tower\emit-signal.py" write-lock green "lock_service_ready"
+    python "%ROOT%\scripts\control-tower\emit-signal.py" env-validator green "env_snapshot_available"
+    echo   [OK] Control tower signals initialized
+) else (
+    echo   [SKIP] emit-signal.py not found
+)
+echo.
+
 REM ===== Step 1: Environment Validation =====
-echo [1/3] Environment validation...
+echo [1/4] Environment validation...
 
 if not exist "%ROOT%\scripts\control-tower\env_validator.py" (
     echo   [WARN] env_validator.py not found -- skipping (degraded)
@@ -32,7 +46,7 @@ if not exist "%ROOT%\scripts\control-tower\env_validator.py" (
 echo.
 
 REM ===== Step 2: Contract Gate =====
-echo [2/3] Contract gate...
+echo [2/4] Contract gate...
 
 if not exist "%ROOT%\scripts\run-contract-gate.ts" (
     echo   [SKIP] run-contract-gate.ts not found -- skipping (degraded)
@@ -52,7 +66,7 @@ if not exist "%ROOT%\scripts\run-contract-gate.ts" (
 echo.
 
 REM ===== Step 3: Write Lock Init =====
-echo [3/3] Write lock init...
+echo [3/4] Write lock init...
 
 if not exist "%ROOT%\.write-locks" (
     mkdir "%ROOT%\.write-locks"
@@ -62,7 +76,7 @@ echo.
 
 REM ===== Final: Agent Start =====
 echo ========================================
-echo   3 steps complete, entering main loop...
+echo   4 steps complete, entering main loop...
 echo ========================================
 echo.
 

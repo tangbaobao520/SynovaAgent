@@ -36,10 +36,28 @@ echo "========================================"
 echo ""
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# Step 0 (optional): 门禁自检 — D219 (附录 A v2.0  §三-四)
+# Step 0a: 控制塔信号初始化 — D230
 # ═══════════════════════════════════════════════════════════════════════════════
 
-echo "[0/4] 门禁检查..."
+echo "[0/5] 控制塔信号初始化..."
+EMIT="$ROOT/scripts/control-tower/emit-signal.py"
+if [ -f "$EMIT" ]; then
+  python "$EMIT" gatekeeper green "startup_check"
+  python "$EMIT" context-injector yellow "pending_first_injection"
+  python "$EMIT" contract-archiver yellow "pending_first_extract"
+  python "$EMIT" write-lock green "lock_service_ready"
+  python "$EMIT" env-validator green "env_snapshot_available"
+  echo "  [OK] 控制塔信号已初始化"
+else
+  echo "  [SKIP] emit-signal.py 不存在 — 跳过"
+fi
+echo ""
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Step 0b: 门禁自检 — D219 (附录 A v2.0  §三-四)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+echo "[1/5] 门禁检查..."
 if [ -f "$ROOT/scripts/audit/check-gates-v2.py" ]; then
   if python "$ROOT/scripts/audit/check-gates-v2.py" --quiet; then
     echo "  [PASS] 门禁报告已更新 → .codex/signals/gate-status.json"
@@ -55,7 +73,7 @@ echo ""
 # Step 1: 环境验证
 # ═══════════════════════════════════════════════════════════════════════════════
 
-echo "[1/3] 环境验证..."
+echo "[2/5] 环境验证..."
 if bash "$ROOT/scripts/validate-env.sh"; then
   echo "  [PASS] 环境验证通过"
 else
@@ -68,7 +86,7 @@ echo ""
 # Step 2: 契约门禁
 # ═══════════════════════════════════════════════════════════════════════════════
 
-echo "[2/3] 契约门禁..."
+echo "[3/5] 契约门禁..."
 if [ -d "$ROOT/.codex/contracts" ] && [ "$(ls -A "$ROOT/.codex/contracts" 2>/dev/null | grep -v '^archive$')" ]; then
   if [ -f "$ROOT/scripts/run-contract-gate.ts" ]; then
     if npx tsx "$ROOT/scripts/run-contract-gate.ts"; then
@@ -89,7 +107,7 @@ echo ""
 # Step 3: 写入锁准备
 # ═══════════════════════════════════════════════════════════════════════════════
 
-echo "[3/3] 写入锁准备..."
+echo "[4/5] 写入锁准备..."
 mkdir -p "$ROOT/.write-locks"
 echo "  [OK] .write-locks/ 就绪"
 echo ""
@@ -99,7 +117,7 @@ echo ""
 # ═══════════════════════════════════════════════════════════════════════════════
 
 echo "========================================"
-echo "  4 步启动完成，进入主循环..."
+echo "  5 步启动完成，进入主循环..."
 echo "========================================"
 echo ""
 
