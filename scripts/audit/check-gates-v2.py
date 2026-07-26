@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 check-gates-v2.py — 17 产品门禁自动判定脚本 (D219)
 
@@ -34,7 +34,7 @@ from typing import Any, Optional
 SCRIPT_VERSION = "v2.0"
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 DEFAULT_OUTPUT = PROJECT_ROOT / ".codex/signals/gate-status.json"
-SERVER_PORT = 18790
+SERVER_PORT = 3000
 
 # 31 条预期路径清单（附录 A §3.5）
 EXPECTED_PATHS: list[str] = [
@@ -346,10 +346,10 @@ class GateChecker:
         if port_open:
             self._port_was_listening = True
             info["passed"] += 1
-            parts.append("端口18790: 进程存活")
-            self.ok("端口18790: 进程存活")
+            parts.append("端口3000: 进程存活")
+            self.ok("端口3000: 进程存活")
         else:
-            self.log("    端口18790未监听，尝试启动服务器...")
+            self.log("    端口3000未监听，尝试启动服务器...")
             started = self._start_server()
             if started:
                 info["passed"] += 1
@@ -361,7 +361,7 @@ class GateChecker:
                 self.fail("服务器无法启动")
 
         # Condition 2: /api/healthz 返回 200 + status ok
-        healthz = self._curl_check("http://localhost:18790/api/healthz", expect_200=True)
+        healthz = self._curl_check("http://localhost:3000/api/healthz", expect_200=True)
         if healthz is True:
             info["passed"] += 1
             parts.append("/api/healthz: 200 + ok")
@@ -376,7 +376,7 @@ class GateChecker:
             self.fail("/api/healthz: 不可达")
 
         # Condition 3: /api/sentinel/health 返回 200
-        sentinel = self._curl_check("http://localhost:18790/api/sentinel/health", expect_200=True)
+        sentinel = self._curl_check("http://localhost:3000/api/sentinel/health", expect_200=True)
         if sentinel is True:
             info["passed"] += 1
             parts.append("/api/sentinel/health: 200")
@@ -423,7 +423,7 @@ class GateChecker:
         except Exception:
             return False
 
-    def _curl_check(self, url: str, expect_200: bool = False) -> Optional[bool]:
+    def _curl_check(self, url: str, expect_200: bool = False, method: str = 'GET', body: str = '') -> Optional[bool]:
         """
         True  = HTTP 200 (and body contains 'ok' if expect_200)
         None  = HTTP response but unexpected
@@ -431,7 +431,10 @@ class GateChecker:
         """
         try:
             import urllib.request
-            req = urllib.request.Request(url, method="GET")
+            data = body.encode('utf-8') if body else None
+            req = urllib.request.Request(url, data=data, method=method)
+            if body:
+                req.add_header('Content-Type', 'application/json')
             with urllib.request.urlopen(req, timeout=5) as resp:
                 if resp.status != 200:
                     return None
@@ -499,7 +502,8 @@ class GateChecker:
         # C4: 端到端 curl 测试
         if self._port_was_listening:
             reg_ok = self._curl_check(
-                "http://localhost:18790/api/enterprise/register", expect_200=True)
+                "http://localhost:3000/api/enterprise/register", expect_200=True,
+                method="POST", body='{"email":"admin@test.com","password":"test123","orgName":"TestOrg"}')
             if reg_ok is True:
                 info["passed"] += 1
                 parts.append("端到端: 注册测试通过")
