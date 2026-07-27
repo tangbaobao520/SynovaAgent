@@ -57,6 +57,7 @@ import dataLifecycleRoutes from './routes/data-lifecycle'; // D40 — GDPR 可�
 import reloadRoutes from './routes/reload';
 import adaptersRoutes from './routes/adapters';
 import auditRoutes from './routes/audit';
+import adminKnowledgeRoutes from "./routes/admin-knowledge";
 import gaAdminRoutes from './routes/ga-admin';
 import gaCorrectionsRoutes from './routes/ga-corrections';
 import gaAnnotationsRoutes from './routes/ga-annotations';
@@ -343,6 +344,7 @@ export async function createServer(): Promise<Server> {
   app.use(adaptersRoutes);
   app.use(auditRoutes);
   app.use(gaAdminRoutes);
+  app.use(adminKnowledgeRoutes);
   app.use(gaCorrectionsRoutes);
   app.use(gaAnnotationsRoutes);
   app.use(solutionsRoutes);
