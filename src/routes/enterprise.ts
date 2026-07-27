@@ -19,6 +19,8 @@ import { Router, type Request, type Response } from 'express';
 import { createLogger } from '@synova/logger';
 import { extractAuthFromRequest } from '../middleware/auth';
 import { UserStore } from '../growth/user-store';
+import { listTemplates, getTemplate, saveTemplate, deleteTemplate } from '../services/role-template-store';
+import type { RoleTemplate } from '../middleware/rbac';
 import bcrypt from 'bcrypt';
 
 const log = createLogger('enterprise-routes');
@@ -449,6 +451,114 @@ router.delete('/api/enterprise/ga-access/:token', (req: Request, res: Response) 
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     log.error({ err }, '撤销GA访问令牌失败');
+    return res.status(500).json({ ok: false, code: 'INTERNAL_ERROR', message: msg, degraded: true });
+  }
+});
+
+// ════════════════════════════════════════════════════════════
+// D242: 权限模板管理 + 双签
+// ════════════════════════════════════════════════════════════
+
+/**
+ * 双签检查：批量权限变更需要 x-second-approver header。
+ */
+function requireDualSign(req: Request, res: Response): boolean {
+  if (!requireAdmin(req, res)) return false;
+  const secondApprover = req.headers['x-second-approver'] as string | undefined;
+  if (!secondApprover) {
+    res.status(400).json({ ok: false, code: 'DUAL_SIGN_REQUIRED', message: '批量权限变更需要 x-second-approver header', degraded: true });
+    return false;
+  }
+  return true;
+}
+
+// GET /api/enterprise/role-templates — 模板列表
+router.get('/api/enterprise/role-templates', (_req: Request, res: Response) => {
+  try {
+    const templates = listTemplates();
+    return res.json({ ok: true, data: templates });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log.error({ err }, '查询模板列表失败');
+    return res.status(500).json({ ok: false, code: 'INTERNAL_ERROR', message: msg, degraded: true });
+  }
+});
+
+// GET /api/enterprise/role-templates/:id — 获取单个模板
+router.get('/api/enterprise/role-templates/:id', (req: Request, res: Response) => {
+  try {
+    const template = getTemplate(req.params.id as string);
+    if (!template) return res.status(404).json({ ok: false, code: 'NOT_FOUND', message: '模板不存在' });
+    return res.json({ ok: true, data: template });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log.error({ err }, '查询模板失败');
+    return res.status(500).json({ ok: false, code: 'INTERNAL_ERROR', message: msg, degraded: true });
+  }
+});
+
+// POST /api/enterprise/role-templates — 创建自定义模板
+router.post('/api/enterprise/role-templates', (req: Request, res: Response) => {
+  try {
+    if (!requireAdmin(req, res)) return;
+    const body = req.body as Partial<import('../middleware/rbac').RoleTemplate>;
+    if (!body.id || !body.name || !body.permissions) {
+      return res.status(400).json({ ok: false, code: 'VALIDATION_ERROR', message: 'id, name, permissions 必填' });
+    }
+    const template: import('../middleware/rbac').RoleTemplate = {
+      id: body.id, name: body.name, description: body.description || '',
+      basedOn: body.basedOn, permissions: body.permissions, isBuiltin: false,
+      createdAt: new Date().toISOString(),
+    };
+    if (saveTemplate(template)) {
+      return res.json({ ok: true, data: template });
+    }
+    return res.status(500).json({ ok: false, code: 'SAVE_FAILED', message: '模板保存失败', degraded: true });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log.error({ err }, '创建模板失败');
+    return res.status(500).json({ ok: false, code: 'INTERNAL_ERROR', message: msg, degraded: true });
+  }
+});
+
+// DELETE /api/enterprise/role-templates/:id — 删除模板（拒绝内置）
+router.delete('/api/enterprise/role-templates/:id', (req: Request, res: Response) => {
+  try {
+    if (!requireAdmin(req, res)) return;
+    const result = deleteTemplate(req.params.id as string);
+    if (!result.ok) {
+      const status = result.reason === '内置模板不可删除' ? 403 : 404;
+      return res.status(status).json({ ok: false, code: 'FORBIDDEN', message: result.reason });
+    }
+    return res.json({ ok: true, message: '模板已删除' });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log.error({ err }, '删除模板失败');
+    return res.status(500).json({ ok: false, code: 'INTERNAL_ERROR', message: msg, degraded: true });
+  }
+});
+
+// POST /api/enterprise/members/:userId/role — 分配角色模板（双签）
+router.post('/api/enterprise/members/:userId/role', (req: Request, res: Response) => {
+  try {
+    if (!requireDualSign(req, res)) return;
+    const userId = req.params.userId as string;
+    const { templateId } = req.body as { templateId?: string };
+    if (!templateId) {
+      return res.status(400).json({ ok: false, code: 'VALIDATION_ERROR', message: 'templateId 必填' });
+    }
+    const template = getTemplate(templateId);
+    if (!template) {
+      return res.status(404).json({ ok: false, code: 'NOT_FOUND', message: '模板不存在' });
+    }
+    const user = getUserStore().getById(userId);
+    if (!user) return res.status(404).json({ ok: false, code: 'NOT_FOUND', message: '成员不存在' });
+    getUserStore().updateUser(userId, { role: template.id as 'admin' | 'manager' | 'staff' });
+    log.info({ userId, templateId, secondApprover: req.headers['x-second-approver'] }, '角色已分配(双签)');
+    return res.json({ ok: true, message: '角色已分配', data: { userId, role: template.id } });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log.error({ err }, '分配角色失败');
     return res.status(500).json({ ok: false, code: 'INTERNAL_ERROR', message: msg, degraded: true });
   }
 });

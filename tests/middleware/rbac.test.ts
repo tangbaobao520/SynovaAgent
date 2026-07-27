@@ -1,5 +1,8 @@
-import { describe, it, expect } from 'vitest';
-import { extractRbacContext, canAccessWorkspace, canModifyWorkspace, type RbacContext } from '../../src/middleware/rbac';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { extractRbacContext, canAccessWorkspace, canModifyWorkspace, derivePermissions, BUILTIN_TEMPLATES, type RbacContext } from '../../src/middleware/rbac';
+import { listTemplates, getTemplate, saveTemplate, deleteTemplate } from '../../src/services/role-template-store';
+import { unlinkSync, existsSync, mkdirSync } from 'fs';
+import { join } from 'path';
 
 function mockReq(token: string): Record<string, unknown> {
   return { headers: { 'x-synova-token': token }, query: {} };
@@ -118,8 +121,93 @@ describe('canModifyWorkspace', () => {
       headers: { 'x-synova-token': 'admin:dev:user1' },
       auth: { sub: 'ga_001', role: 'ga', orgId: 'org-1' },
     } as any);
-    // JWT auth should take priority → role=ga, not admin
     expect(ctx.role).toBe('ga');
     expect(ctx.userId).toBe('ga_001');
+  });
+});
+
+// ═══ D242: 权限模板 ═══
+
+describe('D242 — RoleTemplate builtins', () => {
+  it('有 5 个内置模板', () => {
+    expect(BUILTIN_TEMPLATES).toHaveLength(5);
+    const ids = BUILTIN_TEMPLATES.map(t => t.id);
+    expect(ids).toContain('admin');
+    expect(ids).toContain('manager');
+    expect(ids).toContain('liaison');
+    expect(ids).toContain('staff');
+    expect(ids).toContain('ga');
+  });
+
+  it('内置模板 isBuiltin=true', () => {
+    for (const t of BUILTIN_TEMPLATES) {
+      expect(t.isBuiltin).toBe(true);
+    }
+  });
+
+  it('derivePermissions 从模板派生', () => {
+    const admin = BUILTIN_TEMPLATES.find(t => t.id === 'admin')!;
+    const perms = derivePermissions(admin);
+    expect(perms.data).toBe('admin');
+    expect(perms.function).toBe('audit');
+  });
+
+  it('derivePermissions 支持覆盖', () => {
+    const staff = BUILTIN_TEMPLATES.find(t => t.id === 'staff')!;
+    const perms = derivePermissions(staff, { data: 'write' });
+    expect(perms.data).toBe('write');   // covered
+    expect(perms.function).toBe('use');  // from template
+    expect(perms.time).toBe('business_hours');  // from template
+  });
+});
+
+describe('D242 — RoleTemplateStore CRUD', () => {
+  const TEST_ID = 'test-custom-role';
+  const testTemplate = {
+    id: TEST_ID, name: 'Test Role', description: 'A test custom role',
+    basedOn: 'staff', permissions: { data: 'read' as const, function: 'use' as const, time: 'unlimited' as const },
+    isBuiltin: false, createdAt: new Date().toISOString(),
+  };
+
+  afterEach(() => {
+    try {
+      const p = join(process.cwd(), '.codex', 'settings', 'role-templates', `${TEST_ID}.json`);
+      if (existsSync(p)) unlinkSync(p);
+    } catch { /* ok */ }
+  });
+
+  it('listTemplates 包含 5 个内置', () => {
+    const all = listTemplates();
+    const builtins = all.filter(t => t.isBuiltin);
+    expect(builtins).toHaveLength(5);
+  });
+
+  it('saveTemplate + getTemplate CRUD', () => {
+    expect(saveTemplate(testTemplate)).toBe(true);
+    const loaded = getTemplate(TEST_ID);
+    expect(loaded).toBeDefined();
+    expect(loaded!.name).toBe('Test Role');
+    expect(loaded!.permissions.data).toBe('read');
+  });
+
+  it('内置模板不可删除', () => {
+    const result = deleteTemplate('admin');
+    expect(result.ok).toBe(false);
+    expect(result.reason).toContain('不可删除');
+  });
+
+  it('自定义模板可删除', () => {
+    saveTemplate(testTemplate);
+    const result = deleteTemplate(TEST_ID);
+    expect(result.ok).toBe(true);
+    expect(getTemplate(TEST_ID)).toBeUndefined();
+  });
+
+  it('listTemplates 包含已保存的自定义模板', () => {
+    saveTemplate(testTemplate);
+    const all = listTemplates();
+    const custom = all.find(t => t.id === TEST_ID);
+    expect(custom).toBeDefined();
+    expect(custom!.isBuiltin).toBe(false);
   });
 });

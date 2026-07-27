@@ -1,10 +1,9 @@
 /**
- * middleware/rbac.ts — 权限控制 + GA 权限边界 (D239)
+ * middleware/rbac.ts — 权限控制 + GA 权限边界 (D239) + 权限模板 (D242)
  *
- * admin:   全局读写 + 所有部门只读 + 创建/分配子工作区
- * manager: 本部门读写 + 不可见全局/其他部门
- * liaison: 全局只读 + 所有部门只读 + 冲突检测
- * ga:      Growth Advisor — 受约束的只读访问（D239 新增权限边界）
+ * D242: RoleTemplate 类型 + BUILTIN_TEMPLATES + derivePermissions()
+ *       admin: 全局读写 / manager: 本部门读写 / liaison: 全局只读
+ *       staff: 本部门只读 / ga: 受约束只读 (D239)
  */
 import type { Request, Response, NextFunction } from 'express';
 import { createLogger } from '@synova/logger';
@@ -15,6 +14,65 @@ export type WorkspaceRole = 'admin' | 'manager' | 'liaison' | 'staff' | 'ga';
 
 const DEFAULT_ROLE: WorkspaceRole = 'staff';
 const DEFAULT_USER = 'dev';
+
+// ═══ D242: 权限模板 ═══
+
+/** 权限集合 */
+export interface PermissionSet {
+  /** 数据权限: read / write / admin */
+  data: 'read' | 'write' | 'admin';
+  /** 功能权限: use / manage / audit */
+  function: 'use' | 'manage' | 'audit';
+  /** 时间限制: unlimited / business_hours / custom */
+  time: 'unlimited' | 'business_hours' | 'custom';
+}
+
+/** 角色模板 */
+export interface RoleTemplate {
+  id: string;
+  name: string;
+  description: string;
+  basedOn?: string;
+  permissions: PermissionSet;
+  isBuiltin: boolean;
+  createdAt?: string;
+}
+
+/** 5 个内置模板（不可删除） */
+export const BUILTIN_TEMPLATES: RoleTemplate[] = [
+  {
+    id: 'admin', name: 'Administrator', description: '全局读写 + 所有部门只读 + 创建/分配子工作区',
+    permissions: { data: 'admin', function: 'audit', time: 'unlimited' }, isBuiltin: true,
+  },
+  {
+    id: 'manager', name: 'Manager', description: '本部门读写 + 不可见全局/其他部门',
+    permissions: { data: 'write', function: 'manage', time: 'unlimited' }, isBuiltin: true,
+  },
+  {
+    id: 'liaison', name: 'Liaison', description: '全局只读 + 所有部门只读 + 冲突检测',
+    permissions: { data: 'read', function: 'use', time: 'unlimited' }, isBuiltin: true,
+  },
+  {
+    id: 'staff', name: 'Staff', description: '本部门只读',
+    permissions: { data: 'read', function: 'use', time: 'business_hours' }, isBuiltin: true,
+  },
+  {
+    id: 'ga', name: 'Growth Advisor', description: '受约束的只读访问',
+    permissions: { data: 'read', function: 'audit', time: 'business_hours' }, isBuiltin: true,
+  },
+];
+
+/** 从模板派生实际权限（支持覆盖） */
+export function derivePermissions(
+  template: RoleTemplate,
+  overrides?: Partial<PermissionSet>,
+): PermissionSet {
+  return {
+    data: overrides?.data ?? template.permissions.data,
+    function: overrides?.function ?? template.permissions.function,
+    time: overrides?.time ?? template.permissions.time,
+  };
+}
 
 // ═══ D239: GA 约束 ═══
 
