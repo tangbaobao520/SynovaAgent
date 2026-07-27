@@ -54,6 +54,7 @@ module.exports = {
 
   win: {
     target: [{ target: 'nsis', arch: ['x64'] }],
+    icon: 'assets/icon.ico',
     artifactName: 'SynovaAgent-${version}-win32-x64.${ext}',
   },
   nsis: {
@@ -62,6 +63,8 @@ module.exports = {
     createDesktopShortcut: true,
     createStartMenuShortcut: true,
     shortcutName: 'SynovaAgent',
+    installerIcon: 'assets/icon.ico',
+    uninstallerIcon: 'assets/icon.ico',
   },
 
   mac: {
