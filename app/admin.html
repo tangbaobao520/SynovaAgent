@@ -52,6 +52,39 @@
         <div id="ga-panel"></div>
       </div>
     </section>
+
+    <!-- D245: 3 个新面板 -->
+    <section class="admin-grid" style="margin-top:16px">
+      <!-- Panel 5: Role Templates -->
+      <div class="card">
+        <h2 class="card-title">Role Templates</h2>
+        <div id="role-templates" class="skeleton-pulse" style="height:120px;"></div>
+        <form id="role-template-form" class="inline-form" style="margin-top:10px">
+          <input type="text" id="template-name" placeholder="Template name" required>
+          <input type="text" id="template-permissions" placeholder="Permissions (comma-sep)" required>
+          <button type="submit" class="btn-primary" style="width:auto;padding:6px 14px;">Create</button>
+        </form>
+      </div>
+
+      <!-- Panel 6: Knowledge Approval -->
+      <div class="card">
+        <h2 class="card-title">Knowledge Approval</h2>
+        <div id="knowledge-pending" class="skeleton-pulse" style="height:120px;"></div>
+      </div>
+
+      <!-- Panel 7: Federated Knowledge -->
+      <div class="card">
+        <h2 class="card-title">Federated Knowledge</h2>
+        <div id="federated-panel">
+          <div style="display:flex;gap:8px;margin-bottom:8px">
+            <input type="text" id="fed-knowledge-text" placeholder="Knowledge text to share" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
+            <button id="btn-fed-mark-shareable" class="btn-primary" style="width:auto;padding:6px 14px;">Mark Shareable</button>
+          </div>
+          <div id="fed-pending-list" class="skeleton-pulse" style="height:80px;"></div>
+          <div id="fed-degraded-list" style="margin-top:8px;"></div>
+        </div>
+      </div>
+    </section>
   </div>
 
   <script src="/app/js/auth.js"></script>
