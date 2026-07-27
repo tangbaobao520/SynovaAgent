@@ -221,6 +221,23 @@ export class LoopScheduler {
         }
       });
       log.info('[D237] loop-3-ga-evolution 已注册 (0 9 1 */3 *)');
+
+	      // D238: loop-6: 溢出监控（月级 cron，medium 尺度）
+	      this.scheduler.schedule('loop-6-overflow', '0 9 1 * *', async () => {
+	        if (!this.mainAgent) {
+	          log.warn('[D238] MainAgent 未注入 — 跳过 loop-6');
+	          return;
+	        }
+	        try {
+	          const result = await this.mainAgent.executeLoop('loop-6', 'medium');
+	          this.recordHeartbeat('loop-6');
+	          log.info({ status: result.status }, 'loop-6 溢出监控完成');
+	        } catch (err: unknown) {
+	          const msg = err instanceof Error ? err.message : String(err);
+	          log.warn({ err: msg }, 'loop-6 执行失败 — degraded');
+	        }
+	      });
+	      log.info('[D238] loop-6-overflow 已注册 (0 9 1 * *)');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       log.warn({ err: msg }, '[D9] 内置循环注册失败 — 降级');
