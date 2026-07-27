@@ -80,6 +80,29 @@ router.get('/api/sessions/:id', (req: Request, res: Response) => {
   }
 });
 
+// ═══ Rename (D251) ═══
+router.patch('/api/sessions/:id/title', (req: Request, res: Response) => {
+  try {
+    const { title } = req.body as { title?: string };
+    if (!title || !title.trim()) {
+      return res.status(400).json({ ok: false, error: 'title 必填', code: 'VALIDATION_ERROR' });
+    }
+    const store = getStore();
+    const session = store.getSession(req.params.id as string);
+    if (!session) {
+      return res.status(404).json({ ok: false, error: '会话不存在', code: 'NOT_FOUND' });
+    }
+    const ok = store.renameSession(req.params.id as string, title.trim());
+    if (!ok) {
+      return res.status(500).json({ ok: false, error: '重命名失败', code: 'RENAME_ERROR', degraded: true });
+    }
+    res.json({ ok: true, id: req.params.id, title: title.trim() });
+  } catch (err: any) {
+    log.error({ err }, '重命名会话失败');
+    res.status(500).json({ ok: false, error: err.message, code: 'SESSION_RENAME_ERROR', degraded: true });
+  }
+});
+
 // ═══ Delete ═══
 router.delete('/api/sessions/:id', (req: Request, res: Response) => {
   try {

@@ -198,3 +198,54 @@ body {
   font-size: 13px;
   font-weight: 600;
 }
+
+/* ═══ D251: 三面板布局 ═══ */
+.three-panel { display: flex; height: calc(100vh - 56px); overflow: hidden; }
+
+/* ── Left: Thread Sidebar ── */
+#thread-sidebar {
+  width: 240px; min-width: 240px;
+  border-right: 1px solid var(--border);
+  background: var(--bg-card);
+  display: flex; flex-direction: column;
+}
+.thread-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; border-bottom: 1px solid var(--border);
+}
+.thread-header h3 { font-size: 14px; font-weight: 700; margin: 0; }
+.btn-new-thread {
+  width: 28px; height: 28px; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--bg-card);
+  font-size: 18px; cursor: pointer; display: flex;
+  align-items: center; justify-content: center;
+  color: var(--text-secondary); transition: all 0.15s;
+}
+.btn-new-thread:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+.thread-list { flex: 1; overflow-y: auto; padding: 4px 0; }
+.thread-item {
+  padding: 10px 14px; cursor: pointer; border-left: 3px solid transparent;
+  transition: all 0.15s; user-select: none;
+}
+.thread-item:hover { background: var(--bg); }
+.thread-item-active { background: var(--bg); border-left-color: var(--primary); }
+.thread-name { display: block; font-size: 13px; font-weight: 600; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.thread-date { display: block; font-size: 11px; color: var(--text-secondary); }
+
+/* ── Center: Main Content ── */
+#main-content { flex: 1; overflow-y: auto; background: var(--bg-card); }
+.welcome-placeholder {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; height: 100%;
+  color: var(--text-secondary); text-align: center; padding: 24px;
+}
+.welcome-placeholder h2 { font-size: 18px; margin-bottom: 8px; color: var(--text); }
+
+/* ── Right: Expert Sidebar (Phase 2) ── */
+#expert-sidebar {
+  width: 280px; min-width: 280px;
+  border-left: 1px solid var(--border);
+  background: var(--bg-card);
+}
+.expert-placeholder { padding: 16px; }
+.expert-placeholder h3 { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
