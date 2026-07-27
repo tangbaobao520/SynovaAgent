@@ -231,6 +231,210 @@
     }).catch(function () { showToast('Failed', 'error'); });
   });
 
+  // ═══ D246: Onboarding Wizard ═══
+
+  var ONBOARDING_STEPS = [
+    { id: 'register', title: 'Register', label: 'Create your enterprise account' },
+    { id: 'invite', title: 'Invite', label: 'Invite team members' },
+    { id: 'import', title: 'Import', label: 'Import business data' },
+    { id: 'diagnose', title: 'Diagnose', label: 'Run first diagnosis' },
+    { id: 'view', title: 'View', label: 'View your dashboard' },
+  ];
+
+  var ONBOARDING_KEY = 'synova_onboarding';
+
+  function getOnboardingState() {
+    try { return JSON.parse(localStorage.getItem(ONBOARDING_KEY)) || {}; } catch (e) { return {}; }
+  }
+
+  function setOnboardingState(stepId) {
+    var state = getOnboardingState();
+    state[stepId] = 'done';
+    state._lastStep = stepId;
+    try { localStorage.setItem(ONBOARDING_KEY, JSON.stringify(state)); } catch (e) { /* quota */ }
+    renderOnboarding();
+  }
+
+  function getOnboardingStep() {
+    var state = getOnboardingState();
+    if (state.view === 'done') return -1; // all done
+    for (var i = 0; i < ONBOARDING_STEPS.length; i++) {
+      if (state[ONBOARDING_STEPS[i].id] !== 'done') return i;
+    }
+    return -1;
+  }
+
+  function showOnboarding() {
+    var wiz = $('onboarding-wizard');
+    if (wiz) wiz.style.display = 'block';
+  }
+
+  function renderOnboarding() {
+    var container = $('onboarding-steps');
+    var content = $('onboarding-content');
+    var progress = $('onboarding-progress');
+    if (!container) return;
+
+    var stepIdx = getOnboardingStep();
+    var state = getOnboardingState();
+    var doneCount = Object.keys(state).filter(function (k) { return state[k] === 'done' && k !== '_lastStep'; }).length;
+
+    if (stepIdx === -1) {
+      container.innerHTML = '<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#16a34a"><span>All steps complete!</span> <a href="/cockpit" style="color:var(--primary)">Go to Dashboard</a></div>';
+      content.innerHTML = '';
+      if (progress) progress.textContent = '(5/5)';
+      return;
+    }
+
+    if (progress) progress.textContent = '(' + doneCount + '/5)';
+
+    // Progress bar
+    container.innerHTML = '<div class="ob-step-bar">' + ONBOARDING_STEPS.map(function (s, i) {
+      var cls = i < stepIdx ? 'done' : (i === stepIdx ? 'active' : '');
+      var mark = i < stepIdx ? '&#10003;' : (i + 1);
+      return '<div class="ob-step ' + cls + '"><span class="num">' + mark + '</span>' + escapeHtml(s.title) + '</div>';
+    }).join('') + '</div>';
+
+    // Render the active step's content
+    var step = ONBOARDING_STEPS[stepIdx];
+    content.innerHTML = getStepHTML(stepIdx, step);
+    bindStepEvents(stepIdx, step);
+  }
+
+  function getStepHTML(idx, step) {
+    switch (step.id) {
+      case 'register':
+        return '<h3 style="margin-bottom:12px;font-size:15px">Create Your Enterprise</h3>'
+          + '<div class="ob-field"><label>Organization Name</label><input type="text" id="ob-org-name" placeholder="e.g. Acme Corp" value="My Enterprise"></div>'
+          + '<div class="ob-field"><label>Admin Email</label><input type="email" id="ob-email" value="admin@enterprise.com"></div>'
+          + '<div class="ob-field"><label>Password</label><input type="password" id="ob-password" value="admin123!"></div>'
+          + '<div id="ob-register-result"></div>'
+          + '<div class="ob-actions"><button id="ob-btn-register" class="btn-primary">Register</button></div>';
+
+      case 'invite':
+        return '<h3 style="margin-bottom:12px;font-size:15px">Invite Team Members</h3>'
+          + '<div class="ob-field"><label>Email</label><input type="email" id="ob-invite-email" placeholder="colleague@company.com"></div>'
+          + '<div class="ob-field"><label>Role</label><select id="ob-invite-role"><option value="staff">Staff</option><option value="manager">Manager</option></select></div>'
+          + '<div id="ob-invite-result"></div>'
+          + '<div class="ob-actions"><button id="ob-btn-invite" class="btn-primary">Invite &amp; Continue</button>'
+          + '<button id="ob-btn-skip-invite" class="btn-skip">Skip</button></div>';
+
+      case 'import':
+        return '<h3 style="margin-bottom:12px;font-size:15px">Import Business Data</h3>'
+          + '<p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px">Upload your CSV data to populate the knowledge graph.</p>'
+          + '<div id="ob-import-zone" class="drop-zone" style="padding:24px"><p>Drop CSV file here or click to browse</p></div>'
+          + '<div id="ob-import-result"></div>'
+          + '<div class="ob-actions"><button id="ob-btn-skip-import" class="btn-skip">Skip (continue later)</button></div>';
+
+      case 'diagnose':
+        return '<h3 style="margin-bottom:12px;font-size:15px">Run First Diagnosis</h3>'
+          + '<p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px">Trigger a full enterprise diagnosis. This may take a few minutes.</p>'
+          + '<div id="ob-diagnose-status"></div>'
+          + '<div class="ob-actions"><button id="ob-btn-diagnose" class="btn-primary">Start Diagnosis</button></div>';
+
+      case 'view':
+        return '<h3 style="margin-bottom:12px;font-size:15px">Explore Your Dashboard</h3>'
+          + '<p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px">Your control tower dashboard is ready. Monitor signals, review gates, and track growth.</p>'
+          + '<div class="ob-actions"><a href="/cockpit" class="btn-primary" style="display:inline-block;padding:8px 20px;border-radius:6px;text-decoration:none">Open Dashboard</a>'
+          + '<button id="ob-btn-finish" class="btn-primary" style="background:#16a34a">Finish</button></div>';
+
+      default:
+        return '';
+    }
+  }
+
+  function bindStepEvents(idx, step) {
+    switch (step.id) {
+      case 'register':
+        var btn = $('ob-btn-register');
+        if (btn) btn.addEventListener('click', function () {
+          var org = $('ob-org-name').value;
+          var email = $('ob-email').value;
+          var pass = $('ob-password').value;
+          var result = $('ob-register-result');
+          btn.disabled = true; btn.textContent = 'Registering...';
+          api.post('/api/enterprise/register', { email: email, password: pass, orgName: org }).then(function (r) { return r.json(); }).then(function (data) {
+            if (data.ok) {
+              result.innerHTML = '<div class="ob-success">Enterprise created successfully!</div>';
+              setOnboardingState('register');
+              showToast('Enterprise registered', 'success');
+            } else {
+              result.innerHTML = '<div class="error-message visible">' + escapeHtml(data.message || 'Registration failed') + '</div>';
+              btn.disabled = false; btn.textContent = 'Register';
+            }
+          }).catch(function () {
+            result.innerHTML = '<div class="error-message visible">Registration failed. Is the server running?</div>';
+            btn.disabled = false; btn.textContent = 'Register';
+          });
+        });
+        break;
+
+      case 'invite':
+        var btnInv = $('ob-btn-invite');
+        if (btnInv) btnInv.addEventListener('click', function () {
+          var email = $('ob-invite-email').value;
+          var role = $('ob-invite-role').value;
+          if (!email) { showToast('Enter an email', 'warning'); return; }
+          var result = $('ob-invite-result');
+          btnInv.disabled = true; btnInv.textContent = 'Inviting...';
+          api.post('/api/enterprise/invite', { email: email, role: role }).then(function (r) { return r.json(); }).then(function (data) {
+            if (data.ok) {
+              result.innerHTML = '<div class="ob-success">Invited ' + escapeHtml(email) + '!</div>';
+              setOnboardingState('invite');
+              showToast('Invitation sent', 'success');
+            } else {
+              result.innerHTML = '<div class="error-message visible">' + escapeHtml(data.message || 'Invite failed') + '</div>';
+              btnInv.disabled = false; btnInv.textContent = 'Invite & Continue';
+            }
+          }).catch(function () {
+            result.innerHTML = '<div class="error-message visible">Invite failed.</div>';
+            btnInv.disabled = false; btnInv.textContent = 'Invite & Continue';
+          });
+        });
+        var btnSkip = $('ob-btn-skip-invite');
+        if (btnSkip) btnSkip.addEventListener('click', function () { setOnboardingState('invite'); });
+        break;
+
+      case 'import':
+        // Import via skip for now (CSV upload is a separate page)
+        var btnSkipImp = $('ob-btn-skip-import');
+        if (btnSkipImp) btnSkipImp.addEventListener('click', function () {
+          setOnboardingState('import');
+          showToast('Data import skipped', 'info');
+        });
+        // Dropzone: link to import.html
+        var zone = $('ob-import-zone');
+        if (zone) zone.addEventListener('click', function () {
+          window.location.href = '/app/import.html';
+        });
+        break;
+
+      case 'diagnose':
+        var btnDiag = $('ob-btn-diagnose');
+        if (btnDiag) btnDiag.addEventListener('click', function () {
+          var status = $('ob-diagnose-status');
+          btnDiag.disabled = true; btnDiag.textContent = 'Running...';
+          status.innerHTML = '<p style="font-size:13px;color:var(--primary)">Diagnosis triggered. This runs on cron schedule.</p>';
+          api.post('/api/loops/1/execute', {}).then(function (r) { return r.json(); }).then(function (data) {
+            status.innerHTML = '<div class="ob-success">Diagnosis ' + (data.ok ? 'triggered' : 'requested') + '!</div>';
+            setOnboardingState('diagnose');
+          }).catch(function () {
+            status.innerHTML = '<div class="ob-success">Diagnosis request sent (async).</div>';
+            setOnboardingState('diagnose');
+          });
+        });
+        break;
+
+      case 'view':
+        var btnFinish = $('ob-btn-finish');
+        if (btnFinish) btnFinish.addEventListener('click', function () {
+          setOnboardingState('view');
+          renderOnboarding();
+        });
+        break;
+    }
+  }
+
   // ── Utilities ──
 
   function escapeHtml(str) {
@@ -250,5 +454,16 @@
     loadKnowledgePending();
     loadFederatedPending();
     loadFederatedDegraded();
+    // D246: Show onboarding if no enterprise registered yet
+    api.get('/api/enterprise/status').then(function (r) { return r.json(); }).then(function (data) {
+      if (!data.ok || !data.data) {
+        showOnboarding();
+        renderOnboarding();
+      }
+    }).catch(function () {
+      // Server not reachable — show onboarding as entry point
+      showOnboarding();
+      renderOnboarding();
+    });
   });
 })();

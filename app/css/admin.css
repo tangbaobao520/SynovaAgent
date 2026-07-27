@@ -34,6 +34,28 @@
 .skeleton-pulse { background: linear-gradient(90deg, var(--border) 25%, #f0f0f0 50%, var(--border) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 4px; }
 @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
+/* D246: Onboarding Wizard */
+.ob-step-bar { display:flex; gap:4px; margin-bottom:12px; }
+.ob-step { flex:1; padding:8px 6px; border-radius:6px; font-size:11px; font-weight:600; text-align:center;
+  background:var(--bg); border:1px solid var(--border); color:var(--text-secondary); transition:all 0.2s; }
+.ob-step.active { border-color:var(--primary); color:var(--primary); background:#f0f7ff; }
+.ob-step.done { background:#dcfce7; border-color:#86efac; color:#16a34a; }
+.ob-step .num { display:inline-block; width:20px; height:20px; line-height:20px; border-radius:50%;
+  text-align:center; font-size:10px; margin-right:4px; background:var(--border); color:var(--text-secondary); }
+.ob-step.active .num { background:var(--primary); color:#fff; }
+.ob-step.done .num { background:#16a34a; color:#fff; }
+
+.ob-field { margin-bottom:12px; }
+.ob-field label { display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:var(--text); }
+.ob-field input, .ob-field select { width:100%; padding:8px 10px; border:1px solid var(--border);
+  border-radius:6px; font-size:13px; box-sizing:border-box; }
+.ob-actions { display:flex; gap:8px; margin-top:16px; }
+.ob-actions .btn-primary { padding:8px 20px; border-radius:6px; font-size:13px; font-weight:600; }
+.ob-actions .btn-skip { padding:8px 16px; border-radius:6px; font-size:13px; background:transparent;
+  border:1px solid var(--border); cursor:pointer; color:var(--text-secondary); }
+.ob-actions .btn-skip:hover { background:var(--bg); }
+.ob-success { color:#16a34a; font-size:13px; font-weight:600; margin-top:8px; }
+
 /* D231: import page */
 .drop-zone { border: 2px dashed var(--border); border-radius: 12px; padding: 48px 24px; text-align: center; cursor: pointer; transition: all 0.2s; }
 .drop-zone:hover, .drop-zone.drag-over { border-color: var(--primary); background: #f0f7ff; }
