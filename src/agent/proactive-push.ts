@@ -162,6 +162,15 @@ export class ProactivePush {
       }
     }
 
+    // D249: 产出控制塔信号 — Electron main.cjs 轮询 cockpit/data 触发桌面通知
+    try {
+      const { execSync } = require('child_process');
+      const script = require('path').join(process.cwd(), 'scripts/control-tower/emit-signal.py');
+      execSync('python "' + script + '" sentinel red "' + (finding.title || 'P0 finding').slice(0, 80) + '"', { timeout: 5000, stdio: 'ignore' });
+    } catch (err) {
+      log.warn({ err }, 'D249 emitSignal 失败 — 降级');
+    }
+
     // 并行推送到所有通道
     const pushResults = await Promise.allSettled(
       this.channels.map(channel => this.pushToChannel(channel, finding, message)),
