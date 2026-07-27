@@ -290,6 +290,40 @@ router.delete('/api/enterprise/members/:id', (req: Request, res: Response) => {
 });
 
 // ════════════════════════════════════════════════════════════
+// FREEZE (D239: GA 冻结/解冻)
+// ════════════════════════════════════════════════════════════
+
+router.post('/api/enterprise/members/:userId/freeze', async (req: Request, res: Response) => {
+  try {
+    if (!requireAdmin(req, res)) return;
+    const { userId } = req.params as { userId: string };
+    getUserStore().deleteUser(userId);
+    log.warn({ userId, frozenBy: extractAuthFromRequest(req)?.userId }, 'GA 账户已冻结');
+    return res.json({ ok: true, message: 'GA 账户已冻结 — 所有权限立即收回' });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log.error({ err }, '冻结 GA 失败');
+    return res.status(500).json({ ok: false, code: 'INTERNAL_ERROR', message: msg, degraded: true });
+  }
+});
+
+router.post('/api/enterprise/members/:userId/unfreeze', async (req: Request, res: Response) => {
+  try {
+    if (!requireAdmin(req, res)) return;
+    const { userId } = req.params as { userId: string };
+    const user = getUserStore().getById(userId);
+    if (!user) return res.status(404).json({ ok: false, code: 'NOT_FOUND', message: '成员不存在' });
+    getUserStore().updateUser(userId, { status: 'active' });
+    log.info({ userId, unfrozenBy: extractAuthFromRequest(req)?.userId }, 'GA 账户已解冻');
+    return res.json({ ok: true, message: 'GA 账户已解冻' });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log.error({ err }, '解冻 GA 失败');
+    return res.status(500).json({ ok: false, code: 'INTERNAL_ERROR', message: msg, degraded: true });
+  }
+});
+
+// ════════════════════════════════════════════════════════════
 // IMA BINDING (4 endpoints)
 // ════════════════════════════════════════════════════════════
 
