@@ -5,8 +5,21 @@
  * 降级: Server 未启动 → test.skip
  */
 import { describe, it, expect } from 'vitest';
+import { readFileSync, existsSync } from 'fs';
 
-const BASE = 'http://localhost:3000';
+function detectPort(): number {
+  try {
+    if (process.env.PORT) return parseInt(process.env.PORT, 10);
+    if (existsSync('synova.json')) {
+      const cfg = JSON.parse(readFileSync('synova.json', 'utf-8'));
+      if (cfg?.server?.port) return cfg.server.port;
+    }
+  } catch { /* fallback */ }
+  return 3000;
+}
+
+const PORT = detectPort();
+const BASE = `http://localhost:${PORT}`;
 let serverReady = true;
 
 async function api(path: string, options?: RequestInit): Promise<Response> {
