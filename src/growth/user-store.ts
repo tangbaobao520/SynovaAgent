@@ -22,6 +22,8 @@ export interface UserProps {
   status: 'active' | 'disabled';
   displayName?: string;
   department?: string;
+  phone?: string;
+  wechatId?: string;
 }
 
 export interface UserRecord {
@@ -33,6 +35,8 @@ export interface UserRecord {
   status: string;
   displayName?: string;
   department?: string;
+  phone?: string;
+  wechatId?: string;
   createdAt: string;
 }
 
@@ -73,7 +77,7 @@ export class UserStore {
     password: string,
     role: UserProps['role'] = 'staff',
     orgId: string = 'default',
-    extra?: { displayName?: string; department?: string },
+    extra?: { displayName?: string; department?: string; phone?: string; wechatId?: string },
   ): Promise<{ userId: string; passwordHash: string }> {
     if (!email || !password) {
       throw new Error('email 和 password 必填');
@@ -93,6 +97,8 @@ export class UserStore {
         status: 'active',
         displayName: extra?.displayName || '',
         department: extra?.department || '',
+        phone: extra?.phone || '',
+        wechatId: extra?.wechatId || '',
         createdAt: new Date().toISOString(),
       }, USER_GRAPH);
 
@@ -117,20 +123,57 @@ export class UserStore {
       const results = this.store.queryNodes(NODE_TYPE, { email }, USER_GRAPH);
       if (results.length === 0) return null;
 
-      const node = results[0];
-      return {
-        userId: node.id,
-        email: node.props.email as string,
-        passwordHash: node.props.passwordHash as string,
-        role: node.props.role as string,
-        orgId: node.props.orgId as string,
-        status: node.props.status as string,
-        displayName: node.props.displayName as string | undefined,
-        department: node.props.department as string | undefined,
-        createdAt: node.props.createdAt as string,
-      };
+      return this._nodeToRecord(results[0]);
     } catch (err) {
       log.warn({ err, email }, '查询用户失败 — 降级');
+      return null;
+    }
+  }
+
+  /** 节点 → UserRecord */
+  private _nodeToRecord(node: { id: string; props: Record<string, unknown> }): UserRecord {
+    const p = node.props;
+    return {
+      userId: node.id,
+      email: p.email as string,
+      passwordHash: p.passwordHash as string,
+      role: p.role as string,
+      orgId: p.orgId as string,
+      status: p.status as string,
+      displayName: p.displayName as string | undefined,
+      department: p.department as string | undefined,
+      phone: p.phone as string | undefined,
+      wechatId: p.wechatId as string | undefined,
+      createdAt: p.createdAt as string,
+    };
+  }
+
+  /**
+   * 按手机号查询用户。
+   */
+  queryByPhone(phone: string): UserRecord | null {
+    if (!phone) return null;
+    try {
+      const results = this.store.queryNodes(NODE_TYPE, { phone }, USER_GRAPH);
+      if (results.length === 0) return null;
+      return this._nodeToRecord(results[0]);
+    } catch (err) {
+      log.warn({ err, phone }, '查询用户失败(phone) — 降级');
+      return null;
+    }
+  }
+
+  /**
+   * 按微信号查询用户。
+   */
+  queryByWechatId(wechatId: string): UserRecord | null {
+    if (!wechatId) return null;
+    try {
+      const results = this.store.queryNodes(NODE_TYPE, { wechatId }, USER_GRAPH);
+      if (results.length === 0) return null;
+      return this._nodeToRecord(results[0]);
+    } catch (err) {
+      log.warn({ err, wechatId }, '查询用户失败(wechatId) — 降级');
       return null;
     }
   }
@@ -142,20 +185,22 @@ export class UserStore {
     if (!userId) return null;
 
     try {
-      const node = this.store.getNode(userId, USER_GRAPH) as Record<string, unknown> | null;
-      if (!node) return null;
+      const raw = this.store.getNode(userId, USER_GRAPH) as Record<string, unknown> | null;
+      if (!raw) return null;
 
-      const props = node.props as Record<string, unknown> || {};
+      const p = raw.props as Record<string, unknown> || {};
       return {
-        userId: node.id as string,
-        email: props.email as string,
-        passwordHash: props.passwordHash as string,
-        role: props.role as string,
-        orgId: props.orgId as string,
-        status: props.status as string,
-        displayName: props.displayName as string | undefined,
-        department: props.department as string | undefined,
-        createdAt: props.createdAt as string,
+        userId: raw.id as string,
+        email: p.email as string,
+        passwordHash: p.passwordHash as string,
+        role: p.role as string,
+        orgId: p.orgId as string,
+        status: p.status as string,
+        displayName: p.displayName as string | undefined,
+        department: p.department as string | undefined,
+        phone: p.phone as string | undefined,
+        wechatId: p.wechatId as string | undefined,
+        createdAt: p.createdAt as string,
       };
     } catch (err) {
       log.warn({ err, userId }, '查询用户失败 — 降级');
@@ -207,17 +252,7 @@ export class UserStore {
 
     try {
       const results = this.store.queryNodes(NODE_TYPE, { orgId }, USER_GRAPH);
-      return results.map(node => ({
-        userId: node.id,
-        email: node.props.email as string,
-        passwordHash: node.props.passwordHash as string,
-        role: node.props.role as string,
-        orgId: node.props.orgId as string,
-        status: node.props.status as string,
-        displayName: node.props.displayName as string | undefined,
-        department: node.props.department as string | undefined,
-        createdAt: node.props.createdAt as string,
-      }));
+      return results.map(node => this._nodeToRecord(node));
     } catch (err) {
       log.warn({ err, orgId }, '列出成员失败 — 降级');
       return [];

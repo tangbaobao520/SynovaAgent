@@ -94,23 +94,29 @@ function getOrgId(req: Request): string {
 
 router.post('/api/enterprise/register', async (req: Request, res: Response) => {
   try {
-    const { email, password, orgName } = req.body as { email?: string; password?: string; orgName?: string };
-    if (!email || !password || !orgName) {
-      return res.status(400).json({ ok: false, code: 'VALIDATION_ERROR', message: 'email, password, orgName 必填' });
+    const { email, password, orgName, phone, wechatId } = req.body as
+      { email?: string; password?: string; orgName?: string; phone?: string; wechatId?: string };
+    if ((!email && !phone && !wechatId) || !password || !orgName) {
+      return res.status(400).json({ ok: false, code: 'VALIDATION_ERROR', message: 'email/phone/wechatId, password, orgName 必填' });
     }
-    // Check duplicate (D106: UserStore queryByEmail)
-    const existing = getUserStore().queryByEmail(email);
-    if (existing) return res.status(409).json({ ok: false, code: 'DUPLICATE', message: '邮箱已注册' });
+    if (phone && !/^1[3-9]\d{9}$/.test(phone)) {
+      return res.status(400).json({ ok: false, code: 'VALIDATION_ERROR', message: '手机号格式不正确' });
+    }
+    // Check duplicate (D106: UserStore)
+    const store = getUserStore();
+    if (email && store.queryByEmail(email)) return res.status(409).json({ ok: false, code: 'DUPLICATE', message: '邮箱已注册' });
+    if (phone && store.queryByPhone(phone)) return res.status(409).json({ ok: false, code: 'DUPLICATE', message: '手机号已注册' });
+    if (wechatId && store.queryByWechatId(wechatId)) return res.status(409).json({ ok: false, code: 'DUPLICATE', message: '微信号已注册' });
 
+    const finalEmail = email || `${phone || wechatId}@phone.local`;
     const orgId = nextId('org');
     const now = new Date().toISOString();
 
-    // D106: UserStore.createUser — GraphStore 持久化，自生成 userId
-    const result = await getUserStore().createUser(email, password, 'admin', orgId);
+    const result = await getUserStore().createUser(finalEmail, password, 'admin', orgId, { phone, wechatId });
     enterprises.set(orgId, { orgId, name: orgName, adminId: result.userId, createdAt: now, status: 'active' });
 
-    log.info({ orgId, userId: result.userId, email }, '企业注册成功');
-    return res.json({ ok: true, data: { orgId, userId: result.userId, email, role: 'admin' } });
+    log.info({ orgId, userId: result.userId, email: finalEmail }, '企业注册成功');
+    return res.json({ ok: true, data: { orgId, userId: result.userId, email: finalEmail, role: 'admin' } });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     log.error({ err }, '企业注册失败');
@@ -238,7 +244,7 @@ router.get('/api/enterprise/members', (req: Request, res: Response) => {
     if (!requireAdmin(req, res)) return;
     const orgId = getOrgId(req);
     const list = getUserStore().listByOrg(orgId);
-    return res.json({ ok: true, data: list.map(u => ({ userId: u.userId, email: u.email, role: u.role, status: u.status, createdAt: u.createdAt })) });
+    return res.json({ ok: true, data: list.map(u => ({ userId: u.userId, email: u.email, role: u.role, status: u.status, phone: u.phone, wechatId: u.wechatId, createdAt: u.createdAt })) });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     log.error({ err }, '查询成员失败');

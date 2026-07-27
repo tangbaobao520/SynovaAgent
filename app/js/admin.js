@@ -36,7 +36,8 @@
         container.innerHTML = '<p class="empty-state">No members.</p>'; return;
       }
       container.innerHTML = data.data.map(function (m) {
-        return '<div class="member-row"><span>' + escapeHtml(m.email) + ' <span class="badge badge-' + (m.role === 'admin' ? 'orange' : 'green') + '">' + escapeHtml(m.role) + '</span></span>'
+        var display = escapeHtml(m.phone || m.wechatId || m.email);
+        return '<div class="member-row"><span>' + display + ' <span class="badge badge-' + (m.role === 'admin' ? 'orange' : 'green') + '">' + escapeHtml(m.role) + '</span></span>'
           + (m.status === 'active' ? '<button class="btn-small btn-danger" onclick="window.removeMember(\'' + m.userId + '\')">Remove</button>' : '<span class="badge badge-grey">inactive</span>')
           + '</div>';
       }).join('');
@@ -306,7 +307,7 @@
       case 'register':
         return '<h3 style="margin-bottom:12px;font-size:15px">Create Your Enterprise</h3>'
           + '<div class="ob-field"><label>Organization Name</label><input type="text" id="ob-org-name" placeholder="e.g. Acme Corp" value="My Enterprise"></div>'
-          + '<div class="ob-field"><label>Admin Email</label><input type="email" id="ob-email" value="admin@enterprise.com"></div>'
+          + '<div class="ob-field"><label>Email / Phone / WeChat ID</label><input type="text" id="ob-email" value="admin@enterprise.com"></div>'
           + '<div class="ob-field"><label>Password</label><input type="password" id="ob-password" value="admin123!"></div>'
           + '<div id="ob-register-result"></div>'
           + '<div class="ob-actions"><button id="ob-btn-register" class="btn-primary">Register</button></div>';
@@ -349,11 +350,16 @@
         var btn = $('ob-btn-register');
         if (btn) btn.addEventListener('click', function () {
           var org = $('ob-org-name').value;
-          var email = $('ob-email').value;
+          var input = $('ob-email').value;
           var pass = $('ob-password').value;
           var result = $('ob-register-result');
+          // Smart detect: email, phone, or wechatId
+          var registerBody = { password: pass, orgName: org };
+          if (input.indexOf('@') > 0) registerBody.email = input;
+          else if (/^1[3-9]\d{9}$/.test(input)) registerBody.phone = input;
+          else registerBody.wechatId = input;
           btn.disabled = true; btn.textContent = 'Registering...';
-          api.post('/api/enterprise/register', { email: email, password: pass, orgName: org }).then(function (r) { return r.json(); }).then(function (data) {
+          api.post('/api/enterprise/register', registerBody).then(function (r) { return r.json(); }).then(function (data) {
             if (data.ok) {
               result.innerHTML = '<div class="ob-success">Enterprise created successfully!</div>';
               setOnboardingState('register');

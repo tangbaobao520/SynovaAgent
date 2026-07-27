@@ -25,6 +25,7 @@ const router = Router();
 interface UserRecord {
   userId: string; email: string; passwordHash: string; role: string; orgId: string;
   status: 'active' | 'disabled'; createdAt: string;
+  phone?: string; wechatId?: string;
 }
 const users = new Map<string, UserRecord>();
 let userIdCounter = 0;
@@ -65,37 +66,39 @@ export function setUserStore(store: UserStore): void {
 
 router.post('/api/auth/register', async (req: Request, res: Response) => {
   try {
-    const { email, password, role, orgId } = req.body as { email?: string; password?: string; role?: string; orgId?: string };
-    if (!email || !password) return res.status(400).json({ ok: false, code: 'VALIDATION_ERROR', message: 'email 和 password 必填' });
+    const { email, phone, wechatId, password, role, orgId } = req.body as
+      { email?: string; phone?: string; wechatId?: string; password?: string; role?: string; orgId?: string };
+    if ((!email && !phone && !wechatId) || !password) {
+      return res.status(400).json({ ok: false, code: 'VALIDATION_ERROR', message: 'email/phone/wechatId 至少一个 和 password 必填' });
+    }
     if (password.length < 6) return res.status(400).json({ ok: false, code: 'VALIDATION_ERROR', message: '密码至少6位' });
-
-    // 检查重复邮箱 (UserStore 优先, 内存 Map 回退)
-    const registerUs = getUserStore();
-    if (registerUs) {
-      const existing = registerUs.queryByEmail(email);
-      if (existing) return res.status(409).json({ ok: false, code: 'DUPLICATE', message: '邮箱已注册' });
-    } else {
-      for (const u of users.values()) { if (u.email === email) return res.status(409).json({ ok: false, code: 'DUPLICATE', message: '邮箱已注册' }); }
+    if (phone && !/^1[3-9]\d{9}$/.test(phone)) {
+      return res.status(400).json({ ok: false, code: 'VALIDATION_ERROR', message: '手机号格式不正确' });
     }
 
     const userRole = (role as UserProps['role']) || 'staff' as const;
     const userOrgId = orgId || 'default';
     let finalUserId: string;
+    const finalEmail = email || `${phone || wechatId}@phone.local`;
 
+    const registerUs = getUserStore();
     if (registerUs) {
-      // UserStore.createUser 内部 bcrypt hash + 生成 userId (需要原始 password)
-      const result = await registerUs.createUser(email, password, userRole, userOrgId);
+      // D248: 去重覆盖三种标识符
+      if (email && registerUs.queryByEmail(email)) return res.status(409).json({ ok: false, code: 'DUPLICATE', message: '邮箱已注册' });
+      if (phone && registerUs.queryByPhone(phone)) return res.status(409).json({ ok: false, code: 'DUPLICATE', message: '手机号已注册' });
+      if (wechatId && registerUs.queryByWechatId(wechatId)) return res.status(409).json({ ok: false, code: 'DUPLICATE', message: '微信号已注册' });
+      const result = await registerUs.createUser(finalEmail, password, userRole, userOrgId, { phone, wechatId });
       finalUserId = result.userId;
     } else {
       finalUserId = `usr-${++userIdCounter}`;
       const passwordHash = await bcrypt.hash(password, 10);
-      users.set(finalUserId, { userId: finalUserId, email, passwordHash, role: userRole, orgId: userOrgId, status: 'active', createdAt: new Date().toISOString() });
+      users.set(finalUserId, { userId: finalUserId, email: finalEmail, passwordHash, role: userRole, orgId: userOrgId, status: 'active', createdAt: new Date().toISOString() });
     }
 
     const token = signJwtToken({ sub: finalUserId, role: userRole, orgId: userOrgId });
     if (!token) throw new Error('JWT signing failed');
 
-    log.info({ userId: finalUserId, email, store: registerUs ? 'graph' : 'memory' }, '用户注册成功');
+    log.info({ userId: finalUserId, email: finalEmail, store: registerUs ? 'graph' : 'memory' }, '注册成功');
     return res.status(201).json({ ok: true, token, payload: { userId: finalUserId, role: userRole, orgId: userOrgId } });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -110,29 +113,30 @@ router.post('/api/auth/register', async (req: Request, res: Response) => {
 
 router.post('/api/auth/login', async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body as { email?: string; password?: string };
-    if (!email || !password) return res.status(400).json({ ok: false, code: 'VALIDATION_ERROR', message: 'email 和 password 必填' });
+    const { email, phone, wechatId, password } = req.body as { email?: string; phone?: string; wechatId?: string; password?: string };
+    const loginKey = email || phone || wechatId;
+    if (!loginKey || !password) return res.status(400).json({ ok: false, code: 'VALIDATION_ERROR', message: 'email/phone/wechatId 和 password 必填' });
 
     let foundUser: UserRecord | null = null;
-    // UserStore 优先, 内存 Map 回退
     const loginUs = getUserStore();
     if (loginUs) {
-      const stored = loginUs.queryByEmail(email);
-      if (stored) foundUser = stored as UserRecord;
+      if (email) foundUser = loginUs.queryByEmail(email) as UserRecord | null;
+      else if (phone) foundUser = loginUs.queryByPhone(phone) as UserRecord | null;
+      else if (wechatId) foundUser = loginUs.queryByWechatId(wechatId) as UserRecord | null;
     } else {
-      for (const u of users.values()) { if (u.email === email) { foundUser = u; break; } }
+      for (const u of users.values()) { if (u.email === loginKey) { foundUser = u; break; } }
     }
-    if (!foundUser) return res.status(401).json({ ok: false, code: 'AUTH_FAILED', message: '邮箱或密码错误' });
+    if (!foundUser) return res.status(401).json({ ok: false, code: 'AUTH_FAILED', message: '账户不存在或密码错误' });
     if (foundUser.status !== 'active') return res.status(403).json({ ok: false, code: 'ACCOUNT_DISABLED', message: '账户已停用' });
 
     const passwordMatch = await bcrypt.compare(password, foundUser.passwordHash);
-    if (!passwordMatch) return res.status(401).json({ ok: false, code: 'AUTH_FAILED', message: '邮箱或密码错误' });
+    if (!passwordMatch) return res.status(401).json({ ok: false, code: 'AUTH_FAILED', message: '账户不存在或密码错误' });
 
     const token = signJwtToken({ sub: foundUser.userId, role: foundUser.role, orgId: foundUser.orgId });
     if (!token) return res.status(500).json({ ok: false, code: 'AUTH_CONFIG_ERROR', message: 'JWT_SECRET 未配置', degraded: true });
 
     const result = verifyJwtToken(token);
-    log.info({ userId: foundUser.userId, email, store: loginUs ? 'graph' : 'memory' }, '登录成功');
+    log.info({ userId: foundUser.userId, loginKey, store: loginUs ? 'graph' : 'memory' }, '登录成功');
     return res.json({ ok: true, token, payload: { userId: result.payload?.sub, role: result.payload?.role, orgId: result.payload?.orgId, expiresAt: result.payload?.exp, jti: result.payload?.jti } });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
