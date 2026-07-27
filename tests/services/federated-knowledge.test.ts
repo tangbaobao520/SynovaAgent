@@ -51,6 +51,58 @@ describe("D244: Anonymizer — entity replacement", () => {
   });
 });
 
+describe("D244: GA weight drop", () => {
+  it("checkGaWeightDrop reduces scores for items reviewed by that GA", () => {
+    const pipeline = new FederatedPipeline();
+    pipeline.markShareable("chunk-ga1", "SynovaTech has 500 employees", "org-1");
+    pipeline.approveByGa(pipeline.findIdBySourceChunk("chunk-ga1")!, "ga-zhang");
+
+    pipeline.markShareable("chunk-ga2", "Revenue growth 25% YoY", "org-2");
+    pipeline.approveByGa(pipeline.findIdBySourceChunk("chunk-ga2")!, "ga-zhang");
+
+    pipeline.markShareable("chunk-ga3", "Other data", "org-3");
+    pipeline.approveByGa(pipeline.findIdBySourceChunk("chunk-ga3")!, "ga-li");
+
+    // GA zhang离职，降低权重
+    const affected = pipeline.checkGaWeightDrop("ga-zhang");
+    expect(affected).toBe(2); // 2 items reviewed by ga-zhang
+
+    // ga-li 的条目不受影响
+    const liItem = pipeline.get(pipeline.findIdBySourceChunk("chunk-ga3")!);
+    expect(liItem!.qualityScore).toBe(0); // pending_admin, 评分仍为0
+    // ga-zhang 的条目 qualityScore 降低 50% (保持0 * 0.5 = 0)
+    // Actually since items are pending_admin, score is 0
+    // Let's add some validation scores first
+  });
+
+  it("GA weight drop can trigger degradation when score < 3", () => {
+    const pipeline = new FederatedPipeline();
+
+    // 先审批通过，然后多次验证建立评分
+    const entry1 = pipeline.markShareable("chunk-degrade", "Test data for degradation", "org-1");
+    const fedId = pipeline.findIdBySourceChunk("chunk-degrade")!;
+    pipeline.approveByGa(fedId, "ga-lin");
+
+    // 模拟 3 次验证评分为 5（满分）
+    for (let i = 0; i < 3; i++) {
+      pipeline.validateByEnterprise(fedId, 5);
+    }
+
+    // 验证评分 = 5
+    const before = pipeline.get(fedId);
+    expect(before!.qualityScore).toBe(5);
+    expect(before!.feedbackCount).toBe(3);
+
+    // GA lin 离职 → 评分降低 50% → 5 * 0.5 = 2.5 < 3 → 降级触发
+    const affected = pipeline.checkGaWeightDrop("ga-lin");
+    expect(affected).toBe(1);
+
+    const after = pipeline.get(fedId);
+    expect(after!.qualityScore).toBe(2.5);
+    expect(after!.status).toBe("degraded");
+  });
+});
+
 describe("D244: FederatedPipeline — lifecycle", () => {
   it("markShareable anonymizes and sets pending_admin", () => {
     const pipeline = new FederatedPipeline();

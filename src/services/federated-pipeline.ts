@@ -164,6 +164,47 @@ export class FederatedPipeline {
     return false;
   }
 
+  /**
+   * GA 离职权重降低。
+   *
+   * 当某 GA 离职后, 调用此方法自动降低该 GA 历史审批的联邦知识权重。
+   * 规则:
+   *   - 被该 GA 审批过的条目 qualityScore 降低 50%
+   *   - 降低后 qualityScore < 3 且 feedbackCount >= 3 → 标记 degraded
+   *
+   * @param gaUserId — 离职 GA 的用户 ID
+   * @returns 受影响的条目数
+   */
+  checkGaWeightDrop(gaUserId: string): number {
+    let affected = 0;
+    for (const [, entry] of this.store) {
+      if (entry.reviewedBy !== gaUserId) continue;
+      entry.qualityScore = entry.qualityScore * 0.5;
+      entry.updatedAt = new Date().toISOString();
+      affected++;
+
+      // 降低后评分过低 → 降级
+      if (entry.qualityScore < 3 && entry.feedbackCount >= 3) {
+        entry.status = "degraded";
+        log.warn(
+          { id: entry.sourceChunkId, gaUserId, qualityScore: entry.qualityScore },
+          "GA 离职 → 联邦知识降级",
+        );
+      } else {
+        log.info(
+          { id: entry.sourceChunkId, gaUserId, qualityScore: entry.qualityScore },
+          "GA 离职 → 权重已降低 (未触发降级)",
+        );
+      }
+    }
+    if (affected > 0) {
+      log.warn({ gaUserId, affected }, "GA 离职权重降低处理完成");
+    } else {
+      log.info({ gaUserId }, "该 GA 无历史审批记录，无需处理");
+    }
+    return affected;
+  }
+
   /** 获取联邦知识 */
   get(id: string): FederatedKnowledge | undefined {
     return this.store.get(id);

@@ -187,4 +187,28 @@ router.get('/api/admin/knowledge/federated/degraded', (_req, res) => {
   }
 });
 
+/**
+ * POST /api/admin/knowledge/federated/ga-weight-drop
+ * GA 离职触发 — 降低该 GA 审批过的联邦知识权重。
+ */
+router.post('/api/admin/knowledge/federated/ga-weight-drop', (req, res) => {
+  try {
+    if (!federatedPipeline) {
+      res.status(503).json({ ok: false, error: 'FederatedPipeline not ready', degraded: true });
+      return;
+    }
+    const { gaUserId } = req.body as { gaUserId?: string };
+    if (!gaUserId) {
+      res.status(400).json({ ok: false, code: 'VALIDATION_ERROR', message: 'gaUserId required' });
+      return;
+    }
+    const affected = federatedPipeline.checkGaWeightDrop(gaUserId);
+    res.json({ ok: true, data: { gaUserId, affectedEntries: affected } });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log.error({ err: msg }, 'Failed to process GA weight drop');
+    res.status(500).json({ ok: false, error: msg, degraded: true });
+  }
+});
+
 export default router;
