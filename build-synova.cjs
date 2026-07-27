@@ -1,0 +1,83 @@
+/**
+ * build-synova.js — SynovaAgent Electron 打包配置
+ *
+ * 方案 A: 桌面端 .exe 打包
+ * 用法: npx electron-builder --config build-synova.js
+ *
+ * 产物:
+ *   release/SynovaAgent-{version}-win32-x64/SynovaAgent.exe (Windows)
+ *   release/SynovaAgent-{version}-darwin-x64/SynovaAgent.app (macOS)
+ *
+ * 基于 Novis box/build-desktop.js 架构模式。
+ */
+
+const pkg = require('./package.json');
+
+/** @type {import('electron-builder').Configuration} */
+module.exports = {
+  appId: 'com.synova.agent',
+  productName: 'SynovaAgent',
+  copyright: 'Copyright © 2026 Synova',
+  
+  directories: {
+    output: 'release',
+    buildResources: 'assets',
+  },
+
+  extraMetadata: {
+    main: 'electron/main.cjs',
+  },
+
+  files: [
+    'electron/**/*',
+    '!electron/node_modules/**',
+    'package.json',
+    'node_modules/electron/**/*',
+    '!node_modules/.cache/**',
+    '!node_modules/electron-builder/**',
+    '!tests/**',
+    '!docs/**',
+    '!**/*.map',
+    '!**/*.test.ts',
+    '!src/**',
+    '!tsconfig.json',
+    '!app/**',
+  ],
+
+  extraResources: [
+    {
+      from: 'synova_worker/',
+      to: 'synova_worker/',
+      filter: ['**/*.py', 'requirements.txt'],
+    },
+  ],
+
+  win: {
+    target: [{ target: 'nsis', arch: ['x64'] }],
+    artifactName: 'SynovaAgent-${version}-win32-x64.${ext}',
+  },
+  nsis: {
+    oneClick: false,
+    allowToChangeInstallationDirectory: true,
+    createDesktopShortcut: true,
+    createStartMenuShortcut: true,
+    shortcutName: 'SynovaAgent',
+  },
+
+  mac: {
+    target: [{ target: 'dmg', arch: ['x64', 'arm64'] }],
+    category: 'public.app-category.business',
+  },
+
+  linux: {
+    target: [{ target: 'AppImage', arch: ['x64'] }],
+    category: 'Office',
+  },
+
+  // 自动更新 (方案 A Phase 2)
+  // publish: {
+  //   provider: 'github',
+  //   owner: 'tangbaobao520',
+  //   repo: 'SynovaAgent',
+  // },
+};
