@@ -324,6 +324,44 @@ export function writeGoalKnowledge(
   }
 }
 
+// ═══ D254: 效果验证报告 ═══
+
+export interface EffectReport {
+  status: 'improved' | 'worsened' | 'unchanged' | 'unknown';
+  before?: number;
+  after?: number;
+  deltaPct?: number;
+  edgeId?: string;
+  reason?: string;
+  verifiedAt: string;
+}
+
+/**
+ * D254: 将效果验证报告写入 agent_memory。
+ * 降级: 写入失败 → log.warn + 不阻断。
+ */
+export function writeEffectReport(report: EffectReport): void {
+  try {
+    const { getAgentMemoryStore } = require('../l4/agent-memory-store');
+    const store = getAgentMemoryStore();
+    store.remember({
+      orgId: 'default',
+      key: `effect-${report.edgeId || 'unknown'}-${Date.now()}`,
+      value: JSON.stringify(report),
+      type: 'fact',
+      confidence: report.status === 'unknown' ? 0.3 : 0.7,
+      source: 'diagnosis',
+      tags: ['effect_verification', report.status],
+      expiresAt: null,
+      status: 'active',
+    });
+    log.info({ status: report.status, edgeId: report.edgeId, deltaPct: report.deltaPct }, '效果验证已记录');
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log.warn({ err: msg, status: report.status }, '效果验证写入失败 — 降级');
+  }
+}
+
 /** 将知识条目格式化为可读文本 */
 function formatKnowledgeText(knowledge: GoalExecutionKnowledge): string {
   const lines: string[] = [

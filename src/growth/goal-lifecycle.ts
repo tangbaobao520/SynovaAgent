@@ -176,11 +176,84 @@ export async function closeGoal(
     const KnowledgeStore = (await import('../l4/knowledge-store')).KnowledgeStore;
     const { getDatabase } = await import('../init/engine-context');
     const db = getDatabase();
-    const store = new KnowledgeStore(db);
-    writeGoalKnowledge(knowledge, store);
+    const ks = new KnowledgeStore(db);
+    writeGoalKnowledge(knowledge, ks);
+
+    // D254: 效果验证 — 回溯诊断报告 edge 参数对比
+    const { writeEffectReport } = await import('./knowledge-feedback');
+    const effect = await verifyEffect(goal, store);
+    writeEffectReport(effect);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     log.warn({ err: msg, goalId }, '知识提取/PKB 写入失败 — 降级（不阻断 Goal 关闭）');
+  }
+}
+
+/**
+ * D254: 效果验证 — 回溯诊断关联的 edge 参数，对比当前值 vs 基线。
+ *
+ * 流程:
+ *   goal.diagnosisId → 诊断报告 node → matchedEdgeIds + baselineValues
+ *   → 取首条 edge 当前 weight → 对比 → EffectReport
+ *
+ * @returns EffectReport（降级时 status=unknown + reason）
+ */
+export interface EffectReport {
+  status: 'improved' | 'worsened' | 'unchanged' | 'unknown';
+  before?: number;
+  after?: number;
+  deltaPct?: number;
+  edgeId?: string;
+  reason?: string;
+  verifiedAt: string;
+}
+
+export async function verifyEffect(goal: Goal, store: GraphBridgeLike): Promise<EffectReport> {
+  const verifiedAt = new Date().toISOString();
+
+  if (!goal.diagnosisId) {
+    return { status: 'unknown', reason: '无关联诊断报告', verifiedAt };
+  }
+
+  try {
+    const diagnosis = store.getNode(goal.diagnosisId, 'default') as Record<string, unknown> | null;
+    if (!diagnosis) {
+      return { status: 'unknown', reason: '诊断报告不存在', verifiedAt };
+    }
+
+    const props = (diagnosis as { props?: Record<string, unknown> }).props || {};
+    const edgeIds = props.matchedEdgeIds as string[] | undefined;
+    const baselineValues = props.baselineValues as Record<string, number> | undefined;
+
+    if (!edgeIds?.length || !baselineValues) {
+      return { status: 'unknown', reason: '诊断报告无 edge 引用或基线数据', verifiedAt };
+    }
+
+    const edgeId = edgeIds[0];
+    const baseline = baselineValues[edgeId];
+    // 当前值优先从 diagnosis node props.currentValues 获取，回退到 baseline（表示无变化）
+    const currentValues = props.currentValues as Record<string, number> | undefined;
+    const current = currentValues?.[edgeId] ?? baseline;
+
+    if (baseline == null) {
+      return { status: 'unknown', reason: '基线值缺失', verifiedAt };
+    }
+
+    if (baseline === 0) {
+      const delta = current - baseline;
+      const status = delta > 0 ? 'improved' : delta < 0 ? 'worsened' : 'unchanged';
+      return { status, before: baseline, after: current, deltaPct: delta > 0 ? 100 : delta < 0 ? -100 : 0, edgeId, verifiedAt };
+    }
+
+    const delta = current - baseline;
+    const pct = Math.round((delta / baseline) * 100);
+    const status = pct > 10 ? 'improved' : pct < -10 ? 'worsened' : 'unchanged';
+
+    return { status, before: baseline, after: current, deltaPct: pct, edgeId, verifiedAt };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log.warn({ err: msg, goalId: goal.goalId }, '效果验证失败 — 降级');
+    return { status: 'unknown', reason: `效果验证异常: ${msg}`, verifiedAt };
   }
 }
 
