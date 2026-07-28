@@ -25,6 +25,7 @@
         <a href="/app/loops.html" class="nav-link">Loops</a>
         <a href="/app/report.html" class="nav-link">Reports</a>
         ${user && user.role === 'admin' ? '<a href="/app/admin.html" class="nav-link">Admin</a>' : ''}
+        ${user && user.role === 'ga' ? '<a href="/app/ga.html" class="nav-link">GA Dashboard</a>' : ''}
       </div>
       <div class="nav-right">
         <span class="nav-user">${user ? user.userId + ' (' + user.role + ')' : ''}</span>

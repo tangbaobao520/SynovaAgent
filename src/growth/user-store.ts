@@ -2,7 +2,7 @@
  * src/growth/user-store.ts — GraphStore 用户持久化 (D106)
  *
  * 将 D102/D103 的 in-memory Map 替换为 GraphStore 持久化存储。
- * SOGNodeType.USER 已在 sog-core 中定义。
+ * GraphStore 节点类型定义位于 sog-core 中。
  *
  * 铁律 24+31: catch + log.warn + degraded
  * 铁律 38: 零 as any

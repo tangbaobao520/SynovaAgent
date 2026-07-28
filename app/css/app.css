@@ -249,3 +249,116 @@ body {
 }
 .expert-placeholder { padding: 16px; }
 .expert-placeholder h3 { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+
+/* ═══ D253: GA Dashboard ═══ */
+
+/* ── Panels ── */
+.ga-panel { display: flex; flex-direction: column; overflow: hidden; }
+.ga-panel-left { width: 240px; min-width: 240px; border-right: 1px solid var(--border); background: var(--bg-card); }
+.ga-panel-center { flex: 1; overflow-y: auto; background: var(--bg-card); }
+.ga-panel-right { width: 320px; min-width: 320px; border-left: 1px solid var(--border); background: var(--bg-card); overflow-y: auto; }
+
+.ga-panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; border-bottom: 1px solid var(--border);
+}
+.ga-panel-header h3 { font-size: 14px; font-weight: 700; margin: 0; }
+
+.ga-badge {
+  font-size: 11px; font-weight: 600; padding: 2px 8px;
+  border-radius: 10px; background: var(--primary); color: #fff;
+}
+.ga-timestamp { font-size: 11px; color: var(--text-secondary); }
+
+/* ── Enterprise List ── */
+.ga-list { flex: 1; overflow-y: auto; }
+.ga-enterprise-item {
+  padding: 12px 14px; cursor: pointer; border-left: 3px solid transparent;
+  transition: all 0.12s; user-select: none;
+}
+.ga-enterprise-item:hover { background: var(--bg); }
+.ga-enterprise-active { background: var(--bg); border-left-color: var(--primary); }
+.ga-enterprise-name { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+.ga-enterprise-meta { font-size: 11px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; }
+.ga-status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+.ga-status-green { background: var(--success); }
+.ga-status-yellow { background: var(--warning); }
+
+/* ── Center Content ── */
+.ga-center-content { padding: 16px; }
+.ga-section { margin-bottom: 20px; }
+.ga-section-title { font-size: 13px; font-weight: 700; margin-bottom: 10px; color: var(--text); }
+
+.ga-signal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.ga-signal-card {
+  padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--bg);
+}
+.ga-signal-green { border-left: 3px solid var(--success); }
+.ga-signal-yellow { border-left: 3px solid var(--warning); }
+.ga-signal-red { border-left: 3px solid var(--error); }
+.ga-signal-card .ga-signal-name { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+.ga-signal-card .ga-signal-status { font-size: 11px; font-weight: 700; }
+.ga-signal-green .ga-signal-status { color: var(--success); }
+.ga-signal-yellow .ga-signal-status { color: var(--warning); }
+.ga-signal-red .ga-signal-status { color: var(--error); }
+.ga-signal-card .ga-signal-reason { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+
+.ga-task-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 13px;
+}
+.ga-task-status { font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 4px; }
+.ga-task-active { background: #dbeafe; color: #1d4ed8; }
+.ga-task-pending { background: #fef3c7; color: #92400e; }
+
+/* ── Federated Approval ── */
+.ga-list { padding: 4px 0; }
+.ga-fed-item {
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+}
+.ga-fed-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.ga-fed-status { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; text-transform: uppercase; }
+.ga-fed-pending_admin { background: #fef3c7; color: #92400e; }
+.ga-fed-pending_ga { background: #dbeafe; color: #1d4ed8; }
+.ga-fed-text { font-size: 12px; color: var(--text); margin-bottom: 8px; line-height: 1.4; word-break: break-word; }
+.ga-fed-actions { display: flex; gap: 6px; }
+.ga-fed-btn {
+  flex: 1; padding: 6px; border-radius: 6px; border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.12s;
+}
+.ga-fed-btn-approve { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+.ga-fed-btn-approve:hover { background: #bbf7d0; }
+.ga-fed-btn-reject { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+.ga-fed-btn-reject:hover { background: #fecaca; }
+
+/* ── Observation Form ── */
+.ga-observation-form { padding: 12px 14px; }
+.ga-obs-select {
+  width: 100%; padding: 8px 10px; border: 1px solid var(--border);
+  border-radius: 6px; font-size: 12px; margin-bottom: 8px;
+}
+.ga-obs-textarea {
+  width: 100%; padding: 8px 10px; border: 1px solid var(--border);
+  border-radius: 6px; font-size: 12px; resize: vertical;
+  font-family: inherit; transition: border-color 0.15s;
+}
+.ga-obs-textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(26,115,232,0.1); }
+.ga-obs-select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(26,115,232,0.1); }
+.ga-obs-feedback { font-size: 12px; margin-top: 6px; }
+.ga-obs-success { color: var(--success); }
+.ga-obs-error { color: var(--error); }
+.ga-obs-warning { color: var(--warning); }
+
+/* ── Shared ←─ */
+.ga-empty {
+  padding: 24px; text-align: center; color: var(--text-secondary); font-size: 13px;
+}
+.ga-error {
+  padding: 16px; text-align: center; color: var(--error);
+}
+.ga-error .retry-btn {
+  margin-top: 8px; padding: 6px 16px; border: 1px solid var(--border);
+  border-radius: 6px; background: var(--bg-card); cursor: pointer; font-size: 12px;
+}
+.ga-error .retry-btn:hover { background: var(--bg); }
