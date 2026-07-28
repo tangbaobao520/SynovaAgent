@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Synova — Diagnosis Chat</title>
+  <link rel="stylesheet" href="/app/css/app.css">
+  <link rel="stylesheet" href="/app/css/chat.css">
+</head>
+<body>
+  <header id="synova-shell"></header>
+
+  <div class="page-content">
+    <div class="chat-header">
+      <h1>Enterprise Diagnosis</h1>
+      <p class="text-secondary">Streaming diagnosis with real-time pyramid rendering.</p>
+    </div>
+
+    <div id="chat-form" class="chat-form">
+      <input type="text" id="team-id" placeholder="Team ID (e.g. org-1)" value="org-1">
+      <input type="text" id="concern-input" placeholder="What's your concern? (optional)" value="Assess current growth trajectory">
+      <button id="btn-start" class="btn-primary">Start Diagnosis</button>
+    </div>
+
+    <div id="diagnosis-status" class="diagnosis-status" style="display:none">
+      <div class="phase-progress" id="phase-progress"></div>
+      <div class="status-text" id="status-text">Initializing...</div>
+    </div>
+
+    <div id="pyramid-output" class="pyramid-output">
+      <!-- Pyramid layers rendered by chat-sse.js -->
+      <div class="pyramid-empty">Enter a Team ID above and click "Start Diagnosis" to begin.</div>
+    </div>
+  </div>
+
+  <script src="/app/js/auth.js"></script>
+  <script src="/app/js/api-client.js"></script>
+  <script src="/app/js/shell.js"></script>
+  <script src="/app/js/chat-sse.js"></script>
+</body>
+</html>
