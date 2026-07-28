@@ -36,7 +36,7 @@
     statusText.textContent = 'Starting diagnosis...';
     updatePhaseProgress(0);
 
-    var body = { teamId: teamId };
+    var body = { teamId: teamId, initiator: { role: 'admin', name: 'admin', teamId: teamId } };
     if (concern) body.concern = concern;
 
     fetch('/api/diagnosis/consult', {
