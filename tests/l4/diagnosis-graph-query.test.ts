@@ -4,12 +4,12 @@
  * 每个函数 >= 3 用例 (happy + sad + empty)
  */
 import { describe, it, expect } from 'vitest';
-import { findDiagnosticPaths, summarizeSubgraph, getGraphDiff, findCrossDimensionalBrokers, detectAnomalousPatterns } from '../../src/l4/diagnosis-graph-query';
+import { findDiagnosticPaths, summarizeSubgraph, getGraphDiff, findCrossDimensionalBrokers, detectAnomalousPatterns, queryNodesCreatedAfter } from '../../src/l4/diagnosis-graph-query';
 import { NodeType, EdgeType } from '@synova/ontology';
 
-function fakeStore(nodes: Array<{id:string, type:string}> = [], edges: Array<{id:string, type:string, from:string, to:string, weight:number}> = []) {
+function fakeStore(nodes: Array<{id:string, type:string, props?: Record<string, unknown>}> = [], edges: Array<{id:string, type:string, from:string, to:string, weight:number}> = []) {
   return {
-    queryNodes(type: string) { return nodes.filter(n => !type || n.type === type).map(n => ({...n, props:{}})); },
+    queryNodes(type: string, _filters?: Record<string, unknown>, _graph?: string) { return nodes.filter(n => !type || n.type === type).map(n => ({...n, props: n.props || {}})); },
     queryEdges(_type?: string, from?: string, to?: string) {
       return edges.filter(e =>
         (!_type || e.type === _type) &&
@@ -140,5 +140,47 @@ describe('detectAnomalousPatterns', () => {
     );
     const patterns = detectAnomalousPatterns(store, 'g');
     expect(patterns.some(p => p.type === 'weight_outliers')).toBe(true);
+  });
+});
+
+describe('queryNodesCreatedAfter', () => {
+  const recentDate = new Date(Date.now() - 1 * 86400_000).toISOString(); // yesterday
+  const oldDate = new Date(Date.now() - 90 * 86400_000).toISOString();   // 90 days ago
+  const futureDate = new Date(Date.now() + 1 * 86400_000).toISOString(); // tomorrow
+
+  it('Given nodes created within N days, When queryNodesCreatedAfter, Then returns matching count', () => {
+    const store = fakeStore([
+      { id:'n1', type:'X', props: { createdAt: recentDate } },
+      { id:'n2', type:'X', props: { createdAt: recentDate } },
+      { id:'n3', type:'X', props: { createdAt: oldDate } },
+    ]);
+    expect(queryNodesCreatedAfter(store, 'g', 7)).toBe(2);
+  });
+
+  it('Given all nodes older than N days, When queryNodesCreatedAfter, Then returns 0', () => {
+    const store = fakeStore([
+      { id:'n1', type:'X', props: { createdAt: oldDate } },
+      { id:'n2', type:'X', props: { createdAt: oldDate } },
+    ]);
+    expect(queryNodesCreatedAfter(store, 'g', 7)).toBe(0);
+  });
+
+  it('Given empty graph, When queryNodesCreatedAfter, Then returns 0', () => {
+    expect(queryNodesCreatedAfter(fakeStore(), 'g', 30)).toBe(0);
+  });
+
+  it('Given nodes without createdAt, When queryNodesCreatedAfter, Then excludes them', () => {
+    const store = fakeStore([
+      { id:'n1', type:'X', props: {} },
+      { id:'n2', type:'X', props: { createdAt: recentDate } },
+    ]);
+    expect(queryNodesCreatedAfter(store, 'g', 7)).toBe(1);
+  });
+
+  it('Given future-dated node, When queryNodesCreatedAfter, Then includes it', () => {
+    const store = fakeStore([
+      { id:'n1', type:'X', props: { createdAt: futureDate } },
+    ]);
+    expect(queryNodesCreatedAfter(store, 'g', 7)).toBe(1);
   });
 });

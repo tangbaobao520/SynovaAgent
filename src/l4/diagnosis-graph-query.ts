@@ -223,3 +223,20 @@ export function detectAnomalousPatterns(
   log.info({ anomalies: anomalies.length }, '异常模式检测完成');
   return anomalies;
 }
+
+// ═══ 6. queryNodesCreatedAfter ═══
+
+export function queryNodesCreatedAfter(
+  store: GraphStoreLike,
+  graph: string,
+  days: number,
+): number {
+  const cutoff = new Date(Date.now() - days * 86_400_000).toISOString();
+  const nodes = store.queryNodes('', undefined, graph);
+  const matched = nodes.filter(n => {
+    const ca = n.props?.createdAt;
+    return typeof ca === 'string' && ca >= cutoff;
+  });
+  log.info({ graph, days, matched: matched.length, total: nodes.length }, '增量查询完成');
+  return matched.length;
+}
