@@ -134,9 +134,63 @@ def check_imports(file_rel: str) -> bool:
         return False
 
 
-def is_reachable_from_entry(file_rel: str) -> bool:
-    """检查文件是否从入口 src/server.ts 反向可达"""
-    return "src/" in file_rel or "scripts/" in file_rel
+def build_depgraph() -> dict[str, list[str]]:
+    """扫描 src/ 和 scripts/ 的 .ts import, 构建邻接表 (谁依赖谁)。
+
+    格式: { "src/server.ts": ["src/foo.ts", ...], ... }
+    失败时返回空 dict, 调用方回退到目录检查。
+    """
+    graph: dict[str, list[str]] = {}
+    try:
+        for root_dir in ["src", "scripts"]:
+            base = PROJECT_ROOT / root_dir
+            if not base.exists():
+                continue
+            for ts_file in base.rglob("*.ts"):
+                rel = str(ts_file.relative_to(PROJECT_ROOT)).replace("\\", "/")
+                graph.setdefault(rel, [])
+                text = ts_file.read_text(encoding="utf-8", errors="replace")
+                imports = re.findall(r"""(?:from|import)\s+['\"]([^'\"]+)['\"]""", text)
+                for imp in imports:
+                    if not imp.startswith("."):
+                        continue
+                    try:
+                        imp_path = (ts_file.parent / imp).resolve()
+                        resolved = str(imp_path.relative_to(PROJECT_ROOT)).replace("\\", "/")
+                        if not resolved.endswith(".ts") and not resolved.endswith(".py"):
+                            resolved += ".ts"
+                        graph[rel].append(resolved)
+                    except (ValueError, OSError):
+                        continue
+        return graph
+    except Exception:
+        return {}
+
+
+def is_reachable_from_entry(file_rel: str, depgraph: dict[str, list[str]] | None = None) -> bool:
+    """BFS 判定 file_rel 是否从入口 src/server.ts 可达。
+
+    需要依赖图 depgraph。depgraph 为空时回退到目录检查 (src/ 或 scripts/)。
+    """
+    if not depgraph:
+        return "src/" in file_rel or "scripts/" in file_rel  # fallback
+
+    entry = "src/server.ts"
+    if file_rel == entry:
+        return True
+
+    visited: set[str] = {entry}
+    queue: list[str] = [entry]
+
+    while queue:
+        node = queue.pop(0)
+        for dep in depgraph.get(node, []):
+            if dep == file_rel:
+                return True
+            if dep not in visited:
+                visited.add(dep)
+                queue.append(dep)
+    return False
 
 
 def check_gate_issues(d_id: str, gate_data: dict) -> int:
@@ -155,7 +209,7 @@ def check_gate_issues(d_id: str, gate_data: dict) -> int:
 # ═══ 核心判定 ═══
 
 
-def evaluate_task(task: dict, gate_data: dict) -> dict:
+def evaluate_task(task: dict, gate_data: dict, depgraph: dict[str, list[str]] | None = None) -> dict:
     """对单个 D# 执行 6 条件判定"""
     d_id = task["d_id"]
     src_file = find_source_file(d_id)
@@ -252,12 +306,12 @@ def evaluate_task(task: dict, gate_data: dict) -> dict:
     else:
         conditions["test_exists"]["reason"] = "无源文件"
 
-    # C4: path_reachable
-    if src_file and is_reachable_from_entry(src_file):
+    # C4: path_reachable — 使用 BFS 从入口反向搜索
+    if src_file and is_reachable_from_entry(src_file, depgraph):
         conditions["path_reachable"]["score"] = 1
-        conditions["path_reachable"]["reason"] = "从入口可达"
+        conditions["path_reachable"]["reason"] = "BFS: 从入口可达"
     else:
-        conditions["path_reachable"]["reason"] = "src/ 或 scripts/ 外文件或不存在"
+        conditions["path_reachable"]["reason"] = "BFS: 从入口不可达或文件不存在"
 
     # C5: dependencies_ok
     if src_file and check_imports(src_file):
@@ -338,7 +392,10 @@ def main():
     if not tasks and not args.quiet:
         print("[self-diagnosis] [WARN] 未找到 task briefs", file=sys.stderr)
 
-    results = [evaluate_task(t, gate_data) for t in tasks if t["d_id"]]
+    depgraph = build_depgraph()
+    if depgraph and not args.quiet:
+        print(f"[self-diagnosis] 依赖图构建: {len(depgraph)} 个节点")
+    results = [evaluate_task(t, gate_data, depgraph) for t in tasks if t["d_id"]]
     report = aggregate_results(results)
     report["generatedAt"] = ts
     report["gitCommits"] = len(git_log)
