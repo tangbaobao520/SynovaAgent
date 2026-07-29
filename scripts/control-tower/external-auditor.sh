@@ -29,17 +29,111 @@ REPORT_DIR="$PROJECT_ROOT/.codex/audit-reports"
 
 TASK_ID=""
 DIFF_RANGE=""
+DISPATCH=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --task-id) TASK_ID="$2"; shift 2 ;;
     --diff) DIFF_RANGE="$2"; shift 2 ;;
+    --dispatch) DISPATCH="true"; shift ;;
     *) echo "未知参数: $1"; exit 1 ;;
   esac
 done
 
+# ═══ D256: --dispatch 模式（统一入口）═══
+
+if [[ -n "$DISPATCH" ]]; then
+  PATTERNS_FILE="$PROJECT_ROOT/.codex/audit/known-error-patterns.json"
+  AUDIT_RESULT="$PROJECT_ROOT/.codex/audit/audit-result.json"
+  mkdir -p "$(dirname "$AUDIT_RESULT")"
+
+  echo "═══════════════════════════════════════════════════════════"
+  echo "  审计器统一入口 — --dispatch 模式"
+  echo "═══════════════════════════════════════════════════════════"
+  echo ""
+
+  if [[ ! -f "$PATTERNS_FILE" ]]; then
+    echo "  [WARN] known-error-patterns.json 不存在 — 跳过"
+    python3 "$SCRIPT_DIR/emit-signal.py" external-auditor yellow "patterns_file_missing" 2>/dev/null || true
+    exit 0
+  fi
+
+  FINDINGS=()
+  PATTERN_COUNT=0
+  while IFS= read -r entry; do
+    [[ -z "$entry" ]] && continue
+    PATTERN_COUNT=$((PATTERN_COUNT + 1))
+    PID=$(echo "$entry" | cut -d'|' -f1)
+    PNAME=$(echo "$entry" | cut -d'|' -f2)
+    PPAT=$(echo "$entry" | cut -d'|' -f3)
+    PSEV=$(echo "$entry" | cut -d'|' -f4)
+
+    MATCHES=$(rg --no-heading -n "$PPAT" --include="*.ts" --include="*.tsx" "$PROJECT_ROOT/src/" 2>/dev/null | head -5 || true)
+    if [[ -n "$MATCHES" ]]; then
+      while IFS= read -r match; do
+        [[ -z "$match" ]] && continue
+        FINDINGS+=("$PSEV|$PID|$match|$PNAME: $PPAT")
+      done <<< "$MATCHES"
+    fi
+  done < <(python3 -c "
+import json, sys
+import pathlib
+# Convert bash /d/ path to Windows D:/ path
+raw = '$PATTERNS_FILE'
+raw = raw.replace('/d/', 'D:/').replace('/c/', 'C:/')
+p = pathlib.Path(raw)
+with open(str(p), encoding='utf-8') as f:
+    patterns = json.load(f)
+for pat in patterns:
+    print(f\"{pat['id']}|{pat['name']}|{pat['pattern']}|{pat['severity']}\")
+")
+
+  P0_COUNT=0; P1_COUNT=0; P2_COUNT=0
+  for f in "${FINDINGS[@]}"; do
+    sev=$(echo "$f" | cut -d'|' -f1)
+    case "$sev" in P0) ((P0_COUNT++)) ;; P1) ((P1_COUNT++)) ;; P2) ((P2_COUNT++)) ;; esac
+  done
+
+  # 写 audit-result.json
+  cat > "$AUDIT_RESULT" <<JSONEOF
+{
+  "ok": true,
+  "generatedAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "totalPatterns": $PATTERN_COUNT,
+  "totalFindings": $(($P0_COUNT + $P1_COUNT + $P2_COUNT)),
+  "p0Count": $P0_COUNT,
+  "p1Count": $P1_COUNT,
+  "p2Count": $P2_COUNT,
+  "findings": [
+JSONEOF
+  FIRST=true
+  for f in "${FINDINGS[@]}"; do
+    $FIRST || echo "," >> "$AUDIT_RESULT"
+    FIRST=false
+    sev=$(echo "$f" | cut -d'|' -f1)
+    pid=$(echo "$f" | cut -d'|' -f2)
+    loc=$(echo "$f" | cut -d'|' -f3)
+    desc=$(echo "$f" | cut -d'|' -f4)
+    echo "    {\"severity\":\"$sev\",\"pattern\":\"$pid\",\"location\":\"$loc\",\"description\":\"$desc\"}" >> "$AUDIT_RESULT"
+  done
+  echo "  ]" >> "$AUDIT_RESULT"
+  echo "}" >> "$AUDIT_RESULT"
+
+  echo "  模式: $PATTERN_COUNT | 发现: $(($P0_COUNT + $P1_COUNT + $P2_COUNT)) (P0: $P0_COUNT / P1: $P1_COUNT / P2: $P2_COUNT)"
+  echo "  输出: $AUDIT_RESULT"
+
+  # 发射信号
+  SIG_ST="green"; SIG_REASON="no_findings"
+  if [[ $P0_COUNT -gt 0 ]]; then SIG_ST="red"; SIG_REASON="${P0_COUNT}_P0_findings"
+  elif [[ $P1_COUNT -gt 0 ]]; then SIG_ST="yellow"; SIG_REASON="${P1_COUNT}_P1_findings"; fi
+  python3 "$SCRIPT_DIR/emit-signal.py" external-auditor "$SIG_ST" "$SIG_REASON" --p0 "$P0_COUNT" --p1 "$P1_COUNT" 2>/dev/null || true
+  exit 0
+fi
+
+# ═══ 原有 --task-id --diff 模式 ═══
+
 if [[ -z "$TASK_ID" || -z "$DIFF_RANGE" ]]; then
-  echo "用法: external-auditor.sh --task-id <ID> --diff <RANGE>"
+  echo "用法: external-auditor.sh --dispatch | --task-id <ID> --diff <RANGE>"
   exit 1
 fi
 

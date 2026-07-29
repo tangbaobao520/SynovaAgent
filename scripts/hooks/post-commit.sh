@@ -33,6 +33,11 @@ if [ -f "$AUDITOR" ]; then
   bash "$AUDITOR" --task-id "D${TASK_ID}" --diff HEAD~1..HEAD 2>&1 | tail -3
 fi
 
+# ═══ D256: 审计器统一入口 — 提交后自动 --dispatch ═══
+if [ -f "$AUDITOR" ]; then
+  bash "$AUDITOR" --dispatch 2>&1 | tail -3
+fi
+
 # ═══ 决策流程 ═══
 bash "$ROOT/scripts/workflow/decide-next.sh" 2>/dev/null &
 exit 0
