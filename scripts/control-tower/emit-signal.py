@@ -33,6 +33,8 @@ def emit_signal(
     p0: int = 0,
     p1: int = 0,
     p2: int = 0,
+    completion_score: float = 0.0,
+    deviation_list: list | None = None,
 ) -> None:
     """写入信号到 .codex/signals/{component}.json。不抛异常。"""
     signal = {
@@ -43,6 +45,8 @@ def emit_signal(
         "p0_count": p0,
         "p1_count": p1,
         "p2_count": p2,
+        "completionScore": completion_score,
+        "deviationList": deviation_list or [],
     }
     try:
         os.makedirs(SIGNALS_DIR, exist_ok=True)
@@ -67,10 +71,14 @@ def main() -> None:
     parser.add_argument("--p0", type=int, default=0, help="P0 计数")
     parser.add_argument("--p1", type=int, default=0, help="P1 计数")
     parser.add_argument("--p2", type=int, default=0, help="P2 计数")
+    parser.add_argument("--completion-score", type=float, default=0.0, help="完成度分数 0-100")
+    parser.add_argument("--deviation-list", default="", help="偏差列表 JSON 字符串")
 
     args = parser.parse_args()
     emit_signal(args.component, args.status, args.reason,
-                p0=args.p0, p1=args.p1, p2=args.p2)
+                p0=args.p0, p1=args.p1, p2=args.p2,
+                completion_score=args.completion_score,
+                deviation_list=json.loads(args.deviation_list) if args.deviation_list else None)
     # 总是 exit 0 — 信号写入失败不阻碍调用方
     sys.exit(0)
 

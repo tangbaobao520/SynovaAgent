@@ -1607,6 +1607,12 @@ class GateChecker:
     #  输出
     # ═════════════════════════════════════════════════════════════════
 
+    # V3 §2.2: 四个条件分组映射（附录A门禁维度→A/B/C/D）
+    CRITERIA_GROUP_MAP = {
+        "基础": "A", "接入": "B", "诊断": "C",
+        "导航": "D", "持续运行": "D", "进化": "D", "控制": "D",
+    }
+
     def write_report(self, output_path: Path) -> None:
         """输出 gate-status.json（附录 A §四格式）"""
         duration_ms = int((time.time() - self.start_time) * 1000)
@@ -1615,6 +1621,23 @@ class GateChecker:
         partial = sum(1 for r in self.results if r.status == "partial")
         failed = sum(1 for r in self.results if r.status == "fail")
         unverifiable = sum(1 for r in self.results if r.status == "unverifiable")
+
+        # V3 §2.2: 门禁按条件分组
+        criteria_groups: dict[str, dict] = {
+            "A": {"gates": [], "completionPct": 0.0, "total": 0, "passed": 0},
+            "B": {"gates": [], "completionPct": 0.0, "total": 0, "passed": 0},
+            "C": {"gates": [], "completionPct": 0.0, "total": 0, "passed": 0},
+            "D": {"gates": [], "completionPct": 0.0, "total": 0, "passed": 0},
+        }
+        for r in self.results:
+            letter = self.CRITERIA_GROUP_MAP.get(r.dimension, "D")
+            group = criteria_groups[letter]
+            group["total"] += 1
+            if r.status == "pass":
+                group["passed"] += 1
+        for letter, group in criteria_groups.items():
+            if group["total"] > 0:
+                group["completionPct"] = round(group["passed"] / group["total"] * 100, 1)
 
         weight_map = {"pass": 1.0, "partial": 0.5, "fail": 0.0, "unverifiable": 0.0}
         total_weight = sum(weight_map.get(r.status, 0.0) for r in self.results)
@@ -1633,14 +1656,43 @@ class GateChecker:
                 "weightedProgress": weighted_progress,
             },
             "healthCheck": self.health_result or {},
+            # D261: 条件分组
+            "criteriaGroups": {
+                k: {"completionPct": v["completionPct"], "total": v["total"], "passed": v["passed"]}
+                for k, v in criteria_groups.items()
+            },
         }
 
-        output_path.parent.mkdir(parents=True, exist_ok=True)
+        # D261: 快照写入 snapshots/{ts}/ + 条件分组
         import tempfile
+        import subprocess as _sp
+        from datetime import timezone as _tz
+
+        output_path.parent.mkdir(parents=True, exist_ok=True)
         fd, tmp = tempfile.mkstemp(dir=str(output_path.parent), suffix=".json")
         with os.fdopen(fd, "w", encoding="utf-8") as f:
             json.dump(report, f, ensure_ascii=False, indent=2)
         os.replace(tmp, str(output_path))
+
+        # D261: 快照写入 snapshots/{ts}/
+        try:
+            ts = datetime.now(_tz).strftime("%Y%m%d-%H%M%S")
+            snap_dir = PROJECT_ROOT / ".codex" / "snapshots" / ts
+            snap_dir.mkdir(parents=True, exist_ok=True)
+            snap_gate = snap_dir / "gate-status.json"
+            fd2, tmp2 = tempfile.mkstemp(dir=str(snap_dir), suffix=".json")
+            with os.fdopen(fd2, "w", encoding="utf-8") as f:
+                json.dump(report, f, ensure_ascii=False, indent=2)
+            os.replace(tmp2, str(snap_gate))
+            comp_engine = PROJECT_ROOT / "scripts/audit/completion-engine.py"
+            if comp_engine.exists():
+                _sp.run(
+                    [sys.executable, str(comp_engine), "--quiet"],
+                    cwd=str(PROJECT_ROOT), timeout=30, capture_output=True,
+                )
+            self.log(f"  快照: {snap_dir}")
+        except Exception as e:
+            self.log(f"  快照写入失败(降级): {e}")
 
         self.log(f"\n{'=' * 50}")
         status_icons = {"pass": "✅", "partial": "⚠️", "fail": "❌", "unverifiable": "❓"}

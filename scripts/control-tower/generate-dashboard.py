@@ -31,6 +31,15 @@ from typing import List, Dict, Optional, Any
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 
+# D261: views module imports (fallback)
+_HAS_VIEWS = False
+try:
+    from views.pm_dashboard import render_pm
+    from views.completion import render_completion
+    _HAS_VIEWS = True
+except ImportError:
+    pass
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  数据采集
@@ -284,6 +293,16 @@ def render_html(data: Dict[str, Any]) -> str:
     signals = data.get("signals", {})
 
     # 信号卡片 HTML
+    # D261: inject views
+    _pm_html = ""
+    _completion_html = ""
+    if _HAS_VIEWS:
+        try:
+            _pm_html = render_pm(data)
+            _completion_html = render_completion(data)
+        except Exception:
+            pass
+
     signal_cards = ""
     status_icons = {"green": "&#9679;", "yellow": "&#9679;", "red": "&#9679;", "unknown": "&#9678;"}
     status_colors = {"green": "#22c55e", "yellow": "#f59e0b", "red": "#ef4444", "unknown": "#6b7280"}
@@ -464,6 +483,10 @@ h2 {{ font-size:15px; margin:20px 0 10px; color:#94a3b8; text-transform:uppercas
         {signal_cards}
     </div>
 </div>
+
+<!-- D261: PM 仪表盘 + 完成度视图 -->
+{_pm_html}
+{_completion_html}
 
 <div class="grid">
     <div class="card">
