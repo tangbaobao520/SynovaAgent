@@ -36,6 +36,8 @@ while [[ $# -gt 0 ]]; do
     --task-id) TASK_ID="$2"; shift 2 ;;
     --diff) DIFF_RANGE="$2"; shift 2 ;;
     --dispatch) DISPATCH="true"; shift ;;
+    --audit) AUDIT="true"; shift ;;
+    --target) TARGET_FILES="$2"; shift 2 ;;
     *) echo "未知参数: $1"; exit 1 ;;
   esac
 done
@@ -63,7 +65,8 @@ if [[ -n "$DISPATCH" ]]; then
   while IFS= read -r entry; do
     [[ -z "$entry" ]] && continue
     PATTERN_COUNT=$((PATTERN_COUNT + 1))
-    ENTRY_CLEAN=$(printf '%s' "$entry" | tr -d '')
+    ENTRY_CLEAN=$(printf '%s' "$entry" | tr -d '
+')
     PID=$(printf '%s' "$ENTRY_CLEAN" | cut -d'|' -f1)
     PNAME=$(printf '%s' "$ENTRY_CLEAN" | cut -d'|' -f2)
     PPAT=$(printf '%s' "$ENTRY_CLEAN" | cut -d'|' -f3)
