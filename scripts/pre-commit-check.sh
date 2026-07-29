@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering V4.5.0 — pre-commit 8 组硬阻断 (全部 <10s) + 免疫系统
+# Loop Engineering V4.5.0 — pre-commit 9 组硬阻断 (全部 <10s) + 免疫系统
 #
 # v3.6 → v3.8 核心变化 (2026-06-23):
 #   + plan.json 支持: 分阶段任务可 deferred wiring/test_pairing 检查
@@ -9,15 +9,16 @@
 #   + bash 退位: 只做物理验证 (符号存在? 文件存在? 语法合法?)
 #   + agent 进位: 语义判断 (调用链正确? 降级诚实? 阶段合理?)
 #
-# 8 组 (不变):
+# 9 组:
 #   1. 类型安全 + 硬编码数据    (as any 跳过注释行 + 硬编码业务字段)
 #   2. 测试质量                  (catch 无 log + 测试配对[可 deferred] + 桩测试)
 #   3. Secrets                   (全工作区 + .claude/ + 暂存区 + .env)
-#   4. 接线完整性               (新 export 有调用方[可 deferred] + 接线深度)
+#   4. 接线完整性               (new export 有调用方[可 deferred] + 接线深度)
 #   5. 架构边界 + 桥接文件      (跨层引用 + 铁律 46/47)
 #   6. Task Brief                (存在 + 6 核心字段: Q0/Q1/Q2/Q3/架构层/Done)
 #   7. 架构合规                  (DiagnosticModule + 专家配置 + 数据流)
 #   8. 文件驱动架构完整性       (manifest/tags/回归/目录/feature-flag)
+#   9. 契约门禁 NEW (D257)       (.codex/contracts/*.json 声明 vs staged 比对)
 #
 # 设计哲学:
 #   bash 只回答"物理事实" — 符号被引用过吗？文件存在吗？
@@ -145,7 +146,7 @@ NEW_IMPL=$(git diff --cached --name-only --diff-filter=A 2>/dev/null | grep -E "
 
 echo ""
 echo "═══════════════════════════════════════════════════════════"
-echo "  Loop Engineering V4.5.0 — pre-commit (8 组 + 免疫 + plan-integrity)"
+echo "  Loop Engineering V4.5.0 — pre-commit (9 组 + 免疫 + plan-integrity)"
 echo "═══════════════════════════════════════════════════════════"
 echo ""
 
@@ -637,6 +638,34 @@ bash "$ROOT/scripts/check-acceptance-ci.sh"
 bash "$ROOT/scripts/check-file-driven.sh"
 [ $? -ne 0 ] && HARD_FAIL=$((HARD_FAIL + 1))
 
+# ═══ 组 9/9: 契约门禁 (D257) ═══
+echo -e "${CYAN}── 组 9/9: 契约门禁 ──${RESET}"
+CONTRACT_DIR="$ROOT/.codex/contracts"
+CONTRACT_FAIL=""
+if [ -d "$CONTRACT_DIR" ] && [ "$(ls -A "$CONTRACT_DIR" 2>/dev/null)" ]; then
+  for cf in "$CONTRACT_DIR"/*.json; do
+    [ ! -f "$cf" ] && continue
+    # 从 contract.json 提取声明产出文件列表
+    DECLARED=$(python -c "
+import json, sys
+try:
+    d = json.load(open('$cf'))
+    items = d if isinstance(d, list) else [d]
+    for i in items:
+        fp = i.get('filePath', '')
+        if fp: print(fp)
+except: pass
+" 2>/dev/null || true)
+    for df in $DECLARED; do
+      [ -z "$df" ] && continue
+      if ! echo "$STAGED_ALL" | grep -qF "$df"; then
+        CONTRACT_FAIL="${CONTRACT_FAIL}  ${cf##*/}: 声明产出 $df — 不在暂存区\n"
+      fi
+    done
+  done
+fi
+hard_check "契约门禁: 声明产出须在暂存区" "${CONTRACT_FAIL:-}"
+
 # ═══════════════════════════════════════════════════════════════════
 # 结果
 # ═══════════════════════════════════════════════════════════════════
@@ -649,7 +678,7 @@ if [ "$HARD_FAIL" -gt 0 ]; then
   echo ""
   exit 1
 else
-  echo -e "  ${GREEN}✅ 全部 8 组通过${RESET}"
+  echo -e "  ${GREEN}✅ 全部 9 组通过${RESET}"
   [ "$WARN_COUNT" -gt 0 ] && echo -e "  ${YELLOW}⚠️  ${WARN_COUNT} 项警告 (不阻断)${RESET}"
   echo "═══════════════════════════════════════════════════════════"
   echo ""
