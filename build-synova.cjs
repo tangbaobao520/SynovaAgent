@@ -29,27 +29,13 @@ module.exports = {
   },
 
   files: [
-    'electron/**/*',
-    '!electron/node_modules/**',
+    'electron/main.cjs',
+    'electron/preload.cjs',
+    'electron/config.json',
+    'electron/icon.png',
     'package.json',
-    'node_modules/electron/**/*',
     '!node_modules/.cache/**',
     '!node_modules/electron-builder/**',
-    '!tests/**',
-    '!docs/**',
-    '!**/*.map',
-    '!**/*.test.ts',
-    '!src/**',
-    '!tsconfig.json',
-    '!app/**',
-  ],
-
-  extraResources: [
-    {
-      from: 'synova_worker/',
-      to: 'synova_worker/',
-      filter: ['**/*.py', 'requirements.txt'],
-    },
   ],
 
   win: {
