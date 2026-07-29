@@ -2,6 +2,9 @@
 # ═══════════════════════════════════════════════════════════════════════════════
 # Loop Engineering V4.5.0 — PreToolUse: task brief 质量检查
 #
+# D258: 包含原 hook-block-no-q0.sh 全部功能（Q0 存在性 + Q0a/b 内容检查合并至此）。
+# 原 scripts/hook-block-no-q0.sh 已删除，功能被本文件完全覆盖。
+#
 # 挂在 PreToolUse → Edit|Write 上，在 hook-check-memory.sh 之后运行。
 # 7 项字段质量检查 + 接口真实性反向验证 + 层级确认。
 #
