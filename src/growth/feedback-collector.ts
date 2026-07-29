@@ -295,3 +295,8 @@ export class FeedbackCollector {
 
 /** 全局单例 */
 export const feedbackCollector = new FeedbackCollector();
+
+/** D262: 单例工厂 — 获取全局 FeedbackCollector 实例 */
+export function getFeedbackCollector(): FeedbackCollector {
+  return feedbackCollector;
+}

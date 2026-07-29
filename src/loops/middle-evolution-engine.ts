@@ -12,7 +12,7 @@
  * 铁律 38: 零 as any
  */
 import { createLogger } from '@synova/logger';
-import type { AggregatedSignal } from '../growth/feedback-collector';
+import { getFeedbackCollector, type FeedbackCollector, type AggregatedSignal } from '../growth/feedback-collector';
 
 const log = createLogger('loops/middle-evolution-engine');
 
@@ -128,6 +128,25 @@ export function processFeedbackSignals(signals: AggregatedSignal[]): EvolutionAc
 
     if (actions.length > 0) {
       log.info({ actionCount: actions.length }, '进化信号处理完成');
+      // D262: GA 反馈记录 — 写入 FeedbackCollector
+      try {
+        const fb = getFeedbackCollector();
+        for (const action of actions) {
+          fb.collectFeedback({
+            enterpriseId: 'synova',
+            actorId: 'system:middle-evolution-engine',
+            decision: 'accept',
+            targetType: 'sentinel_alert',
+            targetId: action.type,
+            reason: action.reason,
+            source: 'middle_evolution',
+            eligibility: 'confirmed',
+          });
+        }
+        log.info({ count: actions.length }, 'GA 反馈已记录');
+      } catch (err) {
+        log.warn({ err }, 'GA 反馈记录失败 — 降级');
+      }
     }
 
     return actions;
