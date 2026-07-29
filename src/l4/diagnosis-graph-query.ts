@@ -13,7 +13,7 @@ import { createLogger } from '@synova/logger';
 
 const log = createLogger('l4/diagnosis-graph-query');
 
-interface GraphStoreLike {
+export interface GraphStoreLike {
   queryNodes(type: string, filters?: Record<string, unknown>, graph?: string): Array<{ id: string; type: string; props: Record<string, unknown> }>;
   queryEdges(type?: string, from?: string, to?: string, graph?: string): Array<{ id: string; type: string; from: string; to: string; weight: number; props: Record<string, unknown> }>;
 }
