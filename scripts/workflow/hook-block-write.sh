@@ -308,6 +308,25 @@ if [ -n "$TASK_LAYER" ] && ! echo "$FILE" | grep -qE '\.claude/|scripts/workflow
   fi
 fi
 
+# ═══ V3 CP1: 条件归属验证 (#CRITERIA) ═══
+CRITERIA=$(grep -oP '#CRITERIA\s*[:=]\s*\K[A-D]' "$BRIEF" 2>/dev/null || true)
+if [ -z "$CRITERIA" ]; then
+  echo "[V3-CP1] 缺少 #CRITERIA 条件归属(A/B/C/D) — 标记为 pending（不阻断）"
+else
+  echo "[V3-CP1] 条件归属: $CRITERIA"
+fi
+
+# V3: 写检查点文件
+mkdir -p "$ROOT/.codex/checkpoints"
+cat > "$ROOT/.codex/checkpoints/cp1-criteria.json" <<CP1EOF
+{
+  "name": "CP1: 条件归属",
+  "status": "$([ -z "$CRITERIA" ] && echo 'warn' || echo 'pass')",
+  "reason": "$([ -z "$CRITERIA" ] && echo '缺少 #CRITERIA' || echo "条件: $CRITERIA")",
+  "checkedAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+CP1EOF
+
 # ═══ V4.5.0: 改前先 grep 全仓库引用 — 物理阻断 ═══
 # 写代码前必须运行 grep-refs.sh 生成引用地图，否则拒绝 Write/Edit
 GATE="$ROOT/.claude/grep-verified"

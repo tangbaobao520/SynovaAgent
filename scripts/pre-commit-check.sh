@@ -44,6 +44,11 @@ hard_check() {
   fi
 }
 
+soft_pass() {
+  local name="$1"
+  echo -e "  ${GREEN}✅ ${name}${RESET}"
+}
+
 warn_check() {
   local name="$1" matches="$2"
   local count=0
@@ -665,6 +670,94 @@ except: pass
   done
 fi
 hard_check "契约门禁: 声明产出须在暂存区" "${CONTRACT_FAIL:-}"
+
+# ═══ 组 10/11: V3 CP3 — 条件区域 + 测试覆盖 (D260) ═══
+echo ""
+echo -e "${CYAN}── 组 10/11: V3 流水线健康度 ──${RESET}"
+
+CRITERIA_MAP="$ROOT/.codex/criteria-code-map.json"
+if [ -f "$CRITERIA_MAP" ]; then
+  # V3 CP3-1: G10 条件区域检查 — 暂存的文件是否在声明的条件区域内
+  BRIEF_FILE=$(echo "$CHANGED_FILES" | grep -m1 "\.claude/task-briefs/" || true)
+  if [ -n "$BRIEF_FILE" ]; then
+    BRIEF_PATH="$ROOT/$BRIEF_FILE"
+    CRITERIA=$(grep -oP '#CRITERIA\s*[:=]\s*\K[A-D]' "$BRIEF_PATH" 2>/dev/null || true)
+    if [ -n "$CRITERIA" ]; then
+      # 读取条件代码映射
+      CRITERIA_GLOBS=$(python -c "
+import json
+with open('$CRITERIA_MAP') as f:
+    m = json.load(f)
+g = m.get('criteria', {}).get('$CRITERIA', {}).get('glob', [])
+for gx in g:
+    print(gx)
+" 2>/dev/null || true)
+      REGEX_GLOBS=""
+      while IFS= read -r gx; do
+        [ -z "$gx" ] && continue
+        # 转换 glob 到 grep 正则
+        REGEX=$(echo "$gx" | sed 's/\*/.*/g; s/?/./g')
+        REGEX_GLOBS="${REGEX_GLOBS}|${REGEX}"
+      done <<< "$CRITERIA_GLOBS"
+      REGEX_GLOBS="${REGEX_GLOBS#|}"
+      if [ -n "$REGEX_GLOBS" ]; then
+        MISMATCH=""
+        for sf in $STAGED_FILES; do
+          if ! echo "$sf" | grep -qE "($REGEX_GLOBS)"; then
+            MISMATCH="${MISMATCH}  $sf (不在条件 $CRITERIA 的映射区域内)\n"
+          fi
+        done
+        if [ -n "$MISMATCH" ]; then
+          warn_check "G10: 条件区域不匹配" "$MISMATCH"
+        else
+          soft_pass "G10: 条件区域检查通过 ($CRITERIA)"
+        fi
+      else
+        soft_pass "G10: 条件 $CRITERIA 无映射区域(跳过)"
+      fi
+    else
+      soft_pass "G10: 无条件归属(跳过)"
+    fi
+  else
+    soft_pass "G10: 无 task brief 变更(跳过)"
+  fi
+
+  # V3 CP3-2: G11 测试覆盖检查
+  BRIEF_ID=$(echo "$STAGED_FILES" | grep -oP '\.claude/task-briefs/\K[^.]+' | head -1 || true)
+  if [ -n "$BRIEF_ID" ]; then
+    BRIEF_PATH="$ROOT/.claude/task-briefs/${BRIEF_ID}.md"
+    if [ -f "$BRIEF_PATH" ]; then
+      HAS_E2E=$(grep -c "端到端\|e2e\|curl.*200\|HTTP.*200" "$BRIEF_PATH" 2>/dev/null || true)
+      HAS_TESTS=$(echo "$STAGED_FILES" | grep -c "\.test\.ts" 2>/dev/null || true)
+      if [ "$HAS_E2E" -gt 0 ] && [ "$HAS_TESTS" -eq 0 ]; then
+        warn_check "G11: 声明的端到端验收但无测试文件" "$BRIEF_ID 声明了端到端验收，但暂存区无测试文件"
+      else
+        soft_pass "G11: 测试覆盖检查通过"
+      fi
+    else
+      soft_pass "G11: task brief 不存在(跳过)"
+    fi
+  else
+    soft_pass "G11: 无 task brief 变更(跳过)"
+  fi
+else
+  soft_pass "G10/G11: criteria-code-map.json 不存在(跳过)"
+fi
+
+# V3: 写 CP3 检查点
+mkdir -p "$ROOT/.codex/checkpoints"
+G10_FAIL=$([ -n "$MISMATCH" ] && echo "true" || echo "false")
+G11_FAIL=$([ "$HAS_E2E" -gt 0 ] && [ "$HAS_TESTS" -eq 0 ] && echo "true" || echo "false")
+CP3_STATUS="pass"; CP3_REASON="全部通过"
+if [ "$G10_FAIL" = "true" ]; then CP3_STATUS="warn"; CP3_REASON="有条件区域不匹配"; fi
+if [ "$G11_FAIL" = "true" ]; then CP3_STATUS="warn"; CP3_REASON="有验收无测试"; fi
+python -c "
+import json, os
+d = {'name':'CP3: 预提交检查','status':'$CP3_STATUS','reason':'$CP3_REASON','checkedAt':'$(date -u +%Y-%m-%dT%H:%M:%SZ)'}
+os.makedirs('$ROOT/.codex/checkpoints', exist_ok=True)
+with open('$ROOT/.codex/checkpoints/cp3-commit-check.json','w') as f:
+    json.dump(d, f)
+" 2>/dev/null || true
 
 # ═══════════════════════════════════════════════════════════════════
 # 结果

@@ -166,6 +166,68 @@ case "$TASK_ID" in
     ;;
 esac
 
+# ═══ V3 CP2: 条件归属 + 验收覆盖 + 引用有效性 ═══
+echo ""
+echo "## V3 CP2: DevDoc 审计扩展"
+echo ""
+
+BRIEF="$ROOT/.claude/task-briefs/$TASK_ID"
+if [ -f "$BRIEF" ]; then
+  # 1. 条件归属
+  CRITERIA=$(grep -oP '#CRITERIA\s*[:=]\s*\K[A-D]' "$BRIEF" 2>/dev/null || true)
+  if [ -n "$CRITERIA" ]; then
+    echo "  ✅ CP2-1 条件归属: $CRITERIA"
+  else
+    echo "  ⚠️ CP2-1 条件归属: 未指定"
+  fi
+
+  # 2. 验收标准覆盖
+  if grep -qi "Done 标准\|Done\|完成标准" "$BRIEF" 2>/dev/null; then
+    echo "  ✅ CP2-2 验收标准: 章节存在"
+    # 检查是否有端到端路径
+    if grep -qi "端到端\|e2e\|curl\|http\|endpoint" "$BRIEF" 2>/dev/null; then
+      echo "  ✅ CP2-2 端到端描述: 存在"
+    else
+      echo "  ⚠️ CP2-2 端到端描述: 建议补充"
+    fi
+  else
+    echo "  ⚠️ CP2-2 验收标准: 缺少 Done 标准章节"
+  fi
+
+  # 3. 引用有效性
+  DOC_REFS=$(grep -oP 'docs/synova/research/[^\s\)\]"'"'"'》；,;]+' "$BRIEF" 2>/dev/null || true)
+  if [ -n "$DOC_REFS" ]; then
+    echo "  📄 CP2-3 文档引用:"
+    while IFS= read -r ref; do
+      [ -z "$ref" ] && continue
+      FULL_PATH="$ROOT/$ref"
+      if [ -f "$FULL_PATH" ] || [ -d "$FULL_PATH" ]; then
+        echo "    ✅ $ref"
+      else
+        echo "    ❌ $ref (文件不存在)"
+      fi
+    done <<< "$DOC_REFS"
+  else
+    echo "  ⚪ CP2-3 文档引用: 无（跳过）"
+  fi
+else
+  echo "  ⚠️ task brief 不存在: $BRIEF — 跳过 CP2"
+fi
+
+# V3: 写检查点
+mkdir -p "$ROOT/.codex/checkpoints"
+CP2_STATUS="pass"; CP2_REASON="全部通过"
+if [ -z "$CRITERIA" ]; then CP2_STATUS="warn"; CP2_REASON="条件归属未指定"; fi
+cat > "$ROOT/.codex/checkpoints/cp2-doc-audit.json" <<CP2EOF
+{
+  "name": "CP2: DevDoc 审计",
+  "status": "$CP2_STATUS",
+  "reason": "$CP2_REASON",
+  "checkedAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+CP2EOF
+
+echo ""
 echo "=== 审计完成 ==="
 echo ""
 echo "下一步：将以上输出粘贴到技术文档的 Phase -1 审计表格中。"
