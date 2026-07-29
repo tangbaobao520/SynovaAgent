@@ -63,12 +63,13 @@ if [[ -n "$DISPATCH" ]]; then
   while IFS= read -r entry; do
     [[ -z "$entry" ]] && continue
     PATTERN_COUNT=$((PATTERN_COUNT + 1))
-    PID=$(echo "$entry" | cut -d'|' -f1)
-    PNAME=$(echo "$entry" | cut -d'|' -f2)
-    PPAT=$(echo "$entry" | cut -d'|' -f3)
-    PSEV=$(echo "$entry" | cut -d'|' -f4)
+    ENTRY_CLEAN=$(printf '%s' "$entry" | tr -d '')
+    PID=$(printf '%s' "$ENTRY_CLEAN" | cut -d'|' -f1)
+    PNAME=$(printf '%s' "$ENTRY_CLEAN" | cut -d'|' -f2)
+    PPAT=$(printf '%s' "$ENTRY_CLEAN" | cut -d'|' -f3)
+    PSEV=$(printf '%s' "$ENTRY_CLEAN" | cut -d'|' -f4)
 
-    MATCHES=$(rg --no-heading -n "$PPAT" --include="*.ts" --include="*.tsx" "$PROJECT_ROOT/src/" 2>/dev/null | head -5 || true)
+    MATCHES=$(grep -rnE "$PPAT" "$PROJECT_ROOT/src/" --include="*.ts" --include="*.tsx" 2>/dev/null | head -5 || true)
     if [[ -n "$MATCHES" ]]; then
       while IFS= read -r match; do
         [[ -z "$match" ]] && continue
@@ -76,16 +77,15 @@ if [[ -n "$DISPATCH" ]]; then
       done <<< "$MATCHES"
     fi
   done < <(python3 -c "
-import json, sys
-import pathlib
-# Convert bash /d/ path to Windows D:/ path
+import json, sys, os, pathlib
 raw = '$PATTERNS_FILE'
 raw = raw.replace('/d/', 'D:/').replace('/c/', 'C:/')
 p = pathlib.Path(raw)
 with open(str(p), encoding='utf-8') as f:
     patterns = json.load(f)
 for pat in patterns:
-    print(f\"{pat['id']}|{pat['name']}|{pat['pattern']}|{pat['severity']}\")
+    # Write raw bytes to stdout to avoid backslash eating
+    sys.stdout.buffer.write(f\"{pat['id']}|{pat['name']}|{pat['pattern']}|{pat['severity']}\\n\".encode('utf-8'))
 ")
 
   P0_COUNT=0; P1_COUNT=0; P2_COUNT=0
