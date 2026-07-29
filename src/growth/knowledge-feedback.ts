@@ -81,6 +81,8 @@ export interface GoalExecutionKnowledge {
   reusableAdvice: string;
   /** 创建时间 */
   createdAt: string;
+  /** D264: 诊断质量评分 (0.0-1.0). 基于 confidence + outcome 自动计算. >=0.7 healthy */
+  diagnosisQualityScore?: number;
 }
 
 /** 写入 PKB 所需的存储接口（DI 模式） */
@@ -285,6 +287,7 @@ export function extractGoalKnowledge(
     lessons: generateLessons(deviation.classifier, metricComparisons),
     reusableAdvice: generateAdvice(deviation.classifier, dimension),
     createdAt: now,
+    diagnosisQualityScore: deviation.confidence * 0.7 + (outcome === 'achieved' ? 0.3 : 0),
   };
 }
 

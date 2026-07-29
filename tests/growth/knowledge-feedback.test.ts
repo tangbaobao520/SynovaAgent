@@ -114,6 +114,23 @@ describe('extractGoalKnowledge — 知识提取', () => {
     expect(knowledge.createdAt).toBeTruthy();
   });
 
+  it('diagnosisQualityScore 字段存在且符合公式', async () => {
+    const { extractGoalKnowledge } = await import('../../src/growth/knowledge-feedback');
+    const goal = makeGoal();
+    const achieved = extractGoalKnowledge(goal, 'achieved', [
+      { metricName: '净利润率', target: 8, actual: 9, met: true },
+    ]);
+    expect(achieved.diagnosisQualityScore).toBeDefined();
+    expect(achieved.diagnosisQualityScore).toBeGreaterThanOrEqual(0);
+    expect(achieved.diagnosisQualityScore).toBeLessThanOrEqual(1);
+
+    const failed = extractGoalKnowledge(goal, 'not_achieved', [
+      { metricName: '净利润率', target: 8, actual: 6, met: false },
+    ]);
+    expect(failed.diagnosisQualityScore).toBeDefined();
+    expect(failed.diagnosisQualityScore).toBeLessThan(achieved.diagnosisQualityScore!);
+  });
+
   it('achieved 状态提取正常', async () => {
     const { extractGoalKnowledge } = await import('../../src/growth/knowledge-feedback');
     const goal = makeGoal();
