@@ -98,7 +98,7 @@ ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 # ═══ D201 L3: bypass 阻断 — 今日任何绕过记录 → 硬阻断 ═══
 BYPASS_LOG="$ROOT/.claude/bypass.log"
 if [ -f "$BYPASS_LOG" ]; then
-  TODAY=$(date -u +%Y-%m-%d)
+  TODAY=$(date +%Y-%m-%d)
   BYPASS_COUNT=$(grep -c "$TODAY" "$BYPASS_LOG" 2>/dev/null || echo 0)
   if [ "$BYPASS_COUNT" -gt 0 ]; then
     echo "[GATEKEEPER] 检测到今日 ${BYPASS_COUNT} 次 --no-verify 绕过记录"
@@ -744,6 +744,108 @@ else
   soft_pass "G10/G11: criteria-code-map.json 不存在(跳过)"
 fi
 
+# ═══ 组 12/12: Task Scope 一致性 — 暂存文件 vs Q2 范围 ═══
+echo ""
+echo -e "${CYAN}── 组 12/12: Task Scope 一致性 ──${RESET}"
+
+TODAY=$(date +%Y-%m-%d)
+BRIEFS=$(find "$ROOT/.claude/task-briefs/" -maxdepth 1 -name "*.md" -newermt "$TODAY 00:00:00" 2>/dev/null | sort || true)
+SCOPE_VIOLATION=""
+
+if [ -n "$BRIEFS" ] && [ -n "$STAGED_ALL" ]; then
+  # 收集所有今日 brief 的 Q2 范围路径（取并集）
+  ALL_SCOPE_PATHS=""
+  ALL_EXCLUDE_PATHS=""
+  while IFS= read -r BRIEF; do
+    [ -z "$BRIEF" ] && continue
+    BRIEF_SCOPE=$(awk '
+/^## Q2:/ { in_q2=1; in_include=0; in_exclude=0 }
+in_q2 && /^## / && !/^## Q2/ { exit }
+in_q2 && /^不做什么/ { in_exclude=1; in_include=0 }
+in_q2 && /^做什么/ { in_include=1; in_exclude=0; next }
+in_q2 && in_include && /^- / {
+    line = $0
+    sub(/^- /, "", line)
+    path = line
+    gsub(/:.*$/, "", path)
+    gsub(/：.*$/, "", path)
+    gsub(/ — .*$/, "", path)
+    gsub(/^ +| +$/, "", path)
+    if (length(path) > 0) print path
+}
+' "$BRIEF" 2>/dev/null || true)
+    ALL_SCOPE_PATHS="${ALL_SCOPE_PATHS}${BRIEF_SCOPE}"$'\n'
+
+    BRIEF_EXCLUDE=$(awk '
+/^## Q2:/ { in_q2=1; in_include=0; in_exclude=0 }
+in_q2 && /^## / && !/^## Q2/ { exit }
+in_q2 && /^不做什么/ { in_exclude=1; in_include=0 }
+in_q2 && in_exclude && /^- / {
+    line = $0
+    sub(/^- /, "", line)
+    sub(/不修改/, "", line)
+    sub(/不涉及/, "", line)
+    sub(/不包括/, "", line)
+    path = line
+    gsub(/:.*$/, "", path)
+    gsub(/（.*$/, "", path)
+    gsub(/\(.*$/, "", path)
+    gsub(/^ +| +$/, "", path)
+    if (length(path) > 0) print path
+}
+' "$BRIEF" 2>/dev/null || true)
+    ALL_EXCLUDE_PATHS="${ALL_EXCLUDE_PATHS}${BRIEF_EXCLUDE}"$'\n'
+  done <<< "$BRIEFS"
+
+  # 检查每个暂存文件
+  for sf in $STAGED_ALL; do
+      # 跳过例外路径
+      if echo "$sf" | grep -qE '\.claude/|scripts/workflow/|\.codex/|memory/|docs/|\.github/'; then
+        continue
+      fi
+      # 只检查代码文件
+      if ! echo "$sf" | grep -qE '\.(ts|tsx|js|jsx|json|py|sh)$'; then
+        continue
+      fi
+
+      # 检查是否在排除项中（不做什么）
+      if [ -n "$ALL_EXCLUDE_PATHS" ]; then
+        EXCLUDED=0
+        while IFS= read -r ex_path; do
+          [ -z "$ex_path" ] && continue
+          EX_ESC=$(echo "$ex_path" | sed 's/[.[\*^$()+?{|\\]/\\&/g')
+          if echo "$sf" | grep -qE "(^|/)$EX_ESC$"; then
+            SCOPE_VIOLATION="${SCOPE_VIOLATION}  $sf (Q2 排除项禁止修改: $ex_path)"$'\n'
+            EXCLUDED=1
+            break
+          fi
+        done <<< "$ALL_EXCLUDE_PATHS"
+        [ "$EXCLUDED" -eq 1 ] && continue
+      fi
+
+      # 检查是否在范围内
+      IN_SCOPE=0
+      while IFS= read -r scope_path; do
+        [ -z "$scope_path" ] && continue
+        SCOPE_ESC=$(echo "$scope_path" | sed 's/[.[\*^$()+?{|\\]/\\&/g')
+        if echo "$sf" | grep -qE "(^|/)$SCOPE_ESC$"; then
+          IN_SCOPE=1
+          break
+        fi
+      done <<< "$ALL_SCOPE_PATHS"
+
+      if [ "$IN_SCOPE" -eq 0 ]; then
+        SCOPE_VIOLATION="${SCOPE_VIOLATION}  $sf (不在 Q2 范围内)"$'\n'
+      fi
+    done
+fi
+
+if [ -n "$SCOPE_VIOLATION" ]; then
+  hard_check "G12: task brief Q2 范围一致性" "$SCOPE_VIOLATION"
+else
+  soft_pass "G12: 所有文件均在 Q2 范围内"
+fi
+
 # V3: 写 CP3 检查点
 mkdir -p "$ROOT/.codex/checkpoints"
 G10_FAIL=$([ -n "$MISMATCH" ] && echo "true" || echo "false")
@@ -771,7 +873,7 @@ if [ "$HARD_FAIL" -gt 0 ]; then
   echo ""
   exit 1
 else
-  echo -e "  ${GREEN}✅ 全部 9 组通过${RESET}"
+  echo -e "  ${GREEN}✅ 全部 12 组通过${RESET}"
   [ "$WARN_COUNT" -gt 0 ] && echo -e "  ${YELLOW}⚠️  ${WARN_COUNT} 项警告 (不阻断)${RESET}"
   echo "═══════════════════════════════════════════════════════════"
   echo ""

@@ -386,7 +386,8 @@ router.get('/api/enterprise/ima/sync/status', (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
     const binding = imaBindings.get(orgId);
-    return res.json({ ok: true, data: { orgId, lastSyncAt: binding?.lastSyncAt || null, status: binding?.status || 'not_bound' } });
+    const imaSt = binding?.status || 'not_bound';
+return res.json({ ok: true, data: { orgId, lastSyncAt: binding?.lastSyncAt || null, status: imaSt } });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     log.error({ err }, '查询IMA同步状态失败');
