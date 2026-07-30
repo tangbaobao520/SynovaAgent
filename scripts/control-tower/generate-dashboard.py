@@ -36,6 +36,8 @@ _HAS_VIEWS = False
 try:
     from views.pm_dashboard import render_pm
     from views.completion import render_completion
+    from views.workflow_graph import render_workflow
+    from views.agent_health import render_agent
     _HAS_VIEWS = True
 except ImportError:
     pass
@@ -296,10 +298,14 @@ def render_html(data: Dict[str, Any]) -> str:
     # D261: inject views
     _pm_html = ""
     _completion_html = ""
+    _workflow_html = ""
+    _agent_html = ""
     if _HAS_VIEWS:
         try:
             _pm_html = render_pm(data)
             _completion_html = render_completion(data)
+            _workflow_html = render_workflow()
+            _agent_html = render_agent()
         except Exception:
             pass
 
@@ -487,6 +493,10 @@ h2 {{ font-size:15px; margin:20px 0 10px; color:#94a3b8; text-transform:uppercas
 <!-- D261: PM 仪表盘 + 完成度视图 -->
 {_pm_html}
 {_completion_html}
+
+<!-- D271: 工作流图 + Agent 链路健康 -->
+{_workflow_html}
+{_agent_html}
 
 <div class="grid">
     <div class="card">
