@@ -109,6 +109,12 @@ export class ProactivePush {
   private dedupCache: Map<string, number>;
   /** D272: 去重窗口 (5分钟) */
   private readonly DEDUP_WINDOW_MS = 300_000;
+  /** D272: 去重缓存最大条目 (超过后淘汰 oldest 25%) */
+  private readonly MAX_DEDUP_SIZE = 1000;
+  /** D272: 过期条目保留的宽限期 (超过后 sweep 清理) */
+  private readonly DEDUP_SWEEP_GRACE_MS = 600_000; // 10 min (2x window)
+  /** D272: sweep 调用计数器 (每 32 次完整 onP0Finding 执行一次 sweep) */
+  private sweepCounter = 0;
 
   constructor(
     channels: PushChannel[],
@@ -190,6 +196,32 @@ export class ProactivePush {
       }];
     }
     this.dedupCache.set(dedupKey, now);
+
+    // D272: 去重缓存家政 — 上限保护 + 过期条目 sweep
+    if (this.dedupCache.size > this.MAX_DEDUP_SIZE) {
+      // 淘汰 oldest 25% 条目
+      const sorted = [...this.dedupCache.entries()].sort((a, b) => a[1] - b[1]);
+      const toEvict = Math.ceil(this.MAX_DEDUP_SIZE * 0.25);
+      for (let i = 0; i < toEvict && i < sorted.length; i++) {
+        this.dedupCache.delete(sorted[i][0]);
+      }
+      log.info({ evicted: toEvict, remaining: this.dedupCache.size }, 'dedupCache 上限保护 — 已淘汰 oldest 25%');
+    }
+    // 轻量 sweep: 删除超过宽限期的条目 (每 32 次 onP0Finding 执行一次)
+    this.sweepCounter++;
+    if (this.dedupCache.size > 0 && this.sweepCounter % 32 === 0) {
+      const cutoff = now - this.DEDUP_WINDOW_MS - this.DEDUP_SWEEP_GRACE_MS;
+      let swept = 0;
+      for (const [k, ts] of this.dedupCache) {
+        if (ts < cutoff) {
+          this.dedupCache.delete(k);
+          swept++;
+        }
+      }
+      if (swept > 0) {
+        log.debug({ swept, remaining: this.dedupCache.size }, 'dedupCache sweep 完成');
+      }
+    }
 
     // 并行推送到所有通道
     const pushResults = await Promise.allSettled(

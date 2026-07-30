@@ -105,4 +105,35 @@ describe('Integration: synova-agent channels', () => {
     expect(push['channels'].length).toBe(1);
     expect(push['channels'][0].id).toBe('enabled-ch');
   });
+
+  it('L2b: Given dedupCache exceeds MAX_DEDUP_SIZE, Then oldest 25% evicted', async () => {
+    // Reduce MAX_DEDUP_SIZE temporarily by constructing with many entries
+    // Use private member access to verify the eviction behavior
+    const push = new ProactivePush([makeChannel('cap-ch')]);
+    const cache: Map<string, number> = (push as any)['dedupCache'];
+    const maxSize: number = (push as any)['MAX_DEDUP_SIZE'];
+    // Fill to maxSize (overflow when onP0Finding adds one more)
+    for (let i = 0; i < maxSize; i++) {
+      cache.set(`overflow-key-${i}`, Date.now() - 600_000); // old entries
+    }
+    // Trigger onP0Finding — cache will have maxSize+1 > MAX → evict oldest 25%
+    await push.onP0Finding(mockFinding({ id: 'cap-test' }));
+    // After evicting 25% of maxSize (250), should have roughly maxSize - 250 + 1
+    expect(cache.size).toBeLessThanOrEqual(maxSize);
+  }, TEST_TIMEOUT);
+
+  it('L2b: Given sweep condition met, Then expired entries removed', async () => {
+    const push = new ProactivePush([makeChannel('sweep-ch')]);
+    const cache: Map<string, number> = (push as any)['dedupCache'];
+    // Insert expired entries (older than 15 min, exceeding sweep grace)
+    cache.set('expired-1', Date.now() - 1_200_000); // 20 min ago
+    cache.set('expired-2', Date.now() - 1_200_000);
+    // Set sweepCounter to 31 so the next onP0Finding triggers sweep (31+1=32)
+    (push as any).sweepCounter = 31;
+    // Trigger onP0Finding — sweep should fire at counter=32
+    await push.onP0Finding(mockFinding({ id: 'sweep-test' }));
+    // Expired entries should be removed
+    expect(cache.has('expired-1')).toBe(false);
+    expect(cache.has('expired-2')).toBe(false);
+  }, TEST_TIMEOUT);
 });
