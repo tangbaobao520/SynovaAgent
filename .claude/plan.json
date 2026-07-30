@@ -1,24 +1,34 @@
 {
   "version": "1.0",
-  "task": "D39: TraversalPermissionFilter",
-  "brief": "2026-07-12-D39-TraversalPermissionFilter.md",
   "current_phase": 1,
   "approach": "rewrite",
+  "principles": [
+    "scanCrossDeptSignals 必须从 agent-memory-store.list() 读取条目",
+    "新增 export wiring 通过 plan.json deferred"
+  ],
   "phases": [
     {
       "step": 1,
       "action": "create",
       "files": [
-        "src/l4/traversal-permission-filter.ts",
-        "tests/l4/traversal-permission-filter.test.ts"
+        "src/l4/department-memory-store.ts",
+        "tests/l4/department-memory-store.test.ts"
       ],
-      "checks": { "wiring": "deferred", "test_pairing": "enforce" }
+      "checks": {
+        "wiring": "deferred",
+        "test_pairing": "enforce"
+      }
+    },
+    {
+      "step": 2,
+      "action": "wire",
+      "files": [
+        "src/loops/loop-scheduler.ts"
+      ],
+      "checks": {
+        "wiring": "enforce",
+        "test_pairing": "deferred"
+      }
     }
-  ],
-  "principles": [
-    {"rule": "不修改 graph-traversal.ts 核心逻辑 — 外层包裹不侵入", "verify": "git diff --name-only HEAD src/l4/graph-traversal.ts | wc -l | xargs test 0 -eq"},
-    {"rule": "裁剪后 edges 无悬挂引用", "verify": "grep 'filteredNodeIds' src/l4/traversal-permission-filter.ts | wc -l | xargs test 1 -eq"},
-    {"rule": "零 as any", "verify": "grep -c 'as any' src/l4/traversal-permission-filter.ts | xargs test 0 -eq"}
-  ],
-  "memory_refs": []
+  ]
 }
