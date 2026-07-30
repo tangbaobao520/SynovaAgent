@@ -91,43 +91,11 @@
 
   // ── Panel 4: GA Access ──
 
-  function renderGaPanel(data) {
-    var expiryHtml = '';
-    if (data && data.data && data.data.token) {
-      var token = data.data.token;
-      expiryHtml = '<div class="token-display" style="margin-top:8px">'
-        + '<code>' + escapeHtml(token) + '</code> '
-        + '<button class="btn-small" onclick="navigator.clipboard.writeText(\'' + token + '\');showToast(\'Copied\',\'success\')">Copy</button>'
-        + '<br><small>Token expires: ' + new Date(data.data.expiresAt).toLocaleString() + '</small>'
-        + '</div>'
-        + '<div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px">'
-        + '<label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Contract Expiry Date</label>'
-        + '<div style="display:flex;gap:8px">'
-        + '<input type="date" id="ga-expiry-input" style="flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px">'
-        + '<button id="btn-save-ga-expiry" class="btn-primary" style="width:auto;padding:6px 14px">Save Expiry</button>'
-        + '</div>'
-        + '<div id="ga-expiry-status" style="font-size:12px;margin-top:6px"></div>'
-        + '</div>';
-      $('ga-panel').innerHTML = expiryHtml;
-      // D281: 绑定保存事件
-      $('btn-save-ga-expiry').addEventListener('click', function () {
-        var expiryDate = $('ga-expiry-input').value;
-        if (!expiryDate) { showToast('Select a date', 'warning'); return; }
-        api.put('/api/enterprise/ga-access/' + token + '/expiry', { contractExpiry: expiryDate }).then(function (r) { return r.json(); }).then(function (d) {
-          if (d.ok) { showToast('Expiry saved: ' + expiryDate, 'success'); $('ga-expiry-status').innerHTML = '<span style="color:#22c55e">Expires: ' + expiryDate + '</span>'; }
-          else { showToast(d.message || 'Save failed', 'error'); }
-        }).catch(function () { showToast('Save failed', 'error'); });
-      });
-    } else {
-      $('ga-panel').innerHTML = '<p class="empty-state">No active GA token. Click Generate to create one.</p>';
-    }
-  }
-
   $('btn-generate-ga').addEventListener('click', function () {
     api.post('/api/enterprise/ga-access/generate', {}).then(function (r) { return r.json(); }).then(function (data) {
       if (data.ok && data.data) {
-        showToast('Token generated', 'success');
-        renderGaPanel(data);
+        showToast('Token: ' + data.data.token, 'success');
+        $('ga-panel').innerHTML = '<div class="token-display"><code>' + escapeHtml(data.data.token) + '</code> <button class="btn-small" onclick="navigator.clipboard.writeText(\'' + data.data.token + '\');showToast(\'Copied\',\'success\')">Copy</button><br><small>Expires: ' + new Date(data.data.expiresAt).toLocaleString() + '</small></div>';
       } else { showToast('Generation failed', 'error'); }
     }).catch(function () { showToast('Generation failed', 'error'); });
   });

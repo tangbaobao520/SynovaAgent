@@ -59,29 +59,3 @@ describe('D109 — GA 临时访问多企业隔离', () => {
     expect(content).toContain('degraded');
   });
 });
-
-// ═══ D281: GA 到期日 ═══
-
-describe('D281 — GA expiry', () => {
-  it('enterprise.ts exports router with ga-access routes', async () => {
-    const ep = await import('../../src/routes/enterprise');
-    expect(ep.default).toBeDefined();
-  });
-
-  it('GaAccessRecord 含 contractExpiry 字段', () => {
-    const content = readFileSync('src/routes/enterprise.ts', 'utf-8');
-    expect(content).toContain('contractExpiry');
-  });
-
-  it('server.ts 导入 enterpriseRoutes', () => {
-    const content = readFileSync('src/server.ts', 'utf-8');
-    expect(content).toContain('enterpriseRoutes');
-  });
-
-  it('admin.js 包含 GA expiry UI', () => {
-    const content = readFileSync('app/js/admin.js', 'utf-8');
-    expect(content).toContain('ga-expiry-input');
-    expect(content).toContain('btn-save-ga-expiry');
-    expect(content).toContain('contractExpiry');
-  });
-});
