@@ -17,6 +17,7 @@
  *   @degraded — 推送失败 → log.warn + retry → 最终写入审计
  */
 import type { ActionStoreLike } from "../growth/action-types";
+import type { WorkspaceRole } from "../middleware/rbac";
 import { createLogger } from '@synova/logger';
 import { InteractiveCardHandler } from './interactive-card';
 
@@ -58,6 +59,8 @@ export interface PushMessage {
   severity: string;
   timestamp: string;
   link?: string;
+  /** D285: 目标角色过滤 (undefined=全体可见, 消费端按角色过滤) */
+  targetRoles?: WorkspaceRole[];
 }
 
 export interface PushResult {
@@ -154,14 +157,21 @@ export class ProactivePush {
 
     // D18: 使用交互式卡片替代纯文本
     const cardMessage = cardHandler.buildCardMessage(finding);
+    // D285: 按 severity 标注目标角色
+    const targetRoles: WorkspaceRole[] = finding.severity === 'critical'
+      ? ['admin', 'manager', 'liaison', 'staff', 'ga']
+      : finding.severity === 'warning'
+      ? ['admin', 'manager', 'ga']
+      : ['admin'];
     const message: PushMessage = {
       title: cardMessage.title,
       body: cardMessage.body + '\n\n' + cardMessage.buttons.map(b =>
         `[${b.label}](${cardMessage.callbackUrl}?action=${b.action})`
       ).join(' | '),
-      severity: 'critical',
+      severity: finding.severity,
       timestamp: finding.detectedAt,
       link: cardMessage.callbackUrl,
+      targetRoles,
     };
     const results: PushResult[] = [];
 
@@ -179,7 +189,8 @@ export class ProactivePush {
     try {
       const { execSync } = require('child_process');
       const script = require('path').join(process.cwd(), 'scripts/control-tower/emit-signal.py');
-      execSync('python "' + script + '" sentinel red "' + (finding.title || 'P0 finding').slice(0, 80) + '"', { timeout: 5000, stdio: 'ignore' });
+      const sigStatus = finding.severity === 'critical' ? 'red' : finding.severity === 'warning' ? 'yellow' : 'green';
+      execSync('python "' + script + '" sentinel ' + sigStatus + ' "' + (finding.title || 'P0 finding').slice(0, 80) + '"', { timeout: 5000, stdio: 'ignore' });
     } catch (err) {
       log.warn({ err }, 'D249 emitSignal 失败 — 降级');
     }
