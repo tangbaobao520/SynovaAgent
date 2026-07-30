@@ -86,8 +86,53 @@ export class SynovaAgent {
     setGlobalSentinelRunner(this.sentinelRunner);
     this.sentinelRunner.start();
 
-    // D21-FIX: 创建 ProactivePush 实例 + 注入 ActionStore + 接线到 SentinelRunner
-    const proactivePush = new ProactivePush([]);  // 空通道 — 推送后续接线
+    // D272: 创建 ProactivePush 实例 + 2 个内置通道 + 注入 ActionStore + 接线
+    const proactivePush = new ProactivePush([
+      {
+        id: 'signal-file',
+        type: 'signal-file' as const,
+        enabled: true,
+        send: async (msg) => {
+          try {
+            const { execSync } = require('child_process');
+            const script = require('path').join(process.cwd(), 'scripts/control-tower/emit-signal.py');
+            const reason = msg.body.slice(0, 120).replace(/"/g, '\\"');
+            execSync(
+              `python "${script}" proactive-push red "${reason}" --p0 1`,
+              { timeout: 5000, stdio: 'ignore' },
+            );
+            return `signal-${Date.now()}`;
+          } catch (err: unknown) {
+            const e = err instanceof Error ? err.message : String(err);
+            log.warn({ err: e }, 'signal-file channel send failed — 降级');
+            throw new Error(e);
+          }
+        },
+      },
+      {
+        id: 'electron-notify',
+        type: 'electron-notify' as const,
+        enabled: true,
+        send: async (msg) => {
+          // 信号文件 + 轮询: electron-main.ts 已有 checkP0Alerts() 消费
+          // 同 signal-file 通道写入同一文件以免重复，但用不同 component 名区分
+          try {
+            const { execSync } = require('child_process');
+            const script = require('path').join(process.cwd(), 'scripts/control-tower/emit-signal.py');
+            const title = msg.title.slice(0, 80).replace(/"/g, '\\"');
+            execSync(
+              `python "${script}" electron-notify red "${title}" --p0 1`,
+              { timeout: 5000, stdio: 'ignore' },
+            );
+            return `notify-${Date.now()}`;
+          } catch (err: unknown) {
+            const e = err instanceof Error ? err.message : String(err);
+            log.warn({ err: e }, 'electron-notify channel send failed — 降级');
+            throw new Error(e);
+          }
+        },
+      },
+    ]);
     proactivePush.setActionStore(new ActionStore());
     this.sentinelRunner.setProactivePush(proactivePush);
 

@@ -43,11 +43,13 @@ export interface PushChannel {
   /** 通道标识 */
   id: string;
   /** 通道类型 */
-  type: 'feishu' | 'email' | 'webhook';
+  type: 'feishu' | 'email' | 'webhook' | 'signal-file' | 'electron-notify';
   /** 发送函数（返回 messageId） */
   send: (message: PushMessage) => Promise<string>;
   /** 是否启用 */
   enabled: boolean;
+  /** D272: 去重键（同 key 5 分钟内不重复） */
+  dedupKey?: string;
 }
 
 export interface PushMessage {
@@ -103,6 +105,10 @@ export class ProactivePush {
   private actionStore: ActionStoreLike | null;
   private auditStore: { write(entry: Record<string, unknown>): Promise<string> } | null;
   private dashboardUrl: string;
+  /** D272: 去重缓存 — dedupKey → timestamp */
+  private dedupCache: Map<string, number>;
+  /** D272: 去重窗口 (5分钟) */
+  private readonly DEDUP_WINDOW_MS = 300_000;
 
   constructor(
     channels: PushChannel[],
@@ -114,6 +120,7 @@ export class ProactivePush {
     this.actionStore = null;
     this.auditStore = null;
     this.dashboardUrl = dashboardUrl || 'http://localhost:3000';
+    this.dedupCache = new Map();
   }
 
   /** 注入审计存储 */
@@ -170,6 +177,19 @@ export class ProactivePush {
     } catch (err) {
       log.warn({ err }, 'D249 emitSignal 失败 — 降级');
     }
+
+    // D272: 去重检查 — 同 finding id + channel id 组合 5 分钟内不重复
+    const dedupKey = finding.id;
+    const now = Date.now();
+    const lastPush = this.dedupCache.get(dedupKey);
+    if (lastPush && (now - lastPush) < this.DEDUP_WINDOW_MS) {
+      log.info({ findingId: finding.id, dedupKey }, `去重: 同 key ${(now - lastPush) / 1000}s 前已推送`);
+      return [{
+        findingId: finding.id, channelId: 'dedup',
+        status: 'filtered', retries: 0,
+      }];
+    }
+    this.dedupCache.set(dedupKey, now);
 
     // 并行推送到所有通道
     const pushResults = await Promise.allSettled(
