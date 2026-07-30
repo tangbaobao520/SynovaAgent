@@ -1,4 +1,4 @@
-#!/bin/bash
+﻿#!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
 # external-auditor.sh — 外部审计器 (D202)
 #
@@ -230,16 +230,98 @@ for f in "${FINDINGS[@]}"; do
   esac
 done
 
-# ═══ 交叉对比 ═══
-# 检查 Agent 自我报告中是否声称了审计结果
-AGENT_SELF_REPORT=$(git show HEAD:".claude/task-briefs/$TASK_ID.md" 2>/dev/null || echo "")
-CROSS_CHECK_FAILS=0
 
-if echo "$AGENT_SELF_REPORT" | grep -qi "接线检查\|wiring"; then
-  if ! echo "$AGENT_SELF_REPORT" | grep -qi "grep.*确认\|caller\|调用方"; then
-    ((CROSS_CHECK_FAILS++))
+# ═══ 交叉对比 (D270增强: 1维→4维) ═══
+AGENT_SELF_REPORT=$(git show HEAD:".claude/task-briefs/$TASK_ID.md" 2>/dev/null || echo "")
+CROSS_CHECK_PASS=0; CROSS_CHECK_FAIL=0
+CROSS_DIMS="wiring:pass testing:pass as_any:pass exception:pass"
+
+if [[ -n "$AGENT_SELF_REPORT" ]]; then
+  AR_LOWER=$(echo "$AGENT_SELF_REPORT" | tr '[:upper:]' '[:lower:]')
+  # wiring: 声称接线检查但无具体调用方
+  if echo "$AR_LOWER" | grep -qi "接线\|wiring"; then
+    if ! echo "$AR_LOWER" | grep -qiE "grep.*确认|caller|调用方|grep.*caller"; then
+      CROSS_DIMS=$(echo "$CROSS_DIMS" | sed 's/wiring:pass/wiring:fail/')
+      ((CROSS_CHECK_FAIL++))
+    else
+      ((CROSS_CHECK_PASS++))
+    fi
   fi
+  # testing: 声称测试通过但审计发现S001
+  if echo "$AR_LOWER" | grep -qi "test.*pass\|测试.*通过"; then
+    TEST_P1=$(echo "${FINDINGS[@]}" | grep -c "TEST" || true)
+    if [[ $TEST_P1 -gt 0 ]]; then
+      CROSS_DIMS=$(echo "$CROSS_DIMS" | sed 's/testing:pass/testing:fail/')
+      ((CROSS_CHECK_FAIL++))
+    else
+      ((CROSS_CHECK_PASS++))
+    fi
+  fi
+  # as_any: 声称as any=0但审计发现T001
+  if echo "$AR_LOWER" | grep -qi "as any.*0\|as any = 0"; then
+    ASANY_P0=$(echo "${FINDINGS[@]}" | grep -c "as any" || true)
+    if [[ $ASANY_P0 -gt 0 ]]; then
+      CROSS_DIMS=$(echo "$CROSS_DIMS" | sed 's/as_any:pass/as_any:fail/')
+      ((CROSS_CHECK_FAIL++))
+    else
+      ((CROSS_CHECK_PASS++))
+    fi
+  fi
+  # exception: 声称catch有log但审计发现E001
+  if echo "$AR_LOWER" | grep -qi "catch.*log\|异常.*log"; then
+    EXC_P0=$(echo "${FINDINGS[@]}" | grep -c "空 catch" || true)
+    if [[ $EXC_P0 -gt 0 ]]; then
+      CROSS_DIMS=$(echo "$CROSS_DIMS" | sed 's/exception:pass/exception:fail/')
+      ((CROSS_CHECK_FAIL++))
+    else
+      ((CROSS_CHECK_PASS++))
+    fi
+  fi
+else
+  CROSS_DIMS="agent_report_unavailable"
 fi
+CROSS_CHECK_FAILS=$CROSS_CHECK_FAIL
+CROSS_CHECK_TOTAL=$((CROSS_CHECK_PASS + CROSS_CHECK_FAIL))
+
+# ═══ D270: JSON 报告输出 ═══
+JSON_FILE="$REPORT_DIR/$TASK_ID.json"
+mkdir -p "$REPORT_DIR"
+{
+  echo '{'
+  echo '  "taskId": "'"$TASK_ID"'",'
+  echo '  "generatedAt": "'$(date -Iseconds)'",'
+  echo '  "diffRange": "'"$DIFF_RANGE"'",'
+  echo '  "summary": {'
+  echo '    "p0": '"$P0_COUNT"','
+  echo '    "p1": '"$P1_COUNT"','
+  echo '    "p2": '"$P2_COUNT"','
+  echo '    "total": '"$(($P0_COUNT + $P1_COUNT + $P2_COUNT))"','
+  echo '    "crossCheckFails": '"$CROSS_CHECK_FAILS"
+  echo '  },'
+  echo '  "crossCheck": {'
+  echo '    "total": '"$CROSS_CHECK_TOTAL"','
+  echo '    "passed": '"$CROSS_CHECK_PASS"','
+  echo '    "failed": '"$CROSS_CHECK_FAILS"','
+  echo '    "dims": {'
+  _DIM_VALUE=$(echo "$CROSS_DIMS" | sed 's/ /, /g')
+  echo '      '"$_DIM_VALUE"
+  echo '    }'
+  echo '  },'
+  echo '  "findings": ['
+  _FIRST=1
+  for f in "${FINDINGS[@]}"; do
+    sev=$(echo "$f" | cut -d'|' -f1)
+    cat=$(echo "$f" | cut -d'|' -f2)
+    loc=$(echo "$f" | cut -d'|' -f3)
+    msg=$(echo "$f" | cut -d'|' -f4)
+    if [[ $_FIRST -eq 0 ]]; then echo ','; fi
+    echo -n '    {"severity":"'"$sev"'","category":"'"$cat"'","location":"'"$loc"'","message":"'"$msg"'"}'
+    _FIRST=0
+  done
+  echo ''
+  echo '  ]'
+  echo '}'
+} > "$JSON_FILE"
 
 # ═══ 生成报告 ═══
 {
@@ -359,5 +441,12 @@ elif [[ $P1_COUNT -gt 0 || $P2_COUNT -gt 0 ]]; then
   _SIGNAL_STATUS="yellow"
   _SIGNAL_REASON="${P1_COUNT}_P1_${P2_COUNT}_P2_findings"
 fi
+# D270: 计算 cross-check 完成率
+_CROSS_PCT=100
+if [[ $CROSS_CHECK_TOTAL -gt 0 ]]; then
+  _CROSS_PCT=$((CROSS_CHECK_PASS * 100 / CROSS_CHECK_TOTAL))
+fi
 python3 "$SCRIPT_DIR/emit-signal.py" external-auditor "$_SIGNAL_STATUS" "$_SIGNAL_REASON" \
   --p0 "$P0_COUNT" --p1 "$P1_COUNT" --p2 "$P2_COUNT" 2>/dev/null || true
+# D270: cross-check 完成率写入信号目录
+echo "$_CROSS_PCT" > "$REPORT_DIR/$TASK_ID.cross-check.pct" 2>/dev/null || true
