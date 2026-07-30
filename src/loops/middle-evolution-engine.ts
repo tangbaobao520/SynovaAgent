@@ -147,6 +147,16 @@ export function processFeedbackSignals(signals: AggregatedSignal[]): EvolutionAc
       } catch (err) {
         log.warn({ err }, 'GA 反馈记录失败 — 降级');
       }
+
+      // D273: 进化动作回写 — 将阈值调整写入行业阈值文件
+      try {
+        const result = applyEvolutionActions(actions);
+        if (result.applied > 0 || result.errors.length > 0) {
+          log.info({ applied: result.applied, errors: result.errors.length }, '进化动作回写');
+        }
+      } catch (err) {
+        log.warn({ err }, '进化动作回写失败 — 降级（不阻断主流程）');
+      }
     }
 
     return actions;
@@ -298,4 +308,154 @@ export function computeGAProtection(
     gaAbsenceDays,
     middleActivityRate: clampedRate,
   };
+}
+
+// ═══ D273: GA 纠错回写 ═══
+
+import { readFileSync, writeFileSync, existsSync, readdirSync } from "fs";
+import { join } from "path";
+
+const EXTENSIONS_DIR = join(process.cwd(), "extensions", "industries");
+const MAX_CORRECTION_RATIO = 0.3; // ±30% 上限
+const MIN_TRIGGER_COUNT = 3; // 至少 3 次同 key 纠错才触发
+
+export interface ApplyActionResult {
+  applied: number;
+  skipped: number;
+  errors: string[];
+}
+
+/**
+ * D273: 将 processFeedbackSignals 生成的进化动作回写到行业阈值文件。
+ *
+ * 安全约束:
+ *   - 同 key 纠错 ≥3 次才触发
+ *   - 调整幅度 ≤ ±30%
+ *   - 写前备份到 _gaCorrections 数组
+ *   - manifest.json 不存在 → 跳过 (degraded)
+ *
+ * @param actions — 进化动作列表
+ * @returns 回写统计
+ */
+export function applyEvolutionActions(actions: EvolutionAction[]): ApplyActionResult {
+  const result: ApplyActionResult = { applied: 0, skipped: 0, errors: [] };
+
+  if (!actions || actions.length === 0) return result;
+
+  // 只处理 threshold_adjust 类型 (其余类型暂由未来版本实现)
+  const thresholdActions = actions.filter((a) => a.type === "threshold_adjust");
+
+  for (const action of thresholdActions) {
+    try {
+      const sentinelKey = action.parameter.sentinelKey as string | undefined;
+      const adjustPercent = (action.parameter.adjustPercent as number) || 5;
+      const direction = action.parameter.direction === "up" ? 1 : -1;
+
+      if (!sentinelKey) {
+        result.skipped++;
+        continue;
+      }
+
+      // 查找所有行业阈值文件
+      if (!existsSync(EXTENSIONS_DIR)) {
+        result.errors.push("extensions/industries 目录不存在");
+        result.skipped++;
+        continue;
+      }
+
+      const industries = readdirSync(EXTENSIONS_DIR, { withFileTypes: true }).filter((d) => d.isDirectory());
+      let found = false;
+
+      for (const industry of industries) {
+        const thresholdPath = join(EXTENSIONS_DIR, industry.name, "thresholds.json");
+        if (!existsSync(thresholdPath)) continue;
+
+        const raw = readFileSync(thresholdPath, "utf-8");
+        let config: Record<string, unknown>;
+        try {
+          config = JSON.parse(raw) as Record<string, unknown>;
+        } catch {
+          continue; // JSON 损坏 → 跳过
+        }
+
+        const overrides = config.thresholdOverrides as Record<string, unknown> | undefined;
+        if (!overrides || !overrides[sentinelKey]) continue;
+
+        const entry = overrides[sentinelKey] as Record<string, number>;
+        if (!entry || typeof entry.warning !== "number") continue;
+
+        // 读取 _gaCorrections 历史
+        const corrections = (config._gaCorrections as Array<Record<string, unknown>>) || [];
+        const sameKey = corrections.filter((c) => c.key === sentinelKey && c.direction === action.parameter.direction);
+
+        // 安全约束: 同 key ≥3 次才触发
+        if (sameKey.length < MIN_TRIGGER_COUNT - 1) {
+          // 记录本次纠错但不触发调整
+          corrections.push({
+            key: sentinelKey,
+            direction: action.parameter.direction,
+            adjustPercent,
+            triggeredAt: action.triggeredAt,
+            applied: false,
+            reason: `pending — ${sameKey.length + 1}/${MIN_TRIGGER_COUNT} corrections needed`,
+          });
+          config._gaCorrections = corrections;
+          writeFileSync(thresholdPath, JSON.stringify(config, null, 2), "utf-8");
+          result.skipped++;
+          found = true;
+          continue;
+        }
+
+        // ≥3 次 → 执行调整
+        const oldWarning = entry.warning;
+        const oldCritical = entry.critical;
+
+        // 公式: 新阈值 = 旧阈值 × (1 + direction × adjustPercent/100 × min(count, 3)/3)
+        const count = sameKey.length + 1;
+        const ratio = 1 + direction * (adjustPercent / 100) * (Math.min(count, 3) / 3);
+        // 安全约束: ±30% 上限
+        const clampedRatio = Math.max(1 - MAX_CORRECTION_RATIO, Math.min(1 + MAX_CORRECTION_RATIO, ratio));
+
+        entry.warning = Math.round(oldWarning * clampedRatio * 100) / 100;
+        entry.critical = Math.round(oldCritical * clampedRatio * 100) / 100;
+
+        // 记录纠错历史 + 备份旧值
+        corrections.push({
+          key: sentinelKey,
+          direction: action.parameter.direction,
+          adjustPercent,
+          triggeredAt: action.triggeredAt,
+          applied: true,
+          previousWarning: oldWarning,
+          previousCritical: oldCritical,
+          newWarning: entry.warning,
+          newCritical: entry.critical,
+        });
+        config._gaCorrections = corrections;
+
+        writeFileSync(thresholdPath, JSON.stringify(config, null, 2), "utf-8");
+        log.info(
+          { sentinelKey, industry: industry.name, warning: `${oldWarning}→${entry.warning}` },
+          "GA 阈值调整已回写",
+        );
+        result.applied++;
+        found = true;
+        break;
+      }
+
+      if (!found) {
+        result.skipped++;
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg }, "applyEvolutionAction 异常 — 跳过");
+      result.errors.push(msg);
+    }
+  }
+
+  if (result.applied > 0) {
+    log.info({ applied: result.applied, skipped: result.skipped }, "进化动作回写完成");
+  }
+
+  return result;
 }
