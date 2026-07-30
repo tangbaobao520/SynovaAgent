@@ -512,12 +512,10 @@ function applyExpertConfidenceDowngrade(action: EvolutionAction, result: ApplyAc
     return;
   }
 
-  const oldPriority = manifest.priority;
+  const oldPriority = typeof manifest.priority === "number" ? manifest.priority : 0.5;
   const ratio = 1 + confidenceAdjust;
-  const newPriority = safeAdjust(
-    typeof oldPriority === "number" ? oldPriority : 0.5,
-    Math.max(1 + MAX_CORRECTION_RATIO, Math.min(1 - MAX_CORRECTION_RATIO, ratio)),
-  );
+  // safeAdjust 内置正确 clamp: max(0.7, min(1.3, ratio))
+  const newPriority = safeAdjust(oldPriority, ratio);
   manifest.priority = newPriority;
 
   corrections.push({
