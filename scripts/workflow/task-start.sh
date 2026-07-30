@@ -29,6 +29,10 @@ python3 "$SCRIPT_DIR/generate-task-brief.py"
 
 echo "✅ Task brief 已生成: $BRIEF_FILE"
 
+# D284-FIX: task-start 完成后清除 session-locked（不依赖 hook 触发）
+rm -f "$PROJECT_ROOT/.claude/session-locked" 2>/dev/null
+echo "✅ session-locked 已清除"
+
 # D200: 上下文注射 — 注入权威文档上下文到 Q1c 字段
 INJECTOR="$PROJECT_ROOT/scripts/control-tower/context-injector.sh"
 if [[ -f "$INJECTOR" ]]; then

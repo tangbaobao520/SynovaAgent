@@ -30,11 +30,13 @@ if echo "$FILE" | grep -qE '\.claude/(task-briefs|settings|plans|specs|worktrees
   # v3.5: task brief 被编辑时自动标记 brief-filled
   if echo "$FILE" | grep -qE "\.claude/task-briefs/"; then
     ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+    # D284-FIX: rm -f session-locked 不依赖 workflow-state.json 存在
+    # workflow-state.json 非必需文件, 不存在时不应阻止解锁
     WF_STATE="$ROOT/.claude/workflow-state.json"
     if [ -f "$WF_STATE" ]; then
       python3 -c "import json; d=json.load(open('$WF_STATE')); d['step']='brief-filled'; json.dump(d, open('$WF_STATE','w'))" 2>/dev/null
-    rm -f "$ROOT/.claude/session-locked" 2>/dev/null
     fi
+    rm -f "$ROOT/.claude/session-locked" 2>/dev/null
   fi
   exit 0
 fi
