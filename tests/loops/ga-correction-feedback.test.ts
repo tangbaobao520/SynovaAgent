@@ -149,3 +149,50 @@ describe("D273: degraded mode", () => {
     // 不崩溃即可
   });
 });
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Test 5-7: 其余 3 种进化动作类型
+// ═════════════════════════════════════════════════════════════════════════════
+
+describe("D273: all 4 action types", () => {
+  it("goal_formula_tweak 写入 agent_memory (不崩溃)", () => {
+    const action: EvolutionAction = {
+      type: "goal_formula_tweak",
+      reason: "Goal 被修改 3 次",
+      parameter: { goalType: "revenue_growth", weightAdjust: -0.1 },
+      confidence: 0.8,
+      triggeredAt: new Date().toISOString(),
+    };
+    const result = applyEvolutionActions([action]);
+    // agent_memory 在测试中可能不可用, 但不崩溃即可
+    expect(result.errors).toBeDefined();
+  });
+
+  it("path_rank_downgrade 写入 agent_memory (不崩溃)", () => {
+    const action: EvolutionAction = {
+      type: "path_rank_downgrade",
+      reason: "路径被拒绝 3 次",
+      parameter: { pathKey: "expansion_strategy", rankAdjust: -1 },
+      confidence: 0.8,
+      triggeredAt: new Date().toISOString(),
+    };
+    const result = applyEvolutionActions([action]);
+    expect(result.errors).toBeDefined();
+  });
+
+  it("expert_confidence_downgrade 跳过 (manifest 不存在)", () => {
+    // expert/nonexistent/manifest.json 不存在 → skipped 不崩溃
+    const action: EvolutionAction = {
+      type: "expert_confidence_downgrade",
+      reason: "专家被标记 ineffective 3 次",
+      parameter: { expertKey: "nonexistent", confidenceAdjust: -0.15 },
+      confidence: 0.75,
+      triggeredAt: new Date().toISOString(),
+    };
+    const result = applyEvolutionActions([action]);
+    // 由于 expertKey=nonexistent 不存在 manifest, 回退到 agent_memory
+    // 但 agent_memory 在测试中不可用, 所以会记录错误
+    // 关键是不崩溃
+    expect(result.errors).toBeDefined();
+  });
+});

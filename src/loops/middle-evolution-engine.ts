@@ -337,119 +337,229 @@ export interface ApplyActionResult {
  * @param actions — 进化动作列表
  * @returns 回写统计
  */
+/** 专家 manifest 目录 */
+const EXPERT_DIR = join(process.cwd(), "expert");
+
+/**
+ * 安全调整数值: ±30% 上限 + 防 NaN
+ */
+function safeAdjust(value: number, ratio: number): number {
+  const clamped = Math.max(1 - MAX_CORRECTION_RATIO, Math.min(1 + MAX_CORRECTION_RATIO, ratio));
+  const result = value * clamped;
+  return isNaN(result) ? value : Math.round(result * 100) / 100;
+}
+
+/**
+ * 读取 expert/{type}/manifest.json，返回解析结果或 null。
+ */
+function readExpertManifest(expertType: string): Record<string, unknown> | null {
+  const path = join(EXPERT_DIR, expertType, "manifest.json");
+  if (!existsSync(path)) return null;
+  try {
+    return JSON.parse(readFileSync(path, "utf-8")) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 回写 expert/{type}/manifest.json。
+ */
+function writeExpertManifest(expertType: string, data: Record<string, unknown>): boolean {
+  try {
+    const path = join(EXPERT_DIR, expertType, "manifest.json");
+    writeFileSync(path, JSON.stringify(data, null, 2), "utf-8");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 记录纠错历史到 agent_memory（降级时跳过）。
+ */
+function logCorrection(key: string, actionType: string, details: Record<string, unknown>): void {
+  try {
+    const { getAgentMemoryStore } = require("../l4/agent-memory-store");
+    const store = getAgentMemoryStore();
+    store.remember({
+      orgId: "synova",
+      key: `ga-correction-${key}-${Date.now()}`,
+      value: JSON.stringify({ actionType, ...details }),
+      type: "fact",
+      confidence: 0.7,
+      source: "ga_correction",
+      tags: ["ga_correction", actionType],
+      expiresAt: null,
+      status: "active",
+    });
+  } catch { /* 降级 — 不阻断 */ }
+}
+
+// ═══ 各类型处理函数 ═══
+
+function applyThresholdAdjust(action: EvolutionAction, result: ApplyActionResult): void {
+  const sentinelKey = action.parameter.sentinelKey as string | undefined;
+  const adjustPercent = (action.parameter.adjustPercent as number) || 5;
+  const direction = action.parameter.direction === "up" ? 1 : -1;
+
+  if (!sentinelKey) { result.skipped++; return; }
+  if (!existsSync(EXTENSIONS_DIR)) { result.skipped++; return; }
+
+  const industries = readdirSync(EXTENSIONS_DIR, { withFileTypes: true }).filter((d) => d.isDirectory());
+  let found = false;
+
+  for (const industry of industries) {
+    const thresholdPath = join(EXTENSIONS_DIR, industry.name, "thresholds.json");
+    if (!existsSync(thresholdPath)) continue;
+
+    let config: Record<string, unknown>;
+    try { config = JSON.parse(readFileSync(thresholdPath, "utf-8")) as Record<string, unknown>; }
+    catch { continue; }
+
+    const overrides = config.thresholdOverrides as Record<string, unknown> | undefined;
+    if (!overrides || !overrides[sentinelKey]) continue;
+
+    const entry = overrides[sentinelKey] as Record<string, number>;
+    if (!entry || typeof entry.warning !== "number") continue;
+
+    const corrections = (config._gaCorrections as Array<Record<string, unknown>>) || [];
+    const sameKey = corrections.filter((c) => c.key === sentinelKey && c.direction === action.parameter.direction);
+
+    if (sameKey.length < MIN_TRIGGER_COUNT - 1) {
+      corrections.push({
+        key: sentinelKey, direction: action.parameter.direction, adjustPercent,
+        triggeredAt: action.triggeredAt, applied: false,
+        reason: `pending — ${sameKey.length + 1}/${MIN_TRIGGER_COUNT} corrections needed`,
+      });
+      config._gaCorrections = corrections;
+      writeFileSync(thresholdPath, JSON.stringify(config, null, 2), "utf-8");
+      result.skipped++; found = true;
+      continue;
+    }
+
+    const count = sameKey.length + 1;
+    const ratio = 1 + direction * (adjustPercent / 100) * (Math.min(count, 3) / 3);
+    const oldW = entry.warning;
+    const oldC = entry.critical;
+    entry.warning = safeAdjust(oldW, ratio);
+    entry.critical = safeAdjust(oldC, ratio);
+    corrections.push({
+      key: sentinelKey, direction: action.parameter.direction, adjustPercent,
+      triggeredAt: action.triggeredAt, applied: true,
+      previousWarning: oldW, previousCritical: oldC,
+      newWarning: entry.warning, newCritical: entry.critical,
+    });
+    config._gaCorrections = corrections;
+    writeFileSync(thresholdPath, JSON.stringify(config, null, 2), "utf-8");
+    log.info({ sentinelKey, industry: industry.name, warning: `${oldW}→${entry.warning}` }, "GA 阈值调整已回写");
+    result.applied++; found = true;
+    break;
+  }
+
+  if (!found) result.skipped++;
+}
+
+function applyGoalFormulaTweak(action: EvolutionAction, result: ApplyActionResult): void {
+  const goalType = action.parameter.goalType as string | undefined;
+  const weightAdjust = action.parameter.weightAdjust as number | undefined;
+  if (!goalType || weightAdjust == null) { result.skipped++; return; }
+
+  // Goal 公式调整写入 agent_memory（当前无 Goal 配置文件）
+  logCorrection(goalType, action.type, { weightAdjust, reason: action.reason, triggeredAt: action.triggeredAt });
+  log.info({ goalType, weightAdjust }, "GA Goal 公式调整已记录 (agent_memory)");
+  result.applied++;
+}
+
+function applyPathRankDowngrade(action: EvolutionAction, result: ApplyActionResult): void {
+  const pathKey = action.parameter.pathKey as string | undefined;
+  const rankAdjust = action.parameter.rankAdjust as number | undefined;
+  if (!pathKey || rankAdjust == null) { result.skipped++; return; }
+
+  // 路径排名降级写入 agent_memory（当前无路径配置文件）
+  logCorrection(pathKey, action.type, { rankAdjust, reason: action.reason, triggeredAt: action.triggeredAt });
+  log.info({ pathKey, rankAdjust }, "GA 路径排名降级已记录 (agent_memory)");
+  result.applied++;
+}
+
+function applyExpertConfidenceDowngrade(action: EvolutionAction, result: ApplyActionResult): void {
+  const expertKey = action.parameter.expertKey as string | undefined;
+  const confidenceAdjust = action.parameter.confidenceAdjust as number | undefined;
+  if (!expertKey || confidenceAdjust == null) { result.skipped++; return; }
+
+  // 读取 expert manifest，调整 priority 或添加 confidencePenalty
+  const manifest = readExpertManifest(expertKey);
+  if (!manifest) {
+    // manifest 不存在 → 回退到 agent_memory
+    logCorrection(expertKey, action.type, { confidenceAdjust, reason: action.reason, triggeredAt: action.triggeredAt, degraded: true });
+    log.warn({ expertKey }, "专家 manifest 不存在 — 置信度降级写入 agent_memory");
+    result.applied++;
+    return;
+  }
+
+  // 记录 _gaCorrections + 调整 priority
+  const corrections = (manifest._gaCorrections as Array<Record<string, unknown>>) || [];
+  const sameKey = corrections.filter((c) => c.key === expertKey);
+
+  if (sameKey.length < MIN_TRIGGER_COUNT - 1) {
+    corrections.push({
+      key: expertKey, confidenceAdjust, triggeredAt: action.triggeredAt, applied: false,
+      reason: `pending — ${sameKey.length + 1}/${MIN_TRIGGER_COUNT} corrections needed`,
+    });
+    manifest._gaCorrections = corrections;
+    writeExpertManifest(expertKey, manifest);
+    result.skipped++;
+    return;
+  }
+
+  const oldPriority = manifest.priority;
+  const ratio = 1 + confidenceAdjust;
+  const newPriority = safeAdjust(
+    typeof oldPriority === "number" ? oldPriority : 0.5,
+    Math.max(1 + MAX_CORRECTION_RATIO, Math.min(1 - MAX_CORRECTION_RATIO, ratio)),
+  );
+  manifest.priority = newPriority;
+
+  corrections.push({
+    key: expertKey, confidenceAdjust, triggeredAt: action.triggeredAt, applied: true,
+    previousPriority: oldPriority, newPriority,
+  });
+  manifest._gaCorrections = corrections;
+  writeExpertManifest(expertKey, manifest);
+  log.info({ expertKey, priority: `${oldPriority}→${newPriority}` }, "GA 专家置信度已调整");
+  result.applied++;
+}
+
+// ═══ 主入口: 按类型分发 ═══
+
 export function applyEvolutionActions(actions: EvolutionAction[]): ApplyActionResult {
   const result: ApplyActionResult = { applied: 0, skipped: 0, errors: [] };
 
   if (!actions || actions.length === 0) return result;
 
-  // 只处理 threshold_adjust 类型 (其余类型暂由未来版本实现)
-  const thresholdActions = actions.filter((a) => a.type === "threshold_adjust");
-
-  for (const action of thresholdActions) {
+  for (const action of actions) {
     try {
-      const sentinelKey = action.parameter.sentinelKey as string | undefined;
-      const adjustPercent = (action.parameter.adjustPercent as number) || 5;
-      const direction = action.parameter.direction === "up" ? 1 : -1;
-
-      if (!sentinelKey) {
-        result.skipped++;
-        continue;
-      }
-
-      // 查找所有行业阈值文件
-      if (!existsSync(EXTENSIONS_DIR)) {
-        result.errors.push("extensions/industries 目录不存在");
-        result.skipped++;
-        continue;
-      }
-
-      const industries = readdirSync(EXTENSIONS_DIR, { withFileTypes: true }).filter((d) => d.isDirectory());
-      let found = false;
-
-      for (const industry of industries) {
-        const thresholdPath = join(EXTENSIONS_DIR, industry.name, "thresholds.json");
-        if (!existsSync(thresholdPath)) continue;
-
-        const raw = readFileSync(thresholdPath, "utf-8");
-        let config: Record<string, unknown>;
-        try {
-          config = JSON.parse(raw) as Record<string, unknown>;
-        } catch {
-          continue; // JSON 损坏 → 跳过
-        }
-
-        const overrides = config.thresholdOverrides as Record<string, unknown> | undefined;
-        if (!overrides || !overrides[sentinelKey]) continue;
-
-        const entry = overrides[sentinelKey] as Record<string, number>;
-        if (!entry || typeof entry.warning !== "number") continue;
-
-        // 读取 _gaCorrections 历史
-        const corrections = (config._gaCorrections as Array<Record<string, unknown>>) || [];
-        const sameKey = corrections.filter((c) => c.key === sentinelKey && c.direction === action.parameter.direction);
-
-        // 安全约束: 同 key ≥3 次才触发
-        if (sameKey.length < MIN_TRIGGER_COUNT - 1) {
-          // 记录本次纠错但不触发调整
-          corrections.push({
-            key: sentinelKey,
-            direction: action.parameter.direction,
-            adjustPercent,
-            triggeredAt: action.triggeredAt,
-            applied: false,
-            reason: `pending — ${sameKey.length + 1}/${MIN_TRIGGER_COUNT} corrections needed`,
-          });
-          config._gaCorrections = corrections;
-          writeFileSync(thresholdPath, JSON.stringify(config, null, 2), "utf-8");
+      switch (action.type) {
+        case "threshold_adjust":
+          applyThresholdAdjust(action, result);
+          break;
+        case "goal_formula_tweak":
+          applyGoalFormulaTweak(action, result);
+          break;
+        case "path_rank_downgrade":
+          applyPathRankDowngrade(action, result);
+          break;
+        case "expert_confidence_downgrade":
+          applyExpertConfidenceDowngrade(action, result);
+          break;
+        default:
           result.skipped++;
-          found = true;
-          continue;
-        }
-
-        // ≥3 次 → 执行调整
-        const oldWarning = entry.warning;
-        const oldCritical = entry.critical;
-
-        // 公式: 新阈值 = 旧阈值 × (1 + direction × adjustPercent/100 × min(count, 3)/3)
-        const count = sameKey.length + 1;
-        const ratio = 1 + direction * (adjustPercent / 100) * (Math.min(count, 3) / 3);
-        // 安全约束: ±30% 上限
-        const clampedRatio = Math.max(1 - MAX_CORRECTION_RATIO, Math.min(1 + MAX_CORRECTION_RATIO, ratio));
-
-        entry.warning = Math.round(oldWarning * clampedRatio * 100) / 100;
-        entry.critical = Math.round(oldCritical * clampedRatio * 100) / 100;
-
-        // 记录纠错历史 + 备份旧值
-        corrections.push({
-          key: sentinelKey,
-          direction: action.parameter.direction,
-          adjustPercent,
-          triggeredAt: action.triggeredAt,
-          applied: true,
-          previousWarning: oldWarning,
-          previousCritical: oldCritical,
-          newWarning: entry.warning,
-          newCritical: entry.critical,
-        });
-        config._gaCorrections = corrections;
-
-        writeFileSync(thresholdPath, JSON.stringify(config, null, 2), "utf-8");
-        log.info(
-          { sentinelKey, industry: industry.name, warning: `${oldWarning}→${entry.warning}` },
-          "GA 阈值调整已回写",
-        );
-        result.applied++;
-        found = true;
-        break;
-      }
-
-      if (!found) {
-        result.skipped++;
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      log.warn({ err: msg }, "applyEvolutionAction 异常 — 跳过");
+      log.warn({ err: msg, type: action.type }, "applyEvolutionAction 异常 — 跳过");
       result.errors.push(msg);
+      result.skipped++;
     }
   }
 
