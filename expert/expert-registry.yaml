@@ -1,8 +1,13 @@
-# Synova Expert Registry v1.0
+# Synova Expert Registry v2.0 — D282: 9→7 迁移
 # 声明式专家配置。加新专家 = 加一个条目 + 创建目录 → 自动注册。
 # 不需要改任何 TypeScript 文件。
+#
+# v2.0 变更 (2026-07-30):
+#   移除: strategy, org, finance, marketing, action, business_model, knowledge
+#   新增: capital-cycle, customer-cycle, talent-cycle, finance-structure, competitive-strategy
+#   旧目录归档至 expert/_deprecated/
 
-version: 1
+version: 2
 
 experts:
   host:
@@ -11,29 +16,23 @@ experts:
     model: default
     tools: [route_to_expert, summarize_findings, escalate, query_memory, query_knowledge, get_sentinel_status]
 
-  strategy:
+  capital-cycle:
     enabled: true
     background: true
     model: default
-    tools: [seven_powers, goal_alignment, market_gravity]
+    tools: [compute-break-even, compute-dol, compute-capital-allocation, compute-npv, compute-irr]
 
-  org:
+  customer-cycle:
     enabled: true
     background: true
     model: default
-    tools: [bus_factor, agent_readiness, capability_entropy]
+    tools: [compute-competitive-positioning, compute-hhi, compute-customer-value-score, compute-price-elasticity, compute-optimal-price]
 
-  finance:
+  talent-cycle:
     enabled: true
     background: true
     model: default
-    tools: [cashflow_analysis, unit_economics, financial_snapshot]
-
-  marketing:
-    enabled: true
-    background: true
-    model: default
-    tools: [aarrr_funnel, jtbd_interview]
+    tools: [compute-information-flow, compute-incentive-alignment, compute-trust-friction, compute-knowledge-sharing, compute-organizational-learning]
 
   tech:
     enabled: true
@@ -41,20 +40,14 @@ experts:
     model: default
     tools: [software_ecosystem_scan, connector_blueprint]
 
-  action:
+  finance-structure:
     enabled: true
-    background: true
+    background: false
     model: default
-    tools: [priority_matrix]
+    tools: [compute-interest-coverage, compute-debt-maturity, compute-liquidity-ratio]
 
-  business_model:
+  competitive-strategy:
     enabled: true
-    background: true
+    background: false
     model: default
-    tools: [canvas_nine]
-
-  knowledge:
-    enabled: true
-    background: true
-    model: default
-    tools: [query_graph, manage_permissions, add_pkb_entry]
+    tools: [compute-five-forces, compute-market-share-trend, compute-entrant-threat]
