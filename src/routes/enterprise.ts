@@ -49,6 +49,7 @@ interface ImaBindingRecord {
 }
 interface GaAccessRecord {
   token: string; orgId: string; createdBy: string; expiresAt: string; status: 'active' | 'expired' | 'revoked';
+  contractExpiry?: string;
 }
 
 const enterprises = new Map<string, EnterpriseRecord>();
@@ -442,6 +443,29 @@ router.get('/api/enterprise/ga-access/data/:type', (req: Request, res: Response)
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     log.error({ err }, '查询GA数据失败');
+    return res.status(500).json({ ok: false, code: 'INTERNAL_ERROR', message: msg, degraded: true });
+  }
+});
+
+// PUT /api/enterprise/ga-access/:token/expiry — 设置 GA 合同到期日 (D281)
+router.put('/api/enterprise/ga-access/:token/expiry', (req: Request, res: Response) => {
+  try {
+    if (!requireAdmin(req, res)) return;
+    const token = req.params.token as string;
+    const ga = gaAccessTokens.get(token);
+    if (!ga) return res.status(404).json({ ok: false, code: 'NOT_FOUND', message: 'GA 令牌不存在' });
+    if (ga.status !== 'active') return res.status(400).json({ ok: false, code: 'NOT_ACTIVE', message: 'GA 令牌已过期或已撤销' });
+    const { contractExpiry } = req.body as { contractExpiry?: string };
+    if (!contractExpiry) return res.status(400).json({ ok: false, code: 'VALIDATION_ERROR', message: 'contractExpiry 必填' });
+    const expiryDate = new Date(contractExpiry);
+    if (isNaN(expiryDate.getTime())) return res.status(400).json({ ok: false, code: 'VALIDATION_ERROR', message: '日期格式无效' });
+    if (expiryDate < new Date()) return res.status(400).json({ ok: false, code: 'PAST_DATE', message: '到期日必须是未来日期' });
+    ga.contractExpiry = contractExpiry;
+    log.info({ token, contractExpiry }, 'GA 合同到期日已设置');
+    return res.json({ ok: true, data: { token, contractExpiry } });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log.error({ err }, '设置 GA 到期日失败');
     return res.status(500).json({ ok: false, code: 'INTERNAL_ERROR', message: msg, degraded: true });
   }
 });
