@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# task-start.sh — Loop Engineering V4.5.0: 任务启动检查点
+# task-start.sh — Loop Engineering V4.5.1: 任务启动检查点
 #
 # 生成 task brief → D200 context-injector 注入权威文档上下文
 #

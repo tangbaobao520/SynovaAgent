@@ -1,6 +1,6 @@
 # CLAUDE.md — SynovaAgent
 
-> V4.5.0 "Main Agent" | 2026-07-22 | L2 MainAgent 决策中心 + 创始人控制塔三位一体防御
+> V4.5.1 "Main Agent" | 2026-07-22 | L2 MainAgent 决策中心 + 创始人控制塔三位一体防御
 
 > 组织数字孪生诊断 + 持续增长导航系统。诊断是手段，目的是增长。
 > 核心问题：这家企业的增长卡在哪里？现在该做什么？
@@ -225,7 +225,7 @@ Agent，不是 ChatBot。驻扎企业，持续观测，主动发现，自动诊�
 **目标**: 成为组织诊断的 AWS。每个新客户、新行业、新数据源 → 加文件即可，不改代码。
 能文件化的必须文件化。不能文件化的必须有明确的扩展点。
 
-**流程约束: V4.5.0 — task brief 6字段 + 免疫系统 + plan.json + 8组物理阻断 + Plan-Actual闭合 + engine-core清零 + 时间戳顺序检查 + Q2排除项验证 + verify执行 + 全仓库engine-core扫描 + 壳包检测 + vitest --changed 增量回归 + grep 物理门禁
+**流程约束: V4.5.1 — task brief 6字段 + 免疫系统 + plan.json + 8组物理阻断 + Plan-Actual闭合 + engine-core清零 + 时间戳顺序检查 + Q2排除项验证 + verify执行 + 全仓库engine-core扫描 + 壳包检测 + vitest --changed 增量回归 + grep 物理门禁
 
 **数据流**:
 ```
@@ -298,9 +298,9 @@ evolution/ (SessionLearningEngine, FeedbackCollector, OntologyAdapter)
 
 ---
 
-## Loop Engineering V4.5.0 — grep 物理门禁 + 侧翼修复自动化
+## Loop Engineering V4.5.1 — grep 物理门禁 + 侧翼修复自动化
 
-> 2026-06-17 v2.5 → v3.0 → v3.1 → v3.5 → v3.6 → v3.7 → v3.8 → v3.9 → V4.1 → V4.1.1 → V4.1.2 → V4.2.2 → V4.2.3 → V4.2.4 → V4.2.5 → V4.3.0 → V4.4.0 (2026-07-05) → V4.4.2 (2026-07-07) → V4.4.4 (2026-07-08) → **V4.5.0 (2026-07-10)**。
+> 2026-06-17 v2.5 → v3.0 → v3.1 → v3.5 → v3.6 → v3.7 → v3.8 → v3.9 → V4.1 → V4.1.1 → V4.1.2 → V4.2.2 → V4.2.3 → V4.2.4 → V4.2.5 → V4.3.0 → V4.4.0 (2026-07-05) → V4.4.2 (2026-07-07) → V4.4.4 (2026-07-08) → V4.5.0 (2026-07-10) → **V4.5.1 (2026-08-01)**。
 >
 > **v3.6 的核心教训**：把需要语义理解的事交给 grep = 17 次折腾才提交成功。
 > **V3.9 的核心教训**：硬阻断 100% 有效，软机制 0% 有效。信息注入型检查对 agent 不可见。
@@ -369,6 +369,16 @@ evolution/ (SessionLearningEngine, FeedbackCollector, OntologyAdapter)
 > - **漏洞 3 修复：壳包检测**。`packages/*/src/` 下只有 index.ts 且全为 `export from`、行数 <50、引用 engine-core → 判定为壳包 → 硬阻断。
 > - **check-bridge-files.sh 同步加固**：独立验证器同样覆盖 packages/ + 相对路径 + 壳包检测。
 > - **全部版本号同步到 V4.4.2**
+>
+> ### V4.5.1 变更 (2026-08-01) — pre-commit 超时根治 + 门禁扩展
+> > 背景：pre-commit 实测 122s（>120s 超时线）导致 git commit 反复超时 → 被迫 --no-verify，成为绕过控制塔的根因。
+>
+> - **性能：pre-commit 122s → ~50s**。三管齐下：① 9 个外部脚本并行化（`par_start`/`par_collect`，串行 95s → 并行 ~26s）；② `GIT_CACHED_*` 缓存 git diff（16 次 git 调用 → 4 次）；③ I/O 合并（壳包检测 13 包×4 次 I/O → 1 次 find + 1 次 awk，28.7s → 7.1s；deprecated-mapping 20 次循环 grep → 1 次 grep -L，26s → 1.8s）。
+> - **正确性：12 处 `grep -c ... || echo 0` 加 `tr -d '\n\r'`**。修复 `[: integer expected`——`grep -c` 无匹配时输出 "0" 且 exit 1，`|| echo 0` 追加第二行 "0"，变量变成 "0\n0"。
+> - **Gatekeeper 误判修复**：只匹配 `detected-bypass` 行，`COMMITTED | pre-commit PASS` 是正常提交标记不算绕过。
+> - **新增门禁**：PreToolUse `hook-bypass-block.sh`（24h 内绕过实时阻断）+ `hook-check-task-scope.sh`（文件 vs Q2 范围）+ pre-commit 组 12 Task Scope 一致性。
+> - **控制塔跨 session 自动化**：SessionStart/PreToolUse/PostToolUse 全部 hook 移至 `settings.json`（git 追踪），新 clone 即自带完整控制塔。
+> - **全部版本号同步到 V4.5.1**
 >
 > ### V4.5.0 变更 (2026-07-10) — grep 物理门禁 + 侧翼修复自动化
 > > 背景：发现时间黑洞在"侧翼修复"——删改符号前不知道哪些文件会断裂，tsc 报了才逐处修。

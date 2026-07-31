@@ -1,5 +1,5 @@
  #!/bin/bash
- # Loop Engineering V4.5.0 — 长运行熔断器 + 状态记忆检查
+ # Loop Engineering V4.5.1 — 长运行熔断器 + 状态记忆检查
  #
  # 检测需要熔断的信号:
  #   1. verify-incremental 在单个任务中打到 5 轮上限
@@ -23,7 +23,7 @@
  [ "${1:-}" = "--check" ] && ONLY_CHECK=true
  
  echo ""
- echo -e "${CYAN}Loop Engineering V4.5.0 — 熔断器检查${RESET}"
+ echo -e "${CYAN}Loop Engineering V4.5.1 — 熔断器检查${RESET}"
  echo ""
  
  # 1. 循环轮次检查
