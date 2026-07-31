@@ -99,7 +99,8 @@ ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 BYPASS_LOG="$ROOT/.claude/bypass.log"
 if [ -f "$BYPASS_LOG" ]; then
   TODAY=$(date +%Y-%m-%d)
-  BYPASS_COUNT=$(grep -c "$TODAY" "$BYPASS_LOG" 2>/dev/null || echo 0)
+  # V4.5.1: 只匹配 detected-bypass 行。COMMITTED 行是正常提交成功标记，不是绕过。
+  BYPASS_COUNT=$(grep -c "${TODAY}.*detected-bypass" "$BYPASS_LOG" 2>/dev/null | tr -d '\n\r' || echo 0)
   if [ "$BYPASS_COUNT" -gt 0 ]; then
     echo "[GATEKEEPER] 检测到今日 ${BYPASS_COUNT} 次 --no-verify 绕过记录"
     echo "[GATEKEEPER] 请使用: git synova-commit --task-id <D#> --agent claude-code --message '...'"
@@ -107,7 +108,46 @@ if [ -f "$BYPASS_LOG" ]; then
     exit 1
   fi
 fi
-STAGED=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep '\.ts$' | grep -v node_modules || true)
+# V4.5.1: 缓存 git diff 结果 — 本机每次 git 调用 ~1s，脚本内 10+ 次调用是超时主因
+GIT_CACHED_NAMES=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)
+GIT_CACHED_ALL_NAMES=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)
+GIT_CACHED_ADDED_NAMES=$(git diff --cached --name-only --diff-filter=A 2>/dev/null || true)
+GIT_CACHED_DIFF=$(git diff --cached 2>/dev/null || true)
+
+STAGED=$(echo "$GIT_CACHED_NAMES" | grep '\.ts$' | grep -v node_modules || true)
+
+# ═══ V4.5.1: 慢脚本并行化 — 慢盘上串行 95s → 并行 ~26s ═══
+# 环境事实: 本机单文件 I/O ~500ms, python 启动 ~1.5s, git ~1s。
+# 9 个外部脚本串行执行累计 ~95s 导致 git commit 120s 超时 → 被迫 --no-verify。
+# 解法: 在脚本早期统一后台启动, 在各自原本的调用点 wait + cat 收集。
+PAR_DIR="$ROOT/.claude/.precommit-par"
+rm -rf "$PAR_DIR" 2>/dev/null
+mkdir -p "$PAR_DIR" 2>/dev/null
+
+par_start() {
+  local name="$1" script="$2"
+  bash "$ROOT/scripts/$script" > "$PAR_DIR/$name.out" 2>&1
+  echo $? > "$PAR_DIR/$name.code"
+}
+
+par_collect() {
+  local name="$1" pid="$2"
+  wait "$pid" 2>/dev/null
+  local code=0
+  [ -f "$PAR_DIR/$name.code" ] && code=$(cat "$PAR_DIR/$name.code" 2>/dev/null | tr -d '\n\r')
+  cat "$PAR_DIR/$name.out" 2>/dev/null
+  return "${code:-0}"
+}
+
+# 后台启动 8 个慢脚本 (validate-expert-config 需即时判断退出码, 保留串行)
+( par_start hardcoded check-hardcoded.sh ) &  PAR_HARDCODED=$!
+( par_start deprecated-mapping check-deprecated-mapping.sh ) &  PAR_DEPRECATED=$!
+( par_start secrets check-secrets.sh ) &  PAR_SECRETS=$!
+( par_start plan-integrity check-plan-integrity.sh ) &  PAR_PLAN_INTEGRITY=$!
+( par_start verifiable-done check-verifiable-done.sh ) &  PAR_VERIFIABLE=$!
+( par_start q0c-tracking check-q0c-tracking.sh ) &  PAR_Q0C=$!
+( par_start acceptance-ci check-acceptance-ci.sh ) &  PAR_ACCEPTANCE=$!
+( par_start file-driven check-file-driven.sh ) &  PAR_FILE_DRIVEN=$!
 
 # ═══ V3.8: plan.json — 分阶段任务支持 ═══
 # Anthropic 原则: 架构步骤不是偷懒。当 plan.json 声明某文件处于 create 阶段
@@ -145,9 +185,9 @@ except: pass
     DEFERRED_TEST_FILES=$(echo "$PLAN_PARSE" | grep "^TEST:" | sed 's/^TEST://')
   fi
 fi
-STAGED_ALL=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep -v node_modules || true)
+STAGED_ALL=$(echo "$GIT_CACHED_ALL_NAMES" | grep -v node_modules || true)
 STAGED_SRC=$(echo "$STAGED_ALL" | grep -E '^src/|^tests/|^packages/|^scripts/' | grep -v 'scripts/pre-commit-check.sh\|scripts/check-secrets.sh\|scripts/check-file-driven.sh\|scripts/workflow/' || true)
-NEW_IMPL=$(git diff --cached --name-only --diff-filter=A 2>/dev/null | grep -E "^src/|^extensions/" | grep "\.ts$" | grep -v "\.test\." | grep -v "\.d\.ts" | grep -v "types\.ts$\|index\.ts$\|helpers\.ts$" | grep -v "src/sentinel/compute/" || true)
+NEW_IMPL=$(echo "$GIT_CACHED_ADDED_NAMES" | grep -E "^src/|^extensions/" | grep "\.ts$" | grep -v "\.test\." | grep -v "\.d\.ts" | grep -v "types\.ts$\|index\.ts$\|helpers\.ts$" | grep -v "src/sentinel/compute/" || true)
 
 echo ""
 echo "═══════════════════════════════════════════════════════════"
@@ -192,11 +232,11 @@ if [ -n "$STAGED_HTML" ]; then
   done
 fi
 # 也跑 check-hardcoded.sh 的联合类型/数组/Set/DEFAULT_* 检测 (不阻断，仅报告)
-bash "$ROOT/scripts/check-hardcoded.sh" 2>/dev/null || true
+par_collect hardcoded "$PAR_HARDCODED" || true
 hard_check "硬编码业务数据/类型 (禁止硬编码部门名/可扩展实体列表)" "${HARDCODE_DATA:-}"
 
 # V4.5.0: 旧适配器废弃映射检查 (不阻断)
-bash "$ROOT/scripts/check-deprecated-mapping.sh"
+par_collect deprecated-mapping "$PAR_DEPRECATED" || true
 
 # ═══════════════════════════════════════════════════════════════════
 # 组 2: 测试质量 (原 2, 4, 12, 17 合并)
@@ -243,7 +283,7 @@ if [ -n "$NEW_IMPL" ]; then
     if ! echo "$test_path" | grep -q '\.test\.ts$'; then
       test_path="${test_path%.ts}.test.ts"
     fi
-    if ! git diff --cached --name-only 2>/dev/null | grep -q "^${test_path}$"; then
+    if ! echo "$GIT_CACHED_NAMES" | grep -q "^${test_path}$"; then
       if [ ! -f "$test_path" ]; then
         MISSING_TEST="${MISSING_TEST}${impl} → 缺少 ${test_path}\n"
       fi
@@ -260,11 +300,11 @@ fi
 # 2c. 桩测试 + 跨模块集成测试 (原 12 + 17 合并)
 STUB_FAIL=""
 INTG_FAIL=""
-STAGED_TESTS=$(git diff --cached --name-only --diff-filter=A 2>/dev/null | grep '^tests/.*\.test\.ts$' || true)
+STAGED_TESTS=$(echo "$GIT_CACHED_ADDED_NAMES" | grep '^tests/.*\.test\.ts$' || true)
 if [ -n "$STAGED_TESTS" ]; then
   for tf in $STAGED_TESTS; do
     [ -z "$tf" ] && continue; [ ! -f "$tf" ] && continue
-    EXPECT_COUNT=$(grep -c 'expect(' "$tf" 2>/dev/null || echo 0)
+    EXPECT_COUNT=$(grep -c 'expect(' "$tf" 2>/dev/null | tr -d '\n\r' || echo 0)
     if [ "${EXPECT_COUNT:-0}" -lt 3 ]; then
       STUB_FAIL="${STUB_FAIL}  ${tf}: 仅 ${EXPECT_COUNT} 个 expect() — 可能为桩测试（需 ≥3 个）\n"
     fi
@@ -297,8 +337,7 @@ hard_check "跨模块集成: bridge/context 类需 .integration.test.ts" "${INTG
 # ═══════════════════════════════════════════════════════════════════
 echo ""
 echo -e "${CYAN}── 组 3/8: Secrets ──${RESET}"
-bash "$ROOT/scripts/check-secrets.sh"
-[ $? -ne 0 ] && HARD_FAIL=$((HARD_FAIL + 1))
+par_collect secrets "$PAR_SECRETS" || HARD_FAIL=$((HARD_FAIL + 1))
 
 # ═══════════════════════════════════════════════════════════════════
 # 组 4: 接线完整性 (原 5, 11 合并)
@@ -390,7 +429,7 @@ BRIDGE_ALLOWED="src/adapters/engine-core-adapter.ts|src/init/engine-context.ts|s
 BRIDGE_FAIL=""
 
 # 5b-i: 全仓库扫描（src/ + packages/）— 堵住"藏到 packages/ 目录下"的漏洞
-STAGED_ALL_FILES=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep -E '^(src|packages)/.*\.ts$' | grep -v '\.test\.' || true)
+STAGED_ALL_FILES=$(echo "$GIT_CACHED_ALL_NAMES" | grep -E '^(src|packages)/.*\.ts$' | grep -v '\.test\.' || true)
 if [ -n "$STAGED_ALL_FILES" ]; then
   for file in $STAGED_ALL_FILES; do
     [ -z "$file" ] && continue
@@ -403,21 +442,25 @@ if [ -n "$STAGED_ALL_FILES" ]; then
 fi
 
 # 5b-ii: 壳包检测 — packages/*/ 下只有 index.ts 且全部是 export from → 桥接包
-for pkg_dir in packages/*/; do
-  [ ! -d "$pkg_dir/src" ] && continue
-  pkg_src_files=$(find "$pkg_dir/src" -name "*.ts" 2>/dev/null)
-  src_count=$(echo "$pkg_src_files" | grep -c . 2>/dev/null || echo 0)
-  if [ "$src_count" -eq 1 ] && [ -f "${pkg_dir}src/index.ts" ]; then
-    reexport_lines=$(grep -c "^export.*from" "${pkg_dir}src/index.ts" 2>/dev/null || echo 0)
-    total_lines=$(wc -l < "${pkg_dir}src/index.ts" 2>/dev/null || echo 0)
-    if [ "$reexport_lines" -gt 0 ] && [ "$total_lines" -lt 50 ]; then
-      # 检查是否引用了 engine-core
-      if grep -q "engine-core" "${pkg_dir}src/index.ts" 2>/dev/null; then
-        BRIDGE_FAIL="${BRIDGE_FAIL}  ${pkg_dir}src/index.ts: 壳包 — 仅 ${total_lines} 行且全部是 export from engine-core (铁律 46)\n"
-      fi
+# V4.5.1: 单次 find + 单次 grep -l 替代每包 4 次 I/O（13 包 × 4 次 = 26s → <1s）
+ALL_PKG_SRC=$(find "$ROOT"/packages/*/src -name "*.ts" ! -name "index.ts" 2>/dev/null || true)
+# V4.5.1: awk 单次扫描替代逐文件 grep/wc（8 个匹配包 × 3 次 I/O = 13s → <1s）
+SHELL_PKGS=$(awk '
+  FNR == 1 { reexport=0; engcore=0 }
+  { if ($0 ~ /^export.*from/) reexport=1; if ($0 ~ /engine-core/) engcore=1; lines=FNR }
+  ENDFILE { if (reexport && engcore && lines > 0 && lines < 50) print FILENAME }
+' "$ROOT"/packages/*/src/index.ts 2>/dev/null || true)
+if [ -n "$SHELL_PKGS" ]; then
+  while IFS= read -r pkg_idx; do
+    [ -z "$pkg_idx" ] && continue
+    # 只有 index.ts 一个文件（该包无其他 src 文件）才是壳包
+    pkg_dir=$(dirname "$(dirname "$pkg_idx")")
+    if echo "$ALL_PKG_SRC" | grep -q "^${pkg_dir}/"; then
+      continue  # 包内有其他源文件 → 不是壳包
     fi
-  fi
-done
+    BRIDGE_FAIL="${BRIDGE_FAIL}  $pkg_idx: 壳包 — 仅 ${lines} 行且全部是 export from engine-core (铁律 46)\n"
+  done <<< "$SHELL_PKGS"
+fi
 hard_check "铁律 46: 桥接文件欺诈 + 包级 engine-core + 壳包检测" "${BRIDGE_FAIL:-}"
 
 # 5c. 铁律 47: 声称拆分完须 grep 零旧引用 (原 20 — 警告模式)
@@ -497,16 +540,13 @@ fi
 hard_check "时间戳顺序: brief 必须早于代码写入" "${BEFORE_BRIEF_MSG:-}"
 
 # V4.1: plan-integrity — Q1a/Q1b/Q2 承诺可验证
-bash "$ROOT/scripts/check-plan-integrity.sh"
-[ $? -ne 0 ] && HARD_FAIL=$((HARD_FAIL + 1))
+par_collect plan-integrity "$PAR_PLAN_INTEGRITY" || HARD_FAIL=$((HARD_FAIL + 1))
 
 # V3.9: Done 可证伪性 — 每个 - [x] 必须包含 verify: 命令
-bash "$ROOT/scripts/check-verifiable-done.sh"
-[ $? -ne 0 ] && HARD_FAIL=$((HARD_FAIL + 1))
+par_collect verifiable-done "$PAR_VERIFIABLE" || HARD_FAIL=$((HARD_FAIL + 1))
 
 # V3.9: Q0c 取消跟踪 — 取消的任务必须有 follow_up
-bash "$ROOT/scripts/check-q0c-tracking.sh"
-[ $? -ne 0 ] && HARD_FAIL=$((HARD_FAIL + 1))
+par_collect q0c-tracking "$PAR_Q0C" || HARD_FAIL=$((HARD_FAIL + 1))
 
 # V4.5.0 (本体迁移): 禁止旧 SOG 枚举引用潜入 src/
 SOG_NODE_REFS=$(grep -rn "SOGNodeType\." src/ --include="*.ts" 2>/dev/null | grep -v "node_modules" | head -10 || true)
@@ -555,7 +595,7 @@ echo ""
 echo -e "${CYAN}── 组 7/8: 架构合规 ──${RESET}"
 
 # 7a. DiagnosticModule 禁止 (原 6)
-NEW_DIAG=$(git diff --cached -- "*.ts" "*.js" 2>/dev/null | grep "^+.*DiagnosticModule" | grep -Ev "scripts/pre-commit-check.sh|.md|.html|//|@deprecated|import type|^+++|hard_check|禁止新 DiagnosticModule|不要再使用 DiagnosticModule" || true)
+NEW_DIAG=$(echo "$GIT_CACHED_DIFF" | grep "^+.*DiagnosticModule" | grep -Ev "scripts/pre-commit-check.sh|.md|.html|//|@deprecated|import type|^+++|hard_check|禁止新 DiagnosticModule|不要再使用 DiagnosticModule" || true)
 hard_check "禁止 DiagnosticModule: 新模块须实现 Sentinel 接口" "${NEW_DIAG:-}"
 
 # 7b. 专家配置校验 (原 9)
@@ -576,7 +616,7 @@ BYPASS_LOG="$ROOT/.claude/bypass.log"
 FAILURE_COUNT=0
 if [ -f "$FAILURE_LOG" ]; then
   YESTERDAY=$(date -d "yesterday" +%Y-%m-%d 2>/dev/null || date +%Y-%m-%d)
-  FAILURE_COUNT=$(grep -c "$YESTERDAY\|$(date +%Y-%m-%d)" "$FAILURE_LOG" 2>/dev/null | tr -d '\r' || echo 0)
+  FAILURE_COUNT=$(grep -c "$YESTERDAY\|$(date +%Y-%m-%d)" "$FAILURE_LOG" 2>/dev/null | tr -d '\n\r' || echo 0)
   FAILURE_COUNT=${FAILURE_COUNT//[^0-9]/}
   [ -z "$FAILURE_COUNT" ] && FAILURE_COUNT=0
 fi
@@ -593,7 +633,8 @@ fi
 # 检测方法: post-commit hook 检测 --no-verify 并写入 bypass.log
 BYPASS_COUNT=0
 if [ -f "$BYPASS_LOG" ]; then
-  BYPASS_COUNT=$(grep -c "$(date +%Y-%m-%d)" "$BYPASS_LOG" 2>/dev/null | tr -d '\r' || echo 0)
+  # V4.5.1: 只统计 detected-bypass 行（COMMITTED 是正常提交标记）
+  BYPASS_COUNT=$(grep -c "$(date +%Y-%m-%d).*detected-bypass" "$BYPASS_LOG" 2>/dev/null | tr -d '\n\r' || echo 0)
   BYPASS_COUNT=${BYPASS_COUNT//[^0-9]/}
   [ -z "$BYPASS_COUNT" ] && BYPASS_COUNT=0
 fi
@@ -608,13 +649,13 @@ else
 fi
 
 # 7d. 数据流自检 (原 18)
-STAGED_ROUTES=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep -E '^src/routes/.*\.ts$' | grep -v '.test.' || true)
+STAGED_ROUTES=$(echo "$GIT_CACHED_ALL_NAMES" | grep -E '^src/routes/.*\.ts$' | grep -v '.test.' || true)
 DATA_FLOW_FAIL=""
 if [ -n "$STAGED_ROUTES" ]; then
   for rf in $STAGED_ROUTES; do
     [ -z "$rf" ] && continue; [ ! -f "$rf" ] && continue
-    HAS_API=$(grep -c "fetch(\|await.*import\|getDatabase()\|\.search(\|\.list(\|\.recall(" "$rf" 2>/dev/null || echo 0)
-    HAS_HARD=$(grep -c "'marketing'\|'sales'\|'finance'\|'研发部'\|'市场部'\|'销售部'" "$rf" 2>/dev/null || echo 0)
+    HAS_API=$(grep -c "fetch(\|await.*import\|getDatabase()\|\.search(\|\.list(\|\.recall(" "$rf" 2>/dev/null | tr -d '\n\r' || echo 0)
+    HAS_HARD=$(grep -c "'marketing'\|'sales'\|'finance'\|'研发部'\|'市场部'\|'销售部'" "$rf" 2>/dev/null | tr -d '\n\r' || echo 0)
     if [ "${HAS_API:-0}" -eq 0 ] && [ "${HAS_HARD:-0}" -gt 0 ]; then
       DATA_FLOW_FAIL="${DATA_FLOW_FAIL}  ${rf}: 含硬编码业务数据但无 API 调用 — 可能为静态模板\n"
     fi
@@ -638,10 +679,8 @@ hard_check "数据流: 路由文件须含 API 调用证据" "${DATA_FLOW_FAIL:-}
 echo ""
 echo -e "${CYAN}── 组 8/8: 文件驱动架构完整性 (V3.9) ──${RESET}"
 # V3.9: 能力验收 CI — 验收测试必须通过 CI
-bash "$ROOT/scripts/check-acceptance-ci.sh"
-[ $? -ne 0 ] && HARD_FAIL=$((HARD_FAIL + 1))
-bash "$ROOT/scripts/check-file-driven.sh"
-[ $? -ne 0 ] && HARD_FAIL=$((HARD_FAIL + 1))
+par_collect acceptance-ci "$PAR_ACCEPTANCE" || HARD_FAIL=$((HARD_FAIL + 1))
+par_collect file-driven "$PAR_FILE_DRIVEN" || HARD_FAIL=$((HARD_FAIL + 1))
 
 # ═══ 组 9/9: 契约门禁 (D257) ═══
 echo -e "${CYAN}── 组 9/9: 契约门禁 ──${RESET}"
@@ -723,12 +762,13 @@ for gx in g:
   fi
 
   # V3 CP3-2: G11 测试覆盖检查
+  HAS_E2E=0; HAS_TESTS=0
   BRIEF_ID=$(echo "$STAGED_FILES" | grep -oP '\.claude/task-briefs/\K[^.]+' | head -1 || true)
   if [ -n "$BRIEF_ID" ]; then
     BRIEF_PATH="$ROOT/.claude/task-briefs/${BRIEF_ID}.md"
     if [ -f "$BRIEF_PATH" ]; then
-      HAS_E2E=$(grep -c "端到端\|e2e\|curl.*200\|HTTP.*200" "$BRIEF_PATH" 2>/dev/null || true)
-      HAS_TESTS=$(echo "$STAGED_FILES" | grep -c "\.test\.ts" 2>/dev/null || true)
+      HAS_E2E=$(grep -c "端到端\|e2e\|curl.*200\|HTTP.*200" "$BRIEF_PATH" 2>/dev/null | tr -d '\n\r' || true)
+      HAS_TESTS=$(echo "$STAGED_FILES" | grep -c "\.test\.ts" 2>/dev/null | tr -d '\n\r' || true)
       if [ "$HAS_E2E" -gt 0 ] && [ "$HAS_TESTS" -eq 0 ]; then
         warn_check "G11: 声明的端到端验收但无测试文件" "$BRIEF_ID 声明了端到端验收，但暂存区无测试文件"
       else

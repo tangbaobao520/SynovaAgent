@@ -22,7 +22,8 @@ if [ -f "$CUR_BRIEF" ]; then
   [ -n "$BNAME" ] && BRIEF="$ROOT/.claude/task-briefs/$BNAME"
 fi
 if [ -z "$BRIEF" ] || [ ! -f "$BRIEF" ]; then
-  BRIEF=$(find "$ROOT/.claude/task-briefs/" -type f -name "*.md" 2>/dev/null | xargs ls -t 2>/dev/null | head -1)
+  # V4.5.1: find -printf 单次遍历替代 xargs ls -t（慢盘 2s+ → 0.1s）
+  BRIEF=$(find "$ROOT/.claude/task-briefs/" -type f -name "*.md" -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
 fi
 
 if [ ! -f "$PLAN_FILE" ]; then
@@ -38,14 +39,14 @@ principles = p.get('principles', [])
 print(len(principles))
 for pp in principles: print(pp)
 " 2>/dev/null)
-PRIN_COUNT=$(echo "$PRINCIPLES" | head -1 | tr -d '[:space:]' | grep -o '[0-9]\+' || echo 0)
+PRIN_COUNT=$(echo "$PRINCIPLES" | head -1 | tr -d '[:space:]' | grep -o '[0-9]\+' | tr -d '\n\r' || echo 0)
 if [ "${PRIN_COUNT:-0}" -eq 0 ]; then
   echo -e "  ${RED}❌ plan.principles 为空 — Q1b 未回答 Anthropic 决策链路  [硬阻断]${RESET}"
   HARD_FAIL=$((HARD_FAIL + 1))
 else
   # 检查每条原则是否对应至少一个 Done verify 命令
   if [ -n "$BRIEF" ]; then
-    DONE_CMDS=$(grep -c 'verify:' "$BRIEF" 2>/dev/null || echo 0)
+    DONE_CMDS=$(grep -c 'verify:' "$BRIEF" 2>/dev/null | tr -d '\n\r' || echo 0)
     if [ "${DONE_CMDS:-0}" -lt "${PRIN_COUNT:-1}" ]; then
       echo -e "  ${YELLOW}⚠️  plan.principles 有 ${PRIN_COUNT} 条，但 Done 仅有 ${DONE_CMDS} 个 verify  [警告]${RESET}"
       echo "     每条原则应对应至少一个可验证的 Done 标准。"
@@ -162,7 +163,7 @@ fi
 # ═══ 7. Done verify 格式检查（V4.5.0: 仅检查存在性，不执行命令）═══
 if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
   DONE_SEC=$(awk '/^## Done 标准/{found=1; next} found && /^## /{exit} found' "$BRIEF" 2>/dev/null)
-  VERIFY_COUNT=$(echo "$DONE_SEC" | grep -cE '^\s*- \[x\].*verify:|^\s+verify:' 2>/dev/null || echo 0)
+  VERIFY_COUNT=$(echo "$DONE_SEC" | grep -cE '^\s*- \[x\].*verify:|^\s+verify:' 2>/dev/null | tr -d '\n\r' || echo 0)
   if [ "${VERIFY_COUNT:-0}" -gt 0 ]; then
     echo -e "  ${GREEN}✅ Done verify 格式: ${VERIFY_COUNT} 条已列出${RESET}"
   fi
