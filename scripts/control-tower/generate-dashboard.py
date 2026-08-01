@@ -33,14 +33,18 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 # D261: views module imports (fallback)
 _HAS_VIEWS = False
+parse_snapshot_ts = None
 try:
     from views.pm_dashboard import render_pm
-    from views.completion import render_completion
+    from views.completion import render_completion, parse_snapshot_ts
     from views.workflow_graph import render_workflow
     from views.agent_health import render_agent
     _HAS_VIEWS = True
 except ImportError:
     pass
+
+# D296 (L3-1): 数据新鲜度门禁 — 数据源存在 + mtime < 24h
+FRESHNESS_MAX_AGE = datetime.timedelta(hours=24)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -174,12 +178,129 @@ def count_active_tasks(rdc_pipeline: list) -> int:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+#  D296 (L3-1/L3-3/L3-5): 数据真实性 — 新鲜度门禁 + 测量自检 + 最新快照
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def _latest_completion_path() -> Optional[Path]:
+    """最新快照目录的 completion-scores.json 路径 (无则 None)"""
+    snap_dir = PROJECT_ROOT / ".codex/snapshots"
+    if not snap_dir.exists():
+        return None
+    best = None
+    best_epoch = -1
+    for entry in snap_dir.iterdir():
+        if not entry.is_dir():
+            continue
+        f = entry / "completion-scores.json"
+        if not f.exists():
+            continue
+        epoch = parse_snapshot_ts(entry.name) if parse_snapshot_ts else 0
+        if epoch > best_epoch:
+            best_epoch = epoch
+            best = f
+    return best
+
+
+def read_latest_completion() -> Dict[str, Any]:
+    """读取最新快照的 completion-scores.json (统一 schema, D296)
+
+    之前 collect_dashboard_data 从未加载完成度快照 → 视图取默认值 0 →
+    仪表盘显示假 0%。修复后 data["completion"] 始终是真实快照数据。
+    """
+    path = _latest_completion_path()
+    if path is None:
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+
+def freshness_check(data: Dict[str, Any], sources: Optional[Dict[str, Path]] = None) -> Dict[str, Any]:
+    """数据新鲜度门禁 (L3-1): 数据源存在 + mtime<24h。
+
+    返回 {"status": "fresh"|"stale", "missing": [...], "stale": [...]}。
+    sources 参数供测试注入 (默认: gate-status + 最新完成度 + 依赖图)。
+    """
+    now = datetime.datetime.now(datetime.timezone.utc)
+    if sources is None:
+        sources = {
+            "gate-status": PROJECT_ROOT / ".codex/signals/gate-status.json",
+            "completion": _latest_completion_path(),
+            "dependency-graph": PROJECT_ROOT / ".codex/dependency-graph.json",
+        }
+    missing: List[str] = []
+    stale: List[str] = []
+    for name, path in sources.items():
+        if path is None or not Path(path).exists():
+            missing.append(name)
+            continue
+        try:
+            mtime = datetime.datetime.fromtimestamp(
+                Path(path).stat().st_mtime, tz=datetime.timezone.utc)
+        except OSError:
+            missing.append(name)
+            continue
+        if now - mtime > FRESHNESS_MAX_AGE:
+            stale.append(name)
+    status = "stale" if (missing or stale) else "fresh"
+    return {"status": status, "missing": missing, "stale": stale}
+
+
+def measurement_self_check(data: Dict[str, Any]) -> Dict[str, Any]:
+    """测量自检红灯 (L3-3): 完成度全 0 / signals 全空 → red + 原因。
+
+    控制塔必须反映真实状态 — 全 0 分数本身就是异常信号 (如 63 任务全 0.167)。
+    """
+    reasons: List[str] = []
+    completion = data.get("completion", {}) or {}
+    if completion:
+        total = completion.get("totalTasks", 0)
+        score = completion.get("systemScore", 0)
+        c1 = completion.get("completionByCriteria", {}).get("code_exists", {})
+        c1_pct = c1.get("pct", 0) if isinstance(c1, dict) else 0
+        if total > 0 and score == 0:
+            reasons.append(f"完成度异常: {total} 个任务全部 0 分")
+        elif total > 0 and c1_pct == 0:
+            reasons.append(f"代码存在判定全失败 (code_exists {c1_pct}%)")
+    signals = data.get("signals", {})
+    valid = [s for s in signals.values()
+             if isinstance(s, dict) and s.get("status") != "unknown"]
+    if not valid:
+        reasons.append("组件信号全空")
+    return {"status": "red" if reasons else "green", "reasons": reasons}
+
+
+def write_dashboard_checkpoint(data: Dict[str, Any]) -> None:
+    """L3-5: cp1 仪表盘数据检查点 (与 cp3-commit-check.json 同格式)"""
+    try:
+        cps = PROJECT_ROOT / ".codex/checkpoints"
+        cps.mkdir(parents=True, exist_ok=True)
+        freshness = data.get("freshness", {}) or {}
+        status = "pass" if freshness.get("status") == "fresh" else "fail"
+        trouble = (freshness.get("stale", []) or []) + (freshness.get("missing", []) or [])
+        reason = f"数据新鲜度: {freshness.get('status')}"
+        if trouble:
+            reason += f" — 过期/缺失: {', '.join(trouble[:5])}"
+        payload = {
+            "name": "CP1: 仪表盘数据检查",
+            "status": status,
+            "reason": reason,
+            "checkedAt": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        }
+        (cps / "cp1-dashboard-check.json").write_text(
+            json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    except OSError as e:
+        print(f"[dashboard] [WARN] cp1 检查点写入失败: {e}", file=sys.stderr)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 #  数据聚合
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def collect_dashboard_data() -> Dict[str, Any]:
-    """聚合所有仪表盘数据"""
-    return {
+    """聚合所有仪表盘数据 (D296: + completion/freshness/selfCheck)"""
+    data = {
         "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "authDocs": scan_auth_docs(),
         "rdcPipeline": derive_rdc_pipeline(),
@@ -190,6 +311,11 @@ def collect_dashboard_data() -> Dict[str, Any]:
         "signalCount": 6,
         "activeTasks": count_active_tasks(derive_rdc_pipeline()),
     }
+    # D296: 完成度真实数据 + 新鲜度门禁 + 测量自检
+    data["completion"] = read_latest_completion()
+    data["freshness"] = freshness_check(data)
+    data["selfCheck"] = measurement_self_check(data)
+    return data
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -421,6 +547,19 @@ def render_html(data: Dict[str, Any]) -> str:
     ts = data.get("timestamp", "")
     signal_count = sum(1 for v in signals.values() if v.get("status") != "unknown")
 
+    # D296 (L3-1/L3-3): 红灯/过期横幅 — 数据不真实时先亮警示再展示
+    banners = ""
+    self_check = data.get("selfCheck", {}) or {}
+    freshness = data.get("freshness", {}) or {}
+    if self_check.get("status") == "red":
+        reasons = "；".join(self_check.get("reasons", []) or [])
+        banners += f"""
+    <div class="ct-banner ct-banner-red">&#128308; 测量自检红灯: {esc(reasons) or '数据异常'}</div>"""
+    if freshness.get("status") == "stale":
+        trouble = list(freshness.get("stale", []) or []) + list(freshness.get("missing", []) or [])
+        banners += f"""
+    <div class="ct-banner ct-banner-amber">&#9888; 数据过期/缺失 (>24h): {esc(', '.join(trouble) or '未知')} — 请运行 check-gates-v2.py + self-diagnosis.py</div>"""
+
     # build JS — NOT in f-string so real { } work
     import json as _j
     _dj = _j.dumps(data, default=str, ensure_ascii=False)
@@ -456,6 +595,9 @@ h2 {{ font-size:15px; margin:20px 0 10px; color:#94a3b8; text-transform:uppercas
 .status-bar {{ display:flex; gap:20px; align-items:center; font-size:12px; color:#94a3b8; padding:10px 0; border-top:1px solid #334155; margin-top:16px; }}
 .status-bar .ok {{ color:#22c55e; }}
 .status-bar .warn {{ color:#f59e0b; }}
+.ct-banner {{ border-radius:6px; padding:10px 14px; margin-bottom:12px; font-size:13px; font-weight:600; }}
+.ct-banner-red {{ background:#450a0a; border:1px solid #ef4444; color:#fca5a5; }}
+.ct-banner-amber {{ background:#451a03; border:1px solid #f59e0b; color:#fcd34d; }}
 .gate-grid {{ display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px; }}
 .gate-item {{ display:flex; align-items:center; gap:6px; padding:4px 8px; border-radius:4px; font-size:11px; background:#0f172a; }}
 .gate-item .name {{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }}
@@ -465,6 +607,7 @@ h2 {{ font-size:15px; margin:20px 0 10px; color:#94a3b8; text-transform:uppercas
 </style>
 </head><body>
 <h1>&#9672; 创始人驾驶舱 <span style="font-size:12px;color:#64748b;font-weight:400">D220</span></h1>
+{banners}
 
 <div class="grid">
     <div class="card">
@@ -554,6 +697,8 @@ def generate_static(output_path: str = ""):
     """静态模式：生成 HTML 文件"""
     data = collect_dashboard_data()
     html = render_html(data)
+    # L3-5: cp1 仪表盘数据检查点
+    write_dashboard_checkpoint(data)
 
     if not output_path:
         ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -570,6 +715,8 @@ def serve(port: int = 8899):
     """服务模式：本地 HTTP + 5 分钟 JS 轮询"""
     data = collect_dashboard_data()
     html = render_html(data)
+    # L3-5: cp1 仪表盘数据检查点
+    write_dashboard_checkpoint(data)
 
     class DashboardHandler(http.server.BaseHTTPRequestHandler):
         def do_GET(self):

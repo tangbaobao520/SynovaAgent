@@ -27,16 +27,29 @@ def render_pm(data: dict) -> str:
         gates = data["gates"].get("gates", [])
 
     # 从 completion-scores.json 取条件分组完成度
+    # D296: 统一 schema — 六键 criteria (code_exists 等), 旧 A/B/C/D 兼容降级
     completion = data.get("completion", {})
     criteria = completion.get("completionByCriteria", data.get("completionByCriteria", {}))
-    overall = completion.get("overallScore", data.get("overallScore", 0))
+    overall_raw = completion.get("systemScore", data.get("systemScore", 0))
+    overall = overall_raw * 100 if not overall_raw or overall_raw <= 1 else overall_raw
 
-    # 四个条件组的定义 (V3 §2.2)
+    def _crit_pct(key: str) -> float:
+        entry = criteria.get(key, 0)
+        if isinstance(entry, dict):
+            return entry.get("pct", 0)
+        return entry if isinstance(entry, (int, float)) else 0
+
+    def _crit_d_quality() -> float:
+        """D 综合质量 = 路径可达/依赖可用/无已知缺陷 三键均值"""
+        vals = [_crit_pct(k) for k in ("path_reachable", "dependencies_ok", "no_defects")]
+        return round(sum(vals) / len(vals), 1) if vals else 0.0
+
+    # 四个条件组的定义 (V3 §2.2, D296 映射到统一 schema 六键)
     criteria_defs = [
-        ("A", "代码存在 (Path Exists)", criteria.get("A", 0)),
-        ("B", "接线完整 (Wired)", criteria.get("B", 0)),
-        ("C", "测试存在 (Test Exists)", criteria.get("C", 0)),
-        ("D", "综合质量 (Quality)", criteria.get("D", 0)),
+        ("A", "代码存在 (Path Exists)", _crit_pct("code_exists")),
+        ("B", "接线完整 (Wired)", _crit_pct("wiring_complete")),
+        ("C", "测试存在 (Test Exists)", _crit_pct("test_exists")),
+        ("D", "综合质量 (Quality)", _crit_d_quality()),
     ]
 
     # 按条件分组门禁

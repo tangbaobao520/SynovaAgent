@@ -1,9 +1,16 @@
 #!/usr/bin/env python3
 """
-views/completion.py — V3 §3.3 完成度时间轴视图 (D261)
+views/completion.py — V3 §3.3 完成度时间轴视图 (D261, D296 修复)
 
 时间轴滑块 + 六条件雷达图 + 30天趋势线。
 从 snapshots/ 目录的历史快照渲染。
+
+D296 修复 (控制塔数据真实性):
+  - 消费统一 schema (completion_schema.py): systemScore (0-1) + 六键 criteria
+    (旧 overallScore 0-100 兼容降级读取)
+  - 快照目录名时间解析: %Y%m%dT%H%M%SZ (self-diagnosis) + %Y%m%d-%H%M%S
+    (check-gates-v2) — 旧解析全 ValueError → epoch=0 → 时间轴排序失效
+  - 数据缺失/过期 → 显示 degraded 横幅 + 原因, 禁止渲染假 0% 数字
 
 用法:
   from views.completion import render_completion
@@ -20,11 +27,52 @@ from typing import Any
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 SNAPSHOTS_DIR = PROJECT_ROOT / ".codex/snapshots"
 
+# 六条件雷达 (统一 schema 六键 → 展示名)
+RADAR_KEYS = [
+    ("code_exists", "代码存在"),
+    ("wiring_complete", "接线完整"),
+    ("test_exists", "测试存在"),
+    ("path_reachable", "路径可达"),
+    ("dependencies_ok", "依赖可用"),
+    ("no_defects", "无已知缺陷"),
+]
+
+_SNAPSHOT_TS_FORMATS = ["%Y%m%dT%H%M%SZ", "%Y%m%d-%H%M%S",
+                        "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"]
+
+
+def parse_snapshot_ts(name: str) -> int:
+    """解析快照目录名为 epoch 秒 (D296 时间解析修复)。
+
+    支持 self-diagnosis (%Y%m%dT%H%M%SZ) 与 check-gates-v2 (%Y%m%d-%H%M%S)
+    两种目录命名, 兼容旧 ISO 格式。解析失败返回 0 (排最前, 不阻断)。
+    """
+    for fmt in _SNAPSHOT_TS_FORMATS:
+        try:
+            dt = datetime.strptime(name[:19], fmt)
+            return int(dt.replace(tzinfo=timezone.utc).timestamp())
+        except (ValueError, IndexError):
+            continue
+    return 0
+
 
 def esc(s):
     if not s:
         return ""
     return str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+
+
+def _score_to_pct(score: Any) -> float:
+    """统一为 0-100 百分比显示。
+
+    统一 schema systemScore 是 0-1, 旧 overallScore 是 0-100 —
+    取值 >1 视为已是百分比, 否则乘 100。
+    """
+    try:
+        value = float(score or 0)
+    except (TypeError, ValueError):
+        return 0.0
+    return value if value > 1 else value * 100
 
 
 def load_snapshot_history(max_snapshots: int = 30) -> list[dict]:
@@ -38,14 +86,8 @@ def load_snapshot_history(max_snapshots: int = 30) -> list[dict]:
             completion_file = entry / "completion-scores.json"
             gate_file = entry / "gate-status.json"
             ts = entry.name
-            # 尝试从目录名解析时间
-            try:
-                dt = datetime.strptime(ts[:19], "%Y-%m-%dT%H:%M:%S") if "T" in ts else \
-                     datetime.strptime(ts[:19], "%Y-%m-%d %H:%M:%S") if " " in ts else \
-                     datetime.strptime(ts[:10], "%Y-%m-%d")
-                epoch = int(dt.timestamp())
-            except (ValueError, IndexError):
-                epoch = 0
+            # D296: 时间解析修复 — 支持 %Y%m%dT%H%M%SZ 与 %Y%m%d-%H%M%S
+            epoch = parse_snapshot_ts(ts)
 
             entry_data = {"timestamp": ts, "epoch": epoch}
 
@@ -67,33 +109,40 @@ def load_snapshot_history(max_snapshots: int = 30) -> list[dict]:
 
 
 def render_completion(data: dict) -> str:
-    """渲染完成度时间轴 HTML 片段"""
+    """渲染完成度时间轴 HTML 片段 (D296: 统一 schema + degraded 展示)"""
     # 当前快照来自 data 参数
-    current_completion = data.get("completion", {})
-    overall = current_completion.get("overallScore", data.get("overallScore", 0))
+    current_completion = data.get("completion", {}) or {}
+    overall = current_completion.get("systemScore", data.get("systemScore", 0))
     criteria = current_completion.get("completionByCriteria", data.get("completionByCriteria", {}))
+
+    # D296: 数据缺失/过期 → degraded 展示 + 原因 (禁止假数字)
+    freshness = data.get("freshness", {}) or {}
+    degraded = bool(current_completion.get("degraded", False))
+    degraded_reason = current_completion.get("degradedReason", "")
+    if not current_completion or freshness.get("status") == "stale":
+        degraded = True
+        if not degraded_reason:
+            stale = freshness.get("stale", []) or freshness.get("missing", [])
+            degraded_reason = "完成度数据缺失或过期 (>24h)"
+            if stale:
+                degraded_reason += f" — {', '.join(stale[:3])}"
 
     # 历史快照
     history = load_snapshot_history()
 
-    # 趋势数据: 最近 30 个快照的 overall score
+    # 趋势数据: 最近 30 个快照的 score (统一 0-100)
     trend_points = []
     for snap in history[-30:]:
         comp = snap.get("completion", {})
-        score = comp.get("overallScore", 0)
+        score = _score_to_pct(comp.get("systemScore", comp.get("overallScore", 0)))
         ts = snap.get("timestamp", "")
         trend_points.append({"ts": ts[:16] if len(ts) > 16 else ts, "score": score})
 
-    # 当前六条件雷达值
-    radar_labels = ["代码存在", "接线完整", "测试存在", "路径可达", "依赖可用", "无已知缺陷"]
-    # 从 completionByCriteria 映射到六条件
+    # 当前六条件雷达值 (统一 schema 六键)
+    radar_labels = [label for _, label in RADAR_KEYS]
     radar_values = [
-        criteria.get("A", 0),   # 代码存在
-        criteria.get("B", 0),   # 接线完整
-        criteria.get("C", 0),   # 测试存在
-        criteria.get("D", 0),   # 路径可达(用质量均值近似)
-        criteria.get("D", 0),   # 依赖可用
-        criteria.get("D", 0),   # 无已知缺陷
+        criteria.get(key, {}).get("pct", 0) if isinstance(criteria.get(key), dict) else 0
+        for key, _ in RADAR_KEYS
     ]
     radar_json = json.dumps({"labels": radar_labels, "values": radar_values, "names": radar_labels})
 
@@ -102,11 +151,23 @@ def render_completion(data: dict) -> str:
 
     # 快照统计
     has_snapshots = len(history) > 0
-    all_scores = [s.get("completion", {}).get("overallScore", 0) for s in history if s.get("completion")]
+    all_scores = [_score_to_pct(s.get("completion", {}).get("systemScore",
+                                                            s.get("completion", {}).get("overallScore", 0)))
+                  for s in history if s.get("completion")]
     trend_dir = "up" if len(all_scores) >= 2 and all_scores[-1] > all_scores[0] else \
                 "down" if len(all_scores) >= 2 and all_scores[-1] < all_scores[0] else "flat"
 
-    return f"""
+    # D296: degraded 横幅 — 数据缺失时显示原因, 不渲染假数字
+    degraded_banner = ""
+    if degraded:
+        degraded_banner = f"""
+    <div class="comp-degraded" style="background:#450a0a;border:1px solid #ef4444;border-radius:6px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#fca5a5">
+        <b>&#9888; 数据缺失或过期:</b> {esc(degraded_reason)}
+    </div>"""
+
+    # 修复 (D296): 原实现提前 return 头部片段, 雷达/趋势/时间轴全部被丢弃 —
+    # timeline_end 赋值后从未返回, 视图实际只渲染半个 div。改为拼接后返回。
+    head_html = f"""
     <div class="completion-view">
         <div class="comp-header">
             <h2>系统完成度 <span style="font-size:12px;color:#64748b">V3 §3.3</span></h2>
@@ -115,6 +176,7 @@ def render_completion(data: dict) -> str:
                 <span class="comp-trend comp-trend-{trend_dir}">趋势: {'上升' if trend_dir == 'up' else '下降' if trend_dir == 'down' else '平稳'}</span>
             </div>
         </div>
+        {degraded_banner}
 
         <div class="comp-grid">
             <!-- 雷达图 -->
@@ -141,14 +203,18 @@ def render_completion(data: dict) -> str:
             <h3>快照时间轴</h3>
             <div class="timeline-scroll">"""
 
+    timeline_items_html = ""
     for snap in history[-20:]:
         comp = snap.get("completion", {})
-        score = comp.get("overallScore", 0)
+        score = _score_to_pct(comp.get("systemScore", comp.get("overallScore", 0)))
         ts = snap.get("timestamp", "")
         ts_short = ts[:19].replace("T", " ") if len(ts) > 19 else ts
         color = "#22c55e" if score >= 80 else "#f59e0b" if score >= 40 else "#ef4444"
-        dims = comp.get("dimensionScores", {})
-        dim_str = " | ".join(f"{k}:{v:.0f}%" for k, v in list(dims.items())[:3])
+        # D296: 统一 schema 无 dimensionScores — 用六键 pct 前 3 项替代
+        criteria = comp.get("completionByCriteria", {})
+        dim_str = " | ".join(
+            f"{label}:{criteria.get(key, {}).get('pct', 0):.0f}%"
+            for key, label in RADAR_KEYS[:3])
 
         timeline_accessible = has_snapshots
         timeline_item_style = ""
@@ -160,7 +226,7 @@ def render_completion(data: dict) -> str:
             timeline_placeholder = """<div class="timeline-empty">快照数据积累中 — 运行 check-gates-v2.py 自动生成</div>"""
 
         if timeline_accessible:
-            timeline_items_html = f"""<div class="timeline-item" style="border-left:2px solid {color}">
+            timeline_items_html += f"""<div class="timeline-item" style="border-left:2px solid {color}">
                     <div class="tl-dot" style="background:{color}"></div>
                     <div class="tl-content">
                         <div class="tl-ts">{esc(ts_short)}</div>
@@ -168,8 +234,6 @@ def render_completion(data: dict) -> str:
                         <div class="tl-dims">{esc(dim_str)}</div>
                     </div>
                 </div>"""
-        else:
-            timeline_items_html = ""
 
     timeline_end = f"""
                 {timeline_items_html}
@@ -330,3 +394,6 @@ def render_completion(data: dict) -> str:
     .timeline-legend {{ display:flex; gap:12px; font-size:10px; color:#64748b; margin-top:8px; }}
     @@media (max-width:640px) {{ .comp-grid {{ grid-template-columns:1fr; }} }}
     </style>"""
+
+    # D296 修复: 拼接完整视图返回 (head + 时间轴 + JS/CSS)
+    return head_html + timeline_end

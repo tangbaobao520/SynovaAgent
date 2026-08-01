@@ -1,34 +1,60 @@
 {
   "version": "1.0",
   "current_phase": 1,
-  "approach": "rewrite",
+  "approach": "reuse",
   "principles": [
-    "scanCrossDeptSignals 必须从 agent-memory-store.list() 读取条目",
-    "新增 export wiring 通过 plan.json deferred"
+    {
+      "rule": "completion-scores.json 只允许统一 schema 生成器写 (self-diagnosis.py 任务级 + completion-engine.py 单文件判定)",
+      "verify": "grep -rn 'completion-scores.json' scripts/audit/ | grep -v completion_schema.py"
+    },
+    {
+      "rule": "缺 gate-status.json 时 completion-engine 输出必须 degraded:true (禁止假 0 分)",
+      "verify": "grep -rn 'degradedReason' scripts/audit/completion-engine.py"
+    },
+    {
+      "rule": "新增函数必须被生产调用方引用",
+      "verify": "grep -rn 'parse_brief_file_mapping\\|validate_completion_schema\\|freshness_check' scripts/"
+    }
+  ],
+  "memory_refs": [
+    "memory/engine-core-bridge-files.md"
   ],
   "phases": [
     {
       "step": 1,
-      "action": "create",
-      "files": [
-        "src/l4/department-memory-store.ts",
-        "tests/l4/department-memory-store.test.ts"
-      ],
-      "checks": {
-        "wiring": "deferred",
-        "test_pairing": "enforce"
-      }
+      "action": "test",
+      "files": ["tests/control-tower/test_control_tower_truthfulness.py"],
+      "checks": {"wiring": "deferred", "test_pairing": "deferred"}
     },
     {
       "step": 2,
+      "action": "create",
+      "files": ["scripts/audit/completion_schema.py"],
+      "checks": {"wiring": "deferred", "test_pairing": "deferred"}
+    },
+    {
+      "step": 3,
+      "action": "modify",
+      "files": ["scripts/audit/self-diagnosis.py"],
+      "checks": {"wiring": "deferred", "test_pairing": "deferred"}
+    },
+    {
+      "step": 4,
+      "action": "modify",
+      "files": ["scripts/audit/completion-engine.py"],
+      "checks": {"wiring": "deferred", "test_pairing": "deferred"}
+    },
+    {
+      "step": 5,
+      "action": "modify",
+      "files": ["scripts/control-tower/views/completion.py"],
+      "checks": {"wiring": "deferred", "test_pairing": "deferred"}
+    },
+    {
+      "step": 6,
       "action": "wire",
-      "files": [
-        "src/loops/loop-scheduler.ts"
-      ],
-      "checks": {
-        "wiring": "enforce",
-        "test_pairing": "deferred"
-      }
+      "files": ["scripts/control-tower/generate-dashboard.py", ".gitignore", ".gitattributes"],
+      "checks": {"wiring": "enforce", "test_pairing": "enforce"}
     }
   ]
 }

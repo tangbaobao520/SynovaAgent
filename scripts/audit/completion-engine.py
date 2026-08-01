@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-completion-engine.py — V3 §3.2 六条件判定引擎 (D261)
+completion-engine.py — V3 §3.2 六条件判定引擎 (D261, D296 修复)
 
 对目标代码文件/模块进行六维度完成度判定:
 A. 代码存在 (Path Exists)
@@ -10,27 +10,42 @@ D. 路径可达 (Import Chain Verifiable)
 E. 依赖可用 (Dependencies Resolvable)
 F. 无已知缺陷 (No Known Defect — known-error-patterns.json match)
 
-输出 completion-scores.json 到 snapshots/ 目录。
+D296 修复 (控制塔数据真实性):
+  - 输出统一 schema (completion_schema.py), 与 self-diagnosis.py 不再互相覆盖
+  - 保留单文件判定 (--target) — 任务级完成度唯一生成方是 self-diagnosis.py
+  - 无 --target 模式读 gate-status.json; 缺失 → degraded:true + 原因,
+    禁止输出正常格式假 0 分 (任务文档 §2.3)
 
 用法:
   python scripts/audit/completion-engine.py
   python scripts/audit/completion-engine.py --target path/to/file.ts
-  python scripts/audit/completion-engine.py --output snapshots/completion-scores.json
+  python scripts/audit/completion-engine.py --target path/to/file.ts --output out.json
 
 契约:
-  @input  — 代码库文件系统 + .codex/audit/known-error-patterns.json + node_modules
-  @output — completion-scores.json (含 overall/completionByCriteria/dimensions)
-  @degraded — known-error-patterns.json 缺失 -> C6 标记 unknown, 不阻止其他判定
+  @input  — 代码库文件系统 + .codex/audit/known-error-patterns.json + gate-status.json
+  @output — completion-scores.json (统一 schema: completion_schema.py)
+  @degraded — gate-status.json 缺失 -> degraded:true + exit 0 (不阻断调用方)
 """
 import argparse
 import json
 import os
 import re
 import sys
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
+
+# 同目录模块 (completion_schema) — 独立运行与 importlib 测试加载都可用
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from completion_schema import (
+    SCHEMA_VERSION,
+    GENERATOR_COMPLETION_ENGINE,
+    make_criteria,
+    empty_criteria,
+    validate_completion_schema,
+)
 
 # ═══ 常量 ═══
 
@@ -38,6 +53,16 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 SNAPSHOTS_DIR = PROJECT_ROOT / ".codex/snapshots"
 SIGNALS_DIR = PROJECT_ROOT / ".codex/signals"
 KNOWN_ERRORS_PATH = PROJECT_ROOT / ".codex/audit/known-error-patterns.json"
+
+# 六条件 A-F → 统一 schema 键映射 (D296 2.2)
+CRITERION_KEY_BY_LETTER = {
+    "A": "code_exists",       # C1 代码存在
+    "B": "wiring_complete",   # C2 接线完整
+    "C": "test_exists",       # C3 测试存在
+    "D": "path_reachable",    # C4 路径可达
+    "E": "dependencies_ok",   # C5 依赖可用
+    "F": "no_defects",        # C6 无已知缺陷
+}
 
 # ═══ 数据类型 ═══
 
@@ -52,32 +77,14 @@ class CriterionResult:
     error: Optional[str] = None
 
 @dataclass
-class CriteriaGroup:
-    """四个条件分组 (V3 §2.2)"""
-    letter: str          # A/B/C/D
-    name: str            # 分组名称
-    completion_pct: float = 0.0  # 0-100
-    remaining_tasks: list = field(default_factory=list)
-
-@dataclass
 class CompletionResult:
-    """完整完成度结果"""
+    """完整完成度结果 (单文件判定)"""
     timestamp: str
     overall_score: float                 # 0-100
     completion_by_criteria: dict = field(default_factory=dict)  # {"A": pct, "B": pct, ...}
-    dimension_scores: dict = field(default_factory=dict)        # {"基础": 85, "接入": 70, ...}
+    dimension_scores: dict = field(default_factory=dict)        # 兼容保留 (空)
     active_gates: int = 0
     dimension_breakdown: list = field(default_factory=list)
-
-    def to_dict(self) -> dict:
-        return {
-            "timestamp": self.timestamp,
-            "overallScore": round(self.overall_score, 1),
-            "completionByCriteria": {k: round(v, 1) for k, v in self.completion_by_criteria.items()},
-            "dimensionScores": {k: round(v, 1) for k, v in self.dimension_scores.items()},
-            "activeGates": self.active_gates,
-            "dimensionBreakdown": self.dimension_breakdown,
-        }
 
 
 # ═══ 判定器 ═══
@@ -267,6 +274,8 @@ class CompletionEngine:
 
     def evaluate(self, target_path: str, export_name: str = "") -> CompletionResult:
         """对目标执行全部六条件判定"""
+        # 每次判定独立 — 清空上次累积 (build_single_file_doc 多次调用安全)
+        self.results = []
         self.log(f"\n  判定: {target_path}")
         checks = [
             ("A", lambda: self.check_A_path_exists(target_path)),
@@ -302,64 +311,114 @@ class CompletionEngine:
             active_gates=0,
         )
 
-    def run_all(self, gate_data: dict) -> CompletionResult:
-        """基于 gate-status.json 的门禁数据执行完整评估"""
-        gates = gate_data.get("gates", [])
-        summary = gate_data.get("summary", {})
+    # ── 统一 schema 文档构建 (D296) ──
 
-        # 按 dimension 分组
-        dim_gates: dict[str, list] = {}
-        for g in gates:
-            dim = g.get("dimension", "unknown")
-            dim_gates.setdefault(dim, []).append(g)
+    def build_single_file_doc(self, target_path: str) -> dict:
+        """单文件六条件判定 → 统一 schema 文档。
 
-        dimension_scores = {}
-        dim_breakdown = []
-        total_weighted = 0.0
-        total_count = 0
+        A-F 条件映射到 completionByCriteria 六键 (CRITERION_KEY_BY_LETTER)。
+        任一条件 status=unknown (数据缺失) → degraded:true + 原因。
+        """
+        export = Path(target_path).stem
+        result = self.evaluate(target_path, export)
+        by_letter = {r.letter: r for r in self.results}
 
-        status_w = {"pass": 1.0, "partial": 0.5, "fail": 0.0, "unverifiable": 0.0}
+        criteria = {}
+        conditions = {}
+        degraded = False
+        reasons = []
+        for letter, key in CRITERION_KEY_BY_LETTER.items():
+            r = by_letter.get(letter)
+            if r is None:
+                criteria[key] = make_criteria(0, 1)
+                conditions[key] = {"score": 0, "max": 1, "reason": "无判定结果"}
+                continue
+            passed = 1 if r.status == "pass" else 0
+            criteria[key] = make_criteria(passed, 1)
+            conditions[key] = {"score": round(r.score, 3), "max": 1, "reason": r.detail}
+            if r.status == "unknown":
+                degraded = True
+                reasons.append(f"{r.name} 数据缺失")
 
-        for dim, dim_gate_list in dim_gates.items():
-            count = len(dim_gate_list)
-            total_count += count
-            dim_score = sum(status_w.get(g.get("status", "fail"), 0.0) for g in dim_gate_list)
-            avg = (dim_score / max(count, 1)) * 100
-            dimension_scores[dim] = round(avg, 1)
-            total_weighted += dim_score
-            dim_breakdown.append({
-                "dimension": dim,
-                "gateCount": count,
-                "score": round(avg, 1),
-                "status": "pass" if avg >= 80 else "partial" if avg >= 40 else "fail",
-            })
-
-        overall = (total_weighted / max(total_count, 1)) * 100
-
-        # 四条件分组 — 按 V3 §2.2
-        completion_by_criteria = {
-            "A": dimension_scores.get("基础", 0),
-            "B": dimension_scores.get("接入", 0),
-            "C": dimension_scores.get("诊断", 0),
-            "D": (dimension_scores.get("导航", 0) + dimension_scores.get("持续运行", 0)
-                  + dimension_scores.get("进化", 0) + dimension_scores.get("控制", 0)) / 4,
+        return {
+            "schemaVersion": SCHEMA_VERSION,
+            "generator": GENERATOR_COMPLETION_ENGINE,
+            "systemScore": round(result.overall_score / 100, 3),
+            "totalTasks": 1,
+            "completionByCriteria": criteria,
+            "degraded": degraded,
+            "degradedReason": "; ".join(reasons),
+            "generatedAt": result.timestamp,
+            "results": [{
+                "d_id": target_path,
+                "completion": round(result.overall_score / 100, 3),
+                "totalScore": round(sum(r.score for r in self.results), 3),
+                "totalMax": len(self.results),
+                "conditions": conditions,
+                "degraded": degraded,
+                "degradedReason": "; ".join(reasons),
+                "srcFile": target_path,
+            }],
         }
 
-        return CompletionResult(
-            timestamp=datetime.now(timezone.utc).isoformat(),
-            overall_score=overall,
-            completion_by_criteria={k: round(v, 1) for k, v in completion_by_criteria.items()},
-            dimension_scores=dimension_scores,
-            active_gates=len(gates),
-            dimension_breakdown=dim_breakdown,
-        )
+    def build_gate_doc(self, gate_data: dict | None) -> dict:
+        """基于 gate-status.json 的门禁汇总 → 统一 schema 文档 (D296 2.3)。
+
+        gate_data=None (文件缺失/损坏) → degraded:true + 原因, exit 0,
+        禁止输出正常格式假 0 分数据。
+
+        门禁模式六键来自 criteriaGroups (V3 §2.2 条件分组 A/B/C/D):
+          A→code_exists, B→wiring_complete, C→test_exists,
+          D→path_reachable/dependencies_ok/no_defects (质量组共用 D 数据)
+        """
+        generated_at = datetime.now(timezone.utc).isoformat()
+        if gate_data is None:
+            return {
+                "schemaVersion": SCHEMA_VERSION,
+                "generator": GENERATOR_COMPLETION_ENGINE,
+                "systemScore": 0.0,
+                "totalTasks": 0,
+                "completionByCriteria": empty_criteria(),
+                "degraded": True,
+                "degradedReason": "gate-status.json missing",
+                "generatedAt": generated_at,
+                "results": [],
+            }
+
+        groups = gate_data.get("criteriaGroups", {})
+        summary = gate_data.get("summary", {})
+        weighted = summary.get("weightedProgress")
+        system_score = float(weighted) if isinstance(weighted, (int, float)) else 0.0
+
+        def group_criteria(letter: str) -> dict:
+            g = groups.get(letter, {})
+            return make_criteria(g.get("passed", 0), g.get("total", 0))
+
+        return {
+            "schemaVersion": SCHEMA_VERSION,
+            "generator": GENERATOR_COMPLETION_ENGINE,
+            "systemScore": round(system_score, 3),
+            "totalTasks": len(gate_data.get("gates", [])),
+            "completionByCriteria": {
+                "code_exists": group_criteria("A"),
+                "wiring_complete": group_criteria("B"),
+                "test_exists": group_criteria("C"),
+                "path_reachable": group_criteria("D"),
+                "dependencies_ok": group_criteria("D"),
+                "no_defects": group_criteria("D"),
+            },
+            "degraded": False,
+            "degradedReason": "",
+            "generatedAt": generated_at,
+            "results": [],
+        }
 
 
 # ═══ CLI ═══
 
 def main():
-    parser = argparse.ArgumentParser(description="D261 六条件完成度判定引擎")
-    parser.add_argument("--target", default="", help="目标文件路径 (默认基于 gate-status.json)")
+    parser = argparse.ArgumentParser(description="D261 六条件完成度判定引擎 (D296 统一 schema)")
+    parser.add_argument("--target", default="", help="目标文件路径 (任务级完成度由 self-diagnosis.py 生成)")
     parser.add_argument("--output", default="", help="输出路径 (默认 snapshots/{ts}/completion-scores.json)")
     parser.add_argument("--quiet", action="store_true", help="静默模式")
     args = parser.parse_args()
@@ -367,42 +426,53 @@ def main():
     engine = CompletionEngine(quiet=args.quiet)
 
     if args.target:
-        # 单目标模式
-        export = Path(args.target).stem
-        result = engine.evaluate(args.target, export)
+        # 单文件判定模式 (D296 2.2 保留)
+        doc = engine.build_single_file_doc(args.target)
     else:
-        # 从 gate-status.json 读取
+        # 门禁汇总模式 — 缺 gate-status.json → degraded:true (禁止假 0 分)
+        gate_data = None
         gate_path = SIGNALS_DIR / "gate-status.json"
-        if not gate_path.exists():
-            print("[completion-engine] gate-status.json 不存在 — 空运行")
-            result = CompletionResult(
-                timestamp=datetime.now(timezone.utc).isoformat(),
-                overall_score=0.0,
-                completion_by_criteria={"A": 0, "B": 0, "C": 0, "D": 0},
-                dimension_scores={},
-                active_gates=0,
-            )
-        else:
-            gate_data = json.loads(gate_path.read_text("utf-8", errors="replace"))
-            result = engine.run_all(gate_data)
+        if gate_path.exists():
+            try:
+                gate_data = json.loads(gate_path.read_text("utf-8", errors="replace"))
+            except (json.JSONDecodeError, OSError):
+                gate_data = None
+        if gate_data is None:
+            print("[completion-engine] gate-status.json 缺失或损坏 — degraded 输出", file=sys.stderr)
+        doc = engine.build_gate_doc(gate_data)
 
-    # 输出
+    # 铁律 47: 输出前契约校验 — 非法文档不写入
+    schema_errors = validate_completion_schema(doc)
+    if schema_errors:
+        for err in schema_errors:
+            print(f"[completion-engine] [ERROR] schema 校验失败: {err}", file=sys.stderr)
+        sys.exit(1)
+
     SNAPSHOTS_DIR.mkdir(parents=True, exist_ok=True)
-    ts = datetime.now().strftime("%Y%m%d-%H%M%S")
-    output_dir = SNAPSHOTS_DIR / ts
-    output_dir.mkdir(parents=True, exist_ok=True)
+    if args.output:
+        output_path = Path(args.output)
+    else:
+        ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+        output_dir = SNAPSHOTS_DIR / ts
+        output_dir.mkdir(parents=True, exist_ok=True)
+        output_path = output_dir / "completion-scores.json"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    output_path = output_dir / "completion-scores.json"
-    output_path.write_text(
-        json.dumps(result.to_dict(), ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+    # 原子写入: 临时文件 + rename, 避免半截 JSON
+    tmp = output_path.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(doc, ensure_ascii=False, indent=2), encoding="utf-8")
+    os.replace(tmp, output_path)
+
     if not args.quiet:
-        print(f"\n  overall: {result.overall_score:.1f}%")
-        for k, v in result.completion_by_criteria.items():
-            print(f"    {k}: {v:.1f}%")
+        print(f"\n  systemScore: {doc['systemScore']:.3f}")
+        for key, entry in doc["completionByCriteria"].items():
+            print(f"    {key}: {entry['pct']}%")
+        if doc["degraded"]:
+            print(f"  [degraded] {doc['degradedReason']}")
         print(f"  输出: {output_path}")
-    print(json.dumps(result.to_dict(), ensure_ascii=False))
+
+    # degraded 也 exit 0 — 缺数据是运行时状态, 不是脚本失败 (D296 2.3)
+    sys.exit(0)
 
 
 if __name__ == "__main__":
