@@ -31,6 +31,7 @@ function enableWAL(database: Database.Database, dbPath: string): void {
     database.pragma('journal_mode = WAL');
     database.pragma('synchronous = NORMAL');
   } catch (err: unknown) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "数据库连接初始化");
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes('locking protocol') || msg.includes('not authorized')) {
       log.warn({ path: dbPath, err: msg }, 'WAL 不可用(可能是网络文件系统) — 降级 DELETE 模式. 并发性能会降低.');

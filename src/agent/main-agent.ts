@@ -222,6 +222,7 @@ export class MainAgent {
 
       return record;
     } catch (err: unknown) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "动态模块加载失败");
       const msg = err instanceof Error ? err.message : String(err);
       const durationMs = Date.now() - startTime;
       const record: LoopExecutionRecord = {

@@ -284,6 +284,7 @@ export class ProactivePush {
         };
       } catch (err: unknown) {
         const msg_err = err instanceof Error ? err.message : String(err);
+        log.warn({ findingId: finding.id, channelId: channel.id, attempt: attempt + 1, err: msg_err }, 'P0 推送失败 — 重试流程');
 
         if (attempt < this.retryDelays.length) {
           log.warn({ findingId: finding.id, channelId: channel.id, attempt: attempt + 1, err: msg_err },

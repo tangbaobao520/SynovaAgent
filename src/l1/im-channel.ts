@@ -92,6 +92,7 @@ export function createFeishuWebhookChannel(webhookUrl: string): IMChannel {
         });
         return { ok: res.ok, error: res.ok ? undefined : `HTTP ${res.status}` };
       } catch (err: unknown) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "网络请求失败");
         const msg = err instanceof Error ? err.message : String(err);
         return { ok: false, error: msg };
       }
@@ -121,6 +122,7 @@ export function createFeishuWebhookChannel(webhookUrl: string): IMChannel {
         });
         return { ok: res.ok };
       } catch (err: unknown) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "IM 消息发送失败");
         const msg = err instanceof Error ? err.message : String(err);
         return { ok: false, error: msg };
       }

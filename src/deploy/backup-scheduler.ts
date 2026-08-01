@@ -148,6 +148,7 @@ export class BackupScheduler {
       log.warn({ consecutiveFailures: this.state.consecutiveFailures, error: result.error }, '定时备份失败');
       return false;
     } catch (err: unknown) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "定时备份执行异常");
       this.state.consecutiveFailures++;
       this.saveState();
       log.error({ err, consecutiveFailures: this.state.consecutiveFailures }, '定时备份异常');
@@ -191,7 +192,8 @@ export class BackupScheduler {
       });
       req.write(postData);
       req.end();
-    } catch {
+    } catch (err) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "备份模块加载");
       // D6 不可用 — 预期降级
     }
   }

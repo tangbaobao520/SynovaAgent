@@ -256,7 +256,7 @@ export class DiagnosisLauncher {
       if (this.ctx.provider) {
         import('../services/background-review').then(({ launchBackgroundReview }) => {
           launchBackgroundReview(this.ctx.provider, result.report, teamId);
-        }).catch(() => { /* 动态导入失败 — 静默降级 */ });
+        }).catch((err) => { log.warn({ err }, '后台审查启动失败 — degraded'); });
       }
 
       return {

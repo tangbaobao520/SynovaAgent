@@ -248,7 +248,7 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
             scope?.layers,
           );
           (result.report as Record<string, unknown>).assembled = assembled;
-        } catch { /* 组装失败 — 原始报告已包含在 result 中 */ }
+        } catch (err) { log.warn({ err }, '报告组装失败 — 原始报告已包含在 result 中'); }
       }
       sseClose(res, result);
     }

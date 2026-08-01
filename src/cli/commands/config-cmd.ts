@@ -8,7 +8,10 @@
 
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import { createLogger } from '@synova/logger';
 import type { CLICommand } from '../types';
+
+const log = createLogger('cli/commands/config-cmd');
 
 const CONFIG_PATH = () => join(process.cwd(), 'synova.json');
 const LAST_GOOD_PATH = () => CONFIG_PATH() + '.last-good';
@@ -117,7 +120,9 @@ async function setConfig(key: string, value: string): Promise<void> {
   if (typeof existing === 'number') typedValue = Number(value);
   else if (typeof existing === 'boolean') typedValue = value === 'true' || value === '1';
   else if (typeof existing === 'object' && existing !== null) {
-    try { typedValue = JSON.parse(value); } catch { /* 保留字符串 */ }
+    try { typedValue = JSON.parse(value); } catch (err) {
+      log.warn({ err }, 'value 非 JSON — 保留字符串');
+    }
   }
 
   current[lastKey] = typedValue;

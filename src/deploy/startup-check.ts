@@ -127,6 +127,7 @@ async function checkSQLite(): Promise<CheckResult> {
     }
     return { name: 'SQLite 数据库完整性', passed: true, detail: '数据库文件可读且格式正确' };
   } catch (err: unknown) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "文件系统操作失败");
     return { name: 'SQLite 数据库完整性', passed: false, detail: `数据库文件检查失败: ${(err as Error)?.message || String(err)}` };
   }
 }
@@ -203,7 +204,8 @@ async function checkDiskSpace(): Promise<CheckResult> {
     if (!fs.existsSync(dataDir)) {
       fs.mkdirSync(dataDir, { recursive: true });
     }
-  } catch {
+  } catch (err) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "文件系统操作失败");
     // 创建失败不阻断检查
   }
 
@@ -242,6 +244,7 @@ async function checkDiskSpace(): Promise<CheckResult> {
     // 无法检测 — 降级为警告而非阻断
     return { name: '磁盘空间 >= 500MB', passed: false, detail: '无法检测磁盘可用空间(当前平台/运行时不支持 statfs)' };
   } catch (err: unknown) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "无法检测 — 降级为警告而非阻断");
     return { name: '磁盘空间 >= 500MB', passed: false, detail: `磁盘检查异常: ${(err as Error)?.message || String(err)}` };
   }
 }
@@ -256,7 +259,8 @@ function tryGetStatFs(): { statfsSync: ((path: string) => { bsize: number; bavai
     if (typeof fsModule.statfsSync === 'function') {
       return { statfsSync: fsModule.statfsSync };
     }
-  } catch {
+  } catch (err) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "启动检查模块加载");
     // node:fs 无 statfsSync (旧版本 Node.js)
   }
   return { statfsSync: null };
@@ -292,6 +296,7 @@ async function checkSentinelBaseline(): Promise<CheckResult> {
       detail: `${sentinels.length} 个哨兵已加载，零降级`,
     };
   } catch (err: unknown) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "动态模块加载失败");
     return {
       name: '哨兵工位基线',
       passed: false,
@@ -319,6 +324,7 @@ async function checkPermissions(): Promise<CheckResult> {
     }
     return { name: '数据目录权限', passed: false, detail: '数据目录写入内容与读取不一致' };
   } catch (err: unknown) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "日志路径拼接");
     return { name: '数据目录权限', passed: false, detail: `数据目录不可写: ${(err as Error)?.message || String(err)}` };
   }
 }

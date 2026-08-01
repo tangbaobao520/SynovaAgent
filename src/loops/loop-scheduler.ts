@@ -317,7 +317,8 @@ export class LoopScheduler {
       if (!existsSync(HEARTBEAT_FILE)) return [];
       const raw = readFileSync(HEARTBEAT_FILE, 'utf-8');
       return JSON.parse(raw) as HeartbeatRecord[];
-    } catch {
+    } catch (err) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "循环任务文件存在检查");
       return [];
     }
   }

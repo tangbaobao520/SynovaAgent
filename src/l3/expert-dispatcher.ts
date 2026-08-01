@@ -484,11 +484,13 @@ export class ExpertDispatcher {
   ): Promise<T> {
     try {
       return await fn();
-    } catch (err: any) {
-      const isNetworkError = /timeout|network|econnrefused|etimedout|5\d{2}/i.test(err.message);
+    } catch (err: unknown) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "* Retry wrapper with exponential backoff for network errors");
+      const msg = err instanceof Error ? err.message : String(err);
+      const isNetworkError = /timeout|network|econnrefused|etimedout|5\d{2}/i.test(msg);
       if (isNetworkError && attempt < this.maxRetries) {
         const delay = Math.min(2000 * Math.pow(2, attempt), 8000);
-        log.debug({ expertType, attempt, delay }, 'Expert network error — retrying');
+        log.warn({ expertType, attempt, delay, err: msg }, 'Expert network error — retrying');
         await new Promise(r => setTimeout(r, delay));
         return this.runWithRetry(fn, expertType, attempt + 1);
       }
@@ -512,7 +514,7 @@ export class ExpertDispatcher {
             facts.map(f => `- ${f.key}: ${f.value}`).join('\n')
           }\n`;
         }
-      } catch { /* enterprise_fact 不可用 — degraded */ }
+      } catch (err) { log.warn({ err }, '企业事实加载失败 — degraded'); }
     }
 
     const { getExpertRegistry } = await import('./expert-registry');
@@ -622,7 +624,7 @@ export async function getReportWithCorrections(
     if (!originalEntry) return null;
 
     let original: Record<string, unknown>;
-    try { original = JSON.parse(originalEntry.value); } catch { original = { content: originalEntry.value }; }
+    try { original = JSON.parse(originalEntry.value); } catch (err) { log.warn({ err, reportId }, '报告 JSON 解析失败 — 回退原始文本'); original = { content: originalEntry.value }; }
 
     // 查询该报告的所有纠错
     const listResult = store.list({ orgId, tags: ['ga_correction', reportId] });
@@ -633,7 +635,7 @@ export async function getReportWithCorrections(
       try {
         const corr = JSON.parse(entry.value);
         corrections.push({ ...corr, correctionId: entry.key, correctedAt: entry.createdAt });
-      } catch { continue; }
+      } catch (err) { log.warn({ err, reportId }, '纠错条目解析失败 — 跳过'); continue; }
     }
 
     // 合并：将纠错标注到原始报告的 findings 中

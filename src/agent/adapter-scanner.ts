@@ -70,6 +70,7 @@ export function scanFieldMappings(): ScanResult {
           targetNodeType: config.targetNodeType || DEFAULT_NODE_TYPE,
         });
       } catch (err: unknown) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "文件读取失败");
         const msg = err instanceof Error ? err.message : String(err);
         errors.push(`适配器 ${file.name} 解析失败: ${msg}`);
         log.warn({ err: msg, file: file.name }, '适配器 JSON 解析失败 — 跳过');

@@ -208,6 +208,7 @@ async function loadMetrics() {
     dot.className = 'status-dot ' + (data.degraded ? 'off' : 'on');
     document.getElementById('status-text').textContent = data.degraded ? '降级' : '运行中';
   } catch(e) {
+    log.warn({ err: e instanceof Error ? e.message : String(e) }, "GA 演化接口请求");
     document.getElementById('status-text').textContent = '离线';
     document.getElementById('status-dot').className = 'status-dot off';
   }
@@ -225,6 +226,7 @@ async function loadProposals() {
     renderPending(pending);
     renderAll(all.proposals || []);
   } catch(e) {
+    log.warn({ err: e instanceof Error ? e.message : String(e) }, "GA 演化接口请求");
     document.getElementById('pending-list').innerHTML = '<p class="text-dim text-sm">加载失败</p>';
   }
 }
@@ -297,7 +299,10 @@ async function approve(id) {
     const r = await fetchJSON(API.approve(id), { method:'POST', headers:{'Content-Type':'application/json'}, body:'{}' });
     if (r.ok) { showToast('✅ 提案已批准'); loadProposals(); loadMetrics(); }
     else showToast('❌ ' + (r.error || '审批失败'), 'error');
-  } catch(e) { showToast('❌ 网络错误', 'error'); }
+  } catch(e) {
+    log.warn({ err: e instanceof Error ? e.message : String(e) }, "GA 演化接口请求");
+    showToast('❌ 网络错误', 'error');
+  }
 }
 
 async function rejectProp(id) {
@@ -305,7 +310,10 @@ async function rejectProp(id) {
     const r = await fetchJSON(API.reject(id), { method:'POST', headers:{'Content-Type':'application/json'}, body:'{}' });
     if (r.ok) { showToast('提案已拒绝'); loadProposals(); loadMetrics(); }
     else showToast('❌ ' + (r.error || '拒绝失败'), 'error');
-  } catch(e) { showToast('❌ 网络错误', 'error'); }
+  } catch(e) {
+    log.warn({ err: e instanceof Error ? e.message : String(e) }, "GA 演化接口请求");
+    showToast('❌ 网络错误', 'error');
+  }
 }
 
 async function triggerAggregation() {
@@ -326,7 +334,10 @@ async function triggerAggregation() {
     } else {
       result.textContent = '❌ ' + (r.error || '聚合失败');
     }
-  } catch(e) { result.textContent = '❌ 网络错误'; }
+  } catch(e) {
+    log.warn({ err: e instanceof Error ? e.message : String(e) }, "GA 演化接口请求");
+    result.textContent = '❌ 网络错误';
+  }
   btn.disabled = false;
 }
 
@@ -355,6 +366,7 @@ async function loadLog() {
       '</div>'
     ).join('');
   } catch(e) {
+    log.warn({ err: e instanceof Error ? e.message : String(e) }, "GA 演化接口请求");
     document.getElementById('log-list').innerHTML = '<p class="text-dim text-sm">获取日志失败</p>';
   }
 }

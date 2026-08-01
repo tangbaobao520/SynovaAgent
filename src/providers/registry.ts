@@ -60,6 +60,7 @@ export function createProviderChain(
           }, opts);
           if (completed) return;
         } catch (err: any) {
+          log.warn({ err: err instanceof Error ? err.message : String(err) }, "Provider 调用失败");
           errors.push(`${p.name}: ${err.message}`);
         }
       }

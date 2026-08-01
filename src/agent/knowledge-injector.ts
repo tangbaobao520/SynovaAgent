@@ -155,6 +155,7 @@ export class KnowledgeInjector {
     try {
       stat = fs.statSync(filePath);
     } catch (err: unknown) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "── 安全校验1: 大小限制 ──");
       const msg = err instanceof Error ? err.message : String(err);
       return { content: '', source: filePath, priority, validated: false, validationErrors: [`无法读取文件: ${msg}`] };
     }
@@ -169,6 +170,7 @@ export class KnowledgeInjector {
     try {
       raw = fs.readFileSync(filePath, 'utf-8');
     } catch (err: unknown) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "── 读取 ──");
       const msg = err instanceof Error ? err.message : String(err);
       errors.push(`读取失败: ${msg}`);
       return { content: '', source: filePath, priority, validated: false, validationErrors: errors };

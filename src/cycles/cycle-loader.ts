@@ -71,6 +71,7 @@ export function loadCycles(contextLoader?: ContextLoaderLike): { cycles: CycleCo
         }
       }
     } catch (err: unknown) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "循环配置存在检查");
       const msg = err instanceof Error ? err.message : String(err);
       errors.push(`循环加载失败 (${label}): ${msg}`);
     }
@@ -130,6 +131,7 @@ function loadCycleFile(
       seen.add(cycle.cycleId);
     }
   } catch (err: unknown) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "循环覆盖配置加载");
     const msg = err instanceof Error ? err.message : String(err);
     errors.push(`循环文件 ${filePath} 加载失败: ${msg}`);
   }
@@ -157,6 +159,7 @@ export async function registerLoadedCycles(contextLoader?: ContextLoaderLike): P
       cycleRegistry.register(cycle);
       registered++;
     } catch (err: unknown) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "动态模块加载失败");
       const msg = err instanceof Error ? err.message : String(err);
       errors.push(`循环 ${cycle.cycleId} 注册失败: ${msg}`);
     }

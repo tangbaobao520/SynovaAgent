@@ -192,6 +192,7 @@ export class TaskDecomposer {
         confidence: result.success ? 0.8 : 0,
       };
     } catch (err: unknown) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "子任务执行失败");
       const msg = err instanceof Error ? err.message : String(err);
       subTask.status = 'failed';
       log.warn({ err: msg, subTaskId: subTask.id }, '子任务执行失败 — 降级');

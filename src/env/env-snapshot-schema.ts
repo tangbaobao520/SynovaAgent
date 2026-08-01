@@ -1,3 +1,5 @@
+import { createLogger } from '@synova/logger';
+const log = createLogger('src.env.env-snapshot-schema');
 /**
  * src/env/env-snapshot-schema.ts — 环境快照 TypeScript 类型定义 (D217)
  *
@@ -71,7 +73,8 @@ export function loadSnapshot(path: string): EnvironmentSnapshot | null {
       return null;
     }
     return parsed;
-  } catch {
+  } catch (err) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "环境快照模块加载");
     return null;
   }
 }

@@ -50,6 +50,7 @@ function readJSON<T>(filePath: string): T | null {
     if (!existsSync(filePath)) return null;
     return JSON.parse(readFileSync(filePath, 'utf-8')) as T;
   } catch (err: any) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "本体文件存在检查");
     // JSON 解析失败 — 跳过损坏文件
     return null;
   }

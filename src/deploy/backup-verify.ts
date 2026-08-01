@@ -73,6 +73,7 @@ export async function verifyLocalBackup(packPath: string, password: string): Pro
               log.debug({ dbFile: fileName, size: stat.size }, 'SQLite 数据库验证通过');
             }
           } catch (err: unknown) {
+            log.warn({ err: err instanceof Error ? err.message : String(err) }, "文件系统操作失败");
             errors.push(`${fileName}: SQLite 验证失败 — ${(err as Error)?.message || String(err)}`);
           }
         }
@@ -83,7 +84,8 @@ export async function verifyLocalBackup(packPath: string, password: string): Pro
           if (content.includes('{') && content.includes('}')) {
             try {
               JSON.parse(content);
-            } catch {
+            } catch (err) {
+              log.warn({ err: err instanceof Error ? err.message : String(err) }, "JSON 解析失败");
               // YAML 包含大括号内容但非 JSON 格式, 这在 YAML 中合法, 跳过
             }
           }
@@ -161,6 +163,7 @@ export async function probeRemotePack(url: string, token: string): Promise<Remot
       });
     });
   } catch (err: unknown) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "动态模块加载失败");
     return { reachable: false, error: (err as Error)?.message || String(err) };
   }
 }
@@ -179,7 +182,8 @@ function cleanupTempDir(dir: string): void {
       }
       fs.rmdirSync(dir);
     }
-  } catch {
+  } catch (err) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "文件系统操作失败");
     // 忽略清理错误
   }
 }

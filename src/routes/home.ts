@@ -3,6 +3,8 @@
  * Day 2: FDE 诊断入口页面
  */
 import { Router, type Request, type Response } from 'express';
+import { createLogger } from '@synova/logger';
+const log = createLogger('src.routes.home');
 
 const router = Router();
 
@@ -154,6 +156,7 @@ function toggleTheme(){
       if(badge)badge.style.borderColor='var(--orange)';
     }
   }catch(e){
+    log.warn({ err: e instanceof Error ? e.message : String(e) }, "网络请求失败");
     if(dot)dot.style.background='var(--red)';
     if(text)text.textContent='离线模式 · 服务未启动';
     if(badge)badge.style.borderColor='var(--red)';

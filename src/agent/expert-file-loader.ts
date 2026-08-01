@@ -151,6 +151,7 @@ export class ExpertFileLoader {
           log.warn({ expert: expert.name }, '专家文件为空 — 使用默认 prompt (degraded)');
         }
       } catch (err: unknown) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "专家 Prompt 组装");
         const msg = err instanceof Error ? err.message : String(err);
         errors.push(`${expert.name}: ${msg}`);
         // 降级: 使用默认 prompt
@@ -188,6 +189,7 @@ export class ExpertFileLoader {
           });
           fromDefaults++;
         } catch (err: unknown) {
+          log.warn({ err: err instanceof Error ? err.message : String(err) }, "专家注册");
           const msg = err instanceof Error ? err.message : String(err);
           errors.push(`${name}: ${msg}`);
         }

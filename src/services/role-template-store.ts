@@ -17,7 +17,9 @@ const log = createLogger('services/role-template-store');
 const TEMPLATES_DIR = join(process.cwd(), '.codex', 'settings', 'role-templates');
 
 function ensureDir(): void {
-  try { mkdirSync(TEMPLATES_DIR, { recursive: true }); } catch { /* 降级 */ }
+  try { mkdirSync(TEMPLATES_DIR, { recursive: true }); } catch (err) {
+    log.warn({ err }, '模板目录创建失败 — 降级');
+  }
 }
 
 function filePath(id: string): string {

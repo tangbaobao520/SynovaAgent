@@ -95,7 +95,9 @@ export class DeliveryQueue {
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         log.warn({ err: msg, id: entry.id }, '消息投递失败 — degraded');
-        try { this.store.markFailed(entry.id); } catch { /* 静默 */ }
+        try { this.store.markFailed(entry.id); } catch (markErr) {
+          log.warn({ err: markErr, id: entry.id }, '标记投递失败 — 静默降级');
+        }
         errors.push(`id=${entry.id}: ${msg}`);
       }
     }

@@ -93,6 +93,7 @@ export function loadFrameworks(): { frameworks: Framework[]; degraded: boolean; 
           const data = JSON.parse(readFileSync(join(catDir, file), 'utf-8'));
           frameworks.push(data as Framework);
         } catch (err: any) {
+          log.warn({ err: err instanceof Error ? err.message : String(err) }, "JSON 解析失败");
           errors.push(`框架文件解析失败: ${category}/${file}: ${err.message}`);
         }
       }

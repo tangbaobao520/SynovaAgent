@@ -213,6 +213,7 @@ export class FaultRecovery {
       const data = JSON.parse(raw) as T;
       return { data, status: 'ok', degraded: false };
     } catch (err: any) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "故障恢复配置读取");
       const type = this.detectFileError(err, filePath);
       switch (type) {
         case 'not_found':

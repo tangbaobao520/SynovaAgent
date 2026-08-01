@@ -3,6 +3,8 @@
  * GET /workspace → 三栏 HTML 页面
  */
 import { Router, type Request, type Response } from 'express';
+import { createLogger } from '@synova/logger';
+const log = createLogger('src.routes.workspace');
 
 const router = Router();
 
@@ -74,7 +76,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;backg
 const API='';
 let currentWs=null;
 async function loadWorkspaces(){
-  try{const r=await fetch(API+'/api/workspaces');const data=await r.json();renderWsList(data.workspaces||[])}catch(e){}
+  try {
+    const r=await fetch(API+'/api/workspaces');const data=await r.json();renderWsList(data.workspaces||[]);
+  } catch(e){
+    console.warn('工作区列表加载失败 — degraded', { err: e instanceof Error ? e.message : String(e) });
+  }
 }
 function renderWsList(wss){
   const el=document.getElementById('ws-list');
@@ -86,14 +92,20 @@ function renderWsList(wss){
 }
 async function newWorkspace(){
   const title=prompt('工作区名称')||'新工作区';
-  try{const r=await fetch(API+'/api/workspaces',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title})});await r.json();loadWorkspaces()}catch(e){}
+  try {
+    const r=await fetch(API+'/api/workspaces',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title})});await r.json();loadWorkspaces();
+  } catch(e){
+    console.warn('创建工作区失败 — degraded', { err: e instanceof Error ? e.message : String(e) });
+  }
 }
 async function selectWs(id){
   currentWs=id;loadWorkspaces();
   try{const r=await fetch(API+'/api/workspaces/'+id);const d=await r.json();
     document.getElementById('main-title').innerHTML=\`\${d.title} <span class=expert-tag>\${d.expert||'综合'}</span>\`;
     document.getElementById('right-panel').innerHTML='<h3>目标跟踪</h3><div class=goal-card><div class=g-title>'+d.title+'</div><div class=g-status>状态: '+d.status+'</div></div>';
-  }catch(e){}
+  }catch(e){
+    console.warn("工作区 DOM 渲染", { err: e instanceof Error ? e.message : String(e) });
+  }
 }
 async function sendMsg(){
   const input=document.getElementById('user-input');const text=input.value.trim();if(!text||!currentWs)return;
@@ -102,7 +114,10 @@ async function sendMsg(){
   input.value='';
   try{const r=await fetch(API+'/api/workspaces/'+currentWs+'/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({content:text})});
     const d=await r.json();msgs.innerHTML+='<div class="msg agent">'+d.reply+'</div>';
-  }catch(e){msgs.innerHTML+='<div class="msg system">发送失败</div>'}
+  }catch(e){
+    console.warn("工作区响应解析", { err: e instanceof Error ? e.message : String(e) });
+    msgs.innerHTML+='<div class="msg system">发送失败</div>'
+  }
   msgs.scrollTop=msgs.scrollHeight;
 }
 loadWorkspaces();
@@ -118,7 +133,9 @@ function searchAsk() {
       d.innerHTML = '<b>🔍 ' + esc(q) + '</b><br><br>' + (data.answer || '暂无结果');
       mid.appendChild(d);
       mid.scrollTop = mid.scrollHeight;
-    }).catch(() => {});
+    }).catch((err) => {
+      console.warn('知识问答请求失败 — degraded', { err });
+    });
 }
 </script>
 </body>

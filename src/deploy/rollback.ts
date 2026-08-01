@@ -225,7 +225,8 @@ function getDirSize(dir: string): number {
         size += fs.statSync(fullPath).size;
       }
     }
-  } catch {
+  } catch (err) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "文件系统操作失败");
     // 忽略权限错误
   }
   return size;
@@ -245,7 +246,8 @@ function countFiles(dir: string): number {
         count++;
       }
     }
-  } catch {
+  } catch (err) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "文件系统操作失败");
     // 忽略
   }
   return count;

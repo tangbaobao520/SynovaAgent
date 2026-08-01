@@ -163,7 +163,8 @@ export class DataExporter {
               results.push({ id: n.id, type: n.type, props: n.props, graph: '' });
             }
           }
-        } catch {
+        } catch (err) {
+          log.warn({ err: err instanceof Error ? err.message : String(err) }, "数据导出节点查询");
           // 类型可能无数据，跳过
         }
       }
@@ -195,7 +196,8 @@ export class DataExporter {
               graph: '',
             });
           }
-        } catch {
+        } catch (err) {
+          log.warn({ err: err instanceof Error ? err.message : String(err) }, "数据导出边查询");
           // 类型可能无数据，跳过
         }
       }
@@ -216,7 +218,8 @@ export class DataExporter {
         let messages: MessageRow[] = [];
         try {
           messages = this.sessionStore.getMessages(s.id);
-        } catch {
+        } catch (err) {
+          log.warn({ err: err instanceof Error ? err.message : String(err) }, "导出消息获取");
           // 单会话消息读取失败，继续
         }
         return { session: s, messages };

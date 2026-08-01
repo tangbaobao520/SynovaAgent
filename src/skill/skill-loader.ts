@@ -149,11 +149,13 @@ export function loadSkills(): { skills: LoadedSkill[]; degraded: boolean; errors
             seen.add(manifest.name);
           }
         } catch (err: unknown) {
+          log.warn({ err: err instanceof Error ? err.message : String(err) }, "文件读取失败");
           const msg = err instanceof Error ? err.message : String(err);
           errors.push(`Skill ${entry.name} manifest 解析失败: ${msg}`);
         }
       }
     } catch (err: unknown) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "文件读取失败");
       const msg = err instanceof Error ? err.message : String(err);
       errors.push(`Skill 加载失败 (root: ${root}): ${msg}`);
     }
@@ -188,6 +190,7 @@ export async function registerLoadedSkills(): Promise<{ registered: number; erro
       skillRegistry.register(skill);
       registered++;
     } catch (err: unknown) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "动态模块加载失败");
       const msg = err instanceof Error ? err.message : String(err);
       errors.push(`Skill ${skill.manifest.name} 注册失败: ${msg}`);
     }

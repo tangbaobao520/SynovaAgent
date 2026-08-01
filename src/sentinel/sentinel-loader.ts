@@ -82,6 +82,7 @@ export function loadSentinels(): { sentinels: LoadedSentinel[]; degraded: boolea
         const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8')) as SentinelManifest;
         sentinels.push({ manifest, dir: join(SENTINELS_DIR, entry.name) });
       } catch (err: any) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "JSON 解析失败");
         errors.push(`哨兵 ${entry.name} manifest 解析失败: ${err.message}`);
       }
     }
@@ -159,7 +160,7 @@ export async function registerLoadedSentinels(): Promise<{ registered: number; e
               }
             }
           }
-        } catch { /* dependsOn 检查失败 — degraded */ }
+        } catch (err) { log.warn({ err, sentinel: manifest.name }, 'dependsOn 检查失败 — degraded'); }
       }
 
       // 动态导入 registry 避免循环依赖
@@ -210,6 +211,7 @@ export async function registerLoadedSentinels(): Promise<{ registered: number; e
 
       registered++;
     } catch (err: unknown) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "动态模块加载失败");
       const msg = err instanceof Error ? err.message : String(err);
       errors.push(`哨兵 ${manifest.name} 注册失败: ${msg}`);
     }

@@ -3,6 +3,8 @@
  * GET /ga → 八维诊断表单 + SSE 流式结果
  */
 import { Router, type Request, type Response } from 'express';
+import { createLogger } from '@synova/logger';
+const log = createLogger('src.routes.ga-diagnosis');
 
 const router = Router();
 
@@ -137,6 +139,7 @@ async function startDiagnosis(){
     document.getElementById('phaseLabel').textContent='诊断已提交 · jobId: '+j.jobId;
     if(j.jobId) setTimeout(()=>pollResults(j.jobId),3000);
   }catch(e){
+    log.warn({ err: e instanceof Error ? e.message : String(e) }, "网络请求失败");
     document.getElementById('progress').innerHTML='<span style=color:var(--red)>诊断启动失败: '+e.message+'</span>';
     document.getElementById('startBtn').disabled=false;
   }
@@ -152,6 +155,7 @@ async function pollResults(jobId){
     // 加载标注面板
     setTimeout(loadAnnotationPanel, 500);
   }catch(e){
+    log.warn({ err: e instanceof Error ? e.message : String(e) }, "加载标注面板");
     document.getElementById('phaseLabel').textContent='报告生成中...';
     setTimeout(()=>pollResults(jobId),5000);
   }
@@ -185,7 +189,10 @@ async function loadAnnotationPanel() {
           existingMap[ann.findingId] = ann;
         }
       }
-    } catch(e) { /* 标注加载失败不影响展示 */ }
+    } catch(e) {
+      log.warn({ err: e instanceof Error ? e.message : String(e) }, "网络请求失败");
+      /* 标注加载失败不影响展示 */
+    }
 
     document.getElementById('annotation-loading').style.display = 'none';
     const list = document.getElementById('findings-list');
@@ -207,6 +214,7 @@ async function loadAnnotationPanel() {
     document.getElementById('batch-actions').style.display = 'block';
     updateAnnotationStatus();
   } catch(e) {
+    log.warn({ err: e instanceof Error ? e.message : String(e) }, "网络请求失败");
     document.getElementById('annotation-loading').style.display = 'none';
     document.getElementById('annotation-error').style.display = 'block';
     document.getElementById('annotation-error').textContent = '获取 Findings 失败: ' + e.message;
@@ -288,6 +296,7 @@ async function selectAnnotation(findingId, sentinelId, severity, title, annotati
     statusEl.style.color = 'var(--dim)';
     updateAnnotationStatus();
   } catch(e) {
+    log.warn({ err: e instanceof Error ? e.message : String(e) }, "标注更新失败");
     statusEl.textContent = '尚未标注';
     statusEl.style.color = 'var(--dim)';
     errorEl.textContent = '⚠ 标注提交失败: ' + e.message + '，请重试';
@@ -328,6 +337,7 @@ async function batchConfirmAll() {
         fail++; errors.push(f.id + ': ' + (d.message || ''));
       }
     } catch(e) {
+      log.warn({ err: e instanceof Error ? e.message : String(e) }, "网络请求失败");
       fail++; errors.push(f.id + ': ' + e.message);
     }
   }

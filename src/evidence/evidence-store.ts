@@ -42,8 +42,12 @@ export class EvidenceStore {
     `);
 
     // D37: 数据冲突字段（ALTER TABLE ADD COLUMN — 不重建表，不丢数据）
-    try { this.db.exec(`ALTER TABLE evidence ADD COLUMN has_conflict INTEGER DEFAULT 0`); } catch { /* 列已存在 */ }
-    try { this.db.exec(`ALTER TABLE evidence ADD COLUMN conflict_versions TEXT`); } catch { /* 列已存在 */ }
+    try { this.db.exec(`ALTER TABLE evidence ADD COLUMN has_conflict INTEGER DEFAULT 0`); } catch (err) {
+      log.warn({ err }, 'evidence 表 has_conflict 列迁移 — 列已存在');
+    }
+    try { this.db.exec(`ALTER TABLE evidence ADD COLUMN conflict_versions TEXT`); } catch (err) {
+      log.warn({ err }, 'evidence 表 conflict_versions 列迁移 — 列已存在');
+    }
 
     // FTS5 triggers
     this.db.exec(`

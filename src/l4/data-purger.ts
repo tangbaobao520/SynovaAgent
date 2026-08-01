@@ -184,7 +184,8 @@ export class DataPurger {
       for (const node of nodes) {
         try {
           this.graphStore.updateNode(node.id, { ...node.props, _purgeLocked: true, _purgeJobId: job.id }, '');
-        } catch {
+        } catch (err) {
+          log.warn({ err: err instanceof Error ? err.message : String(err) }, "节点更新");
           // 单个节点锁定失败不影响整体
         }
       }
@@ -253,7 +254,8 @@ export class DataPurger {
         try {
           this.graphStore.deleteNode(node.id, '');
           nodesDeleted++;
-        } catch {
+        } catch (err) {
+          log.warn({ err: err instanceof Error ? err.message : String(err) }, "删除失败");
           // 单节点删除失败继续
         }
       }
@@ -266,11 +268,13 @@ export class DataPurger {
             try {
               this.graphStore.deleteEdge(e.id, '');
               edgesDeleted++;
-            } catch {
+            } catch (err) {
+              log.warn({ err: err instanceof Error ? err.message : String(err) }, "删除失败");
               // 单边删除失败继续
             }
           }
-        } catch {
+        } catch (err) {
+          log.warn({ err: err instanceof Error ? err.message : String(err) }, "删除失败");
           // 类型可能无数据
         }
       }
@@ -282,7 +286,8 @@ export class DataPurger {
         try {
           this.sessionStore.deleteSession(s.id);
           sessionsDeleted++;
-        } catch {
+        } catch (err) {
+          log.warn({ err: err instanceof Error ? err.message : String(err) }, "会话删除");
           // 单会话删除失败继续
         }
       }
@@ -294,11 +299,13 @@ export class DataPurger {
           try {
             this.memoryStore.forget(tenantId, m.key);
             memoriesDeleted++;
-          } catch {
+          } catch (err) {
+            log.warn({ err: err instanceof Error ? err.message : String(err) }, "记忆遗忘");
             // 单记忆删除失败继续
           }
         }
-      } catch {
+      } catch (err) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "记忆遗忘");
         // 记忆列表获取失败，继续
       }
 
@@ -407,7 +414,8 @@ export class DataPurger {
             results.push({ id: n.id, props: n.props });
           }
         }
-      } catch {
+      } catch (err) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "清理节点查询");
         // 类型可能无数据，跳过
       }
     }

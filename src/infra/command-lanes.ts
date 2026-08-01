@@ -64,6 +64,7 @@ export class CommandLanes {
           lane.completed++;
           resolve(result);
         } catch (err: unknown) {
+          log.warn({ err: err instanceof Error ? err.message : String(err) }, "命令通道任务执行");
           lane.failed++;
           reject(err);
         } finally {

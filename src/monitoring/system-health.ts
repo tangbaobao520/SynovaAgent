@@ -81,12 +81,30 @@ export class SystemHealthAudit {
           log.warn({ err }, '可用率采集失败');
           return null;
         }),
-        this.collectLastBackup().catch(() => null),
-        this.collectDataDelayCount().catch(() => 0),
-        this.collectActiveSentinels().catch(() => ({ active: 0, total: 0 })),
-        this.collectWatchdogRestartCount().catch(() => 0),
-        this.collectAgentVersion().catch(() => '0.0.0'),
-        this.collectTotalDiagnosisCount().catch(() => 0),
+        this.collectLastBackup().catch((err: unknown) => {
+          log.warn({ err }, '备份时间采集失败 — 降级 null');
+          return null;
+        }),
+        this.collectDataDelayCount().catch((err: unknown) => {
+          log.warn({ err }, '数据延迟采集失败 — 降级 0');
+          return 0;
+        }),
+        this.collectActiveSentinels().catch((err: unknown) => {
+          log.warn({ err }, '活跃哨兵采集失败 — 降级空');
+          return { active: 0, total: 0 };
+        }),
+        this.collectWatchdogRestartCount().catch((err: unknown) => {
+          log.warn({ err }, '看门狗重启数采集失败 — 降级 0');
+          return 0;
+        }),
+        this.collectAgentVersion().catch((err: unknown) => {
+          log.warn({ err }, 'Agent 版本采集失败 — 降级 0.0.0');
+          return '0.0.0';
+        }),
+        this.collectTotalDiagnosisCount().catch((err: unknown) => {
+          log.warn({ err }, '诊断总数采集失败 — 降级 0');
+          return 0;
+        }),
       ]);
 
     const report: SystemHealthReport = {
@@ -192,7 +210,8 @@ export class SystemHealthAudit {
           delayCount++;
         }
       }
-    } catch {
+    } catch (err) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "文件系统操作失败");
       // 无 quality 目录时返回 0
     }
     return delayCount;
@@ -213,7 +232,8 @@ export class SystemHealthAudit {
         active: degraded ? 0 : sentinels.length,
         total: sentinels.length,
       };
-    } catch {
+    } catch (err) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "动态模块加载失败");
       // 哨兵模块不可用 — 回退到目录扫描
       const sentinelDir = path.join(process.cwd(), 'extensions', 'sentinels');
       if (!fs.existsSync(sentinelDir)) {

@@ -90,7 +90,10 @@ export class ConfigRecovery {
           log.warn({ path: configPath, size, bakSize }, '配置文件大小下降超过 50% — 标记可疑');
           return { ok: true, warning: `配置文件缩小超过 50% (${size} vs ${bakSize})` };
         }
-      } catch { /* 检查失败不阻断 */ }
+      } catch (err) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "文件系统操作失败");
+        /* 检查失败不阻断 */
+      }
     }
 
     // 密钥占位符检测

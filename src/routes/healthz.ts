@@ -101,6 +101,7 @@ async function checkDatabase(): Promise<HealthCheck> {
     }
     return { status: 'ok', detail: `SQLite 数据库正常 (${(stat.size / 1024).toFixed(0)}KB)` };
   } catch (err: unknown) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "文件系统操作失败");
     return { status: 'down', detail: `数据库检查失败: ${(err as Error)?.message || String(err)}` };
   }
 }
@@ -247,7 +248,8 @@ async function checkDataFreshness(): Promise<HealthCheck> {
           newestTime = stat.mtimeMs;
           newestFile = entry;
         }
-      } catch {
+      } catch (err) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "文件系统操作失败");
         // 跳过权限错误
       }
     }
@@ -309,7 +311,8 @@ function tryGetStatFs(): { statfsSync: ((path: string) => { bsize: number; bavai
     if (typeof fsModule.statfsSync === 'function') {
       return { statfsSync: fsModule.statfsSync };
     }
-  } catch {
+  } catch (err) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "健康检查模块加载");
     // 旧版 Node.js, 不支持 statfsSync
   }
   return { statfsSync: null };

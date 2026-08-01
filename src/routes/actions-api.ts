@@ -38,7 +38,7 @@ function persistAction(id: string, item: ActionItem): void {
       tags: ['action', item.status],
       expiresAt: null,
     });
-  } catch { /* AgentMemoryStore 不可用 — degraded, 仅内存存储 */ }
+  } catch (err) { log.warn({ err }, 'AgentMemoryStore 不可用 — degraded, 仅内存存储'); }
 }
 
 router.post('/api/actions', (req: Request, res: Response) => {
@@ -64,10 +64,12 @@ router.get('/api/actions', (req: Request, res: Response) => {
       const records = memStore.recall({ orgId: wsId, type: 'enterprise_fact', tags: ['action'], limit: 50 } as never) as Array<{ value: string }>;
       if (records && records.length > 0) {
         for (const r of records) {
-          try { const item = JSON.parse(r.value) as ActionItem; store.set(item.id, item); } catch { /* skip corrupt */ }
+          try { const item = JSON.parse(r.value) as ActionItem; store.set(item.id, item); } catch (err) {
+            log.warn({ err, orgId: wsId }, 'Action 条目解析失败 — 跳过损坏项');
+          }
         }
       }
-    } catch { /* AgentMemoryStore 不可用 — degraded */ }
+    } catch (err) { log.warn({ err }, 'AgentMemoryStore 不可用 — degraded'); }
   }
   const list = Array.from(store.values())
     .filter(a => !wsId || a.workspaceId === wsId)

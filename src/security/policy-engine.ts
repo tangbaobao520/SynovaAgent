@@ -1,3 +1,5 @@
+import { createLogger } from '@synova/logger';
+const log = createLogger('src.security.policy-engine');
 /**
  * policy-engine.ts — ABAC 属性驱动权限引擎 (L5 安全基础设施)
  *
@@ -259,7 +261,8 @@ export class PolicyEngine {
       }
       // OWD=Private: 无匹配规则时默认 Deny
       return { allow: false, denyReason: 'deny_default: 无匹配策略规则' };
-    } catch {
+    } catch (err) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "OWD=Private: 无匹配规则时默认 Deny");
       // 异常安全：任何错误都返回默认 Deny
       return { allow: false, denyReason: 'deny_error: 策略评估异常' };
     }

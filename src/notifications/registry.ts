@@ -75,6 +75,7 @@ export async function dispatchNotification(notification: Notification): Promise<
         const result = await adapter.send(notification);
         return { channel: adapter.channel, result };
       } catch (err: any) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "消息发送失败");
         return {
           channel: adapter.channel,
           result: { success: false, error: err.message },

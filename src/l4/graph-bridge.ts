@@ -147,6 +147,7 @@ export function createGraphBridge(store: GraphStore, graph: string, onGraphUpdat
             store.createEdge(EdgeType.INFORMATION_FLOW, ia.from, ia.to, ia.weight || 0.5, {}, graph);
             result.edgesCreated++;
           } catch (err: any) {
+            log.warn({ err: err instanceof Error ? err.message : String(err) }, "Create INTERACTS_WITH edges");
             result.errors.push(`HONA edge failed: ${err.message}`);
           }
         }

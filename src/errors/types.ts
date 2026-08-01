@@ -11,6 +11,8 @@
  *   - Jittered backoff: 去抖退避防止雷群效应
  */
 import * as crypto from 'crypto';
+import { createLogger } from '@synova/logger';
+const log = createLogger('src.errors.types');
 
 // ═══ Error Codes (Hermes FailoverReason 对齐) ═══
 
@@ -455,7 +457,9 @@ type ErrorPayload = { code?: unknown; type?: unknown; message?: unknown };
 function extractErrorBody(error: unknown): Record<string, unknown> {
   const e = error as ErrorLike;
   if (e?.body && typeof e.body === 'object' && !Array.isArray(e.body)) return e.body as Record<string, unknown>;
-  try { const r = e?.response?.json?.(); if (r && typeof r === 'object' && !Array.isArray(r)) return r as Record<string, unknown>; } catch { /* not JSON */ }
+  try { const r = e?.response?.json?.(); if (r && typeof r === 'object' && !Array.isArray(r)) return r as Record<string, unknown>; } catch (err) {
+    log.warn({ err }, '错误响应体 JSON 解析失败 — not JSON');
+  }
   return {};
 }
 
@@ -574,6 +578,7 @@ export async function withRetry<T>(
     try {
       return await fn();
     } catch (err: any) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "错误分类流水线执行");
       lastError = err;
       const diagErr = err instanceof DiagnosticAgentError ? err : null;
       const code = diagErr?.code || ErrorCode.INTERNAL;

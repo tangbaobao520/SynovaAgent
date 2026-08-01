@@ -251,6 +251,7 @@ export function createKnowledgeAgent(config: KnowledgeAgentConfig = {}): Knowled
             const limit = Number(params.limit || defaultLimit);
             return { nodes: nodes.slice(0, limit).map(n => ({ type: n.type, props: n.props })), total: nodes.length };
           } catch (err: unknown) {
+            log.warn({ err: err instanceof Error ? err.message : String(err) }, "动态模块加载失败");
             return { error: `图查询失败: ${err instanceof Error ? err.message : String(err)}` };
           }
         },

@@ -231,7 +231,7 @@ function buildVolatileLayer(turnCount: number, phase: number, teamId?: string): 
           sentinelInfo = `\n[哨兵监测]: ${stats.totalFindings} 条发现 (critical: ${stats.criticalFindings}, warning: ${stats.warningFindings})`;
         }
       }
-    } catch { /* degraded — 哨兵数据不可用 */ }
+    } catch (err) { log.warn({ err }, '哨兵数据不可用 — degraded'); }
   }
   return `[轮次: ${turnCount}] [阶段: ${phase}/5]${sentinelInfo}`;
 }
@@ -474,7 +474,7 @@ export class ConversationEngine {
     // Phase 1.2: 注册活跃会话到优雅关闭追踪
     if (this.sessionId) {
       try { getGlobalGracefulShutdown().noteActive(this.sessionId, { orgId: this.orgId, phase: this.phase }); }
-      catch { /* 非阻断 */ }
+      catch (err) { log.warn({ err }, '优雅关闭注册失败 — 非阻断'); }
     }
     this.turnCount++;
     // PII 脱敏: 出站到云 LLM 前脱敏 (S4移除 + S3脱敏 + S2角色掩盖)
@@ -576,7 +576,9 @@ export class ConversationEngine {
           log.warn({ err }, 'InterviewSummary 持久化失败 — degraded');
         });
         // Slice 5.1: 自动同步 SOG 本体
-        this.syncToSOG().then(r => { this._lastOntologyResult = r; }).catch(() => {});
+        this.syncToSOG().then(r => { this._lastOntologyResult = r; }).catch((err) => {
+          log.warn({ err }, 'SOG 本体同步失败 — degraded');
+        });
 
         // 审计 P0-20260620: Phase 0 完成后自动启动诊断管线
         this.startDiagnosis('FDE', '用户').then(result => {
@@ -712,7 +714,7 @@ export class ConversationEngine {
       const facts = [...ctx.ownFacts, ...ctx.relatedFacts];
       if (facts.length === 0) return undefined;
       return facts;
-    } catch { /* memoryStore unavailable — degraded */ return undefined; }
+    } catch (err) { log.warn({ err }, 'memoryStore 不可用 — degraded'); return undefined; }
   }
 
   // ═══ Private: LLM + Tool Loop (delegated to ToolLoopExecutor) ═══

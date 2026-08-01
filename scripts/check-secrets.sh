@@ -113,11 +113,11 @@ if [ -n "$STAGED" ]; then
   #   1. LLM API Key 前缀 (sk-/ak-/fk-/org-)
   #   2. 飞书/企业 App ID 前缀 (cli_)
   #   3. process.env 回退到硬编码字符串 (|| 'xxx' 或 || "xxx")
+  # 修复 (D291): 模式 3 仅匹配 process.env 回退, 排除业务默认值 (sourceType || 'document' 非凭证)
   HARDCODED=$(echo "$STAGED" | xargs grep -Hn \
     -e 'sk-[a-zA-Z0-9]\{20,\}' \
     -e 'cli_[a-z0-9]\{10,\}' \
-    -e "||\s*'[a-zA-Z0-9_-]\{8,\}'" \
-    -e '||\s*"[a-zA-Z0-9_-]\{8,\}"' \
+    -e 'process\.env\.[A-Z_]*\s*||\s*['"'"'"][a-zA-Z0-9_-]\{8,\}['"'"'"]' \
     2>/dev/null \
     | grep -v 'your-\|example\|placeholder\|demo\|test-\|xxx\|TODO\|CHANGE\|Observation\|'\''\s*$' \
     | grep -v "'fde-tool'\|'steady_operator'\|'web-user'\|'strategy'\|'information_flow'\|'resolved'\|'evidence'\|'community'\|'deepseek'\|'qwen'\|'glm'\|'kimi'\|'yi'\|'minimax'\|'step'\|'ernie'\|'openai'\|'gateway'\|'silicon'\|'not_bound'" \

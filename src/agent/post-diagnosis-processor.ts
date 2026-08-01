@@ -138,9 +138,9 @@ export async function runPostDiagnosisProcessing(
       }
     }
   } catch (err: unknown) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "keyPersonRisk 同步失败");
     const msg = err instanceof Error ? err.message : String(err);
     result.errors.push(`GraphBridge: ${msg}`);
-    log.warn({ err: msg }, 'GraphBridge keyPersonRisk sync failed — degraded');
   }
 
   // 1b. HONA — 人-组织网络分析同步
@@ -152,9 +152,9 @@ export async function runPostDiagnosisProcessing(
       result.honaSynced = true;
     }
   } catch (err: unknown) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "HONA 同步失败");
     const msg = err instanceof Error ? err.message : String(err);
     result.errors.push(`GraphBridge(HONA): ${msg}`);
-    log.warn({ err: msg }, 'GraphBridge HONA sync failed — degraded');
   }
 
   // 1c. FinancialImpact — 财务影响分析同步
@@ -166,9 +166,9 @@ export async function runPostDiagnosisProcessing(
       result.financialImpactSynced = true;
     }
   } catch (err: unknown) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "FinancialImpact 同步失败");
     const msg = err instanceof Error ? err.message : String(err);
     result.errors.push(`GraphBridge(FinancialImpact): ${msg}`);
-    log.warn({ err: msg }, 'GraphBridge FinancialImpact sync failed — degraded');
   }
 
   // 1d. CapabilityGap — 能力缺口分析同步
@@ -180,9 +180,9 @@ export async function runPostDiagnosisProcessing(
       result.capabilityGapSynced = true;
     }
   } catch (err: unknown) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "CapabilityGap 同步失败");
     const msg = err instanceof Error ? err.message : String(err);
     result.errors.push(`GraphBridge(CapabilityGap): ${msg}`);
-    log.warn({ err: msg }, 'GraphBridge CapabilityGap sync failed — degraded');
   }
 
   // 1e. SevenPowers — 七力战略分析同步
@@ -194,9 +194,9 @@ export async function runPostDiagnosisProcessing(
       result.sevenPowersSynced = true;
     }
   } catch (err: unknown) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "SevenPowers 同步失败");
     const msg = err instanceof Error ? err.message : String(err);
     result.errors.push(`GraphBridge(SevenPowers): ${msg}`);
-    log.warn({ err: msg }, 'GraphBridge SevenPowers sync failed — degraded');
   }
 
   // 1f. CPC — 关键流程链同步
@@ -208,9 +208,9 @@ export async function runPostDiagnosisProcessing(
       result.cpcSynced = true;
     }
   } catch (err: unknown) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "CPC 同步失败");
     const msg = err instanceof Error ? err.message : String(err);
     result.errors.push(`GraphBridge(CPC): ${msg}`);
-    log.warn({ err: msg }, 'GraphBridge CPC sync failed — degraded');
   }
 
   // 2. 社区报告生成
@@ -222,9 +222,9 @@ export async function runPostDiagnosisProcessing(
       events?.onCommunityReports?.(communities.length, communities);
     }
   } catch (err: unknown) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "社区报告生成失败");
     const msg = err instanceof Error ? err.message : String(err);
     result.errors.push(`CommunityReports: ${msg}`);
-    log.warn({ err: msg }, 'CommunityReports failed — degraded');
   }
 
   // 3. 实体解析
@@ -237,9 +237,9 @@ export async function runPostDiagnosisProcessing(
       events?.onEntityResolution?.(resolution.autoMerged, resolution.queuedForReview);
     }
   } catch (err: unknown) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "实体解析失败");
     const msg = err instanceof Error ? err.message : String(err);
     result.errors.push(`EntityResolution: ${msg}`);
-    log.warn({ err: msg }, 'EntityResolution failed — degraded');
   }
 
   // ═══ P0-2: L0 组织自适应 — 纠错处理 + 阈值自适应 ═══

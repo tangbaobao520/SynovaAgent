@@ -170,6 +170,7 @@ export async function ingestRow(
     const nodeId = store.createNode(mapping.targetNodeType, props, graph);
     return { nodeId, errors };
   } catch (err: unknown) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "写入失败");
     const msg = err instanceof Error ? err.message : String(err);
     return { nodeId: '', errors: [msg] };
   }

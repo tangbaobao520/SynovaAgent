@@ -106,6 +106,7 @@ router.post('/api/qa/ask', async (req: Request, res: Response) => {
 
     res.json(result);
   } catch (err: unknown) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "IM 消息处理失败");
     const msg = err instanceof Error ? err.message : String(err);
     res.status(500).json({ ok: false, error: msg });
   }

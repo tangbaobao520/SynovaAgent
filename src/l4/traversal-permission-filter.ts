@@ -134,7 +134,8 @@ export class TraversalPermissionFilter {
           degraded: true,
           warnings: [...fallback.warnings, `permission_filter_error: ${msg}`],
         };
-      } catch {
+      } catch (err) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "权限过滤图遍历");
         // 双重异常 — 完全降级
         return {
           nodes: [], edges: [], path: [], degraded: true,

@@ -112,7 +112,10 @@ export function loadFileConfig(configPath?: string): SynovaFileConfig {
         try {
           copyFileSync(lastGoodPath, path);
           log.info({ path }, '已从 last-good 恢复配置文件');
-        } catch { /* 非阻断 */ }
+        } catch (err) {
+          log.warn({ err: err instanceof Error ? err.message : String(err) }, "自动恢复: last-good → synova.json");
+          /* 非阻断 */
+        }
         return parsed as SynovaFileConfig;
       }
     }

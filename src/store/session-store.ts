@@ -152,7 +152,9 @@ export class SessionStore {
   renameSession(id: string, title: string): boolean {
     try {
       // 安全迁移: 尝试添加 title 列 (已存在则忽略)
-      try { this.db.exec("ALTER TABLE agent_sessions ADD COLUMN title TEXT DEFAULT ''"); } catch { /* 已存在 */ }
+      try { this.db.exec("ALTER TABLE agent_sessions ADD COLUMN title TEXT DEFAULT ''"); } catch (err) {
+        log.warn({ err }, 'title 列迁移 — 列已存在');
+      }
       this.db.prepare('UPDATE agent_sessions SET title=?, updated_at=? WHERE id=?')
         .run(title, new Date().toISOString(), id);
       return true;

@@ -72,6 +72,7 @@ router.post('/api/data/upload', async (req: Request, res: Response) => {
     log.info({ mapping, rows: rows.length, created: result.nodesCreated }, '数据上传完成');
     res.json(result);
   } catch (err: unknown) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "D35: 管道可观测性 — 记录成功");
     const msg = err instanceof Error ? err.message : String(err);
     // D35: 管道可观测性 — 记录失败
     getPipelineMonitor().recordFailure('upload', mapping || 'unknown', msg);

@@ -357,7 +357,8 @@ function readExpertManifest(expertType: string): Record<string, unknown> | null 
   if (!existsSync(path)) return null;
   try {
     return JSON.parse(readFileSync(path, "utf-8")) as Record<string, unknown>;
-  } catch {
+  } catch (err) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "JSON 解析失败");
     return null;
   }
 }
@@ -370,7 +371,8 @@ function writeExpertManifest(expertType: string, data: Record<string, unknown>):
     const path = join(EXPERT_DIR, expertType, "manifest.json");
     writeFileSync(path, JSON.stringify(data, null, 2), "utf-8");
     return true;
-  } catch {
+  } catch (err) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "阈值文件路径拼接");
     return false;
   }
 }
@@ -393,7 +395,10 @@ function logCorrection(key: string, actionType: string, details: Record<string, 
       expiresAt: null,
       status: "active",
     });
-  } catch { /* 降级 — 不阻断 */ }
+  } catch (err) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "企业记忆访问失败");
+    /* 降级 — 不阻断 */
+  }
 }
 
 // ═══ 各类型处理函数 ═══
@@ -415,7 +420,10 @@ function applyThresholdAdjust(action: EvolutionAction, result: ApplyActionResult
 
     let config: Record<string, unknown>;
     try { config = JSON.parse(readFileSync(thresholdPath, "utf-8")) as Record<string, unknown>; }
-    catch { continue; }
+    catch (err) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "阈值配置加载失败");
+      continue;
+    }
 
     const overrides = config.thresholdOverrides as Record<string, unknown> | undefined;
     if (!overrides || !overrides[sentinelKey]) continue;

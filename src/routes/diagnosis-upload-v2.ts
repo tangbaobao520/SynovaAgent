@@ -108,7 +108,10 @@ setTimeout(()=>{window.location.href='/api/diagnosis/status/'+d.jobId;},2000);
 r.className='error';
 r.innerHTML='<p>Error: '+(d.error||'unknown')+'</p>';
 }
-}catch(err){r.className='error';r.innerHTML='<p>'+err.message+'</p>';}
+}catch(err){
+  log.warn({ err: err instanceof Error ? err.message : String(err) }, "诊断报告上传");
+  r.className='error';r.innerHTML='<p>'+err.message+'</p>';
+}
 });
 </script></body></html>`;
   res.type('html').send(html);

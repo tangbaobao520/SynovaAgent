@@ -52,6 +52,7 @@ export async function withRetry<T>(
     try {
       return await fn();
     } catch (err: unknown) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "重试任务执行");
       const error = err instanceof Error ? err : new Error(String(err));
 
       if (attempt < maxRetries && shouldRetry(error)) {

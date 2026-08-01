@@ -186,6 +186,7 @@ router.get('/api/ontology/graph/:orgId/summary', (req: Request, res: Response) =
     };
     res.json({ ok: true, summary });
   } catch (err: any) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "本体查询失败");
     res.status(500).json({ ok: false, error: err.message, code: 'QUERY_ERROR' });
   }
 });
@@ -202,6 +203,7 @@ router.get('/api/ontology/graph/:orgId/brokers', (req: Request, res: Response) =
     const brokers: Array<{ id: string; type: string; betweenness: number }> = [];
     res.json({ ok: true, brokers });
   } catch (err: any) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "本体查询失败");
     res.status(500).json({ ok: false, error: err.message, code: 'QUERY_ERROR' });
   }
 });
@@ -220,6 +222,7 @@ router.get('/api/ontology/graph/:orgId/diff', (req: Request, res: Response) => {
     const diff = { fromDate, toDate, added: 0, removed: 0, changed: 0, message: '图差异功能待迁移' };
     res.json({ ok: true, diff });
   } catch (err: any) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "本体查询失败");
     res.status(500).json({ ok: false, error: err.message, code: 'QUERY_ERROR' });
   }
 });

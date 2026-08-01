@@ -225,7 +225,9 @@ export class ToolLoopExecutor {
             this.log.warn({ err, tool: tc.function.name }, '工具执行失败');
             execResult = { error: `工具执行失败: ${err.message}` };
             if (hookRunner) {
-              hookRunner.runPostToolUseFailure?.({ name: tc.function.name, input: JSON.stringify(effectiveParams) }, new Error(err.message)).catch(() => {});
+              hookRunner.runPostToolUseFailure?.({ name: tc.function.name, input: JSON.stringify(effectiveParams) }, new Error(err.message)).catch((hookErr) => {
+                this.log.warn({ hookErr, tool: tc.function.name }, 'PostToolUseFailure hook 执行失败 — 非阻断');
+              });
             }
           }
 
@@ -233,7 +235,9 @@ export class ToolLoopExecutor {
           this.toolGuard.afterCall(tc.function.name, execResult, 0);
 
           if (hookRunner && !(execResult as ToolExecResult)?.error) {
-            hookRunner.runPostToolUse({ name: tc.function.name, input: JSON.stringify(effectiveParams) }, { content: JSON.stringify(execResult), isError: false }).catch(() => {});
+            hookRunner.runPostToolUse({ name: tc.function.name, input: JSON.stringify(effectiveParams) }, { content: JSON.stringify(execResult), isError: false }).catch((hookErr) => {
+              this.log.warn({ hookErr, tool: tc.function.name }, 'PostToolUse hook 执行失败 — 非阻断');
+            });
             eventBus?.emit({ id: `evt_${Date.now().toString(36)}`, type: 'tool.executed', consultationId: sessionId, data: { toolName: tc.function.name, success: true }, traceId: sessionId, spanId: sessionId.slice(0, 16), timestamp: new Date().toISOString() });
           }
 

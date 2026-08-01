@@ -67,6 +67,7 @@ export async function checkExternalAssumptions(
           }
         }
       } catch (err: unknown) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "假设监控图遍历");
         warnings.push(`ASSUMPTION_TRIGGERED_REALLOCATION遍历失败: ${err instanceof Error ? err.message : String(err)}`);
       }
     }

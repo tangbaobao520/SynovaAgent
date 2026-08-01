@@ -155,6 +155,7 @@ export function createOpenAICompatibleProvider(cfg: ProviderAdapterConfig): LLMP
       if (res.ok) return { healthy: true, latencyMs: lat };
       return { healthy: false, error: `${cfg.name} 返回 ${res.status}`, latencyMs: lat };
     } catch (err: unknown) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "网络请求失败");
       const msg = err instanceof Error ? err.message : String(err);
       return { healthy: false, error: `${cfg.name}: ${msg}`, latencyMs: Date.now() - start };
     }
@@ -187,13 +188,17 @@ export function createOpenAICompatibleProvider(cfg: ProviderAdapterConfig): LLMP
         checkPromptInjection(messages); // D43: 提示注入检测 — 在 LLM 调用前对原始消息检测
         const res = await makeRequest(messages, opts, true);
         if (!res.ok) {
-          await checkResponse(res, '流式错误').catch((err: Error) => { cb.onError?.(err); });
+          await checkResponse(res, '流式错误').catch((err: Error) => {
+            log.warn({ err }, '流式响应错误检查失败 — 转发 onError 回调');
+            cb.onError?.(err);
+          });
           breaker.recordFailure();
           return;
         }
         await handleStream(res, cb, opts?.model || model);
         breaker.recordSuccess();
       } catch (err: unknown) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "提示注入检测");
         const e = err instanceof Error ? err : new Error(String(err));
         cb.onError?.(cfg.onError ? cfg.onError(e, 'stream') : e);
         breaker.recordFailure();

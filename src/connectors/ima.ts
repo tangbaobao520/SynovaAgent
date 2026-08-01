@@ -123,7 +123,10 @@ export class ImaClient {
 
   async validateToken(apiKey?: string): Promise<boolean> {
     try { await this.authenticate(apiKey); return true; }
-    catch { return false; }
+    catch (err) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "IMA token 校验失败");
+      return false;
+    }
   }
 
   async scanDocuments(filter?: DocumentFilter): Promise<ImaDocument[]> {
@@ -170,6 +173,7 @@ export class ImaClient {
       const response = await fetch(`${this.config.baseUrl}/v1/health`, { signal: AbortSignal.timeout(5000) });
       return response.ok ? { ok: true } : { ok: false, message: `HTTP ${response.status}` };
     } catch (err: unknown) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "网络请求失败");
       return { ok: false, message: err instanceof Error ? err.message : String(err) };
     }
   }

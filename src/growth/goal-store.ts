@@ -180,7 +180,8 @@ export function getActiveGoalCount(orgId: string, store: GraphBridgeLike, graph:
   try {
     const goals = listGoalsByOrg(orgId, store, graph);
     return goals.filter(g => g.status === 'active').length;
-  } catch {
+  } catch (err) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "目标列表查询");
     return 0;
   }
 }

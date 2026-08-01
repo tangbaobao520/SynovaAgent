@@ -99,7 +99,9 @@ export class OntologyEventBus {
     if (index < 0 || index >= this.deadLetterQueue.length) return false;
     const entry = this.deadLetterQueue.splice(index, 1)[0];
     entry.attempts++;
-    this.publish(entry.event).catch(() => {});
+    this.publish(entry.event).catch((err) => {
+      log.warn({ err }, '事件重发失败 — 已从死信队列移除');
+    });
     return true;
   }
 

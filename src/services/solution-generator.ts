@@ -100,10 +100,18 @@ function restoreFromMemStore(teamId: string, reportId: string): void {
           if (pkg.id && !solutionsCache.has(pkg.id)) {
             solutionsCache.set(pkg.id, pkg);
           }
-        } catch { /* skip corrupt */ }
+        } catch (err) {
+          log.warn({ err: err instanceof Error ? err.message : String(err) }, "JSON 解析失败");
+          /* skip corrupt */
+        }
       }
-    }).catch(() => { /* AgentMemoryStore 不可用 — 仅内存 */ });
-  } catch { /* 静默降级 */ }
+    }).catch((err) => {
+      log.warn({ err }, 'AgentMemoryStore 加载失败 — 仅内存缓存');
+    });
+  } catch (err) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "AgentMemoryStore 不可用 — 仅内存");
+    /* 静默降级 */
+  }
 }
 
 // ═══ 核心函数 ═══

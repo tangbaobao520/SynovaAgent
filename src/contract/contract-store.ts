@@ -150,7 +150,8 @@ export class ContractStore {
       return readdirSync(this.baseDir)
         .filter(f => f.startsWith('CONTRACT-') && f.endsWith('.json'))
         .sort();
-    } catch {
+    } catch (err) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "契约文件存在检查");
       return [];
     }
   }

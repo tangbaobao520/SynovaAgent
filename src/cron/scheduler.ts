@@ -381,6 +381,7 @@ export class CronScheduler {
       log.debug({ name: job.name, durationMs: dur }, '任务完成');
       this.persistRun(job);
     } catch (err: unknown) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "任务调试信息记录");
       const msg = err instanceof Error ? err.message : String(err);
       job.lastError = msg;
       job.failures++;

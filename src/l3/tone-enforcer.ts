@@ -125,7 +125,8 @@ export function enforceConversation(text: string): EnforceConversationResult {
     // 检测相邻的两个或以上 ? 或 ？
     const multiQuestion = /[?？]{2,}/.test(text);
     return { text, multiQuestion };
-  } catch {
+  } catch (err) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "语气规则匹配");
     return { text, multiQuestion: false };
   }
 }

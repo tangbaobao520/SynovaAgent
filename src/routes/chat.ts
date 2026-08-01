@@ -282,7 +282,10 @@ async function init() {
   try {
     // GNS v2.0: 检测用户状态 — Phase 0 已完成/有数据源/新手
     const stateRes = await fetch(API + '/api/user-state');
-    const state = await stateRes.json().catch(() => ({}));
+    const state = await stateRes.json().catch((err) => {
+      console.warn('用户状态解析失败 — 降级空对象', { err });
+      return {};
+    });
 
     const r = await fetch(API + '/api/status');
     const s = await r.json();
@@ -315,6 +318,7 @@ async function init() {
       addSystem('msg', '👋 我是 Synova，你的 AI 组织诊断助手。<br>点击下方按钮开始，或直接输入你的组织名称。');
     }
   } catch(e) {
+    log.warn({ err: e instanceof Error ? e.message : String(e) }, "网络请求失败");
     dot.className = 'dot off';
     statusText.textContent = '服务异常';
   }
@@ -476,7 +480,7 @@ function confirmJudgment(cardId) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'confirm', feedback: '用户采纳了判断卡片方案' }),
-    }).catch(function() { /* fire-and-forget — 本地状态已更新, degraded */ });
+    }).catch(function(err) { console.warn('方案确认通知失败 — degraded, 本地状态已更新', err); });
   } catch(e) { console.warn('确认请求失败 — degraded:', e); }
 }
 
@@ -670,7 +674,10 @@ async function send() {
     });
 
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
+      const err = await res.json().catch((jsonErr) => {
+        console.warn('诊断错误响应解析失败 — 降级空对象', { err: jsonErr });
+        return {};
+      });
       addError('诊断启动失败：' + (err.error || err.message || '未知错误'));
       loading = false; btn.disabled = false; btn.textContent = '发送';
       quickActions.style.display = 'flex';
@@ -716,6 +723,7 @@ async function send() {
       }
     }
   } catch(e) {
+    log.warn({ err: e instanceof Error ? e.message : String(e) }, "JSON 解析失败");
     if (e.name !== 'AbortError') {
       addError('连接失败：' + e.message);
     }
@@ -812,6 +820,7 @@ async function loadGraphView() {
 
     addSystem('msg', '📊 团队全景图已加载 (' + nodes.length + ' 人, ' + edges.length + ' 关联)');
   } catch(e) {
+    log.warn({ err: e instanceof Error ? e.message : String(e) }, "网络请求失败");
     addSystem('msg', '⚠️ 团队全景图暂不可用 — 需要先运行诊断生成数据');
   }
 }
@@ -872,7 +881,10 @@ async function resolveProposal(id, action) {
     addSystem('msg', data.ok ?
       (action === 'confirm' ? '✅ 已确认' : action === 'reject' ? '❌ 已拒绝' : '💬 已记录看法') :
       '⚠️ ' + (data.error || '操作失败'));
-  } catch(e) { addSystem('msg', '⚠️ 操作失败: ' + e.message); }
+  } catch(e) {
+    log.warn({ err: e instanceof Error ? e.message : String(e) }, "网络请求失败");
+    addSystem('msg', '⚠️ 操作失败: ' + e.message);
+  }
 }
 
 init();

@@ -93,6 +93,7 @@ router.post('/api/knowledge/ingest', (req: Request, res: Response) => {
 
     res.json({ ok: true, id, warned: check.warnings.length > 0 ? true : undefined });
   } catch (err: unknown) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "知识写入失败");
     const msg = err instanceof Error ? err.message : String(err);
     res.status(500).json({ ok: false, error: msg });
   }
@@ -105,6 +106,7 @@ router.get('/api/knowledge/stats', (_req: Request, res: Response) => {
     const store = getStore();
     res.json({ ok: true, ...store.stats() });
   } catch (err: unknown) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "知识存储获取");
     res.json({ ok: true, totalChunks: 0, totalSizeBytes: 0 });
   }
 });

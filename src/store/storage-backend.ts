@@ -208,6 +208,7 @@ export class SqliteStorageBackend implements StorageBackend {
       this.db.prepare('SELECT 1 FROM storage_kv LIMIT 0').run();
       return { healthy: true };
     } catch (err: any) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "数据库操作失败");
       return { healthy: false, error: err.message };
     }
   }

@@ -289,6 +289,7 @@ export class Bootstrap {
 
       log.info({ phase: def.name, durationMs: Date.now() - start }, `Phase ${def.id} 完成`);
     } catch (err: unknown) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "超时包装执行");
       const msg = err instanceof Error ? err.message : String(err);
       errors.push(msg);
       log.error({ phase: def.name, error: msg }, `Phase ${def.id} 失败`);
@@ -387,6 +388,7 @@ export class Bootstrap {
         errors: [...loadErrors, ...regResult.errors],
       });
     } catch (err: unknown) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "动态模块加载失败");
       const msg = err instanceof Error ? err.message : String(err);
       this.ctx.addDegraded(2, 'sentinel-loader', msg);
       log.warn({ err: msg }, 'Phase 2a: SentinelLoader 失败 — 降级');
@@ -429,6 +431,7 @@ export class Bootstrap {
         errors: [...loadErrors, ...regResult.errors],
       });
     } catch (err: unknown) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "动态模块加载失败");
       const msg = err instanceof Error ? err.message : String(err);
       this.ctx.addDegraded(2, 'skill-loader', msg);
       log.warn({ err: msg }, 'Phase 2b: SkillLoader 失败 — 降级');
@@ -471,6 +474,7 @@ export class Bootstrap {
         errors: [...loadErrors, ...regResult.errors],
       });
     } catch (err: unknown) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "动态模块加载失败");
       const msg = err instanceof Error ? err.message : String(err);
       this.ctx.addDegraded(2, 'playbook-loader', msg);
       log.warn({ err: msg }, 'Phase 2c: PlaybookLoader 失败 — 降级');
@@ -863,7 +867,8 @@ export class Bootstrap {
           try {
             const { getFederalAdapter } = await import('../adapters/federal-adapter');
             ctx.set('federalAdapter', getFederalAdapter());
-          } catch {
+          } catch (err) {
+            log.warn({ err: err instanceof Error ? err.message : String(err) }, "动态模块加载失败");
             // getFederalAdapter 也不可能时，仅记录
             ctx.addDegraded(3, 'federal-adapter-fallback', '联邦适配器降级失败');
           }

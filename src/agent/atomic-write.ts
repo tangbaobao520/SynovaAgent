@@ -95,7 +95,10 @@ export class AtomicWriter {
         if (fs.existsSync(backupPath)) {
           fs.copyFileSync(backupPath, targetPath);
         }
-      } catch { /* double-failure — give up */ }
+      } catch (err) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "文件系统操作失败");
+        /* double-failure — give up */
+      }
       return { success: false, targetPath, error: msg };
     }
 
@@ -111,6 +114,7 @@ export class AtomicWriter {
         return { success: false, targetPath, backupPath, error: err };
       }
     } catch (err: unknown) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "文件读取失败");
       const msg = err instanceof Error ? err.message : String(err);
       return { success: false, targetPath, backupPath, error: msg };
     }
@@ -142,7 +146,10 @@ export class AtomicWriter {
       const oldBackup = path.join(this.versionsDir, backups[i]);
       try {
         fs.unlinkSync(oldBackup);
-      } catch { /* skip */ }
+      } catch (err) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "文件删除失败");
+        /* skip */
+      }
     }
   }
 
@@ -157,9 +164,15 @@ export class AtomicWriter {
           try {
             fs.unlinkSync(fullPath);
             log.debug({ file: fullPath }, '清理临时文件');
-          } catch { /* skip */ }
+          } catch (err) {
+            log.warn({ err: err instanceof Error ? err.message : String(err) }, "文件删除失败");
+            /* skip */
+          }
         }
       }
-    } catch { /* skip */ }
+    } catch (err) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "文件删除失败");
+      /* skip */
+    }
   }
 }

@@ -15,6 +15,8 @@ import * as readline from 'readline';
 import { createProvider } from '../providers';
 import { detectProvider } from '../providers/detect';
 import { ConversationEngine } from '../agent/conversation-engine';
+import { createLogger } from '@synova/logger';
+const log = createLogger('src.mcp.index');
 
 // ═══ MCP Protocol ═══
 
@@ -123,6 +125,7 @@ async function handleToolCall(name: string, params: Record<string, unknown>): Pr
         }));
         return JSON.stringify({ ok: true, total: list.length, sentinels: list });
       } catch (err: unknown) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "动态模块加载失败");
         return JSON.stringify({ ok: false, error: String(err) });
       }
     }
@@ -133,11 +136,15 @@ async function handleToolCall(name: string, params: Record<string, unknown>): Pr
         // 用默认 db 构造 store
         const { getDatabase, initEngineContext } = await import('../init/engine-context');
         const { createSynovaGraphStore } = await import('@synova/graph-store');
-        try { getDatabase(); } catch { initEngineContext(); }
+        try { getDatabase(); } catch (err) {
+          log.warn({ err }, '数据库未初始化 — 执行懒初始化');
+          initEngineContext();
+        }
         const store = createSynovaGraphStore(getDatabase() as never);
         const findings = await runSentinelForTeam(sentinelId, store);
         return JSON.stringify({ ok: true, sentinelId, findings: findings.length });
       } catch (err: unknown) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "MCP 日志调用");
         return JSON.stringify({ ok: false, error: String(err) });
       }
     }
@@ -150,6 +157,7 @@ async function handleToolCall(name: string, params: Record<string, unknown>): Pr
         const results = allResults.map((r, i) => ({ sentinelId: registry.list()[i].config.id, ok: r.status === 'fulfilled' }));
         return JSON.stringify({ ok: true, total: results.length, results });
       } catch (err: unknown) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "动态模块加载失败");
         return JSON.stringify({ ok: false, error: String(err) });
       }
     }
@@ -173,13 +181,17 @@ async function handleToolCall(name: string, params: Record<string, unknown>): Pr
         const score = Math.round(allFindings.reduce((s, f) => s + (sev[f.severity] ?? 50), 0) / allFindings.length);
         return JSON.stringify({ ok: true, overall: score, critical: allFindings.filter(f => f.severity === 'critical').length, warning: allFindings.filter(f => f.severity === 'warning').length, findings: allFindings.length });
       } catch (err: unknown) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "动态模块加载失败");
         return JSON.stringify({ ok: false, error: String(err) });
       }
     }
     case 'data_source_status': {
       try {
         const { getDatabase, initEngineContext } = await import('../init/engine-context');
-        try { getDatabase(); } catch { initEngineContext(); }
+        try { getDatabase(); } catch (err) {
+          log.warn({ err }, '数据库未初始化 — 执行懒初始化');
+          initEngineContext();
+        }
         const db = getDatabase();
         const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as Array<{ name: string }>;
         // 本体层覆盖情况
@@ -191,9 +203,13 @@ async function handleToolCall(name: string, params: Record<string, unknown>): Pr
             id: n.$id, label: n.label,
             fields: Object.keys(n.optionalProps || {}).length + (n.requiredProps || []).length,
           }));
-        } catch { /* ontology unavailable */ }
+        } catch (err) {
+          log.warn({ err: err instanceof Error ? err.message : String(err) }, "动态模块加载失败");
+          /* ontology unavailable */
+        }
         return JSON.stringify({ ok: true, connected: true, tables: tables.slice(0, 30).map(t => t.name), nodeTypes, nodeCount: nodeTypes.length });
       } catch (err: unknown) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "ontology unavailable");
         return JSON.stringify({ ok: false, error: String(err), connected: false });
       }
     }
@@ -221,6 +237,7 @@ async function handleToolCall(name: string, params: Record<string, unknown>): Pr
         const res = await fetch(`${BASE}/api/ontology/graph/${orgId}`);
         return await res.text();
       } catch (err: any) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "网络请求失败");
         process.stderr.write(`[mcp] query_ontology fetch failed: ${err.message?.slice(0, 80)}\n`);
         return JSON.stringify({ error: '本体 API 不可达——请确保 SynovaAgent 服务已启动' });
       }
@@ -235,6 +252,7 @@ async function handleToolCall(name: string, params: Record<string, unknown>): Pr
         });
         return await res.text();
       } catch (err: any) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "网络请求失败");
         process.stderr.write(`[mcp] ingest_document fetch failed: ${err.message?.slice(0, 80)}\n`);
         return JSON.stringify({ error: '本体 API 不可达' });
       }
@@ -246,6 +264,7 @@ async function handleToolCall(name: string, params: Record<string, unknown>): Pr
         const res = await fetch(sessionId ? `${BASE}/api/sessions/${sessionId}` : `${BASE}/api/sessions`);
         return await res.text();
       } catch (err: any) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "网络请求失败");
         process.stderr.write(`[mcp] get_session fetch failed: ${err.message?.slice(0, 80)}\n`);
         return JSON.stringify({ error: '会话 API 不可达' });
       }
@@ -291,6 +310,7 @@ async function main() {
         send({ jsonrpc: '2.0', id: req.id, error: { code: -32601, message: `未知方法: ${req.method}` } });
       }
     } catch (err: any) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "JSON 解析失败");
       // 无法解析 JSON 的行——写入 stderr 便于运维排查
       process.stderr.write(`[mcp] JSON parse error: ${err.message?.slice(0, 80)}\n`);
     }
@@ -298,6 +318,7 @@ async function main() {
 }
 
 main().catch((err) => {
-  process.stderr.write(`MCP Fatal: ${err.message}\n`);
+  log.error({ err: err instanceof Error ? err.message : String(err) }, 'MCP 主进程致命错误 — 退出');
+  process.stderr.write(`MCP Fatal: ${err instanceof Error ? err.message : String(err)}\n`);
   process.exit(1);
 });

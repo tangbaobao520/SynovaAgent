@@ -95,6 +95,7 @@ export class AdapterRegistry {
         });
         registered++;
       } catch (err: unknown) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "适配器注册失败");
         const msg = err instanceof Error ? err.message : String(err);
         errors.push(`适配器 ${item.name} 注册失败: ${msg}`);
       }

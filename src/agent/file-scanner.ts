@@ -274,6 +274,7 @@ export class FileScanner {
               };
             }
           } catch (err: unknown) {
+            log.warn({ err: err instanceof Error ? err.message : String(err) }, "文件系统操作失败");
             const msg = err instanceof Error ? err.message : String(err);
             errors.push({ file: filePath, error: msg });
             log.warn({ file: filePath, err: msg }, '专家文件读取失败 — 跳过');
@@ -285,6 +286,7 @@ export class FileScanner {
         }
       }
     } catch (err: unknown) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "文件系统操作失败");
       const msg = err instanceof Error ? err.message : String(err);
       errors.push({ file: expertDir, error: msg });
       log.warn({ err: msg }, 'expert/ 目录扫描失败 — degraded');
@@ -319,12 +321,14 @@ export class FileScanner {
             file: { relativePath, absolutePath: filePath, content, size: stat.size, lastModified: stat.mtime.toISOString() },
           });
         } catch (err: unknown) {
+          log.warn({ err: err instanceof Error ? err.message : String(err) }, "文件系统操作失败");
           const msg = err instanceof Error ? err.message : String(err);
           errors.push({ file: filePath, error: msg });
           log.warn({ file: filePath, err: msg }, '测量器配置文件读取失败 — 跳过');
         }
       }
     } catch (err: unknown) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "文件系统操作失败");
       const msg = err instanceof Error ? err.message : String(err);
       errors.push({ file: dir, error: msg });
       log.warn({ err: msg }, 'measurers/ 目录扫描失败 — degraded');
@@ -364,12 +368,14 @@ export class FileScanner {
                 size: stat.size, lastModified: stat.mtime.toISOString(),
               });
             } catch (err: unknown) {
+              log.warn({ err: err instanceof Error ? err.message : String(err) }, "文件系统操作失败");
               const msg = err instanceof Error ? err.message : String(err);
               errors.push({ file: filePath, error: msg });
               log.warn({ file: filePath, err: msg }, '知识文件读取失败 — 跳过');
             }
           }
         } catch (err: unknown) {
+          log.warn({ err: err instanceof Error ? err.message : String(err) }, "文件系统操作失败");
           const msg = err instanceof Error ? err.message : String(err);
           errors.push({ file: industryPath, error: msg });
           log.warn({ err: msg }, `knowledge/${industry.name}/ 扫描失败 — degraded`);
@@ -380,6 +386,7 @@ export class FileScanner {
         }
       }
     } catch (err: unknown) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "文件系统操作失败");
       const msg = err instanceof Error ? err.message : String(err);
       errors.push({ file: dir, error: msg });
       log.warn({ err: msg }, 'knowledge/ 目录扫描失败 — degraded');

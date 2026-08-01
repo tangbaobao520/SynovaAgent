@@ -350,6 +350,7 @@ export class RecoveryPackBuilder {
         errors,
       };
     } catch (err: unknown) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "加解密失败");
       const msg = `验证失败: ${(err as Error)?.message || String(err)}`;
       errors.push(msg);
       log.error({ err, packPath }, msg);

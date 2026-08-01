@@ -36,7 +36,7 @@ export const goalalignmentSentinel: Sentinel = {
           }
           const teamRows = db.prepare("SELECT id, props FROM graph_nodes WHERE type = 'TEAM' AND props IS NOT NULL").all();
           for (const r of teamRows) { const p = typeof r.props === 'string' ? JSON.parse(r.props as string) : (r.props || {}); teams_list.push({ id: r.id as string, name: (p.name || r.id) as string }); }
-        } catch { /* */ }
+        } catch (err) { log.warn({ err }, '目标/团队数据读取失败 — degraded'); }
       }
       if (goals.length === 0 && teams_list.length === 0) return { sentinelId: config.id, ok: true, findings: [], durationMs: Date.now() - startTime, checkedAt, degraded: true };
       // 检查：团队级目标是否有父目标（对齐到组织目标）

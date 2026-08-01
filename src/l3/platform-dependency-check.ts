@@ -76,6 +76,7 @@ export async function checkPlatformDependencies(
           }
         }
       } catch (err: unknown) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "平台依赖图遍历");
         warnings.push(`DEPENDS_ON_PLATFORM遍历失败: ${err instanceof Error ? err.message : String(err)}`);
       }
     }

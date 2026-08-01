@@ -553,6 +553,7 @@ function loadExpertManifest(expertType: string, projectRoot?: string): ExpertMan
     const parsed = JSON.parse(raw) as ExpertManifest;
     return parsed;
   } catch (cause) {
+    log.warn({ err: cause instanceof Error ? cause.message : String(cause) }, "文件读取失败");
     const msg = cause instanceof Error ? cause.message : String(cause);
     const err = new Error(`专家manifest解析失败 (${expertType}): ${msg}`);
     Object.assign(err, { code: 'MANIFEST_PARSE_FAILED', phase: 'prompt-assembly', retryable: true });

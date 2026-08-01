@@ -174,6 +174,7 @@ export async function runSentinelOnce(sentinelId: string): Promise<RunOnceRespon
     const result = await sentinel.check(context);
     return { ok: true, sentinelId, result };
   } catch (err: unknown) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "动态模块加载失败");
     const msg = err instanceof Error ? err.message : String(err);
     return { ok: false, sentinelId, result: null, error: msg };
   }

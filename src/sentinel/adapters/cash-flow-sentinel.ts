@@ -68,7 +68,10 @@ export const cashFlowSentinel: Sentinel = {
         rawEntries = db.prepare(
           "SELECT props FROM graph_nodes WHERE type = 'FINANCIAL' AND props IS NOT NULL"
         ).all();
-      } catch { /* DB 不可用 — 降级 */ }
+      } catch (err) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "从 SOG FINANCIAL 节点提取财务条目");
+        /* DB 不可用 — 降级 */
+      }
 
       if (rawEntries.length === 0) {
         return { sentinelId: config.id, ok: true, findings: [], durationMs: Date.now() - startTime, checkedAt, degraded: true };

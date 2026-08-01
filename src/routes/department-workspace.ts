@@ -79,7 +79,9 @@ async function loadWs(){
       <div class="ws-dot \${w.status==='pending'?'warning':w.status==='resolved'?'ok':'critical'}"></div>
       <div style="flex:1"><div>\${w.title} \${w.source==='boss_assigned'?'<span class=\\"source-tag assigned\\">老板分配</span>':w.source==='agent_suggested'?'<span class=\\"source-tag assigned\\">Agent建议</span>':'<span class=\\"source-tag own\\">自己创建</span>'}</div>
       <div style="font-size:10px;color:var(--dim)">\${w.status||'pending'}</div></div></div>\`).join('');
-  }catch(e){}
+  }catch(e){
+    console.warn("部门工作区 DOM 渲染", { err: e instanceof Error ? e.message : String(e) });
+  }
 }
 async function selectWs(id,ctx){
   current=id;loadWs();
@@ -90,12 +92,19 @@ async function selectWs(id,ctx){
   try{const r=await fetch(API+'/api/workspaces/'+id+'/context');const d=await r.json();
     const sources=d.sources||['本部门数据', '竞品数据库', '客户调研报告'];
     document.getElementById('right-panel').innerHTML='<h3>可访问数据</h3>'+sources.map(s=>'<div class=goal-card>'+s+'</div>').join('');
-  }catch(e){document.getElementById('right-panel').innerHTML='<h3>可访问数据</h3><div class=goal-card>数据加载中...</div>';}
+  }catch(e){
+    console.warn("工作区上下文加载失败", { err: e instanceof Error ? e.message : String(e) });
+    document.getElementById('right-panel').innerHTML='<h3>可访问数据</h3><div class=goal-card>数据加载中...</div>';
+  }
   msgs.scrollTop=msgs.scrollHeight;
 }
 async function newWorkspace(){
   const title=prompt('工作区名称')||'新工作区';
-  try{const r=await fetch(API+'/api/workspaces',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,type:'manual'})});await r.json();loadWs()}catch(e){}
+  try {
+    const r=await fetch(API+'/api/workspaces',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,type:'manual'})});await r.json();loadWs();
+  } catch(e){
+    console.warn('创建工作区失败 — degraded', { err: e instanceof Error ? e.message : String(e) });
+  }
 }
 async function sendMsg(){
   const input=document.getElementById('user-input');const text=input.value.trim();if(!text||!current)return;

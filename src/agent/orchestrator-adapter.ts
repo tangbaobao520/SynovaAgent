@@ -68,7 +68,10 @@ export function createDiagnosisLLMClient(provider: LLMProvider): DiagnosisLLMCli
           completionTokens: result.content.length,
           totalTokens: systemPrompt.length + userMessage.length + result.content.length,
         }, result.model || 'unknown');
-      } catch { /* 非阻断 — 预算追踪失败不影响诊断 */ }
+      } catch (err) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "预算追踪器获取");
+        /* 非阻断 — 预算追踪失败不影响诊断 */
+      }
       return {
         content: result.content,
         model: result.model || 'unknown',

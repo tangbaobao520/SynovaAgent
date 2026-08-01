@@ -64,6 +64,8 @@ export class WebViewAdapter implements ViewAdapter {
 
   /** Close the SSE connection */
   close(): void {
-    try { this.res.end(); } catch { /* already closed */ }
+    try { this.res.end(); } catch (err) {
+      log.warn({ err }, 'SSE 连接关闭失败 — already closed');
+    }
   }
 }

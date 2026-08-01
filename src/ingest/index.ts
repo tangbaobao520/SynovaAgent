@@ -26,7 +26,11 @@ export async function ingestFile(filePath: string, orgId: string): Promise<Inges
     const { getDatabase, initEngineContext } = await import('../init/engine-context');
     // 懒初始化——服务端可能还没启动, ingest 也能独立工作
     let db: ReturnType<typeof getDatabase>;
-    try { db = getDatabase(); } catch { initEngineContext(); db = getDatabase(); }
+    try { db = getDatabase(); } catch (err) {
+      log.warn({ err }, '数据库未初始化 — 执行懒初始化');
+      initEngineContext();
+      db = getDatabase();
+    }
     const { createSynovaGraphStore } = await import('@synova/graph-store');
     const store = createSynovaGraphStore(db);
 

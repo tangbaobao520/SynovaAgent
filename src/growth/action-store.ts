@@ -137,7 +137,8 @@ export class ActionStore implements ActionStoreLike {
     try {
       const nodes = this.store.queryNodes('ACTION', { signalId } as Record<string, unknown>, 'growth');
       return nodes.map(n => n.props as unknown as Action);
-    } catch {
+    } catch (err) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "Action 节点查询");
       return [];
     }
   }
@@ -152,7 +153,8 @@ export class ActionStore implements ActionStoreLike {
       return nodes
         .map(n => n.props as unknown as Action)
         .filter(a => a.department === department || a.collaborators?.includes(department));
-    } catch {
+    } catch (err) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "Action 节点查询");
       return [];
     }
   }
@@ -167,7 +169,8 @@ export class ActionStore implements ActionStoreLike {
       return nodes
         .map(n => n.props as unknown as Action)
         .filter(a => a.loopAssociation?.loopId === loopId && a.loopAssociation?.executionId === executionId);
-    } catch {
+    } catch (err) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "Action 节点查询");
       return [];
     }
   }

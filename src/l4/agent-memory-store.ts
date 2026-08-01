@@ -368,7 +368,10 @@ export class AgentMemoryStore {
 
   private rowToEntry(row: Record<string, unknown>): MemoryEntry {
     let tags: string[] = [];
-    try { tags = JSON.parse(row.tags as string); } catch { /* expected: tags may be malformed */ tags = []; }
+    try { tags = JSON.parse(row.tags as string); } catch (err) {
+      log.warn({ err, rowId: row.id }, 'tags 字段损坏 — 降级空数组');
+      tags = [];
+    }
 
     return {
       id: row.id as string,

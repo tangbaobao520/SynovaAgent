@@ -72,6 +72,7 @@ export function collectActivity(
     return { ok: true, agentNodeId: newNodeId, action: 'created', degraded: false, errors: [] };
 
   } catch (err: unknown) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "Agent 观测节点创建失败");
     const msg = err instanceof Error ? err.message : String(err);
     errors.push(msg);
     log.warn({ err: msg, lookupKey, platform: activity.platform },

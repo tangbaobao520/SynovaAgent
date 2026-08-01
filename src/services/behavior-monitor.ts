@@ -247,7 +247,8 @@ export class BehaviorMonitor {
             const drop = (oldThreshold - newThreshold) / oldThreshold;
             if (drop > 0.3) significantDrops++;
           }
-        } catch {
+        } catch (err) {
+          log.warn({ err: err instanceof Error ? err.message : String(err) }, "阈值对比解析失败");
           // 解析失败跳过
         }
       }

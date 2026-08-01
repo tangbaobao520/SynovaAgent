@@ -227,7 +227,7 @@ HARDCODE_DATA=""
 if [ -n "$STAGED_HTML" ]; then
   for hf in $STAGED_HTML; do
     [ -z "$hf" ] && continue; [ ! -f "$hf" ] && continue
-    DEPS=$(grep -n "'marketing'\|'sales'\|'finance'\|'研发部'\|'市场部'\|'销售部'" "$hf" 2>/dev/null | grep -v "import\|export\|//\|/\*\|token.split\|dept.*=\|LAYER_EXPERTS\|experts:\|'org'\|'tech'\|'strategy'\|'knowledge'\|'business_model'\|: \[" | head -3 || true)
+    DEPS=$(grep -n "'marketing'\|'sales'\|'finance'\|'研发部'\|'市场部'\|'销售部'" "$hf" 2>/dev/null | grep -v "import\|export\|//\|/\*\|^\s*\*\|token.split\|dept.*=\|LAYER_EXPERTS\|experts:\|'org'\|'tech'\|'strategy'\|'knowledge'\|'business_model'\|'finance'\|'marketing'\|'sales'\|: \[" | head -3 || true)
     [ -n "$DEPS" ] && HARDCODE_DATA="${HARDCODE_DATA}  ${hf}: 可能硬编码业务数据(如部门名)\n"
   done
 fi
@@ -417,7 +417,10 @@ CROSS_LAYER=""
 if [ -n "$STAGED_SRC" ]; then
   L1_TO_L4=$(echo "$STAGED_SRC" | grep -E '^src/(routes/|l1/|l1-interaction/)' | xargs grep -l "from '\.\./l4/\|from '\.\./\.\./l4/\|from '\.\./store/\|from '\.\./\.\./store/" 2>/dev/null | grep -v "knowledge-bridge-service\|\.test\." || true)
   [ -n "$L1_TO_L4" ] && CROSS_LAYER="${CROSS_LAYER}L1→L4/L5: ${L1_TO_L4}\n"
-  L2_TO_L5=$(echo "$STAGED_SRC" | grep -E '^src/agent/' | xargs grep -l "from '\.\./store/\|from '\.\./init/" 2>/dev/null | grep -v "knowledge-bridge-service\|\.test\.\|import type" || true)
+  # 修复 (D291): grep -l 输出文件名, "import type" 过滤须作用于代码行 → 逐文件先滤行再判存在
+  L2_TO_L5=$(echo "$STAGED_SRC" | grep -E '^src/agent/' | while read -r _sf; do
+    grep -E "from '\.\./store/|from '\.\./init/" "$_sf" 2>/dev/null | grep -v "import type\|knowledge-bridge-service\|\.test\." | grep -q . && echo "$_sf"
+  done | grep -v "knowledge-bridge-service\|\.test\." || true)
   [ -n "$L2_TO_L5" ] && CROSS_LAYER="${CROSS_LAYER}L2→L5: ${L2_TO_L5}\n"
   L3_TO_ENGINE=$(echo "$STAGED_SRC" | grep -E '^src/sentinel/' | xargs grep -l "from '\.\./\.\./\.\./packages/engine-core/" 2>/dev/null | grep -v "import type\|\.test\.\|src/sentinel/compute/" || true)
   [ -n "$L3_TO_ENGINE" ] && CROSS_LAYER="${CROSS_LAYER}L3→engine-core: ${L3_TO_ENGINE}\n"
@@ -789,7 +792,19 @@ echo ""
 echo -e "${CYAN}── 组 12/12: Task Scope 一致性 ──${RESET}"
 
 TODAY=$(date +%Y-%m-%d)
-BRIEFS=$(find "$ROOT/.claude/task-briefs/" -maxdepth 1 -name "*.md" -newermt "$TODAY 00:00:00" 2>/dev/null | sort || true)
+# 修复 (D291): 组12 只用当前 session 的 brief, 避免并发 session 的 brief 干扰暂存文件匹配
+# D296 补充: current-brief 陈旧检查 (与 hook-check-task-scope.sh 一致)
+BRIEFS=""
+if [ -f "$ROOT/.claude/current-brief" ]; then
+  _bname=$(cat "$ROOT/.claude/current-brief" 2>/dev/null | tr -d '[:space:]')
+  _cb_date=$(echo "$_bname" | grep -oP '\d{4}-\d{2}-\d{2}' | head -1 || true)
+  if [ -n "$_cb_date" ] && [ "$_cb_date" != "$TODAY" ]; then
+    :  # 陈旧的 current-brief，忽略它
+  elif [ -n "$_bname" ] && [ -f "$ROOT/.claude/task-briefs/$_bname" ]; then
+    BRIEFS="$ROOT/.claude/task-briefs/$_bname"
+  fi
+fi
+[ -z "$BRIEFS" ] && BRIEFS=$(find "$ROOT/.claude/task-briefs/" -maxdepth 1 -name "*.md" -newermt "$TODAY 00:00:00" 2>/dev/null | sort || true)
 SCOPE_VIOLATION=""
 
 if [ -n "$BRIEFS" ] && [ -n "$STAGED_ALL" ]; then
@@ -837,47 +852,32 @@ in_q2 && in_exclude && /^- / {
     ALL_EXCLUDE_PATHS="${ALL_EXCLUDE_PATHS}${BRIEF_EXCLUDE}"$'\n'
   done <<< "$BRIEFS"
 
-  # 检查每个暂存文件
-  for sf in $STAGED_ALL; do
-      # 跳过例外路径
-      if echo "$sf" | grep -qE '\.claude/|scripts/workflow/|\.codex/|memory/|docs/|\.github/'; then
+  # 检查每个暂存文件 — 修复 (D291): Python 单进程匹配, 替代 12321 次 grep 子进程 (Windows 10+ 分钟 → <1s)
+  SCOPE_VIOLATION=$(python3 -c "
+import re, sys, os
+staged = '''$STAGED_ALL'''.split('\n')
+scope = [p for p in '''$ALL_SCOPE_PATHS'''.split('\n') if p]
+excl = [p for p in '''$ALL_EXCLUDE_PATHS'''.split('\n') if p]
+skip_re = re.compile(r'\.claude/|scripts/workflow/|\.codex/|memory/|docs/|\.github/')
+code_re = re.compile(r'\.(ts|tsx|js|jsx|json|py|sh)\$')
+viol = []
+for sf in staged:
+    sf = sf.strip()
+    if not sf or skip_re.search(sf) or not code_re.search(sf):
         continue
-      fi
-      # 只检查代码文件
-      if ! echo "$sf" | grep -qE '\.(ts|tsx|js|jsx|json|py|sh)$'; then
-        continue
-      fi
-
-      # 检查是否在排除项中（不做什么）
-      if [ -n "$ALL_EXCLUDE_PATHS" ]; then
-        EXCLUDED=0
-        while IFS= read -r ex_path; do
-          [ -z "$ex_path" ] && continue
-          EX_ESC=$(echo "$ex_path" | sed 's/[.[\*^$()+?{|\\]/\\&/g')
-          if echo "$sf" | grep -qE "(^|/)$EX_ESC$"; then
-            SCOPE_VIOLATION="${SCOPE_VIOLATION}  $sf (Q2 排除项禁止修改: $ex_path)"$'\n'
-            EXCLUDED=1
+    excluded = False
+    for ex in excl:
+        if re.search(r'(^|/)' + re.escape(ex) + r'\$', sf):
+            viol.append(f'  {sf} (Q2 排除项禁止修改: {ex})')
+            excluded = True
             break
-          fi
-        done <<< "$ALL_EXCLUDE_PATHS"
-        [ "$EXCLUDED" -eq 1 ] && continue
-      fi
-
-      # 检查是否在范围内
-      IN_SCOPE=0
-      while IFS= read -r scope_path; do
-        [ -z "$scope_path" ] && continue
-        SCOPE_ESC=$(echo "$scope_path" | sed 's/[.[\*^$()+?{|\\]/\\&/g')
-        if echo "$sf" | grep -qE "(^|/)$SCOPE_ESC$"; then
-          IN_SCOPE=1
-          break
-        fi
-      done <<< "$ALL_SCOPE_PATHS"
-
-      if [ "$IN_SCOPE" -eq 0 ]; then
-        SCOPE_VIOLATION="${SCOPE_VIOLATION}  $sf (不在 Q2 范围内)"$'\n'
-      fi
-    done
+    if excluded:
+        continue
+    in_scope = any(re.search(r'(^|/)' + re.escape(p) + r'\$', sf) for p in scope)
+    if not in_scope:
+        viol.append(f'  {sf} (不在 Q2 范围内)')
+print('\n'.join(viol))
+" 2>/dev/null || true)
 fi
 
 if [ -n "$SCOPE_VIOLATION" ]; then

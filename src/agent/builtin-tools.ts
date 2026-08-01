@@ -182,6 +182,7 @@ export function registerBuiltinTools(
           : docs.slice(-limit);
         return { documents: filtered.slice(0, limit), count: filtered.length, totalDocs: docs.length, orgId };
       } catch (err: any) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "工具参数格式化");
         return { error: `读取文档失败: ${err.message}` };
       }
     },
@@ -219,6 +220,7 @@ export function registerBuiltinTools(
 
         return { ok: true, id, name: params.name, cron: params.cron, message: `定时任务 "${params.name}" 已设定 (${params.cron})` };
       } catch (err: any) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "动态模块加载失败");
         return { error: `定时任务设定失败: ${err.message}` };
       }
     },
@@ -245,6 +247,7 @@ export function registerBuiltinTools(
           })),
         };
       } catch (err: any) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "动态模块加载失败");
         return { error: `查询定时任务失败: ${err.message}` };
       }
     },
@@ -282,6 +285,7 @@ export function registerBuiltinTools(
         }
         return { error: result.error || '安装失败', auditScore: result.auditReport.score };
       } catch (err: any) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "动态模块加载失败");
         return { error: `安装失败: ${err.message}` };
       }
     },

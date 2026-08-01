@@ -200,6 +200,7 @@ export class KnowledgeFileImporter {
             title: parsed.title, chunks: totalChunks,
           }, '知识文件已导入');
         } catch (err: unknown) {
+          log.warn({ err: err instanceof Error ? err.message : String(err) }, "知识文件导入失败");
           const msg = err instanceof Error ? err.message : String(err);
           errors.push({ file: entry.relativePath, error: msg });
           log.warn({ file: entry.relativePath, err: msg }, '知识文件导入失败 — 跳过 (degraded)');

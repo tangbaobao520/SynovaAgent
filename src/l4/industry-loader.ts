@@ -28,7 +28,10 @@ export function loadIndustries(): { industries: IndustryManifest[]; degraded: bo
       const mf = join(INDUSTRIES_DIR, entry.name, 'manifest.json');
       if (!existsSync(mf)) { log.warn({ dir: entry.name }, '行业目录缺 manifest.json — 跳过'); continue; }
       try { industries.push(JSON.parse(readFileSync(mf, 'utf-8')) as IndustryManifest); }
-      catch (err: any) { errors.push(`${entry.name}: JSON 解析失败`); }
+      catch (err: any) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "行业 manifest 解析失败");
+        errors.push(`${entry.name}: JSON 解析失败`);
+      }
     }
     // 检查 extends 引用完整性
     const names = new Set(industries.map(i => i.name));

@@ -173,7 +173,7 @@ export class SynovaDiagnosisEngineImpl implements SynovaDiagnosisEngine {
     const allRecommendations: DiagnosisReport['recommendations'] = [];
 
     const emit = (event: DiagnosisEvent): void => {
-      try { onEvent?.(event); } catch { /* degraded — event emission failure is non-blocking */ }
+      try { onEvent?.(event); } catch (err) { log.warn({ err }, '事件发射失败 — degraded, 非阻断'); }
     };
 
     const now = (): string => new Date().toISOString();

@@ -103,6 +103,7 @@ export class PreUploadValidator {
 
       return { ok: true, warnings, blocked: false };
     } catch (err: unknown) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "文件内容截取校验");
       // 约束3: 降级不阻断 — validate() 异常时放行
       const msg = err instanceof Error ? err.message : String(err);
       log.error({ err: msg, tenantId: _tenantId }, 'PreUploadValidator异常→降级放行');

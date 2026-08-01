@@ -51,8 +51,9 @@ export class AuditService {
     _store.log(entry);
 
     // Phase 0.4: 异步触发 GA 行为监控
-    BehaviorMonitor.evaluate(entry, _store).catch(() => {
+    BehaviorMonitor.evaluate(entry, _store).catch((err) => {
       // 异步错误已被 evaluate 内部消化，这里仅保险
+      log.warn({ err }, 'GA 行为监控评估失败 — 仅保险兜底');
     });
   }
 

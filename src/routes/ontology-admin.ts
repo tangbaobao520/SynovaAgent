@@ -6,6 +6,8 @@
  * 铁律39: L1 → L2/L4 via API, 不直接 import L4
  */
 import { Router, type Request, type Response } from 'express';
+import { createLogger } from '@synova/logger';
+const log = createLogger('src.routes.ontology-admin');
 
 const router = Router();
 
@@ -51,6 +53,7 @@ tr:nth-child(even){background:rgba(255,255,255,0.02)}
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.send(html);
   } catch (err: unknown) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "动态模块加载失败");
     res.status(500).send(`本体加载失败: ${err instanceof Error ? err.message : String(err)}`);
   }
 });

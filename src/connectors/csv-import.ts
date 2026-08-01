@@ -53,11 +53,13 @@ export class CsvImportConnector {
     let raw: string;
     try {
       raw = readFileSync(resolvedPath, 'utf-8');
-    } catch {
+    } catch (err) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "文件读取失败");
       try {
         const iconv = require('iconv-lite') as { decode(b: Buffer, enc: string): string };
         raw = iconv.decode(readFileSync(resolvedPath), 'gbk');
-      } catch {
+      } catch (err) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "iconv 模块加载");
         raw = readFileSync(resolvedPath, 'utf-8');
       }
     }
@@ -102,6 +104,7 @@ export class CsvImportConnector {
         nodeIds.push(nodeId);
         imported++;
       } catch (rowErr) {
+        log.warn({ err: rowErr instanceof Error ? rowErr.message : String(rowErr) }, "CSV 行解析");
         warnings.push('Row ' + (i + 1) + ' skipped');
       }
     }

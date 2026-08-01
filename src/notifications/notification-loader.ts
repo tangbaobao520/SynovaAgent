@@ -56,6 +56,7 @@ export async function loadAndRegisterNotificationAdapters(): Promise<{ registere
         registerNotificationAdapter(adapter);
         registered++;
       } catch (err: unknown) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "JSON 解析失败");
         const msg = err instanceof Error ? err.message : String(err);
         errors.push(`通知 ${entry.name} 注册失败: ${msg}`);
       }

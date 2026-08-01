@@ -116,6 +116,7 @@ export class ContractGate {
           return { contractId: contract.contractId, name, type, pass: false, detail: `未知契约类型: ${type}` };
       }
     } catch (err: unknown) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "契约验证异常");
       const msg = err instanceof Error ? err.message : String(err);
       return { contractId: contract.contractId, name, type, pass: false, detail: `验证异常: ${msg}` };
     }
@@ -169,6 +170,7 @@ export class ContractGate {
         detail: found ? `匹配: ${result.split('\n')[0].substring(0, 120)}` : `未找到: ${pattern} 在 ${searchPath}`,
       };
     } catch (err: unknown) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "契约文件路径拼接");
       const msg = err instanceof Error ? err.message : String(err);
       // grep 不可用或超时 → 降级，不阻断
       log.warn({ err: msg, pattern, searchPath }, 'grep 验证失败 — 降级通过');
