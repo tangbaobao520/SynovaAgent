@@ -1,9 +1,0 @@
-{
-  "component": "ga-dashboard",
-  "status": "green",
-  "timestamp": "2026-07-28T10:10:00Z",
-  "reason": "D253 GA Dashboard deployed — ga.html + ga.js + app.css styles + shell.js nav entry",
-  "p0_count": 0,
-  "p1_count": 0,
-  "p2_count": 0
-}

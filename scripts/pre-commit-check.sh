@@ -793,24 +793,31 @@ echo -e "${CYAN}── 组 12/12: Task Scope 一致性 ──${RESET}"
 
 TODAY=$(date +%Y-%m-%d)
 # 修复 (D291): 组12 只用当前 session 的 brief, 避免并发 session 的 brief 干扰暂存文件匹配
-# D296 补充: current-brief 陈旧检查 (与 hook-check-task-scope.sh 一致)
-BRIEFS=""
+# D296 跨 session 污染根治 (认领制):
+#   - 范围 (做什么) 取今日全部 brief 的并集 — 每个 session 的文件由自己的 brief 认领,
+#     并发 session 的 brief 不再误伤 (D291 事故: session 提交被另一 session 的 brief 阻断)
+#   - 排除 (不做什么) 仅取 current-brief — 他人 brief 的排除项不适用于本 session 的文件
+#   - current-brief 缺失/陈旧 → 回退全部 (单 session 语义)
+CUR_BRIEF_PATH=""
 if [ -f "$ROOT/.claude/current-brief" ]; then
   _bname=$(cat "$ROOT/.claude/current-brief" 2>/dev/null | tr -d '[:space:]')
   _cb_date=$(echo "$_bname" | grep -oP '\d{4}-\d{2}-\d{2}' | head -1 || true)
   if [ -n "$_cb_date" ] && [ "$_cb_date" != "$TODAY" ]; then
     :  # 陈旧的 current-brief，忽略它
   elif [ -n "$_bname" ] && [ -f "$ROOT/.claude/task-briefs/$_bname" ]; then
-    BRIEFS="$ROOT/.claude/task-briefs/$_bname"
+    CUR_BRIEF_PATH="$ROOT/.claude/task-briefs/$_bname"
   fi
 fi
-[ -z "$BRIEFS" ] && BRIEFS=$(find "$ROOT/.claude/task-briefs/" -maxdepth 1 -name "*.md" -newermt "$TODAY 00:00:00" 2>/dev/null | sort || true)
+# 认领候选: 今日全部 brief (含并发 session 的)
+ALL_TODAY_BRIEFS=$(find "$ROOT/.claude/task-briefs/" -maxdepth 1 -name "*.md" -newermt "$TODAY 00:00:00" 2>/dev/null | sort || true)
+[ -z "$ALL_TODAY_BRIEFS" ] && [ -n "$CUR_BRIEF_PATH" ] && ALL_TODAY_BRIEFS="$CUR_BRIEF_PATH"
+# 排除来源: 仅 current-brief; 无则全部 (单 session 回退)
+EXCLUDE_BRIEFS="${CUR_BRIEF_PATH:-$ALL_TODAY_BRIEFS}"
 SCOPE_VIOLATION=""
 
-if [ -n "$BRIEFS" ] && [ -n "$STAGED_ALL" ]; then
-  # 收集所有今日 brief 的 Q2 范围路径（取并集）
+if [ -n "$ALL_TODAY_BRIEFS" ] && [ -n "$STAGED_ALL" ]; then
+  # 收集全部今日 brief 的 Q2 范围路径（认领并集）
   ALL_SCOPE_PATHS=""
-  ALL_EXCLUDE_PATHS=""
   while IFS= read -r BRIEF; do
     [ -z "$BRIEF" ] && continue
     BRIEF_SCOPE=$(awk '
@@ -830,7 +837,12 @@ in_q2 && in_include && /^- / {
 }
 ' "$BRIEF" 2>/dev/null || true)
     ALL_SCOPE_PATHS="${ALL_SCOPE_PATHS}${BRIEF_SCOPE}"$'\n'
+  done <<< "$ALL_TODAY_BRIEFS"
 
+  # 排除项 — 仅 current-brief (D296: 他人 brief 的排除不适用于本 session)
+  ALL_EXCLUDE_PATHS=""
+  while IFS= read -r BRIEF; do
+    [ -z "$BRIEF" ] && continue
     BRIEF_EXCLUDE=$(awk '
 /^## Q2:/ { in_q2=1; in_include=0; in_exclude=0 }
 in_q2 && /^## / && !/^## Q2/ { exit }
@@ -839,6 +851,7 @@ in_q2 && in_exclude && /^- / {
     line = $0
     sub(/^- /, "", line)
     sub(/不修改/, "", line)
+    sub(/不改/, "", line)
     sub(/不涉及/, "", line)
     sub(/不包括/, "", line)
     path = line
@@ -850,7 +863,7 @@ in_q2 && in_exclude && /^- / {
 }
 ' "$BRIEF" 2>/dev/null || true)
     ALL_EXCLUDE_PATHS="${ALL_EXCLUDE_PATHS}${BRIEF_EXCLUDE}"$'\n'
-  done <<< "$BRIEFS"
+  done <<< "$EXCLUDE_BRIEFS"
 
   # 检查每个暂存文件 — 修复 (D291): Python 单进程匹配, 替代 12321 次 grep 子进程 (Windows 10+ 分钟 → <1s)
   SCOPE_VIOLATION=$(python3 -c "

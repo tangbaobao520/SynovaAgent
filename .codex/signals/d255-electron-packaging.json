@@ -1,9 +1,0 @@
-{
-  "component": "d255-electron-packaging",
-  "status": "green",
-  "timestamp": "2026-07-29T08:06:49.982244+00:00",
-  "reason": "D255: electron-builder installed + build-synova.cjs fixed + config verified",
-  "p0_count": 0,
-  "p1_count": 0,
-  "p2_count": 0
-}

@@ -1,9 +1,0 @@
-{
-  "component": "d258-script-cleanup",
-  "status": "green",
-  "timestamp": "2026-07-29T09:17:58.716855+00:00",
-  "reason": "D258: 删除22个死代码文件, 合并2组脚本, 归档gen-survey.py, 脚本数131->117",
-  "p0_count": 0,
-  "p1_count": 0,
-  "p2_count": 0
-}
