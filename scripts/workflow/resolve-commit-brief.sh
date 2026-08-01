@@ -108,7 +108,13 @@ if [ -n "$RESULT" ] && [ -f "$RESULT" ]; then
   exit 0
 fi
 
-# 最终回退: 今日最新 brief
-LAST=$(find "$ROOT/.claude/task-briefs/" -type f -name "*.md" -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
-[ -n "$LAST" ] && { echo "$LAST"; exit 0; }
+# 最终回退: 文件名日期前缀最新的 brief
+# 注意: 不能按 mtime — CI 干净检出时所有文件 mtime 相同, 随机选中垃圾 brief
+# (phase34-nodate.md 事故); 按文件名日期前缀取最新, 无日期前缀的垃圾文件被排除
+NEWEST_DATE=$(find "$ROOT/.claude/task-briefs/" -maxdepth 1 -name "*.md" -printf '%f\n' 2>/dev/null \
+  | grep -oE '^[0-9]{4}-[0-9]{2}-[0-9]{2}' | sort | tail -1)
+if [ -n "$NEWEST_DATE" ]; then
+  LAST=$(find "$ROOT/.claude/task-briefs/" -maxdepth 1 -name "${NEWEST_DATE}-*.md" 2>/dev/null | sort | tail -1)
+  [ -n "$LAST" ] && { echo "$LAST"; exit 0; }
+fi
 exit 1
