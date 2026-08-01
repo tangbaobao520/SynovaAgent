@@ -15,7 +15,8 @@ import { getFaultRecovery } from '../services/fault-recovery';
 // V4.4.4 T7b: L3 诊断模块 — 外部假设监控 + 平台依赖检查
 import { checkExternalAssumptions } from '../l3/assumption-monitor';
 import { checkPlatformDependencies } from '../l3/platform-dependency-check';
-import { createGraphTraversal } from '../l4/graph-traversal';
+// D292: L2→L3 适配层 — L2 禁触 L4 (铁律 39)
+import { createGraphTraversal } from '../l3/graph-traversal-adapter';
 // V4.2.4: 内联 SessionStore 类型 — 避免 L2→L5 直接 import (铁律 39)
 interface SessionStoreLike { saveDiagnosisCheckpoint?: (cp: { sessionId: string; phase: number; completedModules: string[]; partialReport: unknown; savedAt: string }) => void; }
 
@@ -227,7 +228,7 @@ export class DiagnosisLauncher {
 
         if (flags.enableCommunityReports && graphStore) {
           try {
-            const { generateCommunityReports: genCR } = await import('../l4/community-reports');
+            const { generateCommunityReports: genCR } = await import('../l3/community-reports-adapter');
             const communities = genCR(graphStore, teamId);
             log.info({ communityCount: communities.length }, '社区报告已生成');
             onEvent?.({ type: 'community_reports', phase: 2, message: `发现 ${communities.length} 个协作圈`, findings: communities.slice(0, 3).map((c: any) => ({ moduleId: c.id || 'community', summary: c.label || `协作圈 ${c.size || 0} 人`, confidence: c.confidence || 0.7 })), confidence: 0.7 });
@@ -239,7 +240,7 @@ export class DiagnosisLauncher {
 
       if (flags.enableEntityResolution && graphStore) {
         try {
-          const { resolveEntitiesL3: resolveL3 } = await import('../l4/entity-resolver');
+          const { resolveEntitiesL3: resolveL3 } = await import('../l3/entity-resolver-adapter');
           const resolution = await resolveL3(graphStore, teamId);
           log.info({ autoMerged: resolution.autoMerged, queued: resolution.queuedForReview }, 'L3 实体解析完成');
           if (resolution.autoMerged > 0 || resolution.queuedForReview > 0) {
