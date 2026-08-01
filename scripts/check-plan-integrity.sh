@@ -15,16 +15,8 @@ HARD_FAIL=0
 
 PLAN_FILE="$ROOT/.claude/plan.json"
 TODAY=$(date +%Y-%m-%d)
-CUR_BRIEF="$ROOT/.claude/current-brief"
-BRIEF=""
-if [ -f "$CUR_BRIEF" ]; then
-  BNAME=$(cat "$CUR_BRIEF" 2>/dev/null | tr -d '[:space:]')
-  [ -n "$BNAME" ] && BRIEF="$ROOT/.claude/task-briefs/$BNAME"
-fi
-if [ -z "$BRIEF" ] || [ ! -f "$BRIEF" ]; then
-  # V4.5.1: find -printf 单次遍历替代 xargs ls -t（慢盘 2s+ → 0.1s）
-  BRIEF=$(find "$ROOT/.claude/task-briefs/" -type f -name "*.md" -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
-fi
+# D296 认领制: 多 session 并发时用认领本提交文件的 brief (跨 session 污染根治)
+BRIEF=$(bash "$ROOT/scripts/workflow/resolve-commit-brief.sh" "$(git diff --cached --name-only 2>/dev/null || true)" 2>/dev/null || true)
 
 if [ ! -f "$PLAN_FILE" ]; then
   echo -e "  ${GREEN}✅ plan-integrity (无 plan.json)${RESET}"

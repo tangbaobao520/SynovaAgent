@@ -468,15 +468,8 @@ hard_check "铁律 46: 桥接文件欺诈 + 包级 engine-core + 壳包检测" "
 
 # 5c. 铁律 47: 声称拆分完须 grep 零旧引用 (原 20 — 警告模式)
 TODAY=$(date +%Y-%m-%d)
-CUR_BRIEF="$ROOT/.claude/current-brief"
-BRIEF=""
-if [ -f "$CUR_BRIEF" ]; then
-  BNAME=$(cat "$CUR_BRIEF" 2>/dev/null | tr -d '[:space:]')
-  [ -n "$BNAME" ] && BRIEF="$ROOT/.claude/task-briefs/$BNAME"
-fi
-if [ -z "$BRIEF" ] || [ ! -f "$BRIEF" ]; then
-  BRIEF=$(find "$ROOT/.claude/task-briefs/" -type f -name "*.md" 2>/dev/null | xargs ls -t 2>/dev/null | head -1)
-fi
+# D296 认领制: 多 session 并发时用认领本提交文件的 brief (跨 session 污染根治)
+BRIEF=$(bash "$ROOT/scripts/workflow/resolve-commit-brief.sh" "$STAGED_ALL" 2>/dev/null || true)
 CLEANUP_CLAIM=""
 if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
   if grep -qi "拆分\|迁移\|清理.*完成\|已拆\|已迁移\|已清理" "$BRIEF" 2>/dev/null; then
@@ -811,16 +804,22 @@ fi
 # 认领候选: 今日全部 brief (含并发 session 的)
 ALL_TODAY_BRIEFS=$(find "$ROOT/.claude/task-briefs/" -maxdepth 1 -name "*.md" -newermt "$TODAY 00:00:00" 2>/dev/null | sort || true)
 [ -z "$ALL_TODAY_BRIEFS" ] && [ -n "$CUR_BRIEF_PATH" ] && ALL_TODAY_BRIEFS="$CUR_BRIEF_PATH"
-# 排除来源: 仅 current-brief; 无则全部 (单 session 回退)
-EXCLUDE_BRIEFS="${CUR_BRIEF_PATH:-$ALL_TODAY_BRIEFS}"
 SCOPE_VIOLATION=""
 
 if [ -n "$ALL_TODAY_BRIEFS" ] && [ -n "$STAGED_ALL" ]; then
-  # 收集全部今日 brief 的 Q2 范围路径（认领并集）
-  ALL_SCOPE_PATHS=""
+  # 认领制 v2 (D296 复查): 每个文件由**认领它的 brief** 判定通过与排除
+  #   - 被 ≥1 个今日 brief 认领 → 通过 (除非认领者自身排除它)
+  #   - 未被任何 brief 认领 → 阻断 (不在任何任务范围)
+  #   - 他人 brief 的排除项不适用于本文件 (场景E: A认领+B排除 → 必须通过)
+  # 生成 per-brief TSV: "brief文件名\t路径"
+  # 注意: 必须用仓库内路径 — Git Bash mktemp 的 /tmp 路径 Windows python3 无法打开
+  SCOPE_TSV="$ROOT/.claude/.g12-scope.tsv"
+  EXCL_TSV="$ROOT/.claude/.g12-excl.tsv"
+  rm -f "$SCOPE_TSV" "$EXCL_TSV"
   while IFS= read -r BRIEF; do
     [ -z "$BRIEF" ] && continue
-    BRIEF_SCOPE=$(awk '
+    BNAME=$(basename "$BRIEF")
+    awk '
 /^## Q2:/ { in_q2=1; in_include=0; in_exclude=0 }
 in_q2 && /^## / && !/^## Q2/ { exit }
 in_q2 && /^不做什么/ { in_exclude=1; in_include=0 }
@@ -835,15 +834,8 @@ in_q2 && in_include && /^- / {
     gsub(/^ +| +$/, "", path)
     if (length(path) > 0) print path
 }
-' "$BRIEF" 2>/dev/null || true)
-    ALL_SCOPE_PATHS="${ALL_SCOPE_PATHS}${BRIEF_SCOPE}"$'\n'
-  done <<< "$ALL_TODAY_BRIEFS"
-
-  # 排除项 — 仅 current-brief (D296: 他人 brief 的排除不适用于本 session)
-  ALL_EXCLUDE_PATHS=""
-  while IFS= read -r BRIEF; do
-    [ -z "$BRIEF" ] && continue
-    BRIEF_EXCLUDE=$(awk '
+' "$BRIEF" 2>/dev/null | sed "s|^|$BNAME\\t|" >> "$SCOPE_TSV" || true
+    awk '
 /^## Q2:/ { in_q2=1; in_include=0; in_exclude=0 }
 in_q2 && /^## / && !/^## Q2/ { exit }
 in_q2 && /^不做什么/ { in_exclude=1; in_include=0 }
@@ -861,16 +853,31 @@ in_q2 && in_exclude && /^- / {
     gsub(/^ +| +$/, "", path)
     if (length(path) > 0) print path
 }
-' "$BRIEF" 2>/dev/null || true)
-    ALL_EXCLUDE_PATHS="${ALL_EXCLUDE_PATHS}${BRIEF_EXCLUDE}"$'\n'
-  done <<< "$EXCLUDE_BRIEFS"
+' "$BRIEF" 2>/dev/null | sed "s|^|$BNAME\\t|" >> "$EXCL_TSV" || true
+  done <<< "$ALL_TODAY_BRIEFS"
 
   # 检查每个暂存文件 — 修复 (D291): Python 单进程匹配, 替代 12321 次 grep 子进程 (Windows 10+ 分钟 → <1s)
+  # D296 认领制 v2: 按 per-brief TSV 判定, 排除只来自认领该文件的 brief
   SCOPE_VIOLATION=$(python3 -c "
-import re, sys, os
+import re, sys
 staged = '''$STAGED_ALL'''.split('\n')
-scope = [p for p in '''$ALL_SCOPE_PATHS'''.split('\n') if p]
-excl = [p for p in '''$ALL_EXCLUDE_PATHS'''.split('\n') if p]
+def load_tsv(path):
+    out = []
+    try:
+        with open(path, encoding='utf-8') as f:
+            for line in f:
+                line = line.rstrip('\n')
+                if '\t' in line:
+                    brief, p = line.split('\t', 1)
+                    if p:
+                        out.append((brief, p))
+    except OSError:
+        pass
+    return out
+scope = load_tsv('''$SCOPE_TSV''')
+excl = load_tsv('''$EXCL_TSV''')
+def matches(path, pat):
+    return re.search(r'(^|/)' + re.escape(pat) + r'\$', path) is not None
 skip_re = re.compile(r'\.claude/|scripts/workflow/|\.codex/|memory/|docs/|\.github/')
 code_re = re.compile(r'\.(ts|tsx|js|jsx|json|py|sh)\$')
 viol = []
@@ -878,19 +885,19 @@ for sf in staged:
     sf = sf.strip()
     if not sf or skip_re.search(sf) or not code_re.search(sf):
         continue
-    excluded = False
-    for ex in excl:
-        if re.search(r'(^|/)' + re.escape(ex) + r'\$', sf):
-            viol.append(f'  {sf} (Q2 排除项禁止修改: {ex})')
-            excluded = True
-            break
-    if excluded:
-        continue
-    in_scope = any(re.search(r'(^|/)' + re.escape(p) + r'\$', sf) for p in scope)
-    if not in_scope:
+    # 认领者 = 做什么 覆盖该文件的 brief
+    claimants = [b for b, p in scope if matches(sf, p)]
+    if not claimants:
         viol.append(f'  {sf} (不在 Q2 范围内)')
+        continue
+    # 排除只来自认领者自身 — 他人 brief 的排除不适用于本文件 (跨 session 根治)
+    for b, ex in excl:
+        if b in claimants and matches(sf, ex):
+            viol.append(f'  {sf} (Q2 排除项禁止修改: {ex}, 来自认领 brief {b})')
+            break
 print('\n'.join(viol))
 " 2>/dev/null || true)
+  rm -f "$SCOPE_TSV" "$EXCL_TSV"
 fi
 
 if [ -n "$SCOPE_VIOLATION" ]; then

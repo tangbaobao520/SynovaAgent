@@ -28,16 +28,8 @@
  HARD_FAIL=0
  WARN_COUNT=0
  
- # 找到当前 brief
- CUR_BRIEF="$ROOT/.claude/current-brief"
- BRIEF=""
- if [ -f "$CUR_BRIEF" ]; then
-   BNAME=$(cat "$CUR_BRIEF" 2>/dev/null | tr -d '[:space:]')
-   [ -n "$BNAME" ] && BRIEF="$ROOT/.claude/task-briefs/$BNAME"
- fi
- if [ -z "$BRIEF" ] || [ ! -f "$BRIEF" ]; then
-   BRIEF=$(find "$ROOT/.claude/task-briefs/" -type f -name "*.md" 2>/dev/null | xargs ls -t 2>/dev/null | head -1)
- fi
+ # 找到当前 brief — D296 认领制 (跨 session 污染根治)
+ BRIEF=$(bash "$ROOT/scripts/workflow/resolve-commit-brief.sh" "$(git diff --cached --name-only 2>/dev/null || true)" 2>/dev/null || true)
  
  if [ -z "$BRIEF" ]; then
    echo "check-brief-vs-code: 无 task brief, 跳过"

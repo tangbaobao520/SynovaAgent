@@ -79,49 +79,8 @@ fi
 # ── 4. 获取相对路径 ──
 REL_FILE="${FILE#$ROOT/}"
 
-# ── 5. 排除检查 — 仅 current-brief (D296 认领制) ──
-while IFS= read -r BRIEF; do
-  [ -z "$BRIEF" ] && continue
-  BRIEF_NAME=$(basename "$BRIEF")
-
-  EXCLUDE_PATHS=$(awk '
-/^## Q2:/ { in_q2=1; in_include=0; in_exclude=0 }
-in_q2 && /^## / && !/^## Q2/ { exit }
-in_q2 && /^不做什么/ { in_exclude=1; in_include=0 }
-in_q2 && in_exclude && /^- / {
-    line = $0
-    sub(/^- /, "", line)
-    sub(/不修改/, "", line)
-    sub(/不改/, "", line)
-    sub(/不涉及/, "", line)
-    sub(/不包括/, "", line)
-    path = line
-    gsub(/:.*$/, "", path)
-    gsub(/（.*$/, "", path)
-    gsub(/\(.*$/, "", path)
-    gsub(/^ +| +$/, "", path)
-    if (length(path) > 0) print path
-}
-' "$BRIEF" 2>/dev/null || true)
-
-  if [ -n "$EXCLUDE_PATHS" ]; then
-    while IFS= read -r ex_path; do
-      [ -z "$ex_path" ] && continue
-      EX_ESCAPED=$(echo "$ex_path" | sed 's/[.[\*^$()+?{|\\]/\\&/g')
-      if echo "$REL_FILE" | grep -qE "(^|/)$EX_ESCAPED$"; then
-        echo "⛔ Q2 排除项禁止修改: $ex_path (来自 $BRIEF_NAME)"
-        echo "   task brief 声明本任务不修改此文件: $REL_FILE"
-        echo "   如需修改，请先更新 task brief 的 Q2 范围。"
-        exit 1
-      fi
-    done <<< "$EXCLUDE_PATHS"
-  fi
-done <<< "$EXCLUDE_BRIEFS"
-
-# ── 6. 范围认领 — 今日全部 brief 的并集 ──
-MATCH_FOUND=0
-BLOCK_REASON=""
-
+# ── 5. 范围认领 — 收集认领该文件的 brief (D296 认领制 v2) ──
+CLAIMANTS=""
 while IFS= read -r BRIEF; do
   [ -z "$BRIEF" ] && continue
 
@@ -151,13 +110,13 @@ in_q2 && in_include && /^- / {
     SCOPE_ESCAPED=$(echo "$scope_path" | sed 's/[.[\*^$()+?{|\\]/\\&/g')
     # 后缀匹配: "enterprise.ts" 匹配 "src/routes/enterprise.ts"
     if echo "$REL_FILE" | grep -qE "(^|/)$SCOPE_ESCAPED$"; then
-      MATCH_FOUND=1
-      break 2  # 跳出两层循环
+      CLAIMANTS="${CLAIMANTS}$(basename "$BRIEF")\n"
+      break
     fi
   done <<< "$SCOPE_PATHS"
 done <<< "$ALL_TODAY_BRIEFS"
 
-if [ "$MATCH_FOUND" -eq 0 ]; then
+if [ -z "$CLAIMANTS" ]; then
   echo "⛔ 文件不在任何今日 task brief 的 Q2 范围内: $REL_FILE"
   echo ""
   echo "   今日活跃的 task brief:"
@@ -175,5 +134,47 @@ if [ "$MATCH_FOUND" -eq 0 ]; then
   echo "   被阻止: $REL_FILE"
   exit 1
 fi
+
+# ── 6. 排除检查 — 只检查认领该文件的 brief (D296 跨 session 根治) ──
+while IFS= read -r BRIEF; do
+  [ -z "$BRIEF" ] && continue
+  if ! echo -e "$CLAIMANTS" | grep -qF "$(basename "$BRIEF")"; then
+    continue  # 非认领者 — 其排除项不适用于本文件
+  fi
+  BRIEF_NAME=$(basename "$BRIEF")
+
+  EXCLUDE_PATHS=$(awk '
+/^## Q2:/ { in_q2=1; in_include=0; in_exclude=0 }
+in_q2 && /^## / && !/^## Q2/ { exit }
+in_q2 && /^不做什么/ { in_exclude=1; in_include=0 }
+in_q2 && in_exclude && /^- / {
+    line = $0
+    sub(/^- /, "", line)
+    sub(/不修改/, "", line)
+    sub(/不改/, "", line)
+    sub(/不涉及/, "", line)
+    sub(/不包括/, "", line)
+    path = line
+    gsub(/:.*$/, "", path)
+    gsub(/（.*$/, "", path)
+    gsub(/\(.*$/, "", path)
+    gsub(/^ +| +$/, "", path)
+    if (length(path) > 0) print path
+}
+' "$BRIEF" 2>/dev/null || true)
+
+  if [ -n "$EXCLUDE_PATHS" ]; then
+    while IFS= read -r ex_path; do
+      [ -z "$ex_path" ] && continue
+      EX_ESCAPED=$(echo "$ex_path" | sed 's/[.[\*^$()+?{|\\]/\\&/g')
+      if echo "$REL_FILE" | grep -qE "(^|/)$EX_ESCAPED$"; then
+        echo "⛔ Q2 排除项禁止修改: $ex_path (来自认领 brief $BRIEF_NAME)"
+        echo "   task brief 声明本任务不修改此文件: $REL_FILE"
+        echo "   如需修改，请先更新 task brief 的 Q2 范围。"
+        exit 1
+      fi
+    done <<< "$EXCLUDE_PATHS"
+  fi
+done <<< "$ALL_TODAY_BRIEFS"
 
 exit 0
