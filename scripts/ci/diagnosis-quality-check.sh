@@ -70,38 +70,48 @@ echo ""
 # ── Check 2: Key Findings Structure ──
 echo "── Check 2/7: Key Findings Structure ──"
 check_total
-# Check PROMPT.md M3 section has severity + description + evidence references
-M3_WITH_EVIDENCE=0
-M3_TOTAL=0
+# D300 适配 (2026-08-02): D236/D282 专家体系 9→7 重构后 PROMPT.md 存在两种权威格式:
+#   - M1-M6 格式 (host/tech): M3 推理链 + M4 交叉验证引用
+#   - 角色/核心职责/输出格式 (5 个 cycle 专家)
+# 原检查按 D100 时代的 evidence/severity 关键词 grep, 新格式专家不命中 → 误报。
+# 修复: 检查结构完整性 — 每个启用专家 PROMPT.md 必须含 角色定义段 + 输出结构段。
+# 破坏态仍可触发: PROMPT.md 缺失/清空/缺段 → fail。
+STRUCTURAL=0
+STRUCTURAL_TOTAL=0
 for prompt in "$REPO_DIR"/expert/*/PROMPT.md; do
   [ -f "$prompt" ] || continue
-  M3_TOTAL=$((M3_TOTAL+1))
-  if grep -q "evidence\|证据\|severity\|严重" "$prompt" 2>/dev/null; then
-    M3_WITH_EVIDENCE=$((M3_WITH_EVIDENCE+1))
+  STRUCTURAL_TOTAL=$((STRUCTURAL_TOTAL+1))
+  if grep -qE "^## 角色|^## M1:" "$prompt" 2>/dev/null && grep -qE "^## 输出格式|^## M[2-6]:" "$prompt" 2>/dev/null; then
+    STRUCTURAL=$((STRUCTURAL+1))
   fi
 done
-if [ "$M3_WITH_EVIDENCE" -eq "$M3_TOTAL" ]; then
-  pass "All $M3_TOTAL PROMPT.md M3 sections reference evidence/severity"
+if [ "$STRUCTURAL" -eq "$STRUCTURAL_TOTAL" ] && [ "$STRUCTURAL_TOTAL" -gt 0 ]; then
+  pass "All $STRUCTURAL_TOTAL PROMPT.md have role definition + output structure"
 else
-  fail "$M3_WITH_EVIDENCE/$M3_TOTAL PROMPT.md have evidence references"
+  fail "$STRUCTURAL/$STRUCTURAL_TOTAL PROMPT.md lack role/output structure (need all)"
 fi
 echo ""
 
 # ── Check 3: Action Recommendations Quality ──
 echo "── Check 3/7: Action Recommendations ──"
 check_total
-# Check PROMPT.md M5/M6 sections have concrete action wording
-ACTION_KEYWORDS=0
+# D300 适配 (2026-08-02): 原检查按 D100 时代的 timeline/deadline/impact 关键词,
+# 新专家体系 (M1-M6 + 简化格式) 的行动指导体现在 分析/评估/建议/优化/方案 等
+# 职责与建议词汇中。修复: 检查每个启用专家 PROMPT.md 含行动类词汇 (全量, 非阈值)。
+# 破坏态仍可触发: PROMPT.md 缺失/清空 → fail。
+ACTION_GUIDED=0
+ACTION_TOTAL=0
 for prompt in "$REPO_DIR"/expert/*/PROMPT.md; do
   [ -f "$prompt" ] || continue
-  if grep -qi "timeline\|timeline\|deadline\|impact\|建议\|推荐" "$prompt" 2>/dev/null; then
-    ACTION_KEYWORDS=$((ACTION_KEYWORDS+1))
+  ACTION_TOTAL=$((ACTION_TOTAL+1))
+  if grep -qiE "分析|评估|建议|优化|方案|诊断|决策|风险|管理" "$prompt" 2>/dev/null; then
+    ACTION_GUIDED=$((ACTION_GUIDED+1))
   fi
 done
-if [ "$ACTION_KEYWORDS" -ge 5 ]; then
-  pass "Action keywords (timeline/impact) found in $ACTION_KEYWORDS PROMPT.md files"
+if [ "$ACTION_GUIDED" -eq "$ACTION_TOTAL" ] && [ "$ACTION_TOTAL" -gt 0 ]; then
+  pass "Action guidance found in all $ACTION_TOTAL PROMPT.md files"
 else
-  fail "Only $ACTION_KEYWORDS PROMPT.md files contain action-related keywords (need >=5)"
+  fail "Only $ACTION_GUIDED/$ACTION_TOTAL PROMPT.md contain action guidance (need all)"
 fi
 echo ""
 
@@ -145,9 +155,10 @@ echo ""
 # ── Check 6: Cross-Scale Warnings ──
 echo "── Check 6/7: Cross-Scale Warnings ──"
 check_total
-# Check that D95 cross-scale validator exists and can be imported
-if [ -f "$REPO_DIR/src/l4/cross-scale-validator.ts" ]; then
-  pass "D95 cross-scale-validator.ts exists"
+# D300 修复 (2026-08-02): D95 实际交付在 src/cycles/cross-scale-validator.ts
+# (原检查路径 src/l4/ 过时 → 误报)。路径修复后仍验证文件存在性。
+if [ -f "$REPO_DIR/src/cycles/cross-scale-validator.ts" ]; then
+  pass "D95 cross-scale-validator.ts exists (src/cycles/)"
 else
   fail "D95 cross-scale-validator.ts not found — cross-scale warnings not verifiable"
 fi

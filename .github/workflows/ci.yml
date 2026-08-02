@@ -124,3 +124,5 @@ jobs:
       - run: npm ci
       - name: Run golden case F1 gate
         run: npx tsx scripts/ci/golden-case-checker.ts
+      - name: Run diagnosis quality check
+        run: bash scripts/ci/diagnosis-quality-check.sh
