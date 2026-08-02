@@ -116,21 +116,29 @@ fi
 echo ""
 
 # ── Check 4: Cross-Expert Coherence ──
-echo "── Check 4/7: Cross-Expert Coherence ──"
+echo "── Check 4/7: Expert Manifest Integrity ──"
 check_total
-# Check manifest peer dependencies are symmetric
-ASYMMETRIC=0
+# D300 修复 (2026-08-02): 原检查 manifest dependencies.peers 对称性 (D100 时代
+# 9 专家体系), D236/D282 重构后 peers 字段不再填充 (5 新 cycle 专家 peers=0)
+# → 误报。且 node require('$manifest') 在 Windows Git Bash 下路径解析失败,
+# 被 2>/dev/null 静默吞掉 → 假绿 (铁律 24 静默降级)。
+# 修复: 检查每个启用专家 manifest 存在 + JSON 可解析 + name/type 字段完整
+# (registry v2 声明式配置的结构完整性)。破坏态仍可触发: manifest 缺失/损坏 → fail。
+MANIFEST_OK=0
+MANIFEST_TOTAL=0
 for manifest in "$REPO_DIR"/expert/*/manifest.json; do
   [ -f "$manifest" ] || continue
-  # Check if file has "peers" array
-  if node -e "const d=require('$manifest'); console.log(d.dependencies?.peers?.length||0)" 2>/dev/null | grep -q "^0"; then
-    ASYMMETRIC=$((ASYMMETRIC+1))
+  MANIFEST_TOTAL=$((MANIFEST_TOTAL+1))
+  # node 用 argv 传路径 (避免 shell 引号嵌套); Windows Git Bash 路径 /d/... 需
+  # 归一为 d:/... (与 golden-case-checker.ts 同款模式), Linux /home/... 原样
+  if node -e "const fs=require('fs');try{const p=process.argv[1].replace(/^\/([a-zA-Z]):/,'\$1:');const d=JSON.parse(fs.readFileSync(p,'utf-8'));process.exit(d.name&&d.type==='expert'?0:1)}catch(e){process.exit(1)}" "$manifest" 2>/dev/null; then
+    MANIFEST_OK=$((MANIFEST_OK+1))
   fi
 done
-if [ "$ASYMMETRIC" -le 2 ]; then
-  pass "Expert peer dependencies declared ($ASYMMETRIC without peers — acceptable)"
+if [ "$MANIFEST_OK" -eq "$MANIFEST_TOTAL" ] && [ "$MANIFEST_TOTAL" -gt 0 ]; then
+  pass "All $MANIFEST_TOTAL expert manifests valid (JSON + name/type)"
 else
-  fail "$ASYMMETRIC experts have no peer dependencies"
+  fail "$MANIFEST_OK/$MANIFEST_TOTAL expert manifests invalid (need all)"
 fi
 echo ""
 
