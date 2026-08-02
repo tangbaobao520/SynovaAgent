@@ -1,13 +1,17 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# synova-commit — 校验网守 (D201)
+# synova-commit — 校验网守 (D201 + D311 M1b)
 #
 # 权威文档 #17 第二章 §2.2：通往 git commit 的唯一路径。
-# 在允许提交前强制执行 pre-commit-check.sh 全部 8 组检查。
+# 在允许提交前强制执行 pre-commit-check.sh 全部 12 组检查。
 # 没有 --no-verify 标志。没有绕过开关。
 #
+# D311 M1b (2026-08-02): 暂存区隔离 — git commit 改显式路径（不用 -a），
+# staging-guard.py 校验暂存文件归属（防 D286 卷走 D300 暂存类事故），
+# 提交成功后写集标记 committed + 阶段 CP4。
+#
 # 用法:
-#   synova-commit --task-id <ID> --agent <名称> --message <消息> [--files <文件...>]
+#   synova-commit --task-id <ID> --agent <名称> --message <消息> [--files <文件...>] [--session-id <ID>]
 #   synova-commit --help
 #   synova-commit --health
 #
@@ -17,7 +21,7 @@
 #   2 = 网守降级（pre-commit 缺失），允许提交但记录告警
 #
 # 契约:
-#   @input  — task-id / agent / message / files（可选）
+#   @input  — task-id / agent / message / files（可选）/ session-id（可选）
 #   @output — 提交确认或错误信息
 #   @degraded — pre-commit 脚本未找到 → exit 2 + 告警
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -208,6 +212,7 @@ TASK_ID=""
 AGENT=""
 MESSAGE=""
 FILES=()
+SESSION_ID=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -227,6 +232,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --message)
       MESSAGE="$2"
+      shift 2
+      ;;
+    --session-id)
+      SESSION_ID="$2"
       shift 2
       ;;
     --files)
@@ -261,6 +270,29 @@ if [[ -z "$MESSAGE" ]]; then
   exit 1
 fi
 
+# ═══ D311: session-id 解析 (M1b 暂存区隔离) ═══
+# 缺省 → resolve-commit-brief.sh 输出 brief 的 basename 去 .md（与 D296 认领制一致）
+if [[ -z "$SESSION_ID" ]]; then
+  RESOLVED_BRIEF=$(bash "$PROJECT_ROOT/scripts/workflow/resolve-commit-brief.sh" "${FILES[*]:-}" 2>/dev/null | head -1 || true)
+  if [[ -n "$RESOLVED_BRIEF" && -f "$RESOLVED_BRIEF" ]]; then
+    SESSION_ID=$(basename "$RESOLVED_BRIEF" .md)
+  else
+    SESSION_ID="$TASK_ID"
+  fi
+fi
+SESSION_REGISTRY="$PROJECT_ROOT/scripts/control-tower/session_registry.py"
+STAGING_GUARD="$PROJECT_ROOT/scripts/control-tower/staging_guard.py"
+WAIT_MANAGER="$PROJECT_ROOT/scripts/control-tower/wait_manager.py"
+
+# 登记本 session（CP2 开发阶段；若已存在则刷新心跳）
+if [[ -f "$SESSION_REGISTRY" ]]; then
+  python3 "$SESSION_REGISTRY" register --session-id "$SESSION_ID" --brief ".claude/task-briefs/${SESSION_ID}.md" 2>/dev/null || true
+  python3 "$WAIT_MANAGER" phase --session-id "$SESSION_ID" --phase CP2 2>/dev/null || true
+  if [[ ${#FILES[@]} -gt 0 ]]; then
+    python3 "$SESSION_REGISTRY" write-set --session-id "$SESSION_ID" --add "${FILES[@]}" 2>/dev/null || true
+  fi
+fi
+
 # ═══ 暂存文件 ═══
 
 if [[ ${#FILES[@]} -gt 0 ]]; then
@@ -269,6 +301,29 @@ if [[ ${#FILES[@]} -gt 0 ]]; then
     echo -e "${RED}❌ 文件暂存失败${NC}"
     exit 1
   }
+fi
+
+# ═══ D311: 暂存区隔离 (M1b — 防 D286 卷走 D300 类事故) ═══
+# 校验暂存文件归属: 他人活跃写集 → 硬阻断；自己/无归属 → 放行
+if [[ -f "$STAGING_GUARD" ]]; then
+  STAGED_LIST=$(git diff --cached --name-only 2>/dev/null || true)
+  if [[ -n "$STAGED_LIST" ]]; then
+    GUARD_OUT=$(python3 "$STAGING_GUARD" --session-id "$SESSION_ID" --staged $STAGED_LIST 2>&1 || true)
+    GUARD_STATUS=$(echo "$GUARD_OUT" | python3 -c "import json,sys; print(json.load(sys.stdin).get('status','degraded'))" 2>/dev/null || echo "degraded")
+    if [[ "$GUARD_STATUS" == "block" ]]; then
+      echo ""
+      echo -e "${RED}❌ 暂存区隔离 (D311 M1b) — 暂存区含他人文件:${NC}"
+      echo "$GUARD_OUT" | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+for f in d.get('foreign_files',[]):
+    print(f\"  - {f['file']} (属于 session {f.get('owner_session','?')}, brief: {f.get('brief','?')})\")
+" 2>/dev/null || echo "$GUARD_OUT"
+      echo ""
+      echo -e "${RED}  提交已阻断 — 请先与对应 session 协调或移出该文件${NC}"
+      exit 1
+    fi
+  fi
 fi
 
 # ═══ 检查暂存区 ═══
@@ -310,9 +365,20 @@ if [[ ! -f "$PRE_COMMIT" ]]; then
   # 记录降级
   echo "$(date -Iseconds) | DEGRADED | pre-commit-check.sh not found | TASK_ID=$TASK_ID | AGENT=$AGENT" >> "$BYPASS_LOG"
 
-  git commit -m "$MESSAGE"
+  # D311 M1b: 显式路径 commit（不用 -a，防误提交工作区杂散文件）
+  if [[ ${#FILES[@]} -gt 0 ]]; then
+    git commit -m "$MESSAGE" -- "${FILES[@]}"
+  else
+    git commit -m "$MESSAGE" -- $(git diff --cached --name-only 2>/dev/null || true)
+  fi
   EXIT_CODE=$?
   echo -e "${GREEN}✅ 提交完成（降级模式）${NC}"
+
+  # D311 M1b: 提交成功后释放写集（标记 committed）+ 阶段 CP4
+  if [[ $EXIT_CODE -eq 0 && -f "$SESSION_REGISTRY" ]]; then
+    python3 "$SESSION_REGISTRY" write-set --session-id "$SESSION_ID" --status $(git diff --cached --name-only 2>/dev/null | head -1) committed 2>/dev/null || true
+    python3 "$WAIT_MANAGER" phase --session-id "$SESSION_ID" --phase CP4 2>/dev/null || true
+  fi
 
   # D202: 提交后运行外部审计（降级模式也运行）
   AUDITOR_SCRIPT="$SCRIPT_DIR/external-auditor.sh"
@@ -336,17 +402,30 @@ echo ""
 
 if [[ $PRECOMMIT_EXIT -eq 0 ]]; then
   # 全部通过 → 执行提交
-  echo -e "${GREEN}✅ 全部 8 组检查通过${NC}"
+  echo -e "${GREEN}✅ 全部 12 组检查通过${NC}"
   echo ""
 
   # D214: 发射 gatekeeper 信号
   python3 "$SCRIPT_DIR/emit-signal.py" gatekeeper green "all_checks_pass" 2>/dev/null || true
 
-  git commit -m "$MESSAGE"
+  # D311 M1b: 显式路径 commit（不用 -a，防误提交工作区杂散文件）
+  if [[ ${#FILES[@]} -gt 0 ]]; then
+    git commit -m "$MESSAGE" -- "${FILES[@]}"
+  else
+    git commit -m "$MESSAGE" -- $(git diff --cached --name-only 2>/dev/null || true)
+  fi
   COMMIT_EXIT=$?
 
   if [[ $COMMIT_EXIT -eq 0 ]]; then
     echo -e "${GREEN}✅ 提交完成${NC}"
+    # D311 M1b: 提交成功后释放写集（标记 committed）+ 阶段 CP4
+    if [[ -f "$SESSION_REGISTRY" ]]; then
+      COMMITTED_FILES=$(git show --name-only --format="" HEAD 2>/dev/null | grep -v '^$' | head -50 || true)
+      for cf in $COMMITTED_FILES; do
+        python3 "$SESSION_REGISTRY" write-set --session-id "$SESSION_ID" --status "$cf" committed 2>/dev/null || true
+      done
+      python3 "$WAIT_MANAGER" phase --session-id "$SESSION_ID" --phase CP4 2>/dev/null || true
+    fi
     # 记录到 bypass.log 作为正常提交证据
     echo "$(date -Iseconds) | COMMITTED | pre-commit PASS | TASK_ID=$TASK_ID | AGENT=$AGENT | HASH=$(git rev-parse HEAD 2>/dev/null)" >> "$BYPASS_LOG"
 
