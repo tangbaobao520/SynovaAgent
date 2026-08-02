@@ -10,6 +10,7 @@
 import type { DiagnosisEngine, DiagnosisEvent, ConsultationResult } from '../l2-interfaces/diagnosis-engine';
 import type { LLMProvider } from '../providers/types';
 import type { ToolRegistry } from '../agent/tools';
+import type Database from 'better-sqlite3';
 import { createLogger } from '@synova/logger';
 
 const log = createLogger('adapters/engine-core');
@@ -73,9 +74,9 @@ export class EngineCoreVendorAdapter implements DiagnosisEngine {
     }
   }
 
-  /** 铁律 39: GraphStore 工厂 — 通过 @synova/graph-store 包 */
+  /** 铁律 39: GraphStore 工厂 — 原生 SqliteGraphStore (D286 统一) */
   static async createGraphStore(db: unknown): Promise<Record<string, unknown>> {
-    const { createSynovaGraphStore } = await import('@synova/graph-store');
-    return createSynovaGraphStore(db as import('@synova/graph-store').SqliteDb) as unknown as Record<string, unknown>;
+    const { SqliteGraphStore } = await import('./sqlite-graph-store');
+    return new SqliteGraphStore(db as Database.Database) as unknown as Record<string, unknown>;
   }
 }

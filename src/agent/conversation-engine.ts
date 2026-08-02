@@ -11,6 +11,7 @@
  * Iron law #31: degraded 信号通过 ProcessResult 传播。
  */
 import type { LLMProvider, LLMMessage } from '../providers/types';
+import type Database from 'better-sqlite3';
 import { ToolRegistry } from './tools';
 import { getGlobalGracefulShutdown } from '../services/graceful-shutdown';
 import { createLogger } from '@synova/logger';
@@ -37,7 +38,7 @@ import { ToolLoopExecutor } from './tool-loop-executor';
 import { DiagnosisLauncher, type DiagnosisEvent, type ConsultationResult } from './diagnosis-launcher';
 import { OntologySyncer, type OntologySyncResult } from './ontology-syncer';
 import type { EngineContext } from './engine-context';
-import { createSynovaGraphStore } from '@synova/graph-store';
+import { SqliteGraphStore } from '../adapters/sqlite-graph-store';
 import { getGlobalSentinelRunner } from '../sentinel/runner';
 import { ContextEngine } from '../orchestrator/context-engine';
 
@@ -347,7 +348,7 @@ export class ConversationEngine {
       graphBridge: this.graphBridge,
       graphStore: this.graphStore,
       diagnosisEngine,
-      createGraphStore: async (db) => createSynovaGraphStore(db as import('@synova/graph-store').SqliteDb),
+      createGraphStore: async (db) => new SqliteGraphStore(db as Database.Database),
       federalAdapter: config.federalAdapter,
       flags: {
         enableCommunityReports: this.enableCommunityReports,

@@ -1,32 +1,57 @@
 /**
- * src/adapters/sqlite-graph-store.ts — SQLite → GraphStoreLike 适配器 (D224)
+ * src/adapters/sqlite-graph-store.ts — SQLite → GraphStore 适配器 (D224 → D286 统一)
  *
- * 将 better-sqlite3 Database 包装为 GraphStoreLike 接口，
- * 使 UserStore 等 L3 模块可以直接使用 SQLite 数据库作为图存储。
- *
- * 长久方案: 复用 engine-core 中的 GraphBridge 实例替代此适配器。
+ * D286: 统一 GraphStore 双轨。取代旧 graph-store 包（tsconfig paths 映射的 synova/graph-store 别名）。
+ * 表结构对齐旧包（graph_nodes + graph_triples，与 engine-core graph-store 兼容）：
+ *   - graph 默认 'default'（对齐旧包；UserStore 显式传 'enterprise' 不受影响）
+ *   - 软删除（valid_from/valid_to 时间线），deleteNode/deleteEdge 置 valid_to 而非物理删除
+ *   - 构造时启用 WAL（不可用时降级 DELETE 模式）
  *
  * 契约:
  *   @input  — better-sqlite3 Database 实例
- *   @output — GraphStoreLike { createNode, queryNodes, getNode, updateNode }
- *   @degraded — SQL 错误 → log.warn + 抛出/返回空
+ *   @output — GraphStore 接口 { createNode, createEdge, queryNodes, queryEdges,
+ *              queryTriples, getNode, updateNode, deleteNode, deleteEdge }
+ *   @degraded — SQL 错误 → log.warn + 返回空/抛出
  */
 import type Database from "better-sqlite3";
 import { createLogger } from "@synova/logger";
 
 const log = createLogger("adapters/sqlite-graph-store");
 
-/** 图节点表结构 */
+/** 图节点/边表结构（对齐旧包 graph-store + engine-core graph-store） */
 const SCHEMA_SQL = `
-CREATE TABLE IF NOT EXISTS _graph_nodes (
-  id        TEXT PRIMARY KEY,
-  type      TEXT NOT NULL,
-  props     TEXT NOT NULL DEFAULT '{}',
-  graph     TEXT NOT NULL DEFAULT 'enterprise',
-  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+CREATE TABLE IF NOT EXISTS graph_nodes (
+  id TEXT PRIMARY KEY,
+  graph TEXT NOT NULL DEFAULT 'default',
+  type TEXT NOT NULL,
+  name TEXT,
+  props TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  valid_from TEXT NOT NULL DEFAULT (datetime('now')),
+  valid_to TEXT
 );
-CREATE INDEX IF NOT EXISTS idx_graph_nodes_type ON _graph_nodes(type);
-CREATE INDEX IF NOT EXISTS idx_graph_nodes_graph ON _graph_nodes(graph);
+CREATE INDEX IF NOT EXISTS idx_gn_type ON graph_nodes(graph, type);
+CREATE INDEX IF NOT EXISTS idx_gn_name ON graph_nodes(graph, name);
+CREATE INDEX IF NOT EXISTS idx_gn_valid ON graph_nodes(graph, valid_to);
+CREATE TABLE IF NOT EXISTS graph_triples (
+  id TEXT PRIMARY KEY,
+  graph TEXT NOT NULL DEFAULT 'default',
+  subject_type TEXT NOT NULL,
+  subject_id TEXT NOT NULL,
+  predicate TEXT NOT NULL,
+  object_type TEXT NOT NULL,
+  object_id TEXT NOT NULL,
+  weight REAL NOT NULL DEFAULT 1.0,
+  props TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  valid_from TEXT NOT NULL DEFAULT (datetime('now')),
+  valid_to TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_gt_subject ON graph_triples(graph, subject_type, subject_id);
+CREATE INDEX IF NOT EXISTS idx_gt_object ON graph_triples(graph, object_type, object_id);
+CREATE INDEX IF NOT EXISTS idx_gt_predicate ON graph_triples(graph, predicate);
+CREATE INDEX IF NOT EXISTS idx_gt_weight ON graph_triples(graph, predicate, weight);
+CREATE INDEX IF NOT EXISTS idx_gt_valid ON graph_triples(graph, valid_from, valid_to);
 `;
 
 /** UUID v4 生成（零外部依赖） */
@@ -47,20 +72,53 @@ function uuid(): string {
   return id;
 }
 
+/** 节点查询结果行 */
+interface GraphNodeRow {
+  id: string;
+  type: string;
+  props: string;
+}
+
+/** 边查询结果行 */
+interface GraphEdgeRow {
+  id: string;
+  predicate: string;
+  subject_id: string;
+  object_id: string;
+  weight: number;
+  props: string;
+}
+
 /**
- * SqliteGraphStore — 将 SQLite 数据库包装为 GraphStoreLike 接口。
+ * SqliteGraphStore — 将 SQLite 数据库包装为 GraphStore 接口。
  *
- * 创建节点 → INSERT INTO _graph_nodes
- * 查询节点 → SELECT FROM _graph_nodes WHERE type=? AND ...
- * 获取节点 → SELECT FROM _graph_nodes WHERE id=?
- * 更新节点 → UPDATE _graph_nodes SET props=? WHERE id=?
+ * 创建节点 → INSERT INTO graph_nodes
+ * 查询节点 → SELECT FROM graph_nodes WHERE graph=? AND type=? AND valid_to IS NULL
+ * 创建边   → INSERT INTO graph_triples（subject/object 类型从节点推断）
+ * 查询边   → SELECT FROM graph_triples WHERE graph=? [AND predicate=? ...] AND valid_to IS NULL
+ * 删除     → 软删除：UPDATE SET valid_to = datetime('now')
  */
 export class SqliteGraphStore {
   private db: Database.Database;
 
   constructor(db: Database.Database) {
     this.db = db;
+    this.enableWAL();
     this.initSchema();
+  }
+
+  /** 启用 WAL 模式；网络文件系统不可用时降级 DELETE（对齐旧包行为） */
+  private enableWAL(): void {
+    try {
+      const result = this.db.pragma("journal_mode = WAL", { simple: true });
+      if (result !== "wal") {
+        this.db.pragma("journal_mode = DELETE", { simple: true });
+        log.warn({ pragmaResult: result }, "WAL 不可用 — 降级到 DELETE 模式");
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg }, "WAL 启用失败 — 使用 SQLite 默认日志模式");
+    }
   }
 
   private initSchema(): void {
@@ -76,39 +134,65 @@ export class SqliteGraphStore {
   createNode(
     type: string,
     props: Record<string, unknown>,
-    graph: string = "enterprise",
+    graph: string = "default",
   ): string {
     const id = `node-${uuid()}`;
+    const name = (props.name as string) || (props.label as string) || type;
     try {
       this.db
         .prepare(
-          "INSERT INTO _graph_nodes (id, type, props, graph) VALUES (?, ?, ?, ?)",
+          "INSERT INTO graph_nodes (id, graph, type, name, props) VALUES (?, ?, ?, ?, ?)",
         )
-        .run(id, type, JSON.stringify(props), graph);
+        .run(id, graph, type, name, JSON.stringify(props));
       return id;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      log.warn({ err: msg, type }, "创建图节点失败");
+      log.warn({ err: msg, type, graph }, "创建图节点失败");
       throw err;
     }
   }
 
-  /** 查询节点，支持按 JSON 属性和图过滤 */
+  /** 创建边，返回边 ID（subject/object 类型从节点推断，节点不存在则 'unknown'） */
+  createEdge(
+    type: string,
+    from: string,
+    to: string,
+    weight?: number,
+    props?: Record<string, unknown>,
+    graph: string = "default",
+  ): string {
+    const id = `edge-${uuid()}`;
+    try {
+      const fromNode = this.getNode(from, graph);
+      const toNode = this.getNode(to, graph);
+      const subjectType = fromNode?.type || "unknown";
+      const objectType = toNode?.type || "unknown";
+      this.db
+        .prepare(
+          `INSERT INTO graph_triples
+             (id, graph, subject_type, subject_id, predicate, object_type, object_id, weight, props)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .run(id, graph, subjectType, from, type, objectType, to, weight ?? 1.0, JSON.stringify(props || {}));
+      return id;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg, type, from, to }, "创建图边失败");
+      throw err;
+    }
+  }
+
+  /** 查询节点，支持按 JSON 属性和图过滤（仅返回未删除节点） */
   queryNodes(
     type: string,
     filters?: Record<string, unknown>,
     graph?: string,
   ): Array<{ id: string; type: string; props: Record<string, unknown> }> {
     try {
-      let sql = "SELECT id, type, props FROM _graph_nodes WHERE type = ?";
-      const params: unknown[] = [type];
+      const g = graph || "default";
+      let sql = "SELECT id, type, props FROM graph_nodes WHERE graph = ? AND type = ? AND valid_to IS NULL";
+      const params: unknown[] = [g, type];
 
-      if (graph) {
-        sql += " AND graph = ?";
-        params.push(graph);
-      }
-
-      // 支持 JSON 属性过滤: 使用 json_extract 匹配 props 中的字段
       if (filters) {
         for (const [key, value] of Object.entries(filters)) {
           if (value !== undefined && value !== null) {
@@ -118,12 +202,7 @@ export class SqliteGraphStore {
         }
       }
 
-      const rows = this.db.prepare(sql).all(...params) as Array<{
-        id: string;
-        type: string;
-        props: string;
-      }>;
-
+      const rows = this.db.prepare(sql).all(...params) as GraphNodeRow[];
       return rows.map((row) => ({
         id: row.id,
         type: row.type,
@@ -136,15 +215,80 @@ export class SqliteGraphStore {
     }
   }
 
-  /** 获取单个节点 */
+  /** 查询边，支持按类型/起点/终点/图过滤（仅返回未删除边） */
+  queryEdges(
+    type?: string,
+    from?: string,
+    to?: string,
+    graph?: string,
+  ): Array<{ id: string; type: string; from: string; to: string; weight: number; props: Record<string, unknown> }> {
+    try {
+      const g = graph || "default";
+      const conditions: string[] = ["graph = ?", "valid_to IS NULL"];
+      const params: unknown[] = [g];
+
+      if (type) { conditions.push("predicate = ?"); params.push(type); }
+      if (from) { conditions.push("subject_id = ?"); params.push(from); }
+      if (to) { conditions.push("object_id = ?"); params.push(to); }
+
+      const sql = `SELECT id, predicate, subject_id, object_id, weight, props FROM graph_triples WHERE ${conditions.join(" AND ")}`;
+      const rows = this.db.prepare(sql).all(...params) as GraphEdgeRow[];
+      return rows.map((row) => ({
+        id: row.id,
+        type: row.predicate,
+        from: row.subject_id,
+        to: row.object_id,
+        weight: row.weight,
+        props: JSON.parse(row.props || "{}") as Record<string, unknown>,
+      }));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg }, "查询图边失败");
+      return [];
+    }
+  }
+
+  /** 按属性模式查询三元组（原样返回行） */
+  queryTriples(
+    pattern: Record<string, unknown>,
+    graph?: string,
+  ): Array<Record<string, unknown>> {
+    try {
+      const g = graph || "default";
+      const conditions: string[] = ["graph = ?", "valid_to IS NULL"];
+      const params: unknown[] = [g];
+
+      const fieldMap: Record<string, string> = {
+        subject_type: "subject_type", subjectId: "subject_id", subject_id: "subject_id",
+        predicate: "predicate",
+        object_type: "object_type", objectId: "object_id", object_id: "object_id",
+      };
+
+      for (const [key, col] of Object.entries(fieldMap)) {
+        if (pattern[key] !== undefined && pattern[key] !== null) {
+          conditions.push(`${col} = ?`);
+          params.push(String(pattern[key]));
+        }
+      }
+
+      const sql = `SELECT * FROM graph_triples WHERE ${conditions.join(" AND ")}`;
+      return this.db.prepare(sql).all(...params) as Array<Record<string, unknown>>;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg }, "查询图三元组失败");
+      return [];
+    }
+  }
+
+  /** 获取单个节点（仅未删除） */
   getNode(
     id: string,
-    graph: string = "enterprise",
+    graph: string = "default",
   ): { id: string; type: string; props: Record<string, unknown> } | null {
     try {
       const row = this.db
-        .prepare("SELECT id, type, props FROM _graph_nodes WHERE id = ? AND graph = ?")
-        .get(id, graph) as { id: string; type: string; props: string } | undefined;
+        .prepare("SELECT id, type, props FROM graph_nodes WHERE id = ? AND graph = ? AND valid_to IS NULL")
+        .get(id, graph) as GraphNodeRow | undefined;
 
       if (!row) return null;
       return {
@@ -159,21 +303,47 @@ export class SqliteGraphStore {
     }
   }
 
-  /** 更新节点属性 */
+  /** 更新节点属性（与现有 props 合并） */
   updateNode(
     id: string,
     props: Record<string, unknown>,
-    graph: string = "enterprise",
+    graph: string = "default",
   ): void {
     try {
       const existing = this.getNode(id, graph);
       const merged = { ...(existing?.props || {}), ...props };
       this.db
-        .prepare("UPDATE _graph_nodes SET props = ? WHERE id = ? AND graph = ?")
+        .prepare("UPDATE graph_nodes SET props = ? WHERE id = ? AND graph = ?")
         .run(JSON.stringify(merged), id, graph);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       log.warn({ err: msg, id }, "更新图节点失败");
+      throw err;
+    }
+  }
+
+  /** 删除节点（软删除：置 valid_to，查询不再可见） */
+  deleteNode(id: string, graph: string = "default"): void {
+    try {
+      this.db
+        .prepare("UPDATE graph_nodes SET valid_to = datetime('now') WHERE id = ? AND graph = ?")
+        .run(id, graph);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg, id }, "删除图节点失败");
+      throw err;
+    }
+  }
+
+  /** 删除边（软删除：置 valid_to，查询不再可见） */
+  deleteEdge(id: string, graph: string = "default"): void {
+    try {
+      this.db
+        .prepare("UPDATE graph_triples SET valid_to = datetime('now') WHERE id = ? AND graph = ?")
+        .run(id, graph);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg, id }, "删除图边失败");
       throw err;
     }
   }

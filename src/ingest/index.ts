@@ -31,8 +31,8 @@ export async function ingestFile(filePath: string, orgId: string): Promise<Inges
       initEngineContext();
       db = getDatabase();
     }
-    const { createSynovaGraphStore } = await import('@synova/graph-store');
-    const store = createSynovaGraphStore(db);
+    const { SqliteGraphStore } = await import('../adapters/sqlite-graph-store');
+    const store = new SqliteGraphStore(db);
 
     // 1. 创建文档节点
     const docId = `doc_${Date.now().toString(36)}`;

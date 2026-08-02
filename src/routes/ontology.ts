@@ -7,7 +7,7 @@
  */
 import { Router, type Request, type Response } from 'express';
 import { createLogger } from '@synova/logger';
-import { createSynovaGraphStore } from '@synova/graph-store';
+import { SqliteGraphStore } from '../adapters/sqlite-graph-store';
 import { getDatabase } from '../init/engine-context';
 import { ALL_NODE_TYPES } from '@synova/ontology';
 
@@ -15,8 +15,8 @@ const router = Router();
 const log = createLogger('routes/ontology');
 
 // V4.2.9: 从 server.ts 注入的 app.locals.graphStore 获取 — 避免 L1→L4 跨层
-function getStoreFromLocals(req: Request): ReturnType<typeof import('@synova/graph-store').createSynovaGraphStore> {
-  const gs = (req.app.locals as Record<string, unknown>).graphStore as ReturnType<typeof import('@synova/graph-store').createSynovaGraphStore>;
+function getStoreFromLocals(req: Request): SqliteGraphStore {
+  const gs = (req.app.locals as Record<string, unknown>).graphStore as SqliteGraphStore;
   if (!gs) throw new Error('GraphStore 不可用 — server.ts 未初始化');
   return gs;
 }

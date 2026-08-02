@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createSynovaGraphStore, type SynovaGraphStore } from '@synova/graph-store';
+import { SqliteGraphStore } from '../../src/adapters/sqlite-graph-store';
 
 // 内存 SQLite — 使用 better-sqlite3
 function createTestDb() {
@@ -9,13 +9,13 @@ function createTestDb() {
   return db;
 }
 
-describe('SynovaGraphStore', () => {
+describe('SqliteGraphStore (D286 统一后原生实现)', () => {
   it('创建 + 查询节点', () => {
     const db = createTestDb();
-    const store = createSynovaGraphStore(db);
+    const store = new SqliteGraphStore(db);
     const id = store.createNode('Person', { name: '张三', teamId: 't1' }, 'default');
     expect(id).toBeTruthy();
-    expect(id).toMatch(/^n_/);
+    expect(id).toMatch(/^node-/);
 
     const nodes = store.queryNodes('Person', {}, 'default');
     expect(nodes.length).toBeGreaterThanOrEqual(1);
@@ -24,7 +24,7 @@ describe('SynovaGraphStore', () => {
 
   it('创建 + 查询边', () => {
     const db = createTestDb();
-    const store = createSynovaGraphStore(db);
+    const store = new SqliteGraphStore(db);
     const a = store.createNode('Person', { name: '张三' }, 'default');
     const b = store.createNode('Team', { name: '研发部' }, 'default');
     const eid = store.createEdge('MEMBER_OF', a, b, 1.0, {}, 'default');
@@ -37,7 +37,7 @@ describe('SynovaGraphStore', () => {
 
   it('getNode + updateNode', () => {
     const db = createTestDb();
-    const store = createSynovaGraphStore(db);
+    const store = new SqliteGraphStore(db);
     const id = store.createNode('Person', { name: '张三', age: 30 }, 'default');
 
     const node = store.getNode(id, 'default');
@@ -51,7 +51,7 @@ describe('SynovaGraphStore', () => {
 
   it('deleteNode — 软删除', () => {
     const db = createTestDb();
-    const store = createSynovaGraphStore(db);
+    const store = new SqliteGraphStore(db);
     const id = store.createNode('Person', { name: '李四' }, 'default');
 
     store.deleteNode(id, 'default');
@@ -59,62 +59,21 @@ describe('SynovaGraphStore', () => {
     expect(nodes.filter(n => n.id === id).length).toBe(0);
   });
 
-  it('批量创建节点 + 边', () => {
+  it('deleteEdge — 软删除', () => {
     const db = createTestDb();
-    const store = createSynovaGraphStore(db);
-    const ids = store.createNodes([
-      { type: 'Person', props: { name: '张三' } },
-      { type: 'Person', props: { name: '李四' } },
-      { type: 'Person', props: { name: '王五' } },
-    ], 'default');
-    expect(ids.filter(Boolean).length).toBe(3);
-
-    store.createEdges([
-      { type: 'REPORTS_TO', from: ids[1], to: ids[0] },
-      { type: 'REPORTS_TO', from: ids[2], to: ids[0] },
-    ], 'default');
-
-    const edges = store.queryEdges('REPORTS_TO', undefined, undefined, 'default');
-    expect(edges.length).toBe(2);
-  });
-
-  it('traverse 图遍历', () => {
-    const db = createTestDb();
-    const store = createSynovaGraphStore(db);
+    const store = new SqliteGraphStore(db);
     const a = store.createNode('Person', { name: '张三' }, 'default');
-    const b = store.createNode('Person', { name: '李四' }, 'default');
-    const c = store.createNode('Person', { name: '王五' }, 'default');
-    store.createEdge('REPORTS_TO', b, a, 1.0, {}, 'default');
-    store.createEdge('REPORTS_TO', c, b, 1.0, {}, 'default');
+    const b = store.createNode('Team', { name: '研发部' }, 'default');
+    const eid = store.createEdge('MEMBER_OF', a, b, 1.0, {}, 'default');
 
-    const result = store.traverse(a, 'REPORTS_TO', 3, 'default') as Array<{ depth: number }>;
-    expect(result.length).toBeGreaterThanOrEqual(1);
-  });
-
-  it('findPaths 路径查找', () => {
-    const db = createTestDb();
-    const store = createSynovaGraphStore(db);
-    const a = store.createNode('Person', { name: '张三' }, 'default');
-    const b = store.createNode('Person', { name: '李四' }, 'default');
-    store.createEdge('REPORTS_TO', b, a, 1.0, {}, 'default');
-
-    const paths = store.findPaths(b, a, 'REPORTS_TO', 4, 'default');
-    expect(paths.length).toBeGreaterThanOrEqual(1);
-  });
-
-  it('getNodeAtTime — 时间点查询', () => {
-    const db = createTestDb();
-    const store = createSynovaGraphStore(db);
-    const id = store.createNode('Person', { name: '历史快照' }, 'default');
-
-    const node = store.getNodeAtTime(id, new Date().toISOString(), 'default');
-    expect(node).not.toBeNull();
-    expect(node!.props.name).toBe('历史快照');
+    store.deleteEdge(eid, 'default');
+    const edges = store.queryEdges('MEMBER_OF', undefined, undefined, 'default');
+    expect(edges.filter(e => e.id === eid).length).toBe(0);
   });
 
   it('queryTriples — 三元组模式查询', () => {
     const db = createTestDb();
-    const store = createSynovaGraphStore(db);
+    const store = new SqliteGraphStore(db);
     const a = store.createNode('Person', { name: '张三' }, 'default');
     const b = store.createNode('Team', { name: '研发部' }, 'default');
     store.createEdge('MEMBER_OF', a, b, 1.0, {}, 'default');
@@ -125,7 +84,7 @@ describe('SynovaGraphStore', () => {
 
   it('空查询返回空数组不崩溃', () => {
     const db = createTestDb();
-    const store = createSynovaGraphStore(db);
+    const store = new SqliteGraphStore(db);
     expect(store.queryNodes('NonExistent', {}, 'default')).toEqual([]);
     expect(store.queryEdges('NonExistent', undefined, undefined, 'default')).toEqual([]);
     expect(store.getNode('nope', 'default')).toBeNull();

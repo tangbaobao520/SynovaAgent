@@ -928,8 +928,8 @@ function esc(t: string): string { return t.replace(/&/g,'&amp;').replace(/</g,'&
 async function createRealGraphStore(jobId: string): Promise<any> {
   try {
     const db = getDatabase();
-    const { createSynovaGraphStore } = await import('@synova/graph-store');
-    const store = createSynovaGraphStore(db);
+    const { SqliteGraphStore } = await import('../adapters/sqlite-graph-store');
+    const store = new SqliteGraphStore(db);
     log.debug({ jobId }, 'GraphStore (SQLite) 已连接');
     return store;
   } catch (err: any) {

@@ -10,6 +10,7 @@
  * @state: real — 生产可用, 与现有 CronScheduler 集成
  */
 
+import type Database from 'better-sqlite3';
 import type { CronScheduler } from '../cron/scheduler';
 import type { Sentinel, SentinelCheckResult } from './types';
 import type { Evidence } from '../evidence/types';
@@ -626,8 +627,8 @@ export class SentinelRunner {
         graphCtx = this.db;
       } else {
         try {
-          const { createSynovaGraphStore } = await import('@synova/graph-store');
-          graphCtx = createSynovaGraphStore(this.db as import('@synova/graph-store').SqliteDb);
+          const { SqliteGraphStore } = await import('../adapters/sqlite-graph-store');
+          graphCtx = new SqliteGraphStore(this.db as Database.Database);
         } catch {
           log.warn({ sentinelId: sentinel?.config?.id }, 'GraphStore 创建失败 — 降级至原始 db');
           graphCtx = this.db;

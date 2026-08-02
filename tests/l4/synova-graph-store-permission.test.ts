@@ -1,17 +1,13 @@
 /**
- * tests/l4/synova-graph-store-permission.test.ts — GraphStore 权限检查单元测试 (Phase 0.2)
+ * tests/l4/synova-graph-store-permission.test.ts — GraphStore 删除语义测试 (D286 迁移)
  *
- * test-first: 先写测试，再实现。
- * 验证 deleteNode/deleteEdge 在权限不足时抛出 PermissionDeniedError。
+ * D286: 旧 synova/graph-store 包的删除权限检查器（setGraphStoreDeletePermissionChecker）已废弃。
+ * 原生 SqliteGraphStore 的删除路径无权限门，行为等价于旧包"总是允许"语义
+ * （bootstrap 曾调用 setGraphStoreDeletePermissionChecker(() => ({allowed:true}))）。
+ * 本测试验证迁移后的删除行为：deleteNode/deleteEdge 总是正常执行（软删除）。
  */
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import {
-  createSynovaGraphStore,
-  setGraphStoreDeletePermissionChecker,
-  clearGraphStoreDeletePermissionChecker,
-  type SynovaGraphStore,
-} from '@synova/graph-store';
-import { PermissionDeniedError } from '@synova/error-types';
+import { describe, it, expect } from 'vitest';
+import { SqliteGraphStore } from '../../src/adapters/sqlite-graph-store';
 
 // ============================================================
 // 辅助函数
@@ -24,7 +20,7 @@ function createTestDb() {
   return db;
 }
 
-function seedTestData(store: SynovaGraphStore): { nodeId: string; edgeId: string } {
+function seedTestData(store: SqliteGraphStore): { nodeId: string; edgeId: string } {
   const nodeA = store.createNode('Person', { name: '测试用户' }, 'default');
   const nodeB = store.createNode('Team', { name: '测试团队' }, 'default');
   const edgeId = store.createEdge('MEMBER_OF', nodeA, nodeB, 1.0, {}, 'default');
@@ -32,17 +28,13 @@ function seedTestData(store: SynovaGraphStore): { nodeId: string; edgeId: string
 }
 
 // ============================================================
-// 兼容性：无检查器时向后兼容
+// 删除语义 — 总是允许（旧权限机制已废弃，行为等价）
 // ============================================================
 
-describe('GraphStore delete — 无权限检查器（向后兼容）', () => {
-  beforeEach(() => {
-    clearGraphStoreDeletePermissionChecker();
-  });
-
-  it('deleteNode 在无检查器时正常执行', () => {
+describe('SqliteGraphStore delete — 总是允许（原权限机制语义等价）', () => {
+  it('deleteNode 正常执行（软删除）', () => {
     const db = createTestDb();
-    const store = createSynovaGraphStore(db);
+    const store = new SqliteGraphStore(db);
     const { nodeId } = seedTestData(store);
 
     expect(() => store.deleteNode(nodeId, 'default')).not.toThrow();
@@ -50,9 +42,9 @@ describe('GraphStore delete — 无权限检查器（向后兼容）', () => {
     expect(nodes.filter(n => n.id === nodeId).length).toBe(0);
   });
 
-  it('deleteEdge 在无检查器时正常执行', () => {
+  it('deleteEdge 正常执行（软删除）', () => {
     const db = createTestDb();
-    const store = createSynovaGraphStore(db);
+    const store = new SqliteGraphStore(db);
     const { edgeId } = seedTestData(store);
 
     expect(() => store.deleteEdge(edgeId, 'default')).not.toThrow();
@@ -60,11 +52,9 @@ describe('GraphStore delete — 无权限检查器（向后兼容）', () => {
     expect(edges.filter(e => e.id === edgeId).length).toBe(0);
   });
 
-  it('createNode/queryNodes 不受检查器影响', () => {
+  it('createNode/queryNodes 不受删除影响', () => {
     const db = createTestDb();
-    const store = createSynovaGraphStore(db);
-
-    setGraphStoreDeletePermissionChecker(() => ({ allowed: false, reason: 'test' }));
+    const store = new SqliteGraphStore(db);
     const id = store.createNode('Person', { name: '只读测试' }, 'default');
     expect(id).toBeTruthy();
 
@@ -74,161 +64,32 @@ describe('GraphStore delete — 无权限检查器（向后兼容）', () => {
 });
 
 // ============================================================
-// 权限拒绝场景
+// 软删除语义 — 历史数据保留
 // ============================================================
 
-describe('GraphStore delete — 权限拒绝', () => {
-  beforeEach(() => {
-    clearGraphStoreDeletePermissionChecker();
-  });
-
-  afterEach(() => {
-    clearGraphStoreDeletePermissionChecker();
-  });
-
-  it('deleteNode 权限不足 → 抛出 PermissionDeniedError', () => {
+describe('SqliteGraphStore delete — 软删除保留历史 (valid_to)', () => {
+  it('删除后原节点数据仍在表中（时间线保留）', () => {
     const db = createTestDb();
-    const store = createSynovaGraphStore(db);
+    const store = new SqliteGraphStore(db);
     const { nodeId } = seedTestData(store);
 
-    // 设置检查器：拒绝所有删除
-    setGraphStoreDeletePermissionChecker(() => ({
-      allowed: false,
-      reason: '仅 admin/owner 可删除数据',
-    }));
+    store.deleteNode(nodeId, 'default');
 
-    expect(() => store.deleteNode(nodeId, 'default')).toThrow(PermissionDeniedError);
+    // 物理行仍存在 — 软删除只置 valid_to
+    const row = db.prepare('SELECT valid_to FROM graph_nodes WHERE id = ?').get(nodeId) as { valid_to: string | null };
+    expect(row.valid_to).not.toBeNull();
   });
 
-  it('deleteEdge 权限不足 → 抛出 PermissionDeniedError', () => {
+  it('删除不影响其他节点', () => {
     const db = createTestDb();
-    const store = createSynovaGraphStore(db);
-    const { edgeId } = seedTestData(store);
-
-    setGraphStoreDeletePermissionChecker(() => ({
-      allowed: false,
-      reason: '仅 admin/owner 可删除数据',
-    }));
-
-    expect(() => store.deleteEdge(edgeId, 'default')).toThrow(PermissionDeniedError);
-  });
-
-  it('PermissionDeniedError 包含正确 code/retryable/phase', () => {
-    const db = createTestDb();
-    const store = createSynovaGraphStore(db);
+    const store = new SqliteGraphStore(db);
     const { nodeId } = seedTestData(store);
+    const other = store.createNode('Person', { name: '保留用户' }, 'default');
 
-    setGraphStoreDeletePermissionChecker(() => ({
-      allowed: false,
-      reason: '权限测试',
-    }));
+    store.deleteNode(nodeId, 'default');
 
-    try {
-      store.deleteNode(nodeId, 'default');
-      expect.unreachable('应该抛出异常');
-    } catch (err) {
-      expect(err).toBeInstanceOf(PermissionDeniedError);
-      const permErr = err as PermissionDeniedError;
-      expect(permErr.code).toBe('PERMISSION_DENIED');
-      expect(permErr.retryable).toBe(false);
-      expect(permErr.message).toContain('权限测试');
-    }
-  });
-
-  it('拒绝后数据不被删除（软删除未执行）', () => {
-    const db = createTestDb();
-    const store = createSynovaGraphStore(db);
-    const { nodeId } = seedTestData(store);
-
-    setGraphStoreDeletePermissionChecker(() => ({
-      allowed: false,
-      reason: '拒绝删除',
-    }));
-
-    try { store.deleteNode(nodeId, 'default'); } catch { /* 预期异常 */ }
-
-    // 数据应该还在
-    const node = store.getNode(nodeId, 'default');
-    expect(node).not.toBeNull();
-  });
-});
-
-// ============================================================
-// 权限允许场景
-// ============================================================
-
-describe('GraphStore delete — 权限允许', () => {
-  beforeEach(() => {
-    clearGraphStoreDeletePermissionChecker();
-  });
-
-  afterEach(() => {
-    clearGraphStoreDeletePermissionChecker();
-  });
-
-  it('deleteNode 权限允许 → 正常删除', () => {
-    const db = createTestDb();
-    const store = createSynovaGraphStore(db);
-    const { nodeId } = seedTestData(store);
-
-    setGraphStoreDeletePermissionChecker(() => ({ allowed: true }));
-
-    expect(() => store.deleteNode(nodeId, 'default')).not.toThrow();
     const nodes = store.queryNodes('Person', {}, 'default');
-    expect(nodes.filter(n => n.id === nodeId).length).toBe(0);
-  });
-
-  it('deleteEdge 权限允许 → 正常删除', () => {
-    const db = createTestDb();
-    const store = createSynovaGraphStore(db);
-    const { edgeId } = seedTestData(store);
-
-    setGraphStoreDeletePermissionChecker(() => ({ allowed: true }));
-
-    expect(() => store.deleteEdge(edgeId, 'default')).not.toThrow();
-    const edges = store.queryEdges('MEMBER_OF', undefined, undefined, 'default');
-    expect(edges.filter(e => e.id === edgeId).length).toBe(0);
-  });
-
-  it('检查器可被动态替换', () => {
-    const db = createTestDb();
-    const store = createSynovaGraphStore(db);
-    const { nodeId } = seedTestData(store);
-
-    // 先拒绝
-    setGraphStoreDeletePermissionChecker(() => ({ allowed: false, reason: 'test' }));
-    expect(() => store.deleteNode(nodeId, 'default')).toThrow(PermissionDeniedError);
-
-    // 切换为允许
-    setGraphStoreDeletePermissionChecker(() => ({ allowed: true }));
-    expect(() => store.deleteNode(nodeId, 'default')).not.toThrow();
-  });
-
-  it('检查器可被清除（设为 null 回到无条件允许）', () => {
-    const db = createTestDb();
-    const store = createSynovaGraphStore(db);
-    const { nodeId } = seedTestData(store);
-
-    setGraphStoreDeletePermissionChecker(() => ({ allowed: false, reason: 'test' }));
-    expect(() => store.deleteNode(nodeId, 'default')).toThrow(PermissionDeniedError);
-
-    clearGraphStoreDeletePermissionChecker();
-    // 新数据重新测
-    const { nodeId: newNodeId } = seedTestData(store);
-    expect(() => store.deleteNode(newNodeId, 'default')).not.toThrow();
-  });
-});
-
-// ============================================================
-// 导出 API
-// ============================================================
-
-describe('setGraphStoreDeletePermissionChecker 导出', () => {
-  it('setGraphStoreDeletePermissionChecker 是可调用的函数', () => {
-    expect(typeof setGraphStoreDeletePermissionChecker).toBe('function');
-  });
-
-  it('clearGraphStoreDeletePermissionChecker 是可调用的函数', () => {
-    expect(typeof clearGraphStoreDeletePermissionChecker).toBe('function');
+    expect(nodes.some(n => n.id === other)).toBe(true);
+    expect(nodes.some(n => n.id === nodeId)).toBe(false);
   });
 });

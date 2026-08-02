@@ -13,7 +13,6 @@ export default defineConfig({
       { find: '@synova/extension-registry', replacement: path.join(packagesRoot, 'extension-registry/src/index.ts') },
       { find: '@synova/knowledge-ingest', replacement: path.join(packagesRoot, 'knowledge-ingest/src/index.ts') },
       { find: '@synova/engine-auth', replacement: path.join(packagesRoot, 'engine-auth/src/index.ts') },
-      { find: '@synova/graph-store', replacement: path.join(packagesRoot, 'graph-store/src/index.ts') },
       { find: '@synova/diagnosis-engine', replacement: path.join(packagesRoot, 'diagnosis-engine/src/index.ts') },
       { find: '@synova/evolution', replacement: path.join(packagesRoot, 'evolution/src/index.ts') },
       { find: '@synova/ontology', replacement: path.join(packagesRoot, 'ontology/src/index.ts') },

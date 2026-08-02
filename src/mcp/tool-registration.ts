@@ -101,11 +101,11 @@ export async function registerMCPTools(registry: ToolRegistry): Promise<void> {
     handler: async (params) => {
       // Dynamically import L4 graph query to avoid circular deps
       // V4.2.3: diagnosis-graph-query.ts 已删除 — 降级跳过，函数在 switch 内直接 import
-      const { createSynovaGraphStore } = await import('@synova/graph-store');
+      const { SqliteGraphStore } = await import('../adapters/sqlite-graph-store');
       const { getDatabase } = await import('../init/engine-context');
 
       const db = getDatabase();
-      const store = createSynovaGraphStore(db) as unknown as Record<string, unknown>;
+      const store = new SqliteGraphStore(db) as unknown as Record<string, unknown>;
       const graph = (params.graph as string) || 'default';
 
       switch (params.operation) {

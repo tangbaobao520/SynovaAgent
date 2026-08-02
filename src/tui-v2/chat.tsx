@@ -11,6 +11,7 @@ import { render, Box, useApp, useStdin, useStdout, Text, useInput } from 'ink';
 import { bootstrap, type BootstrapResult } from './lib/bootstrap';
 import { handleCommand, tryConfigureKey, type CommandContext } from './lib/commands';
 import { createLogger } from '@synova/logger';
+import type Database from 'better-sqlite3';
 import { getGlobalScheduler } from '../cron/scheduler';
 import { checkForUpdates, formatUpdateMessage, type UpdateCheckResult } from '../services/update-checker';
 import { getCostTracker, formatCost } from '../services/llm-cost';
@@ -37,8 +38,8 @@ const STATUS_HINTS = '↑↓ 滚动 │ PgUp/PgDn 翻页 │ /setup │ /balance
 
 async function loadGoalsIntoAggregator(agg: SidebarAggregator, db: unknown): Promise<void> {
   try {
-    const { createSynovaGraphStore } = await import('@synova/graph-store');
-    const store = createSynovaGraphStore(db as import('@synova/graph-store').SqliteDb) as unknown as {
+    const { SqliteGraphStore } = await import('../adapters/sqlite-graph-store');
+    const store = new SqliteGraphStore(db as Database.Database) as unknown as {
       queryNodes(type: string, filters?: Record<string, unknown>, graph?: string): Array<{ id: string; props: Record<string, unknown> }>;
     };
     const goals = store.queryNodes('Goal', { status: 'active' }, 'default');

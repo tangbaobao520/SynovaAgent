@@ -135,12 +135,12 @@ async function handleToolCall(name: string, params: Record<string, unknown>): Pr
         const { runSentinelForTeam } = await import('../sentinel/sentinel-runner');
         // 用默认 db 构造 store
         const { getDatabase, initEngineContext } = await import('../init/engine-context');
-        const { createSynovaGraphStore } = await import('@synova/graph-store');
+        const { SqliteGraphStore } = await import('../adapters/sqlite-graph-store');
         try { getDatabase(); } catch (err) {
           log.warn({ err }, '数据库未初始化 — 执行懒初始化');
           initEngineContext();
         }
-        const store = createSynovaGraphStore(getDatabase() as never);
+        const store = new SqliteGraphStore(getDatabase() as never);
         const findings = await runSentinelForTeam(sentinelId, store);
         return JSON.stringify({ ok: true, sentinelId, findings: findings.length });
       } catch (err: unknown) {

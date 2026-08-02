@@ -737,24 +737,13 @@ export class Bootstrap {
           ctx.addDegraded(1, 'db-decrypt', msg);
         }
 
-        // 1c: GraphStore + OntologyEventBus
+        // 1c: GraphStore + OntologyEventBus (D286: 原生 SqliteGraphStore 统一)
         try {
-          const { createSynovaGraphStore } = await import('@synova/graph-store');
-          const store = createSynovaGraphStore(ctx.require('db') as never);
+          const { SqliteGraphStore } = await import('../adapters/sqlite-graph-store');
+          const store = new SqliteGraphStore(ctx.require<Database>('db'));
           ctx.set('graphStore', store);
           const { getOntologyEventBus } = await import('../l5/ontology-event-bus');
           getOntologyEventBus(store as never);
-
-          // 删除权限检查
-          try {
-            const { setGraphStoreDeletePermissionChecker } = await import('@synova/graph-store');
-            // 不引入 request-context 依赖，简化权限检查
-            setGraphStoreDeletePermissionChecker(() => ({ allowed: true }));
-          } catch (permErr: unknown) {
-            const permMsg = permErr instanceof Error ? permErr.message : String(permErr);
-            log.warn({ err: permMsg }, 'GraphStore 删除权限检查初始化失败 — degraded');
-            ctx.addDegraded(1, 'graphstore-permission', permMsg);
-          }
 
           log.info('GraphStore + OntologyEventBus 已初始化');
         } catch (err: unknown) {
@@ -1116,8 +1105,8 @@ export class Bootstrap {
             scheduler.schedule('daily-briefing', '0 19 * * *', async () => {
               try {
                 const { BriefingGenerator } = await import('../l3/briefing-generator');
-                const { createSynovaGraphStore } = await import('@synova/graph-store');
-                const store = createSynovaGraphStore(ctx.require('db') as never);
+                const { SqliteGraphStore } = await import('../adapters/sqlite-graph-store');
+                const store = new SqliteGraphStore(ctx.require<Database>('db'));
                 const gen = new BriefingGenerator(store as never);
                 const briefing = await gen.generate('default');
                 const markdown = gen.formatMarkdown(briefing);
