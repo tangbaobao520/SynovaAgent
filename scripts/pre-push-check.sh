@@ -149,6 +149,20 @@ else
   echo -e "  ${YELLOW}⚠️  verify-parallel.sh 缺失 — 并行声明验证跳过 (fail-open)${RESET}"
 fi
 
+# ═══ 门禁 6: 基线展示 (D312 M2 — baseline-check, 警告不阻断) ═══
+# 展示 tsc 基线"存量 vs 新增"（豁免阻断归 D314 M4）；新增>0 → YELLOW 警告。
+echo ""
+echo -e "${CYAN}── 基线展示 (D312 baseline-check) ────────────────────${RESET}"
+BASELINE_CHECK="$SCRIPT_DIR/control-tower/baseline-check.sh"
+if [[ -f "$BASELINE_CHECK" ]]; then
+  if ! bash "$BASELINE_CHECK" --tsc; then
+    echo ""
+    echo -e "  ${YELLOW}⚠️  存在新增 tsc 错误 — 请检查（基线豁免阻断归 D314）${RESET}"
+  fi
+else
+  echo -e "  ${YELLOW}⚠️  baseline-check.sh 缺失 — 基线展示跳过 (fail-open)${RESET}"
+fi
+
 echo ""
 echo -e "  ${GREEN}✅ 全部门禁通过 — 允许推送${RESET}"
 echo ""

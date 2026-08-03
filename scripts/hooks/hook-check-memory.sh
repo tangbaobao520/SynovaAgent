@@ -9,6 +9,11 @@
 # ═══════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
 
+# D312 M2: git 操作写窗口守卫 — stash/checkout/reset 期间跳过 memory/STATE 写
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/hook-git-guard.sh" 2>/dev/null || true
+SKIP_HOOK_WRITES=0
+if git_op_window_active 2>/dev/null; then SKIP_HOOK_WRITES=1; fi
+
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 MEMORY_DIR="$ROOT/memory"
 TODAY=$(date +%Y-%m-%d)
@@ -112,10 +117,12 @@ while IFS= read -r memfile; do
   EXPECTED=$(echo "$EXPECTED" | tr -d '[:space:]')
 
   if [ "$ACTUAL" != "$EXPECTED" ]; then
-    # 更新 occurrences
+    # 更新 occurrences（D312 M2: git 操作窗口内跳过写 — 防 stash/pop 冲突）
     OCCURRENCES=$(awk '/^occurrences:/{gsub(/^occurrences: */,""); print; exit}' "$memfile" 2>/dev/null || echo "0")
     OCCURRENCES=$((OCCURRENCES + 1))
-    sed -i "s/^occurrences:.*/occurrences: $OCCURRENCES/" "$memfile" 2>/dev/null || true
+    if [ -z "${SKIP_HOOK_WRITES:-}" ]; then
+      sed -i "s/^occurrences:.*/occurrences: $OCCURRENCES/" "$memfile" 2>/dev/null || true
+    fi
 
     if [ "$SEVERITY" = "block" ]; then
       echo ""
@@ -132,16 +139,18 @@ while IFS= read -r memfile; do
       echo ""
       IMMUNE_BLOCK=1
     else
-      # severity=warn → 写入 STATE.md
-      if [ ! -f "$STATE_FILE" ]; then
-        echo "# SynovaAgent STATE — Loop Engineering 运行状态" > "$STATE_FILE"
-        echo "" >> "$STATE_FILE"
-        echo "## 免疫警告" >> "$STATE_FILE"
-        echo "" >> "$STATE_FILE"
-        echo "| 时间 | 错误类别 | 约束输出 | 累计次数 |" >> "$STATE_FILE"
-        echo "|------|---------|---------|---------|" >> "$STATE_FILE"
+      # severity=warn → 写入 STATE.md（D312 M2: git 操作窗口内跳过写）
+      if [ -z "${SKIP_HOOK_WRITES:-}" ]; then
+        if [ ! -f "$STATE_FILE" ]; then
+          echo "# SynovaAgent STATE — Loop Engineering 运行状态" > "$STATE_FILE"
+          echo "" >> "$STATE_FILE"
+          echo "## 免疫警告" >> "$STATE_FILE"
+          echo "" >> "$STATE_FILE"
+          echo "| 时间 | 错误类别 | 约束输出 | 累计次数 |" >> "$STATE_FILE"
+          echo "|------|---------|---------|---------|" >> "$STATE_FILE"
+        fi
+        echo "| ${TODAY} ${NOW} | ${CLASS} | ${ACTUAL:0:40} | ${OCCURRENCES} |" >> "$STATE_FILE"
       fi
-      echo "| ${TODAY} ${NOW} | ${CLASS} | ${ACTUAL:0:40} | ${OCCURRENCES} |" >> "$STATE_FILE"
       echo "[hook-check-memory] ⚠️ 免疫警告: $CLASS (第 ${OCCURRENCES} 次) → STATE.md"
     fi
   fi

@@ -1,5 +1,5 @@
 ﻿# AGENTS.md — SynovaAgent
-> V4.4.5 | 2026-07-10 | grep 物理门禁 + 侧翼修复自动化
+> V4.5.1 | 2026-08-02 | 9→12 组 pre-commit + 契约门禁 + 认领制 + 跨 session 隔离 (同步自代码, 研究 session 核对)
 
 > 组织数字孪生诊断 + 持续增长导航系统。诊断是手段，目的是增长。
 > 核心问题：这家企业的增长卡在哪里？现在该做什么？
@@ -22,7 +22,7 @@
                          ↓
                     交叉关联 + 严重度升级 + 专家路由
                          ↓
-              8位专家(strategy/org/finance/tech/marketing/action/business_model/knowledge)
+7位专家(host/capital-cycle/customer-cycle/talent-cycle/tech/finance-structure/competitive-strategy)
                          ↓
                     ReAct推理 + 交叉验证
                          ↓
@@ -46,6 +46,12 @@
 **铁律 0-2. 测试先行 + 接线验收——spec → test → impl → wire → review → merge。**
 Step 5 WIRE CHECK 是硬门禁：`grep -rn "新函数名" src/` — 零结果 = 未完成。
 历史：4 次接线失败（组件通过单元测试但从未被生产代码调用）。
+
+**铁律 0-3. 禁止 git stash（D312，2026-08-02 事故）。** stash/pop 间隙被 hook 写文件导致 pop 冲突（39 tracked + 615 untracked 卷入）。替代方案：
+- 查看基线: `bash scripts/control-tower/baseline-check.sh`
+- 隔离工作区: `git worktree add ../synova-wt-<任务名> <branch>`
+- 保存进度: 先 `git commit`（走 synova-commit），不要 stash
+hook 已检测 `git stash` 并提示（hook-git-detect.sh）。
 
 
 **铁律 47. 契约优先。** 新增 compute 函数必须先定义输入/输出/降级契约（JSDoc），再实现。参见 SYNOVA-ARCH-质量与测试体系-20260707.md §二。
@@ -107,7 +113,7 @@ pre-commit `check-architecture.sh` 检测 L2→L4 / L3→L5 跨层违规。
 
 **产品**: SynovaAgent — 组织数字孪生诊断 + 持续增长导航系统。
 **定位**: 独立 Agent 进程，通过 HTTP API + MCP 对外服务。不依赖任何前端或桌面端。
-**市场**: 5-300 人团队的组织诊断与增长导航。
+**市场**: 5-1000人团队的组织诊断与增长导航。
 
 **两大核心系统**:
 1. **FDE 按需诊断** — 用户触发，6阶段管道，全部测量器+专家 → 综合诊断报告
@@ -125,7 +131,7 @@ L4 本体    → l4/ (GraphBridge, EntityResolver, CommunityReports)
               evidence/ (Collector, Corroboration, EvidenceStore)
 L5 存储    → store/ (SessionStore, SQLite)
               cron/ (CronScheduler, 持久化作业)
-引擎       → packages/engine-core/ (543文件, 25测量器+6专家+本体层)
+引擎       → packages/engine-core/ (543文件, 25测量器+本体层, 专家体系已迁出至 expert/ 7位)
 安全       → security/ (PIIScrubber, DataBoundary)
 LLM       → providers/ (DeepSeek, OpenAI, Gateway)
 ```
@@ -146,7 +152,7 @@ LLM       → providers/ (DeepSeek, OpenAI, Gateway)
 v2.5 的 38 项 pre-commit + 12 脚本 + 3 次 tsc/vitest 重跑，
 导致 `--no-verify` 泛滥——一个被绕过的门禁 = 没有门禁。
 
-v3.0 只设 5 项物理阻断 → v4.4.2 扩展到 7 项。新增：契约优先（铁律47）、测试非空壳（铁律48）。
+v3.0 只设 5 项物理阻断 → v4.4.2 扩展到 7 项 → V4.5.1 扩展到 12 组。新增：契约优先（铁律47）、测试非空壳（铁律48）。
 **从代码规范执法 → 行为契约执法。测试不是写完代码后的验证——在代码被写出来之前，对和错的标准已经被定义。**
 
 ### 执法架构: 五层精简
@@ -155,8 +161,8 @@ v3.0 只设 5 项物理阻断 → v4.4.2 扩展到 7 项。新增：契约优先
 📋 任务启动 (人工)   →  task-start.sh — 3 问翻译意图→规格
 🧠 写前注入 (自动)    →  hook-check-memory.sh — 历史教训
 ✍️ 写后验证 (自动)    →  verify-incremental.sh — L1 oxlint → L2 tsc → L3 vitest → L4 接线
-🔴 提交阻断 (自动)    →  pre-commit 5 项 — 全部 <1s
-🚀 推送阻断 (自动)    →  pre-push 1 项 — secrets 终扫
+🔴 提交阻断 (自动)    →  pre-commit 12 组 — 全部 <10s
+🚀 推送阻断 (自动)    →  pre-push 3 项 — secrets + golden-case F1 + vitest --changed
 ```
 
 | 时机 | 脚本 | 阻断 | 耗时 |
@@ -164,21 +170,25 @@ v3.0 只设 5 项物理阻断 → v4.4.2 扩展到 7 项。新增：契约优先
 | PreToolUse | hook-check-memory.sh (教训注入) | 不阻断 | <1s |
 | PreToolUse | hook-block-write.sh (task brief 字段) | 🔴 阻断 | <1s |
 | PreToolUse | hook-enforce-v25.sh (loop-state) | 🔴 阻断 | <1s |
-| PostToolUse | verify-incremental.sh (L1→L4) + check-baseline.sh (L5) | 🔴 阻断 | 5-30s |
-| pre-commit | pre-commit-check.sh (5 项) | 🔴 阻断 | <5s |
-| pre-push | pre-push-check.sh (secrets 终扫) | 🔴 阻断 | <3s |
+| PostToolUse | verify-incremental.sh (L1→L4) + baseline-check.sh (L5) | 🔴 阻断 | 5-30s |
+| pre-commit | pre-commit-check.sh (12 组) | 🔴 阻断 | <10s |
+| pre-push | pre-push-check.sh (3 项) | 🔴 阻断 | <3s |
 
-### pre-commit 7 项硬阻断
+### pre-commit 12 组硬阻断 (V4.5.1, 组号沿用脚本 echo)
 
 | # | 检查 | 历史事故 | 耗时 |
 |---|------|---------|------|
-| 1 | `as any` = 0 | 47 次 | <1s |
-| 2 | empty catch 有 log.warn | 静默吞异常 | <1s |
-| 3 | secrets 扫描 | API key 暴露 | <1s |
-| 4 | 新文件有测试 | 4 次接线失败 | <1s |
-| 5 | 新 export 有调用方 | 4 次接线失败 | <1s |
-| 6 | 新增 compute 函数有测试 + expect 断言 | 铁律 47/48 | <1s |
-| 7 | 新增哨兵 aggregate.ts 有集成测试 | 铁律 47/48 | <1s |
+| 1 | 类型安全 + 硬编码数据 (`as any`=0) | 47 次 | <1s |
+| 2 | 测试质量 (新文件配对测试 + expect) | 4 次接线失败 | <1s |
+| 3 | Secrets 扫描 | API key 暴露 | <1s |
+| 4 | 接线完整性 (新 export 有调用方) | 4 次接线失败 | <1s |
+| 5 | 架构边界 + 桥接文件 (铁律 39/46) | 跨层违规 | <1s |
+| 6 | Task Brief 6 核心字段 | 流程 | <1s |
+| 7 | 架构合规 | 跨层 | <1s |
+| 8 | 文件驱动架构完整性 | 扩展解耦 | <1s |
+| 9 | 契约门禁 (D257) | 契约优先 | <1s |
+| 10 | V3 CP3 流水线健康度 (D260) | 条件区域+测试覆盖 | <1s |
+| 12 | Task Scope 一致性 (D296 认领制) | 跨 session 污染 | <1s |
 
 ### ⚡ Agent 自检 5 问（每次写完代码必答）
 
@@ -240,16 +250,16 @@ npm run workflow:deploy   # 部署后验证
 ```
 ① 任务开始 → pre-commit 强制 (Gate 0: task brief 不存在 + 未填写 → 拒绝提交)
 ② 设计完成 → pre-commit 强制 (Gate 1: SPEC.md + 设计文档不存在 → 拒绝提交)
-③ 实现完成 → pre-commit 强制 (Gate 2: 5 项物理阻断 + task brief 完整)
-④ 提交前   → Git Hook (.git/hooks/pre-commit) 5 项硬阻断（全 <5s）—— 无超时逃生舱
-⑤ 推送前   → Git Hook (.git/hooks/pre-push) 1 道门禁（secrets 终扫）
+③ 实现完成 → pre-commit 强制 (Gate 2: 12 组物理阻断 + task brief 完整)
+④ 提交前   → Git Hook (.git/hooks/pre-commit) 12 组硬阻断（全 <10s）—— 无超时逃生舱
+⑤ 推送前   → Git Hook (.git/hooks/pre-push) 3 道门禁（secrets + golden-case F1 + vitest --changed）
 ⑥ 部署后   → 人工触发 (checkpoint-deploy.sh)
 ⑦ 线上     → Cron
 ```
 
 ### 物理强制说明
 
-> pre-commit 是唯一物理阻断点。①②③ 的产出物检查已全部集成到 pre-commit（5 项硬阻断）：
+> pre-commit 是唯一物理阻断点。①②③ 的产出物检查已全部集成到 pre-commit（12 组硬阻断）：
 > - 无 task brief → 不准 commit
 > - 无 SPEC.md / 设计文档 → 不准 commit
 > - 新 export 未接线 → 不准 commit
@@ -288,16 +298,16 @@ crontab -e  # 添加: */30 * * * * bash /path/to/scripts/workflow/checkpoint-run
 - `.Codex/loop-state.json`: 循环计数，最多5轮
 
 > PostToolUse 是 tsc + vitest + baseline 唯一一次执行的位置。pre-commit 和 pre-push 不重复跑。
-> check-baseline.sh：跑基准测试，输出和上次提交对比。有偏差→告警（不阻断，需 agent 说明原因）。
+> baseline-check.sh：跑基准测试，输出和上次提交对比。有偏差→告警（不阻断，需 agent 说明原因）。
 
 ### Git Hooks
 
 | Hook | 触发时机 | 内容 |
 |------|---------|------|
-| pre-commit | `git commit` | 5 项硬阻断 (as any/empty catch/secrets/新文件测试对/新export接线) |
+| pre-commit | `git commit` | 12 组硬阻断 (类型安全/测试/Secrets/接线/架构边界/Task Brief/架构合规/文件驱动/契约门禁/CP3/Task Scope) |
 | commit-msg | `git commit` | Conventional Commits 格式强制 |
 | post-commit | `git commit` | 决策流程建议 (decide-next.sh) |
-| pre-push | `git push` | 2 道门禁 (secrets 终扫 + 覆盖率不降) |
+| pre-push | `git push` | 3 项 (secrets 终扫 + golden-case F1 + vitest --changed) |
 
 ---
 
@@ -312,7 +322,6 @@ crontab -e  # 添加: */30 * * * * bash /path/to/scripts/workflow/checkpoint-run
 - **逐项 commit** — 单模块独立提交，不批量
 - **改完列清单** — 文件 + 行号 + 为什么改
 - **部署后验证** — `bash scripts/workflow/checkpoint-deploy.sh` curl 外部 URL
-
 
 
 

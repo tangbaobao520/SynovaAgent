@@ -13,6 +13,12 @@
 # ═══════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
 
+# D312 M2: git 操作写窗口守卫 — git stash/checkout/reset 等命令执行期间
+# 跳过仓库内写文件（防 08-02 stash/pop 冲突事故）
+source "$(cd "$(dirname "$0")" && pwd)/../hooks/hook-git-guard.sh" 2>/dev/null || true
+SKIP_HOOK_WRITES=0
+if git_op_window_active 2>/dev/null; then SKIP_HOOK_WRITES=1; fi
+
 INPUT=$(cat 2>/dev/null || echo '{}')
 FILE=$(echo "$INPUT" | python3 -c "
 import json,sys
@@ -33,10 +39,12 @@ if echo "$FILE" | grep -qE '\.claude/(task-briefs|settings|plans|specs|worktrees
     # D284-FIX: rm -f session-locked 不依赖 workflow-state.json 存在
     # workflow-state.json 非必需文件, 不存在时不应阻止解锁
     WF_STATE="$ROOT/.claude/workflow-state.json"
-    if [ -f "$WF_STATE" ]; then
+    if [ -z "${SKIP_HOOK_WRITES:-}" ] && [ -f "$WF_STATE" ]; then
       python3 -c "import json; d=json.load(open('$WF_STATE')); d['step']='brief-filled'; json.dump(d, open('$WF_STATE','w'))" 2>/dev/null
     fi
-    rm -f "$ROOT/.claude/session-locked" 2>/dev/null
+    if [ -z "${SKIP_HOOK_WRITES:-}" ]; then
+      rm -f "$ROOT/.claude/session-locked" 2>/dev/null
+    fi
   fi
   exit 0
 fi
@@ -318,9 +326,10 @@ else
   echo "[V3-CP1] 条件归属: $CRITERIA"
 fi
 
-# V3: 写检查点文件
-mkdir -p "$ROOT/.codex/checkpoints"
-cat > "$ROOT/.codex/checkpoints/cp1-criteria.json" <<CP1EOF
+# V3: 写检查点文件（D312 M2: git 操作窗口内跳过 — 防 stash/pop 冲突）
+if [ -z "${SKIP_HOOK_WRITES:-}" ]; then
+  mkdir -p "$ROOT/.codex/checkpoints"
+  cat > "$ROOT/.codex/checkpoints/cp1-criteria.json" <<CP1EOF
 {
   "name": "CP1: 条件归属",
   "status": "$([ -z "$CRITERIA" ] && echo 'warn' || echo 'pass')",
@@ -328,6 +337,7 @@ cat > "$ROOT/.codex/checkpoints/cp1-criteria.json" <<CP1EOF
   "checkedAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 }
 CP1EOF
+fi
 
 # ═══ V4.5.1: 改前先 grep 全仓库引用 — 物理阻断 ═══
 # 写代码前必须运行 grep-refs.sh 生成引用地图，否则拒绝 Write/Edit

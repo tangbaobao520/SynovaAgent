@@ -19,6 +19,16 @@
             "statusMessage": "验证 v2.5 合规..."
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash scripts/hooks/hook-git-detect.sh",
+            "statusMessage": "识别 git 操作..."
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -29,6 +39,16 @@
             "type": "command",
             "command": "bash scripts/workflow/verify-incremental.sh",
             "statusMessage": "验证改动..."
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash scripts/hooks/hook-git-detect.sh --post",
+            "statusMessage": "关闭 git 操作窗口..."
           }
         ]
       }
