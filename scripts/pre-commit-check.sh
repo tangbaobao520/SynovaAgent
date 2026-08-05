@@ -272,6 +272,14 @@ if [ -n "$STAGED" ]; then
 fi
 hard_check "empty catch 无 log (铁律 24+31)" "${EMPTY:-}"
 
+# D313 M5b: 附挂静默吞错扫描（git diff 新增行含 2>/dev/null → 阻断，豁免需 # swallow-ok:）
+SILENT_OUT=$(bash "$ROOT/scripts/workflow/check-silent-swallow.sh" --diff 2>&1 || true)
+if echo "$SILENT_OUT" | grep -q "❌"; then
+  hard_check "静默吞错扫描 (D313 M5b)" "$SILENT_OUT"
+else
+  soft_pass "静默吞错扫描 (D313 M5b)"
+fi
+
 # 2b. 新文件配对测试 (原 4)
 MISSING_TEST=""
 if [ -n "$NEW_IMPL" ]; then
@@ -819,41 +827,11 @@ if [ -n "$ALL_TODAY_BRIEFS" ] && [ -n "$STAGED_ALL" ]; then
   while IFS= read -r BRIEF; do
     [ -z "$BRIEF" ] && continue
     BNAME=$(basename "$BRIEF")
-    awk '
-/^## Q2:/ { in_q2=1; in_include=0; in_exclude=0 }
-in_q2 && /^## / && !/^## Q2/ { exit }
-in_q2 && /^不做什么/ { in_exclude=1; in_include=0 }
-in_q2 && /^做什么/ { in_include=1; in_exclude=0; next }
-in_q2 && in_include && /^- / {
-    line = $0
-    sub(/^- /, "", line)
-    path = line
-    gsub(/:.*$/, "", path)
-    gsub(/：.*$/, "", path)
-    gsub(/ — .*$/, "", path)
-    gsub(/^ +| +$/, "", path)
-    if (length(path) > 0) print path
-}
-' "$BRIEF" 2>/dev/null | sed "s|^|$BNAME\\t|" >> "$SCOPE_TSV" || true
-    awk '
-/^## Q2:/ { in_q2=1; in_include=0; in_exclude=0 }
-in_q2 && /^## / && !/^## Q2/ { exit }
-in_q2 && /^不做什么/ { in_exclude=1; in_include=0 }
-in_q2 && in_exclude && /^- / {
-    line = $0
-    sub(/^- /, "", line)
-    sub(/不修改/, "", line)
-    sub(/不改/, "", line)
-    sub(/不涉及/, "", line)
-    sub(/不包括/, "", line)
-    path = line
-    gsub(/:.*$/, "", path)
-    gsub(/（.*$/, "", path)
-    gsub(/\(.*$/, "", path)
-    gsub(/^ +| +$/, "", path)
-    if (length(path) > 0) print path
-}
-' "$BRIEF" 2>/dev/null | sed "s|^|$BNAME\\t|" >> "$EXCL_TSV" || true
+    # D313 M3 同源: G12 awk → brief_parser.py（消灭双副本，语义 = parse_q2）
+    python3 "$ROOT/scripts/control-tower/brief_parser.py" --q2-include "$BRIEF" 2>/dev/null \
+      | sed "s|^|$BNAME\\t|" >> "$SCOPE_TSV" || true
+    python3 "$ROOT/scripts/control-tower/brief_parser.py" --q2-exclude "$BRIEF" 2>/dev/null \
+      | sed "s|^|$BNAME\\t|" >> "$EXCL_TSV" || true
   done <<< "$ALL_TODAY_BRIEFS"
 
   # 检查每个暂存文件 — 修复 (D291): Python 单进程匹配, 替代 12321 次 grep 子进程 (Windows 10+ 分钟 → <1s)
@@ -904,6 +882,24 @@ if [ -n "$SCOPE_VIOLATION" ]; then
   hard_check "G12: task brief Q2 范围一致性" "$SCOPE_VIOLATION"
 else
   soft_pass "G12: 所有文件均在 Q2 范围内"
+fi
+
+# D313 M3: 附挂 brief 契约检查（同源解析器 + #CRITERIA + 架构层 + Done）
+BRIEF_PARSEABLE_OUT=$(bash "$ROOT/scripts/workflow/check-brief-parseable.sh" "$BRIEF" 2>&1 || true)
+if echo "$BRIEF_PARSEABLE_OUT" | grep -q "❌"; then
+  hard_check "G12b: brief 可解析性 (D313 M3)" "$BRIEF_PARSEABLE_OUT"
+else
+  soft_pass "G12b: brief 可解析 (D313 M3)"
+fi
+
+# D313 M3b: 附挂 dev doc 写集验证（暂存含 SYNOVA-IMPL-*.md 时）
+if echo "$STAGED_ALL" | grep -qE 'docs/plans/codex/implementation/SYNOVA-IMPL-.*\.md'; then
+  DEV_DOC_OUT=$(bash "$ROOT/scripts/workflow/check-dev-doc-write-set.sh" 2>&1 || true)
+  if echo "$DEV_DOC_OUT" | grep -q "❌"; then
+    hard_check "G12c: dev doc 写集验证 (D313 M3b)" "$DEV_DOC_OUT"
+  else
+    soft_pass "G12c: dev doc 写集验证 (D313 M3b)"
+  fi
 fi
 
 # V3: 写 CP3 检查点

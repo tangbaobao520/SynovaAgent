@@ -19,6 +19,9 @@
  # ============================================================
  
  set -euo pipefail
+# D313 M5 UTF-8 强制: Windows 控制台/子进程统一 UTF-8
+export PYTHONIOENCODING=utf-8
+export LC_ALL=C.UTF-8 2>/dev/null || true
  
  RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; RESET='\033[0m'
  ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
@@ -46,12 +49,18 @@
  # ================================================================
  echo -e "${CYAN}--- 1. Q2 文件范围 vs 实际变更 ---${RESET}"
  
- # 提取 Q2 中声明的文件路径 (支持: - `path/to/file` 和 `path/to/file` 格式)
- DECLARED_FILES=$(sed -n '/^## Q2:/,/^## Q3:/p' "$BRIEF" 2>/dev/null \
-   | grep -oE '\`[^\`]+\.[a-z]{2,5}\`' \
-   | sed 's/\`//g' \
-   | grep -v 'node_modules\|\.test\.' \
-   | sort -u || true)
+ # 提取 Q2 中声明的文件路径 (D313 M3 同源: 优先 brief_parser.py 的 - 行提取, 兜底反引号)
+ REPO_ROOT_BCV="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+ DECLARED_FILES=$(python3 "$REPO_ROOT_BCV/scripts/control-tower/brief_parser.py" --q2-include "$BRIEF" 2>/dev/null \
+   | grep -v 'node_modules\|\.test\.' | sort -u || true)
+ if [ -z "$DECLARED_FILES" ]; then
+   # 兜底: 反引号路径（旧格式 brief 兼容）
+   DECLARED_FILES=$(sed -n '/^## Q2:/,/^## Q3:/p' "$BRIEF" 2>/dev/null \
+     | grep -oE '\`[^\`]+\.[a-z]{2,5}\`' \
+     | sed 's/\`//g' \
+     | grep -v 'node_modules\|\.test\.' \
+     | sort -u || true)
+ fi
  
  # 实际变更的源文件 (排除 test/non-src)
  ACTUAL_FILES_STAGED=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null \

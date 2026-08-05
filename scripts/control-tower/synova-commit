@@ -281,6 +281,7 @@ if [[ -z "$SESSION_ID" ]]; then
   fi
 fi
 SESSION_REGISTRY="$PROJECT_ROOT/scripts/control-tower/session_registry.py"
+SELF_HEALTH="$PROJECT_ROOT/scripts/control-tower/self-health.py"
 STAGING_GUARD="$PROJECT_ROOT/scripts/control-tower/staging_guard.py"
 WAIT_MANAGER="$PROJECT_ROOT/scripts/control-tower/wait_manager.py"
 
@@ -291,6 +292,11 @@ if [[ -f "$SESSION_REGISTRY" ]]; then
   if [[ ${#FILES[@]} -gt 0 ]]; then
     python3 "$SESSION_REGISTRY" write-set --session-id "$SESSION_ID" --add "${FILES[@]}" 2>/dev/null || true
   fi
+fi
+
+# D314: 提交前 self-health 快照（fail-open，不阻断）
+if [[ -f "$SELF_HEALTH" ]]; then
+  python3 "$SELF_HEALTH" > /dev/null 2>&1 || true
 fi
 
 # ═══ 暂存文件 ═══

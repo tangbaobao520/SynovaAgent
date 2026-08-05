@@ -12,6 +12,9 @@
 # 从 stdin JSON 读取 tool_input.file_path 判断目标文件
 # ═══════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
+# D313 M5 UTF-8 强制: Windows 控制台/子进程统一 UTF-8
+export PYTHONIOENCODING=utf-8
+export LC_ALL=C.UTF-8 2>/dev/null || true
 
 # D312 M2: git 操作写窗口守卫 — git stash/checkout/reset 等命令执行期间
 # 跳过仓库内写文件（防 08-02 stash/pop 冲突事故）

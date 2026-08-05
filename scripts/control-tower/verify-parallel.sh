@@ -17,6 +17,9 @@
 # 退出码: 0 = pass/skip/degraded, 1 = block (有交集)
 # ═══════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
+# D313 M5 UTF-8 强制: Windows 控制台/子进程统一 UTF-8
+export PYTHONIOENCODING=utf-8
+export LC_ALL=C.UTF-8 2>/dev/null || true
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -68,89 +71,23 @@ compare_docs() { # compare_docs <doc-a> <doc-b> → exit 1 on overlap
 
   local result py_exit
   result=$(
-    python3 - "$da" "$db" 2>&1 <<'PYEOF'
-import json, re, sys
-from pathlib import Path
-
-def extract_write_set(path: str):
-    """解析 dev doc 写集表: ### N 写集 标题下第一个 markdown 表的第一列。"""
-    try:
-        text = Path(path).read_text(encoding="utf-8", errors="replace")
-    except OSError:
-        return None, f"读取失败: {path}"
-    lines = text.splitlines()
-    in_table = False
-    entries = []
-    for line in lines:
-        if re.match(r"^#{2,4}\s*\d+(\.\d+)*\s*写集", line):
-            in_table = True
-            continue
-        if in_table and re.match(r"^\s*\|[-:\s|]+\|\s*$", line):
-            continue  # 分隔行
-        if in_table and line.strip().startswith("|"):
-            cells = [c.strip() for c in line.strip().strip("|").split("|")]
-            if len(cells) >= 1 and cells[0] and not cells[0].startswith("文件"):
-                entries.append(cells[0])
-            continue
-        if in_table and line.strip().startswith("|") is False:
-            if not line.strip() or line.strip().startswith("#"):
-                in_table = False
-    if not entries:
-        return None, f"无写集表: {path}"
-    return entries, None
-
-def clean_entry(raw: str) -> str:
-    """清洗第一列: 链接/行号/计数/反斜杠/绝对前缀 → 归一化路径。"""
-    e = raw.strip()
-    # markdown 链接 [text](url) → text
-    m = re.match(r"^\[([^\]]+)\]", e)
-    if m:
-        e = m.group(1)
-    # 去行号 (path L750)
-    e = re.sub(r"\s+L\d+$", "", e)
-    # 去计数注释 (N 个 / N 修改)
-    e = re.sub(r"\s*\(\d+\s*[个修改新建删除]+\)\s*$", "", e)
-    # 反斜杠 → 正斜杠; 小写 (Windows FS 大小写不敏感)
-    e = e.replace("\\", "/").lower()
-    # 去绝对前缀 (D:\...\synova-agent\ 或 /d/.../synova-agent/)
-    e = re.sub(r"^[a-z]:[/\\].*?synova-agent[/\\]", "", e)
-    e = re.sub(r"^/+.*?synova-agent/", "", e)
-    return e.strip()
-
-def is_dir_entry(e: str) -> bool:
-    return e.endswith("/")
-
-def overlap(a_entries, b_entries):
-    a = [clean_entry(x) for x in a_entries if clean_entry(x)]
-    b = [clean_entry(x) for x in b_entries if clean_entry(x)]
-    hits = []
-    for x in a:
-        for y in b:
-            if x == y:
-                hits.append(x)
-            elif is_dir_entry(x) and y.startswith(x):
-                hits.append(f"{x} vs {y}")
-            elif is_dir_entry(y) and x.startswith(y):
-                hits.append(f"{y} vs {x}")
-    return list(dict.fromkeys(hits))
-
-ea, err_a = extract_write_set(sys.argv[1])
-if err_a:
-    print(json.dumps({"status": "skip", "doc_a": sys.argv[1], "reason": err_a}))
-    sys.exit(0)
-eb, err_b = extract_write_set(sys.argv[2])
-if err_b:
-    print(json.dumps({"status": "skip", "doc_b": sys.argv[2], "reason": err_b}))
-    sys.exit(0)
-hits = overlap(ea, eb)
-if hits:
-    print(json.dumps({"status": "block", "doc_a": sys.argv[1], "doc_b": sys.argv[2], "overlap": hits, "count_a": len(ea), "count_b": len(eb)}))
-    sys.exit(1)
-print(json.dumps({"status": "pass", "doc_a": sys.argv[1], "doc_b": sys.argv[2], "overlap": [], "count_a": len(ea), "count_b": len(eb)}))
-sys.exit(0)
-PYEOF
+    python3 "$SCRIPT_DIR/devdoc_writeset.py" --overlap-a "$da" --overlap-b "$db" 2>&1
   )
   py_exit=$?
+  result=$(echo "$result" | python3 -c "
+import json, sys
+try:
+    d = json.load(sys.stdin)
+except Exception:
+    sys.exit(0)
+if d.get('status') == 'skip':
+    print(json.dumps({'status': 'skip', 'doc_a': '$da', 'doc_b': '$db', 'reason': d.get('reason','')}, ensure_ascii=False))
+elif d.get('status') == 'block':
+    print(json.dumps({'status': 'block', 'doc_a': '$da', 'doc_b': '$db', 'overlap': d.get('overlap', [])}, ensure_ascii=False))
+else:
+    print(json.dumps({'status': 'pass', 'doc_a': '$da', 'doc_b': '$db', 'overlap': [], 'count_a': 0, 'count_b': 0}, ensure_ascii=False))
+")
+  if echo "$result" | grep -q '"status": "block"'; then py_exit=1; fi
 
   if [ "$py_exit" -eq 1 ]; then
     # block: 有交集（业务判定，不属 fail-open）

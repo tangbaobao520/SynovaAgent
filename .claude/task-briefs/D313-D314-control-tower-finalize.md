@@ -138,6 +138,9 @@ grep 本任务关键词（#CRITERIA / brief_parser / silent-swallow / attach / s
 - scripts/control-tower/verify-parallel.sh：inline 写集解析 → devdoc_writeset.py（行为零变化）
 - scripts/workflow/verify-incremental.sh：L2 → baseline-check.sh --tsc + L3 verification-state + 头部 V4.6.0
 - scripts/hooks/hook-session-start.sh：末尾 attach.py 调用（timeout 10）
+- scripts/control-tower/synova-commit：D314 接线 — 提交前 self-health 快照（fail-open 不阻断）
+- scripts/hooks/hook-check-memory.sh：D313 M5 UTF-8 头块（批量收尾）
+- scripts/hooks/hook-git-detect.sh：D313 M5 UTF-8 头块（批量收尾）
 - .claude/settings.json：SessionStart + PostToolUse Write|Edit → verify-incremental + env 块
 - .codex/control-tower/verification-state.json（只登记不接线）
 - .codex/control-tower/baseline/ci-failures.json（只登记不接线）

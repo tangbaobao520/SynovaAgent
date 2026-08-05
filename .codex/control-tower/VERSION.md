@@ -11,6 +11,31 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V4.6.0 (2026-08-04) — 控制塔独立化正式首发
+
+> M1-M5 全部落地 + 独立化底座 + 日志五件套 + 学习闭环。控制塔从"session 触发的脚本集合"升级为**独立常驻系统**（hook 轻量触发，不真常驻——常驻 daemon 延后到产品化阶段）。
+
+- **变更**: 控制塔 V4.6.0 独立化完成（D311-D314 全部交付）
+- **D313 (M3 brief 契约 + M5 编码)**:
+  - `brief_parser.py` — 同源解析器库（Q2 include/exclude + #CRITERIA + 架构层 + Done；消灭 G12 awk vs resolve-commit-brief python 双副本，4 方共用）
+  - `check-brief-parseable.sh` — 填完 brief 立即验证（#CRITERIA 必填/架构层/Done/模板自检）
+  - `devdoc_writeset.py` + `check-dev-doc-write-set.sh` — 写集声明 vs 代码 grep（M3b）
+  - `generate-task-brief.py` — 模板同源（`## 架构层:` 标题 + `#CRITERIA: A` 字段 + V4.6.0）
+  - `check-silent-swallow.sh` — 静默吞错扫描器（level-0/1/2 + --strict/--utf8/--diff）
+  - UTF-8 强制 — 47 个 .sh 头块 + 21 个 .py reconfigure + settings.json env 兜底
+- **D314 (M4 基线豁免 + 独立化底座)**:
+  - `verify-incremental.sh` L2 — tsc 基线豁免（baseline-check.sh --tsc，存量 28 不阻断新增阻断）
+  - `verification-state.json` — M4b（全量 vitest ≤1 次/任务）
+  - `control_tower_log.py` — 日志五件套写入器（runtime/gate/incident/degraded/version）
+  - `attach.py` — SessionStart 轻量 attach（register + 日志 + self-health + parseable；<2s fail-open）
+  - `self-health.py` — 控制塔自身健康五维（组件/信号/版本一致性/日志/资源）
+  - `incident-loop.py` — 学习闭环（record/suggest/verify；INC-20260802-stash 已闭环可追溯）
+  - settings.json — SessionStart + PostToolUse verify-incremental + env 块
+- **验收**: §四 17 条全过（测试先行 6 套 48 断言 red→green；fail-open 实测；版本一致性实测；vitest ≤1；日志五件套；pre-commit 12 组无 --no-verify）
+- **关联 incident**: INC-20260802-stash（D312 闭环）、INC-20260802-D300/D292/D286（D311 闭环）
+- **作者**: Claude (D313+D314)
+- **路线图（延后项）**: 常驻 daemon（产品化阶段）；CI 基线判定接线（ci-failures.json 只登记）；D309/D310 存量清理（_extinct 25 + admin-knowledge）；npm audit 决策；loop-score.sh 预存乱码修复
+
 ## 变更记录
 
 ### V4.6.0-WIP (2026-08-02) — D311 M1 多会话协调

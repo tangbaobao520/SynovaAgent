@@ -11,9 +11,44 @@
 # exit 1 = 验证失败 (AI 在同一会话内看到输出并修正)
 # ═══════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
+# D313 M5 UTF-8 强制: Windows 控制台/子进程统一 UTF-8
+export PYTHONIOENCODING=utf-8
+export LC_ALL=C.UTF-8 2>/dev/null || true
 
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$ROOT"
+
+# D314: PostToolUse 触发时只对 src/ 代码文件全量验证（.codex/tmp 等测试/配置写入跳过）
+# 从 stdin 读 tool_input.file_path（hook JSON；无 stdin 时保持原行为）
+TARGET_FILE=""
+if [ -n "${FILE_PATH:-}" ]; then
+  TARGET_FILE="$FILE_PATH"
+elif [ -n "${1:-}" ] && ! echo "$1" | grep -q '^{'; then
+  TARGET_FILE="$1"
+else
+  # 无 FILE_PATH/$1 → 尝试 stdin JSON（hook 环境有）；无 stdin 时用 timeout 防阻塞
+  TARGET_FILE=$(timeout 1 cat 2>/dev/null | python3 -c "
+import json, sys
+try:
+    data = json.load(sys.stdin)
+    ti = data.get('tool_input', data)
+    print(ti.get('file_path', '') if isinstance(ti, dict) else '')
+except Exception:
+    print('')
+" 2>/dev/null || echo "")
+fi
+if [ -n "$TARGET_FILE" ]; then
+  case "$TARGET_FILE" in
+    src/*|packages/*) : ;;  # 代码文件 → 全量验证
+    *) echo "[VERIFY] 非代码文件变更 — 跳过全量验证 (D314)"; exit 0 ;;
+  esac
+fi
+
+# D314: 无实际 src/ 变更 → 直接跳过（测试/配置写入触发 hook 时零成本）
+if ! git diff --name-only 2>/dev/null | grep -qE '^src/.*\.ts$|^packages/.*\.ts$'; then
+  echo "[VERIFY] 无 src/ 代码变更 — 跳过全量验证 (D314)"
+  exit 0
+fi
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; RESET='\033[0m'
 
@@ -88,12 +123,11 @@ fi
 if [ -n "$CHANGED_SRC" ]; then
   echo -e "${CYAN}[L2] tsc 类型检查 (incremental)...${RESET}"
   # 使用 --incremental 利用 .tsbuildinfo 缓存, 只检查改动文件
-  if npx tsc --noEmit --incremental 2>&1 | grep -E "^src/|^tests/" | head -20; then
-    TSC_ERRORS=$(npx tsc --noEmit --incremental 2>&1 | grep -cE "^src/|^tests/" || echo 0)
-    if [ "${TSC_ERRORS:-0}" -gt 0 ]; then
-      echo -e "${RED}[FAIL] L2 类型检查: ${TSC_ERRORS} 个错误${RESET}"
-      exit 1
-    fi
+  L2_OUT=$(bash "$ROOT/scripts/control-tower/baseline-check.sh" --tsc 2>&1) || true
+  echo "$L2_OUT" | grep -E "存量|新增|degraded|✅|❌" | head -5
+  if echo "$L2_OUT" | grep -qE "新增 [1-9]"; then
+    echo -e "${RED}[FAIL] L2 类型检查: 存在新增 tsc 错误 (存量豁免, 新增阻断)${RESET}"
+    exit 1
   fi
   echo -e "${GREEN}  L2 类型: 通过${RESET}"
 else

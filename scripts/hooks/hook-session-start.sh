@@ -20,6 +20,9 @@
 # 这不需要 AI 自律。锁是磁盘上的物理文件，bash 读它做硬阻断。
 # ═══════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
+# D313 M5 UTF-8 强制: Windows 控制台/子进程统一 UTF-8
+export PYTHONIOENCODING=utf-8
+export LC_ALL=C.UTF-8 2>/dev/null || true
 
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 WORKFLOW_STATE="$ROOT/.claude/workflow-state.json"
@@ -38,4 +41,11 @@ fi
 # 工作流未完成 → 写入锁文件
 echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) session-locked: workflow not brief-filled" > "$LOCK_FILE"
 echo "[V4.5.1] SessionStart: 流程未完成 — 已锁定。请先运行 task-start.sh。"
+
+# D314 独立化: 轻量 attach
+ATTACH_SCRIPT="$ROOT/scripts/control-tower/attach.py"
+if [ -f "$ATTACH_SCRIPT" ]; then
+  timeout 10 python3 "$ATTACH_SCRIPT" --session-id "$(basename "$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo session)")" 2>/dev/null || echo "[D314] attach 降级 (fail-open)" >&2
+fi
+
 exit 0

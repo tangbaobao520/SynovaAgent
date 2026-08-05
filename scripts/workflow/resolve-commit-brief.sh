@@ -1,4 +1,7 @@
 #!/bin/bash
+# D313 M5 UTF-8 强制: Windows 控制台/子进程统一 UTF-8
+export PYTHONIOENCODING=utf-8
+export LC_ALL=C.UTF-8 2>/dev/null || true
 # ═══════════════════════════════════════════════════════════════════════════════
 # resolve-commit-brief.sh — 认领制 brief 解析 (D296, 跨 session 污染根治)
 #
@@ -45,36 +48,39 @@ fi
 # ── 认领判定 (单次 python3) ──
 RESULT=$(python3 -c "
 import re, sys
+sys.path.insert(0, r'$ROOT/scripts/control-tower')
+try:
+    from brief_parser import parse_q2, match_path
+except ImportError:
+    # fail-open: 解析器缺失 → 降级到内联语义（不阻断认领流程）
+    def parse_q2(text):
+        paths = []
+        in_q2 = in_inc = False
+        for line in text.split('\n'):
+            line = line.rstrip('\r')
+            if re.match(r'^## Q2:', line):
+                in_q2 = True
+                in_inc = False
+                continue
+            if in_q2 and re.match(r'^## ', line):
+                break
+            if in_q2 and re.match(r'^不做什么', line):
+                in_inc = False
+                continue
+            if in_q2 and re.match(r'^做什么', line):
+                in_inc = True
+                continue
+            if in_q2 and in_inc and line.startswith('- '):
+                p = line[2:].split(':', 1)[0].split('：', 1)[0].split(' — ', 1)[0].strip()
+                if p:
+                    paths.append(p)
+        return paths
+    def match_path(path, pat):
+        return re.search(r'(^|/)' + re.escape(pat) + r'\$', path) is not None
 
 staged = [s.strip() for s in '''$STAGED'''.split('\n') if s.strip()]
 briefs = [b for b in '''$ALL_TODAY'''.split('\n') if b.strip()]
 cur = '''$CUR'''
-
-def q2_scope(text):
-    paths = []
-    in_q2 = in_inc = False
-    for line in text.split('\n'):
-        line = line.rstrip('\r')
-        if re.match(r'^## Q2:', line):
-            in_q2 = True
-            in_inc = False
-            continue
-        if in_q2 and re.match(r'^## ', line):
-            break
-        if in_q2 and re.match(r'^不做什么', line):
-            in_inc = False
-            continue
-        if in_q2 and re.match(r'^做什么', line):
-            in_inc = True
-            continue
-        if in_q2 and in_inc and line.startswith('- '):
-            p = line[2:].split(':', 1)[0].split('：', 1)[0].split(' — ', 1)[0].strip()
-            if p:
-                paths.append(p)
-    return paths
-
-def matches(path, pat):
-    return re.search(r'(^|/)' + re.escape(pat) + r'\$', path) is not None
 
 claims = []
 for b in briefs:
@@ -82,8 +88,8 @@ for b in briefs:
         text = open(b, encoding='utf-8').read()
     except OSError:
         continue
-    scope = q2_scope(text)
-    n = sum(1 for sf in staged for p in scope if matches(sf, p))
+    scope = parse_q2(text)['include']
+    n = sum(1 for sf in staged for p in scope if match_path(sf, p))
     claims.append((n, b))
 
 # 1. current-brief 认领 ≥1 → 用它

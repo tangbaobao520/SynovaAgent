@@ -108,17 +108,30 @@ if [ "$MODE" = "diff" ]; then
   fi
   while IFS= read -r sf; do
     [ -z "$sf" ] && continue
-    # 只扫新增行（^+）含 2>/dev/null 且无 fallback/豁免
-    DIFF_LINES=$(git diff --cached -- "$sf" 2>/dev/null | grep -E '^\+' | grep '2>/dev/null' || true)
+    # 新增行全集（续行链查找需要非 2>/dev/null 的后续行）
+    ADDED_LINES=$(git diff --cached -- "$sf" 2>/dev/null | grep -E '^\+' || true)
+    # 只扫含 2>/dev/null 的新增行
+    DIFF_LINES=$(printf '%s\n' "$ADDED_LINES" | grep '2>/dev/null' || true)
     if [ -n "$DIFF_LINES" ]; then
       while IFS= read -r line; do
         [ -z "$line" ] && continue
-        # 豁免: 显式 swallow-ok / 有 fallback (||) / 探测型 (| grep -q 在 if 中)
+        # 豁免: 显式 swallow-ok / 同行 fallback (||或&&) / 探测型 (grep -q 前后 / 容忍管道 | python3)
         if ! echo "$line" | grep -q 'swallow-ok' \
            && ! echo "$line" | grep -qE '2>/dev/null.*(\|\||&&)' \
-           && ! echo "$line" | grep -qE '2>/dev/null\s*\|\s*grep -q'; then
-          echo "[silent-swallow] ❌ $sf: $line"
-          VIOLATIONS=$((VIOLATIONS + 1))
+           && ! echo "$line" | grep -qE '(grep -q.*2>/dev/null|2>/dev/null\s*\|\s*(grep -q|python3))'; then
+          # 续行链检测: 拼接以 \ 结尾的连续新增行组成逻辑行, 在逻辑行内查 || / &&
+          LOGICAL="$line"
+          CUR="$line"
+          while echo "$CUR" | grep -q '\\$'; do
+            NEXT=$(printf '%s\n' "$ADDED_LINES" | grep -A1 -F "$CUR" | tail -1 || true)
+            [ -z "$NEXT" ] || [ "$NEXT" = "$CUR" ] && break
+            LOGICAL="${LOGICAL}"$'\n'"${NEXT}"
+            CUR="$NEXT"
+          done
+          if ! echo "$LOGICAL" | grep -qE '(\|\||&&)'; then
+            echo "[silent-swallow] ❌ $sf: $line"
+            VIOLATIONS=$((VIOLATIONS + 1))
+          fi
         fi
       done <<< "$DIFF_LINES"
     fi

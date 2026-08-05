@@ -116,8 +116,10 @@ grep 本任务关键词在 expert/ sentinel/ extensions/ knowledge/ theory/ skil
 处理（中间经过哪些步骤）：
 结果（最终展示在哪）：
 
-## 本任务在哪一层
+## 架构层: 基础设施
 L1/L2/L3/L4/L5
+#CRITERIA: A
+<!-- #CRITERIA: A/B/C/D 条件归属（v3-FINAL），必填；pre-commit G10 + hook-block-write CP1 + pre-doc-audit CP2 消费 -->
 
 ## Done 标准
 - [ ] 入口可触达:

@@ -1,4 +1,8 @@
 {
+  "env": {
+    "PYTHONIOENCODING": "utf-8",
+    "PYTHONUTF8": "1"
+  },
   "permissions": {
     "allow": [
       "Bash(tasklist //FI \"IMAGENAME eq node.exe\" 2>/dev/null | head -5; echo \"---\"; ls \"C:/Users/Administrator/AppData/Local/Temp/claude/d--novis-backup-20260526-Novis-synova-agent/57bf26a1-1963-43ac-9d23-c964a1437d8a/tasks/\" 2>/dev/null)",
@@ -100,16 +104,99 @@
       "Bash(bash scripts/control-tower/synova-commit --task-id \"D312\" --agent \"claude-code\" --session-id \"2026-08-03-D312-M2\" --message \"test\" --files scripts/hooks/hook-git-detect.sh)",
       "Bash(bash scripts/control-tower/synova-commit --task-id D312 --agent claude-code --session-id 2026-08-03-D312-M2 --message 'fix\\(D312\\): 移除 settings.json 残留 GitHub token \\(secret scanning 推送阻断修复\\) *)",
       "Bash(GIT_SEQUENCE_EDITOR=\"sed -i 's/^pick 785d0ef/edit 785d0ef/'\" git rebase -i 9096993)",
-      "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch --force --index-filter ' *)"
+      "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch --force --index-filter ' *)",
+      "Bash(touch .claude/task-briefs/D313-D314-control-tower-finalize.md)",
+      "Bash(bash scripts/workflow/resolve-commit-brief.sh 'scripts/control-tower/brief_parser.py *)",
+      "Bash(timeout 30 bash tests/control-tower/baseline-exemption.test.sh)",
+      "Bash(timeout 10 env SYNO_CT_DIR=\".codex/control-tower/tmp/be-ct\" SYNO_TSC_OUTPUT=\".codex/control-tower/tmp/be-known.txt\" bash scripts/control-tower/baseline-check.sh --tsc --seed)",
+      "Bash(timeout 5 env SYNO_TSC_OUTPUT=\".codex/control-tower/tmp/be-known.txt\" bash -c 'source scripts/control-tower/baseline-check.sh 2>/dev/null; collect tsc | head -2')",
+      "Bash(timeout 15 env SYNO_CT_DIR=\"/d/novis-backup-20260526/Novis/synova-agent/.codex/control-tower/tmp/be-ct\" SYNO_TSC_OUTPUT=\"/d/novis-backup-20260526/Novis/synova-agent/.codex/control-tower/tmp/be-known.txt\" bash -x scripts/control-tower/baseline-check.sh --tsc --seed)",
+      "Bash(timeout 30 bash -c ' *)",
+      "Bash(timeout 10 env SYNO_CT_DIR=/d/novis-backup-20260526/Novis/synova-agent/.codex/control-tower/tmp/be-ct SYNO_TSC_OUTPUT=/d/novis-backup-20260526/Novis/synova-agent/.codex/control-tower/tmp/be-known.txt bash -x /d/novis-backup-20260526/Novis/synova-agent/scripts/control-tower/baseline-check.sh --tsc)",
+      "Bash(timeout 20 bash -c ' *)",
+      "Bash(chmod +x scripts/workflow/check-brief-parseable.sh)",
+      "Bash(BRIEF_FILE=\".codex/control-tower/tmp/bp-test.md\" TASK_DESC=\"D313 test\" python3 scripts/workflow/generate-task-brief.py)",
+      "Bash(bash tests/control-tower/brief-parseable.test.sh)",
+      "Bash(bash scripts/workflow/resolve-commit-brief.sh 'scripts/control-tower/baseline-check.sh *)",
+      "Bash(chmod +x scripts/workflow/check-dev-doc-write-set.sh)",
+      "Bash(bash tests/control-tower/write-set-check.test.sh)",
+      "Bash(SYNO_DEV_DOC=\".codex/control-tower/tmp/ws-doc1.md\" bash scripts/workflow/check-dev-doc-write-set.sh)",
+      "Bash(SYNO_DEV_DOC=\".codex/control-tower/tmp/ws-doc1.md\" bash scripts/workflow/check-dev-doc-write-set.sh --json)",
+      "Bash(SYNO_DEV_DOC=\".codex/control-tower/tmp/ws-doc4.md\" bash scripts/workflow/check-dev-doc-write-set.sh)",
+      "Bash(chmod +x scripts/workflow/check-silent-swallow.sh)",
+      "Bash(bash tests/control-tower/utf8.test.sh)",
+      "Bash(bash scripts/workflow/check-silent-swallow.sh --utf8 .codex/control-tower/tmp/utf8-gbk.sh)",
+      "Bash(bash scripts/workflow/check-silent-swallow.sh --utf8 .codex/control-tower/tmp/utf8-reconf.py)",
+      "Bash(bash tests/control-tower/baseline-exemption.test.sh)",
+      "Bash(bash tests/control-tower/daemon-smoke.test.sh)",
+      "Bash(SYNO_CT_DIR=\".codex/control-tower/tmp/ds-ct\" python3 scripts/control-tower/attach.py --session-id \"TEST-SESSION\")",
+      "Bash(SYNO_CT_DIR=\".codex/control-tower/tmp/ds-ct\" python3 scripts/control-tower/attach.py --session-id \"TEST2\")",
+      "Bash(bash tests/control-tower/incident-loop.test.sh)",
+      "Bash(SYNO_CT_DIR=\".codex/control-tower/tmp/il-ct\" python3 scripts/control-tower/incident-loop.py record --id \"INC-TEST-001\" --symptom \"测试事故\" --root-cause \"R2\" --sessions \"TEST\" --fix \"测试修复\" --version \"4.6.0\")",
+      "Bash(SYNO_CT_DIR=\".codex/control-tower/tmp/il-ct\" python3 scripts/control-tower/incident-loop.py record --id \"INC-TEST-001\" --symptom \"a\" --root-cause \"R2\" --sessions \"T\" --fix \"f\" --version \"4.6.0\")",
+      "Bash(SYNO_CT_DIR=\".codex/control-tower/tmp/il-ct\" python3 scripts/control-tower/incident-loop.py record --id \"INC-TEST-001\" --symptom \"b\" --root-cause \"R2\" --sessions \"T\" --fix \"f\" --version \"4.6.0\")",
+      "Bash(SYNO_CT_DIR=\".codex/control-tower/tmp/il-ct\" python3 scripts/control-tower/incident-loop.py record --id \"INC-TEST-002\" --symptom \"git stash 冲突\" --root-cause \"R2\" --sessions \"X\" --fix \"禁 stash\" --version \"4.6.0\")",
+      "Bash(SYNO_CT_DIR=\".codex/control-tower/tmp/vp-fail\" bash scripts/control-tower/verify-parallel.sh --doc-a .codex/control-tower/tmp/not-exist.md --doc-b .codex/control-tower/tmp/not-exist2.md)",
+      "Bash(SYNO_CT_DIR=\".codex/control-tower/tmp/vp-fail\" python3 scripts/control-tower/self-health.py)",
+      "Bash(cp .codex/control-tower/VERSION.md /tmp/ver-backup.md && sed -i 's|## V4.6.0 \\(2026-08-04\\)|## V4.5.9 \\(测试\\)|' .codex/control-tower/VERSION.md && python3 scripts/control-tower/self-health.py 2>/dev/null | python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('version dim:', d['dimensions'].get\\('version'\\)\\); print\\('mismatches:', d['versionConsistency']['mismatches']\\)\"; echo \"=== 还原 ===\"; cp /tmp/ver-backup.md .codex/control-tower/VERSION.md && grep -c \"V4.6.0 \\(2026-08-04\\)\" .codex/control-tower/VERSION.md)",
+      "Bash(timeout 20 bash tests/control-tower/daemon-smoke.test.sh)",
+      "Bash(timeout 25 bash tests/control-tower/daemon-smoke.test.sh)",
+      "Bash(timeout 30 bash tests/control-tower/daemon-smoke.test.sh)",
+      "Bash(timeout 30 bash tests/control-tower/incident-loop.test.sh)",
+      "Bash(rm -rf .codex/control-tower/tmp/bp-* .codex/control-tower/tmp/ws-* .codex/control-tower/tmp/utf8-* .codex/control-tower/tmp/be-* .codex/control-tower/tmp/ds-ct .codex/control-tower/tmp/il-ct .codex/control-tower/tmp/utf8-batch.py 2>/dev/null; echo \"=== 写集确认 ===\"; git status --short | grep -E \"control-tower|workflow|hooks|settings|AGENTS|VERSION|pre-commit|brief\" | grep -v \"^\\\\?\\\\?\" | head -25)",
+      "Bash(timeout 40 bash tests/control-tower/hook-git-detect.test.sh)",
+      "Bash(timeout 40 bash tests/control-tower/baseline-check.test.sh)",
+      "Bash(timeout 45 bash tests/control-tower/baseline-check.test.sh)",
+      "Bash(SYNO_CT_DIR=.codex/control-tower/tmp/bc-ct SYNO_TSC_OUTPUT=.codex/control-tower/tmp/bc-known.txt timeout 8 bash -x scripts/control-tower/baseline-check.sh --tsc --seed)",
+      "Bash(timeout 50 bash tests/control-tower/baseline-check.test.sh)",
+      "Bash(SYNO_CT_DIR=.codex/control-tower/tmp/bc-ct SYNO_TSC_OUTPUT=.codex/control-tower/tmp/bc-known.txt bash scripts/control-tower/baseline-check.sh --tsc --seed)",
+      "Bash(SYNO_CT_DIR=.codex/control-tower/tmp/bc-ct SYNO_TSC_OUTPUT=.codex/control-tower/tmp/bc-new.txt timeout 10 bash -x scripts/control-tower/baseline-check.sh --tsc --update-baseline)",
+      "Bash(SYNO_CT_DIR=.codex/control-tower/tmp/bc-ct SYNO_TSC_OUTPUT=.codex/control-tower/tmp/bc-new.txt timeout 10 bash scripts/control-tower/baseline-check.sh --tsc --update-baseline)",
+      "Bash(SYNO_CT_DIR=.codex/control-tower/tmp/bc-ct SYNO_TSC_OUTPUT=.codex/control-tower/tmp/bc-new.txt bash scripts/control-tower/baseline-check.sh --tsc --update-baseline)",
+      "Bash(SYNO_CT_DIR=.codex/control-tower/tmp/bc-ct SYNO_TSC_OUTPUT=/d/novis-backup-20260526/Novis/synova-agent/.codex/control-tower/tmp/bc-known.txt timeout 15 bash scripts/control-tower/baseline-check.sh --tsc --seed)",
+      "Bash(SYNO_CT_DIR=.codex/control-tower/tmp/bc-ct SYNO_TSC_OUTPUT=/d/novis-backup-20260526/Novis/synova-agent/.codex/control-tower/tmp/bc-new.txt timeout 8 bash -x scripts/control-tower/baseline-check.sh --tsc --update-baseline)",
+      "Bash(SYNO_CT_DIR=.codex/control-tower/tmp/bc-ct SYNO_TSC_OUTPUT=__TRACKED_VAR__/.codex/control-tower/tmp/bc-known.txt timeout 15 bash scripts/control-tower/baseline-check.sh --tsc --seed)",
+      "Bash(time  bash tests/control-tower/baseline-check.test.sh)",
+      "Bash(timeout 30 bash -x tests/control-tower/baseline-check.test.sh)",
+      "Bash(SYNO_CT_DIR=.codex/control-tower/tmp/bc-ct SYNO_TSC_OUTPUT=.codex/control-tower/tmp/bc-known.txt timeout 30 bash -x scripts/control-tower/baseline-check.sh --tsc)",
+      "Bash(SYNO_TSC_OUTPUT=.codex/control-tower/tmp/bc-known.txt timeout 5 bash -c 'echo \"env inside: [$SYNO_TSC_OUTPUT]\"')",
+      "Bash(SYNO_TSC_OUTPUT=\".codex/control-tower/tmp/bc-known.txt\" bash scripts/control-tower/baseline-check.sh --tsc)",
+      "Bash(timeout 90 bash tests/control-tower/hook-git-detect.test.sh)",
+      "Bash(bash scripts/control-tower/verify-parallel.sh --doc-a .codex/control-tower/tmp/nope.md --doc-b .codex/control-tower/tmp/nope2.md)",
+      "Bash(bash scripts/control-tower/synova-commit --task-id D313+D314 --agent claude-code --session-id 2026-08-04-D313-D314 --message 'feat\\(D313+D314\\): 控制塔 V4.6.0 首发 — M3 brief 契约 + M5 编码 + M4 基线豁免 + 独立化底座 *)",
+      "Bash(bash scripts/control-tower/synova-commit --task-id D313+D314 --agent claude-code --session-id 2026-08-05-D313-D314 --message 'feat\\(D313\\): M3 brief 契约 + M5 编码 — 同源解析器/写集验证/静默吞错扫描 + 3 测试 *)",
+      "Bash(timeout 60 bash -x scripts/pre-commit-check.sh)",
+      "Bash(rm .claude/task-briefs/2026-08-03-auto.md)",
+      "Bash(date +%Y-%m-%d)",
+      "Bash(echo \"D313-D314-control-tower-finalize.md\")",
+      "Bash(bash scripts/control-tower/synova-commit --task-id D313+D314 --agent claude-code --session-id 2026-08-05-D313-D314 --message 'feat\\(D314\\): M4 基线豁免 + 独立化底座 — tsc 豁免/日志五件套/attach/self-health/学习闭环 + V4.6.0 首发 *)",
+      "Bash(bash scripts/control-tower/synova-commit --task-id \"D313+D314\" --agent \"claude-code\" --session-id \"2026-08-05-D313-D314\" --message \"test\")",
+      "Bash(timeout 60 bash scripts/workflow/check-silent-swallow.sh --diff)",
+      "Bash(sed -n '/^## Q2:/,/^## Q3:/p' .claude/task-briefs/D313-D314-control-tower-finalize.md 2>/dev/null | head -40; echo \"=== current-brief ===\"; cat .claude/current-brief 2>/dev/null)",
+      "Bash(timeout 90 bash scripts/workflow/check-silent-swallow.sh --diff)",
+      "Bash(timeout 90 bash scripts/workflow/check-silent-swallow.sh --utf8)",
+      "Bash(git add *)"
     ],
     "additionalDirectories": [
       "\\tmp",
       "D:\\novis-backup-20260526\\Novis\\synova-agent\\.claude\\task-briefs",
-      "D:\\novis-backup-20260526\\Novis\\synova-agent\\.claude"
+      "D:\\novis-backup-20260526\\Novis\\synova-agent\\.claude",
+      "D:\\novis-backup-20260526\\Novis\\synova-agent\\.codex\\control-tower\\tmp"
     ]
   },
   "model": "deepseek-v4-flash",
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash scripts/hooks/hook-session-start.sh"
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Write|Edit",
@@ -137,6 +224,15 @@
           {
             "type": "command",
             "command": "bash scripts/hooks/hook-git-detect.sh --post"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash scripts/workflow/verify-incremental.sh"
           }
         ]
       }
