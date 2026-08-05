@@ -5,6 +5,9 @@
 # feat/ 分支必须包含 SPEC.md，且必须填写 4 个必填字段。
 #
 set -euo pipefail
+# D313 M5 UTF-8 强制: Windows 控制台/子进程统一 UTF-8
+export PYTHONIOENCODING=utf-8
+export LC_ALL=C.UTF-8 2>/dev/null || true
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 BRANCH=$(git branch --show-current 2>/dev/null || echo "main")
 VIOLATIONS=0

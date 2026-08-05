@@ -21,6 +21,11 @@ import argparse
 import json
 import os
 import sys
+
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except (AttributeError, ValueError):
+    pass
 from datetime import datetime, timezone
 
 SIGNALS_DIR = ".codex/signals"

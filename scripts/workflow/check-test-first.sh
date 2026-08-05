@@ -5,6 +5,9 @@
 # 硬阻断：缺少测试的 export 拒绝提交。
 #
 set -euo pipefail
+# D313 M5 UTF-8 强制: Windows 控制台/子进程统一 UTF-8
+export PYTHONIOENCODING=utf-8
+export LC_ALL=C.UTF-8 2>/dev/null || true
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 YELLOW='\033[1;33m'; GREEN='\033[0;32m'; NC='\033[0m'
 MISSING=0

@@ -1,19 +1,22 @@
  #!/bin/bash
- # Loop Engineering V4.5.1 �?Loop Ready Score (0-100)
+ # Loop Engineering V4.5.1 �?Loop Ready Score (0-100)
  #
- # 基于实际基础设施的量化自评。每个维度有明确的检查项和分值�?
+ # 基于实际基础设施的量化自评。每个维度有明确的检查项和分值�?
  # 评分维度:
- #   State & Memory (20) �?STATE.md + MEMORY.md + LOOP.md + loop-run-log
- #   Gates & Hooks (25)   �?pre-commit + pre-push + commit-msg + post-commit
- #   Verification (23)    �?verify-incremental 四层 + 接线审计 + 铁律门禁
- #   Task Discipline (15) �?task-start.sh + task brief + plan.json
- #   Safety (10)          �?secrets 扫描 + 架构边界 + 熔断�?
- #   Operability (10)     �?loop-sync + loop-context + post-merge-cleanup + deploy verify
+ #   State & Memory (20) �?STATE.md + MEMORY.md + LOOP.md + loop-run-log
+ #   Gates & Hooks (25)   �?pre-commit + pre-push + commit-msg + post-commit
+ #   Verification (23)    �?verify-incremental 四层 + 接线审计 + 铁律门禁
+ #   Task Discipline (15) �?task-start.sh + task brief + plan.json
+ #   Safety (10)          �?secrets 扫描 + 架构边界 + 熔断�?
+ #   Operability (10)     �?loop-sync + loop-context + post-merge-cleanup + deploy verify
  #
  # 用法: bash scripts/workflow/loop-score.sh [--badge]
- #       --badge: 仅输�?markdown badge 代码
+ #       --badge: 仅输�?markdown badge 代码
  
  set -euo pipefail
+# D313 M5 UTF-8 强制: Windows 控制台/子进程统一 UTF-8
+export PYTHONIOENCODING=utf-8
+export LC_ALL=C.UTF-8 2>/dev/null || true
  
  RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; RESET='\033[0m'
  SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -35,15 +38,15 @@
  # ===== State & Memory (20) =====
  echo -e "${CYAN}--- State & Memory (max 20) ---${RESET}"
  check "STATE.md 存在" 5 "[ -f '$ROOT/STATE.md' ]"
- check "STATE.md > 500 字节 (有实质内�?" 5 "[ -f '$ROOT/STATE.md' ] && [ \$(wc -c < '$ROOT/STATE.md') -gt 500 ]"
+ check "STATE.md > 500 字节 (有实质内�?" 5 "[ -f '$ROOT/STATE.md' ] && [ \$(wc -c < '$ROOT/STATE.md') -gt 500 ]"
  check "LOOP.md 存在" 5 "[ -f '$ROOT/LOOP.md' ]"
  check "loop-run-log.md 存在" 5 "[ -f '$ROOT/loop-run-log.md' ]"
  echo ""
  
  # ===== Gates & Hooks (25) =====
  echo -e "${CYAN}--- Gates & Hooks (max 25) ---${RESET}"
- check "pre-commit hook 已安�? 8 "[ -f '$ROOT/.git/hooks/pre-commit' ]"
- check "pre-push hook 已安�? 5 "[ -f '$ROOT/.git/hooks/pre-push' ]"
+ check "pre-commit hook 已安�? 8 "[ -f '$ROOT/.git/hooks/pre-commit' ]"
+ check "pre-push hook 已安�? 5 "[ -f '$ROOT/.git/hooks/pre-push' ]"
  check "commit-msg hook (Conventional Commits)" 4 "[ -f '$ROOT/.git/hooks/commit-msg' ]"
  check "post-commit hook" 4 "[ -f '$ROOT/.git/hooks/post-commit' ]"
  check "pre-commit-check.sh 存在" 4 "[ -f '$ROOT/scripts/pre-commit-check.sh' ]"
@@ -55,7 +58,7 @@
  check "wire-check.sh 存在" 5 "[ -f '$ROOT/scripts/workflow/wire-check.sh' ]"
  check "check-boundaries-incremental.sh 存在" 5 "[ -f '$ROOT/scripts/workflow/check-boundaries-incremental.sh' ]"
  check "check-secrets.sh 存在" 3 "[ -f '$ROOT/scripts/check-secrets.sh' ]"
-check "check-brief-vs-code.sh (Brief vs Code һ����)" 4 "[ -f `$ROOT/scripts/workflow/check-brief-vs-code.sh' ]"
+check "check-brief-vs-code.sh (Brief vs Code һ����)" 4 "[ -f `$ROOT/scripts/workflow/check-brief-vs-code.sh' ]"
  echo ""
  
  # ===== Task Discipline (15) =====
@@ -69,7 +72,7 @@ check "check-brief-vs-code.sh (Brief vs Code һ����)" 4 "[ -f `$ROOT/scripts/wor
 # ===== Safety (10) =====
  echo -e "${CYAN}--- Safety (max 10) ---${RESET}"
  check "check-architecture.sh 存在" 3 "[ -f '$ROOT/scripts/check-architecture.sh' ]"
- check "loop-context.sh (熔断�? 存在" 4 "[ -f '$ROOT/scripts/workflow/loop-context.sh' ]"
+ check "loop-context.sh (熔断�? 存在" 4 "[ -f '$ROOT/scripts/workflow/loop-context.sh' ]"
  check "check-deprecated-mapping.sh 存在" 3 "[ -f '$ROOT/scripts/check-deprecated-mapping.sh' ]"
  echo ""
  
@@ -87,16 +90,16 @@ check "check-brief-vs-code.sh (Brief vs Code һ����)" 4 "[ -f `$ROOT/scripts/wor
  
  if [ "$SCORE" -ge 90 ]; then
    COLOR=brightgreen
-   LEVEL="L3 �?生产�?
+   LEVEL="L3 �?生产�?
  elif [ "$SCORE" -ge 70 ]; then
   COLOR=yellow
-   LEVEL="L2 �?辅助模式"
+   LEVEL="L2 �?辅助模式"
  elif [ "$SCORE" -ge 40 ]; then
    COLOR=orange
-   LEVEL="L1 �?仅报�?
+   LEVEL="L1 �?仅报�?
  else
    COLOR=red
-   LEVEL="初始 �?基础设施缺失"
+   LEVEL="初始 �?基础设施缺失"
  fi
  
  echo -e "Level: ${LEVEL}"
@@ -108,14 +111,14 @@ check "check-brief-vs-code.sh (Brief vs Code һ����)" 4 "[ -f `$ROOT/scripts/wor
    [ ! -f "$ROOT/LOOP.md" ] && echo "  - 创建 LOOP.md 描述活跃循环"
    [ ! -f "$ROOT/loop-run-log.md" ] && echo "  - 创建 loop-run-log.md 记录运行日志"
    [ ! -f "$ROOT/.git/hooks/pre-commit" ] && echo "  - 安装 pre-commit hook: npm run hooks:install"
-   [ ! -f "$ROOT/scripts/workflow/loop-sync.sh" ] && echo "  - 安装 loop-sync 漂移检�?
-   [ ! -f "$ROOT/scripts/workflow/loop-context.sh" ] && echo "  - 安装 loop-context 熔断�?
+   [ ! -f "$ROOT/scripts/workflow/loop-sync.sh" ] && echo "  - 安装 loop-sync 漂移检�?
+   [ ! -f "$ROOT/scripts/workflow/loop-context.sh" ] && echo "  - 安装 loop-context 熔断�?
    [ ! -f "$ROOT/scripts/workflow/post-merge-cleanup.sh" ] && echo "  - 安装 post-merge-cleanup"
  fi
  
  echo "=========================================="
  
-# --badge 模式: 仅输�?markdown badge
+# --badge 模式: 仅输�?markdown badge
  if [ "${1:-}" = "--badge" ]; then
    echo ""
    echo "[![Loop Ready](https://img.shields.io/badge/Loop_Ready-${SCORE}%2F100-${COLOR})](https://github.com/cobusgreyling/loop-engineering)"

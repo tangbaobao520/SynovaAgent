@@ -22,6 +22,11 @@ import os
 import re
 import subprocess
 import sys
+
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except (AttributeError, ValueError):
+    pass
 import uuid
 from pathlib import Path
 from typing import List, Dict, Optional, Any

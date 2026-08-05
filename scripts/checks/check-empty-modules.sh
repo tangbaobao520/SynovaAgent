@@ -9,6 +9,9 @@
 # 原则: 存量 warn (不阻断)，增量 hard-block (阻断)
 # ═══════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
+# D313 M5 UTF-8 强制: Windows 控制台/子进程统一 UTF-8
+export PYTHONIOENCODING=utf-8
+export LC_ALL=C.UTF-8 2>/dev/null || true
 
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$ROOT"

@@ -21,6 +21,11 @@ import os
 import re
 import subprocess
 import sys
+
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except (AttributeError, ValueError):
+    pass
 import time
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone

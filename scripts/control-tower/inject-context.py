@@ -18,6 +18,11 @@ import json
 import os
 import re
 import sys
+
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except (AttributeError, ValueError):
+    pass
 from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Optional, Tuple

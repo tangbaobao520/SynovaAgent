@@ -25,6 +25,11 @@ import hashlib
 import json
 import os
 import sys
+
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except (AttributeError, ValueError):
+    pass
 import time
 import logging
 from pathlib import Path

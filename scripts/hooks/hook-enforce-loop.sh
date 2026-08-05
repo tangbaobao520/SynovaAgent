@@ -12,6 +12,9 @@
 # 阻断信息包含: 阻断原因、已循环次数、修复指引
 # ═══════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
+# D313 M5 UTF-8 强制: Windows 控制台/子进程统一 UTF-8
+export PYTHONIOENCODING=utf-8
+export LC_ALL=C.UTF-8 2>/dev/null || true
 
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 STATE_FILE="$ROOT/.claude/loop-state.json"
