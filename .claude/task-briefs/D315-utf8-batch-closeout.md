@@ -31,7 +31,8 @@ D313 M5 编码交付了 UTF-8 强制（check-silent-swallow.sh --utf8 + utf8.tes
 做什么（38 个文件，全部为已完成的 UTF-8 头块/reconfigure 修改，零逻辑改动）：
 - scripts/checks/check-empty-modules.sh
 - scripts/checks/check-test-quality.sh
-- scripts/control-tower/baseline-check.sh（含 tr -d '\r' 修复，D313 M5 同批）
+- scripts/control-tower/baseline-check.sh：含 tr -d '\r' 修复，D313 M5 同批
+- tests/control-tower/baseline-check.test.sh：TMP_REL 相对路径，UTF-8 批量同批
 - scripts/control-tower/context-injector.sh
 - scripts/control-tower/external-auditor.sh
 - scripts/control-tower/contract-archiver.py

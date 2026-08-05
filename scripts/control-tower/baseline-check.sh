@@ -21,6 +21,9 @@
 # 退出码: 0 = pass/degraded, 1 = 有新增（业务信号）
 # ═══════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
+# D313 M5 UTF-8 强制: Windows 控制台/子进程统一 UTF-8
+export PYTHONIOENCODING=utf-8
+export LC_ALL=C.UTF-8 2>/dev/null || true
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -171,7 +174,7 @@ for a in added: print(f'ADD:{a}')
   if [ "$UPDATE" -eq 1 ]; then
     # 并集合并（存量 + 当前全部 → 全部转存量）
     local merged
-    merged=$( { echo "$base_keys"; echo "$cur_keys"; } | sort -u )
+    merged=$( { echo "$base_keys"; echo "$cur_keys"; } | tr -d '\r' | sort -u )
     cat > "$bfile" <<EOF
 {"schema": "control-tower/baseline/$kind/v1", "version": "4.6.0-WIP", "updatedAt": "$(date -u +%Y-%m-%dT%H:%M:%S+00:00)", "baseline": [$(echo "$merged" | sed 's/^/"/; s/$/"/' | tr '\n' ',' | sed 's/,$//')]}
 EOF
