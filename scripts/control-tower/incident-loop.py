@@ -28,6 +28,7 @@ UTF-8: stdout reconfigure。
 import argparse
 import json
 import os
+import shutil
 import sys
 import time
 from pathlib import Path
@@ -42,6 +43,59 @@ CT_DIR = Path(os.environ.get("SYNO_CT_DIR", str(REPO_ROOT / ".codex" / "control-
 LOGS_DIR = CT_DIR / "logs"
 INCIDENT_LOG = LOGS_DIR / "incident.log"
 KNOWN_PATTERNS = REPO_ROOT / ".codex" / "audit" / "known-error-patterns.json"
+
+# D316: Git 安装若未写入 bash 到 PATH（常见: 仅 Git\cmd 入 PATH），须显式查找。
+# 先试 PATH（shutil.which），再试 Git 标准安装路径，最后 None → 调用方 fail-open。
+GIT_BASH_CANDIDATES = (
+    r"C:\Program Files\Git\bin\bash.exe",
+    r"C:\Program Files\Git\usr\bin\bash.exe",
+)
+
+
+def _find_bash() -> str | None:
+    """解析 bash 可执行路径（不依赖进程 PATH）。
+
+    Why (D316): 纯系统 PATH（CI/任务计划/非 Git Bash 启动的 python）下
+    subprocess.run(["bash", ...]) 抛 WinError 2 → verify() 恒 degraded，
+    学习闭环的"verify 闭环成功"不可用。修复后任何环境都能解析 Git bash。
+    """
+    found = shutil.which("bash")
+    if found:
+        return found
+    for cand in GIT_BASH_CANDIDATES:
+        if os.path.exists(cand):
+            return cand
+    return None
+
+
+def _bash_env(bash: str) -> dict:
+    """构造 subprocess 环境 — hook 依赖链: bash + cat/grep（Git coreutils）+ python3（JSON 解析）。
+
+    实测（D316）: 只修 bash 路径不够 — hook 内 `cat`（Git usr/bin）与 `python3`
+    （WindowsApps shim / 系统 Python）在受限 PATH 下 command not found →
+    hook 静默 exit 0 → verify 误报 open。必须显式补全 PATH:
+      Git bins（usr/bin+bin+cmd+mingw64）→ cat/grep/sed
+      sys.executable 目录 + WindowsApps → python3
+    MSYS bash 的 PATH 分隔符是 ':'（Windows ';' 会被当作普通字符）。
+    """
+    root = Path(bash).parent.parent
+    if root.name == "usr":          # .../Git/usr/bin/bash.exe → 上移一级
+        root = root.parent
+    paths = [
+        str(root / "usr" / "bin"), str(root / "bin"), str(root / "cmd"),
+        str(root / "mingw64" / "bin"),
+        str(Path(sys.executable).parent),
+        str(Path.home() / "AppData" / "Local" / "Microsoft" / "WindowsApps"),
+    ]
+    msys = []
+    for p in paths:
+        s = p.replace("\\", "/")
+        if len(s) > 1 and s[1] == ":":   # C:/... → /c/...
+            s = "/" + s[0].lower() + s[2:]
+        msys.append(s)
+    env = dict(os.environ)
+    env["PATH"] = ":".join(msys + [env.get("PATH", "")])
+    return env
 
 ROOT_CAUSE_MAP = {
     "R1": {"label": "多会话共享工作区无协调", "mechanism": "门禁", "tools": ["verify-parallel.sh", "staging_guard.py", "wait_manager.py"]},
@@ -143,11 +197,16 @@ def verify(case_id: str) -> dict:
     if case_id == "INC-20260802-stash":
         # D312 真实闭环案例: hook-git-detect 拦截 stash
         import subprocess
+        bash = _find_bash()
+        if bash is None:
+            return {"status": "degraded", "case": case_id,
+                    "reason": "bash 不可用 — 无法执行门禁验证 (fail-open)"}
         try:
             r = subprocess.run(
-                ["bash", str(REPO_ROOT / "scripts/hooks/hook-git-detect.sh")],
+                [bash, str(REPO_ROOT / "scripts/hooks/hook-git-detect.sh")],
                 input='{"tool_input":{"command":"git stash"}}',
                 capture_output=True, text=True, timeout=10,
+                env=_bash_env(bash),
             )
             out = r.stdout + r.stderr
             if "禁止" in out:

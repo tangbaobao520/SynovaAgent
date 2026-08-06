@@ -98,15 +98,24 @@ while IFS= read -r entry; do
     fi
     continue
   fi
+  # D316: 非文件条目（操作类，如 "git 推送"，无扩展名）→ 不参与文件核验
+  if ! echo "$entry" | grep -q '\.'; then
+    continue
+  fi
   # 文件存在性
   if [ ! -f "$REPO_DIR/$entry" ]; then
     DRIFT="${DRIFT}  ${entry}（文件不存在）\n"
     continue
   fi
+  # D316: gitignore 文件（运行时产物，如 logs/version.log）→ 存在即声明满足
+  if git check-ignore -q "$REPO_DIR/$entry" 2>/dev/null; then  # swallow-ok: 探测型（ignore 判定失败走 else）
+    continue
+  fi
   # git diff 命中（声明"修改"但零实际变更 → 漂移；SYNO_DEV_DOC 注入时跳过此检查）
+  # D316: grep -qiF 大小写不敏感（VERSION.md vs clean 后 version.md）
   if [ -z "${SYNO_DEV_DOC:-}" ]; then
-    if ! git diff HEAD --name-only 2>/dev/null | grep -qF "$entry"; then
-      if ! git diff --cached --name-only 2>/dev/null | grep -qF "$entry"; then
+    if ! git diff HEAD --name-only 2>/dev/null | grep -qiF "$entry"; then
+      if ! git diff --cached --name-only 2>/dev/null | grep -qiF "$entry"; then
         DRIFT="${DRIFT}  ${entry}（声明修改但零实际变更）\n"
       fi
     fi

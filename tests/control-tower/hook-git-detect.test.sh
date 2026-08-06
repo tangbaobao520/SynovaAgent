@@ -36,6 +36,8 @@ assert_not_contains() {
 
 # 清理测试残留
 rm -f "$WINDOW_FILE" "$REPO_DIR/.claude/session-locked" 2>/dev/null || true
+# D316 P2-1: 中断/失败退出也清窗（否则残留窗口文件 → 下次运行首测失败）
+trap 'rm -f "$WINDOW_FILE" "$REPO_DIR/.claude/session-locked" 2>/dev/null || true' EXIT
 
 echo "═══════════════════════════════════════════════════════════"
 echo "  D312 hook-git-detect 测试 — hook 识别 git 操作"

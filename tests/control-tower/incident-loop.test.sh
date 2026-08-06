@@ -65,6 +65,14 @@ OUT=$(SYNO_CT_DIR="$CT_DIR" python3 "$TOOL" verify --case "INC-20260802-stash" 2
 assert_contains "$OUT" '"closed"' "verify 输出 closed"
 echo ""
 
+echo "── 4b. verify 受限 PATH（bash 不在 PATH → _find_bash 显式 fallback）──"
+# D316: 修复前硬编码 ["bash", 在受限 PATH 下 FileNotFoundError → degraded（本断言 FAIL = red）
+#       修复后 _find_bash 显式查找 Git 安装路径 → closed（本断言 PASS = green）
+PYBIN=$(command -v python3)
+OUT=$(SYNO_CT_DIR="$CT_DIR" env PATH="/c/Windows/system32:/c/Windows" "$PYBIN" "$TOOL" verify --case "INC-20260802-stash" 2>&1) || true
+assert_contains "$OUT" '"closed"' "受限 PATH 下 verify 仍 closed（_find_bash 显式 fallback）"
+echo ""
+
 echo "── 5. record 幂等 ──"
 SYNO_CT_DIR="$CT_DIR" python3 "$TOOL" record --id "INC-TEST-001" --symptom "重复" --root-cause "R2" --sessions "T" --fix "f" --version "4.6.0" > /dev/null 2>&1 || true
 N=$(wc -l < "$CT_DIR/logs/incident.log")

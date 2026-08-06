@@ -11,6 +11,23 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V4.6.1 (2026-08-05) — D316 修复（incident-loop 跨平台 + version.log 补写）
+
+> Codex 审计（SYNOVA-IMPL-D316）发现 3 缺陷，逐一实测核实后修复。
+
+- **变更**: PATCH bump — bug 修复（行为变化必须 bump）
+- **缺陷 A (P1)**: incident-loop.py verify() 硬编码 `["bash",` — 纯系统 PATH（CI/任务计划/非 Git Bash 启动的 python）下 WinError 2 → verify 恒 degraded，学习闭环不可用
+  - `_find_bash()` — shutil.which → Git 安装显式路径 → None（fail-open degraded）
+  - `_bash_env()` — 自包含 subprocess 环境（Git bins + sys.executable 目录 + WindowsApps），hook 依赖链 bash/cat/python3 全部显式可达
+  - 同款修复 attach.py `_run_parseable`（dev doc 遗漏，审计补漏）
+  - 测试: 受限 PATH 断言（red degraded → green closed，8/8）
+- **缺陷 B (P1)**: version.log 缺失 — 补写 4.6.0 首发 + 4.6.1 两条，五件套齐全
+- **缺陷 C (P1)**: D313-D315 共 4 提交未推送 — 随本版本推送落库
+- **P2-1**: hook-git-detect.test.sh EXIT trap 清窗（中断残留 → 下次首测失败）
+- **关联 incident**: INC-20260802-stash（verify 闭环案例）
+- **作者**: Claude (D316)
+- **验证**: incident-loop 8/8 | hook-git-detect 13/13 | pre-commit 12 组 | 推送后 origin..HEAD 空
+
 ## V4.6.0 (2026-08-04) — 控制塔独立化正式首发
 
 > M1-M5 全部落地 + 独立化底座 + 日志五件套 + 学习闭环。控制塔从"session 触发的脚本集合"升级为**独立常驻系统**（hook 轻量触发，不真常驻——常驻 daemon 延后到产品化阶段）。

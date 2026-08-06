@@ -18,6 +18,7 @@ scripts/control-tower/attach.py — D314 SessionStart 轻量 attach
 """
 import json
 import os
+import shutil
 import sys
 import time
 from pathlib import Path
@@ -30,6 +31,47 @@ except (AttributeError, ValueError):
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CT_DIR = Path(os.environ.get("SYNO_CT_DIR", str(REPO_ROOT / ".codex" / "control-tower")))
 LOGS_DIR = CT_DIR / "logs"
+
+# D316: 同 incident-loop.py — Git 安装仅 Git\cmd 入 PATH 时 bash 不在 PATH，
+# subprocess.run(["bash", ...]) WinError 2 → attach ④ 静默跳过。显式查找修复。
+GIT_BASH_CANDIDATES = (
+    r"C:\Program Files\Git\bin\bash.exe",
+    r"C:\Program Files\Git\usr\bin\bash.exe",
+)
+
+
+def _find_bash() -> str | None:
+    """解析 bash 可执行路径（不依赖进程 PATH）— 找不到返回 None（fail-open）。"""
+    found = shutil.which("bash")
+    if found:
+        return found
+    for cand in GIT_BASH_CANDIDATES:
+        if os.path.exists(cand):
+            return cand
+    return None
+
+
+def _bash_env(bash: str) -> dict:
+    """构造 subprocess 环境 — 同 incident-loop.py: check-brief-parseable 依赖
+    cat/grep（Git coreutils）+ python3。MSYS bash PATH 分隔符是 ':'。"""
+    root = Path(bash).parent.parent
+    if root.name == "usr":
+        root = root.parent
+    paths = [
+        str(root / "usr" / "bin"), str(root / "bin"), str(root / "cmd"),
+        str(root / "mingw64" / "bin"),
+        str(Path(sys.executable).parent),
+        str(Path.home() / "AppData" / "Local" / "Microsoft" / "WindowsApps"),
+    ]
+    msys = []
+    for p in paths:
+        s = p.replace("\\", "/")
+        if len(s) > 1 and s[1] == ":":
+            s = "/" + s[0].lower() + s[2:]
+        msys.append(s)
+    env = dict(os.environ)
+    env["PATH"] = ":".join(msys + [env.get("PATH", "")])
+    return env
 
 # fail-open 降级记录（复用既有 degraded-events.log）
 def _degraded(component: str, reason: str) -> None:
@@ -88,9 +130,13 @@ def _run_parseable(brief: str | None) -> None:
         return
     try:
         import subprocess
+        bash = _find_bash()
+        if bash is None:
+            _degraded("attach.parseable", "bash 不可用 — 跳过 brief 契约检查 (fail-open)")
+            return
         subprocess.run(
-            ["bash", str(REPO_ROOT / "scripts" / "workflow" / "check-brief-parseable.sh"), brief],
-            capture_output=True, timeout=10,
+            [bash, str(REPO_ROOT / "scripts" / "workflow" / "check-brief-parseable.sh"), brief],
+            capture_output=True, timeout=10, env=_bash_env(bash),
         )
     except Exception as exc:
         _degraded("attach.parseable", str(exc))
