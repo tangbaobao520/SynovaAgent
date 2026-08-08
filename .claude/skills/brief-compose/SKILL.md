@@ -35,16 +35,24 @@ description: 撰写符合控制塔 pre-commit 门禁的 task brief（6 字段 + 
 - 无扩展名的运行时文件（current-brief/bypass.log 等）**不能写进 exclude**（排除项检查要求扩展名）——直接不声明、不暂存
 - 排除项声明的文件 = 承诺不改 = 暂存里绝不能出现
 
-## 完成后验证
+## 完成后验证（写完必须全部执行——缺一步 = 自检不完整）
 
 ```bash
-bash scripts/workflow/check-brief-parseable.sh .claude/task-briefs/<name>.md   # Q2 可解析/#CRITERIA/架构层/Done
+# ① 排除项格式（最常漏——D316/D317 都因"自检没覆盖这条"被 pre-commit 拦）
+bash scripts/check-plan-integrity.sh
+# ② 解析性 4 项（Q2/#CRITERIA/架构层/Done）
+bash scripts/workflow/check-brief-parseable.sh .claude/task-briefs/<name>.md
 echo "<完整文件名>" > .claude/current-brief
-bash scripts/pre-commit-check.sh   # 12 组全过才算格式过关
+# ③ 12 组物理门禁（最终裁决）
+bash scripts/pre-commit-check.sh
 ```
+
+> ⚠️ 教训（D317）: check-brief-parseable.sh 通过 ≠ 门禁全过——排除项检查在
+> check-plan-integrity.sh（组 6）。自检必须跑①+②+③全链，不能只跑②。
 
 ## 历史案例索引
 - D313: exclude 行缺具体文件名 → 组 6 拦
 - D314: include/exclude 自相矛盾（baseline-check.sh）→ G12 拦
 - D315: current-brief 无扩展名进 exclude → 拦
 - D316: "不改 src/ 任何文件"第一 token 无扩展名 → 拦
+- D317: 同上坑第二次踩（skill 有反例但完成验证缺 ①）→ 补全验证链
