@@ -11,6 +11,21 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V4.6.2 (2026-08-07) — D317 修复（G12b/brief 解析 CI 红）
+
+> Codex 审计（SYNOVA-IMPL-D317）发现 D316 push 后 CI Iron Laws 红（run 31067628720）。缺陷 A 用 worktree 模拟 CI 干净检出完整复现。
+
+- **变更**: PATCH bump — 门禁行为变化（回退过滤）
+- **缺陷 A (P0)**: CI 干净检出（无 staged）时 resolver 最终回退按文件名日期前缀选最新 = D286（旧格式 criteria=null）→ G12b 硬阻断 → Iron Laws 红
+  - resolver 最终回退改"最新日期→最早逐个 brief_parser 验证 criteria A-D，选第一个可解析"
+  - 全部不可解析 / python 不可用 → exit 1（fail-open → G12b 跳过），绝不静默返回坏 brief
+  - brief_parser 定位改脚本相对路径（$ROOT 指向临时 repo 时无解析器——测试隔离暴露）
+- **缺陷 B (P1)**: PYBIN 跨平台回退（python3→python→py，全无 fail-open skip + degraded）——本机实测 python3 可用（WindowsApps shim），按防御性增强修复
+- **测试**: resolve-commit-brief.test.sh 新建 11/11（red 5 失败 → green）；brief-parseable.test.sh 12/12（+4 断言）
+- **验证**: worktree 模拟 CI 干净检出 pre-commit exit 0（修复前 exit 1）；audit 基线 439 FAIL 不变
+- **作者**: Claude (D317)
+- **关联 incident**: INC-20260802-stash（历史闭环案例）
+
 ## V4.6.1 (2026-08-05) — D316 修复（incident-loop 跨平台 + version.log 补写）
 
 > Codex 审计（SYNOVA-IMPL-D316）发现 3 缺陷，逐一实测核实后修复。

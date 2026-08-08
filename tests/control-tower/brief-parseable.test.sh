@@ -26,6 +26,7 @@ pass() { PASS=$((PASS + 1)); echo "  ✅ $1"; }
 fail() { FAIL=$((FAIL + 1)); echo "  ❌ $1" >&2; }
 assert_contains() { if echo "$1" | grep -qF "$2"; then pass "$3"; else fail "$3 — 未找到: $2"; fi; }
 assert_exit() { if [ "$1" = "$2" ]; then pass "$3 (exit=$2)"; else fail "$3 — 期望 exit=$1 实际=$2"; fi; }
+assert_not_contains() { if echo "$1" | grep -qF "$2"; then fail "$3 — 不应包含: $2"; else pass "$3"; fi; }
 
 mkdir -p "$TMP_DIR"
 rm -f "$TMP_DIR"/bp-*.md 2>/dev/null || true
@@ -100,6 +101,19 @@ if [ -f "$REPO_DIR/.claude/task-briefs/D312-baseline-tools.md" ]; then
 else
   fail "D312 brief 不存在"
 fi
+echo ""
+
+# ── 7. D317: legacy brief 仅报真实缺失（非 4 项假失败）+ PYBIN 断言 ──
+echo "── 7. D317 legacy brief 回归 + PYBIN ──"
+if [ -f "$REPO_DIR/.claude/task-briefs/2026-08-02-D286-GraphStore-unify.md" ]; then
+  OUT=$(bash "$CHECKER" "$REPO_DIR/.claude/task-briefs/2026-08-02-D286-GraphStore-unify.md" 2>&1) || true
+  assert_contains "$OUT" "#CRITERIA 缺失" "legacy brief 报 #CRITERIA 缺失（真实缺失项）"
+  assert_not_contains "$OUT" "Q2 不可解析" "legacy brief 不报 Q2 假失败（python 可用时）"
+  assert_not_contains "$OUT" "架构层未标注" "legacy brief 不报架构层假失败（D286 有 L4）"
+else
+  fail "D286 brief 不存在"
+fi
+assert_contains "$(grep -m1 '^PYBIN=' "$CHECKER" || echo '')" "PYBIN=" "checker 有 PYBIN 解析（D317 跨平台回退）"
 echo ""
 
 echo "═══════════════════════════════════════════════════════════"

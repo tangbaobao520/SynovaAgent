@@ -26,6 +26,18 @@ REPO_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PARSER="$REPO_DIR/scripts/control-tower/brief_parser.py"
 DEGRADED_LOG="$REPO_DIR/.codex/control-tower/logs/degraded-events.log"
 
+# D317: Windows 部分机器无 python3.exe（仅 python / py -3）→ 回退；全无 → fail-open 跳过
+PYBIN=""
+for _c in python3 python py; do
+  if command -v "$_c" >/dev/null 2>&1; then PYBIN="$_c"; break; fi
+done
+if [ -z "$PYBIN" ]; then
+  mkdir -p "$(dirname "$DEGRADED_LOG")"
+  echo "{\"time\": \"$(date -u +%Y-%m-%dT%H:%M:%S+00:00)\", \"component\": \"check-brief-parseable\", \"reason\": \"python 不可用 — 跳过 (fail-open)\"}" >> "$DEGRADED_LOG" 2>/dev/null || true
+  echo "[check-brief-parseable] ⚠️  python 不可用 — 跳过 (fail-open)"
+  exit 0
+fi
+
 BRIEF="${1:-}"
 if [ -z "$BRIEF" ]; then
   BRIEF=$(bash "$REPO_DIR/scripts/workflow/resolve-commit-brief.sh" "" 2>/dev/null | head -1 || true)
@@ -42,38 +54,38 @@ fi
 FAILURES=""
 
 # ① Q2 可解析
-Q2_OUT=$(python3 "$PARSER" --all "$BRIEF" 2>/dev/null || echo '{"parseable": false}')
+Q2_OUT=$("$PYBIN" "$PARSER" --all "$BRIEF" 2>/dev/null || echo '{"parseable": false}')
 if echo "$Q2_OUT" | grep -q '"parseable": false'; then
   FAILURES="${FAILURES}  Q2 不可解析（brief_parser 失败）\n"
 else
-  INCLUDE_N=$(echo "$Q2_OUT" | python3 -c "import json,sys; print(len(json.load(sys.stdin).get('q2_include', [])))" 2>/dev/null || echo 0)
+  INCLUDE_N=$(echo "$Q2_OUT" | "$PYBIN" -c "import json,sys; print(len(json.load(sys.stdin).get('q2_include', [])))" 2>/dev/null || echo 0)
   if [ "${INCLUDE_N:-0}" -eq 0 ]; then
     FAILURES="${FAILURES}  Q2 做什么 无路径条目（至少 1 条）\n"
   fi
 fi
 
 # ② #CRITERIA 必填
-CRITERIA=$(echo "$Q2_OUT" | python3 -c "import json,sys; print(json.load(sys.stdin).get('criteria') or '')" 2>/dev/null || echo "")
+CRITERIA=$(echo "$Q2_OUT" | "$PYBIN" -c "import json,sys; print(json.load(sys.stdin).get('criteria') or '')" 2>/dev/null || echo "")
 if [ -z "$CRITERIA" ]; then
   FAILURES="${FAILURES}  #CRITERIA 缺失（必填 A-D）\n"
 fi
 
 # ③ 架构层（有值即通过 — 基础设施类任务无 L1-5；代码任务应标 L1-5）
-LAYER=$(echo "$Q2_OUT" | python3 -c "import json,sys; print(json.load(sys.stdin).get('layer') or '')" 2>/dev/null || echo "")
+LAYER=$(echo "$Q2_OUT" | "$PYBIN" -c "import json,sys; print(json.load(sys.stdin).get('layer') or '')" 2>/dev/null || echo "")
 if [ -z "$LAYER" ]; then
   FAILURES="${FAILURES}  架构层未标注（当前: 空）\n"
 fi
 
 # ④ Done ≥1
-DONE_N=$(echo "$Q2_OUT" | python3 -c "import json,sys; print(json.load(sys.stdin).get('done_count', 0))" 2>/dev/null || echo 0)
+DONE_N=$(echo "$Q2_OUT" | "$PYBIN" -c "import json,sys; print(json.load(sys.stdin).get('done_count', 0))" 2>/dev/null || echo 0)
 if [ "${DONE_N:-0}" -eq 0 ]; then
   FAILURES="${FAILURES}  Done 标准无条目（至少 1 条）\n"
 fi
 
 # ⑤ 模板同源自检（模板输出应能被同源解析）
 TMP_BRIEF="$REPO_DIR/.codex/control-tower/tmp/bp-template-check.md"
-if BRIEF_FILE="$TMP_BRIEF" TASK_DESC="self-check" python3 "$REPO_DIR/scripts/workflow/generate-task-brief.py" > /dev/null 2>&1; then
-  TMP_OUT=$(python3 "$PARSER" --all "$TMP_BRIEF" 2>/dev/null || echo '{"parseable": false}')
+if BRIEF_FILE="$TMP_BRIEF" TASK_DESC="self-check" "$PYBIN" "$REPO_DIR/scripts/workflow/generate-task-brief.py" > /dev/null 2>&1; then
+  TMP_OUT=$("$PYBIN" "$PARSER" --all "$TMP_BRIEF" 2>/dev/null || echo '{"parseable": false}')
   if echo "$TMP_OUT" | grep -q '"parseable": false'; then
     FAILURES="${FAILURES}  模板输出不可被同源解析器解析（模板-解析器漂移）\n"
   fi

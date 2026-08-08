@@ -22,8 +22,21 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 set +e
 
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+# D317: brief_parser 是 resolver 的兄弟组件（同仓库）——不能用 $ROOT 定位，
+# 测试隔离（临时 repo）或 ROOT 与脚本异仓库时 $ROOT 下没有解析器。
+RESOLVER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PARSER="$RESOLVER_DIR/../control-tower/brief_parser.py"
+# Windows python 不认 MSYS 路径（/d/...）→ cygpath 转 C:/...（sys.path 注入用）
+PARSER_DIR_W="$(cygpath -w "$RESOLVER_DIR/../control-tower" 2>/dev/null || echo "$RESOLVER_DIR/../control-tower")"
 TODAY=$(date +%Y-%m-%d)
 STAGED="${1:-}"
+
+# D317: PYBIN 跨平台 — Windows 部分机器无 python3.exe（仅 python / py -3）。
+# 本机实测 python3 可用（WindowsApps shim），但防御性回退防精简 Git/CI runner。
+PYBIN=""
+for _c in python3 python py; do
+  if command -v "$_c" >/dev/null 2>&1; then PYBIN="$_c"; break; fi
+done
 
 # ── current-brief (当日有效) ──
 CUR=""
@@ -45,8 +58,12 @@ if [ -z "$ALL_TODAY" ] && [ -z "$CUR" ]; then
   exit 1
 fi
 
-# ── 认领判定 (单次 python3) ──
-RESULT=$(python3 -c "
+# ── 认领判定 (单次 python) ──
+if [ -z "$PYBIN" ]; then
+  # D317: python 不可用 → 无法认领 → 直接走最终回退（回退同样无 python 时 exit 1 fail-open）
+  RESULT=""
+else
+RESULT=$("$PYBIN" -c "
 import re, sys
 sys.path.insert(0, r'$ROOT/scripts/control-tower')
 try:
@@ -108,19 +125,45 @@ if cur:
     print(cur)
     sys.exit(0)
 " 2>/dev/null || true)
+fi
 
 if [ -n "$RESULT" ] && [ -f "$RESULT" ]; then
   echo "$RESULT"
   exit 0
 fi
 
-# 最终回退: 文件名日期前缀最新的 brief
-# 注意: 不能按 mtime — CI 干净检出时所有文件 mtime 相同, 随机选中垃圾 brief
-# (phase34-nodate.md 事故); 按文件名日期前缀取最新, 无日期前缀的垃圾文件被排除
-NEWEST_DATE=$(find "$ROOT/.claude/task-briefs/" -maxdepth 1 -name "*.md" -printf '%f\n' 2>/dev/null \
-  | grep -oE '^[0-9]{4}-[0-9]{2}-[0-9]{2}' | sort | tail -1)
-if [ -n "$NEWEST_DATE" ]; then
-  LAST=$(find "$ROOT/.claude/task-briefs/" -maxdepth 1 -name "${NEWEST_DATE}-*.md" 2>/dev/null | sort | tail -1)
-  [ -n "$LAST" ] && { echo "$LAST"; exit 0; }
+# D317 最终回退: 最新日期 → 最早, 用 brief_parser 验证可解析性 (criteria A-D),
+# 选第一个可解析的。全部不可解析或 python 不可用 → exit 1 (fail-open → G12b 跳过),
+# 绝不静默返回坏 brief。
+# 背景: CI 干净检出无 staged → 认领为空 → 旧逻辑按日期前缀选最新 = D286 (旧格式,
+# criteria=null) → G12b 硬阻断 → Iron Laws 红 (D317 根因)。
+# 注意: 不能按 mtime — CI 干净检出时所有文件 mtime 相同 (phase34-nodate.md 事故)。
+# 性能: 单次 python 批量解析（281 文件 × 逐文件起 python 进程 = 分钟级超时）。
+if [ -z "$PYBIN" ]; then
+  exit 1
 fi
+RESULT=$("$PYBIN" -c "
+import os, re, sys
+sys.path.insert(0, r'$PARSER_DIR_W')
+from brief_parser import parse_criteria
+
+briefs = []
+for f in os.listdir(r'$ROOT/.claude/task-briefs/'):
+    if not f.endswith('.md'):
+        continue
+    m = re.match(r'(\d{4}-\d{2}-\d{2})', f)
+    if m:
+        briefs.append((m.group(1), f))
+briefs.sort(key=lambda x: x[0], reverse=True)
+for _d, _f in briefs:
+    try:
+        text = open(os.path.join(r'$ROOT/.claude/task-briefs/', _f), encoding='utf-8', errors='replace').read()
+    except OSError:
+        continue
+    if parse_criteria(text):
+        print(os.path.join(r'$ROOT/.claude/task-briefs/', _f))
+        sys.exit(0)
+sys.exit(1)
+" 2>/dev/null || true)
+[ -n "$RESULT" ] && { echo "$RESULT"; exit 0; }
 exit 1
