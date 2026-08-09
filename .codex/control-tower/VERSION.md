@@ -11,6 +11,16 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V4.7.0 (2026-08-09) — D318+D319+D320 批次（git tag 自动化 + 双机身份 + 仪表盘 git 化）
+
+> 批次统一 MINOR bump——D318/D319/D320 三个任务的行为变化合并为一个版本。版本编排由 D319 独占。
+
+- **变更**: MINOR bump — 新机制（git tag 层 + 双机身份 + 仪表盘 git 化）
+- **D319 (git tag 自动化)**: synova-commit 提交成功后自动为 VERSION.md 最新版本打 annotated tag + version.log 自动追加 + push --follow-tags；pre-push 新增门禁 6 附挂 tag 一致性检查（VERSION.md 最新版本必须已有对应 tag，否则硬阻断）；历史回填 V4.6.0/V4.6.1/V4.6.2 三个 annotated tags（c5d8d15/fdad612/5b93579）
+- **测试**: tag-consistency.test.sh 12/12（red 10 失败 → green；V9.9.9 临时 repo 隔离 + SYNO_ 注入缝）
+- **验证**: pre-commit 12 组 | audit 基线 439 FAIL 不变 | git ls-remote --tags origin 含新 tag
+- **作者**: Claude (D319)
+
 ## V4.6.2 (2026-08-07) — D317 修复（G12b/brief 解析 CI 红）
 
 > Codex 审计（SYNOVA-IMPL-D317）发现 D316 push 后 CI Iron Laws 红（run 31067628720）。缺陷 A 用 worktree 模拟 CI 干净检出完整复现。

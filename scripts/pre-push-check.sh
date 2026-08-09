@@ -24,6 +24,47 @@ set -euo pipefail
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; RESET='\033[0m'
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
+# ═══ D319: VERSION.md 最新版本必须有对应 tag ═══
+# 版本事实与 git 对齐: bump 与代码同 commit（VERSION.md 规则），tag 由
+# synova-commit 提交成功后自动创建（annotated）。push 前校验: 最新版本无
+# tag → 硬阻断（提示先 synova-commit）。VERSION.md 缺失/无版本标题 → fail-open。
+# SYNO_TAG_ONLY=1 测试注入: 只跑本检查（tag-consistency.test.sh 隔离单测）。
+
+check_tag_consistency() {
+  # VERSION.md 跟随 cwd 仓库（git rev-parse --show-toplevel）——测试隔离需要，
+  # 真实运行 cwd 即仓库根，与固定路径等价
+  local REPO_ROOT=""
+  REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "$SCRIPT_DIR/..")
+  local VERSION_MD="${SYNO_VERSION_MD:-$REPO_ROOT/.codex/control-tower/VERSION.md}"
+  local ver=""
+  echo -e "${CYAN}── D319: 版本 tag 一致性 ─────────────────────────────${RESET}"
+  if [[ ! -f "$VERSION_MD" ]]; then
+    echo -e "  ${YELLOW}⚠️  VERSION.md 缺失 — tag 检查跳过 (fail-open)${RESET}"
+    return 0
+  fi
+  ver=$(grep -oE '^## V[0-9]+\.[0-9]+\.[0-9]+' "$VERSION_MD" | head -1 | awk '{print $2}')
+  if [[ -z "$ver" ]]; then
+    echo -e "  ${YELLOW}⚠️  VERSION.md 无版本标题 — tag 检查跳过 (fail-open)${RESET}"
+    return 0
+  fi
+  if git tag -l "$ver" | grep -q "$ver"; then
+    echo -e "  ${GREEN}✅ D319: VERSION.md 最新版本 $ver 已有对应 tag${RESET}"
+    return 0
+  fi
+  echo -e "  ${RED}❌ D319: VERSION.md 最新版本 $ver 缺少对应 tag${RESET}"
+  echo -e "  ${RED}    请先运行 synova-commit（提交成功后自动打 tag）或手动: git tag -a $ver -m \"bump $ver\"${RESET}"
+  return 1
+}
+
+# 测试注入: 只跑 D319 tag 一致性检查（tag-consistency.test.sh 用）
+if [[ "${SYNO_TAG_ONLY:-}" == "1" ]]; then
+  set +e
+  check_tag_consistency
+  EC=$?
+  set -e
+  exit "$EC"
+fi
+
 echo ""
 echo "═══════════════════════════════════════════════════════════"
 echo "  Loop Engineering V4.5.1 — pre-push (secrets + golden-case + vitest)"
@@ -161,6 +202,14 @@ if [[ -f "$BASELINE_CHECK" ]]; then
   fi
 else
   echo -e "  ${YELLOW}⚠️  baseline-check.sh 缺失 — 基线展示跳过 (fail-open)${RESET}"
+fi
+
+# ═══ 门禁 6 附挂: 版本 tag 一致性 (D319 — 硬阻断) ═══
+echo ""
+if ! check_tag_consistency; then
+  echo ""
+  echo -e "  ${RED}❌ 版本 tag 一致性未通过 — 推送已拒绝 (D319)${RESET}"
+  exit 1
 fi
 
 echo ""

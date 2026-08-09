@@ -29,7 +29,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-PRE_COMMIT="$PROJECT_ROOT/scripts/pre-commit-check.sh"
+PRE_COMMIT="${SYNO_PRE_COMMIT:-$PROJECT_ROOT/scripts/pre-commit-check.sh}"
 BYPASS_LOG="$PROJECT_ROOT/.claude/bypass.log"
 TIMEOUT_SEC=300
 GATEKEEPER_STORE="$PROJECT_ROOT/.codex/settings/gatekeeper"
@@ -165,6 +165,56 @@ check_l8_contract_consistency() {
   fi
   echo -e "  ${GREEN}L8: PASS — contract consistency check passed${NC}"
   return 0
+}
+
+# ═══ D319: 自动 tag + version.log + push --follow-tags ═══
+# 版本权威 = .codex/control-tower/VERSION.md 最新 `## V4.x.y` 标题。
+# commit 成功后: 无 tag → git tag -a（annotated 带作者/消息, 审计可溯）+
+# control_tower_log.py version 追加 version.log；push 用 --follow-tags。
+# 全部 fail-open: VERSION.md 缺失/无版本标题/git tag 失败 → 提示不阻断。
+
+auto_tag_and_version() {
+  # VERSION.md 跟随 cwd 仓库（git rev-parse --show-toplevel）——测试隔离需要，
+  # 真实运行 cwd 即仓库根，与固定路径等价
+  local REPO_ROOT=""
+  REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "$PROJECT_ROOT")
+  local VERSION_MD="${SYNO_VERSION_MD:-$REPO_ROOT/.codex/control-tower/VERSION.md}"
+  local LOG_PY="$PROJECT_ROOT/scripts/control-tower/control_tower_log.py"
+  local ver=""
+  if [[ -f "$VERSION_MD" ]]; then
+    ver=$(grep -oE '^## V[0-9]+\.[0-9]+\.[0-9]+' "$VERSION_MD" | head -1 | awk '{print $2}')
+  fi
+  if [[ -z "$ver" ]]; then
+    echo -e "  ${YELLOW}⚠ D319: VERSION.md 无版本标题 — 跳过自动 tag${NC}"
+    return 0
+  fi
+  if git tag -l "$ver" | grep -q "$ver"; then
+    echo -e "  ${GREEN}✅ D319: tag 已存在: $ver${NC}"
+    return 0
+  fi
+  if ! git tag -a "$ver" -m "bump $ver (synova-commit auto-tag)"; then
+    echo -e "  ${YELLOW}⚠ D319: 自动打 tag 失败 (git tag -a $ver) — 请手动打 tag${NC}"
+    return 0
+  fi
+  echo -e "  ${GREEN}✅ D319: 自动打 tag: $ver${NC}"
+  if [[ -f "$LOG_PY" ]]; then
+    python3 "$LOG_PY" version --version "${ver#V}" --changes "auto-tag $ver" > /dev/null 2>&1 || true
+  fi
+}
+
+push_with_tags() {
+  local branch=""
+  if ! git remote get-url origin > /dev/null 2>&1; then
+    echo -e "  ${YELLOW}⚠ D319: 无 origin remote — 跳过 push（tag 已本地创建, 请手动 push --follow-tags）${NC}"
+    return 0
+  fi
+  branch=$(git symbolic-ref --short HEAD 2>/dev/null || echo "")
+  if [[ -z "$branch" ]]; then
+    return 0
+  fi
+  if ! git push --follow-tags origin "$branch" 2>&1 | tail -5; then
+    echo -e "  ${YELLOW}⚠ D319: push 失败 — 提交与 tag 已在本地, 请手动 git push --follow-tags origin $branch${NC}"
+  fi
 }
 
 # ═══ L9: 已知错误模式自动扫描 (D201-Phase2) ═══
@@ -380,6 +430,12 @@ if [[ ! -f "$PRE_COMMIT" ]]; then
   EXIT_CODE=$?
   echo -e "${GREEN}✅ 提交完成（降级模式）${NC}"
 
+  # D319: 提交成功后自动 tag + version.log（降级路径同样执行）
+  if [[ $EXIT_CODE -eq 0 ]]; then
+    auto_tag_and_version
+    push_with_tags
+  fi
+
   # D311 M1b: 提交成功后释放写集（标记 committed）+ 阶段 CP4
   if [[ $EXIT_CODE -eq 0 && -f "$SESSION_REGISTRY" ]]; then
     python3 "$SESSION_REGISTRY" write-set --session-id "$SESSION_ID" --status $(git diff --cached --name-only 2>/dev/null | head -1) committed 2>/dev/null || true
@@ -424,6 +480,9 @@ if [[ $PRECOMMIT_EXIT -eq 0 ]]; then
 
   if [[ $COMMIT_EXIT -eq 0 ]]; then
     echo -e "${GREEN}✅ 提交完成${NC}"
+    # D319: 提交成功后自动 tag + version.log + push --follow-tags
+    auto_tag_and_version
+    push_with_tags
     # D311 M1b: 提交成功后释放写集（标记 committed）+ 阶段 CP4
     if [[ -f "$SESSION_REGISTRY" ]]; then
       COMMITTED_FILES=$(git show --name-only --format="" HEAD 2>/dev/null | grep -v '^$' | head -50 || true)
