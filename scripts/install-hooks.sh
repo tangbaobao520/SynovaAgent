@@ -1,37 +1,82 @@
 #!/bin/bash
+# D313 M5 UTF-8 强制: Windows 控制台/子进程统一 UTF-8
+export PYTHONIOENCODING=utf-8
+export LC_ALL=C.UTF-8 2>/dev/null || true
 # ═══════════════════════════════════════════════════════════════════════════════
-# install-hooks.sh — V4.5.1 Git Hooks 安装脚本
+# install-hooks.sh — D318 双机 Git Hooks 安装脚本
 #
 # 用法: bash scripts/install-hooks.sh
 #
 # 作用:
-#   将 .git/hooks/ 中的 git hook 设为从 scripts/hooks/ 加载。
-#   scripts/hooks/ 被 git 跟踪，修改后所有 session 同步。
+#   将 .git/hooks/ 中的 git hook 设为从仓库内脚本加载，全部 toplevel-relative
+#   可移植（Windows + Mac 同一脚本，无绝对路径硬编码）。
+#
+# install_hook 双模式（按 name 分派）:
+#   entry   — scripts/<name>-check.sh 门禁入口（pre-commit / pre-push / commit-msg）
+#   tracked — scripts/hooks/<name>.sh 逻辑（post-commit）
+#
+# 包装器统一 `bash "$(git rev-parse --show-toplevel)/..."` 运行时求值:
+#   旧版写死 $ROOT 绝对路径（post-commit 包装器为 Windows 盘符路径残留）→ Mac 必挂。
+#   $() 在运行时展开 → 克隆到任何机器路径均可用。
+#
+# pre-commit 包装器保留"双日志分离 + 成功标记"三段逻辑:
+#   失败 → 写 .claude/pre-commit-failures.log；成功 → 写 .claude/last-precommit-success。
+#   post-commit.sh 靠 marker 检测 --no-verify 绕过（V4.5.1 核心机制，不可丢）。
+#
+# synova-commit alias: Windows 用 Git bash.exe 绝对路径；Mac/Linux 用 bash（PATH）。
 # ═══════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 
-echo "=== SynovaAgent V4.5.1 Git Hooks 安装 ==="
+echo "=== SynovaAgent D318 Git Hooks 安装（双机可移植）==="
 mkdir -p "$ROOT/scripts/hooks"
 
 install_hook() {
   local name="$1"
+  local entry="$ROOT/scripts/${name}-check.sh"
   local tracked="$ROOT/scripts/hooks/${name}.sh"
   local target="$ROOT/.git/hooks/$name"
-  if [ ! -f "$tracked" ]; then
-    echo "  !! $tracked 不存在 — 跳过"
+  local body
+  if [ "$name" = "pre-commit" ] && [ -f "$entry" ]; then
+    # 双日志分离 + 成功标记（V4.5.1 核心，post-commit 检测 --no-verify 依赖 marker）
+    body='#!/bin/bash
+# v3.7: pre-commit wrapper — 双日志分离 + 成功标记 (D318: toplevel-relative)
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+bash "$ROOT/scripts/pre-commit-check.sh"
+EXIT_CODE=$?
+if [ $EXIT_CODE -ne 0 ]; then
+  echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) exit=$EXIT_CODE branch=$(git branch --show-current 2>/dev/null || echo unknown)" >> "$ROOT/.claude/pre-commit-failures.log"
+else
+  # 写成功标记 — post-commit 用它检测 --no-verify 绕过
+  date +%s > "$ROOT/.claude/last-precommit-success"
+fi
+exit $EXIT_CODE'
+  elif [ -f "$entry" ]; then
+    # 门禁入口（commit-msg 需 "$1" 提交信息文件；pre-push 不传参）
+    if [ "$name" = "commit-msg" ]; then
+      body='#!/bin/bash
+bash "$(git rev-parse --show-toplevel)/scripts/commit-msg-check.sh" "$1"'
+    else
+      body='#!/bin/bash
+bash "$(git rev-parse --show-toplevel)/scripts/'"$name"'-check.sh"'
+    fi
+  elif [ -f "$tracked" ]; then
+    # hooks/ 逻辑入口（post-commit）
+    body='#!/bin/bash
+exec bash "$(git rev-parse --show-toplevel)/scripts/hooks/'"$name"'.sh"'
+  else
+    echo "  !! $name 无入口（$entry / $tracked）— 跳过"
     return
   fi
-  cat > "$target" <<SCRIPT
-#!/bin/bash
-exec bash "$tracked"
-SCRIPT
+  printf '%s\n' "$body" > "$target"
   chmod +x "$target"
   echo "  ✅ $name"
 }
 
+install_hook "pre-commit"
+install_hook "commit-msg"
+install_hook "pre-push"
 install_hook "post-commit"
-# 后续新增 hook 在这里加: install_hook "pre-commit"
 
 # D201-FIX: 安装 synova-commit git alias（commit gatekeeper）
 SYNOVA_COMMIT="$ROOT/scripts/control-tower/synova-commit"
