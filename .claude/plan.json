@@ -1,19 +1,19 @@
 {
   "version": "1.0",
-  "current_phase": 1,
+  "current_phase": 3,
   "approach": "reuse",
   "principles": [
     {
-      "rule": "completion-scores.json 只允许统一 schema 生成器写 (self-diagnosis.py 任务级 + completion-engine.py 单文件判定)",
-      "verify": "grep -rn 'completion-scores.json' scripts/audit/ | grep -v completion_schema.py"
+      "rule": "删除任何 engine-core 相关文件前，必须 grep 全仓库确认零引用",
+      "verify": "grep -rn 'orchestrator-adapter\\|run-pipeline-test\\|convert-frameworks\\|audit-engine-core\\|check-empty-modules' src/ packages/ scripts/ tests/ --include='*.ts' --include='*.tsx' --include='*.js' --include='*.mjs' --include='*.sh' | grep -v node_modules"
     },
     {
-      "rule": "缺 gate-status.json 时 completion-engine 输出必须 degraded:true (禁止假 0 分)",
-      "verify": "grep -rn 'degradedReason' scripts/audit/completion-engine.py"
+      "rule": "修复断裂 import 后，必须跑 tsc --noEmit + 相关 vitest 证明通过",
+      "verify": "npx tsc --noEmit && npx vitest run tests/e2e/diagnosis-pipeline.test.ts tests/architecture/graphstore-unify.test.ts"
     },
     {
-      "rule": "新增函数必须被生产调用方引用",
-      "verify": "grep -rn 'parse_brief_file_mapping\\|validate_completion_schema\\|freshness_check' scripts/"
+      "rule": "清理完成后，全仓库 engine-core 引用只剩禁令门禁本身",
+      "verify": "grep -rn 'engine-core' src/ packages/ scripts/ tests/ --include='*.ts' --include='*.tsx' --include='*.js' --include='*.mjs' --include='*.sh' | grep -v node_modules | grep -v pre-commit-check.sh | grep -v check-bridge-files.sh | grep -v check-plan-integrity.sh | grep -v audit-rules.json"
     }
   ],
   "memory_refs": [
@@ -22,39 +22,21 @@
   "phases": [
     {
       "step": 1,
-      "action": "test",
-      "files": ["tests/control-tower/test_control_tower_truthfulness.py"],
-      "checks": {"wiring": "deferred", "test_pairing": "deferred"}
+      "action": "fix",
+      "files": ["tests/e2e/diagnosis-pipeline.test.ts", "tests/architecture/graphstore-unify.test.ts"],
+      "checks": {"wiring": "enforce", "test_pairing": "enforce"}
     },
     {
       "step": 2,
-      "action": "create",
-      "files": ["scripts/audit/completion_schema.py"],
+      "action": "delete",
+      "files": ["src/agent/orchestrator-adapter.ts", "tests/mvp-pipeline.integration.test.ts", "tests/measurement-pipeline.test.ts", "tests/expert-pipeline.test.ts"],
       "checks": {"wiring": "deferred", "test_pairing": "deferred"}
     },
     {
       "step": 3,
-      "action": "modify",
-      "files": ["scripts/audit/self-diagnosis.py"],
-      "checks": {"wiring": "deferred", "test_pairing": "deferred"}
-    },
-    {
-      "step": 4,
-      "action": "modify",
-      "files": ["scripts/audit/completion-engine.py"],
-      "checks": {"wiring": "deferred", "test_pairing": "deferred"}
-    },
-    {
-      "step": 5,
-      "action": "modify",
-      "files": ["scripts/control-tower/views/completion.py"],
-      "checks": {"wiring": "deferred", "test_pairing": "deferred"}
-    },
-    {
-      "step": 6,
-      "action": "wire",
-      "files": ["scripts/control-tower/generate-dashboard.py", ".gitignore", ".gitattributes"],
-      "checks": {"wiring": "enforce", "test_pairing": "enforce"}
+      "action": "clean",
+      "files": ["tsconfig.json", "vitest.config.ts", "packages/test-kit/"],
+      "checks": {"wiring": "enforce", "test_pairing": "deferred"}
     }
   ]
 }

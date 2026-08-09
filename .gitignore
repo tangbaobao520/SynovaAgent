@@ -31,3 +31,6 @@ docs/research/*.md
 /.codex/snapshots/
 /.codex/checkpoints/
 /.codex/dependency-graph.json
+
+# pre-commit 并行缓存 — 含扫描输出，禁止入库
+.claude/.precommit-par/

@@ -92,7 +92,7 @@ export class OntologySyncer {
         team: this.ctx.orgId,
       }, 'SOG 本体节点已创建');
     } catch (err: any) {
-      log.warn({ err: err.message }, 'SOG 同步失败（engine-core 不可用），继续非本体模式');
+      log.warn({ err: err.message }, 'SOG 同步失败（本体存储不可用），继续非本体模式');
     }
 
     return result;

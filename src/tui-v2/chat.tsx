@@ -166,11 +166,7 @@ function TuiApp({ bctx }: { bctx: BootstrapResult }) {
   const initConversationEngine = useCallback(async (prov: any) => {
     try {
       const { ConversationEngine } = await import('../agent/conversation-engine');
-      const { ToolRegistry } = await import('../agent/tools');
-      const { EngineCoreVendorAdapter } = await import('../adapters/engine-core-adapter');
-      const conv = new ConversationEngine(prov, {
-        diagnosisEngine: new EngineCoreVendorAdapter(prov, new ToolRegistry()),
-      });
+      const conv = new ConversationEngine(prov, {});
       try {
         const { createKnowledgeAgent } = await import('../l3/knowledge-agent');
         const kAgent = createKnowledgeAgent();
@@ -485,7 +481,7 @@ function TuiApp({ bctx }: { bctx: BootstrapResult }) {
         await loadGoalsIntoAggregator(sidebarAgg, db);
         syncSidebar();
       } else {
-        addAlertMessage('⚠️ 导航引擎不可用。请检查 engine-core 是否正确安装。');
+        addAlertMessage('⚠️ 导航引擎不可用。诊断引擎未返回结果，请检查 Synova 引擎配置。');
       }
       setState(prev => ({ ...prev, status: '准备就绪' }));
     }).catch((err: any) => {

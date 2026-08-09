@@ -18,15 +18,10 @@ cd "$ROOT"
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RESET='\033[0m'
 
-# 允许的白名单——这些文件是合法的 engine-core 引用
+# 允许的白名单——这些文件是合法的 engine-core 引用 (D317: 已删除文件的条目移除 — 仅剩仍存在的文件)
 ALLOWED=(
-  "src/adapters/engine-core-adapter.ts"
   "src/init/engine-context.ts"
-  "src/types/engine-core-types.ts"
-  "src/agent/orchestrator-adapter.ts"
   "src/l4/graph-bridge.ts"
-  "src/l4/entity-resolver-l2.ts"
-  "src/l4/engine-graph-store.ts"
   "src/l4/diagnosis-graph-query.ts"
 )
 

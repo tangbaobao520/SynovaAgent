@@ -71,10 +71,8 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
  
  # 3. 废弃函数引用的旧路径 (来自已知迁移)
  echo -e "${CYAN}--- 3. 已知迁移路径残留 ---${RESET}"
- KNOWN_MIGRATIONS=(
-   "src/l4/engine-graph-store.ts:packages/graph-store"
-   "packages/diagnosis-engine/src/graph-store.ts:packages/graph-store"
- )
+ # D317: engine-core 退役 — 旧迁移路径已物理删除，检查项移除
+ KNOWN_MIGRATIONS=()
  MIGRATION_ISSUES=""
  for mapping in "${KNOWN_MIGRATIONS[@]}"; do
    OLD_PATH="${mapping%%:*}"

@@ -150,12 +150,12 @@ export function initEngineContext(): void {
       warn: (...args: any[]) => log.warn(args.length > 1 ? args[1] : {}, args[0]),
       error: (...args: any[]) => log.error(args.length > 1 ? args[1] : {}, args[0]),
       fatal: (...args: any[]) => log.error(args.length > 1 ? args[1] : {}, `[FATAL] ${args[0]}`),
-      child: (_bindings: Record<string, unknown>) => createLogger('engine-core'),
+      child: (_bindings: Record<string, unknown>) => createLogger('engine-context-child'),
       level: process.env.LOG_LEVEL || 'info',
     },
   };
-  // pino child() 返回类型与 engine-core AppLogger 递归类型不兼容 — 运行时兼容
-  // engine-core 弃用 — 引擎上下文不再注入
+  // pino child() 返回类型与旧 AppLogger 递归类型不兼容 — 运行时兼容
+  // D10: engine-core 弃用 — 引擎上下文不再注入
 
   // 3. 设置存储后端 (Slice 2.2: SQLite 持久化替换内存模式)
   const storageBackend = new SqliteStorageBackend(db!);

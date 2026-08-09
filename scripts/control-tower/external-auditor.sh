@@ -198,7 +198,7 @@ for src_file in $SRC_FILES; do
 done
 
 # ═══ engine-core 引用检查（T001-A） ═══
-WHITELIST="src/adapters/engine-core-adapter.ts|src/init/engine-context.ts|src/types/engine-core-types.ts|src/agent/orchestrator-adapter.ts|src/l4/graph-bridge.ts|src/l4/entity-resolver-l2.ts|src/l4/engine-graph-store.ts|src/l4/diagnosis-graph-query.ts"
+WHITELIST="src/init/engine-context.ts|src/l4/graph-bridge.ts|src/l4/diagnosis-graph-query.ts"
 for src_file in $SRC_FILES; do
   if echo "$src_file" | grep -qE "$WHITELIST"; then continue; fi
   if git diff "$DIFF_RANGE" -U0 -- "$src_file" 2>/dev/null | grep -qP 'packages/engine-core|../../engine-core/|\.\./engine-core/'; then

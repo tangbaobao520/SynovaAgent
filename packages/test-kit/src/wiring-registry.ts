@@ -35,15 +35,6 @@ export interface WiringEntry {
 export const WIRING_REGISTRY: WiringEntry[] = [
   // ═══ L2 → L3 桥接 ═══
   {
-    moduleName: 'EngineCoreVendorAdapter',
-    package: '@synova/test-kit',
-    sourceFile: 'src/adapters/engine-core-adapter.ts',
-    expectedEntries: ['src/server.ts', 'src/tui/chat.ts'],
-    purpose: 'L2 诊断引擎桥接 — ConversationEngine 通过此适配器调用 engine-core',
-    required: true,
-    status: 'wired',
-  },
-  {
     moduleName: 'DiagnosisEngine',
     package: '@synova/test-kit',
     sourceFile: 'src/l2-interfaces/diagnosis-engine.ts',
@@ -101,7 +92,7 @@ export const WIRING_REGISTRY: WiringEntry[] = [
     purpose: 'L4 报告从 GraphStore 读取',
     required: false,
     status: 'known-broken',
-    ref: '未接线 — 报告目前通过 engine-core 渲染',
+    ref: '未接线 — 报告当前通过 Synova 自研引擎渲染',
   },
   {
     moduleName: 'CommunityReports',
