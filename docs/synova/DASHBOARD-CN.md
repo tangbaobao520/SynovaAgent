@@ -16,8 +16,8 @@ status: "由 scripts/control-tower/gen-task-board.py 生成 — 自动区为 git
 |----|-----|------|------|------|------|:---:|:---:|:---:|
 | D321 | git notes 读取独立任务 (D320 dev doc §依赖 — 生成器已留 hook… | 待办 | — | — | — | 未知 | — | — |
 | D320 | 仪表盘git化生成器 | dev doc（P1） | — | — | 2026-08-08 | 未知 | — | — |
-| D319 | git-tag自动化 | dev doc（P1） | — | — | 2026-08-08 | 未知 | — | — |
-| D318 | 双机身份与hooks可移植 | dev doc（P0） | — | — | 2026-08-08 | 未知 | — | — |
+| D319 | git-tag自动化 | dev doc（P1） | 300660e | ClawOrg-Win | 2026-08-09 | ✅ | — | — |
+| D318 | 双机身份与hooks可移植 | dev doc（P0） | c576e2b | ClawOrg-Win | 2026-08-09 | ✅ | — | — |
 | D317 | G12b-CI-Fix | dev doc（P0） | 078ccba | ClawOrg | 2026-08-08 | ✅ | — | — |
 | D316 | CT-V4.6.0-Fix | dev doc（P1） | fdad612 | ClawOrg | 2026-08-06 | ✅ | — | — |
 | D315 | utf8-batch-closeout | ✅ 已提交 | 6a5eb01 | ClawOrg | 2026-08-05 | ✅ | — | — |
@@ -204,13 +204,13 @@ status: "由 scripts/control-tower/gen-task-board.py 生成 — 自动区为 git
 > 数据源: VERSION.md + version.log + git tag（D319 后增强）。
 | 版本 | 日期/时间 | 变更 | git tag |
 |------|------------|------|:---:|
-| V4.7.0 | 2026-08-09 | D318+D319+D320 批次（git tag 自动化 + 双机身份 + 仪表盘 git 化） | — |
+| V4.7.0 | 2026-08-09 | D318+D319+D320 批次（git tag 自动化 + 双机身份 + 仪表盘 git 化） | ✅ |
 | V4.6.2 | 2026-08-07 | D317 修复（G12b/brief 解析 CI 红） | ✅ |
 | V4.6.1 | 2026-08-05 | D316 修复（incident-loop 跨平台 + version.log 补写） | ✅ |
 | V4.6.0 | 2026-08-04 | 控制塔独立化正式首发 | ✅ |
+- 4.7.0 2026-08-09T21:29:47+0800: D320 仪表盘 git 化
+- 4.7.0 2026-08-09T21:00:01+0800: auto-tag V4.7.0
 - 4.7.0 2026-08-09T15:37:47+0800: D318 双机身份+hooks
-- 4.6.2 2026-08-07T22:52:44+0800: G12b/brief 解析 CI 红修复 (D317)
-- 4.6.1 2026-08-05T17:37:59+0800: D316 incident-loop 跨平台 + version.log 补写
 ## CI 状态（gh run）
 > degraded: gh 不可用: failed to get runs: HTTP 401: Bad credentials (https://api.github.com/repos/tangbaobao520/SynovaAgent/actions/runs?per_p
 | Run | 工作流 | 状态 | 结论 | 关联 D# |
@@ -218,7 +218,7 @@ status: "由 scripts/control-tower/gen-task-board.py 生成 — 自动区为 git
 | — | （无 gh run 数据） | — | — | — |
 ## 同步健康（D323 预留）
 - 未推送提交: 0（origin/<branch>..HEAD）
-- 工作区变更: 323 个文件（git status --porcelain）
+- 工作区变更: 315 个文件（git status --porcelain）
 > D323 填充: 双机同步健康完整视图。
 <!-- AUTO:END -->
 <!-- MANUAL:START -->
