@@ -1,0 +1,24 @@
+# board-override.yaml — 手动薄层 (D320)
+# 生成器 gen-task-board.py 只读此文件; git/文件无法表达的任务事实唯一入口。
+# 语法 (YAML 子集):
+#   priorities:  - Dxxx: P0|P1|P2    覆盖/补充 dev doc 头优先级
+#   statuses:    - Dxxx: <任意状态文案>  覆盖派生状态 (仅用于确需手写覆盖的场景)
+#   blocked:     - Dxxx: <原因>       标记受阻任务, 原因写入状态列
+#   backlog:     - <任意待办文本>      加入任务表尾部 (D# 开头自动识别)
+#   decisions:   - <任意决策文本>      决策记录, 渲染在任务表下方
+# 注意: 不重复 dev doc 头已表达的事实 (状态/日期/优先级从 dev doc 头派生)。
+
+priorities:
+  # 示例: - D318: P0   # dev doc 头已是 P0, 无需重复
+
+statuses:
+  # 示例: - D330: 🔴 blocked   # 仅在 git/dev doc 无法表达时使用
+
+blocked:
+  # 示例: - D330: 等待创始人决策
+
+backlog:
+  - D321: git notes 读取独立任务 (D320 dev doc §依赖 — 生成器已留 hook 点)
+
+decisions:
+  # 示例: - D320: 仪表盘自动区不再手写, 事实变更走 override / git 提交
