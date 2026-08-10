@@ -34,4 +34,45 @@ else
   echo -e "${GREEN}✅ Commit 格式正确${RESET}"
   echo -e "${YELLOW}   ⚠ 建议在 commit body 中包含 issue/task 引用 (如 #C1, P1-2, SOG-001)${RESET}"
 fi
+
+# ── D328: 提交声明-内容一致性（防并行劫持）──
+# 背景: D320 劫持 — chore(D318) 提交带走 D320 的 8 个文件, G12(范围)与格式校验全过。
+# 本检查绑定"消息声明的 D#"与"暂存文件真实认领 brief 的 D#": 不一致 → 硬阻断。
+# 语义 (dev doc §3.1/§4, 修正 §3.2 代码):
+#   - 两者都存在且不一致 → exit 1（劫持特征）
+#   - 消息无 D# 但认领 brief 有 D# → exit 1（提交未声明任务归属）
+#   - Merge/Revert（上方已跳）/无暂存/无认领 brief/认领 brief 无 D#/无真实认领 → fail-open
+# 消息文件缺失/异常 → MSG_DID 空 → 一致性检查 fail-open（铁律 24: 显式兜底）
+MSG_DID=$(head -1 "$1" 2>/dev/null | grep -oE '\(D[0-9]+\)' | head -1 | tr -d '()') || true # swallow-ok: 消息文件异常时声明为空 → fail-open 不误伤
+STAGED_LIST=$(git diff --cached --name-only 2>/dev/null || true)
+if [ -n "$STAGED_LIST" ]; then
+  # D317 自包含定位: 临时 repo 测试/异仓库时 git rev-parse ROOT 下无脚本目录
+  MSG_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  # Windows/MSYS 边界: python 无法解析 MSYS 路径 (/d/...), 须 cygpath -w 转换
+  # (对齐 resolve-commit-brief.sh 的 PARSER_DIR_W 模式 — D317 教训)
+  MSG_DIR_W="$(cygpath -w "$MSG_DIR" 2>/dev/null || echo "$MSG_DIR")"
+  CLAIM_BRIEF=$(bash "$MSG_DIR/workflow/resolve-commit-brief.sh" "$STAGED_LIST" 2>/dev/null | head -1 || true)
+  if [ -n "$CLAIM_BRIEF" ] && [ -f "$CLAIM_BRIEF" ]; then
+    # 防假阳性: 仅当 resolver 返回的 brief 真实认领了 ≥1 个暂存文件才比较 D#；
+    # 走最终回退（无真实认领）时跳过——未认领场景由 G12 兜底阻断。
+    GENUINE=$(echo "$STAGED_LIST" | python3 -c "
+import re, sys
+sys.path.insert(0, r'$MSG_DIR_W/control-tower')
+from brief_parser import parse_q2, match_path
+staged = [s for s in sys.stdin.read().split('\n') if s.strip()]
+text = open(r'$CLAIM_BRIEF', encoding='utf-8', errors='replace').read()
+inc = parse_q2(text).get('include', [])
+print(1 if any(match_path(s, p) for s in staged for p in inc) else 0)
+" 2>/dev/null || echo 0)
+    if [ "$GENUINE" = "1" ]; then
+      CLAIM_DID=$(basename "$CLAIM_BRIEF" .md | grep -oE 'D[0-9]+' | head -1 || true)
+      if [ -n "$CLAIM_DID" ] && { [ -z "$MSG_DID" ] || [ "$CLAIM_DID" != "$MSG_DID" ]; }; then
+        echo -e "${RED}❌ D328: 提交声明(${MSG_DID:-无})与暂存文件归属($CLAIM_DID)不一致 — 疑似并行劫持${RESET}"
+        echo "   认领 brief: $CLAIM_BRIEF"
+        echo "   请确认提交的是本任务文件，或拆分暂存区后再提交"
+        exit 1
+      fi
+    fi
+  fi
+fi
 exit 0
