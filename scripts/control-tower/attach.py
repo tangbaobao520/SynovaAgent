@@ -10,6 +10,7 @@ scripts/control-tower/attach.py — D314 SessionStart 轻量 attach
     ③ self-health.py 轻量跑（health.json）
     ④ brief 存在且 brief-filled → check-brief-parseable（brief 契约前置）
     ⑤ incident.log 未闭环提示
+    ⑥ 写 session 专属 current-brief（.claude/current-brief.<sid>，D329）
 
 全组件 try/except → fail-open，总时长 <2s（超时降级，绝不拖慢会话启动）。
 
@@ -142,6 +143,32 @@ def _run_parseable(brief: str | None) -> None:
         _degraded("attach.parseable", str(exc))
 
 
+def _run_current_brief_snapshot(session_id: str, brief: str | None) -> None:
+    """D329: 写 session 专属 current-brief（.claude/current-brief.<sid>）。
+
+    session 专属 current-brief 的写入方（dev doc §3.1/§6 DS5）。内容 = brief
+    文件名（对齐全局 current-brief 格式，resolver 读同名格式）。来源优先
+    --brief 参数，否则快照全局 current-brief（会话启动时的活跃 brief）；
+    均无 → 不写（无 brief 可快照，不产生空文件）。fail-open: 写失败仅
+    degraded 记录，绝不阻断会话启动（铁律 24/31）。
+    """
+    try:
+        brief_name = Path(brief).name if brief else None
+        if not brief_name:
+            global_cb = REPO_ROOT / ".claude" / "current-brief"
+            if global_cb.exists():
+                brief_name = global_cb.read_text(
+                    encoding="utf-8", errors="replace"
+                ).strip() or None
+        if not brief_name:
+            return
+        (REPO_ROOT / ".claude" / f"current-brief.{session_id}").write_text(
+            brief_name + "\n", encoding="utf-8"
+        )
+    except Exception as exc:
+        _degraded("attach.current-brief", str(exc))
+
+
 def _run_incident_hint(session_id: str) -> None:
     """⑤ 未闭环 incident 提示（fail-open）。"""
     try:
@@ -167,6 +194,7 @@ def main() -> int:
 
     start = time.time()
     _run_register(args.session_id)
+    _run_current_brief_snapshot(args.session_id, args.brief)
     _run_logs(args.session_id, args.tool)
     _run_health()
     _run_parseable(args.brief)

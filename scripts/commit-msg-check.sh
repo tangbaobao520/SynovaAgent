@@ -51,11 +51,23 @@ if [ -n "$STAGED_LIST" ]; then
   # Windows/MSYS 边界: python 无法解析 MSYS 路径 (/d/...), 须 cygpath -w 转换
   # (对齐 resolve-commit-brief.sh 的 PARSER_DIR_W 模式 — D317 教训)
   MSG_DIR_W="$(cygpath -w "$MSG_DIR" 2>/dev/null || echo "$MSG_DIR")"
+  # D329 (D328 P2 折入): PYBIN 跨平台回退 — 裸 python3 在精简 Git/CI runner
+  # 上不存在（仅 python / py -3）。对齐 resolve-commit-brief.sh 的 PYBIN 循环。
+  # 全无 python → 显式 degraded 提示（fail-open skip，不静默 — 铁律 24/31）。
+  # 注意: 必须放在 resolver 调用之前 — resolver 无 python 时必退空（exit 1），
+  # 若把提示放进 CLAIM_BRIEF 非空条件内，无 python 场景提示永不触发 = 静默 skip。
+  PYBIN=""
+  for _c in python3 python py; do
+    if command -v "$_c" >/dev/null 2>&1; then PYBIN="$_c"; break; fi
+  done
+  if [ -z "$PYBIN" ]; then
+    echo -e "${YELLOW}⚠ D328 一致性检查跳过: python 不可用（fail-open 显式提示，不静默）${RESET}"
+  fi
   CLAIM_BRIEF=$(bash "$MSG_DIR/workflow/resolve-commit-brief.sh" "$STAGED_LIST" 2>/dev/null | head -1 || true)
-  if [ -n "$CLAIM_BRIEF" ] && [ -f "$CLAIM_BRIEF" ]; then
+  if [ -n "$CLAIM_BRIEF" ] && [ -f "$CLAIM_BRIEF" ] && [ -n "$PYBIN" ]; then
     # 防假阳性: 仅当 resolver 返回的 brief 真实认领了 ≥1 个暂存文件才比较 D#；
     # 走最终回退（无真实认领）时跳过——未认领场景由 G12 兜底阻断。
-    GENUINE=$(echo "$STAGED_LIST" | python3 -c "
+    GENUINE=$(echo "$STAGED_LIST" | "$PYBIN" -c "
 import re, sys
 sys.path.insert(0, r'$MSG_DIR_W/control-tower')
 from brief_parser import parse_q2, match_path

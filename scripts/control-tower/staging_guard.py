@@ -7,6 +7,8 @@ scripts/control-tower/staging_guard.py — D311 暂存区隔离 (M1b)
 （A session 的 git commit 把 B session 已暂存的文件一并提交）。
 
 判定逻辑（优先级）:
+  0. 认领制（D329）: 暂存文件被"真实认领 brief（Q2 include 命中）的 D# ≠ 本 session
+     任务 D#"认领 → **block**（独立防线，不依赖 registry 登记时序；own_set 判定之前）
   1. 暂存文件 ∈ 他人活跃 session 写集 → **block**（输出 owner 归属）
   2. 暂存文件 ∈ 自己写集 → pass
   3. 暂存文件无任何认领 → **warn**（stray_files，不硬阻断）
@@ -22,6 +24,8 @@ fail-open（铁律 24/31 + 设计文档 §2.1.5）:
 """
 import argparse
 import json
+import re
+import subprocess
 import sys
 from pathlib import Path
 from typing import List, Optional
@@ -56,6 +60,43 @@ def check_staging(
         "stray_files": [],
         "degraded": False,
     }
+
+    # ── D329: 认领制硬校验 — 文件被"认领 brief 的 D# ≠ 本 session 任务 D#"认领 → block ──
+    # 必须放在 own_set 放行之前：否则 synova-commit 的 write-set 预登记会让被声明文件
+    # 先进 own_set 直接 pass（D329 自查发现的设计缺陷）。registry 写集判定保留（防已登记
+    # 占用），认领制判定是独立防线（不依赖登记时序）。session_id 无 D# → 跳过（不误伤）。
+    try:
+        staged_arg = "\n".join(staged_files)
+        claimed = subprocess.run(
+            ["bash", str(REPO_ROOT / "scripts/workflow/resolve-commit-brief.sh"), staged_arg],
+            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30,
+        ).stdout.strip().splitlines()
+        if claimed:
+            brief = claimed[0]
+            # 防假阳性: 仅当 brief 真实认领 ≥1 个暂存文件才比较 D#（Q2 include 命中）
+            try:
+                sys.path.insert(0, str(REPO_ROOT / "scripts" / "control-tower"))
+                from brief_parser import parse_q2, match_path
+                text = Path(brief).read_text(encoding="utf-8", errors="replace")
+                inc = parse_q2(text).get("include", [])
+                genuine = any(match_path(f, p) for f in staged_files for p in inc)
+            except Exception:
+                genuine = False
+            if genuine:
+                claim_did = re.search(r"D\d+", Path(brief).stem)
+                sess_did = re.search(r"D\d+", session_id or "")
+                # 精确相等（禁 startswith）: D3290 不能匹配 D329；session_id 无 D# → 跳过认领制判定
+                if claim_did and sess_did and claim_did.group(0) != sess_did.group(0):
+                    result["status"] = "block"
+                    result["foreign_files"].append(
+                        {"file": "<staged>", "owner_session": Path(brief).stem,
+                         "brief": brief, "reason": "认领 brief D# 与本 session 任务不一致"}
+                    )
+    except Exception as exc:  # fail-open: 认领判定异常 → degraded 记录，registry 判定兜底
+        log_degraded(reg.degraded_log, "staging-guard", f"claim check degraded: {exc}")
+        result["degraded"] = True
+        result["degraded_reason"] = f"claim check degraded: {exc}"
+
     try:
         if not reg.registry_path.exists():
             # registry 缺失 → fail-open: pass + degraded（绝不静默）

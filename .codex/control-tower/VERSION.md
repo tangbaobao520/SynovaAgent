@@ -11,6 +11,24 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V4.7.1 (2026-08-11) — D328+D329 批次（commit 一致性门禁 + session 身份独立化）
+
+> 批次统一 MINOR bump——D328/D329 两个任务的行为变化合并为一个版本。版本编排由 D329 独占（D328 提交时未 bump）。
+
+- **变更**: MINOR bump — 新机制（提交声明-内容一致性门禁 + session 身份独立化 + 认领制暂存区隔离 + current-brief 独立化）
+- **D328 (commit 声明-内容一致性门禁)**: commit-msg-check 绑定"消息声明的 D#"与"暂存文件真实认领 brief 的 D#"——不一致 → 硬阻断（防 D320 式并行劫持，已随 ea1cb71 上线）
+- **D329 (session 身份与暂存归属根治)**:
+  - `synova-commit` — 删除 SESSION_ID 自动采用认领 brief（D320 劫持根因），缺省 `SESSION_ID=TASK_ID`（显式 --session-id 优先）；write-set 登记移到 staging-guard 通过之后（防 --files 预登记"洗白"他人文件）；register 的 brief 路径按 TASK_ID 前缀查找
+  - `staging_guard.py` — 认领制硬校验：暂存文件被"真实认领 brief（Q2 include 命中）的 D# ≠ 本 session 任务 D#"认领 → block（own_set 判定之前，不依赖 registry 登记时序；精确 D# 相等，禁 startswith）
+  - `session_registry.py` — register --task-id 绑定（session ↔ 任务 D#）
+  - `resolve-commit-brief.sh` — 支持 `--session <sid>`（session 专属 current-brief 优先，无则回退全局）；内联 fallback 契约修复（parse_q2 返回 dict）
+  - `attach.py` — SessionStart 写 `.claude/current-brief.<sid>`（session 专属 current-brief 的写入方）
+  - `commit-msg-check.sh` — PYBIN 回退（D328 P2 折入: python3→python→py，全无 → 显式 degraded 提示）
+  - `.claude/current-brief*` 去跟踪（.gitignore + git rm --cached，运行时产物）
+- **测试**: staging-guard-session.test.py 10/10（劫持窗口/预登记绕过/精确匹配/resolver --session/PYBIN 回退/无 python 显式降级）
+- **验证**: pre-commit 12 组 | audit 基线 439 FAIL 不变 | as any = 0
+- **作者**: Claude (D329)
+
 ## V4.7.0 (2026-08-09) — D318+D319+D320 批次（git tag 自动化 + 双机身份 + 仪表盘 git 化）
 
 > 批次统一 MINOR bump——D318/D319/D320 三个任务的行为变化合并为一个版本。版本编排由 D319 独占。
