@@ -42,7 +42,7 @@ case "$ROLE" in
     ;;
 esac
 
-echo "=== 机器身份配置: $NAME（$ROOT）==="
+echo "=== 机器身份配置: ${NAME}（${ROOT}）==="
 
 # 1. per-clone 身份（local config）
 git -C "$ROOT" config user.name "$NAME"
@@ -66,4 +66,4 @@ echo "=== 当前配置摘要 ==="
 git -C "$ROOT" config --local --list | grep -E "user\.(name|email)|alias\.synova-commit" || true
 echo ""
 echo "✅ 机器配置完成: $NAME"
-echo "   本机所有提交将带身份 $NAME（git log --author=\"$NAME\" 可查）"
+echo "   本机所有提交将带身份 ${NAME}（git log --author=\"${NAME}\" 可查）"

@@ -56,7 +56,7 @@ if [ -n "$CHP" ]; then
     echo "     修复: git config --unset core.hooksPath"
     FAIL=$((FAIL + 1))
   else
-    echo "  ✅ core.hooksPath = $CHP（非 Windows 绝对路径）"
+    echo "  ✅ core.hooksPath = ${CHP}（非 Windows 绝对路径）"
   fi
 else
   echo "  ✅ core.hooksPath 未设置（git 默认 .git/hooks）"
