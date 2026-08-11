@@ -320,28 +320,28 @@ if [[ -z "$MESSAGE" ]]; then
   exit 1
 fi
 
-# ═══ D311: session-id 解析 (M1b 暂存区隔离) ═══
-# 缺省 → resolve-commit-brief.sh 输出 brief 的 basename 去 .md（与 D296 认领制一致）
+# ═══ D329: session-id 解析 (M1b 暂存区隔离 + 劫持根治) ═══
+# 身份 = 会话声明的任务，绝不自动采用认领 brief（D320 劫持根因: 自动采用让
+# staging-guard 把被偷文件当"自己的"）。显式 --session-id 优先。
 if [[ -z "$SESSION_ID" ]]; then
-  RESOLVED_BRIEF=$(bash "$PROJECT_ROOT/scripts/workflow/resolve-commit-brief.sh" "${FILES[*]:-}" 2>/dev/null | head -1 || true)
-  if [[ -n "$RESOLVED_BRIEF" && -f "$RESOLVED_BRIEF" ]]; then
-    SESSION_ID=$(basename "$RESOLVED_BRIEF" .md)
-  else
-    SESSION_ID="$TASK_ID"
-  fi
+  SESSION_ID="$TASK_ID"
 fi
 SESSION_REGISTRY="$PROJECT_ROOT/scripts/control-tower/session_registry.py"
 SELF_HEALTH="$PROJECT_ROOT/scripts/control-tower/self-health.py"
 STAGING_GUARD="$PROJECT_ROOT/scripts/control-tower/staging_guard.py"
 WAIT_MANAGER="$PROJECT_ROOT/scripts/control-tower/wait_manager.py"
 
+# D329: register 的 brief 路径按 TASK_ID 前缀查找实际文件（不假定 ${SESSION_ID}.md 存在）
+REGISTER_BRIEF=""
+for _b in "$PROJECT_ROOT"/.claude/task-briefs/${TASK_ID}.md "$PROJECT_ROOT"/.claude/task-briefs/${TASK_ID}-*.md; do
+  [[ -f "$_b" ]] && REGISTER_BRIEF="$_b" && break
+done
+
 # 登记本 session（CP2 开发阶段；若已存在则刷新心跳）
+# D329: write-set 登记移到 staging-guard 通过之后（防 --files 预登记"洗白"他人文件）
 if [[ -f "$SESSION_REGISTRY" ]]; then
-  python3 "$SESSION_REGISTRY" register --session-id "$SESSION_ID" --brief ".claude/task-briefs/${SESSION_ID}.md" 2>/dev/null || true
+  python3 "$SESSION_REGISTRY" register --session-id "$SESSION_ID" --brief "$REGISTER_BRIEF" --task-id "$TASK_ID" 2>/dev/null || true
   python3 "$WAIT_MANAGER" phase --session-id "$SESSION_ID" --phase CP2 2>/dev/null || true
-  if [[ ${#FILES[@]} -gt 0 ]]; then
-    python3 "$SESSION_REGISTRY" write-set --session-id "$SESSION_ID" --add "${FILES[@]}" 2>/dev/null || true
-  fi
 fi
 
 # D314: 提交前 self-health 快照（fail-open，不阻断）
@@ -380,6 +380,11 @@ for f in d.get('foreign_files',[]):
       exit 1
     fi
   fi
+fi
+
+# ═══ D329: write-set 登记（guard 通过之后 — 防 --files 预登记"洗白"他人文件）═══
+if [[ -f "$SESSION_REGISTRY" ]] && [[ ${#FILES[@]} -gt 0 ]]; then
+  python3 "$SESSION_REGISTRY" write-set --session-id "$SESSION_ID" --add "${FILES[@]}" 2>/dev/null || true
 fi
 
 # ═══ 检查暂存区 ═══

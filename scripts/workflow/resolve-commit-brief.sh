@@ -15,6 +15,7 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 #   3. 无任何认领 → current-brief (当日); 无 → 今日最新
 #
 # 用法: bash resolve-commit-brief.sh "<暂存文件列表 (换行分隔)>"
+#       bash resolve-commit-brief.sh --session <sid> "<暂存文件列表>"  (D329: session 专属 current-brief 优先)
 # 输出: brief 绝对路径; 无可用 brief → exit 1
 #
 # 性能: 认领计数用单次 python3 完成 (Windows 下逐路径 grep 子进程太慢)
@@ -31,6 +32,15 @@ PARSER_DIR_W="$(cygpath -w "$RESOLVER_DIR/../control-tower" 2>/dev/null || echo 
 TODAY=$(date +%Y-%m-%d)
 STAGED="${1:-}"
 
+# D329: --session <sid> — 优先读 session 专属 current-brief（.claude/current-brief.<sid>），
+# 无则回退全局（单 session 语义）。session 专属文件由 attach.py SessionStart 写入。
+SESSION_ID=""
+if [ "${1:-}" = "--session" ]; then
+  SESSION_ID="${2:-}"
+  shift 2
+  STAGED="${1:-}"
+fi
+
 # D317: PYBIN 跨平台 — Windows 部分机器无 python3.exe（仅 python / py -3）。
 # 本机实测 python3 可用（WindowsApps shim），但防御性回退防精简 Git/CI runner。
 PYBIN=""
@@ -40,8 +50,13 @@ done
 
 # ── current-brief (当日有效) ──
 CUR=""
-if [ -f "$ROOT/.claude/current-brief" ]; then
-  BN=$(cat "$ROOT/.claude/current-brief" 2>/dev/null | tr -d '[:space:]')
+CUR_SRC="$ROOT/.claude/current-brief"
+# D329: session 专属 current-brief 优先；无则回退全局
+if [ -n "$SESSION_ID" ] && [ -f "$ROOT/.claude/current-brief.$SESSION_ID" ]; then
+  CUR_SRC="$ROOT/.claude/current-brief.$SESSION_ID"
+fi
+if [ -f "$CUR_SRC" ]; then
+  BN=$(cat "$CUR_SRC" 2>/dev/null | tr -d '[:space:]') # swallow-ok: current-brief 缺失/读失败 → BN 空 → 走认领回退（fail-open 不阻断）
   BD=$(echo "$BN" | grep -oP '\d{4}-\d{2}-\d{2}' | head -1 || true)
   if [ -n "$BD" ] && [ "$BD" != "$TODAY" ]; then
     :  # 陈旧的 current-brief，忽略
@@ -91,7 +106,10 @@ except ImportError:
                 p = line[2:].split(':', 1)[0].split('：', 1)[0].split(' — ', 1)[0].strip()
                 if p:
                     paths.append(p)
-        return paths
+        # D329: 对齐 brief_parser.parse_q2 契约（返回 dict）——旧实现返回 list，
+        # 调用方 parse_q2(text)['include'] 在解析器缺失路径上 TypeError → 认领恒空
+        # 注意: 本段嵌入 bash 双引号串，python 字符串必须用单引号（勿在注释写双引号）
+        return {'include': paths, 'exclude': []}
     def match_path(path, pat):
         return re.search(r'(^|/)' + re.escape(pat) + r'\$', path) is not None
 

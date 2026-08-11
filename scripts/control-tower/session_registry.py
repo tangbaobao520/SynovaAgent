@@ -191,8 +191,18 @@ class SessionRegistry:
 
     # ── 变更 ──
 
-    def register(self, session_id: str, brief: str, pid: Optional[int] = None) -> dict:
-        """创建/刷新 session 条目（刷新 last_seen）。"""
+    def register(
+        self,
+        session_id: str,
+        brief: str,
+        pid: Optional[int] = None,
+        task_id: Optional[str] = None,
+    ) -> dict:
+        """创建/刷新 session 条目（刷新 last_seen）。
+
+        D329: task_id 绑定（session ↔ 任务 D#）— synova-commit 传 --task-id，
+        session 身份 = 会话声明的任务，绝不自动采用认领 brief。
+        """
 
         def fn(data):
             now = _utcnow()
@@ -201,11 +211,14 @@ class SessionRegistry:
                     s["last_seen_at"] = now
                     if pid is not None:
                         s["pid"] = pid
+                    if task_id is not None:
+                        s["task_id"] = task_id
                     return {"created": False}
             data["sessions"].append(
                 {
                     "session_id": session_id,
                     "brief": brief,
+                    "task_id": task_id,
                     "pid": pid,
                     "started_at": now,
                     "last_seen_at": now,
@@ -347,6 +360,7 @@ def main() -> int:
     p_reg.add_argument("--session-id", required=True)
     p_reg.add_argument("--brief", required=True)
     p_reg.add_argument("--pid", type=int, default=None)
+    p_reg.add_argument("--task-id", default=None)
 
     p_ws = sub.add_parser("write-set")
     p_ws.add_argument("--session-id", required=True)
@@ -379,7 +393,7 @@ def main() -> int:
 
     try:
         if args.cmd == "register":
-            result = reg.register(args.session_id, args.brief, args.pid)
+            result = reg.register(args.session_id, args.brief, args.pid, task_id=args.task_id)
         elif args.cmd == "write-set":
             status_pairs = []
             sargs = args.status or []
