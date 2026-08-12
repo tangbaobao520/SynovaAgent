@@ -59,3 +59,4 @@ Binary file .claude/bypass.log matches
 2026-08-12T21:24:59+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D331 | AGENT=claude-code
 2026-08-12T22:33:39+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D331 | AGENT=claude-code
 2026-08-12T22:36:52+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D331 | AGENT=claude-code
+2026-08-12T22:58:19+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D331 | AGENT=claude-code | HASH=45a9220a92cdf03cb3305bd2062dc944bc74085e
