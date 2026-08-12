@@ -56,11 +56,48 @@ check_tag_consistency() {
   return 1
 }
 
-# 测试注入: 只跑 D319 tag 一致性检查（tag-consistency.test.sh 用）
+# ═══ D331 (L4-1): 版本 tag 必须是 HEAD 祖先 ═══
+# 背景: D329 amend 重提交让自动 tag V4.7.1 指向孤儿提交 f685fa0 — 版本锚点与
+# 分支内容物理断裂（拉取 V4.7.1 缺 current-brief 去跟踪），D319 一致性检查只
+# 验证"tag 存在"，不验证"tag 指向 HEAD 可达的提交"。
+# 规则: 所有 V\d+\.\d+\.\d+ tag 须为 HEAD 祖先（git merge-base --is-ancestor）；
+#       VERSION.md 最新版本的 tag 存在且为祖先；违反 → 硬阻断（提示重指/删除）。
+# VERSION.md 缺失/无版本标题 → fail-open（对齐 D319）。
+
+check_tag_ancestry() {
+  local REPO_ROOT="" VERSION_MD="" ver="" TAG_FAIL=""
+  REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "$SCRIPT_DIR/..")
+  VERSION_MD="${SYNO_VERSION_MD:-$REPO_ROOT/.codex/control-tower/VERSION.md}"
+  TAG_FAIL=""
+  echo -e "${CYAN}── D331: 版本 tag 锚点校验 ─────────────────────────────${RESET}"
+  for t in $(git tag -l 'V[0-9]*.[0-9]*.[0-9]*'); do
+    if ! git merge-base --is-ancestor "$t" HEAD 2>/dev/null; then # swallow-ok: if 条件消费 rc（孤儿 tag 判断）
+      TAG_FAIL="${TAG_FAIL}  $t 不是 HEAD 祖先（孤儿 tag）\n"
+    fi
+  done
+  if [[ -f "$VERSION_MD" ]]; then
+    ver=$(grep -oE '^## V[0-9]+\.[0-9]+\.[0-9]+' "$VERSION_MD" | head -1 | awk '{print $2}')
+    if [[ -n "$ver" ]] && ! git merge-base --is-ancestor "$ver" HEAD 2>/dev/null; then # swallow-ok: if 条件消费 rc（锚点断裂判断）
+      TAG_FAIL="${TAG_FAIL}  $ver 缺失或非祖先（VERSION.md 最新版本锚点断裂）\n"
+    fi
+  fi
+  if [[ -n "$TAG_FAIL" ]]; then
+    echo -e "  ${RED}❌ D331: 版本 tag 锚点断裂:${RESET}"
+    printf '%b' "$TAG_FAIL"
+    echo -e "  ${RED}    请运行 git tag -f -a $ver -m \"retag $ver (D331)\" <真实提交> 重指（或删除孤儿 tag）${RESET}"
+    return 1
+  fi
+  echo -e "  ${GREEN}✅ D331: 所有版本 tag 均为 HEAD 祖先${RESET}"
+  return 0
+}
+
+# 测试注入: 只跑 tag 检查（D319 一致性 + D331 祖先 — tag-consistency.test.sh /
+# tag-bypass-wiring.test.sh 用）
 if [[ "${SYNO_TAG_ONLY:-}" == "1" ]]; then
   set +e
-  check_tag_consistency
-  EC=$?
+  EC=0
+  check_tag_consistency || EC=1
+  check_tag_ancestry || EC=1
   set -e
   exit "$EC"
 fi
@@ -204,12 +241,33 @@ else
   echo -e "  ${YELLOW}⚠️  baseline-check.sh 缺失 — 基线展示跳过 (fail-open)${RESET}"
 fi
 
-# ═══ 门禁 6 附挂: 版本 tag 一致性 (D319 — 硬阻断) ═══
+# ═══ 门禁 6 附挂: 版本 tag 一致性 (D319) + tag 锚点 (D331) — 硬阻断 ═══
 echo ""
 if ! check_tag_consistency; then
   echo ""
   echo -e "  ${RED}❌ 版本 tag 一致性未通过 — 推送已拒绝 (D319)${RESET}"
   exit 1
+fi
+if ! check_tag_ancestry; then
+  echo ""
+  echo -e "  ${RED}❌ 版本 tag 锚点校验未通过 — 推送已拒绝 (D331)${RESET}"
+  exit 1
+fi
+
+# ═══ 门禁 7: bypass.log 执行证据链对账 (D331 L4-2 — 硬阻断) ═══
+# 对比 origin..HEAD 提交与 .claude/bypass.log 的 HASH 条目；缺失 → 列出 + 拒绝。
+# 历史提交已一次性补记（ea1cb71/dc369fd）；对账从 D331 起的新提交强制。
+echo ""
+echo -e "${CYAN}── bypass.log 对账 (D331) ───────────────────────────────${RESET}"
+CHECK_BYPASS="$SCRIPT_DIR/control-tower/check-bypass-log.sh"
+if [[ -f "$CHECK_BYPASS" ]]; then
+  if ! bash "$CHECK_BYPASS"; then
+    echo ""
+    echo -e "  ${RED}❌ bypass.log 对账未通过 — 推送已拒绝 (D331)${RESET}"
+    exit 1
+  fi
+else
+  echo -e "  ${YELLOW}⚠️  check-bypass-log.sh 缺失 — 对账跳过 (fail-open)${RESET}"
 fi
 
 echo ""

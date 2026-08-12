@@ -67,8 +67,12 @@ def check_staging(
     # 占用），认领制判定是独立防线（不依赖登记时序）。session_id 无 D# → 跳过（不误伤）。
     try:
         staged_arg = "\n".join(staged_files)
+        # D331 (P2-2): --session 生产接线 — resolver 的 session 专属 current-brief
+        # 支持已实现但零生产调用方（KIMI K3 审计: D329 dev doc §5 只要求"resolver
+        # 读取"，没要求"生产调用方真实传递"）。本调用是生产唯一调用点（WIRE CHECK
+        # 升级: grep "resolve-commit-brief.sh.*--session" scripts/ ≥1 真实命中）。
         claimed = subprocess.run(
-            ["bash", str(REPO_ROOT / "scripts/workflow/resolve-commit-brief.sh"), staged_arg],
+            ["bash", str(REPO_ROOT / "scripts/workflow/resolve-commit-brief.sh"), "--session", session_id, staged_arg],
             capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30,
         ).stdout.strip().splitlines()
         if claimed:
@@ -109,27 +113,39 @@ def check_staging(
             result["degraded_reason"] = f"registry 缺失: {reg.registry_path}"
             return result
         sessions = reg.list(active_only=True)
+        # D331 (P2-1): 归属判定用 task_id — 同任务并行 session（如分阶段协同）的
+        # 写集视同己方（不误伤）；my_task 无（旧注册）→ 回退 session_id 仅判。
+        session_tasks = {s["session_id"]: s.get("task_id") for s in sessions}
+        my_task = session_tasks.get(session_id)
         own_set = set()
         # 文件 → 声明过它的所有 session（含 committed，用于区分"无记录"与"已提交"）
         declared_by: dict[str, list] = {}
         for s in sessions:
-            if s["session_id"] == session_id:
+            sid = s["session_id"]
+            is_own = (sid == session_id) or (
+                my_task is not None and s.get("task_id") == my_task
+            )
+            if is_own:
                 for w in s.get("write_set", []):
                     if w.get("status") != "committed":
                         own_set.add(w["file"].replace("\\", "/").lower())
             for w in s.get("write_set", []):
                 declared_by.setdefault(w["file"].replace("\\", "/").lower(), []).append(
-                    (s["session_id"], w.get("status"))
+                    (sid, w.get("status"))
                 )
 
         for f in staged_files:
             norm = f.replace("\\", "/").lower()
             if norm in own_set:
-                continue  # 2. 自己写集 → pass
+                continue  # 2. 自己写集（含同任务 session）→ pass
             decls = declared_by.get(norm, [])
-            # 1. 他人活跃占用（未 committed）
+            # 1. 他人活跃占用（未 committed；同任务不视为他人）
             active_others = [
-                (sid, st) for sid, st in decls if sid != session_id and st != "committed"
+                (sid, st)
+                for sid, st in decls
+                if sid != session_id
+                and not (my_task is not None and session_tasks.get(sid) == my_task)
+                and st != "committed"
             ]
             if active_others:
                 owner, _ = active_others[0]

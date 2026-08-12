@@ -361,11 +361,39 @@ fi
 
 # ═══ D311: 暂存区隔离 (M1b — 防 D286 卷走 D300 类事故) ═══
 # 校验暂存文件归属: 他人活跃写集 → 硬阻断；自己/无归属 → 放行
+# D331 (P2-5→P1): 裸 python3 + `|| true` 连 guard 崩溃都吞掉（D328 P1-1 同型再犯）
+# → PYBIN 跨平台回退（对齐 commit-msg-check.sh/resolve-commit-brief.sh）+ rc 捕获:
+#   rc==0          → 正常解析 JSON
+#   rc!=0 且 block → 按 block 硬阻断（guard 用 exit 1 表达阻断）
+#   rc!=0 非 JSON  → 显式 degraded 提示（执行异常不静默）
+#   python 不可用  → fail-open 显式提示跳过
 if [[ -f "$STAGING_GUARD" ]]; then
   STAGED_LIST=$(git diff --cached --name-only 2>/dev/null || true)
   if [[ -n "$STAGED_LIST" ]]; then
-    GUARD_OUT=$(python3 "$STAGING_GUARD" --session-id "$SESSION_ID" --staged $STAGED_LIST 2>&1 || true)
-    GUARD_STATUS=$(echo "$GUARD_OUT" | python3 -c "import json,sys; print(json.load(sys.stdin).get('status','degraded'))" 2>/dev/null || echo "degraded")
+    PYBIN=""
+    for _c in python3 python py; do
+      if command -v "$_c" >/dev/null 2>&1 && "$_c" -c "import sys" >/dev/null 2>&1; then PYBIN="$_c"; break; fi
+    done
+    if [[ -n "$PYBIN" ]]; then
+      set +e
+      GUARD_OUT=$("$PYBIN" "$STAGING_GUARD" --session-id "$SESSION_ID" --staged $STAGED_LIST 2>&1)
+      GUARD_RC=$?
+      set -e
+      if [[ "$GUARD_RC" -ne 0 ]]; then
+        # rc≠0: block 用 exit 1 + JSON（正常阻断）vs 崩溃（非 JSON）→ 区分显式降级
+        GUARD_STATUS=$(echo "$GUARD_OUT" | "$PYBIN" -c "import json,sys; print(json.load(sys.stdin).get('status','degraded'))" 2>/dev/null || echo "degraded")
+        if [[ "$GUARD_STATUS" != "block" ]]; then
+          echo -e "${YELLOW}⚠ staging-guard 执行异常 (rc=$GUARD_RC) — 降级放行，请检查其日志${NC}"
+          echo "$GUARD_OUT" | head -3
+          echo ""
+        fi
+      else
+        GUARD_STATUS=$(echo "$GUARD_OUT" | "$PYBIN" -c "import json,sys; print(json.load(sys.stdin).get('status','degraded'))" 2>/dev/null || echo "degraded")
+      fi
+    else
+      GUARD_STATUS="degraded"
+      echo -e "${YELLOW}⚠ staging-guard 跳过: python 不可用或损坏（fail-open 显式提示，不静默）${NC}"
+    fi
     if [[ "$GUARD_STATUS" == "block" ]]; then
       echo ""
       echo -e "${RED}❌ 暂存区隔离 (D311 M1b) — 暂存区含他人文件:${NC}"

@@ -255,7 +255,12 @@ class SessionRegistry:
         add: Optional[list] = None,
         status: Optional[list] = None,
     ) -> dict:
-        """add: [files] 加入写集 (dirty)；status: [(file, status)] 状态流转。"""
+        """add: [files] 加入写集 (dirty)；status: [(file, status)] 状态流转。
+
+        D331 (P2-1): write-set 条目携带 task_id（继承 session 的 task_id）——
+        对齐 D329 dev doc §3.1 声称（文档-实现漂移修复）。staging_guard 用它做
+        同任务并行 session 写集互认（不误伤同任务合作 session）。
+        """
 
         def fn(data):
             now = _utcnow()
@@ -267,7 +272,12 @@ class SessionRegistry:
                 for f in add or []:
                     if f not in existing:
                         s["write_set"].append(
-                            {"file": f, "claimed_at": now, "status": "dirty"}
+                            {
+                                "file": f,
+                                "claimed_at": now,
+                                "status": "dirty",
+                                "task_id": s.get("task_id"),
+                            }
                         )
                 for f, st in status or []:
                     if st not in VALID_STATUSES:
