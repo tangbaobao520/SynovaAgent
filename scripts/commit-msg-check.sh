@@ -56,17 +56,32 @@ if [ -n "$STAGED_LIST" ]; then
   # 全无 python → 显式 degraded 提示（fail-open skip，不静默 — 铁律 24/31）。
   # 注意: 必须放在 resolver 调用之前 — resolver 无 python 时必退空（exit 1），
   # 若把提示放进 CLAIM_BRIEF 非空条件内，无 python 场景提示永不触发 = 静默 skip。
+  # D330 (KIMI K3 P1-1): command -v 只验存在性 — Windows Store stub 等损坏 shim
+  # 存在但执行即败 → 加可用性验证 ("$_c" -c "import sys"); 全部不可用/损坏 →
+  # 显式 degraded 提示（铁律 24/31, 不再静默 skip）
   PYBIN=""
   for _c in python3 python py; do
-    if command -v "$_c" >/dev/null 2>&1; then PYBIN="$_c"; break; fi
+    if command -v "$_c" >/dev/null 2>&1 && "$_c" -c "import sys" >/dev/null 2>&1; then
+      PYBIN="$_c"
+      break
+    fi
   done
   if [ -z "$PYBIN" ]; then
-    echo -e "${YELLOW}⚠ D328 一致性检查跳过: python 不可用（fail-open 显式提示，不静默）${RESET}"
+    echo -e "${YELLOW}⚠ D328 一致性检查跳过: python 不可用或损坏（fail-open 显式提示，不静默）${RESET}"
   fi
-  CLAIM_BRIEF=$(bash "$MSG_DIR/workflow/resolve-commit-brief.sh" "$STAGED_LIST" 2>/dev/null | head -1 || true)
+  # D330 (KIMI K3 P1-1): resolver 内部 PYBIN 探测无可用性验证 — broken-shim 下
+  # 它选中损坏 python3 → 解析失败 exit 1（D317 语义: python 不可用 → exit 1）。
+  # 捕获 rc: 失败且无 brief → 显式 degraded 提示（dev doc §4: 提示+跳过可追溯,
+  # 不再静默放行）
+  CLAIM_RC=0
+  CLAIM_BRIEF=$(bash "$MSG_DIR/workflow/resolve-commit-brief.sh" "$STAGED_LIST" 2>/dev/null | head -1) || CLAIM_RC=$? # swallow-ok: resolver 失败 → degraded 提示（dev doc §3.2）
   if [ -n "$CLAIM_BRIEF" ] && [ -f "$CLAIM_BRIEF" ] && [ -n "$PYBIN" ]; then
     # 防假阳性: 仅当 resolver 返回的 brief 真实认领了 ≥1 个暂存文件才比较 D#；
     # 走最终回退（无真实认领）时跳过——未认领场景由 G12 兜底阻断。
+    # D330 (KIMI K3 P1-1): GENUINE 三态 — 输出 0=无真实认领(跳过,G12 兜底) /
+    # 1=有真实认领(比较 D#) / 执行失败 rc≠0=degraded 显式提示（不再 || echo 0
+    # 把"检查未执行"与"检查通过=无认领"压缩成同一个 0 静默吞掉）
+    GENUINE_RC=0
     GENUINE=$(echo "$STAGED_LIST" | "$PYBIN" -c "
 import re, sys
 sys.path.insert(0, r'$MSG_DIR_W/control-tower')
@@ -75,8 +90,10 @@ staged = [s for s in sys.stdin.read().split('\n') if s.strip()]
 text = open(r'$CLAIM_BRIEF', encoding='utf-8', errors='replace').read()
 inc = parse_q2(text).get('include', [])
 print(1 if any(match_path(s, p) for s in staged for p in inc) else 0)
-" 2>/dev/null || echo 0)
-    if [ "$GENUINE" = "1" ]; then
+" 2>/dev/null) || GENUINE_RC=$? # swallow-ok: 执行失败 → 三态 degraded 显式提示（dev doc §3.2）
+    if [ "$GENUINE_RC" != 0 ]; then
+      echo -e "${YELLOW}⚠ D328 一致性检查 degraded: GENUINE 判定执行失败 (rc=$GENUINE_RC)，本次跳过${RESET}"
+    elif [ "$GENUINE" = "1" ]; then
       CLAIM_DID=$(basename "$CLAIM_BRIEF" .md | grep -oE 'D[0-9]+' | head -1 || true)
       if [ -n "$CLAIM_DID" ] && { [ -z "$MSG_DID" ] || [ "$CLAIM_DID" != "$MSG_DID" ]; }; then
         echo -e "${RED}❌ D328: 提交声明(${MSG_DID:-无})与暂存文件归属($CLAIM_DID)不一致 — 疑似并行劫持${RESET}"
@@ -85,6 +102,8 @@ print(1 if any(match_path(s, p) for s in staged for p in inc) else 0)
         exit 1
       fi
     fi
+  elif [ "$CLAIM_RC" != 0 ]; then
+    echo -e "${YELLOW}⚠ D328 一致性检查 degraded: 认领 brief 解析失败（resolver rc=$CLAIM_RC），本次跳过${RESET}"
   fi
 fi
 exit 0

@@ -11,6 +11,30 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V4.7.3 (2026-08-12) — D331 批次（D329 审计 P1 修复：tag 重指 + 防线补齐 + 接线落地）
+
+> PATCH bump — 门禁行为变化（bug 修复）。D331 独占版本编排；D330 批次 V4.7.2 待落地后由其补序。
+
+- **变更**: PATCH bump — KIMI K3 D329 审计（2026-08-12，P1×2 + 关键 P2）修复
+- **P1-1 (tag V4.7.1 孤儿)**: `git tag -f -a V4.7.1 dc369fd` 重指（amend 前身 f685fa0 不再指向，版本锚点恢复）+ pre-push 新增 **tag-祖先校验**（所有 `V\d+\.\d+\.\d+` tag 须为 HEAD 祖先，VERSION.md 最新版本 tag 存在且为祖先；孤儿/断裂 → 硬阻断）
+- **P1-2 (dc369fd 无 bypass.log 记录)**: 新建 **check-bypass-log.sh** 对账（base..HEAD 提交 vs bypass.log HASH 条目；缺失 → 列出 + exit 1；SYNO_BASE_REF 注入缝）+ pre-push 门禁 7 接入 + ea1cb71/dc369fd 一次性补记
+- **P2-5→P1 (guard 裸 python3 + `|| true` 吞崩溃)**: synova-commit staging-guard 调用改 **PYBIN 回退 + rc 捕获**（rc≠0 且 JSON status=block → 硬阻断；非 JSON → 显式 degraded 提示；python 不可用 → fail-open 显式提示）
+- **P2-2 (resolver --session 零生产调用方)**: staging_guard 认领判定传 `--session`（生产唯一调用点，DS6 grep 物理证据）；D329 dev doc §5 接线升级（WIRE CHECK：测试调用不计入）
+- **P2-1 (write-set 无 task_id)**: session_registry write-set 条目携带 task_id（继承 session）+ staging_guard 归属判定同任务互认（对齐 D329 dev doc §3.1 声称）
+
+## V4.7.2 (2026-08-12) — D330 批次（D328 审计 P1 修复：python 损坏探测 + 豁免测试补全 + 文档回填）
+
+> PATCH bump — 门禁行为变化（bug 修复）。D330 独占版本编排；D331 批次 V4.7.3 落地后由其补序。
+
+- **变更**: PATCH bump — commit-msg 一致性门禁修复（KIMI K3 首审 2026-08-12，P1-1/P1-2 物理复现）
+- **P1-1 (python 损坏静默漏拦)**: commit-msg-check.sh PYBIN 探测加**可用性验证**（`command -v` 只验存在性，Windows Store stub/损坏 shim 存在但执行即败 → GENUINE 静默归 0 → 劫持漏拦，当前树 shim 实测 2/6 败）；GENUINE 三态（0=无认领 / 1=有认领 / rc≠0=显式 degraded 提示）；resolver 失败 rc 捕获（broken-shim 下 resolver 内部 PYBIN 无可用性验证 → exit 1，此前静默跳过）
+- **P1-2 (DS4 声称过度)**: Revert/无暂存补测试用例（原声称"四条豁免全部测试覆盖"仅 Merge/无 D# 有用例）
+- **P2-2**: 用例 1 stage 8 文件（补 `.claude/task-briefs/D320-dashboard-gitify.md`，与 commit message 声明一致）
+- **P2-1/P2-5**: D328 dev doc §3.2 回填 PYBIN 最终实现 + DS4 措辞修正；brief 路径笔误 `synova-commit.sh` → `synova-commit`
+- **测试**: commit-msg-consistency.test.sh 10 用例（原 6 + Revert + 无暂存 + broken-shim degraded + broken-shim 劫持可追溯），red 10 过 2 败 → green 13/13
+- **验证**: pre-commit 12 组 | audit 基线 439 FAIL 不变 | as any = 0
+- **作者**: Claude (D330)
+
 ## V4.7.1 (2026-08-11) — D328+D329 批次（commit 一致性门禁 + session 身份独立化）
 
 > 批次统一 MINOR bump——D328/D329 两个任务的行为变化合并为一个版本。版本编排由 D329 独占（D328 提交时未 bump）。
