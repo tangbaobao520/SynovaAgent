@@ -60,3 +60,6 @@ Binary file .claude/bypass.log matches
 2026-08-12T22:33:39+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D331 | AGENT=claude-code
 2026-08-12T22:36:52+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D331 | AGENT=claude-code
 2026-08-12T22:58:19+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D331 | AGENT=claude-code | HASH=45a9220a92cdf03cb3305bd2062dc944bc74085e
+2026-08-12T23:03:19+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D331 | AGENT=claude-code | HASH=a93d99a41fdd81f5d4b717fdc4499bccbde7f943
+2026-08-12T23:09:30+0800 | COMMITTED | pre-commit PASS (D331 一次性补记: D330 交付 6c00e46+407ff1f 时 12 组全过) | TASK_ID=D330 | AGENT=claude-code | HASH=6c00e46f15b03e1365cf7efe792af8a5402c3019
+2026-08-12T23:09:30+0800 | COMMITTED | pre-commit PASS (D331 一次性补记: D330 交付 6c00e46+407ff1f 时 12 组全过) | TASK_ID=D330 | AGENT=claude-code | HASH=407ff1fa889e03958b8588e7b4cb53ad09e52243
