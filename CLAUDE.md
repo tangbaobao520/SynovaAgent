@@ -225,7 +225,9 @@ Agent，不是 ChatBot。驻扎企业，持续观测，主动发现，自动诊�
 **目标**: 成为组织诊断的 AWS。每个新客户、新行业、新数据源 → 加文件即可，不改代码。
 能文件化的必须文件化。不能文件化的必须有明确的扩展点。
 
-**流程约束: V4.5.1 — task brief 6字段 + 免疫系统 + plan.json + 8组物理阻断 + Plan-Actual闭合 + engine-core清零 + 时间戳顺序检查 + Q2排除项验证 + verify执行 + 全仓库engine-core扫描 + 壳包检测 + vitest --changed 增量回归 + grep 物理门禁
+**流程约束: V4.5.1 — task brief 6字段 + 免疫系统 + plan.json + 8组物理阻断 + Plan-Actual闭合 + engine-core清零 + 时间戳顺序检查 + Q2排除项验证 + verify执行 + 全仓库engine-core扫描 + 壳包检测 + vitest --changed 增量回归 + grep 物理门禁 + 决策参考四步框架
+
+**决策参考框架 (D333, 2026-08-13 创始人定)**: 遇到难决策/多选项/架构取舍/最佳实践选择/实现与文档声称冲突时，按 [DECISION-REFERENCE.md](docs/synova/coordination/DECISION-REFERENCE.md) 四步执行（①第一性原理 ②Anthropic 工程基线 ③开源实证 ④收敛检查），并在 task brief Q1c 决策参考系记录: `参考：Anthropic/DeepSeek/第一性原理 + 结论`（K3 审计可核）。task-start 自动生成 Q1c 字段 + 注入器全文注入框架。
 
 **数据流**:
 ```

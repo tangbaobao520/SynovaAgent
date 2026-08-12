@@ -74,6 +74,7 @@ grep 本任务关键词在 expert/ sentinel/ extensions/ knowledge/ theory/ skil
 
 ### c) 决策
 已有覆盖→复用，不准新建硬编码。无覆盖→新建走文件驱动（属扩展解耦）。冲突→取消任务，复用已有。
+冲突取舍/多选项/架构选择 → 走 DECISION-REFERENCE 四步框架（docs/synova/coordination/DECISION-REFERENCE.md），结论写入 Q1c 决策参考系。
 
 ## Q1: 调研 — 决策链 + 执行约束
 
@@ -104,6 +105,15 @@ grep 本任务关键词在 expert/ sentinel/ extensions/ knowledge/ theory/ skil
     verify: "grep -rn '新字段名' src/sentinel/sentinel-loader.ts"
   - rule: "新增 export 必须在 pre-commit 组 4 有引用"
     verify: "grep -rn '新函数名' src/"
+
+### c) 决策参考系（遇到难决策/多选项/架构取舍/最佳实践/实现与文档冲突时）
+按 DECISION-REFERENCE 四步框架（docs/synova/coordination/DECISION-REFERENCE.md）执行，并将结论记录在本字段：
+  ① 第一性原理 — 问题的最简本质是什么？最少机制能解决吗？
+  ② Anthropic 工程基线 — 隔离/失败即关闭/脚本验证/机器可验契约，哪条适用？
+  ③ 开源实证 — 有可克隆的代码/架构参考吗？clone 下来看实际做法
+  ④ 收敛检查 — 两参考系是否指向同一答案？收敛 = 大概率正确；分歧 = 值得深挖
+决策记录格式（K3 审计可核）: 参考：Anthropic/DeepSeek/第一性原理 + 结论
+简单决策（无冲突、单一路径）只需记录参考系名。
 
 ## Q2: 范围 — 正确的最简方案是什么？
 

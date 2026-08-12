@@ -11,6 +11,20 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V4.7.5 (2026-08-13) — D333 批次（决策参考四步框架落地：brief 模板 Q1c + 注入器全文注入 + CLAUDE.md 引用）
+
+> PATCH bump — 门禁行为变化（模板新增字段）。决策参考框架（创始人 2026-08-13 定，docs/synova/coordination/DECISION-REFERENCE.md）落地到任务启动流程：所有新 session 的 task brief 自动含 Q1c 决策参考系 + 注入器全文注入框架内容。D332 批次 V4.7.4 声明独占（未落地），本条目置顶为其补序（接力模式，D332 落地后由其后继补序）。
+
+- **变更**: PATCH bump — 决策参考框架落地（模板/注入器/文档引用）
+- **D333 (决策参考框架落地)**:
+  - `generate-task-brief.py` — Q0 c) 决策 追加"冲突取舍 → 走 DECISION-REFERENCE 四步，结论写入 Q1c"；Q1 新增 `### c) 决策参考系`（四步框架 + 决策记录格式 `参考：Anthropic/DeepSeek + 结论`）
+  - `inject-context.py` — parse_brief 增加 DECISION-REFERENCE 模式；该文档全文注入（无 E-XX/src 路径时不生成空壳块）
+  - `doc-registry.json` — 注册 DECISION-REFERENCE → docs/synova/coordination/DECISION-REFERENCE.md
+  - `CLAUDE.md` — 流程约束追加决策参考四步框架引用（新 session 必读）
+- **测试**: brief-template-decision.test.sh 8 用例（red 11 失败 → green；模板/注入器/注册表/CLAUDE.md/版本五处物理验证）
+- **验证**: pre-commit 12 组 | as any = 0
+- **作者**: Claude (D333)
+
 ## V4.7.3 (2026-08-12) — D331 批次（D329 审计 P1 修复：tag 重指 + 防线补齐 + 接线落地）
 
 > PATCH bump — 门禁行为变化（bug 修复）。D331 独占版本编排；D330 批次 V4.7.2 已落地（6c00e46+407ff1f），本条目置顶为其补序（D330 委托后继执行，内容零改动）。

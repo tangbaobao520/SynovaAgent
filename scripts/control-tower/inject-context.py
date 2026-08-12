@@ -58,11 +58,12 @@ def parse_brief(text: str) -> List[str]:
     @degraded - 无 ID 找到 -> 空列表
     """
     ids: List[str] = []
-    # 匹配 "Auth Doc #N" 和 "权威文档 #N" 和 "AN" 模式
+    # 匹配 "Auth Doc #N" 和 "权威文档 #N" 和 "AN" 模式 + DECISION-REFERENCE (D333)
     patterns = [
         r'(Auth Doc\s*#\d+)',
         r'(权威文档\s*#\d+)',
         r'(?:^|\s)(A\d{1,2})(?:\s|$|\.)',
+        r'(DECISION-REFERENCE)',
     ]
     for pat in patterns:
         found = re.findall(pat, text)
@@ -302,6 +303,19 @@ def main():
         # 提取片段
         snippets = extract_snippets(doc_path)
 
+        # D333: DECISION-REFERENCE 是决策框架文档（无 E-XX/src 路径）→ 全文注入
+        # 否则 format_injection_block 会生成空壳块（只有标题+时间），框架内容丢失
+        if doc_id == "DECISION-REFERENCE" and not snippets.get("edges") and not snippets.get("files"):
+            try:
+                full_text = Path(doc_path).read_text(encoding="utf-8")
+                block = f"### {doc_id}\n\n> D333 决策参考框架全文（创始人 2026-08-13 定）:\n\n" + full_text
+                success = inject_into_brief(brief_path, doc_id, block)
+                print(f"[注射器] [OK] {doc_id}: 全文注入")
+            except OSError as e:
+                print(f"[注射器] [!] {doc_id}: 全文读取失败 {e}", file=sys.stderr)
+                success = False
+            if success:
+                continue
         # 检查版本一致性（仅 verify 模式全面检查）
         version_warning = ""
         if snippets["version"]:
