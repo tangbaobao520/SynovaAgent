@@ -63,3 +63,10 @@ Binary file .claude/bypass.log matches
 2026-08-12T23:03:19+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D331 | AGENT=claude-code | HASH=a93d99a41fdd81f5d4b717fdc4499bccbde7f943
 2026-08-12T23:09:30+0800 | COMMITTED | pre-commit PASS (D331 一次性补记: D330 交付 6c00e46+407ff1f 时 12 组全过) | TASK_ID=D330 | AGENT=claude-code | HASH=6c00e46f15b03e1365cf7efe792af8a5402c3019
 2026-08-12T23:09:30+0800 | COMMITTED | pre-commit PASS (D331 一次性补记: D330 交付 6c00e46+407ff1f 时 12 组全过) | TASK_ID=D330 | AGENT=claude-code | HASH=407ff1fa889e03958b8588e7b4cb53ad09e52243
+2026-08-12T23:40:38+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D331 | AGENT=claude-code | HASH=7ace35e7df82dd568fdb7a38967d9b5eacd74772
+2026-08-13T00:24:08+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-13T00:24:29+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-13T00:24:45+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-13T01:57:23+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D333 | AGENT=claude-code
+2026-08-13T01:59:01+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D333 | AGENT=claude-code
+2026-08-13T02:12:16+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D333 | AGENT=claude-code | HASH=192ff808f237f0d789f92e984b5e0b4325f1c47d

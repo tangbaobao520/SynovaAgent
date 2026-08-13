@@ -1,60 +1,35 @@
 {
   "version": "1.0",
   "current_phase": 1,
-  "approach": "reuse",
   "principles": [
     {
-      "rule": "completion-scores.json 只允许统一 schema 生成器写 (self-diagnosis.py 任务级 + completion-engine.py 单文件判定)",
-      "verify": "grep -rn 'completion-scores.json' scripts/audit/ | grep -v completion_schema.py"
+      "rule": "brief 模板必须含 ### c) 决策参考系 字段",
+      "verify": "grep -c '决策参考系' scripts/workflow/generate-task-brief.py >= 1"
     },
     {
-      "rule": "缺 gate-status.json 时 completion-engine 输出必须 degraded:true (禁止假 0 分)",
-      "verify": "grep -rn 'degradedReason' scripts/audit/completion-engine.py"
+      "rule": "DECISION-REFERENCE 必须注册 + 注入器可达",
+      "verify": "grep -c 'DECISION-REFERENCE' scripts/control-tower/doc-registry.json >= 1 && grep -c 'DECISION-REFERENCE' scripts/control-tower/inject-context.py >= 1"
     },
     {
-      "rule": "新增函数必须被生产调用方引用",
-      "verify": "grep -rn 'parse_brief_file_mapping\\|validate_completion_schema\\|freshness_check' scripts/"
+      "rule": "CLAUDE.md 必须引用 DECISION-REFERENCE（新 session 必读）",
+      "verify": "grep -c 'DECISION-REFERENCE' CLAUDE.md >= 1"
     }
   ],
-  "memory_refs": [
-    "memory/engine-core-bridge-files.md"
-  ],
+  "approach": "复用（模板字段追加 + 注册表追加 + 注入器模式扩展——文件驱动最小机制，不新建组件不加工厂）",
   "phases": [
     {
       "step": 1,
-      "action": "test",
-      "files": ["tests/control-tower/test_control_tower_truthfulness.py"],
-      "checks": {"wiring": "deferred", "test_pairing": "deferred"}
-    },
-    {
-      "step": 2,
-      "action": "create",
-      "files": ["scripts/audit/completion_schema.py"],
-      "checks": {"wiring": "deferred", "test_pairing": "deferred"}
-    },
-    {
-      "step": 3,
-      "action": "modify",
-      "files": ["scripts/audit/self-diagnosis.py"],
-      "checks": {"wiring": "deferred", "test_pairing": "deferred"}
-    },
-    {
-      "step": 4,
-      "action": "modify",
-      "files": ["scripts/audit/completion-engine.py"],
-      "checks": {"wiring": "deferred", "test_pairing": "deferred"}
-    },
-    {
-      "step": 5,
-      "action": "modify",
-      "files": ["scripts/control-tower/views/completion.py"],
-      "checks": {"wiring": "deferred", "test_pairing": "deferred"}
-    },
-    {
-      "step": 6,
-      "action": "wire",
-      "files": ["scripts/control-tower/generate-dashboard.py", ".gitignore", ".gitattributes"],
-      "checks": {"wiring": "enforce", "test_pairing": "enforce"}
+      "action": "create+wire",
+      "files": [
+        "scripts/workflow/generate-task-brief.py",
+        "scripts/control-tower/inject-context.py",
+        "scripts/control-tower/doc-registry.json",
+        "CLAUDE.md",
+        ".codex/control-tower/VERSION.md",
+        "tests/control-tower/brief-template-decision.test.sh",
+        ".claude/task-briefs/D333-decision-reference-framework.md"
+      ],
+      "checks": { "wiring": "enforce", "test_pairing": "enforce" }
     }
   ]
 }
