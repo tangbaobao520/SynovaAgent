@@ -505,7 +505,10 @@ else
   bash "$PRE_COMMIT"
 fi
 PRECOMMIT_EXIT=$?
-set -e
+# D334: 不在此恢复 set -e — bash 3.2 存在 set -e+elif 交互 bug:
+#   set -e 恢复后, elif 的 [[ ]] 返回非零会让 else 块在子 shell 上下文执行,
+#   导致 PRECOMMIT_EXIT 在 else 中报 unbound (Win/bash 5.x 无此 bug, Mac bash 3.2 复现)。
+#   改法: 保持 set +e 穿过 if/elif/else 结构, 在成功路径内(commit 完成后)恢复。
 
 echo ""
 
@@ -527,6 +530,7 @@ if [[ $PRECOMMIT_EXIT -eq 0 ]]; then
 
   if [[ $COMMIT_EXIT -eq 0 ]]; then
     echo -e "${GREEN}✅ 提交完成${NC}"
+    set -e # D334: 成功路径恢复 set -e — 保护 auto_tag/push 等后续函数 (bash 3.2 elif bug 规避)
     # D319: 提交成功后自动 tag + version.log + push --follow-tags
     auto_tag_and_version
     push_with_tags
@@ -551,7 +555,7 @@ if [[ $PRECOMMIT_EXIT -eq 0 ]]; then
 
     exit 0
   else
-    echo -e "${RED}❌ git commit 失败（exit $COMMIT_EXIT）${NC}"
+    echo -e "${RED}❌ git commit 失败（exit ${COMMIT_EXIT}）${NC}"
     exit 1
   fi
 
@@ -565,7 +569,7 @@ elif [[ $PRECOMMIT_EXIT -eq 124 ]]; then
 
 else
   # 检查失败
-  echo -e "${RED}❌ pre-commit 检查未通过（exit $PRECOMMIT_EXIT）${NC}"
+  echo -e "${RED}❌ pre-commit 检查未通过（exit ${PRECOMMIT_EXIT}）${NC}"
   echo ""
   echo "═══════════════════════════════════════════════════════════"
   echo "  提交被阻断 — 请修复上述问题后重试"

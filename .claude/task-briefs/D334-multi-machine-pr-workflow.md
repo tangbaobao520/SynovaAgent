@@ -53,7 +53,9 @@ feature branch、PR + CI + review 后合并。核心：两台机器永不在同�
 做什么：
 - scripts/pre-push-check.sh — 新增门禁 0 多机同步检查（push 前 fetch 目标分支：落后/分叉硬阻断；main 直推硬阻断 + SYNO_ALLOW_MAIN_PUSH 逃生舱）；门禁 3 改基修复为动态 $PUSH_REMOTE/$PUSH_BRANCH
 - scripts/install-hooks.sh — pre-push entry 传 "$1" "$2"（remote 名/url）
+- scripts/control-tower/synova-commit — Mac 双机兼容：timeout 缺失回退 + bash 3.2 全角括号变量 bug 修复（D319 tag 机制逻辑保持原样）
 - docs/synova/coordination/MULTI-MACHINE-PR-WORKFLOW.md — 协作规范（创始人版+agent 版）
+- docs/synova/coordination/FOUNDER-GUIDE-MERGE.md — 创始人操作手册（PR 合并 + branch protection 傻瓜步骤）
 - .claude/skills/git-sync-pr/SKILL.md — Claude Code skill（开工 5 步/收工 5 步/冲突处理）
 - tests/control-tower/push-sync-guard.test.sh — 9 用例（正常/降级/边界/接线）
 - .codex/control-tower/VERSION.md — bump V4.7.6（PATCH：门禁行为变化）
@@ -62,7 +64,7 @@ feature branch、PR + CI + review 后合并。核心：两台机器永不在同�
 不做什么：
 - 不改 src/ 任何业务代码（本任务是控制塔基础设施）
 - 不改 .github/workflows/ci.yml（CI 的 Architecture Check 红灯与 npm audit 红灯是存量问题，独立任务）
-- 不改 scripts/control-tower/synova-commit（D319 tag 机制不动）
+- 不改 scripts/control-tower/synova-commit 内 D319 tag 机制与 bypass 对账逻辑（本次仅 Mac 兼容回退：timeout 缺失 + 全角括号）
 - 不做 GitHub branch protection 的 API 自动化（无 token；网页手工设置写进创始人指南）
 
 ## Q3: 验收 — 入口 → 交互 → 结果
