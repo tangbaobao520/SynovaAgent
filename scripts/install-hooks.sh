@@ -52,10 +52,14 @@ else
 fi
 exit $EXIT_CODE'
   elif [ -f "$entry" ]; then
-    # 门禁入口（commit-msg 需 "$1" 提交信息文件；pre-push 不传参）
+    # 门禁入口（commit-msg 需 "$1" 提交信息文件；pre-push 需 "$1" remote 名 "$2" url —
+    # D334 多机同步检查要 fetch 目标 remote；hook stdin refs 透传）
     if [ "$name" = "commit-msg" ]; then
       body='#!/bin/bash
 bash "$(git rev-parse --show-toplevel)/scripts/commit-msg-check.sh" "$1"'
+    elif [ "$name" = "pre-push" ]; then
+      body='#!/bin/bash
+bash "$(git rev-parse --show-toplevel)/scripts/pre-push-check.sh" "$1" "$2"'
     else
       body='#!/bin/bash
 bash "$(git rev-parse --show-toplevel)/scripts/'"$name"'-check.sh"'

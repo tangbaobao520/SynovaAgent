@@ -485,11 +485,25 @@ if [[ ! -f "$PRE_COMMIT" ]]; then
 fi
 
 # 运行 pre-commit（带超时）
-echo "🔍 运行 pre-commit 检查（${TIMEOUT_SEC}s 超时）..."
+# D334: Mac 无 GNU timeout（D321 同款双机差异）→ 回退直接执行并显式提示。
+#   pre-commit 12 组自身 <50s，失去外层超时兜底风险可控（不静默降级: 铁律 11）。
+TIMEOUT_BIN=""
+for _c in timeout gtimeout; do
+  if command -v "$_c" >/dev/null 2>&1; then TIMEOUT_BIN="$_c"; break; fi
+done
+if [[ -n "$TIMEOUT_BIN" ]]; then
+  echo "🔍 运行 pre-commit 检查（${TIMEOUT_SEC}s 超时）..."
+else
+  echo "⚠️  timeout/gtimeout 不可用 — 无外层超时直接执行 pre-commit (D334 降级, 显式提示)"
+fi
 echo ""
 
 set +e
-timeout "$TIMEOUT_SEC" bash "$PRE_COMMIT"
+if [[ -n "$TIMEOUT_BIN" ]]; then
+  "$TIMEOUT_BIN" "$TIMEOUT_SEC" bash "$PRE_COMMIT"
+else
+  bash "$PRE_COMMIT"
+fi
 PRECOMMIT_EXIT=$?
 set -e
 

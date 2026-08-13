@@ -11,6 +11,23 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V4.7.6 (2026-08-14) — D334 批次（多机 PR 工作流：门禁 0 同步检查 + main 保护 + 协作规范落地）
+
+> PATCH bump — 门禁行为变化（新增门禁 0）。事故驱动：2026-08-11~13 双机同分支交替 push，
+> Mac tracking ref 过期 4 天误报 ahead、实际落后 11 commit，险些互相覆盖。创始人 2026-08-14
+> 定案 PR 工作流（方案 A），本批次落地规范 + skill + 物理门禁。
+
+- **变更**: PATCH bump — pre-push 新增门禁 0（push 前强制 fetch + 落后/分叉硬阻断 + main 直推保护）；门禁 3 改基从硬编码改为动态
+- **D334 (多机 PR 工作流)**:
+  - `pre-push-check.sh` — 门禁 0-1 同步检查（fetch 目标分支，落后/分叉 → 硬阻断并给修复命令）；门禁 0-2 main 直推保护（SYNO_ALLOW_MAIN_PUSH=1 逃生舱）；门禁 3 改基动态化（$PUSH_REMOTE/$PUSH_BRANCH 替代硬编码 origin/feat/prompt-architecture）
+  - `install-hooks.sh` — pre-push entry 传 "$1" "$2"（remote 名/url，门禁 0 fetch 需要）
+  - `docs/synova/coordination/MULTI-MACHINE-PR-WORKFLOW.md` — 协作规范（创始人 2 件事 + agent 开工/收工 5 步）
+  - `.claude/skills/git-sync-pr/SKILL.md` — Claude Code skill
+  - `CLAUDE.md` — 铁律 0-3 多机 PR 工作流
+- **测试**: push-sync-guard.test.sh 13 用例（main 阻断/逃生舱/落后/分叉/同步/fail-open×2/接线×2，red→green 已证）
+- **验证**: pre-commit 12 组 | as any = 0
+- **作者**: DeepSeek Harness (D334)
+
 ## V4.7.5 (2026-08-13) — D333 批次（决策参考四步框架落地：brief 模板 Q1c + 注入器全文注入 + CLAUDE.md 引用）
 
 > PATCH bump — 门禁行为变化（模板新增字段）。决策参考框架（创始人 2026-08-13 定，docs/synova/coordination/DECISION-REFERENCE.md）落地到任务启动流程：所有新 session 的 task brief 自动含 Q1c 决策参考系 + 注入器全文注入框架内容。D332 批次 V4.7.4 声明独占（未落地），本条目置顶为其补序（接力模式，D332 落地后由其后继补序）。
