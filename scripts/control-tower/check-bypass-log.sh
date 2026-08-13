@@ -44,7 +44,9 @@ if ! git rev-parse --verify "$BASE" >/dev/null 2>&1; then
 fi
 
 MISSING=""
-for h in $(git log "$BASE..HEAD" --format=%H 2>/dev/null || true); do
+# D334: --no-merges — PR 工作流下 GitHub 网页合并产生的 merge commit 不经过
+# synova-commit（无 COMMITTED 记录），对账只覆盖本地产生的实体提交。
+for h in $(git log "$BASE..HEAD" --format=%H --no-merges 2>/dev/null || true); do
   if ! grep -q "$h" "$LOG" 2>/dev/null; then
     SUBJ=$(git log -1 --format=%s "$h" 2>/dev/null || echo "$h")
     MISSING="${MISSING}  $SUBJ [${h:0:8}]\n"

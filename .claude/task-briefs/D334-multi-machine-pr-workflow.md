@@ -54,6 +54,7 @@ feature branch、PR + CI + review 后合并。核心：两台机器永不在同�
 - scripts/pre-push-check.sh — 新增门禁 0 多机同步检查（push 前 fetch 目标分支：落后/分叉硬阻断；main 直推硬阻断 + SYNO_ALLOW_MAIN_PUSH 逃生舱）；门禁 3 改基修复为动态 $PUSH_REMOTE/$PUSH_BRANCH
 - scripts/install-hooks.sh — pre-push entry 传 "$1" "$2"（remote 名/url）
 - scripts/control-tower/synova-commit — Mac 双机兼容：timeout 缺失回退 + bash 3.2 全角括号变量 bug 修复（D319 tag 机制逻辑保持原样）
+- scripts/control-tower/check-bypass-log.sh — D334 PR 工作流兼容：对账跳过 merge commit（--no-merges）
 - docs/synova/coordination/MULTI-MACHINE-PR-WORKFLOW.md — 协作规范（创始人版+agent 版）
 - docs/synova/coordination/FOUNDER-GUIDE-MERGE.md — 创始人操作手册（PR 合并 + branch protection 傻瓜步骤）
 - .claude/skills/git-sync-pr/SKILL.md — Claude Code skill（开工 5 步/收工 5 步/冲突处理）
