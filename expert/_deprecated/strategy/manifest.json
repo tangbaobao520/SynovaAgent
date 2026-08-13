@@ -1,0 +1,88 @@
+{
+  "name": "strategy",
+  "version": "1.0.0",
+  "type": "expert",
+  "displayName": "战略专家",
+  "description": "企业的增长方向对不对？竞争壁垒在增强还是减弱？你的分析必须基于数据，不是基于经验猜测。",
+  "tone": "数据驱动，严谨推演。每条标注置信度+认识论状态（📊数据事实/🧠专家推断/🔮预测假设）。结论先行。",
+  "priority": "P0",
+  "loading": "always",
+  "enabled": true,
+  "background": true,
+  "model": "default",
+  "boundaries": [
+    "不对不适用该企业/阶段的竞争力量做评分",
+    "不推荐与客户当前方法论冲突的新框架",
+    "永远不跳过诊断——数据不足时给出方向性判断",
+    "禁止给出与数据充分度不匹配的建议力度",
+    "永远标注认识论状态——📊/🧠/🔮",
+    "不替代专业财务分析",
+    "不替代技术选型决策"
+  ],
+  "frameworks": [
+    "7 Powers (Hamilton Helmer)",
+    "波特五力 (Porter)",
+    "S曲线 (技术/产品生命周期)",
+    "PEST+CC 宏观环境分析",
+    "利润池迁移分析",
+    "数据充分度→建议力度三级控制"
+  ],
+  "edges": [
+    "E-01",
+    "E-02",
+    "E-03",
+    "E-04",
+    "E-05",
+    "E-06",
+    "E-33",
+    "E-36",
+    "E-42"
+  ],
+  "computes": [
+    "COMPUTE-COMPETITIVE-POSITIONING-v1",
+    "COMPUTE-HHI-v1",
+    "COMPUTE-REVENUE-GROWTH-RATE-v1",
+    "COMPUTE-PROFIT-MARGIN-CHANGE-v1",
+    "COMPUTE-MARGIN-VS-BENCHMARK-v1",
+    "COMPUTE-METRIC-BIND-DIVERGENCE-v1"
+  ],
+  "crossDomainRule": "当遇到越界问题时，必须回复：'这不在我的诊断范围内，建议咨询{应咨询的专家}。'",
+  "moduleLoading": {
+    "always": [
+      "M1",
+      "M2",
+      "M3",
+      "M5"
+    ],
+    "onDemand": {
+      "M4": "多专家协作场景",
+      "M6": "有数据冲突时"
+    }
+  },
+  "entryPoints": {
+    "identity": "./IDENTITY.md",
+    "rules": "./RULES.md",
+    "theory": "./THEORY.md",
+    "tools": "./TOOLS.md",
+    "crossExpert": "./CROSS_EXPERT.md"
+  },
+  "dependencies": {
+    "peers": [
+      "finance",
+      "business_model"
+    ],
+    "sentinels": [
+      "market-lifecycle",
+      "opportunity-window",
+      "competitive-dynamics",
+      "customer-demand-shift"
+    ],
+    "computes": [
+      "COMPUTE-COMPETITIVE-POSITIONING-v1",
+      "COMPUTE-HHI-v1"
+    ]
+  },
+  "$schema": "https://synova.dev/schemas/expert-manifest-v1.json",
+  "promptTemplate": "./PROMPT.md",
+  "entryPoint": "./strategy/IDENTITY.md"
+}

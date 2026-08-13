@@ -1,0 +1,1 @@
+{"$id":"resource/brand","label":"BRAND","tags":["resource","market","intangible"],"requiredProps":["name"],"optionalProps":{"category_exists":"boolean","brand_type":"string","premium_ratio":"number","awareness":"number","nps":"number","repeat_purchase_rate":"number"},"description":"品牌资源。消费者心智中的品牌资产，含溢价能力和忠诚度。"}

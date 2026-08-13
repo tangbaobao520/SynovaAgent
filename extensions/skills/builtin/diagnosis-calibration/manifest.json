@@ -1,0 +1,45 @@
+{
+  "name": "diagnosis-calibration",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "诊断校准",
+  "description": "基于GA反馈回调和历史数据校准诊断准确率，包括假阳性率、假阴性率和校准调整。",
+  "tier": "L6",
+  "complexity": "expert",
+  "expert": "host",
+  "tools": [
+    "query-graph",
+    "query-knowledge"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "system",
+        "knowledge"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": []
+  },
+  "dependencies": {
+    "skills": [],
+    "edges": [],
+    "computes": [],
+    "sentinels": []
+  },
+  "boundaries": {
+    "prohibitedDimensions": [
+      "customer-data",
+      "financial-decision"
+    ],
+    "degradedBehavior": "系统数据不可用时返回 degraded:true",
+    "preconditions": [
+      "下级Skill执行结果已就绪",
+      "GraphStore连接正常"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
+}

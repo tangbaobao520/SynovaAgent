@@ -10,13 +10,13 @@
  * 会话数据属于 Agent 进程层，本体数据属于 engine-core 层。
  */
 import Database from 'better-sqlite3';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('store/session-store');
 
 // ═══ Types ═══
 
-/** Raw SQLite row (P1-02: 替代 as any) */
+/** Raw SQLite row (P1-02: 替代 `as-any`) */
 type SqliteRow = Record<string, unknown>;
 
 export interface SessionRow {
@@ -24,6 +24,7 @@ export interface SessionRow {
   orgId: string;
   phase: number;
   stateJson: string | null;
+  title?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -75,6 +76,7 @@ export class SessionStore {
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
       -- M1-Slice2: user_id migration for existing databases (idempotent via try-catch below)
+      -- D251: title column migration (idempotent via try-catch)
 
       CREATE TABLE IF NOT EXISTS agent_messages (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -146,13 +148,31 @@ export class SessionStore {
     }
   }
 
+  /** D251: 重命名会话——设置 title。自动处理 ALTER TABLE 迁移。 */
+  renameSession(id: string, title: string): boolean {
+    try {
+      // 安全迁移: 尝试添加 title 列 (已存在则忽略)
+      try { this.db.exec("ALTER TABLE agent_sessions ADD COLUMN title TEXT DEFAULT ''"); } catch (err) {
+        log.warn({ err }, 'title 列迁移 — 列已存在');
+      }
+      this.db.prepare('UPDATE agent_sessions SET title=?, updated_at=? WHERE id=?')
+        .run(title, new Date().toISOString(), id);
+      return true;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg, id }, '重命名会话失败');
+      return false;
+    }
+  }
+
   listSessions(limit = 20): SessionRow[] {
     const rows = this.db.prepare(
       'SELECT s.*, (SELECT COUNT(*) FROM agent_messages WHERE session_id=s.id) as msg_count FROM agent_sessions s ORDER BY s.updated_at DESC LIMIT ?'
     ).all(limit) as SqliteRow[];
     return rows.map(r => ({
       id: r.id as string, orgId: r.org_id as string, phase: r.phase as number,
-      stateJson: r.state_json as string | null, createdAt: r.created_at as string, updatedAt: r.updated_at as string,
+      stateJson: r.state_json as string | null, title: r.title as string | undefined,
+      createdAt: r.created_at as string, updatedAt: r.updated_at as string,
     }));
   }
 
@@ -163,7 +183,8 @@ export class SessionStore {
     ).all(limit) as SqliteRow[];
     return rows.map(r => ({
       id: r.id as string, orgId: r.org_id as string, phase: r.phase as number,
-      stateJson: r.state_json as string | null, createdAt: r.created_at as string, updatedAt: r.updated_at as string,
+      stateJson: r.state_json as string | null, title: r.title as string | undefined,
+      createdAt: r.created_at as string, updatedAt: r.updated_at as string,
     }));
   }
 

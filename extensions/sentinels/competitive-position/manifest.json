@@ -1,0 +1,60 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "competitive-position",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "竞争定位",
+  "description": "合并自 competitive-dynamics + market-lifecycle。评估竞争格局(HHI指数/竞争强度)和产业生命周期阶段(Klepper规则)。",
+  "schedule": "0 0 1 * *",
+  "expert": "strategy",
+  "auxiliaryExperts": [
+    "marketing",
+    "knowledge"
+  ],
+  "priority": "P1",
+  "layer": "environment",
+  "computeKind": "deterministic",
+  "computes": [
+    "hhi-index",
+    "competitive-intensity",
+    "lifecycle-stage"
+  ],
+  "thresholds": {
+    "hhi_change": {
+      "warning": 0.05,
+      "critical": 0.1
+    },
+    "competitive_intensity": {
+      "warning": 0.6,
+      "critical": 0.8
+    },
+    "lifecycle_risk": {
+      "warning": 0.3,
+      "critical": 0.6
+    }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": [
+      "sog_graph"
+    ],
+    "dataAccess": {
+      "allowedDimensions": [
+        "strategic",
+        "financial"
+      ],
+      "sensitiveAccess": "read"
+    }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "competitivePositionSentinel",
+  "technoEconomicPhaseCalibration": false,
+  "id": "sentinel-competitive-position",
+  "post-processors": [
+    {
+      "compute": "COMPUTE-HHI-v1",
+      "trigger": "HHI > 2500",
+      "inject": "Market structure + pricing power"
+    }
+  ]
+}

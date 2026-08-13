@@ -1,0 +1,55 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "cash-runway",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "现金流哨兵",
+  "description": "监控现金跑道与应收逾期风险。输出 Finding: '现金跑道不足（X个月），低于安全阈值 Y 个月。'",
+  "schedule": "0 9 * * *",
+  "expert": "finance",
+  "priority": "P0",
+  "computes": [
+    "cash-runway-months",
+    "receivable-overdue-rate"
+  ],
+  "thresholds": {
+    "cash_runway_months": {
+      "warning": 12,
+      "critical": 6
+    },
+    "receivable_overdue": {
+      "warning": 0.15,
+      "critical": 0.3
+    }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": [
+      "sog_graph",
+      "financial_baseline"
+    ],
+    "dataAccess": {
+      "allowedDimensions": [
+        "financial"
+      ],
+      "sensitiveAccess": "read"
+    }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "cashRunwaySentinel",
+  "auxiliaryExperts": [
+    "strategy"
+  ],
+  "layer": "capital",
+  "computeKind": "deterministic",
+  "dependsOn": {
+    "nodeTypes": [
+      "Financial"
+    ],
+    "edgeTypes": [],
+    "requiredFields": [
+      "amount"
+    ]
+  },
+  "id": "sentinel-cash-runway"
+}

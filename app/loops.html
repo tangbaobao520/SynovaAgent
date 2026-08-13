@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Synova — Loop Status</title>
+  <link rel="stylesheet" href="/app/css/app.css">
+  <link rel="stylesheet" href="/app/css/loops.css">
+</head>
+<body>
+  <header id="synova-shell"></header>
+  <div id="toast-container"></div>
+
+  <div class="page-content">
+    <div class="loops-header">
+      <h1>Loop Status</h1>
+      <div class="loops-controls">
+        <span id="refresh-status" class="refresh-label">Auto-refresh every 30s</span>
+        <button onclick="loadLoopStatus()" class="btn-secondary" style="padding:8px 16px;">Refresh</button>
+      </div>
+    </div>
+    <div id="error-container" style="display:none;"></div>
+    <div id="loops-container" class="loops-grid">
+      <div class="loading-placeholder">Loading...</div>
+    </div>
+
+    <section id="history-section" class="card" style="margin-top:24px;">
+      <h2 class="card-title">Recent Executions</h2>
+      <div id="history-list" class="history-list">
+        <div class="loading-placeholder">Loading execution history...</div>
+      </div>
+    </section>
+  </div>
+
+  <script src="/app/js/auth.js"></script>
+  <script src="/app/js/api-client.js"></script>
+  <script src="/app/js/shell.js"></script>
+  <script src="/app/js/loops.js"></script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+{
+  "id": "mece",
+  "name": "MECE原则",
+  "category": "math-engineering",
+  "coreInsight": "分析问题时将整体拆分为相互独立（Mutually Exclusive）、完全穷尽（Collectively Exhaustive）的子问题。交叉=冗余盲区，遗漏=决策盲区。每个问题只归属一个分支，所有分支覆盖全部可能。",
+  "applicableDecisionTypes": [
+    "问题诊断",
+    "任务拆解",
+    "组织设计",
+    "流程分析",
+    "风险评估"
+  ],
+  "constraintPatterns": [
+    "拆解",
+    "分解",
+    "分层",
+    "结构化",
+    "梳理",
+    "归类",
+    "分类",
+    "层次",
+    "维度",
+    "不重不漏"
+  ],
+  "applicableRoles": [
+    "策略规划",
+    "问题分析",
+    "任务拆解",
+    "组织设计",
+    "流程诊断"
+  ],
+  "limitations": [
+    "MECE是理想状态——现实中完全互斥穷尽的拆解难以一次达成",
+    "过度追求MECE可能导致分析瘫痪",
+    "某些复杂系统具有涌现属性，不适用还原论拆解"
+  ],
+  "$id": "framework/math-engineering/mece"
+}

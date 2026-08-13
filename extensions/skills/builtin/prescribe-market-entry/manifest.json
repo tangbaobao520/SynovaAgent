@@ -1,0 +1,63 @@
+{
+  "name": "prescribe-market-entry",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "市场进入评估",
+  "description": "评估新市场吸引力，分析进入壁垒、竞争强度和需求预测，输出进入策略和ROI预测。",
+  "tier": "L4",
+  "complexity": "expert",
+  "expert": "strategy",
+  "tools": [
+    "compute-market-structure-diagnosis",
+    "compute-competitive-positioning",
+    "compute-hhi",
+    "compute-demand-forecast",
+    "compute-lerner-index"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "market",
+        "competitive"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": []
+  },
+  "dependencies": {
+    "skills": [
+      "analyze-competitive-position"
+    ],
+    "edges": [
+      "E-4.7",
+      "E-4.4",
+      "E-0.1",
+      "E-0.3"
+    ],
+    "computes": [
+      "COMPUTE-MARKET-STRUCTURE-DIAGNOSIS-v1",
+      "COMPUTE-COMPETITIVE-POSITIONING-v1",
+      "COMPUTE-HHI-v1",
+      "COMPUTE-DEMAND-FORECAST-v1",
+      "COMPUTE-LERNER-INDEX-v1"
+    ],
+    "sentinels": []
+  },
+  "boundaries": {
+    "prohibitedDimensions": [
+      "financial-detail",
+      "operational",
+      "technology-implementation"
+    ],
+    "degradedBehavior": "竞争数据源不存在时返回 degraded:true，仅输出已有数据",
+    "preconditions": [
+      "下级L1-L2数据已就绪",
+      "相关compute函数可用",
+      "GraphStore连接正常"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
+}

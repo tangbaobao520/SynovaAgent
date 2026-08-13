@@ -1,0 +1,15 @@
+{
+  "$id": "edge/efficiency_attraction",
+  "label": "EFFICIENCY_ATTRACTION",
+  "tags": ["causal", "second_order", "stage_1"],
+  "allowedFrom": ["pool/activity"],
+  "allowedTo": ["pool/capital"],
+  "requiredProps": ["asset_utilization_rate", "operating_margin"],
+  "optionalProps": {
+    "roa_trend": "number — 资产回报率趋势",
+    "capital_efficiency_ratio": "number — 资本效率比率"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "运营效率吸引资本(二阶)——已有资源的高利用率和高运营利润率增强企业的融资能力。"
+}

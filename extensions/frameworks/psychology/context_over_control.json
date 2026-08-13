@@ -1,0 +1,31 @@
+{
+  "id": "context_over_control",
+  "name": "上下文驱动",
+  "category": "psychology",
+  "coreInsight": "给 Agent 充分的信息上下文，而不是用细粒度流程指令控制其行为。充分 Context + 明确目标 → Agent 自主找到最优路径。流程控制应在输入和输出边界上设置，而非干预中间推理。",
+  "applicableDecisionTypes": [
+    "管理方式",
+    "信息共享",
+    "决策授权"
+  ],
+  "constraintPatterns": [
+    "Context",
+    "充分信息",
+    "放权",
+    "自主",
+    "上下文",
+    "信息透明",
+    "信任"
+  ],
+  "applicableRoles": [
+    "团队设计",
+    "信息架构",
+    "系统提示设计"
+  ],
+  "limitations": [
+    "Context的\"充分\"标准很难精确度量",
+    "过度信息可能稀释关键信号",
+    "放权和失控之间需要边界设计"
+  ],
+  "$id": "framework/psychology/context_over_control"
+}

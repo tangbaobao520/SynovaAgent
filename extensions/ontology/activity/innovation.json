@@ -1,0 +1,1 @@
+{"$id":"activity/innovation","label":"INNOVATION","tags":["activity","strategic","growth"],"requiredProps":["name"],"optionalProps":{"innovation_type":"string","stage":"string","success_rate":"number","time_to_market_months":"number"},"description":"创新活动。新产品/服务/流程的研发和商业化过程。"}

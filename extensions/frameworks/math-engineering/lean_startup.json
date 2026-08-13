@@ -1,0 +1,30 @@
+{
+  "id": "lean_startup",
+  "name": "精益创业",
+  "category": "math-engineering",
+  "coreInsight": "创业是寻找可重复可规模化的商业模式。构建-测量-学习反馈循环是最小化浪费的核心机制。",
+  "applicableDecisionTypes": [
+    "产品验证",
+    "市场进入",
+    "资源分配"
+  ],
+  "constraintPatterns": [
+    "创业",
+    "MVP",
+    "验证",
+    "PMF",
+    "产品市场匹配",
+    "精益"
+  ],
+  "applicableRoles": [
+    "创始人",
+    "产品经理",
+    "增长负责人"
+  ],
+  "limitations": [
+    "快速迭代可能忽视长期战略",
+    "不是所有行业都支持快速实验",
+    "MVP的\"最小\"尺度判断依赖经验"
+  ],
+  "$id": "framework/math-engineering/lean_startup"
+}

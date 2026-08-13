@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Synova — 诊断</title>
+  <link rel="stylesheet" href="/app/css/app.css">
+</head>
+<body>
+  <header id="synova-shell"></header>
+  <div id="toast-container"></div>
+
+  <div id="app-layout" class="three-panel">
+    <!-- Left: Thread Sidebar -->
+    <aside id="thread-sidebar">
+      <div class="thread-header">
+        <h3>诊断会话</h3>
+        <button id="btn-new-thread" class="btn-new-thread" title="新建诊断">+</button>
+      </div>
+      <div id="thread-list" class="thread-list"></div>
+    </aside>
+
+    <!-- Center: Main Content -->
+    <main id="main-content">
+      <div id="welcome-placeholder" class="welcome-placeholder">
+        <h2>选择或新建一个诊断会话</h2>
+        <p>左侧列表显示历史诊断记录。点击「+」开始新的诊断。</p>
+      </div>
+    </main>
+
+    <!-- Right: Expert Sidebar (Phase 2) -->
+    <aside id="expert-sidebar" class="expert-sidebar">
+      <div class="expert-placeholder">
+        <h3>Agent 状态</h3>
+        <p class="text-secondary" style="font-size:13px">子 Agent 面板将在后续版本中激活。</p>
+      </div>
+    </aside>
+  </div>
+
+  <script src="/app/js/auth.js"></script>
+  <script src="/app/js/api-client.js"></script>
+  <script src="/app/js/shell.js"></script>
+  <script src="/app/js/threads.js"></script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "$id": "edge/couples",
+  "label": "COUPLES",
+  "tags": ["causal", "growth", "structural"],
+  "allowedFrom": ["activity/production","activity/acquisition","activity/innovation","activity/coordination","activity/learning","activity/governance","activity/maintenance","activity/compliance"],
+  "allowedTo": ["activity/production","activity/acquisition","activity/innovation","activity/coordination","activity/learning","activity/governance","activity/maintenance","activity/compliance"],
+  "requiredProps": ["coupling_strength", "coupling_direction"],
+  "optionalProps": {
+    "coupling_lag_days": "number — 耦合效应的滞后天数",
+    "inertia": "number (0-1) — 耦合惯性（越高越难解耦）",
+    "cross_flywheel_revenue_ratio": "number (0-1) — 跨飞轮收入占比"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "B_output_volatility = A_output_volatility * coupling_strength * exp(-coupling_lag/decay_constant)",
+  "diagnostic_signals": {
+    "high_coupling_risk": "coupling_strength > 0.6 AND coupling_direction == 'unidirectional' — 高耦合单向依赖风险",
+    "forest_fire_risk": "coupling_strength > 0.7 AND inertia < 0.2 — 连锁崩塌风险（一环节崩→全链崩）"
+  },
+  "description": "跨部门飞轮耦合。活动A的输出波动传导到活动B。学术基础：Forrester(1961)系统动力学。计算来源：PRODUCES边的marginal_contribution时间序列的Granger因果检验。"
+}

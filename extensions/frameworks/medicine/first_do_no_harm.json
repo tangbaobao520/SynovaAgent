@@ -1,0 +1,32 @@
+{
+  "id": "first_do_no_harm",
+  "name": "先不伤害",
+  "category": "medicine",
+  "coreInsight": "在不确定的决策中，优先选择最不可能造成不可逆伤害的方案。不是所有行动都比不行动好。",
+  "applicableDecisionTypes": [
+    "供应商切换",
+    "大规模库存调整",
+    "合作伙伴更换"
+  ],
+  "constraintPatterns": [
+    "不确定",
+    "高风险",
+    "关键",
+    "安全",
+    "决策",
+    "切换",
+    "变更",
+    "谨慎"
+  ],
+  "applicableRoles": [
+    "风险控制",
+    "决策审核",
+    "安全顾问",
+    "变更管理"
+  ],
+  "limitations": [
+    "\"不行动\"本身也有风险",
+    "在某些情景下不行动等于放弃机会"
+  ],
+  "$id": "framework/medicine/first_do_no_harm"
+}

@@ -1,0 +1,32 @@
+{
+  "name": "customer-cycle",
+  "version": "1.0.0",
+  "type": "expert",
+  "displayName": "客户循环专家",
+  "description": "合并原营销专家和战略专家，覆盖竞争位势、客户价值、定价、市场进入",
+  "tier": "L3",
+  "complexity": "expert",
+  "edges": [
+    "E-33",
+    "E-36",
+    "E-01",
+    "E-03",
+    "E-25",
+    "E-30",
+    "E-31"
+  ],
+  "computes": [
+    "COMPUTE-COMPETITIVE-POSITIONING-v1",
+    "COMPUTE-HHI-v1",
+    "COMPUTE-CUSTOMER-VALUE-SCORE-v1",
+    "COMPUTE-PRICE-ELASTICITY-v2",
+    "COMPUTE-OPTIMAL-PRICE-v1"
+  ],
+  "tools": [
+    "compute-competitive-positioning",
+    "compute-hhi",
+    "compute-customer-value-score",
+    "compute-price-elasticity",
+    "compute-optimal-price"
+  ]
+}

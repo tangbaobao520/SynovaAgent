@@ -1,0 +1,29 @@
+{
+  "id": "toyota_lean",
+  "name": "丰田精益生产",
+  "category": "math-engineering",
+  "coreInsight": "丰田生产体系的两大支柱：准时化（JIT）和自働化。持续改善是底层文化。",
+  "applicableDecisionTypes": [
+    "生产管理",
+    "库存策略",
+    "质量改进"
+  ],
+  "constraintPatterns": [
+    "丰田",
+    "精益",
+    "TPS",
+    "JIT",
+    "准时化",
+    "Kaizen"
+  ],
+  "applicableRoles": [
+    "精益经理",
+    "生产主管",
+    "质量工程师"
+  ],
+  "limitations": [
+    "精益转型需要3-5年文化改变",
+    "JIT在供应链波动大时脆弱"
+  ],
+  "$id": "framework/math-engineering/toyota_lean"
+}

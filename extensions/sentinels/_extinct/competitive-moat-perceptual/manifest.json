@@ -1,0 +1,42 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "competitive-moat-perceptual",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "护城河感知强度",
+  "description": "I4: 评估品牌溢价、客户忠诚度、认知份额等感知壁垒。数据源: Product, Market节点。",
+  "schedule": "0 0 1 * *",
+  "expert": "strategy",
+  "auxiliaryExperts": [
+    "marketing"
+  ],
+  "priority": "P1",
+  "layer": "interface",
+  "computeKind": "heuristic",
+  "computes": [
+    "brand-premium",
+    "customer-loyalty"
+  ],
+  "thresholds": {
+    "perceptual_strength": {
+      "warning": 0.4,
+      "critical": 0.2
+    }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": [
+      "sog_graph"
+    ],
+    "dataAccess": {
+      "allowedDimensions": [
+        "strategic",
+        "marketing"
+      ],
+      "sensitiveAccess": "read"
+    }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "competitiveMoatPerceptualSentinel",
+  "id": "sentinel-competitive-moat-perceptual"
+}

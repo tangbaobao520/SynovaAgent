@@ -8,7 +8,7 @@
  * GET  /api/credentials/:provider — 检查是否已配置
  */
 import { Router, type Request, type Response } from 'express';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('routes/credentials');
 const router = Router();

@@ -1,0 +1,562 @@
+#!/bin/bash
+# ═══════════════════════════════════════════════════════════════════════════════
+# synova-commit — 校验网守 (D201 + D311 M1b)
+#
+# 权威文档 #17 第二章 §2.2：通往 git commit 的唯一路径。
+# 在允许提交前强制执行 pre-commit-check.sh 全部 12 组检查。
+# 没有 --no-verify 标志。没有绕过开关。
+#
+# D311 M1b (2026-08-02): 暂存区隔离 — git commit 改显式路径（不用 -a），
+# staging-guard.py 校验暂存文件归属（防 D286 卷走 D300 暂存类事故），
+# 提交成功后写集标记 committed + 阶段 CP4。
+#
+# 用法:
+#   synova-commit --task-id <ID> --agent <名称> --message <消息> [--files <文件...>] [--session-id <ID>]
+#   synova-commit --help
+#   synova-commit --health
+#
+# 退出码:
+#   0 = 全部检查通过，提交完成
+#   1 = 检查失败，提交被阻断
+#   2 = 网守降级（pre-commit 缺失），允许提交但记录告警
+#
+# 契约:
+#   @input  — task-id / agent / message / files（可选）/ session-id（可选）
+#   @output — 提交确认或错误信息
+#   @degraded — pre-commit 脚本未找到 → exit 2 + 告警
+# ═══════════════════════════════════════════════════════════════════════════════
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+PRE_COMMIT="${SYNO_PRE_COMMIT:-$PROJECT_ROOT/scripts/pre-commit-check.sh}"
+BYPASS_LOG="$PROJECT_ROOT/.claude/bypass.log"
+TIMEOUT_SEC=300
+GATEKEEPER_STORE="$PROJECT_ROOT/.codex/settings/gatekeeper"
+HEALTH_CACHE="$GATEKEEPER_STORE/.health-check"
+DASHBOARD_SIGNAL="$GATEKEEPER_STORE/.dashboard-signal"
+DEGRADED_LOG="$GATEKEEPER_STORE/degraded-events.log"
+
+# ═══ 颜色（如果终端支持） ═══
+if [[ -t 1 ]]; then
+  RED='\033[0;31m'
+  GREEN='\033[0;32m'
+  YELLOW='\033[1;33m'
+  NC='\033[0m'
+else
+  RED=''; GREEN=''; YELLOW=''; NC=''
+fi
+
+# ═══ 帮助 ═══
+
+show_help() {
+  cat << 'HELP'
+用法: synova-commit --task-id <ID> --agent <名称> --message <消息> [--files <文件...>]
+
+必需参数:
+  --task-id <ID>         任务标识（如 "D201"）
+  --agent <名称>         执行 agent（如 "claude-code"）
+  --message <消息>       commit 消息
+
+可选参数:
+  --files <文件...>      要暂存的文件列表（空格分隔）
+  --health               检查网守健康状态
+  --help                 显示此帮助
+
+退出码:
+  0  = 全部检查通过，提交完成
+  1  = 检查失败，提交被阻断
+  2  = 网守降级（pre-commit 缺失），允许提交但记录告警
+
+示例:
+  synova-commit --task-id D201 --agent claude-code --message "feat: 提交示例"
+  synova-commit --task-id D201 --agent claude-code --message "fix: bug" --files "src/foo.ts"
+  synova-commit --health
+HELP
+  exit 0
+}
+
+# ═══ 健康检查 ═══
+
+health_check() {
+  local ok=true
+  local reasons=()
+
+  if [[ ! -f "$PRE_COMMIT" ]]; then
+    ok=false
+    reasons+=("pre-commit-check.sh 未找到: $PRE_COMMIT")
+  elif [[ ! -x "$PRE_COMMIT" ]]; then
+    ok=false
+    reasons+=("pre-commit-check.sh 不可执行")
+  fi
+
+  if [[ ! -f "$PROJECT_ROOT/.git/hooks/pre-commit" ]]; then
+    reasons+=("git pre-commit hook 未安装")
+  fi
+
+  if [[ "$ok" == "true" ]]; then
+    echo "{\"ok\":true,\"reason\":\"网守健康\"}"
+    exit 0
+  else
+    local reason_str
+    reason_str=$(IFS='; '; echo "${reasons[*]}")
+    echo "{\"ok\":false,\"reason\":\"$reason_str\"}"
+    exit 0
+  fi
+}
+
+# ═══ 仪表盘信号写入 (D201-Phase2) ═══
+
+write_dashboard_signal() {
+  local color="$1" component="$2" reason="$3"
+  mkdir -p "$GATEKEEPER_STORE"
+  echo "${color}|${component}|$(date -u +%Y-%m-%dT%H:%M:%SZ)|${reason}" > "$DASHBOARD_SIGNAL"
+}
+
+# ═══ 健康缓存 (D201-Phase2) ═══
+
+check_health_cache() {
+  if [[ -f "$HEALTH_CACHE" ]]; then
+    local cached_time
+    cached_time=$(cat "$HEALTH_CACHE" 2>/dev/null || echo 0)
+    local now
+    now=$(date +%s)
+    local elapsed=$((now - cached_time))
+    if [[ $elapsed -lt 30 ]]; then return 0; fi
+  fi
+  return 1
+}
+
+update_health_cache() {
+  mkdir -p "$GATEKEEPER_STORE"
+  date +%s > "$HEALTH_CACHE"
+}
+
+# ═══ 降级事件日志 (D201-Phase2) ═══
+
+log_degraded() {
+  local component="$1" reason="$2"
+  mkdir -p "$GATEKEEPER_STORE"
+  echo "{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"component\":\"${component}\",\"reason\":\"${reason}\"}" >> "$DEGRADED_LOG"
+}
+
+# ═══ L8: 跨 Agent 契约一致性 (D201-Phase2) ═══
+
+check_l8_contract_consistency() {
+  local contract="$GATEKEEPER_STORE/contract.json"
+  if [[ ! -f "$contract" ]]; then
+    echo -e "  ${YELLOW}L8: SKIP — contract.json 缺失${NC}"
+    write_dashboard_signal "YELLOW" "gatekeeper_partial" "contract_json_missing"
+    log_degraded "L8" "contract.json missing"
+    return 0
+  fi
+  local failed=0
+  while IFS= read -r func_name; do
+    [[ -z "$func_name" ]] && continue
+    if ! grep -rn "export function $func_name\|export const $func_name" "$PROJECT_ROOT/src/" --include="*.ts" 2>/dev/null | head -1 > /dev/null; then
+      echo -e "  ${RED}L8: Contract function '$func_name' not found in src/${NC}"
+      failed=1
+    fi
+  done < <(node -e "try{const c=require('$contract');if(!c.modules)process.exit(0);for(const m of c.modules)if(m.exports)for(const e of m.exports)console.log(e.name||e)}catch(e){process.exit(1)}" 2>/dev/null || echo "")
+  if [[ $failed -eq 1 ]]; then
+    echo -e "  ${RED}L8: FAIL — contract consistency check failed${NC}"
+    write_dashboard_signal "RED" "gatekeeper_l8" "contract_mismatch"
+    return 1
+  fi
+  echo -e "  ${GREEN}L8: PASS — contract consistency check passed${NC}"
+  return 0
+}
+
+# ═══ D319: 自动 tag + version.log + push --follow-tags ═══
+# 版本权威 = .codex/control-tower/VERSION.md 最新 `## V4.x.y` 标题。
+# commit 成功后: 无 tag → git tag -a（annotated 带作者/消息, 审计可溯）+
+# control_tower_log.py version 追加 version.log；push 用 --follow-tags。
+# 全部 fail-open: VERSION.md 缺失/无版本标题/git tag 失败 → 提示不阻断。
+
+auto_tag_and_version() {
+  # VERSION.md 跟随 cwd 仓库（git rev-parse --show-toplevel）——测试隔离需要，
+  # 真实运行 cwd 即仓库根，与固定路径等价
+  local REPO_ROOT=""
+  REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "$PROJECT_ROOT")
+  local VERSION_MD="${SYNO_VERSION_MD:-$REPO_ROOT/.codex/control-tower/VERSION.md}"
+  local LOG_PY="$PROJECT_ROOT/scripts/control-tower/control_tower_log.py"
+  local ver=""
+  if [[ -f "$VERSION_MD" ]]; then
+    ver=$(grep -oE '^## V[0-9]+\.[0-9]+\.[0-9]+' "$VERSION_MD" | head -1 | awk '{print $2}')
+  fi
+  if [[ -z "$ver" ]]; then
+    echo -e "  ${YELLOW}⚠ D319: VERSION.md 无版本标题 — 跳过自动 tag${NC}"
+    return 0
+  fi
+  if git tag -l "$ver" | grep -q "$ver"; then
+    echo -e "  ${GREEN}✅ D319: tag 已存在: $ver${NC}"
+    return 0
+  fi
+  if ! git tag -a "$ver" -m "bump $ver (synova-commit auto-tag)"; then
+    echo -e "  ${YELLOW}⚠ D319: 自动打 tag 失败 (git tag -a $ver) — 请手动打 tag${NC}"
+    return 0
+  fi
+  echo -e "  ${GREEN}✅ D319: 自动打 tag: $ver${NC}"
+  if [[ -f "$LOG_PY" ]]; then
+    python3 "$LOG_PY" version --version "${ver#V}" --changes "auto-tag $ver" > /dev/null 2>&1 || true
+  fi
+}
+
+push_with_tags() {
+  local branch=""
+  if ! git remote get-url origin > /dev/null 2>&1; then
+    echo -e "  ${YELLOW}⚠ D319: 无 origin remote — 跳过 push（tag 已本地创建, 请手动 push --follow-tags）${NC}"
+    return 0
+  fi
+  branch=$(git symbolic-ref --short HEAD 2>/dev/null || echo "")
+  if [[ -z "$branch" ]]; then
+    return 0
+  fi
+  if ! git push --follow-tags origin "$branch" 2>&1 | tail -5; then
+    echo -e "  ${YELLOW}⚠ D319: push 失败 — 提交与 tag 已在本地, 请手动 git push --follow-tags origin $branch${NC}"
+  fi
+}
+
+# ═══ L9: 已知错误模式自动扫描 (D201-Phase2) ═══
+
+check_l9_error_patterns() {
+  local patterns="$GATEKEEPER_STORE/known-error-patterns.json"
+  if [[ ! -f "$patterns" ]]; then
+    echo -e "  ${YELLOW}L9: SKIP — known-error-patterns.json 缺失${NC}"
+    write_dashboard_signal "YELLOW" "gatekeeper_partial" "error_patterns_missing"
+    log_degraded "L9" "known-error-patterns.json missing"
+    return 0
+  fi
+  local staged_files
+  staged_files=$(git diff --cached --name-only --diff-filter=ACM -- '*.ts' '*.tsx' '*.js' '*.sh' 2>/dev/null || true)
+  if [[ -z "$staged_files" ]]; then
+    echo -e "  ${GREEN}L9: No staged files to scan${NC}"
+    return 0
+  fi
+  local failed=0
+  while IFS= read -r entry; do
+    [[ -z "$entry" ]] && continue
+    local pid=$(echo "$entry" | cut -d'|' -f1)
+    local pat=$(echo "$entry" | cut -d'|' -f2)
+    local desc=$(echo "$entry" | cut -d'|' -f3)
+    echo "$staged_files" | while IFS= read -r file; do
+      [[ -z "$file" ]] && continue; [[ ! -f "$PROJECT_ROOT/$file" ]] && continue
+      if grep -qE "$pat" "$PROJECT_ROOT/$file" 2>/dev/null; then
+        echo -e "  ${RED}L9: $pid — $desc (in: $file)${NC}"
+        failed=1
+      fi
+    done
+  done < <(node -e "try{const p=require('$patterns');for(const i of p)if(i.auto_detectable)console.log(i.id+'|'+i.pattern+'|'+i.description)}catch(e){process.exit(0)}" 2>/dev/null || true)
+  if [[ $failed -eq 1 ]]; then
+    echo -e "  ${RED}L9: FAIL — known error patterns detected${NC}"
+    write_dashboard_signal "RED" "gatekeeper_l9" "known_error_pattern_detected"
+    return 1
+  fi
+  echo -e "  ${GREEN}L9: PASS — no known error patterns${NC}"
+  return 0
+}
+
+# ═══ 参数解析 ═══
+
+TASK_ID=""
+AGENT=""
+MESSAGE=""
+FILES=()
+SESSION_ID=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --help)
+      show_help
+      ;;
+    --health)
+      health_check
+      ;;
+    --task-id)
+      TASK_ID="$2"
+      shift 2
+      ;;
+    --agent)
+      AGENT="$2"
+      shift 2
+      ;;
+    --message)
+      MESSAGE="$2"
+      shift 2
+      ;;
+    --session-id)
+      SESSION_ID="$2"
+      shift 2
+      ;;
+    --files)
+      shift
+      while [[ $# -gt 0 && ! "$1" =~ ^-- ]]; do
+        FILES+=("$1")
+        shift
+      done
+      ;;
+    *)
+      echo -e "${RED}❌ 未知参数: $1${NC}"
+      echo "用法: synova-commit --task-id <ID> --agent <名称> --message <消息> [--files <文件...>]"
+      exit 1
+      ;;
+  esac
+done
+
+# ═══ 验证必需参数 ═══
+
+if [[ -z "$TASK_ID" ]]; then
+  echo -e "${RED}❌ 缺少必需参数: --task-id${NC}"
+  exit 1
+fi
+
+if [[ -z "$AGENT" ]]; then
+  echo -e "${RED}❌ 缺少必需参数: --agent${NC}"
+  exit 1
+fi
+
+if [[ -z "$MESSAGE" ]]; then
+  echo -e "${RED}❌ 缺少必需参数: --message${NC}"
+  exit 1
+fi
+
+# ═══ D329: session-id 解析 (M1b 暂存区隔离 + 劫持根治) ═══
+# 身份 = 会话声明的任务，绝不自动采用认领 brief（D320 劫持根因: 自动采用让
+# staging-guard 把被偷文件当"自己的"）。显式 --session-id 优先。
+if [[ -z "$SESSION_ID" ]]; then
+  SESSION_ID="$TASK_ID"
+fi
+SESSION_REGISTRY="$PROJECT_ROOT/scripts/control-tower/session_registry.py"
+SELF_HEALTH="$PROJECT_ROOT/scripts/control-tower/self-health.py"
+STAGING_GUARD="$PROJECT_ROOT/scripts/control-tower/staging_guard.py"
+WAIT_MANAGER="$PROJECT_ROOT/scripts/control-tower/wait_manager.py"
+
+# D329: register 的 brief 路径按 TASK_ID 前缀查找实际文件（不假定 ${SESSION_ID}.md 存在）
+REGISTER_BRIEF=""
+for _b in "$PROJECT_ROOT"/.claude/task-briefs/${TASK_ID}.md "$PROJECT_ROOT"/.claude/task-briefs/${TASK_ID}-*.md; do
+  [[ -f "$_b" ]] && REGISTER_BRIEF="$_b" && break
+done
+
+# 登记本 session（CP2 开发阶段；若已存在则刷新心跳）
+# D329: write-set 登记移到 staging-guard 通过之后（防 --files 预登记"洗白"他人文件）
+if [[ -f "$SESSION_REGISTRY" ]]; then
+  python3 "$SESSION_REGISTRY" register --session-id "$SESSION_ID" --brief "$REGISTER_BRIEF" --task-id "$TASK_ID" 2>/dev/null || true
+  python3 "$WAIT_MANAGER" phase --session-id "$SESSION_ID" --phase CP2 2>/dev/null || true
+fi
+
+# D314: 提交前 self-health 快照（fail-open，不阻断）
+if [[ -f "$SELF_HEALTH" ]]; then
+  python3 "$SELF_HEALTH" > /dev/null 2>&1 || true
+fi
+
+# ═══ 暂存文件 ═══
+
+if [[ ${#FILES[@]} -gt 0 ]]; then
+  echo "📦 暂存 ${#FILES[@]} 个文件..."
+  git add "${FILES[@]}" || {
+    echo -e "${RED}❌ 文件暂存失败${NC}"
+    exit 1
+  }
+fi
+
+# ═══ D311: 暂存区隔离 (M1b — 防 D286 卷走 D300 类事故) ═══
+# 校验暂存文件归属: 他人活跃写集 → 硬阻断；自己/无归属 → 放行
+# D331 (P2-5→P1): 裸 python3 + `|| true` 连 guard 崩溃都吞掉（D328 P1-1 同型再犯）
+# → PYBIN 跨平台回退（对齐 commit-msg-check.sh/resolve-commit-brief.sh）+ rc 捕获:
+#   rc==0          → 正常解析 JSON
+#   rc!=0 且 block → 按 block 硬阻断（guard 用 exit 1 表达阻断）
+#   rc!=0 非 JSON  → 显式 degraded 提示（执行异常不静默）
+#   python 不可用  → fail-open 显式提示跳过
+if [[ -f "$STAGING_GUARD" ]]; then
+  STAGED_LIST=$(git diff --cached --name-only 2>/dev/null || true)
+  if [[ -n "$STAGED_LIST" ]]; then
+    PYBIN=""
+    for _c in python3 python py; do
+      if command -v "$_c" >/dev/null 2>&1 && "$_c" -c "import sys" >/dev/null 2>&1; then PYBIN="$_c"; break; fi
+    done
+    if [[ -n "$PYBIN" ]]; then
+      set +e
+      GUARD_OUT=$("$PYBIN" "$STAGING_GUARD" --session-id "$SESSION_ID" --staged $STAGED_LIST 2>&1)
+      GUARD_RC=$?
+      set -e
+      if [[ "$GUARD_RC" -ne 0 ]]; then
+        # rc≠0: block 用 exit 1 + JSON（正常阻断）vs 崩溃（非 JSON）→ 区分显式降级
+        GUARD_STATUS=$(echo "$GUARD_OUT" | "$PYBIN" -c "import json,sys; print(json.load(sys.stdin).get('status','degraded'))" 2>/dev/null || echo "degraded")
+        if [[ "$GUARD_STATUS" != "block" ]]; then
+          echo -e "${YELLOW}⚠ staging-guard 执行异常 (rc=$GUARD_RC) — 降级放行，请检查其日志${NC}"
+          echo "$GUARD_OUT" | head -3
+          echo ""
+        fi
+      else
+        GUARD_STATUS=$(echo "$GUARD_OUT" | "$PYBIN" -c "import json,sys; print(json.load(sys.stdin).get('status','degraded'))" 2>/dev/null || echo "degraded")
+      fi
+    else
+      GUARD_STATUS="degraded"
+      echo -e "${YELLOW}⚠ staging-guard 跳过: python 不可用或损坏（fail-open 显式提示，不静默）${NC}"
+    fi
+    if [[ "$GUARD_STATUS" == "block" ]]; then
+      echo ""
+      echo -e "${RED}❌ 暂存区隔离 (D311 M1b) — 暂存区含他人文件:${NC}"
+      echo "$GUARD_OUT" | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+for f in d.get('foreign_files',[]):
+    print(f\"  - {f['file']} (属于 session {f.get('owner_session','?')}, brief: {f.get('brief','?')})\")
+" 2>/dev/null || echo "$GUARD_OUT"
+      echo ""
+      echo -e "${RED}  提交已阻断 — 请先与对应 session 协调或移出该文件${NC}"
+      exit 1
+    fi
+  fi
+fi
+
+# ═══ D329: write-set 登记（guard 通过之后 — 防 --files 预登记"洗白"他人文件）═══
+if [[ -f "$SESSION_REGISTRY" ]] && [[ ${#FILES[@]} -gt 0 ]]; then
+  python3 "$SESSION_REGISTRY" write-set --session-id "$SESSION_ID" --add "${FILES[@]}" 2>/dev/null || true
+fi
+
+# ═══ 检查暂存区 ═══
+
+STAGED_COUNT=$(git diff --cached --name-only | wc -l)
+if [[ "$STAGED_COUNT" -eq 0 ]]; then
+  echo -e "${YELLOW}⚠ 暂存区为空 — 没有要提交的变更${NC}"
+  exit 0
+fi
+
+# ═══ 运行 pre-commit 检查 ═══
+
+echo ""
+echo "═══════════════════════════════════════════════════════════"
+echo "  synova-commit — 校验网守"
+echo "  任务: $TASK_ID | Agent: $AGENT"
+echo "  暂存文件: $STAGED_COUNT"
+echo "═══════════════════════════════════════════════════════════"
+echo ""
+
+# 健康缓存
+update_health_cache
+
+# D201-Phase2: L8 — 契约一致性检查
+echo "── L8/9: Enhanced Checks ──"
+check_l8_contract_consistency || exit 1
+echo ""
+
+# D201-Phase2: L9 — 已知错误模式扫描
+check_l9_error_patterns || exit 1
+echo ""
+
+if [[ ! -f "$PRE_COMMIT" ]]; then
+  echo -e "${YELLOW}⚠ pre-commit-check.sh 未找到 — 网守降级${NC}"
+  echo -e "${YELLOW}⚠ 路径: $PRE_COMMIT${NC}"
+  echo -e "${YELLOW}⚠ 允许提交但建议立即修复${NC}"
+  echo ""
+
+  # 记录降级
+  echo "$(date -Iseconds) | DEGRADED | pre-commit-check.sh not found | TASK_ID=$TASK_ID | AGENT=$AGENT" >> "$BYPASS_LOG"
+
+  # D311 M1b: 显式路径 commit（不用 -a，防误提交工作区杂散文件）
+  if [[ ${#FILES[@]} -gt 0 ]]; then
+    git commit -m "$MESSAGE" -- "${FILES[@]}"
+  else
+    git commit -m "$MESSAGE" -- $(git diff --cached --name-only 2>/dev/null || true)
+  fi
+  EXIT_CODE=$?
+  echo -e "${GREEN}✅ 提交完成（降级模式）${NC}"
+
+  # D319: 提交成功后自动 tag + version.log（降级路径同样执行）
+  if [[ $EXIT_CODE -eq 0 ]]; then
+    auto_tag_and_version
+    push_with_tags
+  fi
+
+  # D311 M1b: 提交成功后释放写集（标记 committed）+ 阶段 CP4
+  if [[ $EXIT_CODE -eq 0 && -f "$SESSION_REGISTRY" ]]; then
+    python3 "$SESSION_REGISTRY" write-set --session-id "$SESSION_ID" --status $(git diff --cached --name-only 2>/dev/null | head -1) committed 2>/dev/null || true
+    python3 "$WAIT_MANAGER" phase --session-id "$SESSION_ID" --phase CP4 2>/dev/null || true
+  fi
+
+  # D202: 提交后运行外部审计（降级模式也运行）
+  AUDITOR_SCRIPT="$SCRIPT_DIR/external-auditor.sh"
+  if [[ -f "$AUDITOR_SCRIPT" ]]; then
+    bash "$AUDITOR_SCRIPT" --task-id "$TASK_ID" --diff "HEAD~1..HEAD" 2>/dev/null || true
+  fi
+
+  exit 2
+fi
+
+# 运行 pre-commit（带超时）
+echo "🔍 运行 pre-commit 检查（${TIMEOUT_SEC}s 超时）..."
+echo ""
+
+set +e
+timeout "$TIMEOUT_SEC" bash "$PRE_COMMIT"
+PRECOMMIT_EXIT=$?
+set -e
+
+echo ""
+
+if [[ $PRECOMMIT_EXIT -eq 0 ]]; then
+  # 全部通过 → 执行提交
+  echo -e "${GREEN}✅ 全部 12 组检查通过${NC}"
+  echo ""
+
+  # D214: 发射 gatekeeper 信号
+  python3 "$SCRIPT_DIR/emit-signal.py" gatekeeper green "all_checks_pass" 2>/dev/null || true
+
+  # D311 M1b: 显式路径 commit（不用 -a，防误提交工作区杂散文件）
+  if [[ ${#FILES[@]} -gt 0 ]]; then
+    git commit -m "$MESSAGE" -- "${FILES[@]}"
+  else
+    git commit -m "$MESSAGE" -- $(git diff --cached --name-only 2>/dev/null || true)
+  fi
+  COMMIT_EXIT=$?
+
+  if [[ $COMMIT_EXIT -eq 0 ]]; then
+    echo -e "${GREEN}✅ 提交完成${NC}"
+    # D319: 提交成功后自动 tag + version.log + push --follow-tags
+    auto_tag_and_version
+    push_with_tags
+    # D311 M1b: 提交成功后释放写集（标记 committed）+ 阶段 CP4
+    if [[ -f "$SESSION_REGISTRY" ]]; then
+      COMMITTED_FILES=$(git show --name-only --format="" HEAD 2>/dev/null | grep -v '^$' | head -50 || true)
+      for cf in $COMMITTED_FILES; do
+        python3 "$SESSION_REGISTRY" write-set --session-id "$SESSION_ID" --status "$cf" committed 2>/dev/null || true
+      done
+      python3 "$WAIT_MANAGER" phase --session-id "$SESSION_ID" --phase CP4 2>/dev/null || true
+    fi
+    # 记录到 bypass.log 作为正常提交证据
+    echo "$(date -Iseconds) | COMMITTED | pre-commit PASS | TASK_ID=$TASK_ID | AGENT=$AGENT | HASH=$(git rev-parse HEAD 2>/dev/null)" >> "$BYPASS_LOG"
+
+    # D202: 提交后运行外部审计（非阻塞 — 不因审计失败而阻断）
+    AUDITOR_SCRIPT="$SCRIPT_DIR/external-auditor.sh"
+    if [[ -f "$AUDITOR_SCRIPT" ]]; then
+      bash "$AUDITOR_SCRIPT" --task-id "$TASK_ID" --diff "HEAD~1..HEAD" 2>/dev/null || true
+    else
+      echo "$(date -Iseconds) | AUDITOR_MISSING | external-auditor.sh not found | TASK_ID=$TASK_ID" >> "$BYPASS_LOG"
+    fi
+
+    exit 0
+  else
+    echo -e "${RED}❌ git commit 失败（exit $COMMIT_EXIT）${NC}"
+    exit 1
+  fi
+
+elif [[ $PRECOMMIT_EXIT -eq 124 ]]; then
+  # 超时
+  echo -e "${RED}❌ pre-commit 检查超时（${TIMEOUT_SEC}s）${NC}"
+  echo -e "${YELLOW}  pre-commit-check.sh 组 6（plan-integrity）可能有性能问题${NC}"
+  echo -e "${YELLOW}  建议: 优化 check-plan-integrity.sh 或增加 TIMEOUT_SEC${NC}"
+  echo "$(date -Iseconds) | TIMEOUT | pre-commit timed out after ${TIMEOUT_SEC}s | TASK_ID=$TASK_ID | AGENT=$AGENT" >> "$BYPASS_LOG"
+  exit 1
+
+else
+  # 检查失败
+  echo -e "${RED}❌ pre-commit 检查未通过（exit $PRECOMMIT_EXIT）${NC}"
+  echo ""
+  echo "═══════════════════════════════════════════════════════════"
+  echo "  提交被阻断 — 请修复上述问题后重试"
+  echo "  synova-commit 没有 --no-verify 选项"
+  echo "═══════════════════════════════════════════════════════════"
+  echo "$(date -Iseconds) | BLOCKED | pre-commit FAIL (exit $PRECOMMIT_EXIT) | TASK_ID=$TASK_ID | AGENT=$AGENT" >> "$BYPASS_LOG"
+  exit 1
+fi

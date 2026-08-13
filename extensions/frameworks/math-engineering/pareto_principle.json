@@ -1,0 +1,68 @@
+{
+  "id": "pareto_principle",
+  "name": "帕累托原则（二八定律）",
+  "category": "math-engineering",
+  "coreInsight": "80%的效果来自20%的原因。聚焦关键少数比平均用力更有效。",
+  "applicableDecisionTypes": [
+    "客户管理",
+    "产品线管理",
+    "库存ABC分类"
+  ],
+  "constraintPatterns": [
+    "资源",
+    "预算",
+    "优先级",
+    "效率",
+    "成本",
+    "有限",
+    "聚焦",
+    "重点"
+  ],
+  "applicableRoles": [
+    "运营经理",
+    "产品经理",
+    "资源分配",
+    "策略规划"
+  ],
+  "limitations": [
+    "剩余80%依然重要",
+    "边界不清时难以确定哪20%是关键"
+  ],
+  "skillPatterns": [
+    {
+      "name": "ABC分类管理",
+      "summary": "基于帕累托原则将管理对象按重要性分为A/B/C三级，差异化投入资源",
+      "category": "运营管理",
+      "tags": [
+        "分类",
+        "优先级",
+        "效率"
+      ],
+      "isMarketplaceSkill": true,
+      "prerequisites": [],
+      "failureModes": [],
+      "sourceTier": "inferred",
+      "dependsOn": [],
+      "conflictsWith": [],
+      "triggers": []
+    },
+    {
+      "name": "优先级矩阵工具",
+      "summary": "用影响度-投入度矩阵筛选关键少数事务，拒绝低价值消耗",
+      "category": "策略规划",
+      "tags": [
+        "优先级",
+        "矩阵",
+        "决策"
+      ],
+      "isMarketplaceSkill": true,
+      "prerequisites": [],
+      "failureModes": [],
+      "sourceTier": "inferred",
+      "dependsOn": [],
+      "conflictsWith": [],
+      "triggers": []
+    }
+  ],
+  "$id": "framework/math-engineering/pareto_principle"
+}

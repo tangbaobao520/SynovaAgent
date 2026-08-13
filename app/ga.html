@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Synova — GA Dashboard</title>
+  <link rel="stylesheet" href="/app/css/app.css">
+</head>
+<body>
+  <header id="synova-shell"></header>
+  <div id="toast-container"></div>
+
+  <div id="ga-layout" class="three-panel">
+    <!-- Left: Enterprise List -->
+    <aside id="ga-enterprises" class="ga-panel ga-panel-left">
+      <div class="ga-panel-header">
+        <h3>企业列表</h3>
+        <span id="ga-enterprise-count" class="ga-badge">0</span>
+      </div>
+      <div id="ga-enterprise-list" class="ga-list">
+        <div class="spinner visible"></div>
+      </div>
+    </aside>
+
+    <!-- Center: Diagnosis + Cockpit Data -->
+    <main id="ga-diagnosis" class="ga-panel ga-panel-center">
+      <div class="ga-panel-header">
+        <h3>诊断概览</h3>
+        <span id="ga-refresh-time" class="ga-timestamp"></span>
+      </div>
+      <div id="ga-diagnosis-content" class="ga-center-content">
+        <div class="spinner visible"></div>
+      </div>
+    </main>
+
+    <!-- Right: Federated Approval + Observation -->
+    <aside id="ga-federated" class="ga-panel ga-panel-right">
+      <div class="ga-panel-header">
+        <h3>联邦知识审批</h3>
+        <span id="ga-federated-count" class="ga-badge">0</span>
+      </div>
+      <div id="ga-federated-list" class="ga-list">
+        <div class="spinner visible"></div>
+      </div>
+
+      <div class="ga-panel-header" style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px;">
+        <h3>写入 Observation</h3>
+      </div>
+      <div id="ga-observation-form" class="ga-observation-form">
+        <select id="ga-obs-enterprise" class="ga-obs-select">
+          <option value="">选择企业…</option>
+        </select>
+        <textarea id="ga-obs-content" class="ga-obs-textarea" rows="4" placeholder="输入 Observation 内容…"></textarea>
+        <button id="ga-obs-submit" class="btn-primary" onclick="submitObservation()">提交 Observation</button>
+        <div id="ga-obs-feedback" class="ga-obs-feedback"></div>
+      </div>
+    </aside>
+  </div>
+
+  <script src="/app/js/auth.js"></script>
+  <script src="/app/js/api-client.js"></script>
+  <script src="/app/js/shell.js"></script>
+  <script src="/app/js/ga.js"></script>
+</body>
+</html>

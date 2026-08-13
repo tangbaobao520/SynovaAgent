@@ -1,0 +1,32 @@
+{
+  "id": "emergent_strategy",
+  "name": "涌现型策略",
+  "category": "biology-physics",
+  "coreInsight": "策略不是在会议室里设计出来的——是从一线行动中涌现的。最好的供应链优化往往来自一线采购员的即时判断而非总部的年度规划。给执行层留策略空间。",
+  "applicableDecisionTypes": [
+    "组织设计",
+    "决策权限分配",
+    "流程优化"
+  ],
+  "constraintPatterns": [
+    "一线",
+    "授权",
+    "策略",
+    "执行",
+    "赋能",
+    "自主",
+    "灵活",
+    "响应"
+  ],
+  "applicableRoles": [
+    "一线管理",
+    "运营授权",
+    "流程优化",
+    "组织设计"
+  ],
+  "limitations": [
+    "完全放权可能导致混乱",
+    "涌现策略需要事后归纳制度化"
+  ],
+  "$id": "framework/biology-physics/emergent_strategy"
+}

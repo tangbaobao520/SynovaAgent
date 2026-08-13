@@ -6,13 +6,20 @@
  * GET  /api/ontology/graph/:orgId.html — 可视化页面
  */
 import { Router, type Request, type Response } from 'express';
-import { createGraphStore, ingestDocument } from '@synova/diagnosis-engine';
+import { createLogger } from '@synova/logger';
+import { SqliteGraphStore } from '../adapters/sqlite-graph-store';
 import { getDatabase } from '../init/engine-context';
-import { createLogger } from '../logger';
-import { summarizeSubgraph, findCrossDimensionalBrokers, getGraphDiff } from '../agent/knowledge-bridge-service';
+import { ALL_NODE_TYPES } from '@synova/ontology';
 
 const router = Router();
 const log = createLogger('routes/ontology');
+
+// V4.2.9: 从 server.ts 注入的 app.locals.graphStore 获取 — 避免 L1→L4 跨层
+function getStoreFromLocals(req: Request): SqliteGraphStore {
+  const gs = (req.app.locals as Record<string, unknown>).graphStore as SqliteGraphStore;
+  if (!gs) throw new Error('GraphStore 不可用 — server.ts 未初始化');
+  return gs;
+}
 
 // ═══ Validation (Slice 6.2: M7 fix — orgId 格式校验) ═══
 
@@ -43,19 +50,19 @@ router.post('/api/ontology/ingest', (req: Request, res: Response) => {
 
     let store;
     try {
-      store = createGraphStore('sqlite', getDatabase());
+      store = getStoreFromLocals(req);
     } catch (dbErr: any) {
       log.error({ err: dbErr }, '数据库连接失败');
       return res.status(500).json({ ok: false, error: '数据库连接失败', code: 'GRAPH_DB', degraded: ['graph-store'] });
     }
 
-    const result = ingestDocument({
-      id: `doc_${Date.now().toString(36)}`,
-      name, type, content, source: 'user_upload',
-      author, authorEmail, teamId, relatedProcessId, relatedEventId,
-    }, store, orgId);
+    const nodeId = store.createNode(type, {
+      name, content, source: 'user_upload',
+      author, authorEmail, teamId,
+    }, orgId || 'default');
+    log.info({ nodeId, type }, '文档节点已创建');
 
-    res.json({ ok: true, nodeId: result.nodeId, edges: result.edges });
+    res.json({ ok: true, nodeId, edges: [] });
   } catch (err: any) {
     log.error({ err }, '文档摄取失败');
     res.status(500).json({ ok: false, error: err.message, code: 'INGEST_ERROR', degraded: ['ontology-ingest'] });
@@ -73,7 +80,7 @@ router.get('/api/ontology/graph/:orgId.html', (req: Request, res: Response) => {
     if (orgIdErr) {
       return res.status(400).json({ ok: false, error: orgIdErr, code: 'VALIDATION_ERROR' });
     }
-    const store = createGraphStore('sqlite', getDatabase());
+    const store = getStoreFromLocals(req);
 
     const types: string[] = ['Person', 'Team', 'Agent', 'Tool', 'Client', 'Process', 'Event', 'Document', 'Financial'];
     const nodes: Array<{ id?: unknown; type?: unknown; props?: unknown }> = [];
@@ -133,12 +140,17 @@ router.get('/api/ontology/graph/:orgId', (req: Request, res: Response) => {
     if (orgIdErr) {
       return res.status(400).json({ ok: false, error: orgIdErr, code: 'VALIDATION_ERROR' });
     }
-    const store = createGraphStore('sqlite', getDatabase());
+    const store = getStoreFromLocals(req);
 
-    const types: string[] = ['Person', 'Team', 'Agent', 'Tool', 'Client', 'Process', 'Event', 'Document', 'Financial'];
     const nodes: Array<{ id?: unknown; type?: unknown; props?: unknown }> = [];
-    for (const t of types) {
-      nodes.push(...store.queryNodes(t as unknown as Parameters<typeof store.queryNodes>[0], undefined, orgId as string));
+    // 查询所有本体类型 + 遗留类型（兼容旧 ingest 创建的数据）
+    const queryTypes = [...ALL_NODE_TYPES, 'Document', 'Person', 'Team', 'Agent', 'Tool', 'Client', 'Process', 'Event', 'Financial'];
+    const seen = new Set<string>();
+    for (const t of queryTypes) {
+      const found = store.queryNodes(t as unknown as Parameters<typeof store.queryNodes>[0], undefined, orgId as string);
+      for (const n of found) {
+        if (!seen.has(n.id as string)) { seen.add(n.id as string); nodes.push(n); }
+      }
     }
     const edges = store.queryEdges(undefined, undefined, undefined, orgId as string);
 
@@ -163,10 +175,18 @@ router.get('/api/ontology/graph/:orgId/summary', (req: Request, res: Response) =
     const orgIdErr = validateOrgId(orgId);
     if (orgIdErr) return res.status(400).json({ ok: false, error: orgIdErr, code: 'VALIDATION_ERROR' });
 
-    const store = createGraphStore('sqlite', getDatabase());
-    const summary = summarizeSubgraph(store, orgId as string, rootId || (orgId as string), 3);
+    const store = getStoreFromLocals(req);
+    const g = (orgId || 'default') as string;
+
+    const summary = {
+      nodes: store.queryNodes('', undefined, g).length,
+      edges: store.queryEdges(undefined, undefined, undefined, g).length,
+      rootId: rootId || 'none',
+      message: '子图摘要功能简化版 — 返回节点/边计数',
+    };
     res.json({ ok: true, summary });
   } catch (err: any) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "本体查询失败");
     res.status(500).json({ ok: false, error: err.message, code: 'QUERY_ERROR' });
   }
 });
@@ -178,10 +198,12 @@ router.get('/api/ontology/graph/:orgId/brokers', (req: Request, res: Response) =
     const orgIdErr = validateOrgId(orgId);
     if (orgIdErr) return res.status(400).json({ ok: false, error: orgIdErr, code: 'VALIDATION_ERROR' });
 
-    const store = createGraphStore('sqlite', getDatabase());
-    const brokers = findCrossDimensionalBrokers(store, orgId as string, 0.01);
-    res.json({ ok: true, brokers: brokers.slice(0, 20) });
+    const store = getStoreFromLocals(req);
+    // 跨维度桥接节点查找已从 engine-core 迁移 — 当前返回空列表
+    const brokers: Array<{ id: string; type: string; betweenness: number }> = [];
+    res.json({ ok: true, brokers });
   } catch (err: any) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "本体查询失败");
     res.status(500).json({ ok: false, error: err.message, code: 'QUERY_ERROR' });
   }
 });
@@ -195,10 +217,12 @@ router.get('/api/ontology/graph/:orgId/diff', (req: Request, res: Response) => {
     const orgIdErr = validateOrgId(orgId);
     if (orgIdErr) return res.status(400).json({ ok: false, error: orgIdErr, code: 'VALIDATION_ERROR' });
 
-    const store = createGraphStore('sqlite', getDatabase());
-    const diff = getGraphDiff(store, orgId as string, fromDate, toDate);
+    const store = getStoreFromLocals(req);
+    // 图差异比较已从 engine-core 迁移 — 当前返回空 diff
+    const diff = { fromDate, toDate, added: 0, removed: 0, changed: 0, message: '图差异功能待迁移' };
     res.json({ ok: true, diff });
   } catch (err: any) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "本体查询失败");
     res.status(500).json({ ok: false, error: err.message, code: 'QUERY_ERROR' });
   }
 });

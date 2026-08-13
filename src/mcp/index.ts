@@ -15,6 +15,8 @@ import * as readline from 'readline';
 import { createProvider } from '../providers';
 import { detectProvider } from '../providers/detect';
 import { ConversationEngine } from '../agent/conversation-engine';
+import { createLogger } from '@synova/logger';
+const log = createLogger('src.mcp.index');
 
 // ═══ MCP Protocol ═══
 
@@ -35,6 +37,31 @@ interface MCPResponse {
 // ═══ Tool Definitions ═══
 
 const TOOLS = [
+  {
+    name: 'sentinel_list',
+    description: '列出所有哨兵 (ID/名称/层/状态/数据依赖满足度)',
+    inputSchema: { type: 'object', properties: {}, required: [] },
+  },
+  {
+    name: 'sentinel_run',
+    description: '运行指定哨兵',
+    inputSchema: { type: 'object', properties: { sentinelId: { type: 'string', description: '哨兵 ID' } }, required: ['sentinelId'] },
+  },
+  {
+    name: 'sentinel_run_all',
+    description: '运行全量哨兵并返回结果',
+    inputSchema: { type: 'object', properties: {}, required: [] },
+  },
+  {
+    name: 'flywheel_speeds',
+    description: '获取三飞轮当前转速 + 瓶颈维度',
+    inputSchema: { type: 'object', properties: {}, required: [] },
+  },
+  {
+    name: 'data_source_status',
+    description: '数据源连接状态 + 字段覆盖度',
+    inputSchema: { type: 'object', properties: {}, required: [] },
+  },
   {
     name: 'diagnose_organization',
     description: '对指定组织运行六阶段诊断分析，返回结构化诊断报告',
@@ -88,6 +115,104 @@ const TOOLS = [
 
 async function handleToolCall(name: string, params: Record<string, unknown>): Promise<string> {
   switch (name) {
+    case 'sentinel_list': {
+      try {
+        const { getSentinelRegistry } = await import('../sentinel/registry');
+        const reg = getSentinelRegistry();
+        const list = reg.list().map(s => ({
+          id: s.config.id, name: s.config.name, layer: (s.config as unknown as Record<string, unknown>).layer || s.config.category,
+          priority: s.config.priority, mode: s.config.mode,
+        }));
+        return JSON.stringify({ ok: true, total: list.length, sentinels: list });
+      } catch (err: unknown) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "动态模块加载失败");
+        return JSON.stringify({ ok: false, error: String(err) });
+      }
+    }
+    case 'sentinel_run': {
+      try {
+        const sentinelId = params.sentinelId as string;
+        const { runSentinelForTeam } = await import('../sentinel/sentinel-runner');
+        // 用默认 db 构造 store
+        const { getDatabase, initEngineContext } = await import('../init/engine-context');
+        const { SqliteGraphStore } = await import('../adapters/sqlite-graph-store');
+        try { getDatabase(); } catch (err) {
+          log.warn({ err }, '数据库未初始化 — 执行懒初始化');
+          initEngineContext();
+        }
+        const store = new SqliteGraphStore(getDatabase() as never);
+        const findings = await runSentinelForTeam(sentinelId, store);
+        return JSON.stringify({ ok: true, sentinelId, findings: findings.length });
+      } catch (err: unknown) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "MCP 日志调用");
+        return JSON.stringify({ ok: false, error: String(err) });
+      }
+    }
+    case 'sentinel_run_all': {
+      try {
+        const { getSentinelRegistry } = await import('../sentinel/registry');
+        const registry = getSentinelRegistry();
+        const context = { db: undefined, now: new Date(), registry };
+        const allResults = await Promise.allSettled(registry.list().map(s => s.check(context)));
+        const results = allResults.map((r, i) => ({ sentinelId: registry.list()[i].config.id, ok: r.status === 'fulfilled' }));
+        return JSON.stringify({ ok: true, total: results.length, results });
+      } catch (err: unknown) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "动态模块加载失败");
+        return JSON.stringify({ ok: false, error: String(err) });
+      }
+    }
+    case 'flywheel_speeds': {
+      try {
+        const { getGlobalSentinelRunner } = await import('../sentinel/runner');
+        const runner = getGlobalSentinelRunner();
+        const allFindings: import('../sentinel/types').SentinelFinding[] = [];
+        if (runner) {
+          for (const runs of runner.getRecentResults().values()) {
+            for (const run of runs) {
+              if (run.result.findings) allFindings.push(...run.result.findings);
+            }
+          }
+        }
+        if (allFindings.length === 0) {
+          return JSON.stringify({ ok: true, valueCreation: 50, valueCapture: 50, valueRegeneration: 50, bottleneck: 'environment', findings: 0 });
+        }
+        // 按严重度汇总
+        const sev: Record<string, number> = { emergency: 0, critical: 0, warning: 50, info: 100 };
+        const score = Math.round(allFindings.reduce((s, f) => s + (sev[f.severity] ?? 50), 0) / allFindings.length);
+        return JSON.stringify({ ok: true, overall: score, critical: allFindings.filter(f => f.severity === 'critical').length, warning: allFindings.filter(f => f.severity === 'warning').length, findings: allFindings.length });
+      } catch (err: unknown) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "动态模块加载失败");
+        return JSON.stringify({ ok: false, error: String(err) });
+      }
+    }
+    case 'data_source_status': {
+      try {
+        const { getDatabase, initEngineContext } = await import('../init/engine-context');
+        try { getDatabase(); } catch (err) {
+          log.warn({ err }, '数据库未初始化 — 执行懒初始化');
+          initEngineContext();
+        }
+        const db = getDatabase();
+        const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as Array<{ name: string }>;
+        // 本体层覆盖情况
+        let nodeTypes: Array<{ id: string; label: string; fields: number }> = [];
+        try {
+          const { loadOntology } = await import('../l4/ontology-loader');
+          const { ontology } = loadOntology();
+          nodeTypes = ontology.nodeTypes.map(n => ({
+            id: n.$id, label: n.label,
+            fields: Object.keys(n.optionalProps || {}).length + (n.requiredProps || []).length,
+          }));
+        } catch (err) {
+          log.warn({ err: err instanceof Error ? err.message : String(err) }, "动态模块加载失败");
+          /* ontology unavailable */
+        }
+        return JSON.stringify({ ok: true, connected: true, tables: tables.slice(0, 30).map(t => t.name), nodeTypes, nodeCount: nodeTypes.length });
+      } catch (err: unknown) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "ontology unavailable");
+        return JSON.stringify({ ok: false, error: String(err), connected: false });
+      }
+    }
     case 'diagnose_organization': {
       const orgName = params.orgName as string;
       const provider = createProvider(detectProvider(), {
@@ -112,6 +237,7 @@ async function handleToolCall(name: string, params: Record<string, unknown>): Pr
         const res = await fetch(`${BASE}/api/ontology/graph/${orgId}`);
         return await res.text();
       } catch (err: any) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "网络请求失败");
         process.stderr.write(`[mcp] query_ontology fetch failed: ${err.message?.slice(0, 80)}\n`);
         return JSON.stringify({ error: '本体 API 不可达——请确保 SynovaAgent 服务已启动' });
       }
@@ -126,6 +252,7 @@ async function handleToolCall(name: string, params: Record<string, unknown>): Pr
         });
         return await res.text();
       } catch (err: any) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "网络请求失败");
         process.stderr.write(`[mcp] ingest_document fetch failed: ${err.message?.slice(0, 80)}\n`);
         return JSON.stringify({ error: '本体 API 不可达' });
       }
@@ -137,6 +264,7 @@ async function handleToolCall(name: string, params: Record<string, unknown>): Pr
         const res = await fetch(sessionId ? `${BASE}/api/sessions/${sessionId}` : `${BASE}/api/sessions`);
         return await res.text();
       } catch (err: any) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "网络请求失败");
         process.stderr.write(`[mcp] get_session fetch failed: ${err.message?.slice(0, 80)}\n`);
         return JSON.stringify({ error: '会话 API 不可达' });
       }
@@ -182,6 +310,7 @@ async function main() {
         send({ jsonrpc: '2.0', id: req.id, error: { code: -32601, message: `未知方法: ${req.method}` } });
       }
     } catch (err: any) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "JSON 解析失败");
       // 无法解析 JSON 的行——写入 stderr 便于运维排查
       process.stderr.write(`[mcp] JSON parse error: ${err.message?.slice(0, 80)}\n`);
     }
@@ -189,6 +318,7 @@ async function main() {
 }
 
 main().catch((err) => {
-  process.stderr.write(`MCP Fatal: ${err.message}\n`);
+  log.error({ err: err instanceof Error ? err.message : String(err) }, 'MCP 主进程致命错误 — 退出');
+  process.stderr.write(`MCP Fatal: ${err instanceof Error ? err.message : String(err)}\n`);
   process.exit(1);
 });

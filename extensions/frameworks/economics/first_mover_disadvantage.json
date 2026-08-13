@@ -1,0 +1,32 @@
+{
+  "id": "first_mover_disadvantage",
+  "name": "先行者劣势",
+  "category": "economics",
+  "coreInsight": "第一个进入新市场的往往是付出最多学习成本的。第二个进入的能学习先行者的错误",
+  "applicableDecisionTypes": [
+    "market_entry",
+    "timing",
+    "competitive_strategy"
+  ],
+  "constraintPatterns": [
+    "市场",
+    "先发",
+    "学习",
+    "进入",
+    "跟随",
+    "时机",
+    "风险",
+    "试探"
+  ],
+  "applicableRoles": [
+    "市场分析",
+    "竞争策略",
+    "时机规划",
+    "战略研究"
+  ],
+  "limitations": [
+    "先行者优势在某些市场仍然显著",
+    "先行者劣势依赖于市场教育成本"
+  ],
+  "$id": "framework/economics/first_mover_disadvantage"
+}

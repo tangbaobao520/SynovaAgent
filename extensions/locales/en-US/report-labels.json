@@ -1,0 +1,42 @@
+{
+  "$id": "locale/en-US/report-labels",
+  "language": "en-US",
+  "sections": {
+    "ceo_summary": "CEO Summary",
+    "dimension_scores": "Diagnosis Dimension Scores",
+    "key_findings": "Key Findings",
+    "root_cause_analysis": "Root Cause Analysis",
+    "evidence_chain": "Evidence Chain",
+    "action_recommendations": "Action Recommendations",
+    "data_trust": "Data Trustworthiness",
+    "cross_validation": "Cross Validation",
+    "expert_sections": "Expert Detailed Diagnosis"
+  },
+  "dimensions": {
+    "strategic": "Strategy",
+    "organizational": "Organization",
+    "financial": "Finance",
+    "technical": "Technology",
+    "marketing": "Marketing",
+    "operational": "Operations",
+    "risk": "Risk",
+    "compliance": "Compliance"
+  },
+  "status": {
+    "improving": "↗ Improving",
+    "declining": "↘ Declining",
+    "stable": "→ Stable",
+    "critical": "🔴 Critical",
+    "warning": "🟡 Needs Attention",
+    "info": "🟢 Info",
+    "degraded": "⚠️ Degraded"
+  },
+  "marketing": {
+    "category_clarity": "Category Clarity",
+    "category_clear": "Clear",
+    "category_blurred": "Blurred",
+    "positioning_consistency": "Positioning Consistency",
+    "differentiation": "Differentiation Validation",
+    "three_party_alignment": "Three-Party Alignment"
+  }
+}

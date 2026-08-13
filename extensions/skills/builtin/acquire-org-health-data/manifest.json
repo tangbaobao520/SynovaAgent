@@ -1,0 +1,50 @@
+{
+  "name": "acquire-org-health-data",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "获取组织健康数据",
+  "description": "从本体层获取组织结构、信息流、激励一致性、信任摩擦和惯例刚性等数据。",
+  "tier": "L1",
+  "complexity": "atomic",
+  "expert": "org",
+  "tools": [
+    "acquire-edge-data"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "organizational"
+      ],
+      "sensitiveAccess": "none"
+    },
+    "crossExpert": []
+  },
+  "dependencies": {
+    "skills": [],
+    "edges": [
+      "E-2.2",
+      "E-2.4",
+      "E-2.5",
+      "E-2.6",
+      "E-2.9",
+      "E-2.10"
+    ],
+    "computes": [],
+    "sentinels": []
+  },
+  "boundaries": {
+    "prohibitedDimensions": [
+      "financial",
+      "market-pricing",
+      "technology-stack"
+    ],
+    "degradedBehavior": "组织数据采集失败时返回 degraded:true，跳过不可用维度",
+    "preconditions": [
+      "数据源连接可用"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
+}

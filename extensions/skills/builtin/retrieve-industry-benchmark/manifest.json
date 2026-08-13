@@ -1,0 +1,48 @@
+{
+  "name": "retrieve-industry-benchmark",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "行业基准检索",
+  "description": "从外部数据源检索行业基准数据，评估数据新鲜度和来源可靠性。",
+  "tier": "L6",
+  "complexity": "composite",
+  "expert": "knowledge",
+  "tools": [
+    "query-knowledge",
+    "acquire-edge-data"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "knowledge"
+      ],
+      "sensitiveAccess": "none"
+    },
+    "crossExpert": []
+  },
+  "dependencies": {
+    "skills": [],
+    "edges": [
+      "E-0.1",
+      "E-0.3"
+    ],
+    "computes": [],
+    "sentinels": []
+  },
+  "boundaries": {
+    "prohibitedDimensions": [
+      "financial",
+      "operational",
+      "strategic-decision"
+    ],
+    "degradedBehavior": "知识库不可用时返回 degraded:true",
+    "preconditions": [
+      "下级Skill执行结果已就绪",
+      "GraphStore连接正常"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
+}

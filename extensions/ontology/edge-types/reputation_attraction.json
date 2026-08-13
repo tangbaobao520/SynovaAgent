@@ -1,0 +1,16 @@
+{
+  "$id": "edge/reputation_attraction",
+  "label": "REPUTATION_ATTRACTION",
+  "tags": ["causal", "second_order", "stage_1"],
+  "allowedFrom": ["pool/reputation"],
+  "allowedTo": ["pool/capital", "pool/human_capital"],
+  "requiredProps": ["reputation_score", "attraction_multiplier"],
+  "optionalProps": {
+    "brand_recognition_rate": "number (0-1) — 品牌认知度",
+    "employer_brand_score": "number (0-1) — 雇主品牌评分",
+    "investor_confidence_index": "number (0-1) — 投资者信心指数"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "企业声誉对外部资源获取的吸引(二阶)——声誉池提高资本获取和人才获取的效率。"
+}

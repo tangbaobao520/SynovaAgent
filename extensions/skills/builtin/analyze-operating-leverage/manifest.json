@@ -1,0 +1,53 @@
+{
+  "name": "analyze-operating-leverage",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "经营杠杆分析",
+  "description": "计算经营杠杆系数(DOL)，评估固定成本占比对利润波动的影响方向和放大倍数。",
+  "tier": "L2",
+  "complexity": "atomic",
+  "expert": "finance",
+  "tools": [
+    "compute-dol",
+    "acquire-edge-data"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "financial"
+      ],
+      "sensitiveAccess": "none"
+    },
+    "crossExpert": []
+  },
+  "dependencies": {
+    "skills": [],
+    "edges": [
+      "E-2.1",
+      "E-3.1",
+      "E-4.1"
+    ],
+    "computes": [
+      "COMPUTE-DOL-v2"
+    ],
+    "sentinels": [
+      "sentinel-operating-leverage"
+    ]
+  },
+  "boundaries": {
+    "prohibitedDimensions": [
+      "organizational",
+      "technology",
+      "customer-segment"
+    ],
+    "degradedBehavior": "财务数据源不可用或部分边缺失时返回部分指标并标记 degraded:true",
+    "preconditions": [
+      "L1感知层数据已采集",
+      "对应compute函数可用"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
+}

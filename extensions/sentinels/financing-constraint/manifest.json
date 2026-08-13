@@ -1,0 +1,40 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "financing-constraint",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "融资约束指数",
+  "description": "F1: 基于KZ指数(Kaplan-Zingales)评估企业融资约束程度。数据源: FINANCIAL节点。",
+  "schedule": "0 0 1 * *",
+  "expert": "finance",
+  "priority": "P1",
+  "layer": "capital",
+  "computeKind": "deterministic",
+  "computes": [
+    "kz-index"
+  ],
+  "thresholds": {
+    "kz_index": {
+      "warning": 1.0,
+      "critical": 2.0
+    }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": [
+      "sog_graph"
+    ],
+    "dataAccess": {
+      "allowedDimensions": [
+        "financial"
+      ],
+      "sensitiveAccess": "read"
+    }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "financingConstraintSentinel",
+  "auxiliaryExperts": [
+    "strategy"
+  ],
+  "id": "sentinel-financing-constraint"
+}

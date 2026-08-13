@@ -6,7 +6,7 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ReportGraphAdapter } from '../../src/l4/report-graph-adapter';
-import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
+import { NodeType, EdgeType } from '@synova/ontology';
 
 // Fake GraphStore with real interface
 function fakeStore(nodes: Array<{id:string, type:string, props:Record<string,unknown>}> = [], edges: Array<{id:string, type:string, from:string, to:string, weight:number, props:Record<string,unknown>}> = []) {
@@ -32,28 +32,28 @@ describe('ReportGraphAdapter', () => {
 
   it('Given a graph with nodes and edges, When getNodeStats called, Then returns type distribution and counts', () => {
     const store = fakeStore(
-      [{ id:'n1', type:SOGNodeType.PERSON, props:{name:'Alice'}},
-       { id:'n2', type:SOGNodeType.PERSON, props:{name:'Bob'}},
-       { id:'n3', type:SOGNodeType.TEAM, props:{name:'Engineering'}},
-       { id:'n4', type:SOGNodeType.RISK, props:{severity:'high'}}],
-      [{ id:'e1', type:SOGEdgeType.INTERACTS_WITH, from:'n1', to:'n2', weight:0.8, props:{}},
-       { id:'e2', type:SOGEdgeType.BELONGS_TO, from:'n1', to:'n3', weight:1, props:{}}],
+      [{ id:'n1', type:NodeType.RESOURCE_PERSON, props:{name:'Alice'}},
+       { id:'n2', type:NodeType.RESOURCE_PERSON, props:{name:'Bob'}},
+       { id:'n3', type:NodeType.RESOURCE_TEAM, props:{name:'Engineering'}},
+       { id:'n4', type:NodeType.OUTCOME_RISK, props:{severity:'high'}}],
+      [{ id:'e1', type:EdgeType.INFORMS /* ONTOLOGY-MIGRATION: SOGEdgeType.INTERACTS_WITH -> INFORMS (approximate). */, from:'n1', to:'n2', weight:0.8, props:{}},
+       { id:'e2', type:EdgeType.DEPENDS_ON /* ONTOLOGY-MIGRATION: SOGEdgeType.BELONGS_TO no direct match. Using DEPENDS_ON (syntactic node ID path). */, from:'n1', to:'n3', weight:1, props:{}}],
     );
     const adapter = new ReportGraphAdapter(store, 'test-org');
 
     const stats = adapter.getNodeStats();
     expect(stats.totalNodes).toBe(4);
     expect(stats.totalEdges).toBe(2);
-    expect(stats.byType[SOGNodeType.PERSON]).toBe(2);
-    expect(stats.byType[SOGNodeType.TEAM]).toBe(1);
-    expect(stats.byType[SOGNodeType.RISK]).toBe(1);
+    expect(stats.byType[NodeType.RESOURCE_PERSON]).toBe(2);
+    expect(stats.byType[NodeType.RESOURCE_TEAM]).toBe(1);
+    expect(stats.byType[NodeType.OUTCOME_RISK]).toBe(1);
   });
 
   it('Given a graph with risk nodes, When getRiskSummary called, Then returns risks sorted by severity', () => {
     const store = fakeStore(
-      [{ id:'r1', type:SOGNodeType.RISK, props:{severity:'critical', riskType:'key_person', name:'单点故障'}},
-       { id:'r2', type:SOGNodeType.RISK, props:{severity:'high', riskType:'technical_debt', name:'技术债'}},
-       { id:'r3', type:SOGNodeType.RISK, props:{severity:'low', riskType:'market', name:'市场波动'}}],
+      [{ id:'r1', type:NodeType.OUTCOME_RISK, props:{severity:'critical', riskType:'key_person', name:'单点故障'}},
+       { id:'r2', type:NodeType.OUTCOME_RISK, props:{severity:'high', riskType:'technical_debt', name:'技术债'}},
+       { id:'r3', type:NodeType.OUTCOME_RISK, props:{severity:'low', riskType:'market', name:'市场波动'}}],
     );
     const adapter = new ReportGraphAdapter(store, 'test-org');
 
@@ -68,12 +68,12 @@ describe('ReportGraphAdapter', () => {
 
   it('Given a graph with causal paths, When getCausalChains called, Then returns paths with descriptions', () => {
     const store = fakeStore(
-      [{ id:'p1', type:SOGNodeType.PERSON, props:{name:'CTO'}},
-       { id:'t1', type:SOGNodeType.TEAM, props:{name:'Engineering'}},
-       { id:'r1', type:SOGNodeType.RISK, props:{severity:'critical', name:'Bus Factor=1'}},
-       { id:'fin1', type:SOGNodeType.FINANCIAL, props:{amount:50000, financialType:'cost'}}],
-      [{ id:'e1', type:SOGEdgeType.AFFECTS, from:'r1', to:'p1', weight:0.9, props:{}},
-       { id:'e2', type:SOGEdgeType.AFFECTS, from:'r1', to:'fin1', weight:0.7, props:{}}],
+      [{ id:'p1', type:NodeType.RESOURCE_PERSON, props:{name:'CTO'}},
+       { id:'t1', type:NodeType.RESOURCE_TEAM, props:{name:'Engineering'}},
+       { id:'r1', type:NodeType.OUTCOME_RISK, props:{severity:'critical', name:'Bus Factor=1'}},
+       { id:'fin1', type:NodeType.OUTCOME_FINANCIAL /* ONTOLOGY-MIGRATION: SOGNodeType.FINANCIAL -> outcome/financial or resource/money? Context-dependent. */, props:{amount:50000, financialType:'cost'}}],
+      [{ id:'e1', type:EdgeType.DEPENDS_ON /* ONTOLOGY-MIGRATION: SOGEdgeType.AFFECTS -> DEPENDS_ON + INFORMS (combination). */, from:'r1', to:'p1', weight:0.9, props:{}},
+       { id:'e2', type:EdgeType.DEPENDS_ON /* ONTOLOGY-MIGRATION: SOGEdgeType.AFFECTS -> DEPENDS_ON + INFORMS (combination). */, from:'r1', to:'fin1', weight:0.7, props:{}}],
     );
     const adapter = new ReportGraphAdapter(store, 'test-org');
 
@@ -114,7 +114,7 @@ describe('ReportGraphAdapter', () => {
 
   it('Given 100 nodes, When getNodeStats called, Then limits returned data to top 10 types', () => {
     const nodes = Array.from({ length: 100 }, (_, i) => ({
-      id: `n${i}`, type: i % 5 === 0 ? SOGNodeType.PERSON : SOGNodeType.TEAM,
+      id: `n${i}`, type: i % 5 === 0 ? NodeType.RESOURCE_PERSON : NodeType.RESOURCE_TEAM,
       props: { name: `Entity${i}` },
     }));
     const store = fakeStore(nodes);
@@ -122,21 +122,21 @@ describe('ReportGraphAdapter', () => {
 
     const stats = adapter.getNodeStats();
     expect(stats.totalNodes).toBe(100);
-    expect(stats.byType[SOGNodeType.PERSON]).toBe(20);
-    expect(stats.byType[SOGNodeType.TEAM]).toBe(80);
+    expect(stats.byType[NodeType.RESOURCE_PERSON]).toBe(20);
+    expect(stats.byType[NodeType.RESOURCE_TEAM]).toBe(80);
   });
 
   // ── Specific node types ──
 
   it('Given Capability nodes exist, When getNodeStats, Then capability count is correct', () => {
     const store = fakeStore(
-      [{ id:'c1', type:SOGNodeType.CAPABILITY, props:{name:'AI/ML'}},
-       { id:'c2', type:SOGNodeType.CAPABILITY, props:{name:'Cloud'}},
-       { id:'p1', type:SOGNodeType.PERSON, props:{name:'Engineer'}}],
+      [{ id:'c1', type:NodeType.RESOURCE_KNOWLEDGE /* ONTOLOGY-MIGRATION: SOGNodeType.CAPABILITY has no direct match. Using resource/knowledge. */, props:{name:'AI/ML'}},
+       { id:'c2', type:NodeType.RESOURCE_KNOWLEDGE /* ONTOLOGY-MIGRATION: SOGNodeType.CAPABILITY has no direct match. Using resource/knowledge. */, props:{name:'Cloud'}},
+       { id:'p1', type:NodeType.RESOURCE_PERSON, props:{name:'Engineer'}}],
     );
     const adapter = new ReportGraphAdapter(store, 'test-org');
 
     const stats = adapter.getNodeStats();
-    expect(stats.byType[SOGNodeType.CAPABILITY]).toBe(2);
+    expect(stats.byType[NodeType.RESOURCE_KNOWLEDGE /* ONTOLOGY-MIGRATION: SOGNodeType.CAPABILITY has no direct match. Using resource/knowledge. */]).toBe(2);
   });
 });

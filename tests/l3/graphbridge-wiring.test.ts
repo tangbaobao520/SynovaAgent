@@ -8,7 +8,7 @@
 import { describe, it, expect } from 'vitest';
 import { ModuleRunner } from '../../src/orchestrator/module-runner';
 import { createGraphBridge } from '../../src/l4/graph-bridge';
-import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
+import { NodeType, EdgeType } from '@synova/ontology';
 
 describe('GraphBridge → ModuleRunner.afterRun → Phase 1', () => {
   it('Given Phase 1 modules complete, When afterRun with GraphBridge, Then findings become SOG nodes', async () => {
@@ -47,7 +47,7 @@ describe('GraphBridge → ModuleRunner.afterRun → Phase 1', () => {
     ]);
 
     expect(graphNodes.length).toBe(2);
-    expect(graphNodes[0].type).toBe(SOGNodeType.PERSON);
+    expect(graphNodes[0].type).toBe(NodeType.RESOURCE_PERSON);
   });
 
   it('Given a failing module, When afterRun with GraphBridge, Then only successful modules create nodes', async () => {

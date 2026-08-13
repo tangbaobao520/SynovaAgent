@@ -1,0 +1,9 @@
+{
+  "$schema": "https://synova.dev/schemas/evolution-config-v1.json",
+  "name": "evolution-defaults",
+  "version": "1.0.0",
+  "type": "evolution-config",
+  "displayName": "进化引擎默认配置",
+  "description": "L0 进化引擎的默认阈值和基线配置",
+  "entryPoint": "./default-thresholds.json"
+}

@@ -1,7 +1,7 @@
 /** tools/strategy-expert-tools.ts — 战略专家工具链 (数据源: 文档提取 + 连接器) */
 import type { ToolDefinition } from '../agent/tools';
-import { SOGNodeType } from '@synova/sog-core';
-import { createLogger } from '../logger';
+import { NodeType } from '@synova/ontology';
+import { createLogger } from '@synova/logger';
 const log = createLogger('tools/strategy-expert');
 
 interface GraphData { nodes?: Array<{ type: string; props?: Record<string, unknown> }>; }
@@ -14,9 +14,9 @@ export const scanIndustryLandscapeTool: ToolDefinition = {
   parameters: { type:'object', properties:{ orgId:{type:'string'} }, required:['orgId'] },
   handler: async (p) => {
     const g = await getGraph(p.orgId as string);
-    const goals = g ? (g.nodes || []).filter((n: any) => n.type === SOGNodeType.GOAL) : [];
-    const clients = g ? (g.nodes || []).filter((n: any) => n.type === SOGNodeType.CLIENT) : [];
-    const teams = g ? (g.nodes || []).filter((n: any) => n.type === SOGNodeType.TEAM) : [];
+    const goals = g ? (g.nodes || []).filter((n: any) => n.type === NodeType.ACTIVITY_GOVERNANCE /* ONTOLOGY-MIGRATION: NodeType.ACTIVITY_GOVERNANCE has no direct match. Using activity/governance (strategic alignment). */) : [];
+    const clients = g ? (g.nodes || []).filter((n: any) => n.type === NodeType.RESOURCE_CLIENT) : [];
+    const teams = g ? (g.nodes || []).filter((n: any) => n.type === NodeType.RESOURCE_TEAM) : [];
     const industryTerms = goals.map((g: any) => g.props?.description || '').join(' ').toLowerCase();
     return {
       orgId: p.orgId, status: goals.length > 0 ? 'ok' : 'limited',
@@ -32,9 +32,9 @@ export const assessCompetitivePositionTool: ToolDefinition = {
   parameters: { type:'object', properties:{ orgId:{type:'string'} }, required:['orgId'] },
   handler: async (p) => {
     const g = await getGraph(p.orgId as string);
-    const pc = g ? (g.nodes || []).filter((n: any) => n.type === SOGNodeType.PERSON).length : 0;
-    const tc = g ? (g.nodes || []).filter((n: any) => n.type === SOGNodeType.TEAM).length : 0;
-    const toolc = g ? (g.nodes || []).filter((n: any) => n.type === SOGNodeType.TOOL).length : 0;
+    const pc = g ? (g.nodes || []).filter((n: any) => n.type === NodeType.RESOURCE_PERSON).length : 0;
+    const tc = g ? (g.nodes || []).filter((n: any) => n.type === NodeType.RESOURCE_TEAM).length : 0;
+    const toolc = g ? (g.nodes || []).filter((n: any) => n.type === NodeType.RESOURCE_TOOL).length : 0;
     return {
       orgId: p.orgId, teamSize: pc, teamCount: tc, toolCount: toolc,
       benchmark: pc < 10 ? 'seed' : pc < 50 ? 'early' : pc < 200 ? 'growth' : 'scale',
@@ -48,9 +48,9 @@ export const analyzeBusinessModelTool: ToolDefinition = {
   parameters: { type:'object', properties:{ orgId:{type:'string'} }, required:['orgId'] },
   handler: async (p) => {
     const g = await getGraph(p.orgId as string);
-    const financials = g ? (g.nodes || []).filter((n: any) => n.type === SOGNodeType.FINANCIAL) : [];
-    const clients = g ? (g.nodes || []).filter((n: any) => n.type === SOGNodeType.CLIENT) : [];
-    const goals = g ? (g.nodes || []).filter((n: any) => n.type === SOGNodeType.GOAL) : [];
+    const financials = g ? (g.nodes || []).filter((n: any) => n.type === NodeType.OUTCOME_FINANCIAL /* ONTOLOGY-MIGRATION: NodeType.OUTCOME_FINANCIAL -> outcome/financial or resource/money? Context-dependent. */) : [];
+    const clients = g ? (g.nodes || []).filter((n: any) => n.type === NodeType.RESOURCE_CLIENT) : [];
+    const goals = g ? (g.nodes || []).filter((n: any) => n.type === NodeType.ACTIVITY_GOVERNANCE /* ONTOLOGY-MIGRATION: NodeType.ACTIVITY_GOVERNANCE has no direct match. Using activity/governance (strategic alignment). */) : [];
     const revenueData = financials.filter((f: any) => f.props?.financialType === 'revenue');
     return {
       orgId: p.orgId, status: financials.length > 0 ? 'ok' : 'limited',
@@ -65,9 +65,9 @@ export const strategicRiskRadarTool: ToolDefinition = {
   parameters: { type:'object', properties:{ orgId:{type:'string'} }, required:['orgId'] },
   handler: async (p) => {
     const g = await getGraph(p.orgId as string);
-    const risks = g ? (g.nodes || []).filter((n: any) => n.type === SOGNodeType.RISK) : [];
-    const goals = g ? (g.nodes || []).filter((n: any) => n.type === SOGNodeType.GOAL) : [];
-    const complianceItems = g ? (g.nodes || []).filter((n: any) => n.type === SOGNodeType.COMPLIANCE) : [];
+    const risks = g ? (g.nodes || []).filter((n: any) => n.type === NodeType.OUTCOME_RISK) : [];
+    const goals = g ? (g.nodes || []).filter((n: any) => n.type === NodeType.ACTIVITY_GOVERNANCE /* ONTOLOGY-MIGRATION: NodeType.ACTIVITY_GOVERNANCE has no direct match. Using activity/governance (strategic alignment). */) : [];
+    const complianceItems = g ? (g.nodes || []).filter((n: any) => n.type === NodeType.ACTIVITY_COMPLIANCE) : [];
     const riskLevels = risks.map((r: any) => r.props?.severity || 'medium');
     return {
       orgId: p.orgId,

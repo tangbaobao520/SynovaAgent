@@ -1,0 +1,11 @@
+{
+  "$schema": "https://synova.dev/schemas/extension-manifest-v1.json",
+  "name": "notifications",
+  "version": "1.0.0",
+  "type": "notification",
+  "displayName": "通知渠道",
+  "description": "SynovaAgent 通知分发。事件驱动：action_created → 匹配的适配器 → 发送。新增渠道 = 加 manifest + adapter。",
+  "entryPoint": "../src/notifications/registry.ts",
+  "exportKey": "dispatchNotification",
+  "channels": ["jira", "linear"]
+}

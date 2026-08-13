@@ -4,7 +4,7 @@
  * 轻量 Prometheus 格式指标收集器。单例模式。
  * 不需要外部依赖——直接输出 Prometheus text format。
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('monitoring/metrics');
 

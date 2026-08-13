@@ -1,0 +1,15 @@
+{
+  "$schema": "https://synova.dev/schemas/extension-manifest-v1.json",
+  "name": "rules",
+  "version": "1.0.0",
+  "type": "rule",
+  "displayName": "诊断规则库",
+  "description": "SynovaAgent 诊断规则、敏感规则、升级策略、信号路由。规则通过 PKB + query_knowledge 工具消费。新增规则 = 加 JSON 文件。",
+  "entryPoint": "../src/l3/rule-loader.ts",
+  "exportKey": "loadRules",
+  "subdirs": {
+    "diagnostic": "诊断规则和敏感规则",
+    "upgrade-strategies": "按行业拆分的信号升级策略",
+    "signal-routing.json": "信号→专家路由表"
+  }
+}

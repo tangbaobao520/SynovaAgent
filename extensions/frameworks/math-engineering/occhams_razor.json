@@ -1,0 +1,31 @@
+{
+  "id": "occhams_razor",
+  "name": "奥卡姆剃刀",
+  "category": "math-engineering",
+  "coreInsight": "最简单的解释通常是正确的。不要为不需要更多假设的理论增添不必要的复杂性。",
+  "applicableDecisionTypes": [
+    "问题诊断",
+    "流程设计",
+    "组织架构"
+  ],
+  "constraintPatterns": [
+    "简化",
+    "效率",
+    "流程",
+    "架构",
+    "设计",
+    "优化",
+    "精简",
+    "成本"
+  ],
+  "applicableRoles": [
+    "流程优化",
+    "架构设计",
+    "效率管理"
+  ],
+  "limitations": [
+    "简单不等于正确",
+    "有些复杂问题是真复杂"
+  ],
+  "$id": "framework/math-engineering/occhams_razor"
+}

@@ -103,3 +103,36 @@ describe('PIIScrubber — opt-out + role masking', () => {
     expect(r1.cleaned).not.toContain('司马光');
   });
 });
+
+describe('PIIScrubber — D42 detectOnly', () => {
+  let s: PIIScrubber;
+  beforeEach(() => { s = new PIIScrubber(); });
+
+  it('Given text with phone number, When detectOnly at S4, Then returns empty (phone is S3)', () => {
+    const matches = s.detectOnly('请联系 13812345678', 'S4');
+    expect(matches).toHaveLength(0);
+  });
+
+  it('Given text with phone number, When detectOnly at S2, Then returns phone match', () => {
+    const matches = s.detectOnly('请联系 13812345678', 'S2');
+    expect(matches.length).toBeGreaterThanOrEqual(1);
+    expect(matches[0].type).toBe('phone_cn');
+    expect(matches[0].level).toBe('S3');
+  });
+
+  it('Given text with API key, When detectOnly at S4, Then returns S4 match', () => {
+    const matches = s.detectOnly('key=sk-abc123def456ghi789jkl012mno345pqr678stu', 'S4');
+    expect(matches.length).toBeGreaterThanOrEqual(1);
+    expect(matches[0].level).toBe('S4');
+  });
+
+  it('Given text with no PII, When detectOnly, Then returns empty array', () => {
+    const matches = s.detectOnly('System configuration updated successfully at 12:00');
+    expect(matches).toHaveLength(0);
+  });
+
+  it('Given detectOnly default level, When called without level, Then defaults to S2', () => {
+    const matches = s.detectOnly('name: 欧阳修');
+    expect(matches.length).toBeGreaterThanOrEqual(1);
+  });
+});

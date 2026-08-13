@@ -1,0 +1,32 @@
+{
+  "id": "screening",
+  "name": "筛选机制设计",
+  "category": "economics",
+  "coreInsight": "设计让供应商自我揭示质量的机制。阶梯付款（质量好→付款比例高）、质保金（连续3批合格→退还）、小订单试跑——让供应商用行为而非语言证明自己。",
+  "applicableDecisionTypes": [
+    "采购谈判",
+    "合同条款设计",
+    "供应商评估"
+  ],
+  "constraintPatterns": [
+    "供应商",
+    "筛选",
+    "机制",
+    "采购",
+    "阶梯",
+    "质保",
+    "付款",
+    "试跑"
+  ],
+  "applicableRoles": [
+    "采购策略",
+    "供应商管理",
+    "合同设计",
+    "质量保障"
+  ],
+  "limitations": [
+    "复杂机制增加交易成本",
+    "供应商可能逆向选择拒绝合作"
+  ],
+  "$id": "framework/economics/screening"
+}

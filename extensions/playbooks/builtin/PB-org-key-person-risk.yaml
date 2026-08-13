@@ -1,0 +1,47 @@
+id: PB-org-key-person-risk
+name: 关键人风险评估剧本
+version: 1.0.0
+expert: org
+type: playbook
+description: 当key-person-risk哨兵告警时，识别关键人依赖、知识集中度和流失风险。
+trigger:
+  sentinels:
+    - key-person-risk
+  condition: key-person-risk告警
+steps:
+  - id: step-1
+    name: 关键人识别
+    description: 识别权力集中度和关键人物依赖
+    tools:
+      - acquire-edge-data
+      - query-graph
+    timeout: 20
+  - id: step-2
+    name: 知识集中度评估
+    description: 评估知识在关键人物上的集中程度
+    tools:
+      - acquire-edge-data
+    timeout: 20
+  - id: step-3
+    name: 流失影响分析
+    description: 评估关键人物流失对业务的影响
+    tools:
+      - query-graph
+    timeout: 25
+    onFailure: degrade
+  - id: step-4
+    name: 缓解方案输出
+    description: 输出知识传承和风险缓解建议
+    tools:
+      - cross-validate
+    timeout: 30
+onFailure: degrade
+output: key_person_risk_report
+dependencies:
+  edges:
+    - E-2.3
+    - E-2.8
+    - E-5.2
+    - E-5.5
+  sentinels:
+    - key-person-risk

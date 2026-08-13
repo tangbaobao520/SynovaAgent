@@ -1,0 +1,24 @@
+{
+  "$schema": "https://synova.dev/schemas/golden-case-v1.json",
+  "id": "golden-case-08",
+  "title": "合规罚款风险",
+  "description": "合规缺口触发潜在监管处罚。预期根因为 RULE_CONSTRAINT 边。",
+  "frozenAt": "2026-07-20T00:00:00Z",
+  "DO_NOT_MODIFY": "Frozen snapshot — update expectations only on 42-edge major version change",
+  "input": {
+    "sentinelFindings": [
+      { "id": "F001", "sentinel": "info-distortion", "severity": "critical", "title": "数据合规审计发现重大缺口", "matchedEdgeIds": ["E-17"], "detectedAt": "2026-07-19T00:00:00Z" },
+      { "id": "F002", "sentinel": "internal-transaction-cost", "severity": "high", "title": "合规流程成本上升200%", "matchedEdgeIds": ["E-17", "E-06"], "detectedAt": "2026-07-18T00:00:00Z" },
+      { "id": "F003", "sentinel": "org-health", "severity": "high", "title": "风险控制部门人员流失", "matchedEdgeIds": ["E-17", "E-07"], "detectedAt": "2026-07-17T00:00:00Z" },
+      { "id": "F004", "sentinel": "unit-economics", "severity": "medium", "title": "合规罚款拨备侵蚀利润", "matchedEdgeIds": ["E-17"], "detectedAt": "2026-07-16T00:00:00Z" }
+    ],
+    "graphEdges": ["E-17", "E-06", "E-07", "E-11", "E-23", "E-31"]
+  },
+  "expected": {
+    "rootCauseEdgeIds": ["E-17"],
+    "rootCauseNodeTypes": ["RULE_CONSTRAINT"],
+    "severity": "critical",
+    "matchedEdgeIds": ["E-17", "E-06", "E-07"],
+    "explanation": "RULE_CONSTRAINT 边弱化→合规缺口扩大→监管处罚风险上升"
+  }
+}

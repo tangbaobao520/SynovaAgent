@@ -1,0 +1,23 @@
+{
+  "$schema": "https://synova.dev/schemas/golden-case-v1.json",
+  "id": "golden-case-02",
+  "title": "利润侵蚀",
+  "description": "毛利率持续下降，成本增速超过收入。预期根因为 OPERATIONAL_EXECUTION 边。",
+  "frozenAt": "2026-07-14T00:00:00Z",
+  "DO_NOT_MODIFY": "Frozen snapshot — update expectations only on 42-edge major version change",
+  "input": {
+    "sentinelFindings": [
+      { "id": "F004", "sentinel": "margin-health", "severity": "critical", "title": "毛利率连续3季下降", "matchedEdgeIds": ["E-23"], "detectedAt": "2026-07-13T00:00:00Z" },
+      { "id": "F005", "sentinel": "cost-health", "severity": "high", "title": "固定成本占比上升", "matchedEdgeIds": ["E-23", "E-12"], "detectedAt": "2026-07-13T00:00:00Z" },
+      { "id": "F006", "sentinel": "value-capture", "severity": "medium", "title": "定价能力减弱", "matchedEdgeIds": ["E-33"], "detectedAt": "2026-07-12T00:00:00Z" }
+    ],
+    "graphEdges": ["E-23", "E-12", "E-05", "E-33", "E-31", "E-07"]
+  },
+  "expected": {
+    "rootCauseEdgeIds": ["E-23"],
+    "rootCauseNodeTypes": ["OPERATIONAL_EXECUTION"],
+    "severity": "critical",
+    "matchedEdgeIds": ["E-23", "E-12", "E-33"],
+    "explanation": "OPERATIONAL_EXECUTION 执行效率不足→成本上升→利润侵蚀"
+  }
+}

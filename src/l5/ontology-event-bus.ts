@@ -5,7 +5,7 @@
  * 保留发布/消费/DLQ/健康检查架构，不引入外部依赖。
  * engine-core 的 NatsOntologyPublisher/Consumer 接口在此得到完整实现。
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import type { GraphStore } from '../l4/graph-bridge';
 
 const log = createLogger('l5/event-bus');
@@ -99,7 +99,9 @@ export class OntologyEventBus {
     if (index < 0 || index >= this.deadLetterQueue.length) return false;
     const entry = this.deadLetterQueue.splice(index, 1)[0];
     entry.attempts++;
-    this.publish(entry.event).catch(() => {});
+    this.publish(entry.event).catch((err) => {
+      log.warn({ err }, '事件重发失败 — 已从死信队列移除');
+    });
     return true;
   }
 

@@ -4,8 +4,8 @@
  * Phase 4 (报告生成) 和 Phase 3 (根因分析) 从 GraphStore 读数据,
  * 非硬编码模板。图空时降级为模板默认。
  */
-import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
-import { createLogger } from '../logger';
+import { ALL_NODE_TYPES, NodeType, EdgeType } from '@synova/ontology';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('l4/report-graph-adapter');
 
@@ -61,7 +61,7 @@ export class ReportGraphAdapter {
     let totalEdges = 0;
 
     try {
-      const allNodeTypes = Object.values(SOGNodeType);
+      const allNodeTypes = ALL_NODE_TYPES;
       for (const type of allNodeTypes) {
         const nodes = this.store.queryNodes(type, undefined, this.graph);
         if (nodes.length > 0) byType[type] = nodes.length;
@@ -81,7 +81,7 @@ export class ReportGraphAdapter {
   /** Get risk summary sorted by severity (critical → high → medium → low) */
   getRiskSummary(): RiskSummaryItem[] {
     try {
-      const riskNodes = this.store.queryNodes(SOGNodeType.RISK, undefined, this.graph);
+      const riskNodes = this.store.queryNodes(NodeType.OUTCOME_RISK, undefined, this.graph);
       if (riskNodes.length === 0) return [];
 
       const items: RiskSummaryItem[] = riskNodes.slice(0, this.maxRiskNodes).map(n => ({

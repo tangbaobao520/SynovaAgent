@@ -1,0 +1,32 @@
+{
+  "id": "signaling",
+  "name": "信号传递",
+  "category": "economics",
+  "coreInsight": "供应商用什么证明自己可信？可伪造的信号（口头承诺、PS认证证书）无价值。不可逆的投入（专用设备、质保金、长期合同违约金）才是真信号。",
+  "applicableDecisionTypes": [
+    "供应商筛选",
+    "合同条款设计",
+    "合作伙伴选择"
+  ],
+  "constraintPatterns": [
+    "供应商",
+    "验证",
+    "信号",
+    "合同",
+    "承诺",
+    "筛选",
+    "评估",
+    "信任"
+  ],
+  "applicableRoles": [
+    "供应商评估",
+    "合同管理",
+    "采购谈判",
+    "尽职调查"
+  ],
+  "limitations": [
+    "昂贵的信号会排斥小型优质供应商",
+    "信号与质量的关系需要行业验证"
+  ],
+  "$id": "framework/economics/signaling"
+}

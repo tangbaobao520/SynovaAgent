@@ -1,0 +1,32 @@
+{
+  "id": "redundancy",
+  "name": "冗余备份",
+  "category": "math-engineering",
+  "coreInsight": "关键系统需要有备用方案。单点故障是系统最脆弱之处。",
+  "applicableDecisionTypes": [
+    "供应商策略",
+    "物流方案",
+    "IT系统架构"
+  ],
+  "constraintPatterns": [
+    "系统",
+    "备份",
+    "多源",
+    "应急",
+    "稳定性",
+    "可靠",
+    "容灾",
+    "高可用"
+  ],
+  "applicableRoles": [
+    "系统运维",
+    "应急管理",
+    "供应商管理",
+    "IT架构"
+  ],
+  "limitations": [
+    "过度冗余增加复杂性",
+    "备选方案本身也需要维护"
+  ],
+  "$id": "framework/math-engineering/redundancy"
+}

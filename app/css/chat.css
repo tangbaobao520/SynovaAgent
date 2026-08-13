@@ -1,0 +1,53 @@
+/* ═══ chat.css — D252 SSE Streaming Chat + Pyramid Rendering ═══ */
+
+.chat-header { margin-bottom: 20px; }
+.chat-header h1 { font-size: 22px; font-weight: 700; }
+.chat-form { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.chat-form input { flex: 1; min-width: 150px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; }
+.chat-form .btn-primary { padding: 10px 24px; border-radius: 6px; font-size: 14px; }
+
+/* ── Phase Progress ── */
+.diagnosis-status { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 20px; }
+.phase-progress { display: flex; align-items: center; margin-bottom: 8px; }
+.phase-dot { width: 16px; height: 16px; border-radius: 50%; background: #e5e7eb; flex-shrink: 0; }
+.phase-dot.active { background: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2); }
+.phase-dot.done { background: #22c55e; }
+.phase-line { flex: 1; height: 3px; background: #e5e7eb; margin: 0 2px; border-radius: 2px; }
+.phase-line.done { background: #22c55e; }
+.status-text { font-size: 13px; color: var(--text-secondary); }
+
+/* ── Pyramid Output ── */
+.pyramid-output { max-height: 80vh; overflow-y: auto; }
+.pyramid-empty { text-align: center; padding: 60px 20px; color: var(--text-secondary); font-size: 15px; }
+
+/* ── GT: Governing Thought ── */
+.gt-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; border-left: 4px solid var(--primary); }
+.gt { font-size: 18px; font-weight: 700; margin: 0 0 6px 0; color: var(--text); }
+.gt-desc { font-size: 14px; color: var(--text-secondary); margin: 0; }
+
+/* ── KJ: Key Judgments ── */
+.kj-section { margin-bottom: 12px; }
+.kj { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 8px; border-left: 3px solid #f59e0b; }
+.kj h3 { font-size: 14px; font-weight: 600; margin: 0 0 4px 0; }
+.kj p { font-size: 13px; color: var(--text-secondary); margin: 0 0 8px 0; }
+.kj-community { border-left-color: #8b5cf6; }
+.kj-findings { list-style: none; padding: 0; margin: 0; }
+.kj-findings li { font-size: 12px; color: var(--text-secondary); padding: 3px 0; border-bottom: 1px solid var(--border); }
+.kj-findings li:last-child { border-bottom: none; }
+.kj-more { color: var(--primary); font-style: italic; }
+
+/* ── Evidence Chain (collapsible) ── */
+.evidence-section { margin-bottom: 12px; }
+.evidence-details { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 13px; }
+.evidence-details summary { cursor: pointer; font-weight: 600; font-size: 13px; color: var(--text-secondary); }
+.evidence-list { list-style: none; padding: 8px 0 0 0; margin: 0; }
+.evidence-list li { font-size: 12px; color: var(--text-secondary); padding: 2px 0; }
+
+/* ── Complete Actions ── */
+.complete-section { background: var(--bg-card); border: 1px solid #22c55e; border-radius: 10px; padding: 20px; text-align: center; margin-top: 12px; }
+.complete-message { font-size: 16px; font-weight: 600; color: #22c55e; margin: 0 0 12px 0; }
+.complete-actions { display: flex; gap: 8px; justify-content: center; }
+.btn-secondary { padding: 8px 20px; border-radius: 6px; font-size: 13px; font-weight: 600; background: var(--bg); border: 1px solid var(--border); cursor: pointer; color: var(--text); }
+.btn-secondary:hover { background: var(--border); }
+
+.badge-phase { background: #eff6ff; color: var(--primary); padding: 1px 6px; border-radius: 3px; font-size: 11px; }

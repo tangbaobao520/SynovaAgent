@@ -11,7 +11,7 @@
  */
 import type { LLMProvider, ChatResult, ChatOptions } from '../providers/types';
 import { isRetryableError, computeBackoff, DEFAULT_LLM_CALL_OPTIONS } from './types';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('llm/retry-middleware');
 
@@ -49,6 +49,7 @@ export async function callWithRetry(
       }
       return result;
     } catch (err: any) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "LLM 请求超时等待");
       lastError = err;
 
       // 不可重试 → 立即抛

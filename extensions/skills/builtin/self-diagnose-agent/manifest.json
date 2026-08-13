@@ -1,0 +1,43 @@
+{
+  "name": "self-diagnose-agent",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "Agent自诊断",
+  "description": "检查Agent系统自身的运行状态，包括运行时间、内存使用、错误率和API延迟。",
+  "tier": "L7",
+  "complexity": "composite",
+  "expert": "host",
+  "tools": [
+    "query-graph"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "system"
+      ],
+      "sensitiveAccess": "none"
+    },
+    "crossExpert": []
+  },
+  "dependencies": {
+    "skills": [],
+    "edges": [],
+    "computes": [],
+    "sentinels": []
+  },
+  "boundaries": {
+    "prohibitedDimensions": [
+      "customer-data",
+      "financial-decision"
+    ],
+    "degradedBehavior": "系统数据不可用时返回 degraded:true",
+    "preconditions": [
+      "下级Skill执行结果已就绪",
+      "GraphStore连接正常"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
+}

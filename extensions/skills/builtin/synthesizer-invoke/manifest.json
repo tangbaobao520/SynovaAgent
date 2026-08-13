@@ -1,0 +1,46 @@
+{
+  "name": "synthesizer-invoke",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "综合诊断合成",
+  "description": "将多位专家的诊断结论合成为统一报告，解决冲突、生成统一行动方案。",
+  "tier": "L3",
+  "complexity": "expert",
+  "expert": "host",
+  "tools": [
+    "cross-validate",
+    "query-graph",
+    "query-knowledge"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "system"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": []
+  },
+  "dependencies": {
+    "skills": [],
+    "edges": [],
+    "computes": [],
+    "sentinels": []
+  },
+  "boundaries": {
+    "prohibitedDimensions": [
+      "customer-data",
+      "financial-decision"
+    ],
+    "degradedBehavior": "系统数据不可用时返回 degraded:true",
+    "preconditions": [
+      "下级L1-L2数据已就绪",
+      "相关compute函数可用",
+      "GraphStore连接正常"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
+}

@@ -9,7 +9,7 @@
 import type { LLMClient, ToolExecutor } from './diagnosis-orchestrator';
 import { HookRunner } from './hook-runner';
 import type { LLMMessage } from '../providers/types';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('orchestrator/llm-phase-executor');
 
@@ -160,6 +160,7 @@ export class LLMPhaseExecutor {
       );
       return { reply: final.content || '工具调用超过最大轮次', toolCallCount, errors, roundsTaken };
     } catch (err: any) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "LLM 阶段执行失败");
       return { reply: `工具调用超过最大轮次: ${err.message}`, toolCallCount, errors, roundsTaken };
     }
   }

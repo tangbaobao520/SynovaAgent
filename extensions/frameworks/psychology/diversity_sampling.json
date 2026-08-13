@@ -1,0 +1,32 @@
+{
+  "id": "diversity_sampling",
+  "name": "多样性采样验证",
+  "category": "psychology",
+  "coreInsight": "当信息不足以独立判断时，应采集多个独立来源交叉验证。\"多个独立来源指向同一结论\"才是信号，单来源不可靠。",
+  "applicableDecisionTypes": [
+    "市场进入策略",
+    "产品定价",
+    "渠道选择"
+  ],
+  "constraintPatterns": [
+    "多重来源",
+    "独立验证",
+    "交叉验证",
+    "采样",
+    "多样性",
+    "口碑",
+    "评价",
+    "推荐"
+  ],
+  "applicableRoles": [
+    "市场分析",
+    "情报收集",
+    "用户研究",
+    "数据验证"
+  ],
+  "limitations": [
+    "独立来源的判断标准在实践中难以保证",
+    "领域内可用的真实独立来源可能有限"
+  ],
+  "$id": "framework/psychology/diversity_sampling"
+}

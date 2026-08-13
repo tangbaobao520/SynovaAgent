@@ -1,9 +1,9 @@
-import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
+import { NodeType, EdgeType } from '@synova/ontology';
 /**
  * tools/tech-expert-tools.ts — 技术专家工具链 (Phase C2)
  */
 import type { ToolDefinition } from '../agent/tools';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 const log = createLogger('tools/tech-expert');
 
 export const scanSoftwareEcosystemTool: ToolDefinition = {
@@ -17,7 +17,7 @@ export const scanSoftwareEcosystemTool: ToolDefinition = {
       const res = await fetch(`${BASE}/api/ontology/graph/${orgId}`);
       if (res.ok) {
         const data = await res.json() as { nodes?: Array<{ type?: string; props?: Record<string, unknown> }> };
-        const tools = (data.nodes || []).filter(n => n.type === SOGNodeType.TOOL);
+        const tools = (data.nodes || []).filter(n => n.type === NodeType.RESOURCE_TOOL);
         return { orgId, toolCount: tools.length, tools: tools.map(t => ({ name: t.props?.name, category: t.props?.category })), recommendation: tools.length === 0 ? '未发现工具节点。请通过 Phase 0 访谈或 API 录入使用的软件工具。' : `已识别 ${tools.length} 个工具。` };
       }
     } catch { log.debug('本体 API 不可达 — 工具降级'); }
@@ -45,8 +45,8 @@ export const assessAiMaturityTool: ToolDefinition = {
       const res = await fetch(`${BASE}/api/ontology/graph/${orgId}`);
       if (res.ok) {
         const data = await res.json() as { nodes?: Array<{ type?: string; props?: Record<string, unknown> }> };
-        const agents = (data.nodes || []).filter(n => n.type === SOGNodeType.AGENT);
-        const tools = (data.nodes || []).filter(n => n.type === SOGNodeType.TOOL);
+        const agents = (data.nodes || []).filter(n => n.type === NodeType.RESOURCE_AGENT);
+        const tools = (data.nodes || []).filter(n => n.type === NodeType.RESOURCE_TOOL);
         return { orgId, agentCount: agents.length, toolCount: tools.length, maturityLevel: agents.length > 0 ? 'intermediate' : 'beginner', recommendation: agents.length === 0 ? '建议从部署一个内部 AI Agent 开始（如代码审查助手）。' : `已有 ${agents.length} 个 Agent 在运行。建议定期评估效果。` };
       }
     } catch { log.debug('本体 API 不可达 — 工具降级'); }

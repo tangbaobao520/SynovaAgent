@@ -39,9 +39,9 @@ describe('Sentinel → Signal → Expert 集成链路', () => {
   it('Given 3 哨兵指向同一实体 → aggregateSignals 升级为 critical', () => {
     const findings = [makeFinding('warning', '团队A: 协作异常')];
     const sentinels = [
-      makeSentinel('sentinel-htm', 'collaboration', 'P1', '0 9 * * *', findings),
-      makeSentinel('sentinel-hacd', 'collaboration', 'P1', '0 9 * * *', findings),
-      makeSentinel('sentinel-hona', 'collaboration', 'P2', '0 9 * * 1', findings),
+      makeSentinel('sentinel-cpc', 'capability', 'P1', '0 9 * * *', findings),
+      makeSentinel('sentinel-gap-dynamics', 'capability', 'P1', '0 9 * * *', findings),
+      makeSentinel('sentinel-path-dependency', 'capability', 'P2', '0 9 * * 1', findings),
     ];
 
     const results: SentinelCheckResult[] = sentinels.map(s => ({
@@ -61,7 +61,7 @@ describe('Sentinel → Signal → Expert 集成链路', () => {
 
   it('Given 单哨兵 single finding → 不升级', () => {
     const results: SentinelCheckResult[] = [{
-      sentinelId: 'sentinel-htm', ok: true,
+      sentinelId: 'sentinel-cpc', ok: true,
       findings: [{ id: 'f1', severity: 'warning' as const, title: '信任健康: 偏低', description: '', evidence: [], suggestion: '', detectedAt: new Date().toISOString() }],
       durationMs: 0, checkedAt: new Date().toISOString(),
     }];
@@ -100,7 +100,7 @@ describe('Sentinel → Signal → Expert 集成链路', () => {
 
     // Step 1: 注册 2 个哨兵
     // 使用包含 keyword 的 ID — inferCategory 按关键词匹配
-    const s1 = makeSentinel('sentinel-htm-test', 'collaboration', 'P1', '0 9 * * *', [makeFinding('warning', '团队A: 协作密度下降')]);
+    const s1 = makeSentinel('sentinel-gap-dynamics', 'capability', 'P1', '0 9 * * *', [makeFinding('warning', '团队A: 协作密度下降')]);
     const s2 = makeSentinel('sentinel-cpc-test', 'capability', 'P1', '0 9 * * 1', [makeFinding('warning', '团队A: 协议缺失')]);
     registry.register(s1);
     registry.register(s2);

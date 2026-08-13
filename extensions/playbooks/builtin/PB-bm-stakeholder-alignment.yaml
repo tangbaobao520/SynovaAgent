@@ -1,0 +1,53 @@
+id: PB-bm-stakeholder-alignment
+name: 利益相关者对齐剧本
+version: 1.0.0
+expert: business_model
+type: playbook
+description: 当structure_health异常时，分析客户、组织、合作伙伴多方利益一致性，定位错位环节。
+trigger:
+  sentinels:
+    - bm-structure-health
+  condition: structure_health异常
+steps:
+  - id: step-1
+    name: 客户价值对齐分析
+    description: 分析客户需求与企业价值主张的一致性
+    tools:
+      - acquire-edge-data
+    timeout: 20
+  - id: step-2
+    name: 渠道合作伙伴分析
+    description: 分析渠道触达与合作伙伴利益一致性
+    tools:
+      - acquire-edge-data
+    timeout: 20
+  - id: step-3
+    name: 组织激励对齐
+    description: 分析内部激励与战略目标的一致性
+    tools:
+      - compute-incentive-alignment
+    timeout: 20
+    onFailure: degrade
+  - id: step-4
+    name: 声誉飞轮分析
+    description: 分析品牌声誉与市场定位的互促关系
+    tools:
+      - acquire-edge-data
+    timeout: 20
+  - id: step-5
+    name: 对齐改进方案
+    description: 输出利益相关者对齐改进建议
+    tools:
+      - cross-validate
+    timeout: 30
+onFailure: degrade
+output: stakeholder_alignment_report
+dependencies:
+  edges:
+    - E-4.1
+    - E-4.3
+    - E-2.5
+    - E-5.4
+  sentinels:
+    - bm-structure-health
+crossExpert: true

@@ -1,0 +1,54 @@
+{
+  "name": "analyze-price-elasticity",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "需求价格弹性分析",
+  "description": "计算需求价格弹性系数，评估市场需求对价格变动的敏感程度，提供定价策略参考。",
+  "tier": "L2",
+  "complexity": "composite",
+  "expert": "marketing",
+  "tools": [
+    "compute-price-elasticity",
+    "acquire-edge-data"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "customer",
+        "market"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": []
+  },
+  "dependencies": {
+    "skills": [],
+    "edges": [
+      "E-4.1",
+      "E-4.4",
+      "E-3.1"
+    ],
+    "computes": [
+      "COMPUTE-PRICE-ELASTICITY-v2"
+    ],
+    "sentinels": [
+      "sentinel-price-elasticity"
+    ]
+  },
+  "boundaries": {
+    "prohibitedDimensions": [
+      "financial-internal",
+      "organizational",
+      "technology-stack"
+    ],
+    "degradedBehavior": "客户/渠道数据不足时降级为部分报告，标记 degraded:true",
+    "preconditions": [
+      "L1感知层数据已采集",
+      "对应compute函数可用"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
+}

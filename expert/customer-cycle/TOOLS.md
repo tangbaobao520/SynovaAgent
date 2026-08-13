@@ -1,0 +1,11 @@
+## 可用工具
+- compute-competitive-positioning: 竞争位势评估
+- compute-hhi: 市场集中度
+- compute-customer-value-score: 客户价值评分
+- compute-customer-profitability: 客户盈利能力
+- compute-customer-demand-structure: 需求结构
+- compute-price-elasticity: 价格弹性
+- compute-optimal-price: 最优价格
+- compute-two-part-tariff: 二部定价
+- compute-market-structure-diagnosis: 市场结构诊断
+- compute-demand-forecast: 需求预测

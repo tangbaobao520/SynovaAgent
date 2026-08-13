@@ -1,0 +1,16 @@
+{
+  "$id": "edge/information_flow",
+  "label": "INFORMATION_FLOW",
+  "tags": ["causal", "first_order", "stage_2"],
+  "allowedFrom": ["pool/data"],
+  "allowedTo": ["pool/activity"],
+  "requiredProps": ["info_fidelity", "transmission_latency_days"],
+  "optionalProps": {
+    "info_availability_score": "number (0-1) — 信息可获取性",
+    "decision_relevance": "number (0-1) — 信息决策相关性",
+    "push_vs_pull_ratio": "number — 推送 vs 拉取比例"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "信息流到需要的人——数据池中的信息传递到决策者和执行者的内部转化阀。"
+}

@@ -10,7 +10,8 @@
  *   query_graph — SOG 实时数据查询
  *   search_external — 外部知识源 (M3 接入)
  */
-import { createLogger } from '../logger';
+import { ImaClient } from "../connectors/ima";
+import { createLogger } from '@synova/logger';
 import { KnowledgeStore } from '../l4/knowledge-store';
 import type { KnowledgeChunk } from '../l4/knowledge-store';
 import { getDatabase } from '../init/engine-context';
@@ -27,6 +28,8 @@ export interface KnowledgeAgentConfig {
   defaultLimit?: number;
   /** 外部知识源 (M3 接入) */
   externalSources?: Array<{ name: string; search: (q: string, limit: number) => Promise<Array<{ title: string; snippet: string; url: string }>> }>;
+  /** ima 客户端实例 (D104+D105) */
+  imaClient?: ImaClient;
 }
 
 export interface KnowledgeAgent {
@@ -34,6 +37,8 @@ export interface KnowledgeAgent {
   registerTo(registry: { register: (tool: Record<string, unknown>) => void }): void;
   /** 执行齿轮6: 从文档/消息提取知识片段 */
   runGear6(): Promise<{ extracted: number; errors: string[] }>;
+  /** ima 知识提取 (D104+D105) */
+  imaDataSource(enterpriseId: string, filter?: { documentTypes?: string[]; limit?: number }): Promise<import("../connectors/ima").ExtractedPkbEntry[]>;
 }
 
 export function createKnowledgeAgent(config: KnowledgeAgentConfig = {}): KnowledgeAgent {
@@ -227,14 +232,18 @@ export function createKnowledgeAgent(config: KnowledgeAgentConfig = {}): Knowled
         sideEffects: 'none',
         handler: async (params: Record<string, unknown>) => {
           try {
-            const BASE = `http://localhost:${process.env.PORT || 3000}`;
+            // 铁律 39: L3 → L4 通过 GraphStore 接口访问，不跨层调 L1 HTTP 路由
+            const { SqliteGraphStore } = await import('../adapters/sqlite-graph-store');
+            const db = getDatabase();
+            const graphStore = new SqliteGraphStore(db);
             const orgId = String(params.orgId || 'default');
             const nodeType = params.nodeType as string | undefined;
-            const res = await fetch(`${BASE}/api/ontology/graph/${orgId}`);
-            if (!res.ok) return { error: '本体 API 不可达' };
-            const data = await res.json() as { nodes?: Array<{ type: string; props: Record<string, unknown> }> };
-            let nodes = (data.nodes || [])
-              .filter(n => !nodeType || n.type === nodeType);
+            const { NodeType } = await import('@synova/ontology');
+            // 用户输入字符串 → NodeType 枚举，不匹配则默认 RESOURCE_PERSON
+            const nodeTypeValues: Record<string, string> = Object.entries(NodeType).reduce((acc, [k, v]) => { acc[k] = v as string; acc[v as string] = v as string; return acc; }, {} as Record<string, string>);
+            const resolvedType: string = nodeType && nodeTypeValues[nodeType] ? nodeTypeValues[nodeType] : NodeType.RESOURCE_PERSON;
+            const rawNodes = graphStore.queryNodes(resolvedType as unknown as typeof NodeType.RESOURCE_PERSON, undefined, orgId);
+            let nodes = rawNodes.filter(n => !nodeType || n.type === nodeType);
             if (params.keywords) {
               const kw = String(params.keywords).toLowerCase();
               nodes = nodes.filter(n => JSON.stringify(n.props).toLowerCase().includes(kw));
@@ -242,6 +251,7 @@ export function createKnowledgeAgent(config: KnowledgeAgentConfig = {}): Knowled
             const limit = Number(params.limit || defaultLimit);
             return { nodes: nodes.slice(0, limit).map(n => ({ type: n.type, props: n.props })), total: nodes.length };
           } catch (err: unknown) {
+            log.warn({ err: err instanceof Error ? err.message : String(err) }, "动态模块加载失败");
             return { error: `图查询失败: ${err instanceof Error ? err.message : String(err)}` };
           }
         },
@@ -444,7 +454,31 @@ export function createKnowledgeAgent(config: KnowledgeAgentConfig = {}): Knowled
       }
     },
 
-    /** 齿轮6: 从文档/消息中提取知识片段到知识库 */
+    /** ima 知识提取 */
+    async imaDataSource(
+      enterpriseId: string,
+      filter?: { documentTypes?: string[]; limit?: number },
+    ): Promise<import("../connectors/ima").ExtractedPkbEntry[]> {
+      const client = config.imaClient;
+      if (!client) { return []; }
+      try {
+        const docs = await client.scanDocuments({
+          documentTypes: (filter?.documentTypes || ["strategy", "operations", "meetings"]) as ("strategy" | "operations" | "meetings")[],
+          limit: filter?.limit || 10,
+        });
+        const entries: import("../connectors/ima").ExtractedPkbEntry[] = [];
+        for (const doc of docs.slice(0, 5)) {
+          const entry = await client.extractContent(doc.id);
+          if (entry) entries.push(entry);
+        }
+        return entries;
+      } catch (err: unknown) {
+        log.warn({ err }, 'ima 扫描或提取失败 — 降级返回空');
+        return [];
+      }
+    },
+
+    /** 齿轮6: 从文档/消息/ima中提取知识片段到知识库 */
     async runGear6() {
       const errors: string[] = [];
       let extracted = 0;

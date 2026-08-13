@@ -1,0 +1,62 @@
+id: PB-bm-structure-health
+name: 商业模式健康检查剧本
+version: 1.0.0
+expert: business_model
+type: playbook
+description: 从价值主张、收入模式、成本结构、竞争定位和利润再投资5维度评估商业模式健康度。
+trigger:
+  sentinels:
+    - bm-structure-health
+  manual: true
+  condition: GA手动触发
+steps:
+  - id: step-1
+    name: 价值主张评估
+    description: 评估核心价值主张的市场匹配度
+    tools:
+      - acquire-edge-data
+      - query-graph
+    timeout: 25
+  - id: step-2
+    name: 收入模式分析
+    description: 分析收入来源的多元性和稳定性
+    tools:
+      - acquire-edge-data
+    timeout: 20
+  - id: step-3
+    name: 成本结构诊断
+    description: 诊断固定成本与变动成本结构
+    skill: analyze-cost-structure
+    timeout: 25
+  - id: step-4
+    name: 竞争位势评估
+    description: 评估竞争护城河强度
+    skill: analyze-competitive-position
+    timeout: 25
+  - id: step-5
+    name: 资本配置审查
+    description: 审查利润再投资和资本配置效率
+    skill: analyze-capital-allocation
+    timeout: 25
+  - id: step-6
+    name: 综合健康评分
+    description: 输出商业模式健康评分和改进建议
+    tools:
+      - cross-validate
+    timeout: 30
+onFailure: degrade
+output: bm_health_report
+dependencies:
+  edges:
+    - E-3.1
+    - E-4.1
+    - E-4.2
+    - E-4.7
+    - E-5.1
+  skills:
+    - analyze-cost-structure
+    - analyze-competitive-position
+    - analyze-capital-allocation
+  sentinels:
+    - bm-structure-health
+crossExpert: true

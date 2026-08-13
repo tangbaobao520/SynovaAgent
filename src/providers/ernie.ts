@@ -10,6 +10,8 @@
  */
 import type { LLMProvider, LLMMessage, ChatOptions, ChatResult, StreamCallback, HealthCheckResult, ProviderConfig } from './types';
 import { DiagnosticAgentError, ErrorCode, isRetryable } from '../errors/types';
+import { createLogger } from '@synova/logger';
+const log = createLogger('src.providers.ernie');
 
 const DEFAULT_BASE_URL = 'https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat';
 const DEFAULT_MODEL = 'ernie-4.0-8k';
@@ -113,7 +115,10 @@ export function createErnieProvider(config: ProviderConfig): LLMProvider {
       });
 
       if (!res.ok) {
-        const text = await res.text().catch(() => '');
+        const text = await res.text().catch((err) => {
+          log.warn({ err, status: res.status }, '错误响应体读取失败 — 降级空文本');
+          return '';
+        });
         const code = res.status === 429 ? ErrorCode.RATE_LIMITED
           : res.status >= 500 ? ErrorCode.SERVER_ERROR
           : ErrorCode.INTERNAL;
@@ -147,6 +152,7 @@ export function createErnieProvider(config: ProviderConfig): LLMProvider {
         }
         cb.onComplete?.({ content: result.content, model: result.model });
       } catch (err: any) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "ERNIE LLM 对话");
         cb.onError?.(err);
       }
     },
@@ -159,6 +165,7 @@ export function createErnieProvider(config: ProviderConfig): LLMProvider {
         await getAccessToken(apiKey, secretKey);
         return { healthy: true };
       } catch (err: any) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "ERNIE access_token 获取");
         return { healthy: false, error: err.message, latencyMs: 0 };
       }
     },

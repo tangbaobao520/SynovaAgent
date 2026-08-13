@@ -1,0 +1,16 @@
+{
+  "$id": "edge/operational_execution",
+  "label": "OPERATIONAL_EXECUTION",
+  "tags": ["causal", "first_order", "stage_3"],
+  "allowedFrom": ["pool/activity"],
+  "allowedTo": ["outcome/financial", "outcome/operational"],
+  "requiredProps": ["efficiency_rate", "defect_rate", "output_volume"],
+  "optionalProps": {
+    "capacity_utilization": "number (0-1) — 产能利用率",
+    "cycle_time_hours": "number — 周期时间",
+    "yield_rate": "number (0-1) — 良品率"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "资源转化为产出——活动池中的运营活动将资源转化为产品/服务的价值输出阀（取代原PRODUCES）。"
+}

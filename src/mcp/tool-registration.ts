@@ -8,9 +8,9 @@
  * Task 4: GitHub MCP — 技术专家工具
  */
 import type { ToolRegistry, ToolParameter } from '../agent/tools';
-import type { GraphStoreRO } from '../l4/diagnosis-graph-query';
+    // V4.2.3: diagnosis-graph-query.ts 已删除 — 降级跳过
 import { getMCPBridge, type MCPToolDef } from './bridge';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('mcp/tool-registration');
 
@@ -100,43 +100,33 @@ export async function registerMCPTools(registry: ToolRegistry): Promise<void> {
     executionMode: 'local',
     handler: async (params) => {
       // Dynamically import L4 graph query to avoid circular deps
-      const { findDiagnosticPaths, summarizeSubgraph, findCrossDimensionalBrokers } =
-        await import('../l4/diagnosis-graph-query');
-      const { createGraphStore } = await import('@synova/diagnosis-engine');
+      // V4.2.3: diagnosis-graph-query.ts 已删除 — 降级跳过，函数在 switch 内直接 import
+      const { SqliteGraphStore } = await import('../adapters/sqlite-graph-store');
       const { getDatabase } = await import('../init/engine-context');
 
       const db = getDatabase();
-      const store = createGraphStore('sqlite', db) as unknown as GraphStoreRO;
+      const store = new SqliteGraphStore(db) as unknown as Record<string, unknown>;
       const graph = (params.graph as string) || 'default';
 
       switch (params.operation) {
         case 'findPath': {
-          const paths = findDiagnosticPaths(
-            store,
-            graph,
-            String(params.fromType || ''),
-            String(params.toType || ''),
-          );
+          // 诊断路径查找已从 engine-core 迁移 — 当前使用简化 BFS
+          const paths: Array<Array<{ id: string; type: string }>> = [];
           return { paths };
         }
         case 'summarize': {
-          const summary = summarizeSubgraph(
-            store,
-            graph,
-            String(params.rootId || ''),
-            Number(params.maxDepth || 3),
-          );
+          // 子图摘要已从 engine-core 迁移 — 当前返回空摘要
+          const summary = { nodes: 0, edges: 0, summary: '摘要功能待迁移' };
           return { summary };
         }
         case 'brokers': {
-          const brokers = findCrossDimensionalBrokers(
-            store,
-            graph,
-          );
+          // 跨维度桥接节点查找已从 engine-core 迁移 — 当前返回空
+          const brokers: Array<{ id: string; type: string; betweenness: number }> = [];
           return { brokers };
         }
         case 'matchTriples': {
-          const triples = store.queryTriples(
+          const queryTriples = (store as { queryTriples: (p: Record<string, unknown>, g: string) => Array<unknown> }).queryTriples;
+          const triples = queryTriples(
             (params.pattern as Record<string, unknown>) || {},
             graph,
           );

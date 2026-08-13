@@ -1,0 +1,20 @@
+{
+  "$id": "edge/cumulative_learning",
+  "label": "CUMULATIVE_LEARNING",
+  "tags": ["causal", "growth", "efficiency"],
+  "allowedFrom": ["activity/production","activity/innovation","activity/learning"],
+  "allowedTo": ["outcome/operational","outcome/financial"],
+  "requiredProps": ["learning_rate", "experience_elasticity"],
+  "optionalProps": {
+    "routine_rigidity": "number (0-1) — 演化经济学的惯例刚性参数",
+    "cumulative_output": "number — 累计产出量",
+    "unit_cost_t0": "number — 初始单位成本"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "unit_cost_t = unit_cost_t0 * (cumulative_output)^(-learning_rate)",
+  "diagnostic_signals": {
+    "learning_stall": "learning_rate < 0.05 AND cumulative_output > baseline — 学习曲线平坦化",
+    "rigidity_lock": "routine_rigidity > 0.8 AND learning_rate_declining — 惯例刚性阻碍学习"
+  },
+  "description": "累积学习曲线——单位成本随累计产出下降。学术基础：Wright's Law(1936)+Nelson-Winter(1982)演化经济学。数据来源：PRODUCES边output/quantity + Financial节点cost/cogs。"
+}

@@ -1,0 +1,34 @@
+{
+  "cycleId": "cash-cycle",
+  "name": "现金流循环",
+  "description": "营收→成本→再投资的现金流闭环。营收增长驱动再投资能力，再投资提升效率，效率反哺利润率。",
+  "version": "1.0.0",
+  "applicableIndustries": [],
+  "nodes": [
+    { "id": "revenue", "label": "营收", "type": "flow", "initialValue": 800, "unit": "万元/年", "edgeRefs": ["E-4.1"] },
+    { "id": "cost", "label": "总成本", "type": "flow", "initialValue": 760, "unit": "万元/年", "edgeRefs": ["E-2.1"] },
+    { "id": "profit", "label": "利润", "type": "stock", "initialValue": 40, "unit": "万元", "edgeRefs": ["E-5.1"] },
+    { "id": "reinvestment", "label": "再投资", "type": "flow", "initialValue": 20, "unit": "万元/年" }
+  ],
+  "edges": [
+    { "from": "revenue", "to": "profit", "polarity": "+", "delay": 0, "weight": 1.0 },
+    { "from": "cost", "to": "profit", "polarity": "-", "delay": 0, "weight": 1.0 },
+    { "from": "profit", "to": "reinvestment", "polarity": "+", "delay": 1, "weight": 0.5 },
+    { "from": "reinvestment", "to": "revenue", "polarity": "+", "delay": 3, "weight": 0.3 }
+  ],
+  "overflowFormula": {
+    "condition": "profit.currentValue < 0",
+    "targetNode": "reinvestment",
+    "formula": "max(0, profit.currentValue * 0.3)",
+    "minDataMaturity": "high"
+  },
+  "dataMaturity": "high",
+  "mapping": [
+    { "nodeId": "revenue", "edgeId": "E-4.1", "weight": 1.0 },
+    { "nodeId": "cost", "edgeId": "E-2.1", "weight": 1.0 },
+    { "nodeId": "profit", "edgeId": "E-5.1", "weight": 0.9 }
+  ],
+  "crossCyclePropagation": [
+    { "targetCycleId": "talent-cycle", "viaEdge": "profit→salary", "strength": 0.4 }
+  ]
+}

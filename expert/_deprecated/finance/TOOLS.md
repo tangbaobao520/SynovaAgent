@@ -1,0 +1,70 @@
+# 财务专家 — 可用工具
+
+## 专有工具
+- cashflow_health: 现金流三分法健康分析 — 经营/投资/融资流独立评分
+- unit_economics: 单位经济学分析 — LTV/CAC、毛利率、边际贡献
+- cost_structure: 成本结构诊断 — 固定vs可变、趋势、行业对标
+- financial_runway: 财务跑道计算 — 当前消耗速率下的资金支撑时间
+
+## 共享工具
+- cross_validate: 与其他专家的发现交叉验证
+- query_graph: 查询本体层节点和边
+- query_knowledge: 查询 PKB 知识库 (会计准则/税务规则)
+
+## 受限工具 (需FDE确认)
+- valuation_model: 估值模型 — 需完整财务数据和行业对标
+- fundraising_strategy: 融资策略建议 — 需充分了解资本市场环境
+
+## Token 成本核算 (TokenEconomics)
+
+当诊断涉及 AI/LLM 使用成本时调用。
+
+### 模型定价参考 (USD/1M tokens)
+| 模型 | 输入 | 输出 |
+|------|------|------|
+| deepseek-v3 | $0.27 | $1.10 |
+| deepseek-r1 | $0.55 | $2.19 |
+| claude-sonnet-4 | $3.00 | $15.00 |
+| claude-haiku-4.5 | $0.80 | $4.00 |
+| gpt-4o | $2.50 | $10.00 |
+
+### 成本阈值
+- 月成本 > $1000: warning
+- 月成本 > $5000: critical
+
+### 数据源
+- L4 GraphStore FINANCIAL 节点 (token_account 类型)
+- 模型用量从 props.inputTokens/outputTokens 读取
+
+## 成本结构深度分析（管理经济学）
+
+### 固定成本vs变动成本识别
+- 固定成本 = 无论产出多少都要支出的成本（房租、底薪、设备折旧）
+- 变动成本 = 随产出线性变化的成本（原材料、计件工资）
+- 混合成本：半固定/半变动——需要用高低点法或回归分解
+
+### 规模经济vs学习曲线
+- 规模经济：产出增加时平均成本下降（固定成本摊薄）
+- 学习曲线：累计产量增加时单位成本下降（效率提升）
+- 两者的区别：规模经济来自产能利用率提升，学习曲线来自经验和效率积累
+
+### 盈亏平衡点
+BEP = 固定成本/(单价-单位变动成本)
+- BEP越低，企业的抗风险能力越强
+- 经营杠杆系数 = (收入-变动成本)/利润
+- 杠杆越高，收入波动对利润的影响越大
+
+### 混合组织修正
+- Agent可以降低变动成本（替代计件工、客服等）但固定成本不变（系统维护）
+- 产品化软件的增量成本几乎为零——这是典型的规模经济
+- 当人工转换为自动化与Agent化后，成本结构将发生深层重组，盈亏平衡点需重新校定
+
+# F1-F5 tools (46 sentinel)
+- kz_index(teamId) → number
+- capital_structure_health(teamId) → {score, signals}
+- roic_wacc_spread(teamId) → number
+- growth_quality(teamId) → {score, organic_pct, cash_conversion}
+
+## 通用哨兵工具 (V4.2.8)
+- get_sentinel(sentinelId: string): 查询指定哨兵的最近检查结果和发现列表
+- get_ontology(nodeType: string): 查询指定本体节点类型的 schema 和实例数据

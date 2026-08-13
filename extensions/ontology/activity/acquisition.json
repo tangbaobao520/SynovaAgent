@@ -1,0 +1,1 @@
+{"$id":"activity/acquisition","label":"ACQUISITION","tags":["activity","market","growth"],"requiredProps":["name"],"optionalProps":{"acquisition_type":"string","target_segment":"string","reach":"number","engage":"number","convert":"number","retain":"number"},"description":"获客活动。将潜在客户转化为付费客户的漏斗过程。"}

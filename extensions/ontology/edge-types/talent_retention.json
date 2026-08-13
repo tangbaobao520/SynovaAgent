@@ -1,0 +1,16 @@
+{
+  "$id": "edge/talent_retention",
+  "label": "TALENT_RETENTION",
+  "tags": ["causal", "first_order", "stage_5"],
+  "allowedFrom": ["outcome/people"],
+  "allowedTo": ["pool/human_capital"],
+  "requiredProps": ["retention_rate", "avg_tenure_months", "satisfaction_score"],
+  "optionalProps": {
+    "voluntary_turnover_rate": "number (0-1) — 主动离职率",
+    "key_talent_loss_rate": "number (0-1) — 关键人才流失率",
+    "exit_interview_feedback": "string — 离职访谈摘要"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "人才留存——员工满意度驱动人才留在企业，减少人力池的流失。"
+}

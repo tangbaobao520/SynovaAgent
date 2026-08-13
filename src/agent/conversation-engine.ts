@@ -11,8 +11,10 @@
  * Iron law #31: degraded 信号通过 ProcessResult 传播。
  */
 import type { LLMProvider, LLMMessage } from '../providers/types';
+import type Database from 'better-sqlite3';
 import { ToolRegistry } from './tools';
-import { createLogger } from '../logger';
+import { getGlobalGracefulShutdown } from '../services/graceful-shutdown';
+import { createLogger } from '@synova/logger';
 import type { ViewAdapter } from '../l1-interaction/types';
 import type { IntentRouter } from '../orchestrator/intent-router';
 import type { DimensionRegistry } from '../orchestrator/dimension-registry';
@@ -27,7 +29,7 @@ import type { GraphStore } from '../l4/graph-bridge';
 import type { createGraphBridge } from '../l4/graph-bridge';
 import type { ReportGraphAdapter } from '../l4/report-graph-adapter';
 import type { DecisionInput, DecisionResult } from '../l4/decision-capture';
-import type { DiagnosticPath, SubgraphSummary, BrokerNode, GraphDiff } from '../l4/diagnosis-graph-query';
+// V4.2.3: diagnosis-graph-query.ts 已删除 — L4 图查询类型移除
 import type { Triple, ReflectionResult } from '../l4/triple-reflection';
 import type { L3ResolutionResult } from '../l4/entity-resolver';
 import type { CommunityReport } from '../l4/community-reports';
@@ -36,7 +38,9 @@ import { ToolLoopExecutor } from './tool-loop-executor';
 import { DiagnosisLauncher, type DiagnosisEvent, type ConsultationResult } from './diagnosis-launcher';
 import { OntologySyncer, type OntologySyncResult } from './ontology-syncer';
 import type { EngineContext } from './engine-context';
-import { EngineCoreVendorAdapter } from '../adapters/engine-core-adapter';
+import { SqliteGraphStore } from '../adapters/sqlite-graph-store';
+import { getGlobalSentinelRunner } from '../sentinel/runner';
+import { ContextEngine } from '../orchestrator/context-engine';
 
 const log = createLogger('agent/conversation-engine');
 
@@ -88,8 +92,12 @@ export interface EngineConfig {
   enableTripleReflection?: boolean;
   /** 铁律 39: L2 通过 DiagnosisEngine 接口调用引擎 */
   diagnosisEngine?: import('../l2-interfaces/diagnosis-engine').DiagnosisEngine;
+  /** v3.3: L4 AgentMemoryStore — 加载已确认判断 */
+  memoryStore?: import('../l4/agent-memory-store').AgentMemoryStore;
   /** FED-001: 联邦进化适配器 */
   federalAdapter?: import('../adapters/federal-adapter').FederalAdapter;
+  /** P1 Phase Gate Check: 证据和专家状态跟踪 (供 onPhaseEnter 回调读取) */
+  phaseGateTracking?: { evidenceCount: number; expertResults: Array<{ expertType: string; confidence: number; hypothesis: string; degraded?: boolean }> };
 }
 
 export interface ProcessResult {
@@ -213,8 +221,20 @@ const DIMENSION_NAMES = [
   'market_positioning', 'digital_foundation',
 ];
 
-function buildVolatileLayer(turnCount: number, phase: number): string {
-  return `[轮次: ${turnCount}] [阶段: ${phase}/5]`;
+function buildVolatileLayer(turnCount: number, phase: number, teamId?: string): string {
+  let sentinelInfo = '';
+  if (teamId && turnCount === 1) {
+    try {
+      const runner = getGlobalSentinelRunner();
+      if (runner) {
+        const stats = runner.getStats();
+        if (stats.totalFindings > 0) {
+          sentinelInfo = `\n[哨兵监测]: ${stats.totalFindings} 条发现 (critical: ${stats.criticalFindings}, warning: ${stats.warningFindings})`;
+        }
+      }
+    } catch (err) { log.warn({ err }, '哨兵数据不可用 — degraded'); }
+  }
+  return `[轮次: ${turnCount}] [阶段: ${phase}/5]${sentinelInfo}`;
 }
 
 function buildSystemPrompt(
@@ -260,8 +280,10 @@ export class ConversationEngine {
   private corroborationEngine: CorroborationEngine | null = null;
   private onDecision: ((decision: DecisionInput) => Promise<DecisionResult>) | null = null;
   private sessionId: string = '';
+  private phaseGateTracking: { evidenceCount: number; expertResults: Array<{ expertType: string; confidence: number; hypothesis: string; degraded?: boolean }> } | null = null;
   // L4 本体层组件
   private graphStore: GraphStore | null = null;
+  private memoryStore: import('../l4/agent-memory-store').AgentMemoryStore | null = null;
   private enableEntityResolution: boolean = false;
   private enableCommunityReports: boolean = false;
   private enableTripleReflection: boolean = false;
@@ -272,6 +294,7 @@ export class ConversationEngine {
   private toolLoop: ToolLoopExecutor;
   private diagnosisLauncher: DiagnosisLauncher;
   private ontologySyncer: OntologySyncer;
+  private contextEngine: ContextEngine;
 
   constructor(provider: LLMProvider, config: EngineConfig = {}) {
     this.provider = provider;
@@ -300,8 +323,12 @@ export class ConversationEngine {
     this.corroborationEngine = config.corroborationEngine || null;
     this.onDecision = config.onDecision || null;
     this.sessionId = config.sessionId || '';
+    // P1 Phase Gate Check: 证据/专家状态跟踪
+    this.phaseGateTracking = config.phaseGateTracking || null;
+    this.contextEngine = new ContextEngine({ provider: this.provider });
     // L4 本体层接线
     this.graphStore = config.graphStore || null;
+    this.memoryStore = config.memoryStore || null;
     this.enableEntityResolution = config.enableEntityResolution ?? false;
     this.enableCommunityReports = config.enableCommunityReports ?? false;
     this.enableTripleReflection = config.enableTripleReflection ?? false;
@@ -321,7 +348,7 @@ export class ConversationEngine {
       graphBridge: this.graphBridge,
       graphStore: this.graphStore,
       diagnosisEngine,
-      createGraphStore: (db) => EngineCoreVendorAdapter.createGraphStore(db),
+      createGraphStore: async (db) => new SqliteGraphStore(db as Database.Database),
       federalAdapter: config.federalAdapter,
       flags: {
         enableCommunityReports: this.enableCommunityReports,
@@ -367,9 +394,16 @@ export class ConversationEngine {
 
   /** Advance to next phase (Hermes P0-2: 重建 system prompt 以更新上下文层) */
   advancePhase(): void {
-    this.phase++;
+    // P1 Loop Engineering: 通过 PhaseStateMachine 驱动，触发 Gate Check 回调
+    if (this.phaseStateMachine && this.phaseStateMachine.getState() === 'running') {
+      const result = this.phaseStateMachine.advance();
+      this.phase = result.phase;
+      log.info({ phase: result.phase, label: result.label }, 'PhaseStateMachine 推进 → Gate Check 已触发');
+    } else {
+      this.phase++;
+      log.debug({ phase: this.phase }, 'Phase 推进 (无状态机, 降级)');
+    }
     this.messages[0] = { role: 'system', content: buildSystemPrompt(this.phase, this.turnCount, this.dimensionCoverage, this.dimensionRegistry) };
-    log.debug({ phase: this.phase }, 'Phase 推进, system prompt 已更新');
   }
 
   /** Get message history (shallow copy) */
@@ -438,11 +472,33 @@ export class ConversationEngine {
    * @returns ProcessResult with reply text and phase completion signal
    */
   async processMessage(userInput: string): Promise<ProcessResult> {
+    // Phase 1.2: 注册活跃会话到优雅关闭追踪
+    if (this.sessionId) {
+      try { getGlobalGracefulShutdown().noteActive(this.sessionId, { orgId: this.orgId, phase: this.phase }); }
+      catch (err) { log.warn({ err }, '优雅关闭注册失败 — 非阻断'); }
+    }
     this.turnCount++;
     // PII 脱敏: 出站到云 LLM 前脱敏 (S4移除 + S3脱敏 + S2角色掩盖)
     const input = this.piiScrubber?.scrub(userInput, 'S2').cleaned ?? userInput;
     // Hermes P0-2: 易变层追加到 user message — 保护 Prefix Cache
     this.messages.push({ role: 'user', content: `${input}\n\n${buildVolatileLayer(this.turnCount, this.phase)}` });
+
+    // G1: 上下文可插拔引擎 — 文件驱动策略，LLM 不可用降级
+    const estimatedTokens = this.messages.reduce((sum, m) => sum + m.content.length, 0);
+    if (this.contextEngine.shouldCompress(this.messages, estimatedTokens)) {
+      try {
+        const confirmedFacts = await this.loadConfirmedFacts();
+        const result = await this.contextEngine.compress(this.messages, estimatedTokens, confirmedFacts);
+        this.messages = result.messages;
+        log.debug({
+          before: result.messages.length + result.stats.discardedCount,
+          after: result.messages.length,
+          degraded: result.stats.degraded,
+        }, '上下文已压缩');
+      } catch (err: unknown) {
+        log.warn({ err }, '上下文压缩失败 — 非阻断');
+      }
+    }
 
     // L3 接线: EvidenceCollector — Phase 0 证据自动采集
     if (this.phase === 0 && this.evidenceCollector) {
@@ -510,16 +566,29 @@ export class ConversationEngine {
         // Batch 2: PhaseStateMachine 驱动 — 替代硬编码 phase=1
         if (this.phaseStateMachine) {
           const next = this.phaseStateMachine.advance();
-          log.info({ nextPhase: next.phase, label: next.label }, '状态机推进');
+          this.phase = next.phase;
+          log.info({ nextPhase: next.phase, label: next.label }, '状态机推进 → Phase 0 完成');
+        } else {
+          this.phase = 1;
         }
-        this.phase = 1;
 
         // GNS v2.0: Phase 0 完成 → 持久化 InterviewSummary 到 GraphStore
         this.persistInterviewSummary(coveredCount).catch(err => {
           log.warn({ err }, 'InterviewSummary 持久化失败 — degraded');
         });
         // Slice 5.1: 自动同步 SOG 本体
-        this.syncToSOG().then(r => { this._lastOntologyResult = r; }).catch(() => {});
+        this.syncToSOG().then(r => { this._lastOntologyResult = r; }).catch((err) => {
+          log.warn({ err }, 'SOG 本体同步失败 — degraded');
+        });
+
+        // 审计 P0-20260620: Phase 0 完成后自动启动诊断管线
+        this.startDiagnosis('FDE', '用户').then(result => {
+          if (result) {
+            log.info({ teamId: result.teamId, durationMs: result.totalDurationMs }, '诊断管线已完成');
+          }
+        }).catch(err => {
+          log.warn({ err }, '诊断管线启动失败 — degraded');
+        });
 
         return { reply, phaseComplete: true };
       }
@@ -633,6 +702,22 @@ export class ConversationEngine {
     return engine;
   }
 
+  /** v3.3: 从企业事实层加载本工作区的已确认判断 */
+  private async loadConfirmedFacts(): Promise<string[] | undefined> {
+    if (!this.memoryStore || !this.orgId) return undefined;
+    try {
+      // v3.5: 从最近消息提取tags → 传递给Bridge做跨区匹配
+      const recentMsgs = this.messages.slice(-5).map(m => typeof m.content === 'string' ? m.content : '').join(' ');
+      const tags = recentMsgs.split(/[\s,，。！？]+/).filter(w => w.length >= 2).slice(0, 5);
+      const { WorkspaceContextBridge } = await import('./workspace-context-bridge');
+      const bridge = new WorkspaceContextBridge(this.memoryStore);
+      const ctx = await bridge.loadContextForWorkspace(this.orgId, tags);
+      const facts = [...ctx.ownFacts, ...ctx.relatedFacts];
+      if (facts.length === 0) return undefined;
+      return facts;
+    } catch (err) { log.warn({ err }, 'memoryStore 不可用 — degraded'); return undefined; }
+  }
+
   // ═══ Private: LLM + Tool Loop (delegated to ToolLoopExecutor) ═══
 
   private async callLLMWithTools(): Promise<string> {
@@ -666,7 +751,7 @@ import type { DiagnosisEngine } from '../l2-interfaces/diagnosis-engine';
 function createNoopEngine(): DiagnosisEngine {
   return {
     async runConsultation(_teamId, _initiator, onEvent) {
-      onEvent?.({ type: 'error', phase: 0, label: '引擎未配置', message: 'DiagnosisEngine 未注入 — 请在 server.ts 中配置 EngineCoreVendorAdapter' });
+      onEvent?.({ type: 'error', phase: 0, label: '引擎未配置', message: 'DiagnosisEngine 未注入 — 请使用 createSynovaDiagnosisEngine 配置引擎' });
       return { teamId: _teamId, report: { error: '引擎未配置' }, totalDurationMs: 0, degradedModules: ['engine'] };
     },
   };

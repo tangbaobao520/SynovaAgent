@@ -1,0 +1,7 @@
+{
+  "name": "playbooks",
+  "version": "1.0.0",
+  "type": "playbooks-manifest",
+  "description": "Synova Playbook System. Playbooks define trigger-to-execution workflows that orchestrate Skills. Loaded from directories below in priority order: custom > industry > builtin.",
+  "loadOrder": ["custom", "industry", "builtin"]
+}

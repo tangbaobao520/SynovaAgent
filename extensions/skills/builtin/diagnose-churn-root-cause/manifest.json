@@ -1,0 +1,71 @@
+{
+  "name": "diagnose-churn-root-cause",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "客户流失根因分析",
+  "description": "通过多维度分析定位客户流失的根本原因，生成流失干预优先级排序。",
+  "tier": "L3",
+  "complexity": "expert",
+  "expert": "marketing",
+  "tools": [
+    "compute-customer-lockin",
+    "compute-customer-value-score",
+    "compute-customer-data-loop",
+    "compute-competitive-positioning",
+    "cross-validate"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "customer",
+        "market"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": [
+      "strategy",
+      "business_model"
+    ]
+  },
+  "dependencies": {
+    "skills": [
+      "analyze-customer-value",
+      "analyze-competitive-position"
+    ],
+    "edges": [
+      "E-4.2",
+      "E-4.6",
+      "E-5.4",
+      "E-4.4",
+      "E-3.5"
+    ],
+    "computes": [
+      "COMPUTE-CUSTOMER-LOCKIN-v1",
+      "COMPUTE-CUSTOMER-VALUE-SCORE-v1",
+      "COMPUTE-CUSTOMER-DATA-LOOP-v1",
+      "COMPUTE-COMPETITIVE-POSITIONING-v1"
+    ],
+    "sentinels": [
+      "churn-health",
+      "competitive-position",
+      "client-portfolio-concentration"
+    ]
+  },
+  "boundaries": {
+    "prohibitedDimensions": [
+      "financial-internal",
+      "organizational",
+      "technology-stack"
+    ],
+    "degradedBehavior": "客户/渠道数据不足时降级为部分报告，标记 degraded:true",
+    "preconditions": [
+      "下级L1-L2数据已就绪",
+      "相关compute函数可用",
+      "GraphStore连接正常"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
+}

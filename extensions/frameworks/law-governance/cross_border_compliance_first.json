@@ -1,0 +1,33 @@
+{
+  "id": "cross_border_compliance_first",
+  "name": "跨境合规前置",
+  "category": "law-governance",
+  "coreInsight": "先认证再选品，不是先选品再认证。3C认证/CR认证/EPR合规是入市门槛而非可选项",
+  "applicableDecisionTypes": [
+    "compliance",
+    "product_strategy",
+    "supplier_selection"
+  ],
+  "constraintPatterns": [
+    "跨境",
+    "合规",
+    "认证",
+    "法规",
+    "出口",
+    "进口",
+    "海关",
+    "标准",
+    "审核"
+  ],
+  "applicableRoles": [
+    "合规专员",
+    "认证管理",
+    "法务",
+    "跨境运营"
+  ],
+  "limitations": [
+    "合规前置会增加初始成本和时间",
+    "部分市场的合规标准变化频繁"
+  ],
+  "$id": "framework/law-governance/cross_border_compliance_first"
+}

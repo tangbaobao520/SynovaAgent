@@ -9,8 +9,8 @@
  */
 import type { LLMMessage } from '../providers/types';
 import type { EngineContext } from './engine-context';
-import { createLogger } from '../logger';
-import { ToolGuardrails } from './tools';
+import { createLogger } from '@synova/logger';
+import { ToolGuard } from '../l3/tool-guard';
 import * as crypto from 'crypto';
 
 /** Tool execution result — may contain error property on failure */
@@ -22,7 +22,7 @@ interface ToolExecResult {
 export class ToolLoopExecutor {
   private ctx: EngineContext;
   private log = createLogger('agent/tool-loop');
-  private guardrails = new ToolGuardrails();
+  private toolGuard = new ToolGuard();
 
   constructor(ctx: EngineContext) {
     this.ctx = ctx;
@@ -90,18 +90,18 @@ export class ToolLoopExecutor {
             }
           }
 
-          // Hermes P4 接线: 循环保护 — 检查是否为死循环
-          const guardResult = this.guardrails.check(tc.function.name, effectiveParams, {});
-          if (guardResult.action === 'block') {
-            this.log.warn({ tool: tc.function.name, reason: guardResult.reason }, '工具被循环保护阻止');
-            messages.push({ role: 'tool', tool_call_id: crypto.randomUUID(), content: JSON.stringify({ error: `工具被阻止: ${guardResult.reason}` }) });
+          // L3 ToolGuard: 工具调用前检查（循环检测 + 重复失败阻断 + 参数校验）
+          const guardDecision = this.toolGuard.beforeCall(tc.function.name, effectiveParams);
+          if (!guardDecision.allow) {
+            this.log.warn({ tool: tc.function.name, reason: guardDecision.reason }, '工具被 ToolGuard 阻止');
+            messages.push({ role: 'tool', tool_call_id: crypto.randomUUID(), content: JSON.stringify({ error: `工具被阻止: ${guardDecision.reason}` }) });
             continue;
-          }
-          if (guardResult.action === 'warn') {
-            this.log.warn({ tool: tc.function.name, reason: guardResult.reason }, '工具循环警告');
           }
 
           const execResult = await toolRegistry.execute(tc.function.name, effectiveParams);
+
+          // L3 ToolGuard: 工具调用后记录（失败计数）
+          this.toolGuard.afterCall(tc.function.name, execResult, 0);
 
           // 编排层 Hook: post-tool-use (审计/证据)
           if (hookRunner) {
@@ -210,6 +210,14 @@ export class ToolLoopExecutor {
             }
           }
 
+          // L3 ToolGuard: 工具调用前检查（streaming 路径）
+          const guardDecision = this.toolGuard.beforeCall(tc.function.name, effectiveParams);
+          if (!guardDecision.allow) {
+            this.log.warn({ tool: tc.function.name, reason: guardDecision.reason }, '工具被 ToolGuard 阻止');
+            messages.push({ role: 'tool', tool_call_id: crypto.randomUUID(), content: JSON.stringify({ error: `工具被阻止: ${guardDecision.reason}` }) });
+            continue;
+          }
+
           let execResult: unknown;
           try {
             execResult = await toolRegistry.execute(tc.function.name, effectiveParams);
@@ -217,12 +225,19 @@ export class ToolLoopExecutor {
             this.log.warn({ err, tool: tc.function.name }, '工具执行失败');
             execResult = { error: `工具执行失败: ${err.message}` };
             if (hookRunner) {
-              hookRunner.runPostToolUseFailure?.({ name: tc.function.name, input: JSON.stringify(effectiveParams) }, new Error(err.message)).catch(() => {});
+              hookRunner.runPostToolUseFailure?.({ name: tc.function.name, input: JSON.stringify(effectiveParams) }, new Error(err.message)).catch((hookErr) => {
+                this.log.warn({ hookErr, tool: tc.function.name }, 'PostToolUseFailure hook 执行失败 — 非阻断');
+              });
             }
           }
 
+          // L3 ToolGuard: 工具调用后记录
+          this.toolGuard.afterCall(tc.function.name, execResult, 0);
+
           if (hookRunner && !(execResult as ToolExecResult)?.error) {
-            hookRunner.runPostToolUse({ name: tc.function.name, input: JSON.stringify(effectiveParams) }, { content: JSON.stringify(execResult), isError: false }).catch(() => {});
+            hookRunner.runPostToolUse({ name: tc.function.name, input: JSON.stringify(effectiveParams) }, { content: JSON.stringify(execResult), isError: false }).catch((hookErr) => {
+              this.log.warn({ hookErr, tool: tc.function.name }, 'PostToolUse hook 执行失败 — 非阻断');
+            });
             eventBus?.emit({ id: `evt_${Date.now().toString(36)}`, type: 'tool.executed', consultationId: sessionId, data: { toolName: tc.function.name, success: true }, traceId: sessionId, spanId: sessionId.slice(0, 16), timestamp: new Date().toISOString() });
           }
 

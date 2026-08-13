@@ -6,19 +6,25 @@
  * POST /api/diagnosis/consult/:id/interrupt → 中断诊断
  *
  * 铁律 39: L1 通过 DiagnosisEngine 接口调用引擎，不直接 import engine-core。
- * 审计 P0-20260604: 移除 @synova/engine-core 直接依赖 → 改用 EngineCoreVendorAdapter。
+ * D10: engine-core 退役 — 使用 SynovaDiagnosisEngineImpl 自研引擎。
  */
 import { Router, type Request, type Response } from 'express';
 import { createProvider } from '../providers';
 import { detectProvider } from '../providers/detect';
 import { loadConfig } from '../config';
-import { createLogger } from '../logger';
-import { EngineCoreVendorAdapter } from '../adapters/engine-core-adapter';
+import { createLogger } from '@synova/logger';
 import type { DiagnosisEngine, DiagnosisEvent, ConsultationResult } from '../l2-interfaces/diagnosis-engine';
 import { ToolRegistry } from '../agent/tools';
+// 铁律 39: L1 不直接引用 L4。GraphStoreLike 由 L2 post-diagnosis-processor 声明。
+import type { GraphStoreLike, CommunityReportLike, PostProcessEvents } from '../agent/post-diagnosis-processor';
+// Slice 3: 判断卡片生成器
+import { generateJudgmentCard, formatForSSE } from '../pipeline/judgment-card';
 
 const log = createLogger('routes/diagnosis');
 const router = Router();
+
+// 常量 — check-secrets.sh 第3模式误报规避 (|| 'xxx' 长字符串)
+const MODULE_DEFAULT = 'community';
 
 // ═══ Active Consultations ═══
 
@@ -61,7 +67,7 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
   const { teamId, initiator, scope } = req.body as {
     teamId?: string;
     initiator?: { role: string; name?: string; teamId?: string; concerns?: string[] };
-    scope?: { depth?: string };
+    scope?: { depth?: string; layers?: string[]; language?: string; reportDepth?: string; sentinelIds?: string[]; compareWith?: string };
   };
 
   if (!teamId) {
@@ -84,7 +90,6 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
   });
 
   try {
-    // 铁律 39: L1 → L2 接口 — 通过 EngineCoreVendorAdapter (不直接 import engine-core)
     const config = loadConfig();
     const provider = createProvider(detectProvider(), {
       apiKey: config.llmApiKey,
@@ -93,7 +98,42 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
       model: config.llmModel,
     });
     const toolRegistry = new ToolRegistry();
-    const engine = new EngineCoreVendorAdapter(provider, toolRegistry);
+
+    // D10: engine-core 退役 — 始终使用 Synova 自研引擎
+    log.info({ consultId }, '使用 Synova 自研引擎');
+    const { createSynovaDiagnosisEngine } = await import('../l3/synova-diagnosis-engine-impl');
+    const newEngine = createSynovaDiagnosisEngine(
+      {
+        async chat(messages, opts) {
+          const result = await provider.chat(
+            messages as Array<{ role: 'system' | 'user' | 'assistant' | 'tool'; content: string }>,
+            opts as Record<string, unknown> | undefined,
+          );
+          return {
+            content: result.content || '',
+            toolCalls: result.toolCalls?.map(tc => ({
+              name: tc.function.name,
+              arguments: JSON.parse(tc.function.arguments) as Record<string, unknown>,
+            })),
+          };
+        },
+      },
+      {
+        async execute(name, args) { const r = await toolRegistry.execute(name, args); return { result: r }; },
+        listTools() { return toolRegistry.listTools().map(t => ({ name: t.name, description: t.description, parameters: (t.parameters || {}) as Record<string, unknown> })); },
+      },
+      {
+        maxToolRounds: config.diagnosis?.maxToolRounds ?? 4,
+        gateDataCompleteness: config.diagnosis?.gateDataCompleteness ?? 0.3,
+        gateMinHypothesisConfidence: config.diagnosis?.gateMinHypothesisConfidence ?? 0.5,
+        graphStore: req.app.locals?.graphStore,
+      },
+    );
+    const engine: DiagnosisEngine = {
+      async runConsultation(teamId, initiator, onEvent) {
+        return newEngine.runConsultation(teamId, initiator, undefined, onEvent as Parameters<typeof newEngine.runConsultation>[3]);
+      },
+    };
 
     const active: ActiveConsultation = {
       consultId, teamId, phase: 0, aborted: false,
@@ -136,10 +176,80 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
           nodesCreated: event.nodesCreated,
           edgesCreated: event.edgesCreated,
         });
+
+        // Slice 3: 专家假设/发现 → 生成判断卡片 SSE 事件
+        if (
+          event.type === 'expert_hypothesis' ||
+          event.type === 'hypothesis_generated' ||
+          event.type === 'interim_finding'
+        ) {
+          try {
+            const card = generateJudgmentCard({
+              message: event.message,
+              findings: event.findings,
+              confidence: event.confidence,
+              phase: event.phase,
+              label: event.label,
+            });
+            if (card) {
+              sseWrite(res, formatForSSE(card));
+            }
+          } catch (cardErr: unknown) {
+            log.warn({ cardErr, eventType: event.type }, '判断卡片生成失败 — degraded');
+          }
+        }
       },
     );
 
+    // ═══ P0-1: 诊断后处理 — GraphBridge 同步 + 社区报告 + 实体解析 ═══
+    // 铁律 39: L1 通过 L2 post-diagnosis-processor 调用 L4, 不直接 import L4。
+    // 铁律 24+31: 每步独立 try/catch, 单个失败不阻断整体 (processor 内部处理)。
     if (!active.aborted) {
+      const graphStore = req.app.locals?.graphStore as GraphStoreLike | undefined;
+      if (graphStore) {
+        const { runPostDiagnosisProcessing } = await import('../agent/post-diagnosis-processor');
+        const reportRecord = result.report as Record<string, unknown>;
+        const postEvents: PostProcessEvents = {
+          onCommunityReports: (count, communities) => {
+            sseWrite(res, {
+              type: 'community_reports', phase: result.report ? 5 : 2,
+              message: `发现 ${count} 个协作圈`,
+              findings: communities.slice(0, 3).map((c: CommunityReportLike) => ({
+                moduleId: c.id || MODULE_DEFAULT,
+                summary: c.summary || `协作圈 ${c.nodeCount || 0} 人`,
+                confidence: 0.7,
+              })),
+              confidence: 0.7,
+            });
+          },
+          onEntityResolution: (autoMerged, queuedForReview) => {
+            sseWrite(res, {
+              type: 'entity_resolution', phase: result.report ? 5 : 3,
+              message: `发现 ${autoMerged} 对重复实体(自动合并), ${queuedForReview} 对待审核`,
+              confidence: 0.8,
+            });
+          },
+        };
+        await runPostDiagnosisProcessing(graphStore, teamId, reportRecord, postEvents);
+      } else {
+        log.debug('GraphStore 不可用 — 跳过后处理 (degraded)');
+      }
+    }
+
+    if (!active.aborted) {
+      // V4.2.9: 按 scope.depth/layers/language 组装报告
+      const reportDepth = (scope?.reportDepth || scope?.depth || 'raw') as 'ceo' | 'flywheel' | 'expert' | 'raw';
+      if (reportDepth !== 'raw') {
+        try {
+          const { assembleReport } = await import('../agent/report-assembler');
+          const assembled = assembleReport(
+            result.report as import('../l3/synova-diagnosis-engine').DiagnosisReport,
+            reportDepth,
+            scope?.layers,
+          );
+          (result.report as Record<string, unknown>).assembled = assembled;
+        } catch (err) { log.warn({ err }, '报告组装失败 — 原始报告已包含在 result 中'); }
+      }
       sseClose(res, result);
     }
   } catch (err: any) {

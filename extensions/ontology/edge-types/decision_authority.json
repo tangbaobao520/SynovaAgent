@@ -1,0 +1,16 @@
+{
+  "$id": "edge/decision_authority",
+  "label": "DECISION_AUTHORITY",
+  "tags": ["causal", "first_order", "stage_2"],
+  "allowedFrom": ["pool/governance"],
+  "allowedTo": ["pool/capital"],
+  "requiredProps": ["authority_delegation_depth", "approval_threshold"],
+  "optionalProps": {
+    "centralization_index": "number (0-1) — 集权指数",
+    "veto_power_holders": "array — 否决权持有者列表",
+    "escalation_procedure": "string — 升级流程"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "决定谁有权分配资源——治理层定义的资金分配权限结构，调节CAPITAL_ALLOCATION的执行。"
+}

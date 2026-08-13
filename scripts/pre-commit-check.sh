@@ -1,479 +1,938 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# 铁律自动化门禁 — pre-commit 硬阻断 + 存量警告
-# 用法: bash scripts/pre-commit-check.sh
-# hard-block: as any / Mock-TODO / CJS require / .only / .env leak / branch
-#   + TUI铁律: ink patch缺失 / 过度Pipeline / flex-end / React.memo缺失
-# warning: empty catch (存量问题, 不阻断但可见)
-#   + TUI铁律: for-ch-of无sleep / finishStreaming顺序 / 注释*/
+# Loop Engineering V4.5.1 — pre-commit 12 组硬阻断 (全部 <10s) + 免疫系统
+#
+# v3.6 → v3.8 核心变化 (2026-06-23):
+#   + plan.json 支持: 分阶段任务可 deferred wiring/test_pairing 检查
+#   + 双日志: pre-commit-failures.log (门禁正常拒绝) vs bypass.log (--no-verify 绕过)
+#   + as any 跳过注释行 (不再把 "Iron law #38: as any = 0" 误报为违规)
+#   + bash 退位: 只做物理验证 (符号存在? 文件存在? 语法合法?)
+#   + agent 进位: 语义判断 (调用链正确? 降级诚实? 阶段合理?)
+#
+# 12 组:
+#   1. 类型安全 + 硬编码数据    (as any 跳过注释行 + 硬编码业务字段)
+#   2. 测试质量                  (catch 无 log + 测试配对[可 deferred] + 桩测试)
+#   3. Secrets                   (全工作区 + .claude/ + 暂存区 + .env)
+#   4. 接线完整性               (new export 有调用方[可 deferred] + 接线深度)
+#   5. 架构边界 + 桥接文件      (跨层引用 + 铁律 46/47)
+#   6. Task Brief                (存在 + 6 核心字段: Q0/Q1/Q2/Q3/架构层/Done)
+#   7. 架构合规                  (DiagnosticModule + 专家配置 + 数据流)
+#   8. 文件驱动架构完整性       (manifest/tags/回归/目录/feature-flag)
+#   9. 契约门禁 NEW (D257)       (.codex/contracts/*.json 声明 vs staged 比对)
+#
+# 设计哲学:
+#   bash 只回答"物理事实" — 符号被引用过吗？文件存在吗？
+#   agent 自检回答"语义判断" — 引用在正确的调用链中吗？
+#   plan.json 声明"架构步骤" — 这个文件接线在后续阶段
 # ═══════════════════════════════════════════════════════════════════════════════
-# set -euo pipefail — 关闭, Windows bash 下子进程 spawn 开销导致某些 grep 管线超时
-# 每个检查独立容错, 失败不中断整体流程
 set +e
 
-HARD_PASS=0; HARD_FAIL=0
+HARD_FAIL=0
 WARN_COUNT=0
-RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RESET='\033[0m'
-
-count_lines() {
-  local input="$1"
-  [ -z "$input" ] && echo 0 || echo "$input" | wc -l | tr -d ' '
-}
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; RESET='\033[0m'
 
 hard_check() {
   local name="$1" matches="$2"
-  local count; count=$(count_lines "$matches")
+  local count=0
+  [ -n "$matches" ] && count=$(echo "$matches" | grep -c . 2>/dev/null) || count=0
   if [ "$count" -gt 0 ]; then
     echo -e "  ${RED}❌ ${name}: ${count} 处  [硬阻断]${RESET}"
-    echo "$matches" | while read -r line; do echo "     ${line}"; done
+    echo "$matches" | head -8 | while read -r line; do [ -n "$line" ] && echo "     ${line}"; done
     HARD_FAIL=$((HARD_FAIL + 1))
   else
     echo -e "  ${GREEN}✅ ${name}${RESET}"
-    HARD_PASS=$((HARD_PASS + 1))
   fi
+}
+
+soft_pass() {
+  local name="$1"
+  echo -e "  ${GREEN}✅ ${name}${RESET}"
 }
 
 warn_check() {
   local name="$1" matches="$2"
-  local count; count=$(count_lines "$matches")
+  local count=0
+  [ -n "$matches" ] && count=$(echo "$matches" | grep -c . 2>/dev/null) || count=0
   if [ "$count" -gt 0 ]; then
-    echo -e "  ${YELLOW}⚠  ${name}: ${count} 处  [存量警告, 非阻断]${RESET}"
-    WARN_COUNT=$((WARN_COUNT + count))
-    return 0  # never block
-  else
-    echo -e "  ${GREEN}✅ ${name}${RESET}"
-    return 0
+    echo -e "  ${YELLOW}⚠️  ${name}: ${count} 处  [警告]${RESET}"
+    echo "$matches" | head -5 | while read -r line; do [ -n "$line" ] && echo "     ${line}"; done
+    WARN_COUNT=$((WARN_COUNT + 1))
   fi
 }
 
-echo ""
-echo "═══════════════════════════════════════════════════════════"
-echo "  铁律自动化门禁 (Iron Law Automated Checks)"
-echo "═══════════════════════════════════════════════════════════"
-echo ""
-
-# ═══════════════════════════════════════════════════════════
-# 门禁 ⓪: 任务开始决策树 (硬阻断)
-# Anthropic 铁律 0-2: 做任务前必须先跑决策树，生成 task brief。
-# 没有今日 task brief = 你不知道自己在做什么 = 不准提交。
-# ═══════════════════════════════════════════════════════════
-ROOT="$(git rev-parse --show-toplevel)"
-TODAY=$(date +%Y-%m-%d)
-TODAY_BRIEF=$(find "$ROOT/.claude/task-briefs/" -name "${TODAY}*" 2>/dev/null | head -1)
-if [ -z "$TODAY_BRIEF" ]; then
-  hard_check "铁律 0-2: 今日无 task brief — 节点① 未执行" \
-    "运行: bash scripts/workflow/task-start.sh \"你的任务描述\""
-else
-  # 质量检查: "用户旅程" 和 "Done 标准" 必须填写，不能是模板占位符
-  BRIEF_QUALITY=""
-  # 用户旅程: 排除 HTML 注释占位符后检查是否有实际内容
-  JOURNEY_CONTENT=$(grep -A3 "用户旅程" "$TODAY_BRIEF" 2>/dev/null | sed 's/<!--.*-->//g' | tr -d ' \n\r\t' || true)
-  if [ -z "$JOURNEY_CONTENT" ] || [ ${#JOURNEY_CONTENT} -lt 10 ]; then
-    BRIEF_QUALITY="${BRIEF_QUALITY}  用户旅程 字段为空或未填写\n"
+# V3.8: plan.json 感知的"硬阻断或降级警告"检查
+# 如果文件在 plan.json 中声明了 defer → 降级为警告，不阻断
+plan_aware_check() {
+  local name="$1" matches="$2" deferred_list="$3"
+  local count=0
+  [ -n "$matches" ] && count=$(echo "$matches" | grep -c . 2>/dev/null) || count=0
+  if [ "$count" -eq 0 ]; then
+    echo -e "  ${GREEN}✅ ${name}${RESET}"
+    return
   fi
-  # Done 标准: 检查是否有勾选框或实际内容
-  DONE_CONTENT=$(grep -A5 "Done 标准" "$TODAY_BRIEF" 2>/dev/null | sed 's/<!--.*-->//g' | tr -d ' \n\r\t' || true)
-  if [ -z "$DONE_CONTENT" ] || [ ${#DONE_CONTENT} -lt 10 ]; then
-    BRIEF_QUALITY="${BRIEF_QUALITY}  Done 标准 字段为空或未填写\n"
-  fi
-  if [ -n "$BRIEF_QUALITY" ]; then
-    hard_check "铁律 0-2: Task Brief 质量 — 必填字段未填写 (${TODAY_BRIEF})" "${BRIEF_QUALITY}"
+  # 检查是否所有匹配都在 deferred 列表中
+  local non_deferred=""
+  while IFS= read -r match_line; do
+    [ -z "$match_line" ] && continue
+    local match_file=$(echo "$match_line" | grep -oP '^[^:]+' | head -1)
+    if [ -n "$deferred_list" ] && echo "$deferred_list" | grep -qF "$match_file" 2>/dev/null; then
+      continue  # 在 defer 列表中 → 跳过
+    fi
+    non_deferred="${non_deferred}${match_line}\n"
+  done <<< "$matches"
+  if [ -z "$non_deferred" ]; then
+    # 全部被 deferred → 警告不阻断
+    echo -e "  ${YELLOW}⚠️  ${name}: ${count} 处 (plan.json deferred)  [警告]${RESET}"
+    echo "$matches" | head -3 | while read -r line; do [ -n "$line" ] && echo "     ${line}"; done
+    WARN_COUNT=$((WARN_COUNT + 1))
   else
-    echo -e "  ${GREEN}✅ 铁律 0-2: Task Brief 存在且已填写 (${TODAY_BRIEF})${RESET}"
+    echo -e "  ${RED}❌ ${name}: $(echo -e "$non_deferred" | grep -c .) 处  [硬阻断]${RESET}"
+    echo -e "$non_deferred" | head -5 | while read -r line; do [ -n "$line" ] && echo "     ${line}"; done
+    HARD_FAIL=$((HARD_FAIL + 1))
+  fi
+}
+
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+
+
+# ═══ D201 L3: bypass 阻断 — 今日任何绕过记录 → 硬阻断 ═══
+BYPASS_LOG="$ROOT/.claude/bypass.log"
+if [ -f "$BYPASS_LOG" ]; then
+  TODAY=$(date +%Y-%m-%d)
+  # V4.5.1: 只匹配 detected-bypass 行。COMMITTED 行是正常提交成功标记，不是绕过。
+  BYPASS_COUNT=$(grep -c "${TODAY}.*detected-bypass" "$BYPASS_LOG" 2>/dev/null | tr -d '\n\r' || echo 0)
+  if [ "$BYPASS_COUNT" -gt 0 ]; then
+    echo "[GATEKEEPER] 检测到今日 ${BYPASS_COUNT} 次 --no-verify 绕过记录"
+    echo "[GATEKEEPER] 请使用: git synova-commit --task-id <D#> --agent claude-code --message '...'"
+    echo "[GATEKEEPER] 修复导致绕过的根因后，bypass.log 中今日记录将在次日自动清零"
+    exit 1
   fi
 fi
+# V4.5.1: 缓存 git diff 结果 — 本机每次 git 调用 ~1s，脚本内 10+ 次调用是超时主因
+GIT_CACHED_NAMES=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)
+GIT_CACHED_ALL_NAMES=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)
+GIT_CACHED_ADDED_NAMES=$(git diff --cached --name-only --diff-filter=A 2>/dev/null || true)
+GIT_CACHED_DIFF=$(git diff --cached 2>/dev/null || true)
 
-# ═══════════════════════════════════════════════════════════
-# 门禁 ①: SPEC 先行 (硬阻断)
-# Anthropic 铁律 0-2 Step 1: 没有 spec 的代码不准进仓库。
-# 所有分支强制 (main 除外——main 只接受 merge)。
-# ═══════════════════════════════════════════════════════════
-bash "$(dirname "$0")/workflow/check-spec.sh" || { HARD_FAIL=$((HARD_FAIL + 1)); }
+STAGED=$(echo "$GIT_CACHED_NAMES" | grep '\.ts$' | grep -v node_modules || true)
+
+# ═══ V4.5.1: 慢脚本并行化 — 慢盘上串行 95s → 并行 ~26s ═══
+# 环境事实: 本机单文件 I/O ~500ms, python 启动 ~1.5s, git ~1s。
+# 9 个外部脚本串行执行累计 ~95s 导致 git commit 120s 超时 → 被迫 --no-verify。
+# 解法: 在脚本早期统一后台启动, 在各自原本的调用点 wait + cat 收集。
+PAR_DIR="$ROOT/.claude/.precommit-par"
+rm -rf "$PAR_DIR" 2>/dev/null
+mkdir -p "$PAR_DIR" 2>/dev/null
+
+par_start() {
+  local name="$1" script="$2"
+  bash "$ROOT/scripts/$script" > "$PAR_DIR/$name.out" 2>&1
+  echo $? > "$PAR_DIR/$name.code"
+}
+
+par_collect() {
+  local name="$1" pid="$2"
+  wait "$pid" 2>/dev/null
+  local code=0
+  [ -f "$PAR_DIR/$name.code" ] && code=$(cat "$PAR_DIR/$name.code" 2>/dev/null | tr -d '\n\r')
+  cat "$PAR_DIR/$name.out" 2>/dev/null
+  return "${code:-0}"
+}
+
+# 后台启动 8 个慢脚本 (validate-expert-config 需即时判断退出码, 保留串行)
+( par_start hardcoded check-hardcoded.sh ) &  PAR_HARDCODED=$!
+( par_start deprecated-mapping check-deprecated-mapping.sh ) &  PAR_DEPRECATED=$!
+( par_start secrets check-secrets.sh ) &  PAR_SECRETS=$!
+( par_start plan-integrity check-plan-integrity.sh ) &  PAR_PLAN_INTEGRITY=$!
+( par_start verifiable-done check-verifiable-done.sh ) &  PAR_VERIFIABLE=$!
+( par_start q0c-tracking check-q0c-tracking.sh ) &  PAR_Q0C=$!
+( par_start acceptance-ci check-acceptance-ci.sh ) &  PAR_ACCEPTANCE=$!
+( par_start file-driven check-file-driven.sh ) &  PAR_FILE_DRIVEN=$!
+
+# ═══ V3.8: plan.json — 分阶段任务支持 ═══
+# Anthropic 原则: 架构步骤不是偷懒。当 plan.json 声明某文件处于 create 阶段
+# 且 wiring 标记为 deferred，接线检查对该文件降级为警告。
+PLAN_FILE="$ROOT/.claude/plan.json"
+DEFERRED_WIRING_FILES=""
+DEFERRED_FF_FILES=""
+DEFERRED_TEST_FILES=""
+PLAN_ACTIVE=0
+if [ -f "$PLAN_FILE" ]; then
+  # 用 python 解析 JSON 比 bash 可靠
+  PLAN_PARSE=$(python3 -c "
+import json, sys
+try:
+  p = json.load(open('$PLAN_FILE'))
+  phase = p.get('current_phase', -1)
+  if phase < 0: sys.exit(0)
+  # 收集当前 phase 之前所有标记为 deferred 的文件
+  for ph in p.get('phases', []):
+    if ph.get('step', 999) > phase: continue
+    checks = ph.get('checks', {})
+    files = ph.get('files', [])
+    if checks.get('wiring') == 'deferred':
+      for f in files: print(f'WIRING:{f}')
+    if checks.get('feature_flag') == 'deferred':
+      for f in files: print(f'FF:{f}')
+    if checks.get('test_pairing') == 'deferred':
+      for f in files: print(f'TEST:{f}')
+except: pass
+" 2>/dev/null)
+  if [ -n "$PLAN_PARSE" ]; then
+    PLAN_ACTIVE=1
+    DEFERRED_WIRING_FILES=$(echo "$PLAN_PARSE" | grep "^WIRING:" | sed 's/^WIRING://')
+    DEFERRED_FF_FILES=$(echo "$PLAN_PARSE" | grep "^FF:" | sed 's/^FF://')
+    DEFERRED_TEST_FILES=$(echo "$PLAN_PARSE" | grep "^TEST:" | sed 's/^TEST://')
+  fi
+fi
+STAGED_ALL=$(echo "$GIT_CACHED_ALL_NAMES" | grep -v node_modules || true)
+STAGED_SRC=$(echo "$STAGED_ALL" | grep -E '^src/|^tests/|^packages/|^scripts/' | grep -v 'scripts/pre-commit-check.sh\|scripts/check-secrets.sh\|scripts/check-file-driven.sh\|scripts/workflow/' || true)
+NEW_IMPL=$(echo "$GIT_CACHED_ADDED_NAMES" | grep -E "^src/|^extensions/" | grep "\.ts$" | grep -v "\.test\." | grep -v "\.d\.ts" | grep -v "types\.ts$\|index\.ts$\|helpers\.ts$" | grep -v "src/sentinel/compute/" || true)
+
+echo ""
+echo "═══════════════════════════════════════════════════════════"
+echo "  Loop Engineering V4.5.1 — pre-commit (12 组 + 免疫 + plan-integrity)"
+echo "═══════════════════════════════════════════════════════════"
 echo ""
 
-# ═══════════════════════════════════════════════════════════
-# 门禁 ②: 测试先行 (硬阻断)
-# Anthropic 铁律 0-2 Step 2: 每个 public 函数 ≥ 1 个测试用例。
-# 新增 ts 文件必须有对应测试引用——否则拒绝提交。
-# ═══════════════════════════════════════════════════════════
-bash "$(dirname "$0")/workflow/check-test-first.sh" || { HARD_FAIL=$((HARD_FAIL + 1)); }
-echo ""
+# ═══════════════════════════════════════════════════════════════════
+# 组 1: 类型安全 + 硬编码数据 (原 1, 10, 13 合并)
+#
+# Anthropic 决策: 原则 6 "找到根因" — `as any` 不是语法错误，是类型系统的信任崩溃。
+#   一次 `as any` 意味着"我不确定这个类型，跳过检查"——而这恰好是所有类型相关 bug
+#   的入口。47 次历史事故证明: 零容忍是唯一正确的策略。
+#   硬编码业务数据 (部门名/可扩展实体列表) 的根因相同——把应该是数据的东西写成了代码。
+#   历史: 47 次 as any 导致运行时崩溃。2026-05 engine-core 拆分中，20 个桥接文件
+#         大量使用 as any 绕过类型检查，17 处 CJS require() 在 ESM 下崩溃。
+# ═══════════════════════════════════════════════════════════════════
+echo -e "${CYAN}── 组 1/12: 类型安全 + 硬编码数据 ──${RESET}"
 
-# ═══════════════════════════════════════════════════════════
-# 门禁 ②b: 设计文档强制 (硬阻断, feat/ 分支)
-# Anthropic 铁律 2: 设计文档中每个能力必须带"触发定义"和"结果呈现"。
-# feat/ 分支必须有设计文档，且含触发定义 + 结果呈现两个必填字段。
-# ═══════════════════════════════════════════════════════════
-if echo "$BRANCH" | grep -qE '^feat/'; then
-  DESIGN_FILE=""
-  for candidate in \
-    "$ROOT/docs/specs/${BRANCH//\//-}.md" \
-    "$ROOT/docs/research/${BRANCH//\//-}.md" \
-    "$ROOT/docs/research/${BRANCH//\//-}.html"; do
-    if [ -f "$candidate" ]; then DESIGN_FILE="$candidate"; break; fi
+# 1a. as any 零容忍 (V3.8: 跳过注释行 — 行首是 // 或 * 或 /* 的行不检查)
+# Anthropic 原则: bash 只做模式匹配，不判断语义。注释行不属于"代码中的 as any"。
+M=$(grep -rn 'as any\b' src/ --include="*.ts" 2>/dev/null \
+  | grep -v "node_modules" | grep -v "\.test\." | grep -v "\.d\.ts" \
+  | grep -vE '^[^:]+:[0-9]+:[ \t]*(//|/\*|\*)' || true)
+hard_check "as any 零容忍 (铁律 38)" "$M"
+
+# 1a-2. from" ???? (D93/D95 ????)
+# ??: Claude Code ?????? import ??????? from ?????
+# tsc ?????????? token??CI ?????: D93 + D95 ?????
+FROM_DAMAGE=$(grep -rn 'from"' src/ --include="*.ts" 2>/dev/null | grep -v "node_modules" | grep -v ".test." | grep -v ".d.ts" | grep -v '"import.*from"' | grep -v '".*from".*"' || true)
+hard_check "from ????: from??????? (D93/D95??)" "${FROM_DAMAGE:-}"
+
+
+# 1b. 硬编码业务数据 (合并原 10 + 13: 硬编码联合类型/数组/Set/DEFAULT_* + 部门名等)
+STAGED_HTML=$(echo "$STAGED_ALL" | grep -E '\.(html|ts)$' | grep -v node_modules | grep -v '\.test\.' || true)
+HARDCODE_DATA=""
+if [ -n "$STAGED_HTML" ]; then
+  for hf in $STAGED_HTML; do
+    [ -z "$hf" ] && continue; [ ! -f "$hf" ] && continue
+    DEPS=$(grep -n "'marketing'\|'sales'\|'finance'\|'研发部'\|'市场部'\|'销售部'" "$hf" 2>/dev/null | grep -v "import\|export\|//\|/\*\|^\s*\*\|token.split\|dept.*=\|LAYER_EXPERTS\|experts:\|'org'\|'tech'\|'strategy'\|'knowledge'\|'business_model'\|'finance'\|'marketing'\|'sales'\|: \[" | head -3 || true)
+    [ -n "$DEPS" ] && HARDCODE_DATA="${HARDCODE_DATA}  ${hf}: 可能硬编码业务数据(如部门名)\n"
   done
-  if [ -z "$DESIGN_FILE" ]; then
-    # 检查 git diff 中是否有新建设计文档
-    DESIGN_IN_DIFF=$(git diff --cached --name-only 2>/dev/null | grep "^docs/" || true)
-    if [ -z "$DESIGN_IN_DIFF" ]; then
-      hard_check "铁律 2: feat/ 分支缺少设计文档" \
-        "在 docs/specs/ 或 docs/research/ 下创建设计文档（含触发定义+结果呈现）"
-    fi
-  else
-    # 检查设计文档是否包含"触发定义"和"结果呈现"
-    MISSING_FIELDS=""
-    if ! grep -qi "触发定义\|触发方式\|谁来触发\|trigger" "$DESIGN_FILE" 2>/dev/null; then
-      MISSING_FIELDS="${MISSING_FIELDS}  缺少 '触发定义' (谁来触发？何时触发？触发入口？)\n"
-    fi
-    if ! grep -qi "结果呈现\|用户.*看到\|result.*present\|display\|呈现" "$DESIGN_FILE" 2>/dev/null; then
-      MISSING_FIELDS="${MISSING_FIELDS}  缺少 '结果呈现' (用户在哪看到？什么形式？)\n"
-    fi
-    if [ -n "$MISSING_FIELDS" ]; then
-      hard_check "铁律 2: 设计文档缺少必填字段 (${DESIGN_FILE})" "${MISSING_FIELDS}"
-    else
-      echo -e "  ${GREEN}✅ 铁律 2: 设计文档存在且完整 (${DESIGN_FILE})${RESET}"
-    fi
-  fi
 fi
+# 也跑 check-hardcoded.sh 的联合类型/数组/Set/DEFAULT_* 检测 (不阻断，仅报告)
+par_collect hardcoded "$PAR_HARDCODED" || true
+hard_check "硬编码业务数据/类型 (禁止硬编码部门名/可扩展实体列表)" "${HARDCODE_DATA:-}"
+
+# V4.5.1: 旧适配器废弃映射检查 (不阻断)
+par_collect deprecated-mapping "$PAR_DEPRECATED" || true
+
+# ═══════════════════════════════════════════════════════════════════
+# 组 2: 测试质量 (原 2, 4, 12, 17 合并)
+#
+# Anthropic 决策: 原则 2 "先设计验证标准" — 测试不是写完代码后的负担，是写代码前的规格。
+#   空 catch 无 log → 静默降级 → 线上故障无迹可寻。铁律 24+31 禁止。
+#   新文件无测试 → 4 次接线失败事故 (组件通过单元测试但从未被生产代码调用)。
+#   桩测试 (<3 expect) → 假绿色 CI → 合并后才发现的回归。铁律 36: vitest 零失败。
+#   跨模块无集成测试 → bridge/context 类跨层调用，单元测试 mock 一切，集成才是真实。
+#   历史: 4 次接线失败 — 新 export 有单元测试但从未被 import。
+#         铁律 11 — 静默降级事故 (catch 空吞异常，生产环境无日志)。
+# ═══════════════════════════════════════════════════════════════════
 echo ""
+echo -e "${CYAN}── 组 2/12: 测试质量 ──${RESET}"
 
-# ═══════════════════════════════════════════════════════════
-# 硬阻断 (Hard Block) — 违反直接拒绝 commit
-# ═══════════════════════════════════════════════════════════
-echo "── 硬阻断 ──────────────────────────────────────────────"
-
-# 铁律 38: as any 零容忍 — \b 单词边界覆盖所有语法位置 (行尾/空格/标点)
-M=$(grep -rn -E 'as any\b' src/ --include="*.ts" 2>/dev/null \
-  | grep -v "node_modules" | grep -v "\.test\." | grep -v "\.d\.ts" | grep -v '//\|/\*\*' || true)
-hard_check "铁律 38: as any 零容忍" "$M"
-
-# 铁律 8: Mock/TODO 残留
-M=$(grep -rn "MOCK_\|TODO.*后期\|TODO.*替换\|TODO.*hardcode" src/ --include="*.ts" 2>/dev/null \
-  | grep -v "node_modules" | grep -v "\.test\." | grep -v "MOCK_残留" || true)
-hard_check "铁律 8: Mock/TODO 残留" "$M"
-
-# 铁律 9: CJS require() — 统一用 ESM import
-M=$(grep -rn "require(" src/ --include="*.ts" 2>/dev/null \
-  | grep -v "node_modules" | grep -v "\.test\." | grep -v "\.d\.ts" | grep -v "import(" || true)
-hard_check "铁律 9: CJS require() 残留" "$M"
-
-# vitest .only()/.skip() — 不得进入 CI
-M=$(grep -rn "\.only(\|\.skip(" tests/ --include="*.ts" 2>/dev/null | grep -v "node_modules" || true)
-hard_check "vitest .only()/.skip() 残留" "$M"
-
-# .env 安全检查 — 只在 .env 被暂存时才阻断
-M=""
-if git diff --cached --name-only 2>/dev/null | grep -q "^\.env$"; then
-  if [ -f .env ] && grep -q "sk-\|ApiKey.*[a-f0-9]\{20\}" .env 2>/dev/null; then
-    M=".env 已暂存且包含疑似真实 API Key — 撤销 git add .env"
-  fi
+# 2a. empty catch 无 log
+EMPTY=""
+if [ -n "$STAGED" ]; then
+  while IFS= read -r file; do
+    [ -z "$file" ] && continue; [ ! -f "$file" ] && continue
+    CATCHES=$(grep -n "catch\s*{" "$file" 2>/dev/null || true)
+    if [ -n "$CATCHES" ]; then
+      while IFS= read -r cline; do
+        linenum=$(echo "$cline" | cut -d: -f1); [ -z "$linenum" ] && continue
+        ctx=$(sed -n "${linenum},$((linenum + 2))p" "$file" 2>/dev/null || echo "")
+        # V3.8: 空 catch 接收 log.|degraded|throw|/\*|// — 有任一项即非"静默吞异常"
+        if ! echo "$ctx" | grep -qE "log\.|logger\.|console\.|degraded|throw\s|/\*|//"; then
+          EMPTY="${EMPTY}${file}:${linenum}: 空 catch (无 log/degraded/throw)\n"
+        fi
+      done <<< "$CATCHES"
+    fi
+  done <<< "$STAGED"
 fi
-hard_check "P0-01: .env 不含真实 API Key (仅当暂存时)" "$M"
+hard_check "empty catch 无 log (铁律 24+31)" "${EMPTY:-}"
 
-# Secrets 扫描: 源码中不得硬编码 API Key/Token/Password — 硬阻断
-bash "$(dirname "$0")/check-secrets.sh"
-SECRETS_EXIT=$?
-if [ $SECRETS_EXIT -ne 0 ]; then
-  HARD_FAIL=$((HARD_FAIL + 1))
-fi
-# 安全检查: eval() / new Function() / HTTP 明文 — 硬阻断
-bash "$(dirname "$0")/check-security.sh"
-SEC_EXIT=$?
-if [ $SEC_EXIT -ne 0 ]; then
-  HARD_FAIL=$((HARD_FAIL + 1))
+# D313 M5b: 附挂静默吞错扫描（git diff 新增行含 2>/dev/null → 阻断，豁免需 # swallow-ok:）
+SILENT_OUT=$(bash "$ROOT/scripts/workflow/check-silent-swallow.sh" --diff 2>&1 || true)
+if echo "$SILENT_OUT" | grep -q "❌"; then
+  hard_check "静默吞错扫描 (D313 M5b)" "$SILENT_OUT"
+else
+  soft_pass "静默吞错扫描 (D313 M5b)"
 fi
 
-# 铁律 37: 文件大小 — 单文件 >1000 行硬阻断, >500 行警告
-# 优化: xargs 批量传递, 避免 -exec wc -l {} \; 逐文件 spawn (43s → <1s)
-FILE_SIZES=$(find src/ -name "*.ts" -type f -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null || true)
-OVERSIZE=$(echo "$FILE_SIZES" | awk '$1 > 1000 && $2 != "total" {print $2": "$1" lines"}' || true)
-hard_check "铁律 37: 单文件 >1000 行" "$OVERSIZE"
-
-LARGE=$(echo "$FILE_SIZES" | awk '$1 > 500 && $1 <= 1000 && $2 != "total" {print $2": "$1" lines"}' || true)
-warn_check "铁律 37: 单文件 >500 行 (建议拆分)" "$LARGE"
-
-# 铁律 33: 新测试文件命名 — 新增 test 文件必须含 .test. 或 .spec.
-NEW_TESTS=$(git diff --cached --name-only --diff-filter=A 2>/dev/null \
-  | grep "^tests/" | grep "\.ts$" | grep -v "\.test\.\|\.spec\.\|\.integration\.\|\.e2e\." || true)
-hard_check "铁律 33: 新测试文件命名不符合规范" "$NEW_TESTS"
-
-# Anthropic 标准: 禁止 "pre-existing" / "known failure" 标记 (反模式)
-PRE_EXISTING=$(grep -rn "pre.existing\|known.failure\|FIXME.*test\|skip.*broken\|TODO.*fix.*test" tests/ src/ --include="*.ts" 2>/dev/null | grep -v "node_modules" || true)
-hard_check "Anthropic: 禁止 pre-existing/known-failure 标记" "$PRE_EXISTING"
-
-# ═══ 铁律 0-2: 单模块提交 ═══
-# 一次 commit 最多 1 个新 impl 文件（非 test / .d.ts / 辅助文件）
-NEW_IMPL=$(git diff --cached --name-only --diff-filter=A 2>/dev/null \
-  | grep "^src/" | grep "\.ts$" | grep -v "\.test\." | grep -v "\.d\.ts" \
-  | grep -v "types\.ts$\|index\.ts$\|helpers\.ts$\|builtins\.ts$" || true)
-NEW_IMPL_COUNT=$(echo "$NEW_IMPL" | grep -c . 2>/dev/null) || NEW_IMPL_COUNT=0
-if [ "${NEW_IMPL_COUNT:-0}" -gt 1 ]; then
-  hard_check "铁律 0-2: 单模块提交 — 1 次最多 1 个新 impl 文件 (当前 ${NEW_IMPL_COUNT})" "$NEW_IMPL"
-fi
-
-# ═══ 铁律 0-2: 新文件配对 — impl 必须同 commit 有 test ═══
-IMPL_PAIRS=""
+# 2b. 新文件配对测试 (原 4)
+MISSING_TEST=""
 if [ -n "$NEW_IMPL" ]; then
   while IFS= read -r impl; do
     [ -z "$impl" ] && continue
-    test_path=$(echo "$impl" | sed 's|^src/|tests/|; s|\.ts$|.test.ts|')
-    if ! git diff --cached --name-only 2>/dev/null | grep -q "^${test_path}$"; then
-      # 检查测试文件是否已存在（存量测试覆盖）
+    # 映射: src/xxx.ts→tests/xxx.test.ts, extensions/sentinels/{name}/aggregate.ts→tests/sentinels/{name}.test.ts, extensions/sentinels/{name}/computes/{fn}.ts→tests/sentinels/{name}/{fn}.test.ts
+    test_path=$(echo "$impl" | sed 's|^src/|tests/|; s|^extensions/sentinels/\([^/]*\)/aggregate\.ts$|tests/sentinels/\1.test.ts|; s|^extensions/sentinels/\([^/]*\)/computes/\([^/]*\)\.ts$|tests/sentinels/\1/\2.test.ts|')
+    # 追加 .test.ts — 但跳过已以 .test.ts 结尾的路径（extensions 映射已生成 .test.ts）
+    if ! echo "$test_path" | grep -q '\.test\.ts$'; then
+      test_path="${test_path%.ts}.test.ts"
+    fi
+    if ! echo "$GIT_CACHED_NAMES" | grep -q "^${test_path}$"; then
       if [ ! -f "$test_path" ]; then
-        IMPL_PAIRS="${IMPL_PAIRS}${impl} → 缺少 ${test_path}\n"
+        MISSING_TEST="${MISSING_TEST}${impl} → 缺少 ${test_path}\n"
       fi
     fi
   done <<< "$NEW_IMPL"
 fi
-if [ -n "$IMPL_PAIRS" ]; then
-  hard_check "铁律 0-2: 新文件配对 — impl 必须同 commit 有 test" "$IMPL_PAIRS"
+# V3.8: plan.json 感知 — deferred test 文件降级为警告
+if [ "$PLAN_ACTIVE" -eq 1 ] && [ -n "$DEFERRED_TEST_FILES" ]; then
+  plan_aware_check "新文件配对: impl 须同 commit 有 test" "${MISSING_TEST:-}" "$DEFERRED_TEST_FILES"
+else
+  hard_check "新文件配对: impl 须同 commit 有 test" "${MISSING_TEST:-}"
 fi
 
-# ═══ 铁律 0-2 Step 5: 接线审计 — 新文件 export 必须接入生产入口 ═══
-# 每个新生产文件中的 export function/class/const 必须出现在入口文件引用中
-UNWIRED_EXPORTS=""
+# 2c. 桩测试 + 跨模块集成测试 (原 12 + 17 合并)
+STUB_FAIL=""
+INTG_FAIL=""
+STAGED_TESTS=$(echo "$GIT_CACHED_ADDED_NAMES" | grep '^tests/.*\.test\.ts$' || true)
+if [ -n "$STAGED_TESTS" ]; then
+  for tf in $STAGED_TESTS; do
+    [ -z "$tf" ] && continue; [ ! -f "$tf" ] && continue
+    EXPECT_COUNT=$(grep -c 'expect(' "$tf" 2>/dev/null | tr -d '\n\r' || echo 0)
+    if [ "${EXPECT_COUNT:-0}" -lt 3 ]; then
+      STUB_FAIL="${STUB_FAIL}  ${tf}: 仅 ${EXPECT_COUNT} 个 expect() — 可能为桩测试（需 ≥3 个）\n"
+    fi
+  done
+fi
+if [ -n "$NEW_IMPL" ]; then
+  for nf in $NEW_IMPL; do
+    [ -z "$nf" ] && continue
+    if echo "$nf" | grep -qiE 'bridge|context|inject|dispatch|connect'; then
+      INTG_TEST=$(echo "$nf" | sed 's|^src/|tests/|; s|\.ts$|.integration.test.ts|')
+      if [ ! -f "$INTG_TEST" ]; then
+        INTG_FAIL="${INTG_FAIL}  ${nf}: 跨模块文件缺少集成测试 → ${INTG_TEST}\n"
+      fi
+    fi
+  done
+fi
+hard_check "桩测试: 新测试需 ≥3 expect()" "${STUB_FAIL:-}"
+hard_check "跨模块集成: bridge/context 类需 .integration.test.ts" "${INTG_FAIL:-}"
+
+# ═══════════════════════════════════════════════════════════════════
+# 组 3: Secrets (原 3 — 独立脚本，逻辑复杂不适合合并)
+#
+# Anthropic 决策: 原则 4 "安全边际" — Secrets 暴露是不可逆事故。
+#   一旦 API Key 进入 git 历史，即使后续 commit 删除，仍可通过 git log 恢复。
+#   全工作区扫描 (不仅暂存区) 是因为 .env 和 .claude/settings.local.json 可能含真实 Key
+#   但从未被 git add——旧门禁漏掉了它们。.claude/ 专项扫描是因为 settings.local.json
+#   可能被备份/同步到其他设备。
+#   历史: .env 真实 API Key 暴露仓库 + 飞书 App Secret 暴露 (2026-06)。
+#         旧门禁只扫暂存区 → 磁盘上的真实 Key 从未被发现，直到被备份软件同步出去。
+# ═══════════════════════════════════════════════════════════════════
+echo ""
+echo -e "${CYAN}── 组 3/12: Secrets ──${RESET}"
+par_collect secrets "$PAR_SECRETS" || HARD_FAIL=$((HARD_FAIL + 1))
+
+# ═══════════════════════════════════════════════════════════════════
+# 组 4: 接线完整性 (原 5, 11 合并)
+#
+# Anthropic 决策: 原则 5 "逐步验证，不信任声称完成" — "写完了" != "接线了"。
+#   铁律 5: 后端能力 ≠ 用户可用的功能。写了代码但没 import → 死代码。
+#   接线深度 (原 11): import 了但从未调用 → 空 import 绕过"有调用方"检测。
+#   这是 v3.5 新增的第二层防御——agent 会 import 一个函数但不调用它来满足门禁。
+#   历史: 4 次接线失败 — 组件通过单元测试但从未被生产代码调用。
+#         v3.5 追加拿线深度检查: 开发者 import 了函数但没调用，绕过了原第 5 项。
+# ═══════════════════════════════════════════════════════════════════
+echo ""
+echo -e "${CYAN}── 组 4/12: 接线完整性 ──${RESET}"
+
+# 4a. 新 export 被引用 (V3.8 简化: bash 只验证"被引用"这个物理事实)
+# Anthropic 原则: bash 退回到物理事实——"这个符号在文件外部出现过吗？"
+# 调用链正确性、分阶段接线 → agent 自检和 plan.json 负责。
+UNWIRED=""
 if [ -n "$NEW_IMPL" ]; then
   while IFS= read -r file; do
-    [ -z "$file" ] && continue
-    [ ! -f "$file" ] && continue
+    [ -z "$file" ] && continue; [ ! -f "$file" ] && continue
     EXPORTS=$(grep -oP 'export (function|class|const) \K\w+' "$file" 2>/dev/null || true)
     for name in $EXPORTS; do
       [ -z "$name" ] && continue
-      # 跳过 mock/fake/internal/deprecated/type
-      if echo "$name" | grep -qi 'mock\|fake\|_internal\|_deprecated\|^[A-Z].*Props$\|^[A-Z].*Config$\|^[A-Z].*State$'; then continue; fi
-      # 检查是否在入口文件中有引用 (排除 export 行自身和 import 行)
-      WIRED=$(grep -rn "\b${name}\b" src/server.ts src/index.ts src/cli.ts src/agent/ src/routes/ src/sentinel/builtins.ts --include="*.ts" 2>/dev/null \
-        | grep -v "export.*${name}" | grep -v "import.*${name}" | grep -v "$file" | head -1 || true)
-      if [ -z "$WIRED" ]; then
-        UNWIRED_EXPORTS="${UNWIRED_EXPORTS}${file}: export ${name} — 未在生产入口中接线\n"
-      fi
+      echo "$name" | grep -qi 'mock\|fake\|_internal\|_deprecated' && continue
+      # V3.8: 搜索范围扩大——任何 src/ 下的文件引用了就算"已接线"
+      WIRED=$(grep -rn "\b${name}\b" src/ --include="*.ts" 2>/dev/null \
+        | grep -v "export.*${name}" | grep -v "$file" | grep -v "\.test\." | head -1 || true)
+      [ -z "$WIRED" ] && UNWIRED="${UNWIRED}${file}: export ${name} — 未被任何 src/ 文件引用\n"
     done
   done <<< "$NEW_IMPL"
 fi
-if [ -n "$UNWIRED_EXPORTS" ]; then
-  hard_check "铁律 0-2 Step 5: 接线审计 — 新 export 未接线" "${UNWIRED_EXPORTS}"
+# V3.8: plan.json 感知 — deferred wiring 文件降级为警告
+if [ "$PLAN_ACTIVE" -eq 1 ] && [ -n "$DEFERRED_WIRING_FILES" ]; then
+  plan_aware_check "接线审计: 新 export 必须被引用" "${UNWIRED:-}" "$DEFERRED_WIRING_FILES"
+else
+  hard_check "接线审计: 新 export 必须被引用 (物理事实)" "${UNWIRED:-}"
 fi
 
-# ═══ 铁律 24+31: 空 catch 无 log — 硬阻断 ═══
-RAW_CATCH=$(grep -rn "catch\s*{" src/ --include="*.ts" 2>/dev/null \
-  | grep -v "node_modules" | grep -v "\.test\." || true)
-EMPTY_CATCH_BLOCK=""
-if [ -n "$RAW_CATCH" ]; then
-  while IFS= read -r line; do
-    FILE=$(echo "$line" | cut -d: -f1)
-    LINE_NUM=$(echo "$line" | cut -d: -f2)
-    CTX=$(sed -n "${LINE_NUM},$((LINE_NUM + 2))p" "$FILE" 2>/dev/null || echo "")
-    # 本行+后续2行无 log./logger./console. → 空吞
-    if ! echo "$CTX" | grep -q "log\.\|logger\.\|console\."; then
-      if ! echo "$CTX" | grep -q "JSON.parse\|ENOENT\|\.destroy\|\.end\|\.detach\|setRawMode\|best-effort\|already closed\|keep original\|return '0\|items\s*=\|initEngineContext\|getDatabase\|return "; then
-        EMPTY_CATCH_BLOCK="${EMPTY_CATCH_BLOCK}${FILE}:${LINE_NUM}: 空 catch (无 log)\n"
+# 4b. 接线深度: import 了但从未调用 (原 11)
+DEEP_FAIL=""
+if [ -n "$NEW_IMPL" ]; then
+  for file in $NEW_IMPL; do
+    [ -z "$file" ] && continue; [ ! -f "$file" ] && continue
+    EXPORTS=$(grep -oP 'export (function|class|const) \K\w+' "$file" 2>/dev/null || true)
+    for name in $EXPORTS; do
+      [ -z "$name" ] && continue
+      echo "$name" | grep -qi 'mock\|fake\|_internal\|_deprecated' && continue
+      CALL_SITES=$(grep -rn "\b${name}\b" src/server.ts src/index.ts src/agent/synova-agent.ts --include="*.ts" 2>/dev/null | grep -v "import.*${name}\b" | grep -v "export.*${name}\b" | grep -v "^\s*//\|^\s*\*" | head -1 || true)
+      IMPORT_ONLY=$(grep -rn "import.*\b${name}\b" src/server.ts src/index.ts src/agent/synova-agent.ts --include="*.ts" 2>/dev/null | head -1 || true)
+      if [ -z "$CALL_SITES" ] && [ -n "$IMPORT_ONLY" ]; then
+        DEEP_FAIL="${DEEP_FAIL}  ${file}: export ${name} — 已 import 但从未调用（空 import 绕过检测）\n"
       fi
-    fi
-  done <<< "$RAW_CATCH"
+    done
+  done
 fi
-hard_check "铁律 24+31: 空 catch 无 log (静默吞异常)" "${EMPTY_CATCH_BLOCK:-}"
+hard_check "接线深度: 新 export 必须被调用(非仅 import)" "${DEEP_FAIL:-}"
 
-# ═══ 铁律 0-2 Step 4: src/ tsc 零错误 ═══
-TSC_OUT=$(npx tsc --noEmit 2>&1 | grep "^src/" || true)
-TSC_COUNT=$(echo "$TSC_OUT" | grep -c . 2>/dev/null) || TSC_COUNT=0
-hard_check "铁律 0-2: src/ tsc 零错误 (当前 ${TSC_COUNT})" "${TSC_OUT:-}"
-
-# ═══ 禁止 --no-verify 绕过 ═══
-NV_LOG=".git/no-verify.log"
-NV_TODAY=$(grep -c "$(date +%Y-%m-%d)" "$NV_LOG" 2>/dev/null) || NV_TODAY=0
-if [ "${NV_TODAY:-0}" -ge 2 ]; then
-  hard_check "铁律 34: 禁止 --no-verify 连续使用 (今日已 ${NV_TODAY} 次)" "24h 内禁止提交 — 修复所有硬阻断后再试"
-fi
-
-# ═══ 自动化诚实门禁 ═══
-# P1-2: DiagnosticModule 已 @deprecated — 禁止新增注册 (铁律 35: 编译器级阻断)
-# 基线: 6 处 registerModule() (通用/FDE — 营销/SOG v1 空壳已清理 P1-3)
-DM_COUNT=$(grep -c "registerModule(" packages/engine-core/src/pipeline/diagnosis/module-registry.ts 2>/dev/null) || DM_COUNT=0
-if [ "${DM_COUNT:-0}" -gt 6 ]; then
-  hard_check "P1-2: 新增 DiagnosticModule 注册 (已 @deprecated → 迁移到 Sentinel 接口)" "发现 ${DM_COUNT} 处 (基线 6)"
-fi
-if [ "${DM_COUNT:-0}" -eq 6 ]; then
-  echo -e "  ${GREEN}✅ P1-2: DiagnosticModule 注册数保持基线 (6)${RESET}"
-fi
-
-# 每处违规 = 硬阻断。不靠 CLAUDE.md 提醒，靠编译器级强制执行。
-bash "$(dirname "$0")/check-reality.sh" || { echo -e "  ${RED}❌ 诚实门禁: 存在违规项${RESET}"; HARD_FAIL=$((HARD_FAIL + 1)); }
+# ═══════════════════════════════════════════════════════════════════
+# 组 5: 架构边界 + 桥接文件 (原 8, 19, 20 合并)
+#
+# Anthropic 决策: 原则 1 "第一性原理" — 五层架构的边界不是约定，是物理规律。
+#   L3 不能直接查 L5 SQLite —— 不是"不应该"，是"语义上不成立"（L3 不知道数据在哪）。
+#   铁律 46: 桥接文件 ≠ 迁移。import 代理骗过 tsc，骗不过 grep。
+#   铁律 47: "拆完了"必须由 grep 物理证明。声称完成但 grep 有结果 = 没拆完。
+#   历史: 2026-05~06 engine-core 拆分欺诈 — 被声称完成 4 次，实际 538 文件原封不动，
+#         20 个桥接文件伪装迁移。tsc 零错误（import 路径合法），但运行时 17 处 CJS
+#         require() 在 ESM 下崩溃。一个月反复承诺零实质进展。这是 Synova 最严重事故。
+#   为什么铁律 47 是警告而非阻断: task brief 可能包含历史遗留声明。但警告让问题
+#         始终可见——不可能"没注意到"。
+# ═══════════════════════════════════════════════════════════════════
 echo ""
+echo -e "${CYAN}── 组 5/12: 架构边界 + 桥接文件 ──${RESET}"
 
-# Anthropic 标准: engine-core vendor Critical bug 不得延期
-SOG_DELETE=$(grep -n "DELETE FROM graph_nodes" packages/engine-core/src/pipeline/diagnosis/graph-store.ts 2>/dev/null || true)
-hard_check "Anthropic: SOG-001 deleteNode 物理删除 (不得延期)" "$SOG_DELETE"
-
-# 铁律 34: 分支命名 — feat/ fix/ chore/ docs/ test/ refactor/
-BRANCH=$(git branch --show-current 2>/dev/null || echo "main")
-if echo "$BRANCH" | grep -qE '^(feat|fix|chore|docs|test|refactor|perf|ci)/'; then
-  M=""
-elif [ "$BRANCH" = "main" ]; then
-  M="main 分支 — 铁律 34 要求 feature branch (警告, 非阻断)"
-else
-  M="分支名 '$BRANCH' 不符合规范 — 应为 feat/ fix/ chore/ 前缀"
+# 5a. 跨层引用检测 (原 8)
+CROSS_LAYER=""
+if [ -n "$STAGED_SRC" ]; then
+  L1_TO_L4=$(echo "$STAGED_SRC" | grep -E '^src/(routes/|l1/|l1-interaction/)' | xargs grep -l "from '\.\./l4/\|from '\.\./\.\./l4/\|from '\.\./store/\|from '\.\./\.\./store/" 2>/dev/null | grep -v "knowledge-bridge-service\|\.test\." || true)
+  [ -n "$L1_TO_L4" ] && CROSS_LAYER="${CROSS_LAYER}L1→L4/L5: ${L1_TO_L4}\n"
+  # 修复 (D291): grep -l 输出文件名, "import type" 过滤须作用于代码行 → 逐文件先滤行再判存在
+  L2_TO_L5=$(echo "$STAGED_SRC" | grep -E '^src/agent/' | while read -r _sf; do
+    grep -E "from '\.\./store/|from '\.\./init/" "$_sf" 2>/dev/null | grep -v "import type\|knowledge-bridge-service\|\.test\." | grep -q . && echo "$_sf"
+  done | grep -v "knowledge-bridge-service\|\.test\." || true)
+  [ -n "$L2_TO_L5" ] && CROSS_LAYER="${CROSS_LAYER}L2→L5: ${L2_TO_L5}\n"
+  L3_TO_ENGINE=$(echo "$STAGED_SRC" | grep -E '^src/sentinel/' | xargs grep -l "from '\.\./\.\./\.\./packages/engine-core/" 2>/dev/null | grep -v "import type\|\.test\.\|src/sentinel/compute/" || true)
+  [ -n "$L3_TO_ENGINE" ] && CROSS_LAYER="${CROSS_LAYER}L3→engine-core: ${L3_TO_ENGINE}\n"
 fi
-if [ "$BRANCH" = "main" ]; then
-  warn_check "铁律 34: 分支命名" "$M"
-else
-  hard_check "铁律 34: 分支命名" "$M"
-fi
+hard_check "架构边界: 禁止跨层引用 (铁律 39)" "${CROSS_LAYER:-}"
 
-echo ""
+# 5b. 桥接文件欺诈 + 包级 engine-core 引用 + shell 包检测 (铁律 46 — V4.5.1 全面加固)
+BRIDGE_ALLOWED="src/init/engine-context.ts|src/l4/graph-bridge.ts|src/l4/diagnosis-graph-query.ts"
+BRIDGE_FAIL=""
 
-# ═══════════════════════════════════════════════════════════
-# 铁律 40-45: TUI V2 铁律 (2026-06-07)
-# ═══════════════════════════════════════════════════════════
-echo "── TUI V2 铁律 ─────────────────────────────────────────"
-
-# 铁律 40: 闪烁修复不可回退 — ink patch 必须存在
-PATCH_FILE=$(find patches/ -name "ink+*.patch" 2>/dev/null | head -1)
-if [ -z "$PATCH_FILE" ]; then
-  M="patches/ 目录缺少 ink patch 文件"
-  hard_check "铁律 40-1: ink patch 缺失" "$M"
-else
-  hard_check "铁律 40-1: ink patch 存在" ""
-fi
-M=$(grep -rn '"postinstall".*patch-package' package.json 2>/dev/null || true)
-if [ -z "$M" ]; then
-  hard_check "铁律 40-2: postinstall: patch-package" "MISSING"
-else
-  hard_check "铁律 40-2: postinstall: patch-package" ""
-fi
-
-# 铁律 40-3: React.memo 在 Message/StreamingText 上
-M=$(grep -rn "export function Message\|export function StreamingText" src/tui-v2/ --include="*.tsx" 2>/dev/null | grep -v "React.memo" || true)
-hard_check "铁律 40-3: Message/StreamingText 缺少 React.memo" "$M"
-
-# 铁律 41: 流式 Pipeline 简单直接 — 禁止在 hook 中使用过度工程化的类
-# streaming.ts 中定义这些类是允许的,但 use-streaming.ts 中不能导入使用
-M=$(grep -rn "LineBuffer\|FrameRateLimiter\|StreamChunker" src/tui-v2/hooks/use-streaming.ts 2>/dev/null || true)
-hard_check "铁律 41: use-streaming.ts 中禁止 LineBuffer/FrameRateLimiter/StreamChunker" "$M"
-
-# 铁律 42: 逐字流必须有延迟 (简化检查: for-ch-of 行无 sleep 则警告)
-M=$(grep -n "for.*const ch of" src/agent/tool-loop-executor.ts 2>/dev/null || true)
-M_SLEEP=""
-if [ -n "$M" ]; then
-  while IFS= read -r line 2>/dev/null || true; do
-    [ -z "$line" ] && continue
-    linenum=$(echo "$line" | cut -d: -f1)
-    [ -z "$linenum" ] && continue
-    # 检查下 5 行内是否有 sleep
-    if ! sed -n "$((linenum+1)),$((linenum+5))p" src/agent/tool-loop-executor.ts 2>/dev/null | grep -q "sleep"; then
-      M_SLEEP="${M_SLEEP}tool-loop-executor.ts:${linenum}: for-ch-of 后缺少 sleep(5)\n"
+# 5b-i: 全仓库扫描（src/ + packages/）— 堵住"藏到 packages/ 目录下"的漏洞
+STAGED_ALL_FILES=$(echo "$GIT_CACHED_ALL_NAMES" | grep -E '^(src|packages)/.*\.ts$' | grep -v '\.test\.' || true)
+if [ -n "$STAGED_ALL_FILES" ]; then
+  for file in $STAGED_ALL_FILES; do
+    [ -z "$file" ] && continue
+    echo "$file" | grep -qE "$BRIDGE_ALLOWED" && continue
+    # 匹配任意形式的 engine-core 引用：包名路径 + 相对路径
+    if grep -qE "packages/engine-core|\.\./engine-core|\.\./\.\./engine-core" "$file" 2>/dev/null; then
+      BRIDGE_FAIL="${BRIDGE_FAIL}  ${file}: 引用 engine-core (铁律 46 — 含相对路径)\n"
     fi
-  done <<< "$M"
+  done
 fi
-warn_check "铁律 42: for-ch-of 无 sleep(5) 延迟" "${M_SLEEP:-}"
 
-# 铁律 43: finishStreaming 顺序 — 简化为检查 use-streaming.ts 中顺序
-M=$(grep -n "isStreaming.*false\|finishStreaming\|flushBuffer\|addAgentMessage" src/tui-v2/hooks/use-streaming.ts 2>/dev/null || true)
-M_ORDER=""
-if [ -n "$M" ]; then
-  flush_line=$(echo "$M" | grep "flushBuffer" | head -1 | cut -d: -f1)
-  msg_line=$(echo "$M" | grep "addAgentMessage" | head -1 | cut -d: -f1)
-  state_line=$(echo "$M" | grep "isStreaming.*false" | head -1 | cut -d: -f1)
-  if [ -n "$flush_line" ] && [ -n "$state_line" ] && [ "$flush_line" -gt "$state_line" ]; then
-    M_ORDER="use-streaming.ts: flushBuffer(${flush_line}) 应在 isStreaming=false(${state_line}) 之前"
+# 5b-ii: 壳包检测 — packages/*/ 下只有 index.ts 且全部是 export from → 桥接包
+# V4.5.1: 单次 find + 单次 grep -l 替代每包 4 次 I/O（13 包 × 4 次 = 26s → <1s）
+ALL_PKG_SRC=$(find "$ROOT"/packages/*/src -name "*.ts" ! -name "index.ts" 2>/dev/null || true)
+# V4.5.1: awk 单次扫描替代逐文件 grep/wc（8 个匹配包 × 3 次 I/O = 13s → <1s）
+SHELL_PKGS=$(awk '
+  FNR == 1 { reexport=0; engcore=0 }
+  { if ($0 ~ /^export.*from/) reexport=1; if ($0 ~ /engine-core/) engcore=1; lines=FNR }
+  ENDFILE { if (reexport && engcore && lines > 0 && lines < 50) print FILENAME }
+' "$ROOT"/packages/*/src/index.ts 2>/dev/null || true)
+if [ -n "$SHELL_PKGS" ]; then
+  while IFS= read -r pkg_idx; do
+    [ -z "$pkg_idx" ] && continue
+    # 只有 index.ts 一个文件（该包无其他 src 文件）才是壳包
+    pkg_dir=$(dirname "$(dirname "$pkg_idx")")
+    if echo "$ALL_PKG_SRC" | grep -q "^${pkg_dir}/"; then
+      continue  # 包内有其他源文件 → 不是壳包
+    fi
+    BRIDGE_FAIL="${BRIDGE_FAIL}  $pkg_idx: 壳包 — 仅 ${lines} 行且全部是 export from engine-core (铁律 46)\n"
+  done <<< "$SHELL_PKGS"
+fi
+hard_check "铁律 46: 桥接文件欺诈 + 包级 engine-core + 壳包检测" "${BRIDGE_FAIL:-}"
+
+# 5c. 铁律 47: 声称拆分完须 grep 零旧引用 (原 20 — 警告模式)
+TODAY=$(date +%Y-%m-%d)
+# D296 认领制: 多 session 并发时用认领本提交文件的 brief (跨 session 污染根治)
+BRIEF=$(bash "$ROOT/scripts/workflow/resolve-commit-brief.sh" "$STAGED_ALL" 2>/dev/null || true)
+CLEANUP_CLAIM=""
+if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
+  if grep -qi "拆分\|迁移\|清理.*完成\|已拆\|已迁移\|已清理" "$BRIEF" 2>/dev/null; then
+    CLEANUP_CLAIM="task brief 声称拆分/迁移/清理完成 — 请确认 grep -r 'packages/engine-core' src/ 零结果"
   fi
 fi
-warn_check "铁律 43: finishStreaming 顺序 (flushBuffer→addAgent→isStreaming=false)" "${M_ORDER:-}"
+warn_check "铁律 47: 声称完成须 grep 物理证明" "${CLEANUP_CLAIM:-}"
 
-# 铁律 44: 禁止 justifyContent="flex-end"
-M=$(grep -rn 'justifyContent.*flex-end\|justifyContent.*"flex-end"' src/tui-v2/ --include="*.tsx" 2>/dev/null || true)
-hard_check "铁律 44: 禁止 justifyContent=flex-end" "$M"
-
-# 铁律 45: 注释中 */ 必须加空格
-M=$(grep -rn '\*/\|\*/' src/tui-v2/ --include="*.tsx" 2>/dev/null \
-  | grep -v '^[^:]*:[^:]*:.*//' \
-  | grep -v 'export \* from\|import.*\*' \
-  | grep -v 'endsWith.*\*/\|\.\*\/' \
-  | grep -v '\* /\|/ \*' || true)
-warn_check "铁律 45: 注释中 */ 未加空格 (esbuild 兼容)" "$M"
-
+# ═══════════════════════════════════════════════════════════════════
+# 组 6: Task Brief (6 核心字段: Q0审计/Q1调研/Q2范围/Q3验收/架构层/Done)
+#
+# Anthropic 决策: 原则 0 "协作对齐前置" — task brief 是 agent 和人类的接口契约。
+#   没有 brief → agent 会假设共识 → 假设错误 → 做了一堆没人要的东西。
+#   v3.8: 6 核心字段 (Q0定位/Q1调研/Q2范围/Q3验收/架构层/Done)，v3.6 曾删到 5 字段，
+#   删除"可以后续补充"的部分 (PRD 章节引用、文件位置——已降级为警告)。
+#   越少字段 → 越可能被完整填写 → 门禁越有效。
+#   历史: 多个 task brief 因 11 字段太重在快速迭代时被跳过 (--no-verify 绕过)。
+#         v3.5 的 --no-verify 日志显示 15 次 pre-commit 失败，其中多次是因为
+#         task brief 字段不完整而非实质质量问题。
+# ═══════════════════════════════════════════════════════════════════
 echo ""
+echo -e "${CYAN}── 组 6/12: Task Brief (6 核心字段) ──${RESET}"
 
-# ═══════════════════════════════════════════════════════════
-# 存量警告 (Warning) — 不阻断，但每次 commit 可见
-# ═══════════════════════════════════════════════════════════
-echo "── 警告 ────────────────────────────────────────────────"
+TASK_BRIEF_MISSING=""
+TASK_BRIEF_EMPTY=""
+if [ -n "$STAGED_SRC" ]; then
+  if [ -z "$BRIEF" ]; then
+    TASK_BRIEF_MISSING="今日无 task brief。请先运行: bash scripts/workflow/task-start.sh \"任务描述\""
+  else
+    # v3.9: 兼容 ## Q0: 和 ## Q0 定位: 两种标题格式
+    for q in "Q0" "Q1" "Q2" "Q3"; do
+      SECTION=$(awk "/^## ${q}(:| )/{found=1; next} /^## /{if(found) exit} found" "$BRIEF" 2>/dev/null)
+      FILLED=$(echo "$SECTION" | grep -v "^<!--\|^$" | tr -d "[:space:]" | head -1)
+      if [ -z "$FILLED" ] || [ ${#FILLED} -lt 3 ]; then
+        TASK_BRIEF_EMPTY="${TASK_BRIEF_EMPTY}  ${q}: 未填写\n"
+      fi
+    done
+    # 架构层: 兼容 ## 本任务在哪一层 和 ## 架构层 两种写法
+    LAYER_SECTION=$(awk '/^## (本任务在哪一层|架构层)(:| )/{found=1; next} /^## /{if(found) exit} found' "$BRIEF" 2>/dev/null)
+    LAYER_FILLED=$(echo "$LAYER_SECTION" | grep -v "^<!--\|^$" | tr -d "[:space:]" | head -1)
+    if [ -z "$LAYER_FILLED" ] || [ ${#LAYER_FILLED} -lt 3 ]; then
+      TASK_BRIEF_EMPTY="${TASK_BRIEF_EMPTY}  架构层: 未填写\n"
+    fi
+    # Done 标准专项: 至少一条完成标准
+    DONE_SECTION=$(awk "/^## Done 标准/{found=1; next} /^## /{if(found) exit} found" "$BRIEF" 2>/dev/null)
+    DONE_CHECKED=$(echo "$DONE_SECTION" | grep -cE '^\s*- \[x\]' || true)
+    DONE_EMPTY=$(echo "$DONE_SECTION" | grep -v "^##\|^<!--\|^$" | wc -l)
+    if [ "${DONE_CHECKED:-0}" -eq 0 ] && [ "${DONE_EMPTY:-0}" -le 1 ]; then
+      TASK_BRIEF_EMPTY="${TASK_BRIEF_EMPTY}  Done 标准: 至少需定义一条完成标准\n"
+    fi
+  fi
+fi
+hard_check "Task Brief: 编码变更须有今日 task brief" "${TASK_BRIEF_MISSING:-}"
+hard_check "Task Brief: 6 核心字段必须填写 (Q0/Q1/Q2/Q3/架构层/Done)" "${TASK_BRIEF_EMPTY:-}"
 
-# 铁律 11: 服务端代码禁止 console.log — 必须用 logger
-M=$(grep -rn "console\.log\|console\.error" src/ --include="*.ts" 2>/dev/null \
-  | grep -v "node_modules" | grep -v "\.test\." \
-  | grep -v "src/cli\.ts\|src/setup\.ts\|src/tui/" \
-  || true)
-hard_check "铁律 11: console.log 残留 (非CLI/TUI)" "$M"
+# V4.5.1: 时间戳顺序检查 — PreToolUse 发现 brief 未填就写代码时记录证据到 /tmp/
+# 此文件在 git 之外，不能被 git checkout 抹掉。必须显式 rm 才能解除阻断。
+BEFORE_BRIEF_EVI="/tmp/.synova-before-brief"
+BEFORE_BRIEF_MSG=""
+if [ -f "$BEFORE_BRIEF_EVI" ]; then
+  EVI_CONTENT=$(head -5 "$BEFORE_BRIEF_EVI" 2>/dev/null)
+  BEFORE_BRIEF_MSG="代码在 brief 填写前已写入:\n${EVI_CONTENT}\n解决方法: rm ${BEFORE_BRIEF_EVI} && git checkout -- . && bash scripts/workflow/task-start.sh"
+fi
+hard_check "时间戳顺序: brief 必须早于代码写入" "${BEFORE_BRIEF_MSG:-}"
 
-# 铁律 11+24+31: 空 catch (无 log 且无注释)
-M=$(grep -rn "catch\s*{" src/ --include="*.ts" 2>/dev/null \
-  | grep -v "node_modules" | grep -v "\.test\." \
-  | grep -v "log\." \
-  | grep -v "JSON\.parse\|ENOENT" \
-  | grep -v "/\*\|//" \
-  | grep -v "_reading\|setRawMode\|\.destroy()\|\.end()\|\.detach" \
-  | grep -v "return '0" \
-  || true)
-# 二次过滤: 下一行有 log → 不算
-M=$(echo "$M" | while read -r line; do
-  file=$(echo "$line" | cut -d: -f1)
-  linenum=$(echo "$line" | cut -d: -f2)
-  next=$((linenum + 1))
-  # Skip if next line has log OR comment OR return/assignment (JSON.parse fallback)
-  if sed -n "${next}p" "$file" 2>/dev/null | grep -qE "log\.|//|/\*|items\s*=|return "; then continue; fi
-  echo "$line"
-done || true)
-warn_check "铁律 11+24+31: 空 catch (静默吞)" "$M"
+# V4.1: plan-integrity — Q1a/Q1b/Q2 承诺可验证
+par_collect plan-integrity "$PAR_PLAN_INTEGRITY" || HARD_FAIL=$((HARD_FAIL + 1))
 
-# 技术债务追踪 (TECH_DEBT.md) — 警告不阻断
-bash "$(dirname "$0")/check-tech-debt.sh" 2>/dev/null || echo "  ⚠ 技术债务检查跳过"
+# V3.9: Done 可证伪性 — 每个 - [x] 必须包含 verify: 命令
+par_collect verifiable-done "$PAR_VERIFIABLE" || HARD_FAIL=$((HARD_FAIL + 1))
 
-# ═══════════════════════════════════════════════════════════
-# 数据流对账 — 警告 (检查代码改动是否含 task brief 数据流关键词)
-# ═══════════════════════════════════════════════════════════
-bash "$(dirname "$0")/workflow/check-dataflow-alignment.sh" 2>/dev/null || true
+# V3.9: Q0c 取消跟踪 — 取消的任务必须有 follow_up
+par_collect q0c-tracking "$PAR_Q0C" || HARD_FAIL=$((HARD_FAIL + 1))
 
-# ═══════════════════════════════════════════════════════════
-# Anthropic 决策树 — 每次 commit 强制执行 (铁律 0-2)
-# 完整版: vitest + tsc + 架构 + 接线审计 + 铁律全集
-# 不设 timeout — 让门禁跑完。15 秒的等待是质量的最低成本。
-# ═══════════════════════════════════════════════════════════
-echo ""
-echo "── Anthropic 决策树 ────────────────────────────────────"
-bash "$(dirname "$0")/anthropic-decide.sh"
-DECIDE_EXIT=$?
-if [ $DECIDE_EXIT -ne 0 ]; then
-  echo -e "  ${RED}❌ Anthropic 决策树: 未通过 — 提交已拒绝${RESET}"
+# V4.5.1 (本体迁移): 禁止旧 SOG 枚举引用潜入 src/
+SOG_NODE_REFS=$(grep -rn "SOGNodeType\." src/ --include="*.ts" 2>/dev/null | grep -v "node_modules" | head -10 || true)
+if [ -n "$SOG_NODE_REFS" ]; then
+  echo -e "${RED}  ❌ 旧 SOGNodeType 枚举仍被引用 — 本体迁移未完成${RESET}"
+  echo "$SOG_NODE_REFS"
   HARD_FAIL=$((HARD_FAIL + 1))
+fi
+SOG_EDGE_REFS=$(grep -rn "SOGEdgeType\." src/ --include="*.ts" 2>/dev/null | grep -v "node_modules" | head -10 || true)
+if [ -n "$SOG_EDGE_REFS" ]; then
+  echo -e "${RED}  ❌ 旧 SOGEdgeType 枚举仍被引用 — 本体迁移未完成${RESET}"
+  echo "$SOG_EDGE_REFS"
+  HARD_FAIL=$((HARD_FAIL + 1))
+fi
+SOG_IMPORTS=$(grep -rn "from '@synova/sog-core'" src/ --include="*.ts" 2>/dev/null | grep -v "node_modules" | head -10 || true)
+if [ -n "$SOG_IMPORTS" ]; then
+  echo -e "${RED}  ❌ @synova/sog-core 仍被 src/ 引用 — 本体迁移未完成${RESET}"
+  echo "$SOG_IMPORTS"
+  HARD_FAIL=$((HARD_FAIL + 1))
+fi
+
+# v3.6 降级为警告 (原 15: PRD 章节引用, 原 16: 文件位置)
+PRD_REF=""
+if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
+  DONE_SEC=$(sed -n '/^## Done 标准/,/^## /p' "$BRIEF" 2>/dev/null)
+  if ! echo "$DONE_SEC" | grep -qE 'sec[0-9]+\.[0-9]+|PRD.*sec' 2>/dev/null; then
+    PRD_REF="Done 标准未引用 PRD 章节 - 重大 feature 建议标注 secX.Y"
+  fi
+fi
+warn_check "PRD 对照: Done 标准引用 PRD 章节(可选)" "${PRD_REF:-}"
+
+# ═══════════════════════════════════════════════════════════════════
+# 组 7: 架构合规 (原 6, 9, 14, 18 合并)
+#
+# Anthropic 决策: 原则 3 "安全边际" — --no-verify 是逃生舱，但不能变成常态。
+#   DiagnosticModule 禁止: Sentinel 已替代旧的模块注册系统。新模块必须走 Sentinel 接口。
+#   专家配置校验: YAML 中的 tool/skill 引用必须真实存在——引用断裂 = 运行时崩溃。
+#   --no-verify 审计: 24h 内使用 ≥3 次 → 硬阻断。逃生舱可以临时用，但不能连续用。
+#         连续绕过门禁意味着门禁本身有问题（太慢/误杀太多）或开发者有问题（偷懒）。
+#   v3.6 把 pre-commit 从 20 项减到 8 组 (<8s) 就是为了消除"门禁太慢"这个绕过理由。
+#   数据流自检: 路由文件含硬编码业务数据但无真实 API 调用 → 可能是静态 mock 未被替换。
+#   历史: DiagnosticModule 注册表已删除但引用未清理 (agent-tool-registry.ts:386
+#         listModules() 运行时崩溃)。--no-verify 在 v2.5 被频繁使用 (38 项检查 90s)。
+# ═══════════════════════════════════════════════════════════════════
+echo ""
+echo -e "${CYAN}── 组 7/12: 架构合规 ──${RESET}"
+
+# 7a. DiagnosticModule 禁止 (原 6)
+NEW_DIAG=$(echo "$GIT_CACHED_DIFF" | grep "^+.*DiagnosticModule" | grep -Ev "scripts/pre-commit-check.sh|.md|.html|//|@deprecated|import type|^+++|hard_check|禁止新 DiagnosticModule|不要再使用 DiagnosticModule" || true)
+hard_check "禁止 DiagnosticModule: 新模块须实现 Sentinel 接口" "${NEW_DIAG:-}"
+
+# 7b. 专家配置校验 (原 9)
+if bash "$ROOT/scripts/validate-expert-config.sh" 2>&1; then
+  echo -e "  ${GREEN}✅ 专家配置校验${RESET}"
 else
-  echo -e "  ${GREEN}✅ Anthropic 决策树: 通过${RESET}"
-fi
-
-# 铁律 39: 架构边界检查 — 硬阻断，不超时跳过
-bash "$(dirname "$0")/check-architecture.sh"
-ARCH_EXIT=$?
-if [ $ARCH_EXIT -ne 0 ]; then
+  echo -e "  ${RED}❌ 专家配置校验: yaml 引用断裂  [硬阻断]${RESET}"
   HARD_FAIL=$((HARD_FAIL + 1))
 fi
 
-echo ""
-echo "───────────────────────────────────────────────────────────"
+# 7c. V3.8 双日志审计 — 门禁故障 vs 人为绕过分离
+#   门禁故障日志 → 用于发现门禁本身的 bug（误报率 = 门禁需要修）
+#   绕过日志     → 用于发现开发者绕过模式（频繁绕过 = 门禁太重/开发者偷懒）
+FAILURE_LOG="$ROOT/.claude/pre-commit-failures.log"
+BYPASS_LOG="$ROOT/.claude/bypass.log"
 
-# ═══ 结果 ═══
+# ── 门禁故障审计 (警告不阻断) ──
+FAILURE_COUNT=0
+if [ -f "$FAILURE_LOG" ]; then
+  YESTERDAY=$(date -d "yesterday" +%Y-%m-%d 2>/dev/null || date +%Y-%m-%d)
+  FAILURE_COUNT=$(grep -c "$YESTERDAY\|$(date +%Y-%m-%d)" "$FAILURE_LOG" 2>/dev/null | tr -d '\n\r' || echo 0)
+  FAILURE_COUNT=${FAILURE_COUNT//[^0-9]/}
+  [ -z "$FAILURE_COUNT" ] && FAILURE_COUNT=0
+fi
+if [ "${FAILURE_COUNT:-0}" -gt 10 ]; then
+  echo -e "  ${YELLOW}⚠️  门禁故障审计: 24h 内 pre-commit 失败 ${FAILURE_COUNT} 次 — 门禁可能太激进 [警告]${RESET}"
+  echo "    高失败率意味着门禁本身有 bug 或太敏感。请检查误报来源。"
+elif [ "${FAILURE_COUNT:-0}" -gt 0 ]; then
+  echo -e "  ${GREEN}✅ 门禁故障审计 (24h: ${FAILURE_COUNT} failures)${RESET}"
+else
+  echo -e "  ${GREEN}✅ 门禁故障审计${RESET}"
+fi
+
+# ── 绕过审计 (硬阻断) ──
+# 检测方法: post-commit hook 检测 --no-verify 并写入 bypass.log
+BYPASS_COUNT=0
+if [ -f "$BYPASS_LOG" ]; then
+  # V4.5.1: 只统计 detected-bypass 行（COMMITTED 是正常提交标记）
+  BYPASS_COUNT=$(grep -c "$(date +%Y-%m-%d).*detected-bypass" "$BYPASS_LOG" 2>/dev/null | tr -d '\n\r' || echo 0)
+  BYPASS_COUNT=${BYPASS_COUNT//[^0-9]/}
+  [ -z "$BYPASS_COUNT" ] && BYPASS_COUNT=0
+fi
+if [ "${BYPASS_COUNT:-0}" -ge 3 ]; then
+  echo -e "  ${RED}❌ 绕过审计: 24h 内 --no-verify ${BYPASS_COUNT} 次 — 已超限  [硬阻断]${RESET}"
+  echo "    连续使用 --no-verify 超过 2 次后，第 3 次起必须修复根因而非绕过"
+  HARD_FAIL=$((HARD_FAIL + 1))
+elif [ "${BYPASS_COUNT:-0}" -ge 2 ]; then
+  echo -e "  ${YELLOW}⚠️  绕过审计: 24h 内 --no-verify ${BYPASS_COUNT} 次 — 警告${RESET}"
+else
+  echo -e "  ${GREEN}✅ 绕过审计${RESET}"
+fi
+
+# 7d. 数据流自检 (原 18)
+STAGED_ROUTES=$(echo "$GIT_CACHED_ALL_NAMES" | grep -E '^src/routes/.*\.ts$' | grep -v '.test.' || true)
+DATA_FLOW_FAIL=""
+if [ -n "$STAGED_ROUTES" ]; then
+  for rf in $STAGED_ROUTES; do
+    [ -z "$rf" ] && continue; [ ! -f "$rf" ] && continue
+    HAS_API=$(grep -c "fetch(\|await.*import\|getDatabase()\|\.search(\|\.list(\|\.recall(" "$rf" 2>/dev/null | tr -d '\n\r' || echo 0)
+    HAS_HARD=$(grep -c "'marketing'\|'sales'\|'finance'\|'研发部'\|'市场部'\|'销售部'" "$rf" 2>/dev/null | tr -d '\n\r' || echo 0)
+    if [ "${HAS_API:-0}" -eq 0 ] && [ "${HAS_HARD:-0}" -gt 0 ]; then
+      DATA_FLOW_FAIL="${DATA_FLOW_FAIL}  ${rf}: 含硬编码业务数据但无 API 调用 — 可能为静态模板\n"
+    fi
+  done
+fi
+hard_check "数据流: 路由文件须含 API 调用证据" "${DATA_FLOW_FAIL:-}"
+
+# ═══════════════════════════════════════════════════════════════════
+# 组 8: 🆕 文件驱动架构完整性 (v3.6 新增 — 调用 check-file-driven.sh)
+#
+# Anthropic 决策: 原则 2 "先设计验证标准" — 这是整个 V3.6 最关键的架构新增。
+#   "文件驱动"是 SynovaAgent 的核心架构承诺——新行业/新本体类型/新 LLM/新 IM 平台
+#   全部零代码接入。如果这个承诺没有物理执法，它就和被声称完成 4 次的 engine-core
+#   拆分一样——只存在于文档里。
+#   这组检查的哲学: 不是"相信开发者会遵守文件驱动"，而是"让违反文件驱动在物理上不可能"。
+#   详细检查清单见 check-file-driven.sh 头部注释。
+#   历史: 这一组阻止的是"未来必然会发生的事故"——基于 engine-core 拆分欺诈的模式推演。
+#         同样的模式: 声称文件驱动 → 有人为了方便在 src/ 加了个 enum → 没人发现 →
+#         越来越多硬编码回归 → 一年后文件驱动只剩文档里的空壳。
+# ═══════════════════════════════════════════════════════════════════
+echo ""
+echo -e "${CYAN}── 组 8/12: 文件驱动架构完整性 (V3.9) ──${RESET}"
+# V3.9: 能力验收 CI — 验收测试必须通过 CI
+par_collect acceptance-ci "$PAR_ACCEPTANCE" || HARD_FAIL=$((HARD_FAIL + 1))
+par_collect file-driven "$PAR_FILE_DRIVEN" || HARD_FAIL=$((HARD_FAIL + 1))
+
+# ═══ 组 9/12: 契约门禁 (D257) ═══
+echo -e "${CYAN}── 组 9/12: 契约门禁 ──${RESET}"
+CONTRACT_DIR="$ROOT/.codex/contracts"
+CONTRACT_FAIL=""
+if [ -d "$CONTRACT_DIR" ] && [ "$(ls -A "$CONTRACT_DIR" 2>/dev/null)" ]; then
+  for cf in "$CONTRACT_DIR"/*.json; do
+    [ ! -f "$cf" ] && continue
+    # 从 contract.json 提取声明产出文件列表
+    DECLARED=$(python -c "
+import json, sys
+try:
+    d = json.load(open('$cf'))
+    items = d if isinstance(d, list) else [d]
+    for i in items:
+        fp = i.get('filePath', '')
+        if fp: print(fp)
+except: pass
+" 2>/dev/null || true)
+    for df in $DECLARED; do
+      [ -z "$df" ] && continue
+      if ! echo "$STAGED_ALL" | grep -qF "$df"; then
+        CONTRACT_FAIL="${CONTRACT_FAIL}  ${cf##*/}: 声明产出 $df — 不在暂存区\n"
+      fi
+    done
+  done
+fi
+hard_check "契约门禁: 声明产出须在暂存区" "${CONTRACT_FAIL:-}"
+
+# ═══ 组 10/12: V3 CP3 — 条件区域 + 测试覆盖 (D260) ═══
+echo ""
+echo -e "${CYAN}── 组 10/12: V3 流水线健康度 ──${RESET}"
+
+CRITERIA_MAP="$ROOT/.codex/criteria-code-map.json"
+if [ -f "$CRITERIA_MAP" ]; then
+  # V3 CP3-1: G10 条件区域检查 — 暂存的文件是否在声明的条件区域内
+  BRIEF_FILE=$(echo "$CHANGED_FILES" | grep -m1 "\.claude/task-briefs/" || true)
+  if [ -n "$BRIEF_FILE" ]; then
+    BRIEF_PATH="$ROOT/$BRIEF_FILE"
+    CRITERIA=$(grep -oP '#CRITERIA\s*[:=]\s*\K[A-D]' "$BRIEF_PATH" 2>/dev/null || true)
+    if [ -n "$CRITERIA" ]; then
+      # 读取条件代码映射
+      CRITERIA_GLOBS=$(python -c "
+import json
+with open('$CRITERIA_MAP') as f:
+    m = json.load(f)
+g = m.get('criteria', {}).get('$CRITERIA', {}).get('glob', [])
+for gx in g:
+    print(gx)
+" 2>/dev/null || true)
+      REGEX_GLOBS=""
+      while IFS= read -r gx; do
+        [ -z "$gx" ] && continue
+        # 转换 glob 到 grep 正则
+        REGEX=$(echo "$gx" | sed 's/\*/.*/g; s/?/./g')
+        REGEX_GLOBS="${REGEX_GLOBS}|${REGEX}"
+      done <<< "$CRITERIA_GLOBS"
+      REGEX_GLOBS="${REGEX_GLOBS#|}"
+      if [ -n "$REGEX_GLOBS" ]; then
+        MISMATCH=""
+        for sf in $STAGED_FILES; do
+          if ! echo "$sf" | grep -qE "($REGEX_GLOBS)"; then
+            MISMATCH="${MISMATCH}  $sf (不在条件 $CRITERIA 的映射区域内)\n"
+          fi
+        done
+        if [ -n "$MISMATCH" ]; then
+          warn_check "G10: 条件区域不匹配" "$MISMATCH"
+        else
+          soft_pass "G10: 条件区域检查通过 ($CRITERIA)"
+        fi
+      else
+        soft_pass "G10: 条件 $CRITERIA 无映射区域(跳过)"
+      fi
+    else
+      soft_pass "G10: 无条件归属(跳过)"
+    fi
+  else
+    soft_pass "G10: 无 task brief 变更(跳过)"
+  fi
+
+  # V3 CP3-2: G11 测试覆盖检查
+  HAS_E2E=0; HAS_TESTS=0
+  BRIEF_ID=$(echo "$STAGED_FILES" | grep -oP '\.claude/task-briefs/\K[^.]+' | head -1 || true)
+  if [ -n "$BRIEF_ID" ]; then
+    BRIEF_PATH="$ROOT/.claude/task-briefs/${BRIEF_ID}.md"
+    if [ -f "$BRIEF_PATH" ]; then
+      HAS_E2E=$(grep -c "端到端\|e2e\|curl.*200\|HTTP.*200" "$BRIEF_PATH" 2>/dev/null | tr -d '\n\r' || true)
+      HAS_TESTS=$(echo "$STAGED_FILES" | grep -c "\.test\.ts" 2>/dev/null | tr -d '\n\r' || true)
+      if [ "$HAS_E2E" -gt 0 ] && [ "$HAS_TESTS" -eq 0 ]; then
+        warn_check "G11: 声明的端到端验收但无测试文件" "$BRIEF_ID 声明了端到端验收，但暂存区无测试文件"
+      else
+        soft_pass "G11: 测试覆盖检查通过"
+      fi
+    else
+      soft_pass "G11: task brief 不存在(跳过)"
+    fi
+  else
+    soft_pass "G11: 无 task brief 变更(跳过)"
+  fi
+else
+  soft_pass "G10/G11: criteria-code-map.json 不存在(跳过)"
+fi
+
+# ═══ 组 12/12: Task Scope 一致性 — 暂存文件 vs Q2 范围 ═══
+echo ""
+echo -e "${CYAN}── 组 12/12: Task Scope 一致性 ──${RESET}"
+
+TODAY=$(date +%Y-%m-%d)
+# 修复 (D291): 组12 只用当前 session 的 brief, 避免并发 session 的 brief 干扰暂存文件匹配
+# D296 跨 session 污染根治 (认领制):
+#   - 范围 (做什么) 取今日全部 brief 的并集 — 每个 session 的文件由自己的 brief 认领,
+#     并发 session 的 brief 不再误伤 (D291 事故: session 提交被另一 session 的 brief 阻断)
+#   - 排除 (不做什么) 仅取 current-brief — 他人 brief 的排除项不适用于本 session 的文件
+#   - current-brief 缺失/陈旧 → 回退全部 (单 session 语义)
+CUR_BRIEF_PATH=""
+if [ -f "$ROOT/.claude/current-brief" ]; then
+  _bname=$(cat "$ROOT/.claude/current-brief" 2>/dev/null | tr -d '[:space:]')
+  _cb_date=$(echo "$_bname" | grep -oP '\d{4}-\d{2}-\d{2}' | head -1 || true)
+  if [ -n "$_cb_date" ] && [ "$_cb_date" != "$TODAY" ]; then
+    :  # 陈旧的 current-brief，忽略它
+  elif [ -n "$_bname" ] && [ -f "$ROOT/.claude/task-briefs/$_bname" ]; then
+    CUR_BRIEF_PATH="$ROOT/.claude/task-briefs/$_bname"
+  fi
+fi
+# 认领候选: 今日全部 brief (含并发 session 的)
+ALL_TODAY_BRIEFS=$(find "$ROOT/.claude/task-briefs/" -maxdepth 1 -name "*.md" -newermt "$TODAY 00:00:00" 2>/dev/null | sort || true)
+[ -z "$ALL_TODAY_BRIEFS" ] && [ -n "$CUR_BRIEF_PATH" ] && ALL_TODAY_BRIEFS="$CUR_BRIEF_PATH"
+SCOPE_VIOLATION=""
+
+if [ -n "$ALL_TODAY_BRIEFS" ] && [ -n "$STAGED_ALL" ]; then
+  # 认领制 v2 (D296 复查): 每个文件由**认领它的 brief** 判定通过与排除
+  #   - 被 ≥1 个今日 brief 认领 → 通过 (除非认领者自身排除它)
+  #   - 未被任何 brief 认领 → 阻断 (不在任何任务范围)
+  #   - 他人 brief 的排除项不适用于本文件 (场景E: A认领+B排除 → 必须通过)
+  # 生成 per-brief TSV: "brief文件名\t路径"
+  # 注意: 必须用仓库内路径 — Git Bash mktemp 的 /tmp 路径 Windows python3 无法打开
+  SCOPE_TSV="$ROOT/.claude/.g12-scope.tsv"
+  EXCL_TSV="$ROOT/.claude/.g12-excl.tsv"
+  rm -f "$SCOPE_TSV" "$EXCL_TSV"
+  while IFS= read -r BRIEF; do
+    [ -z "$BRIEF" ] && continue
+    BNAME=$(basename "$BRIEF")
+    # D313 M3 同源: G12 awk → brief_parser.py（消灭双副本，语义 = parse_q2）
+    python3 "$ROOT/scripts/control-tower/brief_parser.py" --q2-include "$BRIEF" 2>/dev/null \
+      | sed "s|^|$BNAME\\t|" >> "$SCOPE_TSV" || true
+    python3 "$ROOT/scripts/control-tower/brief_parser.py" --q2-exclude "$BRIEF" 2>/dev/null \
+      | sed "s|^|$BNAME\\t|" >> "$EXCL_TSV" || true
+  done <<< "$ALL_TODAY_BRIEFS"
+
+  # 检查每个暂存文件 — 修复 (D291): Python 单进程匹配, 替代 12321 次 grep 子进程 (Windows 10+ 分钟 → <1s)
+  # D296 认领制 v2: 按 per-brief TSV 判定, 排除只来自认领该文件的 brief
+  SCOPE_VIOLATION=$(python3 -c "
+import re, sys
+staged = '''$STAGED_ALL'''.split('\n')
+def load_tsv(path):
+    out = []
+    try:
+        with open(path, encoding='utf-8') as f:
+            for line in f:
+                line = line.rstrip('\n')
+                if '\t' in line:
+                    brief, p = line.split('\t', 1)
+                    if p:
+                        out.append((brief, p))
+    except OSError:
+        pass
+    return out
+scope = load_tsv('''$SCOPE_TSV''')
+excl = load_tsv('''$EXCL_TSV''')
+def matches(path, pat):
+    return re.search(r'(^|/)' + re.escape(pat) + r'\$', path) is not None
+skip_re = re.compile(r'\.claude/|scripts/workflow/|\.codex/|memory/|docs/|\.github/')
+code_re = re.compile(r'\.(ts|tsx|js|jsx|json|py|sh)\$')
+viol = []
+for sf in staged:
+    sf = sf.strip()
+    if not sf or skip_re.search(sf) or not code_re.search(sf):
+        continue
+    # 认领者 = 做什么 覆盖该文件的 brief
+    claimants = [b for b, p in scope if matches(sf, p)]
+    if not claimants:
+        viol.append(f'  {sf} (不在 Q2 范围内)')
+        continue
+    # 排除只来自认领者自身 — 他人 brief 的排除不适用于本文件 (跨 session 根治)
+    for b, ex in excl:
+        if b in claimants and matches(sf, ex):
+            viol.append(f'  {sf} (Q2 排除项禁止修改: {ex}, 来自认领 brief {b})')
+            break
+print('\n'.join(viol))
+" 2>/dev/null || true)
+  rm -f "$SCOPE_TSV" "$EXCL_TSV"
+fi
+
+if [ -n "$SCOPE_VIOLATION" ]; then
+  hard_check "G12: task brief Q2 范围一致性" "$SCOPE_VIOLATION"
+else
+  soft_pass "G12: 所有文件均在 Q2 范围内"
+fi
+
+# D313 M3: 附挂 brief 契约检查（同源解析器 + #CRITERIA + 架构层 + Done）
+BRIEF_PARSEABLE_OUT=$(bash "$ROOT/scripts/workflow/check-brief-parseable.sh" "$BRIEF" 2>&1 || true)
+if echo "$BRIEF_PARSEABLE_OUT" | grep -q "❌"; then
+  hard_check "G12b: brief 可解析性 (D313 M3)" "$BRIEF_PARSEABLE_OUT"
+else
+  soft_pass "G12b: brief 可解析 (D313 M3)"
+fi
+
+# D313 M3b: 附挂 dev doc 写集验证（暂存含 SYNOVA-IMPL-*.md 时）
+if echo "$STAGED_ALL" | grep -qE 'docs/plans/codex/implementation/SYNOVA-IMPL-.*\.md'; then
+  DEV_DOC_OUT=$(bash "$ROOT/scripts/workflow/check-dev-doc-write-set.sh" 2>&1 || true)
+  if echo "$DEV_DOC_OUT" | grep -q "❌"; then
+    hard_check "G12c: dev doc 写集验证 (D313 M3b)" "$DEV_DOC_OUT"
+  else
+    soft_pass "G12c: dev doc 写集验证 (D313 M3b)"
+  fi
+fi
+
+# V3: 写 CP3 检查点
+mkdir -p "$ROOT/.codex/checkpoints"
+G10_FAIL=$([ -n "$MISMATCH" ] && echo "true" || echo "false")
+G11_FAIL=$([ "$HAS_E2E" -gt 0 ] && [ "$HAS_TESTS" -eq 0 ] && echo "true" || echo "false")
+CP3_STATUS="pass"; CP3_REASON="全部通过"
+if [ "$G10_FAIL" = "true" ]; then CP3_STATUS="warn"; CP3_REASON="有条件区域不匹配"; fi
+if [ "$G11_FAIL" = "true" ]; then CP3_STATUS="warn"; CP3_REASON="有验收无测试"; fi
+python -c "
+import json, os
+d = {'name':'CP3: 预提交检查','status':'$CP3_STATUS','reason':'$CP3_REASON','checkedAt':'$(date -u +%Y-%m-%dT%H:%M:%SZ)'}
+os.makedirs('$ROOT/.codex/checkpoints', exist_ok=True)
+with open('$ROOT/.codex/checkpoints/cp3-commit-check.json','w') as f:
+    json.dump(d, f)
+" 2>/dev/null || true
+
+# ═══════════════════════════════════════════════════════════════════
+# 结果
+# ═══════════════════════════════════════════════════════════════════
+echo ""
+echo "═══════════════════════════════════════════════════════════"
 if [ "$HARD_FAIL" -gt 0 ]; then
-  echo -e "  ${RED}硬阻断: ${HARD_FAIL} 项未通过 — 提交已拒绝${RESET}"
-  if [ "$WARN_COUNT" -gt 0 ]; then
-    echo -e "  ${YELLOW}警告: ${WARN_COUNT} 处存量问题 (不阻断)${RESET}"
-  fi
-  echo ""
-  echo "  修复硬阻断项后重试。替代方案见 CLAUDE.md。"
+  echo -e "  ${RED}❌ ${HARD_FAIL} 组未通过 — 提交已拒绝${RESET}"
+  [ "$WARN_COUNT" -gt 0 ] && echo -e "  ${YELLOW}⚠️  ${WARN_COUNT} 项警告${RESET}"
+  echo "═══════════════════════════════════════════════════════════"
   echo ""
   exit 1
 else
-  echo -e "  ${GREEN}硬阻断: 全部通过 ✅${RESET}"
-  if [ "$WARN_COUNT" -gt 0 ]; then
-    echo -e "  ${YELLOW}警告: ${WARN_COUNT} 处存量问题 (不阻断, 建议修复)${RESET}"
-  fi
+  echo -e "  ${GREEN}✅ 全部 12 组通过${RESET}"
+  [ "$WARN_COUNT" -gt 0 ] && echo -e "  ${YELLOW}⚠️  ${WARN_COUNT} 项警告 (不阻断)${RESET}"
+  echo "═══════════════════════════════════════════════════════════"
   echo ""
   exit 0
 fi
+

@@ -1,0 +1,16 @@
+{
+  "$id": "edge/talent_acquisition",
+  "label": "TALENT_ACQUISITION",
+  "tags": ["causal", "first_order", "stage_1"],
+  "allowedFrom": ["external/baseline"],
+  "allowedTo": ["pool/human_capital"],
+  "requiredProps": ["hires_count", "avg_quality_score", "selection_threshold"],
+  "optionalProps": {
+    "time_to_fill_days": "number — 招聘周期",
+    "cost_per_hire": "number — 人均招聘成本",
+    "source_channel_effectiveness": "object — 各渠道效果"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "获取人力——企业从外部人才市场招聘新员工的输入阀。受TALENT_FILTER的selection_threshold调节。"
+}

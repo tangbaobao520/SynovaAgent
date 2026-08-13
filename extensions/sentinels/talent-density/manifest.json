@@ -1,0 +1,40 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "talent-density",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "O10",
+  "description": "O10:",
+  "schedule": "0 0 1 * *",
+  "expert": "org",
+  "priority": "P1",
+  "layer": "internal",
+  "computeKind": "deterministic",
+  "computes": [
+    "compute-talent-density"
+  ],
+  "thresholds": {
+    "score": {
+      "warning": 0.4,
+      "critical": 0.2
+    }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": [
+      "sog_graph"
+    ],
+    "dataAccess": {
+      "allowedDimensions": [
+        "organizational"
+      ],
+      "sensitiveAccess": "read"
+    }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "talentDensitySentinel",
+  "auxiliaryExperts": [
+    "knowledge"
+  ],
+  "id": "sentinel-talent-density"
+}

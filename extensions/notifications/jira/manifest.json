@@ -1,0 +1,19 @@
+{
+  "$schema": "https://synova.dev/schemas/extension-manifest-v1.json",
+  "name": "jira-notification",
+  "version": "1.0.0",
+  "type": "notification",
+  "channel": "jira",
+  "displayName": "Jira 通知适配器",
+  "description": "将诊断行动项创建为 Jira Issue（REST API v3）。",
+  "entryPoint": "./adapter.ts",
+  "exportKey": "jiraNotificationAdapter",
+  "config": {
+    "credentialSchema": {
+      "JIRA_BASE_URL": { "type": "string", "required": true },
+      "JIRA_EMAIL": { "type": "string", "required": true },
+      "JIRA_API_TOKEN": { "type": "string", "required": true, "sensitive": true },
+      "JIRA_PROJECT_KEY": { "type": "string", "required": true }
+    }
+  }
+}

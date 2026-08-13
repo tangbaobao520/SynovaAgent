@@ -6,7 +6,7 @@
  */
 import type { LLMClient } from './diagnosis-orchestrator';
 import type { Evidence } from '../evidence/types';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import { ExpertDispatcher, setGlobalExpertDispatcher } from '../l3/expert-dispatcher';
 import type { QueryAPI } from '../l3/expert-autonomy';
 
@@ -14,8 +14,9 @@ const log = createLogger('orchestrator/subagent-coordinator');
 
 // ═══ Types (L2 接口定义) ═══
 
-export type ExpertType = 'strategy' | 'org' | 'finance' | 'tech' | 'marketing' | 'action' | 'business_model';
-// 'knowledge' 是后台知识引擎，不参与诊断: 负责检索/沉淀/验证/文档管理
+// v3.3: ExpertType 从联合类型改为 string — 加专家不需要改类型定义。
+// 运行时校验由 ExpertRegistry.validateExpertType() 负责。
+export type ExpertType = string;
 
 export interface AnonymizationRule { field: string; replace: string; }
 
@@ -84,8 +85,11 @@ export class SubAgentCoordinator {
   async dispatch(evidence: Evidence[], maxConcurrency = 6): Promise<SubAgentReport[]> {
     if (evidence.length === 0) return [];
 
-    const expertTypes: ExpertType[] = ['strategy', 'org', 'finance', 'tech', 'marketing', 'action', 'business_model'];
-    // KnowledgeAgent 是后台引擎, 不参与诊断 (检索/沉淀/验证/文档管理)
+    // v3.3: 从 Registry + yaml 动态读取
+    const { getExpertRegistry } = await import('../l3/expert-registry');
+    const { getBackgroundExperts } = await import('../agent/expert-config-loader');
+    const BACKGROUND_EXPERTS = getBackgroundExperts();
+    const expertTypes = getExpertRegistry().listTypes().filter(t => !BACKGROUND_EXPERTS.has(t));
     const tasks = expertTypes.map(type => this.dispatcher.runExpert(type, evidence));
 
     const results: SubAgentReport[] = [];

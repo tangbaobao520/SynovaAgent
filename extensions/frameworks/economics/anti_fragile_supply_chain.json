@@ -1,0 +1,32 @@
+{
+  "id": "anti_fragile_supply_chain",
+  "name": "反脆弱供应链",
+  "category": "economics",
+  "coreInsight": "供应链不是追求零中断，而是被中断后能更快恢复。多源采购+安全库存+替代物流=反脆弱三角",
+  "applicableDecisionTypes": [
+    "supply_chain",
+    "risk_management",
+    "cost_optimization"
+  ],
+  "constraintPatterns": [
+    "供应链",
+    "韧性",
+    "多源",
+    "恢复",
+    "中断",
+    "备选",
+    "冗余",
+    "安全"
+  ],
+  "applicableRoles": [
+    "供应链管理",
+    "风险管理",
+    "备选方案",
+    "应急规划"
+  ],
+  "limitations": [
+    "反脆弱需要冗余投入",
+    "过度冗余可能变成效率负担"
+  ],
+  "$id": "framework/economics/anti_fragile_supply_chain"
+}

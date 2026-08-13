@@ -1,0 +1,15 @@
+{
+  "$id": "edge/environmental_scan",
+  "label": "ENVIRONMENTAL_SCAN",
+  "tags": ["causal", "first_order", "stage_0"],
+  "allowedFrom": ["external/baseline"],
+  "allowedTo": ["pool/sensing"],
+  "requiredProps": ["scan_breadth", "scan_depth", "filter_bias"],
+  "optionalProps": {
+    "scan_frequency_days": "number — 主动扫描周期",
+    "horizon_months": "number — 扫描时间跨度"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "主动扫描外部环境——企业通过市场情报、竞品分析等主动手段感知外部机会与威胁。"
+}

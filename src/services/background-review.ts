@@ -12,7 +12,7 @@
  * 铁律 31: 审查失败不影响主诊断流程 — 所有错误静默降级。
  */
 import type { LLMProvider } from '../providers/types';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('services/background-review');
 

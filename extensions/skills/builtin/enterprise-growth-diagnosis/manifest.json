@@ -1,0 +1,77 @@
+{
+  "name": "enterprise-growth-diagnosis",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "全企业增长诊断",
+  "description": "覆盖全部7维度和8位专家的全企业增长诊断，识别增长阻碍者并给出跨维度因果链。",
+  "tier": "L3",
+  "complexity": "expert",
+  "expert": "multi",
+  "tools": [
+    "cross-validate",
+    "query-graph"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "financial",
+        "customer",
+        "market",
+        "organizational",
+        "technology",
+        "execution",
+        "knowledge"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": [
+      "finance",
+      "strategy",
+      "org",
+      "marketing",
+      "tech",
+      "action",
+      "business_model",
+      "knowledge"
+    ]
+  },
+  "dependencies": {
+    "skills": [
+      "acquire-financial-data",
+      "acquire-customer-data",
+      "acquire-competitive-intel",
+      "acquire-org-health-data",
+      "acquire-operational-data",
+      "analyze-break-even",
+      "analyze-operating-leverage",
+      "analyze-price-elasticity",
+      "analyze-customer-value",
+      "analyze-competitive-position",
+      "analyze-cost-structure",
+      "analyze-learning-curve",
+      "analyze-capital-allocation",
+      "diagnose-cashflow-health",
+      "diagnose-churn-root-cause",
+      "diagnose-org-health",
+      "diagnose-competitive-decay",
+      "diagnose-margin-erosion",
+      "diagnose-agency-cost"
+    ],
+    "edges": [],
+    "computes": [],
+    "sentinels": []
+  },
+  "boundaries": {
+    "prohibitedDimensions": [],
+    "degradedBehavior": "部分专家不可用时降级为部分诊断，标记 degraded:true",
+    "preconditions": [
+      "下级L1-L2数据已就绪",
+      "相关compute函数可用",
+      "GraphStore连接正常"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
+}

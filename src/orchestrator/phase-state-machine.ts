@@ -5,7 +5,7 @@
  * 每个 Phase 有 enter/execute/exit 三个生命周期。
  * 状态变更必须通过事件触发 (Event Sourcing)。
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('orchestrator/state-machine');
 

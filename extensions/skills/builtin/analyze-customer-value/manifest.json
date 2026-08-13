@@ -1,0 +1,59 @@
+{
+  "name": "analyze-customer-value",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "客户价值评估",
+  "description": "综合评估客户价值，包括客户价值评分、盈利能力分层、需求浓度和LTV分布。",
+  "tier": "L2",
+  "complexity": "composite",
+  "expert": "marketing",
+  "tools": [
+    "compute-customer-value-score",
+    "compute-customer-profitability",
+    "compute-customer-demand-structure"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "customer",
+        "market"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": []
+  },
+  "dependencies": {
+    "skills": [],
+    "edges": [
+      "E-4.1",
+      "E-4.2",
+      "E-4.6",
+      "E-5.4"
+    ],
+    "computes": [
+      "COMPUTE-CUSTOMER-VALUE-SCORE-v1",
+      "COMPUTE-CUSTOMER-PROFITABILITY-v1",
+      "COMPUTE-CUSTOMER-DEMAND-STRUCTURE-v1"
+    ],
+    "sentinels": [
+      "churn-health",
+      "client-portfolio-concentration"
+    ]
+  },
+  "boundaries": {
+    "prohibitedDimensions": [
+      "financial-internal",
+      "organizational",
+      "technology-stack"
+    ],
+    "degradedBehavior": "客户/渠道数据不足时降级为部分报告，标记 degraded:true",
+    "preconditions": [
+      "L1感知层数据已采集",
+      "对应compute函数可用"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
+}

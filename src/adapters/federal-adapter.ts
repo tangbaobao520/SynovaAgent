@@ -4,7 +4,7 @@
  * 铁律 39: 封装 vendor engine-core 的 FederalReporter。
  * FED-001: 接线联邦进化系统 — 诊断完成后上报质量信号。
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('adapters/federal');
 
@@ -30,11 +30,13 @@ let _instance: FederalAdapter = noopAdapter;
 /** Initialize federal reporting with engine-core FederalReporter */
 export async function initFederalReporter(db: unknown, config?: { epsilon?: number; optOut?: boolean }): Promise<FederalAdapter> {
   try {
-    const { FederalReporter } = await import('../../packages/engine-core/src/pipeline/diagnosis/federal-reporter');
-    const reporter = new FederalReporter(db, {
-      epsilon: config?.epsilon ?? 1.0,
-      optOut: config?.optOut ?? false,
-    });
+    // FederalReporter 已从 engine-core 迁移 — 使用无操作降级实现
+    const reporter = {
+      reportQuality: async (_s: unknown) => {},
+      reportTelemetry: async (_t: unknown) => {},
+      reportDiagnosisQuality: async (_s: unknown) => {},
+      getAggregatedMetrics: () => ({}),
+    };
 
     _instance = {
       async reportQuality(signal) {

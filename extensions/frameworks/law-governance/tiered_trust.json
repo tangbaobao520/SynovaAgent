@@ -1,0 +1,33 @@
+{
+  "id": "tiered_trust",
+  "name": "分级信任模型",
+  "category": "law-governance",
+  "coreInsight": "不搞全信或全不信。按历史表现分三级：Tier-1（战略合作，信用巡检）→ Tier-2（稳定合作，抽样检查）→ Tier-3（新供应商，全量验证）。信任级别决定验证密度。",
+  "applicableDecisionTypes": [
+    "供应商策略",
+    "采购权限",
+    "审批流程"
+  ],
+  "constraintPatterns": [
+    "供应商",
+    "分级",
+    "信任",
+    "战略",
+    "合作",
+    "采购",
+    "审核",
+    "长期"
+  ],
+  "applicableRoles": [
+    "供应商管理",
+    "采购策略",
+    "合作分级",
+    "关系管理"
+  ],
+  "limitations": [
+    "Tier晋升需要客观标准",
+    "长期Tier-1可能滋生腐败",
+    "某些品类天然缺乏Tier-1级供应商"
+  ],
+  "$id": "framework/law-governance/tiered_trust"
+}

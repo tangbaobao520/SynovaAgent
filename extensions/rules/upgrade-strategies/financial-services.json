@@ -1,0 +1,22 @@
+{
+  "$id": "strategy/upgrade/financial-services",
+  "name": "金融服务升级策略",
+  "type": "upgrade_strategy",
+  "industry": "financial-services",
+  "escalation": {
+    "crossSentinelWarning": { "minSentinels": 1, "upgradeTo": "critical" },
+    "crossSentinelCritical": { "minSentinels": 2, "upgradeTo": "emergency" },
+    "cooldownMs": 600000
+  },
+  "signalRouting": {
+    "collaboration": ["org"],
+    "capability": ["org"],
+    "strategy": ["strategy", "business_model"],
+    "risk": ["org", "finance", "business_model"],
+    "health": ["tech"],
+    "data-quality": ["tech"],
+    "compliance": ["strategy", "business_model"],
+    "financial": ["finance", "business_model"]
+  },
+  "metadata": { "source": "engine_calibrated", "confidence": 0.85, "status": "active" }
+}

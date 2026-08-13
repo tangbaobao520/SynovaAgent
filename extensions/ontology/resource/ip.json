@@ -1,0 +1,1 @@
+{"$id":"resource/ip","label":"IP","tags":["resource","intangible","legal"],"requiredProps":["name"],"optionalProps":{"ip_type":"string","expiry":"string","jurisdiction":"string","revenue_attributable":"number","defensibility":"number"},"description":"知识产权。专利、商标、版权的法律保护和商业价值。"}

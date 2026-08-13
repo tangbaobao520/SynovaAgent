@@ -1,0 +1,32 @@
+{
+  "id": "circle_of_competence",
+  "name": "能力圈",
+  "category": "psychology",
+  "coreInsight": "明确知道自己知道什么、不知道什么。只在能力圈内做决策，在圈外找专家。",
+  "applicableDecisionTypes": [
+    "新市场评估",
+    "新业务决策",
+    "投资决策"
+  ],
+  "constraintPatterns": [
+    "专业",
+    "能力",
+    "评估",
+    "专家",
+    "外包",
+    "顾问",
+    "咨询",
+    "审查"
+  ],
+  "applicableRoles": [
+    "专家顾问",
+    "能力评估",
+    "外部咨询",
+    "决策审核"
+  ],
+  "limitations": [
+    "能力圈的边界很难精确划定",
+    "固守能力圈可能错失新机遇"
+  ],
+  "$id": "framework/psychology/circle_of_competence"
+}

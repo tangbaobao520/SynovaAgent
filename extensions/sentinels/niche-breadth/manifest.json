@@ -1,0 +1,45 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "niche-breadth",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "生态位宽度与深度",
+  "description": "I1: 基于Levins公式计算生态位宽度(B)、深度(D)、体积(V)。数据源: Client, Location, Market节点。",
+  "schedule": "0 0 1 * *",
+  "expert": "strategy",
+  "auxiliaryExperts": [
+    "marketing"
+  ],
+  "priority": "P1",
+  "layer": "interface",
+  "computeKind": "heuristic",
+  "computes": [
+    "levins-breadth"
+  ],
+  "thresholds": {
+    "niche_breadth": {
+      "warning": 1.5,
+      "critical": 1.0
+    },
+    "niche_depth": {
+      "warning": 0.3,
+      "critical": 0.5
+    }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": [
+      "sog_graph"
+    ],
+    "dataAccess": {
+      "allowedDimensions": [
+        "strategic",
+        "marketing"
+      ],
+      "sensitiveAccess": "read"
+    }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "nicheBreadthSentinel",
+  "id": "sentinel-niche-breadth"
+}

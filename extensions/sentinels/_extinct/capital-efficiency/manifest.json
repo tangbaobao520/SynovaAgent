@@ -1,0 +1,46 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "capital-efficiency",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "资本配置效率",
+  "description": "F3: 评估企业资本配置效率——ROIC/WACC差、资本周转率、营收集中度。数据源: SOG FINANCIAL节点。",
+  "schedule": "0 9 1 * *",
+  "expert": "finance",
+  "auxiliaryExperts": [
+    "strategy"
+  ],
+  "priority": "P1",
+  "layer": "capital",
+  "computeKind": "deterministic",
+  "computes": [
+    "roic-wacc-spread",
+    "capital-turnover"
+  ],
+  "thresholds": {
+    "roic_wacc_spread": {
+      "warning": 0,
+      "critical": -0.05
+    },
+    "capital_turnover": {
+      "warning": 0.8,
+      "critical": 0.4
+    }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": [
+      "sog_graph"
+    ],
+    "dataAccess": {
+      "allowedDimensions": [
+        "financial"
+      ],
+      "sensitiveAccess": "read"
+    }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "capitalEfficiencySentinel",
+  "technoEconomicPhaseCalibration": true,
+  "id": "sentinel-capital-efficiency"
+}

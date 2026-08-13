@@ -1,0 +1,33 @@
+{
+  "id": "fraud_detection_roi",
+  "name": "造假者ROI模型",
+  "category": "psychology",
+  "coreInsight": "造假者愿花多少钱伪造，你就得花多少钱验证。高毛利品类（保健品/化妆品/奢侈品）造假ROI远高于低毛利品类。验证资源应按造假激励分配，而非均分。",
+  "applicableDecisionTypes": [
+    "供应商可信度验证",
+    "品牌保护",
+    "合规风险判断"
+  ],
+  "constraintPatterns": [
+    "验证",
+    "品牌",
+    "造假",
+    "防伪",
+    "高毛利",
+    "奢侈品",
+    "保健品",
+    "化妆品"
+  ],
+  "applicableRoles": [
+    "风险分析",
+    "品牌保护",
+    "防伪验证",
+    "采购审计"
+  ],
+  "limitations": [
+    "造假者ROI不能精确量化",
+    "新型造假手段可能绕过现有验证",
+    "过度防范伤及诚信供应商"
+  ],
+  "$id": "framework/psychology/fraud_detection_roi"
+}

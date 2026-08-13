@@ -1,0 +1,16 @@
+{
+  "$id": "edge/talent_deployment",
+  "label": "TALENT_DEPLOYMENT",
+  "tags": ["causal", "first_order", "stage_2"],
+  "allowedFrom": ["pool/human_capital"],
+  "allowedTo": ["pool/activity"],
+  "requiredProps": ["fte_allocation", "skill_match_score"],
+  "optionalProps": {
+    "utilization_rate": "number (0-1) — 人员利用率",
+    "avg_project_tenure_months": "number — 平均项目任期",
+    "cross_function_assignment_ratio": "number (0-1) — 跨职能分配比例"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "人力分配到任务——人力池中的人才按照技能和需求分配到各业务活动的内部转化阀。"
+}

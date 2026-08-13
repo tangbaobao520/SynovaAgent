@@ -1,0 +1,40 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "time-penetration",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "时间穿透力",
+  "description": "I9: 聚合哨兵，引用E2/E4/E6/I3/I4结果评估。",
+  "schedule": "0 0 1 * *",
+  "expert": "business_model",
+  "auxiliaryExperts": [
+    "strategy"
+  ],
+  "priority": "P1",
+  "layer": "interface",
+  "computeKind": "heuristic",
+  "computes": [
+    "time-penetration-score"
+  ],
+  "thresholds": {
+    "penetration": {
+      "warning": 0.4,
+      "critical": 0.2
+    }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": [
+      "sog_graph"
+    ],
+    "dataAccess": {
+      "allowedDimensions": [
+        "strategic"
+      ],
+      "sensitiveAccess": "read"
+    }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "timePenetrationSentinel",
+  "id": "sentinel-time-penetration"
+}

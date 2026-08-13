@@ -6,7 +6,7 @@
  *
  * 分支决定后续行为, 不是简单的问答——不同意图触发不同的对话策略。
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import type { LLMClient } from './diagnosis-orchestrator';
 
 const log = createLogger('orchestrator/intent-router');

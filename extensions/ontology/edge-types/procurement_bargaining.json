@@ -1,0 +1,16 @@
+{
+  "$id": "edge/procurement_bargaining",
+  "label": "PROCUREMENT_BARGAINING",
+  "tags": ["causal", "first_order", "stage_4"],
+  "allowedFrom": ["pool/activity"],
+  "allowedTo": ["outcome/financial"],
+  "requiredProps": ["purchase_volume", "supplier_concentration", "bargaining_power"],
+  "optionalProps": {
+    "avg_discount_rate": "number (0-1) — 平均折扣率",
+    "contract_duration_months": "number — 合同期限",
+    "alternative_supplier_count": "number — 替代供应商数量"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "采购时压低供应商价格——采购量和替代选择带来对供应商的议价能力，降低采购成本。"
+}

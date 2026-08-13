@@ -2,7 +2,7 @@
  * tests/architecture/03-vendor-reference.test.ts
  *
  * 铁律 39: 仅 adapter 文件可引用 server/vendor/ 路径。
- * 所有直接 import engine-core 内部路径的行为必须经由适配器。
+ * D317: engine-core 已退役 — 白名单仅保留现存的 adapter 文件。
  */
 import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
@@ -10,7 +10,6 @@ import * as path from 'path';
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '../../../..');
 const ALLOWED_VENDOR_REF_FILES = [
-  'src/adapters/engine-core-adapter.ts',
   'src/adapters/federal-adapter.ts',
 ];
 

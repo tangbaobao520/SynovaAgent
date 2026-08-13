@@ -1,0 +1,49 @@
+id: PB-tech-connector-design
+name: 连接器设计剧本
+version: 1.0.0
+expert: tech
+type: playbook
+description: GA手动触发的技术连接器设计流程，从数据采集、IT系统到信息流全链路设计。
+trigger:
+  manual: true
+  condition: GA手动触发
+steps:
+  - id: step-1
+    name: 数据采集需求分析
+    description: 分析需要接入的数据源和采集需求
+    tools:
+      - acquire-edge-data
+      - query-graph
+    timeout: 25
+  - id: step-2
+    name: IT系统对接评估
+    description: 评估现有IT系统的对接能力
+    tools:
+      - acquire-edge-data
+    timeout: 20
+    onFailure: skip
+  - id: step-3
+    name: 信息流设计
+    description: 设计数据采集到消费的信息流路径
+    tools:
+      - query-graph
+    timeout: 25
+  - id: step-4
+    name: 接口规范定义
+    description: 定义连接器接口规范和数据结构
+    tools: []
+    timeout: 30
+  - id: step-5
+    name: 实施计划输出
+    description: 输出连接器实施计划和排期
+    tools:
+      - cross-validate
+    timeout: 30
+onFailure: continue
+output: connector_design_report
+dependencies:
+  edges:
+    - E-3.7
+    - E-1.5
+    - E-2.4
+  sentinels: []

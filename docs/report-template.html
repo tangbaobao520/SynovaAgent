@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Synova 诊断报告 — XX科技</title>
+<style>
+  :root {
+    --bg: #fafbfc;
+    --surface: #ffffff;
+    --border: #e1e4e8;
+    --text: #24292e;
+    --muted: #6a737d;
+    --accent: #0366d6;
+    --green: #22863a;
+    --orange: #e36209;
+    --red: #d73a49;
+    --purple: #6f42c1;
+    --data: #0366d6;
+    --infer: #6f42c1;
+    --predict: #e36209;
+    --critical: #d73a49;
+    --warning: #e36209;
+    --info: #0366d6;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; line-height:1.6; }
+
+  .report { max-width:900px; margin:0 auto; padding:3rem 2rem; }
+
+  /* Header */
+  .header { margin-bottom:3rem; padding-bottom:2rem; border-bottom:3px solid var(--accent); }
+  .header .org { font-size:1.8rem; font-weight:700; color:var(--text); margin-bottom:.3rem; }
+  .header .meta { font-size:.85rem; color:var(--muted); }
+  .header .meta span { margin-right:1.5rem; }
+  .header .score { display:inline-block; margin-top:1rem; padding:.3rem 1rem; border-radius:20px; font-size:.85rem; font-weight:700; }
+  .score-healthy { background:#dcffe4; color:var(--green); }
+  .score-warning { background:#fff5e6; color:var(--orange); }
+  .score-critical { background:#ffeef0; color:var(--red); }
+
+  /* Governing Thought */
+  .governing { background:var(--surface); border-left:5px solid var(--accent); padding:1.5rem 2rem; margin-bottom:2.5rem; border-radius:4px; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+  .governing .label { font-size:.75rem; text-transform:uppercase; color:var(--muted); letter-spacing:.05em; margin-bottom:.5rem; }
+  .governing .thought { font-size:1.2rem; font-weight:600; color:var(--text); line-height:1.5; }
+
+  /* Key Judgments */
+  .judgments { display:grid; gap:2rem; margin-bottom:2.5rem; }
+  .judgment { background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:1.5rem 2rem; box-shadow:0 1px 3px rgba(0,0,0,.04); }
+  .judgment .kj-num { font-size:.75rem; color:var(--accent); font-weight:700; text-transform:uppercase; letter-spacing:.05em; margin-bottom:.3rem; }
+  .judgment .kj-title { font-size:1.1rem; font-weight:600; margin-bottom:1rem; color:var(--text); }
+
+  /* Evidence Chain */
+  .evidence-list { list-style:none; }
+  .evidence-list li { padding:.6rem 0; border-bottom:1px solid var(--border); font-size:.92rem; }
+  .evidence-list li:last-child { border-bottom:none; }
+  .evidence-list .tag { display:inline-block; padding:.1em .5em; border-radius:3px; font-size:.75rem; font-weight:700; margin-right:.5em; vertical-align:middle; }
+  .tag-data { background:#e8f0fe; color:var(--data); }
+  .tag-infer { background:#f5f0ff; color:var(--infer); }
+  .tag-predict { background:#fff5e6; color:var(--predict); }
+
+  /* Impact & Ruled Out */
+  .impact { background:#ffeef0; border-left:3px solid var(--red); padding:.8rem 1rem; margin-top:1rem; border-radius:3px; font-size:.9rem; }
+  .impact strong { color:var(--red); }
+  .ruled-out { margin-top:.6rem; font-size:.85rem; color:var(--muted); }
+  .ruled-out::before { content:'✗ 排除: '; color:var(--muted); }
+  .confidence-bar { margin-top:.6rem; display:flex; align-items:center; gap:.5rem; font-size:.8rem; }
+  .confidence-bar .fill { height:4px; border-radius:2px; background:var(--accent); }
+  .confidence-bar .empty { flex:1; height:4px; border-radius:2px; background:var(--border); }
+
+  /* Summary Panel */
+  .summary { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:2.5rem; }
+  .summary-box { background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:1.2rem 1.5rem; box-shadow:0 1px 3px rgba(0,0,0,.04); }
+  .summary-box .s-label { font-size:.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:.5rem; }
+  .summary-box .s-value { font-size:1.3rem; font-weight:700; }
+
+  /* Radar placeholder */
+  .radar { text-align:center; padding:2rem; background:var(--surface); border:1px solid var(--border); border-radius:6px; margin-bottom:2.5rem; box-shadow:0 1px 3px rgba(0,0,0,.04); }
+  .radar .placeholder { color:var(--muted); font-size:.9rem; }
+
+  /* Action Plan */
+  .action-plan { background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:1.5rem 2rem; margin-bottom:2.5rem; box-shadow:0 1px 3px rgba(0,0,0,.04); }
+  .action-plan h3 { font-size:1rem; margin-bottom:1rem; color:var(--text); }
+  .timeline { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; }
+  .timeline .phase { background:var(--bg); border-radius:4px; padding:1rem; border:1px solid var(--border); }
+  .phase .week { font-size:.75rem; color:var(--accent); font-weight:700; text-transform:uppercase; }
+  .phase .action-title { font-weight:600; margin:.3rem 0; font-size:.92rem; }
+  .phase .action-detail { font-size:.82rem; color:var(--muted); }
+
+  /* Footer */
+  .footer { margin-top:3rem; padding-top:1.5rem; border-top:1px solid var(--border); font-size:.8rem; color:var(--muted); display:flex; justify-content:space-between; }
+  .honesty-legend { display:flex; gap:1.5rem; font-size:.8rem; margin-bottom:2rem; color:var(--muted); }
+  .honesty-legend span { display:flex; align-items:center; gap:.3rem; }
+
+  @media (max-width:768px) {
+    .report { padding:1.5rem 1rem; }
+    .summary { grid-template-columns:1fr; }
+    .timeline { grid-template-columns:1fr; }
+    .header .meta span { display:block; margin-right:0; }
+  }
+</style>
+</head>
+<body>
+<div class="report">
+
+<!-- ═══ Header ═══ -->
+<div class="header">
+  <div class="org">XX科技 · 组织诊断报告</div>
+  <div class="meta">
+    <span>📅 2026-06-19</span>
+    <span>🏢 企业培训和管理咨询</span>
+    <span>👥 35人 · Stage 1</span>
+    <span>⏱ 诊断耗时 98s</span>
+  </div>
+  <div class="score score-warning">企业健康度 3.1 / 5.0 · 需关注</div>
+</div>
+
+<!-- ═══ Honesty Legend ═══ -->
+<div class="honesty-legend">
+  <span><span class="tag tag-data">📊 数据事实</span> 来自企业数据，可验证</span>
+  <span><span class="tag tag-infer">🧠 专家推断</span> 基于理论推理</span>
+  <span><span class="tag tag-predict">🔮 预测</span> 趋势预判，置信度较低</span>
+</div>
+
+<!-- ═══ Governing Thought ═══ -->
+<div class="governing">
+  <div class="label">Governing Thought</div>
+  <div class="thought">XX科技的增长卡在组织能力——战略方向正确但核心人依赖和客户集中度过高，使当前模式更像"张老师工作室"而非一家可规模化的公司。</div>
+</div>
+
+<!-- ═══ Summary ═══ -->
+<div class="summary">
+  <div class="summary-box">
+    <div class="s-label">战略质量</div>
+    <div class="s-value" style="color:var(--green)">0.72</div>
+    <div class="confidence-bar"><div class="fill" style="width:72%"></div><div class="empty"></div></div>
+    <div style="font-size:.8rem;color:var(--muted);margin-top:.3rem;">赛道正确 · 壁垒中等</div>
+  </div>
+  <div class="summary-box">
+    <div class="s-label">组织能力</div>
+    <div class="s-value" style="color:var(--red)">0.25</div>
+    <div class="confidence-bar"><div class="fill" style="width:25%;background:var(--red)"></div><div class="empty"></div></div>
+    <div style="font-size:.8rem;color:var(--muted);margin-top:.3rem;">核心人依赖 · 单点故障</div>
+  </div>
+  <div class="summary-box">
+    <div class="s-label">混合成熟度</div>
+    <div class="s-value" style="color:var(--orange)">0.40</div>
+    <div class="confidence-bar"><div class="fill" style="width:40%;background:var(--orange)"></div><div class="empty"></div></div>
+    <div style="font-size:.8rem;color:var(--muted);margin-top:.3rem;">数字化薄弱 · 无Agent</div>
+  </div>
+  <div class="summary-box">
+    <div class="s-label">战略组织咬合度</div>
+    <div class="s-value" style="color:var(--red)">0.38</div>
+    <div class="confidence-bar"><div class="fill" style="width:38%;background:var(--red)"></div><div class="empty"></div></div>
+    <div style="font-size:.8rem;color:var(--muted);margin-top:.3rem;">战略需组织能力3倍于现有</div>
+  </div>
+</div>
+
+<!-- ═══ Key Judgments ═══ -->
+<div class="judgments">
+
+  <!-- KJ1: Strategy -->
+  <div class="judgment">
+    <div class="kj-num">Key Judgment 1</div>
+    <div class="kj-title">战略方向正确但时间窗口在缩小</div>
+    <ul class="evidence-list">
+      <li><span class="tag tag-data">📊 数据</span> 西南企业培训市场年增速 18%——行业数据</li>
+      <li><span class="tag tag-infer">🧠 推断</span> 头部竞争者尚未出现，窗口期约 18-24 个月</li>
+      <li><span class="tag tag-predict">🔮 预测</span> 24个月内未达区域头部→大厂可能进入，增长目标从5000万降为3000万</li>
+    </ul>
+    <div class="impact"><strong>⚠ 如果不解决：</strong> 错失窗口 = 增长目标从5000万降为3000万。竞争对手用6个月即可建立同等品质定位。</div>
+    <div class="ruled-out">"先做规模再提品质"——与创始人"只做落地"价值观冲突</div>
+    <div class="confidence-bar"><span>置信度</span><div class="fill" style="width:80%"></div><div class="empty"></div><span style="min-width:3em">80%</span></div>
+  </div>
+
+  <!-- KJ2: Org -->
+  <div class="judgment">
+    <div class="kj-num">Key Judgment 2</div>
+    <div class="kj-title">核心人依赖是公司最大的单点故障</div>
+    <ul class="evidence-list">
+      <li><span class="tag tag-data">📊 数据</span> 张老师承担60%课程量，无备份——企业访谈王总原话"他走了研发就停了"</li>
+      <li><span class="tag tag-data">📊 数据</span> 核心讲师仅3人。Bus Factor = 1，恢复期预估 18 个月</li>
+      <li><span class="tag tag-infer">🧠 推断</span> 这不是"人才风险"——这是"单点故障"。涨薪解决不了 busFactor=1 的结构问题</li>
+    </ul>
+    <div class="impact"><strong>⚠ 如果不解决：</strong> 张老师离职 → 营收直接损失 60%（约1200万/年）。客户续约率可能从70%降至30%以下。</div>
+    <div class="ruled-out">"涨薪留人"——解决不了 busFactor=1。加薪后他依然是唯一能讲核心课程的人</div>
+    <div class="confidence-bar"><span>置信度</span><div class="fill" style="width:90%"></div><div class="empty"></div><span style="min-width:3em">90%</span></div>
+  </div>
+
+  <!-- KJ3: Biz Model -->
+  <div class="judgment">
+    <div class="kj-num">Key Judgment 3</div>
+    <div class="kj-title">项目制先干后收 + 大客户集中 = 增长的自限器</div>
+    <ul class="evidence-list">
+      <li><span class="tag tag-data">📊 数据</span> 内训占营收60%，回款周期平均75天。前3客户占营收55%（B客户30%）</li>
+      <li><span class="tag tag-data">📊 数据</span> 毛利率45%但净利率15%——30%的毛利被定制化成本和资金成本吃掉</li>
+      <li><span class="tag tag-infer">🧠 推断</span> 要做5000万营收需要垫付资金缺口约800万——远超当前现金储备</li>
+      <li><span class="tag tag-predict">🔮 预测</span> 如果维持项目制+大客户模式，增长到3000万后会出现现金流断裂</li>
+    </ul>
+    <div class="impact"><strong>⚠ 如果不解决：</strong> 增长到3000万时遭遇现金流断裂。唯一的自救是接受大客户更低价格 → 毛利率进一步下降 → 恶性循环。</div>
+    <div class="ruled-out">"涨价"——续约率70%说明客户对价格敏感。涨价可能加速流失</div>
+    <div class="confidence-bar"><span>置信度</span><div class="fill" style="width:75%"></div><div class="empty"></div><span style="min-width:3em">75%</span></div>
+  </div>
+
+</div>
+
+<!-- ═══ 90-Day Action Plan ═══ -->
+<div class="action-plan">
+  <h3>📋 90天行动方案 · Plan A：解决组织能力瓶颈</h3>
+  <div class="timeline">
+    <div class="phase">
+      <div class="week">Week 1-2 · 快赢</div>
+      <div class="action-title">启动张老师知识转移</div>
+      <div class="action-detail">录制核心课程视频。选定2位讲师各跟课10节。目标：30天内至少1人可独立讲核心课。</div>
+    </div>
+    <div class="phase">
+      <div class="week">Week 3-6 · 核心行动</div>
+      <div class="action-title">客户分散化 + 预付费试点</div>
+      <div class="action-detail">对3个新客户推预付费模式（9折优惠）。B客户合同到期前找到替代客户，将B占比降至<20%。</div>
+    </div>
+    <div class="phase">
+      <div class="week">Week 7-12 · 系统建设</div>
+      <div class="action-title">标准化课程体系</div>
+      <div class="action-detail">将核心课程拆为标准化模块（课件+练习+评分标准）。目标：任何认证讲师均可交付，品质方差<10%。</div>
+    </div>
+  </div>
+  <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);font-size:.85rem;color:var(--muted);">
+    <strong>Plan B（备用方案）：</strong>如果90天后组织能力约束未转移 → 调低增长目标至3000万，优先解决客户集中度。
+  </div>
+</div>
+
+<!-- ═══ Cross Expert Note ═══ -->
+<div style="background:var(--surface);border:1px solid var(--accent);border-radius:6px;padding:1rem 1.5rem;margin-bottom:2.5rem;font-size:.88rem;">
+  <strong>🔄 跨专家协同笔记：</strong>
+  本报告综合 strategy、org、business_model、finance 四位专家的独立诊断。strategy 和 biz_model 在"核心人依赖"信号上独立收敛——置信度升级。finance 验证了现金流压力——数字与诊断一致。未发现专家间矛盾信号。
+</div>
+
+<!-- ═══ Footer ═══ -->
+<div class="footer">
+  <span>Synova Agent v2.1 · 诊断ID: diag_xxkj_20260619</span>
+  <span>生成时间: 2026-06-19 11:48 CST</span>
+  <span>此报告由AI生成 · FDE审核后交付客户</span>
+</div>
+
+</div>
+</body>
+</html>

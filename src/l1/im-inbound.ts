@@ -11,9 +11,18 @@
  *
  * 铁律 31: 降级信号传播 — 任何环节失败返回 degraded
  */
-import { createLogger } from '../logger';
-import type { SessionStore } from '../store/session-store';
+import { createLogger } from '@synova/logger';
 import type { PIIScrubber } from '../security/pii-scrubber';
+
+// L1 本地类型镜像 — 避免静态跨层依赖 (铁律 39, 审计 2026-06-18)
+interface SessionStoreLike {
+  listSessions(limit: number): Array<{ id: string; updatedAt: string }>;
+  createSession(teamId: string, userId: string): { id: string };
+  deleteSession(id: string): void;
+  addMessage(sessionId: string, role: string, content: string): void;
+  getMessages(sessionId: string): Array<{ role: string; content: string }>;
+  db?: unknown;
+}
 
 const log = createLogger('l1/im-inbound');
 
@@ -100,7 +109,7 @@ function createIdentity(openId: string, extra: { name: string; email: string; te
  * 当前只存储消息到 Session，AI 回复在 Slice 3 (L4 权限过滤) 之后接入。
  */
 export function handleInboundMessage(
-  store: SessionStore,
+  store: SessionStoreLike,
   piiScrubber: PIIScrubber,
   msg: InboundMessage,
 ): InboundResult {
@@ -151,7 +160,7 @@ export function handleInboundMessage(
 // ═══ AI 回复生成 ═══
 
 async function generateAIReply(
-  store: SessionStore,
+  store: SessionStoreLike,
   sessionId: string,
   identity: CachedIdentity,
   userInput: string,
@@ -170,7 +179,7 @@ async function generateAIReply(
 
   const conv = new ConversationEngine(provider);
   const builtinStore = new SessionStore(store['db' as keyof typeof store] as never);
-  registerBuiltinTools(conv.getToolRegistry(), store, sessionId, () => conv.getPhase(), () => identity.teamId);
+  registerBuiltinTools(conv.getToolRegistry(), store as unknown as Parameters<typeof registerBuiltinTools>[1], sessionId, () => conv.getPhase(), () => identity.teamId);
 
   // 恢复会话历史
   const msgs = store.getMessages(sessionId);
@@ -202,7 +211,7 @@ async function generateAIReply(
 let cleanupTimer: ReturnType<typeof setInterval> | null = null;
 
 export function startSessionCleanup(
-  store: SessionStore,
+  store: SessionStoreLike,
   timeoutMs = 1_800_000,
   intervalMs = 300_000,
 ): void {

@@ -7,8 +7,8 @@
  * @state: real — 生产可用, 与 CronScheduler 集成
  */
 
-import type { Sentinel, SentinelConfig, SentinelCategory, SentinelPriority, SentinelRegistry } from './types';
-import { createLogger } from '../logger';
+import type { Sentinel, SentinelConfig, SentinelCategory, SentinelPriority, SentinelRegistry, SentinelFinding, SentinelContext } from './types';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/registry');
 
@@ -59,6 +59,46 @@ export class SentinelRegistryImpl implements SentinelRegistry {
       .filter(s => s.config.mode === 'cron' && s.config.cron)
       .map(s => ({ sentinel: s, cron: s.config.cron! }));
   }
+
+  /** 按团队列出哨兵 — 当前所有哨兵全局适用, 团队过滤在 check() 内部通过 discoverTeams 实现 */
+  listForTeam(_teamId: string): Sentinel[] {
+    return this.list();
+  }
+
+  /** 运行所有哨兵 (按需诊断用), 返回 Finding[]。每哨兵独立降级。 */
+  async runAll(context: SentinelContext): Promise<SentinelFinding[]> {
+    const all: SentinelFinding[] = [];
+    for (const s of this.sentinels.values()) {
+      try {
+        const result = await s.check(context);
+        if (result.findings) all.push(...result.findings);
+      } catch (err: unknown) {
+        log.warn({ err, id: s.config.id }, '哨兵执行失败 — degraded');
+      }
+    }
+    if (all.length > 0) log.info({ findings: all.length }, '哨兵运行完成');
+    return all;
+  }
+}
+
+// ═══ LLM 格式化 ═══
+
+/** 将 Finding[] 格式化为 LLM prompt 文本 */
+export function formatFindingsForLLM(findings: SentinelFinding[]): string {
+  if (findings.length === 0) return '';
+  const crit = findings.filter(f => f.severity === 'critical');
+  const warn = findings.filter(f => f.severity === 'warning');
+  const lines: string[] = ['## 哨兵监测数据 (客观事实)\n'];
+  if (crit.length > 0) {
+    lines.push(`🔴 严重 (${crit.length} 条):`);
+    for (const f of crit) lines.push(`- ${f.title}: ${f.description}`);
+  }
+  if (warn.length > 0) {
+    lines.push(`\n🟡 警告 (${warn.length} 条):`);
+    for (const f of warn) lines.push(`- ${f.title}: ${f.description}`);
+  }
+  lines.push(`\n共 ${findings.length} 条发现。请基于以上客观数据生成诊断假设。`);
+  return lines.join('\n');
 }
 
 // ═══ Global Singleton ═══

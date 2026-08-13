@@ -13,7 +13,7 @@
  *   6. 数据文件损坏 → detect ENOENT vs JSON.parse vs checksum
  *   7. 不可恢复错误 → error event + SSE close + user-friendly message
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import { DiagnosticAgentError, ErrorCode, isRetryable } from '../errors/types';
 
 const log = createLogger('services/fault-recovery');
@@ -213,6 +213,7 @@ export class FaultRecovery {
       const data = JSON.parse(raw) as T;
       return { data, status: 'ok', degraded: false };
     } catch (err: any) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "故障恢复配置读取");
       const type = this.detectFileError(err, filePath);
       switch (type) {
         case 'not_found':

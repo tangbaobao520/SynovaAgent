@@ -7,7 +7,7 @@
  * 铁律 31: 降级模式 — 消息处理失败仍返回 200 (避免 IM 平台重试风暴)
  */
 import { Router, type Request, type Response } from 'express';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import { handleInboundMessage } from '../l1/im-inbound';
 import { runWithContext } from '../services/request-context';
 
@@ -51,7 +51,7 @@ router.post('/api/im/feishu/webhook', async (req: Request, res: Response) => {
 
     // M2: 建立请求级用户上下文 (KnowledgeAgent 工具执行时自动获取权限过滤)
     const result = await runWithContext({ user: { userId: senderId, identity: { openId: senderId, email: '', name: senderId, source: 'feishu' }, auth: { roles: ['employee'], teamId: 'default', tenantId: 'default', sensitivity: 'normal' }, permissions: { version: 1, expiresAt: Date.now() + 3600000 } } }, async () => {
-      return handleInboundMessage(store, piiScrubber, {
+      return handleInboundMessage(store as unknown as Parameters<typeof handleInboundMessage>[0], piiScrubber, {
         platform: 'feishu',
         senderId,
         content: String(content),
@@ -106,6 +106,7 @@ router.post('/api/qa/ask', async (req: Request, res: Response) => {
 
     res.json(result);
   } catch (err: unknown) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "IM 消息处理失败");
     const msg = err instanceof Error ? err.message : String(err);
     res.status(500).json({ ok: false, error: msg });
   }

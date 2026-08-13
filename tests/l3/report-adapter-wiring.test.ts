@@ -8,7 +8,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { ReportGraphAdapter } from '../../src/l4/report-graph-adapter';
-import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
+import { NodeType, EdgeType } from '@synova/ontology';
 
 describe('ReportGraphAdapter → Phase 4 Wiring', () => {
   function fakeStore(nodes: Array<{id:string, type:string, props:Record<string,unknown>}>, edges: Array<{id:string, type:string, from:string, to:string, weight:number}> = []) {
@@ -22,14 +22,14 @@ describe('ReportGraphAdapter → Phase 4 Wiring', () => {
 
   it('Given graph with nodes and edges, When getNodeStats, Then returns type distribution for report header', () => {
     const store = fakeStore([
-      { id:'p1', type:SOGNodeType.PERSON, props:{name:'Alice'}},
-      { id:'p2', type:SOGNodeType.PERSON, props:{name:'Bob'}},
-      { id:'t1', type:SOGNodeType.TEAM, props:{name:'Engineering'}},
-      { id:'r1', type:SOGNodeType.RISK, props:{severity:'critical', name:'单点故障'}},
-      { id:'f1', type:SOGNodeType.FINANCIAL, props:{amount:5000, financialType:'cost'}},
+      { id:'p1', type:NodeType.RESOURCE_PERSON, props:{name:'Alice'}},
+      { id:'p2', type:NodeType.RESOURCE_PERSON, props:{name:'Bob'}},
+      { id:'t1', type:NodeType.RESOURCE_TEAM, props:{name:'Engineering'}},
+      { id:'r1', type:NodeType.OUTCOME_RISK, props:{severity:'critical', name:'单点故障'}},
+      { id:'f1', type:NodeType.OUTCOME_FINANCIAL /* ONTOLOGY-MIGRATION: SOGNodeType.FINANCIAL -> outcome/financial or resource/money? Context-dependent. */, props:{amount:5000, financialType:'cost'}},
     ], [
-      { id:'e1', type:SOGEdgeType.AFFECTS, from:'r1', to:'p1', weight:0.9 },
-      { id:'e2', type:SOGEdgeType.BELONGS_TO, from:'p1', to:'t1', weight:1 },
+      { id:'e1', type:EdgeType.DEPENDS_ON /* ONTOLOGY-MIGRATION: SOGEdgeType.AFFECTS -> DEPENDS_ON + INFORMS (combination). */, from:'r1', to:'p1', weight:0.9 },
+      { id:'e2', type:EdgeType.DEPENDS_ON /* ONTOLOGY-MIGRATION: SOGEdgeType.BELONGS_TO no direct match. Using DEPENDS_ON (syntactic node ID path). */, from:'p1', to:'t1', weight:1 },
     ]);
 
     const adapter = new ReportGraphAdapter(store, 'test-org');
@@ -37,17 +37,17 @@ describe('ReportGraphAdapter → Phase 4 Wiring', () => {
 
     expect(stats.totalNodes).toBe(5);
     expect(stats.totalEdges).toBe(2);
-    expect(stats.byType[SOGNodeType.PERSON]).toBe(2);
-    expect(stats.byType[SOGNodeType.RISK]).toBe(1);
-    expect(stats.byType[SOGNodeType.FINANCIAL]).toBe(1);
+    expect(stats.byType[NodeType.RESOURCE_PERSON]).toBe(2);
+    expect(stats.byType[NodeType.OUTCOME_RISK]).toBe(1);
+    expect(stats.byType[NodeType.OUTCOME_FINANCIAL /* ONTOLOGY-MIGRATION: SOGNodeType.FINANCIAL -> outcome/financial or resource/money? Context-dependent. */]).toBe(1);
     expect(stats.degraded).toBe(false);
   });
 
   it('Given graph with risks, When getRiskSummary, Then risks sorted critical→low for report', () => {
     const store = fakeStore([
-      { id:'r1', type:SOGNodeType.RISK, props:{severity:'critical', riskType:'key_person', name:'Bus Factor=1'}},
-      { id:'r2', type:SOGNodeType.RISK, props:{severity:'high', riskType:'technical_debt', name:'技术债'}},
-      { id:'r3', type:SOGNodeType.RISK, props:{severity:'low', riskType:'market', name:'市场波动'}},
+      { id:'r1', type:NodeType.OUTCOME_RISK, props:{severity:'critical', riskType:'key_person', name:'Bus Factor=1'}},
+      { id:'r2', type:NodeType.OUTCOME_RISK, props:{severity:'high', riskType:'technical_debt', name:'技术债'}},
+      { id:'r3', type:NodeType.OUTCOME_RISK, props:{severity:'low', riskType:'market', name:'市场波动'}},
     ]);
 
     const adapter = new ReportGraphAdapter(store, 'test-org');
@@ -61,12 +61,12 @@ describe('ReportGraphAdapter → Phase 4 Wiring', () => {
 
   it('Given graph with causal paths, When getCausalChains from root cause, Then returns chains for report rendering', () => {
     const store = fakeStore([
-      { id:'root', type:SOGNodeType.RISK, props:{severity:'critical', name:'单点故障'}},
-      { id:'p1', type:SOGNodeType.PERSON, props:{name:'CTO'}},
-      { id:'fin1', type:SOGNodeType.FINANCIAL, props:{amount:50000, financialType:'cost'}},
+      { id:'root', type:NodeType.OUTCOME_RISK, props:{severity:'critical', name:'单点故障'}},
+      { id:'p1', type:NodeType.RESOURCE_PERSON, props:{name:'CTO'}},
+      { id:'fin1', type:NodeType.OUTCOME_FINANCIAL /* ONTOLOGY-MIGRATION: SOGNodeType.FINANCIAL -> outcome/financial or resource/money? Context-dependent. */, props:{amount:50000, financialType:'cost'}},
     ], [
-      { id:'e1', type:SOGEdgeType.AFFECTS, from:'root', to:'p1', weight:0.9 },
-      { id:'e2', type:SOGEdgeType.AFFECTS, from:'root', to:'fin1', weight:0.7 },
+      { id:'e1', type:EdgeType.DEPENDS_ON /* ONTOLOGY-MIGRATION: SOGEdgeType.AFFECTS -> DEPENDS_ON + INFORMS (combination). */, from:'root', to:'p1', weight:0.9 },
+      { id:'e2', type:EdgeType.DEPENDS_ON /* ONTOLOGY-MIGRATION: SOGEdgeType.AFFECTS -> DEPENDS_ON + INFORMS (combination). */, from:'root', to:'fin1', weight:0.7 },
     ]);
 
     const adapter = new ReportGraphAdapter(store, 'test-org');

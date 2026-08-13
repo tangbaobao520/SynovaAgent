@@ -1,4 +1,4 @@
-/**
+﻿/**
  * sentinel/runner.ts — SentinelRunner 调度框架 (P1-4)
  *
  * 桥接 Sentinel 接口与 CronScheduler:
@@ -10,14 +10,93 @@
  * @state: real — 生产可用, 与现有 CronScheduler 集成
  */
 
+import type Database from 'better-sqlite3';
 import type { CronScheduler } from '../cron/scheduler';
 import type { Sentinel, SentinelCheckResult } from './types';
 import type { Evidence } from '../evidence/types';
 import { getSentinelRegistry } from './registry';
 import { getBaselineStore } from './baseline-store';
-import { createLogger } from '../logger';
+import { EscalationEngine, type EscalationRule } from '../services/escalation-engine';
+import { createLogger } from '@synova/logger';
+import { ProactivePush } from "../agent/proactive-push";
+import { dispatchNotification, registerNotificationAdapter } from '../notifications/registry';
+import { ElectronNotificationAdapter } from '../notifications/electron-adapter';
 
 const log = createLogger('sentinel/runner');
+
+// ═══ 信号路由表 (手册 §19.1) ═══
+// 哨兵 → 专家 预定义映射。规则驱动，只有模糊场景丢给 LLM。
+// 信号级别: Low(只记录) / Medium(通知专家) / High(交叉验证) / Emergency(告警FDE)
+
+interface SignalRoute {
+  sentinelId: string;
+  /** 匹配模式: exact(精确ID) | prefix(ID前缀) */
+  match: 'exact' | 'prefix';
+  /** 路由到哪些专家 */
+  experts: string[];
+  /** 触发交叉验证的最低信号级别 (medium=通知不交叉, high/emergency=交叉验证) */
+  crossValidateAt: 'medium' | 'high' | 'emergency';
+}
+
+interface SignalRouteResult {
+  experts: string[];
+  crossValidateAt: string;
+  auxiliaryExperts?: string[];
+}
+
+/** 根据哨兵 ID 查找路由规则：优先级 sentinel.config.route > 维度默认映射 */
+function findSignalRoute(sentinelId: string): SignalRouteResult | undefined {
+  const registry = getSentinelRegistry();
+  const sentinel = registry.get(sentinelId);
+  if (!sentinel) return undefined;
+
+  // 1. 哨兵自身配置了 route（无限扩展：加新哨兵时在 config 中声明路由）
+  const route = (sentinel.config as { route?: { experts?: string[]; crossValidateAt?: string } }).route;
+  if (route?.experts?.length) return { experts: route.experts, crossValidateAt: route.crossValidateAt || 'high' };
+
+  // 2. 从 layer + priority 推导默认路由（技术方案 §7）
+  // 优先使用 manifest 中的 layer 字段，fallback 到旧 category
+  const layer: string = sentinel.config.layer || sentinel.config.category;
+
+  const LAYER_EXPERTS: Record<string, string[]> = {
+    environment: ['strategy'],
+    capital: ['finance'],
+    interface: ['strategy'],
+    technology: ['tech'],
+    alignment: ['org'],
+    internal: ['org'],
+    // layer fallback: 旧 category 兼容
+    risk: ['org', 'finance'],
+    capability: ['org'],
+    collaboration: ['org', 'tech'],
+    health: ['tech'],
+    'data-quality': ['tech'],
+    strategy: ['strategy'],
+  };
+  const experts = LAYER_EXPERTS[layer] || ['org'];
+
+  // 根据哨兵 ID 细化 interface 层路由
+  if (layer === 'interface' || layer === 'interface') {
+    const sid = sentinel.config.id.toLowerCase();
+    if (sid.includes('value-capture') || sid.includes('unit-economics') || sid.includes('ltv')) {
+      return { experts: ['finance'], crossValidateAt: 'high' };
+    }
+    if (sid.includes('niche') || sid.includes('moat') || sid.includes('competitive')) {
+      return { experts: ['strategy'], crossValidateAt: 'high' };
+    }
+    if (sid.includes('network') || sid.includes('transaction-cost') || sid.includes('power')) {
+      return { experts: ['org', 'finance'], crossValidateAt: 'high' };
+    }
+    if (sid.includes('business') || sid.includes('make-or-buy') || sid.includes('time')) {
+      return { experts: ['business_model', 'strategy'], crossValidateAt: 'high' };
+    }
+  }
+
+  const crossValidateAt = sentinel.config.priority === 'P0' ? 'emergency' : sentinel.config.priority === 'P1' ? 'high' : 'medium';
+  // 读取 auxiliaryExperts（manifest 声明的辅助专家）
+  const auxiliaryExperts = sentinel.config.auxiliaryExperts || undefined;
+  return { experts, crossValidateAt, auxiliaryExperts };
+}
 
 // ═══ Types ═══
 
@@ -46,10 +125,22 @@ export class SentinelRunner {
   private records = new Map<string, SentinelRunRecord[]>();
   private cronJobIds = new Map<string, string>();
   private totalRuns = 0;
+  /** G3: 升级链引擎 — 对接人忽略告警后自动升级到上级 */
+  readonly escalationEngine = new EscalationEngine();
+  /** D6: 哨兵通知去重 — 记录每个 sentinelId 的最后推送时间戳 */
+  private notificationSentTimestamps = new Map<string, number>();
+  private readonly NOTIFICATION_DEDUP_MS = 10 * 60 * 1000; // 10分钟去重窗口
+  /** D17: P0 主动推送实例 (注入) */
+  private proactivePush: ProactivePush | null = null;
 
   constructor(scheduler: CronScheduler, db: unknown) {
     this.scheduler = scheduler;
     this.db = db;
+  }
+
+  /** 注入 ProactivePush 实例 (D17) */
+  setProactivePush(push: ProactivePush): void {
+    this.proactivePush = push;
   }
 
   /**
@@ -63,7 +154,7 @@ export class SentinelRunner {
         CREATE TABLE IF NOT EXISTS sentinel_tickets (
           id TEXT PRIMARY KEY,
           signal_id TEXT NOT NULL,
-          severity TEXT NOT NULL CHECK(severity IN ('critical','warning','info')),
+          severity TEXT NOT NULL CHECK(severity IN ('emergency','critical','warning','info')),
           expert_type TEXT NOT NULL,
           diagnosis TEXT,
           suggested_actions TEXT,
@@ -85,6 +176,11 @@ export class SentinelRunner {
     for (const { sentinel, cron } of cronSentinels) {
       this.scheduleSentinel(sentinel, cron);
     }
+
+    // D6: 注册桌面推送通知适配器
+    const electronAdapter = new ElectronNotificationAdapter();
+    registerNotificationAdapter(electronAdapter);
+    log.info('[runner] Electron 桌面推送适配器已注册');
 
     // 信号聚合 — 每小时整点过 5 分运行 (在所有哨兵之后)
     this.scheduler.schedule('SignalAggregator', '5 * * * *', async () => {
@@ -169,6 +265,72 @@ export class SentinelRunner {
       if (criticalOrWarning.length > 0) {
         await this.dispatchSignalsToExperts(criticalOrWarning);
       }
+
+      // ═══ D6: 信号 → 桌面推送通知 (critical/warning 推送到 Electron) ═══
+      for (const signal of criticalOrWarning) {
+        if (this.isNotificationDuplicate(signal)) continue;
+        const sentinelId = signal.sources[0]?.sentinelId || signal.id;
+        await dispatchNotification({
+          id: `notif-${signal.id}-${Date.now()}`,
+          orgId: signal.entities[0] || 'default',
+          title: `[${signal.severity.toUpperCase()}] ${sentinelId}`,
+          description: signal.title || signal.sources[0]?.finding?.description || '',
+          priority: signal.severity === 'critical' ? 'P0' : 'P1',
+          targetSystem: 'electron',
+          metadata: { severity: signal.severity, sentinelId, signalId: signal.id },
+          createdAt: new Date().toISOString(),
+        });
+        this.markNotificationSent(signal);
+      }
+
+      // ═══ D17: P0 主动推送 (critical → Feishu/email/webhook, 含3次重试)
+      const proactivePush = this.proactivePush;
+      if (proactivePush) {
+        for (const signal of criticalOrWarning) {
+          if (signal.severity === "critical") {
+            const src = signal.sources[0]?.finding;
+            const finding = {
+              id: signal.id,
+              sentinelId: signal.sources[0]?.sentinelId || signal.id,
+              sentinelName: signal.sources[0]?.sentinelName || signal.id,
+              severity: "critical" as const,
+              title: signal.title || src?.title || "",
+              description: src?.description,
+              suggestion: src?.suggestion,
+              detectedAt: src?.detectedAt || signal.aggregatedAt || new Date().toISOString(),
+            };
+            proactivePush.onP0Finding(finding).catch((err: Error) => {
+              log.warn({ err, signalId: signal.id }, "P0 主动推送异常 — 不阻断主流程");
+            });
+          }
+        }
+      }
+
+      // G3: 升级链评估 — 对每个聚合信号检查是否需升级
+      for (const signal of signals) {
+        try {
+          // 查找该 signal 的忽略记录（简化: 首次评估无历史，后续由外部触发 recordIgnore）
+          const decision = this.escalationEngine.evaluate({
+            alertId: signal.id,
+            sentinelId: signal.sources?.[0]?.sentinelId ?? signal.id,
+            severity: signal.severity === 'critical' ? 'critical' as const
+              : signal.severity === 'warning' ? 'warning' as const
+              : 'info' as const,
+            firstIgnoredAt: null,
+            cumulativeIgnores: 0,
+            dataImproved: false,
+          });
+          if (decision?.shouldEscalate) {
+            log.warn({
+              signalId: signal.id,
+              escalateTo: decision.escalateTo,
+              reason: decision.reason,
+            }, '[runner] 升级链触发 — 需升级到上级');
+          }
+        } catch (err: unknown) {
+          log.warn({ err, signalId: signal.id }, '[runner] 升级链评估失败 — 非阻断');
+        }
+      }
     } catch (err: unknown) {
       log.error({ err }, '[runner] 信号聚合失败');
     }
@@ -189,13 +351,11 @@ export class SentinelRunner {
       return;
     }
 
-    const EXPERT_TYPE_MAP: Record<string, string> = {
-      org: 'org', strategic: 'strategy', finance: 'finance',
-      tech: 'tech', marketing: 'marketing', action: 'action',
-      business_model: 'business_model',
-    };
+    const { getExpertRegistry } = await import('../l3/expert-registry');
+    const VALID_EXPERTS = new Set(getExpertRegistry().listTypes());
 
     for (const signal of signals) {
+      // 手册 §19.1: 优先用预定义路由表，fallback 到信号自带的 recommendedExperts
       const evidenceItems = signal.sources.map((src: any, i: number) => ({
         id: 'sentinel-' + signal.id + '-' + i,
         source: 'diagnosis' as const,
@@ -208,20 +368,35 @@ export class SentinelRunner {
         sessionId: 'sentinel-' + signal.id,
       }));
 
-      for (const rec of signal.recommendedExperts) {
-        const expertType = EXPERT_TYPE_MAP[rec];
+      // 查找路由表匹配的专家
+      const sourceSentinelId = signal.sources[0]?.sentinelId || '';
+      const route = findSignalRoute(sourceSentinelId);
+      const routedExperts = route?.experts || signal.recommendedExperts;
+
+      // 交叉验证: 信号严重度 >= 路由阈值时，激活相关专家并行推理
+      const severityRank = { info: 0, warning: 1, critical: 2, emergency: 3 };
+      const thresholdRank = { medium: 1, high: 2, emergency: 3 };
+      const shouldCrossValidate = (severityRank[signal.severity as keyof typeof severityRank] || 0)
+        >= (thresholdRank[route?.crossValidateAt as keyof typeof thresholdRank] || 2);
+      // 合并 auxiliaryExperts（manifest 声明的辅助专家）到目标专家列表
+      const auxExperts = route?.auxiliaryExperts || [];
+      const targetExperts = shouldCrossValidate
+        ? [...new Set([...routedExperts, ...auxExperts, ...signal.recommendedExperts])]
+        : [...new Set([...routedExperts, ...auxExperts])];
+
+      for (const rec of targetExperts) {
+        const expertType = VALID_EXPERTS.has(rec) ? rec : null;
         if (!expertType) continue;
 
         try {
-          log.info({ signal: signal.id, expert: expertType, evidenceCount: evidenceItems.length },
+          log.info({ signal: signal.id, expert: expertType, evidenceCount: evidenceItems.length, crossValidate: shouldCrossValidate },
             '[runner] 信号路由专家 → 启动推理');
           const report = await dispatcher.runExpert(
             expertType as 'strategy' | 'org' | 'finance' | 'tech' | 'marketing' | 'action',
             evidenceItems as unknown as Evidence[],
           );
           if (report) {
-            log.info({ signalId: signal.id, expert: expertType, findings: (report as unknown as Record<string, unknown> | null)?.findings ? (Array.isArray((report as unknown as Record<string, unknown>).findings) ? ((report as unknown as Record<string, unknown>).findings as Array<unknown>).length : 0) : 0 },
-              '[runner] 专家诊断完成');
+            log.info({ signalId: signal.id, expert: expertType }, '[runner] 专家诊断完成');
             this.storeExpertReport(signal.id, expertType, report, signal.severity);
           }
         } catch (expertErr: unknown) {
@@ -239,11 +414,11 @@ export class SentinelRunner {
     this.expertReports.push({ signalId, expertType, report, storedAt: new Date().toISOString() });
     if (this.expertReports.length > 50) this.expertReports.shift();
 
-    // L3 闭环: critical 信号自动创建工单
-    if (severity === 'critical') {
+    // L3 闭环: emergency/critical 信号自动创建工单
+    if (severity === 'emergency' || severity === 'critical') {
       try {
         const ticketId = `ticket-${signalId}-${expertType}`;
-        const r = report as Record<string, unknown>;
+        const r = report as { suggestedActions?: string[] };
         (this.db as { prepare(sql: string): { run(...args: unknown[]): void } }).prepare(
           `INSERT OR REPLACE INTO sentinel_tickets (id, signal_id, severity, expert_type, diagnosis, suggested_actions, status, created_at)
            VALUES (?, ?, ?, ?, ?, ?, 'open', datetime('now'))`
@@ -267,6 +442,167 @@ export class SentinelRunner {
     return this.records;
   }
 
+  // ═══ Phase P1-1: L3WriteAPI (L0 进化层接口) ═══
+
+  /**
+   * 返回 L3WriteAPI 实现，供 L0 进化层调用。
+   * 每个方法独立 try/catch，降级安全。
+   */
+  getL0API(): import('@synova/evolution').L3WriteAPI {
+    const self = this;
+    return {
+      async closeTicket(orgId: string, sentinelId: string): Promise<number> {
+        try {
+          const result = (self.db as { prepare(sql: string): { run(...args: unknown[]): { changes: number } } }).prepare(
+            `UPDATE sentinel_tickets SET status = 'resolved', resolved_at = datetime('now')
+             WHERE signal_id LIKE ? AND status = 'open'`
+          ).run(`%${sentinelId}%`);
+          if (result.changes > 0) {
+            log.info({ orgId, sentinelId, closed: result.changes }, '[L3WriteAPI] 工单已关闭');
+          }
+          return result.changes;
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          log.warn({ err: msg, orgId, sentinelId }, '[L3WriteAPI] closeTicket 失败 — degraded');
+          return 0;
+        }
+      },
+
+      async getThreshold(orgId: string, sentinelId: string): Promise<{ warning: number; critical: number } | null> {
+        try {
+          // 1. 先查 AgentMemoryStore 中的自定义阈值
+          const { getAgentMemoryStore } = await import('../l4/agent-memory-store');
+          const { getDatabase } = await import('../init/engine-context');
+          const db = getDatabase();
+          const memStore = getAgentMemoryStore(db);
+          const stored = memStore.recall(orgId, `threshold_${sentinelId}`);
+          if (stored) {
+            const parsed = JSON.parse(stored.value) as { newThreshold?: { warning: number; critical: number } };
+            if (parsed.newThreshold) return parsed.newThreshold;
+          }
+        } catch {
+          log.warn({ sentinelId }, 'getThreshold memory store 失败 — fallback to manifest');
+        }
+
+        // 2. Fallback 到 SentinelManifest 默认阈值
+        try {
+          const { loadSentinels } = await import('./sentinel-loader');
+          const { sentinels } = loadSentinels();
+          const sentinel = sentinels.find((s: { manifest: { name: string } }) => s.manifest.name === sentinelId || s.manifest.name === sentinelId.replace('sentinel-', ''));
+          if (sentinel?.manifest.thresholds) {
+            const key = Object.keys(sentinel.manifest.thresholds)[0];
+            if (key) return sentinel.manifest.thresholds[key];
+          }
+        } catch {
+          log.warn({ sentinelId }, 'getThreshold manifest fallback 失败 — 使用默认值');
+        }
+
+        // 3. 通用默认值
+        return { warning: 0.5, critical: 1.0 };
+      },
+
+      async updateThreshold(orgId: string, sentinelId: string, threshold: { warning?: number; critical?: number }): Promise<void> {
+        try {
+          const existing = await this.getThreshold(orgId, sentinelId);
+          const { getAgentMemoryStore } = await import('../l4/agent-memory-store');
+          const { getDatabase } = await import('../init/engine-context');
+          const db = getDatabase();
+          const memStore = getAgentMemoryStore(db);
+          memStore.remember({
+            orgId,
+            key: `threshold_${sentinelId}`,
+            value: JSON.stringify({
+              sentinelId,
+              newThreshold: {
+                warning: threshold.warning ?? existing?.warning ?? 0.5,
+                critical: threshold.critical ?? existing?.critical ?? 1.0,
+              },
+              adjustedAt: new Date().toISOString(),
+            }),
+            type: 'enterprise_fact',
+            confidence: 0.8,
+            source: 'l3_write_api',
+            tags: ['threshold_adjustment', sentinelId],
+            expiresAt: null,
+          });
+          log.info({ orgId, sentinelId, threshold }, '[L3WriteAPI] 阈值已更新');
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          log.warn({ err: msg, orgId, sentinelId }, '[L3WriteAPI] updateThreshold 失败 — degraded');
+        }
+      },
+
+      async getSentinelStats(industry: string): Promise<import('@synova/evolution').PerSentinelStats[]> {
+        try {
+          const { getAgentMemoryStore } = await import('../l4/agent-memory-store');
+          const { getDatabase } = await import('../init/engine-context');
+          const db = getDatabase();
+          const memStore = getAgentMemoryStore(db);
+
+          // 按 industry:{name} 标签查询所有组织的哨兵得分
+          const memories = memStore.list({
+            orgId: 'global',
+            tags: [`industry:${industry}`],
+            limit: 200,
+          });
+
+          // 聚合: 按 sentinelId 分组统计
+          const sentinelMap = new Map<string, number[]>();
+          for (const mem of memories) {
+            try {
+              const data = JSON.parse(mem.value) as { sentinelId?: string; score?: number };
+              if (data.sentinelId && typeof data.score === 'number') {
+                const list = sentinelMap.get(data.sentinelId) || [];
+                list.push(data.score);
+                sentinelMap.set(data.sentinelId, list);
+              }
+            } catch {
+              log.debug({ sentinelId: (mem?.value ? 'parse_failed' : 'no_value') }, '跳过损坏的哨兵分数数据');
+            }
+          }
+
+          const stats: import('@synova/evolution').PerSentinelStats[] = [];
+          for (const [sentinelId, values] of sentinelMap) {
+            const sorted = [...values].sort((a, b) => a - b);
+            const n = sorted.length;
+            stats.push({
+              sentinelId,
+              name: sentinelId,
+              orgCount: n,
+              values: sorted,
+              median: n > 0 ? sorted[Math.floor(n / 2)] : 0,
+              p25: n > 0 ? sorted[Math.floor(n * 0.25)] : 0,
+              p75: n > 0 ? sorted[Math.floor(n * 0.75)] : 0,
+            });
+          }
+
+          return stats;
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          log.warn({ err: msg, industry }, '[L3WriteAPI] getSentinelStats 失败 — degraded');
+          return [];
+        }
+      },
+    };
+  }
+
+  // ═══ D6: 通知去重 ═══
+
+  private isNotificationDuplicate(signal: { sources: Array<{ sentinelId: string }> }): boolean {
+    const sentinelId = signal.sources[0]?.sentinelId;
+    if (!sentinelId) return false;
+    const lastSent = this.notificationSentTimestamps.get(sentinelId);
+    if (!lastSent) return false;
+    return Date.now() - lastSent < this.NOTIFICATION_DEDUP_MS;
+  }
+
+  private markNotificationSent(signal: { sources: Array<{ sentinelId: string }> }): void {
+    const sentinelId = signal.sources[0]?.sentinelId;
+    if (sentinelId) {
+      this.notificationSentTimestamps.set(sentinelId, Date.now());
+    }
+  }
+
   // ═══ Private ═══
 
   private scheduleSentinel(sentinel: Sentinel, cron: string): void {
@@ -285,14 +621,30 @@ export class SentinelRunner {
   private async executeSentinel(sentinel: Sentinel): Promise<SentinelCheckResult> {
     const startTime = Date.now();
     try {
-      // 构造上下文 — 哨兵通过 context.db 访问数据库
+      // V4.2.9: 构造上下文 — 包装 raw SQLite 为 GraphStore 供哨兵 queryNodes()
+      let graphCtx: unknown;
+      if (typeof this.db === 'object' && this.db !== null && 'queryNodes' in this.db) {
+        graphCtx = this.db;
+      } else {
+        try {
+          const { SqliteGraphStore } = await import('../adapters/sqlite-graph-store');
+          graphCtx = new SqliteGraphStore(this.db as Database.Database);
+        } catch {
+          log.warn({ sentinelId: sentinel?.config?.id }, 'GraphStore 创建失败 — 降级至原始 db');
+          graphCtx = this.db;
+        }
+      }
       const ctx = {
-        db: this.db,
+        db: graphCtx,
         now: new Date(),
         registry: getSentinelRegistry(),
       };
 
       const result = await sentinel.check(ctx);
+
+      // D37: 冲突检测注入 — 旁路增强（不阻断，不改变现有 aggregate 行为）
+      this.injectConflictFindings(result, graphCtx);
+
       const duration = Date.now() - startTime;
       result.durationMs = duration;
 
@@ -363,6 +715,45 @@ export class SentinelRunner {
         error: (err as Error).message || '未知错误',
         degraded: true,
       };
+    }
+  }
+
+  /**
+   * D37: 冲突检测注入 — 旁路增强。
+   * 对哨兵发现中关联的节点检测数据冲突，有冲突则追加 warning 发现。
+   * 不阻断执行，不修改现有 aggregate 行为。
+   */
+  private injectConflictFindings(result: SentinelCheckResult, graphCtx: unknown): void {
+    for (const finding of result.findings) {
+      if (!finding.relatedNodeId) continue;
+      try {
+        if (typeof graphCtx !== 'object' || graphCtx === null) continue;
+        const store = graphCtx as Record<string, unknown>;
+        if (typeof store.getNode !== 'function') continue;
+        const node = (store.getNode as (id: string, graph?: string) => unknown)(finding.relatedNodeId);
+        if (!node) continue;
+        const nodeObj = node as Record<string, unknown>;
+        const props = (nodeObj.props || {}) as Record<string, unknown>;
+        if (props.has_conflict === true) {
+          const versions = Array.isArray(props.data_versions)
+            ? (props.data_versions as unknown[]).length
+            : 0;
+          result.findings.push({
+            id: `conflict-${finding.relatedNodeId}-${Date.now()}`,
+            severity: 'warning',
+            title: `数据冲突: 节点 ${finding.relatedNodeId} 存在 ${versions} 个版本`,
+            description: '节点数据存在冲突版本，可能影响分析准确性',
+            evidence: [],
+            suggestion: '审查冲突数据版本并决定保留哪个',
+            detectedAt: new Date().toISOString(),
+            relatedNodeId: finding.relatedNodeId,
+          });
+          log.warn({ relatedNodeId: finding.relatedNodeId, versions },
+            '冲突检测: 节点存在数据冲突');
+        }
+      } catch {
+        log.debug({ relatedNodeId: finding.relatedNodeId }, '冲突检测失败 — 非阻断');
+      }
     }
   }
 }

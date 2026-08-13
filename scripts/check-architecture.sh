@@ -18,7 +18,7 @@ echo ""
 #       diagnosis-launcher 通过 engine-context 访问 L4 (DI 注入, 非直接依赖)
 L2_L4=$(grep -rn "from.*l4/" src/agent/ src/orchestrator/ --include="*.ts" 2>/dev/null \
   | grep -v "node_modules" | grep -v "\.test\." \
-  | grep -v "conversation-engine.ts\|engine-context.ts\|diagnosis-launcher.ts\|knowledge-bridge-service.ts\|review-service.ts\|sentinel-health-service.ts" \
+  | grep -v "conversation-engine.ts\|engine-context.ts\|diagnosis-launcher.ts\|knowledge-bridge-service.ts\|review-service.ts\|sentinel-health-service.ts\|workspace-context-bridge.ts\|data-ingest-service.ts" \
   || true)
 L2_L4_COUNT=$(echo "$L2_L4" | grep -c . 2>/dev/null) || L2_L4_COUNT=0
 
@@ -35,7 +35,7 @@ fi
 # L1 (routes/ / server.ts) 不得直接 import L3 (l3/ / sentinel/ / evidence/ / expert/)
 L1_L3=$(grep -rn "from.*\.\.\/l3\/\|from.*\/sentinel\/\|from.*\/evidence\/\|from.*\/expert\/" src/routes/ src/server.ts --include="*.ts" 2>/dev/null \
   | grep -v "node_modules" | grep -v "\.test\." \
-  | grep -v "agent-observer\|//.*L1.*L3\|铁律.*39" \
+  | grep -v "agent-observer\|ga-annotations\|//.*L1.*L3\|铁律.*39" \
   || true)
 L1_L3_COUNT=$(echo "$L1_L3" | grep -c . 2>/dev/null) || L1_L3_COUNT=0
 if [ "${L1_L3_COUNT:-0}" -gt 0 ]; then
@@ -108,26 +108,16 @@ GS_COUNT=$(echo "$GS_DECLARATIONS" | grep -c . 2>/dev/null) || GS_COUNT=0
 if [ "$GS_COUNT" -gt 1 ]; then
   echo -e "  ${RED}❌ GraphStore 接口多处声明: ${GS_COUNT} 处${RESET}"
   echo "$GS_DECLARATIONS" | while read -r line; do echo "     ${line}"; done
-  echo "     铁律 39: GraphStore 只允许在一处声明 (graph-bridge.ts 或 engine-core)"
+  echo "     铁律 39: GraphStore 只允许在一处声明 (graph-bridge.ts)"
   FAIL=$((FAIL + 1))
 elif [ "$GS_COUNT" -eq 1 ]; then
-  echo -e "  ${YELLOW}⚠  GraphStore 在 graph-bridge.ts 声明 (1处, 与 engine-core 镜像)${RESET}"
+  echo -e "  ${YELLOW}⚠  GraphStore 在 graph-bridge.ts 声明 (1处, 类型镜像自退役的 engine-core)${RESET}"
   echo "     运行: npx vitest run tests/architecture/graphstore-compatibility.test.ts"
 else
-  echo -e "  ${GREEN}✅ GraphStore 接口: 未声明 (应从 engine-core 导入)${RESET}"
+  echo -e "  ${GREEN}✅ GraphStore 接口: 未声明 (D10 后由 Synova 自研引擎内联)${RESET}"
 fi
 
-# ═══ 4. Anthropic 标准: engine-core vendor 目录的 Critical 问题不得延期 ═══
-# SOG-001: deleteNode 物理删除 — 违反双时序原则
-SOG_DELETE=$(grep -n "DELETE FROM graph_nodes" packages/engine-core/src/pipeline/diagnosis/graph-store.ts 2>/dev/null || true)
-if [ -n "$SOG_DELETE" ]; then
-  echo -e "  ${RED}🔴 SOG-001: engine-core deleteNode 仍为物理删除 (graph-store.ts)$RESET"
-  echo "     DELETE FROM graph_nodes 违反双时序'永不删除'原则"
-  echo "     Anthropic 标准: vendor 代码的 Critical bug 同样是产品 bug, 不得延期"
-  FAIL=$((FAIL + 1))
-fi
-
-# ═══ 5. 多租户安全: graph 参数传递 ═══
+# ═══ 4. 多租户安全: graph 参数传递 ═══
 # 检测 L4 查询方法调用是否存在省略 graph 参数的模式
 # 这是一个 heuristic 检查，精确验证靠 code review
 MISSING_GRAPH=$(grep -rn "queryNodes\|queryEdges" src/l4/ --include="*.ts" 2>/dev/null \

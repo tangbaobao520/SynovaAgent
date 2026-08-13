@@ -1,0 +1,24 @@
+{
+  "$id": "edge/brand_builds",
+  "label": "BRAND_BUILDS",
+  "tags": ["causal", "growth", "marketing", "lagged"],
+  "allowedFrom": ["activity/acquisition", "activity/innovation", "activity/coordination"],
+  "allowedTo": ["outcome/financial", "outcome/market"],
+  "requiredProps": ["lag_months", "brand_investment"],
+  "optionalProps": {
+    "awareness_lift": "number (0-1) — 对应brand.json的awareness字段的变化率",
+    "premium_ratio_change": "number — 对应brand.json的premium_ratio字段的变化",
+    "repeat_purchase_lift": "number (0-1) — 对应brand.json的repeat_purchase_rate变化",
+    "nps_change": "number — 对应brand.json的nps字段变化",
+    "attribution_model": "string — 归因模型(first_touch|last_touch|time_decay|shapley)",
+    "confidence_interval": "number (0-1) — 因果推断置信区间"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "revenue_lift = brand_investment * f(awareness_lift, premium_ratio_change, repeat_purchase_lift, nps_change, lag_months)",
+  "diagnostic_signals": {
+    "brand_decay": "lag_months > 12 AND awareness_lift < 0 AND repeat_purchase_lift < 0 — 品牌资产衰减",
+    "diminishing_returns": "brand_investment increasing BUT (premium_ratio_change + repeat_purchase_lift) flatlining",
+    "under_investment": "premium_ratio > 0.2 AND brand_investment/revenue < industry_benchmark"
+  },
+  "description": "品牌建设活动→长期营收转化。6-18个月滞后期。学术基础：Aaker(1991)品牌资产理论、Keller(1993)CBBE模型。数据映射：awareness_lift←brand.json.awareness变化率, premium_ratio_change←brand.json.premium_ratio变化, repeat_purchase_lift←brand.json.repeat_purchase_rate变化, nps_change←brand.json.nps变化。"
+}

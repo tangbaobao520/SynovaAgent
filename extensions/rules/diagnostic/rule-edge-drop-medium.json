@@ -1,0 +1,13 @@
+{
+  "$id": "rule/diagnostic/edge-drop-medium",
+  "name": "边权重中度下降",
+  "type": "rule",
+  "domain": "organizational",
+  "category": "graph_alert",
+  "severity": "medium",
+  "description": "边权重中度下降，需关注但不紧急",
+  "condition": { "triggerOn": "edge_weight_low", "minSeverity": "medium" },
+  "action": { "title": "关注协作强度变化", "priority": "P2", "assigneeRole": "团队负责人", "estimatedHours": 1 },
+  "cooldownMs": 86400000,
+  "metadata": { "source": "engine_calibrated", "confidence": 0.8, "status": "active" }
+}

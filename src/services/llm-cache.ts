@@ -8,7 +8,7 @@
  * 不缓存: temperature > 0.5 的请求 (创造性生成不应缓存)
  */
 
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import * as crypto from 'crypto';
 
 const log = createLogger('services/llm-cache');

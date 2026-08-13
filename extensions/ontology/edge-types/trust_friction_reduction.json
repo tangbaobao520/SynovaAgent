@@ -1,0 +1,16 @@
+{
+  "$id": "edge/trust_friction_reduction",
+  "label": "TRUST_FRICTION_REDUCTION",
+  "tags": ["causal", "second_order", "stage_2"],
+  "allowedFrom": ["virtual/trust"],
+  "allowedTo": ["pool/activity"],
+  "requiredProps": ["trust_score", "friction_reduction_factor"],
+  "optionalProps": {
+    "psychological_safety_index": "number (0-1) — 心理安全指数",
+    "collaboration_efficiency_gain": "number (0-1) — 协作效率增益",
+    "trust_building_velocity": "number — 信任建立速度(月)"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "信任降低协作摩擦(二阶)——组织信任水平降低人才部署和信息流的摩擦成本。"
+}

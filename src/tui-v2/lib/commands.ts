@@ -15,6 +15,8 @@ import { SessionStore } from '../../store/session-store';
 import { getCostTracker, formatCost } from '../../services/llm-cost';
 import { checkForUpdates, formatUpdateMessage, getCurrentVersion, type UpdateCheckResult } from '../../services/update-checker';
 import type Database from 'better-sqlite3';
+import { createLogger } from '@synova/logger';
+const log = createLogger('src.tui-v2.lib.commands');
 
 export interface CommandContext {
   sessionId: string;
@@ -89,6 +91,7 @@ export async function handleCommand(input: string, ctx: CommandContext): Promise
         ctx.addSystemMessage('⚠️ 无法获取余额。请确认 LLM_API_KEY 已配置。');
       }
     } catch (err: any) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "动态模块加载失败");
       ctx.addAlertMessage(`余额查询失败: ${err.message}`);
     }
     ctx.setStatus('准备就绪');
@@ -130,6 +133,7 @@ export async function handleCommand(input: string, ctx: CommandContext): Promise
       if (msg) ctx.addSystemMessage(msg);
       else ctx.addSystemMessage(`✅ 已是最新版本 (${result.currentVersion})`);
     }).catch((err: Error) => {
+      log.warn({ err }, '更新检查失败 — 已提示用户');
       ctx.addAlertMessage(`更新检查失败: ${err.message}`);
     });
     return { handled: true };
@@ -151,6 +155,7 @@ export async function handleCommand(input: string, ctx: CommandContext): Promise
           (result.summary ? `\n预览: ${result.summary.slice(0, 150)}...` : '')
         );
       } catch (err: any) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "动态模块加载失败");
         ctx.addAlertMessage(`文档解析失败: ${err.message}`);
       }
     }
@@ -266,6 +271,7 @@ export async function tryConfigureKey(rawKey: string, ctx: CommandContext): Prom
       return false;
     }
   } catch (err: any) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "DeepSeek 配置失败");
     ctx.addAlertMessage(`❌ 配置失败: ${err.message}\n请重新输入：`);
     return false;
   }

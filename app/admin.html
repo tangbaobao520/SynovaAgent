@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Synova — Admin Workbench</title>
+  <link rel="stylesheet" href="/app/css/app.css">
+  <link rel="stylesheet" href="/app/css/admin.css">
+</head>
+<body>
+  <header id="synova-shell"></header>
+  <div id="toast-container"></div>
+
+  <div class="page-content">
+    <div class="admin-header">
+      <h1>Admin Workbench</h1>
+    </div>
+
+    <!-- D246: Onboarding Wizard -->
+    <div id="onboarding-wizard" class="card" style="margin-bottom:24px;display:none">
+      <h2 class="card-title" style="display:flex;align-items:center;gap:8px">
+        Getting Started
+        <span id="onboarding-progress" style="font-size:12px;font-weight:400;color:var(--text-secondary)"></span>
+      </h2>
+      <div id="onboarding-steps"></div>
+      <div id="onboarding-content" style="margin-top:16px"></div>
+    </div>
+
+    <section class="admin-grid">
+      <!-- Panel 1: Enterprise Status -->
+      <div class="card">
+        <h2 class="card-title">Enterprise Status</h2>
+        <div id="enterprise-status" class="skeleton-pulse" style="height:100px;"></div>
+      </div>
+
+      <!-- Panel 2: Members -->
+      <div class="card">
+        <h2 class="card-title">Members</h2>
+        <div id="members-panel" class="skeleton-pulse" style="height:150px;"></div>
+        <form id="invite-form" class="inline-form">
+          <input type="email" id="invite-email" placeholder="Email" required>
+          <select id="invite-role"><option value="staff">Staff</option><option value="manager">Manager</option></select>
+          <button type="submit" class="btn-primary" style="width:auto;padding:6px 14px;">Invite</button>
+        </form>
+      </div>
+
+      <!-- Panel 3: IMA Binding -->
+      <div class="card">
+        <h2 class="card-title">IMA Integration</h2>
+        <div id="ima-panel" class="skeleton-pulse" style="height:80px;"></div>
+        <form id="ima-bind-form" class="inline-form">
+          <input type="password" id="ima-api-key" placeholder="API Key" required minlength="8">
+          <button type="submit" class="btn-primary" style="width:auto;padding:6px 14px;">Bind</button>
+        </form>
+      </div>
+
+      <!-- Panel 4: GA Access -->
+      <div class="card">
+        <h2 class="card-title">GA Temporary Access</h2>
+        <p class="text-secondary">Generate 7-day access tokens for Growth Architects.</p>
+        <button id="btn-generate-ga" class="btn-primary" style="width:auto;padding:8px 18px;margin:8px 0;">Generate Token</button>
+        <div id="ga-panel"></div>
+      </div>
+    </section>
+
+    <!-- D245: 3 个新面板 -->
+    <section class="admin-grid" style="margin-top:16px">
+      <!-- Panel 5: Role Templates -->
+      <div class="card">
+        <h2 class="card-title">Role Templates</h2>
+        <div id="role-templates" class="skeleton-pulse" style="height:120px;"></div>
+        <form id="role-template-form" class="inline-form" style="margin-top:10px">
+          <input type="text" id="template-name" placeholder="Template name" required>
+          <input type="text" id="template-permissions" placeholder="Permissions (comma-sep)" required>
+          <button type="submit" class="btn-primary" style="width:auto;padding:6px 14px;">Create</button>
+        </form>
+      </div>
+
+      <!-- Panel 6: Knowledge Approval -->
+      <div class="card">
+        <h2 class="card-title">Knowledge Approval</h2>
+        <div id="knowledge-pending" class="skeleton-pulse" style="height:120px;"></div>
+      </div>
+
+      <!-- Panel 7: Federated Knowledge -->
+      <div class="card">
+        <h2 class="card-title">Federated Knowledge</h2>
+        <div id="federated-panel">
+          <div style="display:flex;gap:8px;margin-bottom:8px">
+            <input type="text" id="fed-knowledge-text" placeholder="Knowledge text to share" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
+            <button id="btn-fed-mark-shareable" class="btn-primary" style="width:auto;padding:6px 14px;">Mark Shareable</button>
+          </div>
+          <div id="fed-pending-list" class="skeleton-pulse" style="height:80px;"></div>
+          <div id="fed-degraded-list" style="margin-top:8px;"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="/app/js/auth.js"></script>
+  <script src="/app/js/api-client.js"></script>
+  <script src="/app/js/shell.js"></script>
+  <script src="/app/js/admin.js"></script>
+</body>
+</html>

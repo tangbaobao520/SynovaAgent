@@ -1,0 +1,34 @@
+{
+  "id": "asymmetric_risk_weighting",
+  "name": "非对称风险加权",
+  "category": "economics",
+  "coreInsight": "对不可逆操作施加比可逆操作更高的决策阈值。切换成本越高、回滚越困难，决策门槛就应越高。",
+  "applicableDecisionTypes": [
+    "库存决策",
+    "供应商切换",
+    "定价策略",
+    "合同条款谈判"
+  ],
+  "constraintPatterns": [
+    "不可逆",
+    "高风险",
+    "切换",
+    "变更",
+    "决策阈值",
+    "回滚",
+    "退出",
+    "终止",
+    "保守"
+  ],
+  "applicableRoles": [
+    "风险管理",
+    "决策分析",
+    "变更管理",
+    "谈判代表"
+  ],
+  "limitations": [
+    "风险加权的系数难以精确标定",
+    "过度谨慎可能导致错失可逆机会"
+  ],
+  "$id": "framework/economics/asymmetric_risk_weighting"
+}

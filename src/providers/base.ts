@@ -14,6 +14,35 @@ import type {
   LLMProvider, LLMMessage, ChatOptions, ChatResult,
   StreamCallback, HealthCheckResult, ProviderConfig, ChatCompletionResponse,
 } from './types';
+import { CircuitBreaker } from '../llm/circuit-breaker';
+import { createLogger } from '@synova/logger';
+import { PromptInjectionDetector, PolicyDeniedError } from '../security/prompt-injection-detector';
+import { AuditService } from '../services/audit-service';
+
+const log = createLogger('providers/base');
+
+/** D43: 在 LLM 调用前检查用户消息是否包含提示注入攻击 */
+function checkPromptInjection(messages: LLMMessage[]): void {
+  if (!messages || messages.length === 0) return;
+  const detector = new PromptInjectionDetector();
+  for (const msg of messages) {
+    if (!msg.content) continue;
+    const result = detector.detect(msg.content);
+    if (result.injectionDetected) {
+      log.warn({ patterns: result.patterns, severity: result.severity }, '检测到提示注入攻击 — 拒绝请求');
+      AuditService.log({
+        orgId: 'system',
+        actorId: 'prompt_injection_detector',
+        actorRole: 'system',
+        action: 'prompt_injection_blocked',
+        targetType: 'llm_request',
+        targetId: `msg_${Date.now()}`,
+        newValue: JSON.stringify({ patterns: result.patterns, severity: result.severity }),
+      });
+      throw new PolicyDeniedError({ reason: `Prompt injection detected: ${result.patterns.join(', ')}` });
+    }
+  }
+}
 
 // ═══ 子类需实现的配置接口 ═══
 
@@ -48,9 +77,15 @@ export function createOpenAICompatibleProvider(cfg: ProviderAdapterConfig): LLMP
   const modelsPath = cfg.modelsPath ?? '/models';
   const healthTimeout = cfg.healthTimeoutMs ?? 10_000;
 
+  // 熔断器实例 — D5: 统一LLM调用保护 (threshold=5, cooldown=30s)
+  const breaker = new CircuitBreaker({ threshold: 5, cooldownMs: 30_000 });
+
   /** 共享 HTTP POST 请求 — 消除 24 行重复 (块 B) */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async function makeRequest(messages: LLMMessage[] | LLMMessage[], opts?: ChatOptions, stream = false) {
+    if (breaker.isOpen()) {
+      throw new Error(`${cfg.name} CircuitBreaker OPEN — too many failures`);
+    }
     if (cfg.apiKey !== undefined && !cfg.apiKey) {
       throw new Error(`${cfg.name} API Key 未配置`);
     }
@@ -120,6 +155,7 @@ export function createOpenAICompatibleProvider(cfg: ProviderAdapterConfig): LLMP
       if (res.ok) return { healthy: true, latencyMs: lat };
       return { healthy: false, error: `${cfg.name} 返回 ${res.status}`, latencyMs: lat };
     } catch (err: unknown) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "网络请求失败");
       const msg = err instanceof Error ? err.message : String(err);
       return { healthy: false, error: `${cfg.name}: ${msg}`, latencyMs: Date.now() - start };
     }
@@ -130,27 +166,42 @@ export function createOpenAICompatibleProvider(cfg: ProviderAdapterConfig): LLMP
     baseUrl,
 
     async chat(messages, opts) {
-      const msgs = cfg.beforeSend ? cfg.beforeSend(messages) : messages;
-      const res = await makeRequest(msgs, opts);
-      await checkResponse(res, 'API 错误');
-      const data = await res.json() as ChatCompletionResponse;
-      const content = data?.choices?.[0]?.message?.content;
-      if (!content) throw new Error(`${cfg.name} 返回缺少 content`);
-      const extra = cfg.afterResponse ? cfg.afterResponse(data, opts) : {};
-      return { content, model: data.model || model, ...extra };
+      checkPromptInjection(messages); // D43: 提示注入检测 — 在 sanitize 前对原始消息检测
+      try {
+        const msgs = cfg.beforeSend ? cfg.beforeSend(messages) : messages;
+        const res = await makeRequest(msgs, opts);
+        await checkResponse(res, 'API 错误');
+        const data = await res.json() as ChatCompletionResponse;
+        const content = data?.choices?.[0]?.message?.content;
+        if (!content) throw new Error(`${cfg.name} 返回缺少 content`);
+        const extra = cfg.afterResponse ? cfg.afterResponse(data, opts) : {};
+        breaker.recordSuccess();
+        return { content, model: data.model || model, ...extra };
+      } catch (err) {
+        breaker.recordFailure();
+        throw err;
+      }
     },
 
     async stream(messages, cb, opts) {
       try {
+        checkPromptInjection(messages); // D43: 提示注入检测 — 在 LLM 调用前对原始消息检测
         const res = await makeRequest(messages, opts, true);
         if (!res.ok) {
-          await checkResponse(res, '流式错误').catch((err: Error) => { cb.onError?.(err); });
+          await checkResponse(res, '流式错误').catch((err: Error) => {
+            log.warn({ err }, '流式响应错误检查失败 — 转发 onError 回调');
+            cb.onError?.(err);
+          });
+          breaker.recordFailure();
           return;
         }
         await handleStream(res, cb, opts?.model || model);
+        breaker.recordSuccess();
       } catch (err: unknown) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "提示注入检测");
         const e = err instanceof Error ? err : new Error(String(err));
         cb.onError?.(cfg.onError ? cfg.onError(e, 'stream') : e);
+        breaker.recordFailure();
       }
     },
 

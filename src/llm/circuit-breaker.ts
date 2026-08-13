@@ -10,7 +10,7 @@
  * 参考: OpenClaw tool-loop-detection.ts
  *   global_circuit_breaker_threshold = 30
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('llm/circuit-breaker');
 

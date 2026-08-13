@@ -1,0 +1,32 @@
+{
+  "id": "premortem",
+  "name": "事前验尸",
+  "category": "psychology",
+  "coreInsight": "在项目开始前假设项目已经失败，然后倒推失败原因。这种\"未来回溯\"能暴露常规规划中忽略的风险。",
+  "applicableDecisionTypes": [
+    "项目规划",
+    "供应商选择",
+    "市场进入"
+  ],
+  "constraintPatterns": [
+    "风险",
+    "项目",
+    "规划",
+    "失败",
+    "预防",
+    "预案",
+    "危机",
+    "应急"
+  ],
+  "applicableRoles": [
+    "项目规划",
+    "风险控制",
+    "应急预案",
+    "质量保障"
+  ],
+  "limitations": [
+    "不能替代正面规划",
+    "最明显的失败原因不一定最可能"
+  ],
+  "$id": "framework/psychology/premortem"
+}

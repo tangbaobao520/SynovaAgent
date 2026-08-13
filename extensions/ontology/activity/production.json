@@ -1,0 +1,1 @@
+{"$id":"activity/production","label":"PRODUCTION","tags":["activity","operational","core"],"requiredProps":["name"],"optionalProps":{"output_type":"string","production_mode":"string","scale_elasticity":"number","quality_standard":"string","cycle_time_hours":"number","capacity_utilization":"number","bottleneck_resource_id":"string"},"description":"生产/交付活动。将资源转化为产品或服务的核心业务流程。"}

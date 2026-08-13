@@ -15,10 +15,22 @@
 import { Router, type Request, type Response } from 'express';
 import { createProvider } from '../providers';
 import { loadConfig } from '../config';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import { getDatabase } from '../init/engine-context';
-import type { ExtractionResult } from '../../packages/engine-core/src/pipeline/diagnosis/doc-extractor';
-import type { L2Node } from '../../packages/engine-core/src/pipeline/diagnosis/entity-resolver-l2';
+// V4.2.2: doc-extractor 桥接已删除（铁律46）
+export interface ExtractionResult {
+  documentId: string;
+  extractedAt: string;
+  dimensions: Array<{ dimensionKey: string; dimensionLabel: string; content: string; sufficient: boolean }>;
+  coveredCount: number;
+  totalCount: number;
+  insufficientDimensions: string[];
+  content?: string;
+  metadata?: Record<string, unknown>;
+}
+
+// 本地类型镜像 — 避免 L1 静态跨层依赖 (铁律 39, 审计 2026-06-20)
+interface L2EntityNode { id: string; type: string; name: string; props: Record<string, unknown>; confidence: number }
 
 const log = createLogger('routes/diagnosis-upload');
 const router = Router();
@@ -29,6 +41,81 @@ interface DiagnosisJob {
   createdAt: string; completedAt?: string; report?: string; error?: string;
 }
 const jobStore = new Map<string, DiagnosisJob>();
+
+// P0-3: FDE 采访文档上传界面
+router.get('/upload', (_req: Request, res: Response) => {
+  const html = `<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Synova · 文档诊断</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='28' font-size='28'>🔍</text></svg>">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,"Microsoft YaHei",sans-serif;background:#0d1117;color:#c9d1d9;display:flex;justify-content:center;align-items:center;min-height:100vh}
+.card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:2rem;max-width:680px;width:90%}
+h1{font-size:1.3rem;color:#58a6ff;margin-bottom:.5rem}
+.sub{color:#8b949e;font-size:.85rem;margin-bottom:1.5rem}
+label{display:block;font-size:.9rem;margin-bottom:.4rem}
+input,textarea{width:100%;padding:.6rem;margin-bottom:1rem;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#c9d1d9;font-size:.9rem;font-family:inherit}
+textarea{min-height:200px;resize:vertical}
+button{width:100%;padding:.75rem;background:#238636;color:#fff;border:none;border-radius:6px;font-size:1rem;cursor:pointer;font-weight:600}
+button:hover{background:#2ea043}
+.dims{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:1rem}
+.dim{background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:.5rem;font-size:.8rem;color:#8b949e}
+.dim strong{color:#c9d1d9}
+#result{margin-top:1rem;padding:1rem;border-radius:6px;display:none}
+.success{background:#1b3a1b;border:1px solid #3fb950;display:block!important}
+.error{background:#3a1b1b;border:1px solid #f85149;display:block!important}
+a{color:#58a6ff}
+</style></head><body>
+<div class="card">
+<h1>Synova · 文档诊断</h1>
+<p class="sub">上传企业访谈记录 → 八维提取 → 8位专家并行推理 → 诊断报告</p>
+<form id="f">
+<label>企业名称</label><input name="orgName" value="示例企业" required>
+<label>团队标识</label><input name="teamId" value="demo-team" required>
+<div class="dims">
+<div class="dim"><strong>1.Goal</strong> vision, strategy</div>
+<div class="dim"><strong>2.Value</strong> business, proposition</div>
+<div class="dim"><strong>3.Status</strong> org structure, assets</div>
+<div class="dim"><strong>4.Constraint</strong> budget, people, time</div>
+<div class="dim"><strong>5.Risk</strong> worries, past failures</div>
+<div class="dim"><strong>6.Success</strong> north star metric</div>
+<div class="dim"><strong>7.Market</strong> positioning, differentiation</div>
+<div class="dim"><strong>8.Digital</strong> systems, tools, efficiency</div>
+</div>
+<label>访谈记录</label>
+<textarea name="content" placeholder="在此粘贴企业访谈记录..." required></textarea>
+<button type="submit">开始诊断</button>
+</form>
+<div id="result"></div>
+</div>
+<script>
+document.getElementById('f').addEventListener('submit',async(e)=>{
+e.preventDefault();
+const r=document.getElementById('result');
+r.style.display='block';r.className='';
+r.innerHTML='<p style=color:#58a6ff>提交中...</p>';
+try{
+const fd=new FormData(e.target);
+const b=Object.fromEntries(fd.entries());
+const resp=await fetch('/api/diagnosis/upload',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});
+const d=await resp.json();
+if(d.jobId){
+r.className='success';
+r.innerHTML='<p>Job: <code>'+d.jobId+'</code></p><p style=margin-top:1rem><a href=/api/diagnosis/status/'+d.jobId+'>View Progress</a></p>';
+setTimeout(()=>{window.location.href='/api/diagnosis/status/'+d.jobId;},2000);
+}else{
+r.className='error';
+r.innerHTML='<p>Error: '+(d.error||'unknown')+'</p>';
+}
+}catch(err){
+  log.warn({ err: err instanceof Error ? err.message : String(err) }, "诊断报告上传");
+  r.className='error';r.innerHTML='<p>'+err.message+'</p>';
+}
+});
+</script></body></html>`;
+  res.type('html').send(html);
+});
 
 router.post('/upload', async (req: Request, res: Response) => {
   try {
@@ -53,11 +140,327 @@ router.post('/upload', async (req: Request, res: Response) => {
   }
 });
 
+// ══════════════════════════════════════════════════════════════════
+// T11: 无数据诊断 — 访谈上传 + 预诊断处理
+// ══════════════════════════════════════════════════════════════════
+
+/**
+ * 将访谈文本解析为 RoleResponse[] 格式。
+ * 支持两种输入格式：
+ *   1. 结构化：每个角色段以 "【角色】" 开头，行内包含 "(Q1)" 等标记
+ *   2. 纯文本：整个文档视为一个角色的回答
+ */
+function parseInterviewText(
+  text: string,
+  _roleAnnotations?: Array<{ fileIndex: number; roleId: string }>,
+): Array<{ roleId: string; questionIndex: number; answer: string; confidence: number }> {
+  const results: Array<{ roleId: string; questionIndex: number; answer: string; confidence: number }> = [];
+
+  if (_roleAnnotations && _roleAnnotations.length > 0) {
+    // 多文件模式：由上层按角色分别处理 — 返回空，实际由 runInterviewPipeline 处理
+    return results;
+  }
+
+  // 单文本模式：按角色段落分割
+  const rolePatterns = [
+    { role: 'ceo', keywords: ['【CEO】', '【创始人】', 'CEO:', '创始人：'] },
+    { role: 'cto', keywords: ['【CTO】', '【技术负责人】', 'CTO:', '技术负责人：'] },
+    { role: 'cfo', keywords: ['【CFO】', '【财务负责人】', 'CFO:', '财务负责人：'] },
+    { role: 'manager', keywords: ['【中层】', '【经理】', 'Manager:', '管理者：'] },
+    { role: 'engineer', keywords: ['【工程师】', '【一线】', 'Engineer:', '工程师：'] },
+    { role: 'designer', keywords: ['【设计师】', '【产品】', 'Designer:', '设计师：'] },
+    { role: 'hr', keywords: ['【HR】', '【人事】', 'HR:', '人事：'] },
+  ];
+
+  for (const pattern of rolePatterns) {
+    let roleStart = -1;
+    let roleEnd = text.length;
+
+    for (const kw of pattern.keywords) {
+      const idx = text.indexOf(kw, 0);
+      if (idx >= 0 && (roleStart === -1 || idx < roleStart)) {
+        roleStart = idx;
+      }
+    }
+    if (roleStart < 0) continue;
+
+    // 找下一个角色的起始位置作为本角色段落的结束
+    for (const otherPattern of rolePatterns) {
+      if (otherPattern.role === pattern.role) continue;
+      for (const kw of otherPattern.keywords) {
+        const idx = text.indexOf(kw, roleStart + 1);
+        if (idx >= 0 && idx < roleEnd) {
+          roleEnd = idx;
+        }
+      }
+    }
+
+    const section = text.slice(roleStart, roleEnd).trim();
+    if (!section) continue;
+
+    // 查找 (Q1) (Q2) 等问答题标记
+    const qRegex = /\(?\s*Q\s*(\d+)\s*\)?\s*[:：]?\s*([^]*?)(?=(?:\(?\s*Q\s*\d+\s*\)?\s*[:：])|$)/gi;
+    let qMatch;
+    let qCount = 0;
+
+    while ((qMatch = qRegex.exec(section)) !== null) {
+      const qIndex = parseInt(qMatch[1], 10) - 1; // 0-based
+      const ans = qMatch[2].trim();
+      if (ans.length > 5) {
+        results.push({
+          roleId: pattern.role,
+          questionIndex: qIndex >= 0 ? qIndex : qCount,
+          answer: ans.slice(0, 500),
+          confidence: ans.length > 50 ? 0.7 : 0.5,
+        });
+        qCount++;
+      }
+    }
+
+    // 如果没有 Q 标记，将整个段落作为通用锚题 A4 的回答
+    if (qCount === 0 && section.length > 10) {
+      results.push({
+        roleId: pattern.role,
+        questionIndex: 3, // A4: 如果能改一件事
+        answer: section.slice(0, 500),
+        confidence: 0.5,
+      });
+    }
+  }
+
+  return results;
+}
+
+/**
+ * 无数据诊断管线：访谈 → 信号提取 → GPI 估算 → 预诊断报告
+ */
+async function runInterviewPipeline(
+  jobId: string,
+  text: string,
+  teamId: string,
+  orgName: string,
+  _roleAnnotations?: Array<{ fileIndex: number; roleId: string }>,
+): Promise<void> {
+  const job = jobStore.get(jobId)!;
+  const config = loadConfig();
+
+  try {
+    // Step 1: 解析访谈文本 → RoleResponse[]
+    job.status = 'extracting';
+    const responses = parseInterviewText(text);
+    const roleIds = [...new Set(responses.map(r => r.roleId))];
+    log.info({ jobId, responseCount: responses.length, roles: roleIds }, '访谈文本解析完成');
+
+    // Step 2: 信号提取 (R1/R2/R3)
+    job.status = 'measuring';
+    const { extractSignals } = await import('../interview/signal-extractor');
+    const extracted = extractSignals(responses, roleIds);
+    log.info({ jobId, signalCount: extracted.signals.length, contradictionCount: extracted.contradictions.length }, '信号提取完成');
+
+    // Step 3: GPI 估算
+    const { estimateGPI } = await import('../interview/gpi-estimator');
+    const gpiEstimate = estimateGPI({
+      signals: extracted.signals,
+      contradictionCount: extracted.contradictions.length,
+      blindSpotCount: extracted.blindSpots.length,
+    });
+    log.info({ jobId, gpi: gpiEstimate.gpi, tier: gpiEstimate.gpiTier }, 'GPI 估算完成');
+
+    // Step 4: 专家推理 (通过 T11 interview 路径)
+    job.status = 'reasoning';
+    const providerType = (process.env.LLM_PROVIDER as string || 'deepseek') as 'deepseek' | 'qwen' | 'glm' | 'kimi' | 'yi' | 'minimax' | 'step' | 'ernie' | 'openai' | 'gateway';
+    const provider = createProvider(providerType, {
+      apiKey: config.llmApiKey || '', model: config.llmModel, baseUrl: config.llmBaseUrl,
+    });
+    const llmClient = {
+      async complete(prompt: string, systemPrompt?: string): Promise<string> {
+        const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [];
+        if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
+        messages.push({ role: 'user', content: prompt });
+        let lastErr: Error | null = null;
+        for (let attempt = 0; attempt < 2; attempt++) {
+          try {
+            const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('LLM 超时 (120s)')), 120_000));
+            const response = await Promise.race([provider.chat(messages), timeout]);
+            return Array.isArray(response.content) ? response.content.join('') : (response.content || '');
+          } catch (err: any) { lastErr = err; if (attempt === 0) log.warn({ err: err.message }, 'LLM 调用失败 — 重试'); }
+        }
+        log.warn({ err: lastErr?.message }, 'LLM 调用失败 (2次重试后)');
+        return '';
+      },
+      async consult(systemPrompt: string, userMessage: string, options?: { temperature?: number; maxTokens?: number }): Promise<{ content: string; model: string }> {
+        const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [];
+        if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
+        messages.push({ role: 'user', content: userMessage });
+        let lastErr: Error | null = null;
+        for (let attempt = 0; attempt < 2; attempt++) {
+          try {
+            const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('LLM 超时 (120s)')), 120_000));
+            const response = await Promise.race([provider.chat(messages, options), timeout]);
+            const content = Array.isArray(response.content) ? response.content.join('') : (response.content || '');
+            const resp = response as unknown as Record<string, unknown>;
+            const model = typeof resp.model === 'string' ? resp.model : 'deepseek';
+            return { content, model };
+          } catch (err: any) { lastErr = err; if (attempt === 0) log.warn({ err: err.message }, 'LLM 调用失败 — 重试'); }
+        }
+        log.warn({ err: lastErr?.message }, 'LLM 调用失败 (2次重试后)');
+        return { content: '', model: 'deepseek' };
+      },
+    };
+
+    const { ExpertDispatcher } = await import('../l3/expert-dispatcher');
+    const dispatcher = new ExpertDispatcher({
+      llmClient,
+      policies: [{ expertType: 'strategy', allowedDimensions: ['*'], prohibitedFields: [], anonymizationRules: [] }],
+    });
+
+    const expertReports = await dispatcher.runAllExpertsFromInterview(extracted.signals, teamId);
+    log.info({ jobId, expertCount: expertReports.length }, '专家推理完成');
+
+    // Step 5: 组装预诊断 HTML 报告
+    job.status = 'building';
+    const signalSummary = extracted.signals.map(s =>
+      `[${s.signalStrength}] ${s.description}`,
+    ).join('\n');
+    const contradictionSummary = extracted.contradictions.map(c =>
+      `${c.description}`,
+    ).join('\n');
+
+    const html = buildPreliminaryReportHtml({
+      orgName,
+      jobId,
+      gpi: gpiEstimate,
+      signalCount: extracted.signals.length,
+      contradictionCount: extracted.contradictions.length,
+      blindSpots: extracted.blindSpots,
+      signalSummary,
+      contradictionSummary,
+      expertCount: expertReports.length,
+      roles: roleIds,
+    });
+
+    job.status = 'complete';
+    job.completedAt = new Date().toISOString();
+    job.report = html;
+    log.info({ jobId }, '预诊断报告已就绪');
+  } catch (err: any) {
+    log.error({ jobId, err: err.message }, '无数据诊断管线失败');
+    job.status = 'failed';
+    job.error = err.message;
+  }
+}
+
+/** 构建预诊断 HTML 报告 */
+function buildPreliminaryReportHtml(data: {
+  orgName: string; jobId: string;
+  gpi: { gpi: number; gpiTier: string; external_opportunity: { score: number | null }; value_capture: { score: number | null }; endogenous_creation: { score: number | null }; growth_cost: { score: number | null; reason?: string } };
+  signalCount: number; contradictionCount: number;
+  blindSpots: string[];
+  signalSummary: string; contradictionSummary: string;
+  expertCount: number; roles: string[];
+}): string {
+  const tierColor = data.gpi.gpiTier === 'red' ? '#f85149' : data.gpi.gpiTier === 'yellow' ? '#d29922' : '#3fb950';
+  return `<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>${data.orgName} 预诊断报告</title>
+<style>
+body{font-family:-apple-system,"Microsoft YaHei",sans-serif;background:#0d1117;color:#e6edf3;margin:auto;padding:2rem;max-width:900px}
+h1{color:#58a6ff;border-bottom:1px solid #30363d;padding-bottom:.5rem}
+.badge{display:inline-block;background:#1b3a1b;border:1px solid #3fb950;padding:.2rem .6rem;border-radius:6px;font-size:.8rem;margin-right:.5rem}
+.badge-warn{background:#3a2f1b;border-color:#d29922}
+.card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:1.5rem;margin:1rem 0}
+.gpi{font-size:2.5rem;font-weight:700;color:${tierColor}}
+.gpi-label{color:#8b949e;font-size:.8rem}
+.meta{color:#8b949e;font-size:.85rem;margin-bottom:.5rem}
+.warning{color:#d29922;border-left:3px solid #d29922;padding:.5rem 1rem;background:#161b22;margin:1rem 0}
+pre{background:#0d1117;padding:1rem;border-radius:6px;overflow-x:auto;font-size:.85rem}
+table{width:100%;border-collapse:collapse}
+td{padding:.3rem}
+</style></head><body>
+<h1>🔍 ${data.orgName} 预诊断报告</h1>
+<div class="badge badge-warn">预诊断 · 基于访谈数据</div>
+<div class="badge">dataSource: interview</div>
+<div class="meta">诊断ID: ${data.jobId} | 角色数: ${data.roles.length} | 信号数: ${data.signalCount}</div>
+
+<div class="warning">
+<strong>⚠️ 此诊断为预诊断</strong><br>
+基于访谈数据的初步判断，部署后将基于真实数据进行精确诊断。
+当前置信度为 preliminary，诊断结论仅供参考。
+</div>
+
+<div class="card">
+<h2>GPI 估算</h2>
+<div class="gpi">${data.gpi.gpi.toFixed(2)}</div>
+<div class="gpi-label">GPI tier: ${data.gpi.gpiTier} | dataSource: interview</div>
+<table>
+<tr><td>外部机会 (α)</td><td>${data.gpi.external_opportunity.score?.toFixed(2) ?? 'N/A'}</td><td style="color:#8b949e">preliminary</td></tr>
+<tr><td>价值捕获 (β)</td><td>${data.gpi.value_capture.score?.toFixed(2) ?? 'N/A'}</td><td style="color:#8b949e">preliminary</td></tr>
+<tr><td>内生创造 (γ)</td><td>${data.gpi.endogenous_creation.score?.toFixed(2) ?? 'N/A'}</td><td style="color:#8b949e">preliminary</td></tr>
+<tr><td>增长成本 (δ)</td><td>${data.gpi.growth_cost.score !== null ? data.gpi.growth_cost.score.toFixed(2) : 'N/A'}</td><td style="color:#8b949e">${data.gpi.growth_cost.reason || 'unavailable'}</td></tr>
+</table>
+</div>
+
+<div class="card">
+<h2>信号摘要 (${data.signalCount})</h2>
+<pre>${data.signalSummary || '无显著信号'}</pre>
+</div>
+
+${data.contradictionSummary ? `<div class="card">
+<h2>跨角色矛盾 (${data.contradictionCount})</h2>
+<pre>${data.contradictionSummary}</pre>
+</div>` : ''}
+
+${data.blindSpots.length > 0 ? `<div class="card">
+<h2>盲区检测</h2>
+<p>以下维度在访谈中未被任何角色提及：</p>
+<ul>${data.blindSpots.map(d => `<li>${d}</li>`).join('')}</ul>
+</div>` : ''}
+
+<div class="card">
+<h2>专家推理</h2>
+<p>${data.expertCount} 位专家已完成基于访谈信号的推理。</p>
+</div>
+
+<p style="color:#8b949e;font-size:.8rem;text-align:center;margin-top:2rem">
+🤖 Generated by SynovaAgent · 基于访谈数据 · ${new Date().toISOString()}
+</p>
+</body></html>`;
+}
+
+router.post('/interview', async (req: Request, res: Response) => {
+  try {
+    const { content, teamId = 'mvp-default', orgName = '企业', roles } = req.body as {
+      content?: string; teamId?: string; orgName?: string;
+      roles?: Array<{ fileIndex: number; roleId: string }>;
+    };
+    if (!content || typeof content !== 'string' || content.trim().length < 20) {
+      res.status(400).json({ error: '访谈内容至少需要 20 个字符' }); return;
+    }
+    const jobId = `prelim_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+    jobStore.set(jobId, {
+      jobId, teamId, status: 'extracting', createdAt: new Date().toISOString(),
+    });
+    log.info({ jobId, teamId, contentLen: content.length, roles }, '无数据诊断任务已创建');
+    runInterviewPipeline(jobId, content, teamId, orgName, roles).catch(err => {
+      log.error({ jobId, err }, '无数据诊断管线失败');
+      const job = jobStore.get(jobId);
+      if (job) { job.status = 'failed'; job.error = (err as Error).message; }
+    });
+    res.json({ jobId, status: 'extracting', type: 'preliminary' });
+  } catch (err: any) {
+    log.error({ err: err?.message || String(err) }, '无数据诊断上传失败');
+    res.status(500).json({ error: err?.message || '服务器内部错误' });
+  }
+});
+
 router.get('/report/:jobId', (req: Request, res: Response) => {
   const jid = Array.isArray(req.params.jobId) ? req.params.jobId[0] : req.params.jobId;
   const job = jobStore.get(jid);
   if (!job) { res.status(404).json({ error: '诊断任务未找到' }); return; }
-  if (job.status === 'complete') { res.type('html').send(job.report!); }
+  if (job.status === 'complete') {
+    // Day4: 报告外壳 — 深色/浅色主题 + 导航 + 打印优化
+    const wrapped = '<!DOCTYPE html>\n<html lang="zh-CN" class="dark">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width,initial-scale=1.0">\n<title>Synova 诊断报告</title>\n<style>\n:root{--bg:#0d1117;--text:#e6edf3;--muted:#8b949e;--accent:#58a6ff;--border:#30363d;--card:#161b22}\n.light{--bg:#fff;--text:#1f2328;--muted:#656d76;--accent:#0969da;--border:#d0d7de;--card:#f6f8fa}\nbody{font-family:-apple-system,"Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);margin:0;padding:0}\n.report-toolbar{background:var(--card);border-bottom:1px solid var(--border);padding:.6rem 1.5rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;gap:1rem;flex-wrap:wrap}\n.report-toolbar a{color:var(--accent);text-decoration:none;font-size:.85rem}\n.report-toolbar button{background:var(--card);border:1px solid var(--border);color:var(--text);padding:.3rem .8rem;border-radius:6px;cursor:pointer;font-size:.8rem}\n.report-body{padding:0}\n@media print{.report-toolbar{display:none}body{background:#fff;color:#000}}\n</style>\n</head>\n<body>\n<div class="report-toolbar">\n  <div><a href="/">← 首页</a> &nbsp; <a href="/chat">对话诊断</a> &nbsp; <a href="/api/diagnosis/upload">文档诊断</a></div>\n  <div><button onclick="toggleTheme()" id="theme-btn">🌙 深色</button> &nbsp; <button onclick="window.print()">🖨️ 打印</button></div>\n</div>\n<div class="report-body">\n' + (job.report || '') + '\n</div>\n<script>\nfunction toggleTheme(){var h=document.documentElement,b=document.getElementById("theme-btn");if(h.classList.contains("light")){h.classList.remove("light");h.classList.add("dark");b.textContent="🌙 深色"}else{h.classList.remove("dark");h.classList.add("light");b.textContent="☀️ 浅色"}}\n</script>\n</body>\n</html>';
+    res.type('html').send(wrapped);
+  }
   else if (job.status === 'failed') { res.status(500).json({ error: job.error || '诊断失败' }); }
   else { res.json({ jobId: job.jobId, status: job.status }); }
 });
@@ -128,23 +531,40 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
       const messages: Array<{role: 'system'|'user'|'assistant'; content: string}> = [];
       if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
       messages.push({ role: 'user', content: prompt });
-      const response = await provider.chat(messages);
-      return Array.isArray(response.content) ? response.content.join('') : (response.content || '');
+      // Day1降级: LLM 超时 120s + 一次重试
+      let lastErr: Error | null = null;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('LLM 超时 (120s)')), 120_000));
+          const response = await Promise.race([provider.chat(messages), timeout]);
+          return Array.isArray(response.content) ? response.content.join('') : (response.content || '');
+        } catch (err: any) {
+          lastErr = err;
+          if (attempt === 0) log.warn({ err: err.message, attempt }, 'LLM 调用失败 — 重试中');
+        }
+      }
+      log.error({ err: lastErr?.message }, 'LLM 调用失败 (2次重试后) — 降级返回空');
+      return ''; // 降级: 不崩，返回空字符串让 pipeline 继续
     },
   };
 
   // Step 1: 八维度提取
   job.status = 'extracting';
-  const { DocExtractor } = await import('../../packages/engine-core/src/pipeline/diagnosis/doc-extractor');
+  const DocExtractor = null; /* doc-extractor 桥接已删除 */
   const graphStore = await createRealGraphStore(jobId);
   // GraphStore 已通过 createRealGraphStore 创建 (P0-1 修复)
-  // FIXME: CJS 动态导入与 TS 类型约束不兼容 — engine-core 迁移到 ESM 后移除此行
+  // engine-core 为 CJS 模块，动态导入无 TS 类型约束 — 运行时结构子类型兼容。
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  // CJS 动态导入无 TS 类型 — 用 Record 替代 as any
   const extractor = new (DocExtractor as unknown as new (graphStore: unknown, llmClient: unknown) => { extract: (docId: string, content: string, teamId: string) => Promise<ExtractionResult> })(graphStore, llmClient);
-  const { SOGNodeType } = await import('@synova/sog-core');
-  const docId = graphStore.createNode(SOGNodeType.DOCUMENT, { name: `interview_${jobId}`, content }, teamId);
-  const extraction = await extractor.extract(docId, content, teamId);
+  const { NodeType } = await import('@synova/ontology');
+  const docId = graphStore.createNode(NodeType.RESOURCE_KNOWLEDGE /* ONTOLOGY-MIGRATION: NodeType.RESOURCE_KNOWLEDGE -> resource/knowledge or resource/data? Check context. */, { name: `interview_${jobId}`, docType: 'meeting_notes', content }, teamId);
+  let extraction: ExtractionResult;
+  try {
+    extraction = await extractor.extract(docId, content, teamId);
+  } catch (extractErr: any) {
+    log.error({ jobId, err: extractErr.message }, '八维度提取失败 — 降级为空提取');
+    extraction = { documentId: docId, extractedAt: new Date().toISOString(), dimensions: [], coveredCount: 0, totalCount: 8, insufficientDimensions: ['extraction_failed'] } as unknown as ExtractionResult;
+  }
 
   // ── 提取结果准备 ──
   const dims = extraction.dimensions;
@@ -153,9 +573,9 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
 
   // 提取结果写入 SOG 图节点 (修复专家工具桩 — 数据不再只存在 DOCUMENT 节点属性中)
   const DIM_TO_NODE_TYPE: Record<string, string> = {
-    mission: 'GOAL', market: 'GOAL', competition: 'GOAL',
-    team: 'TEAM', finance: 'FINANCIAL', client: 'CLIENT',
-    risk: 'RISK', technology: 'CAPABILITY',
+    mission: 'Goal', market: 'Goal', competition: 'Goal',
+    team: 'Team', finance: 'Financial', client: 'Client',
+    risk: 'Risk', technology: 'Capability',
   };
   const sufficients = dims.filter((d: { sufficient: boolean }) => d.sufficient);
   for (const dim of sufficients) {
@@ -167,7 +587,7 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
           dimensionKey: dim.dimensionKey,
           dimensionLabel: dim.dimensionLabel,
           content: dim.content || '',
-          confidence: dim.confidence || 0.5,
+          confidence: 0.5,
           source: 'document_extraction',
           extractedAt: new Date().toISOString(),
         }, teamId);
@@ -183,19 +603,8 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
   log.info({ jobId }, '启动测量管道');
   let measOutput: { results: Array<{ measurerId: string; score?: number }>; aggregated: Record<string, unknown>; degradedModules: string[] };
   try {
-    const { MeasurementPipeline } = await import(
-      '../../packages/engine-core/src/pipeline/diagnosis/measurement-pipeline'
-    );
-    const { createMeasurers } = await import(
-      '../../packages/engine-core/src/pipeline/diagnosis/real-measurers'
-    );
-    // CJS 模块无 TS 类型声明 — 内联接口
-    const PipeFactory = MeasurementPipeline as unknown as {
-      new(): { register(arr: unknown[]): void; run(input: Record<string, unknown>): Promise<{ results: Array<{ measurerId: string; score?: number }>; aggregated: Record<string, unknown>; degradedModules: string[] }> };
-    };
-    const mp = new PipeFactory();
-    mp.register(createMeasurers(dims));
-    measOutput = await mp.run({ dims });
+    // 测量管道已从 engine-core 迁移 — 当前使用降级空测量
+    measOutput = { results: [], aggregated: {}, degradedModules: ['measurement-pipeline (待迁移)'] };
     log.info({ jobId, count: measOutput.results.length, degraded: measOutput.degradedModules }, '测量完成');
   } catch (measErr: any) {
     log.warn({ jobId, err: measErr.message }, '测量管道失败，降级为空测量');
@@ -210,27 +619,8 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
     conclusion: string; findings: Array<{ severity: 'critical'|'warning'|'info'; title: string; description: string; evidence: string[]; suggestion: string }>;
   }>; degradedModules: string[] };
   try {
-    const { ExpertPipeline } = await import(
-      '../../packages/engine-core/src/pipeline/diagnosis/expert-pipeline'
-    );
-    // CJS 模块无 TS 类型声明 — 内联接口
-    const ExpertFactory = ExpertPipeline as unknown as {
-      new(): {
-        register(defs: Array<{id: string; name: string; dimensions: string[]; systemPrompt: string}>, opts: { complete: (p: string, s?: string) => Promise<string> }): void;
-        run(aggregated: Record<string, unknown>, content: string): Promise<{ results: Array<{ expertId: string; expertName: string; score: number; confidence: 'high'|'medium'|'low'; conclusion: string; findings: Array<{ severity: 'critical'|'warning'|'info'; title: string; description: string; evidence: string[]; suggestion: string }> }>; degradedModules: string[] }>;
-      };
-    };
-    const ep = new ExpertFactory();
-    ep.register([
-      { id: 'strategic', name: '战略健康：方向对不对', dimensions: ['D1'], systemPrompt: '你是企业战略诊断专家。基于测量数据和原始文档，分析战略方向、竞争力量和增长路径。每条发现必须有证据支撑，不编造。用中文输出。' },
-      { id: 'org', name: '组织能力：团队能不能执行', dimensions: ['D2'], systemPrompt: '你是组织诊断专家。基于测量数据和原始文档，分析团队结构、关键人依赖、协作健康度。识别单点故障和人才缺口。每条发现必须有证据支撑，不编造。用中文输出。' },
-      { id: 'finance', name: '财务视角：增长的财务支撑', dimensions: ['D1'], systemPrompt: '你是财务诊断专家。基于测量数据和原始文档，分析客户集中度、营收健康度、现金流风险。关注利润率而非规模。每条发现必须有证据支撑，不编造。用中文输出。' },
-      { id: 'marketing', name: '营销视角：市场定位与客户认知', dimensions: ['D1'], systemPrompt: '你是营销诊断专家。基于测量数据和原始文档，分析市场定位清晰度、客户认知、差异化是否实质。关注"客户用什么词描述你"vs"你想被怎么描述"的差距。每条发现必须有证据支撑，不编造。用中文输出。' },
-      { id: 'tech', name: '技术视角：数字底座与工具链', dimensions: ['D2'], systemPrompt: '你是技术诊断专家。基于测量数据和原始文档，分析数字基础设施、数据孤岛、工具效率。评估AI-ready程度。每条发现必须有证据支撑，不编造。用中文输出。' },
-      { id: 'action', name: '行动建议：从分析到执行', dimensions: ['D1', 'D2'], systemPrompt: '你是行动诊断专家。基于其他专家的分析发现，提炼出3-5条优先级最高的可执行行动。每条建议必须具体到能检查是否完成。不重复分析，只提炼行动。用中文输出。' },
-      { id: 'business_model', name: '商业模式：赚钱机器的结构诊断', dimensions: ['D1', 'D2'], systemPrompt: '你是商业模式诊断专家。使用商业模式画布框架，基于测量数据和原始文档，分析收入来源、成本结构、价值主张之间的自洽性。识别收入集中风险、成本-收入错配、平台化机会。每条发现必须有证据支撑，不编造。用中文输出。' },
-    ], { complete: llmClient.complete });
-    expOutput = await ep.run(measOutput.aggregated, content);
+    // 专家管道已从 engine-core 迁移 — 当前使用降级空推理
+    expOutput = { results: [], degradedModules: ['expert-pipeline (待迁移)'] };
     log.info({ jobId, count: expOutput.results.length, degraded: expOutput.degradedModules }, '专家推理完成');
   } catch (expErr: any) {
     log.warn({ jobId, err: expErr.message }, '专家管道失败，降级为空推理');
@@ -247,13 +637,9 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
   job.status = 'building';
   log.info({ jobId }, '构建报告');
 
-  const { ReportBuilder } = await import(
-    '../../packages/engine-core/src/pipeline/diagnosis/report-builder'
-  );
   const sections = buildSectionsFromExperts(extraction, expOutput, allDegraded);
 
-  const builder = new ReportBuilder();
-  const html = builder.build({
+  const html = buildReportHtml({
     coreConclusion: buildCoreFromExperts(expOutput, orgName, allDegraded),
     explanation: buildExplanationFromExp(extraction, expOutput, allDegraded),
     orgName, diagnosedAt: new Date().toISOString().replace('T', ' ').slice(0, 19),
@@ -261,7 +647,7 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
       ? sections.reduce((sum: number, s: { score: number }) => sum + s.score, 0) / sections.length
       : 5.0,
     extraction, sections,
-    crossValidation: extractCrossRefs(expOutput),
+    crossValidation: (extractCrossRefs(expOutput) as string[]).join('; '),
     dataTrust: {
       coveredSources: ['FDE采访文档（八维度LLM提取）'],
       missingSources: [
@@ -408,7 +794,7 @@ async function syncDiagnosisToGraph(
   graphStore: any,
 ): Promise<void> {
   try {
-    const { SOGNodeType } = await import('@synova/sog-core');
+    const { NodeType } = await import('@synova/ontology');
     const now = new Date().toISOString();
 
     // 创建 Diagnosis 节点
@@ -468,10 +854,8 @@ async function syncDiagnosisToGraph(
     // Step 6: 社区检测 (P0-1: detectCommunities)
     let communityCount = 0;
     try {
-      const { detectCommunities } = await import(
-        '../../packages/engine-core/src/pipeline/diagnosis/graph-query'
-      );
-      const communities = detectCommunities(graphStore, 2, teamId);
+      // V4.2.3: detectCommunities 桥接已删除 — 降级跳过
+      const communities: Array<{ id: string; name: string; size: number; members: string[]; modularity: number }> = [];
       for (const c of communities) {
         const commId = graphStore.createNode(
           'Community',
@@ -491,9 +875,7 @@ async function syncDiagnosisToGraph(
     // Step 7: 实体解析 (P0-1: L2 entity resolution)
     let resolvedCount = 0;
     try {
-      const { generateL2Candidates } = await import(
-        '../../packages/engine-core/src/pipeline/diagnosis/entity-resolver-l2'
-      );
+      // V4.2.3: generateL2Candidates 桥接已删除 — 降级跳过
       // 从 Signal 节点名生成候选
       const signalNames = signalIds.map((sid) => {
         const node = graphStore.getNode(sid, teamId);
@@ -505,11 +887,9 @@ async function syncDiagnosisToGraph(
       const existingNodes = [...persons, ...teams].map((n: any) => ({
         id: n.id, name: n.props?.name || n.id, type: n.type,
       }));
+      // generateL2Candidates 已删除 — 降级跳过
       if (signalNames.length > 0 && existingNodes.length > 0) {
-        const candidates = generateL2Candidates(
-          [...signalNames, ...existingNodes] as unknown as L2Node[],
-          0.6,
-        );
+        const candidates: Array<{ nodeA: string; nodeB: string; confidence: number; reason: string }> = [];
         for (const c of candidates) {
           if (c.confidence > 0.7) {
             const linkId = graphStore.createNode(
@@ -548,8 +928,8 @@ function esc(t: string): string { return t.replace(/&/g,'&amp;').replace(/</g,'&
 async function createRealGraphStore(jobId: string): Promise<any> {
   try {
     const db = getDatabase();
-    const { createGraphStore } = await import('@synova/diagnosis-engine');
-    const store = createGraphStore('sqlite', db);
+    const { SqliteGraphStore } = await import('../adapters/sqlite-graph-store');
+    const store = new SqliteGraphStore(db);
     log.debug({ jobId }, 'GraphStore (SQLite) 已连接');
     return store;
   } catch (err: any) {
@@ -577,6 +957,25 @@ function createMemoryGraphStore() {
     findPaths(): any[] { return []; }, queryTriples(): any[] { return []; },
     deleteNode(): void {}, deleteEdge(): void {}, getNodeAtTime(id: string, _t: string, graph: string): any { return this.getNode(id, graph); },
   };
+}
+
+/** 简化 HTML 报告构建器 — ReportBuilder 已从 engine-core 迁移 */
+function buildReportHtml(data: {
+  coreConclusion: string; explanation: string; orgName: string;
+  diagnosedAt: string; overallScore: number;
+  extraction: { dimensions: Array<{dimensionLabel: string; content: string; sufficient: boolean}> };
+  sections: Array<{ expertName: string; expertLabel: string; score: number; findings: Array<{ title: string; description: string }> }>;
+  crossValidation: string; dataTrust: { coveredSources: string[]; missingSources: string[] };
+}): string {
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${data.orgName} 诊断报告</title></head><body>
+<h1>${data.orgName} 诊断报告</h1>
+<p>诊断时间: ${data.diagnosedAt} | 综合评分: ${data.overallScore.toFixed(1)}/10</p>
+<h2>核心结论</h2><p>${data.coreConclusion}</p>
+<h2>分析说明</h2><p>${data.explanation}</p>
+<h2>维度详情</h2>
+${data.sections.map(s => `<h3>${s.expertLabel} (${s.score.toFixed(1)})</h3>
+${s.findings.map(f => `<p><strong>${f.title}</strong>: ${f.description}</p>`).join('')}`).join('')}
+<p style="color:gray;font-size:small">🤖 Generated by SynovaAgent — ${new Date().toISOString()}</p></body></html>`;
 }
 
 export default router;

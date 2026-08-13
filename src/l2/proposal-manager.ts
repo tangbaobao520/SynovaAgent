@@ -4,7 +4,7 @@
  * 铁律 39: L2 编排层组件。SQLite 持久化 — 重启不丢失。
  */
 import Database from 'better-sqlite3';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 type SqliteDB = InstanceType<typeof Database>;
 const log = createLogger('l2/proposal-manager');

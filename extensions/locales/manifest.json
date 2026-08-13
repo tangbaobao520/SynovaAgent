@@ -1,0 +1,12 @@
+{
+  "$schema": "https://synova.dev/schemas/extension-manifest-v1.json",
+  "name": "locales",
+  "version": "1.0.0",
+  "type": "locale",
+  "displayName": "多语言支持",
+  "description": "SynovaAgent 国际化字符串。先做中英双语，其他语言按需追加。",
+  "defaultLanguage": "zh-CN",
+  "languages": ["zh-CN", "en-US"],
+  "entryPoint": "./locale-loader.ts",
+  "exportKey": "loadLocale"
+}

@@ -6,7 +6,7 @@
  */
 import { Router, type Request, type Response } from 'express';
 import { loadConfig } from '../config';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import { getProposalManager } from '../l2/proposal-manager';
 
 const log = createLogger('routes/chat');
@@ -29,10 +29,10 @@ router.get('/api/status', (_req: Request, res: Response) => {
 /** GNS v2.0: 检测用户状态 — 决定显示 Phase 0 还是直接进入默认循环 */
 router.get('/api/user-state', async (_req: Request, res: Response) => {
   try {
-    const { createGraphStore } = await import('@synova/diagnosis-engine');
+    const { SqliteGraphStore } = await import('../adapters/sqlite-graph-store');
     const { getDatabase } = await import('../init/engine-context');
     const db = getDatabase();
-    const store = createGraphStore('sqlite', db) as { queryNodes(type: string, filters?: Record<string,unknown>, graph?: string): Array<{id:string, props:Record<string,unknown>}> };
+    const store = new SqliteGraphStore(db) as unknown as { queryNodes(type: string, filters?: Record<string,unknown>, graph?: string): Array<{id:string, props:Record<string,unknown>}> };
     const summaries = store.queryNodes('Goal', { goalType: 'mission' }, 'default')
       .filter(n => (n.props as { name?: string })?.name?.startsWith('Phase0_Interview'));
     res.json({
@@ -47,7 +47,7 @@ router.get('/api/user-state', async (_req: Request, res: Response) => {
 });
 
 /** GNS v2.0: 提议确认/拒绝/看法 */
-router.post('/api/proposal/:id/resolve', (req: Request, res: Response) => {
+router.post('/api/proposal/:id/resolve', async (req: Request, res: Response) => {
   const { id } = req.params as { id: string };
   const { action, feedback } = req.body as { action?: string; feedback?: string };
   if (!action || !['confirm', 'reject', 'opinion'].includes(action)) {
@@ -58,18 +58,30 @@ router.post('/api/proposal/:id/resolve', (req: Request, res: Response) => {
   if (!result.ok) {
     return res.status(404).json(result);
   }
+  // V4.2.1: 反馈收集 — collectFeedback 持久化用户决策
+  // Phase P0-1: 迁移到 @synova/evolution, 增加 orgId
+  try {
+    const { collectFeedback } = await import('@synova/evolution');
+    collectFeedback({
+      orgId: (req.body as Record<string, unknown>)?.orgId as string || 'default',
+      actionId: id,
+      decision: action === 'confirm' ? 'confirm' : action === 'reject' ? 'reject' : 'modify',
+      reason: feedback || undefined,
+    }).catch(() => {});
+  } catch { log.debug('feedback collector unavailable — degraded'); }
   res.json({ ok: true, proposal: result.proposal });
 });
 
-// ═══ Web 对话界面 ═══
+// ═══ Web 对话界面 (GET /chat) ═══
 
-router.get('/', (_req: Request, res: Response) => {
+router.get('/chat', (_req: Request, res: Response) => {
   const html = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Synova · 增长导航</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='28' font-size='28'>🔍</text></svg>">
 <style>
 :root{
   --bg:#0f0f14;--panel:#1a1a24;--border:#2a2a3a;--text:#e0e0e0;--dim:#888;
@@ -100,6 +112,14 @@ header .status{font-size:11px;color:var(--dim)}
 .msg.user{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:3px}
 .msg.agent{align-self:flex-start;background:var(--panel);border:1px solid var(--border);border-bottom-left-radius:3px}
 .msg.system{align-self:center;background:transparent;color:var(--dim);font-size:11px;text-align:center;max-width:100%}
+/* ── Dimension + Expert labels (Day3) ── */
+.dim-tag{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600;margin-right:4px}
+.dim-tag.covered{background:#0a2a0a;color:var(--green)}
+.dim-tag.missing{background:#2a0a0a;color:var(--red)}
+.dim-tag.partial{background:#2a1a0a;color:var(--orange)}
+.expert-watching{font-size:10px;color:var(--dim);margin-top:4px;display:flex;gap:6px;flex-wrap:wrap}
+.expert-watching span{background:var(--panel);border:1px solid var(--border);padding:1px 6px;border-radius:3px}
+.intent-notice{font-size:10px;color:var(--orange);margin-top:2px;font-style:italic}
 /* ── Interim Finding Card (L1-P0-3) ── */
 .card-finding{align-self:flex-start;background:#0d1a1a;border:1px solid #1a3a3a;border-left:3px solid var(--cyan);border-radius:8px;padding:10px 14px;font-size:12px;line-height:1.6;max-width:90%}
 .card-finding .card-title{font-weight:600;color:var(--cyan);margin-bottom:4px;font-size:13px;display:flex;align-items:center;gap:6px}
@@ -109,6 +129,30 @@ header .status{font-size:11px;color:var(--dim)}
 .card-confidence.high{background:#0a2a0a;color:var(--green)}
 .card-confidence.medium{background:#2a1a0a;color:var(--orange)}
 .card-confidence.low{background:#2a0a0a;color:var(--red)}
+/* ── Judgment Card (Slice 3: Agent 结构化回复) ── */
+.card-judgment{align-self:flex-start;background:var(--panel);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:10px;padding:14px 16px;font-size:13px;line-height:1.7;max-width:88%;animation:fadeIn .35s}
+.card-judgment.confirmed{border-left-color:var(--green);background:#0a1a0a}
+.card-judgment .jc-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.card-judgment .jc-title{font-weight:600;font-size:14px;color:var(--text);display:flex;align-items:center;gap:6px}
+.card-judgment .jc-experts{display:flex;gap:4px;flex-wrap:wrap;margin-left:auto}
+.card-judgment .jc-expert-tag{font-size:10px;padding:2px 8px;border-radius:10px;background:#1a1a2a;color:var(--accent2);border:1px solid #2a2a4a}
+.card-judgment .jc-section{margin-bottom:10px}
+.card-judgment .jc-label{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px}
+.card-judgment .jc-root-cause{color:var(--text);font-size:13px;padding:8px 10px;background:var(--bg);border-radius:6px;border-left:3px solid var(--orange)}
+.card-judgment .jc-suggestion{color:var(--text);font-size:13px;padding:8px 10px;background:var(--bg);border-radius:6px;border-left:3px solid var(--cyan)}
+.card-judgment .jc-confidence-bar{height:5px;background:#1a1a2a;border-radius:3px;overflow:hidden;margin-top:4px}
+.card-judgment .jc-confidence-fill{height:100%;border-radius:3px;transition:width .5s ease}
+.card-judgment .jc-confidence-fill.high{background:var(--green)}
+.card-judgment .jc-confidence-fill.medium{background:var(--orange)}
+.card-judgment .jc-confidence-fill.low{background:var(--red)}
+.card-judgment .jc-meta{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--dim);margin-top:6px}
+.card-judgment .jc-actions{display:flex;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--border)}
+.card-judgment .jc-actions button{padding:6px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
+.card-judgment .jc-btn-confirm{background:#0a2a0a;color:var(--green);border:1px solid var(--green)}
+.card-judgment .jc-btn-confirm:hover{background:var(--green);color:#000}
+.card-judgment .jc-btn-discuss{background:var(--bg);color:var(--accent2);border:1px solid var(--accent2)}
+.card-judgment .jc-btn-discuss:hover{background:var(--accent2);color:var(--bg)}
+.card-judgment .jc-confirmed-badge{display:inline-flex;align-items:center;gap:4px;background:#0a2a0a;color:var(--green);padding:4px 10px;border-radius:4px;font-size:11px;font-weight:600}
 /* ── Phase Event ── */
 .msg.phase{background:#1a1a2e;border:1px solid #2a2a4e;border-left:3px solid var(--accent2);padding:8px 12px;font-size:12px;color:var(--accent2);border-radius:6px;align-self:flex-start;max-width:90%}
 .msg.phase.completed{background:#0a1a0a;border-color:#1a3a1a;border-left-color:var(--green);color:var(--green)}
@@ -116,8 +160,8 @@ header .status{font-size:11px;color:var(--dim)}
 .msg.degraded{align-self:center;background:#2d1f1f;border:1px solid #5c2a2a;color:#e0a0a0;font-size:11px;padding:8px 14px;border-radius:6px;max-width:90%}
 /* ── Input ── */
 #input-area{background:var(--panel);border-top:1px solid var(--border);padding:10px 20px;display:flex;gap:10px;flex-shrink:0}
-#input-area input{flex:1;background:var(--input);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;outline:none}
-#input-area input:focus{border-color:var(--accent)}
+#input-area textarea{flex:1;background:var(--input);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;outline:none;font-family:inherit}
+#input-area textarea:focus{border-color:var(--accent)}
 #input-area button{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;cursor:pointer;font-weight:600;white-space:nowrap}
 #input-area button:hover{background:var(--accent2)}
 #input-area button:disabled{opacity:.5;cursor:default}
@@ -163,6 +207,13 @@ header .status{font-size:11px;color:var(--dim)}
 <body>
 <header>
   <h1><span class="dot" id="status-dot"></span>Synova</h1>
+  <div id="dimension-bar" style="display:flex;align-items:center;gap:8px;font-size:11px;">
+    <span style="color:var(--dim)">维度</span>
+    <span id="dim-count" style="color:var(--accent2);font-weight:600">0/8</span>
+    <div style="width:80px;height:4px;background:#1a1a2a;border-radius:2px;overflow:hidden">
+      <div id="dim-fill" style="height:100%;background:var(--accent);border-radius:2px;transition:width .3s;width:0%"></div>
+    </div>
+  </div>
   <span class="status" id="status-text">连接中...</span>
 </header>
 <div id="progress-bar-container">
@@ -195,13 +246,13 @@ header .status{font-size:11px;color:var(--dim)}
   </div>
 </div>
 <div id="quick-actions">
-  <button class="q-btn" onclick="quickDiag('公司诊断')">🔍 诊断我的公司</button>
+  <button class="q-btn" onclick="quickDiag(\\'公司诊断\\')">🔍 诊断我的公司</button>
   <button class="q-btn" onclick="quickDiag('团队协作分析')">👥 团队协作分析</button>
   <button class="q-btn" onclick="quickDiag('关键人风险评估')">⚠️ 关键人风险</button>
   <button class="q-btn" onclick="toggleGraph()" style="background:var(--accent);color:#fff">📊 团队全景图</button>
 </div>
 <div id="input-area">
-  <input id="user-input" type="text" placeholder="描述你的组织问题..." />
+  <textarea id="user-input" placeholder="描述你的组织问题..." rows="2" style="flex:1;background:var(--input);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;outline:none;resize:none;font-family:inherit" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send()}"></textarea>
   <button id="send-btn" onclick="send()">发送</button>
 </div>
 
@@ -231,7 +282,10 @@ async function init() {
   try {
     // GNS v2.0: 检测用户状态 — Phase 0 已完成/有数据源/新手
     const stateRes = await fetch(API + '/api/user-state');
-    const state = await stateRes.json().catch(() => ({}));
+    const state = await stateRes.json().catch((err) => {
+      console.warn('用户状态解析失败 — 降级空对象', { err });
+      return {};
+    });
 
     const r = await fetch(API + '/api/status');
     const s = await r.json();
@@ -258,12 +312,13 @@ async function init() {
       const skipBtn = document.getElementById('quick-actions');
       if (skipBtn) {
         skipBtn.innerHTML = '<button class="q-btn" onclick="skipPhase0()" style="background:var(--accent);color:#fff">🚀 跳过访谈，直接开始</button>' +
-          '<button class="q-btn" onclick="quickDiag(\'公司诊断\')">🔍 先了解我的组织</button>';
+          '<button class="q-btn" onclick="quickDiag(\\'公司诊断\\')">🔍 先了解我的组织</button>';
       }
     } else {
       addSystem('msg', '👋 我是 Synova，你的 AI 组织诊断助手。<br>点击下方按钮开始，或直接输入你的组织名称。');
     }
   } catch(e) {
+    log.warn({ err: e instanceof Error ? e.message : String(e) }, "网络请求失败");
     dot.className = 'dot off';
     statusText.textContent = '服务异常';
   }
@@ -298,6 +353,40 @@ function addMsg(role, text) {
   scrollDown();
 }
 
+// ═══ Day3: 维度覆盖 + 专家标注 + 意图识别 ═══
+function updateDimCoverage(covered, total) {
+  total = total || 8;
+  const el = document.getElementById('dim-count');
+  const fill = document.getElementById('dim-fill');
+  if (el) el.textContent = covered + '/' + total;
+  if (fill) fill.style.width = (covered / total * 100) + '%';
+}
+
+function addAgentMsg(text, dimKey, experts) {
+  const d = document.createElement('div');
+  d.className = 'msg agent';
+  d.innerHTML = text.replace(/\\n/g,'<br>');
+  if (dimKey || experts) {
+    const meta = document.createElement('div');
+    meta.className = 'expert-watching';
+    if (dimKey) meta.innerHTML += '<span class=\\'dim-tag covered\\'>' + esc(dimKey) + '</span>';
+    if (experts && experts.length) {
+      experts.forEach(function(e) { meta.innerHTML += '<span>' + esc(e) + '</span>'; });
+    }
+    d.appendChild(meta);
+  }
+  messages.appendChild(d);
+  scrollDown();
+}
+
+function addIntentNotice(text) {
+  const d = document.createElement('div');
+  d.className = 'msg system';
+  d.innerHTML = '<span class=\\'intent-notice\\'>' + esc(text) + '</span>';
+  messages.appendChild(d);
+  scrollDown();
+}
+
 function addPhaseEvent(label, completed) {
   const d = document.createElement('div');
   d.className = 'msg phase' + (completed ? ' completed' : '');
@@ -324,6 +413,92 @@ function addFindingCard(data) {
     '</div>';
   messages.appendChild(card);
   scrollDown();
+}
+
+// ═══ Slice 3: 判断卡片渲染 + 互动 ═══
+
+function addJudgmentCard(data) {
+  const card = document.createElement('div');
+  card.className = 'card-judgment';
+  card.id = 'jc-' + (data.cardId || Date.now().toString(36));
+
+  const confPct = Math.round((data.confidence || 0.7) * 100);
+  const confClass = data.confidenceLevel || (confPct >= 70 ? 'high' : confPct >= 40 ? 'medium' : 'low');
+  const experts = (data.experts && data.experts.length) ? data.experts : ['诊断专家'];
+  const expertTags = experts.map(function(e) {
+    return '<span class="jc-expert-tag">' + esc(e) + '</span>';
+  }).join('');
+
+  card.innerHTML =
+    // 头部：标题 + 专家标签
+    '<div class="jc-header">' +
+      '<div class="jc-title">🔍 诊断判断</div>' +
+      '<div class="jc-experts">' + expertTags + '</div>' +
+    '</div>' +
+    // 根因
+    '<div class="jc-section">' +
+      '<div class="jc-label">📌 根因</div>' +
+      '<div class="jc-root-cause">' + esc(data.root_cause || '正在分析中...') + '</div>' +
+    '</div>' +
+    // 建议
+    '<div class="jc-section">' +
+      '<div class="jc-label">💡 建议</div>' +
+      '<div class="jc-suggestion">' + esc(data.suggestion || '建议进一步分析以确定具体方案。') + '</div>' +
+    '</div>' +
+    // 置信度
+    '<div class="jc-section">' +
+      '<div class="jc-label">📊 置信度 ' + confPct + '%</div>' +
+      '<div class="jc-confidence-bar">' +
+        '<div class="jc-confidence-fill ' + confClass + '" style="width:' + confPct + '%"></div>' +
+      '</div>' +
+    '</div>' +
+    // 操作按钮
+    '<div class="jc-actions" id="' + card.id + '-actions">' +
+      '<button class="jc-btn-confirm" onclick="confirmJudgment(\'' + card.id + '\')">✅ 采纳此方案</button>' +
+      '<button class="jc-btn-discuss" onclick="discussJudgment(\'' + card.id + '\', \'' +
+        esc(data.suggestion || data.root_cause || '') + '\')">💬 继续讨论</button>' +
+    '</div>';
+
+  messages.appendChild(card);
+  scrollDown();
+}
+
+function confirmJudgment(cardId) {
+  var card = document.getElementById(cardId);
+  if (!card) return;
+  // 添加 "已确认" 状态
+  card.classList.add('confirmed');
+  // 替换操作按钮为已确认徽章
+  var actions = document.getElementById(cardId + '-actions');
+  if (actions) {
+    actions.innerHTML = '<span class="jc-confirmed-badge">✅ 已采纳</span>' +
+      '<span style="font-size:10px;color:var(--dim);margin-left:8px">方案已记录，将在后续诊断中自动引用</span>';
+  }
+  // 通知服务器（fire-and-forget）
+  try {
+    fetch(API + '/api/proposal/' + encodeURIComponent(cardId) + '/resolve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'confirm', feedback: '用户采纳了判断卡片方案' }),
+    }).catch(function(err) { console.warn('方案确认通知失败 — degraded, 本地状态已更新', err); });
+  } catch(e) { console.warn('确认请求失败 — degraded:', e); }
+}
+
+function discussJudgment(cardId, context) {
+  var input = document.getElementById('user-input');
+  if (!input) return;
+  // 预填追问文本
+  var prefix = '关于"' + context.slice(0, 50) + '"，我想进一步了解：';
+  input.value = prefix;
+  input.focus();
+  // 滚动到输入框
+  input.scrollIntoView({ behavior: 'smooth' });
+  // 高亮卡片
+  var card = document.getElementById(cardId);
+  if (card) {
+    card.style.boxShadow = '0 0 12px rgba(108,92,231,0.3)';
+    setTimeout(function() { card.style.boxShadow = ''; }, 1500);
+  }
 }
 
 function addDegraded(msg) {
@@ -448,6 +623,11 @@ function handleSSEEvent(evt) {
       addDegraded(evt.message || '部分模块降级');
       break;
 
+    // ── Slice 3: 判断卡片 ──
+    case 'judgment_card':
+      addJudgmentCard(evt);
+      break;
+
     // ── GNS v2.0: 右边栏更新 ──
     case 'right_column_update':
       if (evt.rightColumn) renderRightSidebar(evt.rightColumn);
@@ -456,9 +636,19 @@ function handleSSEEvent(evt) {
       addProposalCard(evt);
       break;
 
+    // ── Day3: 维度覆盖更新 + 专家标注 ──
+    case 'dimension_covered':
+      if (evt.covered !== undefined) updateDimCoverage(evt.covered, evt.total || 8);
+      break;
+    case 'agent_thinking':
+      addAgentMsg(evt.message || evt.text || '', evt.dimension, evt.experts);
+      break;
+    case 'intent_notice':
+      addIntentNotice(evt.message || '');
+      break;
+
     // ── Unknown ──
     default:
-      // Forward any unrecognized events as JSON for debugging
       if (evt.type && evt.type !== 'token' && evt.type !== 'agent_message') break;
   }
 }
@@ -484,7 +674,10 @@ async function send() {
     });
 
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
+      const err = await res.json().catch((jsonErr) => {
+        console.warn('诊断错误响应解析失败 — 降级空对象', { err: jsonErr });
+        return {};
+      });
       addError('诊断启动失败：' + (err.error || err.message || '未知错误'));
       loading = false; btn.disabled = false; btn.textContent = '发送';
       quickActions.style.display = 'flex';
@@ -530,6 +723,7 @@ async function send() {
       }
     }
   } catch(e) {
+    log.warn({ err: e instanceof Error ? e.message : String(e) }, "JSON 解析失败");
     if (e.name !== 'AbortError') {
       addError('连接失败：' + e.message);
     }
@@ -626,6 +820,7 @@ async function loadGraphView() {
 
     addSystem('msg', '📊 团队全景图已加载 (' + nodes.length + ' 人, ' + edges.length + ' 关联)');
   } catch(e) {
+    log.warn({ err: e instanceof Error ? e.message : String(e) }, "网络请求失败");
     addSystem('msg', '⚠️ 团队全景图暂不可用 — 需要先运行诊断生成数据');
   }
 }
@@ -686,7 +881,10 @@ async function resolveProposal(id, action) {
     addSystem('msg', data.ok ?
       (action === 'confirm' ? '✅ 已确认' : action === 'reject' ? '❌ 已拒绝' : '💬 已记录看法') :
       '⚠️ ' + (data.error || '操作失败'));
-  } catch(e) { addSystem('msg', '⚠️ 操作失败: ' + e.message); }
+  } catch(e) {
+    log.warn({ err: e instanceof Error ? e.message : String(e) }, "网络请求失败");
+    addSystem('msg', '⚠️ 操作失败: ' + e.message);
+  }
 }
 
 init();

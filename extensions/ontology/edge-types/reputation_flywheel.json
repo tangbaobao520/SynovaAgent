@@ -1,0 +1,16 @@
+{
+  "$id": "edge/reputation_flywheel",
+  "label": "REPUTATION_FLYWHEEL",
+  "tags": ["causal", "first_order", "flywheel", "stage_5"],
+  "allowedFrom": ["pool/reputation"],
+  "allowedTo": ["outcome/market"],
+  "requiredProps": ["referral_rate", "word_of_mouth_velocity"],
+  "optionalProps": {
+    "online_review_score": "number (0-1) — 在线评分",
+    "media_mention_volume": "number — 媒体提及量",
+    "social_sentiment_trend": "string — 社交情绪趋势"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "成功交付带来好口碑，好口碑带来更多客户(飞轮)——声誉池驱动客户获取效率提升。"
+}

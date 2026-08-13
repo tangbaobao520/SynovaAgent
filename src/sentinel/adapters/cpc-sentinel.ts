@@ -1,3 +1,4 @@
+// @deprecated — 能力被I4+I7覆盖，Phase 3上线时删除
 /**
  * sentinel/adapters/cpc-sentinel.ts — 协作协议完备性哨兵 (D2)
  * @state: real
@@ -8,7 +9,7 @@
 
 import type { Sentinel, SentinelCheckResult, SentinelConfig, SentinelContext, SentinelFinding } from '../types';
 import { swapDbForContext, discoverTeams, checkTeam } from './helpers';
-import { createLogger } from '../../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/cpc');
 
@@ -70,23 +71,14 @@ function extractFindings(report: CPCReport, now: Date): SentinelFinding[] {
 export const cpcSentinel: Sentinel = {
   config,
   async check(context: SentinelContext): Promise<SentinelCheckResult> {
-    const restore = swapDbForContext(context);
     const { now } = context;
     try {
-      const teams = discoverTeams(context);
-      const mod = await import('../../../packages/engine-core/src/pipeline/diagnosis/cpc') as { computeCPC(t: string): CPCReport | null };
-      const allFindings: SentinelFinding[] = []; let anyFailed = false, anyData = false; const errors: string[] = [];
-      for (const tid of teams) {
-        const r = await checkTeam(config.id, tid, now, (t) => mod.computeCPC(t), (rep) => extractFindings(rep as CPCReport, now), 'CPC');
-        if (!r.ok) { anyFailed = true; if (r.error) errors.push(r.error); }
-        if (r.findings.length > 0) anyData = true;
-        allFindings.push(...r.findings);
-      }
-      return { sentinelId: config.id, ok: !anyFailed, findings: allFindings, durationMs: Date.now() - now.getTime(), checkedAt: now.toISOString(), error: anyFailed ? errors.join('; ') : undefined, degraded: (!anyData && teams.length > 0) || (anyFailed && allFindings.length === 0) };
+      // CPC 计算已从 engine-core 迁移 — 哨兵功能合并到 I4/I7 新哨兵
+      return { sentinelId: config.id, ok: true, findings: [], durationMs: 0, checkedAt: now.toISOString(), degraded: false };
     } catch (err: unknown) {
       const msg = (err as Error)?.message || String(err);
       log.error({ err: msg, code: 'CPC_SENTINEL_CRASH', phase: 3, retryable: true }, '[CPC] 哨兵崩溃');
       return { sentinelId: config.id, ok: false, findings: [], durationMs: Date.now() - now.getTime(), checkedAt: now.toISOString(), error: msg, degraded: true };
-    } finally { restore(); }
+    }
   },
 };

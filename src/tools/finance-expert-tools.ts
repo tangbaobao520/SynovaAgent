@@ -1,7 +1,7 @@
 /** tools/finance-expert-tools.ts — 财务专家工具链 (数据源: 文档提取 + 连接器) */
 import type { ToolDefinition } from '../agent/tools';
-import { SOGNodeType } from '@synova/sog-core';
-import { createLogger } from '../logger';
+import { NodeType } from '@synova/ontology';
+import { createLogger } from '@synova/logger';
 const log = createLogger('tools/finance-expert');
 
 interface GraphData { nodes?: Array<{ type: string; props?: Record<string, unknown> }>; }
@@ -15,8 +15,8 @@ export const collectCostDataTool: ToolDefinition = {
   // P1: 替换 interview_required → SOG 图查询
   handler: async (p) => {
     const g = await getGraph(p.orgId as string);
-    const financials = g ? (g.nodes || []).filter((n: any) => n.type === SOGNodeType.FINANCIAL) : [];
-    const teams = g ? (g.nodes || []).filter((n: any) => n.type === SOGNodeType.TEAM) : [];
+    const financials = g ? (g.nodes || []).filter((n: any) => n.type === NodeType.OUTCOME_FINANCIAL /* ONTOLOGY-MIGRATION: NodeType.OUTCOME_FINANCIAL -> outcome/financial or resource/money? Context-dependent. */) : [];
+    const teams = g ? (g.nodes || []).filter((n: any) => n.type === NodeType.RESOURCE_TEAM) : [];
     if (financials.length === 0) {
       return { orgId: p.orgId, status: 'no_data', categories: ['人力成本', '基础设施', 'SaaS订阅', '营销'], message: 'SOG 图中无 FINANCIAL 节点。请通过 /api/ontology/ingest 上传财务数据或接入连接器。' };
     }
@@ -32,8 +32,8 @@ export const assessRevenueQualityTool: ToolDefinition = {
   parameters: { type:'object', properties:{ orgId:{type:'string'} }, required:['orgId'] },
   handler: async (p) => {
     const g = await getGraph(p.orgId as string);
-    const clients = g ? (g.nodes || []).filter((n: any) => n.type === SOGNodeType.CLIENT) : [];
-    const financials = g ? (g.nodes || []).filter((n: any) => n.type === SOGNodeType.FINANCIAL) : [];
+    const clients = g ? (g.nodes || []).filter((n: any) => n.type === NodeType.RESOURCE_CLIENT) : [];
+    const financials = g ? (g.nodes || []).filter((n: any) => n.type === NodeType.OUTCOME_FINANCIAL /* ONTOLOGY-MIGRATION: NodeType.OUTCOME_FINANCIAL -> outcome/financial or resource/money? Context-dependent. */) : [];
     const revenueNodes = financials.filter((f: any) => f.props?.financialType === 'revenue');
     return {
       orgId: p.orgId, status: clients.length > 0 ? 'ok' : 'limited',
@@ -48,8 +48,8 @@ export const roiProjectionTool: ToolDefinition = {
   parameters: { type:'object', properties:{ orgId:{type:'string'} }, required:['orgId'] },
   handler: async (p) => {
     const g = await getGraph(p.orgId as string);
-    const persons = g ? (g.nodes || []).filter((n: any) => n.type === SOGNodeType.PERSON) : [];
-    const tools = g ? (g.nodes || []).filter((n: any) => n.type === SOGNodeType.TOOL) : [];
+    const persons = g ? (g.nodes || []).filter((n: any) => n.type === NodeType.RESOURCE_PERSON) : [];
+    const tools = g ? (g.nodes || []).filter((n: any) => n.type === NodeType.RESOURCE_TOOL) : [];
     return {
       orgId: p.orgId, projections: [
         { action: '部署 CI/CD 自动化', estimatedCost: '5人天 + $50/月', estimatedSaving: `${persons.length * 2}人天/月`, roi: '380%', paybackMonths: 1.5 },

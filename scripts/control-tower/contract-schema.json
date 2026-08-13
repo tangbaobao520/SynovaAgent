@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ContractRecord",
+  "description": "契约存档器 — 从 Agent 产出中提取的结构化接口契约（权威文档 #17 Ch3 §4.1）",
+  "type": "object",
+  "properties": {
+    "contractId": { "type": "string", "description": "契约唯一标识" },
+    "type": { "type": "string", "enum": ["export_function", "export_class", "edge_id", "file_path", "api_endpoint"], "description": "契约类型" },
+    "name": { "type": "string", "description": "提取的标识符名称" },
+    "signature": { "type": "string", "description": "完整签名行" },
+    "filePath": { "type": "string", "description": "关联文件路径" },
+    "edgeIds": { "type": "array", "items": { "type": "string" }, "description": "关联的 42 边 ID" },
+    "callerFile": { "type": "string", "description": "调用方文件路径" },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1, "description": "提取置信度" },
+    "sourceLine": { "type": "integer", "description": "源文件行号" },
+    "extractedAt": { "type": "string", "format": "date-time", "description": "提取时间" }
+  },
+  "required": ["contractId", "type", "name", "extractedAt"]
+}

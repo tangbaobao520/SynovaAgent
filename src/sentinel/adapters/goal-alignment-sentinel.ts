@@ -1,3 +1,4 @@
+// @deprecated — 能力被S1覆盖，Phase 5上线时删除
 /**
  * sentinel/adapters/goal-alignment-sentinel.ts — 目标对齐度哨兵 (D2)
  * @state: real
@@ -8,7 +9,7 @@
 
 import type { Sentinel, SentinelCheckResult, SentinelConfig, SentinelContext, SentinelFinding } from '../types';
 import { discoverTeams } from './helpers';
-import { createLogger } from '../../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/goal-alignment');
 
@@ -35,7 +36,7 @@ export const goalalignmentSentinel: Sentinel = {
           }
           const teamRows = db.prepare("SELECT id, props FROM graph_nodes WHERE type = 'TEAM' AND props IS NOT NULL").all();
           for (const r of teamRows) { const p = typeof r.props === 'string' ? JSON.parse(r.props as string) : (r.props || {}); teams_list.push({ id: r.id as string, name: (p.name || r.id) as string }); }
-        } catch { /* */ }
+        } catch (err) { log.warn({ err }, '目标/团队数据读取失败 — degraded'); }
       }
       if (goals.length === 0 && teams_list.length === 0) return { sentinelId: config.id, ok: true, findings: [], durationMs: Date.now() - startTime, checkedAt, degraded: true };
       // 检查：团队级目标是否有父目标（对齐到组织目标）

@@ -1,0 +1,30 @@
+{
+  "id": "devops_sre",
+  "name": "DevOps 与 SRE",
+  "category": "math-engineering",
+  "coreInsight": "通过自动化、监控和SLO消除开发与运维之间的壁垒。错误预算在速度与稳定性之间建立量化决策框架。",
+  "applicableDecisionTypes": [
+    "技术架构",
+    "运维策略",
+    "容量规划"
+  ],
+  "constraintPatterns": [
+    "DevOps",
+    "运维",
+    "自动化",
+    "SLO",
+    "SRE",
+    "可靠性"
+  ],
+  "applicableRoles": [
+    "DevOps工程师",
+    "SRE",
+    "平台工程师"
+  ],
+  "limitations": [
+    "需要较强的工程文化",
+    "错误预算需要管理层理解",
+    "小团队可能无法负担专职SRE"
+  ],
+  "$id": "framework/math-engineering/devops_sre"
+}

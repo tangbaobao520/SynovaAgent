@@ -1,0 +1,32 @@
+{
+  "id": "habitual_saving_fallacy",
+  "name": "习惯性省钱谬误",
+  "category": "psychology",
+  "coreInsight": "为了省钱跳过认证→省了500美元认证费→损失5000美元退货处理费。短期省钱可以是最贵的决策",
+  "applicableDecisionTypes": [
+    "cost_optimization",
+    "compliance",
+    "risk_management"
+  ],
+  "constraintPatterns": [
+    "成本",
+    "合规",
+    "风险",
+    "认证",
+    "省钱",
+    "退货",
+    "质量",
+    "长期"
+  ],
+  "applicableRoles": [
+    "成本管理",
+    "风险分析",
+    "投资回报",
+    "合规审查"
+  ],
+  "limitations": [
+    "省钱有时确实是最优策略",
+    "需要区分必要开支和可选开支"
+  ],
+  "$id": "framework/psychology/habitual_saving_fallacy"
+}

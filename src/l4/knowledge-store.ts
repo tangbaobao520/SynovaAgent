@@ -9,7 +9,7 @@ import Database from 'better-sqlite3';
 export interface FilterClause {
   conditions: Array<{ field: string; operator: 'IN' | 'EQ' | 'NOT_EQ' | 'CONTAINS'; value: unknown }>;
 }
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('l4/knowledge-store');
 
@@ -72,7 +72,7 @@ export class KnowledgeStore {
         pkb_domain TEXT,
         pkb_type TEXT,
         pkb_confidence REAL DEFAULT 0.7,
-        pkb_status TEXT DEFAULT 'active',
+        pkb_status TEXT DEFAULT 'draft',
         pkb_source TEXT,
         pkb_expires_at TEXT,
         pkb_version TEXT,
@@ -308,6 +308,30 @@ export class KnowledgeStore {
       results: filtered.slice(0, limit).map(r => this.rowToChunk(r)),
       stats,
     };
+  }
+
+  /**
+   * 按 SKILL 名称查询知识条目（D63 pull-mode）。
+   * 通过 pkb_type 精确匹配 SKILL 名称。
+   *
+   * @param skillName — SKILL 名称（如 me_pricing_strategy）
+   * @param limit — 最大返回条数
+   * @returns KnowledgeChunk[]
+   */
+  getBySkill(skillName: string, limit = 5): KnowledgeChunk[] {
+    try {
+      const rows = this.db.prepare(`
+        SELECT * FROM knowledge_chunks
+        WHERE pkb_type = ? AND pkb_status = 'active'
+        ORDER BY pkb_confidence DESC, knowledge_level ASC
+        LIMIT ?
+      `).all(skillName, limit) as Array<Record<string, unknown>>;
+      return rows.map(r => this.rowToChunk(r));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg, skillName }, 'getBySkill 查询失败 — 返回空');
+      return [];
+    }
   }
 
   /** 获取 PKB 统计 */
@@ -659,5 +683,58 @@ export class KnowledgeStore {
       }
     }
     return true;
+  }
+
+  // ═══ D241: 知识审批 ═══
+
+  /**
+   * 审批通过一条 PKB。
+   * 将 pkb_status 从 draft 改为 approved，记录审批人信息。
+   */
+  approvePkb(id: string, approverId: string): void {
+    try {
+      const existing = this.db.prepare('SELECT pkb_status FROM knowledge_chunks WHERE id = ?').get(id) as Record<string, unknown> | undefined;
+      if (!existing) throw new Error(`KnowledgeChunk ${id} not found`);
+      this.db.prepare('UPDATE knowledge_chunks SET pkb_status = ?, updated_at = ? WHERE id = ?').run('approved', new Date().toISOString(), id);
+      log.info({ id, approverId }, 'PKB approved');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg, id }, 'PKB approve failed');
+      throw err;
+    }
+  }
+
+  /**
+   * 驳回一条 PKB，记录驳回原因。
+   */
+  rejectPkb(id: string, approverId: string, reason: string): void {
+    try {
+      const existing = this.db.prepare('SELECT pkb_status FROM knowledge_chunks WHERE id = ?').get(id) as Record<string, unknown> | undefined;
+      if (!existing) throw new Error(`KnowledgeChunk ${id} not found`);
+      this.db.prepare('UPDATE knowledge_chunks SET pkb_status = ?, updated_at = ? WHERE id = ?').run('rejected', new Date().toISOString(), id);
+      log.info({ id, approverId, reason }, 'PKB rejected');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg, id }, 'PKB reject failed');
+      throw err;
+    }
+  }
+
+  /**
+   * 列出待审批的 PKB 条目。
+   */
+  listPendingPkb(orgId?: string, limit = 50, offset = 0): KnowledgeChunk[] {
+    try {
+      let sql = 'SELECT * FROM knowledge_chunks WHERE pkb_status = "draft"';
+      const params: unknown[] = [];
+      if (orgId) { sql += ' AND org_id = ?'; params.push(orgId); }
+      sql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+      params.push(limit, offset);
+      const rows = this.db.prepare(sql).all(...params) as Array<Record<string, unknown>>;
+      return rows.map(r => this.rowToChunk(r));
+    } catch (err: unknown) {
+      log.warn({ err }, 'listPendingPkb failed');
+      return [];
+    }
   }
 }

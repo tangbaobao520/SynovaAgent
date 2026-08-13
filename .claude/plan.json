@@ -1,0 +1,35 @@
+{
+  "version": "1.0",
+  "current_phase": 1,
+  "principles": [
+    {
+      "rule": "brief 模板必须含 ### c) 决策参考系 字段",
+      "verify": "grep -c '决策参考系' scripts/workflow/generate-task-brief.py >= 1"
+    },
+    {
+      "rule": "DECISION-REFERENCE 必须注册 + 注入器可达",
+      "verify": "grep -c 'DECISION-REFERENCE' scripts/control-tower/doc-registry.json >= 1 && grep -c 'DECISION-REFERENCE' scripts/control-tower/inject-context.py >= 1"
+    },
+    {
+      "rule": "CLAUDE.md 必须引用 DECISION-REFERENCE（新 session 必读）",
+      "verify": "grep -c 'DECISION-REFERENCE' CLAUDE.md >= 1"
+    }
+  ],
+  "approach": "复用（模板字段追加 + 注册表追加 + 注入器模式扩展——文件驱动最小机制，不新建组件不加工厂）",
+  "phases": [
+    {
+      "step": 1,
+      "action": "create+wire",
+      "files": [
+        "scripts/workflow/generate-task-brief.py",
+        "scripts/control-tower/inject-context.py",
+        "scripts/control-tower/doc-registry.json",
+        "CLAUDE.md",
+        ".codex/control-tower/VERSION.md",
+        "tests/control-tower/brief-template-decision.test.sh",
+        ".claude/task-briefs/D333-decision-reference-framework.md"
+      ],
+      "checks": { "wiring": "enforce", "test_pairing": "enforce" }
+    }
+  ]
+}

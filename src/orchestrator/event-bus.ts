@@ -9,7 +9,7 @@
  */
 import type { OrchestrationEvent, EventFilter } from './types';
 import { EventStore } from './event-store';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('orchestrator/event-bus');
 

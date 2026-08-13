@@ -1,0 +1,16 @@
+{
+  "$id": "edge/capital_acquisition",
+  "label": "CAPITAL_ACQUISITION",
+  "tags": ["causal", "first_order", "stage_1"],
+  "allowedFrom": ["external/baseline"],
+  "allowedTo": ["pool/capital"],
+  "requiredProps": ["capital_raised", "cost_of_capital"],
+  "optionalProps": {
+    "funding_round_type": "string — 融资轮次(seed|series_a|series_b|debt|equity)",
+    "days_to_close": "number — 融资完成天数",
+    "due_diligence_depth": "number (0-1) — 尽调深度"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "获取资本——企业从外部资本市场通过股权/债权/融资等方式获取资金的输入阀。"
+}

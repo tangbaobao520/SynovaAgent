@@ -21,7 +21,10 @@ import type { QueryAPI } from './expert-autonomy';
 import { QualityFirewall } from './quality-firewall';
 import { validateExpertOutput } from './expert-output-schema';
 import { getExpertRegistry } from './expert-registry';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
+import { getSkillLoader } from '../agent/skill-lazy-loader';
+// T11: 无数据诊断 — 访谈信号作为证据来源
+import type { CausalSignal } from '../interview/signals';
 
 const log = createLogger('l3/expert-dispatcher');
 
@@ -67,15 +70,27 @@ export interface ExpertReport extends SubAgentReport {
   model?: string;
 }
 
-// ═══ Output Schema (from engine-core ExpertSubAgentExecutor) ═══
+// ═══ Output Schema (v3.3: 对齐 OUTPUT_SPEC 金字塔结构) ═══
 
 export const EXPERT_REPORT_SCHEMA = JSON.stringify({
+  // Layer 1: 一句话核心判断（CEO 读完这句就知道结论）
+  governingThought: '≤50字。格式: [企业名]的[维度]核心问题是[根因]，表现为[关键信号]。',
+  // Layer 2: 3个关键判断——每个回答一个"为什么"
+  keyJudgments: [{
+    judgment: '判断陈述（一句话，企业负责人能听懂）',
+    severity: 'critical|warning|info',
+    evidence: [{ fact: '数据事实——引用企业数据和访谈原话', type: 'data|infer|predict' }],
+    impact: '如果不解决，12个月内的量化影响',
+    ruledOut: '考虑过但排除的替代解释',
+    confidence: 0.0,
+  }],
+  // Layer 3: 保留兼容——传统findings格式
   findings: [{
     id: 'f1', dimension: '...', statement: '≤200字',
     confidence: 0.8, evidenceRefs: ['ev-xxx'],
     severity: 'critical|high|medium|low', suggestedActions: ['...'],
   }],
-  overallAssessment: '≤300字',
+  overallAssessment: '≤300字。综合判断摘要。',
   uncertainties: [{
     description: '...', reason: '数据不足|超出领域|需要人工判断',
     suggestedNextStep: '...',
@@ -131,6 +146,7 @@ export class ExpertDispatcher {
   private maxRetries: number;
   private piiScrubber: import('../security/pii-scrubber').PIIScrubber | null = null;
   private toolRegistry: import('../agent/tools').ToolRegistry | null = null;
+  private factsContext = ''; // V4.2.1: 企业事实约束
 
   constructor(config: ExpertDispatcherConfig) {
     this.llmClient = config.llmClient;
@@ -289,11 +305,31 @@ export class ExpertDispatcher {
       // Fallback: structured LLM consult with output schema
       return await this.runWithRetry(async () => {
         const prompt = getExpertRegistry().getPrompt(type) || '你是组织诊断专家。';
+        // v2.1: 渐进式技能 — 注入当前专家可用的技能目录
+        let skillCatalog = '';
+        try {
+          const catalog = getSkillLoader().buildCatalogText(type);
+          if (catalog) skillCatalog = '\n\n' + catalog;
+        } catch { /* skill catalog build failed — degraded */ }
+
+        // v2.1: PKB 知识注入 — 注入行业+客户知识到专家上下文
+        let knowledgeContext = '';
+        try {
+          const { getKnowledgeInjector } = await import('../agent/knowledge-injector');
+          const injector = getKnowledgeInjector();
+          const result = injector.inject();
+          if (result.contexts.length > 0) {
+            knowledgeContext = '\n\n## 行业知识库\n\n' + result.contexts
+              .filter(c => c.validated)
+              .map(c => c.content)
+              .join('\n\n---\n\n');
+          }
+        } catch { /* knowledge injection failed — degraded */ }
         const evidenceSummary = filtered.slice(0, 10).map(e =>
           `[${e.type}] ${e.content.slice(0, 100)} (置信度: ${e.confidence})`,
         ).join('\n');
 
-        const systemPrompt = `${prompt}\n\n## 输出格式 (必须严格遵守)\n只输出纯 JSON, 不要 Markdown 代码块包裹。\n${EXPERT_REPORT_SCHEMA}`;
+        const systemPrompt = `${this.factsContext}${prompt}${skillCatalog}${knowledgeContext}\n\n## 输出格式 (必须严格遵守)\n只输出纯 JSON, 不要 Markdown 代码块包裹。\n${EXPERT_REPORT_SCHEMA}`;
         const userMessage = `## 可用证据\n${evidenceSummary || '无证据'}\n\n## 本体图更新 (可选)\n如果你发现了证据中未出现的新实体或关系，请在 ontologyPatches 字段中输出。格式: "ontologyPatches": [{ "createNodes": [...], "createEdges": [...] }]`;
 
         const response = await Promise.race([
@@ -448,11 +484,13 @@ export class ExpertDispatcher {
   ): Promise<T> {
     try {
       return await fn();
-    } catch (err: any) {
-      const isNetworkError = /timeout|network|econnrefused|etimedout|5\d{2}/i.test(err.message);
+    } catch (err: unknown) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "* Retry wrapper with exponential backoff for network errors");
+      const msg = err instanceof Error ? err.message : String(err);
+      const isNetworkError = /timeout|network|econnrefused|etimedout|5\d{2}/i.test(msg);
       if (isNetworkError && attempt < this.maxRetries) {
         const delay = Math.min(2000 * Math.pow(2, attempt), 8000);
-        log.debug({ expertType, attempt, delay }, 'Expert network error — retrying');
+        log.warn({ expertType, attempt, delay, err: msg }, 'Expert network error — retrying');
         await new Promise(r => setTimeout(r, delay));
         return this.runWithRetry(fn, expertType, attempt + 1);
       }
@@ -460,10 +498,35 @@ export class ExpertDispatcher {
     }
   }
 
-  /** Hermes P0-3: 6 专家并行执行 — 诊断速度 3-6x */
-  async runAllExperts(evidence: Evidence[]): Promise<ExpertReport[]> {
-    const expertTypes: ExpertType[] = ['strategy', 'org', 'finance', 'tech', 'marketing', 'action', 'business_model'];
-    // KnowledgeAgent 是后台知识引擎, 不参与诊断 (L1 qa-router 按需调度)
+  /** 从 Registry + expert-registry.yaml 动态读取诊断专家并行执行 */
+  async runAllExperts(evidence: Evidence[], teamId?: string): Promise<ExpertReport[]> {
+    // V4.2.1: 加载企业事实层 — 已确认制度/规则/工具
+    this.factsContext = '';
+    if (teamId) {
+      try {
+        const { getAgentMemoryStore } = await import('../l4/agent-memory-store');
+        const { getDatabase } = await import('../init/engine-context');
+        const db = getDatabase();
+        const store = getAgentMemoryStore(db);
+        const facts: Array<{ key: string; value: string }> = []; // 待适配
+        if (facts && facts.length > 0) {
+          this.factsContext = `\n[企业事实约束 — 以下为本企业已确认制度/规则/工具，推理时必须遵守]\n${
+            facts.map(f => `- ${f.key}: ${f.value}`).join('\n')
+          }\n`;
+        }
+      } catch (err) { log.warn({ err }, '企业事实加载失败 — degraded'); }
+    }
+
+    const { getExpertRegistry } = await import('./expert-registry');
+    const { getBackgroundExperts, getEnabledDiagnosticExperts } = await import('../agent/expert-config-loader');
+    const allTypes = getExpertRegistry().listTypes();
+    // v3.3: 后台专家从 expert-registry.yaml 读取，不再硬编码
+    const BACKGROUND_EXPERTS = getBackgroundExperts();
+    const enabledFromConfig = getEnabledDiagnosticExperts();
+    // 如果 yaml 配置为空 → 回退到 Registry 全部专家（排除 background）
+    const expertTypes = enabledFromConfig.length > 0
+      ? allTypes.filter(t => enabledFromConfig.includes(t) && !BACKGROUND_EXPERTS.has(t))
+      : allTypes.filter(t => !BACKGROUND_EXPERTS.has(t));
 
     const results = await Promise.allSettled(
       expertTypes.map(type => this.runExpert(type, evidence)),
@@ -472,6 +535,54 @@ export class ExpertDispatcher {
     return results
       .filter((r): r is PromiseFulfilledResult<ExpertReport> => r.status === 'fulfilled' && r.value !== null)
       .map(r => r.value);
+  }
+
+  // ═══ T11: 无数据诊断 — 访谈信号 → 证据 → 专家推理 ═══
+
+  /**
+   * 将 CausalSignal（访谈信号）转换为 Evidence（证据池格式）。
+   * 约束5: 零 as any。
+   */
+  private signalToEvidence(signal: CausalSignal): Evidence {
+    return {
+      id: `interview_${signal.id}`,
+      source: 'interviewee',
+      sourceId: signal.sourceRole,
+      type: signal.dimension,
+      content: `[${signal.signalStrength}] ${signal.description} — 原始回答: ${signal.sourceAnswer}`,
+      confidence: signal.signalStrength === 'strong' ? 0.7 : signal.signalStrength === 'moderate' ? 0.5 : 0.3,
+      collectedAt: new Date().toISOString(),
+      orgId: 'interview',
+    };
+  }
+
+  /**
+   * 无数据模式：基于访谈信号运行所有专家。
+   *
+   * 约束1: 不修改 runAllExperts 的已有逻辑——这是新增路径。
+   * 约束3: 证据来源标注为 'interviewee'，报告方标注 dataSource。
+   *
+   * @param signals - 从 signal-extractor 提取的因果信号
+   * @param teamId - 团队标识
+   * @returns 专家报告列表
+   */
+  async runAllExpertsFromInterview(
+    signals: CausalSignal[],
+    teamId?: string,
+  ): Promise<ExpertReport[]> {
+    if (signals.length === 0) {
+      log.warn('无数据诊断: 访谈信号为空 — 专家推理将基于零证据');
+    }
+
+    const evidence: Evidence[] = signals.map(s => this.signalToEvidence(s));
+
+    log.info({
+      signalCount: signals.length,
+      evidenceCount: evidence.length,
+      teamId,
+    }, '无数据模式: 访谈信号已转为 Evidence，启动专家推理');
+
+    return this.runAllExperts(evidence, teamId);
   }
 }
 
@@ -485,6 +596,66 @@ export function getGlobalExpertDispatcher(): ExpertDispatcher | null {
 
 export function setGlobalExpertDispatcher(dispatcher: ExpertDispatcher | null): void {
   _globalDispatcher = dispatcher;
+}
+
+// ════════════════════════════════════════════════════════════════
+// Phase 3.3: 纠错叠加层 — 读取报告时合并 GA 纠错
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * 获取叠加了 GA 纠错后的专家报告。
+ * 先查原始报告 → 再查纠错叠加层 → 合并展示。
+ *
+ * @param reportId - 原始报告 ID
+ * @param orgId - 组织 ID
+ * @returns 合并后的报告内容，或在原始报告不可用时返回 null
+ */
+export async function getReportWithCorrections(
+  reportId: string,
+  orgId = 'default',
+): Promise<{ original: Record<string, unknown>; corrections: Record<string, unknown>[]; merged: Record<string, unknown> } | null> {
+  try {
+    const { getAgentMemoryStore } = await import('../l4/agent-memory-store');
+    const { getDatabase } = await import('../init/engine-context');
+    const store = getAgentMemoryStore(getDatabase());
+
+    // 读取原始报告
+    const originalEntry = store.recall(orgId, `expert_report:${reportId}`);
+    if (!originalEntry) return null;
+
+    let original: Record<string, unknown>;
+    try { original = JSON.parse(originalEntry.value); } catch (err) { log.warn({ err, reportId }, '报告 JSON 解析失败 — 回退原始文本'); original = { content: originalEntry.value }; }
+
+    // 查询该报告的所有纠错
+    const listResult = store.list({ orgId, tags: ['ga_correction', reportId] });
+    const corrections: Record<string, unknown>[] = [];
+
+    for (const entry of listResult) {
+      if (entry.type !== 'ga_correction') continue;
+      try {
+        const corr = JSON.parse(entry.value);
+        corrections.push({ ...corr, correctionId: entry.key, correctedAt: entry.createdAt });
+      } catch (err) { log.warn({ err, reportId }, '纠错条目解析失败 — 跳过'); continue; }
+    }
+
+    // 合并：将纠错标注到原始报告的 findings 中
+    const merged = JSON.parse(JSON.stringify(original)) as Record<string, unknown>;
+    if (corrections.length > 0 && Array.isArray(merged.findings)) {
+      const correctedStatements = new Set(corrections.map((c: any) => c.originalFinding));
+      merged.findings = (merged.findings as Array<Record<string, unknown>>).map((f: Record<string, unknown>) => {
+        if (correctedStatements.has(f.statement || f.description)) {
+          return { ...f, _corrected: true, _correctionCount: corrections.filter((c: any) => c.originalFinding === (f.statement || f.description)).length };
+        }
+        return f;
+      });
+    }
+
+    return { original, corrections, merged };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log.warn({ err: msg, reportId }, 'getReportWithCorrections 失败 — degraded');
+    return null;
+  }
 }
 
 // Expert prompts moved to ExpertRegistry (src/l3/expert-registry.ts) — Task 3

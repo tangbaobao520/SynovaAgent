@@ -1,0 +1,57 @@
+{
+  "name": "verify-hypothesis",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "假设验证测试",
+  "description": "对诊断中的因果假设进行统计验证，通过因果序列分析和干预效应评估确定假设成立与否。",
+  "tier": "L5",
+  "complexity": "expert",
+  "expert": "action",
+  "tools": [
+    "compute-causal-sequence",
+    "compute-intervention-effect",
+    "compute-shapley-attribution"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "execution"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": []
+  },
+  "dependencies": {
+    "skills": [
+      "detect-plan-deviation"
+    ],
+    "edges": [
+      "E-X.1",
+      "E-0.4",
+      "E-2.7"
+    ],
+    "computes": [
+      "COMPUTE-CAUSAL-SEQUENCE-v1",
+      "COMPUTE-INTERVENTION-EFFECT-v1",
+      "COMPUTE-SHAPLEY-ATTRIBUTION-v1"
+    ],
+    "sentinels": [
+      "assumption-triggered-reallocation"
+    ]
+  },
+  "boundaries": {
+    "prohibitedDimensions": [
+      "financial-decision",
+      "strategic-direction"
+    ],
+    "degradedBehavior": "执行数据不足时返回 degraded:true，仅输出可用数据",
+    "preconditions": [
+      "下级Skill执行结果已就绪",
+      "GraphStore连接正常"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
+}

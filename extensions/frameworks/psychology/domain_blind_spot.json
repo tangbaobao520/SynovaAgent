@@ -1,0 +1,32 @@
+{
+  "id": "domain_blind_spot",
+  "name": "领域盲区",
+  "category": "psychology",
+  "coreInsight": "专家在非专业领域的判断力急剧下降。一个领域的深度认知不等于另一个领域的直觉准确。承认盲区比强行跨领域判断更可靠。",
+  "applicableDecisionTypes": [
+    "hiring",
+    "localization",
+    "strategy"
+  ],
+  "constraintPatterns": [
+    "盲区",
+    "跨领域",
+    "专家",
+    "本地",
+    "认知",
+    "调研",
+    "顾问",
+    "局限"
+  ],
+  "applicableRoles": [
+    "领域专家",
+    "本地顾问",
+    "市场调研",
+    "外部咨询"
+  ],
+  "limitations": [
+    "外部顾问的判断也可能有偏",
+    "专家认知和本地认知需要平衡"
+  ],
+  "$id": "framework/psychology/domain_blind_spot"
+}

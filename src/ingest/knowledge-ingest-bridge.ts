@@ -4,7 +4,7 @@
  * Day 4 T4.4: PDF/DOCX/Excel 上传 → 自动解析 → SOG本体构建。
  * 诊断基于事实而非记忆。
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import type { GraphStore } from '../l4/graph-bridge';
 
 const log = createLogger('ingest/knowledge-bridge');

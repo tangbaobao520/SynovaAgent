@@ -12,7 +12,7 @@ export type {
   ToolRegistryInterface,
 } from '@synova/connector-registry';
 
-export type { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
+export type { NodeType, EdgeType } from '@synova/ontology';
 
 export interface ConnectorMessage {
   id: string;

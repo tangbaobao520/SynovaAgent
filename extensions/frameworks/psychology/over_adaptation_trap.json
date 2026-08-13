@@ -1,0 +1,32 @@
+{
+  "id": "over_adaptation_trap",
+  "name": "过度适应陷阱",
+  "category": "psychology",
+  "coreInsight": "为适配局部需求不断修改核心方案→失去全局一致性和规模优势。适应要有底线——核心层不变，适配层可变。",
+  "applicableDecisionTypes": [
+    "product_strategy",
+    "localization",
+    "brand_strategy"
+  ],
+  "constraintPatterns": [
+    "本地化",
+    "标准化",
+    "适应",
+    "全局",
+    "定制",
+    "统一",
+    "核心",
+    "边界"
+  ],
+  "applicableRoles": [
+    "产品策略",
+    "标准化管理",
+    "架构决策",
+    "方案设计"
+  ],
+  "limitations": [
+    "某些场景确实需要深度定制",
+    "全局标准和局部适应的边界需要经验判断"
+  ],
+  "$id": "framework/psychology/over_adaptation_trap"
+}

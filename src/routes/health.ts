@@ -5,6 +5,8 @@
  */
 import { Router } from 'express';
 import { checkForUpdates, getCurrentVersion } from '../services/update-checker';
+import { createLogger } from '@synova/logger';
+const log = createLogger('src.routes.health');
 
 const router = Router();
 const startTime = Date.now();
@@ -27,6 +29,7 @@ router.get('/api/update/check', async (_req, res) => {
     const result = await checkForUpdates();
     res.json({ ok: true, ...result });
   } catch (err: any) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "健康检查更新检测");
     res.json({
       ok: false,
       hasUpdate: false,

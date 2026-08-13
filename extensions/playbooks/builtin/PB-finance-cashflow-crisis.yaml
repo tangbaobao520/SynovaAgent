@@ -1,0 +1,61 @@
+id: PB-finance-cashflow-crisis
+name: 现金流危机应急剧本
+version: 1.0.0
+expert: finance
+type: playbook
+description: 当现金流哨兵触发critical级告警时的应急响应。先确认信号真伪，然后快速评估安全边际和capital结构，输出0-3个关键修复方案。
+trigger:
+  sentinels:
+    - cashflow-critical
+    - sentinel-survival-margin
+  manual: true
+  condition: 现金流哨兵critical
+steps:
+  - id: step-1
+    name: 警报确认
+    description: 确认现金流哨兵告警级别和信号可靠性
+    skill: diagnose-cashflow-health
+    timeout: 30
+    onFailure: halt
+  - id: step-2
+    name: 安全边际计算
+    description: 计算现金流runway天数和安全边际
+    skill: analyze-break-even
+    timeout: 30
+    onFailure: halt
+  - id: step-3
+    name: 经营杠杆评估
+    description: 评估固定成本占比对利润波动的影响
+    skill: analyze-operating-leverage
+    timeout: 20
+    onFailure: degrade
+  - id: step-4
+    name: 资本结构审查
+    description: 审查当前资本配置和融资渠道
+    skill: analyze-capital-allocation
+    timeout: 30
+    onFailure: degrade
+  - id: step-5
+    name: 应急方案输出
+    description: 整合分析结果，输出0-3个关键修复方案
+    tools:
+      - cross-validate
+    timeout: 60
+    onFailure: notify
+onFailure: halt
+output: cashflow_crisis_report
+dependencies:
+  edges:
+    - E-1.1
+    - E-1.2
+    - E-2.1
+    - E-5.1
+    - E-4.1
+  skills:
+    - diagnose-cashflow-health
+    - analyze-break-even
+    - analyze-operating-leverage
+    - analyze-capital-allocation
+  sentinels:
+    - cashflow-critical
+    - sentinel-survival-margin

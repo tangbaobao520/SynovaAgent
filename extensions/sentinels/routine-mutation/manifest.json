@@ -1,0 +1,40 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "routine-mutation",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "O2",
+  "description": "O2:",
+  "schedule": "0 0 1 * *",
+  "expert": "org",
+  "priority": "P1",
+  "layer": "internal",
+  "computeKind": "deterministic",
+  "computes": [
+    "compute-routine-mutation"
+  ],
+  "thresholds": {
+    "score": {
+      "warning": 0.4,
+      "critical": 0.2
+    }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": [
+      "sog_graph"
+    ],
+    "dataAccess": {
+      "allowedDimensions": [
+        "organizational"
+      ],
+      "sensitiveAccess": "read"
+    }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "routineMutationSentinel",
+  "auxiliaryExperts": [
+    "knowledge"
+  ],
+  "id": "sentinel-routine-mutation"
+}

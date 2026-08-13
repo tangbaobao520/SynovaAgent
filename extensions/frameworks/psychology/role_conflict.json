@@ -1,0 +1,34 @@
+{
+  "id": "role_conflict",
+  "name": "角色过载与冲突",
+  "category": "psychology",
+  "coreInsight": "当一个人被赋予不相容的职责（如同时负责合规审查和营收增长），角色冲突必然发生。不相容职责域（合规+营收/质量+速度/创新+稳定）应拆分到不同角色，兼任是冲突的温床。",
+  "applicableDecisionTypes": [
+    "角色设计",
+    "职责分配",
+    "组织架构",
+    "合规设计"
+  ],
+  "constraintPatterns": [
+    "合规",
+    "营收",
+    "多重职责",
+    "兼任",
+    "冲突",
+    "监督",
+    "执行",
+    "制衡"
+  ],
+  "applicableRoles": [
+    "职责分离",
+    "冲突检测",
+    "组织审计",
+    "角色设计"
+  ],
+  "limitations": [
+    "过度拆分导致沟通成本上升",
+    "小团队无法完全避免兼任",
+    "某些创新型角色受益于张力"
+  ],
+  "$id": "framework/psychology/role_conflict"
+}

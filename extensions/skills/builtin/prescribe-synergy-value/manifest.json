@@ -1,0 +1,56 @@
+{
+  "name": "prescribe-synergy-value",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "协同价值评估",
+  "description": "评估企业内部跨部门协同价值，量化知识溢出效应和交叉功能协同，推荐整合方案。",
+  "tier": "L4",
+  "complexity": "expert",
+  "expert": "business_model",
+  "tools": [
+    "compute-synergy",
+    "compute-cross-functional-synergy",
+    "compute-knowledge-sharing",
+    "query-graph"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "business-model",
+        "organizational"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": []
+  },
+  "dependencies": {
+    "skills": [],
+    "edges": [
+      "E-3.6",
+      "E-2.8",
+      "E-5.3"
+    ],
+    "computes": [
+      "COMPUTE-SYNERGY-v1",
+      "COMPUTE-CROSS-FUNCTIONAL-SYNERGY-v1",
+      "COMPUTE-KNOWLEDGE-SHARING-v1"
+    ],
+    "sentinels": []
+  },
+  "boundaries": {
+    "prohibitedDimensions": [
+      "financial-detail",
+      "technology-implementation"
+    ],
+    "degradedBehavior": "协同数据不可用时返回 degraded:true，跳过不可用维度",
+    "preconditions": [
+      "下级L1-L2数据已就绪",
+      "相关compute函数可用",
+      "GraphStore连接正常"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
+}

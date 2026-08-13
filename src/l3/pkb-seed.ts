@@ -9,7 +9,7 @@
  */
 import { KnowledgeStore } from '../l4/knowledge-store';
 import type Database from 'better-sqlite3';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('l3/pkb-seed');
 
@@ -193,6 +193,49 @@ const SEEDS: SeedEntry[] = [
   { domain: 'action', type: 'rule', confidence: 0.95, level: 1, content: '执行工具选择指南(铁律): 1.初创期→OKR(目标对齐)+看板(可视化)。成长期→OKR+KPI混合(战略+执行)。成熟期→BSC(全面)+KPI(精细化)。任何时候: 一旦选定,至少坚持2个季度再评估。不要在同一个团队同时推行Scrum和Kanban(二选一)。工具切换的时机: 企业规模翻倍、业务模式转型、现有工具完成率<50%持续2个季度。' },
   { domain: 'action', type: 'rule', confidence: 0.9, level: 2, content: '方法论的适用边界: OKR→需要团队有自驱力和数据透明度,不适合强管控文化。KPI→适合流程标准化高的岗位(生产/销售),不适合创新岗位。Scrum→适合需求不明确、快速迭代的项目,不适合运维型工作。Kanban→适合持续交付型工作,不适合需要固定周期的项目。向客户推荐工具时,必须先说明: 1.为什么这个适合你(而非其他) 2.什么时候需要升级 3.什么情况下绝对不应该用。' },
   { domain: 'strategy', type: 'rule', confidence: 0.95, level: 1, content: '运营工具选择指南(铁律): 1.小企业(≤100人)→5S+PDCA(简单有效,先养成习惯) 2.成长企业(100-500人)→精益生产+价值流图(系统化) 3.大型企业(>500人)→六西格玛+SCOR(数据驱动)。原则: 不要在5S都没做好的企业推行六西格玛。工具是渐进式的——先把基础的做好,再上复杂的。每个阶段至少稳定运行1年再评估升级。' },
+
+  // ═══ 商业模式 (15 条) — P1 PKB 种子知识 ═══
+  // ── 核心层: 画布9要素 + 5种典型模式 ──
+  { domain: 'business_model', type: 'theory', confidence: 0.95, level: 2, content: '商业模式画布(Business Model Canvas): 亚历山大·奥斯特瓦尔德提出的九要素框架。1.客户细分 2.价值主张 3.渠道通路 4.客户关系 5.收入来源 6.核心资源 7.关键业务 8.重要伙伴 9.成本结构。九个构造块覆盖价值创造、传递和捕获的完整逻辑。' },
+  { domain: 'business_model', type: 'theory', confidence: 0.9, level: 2, content: '订阅制商业模式: 核心指标=MRR(月经常性收入)+Churn(流失率)+LTV(客户终身价值)。健康基准: 月Churn<3%(SaaS), LTV/CAC>3, 净收入留存率(NRR)>100%。典型行业: SaaS、流媒体、会员制电商。关键风险: 获客成本上升+流失加速→增长陷阱。' },
+  { domain: 'business_model', type: 'theory', confidence: 0.9, level: 2, content: '交易市场(平台)商业模式: 核心指标=GMV(总交易额)+Take Rate(抽成率)+双边匹配效率。健康基准: Take Rate 5-30%(按行业), 卖家集中度<30%(避免单一卖家依赖)。典型行业: 电商、出行、招聘。关键风险: 冷启动(供需双边鸡生蛋)、跳单(买卖双方绕过平台)。' },
+  { domain: 'business_model', type: 'theory', confidence: 0.85, level: 2, content: '广告/媒体商业模式: 核心指标=DAU/MAU(日活/月活)+ARPU(每用户收入)+广告填充率。健康基准: DAU/MAU>50%(高粘性), 广告eCPM>行业中位数, 用户增长>获客成本。典型行业: 社交媒体、内容平台。关键风险: 隐私政策变化(如GDPR)、广告主预算收缩。' },
+  { domain: 'business_model', type: 'theory', confidence: 0.85, level: 2, content: '免费增值(Freemium)商业模式: 核心指标=免费→付费转化率+付费用户ARPU+免费用户服务成本。健康基准: 转化率2-5%(优秀>10%), 付费ARPU>免费服务成本×3, 病毒系数>1(自传播)。典型行业: 工具类SaaS、游戏、云存储。关键风险: 免费用户成本侵蚀利润、转化率低于预期。' },
+  { domain: 'business_model', type: 'theory', confidence: 0.8, level: 3, content: '特许经营商业模式: 核心指标=单店盈利模型+加盟商ROI+品牌授权费占比。健康基准: 加盟商回本周期<18个月, 单店净利率>15%, 总部加盟费占比<总收入的10%(可持续)。典型行业: 餐饮、零售、教育。关键风险: 加盟商品控一致性、品牌声誉连带风险。' },
+  // ── 核心层: 诊断规则 ──
+  { domain: 'business_model', type: 'rule', confidence: 0.9, level: 2, content: '价值-收入对齐规则: 不同价值主张类型对应常见收入模式——便利型价值→交易/订阅收入; 体验型价值→溢价定价/会员收入; 平台型价值→抽成/广告收入; 成本型价值→规模交易收入。若价值主张与收入模式不匹配(如承诺"极致体验"但按"广告流量"收费)→标记结构性矛盾。' },
+  { domain: 'business_model', type: 'rule', confidence: 0.85, level: 2, content: '成本-收入匹配规则: 收入模式决定成本结构形态。交易收入→边际成本应递减; 订阅收入→固定成本占比可较高(需规模化摊销); 广告收入→内容生产成本是核心; 平台收入→技术基础设施成本为主。固定成本占比>70%但收入按交易计费→结构性亏损风险。' },
+  { domain: 'business_model', type: 'threshold', confidence: 0.85, level: 2, content: '收入集中度风险阈值: 单一客户收入占比>50%→高风险(生存依赖); 单一产品线收入>70%→中风险(转型困难); 单一渠道收入>80%→中风险(渠道依赖)。健康企业: 最大客户<25%, 最大产品线<50%, 最大渠道<60%。' },
+  { domain: 'business_model', type: 'threshold', confidence: 0.8, level: 2, content: '定价权评估: 品牌效应+转换成本得分高(>0.7)但毛利率低于行业平均→定价权未转化为利润。提价10%后客户流失率<5%→定价权强; 流失率5-15%→中等; >15%→定价权弱。' },
+  { domain: 'business_model', type: 'rule', confidence: 0.9, level: 2, content: '可防御性评估框架: 1.复制成本(竞品复制商业模式需要多少时间和资金?) 2.网络效应强度(每增加一个用户是否为其他用户创造价值?) 3.平台粘性(用户迁移到竞品的转换成本多高?) 4.规模经济(规模扩大时单位成本是否显著下降?)。四维度综合评分<0.4→模式脆弱,需要加固。' },
+  // ── 基准层: 行业基准 ──
+  { domain: 'business_model', type: 'benchmark', confidence: 0.8, level: 2, content: 'SaaS行业商业模式基准: LTV/CAC中位数3-5x, 毛利率>70%, NRR(净收入留存)>100%(优秀>120%), 客户获取成本回收周期<12个月, 月Churn<3%(企业级<1%)。订阅收入占比>80%为纯SaaS模式。' },
+  { domain: 'business_model', type: 'benchmark', confidence: 0.75, level: 2, content: '制造业商业模式基准: 毛利率20-40%(按行业分化), 设备利用率>85%, 库存周转率>6次/年, 人均产值>50万元/年(自动化程度相关)。服务业转型: 从"卖设备"→"设备即服务(EaaS)"→经常性收入占比从0%→30%为目标。' },
+  { domain: 'business_model', type: 'benchmark', confidence: 0.75, level: 2, content: '零售业商业模式基准: 坪效>行业平均(按业态), 库存周转率>4次/年(快消>12次), 线上占比>30%(全渠道趋势), 私域流量占比>15%(降低平台依赖)。DTC(直接面向消费者)模式毛利率通常比传统批发高15-25个百分点。' },
+  { domain: 'business_model', type: 'best_practice', confidence: 0.7, level: 1, content: '中小企业商业模式创新路径: 1.从产品→服务(如卖设备→卖设备使用时长) 2.从一次性→经常性(如项目制→订阅制) 3.从单一收入→多元收入(如产品销售+培训+咨询+配件) 4.从单边→多边(如只服务买家→同时服务买卖双方)。每次转型需验证: 客户是否愿意为新模式付费?现有团队能否支撑?现金流能否度过转型期?' },
+  // ── 动态层: 行业趋势 ──
+  { domain: 'business_model', type: 'case_study', confidence: 0.75, level: 3, content: '制造业即服务(MaaS)趋势: 劳斯莱斯的Power-by-the-Hour(按飞行小时收费,从卖发动机→卖推力)、卡特彼勒的Cat Connect(设备+数据分析服务)。核心逻辑: 客户不需要设备,需要设备产出的结果。转型关键: IoT传感器数据+预测性维护AI+金融租赁能力。' },
+
+  // ═══ 补充: business_model — 段永平六问 + 曾明 S2B2C（Synova v2.1） ═══
+  { domain: 'business_model', type: 'theory', confidence: 0.95, level: 1, content: '段永平商业模式六问: 1.复购驱动力(客户为什么再买?) 2.定价权(涨价客户不走=有定价权) 3.现金流时序(先收后干>先干后收) 4.复制障碍(对手复制要多久?多贵?) 5.规模效应方向(越大越强还是越大越重?) 6.毛利率稳定性(被谁挤压?)。六问不是财务分析——是判断"这个生意天生好吗"。' },
+  { domain: 'business_model', type: 'rule', confidence: 0.9, level: 2, content: '段永平体质判断: 好生意=自然复购+有定价权+先收后干+复制障碍高+规模是朋友+毛利率稳定。坏生意=一锤子买卖+随行就市+先干后收+无壁垒+越大越重+毛利率被挤压。大多数企业处于中间——诊断的价值是找到最薄弱的那一问。' },
+  { domain: 'business_model', type: 'benchmark', confidence: 0.8, level: 2, content: '段永平视角的行业体质对比: 白酒(天生好生意:成瘾性复购+强定价权+先款后货+品牌壁垒+规模经济+高毛利)>家电(天生苦生意:低频复购+弱定价权+先货后款+规模是敌人+毛利率被渠道挤压)。培训咨询(项目制体质差:先干后收+核心人依赖,但轻资产+高毛利可弥补)。' },
+  { domain: 'business_model', type: 'theory', confidence: 0.95, level: 2, content: '曾明 S2B2C 模式: S(Supply Chain/平台)做重——基础设施、供应链、IT、选品、物流; B(Business/前端)做轻——获客、服务、信任关系; C(Consumer)获得好产品+好体验。核心不是技术,是"谁干什么最有效率"。典型案例: 7-11(总部做供应链+系统,加盟店做最后一公里)、海澜之家(上游设计+供应链,加盟店出钱出场地)。' },
+  { domain: 'business_model', type: 'rule', confidence: 0.85, level: 2, content: 'S2B2C 适配判断: 不是所有行业都适合。适合条件: 1.前端需要个性化/本地知识/信任关系(适合B做) 2.后端可以标准化/规模化(适合S做) 3.重新分工能让总体效率提升>20%。不适合: 前端高度标准化(如机票——直接S2C即可)、后端无法标准化(如高端定制咨询)。' },
+  { domain: 'business_model', type: 'best_practice', confidence: 0.8, level: 2, content: '利益相关者动力分析: 强制评估两个问题——1.谁最希望看到你成功?(价值网络中利益正相关的参与者→潜在战略盟友) 2.谁在无意识中阻碍你?(激励机制与你增长目标相悖的参与者→隐藏的组织冲突)。例: 渠道商的销售提成结构让他们倾向于推竞品而不是你的新品——他们不是反对你,但他们的激励让他们无法帮你。' },
+  { domain: 'business_model', type: 'benchmark', confidence: 0.8, level: 2, content: '定价权行业基准: 奢侈品(强定价权,毛利率>65%)> SaaS/软件(中强定价权,毛利率60-85%)> 消费品品牌(中定价权,毛利率40-65%)> 制造业(弱定价权,毛利率20-40%)> 大宗商品(无定价权,毛利率<20%)。定价权的结构性来源: 品牌溢价、转换成本、垄断地位、信息不对称。运营性"定价权"(如促销)不是真正的定价权。' },
+  { domain: 'business_model', type: 'threshold', confidence: 0.85, level: 2, content: '复制障碍等级: 牌照/特许经营(最强,法律保护)> 网络效应(强,用户越多越不可替代)> 规模经济+品牌+渠道沉淀(中强,需时间和资本)> 专利(有时限,到期失效)> 运营效率(弱,竞品可通过学习追赶)> 先发优势(极弱,除非已转化为上述之一)。' },
+  { domain: 'business_model', type: 'case_study', confidence: 0.85, level: 2, content: 'OPPO/vivo 商业模式(段永平视角): 品质定位+渠道共建+稳健定价——不是互联网模式但商业逻辑自洽。复购=品质可靠性→口碑传播; 定价权=价格稳定不乱降价→渠道有信心; 复制障碍=线下渠道需要多年时间沉淀→互联网公司难以复制。证明: 好商业模式不必须是互联网模式。' },
+  { domain: 'business_model', type: 'case_study', confidence: 0.8, level: 2, content: '7-11 S2B2C: 总部S做供应链+IT+选品+物流+培训; 加盟店B做最后一公里服务+本地客户关系; C获得便利+品质。关键: S给B的价值=B自己做不到的效率提升(总部集采比单店采购成本低15-20%)。S2B2C成功的核心= S提供的价值让B的转换成本极高。' },
+
+  // ═══ 补充: knowledge — 行业对标 + 跨行业模式（Synova v2.1） ═══
+  { domain: 'knowledge', type: 'benchmark', confidence: 0.85, level: 2, content: '专业服务行业(培训/咨询/广告)基准: 毛利率40-60%,净利率8-20%,核心人依赖度<30%健康,客户集中度(前3)<40%健康,回款周期<60天健康,续约率>80%健康。致命风险: 核心讲师/客户总监离职→营收直接损失。' },
+  { domain: 'knowledge', type: 'benchmark', confidence: 0.85, level: 2, content: '制造业基准: 毛利率25-40%,产能利用率>80%健康,OEE>72%健康,库存周转>6次/年健康,客户集中度(前3)<50%健康。致命风险: 单一客户依赖+核心工程师离职→研发停摆。代工→品牌转型的必经阵痛: 毛利率提升但营销费用激增。' },
+  { domain: 'knowledge', type: 'benchmark', confidence: 0.85, level: 2, content: 'SaaS/订阅制基准: 月续费率(Logo)>95%健康,月续费率(MRR)>100%健康(NRR>100%),LTV/CAC>3健康,CAC回收期<12月健康,客户集中度(前3)<30%健康,跑道>24月健康。致命风险: 烧钱速度>增长带来的现金流改善。竞品有渠道和客户基础进入同一赛道。' },
+  { domain: 'knowledge', type: 'benchmark', confidence: 0.85, level: 2, content: '零售/消费品基准: 毛利率60-75%(护肤品),净利率5-15%,库存周转>4次/年健康,复购率>40%健康,渠道集中度(单渠道)<40%健康。致命风险: 渠道依赖(平台规则一变就冲击营收)+SKU过长(长尾库存积压)。线下拓展缺经验团队。代工厂核心原料独家供应。' },
+  { domain: 'knowledge', type: 'benchmark', confidence: 0.85, level: 2, content: '连锁餐饮基准: 单店净利润率>15%健康,盈利店占比>90%健康,新店养店期<6月健康,翻台率(午市)>3健康,店长流失率(年)<15%健康。致命风险: 店长培养速度跟不上开店计划。中央厨房配送半径限制跨区域扩张。关键配方只有核心人知道。' },
+  { domain: 'knowledge', type: 'rule', confidence: 0.9, level: 2, content: '跨行业模式识别规则: 当不同行业的两个企业在同一乘数因子上得分相似时,它们的诊断结论可能互鉴。例: 一个培训公司(核心人依赖)和一个精密制造(核心工程师依赖)——在"组织能力"乘数上的瓶颈模式相同,解决方案可以跨行业借鉴。knowledge 专家应主动检索跨行业相似模式。' },
+  { domain: 'knowledge', type: 'best_practice', confidence: 0.8, level: 1, content: '诊断知识积累原则: 每次诊断完成后,被验证正确的发现(用户确认+FDE审核)→自动沉淀为PKB条目(confidence=0.6,随重复验证次数上升)。被验证错误的发现→原条目confidence降级,superseded_by指向新条目。未验证的发现→不自动沉淀,由FDE手动判断。' },
 ];
 
 /**

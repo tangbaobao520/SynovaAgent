@@ -1,0 +1,67 @@
+{
+  "$id": "edge/deploys",
+  "label": "DEPLOYS",
+  "tags": [
+    "causal",
+    "core"
+  ],
+  "allowedFrom": [
+    "resource/money",
+    "resource/person",
+    "resource/team",
+    "resource/tool",
+    "resource/agent",
+    "resource/knowledge",
+    "resource/client",
+    "resource/channel",
+    "resource/data",
+    "resource/supplier"
+  ],
+  "allowedTo": [
+    "activity/production",
+    "activity/acquisition",
+    "activity/innovation",
+    "activity/coordination",
+    "activity/learning",
+    "activity/governance",
+    "activity/maintenance",
+    "activity/compliance"
+  ],
+  "requiredProps": [
+    "contribution_elasticity",
+    "is_bottleneck"
+  ],
+  "optionalProps": {
+    "transferability": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "cost_share": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "time_share": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "proficiency": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    }
+  },
+  "consumed_by_sentinels": [
+    "sentinel-human-agent-boundary",
+    "sentinel-adaptation-velocity",
+    "sentinel-incentive-alignment",
+    "sentinel-internal-transaction-cost",
+    "sentinel-routine-diffusion",
+    "sentinel-business-model-coherence",
+    "sentinel-unit-economics",
+    "sentinel-cost-health"
+  ],
+  "description": "资源部署到活动。增长诊断最核心的因果边。"
+}

@@ -7,7 +7,7 @@
  */
 import type { LLMClient } from '../orchestrator/diagnosis-orchestrator';
 import type { DataAccessPolicy } from '../orchestrator/subagent-coordinator';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('l3/expert-autonomy');
 

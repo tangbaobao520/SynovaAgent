@@ -11,9 +11,9 @@
  * 融合: 0.4*Jaccard + 0.4*Phonetic + 0.2*Semantic(可选)
  * 阈值: auto_merge >= 0.85, review [0.65, 0.85), ignore < 0.65
  */
-import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
+import { ALL_NODE_TYPES, NodeType, ALL_EDGE_TYPES, EdgeType } from '@synova/ontology';
 import { pinyin } from 'pinyin-pro';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('l4/entity-resolver');
 
@@ -45,7 +45,7 @@ export interface L3ResolutionResult {
 /** Fix 2: L3 resolution with semantic matching for borderline cases */
 export async function resolveEntitiesL3(store: GraphStoreRO, graph: string): Promise<L3ResolutionResult> {
   const matches: EntityMatch[] = [];
-  const nodeTypes = Object.values(SOGNodeType);
+  const nodeTypes = ALL_NODE_TYPES;
 
   for (const type of nodeTypes) {
     const nodes = store.queryNodes(type).filter(n => n.props);
@@ -211,7 +211,7 @@ function computeStructuralSimilarity(nodeIdA: string, nodeIdB: string, store: Gr
       // Simplified: just count edges as proxy
       typeCounts.set(e.type, (typeCounts.get(e.type) || 0) + 1);
     }
-    return Object.values(SOGEdgeType).map(et => typeCounts.get(et) || 0);
+    return ALL_EDGE_TYPES.map(et => typeCounts.get(et) || 0);
   };
 
   const vecA = getNeighborTypes(nodeIdA);

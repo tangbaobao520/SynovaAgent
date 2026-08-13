@@ -1,0 +1,1 @@
+{"$id":"activity/learning","label":"LEARNING","tags":["activity","organizational","growth"],"requiredProps":["name"],"optionalProps":{"learning_type":"string","single_vs_double_loop":"string"},"description":"学习活动。组织层面的知识获取和技能提升活动，含单环/双环学习分类。"}

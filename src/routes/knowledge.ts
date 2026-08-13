@@ -11,7 +11,8 @@ import { Router, type Request, type Response } from 'express';
 import { KnowledgeStore } from '../agent/knowledge-bridge-service';
 import { getDatabase } from '../init/engine-context';
 import { getCurrentFilterClause } from '../services/request-context';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
+import { getPreUploadValidator } from '../security/pre-upload-validator';
 import type { KnowledgeChunk, FilterClause } from '../agent/knowledge-bridge-service';
 
 const log = createLogger('routes/knowledge');
@@ -67,6 +68,18 @@ router.post('/api/knowledge/ingest', (req: Request, res: Response) => {
       return res.status(400).json({ ok: false, error: '缺少必填字段: text, sourceType, sourceId' });
     }
 
+    // D42: 隐私预检
+    const tenantId = (req as unknown as Record<string, string>).tenantId || sourceId;
+    const validator = getPreUploadValidator();
+    const check = validator.validate(text, tenantId);
+    if (check.blocked) {
+      log.warn({ tenantId, warnings: check.warnings }, '知识上传被隐私预检阻止');
+      return res.status(422).json({ ok: false, error: '隐私预检未通过', warnings: check.warnings });
+    }
+    if (check.warnings.length > 0) {
+      log.warn({ tenantId, warnings: check.warnings }, '知识上传含PII警告');
+    }
+
     const store = getStore();
     const id = store.insert({
       text,
@@ -78,8 +91,9 @@ router.post('/api/knowledge/ingest', (req: Request, res: Response) => {
       accessSensitivity: (accessSensitivity as KnowledgeChunk['accessSensitivity']) || 'normal',
     });
 
-    res.json({ ok: true, id });
+    res.json({ ok: true, id, warned: check.warnings.length > 0 ? true : undefined });
   } catch (err: unknown) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "知识写入失败");
     const msg = err instanceof Error ? err.message : String(err);
     res.status(500).json({ ok: false, error: msg });
   }
@@ -92,6 +106,7 @@ router.get('/api/knowledge/stats', (_req: Request, res: Response) => {
     const store = getStore();
     res.json({ ok: true, ...store.stats() });
   } catch (err: unknown) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "知识存储获取");
     res.json({ ok: true, totalChunks: 0, totalSizeBytes: 0 });
   }
 });

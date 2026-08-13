@@ -25,7 +25,10 @@ module.exports = {
   },
 
   files: [
-    'electron-main.ts',
+    'electron/main.cjs',
+    'electron/preload.cjs',
+    'electron/config.json',
+    'electron/icon.png',
     'src/**/*.ts',
     'src/**/*.js',
     'package.json',

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://synova.dev/schemas/industry-manifest-v1.json",
+  "name": "retail-ecommerce",
+  "version": "1.0.0",
+  "type": "industry-template",
+  "displayName": "零售电商行业包",
+  "description": "适用于零售/电商企业，含渠道管理、库存周转、客户生命周期等场景的阈值与配置",
+  "inherit": ["general-enterprise"],
+  "tags": ["retail", "ecommerce", "consumer-goods"],
+  "thresholdOverrides": {
+    "inventory-turnover": { "warning": 4.0, "critical": 2.0 },
+    "channel-roi": { "warning": 1.5, "critical": 0.8 },
+    "customer-lifetime-value": { "warning": 0.8, "critical": 0.5 }
+  },
+  "featureFlags": {
+    "enableChannelAttribution": true,
+    "enableInventoryForecast": true,
+    "enableCustomerSegmentation": true
+  }
+}

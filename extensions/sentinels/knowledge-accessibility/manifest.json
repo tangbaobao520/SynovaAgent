@@ -1,0 +1,47 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "knowledge-accessibility",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "O4",
+  "description": "O4:",
+  "schedule": "0 0 1 * *",
+  "expert": "org",
+  "priority": "P1",
+  "layer": "internal",
+  "computeKind": "deterministic",
+  "computes": [
+    "compute-knowledge-accessibility"
+  ],
+  "thresholds": {
+    "score": {
+      "warning": 0.4,
+      "critical": 0.2
+    }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": [
+      "sog_graph"
+    ],
+    "dataAccess": {
+      "allowedDimensions": [
+        "organizational"
+      ],
+      "sensitiveAccess": "read"
+    }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "knowledgeAccessibilitySentinel",
+  "auxiliaryExperts": [
+    "knowledge"
+  ],
+  "id": "sentinel-knowledge-accessibility",
+  "post-processors": [
+    {
+      "compute": "COMPUTE-LEARNING-RATE-v1",
+      "trigger": "learning_rate deviates >50%",
+      "inject": "Learning comparison + scale economy"
+    }
+  ]
+}

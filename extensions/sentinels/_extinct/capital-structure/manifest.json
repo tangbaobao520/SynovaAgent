@@ -1,0 +1,45 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "capital-structure",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "资本结构健康度",
+  "description": "F2: 评估资本结构健康度——负债权益比、利息覆盖倍数、长期负债占比。数据源: FINANCIAL节点。",
+  "schedule": "0 0 1 * *",
+  "expert": "finance",
+  "priority": "P1",
+  "layer": "capital",
+  "computeKind": "deterministic",
+  "computes": [
+    "debt-equity-ratio",
+    "interest-coverage"
+  ],
+  "thresholds": {
+    "debt_equity": {
+      "warning": 1.5,
+      "critical": 2.5
+    },
+    "interest_coverage": {
+      "warning": 3.0,
+      "critical": 1.5
+    }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": [
+      "sog_graph"
+    ],
+    "dataAccess": {
+      "allowedDimensions": [
+        "financial"
+      ],
+      "sensitiveAccess": "read"
+    }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "capitalStructureSentinel",
+  "auxiliaryExperts": [
+    "strategy"
+  ],
+  "id": "sentinel-capital-structure"
+}

@@ -5,11 +5,11 @@
  * cross_validate / trace_lineage / match_pattern / verify_closure / request_human
  */
 import type { ToolDefinition } from '../agent/tools';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('tools/accuracy');
 
-/** Typed JSON fetch response — P1-02: 消除 as any, 用 unknown 强制校验 */
+/** Typed JSON fetch response — P1-02: 消除 `as-any`, 用 unknown 强制校验 */
 async function fetchJSON(url: string): Promise<unknown> {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);

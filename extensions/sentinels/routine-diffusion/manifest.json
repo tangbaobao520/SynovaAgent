@@ -1,0 +1,40 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "routine-diffusion",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "O5",
+  "description": "O5:",
+  "schedule": "0 0 1 * *",
+  "expert": "org",
+  "priority": "P1",
+  "layer": "internal",
+  "computeKind": "deterministic",
+  "computes": [
+    "compute-routine-diffusion"
+  ],
+  "thresholds": {
+    "score": {
+      "warning": 0.4,
+      "critical": 0.2
+    }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": [
+      "sog_graph"
+    ],
+    "dataAccess": {
+      "allowedDimensions": [
+        "organizational"
+      ],
+      "sensitiveAccess": "read"
+    }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "routineDiffusionSentinel",
+  "auxiliaryExperts": [
+    "knowledge"
+  ],
+  "id": "sentinel-routine-diffusion"
+}

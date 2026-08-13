@@ -1,0 +1,34 @@
+{
+  "cycleId": "customer-cycle",
+  "name": "客户循环",
+  "description": "客户获取→留存→LTV 的完整闭环。客户获取成本(CAC)影响留存率，留存率影响LTV，LTV反哺获客预算。",
+  "version": "1.0.0",
+  "applicableIndustries": [],
+  "nodes": [
+    { "id": "acquisition", "label": "客户获取", "type": "flow", "initialValue": 180, "unit": "人/月", "edgeRefs": ["E-4.3"] },
+    { "id": "retention", "label": "客户留存", "type": "stock", "initialValue": 3200, "unit": "人", "edgeRefs": ["E-4.2"] },
+    { "id": "ltv", "label": "客户终身价值", "type": "parameter", "initialValue": 420, "unit": "元", "edgeRefs": ["E-5.4"] },
+    { "id": "cac", "label": "获客成本", "type": "parameter", "initialValue": 68, "unit": "元", "edgeRefs": ["E-4.1"] }
+  ],
+  "edges": [
+    { "from": "acquisition", "to": "retention", "polarity": "+", "delay": 1, "weight": 0.6 },
+    { "from": "retention", "to": "ltv", "polarity": "+", "delay": 3, "weight": 0.8 },
+    { "from": "ltv", "to": "cac", "polarity": "-", "delay": 0, "weight": 0.4 }
+  ],
+  "overflowFormula": {
+    "condition": "cac.currentValue > ltv.currentValue",
+    "targetNode": "cac",
+    "formula": "cac.currentValue * 0.8",
+    "minDataMaturity": "medium"
+  },
+  "dataMaturity": "medium",
+  "mapping": [
+    { "nodeId": "acquisition", "edgeId": "E-4.3", "weight": 1.0 },
+    { "nodeId": "retention", "edgeId": "E-4.2", "weight": 1.0 },
+    { "nodeId": "ltv", "edgeId": "E-5.4", "weight": 0.8 },
+    { "nodeId": "cac", "edgeId": "E-4.1", "weight": 0.6 }
+  ],
+  "crossCyclePropagation": [
+    { "targetCycleId": "cash-cycle", "viaEdge": "ltv→revenue", "strength": 0.5 }
+  ]
+}

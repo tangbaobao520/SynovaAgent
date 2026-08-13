@@ -3,6 +3,9 @@
 # 从 task brief 的"数据流"字段提取关键词，检查是否出现在改动代码中
 # 缺失 → 警告（不阻断），提示 AI 检查数据流是否对齐
 set -euo pipefail
+# D313 M5 UTF-8 强制: Windows 控制台/子进程统一 UTF-8
+export PYTHONIOENCODING=utf-8
+export LC_ALL=C.UTF-8 2>/dev/null || true
 
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$ROOT"

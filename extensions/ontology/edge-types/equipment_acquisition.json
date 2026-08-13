@@ -1,0 +1,16 @@
+{
+  "$id": "edge/equipment_acquisition",
+  "label": "EQUIPMENT_ACQUISITION",
+  "tags": ["causal", "first_order", "stage_1"],
+  "allowedFrom": ["external/baseline"],
+  "allowedTo": ["pool/equipment_capacity"],
+  "requiredProps": ["units_acquired", "total_capacity_added", "avg_utilization_rate"],
+  "optionalProps": {
+    "equipment_type": "string — 设备类型(hardware|software|facility)",
+    "depreciation_period_months": "number — 折旧周期",
+    "maintenance_cost_ratio": "number (0-1) — 维护成本占比"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "获取生产设备与设施——企业从外部设备市场购买/租赁生产设备和基础设施的输入阀。"
+}

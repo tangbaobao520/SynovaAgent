@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "server": {
+    "port": 18790
+  },
+  "llm": {
+    "provider": "deepseek",
+    "model": "deepseek-chat",
+    "baseUrl": "https://api.deepseek.com/v1"
+  },
+  "database": {
+    "path": "./data/synova.db"
+  },
+  "diagnosis": {
+    "maxExpertConcurrency": 6,
+    "maxToolRounds": 3,
+    "toolTimeoutMs": 60000,
+    "gateDataCompleteness": 0.3,
+    "gateMinHypothesisConfidence": 0.5
+  },
+  "context": {
+    "compressionStrategy": "sliding-window",
+    "maxMessagesBeforeCompression": 30,
+    "windowSize": 20
+  },
+  "sentinel": {
+    "baselineMinRuns": 3,
+    "findingCountRatioWarning": 2.0,
+    "findingCountRatioCritical": 3.0,
+    "perSentinel": {}
+  },
+  "devMode": true
+}

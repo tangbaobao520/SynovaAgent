@@ -1,0 +1,171 @@
+<!-- ===== COVER ===== -->
+<div class="page cover">
+<div class="logo">Synova</div>
+<div class="sub">AI 企业增长诊断系统</div>
+<div class="tagline">驻守在企业内部的 AI Agent<br>7x24 监测全量组织数据，主动发现增长卡点<br>8 位 AI 专家协同诊断根因，给出可执行的行动方案</div>
+<div style="margin-top:32px">
+<div class="stat" style="display:inline-block;min-width:110px;margin:4px"><div class="val">67,946</div><div class="lbl">TypeScript 行</div></div>
+<div class="stat" style="display:inline-block;min-width:110px;margin:4px"><div class="val">46</div><div class="lbl">诊断哨兵</div></div>
+<div class="stat" style="display:inline-block;min-width:110px;margin:4px"><div class="val">8</div><div class="lbl">AI 专家</div></div>
+<div class="stat" style="display:inline-block;min-width:110px;margin:4px"><div class="val">60+</div><div class="lbl">学术文献</div></div>
+</div>
+<div class="meta" style="margin-top:28px">参赛赛道：人工智能 / 数字经济 &middot; 2026 &middot; 南宁</div>
+</div>
+
+<!-- ===== 01: EXECUTIVE SUMMARY ===== -->
+<div class="page">
+<span class="sec-num">01</span>
+<h2>一句话概括</h2>
+<div class="g2-70">
+<div>
+<div class="clip"><strong>Synova 不只是另一个 AI 工具。</strong>它驻扎在企业内部，持续监测全部组织数据，主动发现增长瓶颈——无需任何人向它提问。最终交付：一份诊断报告，回答两个终极问题——<em>我的增长卡在哪里？现在该做什么？</em></div>
+<p>中国 1,200 万成长型企业最大的痛点不是没有咨询资源——他们上课、请顾问、买 SaaS——而是每次诊断都是被动的、碎片化的、一次性的。顾问离场后，企业回到「凭感觉」的状态。</p>
+<p>Synova 把诊断从一次性交付变成了<strong>运行时的持续服务</strong>——相当于给每家公司配了一个永不离开的私人董事会。</p>
+</div>
+<div>
+<div class="stat" style="margin-bottom:10px"><div class="val">1,200 万</div><div class="lbl">中国企业 (5-300人)</div></div>
+<div class="stat" style="margin-bottom:10px"><div class="val" style="color:var(--red)">200 万+</div><div class="lbl">传统咨询起步价/次</div></div>
+<div class="stat"><div class="val" style="color:var(--green)">688</div><div class="lbl">Synova 单次诊断</div></div>
+</div>
+</div>
+</div>
+
+<!-- ===== 02: PROBLEM ===== -->
+<div class="page">
+<span class="sec-num">02</span>
+<h2>痛点：传统咨询的三个结构死结</h2>
+<p>中国成长型企业不是没有咨询资源——他们上课、请顾问、买 SaaS。但面向中小企业，传统模式存在三个结构性的死结，不是某家咨询公司的问题，是这套模式本身的问题。</p>
+
+<div class="card" style="border-left:4px solid var(--red)"><strong>第一个死结：模块拼盘，看不到全局</strong><br><span class="small">企业的增长从来不是在「战略」「组织」「财务」「营销」各自独立的管道里发生的。但在传统咨询模式下，做战略的不管组织能不能执行，做组织的不管现金流撑不撑得住，做营销的不管产品本身有没有问题。每家咨询公司只卖自己擅长的一个模块。老板买了一堆，但没有人告诉他，这几个维度之间的<em>转速差</em>才是真正的瓶颈。</span></div>
+
+<div class="card" style="border-left:4px solid var(--orange)"><strong>第二个死结：定性诊断，无法量化</strong><br><span class="small">大多数面向中小企业的诊断，本质上是「有经验的顾问来和你聊两天，然后给你一份报告」。报告里充满了正确的判断——「执行力不足」「品牌定位模糊」「沟通效率有待提升」——但判断的依据是什么？阈值在哪？做完方案到底改进了没有，改进多少，谁也说不清。更致命的是，老板凭自己的认知选咨询公司——而他的认知本身可能就是增长的瓶颈。一个看不见自己盲区的人，凭感觉选了一面同样看不见盲区的镜子。</span></div>
+
+<div class="card" style="border-left:4px solid var(--purple)"><strong>第三个死结：开药就走，无人跟踪</strong><br><span class="small">诊断 → 方案 → 培训 → 结束。这是传统咨询的标准流程。方案好不好，执行了没有，效果持续了多久，全看企业自己。三个月后，一切恢复原状。下次再遇到问题，重新找人，重新诊断，重新花钱。这不是企业的问题——外部顾问不可能驻扎在企业里，不可能每天看数据，不可能在问题刚冒头的时候就发现它。</span></div>
+
+<div class="clip r" style="margin-top:14px"><strong>三个死结指向同一个根源：传统咨询是「医生模式」——你有问题来找我，我给你开药，之后的事情不在我的范围。</strong>但企业真正需要的不是偶尔来一次的医生。企业需要的是一套免疫系统——它自己巡逻，自己监测，在异常出现的第一个瞬间就做出反应。它不会三个月后不管了，它不会给你 20 个无关紧要的建议，它只针对当前最紧急的威胁。它一辈子都在。</div>
+
+<div class="g2" style="margin-top:14px">
+<div>
+<h3 style="margin-top:0">我们问的是一个不同的问题</h3>
+<div class="clip g"><strong>不是问「这个企业有没有问题？」</strong><br>而是问<strong>「这个企业的增长卡在哪里？」</strong></div>
+<p class="small" style="margin-top:12px">增长的三个充分必要条件：</p>
+<div class="card"><strong>条件 1</strong> 有能力创造增长 &mdash; 产品、流程必须不断产生新价值</div>
+<div class="card"><strong>条件 2</strong> 能捕获创造的价值 &mdash; 不被竞争者模仿、不被上下游压价</div>
+<div class="card"><strong>条件 3</strong> 不被自身复杂性压垮 &mdash; 增长的边际成本不能超过边际收益</div>
+</div>
+<div>
+<h3 style="margin-top:0">我们的答案：免疫系统</h3>
+<p class="small">Synova 驻扎在企业内部，7×24 不间断扫描全部组织数据。它不需要你告诉它哪里疼——它自己在巡逻，在监测，在异常出现的第一个瞬间就做出反应。</p>
+<p class="small">任何增长停滞，必然因为以上三个条件中至少一个被破坏。Synova 从这组第一性原理出发，构建了 46 个可计算的哨兵指标——每个都有理论溯源、计算公式和适用边界。</p>
+</div>
+</div>
+</div>
+
+<!-- ===== 03: PRODUCT ===== -->
+<div class="page">
+<span class="sec-num">03</span>
+<h2>产品：免疫系统，不是医生</h2>
+<div class="clip g"><strong>核心差异：免疫系统 vs 医生。</strong>传统咨询是你疼了去看病，开药走人。Synova 是不间断巡逻的免疫系统——自己发现异常、自己分级报告、自己跟踪疗效。一切正常时，它安静运行，不打扰任何人。</div>
+
+<h3 style="margin-top:16px">持续运转的六步诊断管线</h3>
+<div class="flow" style="margin:12px 0">
+<div class="step"><div class="sn">Step 1</div><div class="st">数据注入</div></div>
+<div class="arrow">&rarr;</div>
+<div class="step"><div class="sn">Step 2</div><div class="st">本体关联</div></div>
+<div class="arrow">&rarr;</div>
+<div class="step"><div class="sn">Step 3</div><div class="st">哨兵扫描</div></div>
+<div class="arrow">&rarr;</div>
+<div class="step" style="border:2px solid var(--purple)"><div class="sn">Step 4</div><div class="st">专家推理</div></div>
+<div class="arrow">&rarr;</div>
+<div class="step"><div class="sn">Step 5</div><div class="st">分级报告</div></div>
+<div class="arrow">&rarr;</div>
+<div class="step" style="border:2px solid var(--green)"><div class="sn">Step 6</div><div class="st">执行跟踪</div></div>
+</div>
+
+<div class="g2-40">
+<div>
+<div class="card"><strong>飞书 / 钉钉 / 财务 / CRM</strong><br><span class="small">全量数据自动流入企业本地实例。无需人工采集。</span></div>
+<div class="card" style="border-left:4px solid var(--purple)"><strong>7 维度 &times; 46 哨兵定时扫描</strong><br><span class="small">compute() &rarr; 基线对比 &rarr; 信号聚合。每个哨兵独立判断：这个子领域出问题了吗？</span></div>
+<div class="card" style="border-left:4px solid var(--green)"><strong>分层推送</strong><br><span class="small">高置信度 &rarr; 直接推企业对接人。低置信度 &rarr; 升级给 GA 审核。重大风险 &rarr; 同步老板信箱</span></div>
+</div>
+<div>
+<div class="card"><strong>SOG v1.0 数字孪生</strong><br><span class="small">新客户、新员工、新收入自动生成节点和关联边。17 种节点 &times; 14 种边。企业事实层实时更新。</span></div>
+<div class="card" style="border-left:4px solid var(--purple)"><strong>8 位专家并行推理</strong><br><span class="small">异常信号 &rarr; 自动路由对应专家。多专家交叉验证 &rarr; 证据池。输出结构化判断，非模板填充。</span></div>
+<div class="card" style="border-left:4px solid var(--green)"><strong>跟踪闭环 + 自我进化</strong><br><span class="small">执行结果反馈到数据层。L0 进化层：高置信度发现自动更新数字孪生，用户纠错跨会话持久化。越用越准。</span></div>
+</div>
+</div>
+
+<h3 style="margin-top:16px">三个飞轮：46 个哨兵的聚合呈现</h3>
+<p class="small">46 个哨兵不会平铺到创始人面前。它们被聚合为<strong>三个飞轮</strong>：</p>
+<div class="g3" style="margin-top:8px">
+<div class="card" style="text-align:center"><strong>价值创造</strong><br><span class="small">你在正确的地方<br>创造了价值吗？</span></div>
+<div class="card" style="text-align:center"><strong>价值兑现</strong><br><span class="small">你把价值转化成了<br>利润吗？</span></div>
+<div class="card" style="text-align:center"><strong>价值再生</strong><br><span class="small">你的组织能持续<br>自我修复吗？</span></div>
+</div>
+<p class="small">CEO 看到飞轮的转速，知道哪个是最要命的瓶颈。点击飞轮，展开所有关联哨兵的完整分析——得分、趋势、证据链、专家解读。需要时可以一直钻探到底层原始数据。无论发现多少信号，<strong>只输出少量行动建议</strong>——列出十个问题等于什么都没说，聚焦一个瓶颈才能行动。</p>
+</div>
+
+<!-- ===== 04: THEORY ===== -->
+<div class="page">
+<span class="sec-num">04</span>
+<h2>理论基座：7 学科 &times; 60+ 学术文献</h2>
+
+<p class="small">七个学科不是凭兴趣挑的。从增长方程出发，四个变量各有对应的理论需求：<strong>外部机会</strong>需要产业生命周期 + 技术-经济范式来解释窗口期；<strong>价值捕获</strong>需要生态位理论来统一回答「你在哪 + 守得住吗 + 怎么占领」；<strong>内生创造</strong>需要演化经济学来解释惯例的变异-选择-保留循环；<strong>增长成本</strong>需要交易成本 + 信息论来解释规模和复杂性的自然上限。以下是完整的学科映射。</p>
+
+<table style="margin-top:10px">
+<tr><th style="width:16%">学科</th><th style="width:42%">核心贡献</th><th style="width:42%">关键文献</th></tr>
+<tr><td><strong>演化经济学</strong></td><td>增长源于组织惯例的变异-选择-保留循环。企业不是优化机器，是演化系统。</td><td>Nelson &amp; Winter (1982); March (1991)</td></tr>
+<tr><td><strong>生态位理论</strong></td><td>企业生存空间由其 n 维超体积生态位决定。增长上限 = 生态位宽度 &times; 深度 &times; 壁垒。</td><td>Hutchinson (1957); Hannan &amp; Freeman (1977)</td></tr>
+<tr><td><strong>交易成本经济学</strong></td><td>企业边界由内部协调与市场交易成本的均衡点决定。增长自然上限 = 内部成本 &gt; 市场成本。</td><td>Coase (1937); Williamson (1985)</td></tr>
+<tr><td><strong>信息论</strong></td><td>企业的本质是信息处理系统。隐形瓶颈 = 信道容量不足 + 信息按 p<sup>n</sup> 衰减。</td><td>Shannon (1948); Arrow (1974)</td></tr>
+<tr><td><strong>网络科学</strong></td><td>价值捕获能力由结构位置（结构洞/中心性）决定，不仅仅是内部能力。</td><td>Burt (1992); Barab&aacute;si (2002)</td></tr>
+<tr><td><strong>行为经济学</strong></td><td>最隐形的杀手 = 系统性决策偏见——损失厌恶、沉没成本、确认偏误。</td><td>Kahneman &amp; Tversky (1979); Thaler (1980)</td></tr>
+<tr><td><strong>技术-经济范式</strong></td><td>每次技术革命带来新组织形态。AI 时代 = 人+Agent 混合组织。</td><td>Perez (2002); Freeman &amp; Perez (1988)</td></tr>
+</table>
+<h3 style="margin-top:18px">与业界框架的融合</h3>
+<div class="g3">
+<div class="card"><strong>杨国安 &mdash; 杨三角</strong><br><span class="small">员工能力 &times; 思维 &times; 治理 &rarr; 映射为演化经济学的保留/选择/处理机制，驱动内部层 10 哨兵</span></div>
+<div class="card"><strong>Helmer &mdash; 战略 7 力</strong><br><span class="small">7 种护城河分类法：4 项可量化 + 3 项定性，融入生态位层 I3/I4 哨兵</span></div>
+<div class="card"><strong>段永平 &mdash; 商业模式三问</strong><br><span class="small">差异化？护城河依赖？十年后还赚钱？驱动 I7/I8/I9 哨兵</span></div>
+</div>
+<div class="clip" style="margin-top:14px"><strong>每个哨兵都是：理论溯源 &rarr; 公式定义 &rarr; 本体层数据映射 &rarr; 适用边界判断。</strong>三种计算类型：确定性（HHI 指数）、启发式（生态位挤压指数）、推理推导（人+Agent 混合边界效率）。各有明确数据依赖和置信度标注。</div>
+</div>
+
+<!-- ===== 05: FRAMEWORK + SENTINELS ===== -->
+<div class="page">
+<span class="sec-num">05</span>
+<h2>诊断框架全景：8 层 &times; 46哨兵 &times; 8专家 &times; L0进化</h2>
+<div class="g2-60">
+<div>
+<div class="layer"><span class="lt l0">L0</span><span class="ld"><strong>自我进化层</strong> &mdash; 诊断结果 + 用户反馈回流 &rarr; 本体自适应 + 跨会话学习，系统越用越准</span></div>
+<div class="layer"><span class="lt l0">校准</span><span class="ld"><strong>技术-经济范式分析</strong> &mdash; Perez (2002) AI 革命阶段定位，校准所有下层哨兵阈值</span></div>
+<div class="layer"><span class="lt l1">L1</span><span class="ld"><strong>环境诊断 6 哨兵</strong> &mdash; 市场还有空间吗？窗口在打开还是关闭？</span></div>
+<div class="layer"><span class="lt l2">L2</span><span class="ld"><strong>资本健康 5 哨兵</strong> &mdash; 增长的燃料够吗？钱用对了吗？</span></div>
+<div class="layer"><span class="lt l3">L3</span><span class="ld"><strong>生态位诊断 13 哨兵</strong> &mdash; 壁垒多强？边界划对了吗？商业模式可持续吗？</span></div>
+<div class="layer"><span class="lt l4">L4</span><span class="ld"><strong>技术健康 9 哨兵</strong> &mdash; AI 化就绪度、软件生态、数据可获取性</span></div>
+<div class="layer"><span class="lt l4">L5</span><span class="ld"><strong>战略组织匹配 3 哨兵</strong> &mdash; 战略需要的能力，组织实际具备吗？</span></div>
+<div class="layer"><span class="lt l5">L6</span><span class="ld"><strong>组织动力学 10 哨兵</strong> &mdash; 惯例在进化吗？知识流动吗？组织能自我修复吗？</span></div>
+</div>
+<div>
+<div class="stat" style="margin-bottom:10px"><div class="val">8 层</div><div class="lbl">诊断层级</div></div>
+<div class="stat" style="margin-bottom:10px"><div class="val">46</div><div class="lbl">理论哨兵</div></div>
+<div class="stat" style="margin-bottom:10px"><div class="val">14</div><div class="lbl">已落地运行</div></div>
+<div class="stat"><div class="val">8</div><div class="lbl">AI 专家</div></div>
+</div>
+</div>
+<h3 style="margin-top:12px">46 哨兵全景图</h3>
+<div class="sentinel-grid">
+<div class="sg"><span class="sid">E1</span><span class="sname">市场天花板与生命周期</span></div><div class="sg"><span class="sid">E2</span><span class="sname">结构性机会窗口</span></div><div class="sg"><span class="sid">E3</span><span class="sname">竞争格局变化</span></div><div class="sg"><span class="sid">E4</span><span class="sname">客户需求迁移</span></div><div class="sg"><span class="sid">E5</span><span class="sname">环境红利依赖性</span></div><div class="sg"><span class="sid">E6</span><span class="sname">底层结构变化</span></div>
+<div class="sg"><span class="sid">F1</span><span class="sname">融资约束指数</span></div><div class="sg"><span class="sid">F2</span><span class="sname">资本结构健康度</span></div><div class="sg"><span class="sid">F3</span><span class="sname">资本配置效率</span></div><div class="sg"><span class="sid">F4</span><span class="sname">增长质量指数</span></div><div class="sg"><span class="sid">F5</span><span class="sname">资本周转效率</span></div>
+<div class="sg"><span class="sid">I1</span><span class="sname">生态位宽度与深度</span></div><div class="sg"><span class="sid">I2</span><span class="sname">生态位挤压指数</span></div><div class="sg"><span class="sid">I3</span><span class="sname">护城河结构性强度</span></div><div class="sg"><span class="sid">I4</span><span class="sname">护城河感知强度</span></div><div class="sg"><span class="sid">I5</span><span class="sname">网络权力指数</span></div><div class="sg"><span class="sid">I6</span><span class="sname">价值捕获效率</span></div><div class="sg"><span class="sid">I7</span><span class="sname">商业模式一致性</span></div><div class="sg"><span class="sid">I8</span><span class="sname">护城河依赖度</span></div><div class="sg"><span class="sid">I9</span><span class="sname">时间穿透力</span></div><div class="sg"><span class="sid">I10</span><span class="sname">单位经济可持续性</span></div><div class="sg"><span class="sid">I11</span><span class="sname">内部交易成本增长率</span></div><div class="sg"><span class="sid">I12</span><span class="sname">自制/外购决策健康度</span></div><div class="sg"><span class="sid">I13</span><span class="sname">人+Agent 混合边界效率</span></div>
+<div class="sg"><span class="sid">T1</span><span class="sname">软件生态健康度</span></div><div class="sg"><span class="sid">T2</span><span class="sname">AI 化就绪度</span></div><div class="sg"><span class="sid">T3</span><span class="sname">数据可获取性</span></div><div class="sg"><span class="sid">T4</span><span class="sname">技术债务指数</span></div><div class="sg"><span class="sid">T5</span><span class="sname">系统集成度</span></div><div class="sg"><span class="sid">T6</span><span class="sname">自动化覆盖率</span></div><div class="sg"><span class="sid">T7</span><span class="sname">安全合规基线</span></div><div class="sg"><span class="sid">T8</span><span class="sname">技术人才密度</span></div><div class="sg"><span class="sid">T9</span><span class="sname">创新实验速度</span></div>
+<div class="sg"><span class="sid">S1</span><span class="sname">战略-能力一致性</span></div><div class="sg"><span class="sid">S2</span><span class="sname">战略调适速度</span></div><div class="sg"><span class="sid">S3</span><span class="sname">资源错配指数</span></div>
+<div class="sg"><span class="sid">O1</span><span class="sname">探索-利用平衡</span></div><div class="sg"><span class="sid">O2</span><span class="sname">惯例变异率</span></div><div class="sg"><span class="sid">O3</span><span class="sname">激励增长对齐度</span></div><div class="sg"><span class="sid">O4</span><span class="sname">关键知识可调用性</span></div><div class="sg"><span class="sid">O5</span><span class="sname">惯例扩散速度</span></div><div class="sg"><span class="sid">O6</span><span class="sname">组织信道容量</span></div><div class="sg"><span class="sid">O7</span><span class="sname">信息失真率</span></div><div class="sg"><span class="sid">O8</span><span class="sname">组织修复能力</span></div><div class="sg"><span class="sid">O9</span><span class="sname">权力结构刚性</span></div><div class="sg"><span class="sid">O10</span><span class="sname">人才密度</span></div>
+</div>
+<h3 style="margin-top:12px">8 位文件化 AI 专家</h3>
+<div style="display:flex;gap:6px;flex-wrap:wrap;margin:4px 0">
+<span class="tag b">strategy</span><span class="tag g">org</span><span class="tag o">finance</span><span class="tag p">tech</span><span class="tag b">marketing</span><span class="tag g">action</span><span class="tag o">biz-model</span><span class="tag p">knowledge</span>
+</div>
+<p class="small">每位专家独立配置 10 个文件：IDENTITY / SOUL / RULES / TOOLS / KNOWLEDGE / THEORY / STAGE_LOGIC / CROSS_EXPERT / FORMULAS / OUTPUT_SCHEMA。异常信号自动路由至对应专家。多专家并行推理 + 证据池交叉验证。</p>
+<div class="clip" style="margin-top:12px"><strong>这不是 ChatGPT 问答。</strong>每个哨兵都是一个独立的计算模块。整个管线是确定性的数据处理 + AI 推理的分层架构。诊断结论来自真实计算和推理，不是模型「猜」出来的。</div>
+</div>

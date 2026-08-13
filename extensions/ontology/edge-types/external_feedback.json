@@ -1,0 +1,15 @@
+{
+  "$id": "edge/external_feedback",
+  "label": "EXTERNAL_FEEDBACK",
+  "tags": ["causal", "first_order", "cross_cycle", "stage_0"],
+  "allowedFrom": ["pool/activity"],
+  "allowedTo": ["pool/sensing"],
+  "requiredProps": ["competitor_aggressiveness", "response_lag", "feedback_completeness"],
+  "optionalProps": {
+    "market_share_change": "number — 市场份额变化率",
+    "competitive_response_type": "string — 竞争者反应类型(price|product|channel)"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "企业动作的外部回响——企业行动引发市场/竞争反应，通过外部环境变化反馈回感知系统。"
+}

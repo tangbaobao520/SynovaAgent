@@ -1,0 +1,22 @@
+{
+  "$id": "ontology-tags-v1",
+  "description": "三层标签体系 — 所有节点/边 Schema 中的 tags 字段值必须来自本文件。pre-commit 硬阻断非法标签。",
+  "layers": {
+    "domain": {
+      "description": "本体类型所属的诊断领域",
+      "values": ["outcome", "strategic", "organizational", "financial", "technical", "marketing", "operational", "risk", "compliance", "knowledge", "causal", "core", "structural", "competitive", "synergy"]
+    },
+    "object": {
+      "description": "本体类型代表的企业对象类别",
+      "values": ["human", "machine", "process", "data", "financial_entity", "legal_entity", "physical_asset", "intangible_asset"]
+    },
+    "industry": {
+      "description": "本体类型适用的行业领域",
+      "values": ["generic", "saas", "manufacturing", "financial_services", "healthcare", "education", "government", "retail", "logistics", "food_service"]
+    }
+  },
+  "validation": {
+    "rule": "所有节点/边 Schema 中的 tags 字段值必须来自本文件三层标签的合法值集合",
+    "enforcement": "pre-commit 硬阻断 (check-file-driven.sh) + ontology-loader 加载时校验"
+  }
+}

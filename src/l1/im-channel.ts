@@ -5,7 +5,7 @@
  * 各平台 (飞书/企微/Slack/Teams) 实现此接口后注册到 IMRegistry。
  * 用户可在对话中切换 IM 通道。
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('l1/im-channel');
 
@@ -91,8 +91,10 @@ export function createFeishuWebhookChannel(webhookUrl: string): IMChannel {
           }),
         });
         return { ok: res.ok, error: res.ok ? undefined : `HTTP ${res.status}` };
-      } catch (err: any) {
-        return { ok: false, error: err.message };
+      } catch (err: unknown) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "网络请求失败");
+        const msg = err instanceof Error ? err.message : String(err);
+        return { ok: false, error: msg };
       }
     },
 
@@ -119,8 +121,10 @@ export function createFeishuWebhookChannel(webhookUrl: string): IMChannel {
           }),
         });
         return { ok: res.ok };
-      } catch (err: any) {
-        return { ok: false, error: err.message };
+      } catch (err: unknown) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, "IM 消息发送失败");
+        const msg = err instanceof Error ? err.message : String(err);
+        return { ok: false, error: msg };
       }
     },
 

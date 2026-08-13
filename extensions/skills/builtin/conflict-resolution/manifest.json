@@ -1,0 +1,45 @@
+{
+  "name": "conflict-resolution",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "诊断冲突仲裁",
+  "description": "当多位专家结论矛盾时，基于证据强度而非投票进行仲裁，给出最终裁决。",
+  "tier": "L3",
+  "complexity": "expert",
+  "expert": "host",
+  "tools": [
+    "query-graph",
+    "cross-validate"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "system"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": []
+  },
+  "dependencies": {
+    "skills": [],
+    "edges": [],
+    "computes": [],
+    "sentinels": []
+  },
+  "boundaries": {
+    "prohibitedDimensions": [
+      "customer-data",
+      "financial-decision"
+    ],
+    "degradedBehavior": "系统数据不可用时返回 degraded:true",
+    "preconditions": [
+      "下级L1-L2数据已就绪",
+      "相关compute函数可用",
+      "GraphStore连接正常"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
+}

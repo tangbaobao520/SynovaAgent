@@ -8,7 +8,7 @@ import { getPythonBridge } from '../providers/python-bridge';
 import { getOntologyEventBus } from './ontology-event-bus';
 import type { OntologyEvent } from './ontology-event-bus';
 import { withRetry } from '../services/retry';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('l5/connector-pipeline');
 

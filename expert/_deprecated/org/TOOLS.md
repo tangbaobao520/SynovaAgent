@@ -1,0 +1,129 @@
+# 组织专家 — 可用工具
+
+## 专有工具
+- org_structure_scan: 组织架构扫描 — 层级数、管理幅度、信息流分析
+- key_person_risk: 关键人依赖分析 — Bus Factor量化、离职影响评估
+- agent_readiness: Agent化机会识别 — 流程×维度评估矩阵
+- collaboration_health: 协作健康度 — 跨部门交互密度、信息断裂点检测
+
+## 共享工具
+- cross_validate: 与其他专家的发现交叉验证
+- query_graph: 查询本体层节点和边
+- trace_evidence: 追溯每条发现的证据链
+
+## 受限工具 (需FDE确认)
+- org_restructure: 组织架构调整建议 — 需充分了解业务和人员
+- team_performance: 团队绩效分析 — 需明确的绩效数据来源
+
+## 协作协议完备度检查 (CPC)
+
+当诊断涉及团队协作效率、跨部门沟通时调用此工具。
+
+### 六维度评估矩阵
+| 维度 | 检查内容 | 数据来源 |
+|------|---------|---------|
+| 分工明确度 | 角色分配是否清晰 | L4 GraphStore Person 节点 |
+| 信息流通度 | 团队间 INTERACTS_WITH 边密度 | L4 GraphStore 边数据 |
+| 权威治理度 | 决策流程是否明确 | Process 节点 |
+| 信任激励度 | 激励机制是否对齐 | Goal 节点 |
+| 知识共享度 | 知识是否在团队间流动 | KNOWLEDGE_CHUNK 节点 |
+| 外部接口度 | 对外协作是否规范 | Client 节点 |
+
+### 评分方法
+- 每个维度 0-1 分
+- < 0.4: 该维度存在协议缺失
+- 综合分 = 六维度均值
+
+## 人机协作深度评估 (HACD)
+
+### 协作深度层级
+L0: 完全人工 — 无Agent参与
+L1: Agent辅助 — 人主导，Agent建议
+L2: 协作 — 人+Agent并行
+L3: Agent主导 — Agent执行，人审核
+L4: 完全自主 — Agent独立决策
+
+### 评估方法
+- 自动化率 = Agent参与流程数 / 总流程数
+- 协作密度 = Agent数 / 人数
+- 综合评分 = 自动化率 × 0.6 + 密度 × 0.4
+
+## 组织自知偏差检测 (SelfAwareness)
+
+比较团队自评与引擎观测的差距。差距本身就是最有信息量的信号。
+
+### 检测方法
+- 查询GOAL节点的progress(引擎观测) vs selfScore(团队自评)
+- |delta| >= 0.2 → 显著偏差
+- 显著偏差占比 >50%: critical, >25%: warning
+
+### 应用
+引擎不假设自评比观测更准。报告两个值之间的差距。
+
+## 异质节点网络分析 (HONA)
+
+评估组织中不同类型节点（人/Agent/工具/流程）之间的网络拓扑健康度。
+
+### 指标
+- 平均度数: 每个节点的平均连接数
+- 桥接节点: 度数 > 均值×1.5 的节点（承担过多连接）
+- 孤立节点: 无任何连接的节点
+
+### 健康度评分
+healthScore = 1 - 孤立节点率 - 桥接过载率×0.5
+孤立率 >30%: critical, healthScore <0.5: warning
+
+## 关键人风险检测 (KeyPersonRisk)
+
+### Bus Factor 计算
+- 统计每个知识域有多少人掌握
+- Bus Factor = 共享知识域数 + 1
+- 独占知识域 >=3: critical, >=2: high, >=1: medium
+
+### 数据来源
+L4 GraphStore Person节点（knowledge/domains/skills属性）
+
+## 激励机制诊断工具（管理经济学）
+
+### 效率工资理论 — 适用条件检测
+当以下条件满足时，建议考虑提高薪酬而非增加监督：
+- 监督成本高（工作成果难以量化）
+- 员工流动成本高（培训期长、知识留存在个人）
+- 员工对薪酬的弹性高（外部市场工资上涨）
+
+### 锦标赛理论 — 适用条件检测
+当以下条件满足时，晋升竞争是有效的激励：
+- 个体绩效可以可靠衡量
+- 团队合作不是成功的关键
+- 晋升通道清晰
+
+### 团队激励 — 搭便车问题检测
+当任务满足以下条件时，存在搭便车风险：
+- 任务需要多人协作完成
+- 个体贡献无法精确区分
+- 按团队绩效付酬
+
+搭便车风险的缓解措施（按效果排序）：
+1. 缩小团队规模（降低搭便车的匿名性）
+2. 加入peer evaluation（同事评价）
+3. 混合激励（50%团队+50%个人）
+4. 对明确的个体贡献额外奖励
+
+# O1-O10 tools (46 sentinel)
+- exploration_exploitation_balance(teamId)
+- routine_mutation_rate(teamId)
+- incentive_alignment(teamId)
+- knowledge_accessibility(teamId)
+- routine_diffusion_speed(teamId)
+- channel_capacity(teamId)
+- info_distortion(teamId)
+- org_repairability(teamId)
+- power_rigidity(teamId)
+- talent_density(teamId)
+- strategy_capability_alignment(teamId)
+- adaptation_velocity(teamId)
+- resource_misallocation(teamId)
+
+## 通用哨兵工具 (V4.2.8)
+- get_sentinel(sentinelId: string): 查询指定哨兵的最近检查结果和发现列表
+- get_ontology(nodeType: string): 查询指定本体节点类型的 schema 和实例数据

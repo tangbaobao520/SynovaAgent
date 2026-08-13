@@ -1,0 +1,10 @@
+{
+  "industry": "saas-tech",
+  "aggregatedAt": "2026-08-09T01:46:22.562Z",
+  "thresholdOverrides": {
+    "F1_KZ": {
+      "warning": 1.5,
+      "critical": 1.1
+    }
+  }
+}

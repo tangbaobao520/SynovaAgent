@@ -11,25 +11,28 @@
  *   ✅ upsertFromSevenPowers — diagnosis-launcher.ts
  *   ✅ upsertFromCPC — diagnosis-launcher.ts
  *
- * 接口: 匹配 engine-core GraphStore 真实接口
+ * 接口: Synova 自研 GraphStore 接口 (D10 后由自研引擎定义)
  *   createNode(type, props, graph) → returns auto-id
  *   createEdge(type, from, to, weight?, props?, graph?) → returns auto-id
  */
-import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
-import { createLogger } from '../logger';
+import { NodeType, EdgeType } from '@synova/ontology';
+import { createLogger } from '@synova/logger';
+import { validateAndLog } from './sog-schema-validator';
+import { deriveValidFrom, deriveValidTo } from '../l3/period-utils';
 
 const log = createLogger('l4/graph-bridge');
 
 // ═══ GraphStore Interface ═══
-// 铁律 39: 类型镜像 engine-core GraphStore (graph-store.ts:27)。
-// 使用 string 类型参数 (vs engine-core 的 NodeType/EdgeType 枚举) 以保持 synova-agent 独立。
+// D10: engine-core 退役 — 此接口由 Synova 自研引擎定义，不再镜像 engine-core。
+// 使用 string 类型参数 (而非枚举) 以保持 synova-agent 独立。
 // 结构兼容性由 tests/architecture/graphstore-compatibility.test.ts 验证。
-// engine-core 引用: @synova/engine-core/dist/pipeline/diagnosis/graph-store
 
 export interface GraphStore {
   createNode(type: string, props: Record<string,unknown>, graph: string): string;
   createNodes(nodes: Array<{type:string, props:Record<string,unknown>}>, graph: string): string[];
   queryNodes(type: string, filters?: Record<string,unknown>, graph?: string): Array<{id:string, type:string, props:Record<string,unknown>}>;
+  /** V3.8: 按标签查询节点/边。标签来自 extensions/ontology/tags.json。 */
+  queryByTags?(tags: string[], options?: { matchMode?: 'any'|'all'; graph?: string }): Array<{id:string, type:string, props:Record<string,unknown>}>;
   queryEdges(type?: string, from?: string, to?: string, graph?: string): Array<{id:string, type:string, from:string, to:string, weight:number, props:Record<string,unknown>}>;
   createEdge(type: string, from: string, to: string, weight?: number, props?: Record<string,unknown>, graph?: string): string;
   createEdges(edges: Array<{type:string, from:string, to:string, weight?:number, props?:Record<string,unknown>}>, graph: string): string[];
@@ -70,6 +73,60 @@ export interface CPCInput { processName: string; teamId: string; efficiency?: nu
 export function createGraphBridge(store: GraphStore, graph: string, onGraphUpdated?: () => void) {
   const notify = () => onGraphUpdated?.();
 
+  // v3.3 20.5: SOG schema 校验 — 包装 createNode/updateNode
+  // D29: 可选冲突检测 — props.standardKey 触发标准键查询 + data_versions 追加
+  // D33: 时间字段 — props.period 触发 valid_from/valid_to/observed_at 自动填充
+  const _createNode = store.createNode.bind(store);
+  const _updateNode = store.updateNode?.bind(store);
+  store.createNode = (type: string, props: Record<string,unknown>, g: string): string => {
+    validateAndLog(type, props);
+
+    // D33: 时间字段推导 — 从 period 映射 valid_from/valid_to
+    if (props?.period) {
+      const period = String(props.period);
+      props.valid_from = deriveValidFrom(period);
+      props.valid_to = deriveValidTo(period);
+    }
+    props.observed_at = props.observed_at || new Date().toISOString();
+
+    const standardKey = props?.standardKey;
+    if (standardKey) {
+      const existing = store.queryNodes(type, { standardKey: standardKey as string }, g);
+      if (existing.length > 0) {
+        const existingNode = existing[0];
+        const existingProps = existingNode.props;
+        const dataVersions = Array.isArray(existingProps.data_versions)
+          ? existingProps.data_versions as Array<Record<string, unknown>>
+          : [];
+        const existingCore: Record<string, unknown> = {};
+        for (const k of Object.keys(existingProps)) {
+          if (k !== 'data_versions' && k !== 'has_conflict') {
+            existingCore[k] = existingProps[k];
+          }
+        }
+        store.updateNode(existingNode.id, {
+          ...existingProps,
+          ...props,
+          data_versions: [
+            ...dataVersions,
+            { value: existingCore, recordedAt: new Date().toISOString() },
+          ],
+          has_conflict: true,
+        }, g);
+        return existingNode.id;
+      }
+      return _createNode(type, { ...props, data_versions: [], has_conflict: false }, g);
+    }
+
+    return _createNode(type, props, g);
+  };
+  if (_updateNode) {
+    store.updateNode = (id: string, props: Record<string,unknown>, g: string): void => {
+      // updateNode 不传 type — 校验跳过（无法在更新时获取节点类型）
+      _updateNode(id, props, g);
+    };
+  }
+
   return {
     upsertFromHONA(people: HONAInput[], interactions: HONAEdge[]): BridgeResult {
       const result: BridgeResult = { nodesCreated: 0, edgesCreated: 0, degraded: false, errors: [] };
@@ -78,7 +135,7 @@ export function createGraphBridge(store: GraphStore, graph: string, onGraphUpdat
       try {
         // Batch create Person nodes
         const nodeIds = store.createNodes(
-          people.map(p => ({ type: SOGNodeType.PERSON, props: { name: p.name, role: p.role || 'unknown' } })),
+          people.map(p => ({ type: NodeType.RESOURCE_PERSON, props: { name: p.name, role: p.role || 'unknown' } })),
           graph,
         );
         result.nodesCreated = nodeIds.length;
@@ -86,9 +143,10 @@ export function createGraphBridge(store: GraphStore, graph: string, onGraphUpdat
         // Create INTERACTS_WITH edges
         for (const ia of interactions) {
           try {
-            store.createEdge(SOGEdgeType.INTERACTS_WITH, ia.from, ia.to, ia.weight || 0.5, {}, graph);
+            store.createEdge(EdgeType.INFORMATION_FLOW, ia.from, ia.to, ia.weight || 0.5, {}, graph);
             result.edgesCreated++;
           } catch (err: any) {
+            log.warn({ err: err instanceof Error ? err.message : String(err) }, "Create INTERACTS_WITH edges");
             result.errors.push(`HONA edge failed: ${err.message}`);
           }
         }
@@ -106,7 +164,7 @@ export function createGraphBridge(store: GraphStore, graph: string, onGraphUpdat
 
       try {
         for (const p of profiles) {
-          const riskNodeId = store.createNode(SOGNodeType.RISK, {
+          const riskNodeId = store.createNode(NodeType.OUTCOME_RISK, {
             name: `关键人风险: ${p.roleId}`,
             severity: p.riskLevel,
             riskType: 'key_person',
@@ -116,9 +174,9 @@ export function createGraphBridge(store: GraphStore, graph: string, onGraphUpdat
           result.nodesCreated++;
 
           // AFFECTS edges to Person nodes matching roleId
-          const persons = store.queryNodes(SOGNodeType.PERSON, { name: p.roleId }, graph);
+          const persons = store.queryNodes(NodeType.RESOURCE_PERSON, { name: p.roleId }, graph);
           for (const person of persons) {
-            store.createEdge(SOGEdgeType.AFFECTS, riskNodeId, person.id, 0.8, {}, graph);
+            store.createEdge(EdgeType.TALENT_DEPLOYMENT, riskNodeId, person.id, 0.8, {}, graph);
             result.edgesCreated++;
           }
         }
@@ -137,7 +195,7 @@ export function createGraphBridge(store: GraphStore, graph: string, onGraphUpdat
 
       try {
         for (const item of items) {
-          store.createNode(SOGNodeType.FINANCIAL, {
+          store.createNode(NodeType.OUTCOME_FINANCIAL /* ONTOLOGY-MIGRATION: NodeType.OUTCOME_FINANCIAL -> outcome/financial or resource/money? Context-dependent. */, {
             name: item.dimension,
             amount: item.amount,
             financialType: item.financialType,
@@ -158,7 +216,7 @@ export function createGraphBridge(store: GraphStore, graph: string, onGraphUpdat
 
       try {
         for (const gap of gaps) {
-          store.createNode(SOGNodeType.CAPABILITY, {
+          store.createNode(NodeType.RESOURCE_KNOWLEDGE /* ONTOLOGY-MIGRATION: NodeType.RESOURCE_KNOWLEDGE has no direct match. Using resource/knowledge. */, {
             name: gap.name,
             category: gap.category,
             proficiencyLevel: 1 - gap.severity,
@@ -180,7 +238,7 @@ export function createGraphBridge(store: GraphStore, graph: string, onGraphUpdat
 
       try {
         for (const p of powers) {
-          store.createNode(SOGNodeType.GOAL, {
+          store.createNode(NodeType.ACTIVITY_GOVERNANCE /* ONTOLOGY-MIGRATION: NodeType.ACTIVITY_GOVERNANCE has no direct match. Using activity/governance (strategic alignment). */, {
             name: p.power,
             goalType: 'north_star',
             description: p.recommendation || '',
@@ -201,16 +259,16 @@ export function createGraphBridge(store: GraphStore, graph: string, onGraphUpdat
 
       try {
         for (const proc of processes) {
-          const nodeId = store.createNode(SOGNodeType.PROCESS, {
+          const nodeId = store.createNode(NodeType.ACTIVITY_PRODUCTION /* ONTOLOGY-MIGRATION: NodeType.ACTIVITY_PRODUCTION is approximate. Check processType and map to correct activity type. */, {
             name: proc.processName,
             processType: 'workflow',
           }, graph);
           result.nodesCreated++;
 
           // BELONGS_TO edge to team
-          const teams = store.queryNodes(SOGNodeType.TEAM, { name: proc.teamId }, graph);
+          const teams = store.queryNodes(NodeType.RESOURCE_TEAM, { name: proc.teamId }, graph);
           for (const team of teams) {
-            store.createEdge(SOGEdgeType.BELONGS_TO, nodeId, team.id, 1, {}, graph);
+            store.createEdge(EdgeType.TALENT_DEPLOYMENT, nodeId, team.id, 1, {}, graph);
             result.edgesCreated++;
           }
         }
@@ -221,4 +279,36 @@ export function createGraphBridge(store: GraphStore, graph: string, onGraphUpdat
       return result;
     },
   };
+}
+
+// ═══ D37: 数据冲突只读查询 ═══
+
+export interface NodeConflictInfo {
+  hasConflict: boolean;
+  versions: Array<Record<string, unknown>>;
+  currentVersion: Record<string, unknown>;
+}
+
+/**
+ * 查询节点数据冲突信息（只读，不修改数据）。
+ * D29 在 createNode 时写入 has_conflict/data_versions，本函数暴露给 L3 层。
+ *
+ * @param nodeId - 节点 ID
+ * @param g - GraphStore 实例
+ * @param graph - 图名称（多租户）
+ * @returns {NodeConflictInfo} 冲突状态、版本列表、当前版本摘要
+ */
+export function getNodeConflictInfo(nodeId: string, g: GraphStore, graph: string): NodeConflictInfo {
+  const node = g.getNode(nodeId, graph);
+  if (!node) return { hasConflict: false, versions: [], currentVersion: {} };
+  const record = node as Record<string, unknown>;
+  const props = (record.props || {}) as Record<string, unknown>;
+  const versions = Array.isArray(props.data_versions)
+    ? props.data_versions as Array<Record<string, unknown>>
+    : [];
+  const current: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(props)) {
+    if (k !== 'data_versions' && k !== 'has_conflict') current[k] = v;
+  }
+  return { hasConflict: props.has_conflict === true, versions, currentVersion: current };
 }

@@ -13,7 +13,7 @@
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('services/db-encryption');
 
@@ -104,6 +104,7 @@ export function decryptDatabase(config: EncryptionConfig): boolean {
     log.info({ path: dbPath, size: decrypted.length }, '数据库已解密');
     return true;
   } catch (err: any) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "Write plaintext back (in-place)");
     // Decryption failure — file may already be plaintext or is corrupted
     if (err.message?.includes('unsupported state') || err.message?.includes('authentication')) {
       log.warn({ path: dbPath }, '数据库解密失败 — 可能已是明文或密钥不匹配');
@@ -208,6 +209,7 @@ export function backupDatabase(config: BackupConfig): { ok: boolean; path?: stri
 
     return { ok: true, path: backupPath };
   } catch (err: any) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "文件系统操作失败");
     return { ok: false, error: err.message };
   }
 }

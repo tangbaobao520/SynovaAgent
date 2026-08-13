@@ -1,0 +1,32 @@
+{
+  "id": "single_point_accountability",
+  "name": "单点问责",
+  "category": "law-governance",
+  "coreInsight": "每个任务必须有唯一 owner。多人共责 = 无人负责。当任务需要多人协作时，拆分到子任务粒度直到每个子任务有唯一 owner。",
+  "applicableDecisionTypes": [
+    "任务分配",
+    "项目管理",
+    "质量管理"
+  ],
+  "constraintPatterns": [
+    "唯一责任人",
+    "owner",
+    "问责",
+    "分配",
+    "明确",
+    "单点",
+    "RACI",
+    "执行"
+  ],
+  "applicableRoles": [
+    "项目管理",
+    "任务分配",
+    "责任审计",
+    "质量管理"
+  ],
+  "limitations": [
+    "过度拆分可能导致任务碎片化",
+    "某些创造型任务难以预拆分"
+  ],
+  "$id": "framework/law-governance/single_point_accountability"
+}

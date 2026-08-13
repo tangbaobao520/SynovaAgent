@@ -1,0 +1,16 @@
+{
+  "$id": "edge/market_share_capture",
+  "label": "MARKET_SHARE_CAPTURE",
+  "tags": ["causal", "first_order", "stage_4"],
+  "allowedFrom": ["pool/activity"],
+  "allowedTo": ["outcome/market"],
+  "requiredProps": ["market_share_change", "competitive_intensity", "growth_strategy_type"],
+  "optionalProps": {
+    "share_gain_source": "string — 份额来源(organic|acquisition|price_war)",
+    "competitor_response_aggressiveness": "number (0-1) — 竞品反应强度",
+    "market_growth_rate": "number — 市场增长率"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "从竞品手中夺取或守住份额——企业行动直接影响市场竞争地位。"
+}

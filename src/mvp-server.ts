@@ -6,7 +6,7 @@
  */
 import express from 'express';
 import cors from 'cors';
-import { createLogger } from './logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('mvp-server');
 
@@ -138,7 +138,15 @@ ${dimList}
   const extractText = extractData.choices?.[0]?.message?.content || '';
   const jsonMatch = extractText.match(/\[[\s\S]*\]/);
   const dimensions = jsonMatch
-    ? (() => { try { const arr = JSON.parse(jsonMatch[0]); return DIMS.map(d => arr.find((a: any) => a.dimensionKey === d.key) || { dimensionKey: d.key, dimensionLabel: d.label, content: '提取失败', confidence: 'low', sufficient: false }); } catch { return DIMS.map(d => ({ dimensionKey: d.key, dimensionLabel: d.label, content: '解析失败', confidence: 'low' as const, sufficient: false })); } })()
+    ? (() => {
+        try {
+          const arr = JSON.parse(jsonMatch[0]);
+          return DIMS.map(d => arr.find((a: any) => a.dimensionKey === d.key) || { dimensionKey: d.key, dimensionLabel: d.label, content: '提取失败', confidence: 'low', sufficient: false });
+        } catch (err) {
+          log.warn({ err }, '维度 JSON 解析失败 — 降级解析失败');
+          return DIMS.map(d => ({ dimensionKey: d.key, dimensionLabel: d.label, content: '解析失败', confidence: 'low' as const, sufficient: false }));
+        }
+      })()
     : DIMS.map(d => ({ dimensionKey: d.key, dimensionLabel: d.label, content: '解析失败', confidence: 'low' as const, sufficient: false }));
 
   const covered = dimensions.filter((d: any) => d.sufficient).length;

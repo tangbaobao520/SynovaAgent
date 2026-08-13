@@ -1,0 +1,18 @@
+{
+  "version": "1.0",
+  "description": "通用默认哨兵阈值。作为行业阈值偏离的参考基线。
+    新增哨兵时在此文件追加一条即可，无需改 TypeScript 代码。",
+  "updatedAt": "2026-07-01T00:00:00.000Z",
+  "thresholds": {
+    "F1_KZ": { "warning": 1.5, "critical": 2.0 },
+    "F2_runway": { "warning": 12, "critical": 6 },
+    "F3_revenue_quality": { "warning": 0.3, "critical": 0.15 },
+    "F4_profit_quality": { "warning": 0.3, "critical": 0.15 },
+    "F5_cash_conversion": { "warning": 0.5, "critical": 0.3 },
+    "O1_info_distortion": { "warning": 0.4, "critical": 0.6 },
+    "O2_explore_exploit": { "warning": 0.3, "critical": 0.5 },
+    "O3_talent_density": { "warning": 0.3, "critical": 0.5 },
+    "T1_software_health": { "warning": 0.4, "critical": 0.6 },
+    "T2_connector_coverage": { "warning": 0.3, "critical": 0.5 }
+  }
+}

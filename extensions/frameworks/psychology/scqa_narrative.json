@@ -1,0 +1,25 @@
+{
+  "id": "scqa_narrative",
+  "name": "SCQA叙事框架",
+  "category": "psychology",
+  "coreInsight": "Situation-Complication-Question-Answer叙事结构，仅限Agent到人类输出使用，不用于Agent间通信。",
+  "applicableDecisionTypes": [
+    "报告编写",
+    "人类沟通"
+  ],
+  "constraintPatterns": [
+    "报告",
+    "方案呈现",
+    "沟通",
+    "汇报"
+  ],
+  "applicableRoles": [
+    "报告者",
+    "沟通者"
+  ],
+  "limitations": [
+    "仅对Agent到人类单向通讯有效",
+    "Agent间通信应使用结构化数据"
+  ],
+  "$id": "framework/psychology/scqa_narrative"
+}

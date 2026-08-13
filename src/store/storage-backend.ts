@@ -7,7 +7,7 @@
  * Iron law #31: 所有操作返回 {value, degraded} 标记。
  */
 import Database from 'better-sqlite3';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('store/storage-backend');
 
@@ -208,6 +208,7 @@ export class SqliteStorageBackend implements StorageBackend {
       this.db.prepare('SELECT 1 FROM storage_kv LIMIT 0').run();
       return { healthy: true };
     } catch (err: any) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, "数据库操作失败");
       return { healthy: false, error: err.message };
     }
   }

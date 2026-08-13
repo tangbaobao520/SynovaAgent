@@ -1,7 +1,7 @@
 node_modules/
 dist/
 data/
-coverage/
+/coverage/
 .env
 *.log
 *.tgz
@@ -9,6 +9,8 @@ coverage/
 .DS_Store
 Thumbs.db
 *.html
+!app/*.html
+!app/**/*.html
 *.ps1
 *.cmd
 Dockerfile
@@ -21,3 +23,17 @@ docs/*.html
 docs/research/*.html
 docs/research/*.md
 .claude/loop-state.json
+# D329: current-brief 是运行时产物（多 session 互相覆盖，已提交值陈旧）
+# session 专属 current-brief.<sid> 与全局 current-brief 均去跟踪
+.claude/current-brief*
+
+# D296 (L3-2): 控制塔生成物不入 git — 运行时重新生成, 防止 "git 有、磁盘无" 中间态
+# 重新生成命令: python scripts/audit/check-gates-v2.py && python scripts/audit/self-diagnosis.py
+# 组件信号: 各 control-tower 组件脚本运行后经 emit-signal.py 写入
+/.codex/signals/
+/.codex/snapshots/
+/.codex/checkpoints/
+/.codex/dependency-graph.json
+
+# pre-commit 并行缓存 — 含扫描输出，禁止入库
+.claude/.precommit-par/

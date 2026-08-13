@@ -1,0 +1,34 @@
+{
+  "id": "transaction_cost",
+  "name": "交易成本边界",
+  "category": "economics",
+  "coreInsight": "企业边界由交易成本决定。外部协调成本高于内部管理成本时自己做，反之外包。跨境/多平台/多供应商场景下，必须设置专门的外部接口角色来吸收协调成本。",
+  "applicableDecisionTypes": [
+    "外包决策",
+    "供应商策略",
+    "组织设计",
+    "跨境运营"
+  ],
+  "constraintPatterns": [
+    "跨境",
+    "多平台",
+    "外部协调",
+    "外包",
+    "多供应商",
+    "合作伙伴",
+    "交易",
+    "接口"
+  ],
+  "applicableRoles": [
+    "外部接口",
+    "供应商管理",
+    "合作伙伴管理",
+    "跨境协调"
+  ],
+  "limitations": [
+    "交易成本难以精确量化",
+    "内部管理成本也可能失控",
+    "\"中间型\"交易（关系契约）不适用二分法"
+  ],
+  "$id": "framework/economics/transaction_cost"
+}

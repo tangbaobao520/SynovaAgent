@@ -1,0 +1,38 @@
+{
+  "$id": "edge/locks-in",
+  "label": "LOCKS_IN",
+  "tags": [
+    "causal",
+    "defensive"
+  ],
+  "allowedFrom": [
+    "resource/tool",
+    "resource/knowledge",
+    "resource/brand",
+    "resource/ip",
+    "resource/data",
+    "resource/client",
+    "resource/supplier"
+  ],
+  "allowedTo": [
+    "resource/client",
+    "resource/person",
+    "resource/team"
+  ],
+  "requiredProps": [
+    "lock_in_strength",
+    "lock_type"
+  ],
+  "optionalProps": {
+    "switching_cost_created": "number",
+    "lock_durability_years": "number",
+    "peer_edge_id": "string"
+  },
+  "consumed_by_sentinels": [
+    "sentinel-ai-ecosystem-fit",
+    "sentinel-software-health",
+    "sentinel-api-coverage",
+    "sentinel-process-ai-readiness"
+  ],
+  "description": "客户/资源锁定。切换成本壁垒。"
+}

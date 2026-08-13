@@ -7,7 +7,7 @@
  */
 import type { LLMProvider, LLMMessage, ChatOptions, ChatResult, StreamCallback, HealthCheckResult } from './types';
 import { createProvider, type ProviderType } from './index';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('providers/registry');
 
@@ -60,6 +60,7 @@ export function createProviderChain(
           }, opts);
           if (completed) return;
         } catch (err: any) {
+          log.warn({ err: err instanceof Error ? err.message : String(err) }, "Provider 调用失败");
           errors.push(`${p.name}: ${err.message}`);
         }
       }
@@ -141,5 +142,77 @@ export class ProviderRegistry {
     const all = [...healthy, ...unhealthy];
     if (all.length === 0) throw new Error('未注册任何 Provider');
     return createProviderChain(all) as unknown as LLMProvider;
+  }
+}
+
+// ═══ Phase 5.5: 凭据池轮换 ═══
+
+export interface CredentialEntry {
+  id: string;
+  credentials: Record<string, string>;
+}
+
+export interface CredentialPoolConfig {
+  /** 耗尽冷却时间（毫秒） */
+  cooldownMs: number;
+}
+
+/**
+ * 多 API Key 凭据池。
+ * 401/429 自动标记当前 key exhausted 并轮换下一个。
+ * 对标 Hermes credential_pool 模式。
+ */
+export class CredentialPool {
+  private entries: CredentialEntry[] = [];
+  private exhausted = new Map<string, number>(); // id → exhaustedAt
+  private config: CredentialPoolConfig;
+
+  constructor(config?: Partial<CredentialPoolConfig>) {
+    this.config = { cooldownMs: config?.cooldownMs ?? 60_000 };
+  }
+
+  /** 注册一个凭据到池中 */
+  register(id: string, credentials: Record<string, string>): void {
+    this.entries.push({ id, credentials });
+    log.debug({ id }, '凭据已注册到池');
+  }
+
+  /** 获取下一个可用凭据 */
+  get(): CredentialEntry | null {
+    const now = Date.now();
+
+    // 先检查冷却到期的凭据
+    for (const [id, exhaustedAt] of this.exhausted) {
+      if (now - exhaustedAt >= this.config.cooldownMs) {
+        this.exhausted.delete(id);
+        log.info({ id, cooldownMs: this.config.cooldownMs }, '凭据冷却期满 — 恢复可用');
+      }
+    }
+
+    // 找第一个未耗尽的
+    for (const entry of this.entries) {
+      if (!this.exhausted.has(entry.id)) {
+        return entry;
+      }
+    }
+
+    return null;
+  }
+
+  /** 标记凭据为耗尽（401/429 后调用） */
+  markExhausted(id: string): void {
+    this.exhausted.set(id, Date.now());
+    const remaining = this.entries.filter(e => !this.exhausted.has(e.id)).length;
+    log.warn({ id, remaining }, `凭据 ${id} 已耗尽 — 剩余 ${remaining} 个可用`);
+  }
+
+  /** 当前可用凭据数 */
+  count(): number {
+    return this.entries.length;
+  }
+
+  /** 所有凭据 */
+  list(): CredentialEntry[] {
+    return [...this.entries];
   }
 }

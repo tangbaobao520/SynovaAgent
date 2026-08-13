@@ -26,31 +26,29 @@
        → ReAct推理+交叉验证 → 综合诊断报告 → FDE收到警报+报告
 
 ## 本任务在哪一层
-<!-- L1/L2/L3/L4/L5？触及哪几层？有没有跨层风险？ -->
-<!-- 示例: L3(哨兵) → L2(桥接) → L1(API)。L1 禁触 L3/L4/L5。 -->
+
+
 
 ## 文档引用
-<!-- 全量对齐手册哪些章节和本任务相关？引用具体节号。 -->
-<!-- 示例: §7.3 测量器与哨兵、§8.3 专家Agent调度、§6 L1交互层 -->
+
+
 
 ## 接口审计
-<!-- 本任务调用的关键函数签名（从代码 grep 来的，不凭记忆） -->
-<!-- 格式: 文件名:函数名(参数) → 返回类型 -->
-<!-- 示例:
+
+
   src/l3/expert-dispatcher.ts: runExpert(type: ExpertType, evidence: Evidence[]) → Promise<ExpertReport | null>
   src/sentinel/signal-aggregator.ts: aggregateSignals(results: SentinelCheckResult[]) → { signals: AggregatedSignal[], stats }
--->
 
 ## 数据流
-<!-- 输入来自哪里 → 经过哪些文件/函数 → 输出到哪里（用户看到什么） -->
-<!-- 必须包含至少一个 → 箭头 -->
-<!-- 示例: Cron → runner.aggregateAndDispatch() → ExpertDispatcher.runExpert() → GET /api/sentinel/reports → FDE -->
+
+
+
 
 ## 用户旅程
-<!-- 用产品语言描述: 谁→什么场景→做了什么→看到什么结果 -->
+
 
 ## Done 标准
-<!-- 铁律 7: 入口可触达 + 完整链路走通 + 结果可见 -->
+
 - [ ] 入口可触达:
 - [ ] 链路走通:
 - [ ] 结果可见:

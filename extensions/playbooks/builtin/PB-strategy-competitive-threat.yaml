@@ -1,0 +1,63 @@
+id: PB-strategy-competitive-threat
+name: 竞争威胁应对剧本
+version: 1.0.0
+expert: strategy
+type: playbook
+description: 当竞争位势或护城河哨兵告警时，系统化评估威胁来源、强度和趋势，输出战略响应选项。
+trigger:
+  sentinels:
+    - competitive-position
+    - competitive-moat
+  condition: competitive-position/competitive-moat告警
+steps:
+  - id: step-1
+    name: 竞争态势评估
+    description: 从七力框架评估当前竞争位势
+    skill: analyze-competitive-position
+    timeout: 30
+  - id: step-2
+    name: 威胁解码
+    description: 分析竞争对手特征威胁和定价策略
+    tools:
+      - compute-competitor-feature-threat
+    timeout: 25
+  - id: step-3
+    name: 市场份额追踪
+    description: 追踪市场份额变化和HHI趋势
+    tools:
+      - compute-market-share-capture
+    timeout: 20
+  - id: step-4
+    name: 外部环境扫描
+    description: 沿E-0.3扫描外部威胁信号
+    tools:
+      - acquire-edge-data
+    timeout: 30
+    onFailure: skip
+  - id: step-5
+    name: 护城河评估
+    description: 评估护城河侵蚀程度
+    tools:
+      - cross-validate
+    timeout: 25
+  - id: step-6
+    name: 战略选项输出
+    description: 输出战略响应选项列表
+    skill: diagnose-competitive-decay
+    timeout: 40
+onFailure: degrade
+output: competitive_threat_report
+dependencies:
+  edges:
+    - E-4.7
+    - E-4.4
+    - E-4.5
+    - E-0.3
+    - E-3.6
+  skills:
+    - analyze-competitive-position
+    - diagnose-competitive-decay
+  sentinels:
+    - competitive-position
+    - competitive-moat
+crossExpert: true

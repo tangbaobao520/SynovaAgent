@@ -1,0 +1,23 @@
+{
+  "$schema": "https://synova.dev/schemas/golden-case-v1.json",
+  "id": "golden-case-04",
+  "title": "人才流失",
+  "description": "核心技术人才大量流失，招聘效率不足。预期根因为 TALENT_ACQUISITION 边。",
+  "frozenAt": "2026-07-14T00:00:00Z",
+  "DO_NOT_MODIFY": "Frozen snapshot — update expectations only on 42-edge major version change",
+  "input": {
+    "sentinelFindings": [
+      { "id": "F010", "sentinel": "key-person-risk", "severity": "critical", "title": "关键人员流失率超30%", "matchedEdgeIds": ["E-07"], "detectedAt": "2026-07-13T00:00:00Z" },
+      { "id": "F011", "sentinel": "talent-density", "severity": "high", "title": "人才密度下降", "matchedEdgeIds": ["E-07", "E-12"], "detectedAt": "2026-07-13T00:00:00Z" },
+      { "id": "F012", "sentinel": "internal-transaction-cost", "severity": "medium", "title": "内部协调成本上升", "matchedEdgeIds": ["E-23"], "detectedAt": "2026-07-12T00:00:00Z" }
+    ],
+    "graphEdges": ["E-07", "E-12", "E-05", "E-23", "E-31", "E-33"]
+  },
+  "expected": {
+    "rootCauseEdgeIds": ["E-07"],
+    "rootCauseNodeTypes": ["TALENT_ACQUISITION"],
+    "severity": "critical",
+    "matchedEdgeIds": ["E-07", "E-12", "E-23"],
+    "explanation": "TALENT_ACQUISITION 边缺失→人才获取受阻→关键人员流失"
+  }
+}

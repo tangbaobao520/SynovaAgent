@@ -1,0 +1,1 @@
+{"$id":"outcome/market","label":"MARKET_OUTCOME","tags":["outcome","market","core"],"requiredProps":["period"],"optionalProps":{"market_share":"number","nps":"number","customer_satisfaction":"number","brand_awareness":"number","client_concentration_hhi":"number","churn_rate":"number"},"description":"市场结果。企业在市场中的竞争地位和客户反响。"}

@@ -1,0 +1,13 @@
+{
+  "$id": "rule/diagnostic/isolation",
+  "name": "信息孤岛检测",
+  "type": "rule",
+  "domain": "organizational",
+  "category": "graph_alert",
+  "severity": "high",
+  "description": "Person 节点度数为 0，该成员未参与任何交互",
+  "condition": { "nodeType": "Person", "metric": "degree", "operator": "eq", "value": 0 },
+  "appliesTo": ["general-enterprise", "saas-tech", "manufacturing", "financial-services"],
+  "cooldownMs": 86400000,
+  "metadata": { "source": "expert_template", "confidence": 0.9, "status": "active" }
+}

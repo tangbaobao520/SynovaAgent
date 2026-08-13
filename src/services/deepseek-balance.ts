@@ -7,7 +7,7 @@
  * 铁律: 不涉及 React/ink，纯数据获取模块。
  */
 
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('services/deepseek-balance');
 

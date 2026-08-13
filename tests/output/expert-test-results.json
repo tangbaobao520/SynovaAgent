@@ -1,0 +1,58 @@
+[
+  {
+    "name": "strategy",
+    "ok": true,
+    "conclusion": "XX科技当前战略方向与组织能力严重不匹配，增长目标（2000万→5000万）在现有模式下不可持续，核心风险集中在关键人依赖和客户集中度上，必须先解决组织能力短板再谈规模扩张。",
+    "degraded": false,
+    "time": 13.2,
+    "tokens": 2291
+  },
+  {
+    "name": "org",
+    "ok": true,
+    "conclusion": "XX科技的组织能力严重依赖关键个人，增长战略面临‘人走茶凉’和‘现金流断裂’的双重风险，当前组织架构无法支撑3倍营收增长。",
+    "degraded": false,
+    "time": 14,
+    "tokens": 2497
+  },
+  {
+    "name": "finance",
+    "ok": true,
+    "conclusion": "现金流紧张和关键人依赖是当前最致命的财务风险，若不解决，增长目标将因资金断裂或核心讲师流失而无法实现。",
+    "degraded": false,
+    "time": 16.4,
+    "tokens": 2870
+  },
+  {
+    "name": "tech",
+    "ok": true,
+    "conclusion": "XX科技数字化基础薄弱，核心业务依赖个人而非系统，存在严重的单点故障和增长瓶颈，Agent就绪度极低，需优先解决核心讲师依赖和客户集中度问题。",
+    "degraded": false,
+    "time": 10.7,
+    "tokens": 2034
+  },
+  {
+    "name": "marketing",
+    "ok": true,
+    "conclusion": "XX科技的增长瓶颈不在市场，而在组织——核心讲师单点依赖和客户集中度过高，导致增长杠杆只有一根在转，且随时可能断裂。",
+    "degraded": false,
+    "time": 16,
+    "tokens": 2426
+  },
+  {
+    "name": "action",
+    "ok": true,
+    "conclusion": "XX科技处于成长期早期，核心风险集中在关键人依赖和客户集中度，需立即行动降低单点故障风险，同时为规模化增长打好组织基础。",
+    "degraded": false,
+    "time": 10.6,
+    "tokens": 1996
+  },
+  {
+    "name": "business_model",
+    "ok": true,
+    "conclusion": "这家公司本质上是一个‘张老师工作室’——核心资产是3个人，核心收入依赖1个人，核心客户依赖3家。这不是一家公司，是一个高杠杆的个人生意。",
+    "degraded": false,
+    "time": 17.2,
+    "tokens": 2728
+  }
+]

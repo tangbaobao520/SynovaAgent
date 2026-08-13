@@ -4,7 +4,9 @@
  * 最小必需: DEV_MODE=true 或 (LLM_API_KEY + ENGINE_API_TOKENS)
  * 所有值都有合理默认值，适合本地开发和客户部署。
  */
-import { createLogger } from './logger';
+import { createLogger } from '@synova/logger';
+import { loadFileConfig } from './config-file';
+import { ConfigRecovery } from './services/config-recovery';
 
 const log = createLogger('config');
 
@@ -18,9 +20,48 @@ export interface SynovaConfig {
   engineTokens: string;
   gatewayHost: string;
   llmConfigured: boolean;
+  diagnosis?: {
+    maxToolRounds?: number;
+    gateDataCompleteness?: number;
+    gateMinHypothesisConfidence?: number;
+  };
+  sentinel?: {
+    baselineMinRuns: number;
+    findingCountRatioWarning: number;
+    findingCountRatioCritical: number;
+    perSentinel?: Record<string, { warningRatio?: number; criticalRatio?: number; minRuns?: number }>;
+  };
 }
 
 export function loadConfig(): SynovaConfig {
+  // C5: 优先加载 synova.json, 失败降级到环境变量
+  let filePort: number | undefined;
+  let fileSentinel: SynovaConfig['sentinel'] | undefined;
+  try {
+    const fileCfg = loadFileConfig();
+    filePort = fileCfg.server.port;
+    fileSentinel = fileCfg.sentinel;
+    log.info({ port: filePort, source: 'synova.json' }, '使用文件配置');
+
+    // Phase 4.2: 验证配置文件完整性
+    try {
+      const synovaJsonPath = require('path').join(process.cwd(), 'synova.json');
+      const recoveryResult = ConfigRecovery.verify(synovaJsonPath);
+      if (recoveryResult.restored) {
+        log.info('配置文件已从 .bak 恢复 — 重新加载');
+        const restoredCfg = loadFileConfig();
+        filePort = restoredCfg.server.port;
+        fileSentinel = restoredCfg.sentinel;
+      } else if (recoveryResult.corrupted) {
+        log.warn({ error: recoveryResult.error }, '配置文件损坏且无法恢复 — 使用默认值');
+      }
+    } catch (verifyErr: unknown) {
+      log.warn({ err: verifyErr }, '配置校验失败 — degraded');
+    }
+  } catch {
+    log.debug('synova.json 不可用, 使用环境变量');
+  }
+
   const devMode = process.env.DEV_MODE === 'true';
 
   // LLM 配置 — 多 Provider 支持
@@ -46,7 +87,7 @@ export function loadConfig(): SynovaConfig {
   const dbPath = process.env.SYNOVA_DB_PATH ||
     (dataDir ? `${dataDir}/synova.db` : './data/synova.db');
 
-  const port = parseInt(process.env.PORT || '3000', 10);
+  const port = parseInt(process.env.PORT || String(filePort || 3000), 10);
 
   if (!devMode && !llmApiKey && !gatewayHost) {
     log.warn('⚠️  未设置 LLM_API_KEY 且未设置 OPENCLAW_GATEWAY_HOST');
@@ -57,5 +98,5 @@ export function loadConfig(): SynovaConfig {
 
   log.info({ port, devMode, dbPath, model: llmModel, llmConfigured }, '配置加载完成');
 
-  return { port, devMode, dbPath, llmApiKey, llmBaseUrl, llmModel, engineTokens, gatewayHost, llmConfigured };
+  return { port, devMode, dbPath, llmApiKey, llmBaseUrl, llmModel, engineTokens, gatewayHost, llmConfigured, sentinel: fileSentinel };
 }

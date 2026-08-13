@@ -9,13 +9,14 @@
  *   ReportGraphAdapter → Phase 4
  *   接线审计: grep 确认每个组件在生产入口有引用
  */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import Database from 'better-sqlite3';
 import { EvidenceCollector, CorroborationEngine } from '../../src/evidence/index';
 import { EvidenceStore } from '../../src/evidence/evidence-store';
 import { ModuleRunner } from '../../src/orchestrator/module-runner';
 import { createGraphBridge } from '../../src/l4/graph-bridge';
 import { SubAgentCoordinator } from '../../src/orchestrator/subagent-coordinator';
+import { getExpertRegistry } from '../../src/l3/expert-registry';
 import { ReportGraphAdapter } from '../../src/l4/report-graph-adapter';
 import type { Evidence } from '../../src/evidence/types';
 import type { LLMClient } from '../../src/orchestrator/diagnosis-orchestrator';
@@ -105,6 +106,14 @@ describe('SubAgentCoordinator → Phase 2 wiring', () => {
     async consult() { return { content: '{"hypothesis":"根因是排班制度","confidence":0.85}', model: 'fake' }; },
   };
 
+  beforeAll(() => {
+    const EXPERT_TYPES = ['strategy','org','finance','marketing','tech','action','knowledge'];
+    const registry = getExpertRegistry();
+    for (const t of EXPERT_TYPES) {
+      registry.registerDefault(t, `你是${t}专家。\n不可做的事: 不做其他领域分析`);
+    }
+  });
+
   it('Given Phase 1 evidence, When SubAgentCoordinator dispatches, Then all 7 experts produce reports', async () => {
     const coordinator = new SubAgentCoordinator(fakeLLM);
     const evidence: Evidence[] = [
@@ -124,8 +133,8 @@ describe('ReportGraphAdapter → Phase 4 wiring', () => {
   it('Given Phase 3 root causes in GraphStore, When ReportGraphAdapter queries, Then returns report data', () => {
     const fakeStore = {
       queryNodes(type: string) {
-        if (type === 'Person') return [{ id:'p1', type:'Person', props:{name:'Alice'}}, { id:'p2', type:'Person', props:{name:'Bob'}}];
-        if (type === 'Risk') return [{ id:'r1', type:'Risk', props:{severity:'high', name:'单点故障'}}];
+        if (type === 'resource/person') return [{ id:'p1', type:'resource/person', props:{name:'Alice'}}, { id:'p2', type:'resource/person', props:{name:'Bob'}}];
+        if (type === 'outcome/risk') return [{ id:'r1', type:'outcome/risk', props:{severity:'high', name:'单点故障'}}];
         return [];
       },
       queryEdges() { return []; },

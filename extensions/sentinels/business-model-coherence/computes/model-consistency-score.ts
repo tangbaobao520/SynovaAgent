@@ -1,0 +1,23 @@
+/**
+ * I7 商业模式一致性: 三角框架
+ * - 价值主张(VP) vs 收入模式(Rev): VP是否支撑定价
+ * - 收入模式 vs 成本结构(Cost): 毛利是否合理
+ * - 成本结构 vs 核心能力(Cap): 成本是否投入在关键能力
+ */
+export interface CoherenceResult { score: number; vpRevFit: number; revCostFit: number; costCapFit: number; signals: string[]; degraded: boolean; }
+export function computeModelCoherence(nodes: Array<{ type: string; props: Record<string, unknown> }>): CoherenceResult {
+  if (nodes.length === 0) return { score: 0, vpRevFit: 0, revCostFit: 0, costCapFit: 0, signals: ['无数据'], degraded: true };
+  const signals: string[] = [];
+  const hasVP = nodes.some(n => n.type === 'BusinessModel' || n.props.valueProposition);
+  const hasRevenue = nodes.some(n => n.props.revenue || n.props.pricing);
+  const hasCost = nodes.some(n => n.props.cost || n.props.costStructure);
+  const hasCap = nodes.some(n => n.type === 'Capability' || n.props.capability);
+  const vpRevFit = hasVP && hasRevenue ? 0.8 : (hasVP || hasRevenue ? 0.4 : 0.2);
+  const revCostFit = hasRevenue && hasCost ? 0.8 : (hasRevenue || hasCost ? 0.4 : 0.2);
+  const costCapFit = hasCost && hasCap ? 0.8 : (hasCost || hasCap ? 0.4 : 0.2);
+  if (!hasVP) signals.push('缺少价值主张定义');
+  if (!hasRevenue) signals.push('缺少收入模式定义');
+  if (!hasCost) signals.push('缺少成本结构定义');
+  const score = (vpRevFit + revCostFit + costCapFit) / 3;
+  return { score: Math.round(score * 100) / 100, vpRevFit, revCostFit, costCapFit, signals, degraded: false };
+}

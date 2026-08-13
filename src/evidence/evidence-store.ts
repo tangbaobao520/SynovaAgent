@@ -5,7 +5,7 @@
  */
 import Database from 'better-sqlite3';
 import type { Evidence, EvidenceFilter } from './types';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('evidence/store');
 
@@ -41,6 +41,14 @@ export class EvidenceStore {
       );
     `);
 
+    // D37: 数据冲突字段（ALTER TABLE ADD COLUMN — 不重建表，不丢数据）
+    try { this.db.exec(`ALTER TABLE evidence ADD COLUMN has_conflict INTEGER DEFAULT 0`); } catch (err) {
+      log.warn({ err }, 'evidence 表 has_conflict 列迁移 — 列已存在');
+    }
+    try { this.db.exec(`ALTER TABLE evidence ADD COLUMN conflict_versions TEXT`); } catch (err) {
+      log.warn({ err }, 'evidence 表 conflict_versions 列迁移 — 列已存在');
+    }
+
     // FTS5 triggers
     this.db.exec(`
       CREATE TRIGGER IF NOT EXISTS evidence_ai AFTER INSERT ON evidence BEGIN
@@ -57,14 +65,16 @@ export class EvidenceStore {
   /** Add evidence (deduplicate by source+type+content hash) */
   add(evidence: Evidence): void {
     this.db.prepare(`
-      INSERT OR REPLACE INTO evidence (id, source, source_id, type, content, confidence, collected_at, expires_at, org_id, session_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT OR REPLACE INTO evidence (id, source, source_id, type, content, confidence, collected_at, expires_at, org_id, session_id, has_conflict, conflict_versions)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       evidence.id, evidence.source, evidence.sourceId, evidence.type,
       evidence.content, evidence.confidence,
       evidence.collectedAt || new Date().toISOString(),
       evidence.expiresAt || null,
       evidence.orgId, evidence.sessionId || null,
+      evidence.hasConflict ?? null,
+      evidence.conflictVersions ?? null,
     );
     log.debug({ id: evidence.id, source: evidence.source }, '证据已存储');
   }
@@ -80,7 +90,7 @@ export class EvidenceStore {
     if (filter.sessionId) { conditions.push('session_id = ?'); params.push(filter.sessionId); }
     if (filter.minConfidence !== undefined) { conditions.push('confidence >= ?'); params.push(filter.minConfidence); }
 
-    const sql = `SELECT * FROM evidence WHERE ${conditions.join(' AND ')} ORDER BY collected_at DESC` +
+    const sql = `SELECT id, source, source_id AS sourceId, type, content, confidence, collected_at AS collectedAt, expires_at AS expiresAt, org_id AS orgId, session_id AS sessionId, has_conflict AS hasConflict, conflict_versions AS conflictVersions FROM evidence WHERE ${conditions.join(' AND ')} ORDER BY collected_at DESC` +
       (filter.limit ? ` LIMIT ${filter.limit}` : '');
 
     return this.db.prepare(sql).all(...params) as Evidence[];
@@ -89,7 +99,7 @@ export class EvidenceStore {
   /** Full-text search */
   search(query: string, limit = 10): Evidence[] {
     return this.db.prepare(`
-      SELECT e.* FROM evidence e
+      SELECT e.id, e.source, e.source_id AS sourceId, e.type, e.content, e.confidence, e.collected_at AS collectedAt, e.expires_at AS expiresAt, e.org_id AS orgId, e.session_id AS sessionId, e.has_conflict AS hasConflict, e.conflict_versions AS conflictVersions FROM evidence e
       INNER JOIN evidence_fts fts ON e.rowid = fts.rowid
       WHERE evidence_fts MATCH ?
       ORDER BY rank LIMIT ?

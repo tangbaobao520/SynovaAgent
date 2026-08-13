@@ -9,7 +9,11 @@ version: "3.8"
 
 services:
   synova-agent:
-    build: .
+    build:
+      context: .
+      platforms:
+        - linux/amd64
+        - linux/arm64
     container_name: synova-agent
     restart: unless-stopped
     ports:
@@ -35,6 +39,34 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # D52: 看门狗 sidecar — 监控 system-self-ops 状态
+  watchdog:
+    image: synova-agent:latest
+    container_name: synova-watchdog
+    restart: unless-stopped
+    volumes:
+      - synova-data:/app/data
+      - ./.env:/app/.env:ro
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - WATCHDOG_MODE=true
+      - SYNOVA_DB_PATH=/app/data/synova.db
+    command: ["node", "--import", "tsx/esm", "src/deploy/watchdog-entry.ts"]
+    depends_on:
+      synova-agent:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   synova-data:

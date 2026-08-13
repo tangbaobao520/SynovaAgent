@@ -1,0 +1,32 @@
+{
+  "id": "critical_mass",
+  "name": "临界质量",
+  "category": "biology-physics",
+  "coreInsight": "某些变化需要达到一个阈值才会发生质变。不到阈值之前投入看起来\"无效\"，但过了阈值效应爆发。",
+  "applicableDecisionTypes": [
+    "市场教育投入",
+    "品牌建设",
+    "团队文化建设"
+  ],
+  "constraintPatterns": [
+    "增长",
+    "市场",
+    "规模",
+    "阈值",
+    "突破",
+    "临界",
+    "积累",
+    "品牌"
+  ],
+  "applicableRoles": [
+    "增长负责人",
+    "市场拓展",
+    "品牌建设",
+    "战略投资"
+  ],
+  "limitations": [
+    "临界点不可预知",
+    "在临界点前放弃是常见错误"
+  ],
+  "$id": "framework/biology-physics/critical_mass"
+}

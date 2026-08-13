@@ -1,0 +1,60 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "cost-health",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "成本健康哨兵",
+  "description": "监控成本结构健康度。输出 Finding: '成本结构恶化，固定成本占比 X%→Y%，超出 critical 阈值 Z%。'",
+  "schedule": "0 */6 * * *",
+  "expert": "finance",
+  "priority": "P1",
+  "computes": [
+    "gross-margin",
+    "fixed-variable-ratio",
+    "cost-per-head"
+  ],
+  "thresholds": {
+    "gross_margin": {
+      "warning": -0.05,
+      "critical": -0.15
+    },
+    "fixed_ratio": {
+      "warning": 0.6,
+      "critical": 0.75
+    },
+    "cost_per_head": {
+      "warning": 0.1,
+      "critical": 0.25
+    }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": [
+      "sog_graph",
+      "financial_baseline"
+    ],
+    "dataAccess": {
+      "allowedDimensions": [
+        "financial"
+      ],
+      "sensitiveAccess": "read"
+    }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "costHealthSentinel",
+  "auxiliaryExperts": [
+    "strategy"
+  ],
+  "layer": "capital",
+  "computeKind": "deterministic",
+  "dependsOn": {
+    "nodeTypes": [
+      "Financial"
+    ],
+    "edgeTypes": [],
+    "requiredFields": [
+      "amount"
+    ]
+  },
+  "id": "sentinel-cost-health"
+}

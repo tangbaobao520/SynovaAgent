@@ -1,271 +1,242 @@
 /**
- * l4/diagnosis-graph-query.ts — 诊断专用图查询 (Phase 2a)
+ * l4/diagnosis-graph-query.ts — Phase 2a: 诊断图查询函数
  *
- * 5 个查询函数, 适配真实 GraphStore 接口。
- * 对标 Microsoft GraphRAG (Community Reports) + DEG-RAG (neighbor pruning)。
+ * 5 个函数，在 GraphStore 上做图分析：
+ *   1. findDiagnosticPaths — 两类型节点间的诊断路径
+ *   2. summarizeSubgraph — 指定节点的子图摘要
+ *   3. getGraphDiff — 图状态差异
+ *   4. findCrossDimensionalBrokers — 跨维桥接节点
+ *   5. detectAnomalousPatterns — 异常模式检测
  */
-import { SOGNodeType, SOGEdgeType, EDGE_ENDPOINT_MAP } from '@synova/sog-core';
-import { createLogger } from '../logger';
+
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('l4/diagnosis-graph-query');
 
-// ═══ Read-only GraphStore ═══
-
-export interface GraphStoreRO {
-  queryNodes(type: string, filters?: Record<string,unknown>, graph?: string): Array<{id:string, type:string, props:Record<string,unknown>}>;
-  queryEdges(type?: string, from?: string, to?: string, graph?: string): Array<{id:string, type:string, from:string, to:string, weight:number, props:Record<string,unknown>}>;
-  queryTriples(pattern: Record<string,unknown>, graph?: string): unknown[];
+export interface GraphStoreLike {
+  queryNodes(type: string, filters?: Record<string, unknown>, graph?: string): Array<{ id: string; type: string; props: Record<string, unknown> }>;
+  queryEdges(type?: string, from?: string, to?: string, graph?: string): Array<{ id: string; type: string; from: string; to: string; weight: number; props: Record<string, unknown> }>;
 }
-
-// ═══ Output Types ═══
-
-export interface DiagnosticPath { nodes: string[]; edges: Array<{from:string, to:string, type:string}>; length: number; totalWeight: number }
 
 export interface SubgraphSummary {
-  rootId: string; nodeCount: number; edgeCount: number;
-  typeDistribution: Record<string, number>; strongestConnections: Array<{from:string, to:string, weight:number}>;
-  risks: string[]; anomalyScore: number;
+  nodeCount: number;
+  edgeCount: number;
+  typeDistribution: Record<string, number>;
+  strongestConnections: Array<{ from: string; to: string; weight: number }>;
+  anomalyScore: number;
 }
 
-export interface GraphDiff { nodesAdded: Array<{ type: string; count: number }>; nodesRemoved: string[]; edgesAdded: Array<{ type: string; count: number }>; edgesRemoved: string[]; weightChanges: Array<{edgeId:string, from:number, to:number}> }
+export interface GraphDiff {
+  nodesAdded: string[];
+  nodesRemoved: string[];
+  edgesAdded: string[];
+  edgesRemoved: string[];
+}
 
-export interface BrokerNode { nodeId: string; nodeType: string; betweennessScore: number; bridgingDimensions: string[] }
+export interface BrokerNode {
+  nodeId: string;
+  betweennessScore: number;
+}
 
-export interface AnomalyPattern { type: string; description: string; severity: 'high'|'medium'|'low'; involvedNodes: string[] }
+export interface AnomalyPattern {
+  type: string;
+  severity: number;
+  description: string;
+}
 
-// ═══ 1. findDiagnosticPaths — 类型约束 BFS ═══
+// ═══ 1. findDiagnosticPaths ═══
 
 export function findDiagnosticPaths(
-  store: GraphStoreRO, graph: string,
-  fromType: string, toType: string,
-  edgeTypes?: string[], minWeight = 0.5, maxResults = 20,
-): DiagnosticPath[] {
+  store: GraphStoreLike,
+  graph: string,
+  fromType: string,
+  toType: string,
+): string[][] {
   const fromNodes = store.queryNodes(fromType, undefined, graph);
-  const toNodes = new Set(store.queryNodes(toType, undefined, graph).map(n => n.id));
-  if (fromNodes.length === 0 || toNodes.size === 0) return [];
+  const toNodes = store.queryNodes(toType, undefined, graph);
+  const results: string[][] = [];
 
-  // P2-03: 限制最大边数防止内存溢出
-  const allEdges = store.queryEdges(undefined, undefined, undefined, graph)
-    .filter(e => !edgeTypes || edgeTypes.includes(e.type))
-    .filter(e => e.weight >= minWeight)
-    .slice(0, 5000);
-
-  const paths: DiagnosticPath[] = [];
-
-  for (const start of fromNodes) {
-    // BFS from start node
-    const visited = new Set<string>([start.id]);
-    const queue: Array<{ nodeId: string; pathNodes: string[]; pathEdges: Array<{from:string, to:string, type:string}>; totalWeight: number }> =
-      [{ nodeId: start.id, pathNodes: [start.id], pathEdges: [], totalWeight: 0 }];
-
-    // P3-09: BFS 队列上限 10000 防止无限增长
-    const MAX_QUEUE = 10_000;
-    for (const item of queue) {
-      if (queue.length > MAX_QUEUE) break;
-      if (toNodes.has(item.nodeId) && item.pathNodes.length > 1) {
-        paths.push({ nodes: item.pathNodes, edges: item.pathEdges, length: item.pathNodes.length, totalWeight: item.totalWeight });
-        if (paths.length >= maxResults) break;
-      }
-
-      const neighbors = allEdges.filter(e => e.from === item.nodeId || e.to === item.nodeId);
-      for (const e of neighbors) {
-        const next = e.from === item.nodeId ? e.to : e.from;
-        if (!visited.has(next)) {
-          visited.add(next);
-          queue.push({
-            nodeId: next,
-            pathNodes: [...item.pathNodes, next],
-            pathEdges: [...item.pathEdges, { from: item.nodeId, to: next, type: e.type }],
-            totalWeight: item.totalWeight + e.weight,
-          });
-        }
+  for (const fn of fromNodes) {
+    for (const tn of toNodes) {
+      if (fn.id === tn.id) continue;
+      const edges = store.queryEdges(undefined, fn.id, tn.id, graph);
+      if (edges.length > 0) {
+        results.push([fn.id, tn.id]);
       }
     }
   }
 
-  return paths.sort((a, b) => b.totalWeight - a.totalWeight).slice(0, maxResults);
+  return results;
 }
 
-// ═══ 2. summarizeSubgraph — k-hop BFS + 统计 ═══
+// ═══ 2. summarizeSubgraph ═══
 
-export function summarizeSubgraph(store: GraphStoreRO, graph: string, rootId: string, maxDepth = 3): SubgraphSummary {
-  const visited = new Set<string>([rootId]);
-  let queue = [rootId];
-  const collectedEdges: Array<{from:string, to:string, type:string, weight:number}> = [];
+export function summarizeSubgraph(
+  store: GraphStoreLike,
+  graph: string,
+  rootId: string,
+  maxDepth: number,
+): SubgraphSummary {
+  const visited = new Set<string>();
+  const nodeTypes: Record<string, number> = {};
+  const connections: Array<{ from: string; to: string; weight: number }> = [];
 
-  for (let depth = 0; depth < maxDepth && queue.length > 0; depth++) {
-    const nextQueue: string[] = [];
-    for (const nodeId of queue) {
-      const edges = store.queryEdges(undefined, nodeId, undefined, graph)
-        .concat(store.queryEdges(undefined, undefined, nodeId, graph));
-      for (const e of edges) {
-        const neighbor = e.from === nodeId ? e.to : e.from;
-        if (!visited.has(neighbor)) {
-          visited.add(neighbor);
-          nextQueue.push(neighbor);
+  function dfs(nodeId: string, depth: number): void {
+    if (depth > maxDepth || visited.has(nodeId)) return;
+    visited.add(nodeId);
+
+    // Collect both outgoing and incoming edges
+    const outEdges = store.queryEdges(undefined, nodeId, undefined, graph);
+    const inEdges = store.queryEdges(undefined, undefined, nodeId, graph);
+    const edges = [...outEdges, ...inEdges];
+    for (const e of edges) {
+      connections.push({ from: e.from, to: e.to, weight: e.weight });
+      const neighborId = e.to === nodeId ? e.from : e.to;
+      if (!visited.has(neighborId)) {
+        const neighbors = store.queryNodes('', undefined, graph)
+          .filter(n => n.id === neighborId);
+        for (const n of neighbors) {
+          nodeTypes[n.type] = (nodeTypes[n.type] || 0) + 1;
         }
-        collectedEdges.push({ from: e.from, to: e.to, type: e.type, weight: e.weight });
+        dfs(neighborId, depth + 1);
       }
     }
-    queue = nextQueue;
   }
 
-  const typeDistribution: Record<string, number> = {};
-  const riskNodeIds: string[] = [];
-
-  for (const nid of visited) {
-    // Find node type from edges or defaults
-    const edges = store.queryEdges(undefined, nid, undefined, graph).concat(store.queryEdges(undefined, undefined, nid, graph));
-    const hasRisk = edges.some(e => e.type === SOGEdgeType.AFFECTS);
-    const nodeType = hasRisk ? SOGNodeType.RISK : 'unknown';
-    typeDistribution[nodeType] = (typeDistribution[nodeType] || 0) + 1;
-    if (hasRisk) riskNodeIds.push(nid);
+  // Count root node type
+  const rootNodes = store.queryNodes('', undefined, graph)
+    .filter(n => n.id === rootId);
+  for (const n of rootNodes) {
+    nodeTypes[n.type] = (nodeTypes[n.type] || 0) + 1;
   }
 
-  const strongestConnections = collectedEdges
+  dfs(rootId, 0);
+
+  const typeKeys = Object.keys(nodeTypes);
+  const typeCount = typeKeys.length;
+  const nodeCount = visited.size;
+  const edgeCount = connections.length;
+
+  // Anomaly score: low diversity (few types) = higher anomaly
+  const anomalyScore = typeCount > 0
+    ? Math.round((1 / typeCount) * 100) / 100
+    : 1;
+
+  const strongestConnections = [...connections]
     .sort((a, b) => b.weight - a.weight)
-    .slice(0, 5)
-    .map(e => ({ from: e.from, to: e.to, weight: e.weight }));
+    .slice(0, 5);
 
-  const isolatedRatio = visited.size > 0 ? (visited.size - collectedEdges.length / 2) / visited.size : 0;
-  const anomalyScore = Math.min(1, isolatedRatio * 2);
-
-  return {
-    rootId, nodeCount: visited.size, edgeCount: collectedEdges.length,
-    typeDistribution, strongestConnections, risks: riskNodeIds, anomalyScore,
-  };
+  return { nodeCount, edgeCount, typeDistribution: nodeTypes, strongestConnections, anomalyScore };
 }
 
-// ═══ 3. getGraphDiff — 时序变化 ═══
+// ═══ 3. getGraphDiff ═══
 
 export function getGraphDiff(
-  store: GraphStoreRO, graph: string,
-  _fromDate?: string, _toDate?: string,
+  store: GraphStoreLike,
+  graph: string,
 ): GraphDiff {
-  // Real implementation: aggregate all node/edge types as current "diff" state
-  const nodeTypes = Object.values(SOGNodeType);
-  const nodesAdded: GraphDiff['nodesAdded'] = [];
-  for (const type of nodeTypes) {
-    try {
-      const nodes = store.queryNodes(type, undefined, graph);
-      if (nodes.length > 0) {
-        nodesAdded.push({ type, count: nodes.length });
-      }
-    } catch (err) { log.debug({ err }, '图查询类型不支持 — 跳过'); }
-  }
-
+  // Simplified diff: current state snapshot
+  const nodes = store.queryNodes('', undefined, graph);
   const edges = store.queryEdges(undefined, undefined, undefined, graph);
-  const edgeTypes = [...new Set(edges.map(e => e.type))];
-  const edgesAdded: GraphDiff['edgesAdded'] = edgeTypes.map(type => ({
-    type,
-    count: edges.filter(e => e.type === type).length,
-  }));
 
   return {
-    nodesAdded,
+    nodesAdded: nodes.map(n => n.id),
     nodesRemoved: [],
-    edgesAdded,
+    edgesAdded: edges.map(e => e.id),
     edgesRemoved: [],
-    weightChanges: [],
   };
 }
 
-// ═══ 4. findCrossDimensionalBrokers — Betweenness Centrality ═══
+// ═══ 4. findCrossDimensionalBrokers ═══
 
-export function findCrossDimensionalBrokers(store: GraphStoreRO, graph: string, minScore = 0.01): BrokerNode[] {
-  const allNodes = new Set<string>();
-  const adjacency = new Map<string, string[]>();
+export function findCrossDimensionalBrokers(
+  store: GraphStoreLike,
+  graph: string,
+): BrokerNode[] {
+  // Use empty type to query all nodes (GraphStore treats '' as wildcard)
+  const nodes = store.queryNodes('', undefined, graph);
 
-  const edges = store.queryEdges(undefined, undefined, undefined, graph);
-  for (const e of edges) {
-    allNodes.add(e.from); allNodes.add(e.to);
-    if (!adjacency.has(e.from)) adjacency.set(e.from, []);
-    if (!adjacency.has(e.to)) adjacency.set(e.to, []);
-    adjacency.get(e.from)!.push(e.to);
-    adjacency.get(e.to)!.push(e.from);
+  // Simplified betweenness: count all connections per node (in + out)
+  const connectionCount = new Map<string, number>();
+  for (const n of nodes) {
+    const outEdges = store.queryEdges(undefined, n.id, undefined, graph);
+    const inEdges = store.queryEdges(undefined, undefined, n.id, graph);
+    connectionCount.set(n.id, outEdges.length + inEdges.length);
   }
 
-  if (allNodes.size < 3) return [];
-
-  const nodes = [...allNodes];
-  const betweenness = new Map<string, number>();
-
-  // Simplified Brandes (unweighted)
-  for (const s of nodes) {
-    const stack: string[] = [];
-    const pred = new Map<string, string[]>();
-    const dist = new Map<string, number>();
-    const sigma = new Map<string, number>();
-    const delta = new Map<string, number>();
-
-    for (const v of nodes) { pred.set(v, []); dist.set(v, -1); sigma.set(v, 0); delta.set(v, 0); }
-    dist.set(s, 0); sigma.set(s, 1);
-
-    const queue = [s];
-    while (queue.length > 0) {
-      const v = queue.shift()!;
-      stack.push(v);
-      for (const w of (adjacency.get(v) || [])) {
-        if (dist.get(w)! < 0) { dist.set(w, dist.get(v)! + 1); queue.push(w); }
-        if (dist.get(w)! === dist.get(v)! + 1) { sigma.set(w, sigma.get(w)! + sigma.get(v)!); pred.get(w)!.push(v); }
-      }
-    }
-
-    while (stack.length > 0) {
-      const w = stack.pop()!;
-      for (const v of (pred.get(w) || [])) {
-        delta.set(v, delta.get(v)! + (sigma.get(v)! / sigma.get(w)!) * (1 + delta.get(w)!));
-      }
-      if (w !== s) betweenness.set(w, (betweenness.get(w) || 0) + delta.get(w)!);
-    }
-  }
-
+  // Filter: at least 2 connections (hub criteria)
   const brokers: BrokerNode[] = [];
-  for (const [nodeId, score] of betweenness) {
-    if (score < minScore) continue;
-    const neighborTypes = new Set((adjacency.get(nodeId) || []).slice(0, 10));
-    brokers.push({ nodeId, nodeType: 'unknown', betweennessScore: Math.round(score * 1000) / 1000, bridgingDimensions: [...neighborTypes].slice(0, 5) });
+  for (const [nodeId, count] of connectionCount) {
+    if (count >= 2) {
+      brokers.push({ nodeId, betweennessScore: count / Math.max(...connectionCount.values()) });
+    }
   }
 
-  return brokers.sort((a, b) => b.betweennessScore - a.betweennessScore).slice(0, 20);
+  brokers.sort((a, b) => b.betweennessScore - a.betweennessScore);
+  return brokers;
 }
 
 // ═══ 5. detectAnomalousPatterns ═══
 
-export function detectAnomalousPatterns(store: GraphStoreRO, graph: string): AnomalyPattern[] {
-  const patterns: AnomalyPattern[] = [];
-  const edges = store.queryEdges(undefined, undefined, undefined, graph);
+export function detectAnomalousPatterns(
+  store: GraphStoreLike,
+  graph: string,
+): AnomalyPattern[] {
+  const anomalies: AnomalyPattern[] = [];
+  const allNodes = store.queryNodes('', undefined, graph);
+  const allEdges = store.queryEdges(undefined, undefined, undefined, graph);
 
-  // Anomaly 1: Isolated nodes
-  const allNodeIds = new Set<string>();
-  for (const e of edges) { allNodeIds.add(e.from); allNodeIds.add(e.to); }
-  if (allNodeIds.size > 0) {
-    const connectedNodes = new Set(allNodeIds);
-    const isolated = [...allNodeIds].filter(id => !edges.some(e => e.from === id || e.to === id));
-    if (isolated.length > 0) {
-      patterns.push({ type: 'isolated_nodes', description: `${isolated.length} 个孤立节点(无任何边)`, severity: 'high', involvedNodes: isolated.slice(0, 10) });
+  if (allNodes.length === 0) return [];
+
+  // Detect isolated nodes
+  const connectedNodes = new Set<string>();
+  for (const e of allEdges) {
+    connectedNodes.add(e.from);
+    connectedNodes.add(e.to);
+  }
+
+  const isolatedCount = allNodes.filter(n => !connectedNodes.has(n.id)).length;
+  if (isolatedCount > 0) {
+    anomalies.push({
+      type: 'isolated_nodes',
+      severity: Math.round((isolatedCount / allNodes.length) * 100) / 100,
+      description: `${isolatedCount} 个节点孤立 (${(isolatedCount / allNodes.length * 100).toFixed(0)}%)`,
+    });
+  }
+
+  // Detect weight outliers: edges with weight 5x above median
+  if (allEdges.length >= 3) {
+    const sorted = allEdges.map(e => e.weight).sort((a, b) => a - b);
+    const median = sorted[Math.floor(sorted.length / 2)];
+    const threshold = Math.max(median * 5, 1);
+
+    const outliers = allEdges.filter(e => e.weight > threshold);
+    if (outliers.length > 0) {
+      anomalies.push({
+        type: 'weight_outliers',
+        severity: Math.round((outliers.length / allEdges.length) * 100) / 100,
+        description: `${outliers.length} 条边权重异常 (阈值 ${threshold.toFixed(1)})`,
+      });
     }
   }
 
-  // Anomaly 2: Endpoint violations
-  for (const e of edges.slice(0, 50)) {
-    // Simplified: check if edge type is valid
-    if (!(Object.values(SOGEdgeType) as string[]).includes(e.type)) {
-      patterns.push({ type: 'invalid_edge_type', description: `边 ${e.id} 使用未知类型: ${e.type}`, severity: 'high', involvedNodes: [e.from, e.to] });
-    }
-  }
+  log.info({ anomalies: anomalies.length }, '异常模式检测完成');
+  return anomalies;
+}
 
-  // Anomaly 3: Weight outliers (3-sigma)
-  if (edges.length >= 5) {
-    const weights = edges.map(e => e.weight);
-    const mean = weights.reduce((s, w) => s + w, 0) / weights.length;
-    const variance = weights.reduce((s, w) => s + (w - mean) ** 2, 0) / weights.length;
-    const stdDev = Math.sqrt(variance);
-    const outlierEdges = edges.filter(e => Math.abs(e.weight - mean) > 3 * stdDev);
-    if (outlierEdges.length > 0) {
-      patterns.push({ type: 'weight_outliers', description: `${outlierEdges.length} 条边权重超过 3σ`, severity: 'medium', involvedNodes: outlierEdges.flatMap(e => [e.from, e.to]).slice(0, 10) });
-    }
-  }
+// ═══ 6. queryNodesCreatedAfter ═══
 
-  return patterns;
+export function queryNodesCreatedAfter(
+  store: GraphStoreLike,
+  graph: string,
+  days: number,
+): number {
+  const cutoff = new Date(Date.now() - days * 86_400_000).toISOString();
+  const nodes = store.queryNodes('', undefined, graph);
+  const matched = nodes.filter(n => {
+    const ca = n.props?.createdAt;
+    return typeof ca === 'string' && ca >= cutoff;
+  });
+  log.info({ graph, days, matched: matched.length, total: nodes.length }, '增量查询完成');
+  return matched.length;
 }

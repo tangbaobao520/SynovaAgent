@@ -6,15 +6,72 @@
  *
  * Given/When/Then 格式。
  */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { getExpertRegistry, ExpertRegistry } from '../src/l3/expert-registry';
 
 describe('ExpertRegistry prompt independence', () => {
 
   let registry: ExpertRegistry;
 
-  beforeEach(() => {
+  beforeAll(() => {
     registry = getExpertRegistry();
+    // 注册 7 个默认专家 prompts（模拟生产环境 server.ts 启动流程后的状态）
+    const DEFAULT_PROMPTS: Record<string, string> = {
+      strategy: `## 身份
+三层战略诊断专家。负责分析企业的外部环境、竞争定位和增长路径。
+
+## 核心框架
+- 三层战略诊断
+- 四档节奏: 紧急重要 | 重要不紧急 | 紧急不重要 | 不紧急不重要
+- 数据不足时: 标记低置信度，不强行结论
+- 不可做的事: 不做财务数据分析、不做组织架构设计`,
+      org: `## 身份
+传统组织诊断与Agent化机会识别专家。
+
+## 核心框架
+- 传统组织诊断
+- Agent化机会识别
+- 四档节奏
+- 不可做的事: 不做战略决策、不做技术选型`,
+      finance: `## 身份
+现金流健康分析与财务诊断专家。
+
+## 核心框架
+- 现金流健康分析
+- 分析时遵守的会计框架
+- 四档节奏
+- 不可做的事: 不编造数据、不做战略建议`,
+      marketing: `## 身份
+市场营销与增长策略专家。
+
+## 核心框架
+- JTBD
+- 定价策略
+- 四档节奏
+- 不可做的事: 不做产品设计、不做技术评估`,
+      tech: `## 身份
+技术专家。负责评估技术栈、连接器、架构健康度。
+
+## 核心框架
+- 技术专家
+- 连接器
+- 不可做的事`,
+      action: `## 身份
+行动建议专家。负责将诊断结论转化为可执行行动计划。
+
+## 核心框架
+- 行动
+- 不可做的事`,
+      knowledge: `## 身份
+知识管理专家。负责维护和查询组织知识库。
+
+## 核心框架
+- 知识
+- 不可做的事`,
+    };
+    for (const [type, prompt] of Object.entries(DEFAULT_PROMPTS)) {
+      registry.registerDefault(type, prompt);
+    }
   });
 
   // ── 每个专家必须有独立的 prompt ──

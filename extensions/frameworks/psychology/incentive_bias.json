@@ -1,0 +1,71 @@
+{
+  "id": "incentive_bias",
+  "name": "激励偏差",
+  "category": "psychology",
+  "coreInsight": "人的行为由激励结构驱动，而非由\"应该做什么\"决定。改变行为最有效的方式是改变激励，而非说教。",
+  "applicableDecisionTypes": [
+    "供应商评估",
+    "员工绩效",
+    "合作伙伴选择",
+    "谈判策略"
+  ],
+  "constraintPatterns": [
+    "激励",
+    "绩效",
+    "考核",
+    "奖惩",
+    "提成",
+    "KPI",
+    "OKR",
+    "佣金",
+    "分红"
+  ],
+  "applicableRoles": [
+    "激励设计",
+    "绩效管理",
+    "薪酬规划",
+    "组织设计"
+  ],
+  "limitations": [
+    "过度依赖激励会挤出内在动机",
+    "激励效果有时滞",
+    "复杂场景激励会交互扭曲"
+  ],
+  "skillPatterns": [
+    {
+      "name": "激励方案设计",
+      "summary": "基于激励偏差原理设计奖惩机制，对齐利益驱动行为",
+      "category": "组织设计",
+      "tags": [
+        "激励",
+        "绩效",
+        "薪酬"
+      ],
+      "isMarketplaceSkill": true,
+      "prerequisites": [],
+      "failureModes": [],
+      "sourceTier": "inferred",
+      "dependsOn": [],
+      "conflictsWith": [],
+      "triggers": []
+    },
+    {
+      "name": "绩效指标工程",
+      "summary": "设计KPI/OKR体系，避免激励扭曲和指标博弈",
+      "category": "管理工具",
+      "tags": [
+        "KPI",
+        "OKR",
+        "考核"
+      ],
+      "isMarketplaceSkill": true,
+      "prerequisites": [],
+      "failureModes": [],
+      "sourceTier": "inferred",
+      "dependsOn": [],
+      "conflictsWith": [],
+      "triggers": []
+    }
+  ],
+  "$id": "framework/psychology/incentive_bias"
+}

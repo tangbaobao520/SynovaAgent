@@ -1,0 +1,35 @@
+{
+  "id": "structure_follows_strategy",
+  "name": "结构跟随战略",
+  "category": "law-governance",
+  "coreInsight": "组织结构的唯一目的是服务战略。任务从\"探索\"转向\"执行\"时，组织应从松散耦合转向层级化；从\"单一市场\"转向\"多市场\"时，应增设区域协调层。结构不是固定的——它是战略的函数。这是所有组织设计规则的元规则。",
+  "applicableDecisionTypes": [
+    "组织变革",
+    "阶段管理",
+    "架构设计",
+    "战略规划"
+  ],
+  "constraintPatterns": [
+    "阶段",
+    "转型",
+    "扩张",
+    "探索",
+    "执行",
+    "规模",
+    "增长",
+    "战略",
+    "调整"
+  ],
+  "applicableRoles": [
+    "组织架构",
+    "战略规划",
+    "变革管理",
+    "阶段评估"
+  ],
+  "limitations": [
+    "结构调整有滞后成本",
+    "过分频繁的调整本身损害执行",
+    "\"战略先行\"假设战略已明确（现实中战略可能是涌现的）"
+  ],
+  "$id": "framework/law-governance/structure_follows_strategy"
+}

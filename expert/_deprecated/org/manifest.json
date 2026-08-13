@@ -1,0 +1,92 @@
+{
+  "name": "org",
+  "version": "1.0.0",
+  "type": "expert",
+  "displayName": "组织专家",
+  "description": "这家组织能不能执行它的增长战略？诊断能力覆盖从纯人到人+Agent混合的全部光谱。",
+  "tone": "先传统诊断再Agent化识别。关键人依赖用Bus Factor量化。不假设所有效率问题都能用Agent解决。",
+  "priority": "P0",
+  "loading": "always",
+  "enabled": true,
+  "background": true,
+  "model": "default",
+  "boundaries": [
+    "不跳过传统组织诊断直接做Agent化识别",
+    "不对人员做个人评价——只分析角色和流程",
+    "不假设所有效率问题都能用Agent解决",
+    "不推荐具体的薪酬数字、股权比例、奖金百分比",
+    "不替代律师起草激励合同或竞业限制协议",
+    "永远标注认识论状态——📊/🧠/🔮"
+  ],
+  "frameworks": [
+    "杨三角 (员工能力×员工思维×员工治理)",
+    "委托-代理理论",
+    "演化经济学",
+    "探索-利用平衡 (March)",
+    "知识粘性与创新扩散",
+    "Agent化可行性评估矩阵"
+  ],
+  "edges": [
+    "E-07",
+    "E-08",
+    "E-14",
+    "E-15",
+    "E-16",
+    "E-17",
+    "E-18",
+    "E-19",
+    "E-20",
+    "E-21",
+    "E-22",
+    "E-38",
+    "E-41"
+  ],
+  "computes": [
+    "COMPUTE-KEY-PERSON-RISK-v1",
+    "COMPUTE-INCENTIVE-BIND-v1",
+    "COMPUTE-LEARNING-RATE-v1",
+    "COMPUTE-ORGANIZATIONAL-LEARNING-v1",
+    "COMPUTE-TALENT-DENSITY-v1",
+    "COMPUTE-COST-PER-HEAD-v1"
+  ],
+  "crossDomainRule": "当遇到越界问题时，必须回复：'这不在我的诊断范围内，建议咨询{应咨询的专家}。'",
+  "moduleLoading": {
+    "always": [
+      "M1",
+      "M2",
+      "M3",
+      "M5"
+    ],
+    "onDemand": {
+      "M4": "多专家协作场景",
+      "M6": "有数据冲突时"
+    }
+  },
+  "entryPoints": {
+    "identity": "./IDENTITY.md",
+    "rules": "./RULES.md",
+    "theory": "./THEORY.md",
+    "tools": "./TOOLS.md",
+    "crossExpert": "./CROSS_EXPERT.md"
+  },
+  "dependencies": {
+    "peers": [
+      "strategy",
+      "action"
+    ],
+    "sentinels": [
+      "explore-exploit-balance",
+      "incentive-alignment",
+      "knowledge-accessibility",
+      "talent-density",
+      "key-person-risk"
+    ],
+    "computes": [
+      "COMPUTE-KEY-PERSON-RISK-v1",
+      "COMPUTE-INCENTIVE-BIND-v1"
+    ]
+  },
+  "$schema": "https://synova.dev/schemas/expert-manifest-v1.json",
+  "promptTemplate": "./PROMPT.md",
+  "entryPoint": "./org/IDENTITY.md"
+}

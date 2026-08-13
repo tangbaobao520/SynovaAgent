@@ -1,0 +1,16 @@
+{
+  "$id": "edge/demand_to_spec",
+  "label": "DEMAND_TO_SPEC",
+  "tags": ["causal", "first_order", "stage_3"],
+  "allowedFrom": ["pool/sensing"],
+  "allowedTo": ["pool/activity"],
+  "requiredProps": ["market_demand_signal", "spec_translation_fidelity"],
+  "optionalProps": {
+    "customer_voice_integration": "number (0-1) — 客户声音整合度",
+    "requirement_stability_index": "number (0-1) — 需求稳定性指数",
+    "spec_change_frequency": "number — 规格变更频率"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "市场需求转化为产品规格——感知池中的市场洞察驱动产品开发方向。"
+}

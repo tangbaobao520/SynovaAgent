@@ -6,7 +6,7 @@
  */
 import { readFileContent, extractEntities } from '@synova/knowledge-ingest';
 import type { IngestResult } from '@synova/knowledge-ingest';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 export type { IngestResult };
 
@@ -23,24 +23,27 @@ export async function ingestFile(filePath: string, orgId: string): Promise<Inges
 
   // 铁律 39: 通过 adapter 获取 GraphStore; ontology-adapter 保留 (L5 数据层直接调用)
   try {
-    const { EngineCoreVendorAdapter } = await import('../adapters/engine-core-adapter');
     const { getDatabase, initEngineContext } = await import('../init/engine-context');
     // 懒初始化——服务端可能还没启动, ingest 也能独立工作
     let db: ReturnType<typeof getDatabase>;
-    try { db = getDatabase(); } catch { initEngineContext(); db = getDatabase(); }
-    const store = await EngineCoreVendorAdapter.createGraphStore(db) as Record<string, unknown>;
+    try { db = getDatabase(); } catch (err) {
+      log.warn({ err }, '数据库未初始化 — 执行懒初始化');
+      initEngineContext();
+      db = getDatabase();
+    }
+    const { SqliteGraphStore } = await import('../adapters/sqlite-graph-store');
+    const store = new SqliteGraphStore(db);
 
     // 1. 创建文档节点
-    const { ingestDocument } = await import('@synova/diagnosis-engine');
     const docId = `doc_${Date.now().toString(36)}`;
-    await ingestDocument({
-      id: docId, name: filePath.split(/[\\/]/).pop() || filePath, type: fileType,
+    store.createNode('Document', {
+      name: filePath.split(/[\\/]/).pop() || filePath, type: fileType,
       content: content.slice(0, 10000), source: 'user_upload' as const,
-    }, store as unknown as Parameters<typeof ingestDocument>[1], orgId);
+    }, orgId);
 
     // 2. 将提取的实体写入 GraphStore
     // 使用 Document 类型 (vendor sog-core 旧版无 KnowledgeChunk)，docType 区分
-    const typedStore = store as {
+    const typedStore = store as unknown as {
       createNode(type: string, props: Record<string, unknown>, graph: string): string;
       createEdge(type: string, from: string, to: string, weight: number, graph: string): string;
     };

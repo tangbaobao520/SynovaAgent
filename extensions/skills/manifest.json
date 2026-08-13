@@ -1,0 +1,7 @@
+{
+  "name": "skills",
+  "version": "1.0.0",
+  "type": "skills-manifest",
+  "description": "Synova Skill System. Skills are loaded from the directories below in priority order: custom > industry > builtin.",
+  "loadOrder": ["custom", "industry", "builtin", "candidates"]
+}

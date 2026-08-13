@@ -1,0 +1,48 @@
+{
+  "name": "acquire-customer-data",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "获取客户数据",
+  "description": "从本体层获取客户相关数据，包括客户列表、留存率、流失率和LTV。",
+  "tier": "L1",
+  "complexity": "atomic",
+  "expert": "marketing",
+  "tools": [
+    "acquire-edge-data"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "customer"
+      ],
+      "sensitiveAccess": "none"
+    },
+    "crossExpert": []
+  },
+  "dependencies": {
+    "skills": [],
+    "edges": [
+      "E-4.1",
+      "E-4.2",
+      "E-4.3",
+      "E-4.6"
+    ],
+    "computes": [],
+    "sentinels": []
+  },
+  "boundaries": {
+    "prohibitedDimensions": [
+      "financial-internal",
+      "organizational",
+      "technology-stack"
+    ],
+    "degradedBehavior": "客户/渠道数据不足时降级为部分报告，标记 degraded:true",
+    "preconditions": [
+      "数据源连接可用"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
+}

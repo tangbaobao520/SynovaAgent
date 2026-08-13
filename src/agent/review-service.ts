@@ -5,7 +5,8 @@
  * L1→L2 ✅ | L2→L4 ✅
  */
 
-import { getReviewStore, type ReviewItem } from '../l4/review-store';
+// D292: L2→L3 适配层 — L2 禁触 L4 (铁律 39)
+import { getReviewStore, type ReviewItem } from '../l3/review-store-adapter';
 
 export function enqueueReview(findingId: string, reason: string, priority: string): ReviewItem {
   return getReviewStore().enqueue(findingId, reason, priority);

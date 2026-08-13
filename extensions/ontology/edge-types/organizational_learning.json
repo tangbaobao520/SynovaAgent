@@ -1,0 +1,16 @@
+{
+  "$id": "edge/organizational_learning",
+  "label": "ORGANIZATIONAL_LEARNING",
+  "tags": ["causal", "second_order", "stage_2"],
+  "allowedFrom": ["pool/knowledge"],
+  "allowedTo": ["pool/activity"],
+  "requiredProps": ["learning_rate", "knowledge_integration_capability"],
+  "optionalProps": {
+    "experience_elasticity": "number — 经验弹性",
+    "lessons_learned_application_rate": "number (0-1) — 经验应用率",
+    "cross_project_learning_score": "number (0-1) — 跨项目学习得分"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "经验积累提升整体运行效率(二阶)——知识池中的积累经验提高人才部署和资本分配的效率。"
+}

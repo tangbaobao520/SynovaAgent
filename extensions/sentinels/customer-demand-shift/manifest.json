@@ -1,0 +1,46 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "customer-demand-shift",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "客户需求迁移",
+  "description": "E4: 检测客户需求迁移信号——客户流失率、收入集中度、NPS健康度。数据源: SOG CLIENT/FINANCIAL/Goal节点。",
+  "schedule": "0 9 * * 1",
+  "expert": "marketing",
+  "auxiliaryExperts": [
+    "strategy"
+  ],
+  "priority": "P0",
+  "layer": "environment",
+  "computeKind": "heuristic",
+  "computes": [
+    "customer-concentration",
+    "customer-churn-risk"
+  ],
+  "thresholds": {
+    "churn_rate": {
+      "warning": 0.1,
+      "critical": 0.2
+    },
+    "top_customer_concentration": {
+      "warning": 0.3,
+      "critical": 0.4
+    }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": [
+      "sog_graph"
+    ],
+    "dataAccess": {
+      "allowedDimensions": [
+        "marketing",
+        "financial"
+      ],
+      "sensitiveAccess": "read"
+    }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "customerDemandShiftSentinel",
+  "id": "sentinel-customer-demand-shift"
+}

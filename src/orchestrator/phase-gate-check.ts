@@ -8,7 +8,7 @@
  * 铁律 39: L2 编排层。通过 L3 QualityFirewall + L4 GraphStore 接口访问下级。
  */
 
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import type { PhaseStateMachine } from './phase-state-machine';
 
 const log = createLogger('orchestrator/phase-gate-check');

@@ -8,7 +8,7 @@
  *   - JSON.parse 失败 → 自动重试 1 次
  */
 import { z } from 'zod/v4';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('llm/output-validator');
 

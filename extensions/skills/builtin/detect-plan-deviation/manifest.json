@@ -1,0 +1,51 @@
+{
+  "name": "detect-plan-deviation",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "方案偏差检测",
+  "description": "自动检测预计与实际执行之间的偏差，分析趋势并判断是否需要触发重新诊断。",
+  "tier": "L5",
+  "complexity": "expert",
+  "expert": "action",
+  "tools": [
+    "acquire-edge-data",
+    "query-graph"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "execution"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": []
+  },
+  "dependencies": {
+    "skills": [
+      "track-execution-progress"
+    ],
+    "edges": [
+      "E-2.1",
+      "E-3.1",
+      "E-4.1",
+      "E-X.1"
+    ],
+    "computes": [],
+    "sentinels": []
+  },
+  "boundaries": {
+    "prohibitedDimensions": [
+      "financial-decision",
+      "strategic-direction"
+    ],
+    "degradedBehavior": "执行数据不足时返回 degraded:true，仅输出可用数据",
+    "preconditions": [
+      "下级Skill执行结果已就绪",
+      "GraphStore连接正常"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
+}

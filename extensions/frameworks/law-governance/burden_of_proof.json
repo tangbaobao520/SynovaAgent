@@ -1,0 +1,31 @@
+{
+  "id": "burden_of_proof",
+  "name": "举证责任",
+  "category": "law-governance",
+  "coreInsight": "提出主张的一方有责任提供证据。不能只靠直觉或他人佐证就采信一个判断。",
+  "applicableDecisionTypes": [
+    "供应商评估",
+    "问题根因分析"
+  ],
+  "constraintPatterns": [
+    "合规",
+    "验证",
+    "证据",
+    "审计",
+    "审核",
+    "认证",
+    "审查",
+    "评估"
+  ],
+  "applicableRoles": [
+    "合规专员",
+    "审计员",
+    "法务",
+    "质量审核"
+  ],
+  "limitations": [
+    "某些场景下举证成本过高",
+    "过度要求举证会延宕决策"
+  ],
+  "$id": "framework/law-governance/burden_of_proof"
+}

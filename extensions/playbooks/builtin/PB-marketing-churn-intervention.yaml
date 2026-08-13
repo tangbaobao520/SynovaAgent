@@ -1,0 +1,61 @@
+id: PB-marketing-churn-intervention
+name: 客户流失干预剧本
+version: 1.0.0
+expert: marketing
+type: playbook
+description: 当churn-health告警时，从客户价值、锁定效应、竞争位势和服务支持多维度定位流失根因，输出干预优先级。
+trigger:
+  sentinels:
+    - churn-health
+  condition: churn-health告警
+steps:
+  - id: step-1
+    name: 流失信号确认
+    description: 确认客户流失率上升的真实性和范围
+    skill: diagnose-churn-root-cause
+    timeout: 30
+  - id: step-2
+    name: 客户价值分析
+    description: 按客户价值分层分析流失分布
+    skill: analyze-customer-value
+    timeout: 25
+  - id: step-3
+    name: 锁定效应评估
+    description: 评估客户转换成本和锁定效应强度
+    tools:
+      - compute-customer-lockin
+    timeout: 20
+    onFailure: degrade
+  - id: step-4
+    name: 竞争位势对照
+    description: 结合竞争位势评估流失外部因素
+    skill: analyze-competitive-position
+    timeout: 30
+  - id: step-5
+    name: 干预方案排序
+    description: 按ROI和紧迫性排序干预措施
+    tools:
+      - cross-validate
+    timeout: 30
+  - id: step-6
+    name: 输出报告
+    description: 生成流失分析报告和干预建议
+    tools:
+      - query-graph
+    timeout: 30
+onFailure: degrade
+output: churn_intervention_report
+dependencies:
+  edges:
+    - E-4.2
+    - E-4.6
+    - E-5.4
+    - E-4.4
+    - E-3.5
+  skills:
+    - diagnose-churn-root-cause
+    - analyze-customer-value
+    - analyze-competitive-position
+  sentinels:
+    - churn-health
+crossExpert: true

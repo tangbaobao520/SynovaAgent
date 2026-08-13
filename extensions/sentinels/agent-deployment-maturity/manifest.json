@@ -1,0 +1,40 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "agent-deployment-maturity",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "T7 Agent部署成熟度",
+  "description": "T7: T7 Agent部署成熟度",
+  "schedule": "0 0 1 * *",
+  "expert": "tech",
+  "priority": "P1",
+  "layer": "technology",
+  "computeKind": "deterministic",
+  "computes": [
+    "compute-agent-deployment-maturity"
+  ],
+  "thresholds": {
+    "score": {
+      "warning": 0.4,
+      "critical": 0.2
+    }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": [
+      "sog_graph"
+    ],
+    "dataAccess": {
+      "allowedDimensions": [
+        "technology"
+      ],
+      "sensitiveAccess": "read"
+    }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "AgentdeploymentmaturitySentinel",
+  "auxiliaryExperts": [
+    "org"
+  ],
+  "id": "sentinel-agent-deployment-maturity"
+}

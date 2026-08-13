@@ -1,0 +1,29 @@
+{
+  "id": "goodhart_law",
+  "name": "古德哈特定律",
+  "category": "economics",
+  "coreInsight": "当一个指标变成目标时就不再是好指标。人们会让数字好看但不让实际变好。",
+  "applicableDecisionTypes": [
+    "绩效考核",
+    "指标体系",
+    "激励机制"
+  ],
+  "constraintPatterns": [
+    "古德哈特",
+    "指标扭曲",
+    "KPI",
+    "考核",
+    "激励博弈"
+  ],
+  "applicableRoles": [
+    "绩效经理",
+    "数据分析师",
+    "HRBP"
+  ],
+  "limitations": [
+    "不是所有指标都会被玩弄",
+    "完全不用指标回到主观评价",
+    "多指标组合可降低风险"
+  ],
+  "$id": "framework/economics/goodhart_law"
+}

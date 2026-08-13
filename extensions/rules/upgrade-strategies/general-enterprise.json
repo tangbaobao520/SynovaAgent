@@ -1,0 +1,20 @@
+{
+  "$id": "strategy/upgrade/general-enterprise",
+  "name": "通用企业升级策略",
+  "type": "upgrade_strategy",
+  "industry": "general-enterprise",
+  "escalation": {
+    "crossSentinelWarning": { "minSentinels": 2, "upgradeTo": "critical" },
+    "crossSentinelCritical": { "minSentinels": 3, "upgradeTo": "emergency" },
+    "cooldownMs": 3600000
+  },
+  "signalRouting": {
+    "collaboration": ["org"],
+    "capability": ["org", "tech"],
+    "strategy": ["strategy"],
+    "risk": ["org", "finance"],
+    "health": ["tech"],
+    "data-quality": ["tech"]
+  },
+  "metadata": { "source": "engine_calibrated", "confidence": 0.85, "status": "active" }
+}

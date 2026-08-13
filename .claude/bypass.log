@@ -1,0 +1,75 @@
+Binary file .claude/bypass.log matches
+2026-07-26T18:34:35Z detected-bypass no-precommit-marker
+2026-07-26T19:11:26Z detected-bypass no-precommit-marker
+2026-07-26T19:20:27Z detected-bypass no-precommit-marker
+2026-07-27T21:54:30Z detected-bypass no-precommit-marker
+2026-07-28T22:09:15+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D253 | AGENT=claude-code | HASH=b6dd37185ffde9fe1b3420f2cd434538e2506f5d
+2026-07-28T14:59:07Z detected-bypass no-precommit-marker
+2026-07-30T22:05:37+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D284 | AGENT=claude-code | HASH=5c69056aea8428afa3fee8245c0139d7fbaa8ecc
+2026-08-03T13:19:46+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D312 | AGENT=claude-code | HASH=e9b7e1cb3cae812edbab952f522920017970d125
+2026-08-04T23:13:32+08:00 | TIMEOUT | pre-commit timed out after 300s | TASK_ID=D313+D314 | AGENT=claude-code
+2026-08-05T00:03:08+08:00 | TIMEOUT | pre-commit timed out after 300s | TASK_ID=D313+D314 | AGENT=claude-code
+2026-08-05T00:11:14+08:00 | TIMEOUT | pre-commit timed out after 300s | TASK_ID=D313+D314 | AGENT=claude-code
+2026-08-05T00:42:09+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D313+D314 | AGENT=claude-code | HASH=624281f5fe647a51695aaef38376a50dc23bef05
+2026-08-05T01:26:55+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D313+D314 | AGENT=claude-code
+2026-08-05T01:31:59+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D313+D314 | AGENT=claude-code
+2026-08-05T08:20:27+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D313+D314 | AGENT=claude-code | HASH=c5d8d15543577152dba2a84c18d757417a2c1619
+2026-08-05T09:20:19+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D315 | AGENT=claude-code | HASH=63b652919ecd7d81dd037aef693b6619d1d617b9
+2026-08-05T09:37:18+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D315 | AGENT=claude-code | HASH=6a5eb017333c32acce4a8a9f7278f2cb0c7efd82
+2026-08-06T11:07:54+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D316 | AGENT=claude-code | HASH=fdad612a0248199870b140d5bbd437ae68d56676
+2026-08-07T22:35:06+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D316 | AGENT=claude-code | HASH=6f08432e5927b05332fef83b92637f41a44d75ca
+2026-08-08T08:10:39+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D317 | AGENT=claude-code | HASH=5b93579d47ab843e7dd18bfef4f2dacad78c3d8e
+2026-08-08T08:21:07+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D317 | AGENT=claude-code | HASH=078ccbaba2e7fede7fd94661f997b23ff5ad0375
+2026-08-09T13:10:48+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D319-test | AGENT=test
+2026-08-09T13:20:19+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D319-test | AGENT=test
+2026-08-09T13:58:38+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D319-test | AGENT=test
+2026-08-09T14:02:37+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D319-test | AGENT=test
+2026-08-09T14:04:57+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D319-test | AGENT=test
+2026-08-09T14:07:40+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D319-test | AGENT=test
+2026-08-09T15:47:36+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D319-test | AGENT=test
+2026-08-09T15:53:25+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D319 | AGENT=claude-code
+2026-08-09T16:01:18+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D319 | AGENT=claude-code
+2026-08-09T16:09:19+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D319-test | AGENT=test
+2026-08-09T20:56:03+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D319-test | AGENT=test
+2026-08-09T21:01:34+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D319 | AGENT=claude-code | HASH=300660e400dc1e30b041468a17e40f09b9bf06be
+2026-08-10T21:42:30+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D319-test | AGENT=test
+2026-08-11T20:26:43+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D329 | AGENT=claude-code
+2026-08-11T20:28:50+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D329 | AGENT=claude-code
+2026-08-11T20:54:07+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D329 | AGENT=claude-code | HASH=f685fa06941011f3e6b75f3eedf5aa63a773d21d
+2026-08-12T16:54:51+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-12T16:55:24+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-12T17:00:25+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-12T17:00:40+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-12T17:00:54+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-12T17:07:47+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D331-test | AGENT=test
+2026-08-12T17:13:28+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-12T17:14:13+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-12T17:14:32+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-12T17:22:11+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-12T17:22:30+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-12T17:22:49+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-12T17:27:42+08:00 | COMMITTED | pre-commit PASS (D331 一次性补记: D328 交付时 12 组全过) | TASK_ID=D328 | AGENT=claude-code | HASH=ea1cb71b0c8fb445144c89ac6b32075e9cbb287f
+2026-08-12T17:27:42+08:00 | COMMITTED | pre-commit PASS (D331 一次性补记: D329 amend 重提交 12 组全过) | TASK_ID=D329 | AGENT=claude-code | HASH=dc369fdb716daa6c9e8e52283ac44ed47fdd5900
+2026-08-12T17:29:24+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D319-test | AGENT=test
+2026-08-12T17:49:58+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D331 | AGENT=claude-code
+2026-08-12T17:52:57+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D331 | AGENT=claude-code
+2026-08-12T21:12:48+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D331 | AGENT=claude-code
+2026-08-12T21:18:06+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D331 | AGENT=claude-code
+2026-08-12T21:21:39+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D331 | AGENT=claude-code
+2026-08-12T21:24:59+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D331 | AGENT=claude-code
+2026-08-12T22:33:39+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D331 | AGENT=claude-code
+2026-08-12T22:36:52+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D331 | AGENT=claude-code
+2026-08-12T22:58:19+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D331 | AGENT=claude-code | HASH=45a9220a92cdf03cb3305bd2062dc944bc74085e
+2026-08-12T23:03:19+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D331 | AGENT=claude-code | HASH=a93d99a41fdd81f5d4b717fdc4499bccbde7f943
+2026-08-12T23:09:30+0800 | COMMITTED | pre-commit PASS (D331 一次性补记: D330 交付 6c00e46+407ff1f 时 12 组全过) | TASK_ID=D330 | AGENT=claude-code | HASH=6c00e46f15b03e1365cf7efe792af8a5402c3019
+2026-08-12T23:09:30+0800 | COMMITTED | pre-commit PASS (D331 一次性补记: D330 交付 6c00e46+407ff1f 时 12 组全过) | TASK_ID=D330 | AGENT=claude-code | HASH=407ff1fa889e03958b8588e7b4cb53ad09e52243
+2026-08-12T23:40:38+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D331 | AGENT=claude-code | HASH=7ace35e7df82dd568fdb7a38967d9b5eacd74772
+2026-08-13T00:24:08+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-13T00:24:29+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-13T00:24:45+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-13T01:57:23+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D333 | AGENT=claude-code
+2026-08-13T01:59:01+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D333 | AGENT=claude-code
+2026-08-13T02:12:16+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D333 | AGENT=claude-code | HASH=192ff808f237f0d789f92e984b5e0b4325f1c47d
+2026-08-09T21:30:54+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D317-engine-core-retirement-cleanup | AGENT=claude-code | HASH=4e02de34bd9ce37584265b287298522f3fbe689f
+2026-08-13T09:30:00+0800 | COMMITTED | pre-commit PASS (D333 一次性补记: 状态文件提交 c364275 时 12 组全过) | TASK_ID=D333 | AGENT=claude-code | HASH=c364275d499b275d0d3b5871dbd455dfdaf8fc76
+2026-08-13T09:35:00+0800 | COMMITTED | pre-commit PASS (D333 一次性补记: merge e00738d 时 12 组全过) | TASK_ID=D333 | AGENT=claude-code | HASH=e00738d1cb926762b85dd83cd66a0b84b7bace4e

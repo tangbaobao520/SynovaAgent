@@ -9,12 +9,18 @@
  * GraphStore 的 createNode 不支持显式 ID，因此用 props 匹配。
  */
 
-import { SOGNodeType } from '@synova/sog-core';
-import { createLogger } from '../logger';
-import type { GraphStore } from '../l4/graph-bridge';
+import { NodeType } from '@synova/ontology';
+import { createLogger } from '@synova/logger';
 import type { AgentActivity, ReportResponse } from './types';
 
 const log = createLogger('agent-observer/collector');
+
+/** 本模块实际消费的 GraphStore 方法面（D286: 接口隔离，只声明用到的 3 方法） */
+interface CollectorGraphStore {
+  queryNodes(type: string, filters?: Record<string, unknown>, graph?: string): Array<{ id: string; props: Record<string, unknown> }>;
+  updateNode(id: string, props: Record<string, unknown>, graph: string): void;
+  createNode(type: string, props: Record<string, unknown>, graph: string): string;
+}
 
 /**
  * 收集一次 Agent 活动 → upsert SOG AGENT 节点。
@@ -22,12 +28,12 @@ const log = createLogger('agent-observer/collector');
  * 查询策略: 在同一 graph 下按 name + platform 匹配已有 AGENT 节点。
  * 匹配到 → updateNode (递增 activityCount)，未匹配 → createNode。
  *
- * @param store  GraphStore 实例 (通过 createGraphStore 创建)
+ * @param store  GraphStore 实例 (通过 SqliteGraphStore 创建)
  * @param activity  外部上报的 Agent 活动数据
  * @returns ReportResponse — 总是返回 { ok: true }，失败时 degraded: true
  */
 export function collectActivity(
-  store: GraphStore,
+  store: CollectorGraphStore,
   activity: AgentActivity,
 ): ReportResponse {
   const errors: string[] = [];
@@ -48,7 +54,7 @@ export function collectActivity(
     if (activity.model) props.model = activity.model;
 
     // 按 name + platform 查找已有节点 (一个 platform+agentId 组合应该只有一个)
-    const existing = store.queryNodes(SOGNodeType.AGENT, {
+    const existing = store.queryNodes(NodeType.RESOURCE_AGENT, {
       agentId: activity.agentId,
       platform: activity.platform,
     }, graph);
@@ -66,12 +72,13 @@ export function collectActivity(
 
     // 创建新节点
     props.activityCount = 1;
-    const newNodeId = store.createNode(SOGNodeType.AGENT, props, graph);
+    const newNodeId = store.createNode(NodeType.RESOURCE_AGENT, props, graph);
     log.info({ nodeId: newNodeId, lookupKey, graph },
       'AGENT 节点已创建');
     return { ok: true, agentNodeId: newNodeId, action: 'created', degraded: false, errors: [] };
 
   } catch (err: unknown) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "Agent 观测节点创建失败");
     const msg = err instanceof Error ? err.message : String(err);
     errors.push(msg);
     log.warn({ err: msg, lookupKey, platform: activity.platform },
@@ -85,7 +92,7 @@ export function collectActivity(
  * 单个失败不影响其他 — 始终返回所有结果。
  */
 export function collectActivities(
-  store: GraphStore,
+  store: CollectorGraphStore,
   activities: AgentActivity[],
 ): { results: ReportResponse[]; degraded: boolean } {
   const results: ReportResponse[] = [];

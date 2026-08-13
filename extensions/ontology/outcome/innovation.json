@@ -1,0 +1,1 @@
+{"$id":"outcome/innovation","label":"INNOVATION_OUTCOME","tags":["outcome","strategic","growth"],"requiredProps":["period"],"optionalProps":{"new_products_launched":"number","new_patents_filed":"number","rd_conversion_rate":"number","innovation_revenue_ratio":"number"},"description":"创新结果。组织的创新产出和研发转化效率。"}

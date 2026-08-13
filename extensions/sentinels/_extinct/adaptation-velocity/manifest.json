@@ -1,0 +1,40 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "adaptation-velocity",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "S2",
+  "description": "S2:",
+  "schedule": "0 0 1 * *",
+  "expert": "org",
+  "priority": "P1",
+  "layer": "alignment",
+  "computeKind": "deterministic",
+  "computes": [
+    "compute-adaptation-velocity"
+  ],
+  "thresholds": {
+    "score": {
+      "warning": 0.4,
+      "critical": 0.2
+    }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": [
+      "sog_graph"
+    ],
+    "dataAccess": {
+      "allowedDimensions": [
+        "organizational"
+      ],
+      "sensitiveAccess": "read"
+    }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "adaptationVelocitySentinel",
+  "auxiliaryExperts": [
+    "strategy"
+  ],
+  "id": "sentinel-adaptation-velocity"
+}

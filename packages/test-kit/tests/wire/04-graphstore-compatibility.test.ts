@@ -7,7 +7,7 @@
 import { describe, it, expect } from 'vitest';
 
 describe('铁律 39: GraphStore 接口兼容性', () => {
-  it('方法列表应与 engine-core GraphStore 一致', () => {
+  it('GraphStore 接口方法列表完整 (D10 自研定义)', () => {
     const synovaMethods = [
       'createNode', 'createNodes', 'queryNodes', 'queryEdges',
       'createEdge', 'createEdges', 'getNode', 'updateNode',
@@ -15,14 +15,14 @@ describe('铁律 39: GraphStore 接口兼容性', () => {
       'queryTriples', 'getNodeAtTime',
     ];
 
-    const engineCoreMethods = [
+    const expectedMethods = [
       'createNode', 'createNodes', 'queryNodes', 'queryEdges',
       'createEdge', 'createEdges', 'getNode', 'updateNode',
       'deleteNode', 'deleteEdge', 'traverse', 'findPaths',
       'queryTriples', 'getNodeAtTime',
     ];
 
-    expect(synovaMethods.sort()).toEqual(engineCoreMethods.sort());
+    expect(synovaMethods.sort()).toEqual(expectedMethods.sort());
   });
 
   it('多租户 graph 参数必须传递', () => {

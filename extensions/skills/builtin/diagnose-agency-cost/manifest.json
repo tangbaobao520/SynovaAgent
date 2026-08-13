@@ -1,0 +1,61 @@
+{
+  "name": "diagnose-agency-cost",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "委托-代理成本诊断",
+  "description": "诊断组织中的委托-代理问题，评估代理成本水平、道德风险信号和KPI扭曲程度。",
+  "tier": "L3",
+  "complexity": "expert",
+  "expert": "org",
+  "tools": [
+    "compute-incentive-alignment",
+    "compute-decision-authority",
+    "compute-information-flow",
+    "compute-agency-cost",
+    "query-graph"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "organizational"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": []
+  },
+  "dependencies": {
+    "skills": [],
+    "edges": [
+      "E-2.2",
+      "E-2.4",
+      "E-2.5",
+      "E-2.6"
+    ],
+    "computes": [
+      "COMPUTE-AGENCY-COST-v1",
+      "COMPUTE-INCENTIVE-ALIGNMENT-v1",
+      "COMPUTE-DECISION-AUTHORITY-v1",
+      "COMPUTE-INFORMATION-FLOW-v1"
+    ],
+    "sentinels": [
+      "sentinel-agency-cost"
+    ]
+  },
+  "boundaries": {
+    "prohibitedDimensions": [
+      "financial",
+      "market-pricing",
+      "technology-stack"
+    ],
+    "degradedBehavior": "组织数据采集失败时返回 degraded:true，跳过不可用维度",
+    "preconditions": [
+      "下级L1-L2数据已就绪",
+      "相关compute函数可用",
+      "GraphStore连接正常"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
+}

@@ -10,7 +10,8 @@ import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { render, Box, useApp, useStdin, useStdout, Text, useInput } from 'ink';
 import { bootstrap, type BootstrapResult } from './lib/bootstrap';
 import { handleCommand, tryConfigureKey, type CommandContext } from './lib/commands';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
+import type Database from 'better-sqlite3';
 import { getGlobalScheduler } from '../cron/scheduler';
 import { checkForUpdates, formatUpdateMessage, type UpdateCheckResult } from '../services/update-checker';
 import { getCostTracker, formatCost } from '../services/llm-cost';
@@ -37,8 +38,8 @@ const STATUS_HINTS = '↑↓ 滚动 │ PgUp/PgDn 翻页 │ /setup │ /balance
 
 async function loadGoalsIntoAggregator(agg: SidebarAggregator, db: unknown): Promise<void> {
   try {
-    const { createGraphStore } = await import('@synova/diagnosis-engine');
-    const store = createGraphStore('sqlite', db) as {
+    const { SqliteGraphStore } = await import('../adapters/sqlite-graph-store');
+    const store = new SqliteGraphStore(db as Database.Database) as unknown as {
       queryNodes(type: string, filters?: Record<string, unknown>, graph?: string): Array<{ id: string; props: Record<string, unknown> }>;
     };
     const goals = store.queryNodes('Goal', { status: 'active' }, 'default');
@@ -55,7 +56,7 @@ async function loadGoalsIntoAggregator(agg: SidebarAggregator, db: unknown): Pro
   } catch (err: any) {
     // 静默降级 — GraphStore 不可用时右边栏目标区为空
     if (err?.code !== 'ERR_MODULE_NOT_FOUND') {
-      (await import('../logger')).createLogger('tui-v2').warn({ err: err.message }, '加载增长目标失败');
+      (await import('@synova/logger')).createLogger('tui-v2').warn({ err: err.message }, '加载增长目标失败');
     }
   }
 }
@@ -165,11 +166,7 @@ function TuiApp({ bctx }: { bctx: BootstrapResult }) {
   const initConversationEngine = useCallback(async (prov: any) => {
     try {
       const { ConversationEngine } = await import('../agent/conversation-engine');
-      const { ToolRegistry } = await import('../agent/tools');
-      const { EngineCoreVendorAdapter } = await import('../adapters/engine-core-adapter');
-      const conv = new ConversationEngine(prov, {
-        diagnosisEngine: new EngineCoreVendorAdapter(prov, new ToolRegistry()),
-      });
+      const conv = new ConversationEngine(prov, {});
       try {
         const { createKnowledgeAgent } = await import('../l3/knowledge-agent');
         const kAgent = createKnowledgeAgent();
@@ -266,7 +263,7 @@ function TuiApp({ bctx }: { bctx: BootstrapResult }) {
     addAgentMessage(welcome);
 
     // 全局告警桥接
-    (globalThis as any).__synovaAlerts = {
+    (globalThis as Record<string, unknown>).__synovaAlerts = {
       pushAlert(_level: string, title: string, _data: string, _suggestion: string) {
         sidebarAggRef.current.addLegacy({ title });
         syncSidebar();
@@ -484,7 +481,7 @@ function TuiApp({ bctx }: { bctx: BootstrapResult }) {
         await loadGoalsIntoAggregator(sidebarAgg, db);
         syncSidebar();
       } else {
-        addAlertMessage('⚠️ 导航引擎不可用。请检查 engine-core 是否正确安装。');
+        addAlertMessage('⚠️ 导航引擎不可用。诊断引擎未返回结果，请检查 Synova 引擎配置。');
       }
       setState(prev => ({ ...prev, status: '准备就绪' }));
     }).catch((err: any) => {

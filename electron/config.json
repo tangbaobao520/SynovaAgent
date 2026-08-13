@@ -1,0 +1,4 @@
+{
+  "serverUrl": "http://localhost:18790",
+  "pollInterval": 300000
+}

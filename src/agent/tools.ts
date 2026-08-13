@@ -6,7 +6,8 @@
  *
  * 流程: LLM → tool call → ToolRegistry.execute() → result → LLM → 最终回复
  */
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
+import { getProfileForRole } from './tool-profiles';
 
 const log = createLogger('agent/tools');
 
@@ -108,6 +109,14 @@ export class ToolRegistry {
   /** Hermes P0-3: 并行门控实例 */
   readonly gate = new ParallelGate();
 
+  /** E2: Tool Profiles 角色限制 (null = 不限制) */
+  private _role: string | null = null;
+
+  /** 设置当前角色 (影响工具可见性和权限) */
+  setRole(role: string): void {
+    this._role = role;
+  }
+
   /** Bind to ConnectorRegistry for 'connector' mode tools (Slice 4.1) */
   bindConnectorRegistry(registry: unknown): void {
     this.connectorRegistry = registry;
@@ -132,7 +141,12 @@ export class ToolRegistry {
   }
 
   listTools(): ToolDefinition[] {
-    return [...this.tools.values()].sort((a, b) => a.name.localeCompare(b.name));
+    let tools = [...this.tools.values()].sort((a, b) => a.name.localeCompare(b.name));
+    if (this._role) {
+      const profile = getProfileForRole(this._role);
+      tools = tools.filter(t => profile.allowedTools.includes('*') || profile.allowedTools.includes(t.name));
+    }
+    return tools;
   }
 
   /** List tools filtered by execution mode (Slice 1.2) */
@@ -146,6 +160,15 @@ export class ToolRegistry {
 
   /** 执行工具，支持多模式分发 (Slice 1.2)，永不抛异常 */
   async execute(name: string, params: Record<string, unknown>): Promise<ToolCallResult> {
+    // E2: Tool Profiles — 检查当前角色是否有权限执行此工具
+    if (this._role) {
+      const profile = getProfileForRole(this._role);
+      if (!profile.allowedTools.includes('*') && !profile.allowedTools.includes(name)) {
+        log.warn({ name, role: this._role }, '工具权限被拒绝');
+        return { error: `权限不足: 当前角色不允许执行 "${name}"` };
+      }
+    }
+
     const tool = this.tools.get(name);
     if (!tool) {
       log.warn({ name }, '未知工具调用');

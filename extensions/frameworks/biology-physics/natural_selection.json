@@ -1,0 +1,32 @@
+{
+  "id": "natural_selection",
+  "name": "自然选择",
+  "category": "biology-physics",
+  "coreInsight": "不是最强的物种生存，而是最能适应变化的。环境选择适应者而非完美者。",
+  "applicableDecisionTypes": [
+    "组织变革",
+    "业务模式调整",
+    "人才策略"
+  ],
+  "constraintPatterns": [
+    "变革",
+    "适应",
+    "竞争",
+    "环境",
+    "转型",
+    "进化",
+    "调整",
+    "迭代"
+  ],
+  "applicableRoles": [
+    "战略规划",
+    "组织发展",
+    "变革管理",
+    "竞争分析"
+  ],
+  "limitations": [
+    "\"适应\"是事后判断",
+    "人类组织比生物系统有更多主动选择空间"
+  ],
+  "$id": "framework/biology-physics/natural_selection"
+}

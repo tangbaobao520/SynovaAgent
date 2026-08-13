@@ -1,0 +1,40 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "moat-dependency",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "护城河依赖度",
+  "description": "I8: 聚合哨兵，引用I3+I4结果评估护城河依赖度。",
+  "schedule": "0 0 1 * *",
+  "expert": "strategy",
+  "priority": "P1",
+  "layer": "interface",
+  "computeKind": "heuristic",
+  "computes": [
+    "moat-dependency-score"
+  ],
+  "thresholds": {
+    "dependency": {
+      "warning": 0.6,
+      "critical": 0.8
+    }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": [
+      "sog_graph"
+    ],
+    "dataAccess": {
+      "allowedDimensions": [
+        "strategic"
+      ],
+      "sensitiveAccess": "read"
+    }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "moatDependencySentinel",
+  "auxiliaryExperts": [
+    "strategy"
+  ],
+  "id": "sentinel-moat-dependency"
+}

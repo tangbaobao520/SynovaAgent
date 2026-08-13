@@ -7,7 +7,7 @@
  * Iron law #31: engine-core 不可用时静默降级——返回空结果，不阻断对话。
  */
 import type { EngineContext } from './engine-context';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('agent/ontology-syncer');
 
@@ -66,7 +66,7 @@ export class OntologySyncer {
 
     // 铁律 39: 通过 adapter 获取 GraphStore, 不直接 import vendor
     try {
-      const { SOGNodeType } = await import('@synova/sog-core');
+      const { NodeType } = await import('@synova/ontology');
       const { getDatabase } = await import('../init/engine-context');
       const db = getDatabase();
       if (!this.ctx.createGraphStore) {
@@ -76,14 +76,14 @@ export class OntologySyncer {
       const store = await this.ctx.createGraphStore(db) as { createNode: (type: string, props: Record<string, unknown>, graph: string) => string };
 
       // Create Team node
-      store.createNode(SOGNodeType.TEAM, {
+      store.createNode(NodeType.RESOURCE_TEAM, {
         name: this.ctx.orgId || '默认组织',
         teamType: 'permanent',
       }, this.ctx.orgId || 'default');
 
       // Create Person nodes from extracted names
       for (const name of personNames) {
-        store.createNode(SOGNodeType.PERSON, { name }, this.ctx.orgId || 'default');
+        store.createNode(NodeType.RESOURCE_PERSON, { name }, this.ctx.orgId || 'default');
       }
 
       result.created = true;
@@ -92,7 +92,7 @@ export class OntologySyncer {
         team: this.ctx.orgId,
       }, 'SOG 本体节点已创建');
     } catch (err: any) {
-      log.warn({ err: err.message }, 'SOG 同步失败（engine-core 不可用），继续非本体模式');
+      log.warn({ err: err.message }, 'SOG 同步失败（本体存储不可用），继续非本体模式');
     }
 
     return result;

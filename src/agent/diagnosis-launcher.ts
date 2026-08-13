@@ -6,12 +6,19 @@
  */
 import type { EngineContext } from './engine-context';
 import type { DiagnosisEngine, DiagnosisEvent, ConsultationResult } from '../l2-interfaces/diagnosis-engine';
-import { createLogger } from '../logger';
-import { resolveEntitiesL3 } from '../l4/entity-resolver';
-import { generateCommunityReports } from '../l4/community-reports';
+import { createLogger } from '@synova/logger';
+// L4 访问: 运行时动态 import — 避免静态跨层依赖 (铁律 39, 审计 P0-20260618)
+import { ContractGate } from "../contract/contract-gate";
+import { ContractStore } from "../contract/contract-store";
 import { runSafetyGate } from '../security/safety-guardrails';
 import { getFaultRecovery } from '../services/fault-recovery';
-import type { SessionStore } from '../store/session-store';
+// V4.4.4 T7b: L3 诊断模块 — 外部假设监控 + 平台依赖检查
+import { checkExternalAssumptions } from '../l3/assumption-monitor';
+import { checkPlatformDependencies } from '../l3/platform-dependency-check';
+// D292: L2→L3 适配层 — L2 禁触 L4 (铁律 39)
+import { createGraphTraversal } from '../l3/graph-traversal-adapter';
+// V4.2.4: 内联 SessionStore 类型 — 避免 L2→L5 直接 import (铁律 39)
+interface SessionStoreLike { saveDiagnosisCheckpoint?: (cp: { sessionId: string; phase: number; completedModules: string[]; partialReport: unknown; savedAt: string }) => void; }
 
 // 诊断检查点 — 每个 Phase 完成后保存状态到 SessionStore
 interface DiagnosisCheckpoint {
@@ -56,7 +63,19 @@ export class DiagnosisLauncher {
 
     try {
       // ═══ Batch 2: 六阶段追踪 — 每阶段发射 phase_started 事件 ═══
-      const phaseLabels = [
+      // D215: 契约门禁 — 启动前验证接口契约
+    try {
+      const gate = new ContractGate(new ContractStore());
+      const validation = await gate.validateAll();
+      if (!validation.pass && !validation.degraded) {
+        throw new Error(`D215 契约门禁未通过: ${validation.failures.length} 项失败`);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg }, "D215 契约门禁跳过 — 降级");
+    }
+
+    const phaseLabels = [
         '组织访谈', '数据采集', '假设生成', '根因分析', '报告生成', '交付',
       ];
       // Phase 0 完成信号 (ConversationEngine 已在 Phase 0 完成后调用 startDiagnosis)
@@ -100,7 +119,7 @@ export class DiagnosisLauncher {
       // 诊断检查点保存 — 每个 Phase 完成后写入 SessionStore
       const saveCheckpoint = (phase: number, modules: string[], report: unknown) => {
         try {
-          const store: SessionStore | undefined = (this.ctx as { sessionStore?: SessionStore }).sessionStore;
+          const store: SessionStoreLike | undefined = (this.ctx as { sessionStore?: SessionStoreLike }).sessionStore;
           if (store) {
             store.saveDiagnosisCheckpoint?.({
               sessionId: this.ctx.sessionId, phase, completedModules: modules,
@@ -119,6 +138,18 @@ export class DiagnosisLauncher {
       }, onEvent);
 
       log.info({ teamId, durationMs: result.totalDurationMs, degraded: result.degradedModules.length }, '诊断完成');
+
+      // T7b: L3 诊断模块 — 外部假设监控 + 平台依赖检查 (通过 runModules 消费)
+      if (graphStore && typeof graphStore.queryNodes === 'function') {
+        const store = graphStore as Parameters<typeof checkExternalAssumptions>[0];
+        const traversal = createGraphTraversal(store);
+        checkExternalAssumptions(store, teamId, traversal)
+          .then(ar => log.info({ teamId, totalAssumptions: ar.totalAssumptions, findings: ar.findings.length }, '外部假设监控完成'))
+          .catch(err => log.warn({ err, teamId }, '[assumption-monitor] 异步失败'));
+        checkPlatformDependencies(store, teamId, traversal)
+          .then(pr => log.info({ teamId, totalDependencies: pr.totalDependencies, findings: pr.findings.length }, '平台依赖检查完成'))
+          .catch(err => log.warn({ err, teamId }, '[platform-dependency-check] 异步失败'));
+      }
 
       // FED-001: 联邦进化 — 诊断完成后上报质量信号 (差分隐私+加密)
       if (this.ctx.federalAdapter) {
@@ -149,16 +180,7 @@ export class DiagnosisLauncher {
         // C6: 接入剩余 5 个 upsert 方法 (审计 P0-20260604)
         // 每个独立 try/catch — 单个数据段失败不影响其他
 
-        // HONA — 人-组织网络分析
-        try {
-          const honaData = (report as { hona?: any; humanOrganization?: any }).hona
-            || (report as { humanOrganization?: any }).humanOrganization;
-          if (honaData?.people?.length > 0) {
-            const result = graphBridge.upsertFromHONA(honaData.people, honaData.interactions || honaData.edges || []);
-            if (result.errors.length > 0) log.warn({ errors: result.errors }, 'HONA sync — some errors');
-            log.debug({ nodes: result.nodesCreated, edges: result.edgesCreated }, 'HONA 已同步到本体图');
-          }
-        } catch (err: any) { log.warn({ err }, 'HONA GraphBridge sync failed — degraded'); }
+        // HONA — V4.2.4: hona 哨兵已删除 — 跳过
 
         // FinancialImpact — 财务影响分析
         try {
@@ -206,7 +228,8 @@ export class DiagnosisLauncher {
 
         if (flags.enableCommunityReports && graphStore) {
           try {
-            const communities = generateCommunityReports(graphStore, teamId);
+            const { generateCommunityReports: genCR } = await import('../l3/community-reports-adapter');
+            const communities = genCR(graphStore, teamId);
             log.info({ communityCount: communities.length }, '社区报告已生成');
             onEvent?.({ type: 'community_reports', phase: 2, message: `发现 ${communities.length} 个协作圈`, findings: communities.slice(0, 3).map((c: any) => ({ moduleId: c.id || 'community', summary: c.label || `协作圈 ${c.size || 0} 人`, confidence: c.confidence || 0.7 })), confidence: 0.7 });
           } catch (err: any) {
@@ -217,7 +240,8 @@ export class DiagnosisLauncher {
 
       if (flags.enableEntityResolution && graphStore) {
         try {
-          const resolution = await resolveEntitiesL3(graphStore, teamId);
+          const { resolveEntitiesL3: resolveL3 } = await import('../l3/entity-resolver-adapter');
+          const resolution = await resolveL3(graphStore, teamId);
           log.info({ autoMerged: resolution.autoMerged, queued: resolution.queuedForReview }, 'L3 实体解析完成');
           if (resolution.autoMerged > 0 || resolution.queuedForReview > 0) {
             onEvent?.({ type: 'entity_resolution', phase: 3,
@@ -233,7 +257,7 @@ export class DiagnosisLauncher {
       if (this.ctx.provider) {
         import('../services/background-review').then(({ launchBackgroundReview }) => {
           launchBackgroundReview(this.ctx.provider, result.report, teamId);
-        }).catch(() => { /* 动态导入失败 — 静默降级 */ });
+        }).catch((err) => { log.warn({ err }, '后台审查启动失败 — degraded'); });
       }
 
       return {

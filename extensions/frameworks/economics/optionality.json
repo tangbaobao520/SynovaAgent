@@ -1,0 +1,32 @@
+{
+  "id": "optionality",
+  "name": "可选性",
+  "category": "economics",
+  "coreInsight": "保留多种选择比追求单个最优更重要。选择越多，你在不确定性下的生存概率越高。",
+  "applicableDecisionTypes": [
+    "供应商策略",
+    "物流方案",
+    "市场进入策略"
+  ],
+  "constraintPatterns": [
+    "灵活",
+    "不确定",
+    "多方案",
+    "创业",
+    "初创",
+    "试错",
+    "探索",
+    "迭代"
+  ],
+  "applicableRoles": [
+    "战略顾问",
+    "业务拓展",
+    "创新管理",
+    "市场探索"
+  ],
+  "limitations": [
+    "过多选择会增加决策复杂度",
+    "维护可选性需要成本"
+  ],
+  "$id": "framework/economics/optionality"
+}

@@ -1,0 +1,32 @@
+{
+  "id": "jobs_to_be_done_lens",
+  "name": "用户雇佣视角",
+  "category": "psychology",
+  "coreInsight": "用户不是\"买产品\"——是\"雇佣\"产品来完成某个任务。不是\"哪个供应商最便宜\"而是\"哪个供应商能最好地完成我的交付任务\"。",
+  "applicableDecisionTypes": [
+    "供应商选择",
+    "产品定位",
+    "市场策略"
+  ],
+  "constraintPatterns": [
+    "用户",
+    "需求",
+    "产品",
+    "任务",
+    "场景",
+    "定位",
+    "市场",
+    "匹配"
+  ],
+  "applicableRoles": [
+    "产品设计",
+    "用户研究",
+    "需求分析",
+    "市场定位"
+  ],
+  "limitations": [
+    "JTBD抽象层次容易过高",
+    "同一产品可能被\"雇佣\"来完成不同任务"
+  ],
+  "$id": "framework/psychology/jobs_to_be_done_lens"
+}

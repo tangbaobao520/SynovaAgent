@@ -1,0 +1,62 @@
+#!/bin/bash
+# ═══════════════════════════════════════════════════════════════════════════════
+# check-bypass-log.sh — D331 (L4-2 / P1-2): bypass.log 执行证据链对账
+#
+# 背景: D329 的 dc369fd 经 git commit --amend 重提交 — synova-commit 的 pathspec
+# 提交（-- "${FILES[@]}"）不含删除/改回，配套变更须 amend 并入；amend 绕过了
+# synova-commit 的 COMMITTED 记录写入，导致版本锚点 tag 与执行证据链同时断裂
+# （tag V4.7.1 孤儿 f685fa0 + dc369fd 无 bypass.log 记录），无人发现（无对账方）。
+#
+# 对账: 对比 <base>..HEAD 全部提交与 .claude/bypass.log 的 HASH 条目；
+#       缺失 → 列出 + exit 1（新提交硬要求）；全部有记录 → exit 0。
+#
+# 用法: bash check-bypass-log.sh [base-ref]
+#       默认 base: origin/feat/prompt-architecture（D311 改基约定）
+# 注入: SYNO_BASE_REF 环境变量覆盖（测试隔离；显式给出则必须可解析）
+# 豁免: 历史提交一次性补记（D331 已对 ea1cb71/dc369fd 回填）；对账从 D331 起强制
+# 降级: 日志缺失 → exit 1（执行证据链缺失显式列出）；base 不可解析且非显式
+#       → fetch 一次后仍不可用 → 显式跳过 exit 0（fail-open，不静默 — 铁律 24/31）
+# ═══════════════════════════════════════════════════════════════════════════════
+set -uo pipefail
+
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+LOG="$ROOT/.claude/bypass.log"
+BASE="${SYNO_BASE_REF:-${1:-origin/feat/prompt-architecture}}"
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RESET='\033[0m'
+
+if [[ ! -f "$LOG" ]]; then
+  echo -e "${RED}❌ bypass.log 不存在: $LOG${RESET}"
+  echo "  执行证据链缺失 — 请确认提交均经 synova-commit（含 COMMITTED 记录）或一次性补记"
+  exit 1
+fi
+
+# base 可解析性: 显式 SYNO_BASE_REF 不可解析 → 硬错误（测试/调用方给错引用须显式暴露）
+if ! git rev-parse --verify "$BASE" >/dev/null 2>&1; then
+  if [[ -n "${SYNO_BASE_REF:-}" ]]; then
+    echo -e "${RED}❌ base 不可解析: $BASE${RESET}"
+    exit 1
+  fi
+  git fetch origin >/dev/null 2>&1 || true
+  if ! git rev-parse --verify "$BASE" >/dev/null 2>&1; then
+    echo -e "${YELLOW}⚠️  base 引用缺失 ($BASE) — 对账跳过（fail-open 显式提示，不静默）${RESET}"
+    exit 0
+  fi
+fi
+
+MISSING=""
+for h in $(git log "$BASE..HEAD" --format=%H 2>/dev/null || true); do
+  if ! grep -q "$h" "$LOG" 2>/dev/null; then
+    SUBJ=$(git log -1 --format=%s "$h" 2>/dev/null || echo "$h")
+    MISSING="${MISSING}  $SUBJ [${h:0:8}]\n"
+  fi
+done
+
+if [[ -n "$MISSING" ]]; then
+  echo -e "${RED}❌ bypass.log 缺以下提交记录（执行证据链断裂）:${RESET}"
+  printf '%b' "$MISSING"
+  echo "  请确认提交经 synova-commit（含 COMMITTED 记录）或一次性补记后再推送"
+  exit 1
+fi
+
+echo -e "${GREEN}✅ bypass.log 对账通过: $BASE..HEAD 全部提交有记录${RESET}"
+exit 0

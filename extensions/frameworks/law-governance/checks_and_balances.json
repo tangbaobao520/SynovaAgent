@@ -1,0 +1,69 @@
+{
+  "id": "checks_and_balances",
+  "name": "制衡机制",
+  "category": "law-governance",
+  "coreInsight": "权力必须被制衡。没有任何单一角色应该拥有所有决策权。",
+  "applicableDecisionTypes": [
+    "组织设计",
+    "审批流程",
+    "采购权限"
+  ],
+  "constraintPatterns": [
+    "合规",
+    "审计",
+    "审批",
+    "权力",
+    "监督",
+    "治理",
+    "流程",
+    "权限",
+    "风控"
+  ],
+  "applicableRoles": [
+    "合规专员",
+    "审计员",
+    "流程管理",
+    "治理监督"
+  ],
+  "limitations": [
+    "过度制衡降低决策效率",
+    "制衡不足则易导致滥用"
+  ],
+  "skillPatterns": [
+    {
+      "name": "合规审查流程",
+      "summary": "基于制衡原理设计多层审批节点和权力分立，降低单一决策风险",
+      "category": "合规管理",
+      "tags": [
+        "合规",
+        "审查",
+        "审批"
+      ],
+      "isMarketplaceSkill": true,
+      "prerequisites": [],
+      "failureModes": [],
+      "sourceTier": "inferred",
+      "dependsOn": [],
+      "conflictsWith": [],
+      "triggers": []
+    },
+    {
+      "name": "权限分离设计",
+      "summary": "将高风险操作拆分为提议-审核-执行三道防线，防止权力集中",
+      "category": "治理设计",
+      "tags": [
+        "权限",
+        "安全",
+        "治理"
+      ],
+      "isMarketplaceSkill": true,
+      "prerequisites": [],
+      "failureModes": [],
+      "sourceTier": "inferred",
+      "dependsOn": [],
+      "conflictsWith": [],
+      "triggers": []
+    }
+  ],
+  "$id": "framework/law-governance/checks_and_balances"
+}

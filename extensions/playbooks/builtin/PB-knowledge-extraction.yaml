@@ -1,0 +1,43 @@
+id: PB-knowledge-extraction
+name: 知识萃取剧本
+version: 1.0.0
+expert: knowledge
+type: playbook
+description: 诊断完成后从推理链和专家结论中萃取可复用的知识和模式。
+trigger:
+  condition: 诊断完成后
+steps:
+  - id: step-1
+    name: 诊断过程回顾
+    description: 收集本次诊断的推理链和中间结论
+    tools:
+      - query-graph
+      - query-knowledge
+    timeout: 25
+  - id: step-2
+    name: 模式识别
+    description: 识别可与历史案例对比的重复模式
+    tools:
+      - query-knowledge
+    timeout: 30
+  - id: step-3
+    name: 知识提取
+    description: 提取可复用的诊断规则和因果关系
+    skill: distill-expert-knowledge
+    timeout: 30
+  - id: step-4
+    name: 知识入库
+    description: 将新知识格式化为标准格式写入知识库
+    tools:
+      - query-knowledge
+    timeout: 25
+onFailure: continue
+output: knowledge_extraction_report
+dependencies:
+  edges:
+    - E-2.7
+    - E-2.8
+    - E-5.3
+  skills:
+    - distill-expert-knowledge
+  sentinels: []

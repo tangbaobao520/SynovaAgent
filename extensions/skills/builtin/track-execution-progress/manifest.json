@@ -1,0 +1,51 @@
+{
+  "name": "track-execution-progress",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "执行进度追踪",
+  "description": "追踪诊断方案的执行进度，检测停滞项和偏差，生成偏差警报。",
+  "tier": "L5",
+  "complexity": "composite",
+  "expert": "action",
+  "tools": [
+    "query-graph",
+    "acquire-edge-data"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "execution"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": []
+  },
+  "dependencies": {
+    "skills": [],
+    "edges": [
+      "E-2.1",
+      "E-3.1",
+      "E-5.1",
+      "E-5.4"
+    ],
+    "computes": [],
+    "sentinels": [
+      "action-tracker"
+    ]
+  },
+  "boundaries": {
+    "prohibitedDimensions": [
+      "financial-decision",
+      "strategic-direction"
+    ],
+    "degradedBehavior": "执行数据不足时返回 degraded:true，仅输出可用数据",
+    "preconditions": [
+      "下级Skill执行结果已就绪",
+      "GraphStore连接正常"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
+}

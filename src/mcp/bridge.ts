@@ -14,7 +14,7 @@
  *   - Memory: 知识图谱持久化
  */
 import { spawn, type ChildProcess } from 'child_process';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import { createInterface } from 'readline';
 
 const log = createLogger('mcp/bridge');

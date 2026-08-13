@@ -1,72 +1,79 @@
 /**
- * sentinel/builtins.ts — 内置哨兵注册入口
+ * sentinel/builtins.ts — 内置哨兵自动注册
  *
- * 在 SynovaAgent 启动时调用 registerBuiltinSentinels() 注册全部 7 个内置哨兵。
- * 必须在 SentinelRunner.start() 之前调用，否则 Runner 找不到哨兵。
+ * 2026-06-18: 从硬编码 25 个模块 → 目录自动扫描。
+ * 加新哨兵 = 在 adapters/ 创建 xxx-sentinel.ts 文件 → 自动注册。
+ * 不需要改 builtins.ts。
  *
  * 架构: L2 (synova-agent.ts) → L3 (builtins.ts) → L3 (adapters/*)
- *       零 L1 感知，零 L4/L5 直接依赖。
  */
 
+import { readdirSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { getSentinelRegistry } from './registry';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/builtins');
 
 /**
- * 注册全部 7 个内置哨兵。
+ * 从文件名推导导出键名。
+ * cost-health-sentinel.ts → costHealthSentinel
+ * revenue-health-sentinel.ts → revenueHealthSentinel
+ * gap-dynamics: 已删除(V4.2.4)
+ */
+function filenameToExportKey(filename: string): string {
+  const base = filename.replace(/-sentinel\.ts$/, '').replace(/\.ts$/, '');
+  return base.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
+}
+
+/**
+ * 扫描 adapters/ 目录，自动发现并注册所有 *-sentinel.ts 文件。
  * 每个模块独立 try/catch——一个加载失败不影响其他。
  */
 export async function registerBuiltinSentinels(): Promise<void> {
   const registry = getSentinelRegistry();
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = dirname(__filename);
+  const adaptersDir = join(__dirname, 'adapters');
 
-  const modules = [
-    { name: 'HTM', loader: () => import('./adapters/htm-sentinel'), key: 'htmSentinel' },
-    { name: 'HACD', loader: () => import('./adapters/hacd-sentinel'), key: 'hacdSentinel' },
-    { name: 'GapDynamics', loader: () => import('./adapters/gap-dynamics-sentinel'), key: 'gapDynamicsSentinel' },
-    { name: 'CPC', loader: () => import('./adapters/cpc-sentinel'), key: 'cpcSentinel' },
-    { name: 'PathDependency', loader: () => import('./adapters/path-dependency-sentinel'), key: 'pathDependencySentinel' },
-    { name: 'SelfAwareness', loader: () => import('./adapters/self-awareness-sentinel'), key: 'selfAwarenessSentinel' },
-    { name: 'SevenPowers', loader: () => import('./adapters/seven-powers-sentinel'), key: 'sevenPowersSentinel' },
-    { name: 'EOB', loader: () => import('./adapters/eob-sentinel'), key: 'eobSentinel' },
-    { name: 'HONA', loader: () => import('./adapters/hona-sentinel'), key: 'honaSentinel' },
-    { name: 'KeyPersonRisk', loader: () => import('./adapters/key-person-risk-sentinel'), key: 'keyPersonRiskSentinel' },
-    { name: 'TokenEconomics', loader: () => import('./adapters/token-economics-sentinel'), key: 'tokenEconomicsSentinel' },
-    { name: 'FinancialImpact', loader: () => import('./adapters/financial-impact-sentinel'), key: 'financialImpactSentinel' },
-    { name: 'FinancialSnapshot', loader: () => import('./adapters/financial-snapshot-sentinel'), key: 'financialSnapshotSentinel' },
-    { name: 'GoalAlignment', loader: () => import('./adapters/goal-alignment-sentinel'), key: 'goalAlignmentSentinel' },
-    { name: 'RiskAggregator', loader: () => import('./adapters/risk-aggregator-sentinel'), key: 'riskAggregatorSentinel' },
-    { name: 'APIAccess', loader: () => import('./adapters/api-accessibility-sentinel'), key: 'apiAccessibilitySentinel' },
-    { name: 'DataReadiness', loader: () => import('./adapters/data-readiness-sentinel'), key: 'dataReadinessSentinel' },
-    { name: 'ProtocolCoverage', loader: () => import('./adapters/protocol-coverage-sentinel'), key: 'protocolCoverageSentinel' },
-    { name: 'RevenueDecomposition', loader: () => import('./adapters/revenue-decomposition-sentinel'), key: 'revenueDecompositionSentinel' },
-    { name: 'CustomerDynamics', loader: () => import('./adapters/customer-dynamics-sentinel'), key: 'customerDynamicsSentinel' },
-    { name: 'CashFlow', loader: () => import('./adapters/cash-flow-sentinel'), key: 'cashFlowSentinel' },
-    { name: 'IntegrationHealth', loader: () => import('./adapters/integration-health-sentinel'), key: 'integrationHealthSentinel' },
-    { name: 'DataSilos', loader: () => import('./adapters/data-silos-sentinel'), key: 'dataSilosSentinel' },
-  ];
+  let sentinelFiles: string[];
+  try {
+    sentinelFiles = readdirSync(adaptersDir).filter(f => f.endsWith('-sentinel.ts') || f.endsWith('-sentinel.js'));
+  } catch {
+    log.error('[builtins] adapters/ 目录不可读 — 哨兵注册失败');
+    return;
+  }
+
+  if (sentinelFiles.length === 0) {
+    log.warn('[builtins] adapters/ 无 *-sentinel 文件 — 零哨兵注册');
+    return;
+  }
 
   let registered = 0;
 
-  for (const { name, loader, key } of modules) {
+  for (const filename of sentinelFiles) {
+    const key = filenameToExportKey(filename);
     try {
-      const mod = await loader();
+      const mod = await import(join(adaptersDir, filename).replace(/\\/g, '/'));
       const sentinel = (mod as Record<string, unknown>)[key];
       if (sentinel && typeof sentinel === 'object' && 'config' in sentinel) {
         registry.register(sentinel as Parameters<typeof registry.register>[0]);
         registered++;
-        log.info(`[builtins] ${name} 已注册`);
+        log.info(`[builtins] ${filename} → ${key} 已注册`);
       } else {
-        log.error({ name, key }, `[builtins] ${name} 模块未导出哨兵对象 (key=${key})`);
+        log.error({ filename, key }, `[builtins] ${filename} 未导出哨兵对象 (key=${key})`);
       }
     } catch (err: unknown) {
-      // Iron Law 24: 单个哨兵注册失败打 log.error, 不阻断其他
-      log.error({ name, err: (err as Error)?.message || String(err), code: 'SENTINEL_REGISTER_FAILED', phase: 2, retryable: false },
-        `[builtins] ${name} 注册失败`);
+      log.error({ filename, key, err: (err as Error)?.message || String(err), code: 'SENTINEL_REGISTER_FAILED', phase: 2, retryable: false },
+        `[builtins] ${filename} 注册失败`);
     }
   }
 
   const total = registry.count();
   const cronCount = registry.listCronSentinels().length;
-  log.info({ registered, total, cronCount }, '[builtins] 内置哨兵注册完成');
+  log.info({ registered, total, cronCount, scanned: sentinelFiles.length }, '[builtins] 哨兵自动注册完成');
 }
+
+// 哨兵注册表: 文件驱动哨兵由 sentinel-loader.ts 自动发现注册 (V3.8)
+// 新增哨兵 = extensions/sentinels/{name}/manifest.json + aggregate.ts → 零代码变更

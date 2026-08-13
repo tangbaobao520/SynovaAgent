@@ -1,0 +1,24 @@
+{
+  "$schema": "https://synova.dev/schemas/golden-case-v1.json",
+  "id": "golden-case-10",
+  "title": "知识流失危机",
+  "description": "关键人员离职导致跨团队知识断层。预期根因为 KNOWLEDGE_SHARING 边。",
+  "frozenAt": "2026-07-20T00:00:00Z",
+  "DO_NOT_MODIFY": "Frozen snapshot — update expectations only on 42-edge major version change",
+  "input": {
+    "sentinelFindings": [
+      { "id": "F001", "sentinel": "key-person-risk", "severity": "critical", "title": "核心技术主管离职", "matchedEdgeIds": ["E-19"], "detectedAt": "2026-07-19T00:00:00Z" },
+      { "id": "F002", "sentinel": "talent-density", "severity": "critical", "title": "知识传承文档覆盖率不足30%", "matchedEdgeIds": ["E-19", "E-20"], "detectedAt": "2026-07-18T00:00:00Z" },
+      { "id": "F003", "sentinel": "collaboration-health", "severity": "high", "title": "跨团队协作效率下降", "matchedEdgeIds": ["E-19", "E-06"], "detectedAt": "2026-07-17T00:00:00Z" },
+      { "id": "F004", "sentinel": "growth-quality", "severity": "medium", "title": "新员工上手周期延长一倍", "matchedEdgeIds": ["E-19"], "detectedAt": "2026-07-16T00:00:00Z" }
+    ],
+    "graphEdges": ["E-19", "E-20", "E-06", "E-07", "E-11", "E-23"]
+  },
+  "expected": {
+    "rootCauseEdgeIds": ["E-19"],
+    "rootCauseNodeTypes": ["KNOWLEDGE_SHARING"],
+    "severity": "critical",
+    "matchedEdgeIds": ["E-19", "E-20", "E-06"],
+    "explanation": "KNOWLEDGE_SHARING 边弱化→知识传承断裂→关键人离职影响放大→团队效率下降"
+  }
+}

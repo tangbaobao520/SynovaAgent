@@ -1,0 +1,45 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "software-health",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "软件资产健康度",
+  "description": "T1: 评估企业软件资产的利用率与授权合规性。数据源: SOG TOOL/APP 节点。",
+  "schedule": "0 10 * * 1",
+  "expert": "tech",
+  "priority": "P1",
+  "layer": "technology",
+  "computeKind": "deterministic",
+  "computes": [
+    "saas-usage-score",
+    "shadow-it-score"
+  ],
+  "thresholds": {
+    "usage_rate": {
+      "warning": 0.4,
+      "critical": 0.2
+    },
+    "unauthorized_rate": {
+      "warning": 0.3,
+      "critical": 0.5
+    }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": [
+      "sog_graph"
+    ],
+    "dataAccess": {
+      "allowedDimensions": [
+        "technology"
+      ],
+      "sensitiveAccess": "read"
+    }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "softwareHealthSentinel",
+  "auxiliaryExperts": [
+    "strategy"
+  ],
+  "id": "sentinel-software-health"
+}

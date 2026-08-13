@@ -1,0 +1,46 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "competitive-dynamics",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "竞争格局变化",
+  "description": "E3: 检测竞争格局变化——HHI指数、竞争强度、市场份额变动。数据源: Market, FINANCIAL节点。",
+  "schedule": "0 0 1 * *",
+  "expert": "strategy",
+  "auxiliaryExperts": [
+    "marketing"
+  ],
+  "priority": "P1",
+  "layer": "environment",
+  "computeKind": "deterministic",
+  "computes": [
+    "hhi-index",
+    "competitive-intensity"
+  ],
+  "thresholds": {
+    "hhi_change": {
+      "warning": 0.05,
+      "critical": 0.1
+    },
+    "competitive_intensity": {
+      "warning": 0.6,
+      "critical": 0.8
+    }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": [
+      "sog_graph"
+    ],
+    "dataAccess": {
+      "allowedDimensions": [
+        "strategic",
+        "financial"
+      ],
+      "sensitiveAccess": "read"
+    }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "competitiveDynamicsSentinel",
+  "id": "sentinel-competitive-dynamics"
+}

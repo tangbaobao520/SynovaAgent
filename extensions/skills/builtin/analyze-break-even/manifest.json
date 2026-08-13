@@ -1,0 +1,54 @@
+{
+  "name": "analyze-break-even",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "盈亏平衡分析",
+  "description": "计算盈亏平衡点，评估安全边际，分类企业盈亏状态（正常/警戒/危险）并给出行动含义。",
+  "tier": "L2",
+  "complexity": "atomic",
+  "expert": "finance",
+  "tools": [
+    "compute-break-even",
+    "acquire-edge-data"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "financial"
+      ],
+      "sensitiveAccess": "none"
+    },
+    "crossExpert": []
+  },
+  "dependencies": {
+    "skills": [],
+    "edges": [
+      "E-1.1",
+      "E-2.1",
+      "E-3.1",
+      "E-4.1"
+    ],
+    "computes": [
+      "COMPUTE-BREAK-EVEN-v1"
+    ],
+    "sentinels": [
+      "sentinel-breakeven"
+    ]
+  },
+  "boundaries": {
+    "prohibitedDimensions": [
+      "organizational",
+      "technology",
+      "customer-segment"
+    ],
+    "degradedBehavior": "财务数据源不可用或部分边缺失时返回部分指标并标记 degraded:true",
+    "preconditions": [
+      "L1感知层数据已采集",
+      "对应compute函数可用"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
+}

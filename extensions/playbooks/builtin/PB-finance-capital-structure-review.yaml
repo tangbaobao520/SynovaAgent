@@ -1,0 +1,47 @@
+id: PB-finance-capital-structure-review
+name: 资本结构审查剧本
+version: 1.0.0
+expert: finance
+type: playbook
+description: 当capital-health告警时，对企业的资本结构和配置效率进行全面审查。
+trigger:
+  sentinels:
+    - capital-health
+  condition: capital-health告警
+steps:
+  - id: step-1
+    name: 资本配置效率评估
+    description: 计算资本周转率和配置效率
+    skill: analyze-capital-allocation
+    timeout: 30
+  - id: step-2
+    name: NPV审查
+    description: 审查主要项目的净现值状态
+    tools:
+      - compute-npv
+    timeout: 25
+    onFailure: degrade
+  - id: step-3
+    name: 杠杆风险分析
+    description: 评估经营杠杆和财务杠杆风险
+    skill: analyze-operating-leverage
+    timeout: 20
+  - id: step-4
+    name: 优化建议
+    description: 输出资本结构优化建议
+    tools:
+      - cross-validate
+    timeout: 30
+onFailure: degrade
+output: capital_structure_report
+dependencies:
+  edges:
+    - E-1.1
+    - E-1.2
+    - E-2.1
+    - E-5.1
+  skills:
+    - analyze-capital-allocation
+    - analyze-operating-leverage
+  sentinels:
+    - capital-health

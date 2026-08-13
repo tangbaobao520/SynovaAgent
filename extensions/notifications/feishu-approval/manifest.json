@@ -1,0 +1,1 @@
+{"$schema":"https://synova.dev/schemas/extension-manifest-v1.json","name":"feishu-approval","version":"1.0.0","type":"notification","channel":"feishu-approval","displayName":"飞书审批适配器","description":"通过飞书审批流程发起诊断行动项审批。","entryPoint":"./adapter.ts","exportKey":"feishuApprovalAdapter"}

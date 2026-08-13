@@ -1,0 +1,28 @@
+{
+  "id": "apache_way",
+  "name": "Apache 之道",
+  "category": "law-governance",
+  "coreInsight": "精英治理——影响力取决于贡献质量而非头衔；社区优于代码；共识决策。",
+  "applicableDecisionTypes": [
+    "开源治理",
+    "社区管理",
+    "贡献者激励"
+  ],
+  "constraintPatterns": [
+    "Apache",
+    "开源",
+    "精英治理",
+    "共识",
+    "社区"
+  ],
+  "applicableRoles": [
+    "社区经理",
+    "PMC成员",
+    "提交者"
+  ],
+  "limitations": [
+    "精英治理可能演化出新的贵族阶层",
+    "共识决策在紧急情况下效率低"
+  ],
+  "$id": "framework/law-governance/apache_way"
+}

@@ -1,0 +1,30 @@
+{
+  "id": "ethereum_dao",
+  "name": "以太坊 DAO",
+  "category": "law-governance",
+  "coreInsight": "智能合约实现去中心化自治组织。提案→投票→执行全流程自动化。",
+  "applicableDecisionTypes": [
+    "DAO治理",
+    "投票机制",
+    "去中心化决策"
+  ],
+  "constraintPatterns": [
+    "以太坊",
+    "DAO",
+    "智能合约",
+    "Token",
+    "治理",
+    "投票"
+  ],
+  "applicableRoles": [
+    "DAO治理官",
+    "协议设计师",
+    "社区协调员"
+  ],
+  "limitations": [
+    "投票参与率低于10%",
+    "大户容易形成寡头治理",
+    "智能合约漏洞可能导致攻击"
+  ],
+  "$id": "framework/law-governance/ethereum_dao"
+}

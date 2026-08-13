@@ -1,0 +1,58 @@
+{
+  "name": "analyze-capital-allocation",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "资本配置效率",
+  "description": "评估企业资本配置效率，计算资本周转率、NPV状态和利润再投资率。",
+  "tier": "L2",
+  "complexity": "composite",
+  "expert": "finance",
+  "tools": [
+    "compute-capital-allocation",
+    "compute-npv",
+    "compute-profit-reinvestment"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "financial"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": []
+  },
+  "dependencies": {
+    "skills": [],
+    "edges": [
+      "E-1.1",
+      "E-2.1",
+      "E-5.1",
+      "E-X.1"
+    ],
+    "computes": [
+      "COMPUTE-CAPITAL-ALLOCATION-v1",
+      "COMPUTE-NPV-v1",
+      "COMPUTE-PROFIT-REINVESTMENT-v1"
+    ],
+    "sentinels": [
+      "capital-health",
+      "sentinel-npv-negative"
+    ]
+  },
+  "boundaries": {
+    "prohibitedDimensions": [
+      "organizational",
+      "technology",
+      "customer-segment"
+    ],
+    "degradedBehavior": "财务数据源不可用或部分边缺失时返回部分指标并标记 degraded:true",
+    "preconditions": [
+      "L1感知层数据已采集",
+      "对应compute函数可用"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
+}

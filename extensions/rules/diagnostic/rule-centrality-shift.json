@@ -1,0 +1,13 @@
+{
+  "$id": "rule/diagnostic/centrality-shift",
+  "name": "中心性偏移",
+  "type": "rule",
+  "domain": "organizational",
+  "category": "graph_alert",
+  "severity": "high",
+  "description": "节点中心性显著变化，信息流结构改变",
+  "condition": { "triggerOn": "centrality_shift", "minSeverity": "high" },
+  "action": { "title": "检查信息流结构变化", "priority": "P1", "assigneeRole": "技术负责人", "estimatedHours": 2 },
+  "cooldownMs": 604800000,
+  "metadata": { "source": "engine_calibrated", "confidence": 0.8, "status": "active" }
+}

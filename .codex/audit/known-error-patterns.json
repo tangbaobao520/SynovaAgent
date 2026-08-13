@@ -1,0 +1,30 @@
+[
+  {
+    "id": "E1",
+    "name": "空构造函数",
+    "desc": "new X([]) 空数组构造",
+    "pattern": "new \\w+\\(\\[\\]\\)",
+    "severity": "P1"
+  },
+  {
+    "id": "E2",
+    "name": "类型导入未实例化",
+    "desc": "import type { X } 未创建实例",
+    "pattern": "import type \\{[^}]*\\}",
+    "severity": "P1"
+  },
+  {
+    "id": "E3",
+    "name": "存根函数体",
+    "desc": "throw new Error('Not implemented')",
+    "pattern": "throw new Error\\('Not implemented'\\)",
+    "severity": "P0"
+  },
+  {
+    "id": "E4",
+    "name": "参数不匹配",
+    "desc": "调用方传入参数与函数签名不一致",
+    "pattern": "searchSessions\\(q, 10\\)",
+    "severity": "P1"
+  }
+]

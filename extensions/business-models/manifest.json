@@ -1,0 +1,1 @@
+{"$schema":"https://synova.dev/schemas/extension-manifest-v1.json","$schema":"https://synova.dev/schemas/extension-manifest-v1.json","name":"business-models","version":"1.0.0","type":"business-model","displayName":"商业模式模板","entryPoint":"../src/l3/business-model-loader.ts","exportKey":"loadBusinessModels"}

@@ -1,7 +1,7 @@
 /** connectors/nemoclaw.ts — NemoClaw MCP 连接器 (Batch 3 #8) · 国际轨 */
 import type { DataConnector, ConnectorMessage, ConnectorMember, ConnectorEvent, OntologyMapping } from './types';
-import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
-import { createLogger } from '../logger';
+import { NodeType, EdgeType } from '@synova/ontology';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('connectors/nemoclaw');
 
@@ -32,14 +32,14 @@ export class NemoClawConnector implements DataConnector {
   mapToOntology(messages: ConnectorMessage[], members: ConnectorMember[], events: ConnectorEvent[], orgId: string): OntologyMapping {
     const mapping: OntologyMapping = { nodes: [], edges: [] };
     for (const m of members) {
-      mapping.nodes.push({ type: SOGNodeType.PERSON, props: { name: m.name, email: m.email } });
-      if (m.department) mapping.nodes.push({ type: SOGNodeType.TEAM, props: { name: m.department, teamType: 'permanent' } });
+      mapping.nodes.push({ type: NodeType.RESOURCE_PERSON, props: { name: m.name, email: m.email } });
+      if (m.department) mapping.nodes.push({ type: NodeType.RESOURCE_TEAM, props: { name: m.department, teamType: 'permanent' } });
     }
     for (const msg of messages) {
-      mapping.edges.push({ type: SOGEdgeType.INTERACTS_WITH, from: msg.senderId, to: msg.recipientIds?.[0] || msg.senderId, weight: 1, props: { channel: msg.channel } });
+      mapping.edges.push({ type: EdgeType.INFORMATION_FLOW, from: msg.senderId, to: msg.recipientIds?.[0] || msg.senderId, weight: 1, props: { channel: msg.channel } });
     }
     for (const evt of events) {
-      mapping.nodes.push({ type: SOGNodeType.EVENT, props: { eventType: evt.eventType, timestamp: evt.timestamp } });
+      mapping.nodes.push({ type: NodeType.ACTIVITY_LEARNING /* ONTOLOGY-MIGRATION: NodeType.ACTIVITY_LEARNING has no direct match. Store as edge annotation. */, props: { eventType: evt.eventType, timestamp: evt.timestamp } });
     }
     log.info({ nodes: mapping.nodes.length, edges: mapping.edges.length, orgId }, '[nemoclaw] 本体映射完成');
     return mapping;

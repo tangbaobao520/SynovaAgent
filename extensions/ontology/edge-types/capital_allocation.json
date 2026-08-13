@@ -1,0 +1,16 @@
+{
+  "$id": "edge/capital_allocation",
+  "label": "CAPITAL_ALLOCATION",
+  "tags": ["causal", "first_order", "stage_2"],
+  "allowedFrom": ["pool/capital"],
+  "allowedTo": ["pool/activity"],
+  "requiredProps": ["allocation_amount", "allocation_ratio"],
+  "optionalProps": {
+    "roi_by_activity": "object — 各活动ROI分布",
+    "allocation_frequency": "string — 分配频率(quarterly|annual|continuous)",
+    "decision_process": "string — 决策流程(top_down|bottom_up|hybrid)"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "资金分配到活动——资本池中的资金按照决策分配到各业务活动的内部转化阀。"
+}

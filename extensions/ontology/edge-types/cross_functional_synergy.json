@@ -1,0 +1,16 @@
+{
+  "$id": "edge/cross_functional_synergy",
+  "label": "CROSS_FUNCTIONAL_SYNERGY",
+  "tags": ["causal", "second_order", "stage_3"],
+  "allowedFrom": ["pool/activity"],
+  "allowedTo": ["pool/activity"],
+  "requiredProps": ["synergy_strength", "cross_team_collaboration_score"],
+  "optionalProps": {
+    "communication_efficiency": "number (0-1) — 沟通效率",
+    "shared_goal_alignment": "number (0-1) — 共享目标对齐度",
+    "conflict_resolution_speed_days": "number — 冲突解决速度"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "跨部门协同提升产出质量(二阶)——活动池中的协同效应提升运营执行和创新产出的效率（取代原COUPLES）。"
+}

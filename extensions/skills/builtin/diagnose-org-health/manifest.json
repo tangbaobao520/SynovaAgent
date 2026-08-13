@@ -1,0 +1,69 @@
+{
+  "name": "diagnose-org-health",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "组织健康扫描",
+  "description": "从信息流密度、激励一致性、信任摩擦、惯例刚性等多维扫描组织健康状况。",
+  "tier": "L3",
+  "complexity": "expert",
+  "expert": "org",
+  "tools": [
+    "compute-information-flow",
+    "compute-incentive-alignment",
+    "compute-trust-friction",
+    "compute-routine-rigidity",
+    "compute-decision-authority",
+    "compute-knowledge-sharing",
+    "cross-validate"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "organizational"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": []
+  },
+  "dependencies": {
+    "skills": [],
+    "edges": [
+      "E-2.2",
+      "E-2.4",
+      "E-2.5",
+      "E-2.6",
+      "E-2.9",
+      "E-2.10"
+    ],
+    "computes": [
+      "COMPUTE-INFORMATION-FLOW-v1",
+      "COMPUTE-INCENTIVE-ALIGNMENT-v1",
+      "COMPUTE-TRUST-FRICTION-v1",
+      "COMPUTE-ROUTINE-RIGIDITY-v1",
+      "COMPUTE-DECISION-AUTHORITY-v1",
+      "COMPUTE-KNOWLEDGE-SHARING-v1"
+    ],
+    "sentinels": [
+      "org-health",
+      "collaboration-health",
+      "key-person-risk"
+    ]
+  },
+  "boundaries": {
+    "prohibitedDimensions": [
+      "financial",
+      "market-pricing",
+      "technology-stack"
+    ],
+    "degradedBehavior": "组织数据采集失败时返回 degraded:true，跳过不可用维度",
+    "preconditions": [
+      "下级L1-L2数据已就绪",
+      "相关compute函数可用",
+      "GraphStore连接正常"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
+}

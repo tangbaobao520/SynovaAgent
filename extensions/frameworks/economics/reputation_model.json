@@ -1,0 +1,33 @@
+{
+  "id": "reputation_model",
+  "name": "声誉博弈",
+  "category": "economics",
+  "coreInsight": "供应商在长期关系中维护声誉的动机远大于单次交易的欺骗诱惑。把大单拆为多次小单+公开评价机制=将一次性博弈转为重复博弈。",
+  "applicableDecisionTypes": [
+    "供应商关系维护",
+    "合作伙伴选择",
+    "长期合同设计"
+  ],
+  "constraintPatterns": [
+    "供应商",
+    "长期",
+    "评价",
+    "声誉",
+    "合作",
+    "博弈",
+    "重复",
+    "信任"
+  ],
+  "applicableRoles": [
+    "供应商关系",
+    "评价管理",
+    "合作策略",
+    "长期采购"
+  ],
+  "limitations": [
+    "声誉建立需要时间——初创期不适用",
+    "评价系统可能被操纵",
+    "行业衰退期声誉约束失效"
+  ],
+  "$id": "framework/economics/reputation_model"
+}

@@ -1,0 +1,14 @@
+{
+  "name": "competitive-intel",
+  "label": "竞争情报数据",
+  "targetNodeType": "Competitive",
+  "mappings": [
+    { "externalField": "市场份额排名", "prop": "market_share_rank", "type": "number" },
+    { "externalField": "份额变动", "prop": "market_share_delta", "type": "number" },
+    { "externalField": "相对增长率", "prop": "relative_growth_rate", "type": "number" },
+    { "externalField": "竞争对手数", "prop": "competitor_count", "type": "number" },
+    { "externalField": "12月新进入者", "prop": "new_entrants_12m", "type": "number" },
+    { "externalField": "HHI变动", "prop": "hhi_delta", "type": "number" },
+    { "externalField": "期间", "prop": "period", "type": "string" }
+  ]
+}

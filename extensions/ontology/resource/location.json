@@ -1,0 +1,1 @@
+{"$id":"resource/location","label":"LOCATION","tags":["resource","physical","operational"],"requiredProps":["name"],"optionalProps":{"location_type":"string","city":"string","region":"string","distance_to_hq_km":"number","person_count":"number","is_primary":"boolean"},"description":"地理位置。企业的物理场所，含人员分布和距离总部的距离。"}

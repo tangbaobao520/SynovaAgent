@@ -1,18 +1,21 @@
+// @deprecated — 能力被I11覆盖，Phase 3上线时删除
 /**
- * sentinel/adapters/integration-health-sentinel.ts — 集成健康哨兵 (D4)
+ * sentinel/adapters/integration-health-sentinel.ts — 集成健康度哨兵 (D4)
  * @state: real
  *
- * 检查 SOG 图中 TOOL 节点间的 edge 连通性。不需要外部连接器——本体层已有集成边数据。
- * 每日9:00巡检。
+ * 检测系统集成的健康状态：MCP 支持度、连接器覆盖率、API 可用性汇总。
+ * 每日 9:00 巡检。数据源: SOG 图节点属性。
  */
-
 import type { Sentinel, SentinelCheckResult, SentinelConfig, SentinelContext, SentinelFinding } from '../types';
-import { createLogger } from '../../logger';
+import { createLogger } from '@synova/logger';
 
-const log = createLogger('sentinel/integration');
+const log = createLogger('sentinel/integration-health');
 
 const config: SentinelConfig = {
-  id: 'sentinel-integration-health', name: '集成健康', description: '系统间集成状态:活跃连接/失败率/数据延迟/集成债务。数据源:SOG图集成边。', category: 'health', priority: 'P0', mode: 'cron', cron: '0 9 * * *', requiredDataSources: ['sog_graph'], confidenceModel: 'deterministic', version: '1.0.0',
+  id: 'sentinel-integration-health', name: '集成健康度',
+  description: '检测系统集成的健康状态: MCP支持/连接器覆盖/API可用汇总。数据源: SOG图。',
+  category: 'health', priority: 'P1', mode: 'cron', cron: '0 9 * * *',
+  requiredDataSources: ['sog_graph'], confidenceModel: 'deterministic', version: '1.0.0',
 };
 
 export const integrationHealthSentinel: Sentinel = {
@@ -21,30 +24,76 @@ export const integrationHealthSentinel: Sentinel = {
     const { now } = context; const checkedAt = now.toISOString(); const startTime = Date.now();
     try {
       const db = context.db as { prepare(sql: string): { all(): Array<Record<string, unknown>> } } | null;
-      if (!db) return { sentinelId: config.id, ok: true, findings: [], durationMs: 0, checkedAt, degraded: true };
-      let toolCount = 0; let edgeCount = 0; let brokenEdges = 0;
+      if (!db) { return { sentinelId: config.id, ok: true, findings: [], durationMs: 0, checkedAt, degraded: true }; }
+
+      let systems: Array<{ id: string; name: string; mcpSupport: string; apiAccess: string; hasConnector: boolean }> = [];
       try {
-        const toolRows = db.prepare("SELECT COUNT(*) as c FROM graph_nodes WHERE type = 'TOOL'").all();
-        toolCount = (toolRows[0]?.c as number) || 0;
-        const edgeRows = db.prepare("SELECT props FROM graph_edges WHERE type = 'INTEGRATES' AND props IS NOT NULL").all();
-        edgeCount = edgeRows.length;
-        for (const r of edgeRows) {
-          const p = typeof r.props === 'string' ? JSON.parse(r.props as string) : (r.props || {});
-          if (p.status === 'broken' || p.status === 'down' || p.health === 'unhealthy' || (p.last_sync && Date.now() - new Date(p.last_sync as string).getTime() > 86400000)) { brokenEdges++; }
+        const rows = db.prepare(
+          "SELECT id, props FROM graph_nodes WHERE (type = 'TOOL' OR type = 'APP' OR type = 'SOFTWARE') AND props IS NOT NULL"
+        ).all();
+        for (const r of rows) {
+          const props = typeof r.props === 'string' ? JSON.parse(r.props as string) : (r.props || {});
+          systems.push({
+            id: r.id as string,
+            name: (props.name || r.id) as string,
+            mcpSupport: (props.mcpSupport || props.mcp || 'none') as string,
+            apiAccess: (props.apiAccess || props.api || 'unknown') as string,
+            hasConnector: !!(props.connector || props.hasConnector),
+          });
         }
-      } catch { /* */ }
+      } catch { return { sentinelId: config.id, ok: true, findings: [], durationMs: Date.now() - startTime, checkedAt, degraded: true }; }
+
+      if (systems.length === 0) {
+        return { sentinelId: config.id, ok: true, findings: [], durationMs: Date.now() - startTime, checkedAt, degraded: false };
+      }
+
+      const mcpReady = systems.filter(s => s.mcpSupport === 'native' || s.mcpSupport === 'official');
+      const apiAccessible = systems.filter(s => s.apiAccess === 'full' || s.apiAccess === 'partial');
+      const connectorCovered = systems.filter(s => s.hasConnector);
+
       const findings: SentinelFinding[] = [];
-      if (toolCount === 0) return { sentinelId: config.id, ok: true, findings: [], durationMs: Date.now() - startTime, checkedAt, degraded: true };
-      const healthRate = edgeCount > 0 ? 1 - brokenEdges / edgeCount : 1;
-      if (healthRate < 0.5) {
-        findings.push({ id: `int-broken-${now.getTime()}`, severity: 'critical', title: `集成健康度严重恶化 (${(healthRate*100).toFixed(0)}%)`, description: `${toolCount}个系统间${edgeCount}条集成边，${brokenEdges}条异常。数据可能在不同系统间断裂。`, evidence: [`工具数: ${toolCount}`, `集成边: ${edgeCount}`, `异常: ${brokenEdges}`], suggestion: '排查异常集成，修复数据同步链路。', detectedAt: checkedAt });
-      } else if (healthRate < 0.8) {
-        findings.push({ id: `int-debt-${now.getTime()}`, severity: 'warning', title: `集成健康度不足 (${(healthRate*100).toFixed(0)}%)`, description: `${brokenEdges}/${edgeCount} 条集成边异常。`, evidence: [`异常集成: ${brokenEdges}`], suggestion: '建立集成监控告警，定期检查同步状态。', detectedAt: checkedAt });
+      const mcpRate = mcpReady.length / systems.length;
+      const apiRate = apiAccessible.length / systems.length;
+
+      // MCP 支持度
+      if (mcpRate < 0.3 && systems.length >= 3) {
+        findings.push({
+          id: `ih-mcp-${now.getTime()}`, severity: 'critical',
+          title: `MCP 支持度低: 仅 ${mcpReady.length}/${systems.length} 有原生 MCP (${(mcpRate * 100).toFixed(0)}%)`,
+          description: `无 MCP 支持的系统: ${systems.filter(s => s.mcpSupport === 'none').map(s => s.name).join(', ')}`,
+          evidence: [`MCP原生: ${mcpReady.length}`, `总系统: ${systems.length}`],
+          suggestion: '无 MCP 的系统需要自建 MCP Server 或使用 API 桥接。优先覆盖高频使用的系统。',
+          detectedAt: checkedAt,
+        });
       }
-      if (toolCount > 3 && edgeCount < toolCount / 2) {
-        findings.push({ id: `int-debt-${now.getTime()}`, severity: 'warning', title: '集成债务: 工具多但集成少', description: `${toolCount}个工具仅${edgeCount}条集成边。大量系统孤立运行，数据分散。`, evidence: [`工具: ${toolCount}`, `集成: ${edgeCount}`, `集成率: ${(edgeCount/toolCount*100).toFixed(0)}%`], suggestion: '优先将高频协作的系统对建立集成。', detectedAt: checkedAt });
+
+      // API 可达率
+      if (apiRate < 0.5 && systems.length >= 3) {
+        findings.push({
+          id: `ih-api-${now.getTime()}`, severity: 'warning',
+          title: `API 可达率低: ${(apiRate * 100).toFixed(0)}% (${apiAccessible.length}/${systems.length})`,
+          description: `API 不可达或未知的系统: ${systems.filter(s => s.apiAccess !== 'full' && s.apiAccess !== 'partial').map(s => s.name).join(', ')}`,
+          evidence: [`API可达: ${apiAccessible.length}`, `总系统: ${systems.length}`],
+          suggestion: '优先为高频系统配置 API 访问。无 API 的系统考虑 RPA 或手动桥接。',
+          detectedAt: checkedAt,
+        });
       }
+
+      // 连接器覆盖率
+      if (systems.length >= 5 && connectorCovered.length < Math.ceil(systems.length * 0.5)) {
+        findings.push({
+          id: `ih-connector-${now.getTime()}`, severity: 'warning',
+          title: `连接器覆盖率不足: ${connectorCovered.length}/${systems.length} (${((connectorCovered.length / systems.length) * 100).toFixed(0)}%)`,
+          description: `缺少连接器的系统: ${systems.filter(s => !s.hasConnector).map(s => s.name).join(', ')}`,
+          evidence: [`已覆盖: ${connectorCovered.length}`, `未覆盖: ${systems.length - connectorCovered.length}`],
+          suggestion: '按优先级列表补齐连接器。先覆盖数据量最大的系统。',
+          detectedAt: checkedAt,
+        });
+      }
+
       return { sentinelId: config.id, ok: true, findings, durationMs: Date.now() - startTime, checkedAt, degraded: false };
-    } catch (err: unknown) { return { sentinelId: config.id, ok: false, findings: [], durationMs: Date.now() - startTime, checkedAt, error: (err as Error)?.message || String(err), degraded: true }; }
+    } catch (err: unknown) {
+      return { sentinelId: config.id, ok: false, findings: [], durationMs: Date.now() - startTime, checkedAt, error: (err as Error)?.message || String(err), degraded: true };
+    }
   },
 };

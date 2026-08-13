@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Synova — Login</title>
+  <link rel="stylesheet" href="/app/css/app.css">
+  <script src="/app/js/auth.js"></script>
+</head>
+<body class="login-page">
+  <div id="toast-container"></div>
+  <div class="login-card">
+    <h1>Synova</h1>
+    <p class="subtitle">Organizational Diagnosis Agent</p>
+
+    <div id="login-error" class="error-message"></div>
+
+    <form id="login-form" onsubmit="return handleLogin(event)">
+      <div class="form-group">
+        <label for="userId">User ID</label>
+        <input type="text" id="userId" name="userId" placeholder="Enter your user ID" required autofocus>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="(optional in demo)" disabled>
+      </div>
+      <div class="form-group">
+        <label for="role">Role</label>
+        <select id="role" name="role">
+          <option value="admin">Admin</option>
+          <option value="manager" selected>Manager</option>
+          <option value="liaison">Liaison</option>
+          <option value="staff">Staff</option>
+          <option value="ga">GA</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="orgId">Organization ID</label>
+        <input type="text" id="orgId" name="orgId" value="default" placeholder="org-id">
+      </div>
+      <button type="submit" id="login-btn" class="btn-primary">
+        <span id="login-btn-text">Sign In</span>
+        <span id="login-spinner" class="spinner"></span>
+      </button>
+    </form>
+  </div>
+
+  <script>
+    // Already-logged-in guard (v1.1)
+    if (typeof isAuthenticated === 'function' && isAuthenticated()) {
+      window.location.replace('/app/dashboard.html');
+    }
+
+    async function handleLogin(event) {
+      event.preventDefault();
+      const errorEl = document.getElementById('login-error');
+      const btn = document.getElementById('login-btn');
+      const btnText = document.getElementById('login-btn-text');
+      const spinner = document.getElementById('login-spinner');
+
+      // Reset error
+      errorEl.classList.remove('visible');
+      errorEl.textContent = '';
+
+      // Loading state
+      btn.disabled = true;
+      btnText.textContent = 'Signing in...';
+      spinner.classList.add('visible');
+
+      const userId = document.getElementById('userId').value;
+      const role = document.getElementById('role').value;
+      const orgId = document.getElementById('orgId').value;
+
+      try {
+        await login(userId, role, orgId);
+        window.location.replace('/app/dashboard.html');
+      } catch (err) {
+        // Error states: network vs auth vs general
+        let message = err.message || 'Login failed';
+        if (err.message === 'Failed to fetch' || err.message.includes('NetworkError')) {
+          message = 'Server unreachable — please check your connection';
+        } else if (err.message.includes('401') || err.message.includes('403')) {
+          message = 'Invalid credentials';
+        } else if (err.message.includes('500')) {
+          message = 'Server error — please try again later';
+        }
+        errorEl.textContent = message;
+        errorEl.classList.add('visible');
+      } finally {
+        btn.disabled = false;
+        btnText.textContent = 'Sign In';
+        spinner.classList.remove('visible');
+      }
+    }
+  </script>
+</body>
+</html>

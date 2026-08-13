@@ -1,0 +1,13 @@
+{
+  "$id": "rule/diagnostic/silo",
+  "name": "部门墙",
+  "type": "rule",
+  "domain": "organizational",
+  "category": "graph_alert",
+  "severity": "high",
+  "description": "Team 间 INTERACTS_WITH 边权 < 0.3，跨部门协作薄弱",
+  "condition": { "nodeType": "Team", "edgeType": "INTERACTS_WITH", "metric": "edge_weight", "operator": "lt", "value": 0.3 },
+  "appliesTo": ["general-enterprise", "saas-tech", "manufacturing", "financial-services"],
+  "cooldownMs": 604800000,
+  "metadata": { "source": "expert_template", "confidence": 0.9, "status": "active" }
+}

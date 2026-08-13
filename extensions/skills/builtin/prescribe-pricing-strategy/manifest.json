@@ -1,0 +1,70 @@
+{
+  "name": "prescribe-pricing-strategy",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "定价策略建议",
+  "description": "基于需求弹性、边际成本和竞争格局生成最优定价策略，覆盖单一定价、二部定价、价格歧视、捆绑和峰时定价。",
+  "tier": "L4",
+  "complexity": "expert",
+  "expert": "marketing",
+  "tools": [
+    "compute-price-elasticity",
+    "compute-marginal-cost",
+    "compute-competitive-positioning",
+    "compute-optimal-price",
+    "compute-two-part-tariff",
+    "compute-price-discrimination",
+    "compute-bundling-optimal",
+    "compute-peak-load-pricing"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "customer",
+        "market"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": []
+  },
+  "dependencies": {
+    "skills": [
+      "analyze-price-elasticity",
+      "analyze-cost-structure",
+      "analyze-competitive-position"
+    ],
+    "edges": [
+      "E-4.1",
+      "E-4.4",
+      "E-3.1"
+    ],
+    "computes": [
+      "COMPUTE-PRICE-ELASTICITY-v2",
+      "COMPUTE-MARGINAL-COST-v1",
+      "COMPUTE-COMPETITIVE-POSITIONING-v1",
+      "COMPUTE-OPTIMAL-PRICE-v1",
+      "COMPUTE-TWO-PART-TARIFF-v1",
+      "COMPUTE-PRICE-DISCRIMINATION-v1",
+      "COMPUTE-BUNDLING-OPTIMAL-v1",
+      "COMPUTE-PEAK-LOAD-PRICING-v1"
+    ],
+    "sentinels": []
+  },
+  "boundaries": {
+    "prohibitedDimensions": [
+      "financial-internal",
+      "organizational",
+      "technology-stack"
+    ],
+    "degradedBehavior": "客户/渠道数据不足时降级为部分报告，标记 degraded:true",
+    "preconditions": [
+      "下级L1-L2数据已就绪",
+      "相关compute函数可用",
+      "GraphStore连接正常"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
+}

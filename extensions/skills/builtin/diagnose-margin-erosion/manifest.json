@@ -1,0 +1,80 @@
+{
+  "name": "diagnose-margin-erosion",
+  "version": "1.0.0",
+  "type": "skill",
+  "displayName": "利润率下降根因分析",
+  "description": "从成本端、收入端、竞争端、结构端四维度定位利润率下降的根本原因，提供干预路径。",
+  "tier": "L3",
+  "complexity": "expert",
+  "expert": "finance",
+  "tools": [
+    "compute-dol",
+    "compute-break-even",
+    "compute-marginal-cost",
+    "compute-fixed-cost-rigidity",
+    "compute-price-elasticity",
+    "compute-competitive-positioning",
+    "cross-validate",
+    "query-graph"
+  ],
+  "entryPoint": "./SKILL.md",
+  "exportKey": "default",
+  "permissions": {
+    "dataAccess": {
+      "dimensions": [
+        "financial"
+      ],
+      "sensitiveAccess": "read"
+    },
+    "crossExpert": [
+      "strategy",
+      "business_model"
+    ]
+  },
+  "dependencies": {
+    "skills": [
+      "analyze-break-even",
+      "analyze-operating-leverage",
+      "analyze-cost-structure",
+      "analyze-price-elasticity",
+      "analyze-competitive-position"
+    ],
+    "edges": [
+      "E-2.1",
+      "E-3.1",
+      "E-4.1",
+      "E-4.4",
+      "E-3.6",
+      "E-X.1"
+    ],
+    "computes": [
+      "COMPUTE-DOL-v2",
+      "COMPUTE-BREAK-EVEN-v1",
+      "COMPUTE-MARGINAL-COST-v1",
+      "COMPUTE-FIXED-COST-RIGIDITY-v1",
+      "COMPUTE-PRICE-ELASTICITY-v2",
+      "COMPUTE-COMPETITIVE-POSITIONING-v1"
+    ],
+    "sentinels": [
+      "margin-health",
+      "sentinel-breakeven",
+      "sentinel-operating-leverage",
+      "sentinel-margin-trend"
+    ]
+  },
+  "boundaries": {
+    "prohibitedDimensions": [
+      "organizational",
+      "technology",
+      "customer-segment"
+    ],
+    "degradedBehavior": "财务数据源不可用或部分边缺失时返回部分指标并标记 degraded:true",
+    "preconditions": [
+      "下级L1-L2数据已就绪",
+      "相关compute函数可用",
+      "GraphStore连接正常"
+    ]
+  },
+  "loading": "on-demand",
+  "lifecycle": "active"
+}

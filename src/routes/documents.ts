@@ -8,7 +8,7 @@
 import { Router, type Request, type Response } from 'express';
 import { KnowledgeStore } from '../agent/knowledge-bridge-service';
 import { getDatabase } from '../init/engine-context';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('routes/documents');
 const router = Router();
@@ -71,6 +71,7 @@ router.post('/api/documents/upload', (req: Request, res: Response) => {
       chunkIds,
     });
   } catch (err: unknown) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "文档检索失败");
     const msg = err instanceof Error ? err.message : String(err);
     res.status(500).json({ ok: false, error: msg });
   }
@@ -97,6 +98,7 @@ router.get('/api/documents/list', (_req: Request, res: Response) => {
 
     res.json({ ok: true, documents: docs, count: docs.length });
   } catch (err: unknown) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "文档存储获取");
     res.json({ ok: true, documents: [], count: 0 });
   }
 });
@@ -128,6 +130,7 @@ router.get('/api/documents/:id', (req: Request, res: Response) => {
       chunks,
     });
   } catch (err: unknown) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "文档检索失败");
     const msg = err instanceof Error ? err.message : String(err);
     res.status(500).json({ ok: false, error: msg });
   }

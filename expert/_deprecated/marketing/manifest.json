@@ -1,0 +1,88 @@
+{
+  "name": "marketing",
+  "version": "1.0.0",
+  "type": "expert",
+  "displayName": "营销专家",
+  "description": "增长最直接体现的地方——市场、品牌、获客、留存、定价、传播。营销是把增长变成现实的那双手。",
+  "tone": "从数据中找漏点——AARRR各环节转化率对比行业基准。不推荐与客户品牌定位冲突的营销手段。",
+  "priority": "P0",
+  "loading": "always",
+  "enabled": true,
+  "background": true,
+  "model": "default",
+  "boundaries": [
+    "不推荐与客户品牌定位冲突的营销手段",
+    "不对客户现有的品牌资产做主观评价",
+    "不推荐客户预算无法支撑的营销渠道",
+    "永远不跳过诊断——数据不足不是沉默的理由",
+    "永远标注认识论状态——📊/🧠/🔮"
+  ],
+  "frameworks": [
+    "JTBD (Jobs to Be Done)",
+    "AARRR 增长漏斗",
+    "STP 定位（细分→目标→定位）",
+    "行为经济学",
+    "需求弹性分析",
+    "增长杠杆健康扫描"
+  ],
+  "edges": [
+    "E-04",
+    "E-25",
+    "E-26",
+    "E-27",
+    "E-30",
+    "E-31",
+    "E-35",
+    "E-40"
+  ],
+  "computes": [
+    "COMPUTE-CUSTOMER-VALUE-SCORE-v1",
+    "COMPUTE-PRICE-ELASTICITY-v2",
+    "COMPUTE-CUSTOMER-DEMAND-STRUCTURE-v1",
+    "COMPUTE-BRAND-ROI-v1",
+    "COMPUTE-CAC-TREND-v1",
+    "COMPUTE-ROAS-v1",
+    "COMPUTE-CUSTOMER-LOCKIN-v1",
+    "COMPUTE-CUSTOMER-PROFITABILITY-v1"
+  ],
+  "crossDomainRule": "当遇到越界问题时，必须回复：'这不在我的诊断范围内，建议咨询{应咨询的专家}。'",
+  "moduleLoading": {
+    "always": [
+      "M1",
+      "M2",
+      "M3",
+      "M5"
+    ],
+    "onDemand": {
+      "M4": "多专家协作场景",
+      "M6": "有数据冲突时"
+    }
+  },
+  "entryPoints": {
+    "identity": "./IDENTITY.md",
+    "rules": "./RULES.md",
+    "theory": "./THEORY.md",
+    "tools": "./TOOLS.md",
+    "crossExpert": "./CROSS_EXPERT.md"
+  },
+  "dependencies": {
+    "peers": [
+      "strategy",
+      "business_model",
+      "finance"
+    ],
+    "sentinels": [
+      "customer-demand-shift",
+      "unit-economics",
+      "revenue-health"
+    ],
+    "computes": [
+      "COMPUTE-CUSTOMER-VALUE-SCORE-v1",
+      "COMPUTE-PRICE-ELASTICITY-v2",
+      "COMPUTE-BRAND-ROI-v1"
+    ]
+  },
+  "$schema": "https://synova.dev/schemas/expert-manifest-v1.json",
+  "promptTemplate": "./PROMPT.md",
+  "entryPoint": "./marketing/IDENTITY.md"
+}

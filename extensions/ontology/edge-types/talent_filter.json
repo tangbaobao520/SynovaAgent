@@ -1,0 +1,16 @@
+{
+  "$id": "edge/talent_filter",
+  "label": "TALENT_FILTER",
+  "tags": ["causal", "first_order", "stage_1"],
+  "allowedFrom": ["pool/governance"],
+  "allowedTo": ["pool/human_capital"],
+  "requiredProps": ["selection_threshold", "filter_criteria"],
+  "optionalProps": {
+    "diversity_target": "number (0-1) — 多样性目标",
+    "cultural_fit_weight": "number (0-1) — 文化匹配权重",
+    "experience_minimum_years": "number — 最低经验年限"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "设定人才准入门槛——治理层决定的人才筛选标准，调节TALENT_ACQUISITION的selection_threshold参数。"
+}

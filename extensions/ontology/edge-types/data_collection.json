@@ -1,0 +1,16 @@
+{
+  "$id": "edge/data_collection",
+  "label": "DATA_COLLECTION",
+  "tags": ["causal", "first_order", "stage_1"],
+  "allowedFrom": ["pool/activity"],
+  "allowedTo": ["pool/data"],
+  "requiredProps": ["collection_coverage", "data_quality", "collection_frequency_days"],
+  "optionalProps": {
+    "data_categories": "array — 采集的数据类别",
+    "automation_level": "number (0-1) — 采集自动化程度",
+    "storage_duration_days": "number — 数据保留天数"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "采集内部经营信息——企业运营活动产生的数据被系统化采集进入企业信息池。"
+}

@@ -1,0 +1,42 @@
+{
+  "$id": "edge/constrains",
+  "label": "CONSTRAINS",
+  "tags": [
+    "causal",
+    "defensive"
+  ],
+  "allowedFrom": [
+    "outcome/external"
+  ],
+  "allowedTo": [
+    "activity/production",
+    "activity/acquisition",
+    "activity/innovation",
+    "activity/coordination",
+    "activity/learning",
+    "activity/governance",
+    "activity/maintenance",
+    "activity/compliance"
+  ],
+  "requiredProps": [
+    "constraint_type",
+    "magnitude"
+  ],
+  "optionalProps": {
+    "constraint_period": "string",
+    "adaptation_required": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    }
+  },
+  "consumed_by_sentinels": [
+    "sentinel-customer-demand-shift",
+    "sentinel-niche-squeeze",
+    "sentinel-environment-rent-dependency",
+    "sentinel-opportunity-window",
+    "sentinel-market-lifecycle",
+    "sentinel-incentive-alignment"
+  ],
+  "description": "外部约束。宏观环境对活动的限制。"
+}

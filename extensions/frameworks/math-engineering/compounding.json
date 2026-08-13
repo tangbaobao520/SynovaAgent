@@ -1,0 +1,32 @@
+{
+  "id": "compounding",
+  "name": "复利效应",
+  "category": "math-engineering",
+  "coreInsight": "微小的持续改进会产生指数级差异。每天进步1%一年后是37.8倍。",
+  "applicableDecisionTypes": [
+    "供应商关系维护",
+    "客户口碑积累",
+    "团队技能建设"
+  ],
+  "constraintPatterns": [
+    "长期",
+    "增长",
+    "积累",
+    "品牌",
+    "复利",
+    "持续",
+    "渐进",
+    "关系"
+  ],
+  "applicableRoles": [
+    "增长负责人",
+    "品牌建设",
+    "客户关系",
+    "团队发展"
+  ],
+  "limitations": [
+    "复利需要足够长的时间窗口",
+    "中间波动可能导致提前放弃"
+  ],
+  "$id": "framework/math-engineering/compounding"
+}

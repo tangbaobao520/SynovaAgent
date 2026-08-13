@@ -1,0 +1,36 @@
+{
+  "id": "confidence_calibration",
+  "name": "置信度校准",
+  "category": "psychology",
+  "coreInsight": "任何判断必须附带显式置信度区间。当无法给出区间估计时，应标注\"置信度未知\"而非隐式假定确定性。精确的错误比模糊的正确更危险。",
+  "applicableDecisionTypes": [
+    "进度估算",
+    "成本预测",
+    "市场预测",
+    "技术选型",
+    "架构评估",
+    "风险量化",
+    "安全审计"
+  ],
+  "constraintPatterns": [
+    "置信度",
+    "区间估计",
+    "不确定性",
+    "概率",
+    "校准",
+    "精确度",
+    "误差范围",
+    "置信区间"
+  ],
+  "applicableRoles": [
+    "风险评估",
+    "预测分析",
+    "安全审计",
+    "决策支持"
+  ],
+  "limitations": [
+    "显式置信度标注有认知成本",
+    "在某些场景下精确的区间估计不可行"
+  ],
+  "$id": "framework/psychology/confidence_calibration"
+}

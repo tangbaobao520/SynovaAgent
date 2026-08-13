@@ -8,7 +8,7 @@
  * 铁律 39: L3 通过 L4 GraphStore 接口访问本体数据。
  */
 
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 import type { GraphStore } from '../l4/graph-bridge';
 
 const log = createLogger('l3/business-model-canvas');

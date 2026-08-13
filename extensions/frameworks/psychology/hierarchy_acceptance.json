@@ -1,0 +1,34 @@
+{
+  "id": "hierarchy_acceptance",
+  "name": "层级接受度",
+  "category": "psychology",
+  "coreInsight": "不同协作环境中层级式决策（自上而下）和扁平式决策（参与协商）的适用性不同。高不确定性+需要快速响应→层级式更高效；高复杂度+需要多视角→扁平式更准确。协作模式必须匹配任务特征而非默认偏好。",
+  "applicableDecisionTypes": [
+    "团队协作",
+    "组织设计",
+    "决策模式",
+    "协作协议"
+  ],
+  "constraintPatterns": [
+    "层级",
+    "扁平",
+    "决策",
+    "协作",
+    "冲突",
+    "共识",
+    "指挥链",
+    "参与"
+  ],
+  "applicableRoles": [
+    "协作模式设计",
+    "组织架构",
+    "决策流程",
+    "团队管理"
+  ],
+  "limitations": [
+    "任务特征和最优协作模式的映射不是精确科学",
+    "成员个体偏好差异大",
+    "混合模式可能增加沟通开销"
+  ],
+  "$id": "framework/psychology/hierarchy_acceptance"
+}

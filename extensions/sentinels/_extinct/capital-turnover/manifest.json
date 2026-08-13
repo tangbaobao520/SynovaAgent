@@ -1,0 +1,45 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "capital-turnover",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "资本周转效率",
+  "description": "F5: 评估资本周转效率——总资产周转率、流动资产周转率、应收周转天数。",
+  "schedule": "0 0 1 * *",
+  "expert": "finance",
+  "priority": "P1",
+  "layer": "capital",
+  "computeKind": "deterministic",
+  "computes": [
+    "asset-turnover",
+    "receivable-turnover"
+  ],
+  "thresholds": {
+    "asset_turnover": {
+      "warning": 0.8,
+      "critical": 0.5
+    },
+    "receivable_turnover_days": {
+      "warning": 60,
+      "critical": 90
+    }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": [
+      "sog_graph"
+    ],
+    "dataAccess": {
+      "allowedDimensions": [
+        "financial"
+      ],
+      "sensitiveAccess": "read"
+    }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "capitalTurnoverSentinel",
+  "auxiliaryExperts": [
+    "strategy"
+  ],
+  "id": "sentinel-capital-turnover"
+}

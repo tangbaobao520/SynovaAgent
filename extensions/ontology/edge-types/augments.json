@@ -1,0 +1,51 @@
+{
+  "$id": "edge/augments",
+  "label": "AUGMENTS",
+  "tags": [
+    "causal",
+    "synergy"
+  ],
+  "allowedFrom": [
+    "resource/money",
+    "resource/person",
+    "resource/team",
+    "resource/tool",
+    "resource/agent",
+    "resource/knowledge",
+    "resource/client",
+    "resource/brand",
+    "resource/data",
+    "resource/location",
+    "resource/supplier"
+  ],
+  "allowedTo": [
+    "resource/money",
+    "resource/person",
+    "resource/team",
+    "resource/tool",
+    "resource/agent",
+    "resource/knowledge",
+    "resource/client",
+    "resource/brand",
+    "resource/data",
+    "resource/location",
+    "resource/supplier"
+  ],
+  "requiredProps": [
+    "synergy_factor"
+  ],
+  "optionalProps": {
+    "cannibalization_risk": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "direction": "string"
+  },
+  "consumed_by_sentinels": [
+    "sentinel-ai-ecosystem-fit",
+    "sentinel-competitive-dynamics",
+    "sentinel-adaptation-velocity"
+  ],
+  "description": "资源增强。资源间的协同增强效应。"
+}

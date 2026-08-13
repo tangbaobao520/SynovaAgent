@@ -12,7 +12,7 @@
  */
 import { SynovaAgent } from './agent/synova-agent';
 import { initEngineContext, getDatabase, closeEngineContext } from './init/engine-context';
-import { logger } from './logger';
+import { logger } from '@synova/logger';
 
 async function main() {
   try {

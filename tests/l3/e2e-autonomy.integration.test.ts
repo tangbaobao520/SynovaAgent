@@ -11,6 +11,7 @@ import type { Server } from 'http';
 import Database from 'better-sqlite3';
 import { initEngineContext } from '../../src/init/engine-context';
 import { SubAgentCoordinator } from '../../src/orchestrator/subagent-coordinator';
+import { getExpertRegistry } from '../../src/l3/expert-registry';
 import { ExpertAutonomyEngine } from '../../src/l3/expert-autonomy';
 import type { LLMClient } from '../../src/orchestrator/diagnosis-orchestrator';
 import type { Evidence } from '../../src/evidence/types';
@@ -84,6 +85,13 @@ afterAll(() => {
 // ═══ E2E Tests ═══
 
 describe('E2E: Phase 2 Expert Autonomy', () => {
+  beforeAll(() => {
+    const registry = getExpertRegistry();
+    for (const t of ['strategy','org','finance','marketing','tech','action','business_model']) {
+      registry.registerDefault(t, `你是${t}专家。\n不可做的事: 不做其他领域分析`);
+    }
+  });
+
   it('Given evidence posted, When /api/test/phase2-autonomy called, Then all 7 experts produce hypotheses through ReAct', async () => {
     // 提供覆盖全部7种 DataAccessPolicy 的证据类型
     const evidence: Evidence[] = [

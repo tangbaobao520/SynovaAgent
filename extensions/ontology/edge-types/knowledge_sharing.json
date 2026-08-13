@@ -1,0 +1,16 @@
+{
+  "$id": "edge/knowledge_sharing",
+  "label": "KNOWLEDGE_SHARING",
+  "tags": ["causal", "second_order", "stage_2"],
+  "allowedFrom": ["pool/knowledge"],
+  "allowedTo": ["pool/knowledge"],
+  "requiredProps": ["sharing_frequency", "knowledge_transfer_effectiveness"],
+  "optionalProps": {
+    "documentation_coverage": "number (0-1) — 文档覆盖率",
+    "mentoring_hours_per_quarter": "number — 师徒指导时间",
+    "tacit_knowledge_loss_rate": "number (0-1) — 隐性知识流失率"
+  },
+  "consumed_by_sentinels": [],
+  "transfer_function": "TBD — to be defined in compute phase",
+  "description": "个体经验转化为团队能力(二阶)——个体知识通过分享机制扩散为团队知识。"
+}

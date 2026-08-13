@@ -2,17 +2,20 @@
  * sentinel/signal-aggregator.ts — 信号聚合引擎 (L3)
  * @state: real
  *
- * 消费 SentinelCheckResult[] → 交叉关联 → 严重度升级 → 专家路由。
+ * 消费 SentinelCheckResult[] → 交叉关联 → 严重度升级 → 专家路由 → 飞轮聚合。
  *
  * 手册 §7.4: "三个信号指向同一团队——这不是噪音，是这个团队要出问题"
  * 手册 §8.2: 信号→专家映射为预定义规则，不是 LLM 判断
+ *
+ * V4.2.7 / Phase 7: 集成飞轮聚合引擎，输出三飞轮转速+瓶颈。
+ * 飞轮数据嵌入诊断报告，供 L1 交互层渲染 CEO 仪表盘。
  *
  * 铁律 24: 每个 catch 带 log.warn/error + degraded
  * 铁律 31: degraded 信号传播到调用链顶端
  */
 
 import type { SentinelFinding, SentinelCheckResult } from './types';
-import { createLogger } from '../logger';
+import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/signal-aggregator');
 
@@ -123,17 +126,18 @@ export function aggregateSignals(
 
     // 3. 严重度升级
     let severity: 'critical' | 'warning' | 'info' = 'info';
-    const maxSourceSeverity = items.reduce((max, i) => {
-      const order = { critical: 3, warning: 2, info: 1 };
-      return order[i.finding.severity] > order[max] ? i.finding.severity : max;
-    }, 'info' as 'critical' | 'warning' | 'info');
+    const sevOrder: Record<string, number> = { emergency: 4, critical: 3, warning: 2, info: 1 };
+    const maxSourceSeverity = items.reduce<'critical' | 'warning' | 'info'>((max, i) => {
+      const cur = sevOrder[i.finding.severity] || 1;
+      return cur > (sevOrder[max] || 1) ? (i.finding.severity as 'critical' | 'warning' | 'info') : max;
+    }, 'info');
 
     if (distinctSentinels >= ESCALATION_RULES.crossSentinelCritical) {
       severity = 'critical';
     } else if (distinctSentinels >= ESCALATION_RULES.crossSentinelWarning && maxSourceSeverity === 'warning') {
       severity = 'critical'; // 多哨兵 warning → 升级为 critical
     } else {
-      severity = maxSourceSeverity;
+      severity = maxSourceSeverity as 'critical' | 'warning' | 'info';
     }
 
     signals.push({
@@ -180,9 +184,9 @@ function extractEntityKey(finding: SentinelFinding): string {
 
 /** 从哨兵 ID 推断类别 */
 function inferCategory(sentinelId: string): string {
-  if (sentinelId.includes('htm') || sentinelId.includes('hacd') || sentinelId.includes('hona') || sentinelId.includes('self-awareness')) return 'collaboration';
-  if (sentinelId.includes('gap') || sentinelId.includes('cpc') || sentinelId.includes('path') || sentinelId.includes('eob') || sentinelId.includes('token')) return 'capability';
-  if (sentinelId.includes('seven-powers')) return 'strategy';
+  // V4.2.4: htm/hacd/hona/self-awareness 已删除
+  if (sentinelId.includes("gap") || sentinelId.includes("cpc") || sentinelId.includes("path") || sentinelId.includes("token")) return "capability";
+  // V4.2.4: seven-powers 已删除
   if (sentinelId.includes('key-person') || sentinelId.includes('risk')) return 'risk';
   return 'health';
 }

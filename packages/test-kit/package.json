@@ -22,7 +22,6 @@
     "@synova/sog-core": "file:../sog-core",
     "@synova/logger": "file:../logger",
     "@synova/error-types": "file:../error-types",
-    "@synova/diagnosis-engine": "file:../diagnosis-engine",
     "@synova/connector-registry": "file:../connector-registry",
     "@synova/extension-registry": "file:../extension-registry",
     "@synova/engine-auth": "file:../engine-auth"

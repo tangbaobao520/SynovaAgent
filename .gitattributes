@@ -1,0 +1,6 @@
+# D296 (L3-2): 控制塔运行时生成物 — linguist-generated 标记
+# 防止 PR 审查时误入代码 diff
+.codex/signals/** linguist-generated=true
+.codex/snapshots/** linguist-generated=true
+.codex/checkpoints/** linguist-generated=true
+.codex/dependency-graph.json linguist-generated=true

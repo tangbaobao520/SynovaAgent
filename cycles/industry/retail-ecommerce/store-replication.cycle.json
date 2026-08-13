@@ -1,0 +1,35 @@
+{
+  "cycleId": "store-replication",
+  "name": "门店复制循环",
+  "description": "零售电商行业特有的门店复制扩张循环。单店模型验证成功后进入复制阶段，覆盖新区域，规模效应降低单位成本。",
+  "version": "1.0.0",
+  "applicableIndustries": ["retail-ecommerce"],
+  "nodes": [
+    { "id": "pilot", "label": "单店验证", "type": "stock", "initialValue": 1, "unit": "店", "edgeRefs": ["E-1.1"] },
+    { "id": "replication", "label": "门店复制", "type": "flow", "initialValue": 2, "unit": "店/年", "edgeRefs": ["E-1.6"] },
+    { "id": "coverage", "label": "区域覆盖", "type": "stock", "initialValue": 2, "unit": "城市", "edgeRefs": ["E-4.3"] },
+    { "id": "scaleEfficiency", "label": "规模效率", "type": "parameter", "initialValue": 0.85, "unit": "指数", "edgeRefs": ["E-1.8"] }
+  ],
+  "edges": [
+    { "from": "pilot", "to": "replication", "polarity": "+", "delay": 2, "weight": 0.9 },
+    { "from": "replication", "to": "coverage", "polarity": "+", "delay": 1, "weight": 1.0 },
+    { "from": "coverage", "to": "scaleEfficiency", "polarity": "+", "delay": 3, "weight": 0.6 },
+    { "from": "scaleEfficiency", "to": "replication", "polarity": "+", "delay": 2, "weight": 0.5 }
+  ],
+  "overflowFormula": {
+    "condition": "replication.currentValue > coverage.currentValue * 2",
+    "targetNode": "replication",
+    "formula": "replication.currentValue * 0.5",
+    "minDataMaturity": "medium"
+  },
+  "dataMaturity": "medium",
+  "mapping": [
+    { "nodeId": "pilot", "edgeId": "E-1.1", "weight": 0.8 },
+    { "nodeId": "replication", "edgeId": "E-1.6", "weight": 0.7 },
+    { "nodeId": "coverage", "edgeId": "E-4.3", "weight": 0.6 },
+    { "nodeId": "scaleEfficiency", "edgeId": "E-1.8", "weight": 0.9 }
+  ],
+  "crossCyclePropagation": [
+    { "targetCycleId": "cash-cycle", "viaEdge": "coverage→revenue", "strength": 0.5 }
+  ]
+}
