@@ -1,0 +1,17 @@
+{
+  "component": "self-health",
+  "status": "yellow",
+  "timestamp": "2026-08-13T17:11:52+00:00",
+  "dimensions": {
+    "gates": "healthy",
+    "signals": "healthy",
+    "logs": "warn",
+    "resource": "unknown",
+    "version": "healthy"
+  },
+  "versionConsistency": {
+    "mismatches": []
+  },
+  "degradedSince": "",
+  "lastHealthyAt": ""
+}

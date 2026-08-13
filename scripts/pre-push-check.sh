@@ -1,16 +1,21 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loop Engineering V4.5.1+D311 — pre-push (secrets + golden-case + vitest 改基 + 并行协调)
+# Loop Engineering V4.7.6+D334 — pre-push (同步检查 + secrets + golden-case + vitest 改基 + 并行协调)
 #
 # 设计原则:
 #   - pre-commit 已跑 12 组物理阻断 + 格式检查 → 不重复
 #   - PostToolUse 已跑 tsc --incremental + vitest --related → 不重复
 #   - push 的独特风险: API key 泄露到 GitHub + 全量回归遗漏 + 黄金诊断无声退化
-#     + 并行 session 中间态污染 (D311 改基: vitest 只测 origin..HEAD)
+#     + 并行 session 中间态污染 (D311 改基: vitest 只测本次推送提交)
 #   - V4.5.1 新增: vitest --changed 作为 push 时的增量回归检查
 #   - D300 新增: golden-case F1 门禁 (权威文档09 §5.2 + A线 C-G1 修复)
-#   - D311 新增: 门禁 3 改基 (origin/feat/prompt-architecture..HEAD) +
-#     门禁 4 工作区中间态警告 + 门禁 5 并行声明物理验证 (verify-parallel.sh)
+#   - D311 新增: 门禁 3 改基 + 门禁 4 工作区中间态警告 + 门禁 5 并行声明物理验证
+#   - D334 新增: 门禁 0 多机同步检查 (push 前强制 fetch + 落后/分叉阻断 + main 保护)。
+#     事故: 2026-08-11~13 双机同一分支交替 push，Mac tracking ref 过期 4 天，
+#     git status 误报 ahead 实际落后 11 commit——双机互不知情险些互相覆盖。
+#     (详见 docs/synova/coordination/MULTI-MACHINE-PR-WORKFLOW.md)
+#   - D334 修复: 门禁 3 改基从硬编码 origin/feat/prompt-architecture 改为动态
+#     $PUSH_REMOTE/<被 push 分支>——PR 工作流下每台机器分支名不同，硬编码失效。
 #   - secrets 终扫是最后防线 — 一旦 key 推到 GitHub, 轮换成本极高
 #
 # 删除的 5 道门去哪了:
@@ -23,6 +28,87 @@ set -euo pipefail
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; RESET='\033[0m'
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# ═══ D334: push 上下文解析 (hook 传参 + stdin refs) ═══
+# pre-push hook 调用: bash pre-push-check.sh <remote-name> <remote-url>
+# stdin: 每行 "<local_ref> <local_sha> <remote_ref> <remote_sha>"
+# 兼容: 无参调用(测试/手动)时 REFS_INPUT 为空 → 同步检查 fail-open 显式提示。
+PUSH_REMOTE="${1:-}"
+PUSH_URL="${2:-}"
+REFS_INPUT="$(cat 2>/dev/null || true)"
+# 取第一个 refs/heads/* 作为本次 push 的目标分支（多 ref push 时逐个由 hook 层保证；
+# 本脚本取首个分支 ref 用于门禁 0/3 的动态改基）
+PUSH_BRANCH_REF="$(printf '%s\n' "$REFS_INPUT" | awk '$3 ~ /^refs\/heads\// {print $3; exit}')"
+PUSH_BRANCH="${PUSH_BRANCH_REF#refs/heads/}"
+if [[ -z "$PUSH_REMOTE" ]]; then
+  # hook 未传参（旧 hook 格式/手动运行）→ 从本地 remote 兜底
+  PUSH_REMOTE="$(git remote 2>/dev/null | head -1 || echo '')"
+fi
+
+# ═══ D334: 门禁 0 多机同步检查 (push 前强制 fetch + 落后/分叉阻断 + main 保护) ═══
+# 规则:
+#   0-1 push 前强制 fetch 目标分支:
+#       落后(远端有新 commit) → 🔴 硬阻断 (提示 pull/rebase)
+#       分叉(双向都有新 commit) → 🔴 硬阻断 (提示 rebase, 禁 force push)
+#       仅本地领先 → 放行
+#   0-2 refs/heads/main 直接 push → 🔴 硬阻断 (main 只进 PR)。
+#       紧急逃生舱: SYNO_ALLOW_MAIN_PUSH=1 (需创始人批准, 记 bypass.log)
+# 降级: fetch 失败(离线/bare/无权限) → fail-open 显式提示 (不静默跳过; 铁律 11)
+# 测试注入: SYNO_SYNC_ONLY=1 只跑本检查 (push-sync-guard.test.sh 隔离单测)
+
+check_push_sync() {
+  local behind="0" ahead="0" fremote="$1" fbranch="$2"
+  [[ -z "$fbranch" ]] && fbranch="$PUSH_BRANCH"
+
+  # 0-2: main 保护 (本地判定零成本, 先于网络操作)
+  if [[ "$PUSH_BRANCH_REF" == "refs/heads/main" ]] || [[ "$fbranch" == "main" ]]; then
+    if [[ "${SYNO_ALLOW_MAIN_PUSH:-}" != "1" ]]; then
+      echo -e "  ${RED}❌ 门禁 0-2: 禁止直接 push main — main 只进 PR${RESET}"
+      echo "  正确流程: push 自己的 feat/ 分支 → 开 PR → 创始人在 GitHub 点 Merge。"
+      echo "  紧急逃生舱(需创始人批准): SYNO_ALLOW_MAIN_PUSH=1 git push ... (记 bypass.log)"
+      return 1
+    fi
+    echo -e "  ${YELLOW}⚠️  门禁 0-2: SYNO_ALLOW_MAIN_PUSH=1 逃生舱生效 — 直推 main (已记 bypass.log)${RESET}"
+  fi
+
+  # 0-1: fetch 目标分支对比同步状态
+  if [[ -z "$fremote" || -z "$fbranch" || -z "$PUSH_BRANCH_REF" ]]; then
+    echo -e "  ${YELLOW}⚠️  门禁 0-1: 无法确定 push 目标 (remote=$fremote branch=$fbranch) — 跳过 (fail-open)${RESET}"
+    return 0
+  fi
+  if ! git fetch "$fremote" "$fbranch" --quiet 2>/dev/null; then # swallow-ok: fetch 失败走 fail-open 显式提示降级 (铁律 11)
+    echo -e "  ${YELLOW}⚠️  门禁 0-1: fetch $fremote $fbranch 失败 — 同步检查跳过 (fail-open)${RESET}"
+    return 0
+  fi
+  behind="$(git rev-list --count HEAD..FETCH_HEAD 2>/dev/null | tr -d '\n\r' || echo "0")"
+  ahead="$(git rev-list --count FETCH_HEAD..HEAD 2>/dev/null | tr -d '\n\r' || echo "0")"
+  [[ -z "$behind" ]] && behind="0"
+  [[ -z "$ahead" ]] && ahead="0"
+  if [[ "$behind" -gt 0 && "$ahead" -gt 0 ]]; then
+    echo -e "  ${RED}❌ 门禁 0-1: 本地与远端分叉 — 本地领先 $ahead / 落后 $behind${RESET}"
+    echo "  禁止直接 push (会覆盖对方工作) 也禁止 force push。先集成远端:"
+    echo "    git rebase $fremote/$fbranch   # 或 git merge $fremote/$fbranch"
+    return 1
+  fi
+  if [[ "$behind" -gt 0 ]]; then
+    echo -e "  ${RED}❌ 门禁 0-1: 远端有 $behind 个本机没有的 commit — 本地已过期${RESET}"
+    echo "  注意: git status 的 ahead 是相对本机缓存的远端引用, 不是远端真身。"
+    echo "  先拉平再 push:"
+    echo "    git pull --ff-only   # 或 git rebase $fremote/$fbranch"
+    return 1
+  fi
+  echo -e "  ${GREEN}✅ 门禁 0-1: 与远端同步 (本地领先 $ahead)${RESET}"
+  return 0
+}
+
+# 测试注入: 只跑同步检查 (push-sync-guard.test.sh 隔离单测)
+if [[ "${SYNO_SYNC_ONLY:-}" == "1" ]]; then
+  set +e
+  check_push_sync "$PUSH_REMOTE" "$PUSH_BRANCH"
+  EC=$?
+  set -e
+  exit "$EC"
+fi
 
 # ═══ D319: VERSION.md 最新版本必须有对应 tag ═══
 # 版本事实与 git 对齐: bump 与代码同 commit（VERSION.md 规则），tag 由
@@ -108,6 +194,14 @@ echo "  Loop Engineering V4.5.1 — pre-push (secrets + golden-case + vitest)"
 echo "═══════════════════════════════════════════════════════════"
 echo ""
 
+# ═══ 门禁 0: 多机同步检查 (D334 — push 前强制 fetch + 落后/分叉检测 + main 保护) ═══
+echo -e "${CYAN}── 多机同步检查 (D334) ─────────────────────────────${RESET}"
+if ! check_push_sync "$PUSH_REMOTE" "$PUSH_BRANCH"; then
+  echo ""
+  echo -e "  ${RED}❌ 多机同步检查未通过 — 推送已拒绝 (D334)${RESET}"
+  exit 1
+fi
+
 # ═══ 门禁 1: secrets 终扫 ═══
 echo -e "${CYAN}── secrets 终扫 (最后防线) ───────────────────────────${RESET}"
 bash "$SCRIPT_DIR/check-secrets.sh" || {
@@ -137,17 +231,25 @@ if ! bash "$SCRIPT_DIR/ci/diagnosis-quality-check.sh"; then
   exit 1
 fi
 
-# ═══ 门禁 3: vitest 改基增量回归 (D311 M1 — 只测本次推送提交) ═══
+# ═══ 门禁 3: vitest 改基增量回归 (D311 M1 — 只测本次推送提交; D334 动态改基) ═══
 # D300 事故: 并行 session 的工作区中间态让 vitest --changed 退化成全量且失败。
-# D311 改基: 用 origin/feat/prompt-architecture..HEAD 只测本次推送的提交，
-# 不测工作区杂散变更。
+# D311 改基: 用远端引用..HEAD 只测本次推送的提交，不测工作区杂散变更。
+# D334 修复: BASE_REF 从硬编码 origin/feat/prompt-architecture 改为
+#   $PUSH_REMOTE/$PUSH_BRANCH——PR 工作流下每台机器分支名不同, 硬编码失效。
 echo ""
-echo -e "${CYAN}── vitest 改基增量回归 (D311, origin..HEAD) ──────────${RESET}"
-BASE_REF="origin/feat/prompt-architecture"
-if ! git rev-parse --verify "$BASE_REF" > /dev/null 2>&1; then
-  # 远程引用缺失 → 降级提示 + 用 HEAD^ 兜底（fail-open，不静默）
-  echo -e "  ${YELLOW}⚠️  远程分支引用缺失 ($BASE_REF) — 尝试 git fetch 或用 HEAD^ 兜底${RESET}"
-  git fetch origin 2>/dev/null || true
+echo -e "${CYAN}── vitest 改基增量回归 (D311+D334, $PUSH_REMOTE/$PUSH_BRANCH..HEAD) ──${RESET}"
+BASE_REF=""
+if [[ -n "$PUSH_REMOTE" && -n "$PUSH_BRANCH" ]]; then
+  BASE_REF="$PUSH_REMOTE/$PUSH_BRANCH"
+fi
+if [[ -z "$BASE_REF" ]] || ! git rev-parse --verify "$BASE_REF" > /dev/null 2>&1; then
+  # 远程引用缺失 → 降级提示 + 尝试 fetch + HEAD^ 兜底（fail-open，不静默）
+  echo -e "  ${YELLOW}⚠️  远程分支引用缺失 (${BASE_REF:-<none>}) — 尝试 git fetch 或 HEAD^ 兜底${RESET}"
+  if [[ -n "$PUSH_REMOTE" && -n "$PUSH_BRANCH" ]]; then
+    git fetch "$PUSH_REMOTE" "$PUSH_BRANCH" 2>/dev/null || true
+  else
+    git fetch origin 2>/dev/null || true
+  fi
   BASE_REF="HEAD^"
 fi
 UNPUSHED=$(git rev-list --count "$BASE_REF..HEAD" 2>/dev/null || echo "0")

@@ -48,6 +48,14 @@
 Step 5 WIRE CHECK 是硬门禁：`grep -rn "新函数名" src/` — 零结果 = 未完成。
 历史：4 次接线失败（组件通过单元测试但从未被生产代码调用）。
 
+**铁律 0-3. 多机 PR 工作流（D334，2026-08-14 创始人定）。**
+main 是唯一真相。一人一事一分支。合并走 PR。禁止直接 push main（pre-push 门禁 0-2 硬阻断）。
+开工前必须 `git fetch --all && git pull --ff-only`；禁止在 `[behind N]` 状态开工或 push
+（门禁 0-1 硬阻断）。禁止 force push 共享分支。规范全文:
+`docs/synova/coordination/MULTI-MACHINE-PR-WORKFLOW.md`；skill: `git-sync-pr`。
+历史：2026-08-11~13 双机同分支交替 push，Mac tracking ref 过期 4 天误报 ahead、实际落后
+11 commit，险些互相覆盖。
+
 ### 一、接线铁律
 
 **铁律 1. 垂直切片交付。** 按用户可见的行为拆，不按技术层拆。
