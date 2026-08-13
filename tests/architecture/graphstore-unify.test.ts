@@ -85,9 +85,8 @@ describe("D286 GraphStore 统一 — 配置零映射 (DS1)", () => {
 });
 
 describe("D286 GraphStore 统一 — 调用点迁移 (DS3)", () => {
-  it("14 个 src 调用点全部改用 SqliteGraphStore", () => {
+  it("12 个 src 调用点全部改用 SqliteGraphStore", () => {
     const callSites = [
-      "src/adapters/engine-core-adapter.ts",
       "src/agent/conversation-engine.ts",
       "src/deploy/bootstrap.ts",
       "src/ingest/index.ts",
@@ -111,8 +110,8 @@ describe("D286 GraphStore 统一 — 调用点迁移 (DS3)", () => {
         expect(content.includes(PACKAGE_REF)).toBe(false);
       }
     }
-    // 断言数量：13 个调用点 + 每个不含旧包引用
-    expect(callSites.length).toBeGreaterThanOrEqual(13);
+    // 断言数量：12 个调用点 + 每个不含旧包引用
+    expect(callSites.length).toBeGreaterThanOrEqual(12);
   });
 
   it("2 个 l4 测试改用原生 SqliteGraphStore", () => {

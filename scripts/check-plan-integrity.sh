@@ -24,7 +24,7 @@ if [ ! -f "$PLAN_FILE" ]; then
 fi
 
 # ═══ 1. principles 非空 — Q1b 是否回答了 ═══
-PRINCIPLES=$(python -c "
+PRINCIPLES=$(python3 -c "
 import json
 p = json.load(open('$PLAN_FILE', encoding='utf-8'))
 principles = p.get('principles', [])
@@ -51,7 +51,7 @@ else
 fi
 
 # ═══ 2. approach = rewrite/reuse — Q2 是否回答了 ═══
-APPROACH=$(python -c "import json; print(json.load(open('$PLAN_FILE', encoding='utf-8')).get('approach',''))" 2>/dev/null)
+APPROACH=$(python3 -c "import json; print(json.load(open('$PLAN_FILE', encoding='utf-8')).get('approach',''))" 2>/dev/null) # swallow-ok: plan.json 解析失败降级为空，调用方判断 approach
 if [ -z "$APPROACH" ] || [ "$APPROACH" = "None" ]; then
   echo -e "  ${RED}❌ plan.approach 为空 — Q2 未回答重写还是复用  [硬阻断]${RESET}"
   HARD_FAIL=$((HARD_FAIL + 1))
@@ -70,7 +70,7 @@ else
 fi
 
 # ═══ 3. memory_refs 的每个文件存在 — Q1a 是否真实 ═══
-MEMORY_REFS=$(python -c "
+MEMORY_REFS=$(python3 -c "
 import json, os
 p = json.load(open('$PLAN_FILE', encoding='utf-8'))
 refs = p.get('memory_refs', [])
@@ -92,7 +92,8 @@ fi
 
 # ═══ 4. 模板残留检查 — brief 是否认真填了 ═══
 if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
-  TEMPLATE_RESIDUE=$(grep -c '<!--' "$BRIEF" 2>/dev/null | tr -d '\r\n' || echo 0)
+  # #CRITERIA 注释行是必填产物（pre-commit G10 + hook-block-write CP1 + pre-doc-audit CP2 消费），非模板残留 — 排除后再计数
+  TEMPLATE_RESIDUE=$(grep '<!--' "$BRIEF" 2>/dev/null | grep -vc '#CRITERIA' | tr -d '\r\n' || echo 0)
   TEMPLATE_RESIDUE=${TEMPLATE_RESIDUE//[!0-9]/}
   if [ "${TEMPLATE_RESIDUE:-0}" -gt 0 ]; then
     echo -e "  ${RED}❌ brief 模板残留: 发现 ${TEMPLATE_RESIDUE} 处未填注释 (<!--)  [硬阻断]${RESET}"
@@ -111,8 +112,8 @@ if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
       BAD=""
       while IFS= read -r line; do
         [ -z "$line" ] && continue
-        # 排除项必须包含文件扩展名（.ts/.sh/.json/.py/.md）或完整路径
-        if ! echo "$line" | grep -qiE '(\.ts|\.sh|\.json|\.py|\.md|\.yaml|/\S+)' 2>/dev/null; then
+        # 排除项必须包含文件扩展名（.ts/.sh/.json/.py/.md/.yaml）或完整路径（/\S* 兼容 src/ 尾斜杠目录路径）
+        if ! echo "$line" | grep -qiE '(\.ts|\.sh|\.json|\.py|\.md|\.yaml|/\S*)' 2>/dev/null; then
           BAD="${BAD}  ${line}\n"
         fi
       done <<< "$EXCLUDED"

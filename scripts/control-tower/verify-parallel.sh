@@ -145,7 +145,11 @@ elif [ "$MODE" = "today" ]; then
     echo "  ✅ 今日无 dev doc — 跳过"
     exit 0
   fi
-  mapfile -t DOC_ARR <<< "$DOCS"
+  # bash 3.2 兼容: 数组批量读入命令是 bash 4.0+ 专属，Mac 默认 3.2 无此命令
+  DOC_ARR=()
+  while IFS= read -r doc_line || [ -n "$doc_line" ]; do
+    [ -n "$doc_line" ] && DOC_ARR+=("$doc_line")
+  done <<< "$DOCS"
   for ((i = 0; i < ${#DOC_ARR[@]}; i++)); do
     for ((j = i + 1; j < ${#DOC_ARR[@]}; j++)); do
       compare_docs "${DOC_ARR[$i]}" "${DOC_ARR[$j]}" || BLOCKED=1

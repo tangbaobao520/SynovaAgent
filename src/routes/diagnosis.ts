@@ -6,7 +6,7 @@
  * POST /api/diagnosis/consult/:id/interrupt → 中断诊断
  *
  * 铁律 39: L1 通过 DiagnosisEngine 接口调用引擎，不直接 import engine-core。
- * D10: engine-core 退役 — 直接使用 SynovaDiagnosisEngineImpl。EngineCoreVendorAdapter 已 @deprecated。
+ * D10: engine-core 退役 — 使用 SynovaDiagnosisEngineImpl 自研引擎。
  */
 import { Router, type Request, type Response } from 'express';
 import { createProvider } from '../providers';

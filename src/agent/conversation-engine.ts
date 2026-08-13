@@ -751,7 +751,7 @@ import type { DiagnosisEngine } from '../l2-interfaces/diagnosis-engine';
 function createNoopEngine(): DiagnosisEngine {
   return {
     async runConsultation(_teamId, _initiator, onEvent) {
-      onEvent?.({ type: 'error', phase: 0, label: '引擎未配置', message: 'DiagnosisEngine 未注入 — 请在 server.ts 中配置 EngineCoreVendorAdapter' });
+      onEvent?.({ type: 'error', phase: 0, label: '引擎未配置', message: 'DiagnosisEngine 未注入 — 请使用 createSynovaDiagnosisEngine 配置引擎' });
       return { teamId: _teamId, report: { error: '引擎未配置' }, totalDurationMs: 0, degradedModules: ['engine'] };
     },
   };

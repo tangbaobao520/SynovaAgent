@@ -31,53 +31,45 @@ else
 fi
 
 # ═══ Question 2: Any blocked commits? ═══
+# D317: engine-core 退役 — SOG-001 (graph-store 硬删除门禁) 已随包删除，此检查作废
 BLOCKED=""
-# engine-core SOG-001
-if [ -f "$ROOT/packages/engine-core/src/pipeline/diagnosis/graph-store.ts" ]; then
-  if grep -q "DELETE FROM graph_nodes" "$ROOT/packages/engine-core/src/pipeline/diagnosis/graph-store.ts" 2>/dev/null; then
-    BLOCKED="${BLOCKED}SOG-001 "
-  fi
-fi
 
 if [ -n "$BLOCKED" ]; then
   echo -e "  ${RED}Q2: Any blocked commits? → YES: ${BLOCKED}${RESET}"
   echo -e "  ${RED}   → Unblock by fixing the commit gate, then commit.${RESET}"
-  PRIORITY+=("🔴 P0: Unblock ${BLOCKED}→ fix engine-core pre-commit violations → commit SOG-001")
+  PRIORITY+=("🔴 P0: Unblock ${BLOCKED}→ fix pre-commit violations → commit")
 else
   echo -e "  ${GREEN}Q2: Any blocked commits? → NO${RESET}"
 fi
 
-# ═══ Question 3: Critical bugs in vendor? ═══
-# SOG-002: 多租户隔离缺失 (queryTriples 无 graph guard → 已修复 2026-06-05)
-# SOG-003: 空 catch 吞异常 (llm-client.ts 熔断器 → 已修复 2026-06-05)
-# SOG-004: GraphStore 接口 graph? 误导 (已添加文档注释 2026-06-05)
+# ═══ Question 3: Silent error swallow / destructive SQL? ═══
+# D317: engine-core 退役 — 原 vendor 扫描指向已删包，改扫当前代码库 (src/ + packages/)
 VENDOR_CRITICAL=0
-# Check: Any remaining empty catch blocks in vendor that silently swallow errors
-EMPTY_CATCHES=$(grep -rn "\.catch(() => {})" "$ROOT/packages/engine-core/src/" --include="*.ts" 2>/dev/null | grep -v "\.test\." | wc -l | tr -d '[:space:]') || true
+# Check: Any remaining empty catch blocks that silently swallow errors
+EMPTY_CATCHES=$(grep -rn "\.catch(() => {})" "$ROOT/src/" "$ROOT/packages/" --include="*.ts" 2>/dev/null | grep -v "\.test\." | wc -l | tr -d '[:space:]') || true
 VENDOR_CRITICAL=$((VENDOR_CRITICAL + ${EMPTY_CATCHES:-0}))
 # Check: Any hard deletes (physical DELETE FROM)
-HARD_DELETES=$(grep -rn "DELETE FROM" "$ROOT/packages/engine-core/src/" --include="*.ts" 2>/dev/null | grep -v "\.test\." | wc -l | tr -d '[:space:]') || true
+HARD_DELETES=$(grep -rn "DELETE FROM" "$ROOT/src/" "$ROOT/packages/" --include="*.ts" 2>/dev/null | grep -v "\.test\." | wc -l | tr -d '[:space:]') || true
 VENDOR_CRITICAL=$((VENDOR_CRITICAL + ${HARD_DELETES:-0}))
 
 if [ "$VENDOR_CRITICAL" -gt 0 ]; then
-  echo -e "  ${YELLOW}Q3: Critical bugs in vendor? → ${VENDOR_CRITICAL} items${RESET}"
-  echo -e "  ${YELLOW}     Anthropic rule: vendor bugs = product bugs. No deferring.${RESET}"
-  PRIORITY+=("🟡 P1: engine-core ${VENDOR_CRITICAL} Critical/High items — start with SOG-002 (多租户)")
+  echo -e "  ${YELLOW}Q3: Silent failures? → ${VENDOR_CRITICAL} items${RESET}"
+  echo -e "  ${YELLOW}     Errors swallowed without log. Degraded mode invisible.${RESET}"
+  PRIORITY+=("🟡 P1: 当前代码库 ${VENDOR_CRITICAL} 处空 catch/硬删除")
 else
-  echo -e "  ${GREEN}Q3: Critical bugs in vendor? → 0${RESET}"
+  echo -e "  ${GREEN}Q3: Silent failures? → 0${RESET}"
 fi
 
 # ═══ Question 4: User-visible gaps? ═══
-# Check if FederalReporter is instantiated/called anywhere (not just defined)
-FED_DEFINED=$(grep -rn "class FederalReporter\|export class FederalReporter" "$ROOT/packages/engine-core/src/" --include="*.ts" 2>/dev/null | wc -l | tr -d '[:space:]') || FED_DEFINED=0
-FED_CALLED=$(grep -rn "new FederalReporter\|FederalReporter(" "$ROOT/src/" "$ROOT/packages/" --include="*.ts" 2>/dev/null | grep -v "federal-reporter.ts" | grep -v "\.test\." | wc -l | tr -d '[:space:]') || FED_CALLED=0
-# Defined but never called = unwired
+# D317: engine-core 退役 — FederalReporter 已迁移至 src/adapters/federal-adapter.ts
+# 检查联邦进化适配器是否被生产代码调用 (bootstrap.ts 注入)
+FED_CALLED=$(grep -rn "initFederalReporter" "$ROOT/src/" --include="*.ts" 2>/dev/null | grep -v "\.test\." | grep -v "federal-adapter.ts" | wc -l | tr -d '[:space:]') || FED_CALLED=0
 FED_WIRED=$FED_CALLED
 
 if [ "${FED_WIRED:-0}" -eq 0 ]; then
   echo -e "  ${YELLOW}Q4: User-visible gaps? → YES: Federal evolution offline${RESET}"
-  echo -e "  ${YELLOW}     100% code, 0% function. 差分隐私+AES+RSA 全部造好, 从未启动.${RESET}"
-  PRIORITY+=("🟡 P1: FED-001 联邦进化接线 → server.ts 启动 FederalReporter → diagnosis 钩子")
+  echo -e "  ${YELLOW}     initFederalReporter() 已定义但未在启动链中调用。${RESET}"
+  PRIORITY+=("🟡 P1: FED-001 联邦进化接线 → bootstrap.ts 启动 initFederalReporter")
 else
   echo -e "  ${GREEN}Q4: User-visible gaps? → NO${RESET}"
 fi

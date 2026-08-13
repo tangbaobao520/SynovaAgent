@@ -226,7 +226,8 @@ describe('D99: Full Pipeline E2E — 完整管线集成测试', () => {
   });
 
   it('Stage 5c: DiagnosisOrchestrator — 可实例化 with mock deps', async () => {
-    const { DiagnosisOrchestrator } = await import('../../packages/engine-core/src/pipeline/diagnosis/diagnosis-orchestrator');
+    // D317: engine-core 退役 — 编排器已迁移至 src/orchestrator/diagnosis-orchestrator
+    const { DiagnosisOrchestrator } = await import('../../src/orchestrator/diagnosis-orchestrator');
 
     const mockClient = { consult: vi.fn().mockResolvedValue({ content: JSON.stringify(makeMockDiagnosisResponse()) }) };
     const mockTools = { execute: vi.fn().mockResolvedValue({ content: 'ok' }) };
@@ -236,7 +237,6 @@ describe('D99: Full Pipeline E2E — 完整管线集成测试', () => {
     const orch = new DiagnosisOrchestrator(mockClient, mockTools);
     expect(orch).toBeDefined();
     expect(typeof orch.withMaxIterations).toBe('function');
-    expect(typeof orch.withSessionTracer).toBe('function');
   });
 
   it('Stage 6: 报告结构验证 — ActionRecommendation / ceoSummary / findings', async () => {

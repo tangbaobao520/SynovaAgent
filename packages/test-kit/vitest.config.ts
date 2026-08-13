@@ -7,7 +7,6 @@ export default defineConfig({
       '@synova/sog-core': path.resolve(__dirname, '../sog-core/src/index.ts'),
       '@synova/logger': path.resolve(__dirname, '../logger/src/index.ts'),
       '@synova/error-types': path.resolve(__dirname, '../error-types/src/index.ts'),
-      '@synova/diagnosis-engine': path.resolve(__dirname, '../diagnosis-engine/src/index.ts'),
       '@synova/connector-registry': path.resolve(__dirname, '../connector-registry/src/index.ts'),
       '@synova/extension-registry': path.resolve(__dirname, '../extension-registry/src/index.ts'),
       '@synova/engine-auth': path.resolve(__dirname, '../engine-auth/src/index.ts'),

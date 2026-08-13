@@ -4,27 +4,25 @@
  * 基于真实咨询场景:
  *   某 SaaS 公司，150 人，销售转化率下降，核心员工离职，交付延期
  *
- * 注入: GraphStore entities + GapSnapshot → 引擎可以完整分析
+ * 注入: GraphStore entities → 引擎可以完整分析
+ * D317: engine-core 退役 — 改用 SqliteGraphStore (src/adapters/sqlite-graph-store)；
+ *       gap-recorder 无 Synova 等价实现，降级跳过。
  */
 import { initEngineContext, getDatabase } from '../../src/init/engine-context';
+import { SqliteGraphStore } from '../../src/adapters/sqlite-graph-store';
 import { createLogger } from '@synova/logger';
 
 const log = createLogger('test:pde-seed');
 
 export async function seedRealPdeData(): Promise<string> {
   const orgId = 'default';  // 引擎默认使用 'default', 需要匹配
-  const now = new Date().toISOString();
 
   // 1. 确保 DB + EngineContext 已初始化
   try { getDatabase(); } catch { initEngineContext(); }
 
   // 2. 通过 GraphStore API 创建组织节点（自动建表 + SOG 验证）
-  const { EngineCoreVendorAdapter } = await import('../../src/adapters/engine-core-adapter');
   const db = getDatabase();
-  const store = await EngineCoreVendorAdapter.createGraphStore(db) as {
-    createNode(type: string, props: Record<string, unknown>, graph: string): string;
-    createEdge(type: string, from: string, to: string, weight: number, graph: string): string;
-  };
+  const store = new SqliteGraphStore(db);
 
   // 3 个团队
   const salesTeam = store.createNode('Team', { name: '销售团队', teamType: 'permanent', department: 'sales' }, orgId);
@@ -77,24 +75,9 @@ export async function seedRealPdeData(): Promise<string> {
   E('PROVIDES', prodTeam, cap3);
   E('PROVIDES', salesTeam, cap1);
 
-  // 3. 创建完整 GapSnapshot（6 维度 × PDE 推断分数）
-  const { recordGapSnapshot } = await import(
-    '../../../packages/engine-core/src/pipeline/diagnosis/gap-recorder'
-  );
+  // 3. GapSnapshot 记录 — D317 降级: engine-core gap-recorder 无 Synova 等价实现，跳过
+  log.warn({ orgId }, 'GapSnapshot 记录已降级跳过 (engine-core gap-recorder 退役)');
 
-  const gaps = {
-    division_of_labor:      { mode: 'functional_silo', engineScore: 0.62, confidence: 'medium' as const, sourceBreakdown: { pde_interview: 0.6, org_chart: 0.4 } },
-    information_flow:       { mode: 'bottlenecked', engineScore: 0.55, confidence: 'medium' as const, sourceBreakdown: { pde_interview: 0.5, meeting_log: 0.5 } },
-    authority_governance:   { mode: 'centralized_weak_delegation', engineScore: 0.58, confidence: 'medium' as const, sourceBreakdown: { pde_interview: 0.7, org_chart: 0.3 } },
-    trust_incentive:        { mode: 'declining', engineScore: 0.45, confidence: 'high' as const, sourceBreakdown: { exit_interview: 0.6, pde_interview: 0.4 } },
-    knowledge_sharing:      { mode: 'tribal_siloed', engineScore: 0.48, confidence: 'medium' as const, sourceBreakdown: { pde_interview: 0.5, doc_analysis: 0.5 } },
-    external_interface:     { mode: 'reactive', engineScore: 0.52, confidence: 'low' as const, sourceBreakdown: { pde_interview: 0.4, customer_feedback: 0.6 } },
-  };
-
-  recordGapSnapshot({
-    teamId: orgId, observedAt: now, sourcePipeline: 'manual_trigger', gaps,
-  } as Parameters<typeof recordGapSnapshot>[0]);
-
-  log.info({ orgId }, 'PDE 种子数据注入完成（15 节点 + 10 边 + 1 快照）');
+  log.info({ orgId }, 'PDE 种子数据注入完成（15 节点 + 10 边）');
   return orgId;
 }

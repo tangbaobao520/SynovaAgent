@@ -17,14 +17,11 @@
     "paths": {
       "@synova/sog-core": ["./packages/sog-core/src/index.ts"],
       "@synova/engine-auth": ["./packages/engine-auth/src/index.ts"],
-      "@synova/engine-core": ["./packages/engine-core/src/index.ts"],
-      "@synova/engine-core/src/*": ["./packages/engine-core/src/*"],
       "@synova/logger": ["./packages/logger/src/index.ts"],
       "@synova/error-types": ["./packages/error-types/src/index.ts"],
       "@synova/connector-registry": ["./packages/connector-registry/src/index.ts"],
       "@synova/extension-registry": ["./packages/extension-registry/src/index.ts"],
       "@synova/knowledge-ingest": ["./packages/knowledge-ingest/src/index.ts"],
-      "@synova/diagnosis-engine": ["./packages/diagnosis-engine/src/index.ts"],
       "@synova/evolution": ["./packages/evolution/src/index.ts"],
       "@synova/ontology": ["./packages/ontology/src/index.ts"]
     }

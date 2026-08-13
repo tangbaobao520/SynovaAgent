@@ -436,7 +436,7 @@ fi
 hard_check "架构边界: 禁止跨层引用 (铁律 39)" "${CROSS_LAYER:-}"
 
 # 5b. 桥接文件欺诈 + 包级 engine-core 引用 + shell 包检测 (铁律 46 — V4.5.1 全面加固)
-BRIDGE_ALLOWED="src/adapters/engine-core-adapter.ts|src/init/engine-context.ts|src/types/engine-core-types.ts|src/agent/orchestrator-adapter.ts|src/l4/graph-bridge.ts|src/l4/entity-resolver-l2.ts|src/l4/engine-graph-store.ts|src/l4/diagnosis-graph-query.ts|src/sentinel/compute/"
+BRIDGE_ALLOWED="src/init/engine-context.ts|src/l4/graph-bridge.ts|src/l4/diagnosis-graph-query.ts"
 BRIDGE_FAIL=""
 
 # 5b-i: 全仓库扫描（src/ + packages/）— 堵住"藏到 packages/ 目录下"的漏洞

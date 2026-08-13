@@ -91,7 +91,7 @@ echo ""
 # ── 明确边界：绝对不能碰的 ──
 echo -e "  ${RED}🚫 禁止触碰:${RESET}"
 echo "    ❌ expert/ 目录下的 SOUL/RULES/KNOWLEDGE 文件 (另一个Claude)"
-echo "    ❌ packages/engine-core/ 诊断管线 (另一个Claude)"
+echo "    ❌ packages/engine-core/ (已退役 — D10 由自研引擎替代, 不重建)"
 echo "    ❌ src/l3/ 专家逻辑 (除非修崩溃bug)"
 echo "    ❌ L5 存储层 / 数据库 schema"
 echo ""

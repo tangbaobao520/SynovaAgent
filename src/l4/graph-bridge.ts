@@ -11,7 +11,7 @@
  *   ✅ upsertFromSevenPowers — diagnosis-launcher.ts
  *   ✅ upsertFromCPC — diagnosis-launcher.ts
  *
- * 接口: 匹配 engine-core GraphStore 真实接口
+ * 接口: Synova 自研 GraphStore 接口 (D10 后由自研引擎定义)
  *   createNode(type, props, graph) → returns auto-id
  *   createEdge(type, from, to, weight?, props?, graph?) → returns auto-id
  */
@@ -23,10 +23,9 @@ import { deriveValidFrom, deriveValidTo } from '../l3/period-utils';
 const log = createLogger('l4/graph-bridge');
 
 // ═══ GraphStore Interface ═══
-// 铁律 39: 类型镜像 engine-core GraphStore (graph-store.ts:27)。
-// 使用 string 类型参数 (vs engine-core 的 NodeType/EdgeType 枚举) 以保持 synova-agent 独立。
+// D10: engine-core 退役 — 此接口由 Synova 自研引擎定义，不再镜像 engine-core。
+// 使用 string 类型参数 (而非枚举) 以保持 synova-agent 独立。
 // 结构兼容性由 tests/architecture/graphstore-compatibility.test.ts 验证。
-// engine-core 引用: @synova/engine-core/dist/pipeline/diagnosis/graph-store
 
 export interface GraphStore {
   createNode(type: string, props: Record<string,unknown>, graph: string): string;

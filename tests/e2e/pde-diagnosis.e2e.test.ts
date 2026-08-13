@@ -68,12 +68,41 @@ describe('PDE 工作流 E2E', () => {
     expect(health.healthy).toBe(true);
     log.info({ provider: provider.name }, 'LLM 连接成功');
 
-    // 2. 初始化引擎
+    // 2. 初始化引擎 (D317: engine-core 退役 — 使用 Synova 自研引擎接线模式)
     const { ConversationEngine } = await import('../../src/agent/conversation-engine');
     const { ToolRegistry } = await import('../../src/agent/tools');
-    const { EngineCoreVendorAdapter } = await import('../../src/adapters/engine-core-adapter');
+    const { createSynovaDiagnosisEngine } = await import('../../src/l3/synova-diagnosis-engine-impl');
+    const llmClient = {
+      async chat(messages: Array<{ role: string; content: string }>, opts?: Record<string, unknown>) {
+        const r = await provider.chat(
+          messages as Array<{ role: 'system' | 'user' | 'assistant' | 'tool'; content: string }>,
+          opts as Record<string, unknown> | undefined,
+        );
+        return {
+          content: r.content || '',
+          toolCalls: r.toolCalls?.map(tc => ({
+            name: tc.function.name,
+            arguments: JSON.parse(tc.function.arguments) as Record<string, unknown>,
+          })),
+        };
+      },
+    };
+    const toolRegistry = new ToolRegistry();
+    const toolExecutor = {
+      async execute(name: string, args: Record<string, unknown>) { const r = await toolRegistry.execute(name, args); return { result: r }; },
+      listTools() { return toolRegistry.listTools().map(t => ({ name: t.name, description: t.description, parameters: (t.parameters || {}) as Record<string, unknown> })); },
+    };
+    const newEngine = createSynovaDiagnosisEngine(llmClient, toolExecutor, {
+      maxToolRounds: 4,
+      gateDataCompleteness: 0.3,
+      gateMinHypothesisConfidence: 0.5,
+    });
     const engine = new ConversationEngine(provider, {
-      diagnosisEngine: new EngineCoreVendorAdapter(provider, new ToolRegistry()),
+      diagnosisEngine: {
+        async runConsultation(teamId, initiator, onEvent) {
+          return newEngine.runConsultation(teamId, initiator, undefined, onEvent as Parameters<typeof newEngine.runConsultation>[3]);
+        },
+      },
     });
 
     // 3. 注入 PDE 访谈后的真实数据（GraphStore 实体 + GapSnapshot）
