@@ -6,7 +6,6 @@ Binary file .claude/bypass.log matches
 2026-07-28T22:09:15+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D253 | AGENT=claude-code | HASH=b6dd37185ffde9fe1b3420f2cd434538e2506f5d
 2026-07-28T14:59:07Z detected-bypass no-precommit-marker
 2026-07-30T22:05:37+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D284 | AGENT=claude-code | HASH=5c69056aea8428afa3fee8245c0139d7fbaa8ecc
-<<<<<<< HEAD
 2026-08-03T13:19:46+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D312 | AGENT=claude-code | HASH=e9b7e1cb3cae812edbab952f522920017970d125
 2026-08-04T23:13:32+08:00 | TIMEOUT | pre-commit timed out after 300s | TASK_ID=D313+D314 | AGENT=claude-code
 2026-08-05T00:03:08+08:00 | TIMEOUT | pre-commit timed out after 300s | TASK_ID=D313+D314 | AGENT=claude-code
@@ -72,3 +71,5 @@ Binary file .claude/bypass.log matches
 2026-08-13T01:59:01+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D333 | AGENT=claude-code
 2026-08-13T02:12:16+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D333 | AGENT=claude-code | HASH=192ff808f237f0d789f92e984b5e0b4325f1c47d
 2026-08-09T21:30:54+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D317-engine-core-retirement-cleanup | AGENT=claude-code | HASH=4e02de34bd9ce37584265b287298522f3fbe689f
+2026-08-13T09:30:00+0800 | COMMITTED | pre-commit PASS (D333 一次性补记: 状态文件提交 c364275 时 12 组全过) | TASK_ID=D333 | AGENT=claude-code | HASH=c364275d499b275d0d3b5871dbd455dfdaf8fc76
+2026-08-13T09:35:00+0800 | COMMITTED | pre-commit PASS (D333 一次性补记: merge e00738d 时 12 组全过) | TASK_ID=D333 | AGENT=claude-code | HASH=e00738d1cb926762b85dd83cd66a0b84b7bace4e
