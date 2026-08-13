@@ -11,6 +11,23 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V4.7.7 (2026-08-14) — D335 批次（防线闭环：提交端同步门禁 + synova.db 异地自动备份）
+
+> PATCH bump — 门禁行为变化（新增提交端门禁）。创始人复核 D334 指出两个漏洞：
+> ① 开工端仍是软机制（物理强制只在 push 端）② synova.db 数据无异地备份。
+> 本批次: synova-commit 前置分支同步硬阻断 + launchd 每日 iCloud 备份。
+
+- **变更**: PATCH bump — synova-commit 新增提交端同步门禁（过期基线禁止提交）；新增数据异地备份体系
+- **D335 (防线闭环)**:
+  - `scripts/control-tower/check-branch-sync.sh` — 提交端门禁：main 落后/分支基线过期/分叉 → 硬阻断并给修复命令；SYNO_SKIP_BRANCH_SYNC=1 逃生舱（记 degraded）；fetch 失败 fail-open 显式提示
+  - `scripts/control-tower/synova-commit` — 挂载 check-branch-sync.sh（pre-commit 之前）——提交端与 push 端（D334 门禁 0）构成两端闭环
+  - `scripts/backup/backup-db.sh` — sqlite3 .backup 一致性快照 + 原子落盘 + integrity_check + 14 份轮转 + 日志；默认目标 iCloud Drive
+  - `scripts/backup/install-backup-launchd.sh` — launchd 每日 03:30 自动备份（crontab 在 Mac 被 TCC 拦，launchd 原生无需 root）
+  - `CLAUDE.md` — 铁律 0-4 数据资产备份
+- **测试**: branch-sync-guard.test.sh 11 用例 + backup-db.test.sh 9 用例（正常/降级/边界/接线，red→green 已证）
+- **验证**: pre-commit 12 组 | as any = 0
+- **作者**: DeepSeek Harness (D335)
+
 ## V4.7.6 (2026-08-14) — D334 批次（多机 PR 工作流：门禁 0 同步检查 + main 保护 + 协作规范落地）
 
 > PATCH bump — 门禁行为变化（新增门禁 0）。事故驱动：2026-08-11~13 双机同分支交替 push，
