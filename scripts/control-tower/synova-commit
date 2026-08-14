@@ -368,7 +368,9 @@ fi
 #   rc!=0 非 JSON  → 显式 degraded 提示（执行异常不静默）
 #   python 不可用  → fail-open 显式提示跳过
 if [[ -f "$STAGING_GUARD" ]]; then
-  STAGED_LIST=$(git diff --cached --name-only 2>/dev/null || true)
+  # D338: core.quotepath=false — git 默认把非 ASCII 文件名转义为 \346\... 带引号输出，
+  # guard 拿转义路径匹配失败 → current-brief 认领落空 → 误 block（Mac 中文文件名首现）。
+  STAGED_LIST=$(git -c core.quotepath=false diff --cached --name-only 2>/dev/null || true)
   if [[ -n "$STAGED_LIST" ]]; then
     PYBIN=""
     for _c in python3 python py; do
@@ -458,7 +460,8 @@ if [[ ! -f "$PRE_COMMIT" ]]; then
   if [[ ${#FILES[@]} -gt 0 ]]; then
     git commit -m "$MESSAGE" -- "${FILES[@]}"
   else
-    git commit -m "$MESSAGE" -- $(git diff --cached --name-only 2>/dev/null || true)
+    # D338: pathspec 同样需要 core.quotepath=false（否则中文文件名转义 → "did not match"）
+    git commit -m "$MESSAGE" -- $(git -c core.quotepath=false diff --cached --name-only 2>/dev/null || true)
   fi
   EXIT_CODE=$?
   echo -e "${GREEN}✅ 提交完成（降级模式）${NC}"
@@ -540,7 +543,8 @@ if [[ $PRECOMMIT_EXIT -eq 0 ]]; then
   if [[ ${#FILES[@]} -gt 0 ]]; then
     git commit -m "$MESSAGE" -- "${FILES[@]}"
   else
-    git commit -m "$MESSAGE" -- $(git diff --cached --name-only 2>/dev/null || true)
+    # D338: pathspec 同样需要 core.quotepath=false（否则中文文件名转义 → "did not match"）
+    git commit -m "$MESSAGE" -- $(git -c core.quotepath=false diff --cached --name-only 2>/dev/null || true)
   fi
   COMMIT_EXIT=$?
 

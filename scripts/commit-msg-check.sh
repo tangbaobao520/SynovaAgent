@@ -44,7 +44,9 @@ fi
 #   - Merge/Revert（上方已跳）/无暂存/无认领 brief/认领 brief 无 D#/无真实认领 → fail-open
 # 消息文件缺失/异常 → MSG_DID 空 → 一致性检查 fail-open（铁律 24: 显式兜底）
 MSG_DID=$(head -1 "$1" 2>/dev/null | grep -oE '\(D[0-9]+\)' | head -1 | tr -d '()') || true # swallow-ok: 消息文件异常时声明为空 → fail-open 不误伤
-STAGED_LIST=$(git diff --cached --name-only 2>/dev/null || true)
+# D338: core.quotepath=false — 中文文件名默认被 git 转义(\346\...)带引号输出，
+# D328 认领判定 match_path 失败 → current-brief 认领落空 → 误报"并行劫持"（Mac 首现）。
+STAGED_LIST=$(git -c core.quotepath=false diff --cached --name-only 2>/dev/null || true)
 if [ -n "$STAGED_LIST" ]; then
   # D317 自包含定位: 临时 repo 测试/异仓库时 git rev-parse ROOT 下无脚本目录
   MSG_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
