@@ -11,6 +11,20 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V4.7.8 (2026-08-14) — D336 批次（多 Agent 协作协议：四角色两线 + 审计红线 + 任务路由）
+
+> PATCH bump — 流程约束变更。创始人将 DeepSeek Harness (Mac) 加入协作团队，
+> 确认三决策：① DeepSeek Harness = 架构师+第二开发者+PR 审查 ② 审计红线严格隔离
+> ③ 协作协议立即落地。本批次把四角色协作宪法入库。
+
+- **变更**: PATCH bump — 协作治理文档化（角色职责/审计红线/任务路由表）
+- **D336 (多 Agent 协作协议)**:
+  - `docs/synova/coordination/MULTI-AGENT-COLLAB.md` — 四角色两线架构、审计红线五条（铁律级）、任务生命周期七步、防撞车规则、共享记忆规则
+  - `docs/synova/coordination/TASK-ROUTING.md` — 任务类型路由表 + 模块认领状态 + 认领/交还流程
+  - `CLAUDE.md` — 铁律 0-5 多 Agent 协作协议 + 审计红线（DeepSeek Harness/Claude Code 永不碰 scripts/audit/、禁自我审计、PR 审查 ≠ 审计）
+- **验证**: pre-commit 12 组 | as any = 0
+- **作者**: DeepSeek Harness (D336)
+
 ## V4.7.7 (2026-08-14) — D335 批次（防线闭环：提交端同步门禁 + synova.db 异地自动备份）
 
 > PATCH bump — 门禁行为变化（新增提交端门禁）。创始人复核 D334 指出两个漏洞：
