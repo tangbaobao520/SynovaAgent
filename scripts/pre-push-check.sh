@@ -363,7 +363,15 @@ echo ""
 echo -e "${CYAN}── bypass.log 对账 (D331) ───────────────────────────────${RESET}"
 CHECK_BYPASS="$SCRIPT_DIR/control-tower/check-bypass-log.sh"
 if [[ -f "$CHECK_BYPASS" ]]; then
-  if ! bash "$CHECK_BYPASS"; then
+  # D334: 对账 base 动态化 — PR 工作流下分支名每机器不同, 硬编码旧分支失效。
+  # 优先 $PUSH_REMOTE/$PUSH_BRANCH（存在时），fallback origin/main（main 是唯一真相）。
+  BYPASS_BASE=""
+  if [[ -n "$PUSH_REMOTE" && -n "$PUSH_BRANCH" ]] && git rev-parse --verify "$PUSH_REMOTE/$PUSH_BRANCH" >/dev/null 2>&1; then
+    BYPASS_BASE="$PUSH_REMOTE/$PUSH_BRANCH"
+  elif git rev-parse --verify origin/main >/dev/null 2>&1; then
+    BYPASS_BASE="origin/main"
+  fi
+  if ! bash "$CHECK_BYPASS" "$BYPASS_BASE"; then
     echo ""
     echo -e "  ${RED}❌ bypass.log 对账未通过 — 推送已拒绝 (D331)${RESET}"
     exit 1
