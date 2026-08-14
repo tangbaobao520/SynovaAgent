@@ -1,6 +1,7 @@
 # SYNOVA-DESIGN — 黄金场景集（GSS）+ 创始人驾驶舱 v1 设计
 
-> **⚠️ 2026-08-16 更新**: 创始人新需求——驾驶舱主视图改为**产品完成度仪表盘**（20 条能力线 × 进度条 × 待办聚合），见 [SYNOVA-DESIGN-产品完成度仪表盘-v1-20260816.md](SYNOVA-DESIGN-产品完成度仪表盘-v1-20260816.md)。本设计的 GSS 保留为"验收点证据引擎"，§三驾驶舱规范被取代。
+> **⚠️ 2026-08-16 更新**: 创始人新需求——驾驶舱主视图改为**产品完成度仪表盘**（26 条能力线 × 进度条 × 待办聚合），见 [SYNOVA-DESIGN-产品完成度仪表盘-v1-20260816.md](SYNOVA-DESIGN-产品完成度仪表盘-v1-20260816.md)。本设计的 GSS 保留为"验收点证据引擎"，§三驾驶舱规范被取代。
+> **⚠️ 2026-08-15 更新 2**: 本设计 §五 审计提案已由 K3 定稿为正式标准 `docs/synova/coordination/K3-AUDIT-STANDARD-v1-20260815.md`（待创始人批准生效）；本设计已按其对齐（证据路径/逢绿必验/判定中间态/R1-R7 反向契约），**实现与审计以 K3 标准为准**。
 
 > **版本**: v1.0 | 2026-08-16 | 作者: DeepSeek Harness（Win 会话出设计，Mac 执行）
 > **上游提案**: [FOUNDER-OPERATING-MODE.md](../../synova/coordination/FOUNDER-OPERATING-MODE.md)（创始人已批准开工）
@@ -75,7 +76,8 @@ scripts/golden-scenarios/
 ├── GS-06-evolution-loop/   （同构）
 ├── GS-07-data-safety/      （同构）
 ├── GS-08-report-readable/  （同构）
-└── evidence/            # 运行产物（git 跟踪；文件名 GS-XX-YYYYMMDD.json/png）
+└── (证据产物不在此目录——按 K3 维度 17 定稿路径:
+    docs/synova/product-lines/evidence/GS-XX/GS-XX-YYYYMMDD.json + PNG 同目录)
 ```
 
 ### 2.2 run.sh 运行契约（每场景必须满足）
@@ -86,9 +88,10 @@ scripts/golden-scenarios/
 3. inject fixture（按场景：crm-standard / erp-standard / hr-standard / 问卷 / 敏感数据）
 4. 触发（API 调用 / cron 手动 run / 页面操作——优先 API 级，页面级 Phase 3 补）
 5. 断言（逐条执行 expect.json → 结果 JSON）
-6. 证据产物写 evidence/GS-XX-<date>.json + 截图（PNG，可选但推荐）
+6. 证据产物写 `docs/synova/product-lines/evidence/GS-XX/`（K3 维度 17 路径；**R1 schema**：`{scenario_id, exit_code, duration_ms, env:{os, runtime, git_hash, timestamp}, assertions:[{name, target, result}]}`——含环境指纹四要素）+ 截图（PNG 同目录，可选但推荐）
 7. exit 0 = 全部断言过；exit 1 = 任一断言失败（失败明细入 JSON）
-8. 幂等：重复跑结果一致；中途失败也须清理临时资源
+8. 幂等 + **重跑确定性（K3 R7）**：同 git hash 同环境重跑结果必须一致（时间戳类非确定断言须入白名单豁免清单）；中途失败也须清理临时资源
+9. **一行自举（K3 R2）**：run.sh 不得需要人工前置步骤（手动起服务/预建目录）——依赖在脚本内自举，干净 clone 上一行跑通
 ```
 
 ### 2.3 断言规范（防"假转绿"——本设计的第一红线）
@@ -188,14 +191,14 @@ Synova 驾驶舱 — 今天   场景 2/8 绿   卡点 2 个
 
 ### 5.2 审计触发与频率建议
 
-- 场景真值复核：**按"场景转绿里程碑"触发**（每 3-5 个场景转绿或每 2 周一次，成本可控 ¥5-20/次），不必每 D# 都审场景。
-- 控制塔健康审计触发条件 +1：**场景连续 2 周无新增转绿** 或 **证据与驾驶舱不一致** → 触发。
+- 场景真值复核触发（K3 维度 17 定稿）：**逢绿必验**——转绿声明即入待验池，最近批次必验，**不设攒量门槛**；双周批次兜底防声明遗漏。单批成本 ≤¥20（K3 抽样规则：优先级 1 新增绿全验）。
+- 控制塔健康审计触发条件 +1（K3 定稿修正）：**证据与驾驶舱不一致** 或 **声明绿复核红** → 触发。（注：提案的"2 周无新增转绿触发"已被 K3 否决——那是开发节奏问题，不是门禁失效信号，会制造误报噪音。）
 - 红线重申：GSS 脚本、gen-cockpit.py、驾驶舱生成器均属 Harness 产出 → **进 K3 审计范围，无豁免**。
 
 ### 5.3 审计报告格式建议
 
-- 现有模板 + 1 节：**"场景状态复核"**（每场景一行：声明状态 / evidence 核对 / K3 独立重跑结果 / 判定）。
-- 结论判定规则：任一场景"声明绿但 K3 重跑红" → 该任务 FAIL（与现有 PASS/CONDITIONAL/FAIL 对齐）。
+- 报告模板（K3 定稿）：K3-AUDIT-STANDARD-v1-20260815.md 附录 A"模式 C 报告模板"（含场景状态复核表 + 进度真度抽样表 + 成本记录）。
+- 结论判定规则（K3 定稿）：**声明绿 + K3 重跑红 → FAIL**；evidence 缺失/不可解析/缺环境指纹 → **CONDITIONAL PASS**（证据缺陷，验收点维持 🟡 不得转 🟢）；对象不存在 → NOT-AUDITABLE（≠ PASS，须显式标注）。
 
 ---
 
