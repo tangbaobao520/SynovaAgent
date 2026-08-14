@@ -11,6 +11,25 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V4.7.9 (2026-08-15) — D366 批次（门禁"今日/本次"判定修复：mtime → 文件名日期 + marker head 对账）
+
+> PATCH bump — 门禁判定机制 bug 修复。git pull/checkout 刷 mtime 使 `find -newermt` 把
+> 346 个历史 brief 全部误判为今日（G12 起 346 个 python 进程 → 门禁 900s+ 超时死锁，
+> D362 实证）；全局单例 marker 被并发 session 的 post-commit rm 后，另一 session 正常
+> 提交被误判 detected-bypass（CT-29，3 条误判触发 GATEKEEPER 硬阻断死锁）。
+> 修复：文件名日期筛选 + head hash 对账（只覆盖不删除）。
+
+- **变更**: PATCH bump — 4 处 `find -newermt` 今日判定 → `today_files_by_prefix/suffix` 文件名日期筛选；marker `head|ts` 对账 + 去 rm + legacy 纯时间戳过渡分支 + root commit 显式降级
+- **D366 (门禁判定修复)**:
+  - `scripts/pre-commit-check.sh` — 组 12 ALL_TODAY_BRIEFS 按文件名日期前缀
+  - `scripts/workflow/resolve-commit-brief.sh` / `scripts/workflow/hook-check-task-scope.sh` — 同上
+  - `scripts/control-tower/verify-parallel.sh` — --scan-today 按 `-YYYYMMDD.md` 文件名后缀
+  - `scripts/hooks/post-commit.sh` — head==HEAD^ 对账、不匹配/无 marker=detected-bypass、超时=possible-bypass、legacy 兼容、root commit 降级；不 rm marker
+  - `scripts/install-hooks.sh` — pre-commit wrapper 写 `head|timestamp`
+  - `tests/control-tower/today-by-name.test.sh` + `tests/control-tower/post-commit-marker.test.sh` — RED→GREEN 单测（346→1、CT-29 交错时序，各 ≥6 断言）
+- **验证**: DS1-DS8 | newermt=0 | today_files_by 生产调用 ≥4 | 两测试全绿 | tsc 基线 +0
+- **作者**: Claude Code (D366)
+
 ## V4.7.8 (2026-08-14) — D336 批次（多 Agent 协作协议：四角色两线 + 审计红线 + 任务路由）
 
 > PATCH bump — 流程约束变更。创始人将 DeepSeek Harness (Mac) 加入协作团队，
