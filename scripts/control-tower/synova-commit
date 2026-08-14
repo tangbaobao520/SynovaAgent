@@ -3,7 +3,7 @@
 # synova-commit — 校验网守 (D201 + D311 M1b)
 #
 # 权威文档 #17 第二章 §2.2：通往 git commit 的唯一路径。
-# 在允许提交前强制执行 pre-commit-check.sh 全部 12 组检查。
+# 在允许提交前强制执行 pre-commit-check.sh 全部 13 组检查。
 # 没有 --no-verify 标志。没有绕过开关。
 #
 # D311 M1b (2026-08-02): 暂存区隔离 — git commit 改显式路径（不用 -a），
@@ -502,7 +502,7 @@ echo ""
 
 # 运行 pre-commit（带超时）
 # D334: Mac 无 GNU timeout（D321 同款双机差异）→ 回退直接执行并显式提示。
-#   pre-commit 12 组自身 <50s，失去外层超时兜底风险可控（不静默降级: 铁律 11）。
+#   pre-commit 13 组自身 <50s，失去外层超时兜底风险可控（不静默降级: 铁律 11）。
 TIMEOUT_BIN=""
 for _c in timeout gtimeout; do
   if command -v "$_c" >/dev/null 2>&1; then TIMEOUT_BIN="$_c"; break; fi
@@ -530,7 +530,7 @@ echo ""
 
 if [[ $PRECOMMIT_EXIT -eq 0 ]]; then
   # 全部通过 → 执行提交
-  echo -e "${GREEN}✅ 全部 12 组检查通过${NC}"
+  echo -e "${GREEN}✅ 全部 13 组检查通过${NC}"
   echo ""
 
   # D214: 发射 gatekeeper 信号

@@ -9,7 +9,8 @@
 #
 # 历史事故: .env 真实 API Key 暴露仓库 / 飞书 App Secret 暴露
 set -euo pipefail
-REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# 测试注入: SYNO_SECRETS_ROOT 覆盖扫描根（secrets-env-exempt.test.sh 沙箱单测）
+REPO_ROOT="${SYNO_SECRETS_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'; VIOLATIONS=0
 
 echo ""
@@ -18,7 +19,9 @@ echo ""
 
 # ═══ 0. 全工作区扫描 (硬阻断) ═══
 # 不限于暂存区 — 磁盘上任一文件含真实 API Key 即阻断。
-# 覆盖 .env / .claude/ / scripts/ 等 gitignored 文件。
+# D370 修复: gitignored + 未跟踪的 .env = 本地密钥库（产品运行依赖真实密钥的正常状态），
+#   豁免扫描——泄漏保护由 检查1 (.env 暂存阻断) + .gitignore 条目 + git 跟踪状态共同覆盖。
+#   被 git 跟踪的 .env 含真实 Key = 泄漏事故，仍硬阻断。
 # 历史事故: .env 和 .claude/settings.local.json 含真实 Key 但从未暂存, 旧门禁漏掉。
 echo "── 全工作区扫描 ──"
 FULL_SCAN=$(grep -rn \
@@ -42,9 +45,20 @@ FULL_SCAN=$(grep -rn \
   || true)
 
 # 二次过滤: .env.example 中的占位符不阻断
+# D370: 未跟踪 .env 豁免（grep 输出路径为相对 REPO_ROOT 的 "<path>:<line>:<content>"）
 FULL_SCAN_FILTERED=""
 if [ -n "$FULL_SCAN" ]; then
-  FULL_SCAN_FILTERED=$(echo "$FULL_SCAN" | grep -v '\.env\.example:' || true)
+  while IFS= read -r line; do
+    FILE=$(echo "$line" | cut -d: -f1)
+    if echo "$FILE" | grep -qE '(^|/)\.env$'; then
+      # 未跟踪 → 本地密钥库 → 豁免（git ls-files 仅输出被跟踪路径）
+      if ! git -C "$REPO_ROOT" ls-files --error-unmatch "$FILE" >/dev/null 2>&1; then
+        continue
+      fi
+    fi
+    case "$FILE" in *.env.example) continue ;; esac
+    FULL_SCAN_FILTERED="${FULL_SCAN_FILTERED}${line}\n"
+  done <<< "$FULL_SCAN"
 fi
 
 if [ -n "$FULL_SCAN_FILTERED" ]; then
@@ -135,19 +149,25 @@ else
   echo -e "  ${GREEN}✅ 暂存文件无硬编码凭证${NC}"
 fi
 
-# ═══ 4. 本地 .env 检查 (硬阻断 — 含真实 Key 即阻断) ═══
+# ═══ 4. 本地 .env 检查 (硬阻断 — 被 git 跟踪的 .env 含真实 Key 即阻断) ═══
+# D370 修复: 未跟踪 + gitignored 的 .env = 本地密钥库（产品运行依赖真实密钥的正常状态），
+#   不阻断（泄漏路径由 git 跟踪状态 + 检查1 暂存阻断覆盖）。
+#   被 git 跟踪的 .env 含真实 Key = 泄漏事故 → 硬阻断。
 # 历史事故: 旧门禁此处只警告不阻断, .env 真实 Key 长期留在磁盘未被发现。
 if [ -f "$REPO_ROOT/.env" ]; then
-  REAL_KEY_IN_ENV=$(grep -E 'sk-[a-zA-Z0-9]{20,}' "$REPO_ROOT/.env" 2>/dev/null \
-    | grep -v 'your-\|example\|placeholder\|xxx\|sk-your' || true)
-  if [ -n "$REAL_KEY_IN_ENV" ]; then
-    echo -e "  ${RED}❌ 本地 .env 包含疑似真实 API Key  [硬阻断]${NC}"
-    echo "$REAL_KEY_IN_ENV" | while read -r line; do echo "     ${line}"; done
-    echo "  请确认此 Key 是否真实。如果是 → 立即去服务商后台轮换, 然后更新 .env。"
-    echo "  如已轮换(旧Key已失效) → 将 .env 中旧Key替换为占位符 sk-your-xxx 后重试。"
-    VIOLATIONS=$((VIOLATIONS + 1))
+  if git -C "$REPO_ROOT" ls-files --error-unmatch .env >/dev/null 2>&1; then
+    REAL_KEY_IN_ENV=$(grep -E 'sk-[a-zA-Z0-9]{20,}' "$REPO_ROOT/.env" 2>/dev/null \
+      | grep -v 'your-\|example\|placeholder\|xxx\|sk-your' || true)
+    if [ -n "$REAL_KEY_IN_ENV" ]; then
+      echo -e "  ${RED}❌ 本地 .env 含真实 API Key 且被 git 跟踪  [硬阻断]${NC}"
+      echo "$REAL_KEY_IN_ENV" | while read -r line; do echo "     ${line}"; done
+      echo "  被跟踪的 .env 会随仓库泄漏。git rm --cached .env 解除跟踪后重试。"
+      VIOLATIONS=$((VIOLATIONS + 1))
+    else
+      echo -e "  ${GREEN}✅ 被跟踪 .env 无真实凭证${NC}"
+    fi
   else
-    echo -e "  ${GREEN}✅ 本地 .env 无真实凭证${NC}"
+    echo -e "  ${GREEN}✅ .env 未跟踪（本地密钥库, D370 豁免 — 暂存仍阻断）${NC}"
   fi
 else
   echo -e "  ${GREEN}✅ 无 .env 文件${NC}"

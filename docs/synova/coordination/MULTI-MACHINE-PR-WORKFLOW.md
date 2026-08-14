@@ -44,7 +44,7 @@ git log --oneline -3
 ### 收工（任务完成，准备交付）
 
 ```bash
-# 1. 提交（走 synova-commit，自动跑 12 组门禁 + 打 tag）
+# 1. 提交（走 synova-commit，自动跑 13 组门禁 + 打 tag）
 synova-commit "feat(Dxxx): 任务描述"
 # 2. 推送自己的分支（pre-push 门禁 0 会自动 fetch 检查同步状态）
 git push ssh feat/<mac|win>-<任务简称>
