@@ -44,6 +44,13 @@ jobs:
         run: |
           git config user.name "synova-bot"
           git config user.email "bot@synova.local"
+          # D373 自愈: 悬挂 bot 分支（有分支但无 PR 的历史遗留）→ 先清理
+          # 注意: 删除失败（远端无此分支）用 || true 幂等吞掉——这是幂等清理，不是静默降级
+          if git ls-remote --exit-code origin auto/product-progress >/dev/null 2>&1 \
+             && ! (gh pr list --head auto/product-progress --state open --limit 1 --json number -q '.[0].number // empty' | grep -qE '^[0-9]+$'); then
+            echo "检测到悬挂 bot 分支（有分支无 PR），自动清理"
+            git push origin :auto/product-progress || true
+          fi
           if git diff --quiet -- docs/synova/product-lines/; then
             echo "无变化，跳过（幂等）"
             exit 0
@@ -52,9 +59,11 @@ jobs:
           git add docs/synova/product-lines/
           git commit -m "chore(D371): 产品进度自动更新 $(date -u +%Y-%m-%d)"
           git push origin auto/product-progress --force
-          if gh pr list --head auto/product-progress --state open --json number -q '.[0].number' | grep -qE '^[0-9]+$'; then
-            echo "PR 已存在，无需新建"
+          if gh pr list --head auto/product-progress --state open --limit 1 --json number -q '.[0].number // empty' | grep -qE '^[0-9]+$'; then
+            echo "✅ PR 已存在，无需新建"
           else
+            # D373 fail-closed: PR 创建失败 = 本 step 失败 = workflow 红灯（绝不绿灯假装成功）
+            echo "创建 PR（失败即红灯，不静默）"
             gh pr create --title "chore(D371): 产品进度自动更新" \
               --body "自动生成（产品完成度仪表盘 A1-A5）。产物: todos.yaml / product-progress.json / product-progress.html。合并前可点开 product-progress.html 查看最新进度。CI 绿后点 Merge 即可。"
           fi
