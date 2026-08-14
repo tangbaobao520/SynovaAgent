@@ -278,9 +278,24 @@ def compute(yaml_path, evidence_dir, override_path, git_cmd, out_path):
     }
     if problems:
         result["degraded"]["git_check"] = "partial"
+
+    # 幂等: 仅 generated_at 变化 → 不重写（防 CI 每跑一次就产生一条噪音提交/bot PR）
+    payload = json.dumps(result, ensure_ascii=False, indent=2)
+    if out_path.is_file():
+        try:
+            old = json.loads(out_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            old = None
+        if isinstance(old, dict):
+            old_norm = dict(old)
+            old_norm["generated_at"] = result["generated_at"]
+            if json.dumps(old_norm, ensure_ascii=False, indent=2) == payload:
+                log.info("进度无变化（仅时间戳），不重写（幂等）")
+                return result
+
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(result, f, ensure_ascii=False, indent=2)
+        f.write(payload + "\n")
     return result
 
 

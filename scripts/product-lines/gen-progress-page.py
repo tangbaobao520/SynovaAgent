@@ -326,6 +326,9 @@ def generate(progress_path, todos_path, map_path, out_path):
         log.warning("todos.yaml 不存在（页面待办区为空）")
 
     page = render_page(progress, todos, progress.get("generated_at", ""))
+    if out_path.is_file() and out_path.read_text(encoding="utf-8") == page:
+        log.info("页面无变化，不重写（幂等）")
+        return page
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(page, encoding="utf-8")
     log.info("已生成 %s（%d 条线 / %d 条待办）", out_path, len(progress["lines"]), len(todos))

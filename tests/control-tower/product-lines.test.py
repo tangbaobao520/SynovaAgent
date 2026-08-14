@@ -280,6 +280,17 @@ class TestCalcStateMachine(unittest.TestCase):
         self.assertEqual(len(result["decisions"]), 2)
         self.assertEqual(result["total_lines"], 26)
 
+    def test_idempotent_no_rewrite(self):
+        """D372: 内容无变化（仅时间戳）→ 不重写文件（防 CI 噪音提交）。"""
+        tmp = Path(tempfile.mkdtemp())
+        out = tmp / "out.json"
+        calc.compute(DOC_DIR / "product-lines.yaml", DOC_DIR / "evidence",
+                     DOC_DIR / "cockpit-override.yaml", "git", out)
+        mtime1 = out.stat().st_mtime_ns
+        calc.compute(DOC_DIR / "product-lines.yaml", DOC_DIR / "evidence",
+                     DOC_DIR / "cockpit-override.yaml", "git", out)
+        self.assertEqual(out.stat().st_mtime_ns, mtime1, "第二次运行不得重写（幂等）")
+
 
 class TestAggregateTodos(unittest.TestCase):
     """3. aggregate-todos.py: 真实源 + 区间展开 + 幂等 + MANUAL 保留 + fail-closed"""
@@ -419,6 +430,16 @@ class TestGenPage(unittest.TestCase):
         out = Path(tmp) / "page.html"
         genpage.generate(progress, todos, DOC_DIR / "todo-line-map.yaml", out)
         self.assertIn("人工覆盖标题", out.read_text(encoding="utf-8"))
+
+    def test_idempotent_no_rewrite(self):
+        """D372: 页面内容无变化 → 不重写（mtime 不变）。"""
+        tmp = Path(tempfile.mkdtemp())
+        progress, todos = self._real_chain(tmp)
+        out = tmp / "page.html"
+        genpage.generate(progress, todos, DOC_DIR / "todo-line-map.yaml", out)
+        mtime1 = out.stat().st_mtime_ns
+        genpage.generate(progress, todos, DOC_DIR / "todo-line-map.yaml", out)
+        self.assertEqual(out.stat().st_mtime_ns, mtime1)
 
 
 class TestAScripts(unittest.TestCase):

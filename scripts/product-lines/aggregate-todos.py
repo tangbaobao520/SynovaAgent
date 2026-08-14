@@ -379,12 +379,19 @@ def aggregate(args):
         manual_block = preserve_manual(out_path.read_text(encoding="utf-8"))
     content = render(todos, degraded, manual_block, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
-    if out_path.is_file() and out_path.read_text(encoding="utf-8") == content:
-        log.info("AUTO 区无变化，不重写（幂等）")
-    else:
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        out_path.write_text(content, encoding="utf-8")
-        log.info("已写入 %s（%d 条待办）", out_path, len(todos))
+    if out_path.is_file():
+        existing = out_path.read_text(encoding="utf-8")
+
+        def norm(s: str) -> str:
+            return re.sub(r'generated_at: ".*"', 'generated_at: "X"', s)
+
+        if norm(existing) == norm(content):
+            log.info("待办无变化（仅时间戳），不重写（幂等）")
+            return todos, degraded
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(content, encoding="utf-8")
+    log.info("已写入 %s（%d 条待办）", out_path, len(todos))
 
     return todos, degraded
 
