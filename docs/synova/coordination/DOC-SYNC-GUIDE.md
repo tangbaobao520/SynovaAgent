@@ -37,14 +37,28 @@
 4. **冲突处理**：若发现 Win 侧文档与已提交版本有冲突/重复，以 Win 侧为准覆盖，
    并在 commit message 注明
 
-## 三、提交流程（PR 工作流）
+## 三、提交流程（PR 工作流 — 先提交 → 再拉平 → 再合流）
+
+> ⚠️ 顺序铁律：未提交文件是全项目最脆弱的东西（唯一副本）。
+> 必须先把它们 commit 锁进 git，再动分支。禁止带着未提交文件 pull/切分支
+> （git 会报错卡住；更糟的是任何失误都可能弄丢唯一副本）。
 
 ```bash
-git fetch --all && git pull --ff-only        # 拉平到最新 main
-git checkout -b feat/docs-sync-<日期>        # 开文档同步分支
-# 按"二"整理、拷贝、更新索引
+# ── 第一步：先提交（保存文档，锁进保险箱）──
 git add -A
-git commit -m "docs(D337): Win 侧文档拉平 — dev doc/教训/研究全量入库 + 索引更新 + 导读"
+git commit -m "docs(WIP): 本地未提交文档存档 — 拉平前快照"
+# 注：若被 pre-commit 门禁拦（brief 缺失等），先用 synova-commit 走完整门禁，
+#     或问创始人授权；无论如何：先 commit，再动分支。
+
+# ── 第二步：拉平 main（拿到唯一真相）──
+git fetch --all
+git checkout main && git pull --ff-only
+# 若 checkout 被未提交文件挡住 → 回到第一步，把剩余文件也 commit
+
+# ── 第三步：合流（基于最新 main 开同步分支）──
+git checkout -b feat/docs-sync-<日期>
+git cherry-pick <第一步的 commit>          # 把文档提交带过来
+# （若文档 commit 在别的分支上，cherry-pick 其 hash；冲突时问创始人仲裁）
 git push ssh feat/docs-sync-<日期>
 # 给创始人 PR 链接 → 创始人点 Merge
 ```
