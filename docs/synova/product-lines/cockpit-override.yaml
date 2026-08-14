@@ -1,0 +1,35 @@
+# cockpit-override.yaml — 待裁决清单（A8 源，手动区）
+#
+# 用途: 页面顶部"需要创始人"置顶区的内容。每项必须自带选项 + 建议 + 一句话理由
+#       （对齐 K3 原则：只出分析不替创始人决策——但建议必须给）。
+# 维护: DeepSeek Harness 起草；创始人裁决后把 status 改为 resolved 并填 resolved_date。
+#       改完跑 bash scripts/product-lines/refresh-all.sh 页面即时生效。
+
+version: 1.0
+
+pending_decisions:
+  - id: "D-1"
+    title: "告警去重窗口用多久？（同一件事多久内只提醒一次）"
+    context: "审计员发现告警去重键不稳定（先修键是技术活，已排任务）。窗口大小是产品决策：太长会漏掉重要变化，太短会反复打扰老板。"
+    options:
+      - label: "5 分钟"
+        note: "同一异常 5 分钟内只提醒一次；周级监测节奏下足够"
+      - label: "30 分钟"
+        note: "更安静，但半小时内的两次独立异常会合并"
+    suggestion:
+      label: "5 分钟"
+      reason: "监测最细是周级，重复告警都发生在同一轮；5 分钟足够去重，且不吞掉真实变化"
+    status: open
+
+  - id: "D-2"
+    title: "第一条做到 100% 的线选哪条？"
+    context: "每条线到 100% 都要审计员全量复核（防烂尾）。第一条 100% 线是样板，建议选演示刚需、修复路径最清晰的。"
+    options:
+      - label: "资本循环（线 10）"
+        note: "演示刚需（持续监测叙事）；审计员已给出转绿路径，第一步只需修一行配置"
+      - label: "首次诊断（线 06）"
+        note: "演示刚需（首诊叙事）；但从未端到端实测，路径最长"
+    suggestion:
+      label: "资本循环（线 10）"
+      reason: "修复路径最短、每步都有审计员给的断点清单，最快立信"
+    status: open

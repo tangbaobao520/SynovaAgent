@@ -1,0 +1,60 @@
+# product-progress.yml — 产品进度自动刷新（设计 v1.4 §5.3 A1+A3+A4+A5）
+#
+# 触发:
+#   - push 到 main（= PR 合并事件）→ A1 证据失效检测 + A4 进度重算（代码一变页面自动转黄）
+#   - 每周五 09:00 UTC（17:00 北京时间）→ A3 待办聚合 + A4 + A5 全量刷新
+#   - 手动 workflow_dispatch
+#
+# 产出: docs/synova/product-lines/{todos.yaml,product-progress.json,product-progress.html}
+# 产物有变化 → 提交到 bot 分支 auto/product-progress 并开/更新 PR（合并走 PR，不直接推 main；
+# 对齐 MULTI-MACHINE-PR-WORKFLOW）。无变化 → 什么都不做（幂等）。
+#
+# 红线: 本工作流只消费数据源 + 调用 scripts/product-lines/（Harness 代码，进审计范围）；
+#       不触碰 scripts/audit/、不写审计标准。
+
+name: Product Progress (A1-A5)
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 9 * * 5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh:
+    name: 聚合 → 计算 → 页面
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: 一键刷新（A3+A4+A5，含 A1 惰性失效）
+        run: bash scripts/product-lines/refresh-all.sh
+      - name: 产物有变化则提交到 bot 分支并开 PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "synova-bot"
+          git config user.email "bot@synova.local"
+          if git diff --quiet -- docs/synova/product-lines/; then
+            echo "无变化，跳过（幂等）"
+            exit 0
+          fi
+          git checkout -b auto/product-progress
+          git add docs/synova/product-lines/
+          git commit -m "chore(D371): 产品进度自动更新 $(date -u +%Y-%m-%d)"
+          git push origin auto/product-progress --force
+          if gh pr list --head auto/product-progress --state open --json number -q '.[0].number' | grep -qE '^[0-9]+$'; then
+            echo "PR 已存在，无需新建"
+          else
+            gh pr create --title "chore(D371): 产品进度自动更新" \
+              --body "自动生成（产品完成度仪表盘 A1-A5）。产物: todos.yaml / product-progress.json / product-progress.html。合并前可点开 product-progress.html 查看最新进度。CI 绿后点 Merge 即可。"
+          fi
