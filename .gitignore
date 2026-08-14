@@ -56,3 +56,12 @@ docs/research/*.md
 # 临时 brief 与 worktree 副本
 .claude/task-briefs/*-auto.md
 .claude/worktrees/
+# Electron 打包产物（几百 MB 二进制，非源码）
+release/
+# 飞书桥会话状态
+.feishu-bridge-state.json
+# 写入锁临时目录
+.write-locks/
+# 根目录临时文档生成/审计/调试脚本（一次性脚手架，用完即弃）
+/_*.py
+/_*.txt
