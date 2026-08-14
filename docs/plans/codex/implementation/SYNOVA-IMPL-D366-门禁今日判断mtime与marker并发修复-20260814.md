@@ -62,7 +62,7 @@
 
 ## 3. 实现方案
 
-### 3.1 写集 (5 修改 + 2 新建)
+### 3.1 写集 (7 修改 + 2 新建)
 | 文件 | 操作 | 说明 |
 |------|:---:|------|
 | [scripts/control-tower/verify-parallel.sh](D:\novis-backup-20260526\Novis\synova-agent\scripts\control-tower\verify-parallel.sh) | 修改 | `--scan-today` 的 `find -newermt` 改为按文件名日期后缀 `-YYYYMMDD.md` 匹配今天 |
@@ -164,8 +164,8 @@ post-commit 改为：读 marker 的 head hash 对比 `git rev-parse HEAD^`（本
 - DS5: `bash tests/control-tower/post-commit-marker.test.sh` 全绿（并发写/无 marker/head 匹配/不匹配/超时）
 - DS6: `bash scripts/control-tower/baseline-check.sh --tsc` 显示新增 0（存量 28 不变）
 - DS7: VERSION.md 含 V4.7.9 + version.log 追加 4.7.9（与代码同 commit）
-- DS8: `git diff --name-only HEAD~1..HEAD` 恰为写集 5 修改 + 2 新建（无越界）
-- DS9: 真实 push 验证：`git log origin/feat/prompt-architecture..HEAD` 为空（已推送）+ CI task-relevant jobs 绿（vitest/golden-case/checker-review 等；npm audit/Architecture 预存失败单独标注）
+- DS8: `git diff --name-only HEAD~1..HEAD` 恰为写集 7 修改 + 2 新建（无越界）
+- DS9: 真实 push 验证：`git log @{upstream}..HEAD` 为空（已推送，用实际推送分支的 upstream，PR 工作流下分支名可变）+ CI task-relevant jobs 绿（vitest/golden-case/checker-review 等；npm audit/Architecture 预存失败单独标注）
 
 ## 7. 自检清单
 

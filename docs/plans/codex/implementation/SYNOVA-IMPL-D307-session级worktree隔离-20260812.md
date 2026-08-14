@@ -2,7 +2,7 @@
   SYNOVA-IMPL-D307: session 级 worktree 隔离 — 并行根治（独立 index / 独立暂存区 / 完成合并清理）
   状态: dev doc | 2026-08-12 | 优先级 P0 (M8 共享暂存区竞争物理根治; D320 劫持/D330-D331 拉锯均根因于此)
   权威文档: PARALLEL-DISCIPLINE.md + AGENTS.md 铁律 0-3 + D311 session_registry + D332 软加固
-  依赖: D330+D331+D332（控制塔稳定后；D332 的 attach register 是本任务前置）
+  依赖: 无（D332 的 attach register 从"前置"降为"可选增强"——worktree 隔离核心不依赖 attach 强制 register；attach 并行模式检测是提示层增强，可独立于 D332 执行）
   并行: 无（独占 V4.8.0 版本编排）
 -->
 
@@ -46,7 +46,8 @@
 | [tests/control-tower/worktree-manager.test.py](D:\novis-backup-20260526\Novis\synova-agent\tests\control-tower\worktree-manager.test.py) | 新建 | worktree 生命周期 + 并行隔离测试（≥6 用例，见 §4） |
 
 > version.log 运行时（gitignore）：`control_tower_log.py version --version 4.8.0 --changes "D307 worktree 隔离"`。
-> **写集说明**：attach.py 与 D332 共享（均改 attach.py）——D307 依赖 D332 串行执行，无并行冲突。
+> **写集说明**：attach.py 的 register 部分由 D332 负责；D307 只加"并行模式检测提示"（detect-only，不依赖 D332，可独立执行）。若 D332 已先行，attach register 与本任务的并行检测在 attach.py 内叠加，无冲突。
+> **共享资源标注**（S-8）：`.codex/control-tower/VERSION.md`、`.claude/current-brief`、`.claude/task-briefs/`、暂存区本身为共享资源，串行触碰；本任务与 D332（改 attach.py）若并行，须先 worktree 隔离或串行执行。
 
 ### 3.2 修复模式
 
@@ -107,12 +108,26 @@ if parallel_mode and not in_worktree():
 | L2 | Python 单元（新建） | ≥6 | 上述 6 用例（正常/隔离/合并/清理/降级） |
 | L1 | 端到端 | 1 | 模拟双 session 并行提交 → 主分支合并无冲突 |
 
+## 4.5 决策参考
+
+**决策点 1**：worktree 隔离选"session 分支 + finish merge 回主分支"，而非"直接在主 worktree 双 checkout"。
+
+**参考系**：第一性原理——git worktree 硬约束"两个 worktree 不能 checkout 同一分支"，故并行 session 必须用独立分支（`session/<sid>`），finish 时 merge 回主分支；DeepSeek 开源实证——git 官方 worktree 设计的标准用法即是"分支级隔离 + 合并回主"。
+
+**结论**：create 时 `git worktree add -b session/<sid>`，finish 时主 worktree merge session 分支并清理。完成报告须含"决策记录"（决策点 + 参考系 + 理由）。
+
+**决策点 2**：attach.py 并行模式是"检测提示"而非"自动 create worktree"。
+
+**参考系**：Anthropic 工程基线——PreToolUse/SessionStart hook 无法改变宿主进程的 cwd（不能 `os.chdir` 到 worktree 目录），只能输出 degraded 提示，由 task-start 在目标 worktree 目录启动。
+
+**结论**：attach 只 detect + log_degraded 提示，不自动 create。完成报告须含"决策记录"。
+
 ## 5. 接线要求
 
 | 变更 | 验证 |
 |------|------|
 | worktree-manager create/finish | `python worktree-manager.py create test` → worktree 存在 + session/test 分支；finish → 清理 |
-| attach 并行模式 | registry 有活跃 session 时 SessionStart 自动 create worktree |
+| attach 并行模式 | registry 有活跃 session 且当前非 worktree 时 SessionStart 输出 degraded 提示（不自动 create，hook 无法切 cwd） |
 | registry worktree 字段 | session 记录含 worktree_path/branch |
 | synova-commit 提示 | worktree 内提交后输出 finish 指引 |
 
@@ -127,7 +142,7 @@ if parallel_mode and not in_worktree():
 7. DS7: VERSION.md 含 **V4.8.0** + version.log 追加（同 commit）
 8. DS8: 全量审计与当前 HEAD 基线一致（**439 FAIL**；若已合并 Mac 清理 ba653c3 则为 434）+ as any=0
 9. DS9: 真实提交环境 12 组 pre-commit 全过、无 --no-verify、`git diff --name-only` 与写集一致
-10. DS10: **推送 + CI 验证**：`git log origin/feat/prompt-architecture..HEAD` 为空 + CI 任务相关 job 逐 job 全绿（预存 npm audit/Architecture 单独标注）
+10. DS10: **推送 + CI 验证**：`git log @{upstream}..HEAD` 为空（用实际推送分支的 upstream，PR 工作流下分支名可变）+ CI 任务相关 job 逐 job 全绿（预存 npm audit/Architecture 单独标注）
 
 ## 7. 自检清单
 
