@@ -332,6 +332,10 @@ purpose: "全局任务追踪。控制塔健康监控。"
 > | **D358** | **合并哨兵去 _extinct 桥接**（P1-2）：margin-health / capital-health 重写真实 compute，不再动态 import ../_extinct/ 退役代码；props 契约对齐 erp-standard | P1 | ❌ 需写 dev doc |
 > | **D359** | **文档口径同步 + 权威03 落地**（P1-4 + P1-5）：架构文档 61/50/11/4 更新为实际 47/44/1/已修复；N1-N10 哨兵落地 + computeMarginalCost/LearningCurve/CSFProfile 补全 + 42 边旧标签迁移 + **正向信号放大未实现**（grep excellence/positive 零命中） | P1 | ❌ 需写 dev doc |
 > | **D360** | **P2 批次清理**（checkedAt 1970 时间戳 / 阈值硬编码不读 manifest / findings 持久化分裂（tickets 表不读）/ DEPLOYS deprecated 门控 / 规范外哨兵 2 个 / err:any / **三重注册入口冗余**（builtins+file-driven+runner 去重无害化但冗余）） | P2 | ❌ 需写 dev doc |
+> | **K3 基础设施审计（2026-08-14）** | **CONDITIONAL PASS（8 能力 5 真/3 部分/0 空壳）**：扫描报告 8/8 量化声称独立复核无一偏差（288/267 租户引用、DB 实测 tickets=0/baselines=580/agent_sessions=1 全复现）；增量 3 条（agent_sessions 仅 1 行=跨会话记忆零流转、"10 provider"实为 4 内置+10 manifest、"MCPToolRegistry"是通用 ToolRegistry 别名）。P1×3（LLM 无运行时 failover / actions+feedback_log 表缺失 / 跨会话记忆未激活）+ P2×3。报告: docs/synova/audit-reports/AGENT-INFRASTRUCTURE-AUDIT-20260814.md | — | 🔄 D363-D365 |
+> | **D363** | **LLM 运行时 failover + 降级故障注入**（P1-1 + P2-1/P2-2）：主 provider 失败 catch→切换备用（当前 fallback 仅注释 1 处，无 circuit breaker，detect.ts 只在启动时按环境变量切换）；验收须含故障注入测试（mock 主 provider 抛错→断言备用接管，CT-30）；顺带修正 MCP 命名误导（自研 JSON-RPC 桥接冒称 MCP）+ "10 provider" 口径（4 内置 vs 10 manifest） | P1 | ❌ 需写 dev doc |
+> | **D364** | **执行跟踪 + 跨会话记忆闭环激活**（P1-2 + P1-3）：actions/feedback_log 表缺失（DDL 惰性建表从未执行）+ agent_memory 0 行/agent_sessions 1 行——闭环能力"代码真实≠能力激活"；验收须含数据流证据（生产或测试库 ≥1 条端到端流转记录，CT-31） | P1 | ❌ 需写 dev doc |
+> | **D365** | **审计任务书命令健壮性**（P2-3）：任务书命令禁裸 `2>/dev/null`（命令不存在与结果为空不可区分，与 P0-3 fail-open 同态）；改 `command -v sqlite3 || echo MISSING` 显式分支，退出码作为证据输出（CT-32） | P2 | ❌ 需写 dev doc |
 >
 > 开发文档: [implementation/](../plans/codex/implementation/) | 权威文档: [research/](research/)
 > 协调文档: [ROLES.md](coordination/ROLES.md) | [AUDIT-PROTOCOL.md](coordination/AUDIT-PROTOCOL.md) | [审计发现台账](coordination/AUDIT-FINDINGS-LEDGER.md)（K3 审计发现 + CT/S 改进队列）| [DECISION-REFERENCE.md](coordination/DECISION-REFERENCE.md)（决策双参考系：Anthropic 工程 + DeepSeek 第一性原理/开源实证，S-12 强制记录）

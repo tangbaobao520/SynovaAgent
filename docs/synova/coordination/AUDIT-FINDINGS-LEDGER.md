@@ -29,6 +29,7 @@
 | 08-12 | K3 权威偏差 v1.1 | P1×5 | ①V5 视图硬编码旧 6 专家（D282 未传播，铁律 9 违规实例）；②gate-status.json 缺失（3/19 信号仅 3 文件）；③铁律 36 无全量 vitest 强制点；④铁律 37 无 dead-code 扫描（direction-monitor 存活 11 天）；⑤铁律 9 无传播检查 | 控制塔视图/信号/铁律门禁缺失 | D340-D342 | 控制塔 |
 | 08-12 | K3 权威偏差 v1.1 | 改判 | D-G2"已修复"→"引擎已修复，数据链路未担保"（gate-status 缺失 + 快照 11 天 + 自检盲区）；组 11 并入组 4（12 组计数口径 → D3）；铁律 38 确认全仓扫描 | 复核深化 | 演示前 checklist + D339 | 控制塔+文档 |
 | 08-14 | K3 全链路审计 | P0×3 / P1×5 / P2×6 | **Agent 核心能力全链路 FAIL（0/3 贯通）**：L5 无 CRM/财务/HR 连接器；L4 类型契约断裂（Market≠Client、People≠Person、Event/Tool 零写入方）+ 属性契约断裂（cashBalance≠cash）+ filter bug（compute-cash-runway-months.ts:60）；P0 哨兵阈值告警生产死代码（sentinel-loader 从不挂 manifest）；L4 查询层静默 fail-open（schema 漂移只 warn 返回空）。活运行证明 L3 计算能力本身是真的，断裂在数据进出两端 | L5 连接器缺失 + L4 契约失配 + manifest 死代码 + fail-open | D355-D360（见仪表盘） | 产品 |
+| 08-14 | K3 基础设施审计 | P1×3 / P2×3 | **CONDITIONAL PASS（8 能力 5 真 3 部分 0 空壳）**：扫描报告 8/8 量化声称独立复核无一偏差（288/267 租户引用、DB 实测 tickets=0/baselines=580/agent_sessions=1 等全复现）。增量 3 条：agent_sessions 仅 1 行（跨会话记忆生产零流转）；"10 provider"实为 4 内置适配器 + 10 manifest；"MCPToolRegistry"是通用 ToolRegistry 的 import 别名。P1：LLM 无运行时 failover（fallback 仅注释 1 处）/ actions+feedback_log 表缺失（DDL 惰性未执行）/ 跨会话记忆未激活 | 代码真实 ≠ 能力激活（failover 是运行时行为路径，静态 WIRE CHECK 看不见） | D363-D365 | 产品 |
 
 ## 二、模式归纳（跨审计复现的根因类）
 
@@ -77,6 +78,9 @@
 | CT-27 | N14 去重键稳定（finding.id 去时间戳） | v2 N14 | 🔄 D354 |
 | CT-28 | **verify-parallel --scan-today 语义缺陷**（L135-146 只按当天 mtime 圈 doc 两两比对，不理解「依赖/接力顺序」——D332/D307 与 D331 写集重叠被误判并行冲突硬阻断；自愈=离开当天范围即放行。K3 审计仅验「门禁 5 存在+接线」，未覆盖判定语义=控制塔语义审计盲区） | 2026-08-13 并行拦截复盘（K3 盲区，本机发现） | 🔧 建议并入 D332 写集或新建补丁 |
 | CT-29 | **pre-commit marker 并发缺陷**：post-commit 靠全局单例 `.claude/last-precommit-success` 检测 --no-verify 绕过，多 session 并发时一个 session 的 post-commit `rm` 掉 marker，导致另一个 session 的正常提交被误判 `detected-bypass no-precommit-marker`，反过来触发 GATEKEEPER 硬阻断所有提交（2026-08-14 文档拉平 D362 死锁实证）。修复方向：per-session marker 或按 commit hash 对账，替代单文件时间戳 | 2026-08-14 D362 文档拉平死锁 | 🔧 建议新建补丁（D363+） |
+| CT-30 | **降级能力故障注入契约**：failover 是运行时行为路径（主 provider 抛错→catch→切换），静态 WIRE CHECK 永远看不见——凡声称"可降级/可切换"的模块，验收测试必须含一次真实故障注入（mock 主 provider 抛错，断言备用路径接管）；无此测试，"降级"二字不得进能力文档 | K3 基础设施审计 L4 发现 1（P1-1） | 🔧 并入 D363 + S 队列 |
+| CT-31 | **闭环能力数据流证据验收**：现有门禁验证"代码存在"（DDL/INSERT 在代码里）不验证"数据流转过"——actions/feedback_log 惰性建表通过一切静态检查但生产库从未执行。闭环类能力（跟踪/记忆/回流）Done 标准增加"生产或测试库 ≥1 条端到端流转记录"（首跑证据）或 checkpoint 增加关键表存在性+行数断言 | K3 基础设施审计 L4 发现 2（P1-2/P1-3） | 🔧 并入 D364 + S 队列 |
+| CT-32 | **审计任务书命令健壮性**：任务书命令禁裸 `2>/dev/null`（命令不存在与结果为空输出不可区分，与 P0-3 fail-open 同态）；改 `command -v sqlite3 || echo MISSING` 显式分支，退出码作为证据输出 | K3 基础设施审计 L4 发现 3（P2-3） | 🔧 并入 D365 + S 队列 |
 | 权威18 | 审计体系冲刺（7 任务重编号 D343-D349）：D343 bypass A+B（P0）/ D344 报告git+dispatcher（P0）/ D345 doc-audit / D346 组13 / D347 JSON规范 / D348 CLAIM标签化（5份核心80%，按§5.5+验收#7）/ D349 JSON生成器 | 权威文档 18（2026-08-12） | 📝 D343-D349 待写 dev doc |
 | 决策 | N14 去重窗口 ✅ 裁决 A（文档改 5 分钟，任务地图 v2 已改 2026-08-13）｜P0-8 boss 角色 ✅ 裁决 A（ENT 补 → D351）｜npm audit ⏳ 待裁（建议豁免并入 D309/D310） | 创始人 2026-08-13 | 🔄 D351 待写 + D339 含 N14 |
 | 08-13 | K3 D331 复审 | P1×1 | **DS13 静默消失**：dev doc 承诺 resolver 硬化（PYBIN 探测 + 退出码 0/1/2）零交付，交付声明止于 DS12 无 descope——D330 L4#2 同构复发；broken-python 门禁仍不拦截、无 brief 仍误标 degraded | dev doc 完成标准 ⊆ 交付声明无对账机制 | D352（补做）+ S-10（skill） | skill+控制塔 |
