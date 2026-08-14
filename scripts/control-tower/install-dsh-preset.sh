@@ -55,15 +55,16 @@ degrade() { # <原因> — 降级: 显式日志 + exit 2
 TARGET="$DSH_HOME/.agent-presets/synova-dsh"
 
 # ── 探测 standard 预设源（测试注入优先, 再环境变量, 再 npm 全局, 再常见路径）──
+# 注: ${DSH_INSTALL_DIR:-} 默认空串 — set -u 下直接 $DSH_INSTALL_DIR 会 unbound variable
 if [ -z "$STD_SRC" ]; then
   for cand in \
-    "$DSH_INSTALL_DIR/config/agent-presets/standard" \
+    "${DSH_INSTALL_DIR:-}/config/agent-presets/standard" \
     "$(npm root -g 2>/dev/null || true)/@deepseek-ai/dsh/config/agent-presets/standard" \
     "$HOME/.nvm/current/lib/node_modules/@deepseek-ai/dsh/config/agent-presets/standard"; do
     if [ -d "$cand" ] && [ -f "$cand/agent.cordis.yml" ]; then STD_SRC="$cand"; break; fi
   done
 fi
-[ -d "$STD_SRC" ] || degrade "standard 预设源未找到（--standard-from 注入或 $DSH_INSTALL_DIR/npm root -g 探测）"
+[ -d "$STD_SRC" ] || degrade "standard 预设源未找到（--standard-from 注入或 ${DSH_INSTALL_DIR:-DSH_INSTALL_DIR}/npm root -g 探测）"
 [ -f "$STD_SRC/agent.cordis.yml" ] || degrade "standard 预设源缺 agent.cordis.yml: $STD_SRC"
 [ -f "$PERSONA_BLOCK" ] || degrade "仓库 persona-block.yml 缺失: $PERSONA_BLOCK"
 [ -f "$PRESET_YML" ] || degrade "仓库 preset.yml 缺失: $PRESET_YML"

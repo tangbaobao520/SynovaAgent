@@ -112,6 +112,24 @@ EXIT6=$?
 chmod 755 "$RO_HOME"
 assert_exit "$EXIT6" 2 "T6: home 不可写 exit 2"
 
+# ── T9: DSH_INSTALL_DIR 环境探测路径（不注入 --standard-from, D370 fix: set -u unbound）──
+FAKE_INSTALL="$TMP/fake-install"
+mkdir -p "$FAKE_INSTALL/config/agent-presets/standard"
+cp "$STD_MOCK/preset.yml" "$FAKE_INSTALL/config/agent-presets/standard/preset.yml"
+cp "$STD_MOCK/agent.cordis.yml" "$FAKE_INSTALL/config/agent-presets/standard/agent.cordis.yml"
+OUT9=$(DSH_INSTALL_DIR="$FAKE_INSTALL" bash "$INSTALL" --home "$TMP/home9" --install 2>&1)
+EXIT9=$?
+assert_exit "$EXIT9" 0 "T9: DSH_INSTALL_DIR 探测安装 exit 0"
+[ -f "$TMP/home9/.agent-presets/synova-dsh/agent.cordis.yml" ] \
+  && pass "T9: 探测路径产出预设" || fail "T9: 探测路径无产出"
+
+# ── T10: 无任何探测命中 → exit 2 降级（D328: 不产出半成品）──
+# 受限 PATH（无 npm/basename 干扰, windows-compat 模式 2）保证探测确定性失败
+OUT10=$(env PATH="/usr/bin:/bin" DSH_INSTALL_DIR="$TMP/不存在" HOME=/nonexistent-home bash "$INSTALL" --home "$TMP/home10" --install 2>&1)
+EXIT10=$?
+assert_exit "$EXIT10" 2 "T10: 探测全失败 exit 2"
+[ ! -e "$TMP/home10/.agent-presets/synova-dsh" ] && pass "T10: 无半成品残留" || fail "T10: 半成品残留"
+
 # ── T7: 重复安装幂等（正常）──
 OUT7=$(RUN --install 2>&1)
 EXIT7=$?
