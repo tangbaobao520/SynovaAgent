@@ -336,6 +336,7 @@ purpose: "全局任务追踪。控制塔健康监控。"
 > | **D363** | **LLM 运行时 failover + 降级故障注入**（P1-1 + P2-1/P2-2）：主 provider 失败 catch→切换备用（当前 fallback 仅注释 1 处，无 circuit breaker，detect.ts 只在启动时按环境变量切换）；验收须含故障注入测试（mock 主 provider 抛错→断言备用接管，CT-30）；顺带修正 MCP 命名误导（自研 JSON-RPC 桥接冒称 MCP）+ "10 provider" 口径（4 内置 vs 10 manifest） | P1 | ❌ 需写 dev doc |
 > | **D364** | **执行跟踪 + 跨会话记忆闭环激活**（P1-2 + P1-3）：actions/feedback_log 表缺失（DDL 惰性建表从未执行）+ agent_memory 0 行/agent_sessions 1 行——闭环能力"代码真实≠能力激活"；验收须含数据流证据（生产或测试库 ≥1 条端到端流转记录，CT-31） | P1 | ❌ 需写 dev doc |
 > | **D365** | **审计任务书命令健壮性**（P2-3）：任务书命令禁裸 `2>/dev/null`（命令不存在与结果为空不可区分，与 P0-3 fail-open 同态）；改 `command -v sqlite3 || echo MISSING` 显式分支，退出码作为证据输出（CT-32） | P2 | ❌ 需写 dev doc |
+> | **D366** | **门禁"今日/本次"判断机制修复**（CT-28 + CT-29）：4 处 `find -newermt`（pre-commit G12:813 / hook-check-task-scope:74 / resolve-commit-brief:69 / verify-parallel:143）改按文件名日期判断"今日"（git pull 刷 mtime 误判根因）；marker 去 `rm` 改 head hash 校验（多 session 并发误判根因）。V4.7.9 | P1 | ✅ dev doc 就绪（20260814） |
 >
 > 开发文档: [implementation/](../plans/codex/implementation/) | 权威文档: [research/](research/)
 > 协调文档: [ROLES.md](coordination/ROLES.md) | [AUDIT-PROTOCOL.md](coordination/AUDIT-PROTOCOL.md) | [审计发现台账](coordination/AUDIT-FINDINGS-LEDGER.md)（K3 审计发现 + CT/S 改进队列）| [DECISION-REFERENCE.md](coordination/DECISION-REFERENCE.md)（决策双参考系：Anthropic 工程 + DeepSeek 第一性原理/开源实证，S-12 强制记录）
