@@ -1,7 +1,7 @@
 # 审计发现台账（KIMI K3 独立审计）
 
 > 用途：把 K3 审计发现固化为**开发过程迭代的关键素材**——改进控制塔 + 改进 Codex 的 dev doc 编写 skill。
-> 维护：Codex 在每次 K3 审计完成后更新本台账 + 登记仪表盘。
+> 维护：Codex（Win）+ DeepSeek Harness（Mac，DSH 相关发现，2026-08-15 创始人批准）在每次 K3 审计完成后更新本台账 + 登记仪表盘。
 > 关联：[AUDIT-PROTOCOL](AUDIT-PROTOCOL.md) / [ROLES](ROLES.md) / 审计报告 `docs/synova/audit-reports/`
 
 ## 一、审计发现台账
@@ -77,6 +77,7 @@
 | CT-27 | N14 去重键稳定（finding.id 去时间戳） | v2 N14 | 🔄 D354 |
 | CT-28 | **verify-parallel --scan-today 语义缺陷**（L135-146 只按当天 mtime 圈 doc 两两比对，不理解「依赖/接力顺序」——D332/D307 与 D331 写集重叠被误判并行冲突硬阻断；自愈=离开当天范围即放行。K3 审计仅验「门禁 5 存在+接线」，未覆盖判定语义=控制塔语义审计盲区） | 2026-08-13 并行拦截复盘（K3 盲区，本机发现） | 🔧 建议并入 D332 写集或新建补丁 |
 | CT-29 | **pre-commit marker 并发缺陷**：post-commit 靠全局单例 `.claude/last-precommit-success` 检测 --no-verify 绕过，多 session 并发时一个 session 的 post-commit `rm` 掉 marker，导致另一个 session 的正常提交被误判 `detected-bypass no-precommit-marker`，反过来触发 GATEKEEPER 硬阻断所有提交（2026-08-14 文档拉平 D362 死锁实证）。修复方向：per-session marker 或按 commit hash 对账，替代单文件时间戳 | 2026-08-14 D362 文档拉平死锁 | 🔧 建议新建补丁（D363+） |
+| CT-30 | **Secrets 门禁 .env 过拦**：check-secrets.sh 全工作区扫描 + 本地 .env 检查把 gitignored 未跟踪的 .env（本地密钥库，产品运行依赖真实密钥的正常状态）当违规硬阻断 → 2026-08-14 23:04 .env 写入真实密钥起**所有提交被误拦**（上一 session WIP 卡死实证）。修复（D370）：未跟踪 .env 豁免；被 git 跟踪/被暂存 .env 仍阻断（泄漏路径不变）。测试 tests/control-tower/secrets-env-exempt.test.sh 7 用例 | 2026-08-15 D370 门禁自检发现 | ✅ D370 已修 |
 | 权威18 | 审计体系冲刺（7 任务重编号 D343-D349）：D343 bypass A+B（P0）/ D344 报告git+dispatcher（P0）/ D345 doc-audit / D346 组13 / D347 JSON规范 / D348 CLAIM标签化（5份核心80%，按§5.5+验收#7）/ D349 JSON生成器 | 权威文档 18（2026-08-12） | 📝 D343-D349 待写 dev doc |
 | 决策 | N14 去重窗口 ✅ 裁决 A（文档改 5 分钟，任务地图 v2 已改 2026-08-13）｜P0-8 boss 角色 ✅ 裁决 A（ENT 补 → D351）｜npm audit ⏳ 待裁（建议豁免并入 D309/D310） | 创始人 2026-08-13 | 🔄 D351 待写 + D339 含 N14 |
 | 08-13 | K3 D331 复审 | P1×1 | **DS13 静默消失**：dev doc 承诺 resolver 硬化（PYBIN 探测 + 退出码 0/1/2）零交付，交付声明止于 DS12 无 descope——D330 L4#2 同构复发；broken-python 门禁仍不拦截、无 brief 仍误标 degraded | dev doc 完成标准 ⊆ 交付声明无对账机制 | D352（补做）+ S-10（skill） | skill+控制塔 |
@@ -100,6 +101,32 @@
 | S-8 | 写集表标注共享资源（VERSION.md/current-brief/暂存区） | M8 | ✅ 已入 requirements.md + template.md（2026-08-12） |
 | S-9 | 任务前置含环境检查（session-registry 活跃 session） | M8 | ✅ 已入 requirements.md（2026-08-12） |
 
+## 四、DSH 防线映射（synova-dsh persona 免疫细胞）
+
+> 2026-08-15 创始人批准：K3 审计错误闭环覆盖 DeepSeek Harness。DSH 无 PreToolUse hook，
+> 免疫细胞形态 = persona 规则（`~/.dsh/.agent-presets/synova-dsh/agent.cordis.yml`）。
+> 闭环规则：**同类错误第二次出现 = 防线系统性失效，必须升级给创始人。**
+
+| M 模式 | 根因类 | DSH persona 防线 |
+|--------|--------|------------------|
+| M1 | fail-open 静默失效（检查未执行==检查通过） | SOP ⑤ verify 必须真实执行；验证失败 ≠ 通过；降级诚实（自检 5 问 2） |
+| M2 | 声称 vs 事实（doc/report overclaim） | 汇报必须文件 + 行号；"拆完了"由 grep 物理证明（铁律 47） |
+| M3 | 机制建成未接线（WIRE CHECK 失败） | 自检 5 问 1：新 export 谁调用（grep 确认调用方存在） |
+| M4 | 执行证据链断裂（bypass.log） | 禁止 --no-verify；提交走 synova-commit |
+| M5 | 环境依赖门禁（python3/broken shim） | 关键脚本 PYBIN 探测；脚本失败不算通过 |
+| M6 | 版本锚点断裂（tag 孤儿） | 铁律 0-3：开工前 git fetch + pull --ff-only；禁止 behind 开工 |
+| M7 | 文档-实现漂移（dev doc 未回填） | 交付汇报与实现同 commit 回填 |
+| M8 | 共享暂存区竞争（并行 session） | 分支隔离（铁律 0-3/34）+ 认领制（D296） |
+
+**DSH 侧审计发现闭环流程**：
+```
+K3 发现 → 查本台账 M 模式 → 归属判定
+  · DSH 犯的错 → 记入台账 + 长成 persona 规则（免疫细胞）
+  · 控制塔/工程缺陷 → 记入 CT 队列（DSH 领地，负责修）
+  · 审计脚本/审计标准 → 只转达 K3，绝不修改 scripts/audit/（红线）
+→ 记录 → 同类第二次 → 升级创始人
+```
+
 ## 五、演进记录
 
 | 日期 | 事件 |
@@ -117,3 +144,4 @@
 | 2026-08-13 | K3 D331 复审：CONDITIONAL PASS——D329 的 P1/P2 全部落地（bypass 证据链首次完整）；P1-1 DS13 resolver 硬化零交付（D352 补做）；P2×4；L4 DS 对账机制 → S-10/S-11 已入 skill |
 | 2026-08-13 | K3 权威偏差 v2：N13 根因加深（placeholder 假成功 + 伪造 completed）→ D333 扩为循环执行体真实化；铁律 38 改判退回（packages 81 处 as any）→ D353；N14 真问题去重键 → D354；D335 吸收；D5 文档 → D339 |
 | 2026-08-13 | 决策参考机制建立（DECISION-REFERENCE.md）：四步框架（第一性原理→Anthropic→DeepSeek 开源实证→收敛检查）+ 记录参考系强制；S-12 入 dev-doc skill（多选项任务必填决策参考小节 + 完成报告决策记录） |
+| 2026-08-15 | **DSH 审计闭环建立**：① 决策模式（D333）写入 synova-dsh persona——技术决策自决四步 + 记录参考系 + 收敛直接执行，只有产品/业务决策问创始人（创始人无代码基础，禁止转嫁技术决策）；② 审计免疫写入 persona——K3 发现 → 查台账 M 模式 → 归属判定（DSH 犯错→persona 规则；控制塔缺陷→CT 队列；审计脚本→只转达 K3）；③ 本台账新增 §四 DSH 防线映射（M1-M8 → persona 规则）；④ 台账维护权扩至 DSH（创始人批准） |

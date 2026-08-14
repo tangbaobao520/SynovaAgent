@@ -1,5 +1,5 @@
-﻿# AGENTS.md — SynovaAgent
-> V4.5.1 | 2026-08-02 | 9→12 组 pre-commit + 契约门禁 + 认领制 + 跨 session 隔离 (同步自代码, 研究 session 核对)
+# AGENTS.md — SynovaAgent
+> V4.5.1 | 2026-08-02 | 9→13 组 pre-commit + 契约门禁 + 认领制 + 跨 session 隔离 (同步自代码, 研究 session 核对)
 
 > 组织数字孪生诊断 + 持续增长导航系统。诊断是手段，目的是增长。
 > 核心问题：这家企业的增长卡在哪里？现在该做什么？
@@ -152,7 +152,7 @@ LLM       → providers/ (DeepSeek, OpenAI, Gateway)
 v2.5 的 38 项 pre-commit + 12 脚本 + 3 次 tsc/vitest 重跑，
 导致 `--no-verify` 泛滥——一个被绕过的门禁 = 没有门禁。
 
-v3.0 只设 5 项物理阻断 → v4.4.2 扩展到 7 项 → V4.5.1 扩展到 12 组。新增：契约优先（铁律47）、测试非空壳（铁律48）。
+v3.0 只设 5 项物理阻断 → v4.4.2 扩展到 7 项 → V4.5.1 扩展到 13 组。新增：契约优先（铁律47）、测试非空壳（铁律48）。
 **从代码规范执法 → 行为契约执法。测试不是写完代码后的验证——在代码被写出来之前，对和错的标准已经被定义。**
 
 ### 执法架构: 五层精简
@@ -161,7 +161,7 @@ v3.0 只设 5 项物理阻断 → v4.4.2 扩展到 7 项 → V4.5.1 扩展到 12
 📋 任务启动 (人工)   →  task-start.sh — 3 问翻译意图→规格
 🧠 写前注入 (自动)    →  hook-check-memory.sh — 历史教训
 ✍️ 写后验证 (自动)    →  verify-incremental.sh — L1 oxlint → L2 tsc → L3 vitest → L4 接线
-🔴 提交阻断 (自动)    →  pre-commit 12 组 — 全部 <10s
+🔴 提交阻断 (自动)    →  pre-commit 13 组 — 全部 <10s
 🚀 推送阻断 (自动)    →  pre-push 3 项 — secrets + golden-case F1 + vitest --changed
 ```
 
@@ -171,10 +171,10 @@ v3.0 只设 5 项物理阻断 → v4.4.2 扩展到 7 项 → V4.5.1 扩展到 12
 | PreToolUse | hook-block-write.sh (task brief 字段) | 🔴 阻断 | <1s |
 | PreToolUse | hook-enforce-v25.sh (loop-state) | 🔴 阻断 | <1s |
 | PostToolUse | verify-incremental.sh (L1→L4) + baseline-check.sh (L5) | 🔴 阻断 | 5-30s |
-| pre-commit | pre-commit-check.sh (12 组) | 🔴 阻断 | <10s |
+| pre-commit | pre-commit-check.sh (13 组) | 🔴 阻断 | <10s |
 | pre-push | pre-push-check.sh (3 项) | 🔴 阻断 | <3s |
 
-### pre-commit 12 组硬阻断 (V4.5.1, 组号沿用脚本 echo)
+### pre-commit 13 组硬阻断 (V4.5.1, 组号沿用脚本 echo)
 
 | # | 检查 | 历史事故 | 耗时 |
 |---|------|---------|------|
@@ -189,6 +189,7 @@ v3.0 只设 5 项物理阻断 → v4.4.2 扩展到 7 项 → V4.5.1 扩展到 12
 | 9 | 契约门禁 (D257) | 契约优先 | <1s |
 | 10 | V3 CP3 流水线健康度 (D260) | 条件区域+测试覆盖 | <1s |
 | 12 | Task Scope 一致性 (D296 认领制) | 跨 session 污染 | <1s |
+| 13 | 技能同步一致性 (D370) | .claude/skills ↔ .dsh/skills 漂移 | <1s |
 
 ### ⚡ Agent 自检 5 问（每次写完代码必答）
 
@@ -250,8 +251,8 @@ npm run workflow:deploy   # 部署后验证
 ```
 ① 任务开始 → pre-commit 强制 (Gate 0: task brief 不存在 + 未填写 → 拒绝提交)
 ② 设计完成 → pre-commit 强制 (Gate 1: SPEC.md + 设计文档不存在 → 拒绝提交)
-③ 实现完成 → pre-commit 强制 (Gate 2: 12 组物理阻断 + task brief 完整)
-④ 提交前   → Git Hook (.git/hooks/pre-commit) 12 组硬阻断（全 <10s）—— 无超时逃生舱
+③ 实现完成 → pre-commit 强制 (Gate 2: 13 组物理阻断 + task brief 完整)
+④ 提交前   → Git Hook (.git/hooks/pre-commit) 13 组硬阻断（全 <10s）—— 无超时逃生舱
 ⑤ 推送前   → Git Hook (.git/hooks/pre-push) 3 道门禁（secrets + golden-case F1 + vitest --changed）
 ⑥ 部署后   → 人工触发 (checkpoint-deploy.sh)
 ⑦ 线上     → Cron
@@ -259,7 +260,7 @@ npm run workflow:deploy   # 部署后验证
 
 ### 物理强制说明
 
-> pre-commit 是唯一物理阻断点。①②③ 的产出物检查已全部集成到 pre-commit（12 组硬阻断）：
+> pre-commit 是唯一物理阻断点。①②③ 的产出物检查已全部集成到 pre-commit（13 组硬阻断）：
 > - 无 task brief → 不准 commit
 > - 无 SPEC.md / 设计文档 → 不准 commit
 > - 新 export 未接线 → 不准 commit
@@ -304,7 +305,7 @@ crontab -e  # 添加: */30 * * * * bash /path/to/scripts/workflow/checkpoint-run
 
 | Hook | 触发时机 | 内容 |
 |------|---------|------|
-| pre-commit | `git commit` | 12 组硬阻断 (类型安全/测试/Secrets/接线/架构边界/Task Brief/架构合规/文件驱动/契约门禁/CP3/Task Scope) |
+| pre-commit | `git commit` | 13 组硬阻断 (类型安全/测试/Secrets/接线/架构边界/Task Brief/架构合规/文件驱动/契约门禁/CP3/Task Scope) |
 | commit-msg | `git commit` | Conventional Commits 格式强制 |
 | post-commit | `git commit` | 决策流程建议 (decide-next.sh) |
 | pre-push | `git push` | 3 项 (secrets 终扫 + golden-case F1 + vitest --changed) |

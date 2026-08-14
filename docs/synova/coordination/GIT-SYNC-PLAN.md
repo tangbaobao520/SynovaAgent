@@ -114,6 +114,6 @@ Mac clone 后将缺失：K3 全部审计报告、coordination 分工/审计制�
 
 1. **不无脑 `git add .`**——327 untracked 里混着敏感企业数据与运行时产物，必须按 §4 分类分批 add。
 2. **并行 session 协调**——提交前 `git status` 确认暂存区，遇并行 session 抢占先确认对方是否活跃。
-3. **门禁合规**——每批走 synova-commit（12 组 pre-commit + bypass 对账），不用 `--no-verify`。
+3. **门禁合规**——每批走 synova-commit（13 组 pre-commit + bypass 对账），不用 `--no-verify`。
 4. **version.log**——本计划属 chore，若涉及控制塔版本不动 VERSION.md，只追加 version.log 记录。
 5. **完成标准**——全部批次完成后 `git status` 干净（仅剩应被忽略的运行时产物）、`origin..HEAD` 空、双机 clone 能拿到全部 §4.1 文档。

@@ -9,7 +9,7 @@
 #   + bash 退位: 只做物理验证 (符号存在? 文件存在? 语法合法?)
 #   + agent 进位: 语义判断 (调用链正确? 降级诚实? 阶段合理?)
 #
-# 12 组:
+# 13 组:
 #   1. 类型安全 + 硬编码数据    (as any 跳过注释行 + 硬编码业务字段)
 #   2. 测试质量                  (catch 无 log + 测试配对[可 deferred] + 桩测试)
 #   3. Secrets                   (全工作区 + .claude/ + 暂存区 + .env)
@@ -19,6 +19,7 @@
 #   7. 架构合规                  (DiagnosticModule + 专家配置 + 数据流)
 #   8. 文件驱动架构完整性       (manifest/tags/回归/目录/feature-flag)
 #   9. 契约门禁 NEW (D257)       (.codex/contracts/*.json 声明 vs staged 比对)
+#  13. 技能同步一致性            (.claude/skills ↔ .dsh/skills 漂移, 调用 sync-dsh-skills.sh --check)
 #
 # 设计哲学:
 #   bash 只回答"物理事实" — 符号被引用过吗？文件存在吗？
@@ -191,7 +192,7 @@ NEW_IMPL=$(echo "$GIT_CACHED_ADDED_NAMES" | grep -E "^src/|^extensions/" | grep 
 
 echo ""
 echo "═══════════════════════════════════════════════════════════"
-echo "  Loop Engineering V4.5.1 — pre-commit (12 组 + 免疫 + plan-integrity)"
+echo "  Loop Engineering V4.5.1 — pre-commit (13 组 + 免疫 + plan-integrity)"
 echo "═══════════════════════════════════════════════════════════"
 echo ""
 
@@ -205,7 +206,7 @@ echo ""
 #   历史: 47 次 as any 导致运行时崩溃。2026-05 engine-core 拆分中，20 个桥接文件
 #         大量使用 as any 绕过类型检查，17 处 CJS require() 在 ESM 下崩溃。
 # ═══════════════════════════════════════════════════════════════════
-echo -e "${CYAN}── 组 1/12: 类型安全 + 硬编码数据 ──${RESET}"
+echo -e "${CYAN}── 组 1/13: 类型安全 + 硬编码数据 ──${RESET}"
 
 # 1a. as any 零容忍 (V3.8: 跳过注释行 — 行首是 // 或 * 或 /* 的行不检查)
 # Anthropic 原则: bash 只做模式匹配，不判断语义。注释行不属于"代码中的 as any"。
@@ -250,7 +251,7 @@ par_collect deprecated-mapping "$PAR_DEPRECATED" || true
 #         铁律 11 — 静默降级事故 (catch 空吞异常，生产环境无日志)。
 # ═══════════════════════════════════════════════════════════════════
 echo ""
-echo -e "${CYAN}── 组 2/12: 测试质量 ──${RESET}"
+echo -e "${CYAN}── 组 2/13: 测试质量 ──${RESET}"
 
 # 2a. empty catch 无 log
 EMPTY=""
@@ -344,7 +345,7 @@ hard_check "跨模块集成: bridge/context 类需 .integration.test.ts" "${INTG
 #         旧门禁只扫暂存区 → 磁盘上的真实 Key 从未被发现，直到被备份软件同步出去。
 # ═══════════════════════════════════════════════════════════════════
 echo ""
-echo -e "${CYAN}── 组 3/12: Secrets ──${RESET}"
+echo -e "${CYAN}── 组 3/13: Secrets ──${RESET}"
 par_collect secrets "$PAR_SECRETS" || HARD_FAIL=$((HARD_FAIL + 1))
 
 # ═══════════════════════════════════════════════════════════════════
@@ -358,7 +359,7 @@ par_collect secrets "$PAR_SECRETS" || HARD_FAIL=$((HARD_FAIL + 1))
 #         v3.5 追加拿线深度检查: 开发者 import 了函数但没调用，绕过了原第 5 项。
 # ═══════════════════════════════════════════════════════════════════
 echo ""
-echo -e "${CYAN}── 组 4/12: 接线完整性 ──${RESET}"
+echo -e "${CYAN}── 组 4/13: 接线完整性 ──${RESET}"
 
 # 4a. 新 export 被引用 (V3.8 简化: bash 只验证"被引用"这个物理事实)
 # Anthropic 原则: bash 退回到物理事实——"这个符号在文件外部出现过吗？"
@@ -418,7 +419,7 @@ hard_check "接线深度: 新 export 必须被调用(非仅 import)" "${DEEP_FAI
 #         始终可见——不可能"没注意到"。
 # ═══════════════════════════════════════════════════════════════════
 echo ""
-echo -e "${CYAN}── 组 5/12: 架构边界 + 桥接文件 ──${RESET}"
+echo -e "${CYAN}── 组 5/13: 架构边界 + 桥接文件 ──${RESET}"
 
 # 5a. 跨层引用检测 (原 8)
 CROSS_LAYER=""
@@ -499,7 +500,7 @@ warn_check "铁律 47: 声称完成须 grep 物理证明" "${CLEANUP_CLAIM:-}"
 #         task brief 字段不完整而非实质质量问题。
 # ═══════════════════════════════════════════════════════════════════
 echo ""
-echo -e "${CYAN}── 组 6/12: Task Brief (6 核心字段) ──${RESET}"
+echo -e "${CYAN}── 组 6/13: Task Brief (6 核心字段) ──${RESET}"
 
 TASK_BRIEF_MISSING=""
 TASK_BRIEF_EMPTY=""
@@ -596,7 +597,7 @@ warn_check "PRD 对照: Done 标准引用 PRD 章节(可选)" "${PRD_REF:-}"
 #         listModules() 运行时崩溃)。--no-verify 在 v2.5 被频繁使用 (38 项检查 90s)。
 # ═══════════════════════════════════════════════════════════════════
 echo ""
-echo -e "${CYAN}── 组 7/12: 架构合规 ──${RESET}"
+echo -e "${CYAN}── 组 7/13: 架构合规 ──${RESET}"
 
 # 7a. DiagnosticModule 禁止 (原 6)
 NEW_DIAG=$(echo "$GIT_CACHED_DIFF" | grep "^+.*DiagnosticModule" | grep -Ev "scripts/pre-commit-check.sh|.md|.html|//|@deprecated|import type|^+++|hard_check|禁止新 DiagnosticModule|不要再使用 DiagnosticModule" || true)
@@ -681,13 +682,13 @@ hard_check "数据流: 路由文件须含 API 调用证据" "${DATA_FLOW_FAIL:-}
 #         越来越多硬编码回归 → 一年后文件驱动只剩文档里的空壳。
 # ═══════════════════════════════════════════════════════════════════
 echo ""
-echo -e "${CYAN}── 组 8/12: 文件驱动架构完整性 (V3.9) ──${RESET}"
+echo -e "${CYAN}── 组 8/13: 文件驱动架构完整性 (V3.9) ──${RESET}"
 # V3.9: 能力验收 CI — 验收测试必须通过 CI
 par_collect acceptance-ci "$PAR_ACCEPTANCE" || HARD_FAIL=$((HARD_FAIL + 1))
 par_collect file-driven "$PAR_FILE_DRIVEN" || HARD_FAIL=$((HARD_FAIL + 1))
 
 # ═══ 组 9/12: 契约门禁 (D257) ═══
-echo -e "${CYAN}── 组 9/12: 契约门禁 ──${RESET}"
+echo -e "${CYAN}── 组 9/13: 契约门禁 ──${RESET}"
 CONTRACT_DIR="$ROOT/.codex/contracts"
 CONTRACT_FAIL=""
 if [ -d "$CONTRACT_DIR" ] && [ "$(ls -A "$CONTRACT_DIR" 2>/dev/null)" ]; then
@@ -716,7 +717,7 @@ hard_check "契约门禁: 声明产出须在暂存区" "${CONTRACT_FAIL:-}"
 
 # ═══ 组 10/12: V3 CP3 — 条件区域 + 测试覆盖 (D260) ═══
 echo ""
-echo -e "${CYAN}── 组 10/12: V3 流水线健康度 ──${RESET}"
+echo -e "${CYAN}── 组 10/13: V3 流水线健康度 ──${RESET}"
 
 CRITERIA_MAP="$ROOT/.codex/criteria-code-map.json"
 if [ -f "$CRITERIA_MAP" ]; then
@@ -790,7 +791,7 @@ fi
 
 # ═══ 组 12/12: Task Scope 一致性 — 暂存文件 vs Q2 范围 ═══
 echo ""
-echo -e "${CYAN}── 组 12/12: Task Scope 一致性 ──${RESET}"
+echo -e "${CYAN}── 组 12/13: Task Scope 一致性 ──${RESET}"
 
 TODAY=$(date +%Y-%m-%d)
 # 修复 (D291): 组12 只用当前 session 的 brief, 避免并发 session 的 brief 干扰暂存文件匹配
@@ -902,6 +903,26 @@ if echo "$STAGED_ALL" | grep -qE 'docs/plans/codex/implementation/SYNOVA-IMPL-.*
   fi
 fi
 
+# ═══ 组 13/13: 技能同步一致性 (.claude/skills ↔ .dsh/skills, D370) ═══
+# 背景: DSH 技能发现根 .dsh/skills（rank 100）不读 .claude/skills → 单源复制 + 漂移门禁。
+# fail-closed (D328): 检查脚本 exit 2 = 检查执行失败 → 同样硬阻断, 不与"通过"混同。
+echo ""
+echo -e "${CYAN}── 组 13/13: 技能同步一致性 ──${RESET}"
+SKILL_FILES_STAGED=$(echo "$STAGED_ALL" | grep -E "\.claude/skills/|\.dsh/skills/" || true)
+if [ -n "$SKILL_FILES_STAGED" ]; then
+  SKILL_SYNC_OUT=$(bash "$ROOT/scripts/workflow/sync-dsh-skills.sh" --check 2>&1)
+  SKILL_SYNC_EXIT=$?
+  if [ "$SKILL_SYNC_EXIT" -eq 0 ]; then
+    soft_pass "G13: 技能同步一致 ($(echo "$SKILL_SYNC_OUT" | head -1 | sed 's/SYNC-OK: //'))"
+  elif [ "$SKILL_SYNC_EXIT" -eq 1 ]; then
+    hard_check "G13: 技能漂移 — 运行 bash scripts/workflow/sync-dsh-skills.sh 后重新暂存" "$SKILL_SYNC_OUT"
+  else
+    hard_check "G13: 技能同步检查执行失败 (exit=$SKILL_SYNC_EXIT, D328 三态)" "$SKILL_SYNC_OUT"
+  fi
+else
+  soft_pass "G13: 无技能文件变更(跳过)"
+fi
+
 # V3: 写 CP3 检查点
 mkdir -p "$ROOT/.codex/checkpoints"
 G10_FAIL=$([ -n "$MISMATCH" ] && echo "true" || echo "false")
@@ -929,7 +950,7 @@ if [ "$HARD_FAIL" -gt 0 ]; then
   echo ""
   exit 1
 else
-  echo -e "  ${GREEN}✅ 全部 12 组通过${RESET}"
+  echo -e "  ${GREEN}✅ 全部 13 组通过${RESET}"
   [ "$WARN_COUNT" -gt 0 ] && echo -e "  ${YELLOW}⚠️  ${WARN_COUNT} 项警告 (不阻断)${RESET}"
   echo "═══════════════════════════════════════════════════════════"
   echo ""
