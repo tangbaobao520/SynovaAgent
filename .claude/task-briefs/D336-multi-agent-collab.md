@@ -51,6 +51,7 @@ Claude Code(实现) + Kimi K3(独立审计)，均在 Win 机，控制塔体系�
 做什么：
 - docs/synova/coordination/MULTI-AGENT-COLLAB.md — 协作协议（角色职责表/审计红线/任务生命周期/防撞车/共享记忆）
 - docs/synova/coordination/TASK-ROUTING.md — 任务路由表（类型路由 + 模块认领状态 + 认领流程）
+- docs/synova/coordination/DOC-SYNC-GUIDE.md — 文档拉平指引（创始人 08-14 定：Win 侧未提交文档由 Codex 整理入库 + 导读 + 索引更新）
 - CLAUDE.md — 铁律 0-5 多 Agent 协作协议 + 审计红线
 - .codex/control-tower/VERSION.md — bump V4.7.8（PATCH：流程约束变更）
 
