@@ -1,0 +1,1812 @@
+{
+  "generated_at": "2026-08-15 02:19:27",
+  "version": "1.0",
+  "product_progress_pct": 3,
+  "total_lines": 26,
+  "lines": [
+    {
+      "id": 1,
+      "name": "桌面端",
+      "value": "Electron 桌面应用，Windows+Mac 双平台能装能跑、服务自启开窗",
+      "weight": 1.0,
+      "baseline_pct": 40,
+      "baseline_note": "打包存在（D255）；自启服务、双平台实测 = 0",
+      "done_definition": "创始人双击安装包 → 装好 → 服务自启 → 开窗即用，Win 和 Mac 都实测过",
+      "total": 8,
+      "verified": 0,
+      "progress_pct": 0,
+      "k3_gate": "",
+      "status_counts": {
+        "uncommitted": 8,
+        "failed": 0,
+        "pending_k3": 0,
+        "verified": 0,
+        "rejected": 0,
+        "stale": 0
+      },
+      "points": [
+        {
+          "id": "1-1",
+          "desc": "安装包能打出来（Electron 打包流程产出可安装产物）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "打包流程存在（D255），但未作为场景断言实测"
+        },
+        {
+          "id": "1-2",
+          "desc": "Windows 双击安装 → 启动 → 出窗（30 分钟首诊旅程起点）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "从未实测"
+        },
+        {
+          "id": "1-3",
+          "desc": "Mac 版安装包可用（双平台承诺）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "从未实测"
+        },
+        {
+          "id": "1-4",
+          "desc": "服务自启、开窗即用（用户不用碰命令行）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "S3-1 部署门槛"
+        },
+        {
+          "id": "1-5",
+          "desc": "安装引导单一入口（双引导收敛）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "S3-6：双引导并存未收敛"
+        },
+        {
+          "id": "1-6",
+          "desc": "30 分钟内从安装到可诊断（零命令行）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "S3-1 目标值"
+        },
+        {
+          "id": "1-7",
+          "desc": "升级/重装不丢数据（企业数据安全底线）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        },
+        {
+          "id": "1-8",
+          "desc": "审计员复核安装实测记录（独立重跑）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "对话交互",
+      "value": "老板用对话触发诊断，回答是流式的，关键选择给卡片，系统会主动找老板说话",
+      "weight": 1.0,
+      "baseline_pct": 50,
+      "baseline_note": "聊天+SSE+线程存在；主动交互蓝图未全接线",
+      "done_definition": "老板一句大白话 → 系统听懂意图 → 流式回答 → 关键选择给卡片 → 系统主动发起对话（该提醒时提醒）",
+      "total": 7,
+      "verified": 0,
+      "progress_pct": 0,
+      "k3_gate": "",
+      "status_counts": {
+        "uncommitted": 7,
+        "failed": 0,
+        "pending_k3": 0,
+        "verified": 0,
+        "rejected": 0,
+        "stale": 0
+      },
+      "points": [
+        {
+          "id": "2-1",
+          "desc": "对话触发诊断（说人话就能开一次诊断）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "ConversationEngine 存在，端到端未验证"
+        },
+        {
+          "id": "2-2",
+          "desc": "回答是流式的（逐字出来，不等整段）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "SSE 存在；流式质量有 TUI 铁律 40-45 保护"
+        },
+        {
+          "id": "2-3",
+          "desc": "关键选择给交互卡片（不是让老板打字选）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "权威05 蓝图未全接线"
+        },
+        {
+          "id": "2-4",
+          "desc": "系统主动找老板（该提醒时主动说话）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "主动交互蓝图未全接线"
+        },
+        {
+          "id": "2-5",
+          "desc": "多轮对话上下文不丢（聊到第 10 轮还记得第 1 轮）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "线程存在，长会话上下文管理见线 20"
+        },
+        {
+          "id": "2-6",
+          "desc": "对话查询监测结果（老板问『最近有什么异常』能得到答案）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        },
+        {
+          "id": "2-7",
+          "desc": "审计员复核对话触发诊断链路",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "报告体系",
+      "value": "一页纸结论先行 + 详细报告 + 对话式调整深度（驻扎企业内部的麦肯锡）",
+      "weight": 1.0,
+      "baseline_pct": 30,
+      "baseline_note": "一页纸结构有；详细报告/交互深度 = 0",
+      "done_definition": "老板拿到一页纸结论（看得懂），想深挖有详细报告，想调整深浅说句话就行；手机能看，能导出",
+      "total": 8,
+      "verified": 0,
+      "progress_pct": 0,
+      "k3_gate": "",
+      "status_counts": {
+        "uncommitted": 8,
+        "failed": 0,
+        "pending_k3": 0,
+        "verified": 0,
+        "rejected": 0,
+        "stale": 0
+      },
+      "points": [
+        {
+          "id": "3-1",
+          "desc": "一页纸报告结构（结论先行，10 分钟看完）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "S2-1/R5：结构存在，未验证"
+        },
+        {
+          "id": "3-2",
+          "desc": "详细报告（完整诊断各章节，驻扎企业内部的麦肯锡）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "创始人 13 问第 2 问：详细报告 = 0"
+        },
+        {
+          "id": "3-3",
+          "desc": "对话式调整深度（『讲细一点/说人话』能切换深浅）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "交互深度 = 0"
+        },
+        {
+          "id": "3-4",
+          "desc": "报告可导出（PDF/HTML 带走，S2-5）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "导出完整性未审"
+        },
+        {
+          "id": "3-5",
+          "desc": "手机端能看报告",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "S0-4 手机可看"
+        },
+        {
+          "id": "3-6",
+          "desc": "创始人 10 分钟复述报告（人测 checklist 转核验）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "S0-4/S2-1 演示核验类验收点"
+        },
+        {
+          "id": "3-7",
+          "desc": "一页纸含各维度循环结论（客户/资本/人才等）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "依赖 09/10/11 循环"
+        },
+        {
+          "id": "3-8",
+          "desc": "审计员复核报告结构与真实性",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "数据接入",
+      "value": "CRM/ERP/HR 连接器 + 文件导入 + 问卷，三条路都能把企业数据接进来",
+      "weight": 1.0,
+      "baseline_pct": 15,
+      "baseline_note": "仅飞书+CSV（K3 P0-2）",
+      "done_definition": "老板的企业数据（客户/财务/人事）能接进来；接不进来时系统说清楚为什么",
+      "total": 8,
+      "verified": 0,
+      "progress_pct": 0,
+      "k3_gate": "",
+      "status_counts": {
+        "uncommitted": 8,
+        "failed": 0,
+        "pending_k3": 0,
+        "verified": 0,
+        "rejected": 0,
+        "stale": 0
+      },
+      "points": [
+        {
+          "id": "4-1",
+          "desc": "问卷路径（没数据也能起步）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "入口存在，端到端未实测"
+        },
+        {
+          "id": "4-2",
+          "desc": "CSV 文件导入",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "已有"
+        },
+        {
+          "id": "4-3",
+          "desc": "飞书连接器",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "已有（K3 P0-2：仅飞书+CSV）"
+        },
+        {
+          "id": "4-4",
+          "desc": "CRM 连接器（crm-standard 契约）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "K3：L5 无 CRM 连接器"
+        },
+        {
+          "id": "4-5",
+          "desc": "ERP 连接器（erp-standard 契约）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "K3：L5 无 ERP 连接器"
+        },
+        {
+          "id": "4-6",
+          "desc": "HR 连接器（hr-standard 契约）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "K3：L5 无 HR 连接器"
+        },
+        {
+          "id": "4-7",
+          "desc": "导入校验：坏数据明确报错，不静默丢（fail-closed）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "K3 P0-3 fail-open 教训"
+        },
+        {
+          "id": "4-8",
+          "desc": "审计员复核连接器链路",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "本体层收敛",
+      "value": "企业电子病历两套类型统一、读写对齐（收敛可用，不是重构）",
+      "weight": 1.0,
+      "baseline_pct": 10,
+      "baseline_note": "新旧两套并存，收敛未开始",
+      "done_definition": "同一类企业数据在系统里只有一个名字，读写都走同一个契约；图里每类节点都有真实写入方",
+      "total": 6,
+      "verified": 0,
+      "progress_pct": 0,
+      "k3_gate": "",
+      "status_counts": {
+        "uncommitted": 6,
+        "failed": 0,
+        "pending_k3": 0,
+        "verified": 0,
+        "rejected": 0,
+        "stale": 0
+      },
+      "points": [
+        {
+          "id": "5-1",
+          "desc": "类型契约对齐（Market→Client、People→Person 收敛）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "K3 全链路：类型契约断裂"
+        },
+        {
+          "id": "5-2",
+          "desc": "属性契约对齐（cashBalance↔cash 等 snake/camel）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "K3：属性契约断裂"
+        },
+        {
+          "id": "5-3",
+          "desc": "图节点读写对齐（Event/Tool 有真实写入方）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "K3：Event/Tool 零写入方"
+        },
+        {
+          "id": "5-4",
+          "desc": "L4 查询层 fail-open 修复（schema 漂移必须报错，不静默返回空）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "K3：静默 fail-open（只 warn 返回空）"
+        },
+        {
+          "id": "5-5",
+          "desc": "收敛方案成文（收敛可用非重构，写清边界）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "创始人已批：本体层=收敛可用"
+        },
+        {
+          "id": "5-6",
+          "desc": "审计员复核本体收敛结果",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "首次诊断",
+      "value": "没数据也能 3 天出首诊、命中老板盲区",
+      "weight": 1.0,
+      "baseline_pct": 0,
+      "baseline_note": "从未端到端实测——诚实 0",
+      "done_definition": "新装 → 问卷 → 3 天内出首份诊断报告 → 至少命中 1 个老板没想到的盲区",
+      "total": 7,
+      "verified": 0,
+      "progress_pct": 0,
+      "k3_gate": "",
+      "status_counts": {
+        "uncommitted": 7,
+        "failed": 0,
+        "pending_k3": 0,
+        "verified": 0,
+        "rejected": 0,
+        "stale": 0
+      },
+      "points": [
+        {
+          "id": "6-1",
+          "desc": "首诊旅程端到端实测（新装 → 问卷 → 首诊报告）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "从未端到端实测（D255 教训）"
+        },
+        {
+          "id": "6-2",
+          "desc": "3 天出首诊（≤3 天首个价值时间）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "S2-3/T-1 TTFV 未测量"
+        },
+        {
+          "id": "6-3",
+          "desc": "命中 ≥1 个老板盲区（首诊有价值）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "S0-1 价值第一印象"
+        },
+        {
+          "id": "6-4",
+          "desc": "数据不足也能出首诊（<30% 数据仍诊断）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "S3-2 无数据诊断：仅数据源检测"
+        },
+        {
+          "id": "6-5",
+          "desc": "首诊后自动进入持续监测（衔接线 07）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        },
+        {
+          "id": "6-6",
+          "desc": "创始人演示核验首诊（R2/R3 演示叙事）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        },
+        {
+          "id": "6-7",
+          "desc": "审计员复核首诊旅程",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "name": "持续监测",
+      "value": "哨兵按周/月/季自动转，企业异常自动浮出来",
+      "weight": 1.0,
+      "baseline_pct": 40,
+      "baseline_note": "调度真实（K3 PASS）；告警层死代码",
+      "done_definition": "装好后系统自动按周/月/季监测，异常自动发现、自动进报告；重启/断电不丢监测结果",
+      "total": 8,
+      "verified": 1,
+      "progress_pct": 12,
+      "k3_gate": "",
+      "status_counts": {
+        "uncommitted": 5,
+        "failed": 1,
+        "pending_k3": 0,
+        "verified": 1,
+        "rejected": 1,
+        "stale": 0
+      },
+      "points": [
+        {
+          "id": "7-1",
+          "desc": "哨兵调度真实运行（周/月/季 cron 注册并生效）",
+          "status": "verified",
+          "evidence_files": [
+            "docs/synova/product-lines/evidence/k3-full-chain-20260813.json"
+          ],
+          "note": "K3 全链路审计 L2 PASS：runner.ts:169 listCronSentinels → CronScheduler 注册，manifest schedule 真实生效"
+        },
+        {
+          "id": "7-2",
+          "desc": "哨兵全量注册（manifest 挂载无死代码）",
+          "status": "rejected",
+          "evidence_files": [
+            "docs/synova/product-lines/evidence/k3-full-chain-20260813.json"
+          ],
+          "note": "K3：P0 哨兵阈值告警生产死代码（sentinel-loader 从不挂 manifest）"
+        },
+        {
+          "id": "7-3",
+          "desc": "监测结果持久化（重启不丢 findings）",
+          "status": "failed",
+          "evidence_files": [],
+          "note": "K3 P2：findings 来自 runner 内存 records，进程重启即丢"
+        },
+        {
+          "id": "7-4",
+          "desc": "基线对比与异常检测（哨兵发现异常自动告警）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        },
+        {
+          "id": "7-5",
+          "desc": "信号聚合 → 专家解读 → 监测报告",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        },
+        {
+          "id": "7-6",
+          "desc": "周期报告产出（周报/月报自动生成）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        },
+        {
+          "id": "7-7",
+          "desc": "定时任务容错（cron 失败有记录、可重试）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        },
+        {
+          "id": "7-8",
+          "desc": "审计员复核持续监测闭环",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "name": "告警推送",
+      "value": "阈值触发 → 工单 → 推送老板，同一件事不反复轰炸",
+      "weight": 1.0,
+      "baseline_pct": 15,
+      "baseline_note": "工单表路径有；manifest 死代码+去重键不稳定",
+      "done_definition": "异常发生时老板收到一条提醒；同一异常只提醒一次；处理完自动销单",
+      "total": 5,
+      "verified": 0,
+      "progress_pct": 0,
+      "k3_gate": "",
+      "status_counts": {
+        "uncommitted": 3,
+        "failed": 1,
+        "pending_k3": 0,
+        "verified": 0,
+        "rejected": 1,
+        "stale": 0
+      },
+      "points": [
+        {
+          "id": "8-1",
+          "desc": "阈值真实触发（读 manifest 配置，不硬编码）",
+          "status": "rejected",
+          "evidence_files": [
+            "docs/synova/product-lines/evidence/k3-full-chain-20260813.json"
+          ],
+          "note": "K3 P0-1：阈值硬编码于 aggregate（0.4/0.3/0.2/0.1），不读 manifest"
+        },
+        {
+          "id": "8-2",
+          "desc": "工单入库（sentinel_tickets 表有行）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "工单表路径存在，未场景断言"
+        },
+        {
+          "id": "8-3",
+          "desc": "推送去重（同一异常只推一次，去重键稳定）",
+          "status": "failed",
+          "evidence_files": [],
+          "note": "N14 去重键不稳定；窗口大小待创始人裁决（见待裁决区）"
+        },
+        {
+          "id": "8-4",
+          "desc": "工单状态机（新建 → 处理 → 销单闭环）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        },
+        {
+          "id": "8-5",
+          "desc": "审计员复核告警闭环（P0-1 + N14 修复验证）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "name": "客户循环",
+      "value": "CRM 数据 → 客户集中/流失预警，老板提前知道客户风险",
+      "weight": 1.0,
+      "baseline_pct": 5,
+      "baseline_note": "K3 全链路 FAIL（0/3 之一）",
+      "done_definition": "客户数据进来 → 系统持续看客户集中度和流失风险 → 风险出现老板提前收到预警",
+      "total": 6,
+      "verified": 1,
+      "progress_pct": 17,
+      "k3_gate": "",
+      "status_counts": {
+        "uncommitted": 5,
+        "failed": 0,
+        "pending_k3": 0,
+        "verified": 1,
+        "rejected": 0,
+        "stale": 0
+      },
+      "points": [
+        {
+          "id": "9-1",
+          "desc": "CRM 数据进 Client 节点（L5 连接器 → L4 图）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "K3：L5 无 CRM 连接器，断在数据进口"
+        },
+        {
+          "id": "9-2",
+          "desc": "customer-demand-shift 哨兵计算真实（注入数据产出 critical）",
+          "status": "verified",
+          "evidence_files": [
+            "docs/synova/product-lines/evidence/k3-full-chain-20260813.json"
+          ],
+          "note": "K3 T3 实验 PASS（有保留）：集中度 89%、流失率 33% 正确产出 critical；保留①阈值硬编码（见 8-1）"
+        },
+        {
+          "id": "9-3",
+          "desc": "客户集中度过高/流失率告警（阈值触发）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        },
+        {
+          "id": "9-4",
+          "desc": "客户循环端到端（数据→哨兵→报告→行动建议）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "K3：0/3 贯通之一 FAIL"
+        },
+        {
+          "id": "9-5",
+          "desc": "无客户数据不误报（降级诚实）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "K3 P0-3 fail-open 教训"
+        },
+        {
+          "id": "9-6",
+          "desc": "审计员复核客户循环全链路（P0-2 修复验证）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "name": "资本循环",
+      "value": "ERP 数据 → 现金流跑道/成本利润持续监测与告警",
+      "weight": 1.0,
+      "baseline_pct": 5,
+      "baseline_note": "K3 三重缺陷；建议第一条 100% 线",
+      "done_definition": "老板能接财务数据，系统自动产出现金流/成本/利润的持续监测与告警，每条结论可回溯证据",
+      "total": 8,
+      "verified": 0,
+      "progress_pct": 0,
+      "k3_gate": "",
+      "status_counts": {
+        "uncommitted": 8,
+        "failed": 0,
+        "pending_k3": 0,
+        "verified": 0,
+        "rejected": 0,
+        "stale": 0
+      },
+      "points": [
+        {
+          "id": "10-1",
+          "desc": "ERP 财务数据上传 → Financial 节点（erp-standard 契约）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "K3：L5 无 ERP 连接器"
+        },
+        {
+          "id": "10-2",
+          "desc": "属性契约对齐（cashBalance↔cash 等 snake/camel）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "K3：属性契约断裂"
+        },
+        {
+          "id": "10-3",
+          "desc": "P0 哨兵 manifest 挂载，阈值真实触发",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "K3 已给转绿路径：一行修 manifest 起步"
+        },
+        {
+          "id": "10-4",
+          "desc": "现金流跑道计算正确（filter bug 修复）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "K3：compute-cash-runway-months.ts:60 filter bug"
+        },
+        {
+          "id": "10-5",
+          "desc": "告警 → 工单 → 推送链路（资本异常老板收得到）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        },
+        {
+          "id": "10-6",
+          "desc": "无数据不误报 critical（降级诚实）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "K3 T3：负向断言待补"
+        },
+        {
+          "id": "10-7",
+          "desc": "报告一页纸含资本结论",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        },
+        {
+          "id": "10-8",
+          "desc": "审计员全链路复核通过（K3 维度 20c 线 100% 门槛）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "name": "人才循环",
+      "value": "HR 数据 → 关键人风险/人才密度预警",
+      "weight": 1.0,
+      "baseline_pct": 5,
+      "baseline_note": "K3 全链路 FAIL",
+      "done_definition": "人事数据进来 → 系统持续看关键人风险和人才密度 → 风险出现老板提前知道",
+      "total": 7,
+      "verified": 2,
+      "progress_pct": 29,
+      "k3_gate": "",
+      "status_counts": {
+        "uncommitted": 5,
+        "failed": 0,
+        "pending_k3": 0,
+        "verified": 2,
+        "rejected": 0,
+        "stale": 0
+      },
+      "points": [
+        {
+          "id": "11-1",
+          "desc": "key-person-risk 哨兵计算真实（Bus Factor 基于 Person 节点）",
+          "status": "verified",
+          "evidence_files": [
+            "docs/synova/product-lines/evidence/k3-full-chain-20260813.json"
+          ],
+          "note": "K3 PASS：aggregate.ts 包装 checkKeyPersonRisk 真实接线"
+        },
+        {
+          "id": "11-2",
+          "desc": "talent-density 哨兵计算真实（含降级诚实：数据不足返回 info 不误报）",
+          "status": "verified",
+          "evidence_files": [
+            "docs/synova/product-lines/evidence/k3-full-chain-20260813.json"
+          ],
+          "note": "K3 PASS：T3 触发 warning；空数据返回 info——文件驱动哨兵中唯一符合降级诚实性的样本"
+        },
+        {
+          "id": "11-3",
+          "desc": "HR 数据进 Person 节点（L5 连接器 → L4 图）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "K3：L5 无 HR 连接器"
+        },
+        {
+          "id": "11-4",
+          "desc": "People→Person 类型收敛",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "K3：类型契约断裂"
+        },
+        {
+          "id": "11-5",
+          "desc": "关键人风险/人才密度告警（阈值触发 → 老板收到）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        },
+        {
+          "id": "11-6",
+          "desc": "人才循环端到端（数据→哨兵→报告→行动建议）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "K3：0/3 贯通之一 FAIL"
+        },
+        {
+          "id": "11-7",
+          "desc": "审计员复核人才循环全链路",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "name": "技术维度",
+      "value": "技术能力/技术债务/演进方向的持续诊断",
+      "weight": 1.0,
+      "baseline_pct": 0,
+      "baseline_note": "专家存在，维度端到端循环 = 0——诚实 0",
+      "done_definition": "系统的技术状态（债务、能力、演进方向）像财务一样被持续诊断并出结论",
+      "total": 5,
+      "verified": 0,
+      "progress_pct": 0,
+      "k3_gate": "",
+      "status_counts": {
+        "uncommitted": 5,
+        "failed": 0,
+        "pending_k3": 0,
+        "verified": 0,
+        "rejected": 0,
+        "stale": 0
+      },
+      "points": [
+        {
+          "id": "12-1",
+          "desc": "技术哨兵注册运行（技术债务等监测项真实执行）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        },
+        {
+          "id": "12-2",
+          "desc": "技术数据进图（Tech 节点有真实写入方）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        },
+        {
+          "id": "12-3",
+          "desc": "技术维度端到端诊断（数据→哨兵→专家→结论）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "专家存在，端到端循环 = 0"
+        },
+        {
+          "id": "12-4",
+          "desc": "技术维度报告结论（老板看得懂技术风险）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        },
+        {
+          "id": "12-5",
+          "desc": "审计员复核技术维度循环",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "name": "财务结构维度",
+      "value": "融资结构/资本成本/财务健康诊断",
+      "weight": 1.0,
+      "baseline_pct": 0,
+      "baseline_note": "专家存在，维度端到端循环 = 0——诚实 0",
+      "done_definition": "融资结构、资本成本、财务健康像现金流一样被持续诊断并出结论",
+      "total": 5,
+      "verified": 0,
+      "progress_pct": 0,
+      "k3_gate": "",
+      "status_counts": {
+        "uncommitted": 5,
+        "failed": 0,
+        "pending_k3": 0,
+        "verified": 0,
+        "rejected": 0,
+        "stale": 0
+      },
+      "points": [
+        {
+          "id": "13-1",
+          "desc": "财务结构哨兵注册运行",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        },
+        {
+          "id": "13-2",
+          "desc": "财务结构数据进图（CapitalStructure 等节点有写入方）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        },
+        {
+          "id": "13-3",
+          "desc": "财务结构维度端到端诊断（融资结构/资本成本结论）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "专家存在，端到端循环 = 0"
+        },
+        {
+          "id": "13-4",
+          "desc": "财务结构报告结论（老板看得懂融资风险）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        },
+        {
+          "id": "13-5",
+          "desc": "审计员复核财务结构维度循环",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "name": "竞争战略维度",
+      "value": "竞争位置/护城河/战略有效性诊断",
+      "weight": 1.0,
+      "baseline_pct": 0,
+      "baseline_note": "专家存在，维度端到端循环 = 0——诚实 0",
+      "done_definition": "竞争位置、护城河、战略有效性被持续诊断并出结论",
+      "total": 5,
+      "verified": 0,
+      "progress_pct": 0,
+      "k3_gate": "",
+      "status_counts": {
+        "uncommitted": 5,
+        "failed": 0,
+        "pending_k3": 0,
+        "verified": 0,
+        "rejected": 0,
+        "stale": 0
+      },
+      "points": [
+        {
+          "id": "14-1",
+          "desc": "竞争战略哨兵注册运行",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        },
+        {
+          "id": "14-2",
+          "desc": "竞争数据进图（Market/Competitor 节点有写入方）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        },
+        {
+          "id": "14-3",
+          "desc": "竞争战略维度端到端诊断（竞争位置/护城河结论）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "专家存在，端到端循环 = 0"
+        },
+        {
+          "id": "14-4",
+          "desc": "竞争战略报告结论（老板看得懂竞争风险）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        },
+        {
+          "id": "14-5",
+          "desc": "审计员复核竞争战略维度循环",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "name": "专家体系",
+      "value": "7 位专家 + 调度逻辑 + 工具/技能工作流 + 提示词质量",
+      "weight": 1.0,
+      "baseline_pct": 70,
+      "baseline_note": "注册表+调度+工具接线存在（代码实证）；提示词效果未验证",
+      "done_definition": "诊断时专家真的在干活（老板看得见），交叉验证结论，专家提示词效果有数据证明",
+      "total": 7,
+      "verified": 0,
+      "progress_pct": 0,
+      "k3_gate": "",
+      "status_counts": {
+        "uncommitted": 7,
+        "failed": 0,
+        "pending_k3": 0,
+        "verified": 0,
+        "rejected": 0,
+        "stale": 0
+      },
+      "points": [
+        {
+          "id": "15-1",
+          "desc": "专家注册表 + 文件驱动自动发现（7 位专家全注册）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "代码实证存在；K3 v1.1：V5 视图硬编码旧 6 专家（D282 未传播）"
+        },
+        {
+          "id": "15-2",
+          "desc": "专家调度链端到端（ExpertDispatcher 真实调用）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "调度接线存在（代码实证）；端到端未验证"
+        },
+        {
+          "id": "15-3",
+          "desc": "工具/技能工作流接线（专家真能用工具）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "接线存在（代码实证）"
+        },
+        {
+          "id": "15-4",
+          "desc": "专家提示词效果验证（黄金数据集命中率）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "创始人 13 问第 10 问：提示词效果未验证"
+        },
+        {
+          "id": "15-5",
+          "desc": "调度可见性（老板看得见谁在干活、在干什么）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        },
+        {
+          "id": "15-6",
+          "desc": "多专家交叉验证（结论经 corroboration）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        },
+        {
+          "id": "15-7",
+          "desc": "审计员复核专家体系",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "name": "目标导航与行动闭环",
+      "value": "诊断后『现在该做什么』：Goal/方案三选一/执行跟踪",
+      "weight": 1.0,
+      "baseline_pct": 35,
+      "baseline_note": "Goal/Proposal 存在；端到端闭环未验证",
+      "done_definition": "每次诊断都回答『现在该做什么』，建议绑定目标，老板能跟踪执行到闭环",
+      "total": 5,
+      "verified": 0,
+      "progress_pct": 0,
+      "k3_gate": "",
+      "status_counts": {
+        "uncommitted": 5,
+        "failed": 0,
+        "pending_k3": 0,
+        "verified": 0,
+        "rejected": 0,
+        "stale": 0
+      },
+      "points": [
+        {
+          "id": "16-1",
+          "desc": "诊断产出行动建议（每条建议绑定 Goal）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "S2-2：建议 100% 绑定 Goal"
+        },
+        {
+          "id": "16-2",
+          "desc": "方案三选一（Proposal 机制）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "组件存在"
+        },
+        {
+          "id": "16-3",
+          "desc": "执行跟踪（Goal 状态推进、进度可见）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        },
+        {
+          "id": "16-4",
+          "desc": "端到端闭环验证（诊断 → 行动 → 执行 → 反馈下次诊断）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "权威13 闭环未验证"
+        },
+        {
+          "id": "16-5",
+          "desc": "审计员复核行动闭环",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "name": "进化闭环",
+      "value": "老板纠错 → 规则更新 → 下次更准",
+      "weight": 1.0,
+      "baseline_pct": 10,
+      "baseline_note": "N13 P0：placeholder 假成功",
+      "done_definition": "老板说『你判错了』，系统真的改规则，下次同类诊断变准，且能证明变准了",
+      "total": 5,
+      "verified": 0,
+      "progress_pct": 0,
+      "k3_gate": "",
+      "status_counts": {
+        "uncommitted": 3,
+        "failed": 1,
+        "pending_k3": 0,
+        "verified": 0,
+        "rejected": 1,
+        "stale": 0
+      },
+      "points": [
+        {
+          "id": "17-1",
+          "desc": "反馈有真实消费方（feedback-collector 被真实调用，老板说『你判错了』能被消费）",
+          "status": "rejected",
+          "evidence_files": [
+            "docs/synova/product-lines/evidence/k3-full-chain-20260813.json"
+          ],
+          "note": "K3 N13 P0：middle-evolution 零调用、feedback-collector 无消费方；名义调度通道是 placeholder 返回假成功"
+        },
+        {
+          "id": "17-2",
+          "desc": "规则更新真实执行（loop-3/5 非 placeholder）",
+          "status": "failed",
+          "evidence_files": [],
+          "note": "K3 P1-C2：4 个默认循环处理器全部 placeholder 假成功"
+        },
+        {
+          "id": "17-3",
+          "desc": "GA 纠错回流（可逆仲裁，纠错可撤销）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "S5-2：GA 仅 type import（弱引用）"
+        },
+        {
+          "id": "17-4",
+          "desc": "下次诊断变好可验证（校准周期 T-3 真实闭环）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "T-3 无校准闭环"
+        },
+        {
+          "id": "17-5",
+          "desc": "审计员复核进化闭环（N13 P0 修复验证）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "name": "记忆体系",
+      "value": "Agent 记忆（9 类）+ 组织记忆，记住企业的一切关键事实",
+      "weight": 1.0,
+      "baseline_pct": 50,
+      "baseline_note": "AgentMemoryStore 9 类+SessionStore+重启恢复存在（代码实证）；消费端接线未全验证",
+      "done_definition": "系统记住企业的关键事实、老板的偏好、做过的决定；重启不丢；诊断真的在用它",
+      "total": 6,
+      "verified": 1,
+      "progress_pct": 17,
+      "k3_gate": "",
+      "status_counts": {
+        "uncommitted": 5,
+        "failed": 0,
+        "pending_k3": 0,
+        "verified": 1,
+        "rejected": 0,
+        "stale": 0
+      },
+      "points": [
+        {
+          "id": "18-1",
+          "desc": "AgentMemoryStore 9 类记忆存储（fact/preference/decision/pattern/entity/enterprise_fact/ga_correction/implementation_plan/sentinel_annotation）",
+          "status": "verified",
+          "evidence_files": [
+            "docs/synova/product-lines/evidence/k3-full-chain-20260813.json"
+          ],
+          "note": "代码实证存在（创始人 13 问第 3 问：Agent 记忆 + 组织记忆合并为记忆体系）"
+        },
+        {
+          "id": "18-2",
+          "desc": "SessionStore + 重启恢复（重启后记忆还在）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "代码实证存在；重启恢复测试未作为证据登记"
+        },
+        {
+          "id": "18-3",
+          "desc": "消费端接线（诊断真的读记忆，不是存而不用）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "消费端接线未全验证"
+        },
+        {
+          "id": "18-4",
+          "desc": "组织记忆自动生成（<30% 人工，S5-4）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "S5-4：未排期（缺失）"
+        },
+        {
+          "id": "18-5",
+          "desc": "版本化 + superseded_by 链（事实更新可追溯）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "企业事实层设计存在"
+        },
+        {
+          "id": "18-6",
+          "desc": "审计员复核记忆体系",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "name": "方向监测",
+      "value": "企业方向失效信号 → 24 小时内自动触发诊断",
+      "weight": 1.0,
+      "baseline_pct": 0,
+      "baseline_note": "direction-monitor 零调用——诚实 0",
+      "done_definition": "企业方向出现失效信号时，24 小时内系统自动跑一次诊断，不等老板想起来",
+      "total": 5,
+      "verified": 0,
+      "progress_pct": 0,
+      "k3_gate": "",
+      "status_counts": {
+        "uncommitted": 4,
+        "failed": 0,
+        "pending_k3": 0,
+        "verified": 0,
+        "rejected": 1,
+        "stale": 0
+      },
+      "points": [
+        {
+          "id": "19-1",
+          "desc": "direction-monitor 有生产调用方（零调用修复）",
+          "status": "rejected",
+          "evidence_files": [
+            "docs/synova/product-lines/evidence/k3-full-chain-20260813.json"
+          ],
+          "note": "K3 P1-A1：direction-monitor 未接线"
+        },
+        {
+          "id": "19-2",
+          "desc": "方向失效信号定义（什么算失效，规则明确）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        },
+        {
+          "id": "19-3",
+          "desc": "信号 → 触发诊断 <24h（S1-5 目标值）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "S1-5：断裂"
+        },
+        {
+          "id": "19-4",
+          "desc": "方向失效结论送达老板（报告含方向风险）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        },
+        {
+          "id": "19-5",
+          "desc": "审计员复核方向监测链路",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "name": "Agent 运行底座",
+      "value": "会话状态机/工具循环/上下文管理/流式/基础通用能力",
+      "weight": 1.0,
+      "baseline_pct": 45,
+      "baseline_note": "ConversationEngine/工具循环/熔断/优雅停机/卡会话检测存在；上下文窗口管理策略 = 0",
+      "done_definition": "Agent 稳定跑得起来：会话状态对、工具循环真实执行、上下文窗口管理有策略、不会卡死",
+      "total": 6,
+      "verified": 0,
+      "progress_pct": 0,
+      "k3_gate": "",
+      "status_counts": {
+        "uncommitted": 6,
+        "failed": 0,
+        "pending_k3": 0,
+        "verified": 0,
+        "rejected": 0,
+        "stale": 0
+      },
+      "points": [
+        {
+          "id": "20-1",
+          "desc": "ConversationEngine 会话状态机（多轮状态正确）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "代码存在；端到端未验证"
+        },
+        {
+          "id": "20-2",
+          "desc": "工具循环真实执行（不是 placeholder，K3 P1-C2 教训）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        },
+        {
+          "id": "20-3",
+          "desc": "上下文窗口管理策略（长会话不爆窗、不丢重点）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "创始人 13 问第 4 问：当前 = 0，要设计"
+        },
+        {
+          "id": "20-4",
+          "desc": "流式输出稳定（不闪烁不卡死，TUI 铁律 40-45）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "TUI V2 铁律已固化"
+        },
+        {
+          "id": "20-5",
+          "desc": "熔断/优雅停机/卡会话检测（异常自愈）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "组件存在（代码实证）"
+        },
+        {
+          "id": "20-6",
+          "desc": "审计员复核运行底座",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "name": "模型底座与 DeepSeek 深度优化",
+      "value": "DeepSeek 适配 + 提示词/成本/长上下文策略优化",
+      "weight": 1.0,
+      "baseline_pct": 10,
+      "baseline_note": "标准适配器有（providers/deepseek.ts）；深度优化 = 0",
+      "done_definition": "基于 DeepSeek 的差异化优势：提示词效果、成本、长上下文都有优化策略且可测量",
+      "total": 5,
+      "verified": 0,
+      "progress_pct": 0,
+      "k3_gate": "",
+      "status_counts": {
+        "uncommitted": 5,
+        "failed": 0,
+        "pending_k3": 0,
+        "verified": 0,
+        "rejected": 0,
+        "stale": 0
+      },
+      "points": [
+        {
+          "id": "21-1",
+          "desc": "DeepSeek 适配器（标准 API 接入）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "providers/deepseek.ts 存在"
+        },
+        {
+          "id": "21-2",
+          "desc": "提示词优化策略（效果可测量）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "深度优化 = 0"
+        },
+        {
+          "id": "21-3",
+          "desc": "成本策略（token 预算/缓存，成本可测量）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        },
+        {
+          "id": "21-4",
+          "desc": "长上下文策略（与线 20-3 联动）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        },
+        {
+          "id": "21-5",
+          "desc": "审计员复核模型底座优化",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "name": "自诊断与稳定性",
+      "value": "自我健康 + 重启自愈 + 断网降级 + 备份恢复（容灾）",
+      "weight": 1.0,
+      "baseline_pct": 40,
+      "baseline_note": "看门狗/熔断/健康检查/优雅停机存在；断网降级 = 0，容灾演练 = 0",
+      "done_definition": "系统能说出自己健不健康；出问题能自愈；断网时不装死；数据有备份且演练过恢复",
+      "total": 6,
+      "verified": 0,
+      "progress_pct": 0,
+      "k3_gate": "",
+      "status_counts": {
+        "uncommitted": 6,
+        "failed": 0,
+        "pending_k3": 0,
+        "verified": 0,
+        "rejected": 0,
+        "stale": 0
+      },
+      "points": [
+        {
+          "id": "22-1",
+          "desc": "看门狗/熔断/健康检查（自我健康机制）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "组件存在（代码实证）"
+        },
+        {
+          "id": "22-2",
+          "desc": "重启自愈（崩溃自动拉起）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "S3-4：稳定性达标（C线），但未演练"
+        },
+        {
+          "id": "22-3",
+          "desc": "断网降级（没网也能本地诊断，不装死）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "创始人 13 问第 12 问：断网降级 = 0，要设计"
+        },
+        {
+          "id": "22-4",
+          "desc": "备份恢复（容灾演练：删库能恢复）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "backup-db.sh 已装（launchd）；恢复演练 = 0"
+        },
+        {
+          "id": "22-5",
+          "desc": "自我健康报告真实（完成度误判修复，D-G2）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "S3-5/D-G2：引擎已修复，数据链路未担保"
+        },
+        {
+          "id": "22-6",
+          "desc": "审计员复核稳定性（K3 实测）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "name": "权限治理",
+      "value": "角色/GA/企业多用户 + 冲突仲裁 + 被遗忘权（删除数据）",
+      "weight": 1.0,
+      "baseline_pct": 55,
+      "baseline_note": "RBAC/GA 边界/数据导出删除存在（代码实证）；冲突仲裁流程 = 0，端到端未验证",
+      "done_definition": "谁看什么清清楚楚；GA 和企业意见冲突有仲裁流程；老板说『删掉这段数据』就能彻底删",
+      "total": 6,
+      "verified": 0,
+      "progress_pct": 0,
+      "k3_gate": "",
+      "status_counts": {
+        "uncommitted": 6,
+        "failed": 0,
+        "pending_k3": 0,
+        "verified": 0,
+        "rejected": 0,
+        "stale": 0
+      },
+      "points": [
+        {
+          "id": "23-1",
+          "desc": "RBAC 角色（角色权限分明）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "组件存在（代码实证）"
+        },
+        {
+          "id": "23-2",
+          "desc": "GA 边界（L3 原始数据 GA 永久不可见）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "GA 边界存在（代码实证）；端到端未验证"
+        },
+        {
+          "id": "23-3",
+          "desc": "冲突仲裁流程（GA vs 企业、老板 vs 员工）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "创始人 13 问第 13 问：仲裁流程 = 0，要设计"
+        },
+        {
+          "id": "23-4",
+          "desc": "被遗忘权（老板说『删掉这段数据』就能彻底删，DataExporter/DataPurger 端到端）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "组件有；端到端未验证"
+        },
+        {
+          "id": "23-5",
+          "desc": "企业多用户（同一企业多账号）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        },
+        {
+          "id": "23-6",
+          "desc": "审计员复核权限治理",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "name": "安全与信任",
+      "value": "脱敏/本地部署/防注入/防篡改/对抗性测试",
+      "weight": 1.0,
+      "baseline_pct": 60,
+      "baseline_note": "PII/注入检测/审计哈希链存在（代码实证）；注入异常降级放行（fail-open 待修）；对抗性测试 = 0",
+      "done_definition": "数据本地不出门、敏感信息脱敏、恶意提示词防得住、篡改可查，且对抗性测试过",
+      "total": 6,
+      "verified": 0,
+      "progress_pct": 0,
+      "k3_gate": "",
+      "status_counts": {
+        "uncommitted": 5,
+        "failed": 1,
+        "pending_k3": 0,
+        "verified": 0,
+        "rejected": 0,
+        "stale": 0
+      },
+      "points": [
+        {
+          "id": "24-1",
+          "desc": "PII 脱敏（人名/金额不进报告明文）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "组件存在（代码实证）"
+        },
+        {
+          "id": "24-2",
+          "desc": "本地部署数据不出门（L3 原始数据不出企业）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        },
+        {
+          "id": "24-3",
+          "desc": "防注入（注入检测异常必须拒绝，修复 fail-open 放行）",
+          "status": "failed",
+          "evidence_files": [],
+          "note": "注入检测存在但异常时降级放行（fail-open 待修，创始人 13 问第 11 问）"
+        },
+        {
+          "id": "24-4",
+          "desc": "防篡改（审计哈希链）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "组件存在（代码实证）"
+        },
+        {
+          "id": "24-5",
+          "desc": "对抗性测试（恶意输入攻击演练通过）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "创始人 13 问第 13 问：对抗性测试 = 0"
+        },
+        {
+          "id": "24-6",
+          "desc": "审计员复核安全与信任",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "name": "插件化扩展体系",
+      "value": "专家/技能/哨兵/连接器/模式五类插件，运行时扩展不改代码",
+      "weight": 1.0,
+      "baseline_pct": 20,
+      "baseline_note": "文件驱动有；运行时插件化/多模式框架 = 0",
+      "done_definition": "加新能力只加文件不改代码：新专家、新技能、新哨兵、新连接器、新模式都是插件",
+      "total": 7,
+      "verified": 0,
+      "progress_pct": 0,
+      "k3_gate": "",
+      "status_counts": {
+        "uncommitted": 7,
+        "failed": 0,
+        "pending_k3": 0,
+        "verified": 0,
+        "rejected": 0,
+        "stale": 0
+      },
+      "points": [
+        {
+          "id": "25-1",
+          "desc": "专家插件（新专家 = 加文件自动注册）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "文件驱动已有"
+        },
+        {
+          "id": "25-2",
+          "desc": "技能插件（新技能 = 加目录自动发现）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        },
+        {
+          "id": "25-3",
+          "desc": "哨兵插件（新哨兵 = 加文件自动加载）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "builtins 自动扫描存在"
+        },
+        {
+          "id": "25-4",
+          "desc": "连接器插件（新数据源 = 加连接器文件）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "connector-registry 包存在"
+        },
+        {
+          "id": "25-5",
+          "desc": "模式框架（诊断模式/导航模式/未来模式）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "创始人 13 问第 9 问：多模式框架 = 0"
+        },
+        {
+          "id": "25-6",
+          "desc": "运行时插件化（运行中加载，不改代码不重启）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "文件驱动是 1.0，运行时插件化是 2.0"
+        },
+        {
+          "id": "25-7",
+          "desc": "审计员复核插件化体系",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": 26,
+      "name": "MCP 集成",
+      "value": "企业已有 agent 经 MCP 调用 Synova",
+      "weight": 1.0,
+      "baseline_pct": 40,
+      "baseline_note": "工具在；认证/权限/打包缺",
+      "done_definition": "企业里已有的 AI 助手能通过 MCP 安全地调用 Synova（有认证、有权限、装得上）",
+      "total": 6,
+      "verified": 0,
+      "progress_pct": 0,
+      "k3_gate": "",
+      "status_counts": {
+        "uncommitted": 6,
+        "failed": 0,
+        "pending_k3": 0,
+        "verified": 0,
+        "rejected": 0,
+        "stale": 0
+      },
+      "points": [
+        {
+          "id": "26-1",
+          "desc": "MCP 工具暴露（诊断/监测工具可被调用）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "工具在"
+        },
+        {
+          "id": "26-2",
+          "desc": "MCP 认证（不是谁都能连）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "认证缺"
+        },
+        {
+          "id": "26-3",
+          "desc": "MCP 权限（调用方按角色受限）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "权限缺"
+        },
+        {
+          "id": "26-4",
+          "desc": "MCP 打包/分发（企业装得上）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "打包缺"
+        },
+        {
+          "id": "26-5",
+          "desc": "企业已有 agent 端到端调用（外部 agent 真实跑通一次诊断）",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": "接口面策略 P0"
+        },
+        {
+          "id": "26-6",
+          "desc": "审计员复核 MCP 集成",
+          "status": "uncommitted",
+          "evidence_files": [],
+          "note": ""
+        }
+      ]
+    }
+  ],
+  "decisions": [
+    {
+      "id": "D-1",
+      "title": "告警去重窗口用多久？（同一件事多久内只提醒一次）",
+      "context": "审计员发现告警去重键不稳定（先修键是技术活，已排任务）。窗口大小是产品决策：太长会漏掉重要变化，太短会反复打扰老板。",
+      "options": [
+        {
+          "label": "5 分钟",
+          "note": "同一异常 5 分钟内只提醒一次；周级监测节奏下足够"
+        },
+        {
+          "label": "30 分钟",
+          "note": "更安静，但半小时内的两次独立异常会合并"
+        }
+      ],
+      "suggestion": {
+        "label": "5 分钟",
+        "reason": "监测最细是周级，重复告警都发生在同一轮；5 分钟足够去重，且不吞掉真实变化"
+      },
+      "status": "open"
+    },
+    {
+      "id": "D-2",
+      "title": "第一条做到 100% 的线选哪条？",
+      "context": "每条线到 100% 都要审计员全量复核（防烂尾）。第一条 100% 线是样板，建议选演示刚需、修复路径最清晰的。",
+      "options": [
+        {
+          "label": "资本循环（线 10）",
+          "note": "演示刚需（持续监测叙事）；审计员已给出转绿路径，第一步只需修一行配置"
+        },
+        {
+          "label": "首次诊断（线 06）",
+          "note": "演示刚需（首诊叙事）；但从未端到端实测，路径最长"
+        }
+      ],
+      "suggestion": {
+        "label": "资本循环（线 10）",
+        "reason": "修复路径最短、每步都有审计员给的断点清单，最快立信"
+      },
+      "status": "open"
+    }
+  ],
+  "degraded": {
+    "sources": [],
+    "problems": [],
+    "git_check": "ok"
+  }
+}

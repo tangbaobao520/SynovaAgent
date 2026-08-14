@@ -26,6 +26,8 @@
 | src/ 业务代码（L1-L5） | 空闲 | Claude Code 主力 |
 | scripts/audit/（审计工具） | Kimi K3 专属 | 红线：其他角色禁碰 |
 | docs/synova/coordination/（协作宪法） | DeepSeek Harness | 创始人批准后变更 |
+| scripts/product-lines/（产品进度仪表盘） | 进行中·DeepSeek Harness·08-16 | D371 Phase 1（创始人已确认 26 线集） |
+| scripts/golden-scenarios/（黄金场景证据引擎） | 进行中·DeepSeek Harness·08-16 | D371 先落目录骨架；GS-01~08 本体 D361-D364 |
 
 ## 认领/交还流程
 

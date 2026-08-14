@@ -1,0 +1,371 @@
+# todos.yaml — 待办聚合产物（由 scripts/product-lines/aggregate-todos.py 生成）
+# AUTO 区机器生成，禁止手写；MANUAL 区人工微调归属，生成器逐字节保留。
+# 改完跑 bash scripts/product-lines/refresh-all.sh 生效。
+version: 1.0
+generated_at: "2026-08-15 02:19:27"
+todos:
+# AUTO:START
+  - id: "T-1-01"
+    line: 1
+    title: "部署门槛（S3-1）: 未验证"
+    source: "C线差距清单（第五章）"
+    priority: P0
+    owner: "DeepSeek Harness"
+    depends: []
+    acceptance: "场景 GS-01 转绿（exit 0 + 证据入库）"
+  - id: "T-3-01"
+    line: 3
+    title: "报告\"一看就懂\"（S0-4）: 未验证"
+    source: "C线差距清单（第五章）"
+    priority: P0
+    owner: "DeepSeek Harness"
+    depends: []
+    acceptance: "场景 GS-08 转绿（exit 0 + 证据入库）"
+  - id: "T-3-02"
+    line: 3
+    title: "报告可读性（S2-1）: 未验证"
+    source: "C线差距清单（第五章）"
+    priority: P0
+    owner: "DeepSeek Harness"
+    depends: []
+    acceptance: "场景 GS-08 转绿（exit 0 + 证据入库）"
+  - id: "T-4-01"
+    line: 4
+    title: "Agent 核心能力全链路 FAIL（0/3 贯通）：L5 无 CRM/财务/HR 连接器；L4 类型契约断裂（Market≠Client、People≠Per（D357）"
+    source: "审计发现台账（K3 全链路审计）"
+    priority: P0
+    owner: "Claude Code"
+    depends: ["D357"]
+    acceptance: "场景 GS-01、GS-02、GS-03、GS-04 转绿（exit 0 + 证据入库）"
+  - id: "T-5-01"
+    line: 5
+    title: "Agent 核心能力全链路 FAIL（0/3 贯通）：L5 无 CRM/财务/HR 连接器；L4 类型契约断裂（Market≠Client、People≠Per（D360）"
+    source: "审计发现台账（K3 全链路审计）"
+    priority: P0
+    owner: "Claude Code"
+    depends: ["D360"]
+    acceptance: "场景 GS-02、GS-03、GS-04 转绿（exit 0 + 证据入库）"
+  - id: "T-6-01"
+    line: 6
+    title: "价值第一印象（S0-1）: 未验证"
+    source: "C线差距清单（第五章）"
+    priority: P0
+    owner: "Claude Code"
+    depends: []
+    acceptance: "场景 GS-01 转绿（exit 0 + 证据入库）"
+  - id: "T-6-02"
+    line: 6
+    title: "首个价值时间（S2-3）: 未测量"
+    source: "C线差距清单（第五章）"
+    priority: P0
+    owner: "Claude Code"
+    depends: []
+    acceptance: "场景 GS-01 转绿（exit 0 + 证据入库）"
+  - id: "T-8-01"
+    line: 8
+    title: "P0-8（3 处 boss 幽灵引用 + 两选项影响面）、N14（去重键不稳定为前置缺陷 + 窗口权衡）"
+    source: "权威偏差登记册 v2"
+    priority: P0
+    owner: "DeepSeek Harness"
+    depends: []
+    acceptance: "场景 GS-05 转绿（exit 0 + 证据入库）"
+  - id: "T-9-01"
+    line: 9
+    title: "Agent 核心能力全链路 FAIL（0/3 贯通）：L5 无 CRM/财务/HR 连接器；L4 类型契约断裂（Market≠Client、People≠Per（D358）"
+    source: "审计发现台账（K3 全链路审计）"
+    priority: P0
+    owner: "Claude Code"
+    depends: ["D358"]
+    acceptance: "场景 GS-02 转绿（exit 0 + 证据入库）"
+  - id: "T-10-01"
+    line: 10
+    title: "Agent 核心能力全链路 FAIL（0/3 贯通）：L5 无 CRM/财务/HR 连接器；L4 类型契约断裂（Market≠Client、People≠Per（D355）"
+    source: "审计发现台账（K3 全链路审计）"
+    priority: P0
+    owner: "Claude Code"
+    depends: ["D355"]
+    acceptance: "场景 GS-03、GS-05 转绿（exit 0 + 证据入库）"
+  - id: "T-10-02"
+    line: 10
+    title: "Agent 核心能力全链路 FAIL（0/3 贯通）：L5 无 CRM/财务/HR 连接器；L4 类型契约断裂（Market≠Client、People≠Per（D356）"
+    source: "审计发现台账（K3 全链路审计）"
+    priority: P0
+    owner: "Claude Code"
+    depends: ["D356"]
+    acceptance: "场景 GS-03、GS-05 转绿（exit 0 + 证据入库）"
+  - id: "T-11-01"
+    line: 11
+    title: "Agent 核心能力全链路 FAIL（0/3 贯通）：L5 无 CRM/财务/HR 连接器；L4 类型契约断裂（Market≠Client、People≠Per（D359）"
+    source: "审计发现台账（K3 全链路审计）"
+    priority: P0
+    owner: "Claude Code"
+    depends: ["D359"]
+    acceptance: "场景 GS-04 转绿（exit 0 + 证据入库）"
+  - id: "T-16-01"
+    line: 16
+    title: "闭环验证（S0-2）: 断裂"
+    source: "C线差距清单（第五章）"
+    priority: P0
+    owner: "Claude Code"
+    depends: []
+    acceptance: "场景 GS-01、GS-06 转绿（exit 0 + 证据入库）"
+  - id: "T-17-01"
+    line: 17
+    title: "N13 反馈→规则闭环断裂（middle-evolution 零调用、feedback-collector 无消费方）（D333）"
+    source: "审计发现台账（K3 权威偏差审计）"
+    priority: P0
+    owner: "Claude Code"
+    depends: ["D333"]
+    acceptance: "场景 GS-06 转绿（exit 0 + 证据入库）"
+  - id: "T-17-04"
+    line: 17
+    title: "**N13 反馈→规则闭环断裂 + 名义通道 placeholder 假成功**（v2 根因加深）：① 消费方 `middle-evolution-engine` 零生产调用；② loop-3/5 名义进化通道是 placeholder（`"
+    source: "权威偏差登记册 v2"
+    priority: P0
+    owner: "Claude Code"
+    depends: []
+    acceptance: "场景 GS-06 转绿（exit 0 + 证据入库）"
+  - id: "T-17-05"
+    line: 17
+    title: "维持 ✅ 验证，且证据加强：N13 断裂 + loop-3/5 placeholder 假成功（P0-A1/P1-C2）"
+    source: "权威偏差登记册 v2"
+    priority: P0
+    owner: "Claude Code"
+    depends: []
+    acceptance: "场景 GS-06 转绿（exit 0 + 证据入库）"
+  - id: "T-17-07"
+    line: 17
+    title: "反馈→规则闭环（S5-1）: 断裂"
+    source: "C线差距清单（第五章）"
+    priority: P0
+    owner: "Claude Code"
+    depends: []
+    acceptance: "场景 GS-06 转绿（exit 0 + 证据入库）"
+  - id: "T-22-02"
+    line: 22
+    title: "自诊断可信度（S3-5）: 断裂"
+    source: "C线差距清单（第五章）"
+    priority: P0
+    owner: "DeepSeek Harness"
+    depends: []
+    acceptance: "场景 GS-07 转绿（exit 0 + 证据入库）"
+  - id: "T-24-01"
+    line: 24
+    title: "✅ **复现成功，P0 保留，根因加深**"
+    source: "权威偏差登记册 v2"
+    priority: P0
+    owner: "Claude Code"
+    depends: []
+    acceptance: "场景 GS-07 转绿（exit 0 + 证据入库）"
+  - id: "T-1-02"
+    line: 1
+    title: "部署成本（S4-3）: 未测量"
+    source: "C线差距清单（第五章）"
+    priority: P1
+    owner: "DeepSeek Harness"
+    depends: []
+    acceptance: "场景 GS-01 转绿（exit 0 + 证据入库）"
+  - id: "T-1-03"
+    line: 1
+    title: "D255: Electron 桌面打包 (.exe) — electron-builder + build-synova.cjs 修正"
+    source: "任务看板（未完成）"
+    priority: P1
+    owner: "DeepSeek Harness"
+    depends: ["D255"]
+    acceptance: "场景 GS-01 转绿（exit 0 + 证据入库）"
+  - id: "T-1-04"
+    line: 1
+    title: "D111 Electron无法启动: —"
+    source: "任务看板（未完成）"
+    priority: P1
+    owner: "DeepSeek Harness"
+    depends: ["D111"]
+    acceptance: "场景 GS-01 转绿（exit 0 + 证据入库）"
+  - id: "T-3-03"
+    line: 3
+    title: "可带走性（S2-5）: 未验证"
+    source: "C线差距清单（第五章）"
+    priority: P1
+    owner: "DeepSeek Harness"
+    depends: []
+    acceptance: "场景 GS-08 转绿（exit 0 + 证据入库）"
+  - id: "T-6-03"
+    line: 6
+    title: "无数据诊断（S3-2）: 断裂"
+    source: "C线差距清单（第五章）"
+    priority: P1
+    owner: "Claude Code"
+    depends: []
+    acceptance: "场景 GS-01 转绿（exit 0 + 证据入库）"
+  - id: "T-8-02"
+    line: 8
+    title: "制衡机制（S0-3）: 未验证"
+    source: "C线差距清单（第五章）"
+    priority: P1
+    owner: "DeepSeek Harness"
+    depends: []
+    acceptance: "场景 GS-05 转绿（exit 0 + 证据入库）"
+  - id: "T-9-02"
+    line: 9
+    title: "根因命中率（S1-1）: 未测量"
+    source: "C线差距清单（第五章）"
+    priority: P1
+    owner: "Claude Code"
+    depends: []
+    acceptance: "场景 GS-02 转绿（exit 0 + 证据入库）"
+  - id: "T-15-01"
+    line: 15
+    title: "①V5 视图硬编码旧 6 专家（D282 未传播，铁律 9 违规实例）；②gate-status.json 缺失（3/19 信号仅 3 文件）；③铁律 36 无（D340）"
+    source: "审计发现台账（K3 权威偏差 v1.1）"
+    priority: P1
+    owner: "DeepSeek Harness"
+    depends: ["D340"]
+    acceptance: "场景 GS-01 转绿（exit 0 + 证据入库）"
+  - id: "T-15-02"
+    line: 15
+    title: "①V5 视图硬编码旧 6 专家（D282 未传播，铁律 9 违规实例）；②gate-status.json 缺失（3/19 信号仅 3 文件）；③铁律 36 无（D341）"
+    source: "审计发现台账（K3 权威偏差 v1.1）"
+    priority: P1
+    owner: "DeepSeek Harness"
+    depends: ["D341"]
+    acceptance: "场景 GS-01 转绿（exit 0 + 证据入库）"
+  - id: "T-15-03"
+    line: 15
+    title: "①V5 视图硬编码旧 6 专家（D282 未传播，铁律 9 违规实例）；②gate-status.json 缺失（3/19 信号仅 3 文件）；③铁律 36 无（D342）"
+    source: "审计发现台账（K3 权威偏差 v1.1）"
+    priority: P1
+    owner: "DeepSeek Harness"
+    depends: ["D342"]
+    acceptance: "场景 GS-01 转绿（exit 0 + 证据入库）"
+  - id: "T-15-04"
+    line: 15
+    title: "D300: GoldenCase-Gate"
+    source: "任务看板（未完成）"
+    priority: P1
+    owner: "DeepSeek Harness"
+    depends: ["D300"]
+    acceptance: "场景 GS-01 转绿（exit 0 + 证据入库）"
+  - id: "T-15-05"
+    line: 15
+    title: "D234: 专家工具补齐 (8/8)"
+    source: "任务看板（未完成）"
+    priority: P1
+    owner: "DeepSeek Harness"
+    depends: ["D234"]
+    acceptance: "场景 GS-01 转绿（exit 0 + 证据入库）"
+  - id: "T-15-06"
+    line: 15
+    title: "D236: 专家9->7重构 (39文件)"
+    source: "任务看板（未完成）"
+    priority: P1
+    owner: "DeepSeek Harness"
+    depends: ["D236"]
+    acceptance: "场景 GS-01 转绿（exit 0 + 证据入库）"
+  - id: "T-16-02"
+    line: 16
+    title: "行动采纳率（S2-2）: 未测量"
+    source: "C线差距清单（第五章）"
+    priority: P1
+    owner: "Claude Code"
+    depends: []
+    acceptance: "场景 GS-01、GS-06 转绿（exit 0 + 证据入库）"
+  - id: "T-17-02"
+    line: 17
+    title: "direction-monitor 未接线 / loop-4 无专属处理器 / GA 仅 type import / 静默升级回滚未实现 / orgId 未全量（D335）"
+    source: "审计发现台账（K3 权威偏差审计）"
+    priority: P1
+    owner: "Claude Code"
+    depends: ["D335"]
+    acceptance: "场景 GS-06 转绿（exit 0 + 证据入库）"
+  - id: "T-17-03"
+    line: 17
+    title: "direction-monitor 未接线 / loop-4 无专属处理器 / GA 仅 type import / 静默升级回滚未实现 / orgId 未全量（D336）"
+    source: "审计发现台账（K3 权威偏差审计）"
+    priority: P1
+    owner: "Claude Code"
+    depends: ["D336"]
+    acceptance: "场景 GS-06 转绿（exit 0 + 证据入库）"
+  - id: "T-17-06"
+    line: 17
+    title: "中层进化监测（S1-6）: 断裂"
+    source: "C线差距清单（第五章）"
+    priority: P1
+    owner: "Claude Code"
+    depends: []
+    acceptance: "场景 GS-06 转绿（exit 0 + 证据入库）"
+  - id: "T-17-08"
+    line: 17
+    title: "GA 纠错回流（S5-2）: 断裂"
+    source: "C线差距清单（第五章）"
+    priority: P1
+    owner: "Claude Code"
+    depends: []
+    acceptance: "场景 GS-06 转绿（exit 0 + 证据入库）"
+  - id: "T-18-01"
+    line: 18
+    title: "组织记忆自动生成（S5-4）: 缺失"
+    source: "C线差距清单（第五章）"
+    priority: P1
+    owner: "Claude Code"
+    depends: []
+    acceptance: "场景 GS-01、GS-06 转绿（exit 0 + 证据入库）"
+  - id: "T-18-02"
+    line: 18
+    title: "D240: 企业事实治理 (9测试)"
+    source: "任务看板（未完成）"
+    priority: P1
+    owner: "Claude Code"
+    depends: ["D240"]
+    acceptance: "场景 GS-01、GS-06 转绿（exit 0 + 证据入库）"
+  - id: "T-19-01"
+    line: 19
+    title: "direction-monitor 未接线 / loop-4 无专属处理器 / GA 仅 type import / 静默升级回滚未实现 / orgId 未全量（D334）"
+    source: "审计发现台账（K3 权威偏差审计）"
+    priority: P1
+    owner: "DeepSeek Harness"
+    depends: ["D334"]
+    acceptance: "场景 GS-05 转绿（exit 0 + 证据入库）"
+  - id: "T-19-02"
+    line: 19
+    title: "方向监测（S1-5）: 断裂"
+    source: "C线差距清单（第五章）"
+    priority: P1
+    owner: "DeepSeek Harness"
+    depends: []
+    acceptance: "场景 GS-05 转绿（exit 0 + 证据入库）"
+  - id: "T-22-01"
+    line: 22
+    title: "direction-monitor 未接线 / loop-4 无专属处理器 / GA 仅 type import / 静默升级回滚未实现 / orgId 未全量（D337）"
+    source: "审计发现台账（K3 权威偏差审计）"
+    priority: P1
+    owner: "DeepSeek Harness"
+    depends: ["D337"]
+    acceptance: "场景 GS-07 转绿（exit 0 + 证据入库）"
+  - id: "T-23-01"
+    line: 23
+    title: "direction-monitor 未接线 / loop-4 无专属处理器 / GA 仅 type import / 静默升级回滚未实现 / orgId 未全量（D338）"
+    source: "审计发现台账（K3 权威偏差审计）"
+    priority: P1
+    owner: "Claude Code"
+    depends: ["D338"]
+    acceptance: "场景 GS-07 转绿（exit 0 + 证据入库）"
+  - id: "T-23-02"
+    line: 23
+    title: "D239: GA权限边界 (14测试)"
+    source: "任务看板（未完成）"
+    priority: P1
+    owner: "Claude Code"
+    depends: ["D239"]
+    acceptance: "场景 GS-07 转绿（exit 0 + 证据入库）"
+  - id: "T-24-02"
+    line: 24
+    title: "权限与安全（S3-3）: 未验证"
+    source: "C线差距清单（第五章）"
+    priority: P1
+    owner: "Claude Code"
+    depends: []
+    acceptance: "场景 GS-07 转绿（exit 0 + 证据入库）"
+# AUTO:END
+# MANUAL:START
+manual: []
+# MANUAL:END
