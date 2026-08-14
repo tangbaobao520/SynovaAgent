@@ -20,14 +20,14 @@
 
 | 模块/区域 | 状态 | 备注 |
 |-----------|------|------|
-| scripts/control-tower/（控制塔） | 进行中·DeepSeek Harness | D334-D336 连续迭代 |
+| scripts/control-tower/（控制塔+门禁脚本） | 进行中·Claude Code (Win)·08-16 | 创始人仲裁：归 Win（D366 门禁修复在途）；Harness 只留 workflow 协作文档 |
 | scripts/backup/（备份） | 已完成·DeepSeek Harness·08-14 | launchd 已装 |
 | .claude/skills + .dsh/skills + DSH preset | 已完成·DeepSeek Harness·08-15 | D370 P0-P3（技能同步+组13+预设安装），PR 已合并 |
-| src/ 业务代码（L1-L5） | 空闲 | Claude Code 主力 |
+| src/ 业务代码（L1-L5） | Claude Code (Win) | D355-D360 契约/连接器/manifest 修复（D366 场景驱动验收） |
 | scripts/audit/（审计工具） | Kimi K3 专属 | 红线：其他角色禁碰 |
 | docs/synova/coordination/（协作宪法） | DeepSeek Harness | 创始人批准后变更 |
-| scripts/product-lines/（产品进度仪表盘） | 已完成·DeepSeek Harness·08-16 | D371 Phase 1（PR #19 已合并）；D372 幂等修复同 PR 收尾 |
-| scripts/golden-scenarios/（黄金场景证据引擎） | 进行中·DeepSeek Harness·08-16 | D371 已落目录骨架；GS-01~08 本体 D361-D364（下一任务） |
+| scripts/product-lines/（产品进度仪表盘） | 已完成·DeepSeek Harness·08-16 | D371 Phase 1（PR #19）+ D372 幂等（PR #20）+ D373 fail-closed/自愈（PR #21）全部已合并 |
+| scripts/golden-scenarios/（黄金场景证据引擎） | 进行中·DeepSeek Harness·08-16 | D361 基建（common/ 四工具+断言规范）；**GS-02/03/04 脚本等 Win D366/D355-D357 修复合并后再写**（创始人仲裁 08-16） |
 
 ## 认领/交还流程
 
