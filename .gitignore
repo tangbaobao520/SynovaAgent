@@ -9,11 +9,10 @@ data/
 .DS_Store
 Thumbs.db
 *.html
+!/*.html
+!docs/**/*.html
 !app/*.html
 !app/**/*.html
-*.ps1
-*.cmd
-Dockerfile
 synova_worker/__pycache__/
 **/__pycache__/
 .env
@@ -37,3 +36,23 @@ docs/research/*.md
 
 # pre-commit 并行缓存 — 含扫描输出，禁止入库
 .claude/.precommit-par/
+
+# ═══ 运行时 / 敏感产物（2026-08-14 GIT-SYNC-PLAN）═══
+# 企业事实数据（敏感，不进 git）
+.codex/enterprise/facts/
+# 本地设置与环境快照
+.claude/settings.local.json
+.claude/workflow-state.json
+.codex/env-snapshot.json
+.codex/settings/
+# 控制塔运行时产物
+.codex/control-tower/tmp/
+.codex/control-tower/session-registry.json
+.codex/control-tower/health.json
+.codex/control-tower/*.corrupt-*
+# 审计运行时产物（区别于 docs/synova/audit-reports/ 正式报告）
+.codex/audit/
+.codex/audit-reports/
+# 临时 brief 与 worktree 副本
+.claude/task-briefs/*-auto.md
+.claude/worktrees/

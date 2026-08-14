@@ -1,0 +1,118 @@
+# 审计发现台账（KIMI K3 独立审计）
+
+> 用途：把 K3 审计发现固化为**开发过程迭代的关键素材**——改进控制塔 + 改进 Codex 的 dev doc 编写 skill。
+> 维护：Codex 在每次 K3 审计完成后更新本台账 + 登记仪表盘。
+> 关联：[AUDIT-PROTOCOL](AUDIT-PROTOCOL.md) / [ROLES](ROLES.md) / 审计报告 `docs/synova/audit-reports/`
+
+## 一、审计发现台账
+
+| 日期 | D# | 级别 | 发现 | 根因（该拦的防线） | 修复 | 改进归属 |
+|------|----|:---:|------|------------------|------|:---:|
+| 08-12 | D328 | P1-1 | python 损坏 shim 时一致性门禁**静默漏拦**（2/6 败，物理复现） | fail-open 把"检查未执行"与"检查通过"压成同一 exit 0；`command -v` 只探存在性不探可用性 | D330（探测+三态） | 控制塔+skill |
+| 08-12 | D328 | P1-2 | DS4 声称"四条豁免全部测试覆盖"，Revert/无暂存**无用例** | DS verify 不映射"声称项↔用例"（自报无法自证） | D330（补 2 用例+措辞） | skill |
+| 08-12 | D328 | P1-3 | DS7 无物理证据（bypass.log 空窗，ea1cb71 落窗内） | bypass.log 无对账方，执行证据链断裂无人发现 | D331（对账） | 控制塔 |
+| 08-12 | D329 | P1-1 | tag V4.7.1 指向**孤儿提交** f685fa0（版本锚点断裂） | 无 tag-祖先校验（amend 重提交后 tag 未跟随） | D331（重指+校验） | 控制塔 |
+| 08-12 | D329 | P1-2 | dc369fd 无 bypass.log 记录（**同型缺口第二次**） | 对账机制未建立即再犯 = 防线系统性失效 | D331（对账强制） | 控制塔 |
+| 08-12 | D329 | P2-1 | write-set 记录无 task_id（dev doc §3.1 声称过度） | 文档-实现漂移：声称"记录含 X"但未实现/未验收 | D331 | skill |
+| 08-12 | D329 | P2-2 | resolver --session **零生产调用方**（机制建成未接线） | dev doc §5 接线验收写浅：没要求"生产调用点真实传递" | D331（接线+§5 升级） | skill |
+| 08-12 | D329 | P2-5 | synova-commit:367 裸 python3 + `\|\| true` 吞失败（同文件刚修过 commit-msg） | PYBIN 未全局对齐；`\|\| true` 连崩溃都吞 | D331（升级 P1） | 控制塔 |
+| 08-12 | D329 | P2 其他 | 测试无 runner 接线 / genuine except 无 degraded / brief 引用不存在文件 / DS6"同 commit"与 gitignore 矛盾 / DS9 verify --self-test 无效 | 多个"声称 vs 物理"小缺口 | D331 清理 | skill+控制塔 |
+| 08-09/12 | Mac ba653c3 | P2 | engine-core 退役清理"grep 物理证明零引用"**声称不实**：tests/run-e2e-pipeline.cjs（死文件）残留 3 处 packages/engine-core 引用 | M2 声称 vs 事实（清理时 grep 范围漏 tests/*.cjs） | 待清理 chore | skill |
+| 08-12 | Mac 清理 | — | 审计基线 439→**434**（78K 删除，-5 FAIL / -1 arch / -2 WARN）；admin-knowledge.ts:17 L1→L4 违规**仍在**（D309 待做） | 大规模删除改变基线契约 | 基线已更新（2026-08-12） | 控制塔 |
+| 08-12 | D330/D331 并行 | P0 | **共享暂存区拉锯**：D331 re-add 抢占 → D330 被 D328 门禁拒绝 → 循环（防护在工作，暴露 D307 缺失） | git index 是 worktree 级单例；门禁仲裁替代物理隔离；依赖任务被并行派发 | D332（软加固）+ D307（根治） | 控制塔+skill |
+| 08-12 | K3 权威偏差审计 | P0×1 | **N13 反馈→规则闭环断裂**（middle-evolution 零调用、feedback-collector 无消费方） | 写了没接线（M3 类） | D333（P0） | 产品 |
+| 08-12 | K3 权威偏差审计 | P1×5 | direction-monitor 未接线 / loop-4 无专属处理器 / GA 仅 type import / 静默升级回滚未实现 / orgId 未全量验证 | 多为"机制建成未接线/口径滞后" | D334-D338 | 产品+文档 |
+| 08-12 | K3 权威偏差审计 | 文档×2 | AGENTS.md 哨兵口径 20 vs 45+4；N14 去重窗口 5 vs 30 | 口径滞后（代码无缺陷） | D339（待创始人定 N14） | 文档 |
+| 08-12 | K3 D330 复审 | P1×1 | **bypass.log 连续第三个任务无记录**（6c00e46/407ff1f）——防线失效本身，两次排队进 CT 无物理执行体发现 | 对账机制只在队列，无自动执行 | **升级 P0 流程事项：D331 check-bypass-log 立即执行（K3 已给最小实现 comm -23）** | 控制塔 |
+| 08-12 | K3 D330 复审 | 技术事实 | broken-python3 + 可用 python 时门禁**仍不拦截**（resolver PYBIN 无探测先死）——D330 只"不静默"非"仍拦截" | resolver 硬化未含探测 | D331 折入（§2.6/DS13） | 控制塔 |
+| 08-12 | K3 D330 复审 | P2×5 | resolver exit 1 二义 / 用例 10 标题矛盾 / DS8 基线 439（我已误写 434 已修）/ V4.7.3 幻影条目 / 测试无 runner | 文档-代码小漂移 + 版本编排副作用 | D331 折入 + 文档已修 | skill+控制塔 |
+| 08-12 | K3 权威偏差 v1.1 | P1×5 | ①V5 视图硬编码旧 6 专家（D282 未传播，铁律 9 违规实例）；②gate-status.json 缺失（3/19 信号仅 3 文件）；③铁律 36 无全量 vitest 强制点；④铁律 37 无 dead-code 扫描（direction-monitor 存活 11 天）；⑤铁律 9 无传播检查 | 控制塔视图/信号/铁律门禁缺失 | D340-D342 | 控制塔 |
+| 08-12 | K3 权威偏差 v1.1 | 改判 | D-G2"已修复"→"引擎已修复，数据链路未担保"（gate-status 缺失 + 快照 11 天 + 自检盲区）；组 11 并入组 4（12 组计数口径 → D3）；铁律 38 确认全仓扫描 | 复核深化 | 演示前 checklist + D339 | 控制塔+文档 |
+| 08-14 | K3 全链路审计 | P0×3 / P1×5 / P2×6 | **Agent 核心能力全链路 FAIL（0/3 贯通）**：L5 无 CRM/财务/HR 连接器；L4 类型契约断裂（Market≠Client、People≠Person、Event/Tool 零写入方）+ 属性契约断裂（cashBalance≠cash）+ filter bug（compute-cash-runway-months.ts:60）；P0 哨兵阈值告警生产死代码（sentinel-loader 从不挂 manifest）；L4 查询层静默 fail-open（schema 漂移只 warn 返回空）。活运行证明 L3 计算能力本身是真的，断裂在数据进出两端 | L5 连接器缺失 + L4 契约失配 + manifest 死代码 + fail-open | D355-D360（见仪表盘） | 产品 |
+
+## 二、模式归纳（跨审计复现的根因类）
+
+| # | 模式 | 首次 | 再次 | 对应防线 |
+|---|------|------|------|---------|
+| M1 | **fail-open 静默失效**（检查未执行==检查通过） | D328 P1-1 | D329 P2-5（`\|\| true`） | 三态输出（pass/degraded/fail） |
+| M2 | **声称 vs 事实**（doc/报告 overclaim） | D328 P1-2 | D329 P2-1（task_id）、Mac ba653c3（零引用声称） | DS verify 覆盖映射；写集声称=实现+验收 |
+| M3 | **机制建成未接线**（WIRE CHECK 失败） | D329 P2-2 | — | 接线要求"生产调用点真实传递"（测试不计） |
+| M4 | **执行证据链断裂**（bypass.log） | D328 P1-3 | D329 P1-2（第二次） | git log vs bypass.log 对账 |
+| M5 | **环境依赖门禁**（python3/broken shim） | D328 P1-1 | D329 P2-5 | PYBIN 全局 + 可用性探测 |
+| M6 | **版本锚点断裂**（tag 孤儿） | D329 P1-1 | — | tag-祖先校验（pre-push/CI） |
+| M7 | **文档-实现漂移**（dev doc 未回填/声称未实现） | D329 P2-1 | — | dev doc 与最终实现同 commit 回填 |
+| M8 | **共享暂存区竞争**（并行 session 共用 worktree index） | D330/D331（08-12） | — | worktree 隔离（D307）+ staging-guard 指引/事件记录（D332） |
+
+## 三、控制塔改进队列（CT）
+
+| # | 项 | 来源 | 状态 |
+|---|-----|------|------|
+| CT-1 | fail-open 三态（gate 输出区分 pass/degraded/fail） | M1 | ⏳ 健康审计队列（D330 只做 commit-msg 局部） |
+| CT-2 | WIRE CHECK 升级（≥1 生产调用点，测试不计） | M3 | ⏳ 健康审计队列（D331 §5 局部落地） |
+| CT-3 | bypass.log 对账（post-commit + 定期/CI） | M4 | 🔄 D331 折入 |
+| CT-4 | tag-祖先校验（pre-push） | M6 | 🔄 D331 折入 |
+| CT-5 | PYBIN 全局对齐（全 scripts 裸 python3 清零） | M5 | 🔄 D331 折入（synova-commit）+ 剩余点待扫 |
+| CT-6 | CI job 级判定（生成器假红） | D320 审计 | ⏳ 未排 |
+| CT-7 | pre-commit 性能/双重执行 | D319 报告 | ⏳ 未排 |
+| CT-8 | baseline-check.test.sh 3 失败 | D318 报告 | ⏳ 未排 |
+| CT-9 | 10 个 .sh UTF-8 头块 | D318 报告 | ⏳ 未排 |
+| CT-10 | staging-guard 被拒带指引（活跃 session/归属/建议） | M8 | 🔄 D332 折入 |
+| CT-11 | attach.py SessionStart 强制 register session | M8 | 🔄 D332 折入 |
+| CT-12 | wait_manager 暂存区竞争检测/提示 | M8 | 🔄 D332 折入 |
+| CT-13 | 提交被拒事件记录（parallel-conflicts.log） | M8 | 🔄 D332 折入 |
+| CT-14 | 审计协议 L3 加"并行合规"检查项 | M8 | ✅ 已入 AUDIT-PROTOCOL（2026-08-12） |
+| CT-15 | worktree 隔离落地（D307：独立 index/暂存区/current-brief + worktree-manager 生命周期） | M8 根因 | 🔄 D307 dev doc 就绪（2026-08-12，V4.8.0）— 待派发 |
+| CT-16 | 进化闭环接线（N13/middle-evolution 零调用） | K3 权威偏差 P0-A1 | 🔄 D333（P0）待写 dev doc |
+| CT-17 | **bypass 对账物理执行**（防"队列无执行体"——连续 3 任务无记录） | K3 D330 复审 P1 | 🔄 D331 check-bypass-log（升级 P0 优先级） |
+| CT-18 | resolver PYBIN 可用性探测 + 退出码 0/1/2 语义化 | K3 D330 复审 | 🔄 D331 折入（§2.6/DS13） |
+| CT-19 | 控制塔 V5 视图动态化（agent_health 读 expert-registry） | v1.1 P1-B1 | 🔄 D340 |
+| CT-20 | 控制塔信号完整性（gate-status 回填 + 自检部分缺失升级） | v1.1 P1-B2 | 🔄 D341 |
+| CT-21 | 铁律 36/37/9 门禁补全 | v1.1 P1-B3~B5 | 🔄 D342 |
+| CT-22 | P2 结转治理（测试 runner 接线 / 用例标题 / brief 引用 / genuine degraded）——3 审计连续 carried，禁再 carry | 多份 | ⏳ 控制塔健康审计批次 |
+| CT-23 | DS 对账机制（交付声明 vs dev doc DS 一一对应，禁重编号，缺项显式 descope） | K3 D331 L4 | 🔄 S-10 已入 skill；门禁化待健康审计 |
+| CT-24 | resolver 硬化交付（DS13：PYBIN 可用性探测 + 退出码 0/1/2） | K3 D331 P1-1 | 🔄 D352 |
+| 演示前 | D-G2 数据链路动作（回填信号 + 刷快照 + 验红灯） | v1.1 改判 | 🔄 并入 D341 |
+| CT-25 | 循环执行体真实化（loop-2/3/4/5/6 placeholder 假成功 → 真实执行 + 修假 completed + middle-evolution 接入） | v2 P0-A1/P1-C2 | 🔄 D333（P0） |
+| CT-26 | 铁律 38 扫描范围扩至 packages/（as any 清理或声称降级） | v2 P1-C1 | 🔄 D353 |
+| CT-27 | N14 去重键稳定（finding.id 去时间戳） | v2 N14 | 🔄 D354 |
+| CT-28 | **verify-parallel --scan-today 语义缺陷**（L135-146 只按当天 mtime 圈 doc 两两比对，不理解「依赖/接力顺序」——D332/D307 与 D331 写集重叠被误判并行冲突硬阻断；自愈=离开当天范围即放行。K3 审计仅验「门禁 5 存在+接线」，未覆盖判定语义=控制塔语义审计盲区） | 2026-08-13 并行拦截复盘（K3 盲区，本机发现） | 🔧 建议并入 D332 写集或新建补丁 |
+| 权威18 | 审计体系冲刺（7 任务重编号 D343-D349）：D343 bypass A+B（P0）/ D344 报告git+dispatcher（P0）/ D345 doc-audit / D346 组13 / D347 JSON规范 / D348 CLAIM标签化（5份核心80%，按§5.5+验收#7）/ D349 JSON生成器 | 权威文档 18（2026-08-12） | 📝 D343-D349 待写 dev doc |
+| 决策 | N14 去重窗口 ✅ 裁决 A（文档改 5 分钟，任务地图 v2 已改 2026-08-13）｜P0-8 boss 角色 ✅ 裁决 A（ENT 补 → D351）｜npm audit ⏳ 待裁（建议豁免并入 D309/D310） | 创始人 2026-08-13 | 🔄 D351 待写 + D339 含 N14 |
+| 08-13 | K3 D331 复审 | P1×1 | **DS13 静默消失**：dev doc 承诺 resolver 硬化（PYBIN 探测 + 退出码 0/1/2）零交付，交付声明止于 DS12 无 descope——D330 L4#2 同构复发；broken-python 门禁仍不拦截、无 brief 仍误标 degraded | dev doc 完成标准 ⊆ 交付声明无对账机制 | D352（补做）+ S-10（skill） | skill+控制塔 |
+| 08-13 | K3 D331 复审 | P2×4 | 25/25 vs 24/24 计数失真；brief 未入仓；"已写 memory"声称不实（第 2 次公式化声称）；测试无 runner（carried） | 声称-事实小漂移 | S-11（skill）+ carried | skill |
+| 08-13 | K3 权威偏差 v2 | P0 加深 | **N13 根因加深：loop-3/5 名义进化通道是 placeholder 假成功**（loop-handlers.ts:4-5 "D9 未兑现"），每次 cron 触发写伪造 'completed' 记录（main-agent.ts:182-199）——断裂在仪表盘不可见 | placeholder 假成功 + 假审计记录 | D333（P0，吸收 D335/P1-C2） | 产品 |
+| 08-13 | K3 权威偏差 v2 | 新 P1×2 | P1-C1：铁律 38 "as any 零存在"不实（组 1 只扫 src/，packages/ 36 文件 81 处无门禁）；P1-C2：4 默认循环处理器全 placeholder（吸收 P1-A2） | 门禁扫描范围盲区 + 假成功 | D353 + D333 吸收 | 控制塔 |
+| 08-13 | K3 权威偏差 v2 | 改判 | 铁律 38 从"实证全覆盖"**退回**（packages 盲区）；D-G2 精确化（freshness/CP1 被动记录型，cp1 停 08-01）；N14 真问题是**去重键不稳定**（finding.id 含时间戳），窗口是二级 | v1.1 复核不完整 | D354 + 台账修正 | 控制塔 |
+| 08-13 | K3 权威偏差 v2 | 文档 D5 | C线 S5-3/T-2/A线 B6 的 ✅ 基于 placeholder 接线，证据失去支撑 | 声称基于假执行体 | D339 扩 | 文档 |
+
+## 四、dev doc 编写 skill 改进队列（Codex synova-dev-doc）
+
+| # | 改进 | 来源 | 状态 |
+|---|------|------|------|
+| S-1 | **MANDATORY push+CI DS**（推送后 origin..HEAD 空 + CI 逐 job 绿） | D328/D329 未推送教训 | ✅ 已入 requirements.md（2026-08-12） |
+| S-2 | 写集表"记录含 X"声称 = 实现 + 验收（禁声称过度） | M2 | ✅ 已入 requirements.md（2026-08-12） |
+| S-3 | §5 接线要求必须"生产调用点真实传递"（测试调用不计） | M3 | ✅ 已入 requirements.md + template.md（2026-08-12） |
+| S-4 | DS verify 命令必须有效且映射"声称项↔用例" | M2/DS9 | ✅ 已入 requirements.md + template.md（2026-08-12） |
+| S-5 | 测试 red 必须覆盖"失败模式"（broken shim/劫持/绕过），非仅 happy path | M1/M5 | ✅ 已入 requirements.md + template.md（2026-08-12） |
+| S-6 | dev doc §3.2 最终实现同 commit 回填 | M7 | ✅ 已入 template.md（2026-08-12） |
+| S-7 | 依赖非空 → 禁止并行派发（派发说明标注 worktree 要求） | M8 | ✅ 已入 requirements.md + template.md（2026-08-12） |
+| S-8 | 写集表标注共享资源（VERSION.md/current-brief/暂存区） | M8 | ✅ 已入 requirements.md + template.md（2026-08-12） |
+| S-9 | 任务前置含环境检查（session-registry 活跃 session） | M8 | ✅ 已入 requirements.md（2026-08-12） |
+
+## 五、演进记录
+
+| 日期 | 事件 |
+|------|------|
+| 2026-08-12 | 建台账；登记 K3 D328/D329 两轮审计发现（P1×5 + 关键 P2）+ 7 模式 + CT/S 队列 |
+| 2026-08-12 | S-2~S-6 写入 synova-dev-doc skill（requirements.md + template.md），skill 改进队列全部落地 |
+| 2026-08-12 | 登记 Mac 双提交（ba653c3 engine-core 清理 + 46b9271 D321 Mac 兼容）；审计基线 439→434；admin-knowledge D309 待做；run-e2e-pipeline.cjs 残留待清；分支分歧待合并 |
+| 2026-08-12 | D330/D331 共享暂存区拉锯事件 → 根因三层（物理/设计/流程）+ M8 模式 + CT-10~14 + S-7~9；D332 dev doc 就绪（V4.7.4）；PARALLEL-DISCIPLINE.md 建立 |
+| 2026-08-12 | **D307 dev doc 补齐**（长期 backlog 未落地，本次承认疏漏并补写；V4.8.0 物理根治）→ CT-15 |
+| 2026-08-12 | K3 权威偏差审计（A线复核）登记：P0×1/P1×5/文档×2 → D333-D339 队列；已闭环×4 防重定案；G6 改判；快照 08-01 观察项 |
+| 2026-08-12 | K3 D330 复审：CONDITIONAL PASS（P1-1/1-2 独立复验通过，加分项诚实标注）；bypass 连续 3 任务无记录 → 升级 P0；resolver 探测折入 D331；DS8 基线 439 修正（我误写 434） |
+| 2026-08-12 | K3 权威偏差 v1.1：P1-B1~B5 → D340-D342；D-G2 改判；铁律覆盖总表（36/37/9 无门禁）；组11 修正；D-G2 数据链路演示前动作；P0-8/N14 待决策 |
+| 2026-08-13 | 权威文档 18（审计体系）登记：D# 冲突重编号（研究方案 D331-337 → D343-349，7 任务）；代码现状核（dispatcher/doc-audit-interface/claim-tag-spec 已存在，doc-audit.sh/bypass-log-reconcile.sh 缺失，报告未 git 跟踪）；标注方案内部矛盾（§五迁移 vs §5.5 不迁移，按 5.5+验收#7） |
+| 2026-08-13 | 创始人裁决 N14=A（文档改 5 分钟已落实）+ P0-8=A（ENT 补 boss → D351）；建立"创始人待裁决区"（npm audit 仍待）；复盘：待裁决项此前只登记未主动提出，流程已纠正 |
+| 2026-08-13 | K3 D331 复审：CONDITIONAL PASS——D329 的 P1/P2 全部落地（bypass 证据链首次完整）；P1-1 DS13 resolver 硬化零交付（D352 补做）；P2×4；L4 DS 对账机制 → S-10/S-11 已入 skill |
+| 2026-08-13 | K3 权威偏差 v2：N13 根因加深（placeholder 假成功 + 伪造 completed）→ D333 扩为循环执行体真实化；铁律 38 改判退回（packages 81 处 as any）→ D353；N14 真问题去重键 → D354；D335 吸收；D5 文档 → D339 |
+| 2026-08-13 | 决策参考机制建立（DECISION-REFERENCE.md）：四步框架（第一性原理→Anthropic→DeepSeek 开源实证→收敛检查）+ 记录参考系强制；S-12 入 dev-doc skill（多选项任务必填决策参考小节 + 完成报告决策记录） |

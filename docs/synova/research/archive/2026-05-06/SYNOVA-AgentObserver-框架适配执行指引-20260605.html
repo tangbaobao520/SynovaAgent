@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><title>Agent Observer — 编码 AI 执行指引</title>
+<style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",sans-serif;background:#0b0b12;color:#e0e0e0;font-size:14px;line-height:1.8;padding:40px;max-width:960px;margin:0 auto}
+h1{font-size:28px;border-bottom:2px solid #6c5ce7;padding-bottom:12px}
+h2{font-size:20px;color:#6c5ce7;border-left:4px solid #6c5ce7;padding-left:12px;margin:32px 0 14px}
+h3{font-size:16px;color:#a29bfe;margin:24px 0 8px}
+p{margin:8px 0;color:#aaa}
+table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13px}
+th,td{padding:6px 10px;text-align:left;border:1px solid #2a2a3a}
+th{background:#12121c;color:#a29bfe}
+code{background:#1a1a2a;padding:1px 5px;border-radius:3px}
+pre{background:#08080f;padding:10px 14px;border-radius:6px;border:1px solid #2a2a3a;font-size:12px;line-height:1.6}
+.tag{display:inline-block;padding:1px 7px;border-radius:3px;font-size:10px;font-weight:700}
+.p0{background:#e74c3c;color:#fff}.p1{background:#f39c12;color:#000}.p2{background:#6c5ce7;color:#fff}
+hr{border:none;border-top:1px solid #2a2a3a;margin:20px 0}
+</style></head>
+<body>
+
+<h1>Agent Observer — 编码 AI 执行指引</h1>
+<p style="color:#777">基于实际源码分析，不是猜测 · 2026-06-05</p>
+
+<hr>
+
+<h2>〇、整体架构</h2>
+<pre>仓库根目录：synova-agent/
+新增目录：src/agent-observer/          ← Observer 核心
+新增目录：observer-adapters/           ← 各平台适配器（可选安装）
+新增目录：synova_worker/observer/      ← Python 侧车上报逻辑
+
+观察数据流：
+Agent 活动 → Observer 适配器 → HTTP POST 到 Synova → 创建/更新 SOG AGENT 节点
+                                                                  ↓
+                                                   6 个专家 Agent 通过 query_sog_graph 分析
+                                                                  ↓
+                                                   与人类团队共享同一套分析管线</pre>
+
+<hr>
+
+<h2>一、统一数据格式（先做这个）</h2>
+<p>所有适配器上报的数据格式统一。在 <code>src/agent-observer/types.ts</code> 定义：</p>
+<pre>// 一个 Agent 活动事件
+export interface AgentActivity {
+  agentId: string;          // Agent 唯一标识
+  platform: string;         // 'openclaw' | 'claude-code' | 'hermes' | 'langchain' | 'mcp' | 'unknown'
+  agentName?: string;       // 可读名称
+  teamId?: string;          // 所属团队（如果有）
+
+  // 活动内容
+  activityType: 'tool_call' | 'llm_call' | 'subagent_spawn' | 'task_complete' | 'error' | 'heartbeat';
+  toolName?: string;        // 如果是工具调用
+  toolArgs?: string;         // 工具参数（可选，默认不发送）
+  success?: boolean;        // 是否成功
+  durationMs?: number;       // 耗时
+  error?: string;            // 错误信息
+
+  // 资源
+  tokenIn?: number;          // LLM 输入 token
+  tokenOut?: number;         // LLM 输出 token
+  costUsd?: number;          // 成本（美元）
+
+  // 时间
+  timestamp: string;         // ISO 8601
+  sessionId?: string;        // 会话 ID（如果有）
+}
+
+// 上报 API
+// POST /api/agent-observer/report
+// Body: AgentActivity 或 AgentActivity[]
+// 响应: { ok: true, nodeId?: string }</pre>
+
+<p><strong>接线验证：</strong><code>grep -rn "AgentActivity\|agent-observer/report" src/ --include="*.ts" | grep -v test</code> → 类型和路由存在</p>
+
+<hr>
+
+<h2>二、接收端（Synova 侧）</h2>
+<p>新建 <code>src/agent-observer/collector.ts</code>，接收上报数据并写入 SOG：</p>
+<pre>import { getGraphStore } from '../l4/graph-bridge';
+import { SOGNodeType, SOGEdgeType } from '@synova/sog-core';
+import { createLogger } from '../logger';
+import type { AgentActivity } from './types';
+
+const log = createLogger('agent-observer/collector');
+
+export async function collectActivity(activity: AgentActivity): Promise&lt;{ nodeId: string }&gt; {
+  const store = getGraphStore();
+  const graph = activity.teamId || 'default';
+  const nodeId = `agent-${activity.platform}-${activity.agentId}`;
+
+  // 创建或更新 AGENT 节点
+  store.createNode(SOGNodeType.AGENT, {
+    name: activity.agentName || activity.agentId,
+    platform: activity.platform,
+    lastSeen: activity.timestamp,
+    status: 'active',
+  }, graph);
+
+  // 记录工具调用等信息（可选）
+  if (activity.activityType === 'tool_call' && activity.success !== undefined) {
+    // 可以记录到 EVENT 节点或更新节点属性
+  }
+
+  return { nodeId };
+}
+</pre>
+<p>新建 <code>src/routes/agent-observer.ts</code>：</p>
+<pre>import { Router } from 'express';
+import { collectActivity } from '../agent-observer/collector';
+import type { AgentActivity } from '../agent-observer/types';
+
+const router = Router();
+
+router.post('/api/agent-observer/report', async (req, res) => {
+  try {
+    const activities = Array.isArray(req.body) ? req.body : [req.body];
+    const results = await Promise.allSettled(
+      activities.map(a => collectActivity(a as AgentActivity))
+    );
+    const nodeIds = results
+      .filter((r): r is PromiseFulfilledResult&lt;{ nodeId: string }&gt; => r.status === 'fulfilled')
+      .map(r => r.value.nodeId);
+    res.json({ ok: true, nodeIds, count: nodeIds.length });
+  } catch (err: any) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+export default router;
+</pre>
+<p>在 <code>src/server.ts</code> 中挂载此路由。</p>
+
+<p><strong>接线验证：</strong><code>curl -X POST http://localhost:3000/api/agent-observer/report -H 'Content-Type: application/json' -d '{"agentId":"test","platform":"openclaw","activityType":"heartbeat","timestamp":"2026-06-05T00:00:00Z"}'</code> → 返回 200</p>
+
+<hr>
+
+<h2>三、MCP Server 适配器（覆盖 10 个框架，P0）</h2>
+<p><strong>这些框架的共性</strong>：都是配置一个 MCP Server 在 JSON 文件里，不需要写代码。</p>
+<p>新建 <code>packages/agent-observer-mcp/src/index.ts</code>（独立的 npm 包，@synova/agent-observer-mcp）：</p>
+<pre>import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import fetch from 'node-fetch';
+
+const SYNOVA_URL = process.env.SYNOVA_URL || 'http://localhost:3000';
+const AGENT_NAME = process.env.AGENT_NAME || 'unknown-agent';
+const PLATFORM = 'mcp';
+
+const server = new Server(
+  { name: 'synova-observer', version: '1.0.0' },
+  { capabilities: { tools: {} } }
+);
+
+// 提供一个工具供 Agent 调用（Agent 主动汇报）
+server.setRequestHandler('tools/call', async (request) => {
+  const { name, arguments: args } = request.params;
+
+  // 上报到 Synova
+  await fetch(`${SYNOVA_URL}/api/agent-observer/report`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      agentId: AGENT_NAME,
+      platform: PLATFORM,
+      agentName: AGENT_NAME,
+      activityType: 'tool_call',
+      toolName: name,
+      toolArgs: JSON.stringify(args).slice(0, 1000),
+      timestamp: new Date().toISOString(),
+    }),
+  }).catch(() => {}); // 静默失败，不影响 Agent
+
+  return { content: [{ type: 'text', text: 'ok' }] };
+});
+
+const transport = new StdioServerTransport();
+await server.connect(transport);
+</pre>
+
+<h3>用户配置方式（覆盖 10 个框架）</h3>
+<pre>// Claude Code: ~/.claude/settings.json
+{
+  "mcpServers": {
+    "synova-observer": {
+      "command": "npx",
+      "args": ["@synova/agent-observer-mcp"],
+      "env": { "SYNOVA_URL": "http://localhost:3000", "AGENT_NAME": "my-agent" }
+    }
+  }
+}
+
+// Cline: cline_mcp_settings.json（同上）
+// Continue: ~/.continue/config.json（同上）
+// Windsurf: ~/.windsurf/settings.json（同上）
+// Cursor: ~/.cursor/mcp.json（同上）
+// OpenClaw: openclaw.json 的 mcpServers（同上）
+// Goose: ~/.config/goose/config.yaml（格式略有不同，但字段相同）
+</pre>
+
+<p><strong>需要在 npm 上发布 <code>@synova/agent-observer-mcp</code> 包。</strong></p>
+<p><strong>接线验证：</strong>用户配置后启动 Claude Code，Synova 收到第一条 heartbeat 即表示接入成功。</p>
+
+<hr>
+
+<h2>四、OpenClaw Skill（P0）</h2>
+<p>基于 OpenClaw 的 <code>agent-end</code> 钩子实现。参考已有代码：</p>
+<ul>
+<li><code>D:\novis-backup-20260526\Novis\server\src\synova-plugin\hooks\agent-end.ts</code>（已在用的钩子）</li>
+<li><code>D:\novis-backup-20260526\Novis\server\src\routes\synova.ts:2230</code>（evolution-signal 端点）</li>
+</ul>
+<p>新建 <code>observer-adapters/openclaw-skill/hooks.json</code>：</p>
+<pre>{
+  "hooks": {
+    "agent_end": [
+      {
+        "matcher": "*",
+        "hooks": [{
+          "type": "command",
+          "command": "python3 ${SKILL_ROOT}/report.py",
+          "timeout": 10
+        }]
+      }
+    ]
+  }
+}
+</pre>
+<p>新建 <code>observer-reporter/synova_worker/observer/report.py</code>（所有适配器共用）：</p>
+<pre>"""HTTP 上报到 Synova（所有适配器共用）"""
+import requests
+import json
+import os
+
+SYNOVA_URL = os.environ.get('SYNOVA_URL', 'http://localhost:3000')
+
+def report(activity: dict) -> None:
+    """上报 Agent 活动到 Synova。失败时不抛异常。"""
+    try:
+        requests.post(
+            f"{SYNOVA_URL}/api/agent-observer/report",
+            json=activity,
+            timeout=3,
+        )
+    except Exception:
+        pass  # 静默失败，不影响 Agent
+</pre>
+<p>新建 <code>observer-adapters/openclaw-skill/report.py</code>：</p>
+<pre>#!/usr/bin/env python3
+"""OpenClaw agent_end 钩子：采集 Agent 活动上报到 Synova"""
+import sys, json
+from synova_worker.observer.report import report
+
+# 从 stdin 读取钩子事件（OpenClaw 的钩子系统通过 stdin/stdout 通信）
+input_data = json.loads(sys.stdin.read())
+hook_event = input_data.get('hookEvent', {})
+agent_context = input_data.get('context', {})
+
+# 提取活动数据
+activity = {
+    'agentId': agent_context.get('agentId', 'unknown'),
+    'platform': 'openclaw',
+    'agentName': agent_context.get('agentName', agent_context.get('agentId', '')),
+    'teamId': agent_context.get('teamId', ''),
+    'activityType': 'tool_call',
+    'success': hook_event.get('success', True),
+    'durationMs': hook_event.get('durationMs', 0),
+    'timestamp': hook_event.get('timestamp', ''),
+}
+report(activity)
+
+# 输出空 JSON 表示成功（OpenClaw 钩子协议要求）
+print(json.dumps({}))
+</pre>
+<p>用户安装方式：<code>clawhub install synova-observer</code> 或手动复制到 <code>~/.openclaw/agents/*/skills/</code>。</p>
+
+<p><strong>接线验证：</strong>安装后任何 Agent 回合完成时，Synova 收到 activity 数据。</p>
+
+<hr>
+
+<h2>五、Claude Code Hook 适配器（P0，基于实际源码）</h2>
+<p>参考源码：<code>D:\novis-backup-20260526\claw-code\plugins\security-guidance\hooks\security_reminder_hook.py</code></p>
+<p>Claude Code 的钩子系统通过 stdin/stdout JSON 通信。PreToolUse 接收到：<code>tool_name</code>、<code>tool_input</code>。</p>
+<p>新建 <code>observer-adapters/claude-code-hook/hook.py</code>：</p>
+<pre>#!/usr/bin/env python3
+"""Claude Code PreToolUse 钩子：采集工具调用上报到 Synova"""
+import sys, json
+from synova_worker.observer.report import report
+
+input_data = json.loads(sys.stdin.read())
+tool_name = input_data.get('tool_name', '')
+tool_input = input_data.get('tool_input', {})
+
+activity = {
+    'agentId': 'claude-code',
+    'platform': 'claude-code',
+    'activityType': 'tool_call',
+    'toolName': tool_name,
+    'toolArgs': json.dumps(tool_input).slice(0, 1000),
+    'timestamp': '',
+}
+report(activity)
+
+# 允许工具继续执行
+print(json.dumps({}))
+</pre>
+<p>用户配置方式：加到 <code>~/.claude/settings.json</code>：</p>
+<pre>{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          { "type": "command", "command": "python3 /path/to/hook.py", "timeout": 5 }
+        ]
+      }
+    ]
+  }
+}
+</pre>
+
+<p><strong>接线验证：</strong>配置后 Claude Code 每次工具调用时，Synova 收到数据。</p>
+
+<hr>
+
+<h2>六、Hermes Plugin 适配器（P1）</h2>
+<p>参考源码：<code>D:\hermes\hermes-agent\agent\plugin_llm.py</code></p>
+<p>新建 <code>observer-adapters/hermes-plugin/plugin.py</code>：</p>
+<pre>"""Hermes Plugin：采集 Agent 活动上报到 Synova"""
+from synova_worker.observer.report import report
+
+def register(api):
+    """在 Hermes Plugin 系统中注册"""
+    @api.on('tool_call_completed')
+    def on_tool_call(tool_name, args, result, ctx):
+        report({
+            'agentId': ctx.agent_id,
+            'platform': 'hermes',
+            'agentName': ctx.agent_name,
+            'activityType': 'tool_call',
+            'toolName': tool_name,
+            'success': result.success,
+            'durationMs': result.duration_ms,
+            'timestamp': ctx.timestamp.isoformat(),
+        })
+</pre>
+<p>用户配置方式：加到 <code>~/.hermes/config.yaml</code> 的 plugins 列表。</p>
+
+<hr>
+
+<h2>七、LangChain / CrewAI / AutoGen / OpenAI SDK（P1，一行代码）</h2>
+<p>发布一个 <code>synova-observer</code> Python 包（<code>observer-adapters/python-sdk/</code>）：</p>
+<pre># observer-adapters/python-sdk/synova_observer/__init__.py
+from synova_worker.observer.report import report
+
+class SynovaCallback:
+    """LangChain CallbackHandler / CrewAI callback / 通用"""
+    def on_tool_start(self, tool_name, **kwargs):
+        report({
+            'agentId': kwargs.get('agent_id', 'python-agent'),
+            'platform': 'langchain',
+            'activityType': 'tool_call_start',
+            'toolName': tool_name,
+            'timestamp': '',
+        })
+
+    def on_tool_end(self, tool_name, output, **kwargs):
+        report({
+            'agentId': kwargs.get('agent_id', 'python-agent'),
+            'platform': 'langchain',
+            'activityType': 'tool_call_end',
+            'toolName': tool_name,
+            'success': True,
+            'timestamp': '',
+        })
+
+# 用户只需：
+# from synova_observer import SynovaCallback
+# chain = create_chain(callbacks=[SynovaCallback()])
+# 或
+# crew = Crew(task_callback=SynovaCallback())
+</pre>
+
+<hr>
+
+<h2>八、优先实现顺序</h2>
+
+<table>
+<tr><th>顺序</th><th>任务</th><th>文件</th><th>工时</th></tr>
+<tr><td>1</td><td>统一数据格式（AgentActivity 接口）</td><td>src/agent-observer/types.ts</td><td>0.5 天</td></tr>
+<tr><td>2</td><td>接收端（collector + 路由）</td><td>src/agent-observer/collector.ts + routes/agent-observer.ts</td><td>0.5 天</td></tr>
+<tr><td>3</td><td>MCP Server 包（覆盖 10 个框架）</td><td>packages/agent-observer-mcp/</td><td>1 天</td></tr>
+<tr><td>4</td><td>OpenClaw Skill</td><td>observer-adapters/openclaw-skill/</td><td>0.5 天</td></tr>
+<tr><td>5</td><td>Python SDK（LangChain/CrewAI/AutoGen 共用）</td><td>observer-adapters/python-sdk/</td><td>0.5 天</td></tr>
+<tr><td>6</td><td>Claude Code Hook</td><td>observer-adapters/claude-code-hook/</td><td>0.5 天</td></tr>
+<tr><td>7</td><td>Hermes Plugin</td><td>observer-adapters/hermes-plugin/</td><td>0.5 天</td></tr>
+</table>
+
+<p><strong>所有适配器共用 <code>synova_worker/observer/report.py</code> 做 HTTP 上报。</strong></p>
+
+<hr>
+<p style="color:#777;font-size:12px;text-align:center">基于实际源码分析 · 2026-06-05</p>
+</body>
+</html>

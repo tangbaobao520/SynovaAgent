@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Synova — 商业计划书 2026</title>
+<style>
+  /* ── 基础 ── */
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2333;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --accent: #58a6ff;
+    --accent2: #79c0ff;
+    --green: #3fb950;
+    --orange: #d2991d;
+    --purple: #bc8cff;
+    --pink: #f778ba;
+    --red: #f85149;
+    --font: 'Inter', system-ui, -apple-system, sans-serif;
+    --mono: 'JetBrains Mono', 'Fira Code', monospace;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background:var(--bg); color:var(--text);
+    font-family:var(--font); line-height:1.7;
+    display:flex; flex-direction:column; align-items:center;
+  }
+  .page {
+    max-width:900px; width:100%;
+    padding:3rem 2.5rem;
+    position:relative;
+  }
+  .page-break { page-break-after:always; border-bottom:1px dashed var(--border); margin-bottom:2rem; padding-bottom:2rem; }
+  @media print {
+    body { background:#fff; color:#111; }
+    .page { max-width:100%; padding:1.5cm; }
+    .card,.grid-card,.metric-card { background:#f5f5f5 !important; border-color:#ddd !important; }
+    .tag-blue,.tag-green,.tag-amber,.tag-purple,.tag-red { color:#fff !important; }
+    .badge { border-color:#ccc !important; }
+    .page-break { border-color:#ddd; }
+  }
+  @page { size:A4; margin:1.5cm; }
+
+  /* ── 排版 ── */
+  h1 { font-size:2.5rem; font-weight:800; letter-spacing:-0.03em; line-height:1.2; color:#f0f6fc; }
+  h2 { font-size:1.6rem; font-weight:700; margin:2.5rem 0 1rem; color:var(--accent2); letter-spacing:-0.02em; }
+  h3 { font-size:1.2rem; font-weight:600; margin:1.8rem 0 .8rem; color:var(--accent); }
+  h4 { font-size:1rem; font-weight:600; margin:1.2rem 0 .5rem; color:var(--text); }
+  p  { margin:.6rem 0; }
+  .muted { color:var(--text-muted); font-size:.9rem; }
+
+  /* ── 数字卡片 ── */
+  .metric-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(200px,1fr));
+    gap:.8rem; margin:1.2rem 0;
+  }
+  .metric-card {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:10px; padding:1rem 1.2rem; text-align:center;
+  }
+  .metric-card .num {
+    font-size:2rem; font-weight:800;
+    color:var(--accent); line-height:1.2;
+  }
+  .metric-card .num.green { color:var(--green); }
+  .metric-card .num.orange { color:var(--orange); }
+  .metric-card .num.purple { color:var(--purple); }
+  .metric-card .num.pink { color:var(--pink); }
+  .metric-card .label { font-size:.8rem; color:var(--text-muted); margin-top:.2rem; }
+
+  /* ── 卡片 ── */
+  .card {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:10px; padding:1.2rem 1.5rem; margin:1rem 0;
+  }
+  .card-title { font-weight:600; font-size:.95rem; margin-bottom:.5rem; color:var(--accent); }
+
+  /* ── 表格 ── */
+  table { width:100%; border-collapse:collapse; margin:.8rem 0; font-size:.9rem; }
+  th { text-align:left; padding:.5rem .6rem; border-bottom:2px solid var(--border); color:var(--text-muted); font-weight:600; font-size:.8rem; text-transform:uppercase; letter-spacing:.05em; }
+  td { padding:.45rem .6rem; border-bottom:1px solid var(--border); vertical-align:top; }
+  tr:hover td { background:var(--surface2); }
+
+  /* ── 标签 ── */
+  .tag { display:inline-block; padding:.05em .5em; border-radius:4px; font-size:.75rem; font-weight:500; }
+  .tag-blue { background:#1f3a5f; color:var(--accent2); }
+  .tag-green { background:#1a3a1a; color:var(--green); }
+  .tag-amber { background:#3a2e0a; color:var(--orange); }
+  .tag-purple { background:#2a1a3a; color:var(--purple); }
+  .tag-red { background:#3a1a1a; color:var(--red); }
+
+  .badge {
+    display:inline-flex; align-items:center; gap:.3rem;
+    padding:.15em .6em; border-radius:20px;
+    border:1px solid var(--border);
+    font-size:.75rem; font-weight:500;
+  }
+
+  /* ── Tree / List ── */
+  .tree { padding-left:1.2rem; margin:.4rem 0; }
+  .tree li { margin:.25rem 0; list-style-type:none; position:relative; }
+  .tree li::before { content:'▸'; position:absolute; left:-1.1rem; color:var(--accent); }
+  .tree li.dim::before { color:var(--text-muted); }
+
+  /* ── 分隔线 ── */
+  hr { border:none; border-top:1px solid var(--border); margin:1.5rem 0; }
+
+  /* ── 数据条 ── */
+  .bar-group { margin:.5rem 0; }
+  .bar-row { display:flex; align-items:center; gap:.6rem; margin:.3rem 0; font-size:.85rem; }
+  .bar-label { width:140px; flex-shrink:0; color:var(--text-muted); }
+  .bar-track { flex:1; height:18px; background:var(--surface2); border-radius:4px; overflow:hidden; position:relative; }
+  .bar-fill { height:100%; border-radius:4px; transition:width .3s; }
+  .bar-fill.green { background:var(--green); }
+  .bar-fill.blue { background:var(--accent); }
+  .bar-fill.orange { background:var(--orange); }
+  .bar-fill.red { background:var(--red); }
+  .bar-fill.purple { background:var(--purple); }
+  .bar-pct { width:40px; text-align:right; font-weight:600; font-size:.8rem; }
+
+  /* ── 架构图 ── */
+  .arch {
+    display:flex; flex-direction:column; gap:6px;
+    margin:1rem 0; font-family:var(--mono); font-size:.8rem;
+  }
+  .arch-row {
+    display:flex; align-items:center; gap:10px;
+    padding:.5rem .8rem; border-radius:6px;
+    background:var(--surface); border:1px solid var(--border);
+  }
+  .arch-layer {
+    width:70px; font-weight:700; text-align:right; flex-shrink:0;
+  }
+  .arch-l1 .arch-layer { color:var(--pink); }
+  .arch-l2 .arch-layer { color:var(--purple); }
+  .arch-l3 .arch-layer { color:var(--accent); }
+  .arch-l4 .arch-layer { color:var(--green); }
+  .arch-l5 .arch-layer { color:var(--orange); }
+  .arch-desc { color:var(--text-muted); }
+
+  /* ── 流图 ── */
+  .flow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:.8rem 0; }
+  .flow-node {
+    background:var(--surface2); border:1px solid var(--border);
+    border-radius:8px; padding:.4rem .8rem; font-size:.8rem; text-align:center;
+    flex:1; min-width:80px;
+  }
+  .flow-node.highlight { border-color:var(--accent); background:#1f3a5f; }
+  .flow-arrow { color:var(--text-muted); font-size:1rem; flex-shrink:0; }
+
+  /* ── 首页 ── */
+  .hero {
+    text-align:center; padding:3rem 1rem 2rem;
+    border-bottom:1px solid var(--border); margin-bottom:2rem;
+  }
+  .hero .subtitle {
+    font-size:1.1rem; color:var(--text-muted); margin-top:.5rem;
+    max-width:600px; margin-left:auto; margin-right:auto;
+  }
+  .hero .meta {
+    display:flex; justify-content:center; gap:2rem;
+    margin-top:1.5rem; font-size:.85rem; color:var(--text-muted);
+  }
+  .hero .meta span { display:flex; align-items:center; gap:.4rem; }
+
+  /* ── 比较表 ── */
+  .compare td:first-child { font-weight:500; white-space:nowrap; width:25%; }
+  .compare td:nth-child(2) { color:var(--text-muted); font-size:.85rem; }
+  .compare td:last-child { color:var(--accent2); }
+
+  /* ── 响应式 ── */
+  @media (max-width:640px) {
+    .page { padding:1.5rem 1rem; }
+    .metric-grid { grid-template-columns:repeat(2,1fr); }
+    .hero .meta { flex-direction:column; gap:.5rem; }
+    .bar-label { width:100px; font-size:.8rem; }
+    .arch-row { flex-wrap:wrap; }
+    .arch-layer { width:auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- 封面 -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<div class="hero">
+  <h1>Synova</h1>
+  <div class="subtitle">
+    组织数字孪生诊断 + 持续增长导航系统<br>
+    <span style="font-size:.9rem">诊断是手段，目的是增长</span>
+  </div>
+  <div class="meta">
+    <span>📅 2026-06-18</span>
+    <span>🏢 5–1000 人团队市场</span>
+    <span>⚡ v3.1.0</span>
+    <span>📄 机密</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- 金字塔顶层：核心主张 -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div class="card" style="border-left:4px solid var(--accent);">
+  <p style="font-size:1.1rem;font-weight:500;margin:0;">
+    <strong>Synova 是一个驻扎在企业内部的 AI 诊断系统。</strong>
+    它持续观测组织数据，自动发现增长卡点，跨维度交叉验证，
+    输出带证据链的诊断报告和可执行建议——<strong>让 5–1000 人的企业，
+    在决策时有依据，而不是凭感觉。</strong>
+  </p>
+</div>
+
+<div class="metric-grid">
+  <div class="metric-card"><div class="num">17</div><div class="label">本体节点类型</div></div>
+  <div class="metric-card"><div class="num">14</div><div class="label">本体边类型</div></div>
+  <div class="metric-card"><div class="num">8</div><div class="label">AI 诊断专家</div></div>
+  <div class="metric-card"><div class="num">26</div><div class="label">哨兵适配器</div></div>
+  <div class="metric-card"><div class="num">25+</div><div class="label">测量分析模块</div></div>
+  <div class="metric-card"><div class="num">55</div><div class="label">HTTP API 端点</div></div>
+  <div class="metric-card"><div class="num">11</div><div class="label">Monorepo 包</div></div>
+  <div class="metric-card"><div class="num">27.7k</div><div class="label">TypeScript 行数</div></div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- 一、市场机会 -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<h2>一、市场机会</h2>
+
+<h3>1.1 金字塔底层长期被忽视</h3>
+
+<p>中国有超过 <strong>4,000 万</strong>中小微企业。其中 5–1000 人规模的成长型企业，
+是经济中最活跃但管理最薄弱的群体：</p>
+
+<table class="compare">
+  <tr><th>维度</th><th>大型企业</th><th>5–1000 人企业</th></tr>
+  <tr><td>管理工具</td><td>SAP/Oracle/自建系统</td><td>钉钉+Excel+微信</td></tr>
+  <tr><td>诊断能力</td><td>麦肯锡/BCG 级咨询</td><td>老板直觉+朋友建议</td></tr>
+  <tr><td>数据基础</td><td>CDP/数仓/BI</td><td>财务流水+销售台账</td></tr>
+  <tr><td>AI 采用</td><td>专属数据科学团队</td><td>用上 ChatGPT 就算数字化</td></tr>
+  <tr><td>年管理预算</td><td>¥500 万–无上限</td><td>¥5 万–50 万</td></tr>
+</table>
+
+<p><strong>核心洞察：</strong>这个市场不是"不能做"，而是"大厂理性地不选择"。
+腾讯/阿里的增长目标以百亿计，5–1000 人企业诊断对其无足轻重。
+AI 平台公司（OpenAI/Anthropic）必须保持平台中立性，
+做垂直诊断等同于与所有客户竞争。</p>
+
+<h3>1.2 竞品格局</h3>
+
+<table>
+  <tr><th>品类</th><th>代表</th><th>弱点</th><th>Synova 优势</th></tr>
+  <tr>
+    <td><span class="tag tag-blue">管理咨询</span></td>
+    <td>麦肯锡/BCG/本土精品</td>
+    <td>¥200 万起，3 个月周期，一次性 PPT</td>
+    <td>¥5 万/年起，持续监测，自动更新</td>
+  </tr>
+  <tr>
+    <td><span class="tag tag-blue">SaaS 报表</span></td>
+    <td>金蝶/用友/神策</td>
+    <td>只看"销售额降了 15%"，不说为什么</td>
+    <td>自动交叉分析→根因→可执行建议</td>
+  </tr>
+  <tr>
+    <td><span class="tag tag-blue">ChatBot</span></td>
+    <td>ChatGPT/Claude</td>
+    <td>你问一句答一句，不持续不主动</td>
+    <td>Agent 常驻，7×24 主动观测</td>
+  </tr>
+  <tr>
+    <td><span class="tag tag-blue">AI Agent 平台</span></td>
+    <td>OpenClaw/CrewAI</td>
+    <td>通用平台，无诊断深度</td>
+    <td>17 节点×14 边的本体论，25+ 专业测量器</td>
+  </tr>
+</table>
+
+<h3>1.3 市场规模</h3>
+
+<div class="metric-grid">
+  <div class="metric-card"><div class="num green">4,000 万+</div><div class="label">中国中小微企业总量</div></div>
+  <div class="metric-card"><div class="num">¥5–50 万</div><div class="label">年均管理预算区间</div></div>
+  <div class="metric-card"><div class="num green">¥2,000 亿+</div><div class="label">可寻址市场 (TAM)</div></div>
+  <div class="metric-card"><div class="num orange">~¥50 亿</div><div class="label">可达市场 (SAM) 首年</div></div>
+</div>
+
+<p class="muted">估算依据：5–1000 人企业约 200 万家，10% 渗透率×¥2.5 万/年=¥50 亿首年。成熟期按 30% 渗透率、¥5 万 ARPU 估算可达 ¥300 亿。</p>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- 二、产品核心：诊断系统 -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<h2>二、产品核心</h2>
+
+<h3>2.1 数据流全景</h3>
+
+<div class="flow">
+  <div class="flow-node">原始数据<br><span class="muted" style="font-size:.7rem">访谈/财务/API</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-node highlight">本体层<br><span class="muted" style="font-size:.7rem">组织数字孪生</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-node">7维×25+测量器<br><span class="muted" style="font-size:.7rem">并行计算</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-node">Evidence 池<br><span class="muted" style="font-size:.7rem">原始证据</span></div>
+</div>
+
+<div class="flow">
+  <div class="flow-node">Sentinel<br><span class="muted" style="font-size:.7rem">定时触发</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-node highlight">信号聚合引擎<br><span class="muted" style="font-size:.7rem">交叉关联+升级</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-node highlight">8 位专家<br><span class="muted" style="font-size:.7rem">ReAct 推理</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-node">综合诊断报告<br><span class="muted" style="font-size:.7rem">增长卡点+建议</span></div>
+</div>
+
+<h3>2.2 两大运行模式</h3>
+
+<table>
+  <tr><th>模式</th><th>触发</th><th>管线</th><th>输出</th></tr>
+  <tr>
+    <td><span class="tag tag-blue">FDE 按需诊断</span></td>
+    <td>用户上传企业访谈文档</td>
+    <td>6 阶段 (Phase 0–5)，全部测量器 + 全部专家</td>
+    <td>综合诊断报告（HTML/JSON）</td>
+  </tr>
+  <tr>
+    <td><span class="tag tag-green">Sentinel 定时哨兵</span></td>
+    <td>Cron 定时（日/周/月）</td>
+    <td>基线对比 → 异常检测 → 信号聚合 → 专家</td>
+    <td>检测工单 + 聚合信号</td>
+  </tr>
+</table>
+
+<h3>2.3 7 维度测量体系</h3>
+
+<div class="bar-group">
+  <div class="bar-row"><span class="bar-label">D1 增长动力</span><div class="bar-track"><div class="bar-fill green" style="width:100%"></div></div><span class="bar-pct green">4/4 100%</span></div>
+  <div class="bar-row"><span class="bar-label">D2 组织能力</span><div class="bar-track"><div class="bar-fill blue" style="width:71%"></div></div><span class="bar-pct">5/7 71%</span></div>
+  <div class="bar-row"><span class="bar-label">D3 人+Agent</span><div class="bar-track"><div class="bar-fill blue" style="width:57%"></div></div><span class="bar-pct">4/7 57%</span></div>
+  <div class="bar-row"><span class="bar-label">D4 软件生态</span><div class="bar-track"><div class="bar-fill orange" style="width:50%"></div></div><span class="bar-pct">2/4 50%</span></div>
+  <div class="bar-row"><span class="bar-label">D5 软件-Agent 适配</span><div class="bar-track"><div class="bar-fill blue" style="width:75%"></div></div><span class="bar-pct">3/4 75%</span></div>
+  <div class="bar-row"><span class="bar-label">D6 战略健康</span><div class="bar-track"><div class="bar-fill orange" style="width:25%"></div></div><span class="bar-pct">1/4 25%</span></div>
+  <div class="bar-row"><span class="bar-label">D7 风险预警</span><div class="bar-track"><div class="bar-fill green" style="width:100%"></div></div><span class="bar-pct green">4/4 100%</span></div>
+  <div class="bar-row" style="font-weight:600"><span class="bar-label">总计覆盖率</span><div class="bar-track"><div class="bar-fill purple" style="width:68%"></div></div><span class="bar-pct">23/34 68%</span></div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- 三、架构深度 -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<h2>三、技术架构</h2>
+
+<h3>3.1 五层架构</h3>
+
+<div class="arch">
+  <div class="arch-row arch-l1">
+    <span class="arch-layer">L1 交互</span>
+    <span>routes/ (55 API) · tui/ (React Ink) · mcp/ (4 工具)</span>
+    <span class="arch-desc">🔄 17 路由文件</span>
+  </div>
+  <div class="arch-row arch-l2">
+    <span class="arch-layer">L2 编排</span>
+    <span>ConversationEngine · diagnosis-launcher · sentinel-service</span>
+    <span class="arch-desc">↗ 22 编排文件</span>
+  </div>
+  <div class="arch-row arch-l3">
+    <span class="arch-layer">L3 洞察</span>
+    <span>ExpertDispatcher · 8 专家 · SentinelRunner · QualityFirewall</span>
+    <span class="arch-desc">🧠 51 洞察文件</span>
+  </div>
+  <div class="arch-row arch-l4">
+    <span class="arch-layer">L4 本体</span>
+    <span>GraphBridge · EntityResolver · EvidenceStore · CommunityReports</span>
+    <span class="arch-desc">📊 14 本体文件</span>
+  </div>
+  <div class="arch-row arch-l5">
+    <span class="arch-layer">L5 存储</span>
+    <span>SessionStore · SQLite · CronScheduler</span>
+    <span class="arch-desc">💾 6 存储文件</span>
+  </div>
+</div>
+
+<p style="font-size:.85rem;color:var(--text-muted);">
+  L1 只调用 L2，L2 只调用 L3，依此类推。pre-commit 物理阻断跨层调用。
+  引擎层 <code>packages/engine-core/</code> 独立 223 源文件，58,865 行。
+</p>
+
+<h3>3.2 本体层：SOG-Core v1.0</h3>
+<p>组织数字孪生的开放标准。17 种节点类型 × 14 种边类型，全部带类型化属性接口（零 <code>any</code>）。</p>
+
+<div class="metric-grid" style="grid-template-columns:repeat(3,1fr)">
+  <div class="metric-card"><div class="num green">17</div><div class="label">节点类型</div></div>
+  <div class="metric-card"><div class="num purple">14</div><div class="label">边类型</div></div>
+  <div class="metric-card"><div class="num pink">52</div><div class="label">边端点规则</div></div>
+</div>
+
+<table>
+  <tr><th colspan="2">节点类型</th><th colspan="2">边类型（选例）</th></tr>
+  <tr>
+    <td><span class="badge">Person</span> <span class="badge">Team</span></td>
+    <td class="muted">人与团队</td>
+    <td><span class="badge">INTERACTS_WITH</span></td>
+    <td class="muted">协作关系</td>
+  </tr>
+  <tr>
+    <td><span class="badge">Agent</span> <span class="badge">Tool</span></td>
+    <td class="muted">AI + 工具</td>
+    <td><span class="badge">BELONGS_TO</span></td>
+    <td class="muted">归属关系</td>
+  </tr>
+  <tr>
+    <td><span class="badge">Goal</span> <span class="badge">Capability</span></td>
+    <td class="muted">目标 + 能力</td>
+    <td><span class="badge">DEPENDS_ON</span></td>
+    <td class="muted">依赖关系</td>
+  </tr>
+  <tr>
+    <td><span class="badge">Financial</span> <span class="badge">Client</span></td>
+    <td class="muted">财务 + 客户</td>
+    <td><span class="badge">REVENUE_FROM</span></td>
+    <td class="muted">商业模式</td>
+  </tr>
+  <tr>
+    <td><span class="badge">Risk</span> <span class="badge">Compliance</span></td>
+    <td class="muted">风险 + 合规</td>
+    <td><span class="badge">VALUE_PROPOSITION</span></td>
+    <td class="muted">价值映射</td>
+  </tr>
+  <tr>
+    <td><span class="badge">Process</span> <span class="badge">Event</span></td>
+    <td class="muted">流程 + 事件</td>
+    <td><span class="badge">COST_DRIVEN_BY</span></td>
+    <td class="muted">成本驱动</td>
+  </tr>
+  <tr>
+    <td><span class="badge">BusinessModel</span> <span class="badge">KnowledgeChunk</span></td>
+    <td class="muted">商业模式 + 知识</td>
+    <td><span class="badge">HAS_ACCESS_TO</span></td>
+    <td class="muted">权限控制</td>
+  </tr>
+  <tr>
+    <td><span class="badge">Document</span> <span class="badge">Location</span></td>
+    <td class="muted">文档 + 位置</td>
+    <td><span class="badge">AFFECTS</span></td>
+    <td class="muted">因果影响</td>
+  </tr>
+  <tr>
+    <td><span class="badge">User</span></td>
+    <td class="muted">系统用户</td>
+    <td><span class="badge">ALIGNS_WITH</span></td>
+    <td class="muted">对齐度</td>
+  </tr>
+</table>
+
+<p>支持 4 种行业模板：<span class="tag tag-blue">通用企业</span> <span class="tag tag-green">SaaS 科技</span> <span class="tag tag-amber">制造业</span> <span class="tag tag-purple">金融服务</span></p>
+
+<h3>3.3 诊断专家系统</h3>
+
+<table>
+  <tr><th>专家</th><th>角色</th><th>核心能力</th></tr>
+  <tr><td><span class="tag tag-blue">Strategy</span></td><td>战略分析师</td><td>三层战略诊断：市场引力 (Porter5+PEST) + 7 Powers 竞争壁垒 + 增长方向</td></tr>
+  <tr><td><span class="tag tag-blue">Org</span></td><td>组织诊断师</td><td>组织能力评估 + Agent 化机会识别 + Bus Factor 量化</td></tr>
+  <tr><td><span class="tag tag-green">Finance</span></td><td>财务分析师</td><td>现金流三部分健康度 + 单位经济模型 (LTV/CAC) + 成本结构</td></tr>
+  <tr><td><span class="tag tag-green">Marketing</span></td><td>营销分析师</td><td>定位一致性 + 定价策略 + AARRR 增长漏斗 + JTBD 需求分析</td></tr>
+  <tr><td><span class="tag tag-purple">Tech</span></td><td>技术架构师</td><td>软件生态扫描 + Agent 就绪度 + 连接器 PRD 设计</td></tr>
+  <tr><td><span class="tag tag-amber">Action</span></td><td>行动顾问</td><td>P0/P1/P2 优先级排序 + 依赖分析 + ROI 估算</td></tr>
+  <tr><td><span class="tag tag-red">Business_Model</span></td><td>商业模式分析师</td><td>Canvas 9 要素诊断 + 收入集中度 + 固定成本比</td></tr>
+  <tr><td><span class="tag tag-blue">Knowledge</span></td><td>知识引擎</td><td>后台常驻，信息→知识转化，所有专家共享</td></tr>
+</table>
+
+<p>专家采用 <strong>ReAct 推理</strong> + <strong>交叉验证</strong>机制：一个信号是噪音，三个信号指向同一方向就是问题。</p>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- 四、遥测体系 -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<h2>四、哨兵遥测体系</h2>
+
+<h3>4.1 26 哨兵适配器 × 7 维度</h3>
+
+<div class="metric-grid" style="grid-template-columns:repeat(4,1fr)">
+  <div class="metric-card"><div class="num green">26</div><div class="label">已注册适配器</div></div>
+  <div class="metric-card"><div class="num purple">23</div><div class="label">已投产维度</div></div>
+  <div class="metric-card"><div class="num orange">11</div><div class="label">待开发维度</div></div>
+  <div class="metric-card"><div class="num">68%</div><div class="label">总覆盖率</div></div>
+</div>
+
+<table>
+  <tr><th>维度</th><th>哨兵</th><th>频率</th><th>数据源</th></tr>
+  <tr><td rowspan="4">D1 增长动力</td><td>营收分解</td><td>每月 1 日</td><td>FINANCIAL/DOCUMENT</td></tr>
+  <tr><td>客户动态</td><td>每周一</td><td>CLIENT 节点</td></tr>
+  <tr><td>现金流</td><td>每日</td><td>FINANCIAL 节点</td></tr>
+  <tr><td>Token 经济学</td><td>每周一</td><td>Agent 路由事件</td></tr>
+  <tr><td rowspan="5">D2 组织能力</td><td>缝隙动力学</td><td>每周一</td><td>SOG 图谱</td></tr>
+  <tr><td>协作协议完备性 (CPC)</td><td>每周一</td><td>SOG 图谱</td></tr>
+  <tr><td>路径依赖</td><td>每周一</td><td>SOG 图谱</td></tr>
+  <tr><td>自知偏差</td><td>每周一</td><td>SOG 图谱</td></tr>
+  <tr><td>目标对齐度</td><td>每周一</td><td>SOG 图谱</td></tr>
+  <tr><td rowspan="4">D3 人+Agent</td><td>混合信任模型 (HTM)</td><td>每日</td><td>SOG 图谱</td></tr>
+  <tr><td>人机协作深度 (HACD)</td><td>每日</td><td>SOG 图谱</td></tr>
+  <tr><td>异质节点网络 (HONA)</td><td>每周一</td><td>SOG 图谱</td></tr>
+  <tr><td>组织弹性边界 (EOB)</td><td>每周二</td><td>SOG 图谱</td></tr>
+  <tr><td rowspan="2">D4 软件生态</td><td>集成健康</td><td>每日</td><td>SOG 集成边</td></tr>
+  <tr><td>数据孤岛</td><td>每月 1 日</td><td>SOG 跨系统查询</td></tr>
+  <tr><td rowspan="3">D5 适配</td><td>API 可访问性</td><td>每日</td><td>TOOL + HTTP HEAD</td></tr>
+  <tr><td>数据就绪</td><td>每周一</td><td>Graph 完整性</td></tr>
+  <tr><td>协议覆盖</td><td>每周一</td><td>TOOL 协议统计</td></tr>
+  <tr><td>D6 战略健康</td><td>7 Powers 竞争壁垒</td><td>每月 1 日</td><td>SOG 图谱</td></tr>
+  <tr><td rowspan="4">D7 风险预警</td><td>关键人风险</td><td>每周一</td><td>SOG 图谱</td></tr>
+  <tr><td>风险聚合</td><td>每周一</td><td>SOG 图谱</td></tr>
+  <tr><td>财务影响分析</td><td>每月 1 日</td><td>FINANCIAL 节点</td></tr>
+  <tr><td>财务快照</td><td>每月 1 日</td><td>FINANCIAL 节点</td></tr>
+</table>
+
+<h3>4.2 信号聚合引擎</h3>
+<p>哨兵发现经过 <strong>交叉关联 → 严重度升级 → 专家路由</strong> 三步处理。
+多个哨兵指向同一方向时自动升级为 P0 告警，触发专家同步诊断。</p>
+
+<div class="card">
+  <div class="card-title">📡 哨兵 API 面</div>
+  <table>
+    <tr><td>GET /api/sentinel/health</td><td class="muted">23 哨兵实时状态</td></tr>
+    <tr><td>GET /api/sentinel/findings</td><td class="muted">发现列表</td></tr>
+    <tr><td>GET /api/sentinel/signals</td><td class="muted">聚合信号</td></tr>
+    <tr><td>GET /api/sentinel/reports</td><td class="muted">专家诊断报告</td></tr>
+    <tr><td>GET /api/sentinel/tickets</td><td class="muted">工单系统 (L3 闭环)</td></tr>
+    <tr><td>POST /api/sentinel/run/:id</td><td class="muted">手动触发单哨兵</td></tr>
+  </table>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- 五、系统规模全景 -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<h2>五、系统规模全景</h2>
+
+<h3>5.1 代码资产</h3>
+
+<div class="metric-grid" style="grid-template-columns:repeat(4,1fr)">
+  <div class="metric-card"><div class="num">1,148</div><div class="label">项目总文件</div></div>
+  <div class="metric-card"><div class="num">730</div><div class="label">TS/TSX 文件</div></div>
+  <div class="metric-card"><div class="num">27.7k</div><div class="label">TypeScript 行数</div></div>
+  <div class="metric-card"><div class="num">333</div><div class="label">文档文件</div></div>
+</div>
+
+<div class="metric-grid" style="grid-template-columns:repeat(4,1fr)">
+  <div class="metric-card"><div class="num">119</div><div class="label">测试文件</div></div>
+  <div class="metric-card"><div class="num">15,104</div><div class="label">测试代码行</div></div>
+  <div class="metric-card"><div class="num">11</div><div class="label">Monorepo 包</div></div>
+  <div class="metric-card"><div class="num">19</div><div class="label">SKILL 文件</div></div>
+</div>
+
+<h3>5.2 源文件分布</h3>
+
+<table>
+  <tr><th>目录</th><th>TS 文件</th><th>占比</th></tr>
+  <tr><td>packages/engine-core/src/</td><td>223</td><td class="muted">引擎核心（不含测试）</td></tr>
+  <tr><td>src/ (总)</td><td>238</td><td class="muted">应用层源代码</td></tr>
+  <tr><td>├─ sentinel/</td><td>33</td><td class="muted">26 哨兵适配器</td></tr>
+  <tr><td>├─ agent/</td><td>19</td><td class="muted">编排服务</td></tr>
+  <tr><td>├─ orchestrator/</td><td>17</td><td class="muted">管线编排</td></tr>
+  <tr><td>├─ routes/</td><td>17</td><td class="muted">55 API 端点</td></tr>
+  <tr><td>├─ l3/</td><td>13</td><td class="muted">专家洞察层</td></tr>
+  <tr><td>├─ l4/</td><td>11</td><td class="muted">本体层</td></tr>
+  <tr><td>├─ providers/</td><td>11</td><td class="muted">LLM 提供商 (DeepSeek/OpenAI/Gateway)</td></tr>
+  <tr><td>├─ services/</td><td>11</td><td class="muted">基础设施服务</td></tr>
+  <tr><td>├─ tui-v2/</td><td>11</td><td class="muted">终端 UI (React Ink)</td></tr>
+  <tr><td>└─ mcp/</td><td>5</td><td class="muted">MCP 协议层</td></tr>
+  <tr><td>packages/total</td><td>355</td><td class="muted">全部 11 包</td></tr>
+</table>
+
+<h3>5.3 Monorepo 包</h3>
+
+<table>
+  <tr><th>包名</th><th>版本</th><th>职责</th></tr>
+  <tr><td>@synova/engine-core</td><td>0.1.0</td><td>核心引擎：223 源文件，58,865 行，25+ 测量模块 + 管线 + 知识</td></tr>
+  <tr><td>@synova/sog-core</td><td>1.0.0</td><td>本体图核心模式：17 节点 × 14 边，CC BY 4.0</td></tr>
+  <tr><td>@synova/diagnosis-engine</td><td>0.1.0</td><td>6 阶段诊断编排器 + GraphStore</td></tr>
+  <tr><td>@synova/engine-auth</td><td>0.1.0</td><td>认证授权：Auth Provider + RBAC</td></tr>
+  <tr><td>@synova/connector-registry</td><td>0.1.0</td><td>双向连接器注册中心</td></tr>
+  <tr><td>@synova/extension-registry</td><td>0.1.0</td><td>扩展注册中心</td></tr>
+  <tr><td>@synova/knowledge-ingest</td><td>0.1.0</td><td>知识摄取管线</td></tr>
+  <tr><td>@synova/logger</td><td>1.0.0</td><td>共享日志封装 (Pino)</td></tr>
+  <tr><td>@synova/error-types</td><td>1.0.0</td><td>类型化错误层级</td></tr>
+  <tr><td>@synova/test-kit</td><td>0.1.0</td><td>全维度测试套件</td></tr>
+  <tr><td>@synova/agent-observer-mcp</td><td>1.0.0</td><td>跨框架 Agent 观测 MCP 服务</td></tr>
+</table>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- 六、API 与服务 -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<h2>六、API 与服务面</h2>
+
+<h3>6.1 55 个 HTTP API 端点</h3>
+
+<div class="metric-grid" style="grid-template-columns:repeat(5,1fr)">
+  <div class="metric-card"><div class="num">19</div><div class="label">诊断 + 本体</div></div>
+  <div class="metric-card"><div class="num">9</div><div class="label">Sentinel</div></div>
+  <div class="metric-card"><div class="num">8</div><div class="label">知识 + 文档</div></div>
+  <div class="metric-card"><div class="num">8</div><div class="label">权限 + 认证</div></div>
+  <div class="metric-card"><div class="num">11</div><div class="label">其他 (IM/Connector)</div></div>
+</div>
+
+<p>核心诊断 API：</p>
+<ul class="tree">
+  <li><strong>POST /api/diagnosis/consult</strong> — SSE 流式 6 阶段诊断（interrupt/resume 支持）</li>
+  <li><strong>POST /api/diagnosis/upload</strong> — 文档上传触发诊断</li>
+  <li><strong>GET /api/diagnosis/report/:jobId</strong> — 综合诊断报告</li>
+  <li><strong>GET /api/ontology/graph/:orgId</strong> — 本体图查询（JSON + HTML 可视化）</li>
+  <li><strong>POST /api/ontology/ingest</strong> — 文档摄入为图节点</li>
+</ul>
+
+<h3>6.2 MCP 协议服务</h3>
+<p>独立 MCP Server (stdio JSON-RPC 2.0)，可供任何 MCP 客户端（Claude Code/Cline/OpenClaw）调用：</p>
+<table>
+  <tr><th>工具</th><th>描述</th></tr>
+  <tr><td>diagnose_organization</td><td>运行 6 阶段诊断管线</td></tr>
+  <tr><td>query_ontology</td><td>查询组织本体图</td></tr>
+  <tr><td>ingest_document</td><td>文档摄入为图节点</td></tr>
+  <tr><td>get_session</td><td>查询历史诊断会话</td></tr>
+</table>
+
+<h3>6.3 Agent Observer MCP</h3>
+<p>独立发布的包 <code>@synova/agent-observer-mcp</code>，自动观测 10+ AI 框架的 Agent 行为并写入 SOG 图：</p>
+<div class="card">
+  <span class="tag tag-blue">Claude Code</span> <span class="tag tag-blue">Cline</span>
+  <span class="tag tag-blue">Continue</span> <span class="tag tag-blue">Windsurf</span>
+  <span class="tag tag-blue">Cursor</span> <span class="tag tag-blue">GitHub Copilot</span>
+  <span class="tag tag-blue">OpenClaw</span> <span class="tag tag-blue">Goose</span>
+  <span class="tag tag-blue">Google Genkit</span> <span class="tag tag-blue">Vertex AI Agent</span>
+  <span class="tag tag-blue">Codex</span>
+</div>
+<p style="font-size:.9rem;margin-top:.5rem">✦ 每个 Agent 工具调用自动记录为 SOG Agent 节点 + 边，10+ 框架统一 Schema</p>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- 七、技能树与知识体系 -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<h2>七、诊断技能与知识体系</h2>
+
+<h3>7.1 19 个诊断技能</h3>
+
+<table>
+  <tr><th>领域</th><th>技能</th><th>方法论基础</th></tr>
+  <tr><td rowspan="2">📈 战略</td><td>market-gravity</td><td>Porter 5 Forces + PEST+CC + 利润池迁移</td></tr>
+  <tr><td>seven-powers</td><td>Hamilton Helmer 7 力量：规模经济/网络效应/置换成本/品牌/资源/流程</td></tr>
+  <tr><td rowspan="2">📊 营销</td><td>aarrr-funnel</td><td>获客→激活→留存→收入→推荐，行业基准对比</td></tr>
+  <tr><td>jtbd-interview</td><td>Jobs-to-be-Done 需求挖掘框架</td></tr>
+  <tr><td rowspan="2">💰 财务</td><td>cashflow-analysis</td><td>经营/投资/筹资现金流三分健康度</td></tr>
+  <tr><td>unit-economics</td><td>LTV/CAC + 毛利率分解 + 边际贡献</td></tr>
+  <tr><td rowspan="2">🏛 组织</td><td>agent-readiness</td><td>流程 Agent 化机会识别矩阵</td></tr>
+  <tr><td>bus-factor</td><td>关键人依赖量化（Bus Factor）</td></tr>
+  <tr><td rowspan="2">🔧 技术</td><td>connector-blueprint</td><td>API 桥接/MCP Server/RPA 适配器 PRD 模板</td></tr>
+  <tr><td>software-ecosystem-scan</td><td>客户软件全景扫描 + Agent 就绪度映射</td></tr>
+  <tr><td>🎯 行动</td><td>priority-matrix</td><td>紧急×重要×投入×依赖四维排序，输出 P0/P1/P2</td></tr>
+  <tr><td rowspan="2">📐 商业模式</td><td>canvas-nine</td><td>Canvas 9 要素：价值主张/客户细分/收入/成本/伙伴依赖等</td></tr>
+  <tr><td>pricing-strategy</td><td>6 种定价模型评估</td></tr>
+  <tr><td rowspan="6">🔬 质检</td><td>cross_validate</td><td>跨专家交叉验证</td></tr>
+  <tr><td>detect_contradiction</td><td>矛盾检测</td></tr>
+  <tr><td>human_calibration</td><td>人类校准</td></tr>
+  <tr><td>match_pattern</td><td>模式匹配</td></tr>
+  <tr><td>trace_evidence</td><td>证据溯源</td></tr>
+  <tr><td>verify_closed_loop</td><td>闭环验证</td></tr>
+</table>
+
+<h3>7.2 营销理论基础</h3>
+<p>完整 6 层营销理论体系（docs/research/marketing-theory-complete.md）：</p>
+<ul class="tree">
+  <li><strong>地基层</strong> — 行为经济学：峰终定律、损失厌恶、锚定效应、社会证明</li>
+  <li><strong>L1 需求</strong> — JTBD + 4 维需求（未满足/未表达/未创造/满足但不满）</li>
+  <li><strong>L2 市场</strong> — STP + 品类战略 + 定位</li>
+  <li><strong>L3 执行</strong> — 4P/营销组合 + 增长漏斗 + 6 种定价模型</li>
+  <li><strong>L4 爆发</strong> — 引爆点理论（Gladwell 3 法则）+ 增长杠杆</li>
+  <li><strong>L5 服务业</strong> — 关键时刻 (MOT) + 峰终定律应用</li>
+</ul>
+
+<h3>7.3 引擎管线（Engine-Core Pipeline）</h3>
+
+<table>
+  <tr><th>阶段</th><th>名称</th><th>输出</th></tr>
+  <tr><td>L1</td><td>derive_roles (角色推导)</td><td>团队角色结构</td></tr>
+  <tr><td>L2</td><td>distill_genome (基因组蒸馏)</td><td>角色专业心智模型</td></tr>
+  <tr><td>L3</td><td>select_mode (协作模式选择)</td><td>9 种协作模式之一</td></tr>
+  <tr><td>L4</td><td>match_skills (技能匹配)</td><td>角色→技能→工具映射</td></tr>
+  <tr><td>L5</td><td>assemble_blueprint (蓝图组装)</td><td>完整团队配置蓝图</td></tr>
+</table>
+
+<p>9 种协作模式：<span class="tag">iron_captain</span> <span class="tag">democratic_council</span>
+<span class="tag">loose_federation</span> <span class="tag">cross_check_balance</span>
+<span class="tag">bytedance_flat</span> <span class="tag">haier_ren_dan_he_yi</span>
+<span class="tag">haidilao_frontline_auth</span> <span class="tag">mckinsey_partnership</span>
+<span class="tag">tencent_internal_race</span></p>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- 八、工程质量体系 -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<h2>八、工程与质量体系</h2>
+
+<h3>8.1 Loop Engineering v3.0</h3>
+<p>AI 代码质量物理执法体系，5 层精简架构，源自 47 次实际事故教训：</p>
+
+<div class="arch">
+  <div class="arch-row arch-l1" style="border-color:var(--green)">
+    <span class="arch-layer" style="width:130px">📋 任务启动</span>
+    <span>task-start.sh — 3 问翻译意图→规格</span>
+  </div>
+  <div class="arch-row arch-l2" style="border-color:var(--accent)">
+    <span class="arch-layer" style="width:130px">🧠 写前注入</span>
+    <span>hook-check-memory.sh — 历史教训</span>
+  </div>
+  <div class="arch-row arch-l3" style="border-color:var(--purple)">
+    <span class="arch-layer" style="width:130px">✍️ 写后验证</span>
+    <span>verify-incremental.sh — L1 oxlint → L2 tsc → L3 vitest → L4 接线</span>
+  </div>
+  <div class="arch-row arch-l4" style="border-color:var(--orange)">
+    <span class="arch-layer" style="width:130px">🔴 提交阻断</span>
+    <span>pre-commit 5 项 — 全部 &lt;5s</span>
+  </div>
+  <div class="arch-row arch-l5" style="border-color:var(--red)">
+    <span class="arch-layer" style="width:130px">🚀 推送阻断</span>
+    <span>pre-push — secrets 终扫</span>
+  </div>
+</div>
+
+<h3>8.2 pre-commit 5 项硬阻断</h3>
+
+<table>
+  <tr><th>#</th><th>检查</th><th>历史事故</th><th>耗时</th></tr>
+  <tr><td>1</td><td><code>as any</code> = 0</td><td>47 次类型事故</td><td>&lt;1s</td></tr>
+  <tr><td>2</td><td>empty catch → log.warn</td><td>静默吞异常</td><td>&lt;1s</td></tr>
+  <tr><td>3</td><td>secrets 扫描</td><td>API Key 泄露</td><td>&lt;1s</td></tr>
+  <tr><td>4</td><td>新文件有测试</td><td>4 次接线失败</td><td>&lt;1s</td></tr>
+  <tr><td>5</td><td>新 export 有调用方</td><td>4 次接线失败</td><td>&lt;1s</td></tr>
+</table>
+
+<h3>8.3 Agent 自检 5 问</h3>
+<p>每次写代码后自动执行，非 bash 脚本，由 agent 语义理解完成：</p>
+<ol style="margin:.5rem 1.2rem;color:var(--text-muted);font-size:.9rem">
+  <li>接线检查：新 export 谁调用？</li>
+  <li>异常处理：每个 catch 有 log + degraded？</li>
+  <li>类型安全：as any = 0？</li>
+  <li>测试覆盖：测试有 expect() 断言？</li>
+  <li>残留清理：有死代码吗？</li>
+</ol>
+
+<h3>8.4 自动化工作流</h3>
+<p>Anthropic 7 节点工程工作流，全部物理强制：</p>
+<div class="flow">
+  <div class="flow-node">① 任务开始</div><div class="flow-arrow">→</div>
+  <div class="flow-node">② 设计完成</div><div class="flow-arrow">→</div>
+  <div class="flow-node highlight">③ 实现完成</div><div class="flow-arrow">→</div>
+  <div class="flow-node">④ 提交</div><div class="flow-arrow">→</div>
+  <div class="flow-node">⑤ 推送</div><div class="flow-arrow">→</div>
+  <div class="flow-node">⑥ 部署</div><div class="flow-arrow">→</div>
+  <div class="flow-node">⑦ 线上</div>
+</div>
+
+<div class="card">
+  <div class="card-title">📐 架构边界物理阻断</div>
+  <p style="margin:0;font-size:.9rem">
+    L1 交互 → L2 → L3 → L4 → L5，每层只与相邻层通信。
+    pre-commit <code>check-architecture.sh</code> 检测 L2→L4 / L3→L5 跨层违规。
+    从 38 项检查精简为 5 项物理阻断，提交耗时从 90s 降至 &lt;5s。
+  </p>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- 九、商业模式 -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<h2>九、商业模式</h2>
+
+<h3>9.1 定价模型</h3>
+
+<table>
+  <tr><th>层级</th><th>目标客户</th><th>定价</th><th>能力</th></tr>
+  <tr>
+    <td><span class="tag tag-blue">FDE Pro</span></td>
+    <td>诊断工程师 / 咨询顾问</td>
+    <td>¥5,000/年</td>
+    <td>按需诊断 + 报告生成 + 基础哨兵</td>
+  </tr>
+  <tr>
+    <td><span class="tag tag-green">Enterprise</span></td>
+    <td>30–300 人企业</td>
+    <td>¥25,000/年</td>
+    <td>FDE Pro + 7×24 哨兵 + 8 专家 + 飞书/钉钉集成</td>
+  </tr>
+  <tr>
+    <td><span class="tag tag-purple">Premier</span></td>
+    <td>集团 / 咨询公司</td>
+    <td>¥80,000/年</td>
+    <td>Enterprise + 私有部署 + 自定义模板 + 专属模型调优</td>
+  </tr>
+</table>
+
+<h3>9.2 商业模式画布</h3>
+
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:.8rem 0;font-size:.8rem;">
+  <div class="card" style="grid-column:1">
+    <div class="card-title">🤝 关键伙伴</div>
+    <ul class="tree" style="font-size:.8rem">
+      <li>AI 模型提供商 (DeepSeek/OpenAI)</li>
+      <li>IM 平台 (飞书/钉钉/企微)</li>
+      <li>行业咨询合伙人</li>
+    </ul>
+  </div>
+  <div class="card" style="grid-column:2">
+    <div class="card-title">⚙️ 关键活动</div>
+    <ul class="tree" style="font-size:.8rem">
+      <li>引擎持续迭代</li>
+      <li>哨兵适配器扩展</li>
+      <li>行业模板积累</li>
+    </ul>
+    <div class="card-title" style="margin-top:.6rem">📦 关键资源</div>
+    <ul class="tree" style="font-size:.8rem">
+      <li>SOG 本体论 (v1.0 冻结)</li>
+      <li>25+ 测量模块</li>
+      <li>8 专家知识库</li>
+    </ul>
+  </div>
+  <div class="card" style="grid-column:3">
+    <div class="card-title">💎 价值主张</div>
+    <ul class="tree" style="font-size:.8rem">
+      <li>持续观测 + 自动诊断</li>
+      <li>证据驱动，不是感觉</li>
+      <li>AI 专家交叉验证</li>
+      <li>可执行行动建议</li>
+      <li>麦肯锡级 × SaaS 价格</li>
+    </ul>
+  </div>
+  <div class="card" style="grid-column:1">
+    <div class="card-title">❤️ 客户关系</div>
+    <ul class="tree" style="font-size:.8rem">
+      <li>FDE 现场支持</li>
+      <li>行业社群</li>
+      <li>持续哨兵服务</li>
+    </ul>
+  </div>
+  <div class="card" style="grid-column:2">
+    <div class="card-title">📢 渠道通路</div>
+    <ul class="tree" style="font-size:.8rem">
+      <li>FDE 网络直销</li>
+      <li>咨询伙伴代理</li>
+      <li>MCP 生态传播</li>
+    </ul>
+  </div>
+  <div class="card" style="grid-column:3">
+    <div class="card-title">👥 客户细分</div>
+    <ul class="tree" style="font-size:.8rem">
+      <li>5–1000 人成长型企业</li>
+      <li>管理咨询公司</li>
+      <li>企业诊断 FDE</li>
+    </ul>
+  </div>
+  <div class="card" style="grid-column:1/3">
+    <div class="card-title">💰 成本结构</div>
+    <ul class="tree" style="font-size:.8rem">
+      <li>LLM API 调用 (可变成本，占收入 20-30%)</li>
+      <li>研发人力 (固定成本 ~60%)</li>
+      <li>基础设施 (~10%)</li>
+    </ul>
+  </div>
+  <div class="card" style="grid-column:3">
+    <div class="card-title">📈 收入来源</div>
+    <ul class="tree" style="font-size:.8rem">
+      <li>SaaS 订阅 (年费)</li>
+      <li>私有部署授权</li>
+      <li>行业模板市场</li>
+      <li>专家咨询分成</li>
+    </ul>
+  </div>
+</div>
+
+<h3>9.3 单位经济模型</h3>
+<div class="metric-grid" style="grid-template-columns:repeat(3,1fr)">
+  <div class="metric-card"><div class="num green">3–6 月</div><div class="label">CAC 回收期</div></div>
+  <div class="metric-card"><div class="num green">8–12 月</div><div class="label">预计 LTV > CAC</div></div>
+  <div class="metric-card"><div class="num green">~70%</div><div class="label">预计毛利率</div></div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- 十、路线图 -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<h2>十、路线图</h2>
+
+<table>
+  <tr><th>阶段</th><th>时间</th><th>目标</th><th>关键里程碑</th></tr>
+  <tr>
+    <td><span class="tag tag-green">Phase 1</span></td>
+    <td>2026 Q2–Q3</td>
+    <td>演示就绪</td>
+    <td>FDE 上传文档 → 出诊断报告链路跑通 · 24 测量模块全部通过测试</td>
+  </tr>
+  <tr>
+    <td><span class="tag tag-blue">Phase 2</span></td>
+    <td>2026 Q3–Q4</td>
+    <td>核心交付</td>
+    <td>6 阶段诊断管线全通 · 8 专家并行推理 · Sentinel 覆盖率提至 80%</td>
+  </tr>
+  <tr>
+    <td><span class="tag tag-purple">Phase 3</span></td>
+    <td>2026 Q4–2027 Q1</td>
+    <td>商用就绪</td>
+    <td>飞书/钉钉双向连接器 · 知识图谱持续学习 · 行业模板市场 v1</td>
+  </tr>
+  <tr>
+    <td><span class="tag tag-amber">Phase 4</span></td>
+    <td>2027 Q1–Q2</td>
+    <td>规模化</td>
+    <td>Agent Observer 生态扩大 · MCP 市场发布 · 首批 20 家付费客户</td>
+  </tr>
+  <tr>
+    <td><span class="tag tag-red">Phase 5</span></td>
+    <td>2027 Q2+</td>
+    <td>平台化</td>
+    <td>第三方专家开发平台 · 诊断报告自动化采购 · API 经济</td>
+  </tr>
+</table>
+
+<hr>
+
+<h2>附录：数据索引</h2>
+
+<div class="metric-grid" style="grid-template-columns:repeat(3,1fr)">
+  <div class="metric-card"><div class="num">17</div><div class="label">SOG 节点类型</div></div>
+  <div class="metric-card"><div class="num">14</div><div class="label">SOG 边类型</div></div>
+  <div class="metric-card"><div class="num">52</div><div class="label">边端点规则</div></div>
+  <div class="metric-card"><div class="num">8</div><div class="label">诊断专家</div></div>
+  <div class="metric-card"><div class="num">7</div><div class="label">诊断维度</div></div>
+  <div class="metric-card"><div class="num">6</div><div class="label">FDE 阶段</div></div>
+  <div class="metric-card"><div class="num">26</div><div class="label">哨兵适配器</div></div>
+  <div class="metric-card"><div class="num">23</div><div class="label">已投产哨兵</div></div>
+  <div class="metric-card"><div class="num">34</div><div class="label">哨兵目标总量</div></div>
+  <div class="metric-card"><div class="num">55</div><div class="label">HTTP API 端点</div></div>
+  <div class="metric-card"><div class="num">4</div><div class="label">MCP 工具</div></div>
+  <div class="metric-card"><div class="num">19</div><div class="label">诊断技能</div></div>
+  <div class="metric-card"><div class="num">11</div><div class="label">Monorepo 包</div></div>
+  <div class="metric-card"><div class="num">5</div><div class="label">架构层级</div></div>
+  <div class="metric-card"><div class="num">9</div><div class="label">协作模式</div></div>
+  <div class="metric-card"><div class="num">5</div><div class="label">战略姿态</div></div>
+  <div class="metric-card"><div class="num">4</div><div class="label">目标类型</div></div>
+  <div class="metric-card"><div class="num">4</div><div class="label">行业模板</div></div>
+  <div class="metric-card"><div class="num">6</div><div class="label">质量门禁</div></div>
+  <div class="metric-card"><div class="num">11</div><div class="label">AI 框架接入</div></div>
+  <div class="metric-card"><div class="num">11</div><div class="label">质量体系项</div></div>
+  <div class="metric-card"><div class="num">5</div><div class="label">pre-commit 阻断</div></div>
+  <div class="metric-card"><div class="num">1</div><div class="label">本体标准版本</div></div>
+  <div class="metric-card"><div class="num">1,148</div><div class="label">项目总文件</div></div>
+  <div class="metric-card"><div class="num">730</div><div class="label">TS 源文件</div></div>
+  <div class="metric-card"><div class="num">27.7k</div><div class="label">TS 代码行数</div></div>
+  <div class="metric-card"><div class="num">333</div><div class="label">文档文件</div></div>
+  <div class="metric-card"><div class="num">119</div><div class="label">测试文件</div></div>
+  <div class="metric-card"><div class="num">15.1k</div><div class="label">测试代码行</div></div>
+</div>
+
+<p style="text-align:center;color:var(--text-muted);font-size:.8rem;margin-top:2rem;">
+  Synova Business Plan 2026-06-18 · 基于 CLAUDE.md + 代码现状 + 全量对齐手册<br>
+  数据截至 2026-06-17，commit 576d023
+</p>
+
+</div><!-- .page -->
+</body>
+</html>

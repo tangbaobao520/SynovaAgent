@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Synova · AI 增长诊断系统 · 创业大赛商业计划书</title>
+<style>
+:root{--bg:#f5f4f0;--surface:#fff;--s2:#eeede8;--bd:#d4d3cb;--t:#1c1c1a;--m:#6b6b63;--d:#9c9c94;--b:#2563eb;--g:#2b8a3e;--o:#d97706;--p:#7c3aed;--r:#dc2626;--f:'Inter','Noto Sans SC','Microsoft YaHei',sans-serif;--mo:'JetBrains Mono',monospace}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--t);font-family:var(--f);display:flex;flex-direction:column;align-items:center;padding:24px 12px}
+.page{max-width:960px;width:100%;background:var(--surface);border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.08);padding:36px 44px;margin:0 auto 20px;page-break-after:always}
+.page:last-child{page-break-after:auto}
+h1{font-size:2rem;font-weight:800;letter-spacing:-.03em;margin-bottom:4px}
+h2{font-size:1.25rem;font-weight:700;margin:28px 0 10px;border-bottom:2px solid var(--s2);padding-bottom:5px}
+h3{font-size:1rem;font-weight:600;margin:16px 0 6px;color:var(--b)}
+p{font-size:.88rem;line-height:1.7;margin:6px 0}
+.mut{color:var(--m);font-size:.82rem}
+.sm{font-size:.78rem;color:var(--d)}
+table{width:100%;border-collapse:collapse;margin:8px 0;font-size:.8rem}
+th{text-align:left;padding:5px 7px;border-bottom:2px solid var(--bd);color:var(--m);font-weight:600;font-size:.72rem}
+td{padding:4px 7px;border-bottom:1px solid var(--bd);vertical-align:top;font-size:.78rem}
+ul,ol{margin:4px 0 4px 18px}li{margin:2px 0;font-size:.82rem}
+.card{background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:12px 14px;margin:8px 0}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:8px 0}
+.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:8px 0}
+.tl{display:inline-block;background:var(--s2);border-radius:4px;padding:1px 6px;font-size:.72rem;color:var(--m)}
+.bl{border-left:4px solid var(--b);padding:8px 14px;margin:8px 0;border-radius:0 6px 6px 0;font-size:.82rem;background:var(--s2)}
+.bl.g{border-left-color:var(--g)}.bl.p{border-left-color:var(--p)}.bl.o{border-left-color:var(--o)}
+.tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:.68rem;color:#fff;font-weight:500}
+.tb{background:var(--b)}.tg{background:var(--g)}.to{background:var(--o)}.tp{background:var(--p)}.tr{background:var(--r)}
+@media print{body{background:#fff;padding:0}.page{box-shadow:none;padding:1.5cm}}
+@page{size:A4;margin:1.5cm}
+@media(max-width:640px){.page{padding:16px}.two{grid-template-columns:1fr}}
+</style></head>
+<body>
+<div class="page" style="text-align:center">
+<div style="padding:40px 0 20px">
+<div style="font-size:2.8rem;font-weight:800;letter-spacing:-.04em">Synova</div>
+<div style="font-size:1.2rem;color:var(--m);margin:6px 0">AI 增长诊断系统</div>
+<div style="font-size:.9rem;color:var(--d);margin:4px 0 8px;font-weight:500">麦肯锡收费 200 万，做完项目走人。</div>
+<div style="font-size:.9rem;color:var(--d);margin:4px 0 20px;font-weight:500">Synova 收费 5 万，驻扎企业 7x24，永不离开。</div>
+<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;font-size:.78rem;color:var(--m)">
+<span>参赛赛道：人工智能</span><span>2026</span><span>南宁</span>
+</div></div>
+</div>
+<div class="page">
+<h2>执行摘要</h2>
+<div class="bl g"><p style="margin:0;font-weight:500;font-size:.9rem">Synova 是一个驻扎在企业内部的 AI 增长诊断系统。它 7x24 监测全量组织数据，主动发现增长卡点，8 位 AI 专家协同诊断根因，给出可落地的行动方案，并跟踪执行效果。最终决策由人做出。</p></div>
+<div class="two">
+<div><p><strong>解决了什么问题？</strong></p><p>辛辛苦苦一年做到 5000 万营收，却因为一次错误的战略决策，利润全亏。创始人不是神，他们身边缺一个敢说真话、看得懂数据的人。</p>
+<p>中小企业并不是没有咨询。他们花几万块上课，花几十万请中小咨询公司——但这些咨询只能聚焦某个领域（组织、营销、财务），没有一家能做全面诊断。方案能不能落地，全看企业自己。更致命的是，所有传统咨询都是基于过去和当下的时点做判断，顾问离场后，企业又回到"凭感觉"的状态。运行时监测和实时诊断，传统咨询做不到。</p></div>
+<div><p><strong>核心技术壁垒？</strong></p><p>文件驱动架构——专家、哨兵、行业模板、本体类型全部文件化。新行业 = 加文件不改代码。传统咨询加一个行业需要合伙人团队（¥500 万+），Synova 只需工程师 1-2 天。</p></div>
+</div>
+<div class="three">
+<div class="card" style="text-align:center"><div style="font-size:1.6rem;font-weight:800;color:var(--b)">102k</div><div class="mut">TypeScript 行</div></div>
+<div class="card" style="text-align:center"><div style="font-size:1.6rem;font-weight:800;color:var(--g)">540</div><div class="mut">测试文件</div></div>
+<div class="card" style="text-align:center"><div style="font-size:1.6rem;font-weight:800;color:var(--p)">8 位</div><div class="mut">AI 专家</div></div>
+<div class="card" style="text-align:center"><div style="font-size:1.6rem;font-weight:800;color:var(--b)">26</div><div class="mut">哨兵适配器</div></div>
+<div class="card" style="text-align:center"><div style="font-size:1.6rem;font-weight:800;color:var(--g)">76</div><div class="mut">API 端点</div></div>
+<div class="card" style="text-align:center"><div style="font-size:1.6rem;font-weight:800;color:var(--o)">200 万</div><div class="mut">可服务企业</div></div>
+</div>
+</div>
+<div class="page">
+<h2>产品形态 -- 主动，不是被动</h2>
+<table>
+<tr><th style="width:20%">维度</th><th style="width:35%">传统咨询 / BI</th><th style="width:45%">Synova</th></tr>
+<tr><td><strong>触发方式</strong></td><td>人找问题，被动查询</td><td>Agent 主动找人，哨兵 7x24 扫描</td></tr>
+<tr><td><strong>分析方式</strong></td><td>基于过去时点做静态判断</td><td>运行时监测，实时诊断</td></tr>
+<tr><td><strong>跟踪方式</strong></td><td>交付 PPT 即结束</td><td>执行效果持续跟踪，有效继续，无效重诊</td></tr>
+</table>
+<p style="font-size:.85rem;color:var(--d);margin-top:4px">AI 比你先知道公司哪里不舒服。它主动推送到你的手机，告诉你问题在哪、根因是什么、该怎么做。这是传统咨询从未做到过的事。</p>
+
+<h2>核心流程</h2>
+<p>Synova 的核心不是"人找系统做诊断"，而是 Agent 在后台持续运转、主动发现问题、主动汇报。</p>
+<div class="bl" style="margin:5px 0;padding:6px 12px;font-size:.8rem">
+<strong>数据持续注入</strong>
+<br><span style="color:var(--m);font-size:.75rem">飞书/钉钉/财务系统/CRM/文档。数据自动流入企业本地实例，不需要人工采集。</span>
+</div>
+<div class="bl" style="margin:5px 0;padding:6px 12px;font-size:.8rem">
+<strong>本体层自动关联</strong>
+<br><span style="color:var(--m);font-size:.75rem">新客户、新员工、新收入自动生成 SOG 节点和关联边。组织数字孪生实时更新。</span>
+</div>
+<div class="bl" style="margin:5px 0;padding:6px 12px;font-size:.8rem">
+<strong>哨兵不间断扫描</strong>
+<br><span style="color:var(--m);font-size:.75rem">7 维度 x 26 哨兵定时自动执行 compute()。信号聚合引擎交叉关联多个哨兵，判断是否存在结构性风险。一切正常时不打扰任何人。</span>
+</div>
+<div class="bl" style="margin:5px 0;padding:6px 12px;font-size:.8rem">
+<strong>发现异常 -> 专家推理</strong>
+<br><span style="color:var(--m);font-size:.75rem">根据异常类型自动路由到对应专家。8 位专家并行推理，证据池交叉验证，形成结构化判断。</span>
+</div>
+<div class="bl" style="margin:5px 0;padding:6px 12px;font-size:.8rem">
+<strong>主动分层汇报</strong>
+<br><span style="color:var(--m);font-size:.75rem">置信度高 -> 推送给对接人。置信度低 -> 升级给 GA。重大风险 -> 同步老板信箱。</span>
+</div>
+<div class="bl" style="margin:5px 0;padding:6px 12px;font-size:.8rem">
+<strong>执行跟踪 -> 反馈闭环</strong>
+<br><span style="color:var(--m);font-size:.75rem">执行结果反馈到数据层。哨兵扫描自动对比：有效继续，无效重新诊断。永不停止的循环。</span>
+</div>
+<div class="bl g" style="margin-top:12px"><p style="margin:0;font-size:.82rem">这个流程是持续运转的，不是一次性服务。传统咨询做不到这一点。</p></div>
+</div>
+<div class="page">
+<h2>六大差异化优势</h2>
+<table>
+<tr><th style="width:18%">维度</th><th style="width:36%">传统咨询</th><th style="width:46%">Synova</th></tr>
+<tr><td><strong>监测模式</strong></td><td>顾问进场 1-3 个月，做完走人</td><td>7x24 不间断监测，Agent 永不离开</td></tr>
+<tr><td><strong>数据来源</strong></td><td>访谈 + 问卷 + 手工财务表</td><td>全量数据自动接入（飞书/财务/CRM/文档）</td></tr>
+<tr><td><strong>分析维度</strong></td><td>3-5 个维度，受限于顾问个人能力</td><td>7 维度 x 26 哨兵 x 8 专家并行交叉</td></tr>
+<tr><td><strong>发现问题</strong></td><td>靠经验和访谈，滞后</td><td>哨兵实时扫描，信号自动关联发现</td></tr>
+<tr><td><strong>方案交付</strong></td><td>一次性 PPT，交付即结束</td><td>持续对比效果，有效继续，无效重诊</td></tr>
+<tr><td><strong>经验传承</strong></td><td>在顾问脑子里，离职即丢失</td><td>知识和规则在文件里，GA 换人知识不丢</td></tr>
+</table>
+</div>
+<div class="page">
+<h2>文件驱动架构 —— 最深的壁垒</h2>
+<div class="bl g"><p style="margin:0;font-size:.82rem">传统咨询每服务一个新行业 = 招一个新合伙人团队（年成本 500 万+）。Synova 每服务一个新行业 = 加文件，不改代码。</p></div>
+<p>传统咨询公司扩张靠的是招更资深的合伙人（年薪 500 万+）。Synova 的扩张靠的是知识资产化——任何行业老兵，把他的毕生经验写成一个 Markdown 文件，系统就能自动学会诊断。新增一个行业，1-2 天，改文件，不改代码。这是咨询业的"工业革命"。</p>
+<p>更重要的是，现在的咨询界绝大多数是基于"纯人类组织"的咨询。未来十年，所有企业都会变成"人+AI Agent"的混合组织。这需要全新的咨询方式——既要诊断人的协作，也要诊断 Agent 的行为。Synova 的 SOG 本体模型，是面向人+Agent 混合组织的诊断标准。这是我们最深的技术护城河。</p>
+<p>Synova 的能力通过四个扩展模块实现：新增能力 = 加目录 + 加配置文件。这带来了传统咨询无法实现的规模化能力。</p>
+<div class="card">
+<div style="font-weight:700;font-size:.88rem;margin-bottom:4px">专家模块</div>
+<p class="sm">8 位 AI 专家（战略/组织/财务/营销/技术/商业模式/行动/知识），每位独立 9 个配置文件（IDENTITY / SOUL / RULES / TOOLS / KNOWLEDGE / THEORY / STAGE_LOGIC / CROSS_EXPERT / OUTPUT_SCHEMA）。新增专家 = 新建目录 + 9 个配置文件 -> 自动注册到 ExpertDispatcher。不需要改调度代码。</p>
+</div>
+<div class="card">
+<div style="font-weight:700;font-size:.88rem;margin-bottom:4px">哨兵模块</div>
+<p class="sm">26 个哨兵适配器，7 维度 76% 覆盖率。三层粒度：专家（领领域）-> 哨兵（子领域）-> 计算（指标）。新增监测维度 = 加 manifest + 计算函数哨兵自动发现。每个哨兵可以独立说"这个子领域出问题了"。</p>
+</div>
+<div class="card">
+<div style="font-weight:700;font-size:.88rem;margin-bottom:4px">行业模块</div>
+<p class="sm">每个行业一个目录，含行业基准数据、特有哨兵阈值、诊断规则、案例库。新行业 = 加一个目录。新增行业不需要改代码、不需要重新训练模型、不需要停服务。客户属性 -> 自动匹配行业知识 -> 调用对应专家。</p>
+</div>
+<div class="card">
+<div style="font-weight:700;font-size:.88rem;margin-bottom:4px">本体模块</div>
+<p class="sm">SOG（Strategic Organization Graph）v1.0——自主知识产权的组织数字孪生标准。17 种节点类型、14 种边类型，全部通过 JSON Schema 文件定义。新增实体类型 = 加 JSON Schema 文件。</p>
+</div>
+<p><strong>验证方式：</strong>签下 pizza-chain（连锁餐饮），不修改任何 .ts 文件，系统能正确诊断该行业的组织健康度。</p>
+</div>
+<div class="page">
+<h2>五层架构 + 8 位 AI 专家</h2>
+<div style="display:flex;flex-direction:column;gap:3px;margin:6px 0">
+<div style="background:#fce4ec;border:1px solid var(--r);border-radius:6px;padding:5px 12px"><span style="font-weight:700;color:var(--r);font-size:.82rem">L1 交互层</span> <span class="sm">三栏界面 | 76 API | MCP 协议 | GA/对接人/老板/部门负责人</span></div>
+<div style="font-size:.65rem;color:var(--d);text-align:center">决策下达 执行结果反馈</div>
+<div style="background:#e7f5ff;border:1px solid var(--b);border-radius:6px;padding:5px 12px"><span style="font-weight:700;color:var(--b);font-size:.82rem">L2 编排层</span> <span class="sm">ConversationEngine | 工作区 | 上下文压缩 | 企业事实层</span></div>
+<div style="font-size:.65rem;color:var(--d);text-align:center">V</div>
+<div style="background:#f3e8ff;border:1px solid var(--p);border-radius:6px;padding:5px 12px"><span style="font-weight:700;color:var(--p);font-size:.82rem">L3 洞察层</span> <span class="sm">26 哨兵 x 7 维度 | 8 专家并行 | 信号聚合 | 证据池</span></div>
+<div style="font-size:.65rem;color:var(--d);text-align:center">V DocExtractor 自动解析</div>
+<div style="background:#fff4e6;border:1px solid var(--o);border-radius:6px;padding:5px 12px"><span style="font-weight:700;color:var(--o);font-size:.82rem">L4 本体层</span> <span class="sm">SOG 组织数字孪生 | 17 节点 | 14 边 | 企业事实层</span></div>
+<div style="font-size:.65rem;color:var(--d);text-align:center">V 原始数据流入</div>
+<div style="background:#fff3f3;border:1px solid var(--r);border-radius:6px;padding:5px 12px"><span style="font-weight:700;color:var(--r);font-size:.82rem">L5 数据层</span> <span class="sm">SQLite | AgentMemoryStore | 飞书/财务/CRM 全量数据</span></div>
+</div>
+<p><strong>工程基础：</strong>102,000 行 TypeScript · 540 个测试文件 · 76 个 API 端点 · 11 个 monorepo 包 · tsc --noEmit 零错误</p>
+<p><strong>质量体系：</strong>46 条铁律，pre-commit 5 项物理阻断（as any 零容忍 / 空 catch 审计 / secrets 扫描 / 新文件有测试 / 新 export 有调用方）。五层架构边界 pre-commit 物理阻断。</p>
+<p><strong>国产大模型适配：</strong>已适配 DeepSeek V4，低推理成本（每次 1-3 元），可切换其他国产模型。</p>
+</div>
+<div class="page">
+<h2>产品交互与用户角色</h2>
+<div class="two">
+<div class="card"><div style="font-weight:700;font-size:.85rem">GA（增长顾问）</div><p class="sm">行业老兵。按 8 维框架调研客户 -> 输入 Synova -> 审阅 AI 专家报告 -> 用经验修正判断 -> 确认方案。服务 10-20 个客户。数据脱敏（L0-L2 可见）。</p></div>
+<div class="card"><div style="font-weight:700;font-size:.85rem">企业对接人</div><p class="sm">内部协调。收到 Agent 推送 -> 审阅方案 -> 确认或调整 -> 推动落地。不需要行业经验。只看本企业数据。</p></div>
+<div class="card"><div style="font-weight:700;font-size:.85rem">部门负责人</div><p class="sm">在独立工作区和 Agent 讨论本部门方案细化。权限隔离：只看本部门。结果汇入全局。</p></div>
+<div class="card"><div style="font-weight:700;font-size:.85rem">老板</div><p class="sm">每周摘要邮件 + 异常即时推送。飞书对话调整信息密度。不打开系统就能知道公司健康度。</p></div>
+</div>
+<p><strong>三栏交互：</strong>左栏工作区列表（每个问题独立上下文）| 中栏对话区（Agent 输出结构化判断+行动按钮）| 右栏行动跟踪（目标/卡点/遗留）。</p>
+<p><strong>自我进化：</strong>两路反馈回路（GA 纠正 + 客户反馈）。候选池 X2 确认机制。执行效果数据为最高仲裁者。</p>
+</div>
+<div class="page">
+<h2>市场与商业模式</h2>
+<div class="two">
+<div>
+<h3>目标市场</h3>
+<p>这是一个 300 亿的沉睡市场。过去，这 200 万家企业因为付不起 200 万的咨询费，被排除在顶级管理智慧之外。Synova 的目标不是抢麦肯锡的客户，而是把诊断的成本降低 100 倍，创造一个全新的、年规模 300 亿+ 的企业诊断市场。</p>
+<h3>竞品格局</h3>
+<ul><li><strong>管理咨询：</strong>200 万起，一次性 PPT</li><li><strong>SaaS 报表：</strong>只看指标不分析根因</li><li><strong>ChatBot：</strong>一问一答不持续不主动</li><li><strong>AI Agent 平台：</strong>通用平台无行业深度</li></ul>
+</div>
+<div>
+<h3>商业模式 B2B2B</h3>
+<p>Synova -> GA（增长顾问）-> 企业客户。</p>
+
+<h3 style="margin-top:14px">计费：License 许可证，离线可用</h3>
+<p>Synova 部署在客户本地后，通过<strong>加密 License 许可证文件</strong>计费。客户购买 N 次诊断额度，许可证文件包含剩余次数。系统每次诊断后自动递减。次数用完时提示续费。全程零数据回传——客户的诊断数据从未离开过客户自己的服务器。</p>
+<p>客户不需要联网验证。License 签名防篡改。部署和软件本身免费。只在用的时候付钱。</p>
+
+<h3 style="margin-top:14px">定价</h3>
+<p><strong>一次诊断 ￥688。</strong></p>
+<div class="three">
+<div class="card" style="text-align:center"><div style="font-size:.8rem;font-weight:600">自助版</div><div style="font-size:1.2rem;font-weight:700;color:var(--b)">￥688/次</div><div class="sm">企业自己用</div></div>
+<div class="card" style="text-align:center"><div style="font-size:.8rem;font-weight:600">GA 陪跑版</div><div style="font-size:1.2rem;font-weight:700;color:var(--p)">￥2,064/次</div><div class="sm">GA 季度回访，审阅报告</div></div>
+<div class="card" style="text-align:center"><div style="font-size:.8rem;font-weight:600">GA 全托管版</div><div style="font-size:1.2rem;font-weight:700;color:var(--g)">￥2,064/次</div><div class="sm">GA 日常跟踪，全程介入</div></div>
+</div>
+
+<p style="margin-top:8px;font-size:.82rem;color:var(--muted)">客户自己算账。一次诊断 ￥688，一个方案省了 50 万——728 倍的回报。50 人的企业一个月诊断 4 次，年费约 ￥33,000。GA 陪跑 10 个客户，每个客户每月 5 次，GA 年收入接近 ￥80 万。</p>
+<p style="font-size:.8rem;color:var(--muted)">客户的 LLM 费用自己出——用自己的 DeepSeek API key。Synova 的软件边际成本接近于零。诊断次数本身就携带规模和复杂度的差异——300 人企业自然会比 20 人企业诊断更多次。</p>
+
+<h3 style="margin-top:14px">增长飞轮：GA 是核心</h3>
+<p>GA 是一群在企业里深耕了 20 年、刚退休或渴望自由的行业老兵。我们给他们工具（Synova），让他们一个人就能服务 10-20 个客户，年收入几十万到百万。他们不需要写代码，只需要把自己的经验写成一个 Markdown 文件。</p>
+<p>10 个 GA，我们是一家小公司。1000 个 GA，我们就是中国最大的管理咨询平台。</p>
+</div>
+</div>
+社会效益</h2>
+<ul>
+<li>帮助中小微企业以可承受的成本获得系统化的管理诊断服务</li>
+<li>降低企业管理咨询的门槛——从 200 万降到 5 万</li>
+<li>带动 AI 技术服务就业（GA 网络培养行业老兵转型）</li>
+<li>国产大模型 + 本地部署 = 数据安全自主可控</li>
+</ul>
+<h2>发展规划</h2>
+<table>
+<tr><th>阶段</th><th>时间</th><th>商业目标</th></tr>
+<tr><td><strong>验证</strong></td><td>2026 Q2-Q3</td><td>2-3 种子客户。验证 GA 模式商业可行性。</td></tr>
+<tr><td><strong>启动</strong></td><td>2026 Q3-Q4</td><td>15 付费客户。5 位外部 GA。</td></tr>
+<tr><td><strong>扩展</strong></td><td>2026 Q4-2027 Q1</td><td>50+ 客户。20+ GA。5 行业模板。</td></tr>
+<tr><td><strong>规模化</strong></td><td>2027 Q1-Q2</td><td>100+ GA。500+ 客户。</td></tr>
+</table>
+<h2>团队</h2>
+<div class="two">
+<div class="card"><div style="font-weight:700">黄学松 — 创始人</div><p class="sm">深谙成长型企业管理痛点。22 章全量对齐手册 + 21 章交互 PRD 唯一作者。</p></div>
+<div class="card"><div style="font-weight:700">Claude Code + Codex</div><p class="sm">两位 AI 编程 Agent 协同开发。负责架构、前端、PRD。</p></div>
+</div>
+<p class="sm" style="text-align:center">当前团队 1 人类 + 2 AI Agent。正在招募首位全职工程师。</p>
+</div>
+<div class="page" style="text-align:center">
+<h2>融资需求</h2>
+<p style="font-size:1rem;margin:10px 0">种子轮 / 天使轮</p>
+<div class="bl" style="text-align:left;max-width:500px;margin:10px auto">
+<p style="margin:0;font-size:.85rem"><strong>资金用途：</strong></p>
+<ul class="sm">
+<li>全职工程师招募</li>
+<li>LLM 推理调用</li>
+<li>服务器与基础设施</li>
+<li>市场与客户拓展</li>
+</ul>
+</div>
+<p style="margin-top:16px;font-size:.9rem">Synova 的目标不是做一个更好的诊断工具。我们正在定义一种全新的职业（GA）和一种全新的服务模式（企业诊断即服务）。我们要让中国 200 万家成长型企业，以付得起的成本，拥有自己的"私人董事会"。</p>
+<p style="font-size:1.1rem;font-weight:700;margin-top:10px">诊断不是目的，增长才是。</p>
+<p class="mut" style="margin-top:10px">Synova · 2026</p>
+</div>
+</body>
+</html>

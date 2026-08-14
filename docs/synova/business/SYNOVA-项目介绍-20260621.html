@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Synova — 产品介绍</title>
+<style>
+:root{
+  --bg:#f5f5f0;--surface:#fafaf7;--surface2:#eeede8;--border:#d4d3cb;
+  --text:#1c1c1a;--muted:#6b6b63;--dim:#9c9c94;
+  --blue:#2563eb;--green:#2b8a3e;--orange:#d97706;--purple:#7c3aed;
+  --font:'Inter','PingFang SC','Microsoft YaHei',sans-serif;
+  --mono:'JetBrains Mono','Fira Code',monospace
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--font);display:flex;flex-direction:column;align-items:center;padding:32px 12px}
+.page{max-width:900px;width:100%;background:var(--surface);border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);padding:44px 48px;margin:0 auto 20px}
+h1{font-size:2.2rem;font-weight:800;letter-spacing:-.03em;line-height:1.15;color:var(--text)}
+h2{font-size:1.35rem;font-weight:700;margin:34px 0 12px;border-bottom:2px solid var(--surface2);padding-bottom:6px}
+h3{font-size:1.05rem;font-weight:600;margin:20px 0 8px;color:var(--blue)}
+p{font-size:.92rem;line-height:1.75;margin:8px 0;color:var(--text)}
+.muted{color:var(--muted);font-size:.85rem}
+.small{font-size:.8rem;color:var(--dim)}
+.sep{border:none;border-top:1px solid var(--border);margin:28px 0}
+ul{margin:6px 0 6px 20px}
+li{margin:4px 0;font-size:.88rem;line-height:1.6}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:14px 0}
+.card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px;margin:10px 0}
+.card-title{font-weight:600;font-size:.9rem;margin-bottom:6px;color:var(--blue)}
+.tag{display:inline-block;padding:2px 8px;border-radius:5px;font-size:.75rem;color:#fff;font-weight:500}
+.tag-b{background:var(--blue)}.tag-g{background:var(--green)}.tag-p{background:var(--purple)}.tag-o{background:var(--orange)}
+.block{border-left:4px solid var(--blue);background:var(--surface2);padding:10px 16px;margin:12px 0;border-radius:0 8px 8px 0;font-size:.88rem}
+.block.g{border-left-color:var(--green)}
+.block.p{border-left-color:var(--purple)}
+.block.o{border-left-color:var(--orange)}
+.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:12px 0}
+.three-card{background:var(--surface2);border-radius:8px;padding:12px;text-align:center}
+.three-card .n{font-size:1.6rem;font-weight:800;color:var(--blue)}
+.three-card .n.g{color:var(--green)}.three-card .n.p{color:var(--purple)}.three-card .n.o{color:var(--orange)}
+.three-card .l{font-size:.78rem;color:var(--muted);margin-top:2px}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:.85rem}
+th{text-align:left;padding:6px 8px;border-bottom:2px solid var(--border);color:var(--muted);font-weight:600;font-size:.75rem}
+td{padding:6px 8px;border-bottom:1px solid var(--border);vertical-align:top;font-size:.82rem}
+@media print{body{background:#fff;padding:0}.page{box-shadow:none;padding:1.5cm;border-radius:0;page-break-after:always}.page:last-child{page-break-after:auto}}
+@page{size:A4;margin:1.5cm}
+@media(max-width:640px){.page{padding:20px 16px}.two-col,.three{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="page" style="text-align:center;padding:80px 48px">
+<h1 style="font-size:3rem">Synova</h1>
+<p style="font-size:1.3rem;color:var(--muted);margin:8px 0 4px">AI 增长诊断系统</p>
+<p style="font-size:.9rem;color:var(--dim);max-width:500px;margin:14px auto 30px">驻扎在企业内部的数字化管理咨询师——持续观测、主动发现、AI 专家诊断、给出结构化方案、跟踪执行效果</p>
+<div style="display:flex;justify-content:center;gap:24px;font-size:.82rem;color:var(--muted)">
+<span>102,000+ 行代码</span><span>540 个测试</span><span>8 位 AI 专家</span><span>26 个哨兵适配器</span>
+</div></div>
+<div class="page">
+<h2>一、产品定位</h2>
+<div class="block g">
+<p style="margin:0;font-weight:500;font-size:.95rem">Synova 是一个 Agent，不是 ChatBot，不是 SaaS，不是 BI。</p>
+</div>
+<p>它驻扎在企业内部，持续观测全量组织数据，主动发现问题，自动诊断根因，提出可落地的方案，跟踪执行效果。最终决策永远是人做的——Synova 是辅助决策，不是替代决策。</p>
+<h3>核心能力</h3>
+<table>
+<tr><th style="width:20%">能力</th><th>Agent 做什么</th><th>人做什么</th></tr>
+<tr><td><strong>发现问题</strong></td><td>交叉关联多个信号，浮现真实风险。不是"指标跌了"，是"三个看似无关的信号指向同一个结构性问题"</td><td>确认 Agent 的发现是否重要、是否需要立即处理</td></tr>
+<tr><td><strong>提出方案</strong></td><td>从根因推导到行动，告诉人为什么这样做、预期效果是什么。有因果逻辑的方案，不是模板化的建议列表</td><td>确认方案是否可行、是否适合当前组织现实。补充 Agent 看不到的背景信息</td></tr>
+<tr><td><strong>执行监督</strong></td><td>持续跟踪：建议被执行了吗？效果如何？自动对比上次建议 vs 当前现实</td><td>更新执行状态。对无效的方案说"这个方向不对"</td></tr>
+</table>
+<h3>与市场上其他方案的区别</h3>
+<table>
+<tr><th>类别</th><th>代表</th><th>差异</th></tr>
+<tr><td>管理咨询</td><td>麦肯锡 / BCG</td><td>¥200 万起、一次性 PPT、3 个月周期。Synova 是持续监测、按需诊断、自动更新</td></tr>
+<tr><td>SaaS 报表</td><td>金蝶 / 用友 / 神策</td><td>只看指标("销售额降了 15%")不分析根因。Synova 自动交叉分析得出根因和行动建议</td></tr>
+<tr><td>ChatBot</td><td>ChatGPT / Claude</td><td>一问一答，不持续不主动，不知道企业上下文。Synova 常驻企业内部，7x24 主动观测</td></tr>
+<tr><td>AI Agent 平台</td><td>OpenClaw / CrewAI</td><td>通用平台，需要自己搭建诊断逻辑，无行业深度。Synova 有 7 维度测量体系、8 专家知识库、SOG 本体论</td></tr>
+</table>
+</div>
+<div class="page">
+<h2>二、使用场景与用户角色</h2>
+<p>Synova 有三类参与者，每类角色使用不同、看到的数据范围不同、参与频率不同。</p>
+<table>
+<tr><th>角色</th><th>定义</th><th>使用方式</th><th>数据范围</th></tr>
+<tr><td><strong>GA（增长顾问）</strong></td><td>行业经验丰富的老兵，不是工程师。把客户带进来、用 Synova 放大自己的经验、和客户建立长期信任关系。一个人服务 10-20 个客户</td><td>8 维度调研 -> 输入 Synova -> 审阅 AI 诊断报告 -> 用行业经验修正判断 -> 确认方案 -> 定期收到异常通知。只在异常时介入</td><td>L0-L2 脱敏数据。原始数据（人名、合同金额）不可见</td></tr>
+<tr><td><strong>企业内部对接人</strong></td><td>不需要行业经验，需要执行力和内部协调力</td><td>收到 Agent 推送 -> 审阅方案 -> 确认或调整 -> 推动落地。日常更新执行进度</td><td>本企业完整数据</td></tr>
+<tr><td><strong>老板</strong></td><td>企业决策者</td><td>每周一封摘要邮件 + 异常即时推送。可在飞书中与 Synova 对话调整信息密度</td><td>只看摘要和告警</td></tr>
+<tr><td><strong>部门负责人</strong></td><td>各部门（市场/财务/HR）负责人</td><td>在独立工作区中和 Agent 讨论本部门方案的细化落地。结果汇入全局方案</td><td>本部门数据 + 全局方案摘要</td></tr>
+</table>
+<div class="block" style="font-size:.85rem"><strong>定位差异：</strong>GA 是核心付费群体。他通过 Synova 放大了自己的行业经验，同时将行业洞察沉淀回 Synova 的知识库。GA 网络本身就是竞争壁垒。</div>
+</div>
+<div class="page">
+<h2>三、系统架构：五层闭环</h2>
+<p>数据从底部流入，人在顶部做决策，方案执行结果回流到数据层，形成持续闭环。</p>
+<div class="card" style="border-left:4px solid var(--purple)"><div class="card-title" style="color:var(--purple)">L1 交互层</div>
+<p style="font-size:.88rem;margin:0">GA 审阅修正 / 对接人执行跟踪 / 部门独立工作区 / 老板邮件+飞书摘要 / 76 个 API 端点 / MCP 协议服务。三栏界面：左栏工作区列表、中栏对话、右栏行动跟踪。</p></div>
+<div style="text-align:center;color:var(--dim);font-size:.8rem;margin:2px 0">&#8595; 决策下达 &#8593; 执行结果反馈</div>
+<div class="card" style="border-left:4px solid var(--blue)"><div class="card-title" style="color:var(--blue)">L2 编排层</div>
+<p style="font-size:.88rem;margin:0">ConversationEngine 管理诊断对话流程。每个问题 = 一个独立工作区，工作区之间不混淆上下文。SessionManager 处理上下文压缩——已确认的判断永不丢失，对话细节可丢弃。跨工作区相关判断自动引用。</p></div>
+<div style="text-align:center;color:var(--dim);font-size:.8rem;margin:2px 0">&#8595;</div>
+<div class="card" style="border-left:4px solid var(--purple)"><div class="card-title" style="color:var(--purple)">L3 洞察层</div>
+<p style="font-size:.88rem;margin:0">7 维度 x 26 哨兵，定时扫描 OR GA 按需触发 8 位专家并行推理。信号聚合引擎交叉关联异常信号。证据池交叉验证。每位专家输出经 Zod schema 校验方可进入下游。</p>
+<p style="font-size:.82rem;margin:4px 0 0;color:var(--muted)">8 位专家：战略（7 Powers+投融资）、组织（Bus Factor+协作）、财务（现金流+单位经济）、营销（AARRR+品牌定位）、技术（技术债+迁移）、商业模式（Canvas+定价）、行动（优先级排序）、知识（后台引擎，不直接对话）</p></div>
+<div style="text-align:center;color:var(--dim);font-size:.8rem;margin:2px 0">&#8595;</div>
+<div class="card" style="border-left:4px solid var(--orange)"><div class="card-title" style="color:var(--orange)">L4 本体层</div>
+<p style="font-size:.88rem;margin:0">SOG（Strategic Organization Graph）v1.0——组织数字孪生的开放标准。17 种节点类型、14 种边类型、52 条边端点规则。</p>
+<p style="font-size:.82rem;margin:4px 0 0;color:var(--muted)">Person / Agent / Team / Goal / Revenue / Cost / Customer / Risk / Tool / Skill / Document / Knowledge / Artifact / Routine / Product / Task / Constraint</p></div>
+<div style="text-align:center;color:var(--dim);font-size:.8rem;margin:2px 0">&#8595;</div>
+<div class="card" style="border-left:4px solid var(--green)"><div class="card-title" style="color:var(--green)">L5 数据层</div>
+<p style="font-size:.88rem;margin:0">企业全量数据：飞书聊天记录 / 财务系统 / CRM / 组织架构 / 文档 / 会议录音。存储：SQLite / AgentMemoryStore / KnowledgeStore（FTS5 全文索引 + RBAC 权限过滤）。</p></div>
+<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin:16px 0;padding:10px 0;border-top:2px dashed var(--border);flex-wrap:wrap;font-size:.82rem">
+<span style="background:var(--surface2);padding:4px 10px;border-radius:6px"><strong>方案执行</strong> &#8593; 行动项写入 L5</span>
+<span style="color:var(--dim)">&#8594;</span>
+<span style="font-weight:600;color:var(--blue)">反馈闭环：执行结果 = 新数据 -> 再次诊断 -> 对比效果</span>
+<span style="color:var(--dim)">&#8594;</span>
+<span style="background:var(--surface2);padding:4px 10px;border-radius:6px">进入下一循环</span>
+</div>
+<h3>工程质量</h3>
+<ul>
+<li><strong>五层架构边界：</strong>L1 只调 L2，L2 只调 L3，依此类推。pre-commit check-architecture.sh 物理阻断跨层调用。</li>
+<li><strong>46 条铁律，5 项物理阻断：</strong>as any = 0（零容忍，47 次历史事故教训），空 catch 有 log + degraded，secrets 扫描，新文件有测试，新 export 有调用方。提交耗时 <5s。</li>
+<li><strong>Agent 自检 5 问：</strong>每次写完代码自动回答：接线检查、异常处理、类型安全、测试覆盖、残留清理。</li>
+</ul>
+</div>
+<div class="page">
+<h2>四、对话与上下文管理</h2>
+<p>Synova 的对话不是 ChatGPT 式的通用聊天。每段对话有明确的上下文的上下文——哪个客户、哪个工作区、哪些判断已确认、哪些企业事实不可更改。</p>
+<h3>三层上下文结构</h3>
+<table>
+<tr><th>层级</th><th>内容</th><th>技术实现</th></tr>
+<tr><td><strong>会话上下文</strong></td><td>企业基本信息：行业、规模、阶段、历史诊断记录</td><td>KnowledgeStore + GraphStore。每次对话自动注入</td></tr>
+<tr><td><strong>主题上下文</strong></td><td>当前工作区的判断卡片、对话状态、已确认的方案</td><td>SessionStore + AgentMemoryStore</td></tr>
+<tr><td><strong>判断上下文</strong></td><td>单条判断的根因、证据链、修正历史、置信度变化</td><td>AgentMemoryStore (type=decision)</td></tr>
+</table>
+<h3>工作区模型</h3>
+<p>每个问题 = 一个独立工作区。工作区天然限制了上下文膨胀率——大部分工作区在 5-10 轮对话内完成（根因确认 -> 方案确认 -> 关闭）。部门工作区（配置讨论）可能超过 30 条，但工作区之间不混淆上下文。</p>
+<ul>
+<li><strong>工作区内部压缩：</strong>已确认的判断永不丢失（从 AgentMemoryStore 加载 type=enterprise_fact）。对话历史压缩为摘要。使用 summary 策略替代 sliding-window。</li>
+<li><strong>跨工作区引用：</strong>工作区 B 打开时自动从 AgentMemoryStore 加载工作区 A 的相关判断。"在现金流工作区中已确认采购流程异常是临时性的——新工作区直接继承这个结论。"</li>
+<li><strong>企业事实层：</strong>不被遗忘的动态知识。收入确认方式、考核工具、组织架构——每次 Agent 推理时自动注入系统 prompt 顶部，永不丢失。变更时记录完整版本历史和变更原因。</li>
+</ul>
+</div>
+<div class="page">
+<h2>五、交互设计：三栏布局</h2>
+<p>GA 和对接人都使用三栏布局，差异在于 GA 多了客户导航和数据导入入口。</p>
+<div class="card" style="text-align:center">
+<div style="font-weight:600;font-size:.9rem">左栏：工作区列表</div>
+<div class="muted" style="font-size:.82rem">当前企业的所有问题。按优先级排序 &#8593; 每个显示：状态图标 + 名称 + 最后更新时间</div>
+</div>
+<div class="card" style="text-align:center">
+<div style="font-weight:600;font-size:.9rem">中栏：对话区</div>
+<div class="muted" style="font-size:.82rem">Agent 每次回复 = 结构化判断（根因/建议/置信度） + 行动按钮。GA 确认或对话修正。Agent 根据上下文自动调用相关专家</div>
+</div>
+<div class="card" style="text-align:center">
+<div style="font-weight:600;font-size:.9rem">右栏：行动跟踪</div>
+<div class="muted" style="font-size:.82rem">目标跟踪（公司目标+进度）、增长卡点（当前活跃问题）、长期遗留（有意识推迟的问题+复活条件）</div>
+</div>
+<h3>GA 的完整工作流</h3>
+<ol style="font-size:.88rem">
+<li><strong>初步调研：</strong>GA 按 8 维度框架（任务目标 / 业务价值 / 现状起点 / 资源约束 / 风险瓶颈 / 成功标准 / 市场定位 / 数字底座）调研企业</li>
+<li><strong>输入诊断：</strong>上传调研数据，Synova 调用 8 位专家并行分析，输出各专家独立报告 + 综合报告</li>
+<li><strong>审阅修正：</strong>GA 逐条审阅 Agent 判断。有疑问的展开对话——"你分析现金流根因是应收账款，但你没看到客户刚换了采购系统"——Agent 重新推理后更新判断</li>
+<li><strong>方案交付：</strong>GA 将最终方案交付给企业对接人。此后 GA 转为定期回访角色</li>
+<li><strong>异常介入：</strong>Synova 7x24 监测。方案效果不达预期或对接人未按时响应时，通知 GA 介入</li>
+</ol>
+<h3>老板信箱</h3>
+<p>老板不需要打开 Synova 的界面。老板的界面是收件箱——每周一封摘要邮件 + 异常情况下即时推送。老板在飞书中与 Synova 对话即可调整信息密度：</p>
+<ul>
+<li>"本周信息太细了，只给我看红色的" -> Agent 调整阈值</li>
+<li>"我出差两周，推送暂停" -> Agent 进入休假模式</li>
+<li>"现金流预警有更新吗？" -> Agent 回复最新数据</li>
+</ul>
+</div>
+<div class="page">
+<h2>六、8 位 AI 专家</h2>
+<p>7 位前台推理 + 1 位后台知识引擎。每位专家有 9 个定义文件（IDENTITY / SOUL / RULES / TOOLS / KNOWLEDGE / THEORY / STAGE_LOGIC / CROSS_EXPERT / OUTPUT_SCHEMA），可以独立修改、独立扩展、独立通过 Schema 校验。</p>
+<table>
+<tr><th>专家</th><th>核心能力</th><th>理论基础</th><th>典型判断</th></tr>
+<tr><td><strong>战略顾问</strong></td><td>7 Powers 竞争分析、战略姿态识别、Goal 节点对齐度、投融资评估</td><td>Hamilton Helmer 7 Powers、波特五力、PEST+CC</td><td>"你的竞争护城河在减弱"、"这个融资条款会影响你的控制权"</td></tr>
+<tr><td><strong>组织顾问</strong></td><td>跨部门协作摩擦检测、关键人依赖风险、Agent 就绪度评估</td><td>杨国安理论扩展、Bus Factor、人+Agent 混合组织模型</td><td>"两个部门协作断裂正在延迟产品交付"</td></tr>
+<tr><td><strong>财务顾问</strong></td><td>现金流健康度、单位经济模型（LTV/CAC）、成本结构诊断</td><td>财务比率分析、现金流三分法</td><td>"你未来三个月存在现金流缺口"</td></tr>
+<tr><td><strong>战略顾问</strong></td><td>7 Powers 竞争分析、战略姿态识别、Goal 节点对齐度、投融资评估</td><td>Hamilton Helmer 7 Powers、波特五力</td><td>"你的竞争护城河在减弱"</td></tr>
+<tr><td><strong>营销顾问</strong></td><td>AARRR 漏斗分析、品牌定位一致度、NPS + 客户感知匹配</td><td>AARRR、STP、峰终定律、JTBD</td><td>"客户对你的认知和你的定位有偏差"</td></tr>
+<tr><td><strong>技术顾问</strong></td><td>技术债评估、系统迁移风险、软件生态健康度、Agent 就绪度</td><td>技术债四象限、MCP 协议覆盖评估</td><td>"基础设施债务正在拖慢新产品交付"</td></tr>
+<tr><td><strong>商业模式顾问</strong></td><td>商业模式画布 9 要素评估、收入可持续性、6 种定价模型</td><td>Business Model Canvas、7 Powers</td><td>"你的收入结构过度依赖单一客户"</td></tr>
+<tr><td><strong>行动顾问</strong></td><td>四维优先级排序（紧急+重要+投入+依赖）、跨方案一致性</td><td>Eisenhower 矩阵扩展</td><td>"这两个建议互相矛盾——优先执行 A，D 可以推迟"</td></tr>
+<tr><td><strong>知识顾问</strong></td><td>行业参考检索、案例对比、最佳实践查询（后台引擎，不直接对话）</td><td>FTS5 全文检索 + RBAC 权限过滤</td><td>（为以上 7 位提供数据支持）</td></tr>
+</table>
+<div class="block" style="font-size:.85rem"><strong>专家配置文件化的好处：</strong>修改专家知识只需改对应 markdown 文件，不需要改代码。新增专家只需新增目录 + 配置文件，ExpertDispatcher 会自动从 expert-registry.yaml 加载。每位专家输出有独立的 Zod schema 验证，不合格的输出在进入证据池前就被阻断。</div>
+</div>
+<div class="page">
+<h2>七、哨兵系统与本体论</h2>
+<h3>7.1 26 个哨兵，7 维度覆盖</h3>
+<p>哨兵是 Synova 的神经末梢——定时扫描企业各维度的信号，发现异常时自动推送。GA 也可按需触发完整诊断管线（6 阶段、8 专家、全部哨兵）。</p>
+<div class="three">
+<div class="three-card"><div class="n" style="font-size:.9rem;color:var(--text)">D1 增长动力</div><div class="n g" style="font-size:1.2rem">4/4 100%</div></div>
+<div class="three-card"><div class="n" style="font-size:.9rem;color:var(--text)">D2 组织能力</div><div class="n g" style="font-size:1.2rem">5/7 71%</div></div>
+<div class="three-card"><div class="n" style="font-size:.9rem;color:var(--text)">D3 人+Agent</div><div class="n o" style="font-size:1.2rem">4/7 57%</div></div>
+<div class="three-card"><div class="n" style="font-size:.9rem;color:var(--text)">D4 软件生态</div><div class="n o" style="font-size:1.2rem">2/4 50%</div></div>
+<div class="three-card"><div class="n" style="font-size:.9rem;color:var(--text)">D5 软件-Agent适配</div><div class="n b" style="font-size:1.2rem">3/4 75%</div></div>
+<div class="three-card"><div class="n" style="font-size:.9rem;color:var(--text)">D6 战略健康</div><div class="n o" style="font-size:1.2rem">1/4 25%</div></div>
+<div class="three-card"><div class="n" style="font-size:.9rem;color:var(--text)">D7 风险预警</div><div class="n g" style="font-size:1.2rem">4/4 100%</div></div>
+<div class="three-card"><div class="n p" style="font-size:1.2rem">总计 23/34 68%</div></div>
+</div>
+<h3>7.2 SOG 本体 v1.0——为什么 17 个节点</h3>
+<p>SOG（Strategic Organization Graph）是组织数字孪生的底层标准。每个节点类型对应一个必须独立测量的诊断维度。</p>
+<table>
+<tr><th>节点类型</th><th>诊断价值</th></tr>
+<tr><td><strong>Person / Agent / Team</strong></td><td>三种执行单元必须区分——否则无法识别哪些工作应该由 AI 替代、哪些应该由人来完成</td></tr>
+<tr><td><strong>Goal / Routine / Artifact</strong></td><td>组织实际在做什么（Routine） vs 应该做什么（Goal） vs 做出来什么（Artifact）。三个节点的交叉分析可以发现目标-执行-产出之间的断裂</td></tr>
+<tr><td><strong>Revenue / Cost / Product / Customer</strong></td><td>商业模型的基础要素。区分 Customer 和 Revenue 才能分析客户集中度风险</td></tr>
+<tr><td><strong>Tool / Connection / Task</strong></td><td>软件生态 + Agent 适配的诊断基础。Tool 是有什么系统，Connection 是它们怎么连，Task 是人在做什么</td></tr>
+<tr><td><strong>Document / Knowledge / Skill</strong></td><td>知识管理的三要素——Knowledge 是结构化沉淀，Skill 是团队能力，Document 是载体</td></tr>
+<tr><td><strong>Risk / Constraint</strong></td><td>Risk 是已知风险，Constraint 是硬约束（预算/法规/资源）。D7 风险预警的直接消费层</td></tr>
+</table>
+</div>
+<div class="page">
+<h2>八、工程现状</h2>
+<p>Synova 不是概念验证——是已经投入了约 4 个月全职工时、102,000 行 TypeScript 代码、540 个测试文件的严肃工程系统。</p>
+<div class="three">
+<div class="three-card"><div class="n b" style="font-size:1.2rem">102,000</div><div class="l">TypeScript 代码行</div></div>
+<div class="three-card"><div class="n b" style="font-size:1.2rem">631</div><div class="l">TS 源文件</div></div>
+<div class="three-card"><div class="n g" style="font-size:1.2rem">76</div><div class="l">HTTP API 端点</div></div>
+<div class="three-card"><div class="n g" style="font-size:1.2rem">540</div><div class="l">测试文件</div></div>
+<div class="three-card"><div class="n p" style="font-size:1.2rem">11</div><div class="l">monorepo 包</div></div>
+<div class="three-card"><div class="n o" style="font-size:1.2rem">46</div><div class="l">铁律数</div></div>
+</div>
+<h3>技术栈</h3>
+<div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0">
+<span class="tag tag-b">TypeScript</span>
+<span class="tag tag-b">Express + SSE</span>
+<span class="tag tag-g">SQLite + FTS5</span>
+<span class="tag tag-p">DeepSeek V4</span>
+<span class="tag tag-o">Zod schema</span>
+<span class="tag tag-g">vitest</span>
+<span class="tag tag-b">SSR HTML / React(ink)</span>
+<span class="tag tag-g">pnpm workspace</span>
+</div>
+<table>
+<tr><th style="width:30%">指标</th><th>数值</th><th>说明</th></tr>
+<tr><td>代码行数</td><td>102,000+</td><td>含 src/ + packages/（11 monorepo 包）。不含 node_modules</td></tr>
+<tr><td>测试</td><td>540 个文件，约 1,247 个测试用例</td><td>单元测试（.test.ts）+ 集成测试（.integration.test.ts）+ E2E 测试（.e2e.test.ts）。命名规范遵循铁律 33</td></tr>
+<tr><td>TypeScript 编译</td><td>tsc --noEmit 零错误</td><td>strict: true, noImplicitAny: true</td></tr>
+<tr><td>API 端点</td><td>76 个</td><td>诊断/本体 19、Sentinel 9、知识/文档 8、权限/认证 8、其他 11。含 Bearer token 认证、SSE 流推送</td></tr>
+<tr><td>MCP 协议</td><td>4 个工具</td><td>diagnose_organization / query_ontology / ingest_document / get_session。JSON-RPC 2.0</td></tr>
+<tr><td>pre-commit</td><td>5 项硬阻断，全部 <5s</td><td>as any 零容忍 / 空 catch 审计 / secrets 扫描 / 新文件有测试 / 新 export 有调用方</td></tr>
+<tr><td>架构边界</td><td>五层物理阻断</td><td>check-architecture.sh 检测跨层违规。铁律 39 强制执行</td></tr>
+<tr><td>文档</td><td>22 章全量对齐手册 + 21 章 PRD v1.8</td><td>92KB + 全量对齐手册 HTML。代码的一级输入</td></tr>
+</table>
+<h3>数据安全（当前+未来）</h3>
+<ul>
+<li>API 认证：Bearer token + sanitize-check 中间件（检测 sk-/ghp_ 等密钥模式）</li>
+<li>PII 脱敏：security/ 模块实现，对话中自动过滤敏感信息</li>
+<li>FDE 数据边界：GA 默认只看到 L0-L2 脱敏数据（判断结论+聚合信号+脱敏证据），看不到 L3 原始数据。临时查看需对接人审批</li>
+<li>Agent 部署在企业内部（Enterprise 和 Premier 版），数据不离境</li>
+</ul>
+</div>
+<div class="page">
+<h2>九、路线图</h2>
+<table>
+<tr><th>阶段</th><th>时间</th><th>商业目标</th><th>技术目标</th></tr>
+<tr><td><strong>验证</strong></td><td>2026 Q2-Q3</td><td>2-3 个种子客户。GA 全流程从 8 小时降至 3 小时内</td><td>26 哨兵全部投产。老板信箱双通道推送。行动跟踪系统上线</td></tr>
+<tr><td><strong>启动</strong></td><td>2026 Q3-Q4</td><td>15 个付费客户。5 位外部 GA 完成培训</td><td>部门工作区上线。企业事实层上线。上下文压缩完善</td></tr>
+<tr><td><strong>扩展</strong></td><td>2026 Q4-2027 Q1</td><td>50+ 客户。20+ GA。行业模板覆盖 5 个行业</td><td>GA 反馈闭环接入 Evolution Engine。多媒体数据支持启动</td></tr>
+<tr><td><strong>规模化</strong></td><td>2027 Q1-Q2</td><td>100+ GA。500+ 客户。年收入 480 万+</td><td>专家配置化注册、共享知识自动同步、专家 output schema 统一治理</td></tr>
+</table>
+<h3>商业模式</h3>
+<p><strong>B2B2B：Synova -> GA -> 企业客户。</strong>核心收入不是企业买套餐——是 GA（增长顾问）为他的客户群购买诊断能力。</p>
+<div class="three">
+<div class="three-card"><div class="n" style="font-size:.9rem;color:var(--text)">GA 入门版</div><div class="l" style="font-weight:700">¥12,000/年</div><div class="l">5-10 个客户</div></div>
+<div class="three-card"><div class="n" style="font-size:.9rem;color:var(--text)">GA 专业版</div><div class="l" style="font-weight:700">¥48,000/年</div><div class="l">10-20 个客户</div></div>
+<div class="three-card"><div class="n" style="font-size:.9rem;color:var(--text)">企业直连版</div><div class="l" style="font-weight:700">¥25,000/年</div><div class="l">企业自带</div></div>
+<div class="three-card"><div class="n" style="font-size:.9rem;color:var(--text)">私有部署</div><div class="l" style="font-weight:700">¥80,000/年</div><div class="l">安全敏感企业</div></div>
+</div>
+<p style="font-size:.82rem;color:var(--muted)">单位经济：每次诊断推理成本约 1-3 元（DeepSeek V4），预计毛利率 ~70%。100 位 GA = 480 万/年。GA 网络是最强竞争壁垒——每位 GA 的行业认知沉淀在 Synova 中，新进入者没有 GA 网络就没有行业诊断经验。</p>
+<h2>总结</h2>
+<div class="block g">
+<p style="margin:0;font-size:.9rem">Synova 是一个已经拥有完整架构、工程基础扎实的 AI 诊断系统。它瞄准的是一个被大厂系统性忽视的市场（5-1000 人的成长型企业），用 Agent 替代传统咨询的基础工作，让成长型企业花得起、用得上。</p>
+</div>
+<p style="font-size:.88rem">产品定义（全量对齐手册 22 章 + PRD 21 章）、工程实现（102k 行代码 + 540 测试）、交互设计（三栏布局 + GA 工作流 + 老板信箱）——三个层面都有了结构化的交付物。正在从产品阶段走向商业验证阶段。</p>
+<p style="text-align:center;color:var(--muted);font-size:.8rem;margin-top:24px">Synova 项目介绍 · 2026-06-21 · 数据截至 2026-06-21 · 基于实际代码盘点 + PRD v1.8</p>
+</div>
+</body>
+</html>

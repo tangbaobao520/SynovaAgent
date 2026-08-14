@@ -1,0 +1,1793 @@
+=== Synova Audit Report (2026-08-01T14:23:11Z | full) ===
+=== Synova Audit (full) ===
+
+[1/11] File existence
+  src/cli-manager.ts EXISTS
+  src/cli.ts EXISTS
+  src/config-file.ts EXISTS
+  src/config.ts EXISTS
+  src/errors.ts EXISTS
+  src/index.ts EXISTS
+  src/mvp-server.ts EXISTS
+  src/server.ts EXISTS
+  src/setup.ts EXISTS
+  src/adapters/engine-core-adapter.ts EXISTS
+  src/adapters/federal-adapter.ts EXISTS
+  src/adapters/sqlite-graph-store.ts EXISTS
+  src/agent/adapter-registry.ts EXISTS
+  src/agent/adapter-scanner.ts EXISTS
+  src/agent/atomic-write.ts EXISTS
+  src/agent/boss-mailbox.ts EXISTS
+  src/agent/builtin-tools.ts EXISTS
+  src/agent/conflict-arbitrator.ts EXISTS
+  src/agent/convergence-engine.ts EXISTS
+  src/agent/conversation-engine.ts EXISTS
+  src/agent/cost-budget.ts EXISTS
+  src/agent/cross-validator.ts EXISTS
+  src/agent/data-ingest-service.ts EXISTS
+  src/agent/data-lifecycle-service.ts EXISTS
+  src/agent/diagnosis-launcher.ts EXISTS
+  src/agent/engine-context.ts EXISTS
+  src/agent/expert-config-loader.ts EXISTS
+  src/agent/expert-file-loader.ts EXISTS
+  src/agent/expert-interaction-protocol.ts EXISTS
+  src/agent/expert-router.ts EXISTS
+  src/agent/file-scanner.ts EXISTS
+  src/agent/index.ts EXISTS
+  src/agent/interactive-card.ts EXISTS
+  src/agent/knowledge-bridge-service.ts EXISTS
+  src/agent/knowledge-conflict-handler.ts EXISTS
+  src/agent/knowledge-file-importer.ts EXISTS
+  src/agent/knowledge-injector.ts EXISTS
+  src/agent/loop-handlers.ts EXISTS
+  src/agent/main-agent.ts EXISTS
+  src/agent/ontology-syncer.ts EXISTS
+  src/agent/orchestrator-adapter.ts EXISTS
+  src/agent/post-diagnosis-processor.ts EXISTS
+  src/agent/proactive-push.ts EXISTS
+  src/agent/prompt-assembler.ts EXISTS
+  src/agent/report-assembler.ts EXISTS
+  src/agent/review-service.ts EXISTS
+  src/agent/sentinel-health-service.ts EXISTS
+  src/agent/sentinel-service.ts EXISTS
+  src/agent/session-service.ts EXISTS
+  src/agent/skill-lazy-loader.ts EXISTS
+  src/agent/synova-agent.ts EXISTS
+  src/agent/task-decomposer.ts EXISTS
+  src/agent/tool-loop-executor.ts EXISTS
+  src/agent/tool-profiles.ts EXISTS
+  src/agent/tools.ts EXISTS
+  src/agent/workspace-context-bridge.ts EXISTS
+  src/agent/workspace-service.ts EXISTS
+  src/agent-observer/collector.ts EXISTS
+  src/agent-observer/types.ts EXISTS
+  src/cli/types.ts EXISTS
+  src/cli/commands/config-cmd.ts EXISTS
+  src/cli/commands/expert.ts EXISTS
+  src/cli/commands/knowledge.ts EXISTS
+  src/cli/commands/measurer.ts EXISTS
+  src/connectors/csv-import.ts EXISTS
+  src/connectors/feishu-bridge.ts EXISTS
+  src/connectors/feishu.ts EXISTS
+  src/connectors/ima-connector.ts EXISTS
+  src/connectors/ima.ts EXISTS
+  src/connectors/index.ts EXISTS
+  src/connectors/nemoclaw.ts EXISTS
+  src/connectors/registry.ts EXISTS
+  src/connectors/types.ts EXISTS
+  src/connectors/unified-connector.ts EXISTS
+  src/contract/contract-gate.ts EXISTS
+  src/contract/contract-store.ts EXISTS
+  src/control-tower/signal-emitter.ts EXISTS
+  src/cron/scheduler.ts EXISTS
+  src/cycles/cross-scale-validator.ts EXISTS
+  src/cycles/cycle-loader.ts EXISTS
+  src/cycles/cycle-registry.ts EXISTS
+  src/cycles/cycle-types.ts EXISTS
+  src/cycles/index.ts EXISTS
+  src/cycles/investment-advisor.ts EXISTS
+  src/cycles/overflow-compute.ts EXISTS
+  src/cycles/overflow-dashboard.ts EXISTS
+  src/cycles/overflow-graph-bridge.ts EXISTS
+  src/deploy/backup-scheduler.ts EXISTS
+  src/deploy/backup-verify.ts EXISTS
+  src/deploy/bootstrap.ts EXISTS
+  src/deploy/compute-version.ts EXISTS
+  src/deploy/data-directory.ts EXISTS
+  src/deploy/recovery-pack.ts EXISTS
+  src/deploy/rollback.ts EXISTS
+  src/deploy/schema-version.ts EXISTS
+  src/deploy/startup-check.ts EXISTS
+  src/deploy/system-self-ops.ts EXISTS
+  src/deploy/watchdog-entry.ts EXISTS
+  src/env/env-snapshot-schema.ts EXISTS
+  src/errors/types.ts EXISTS
+  src/evidence/evidence-store.ts EXISTS
+  src/evidence/index.ts EXISTS
+  src/evidence/types.ts EXISTS
+  src/expert-platform/extractor.ts EXISTS
+  src/expert-platform/outcome-tracker.ts EXISTS
+  src/expert-platform/store.ts EXISTS
+  src/expert-platform/types.ts EXISTS
+  src/expert-platform/validator.ts EXISTS
+  src/extensions/registry.ts EXISTS
+  src/extensions/types.ts EXISTS
+  src/growth/action-store.ts EXISTS
+  src/growth/action-types.ts EXISTS
+  src/growth/context-loader.ts EXISTS
+  src/growth/dnd-engine.ts EXISTS
+  src/growth/feedback-collector.ts EXISTS
+  src/growth/goal-conflict-detector.ts EXISTS
+  src/growth/goal-lifecycle.ts EXISTS
+  src/growth/goal-sentinel-lifecycle.ts EXISTS
+  src/growth/goal-sentinel.ts EXISTS
+  src/growth/goal-store.ts EXISTS
+  src/growth/goal-types.ts EXISTS
+  src/growth/knowledge-feedback.ts EXISTS
+  src/growth/lightweight-diagnosis.ts EXISTS
+  src/growth/next-action-engine.ts EXISTS
+  src/growth/proposal-engine.ts EXISTS
+  src/growth/proposal-store.ts EXISTS
+  src/growth/proposal-types.ts EXISTS
+  src/growth/skill-knowledge.ts EXISTS
+  src/growth/user-store.ts EXISTS
+  src/growth/workspace-builder.ts EXISTS
+  src/growth/workspace-types.ts EXISTS
+  src/infra/command-lanes.ts EXISTS
+  src/infra/trace-context.ts EXISTS
+  src/ingest/data-pipeline-monitor.ts EXISTS
+  src/ingest/index.ts EXISTS
+  src/ingest/knowledge-ingest-bridge.ts EXISTS
+  src/init/connector-binding.ts EXISTS
+  src/init/engine-context.ts EXISTS
+  src/init/file-driven-loaders.ts EXISTS
+  src/interview/engine.ts EXISTS
+  src/interview/gpi-estimator.ts EXISTS
+  src/interview/question-bank.ts EXISTS
+  src/interview/roles.ts EXISTS
+  src/interview/signal-extractor.ts EXISTS
+  src/interview/signals.ts EXISTS
+  src/l1/im-channel.ts EXISTS
+  src/l1/im-inbound.ts EXISTS
+  src/l1/l0-global-prompt.ts EXISTS
+  src/l1/qa-router.ts EXISTS
+  src/l1-interaction/tui-adapter-v2.ts EXISTS
+  src/l1-interaction/types.ts EXISTS
+  src/l1-interaction/web-adapter.ts EXISTS
+  src/l2/domain-keywords.ts EXISTS
+  src/l2/expert-router.ts EXISTS
+  src/l2/proposal-manager.ts EXISTS
+  src/l2-interfaces/diagnosis-engine.ts EXISTS
+  src/l3/assumption-monitor.ts EXISTS
+  src/l3/briefing-generator.ts EXISTS
+  src/l3/business-model-canvas.ts EXISTS
+  src/l3/business-model-loader.ts EXISTS
+  src/l3/data-lifecycle-service.ts EXISTS
+  src/l3/expert-autonomy.ts EXISTS
+  src/l3/expert-dispatcher.ts EXISTS
+  src/l3/expert-output-schema.ts EXISTS
+  src/l3/expert-registry.ts EXISTS
+  src/l3/framework-loader.ts EXISTS
+  src/l3/ga-collaboration.ts EXISTS
+  src/l3/gear6-scheduler.ts EXISTS
+  src/l3/index.ts EXISTS
+  src/l3/key-person-risk.ts EXISTS
+  src/l3/knowledge-agent.ts EXISTS
+  src/l3/period-utils.ts EXISTS
+  src/l3/pkb-lifecycle.ts EXISTS
+  src/l3/pkb-seed.ts EXISTS
+  src/l3/platform-dependency-check.ts EXISTS
+  src/l3/quality-firewall.ts EXISTS
+  src/l3/report-template-loader.ts EXISTS
+  src/l3/report-templates.ts EXISTS
+  src/l3/rule-loader.ts EXISTS
+  src/l3/synova-diagnosis-engine-impl.ts EXISTS
+  src/l3/synova-diagnosis-engine.ts EXISTS
+  src/l3/tone-enforcer.ts EXISTS
+  src/l3/tool-guard.ts EXISTS
+  src/l4/adapter-loader.ts EXISTS
+  src/l4/agent-memory-store.ts EXISTS
+  src/l4/audit-store.ts EXISTS
+  src/l4/community-reports.ts EXISTS
+  src/l4/data-exporter.ts EXISTS
+  src/l4/data-purger.ts EXISTS
+  src/l4/decision-capture.ts EXISTS
+  src/l4/delivery-queue-store.ts EXISTS
+  src/l4/delivery-queue.ts EXISTS
+  src/l4/department-memory-store.ts EXISTS
+  src/l4/diagnosis-graph-query.ts EXISTS
+  src/l4/entity-resolver.ts EXISTS
+  src/l4/graph-bridge.ts EXISTS
+  src/l4/graph-traversal.ts EXISTS
+  src/l4/index.ts EXISTS
+  src/l4/industry-loader.ts EXISTS
+  src/l4/knowledge-store.ts EXISTS
+  src/l4/migration-validator.ts EXISTS
+  src/l4/ontology-loader.ts EXISTS
+  src/l4/report-graph-adapter.ts EXISTS
+  src/l4/review-store.ts EXISTS
+  src/l4/sog-schema-validator.ts EXISTS
+  src/l4/temporal-baseline.ts EXISTS
+  src/l4/traversal-permission-filter.ts EXISTS
+  src/l4/triple-reflection.ts EXISTS
+  src/l5/alert-rules.ts EXISTS
+  src/l5/connector-pipeline.ts EXISTS
+  src/l5/ontology-event-bus.ts EXISTS
+  src/llm/circuit-breaker.ts EXISTS
+  src/llm/output-validator.ts EXISTS
+  src/llm/retry-middleware.ts EXISTS
+  src/llm/types.ts EXISTS
+  src/locale/locale-loader.ts EXISTS
+  src/loops/direction-monitor.ts EXISTS
+  src/loops/loop-scheduler.ts EXISTS
+  src/loops/loop-trigger-config.ts EXISTS
+  src/loops/middle-evolution-engine.ts EXISTS
+  src/mcp/bridge.ts EXISTS
+  src/mcp/index.ts EXISTS
+  src/mcp/skill-audit-gate.ts EXISTS
+  src/mcp/skill-installer.ts EXISTS
+  src/mcp/tool-registration.ts EXISTS
+  src/middleware/auth.ts EXISTS
+  src/middleware/rate-limit.ts EXISTS
+  src/middleware/rate-limiter.ts EXISTS
+  src/middleware/rbac.ts EXISTS
+  src/middleware/sanitize-check.ts EXISTS
+  src/monitoring/data-quality-gate.ts EXISTS
+  src/monitoring/freshness-tracker.ts EXISTS
+  src/monitoring/metrics.ts EXISTS
+  src/monitoring/pipeline-monitor.ts EXISTS
+  src/monitoring/routes.ts EXISTS
+  src/monitoring/system-health.ts EXISTS
+  src/notifications/electron-adapter.ts EXISTS
+  src/notifications/notification-loader.ts EXISTS
+  src/notifications/registry.ts EXISTS
+  src/notifications/types.ts EXISTS
+  src/orchestrator/context-compressor.ts EXISTS
+  src/orchestrator/context-engine.ts EXISTS
+  src/orchestrator/diagnosis-orchestrator.ts EXISTS
+  src/orchestrator/dimension-registry.ts EXISTS
+  src/orchestrator/event-bus.ts EXISTS
+  src/orchestrator/event-store.ts EXISTS
+  src/orchestrator/hook-runner.ts EXISTS
+  src/orchestrator/index.ts EXISTS
+  src/orchestrator/intent-router.ts EXISTS
+  src/orchestrator/llm-phase-executor.ts EXISTS
+  src/orchestrator/module-runner.ts EXISTS
+  src/orchestrator/phase-gate-check.ts EXISTS
+  src/orchestrator/phase-state-machine.ts EXISTS
+  src/orchestrator/phase0-engine.ts EXISTS
+  src/orchestrator/session-manager.ts EXISTS
+  src/orchestrator/subagent-coordinator.ts EXISTS
+  src/orchestrator/types.ts EXISTS
+  src/orchestrator/wiring.ts EXISTS
+  src/pipeline/judgment-card.ts EXISTS
+  src/pipeline/narrative-generator.ts EXISTS
+  src/playbook/execution-store.ts EXISTS
+  src/playbook/index.ts EXISTS
+  src/playbook/playbook-loader.ts EXISTS
+  src/playbook/playbook-registry.ts EXISTS
+  src/playbook/playbook-types.ts EXISTS
+  src/providers/base.ts EXISTS
+  src/providers/deepseek.ts EXISTS
+  src/providers/detect.ts EXISTS
+  src/providers/ernie.ts EXISTS
+  src/providers/gateway.ts EXISTS
+  src/providers/index.ts EXISTS
+  src/providers/llm-provider-loader.ts EXISTS
+  src/providers/message-sanitizer.ts EXISTS
+  src/providers/openai.ts EXISTS
+  src/providers/python-bridge.ts EXISTS
+  src/providers/registry.ts EXISTS
+  src/providers/types.ts EXISTS
+  src/routes/actions-api.ts EXISTS
+  src/routes/adapters.ts EXISTS
+  src/routes/admin-knowledge.ts EXISTS
+  src/routes/agent-observer.ts EXISTS
+  src/routes/audit.ts EXISTS
+  src/routes/auth.ts EXISTS
+  src/routes/backup.ts EXISTS
+  src/routes/chat.ts EXISTS
+  src/routes/cockpit.ts EXISTS
+  src/routes/credentials.ts EXISTS
+  src/routes/data-lifecycle.ts EXISTS
+  src/routes/data.ts EXISTS
+  src/routes/department-workspace.ts EXISTS
+  src/routes/diagnosis-upload-v2.ts EXISTS
+  src/routes/diagnosis.ts EXISTS
+  src/routes/documents.ts EXISTS
+  src/routes/enterprise.ts EXISTS
+  src/routes/evolution.ts EXISTS
+  src/routes/expert.ts EXISTS
+  src/routes/ga-admin.ts EXISTS
+  src/routes/ga-annotations-types.ts EXISTS
+  src/routes/ga-annotations.ts EXISTS
+  src/routes/ga-corrections.ts EXISTS
+  src/routes/ga-diagnosis.ts EXISTS
+  src/routes/ga-evolution.ts EXISTS
+  src/routes/health.ts EXISTS
+  src/routes/healthz.ts EXISTS
+  src/routes/home.ts EXISTS
+  src/routes/im.ts EXISTS
+  src/routes/import.ts EXISTS
+  src/routes/knowledge-ask.ts EXISTS
+  src/routes/knowledge.ts EXISTS
+  src/routes/loops.ts EXISTS
+  src/routes/notifications.ts EXISTS
+  src/routes/ontology-admin.ts EXISTS
+  src/routes/ontology.ts EXISTS
+  src/routes/overflow.ts EXISTS
+  src/routes/permissions.ts EXISTS
+  src/routes/reload.ts EXISTS
+  src/routes/review.ts EXISTS
+  src/routes/self-ops.ts EXISTS
+  src/routes/sentinel-health.ts EXISTS
+  src/routes/sentinel.ts EXISTS
+  src/routes/sessions.ts EXISTS
+  src/routes/solutions.ts EXISTS
+  src/routes/workspace-data.ts EXISTS
+  src/routes/workspace.ts EXISTS
+  src/routes/workspaces-api.ts EXISTS
+  src/security/connector-audit.ts EXISTS
+  src/security/connector-sandbox.ts EXISTS
+  src/security/credential-vault.ts EXISTS
+  src/security/crypto-hash-utils.ts EXISTS
+  src/security/external-hash-store.ts EXISTS
+  src/security/file-guard.ts EXISTS
+  src/security/index.ts EXISTS
+  src/security/pii-scrubber.ts EXISTS
+  src/security/policy-engine.ts EXISTS
+  src/security/pre-upload-validator.ts EXISTS
+  src/security/prompt-injection-detector.ts EXISTS
+  src/security/root-hash-publisher.ts EXISTS
+  src/security/safety-guardrails.ts EXISTS
+  src/sentinel/baseline-store.ts EXISTS
+  src/sentinel/builtins.ts EXISTS
+  src/sentinel/flywheel-aggregator.ts EXISTS
+  src/sentinel/index.ts EXISTS
+  src/sentinel/registry.ts EXISTS
+  src/sentinel/runner.ts EXISTS
+  src/sentinel/sentinel-accuracy.ts EXISTS
+  src/sentinel/sentinel-loader.ts EXISTS
+  src/sentinel/sentinel-runner.ts EXISTS
+  src/sentinel/signal-aggregator.ts EXISTS
+  src/sentinel/types.ts EXISTS
+  src/sentinel/adapters/cash-flow-sentinel.ts EXISTS
+  src/sentinel/adapters/cpc-sentinel.ts EXISTS
+  src/sentinel/adapters/goal-alignment-sentinel.ts EXISTS
+  src/sentinel/adapters/helpers.ts EXISTS
+  src/sentinel/adapters/integration-health-sentinel.ts EXISTS
+  src/services/anomaly-detector.ts EXISTS
+  src/services/anonymizer.ts EXISTS
+  src/services/audit-service.ts EXISTS
+  src/services/background-review.ts EXISTS
+  src/services/behavior-monitor.ts EXISTS
+  src/services/config-recovery.ts EXISTS
+  src/services/container.ts EXISTS
+  src/services/context-budget-tracker.ts EXISTS
+  src/services/db-encryption.ts EXISTS
+  src/services/deepseek-balance.ts EXISTS
+  src/services/email-service.ts EXISTS
+  src/services/escalation-engine.ts EXISTS
+  src/services/fault-recovery.ts EXISTS
+  src/services/federated-pipeline.ts EXISTS
+  src/services/graceful-shutdown.ts EXISTS
+  src/services/llm-cache.ts EXISTS
+  src/services/llm-cost.ts EXISTS
+  src/services/memory-monitor.ts EXISTS
+  src/services/pattern-matcher.ts EXISTS
+  src/services/request-context.ts EXISTS
+  src/services/resource-monitor.ts EXISTS
+  src/services/restart-recovery.ts EXISTS
+  src/services/retry.ts EXISTS
+  src/services/role-template-store.ts EXISTS
+  src/services/runtime-global-handlers.ts EXISTS
+  src/services/solution-generator.ts EXISTS
+  src/services/stuck-session-detector.ts EXISTS
+  src/services/update-checker.ts EXISTS
+  src/skill/index.ts EXISTS
+  src/skill/skill-loader.ts EXISTS
+  src/skill/skill-registry.ts EXISTS
+  src/skills/skill-loader.ts EXISTS
+  src/store/schema-migration.ts EXISTS
+  src/store/session-store.ts EXISTS
+  src/store/storage-backend.ts EXISTS
+  src/tools/accuracy-tools.ts EXISTS
+  src/tools/action-expert-tools.ts EXISTS
+  src/tools/business_model-expert-tools.ts EXISTS
+  src/tools/finance-expert-tools.ts EXISTS
+  src/tools/index.ts EXISTS
+  src/tools/knowledge-expert-tools.ts EXISTS
+  src/tools/marketing-expert-tools.ts EXISTS
+  src/tools/org-expert-tools.ts EXISTS
+  src/tools/pattern-engine.ts EXISTS
+  src/tools/strategy-expert-tools.ts EXISTS
+  src/tools/tech-expert-tools.ts EXISTS
+  src/tools/tool-registry.ts EXISTS
+  src/tui-v2/app.tsx EXISTS
+  src/tui-v2/chat.tsx EXISTS
+  src/tui-v2/demo.tsx EXISTS
+  src/tui-v2/index.ts EXISTS
+  src/tui-v2/types.ts EXISTS
+  src/tui-v2/components/chat-panel.tsx EXISTS
+  src/tui-v2/components/composer.tsx EXISTS
+  src/tui-v2/components/header.tsx EXISTS
+  src/tui-v2/components/message.tsx EXISTS
+  src/tui-v2/components/section-panel.tsx EXISTS
+  src/tui-v2/components/side-panel.tsx EXISTS
+  src/tui-v2/components/status-bar.tsx EXISTS
+  src/tui-v2/components/streaming-text.tsx EXISTS
+  src/tui-v2/hooks/use-event-bus.ts EXISTS
+  src/tui-v2/hooks/use-streaming.ts EXISTS
+  src/tui-v2/lib/bootstrap.ts EXISTS
+  src/tui-v2/lib/commands.ts EXISTS
+  src/tui-v2/lib/grapheme.ts EXISTS
+  src/tui-v2/lib/mouse-input.ts EXISTS
+  src/tui-v2/lib/sidebar-aggregator.ts EXISTS
+  src/tui-v2/lib/theme.ts EXISTS
+  src/tui-v2/lib/thinking.ts EXISTS
+  src/tui-v3/demo-opentui.tsx EXISTS
+  src/tui-v3/demo-unblessed.ts EXISTS
+  src/types/neo-blessed.d.ts EXISTS
+  426 files checked
+[2/11] Type safety (as any)
+  0 as any occurrences
+[3/11] Error handling (empty catch)
+  0 empty catches
+[4/11] Wiring (caller detection)
+  src/cli-manager.ts: export CLIManager -- WARNING: no callers in src/
+  src/cli-manager.ts: export registerDefaultCommands -- WARNING: no callers in src/
+  src/config-file.ts: export validateConfig -- WARNING: no callers in src/
+  src/config-file.ts: export rollbackConfig -- WARNING: no callers in src/
+  src/config-file.ts: export saveFileConfig -- WARNING: no callers in src/
+  src/config-file.ts: export SynovaFileConfig -- WARNING: no callers in src/
+  src/setup.ts: export SetupResult -- WARNING: no callers in src/
+  src/agent/adapter-registry.ts: export RegistryState -- WARNING: no callers in src/
+  src/agent/adapter-registry.ts: export AdapterEntry -- WARNING: no callers in src/
+  src/agent/adapter-scanner.ts: export ScannedAdapter -- WARNING: no callers in src/
+  src/agent/adapter-scanner.ts: export ScanResult -- WARNING: no callers in src/
+  src/agent/boss-mailbox.ts: export WeeklyReport -- WARNING: no callers in src/
+  src/agent/boss-mailbox.ts: export WeeklySignal -- WARNING: no callers in src/
+  src/agent/boss-mailbox.ts: export ActionProgress -- WARNING: no callers in src/
+  src/agent/conflict-arbitrator.ts: export GATicket -- WARNING: no callers in src/
+  src/agent/conflict-arbitrator.ts: export AutoResolution -- WARNING: no callers in src/
+  src/agent/conflict-arbitrator.ts: export ArbitrationSummary -- WARNING: no callers in src/
+  src/agent/convergence-engine.ts: export DivergenceResult -- WARNING: no callers in src/
+  src/agent/convergence-engine.ts: export GAAccuracyData -- WARNING: no callers in src/
+  src/agent/convergence-engine.ts: export SynthesisMatrix -- WARNING: no callers in src/
+  src/agent/convergence-engine.ts: export ConsensusResult -- WARNING: no callers in src/
+  src/agent/convergence-engine.ts: export ConvergenceRule -- WARNING: no callers in src/
+  src/agent/convergence-engine.ts: export ArbitrationResultLike -- WARNING: no callers in src/
+  src/agent/convergence-engine.ts: export ConvergedSynthesis -- WARNING: no callers in src/
+  src/agent/conversation-engine.ts: export EngineState -- WARNING: no callers in src/
+  src/agent/conversation-engine.ts: export ProcessResult -- WARNING: no callers in src/
+  src/agent/cost-budget.ts: export ExecutionCostRecord -- WARNING: no callers in src/
+  src/agent/cost-budget.ts: export BudgetConfig -- WARNING: no callers in src/
+  src/agent/cost-budget.ts: export BudgetStatus -- WARNING: no callers in src/
+  src/agent/cost-budget.ts: export NOOP_BUDGET_TRACKER -- WARNING: no callers in src/
+  src/agent/data-ingest-service.ts: export FieldMappingConfig -- WARNING: no callers in src/
+  src/agent/data-ingest-service.ts: export ingestRow -- WARNING: no callers in src/
+  src/agent/data-ingest-service.ts: export loadFinancialSchema -- WARNING: no callers in src/
+  src/agent/data-ingest-service.ts: export FieldMapping -- WARNING: no callers in src/
+  src/agent/data-ingest-service.ts: export getAvailableAdapters -- WARNING: no callers in src/
+  src/agent/expert-config-loader.ts: export ExpertConfigEntry -- WARNING: no callers in src/
+  src/agent/expert-config-loader.ts: export ExpertRegistryConfig -- WARNING: no callers in src/
+  src/agent/expert-file-loader.ts: export ExpertLoadResult -- WARNING: no callers in src/
+  src/agent/expert-file-loader.ts: export LoadedExpert -- WARNING: no callers in src/
+  src/agent/expert-interaction-protocol.ts: export formatInteraction -- WARNING: no callers in src/
+  src/agent/expert-interaction-protocol.ts: export endorse -- WARNING: no callers in src/
+  src/agent/expert-interaction-protocol.ts: export requestValidation -- WARNING: no callers in src/
+  src/agent/expert-interaction-protocol.ts: export ExpertInteraction -- WARNING: no callers in src/
+  src/agent/expert-router.ts: export ExpertRequest -- WARNING: no callers in src/
+  src/agent/file-scanner.ts: export MeasurerConfig -- WARNING: no callers in src/
+  src/agent/interactive-card.ts: export CardSentinelFinding -- WARNING: no callers in src/
+  src/agent/interactive-card.ts: export CardActionResult -- WARNING: no callers in src/
+  src/agent/interactive-card.ts: export CardMessage -- WARNING: no callers in src/
+  src/agent/interactive-card.ts: export CardActionType -- WARNING: no callers in src/
+  src/agent/interactive-card.ts: export CardUpdate -- WARNING: no callers in src/
+  src/agent/interactive-card.ts: export CardAction -- WARNING: no callers in src/
+  src/agent/knowledge-file-importer.ts: export KnowledgeImportResult -- WARNING: no callers in src/
+  src/agent/knowledge-file-importer.ts: export KnowledgeFileImporter -- WARNING: no callers in src/
+  src/agent/knowledge-file-importer.ts: export ImportedEntry -- WARNING: no callers in src/
+  src/agent/loop-handlers.ts: export LoopExecutionResult -- WARNING: no callers in src/
+  src/agent/main-agent.ts: export LoopStatus -- WARNING: no callers in src/
+  src/agent/main-agent.ts: export LoopExecutionRecord -- WARNING: no callers in src/
+  src/agent/orchestrator-adapter.ts: export DiagnosisLLMClient -- WARNING: no callers in src/
+  src/agent/post-diagnosis-processor.ts: export PostProcessResult -- WARNING: no callers in src/
+  src/agent/proactive-push.ts: export PushMessage -- WARNING: no callers in src/
+  src/agent/proactive-push.ts: export PushChannel -- WARNING: no callers in src/
+  src/agent/proactive-push.ts: export PushResult -- WARNING: no callers in src/
+  src/agent/prompt-assembler.ts: export LoopResult -- WARNING: no callers in src/
+  src/agent/prompt-assembler.ts: export AssembleResult -- WARNING: no callers in src/
+  src/agent/prompt-assembler.ts: export resolvePromptMode -- WARNING: no callers in src/
+  src/agent/prompt-assembler.ts: export PromptContext -- WARNING: no callers in src/
+  src/agent/prompt-assembler.ts: export detectExpertLoop -- WARNING: no callers in src/
+  src/agent/report-assembler.ts: export AssembledReport -- WARNING: no callers in src/
+  src/agent/report-assembler.ts: export ReportDepth -- WARNING: no callers in src/
+  src/agent/sentinel-health-service.ts: export SentinelHealthReport -- WARNING: no callers in src/
+  src/agent/sentinel-service.ts: export RunOnceResponse -- WARNING: no callers in src/
+  src/agent/sentinel-service.ts: export ExpertReportsResponse -- WARNING: no callers in src/
+  src/agent/sentinel-service.ts: export SignalsResponse -- WARNING: no callers in src/
+  src/agent/sentinel-service.ts: export TicketsResponse -- WARNING: no callers in src/
+  src/agent/sentinel-service.ts: export FindingsQuery -- WARNING: no callers in src/
+  src/agent/sentinel-service.ts: export FindingsResponse -- WARNING: no callers in src/
+  src/agent/session-service.ts: export searchSessions -- WARNING: no callers in src/
+  src/agent/session-service.ts: export getSessionMessages -- WARNING: no callers in src/
+  src/agent/skill-lazy-loader.ts: export SkillStub -- WARNING: no callers in src/
+  src/agent/skill-lazy-loader.ts: export SkillLazyLoader -- WARNING: no callers in src/
+  src/agent/task-decomposer.ts: export DecompositionResult -- WARNING: no callers in src/
+  src/agent/task-decomposer.ts: export AggregatedResult -- WARNING: no callers in src/
+  src/agent/task-decomposer.ts: export SentinelFindingLike -- WARNING: no callers in src/
+  src/agent/task-decomposer.ts: export SubTaskResult -- WARNING: no callers in src/
+  src/agent/task-decomposer.ts: export SubTask -- WARNING: no callers in src/
+  src/agent/tool-profiles.ts: export getGuardLevelForRole -- WARNING: no callers in src/
+  src/agent/tool-profiles.ts: export ProfileConfig -- WARNING: no callers in src/
+  src/agent/tool-profiles.ts: export ToolProfile -- WARNING: no callers in src/
+  src/agent/tool-profiles.ts: export TOOL_PROFILES -- WARNING: no callers in src/
+  src/agent/tool-profiles.ts: export filterToolsByProfile -- WARNING: no callers in src/
+  src/agent/tools.ts: export ToolCallResult -- WARNING: no callers in src/
+  src/agent/tools.ts: export GuardrailDecision -- WARNING: no callers in src/
+  src/agent/tools.ts: export ToolExecutionMode -- WARNING: no callers in src/
+  src/agent/tools.ts: export SideEffect -- WARNING: no callers in src/
+  src/agent/tools.ts: export ParallelGate -- WARNING: no callers in src/
+  src/agent/workspace-service.ts: export SubWorkspaceRequest -- WARNING: no callers in src/
+  src/agent-observer/types.ts: export ActivityType -- WARNING: no callers in src/
+  src/agent-observer/types.ts: export AgentStatus -- WARNING: no callers in src/
+  src/agent-observer/types.ts: export AgentPlatform -- WARNING: no callers in src/
+  src/connectors/csv-import.ts: export ImportResult -- WARNING: no callers in src/
+  src/connectors/csv-import.ts: export CSVRow -- WARNING: no callers in src/
+  src/connectors/ima-connector.ts: export ImaSearchResult -- WARNING: no callers in src/
+  src/connectors/ima-connector.ts: export ImaConnector -- WARNING: no callers in src/
+  src/connectors/ima-connector.ts: export ImaKnowledgeBase -- WARNING: no callers in src/
+  src/connectors/ima-connector.ts: export ingestImaResults -- WARNING: no callers in src/
+  src/connectors/ima-connector.ts: export createImaConnector -- WARNING: no callers in src/
+  src/connectors/ima.ts: export decryptApiKey -- WARNING: no callers in src/
+  src/connectors/ima.ts: export DocumentFilter -- WARNING: no callers in src/
+  src/connectors/ima.ts: export encryptApiKey -- WARNING: no callers in src/
+  src/connectors/ima.ts: export ImaDocument -- WARNING: no callers in src/
+  src/connectors/nemoclaw.ts: export NemoClawConnector -- WARNING: no callers in src/
+  src/connectors/unified-connector.ts: export ConnectionStatus -- WARNING: no callers in src/
+  src/connectors/unified-connector.ts: export ConnectorSpec -- WARNING: no callers in src/
+  src/contract/contract-gate.ts: export ValidationItem -- WARNING: no callers in src/
+  src/contract/contract-gate.ts: export NAME -- WARNING: no callers in src/
+  src/control-tower/signal-emitter.ts: export SignalPayload -- WARNING: no callers in src/
+  src/cron/scheduler.ts: export emitEvent -- WARNING: no callers in src/
+  src/cron/scheduler.ts: export onEventType -- WARNING: no callers in src/
+  src/cron/scheduler.ts: export CronJob -- WARNING: no callers in src/
+  src/cycles/cross-scale-validator.ts: export CrossScaleWarning -- WARNING: no callers in src/
+  src/cycles/investment-advisor.ts: export CommitmentItem -- WARNING: no callers in src/
+  src/cycles/investment-advisor.ts: export RelativeEffectRanking -- WARNING: no callers in src/
+  src/cycles/investment-advisor.ts: export InvestmentSimulationResult -- WARNING: no callers in src/
+  src/cycles/investment-advisor.ts: export ExecutionConstraint -- WARNING: no callers in src/
+  src/cycles/overflow-compute.ts: export computeOverflow -- WARNING: no callers in src/
+  src/cycles/overflow-compute.ts: export EnterpriseTimeSeries -- WARNING: no callers in src/
+  src/cycles/overflow-dashboard.ts: export OverflowDashboard -- WARNING: no callers in src/
+  src/cycles/overflow-dashboard.ts: export HeatmapCell -- WARNING: no callers in src/
+  src/cycles/overflow-dashboard.ts: export ConductionStep -- WARNING: no callers in src/
+  src/cycles/overflow-dashboard.ts: export DashboardRow -- WARNING: no callers in src/
+  src/cycles/overflow-graph-bridge.ts: export OverflowHeatmap -- WARNING: no callers in src/
+  src/cycles/overflow-graph-bridge.ts: export writeOverflowSnapshot -- WARNING: no callers in src/
+  src/cycles/overflow-graph-bridge.ts: export OverflowCell -- WARNING: no callers in src/
+  src/cycles/overflow-graph-bridge.ts: export OverflowHeatmapQuery -- WARNING: no callers in src/
+  src/cycles/overflow-graph-bridge.ts: export getOverflowHeatmap -- WARNING: no callers in src/
+  src/deploy/backup-scheduler.ts: export BackupStatus -- WARNING: no callers in src/
+  src/deploy/backup-verify.ts: export probeRemotePack -- WARNING: no callers in src/
+  src/deploy/backup-verify.ts: export RemoteProbeResult -- WARNING: no callers in src/
+  src/deploy/bootstrap.ts: export PhaseDefinition -- WARNING: no callers in src/
+  src/deploy/bootstrap.ts: export PhaseResult -- WARNING: no callers in src/
+  src/deploy/bootstrap.ts: export BootstrapOptions -- WARNING: no callers in src/
+  src/deploy/bootstrap.ts: export BootstrapServices -- WARNING: no callers in src/
+  src/deploy/compute-version.ts: export ComputeContract -- WARNING: no callers in src/
+  src/deploy/compute-version.ts: export ComputeCompatibilityResult -- WARNING: no callers in src/
+  src/deploy/compute-version.ts: export ComputeVersionResult -- WARNING: no callers in src/
+  src/deploy/recovery-pack.ts: export RestoreResult -- WARNING: no callers in src/
+  src/deploy/recovery-pack.ts: export RecoveryPackResult -- WARNING: no callers in src/
+  src/deploy/recovery-pack.ts: export PackMeta -- WARNING: no callers in src/
+  src/deploy/rollback.ts: export SnapshotResult -- WARNING: no callers in src/
+  src/deploy/rollback.ts: export RollbackResult -- WARNING: no callers in src/
+  src/deploy/schema-version.ts: export SchemaCompatibilityResult -- WARNING: no callers in src/
+  src/deploy/schema-version.ts: export DDLChangeType -- WARNING: no callers in src/
+  src/deploy/schema-version.ts: export DDLChange -- WARNING: no callers in src/
+  src/deploy/startup-check.ts: export StartupCheckResult -- WARNING: no callers in src/
+  src/deploy/startup-check.ts: export runStartupChecks -- WARNING: no callers in src/
+  src/deploy/system-self-ops.ts: export OpSeverity -- WARNING: no callers in src/
+  src/deploy/system-self-ops.ts: export SelfOpRequest -- WARNING: no callers in src/
+  src/deploy/system-self-ops.ts: export SystemHealthSnapshot -- WARNING: no callers in src/
+  src/env/env-snapshot-schema.ts: export PythonInfo -- WARNING: no callers in src/
+  src/env/env-snapshot-schema.ts: export EnvironmentSnapshot -- WARNING: no callers in src/
+  src/env/env-snapshot-schema.ts: export TypeScriptInfo -- WARNING: no callers in src/
+  src/env/env-snapshot-schema.ts: export GitInfo -- WARNING: no callers in src/
+  src/env/env-snapshot-schema.ts: export NodeInfo -- WARNING: no callers in src/
+  src/env/env-snapshot-schema.ts: export loadSnapshot -- WARNING: no callers in src/
+  src/env/env-snapshot-schema.ts: export HooksInfo -- WARNING: no callers in src/
+  src/env/env-snapshot-schema.ts: export SystemInfo -- WARNING: no callers in src/
+  src/errors/types.ts: export ClassifyInput -- WARNING: no callers in src/
+  src/errors/types.ts: export normalizeError -- WARNING: no callers in src/
+  src/errors/types.ts: export jitteredBackoff -- WARNING: no callers in src/
+  src/errors/types.ts: export getBackoffForError -- WARNING: no callers in src/
+  src/errors/types.ts: export ErrorCodeType -- WARNING: no callers in src/
+  src/errors/types.ts: export classifyApiError -- WARNING: no callers in src/
+  src/evidence/index.ts: export ConfidenceScorer -- WARNING: no callers in src/
+  src/expert-platform/extractor.ts: export ExpertKnowledgeExtractor -- WARNING: no callers in src/
+  src/expert-platform/outcome-tracker.ts: export StalenessDetector -- WARNING: no callers in src/
+  src/expert-platform/store.ts: export ContributionEntry -- WARNING: no callers in src/
+  src/expert-platform/store.ts: export SQLiteOutcomeStore -- WARNING: no callers in src/
+  src/expert-platform/types.ts: export ExpertValidation -- WARNING: no callers in src/
+  src/growth/action-types.ts: export ActionVerification -- WARNING: no callers in src/
+  src/growth/action-types.ts: export LoopAssociation -- WARNING: no callers in src/
+  src/growth/context-loader.ts: export MergeResult -- WARNING: no callers in src/
+  src/growth/context-loader.ts: export EnterpriseOverrides -- WARNING: no callers in src/
+  src/growth/feedback-collector.ts: export FeedbackRecord -- WARNING: no callers in src/
+  src/growth/feedback-collector.ts: export MiddleFeedbackInput -- WARNING: no callers in src/
+  src/growth/feedback-collector.ts: export FeedbackTargetType -- WARNING: no callers in src/
+  src/growth/feedback-collector.ts: export FEEDBACK_DDL -- WARNING: no callers in src/
+  src/growth/feedback-collector.ts: export FeedbackDecision -- WARNING: no callers in src/
+  src/growth/feedback-collector.ts: export FeedbackQuery -- WARNING: no callers in src/
+  src/growth/goal-conflict-detector.ts: export resolveConflict -- WARNING: no callers in src/
+  src/growth/goal-conflict-detector.ts: export ConflictResolutionRecord -- WARNING: no callers in src/
+  src/growth/goal-conflict-detector.ts: export CascadeImpact -- WARNING: no callers in src/
+  src/growth/goal-conflict-detector.ts: export detectCascadeImpact -- WARNING: no callers in src/
+  src/growth/goal-conflict-detector.ts: export ConflictDescription -- WARNING: no callers in src/
+  src/growth/goal-conflict-detector.ts: export ConflictResolution -- WARNING: no callers in src/
+  src/growth/goal-lifecycle.ts: export verifyEffect -- WARNING: no callers in src/
+  src/growth/goal-lifecycle.ts: export transitionGoal -- WARNING: no callers in src/
+  src/growth/goal-lifecycle.ts: export archiveGoal -- WARNING: no callers in src/
+  src/growth/goal-sentinel-lifecycle.ts: export resumeOnGoalResumed -- WARNING: no callers in src/
+  src/growth/goal-sentinel.ts: export BaselineStatus -- WARNING: no callers in src/
+  src/growth/goal-store.ts: export checkDraftPreconditions -- WARNING: no callers in src/
+  src/growth/goal-store.ts: export checkCompletionPreconditions -- WARNING: no callers in src/
+  src/growth/goal-store.ts: export listGoalsByOrg -- WARNING: no callers in src/
+  src/growth/goal-store.ts: export getActiveGoalCount -- WARNING: no callers in src/
+  src/growth/goal-types.ts: export VALID_GOAL_STATUSES -- WARNING: no callers in src/
+  src/growth/knowledge-feedback.ts: export DeviationClassifier -- WARNING: no callers in src/
+  src/growth/knowledge-feedback.ts: export MetricComparison -- WARNING: no callers in src/
+  src/growth/knowledge-feedback.ts: export GoalExecutionKnowledge -- WARNING: no callers in src/
+  src/growth/lightweight-diagnosis.ts: export LightweightReDiagnosisDeps -- WARNING: no callers in src/
+  src/growth/lightweight-diagnosis.ts: export GoalAdjustmentProposal -- WARNING: no callers in src/
+  src/growth/lightweight-diagnosis.ts: export LightweightReDiagnosisInput -- WARNING: no callers in src/
+  src/growth/lightweight-diagnosis.ts: export ExpertRediagnosisResult -- WARNING: no callers in src/
+  src/growth/lightweight-diagnosis.ts: export MiniDiagnosisContext -- WARNING: no callers in src/
+  src/growth/lightweight-diagnosis.ts: export lightweightReDiagnosis -- WARNING: no callers in src/
+  src/growth/proposal-engine.ts: export generateGoalFromProposal -- WARNING: no callers in src/
+  src/growth/proposal-engine.ts: export handleDispute -- WARNING: no callers in src/
+  src/growth/proposal-engine.ts: export DiagnosisReportLike -- WARNING: no callers in src/
+  src/growth/proposal-engine.ts: export startProposalExecution -- WARNING: no callers in src/
+  src/growth/proposal-engine.ts: export checkExpiryAndAutoSelect -- WARNING: no callers in src/
+  src/growth/proposal-store.ts: export confirmByGa -- WARNING: no callers in src/
+  src/growth/proposal-store.ts: export PROPOSAL_TRANSITIONS -- WARNING: no callers in src/
+  src/growth/proposal-store.ts: export selectPath -- WARNING: no callers in src/
+  src/growth/proposal-store.ts: export rejectByGa -- WARNING: no callers in src/
+  src/growth/proposal-store.ts: export isValidProposalTransition -- WARNING: no callers in src/
+  src/growth/proposal-store.ts: export listPendingProposals -- WARNING: no callers in src/
+  src/growth/proposal-types.ts: export MAX_CHANGE_COUNT -- WARNING: no callers in src/
+  src/growth/proposal-types.ts: export VALID_PROPOSAL_STATUSES -- WARNING: no callers in src/
+  src/growth/proposal-types.ts: export PROPOSAL_EXPIRY_MS -- WARNING: no callers in src/
+  src/growth/proposal-types.ts: export PROPOSAL_FORGOTTEN_MS -- WARNING: no callers in src/
+  src/growth/proposal-types.ts: export ProposalDispute -- WARNING: no callers in src/
+  src/growth/skill-knowledge.ts: export SKILL_ENTRIES -- WARNING: no callers in src/
+  src/growth/skill-knowledge.ts: export seedSkillKnowledge -- WARNING: no callers in src/
+  src/growth/skill-knowledge.ts: export SkillKnowledgeEntry -- WARNING: no callers in src/
+  src/growth/skill-knowledge.ts: export ToolRegistryLike -- WARNING: no callers in src/
+  src/growth/skill-knowledge.ts: export registerToolQueryKnowledge -- WARNING: no callers in src/
+  src/infra/command-lanes.ts: export LaneStats -- WARNING: no callers in src/
+  src/infra/command-lanes.ts: export CommandLanesConfig -- WARNING: no callers in src/
+  src/infra/command-lanes.ts: export LaneId -- WARNING: no callers in src/
+  src/infra/trace-context.ts: export getTraceBindings -- WARNING: no callers in src/
+  src/infra/trace-context.ts: export getTraceContext -- WARNING: no callers in src/
+  src/infra/trace-context.ts: export runWithTraceAsync -- WARNING: no callers in src/
+  src/infra/trace-context.ts: export runWithTrace -- WARNING: no callers in src/
+  src/infra/trace-context.ts: export generateTraceId -- WARNING: no callers in src/
+  src/infra/trace-context.ts: export generateSpanId -- WARNING: no callers in src/
+  src/infra/trace-context.ts: export TraceContext -- WARNING: no callers in src/
+  src/ingest/data-pipeline-monitor.ts: export getPipelineHealth -- WARNING: no callers in src/
+  src/ingest/data-pipeline-monitor.ts: export PipelineHealth -- WARNING: no callers in src/
+  src/ingest/knowledge-ingest-bridge.ts: export ingestDocumentText -- WARNING: no callers in src/
+  src/interview/engine.ts: export getRoleDimensions -- WARNING: no callers in src/
+  src/interview/engine.ts: export DEFAULT_ROLE_WEIGHTS -- WARNING: no callers in src/
+  src/interview/engine.ts: export aggregateResults -- WARNING: no callers in src/
+  src/interview/engine.ts: export RoleQuestionMatrix -- WARNING: no callers in src/
+  src/interview/engine.ts: export getAllDimensions -- WARNING: no callers in src/
+  src/interview/engine.ts: export ROLE_DIMENSIONS -- WARNING: no callers in src/
+  src/interview/gpi-estimator.ts: export GPIInput -- WARNING: no callers in src/
+  src/interview/gpi-estimator.ts: export GPIEstimate -- WARNING: no callers in src/
+  src/interview/gpi-estimator.ts: export GPIFactorEstimate -- WARNING: no callers in src/
+  src/interview/question-bank.ts: export getQuestionSet -- WARNING: no callers in src/
+  src/interview/question-bank.ts: export getQuestions -- WARNING: no callers in src/
+  src/interview/question-bank.ts: export InterviewQuestion -- WARNING: no callers in src/
+  src/interview/question-bank.ts: export QUESTION_BANK -- WARNING: no callers in src/
+  src/interview/question-bank.ts: export getTotalQuestionCount -- WARNING: no callers in src/
+  src/interview/roles.ts: export getInterviewRole -- WARNING: no callers in src/
+  src/interview/roles.ts: export getRolesByLevel -- WARNING: no callers in src/
+  src/interview/signals.ts: export EvidenceType -- WARNING: no callers in src/
+  src/interview/signals.ts: export SignalStrength -- WARNING: no callers in src/
+  src/interview/signals.ts: export RoleSignalSet -- WARNING: no callers in src/
+  src/l1/im-channel.ts: export IMCard -- WARNING: no callers in src/
+  src/l1/im-channel.ts: export IMMessage -- WARNING: no callers in src/
+  src/l1/im-channel.ts: export IMChannel -- WARNING: no callers in src/
+  src/l1/im-inbound.ts: export stopSessionCleanup -- WARNING: no callers in src/
+  src/l1/im-inbound.ts: export InboundMessage -- WARNING: no callers in src/
+  src/l1/im-inbound.ts: export InboundResult -- WARNING: no callers in src/
+  src/l1/im-inbound.ts: export startSessionCleanup -- WARNING: no callers in src/
+  src/l1/qa-router.ts: export QAResponse -- WARNING: no callers in src/
+  src/l1/qa-router.ts: export QARequest -- WARNING: no callers in src/
+  src/l1-interaction/web-adapter.ts: export WebViewAdapter -- WARNING: no callers in src/
+  src/l2/domain-keywords.ts: export DomainKeywordSet -- WARNING: no callers in src/
+  src/l2/domain-keywords.ts: export registerKeywords -- WARNING: no callers in src/
+  src/l2/expert-router.ts: export RouteMode -- WARNING: no callers in src/
+  src/l2/expert-router.ts: export RouteContext -- WARNING: no callers in src/
+  src/l2/expert-router.ts: export LLMClassifier -- WARNING: no callers in src/
+  src/l2/expert-router.ts: export ExpertId -- WARNING: no callers in src/
+  src/l2/expert-router.ts: export getExpertRouter -- WARNING: no callers in src/
+  src/l3/assumption-monitor.ts: export AssumptionMonitorResult -- WARNING: no callers in src/
+  src/l3/assumption-monitor.ts: export AssumptionFinding -- WARNING: no callers in src/
+  src/l3/briefing-generator.ts: export DailyBriefing -- WARNING: no callers in src/
+  src/l3/briefing-generator.ts: export getBriefingGenerator -- WARNING: no callers in src/
+  src/l3/business-model-canvas.ts: export formatCanvasSummary -- WARNING: no callers in src/
+  src/l3/business-model-canvas.ts: export computeCanvas -- WARNING: no callers in src/
+  src/l3/business-model-canvas.ts: export BusinessModelCanvasReport -- WARNING: no callers in src/
+  src/l3/business-model-canvas.ts: export CostStructureData -- WARNING: no callers in src/
+  src/l3/business-model-canvas.ts: export CustomerSegmentData -- WARNING: no callers in src/
+  src/l3/business-model-canvas.ts: export CanvasElement -- WARNING: no callers in src/
+  src/l3/business-model-canvas.ts: export RevenueStreamData -- WARNING: no callers in src/
+  src/l3/business-model-loader.ts: export clearBusinessModelCache -- WARNING: no callers in src/
+  src/l3/business-model-loader.ts: export loadBusinessModels -- WARNING: no callers in src/
+  src/l3/business-model-loader.ts: export BusinessModelDef -- WARNING: no callers in src/
+  src/l3/expert-autonomy.ts: export AutonomyConfig -- WARNING: no callers in src/
+  src/l3/expert-autonomy.ts: export LLMReActResponse -- WARNING: no callers in src/
+  src/l3/expert-autonomy.ts: export AutonomyInput -- WARNING: no callers in src/
+  src/l3/expert-autonomy.ts: export AutonomyResult -- WARNING: no callers in src/
+  src/l3/expert-dispatcher.ts: export EXPERT_REPORT_SCHEMA -- WARNING: no callers in src/
+  src/l3/expert-dispatcher.ts: export ExpertDispatcherConfig -- WARNING: no callers in src/
+  src/l3/expert-dispatcher.ts: export getReportWithCorrections -- WARNING: no callers in src/
+  src/l3/expert-output-schema.ts: export ValidatedExpertOutput -- WARNING: no callers in src/
+  src/l3/expert-output-schema.ts: export ExpertValidationResult -- WARNING: no callers in src/
+  src/l3/expert-output-schema.ts: export UncertaintySchema -- WARNING: no callers in src/
+  src/l3/expert-output-schema.ts: export ExpertOutputSchema -- WARNING: no callers in src/
+  src/l3/expert-output-schema.ts: export FindingSchema -- WARNING: no callers in src/
+  src/l3/expert-output-schema.ts: export CrossReferenceSchema -- WARNING: no callers in src/
+  src/l3/expert-output-schema.ts: export ConflictingSignalSchema -- WARNING: no callers in src/
+  src/l3/framework-loader.ts: export Framework -- WARNING: no callers in src/
+  src/l3/framework-loader.ts: export SkillPattern -- WARNING: no callers in src/
+  src/l3/ga-collaboration.ts: export GAFeedbackResult -- WARNING: no callers in src/
+  src/l3/ga-collaboration.ts: export GAFeedbackAction -- WARNING: no callers in src/
+  src/l3/gear6-scheduler.ts: export stopGear6Scheduler -- WARNING: no callers in src/
+  src/l3/key-person-risk.ts: export checkKeyPersonRisk -- WARNING: no callers in src/
+  src/l3/key-person-risk.ts: export KeyPersonRiskResult -- WARNING: no callers in src/
+  src/l3/key-person-risk.ts: export computeBusFactor -- WARNING: no callers in src/
+  src/l3/key-person-risk.ts: export formatRiskForLLM -- WARNING: no callers in src/
+  src/l3/knowledge-agent.ts: export KnowledgeAgentConfig -- WARNING: no callers in src/
+  src/l3/pkb-lifecycle.ts: export runPKBLifecycle -- WARNING: no callers in src/
+  src/l3/pkb-lifecycle.ts: export extractSedimentInputs -- WARNING: no callers in src/
+  src/l3/pkb-lifecycle.ts: export SedimentResult -- WARNING: no callers in src/
+  src/l3/pkb-lifecycle.ts: export autoSediment -- WARNING: no callers in src/
+  src/l3/pkb-lifecycle.ts: export calibrateThresholds -- WARNING: no callers in src/
+  src/l3/pkb-lifecycle.ts: export SedimentInput -- WARNING: no callers in src/
+  src/l3/platform-dependency-check.ts: export PlatformDependencyFinding -- WARNING: no callers in src/
+  src/l3/platform-dependency-check.ts: export PlatformDependencyResult -- WARNING: no callers in src/
+  src/l3/quality-firewall.ts: export FirewallResult -- WARNING: no callers in src/
+  src/l3/quality-firewall.ts: export FirewallInput -- WARNING: no callers in src/
+  src/l3/report-template-loader.ts: export LoadedTemplate -- WARNING: no callers in src/
+  src/l3/report-template-loader.ts: export TemplateData -- WARNING: no callers in src/
+  src/l3/report-templates.ts: export ReportTemplate -- WARNING: no callers in src/
+  src/l3/rule-loader.ts: export SignalRouting -- WARNING: no callers in src/
+  src/l3/rule-loader.ts: export SensitivityRule -- WARNING: no callers in src/
+  src/l3/rule-loader.ts: export UpgradeStrategy -- WARNING: no callers in src/
+  src/l3/rule-loader.ts: export LoadedRules -- WARNING: no callers in src/
+  src/l3/rule-loader.ts: export getSignalRouting -- WARNING: no callers in src/
+  src/l3/rule-loader.ts: export DiagnosticRule -- WARNING: no callers in src/
+  src/l3/synova-diagnosis-engine.ts: export DegradedEvent -- WARNING: no callers in src/
+  src/l3/synova-diagnosis-engine.ts: export ReportReadyEvent -- WARNING: no callers in src/
+  src/l3/synova-diagnosis-engine.ts: export RootCauseIdentifiedEvent -- WARNING: no callers in src/
+  src/l3/synova-diagnosis-engine.ts: export CommunityReportsEvent -- WARNING: no callers in src/
+  src/l3/synova-diagnosis-engine.ts: export ErrorEvent -- WARNING: no callers in src/
+  src/l3/synova-diagnosis-engine.ts: export PhaseCompletedEvent -- WARNING: no callers in src/
+  src/l3/synova-diagnosis-engine.ts: export DiagnosisDepth -- WARNING: no callers in src/
+  src/l3/synova-diagnosis-engine.ts: export HypothesisGeneratedEvent -- WARNING: no callers in src/
+  src/l3/synova-diagnosis-engine.ts: export LLMResponseEvent -- WARNING: no callers in src/
+  src/l3/synova-diagnosis-engine.ts: export DiagnosisEventType -- WARNING: no callers in src/
+  src/l3/synova-diagnosis-engine.ts: export ContradictionDetectedEvent -- WARNING: no callers in src/
+  src/l3/synova-diagnosis-engine.ts: export ExpertHypothesisEvent -- WARNING: no callers in src/
+  src/l3/synova-diagnosis-engine.ts: export RightColumnUpdateEvent -- WARNING: no callers in src/
+  src/l3/synova-diagnosis-engine.ts: export GraphUpdateEvent -- WARNING: no callers in src/
+  src/l3/synova-diagnosis-engine.ts: export PhaseStartedEvent -- WARNING: no callers in src/
+  src/l3/synova-diagnosis-engine.ts: export LLMFallbackEvent -- WARNING: no callers in src/
+  src/l3/synova-diagnosis-engine.ts: export HypothesisRefutedEvent -- WARNING: no callers in src/
+  src/l3/synova-diagnosis-engine.ts: export EvidenceAddedEvent -- WARNING: no callers in src/
+  src/l3/synova-diagnosis-engine.ts: export EntityResolutionEvent -- WARNING: no callers in src/
+  src/l3/tone-enforcer.ts: export EnforceReportResult -- WARNING: no callers in src/
+  src/l3/tone-enforcer.ts: export EnforceConversationResult -- WARNING: no callers in src/
+  src/l3/tone-enforcer.ts: export EnforceRoleConsistencyResult -- WARNING: no callers in src/
+  src/l3/tone-enforcer.ts: export enforceConversation -- WARNING: no callers in src/
+  src/l3/tone-enforcer.ts: export enforceRoleConsistency -- WARNING: no callers in src/
+  src/l3/tool-guard.ts: export ToolCallRecord -- WARNING: no callers in src/
+  src/l3/tool-guard.ts: export LoopRecord -- WARNING: no callers in src/
+  src/l3/tool-guard.ts: export ToolGuardDecision -- WARNING: no callers in src/
+  src/l4/adapter-loader.ts: export AdapterManifest -- WARNING: no callers in src/
+  src/l4/agent-memory-store.ts: export MemoryType -- WARNING: no callers in src/
+  src/l4/data-exporter.ts: export ExportArchive -- WARNING: no callers in src/
+  src/l4/data-exporter.ts: export ExportedNode -- WARNING: no callers in src/
+  src/l4/data-exporter.ts: export ExportedEdge -- WARNING: no callers in src/
+  src/l4/data-exporter.ts: export ExportedSession -- WARNING: no callers in src/
+  src/l4/data-purger.ts: export PurgeStage -- WARNING: no callers in src/
+  src/l4/data-purger.ts: export PurgeStatus -- WARNING: no callers in src/
+  src/l4/data-purger.ts: export PurgeStageName -- WARNING: no callers in src/
+  src/l4/delivery-queue-store.ts: export EntryStatus -- WARNING: no callers in src/
+  src/l4/delivery-queue-store.ts: export DeliveryQueueEntry -- WARNING: no callers in src/
+  src/l4/delivery-queue.ts: export DeliveryStoreLike -- WARNING: no callers in src/
+  src/l4/department-memory-store.ts: export CrossDeptSignal -- WARNING: no callers in src/
+  src/l4/department-memory-store.ts: export scanCrossDeptSignals -- WARNING: no callers in src/
+  src/l4/diagnosis-graph-query.ts: export GraphDiff -- WARNING: no callers in src/
+  src/l4/diagnosis-graph-query.ts: export getGraphDiff -- WARNING: no callers in src/
+  src/l4/diagnosis-graph-query.ts: export BrokerNode -- WARNING: no callers in src/
+  src/l4/diagnosis-graph-query.ts: export SubgraphSummary -- WARNING: no callers in src/
+  src/l4/diagnosis-graph-query.ts: export AnomalyPattern -- WARNING: no callers in src/
+  src/l4/diagnosis-graph-query.ts: export detectAnomalousPatterns -- WARNING: no callers in src/
+  src/l4/entity-resolver.ts: export EntityMatch -- WARNING: no callers in src/
+  src/l4/graph-bridge.ts: export NodeConflictInfo -- WARNING: no callers in src/
+  src/l4/graph-bridge.ts: export getNodeConflictInfo -- WARNING: no callers in src/
+  src/l4/industry-loader.ts: export getIndustry -- WARNING: no callers in src/
+  src/l4/industry-loader.ts: export clearIndustryCache -- WARNING: no callers in src/
+  src/l4/industry-loader.ts: export loadIndustries -- WARNING: no callers in src/
+  src/l4/industry-loader.ts: export IndustryManifest -- WARNING: no callers in src/
+  src/l4/industry-loader.ts: export listIndustries -- WARNING: no callers in src/
+  src/l4/knowledge-store.ts: export SearchStats -- WARNING: no callers in src/
+  src/l4/migration-validator.ts: export validateMigration -- WARNING: no callers in src/
+  src/l4/ontology-loader.ts: export LoadedOntology -- WARNING: no callers in src/
+  src/l4/ontology-loader.ts: export EdgeTypeDef -- WARNING: no callers in src/
+  src/l4/ontology-loader.ts: export NodeTypeDef -- WARNING: no callers in src/
+  src/l4/report-graph-adapter.ts: export NodeStats -- WARNING: no callers in src/
+  src/l4/report-graph-adapter.ts: export RiskSummaryItem -- WARNING: no callers in src/
+  src/l4/review-store.ts: export ReviewStore -- WARNING: no callers in src/
+  src/l4/sog-schema-validator.ts: export validateNodeProps -- WARNING: no callers in src/
+  src/l4/sog-schema-validator.ts: export PropRule -- WARNING: no callers in src/
+  src/l4/sog-schema-validator.ts: export SchemaRule -- WARNING: no callers in src/
+  src/l4/temporal-baseline.ts: export computeTemporalBaseline -- WARNING: no callers in src/
+  src/l4/traversal-permission-filter.ts: export TraversalFilterOptions -- WARNING: no callers in src/
+  src/l4/traversal-permission-filter.ts: export TraversalPermissionFilter -- WARNING: no callers in src/
+  src/l4/triple-reflection.ts: export TripleReflection -- WARNING: no callers in src/
+  src/l5/alert-rules.ts: export AlertRule -- WARNING: no callers in src/
+  src/l5/alert-rules.ts: export AlertTrigger -- WARNING: no callers in src/
+  src/l5/connector-pipeline.ts: export scheduledConnectorSync -- WARNING: no callers in src/
+  src/l5/connector-pipeline.ts: export PipelineResult -- WARNING: no callers in src/
+  src/llm/circuit-breaker.ts: export CircuitBreakerConfig -- WARNING: no callers in src/
+  src/llm/output-validator.ts: export validateLLMOutput -- WARNING: no callers in src/
+  src/llm/output-validator.ts: export LLMJsonOutputSchema -- WARNING: no callers in src/
+  src/llm/output-validator.ts: export ValidationResult -- WARNING: no callers in src/
+  src/llm/output-validator.ts: export ExpertTemplateSchema -- WARNING: no callers in src/
+  src/llm/retry-middleware.ts: export callWithRetry -- WARNING: no callers in src/
+  src/llm/types.ts: export TRANSIENT_ERROR_PATTERNS -- WARNING: no callers in src/
+  src/llm/types.ts: export RETRYABLE_STATUS_CODES -- WARNING: no callers in src/
+  src/llm/types.ts: export LLMCallOptions -- WARNING: no callers in src/
+  src/locale/locale-loader.ts: export LocaleStrings -- WARNING: no callers in src/
+  src/loops/direction-monitor.ts: export EdgeDeviation -- WARNING: no callers in src/
+  src/loops/direction-monitor.ts: export DirectionReport -- WARNING: no callers in src/
+  src/loops/direction-monitor.ts: export DirectionStatus -- WARNING: no callers in src/
+  src/loops/direction-monitor.ts: export EdgeCategory -- WARNING: no callers in src/
+  src/loops/direction-monitor.ts: export EdgeStoreReader -- WARNING: no callers in src/
+  src/loops/direction-monitor.ts: export CategoryDeviation -- WARNING: no callers in src/
+  src/loops/direction-monitor.ts: export DirectionMonitor -- WARNING: no callers in src/
+  src/loops/loop-scheduler.ts: export HeartbeatRecord -- WARNING: no callers in src/
+  src/loops/loop-scheduler.ts: export CronSchedulerLike -- WARNING: no callers in src/
+  src/loops/loop-scheduler.ts: export NextTriggerInfo -- WARNING: no callers in src/
+  src/loops/loop-scheduler.ts: export TriggerEvent -- WARNING: no callers in src/
+  src/loops/loop-scheduler.ts: export StagnationReport -- WARNING: no callers in src/
+  src/loops/middle-evolution-engine.ts: export applyEvolutionActions -- WARNING: no callers in src/
+  src/loops/middle-evolution-engine.ts: export ApplyActionResult -- WARNING: no callers in src/
+  src/loops/middle-evolution-engine.ts: export EvolutionAction -- WARNING: no callers in src/
+  src/loops/middle-evolution-engine.ts: export processFeedbackSignals -- WARNING: no callers in src/
+  src/loops/middle-evolution-engine.ts: export computeGAProtection -- WARNING: no callers in src/
+  src/loops/middle-evolution-engine.ts: export EvolutionActionType -- WARNING: no callers in src/
+  src/loops/middle-evolution-engine.ts: export GAProtectionResult -- WARNING: no callers in src/
+  src/mcp/bridge.ts: export MCPCallResult -- WARNING: no callers in src/
+  src/mcp/skill-installer.ts: export InstallResult -- WARNING: no callers in src/
+  src/mcp/skill-installer.ts: export SkillInstaller -- WARNING: no callers in src/
+  src/middleware/auth.ts: export AuthRequestContext -- WARNING: no callers in src/
+  src/middleware/auth.ts: export JwtPayload -- WARNING: no callers in src/
+  src/middleware/auth.ts: export isTokenRevoked -- WARNING: no callers in src/
+  src/middleware/auth.ts: export clearRevokedTokens -- WARNING: no callers in src/
+  src/middleware/rate-limit.ts: export RateLimitMiddleware -- WARNING: no callers in src/
+  src/middleware/rate-limit.ts: export FixedWindowLimiter -- WARNING: no callers in src/
+  src/middleware/rate-limit.ts: export createLLMRateLimiter -- WARNING: no callers in src/
+  src/middleware/rate-limit.ts: export LLMRateLimiter -- WARNING: no callers in src/
+  src/middleware/rate-limit.ts: export AuthRateLimiter -- WARNING: no callers in src/
+  src/middleware/rate-limit.ts: export createAuthRateLimiter -- WARNING: no callers in src/
+  src/middleware/rate-limiter.ts: export clearRateStore -- WARNING: no callers in src/
+  src/middleware/rate-limiter.ts: export checkRateLimit -- WARNING: no callers in src/
+  src/middleware/rate-limiter.ts: export RateCheckResult -- WARNING: no callers in src/
+  src/middleware/rbac.ts: export derivePermissions -- WARNING: no callers in src/
+  src/middleware/rbac.ts: export isGaFrozen -- WARNING: no callers in src/
+  src/middleware/rbac.ts: export GAConstraints -- WARNING: no callers in src/
+  src/middleware/rbac.ts: export canDownloadRawData -- WARNING: no callers in src/
+  src/middleware/rbac.ts: export auditGaAccess -- WARNING: no callers in src/
+  src/middleware/rbac.ts: export RbacContext -- WARNING: no callers in src/
+  src/middleware/rbac.ts: export canGaAccessSensitivity -- WARNING: no callers in src/
+  src/middleware/rbac.ts: export canGaAccessDept -- WARNING: no callers in src/
+  src/middleware/rbac.ts: export isGaContractExpired -- WARNING: no callers in src/
+  src/monitoring/data-quality-gate.ts: export QualityReport -- WARNING: no callers in src/
+  src/monitoring/data-quality-gate.ts: export COLD_START_PHASES -- WARNING: no callers in src/
+  src/monitoring/data-quality-gate.ts: export DataMaturity -- WARNING: no callers in src/
+  src/monitoring/data-quality-gate.ts: export DataSmellCheckResult -- WARNING: no callers in src/
+  src/monitoring/data-quality-gate.ts: export DegradedLevel -- WARNING: no callers in src/
+  src/monitoring/data-quality-gate.ts: export FieldDescriptor -- WARNING: no callers in src/
+  src/monitoring/data-quality-gate.ts: export POOL_CATEGORY -- WARNING: no callers in src/
+  src/monitoring/data-quality-gate.ts: export FRESHNESS_THRESHOLDS -- WARNING: no callers in src/
+  src/monitoring/data-quality-gate.ts: export QualityCheck -- WARNING: no callers in src/
+  src/monitoring/data-quality-gate.ts: export ColdStartPhase -- WARNING: no callers in src/
+  src/monitoring/data-quality-gate.ts: export CompletenessCheckResult -- WARNING: no callers in src/
+  src/monitoring/data-quality-gate.ts: export DataQualityGate -- WARNING: no callers in src/
+  src/monitoring/data-quality-gate.ts: export FreshnessCheckResult -- WARNING: no callers in src/
+  src/monitoring/data-quality-gate.ts: export COLD_START_DAYS -- WARNING: no callers in src/
+  src/monitoring/freshness-tracker.ts: export ExpectedFrequency -- WARNING: no callers in src/
+  src/monitoring/freshness-tracker.ts: export FreshnessStatus -- WARNING: no callers in src/
+  src/monitoring/system-health.ts: export BackupInfo -- WARNING: no callers in src/
+  src/monitoring/system-health.ts: export SentinelSummary -- WARNING: no callers in src/
+  src/monitoring/system-health.ts: export SystemHealthReport -- WARNING: no callers in src/
+  src/notifications/registry.ts: export unregisterNotificationAdapter -- WARNING: no callers in src/
+  src/notifications/registry.ts: export clearNotificationRegistry -- WARNING: no callers in src/
+  src/notifications/types.ts: export NotificationPriority -- WARNING: no callers in src/
+  src/notifications/types.ts: export NotificationTargetSystem -- WARNING: no callers in src/
+  src/orchestrator/context-compressor.ts: export CompressionStrategy -- WARNING: no callers in src/
+  src/orchestrator/context-compressor.ts: export CompressionResult -- WARNING: no callers in src/
+  src/orchestrator/context-engine.ts: export CompressStats -- WARNING: no callers in src/
+  src/orchestrator/context-engine.ts: export ContextEngineOptions -- WARNING: no callers in src/
+  src/orchestrator/context-engine.ts: export CompressResult -- WARNING: no callers in src/
+  src/orchestrator/context-engine.ts: export ContextStrategy -- WARNING: no callers in src/
+  src/orchestrator/diagnosis-orchestrator.ts: export OrchestratorConfig -- WARNING: no callers in src/
+  src/orchestrator/dimension-registry.ts: export DimensionQuestion -- WARNING: no callers in src/
+  src/orchestrator/hook-runner.ts: export PostToolUseFailureHook -- WARNING: no callers in src/
+  src/orchestrator/hook-runner.ts: export PostToolUseHook -- WARNING: no callers in src/
+  src/orchestrator/hook-runner.ts: export PreToolUseHook -- WARNING: no callers in src/
+  src/orchestrator/hook-runner.ts: export PreToolUseResult -- WARNING: no callers in src/
+  src/orchestrator/intent-router.ts: export Intent -- WARNING: no callers in src/
+  src/orchestrator/intent-router.ts: export IntentCategory -- WARNING: no callers in src/
+  src/orchestrator/intent-router.ts: export NonDiagnosticIntent -- WARNING: no callers in src/
+  src/orchestrator/intent-router.ts: export DiagnosticIntent -- WARNING: no callers in src/
+  src/orchestrator/llm-phase-executor.ts: export LLMPhaseConfig -- WARNING: no callers in src/
+  src/orchestrator/llm-phase-executor.ts: export TurnResult -- WARNING: no callers in src/
+  src/orchestrator/phase-gate-check.ts: export PhaseGateResult -- WARNING: no callers in src/
+  src/orchestrator/phase-gate-check.ts: export PhaseGateConfig -- WARNING: no callers in src/
+  src/orchestrator/phase0-engine.ts: export Phase0Response -- WARNING: no callers in src/
+  src/orchestrator/subagent-coordinator.ts: export AnonymizationRule -- WARNING: no callers in src/
+  src/pipeline/judgment-card.ts: export JudgmentAction -- WARNING: no callers in src/
+  src/pipeline/judgment-card.ts: export ConfidenceLevel -- WARNING: no callers in src/
+  src/pipeline/judgment-card.ts: export JudgmentCard -- WARNING: no callers in src/
+  src/pipeline/judgment-card.ts: export JudgmentCardInput -- WARNING: no callers in src/
+  src/pipeline/narrative-generator.ts: export SignalInput -- WARNING: no callers in src/
+  src/pipeline/narrative-generator.ts: export generateNarrative -- WARNING: no callers in src/
+  src/playbook/execution-store.ts: export ExecutionStore -- WARNING: no callers in src/
+  src/playbook/playbook-loader.ts: export recordPlaybookExecution -- WARNING: no callers in src/
+  src/playbook/playbook-types.ts: export CrossExpertInteraction -- WARNING: no callers in src/
+  src/playbook/playbook-types.ts: export StepResult -- WARNING: no callers in src/
+  src/providers/base.ts: export ProviderAdapterConfig -- WARNING: no callers in src/
+  src/providers/llm-provider-loader.ts: export getLLMProvider -- WARNING: no callers in src/
+  src/providers/llm-provider-loader.ts: export loadLLMProviders -- WARNING: no callers in src/
+  src/providers/llm-provider-loader.ts: export LLMProviderManifest -- WARNING: no callers in src/
+  src/providers/llm-provider-loader.ts: export clearLLMProviderCache -- WARNING: no callers in src/
+  src/providers/message-sanitizer.ts: export sanitizeMessage -- WARNING: no callers in src/
+  src/providers/registry.ts: export ProviderRegistry -- WARNING: no callers in src/
+  src/providers/registry.ts: export createProviderChain -- WARNING: no callers in src/
+  src/providers/registry.ts: export HealthMatrix -- WARNING: no callers in src/
+  src/providers/registry.ts: export CredentialEntry -- WARNING: no callers in src/
+  src/providers/registry.ts: export CredentialPoolConfig -- WARNING: no callers in src/
+  src/providers/registry.ts: export detectProviderFromUrl -- WARNING: no callers in src/
+  src/routes/admin-knowledge.ts: export setFederatedPipeline -- WARNING: no callers in src/
+  src/routes/admin-knowledge.ts: export setKnowledgeStore -- WARNING: no callers in src/
+  src/routes/credentials.ts: export getStoredCredentials -- WARNING: no callers in src/
+  src/routes/diagnosis-upload-v2.ts: export ExtractionResult -- WARNING: no callers in src/
+  src/routes/ga-admin.ts: export getEnterpriseDiagnosisReports -- WARNING: no callers in src/
+  src/routes/ga-admin.ts: export getEnterpriseList -- WARNING: no callers in src/
+  src/routes/ga-annotations-types.ts: export AnnotationType -- WARNING: no callers in src/
+  src/routes/ga-annotations-types.ts: export SentinelAnnotation -- WARNING: no callers in src/
+  src/routes/ga-annotations-types.ts: export SentinelAccuracyEntry -- WARNING: no callers in src/
+  src/routes/loops.ts: export computeNextTrigger -- WARNING: no callers in src/
+  src/routes/overflow.ts: export setOverflowGraphStore -- WARNING: no callers in src/
+  src/security/connector-audit.ts: export ConnectorAuditLog -- WARNING: no callers in src/
+  src/security/connector-audit.ts: export getConnectorAuditLog -- WARNING: no callers in src/
+  src/security/connector-sandbox.ts: export auditConnectorCode -- WARNING: no callers in src/
+  src/security/connector-sandbox.ts: export SandboxLevel -- WARNING: no callers in src/
+  src/security/connector-sandbox.ts: export DEFAULT_SANDBOX -- WARNING: no callers in src/
+  src/security/connector-sandbox.ts: export SandboxConfig -- WARNING: no callers in src/
+  src/security/connector-sandbox.ts: export AuditReport -- WARNING: no callers in src/
+  src/security/connector-sandbox.ts: export AuditFinding -- WARNING: no callers in src/
+  src/security/connector-sandbox.ts: export InstallGateResult -- WARNING: no callers in src/
+  src/security/connector-sandbox.ts: export securityGateCheck -- WARNING: no callers in src/
+  src/security/credential-vault.ts: export createVaultKey -- WARNING: no callers in src/
+  src/security/credential-vault.ts: export getCredentialPool -- WARNING: no callers in src/
+  src/security/credential-vault.ts: export PoolEntry -- WARNING: no callers in src/
+  src/security/external-hash-store.ts: export PublishResult -- WARNING: no callers in src/
+  src/security/file-guard.ts: export FileAccessDecision -- WARNING: no callers in src/
+  src/security/index.ts: export PermissionAction -- WARNING: no callers in src/
+  src/security/index.ts: export DataBoundary -- WARNING: no callers in src/
+  src/security/index.ts: export DataClassification -- WARNING: no callers in src/
+  src/security/index.ts: export PermissionPolicy -- WARNING: no callers in src/
+  src/security/index.ts: export AuditLog -- WARNING: no callers in src/
+  src/security/index.ts: export PermissionCheck -- WARNING: no callers in src/
+  src/security/pii-scrubber.ts: export PIIMatch -- WARNING: no callers in src/
+  src/security/pii-scrubber.ts: export ScrubResult -- WARNING: no callers in src/
+  src/security/policy-engine.ts: export Soi -- WARNING: no callers in src/
+  src/security/policy-engine.ts: export AccessRequest -- WARNING: no callers in src/
+  src/security/policy-engine.ts: export PolicyRule -- WARNING: no callers in src/
+  src/security/pre-upload-validator.ts: export SensitiveKeywords -- WARNING: no callers in src/
+  src/security/pre-upload-validator.ts: export PreUploadResult -- WARNING: no callers in src/
+  src/security/root-hash-publisher.ts: export PublishRecord -- WARNING: no callers in src/
+  src/security/root-hash-publisher.ts: export RootHashPublisher -- WARNING: no callers in src/
+  src/security/safety-guardrails.ts: export CoherenceViolation -- WARNING: no callers in src/
+  src/security/safety-guardrails.ts: export HonestyMark -- WARNING: no callers in src/
+  src/security/safety-guardrails.ts: export checkRefusalList -- WARNING: no callers in src/
+  src/security/safety-guardrails.ts: export checkPhaseCoverage -- WARNING: no callers in src/
+  src/security/safety-guardrails.ts: export PhaseCoverageResult -- WARNING: no callers in src/
+  src/security/safety-guardrails.ts: export checkHonestyMark -- WARNING: no callers in src/
+  src/security/safety-guardrails.ts: export checkCoherenceRules -- WARNING: no callers in src/
+  src/security/safety-guardrails.ts: export SafetyGateResult -- WARNING: no callers in src/
+  src/sentinel/baseline-store.ts: export BaselineConfig -- WARNING: no callers in src/
+  src/sentinel/baseline-store.ts: export DEFAULT_BASELINE_CONFIG -- WARNING: no callers in src/
+  src/sentinel/flywheel-aggregator.ts: export FlywheelSpeeds -- WARNING: no callers in src/
+  src/sentinel/sentinel-accuracy.ts: export SentinelAccuracy -- WARNING: no callers in src/
+  src/sentinel/sentinel-loader.ts: export LoadedSentinel -- WARNING: no callers in src/
+  src/sentinel/adapters/cash-flow-sentinel.ts: export cashFlowSentinel -- WARNING: no callers in src/
+  src/sentinel/adapters/cpc-sentinel.ts: export cpcSentinel -- WARNING: no callers in src/
+  src/sentinel/adapters/goal-alignment-sentinel.ts: export goalalignmentSentinel -- WARNING: no callers in src/
+  src/sentinel/adapters/integration-health-sentinel.ts: export integrationHealthSentinel -- WARNING: no callers in src/
+  src/services/anomaly-detector.ts: export UserStoreLike -- WARNING: no callers in src/
+  src/services/anomaly-detector.ts: export calculateBaseline -- WARNING: no callers in src/
+  src/services/anomaly-detector.ts: export SabotageHandler -- WARNING: no callers in src/
+  src/services/anonymizer.ts: export AnonymizeResult -- WARNING: no callers in src/
+  src/services/background-review.ts: export PatternExtractionResult -- WARNING: no callers in src/
+  src/services/background-review.ts: export BackgroundReviewer -- WARNING: no callers in src/
+  src/services/background-review.ts: export QualityReviewResult -- WARNING: no callers in src/
+  src/services/behavior-monitor.ts: export BehaviorAlert -- WARNING: no callers in src/
+  src/services/context-budget-tracker.ts: export TokenUsage -- WARNING: no callers in src/
+  src/services/context-budget-tracker.ts: export BudgetSnapshot -- WARNING: no callers in src/
+  src/services/context-budget-tracker.ts: export ContextBudgetTracker -- WARNING: no callers in src/
+  src/services/db-encryption.ts: export encryptDatabase -- WARNING: no callers in src/
+  src/services/db-encryption.ts: export isDatabaseEncrypted -- WARNING: no callers in src/
+  src/services/db-encryption.ts: export EncryptionConfig -- WARNING: no callers in src/
+  src/services/db-encryption.ts: export BackupConfig -- WARNING: no callers in src/
+  src/services/db-encryption.ts: export decryptDatabase -- WARNING: no callers in src/
+  src/services/deepseek-balance.ts: export clearBalanceCache -- WARNING: no callers in src/
+  src/services/email-service.ts: export initEmailService -- WARNING: no callers in src/
+  src/services/email-service.ts: export SendEmailOptions -- WARNING: no callers in src/
+  src/services/email-service.ts: export EmailConfig -- WARNING: no callers in src/
+  src/services/escalation-engine.ts: export EscalationContext -- WARNING: no callers in src/
+  src/services/escalation-engine.ts: export EscalationEngineStats -- WARNING: no callers in src/
+  src/services/escalation-engine.ts: export EscalationEngineOptions -- WARNING: no callers in src/
+  src/services/escalation-engine.ts: export EscalationDecision -- WARNING: no callers in src/
+  src/services/escalation-engine.ts: export EscalationRecord -- WARNING: no callers in src/
+  src/services/escalation-engine.ts: export DataImprovementInput -- WARNING: no callers in src/
+  src/services/fault-recovery.ts: export FaultConfig -- WARNING: no callers in src/
+  src/services/federated-pipeline.ts: export FederatedKnowledge -- WARNING: no callers in src/
+  src/services/federated-pipeline.ts: export FederatedStatus -- WARNING: no callers in src/
+  src/services/graceful-shutdown.ts: export SessionStoreForDrain -- WARNING: no callers in src/
+  src/services/graceful-shutdown.ts: export SessionEntry -- WARNING: no callers in src/
+  src/services/llm-cache.ts: export getLLMCache -- WARNING: no callers in src/
+  src/services/llm-cache.ts: export CacheOptions -- WARNING: no callers in src/
+  src/services/pattern-matcher.ts: export computeCoverage -- WARNING: no callers in src/
+  src/services/pattern-matcher.ts: export DataDependency -- WARNING: no callers in src/
+  src/services/request-context.ts: export getCurrentAuthProvider -- WARNING: no callers in src/
+  src/services/request-context.ts: export RequestContext -- WARNING: no callers in src/
+  src/services/resource-monitor.ts: export getResourceSnapshot -- WARNING: no callers in src/
+  src/services/resource-monitor.ts: export getResourceHealth -- WARNING: no callers in src/
+  src/services/resource-monitor.ts: export ResourceSnapshot -- WARNING: no callers in src/
+  src/services/retry.ts: export RetryOptions -- WARNING: no callers in src/
+  src/services/solution-generator.ts: export SolutionPackage -- WARNING: no callers in src/
+  src/services/solution-generator.ts: export EstimatedImpact -- WARNING: no callers in src/
+  src/services/stuck-session-detector.ts: export MemoryStoreLike -- WARNING: no callers in src/
+  src/services/stuck-session-detector.ts: export StuckResult -- WARNING: no callers in src/
+  src/services/update-checker.ts: export recommendedUpdateCommand -- WARNING: no callers in src/
+  src/services/update-checker.ts: export detectInstallMethod -- WARNING: no callers in src/
+  src/skill/skill-loader.ts: export SkillBoundaries -- WARNING: no callers in src/
+  src/skill/skill-loader.ts: export SkillDependencies -- WARNING: no callers in src/
+  src/skills/skill-loader.ts: export SkillDefinition -- WARNING: no callers in src/
+  src/skills/skill-loader.ts: export injectToSystemPrompt -- WARNING: no callers in src/
+  src/store/schema-migration.ts: export SCHEMA_VERSION -- WARNING: no callers in src/
+  src/store/schema-migration.ts: export Migration -- WARNING: no callers in src/
+  src/store/storage-backend.ts: export StorageEntry -- WARNING: no callers in src/
+  src/store/storage-backend.ts: export StorageResult -- WARNING: no callers in src/
+  src/store/storage-backend.ts: export StorageQuery -- WARNING: no callers in src/
+  src/store/storage-backend.ts: export MemoryStorageBackend -- WARNING: no callers in src/
+  src/tools/accuracy-tools.ts: export crossValidateTool -- WARNING: no callers in src/
+  src/tools/accuracy-tools.ts: export traceLineageTool -- WARNING: no callers in src/
+  src/tools/accuracy-tools.ts: export matchPatternTool -- WARNING: no callers in src/
+  src/tools/accuracy-tools.ts: export requestHumanTool -- WARNING: no callers in src/
+  src/tools/accuracy-tools.ts: export verifyClosureTool -- WARNING: no callers in src/
+  src/tools/action-expert-tools.ts: export measureEffectivenessTool -- WARNING: no callers in src/
+  src/tools/action-expert-tools.ts: export prioritizeByImpactTool -- WARNING: no callers in src/
+  src/tools/action-expert-tools.ts: export trackExecutionTool -- WARNING: no callers in src/
+  src/tools/business_model-expert-tools.ts: export revenueStructureTool -- WARNING: no callers in src/
+  src/tools/business_model-expert-tools.ts: export structureHealthCheckTool -- WARNING: no callers in src/
+  src/tools/business_model-expert-tools.ts: export canvasScanTool -- WARNING: no callers in src/
+  src/tools/business_model-expert-tools.ts: export valueCycleAuditTool -- WARNING: no callers in src/
+  src/tools/finance-expert-tools.ts: export roiProjectionTool -- WARNING: no callers in src/
+  src/tools/finance-expert-tools.ts: export collectCostDataTool -- WARNING: no callers in src/
+  src/tools/finance-expert-tools.ts: export assessRevenueQualityTool -- WARNING: no callers in src/
+  src/tools/knowledge-expert-tools.ts: export structuredWriterTool -- WARNING: no callers in src/
+  src/tools/knowledge-expert-tools.ts: export contentScannerTool -- WARNING: no callers in src/
+  src/tools/knowledge-expert-tools.ts: export knowledgeExtractorTool -- WARNING: no callers in src/
+  src/tools/knowledge-expert-tools.ts: export conflictDetectorTool -- WARNING: no callers in src/
+  src/tools/marketing-expert-tools.ts: export collectPositioningDataTool -- WARNING: no callers in src/
+  src/tools/marketing-expert-tools.ts: export goToMarketAuditTool -- WARNING: no callers in src/
+  src/tools/marketing-expert-tools.ts: export competitiveLandscapeTool -- WARNING: no callers in src/
+  src/tools/org-expert-tools.ts: export identifyKeyPersonRiskTool -- WARNING: no callers in src/
+  src/tools/org-expert-tools.ts: export scanCollaborationTool -- WARNING: no callers in src/
+  src/tools/org-expert-tools.ts: export assessDecisionFlowTool -- WARNING: no callers in src/
+  src/tools/org-expert-tools.ts: export buildOrgGraphTool -- WARNING: no callers in src/
+  src/tools/pattern-engine.ts: export PatternEngine -- WARNING: no callers in src/
+  src/tools/pattern-engine.ts: export DiagnosticPattern -- WARNING: no callers in src/
+  src/tools/strategy-expert-tools.ts: export assessCompetitivePositionTool -- WARNING: no callers in src/
+  src/tools/strategy-expert-tools.ts: export strategicRiskRadarTool -- WARNING: no callers in src/
+  src/tools/strategy-expert-tools.ts: export scanIndustryLandscapeTool -- WARNING: no callers in src/
+  src/tools/strategy-expert-tools.ts: export analyzeBusinessModelTool -- WARNING: no callers in src/
+  src/tools/tech-expert-tools.ts: export recommendTechStackTool -- WARNING: no callers in src/
+  src/tools/tech-expert-tools.ts: export assessAiMaturityTool -- WARNING: no callers in src/
+  src/tools/tech-expert-tools.ts: export scanSoftwareEcosystemTool -- WARNING: no callers in src/
+  src/tools/tech-expert-tools.ts: export analyzeCodeHealthTool -- WARNING: no callers in src/
+  src/tools/tool-registry.ts: export AtomicityResult -- WARNING: no callers in src/
+  src/tools/tool-registry.ts: export ToolPolicyEngine -- WARNING: no callers in src/
+  src/tools/tool-registry.ts: export ToolPolicyContext -- WARNING: no callers in src/
+  src/tools/tool-registry.ts: export ToolCallLogEntry -- WARNING: no callers in src/
+  src/tools/tool-registry.ts: export ToolDef -- WARNING: no callers in src/
+  src/tui-v2/hooks/use-event-bus.ts: export useEventBus -- WARNING: no callers in src/
+  src/tui-v2/lib/bootstrap.ts: export setupTerminalEncoding -- WARNING: no callers in src/
+  src/tui-v2/lib/bootstrap.ts: export loadEnvFile -- WARNING: no callers in src/
+  src/tui-v2/lib/commands.ts: export CommandResult -- WARNING: no callers in src/
+  src/tui-v2/lib/grapheme.ts: export sliceGraphemes -- WARNING: no callers in src/
+  src/tui-v2/lib/grapheme.ts: export insertAtGrapheme -- WARNING: no callers in src/
+  src/tui-v2/lib/grapheme.ts: export deleteAtGrapheme -- WARNING: no callers in src/
+  src/tui-v2/lib/grapheme.ts: export stripAnsi -- WARNING: no callers in src/
+  src/tui-v2/lib/grapheme.ts: export displayWidthStrip -- WARNING: no callers in src/
+  src/tui-v2/lib/grapheme.ts: export splitGraphemes -- WARNING: no callers in src/
+  src/tui-v2/lib/grapheme.ts: export graphemeIndexToStringIndex -- WARNING: no callers in src/
+  src/tui-v2/lib/grapheme.ts: export graphemeCount -- WARNING: no callers in src/
+  src/tui-v2/lib/grapheme.ts: export truncateToWidth -- WARNING: no callers in src/
+  src/tui-v2/lib/sidebar-aggregator.ts: export SidebarSectionId -- WARNING: no callers in src/
+  src/tui-v2/lib/theme.ts: export DEFAULT_THEME -- WARNING: no callers in src/
+  src/tui-v2/lib/theme.ts: export setTheme -- WARNING: no callers in src/
+  src/tui-v2/lib/theme.ts: export Theme -- WARNING: no callers in src/
+  src/tui-v2/lib/theme.ts: export supportsColor -- WARNING: no callers in src/
+  src/tui-v2/lib/theme.ts: export HIGH_CONTRAST_THEME -- WARNING: no callers in src/
+  src/tui-v2/lib/theme.ts: export supportsTrueColor -- WARNING: no callers in src/
+  src/tui-v2/lib/thinking.ts: export toggleExpanded -- WARNING: no callers in src/
+  src/tui-v2/lib/thinking.ts: export stashReasoning -- WARNING: no callers in src/
+  src/tui-v2/lib/thinking.ts: export getStashedReasoning -- WARNING: no callers in src/
+  src/tui-v2/lib/thinking.ts: export isExpanded -- WARNING: no callers in src/
+  1515 exports, 715 unwired
+[5/11] Shell/smell detection
+  src/cli-manager.ts:17: P2: type-only import (potential unused): import type { CLICommand }
+  src/cli.ts:23: P2: type-only import (potential unused): import type { LLMProvider }
+  src/server.ts:11: P2: type-only import (potential unused): import type { Server }
+  src/server.ts:73: P2: type-only import (potential unused): import type { ServiceContainer }
+  src/server.ts:82: P2: type-only import (potential unused): import type { BootstrapResult }
+  src/setup.ts:17: P2: type-only import (potential unused): import type { LLMProvider }
+  src/adapters/engine-core-adapter.ts:10: P2: type-only import (potential unused): import type { DiagnosisEngine, DiagnosisEvent, ConsultationR
+  src/adapters/engine-core-adapter.ts:11: P2: type-only import (potential unused): import type { LLMProvider }
+  src/adapters/engine-core-adapter.ts:12: P2: type-only import (potential unused): import type { ToolRegistry }
+  src/agent/builtin-tools.ts:7: P2: type-only import (potential unused): import type { ToolRegistry }
+  src/agent/builtin-tools.ts:8: P2: type-only import (potential unused): import type { SessionStore }
+  src/agent/conflict-arbitrator.ts:19: P2: type-only import (potential unused): import type { Conflict, TieBreakerResult }
+  src/agent/convergence-engine.ts:16: P2: type-only import (potential unused): import type { ExpertResponse }
+  src/agent/conversation-engine.ts:13: P2: type-only import (potential unused): import type { LLMProvider, LLMMessage }
+  src/agent/conversation-engine.ts:17: P2: type-only import (potential unused): import type { ViewAdapter }
+  src/agent/conversation-engine.ts:18: P2: type-only import (potential unused): import type { IntentRouter }
+  src/agent/conversation-engine.ts:19: P2: type-only import (potential unused): import type { DimensionRegistry }
+  src/agent/conversation-engine.ts:20: P2: type-only import (potential unused): import type { HookRunner }
+  src/agent/conversation-engine.ts:21: P2: type-only import (potential unused): import type { PhaseStateMachine }
+  src/agent/conversation-engine.ts:22: P2: type-only import (potential unused): import type { PIIScrubber }
+  src/agent/conversation-engine.ts:23: P2: type-only import (potential unused): import type { SessionManager }
+  src/agent/conversation-engine.ts:24: P2: type-only import (potential unused): import type { EventBus }
+  src/agent/conversation-engine.ts:25: P2: type-only import (potential unused): import type { EvidenceCollector, CorroborationEngine }
+  src/agent/conversation-engine.ts:27: P2: type-only import (potential unused): import type { GraphStore }
+  src/agent/conversation-engine.ts:28: P2: type-only import (potential unused): import type { createGraphBridge }
+  src/agent/conversation-engine.ts:29: P2: type-only import (potential unused): import type { ReportGraphAdapter }
+  src/agent/conversation-engine.ts:30: P2: type-only import (potential unused): import type { DecisionInput, DecisionResult }
+  src/agent/conversation-engine.ts:32: P2: type-only import (potential unused): import type { Triple, ReflectionResult }
+  src/agent/conversation-engine.ts:33: P2: type-only import (potential unused): import type { L3ResolutionResult }
+  src/agent/conversation-engine.ts:34: P2: type-only import (potential unused): import type { CommunityReport }
+  src/agent/conversation-engine.ts:39: P2: type-only import (potential unused): import type { EngineContext }
+  src/agent/conversation-engine.ts:747: P2: type-only import (potential unused): import type { DiagnosisEngine }
+  src/agent/cross-validator.ts:23: P2: type-only import (potential unused): import type { ExpertResponse }
+  src/agent/diagnosis-launcher.ts:7: P2: type-only import (potential unused): import type { EngineContext }
+  src/agent/diagnosis-launcher.ts:8: P2: type-only import (potential unused): import type { DiagnosisEngine, DiagnosisEvent, ConsultationR
+  src/agent/engine-context.ts:9: P2: type-only import (potential unused): import type { LLMProvider, LLMMessage }
+  src/agent/engine-context.ts:10: P2: type-only import (potential unused): import type { ToolRegistry }
+  src/agent/engine-context.ts:11: P2: type-only import (potential unused): import type { HookRunner }
+  src/agent/engine-context.ts:12: P2: type-only import (potential unused): import type { EventBus }
+  src/agent/engine-context.ts:13: P2: type-only import (potential unused): import type { EvidenceCollector, CorroborationEngine }
+  src/agent/engine-context.ts:14: P2: type-only import (potential unused): import type { createGraphBridge, GraphStore }
+  src/agent/engine-context.ts:15: P2: type-only import (potential unused): import type { DiagnosisEngine }
+  src/agent/expert-file-loader.ts:11: P2: type-only import (potential unused): import type { FileIndex, ExpertFiles, ScannedFile }
+  src/agent/interactive-card.ts:13: P2: type-only import (potential unused): import type { GAFeedbackHandler, GAFeedbackActionType }
+  src/agent/knowledge-file-importer.ts:12: P2: type-only import (potential unused): import type { PreUploadValidator }
+  src/agent/knowledge-file-importer.ts:13: P2: type-only import (potential unused): import type { FileIndex, KnowledgeFile, ScannedFile }
+  src/agent/loop-handlers.ts:13: P2: type-only import (potential unused): import type { ScaleName }
+  src/agent/main-agent.ts:19: P2: type-only import (potential unused): import type { LoopTriggerConfig, ScaleName }
+  src/agent/main-agent.ts:21: P2: type-only import (potential unused): import type { ConflictArbitrator }
+  src/agent/ontology-syncer.ts:9: P2: type-only import (potential unused): import type { EngineContext }
+  src/agent/orchestrator-adapter.ts:10: P2: type-only import (potential unused): import type { LLMProvider }
+  src/agent/proactive-push.ts:19: P2: type-only import (potential unused): import type { ActionStoreLike }
+  src/agent/proactive-push.ts:20: P2: type-only import (potential unused): import type { WorkspaceRole }
+  src/agent/report-assembler.ts:15: P2: type-only import (potential unused): import type { DiagnosisReport }
+  src/agent/sentinel-service.ts:11: P2: type-only import (potential unused): import type { SentinelFinding, SentinelCheckResult }
+  src/agent/sentinel-service.ts:12: P2: type-only import (potential unused): import type { AggregatedSignal }
+  src/agent/synova-agent.ts:14: P2: type-only import (potential unused): import type { Server }
+  src/agent/tool-loop-executor.ts:10: P2: type-only import (potential unused): import type { LLMMessage }
+  src/agent/tool-loop-executor.ts:11: P2: type-only import (potential unused): import type { EngineContext }
+  src/agent/workspace-context-bridge.ts:14: P2: type-only import (potential unused): import type { AgentMemoryStore, MemoryQuery }
+  src/agent-observer/collector.ts:14: P2: type-only import (potential unused): import type { GraphStore }
+  src/agent-observer/collector.ts:15: P2: type-only import (potential unused): import type { AgentActivity, ReportResponse }
+  src/cli/commands/config-cmd.ts:12: P2: type-only import (potential unused): import type { CLICommand }
+  src/cli/commands/expert.ts:12: P2: type-only import (potential unused): import type { CLICommand }
+  src/cli/commands/knowledge.ts:11: P2: type-only import (potential unused): import type { CLICommand }
+  src/cli/commands/measurer.ts:11: P2: type-only import (potential unused): import type { CLICommand }
+  src/connectors/feishu-bridge.ts:9: P2: type-only import (potential unused): import type { GraphStore }
+  src/connectors/feishu.ts:7: P2: type-only import (potential unused): import type { DataConnector, ConnectorMessage, ConnectorMemb
+  src/connectors/feishu.ts:11: P2: type-only import (potential unused): import type { FeishuMember }
+  src/connectors/nemoclaw.ts:2: P2: type-only import (potential unused): import type { DataConnector, ConnectorMessage, ConnectorMemb
+  src/connectors/unified-connector.ts:7: P2: type-only import (potential unused): import type { ConnectorMessage, ConnectorMember, ConnectorEv
+  src/connectors/unified-connector.ts:53: P2: type-only import (potential unused): import type { DataConnector }
+  src/contract/contract-gate.ts:22: P2: type-only import (potential unused): import type { ContractRecord, ContractStore }
+  src/cycles/cross-scale-validator.ts:21: P2: type-only import (potential unused): import type { GraphStore }
+  src/cycles/cross-scale-validator.ts:23: P2: type-only import (potential unused): import type { OverflowSnapshot }
+  src/cycles/cycle-loader.ts:19: P2: type-only import (potential unused): import type { CycleConfig, ContextLoaderLike }
+  src/cycles/cycle-registry.ts:7: P2: type-only import (potential unused): import type { CycleConfig }
+  src/cycles/cycle-types.ts:10: P2: type-only import (potential unused): import type { GraphBridgeLike, AuditStoreLike }
+  src/cycles/investment-advisor.ts:12: P2: type-only import (potential unused): import type { GraphStore }
+  src/cycles/investment-advisor.ts:13: P2: type-only import (potential unused): import type { CycleConfig }
+  src/cycles/investment-advisor.ts:14: P2: type-only import (potential unused): import type { OverflowSnapshot }
+  src/cycles/overflow-compute.ts:13: P2: type-only import (potential unused): import type { CycleConfig }
+  src/cycles/overflow-dashboard.ts:15: P2: type-only import (potential unused): import type { CycleRegistry }
+  src/cycles/overflow-dashboard.ts:16: P2: type-only import (potential unused): import type { GraphStore }
+  src/cycles/overflow-dashboard.ts:17: P2: type-only import (potential unused): import type { OverflowSnapshot }
+  src/cycles/overflow-graph-bridge.ts:13: P2: type-only import (potential unused): import type { GraphStore }
+  src/cycles/overflow-graph-bridge.ts:14: P2: type-only import (potential unused): import type { OverflowSnapshot }
+  src/deploy/backup-verify.ts:16: P2: type-only import (potential unused): import type { VerifyResult }
+  src/deploy/bootstrap.ts:27: P2: type-only import (potential unused): import type { Database }
+  src/errors/types.ts:463: P2: stub function (empty return): return {};
+  src/evidence/evidence-store.ts:7: P2: type-only import (potential unused): import type { Evidence, EvidenceFilter }
+  src/evidence/index.ts:10: P2: type-only import (potential unused): import type { Evidence, EvidenceFilter, ContradictionSignal,
+  src/expert-platform/extractor.ts:9: P2: type-only import (potential unused): import type { LLMProvider }
+  src/expert-platform/extractor.ts:10: P2: type-only import (potential unused): import type { ExpertContribution, ExpertTemplate }
+  src/expert-platform/outcome-tracker.ts:8: P2: type-only import (potential unused): import type { ExpertTemplate }
+  src/expert-platform/store.ts:98: P2: type-only import (potential unused): import type { OutcomeRecord, OutcomeStore }
+  src/expert-platform/validator.ts:10: P2: type-only import (potential unused): import type { ExpertTemplate, TemplateStatus, TemplateValida
+  src/growth/action-store.ts:17: P2: type-only import (potential unused): import type { Action, ActionLifecycle, ActionStoreLike }
+  src/growth/action-store.ts:19: P2: type-only import (potential unused): import type { SentinelFinding }
+  src/growth/action-types.ts:8: P2: type-only import (potential unused): import type { SentinelFinding }
+  src/growth/dnd-engine.ts:19: P2: type-only import (potential unused): import type { WorkspaceAlert, DNDConfig }
+  src/growth/goal-conflict-detector.ts:13: P2: type-only import (potential unused): import type { Goal, GraphBridgeLike }
+  src/growth/goal-lifecycle.ts:12: P2: type-only import (potential unused): import type { Goal, GoalStatus, GoalMetric, GraphBridgeLike,
+  src/growth/goal-lifecycle.ts:15: P2: type-only import (potential unused): import type { SentinelRegistry }
+  src/growth/goal-sentinel-lifecycle.ts:14: P2: type-only import (potential unused): import type { Goal, GraphBridgeLike }
+  src/growth/goal-sentinel-lifecycle.ts:15: P2: type-only import (potential unused): import type { SentinelRegistry }
+  src/growth/goal-sentinel-lifecycle.ts:16: P2: type-only import (potential unused): import type { GoalSentinelState }
+  src/growth/goal-sentinel.ts:20: P2: type-only import (potential unused): import type { Goal }
+  src/growth/goal-sentinel.ts:21: P2: type-only import (potential unused): import type { Sentinel, SentinelConfig, SentinelContext, Sen
+  src/growth/goal-store.ts:14: P2: type-only import (potential unused): import type { Goal, GoalStatus, GraphBridgeLike, AuditStoreL
+  src/growth/knowledge-feedback.ts:18: P2: type-only import (potential unused): import type { Goal }
+  src/growth/next-action-engine.ts:11: P2: type-only import (potential unused): import type { DepartmentWorkspace, NextAction }
+  src/growth/proposal-engine.ts:13: P2: type-only import (potential unused): import type { GraphBridgeLike, AuditStoreLike, PolicyEngineL
+  src/growth/proposal-engine.ts:14: P2: type-only import (potential unused): import type { Proposal, ProposalPath, ProposalStatus }
+  src/growth/proposal-store.ts:14: P2: type-only import (potential unused): import type { GraphBridgeLike, AuditStoreLike }
+  src/growth/proposal-store.ts:15: P2: type-only import (potential unused): import type { Proposal, ProposalStatus, ProposalTimeline, Pr
+  src/growth/workspace-builder.ts:19: P2: type-only import (potential unused): import type {
+  DepartmentWorkspace,
+  ActiveGoal,
+  Workspa
+  src/growth/workspace-builder.ts:28: P2: type-only import (potential unused): import type { DNDConfig, NextAction }
+  src/infra/trace-context.ts:59: P2: stub function (empty return): return {};
+  src/ingest/data-pipeline-monitor.ts:13: P2: type-only import (potential unused): import type { GraphStoreLike }
+  src/ingest/index.ts:8: P2: type-only import (potential unused): import type { IngestResult }
+  src/ingest/knowledge-ingest-bridge.ts:8: P2: type-only import (potential unused): import type { GraphStore }
+  src/init/connector-binding.ts:13: P2: type-only import (potential unused): import type { ToolRegistry }
+  src/interview/engine.ts:7: P2: type-only import (potential unused): import type { InterviewRole }
+  src/interview/gpi-estimator.ts:15: P2: type-only import (potential unused): import type { CausalSignal }
+  src/interview/signal-extractor.ts:16: P2: type-only import (potential unused): import type { RoleResponse, Contradiction }
+  src/interview/signal-extractor.ts:19: P2: type-only import (potential unused): import type { CausalSignal, ExtractedSignals }
+  src/interview/signals.ts:12: P2: type-only import (potential unused): import type { Contradiction }
+  src/l1/im-inbound.ts:15: P2: type-only import (potential unused): import type { PIIScrubber }
+  src/l1/qa-router.ts:12: P2: type-only import (potential unused): import type { FilterClause }
+  src/l1-interaction/tui-adapter-v2.ts:4: P2: type-only import (potential unused): import type { ViewAdapter }
+  src/l1-interaction/tui-adapter-v2.ts:5: P2: type-only import (potential unused): import type { EventBus }
+  src/l1-interaction/tui-adapter-v2.ts:6: P2: type-only import (potential unused): import type { OrchestrationEvent }
+  src/l1-interaction/tui-adapter-v2.ts:7: P2: type-only import (potential unused): import type { TuiState }
+  src/l1-interaction/web-adapter.ts:9: P2: type-only import (potential unused): import type { ViewAdapter }
+  src/l1-interaction/web-adapter.ts:10: P2: type-only import (potential unused): import type { Response }
+  src/l3/assumption-monitor.ts:13: P2: type-only import (potential unused): import type { GraphTraversal, GraphStoreReader }
+  src/l3/business-model-canvas.ts:12: P2: type-only import (potential unused): import type { GraphStore }
+  src/l3/data-lifecycle-service.ts:11: P2: type-only import (potential unused): import type { GraphStore }
+  src/l3/expert-autonomy.ts:8: P2: type-only import (potential unused): import type { LLMClient }
+  src/l3/expert-autonomy.ts:9: P2: type-only import (potential unused): import type { DataAccessPolicy }
+  src/l3/expert-dispatcher.ts:16: P2: type-only import (potential unused): import type { LLMClient }
+  src/l3/expert-dispatcher.ts:17: P2: type-only import (potential unused): import type { Evidence }
+  src/l3/expert-dispatcher.ts:18: P2: type-only import (potential unused): import type { DataAccessPolicy, SubAgentReport, ExpertType }
+  src/l3/expert-dispatcher.ts:20: P2: type-only import (potential unused): import type { QueryAPI }
+  src/l3/expert-dispatcher.ts:27: P2: type-only import (potential unused): import type { CausalSignal }
+  src/l3/key-person-risk.ts:14: P2: type-only import (potential unused): import type { SentinelFinding }
+  src/l3/knowledge-agent.ts:16: P2: type-only import (potential unused): import type { KnowledgeChunk }
+  src/l3/knowledge-agent.ts:20: P2: type-only import (potential unused): import type { FilterClause }
+  src/l3/platform-dependency-check.ts:13: P2: type-only import (potential unused): import type { GraphTraversal, GraphStoreReader }
+  src/l3/synova-diagnosis-engine-impl.ts:21: P2: type-only import (potential unused): import type {
+  SynovaDiagnosisEngine,
+  InitiatorProfile,
+ 
+  src/l3/synova-diagnosis-engine-impl.ts:551: P2: type-only import (potential unused): import type { DiagnosisEngineFactory }
+  src/l4/data-exporter.ts:13: P2: type-only import (potential unused): import type { GraphStore }
+  src/l4/data-exporter.ts:14: P2: type-only import (potential unused): import type { SessionStore, SessionRow, MessageRow }
+  src/l4/data-exporter.ts:15: P2: type-only import (potential unused): import type { AgentMemoryStore, MemoryEntry }
+  src/l4/data-purger.ts:15: P2: type-only import (potential unused): import type { GraphStore }
+  src/l4/data-purger.ts:16: P2: type-only import (potential unused): import type { SessionStore }
+  src/l4/data-purger.ts:17: P2: type-only import (potential unused): import type { AgentMemoryStore }
+  src/l4/department-memory-store.ts:18: P2: type-only import (potential unused): import type { MemoryEntry }
+  src/l4/traversal-permission-filter.ts:18: P2: type-only import (potential unused): import type { GraphTraversal, TraversalResult }
+  src/l4/triple-reflection.ts:6: P2: type-only import (potential unused): import type { LLMClient }
+  src/l5/connector-pipeline.ts:9: P2: type-only import (potential unused): import type { OntologyEvent }
+  src/l5/ontology-event-bus.ts:9: P2: type-only import (potential unused): import type { GraphStore }
+  src/llm/retry-middleware.ts:12: P2: type-only import (potential unused): import type { LLMProvider, ChatResult, ChatOptions }
+  src/loops/loop-scheduler.ts:16: P2: type-only import (potential unused): import type { LoopTriggerConfig, TriggerScale, ScaleName, Tr
+  src/mcp/skill-installer.ts:15: P2: type-only import (potential unused): import type { SkillAuditReport }
+  src/mcp/tool-registration.ts:10: P2: type-only import (potential unused): import type { ToolRegistry, ToolParameter }
+  src/middleware/auth.ts:14: P2: type-only import (potential unused): import type { Request, Response, NextFunction }
+  src/middleware/auth.ts:16: P2: type-only import (potential unused): import type { WorkspaceRole }
+  src/middleware/rate-limit.ts:12: P2: type-only import (potential unused): import type { Request, Response, NextFunction }
+  src/middleware/rbac.ts:8: P2: type-only import (potential unused): import type { Request, Response, NextFunction }
+  src/middleware/sanitize-check.ts:14: P2: type-only import (potential unused): import type { Request, Response, NextFunction }
+  src/monitoring/data-quality-gate.ts:13: P2: type-only import (potential unused): import type { FreshnessTracker, FreshnessRecord }
+  src/monitoring/data-quality-gate.ts:14: P2: type-only import (potential unused): import type { PipelineMonitor, PipelineStats }
+  src/monitoring/freshness-tracker.ts:11: P2: type-only import (potential unused): import type { EventBus }
+  src/monitoring/freshness-tracker.ts:12: P2: type-only import (potential unused): import type { OrchestrationEvent }
+  src/monitoring/pipeline-monitor.ts:15: P2: type-only import (potential unused): import type { EventBus }
+  src/monitoring/pipeline-monitor.ts:16: P2: type-only import (potential unused): import type { OrchestrationEvent }
+  src/notifications/electron-adapter.ts:9: P2: type-only import (potential unused): import type { Notification, NotificationResult, Notification
+  src/notifications/notification-loader.ts:14: P2: type-only import (potential unused): import type { NotificationAdapter }
+  src/notifications/registry.ts:11: P2: type-only import (potential unused): import type { NotificationAdapter, Notification, Notificatio
+  src/orchestrator/context-compressor.ts:15: P2: type-only import (potential unused): import type { LLMMessage }
+  src/orchestrator/context-engine.ts:26: P2: type-only import (potential unused): import type { LLMMessage, LLMProvider }
+  src/orchestrator/diagnosis-orchestrator.ts:15: P2: type-only import (potential unused): import type { PhaseConfig }
+  src/orchestrator/diagnosis-orchestrator.ts:16: P2: type-only import (potential unused): import type { EventBus }
+  src/orchestrator/event-bus.ts:10: P2: type-only import (potential unused): import type { OrchestrationEvent, EventFilter }
+  src/orchestrator/event-store.ts:8: P2: type-only import (potential unused): import type { OrchestrationEvent, EventFilter }
+  src/orchestrator/intent-router.ts:10: P2: type-only import (potential unused): import type { LLMClient }
+  src/orchestrator/llm-phase-executor.ts:9: P2: type-only import (potential unused): import type { LLMClient, ToolExecutor }
+  src/orchestrator/llm-phase-executor.ts:11: P2: type-only import (potential unused): import type { LLMMessage }
+  src/orchestrator/phase-gate-check.ts:12: P2: type-only import (potential unused): import type { PhaseStateMachine }
+  src/orchestrator/subagent-coordinator.ts:7: P2: type-only import (potential unused): import type { LLMClient }
+  src/orchestrator/subagent-coordinator.ts:8: P2: type-only import (potential unused): import type { Evidence }
+  src/orchestrator/subagent-coordinator.ts:11: P2: type-only import (potential unused): import type { QueryAPI }
+  src/orchestrator/wiring.ts:17: P2: type-only import (potential unused): import type { LLMClient }
+  src/orchestrator/wiring.ts:18: P2: type-only import (potential unused): import type { LLMProvider }
+  src/playbook/execution-store.ts:12: P2: type-only import (potential unused): import type { PlaybookExecutionRecord }
+  src/playbook/playbook-loader.ts:19: P2: type-only import (potential unused): import type { PlaybookDefinition }
+  src/playbook/playbook-loader.ts:20: P2: type-only import (potential unused): import type { PlaybookExecutionRecord }
+  src/playbook/playbook-registry.ts:7: P2: type-only import (potential unused): import type { PlaybookDefinition }
+  src/providers/base.ts:13: P2: type-only import (potential unused): import type {
+  LLMProvider, LLMMessage, ChatOptions, ChatRe
+  src/providers/deepseek.ts:7: P2: type-only import (potential unused): import type { LLMProvider, LLMMessage, ChatOptions, ChatResu
+  src/providers/detect.ts:7: P2: type-only import (potential unused): import type { ProviderType }
+  src/providers/ernie.ts:11: P2: type-only import (potential unused): import type { LLMProvider, LLMMessage, ChatOptions, ChatResu
+  src/providers/gateway.ts:6: P2: type-only import (potential unused): import type { LLMProvider, ProviderConfig }
+  src/providers/index.ts:20: P2: type-only import (potential unused): import type { LLMProvider, ProviderConfig }
+  src/providers/openai.ts:6: P2: type-only import (potential unused): import type { LLMProvider, ProviderConfig }
+  src/providers/registry.ts:8: P2: type-only import (potential unused): import type { LLMProvider, LLMMessage, ChatOptions, ChatResu
+  src/routes/admin-knowledge.ts:19: P2: type-only import (potential unused): import type { Database }
+  src/routes/agent-observer.ts:15: P2: type-only import (potential unused): import type { AgentActivity, BatchReportResponse, ReportResp
+  src/routes/chat.ts:287: P2: stub function (empty return): return {};
+  src/routes/chat.ts:679: P2: stub function (empty return): return {};
+  src/routes/diagnosis.ts:16: P2: type-only import (potential unused): import type { DiagnosisEngine, DiagnosisEvent, ConsultationR
+  src/routes/diagnosis.ts:19: P2: type-only import (potential unused): import type { GraphStoreLike, CommunityReportLike, PostProce
+  src/routes/enterprise.ts:23: P2: type-only import (potential unused): import type { RoleTemplate }
+  src/routes/ga-annotations.ts:18: P2: type-only import (potential unused): import type {
+  CreateAnnotationRequest,
+  ListAnnotationsQu
+  src/routes/ga-annotations.ts:29: P2: type-only import (potential unused): import type { AnnotationRecord as AccuracyAnnotation }
+  src/routes/knowledge.ts:16: P2: type-only import (potential unused): import type { KnowledgeChunk, FilterClause }
+  src/routes/reload.ts:11: P2: type-only import (potential unused): import type { FileScanner }
+  src/routes/reload.ts:12: P2: type-only import (potential unused): import type { ExpertFileLoader }
+  src/routes/solutions.ts:24: P2: type-only import (potential unused): import type { SolutionStatus, RecommendationInput }
+  src/routes/workspace-data.ts:22: P2: type-only import (potential unused): import type { WorkspaceBuilderDeps }
+  src/security/safety-guardrails.ts:14: P2: type-only import (potential unused): import type { DiagnosisEvent }
+  src/sentinel/baseline-store.ts:13: P2: type-only import (potential unused): import type { SentinelFinding }
+  src/sentinel/flywheel-aggregator.ts:10: P2: type-only import (potential unused): import type { SentinelFinding }
+  src/sentinel/registry.ts:10: P2: type-only import (potential unused): import type { Sentinel, SentinelConfig, SentinelCategory, Se
+  src/sentinel/runner.ts:13: P2: type-only import (potential unused): import type { CronScheduler }
+  src/sentinel/runner.ts:14: P2: type-only import (potential unused): import type { Sentinel, SentinelCheckResult }
+  src/sentinel/runner.ts:15: P2: type-only import (potential unused): import type { Evidence }
+  src/sentinel/sentinel-loader.ts:13: P2: type-only import (potential unused): import type { SentinelFinding, SentinelCheckResult }
+  src/sentinel/sentinel-runner.ts:14: P2: type-only import (potential unused): import type { SentinelFinding, SentinelContext }
+  src/sentinel/signal-aggregator.ts:17: P2: type-only import (potential unused): import type { SentinelFinding, SentinelCheckResult }
+  src/sentinel/types.ts:171: P2: type-only import (potential unused): import type { apiCoverageSentinel as _apiCoverageTypeCheck }
+  src/sentinel/types.ts:172: P2: type-only import (potential unused): import type { computeProtocolCoverage as _protoCoverageCheck
+  src/sentinel/types.ts:173: P2: type-only import (potential unused): import type { dataHealthSentinel as _dataHealthTypeCheck }
+  src/sentinel/types.ts:174: P2: type-only import (potential unused): import type { computeDataReadiness as _dataReadinessCheck }
+  src/sentinel/types.ts:175: P2: type-only import (potential unused): import type { computeDataSiloScore as _dataSiloCheck }
+  src/sentinel/types.ts:176: P2: type-only import (potential unused): import type { softwareHealthSentinel as _swHealthTypeCheck }
+  src/sentinel/types.ts:177: P2: type-only import (potential unused): import type { computeSaasUsageScore as _saasCheck }
+  src/sentinel/types.ts:178: P2: type-only import (potential unused): import type { computeShadowItScore as _shadowCheck }
+  src/sentinel/types.ts:179: P2: type-only import (potential unused): import type { customerDemandShiftSentinel as _custDemandChec
+  src/sentinel/types.ts:180: P2: type-only import (potential unused): import type { computeCustomerChurnRisk as _custChurnCheck }
+  src/sentinel/types.ts:181: P2: type-only import (potential unused): import type { computeCustomerConcentration as _custConcCheck
+  src/sentinel/types.ts:182: P2: type-only import (potential unused): import type { capitalEfficiencySentinel as _capEffCheck }
+  src/sentinel/types.ts:183: P2: type-only import (potential unused): import type { computeRoicWaccSpread as _roicCheck }
+  src/sentinel/types.ts:184: P2: type-only import (potential unused): import type { marketLifecycleSentinel as _marketLifecycleChe
+  src/sentinel/types.ts:185: P2: type-only import (potential unused): import type { computeLifecycleStage as _lifecycleCheck }
+  src/sentinel/types.ts:186: P2: type-only import (potential unused): import type { opportunityWindowSentinel as _oppWinCheck }
+  src/sentinel/types.ts:187: P2: type-only import (potential unused): import type { computeOpportunityWindowScore as _oppScoreChec
+  src/sentinel/types.ts:188: P2: type-only import (potential unused): import type { computeCapitalTurnover as _capTurnCheck }
+  src/sentinel/types.ts:189: P2: type-only import (potential unused): import type { competitiveDynamicsSentinel as _compDynCheck }
+  src/sentinel/types.ts:190: P2: type-only import (potential unused): import type { environmentRentDependencySentinel as _rentDepC
+  src/sentinel/types.ts:191: P2: type-only import (potential unused): import type { structuralChangeSentinel as _structChangeCheck
+  src/sentinel/types.ts:192: P2: type-only import (potential unused): import type { computeStructuralChangeSignal as _structSigChe
+  src/sentinel/types.ts:194: P2: type-only import (potential unused): import type { financingConstraintSentinel as _finConCheck }
+  src/sentinel/types.ts:195: P2: type-only import (potential unused): import type { capitalStructureSentinel as _capStructCheck }
+  src/sentinel/types.ts:196: P2: type-only import (potential unused): import type { computeDebtEquityRatio as _deCheck }
+  src/sentinel/types.ts:197: P2: type-only import (potential unused): import type { computeInterestCoverage as _icCheck }
+  src/sentinel/types.ts:198: P2: type-only import (potential unused): import type { growthQualitySentinel as _gqCheck }
+  src/sentinel/types.ts:199: P2: type-only import (potential unused): import type { computeCashConversionRate as _ccrCheck }
+  src/sentinel/types.ts:200: P2: type-only import (potential unused): import type { capitalTurnoverSentinel as _ctCheck }
+  src/sentinel/types.ts:201: P2: type-only import (potential unused): import type { computeDebtStructure as _dsCheck }
+  src/sentinel/types.ts:202: P2: type-only import (potential unused): import type { computeIntegrationHealth as _ihCheck }
+  src/sentinel/types.ts:203: P2: type-only import (potential unused): import type { computeAssetTurnover as _atCheck }
+  src/sentinel/types.ts:204: P2: type-only import (potential unused): import type { computeCashConversionCycle as _cccCheck }
+  src/sentinel/types.ts:205: P2: type-only import (potential unused): import type { computeCashRunway as _crCheck }
+  src/sentinel/types.ts:206: P2: type-only import (potential unused): import type { computeWacc as _waccCheck }
+  src/sentinel/types.ts:207: P2: type-only import (potential unused): import type { computeVariableCosts as _varcCheck }
+  src/sentinel/types.ts:208: P2: type-only import (potential unused): import type { computeMarginalContribution as _mcCheck }
+  src/sentinel/types.ts:209: P2: type-only import (potential unused): import type { computeFixedCostRigidity as _fcrCheck }
+  src/sentinel/types.ts:210: P2: type-only import (potential unused): import type { computeScenarioSimulation as _ssCheck }
+  src/sentinel/types.ts:211: P2: type-only import (potential unused): import type { computeBreakEven as _beCheck }
+  src/sentinel/types.ts:212: P2: type-only import (potential unused): import type { computeProblemActionCycle as _pacCheck }
+  src/sentinel/types.ts:213: P2: type-only import (potential unused): import type { computeFinkelsteinPowerIndex as _fpiCheck }
+  src/sentinel/types.ts:214: P2: type-only import (potential unused): import type { computeExploreExploitBalanceV2 as _eebv2Check 
+  src/sentinel/types.ts:215: P2: type-only import (potential unused): import type { nicheBreadthSentinel as _nbCheck }
+  src/sentinel/types.ts:216: P2: type-only import (potential unused): import type { computeLevinsBreadth as _levinsCheck }
+  src/sentinel/types.ts:217: P2: type-only import (potential unused): import type { nicheSqueezeSentinel as _nsCheck }
+  src/sentinel/types.ts:218: P2: type-only import (potential unused): import type { computeNicheSqueezeIndex as _nsIdxCheck }
+  src/sentinel/types.ts:219: P2: type-only import (potential unused): import type { competitiveMoatStructuralSentinel as _cmsCheck
+  src/sentinel/types.ts:220: P2: type-only import (potential unused): import type { competitiveMoatPerceptualSentinel as _cmpCheck
+  src/sentinel/types.ts:221: P2: type-only import (potential unused): import type { businessModelCoherenceSentinel as _bmcCheck }
+  src/sentinel/types.ts:222: P2: type-only import (potential unused): import type { unitEconomicsSentinel as _ueCheck }
+  src/sentinel/types.ts:223: P2: type-only import (potential unused): import type { internalTransactionCostSentinel as _itcCheck }
+  src/sentinel/types.ts:224: P2: type-only import (potential unused): import type { networkPowerSentinel as _npCheck }
+  src/sentinel/types.ts:225: P2: type-only import (potential unused): import type { valueCaptureSentinel as _vcCheck }
+  src/sentinel/types.ts:226: P2: type-only import (potential unused): import type { moatDependencySentinel as _mdCheck }
+  src/sentinel/types.ts:227: P2: type-only import (potential unused): import type { timePenetrationSentinel as _tpCheck }
+  src/sentinel/types.ts:228: P2: type-only import (potential unused): import type { makeOrBuySentinel as _mobCheck }
+  src/sentinel/types.ts:229: P2: type-only import (potential unused): import type { ConnectorCoverageSentinel as _ccCheck }
+  src/sentinel/types.ts:230: P2: type-only import (potential unused): import type { ProcessAiReadinessSentinel as _parCheck }
+  src/sentinel/types.ts:231: P2: type-only import (potential unused): import type { AiEcosystemFitSentinel as _aefCheck }
+  src/sentinel/types.ts:232: P2: type-only import (potential unused): import type { AgentDeploymentMaturitySentinel as _admCheck }
+  src/sentinel/types.ts:233: P2: type-only import (potential unused): import type { AiInvestmentReturnSentinel as _airCheck }
+  src/sentinel/types.ts:234: P2: type-only import (potential unused): import type { HumanAgentBoundarySentinel as _habCheck }
+  src/sentinel/types.ts:235: P2: type-only import (potential unused): import type { strategyCapabilityFitSentinel as _scfCheck }
+  src/sentinel/types.ts:236: P2: type-only import (potential unused): import type { adaptationVelocitySentinel as _avCheck }
+  src/sentinel/types.ts:237: P2: type-only import (potential unused): import type { resourceMisallocationSentinel as _rmCheck }
+  src/sentinel/types.ts:238: P2: type-only import (potential unused): import type { exploreExploitBalanceSentinel as _eebCheck }
+  src/sentinel/types.ts:239: P2: type-only import (potential unused): import type { routineMutationSentinel as _rmutCheck }
+  src/sentinel/types.ts:240: P2: type-only import (potential unused): import type { incentiveAlignmentSentinel as _iaCheck }
+  src/sentinel/types.ts:241: P2: type-only import (potential unused): import type { knowledgeAccessibilitySentinel as _kaCheck }
+  src/sentinel/types.ts:242: P2: type-only import (potential unused): import type { routineDiffusionSentinel as _rdCheck }
+  src/sentinel/types.ts:243: P2: type-only import (potential unused): import type { channelCapacitySentinel as _ccapCheck }
+  src/sentinel/types.ts:244: P2: type-only import (potential unused): import type { infoDistortionSentinel as _idCheck }
+  src/sentinel/types.ts:245: P2: type-only import (potential unused): import type { orgRepairabilitySentinel as _orCheck }
+  src/sentinel/types.ts:246: P2: type-only import (potential unused): import type { powerRigiditySentinel as _prCheck }
+  src/sentinel/types.ts:247: P2: type-only import (potential unused): import type { talentDensitySentinel as _tdCheck }
+  src/sentinel/types.ts:248: P2: type-only import (potential unused): import type { computeFlywheelSpeeds as _fwCheck }
+  src/sentinel/adapters/cash-flow-sentinel.ts:9: P2: type-only import (potential unused): import type { Sentinel, SentinelCheckResult, SentinelConfig,
+  src/sentinel/adapters/cpc-sentinel.ts:10: P2: type-only import (potential unused): import type { Sentinel, SentinelCheckResult, SentinelConfig,
+  src/sentinel/adapters/goal-alignment-sentinel.ts:10: P2: type-only import (potential unused): import type { Sentinel, SentinelCheckResult, SentinelConfig,
+  src/sentinel/adapters/helpers.ts:12: P2: type-only import (potential unused): import type { SentinelContext, SentinelCheckResult, Sentinel
+  src/sentinel/adapters/integration-health-sentinel.ts:9: P2: type-only import (potential unused): import type { Sentinel, SentinelCheckResult, SentinelConfig,
+  src/services/background-review.ts:14: P2: type-only import (potential unused): import type { LLMProvider }
+  src/services/behavior-monitor.ts:18: P2: type-only import (potential unused): import type { AuditStore, AuditEntryInput }
+  src/services/container.ts:11: P2: type-only import (potential unused): import type { EventBus }
+  src/services/container.ts:12: P2: type-only import (potential unused): import type { HookRunner }
+  src/services/container.ts:13: P2: type-only import (potential unused): import type { SessionManager }
+  src/services/container.ts:14: P2: type-only import (potential unused): import type { PhaseStateMachine }
+  src/services/container.ts:15: P2: type-only import (potential unused): import type { ToolRegistry }
+  src/services/container.ts:16: P2: type-only import (potential unused): import type { PIIScrubber }
+  src/services/container.ts:17: P2: type-only import (potential unused): import type { CredentialVault }
+  src/services/container.ts:18: P2: type-only import (potential unused): import type { CredentialPool }
+  src/services/container.ts:19: P2: type-only import (potential unused): import type { FileGuard }
+  src/services/container.ts:20: P2: type-only import (potential unused): import type { FederalAdapter }
+  src/services/container.ts:21: P2: type-only import (potential unused): import type { AlertRuleEngine }
+  src/services/container.ts:22: P2: type-only import (potential unused): import type { IMRegistry }
+  src/services/container.ts:23: P2: type-only import (potential unused): import type { LLMCache }
+  src/services/container.ts:24: P2: type-only import (potential unused): import type { ProposalManager }
+  src/services/container.ts:25: P2: type-only import (potential unused): import type { ExpertRegistry }
+  src/services/container.ts:26: P2: type-only import (potential unused): import type { BriefingGenerator }
+  src/services/container.ts:27: P2: type-only import (potential unused): import type { ReportTemplateRegistry }
+  src/services/container.ts:28: P2: type-only import (potential unused): import type { FaultRecovery }
+  src/services/container.ts:29: P2: type-only import (potential unused): import type { MCPBridge }
+  src/services/container.ts:30: P2: type-only import (potential unused): import type { Database }
+  src/services/runtime-global-handlers.ts:14: P2: type-only import (potential unused): import type { Server }
+  src/services/solution-generator.ts:13: P2: type-only import (potential unused): import type { ImplementationPattern }
+  src/skill/skill-registry.ts:12: P2: type-only import (potential unused): import type { LoadedSkill }
+  src/tools/accuracy-tools.ts:7: P2: type-only import (potential unused): import type { ToolDefinition }
+  src/tools/action-expert-tools.ts:2: P2: type-only import (potential unused): import type { ToolDefinition }
+  src/tools/business_model-expert-tools.ts:7: P2: type-only import (potential unused): import type { ToolDefinition }
+  src/tools/finance-expert-tools.ts:2: P2: type-only import (potential unused): import type { ToolDefinition }
+  src/tools/knowledge-expert-tools.ts:7: P2: type-only import (potential unused): import type { ToolDefinition }
+  src/tools/marketing-expert-tools.ts:2: P2: type-only import (potential unused): import type { ToolDefinition }
+  src/tools/org-expert-tools.ts:17: P2: type-only import (potential unused): import type { ToolDefinition }
+  src/tools/strategy-expert-tools.ts:2: P2: type-only import (potential unused): import type { ToolDefinition }
+  src/tools/tech-expert-tools.ts:5: P2: type-only import (potential unused): import type { ToolDefinition }
+  src/tools/tool-registry.ts:20: P2: type-only import (potential unused): import type { PolicyDecision }
+  src/tools/tool-registry.ts:21: P2: type-only import (potential unused): import type { AuditEntryInput }
+  src/tui-v2/app.tsx:12: P2: type-only import (potential unused): import type { ConversationEngine }
+  src/tui-v2/app.tsx:13: P2: type-only import (potential unused): import type { EventBus }
+  src/tui-v2/types.ts:5: P2: type-only import (potential unused): import type { SidebarSnapshot }
+  src/tui-v2/components/chat-panel.tsx:17: P2: type-only import (potential unused): import type { MessageItem }
+  src/tui-v2/components/message.tsx:15: P2: type-only import (potential unused): import type { MessageRole }
+  src/tui-v2/components/section-panel.tsx:10: P2: type-only import (potential unused): import type { SidebarSection, GoalItem, ObstacleItem, Expert
+  src/tui-v2/components/side-panel.tsx:11: P2: type-only import (potential unused): import type { SidebarSnapshot }
+  src/tui-v2/hooks/use-event-bus.ts:9: P2: type-only import (potential unused): import type { EventBus }
+  src/tui-v2/hooks/use-event-bus.ts:10: P2: type-only import (potential unused): import type { OrchestrationEvent }
+  src/tui-v2/hooks/use-event-bus.ts:11: P2: type-only import (potential unused): import type { ExpertStatus, GoalData, ObstacleItem, LegacyIs
+  360 shell/smell patterns
+[6/11] Chain integrity (local imports)
+  src/l3/framework-loader.ts: import '...framework-library' -- RESOLVE ERROR
+  src/tui-v2/app.tsx: import './components/header' -- RESOLVE ERROR
+  src/tui-v2/app.tsx: import './components/chat-panel' -- RESOLVE ERROR
+  src/tui-v2/app.tsx: import './components/side-panel' -- RESOLVE ERROR
+  src/tui-v2/app.tsx: import './components/composer' -- RESOLVE ERROR
+  src/tui-v2/app.tsx: import './components/status-bar' -- RESOLVE ERROR
+  src/tui-v2/chat.tsx: import './components/header' -- RESOLVE ERROR
+  src/tui-v2/chat.tsx: import './components/chat-panel' -- RESOLVE ERROR
+  src/tui-v2/chat.tsx: import './components/side-panel' -- RESOLVE ERROR
+  src/tui-v2/chat.tsx: import './components/composer' -- RESOLVE ERROR
+  src/tui-v2/chat.tsx: import './components/status-bar' -- RESOLVE ERROR
+  src/tui-v2/demo.tsx: import './components/header' -- RESOLVE ERROR
+  src/tui-v2/demo.tsx: import './components/chat-panel' -- RESOLVE ERROR
+  src/tui-v2/demo.tsx: import './components/side-panel' -- RESOLVE ERROR
+  src/tui-v2/demo.tsx: import './components/composer' -- RESOLVE ERROR
+  src/tui-v2/demo.tsx: import './components/status-bar' -- RESOLVE ERROR
+  src/tui-v2/index.ts: import './app' -- RESOLVE ERROR
+  src/tui-v2/components/chat-panel.tsx: import './message' -- RESOLVE ERROR
+  src/tui-v2/components/chat-panel.tsx: import './streaming-text' -- RESOLVE ERROR
+  src/tui-v2/components/side-panel.tsx: import './section-panel' -- RESOLVE ERROR
+  816 local imports, 20 unresolved
+[7/11] Architecture L1-L5 (Python native)
+  src/agent/builtin-tools.ts:8: L2->L5 VIOLATION (imports src/store/session-store)
+  src/agent/builtin-tools.ts:208: L2->L5 VIOLATION (imports src/cron/scheduler)
+  src/agent/builtin-tools.ts:238: L2->L5 VIOLATION (imports src/cron/scheduler)
+  src/agent/conversation-engine.ts:25: L2->L4 VIOLATION (imports src/evidence/index)
+  src/agent/conversation-engine.ts:29: L2->L4 VIOLATION (imports src/l4/report-graph-adapter)
+  src/agent/conversation-engine.ts:30: L2->L4 VIOLATION (imports src/l4/decision-capture)
+  src/agent/conversation-engine.ts:32: L2->L4 VIOLATION (imports src/l4/triple-reflection)
+  src/agent/conversation-engine.ts:33: L2->L4 VIOLATION (imports src/l4/entity-resolver)
+  src/agent/conversation-engine.ts:34: L2->L4 VIOLATION (imports src/l4/community-reports)
+  src/agent/conversation-engine.ts:95: L2->L4 VIOLATION (imports src/l4/agent-memory-store)
+  src/agent/conversation-engine.ts:285: L2->L4 VIOLATION (imports src/l4/agent-memory-store)
+  src/agent/diagnosis-launcher.ts:18: L2->L4 VIOLATION (imports src/l4/graph-traversal)
+  src/agent/diagnosis-launcher.ts:230: L2->L4 VIOLATION (imports src/l4/community-reports)
+  src/agent/diagnosis-launcher.ts:242: L2->L4 VIOLATION (imports src/l4/entity-resolver)
+  src/agent/engine-context.ts:13: L2->L4 VIOLATION (imports src/evidence/index)
+  src/agent/knowledge-bridge-service.ts:13: L2->L4 VIOLATION (imports src/l4/knowledge-store)
+  src/agent/knowledge-bridge-service.ts:14: L2->L4 VIOLATION (imports src/l4/knowledge-store)
+  src/agent/post-diagnosis-processor.ts:105: L2->L4 VIOLATION (imports src/l4/community-reports)
+  src/agent/post-diagnosis-processor.ts:106: L2->L4 VIOLATION (imports src/l4/entity-resolver)
+  src/agent/post-diagnosis-processor.ts:248: L2->L4 VIOLATION (imports src/l4/agent-memory-store)
+  src/agent/review-service.ts:8: L2->L4 VIOLATION (imports src/l4/review-store)
+  src/agent/session-service.ts:7: L2->L5 VIOLATION (imports src/store/session-store)
+  src/agent/synova-agent.ts:17: L2->L5 VIOLATION (imports src/cron/scheduler)
+  src/agent/synova-agent.ts:76: L2->L5 VIOLATION (imports src/store/session-store)
+  src/agent/synova-agent.ts:166: L2->L4 VIOLATION (imports src/l4/delivery-queue-store)
+  src/agent/synova-agent.ts:167: L2->L4 VIOLATION (imports src/l4/delivery-queue)
+  src/agent/synova-agent.ts:178: L2->L5 VIOLATION (imports src/store/session-store)
+  src/agent/synova-agent.ts:179: L2->L4 VIOLATION (imports src/l4/agent-memory-store)
+  src/agent/synova-agent.ts:196: L2->L4 VIOLATION (imports src/l4/knowledge-store)
+  src/agent/synova-agent.ts:275: L2->L5 VIOLATION (imports src/store/session-store)
+  src/agent/workspace-context-bridge.ts:14: L2->L4 VIOLATION (imports src/l4/agent-memory-store)
+  src/l1/im-inbound.ts:171: L1->L5 VIOLATION (imports src/store/session-store)
+  src/l3/data-lifecycle-service.ts:12: L3->L5 VIOLATION (imports src/store/session-store)
+  src/l3/knowledge-agent.ts:18: L3->L5 VIOLATION (imports src/store/session-store)
+  src/mcp/index.ts:120: L1->L3 VIOLATION (imports src/sentinel/registry)
+  src/mcp/index.ts:135: L1->L3 VIOLATION (imports src/sentinel/sentinel-runner)
+  src/mcp/index.ts:153: L1->L3 VIOLATION (imports src/sentinel/registry)
+  src/mcp/index.ts:166: L1->L3 VIOLATION (imports src/sentinel/runner)
+  src/mcp/index.ts:168: L1->L3 VIOLATION (imports src/sentinel/types)
+  src/mcp/index.ts:200: L1->L4 VIOLATION (imports src/l4/ontology-loader)
+  src/mcp/skill-installer.ts:126: L1->L3 VIOLATION (imports src/l3/expert-registry)
+  src/orchestrator/subagent-coordinator.ts:8: L2->L4 VIOLATION (imports src/evidence/types)
+  src/routes/admin-knowledge.ts:17: L1->L4 VIOLATION (imports src/l4/knowledge-store)
+  src/routes/diagnosis-upload-v2.ts:311: L1->L3 VIOLATION (imports src/l3/expert-dispatcher)
+  src/routes/diagnosis.ts:104: L1->L3 VIOLATION (imports src/l3/synova-diagnosis-engine-impl)
+  src/routes/diagnosis.ts:246: L1->L3 VIOLATION (imports src/l3/synova-diagnosis-engine)
+  src/routes/diagnosis.ts:307: L1->L5 VIOLATION (imports src/store/session-store)
+  src/routes/evolution.ts:27: L1->L4 VIOLATION (imports src/l4/agent-memory-store)
+  src/routes/evolution.ts:34: L1->L3 VIOLATION (imports src/sentinel/runner)
+  src/routes/expert.ts:11: L1->L3 VIOLATION (imports src/expert-platform/validator)
+  src/routes/expert.ts:12: L1->L3 VIOLATION (imports src/expert-platform/store)
+  src/routes/ga-annotations.ts:28: L1->L3 VIOLATION (imports src/sentinel/sentinel-accuracy)
+  src/routes/ga-annotations.ts:29: L1->L3 VIOLATION (imports src/sentinel/sentinel-accuracy)
+  src/routes/ga-annotations.ts:38: L1->L4 VIOLATION (imports src/l4/agent-memory-store)
+  src/routes/ga-corrections.ts:9: L1->L4 VIOLATION (imports src/l4/agent-memory-store)
+  src/routes/im.ts:42: L1->L5 VIOLATION (imports src/store/session-store)
+  src/routes/knowledge-ask.ts:39: L1->L4 VIOLATION (imports src/l4/knowledge-store)
+  src/routes/ontology-admin.ts:16: L1->L4 VIOLATION (imports src/l4/ontology-loader)
+  src/routes/sessions.ts:11: L1->L5 VIOLATION (imports src/store/session-store)
+  src/sentinel/runner.ts:13: L3->L5 VIOLATION (imports src/cron/scheduler)
+  60 architecture violations
+[8/11] Debug-only log detection
+  src/config.ts:62: log.debug without warn/error
+  src/agent/adapter-registry.ts:54: log.debug without warn/error
+  src/agent/adapter-registry.ts:59: log.debug without warn/error
+  src/agent/adapter-registry.ts:74: log.debug without warn/error
+  src/agent/conversation-engine.ts:403: log.debug without warn/error
+  src/agent/conversation-engine.ts:492: log.debug without warn/error
+  src/agent/knowledge-file-importer.ts:198: log.debug without warn/error
+  src/agent/orchestrator-adapter.ts:56: log.debug without warn/error
+  src/agent/proactive-push.ts:151: log.debug without warn/error
+  src/agent/proactive-push.ts:233: log.debug without warn/error
+  src/agent/skill-lazy-loader.ts:49: log.debug without warn/error
+  src/agent/skill-lazy-loader.ts:102: log.debug without warn/error
+  src/agent/skill-lazy-loader.ts:178: log.debug without warn/error
+  src/agent/synova-agent.ts:203: log.debug without warn/error
+  src/agent/tool-loop-executor.ts:89: log.debug without warn/error
+  src/agent/tool-loop-executor.ts:175: log.debug without warn/error
+  src/agent/tool-loop-executor.ts:209: log.debug without warn/error
+  src/agent/tools.ts:123: log.debug without warn/error
+  src/agent/tools.ts:130: log.debug without warn/error
+  src/agent/tools.ts:140: log.debug without warn/error
+  src/agent-observer/collector.ts:62: log.debug without warn/error
+  src/connectors/ima-connector.ts:150: log.debug without warn/error
+  src/cron/scheduler.ts:155: log.debug without warn/error
+  src/cron/scheduler.ts:232: log.debug without warn/error
+  src/cron/scheduler.ts:337: log.debug without warn/error
+  src/cron/scheduler.ts:373: log.debug without warn/error
+  src/cron/scheduler.ts:381: log.debug without warn/error
+  src/deploy/backup-scheduler.ts:111: log.debug without warn/error
+  src/deploy/backup-scheduler.ts:188: log.debug without warn/error
+  src/deploy/backup-scheduler.ts:253: log.debug without warn/error
+  src/deploy/backup-verify.ts:73: log.debug without warn/error
+  src/deploy/bootstrap.ts:1104: log.debug without warn/error
+  src/deploy/compute-version.ts:69: log.debug without warn/error
+  src/deploy/data-directory.ts:57: log.debug without warn/error
+  src/deploy/startup-check.ts:67: log.debug without warn/error
+  src/evidence/evidence-store.ts:79: log.debug without warn/error
+  src/expert-platform/outcome-tracker.ts:67: log.debug without warn/error
+  src/expert-platform/validator.ts:24: log.debug without warn/error
+  src/growth/knowledge-feedback.ts:419: log.debug without warn/error
+  src/growth/workspace-builder.ts:115: log.debug without warn/error
+  src/growth/workspace-builder.ts:140: log.debug without warn/error
+  src/growth/workspace-builder.ts:153: log.debug without warn/error
+  src/growth/workspace-builder.ts:166: log.debug without warn/error
+  src/growth/workspace-builder.ts:184: log.debug without warn/error
+  src/ingest/knowledge-ingest-bridge.ts:65: log.debug without warn/error
+  src/init/connector-binding.ts:52: log.debug without warn/error
+  src/init/engine-context.ts:147: log.debug without warn/error
+  src/interview/engine.ts:90: log.debug without warn/error
+  src/interview/gpi-estimator.ts:212: log.debug without warn/error
+  src/interview/signal-extractor.ts:262: log.debug without warn/error
+  src/interview/signal-extractor.ts:281: log.debug without warn/error
+  src/interview/signal-extractor.ts:296: log.debug without warn/error
+  src/l1/qa-router.ts:89: log.debug without warn/error
+  src/l1-interaction/web-adapter.ts:32: log.debug without warn/error
+  src/l2/expert-router.ts:77: log.debug without warn/error
+  src/l2/expert-router.ts:81: log.debug without warn/error
+  src/l2/expert-router.ts:115: log.debug without warn/error
+  src/l3/expert-autonomy.ts:151: log.debug without warn/error
+  src/l3/expert-autonomy.ts:221: log.debug without warn/error
+  src/l3/expert-dispatcher.ts:453: log.debug without warn/error
+  src/l3/expert-dispatcher.ts:473: log.debug without warn/error
+  src/l3/knowledge-agent.ts:449: log.debug without warn/error
+  src/l3/knowledge-agent.ts:509: log.debug without warn/error
+  src/l3/pkb-lifecycle.ts:100: log.debug without warn/error
+  src/l3/quality-firewall.ts:67: log.debug without warn/error
+  src/l3/quality-firewall.ts:83: log.debug without warn/error
+  src/l3/synova-diagnosis-engine-impl.ts:239: log.debug without warn/error
+  src/l4/agent-memory-store.ts:123: log.debug without warn/error
+  src/l4/agent-memory-store.ts:165: log.debug without warn/error
+  src/l4/delivery-queue-store.ts:70: log.debug without warn/error
+  src/l4/delivery-queue-store.ts:84: log.debug without warn/error
+  src/l4/delivery-queue-store.ts:96: log.debug without warn/error
+  src/l4/delivery-queue-store.ts:121: log.debug without warn/error
+  src/l4/delivery-queue-store.ts:149: log.debug without warn/error
+  src/l4/delivery-queue.ts:61: log.debug without warn/error
+  src/l4/department-memory-store.ts:161: log.debug without warn/error
+  src/l4/entity-resolver.ts:72: log.debug without warn/error
+  src/l4/knowledge-store.ts:444: log.debug without warn/error
+  src/l4/traversal-permission-filter.ts:119: log.debug without warn/error
+  src/loops/loop-scheduler.ts:389: log.debug without warn/error
+  src/loops/loop-scheduler.ts:408: log.debug without warn/error
+  src/mcp/bridge.ts:139: log.debug without warn/error
+  src/mcp/bridge.ts:143: log.debug without warn/error
+  src/mcp/skill-audit-gate.ts:121: log.debug without warn/error
+  src/mcp/skill-audit-gate.ts:170: log.debug without warn/error
+  src/mcp/skill-installer.ts:129: log.debug without warn/error
+  src/middleware/auth.ts:167: log.debug without warn/error
+  src/middleware/auth.ts:177: log.debug without warn/error
+  src/orchestrator/context-compressor.ts:78: log.debug without warn/error
+  src/orchestrator/context-compressor.ts:150: log.debug without warn/error
+  src/orchestrator/context-compressor.ts:210: log.debug without warn/error
+  src/orchestrator/context-compressor.ts:238: log.debug without warn/error
+  src/orchestrator/context-compressor.ts:257: log.debug without warn/error
+  src/orchestrator/context-engine.ts:142: log.debug without warn/error
+  src/orchestrator/context-engine.ts:147: log.debug without warn/error
+  src/orchestrator/context-engine.ts:249: log.debug without warn/error
+  src/orchestrator/dimension-registry.ts:164: log.debug without warn/error
+  src/orchestrator/event-bus.ts:31: log.debug without warn/error
+  src/orchestrator/hook-runner.ts:57: log.debug without warn/error
+  src/orchestrator/hook-runner.ts:62: log.debug without warn/error
+  src/orchestrator/hook-runner.ts:67: log.debug without warn/error
+  src/orchestrator/intent-router.ts:106: log.debug without warn/error
+  src/orchestrator/llm-phase-executor.ts:183: log.debug without warn/error
+  src/orchestrator/llm-phase-executor.ts:191: log.debug without warn/error
+  src/orchestrator/module-runner.ts:109: log.debug without warn/error
+  src/orchestrator/module-runner.ts:163: log.debug without warn/error
+  src/orchestrator/phase-state-machine.ts:87: log.debug without warn/error
+  src/orchestrator/phase-state-machine.ts:102: log.debug without warn/error
+  src/orchestrator/phase0-engine.ts:159: log.debug without warn/error
+  src/providers/python-bridge.ts:80: log.debug without warn/error
+  src/providers/registry.ts:177: log.debug without warn/error
+  src/routes/chat.ts:71: log.debug without warn/error
+  src/routes/chat.ts:718: log.debug without warn/error
+  src/routes/diagnosis-upload-v2.ts:933: log.debug without warn/error
+  src/routes/diagnosis.ts:235: log.debug without warn/error
+  src/routes/ga-annotations.ts:174: log.debug without warn/error
+  src/routes/ga-annotations.ts:186: log.debug without warn/error
+  src/routes/ga-annotations.ts:235: log.debug without warn/error
+  src/routes/healthz.ts:53: log.debug without warn/error
+  src/routes/im.ts:127: log.debug without warn/error
+  src/security/index.ts:101: log.debug without warn/error
+  src/security/pii-scrubber.ts:133: log.debug without warn/error
+  src/security/root-hash-publisher.ts:160: log.debug without warn/error
+  src/sentinel/baseline-store.ts:123: log.debug without warn/error
+  src/sentinel/baseline-store.ts:208: log.debug without warn/error
+  src/sentinel/runner.ts:165: log.debug without warn/error
+  src/sentinel/runner.ts:559: log.debug without warn/error
+  src/sentinel/runner.ts:680: log.debug without warn/error
+  src/sentinel/runner.ts:754: log.debug without warn/error
+  src/sentinel/adapters/helpers.ts:38: log.debug without warn/error
+  src/services/context-budget-tracker.ts:74: log.debug without warn/error
+  src/services/context-budget-tracker.ts:145: log.debug without warn/error
+  src/services/escalation-engine.ts:137: log.debug without warn/error
+  src/services/escalation-engine.ts:149: log.debug without warn/error
+  src/services/escalation-engine.ts:213: log.debug without warn/error
+  src/services/escalation-engine.ts:268: log.debug without warn/error
+  src/services/fault-recovery.ts:161: log.debug without warn/error
+  src/services/fault-recovery.ts:220: log.debug without warn/error
+  src/services/graceful-shutdown.ts:48: log.debug without warn/error
+  src/services/graceful-shutdown.ts:70: log.debug without warn/error
+  src/services/graceful-shutdown.ts:79: log.debug without warn/error
+  src/services/llm-cache.ts:77: log.debug without warn/error
+  src/services/restart-recovery.ts:125: log.debug without warn/error
+  src/services/restart-recovery.ts:136: log.debug without warn/error
+  src/services/retry.ts:60: log.debug without warn/error
+  src/services/update-checker.ts:73: log.debug without warn/error
+  src/services/update-checker.ts:93: log.debug without warn/error
+  src/services/update-checker.ts:102: log.debug without warn/error
+  src/services/update-checker.ts:113: log.debug without warn/error
+  src/services/update-checker.ts:124: log.debug without warn/error
+  src/services/update-checker.ts:174: log.debug without warn/error
+  src/services/update-checker.ts:191: log.debug without warn/error
+  src/services/update-checker.ts:207: log.debug without warn/error
+  src/skills/skill-loader.ts:62: log.debug without warn/error
+  src/store/schema-migration.ts:63: log.debug without warn/error
+  src/store/session-store.ts:108: log.debug without warn/error
+  src/store/session-store.ts:111: log.debug without warn/error
+  src/tools/action-expert-tools.ts:11: log.debug without warn/error
+  src/tools/action-expert-tools.ts:35: log.debug without warn/error
+  src/tools/finance-expert-tools.ts:9: log.debug without warn/error
+  src/tools/marketing-expert-tools.ts:9: log.debug without warn/error
+  src/tools/marketing-expert-tools.ts:34: log.debug without warn/error
+  src/tools/org-expert-tools.ts:87: log.debug without warn/error
+  src/tools/org-expert-tools.ts:124: log.debug without warn/error
+  src/tools/org-expert-tools.ts:168: log.debug without warn/error
+  src/tools/strategy-expert-tools.ts:9: log.debug without warn/error
+  src/tools/tech-expert-tools.ts:23: log.debug without warn/error
+  src/tools/tech-expert-tools.ts:52: log.debug without warn/error
+  168 debug-only log calls (no warn/error)
+[9/11] Blueprint fitness
+  SKIP: architecture-blueprint.json not found
+[10/11] Scope reduction vs dev doc
+  src/l3/pkb-seed.ts:190: P1: scope reduction -- only handles specific case: 只处理异常)
+  src/loops/direction-monitor.ts:196: P1: scope reduction -- only handles specific case: 只处理有实例的边 — 无实例的边不参与统计（非缺失数据降级）
+  src/pipeline/judgment-card.ts:231: P1: scope reduction -- only handles specific case: 只处理专家假设和发现类事件
+  3 scope reduction patterns
+[11/11] Unbounded structures
+  src/setup.ts:54: P0: unbounded loop (while true): while (true)
+  src/connectors/ima-connector.ts:82: P0: unbounded loop (while true): while (true)
+  src/providers/base.ts:123: P0: unbounded loop (while true): while (true)
+  src/routes/chat.ts:696: P0: unbounded loop (while true): while (true)
+  4 unbounded structures
+
+--
+PASS:3 WARN:886 FAIL:444
