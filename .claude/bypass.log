@@ -73,3 +73,15 @@ Binary file .claude/bypass.log matches
 2026-08-09T21:30:54+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D317-engine-core-retirement-cleanup | AGENT=claude-code | HASH=4e02de34bd9ce37584265b287298522f3fbe689f
 2026-08-13T09:30:00+0800 | COMMITTED | pre-commit PASS (D333 一次性补记: 状态文件提交 c364275 时 12 组全过) | TASK_ID=D333 | AGENT=claude-code | HASH=c364275d499b275d0d3b5871dbd455dfdaf8fc76
 2026-08-13T09:35:00+0800 | COMMITTED | pre-commit PASS (D333 一次性补记: merge e00738d 时 12 组全过) | TASK_ID=D333 | AGENT=claude-code | HASH=e00738d1cb926762b85dd83cd66a0b84b7bace4e
+2026-08-14T01:35:54+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D334 | AGENT=test
+2026-08-14T01:38:22+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D334 | AGENT=test
+2026-08-14T01:40:03+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D334 | AGENT=DeepSeek-Harness
+2026-08-14T01:42:37+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D334 | AGENT=DeepSeek-Harness | HASH=25721f615cc26edafc67876d04eb989da49d14e9
+2026-08-14T01:44:52+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-14T01:44:53+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-14T01:44:54+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-14T01:44:59+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-14T01:45:00+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-14T01:45:01+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-14T01:46:28+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D334 | AGENT=DeepSeek-Harness | HASH=54c7a36e16977948937e37ecc06fb3563e7a180a
+2026-08-14T01:57:50+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D335 | AGENT=DeepSeek-Harness

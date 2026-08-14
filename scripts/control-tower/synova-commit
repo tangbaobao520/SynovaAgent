@@ -484,6 +484,22 @@ if [[ ! -f "$PRE_COMMIT" ]]; then
   exit 2
 fi
 
+# ═══ D335: 分支同步门禁 (提交端物理强制 — 过期基线禁止提交) ═══
+# 在 pre-commit 之前检查当前分支相对远端 main 的同步状态:
+#   main 落后 / 分支基线过期 / 分叉 → 硬阻断 (先 pull/rebase)。
+# 与 pre-push 门禁 0 (D334) 构成两端闭环: 提交端拦"基于过期代码干活",
+# push 端拦"覆盖对方工作"。逃生舱 SYNO_SKIP_BRANCH_SYNC=1 (记 degraded)。
+BRANCH_SYNC_CHECK="$SCRIPT_DIR/check-branch-sync.sh"
+if [[ -f "$BRANCH_SYNC_CHECK" ]]; then
+  if ! bash "$BRANCH_SYNC_CHECK"; then
+    echo -e "${RED}❌ 提交已拒绝 — 分支同步检查未通过 (D335)${RESET}"
+    exit 1
+  fi
+else
+  echo -e "${YELLOW}⚠️  check-branch-sync.sh 缺失 — 同步检查跳过 (fail-open)${RESET}"
+fi
+echo ""
+
 # 运行 pre-commit（带超时）
 # D334: Mac 无 GNU timeout（D321 同款双机差异）→ 回退直接执行并显式提示。
 #   pre-commit 12 组自身 <50s，失去外层超时兜底风险可控（不静默降级: 铁律 11）。

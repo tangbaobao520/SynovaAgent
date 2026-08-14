@@ -90,3 +90,15 @@ git rebase --continue    # 然后重新 push
 
 - 门禁误阻断需要绕过：找创始人批准，用 `--no-verify`（会被 bypass.log 记录审计，3 次/24h 硬阻断）
 - 分叉无法判断取舍：**停下，问创始人**，不要自行 force push 或 reset。
+
+---
+
+## 六、数据资产备份（D335 追加）
+
+- **代码**: 三地备份（GitHub + Mac + Win），git 分布式天然冗余
+- **数据**: `data/synova.db` 每日 03:30 由 launchd 自动备份到 iCloud Drive
+  （`scripts/backup/backup-db.sh`：sqlite3 .backup 一致性快照 + 完整性校验 + 保留 14 份）
+- **新机器开工前验证备份**: `launchctl list | grep synova.backup`
+- **手动备份一次**: `bash scripts/backup/backup-db.sh`
+- **安装/重装**: `bash scripts/backup/install-backup-launchd.sh`
+- **禁止直接 cp 数据库**（可能拷到写一半的库）——只准用 backup-db.sh

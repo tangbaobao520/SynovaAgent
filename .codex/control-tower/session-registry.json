@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-08-13T17:11:52+00:00",
+  "updated_at": "2026-08-13T18:00:58+00:00",
   "sessions": [
     {
       "session_id": "D317-engine-core-retirement-cleanup",
@@ -18,9 +18,38 @@
       "task_id": "D334",
       "pid": null,
       "started_at": "2026-08-13T17:11:26+00:00",
-      "last_seen_at": "2026-08-13T17:11:52+00:00",
+      "last_seen_at": "2026-08-13T17:46:28+00:00",
+      "phase": "CP4",
+      "phase_entered_at": "2026-08-13T17:46:28+00:00",
+      "write_set": []
+    },
+    {
+      "session_id": "D331-test",
+      "brief": "",
+      "task_id": "D331-test",
+      "pid": null,
+      "started_at": "2026-08-13T17:44:52+00:00",
+      "last_seen_at": "2026-08-13T17:45:00+00:00",
+      "phase": "CP4",
+      "phase_entered_at": "2026-08-13T17:45:00+00:00",
+      "write_set": [
+        {
+          "file": "x.md",
+          "claimed_at": "2026-08-13T17:44:52+00:00",
+          "status": "dirty",
+          "task_id": "D331-test"
+        }
+      ]
+    },
+    {
+      "session_id": "D335",
+      "brief": "/Users/wane/SynovaAgent/.claude/task-briefs/D335-sync-backup.md",
+      "task_id": "D335",
+      "pid": null,
+      "started_at": "2026-08-13T17:57:20+00:00",
+      "last_seen_at": "2026-08-13T18:00:58+00:00",
       "phase": "CP2",
-      "phase_entered_at": "2026-08-13T17:11:52+00:00",
+      "phase_entered_at": "2026-08-13T18:00:58+00:00",
       "write_set": []
     }
   ],
