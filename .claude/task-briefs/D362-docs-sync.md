@@ -16,6 +16,7 @@ Mac 已用 PR 工作流（MULTI-MACHINE-PR-WORKFLOW.md）把 D334/D335 合并进
 - tests/control-tower/gen-task-board.test.py
 - tests/control-tower/hooks-install.test.sh
 - scripts/check-file-driven.sh
+- scripts/control-tower/synova-commit
 
 不做什么：
 - .env
