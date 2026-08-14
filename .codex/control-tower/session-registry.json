@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-08-13T18:00:58+00:00",
+  "updated_at": "2026-08-14T05:41:48+00:00",
   "sessions": [
     {
       "session_id": "D317-engine-core-retirement-cleanup",
@@ -50,6 +50,17 @@
       "last_seen_at": "2026-08-13T18:00:58+00:00",
       "phase": "CP2",
       "phase_entered_at": "2026-08-13T18:00:58+00:00",
+      "write_set": []
+    },
+    {
+      "session_id": "D336",
+      "brief": "/Users/wane/SynovaAgent/.claude/task-briefs/D336-multi-agent-collab.md",
+      "task_id": "D336",
+      "pid": null,
+      "started_at": "2026-08-14T04:21:35+00:00",
+      "last_seen_at": "2026-08-14T05:41:48+00:00",
+      "phase": "CP2",
+      "phase_entered_at": "2026-08-14T05:41:48+00:00",
       "write_set": []
     }
   ],

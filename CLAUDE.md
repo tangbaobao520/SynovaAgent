@@ -62,6 +62,14 @@ main 是唯一真相。一人一事一分支。合并走 PR。禁止直接 push 
 .backup 一致性快照 + integrity_check + 14 份轮转）。禁止直接 cp 数据库（可能拷到
 写一半的库）。新机器开工前验证备份任务存在：`launchctl list | grep synova.backup`。
 
+**铁律 0-5. 多 Agent 协作协议（D336，2026-08-14 创始人定）。**
+四角色两条线：开发线 = Codex+DeepSeek(dev doc) + DeepSeek Harness(架构/基建/PR审查/创新)
++ Claude Code(功能实现)；审计线 = Kimi K3(独立审计)。任务路由查
+`docs/synova/coordination/TASK-ROUTING.md`，协议全文 `docs/synova/coordination/MULTI-AGENT-COLLAB.md`。
+**审计红线（违反=事故）**：DeepSeek Harness 与 Claude Code 永不修改审计脚本
+（scripts/audit/ 等）、永不编写审计标准、禁止自我审计（开发者改过的门禁同样受 K3 审）。
+PR 审查 ≠ 审计：审计结论只认 K3 报告。同一模块同一时间只允许一个角色认领。
+
 ### 一、接线铁律
 
 **铁律 1. 垂直切片交付。** 按用户可见的行为拆，不按技术层拆。
