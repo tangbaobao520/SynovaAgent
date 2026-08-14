@@ -83,6 +83,36 @@ class TestGenTaskBoard(unittest.TestCase):
     """D320 生成器 — 5 组 red→green 用例"""
 
     # ════════════════════════════════════════════════════════════════
+    # 用例 0: 品牌迁移显示层归一 (ClawOrg → Synova, 不改写 git 历史)
+    # ════════════════════════════════════════════════════════════════
+
+    def test_author_brand_normalization(self):
+        """normalize_author/email: ClawOrg 变体 → Synova; 未命中原样返回"""
+        self.assertEqual(_gtb.normalize_author("ClawOrg"), "Synova")
+        self.assertEqual(_gtb.normalize_author("ClawOrg-Win"), "Synova-Win")
+        self.assertEqual(_gtb.normalize_author("ClawOrg-Mac"), "Synova-Mac")
+        self.assertEqual(_gtb.normalize_author("哇呢"), "Synova-Mac")
+        self.assertEqual(_gtb.normalize_author("Synova"), "Synova")
+        self.assertEqual(_gtb.normalize_author("Test Runner"), "Test Runner")
+        self.assertEqual(_gtb.normalize_email("claworg@users.noreply.github.com"),
+                         "synova@users.noreply.github.com")
+        self.assertEqual(_gtb.normalize_email("wane@wanedeMacBook-Pro.local"),
+                         "synova@users.noreply.github.com")
+        self.assertEqual(_gtb.normalize_email("test@synova.local"),
+                         "test@synova.local")
+
+    def test_author_normalized_in_git_log(self):
+        """git_log_d 读取时对历史 ClawOrg author 做显示层归一 (email 同步)"""
+        repo = make_repo()
+        _git(repo, "config", "user.name", "ClawOrg")
+        _git(repo, "config", "user.email", "claworg@users.noreply.github.com")
+        commit_file(repo, "c.txt", "feat(D325): ClawOrg 身份提交")
+        commits = _gtb.git_log_d(repo)
+        self.assertEqual(len(commits), 1)
+        self.assertEqual(commits[0]["author"], "Synova")
+        self.assertEqual(commits[0]["email"], "synova@users.noreply.github.com")
+
+    # ════════════════════════════════════════════════════════════════
     # 用例 1: D# 提取 + 推送状态 (正常路径)
     # ════════════════════════════════════════════════════════════════
 

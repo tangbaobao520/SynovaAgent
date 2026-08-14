@@ -83,7 +83,7 @@ export function loadConfig(): SynovaConfig {
   const engineTokens = process.env.ENGINE_API_TOKENS || (devMode ? 'synova-dev-token' : '');
 
   // 数据库路径
-  const dataDir = process.env.SYNOVA_DATA_DIR || process.env.CLAWORG_DATA_DIR || '';
+  const dataDir = process.env.SYNOVA_DATA_DIR || '';
   const dbPath = process.env.SYNOVA_DB_PATH ||
     (dataDir ? `${dataDir}/synova.db` : './data/synova.db');
 

@@ -179,6 +179,32 @@ def run_git(root: Path, args: List[str], timeout: int = 20) -> Optional[str]:
 _GIT_LOG_FMT = "%H%x1f%an%x1f%ae%x1f%ad%x1f%s"
 
 
+# ─── 品牌迁移显示层归一 (2026-08-14) ─────────────────────────────────────────
+# 旧项目代号 ClawOrg → Synova。仅归一仪表盘显示，不改写 git 历史：
+# git log 的原始 author 保持 ClawOrg（历史事实），本映射只影响 render 出来的
+# 作者列。显式声明、可审计，杜绝"仪表盘 vs git log 不一致"被误判为假数据。
+AUTHOR_BRAND_MAP: Dict[str, str] = {
+    "ClawOrg-Win": "Synova-Win",
+    "ClawOrg-Mac": "Synova-Mac",
+    "ClawOrg": "Synova",
+    "哇呢": "Synova-Mac",
+}
+EMAIL_BRAND_MAP: Dict[str, str] = {
+    "claworg@users.noreply.github.com": "synova@users.noreply.github.com",
+    "wane@wanedeMacBook-Pro.local": "synova@users.noreply.github.com",
+}
+
+
+def normalize_author(author: str) -> str:
+    """author 显示名归一 (品牌迁移 ClawOrg → Synova)。未命中则原样返回。"""
+    return AUTHOR_BRAND_MAP.get(author, author)
+
+
+def normalize_email(email: str) -> str:
+    """email 显示名归一 (品牌迁移)。未命中则原样返回。"""
+    return EMAIL_BRAND_MAP.get(email, email)
+
+
 def git_log_d(root: Path) -> List[Dict[str, Any]]:
     """全历史 D# 提交 (git log --grep=D[0-9], BRE): 最新在前。
 
@@ -202,7 +228,8 @@ def git_log_d(root: Path) -> List[Dict[str, Any]]:
         # 后置 D# 仅为提及（如 "…固化 D313-D316 协作教训"）— 不参与归属。
         d_ids = [d_ids[0]]
         rows.append({
-            "hash": h, "short_hash": h[:7], "author": author, "email": email,
+            "hash": h, "short_hash": h[:7],
+            "author": normalize_author(author), "email": normalize_email(email),
             "date": date, "subject": subject, "d_ids": d_ids,
         })
     return rows

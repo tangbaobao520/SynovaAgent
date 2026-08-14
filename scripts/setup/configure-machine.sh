@@ -8,8 +8,8 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 # 用法: bash scripts/setup/configure-machine.sh [--role win|mac]
 #
 # 作用（全部写 local config，不碰 global — 两台机器各自配置）:
-#   1. 身份: user.name = ClawOrg-Win / ClawOrg-Mac（机器归属靠 name 前缀，
-#      git log --author="ClawOrg-Win" 可查机器）；user.email = claworg@users.noreply.github.com
+#   1. 身份: user.name = Synova-Win / Synova-Mac（机器归属靠 name 前缀，
+#      git log --author="Synova-Win" 可查机器）；user.email = synova@users.noreply.github.com
 #      保持同一账号 noreply（GitHub 提交归属不丢，勿用 +win 之类非标准后缀）
 #   2. 安装 hooks: install-hooks.sh（4 hook toplevel-relative + synova-commit alias）
 #   3. 自检: verify-hooks-installed.sh（4 项全过才 exit 0）
@@ -32,12 +32,12 @@ if [ "${1:-}" = "--role" ]; then
 fi
 
 case "$ROLE" in
-  win|windows) NAME="ClawOrg-Win" ;;
-  mac|macos|darwin) NAME="ClawOrg-Mac" ;;
+  win|windows) NAME="Synova-Win" ;;
+  mac|macos|darwin) NAME="Synova-Mac" ;;
   *)
     echo "用法: bash scripts/setup/configure-machine.sh [--role win|mac]" >&2
-    echo "  --role win — Windows 机器身份 (ClawOrg-Win)" >&2
-    echo "  --role mac — Mac 机器身份 (ClawOrg-Mac)" >&2
+    echo "  --role win — Windows 机器身份 (Synova-Win)" >&2
+    echo "  --role mac — Mac 机器身份 (Synova-Mac)" >&2
     exit 1
     ;;
 esac
@@ -46,9 +46,9 @@ echo "=== 机器身份配置: ${NAME}（${ROOT}）==="
 
 # 1. per-clone 身份（local config）
 git -C "$ROOT" config user.name "$NAME"
-git -C "$ROOT" config user.email "claworg@users.noreply.github.com"
+git -C "$ROOT" config user.email "synova@users.noreply.github.com"
 echo "  ✅ user.name = $NAME"
-echo "  ✅ user.email = claworg@users.noreply.github.com"
+echo "  ✅ user.email = synova@users.noreply.github.com"
 
 # 2. hooks 安装（4 hook + synova-commit alias）
 echo ""
