@@ -1,0 +1,360 @@
+# A线审计证据日志
+时间: 2026-08-01 05:24:43
+commit: 431e16b8ddcb041d1f9ef7f860baf7686906f5c5
+--- git status 摘要 ---
+ M .claude/bypass.log
+ M .claude/reference-map.md
+ M .claude/settings.json
+ D .codex/signals/cross-dept.json
+ D .codex/signals/d255-electron-packaging.json
+ D .codex/signals/d258-script-cleanup.json
+ D .codex/signals/d261-pm-dashboard.json
+ D .codex/signals/d263-graph-query.json
+ D .codex/signals/d266-pipeline-monitor.json
+ D .codex/signals/d269-expert-pyramid.json
+ D .codex/signals/d272-push-wiring.json
+ D .codex/signals/d282-expert-migration.json
+ D .codex/signals/d284-control-tower-test.json
+ D .codex/signals/d284-cross-dept.json
+ D .codex/signals/ga-dashboard.json
+ D .codex/signals/gate-status.json
+ M AGENTS.md
+ M "AUDIT-BRIEF-\347\254\254\344\270\211\346\226\271\345\256\241\350\256\241\345\247\224\346\211\230\344\271\246-20260602.md"
+ M "docs/DECISION-\346\226\207\344\273\266\344\274\230\345\205\210\350\256\276\350\256\241\350\214\203\345\274\217\350\275\254\345\236\213-20260615.md"
+ M "docs/SYNOVA-MASTER-\345\205\250\351\207\217\345\257\271\351\275\220\346\211\213\345\206\214-20260610.html"
+ M docs/plans/codex/bp_v2_part1.txt
+ M docs/research/growth-diagnostics/gen_epsilon.py
+ M docs/synova/DASHBOARD-CN.md
+ M docs/synova/DASHBOARD.md
+ M extensions/industries/saas-tech/thresholds.json
+ M extensions/industries/test-write/thresholds.json
+ M memory/dual-source-fraud.md
+ M memory/engine-core-bridge-files.md
+ M memory/grep-semantic-overreach.md
+ M memory/info-injection-ignored.md
+--- 结束 ---
+
+════════ 条件A 部署独立 ════════
+
+▶ [A1 安装向导] grep -rn "welcome|Configure|Test Connection|synova_setup_step" app/js/setup.js
+3: * 4-step wizard: Welcome -> Configure -> Test Connection -> Done
+8:    { id: 'welcome',  title: 'Welcome' },
+9:    { id: 'configure', title: 'Configure' },
+13:  var STEP_KEY = 'synova_setup_step';
+42:      case 2: renderConfigure(container); break;
+52:      + '<div style="padding:10px 0;border-bottom:1px solid var(--border);font-size:14px"><strong>Step 1:</strong> Configure your server connection</div>'
+59:  function renderConfigure(container) {
+61:    container.innerHTML = '<h1>Configure Server</h1>'
+76:    container.innerHTML = '<h1>Test Connection</h1>'
+
+▶ [A2 GA到期日] grep -rn "ga-expiry|contractExpiry|ga-access" app/js/admin.js
+107:      + '<input type="date" id="ga-expiry-input" style="flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px">'
+108:      + '<button id="btn-save-ga-expiry" class="btn-primary" style="width:auto;padding:6px 14px">Save Expiry</button>'
+109:      + '</div><div id="ga-expiry-status" style="font-size:12px;margin-top:6px"></div></div>';
+111:    $('btn-save-ga-expiry').addEventListener('click', function () {
+112:      var expiryDate = $('ga-expiry-input').value;
+114:      api.put('/api/enterprise/ga-access/' + token + '/expiry', { contractExpiry: expiryDate }).then(function (r) { return r.json(); }).then(function (d) {
+115:        if (d.ok) { showToast('Expiry saved: ' + expiryDate, 'success'); $('ga-expiry-status').innerHTML = '<span style="color:#22c55e">Expires: ' + expiryDate + '</span>'; }
+122:    api.post('/api/enterprise/ga-access/generate', {}).then(function (r) { return r.json(); }).then(function (data) {
+
+▶ [A3 rbac调用] grep -rn "canAccessWorkspace|isGaContractExpired" src
+src/middleware/rbac.ts:135:export function isGaContractExpired(ctx: RbacContext): boolean {
+src/middleware/rbac.ts:201:export function canAccessWorkspace(ctx: RbacContext, ws: {
+src/middleware/rbac.ts:214:  if (isGaContractExpired(ctx)) {
+src/routes/workspaces-api.ts:130:  const { extractRbacContext, canAccessWorkspace } = require('../middleware/rbac') as typeof import('../middleware/rbac');
+src/routes/workspaces-api.ts:132:  if (!canAccessWorkspace(ctx, { visibility: ws.visibility, department: ws.department, owner: ws.owner })) {
+src/server.ts:19:import { rbacMiddleware, extractRbacContext, canAccessWorkspace, canModifyWorkspace } from './middleware/rbac';
+src/server.ts:208:  void canAccessWorkspace(rbacCtx, { visibility: 'global' });
+
+▶ [A4 user-store] grep -rn "user-store|UserStore" src
+src/adapters/sqlite-graph-store.ts:5: * 使 UserStore 等 L3 模块可以直接使用 SQLite 数据库作为图存储。
+src/agent/synova-agent.ts:139:    // D224: UserStore 注入 enterprise 路由
+src/agent/synova-agent.ts:142:      const { UserStore } = await import('../growth/user-store');
+src/agent/synova-agent.ts:143:      const { setUserStore } = await import('../routes/enterprise');
+src/agent/synova-agent.ts:145:      const userStore = new UserStore(graphStore);
+src/agent/synova-agent.ts:146:      setUserStore(userStore);
+src/agent/synova-agent.ts:147:      log.info('[wiring] UserStore 已注入 enterprise 路由');
+src/agent/synova-agent.ts:150:      log.warn({ err: msg }, '[wiring] UserStore 注入失败 — degraded，继续启动');
+src/growth/user-store.ts:2: * src/growth/user-store.ts — GraphStore 用户持久化 (D106)
+src/growth/user-store.ts:13:const log = createLogger('growth/user-store');
+src/growth/user-store.ts:56:// ═══ UserStore ═══
+src/growth/user-store.ts:58:export class UserStore {
+src/routes/auth.ts:15:import { UserStore, type UserProps } from '../growth/user-store';
+src/routes/auth.ts:33:/** D106+D107: UserStore (GraphStore 持久化), 替代内存 Map */
+src/routes/auth.ts:34:let _userStore: UserStore | null = null;
+
+▶ [A5 租户隔离] grep -rn "getOrgId|orgId" src/routes/enterprise.ts
+41:  orgId: string; name: string; adminId: string; createdAt: string; status: 'active' | 'suspended';
+44:  token: string; email: string; orgId: string; role: string; invitedBy: string;
+48:  orgId: string; apiKeyHash: string; status: 'active' | 'error'; lastSyncAt?: string;
+51:  token: string; orgId: string; createdBy: string; expiresAt: string; status: 'active' | 'expired' | 'revoked';
+62:export function getActiveImaBindings(): Array<{ orgId: string; apiKeyHash: string }> {
+63:  const result: Array<{ orgId: string; apiKeyHash: string }> = [];
+64:  for (const [orgId, binding] of imaBindings) {
+66:      result.push({ orgId, apiKeyHash: binding.apiKeyHash });
+87:function getOrgId(req: Request): string {
+89:  return auth?.orgId || 'default';
+113:    const orgId = nextId('org');
+116:    const result = await getUserStore().createUser(finalEmail, password, 'admin', orgId, { phone, wechatId });
+117:    enterprises.set(orgId, { orgId, name: orgName, adminId: result.userId, createdAt: now, status: 'active' });
+119:    log.info({ orgId, userId: result.userId, email: finalEmail }, '企业注册成功');
+120:    return res.json({ ok: true, data: { orgId, userId: result.userId, email: finalEmail, role: 'admin' } });
+
+▶ [A6 静态服务] grep -rn "express.static|sendFile" src/server.ts
+278:  app.use('/app', express.static(path.join(process.cwd(), 'app')));
+
+════════ 条件B 诊断自主 ════════
+
+▶ [B1 诊断启动] grep -rn "startDiagnosis|diagnosis-launcher|launchDiagnosis" src
+src/agent/conversation-engine.ts:26:// EC-03: L2 只依赖 L4 类型 (接口契约), 运行时通过 diagnosis-launcher (L3) 调用
+src/agent/conversation-engine.ts:37:import { DiagnosisLauncher, type DiagnosisEvent, type ConsultationResult } from './diagnosis-launcher';
+src/agent/conversation-engine.ts:375:  // 所有 L4 操作由 diagnosis-launcher.ts (L2→L3→L4 正确路径) 处理。
+src/agent/conversation-engine.ts:584:        this.startDiagnosis('FDE', '用户').then(result => {
+src/agent/conversation-engine.ts:661:  async startDiagnosis(
+src/agent/conversation-engine.ts:675:    return this.diagnosisLauncher.startDiagnosis(initiatorRole, initiatorName, onEvent);
+src/agent/diagnosis-launcher.ts:2: * agent/diagnosis-launcher.ts — 诊断启动器 (ConversationEngine 子组件)
+src/agent/diagnosis-launcher.ts:5: * 职责: startDiagnosis() → 委托给 DiagnosisEngine → L4 后处理 (GraphBridge/CommunityReports/EntityResolver)
+src/agent/diagnosis-launcher.ts:31:const log = createLogger('agent/diagnosis-launcher');
+src/agent/diagnosis-launcher.ts:55:  async startDiagnosis(
+src/agent/diagnosis-launcher.ts:80:      // Phase 0 完成信号 (ConversationEngine 已在 Phase 0 完成后调用 startDiagnosis)
+src/l4/graph-bridge.ts:7: *   ✅ upsertFromKeyPersonRisk — diagnosis-launcher.ts
+src/l4/graph-bridge.ts:8: *   ✅ upsertFromHONA — diagnosis-launcher.ts
+src/l4/graph-bridge.ts:9: *   ✅ upsertFromFinancialImpact — diagnosis-launcher.ts
+src/l4/graph-bridge.ts:10: *   ✅ upsertFromCapabilityGap — diagnosis-launcher.ts
+
+▶ [B2 信号聚合消费] grep -rn "signal-aggregator|SignalAggregator" src
+src/agent/sentinel-service.ts:12:import type { AggregatedSignal } from '../sentinel/signal-aggregator';
+src/agent/sentinel-service.ts:14:import { aggregateSignals } from '../sentinel/signal-aggregator';
+src/sentinel/index.ts:45:} from './signal-aggregator';
+src/sentinel/index.ts:48:  SignalAggregatorStats,
+src/sentinel/index.ts:49:} from './signal-aggregator';
+src/sentinel/runner.ts:185:    this.scheduler.schedule('SignalAggregator', '5 * * * *', async () => {
+src/sentinel/runner.ts:249:      const { aggregateSignals } = await import('./signal-aggregator');
+src/sentinel/signal-aggregator.ts:2: * sentinel/signal-aggregator.ts — 信号聚合引擎 (L3)
+src/sentinel/signal-aggregator.ts:20:const log = createLogger('sentinel/signal-aggregator');
+src/sentinel/signal-aggregator.ts:71:export interface SignalAggregatorStats {
+src/sentinel/signal-aggregator.ts:90:): { signals: AggregatedSignal[]; stats: SignalAggregatorStats } {
+src/sentinel/signal-aggregator.ts:161:  const stats: SignalAggregatorStats = {
+src/server.ts:164:        const { aggregateSignals } = await import('./sentinel/signal-aggregator');
+
+▶ [B3 专家调度] grep -rn "expert-dispatcher|ExpertDispatcher" src
+src/agent/expert-config-loader.ts:7: * 从文件加载 → 注册到 ExpertRegistry → ExpertDispatcher 消费。
+src/agent/knowledge-injector.ts:257:// ═══ Singleton (v2.1: ExpertDispatcher 调用) ═══
+src/interview/gpi-estimator.ts:6: * 消费方: POST /api/diagnosis/upload/interview → expert-dispatcher
+src/interview/signal-extractor.ts:6: * 消费方: POST /api/diagnosis/upload/interview → expert-dispatcher
+src/interview/signals.ts:6: * 消费方: signal-extractor.ts, gpi-estimator.ts, expert-dispatcher.ts
+src/l3/expert-dispatcher.ts:2: * l3/expert-dispatcher.ts — L3 专家调度器 (Sprint 3: 合并 engine-core 结构化解析+重试+超时)
+src/l3/expert-dispatcher.ts:29:const log = createLogger('l3/expert-dispatcher');
+src/l3/expert-dispatcher.ts:123:export interface ExpertDispatcherConfig {
+src/l3/expert-dispatcher.ts:138:export class ExpertDispatcher {
+src/l3/expert-dispatcher.ts:151:  constructor(config: ExpertDispatcherConfig) {
+src/l3/expert-dispatcher.ts:591:let _globalDispatcher: ExpertDispatcher | null = null;
+src/l3/expert-dispatcher.ts:593:export function getGlobalExpertDispatcher(): ExpertDispatcher | null {
+src/l3/expert-dispatcher.ts:597:export function setGlobalExpertDispatcher(dispatcher: ExpertDispatcher | null): void {
+src/l3/index.ts:4:export { ExpertDispatcher } from './expert-dispatcher';
+src/l3/index.ts:5:export type { ExpertReport } from './expert-dispatcher';
+
+▶ [B4 direction-monitor接线] grep -rn "direction-monitor|DirectionMonitor" src
+src/loops/direction-monitor.ts:2: * src/loops/direction-monitor.ts — 方向有效性监测 (D222)
+src/loops/direction-monitor.ts:14:const log = createLogger("loops/direction-monitor");
+src/loops/direction-monitor.ts:135:// ═══ DirectionMonitor ═══
+src/loops/direction-monitor.ts:148:export class DirectionMonitor {
+
+▶ [B5 middle-evolution接线] grep -rn "middle-evolution-engine|MiddleEvolutionEngine" src
+src/loops/middle-evolution-engine.ts:2: * src/loops/middle-evolution-engine.ts — 中层驱动进化引擎 (D92)
+src/loops/middle-evolution-engine.ts:17:const log = createLogger('loops/middle-evolution-engine');
+src/loops/middle-evolution-engine.ts:137:            actorId: 'system:middle-evolution-engine',
+
+▶ [B6 NCI] grep -rn "\bNCI\b|non-consensus|NonConsensus|非共识" src
+   (无匹配 → 未接线/不存在的证据)
+
+▶ [B7 loop接线] grep -rn "loop-scheduler|LoopScheduler|registerDefaultLoops" src
+src/agent/synova-agent.ts:153:    // D224: LoopScheduler 注册核心循环
+src/agent/synova-agent.ts:155:      const { LoopScheduler } = await import('../loops/loop-scheduler');
+src/agent/synova-agent.ts:156:      const loopScheduler = new LoopScheduler(this.scheduler ?? undefined);
+src/agent/synova-agent.ts:157:      const registered = loopScheduler.registerDefaultLoops();
+src/deploy/bootstrap.ts:511:   * 注册 6 循环 × 3 尺度的触发配置到 LoopScheduler。
+src/deploy/bootstrap.ts:512:   * 降级: LoopScheduler 不可用时仅记录日志，不阻断启动。
+src/deploy/bootstrap.ts:517:      const { LoopScheduler } = await import('../loops/loop-scheduler');
+src/deploy/bootstrap.ts:521:      const loopScheduler = new LoopScheduler(scheduler);
+src/deploy/bootstrap.ts:522:      const count = loopScheduler.registerDefaultLoops();
+src/deploy/bootstrap.ts:527:        name: 'loop-scheduler',
+src/deploy/bootstrap.ts:535:      this.ctx.addDegraded(2, 'loop-scheduler', msg);
+src/deploy/bootstrap.ts:538:        name: 'loop-scheduler',
+src/loops/loop-scheduler.ts:2: * src/loops/loop-scheduler.ts — 多尺度循环调度器 (D91 + D223)
+src/loops/loop-scheduler.ts:20:const log = createLogger('loops/loop-scheduler');
+src/loops/loop-scheduler.ts:74:// ═══ LoopScheduler ═══
+
+▶ [B8 对话入口(im-inbound)] grep -rn "conversation-engine|ConversationEngine" src/l1/im-inbound.ts
+170:  const { ConversationEngine } = await import('../agent/conversation-engine');
+180:  const conv = new ConversationEngine(provider);
+
+════════ 条件C 结论有用 ════════
+
+▶ [C1 报告组装] grep -rn "report-assembler|ReportAssembler|assembleReport" src
+src/agent/report-assembler.ts:2: * report-assembler.ts — 四层报告组装器 + Tone后处理 (L2 → D57)
+src/agent/report-assembler.ts:18:const log = createLogger('agent/report-assembler');
+src/agent/report-assembler.ts:98:export function assembleReport(
+src/routes/diagnosis.ts:244:          const { assembleReport } = await import('../agent/report-assembler');
+src/routes/diagnosis.ts:245:          const assembled = assembleReport(
+
+▶ [C2 交叉验证] grep -rn "cross-validator|CrossValidator|convergence-engine" src
+src/agent/conflict-arbitrator.ts:19:import type { Conflict, TieBreakerResult } from './cross-validator';
+src/agent/conflict-arbitrator.ts:113:  private convergenceEngine: import('./convergence-engine').ConvergenceEngine | null;
+src/agent/conflict-arbitrator.ts:118:    convergenceEngine?: import('./convergence-engine').ConvergenceEngine | null,
+src/agent/convergence-engine.ts:2: * src/agent/convergence-engine.ts — 收敛机制 (D8f v2)
+src/agent/convergence-engine.ts:18:const log = createLogger('agent/convergence-engine');
+src/agent/convergence-engine.ts:392:          actorId: 'convergence-engine',
+src/agent/cross-validator.ts:2: * src/agent/cross-validator.ts — 交叉验证触发器 (D8d)
+src/agent/cross-validator.ts:25:const log = createLogger('agent/cross-validator');
+src/agent/main-agent.ts:207:          const { ConvergenceEngine } = await import('./convergence-engine');
+src/agent/main-agent.ts:319:        const { CrossValidationTrigger } = await import('./cross-validator');
+src/agent/main-agent.ts:352:        const { ConvergenceEngine } = await import('./convergence-engine');
+
+▶ [C3 质量门禁] grep -rn "quality-firewall|QualityFirewall" src
+src/l3/expert-dispatcher.ts:5: * 职责: 专家子 Agent 执行 — 证据过滤 + Prompt 构建 + ExpertAutonomyEngine + QualityFirewall
+src/l3/expert-dispatcher.ts:21:import { QualityFirewall } from './quality-firewall';
+src/l3/expert-dispatcher.ts:274:          // Gear 4: QualityFirewall
+src/l3/expert-dispatcher.ts:279:            const firewall = new QualityFirewall(this.graphStoreForFirewall, 'default');
+src/l3/expert-dispatcher.ts:351:        // Gear 4: QualityFirewall — 证据引用、置信度、过时、矛盾校验
+src/l3/expert-dispatcher.ts:360:          const firewall = new QualityFirewall(this.graphStoreForFirewall, 'default');
+src/l3/index.ts:8:export { QualityFirewall } from './quality-firewall';
+src/l3/quality-firewall.ts:2: * l3/quality-firewall.ts — 洞察质量防火墙 (Gear 4)
+src/l3/quality-firewall.ts:12:const log = createLogger('l3/quality-firewall');
+src/l3/quality-firewall.ts:36:// ═══ QualityFirewall ═══
+src/l3/quality-firewall.ts:38:export class QualityFirewall {
+src/orchestrator/phase-gate-check.ts:5: * 此前 QualityFirewall 仅在 ExpertDispatcher.runExpert() 内部调用（专家级），
+src/orchestrator/phase-gate-check.ts:8: * 铁律 39: L2 编排层。通过 L3 QualityFirewall + L4 GraphStore 接口访问下级。
+
+▶ [C4 知识回流] grep -rn "knowledge-feedback|KnowledgeFeedback|collectFeedback" src
+src/agent/interactive-card.ts:139:    feedbackCollector?: { collectFeedback(data: Record<string, unknown>): Promise<string> },
+src/agent/interactive-card.ts:258:    feedbackCollector?: { collectFeedback(data: Record<string, unknown>): Promise<string> },
+src/agent/interactive-card.ts:262:        await feedbackCollector.collectFeedback({
+src/growth/feedback-collector.ts:153:  collectFeedback(input: MiddleFeedbackInput): FeedbackRecord & { degraded?: boolean } {
+src/growth/goal-lifecycle.ts:174:    const { extractGoalKnowledge, writeGoalKnowledge } = await import('./knowledge-feedback');
+src/growth/goal-lifecycle.ts:183:    const { writeEffectReport } = await import('./knowledge-feedback');
+src/growth/knowledge-feedback.ts:2: * src/growth/knowledge-feedback.ts — 执行知识 PKB 回流 (D76)
+src/growth/knowledge-feedback.ts:20:const log = createLogger('growth/knowledge-feedback');
+src/l3/ga-collaboration.ts:51:  private feedbackCollector: { collectFeedback(data: Record<string, unknown>): { id: string } | Promise<{ id: string }> } | null = null;
+src/l3/ga-collaboration.ts:56:  setFeedbackCollector(collector: { collectFeedback(data: Record<string, unknown>): { id: string } | Promise<{ id: string }> }): void {
+src/l3/ga-collaboration.ts:210:      const result = await this.feedbackCollector.collectFeedback({
+src/loops/middle-evolution-engine.ts:135:          fb.collectFeedback({
+src/routes/chat.ts:61:  // V4.2.1: 反馈收集 — collectFeedback 持久化用户决策
+src/routes/chat.ts:64:    const { collectFeedback } = await import('@synova/evolution');
+src/routes/chat.ts:65:    collectFeedback({
+
+▶ [C5 Goal闭环] grep -rn "goal-lifecycle|GoalLifecycle" src
+src/growth/goal-lifecycle.ts:2: * src/growth/goal-lifecycle.ts — Goal 生命周期管理
+src/growth/goal-lifecycle.ts:17:const log = createLogger('growth/goal-lifecycle');
+src/growth/goal-types.ts:191: * goal-lifecycle 所需的最小 AuditStore 接口。
+src/growth/goal-types.ts:207: * goal-lifecycle 所需的最小 PolicyEngine 接口。
+
+▶ [C6 Proposal] grep -rn "proposal-engine|ProposalEngine|proposal-store" src
+src/growth/proposal-engine.ts:2: * src/growth/proposal-engine.ts — Proposal 引擎
+src/growth/proposal-engine.ts:15:import { createProposal, getProposal, updateProposalStatus, checkExpiry } from '../growth/proposal-store';
+src/growth/proposal-engine.ts:18:const log = createLogger('growth/proposal-engine');
+src/growth/proposal-engine.ts:135:    createdBy: 'system:proposal-engine',
+src/growth/proposal-engine.ts:339: * 代理调用 proposal-store.checkExpiry。
+src/growth/proposal-store.ts:2: * src/growth/proposal-store.ts — Proposal 持久化存储
+src/growth/proposal-store.ts:17:const log = createLogger('growth/proposal-store');
+src/growth/proposal-store.ts:100:      actorId: `system:proposal-store`,
+src/growth/workspace-builder.ts:7: *   3. 待处理 Proposal（proposal-store）
+src/growth/workspace-builder.ts:37: * 遵循 goal-store/proposal-store 的 DI 模式，避免直接耦合具体实现。
+src/growth/workspace-types.ts:74: * - Proposal 过期 → proposal-store.ts checkExpiry() 检测
+src/growth/workspace-types.ts:104: * 数据来源: proposal-store.ts listProposalsByDept() + 按 status 筛选。
+
+▶ [C7 交互卡片] grep -rn "interactive-card|InteractiveCard" src
+src/agent/interactive-card.ts:2: * src/agent/interactive-card.ts — 交互式卡片回复 (D18)
+src/agent/interactive-card.ts:15:const log = createLogger('agent/interactive-card');
+src/agent/interactive-card.ts:80:// ═══ InteractiveCardHandler ═══
+src/agent/interactive-card.ts:82:export class InteractiveCardHandler {
+src/agent/proactive-push.ts:22:import { InteractiveCardHandler } from './interactive-card';
+src/agent/proactive-push.ts:27:const cardHandler = new InteractiveCardHandler();
+src/routes/sentinel.ts:115:    const { InteractiveCardHandler } = await import('../agent/interactive-card');
+src/routes/sentinel.ts:116:    const handler = new InteractiveCardHandler();
+
+════════ 条件D 持续运行 ════════
+
+▶ [D1 cron持久化] grep -rn "cron_jobs|trigger_type|persistRun" src/cron
+src/cron/scheduler.ts:131:      CREATE TABLE IF NOT EXISTS cron_jobs (
+src/cron/scheduler.ts:140:        trigger_type TEXT DEFAULT 'cron',
+src/cron/scheduler.ts:147:    try { this.db.exec("ALTER TABLE cron_jobs ADD COLUMN trigger_type TEXT DEFAULT 'cron'"); } catch { log.warn({}, 'ALTER TABLE trigger_type 已存在或失败 — 跳过'); }
+src/cron/scheduler.ts:148:    try { this.db.exec("ALTER TABLE cron_jobs ADD COLUMN event_types TEXT DEFAULT '[]'"); } catch { log.warn({}, 'ALTER TABLE event_types 已存在或失败 — 跳过'); }
+src/cron/scheduler.ts:149:    try { this.db.exec("ALTER TABLE cron_jobs ADD COLUMN last_event_at TEXT"); } catch { log.warn({}, 'ALTER TABLE last_event_at 已存在或失败 — 跳过'); }
+src/cron/scheduler.ts:153:    const rows = this.db.prepare('SELECT * FROM cron_jobs').all() as Array<Record<string, unknown>>;
+src/cron/scheduler.ts:163:        triggerType: (row.trigger_type as TriggerType) || 'cron',
+src/cron/scheduler.ts:230:      'INSERT OR REPLACE INTO cron_jobs (id, name, cron, trigger_type, event_types) VALUES (?,?,?,?,?)',
+src/cron/scheduler.ts:264:    this.db.prepare('DELETE FROM cron_jobs WHERE id=?').run(id);
+src/cron/scheduler.ts:288:    this.db.prepare('UPDATE cron_jobs SET event_types=? WHERE id=?').run(etJson, jobId);
+src/cron/scheduler.ts:382:      this.persistRun(job);
+src/cron/scheduler.ts:390:      this.persistRun(job);
+src/cron/scheduler.ts:394:  private persistRun(job: CronJob): void {
+src/cron/scheduler.ts:396:      'UPDATE cron_jobs SET last_run_at=?, last_error=?, failures=?, runs=?, last_event_at=? WHERE id=?',
+
+▶ [D2 重启恢复] grep -rn "restart-recovery|RestartRecovery|recoverInterrupted" src
+src/agent/synova-agent.ts:22:import { RestartRecovery } from '../services/restart-recovery';
+src/agent/synova-agent.ts:78:      const recovery = new RestartRecovery(sessionStore);
+src/agent/synova-agent.ts:79:      await recovery.recoverInterruptedSessions();
+src/services/restart-recovery.ts:2: * restart-recovery.ts — 启动恢复 (Phase 1.1)
+src/services/restart-recovery.ts:15:const log = createLogger('services/restart-recovery');
+src/services/restart-recovery.ts:27: * SessionStore 的最小接口——RestartRecovery 需要的全部操作。
+src/services/restart-recovery.ts:44:// ═══ RestartRecovery ═══
+src/services/restart-recovery.ts:46:export class RestartRecovery {
+src/services/restart-recovery.ts:59:  async recoverInterruptedSessions(): Promise<RecoveryResult> {
+
+▶ [D3 优雅停机] grep -rn "graceful-shutdown|GracefulShutdown|drain" src
+src/agent/conversation-engine.ts:15:import { getGlobalGracefulShutdown } from '../services/graceful-shutdown';
+src/agent/conversation-engine.ts:476:      try { getGlobalGracefulShutdown().noteActive(this.sessionId, { orgId: this.orgId, phase: this.phase }); }
+src/agent/synova-agent.ts:23:import { GracefulShutdown, setGlobalGracefulShutdown } from '../services/graceful-shutdown';
+src/agent/synova-agent.ts:34:  private gracefulShutdown: GracefulShutdown;
+src/agent/synova-agent.ts:39:    this.gracefulShutdown = new GracefulShutdown();
+src/agent/synova-agent.ts:40:    setGlobalGracefulShutdown(this.gracefulShutdown);
+src/agent/synova-agent.ts:170:      await queue.drain();
+src/agent/synova-agent.ts:277:      await this.gracefulShutdown.drain(sessionStore);
+src/agent/synova-agent.ts:289:  getGracefulShutdown(): GracefulShutdown { return this.gracefulShutdown; }
+src/interview/signal-extractor.ts:88:    dimension: 'turnover', signalType: 'talent_drain', description: '核心人才流失', },
+src/l4/delivery-queue.ts:6: *   drain → 启动时恢复未投递消息
+src/l4/delivery-queue.ts:71:  async drain(maxTimeMs = 60_000): Promise<DrainResult> {
+src/l4/delivery-queue.ts:88:        errors.push('drain timeout');
+src/services/graceful-shutdown.ts:2: * graceful-shutdown.ts — 优雅关闭 (Phase 1.2)
+src/services/graceful-shutdown.ts:6: *   noteActive / forgetActive / listActive / drain 模式。
+
+▶ [D4 心跳] grep -rn "heartbeat|stalled|HEARTBEAT" src/loops
+src/loops/loop-scheduler.ts:63:  stalled: string[];
+src/loops/loop-scheduler.ts:71:const HEARTBEAT_DIR = join(process.cwd(), '.codex');
+src/loops/loop-scheduler.ts:72:const HEARTBEAT_FILE = join(HEARTBEAT_DIR, 'heartbeat.json');
+src/loops/loop-scheduler.ts:97:    try { mkdirSync(HEARTBEAT_DIR, { recursive: true }); } catch { log.warn({}, '心跳目录创建失败 — 降级'); }
+src/loops/loop-scheduler.ts:106:      this.scheduler.schedule('system-heartbeat-check', '0 0 * * *', async () => {
+src/loops/loop-scheduler.ts:108:        if (report.stalled.length > 0) {
+src/loops/loop-scheduler.ts:109:          log.warn({ stalled: report.stalled, report }, 'SYSTEM_SILENCE — 检测到停滞循环');
+src/loops/loop-scheduler.ts:110:          emitSignal('loop-scheduler', 'red', `${report.stalled.length} loops stalled`);
+src/loops/loop-scheduler.ts:266:      writeFileSync(HEARTBEAT_FILE, JSON.stringify(records, null, 2), 'utf-8');
+src/loops/loop-scheduler.ts:275:   * 超 3 周期未产出 → 标记 stalled。
+src/loops/loop-scheduler.ts:281:    const stalled: string[] = [];
+src/loops/loop-scheduler.ts:295:        stalled.push(loopId);
+src/loops/loop-scheduler.ts:302:      stalled, healthy, unknown,
+src/loops/loop-scheduler.ts:307:    if (stalled.length > 0) {
+src/loops/loop-scheduler.ts:308:      log.warn({ stalled, report }, '检测到循环停滞 — SYSTEM_SILENCE');
+
+▶ [D5 故障恢复] grep -rn "fault-recovery|FaultRecovery" src
+src/agent/diagnosis-launcher.ts:14:import { getFaultRecovery } from '../services/fault-recovery';
+src/agent/diagnosis-launcher.ts:33:const faultRecovery = getFaultRecovery();
+src/server.ts:236:    faultRecovery: new (await import('./services/fault-recovery')).FaultRecovery(),
+src/services/container.ts:28:import type { FaultRecovery } from './fault-recovery';
+src/services/container.ts:69:  faultRecovery: FaultRecovery;
+src/services/fault-recovery.ts:2: * services/fault-recovery.ts — 故障恢复模块 (Batch 3: BP 7 场景全覆盖)
+src/services/fault-recovery.ts:19:const log = createLogger('services/fault-recovery');
+src/services/fault-recovery.ts:58:export class FaultRecovery {
+src/services/fault-recovery.ts:277:let _instance: FaultRecovery | null = null;
+src/services/fault-recovery.ts:278:export function getFaultRecovery(config?: Partial<FaultConfig>, inject?: FaultRecovery): FaultRecovery {
+src/services/fault-recovery.ts:280:  if (!_instance) _instance = new FaultRecovery(config);
+
+▶ [D6 资源监控] grep -rn "resource-monitor|memory-monitor" src
+src/server.ts:12:import { MemoryMonitor } from './services/memory-monitor';
+src/services/memory-monitor.ts:2: * services/memory-monitor.ts — 内存监控 (Phase 5.3)
+src/services/memory-monitor.ts:11:const log = createLogger('services/memory-monitor');
+src/services/resource-monitor.ts:2: * services/resource-monitor.ts — 资源监控模块 (D265)
+src/services/resource-monitor.ts:15:const log = createLogger('services/resource-monitor');
+src/services/resource-monitor.ts:45:    const runner = join(__dirname, '../../.codex/tmp/resource-monitor-runner.py');
+
+# 结束 — 证据日志完成

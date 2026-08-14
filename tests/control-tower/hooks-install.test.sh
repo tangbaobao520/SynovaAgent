@@ -88,9 +88,9 @@ EXIT=0
 COUT=$(cd "$CLONE" && bash "$REPO_DIR/scripts/setup/configure-machine.sh" --role mac 2>&1) || EXIT=$?
 assert_exit 0 "$EXIT" "configure-machine --role mac exit 0"
 NAME=$(cd "$CLONE" && git config user.name)
-assert_contains "$NAME" "ClawOrg-Mac" "user.name = ClawOrg-Mac（机器归属靠 name）"
+assert_contains "$NAME" "Synova-Mac" "user.name = Synova-Mac（机器归属靠 name）"
 EMAIL=$(cd "$CLONE" && git config user.email)
-assert_contains "$EMAIL" "claworg@users.noreply.github.com" "user.email 保持同一账号 noreply"
+assert_contains "$EMAIL" "synova@users.noreply.github.com" "user.email 保持同一账号 noreply"
 echo ""
 
 # ── 5. commit 触发 pre-commit（不 --no-verify；DS7）──

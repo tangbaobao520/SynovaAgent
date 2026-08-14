@@ -36,7 +36,7 @@ const CACHE_FILE = path.join(
 const CACHE_TTL_MS = 6 * 3600_000;
 
 /** 远程仓库 URL */
-const REMOTE_REPO_URL = 'https://github.com/ClawOrg-cn/ClawOrg.git';
+const REMOTE_REPO_URL = 'https://github.com/tangbaobao520/SynovaAgent.git';
 
 // ═══ Types ═══
 
@@ -131,7 +131,7 @@ export function recommendedUpdateCommand(): string {
   switch (method) {
     case 'git': return 'git pull origin main && npm install';
     case 'npm': return 'npm install -g synova-agent@latest';
-    case 'docker': return 'docker pull claworg/synova-agent:latest';
+    case 'docker': return 'docker pull synova/synova-agent:latest';
     default: return 'git pull origin main && npm install';
   }
 }

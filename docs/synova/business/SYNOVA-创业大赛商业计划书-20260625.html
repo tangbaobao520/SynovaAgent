@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Synova — AI 企业增长诊断 Agent · 创业大赛商业计划书</title>
+<style>
+
+@charset "UTF-8";
+:root{--bg:#faf9f6;--page:#fff;--t1:#111;--t2:#333;--t3:#5f5f5f;--t4:#8a8a8a;--blue:#1d4ed8;--green:#166534;--orange:#b45309;--purple:#6d28d9;--red:#b91c1c;--bd:#e5e3dd;--s1:#f3f2ee;--s2:#eae7e0}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--t2);font-family:Inter,Noto Sans SC,Microsoft YaHei,PingFang SC,sans-serif;display:flex;flex-direction:column;align-items:center;padding:20px 10px}
+.page{max-width:960px;width:100%;background:var(--page);border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.06);padding:40px 48px;margin-bottom:16px;page-break-after:always}
+.page:last-child{page-break-after:auto}
+h2{font-size:1.2rem;font-weight:700;color:var(--t1);margin:32px 0 12px;padding-bottom:6px;border-bottom:2px solid var(--bd);letter-spacing:-.01em}
+h3{font-size:.95rem;font-weight:600;color:var(--t2);margin:18px 0 6px}
+p{font-size:.85rem;line-height:1.65;margin:5px 0;color:var(--t3)}
+.small{font-size:.75rem;color:var(--t4);line-height:1.6}
+.caption{font-size:.7rem;color:var(--t4);margin-top:2px}
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:6px;padding:14px 16px;margin:6px 0}
+.card h4{font-size:.82rem;font-weight:600;color:var(--t2);margin-bottom:4px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:8px 0}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:8px 0}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:8px 0}
+.g2-70{display:grid;grid-template-columns:7fr 3fr;gap:14px;margin:8px 0}
+.g2-60{display:grid;grid-template-columns:6fr 4fr;gap:14px;margin:8px 0}
+.g2-40{display:grid;grid-template-columns:4fr 6fr;gap:14px;margin:8px 0}
+.stat{text-align:center;background:var(--page);border:1px solid var(--bd);border-radius:6px;padding:14px 8px}
+.stat .val{font-family:JetBrains Mono,Consolas,monospace;font-size:1.5rem;font-weight:700;color:var(--t1);letter-spacing:-.02em}
+.stat .lbl{font-size:.68rem;color:var(--t4);margin-top:2px}
+.tag{display:inline-block;padding:2px 8px;border-radius:3px;font-size:.68rem;font-weight:600;letter-spacing:.01em}
+.tag.b{background:rgba(29,78,216,.1);color:var(--blue)} .tag.g{background:rgba(22,101,52,.1);color:var(--green)}
+.tag.o{background:rgba(180,83,9,.1);color:var(--orange)} .tag.p{background:rgba(109,40,217,.1);color:var(--purple)}
+.tag.r{background:rgba(185,28,28,.1);color:var(--red)}
+.clip{border-left:4px solid var(--blue);padding:8px 14px;margin:8px 0;background:var(--s1);border-radius:0 6px 6px 0;font-size:.82rem}
+.clip.g{border-left-color:var(--green)} .clip.o{border-left-color:var(--orange)} .clip.p{border-left-color:var(--purple)} .clip.r{border-left-color:var(--red)}
+.clip strong{color:var(--t1)}
+.layer{display:grid;grid-template-columns:48px 1fr;gap:8px;margin:2px 0;align-items:center}
+.layer .lt{font-size:.64rem;font-weight:700;padding:3px 6px;border-radius:3px;text-align:center;white-space:nowrap}
+.l1{background:#fee2e2;color:var(--red)}.l2{background:#dbeafe;color:var(--blue)}
+.l3{background:#ede9fe;color:var(--purple)}.l4{background:#fff7ed;color:var(--orange)}
+.l5{background:#fef2f2;color:var(--red)}.l0{background:#f0fdf4;color:var(--green)}
+.layer .ld{font-size:.72rem;color:var(--t3)}
+.flow{display:flex;align-items:center;gap:0;margin:8px 0;flex-wrap:wrap;justify-content:center}
+.flow .step{background:var(--page);border:1px solid var(--bd);border-radius:6px;padding:10px 14px;text-align:center;min-width:80px;margin:2px}
+.flow .step .sn{font-size:.68rem;color:var(--t4);margin-bottom:2px}
+.flow .step .st{font-size:.74rem;font-weight:600;color:var(--t2)}
+.flow .arrow{color:var(--t4);font-size:1rem;padding:0 4px}
+table{width:100%;border-collapse:collapse;margin:10px 0;font-size:.8rem}
+th{text-align:left;padding:8px 10px;background:var(--s2);border-bottom:2px solid var(--bd);font-weight:600;font-size:.72rem;color:var(--t3)}
+td{padding:7px 10px;border-bottom:1px solid var(--bd);vertical-align:top;font-size:.78rem}
+tr:nth-child(even) td{background:var(--s1)}
+.cover{text-align:center;padding:60px 0 40px}
+.cover .logo{font-size:3.4rem;font-weight:800;letter-spacing:-.05em;color:var(--t1)}
+.cover .sub{font-size:1.15rem;color:var(--t3);margin:6px 0 4px}
+.cover .tagline{font-size:.85rem;color:var(--t4);margin:8px 0 28px;line-height:1.7}
+.cover .meta{font-size:.78rem;color:var(--t4)}
+.sec-num{font-size:.72rem;color:var(--t4);font-weight:500;letter-spacing:.04em}
+.moat{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}
+.moat .m{background:var(--page);border:1px solid var(--bd);border-radius:6px;padding:12px}
+.moat .m .mt{font-size:.78rem;font-weight:600;color:var(--t2);margin-bottom:3px}
+.moat .m .md{font-size:.7rem;color:var(--t4);line-height:1.5}
+.rm{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0}
+.rm .phase{background:var(--s1);border-radius:6px;padding:12px 10px;text-align:center;border-top:3px solid var(--bd)}
+.rm .phase.now{border-top-color:var(--blue);background:rgba(29,78,216,.04)}
+.rm .phase .pname{font-size:.75rem;font-weight:600;color:var(--t2);margin-bottom:3px}
+.rm .phase .pdate{font-size:.65rem;color:var(--t4);margin-bottom:6px}
+.rm .phase .pgoal{font-size:.7rem;color:var(--t3);line-height:1.6}
+.sentinel-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:4px 12px;font-size:.7rem;margin:8px 0}
+.sentinel-grid .sg{display:flex;gap:4px;align-items:baseline;padding:2px 0}
+.sentinel-grid .sg .sid{font-family:JetBrains Mono,Consolas,monospace;font-size:.68rem;color:var(--blue);min-width:28px}
+.sentinel-grid .sg .sname{color:var(--t3)}
+@media print{body{background:#fff;padding:0}.page{box-shadow:none;padding:1.5cm;margin-bottom:0;border-radius:0}}
+@page{size:A4;margin:1.2cm}
+@media(max-width:640px){.page{padding:18px 14px}.g2,.g3,.g4,.g2-70,.g2-60,.g2-40{grid-template-columns:1fr}.moat,.sentinel-grid{grid-template-columns:1fr}.rm{grid-template-columns:1fr 1fr}.cover{padding:30px 0 16px}}
+
+</style>
+</head>
+<body>
+<!-- ===== COVER ===== -->
+<div class="page cover">
+<div class="logo">Synova</div>
+<div class="sub">AI 企业增长诊断系统</div>
+<div class="tagline">驻守在企业内部的 AI Agent<br>7x24 监测全量组织数据，主动发现增长卡点<br>8 位 AI 专家协同诊断根因，给出可执行的行动方案</div>
+<div style="margin-top:32px">
+<div class="stat" style="display:inline-block;min-width:110px;margin:4px"><div class="val">140,442</div><div class="lbl">TypeScript 行</div></div>
+<div class="stat" style="display:inline-block;min-width:110px;margin:4px"><div class="val">50</div><div class="lbl">诊断哨兵</div></div>
+<div class="stat" style="display:inline-block;min-width:110px;margin:4px"><div class="val">8</div><div class="lbl">AI 专家</div></div>
+</div>
+<div class="meta" style="margin-top:28px">参赛赛道：人工智能 / 数字经济 &middot; 2026 &middot; 南宁</div>
+</div>
+
+<!-- ===== 01: EXECUTIVE SUMMARY ===== -->
+<div class="page">
+<span class="sec-num">01</span>
+<h2>执行摘要</h2>
+
+<div class="clip g" style="font-size:.88rem"><strong>企业的免疫系统一直不存在。</strong>咨询公司自称"企业医生"——麦肯锡、BCG、长松，他们干了五十年了。但人类身体同时需要免疫系统和医生：免疫系统做日常防御，医生治疑难杂症。企业呢？只有医生。不是企业不想有免疫系统——是过去技术根本做不到。没有 AI 能驻扎在每家公司里、读取所有数据、7x24 不间断巡逻。<br><br><strong>现在可以了。</strong>LLM 推理成本降到 1-3 元一次，MCP 协议让数据接入标准化，国产大模型让数据可以留在本地。一个真正的企业免疫系统需要具备什么？五个特征：永不离开（持续运行）、全知（读全所有数据）、即时响应（异常秒级报警）、学习型（每次诊断沉淀为知识不重复犯错）、自适应（组织变了它跟着变）。Synova 按照这五个特征从头构建。它不是"更好的咨询工具"——它是企业从未拥有过的那套免疫系统。</div></div>
+
+<div class="g2" style="margin-top:14px">
+<div>
+<p><strong>Synova 是一套 AI 驱动的企业增长免疫系统。</strong>它驻扎在企业内部，7x24 持续监测全部组织数据，主动发现增长瓶颈——无需任何人向它提问。8 位 AI 专家并行推理，最终回答两个终极问题：<em>增长卡在哪里？现在该做什么？</em></p>
+<p>中国 1,200 万成长型企业的共同困境不是缺咨询——他们上课、请顾问、买 SaaS——而是每次诊断都是被动的、一次性的。顾问离场，企业回到"凭感觉"。</p>
+<p>Synova 把诊断从一次性交付变成<strong>持续运转的免疫系统</strong>。诊断不是目的，增长才是。</p>
+</div>
+<div>
+<div class="stat" style="margin-bottom:10px"><div class="val">1,200 万</div><div class="lbl">中国企业 (5-1000人)</div></div>
+<div class="stat" style="margin-bottom:10px"><div class="val" style="color:var(--red)">200 万+</div><div class="lbl">传统咨询起步价/次</div></div>
+<div class="stat" style="margin-bottom:10px"><div class="val" style="color:var(--blue)">3.98 万</div><div class="lbl">Synova 年费起</div></div>
+<div class="stat"><div class="val" style="color:var(--green)">50</div><div class="lbl">哨兵已落地运行</div></div>
+</div>
+</div>
+</div>
+
+
+<div class="clip g" style="margin-top:8px"><strong>已确认的关键进展：</strong>首签客户 &mdash; 母婴行业，客户与全国 400+ 月子中心合作，以此为支点打入母婴市场。首签 GA &mdash; 长松咨询 15 年资深顾问，自带客户积累与行业资源。</div>
+</div>
+</div>
+
+<!-- ===== 02: PROBLEM ===== -->
+<div class="page">
+<span class="sec-num">02</span>
+<h2>痛点：传统咨询的三个结构死结</h2>
+<p>中国成长型企业不是没有咨询资源——他们上课、请顾问、买 SaaS。但面向中小企业，传统模式存在三个结构性的死结，不是某家咨询公司的问题，是这套模式本身的问题。</p>
+
+<div class="card" style="border-left:4px solid var(--red)"><strong>第一个死结：模块拼盘，看不到全局</strong><br><span class="small">企业的增长从来不是在「战略」「组织」「财务」「营销」各自独立的管道里发生的。但在传统咨询模式下，做战略的不管组织能不能执行，做组织的不管现金流撑不撑得住，做营销的不管产品本身有没有问题。每家咨询公司只卖自己擅长的一个模块。老板买了一堆，但没有人告诉他，这几个维度之间的<em>转速差</em>才是真正的瓶颈。</span></div>
+
+<div class="card" style="border-left:4px solid var(--orange)"><strong>第二个死结：定性诊断，无法量化</strong><br><span class="small">大多数面向中小企业的诊断，本质上是「有经验的顾问来和你聊两天，然后给你一份报告」。报告里充满了正确的判断——「执行力不足」「品牌定位模糊」「沟通效率有待提升」——但判断的依据是什么？阈值在哪？做完方案到底改进了没有，改进多少，谁也说不清。更致命的是，老板凭自己的认知选咨询公司——而他的认知本身可能就是增长的瓶颈。一个看不见自己盲区的人，凭感觉选了一面同样看不见盲区的镜子。</span></div>
+
+<div class="card" style="border-left:4px solid var(--purple)"><strong>第三个死结：开药就走，无人跟踪</strong><br><span class="small">诊断 → 方案 → 培训 → 结束。这是传统咨询的标准流程。方案好不好，执行了没有，效果持续了多久，全看企业自己。三个月后，一切恢复原状。下次再遇到问题，重新找人，重新诊断，重新花钱。这不是企业的问题——外部顾问不可能驻扎在企业里，不可能每天看数据，不可能在问题刚冒头的时候就发现它。</span></div>
+
+<div class="clip r" style="margin-top:14px"><strong><div class="clip" style="margin-top:14px"><strong>为什么是现在？</strong>四个条件在 2026 年同时成熟：LLM 推理成本降至 1-3 元/次（三年前是 100+ 元）&mdash; 诊断不再亏损；MCP 协议成为 Agent-工具交互标准 &mdash; 数据接入不再是定制开发；国产大模型生态完整（DeepSeek/通义千问/Kimi）&mdash; 数据可留在客户本地；中小企业开始习惯用 AI &mdash; 市场教育已完成。三年前做不了，现在不做就晚了。</div>
+
+<div class="clip r" style="margin-top:10px"><strong>三个死结指向同一个根源：传统咨询是「医生模式」——你有问题来找我，我给你开药，之后的事情不在我的范围。</strong>但企业真正需要的不是偶尔来一次的医生。企业需要的是一套免疫系统——它自己巡逻，自己监测，在异常出现的第一个瞬间就做出反应。它不会三个月后不管了，它不会给你 20 个无关紧要的建议，它只针对当前最紧急的威胁。它一辈子都在。</div>
+
+<div class="g2" style="margin-top:14px">
+<div>
+<h3 style="margin-top:0">我们问的是一个不同的问题</h3>
+<div class="clip g"><strong>不是问「这个企业有没有问题？」</strong><br>而是问<strong>「这个企业的增长卡在哪里？」</strong></div>
+
+<h3 style="margin-top:14px">呈现方式：三个飞轮（CEO 视角）</h3>
+<p class="small">企业拿到诊断报告时，看到的不是增长方程 &mdash; 是三个飞轮的转速仪表盘。CEO 不需要理解演化经济学，只需要知道哪个飞轮最慢。但飞轮背后，是<strong>增长方程在驱动每一个诊断结论</strong>。</p>
+<div class="g3" style="margin-top:6px">
+<div class="card" style="text-align:center"><strong>价值创造飞轮</strong><br><span class="small">你凭什么存在？<br>生态位理论、颠覆式创新</span></div>
+<div class="card" style="text-align:center"><strong>价值兑现飞轮</strong><br><span class="small">你能把钱收回来吗？<br>商业模式画布、交易成本经济学</span></div>
+<div class="card" style="text-align:center"><strong>价值再生飞轮</strong><br><span class="small">你能一直做下去吗？<br>演化经济学、组织双环学习</span></div>
+</div>
+<p class="small" style="margin-top:8px">三个飞轮是咬合的：价值创造是发动机，价值兑现是传动轴，价值再生是自我修复系统。诊断的关键是<strong>找到三个飞轮之间的转速差</strong>。这不是传统的「战略-组织-财务」拆分——任何一个飞轮为零，增长消失。<br><span class="small" style="color:var(--t4)">飞轮是呈现方式，增长方程才是诊断引擎。三飞轮回答"CEO 看到什么"，增长方程（详见第 04 章）回答"为什么必须这么测量"。<strong>如果方程是错的，飞轮转多快都没有意义。</strong></span></p>
+</div>
+</div>
+</div>
+
+<!-- ===== 03: PRODUCT PIPELINE ===== -->
+<div class="page">
+<span class="sec-num">03</span>
+<h2>产品：免疫系统，不是医生</h2>
+<div class="clip g"><strong>核心差异：主动 vs 被动。</strong>传统工具等用户提问；Synova 不间断扫描、主动发现异常、主动分级报告。一切正常时不打扰任何人。</div>
+<div class="flow" style="margin:18px 0">
+<div class="step"><div class="sn">Step 1</div><div class="st">数据注入</div></div>
+<div class="arrow">&rarr;</div>
+<div class="step"><div class="sn">Step 2</div><div class="st">本体关联</div></div>
+<div class="arrow">&rarr;</div>
+<div class="step"><div class="sn">Step 3</div><div class="st">哨兵扫描</div></div>
+<div class="arrow">&rarr;</div>
+<div class="step" style="border:2px solid var(--purple)"><div class="sn">Step 4</div><div class="st">专家推理</div></div>
+<div class="arrow">&rarr;</div>
+<div class="step"><div class="sn">Step 5</div><div class="st">分级报告</div></div>
+<div class="arrow">&rarr;</div>
+<div class="step" style="border:2px solid var(--green)"><div class="sn">Step 6</div><div class="st">执行跟踪</div></div>
+</div>
+<div class="g2-40">
+<div>
+<div class="card"><strong>飞书 / 钉钉 / 财务 / CRM</strong><br><span class="small">全量数据自动流入企业本地实例。无需人工采集。</span></div>
+<div class="card" style="border-left:4px solid var(--purple)"><strong>7 维度 &times; 50 哨兵定时扫描</strong><br><span class="small">compute() &rarr; 基线对比 &rarr; 信号聚合。每个哨兵独立判断：这个子领域出问题了吗？</span></div>
+<div class="card" style="border-left:4px solid var(--green)"><strong>分层推送</strong><br><span class="small">高置信度 &rarr; 直接推企业对接人。低置信度 &rarr; 升级给 GA 审核。重大风险 &rarr; 同步老板信箱</span></div>
+</div>
+<div>
+<div class="card"><strong>SOG v1.0 数字孪生</strong><br><span class="small">新客户、新员工、新收入自动生成节点和关联边。17 种节点 &times; 14 种边。企业事实层实时更新。</span></div>
+<div class="card" style="border-left:4px solid var(--purple)"><strong>8 位专家并行推理</strong><br><span class="small">异常信号 &rarr; 自动路由对应专家。多专家交叉验证 &rarr; 证据池。输出结构化判断，非模板填充。</span></div>
+<div class="card" style="border-left:4px solid var(--green)"><strong>跟踪闭环 + 自我进化</strong><br><span class="small">执行结果反馈到数据层。L0 进化层：高置信度发现自动更新数字孪生，用户纠错跨会话持久化。越用越准。</span></div>
+</div>
+</div>
+</div>
+
+<!-- ===== 04: THEORY ===== -->
+<div class="page">
+<span class="sec-num">04</span>
+<h2>理论基座：不是文献综述，是推导链</h2>
+
+<div class="clip"><strong>第一性起点：</strong>在市场经济中，不能增长的企业会消失。所以"企业为什么能持续增长？"是一个不能再追问的起点 &mdash; 这是整个 Synova 诊断体系的根基。从这里出发，不能从管理学教科书里找答案——那些书是从"企业通常怎么做"出发的，不是从"企业为什么存在"出发的。</div>
+
+<div class="card" style="text-align:center;padding:16px 20px;margin:12px 0;background:var(--page);border:2px solid var(--blue)">
+<div style="font-family:JetBrains Mono,monospace;font-size:1.1rem;font-weight:700;color:var(--t1);margin-bottom:6px">增长 = 外部机会 &times; 价值捕获 &times; 内生创造 &minus; 增长成本</div>
+<div class="small" style="max-width:640px;margin:0 auto;text-align:left;line-height:1.8">
+<strong>这个方程是 Synova 全部 50 个哨兵的基因。</strong>它不是数学意义上的等式——它表达的是四个相互独立的变量的乘积与制衡关系。任何一个趋近于零，增长停滞。任何一个为负（增长成本超过创造的价值），企业衰亡。<strong>诊断的目的，就是找到这四个变量中哪一个在"拖后腿"。</strong>如果这个方程是错的，后面 50 个哨兵、8 个专家、9 个 Monorepo 包全部没有意义。所以我们花了最大篇幅来验证它。
+</div>
+</div>
+
+<h3 style="margin-top:12px">第一层：三个独立变量的析出</h3>
+<p class="small">从起点出发，企业要增长，三个条件缺一不可——任何一个为零，增长消失。注意这不是"三个重要的事情"，是<strong>相互独立、不可替代的必要条件</strong>：</p>
+<table>
+<tr><th style="width:14%">变量</th><th style="width:32%">追问</th><th style="width:54%">为什么不能和别的合并？</th></tr>
+<tr><td><strong>内生创造</strong></td><td>企业自身能持续产生新价值吗？</td><td>和外部机会独立——好行业里也有烂公司。和资本独立——能被融资驱动的增长只是加速，不是创造。</td></tr>
+<tr><td><strong>价值捕获</strong></td><td>创造的价值能留在自己手里吗？</td><td>和内生创造独立——专利最多、产品最好的公司不一定最赚钱（参见苹果供应链 vs 苹果）。</td></tr>
+<tr><td style="color:var(--red)"><strong>增长成本</strong></td><td>增长本身会不会杀死增长？</td><td>和前面两个都独立——规模越大协调成本越高，和"你在不在好行业""有没有护城河"无关。这是交易成本经济学和信息论各自独立贡献的维度，二者也不能合并：Coase 管的是治理成本（合同、监督），Shannon 管的是信息处理成本（层级衰减、信道堵塞），在 AI 时代两条曲线变化方向相反。</td></tr>
+</table>
+
+<h3 style="margin-top:14px">第二层：每个变量用哪个学科来测量——以及淘汰了谁</h3>
+<p class="small">知道"要测量什么"只是第一步。真正的问题是<strong>"用一个学科来测量它，还是用几个？为什么是这个不是那个？"</strong>下面是完整的淘汰链。</p>
+<table style="font-size:.72rem">
+<tr><th style="width:12%">变量</th><th style="width:20%">候选学科</th><th style="width:18%">淘汰理由</th><th style="width:22%">最终选择</th><th style="width:28%">为什么这个能行</th></tr>
+<tr><td rowspan="2"><strong>外部机会</strong></td><td>宏观经济学</td><td>GDP 增速和企业增长之间关系太弱，无法解释个体企业的机会差异</td><td rowspan="2"><strong>产业生命周期 + 技术-经济范式</strong><br>Gort &amp; Klepper (1982); Perez (2002)</td><td rowspan="2">产业生命周期回答"行业在哪个阶段"（结构性），技术-经济范式回答"有没有临界窗口"（时间性）。Perez 的导入期/转折点/协同期三阶段模型直接校准了 E1-E6 的全部诊断阈值。<br><span class="small">淘汰了 Schumpeter 吗？没有——他的创造性破坏精神嵌入 E2 哨兵，但不作为独立的顶层框架，因为 Perez 的周期模型更适合诊断体系的"时代定位"需求。</span></td></tr>
+<tr><td>产业经济学</td><td>只关注均衡状态下的产业结构，无法解释"窗口期"这种时间性概念</td></tr>
+<tr><td rowspan="2"><strong>内生创造</strong></td><td>管理学</td><td>SWOT、五力、平衡计分卡互不兼容，各自为政</td><td rowspan="2"><strong>演化经济学</strong><br>Nelson &amp; Winter (1982)</td><td rowspan="2">企业 = 惯例的集合。增长 = 惯例的变异-选择-保留循环。不是比喻——用马尔可夫过程建模。可操作测量：变异率 O2、选择效率 O3、保留能力 O4/O5。</td></tr>
+<tr><td>组织行为学</td><td>关注个体和团队，缺乏系统层面的演化动力</td></tr>
+<tr><td rowspan="2"><strong>价值捕获</strong></td><td>Porter 五力</td><td>只能解释行业利润分配，解释不了企业个体差异</td><td rowspan="2"><strong>生态位理论</strong><br>Hutchinson (1957)</td><td rowspan="2">n 维超体积概念：同时解释"你在哪"（生态位质量）、"守得住吗"（壁垒，对应战略 7 力）、"怎么占领"（实现方式，对应商业模式）。一个理论统一了三个管理学子领域。</td></tr>
+<tr><td>资源基础观 RBV</td><td>能解释企业优势，但忽略外部位置重要性；RBV 作为补充融入生态位层"独占资源"力量</td></tr>
+<tr><td rowspan="2"><strong>增长成本<br>(治理)</strong></td><td>管理学</td><td>只有"扁平化"等建议，缺数学语言</td><td rowspan="2"><strong>交易成本经济学</strong><br>Coase (1937); Williamson (1985)</td><td rowspan="2">企业边界的数学逻辑：当内部协调成本 &gt; 市场交易成本时停止扩张。AI 时代修正：Agent 作为新生产单位，资产专用性概念需重新定义。</td></tr>
+<tr><td>—</td><td>—</td></tr>
+<tr><td rowspan="2"><strong>增长成本<br>(信息)</strong></td><td>—</td><td>交易成本经济学只覆盖治理成本，不覆盖信息处理成本——二者在 AI 时代变化方向相反，不能合并</td><td rowspan="2"><strong>信息论</strong><br>Shannon (1948); Arrow (1974)</td><td rowspan="2">信道容量和噪声的数学语言。Arrow：信息在层级中按 p<sup>n</sup> 衰减。这两个概念直接映射到 O6（信道容量）和 O7（信息失真率）的计算公式。</td></tr>
+<tr><td>—</td><td>—</td></tr>
+</table></table>
+
+<h3 style="margin-top:14px">收束：从推导链到诊断体系</h3>
+<div class="g2" style="margin-top:8px">
+<div>
+<p class="small">加上<strong>资本燃料</strong>——它不是增长的发动机，是加速器。一个企业如果内生创造为零，再多的资本也只是加速毁灭。所以资本健康层不参与增长方程的四个自变量，而是一个独立的诊断层。</p><p class="small">以上五个变量的推导，加上资本健康层和顶层范式校准，构成了完整的六层诊断 + L0 进化体系。这个四变量方程最终收敛为 CEO 在诊断报告中看到的三个飞轮——价值创造（外部机会 + 内生创造）、价值兑现（价值捕获）、价值再生（- 增长成本）。设计层的推导和交付层的呈现是同一套逻辑：前者保证测量是对的，后者保证结果是能用的。</p>
+<p class="small">每一个学科的入选，背后都有一套淘汰理由。这不是管理理论的合集——是<strong>从一个第一性起点出发，逐层推演、每一步都有淘汰</strong>的逻辑自洽的增长动力学模型。</p>
+</div>
+<div class="card" style="text-align:center">
+<div style="font-family:JetBrains Mono,monospace;font-size:.9rem;color:var(--t1);margin-bottom:6px">增长 = 外部机会 x 价值捕获 x 内生创造 - 增长成本</div>
+<div class="small" style="line-height:1.8">
+外部机会 &rarr; 产业生命周期 + 技术-经济范式（淘汰：宏观经济学）<br>
+价值捕获 &rarr; 生态位理论（淘汰：Porter 五力、RBV）<br>
+内生创造 &rarr; 演化经济学（淘汰：管理学、组织行为学）<br>
+增长成本 &rarr; 交易成本 + 信息论（互补，不可合并）
+</div>
+</div>
+</div>
+</div>
+
+<!-- ===== 05: FRAMEWORK + SENTINELS ===== -->
+<div class="page">
+<span class="sec-num">05</span>
+<h2>诊断框架全景：六层诊断 + 顶层校准 + L0 进化</h2>
+<div class="g2-60">
+<div>
+
+<div class="layer"><span class="lt l1">1</span><span class="ld"><strong>环境诊断 6 哨兵</strong> &mdash; 市场还有空间吗？窗口在打开还是关闭？</span></div>
+<div class="layer"><span class="lt l2">2</span><span class="ld"><strong>资本健康 5 哨兵</strong> &mdash; 增长的燃料够吗？钱用对了吗？</span></div>
+<div class="layer"><span class="lt l3">3</span><span class="ld"><strong>生态位诊断 13 哨兵</strong> &mdash; 壁垒多强？边界划对了吗？商业模式可持续吗？</span></div>
+<div class="layer"><span class="lt l4">4</span><span class="ld"><strong>技术健康 9 哨兵</strong> &mdash; 软件生态、AI 化就绪、Agent 部署成熟度</span></div>
+<div class="layer"><span class="lt l4">L5</span><span class="ld"><strong>战略组织匹配 3 哨兵</strong> &mdash; 战略需要的能力，组织实际具备吗？</span></div>
+<div class="layer"><span class="lt l5">L6</span><span class="ld"><strong>组织动力学 10 哨兵</strong> &mdash; 惯例在进化吗？知识流动吗？组织能自我修复吗？</span></div>
+</div>
+<div class="layer" style="margin-top:6px"><span class="lt l0">L0</span><span class="ld"><strong>自我进化层</strong> &mdash; 诊断结果 + 用户反馈回流 &rarr; 本体自适应 + 跨会话学习，系统越用越准</span></div>
+<div class="layer" style="margin-top:6px"><span class="lt l0">校准</span><span class="ld"><strong>技术-经济范式分析</strong> &mdash; Perez (2002) AI 革命阶段定位，校准所有下层哨兵阈值</span></div>
+<div>
+<div class="stat" style="margin-bottom:10px"><div class="val">6+1</div><div class="lbl">诊断层级</div></div>
+<div class="stat" style="margin-bottom:10px"><div class="val">50</div><div class="lbl">哨兵</div></div></div>
+<div class="stat"><div class="val">8</div><div class="lbl">AI 专家</div></div>
+</div>
+</div>
+<h3 style="margin-top:12px">50 哨兵全景图</h3>
+<div class="sentinel-grid">
+<div class="sg"><span class="sid">E1</span><span class="sname">市场天花板与生命周期</span></div><div class="sg"><span class="sid">E2</span><span class="sname">结构性机会窗口</span></div><div class="sg"><span class="sid">E3</span><span class="sname">竞争格局变化</span></div><div class="sg"><span class="sid">E4</span><span class="sname">客户需求迁移</span></div><div class="sg"><span class="sid">E5</span><span class="sname">环境红利依赖性</span></div><div class="sg"><span class="sid">E6</span><span class="sname">底层结构变化</span></div>
+<div class="sg"><span class="sid">F1</span><span class="sname">融资约束指数</span></div><div class="sg"><span class="sid">F2</span><span class="sname">资本结构健康度</span></div><div class="sg"><span class="sid">F3</span><span class="sname">资本配置效率</span></div><div class="sg"><span class="sid">F4</span><span class="sname">增长质量指数</span></div><div class="sg"><span class="sid">F5</span><span class="sname">资本周转效率</span></div>
+<div class="sg"><span class="sid">I1</span><span class="sname">生态位宽度与深度</span></div><div class="sg"><span class="sid">I2</span><span class="sname">生态位挤压指数</span></div><div class="sg"><span class="sid">I3</span><span class="sname">护城河结构性强度</span></div><div class="sg"><span class="sid">I4</span><span class="sname">护城河感知强度</span></div><div class="sg"><span class="sid">I5</span><span class="sname">网络权力指数</span></div><div class="sg"><span class="sid">I6</span><span class="sname">价值捕获效率</span></div><div class="sg"><span class="sid">I7</span><span class="sname">商业模式一致性</span></div><div class="sg"><span class="sid">I8</span><span class="sname">护城河依赖度</span></div><div class="sg"><span class="sid">I9</span><span class="sname">时间穿透力</span></div><div class="sg"><span class="sid">I10</span><span class="sname">单位经济可持续性</span></div><div class="sg"><span class="sid">I11</span><span class="sname">内部交易成本增长率</span></div><div class="sg"><span class="sid">I12</span><span class="sname">自制/外购决策健康度</span></div><div class="sg"><span class="sid">I13</span><span class="sname">人+Agent 混合边界效率</span></div>
+<div class="sg"><span class="sid">T1</span><span class="sname">软件资产健康度</span></div><div class="sg"><span class="sid">T2</span><span class="sname">API可达性与协议覆盖</span></div><div class="sg"><span class="sid">T3</span><span class="sname">数据健康度</span></div><div class="sg"><span class="sid">T4</span><span class="sname">连接器覆盖率</span></div><div class="sg"><span class="sid">T5</span><span class="sname">流程AI化就绪度</span></div><div class="sg"><span class="sid">T6</span><span class="sname">AI软件生态匹配度</span></div><div class="sg"><span class="sid">T7</span><span class="sname">Agent部署成熟度</span></div><div class="sg"><span class="sid">T8</span><span class="sname">AI投入产出比</span></div><div class="sg"><span class="sid">T9</span><span class="sname">人+Agent混合边界效率</span></div>
+<div class="sg"><span class="sid">S1</span><span class="sname">战略-能力一致性</span></div><div class="sg"><span class="sid">S2</span><span class="sname">战略调适速度</span></div><div class="sg"><span class="sid">S3</span><span class="sname">资源错配指数</span></div>
+<div class="sg"><span class="sid">O1</span><span class="sname">探索-利用平衡</span></div><div class="sg"><span class="sid">O2</span><span class="sname">惯例变异率</span></div><div class="sg"><span class="sid">O3</span><span class="sname">激励增长对齐度</span></div><div class="sg"><span class="sid">O4</span><span class="sname">关键知识可调用性</span></div><div class="sg"><span class="sid">O5</span><span class="sname">惯例扩散速度</span></div><div class="sg"><span class="sid">O6</span><span class="sname">组织信道容量</span></div><div class="sg"><span class="sid">O7</span><span class="sname">信息失真率</span></div><div class="sg"><span class="sid">O8</span><span class="sname">组织修复能力</span></div><div class="sg"><span class="sid">O9</span><span class="sname">权力结构刚性</span></div><div class="sg"><span class="sid">O10</span><span class="sname">人才密度</span></div>
+</div>
+<h3 style="margin-top:12px">8 位文件化 AI 专家</h3>
+<div style="display:flex;gap:6px;flex-wrap:wrap;margin:4px 0">
+<span class="tag b">strategy</span><span class="tag g">org</span><span class="tag o">finance</span><span class="tag p">tech</span><span class="tag b">marketing</span><span class="tag g">action</span><span class="tag o">biz-model</span><span class="tag p">knowledge</span>
+</div>
+<p class="small">每位专家独立配置 10 个文件：IDENTITY / SOUL / RULES / TOOLS / KNOWLEDGE / THEORY / STAGE_LOGIC / CROSS_EXPERT / FORMULAS / OUTPUT_SCHEMA。异常信号自动路由至对应专家。多专家并行推理 + 证据池交叉验证。</p>
+<div class="clip" style="margin-top:12px"><strong>这不是 ChatGPT 问答。</strong>每个哨兵都是一个独立的计算模块。整个管线是确定性的数据处理 + AI 推理的分层架构。诊断结论来自真实计算和推理，不是模型「猜」出来的。</div>
+</div>
+
+<!-- ===== 05B: QUALITY SYSTEM ===== -->
+<div class="page">
+<span class="sec-num">05B</span>
+<h2>开放的体系，封闭的质量</h2>
+
+<div class="clip"><strong>一个投资人会问的合理问题：</strong>你说哨兵可以加、专家可以加——那将来 500 个哨兵、20 个专家的时候，诊断质量怎么保证不下降？答案不在数量控制，在<strong>四层分离的质量架构</strong>。每一层的开放度和验证机制不同。</div>
+
+<table style="font-size:.74rem;margin-top:12px">
+<tr><th style="width:12%">层级</th><th style="width:10%">开放度</th><th style="width:16%">扩展方式</th><th style="width:22%">谁来加</th><th style="width:40%">质量怎么保证</th></tr>
+<tr><td><strong>推导层</strong></td><td style="color:var(--red);font-weight:600">封闭</td><td>不可扩展</td><td>创始人</td><td>六个诊断维度从第一性原理推导，加不了第七个。任何新哨兵必须挂在这六层下面。骨骼不动。</td></tr>
+<tr><td><strong>哨兵层</strong></td><td style="color:var(--orange);font-weight:600">半开放</td><td>加 xxx-sentinel.ts 文件</td><td>工程师</td><td>哨兵是确定性公式（不是 LLM 推理），每个公式有理论溯源、数据源和适用边界。公式写错了，数字就是错的——bug 会被 GA 现场和客户数据立刻发现。新哨兵上线前在 shadow mode 跑 30 天，输出不入报告，只做回溯对比。</td></tr>
+<tr><td><strong>专家层</strong></td><td style="color:var(--blue);font-weight:600">开放但有准入</td><td>新建目录 + 10 个 Markdown</td><td>GA + 行业老兵</td><td>通用专家 8 位是基线（覆盖增长的全部变量）。行业专家按需匹配：电商企业加供应链专家和电商运营专家，300 人企业加法律专家——不用的专家不激活，减少推理噪音。新专家上线后先在候选池跑三个月，输出不入正式报告，只和哨兵数据做回溯对比。三个月后数据说话：高置信度通过，低置信度退回重训。</td></tr>
+<tr><td><strong>进化层</strong></td><td style="color:var(--green);font-weight:600">自动</td><td>L0 自适应</td><td>系统自身</td><td>GA 纠错 + 客户反馈 &rarr; 候选池 &rarr; 三个月回验 &rarr; 写入知识库或降级。每一轮诊断都被下一轮诊断验证。系统驻扎越久，本地数据越多，诊断越难被蒙混过关。</td></tr>
+</table>
+
+<div class="g2" style="margin-top:12px">
+<div class="card">
+<strong>为什么专家可以引用"被淘汰"的理论</strong><br>
+<span class="small">Porter 五力在推导层被淘汰了——因为它不足以作为独立维度撑起整个诊断体系的骨架。但 strategy 专家的知识库仍然包含它。区别：骨架层只用最硬的几根骨头（生态位理论 &gt; 五力），专家推理层可以用全部管理知识（包括五力、SWOT、平衡计分卡）。推导层回答"测量什么"，专家层回答"数据意味着什么"——后者需要的工具箱比前者大得多。这是刻意设计，不是体系自相矛盾。</span>
+</div>
+<div class="card">
+<strong>为什么专家数量不会失控</strong><br>
+<span class="small">新增专家 = 加文件，这是扩展成本低的一面。但质量控制不靠数量限制，靠两个机制：一是行业匹配——电商企业不会激活法律专家，减少推理噪音；二是 L0 回验——所有专家输出定期和哨兵数据交叉比对，偏差持续 &gt; 阈值的专家自动降级。加一个专家简单，让它活下来不简单。</span>
+</div>
+</div>
+
+<div class="clip g" style="margin-top:10px"><strong>这个四层架构回答了一个根本问题：</strong>凭什么 Synova 的体系可以无限扩展行业和规模，但诊断质量不会劣化？因为扩展的是哨兵和专家（加文件），不变的是推导层和验证机制（不改逻辑）。开放的是能力边界，封闭的是质量基线。</div>
+</div>
+
+
+<!-- ===== 06: THREE-LAYER DECOUPLING ===== -->
+<div class="page">
+<span class="sec-num">06</span>
+<h2>核心护城河：三层解耦体系</h2>
+<div class="clip g"><strong>大多数 AI 创业项目的代码活不过第二轮融资后的重构。</strong>Synova 的架构从第一天就是为了「持续加功能但代码不乱」而设计的。</div>
+
+<h3 style="margin-top:14px">纵向解耦：五层物理隔离</h3>
+<div class="layer"><span class="lt l1">1</span><span class="ld">交互层 &mdash; API / MCP / TUI / 多角色权限</span></div>
+<div class="layer"><span class="lt l2">2</span><span class="ld">编排层 &mdash; ConversationEngine / Workspace / 上下文压缩</span></div>
+<div class="layer"><span class="lt l3">3</span><span class="ld">洞察层 &mdash; 哨兵引擎 / 专家平台 / 证据池</span></div>
+<div class="layer"><span class="lt l4">4</span><span class="ld">本体层 &mdash; SOG 数字孪生 / 图存储 / 实体解析</span></div>
+<div class="layer"><span class="lt l5">5</span><span class="ld">存储层 &mdash; SQLite / AgentMemoryStore / 持久化</span></div>
+<p class="caption" style="margin-top:6px">每层只与相邻层通信。跨层引用 pre-commit 物理阻断 &mdash; 不是靠自觉，是靠门禁。换掉底层存储，上层一行代码不用改。</p>
+
+<h3 style="margin-top:16px">横向解耦：9 个独立 Monorepo 包</h3>
+<p class="small">五层架构的每一层内部，进一步拆成独立包。每个包有明确定义的接口边界，拆卸一个不影响其余 20 个。</p>
+<div class="sentinel-grid" style="grid-template-columns:repeat(3,1fr);font-size:.68rem;margin:8px 0">
+<div class="sg"><span class="sid" style="color:var(--t4)">基础</span><span class="sname">error-types</span></div><div class="sg"><span class="sid" style="color:var(--t4)">基础</span><span class="sname">logger</span></div><div class="sg"><span class="sid" style="color:var(--t4)">基础</span><span class="sname">security</span></div>
+<div class="sg"><span class="sid" style="color:var(--t4)">基础</span><span class="sname">infra</span></div><div class="sg"><span class="sid" style="color:var(--t4)">基础</span><span class="sname">llm-providers</span></div><div class="sg"><span class="sid" style="color:var(--t4)">基础</span><span class="sname">monitoring</span></div>
+<div class="sg"><span class="sid" style="color:var(--red)">L5</span><span class="sname">persistence</span></div>
+<div class="sg"><span class="sid" style="color:var(--orange)">L4</span><span class="sname">sog-core</span></div><div class="sg"><span class="sid" style="color:var(--orange)">L4</span><span class="sname">graph-store</span></div>
+<div class="sg"><span class="sid" style="color:var(--purple)">L3</span><span class="sname">sentinel-engine</span></div><div class="sg"><span class="sid" style="color:var(--purple)">L3</span><span class="sname">expert-platform</span></div>
+<div class="sg"><span class="sid" style="color:var(--purple)">L3</span><span class="sname">evidence</span></div><div class="sg"><span class="sid" style="color:var(--purple)">L3</span><span class="sname">evolution（L0）</span></div>
+<div class="sg"><span class="sid" style="color:var(--blue)">L2</span><span class="sname">conversation-engine</span></div><div class="sg"><span class="sid" style="color:var(--blue)">L2</span><span class="sname">orchestrator</span></div>
+<div class="sg"><span class="sid" style="color:var(--red)">L1</span><span class="sname">api-server</span></div><div class="sg"><span class="sid" style="color:var(--red)">L1</span><span class="sname">mcp-server</span></div>
+<div class="sg"><span class="sid" style="color:var(--red)">L1</span><span class="sname">tui</span></div>
+<div class="sg"><span class="sid" style="color:var(--green)">横向</span><span class="sname">connector-registry</span></div><div class="sg"><span class="sid" style="color:var(--green)">横向</span><span class="sname">extension-registry</span></div>
+<div class="sg"><span class="sid" style="color:var(--green)">横向</span><span class="sname">tools</span></div>
+</div>
+<p class="caption">目前 sog-core、connector-registry 等核心包已落地，其余正从单体 src/ 逐步迁移到独立包。</p>
+
+<h3 style="margin-top:14px">扩展解耦：文件驱动，不改代码</h3>
+<p class="small">纵向和横向解耦解决的是「现有代码不乱」。但真正让 Synova 拥有规模化能力的是第三层 &mdash; 所有新增能力靠文件，不靠改代码。</p>
+<div class="g3" style="margin-top:8px">
+<div class="card"><strong>新增专家</strong><br><span class="small">新建目录 + 10 个 Markdown 配置 &rarr; 自动注册到 ExpertDispatcher</span></div>
+<div class="card"><strong>新增哨兵</strong><br><span class="small">加 xxx-sentinel.ts 文件 &rarr; builtins 自动扫描加载</span></div>
+<div class="card"><strong>新增行业</strong><br><span class="small">加行业目录（基准+阈值+案例）&rarr; 1-2 天上线，不改代码</span></div>
+</div>
+<div class="clip" style="margin-top:10px"><strong>传统咨询每服务一个新行业 = 招一个年薪 500 万的合伙人。</strong>Synova = 工程师一个下午写 Markdown。这是咨询业的「工业革命」。</div>
+</div>
+
+<!-- ===== 07: ENGINEERING ===== -->
+<div class="page">
+<span class="sec-num">07</span>
+<h2>工程质量：不是 Demo，是可交付产品</h2>
+<div class="g4">
+<div class="stat"><div class="val">140,442</div><div class="lbl">TypeScript 行</div></div>
+<div class="stat"><div class="val">181</div><div class="lbl">测试文件</div></div>
+<div class="stat"><div class="val">112</div><div class="lbl">API 端点</div></div>
+<div class="stat"><div class="val">9</div><div class="lbl">Monorepo 包</div></div>
+</div>
+<div class="g2" style="margin-top:16px">
+<div>
+<h3 style="margin-top:0">质量门禁链（46 条工程铁律）</h3>
+<table style="font-size:.7rem">
+<tr><th>检查项</th><th style="width:38%">位置</th></tr>
+<tr><td><code>as any</code> = 0</td><td>pre-commit &lt;1s</td></tr>
+<tr><td>空 catch 有 log.warn</td><td>pre-commit &lt;1s</td></tr>
+<tr><td>secrets 扫描</td><td>pre-commit &lt;1s</td></tr>
+<tr><td>新文件有测试对</td><td>pre-commit &lt;1s</td></tr>
+<tr><td>新 export 有调用方</td><td>pre-commit &lt;1s</td></tr>
+<tr><td>五层边界检查</td><td>pre-commit &lt;1s</td></tr>
+<tr><td>tsc --noEmit</td><td>PostToolUse 5-10s</td></tr>
+<tr><td>vitest --changed</td><td>PostToolUse 10-30s</td></tr>
+</table>
+<p class="caption">pre-commit 6 项全部 &lt;6s，零 --no-verify 逃生舱。基于 47 次 as any 事故和 4 次接线失败植入的硬门禁。</p>
+</div>
+<div>
+<h3 style="margin-top:0">L0 自我进化层</h3>
+<p class="small"><strong>独立于五层架构，负责系统越用越准：</strong></p>
+<div class="card" style="padding:8px 12px;margin:4px 0"><span class="small"><strong>本体自适应</strong> &mdash; 高置信度（&ge;0.7）诊断发现 &rarr; 自动更新企业数字孪生</span></div>
+<div class="card" style="padding:8px 12px;margin:4px 0"><span class="small"><strong>会话学习</strong> &mdash; 用户纠错实时调整 + 跨会话持久化到 SQLite</span></div>
+<div class="card" style="padding:8px 12px;margin:4px 0"><span class="small"><strong>反馈闭环</strong> &mdash; 确认/修改/拒绝 &rarr; 候选池 &rarr; 三个月后自动回验</span></div>
+<h3 style="margin-top:14px">国产大模型适配</h3>
+<p class="small">已接入 DeepSeek V4，单次推理成本 1-3 元。可无缝切换通义千问、Kimi、GLM 等国产模型。部署在客户本地，数据零回传。</p>
+</div>
+</div>
+</div>
+
+<!-- ===== 08: COMPETITIVE ===== -->
+<div class="page">
+<span class="sec-num">08</span>
+<h2>竞品格局：全维度交叉诊断 = 只有 Synova</h2>
+<table>
+<tr><th style="width:13%"></th><th style="width:20%">传统咨询<br><span class="small">麦肯锡/BCG</span></th><th style="width:20%">SaaS 报表<br><span class="small">用友/金蝶/Salesforce</span></th><th style="width:20%">AI ChatBot<br><span class="small">ChatGPT/Claude</span></th><th style="width:27%">Synova</th></tr>
+<tr><td style="font-weight:600">触发</td><td>人找问题</td><td>看面板</td><td>一问一答</td><td style="color:var(--green);font-weight:600">Agent 主动监测</td></tr>
+<tr><td style="font-weight:600">周期</td><td>进场 1-3 月</td><td>即时</td><td>即时</td><td style="color:var(--green);font-weight:600">持续驻守</td></tr>
+<tr><td style="font-weight:600">数据</td><td>访谈+问卷</td><td>历史报表</td><td>对话记录</td><td style="color:var(--green);font-weight:600">全量自动接入</td></tr>
+<tr><td style="font-weight:600">维度</td><td>3-5 维</td><td>财务/运营</td><td>单问答</td><td style="color:var(--green);font-weight:600">六层诊断 &times; 50 哨兵</td></tr>
+<tr><td style="font-weight:600">因果</td><td>经验</td><td>无</td><td>弱</td><td style="color:var(--green);font-weight:600">跨哨兵关联验证</td></tr>
+<tr><td style="font-weight:600">跟踪</td><td>无</td><td>无</td><td>无</td><td style="color:var(--green);font-weight:600">闭环 + 自进化</td></tr>
+<tr><td style="font-weight:600">价格</td><td>200 万起</td><td>5-50 万/年</td><td>免费-5 万</td><td style="color:var(--green);font-weight:600">3.98-8.98 万/年</td></tr>
+</table>
+
+<h3 style="margin-top:14px">为什么竞品做不了？</h3>
+<div class="card" style="margin:4px 0"><strong>为什么用友/金蝶做不了？</strong><br><span class="small">他们掌握财务和 ERP 数据，但缺乏组织动力学和生态位的诊断框架。46 个哨兵需要演化经济学、生态位理论、交易成本理论等七大学科的理论纵深和行业数据校准 &mdash; 这不是加一个 AI 模块能解决的问题，是学科积累 &times; 工程实现 &times; 行业数据的三重壁垒。</span></div>
+<div class="card" style="margin:4px 0"><strong>为什么大模型公司做不了？</strong><br><span class="small">ChatGPT 可以回答「什么是增长瓶颈」，但无法自动接入企业数据、持续监测、主动报警、并行专家推理、证据池交叉验证 &mdash; 这些是系统工程问题，不是模型能力问题。Synova 是「确定性计算 + AI 推理」的混合架构，不是纯 LLM 套壳。</span></div>
+
+<div class="clip" style="margin-top:12px"><strong>如果大厂免费怎么办？</strong>垂直深耕（不做通用，专注 5-1000 人诊断场景）+ GA 网络（现场服务是大厂无法规模化的「人力护城河」）+ 数据主权（本地部署、数据不出企业）+ 联邦进化（越用越准的网络效应，单点 AI 无法复制）。</div>
+<div class="card" style="margin-top:8px"><strong>更深层的壁垒：这不是一个纯产品市场。</strong><br><span class="small">企业诊断不是标准 SaaS &mdash; 它需要行业专有知识、GA 生态的客户关系网络、以及长期驻扎积累的企业数字孪生。字节可以一夜之间上线一个 AI 功能，但无法一夜之间培养 1000 个 15 年经验的 GA、无法复制 400+ 月子中心的行业知识图谱、无法替代已运行 12 个月的企业数字孪生。对大厂而言，这是一个脏活累活 &mdash; 高知识密度、重服务交付、非标准化 &mdash; 恰恰是创业公司最安全的护城河。关键不是大厂会不会来，而是他们来之前我们能跑多远。快速形成 GA 生态密度，才是真正的壁垒。</span></div>
+</div>
+<!-- ===== 09: MARKET ===== -->
+<div class="page">
+<span class="sec-num">09</span>
+<h2>市场与商业模式</h2>
+<div class="g2">
+<div>
+<h3 style="margin-top:0">目标市场</h3>
+<p>中国 5-1000 人成长型企业约 <strong>1,200 万家</strong><span class="caption">（来源：国家统计局《中国经济普查年鉴》，剔除个体工商户及300人以上企业）</span>。共同特点：</p>
+
+<div class="card">有管理需求，但付不起 200 万的传统咨询费</div>
+<div class="card">买了 SaaS 但只看指标，不知道背后根因</div>
+<div class="card">团队在扩张，开始出现「增长之后的累」</div>
+<p class="small" style="margin-top:8px">Synova 不抢麦肯锡的客户，而是把诊断成本降低 100 倍，创造一个<strong>全新的企业诊断市场</strong>。
+<span class="small" style="display:block;margin-top:4px">可触达市场（SAM）测算：1,200万 &times; 保守渗透率0.1%（1.2万家）&times; 加权客单价~5.98万 = 首年 ~70亿元。中期渗透率0.5%时对应 ~350亿市场。此处未计入纯软件订阅客户，为保守估算。</span></p>
+</div>
+<div>
+<h3 style="margin-top:0">商业模式 B2B2B</h3>
+<div style="text-align:center;margin:12px 0">
+<div class="tag b" style="font-size:.78rem;padding:4px 12px;margin:3px">Synova</div>
+<div style="margin:3px 0;color:var(--t4);font-size:.9rem">&darr; 工具 + 知识框架</div>
+<div class="tag g" style="font-size:.78rem;padding:4px 12px;margin:3px">GA (增长顾问)</div>
+<div style="margin:3px 0;color:var(--t4);font-size:.9rem">&darr; 行业经验 + 诊断服务</div>
+<div class="tag o" style="font-size:.78rem;padding:4px 12px;margin:3px">企业客户</div>
+</div>
+<p class="small">GA 是行业老兵 &mdash; 退休、自由职业、渴望独立。不需写代码，只需把毕生经验写成 Markdown 文件。一个 GA + Synova 能服务 10-20 个客户。</p>
+<h3 style="margin-top:12px">定价模型：按组织复杂度分级订阅</h3>
+<p class="small" style="margin-bottom:8px">核心设计：公司实收固定 29,800 元/年/客户，GA 服务费随企业规模递增。LLM 推理成本由客户自带 Key 承担。</p>
+<table>
+<tr><th style="width:14%">档位</th><th style="width:14%">规模</th><th style="width:16%">对外年费</th><th style="width:14%">公司实收</th><th style="width:14%">GA服务费</th><th style="width:28%">年现场服务</th></tr>
+<tr><td><strong>S档</strong></td><td>5-50人</td><td style="font-family:JetBrains Mono,monospace;color:var(--blue)">39,800</td><td style="font-family:JetBrains Mono,monospace">29,800</td><td style="font-family:JetBrains Mono,monospace">10,000</td><td>2次 &mdash; SOG校准+阈值复核</td></tr>
+<tr><td><strong>M档</strong></td><td>51-150人</td><td style="font-family:JetBrains Mono,monospace;color:var(--purple)">59,800</td><td style="font-family:JetBrains Mono,monospace">29,800</td><td style="font-family:JetBrains Mono,monospace">30,000</td><td>3次 &mdash; +行动追踪+战略对齐</td></tr>
+<tr><td><strong>L档</strong></td><td>151-300人</td><td style="font-family:JetBrains Mono,monospace;color:var(--green)">89,800</td><td style="font-family:JetBrains Mono,monospace">29,800</td><td style="font-family:JetBrains Mono,monospace">60,000</td><td>4次 &mdash; +专题工作坊+年度战略</td></tr>
+</table>
+<p class="small" style="margin-top:8px">定价逻辑：传统咨询 50 万 &rarr; Synova M 档 5.98 万，降价 90%，100 倍成本降低的故事依然成立。公司实收恒定 29,800 元 = 可预测的 ARR，投资人可按 SaaS 估值模型（5-10x ARR）定价。BYOLLM 模式：客户使用自有 API Key，公司零 Token 成本，首年毛利率 &gt; 90%。</p>
+
+<h3 style="margin-top:14px">GA 合伙人经济模型</h3>
+<div class="g3" style="margin-top:6px">
+<div class="card" style="text-align:center"><strong>S档 GA</strong><br><span class="small">20个客户<br>年入 20 万<br>纯交付 ~400h<br>时薪 500 元</span></div>
+<div class="card" style="text-align:center"><strong>M档 GA</strong><br><span class="small">20个客户<br>年入 60 万<br>纯交付 ~800h<br>时薪 750 元</span></div>
+<div class="card" style="text-align:center"><strong>L档 GA</strong><br><span class="small">20个客户<br>年入 120 万<br>纯交付 ~1,200h<br>时薪 1,000 元</span></div>
+</div>
+<p class="small" style="margin-top:6px">每次现场四件套（写入 GA 合同）：SOG 本体体检与调整 / 阈值行业校准 / 增长行动追踪 / 高管心智对齐。GA 不是跟单员 &mdash; 现场是 GA 不可替代的核心价值。</p>
+</div>
+</div>
+<div class="clip" style="margin-top:16px">10 个 GA</div>
+</div>
+<div class="clip" style="margin-top:16px">10 个 GA，我们是一家小公司。<strong>10 个 GA，我们是一家小公司。<strong>1000 个 GA，我们就是中国最大的管理咨询平台。</strong>
+<p class="small" style="margin-top:6px">规模化质量保障：双层机制。第一层，GA 准入标准 &mdash; 15 年以上行业经验 + 客户实盘验证 + 方法论对齐，不是谁都能当 GA。第二层，Synova 自我进化 &mdash; L0 进化层的本体自适应和跨会话学习，每一次 GA 的诊断反馈都会沉淀为系统知识。GA 越用越熟练，系统越用越智能，诊断质量随规模递增而非递减。</p></strong></div>
+</div>
+
+
+<!-- ===== 09B: FINANCIAL ===== -->
+<div class="page">
+<span class="sec-num">09B</span>
+<h2>财务预测与融资规划</h2>
+<div class="g2">
+<div>
+<h3 style="margin-top:0">首年收入预测（保守估算）</h3>
+<table style="font-size:.74rem">
+<tr><th>项目</th><th style="width:35%">金额/数量</th></tr>
+<tr><td>签约客户数（首年）</td><td>10 家（全部 M 档）</td></tr>
+<tr><td>对外总营收</td><td style="font-family:JetBrains Mono,monospace">59.8 万（10 &times; 5.98 万）</td></tr>
+<tr><td>其中：公司实收 ARR</td><td style="font-family:JetBrains Mono,monospace;color:var(--blue)">29.8 万（10 &times; 2.98 万）</td></tr>
+<tr><td>其中：GA 分成</td><td style="font-family:JetBrains Mono,monospace">30 万（10 &times; 3 万）</td></tr>
+<tr><td>公司直接成本</td><td style="font-family:JetBrains Mono,monospace">~2 万（存储+技术支持）</td></tr>
+<tr><td>公司毛利</td><td style="font-family:JetBrains Mono,monospace;color:var(--green)">~27.8 万（毛利率 93%）</td></tr>
+</table>
+<h3 style="margin-top:12px">第二年（续约 + 新签）</h3>
+<table style="font-size:.74rem">
+<tr><th>项目</th><th style="width:35%">金额/数量</th></tr>
+<tr><td>老客户续约</td><td>8 家（续约率 80%），ARR 23.84 万</td></tr>
+<tr><td>新签客户</td><td>15 家，ARR 44.7 万</td></tr>
+<tr><td>公司实收 ARR 合计</td><td style="font-family:JetBrains Mono,monospace;color:var(--blue)">68.54 万（同比 +130%）</td></tr>
+</table>
+</div>
+<div>
+<h3 style="margin-top:0">融资需求</h3>
+<div class="card"><strong>本轮融资：200-300 万人民币</strong></div>
+<table style="font-size:.74rem">
+<tr><th>用途</th><th style="width:35%">金额</th></tr>
+<tr><td>团队扩张（PO全栈 + AI算法）</td><td>120-150 万</td></tr>
+<tr><td>市场验证（3-5 标杆客户）</td><td>40-50 万</td></tr>
+<tr><td>产品完善（仪表板+联邦进化联调）</td><td>40-60 万</td></tr>
+<tr><td>运营储备</td><td>~40 万</td></tr>
+</table>
+<h3 style="margin-top:10px">12 个月里程碑</h3>
+<div class="card"><span class="small">50 家付费客户，ARR 达 150 万，至少 2 个行业模板完成验证，GA 网络扩展至 5 人以上</span></div>
+</div>
+</div>
+<p class="caption" style="margin-top:12px">关键假设：M 档为首年主推（占 80%）；LLM 推理由客户自带 Key 承担；GA 分成签约时付 50%，年度完成付 50%；首年客户获取通过创始人直客 + GA 网络内推，预计 CAC &lt; 首年 ARR 的 30%。以上为保守估算，未计入 S/L 档及纯软件订阅收入。（占 80%）；LLM 推理由客户自带 Key 承担；GA 分成签约时付 50%，年度完成付 50%；首年客户获取通过创始人直客 + GA 网络内推。以上为保守估算，未计入 S/L 档及纯软件订阅收入。</p>
+</div>
+
+<!-- ===== 10: TEAM + ROADMAP ===== -->
+<div class="page">
+<span class="sec-num">10</span>
+<h2>团队与路线图</h2>
+<div class="clip p"><strong>Synova 自身的组织方式，就是产品理念的活证据。</strong>1 人 + 6 AI Agent，完成了传统需要 10 人团队的工程规模。</div>
+
+<div class="g2" style="margin-top:10px">
+<div>
+<h3 style="margin-top:0">核心团队</h3>
+<table style="font-size:.72rem">
+<tr><th style="width:30%">角色</th><th style="width:38%">身份</th><th style="width:32%">状态</th></tr>
+<tr><td><strong>黄学涛</strong></td><td>创始人</td><td style="color:var(--green)">全职</td></tr>
+<tr><td><strong>沈括</strong></td><td>首席科学家</td><td style="color:var(--blue)">OpenClaw Agent</td></tr>
+<tr><td><strong>诸葛亮</strong></td><td>战略顾问</td><td style="color:var(--blue)">OpenClaw Agent</td></tr>
+<tr><td><strong>张良</strong></td><td>产品经理</td><td style="color:var(--blue)">OpenClaw Agent</td></tr>
+<tr><td><strong>Hermes</strong></td><td>产品总装设计</td><td style="color:var(--blue)">Agent</td></tr>
+<tr><td><strong>Codex</strong></td><td>个人助手</td><td style="color:var(--blue)">Agent</td></tr>
+<tr><td><strong>Claude Code</strong></td><td>开发工程师</td><td style="color:var(--blue)">Agent</td></tr>
+</table>
+<p class="small" style="margin-top:6px">人制定方向、确认决策，AI Agent 协同开发。这种协作范式本身就是 I13 哨兵（人+Agent 混合边界效率）的验证场景。开发周期 2026.05-06，产出 140,442 行 TypeScript。</p>
+
+<h3 style="margin-top:10px">招募方向（融资后到位）</h3>
+<p class="small">P0：全栈工程师（Node.js/React）&mdash; TUI/Web 交互层<br>P0：AI 算法工程师 &mdash; 哨兵计算 + 专家推理优化<br>P1：GA 运营 &mdash; 行业老兵网络招募与赋能</p>
+</div>
+<div>
+<h3 style="margin-top:0">四阶段路线图</h3>
+<div class="rm" style="grid-template-columns:1fr 1fr;gap:4px">
+<div class="phase now">
+<div class="pname">验证期</div>
+<div class="pdate">2026 Q2-Q3</div>
+<div class="pgoal">2-3 种子客户<br>验证 GA 模式<br>完成哨兵行业专项优化</div>
+</div>
+<div class="phase next">
+<div class="pname">启动期</div>
+<div class="pdate">2026 Q3-Q4</div>
+<div class="pgoal">15 付费客户<br>3 位外部 GA<br>首个行业模板</div>
+</div>
+<div class="phase">
+<div class="pname">扩展期</div>
+<div class="pdate">2027 Q1</div>
+<div class="pgoal">50+ 客户<br>10+ GA<br>5 个行业模板</div>
+</div>
+<div class="phase">
+<div class="pname">规模化</div>
+<div class="pdate">2027 Q2</div>
+<div class="pgoal">100+ GA<br>200+ 客户<br>GA 市场启动</div>
+</div>
+</div>
+<h3 style="margin-top:10px">工程产出</h3>
+<table style="font-size:.68rem">
+<tr><td>TypeScript</td><td style="font-family:JetBrains Mono,monospace;color:var(--blue)">140,442 行</td><td>API 端点</td><td style="font-family:JetBrains Mono,monospace;color:var(--purple)">112 个</td></tr>
+<tr><td>测试文件</td><td style="font-family:JetBrains Mono,monospace;color:var(--green)">181 个</td><td>Monorepo包</td><td style="font-family:JetBrains Mono,monospace;color:var(--orange)">9 个</td></tr>
+<tr><td>哨兵/专家</td><td style="font-family:JetBrains Mono,monospace;color:var(--blue)">50 / 8</td><td>铁律/文献</td><td style="font-family:JetBrains Mono,monospace;color:var(--green)">46 / 60+</td></tr>
+</table>
+<p class="caption" style="margin-top:4px">人+Agent 混合组织不是 PPT 概念 &mdash; 我们就是正在运行的原型。<br><span class="caption">所有 Agent 能力已通过文件化提示词和知识库固化，不依赖单一服务商。Agent 角色可迁移至替代平台。</span></p>
+</div>
+</div>
+</div>
+
+<!-- ===== 12: SOCIAL VALUE ===== -->
+<div class="page">
+<span class="sec-num">12</span>
+<h2>社会价值与行业影响</h2>
+<div class="g3" style="margin-top:12px">
+<div class="stat"><div class="val" style="font-size:1.1rem;color:var(--blue)">100&times;</div><div class="lbl">诊断成本下降</div></div>
+<div class="stat"><div class="val" style="font-size:1.1rem;color:var(--green)">1200 万</div><div class="lbl">可覆盖企业</div></div>
+<div class="stat"><div class="val" style="font-size:1.1rem;color:var(--purple)">新职业</div><div class="lbl">GA 增长顾问</div></div>
+</div>
+<div class="g2" style="margin-top:14px">
+<div class="card"><strong>普惠管理智慧</strong><br><span class="small">让 1,200 万成长型企业以可承受的成本获得系统化诊断。把诊断从奢侈品变成日用品。</span></div>
+<div class="card"><strong>知识资产化</strong><br><span class="small">行业老兵的经验不再随退休而消失。中国每年有数十万行业老兵退休，他们的毕生经验目前只能烂在脑子里。Markdown 文件驱动的知识资产化，让毕生经验可传承、可复用 &mdash; Synova 的 GA 网络可能是唯一能让这些经验变成可传承资产的方式。</span></div>
+<div class="card"><strong>AI 时代的组织探路者</strong><br><span class="small">SOG v1.0 是面向人+Agent 混合组织的诊断标准。在所有人讨论「AI 替代人」时，我们已经在测量这种混合组织的健康度。</span></div>
+<div class="card"><strong>带动新型就业</strong><br><span class="small">GA 网络为行业老兵提供「经验变现」通道。退休 &ne; 退出。1 个 GA = 10-20 个企业 = 新的知识经济就业形态。</span></div>
+</div>
+<div style="text-align:center;margin-top:40px;padding:24px 0">
+<div style="font-size:1.3rem;font-weight:700;color:var(--t1)">诊断不是目的，增长才是。</div>
+<div style="font-size:.85rem;color:var(--t4);margin-top:8px">Synova &middot; 2026 &middot; 南宁</div>
+</div>
+</div>
+
+</body>
+</html>

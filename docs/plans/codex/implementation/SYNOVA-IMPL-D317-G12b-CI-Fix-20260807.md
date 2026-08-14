@@ -64,35 +64,60 @@
 
 ### 3.2 修复模式
 
-**resolve-commit-brief.sh（L48 之前插入 PYBIN 解析；L49 换用；替换 L117-124）**:
+**resolve-commit-brief.sh（L22 之后插入；L49 换用；替换 L117-124）——最终实现（D317b 同步）**:
 
 ```bash
-# 顶部（ROOT/TODAY 之后）:
+# 顶部（ROOT 之后）:
+# brief_parser 是 resolver 的兄弟组件（同仓库）——不能用 $ROOT 定位，
+# 测试隔离（临时 repo）或 ROOT 与脚本异仓库时 $ROOT 下没有解析器。
+RESOLVER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PARSER="$RESOLVER_DIR/../control-tower/brief_parser.py"
+# Windows python 不认 MSYS 路径（/d/...）→ cygpath 转 C:/...（sys.path 注入用）
+PARSER_DIR_W="$(cygpath -w "$RESOLVER_DIR/../control-tower" 2>/dev/null || echo "$RESOLVER_DIR/../control-tower")"
+
+# PYBIN 跨平台（python3 → python → py）:
 PYBIN=""
 for _c in python3 python py; do
   if command -v "$_c" >/dev/null 2>&1; then PYBIN="$_c"; break; fi
 done
 # L49: RESULT=$("$PYBIN" -c "...")（认领判定用同一解释器，避免 Windows 无 python3 时 RESULT 空）
 
-# 最终回退: 最新日期 → 最早, 逐个用 brief_parser 验证可解析性 (criteria A-D)
+# 最终回退: 最新日期 → 最早, 单次 python 批量解析验证可解析性 (criteria A-D)
 # 全部不可解析或 python 不可用 → exit 1 (fail-open → G12b 跳过), 绝不静默选坏 brief
 if [ -z "$PYBIN" ]; then
   exit 1
 fi
-for _d in $(find "$ROOT/.claude/task-briefs/" -maxdepth 1 -name "*.md" -printf '%f\n' 2>/dev/null \
-  | grep -oE '^[0-9]{4}-[0-9]{2}-[0-9]{2}' | sort -r | uniq); do
-  for _f in $(find "$ROOT/.claude/task-briefs/" -maxdepth 1 -name "${_d}-*.md" 2>/dev/null | sort -r); do
-    if "$PYBIN" "$ROOT/scripts/control-tower/brief_parser.py" --all "$_f" 2>/dev/null \
-      | grep -qE '"criteria": "[A-D]"'; then
-      echo "$_f"
-      exit 0
-    fi
-  done
-done
+RESULT=$("$PYBIN" -c "
+import os, re, sys
+sys.path.insert(0, r'$PARSER_DIR_W')
+from brief_parser import parse_criteria
+
+briefs = []
+for f in os.listdir(r'$ROOT/.claude/task-briefs/'):
+    if not f.endswith('.md'):
+        continue
+    m = re.match(r'(\d{4}-\d{2}-\d{2})', f)
+    if m:
+        briefs.append((m.group(1), f))
+briefs.sort(key=lambda x: x[0], reverse=True)
+for _d, _f in briefs:
+    try:
+        text = open(os.path.join(r'$ROOT/.claude/task-briefs/', _f), encoding='utf-8', errors='replace').read()
+    except OSError:
+        continue
+    if parse_criteria(text):
+        print(os.path.join(r'$ROOT/.claude/task-briefs/', _f))
+        sys.exit(0)
+sys.exit(1)
+" 2>/dev/null || true)
+[ -n "$RESULT" ] && { echo "$RESULT"; exit 0; }
 exit 1
 ```
 
 > 说明：以 `criteria` 作为最小可解析判据（#CRITERIA 是新模板的硬字段；layer/Done 旧格式部分存在，以 criteria 为准最稳）。G12b 对真实提交仍生效——认领路径（步骤 1/2/3）不变，只有无认领的最终回退变严格。
+>
+> 实现备注（D317b，dev doc 方案 3 处增强，已落库 5b93579）：
+> ① 性能：dev doc 原逐文件 python 进程（281 文件 × 起进程 = 分钟级超时）→ **单次 python 批量解析**（实测 0.8s）；② 路径：`$ROOT` 定位解析器在测试隔离（临时 repo）下失效 → **脚本相对路径 RESOLVER_DIR**；③ MSYS：sys.path 注入 `/d/...` 风格路径 Windows python 不认（静默 import 失败）→ **cygpath 转 Windows 路径**。
 
 **check-brief-parseable.sh 顶部（L26 之后插入）**:
 

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Synova · AI 增长诊断系统 · 商业计划书</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+SC:wght@300;400;500;700;900&family=Noto+Serif+SC:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5f4f0;--bgc:#eeede8;--bd:#d4d3cb;--t:#1c1c1a;--m:#6b6b63;--d:#9c9c94;--b:#2563eb;--g:#2b8a3e;--o:#d97706;--p:#7c3aed;--r:#dc2626;--f:'Inter','Noto Sans SC',system-ui,sans-serif;--mo:'JetBrains Mono',monospace}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-snap-type:x mandatory;overflow-x:auto;overflow-y:hidden;height:100vh}
+body{display:flex;height:100vh;font-family:var(--f);color:var(--t);background:var(--bg)}
+.slide{min-width:100vw;height:100vh;scroll-snap-align:start;display:flex;flex-direction:column;justify-content:center;padding:5vh 5vw;position:relative;flex-shrink:0}
+.nav{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:100;background:rgba(245,244,240,.85);padding:5px 12px;border-radius:20px;backdrop-filter:blur(4px);font-size:.65rem;color:var(--d)}
+.nav a{width:8px;height:8px;border-radius:50%;background:var(--bd);text-indent:-9999px;overflow:hidden}
+.nav a.act{background:var(--b);width:20px;border-radius:4px}
+h1{font-size:2.4rem;font-weight:800;letter-spacing:-.04em;line-height:1.1}
+h2{font-size:1.3rem;font-weight:700;margin-bottom:12px;letter-spacing:-.02em}
+h3{font-size:1rem;font-weight:600;margin-bottom:6px;color:var(--b)}
+p{font-size:.88rem;line-height:1.7;margin:5px 0}
+.mut{color:var(--m);font-size:.78rem}
+.sm{font-size:.72rem;color:var(--d)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:8px 0}
+.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:8px 0}
+.four{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0}
+.cd{background:var(--bgc);border:1px solid var(--bd);border-radius:8px;padding:12px;text-align:center}
+.cd .n{font-size:1.6rem;font-weight:800;color:var(--b);line-height:1.1}
+.cd .n.g{color:var(--g)}.cd .n.p{color:var(--p)}.cd .n.o{color:var(--o)}
+.cd .l{font-size:.75rem;color:var(--m);margin-top:3px}
+.bl{border-left:5px solid var(--b);padding:10px 14px;margin:8px 0;border-radius:0 8px 8px 0;font-size:.85rem;background:var(--bgc)}
+.bl.g{border-left-color:var(--g)}.bl.p{border-left-color:var(--p)}
+table{width:100%;border-collapse:collapse;margin:8px 0;font-size:.78rem}
+th{text-align:left;padding:5px 7px;border-bottom:2px solid var(--bd);color:var(--m);font-weight:600;font-size:.7rem}
+td{padding:4px 7px;border-bottom:1px solid var(--bd);vertical-align:top;font-size:.75rem}
+.tag{display:inline-block;padding:1px 6px;border-radius:4px;font-size:.65rem;color:#fff;font-weight:500}
+.tb{background:var(--b)}.tg{background:var(--g)}.to{background:var(--o)}.tp{background:var(--p)}
+ul{margin:3px 0 3px 16px}li{margin:1px 0;font-size:.8rem}
+.ft{position:absolute;bottom:18px;left:5vw;right:5vw;font-size:.62rem;color:var(--d);display:flex;justify-content:space-between}
+.hr{font-size:3rem;font-weight:800;letter-spacing:-.04em;line-height:1.1}
+.shr{font-size:1.2rem;color:var(--m);margin:6px 0 2px}
+@media(max-width:768px){.two,.four{grid-template-columns:1fr}.three{grid-template-columns:1fr 1fr}.hr{font-size:2rem}.slide{padding:3vh 4vw}}
+</style>
+</head>
+<body>
+<div class="slide" style="text-align:center">
+<div class="hr">Synova</div>
+<div class="shr">AI 增长诊断系统</div>
+<p class="mut" style="margin:4px 0">驻扎在企业内部的数字化管理咨询师</p>
+<div class="four" style="max-width:600px;margin:20px auto 0">
+<div class="cd"><div class="n">102k</div><div class="l">TypeScript 行</div></div>
+<div class="cd"><div class="n">540</div><div class="l">测试文件</div></div>
+<div class="cd"><div class="n g">8</div><div class="l">AI 专家</div></div>
+<div class="cd"><div class="n p">26</div><div class="l">哨兵适配器</div></div>
+</div>
+<div class="ft"><span>2026-06-23</span><span>docs/plans/codex/</span></div>
+</div><div class="slide">
+<div class="two">
+<div style="padding-right:10px">
+<h2>市场机会</h2>
+<div class="bl g"><p style="margin:0;font-size:.85rem">中国 5-1000 人成长型企业约 200 万家。它们花不起麦肯锡，也不相信 Excel 能告诉它们为什么有问题。</p></div>
+<div class="three" style="margin-top:14px">
+<div class="cd"><div class="n g">200万</div><div class="l">可服务企业</div></div>
+<div class="cd"><div class="n">50亿</div><div class="l">首年 SAM</div></div>
+<div class="cd"><div class="n p">300亿+</div><div class="l">成熟期 TAM</div></div>
+</div>
+</div>
+<div>
+<h2>解决方案</h2>
+<p><strong>Synova 不是工具，是一位驻扎在企业内部的 AI 管理咨询师。</strong></p>
+<ul>
+<li><strong>发现问题：</strong>不是"指标跌了"，是"三个信号指向同一个结构性问题"</li>
+<li><strong>提出方案：</strong>从根因推导到行动，有因果逻辑，不是模板化建议</li>
+<li><strong>执行监督：</strong>持续跟踪效果，自动对比上次建议 vs 当前现实</li>
+</ul>
+<div class="bl"><p style="margin:0;font-size:.82rem">最终决策永远由人做出。Synova 是辅助决策，不是替代决策。</p></div>
+</div>
+</div>
+<div class="ft"><span>市场规模</span><span>1 / 10</span></div>
+</div><div class="slide">
+<h2>为什么是现在</h2>
+<table>
+<tr><th>趋势</th><th>以前</th><th>现在</th><th>对 Synova 的意义</th></tr>
+<tr><td><strong>企业数字化</strong></td><td>Excel + 微信管业务</td><td>飞书/钉钉覆盖 80% 成长型企业</td><td>数据前提成熟，不需要额外投入</td></tr>
+<tr><td><strong>AI 推理能力</strong></td><td>GPT-4 前做不了结构化输出</td><td>DeepSeek V4 能可靠输出结构化 JSON</td><td>诊断管线可以依赖</td></tr>
+<tr><td><strong>AI 成本</strong></td><td>一次推理 >10 元</td><td>一次诊断推理 1-3 元</td><td>单位经济成立</td></tr>
+</table>
+<h3 style="margin-top:16px">为什么大厂不做</h3>
+<p>对腾讯/阿里的百亿级增长目标，5-1000 人企业对他们无足轻重。AI 模型公司必须保持平台中立性。这个市场被系统性地忽视了。</p>
+<div class="bl g" style="margin-top:10px"><p style="margin:0;font-size:.82rem"><strong>竞争壁垒：</strong>GA 网络效应 + SOG 本体论（17 节点/14 边）+ 102k 行工程代码。不是 AI 套壳——是严谨的工程系统。</p></div>
+<div class="ft"><span>竞争分析</span><span>2 / 10</span></div>
+</div><div class="slide">
+<h2>五层架构闭环</h2>
+<div style="display:flex;flex-direction:column;gap:3px;margin:6px 0">
+<div style="background:#fce4ec;border:1px solid var(--r);border-radius:6px;padding:6px 12px"><span style="font-weight:700;color:var(--r)">L1 交互层</span> <span class="mut">三栏界面·76 API·MCP·GA/对接人/老板</span></div>
+<div style="font-size:.68rem;color:var(--d);text-align:center">&#8595; 决策下达 &#8593; 执行结果</div>
+<div style="background:#e7f5ff;border:1px solid var(--b);border-radius:6px;padding:6px 12px"><span style="font-weight:700;color:var(--b)">L2 编排层</span> <span class="mut">ConversationEngine·工作区·上下文压缩·企业事实层</span></div>
+<div style="font-size:.68rem;color:var(--d);text-align:center">&#8595;</div>
+<div style="background:#f3e8ff;border:1px solid var(--p);border-radius:6px;padding:6px 12px"><span style="font-weight:700;color:var(--p)">L3 洞察层</span> <span class="mut">26 哨兵 x 7 维度 + 8 专家并行推理 + 证据池验证</span></div>
+<div style="font-size:.68rem;color:var(--d);text-align:center">&#8595; DocExtractor 自动解析</div>
+<div style="background:#fff4e6;border:1px solid var(--o);border-radius:6px;padding:6px 12px"><span style="font-weight:700;color:var(--o)">L4 本体层</span> <span class="mut">SOG 组织数字孪生·17 节点·14 边·企业事实层</span></div>
+<div style="font-size:.68rem;color:var(--d);text-align:center">&#8595; 原始数据流入</div>
+<div style="background:#fff3f3;border:1px solid var(--r);border-radius:6px;padding:6px 12px"><span style="font-weight:700;color:var(--r)">L5 数据层</span> <span class="mut">SQLite·AgentMemoryStore·飞书/财务/CRM 全量数据</span></div>
+</div>
+<div style="display:flex;gap:8px;justify-content:center;margin:6px 0;flex-wrap:wrap;font-size:.75rem">
+<span style="background:var(--bgc);padding:3px 8px;border-radius:4px">方案执行 &#8593; 反馈闭环</span>
+<span style="color:var(--d)">&#8594;</span>
+<span style="font-weight:600;color:var(--b)">新数据 -> 再次诊断 -> 对比效果</span>
+<span style="color:var(--d)">&#8594;</span>
+<span style="background:var(--bgc);padding:3px 8px;border-radius:4px">进入下一循环</span>
+</div>
+<div class="ft"><span>五层架构 + pre-commit 物理阻断</span><span>3 / 10</span></div>
+</div><div class="slide">
+<h2>8 位 AI 专家</h2>
+<p class="mut" style="margin-bottom:10px">7 位前台推理 + 1 位后台知识引擎。每位专家 9 个独立配置文件，修改知识不改代码。</p>
+<div class="four">
+<div class="cd"><div class="n" style="font-size:1rem;color:var(--t)">战略顾问</div><div class="l">7 Powers + 投融资</div></div>
+<div class="cd"><div class="n" style="font-size:1rem;color:var(--t)">组织顾问</div><div class="l">Bus Factor + 代理理论</div></div>
+<div class="cd"><div class="n" style="font-size:1rem;color:var(--t)">财务顾问</div><div class="l">现金流 + 单位经济</div></div>
+<div class="cd"><div class="n" style="font-size:1rem;color:var(--t)">营销顾问</div><div class="l">AARRR + 行为经济学</div></div>
+<div class="cd"><div class="n" style="font-size:1rem;color:var(--t)">技术顾问</div><div class="l">技术债 + 信息经济学</div></div>
+<div class="cd"><div class="n" style="font-size:1rem;color:var(--t)">商业模式</div><div class="l">Canvas + 交易成本</div></div>
+<div class="cd"><div class="n" style="font-size:1rem;color:var(--t)">行动顾问</div><div class="l">优先级排序</div></div>
+<div class="cd" style="opacity:.5"><div class="n" style="font-size:1rem;color:var(--m)">知识顾问</div><div class="l">后台引擎</div></div>
+</div>
+<h3 style="margin-top:8px">交互设计</h3>
+<div class="two">
+<div><div class="bl"><p style="margin:0;font-size:.8rem"><strong>左栏：</strong>工作区列表。每个问题一个独立工作区。优先级排序。</p></div></div>
+<div><div class="bl"><p style="margin:0;font-size:.8rem"><strong>中栏：</strong>对话区。Agent 输出结构化判断（根因+建议+置信度）+ 行动按钮。</p></div></div>
+<div><div class="bl"><p style="margin:0;font-size:.8rem"><strong>右栏：</strong>行动跟踪。目标跟踪 + 增长卡点 + 长期遗留。</p></div></div>
+<div><div class="bl g"><p style="margin:0;font-size:.8rem"><strong>老板信箱：</strong>每周摘要邮件 + 即时告警。飞书对话调整密度。</p></div></div>
+</div>
+<div class="ft"><span>8 专家 + 三栏布局 + 老板信箱</span><span>4 / 10</span></div>
+</div><div class="slide">
+<h2>26 哨兵 · 7 维度监测</h2>
+<div class="four">
+<div class="cd"><div class="n g">4/4</div><div class="l">D1 增长动力</div></div>
+<div class="cd"><div class="n g">5/7</div><div class="l">D2 组织能力</div></div>
+<div class="cd"><div class="n o">4/7</div><div class="l">D3 人+Agent</div></div>
+<div class="cd"><div class="n o">2/4</div><div class="l">D4 软件生态</div></div>
+<div class="cd"><div class="n">3/4</div><div class="l">D5 软件-Agent适配</div></div>
+<div class="cd"><div class="n o">1/4</div><div class="l">D6 战略健康</div></div>
+<div class="cd"><div class="n g">4/4</div><div class="l">D7 风险预警</div></div>
+<div class="cd"><div class="n p">23/34</div><div class="l">总计 68%</div></div>
+</div>
+<p class="mut">覆盖：现金流、HONA、关键人风险、路径依赖、HTM、自我意识、SaaS 利用率、影子 IT、CPC、EOB、API 可达性、数据就绪、数据孤岛、客户动态等 26 个。</p>
+
+<h3 style="margin-top:10px">用户角色</h3>
+<div class="three">
+<div class="cd"><div class="n" style="font-size:1rem;color:var(--t)">GA（增长顾问）</div><div class="l">行业老兵。8 维调研 -> 审阅修正 -> 方案交付。服务 10-20 客户。数据脱敏。</div></div>
+<div class="cd"><div class="n" style="font-size:1rem;color:var(--t)">企业对接人</div><div class="l">内部协调。确认方案可行性，推动执行。只看本企业。</div></div>
+<div class="cd"><div class="n" style="font-size:1rem;color:var(--t)">老板</div><div class="l">每周摘要 + 异常告警。飞书对话调整信息密度。</div></div>
+</div>
+<div class="ft"><span>遥测 + 用户角色四层</span><span>5 / 10</span></div>
+</div><div class="slide">
+<h2>商业模式</h2>
+<div class="bl g"><p style="margin:0;font-size:.85rem"><strong>B2B2B：</strong>Synova -> GA（增长顾问）-> 企业客户。GA 不仅付费还贡献行业认知。GA 网络本身就是竞争壁垒。</p></div>
+<div class="four">
+<div class="cd"><div class="n" style="font-size:.95rem">入门版</div><div class="n g" style="font-size:1.3rem">12k/年</div><div class="l">5-10 客户</div></div>
+<div class="cd"><div class="n" style="font-size:.95rem">专业版</div><div class="n p" style="font-size:1.3rem">48k/年</div><div class="l">10-20 客户</div></div>
+<div class="cd"><div class="n" style="font-size:.95rem">企业版</div><div class="n" style="font-size:1.3rem">25k/年</div><div class="l">企业直接使用</div></div>
+<div class="cd"><div class="n" style="font-size:.95rem">私有化</div><div class="n o" style="font-size:1.3rem">80k/年</div><div class="l">本地部署</div></div>
+</div>
+<div class="two">
+<div><div class="cd"><div class="n g">100</div><div class="l">位 GA = 480 万/年</div></div></div>
+<div><div class="cd"><div class="n p">1,000</div><div class="l">位 GA = 4,800 万/年</div></div></div>
+</div>
+<p class="sm" style="margin-top:6px">每次诊断推理成本 1-3 元（DeepSeek V4）。预计毛利率 ~70%。CAC 回收期 3-6 个月。</p>
+<div class="ft"><span>GA 订阅费 + 私有部署</span><span>6 / 10</span></div>
+</div><div class="slide">
+<h2>工程现状</h2>
+<div class="four">
+<div class="cd"><div class="n">102k</div><div class="l">TS 行</div></div>
+<div class="cd"><div class="n">540</div><div class="l">测试文件</div></div>
+<div class="cd"><div class="n g">76</div><div class="l">API 端点</div></div>
+<div class="cd"><div class="n p">11</div><div class="l">monorepo</div></div>
+</div>
+<h3>技术栈</h3>
+<p>TypeScript · Express · SQLite + FTS5 · DeepSeek V4 · Zod schema · vitest · MCP 协议</p>
+
+<h3 style="margin-top:10px">工程质量</h3>
+<div class="two">
+<div><div class="bl"><p style="margin:0;font-size:.78rem"><strong>46 条铁律 · 5 项物理阻断：</strong>as any = 0、空 catch 有 log、secrets 扫描、新文件有测试、新 export 有调用方。提交 <5s。</p></div></div>
+<div><div class="bl g"><p style="margin:0;font-size:.78rem"><strong>五层架构边界：</strong>pre-commit check-architecture.sh 物理阻断跨层调用。CLAUDE.md v3.5 执法。</p></div></div>
+</div>
+<div class="two" style="margin-top:8px">
+<div><div class="bl p"><p style="margin:0;font-size:.78rem"><strong>自我进化：</strong>2 路反馈回路。GA 纠正 + 客户反馈。候选池 X2 确认。执行效果数据为最高仲裁者。分歧记录自动重新验证。</p></div></div>
+<div><div class="bl o"><p style="margin:0;font-size:.78rem"><strong>数据安全：</strong>L0-L2 脱敏。GA 默认不可见原始数据。本地部署。</p></div></div>
+</div>
+<div class="ft"><span>102k 行代码 + 46 条铁律</span><span>7 / 10</span></div>
+</div><div class="slide">
+<h2>路线图</h2>
+<table>
+<tr><th>阶段</th><th>时间</th><th>商业目标</th></tr>
+<tr><td><span class="tag tb">验证</span></td><td>2026 Q2-Q3</td><td>2-3 种子客户。验证 GA 模式。</td></tr>
+<tr><td><span class="tag tb">启动</span></td><td>2026 Q3-Q4</td><td>15 付费客户。5 位外部 GA。</td></tr>
+<tr><td><span class="tag tg">扩展</span></td><td>2026 Q4-2027 Q1</td><td>50+ 客户。20+ GA。5 行业模板。</td></tr>
+<tr><td><span class="tag tp">规模化</span></td><td>2027 Q1-Q2</td><td>100+ GA。500+ 客户。480 万+ 收入。</td></tr>
+</table>
+
+<h3 style="margin-top:12px">团队</h3>
+<div class="two">
+<div class="cd" style="text-align:left;padding:12px"><div style="font-weight:700;font-size:.9rem">黄学松 — 创始人</div><div class="l" style="font-size:.8rem;color:var(--t)">行业经验与产品思维兼具。全量对齐手册（22 章）+ PRD v1.8（21 章）唯一作者。</div></div>
+<div class="cd" style="text-align:left;padding:12px"><div style="font-weight:700;font-size:.9rem">Claude Code + Codex — AI 工程师</div><div class="l" style="font-size:.8rem;color:var(--t)">两个 AI 编程 Agent。Claude Code 负责前端交互层，Codex 负责架构审计+PRD。</div></div>
+</div>
+<p class="sm" style="text-align:center;margin-top:6px">当前 1 人类 + 2 AI Agent · 正在招募首位全职工程师</p>
+<div class="ft"><span>商业里程碑驱动</span><span>8 / 10</span></div>
+</div></body></html>
