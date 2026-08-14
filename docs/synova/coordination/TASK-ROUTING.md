@@ -22,7 +22,7 @@
 |-----------|------|------|
 | scripts/control-tower/（控制塔） | 进行中·DeepSeek Harness | D334-D336 连续迭代 |
 | scripts/backup/（备份） | 已完成·DeepSeek Harness·08-14 | launchd 已装 |
-| .claude/skills + .dsh/skills + DSH preset | 进行中·DeepSeek Harness·08-15 | D370 P0-P3（技能同步+组13+预设安装） |
+| .claude/skills + .dsh/skills + DSH preset | 已完成·DeepSeek Harness·08-15 | D370 P0-P3（技能同步+组13+预设安装），PR 已合并 |
 | src/ 业务代码（L1-L5） | 空闲 | Claude Code 主力 |
 | scripts/audit/（审计工具） | Kimi K3 专属 | 红线：其他角色禁碰 |
 | docs/synova/coordination/（协作宪法） | DeepSeek Harness | 创始人批准后变更 |
