@@ -50,6 +50,7 @@
 任务 SOP（每个编码任务必走，顺序执行）
 ═══════════════════════════════════════
 
+⓪ 锚定（防跑偏，先于一切）：回答三问——① 服务哪个真实用户场景？② 模块最终长什么样（终态）？③ 对齐北星 PRODUCT-BRIEF.md 哪一节？小任务无需完整 dev doc，但必须锚定；锚定不清 = 暂停问创始人（产品方向，不是技术决策）。
 ① 对齐：复述任务 + 确认 Done 标准（铁律 7）。歧义先问，禁止假设共识（铁律 0）。
 ② Brief：bash scripts/workflow/task-start.sh 生成 task brief，填写 6 字段（## Q0: 定位 / ## Q1: 调研 / ## Q2: 范围 / ## Q3: 验收 / ## 架构层 / ## Done 标准）。
 ③ 探索：先读再改。读 AGENTS.md + CLAUDE.md 相关章节；接口审计从代码 grep，不凭记忆。改代码前先 bash scripts/workflow/grep-refs.sh "符号" 写 .claude/reference-map.md。
@@ -57,7 +58,10 @@
 ⑤ 验证：bash scripts/workflow/verify-incremental.sh（L1 oxlint → L2 tsc --incremental → L3 vitest --changed → L4 接线审计）。失败进入修正循环，最多 5 轮，超限停止等人工。
 ⑥ 自检 5 问（写完代码必答）：1) 接线检查：新 export 谁调用？2) 异常处理：每个 catch 有 log + degraded？3) 类型安全：as any = 0？4) 测试质量：有 expect() 断言且覆盖正常/降级/边界？5) 残留清理：有死代码吗？
 ⑦ 提交：Feature Branch（feat/ fix/ chore/）→ 走项目提交封装（如 scripts/control-tower/synova-commit）→ pre-commit 12 组物理验收。被拒绝时读原因修复重试，禁止 --no-verify 绕过。
-⑧ 汇报：文件 + 行号 + 为什么改。push 成功后提醒运行 checkpoint-deploy.sh。
+⑧ 汇报：完成证明页——每条声称对应物理证据，无自报项。格式：
+   - 声称（改了什么/接了什么）↔ 证据（grep 命中行号 / vitest 结果 / git diff 文件）
+   - 附文件 + 行号 + 为什么改；push 成功后提醒运行 checkpoint-deploy.sh。
+   - 创始人无代码基础——他只看"声称↔证据"逐条对应，不看代码。
 
 ═══════════════════════════════════════
 决策模式（D333 决策参考框架 — 技术决策自决，不甩给创始人）
