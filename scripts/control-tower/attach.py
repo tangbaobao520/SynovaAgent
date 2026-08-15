@@ -11,10 +11,13 @@ scripts/control-tower/attach.py — D314 SessionStart 轻量 attach
     ④ brief 存在且 brief-filled → check-brief-parseable（brief 契约前置）
     ⑤ incident.log 未闭环提示
     ⑥ 写 session 专属 current-brief（.claude/current-brief.<sid>，D329）
+    ⑦ 并行模式检测提示（D307）: registry 有活跃 session 或 --parallel, 且当前
+       非 worktree → 提示用 worktree 隔离。只提示绝不 os.chdir（决策点 2:
+       SessionStart hook 无法改变宿主进程 cwd）。
 
 全组件 try/except → fail-open，总时长 <2s（超时降级，绝不拖慢会话启动）。
 
-用法: python3 attach.py --session-id <id> [--tool <tool>] [--brief <path>]
+用法: python3 attach.py --session-id <id> [--tool <tool>] [--brief <path>] [--parallel]
 支持 SYNO_CT_DIR 注入（测试隔离）。
 """
 import json
@@ -40,6 +43,11 @@ GIT_BASH_CANDIDATES = (
     r"C:\Program Files\Git\usr\bin\bash.exe",
 )
 
+GIT_CANDIDATES = (
+    r"C:\Program Files\Git\cmd\git.exe",
+    r"C:\Program Files\Git\bin\git.exe",
+)
+
 
 def _find_bash() -> str | None:
     """解析 bash 可执行路径（不依赖进程 PATH）— 找不到返回 None（fail-open）。"""
@@ -47,6 +55,17 @@ def _find_bash() -> str | None:
     if found:
         return found
     for cand in GIT_BASH_CANDIDATES:
+        if os.path.exists(cand):
+            return cand
+    return None
+
+
+def _find_git() -> str | None:
+    """解析 git 可执行路径（不依赖进程 PATH）— 找不到返回 None（fail-open）。"""
+    found = shutil.which("git")
+    if found:
+        return found
+    for cand in GIT_CANDIDATES:
         if os.path.exists(cand):
             return cand
     return None
@@ -169,6 +188,86 @@ def _run_current_brief_snapshot(session_id: str, brief: str | None) -> None:
         _degraded("attach.current-brief", str(exc))
 
 
+def _in_worktree(root: Path) -> bool:
+    """链接 worktree 判定: absolute-git-dir != git-common-dir（D307）。
+
+    主 worktree 两者相同; 链接 worktree 的 gitdir 指向 <主>/.git/worktrees/<name>。
+    探测失败 → False（fail-open, 不误提示）。"""
+    try:
+        import subprocess
+        git = _find_git()
+        if git is None:
+            return False
+
+        def _rev(arg: str) -> str:
+            return subprocess.run(
+                [git, "-C", str(root), "rev-parse", arg],
+                capture_output=True, text=True, encoding="utf-8", errors="replace",
+            ).stdout.strip()
+
+        def _abs(p: str) -> Path:
+            path = Path(p)
+            return path.resolve() if path.is_absolute() else (root / path).resolve()
+
+        gitdir = _rev("--absolute-git-dir")
+        commondir = _rev("--git-common-dir")
+        if not gitdir or not commondir:
+            return False
+        return _abs(gitdir) != _abs(commondir)
+    except Exception:
+        return False
+
+
+def _detect_parallel(reg, session_id: str, force: bool = False) -> bool:
+    """并行模式: --parallel 显式声明, 或 registry 存在其他活跃 session
+    （非 self、非 DONE、last_seen 24h 内）。任何异常 → False（fail-open）。"""
+    if force:
+        return True
+    try:
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc)
+        for s in reg.list():
+            if s.get("session_id") == session_id:
+                continue
+            if s.get("phase") == "DONE":
+                continue
+            try:
+                last = datetime.fromisoformat(s.get("last_seen_at", ""))
+                if last.tzinfo is None:
+                    last = last.replace(tzinfo=timezone.utc)
+                if (now - last).total_seconds() > 86400:
+                    continue
+            except (ValueError, TypeError):
+                continue
+            return True
+    except Exception:
+        pass
+    return False
+
+
+def _run_parallel_hint(session_id: str, force: bool = False) -> None:
+    """⑦ 并行模式检测提示（D307）: registry 有活跃 session 或 --parallel, 且当前
+    非 worktree → 打印提示 + degraded 记录。绝不 os.chdir（SessionStart hook
+    无法改变宿主进程 cwd — 决策点 2: 不能做的不假装做, 显式提示代替）。"""
+    try:
+        sys.path.insert(0, str(REPO_ROOT / "scripts" / "control-tower"))
+        from session_registry import SessionRegistry
+        reg = SessionRegistry(
+            registry_path=CT_DIR / "session-registry.json",
+            lock_dir=CT_DIR / "locks",
+            degraded_log=LOGS_DIR / "degraded-events.log",
+        )
+        if _detect_parallel(reg, session_id, force=force) and not _in_worktree(REPO_ROOT):
+            print(
+                "[attach] ⚠ 并行模式: registry 存在其他活跃 session 且当前不在 worktree 内 — "
+                "共享暂存区有劫持风险 (D320/D330 历史)。建议: "
+                "python scripts/control-tower/worktree-manager.py create <sid>"
+            )
+            _degraded("attach.parallel-hint", "parallel mode detected outside worktree")
+    except Exception as exc:
+        _degraded("attach.parallel-hint", str(exc))
+
+
 def _run_incident_hint(session_id: str) -> None:
     """⑤ 未闭环 incident 提示（fail-open）。"""
     try:
@@ -190,6 +289,7 @@ def main() -> int:
     parser.add_argument("--session-id", required=True)
     parser.add_argument("--tool", default="session-start")
     parser.add_argument("--brief", default=None)
+    parser.add_argument("--parallel", action="store_true")
     args = parser.parse_args()
 
     start = time.time()
@@ -198,6 +298,7 @@ def main() -> int:
     _run_logs(args.session_id, args.tool)
     _run_health()
     _run_parseable(args.brief)
+    _run_parallel_hint(args.session_id, force=args.parallel)
     _run_incident_hint(args.session_id)
     elapsed = time.time() - start
     print(f"[attach] session {args.session_id} attached ({elapsed:.1f}s)")

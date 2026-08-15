@@ -20,11 +20,13 @@ scripts/control-tower/session-registry.py — D311 会话注册表 (M1 多会话
   session-registry.py claimants <file> [--active-only]
   session-registry.py attribution <file>...
   session-registry.py phase --session-id <id> --phase <CP1|CP2|CP3|CP4|DONE>
+  session-registry.py worktree --session-id <id> --path <p> --branch <b> [--clear]
   session-registry.py gc [--max-age <sec>] [--stale-pid]
   session-registry.py list [--active]
   session-registry.py archive --session-id <id>
 
 输出: UTF-8 JSON（sys.stdout.reconfigure）
+注入: SYNO_CT_DIR 覆盖 registry/locks/logs 目录（测试隔离, 默认 .codex/control-tower）
 """
 import argparse
 import json
@@ -225,6 +227,9 @@ class SessionRegistry:
                     "phase": "CP1",
                     "phase_entered_at": now,
                     "write_set": [],
+                    # D307: worktree 隔离绑定（worktree-manager create 写入, finish 清空）
+                    "worktree_path": None,
+                    "worktree_branch": None,
                 }
             )
             return {"created": True}
@@ -244,6 +249,25 @@ class SessionRegistry:
                     s["last_seen_at"] = now
                     if phase != "CP1" and phase != s.get("phase"):
                         pass  # 回退允许（wait-manager 提示）
+                    return {"updated": True}
+            return {"updated": False}
+
+        return self._mutate(fn)
+
+    def set_worktree(
+        self,
+        session_id: str,
+        worktree_path: Optional[str] = None,
+        worktree_branch: Optional[str] = None,
+    ) -> dict:
+        """D307: 记录/清除 session 的 worktree 绑定（create 写入, finish 传 None 清空）。"""
+
+        def fn(data):
+            for s in data["sessions"]:
+                if s["session_id"] == session_id:
+                    s["last_seen_at"] = _utcnow()
+                    s["worktree_path"] = worktree_path
+                    s["worktree_branch"] = worktree_branch
                     return {"updated": True}
             return {"updated": False}
 
@@ -388,6 +412,12 @@ def main() -> int:
     p_ph.add_argument("--session-id", required=True)
     p_ph.add_argument("--phase", required=True)
 
+    p_wt = sub.add_parser("worktree")
+    p_wt.add_argument("--session-id", required=True)
+    p_wt.add_argument("--path", default=None)
+    p_wt.add_argument("--branch", default=None)
+    p_wt.add_argument("--clear", action="store_true")
+
     p_gc = sub.add_parser("gc")
     p_gc.add_argument("--max-age", type=int, default=14400)
     p_gc.add_argument("--stale-pid", action="store_true", default=True)
@@ -399,7 +429,13 @@ def main() -> int:
     p_arc.add_argument("--session-id", required=True)
 
     args = parser.parse_args()
-    reg = SessionRegistry()
+    # D307: SYNO_CT_DIR 注入（测试隔离, 模式 5）— 未注入时等价于原 DEFAULT 路径
+    ct_dir = Path(os.environ.get("SYNO_CT_DIR", str(REPO_ROOT / ".codex" / "control-tower")))
+    reg = SessionRegistry(
+        registry_path=ct_dir / "session-registry.json",
+        lock_dir=ct_dir / "locks",
+        degraded_log=ct_dir / "logs" / "degraded-events.log",
+    )
 
     try:
         if args.cmd == "register":
@@ -417,6 +453,13 @@ def main() -> int:
             result = {"attribution": reg.attribution(args.files)}
         elif args.cmd == "phase":
             result = reg.phase(args.session_id, args.phase)
+        elif args.cmd == "worktree":
+            if args.clear:
+                result = reg.set_worktree(args.session_id, None, None)
+            elif args.path is None or args.branch is None:
+                raise ValueError("worktree 命令: --path 与 --branch 必须成对提供（或 --clear 清空）")
+            else:
+                result = reg.set_worktree(args.session_id, args.path, args.branch)
         elif args.cmd == "gc":
             result = {"archived": reg.gc(max_age_sec=args.max_age, stale_pid=args.stale_pid)}
         elif args.cmd == "list":
@@ -430,7 +473,7 @@ def main() -> int:
         return 0
     except (ValueError, OSError) as exc:
         # fail-open: 自身异常 → 降级输出 + exit 0（不阻断业务）
-        log_degraded(DEFAULT_DEGRADED_LOG, "session-registry", f"{args.cmd} error: {exc}")
+        log_degraded(ct_dir / "logs" / "degraded-events.log", "session-registry", f"{args.cmd} error: {exc}")
         _out({"status": "degraded", "reason": str(exc), "degraded": True})
         return 0
 
