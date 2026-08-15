@@ -14,7 +14,7 @@
 |----|--------|--------|
 | **Mac DSH** | 控制塔 + 验证系统 + 门面（MCP/桌面）+ **哨兵体系核心代码** + 主 CTO（盯全局） | 建仪表盘 + 修哨兵 + 总管家的人 |
 | **Win Claude** | 产品核心（诊断体系 FDE + 本体/存储/交互） | 修发动机的人 |
-| **Codex** | Claude 线 dev doc + D# 统一分配（**不再跟仪表盘**） | 画图纸的人 |
+| **Codex** | Claude 线 dev doc + Claude 线 D# 分配（**不再跟仪表盘**） | 画图纸的人 |
 | **K3**（双轨：Win Kimi CLI + Mac DSH+K3） | 验收（审两边） | 监理 |
 | **你** | 定产品 + 点 Merge + 看评估看板 | 老板 |
 
@@ -36,7 +36,7 @@
 | electron/ + electron-renderer/ | **Mac DSH** | Electron 一体化 |
 | scripts/control-tower/ + scripts/backup/ + 门禁脚本 + docs/synova/coordination/ + DSH 预设与技能 | **Mac DSH** | 控制塔持续维护 |
 | **src/（除 sentinel/cron/mcp 外）L1-L5 + extensions/ + packages/ + synova_worker/** | **Win Claude Code** | 诊断体系（FDE 6阶段）+ 本体/存储/交互 |
-| docs/计划库（Claude 线 dev doc） | **Codex (Win)** | Claude 线 dev doc + D# 统一分配 + 任务登记 |
+| docs/计划库（Claude 线 dev doc） | **Codex (Win)** | Claude 线 dev doc + Claude 线 D# 分配 + 任务登记 |
 | scripts/audit/ + 审计标准 | **Kimi K3** | 红线：其他角色禁碰 |
 
 ### 审计双轨（各自独立）
@@ -73,7 +73,7 @@
 ### DSH 自出 dev doc 的护栏（不变，防"自我闭环"）
 
 1. 结构门禁：过 dev-doc-gatekeeper（Q0-Q3/写集/DS 清单/Done 可证伪）
-2. D# 编号：Codex 统一分配
+2. 任务编号：**DSH 线自定**，格式 `SYNOVA-IMPL-DSH-{任务名}-{YYYYMMDD}.md`（不再向 Codex 拿 D#）；Claude 线继续 Codex 的 D#
 3. PR 预审：DSH 的 PR → Codex 预审
 4. K3 审计：无豁免
 5. 写集契约：声明写集，verify-parallel 查重叠
