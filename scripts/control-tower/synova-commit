@@ -10,6 +10,9 @@
 # staging-guard.py 校验暂存文件归属（防 D286 卷走 D300 暂存类事故），
 # 提交成功后写集标记 committed + 阶段 CP4。
 #
+# D307 (2026-08-15): worktree 隔离感知 — 链接 worktree 内提交后 finish 提示;
+# session/<sid> 隔离分支跳过 auto-tag/auto-push（finish 合并回主后推送）。
+#
 # 用法:
 #   synova-commit --task-id <ID> --agent <名称> --message <消息> [--files <文件...>] [--session-id <ID>]
 #   synova-commit --help
@@ -331,6 +334,24 @@ SELF_HEALTH="$PROJECT_ROOT/scripts/control-tower/self-health.py"
 STAGING_GUARD="$PROJECT_ROOT/scripts/control-tower/staging_guard.py"
 WAIT_MANAGER="$PROJECT_ROOT/scripts/control-tower/wait_manager.py"
 
+# ═══ D307: worktree 隔离感知 ═══
+# 链接 worktree 判定: 链接 worktree 的 git-dir 必为 <主>/.git/worktrees/<name>
+# 绝对路径; 主 worktree 的 git-dir 为 ".git"（相对）→ 子串特征可物理区分,
+# 不依赖 realpath/git 版本（Mac 无 realpath, D334 双机兼容）。
+# session/<sid> 分支 = worktree-manager create 的本地隔离分支:
+#   - 禁止 auto-tag/auto-push（合并回主 worktree 后由主推送, 决策点 1）
+#   - 提交成功后提示 finish 流程
+IS_LINKED_WT=""
+GITDIR_D307=$(git rev-parse --git-dir 2>/dev/null || echo "")
+case "$GITDIR_D307" in
+  *"/.git/worktrees/"*) IS_LINKED_WT=1 ;;
+esac
+CURRENT_BRANCH_D307=$(git symbolic-ref --short HEAD 2>/dev/null || echo "")
+SESSION_WT_BRANCH=""
+case "$CURRENT_BRANCH_D307" in
+  session/*) SESSION_WT_BRANCH=1 ;;
+esac
+
 # D329: register 的 brief 路径按 TASK_ID 前缀查找实际文件（不假定 ${SESSION_ID}.md 存在）
 REGISTER_BRIEF=""
 for _b in "$PROJECT_ROOT"/.claude/task-briefs/${TASK_ID}.md "$PROJECT_ROOT"/.claude/task-briefs/${TASK_ID}-*.md; do
@@ -464,9 +485,18 @@ if [[ ! -f "$PRE_COMMIT" ]]; then
   echo -e "${GREEN}✅ 提交完成（降级模式）${NC}"
 
   # D319: 提交成功后自动 tag + version.log（降级路径同样执行）
+  # D307: session/<sid> 隔离分支跳过 auto-tag/auto-push（本地分支, finish 合并后主推）
   if [[ $EXIT_CODE -eq 0 ]]; then
-    auto_tag_and_version
-    push_with_tags
+    if [[ -n "$SESSION_WT_BRANCH" ]]; then
+      echo -e "  ${YELLOW}ℹ D307: ${CURRENT_BRANCH_D307} 是本地隔离分支 — 跳过 auto-tag/auto-push（finish 合并回主后推送）${NC}"
+    else
+      auto_tag_and_version
+      push_with_tags
+    fi
+    if [[ -n "$IS_LINKED_WT" ]]; then
+      echo -e "  ${YELLOW}ℹ D307: 本提交在 session worktree 内完成 — 回主 worktree 执行:${NC}"
+      echo -e "     ${YELLOW}python scripts/control-tower/worktree-manager.py finish <sid>${NC}"
+    fi
   fi
 
   # D311 M1b: 提交成功后释放写集（标记 committed）+ 阶段 CP4
@@ -492,7 +522,7 @@ fi
 BRANCH_SYNC_CHECK="$SCRIPT_DIR/check-branch-sync.sh"
 if [[ -f "$BRANCH_SYNC_CHECK" ]]; then
   if ! bash "$BRANCH_SYNC_CHECK"; then
-    echo -e "${RED}❌ 提交已拒绝 — 分支同步检查未通过 (D335)${RESET}"
+    echo -e "${RED}❌ 提交已拒绝 — 分支同步检查未通过 (D335)${NC}"
     exit 1
   fi
 else
@@ -548,8 +578,17 @@ if [[ $PRECOMMIT_EXIT -eq 0 ]]; then
     echo -e "${GREEN}✅ 提交完成${NC}"
     set -e # D334: 成功路径恢复 set -e — 保护 auto_tag/push 等后续函数 (bash 3.2 elif bug 规避)
     # D319: 提交成功后自动 tag + version.log + push --follow-tags
-    auto_tag_and_version
-    push_with_tags
+    # D307: session/<sid> 隔离分支跳过 auto-tag/auto-push（本地分支, finish 合并后主推）
+    if [[ -n "$SESSION_WT_BRANCH" ]]; then
+      echo -e "  ${YELLOW}ℹ D307: ${CURRENT_BRANCH_D307} 是本地隔离分支 — 跳过 auto-tag/auto-push（finish 合并回主后推送）${NC}"
+    else
+      auto_tag_and_version
+      push_with_tags
+    fi
+    if [[ -n "$IS_LINKED_WT" ]]; then
+      echo -e "  ${YELLOW}ℹ D307: 本提交在 session worktree 内完成 — 回主 worktree 执行:${NC}"
+      echo -e "     ${YELLOW}python scripts/control-tower/worktree-manager.py finish <sid>${NC}"
+    fi
     # D311 M1b: 提交成功后释放写集（标记 committed）+ 阶段 CP4
     if [[ -f "$SESSION_REGISTRY" ]]; then
       COMMITTED_FILES=$(git show --name-only --format="" HEAD 2>/dev/null | grep -v '^$' | head -50 || true)

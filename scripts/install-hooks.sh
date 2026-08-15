@@ -47,8 +47,8 @@ EXIT_CODE=$?
 if [ $EXIT_CODE -ne 0 ]; then
   echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) exit=$EXIT_CODE branch=$(git branch --show-current 2>/dev/null || echo unknown)" >> "$ROOT/.claude/pre-commit-failures.log"
 else
-  # 写成功标记 — post-commit 用它检测 --no-verify 绕过
-  date +%s > "$ROOT/.claude/last-precommit-success"
+  # 写成功标记 — post-commit 用它检测 --no-verify 绕过 (D366: head|时间戳 对账)
+  echo "$(git rev-parse HEAD 2>/dev/null || true)|$(date +%s)" > "$ROOT/.claude/last-precommit-success"
 fi
 exit $EXIT_CODE'
   elif [ -f "$entry" ]; then

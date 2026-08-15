@@ -111,6 +111,41 @@ else:
   return 0
 }
 
+# ── 今日文件筛选 (D366) — 必须在模式分发之前定义: 分支内的定义只在分支执行时生效 ──
+# D366: 按文件名日期判断"今日" — 替代 find 按 mtime 的今日判定 (git pull/checkout 刷 mtime 不可靠)
+# 用法: today_files_by_prefix <dir>   # brief: YYYY-MM-DD 文件名前缀 (扫描 *.md)
+#       today_files_by_suffix <dir>   # dev doc: -YYYYMMDD.md 文件名后缀 (扫描 SYNOVA-IMPL-*.md)
+# 性能: 纯 bash for+case 零子进程 — grep|head 每文件 3 spawn × 349 brief = Windows 分钟级 (实测回退)
+# 注意: glob 硬编码在函数内 — 变量中的 * 不会被路径名展开 (实测), 字面 glob 才展开
+TODAY_DASH=$(date +%Y-%m-%d)
+TODAY_COMPACT=$(date +%Y%m%d)
+today_files_by_prefix() {
+  local dir="$1" f b
+  dir="${dir%/}"
+  [ -d "$dir" ] || return 0
+  for f in "$dir"/*.md; do
+    [ -e "$f" ] || continue
+    b=${f##*/}
+    case "$b" in
+      "${TODAY_DASH}"-*) echo "$f" ;;
+    esac
+  done
+  return 0
+}
+today_files_by_suffix() {
+  local dir="$1" f b
+  dir="${dir%/}"
+  [ -d "$dir" ] || return 0
+  for f in "$dir"/SYNOVA-IMPL-*.md; do
+    [ -e "$f" ] || continue
+    b=${f##*/}
+    case "$b" in
+      *-${TODAY_COMPACT}.md) echo "$f" ;;
+    esac
+  done
+  return 0
+}
+
 # ── 模式分发 ──
 echo "── verify-parallel (D311): 并行声明物理验证 ──"
 
@@ -138,9 +173,8 @@ elif [ "$MODE" = "declared" ]; then
   done
 
 elif [ "$MODE" = "today" ]; then
-  # 今日全部 dev doc 两两比对
-  TODAY=$(date +%Y-%m-%d)
-  DOCS=$(find "$IMPL_DIR" -name "SYNOVA-IMPL-*.md" -newermt "$TODAY 00:00:00" 2>/dev/null | sort || true)
+  # 今日全部 dev doc 两两比对 — D366: 文件名日期后缀 (mtime 会被 git pull 刷, 不可靠)
+  DOCS=$(today_files_by_suffix "$IMPL_DIR" | sort || true)
   if [ -z "$DOCS" ]; then
     echo "  ✅ 今日无 dev doc — 跳过"
     exit 0

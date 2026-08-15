@@ -65,8 +65,41 @@ if [ -f "$CUR_SRC" ]; then
   fi
 fi
 
-# 今日全部 brief (认领候选)
-ALL_TODAY=$(find "$ROOT/.claude/task-briefs/" -maxdepth 1 -name "*.md" -newermt "$TODAY 00:00:00" 2>/dev/null | sort || true)
+# 今日全部 brief (认领候选) — D366: 文件名日期前缀 (mtime 会被 git pull 刷, 不可靠)
+# D366: 按文件名日期判断"今日" — 替代 find 按 mtime 的今日判定
+# 用法: today_files_by_prefix <dir>   # brief: YYYY-MM-DD 文件名前缀 (扫描 *.md)
+#       today_files_by_suffix <dir>   # dev doc: -YYYYMMDD.md 文件名后缀 (扫描 SYNOVA-IMPL-*.md)
+# 性能: 纯 bash for+case 零子进程 — grep|head 每文件 3 spawn × 349 brief = Windows 分钟级 (实测回退)
+# 注意: glob 硬编码在函数内 — 变量中的 * 不会被路径名展开 (实测), 字面 glob 才展开
+TODAY_DASH=$(date +%Y-%m-%d)
+TODAY_COMPACT=$(date +%Y%m%d)
+today_files_by_prefix() {
+  local dir="$1" f b
+  dir="${dir%/}"
+  [ -d "$dir" ] || return 0
+  for f in "$dir"/*.md; do
+    [ -e "$f" ] || continue
+    b=${f##*/}
+    case "$b" in
+      "${TODAY_DASH}"-*) echo "$f" ;;
+    esac
+  done
+  return 0
+}
+today_files_by_suffix() {
+  local dir="$1" f b
+  dir="${dir%/}"
+  [ -d "$dir" ] || return 0
+  for f in "$dir"/SYNOVA-IMPL-*.md; do
+    [ -e "$f" ] || continue
+    b=${f##*/}
+    case "$b" in
+      *-${TODAY_COMPACT}.md) echo "$f" ;;
+    esac
+  done
+  return 0
+}
+ALL_TODAY=$(today_files_by_prefix "$ROOT/.claude/task-briefs/" | sort || true)
 [ -z "$ALL_TODAY" ] && [ -n "$CUR" ] && ALL_TODAY="$CUR"
 
 if [ -z "$ALL_TODAY" ] && [ -z "$CUR" ]; then
