@@ -336,7 +336,40 @@ purpose: "全局任务追踪。控制塔健康监控。"
 > | **D360** | **P2 批次清理**（checkedAt 1970 时间戳 / 阈值硬编码不读 manifest / findings 持久化分裂（tickets 表不读）/ DEPLOYS deprecated 门控 / 规范外哨兵 2 个 / err:any / **三重注册入口冗余**（builtins+file-driven+runner 去重无害化但冗余）） | P2 | ❌ 需写 dev doc |
 >
 > 开发文档: [implementation/](../plans/codex/implementation/) | 权威文档: [research/](research/)
-> 协调文档: [ROLES.md](coordination/ROLES.md) | [AUDIT-PROTOCOL.md](coordination/AUDIT-PROTOCOL.md) | [审计发现台账](coordination/AUDIT-FINDINGS-LEDGER.md)（K3 审计发现 + CT/S 改进队列）| [DECISION-REFERENCE.md](coordination/DECISION-REFERENCE.md)（决策双参考系：Anthropic 工程 + DeepSeek 第一性原理/开源实证，S-12 强制记录）
+> 协调文档: [ROLES.md](coordination/ROLES.md) | [AUDIT-PROTOCOL.md](coordination/AUDIT-PROTOCOL.md) | [审计发现台账](coordination/AUDIT-FINDINGS-LEDGER.md)（K3 审计发现 + CT/S 改进队列）| [DECISION-REFERENCE.md](coordination/DECISION-REFERENCE.md)（决策双参考系）| [**TASK-ROUTING.md 分工看板**](coordination/TASK-ROUTING.md)（**派活前必查**）
+>
+> **🧭 分工看板（唯一权威 = TASK-ROUTING.md v3，撞车时查它）**：
+> | 模块 | 所有者 |
+> |------|--------|
+> | scripts/control-tower/ + 门禁脚本 + coordination 文档 | Mac DSH |
+> | golden-scenarios/product-lines/.github/src\/mcp/electron | Mac DSH |
+> | src/（除 mcp）+ extensions/ + packages/ + synova_worker | Win Claude |
+> | docs/计划库 + 双仪表盘 | **Codex（本机）** |
+> | scripts/audit/ + 审计执行 | Kimi K3 |
+> **Codex 职责边界**：只写 Claude Code 的 dev doc（src/ 业务）+ 维护双仪表盘；**不碰控制塔/门禁脚本实现，不写 DSH 的 dev doc**。
+>
+> **📊 产品完成度（完成标准，给创始人看）**：产品 = 26 条能力线，每条线"到 100%"由验收点清单定义，只有 K3 复核/创始人演示核验的验收点才计绿。**当前总进度 3%**。入口: [product-progress.html](product-lines/product-progress.html) + [product-lines.yaml](product-lines/product-lines.yaml)。
+> **本表 = 过程仪表盘（待办来源④）**：每个 D# 任务标注「服务线」编号，供产品完成度聚合"还差哪些待办"——D# 完成 ≠ 产品线绿，验收点经证据验证才算。
+>
+> **🗺️ D# → 产品线映射（待办 → 完成标准，源自设计文档 §2.3 K3 P0/P1→线权威映射）**：
+> | D# | 服务线 |
+> |----|--------|
+> | D333 | 17 进化闭环（N13 + placeholder 假成功） |
+> | D334 | 19 方向监测（direction-monitor 接线） |
+> | D336 | 17 进化闭环（GA 验证闭环） |
+> | D337 | 01 桌面端（静默升级/回滚） |
+> | D338 | 24 安全与信任（orgId 单实例） |
+> | D351 | 23 权限治理（ENT boss 角色） |
+> | D354 | 08 告警推送（N14 去重键） |
+> | D355 | 05 本体层收敛 + 09/10/11 三循环（契约收敛 + fail-open） |
+> | D356 | 07 持续监测 + 08 告警推送（manifest 死代码 + 降级误报） |
+> | D357 | 04 数据接入（L5 连接器） |
+> | D358 | 07 持续监测（合并哨兵去 _extinct） |
+> | D359 | 07 持续监测 + 15 专家体系（权威03 落地 + 哨兵口径） |
+> | D360 | 07/08（P2 清理） |
+> | D363 | 20 Agent 运行底座 + 21 模型底座（LLM failover） |
+> | D364 | 16 目标导航 + 18 记忆体系（跟踪闭环 + 跨会话记忆） |
+> | 流程类 | D307/308/310/330-332/340-342/343-349/352/353/365/373（控制塔/门禁/审计基建，**非产品线**，不直接推进任何线的验收点） |
 > **创始人待裁决区（2026-08-13 建立——⏳ 项由 Codex 主动提出，不埋在队列）**：N14 ✅A（文档改 5 分钟，已落实）｜P0-8 ✅A（ENT 补 boss → D351）｜npm audit ⏳ 待裁（建议豁免并入 D309/D310 批次）
 > 最后更新: 2026-08-12 | 派发链 D330(4.7.2)→D331(4.7.3)→D332(4.7.4)→D307(4.8.0) | CT 20/20 | 门禁 12 组 | 审计基线 434
 > English: [DASHBOARD.md](DASHBOARD.md)
