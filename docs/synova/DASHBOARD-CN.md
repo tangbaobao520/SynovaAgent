@@ -287,7 +287,7 @@ purpose: "全局任务追踪。控制塔健康监控。"
 > | **D336** | **GA 验证闭环接线**（ga-collaboration.ts 仅 type import，P1-A3）— 报告确认流程接入 GAFeedbackHandler 运行时实例 | P1 | ❌ 需写 dev doc |
 > | **D337** | **静默升级/回滚**（electron-updater 仅依赖声明、main.cjs 零使用，P1-A4）— 接线 electron-updater + 回滚策略；或文档降级"版本提示+手动升级"（与 Electron P0 一体化协同） | P1 | ❌ 需写 dev doc |
 > | **D338** | **orgId 单实例内逐表全覆盖审计**（P1-A5）— 逐表核对 DB 查询 orgId 过滤 + 补 GA 中国墙 | P1 | ❌ 需写 dev doc |
-> | **D339** | **文档口径同步**（AGENTS.md:128 哨兵 20→45 扩展+4 内置；N14 窗口改 5min 已裁决、先修 key（D354）；C线红线3 话术随 D300 升级；**+D5：C线 S5-3/T-2/A线 B6 的 ✅ 基于 placeholder 接线，需修正**） | P2 | ❌ 需写 dev doc |
+> | **D339** | **⚠️ 编号冲突：实际提交为「Mac 中文文件名门禁修复」（247ceae5，08-14 已提交）**；台账计划名「文档口径同步」未按计划落地——其中**哨兵口径部分已由 D378 完成（2026-08-16 CTO 审计后更新：20→45 扩展+4 内置=49 活跃，12 退役）**；N14 已裁决 A（文档改 5min，先修 key 归 D354）；C线红线3 话术 + D5 证据修正仍待办 | P2 | ✅ quotepath 已提交；哨兵口径 D378 承接 |
 > | **K3 权威偏差审计 v1.1（2026-08-12）** | 新增 P1-B1~B5（控制塔/铁律）+ 铁律覆盖总表（38/39/Secrets ✅；36/37/9 ❌）+ D-G2 改判"引擎已修复，数据链路未担保"+ 组11 修正（并入组4，计数口径→D3）+ 文档 D3/D4 | — | 📝 D340-D342 + D339 扩 |
 > | **D340** | **控制塔 V5 视图动态化**（agent_health.py:21-28 硬编码旧 6 专家 → 从 expert-registry.yaml 动态读 7 专家 + 全仓旧专家 ID 清理；P1-B1 铁律 9 违规实例） | P1 | ❌ 需写 dev doc |
 > | **D341** | **控制塔信号完整性**（gate-status.json 缺失根因 + 自检升级"部分缺失→黄/红" + 演示前回填 checklist；P1-B2，若演示含控制塔面板升 P0） | P1 | ❌ 需写 dev doc |
@@ -333,7 +333,7 @@ purpose: "全局任务追踪。控制塔健康监控。"
 > | **D357** | **L5 连接器落地**（P0-2 L5）：CRM（Salesforce/HubSpot/钉钉）+ 财务（用友/金蝶/银行）+ HR（北森/钉钉）连接器；管线已通（connector-pipeline + POST /api/connector/sync）缺连接器实现 | P1 | ❌ 需写 dev doc |
 > | **D358** | **合并哨兵去 _extinct 桥接**（P1-2）：margin-health / capital-health 重写真实 compute，不再动态 import ../_extinct/ 退役代码；props 契约对齐 erp-standard | P1 | ❌ 需写 dev doc |
 > | **D359** | **文档口径同步 + 权威03 落地**（P1-4 + P1-5）：架构文档 61/50/11/4 更新为实际 47/44/1/已修复；N1-N10 哨兵落地 + computeMarginalCost/LearningCurve/CSFProfile 补全 + 42 边旧标签迁移 + **正向信号放大未实现**（grep excellence/positive 零命中） | P1 | ❌ 需写 dev doc |
-> | **D360** | **P2 批次清理**（checkedAt 1970 时间戳 / 阈值硬编码不读 manifest / findings 持久化分裂（tickets 表不读）/ DEPLOYS deprecated 门控 / 规范外哨兵 2 个 / err:any / **三重注册入口冗余**（builtins+file-driven+runner 去重无害化但冗余）） | P2 | ❌ 需写 dev doc |
+> | **D360** | **P2 批次清理**（checkedAt 1970 时间戳 / 阈值硬编码不读 manifest / findings 持久化分裂（tickets 表不读）/ DEPLOYS deprecated 门控 / 规范外哨兵 **3 个**（path-dependency / sentinel-forecast-accuracy / sentinel-pricing-strategy；**path-dependency 空壳缺实现**——D378 审计核实）/ err:any / **三重注册入口冗余**（builtins+file-driven+runner 去重无害化但冗余）） | P2 | ❌ 需写 dev doc |
 >
 > 开发文档: [implementation/](../plans/codex/implementation/) | 权威文档: [research/](research/)
 > 协调文档: [ROLES.md](coordination/ROLES.md) | [AUDIT-PROTOCOL.md](coordination/AUDIT-PROTOCOL.md) | [审计发现台账](coordination/AUDIT-FINDINGS-LEDGER.md)（K3 审计发现 + CT/S 改进队列）| [DECISION-REFERENCE.md](coordination/DECISION-REFERENCE.md)（决策双参考系）| [**TASK-ROUTING.md 分工看板**](coordination/TASK-ROUTING.md)（**派活前必查**）
@@ -504,7 +504,7 @@ purpose: "全局任务追踪。控制塔健康监控。"
 | 门禁 | 17/17 PASS | 17/17 |
 | 控制塔 | 20/20 在线 | 20/20 |
 | 已完成D任务 | 131+ | 97% |
-| 哨兵 | 45活跃 | 50 |
+| 哨兵 | 49活跃（45扩展+4内置，另12退役） | 50 |
 | 计算总计 | 88 | >=1/edge |
 | 专家 | 8工具+15目录 | 7活跃 |
 | 前端页面 | 6 HTML | 10/31 |
