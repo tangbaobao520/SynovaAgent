@@ -11,6 +11,24 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V4.8.0 (2026-08-15) — D307 批次（session 级 worktree 隔离：物理根治共享 index 拉锯/劫持）
+
+> MINOR bump — 新机制（git worktree 隔离层）。D320 写集被吞、D330-D331 共享暂存区
+> 劫持的根因是同一主 worktree index 的多 session 拉锯；门禁只能事后拦截，worktree
+> 是事前物理隔离（git 硬约束: 两 worktree 不能 checkout 同分支）。决策: session/<sid>
+> 分支 + finish merge 回主（第一性原理 + git 官方用法开源实证，收敛）；attach 只提示
+> 绝不 os.chdir（SessionStart hook 无法改变宿主进程 cwd，Anthropic 基线: 不能做的不假装做）。
+
+- **变更**: MINOR bump — 新增 worktree 生命周期管理 + 并行模式检测提示 + session/* 分支推送保护
+- **D307 (worktree 隔离)**:
+  - `scripts/control-tower/worktree-manager.py` — 新建。create/finish/list/status 四命令；JSON 输出 + 三态退出码 (0 ok/1 block/2 degraded)；git 生命周期操作 fail-closed（脏 worktree/脏主树/冲突 → block 且保留一切）；registry 簿记 fail-open；`SYNO_CT_DIR`/`--repo` 测试注入
+  - `scripts/control-tower/attach.py` — ⑦ 并行模式检测提示: registry 活跃 session 或 --parallel 且非 worktree → 提示 worktree 隔离（0 处 os.chdir）
+  - `scripts/control-tower/session_registry.py` — register 新记录含 worktree_path/worktree_branch 字段 + set_worktree() + worktree CLI (--path/--branch/--clear)；main 支持 SYNO_CT_DIR 注入
+  - `scripts/control-tower/synova-commit` — 链接 worktree 判定（git-dir 含 /.git/worktrees/ 子串特征，Mac 无 realpath 兼容）；session/* 分支跳过 auto-tag/auto-push 显式提示；worktree 内提交后 finish 指引
+  - `tests/control-tower/worktree-manager.test.py` — 13 用例（create/独立 index 物理证明/并行提交互不干扰/finish 合并清理/hooks 共享回归/registry 字段/脏树与分支冲突边界/attach 并行检测），red→green 已证
+- **验证**: 13 测试全绿 | pre-commit 12 组 | as any = 0
+- **作者**: Claude Code (D307)
+
 ## V4.7.9 (2026-08-15) — D366 批次（门禁"今日/本次"判定修复：mtime → 文件名日期 + marker head 对账）
 
 > PATCH bump — 门禁判定机制 bug 修复。git pull/checkout 刷 mtime 使 `find -newermt` 把
