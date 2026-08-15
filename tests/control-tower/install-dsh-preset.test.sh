@@ -69,6 +69,12 @@ assert_grep "$INSTALLED/agent.cordis.yml" "tool-bash" "T1: 非 persona 行原样
 assert_grep "$INSTALLED/preset.yml" "纪律模式" "T1: preset.yml 已替换为仓库版"
 [ -f "$INSTALLED/.synova-preset-version" ] && pass "T1: 版本标记已写" || fail "T1: 版本标记缺失"
 
+# ── T11: devdoc 预设同步落位（多预设注册表, 2026-08-15 加入）──
+DEVDOC_INSTALLED="$HOME_MOCK/.agent-presets/synova-devdoc"
+[ -f "$DEVDOC_INSTALLED/agent.cordis.yml" ] && pass "T11: devdoc agent.cordis.yml 已落位" || fail "T11: devdoc agent.cordis.yml 缺失"
+assert_grep "$DEVDOC_INSTALLED/agent.cordis.yml" "dev doc 撰写" "T11: devdoc persona 已替换为仓库版"
+assert_grep "$DEVDOC_INSTALLED/preset.yml" "dev-doc" "T11: devdoc preset.yml 已替换为仓库版"
+
 # ── T2: --check 安装后 → exit 0（正常）──
 OUT2=$(RUN --check 2>&1)
 EXIT2=$?
