@@ -47,7 +47,7 @@ SYNOVA-IMPL-DSH-{任务名}-{YYYYMMDD}.md
 
 ## 三、项目是什么
 
-**SynovaAgent** — 驻扎企业内部的 AI 诊断 Agent，核心问题"企业增长卡在哪？现在该做什么？"。五层架构（L1交互→L2编排→L3洞察→L4本体→L5存储），8 专家，26 哨兵。定位详见 `PRODUCT-BRIEF.md`（唯一事实源）。
+**SynovaAgent** — 驻扎企业内部的 AI 诊断 Agent，核心问题"企业增长卡在哪？现在该做什么？"。五层架构（L1交互→L2编排→L3洞察→L4本体→L5存储），8 专家，**49 活跃哨兵（45 文件驱动 extensions/sentinels + 4 内置适配器，另 12 退役 _extinct）**。定位详见 `PRODUCT-BRIEF.md`（唯一事实源）。
 
 ## 四、分工（四条线 × 双轨，终态统一 DSH）
 
