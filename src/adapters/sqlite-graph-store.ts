@@ -11,10 +11,12 @@
  *   @input  — better-sqlite3 Database 实例
  *   @output — GraphStore 接口 { createNode, createEdge, queryNodes, queryEdges,
  *              queryTriples, getNode, updateNode, deleteNode, deleteEdge }
- *   @degraded — SQL 错误 → log.warn + 返回空/抛出
+ *   @degraded — SQL 错误 → log.error + 返回空/抛出（D355: 查询层 fail-open 升级，
+ *               schema 漂移 "no such column" 单独识别并提示运行迁移）
  */
 import type Database from "better-sqlite3";
 import { createLogger } from "@synova/logger";
+import { reconcileSchema } from "../store/schema-migration";
 
 const log = createLogger("adapters/sqlite-graph-store");
 
@@ -105,6 +107,9 @@ export class SqliteGraphStore {
     this.db = db;
     this.enableWAL();
     this.initSchema();
+    // D355: schema 版本化迁移（幂等）。fail-closed: 不 catch — 迁移失败必须阻止启动
+    //（框架契约），修复 K3 P0-3 旧库 props_json 无 props 列的 schema 漂移。
+    reconcileSchema(this.db);
   }
 
   /** 启用 WAL 模式；网络文件系统不可用时降级 DELETE（对齐旧包行为） */
@@ -210,7 +215,13 @@ export class SqliteGraphStore {
       }));
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      log.warn({ err: msg, type }, "查询图节点失败");
+      // D355 (K3 P0-3): 静默 fail-open 升级 — 失效在日志层可见（不再 log.warn）
+      if (msg.includes("no such column")) {
+        // schema 漂移 → 升级 error，提示运行迁移
+        log.error({ err: msg, type }, "图节点 schema 漂移——props 列缺失，需运行迁移");
+        return [];
+      }
+      log.error({ err: msg, type }, "查询图节点失败");
       return [];
     }
   }

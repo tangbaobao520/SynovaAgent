@@ -70,3 +70,53 @@ describe('SchemaMigration — 幂等', () => {
     expect(row.version).toBe(SCHEMA_VERSION);
   });
 });
+
+describe('SchemaMigration — v2 迁移 (D355 graph_nodes props)', () => {
+  beforeEach(async () => { await loadModules(); });
+
+  it('SCHEMA_VERSION 应为 2（含 D355 迁移）', () => {
+    expect(SCHEMA_VERSION).toBe(2);
+  });
+
+  it('旧库（props_json 无 props）reconcile 后补 props 列并回填数据', () => {
+    const db = createTestDb();
+    db.exec(`
+      CREATE TABLE graph_nodes (
+        id TEXT PRIMARY KEY, graph TEXT NOT NULL DEFAULT 'default', type TEXT NOT NULL, name TEXT,
+        props_json TEXT, created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        valid_from TEXT NOT NULL DEFAULT (datetime('now')), valid_to TEXT
+      )
+    `);
+    db.prepare("INSERT INTO graph_nodes (id, type, props_json) VALUES ('n1', 'Client', ?)").run('{"churn_rate":0.12}');
+
+    reconcileSchema(db);
+
+    const props = (db.prepare("SELECT props FROM graph_nodes WHERE id = 'n1'").get() as { props: string }).props;
+    expect(JSON.parse(props)).toEqual({ churn_rate: 0.12 });
+  });
+
+  it('schema_version 已到 v1 的库增量执行 v2 并推进版本', () => {
+    const db = createTestDb();
+    db.exec("CREATE TABLE schema_version (version INTEGER NOT NULL, updated_at TEXT NOT NULL DEFAULT (datetime('now')))");
+    db.prepare("INSERT INTO schema_version (version) VALUES (1)").run();
+    db.exec(`
+      CREATE TABLE graph_nodes (
+        id TEXT PRIMARY KEY, graph TEXT NOT NULL DEFAULT 'default', type TEXT NOT NULL, name TEXT,
+        props_json TEXT, created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        valid_from TEXT NOT NULL DEFAULT (datetime('now')), valid_to TEXT
+      )
+    `);
+
+    reconcileSchema(db);
+
+    const versions = (db.prepare('SELECT version FROM schema_version').all() as Array<{ version: number }>).map((r) => r.version);
+    expect(versions).toContain(2);
+  });
+
+  it('v2 迁移失败必须抛（fail-closed — 迁移失败阻止启动）', () => {
+    const db = createTestDb();
+    db.exec("CREATE VIEW graph_nodes AS SELECT 1 AS id, 'Client' AS type, NULL AS props_json");
+
+    expect(() => reconcileSchema(db)).toThrow();
+  });
+});

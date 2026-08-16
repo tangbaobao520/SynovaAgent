@@ -9,13 +9,14 @@
  */
 import type Database from 'better-sqlite3';
 import { createLogger } from '@synova/logger';
+import { graphNodesPropsMigration } from './migrations/001-graph-nodes-props';
 
 const log = createLogger('store/schema-migration');
 
 // ═══ 常量 ═══
 
 /** 当前 schema 版本。每次新增迁移文件时递增。 */
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 // ═══ Migration 定义 ═══
 
@@ -30,8 +31,8 @@ export interface Migration {
  * 按版本号顺序执行。
  */
 const migrations: Migration[] = [
-  // 未来迁移在此添加:
-  // { version: 2, name: 'add_notification_read_flag', up: (db) => { ... } },
+  // D355: 旧库 graph_nodes 以 props_json 存储属性 → 补 props 列并回填（K3 P0-3）
+  graphNodesPropsMigration,
 ];
 
 // ═══ reconcileSchema ═══
