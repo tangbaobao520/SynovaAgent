@@ -27,12 +27,24 @@ export const cashRunwaySentinel = {
 
       if (this.manifest) {
         const t = this.manifest.thresholds;
-        if (runwayMonths <= t.cash_runway_months.critical) {
+        // P1-1 (K3 20260813): degraded 结果不穿过阈值门控 — compute 降级时 value=0，
+        // 0 ≤ critical 6 会误报「现金流危急」（活运行 [B] 组实证）。短路改发
+        // severity=warning 的 degraded finding（formatFindingsForLLM 只呈现
+        // critical+warning，warning 保证降级信号对专家 prompt 可见 — 铁律 31）。
+        if (runwayResult.degraded) {
+          findings.push({
+            id: 'cr_runway_degraded', severity: 'warning', title: '现金流数据不完整',
+            description: `现金跑道计算降级：${runwayResult.warnings.join('；')}`,
+            evidence: runwayResult.evidence,
+            suggestion: '请确认财务数据是否完整。',
+            detectedAt: new Date().toISOString(),
+          });
+        } else if (runwayMonths <= t.cash_runway_months.critical) {
           findings.push({
             id: 'cash_critical', severity: 'critical', title: `现金流危急—跑道${Number.isFinite(runwayMonths) ? runwayMonths.toFixed(1) : '充足'}个月`,
             description: `现金跑道${Number.isFinite(runwayMonths) ? runwayMonths.toFixed(1) : '充足'}个月，低于critical阈值${t.cash_runway_months.critical}个月。`,
             evidence: runwayResult.evidence,
-            suggestion: runwayResult.degraded ? '请确认财务数据是否完整。' : '启动应急融资，削减非必要支出。',
+            suggestion: '启动应急融资，削减非必要支出。',
             detectedAt: new Date().toISOString(),
           });
         } else if (runwayMonths <= t.cash_runway_months.warning) {
@@ -42,7 +54,15 @@ export const cashRunwaySentinel = {
             detectedAt: new Date().toISOString(),
           });
         }
-        if (overdueRate >= t.receivable_overdue.critical) {
+        if (overdueResult.degraded) {
+          findings.push({
+            id: 'cr_overdue_degraded', severity: 'warning', title: '应收数据不完整',
+            description: `应收逾期率计算降级：${overdueResult.warnings.join('；')}`,
+            evidence: overdueResult.evidence,
+            suggestion: '请确认财务数据是否完整。',
+            detectedAt: new Date().toISOString(),
+          });
+        } else if (overdueRate >= t.receivable_overdue.critical) {
           findings.push({
             id: 'ar_critical', severity: 'critical', title: '应收逾期严重',
             description: `应收/现金比${(overdueRate * 100).toFixed(0)}%，超出critical阈值。`,
