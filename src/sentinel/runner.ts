@@ -1,4 +1,4 @@
-﻿/**
+/**
  * sentinel/runner.ts — SentinelRunner 调度框架 (P1-4)
  *
  * 桥接 Sentinel 接口与 CronScheduler:
@@ -12,10 +12,15 @@
 
 import type Database from 'better-sqlite3';
 import type { CronScheduler } from '../cron/scheduler';
-import type { Sentinel, SentinelCheckResult } from './types';
+import type { Sentinel, SentinelCheckResult, SentinelFinding } from './types';
 import type { Evidence } from '../evidence/types';
 import { getSentinelRegistry } from './registry';
 import { getBaselineStore } from './baseline-store';
+import {
+  createSentinelEventsTable,
+  appendSentinelEvent,
+  replaySentinelEvents,
+} from './sentinel-events';
 import { EscalationEngine, type EscalationRule } from '../services/escalation-engine';
 import { createLogger } from '@synova/logger';
 import { ProactivePush } from "../agent/proactive-push";
@@ -165,6 +170,15 @@ export class SentinelRunner {
       `);
     } catch { log.debug('哨兵工单表初始化失败 — 可能已存在或 db 不可用'); }
 
+    // sentinel_events 事件表 (L5 append-only) + 启动重放重建投影 (I1 可重建)
+    try {
+      createSentinelEventsTable(this.db as Database.Database);
+      this.rebuildFromEvents();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg }, '[runner] 哨兵事件表初始化/重放失败 — degraded, 内存态从空开始');
+    }
+
     const registry = getSentinelRegistry();
     const cronSentinels = registry.listCronSentinels();
 
@@ -249,6 +263,21 @@ export class SentinelRunner {
 
       const { aggregateSignals } = await import('./signal-aggregator');
       const { signals, stats } = aggregateSignals(results);
+
+      // I3 审计: 写 signal 事件（信号按需重算，事件流仅作审计追踪，不建投影）
+      try {
+        for (const signal of signals) {
+          appendSentinelEvent(this.db as Database.Database, {
+            event_type: 'signal',
+            sentinel_id: signal.sources[0]?.sentinelId || signal.id,
+            aggregate_id: signal.id,
+            payload: { signal: { ...signal } },
+          });
+        }
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        log.warn({ err: msg }, '[runner] signal 事件写入失败 — 非阻断');
+      }
 
       if (stats.criticalSignals > 0) {
         log.warn({
@@ -428,6 +457,18 @@ export class SentinelRunner {
           Array.isArray(r?.suggestedActions) ? (r.suggestedActions as string[]).join('; ') : null
         );
         log.info({ ticketId, signalId, expertType }, '[runner] 工单已创建');
+        // I3 审计: 写 ticket_transition 事件（工单创建）
+        try {
+          appendSentinelEvent(this.db as Database.Database, {
+            event_type: 'ticket_transition',
+            sentinel_id: signalId,
+            aggregate_id: ticketId,
+            payload: { ticketId, signalId, severity, expertType, to: 'open', at: new Date().toISOString() },
+          });
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          log.warn({ err: msg, ticketId }, '[runner] ticket_transition 事件写入失败 — 非阻断');
+        }
       } catch (err) { log.warn({ err }, '[runner] 工单创建失败 (非阻断)'); }
     }
   }
@@ -442,6 +483,153 @@ export class SentinelRunner {
     return this.records;
   }
 
+  // ═══ 事件溯源 (I1 可重建 / I2 单源 / I3 可审计) ═══
+
+  /**
+   * 将一次 run 的 run_completed + finding 事件写入事件流（I2 单源唯一写入口）。
+   * run_completed 作聚合锚点（不含 findings）；每条 finding 一条 finding 事件（I3 可审计）。
+   */
+  private persistRunEvents(record: SentinelRunRecord): void {
+    const db = this.db as Database.Database;
+    const runKey = `${record.sentinelId}@${record.result.checkedAt}`;
+    appendSentinelEvent(db, {
+      event_type: 'run_completed',
+      sentinel_id: record.sentinelId,
+      aggregate_id: runKey,
+      payload: {
+        sentinelId: record.sentinelId,
+        sentinelName: record.sentinelName,
+        checkedAt: record.result.checkedAt,
+        durationMs: record.result.durationMs,
+        ok: record.result.ok,
+        error: record.result.error ?? null,
+        degraded: record.result.degraded ?? false,
+        cronJobId: record.cronJobId,
+      },
+    });
+    for (const finding of record.result.findings) {
+      appendSentinelEvent(db, {
+        event_type: 'finding',
+        sentinel_id: record.sentinelId,
+        aggregate_id: runKey,
+        payload: { finding: { ...finding, status: finding.status ?? 'open' } },
+      });
+    }
+  }
+
+  /** 物化投影: 把 run record 追加进 records Map（保留最近 50 条） */
+  private projectRunRecord(record: SentinelRunRecord): void {
+    const history = this.records.get(record.sentinelId) || [];
+    history.push(record);
+    if (history.length > 50) history.shift();
+    this.records.set(record.sentinelId, history);
+  }
+
+  /**
+   * 启动重放: 从 sentinel_events 事件流重建 records 投影 (I1 可重建)。
+   * 运行期新事件由 persistRunEvents/projectRunRecord 边写边投影；本方法仅在 start() 调用一次。
+   */
+  rebuildFromEvents(): void {
+    const events = replaySentinelEvents(this.db as Database.Database);
+    this.records.clear();
+    this.totalRuns = 0;
+
+    const runByAggregate = new Map<string, SentinelRunRecord>();
+    const findingById = new Map<string, SentinelFinding>();
+
+    for (const ev of events) {
+      switch (ev.event_type) {
+        case 'run_completed': {
+          const p = ev.payload;
+          const record: SentinelRunRecord = {
+            sentinelId: String(p.sentinelId),
+            sentinelName: String(p.sentinelName ?? p.sentinelId),
+            cronJobId: String(p.cronJobId ?? ''),
+            result: {
+              sentinelId: String(p.sentinelId),
+              ok: Boolean(p.ok),
+              findings: [],
+              durationMs: Number(p.durationMs ?? 0),
+              checkedAt: String(p.checkedAt ?? ''),
+              ...(p.error != null ? { error: String(p.error) } : {}),
+              ...(p.degraded != null ? { degraded: Boolean(p.degraded) } : {}),
+            },
+          };
+          this.projectRunRecord(record);
+          this.totalRuns++;
+          if (ev.aggregate_id) runByAggregate.set(ev.aggregate_id, record);
+          break;
+        }
+        case 'finding': {
+          const p = ev.payload;
+          const finding = p.finding as SentinelFinding;
+          if (ev.aggregate_id) {
+            const run = runByAggregate.get(ev.aggregate_id);
+            if (run) {
+              run.result.findings.push(finding);
+              findingById.set(finding.id, finding);
+            } else {
+              log.warn({ aggregateId: ev.aggregate_id, findingId: finding.id },
+                '[runner] 重放 finding 事件 — 未找到对应 run（跳过）');
+            }
+          }
+          break;
+        }
+        case 'finding_transition': {
+          const p = ev.payload;
+          const findingId = String(p.findingId);
+          const to = String(p.to) as SentinelFinding['status'];
+          const finding = findingById.get(findingId);
+          if (finding) {
+            finding.status = to;
+          } else {
+            log.warn({ findingId }, '[runner] 重放 finding_transition — 未找到对应 finding（跳过）');
+          }
+          break;
+        }
+        case 'signal':
+        case 'ticket_transition':
+          // I3 审计: 信号按需重算（aggregateSignals）、工单状态在 sentinel_tickets 表——
+          // 事件流仅作审计追踪，不投影到内存态。
+          break;
+      }
+    }
+  }
+
+  /**
+   * 迁移 finding 生命周期状态 (K3 §4.6 findings 正名)。
+   * 契约:
+   *   @input  — findingId: string, to: 'acknowledged' | 'resolved'
+   *   @output — 命中并迁移的 finding 数量（0 = 未找到）
+   *   @degraded — 事件写入失败 → log.warn + 仍更新内存投影（degraded）
+   *   @error  — 无（纯内存搜索 + 幂等写事件，不抛）
+   */
+  transitionFindingStatus(findingId: string, to: 'acknowledged' | 'resolved'): number {
+    let changed = 0;
+    for (const runs of this.records.values()) {
+      for (const run of runs) {
+        for (const f of run.result.findings) {
+          if (f.id !== findingId) continue;
+          const from = f.status ?? 'open';
+          f.status = to;
+          changed++;
+          try {
+            appendSentinelEvent(this.db as Database.Database, {
+              event_type: 'finding_transition',
+              sentinel_id: run.sentinelId,
+              aggregate_id: findingId,
+              payload: { findingId, from, to, at: new Date().toISOString() },
+            });
+          } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err);
+            log.warn({ err: msg, findingId }, '[runner] finding_transition 事件写入失败 — degraded');
+          }
+        }
+      }
+    }
+    return changed;
+  }
+
   // ═══ Phase P1-1: L3WriteAPI (L0 进化层接口) ═══
 
   /**
@@ -453,12 +641,35 @@ export class SentinelRunner {
     return {
       async closeTicket(orgId: string, sentinelId: string): Promise<number> {
         try {
-          const result = (self.db as { prepare(sql: string): { run(...args: unknown[]): { changes: number } } }).prepare(
+          const db = self.db as {
+            prepare(sql: string): {
+              run(...args: unknown[]): { changes: number };
+              all(...args: unknown[]): Array<{ id: string }>;
+            };
+          };
+          const affected = db.prepare(
+            `SELECT id FROM sentinel_tickets WHERE signal_id LIKE ? AND status = 'open'`
+          ).all(`%${sentinelId}%`);
+          const result = db.prepare(
             `UPDATE sentinel_tickets SET status = 'resolved', resolved_at = datetime('now')
              WHERE signal_id LIKE ? AND status = 'open'`
           ).run(`%${sentinelId}%`);
           if (result.changes > 0) {
             log.info({ orgId, sentinelId, closed: result.changes }, '[L3WriteAPI] 工单已关闭');
+            // I3 审计: 写 ticket_transition 事件（工单 resolved）
+            for (const row of affected) {
+              try {
+                appendSentinelEvent(self.db as Database.Database, {
+                  event_type: 'ticket_transition',
+                  sentinel_id: sentinelId,
+                  aggregate_id: row.id,
+                  payload: { ticketId: row.id, signalId: sentinelId, to: 'resolved', at: new Date().toISOString() },
+                });
+              } catch (evErr: unknown) {
+                const evMsg = evErr instanceof Error ? evErr.message : String(evErr);
+                log.warn({ err: evMsg, ticketId: row.id }, '[L3WriteAPI] ticket_transition 事件写入失败 — 非阻断');
+              }
+            }
           }
           return result.changes;
         } catch (err: unknown) {
@@ -647,6 +858,12 @@ export class SentinelRunner {
 
       const duration = Date.now() - startTime;
       result.durationMs = duration;
+      // I1 可重建: 确保 checkedAt 恒为有效 ISO 时间戳（重放需确定性 run key）
+      if (!result.checkedAt) result.checkedAt = new Date().toISOString();
+      // K3 §4.6 findings 生命周期正名: 新 finding 默认 status='open'
+      for (const f of result.findings) {
+        if (!f.status) f.status = 'open';
+      }
 
       // 记录运行
       const record: SentinelRunRecord = {
@@ -656,11 +873,15 @@ export class SentinelRunner {
         cronJobId: this.cronJobIds.get(sentinel.config.id) || '',
       };
 
-      const history = this.records.get(sentinel.config.id) || [];
-      history.push(record);
-      // 只保留最近 50 条记录
-      if (history.length > 50) history.shift();
-      this.records.set(sentinel.config.id, history);
+      // I2 单源: 先落事件流（唯一写入口，fail-closed），再物化投影
+      try {
+        this.persistRunEvents(record);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        log.error({ err: msg, sentinelId: sentinel.config.id },
+          '[runner] 哨兵事件持久化失败 — 降级为纯内存态（重启即丢）');
+      }
+      this.projectRunRecord(record);
       this.totalRuns++;
 
       // 记录发现
