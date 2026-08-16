@@ -1,10 +1,10 @@
 # Synova CTO 健康仪表盘（第③面）
 
-> 打开即真相。生成: 2026-08-16 21:27:14 | 数据源指纹: fdbc7ba06827
+> 打开即真相。生成: 2026-08-17 04:50:33 | 数据源指纹: 22d0657aa827
 
 <!-- CTO-HEALTH:AUTO:START -->
 ## CTO 健康仪表盘（第③面）— 自动区
-> 生成: 2026-08-16 21:27:14 | 数据源: bypass.log / pre-commit-failures.log / AUDIT-FINDINGS-LEDGER
+> 生成: 2026-08-17 04:50:33 | 数据源: bypass.log / pre-commit-failures.log / AUDIT-FINDINGS-LEDGER
 
 **总体判定: 🟡 黄 — 历史有 M 模式复发记录 (见 §三; 多为 D328-D331 已闭环项, 需 CTO 确认无新增)**
 
@@ -12,13 +12,13 @@
 
 | 事件 | 全量 | 24h 内 |
 |------|:---:|:---:|
-| COMMITTED（正常提交） | 46 | 19 |
+| COMMITTED（正常提交） | 49 | 22 |
 | BLOCKED（被门禁拒绝） | 27 | 5 |
 | DEGRADED（降级放行） | 31 | 0 |
 | TIMEOUT（超时） | 3 | 0 |
 | **detected-bypass（真绕过）** | **5** | **0** |
 
-近 7 天事件: 2026-08-09:13 | 2026-08-10:1 | 2026-08-11:3 | 2026-08-12:28 | 2026-08-13:8 | 2026-08-14:14 | 2026-08-16:24
+近 7 天事件: 2026-08-10:1 | 2026-08-11:3 | 2026-08-12:28 | 2026-08-13:8 | 2026-08-14:14 | 2026-08-16:26 | 2026-08-17:1
 
 **绕过历史（全部）** — 集中在 07-26~28（旧 marker 时代），此后零绕过：
 - `2026-07-26T18:34:35Z` no-precommit-marker
@@ -60,16 +60,19 @@
 | D387 | audited | ✅ | ✅ | CONDITIONAL_PASS | CT-P1-1 |
 | D389 | impl_done | — | ✅ | — |  |
 | D390 | impl_done | — | ✅ | — |  |
-| D391 | impl_done | — | ✅ | — |  |
+| D391 | audited | — | ✅ | CONDITIONAL_PASS | D402 |
 | D392 | impl_done | — | ✅ | — |  |
-| D393 | impl_done | — | ✅ | — | D399 |
+| D393 | audited | — | ✅ | PASS | D399 |
 | D394 | claimed | — | — | — |  |
 | D395 | claimed | — | — | — |  |
 | D396 | claimed | — | — | — |  |
 | D397 | claimed | — | — | — |  |
 | D398 | claimed | — | — | — |  |
 | D399 | impl_done | — | ✅ | — |  |
-| D400 | claimed | — | — | — |  |
+| D400 | impl_done | — | ✅ | — |  |
+| D401 | impl_done | — | ✅ | — |  |
+| D402 | claimed | — | — | — |  |
+| D403 | impl_done | — | ✅ | — |  |
 
 > 红线提醒: 不碰 scripts/audit/；不写审计标准；禁止自我审计。
 > 同类错误第二次出现 = 防线系统性失效，升级创始人。
