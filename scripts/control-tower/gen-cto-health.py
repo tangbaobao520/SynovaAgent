@@ -221,7 +221,7 @@ def analyze_task_state() -> list:
         m = re.search(r"D(\d{3})", tid)
         num = int(m.group(1)) if m else None
 # 派生判定 (工件优先; json 字段兜底展示但不算真)
-        # D399 (P1-2): json 兜底仅当 path 指向的文件真实存在（消除幻影 spec ✅）
+        # D399 (P1-2)/D400: spec = glob 扫描 OR json spec.path 兜底（文件必须真实存在——存在即算真, 消除幻影）
         has_spec = num in spec_files or bool(
             (d.get("spec") or {}).get("path")
             and (REPO / (d["spec"]["path"])).exists()

@@ -1,0 +1,12 @@
+{
+  "task_id": "D396",
+  "title": "snapshot 测试（借 Harness B3，补黄金数据集门禁）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-16",
+  "updated_by": "CTO",
+  "note": "战略借鉴方向（P1，9 月部署后启动；来源: 同上）"
+}

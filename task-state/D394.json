@@ -1,0 +1,12 @@
+{
+  "task_id": "D394",
+  "title": "事件溯源 session log（借 Harness B1，补 S3-5/S0）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-16",
+  "updated_by": "CTO",
+  "note": "战略借鉴方向（P1，9 月部署后启动；来源: docs/synova/research/Harness研究与Synova战略再定位-20260816/开发转交方向-Harness借鉴与OpenViking应对-20260816.md）"
+}

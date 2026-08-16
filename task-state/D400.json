@@ -1,0 +1,21 @@
+{
+  "task_id": "D400",
+  "title": "D399 复审 CONDITIONAL PASS 收尾（D394-D398/D391 入库 + 纯净重生成 + 注释同步）",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "commit": "local-pending",
+    "by": "CTO",
+    "at": "2026-08-16",
+    "files": [
+      "D394-D398.json 入库",
+      "D391 spec 入库",
+      "CTO-HEALTH 纯净重生成",
+      "注释/README 同步"
+    ]
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-16",
+  "updated_by": "CTO"
+}

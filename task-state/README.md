@@ -21,7 +21,7 @@ claimed ──dev-doc 交付 spec──▶ spec_done ──编码交付实现─
 ## D393 升级（2026-08-16）：状态从工件自动派生
 
 > **status/spec/impl/audit 由生成器从工件重算，不再人工维护**（防失真——GitHub/Linear 同哲学）。
-> json 里的 status/spec/impl/audit 字段为 **deprecated**（生成器忽略，仅作历史/兜底展示）。
+> json 里的 status/impl/audit 字段为 **deprecated**（生成器派生覆盖）；**spec 保留 json 兜底**（spec.path 文件真实存在时计 spec，见下）——D400 定稿语义。
 > 人工只需维护：task_id / title / fix_task_id（生成器读不到的元数据）。
 
 | 状态 | 派生自 | 判定 |

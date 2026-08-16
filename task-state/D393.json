@@ -1,11 +1,21 @@
 {
   "task_id": "D393",
   "title": "task-state 状态工件自动派生改造（D393）",
-  "status": "claimed",
+  "status": "audited",
   "spec": null,
   "impl": null,
-  "audit": null,
-  "fix_task_id": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-08-16-D393.md",
+    "verdict": "PASS",
+    "by": "K3",
+    "at": "2026-08-16",
+    "findings": [
+      "P0: ['P0-1 验收测试交付态红灯: test.sh:70 断言 D393=claimed 与交付提交 (D393) 自指矛盾, 实跑 6/7 exit=1; brief 声称 7/7 不实; Done 标准 2/4 不成立']",
+      "P1: ['P1-1 提交的 CTO-HEALTH.md 从提交态不可复现: D385/D391 行派生自未提交 json; 事件计数含未入库日志; D393 行提交即过期', 'P1-2 spec 列双向失真: glob SYNOVA-IMPL-DSH-D* 仅匹配 1/117 dev doc; json 兜底承重与 README「生成器忽略」矛盾, D356/D379 spec✅ 为幻影(bc552aae 无效对象)', 'P1-3 人工维护的 CTO 备注区被清空未在 brief 写集声明', 'P1-4 08-16 批次 pre-commit 门禁记录未入库(M4 苗头), 跟踪版 bypass.log 尾行 08-14']"
+    ],
+    "note": "D399 修复 + D400 收尾后转 PASS（K3 复审 CONDITIONAL PASS: P0-1/P1-3/P1-4/P2-1 闭合, P1-1/P1-2 收尾闭合）"
+  },
+  "fix_task_id": "D399",
   "updated_at": "2026-08-16",
-  "updated_by": "alloc-task-id"
+  "updated_by": "CTO"
 }

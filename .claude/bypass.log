@@ -110,3 +110,5 @@ Binary file .claude/bypass.log matches
 2026-08-16T20:31:00+08:00 | COMMITTED | pre-commit PASS (merge/autostash 补记: D356, 记录被 merge 操作回滚) | TASK_ID=D356 | AGENT=claude-code | HASH=ed9d248d27394753bcb3f70be0fe04ac314ba873
 2026-08-16T20:31:00+08:00 | COMMITTED | pre-commit PASS (merge/autostash 补记: D379, 记录被 merge 操作回滚) | TASK_ID=D379 | AGENT=claude-code | HASH=afbc5fd18ace69d41121d988c50da126a92b5d4d
 2026-08-16T20:31:00+08:00 | COMMITTED | pre-commit PASS (merge/autostash 补记: D355, 记录被 merge 操作回滚) | TASK_ID=D355 | AGENT=claude-code | HASH=99fa8df52a832e385064633a4f0f33cfa422bb9c
+2026-08-16T21:00:24+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D399 | AGENT=DeepSeek-Harness | HASH=082326fc1f77176fe8f90e6a6d64308a8fd0af62
+2026-08-16T21:26:14+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D400 | AGENT=DeepSeek-Harness

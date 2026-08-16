@@ -1,0 +1,12 @@
+{
+  "task_id": "D397",
+  "title": "guard 循环卫生+超时（借 Harness B5，通用化控制塔）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-16",
+  "updated_by": "CTO",
+  "note": "战略借鉴方向（P1，9 月部署后启动；来源: 同上）"
+}
