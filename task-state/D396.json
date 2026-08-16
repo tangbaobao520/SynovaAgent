@@ -1,8 +1,13 @@
 {
   "task_id": "D396",
   "title": "snapshot 测试（黄金用例固化回归门禁——K3 提前 P0 同批）",
-  "status": "claimed",
-  "spec": null,
+  "status": "spec_done",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D396-golden-case-gate-20260816.md",
+    "commit": null,
+    "by": "dev-doc",
+    "at": "2026-08-16"
+  },
   "impl": null,
   "audit": null,
   "fix_task_id": null,
