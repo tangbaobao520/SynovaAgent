@@ -132,3 +132,135 @@ describe('金数据校验 — 5黄金案例全通过', () => {
     expect(f1.passed).toBe(true);
   });
 });
+
+// ═══════════════════════════════════════════════════════════════
+// D396: 快照层测试 — compute 全 diff / findings 全 diff / 专家报告结构断言
+// 铁律 48: 覆盖正常路径 + 降级路径 + 边界条件 + 红-绿演练（非空壳）
+// ═══════════════════════════════════════════════════════════════
+
+describe('runComputeSnapshot — compute 全 diff（真跑 computeCashRunway）', () => {
+  it('合法 compute fixture → passed:true（正常路径）', async () => {
+    const { runComputeSnapshot } = await import('../../scripts/ci/golden-snapshot-runner');
+    const result = runComputeSnapshot({
+      function: 'computeCashRunway',
+      input: [{ cash: 100000, operatingExpense: 30000 }],
+      snapshot: { runwayMonths: 3.3, monthlyBurn: 30000, signal: 'critical', degraded: false, warnings: [] },
+    });
+    expect(result.passed).toBe(true);
+    expect(result.diffs).toHaveLength(0);
+  });
+
+  it('红-绿演练: 快照 signal 与真实输出不一致 → passed:false + diff 点名 signal', async () => {
+    const { runComputeSnapshot } = await import('../../scripts/ci/golden-snapshot-runner');
+    // 真实 computeCashRunway 输出 signal=critical；这里故意把冻结快照改成 healthy（等价于改坏阈值导致的漂移）
+    const result = runComputeSnapshot({
+      function: 'computeCashRunway',
+      input: [{ cash: 100000, operatingExpense: 30000 }],
+      snapshot: { runwayMonths: 3.3, monthlyBurn: 30000, signal: 'healthy', degraded: false, warnings: [] },
+    });
+    expect(result.passed).toBe(false);
+    expect(result.diffs.some((d) => d.includes('signal'))).toBe(true);
+  });
+
+  it('compute.snapshot 缺失 → degraded:true + passed:false（不静默 pass，降级路径）', async () => {
+    const { runComputeSnapshot } = await import('../../scripts/ci/golden-snapshot-runner');
+    const result = runComputeSnapshot({ function: 'computeCashRunway', input: [{ cash: 100000, operatingExpense: 30000 }] });
+    expect(result.passed).toBe(false);
+    expect(result.degraded).toBe(true);
+    expect(result.diffs.length).toBeGreaterThan(0);
+  });
+
+  it('未登记的 function 名 → passed:false + "未登记"（不静默 skip，边界）', async () => {
+    const { runComputeSnapshot } = await import('../../scripts/ci/golden-snapshot-runner');
+    const result = runComputeSnapshot({ function: 'notRegisteredFn', input: [], snapshot: {} });
+    expect(result.passed).toBe(false);
+    expect(result.degraded).toBe(false);
+    expect(result.diffs.some((d) => d.includes('未登记') || d.includes('notRegisteredFn'))).toBe(true);
+  });
+});
+
+describe('diffFindings / runFindingsSnapshot — findings 全 diff', () => {
+  it('改坏哨兵 aggregate → findings 集合 diff 命中 missing/extra', async () => {
+    const { diffFindings } = await import('../../scripts/ci/golden-snapshot-runner');
+    const snapshot = [
+      { id: 'F1', severity: 'critical', title: '现金流不足 6 个月' },
+    ];
+    const actual = [
+      { id: 'F2', severity: 'warning', title: '融资渠道受限' },
+    ];
+    const diff = diffFindings(actual, snapshot);
+    expect(diff.missing).toContain('F1');
+    expect(diff.extra).toContain('F2');
+  });
+
+  it('findings 完全一致 → missing/extra/mismatched 均空（正常路径）', async () => {
+    const { diffFindings } = await import('../../scripts/ci/golden-snapshot-runner');
+    const snapshot = [{ id: 'F1', severity: 'critical', title: '现金流不足 6 个月' }];
+    const actual = [{ id: 'F1', severity: 'critical', title: '现金流不足 6 个月' }];
+    const diff = diffFindings(actual, snapshot);
+    expect(diff.missing).toHaveLength(0);
+    expect(diff.extra).toHaveLength(0);
+    expect(diff.mismatched).toHaveLength(0);
+  });
+
+  it('未登记 findings function → passed:false（不静默 skip，边界）', async () => {
+    const { runFindingsSnapshot } = await import('../../scripts/ci/golden-snapshot-runner');
+    const result = runFindingsSnapshot({ function: 'notRegisteredAggregate', input: {}, snapshot: [] });
+    expect(result.passed).toBe(false);
+    expect(result.diffs.some((d) => d.includes('未登记') || d.includes('notRegisteredAggregate'))).toBe(true);
+  });
+});
+
+describe('runExpertReportAssertion — 专家报告结构断言', () => {
+  it('confidence 越界（>1）→ 断言失败', async () => {
+    const { runExpertReportAssertion } = await import('../../scripts/ci/golden-snapshot-runner');
+    const result = runExpertReportAssertion({
+      snapshot: { expert: 'finance', summary: '现金流告警', confidence: 1.5, checkedAt: '2026-08-16T00:00:00Z' },
+    });
+    expect(result.passed).toBe(false);
+    expect(result.diffs.some((d) => d.includes('confidence'))).toBe(true);
+  });
+
+  it('合法专家报告 → passed:true（正常路径）', async () => {
+    const { runExpertReportAssertion } = await import('../../scripts/ci/golden-snapshot-runner');
+    const result = runExpertReportAssertion({
+      snapshot: { expert: 'finance', summary: '现金流告警', confidence: 0.8, checkedAt: '2026-08-16T00:00:00Z' },
+    });
+    expect(result.passed).toBe(true);
+    expect(result.diffs).toHaveLength(0);
+  });
+
+  it('summary 为空 → 断言失败（边界）', async () => {
+    const { runExpertReportAssertion } = await import('../../scripts/ci/golden-snapshot-runner');
+    const result = runExpertReportAssertion({
+      snapshot: { expert: 'finance', summary: '', confidence: 0.8, checkedAt: '2026-08-16T00:00:00Z' },
+    });
+    expect(result.passed).toBe(false);
+    expect(result.diffs.some((d) => d.includes('summary'))).toBe(true);
+  });
+});
+
+describe('golden-case-11 — 集成（真实 fixture + 真实 compute 函数）', () => {
+  it('F1 门禁 + compute 快照双通过（铁律 12: 真实路由，不 mock）', async () => {
+    const fs = await import('fs');
+    const { computeF1Score, deriveActual } = await import('../../scripts/ci/golden-case-checker');
+    const { runComputeSnapshot } = await import('../../scripts/ci/golden-snapshot-runner');
+    const data = JSON.parse(fs.readFileSync('tests/fixtures/golden-cases/golden-case-11-cash-runway-threshold.json', 'utf-8'));
+    const f1 = computeF1Score(deriveActual(data), data.expected);
+    expect(f1.passed).toBe(true);
+    const snap = runComputeSnapshot(data.compute);
+    expect(snap.passed).toBe(true);
+  });
+
+  it('旧 fixture（无 compute 段）→ 只跑 F1，向后兼容', async () => {
+    const fs = await import('fs');
+    const { computeF1Score, deriveActual } = await import('../../scripts/ci/golden-case-checker');
+    const data = JSON.parse(fs.readFileSync('tests/fixtures/golden-cases/golden-case-01-cashflow-crisis.json', 'utf-8'));
+    // 旧 fixture 无快照段 → checker 应只跑 F1 门禁，不报错
+    expect(data.compute).toBeUndefined();
+    expect(data.findings).toBeUndefined();
+    expect(data.expertReport).toBeUndefined();
+    const f1 = computeF1Score(deriveActual(data), data.expected);
+    expect(f1.passed).toBe(true);
+  });
+});

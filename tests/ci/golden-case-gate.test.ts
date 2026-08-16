@@ -59,12 +59,12 @@ describe('D300 接线 — CI job', () => {
 describe('D300 夹具完整性 — 黄金案例 fixture', () => {
   const fixturesDir = path.join(REPO_ROOT, 'tests', 'fixtures', 'golden-cases');
 
-  it('fixture 目录存在且包含 10 个黄金案例', () => {
+  it('fixture 目录存在且包含 11 个黄金案例（D396 新增 golden-case-11 快照用例）', () => {
     expect(fs.existsSync(fixturesDir)).toBe(true);
     const files = fs
       .readdirSync(fixturesDir)
       .filter((f) => f.endsWith('.json') && f.startsWith('golden-case'));
-    expect(files.length).toBe(10);
+    expect(files.length).toBe(11);
   });
 
   it('每个 fixture 均为可解析 JSON 且含 expected 字段（冻结快照结构）', () => {
