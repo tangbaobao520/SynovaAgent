@@ -115,6 +115,9 @@ grep 本任务关键词在 expert/ sentinel/ extensions/ knowledge/ theory/ skil
 决策记录格式（K3 审计可核）: 参考：Anthropic/DeepSeek/第一性原理 + 结论
 简单决策（无冲突、单一路径）只需记录参考系名。
 
+### d) 相关 Note 引用
+- [ ] memory/notes/<四态>/YYYY-MM-DD-<主题>.md（本任务决策沉淀到哪条 Note；无则新建 proposed）
+
 ## Q2: 范围 — 正确的最简方案是什么？
 
 做什么：
