@@ -1,8 +1,13 @@
 {
   "task_id": "D395",
   "title": "Agent Notes 四态（D395-a 开发组织版，1天——K3 拆分）",
-  "status": "claimed",
-  "spec": null,
+  "status": "spec_done",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D395a-notes-four-state-20260816.md",
+    "commit": "4df237a497d5efd4f0fd364c7d764026f6dced1d",
+    "by": "dev-doc",
+    "at": "2026-08-16"
+  },
   "impl": null,
   "audit": null,
   "fix_task_id": null,
