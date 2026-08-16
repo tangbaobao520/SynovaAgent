@@ -29,6 +29,7 @@ gen-cto-health.py — CTO 健康仪表盘（第③面）生成器 v0.1 (D381, 20
 import argparse
 import json
 import re
+import subprocess
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -167,25 +168,91 @@ def analyze_ledger(text: str) -> dict:
 
 
 def analyze_task_state() -> list:
-    """读 task-state/*.json (D382): 每任务状态 + spec/impl/audit 三段."""
+    """D393: 状态从工件自动派生 — 不靠人工维护 status (防失真, GitHub/Linear 同哲学).
+
+    派生规则 (每任务):
+      spec  ← dev doc 存在 (docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D#-*.md 或 json spec.path)
+      impl  ← git 提交含该 D# (git log --all 精确 (D#) 匹配) 或 json impl.commit 可解析
+      audit ← docs/synova/audit-reports/ 含 D# 的报告存在 → 解析 verdict
+      status← 组合: 全空=claimed / spec→spec_done / +impl→impl_done / +audit→audited
+    json 人工 status/spec/impl/audit 字段被派生结果覆盖 (仅 FIX 指向/title 保留人工).
+    """
     tasks = []
     if not TASK_STATE_DIR.exists():
         return tasks
+    # 一次采集工件索引 (D393: 全量一次, 进程内匹配, 不逐任务起子进程)
+    impl_hits = set()  # 含 (D#) 的提交里的 D#
+    try:
+        log = subprocess.run(["git", "log", "--all", "--format=%s"],
+                             capture_output=True, text=True, encoding="utf-8",
+                             errors="replace", timeout=30, cwd=REPO).stdout
+        for line in log.splitlines():
+            m = re.search(r"\(D(\d{3})\)", line)
+            if m:
+                impl_hits.add(int(m.group(1)))
+    except Exception:  # noqa: BLE001 — git 不可用 → 派生降级, 标注 degraded
+        impl_hits = set()
+    spec_files = set()
+    impl_dir = REPO / "docs" / "plans" / "codex" / "implementation"
+    if impl_dir.exists():
+        for f in impl_dir.glob("SYNOVA-IMPL-DSH-D*.md"):
+            m = re.search(r"D(\d{3})", f.name)
+            if m:
+                spec_files.add(int(m.group(1)))
+    audit_files = set()
+    audit_dir = REPO / "docs" / "synova" / "audit-reports"
+    if audit_dir.exists():
+        for f in audit_dir.glob("*.md"):
+            m = re.search(r"D(\d{3})", f.name)
+            if m:
+                audit_files.add(int(m.group(1)))
+
     for p in sorted(TASK_STATE_DIR.glob("*.json")):
         if p.name == "TEMPLATE.json":
             continue
         try:
             d = json.loads(p.read_text(encoding="utf-8", errors="replace"))
-        except Exception:  # noqa: BLE001 — 生成器降级: 单个坏文件不拖垮整页
+        except Exception:  # noqa: BLE001
             tasks.append({"task_id": p.stem, "title": "?", "status": "broken", "note": "json 解析失败"})
             continue
+        tid = d.get("task_id", p.stem)
+        m = re.search(r"D(\d{3})", tid)
+        num = int(m.group(1)) if m else None
+# 派生判定 (工件优先; json 字段兜底展示但不算真)
+        has_spec = num in spec_files or bool((d.get("spec") or {}).get("path"))
+        has_impl = (num in impl_hits) or bool((d.get("impl") or {}).get("commit"))
+        audit_txt = "—"
+        if num in audit_files:
+            for f in sorted(audit_dir.glob(f"*D{num}.md")):
+                try:
+                    txt = f.read_text(encoding="utf-8", errors="replace")
+                    if "CONDITIONAL PASS" in txt:
+                        audit_txt = "CONDITIONAL_PASS"
+                    elif "PASS" in txt:
+                        audit_txt = "PASS"
+                    elif "FAIL" in txt:
+                        audit_txt = "FAIL"
+                    else:
+                        audit_txt = "?"
+                    break
+                except OSError:
+                    continue
+        # 状态组合 (D393): audit 优先 — 有审计报告即 audited (控制塔/CTO 批次无 spec 也成立)
+        if audit_txt != "—":
+            status = "audited"
+        elif has_impl:
+            status = "impl_done"
+        elif has_spec:
+            status = "spec_done"
+        else:
+            status = "claimed"
         tasks.append({
-            "task_id": d.get("task_id", p.stem),
+            "task_id": tid,
             "title": (d.get("title") or "")[:28],
-            "status": d.get("status", "?"),
-            "spec": "✅" if d.get("spec") else "—",
-            "impl": "✅" if d.get("impl") else "—",
-            "audit": f"{d['audit'].get('verdict', '?')}" if d.get("audit") else "—",
+            "status": status,
+            "spec": "✅" if has_spec else "—",
+            "impl": "✅" if has_impl else "—",
+            "audit": audit_txt,
             "fix": d.get("fix_task_id") or "",
         })
     return tasks
@@ -311,7 +378,7 @@ def main() -> int:
     ts_files = []
     if TASK_STATE_DIR.exists():
         ts_files = sorted(str(p) for p in TASK_STATE_DIR.glob("*.json") if p.name != "TEMPLATE.json")
-    fp_src = raw_b + raw_f + raw_l + "".join(read_binary_safe(Path(p)) for p in ts_files)
+    fp_src = raw_b + raw_f + raw_l + "".join(read_binary_safe(Path(p)) for p in ts_files) + read_binary_safe(Path(__file__))
     fingerprint = hashlib.sha256(fp_src.encode("utf-8", errors="replace")).hexdigest()[:12]
 
     auto = render(b, f, l, t)

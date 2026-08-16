@@ -18,6 +18,19 @@ claimed ──dev-doc 交付 spec──▶ spec_done ──编码交付实现─
 > 原任务已交付+标记完成，写集已 close；塞回修复 = 污染原交付证据（D328 声明-内容一致性门禁会拦），
 > 且 K3 无法区分「原问题」和「修复质量」。折入例外需 CTO 判定（同领域+进行中任务+改动小）并标注。
 
+## D393 升级（2026-08-16）：状态从工件自动派生
+
+> **status/spec/impl/audit 由生成器从工件重算，不再人工维护**（防失真——GitHub/Linear 同哲学）。
+> json 里的 status/spec/impl/audit 字段为 **deprecated**（生成器忽略，仅作历史/兜底展示）。
+> 人工只需维护：task_id / title / fix_task_id（生成器读不到的元数据）。
+
+| 状态 | 派生自 | 判定 |
+|------|--------|------|
+| spec ✅ | docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D#-*.md | 文件存在 |
+| impl ✅ | git log 含该 D# 的提交 | (D#) 精确匹配 |
+| audit | docs/synova/audit-reports/*D#*.md | 存在 + verdict 解析 |
+| status | 三态组合 | audit→audited / impl→impl_done / spec→spec_done / 无→claimed |
+
 ## 字段契约
 
 | 字段 | 类型 | 说明 |

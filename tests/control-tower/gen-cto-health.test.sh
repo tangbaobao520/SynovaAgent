@@ -60,7 +60,19 @@ fi
 python3 "$GEN" >/dev/null 2>&1 || true
 echo ""
 
-echo "── 4. dry-run 可跑且含指纹 ──"
+echo "── 5. 派生逻辑（D393）: 状态从工件算, 不靠 json.status ──"
+OUT5=$(python3 "$GEN" 2>&1)
+# D356 有 impl 提交(6db5a17a) + 审计报告 → audited; D393 新建无工件 → claimed
+if echo "$OUT5" | grep -q "已生成\|幂等"; then
+  TABLE=$(sed -n '/### 五、任务状态汇总/,/红线提醒/p' "$OUT" 2>/dev/null || true)
+  # 输出文件可能未更新（幂等）——直接调 dry-run 拿表格
+  DRY=$(python3 "$GEN" --dry-run 2>&1)
+  if echo "$DRY" | grep -q "| D393 | claimed"; then pass "D393 派生=claimed (无工件)"; else fail "D393 派生非 claimed"; fi
+  if echo "$DRY" | grep -q "| D383 | audited"; then pass "D383 派生=audited (impl+audit, 无 spec 也成立)"; else fail "D383 派生非 audited"; fi
+else
+  fail "生成器执行失败"
+fi
+echo ""
 OUT4=$(python3 "$GEN" --dry-run 2>&1)
 assert_contains "$OUT4" "数据源指纹" "dry-run 含指纹"
 echo ""
