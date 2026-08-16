@@ -110,12 +110,58 @@ if [ -f "$BYPASS_LOG" ]; then
   fi
 fi
 # V4.5.1: 缓存 git diff 结果 — 本机每次 git 调用 ~1s，脚本内 10+ 次调用是超时主因
-GIT_CACHED_NAMES=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)
-GIT_CACHED_ALL_NAMES=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)
-GIT_CACHED_ADDED_NAMES=$(git diff --cached --name-only --diff-filter=A 2>/dev/null || true)
-GIT_CACHED_DIFF=$(git diff --cached 2>/dev/null || true)
+# D387 (CT-34): 测试注入缝 (只读, 默认真实 git, fail-closed) — SYNO_GIT_CACHED_* 覆盖, 仅测试用
+GIT_CACHED_NAMES="${SYNO_GIT_CACHED_NAMES:-$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)}"
+GIT_CACHED_ALL_NAMES="${SYNO_GIT_CACHED_ALL_NAMES:-$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)}"
+GIT_CACHED_ADDED_NAMES="${SYNO_GIT_CACHED_ADDED_NAMES:-$(git diff --cached --name-only --diff-filter=A 2>/dev/null || true)}"
+GIT_CACHED_DIFF="${SYNO_GIT_CACHED_DIFF:-$(git diff --cached 2>/dev/null || true)}"
 
 STAGED=$(echo "$GIT_CACHED_NAMES" | grep '\.ts$' | grep -v node_modules || true)
+
+# ═══ CT-34 (D387): 纯文档提交豁免 — 创始人 2026-08-16 决策 ═══
+# 文档(docs/、.claude/task-briefs/、memory/、task-state/、根级 *.md/*.html/*.txt)
+# 仅为跨机同步信息, 不与代码同跑 13 组门禁。豁免 12 组, 仅保留 Secrets(D312)。
+# 白名单 = 目录 + 扩展名双约束:
+#   ✅ docs/ 下仅 *.md|*.html|*.txt; .claude/task-briefs/ 下 *.md; memory/ 下 *.md;
+#      task-state/ 下 *.json|*.md(任务登记); 根级 *.md|*.html|*.txt
+#   ❌ 排除: .claude/skills/、.dsh/skills/(行为配置, D370 有独立同步契约 → 非纯文档,
+#      技能提交保持组 13 全门禁; 纯文档提交时 SKILL_FILES_STAGED 为空天然不触发)
+#   ❌ 排除: .codex/(契约/映射配置, 组 9 依赖)、.github/(CI 配置, 非同步信息)、
+#      .claude/settings.json(含 token 风险, D312)
+# 契约 (铁律 47):
+#   @input  — $1: STAGED_ALL（git diff --cached --name-only 全暂存文件, 换行分隔）
+#   @output — stdout: 1 = 纯文档提交; 0 = 非纯文档（含任一白名单外文件/空输入）
+#   @fail-closed — 正则匹配失败/空输入 → 0（走全量 13 组, 不静默放行, D328）
+#   @error  — 无异常路径（纯 bash 字符串匹配）
+DOC_PREFIX_RE='^(docs/.*\.(md|html|txt)$|\.claude/task-briefs/.*\.(md|html|txt)$|memory/.*\.(md|html|txt)$|task-state/.*\.(json|md)$|[^/]+\.(md|html|txt)$)'
+is_doc_only() {
+  local staged="$1"
+  [ -z "$staged" ] && { echo 0; return; }   # fail-closed: 空暂存 → 非纯文档路径
+  local non_doc
+  non_doc=$(echo "$staged" | grep -vE "$DOC_PREFIX_RE" || true)
+  if [ -z "$non_doc" ]; then echo 1; else echo 0; fi
+}
+STAGED_ALL=$(echo "$GIT_CACHED_ALL_NAMES" | grep -v node_modules || true)
+DOC_ONLY=$(is_doc_only "$STAGED_ALL")
+
+# ── CT-34 纯文档提交: 仅 Secrets 扫描, 豁免其余 12 组 ──
+# 早退分支置于 par_start 之前: 纯文档提交零 par 启动、秒过 (V4.5.1 性能教训)。
+# GATEKEEPER bypass 阻断 (L99-111) 在早退之前 — 绕过审计先于豁免, 不放行 --no-verify 滥用。
+if [ "$DOC_ONLY" -eq 1 ]; then
+  echo ""
+  echo "═══════════════════════════════════════════════════════════"
+  echo "  纯文档提交 (CT-34/D387): 豁免 12 组 — 仅 Secrets 扫描"
+  echo "═══════════════════════════════════════════════════════════"
+  echo ""
+  if bash "$ROOT/scripts/check-secrets.sh" 2>&1; then
+    echo -e "  ${GREEN}✅ Secrets 扫描通过${RESET}"
+    echo -e "  ${GREEN}✅ 纯文档提交豁免检查完成 (CT-34)${RESET}"
+    exit 0
+  else
+    echo -e "  ${RED}❌ Secrets 扫描失败 — 提交已拒绝${RESET}"
+    exit 1
+  fi
+fi
 
 # ═══ V4.5.1: 慢脚本并行化 — 慢盘上串行 95s → 并行 ~26s ═══
 # 环境事实: 本机单文件 I/O ~500ms, python 启动 ~1.5s, git ~1s。
@@ -186,7 +232,7 @@ except: pass
     DEFERRED_TEST_FILES=$(echo "$PLAN_PARSE" | grep "^TEST:" | sed 's/^TEST://')
   fi
 fi
-STAGED_ALL=$(echo "$GIT_CACHED_ALL_NAMES" | grep -v node_modules || true)
+# STAGED_ALL 已提前定义于 CT-34 (D387) 区块 — 此处不再重复定义
 STAGED_SRC=$(echo "$STAGED_ALL" | grep -E '^src/|^tests/|^packages/|^scripts/' | grep -v 'scripts/pre-commit-check.sh\|scripts/check-secrets.sh\|scripts/check-file-driven.sh\|scripts/workflow/' || true)
 NEW_IMPL=$(echo "$GIT_CACHED_ADDED_NAMES" | grep -E "^src/|^extensions/" | grep "\.ts$" | grep -v "\.test\." | grep -v "\.d\.ts" | grep -v "types\.ts$\|index\.ts$\|helpers\.ts$" | grep -v "src/sentinel/compute/" || true)
 
