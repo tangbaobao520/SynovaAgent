@@ -151,11 +151,14 @@ git -C "$SANDBOX" config user.email t@t
 git -C "$SANDBOX" config user.name t
 
 RUN_PRECOMMIT() { # RUN_PRECOMMIT <staged_names>
+  # D390 (CT-P1-1): 武装守卫 — 注入缝需 SYNO_TEST_ARM=1 才生效（生产缝关闭）
+  SYNO_TEST_ARM=1 \
   SYNO_GIT_CACHED_NAMES="$1" \
   SYNO_GIT_CACHED_ALL_NAMES="$1" \
   SYNO_GIT_CACHED_ADDED_NAMES="$1" \
   SYNO_GIT_CACHED_DIFF="$1" \
   SYNO_SECRETS_ROOT="$SANDBOX" \
+  SYNO_EXEMPT_LOG="$SANDBOX/exempt.log" \
   bash "$PRECOMMIT" 2>&1
 }
 
@@ -164,6 +167,12 @@ if echo "$OUT1" | grep -q "CT-34"; then
   pass "T1: 纯 docs/ 提交 → 豁免标记 (CT-34) 输出"
 else
   fail "T1: 纯 docs/ 提交无豁免标记 (早退分支未执行)"
+fi
+# D390 (CT-P1-1): 豁免事件审计落盘 — exempt.log 必须含 EXEMPT + staged 清单
+if [ -f "$SANDBOX/exempt.log" ] && grep -q "EXEMPT" "$SANDBOX/exempt.log" && grep -q "docs/plans/x.md" "$SANDBOX/exempt.log"; then
+  pass "T13: 豁免事件落盘 exempt.log (EXEMPT + staged)"
+else
+  fail "T13: exempt.log 无豁免记录"
 fi
 
 OUT2=$(RUN_PRECOMMIT ".claude/task-briefs/D387-test.md")

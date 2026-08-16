@@ -1,0 +1,11 @@
+{
+  "task_id": "D390",
+  "title": "P1-1 修复：注入缝武装守卫 + 豁免事件 exempt.log 落盘（K3 D387）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-16",
+  "updated_by": "alloc-task-id"
+}
