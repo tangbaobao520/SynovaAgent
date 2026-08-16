@@ -32,7 +32,7 @@
     }
   },
   "entryPoint": "./aggregate.ts",
-  "exportKey": "AiinvestmentreturnSentinel",
+  "exportKey": "AiInvestmentReturnSentinel",
   "auxiliaryExperts": [
     "finance"
   ],
