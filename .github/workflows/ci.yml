@@ -109,9 +109,13 @@ jobs:
   audit:
     name: npm audit
     runs-on: ubuntu-latest
+    # 2026-08-16 创始人裁决豁免（台账登记）：33 漏洞（32 high/1 critical）在 node-gyp
+    # 编译链，非产品运行时；Synova 本地部署，攻击面不成立。豁免登记备案，
+    # 触发升级条件 = 上云/公网化。CI 保留扫描（黄灯），失败不阻断合并。
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
-      - run: npm audit --audit-level=high
+      - run: npm audit --audit-level=high || echo "npm audit 已豁免 (2026-08-16 创始人裁决, 见台账)"
 
   golden-case:
     name: Golden Case F1 Gate
