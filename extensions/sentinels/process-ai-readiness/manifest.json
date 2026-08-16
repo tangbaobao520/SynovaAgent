@@ -32,7 +32,7 @@
     }
   },
   "entryPoint": "./aggregate.ts",
-  "exportKey": "ProcessaireadinessSentinel",
+  "exportKey": "ProcessAiReadinessSentinel",
   "auxiliaryExperts": [
     "org"
   ],
