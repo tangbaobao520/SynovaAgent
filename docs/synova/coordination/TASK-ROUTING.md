@@ -110,7 +110,7 @@
 | src/ 其余业务（诊断体系 L1-L5） | Win Claude Code 主力（**D355-D360 P0 全链路修复进行中**；D391 已完成；部署后负载 D394片2/D397'/D398） |
 | scripts/product-lines/ + 双仪表盘 | DeepSeek Harness（主导） |
 | scripts/golden-scenarios/ | 进行中·DeepSeek Harness |
-| 战略借鉴 D394-D398（**按 K3 咨询调整**：D396 提前 P0 同批 / D394 哨兵 findings 事件化先做 / D395-a Notes 四态现在做 / D397 砍并入 CT / D398 排最后） | 计划中·DeepSeek Harness（2026-08-16 K3 咨询定序，创始人确认以咨询为准） |
+| 战略借鉴（**K3 咨询定序**）：D396 + D394 片1 + D395-a + D402 = **dev-doc 线写 spec 中**（派活 brief 就绪，启动指引 docs/synova/coordination/DEV-DOC-DISPATCH-20260816.md）；D394 片2/D397'/D398 = Win 部署后 | 进行中·synova-devdoc（2026-08-16 派活） |
 | scripts/audit/ | Kimi K3 专属（双轨：Win + Mac） |
 
 ## 五、认领/交还流程（不变）
