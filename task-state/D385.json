@@ -1,0 +1,18 @@
+{
+  "task_id": "D385",
+  "title": "K3 审计产物合入仓库（D383 findings 镜像 + 审计报告落库）",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "commit": "1e708bd7",
+    "by": "CTO",
+    "at": "2026-08-16",
+    "files": [
+      "K3 D383 审计产物合入（task-state + 报告 + 台账）"
+    ]
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-16",
+  "updated_by": "CTO"
+}

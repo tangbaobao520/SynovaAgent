@@ -187,15 +187,17 @@ def analyze_task_state() -> list:
                              capture_output=True, text=True, encoding="utf-8",
                              errors="replace", timeout=30, cwd=REPO).stdout
         for line in log.splitlines():
+            # impl = 任务有提交（feat/fix/docs/ci 均算交付——提交即完成证据）
             m = re.search(r"\(D(\d{3})\)", line)
             if m:
                 impl_hits.add(int(m.group(1)))
-    except Exception:  # noqa: BLE001 — git 不可用 → 派生降级, 标注 degraded
+    except Exception:  # noqa: BLE001 — git 不可用 → 派生降级
         impl_hits = set()
+        print('⚠ degraded: git log 不可用, impl 派生降级为空集 (D399 P2-1)', file=sys.stderr)
     spec_files = set()
     impl_dir = REPO / "docs" / "plans" / "codex" / "implementation"
     if impl_dir.exists():
-        for f in impl_dir.glob("SYNOVA-IMPL-DSH-D*.md"):
+        for f in impl_dir.glob("SYNOVA-IMPL-D*.md"):
             m = re.search(r"D(\d{3})", f.name)
             if m:
                 spec_files.add(int(m.group(1)))
@@ -219,8 +221,12 @@ def analyze_task_state() -> list:
         m = re.search(r"D(\d{3})", tid)
         num = int(m.group(1)) if m else None
 # 派生判定 (工件优先; json 字段兜底展示但不算真)
-        has_spec = num in spec_files or bool((d.get("spec") or {}).get("path"))
-        has_impl = (num in impl_hits) or bool((d.get("impl") or {}).get("commit"))
+        # D399 (P1-2): json 兜底仅当 path 指向的文件真实存在（消除幻影 spec ✅）
+        has_spec = num in spec_files or bool(
+            (d.get("spec") or {}).get("path")
+            and (REPO / (d["spec"]["path"])).exists()
+        )
+        has_impl = num in impl_hits  # D399: 纯派生, json impl 字段 deprecated 忽略
         audit_txt = "—"
         if num in audit_files:
             for f in sorted(audit_dir.glob(f"*D{num}.md")):

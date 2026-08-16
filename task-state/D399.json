@@ -1,0 +1,11 @@
+{
+  "task_id": "D399",
+  "title": "D393 审计 FAIL 修复（自指悖论/spec 双向失真/CTO-HEALTH 可复现/门禁记录入库）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-16",
+  "updated_by": "alloc-task-id"
+}
