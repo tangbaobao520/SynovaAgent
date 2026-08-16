@@ -296,10 +296,23 @@ def main() -> int:
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
-    b = analyze_bypass(read_binary_safe(BYpass_LOG))
-    f = analyze_failures(read_binary_safe(PRE_COMMIT_FAILURES))
-    l = analyze_ledger(read_binary_safe(LEDGER))
+    raw_b = read_binary_safe(BYpass_LOG)
+    raw_f = read_binary_safe(PRE_COMMIT_FAILURES)
+    raw_l = read_binary_safe(LEDGER)
+    b = analyze_bypass(raw_b)
+    f = analyze_failures(raw_f)
+    l = analyze_ledger(raw_l)
     t = analyze_task_state()
+
+    # D384/CT-37: 数据源指纹 — bypass/failures/ledger/task-state 内容 hash.
+    # 幂等判定 = 指纹比较: 数据源未变 → 不重写 (时间戳差异不影响);
+    # 数据源变了 → 重写 (产物与数据源一致性).
+    import hashlib
+    ts_files = []
+    if TASK_STATE_DIR.exists():
+        ts_files = sorted(str(p) for p in TASK_STATE_DIR.glob("*.json") if p.name != "TEMPLATE.json")
+    fp_src = raw_b + raw_f + raw_l + "".join(read_binary_safe(Path(p)) for p in ts_files)
+    fingerprint = hashlib.sha256(fp_src.encode("utf-8", errors="replace")).hexdigest()[:12]
 
     auto = render(b, f, l, t)
     # 幂等 + marker 保留 MANUAL 区
@@ -313,15 +326,19 @@ def main() -> int:
     else:
         body = f"{AUTO_START}\n{auto}\n{AUTO_END}\n<!-- CTO-HEALTH:MANUAL:START -->\n(CTO 备注区)\n<!-- CTO-HEALTH:MANUAL:END -->\n"
 
-    full = f"# Synova CTO 健康仪表盘（第③面）\n\n> 打开即真相。生成: {datetime.now().astimezone().strftime('%Y-%m-%d %H:%M:%S')}\n\n{body}"
+    full = f"# Synova CTO 健康仪表盘（第③面）\n\n> 打开即真相。生成: {datetime.now().astimezone().strftime('%Y-%m-%d %H:%M:%S')} | 数据源指纹: {fingerprint}\n\n{body}"
     if args.dry_run:
         print(full)
         return 0
-    if OUT.exists() and OUT.read_text(encoding="utf-8", errors="replace") == full:
-        print("幂等: 无变化, 不写文件")
-        return 0
+    if OUT.exists():
+        old = OUT.read_text(encoding="utf-8", errors="replace")
+        import re as _re
+        old_fp = _re.search(r"数据源指纹: ([0-9a-f]{12})", old)
+        if old_fp and old_fp.group(1) == fingerprint:
+            print(f"幂等: 数据源指纹 {fingerprint} 未变, 不写文件")
+            return 0
     OUT.write_text(full, encoding="utf-8")
-    print(f"已生成: {OUT}")
+    print(f"已生成: {OUT} (指纹 {fingerprint})")
     return 0
 
 

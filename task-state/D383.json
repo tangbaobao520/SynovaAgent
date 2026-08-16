@@ -1,0 +1,23 @@
+{
+  "task_id": "D383",
+  "title": "CTO 2026-08-16 统一批次（哨兵口径/派活/B1/C6 固化/状态机/台账拆分）",
+  "status": "audited",
+  "spec": null,
+  "impl": {
+    "commit": "98b0d4d1",
+    "by": "CTO",
+    "at": "2026-08-16",
+    "files": [
+      "共23 文件（98b0d4d1）"
+    ]
+  },
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-08-16-D383.md",
+    "verdict": "CONDITIONAL_PASS",
+    "by": "k3",
+    "at": "2026-08-16"
+  },
+  "fix_task_id": "D384",
+  "updated_at": "2026-08-16",
+  "updated_by": "CTO"
+}

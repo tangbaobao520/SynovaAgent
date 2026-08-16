@@ -58,6 +58,7 @@ dev doc 结构（11 节，逐节必写）
 - §3.2 最终实现同 commit 回填（S-6）
 - 多选项任务必写决策参考小节 + 完成报告决策记录（S-12）
 - 依赖非空 → 禁止并行派发；写集表标注共享资源（S-7/S-8）
+ - 【D384 取号纪律】任务编号必须走 bash scripts/control-tower/alloc-task-id.sh "<任务名>" 获取（查 task-state/ 占用 + 自动登记）；禁止自编号（D382 撞车教训，见 cto-handover §〇）。
  - 【D381 写前必读范例】开工先读 1 份近期 Codex 范例并对齐其结构。必读: docs/plans/codex/implementation/SYNOVA-IMPL-D352-resolver硬化-20260813.md。其 7 样结构即本模板骨架：写集表 / 权威引用带原文 / 缺陷分节代码审计 / red→green 对照表 / 决策参考表 / DS 一一对应 / 自检清单。
  - 【D381 格式契约】写集表标题固定为 "### N.N 写集 (N 修改 + M 新建)"，标题行下一行必须是表头行（中间不留空行）；§8 标题只用 "Wiring Verification"（勿用"接线要求"——gatekeeper C4 不匹配该词）。
  - 【D381 接线纪律】接线/调用方必须 grep 实测确认，禁凭架构文档描述推断（实测教训：文档描述 src/agent/synova-agent.ts，实际调用方是 file-driven-loaders.ts:73 + bootstrap.ts:376）；契约涉及的类型/函数必须 read 被调用方真实定义，禁从 import 线索猜接口。

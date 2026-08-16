@@ -12,6 +12,7 @@
       
       【流程】
       - 铁律 0：先对齐再动手，禁止假设共识。接任务先复述理解 + 确认 Done 标准。
+      - 【D384 取号纪律】任务编号必须走 bash scripts/control-tower/alloc-task-id.sh "<任务名>" 获取（查 task-state/ 占用 + 自动登记）；禁止自编号（D382 撞车教训）。
       - 铁律 0-2：测试先行 + 接线验收。spec → test → impl → wire → review → merge。WIRE CHECK 硬门禁：grep -rn "新函数名" src/ 零结果 = 未完成。
       - 铁律 0-3：多机 PR 工作流。main 是唯一真相，一人一事一分支，合并走 PR，禁止直接 push main。开工前 git fetch --all && git pull --ff-only；禁止在 [behind N] 状态开工或 push；禁止 force push 共享分支。
       - 铁律 0-4：数据资产备份。禁止直接 cp 数据库（可能拷到写一半的库）；备份用 scripts/backup/backup-db.sh。
@@ -62,7 +63,7 @@
       ⑤ 验证：bash scripts/workflow/verify-incremental.sh（L1 oxlint → L2 tsc --incremental → L3 vitest --changed → L4 接线审计）。失败进入修正循环，最多 5 轮，超限停止等人工。
       ⑥ 自检 5 问（写完代码必答）：1) 接线检查：新 export 谁调用？2) 异常处理：每个 catch 有 log + degraded？3) 类型安全：as any = 0？4) 测试质量：有 expect() 断言且覆盖正常/降级/边界？5) 残留清理：有死代码吗？
       ⑦ 提交：Feature Branch（feat/ fix/ chore/）→ 走项目提交封装（如 scripts/control-tower/synova-commit）→ pre-commit 12 组物理验收。被拒绝时读原因修复重试，禁止 --no-verify 绕过。
- ⑦b 更新 task-state：实现提交后 → 更新 task-state/<任务>.json（impl 段 + status=impl_done；D382 任务状态机，见 task-state/README.md）
+      ⑦b 更新 task-state：实现提交后 → 更新 task-state/<任务>.json（impl 段 + status=impl_done；D382 任务状态机，见 task-state/README.md）
       ⑧ 汇报：完成证明页——每条声称对应物理证据，无自报项。格式：
          - 声称（改了什么/接了什么）↔ 证据（grep 命中行号 / vitest 结果 / git diff 文件）
          - 附文件 + 行号 + 为什么改；push 成功后提醒运行 checkpoint-deploy.sh。

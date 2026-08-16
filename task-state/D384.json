@@ -1,0 +1,22 @@
+{
+  "task_id": "D384",
+  "title": "D383 审计 P1×4 修复批次（写集漂移/D382 撞车/CTO-HEALTH 无源/幂等+测试）",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "commit": "local-wip",
+    "by": "CTO",
+    "at": "2026-08-16",
+    "files": [
+      "alloc-task-id.sh",
+      "gen-cto-health.py",
+      "CTO-HEALTH.md",
+      "台账",
+      "persona/skill 取号纪律"
+    ]
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-16",
+  "updated_by": "CTO"
+}
