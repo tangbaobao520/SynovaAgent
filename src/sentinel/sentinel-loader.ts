@@ -116,6 +116,24 @@ export function clearSentinelCache(): void {
 // ═══ Registry 注册 ═══
 
 /**
+ * 注入 manifest 到哨兵实例（P0-1: 修复阈值告警死代码）。
+ *
+ * 契约:
+ *   输入: sentinelObj: unknown — 动态 import 的哨兵实例（aggregate 导出的 object）
+ *         manifest: SentinelManifest — 哨兵 manifest（含 thresholds）
+ *   输出: boolean — 注入成功返回 true；非 object（function/undefined 等）跳过返回 false
+ *   降级: 永不抛异常；非 object 输入静默跳过（调用方 check 校验已兜底拦截）
+ *   类型安全: 内联类型收窄，非 as any（铁律 38）
+ */
+export function injectSentinelManifest(sentinelObj: unknown, manifest: SentinelManifest): boolean {
+  if (typeof sentinelObj === 'object' && sentinelObj !== null) {
+    (sentinelObj as { manifest?: SentinelManifest }).manifest = manifest;
+    return true;
+  }
+  return false;
+}
+
+/**
  * 将已加载的文件驱动哨兵注册到全局 SentinelRegistry。
  * 每个哨兵动态 import 其 aggregate.ts，包装为 Sentinel 接口后注册。
  */
@@ -138,6 +156,9 @@ export async function registerLoadedSentinels(): Promise<{ registered: number; e
         errors.push(`哨兵 ${manifest.name} 缺少 check() 方法`);
         continue;
       }
+
+      // P0-1: 注册前注入 manifest — 修复阈值告警死代码（aggregate 依赖 this.manifest 读阈值）
+      injectSentinelManifest(sentinelObj, manifest);
 
       // V4.2.9: dependsOn 数据依赖校验
       if (manifest.dependsOn) {

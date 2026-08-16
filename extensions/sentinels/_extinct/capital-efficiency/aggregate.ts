@@ -36,6 +36,14 @@ export const capitalEfficiencySentinel = {
         }
       } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
       if (!usedTraversal) { finNodes = store.queryNodes('Financial', { teamId }); }
+      // P1-3: 缺字段 ≠ 0 —— 关键字段缺失时 fail-closed（铁律 11/24/31）
+      const missing = finNodes.some(n =>
+        n.props.revenue === undefined || n.props.totalDebt === undefined ||
+        n.props.equity === undefined);
+      if (missing) {
+        log.warn({ teamId }, '[capital-efficiency] 关键字段缺失 — degraded，不产出 finding');
+        return [];
+      }
       const financials = finNodes.map(n => ({
         revenue: Number(n.props.revenue) || Number(n.props.totalRevenue) || 0,
         cost: Number(n.props.cost) || Number(n.props.costs) || 0,

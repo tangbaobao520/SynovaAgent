@@ -15,6 +15,14 @@ export const capitalTurnoverSentinel = {
       // @deprecated — 语义迁移由D15处理
       try { if (traversal) { const r = traversal.traverse([teamId], ['FUNDS']); if (r.nodes[0]) { finNodes = r.nodes; usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
       if (!usedTraversal) { finNodes = store.queryNodes('Financial', { teamId }); }
+      // P1-3: 缺字段 ≠ 0 —— 关键字段缺失时 fail-closed（铁律 11/24/31）
+      const missing = finNodes.some(n =>
+        n.props.revenue === undefined || n.props.totalAssets === undefined ||
+        n.props.accountsReceivable === undefined);
+      if (missing) {
+        log.warn({ teamId }, '[capital-turnover] 关键字段缺失 — degraded，不产出 finding');
+        return [];
+      }
       const f = finNodes.map(n => ({ revenue: Number(n.props.revenue) || 0, totalAssets: Number(n.props.totalAssets) || 0, currentAssets: Number(n.props.currentAssets) || 0, accountsReceivable: Number(n.props.accountsReceivable) || 0 }));
       const at = computeAssetTurnover(f); const rt = computeReceivableTurnover(f); const r: SentinelFinding[] = [];
       if (!at.degraded && at.totalTurnover < 0.5) r.push({ id: `f5-at-crit-${now.getTime()}`, severity: 'critical', title: `总资产周转率过低 (${at.totalTurnover.toFixed(2)})`, description: '每单位资产营收不足 0.5。', evidence: [`周转率: ${at.totalTurnover.toFixed(2)}`, `营收: ${at.totalRevenue}`, `总资产: ${at.totalAssets}`], suggestion: '审查资产效率，处置低效资产。', detectedAt: checkedAt });

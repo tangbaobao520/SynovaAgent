@@ -20,6 +20,14 @@ export const capitalStructureSentinel = {
       // @deprecated — 语义迁移由D15处理
       try { if (traversal) { const r = traversal.traverse([teamId], ['FUNDS']); if (r.nodes[0]) { finNodes = r.nodes; usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
       if (!usedTraversal) { finNodes = store.queryNodes('Financial', { teamId }); }
+      // P1-3: 缺字段 ≠ 0 —— 关键字段缺失时 fail-closed，不静默默认（铁律 11/24/31）
+      const missing = finNodes.some(n =>
+        n.props.totalDebt === undefined || n.props.equity === undefined ||
+        n.props.operatingIncome === undefined || n.props.interestExpense === undefined);
+      if (missing) {
+        log.warn({ teamId }, '[capital-structure] 关键字段缺失 — degraded，不产出 finding');
+        return [];
+      }
       const financials = finNodes.map(n => ({
         totalDebt: Number(n.props.totalDebt) || 0,
         shortTermDebt: Number(n.props.shortTermDebt) || Number(n.props.shortTermBorrowing) || 0,

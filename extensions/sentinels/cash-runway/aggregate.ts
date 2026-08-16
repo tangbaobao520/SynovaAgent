@@ -27,7 +27,8 @@ export const cashRunwaySentinel = {
 
       if (this.manifest) {
         const t = this.manifest.thresholds;
-        if (runwayMonths <= t.cash_runway_months.critical) {
+        // P1-1: degraded 信号不得穿过阈值门控（铁律 24/31）——无数据 value=0 不再误报 critical
+        if (!runwayResult.degraded && runwayMonths <= t.cash_runway_months.critical) {
           findings.push({
             id: 'cash_critical', severity: 'critical', title: `现金流危急—跑道${Number.isFinite(runwayMonths) ? runwayMonths.toFixed(1) : '充足'}个月`,
             description: `现金跑道${Number.isFinite(runwayMonths) ? runwayMonths.toFixed(1) : '充足'}个月，低于critical阈值${t.cash_runway_months.critical}个月。`,
@@ -35,14 +36,14 @@ export const cashRunwaySentinel = {
             suggestion: runwayResult.degraded ? '请确认财务数据是否完整。' : '启动应急融资，削减非必要支出。',
             detectedAt: new Date().toISOString(),
           });
-        } else if (runwayMonths <= t.cash_runway_months.warning) {
+        } else if (!runwayResult.degraded && runwayMonths <= t.cash_runway_months.warning) {
           findings.push({
             id: 'cash_warning', severity: 'warning', title: `现金流紧张—跑道${Number.isFinite(runwayMonths) ? runwayMonths.toFixed(1) : 0}个月`,
             description: `现金跑道${Number.isFinite(runwayMonths) ? runwayMonths.toFixed(1) : 0}个月，低于warning阈值。`,
             detectedAt: new Date().toISOString(),
           });
         }
-        if (overdueRate >= t.receivable_overdue.critical) {
+        if (!overdueResult.degraded && overdueRate >= t.receivable_overdue.critical) {
           findings.push({
             id: 'ar_critical', severity: 'critical', title: '应收逾期严重',
             description: `应收/现金比${(overdueRate * 100).toFixed(0)}%，超出critical阈值。`,
