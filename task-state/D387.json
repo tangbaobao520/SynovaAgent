@@ -19,7 +19,7 @@
   },
   "audit": {
     "report": "docs/synova/audit-reports/2026-08-16-D387.md",
-    "verdict": "CONDITIONAL_PASS",
+    "verdict": "PASS",
     "by": "K3",
     "at": "2026-08-16",
     "findings": [
@@ -29,7 +29,8 @@
       "P2-2 DS14 交付声明未入库（无 DS1-DS14 逐项标注的完成报告文件；决策记录 §3.2 在库）",
       "P2-3 基线 FAIL 434→435 漂移发生在 D383-D386 堆叠区间（非本任务，D387 前后 435=435）",
       "P2-4 豁免面治理备查：task-state/memory/根级行为注入 md 经豁免仅 Secrets 把关，状态机完整性单点依赖 K3 审计（创始人决策明文，观察项）"
-    ]
+    ],
+    "note": "补核转 PASS (2026-08-16): 推送核实 range 空 + CI 6/8 绿, 2 红预存 (admin-knowledge D309 + npm audit CVE), D387 零触碰排除"
   },
   "fix_task_id": "CT-P1-1",
   "updated_at": "2026-08-16",

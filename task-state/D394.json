@@ -1,6 +1,6 @@
 {
   "task_id": "D394",
-  "title": "事件溯源 session log（借 Harness B1，补 S3-5/S0）",
+  "title": "事件溯源（哨兵 findings 事件化先做——K3 改切片）",
   "status": "claimed",
   "spec": null,
   "impl": null,
@@ -8,5 +8,6 @@
   "fix_task_id": null,
   "updated_at": "2026-08-16",
   "updated_by": "CTO",
-  "note": "战略借鉴方向（P1，9 月部署后启动；来源: docs/synova/research/Harness研究与Synova战略再定位-20260816/开发转交方向-Harness借鉴与OpenViking应对-20260816.md）"
+  "note": "K3 咨询定：片1 哨兵 findings 事件化（2-3天，治重启即丢，含修 sentinel-service.ts durationMs bug :97 + 第6项 findings 正名）；片2 诊断会话事件化（6-8天，部署后，硬依赖 D355-D360 契约稳定 + PII append 前过 Scrubber）；片3 fork/resume（Q4 期权）。三条 invariant：I1 可重建/I2 单源/I3 可审计。 | 终版补：OpenViking HTTP 集成现在不做（L3 数据不出企业），留 D398 片2 开工决策点",
+  "priority": "P0-片1/P1-片2/P2-片3"
 }

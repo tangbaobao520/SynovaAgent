@@ -1,6 +1,6 @@
 {
   "task_id": "D397",
-  "title": "guard 循环卫生+超时（借 Harness B5，通用化控制塔）",
+  "title": "（原 guard 通用化已砍）产品 loop 卫生 D397'——K3 重定义",
   "status": "claimed",
   "spec": null,
   "impl": null,
@@ -8,5 +8,6 @@
   "fix_task_id": null,
   "updated_at": "2026-08-16",
   "updated_by": "CTO",
-  "note": "战略借鉴方向（P1，9 月部署后启动；来源: 同上）"
+  "note": "K3 咨询定：现定义（控制塔通用化）砍掉并入 CT 队列（违反预算铁律+与 CT 积压重叠+时机危险）；重定义 D397' = 产品 loop 卫生（诊断阶段超时 + tool-loop 重复提醒 + 哨兵 invariant），P2 Q4 后。 | 终版补：插件供应链红线——装有产品仓库的机器不装第三方 dsh 插件（白名单审批，近期风险）",
+  "priority": "P2-Q4后"
 }

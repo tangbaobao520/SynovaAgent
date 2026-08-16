@@ -1,11 +1,18 @@
 {
   "task_id": "D386",
   "title": "修复 sentinel-loader.test.ts 断言容忍规范外哨兵 computes 空（CI Vitest 预存红）",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": null,
-  "impl": null,
+  "impl": {
+    "commit": "7bc829bf",
+    "by": "CTO",
+    "at": "2026-08-16",
+    "files": [
+      "Vitest 断言修复（CI 预存红消除）"
+    ]
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-08-16",
-  "updated_by": "alloc-task-id"
+  "updated_by": "CTO"
 }

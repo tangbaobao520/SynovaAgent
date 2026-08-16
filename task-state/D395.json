@@ -1,6 +1,6 @@
 {
   "task_id": "D395",
-  "title": "Agent Notes 四态记忆（借 Harness B4，补 S5-3）",
+  "title": "Agent Notes 四态（D395-a 开发组织版，1天——K3 拆分）",
   "status": "claimed",
   "spec": null,
   "impl": null,
@@ -8,5 +8,6 @@
   "fix_task_id": null,
   "updated_at": "2026-08-16",
   "updated_by": "CTO",
-  "note": "战略借鉴方向（P1，9 月部署后启动；来源: 同上）"
+  "note": "D395-a 开发组织 Notes 四态（memory/notes/{proposed,implemented,archived,rejected}，强化 M7）；D395-b 产品版取消独立，并入 D398（先看记忆长什么样）。",
+  "priority": "P1-现在就做"
 }

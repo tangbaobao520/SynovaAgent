@@ -1,16 +1,24 @@
 {
   "task_id": "D391",
   "title": "admin-knowledge.ts:17 L1→L4 跨层修复（CI Architecture 转绿，D309 落地，K3 P2-5 派单）",
-  "status": "spec_done",
+  "status": "impl_done",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D391-admin-knowledge-l1l4-fix-20260816.md",
     "commit": null,
     "by": "dev-doc",
     "at": "2026-08-16"
   },
-  "impl": null,
+  "impl": {
+    "commit": "a60e45f0",
+    "by": "DSH",
+    "at": "2026-08-16",
+    "files": [
+      "src/routes/admin-knowledge.ts",
+      "tests/routes/admin-knowledge.test.ts"
+    ]
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-08-16",
-  "updated_by": "dev-doc"
+  "updated_by": "DSH"
 }

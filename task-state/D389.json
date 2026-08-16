@@ -1,9 +1,16 @@
 {
   "task_id": "D389",
   "title": "D387 审计产物合入仓库",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": null,
-  "impl": null,
+  "impl": {
+    "commit": "1b9003ba",
+    "by": "CTO",
+    "at": "2026-08-16",
+    "files": [
+      "D387 审计产物合入"
+    ]
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-08-16",

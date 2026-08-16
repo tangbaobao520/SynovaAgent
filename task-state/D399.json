@@ -1,11 +1,22 @@
 {
   "task_id": "D399",
   "title": "D393 审计 FAIL 修复（自指悖论/spec 双向失真/CTO-HEALTH 可复现/门禁记录入库）",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": null,
-  "impl": null,
+  "impl": {
+    "commit": "082326fc",
+    "by": "CTO",
+    "at": "2026-08-16",
+    "files": [
+      "gen-cto-health.py",
+      "test.sh",
+      "CTO-HEALTH.md",
+      "D385/D391.json",
+      "bypass.log"
+    ]
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-08-16",
-  "updated_by": "alloc-task-id"
+  "updated_by": "CTO"
 }
