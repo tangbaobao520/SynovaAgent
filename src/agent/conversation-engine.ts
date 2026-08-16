@@ -10,7 +10,10 @@
  * Iron law #32: 错误统一通过 try/catch + log 处理，不静默吞。
  * Iron law #31: degraded 信号通过 ProcessResult 传播。
  */
-import type { LLMProvider, LLMMessage } from '../providers/types';
+import type { LLMProvider, LLMMessage, HealthCheckResult } from '../providers/types';
+// D363: 运行时 failover 接线 — chain 包装 + 环境变量派生备用 provider
+import { createProviderChain, detectProviderFromUrl } from '../providers/registry';
+import { createProvider } from '../providers';
 import type Database from 'better-sqlite3';
 import { ToolRegistry } from './tools';
 import { getGlobalGracefulShutdown } from '../services/graceful-shutdown';
@@ -70,6 +73,8 @@ export interface EngineConfig {
   piiScrubber?: PIIScrubber;
   /** 会话 ID (用于事件追踪) */
   sessionId?: string;
+  /** D363: 备用 LLMProvider — 主 provider 失败时 chain 自动切换。undefined → 从环境变量派生（主 deepseek→备 openai，主非 deepseek→备 deepseek）；null → 显式禁用 failover */
+  fallbackProvider?: LLMProvider | null;
   /** L3: EvidenceCollector (Phase 0 证据采集) */
   evidenceCollector?: EvidenceCollector;
   /** L4: GraphBridge (Phase 1 自动写入本体图) */
@@ -253,6 +258,77 @@ function buildSystemPrompt(
   // 易变层不放入 system prompt — 追加到 user message 末尾保护 Cache
 }
 
+// ═══ D363: Provider Failover 接线 ═══
+
+/**
+ * D363: 将单 provider 包装为运行时 failover chain（保持 LLMProvider 契约）。
+ *
+ * 输入:
+ *   primary  — 主 provider（构造时注入，保持原接口不变）
+ *   fallback — 备用 provider；null/undefined → 不包装，原样返回 primary
+ * 输出:
+ *   LLMProvider — chain 包装（name=chain(主→备)，baseUrl 继承主）；无备用时 = primary 原实例
+ * 降级:
+ *   - 无备用 → 返回原 provider，行为与修复前完全一致（零包装开销）
+ *   - chain 的 healthCheck 返回数组（多 provider 体检），本函数聚合为单值
+ *     HealthCheckResult（LLMProvider 契约，context-engine.ts:274 isLLMAvailable
+ *     依赖 result.healthy）— 任一 provider 健康即视为链可用（failover 语义），
+ *     全不健康返回主 provider 的失败详情
+ *   - 全部 provider 失败 → chat/stream 抛"所有 Provider 均失败"（含全部失败名，不静默）
+ */
+export function wrapProviderWithFailover(
+  primary: LLMProvider,
+  fallback: LLMProvider | null | undefined,
+): LLMProvider {
+  if (!fallback) return primary;
+  const chain = createProviderChain([primary, fallback]);
+  return {
+    name: chain.name,
+    baseUrl: chain.baseUrl,
+    chat: chain.chat,
+    stream: chain.stream,
+    listModels: chain.listModels,
+    // healthCheck 契约适配: chain 返回数组，LLMProvider 要求单值 HealthCheckResult
+    healthCheck: async (): Promise<HealthCheckResult> => {
+      const results = await chain.healthCheck();
+      const ok = results.find(r => r.healthy);
+      if (ok) return ok;
+      return results[0] ?? { healthy: false, error: 'ProviderChain 无 provider 体检结果' };
+    },
+  };
+}
+
+/**
+ * D363: 从环境变量派生备用 provider（主 provider 类型决定备用方向）。
+ *
+ * 输入:
+ *   primary — 主 provider（按 baseUrl 经 detectProviderFromUrl 判定类型）
+ * 输出:
+ *   LLMProvider | null — 备用 provider；无凭据 → null
+ * 规则:
+ *   主 = deepseek → 备 = openai（需 OPENAI_API_KEY）
+ *   主 ≠ deepseek（openai/qwen/gateway 等）→ 备 = deepseek（需 LLM_API_KEY 或 DEEPSEEK_API_KEY）
+ * 降级: 备用凭据缺失 → 返回 null + log.info 显式记录（failover 未启用），绝不静默；
+ *       调用方（constructor）保持单 provider 行为不变。
+ */
+export function buildFallbackProvider(primary: LLMProvider): LLMProvider | null {
+  const primaryKind = detectProviderFromUrl(primary.baseUrl);
+  if (primaryKind === 'deepseek') {
+    const openaiKey = process.env.OPENAI_API_KEY;
+    if (!openaiKey) {
+      log.info('无 OPENAI_API_KEY 备用凭据 — failover 未启用（保持单 provider）');
+      return null;
+    }
+    return createProvider('openai', { apiKey: openaiKey });
+  }
+  const deepseekKey = process.env.LLM_API_KEY || process.env.DEEPSEEK_API_KEY;
+  if (!deepseekKey) {
+    log.info('无 DeepSeek 备用凭据 — failover 未启用（保持单 provider）');
+    return null;
+  }
+  return createProvider('deepseek', { apiKey: deepseekKey });
+}
+
 // ═══ ConversationEngine ═══
 
 export class ConversationEngine {
@@ -297,7 +373,14 @@ export class ConversationEngine {
   private contextEngine: ContextEngine;
 
   constructor(provider: LLMProvider, config: EngineConfig = {}) {
-    this.provider = provider;
+    // D363: 运行时 failover 接线 — 注入的单 provider 包装为 failover chain。
+    // tool-loop-executor 消费的 ctx.provider（经 engineCtx 注入）自动获得
+    // "主 provider 失败 → 切换备用"能力；无备用（显式 null 或凭据缺失）时
+    // 保持原 provider，行为与修复前完全一致。
+    this.provider = wrapProviderWithFailover(
+      provider,
+      config.fallbackProvider !== undefined ? config.fallbackProvider : buildFallbackProvider(provider),
+    );
     this.phase = 0;
     this.orgId = config.orgId || '';
     this.turnCount = 0;
