@@ -94,7 +94,7 @@ export function getSentinelFindings(query: FindingsQuery = {}): FindingsResponse
             sentinelId,
             sentinelName: run.sentinelName,
             finding,
-            checkedAt: new Date(run.result.durationMs).toISOString(),
+            checkedAt: run.result.checkedAt,
           });
         }
       }

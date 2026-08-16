@@ -55,6 +55,12 @@ export interface SentinelFinding {
   detectedAt: string;
   /** 关联的本体节点 ID (可选) */
   relatedNodeId?: string;
+  /**
+   * 生命周期状态 (K3 §4.6 findings 正名)。
+   * 默认 'open'（产生时）；经 finding_transition 事件迁移至 acknowledged/resolved。
+   * 可选字段以兼容存量 findings（未显式赋值时按 'open' 处理）。
+   */
+  status?: 'open' | 'acknowledged' | 'resolved';
 }
 
 /** 哨兵检查结果 */

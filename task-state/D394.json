@@ -1,18 +1,29 @@
 {
   "task_id": "D394",
   "title": "事件溯源（哨兵 findings 事件化先做——K3 改切片）",
-  "status": "spec_done",
+  "status": "impl_done",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D394-sentinel-events-20260816.md",
     "commit": "4df237a497d5efd4f0fd364c7d764026f6dced1d",
     "by": "dev-doc",
     "at": "2026-08-16"
   },
-  "impl": null,
+  "impl": {
+    "commit": null,
+    "by": "DeepSeek Harness",
+    "at": "2026-08-17",
+    "files": [
+      "src/sentinel/sentinel-events.ts",
+      "src/sentinel/runner.ts",
+      "src/sentinel/types.ts",
+      "src/agent/sentinel-service.ts",
+      "tests/sentinel/sentinel-events.test.ts"
+    ]
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-08-16",
-  "updated_by": "CTO",
+  "updated_at": "2026-08-17",
+  "updated_by": "DeepSeek Harness",
   "note": "K3 咨询定：片1 哨兵 findings 事件化（2-3天，治重启即丢，含修 sentinel-service.ts durationMs bug :97 + 第6项 findings 正名）；片2 诊断会话事件化（6-8天，部署后，硬依赖 D355-D360 契约稳定 + PII append 前过 Scrubber）；片3 fork/resume（Q4 期权）。三条 invariant：I1 可重建/I2 单源/I3 可审计。 | 终版补：OpenViking HTTP 集成现在不做（L3 数据不出企业），留 D398 片2 开工决策点",
   "priority": "P0-片1/P1-片2/P2-片3"
 }
