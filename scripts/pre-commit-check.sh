@@ -110,11 +110,23 @@ if [ -f "$BYPASS_LOG" ]; then
   fi
 fi
 # V4.5.1: 缓存 git diff 结果 — 本机每次 git 调用 ~1s，脚本内 10+ 次调用是超时主因
-# D387 (CT-34): 测试注入缝 (只读, 默认真实 git, fail-closed) — SYNO_GIT_CACHED_* 覆盖, 仅测试用
-GIT_CACHED_NAMES="${SYNO_GIT_CACHED_NAMES:-$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)}"
-GIT_CACHED_ALL_NAMES="${SYNO_GIT_CACHED_ALL_NAMES:-$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)}"
-GIT_CACHED_ADDED_NAMES="${SYNO_GIT_CACHED_ADDED_NAMES:-$(git diff --cached --name-only --diff-filter=A 2>/dev/null || true)}"
-GIT_CACHED_DIFF="${SYNO_GIT_CACHED_DIFF:-$(git diff --cached 2>/dev/null || true)}"
+# D387 (CT-34): 测试注入缝 (只读, 默认真实 git, fail-closed)
+# D390 (CT-P1-1, K3 D387 P1-1): 武装守卫 — 注入缝仅 SYNO_TEST_ARM=1 时生效。
+# 生产环境缝关闭: 组合 SYNO_SECRETS_ROOT 的无痕迹全 13 组旁路被堵死
+# (K3 实测: SYNO_GIT_CACHED_*=docs/x.md + SYNO_SECRETS_ROOT=/tmp/empty → 全部门禁跳过且零审计)。
+if [ "${SYNO_TEST_ARM:-0}" = "1" ]; then
+  # 测试/审计注入缝 (SYNO_TEST_ARM=1 双确认才可注入)
+  GIT_CACHED_NAMES="${SYNO_GIT_CACHED_NAMES:-$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)}"
+  GIT_CACHED_ALL_NAMES="${SYNO_GIT_CACHED_ALL_NAMES:-$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)}"
+  GIT_CACHED_ADDED_NAMES="${SYNO_GIT_CACHED_ADDED_NAMES:-$(git diff --cached --name-only --diff-filter=A 2>/dev/null || true)}"
+  GIT_CACHED_DIFF="${SYNO_GIT_CACHED_DIFF:-$(git diff --cached 2>/dev/null || true)}"
+else
+  # 生产路径: 真实 git (注入缝变量被忽略, fail-closed)
+  GIT_CACHED_NAMES="$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)"
+  GIT_CACHED_ALL_NAMES="$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)"
+  GIT_CACHED_ADDED_NAMES="$(git diff --cached --name-only --diff-filter=A 2>/dev/null || true)"
+  GIT_CACHED_DIFF="$(git diff --cached 2>/dev/null || true)"
+fi
 
 STAGED=$(echo "$GIT_CACHED_NAMES" | grep '\.ts$' | grep -v node_modules || true)
 
@@ -153,6 +165,12 @@ if [ "$DOC_ONLY" -eq 1 ]; then
   echo "  纯文档提交 (CT-34/D387): 豁免 12 组 — 仅 Secrets 扫描"
   echo "═══════════════════════════════════════════════════════════"
   echo ""
+  # D390 (CT-P1-1, K3 D387 P1-1): 豁免事件审计落盘 — 无痕迹豁免 = M4 执行证据链断裂。
+  # 每次纯文档豁免写 exempt.log（时间戳 + 暂存清单），供审计对账（post-commit/定期）。
+  # 路径支持 SYNO_EXEMPT_LOG 注入（测试沙箱，同 SYNO_SECRETS_ROOT 惯例；不构成旁路）。
+  EXEMPT_LOG="${SYNO_EXEMPT_LOG:-$ROOT/.claude/exempt.log}"
+  mkdir -p "$(dirname "$EXEMPT_LOG")" 2>/dev/null || true
+  echo "$(date +%Y-%m-%dT%H:%M:%S%z) | EXEMPT | staged=$(echo "$STAGED_ALL" | tr '\n' ',' | sed 's/,$//')" >> "$EXEMPT_LOG" 2>/dev/null || true
   if bash "$ROOT/scripts/check-secrets.sh" 2>&1; then
     echo -e "  ${GREEN}✅ Secrets 扫描通过${RESET}"
     echo -e "  ${GREEN}✅ 纯文档提交豁免检查完成 (CT-34)${RESET}"

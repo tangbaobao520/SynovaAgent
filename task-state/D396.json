@@ -1,0 +1,13 @@
+{
+  "task_id": "D396",
+  "title": "snapshot 测试（黄金用例固化回归门禁——K3 提前 P0 同批）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-16",
+  "updated_by": "CTO",
+  "note": "K3 咨询定：提前到 P0 同批（2-3天）——每个 D355-D360 修复带一条黄金用例，扩展既有 golden-case-checker（不做新体系）；防'下次又改坏'。红-绿演练必须跑一次证明门禁真能红。 | 终版补：带宽预算硬约束——借鉴类任务月度 ≤25% 工程带宽（可核账）",
+  "priority": "P0 同批"
+}

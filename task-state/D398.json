@@ -1,0 +1,13 @@
+{
+  "task_id": "D398",
+  "title": "组织记忆策略调整（排最后，先看数据——K3 定序）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-16",
+  "updated_by": "CTO",
+  "note": "K3 咨询定：排最后，哇呢宝贝数据回流后再动手；成功标准 = GA 确认率（非条目数）；红线流程化（AGPL 不复制）；既有落点 src/l4/ agent-memory-store 等非从零。 | 终版补：叙事红线——会话变记忆落地后不得宣称'越用越准/自我进化'（S5-1 未闭环）；Sylph 已开源模板层，护城河=因果诊断深度×数据验证速率",
+  "priority": "P2-数据回流后"
+}

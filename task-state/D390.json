@@ -1,14 +1,14 @@
 {
-  "task_id": "D386",
-  "title": "修复 sentinel-loader.test.ts 断言容忍规范外哨兵 computes 空（CI Vitest 预存红）",
+  "task_id": "D390",
+  "title": "P1-1 修复：注入缝武装守卫 + 豁免事件 exempt.log 落盘（K3 D387）",
   "status": "impl_done",
   "spec": null,
   "impl": {
-    "commit": "7bc829bf",
+    "commit": "4a0f666b",
     "by": "CTO",
     "at": "2026-08-16",
     "files": [
-      "Vitest 断言修复（CI 预存红消除）"
+      "P1-1 安全修复（武装守卫 + exempt.log）"
     ]
   },
   "audit": null,
