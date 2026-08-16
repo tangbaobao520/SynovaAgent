@@ -1,0 +1,37 @@
+{
+  "task_id": "D387",
+  "title": "CT-34 纯文档提交豁免门禁（pre-commit 白名单 + Secrets 保留）",
+  "status": "audited",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D387-doc-commit-exempt-20260816.md",
+    "commit": "1c72c2be",
+    "by": "dev-doc",
+    "at": "2026-08-16"
+  },
+  "impl": {
+    "commit": "de7b831d",
+    "by": "coding",
+    "at": "2026-08-16",
+    "files": [
+      "scripts/pre-commit-check.sh",
+      "tests/control-tower/doc-commit-exempt.test.sh"
+    ]
+  },
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-08-16-D387.md",
+    "verdict": "CONDITIONAL_PASS",
+    "by": "K3",
+    "at": "2026-08-16",
+    "findings": [
+      "P1-1 SYNO_GIT_CACHED_* 注入缝无武装守卫、豁免事件零审计落盘——组合 SYNO_SECRETS_ROOT 构成无痕迹全 13 组旁路，post-commit 绕过检测对其失效",
+      "P1-2 CI 逐 job 结论不可核（审计环境网络超时）+ 推送证据为缓存 ref（origin/feat/d387-doc-commit-exempt=1c72c2be）",
+      "P2-1 dev doc 行号引用为改动前值未回填（G12c L929-937→实测:977；组6 L537-545→:585；par_start L120→:174）",
+      "P2-2 DS14 交付声明未入库（无 DS1-DS14 逐项标注的完成报告文件；决策记录 §3.2 在库）",
+      "P2-3 基线 FAIL 434→435 漂移发生在 D383-D386 堆叠区间（非本任务，D387 前后 435=435）",
+      "P2-4 豁免面治理备查：task-state/memory/根级行为注入 md 经豁免仅 Secrets 把关，状态机完整性单点依赖 K3 审计（创始人决策明文，观察项）"
+    ]
+  },
+  "fix_task_id": "CT-P1-1",
+  "updated_at": "2026-08-16",
+  "updated_by": "CTO"
+}
