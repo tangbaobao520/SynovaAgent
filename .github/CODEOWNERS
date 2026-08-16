@@ -1,0 +1,45 @@
+# Synova CODEOWNERS — v4 分工的机器强制层（B1）
+# 来源: docs/synova/coordination/TASK-ROUTING.md v4 §一 模块所有权表（2026-08-16 定稿）
+# 效果: 越界 PR 被 GitHub 自动要求 owner approve（拦截跨领地改动）
+#
+# ⚠️ owner 账号体系待创始人定（2026-08-16 B1 落地）：
+#   当前全部指向主账号 @tangbaobao520（兜底 = 创始人最终把关）。
+#   建议：GitHub 组织下建三个团队 @synova-dsh / @synova-claude / @synova-k3，
+#   对应 Mac DSH / Win Claude / K3 三线，替换下方占位后再启用严格拦截。
+#   替换后本文件注释可删。
+
+# ── 串行点（§串行点表）──
+# src/server.ts: Claude 专属（DSH 不碰，mcp/ 内部除外）
+src/server.ts                                    @tangbaobao520
+# 门禁脚本 + coordination 文档 + VERSION.md: DSH 专属
+scripts/control-tower/                           @tangbaobao520
+scripts/workflow/                                @tangbaobao520
+scripts/hooks/                                   @tangbaobao520
+scripts/pre-commit-check.sh                      @tangbaobao520
+scripts/pre-push-check.sh                        @tangbaobao520
+docs/synova/coordination/                        @tangbaobao520
+VERSION.md                                       @tangbaobao520
+
+# ── Mac DSH 领地（哨兵切片 + 门面 + 仪表盘）──
+src/sentinel/                                    @tangbaobao520
+src/cron/                                        @tangbaobao520
+src/agent/sentinel-service*                      @tangbaobao520
+src/mcp/                                         @tangbaobao520
+electron/                                        @tangbaobao520
+electron-renderer/                               @tangbaobao520
+scripts/product-lines/                           @tangbaobao520
+scripts/golden-scenarios/                        @tangbaobao520
+scripts/backup/                                  @tangbaobao520
+.github/workflows/                               @tangbaobao520
+docs/synova/product-lines/                       @tangbaobao520
+.claude/task-briefs/                             @tangbaobao520
+.dsh/                                            @tangbaobao520
+
+# ── Win Claude Code 领地（诊断体系 FDE + 本体/存储/交互）──
+src/                                             @tangbaobao520
+extensions/                                      @tangbaobao520
+packages/                                        @tangbaobao520
+synova_worker/                                   @tangbaobao520
+
+# ── Kimi K3 审计红线（其他角色禁碰）──
+scripts/audit/                                   @tangbaobao520

@@ -74,9 +74,14 @@ class TestDevDocGatekeeper(unittest.TestCase):
         finally:
             os.unlink(tmp)
 
-    def test_help_exit_code(self):
-        ret = os.system('python scripts/control-tower/dev-doc-gatekeeper.py --help')
-        self.assertEqual(ret, 0)
+    def test_sh_exists_and_noarg_exit1(self):
+        # D381 (2026-08-16): 原用例引用不存在的 dev-doc-gatekeeper.py (D212 后回归 .sh,
+        # 测试未跟上 → 32512 command not found, pre-existing 假失败, M7 漂移)。
+        # 修正: 断言 .sh 真实存在 + 无参数调用退出码 1 (用法提示)。
+        sh = 'scripts/control-tower/dev-doc-gatekeeper.sh'
+        self.assertTrue(os.path.exists(sh), f"{sh} 应存在")
+        ret = os.system(f'bash {sh} >/dev/null 2>&1')
+        self.assertEqual(ret, 256, "无参数调用应 exit 1 (用法提示)")
 
 
 if __name__ == '__main__':

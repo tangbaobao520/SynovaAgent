@@ -106,7 +106,7 @@
 | 模块/区域 | 状态 |
 |-----------|------|
 | scripts/control-tower/ + coordination + DSH 预设/技能 | 进行中·DeepSeek Harness |
-| src/sentinel/ + src/cron/（哨兵切片） | 空闲·待 DSH 认领 |
+| src/sentinel/ + src/cron/（哨兵切片） | 进行中·DeepSeek Harness（编码线 2026-08-16 认领；**D379 path-dependency 空壳补实现** 进行中，**D356 P0 阈值告警接线** spec 已交付待实现） |
 | src/ 其余业务（诊断体系 L1-L5） | Win Claude Code 主力 |
 | scripts/product-lines/ + 双仪表盘 | DeepSeek Harness（主导） |
 | scripts/golden-scenarios/ | 进行中·DeepSeek Harness |

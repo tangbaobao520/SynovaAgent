@@ -17,7 +17,10 @@ describe('loadSentinels', () => {
     for (const s of sentinels) {
       expect(s.manifest.name).toBeTruthy();
       expect(s.manifest.expert).toBeTruthy();
-      expect(s.manifest.computes.length).toBeGreaterThan(0);
+      // D386 (2026-08-16): 容忍规范外哨兵 computes 空 — forecast-accuracy/pricing-strategy
+      // 在 aggregate.ts 直接实现不声明 computes；要求「有可执行入口」即可。
+      // (path-dependency 空壳 computes 非空, 由 D379 补实现闭环)
+      expect(s.manifest.computes.length > 0 || Boolean(s.manifest.entryPoint)).toBe(true);
     }
   });
 

@@ -1,0 +1,24 @@
+{
+  "task_id": "D387",
+  "title": "CT-34 文档提交豁免门禁（只保留 Secrets 扫描）",
+  "status": "impl_done",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D387-doc-commit-exempt-20260816.md",
+    "commit": null,
+    "by": "dev-doc",
+    "at": "2026-08-16"
+  },
+  "impl": {
+    "commit": "de7b831d",
+    "by": "deepseek-harness",
+    "at": "2026-08-16",
+    "files": [
+      "scripts/pre-commit-check.sh",
+      "tests/control-tower/doc-commit-exempt.test.sh"
+    ]
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-16",
+  "updated_by": "deepseek-harness"
+}

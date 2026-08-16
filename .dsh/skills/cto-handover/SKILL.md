@@ -11,16 +11,20 @@ description: Synova CTO 交接文档——完整上下文（过渡 CTO 交接给
 
 ---
 
-## 〇、任务编号规范（2026-08-16 创始人定，重要）
+## 〇、任务编号规范（2026-08-16 创始人定；D384 升级：集中分配防撞车）
 
-**DSH 线的任务不再向 Codex 拿 D#**（旧流程太麻烦）。改为 DSH 自定编号：
+**DSH 线的任务不再向 Codex 拿 D#**（旧流程太麻烦）。改为 **D# 集中分配器**：
 
 ```
-SYNOVA-IMPL-DSH-{任务名}-{YYYYMMDD}.md
-例：SYNOVA-IMPL-DSH-sentinel-threshold-alert-20260816.md
+取号（唯一入口，任何角色必走）:
+  bash scripts/control-tower/alloc-task-id.sh "<任务名>"
+  → 输出 DXXX + 自动建 task-state/DXXX.json 空壳（先登记后使用）
 ```
 
-- **DSH 线**：`SYNOVA-IMPL-DSH-{任务名}-{YYYYMMDD}.md`（dev doc + task brief 都用这个命名）
+- **为什么必须走分配器**：D382 撞车教训（CTO 用 D382 指状态机、dev-doc 用 D382 指 doc-commit-exempt；D339 同型）——分散自编号 + 零检查 = 必然撞车。分配器查 `task-state/` 占用表 → 单调递增 → 建壳登记，物理防撞。
+- **D# 语义**：一个 D# = 一个任务（含其 dev doc / 代码 / 审计报告 / task-state）。dev doc 文件名 `SYNOVA-IMPL-DSH-{任务名}-{YYYYMMDD}.md` 里的编号**必须与 task-state 登记的 D# 一致**。
+- **撞车实例处理**：task-state 状态机保持 D382（已提交+审计）；doc-commit-exempt 由 dev-doc 线走分配器拿新号（未提交可改）。
+- **防绕过（阶段 2 门禁）**：pre-commit 查新 dev doc/brief 头部 D# 在 task-state/ 无登记 → 硬阻断。
 - **Claude 线**：继续 Codex 的 D# 编号（Codex 分配）
 - 两条编号体系并行，互不干扰；认领制（组 12）+ 写集重叠检查（pre-push）照样防撞车
 
@@ -102,11 +106,19 @@ git-sync-pr / brief-compose / claim-verifier / windows-compat / synova-audit / p
 1. **A1 日期粒度 bug**：calc-progress.py 的 `--since=<日期>T00:00:00` 天粒度，合并当天改模块会让当天证据立即 stale。修法=次日 00:00（待创始人拍板，影响所有证据）
 2. **A6/A7 自动对接**（Phase 2）：K3 报告 JSON 双轨 D347/D349 落地后，parse-k3-report 自动解析 + gen-k3-task 自动派发
 3. **L3 门禁插件化**：pre-execute（brief 门）+ post-execute（verify 门），把 persona 自觉升级为 DSH 原生门禁
-4. **task-state 状态机**：task-state/<任务>.json 模板 + 双向 persona 规则（结果传递自动化）
+4. **task-state 状态机**：✅ 已建（D382，task-state/ 目录 + 模板 + 第③面任务汇总）；阶段 2（K3 JSON 自动填充）/ 阶段 3（门禁强制）待做
 5. **观星台 UI**（L5）：创始人驾驶舱面板（北星/进度/证据链/待办）
-6. **CTO 健康仪表盘**（第③面）：聚合 bypass/模式复发/缺口
+6. **CTO 健康仪表盘**（第③面）：✅ v0.1 已上线（docs/synova/CTO-HEALTH.md + gen-cto-health.py）；v0.2 待补 CI job 级判定
 7. **session 质量评分卡**：三员工各指标量化
 8. **双轨评估看板**（第④面）：DSH vs Claude 效率/质量/成本对照（创始人评估依据）
+
+## 八b、审计闭环铁律（2026-08-16 创始人裁决，D382）
+
+> **K3 审计出问题 → 一律另起修复任务（FIX D#），禁止直接改原任务。**
+> 理由：原任务已交付+标记完成、写集已 close；塞回修复 = 证据链混淆（污染原交付证据 + K3 无法区分原问题与修复质量）。
+> 折入例外需 CTO 判定（同领域 + 进行中任务 + 改动小）并标注（如 D335→D333）。
+> 流程：K3 出问题 → 记入审计发现台账-DSH-CTO.md → 判定归属（线 + 可折入否）→ 另起 FIX 任务走完整生命周期（spec→impl→audit）→ K3 复审 → 原任务 state 标注 fix_task_id。
+> 任务进展看 task-state/<任务>.json（第③面 §五 汇总）。
 
 ## 九、git 纪律 + 教训（重要，踩过的坑）
 
