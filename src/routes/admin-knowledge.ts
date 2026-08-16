@@ -14,9 +14,10 @@
  */
 import { Router } from 'express';
 import { createLogger } from '@synova/logger';
-import { KnowledgeStore } from '../l4/knowledge-store';
+// 铁律 39: L1 不直接触 L4 — KnowledgeStore 经 L2 桥接 re-export（knowledge.ts 同款先例）
+import { KnowledgeStore } from '../agent/knowledge-bridge-service';
+import { getDatabase } from '../init/engine-context';
 import { FederatedPipeline } from '../services/federated-pipeline';
-import type { Database } from 'better-sqlite3';
 
 const log = createLogger('routes/admin-knowledge');
 const router = Router();
@@ -33,16 +34,34 @@ export function setFederatedPipeline(pipeline: FederatedPipeline): void {
 }
 
 /**
+ * getStore — D391 M3 兜底：注入优先，未注入时实例化
+ * 契约:
+ *   @input  — 无（读模块级注入状态）
+ *   @output — KnowledgeStore 实例（注入的 mock/实例优先；否则 new KnowledgeStore(getDatabase())）
+ *   @degraded — DB 未初始化 → getDatabase() throw → 由调用方 handler catch → 500 + degraded:true（铁律 24/31）
+ */
+function getStore(): KnowledgeStore {
+  return knowledgeStore ?? new KnowledgeStore(getDatabase());
+}
+
+/**
+ * getPipeline — D391 M3 兜底：注入优先，未注入时实例化
+ * 契约:
+ *   @input  — 无（读模块级注入状态）
+ *   @output — FederatedPipeline 实例（注入优先；否则 new FederatedPipeline()，构造无外部依赖、内存态）
+ *   @degraded — 无降级路径（构造不触 DB）；方法级错误由调用方 handler catch → 500 + degraded:true
+ */
+function getPipeline(): FederatedPipeline {
+  return federatedPipeline ?? new FederatedPipeline();
+}
+
+/**
  * GET /api/admin/knowledge/pending
  * 返回待审批的知识条目（pkb_status = 'draft'）。
  */
 router.get('/api/admin/knowledge/pending', (_req, res) => {
   try {
-    if (!knowledgeStore) {
-      res.status(503).json({ ok: false, error: 'KnowledgeStore not ready', degraded: true });
-      return;
-    }
-    const pending = knowledgeStore.listPendingPkb();
+    const pending = getStore().listPendingPkb();
     res.json({ ok: true, data: pending, count: pending.length });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -57,11 +76,7 @@ router.get('/api/admin/knowledge/pending', (_req, res) => {
  */
 router.post('/api/admin/knowledge/:id/approve', (req, res) => {
   try {
-    if (!knowledgeStore) {
-      res.status(503).json({ ok: false, error: 'KnowledgeStore not ready', degraded: true });
-      return;
-    }
-    knowledgeStore.approvePkb(req.params.id, (req.headers['x-user-id'] as string) || 'admin');
+    getStore().approvePkb(req.params.id, (req.headers['x-user-id'] as string) || 'admin');
     res.json({ ok: true, data: { id: req.params.id, status: 'approved' } });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -76,12 +91,8 @@ router.post('/api/admin/knowledge/:id/approve', (req, res) => {
  */
 router.post('/api/admin/knowledge/:id/reject', (req, res) => {
   try {
-    if (!knowledgeStore) {
-      res.status(503).json({ ok: false, error: 'KnowledgeStore not ready', degraded: true });
-      return;
-    }
     const reason = (req.body?.reason as string) || 'No reason provided';
-    knowledgeStore.rejectPkb(req.params.id, (req.headers['x-user-id'] as string) || 'admin', reason);
+    getStore().rejectPkb(req.params.id, (req.headers['x-user-id'] as string) || 'admin', reason);
     res.json({ ok: true, data: { id: req.params.id, status: 'rejected', reason } });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -100,20 +111,12 @@ router.post('/api/admin/knowledge/:id/reject', (req, res) => {
  */
 router.post('/api/admin/knowledge/:id/mark-shareable', (req, res) => {
   try {
-    if (!federatedPipeline) {
-      res.status(503).json({ ok: false, error: 'FederatedPipeline not ready', degraded: true });
-      return;
-    }
-    if (!knowledgeStore) {
-      res.status(503).json({ ok: false, error: 'KnowledgeStore not ready', degraded: true });
-      return;
-    }
     const { text, orgId } = req.body as { text?: string; orgId?: string };
     if (!text || !orgId) {
       res.status(400).json({ ok: false, code: 'VALIDATION_ERROR', message: 'text and orgId required' });
       return;
     }
-    const entry = federatedPipeline.markShareable(req.params.id, text, orgId);
+    const entry = getPipeline().markShareable(req.params.id, text, orgId);
     res.status(201).json({ ok: true, data: entry });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -128,13 +131,10 @@ router.post('/api/admin/knowledge/:id/mark-shareable', (req, res) => {
  */
 router.get('/api/admin/knowledge/federated/pending', (_req, res) => {
   try {
-    if (!federatedPipeline) {
-      res.status(503).json({ ok: false, error: 'FederatedPipeline not ready', degraded: true });
-      return;
-    }
+    const pipeline = getPipeline();
     const pending = [
-      ...federatedPipeline.listByStatus('pending_admin'),
-      ...federatedPipeline.listByStatus('pending_ga'),
+      ...pipeline.listByStatus('pending_admin'),
+      ...pipeline.listByStatus('pending_ga'),
     ];
     res.json({ ok: true, data: pending, count: pending.length });
   } catch (err: unknown) {
@@ -150,12 +150,8 @@ router.get('/api/admin/knowledge/federated/pending', (_req, res) => {
  */
 router.post('/api/admin/knowledge/federated/:id/approve', (req, res) => {
   try {
-    if (!federatedPipeline) {
-      res.status(503).json({ ok: false, error: 'FederatedPipeline not ready', degraded: true });
-      return;
-    }
     const reviewer = (req.headers['x-user-id'] as string) || 'ga-admin';
-    const ok = federatedPipeline.approveByGa(req.params.id, reviewer);
+    const ok = getPipeline().approveByGa(req.params.id, reviewer);
     if (!ok) {
       res.status(400).json({ ok: false, code: 'INVALID_STATE', message: 'Item not in pending_admin state' });
       return;
@@ -174,11 +170,7 @@ router.post('/api/admin/knowledge/federated/:id/approve', (req, res) => {
  */
 router.get('/api/admin/knowledge/federated/degraded', (_req, res) => {
   try {
-    if (!federatedPipeline) {
-      res.status(503).json({ ok: false, error: 'FederatedPipeline not ready', degraded: true });
-      return;
-    }
-    const degraded = federatedPipeline.listByStatus('degraded');
+    const degraded = getPipeline().listByStatus('degraded');
     res.json({ ok: true, data: degraded, count: degraded.length });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -193,16 +185,12 @@ router.get('/api/admin/knowledge/federated/degraded', (_req, res) => {
  */
 router.post('/api/admin/knowledge/federated/ga-weight-drop', (req, res) => {
   try {
-    if (!federatedPipeline) {
-      res.status(503).json({ ok: false, error: 'FederatedPipeline not ready', degraded: true });
-      return;
-    }
     const { gaUserId } = req.body as { gaUserId?: string };
     if (!gaUserId) {
       res.status(400).json({ ok: false, code: 'VALIDATION_ERROR', message: 'gaUserId required' });
       return;
     }
-    const affected = federatedPipeline.checkGaWeightDrop(gaUserId);
+    const affected = getPipeline().checkGaWeightDrop(gaUserId);
     res.json({ ok: true, data: { gaUserId, affectedEntries: affected } });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
