@@ -49,7 +49,16 @@ def extract_write_set(path: str) -> Tuple[Optional[List[str]], Optional[str]]:
                 entries.append(cells[0])
             continue
         if in_table and not line.strip().startswith("|"):
-            if not line.strip() or line.strip().startswith("#"):
+            # D381 (2026-08-16): 标题后空行容忍 — 空行不重置表格状态,
+            # 防止 "### 3.1 写集 (5 修改 + 1 新建)\n\n| 文件 |" 提取失败
+            if not line.strip():
+                continue
+            if line.strip().startswith("#"):
+                # 新标题: 若是写集标题则继续表格, 否则结束
+                if re.match(r"^#{2,4}\s*\d+(\.\d+)*\s*写集", line):
+                    continue
+                in_table = False
+            else:
                 in_table = False
     if not entries:
         return None, f"无写集表: {path}"

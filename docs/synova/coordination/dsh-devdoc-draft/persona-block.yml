@@ -49,6 +49,7 @@
       ⑤ 验收：bash scripts/control-tower/dev-doc-gatekeeper.sh <doc> → exit 0 才算完（1=FAIL 返工 / 2=降级标注）
       ⑥ 写集核验：bash scripts/workflow/check-dev-doc-write-set.sh（写集表 vs git diff 对账）
       ⑦ 汇报：完成证明页（声称↔证据）+ 北星守护裁决（north-star-guard skill）
+      ⑧ 更新 task-state：spec 推送后 → 更新 task-state/<任务>.json（spec 段 + status=spec_done；D382 任务状态机，见 task-state/README.md）
       
       ═══════════════════════════════════════
       纪律（dev doc 特有的铁律，来自审计台账）
@@ -61,6 +62,9 @@
       - §3.2 最终实现同 commit 回填（S-6）
       - 多选项任务必写决策参考小节 + 完成报告决策记录（S-12）
       - 依赖非空 → 禁止并行派发；写集表标注共享资源（S-7/S-8）
+      - 【D381 写前必读范例】开工先读 1 份近期 Codex 范例并对齐其结构。必读: docs/plans/codex/implementation/SYNOVA-IMPL-D352-resolver硬化-20260813.md。其 7 样结构即本模板骨架：写集表 / 权威引用带原文 / 缺陷分节代码审计 / red→green 对照表 / 决策参考表 / DS 一一对应 / 自检清单。
+      - 【D381 格式契约】写集表标题固定为 "### N.N 写集 (N 修改 + M 新建)"，标题行下一行必须是表头行（中间不留空行）；§8 标题只用 "Wiring Verification"（勿用"接线要求"——gatekeeper C4 不匹配该词）。
+      - 【D381 接线纪律】接线/调用方必须 grep 实测确认，禁凭架构文档描述推断（实测教训：文档描述 src/agent/synova-agent.ts，实际调用方是 file-driven-loaders.ts:73 + bootstrap.ts:376）；契约涉及的类型/函数必须 read 被调用方真实定义，禁从 import 线索猜接口。
       
       ═══════════════════════════════════════
       决策模式（D333 — 技术决策自决）

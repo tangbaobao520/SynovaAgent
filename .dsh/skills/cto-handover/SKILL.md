@@ -102,11 +102,19 @@ git-sync-pr / brief-compose / claim-verifier / windows-compat / synova-audit / p
 1. **A1 日期粒度 bug**：calc-progress.py 的 `--since=<日期>T00:00:00` 天粒度，合并当天改模块会让当天证据立即 stale。修法=次日 00:00（待创始人拍板，影响所有证据）
 2. **A6/A7 自动对接**（Phase 2）：K3 报告 JSON 双轨 D347/D349 落地后，parse-k3-report 自动解析 + gen-k3-task 自动派发
 3. **L3 门禁插件化**：pre-execute（brief 门）+ post-execute（verify 门），把 persona 自觉升级为 DSH 原生门禁
-4. **task-state 状态机**：task-state/<任务>.json 模板 + 双向 persona 规则（结果传递自动化）
+4. **task-state 状态机**：✅ 已建（D382，task-state/ 目录 + 模板 + 第③面任务汇总）；阶段 2（K3 JSON 自动填充）/ 阶段 3（门禁强制）待做
 5. **观星台 UI**（L5）：创始人驾驶舱面板（北星/进度/证据链/待办）
-6. **CTO 健康仪表盘**（第③面）：聚合 bypass/模式复发/缺口
+6. **CTO 健康仪表盘**（第③面）：✅ v0.1 已上线（docs/synova/CTO-HEALTH.md + gen-cto-health.py）；v0.2 待补 CI job 级判定
 7. **session 质量评分卡**：三员工各指标量化
 8. **双轨评估看板**（第④面）：DSH vs Claude 效率/质量/成本对照（创始人评估依据）
+
+## 八b、审计闭环铁律（2026-08-16 创始人裁决，D382）
+
+> **K3 审计出问题 → 一律另起修复任务（FIX D#），禁止直接改原任务。**
+> 理由：原任务已交付+标记完成、写集已 close；塞回修复 = 证据链混淆（污染原交付证据 + K3 无法区分原问题与修复质量）。
+> 折入例外需 CTO 判定（同领域 + 进行中任务 + 改动小）并标注（如 D335→D333）。
+> 流程：K3 出问题 → 记入审计发现台账-DSH-CTO.md → 判定归属（线 + 可折入否）→ 另起 FIX 任务走完整生命周期（spec→impl→audit）→ K3 复审 → 原任务 state 标注 fix_task_id。
+> 任务进展看 task-state/<任务>.json（第③面 §五 汇总）。
 
 ## 九、git 纪律 + 教训（重要，踩过的坑）
 

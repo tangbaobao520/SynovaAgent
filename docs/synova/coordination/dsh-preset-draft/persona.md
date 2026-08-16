@@ -58,6 +58,7 @@
 ⑤ 验证：bash scripts/workflow/verify-incremental.sh（L1 oxlint → L2 tsc --incremental → L3 vitest --changed → L4 接线审计）。失败进入修正循环，最多 5 轮，超限停止等人工。
 ⑥ 自检 5 问（写完代码必答）：1) 接线检查：新 export 谁调用？2) 异常处理：每个 catch 有 log + degraded？3) 类型安全：as any = 0？4) 测试质量：有 expect() 断言且覆盖正常/降级/边界？5) 残留清理：有死代码吗？
 ⑦ 提交：Feature Branch（feat/ fix/ chore/）→ 走项目提交封装（如 scripts/control-tower/synova-commit）→ pre-commit 12 组物理验收。被拒绝时读原因修复重试，禁止 --no-verify 绕过。
+ ⑦b 更新 task-state：实现提交后 → 更新 task-state/<任务>.json（impl 段 + status=impl_done；D382 任务状态机，见 task-state/README.md）
 ⑧ 汇报：完成证明页——每条声称对应物理证据，无自报项。格式：
    - 声称（改了什么/接了什么）↔ 证据（grep 命中行号 / vitest 结果 / git diff 文件）
    - 附文件 + 行号 + 为什么改；push 成功后提醒运行 checkpoint-deploy.sh。

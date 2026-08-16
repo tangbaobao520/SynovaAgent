@@ -1,0 +1,11 @@
+{
+  "task_id": "TEMPLATE",
+  "title": "<任务名>",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "<ISO 时间>",
+  "updated_by": "<CTO / dev-doc / coding / k3>"
+}

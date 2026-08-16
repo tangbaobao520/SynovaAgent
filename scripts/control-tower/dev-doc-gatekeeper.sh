@@ -2,7 +2,7 @@
 # ═══════════════════════════════════════════════════════════════════════════════
 # dev-doc-gatekeeper.sh — Dev Doc 校验网守 (D206)
 #
-# 权威文档 #17 Ch3 S1.1：在 dev doc 分发给 Claude Code 前，必须通过 5 项
+# 权威文档 #17 Ch3 S1.1：在 dev doc 分发给 Claude Code 前，必须通过 6 项
 # 机械验证。防止已知错误模式传播到实现阶段。
 #
 # 用法:
@@ -13,12 +13,13 @@
 #   1 = FAIL（不能分发 — 有阻断项）
 #   2 = DEGRADED（检查自身降级，允许分发但告警）
 #
-# 5 项强制检查:
+# 6 项强制检查:
 #   C1: Edge ID 存在性 — 每个 E-XX 在代码中真实存在
 #   C2: 文件路径存在性 — 每个 src/extensions/packages 路径真实存在
 #   C3: Test Requirements 章节 — 包含 L1/L2a/L2b/L2c
 #   C4: Wiring Verification 章节 — 包含调用方文件路径
 #   C5: Authority Doc Verification 章节 — 包含来源路径引用
+#   C6: 写集表存在性 — devdoc_writeset --extract 提取失败 = FAIL (D381 堵 fail-open)
 # ═══════════════════════════════════════════════════════════════════════════════
 set -uo pipefail
 
@@ -175,6 +176,43 @@ if grep -qiE "Authority Doc|Auth Doc|权威文档|权威文档原文" "$DOC_PATH
   fi
 else
   check_fail "C5: 缺少 Authority Doc Verification 或 Auth Doc 章节"
+fi
+echo ""
+
+# ═══════════════════════════════════════════════════════════
+# C6: 写集表存在性 (D381, 2026-08-16 — 堵 fail-open)
+# 背景: check-dev-doc-write-set.sh 无写集表时 SKIP + exit 0 (fail-open),
+#       maker 第一版 dev doc 无写集表照样过门 (M1 活实例)。
+# 规则: devdoc_writeset.py --extract 提取不到写集表 → FAIL (阻断), 不再 SKIP。
+# ═══════════════════════════════════════════════════════════
+
+echo "── [C6] 写集表存在性 (devdoc_writeset --extract) ──"
+
+# PYBIN 可用性探测 (D330: 损坏 shim 静默漏拦教训 — 探测后须试运行)
+C6_PYBIN=""
+for _c in python3 python; do
+  if command -v "$_c" >/dev/null 2>&1 && "$_c" -c "import sys" >/dev/null 2>&1; then
+    C6_PYBIN="$_c"
+    break
+  fi
+done
+
+if [ -z "$C6_PYBIN" ]; then
+  check_fail "C6: python 不可用/损坏 — 写集表检查无法执行 (fail-closed, 不降级放行)"
+else
+  C6_JSON=$("$C6_PYBIN" "$SCRIPT_DIR/devdoc_writeset.py" --extract "$DOC_PATH" 2>&1)
+  C6_RC=$?
+  if [ "$C6_RC" -ne 0 ]; then
+    check_fail "C6: 写集表检查执行失败 (rc=$C6_RC)"
+  else
+    C6_STATUS=$(echo "$C6_JSON" | "$C6_PYBIN" -c "import json,sys; print(json.load(sys.stdin).get('status',''))" 2>/dev/null) || C6_STATUS="" # swallow-ok: 解析失败 → 空 → 走 FAIL 分支 (fail-closed, D381)
+    if [ "$C6_STATUS" = "ok" ]; then
+      C6_N=$(echo "$C6_JSON" | "$C6_PYBIN" -c "import json,sys; print(len(json.load(sys.stdin).get('entries',[])))" 2>/dev/null) || C6_N="0" # swallow-ok: 计数失败 → 0, 仅展示用
+      check_pass "C6: 写集表存在, 提取到 $C6_N 个条目"
+    else
+      check_fail "C6: 写集表缺失或格式错误 (devdoc_writeset: $C6_JSON)"
+    fi
+  fi
 fi
 echo ""
 
