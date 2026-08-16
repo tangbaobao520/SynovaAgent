@@ -30,6 +30,8 @@
 | 08-12 | K3 权威偏差 v1.1 | 改判 | D-G2"已修复"→"引擎已修复，数据链路未担保"（gate-status 缺失 + 快照 11 天 + 自检盲区）；组 11 并入组 4（12 组计数口径 → D3）；铁律 38 确认全仓扫描 | 复核深化 | 演示前 checklist + D339 | 控制塔+文档 |
 | 08-14 | K3 全链路审计 | P0×3 / P1×5 / P2×6 | **Agent 核心能力全链路 FAIL（0/3 贯通）**：L5 无 CRM/财务/HR 连接器；L4 类型契约断裂（Market≠Client、People≠Person、Event/Tool 零写入方）+ 属性契约断裂（cashBalance≠cash）+ filter bug（compute-cash-runway-months.ts:60）；P0 哨兵阈值告警生产死代码（sentinel-loader 从不挂 manifest）；L4 查询层静默 fail-open（schema 漂移只 warn 返回空）。活运行证明 L3 计算能力本身是真的，断裂在数据进出两端 | L5 连接器缺失 + L4 契约失配 + manifest 死代码 + fail-open | D355-D360（见仪表盘） | 产品 |
 | 08-15 | K3 D366 审计 | P1×3 / P2×5 | **CONDITIONAL PASS（无 P0）**：DS1-DS8 八项物理一致（newermt=0、4 处生产调用、无 rm、T1/T2 双侧 15/15+12/12 绿、写集 9/9、版本三同步），自报偏离 a-i 全部诚实。**T3 故障注入发现 2 个新引入边缘回归**：P1-1 git commit --amend 必触发 detected-bypass head-mismatch 误报（marker 记旧 commit、HEAD^ 恒不等，一次 amend=当日提交死锁，CT-29 同型）；P1-2 D 前缀 brief 被"今日集合"物理排除（today_files_by_prefix 只匹配 YYYY-MM-DD-*，D 前缀 session 提交代码文件被 G12 阻断，§2.3 记录两种命名但方案只覆盖一种）；P1-3 dev doc 从未进入实现分支树（契约链分岔）。项 13 CI pending DEGRADED | 判定语义层缺口（dev doc 引用 CT-28 却语义层重蹈覆辙） | D373 | 控制塔 |
+| 08-16 | K3 D355 审计 | P1×1 / P2×2 | **CONDITIONAL PASS（无 P0）**：P0-2 写侧契约收敛（3 JSON 对齐读侧）+ P0-3 fail-open 修复物理成立（T1/T2 24/24 绿 + T3 三组故障注入：真实旧库自动迁移、视图异常抛错、只读库抛错均 fail-closed）。P1-1 **版本幻影**（commit 声称 V4.7.10，VERSION.md/version.log/tag 三处零同步，且序号落后 V4.8.0）；P2-1 dev doc 写集表未回填（实际 6 修改+3 新建 vs doc 写 4+3）；P2-2 schema-migration.ts 注释陈旧。**正面（L4 发现 3）**：D307 worktree 隔离生效——D355 与 D366/D373 同机并行零暂存区竞争，bypass 证据链首次归属到 worktree 级 | 版本编排 + S-6 回填未执行 | P1-1 补 VERSION.md 条目；P2 回填 | 控制塔+skill |
+| 08-16 | K3 D363 审计 | P1×1 / P2×4 | **CONDITIONAL PASS（无 P0）**：failover 接线物理成立（17/17 双侧 + K3 真实网络注入：连接拒绝/HTTP 500/双死/healthCheck），CI job 级 API 核实零偏差，S-6 回填+决策记录到位（交付质量创系列新高）。P1-1 **stream 混流**（主 provider 中途断流→调用方收到主残余+备全文拼接，既有 chain 代码缺陷本次接线暴露）；P2-1 任务 ID D363 复用（5b78a1c 审计登记与本任务混同）；P2-2 bypass 证据滞留 worktree；P2-3 无版本编排；P2-4 LLMClient 路径（GA 诊断）failover 缺（接口不兼容 descope） | 既有 chain 缺陷暴露 + ID 分配无唯一性校验 | P1-1 stream 改"首 token 前才 failover"；P2-4 单独立项 | 产品+控制塔 |
 
 ## 二、模式归纳（跨审计复现的根因类）
 
@@ -83,6 +85,10 @@
 | CT-32 | **判定语义变更缺"新旧过滤器等价集对账"DS**：判定类门禁的语义变更，DS 必须含新旧逻辑等价集对账（真实目录跑新旧过滤器，输出集合 diff 为空或逐项豁免）——D366 改了 mtime→文件名日期，但 DS 只验"newermt 清零+调用数"，没验"新旧今日集合等价"，导致 D 前缀 brief 语义回归（dev doc 引用 CT-28 却语义层重蹈覆辙） | K3 D366 审计 L4 发现 2（P1-2） | 🔧 并入 D373 + S 队列 |
 | CT-33 | **分支与 brief 无对账**：G12 skip_re 豁免 docs/ 使文档类越界提交对 scope 门禁不可见（分支污染）；brief 头部"分支"字段从不与 `git branch --show-current` 对账（死文本）——commit 时 brief 声明分支与当前分支对账，或删除该字段 | K3 D366 审计 L4 发现 3（P2-5） | 🔧 并入 D373 或健康审计批次 |
 | CT-34 | **文档提交豁免严格门禁（只保留 Secrets 扫描）**：文档（docs/、.claude/task-briefs/、memory/ 等）提交仅为跨机器（Mac/未来同事）同步信息，不应与代码同跑 13 组严格门禁。现状卡点（实证）：①组 6 时间戳顺序（before-brief 残留）不区分文档/代码，文档提交被误拦（D362 文档拉平 + D366 审计登记反复卡）；②G12b brief 可解析性对暂存 brief 触发；③task brief/Q2 范围/测试/接线/架构/契约对纯文档无意义。豁免：12 组（task brief + Q2 范围 + 时间戳 + 测试 + 接线 + 架构 + 契约 + 类型 + 文件驱动 + CP3 + scope + 技能）；保留：**Secrets 扫描**（文档同样泄密，D312 settings.json token 实证）。文档"真实性"不靠 pre-commit，靠 K3 审计兜底（声称 vs 事实复核）。归属：门禁脚本 scripts/pre-commit-check.sh 是 DSH 地盘，由 DSH 实现 | 2026-08-16 创始人决策 + D362/D366 文档提交反复卡门禁实证 | 🔧 DSH 排期（新 D#） |
+| CT-35 | **版本号幻影门禁**：commit message 携带 `Vx.y.z` 时，同 commit 必须含 VERSION.md 对应条目变更（未落库版本号不得出现在消息）；铁律"版本只增不减"加序号方向校验（新条目不得落后于现存顶端）。D355 P1-1 实证（声称 V4.7.10 但三处零同步且落后 V4.8.0） | K3 D355 审计 L4 发现 1 | 🔧 门禁脚本（DSH 地盘） |
+| CT-36 | **故障注入测试缺"失败时间点"维度**：stream/分页/批量类接口的降级测试必须覆盖"部分数据已交付后失败"场景（首 token 前/后/onComplete 前）；failover 语义（重试=内容重来）需在契约层显式定义"混流是否可接受"。D363 P1-1 实证（stream 混流） | K3 D363 审计 L4 发现 1 | 🔧 并入 S 队列（dev doc skill） |
+| CT-37 | **能力存在性判定的近义词簇 grep**：K3 审计协议增补——能力存在性判定前，grep 关键词必须含近义词簇（failover\|chain\|circuit\|retry\|切换\|降级）；"零生产调用方的已实现能力"单独立项为"建成未接线"（铁律 37），不得并入"不存在"。D363 实证（K3 用 fallback 单关键词误判 failover 不存在，实为建成未接线） | K3 D363 审计 L4 发现 2（审计侧收割） | 🔧 K3 审计协议 |
+| CT-38 | **任务 ID 唯一性校验**：注册新 ID 前 grep 既有 brief/提交/bypass.log 是否已占用（防 ID 复用）。D363 P2-1 实证（5b78a1c 审计登记与本任务共用 D363） | K3 D363 审计 L4 发现 3 | 🔧 任务 ID 分配处 |
 | 权威18 | 审计体系冲刺（7 任务重编号 D343-D349）：D343 bypass A+B（P0）/ D344 报告git+dispatcher（P0）/ D345 doc-audit / D346 组13 / D347 JSON规范 / D348 CLAIM标签化（5份核心80%，按§5.5+验收#7）/ D349 JSON生成器 | 权威文档 18（2026-08-12） | 📝 D343-D349 待写 dev doc |
 | 决策 | N14 去重窗口 ✅ 裁决 A（文档改 5 分钟，任务地图 v2 已改 2026-08-13）｜P0-8 boss 角色 ✅ 裁决 A（ENT 补 → D351）｜npm audit ⏳ 待裁（建议豁免并入 D309/D310） | 创始人 2026-08-13 | 🔄 D351 待写 + D339 含 N14 |
 | 08-13 | K3 D331 复审 | P1×1 | **DS13 静默消失**：dev doc 承诺 resolver 硬化（PYBIN 探测 + 退出码 0/1/2）零交付，交付声明止于 DS12 无 descope——D330 L4#2 同构复发；broken-python 门禁仍不拦截、无 brief 仍误标 degraded | dev doc 完成标准 ⊆ 交付声明无对账机制 | D352（补做）+ S-10（skill） | skill+控制塔 |
@@ -150,4 +156,31 @@ K3 发现 → 查本台账 M 模式 → 归属判定
 | 2026-08-13 | K3 权威偏差 v2：N13 根因加深（placeholder 假成功 + 伪造 completed）→ D333 扩为循环执行体真实化；铁律 38 改判退回（packages 81 处 as any）→ D353；N14 真问题去重键 → D354；D335 吸收；D5 文档 → D339 |
 | 2026-08-13 | 决策参考机制建立（DECISION-REFERENCE.md）：四步框架（第一性原理→Anthropic→DeepSeek 开源实证→收敛检查）+ 记录参考系强制；S-12 入 dev-doc skill（多选项任务必填决策参考小节 + 完成报告决策记录） |
 | 2026-08-15 | **DSH 审计闭环建立**：① 决策模式（D333）写入 synova-dsh persona——技术决策自决四步 + 记录参考系 + 收敛直接执行，只有产品/业务决策问创始人（创始人无代码基础，禁止转嫁技术决策）；② 审计免疫写入 persona——K3 发现 → 查台账 M 模式 → 归属判定（DSH 犯错→persona 规则；控制塔缺陷→CT 队列；审计脚本→只转达 K3）；③ 本台账新增 §四 DSH 防线映射（M1-M8 → persona 规则）；④ 台账维护权扩至 DSH（创始人批准） |
-| 2026-08-16 | **哨兵口径核实（D378，CTO 审计后更新）**：哨兵为双体系——文件驱动 45 个（extensions/sentinels/，42 个在顶层 manifest + 3 个规范外：path-dependency / sentinel-forecast-accuracy / sentinel-pricing-strategy）+ 内置适配器 4 个（src/sentinel/adapters/）= **49 活跃**，另有 12 个退役（_extinct/）。**发现 3 个新事实**：①交接文档与 AGENTS.md 的「26/20 哨兵」口径过时（源头=台账 D339 计划名未落地，D339 编号被 quotepath 修复占用，编号冲突）；②**path-dependency 哨兵空壳**（manifest entryPoint 指向不存在的 computes/detect.ts，registerLoadedSentinels 将报错，实际可注册 44/45）；③台账 D360「规范外哨兵 2 个」应为 3 个。修正：AGENTS.md / cto-handover skill（.claude+.dsh）/ DASHBOARD-CN 三处口径统一为 45+4=49；D360 计数修正。**遗留：path-dependency 空壳补实现（归属 DSH 哨兵切片）** |
+
+## 六、流程减负清单（省时不丢质量，2026-08-16 创始人提出）
+
+> 依据：D362 文档拉平、D355/D363 提交、D307 验收期间积累的一手时间黑洞证据。原则：只减「纯摩擦/重复劳动」，不动「质量根」（代码门禁 + K3 审计）。
+
+### 6.1 减负项（省时点，按优先级）
+
+| # | 减负项 | 省什么时间 | 为什么不丢质量 | 归属 | 优先级 |
+|---|--------|-----------|--------------|------|:---:|
+| 1 | 文档提交豁免（CT-34） | 文档提交从反复卡几十轮 → 秒级（只跑 Secrets） | 文档真实性靠 K3 审计兜底，不靠 pre-commit | DSH（执行中） | P0 |
+| 2 | worktree 初始化脚本 | 新 worktree 一键就绪，免每次手动 safe.directory（dubious ownership）/ SSH host key / 清 index.lock | 纯环境配置，与质量零关系 | DSH | P0 |
+| 3 | bypass 补记自动化（BACKFILL 标记） | 手动补记（完整 40 位 hash + 双 worktree 分别补）→ 自动 + BACKFILL 区分真实/补记 | 证据链机制保留，只自动化补记动作 | DSH | P1 |
+| 4 | 版本编排统一入口（CT-35） | 孤儿 tag / 幻影版本号（V4.8.0 孤儿、V4.7.10 未落库）从源头消失 | 版本三同步（VERSION.md/version.log/tag）约束保留 | DSH | P1 |
+| 5 | 任务 ID 唯一性校验（CT-38） | ID 复用（D363 被用两次）的混同排查省掉 | ID 唯一性保障证据链/仪表盘对账 | DSH | P1 |
+| 6 | synova-commit 双重执行消除 | 门禁跑两次（synova-commit 内部跑 + git commit hook 再跑）→ 一次（D362 实测 554s 超时根因） | 门禁内容不变，只去掉重复执行 | DSH | P1 |
+
+### 6.2 保留项（防误伤——这些不减）
+
+| 保留项 | 为什么不减 |
+|--------|-----------|
+| 代码提交 13 组门禁（类型安全/Secrets/接线/架构/测试） | 质量根，一毫米不动 |
+| K3 审计 T1/T2/T3 故障注入 | 抓真相的唯一关卡（D363 stream 混流就是 T3 抓的） |
+| S-6 dev doc 回填 + S-10 DS 对账 | 防「文档-实现漂移」 |
+| 接线验收（生产调用点 ≥1） | 防「机制建成未接线」（M3 模式） |
+
+### 6.3 结论
+
+效率降低的根因不是「质量要求变高」，而是**文档提交跑代码门禁 + worktree 环境摩擦 + 证据链补记重复劳动**三类纯摩擦。§6.1 五项落地后，这三类摩擦消掉大半，§6.2 的质量根不受影响。
