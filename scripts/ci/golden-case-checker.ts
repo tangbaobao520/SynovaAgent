@@ -11,6 +11,17 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
+import {
+  runComputeSnapshot,
+  runFindingsSnapshot,
+  runExpertReportAssertion,
+} from './golden-snapshot-runner';
+import type {
+  ComputeSnapshotSection,
+  FindingsSnapshotSection,
+  ExpertReportSection,
+  SnapshotCheckResult,
+} from './golden-snapshot-runner';
 
 // ═══ 类型定义 ═══
 
@@ -22,6 +33,12 @@ export interface GoldenCase {
   frozenAt: string;
   input: GoldenCaseInput;
   expected: GoldenCaseExpectation;
+  /** D396: compute 快照段（可选，向后兼容旧 fixture） */
+  compute?: ComputeSnapshotSection;
+  /** D396: findings 快照段（可选） */
+  findings?: FindingsSnapshotSection;
+  /** D396: 专家报告结构断言段（可选） */
+  expertReport?: ExpertReportSection;
 }
 
 interface GoldenCaseInput {
@@ -74,6 +91,12 @@ interface CheckerReport {
     title: string;
     passed: boolean;
     f1: Omit<F1Result, 'passed'>;
+    /** D396: 三层快照结果（存在则记录，不存在则为 undefined） */
+    snapshot?: {
+      compute?: SnapshotCheckResult;
+      findings?: SnapshotCheckResult;
+      expertReport?: SnapshotCheckResult;
+    };
   }[];
   summary: string;
 }
@@ -233,17 +256,24 @@ function runAllChecks(): CheckerReport {
 
     // 推导实际结果
     const actualResult = deriveActual(caseData);
-    // 计算 F1
+    // 计算 F1（判定逻辑冻结，D396 只加快照层不改判定）
     const f1 = computeF1Score(actualResult, caseData.expected);
-    const passEmoji = f1.passed ? '✅' : '❌';
+
+    // D396: 三层快照检查（向后兼容——旧 fixture 无快照段则跳过）
+    const snapshotResults: NonNullable<CheckerReport['results'][number]['snapshot']> = {};
+    if (caseData.compute) snapshotResults.compute = runComputeSnapshot(caseData.compute);
+    if (caseData.findings) snapshotResults.findings = runFindingsSnapshot(caseData.findings);
+    if (caseData.expertReport) snapshotResults.expertReport = runExpertReportAssertion(caseData.expertReport);
+    const snapshotPassed = Object.values(snapshotResults).every((r) => r.passed);
+    const casePassed = f1.passed && snapshotPassed;
+
+    const passEmoji = casePassed ? '✅' : '❌';
     const resultLine = `  ${passEmoji} ${caseData.id}: ${caseData.title}`;
 
     if (f1.passed) {
-      passedCases++;
-      console.log(`${resultLine} — PASS (边缘=1.0, 节点=1.0, 级别=${f1.severityMatch})`);
+      console.log(`${resultLine} — F1 PASS (边缘=1.0, 节点=1.0, 级别=${f1.severityMatch})`);
     } else {
-      failedCases++;
-      console.log(`${resultLine} — FAIL`);
+      console.log(`${resultLine} — F1 FAIL`);
       console.log(`     边缘命中率: ${(f1.edgeHitRate * 100).toFixed(0)}% (预期: ${f1.details.expectedEdgeIds.join(', ')})`);
       if (f1.details.missingEdges.length > 0) {
         console.log(`     缺失边: ${f1.details.missingEdges.join(', ')}`);
@@ -251,18 +281,42 @@ function runAllChecks(): CheckerReport {
       console.log(`     节点匹配率: ${(f1.nodeMatchRate * 100).toFixed(0)}% (预期: ${f1.details.expectedNodeTypes.join(', ')})`);
       console.log(`     级别一致: ${f1.severityMatch} (预期: ${f1.details.expectedSeverity}, 实际: ${f1.details.actualSeverity})`);
     }
+
+    // 快照层输出（diff 逐行打印，红-绿演练据此点名 signal）
+    if (snapshotResults.compute) {
+      const r = snapshotResults.compute;
+      console.log(`     compute 快照: ${r.passed ? 'PASS' : 'FAIL'}`);
+      if (!r.passed) for (const d of r.diffs) console.log(`       - ${d}`);
+    }
+    if (snapshotResults.findings) {
+      const r = snapshotResults.findings;
+      console.log(`     findings 快照: ${r.passed ? 'PASS' : 'FAIL'}`);
+      if (!r.passed) for (const d of r.diffs) console.log(`       - ${d}`);
+    }
+    if (snapshotResults.expertReport) {
+      const r = snapshotResults.expertReport;
+      console.log(`     专家报告结构断言: ${r.passed ? 'PASS' : 'FAIL'}`);
+      if (!r.passed) for (const d of r.diffs) console.log(`       - ${d}`);
+    }
+
+    if (casePassed) {
+      passedCases++;
+    } else {
+      failedCases++;
+    }
     console.log('');
 
     results.push({
       caseId: caseData.id,
       title: caseData.title,
-      passed: f1.passed,
+      passed: casePassed,
       f1: {
         edgeHitRate: f1.edgeHitRate,
         nodeMatchRate: f1.nodeMatchRate,
         severityMatch: f1.severityMatch,
         details: f1.details,
       },
+      snapshot: Object.keys(snapshotResults).length > 0 ? snapshotResults : undefined,
     });
   }
 

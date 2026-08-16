@@ -1,0 +1,32 @@
+{
+  "$schema": "https://synova.dev/schemas/golden-case-v1.json",
+  "id": "golden-case-11-cash-runway-threshold",
+  "title": "现金流阈值告警（D356 修复对象）",
+  "description": "现金流 100k / 月支出 30k → runway 3.3 月 < 6 → critical。冻结 compute 快照 + F1 断言。改坏 cash-runway.ts 阈值（如 <6 改 <3）→ 快照 signal 漂移 → 门禁红。",
+  "frozenAt": "2026-08-16T00:00:00Z",
+  "DO_NOT_MODIFY": "Frozen snapshot — update expectations only on 42-edge major version change",
+  "input": {
+    "sentinelFindings": [
+      { "id": "F011", "sentinel": "cash-runway", "severity": "critical", "title": "现金流不足 6 个月", "matchedEdgeIds": ["E-05"], "detectedAt": "2026-08-16T00:00:00Z" }
+    ],
+    "graphEdges": ["E-05"]
+  },
+  "expected": {
+    "rootCauseEdgeIds": ["E-05"],
+    "rootCauseNodeTypes": ["CAPITAL_ACQUISITION"],
+    "severity": "critical",
+    "matchedEdgeIds": ["E-05"],
+    "explanation": "现金流不足 6 个月 → CAPITAL_ACQUISITION 边"
+  },
+  "compute": {
+    "function": "computeCashRunway",
+    "input": [{ "cash": 100000, "operatingExpense": 30000 }],
+    "snapshot": {
+      "runwayMonths": 3.3,
+      "monthlyBurn": 30000,
+      "signal": "critical",
+      "degraded": false,
+      "warnings": []
+    }
+  }
+}

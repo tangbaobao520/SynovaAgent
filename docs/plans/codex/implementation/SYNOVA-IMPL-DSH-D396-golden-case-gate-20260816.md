@@ -66,16 +66,19 @@ fixtures 现状（10 条，[tests/fixtures/golden-cases/](tests/fixtures/golden-
 
 ## 3. 实现方案
 
-### 3.1 写集 (1 修改 + 3 新建)
+### 3.1 写集 (3 修改 + 2 新建)
 
 | 文件 | 操作 | 说明 |
 |------|:---:|------|
-| [scripts/ci/golden-case-checker.ts](scripts/ci/golden-case-checker.ts) | 修改 | 新增**快照层**（不改 `computeF1Score`/`deriveActual` 判定逻辑）：① `computeFnRegistry`（compute 函数名 → 真实函数映射）；② `runComputeSnapshot(caseData)` 导出函数；③ `runAllChecks()` 追加 compute/findings/专家报告三层 diff 阶段 |
-| [scripts/ci/golden-snapshot-runner.ts](scripts/ci/golden-snapshot-runner.ts) | 新建 | 快照执行器：import 真实 compute/哨兵 aggregate 函数，按 fixture `compute` 段执行 + 结构化 diff（纯函数，可单测） |
+| [scripts/ci/golden-case-checker.ts](scripts/ci/golden-case-checker.ts) | 修改 | `GoldenCase` 类型加可选 `compute`/`findings`/`expertReport` 段 + `runAllChecks()` 追加 compute/findings/专家报告三层 diff 阶段（**不改 `computeF1Score`/`deriveActual` 判定逻辑**；执行器/registry 在 golden-snapshot-runner.ts） |
+| [scripts/ci/golden-snapshot-runner.ts](scripts/ci/golden-snapshot-runner.ts) | 新建 | 快照执行器：`computeFnRegistry` + `runComputeSnapshot`/`runFindingsSnapshot`/`runExpertReportAssertion`，import 真实 compute 函数，按 fixture 快照段执行 + 结构化 diff（纯函数，可单测） |
 | [tests/fixtures/golden-cases/golden-case-11-cash-runway-threshold.json](tests/fixtures/golden-cases/golden-case-11-cash-runway-threshold.json) | 新建 | 示范黄金用例（D356 修复对象 cash-runway 阈值的最小数据副本 + 冻结 compute 快照） |
-| [tests/ci/golden-case-checker.test.ts](tests/ci/golden-case-checker.test.ts) | 新建 | 快照层测试（≥10 用例，含"故意改坏 → 红 → 恢复 → 绿"红-绿演练用例，见 §4） |
+| [tests/ci/golden-case-checker.test.ts](tests/ci/golden-case-checker.test.ts) | 修改 | 扩展快照层测试（≥10 新用例，含红-绿演练 + 降级 + 边界，见 §4） |
+| [tests/ci/golden-case-gate.test.ts](tests/ci/golden-case-gate.test.ts) | 修改 | D300 硬编码断言 `files.length = 10` → `11`（新增 golden-case-11 必然打破，必要同步） |
 
 > 说明：黄金用例 fixtures 随每个 D355-D360 修复同 PR **增量添加**（每修复一条）；本 spec 固化契约 + 示范 1 条（cash-runway 阈值，D356 对象）。写集表列示范条目，其余按同契约新增。
+>
+> 实现偏差记录（S-12，K3 可核）：原 §3.1 未预见 `tests/ci/golden-case-gate.test.ts` 的 D300 硬编码断言 `files.length = 10`——新增 golden-case-11 必然使其打破（vitest 全量红，铁律 36）。故实现时同步该断言 `10 → 11` 并纳入写集（声明 = 实际，D286 漂移教训）。`golden-case-checker.test.ts` 原 spec 标「新建」实为已存在（D51/D300），实现为「修改」（扩展快照层测试）。
 
 ### 3.2 修复模式
 
