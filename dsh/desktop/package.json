@@ -1,0 +1,15 @@
+{
+  "name": "@synova/dsh-desktop",
+  "version": "0.1.0",
+  "description": "SynovaAgent 控制塔桌面壳——把 DSH Web GUI（含三仪表盘右栏）封装为 macOS 原生应用。方案 A：壳 + 本地 dsh web 服务，零侵入。",
+  "private": true,
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev"
+  },
+  "devDependencies": {
+    "electron": "^33.4.11"
+  },
+  "license": "MIT"
+}

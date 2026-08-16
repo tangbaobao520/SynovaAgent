@@ -1,0 +1,11 @@
+{
+  "task_id": "D388",
+  "title": "dsh-desktop 控制塔桌面壳（方案A 壳+本地服务）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-16",
+  "updated_by": "alloc-task-id"
+}
