@@ -14,8 +14,15 @@
   "audit": {
     "report": "docs/synova/audit-reports/2026-08-16-D383.md",
     "verdict": "CONDITIONAL_PASS",
-    "by": "k3",
-    "at": "2026-08-16"
+    "by": "K3",
+    "at": "2026-08-16",
+    "findings": [
+      "P1-1 写集漂移: brief 声称 25 文件实际 23; TASK-ROUTING.md 派活登记未提交 + D356/D379 spec 未入库(声称'dev-doc spec 入库'不实)",
+      "P1-2 D382 编号撞车: task-state 状态机 vs doc-commit-exempt dev doc 共用 D382",
+      "P1-3 CTO-HEALTH.md 产物数据无源(提交内 44/6 vs bypass.log 27/0) + D383 提交无 bypass.log 记录(M4 第三次, 升级创始人)",
+      "P1-4 gen-cto-health.py 幂等声称不实(时间戳恒写文件) + 329 行零测试",
+      "P2×5: D383.json 未提交 + files 非数组; gen-cto-health 无自动接线; 编号规范漂移; 工作区 335 文件未提交; pre-commit 时间戳晚于提交"
+    ]
   },
   "fix_task_id": "D384",
   "updated_at": "2026-08-16",
