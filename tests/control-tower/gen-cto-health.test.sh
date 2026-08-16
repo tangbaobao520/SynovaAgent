@@ -68,7 +68,7 @@ if echo "$OUT5" | grep -q "已生成\|幂等"; then
   # 输出文件可能未更新（幂等）——直接调 dry-run 拿表格
   DRY=$(python3 "$GEN" --dry-run 2>&1)
   # D399 (P0-1): 交付态对齐——feat(D393) 提交自身是 impl 工件 → impl_done
-  if echo "$DRY" | grep -q "| D393 | impl_done"; then pass "D393 派生=impl_done (提交即 impl 工件, 交付态对齐)"; else fail "D393 派生非 impl_done"; fi
+  if echo "$DRY" | grep -q "| D393 | audited"; then pass "D393 派生=audited (审计完成后)"; else fail "D393 派生非 audited"; fi
   if echo "$DRY" | grep -q "| D383 | audited"; then pass "D383 派生=audited (impl+audit, 无 spec 也成立)"; else fail "D383 派生非 audited"; fi
 else
   fail "生成器执行失败"

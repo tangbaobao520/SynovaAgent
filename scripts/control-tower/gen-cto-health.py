@@ -264,6 +264,23 @@ def analyze_task_state() -> list:
     return tasks
 
 
+def analyze_ci() -> dict:
+    """CT-41①: CI 状态入仪表盘 — GitHub API 匿名拉最近 runs. 失败降级."""
+    runs = []
+    try:
+        import urllib.request
+        url = "https://api.github.com/repos/tangbaobao520/SynovaAgent/actions/runs?per_page=8"
+        req = urllib.request.Request(url, headers={"Accept": "application/vnd.github+json"})
+        with urllib.request.urlopen(req, timeout=10) as r:
+            d = json.loads(r.read().decode("utf-8"))
+        for run in d.get("workflow_runs", [])[:8]:
+            runs.append({"num": run.get("run_number"), "conclusion": run.get("conclusion") or "pending",
+                         "title": (run.get("display_title") or "")[:50], "branch": (run.get("head_branch") or "")[:25]})
+        return {"runs": runs, "degraded": False}
+    except Exception:  # noqa: BLE001
+        return {"runs": [], "degraded": True}
+
+
 def verdict(bypass: dict, fail: dict, m_recur: list) -> str:
     """健康判定 (v0.1: 红=物理绕过; 黄=历史复发/降级需确认; 绿=干净)."""
     if bypass["last24h"]["detected-bypass"] > 0:
@@ -277,7 +294,8 @@ def verdict(bypass: dict, fail: dict, m_recur: list) -> str:
     return "🟢 绿 — 无绕过, 门禁在拦截, 防线健康"
 
 
-def render(bypass: dict, fail: dict, ledger: dict, tasks: list) -> str:
+def render(bypass: dict, fail: dict, ledger: dict, tasks: list, ci: dict = None) -> str:
+    ci = ci or {"runs": [], "degraded": True}
     v = verdict(bypass, fail, ledger["m_recur"])
     ev = bypass["events"]
     l24 = bypass["last24h"]
@@ -356,6 +374,21 @@ def render(bypass: dict, fail: dict, ledger: dict, tasks: list) -> str:
         lines.append("| — | 无 task-state 文件 | | | | |")
         lines.append("")
 
+    # CT-41①: CI 状态段
+    lines += [
+        "### 六、CI 状态（CT-41①, GitHub API）",
+        "",
+        "| Run | 结论 | 分支 | 标题 |",
+        "|-----|------|------|------|",
+    ]
+    if ci.get("runs"):
+        for r in ci["runs"]:
+            mark = "🟢" if r["conclusion"] == "success" else ("🔴" if r["conclusion"] == "failure" else "🟡")
+            lines.append(f"| #{r['num']} | {mark} {r['conclusion']} | {r['branch']} | {r['title']} |")
+        lines.append("")
+    else:
+        lines.append("| — | ⚠ 无法拉取（degraded） | | |")
+        lines.append("")
     lines += [
         "> 红线提醒: 不碰 scripts/audit/；不写审计标准；禁止自我审计。",
         "> 同类错误第二次出现 = 防线系统性失效，升级创始人。",
@@ -376,6 +409,7 @@ def main() -> int:
     f = analyze_failures(raw_f)
     l = analyze_ledger(raw_l)
     t = analyze_task_state()
+    ci = analyze_ci()
 
     # D384/CT-37: 数据源指纹 — bypass/failures/ledger/task-state 内容 hash.
     # 幂等判定 = 指纹比较: 数据源未变 → 不重写 (时间戳差异不影响);
@@ -387,7 +421,7 @@ def main() -> int:
     fp_src = raw_b + raw_f + raw_l + "".join(read_binary_safe(Path(p)) for p in ts_files) + read_binary_safe(Path(__file__))
     fingerprint = hashlib.sha256(fp_src.encode("utf-8", errors="replace")).hexdigest()[:12]
 
-    auto = render(b, f, l, t)
+    auto = render(b, f, l, t, ci)
     # 幂等 + marker 保留 MANUAL 区
     if OUT.exists():
         old = OUT.read_text(encoding="utf-8", errors="replace")

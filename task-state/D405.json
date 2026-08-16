@@ -1,0 +1,11 @@
+{
+  "task_id": "D405",
+  "title": "CT-41① CI 状态入仪表盘",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-17",
+  "updated_by": "alloc-task-id"
+}
