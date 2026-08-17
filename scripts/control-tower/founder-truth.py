@@ -107,6 +107,41 @@ def judge(claimed, phys):
     return "⚪", "进行中"
 
 
+def render_html(rows, green, yellow, red, git_ok):
+    """自包含 HTML（创始人双击即开, 内联 CSS 零外部依赖, 大白话 + 红绿灯 + 可复核）。"""
+    colors = {"🟢": "#16a34a", "🟡": "#d97706", "🔴": "#dc2626", "⚪": "#9ca3af"}
+
+    def row_html(r):
+        emoji, note = judge(r["claimed"], r["phys"])
+        return ('<tr><td><b>%s</b> %s</td><td>%s</td><td>%s</td>'
+                '<td style="color:%s;font-weight:600">%s %s</td></tr>'
+                % (r["id"], r["title"], r["claimed"], r["phys"], colors[emoji], emoji, note))
+
+    rows_html = "".join(row_html(r) for r in rows)
+    ok = red == 0
+    status_bg = "#16a34a" if ok else "#dc2626"
+    status_txt = "全部声称与物理一致 ✅" if ok else "⚠️ 发现 %d 个疑似虚报（点下方任务看证据）" % red
+    degraded = "" if git_ok else '<p style="color:#d97706">⚠️ git 不可用，本次物理核验降级</p>'
+    css = ("body{font-family:-apple-system,'PingFang SC',sans-serif;max-width:960px;margin:24px auto;padding:0 16px;background:#f9fafb;color:#111}"
+           "h1{font-size:22px}.cards{display:flex;gap:12px;margin:16px 0}"
+           ".card{flex:1;background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.08);text-align:center}"
+           ".card .n{font-size:32px;font-weight:700}table{width:100%;background:#fff;border-radius:12px;border-collapse:collapse;box-shadow:0 1px 3px rgba(0,0,0,.08)}"
+           "td,th{padding:10px 12px;text-align:left;border-bottom:1px solid #eee;font-size:14px}th{background:#f3f4f6}"
+           ".status{padding:12px 16px;border-radius:12px;color:#fff;font-weight:600;background:" + status_bg + "}")
+    return ("<!DOCTYPE html>\n<html lang=\"zh\"><head><meta charset=\"utf-8\"><title>创始人控制台 · 任务真相</title><style>" + css + "</style></head><body>\n"
+            "<h1>🧭 创始人控制台 · 任务真相</h1>\n"
+            "<p style=\"color:#666\">物理核验（git/CI 事实），不是 agent 自报。</p>\n"
+            "<div class=\"status\">" + status_txt + "</div>\n"
+            "<div class=\"cards\">"
+            "<div class=\"card\"><div class=\"n\" style=\"color:#16a34a\">" + str(green) + "</div>🟢 真实</div>"
+            "<div class=\"card\"><div class=\"n\" style=\"color:#d97706\">" + str(yellow) + "</div>🟡 待复核</div>"
+            "<div class=\"card\"><div class=\"n\" style=\"color:#dc2626\">" + str(red) + "</div>🔴 疑似虚报</div>"
+            "</div>\n" + degraded + "\n"
+            "<table><tr><th>任务</th><th>它说</th><th>物理核验</th><th>判定</th></tr>" + rows_html + "</table>\n"
+            "<p style=\"color:#999;font-size:12px\">每个判定都可复核：git log --all --format=%s | grep \"(D#)\" 验证提交；git merge-base 验证是否进 main。</p>\n"
+            "</body></html>")
+
+
 def main():
     offline = "--offline" in sys.argv
     rows, git_ok = collect(offline)
@@ -115,6 +150,12 @@ def main():
     green = sum(1 for r in rows if judge(r["claimed"], r["phys"])[0] == "🟢")
     red = sum(1 for r in rows if judge(r["claimed"], r["phys"])[0] == "🔴")
     yellow = sum(1 for r in rows if judge(r["claimed"], r["phys"])[0] == "🟡")
+
+    if "--html" in sys.argv:
+        out = REPO / "docs" / "synova" / "founder-console.html"
+        out.write_text(render_html(rows, green, yellow, red, git_ok), encoding="utf-8")
+        print(f"已生成: {out}")
+        return 1 if red > 0 else (2 if not git_ok else 0)
 
     print("# 任务真相（物理核验，非 agent 自报）\n")
     print("| 任务 | 它说 | 物理核验 | 判定 |")
