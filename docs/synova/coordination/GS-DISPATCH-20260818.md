@@ -3,6 +3,10 @@
 > 2026-08-18 | CTO 派发 | 执行：🛠 synova-dsh（编码 session）
 > 背景：创始人问"26 条线能不能一次跑通"→ 盘点发现 105 个 scenario 验收点零脚本（GS-01~08 未实现）。
 > 本文档是唯一派活依据，编码 session 按此执行，写完跑通后 evidence 自动进完成度。
+> **边界澄清（2026-08-18 创始人确认）**：D357（L5 连接器，src/connectors/）**交回 Win Claude Code**，
+> 不在 Mac 编码 session 范围。GS 场景脚本（scripts/golden-scenarios/）归 Mac Harness，
+> 但 GS-02/GS-04 依赖 Win 的 D355+D357 完成后才能跑通——编码 session 遇到依赖缺失时，
+> **先做不依赖 Win 的场景（GS-03/GS-05），依赖 Win 的（GS-02/GS-04）挂起等 Win 交付**。
 
 ---
 
@@ -17,8 +21,8 @@
 | D# | 场景 | 数据 | 关键断言 | 依赖 |
 |---|---|---|---|---|
 | D442 | GS-03 资本循环 | erp-standard | manifest 挂载 + cashBalance↔cash 对齐 + 阈值触发 | ✅ D356 已就绪（audited） |
-| D443 | GS-02 客户循环 | crm-standard | Market→Client 收敛 + customer-demand-shift 出 critical | D355/D357 确认后开工 |
-| D444 | GS-04 人才循环 | hr-standard | People→Person 收敛 + key-person-risk 产出 | D355/D357 确认后开工 |
+| D443 | GS-02 客户循环 | crm-standard | Market→Client 收敛 + customer-demand-shift 出 critical | ⏳ 依赖 Win：D355（L4 契约）+ D357（CRM 连接器，**交回 Win**） |
+| D444 | GS-04 人才循环 | hr-standard | People→Person 收敛 + key-person-risk 产出 | ⏳ 依赖 Win：D355（L4 契约）+ D357（HR 连接器，**交回 Win**） |
 | D445 | GS-05 告警闭环 | 越阈 fixture | sentinel_tickets 有行 + 推送去重键稳定 | D356 ✅ + D354 |
 | D446 | GS-01 首诊旅程 | 问卷 | 首诊报告产出 ≤3 天路径 + ≥1 盲区命中 | D232/D233 确认 |
 | D447 | GS-06 进化闭环 | 反馈注入 | loop-3/5 真实执行体 + 规则变更可验证 | D333 确认 |

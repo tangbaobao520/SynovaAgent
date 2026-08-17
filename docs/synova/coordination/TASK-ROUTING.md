@@ -107,7 +107,7 @@
 |-----------|------|
 | scripts/control-tower/ + coordination + DSH 预设/技能 | 进行中·DeepSeek Harness |
 | src/sentinel/ + src/cron/（哨兵切片） | 进行中·DeepSeek Harness（编码线 2026-08-16 认领；**D379 path-dependency 空壳补实现** 进行中，**D356 P0 阈值告警接线** spec 已交付待实现） |
-| src/ 其余业务（诊断体系 L1-L5） | Win Claude Code 主力（**D355-D360 P0 全链路修复进行中**；D391 已完成；部署后负载 D394片2/D397'/D398） |
+| src/ 其余业务（诊断体系 L1-L5） | Win Claude Code 主力（**D355-D360 P0 全链路修复进行中**；D391 已完成；部署后负载 D394片2/D397'/D398）。**D357（L5 连接器 src/connectors/）2026-08-18 创始人确认交回 Win**——GS 场景脚本归 Mac Harness 但 GS-02/GS-04 依赖 D355+D357，等 Win 交付后跑通 |
 | scripts/product-lines/ + 双仪表盘 | DeepSeek Harness（主导） |
 | scripts/golden-scenarios/ | 进行中·DeepSeek Harness |
 | 战略借鉴（**K3 咨询定序**）：D396 + D394 片1 + D395-a + D402 = **dev-doc 线写 spec 中**（派活 brief 就绪，启动指引 docs/synova/coordination/DEV-DOC-DISPATCH-20260816.md）；D394 片2/D397'/D398 = Win 部署后 | 进行中·synova-devdoc（2026-08-16 派活） |
