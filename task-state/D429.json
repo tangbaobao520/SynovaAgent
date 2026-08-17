@@ -1,0 +1,17 @@
+{
+  "task_id": "D429",
+  "title": "founder-truth 控制台验证（U1-U8 合并后首跑）",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "commit": "3ea406ee46e6",
+    "by": "cto-api",
+    "at": "2026-08-17",
+    "note": "founder-truth.py --html 生成 founder-console.html：🟢真实24/🟡待复核11/🔴疑似0，无红灯"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-17",
+  "updated_by": "CTO",
+  "note": "验证结果：K3 的 U 系列任务 task-state 状态滞后（claimed→已提交），归 K3 审计闭环处理不越权改"
+}
