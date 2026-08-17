@@ -213,6 +213,21 @@ def _github_repo():
     return None
 
 
+def _github_token():
+    """读取 GitHub token（只读）: GITHUB_TOKEN env 优先 → 仓库根 .synova-ci-token → ~/.synova/github-token。"""
+    tok = os.environ.get("GITHUB_TOKEN", "").strip()
+    if tok:
+        return tok
+    for p in (REPO / ".synova-ci-token", Path.home() / ".synova" / "github-token"):
+        try:
+            t = p.read_text(encoding="utf-8").strip()
+            if t:
+                return t
+        except OSError:
+            continue
+    return ""
+
+
 def ci_status():
     """CI 核验: GitHub Actions 最近一次运行。返回 (label, detail, ok, degraded)。"""
     repo = _github_repo()
@@ -230,7 +245,7 @@ def ci_status():
                 return label, f"{r0.get('workflowName','CI')} {concl} (sha {str(r0.get('headSha',''))[:7]})", concl == "success", False
         except Exception:
             pass
-    token = os.environ.get("GITHUB_TOKEN", "")
+    token = _github_token()
     if not token:
         return None, "未接入 CI（需 gh 或 GITHUB_TOKEN）", False, True
     url = f"https://api.github.com/repos/{repo}/actions/runs?per_page=1"
