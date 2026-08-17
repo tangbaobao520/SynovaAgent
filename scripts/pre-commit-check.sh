@@ -97,6 +97,9 @@ ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 
 
 # ═══ D201 L3: bypass 阻断 — 今日任何绕过记录 → 硬阻断 ═══
+# D421 (CT-29 熔断去锁死): 单点 detected-bypass 误报不再无条件锁死全线——
+#   缺省仍硬阻断, 但 SYNO_GATEKEEPER_ACK=1 表示人工已复核该绕过记录 → 降级为告警放行。
+#   与组 7c 共享同一逃生舱语义 (逃生舱写入 degraded-events.log, 铁律 11)。
 BYPASS_LOG="$ROOT/.claude/bypass.log"
 if [ -f "$BYPASS_LOG" ]; then
   TODAY=$(date +%Y-%m-%d)
@@ -104,9 +107,15 @@ if [ -f "$BYPASS_LOG" ]; then
   BYPASS_COUNT=$(grep -c "${TODAY}.*detected-bypass" "$BYPASS_LOG" 2>/dev/null | tr -d '\n\r' || echo 0)
   if [ "$BYPASS_COUNT" -gt 0 ]; then
     echo "[GATEKEEPER] 检测到今日 ${BYPASS_COUNT} 次 --no-verify 绕过记录"
-    echo "[GATEKEEPER] 请使用: git synova-commit --task-id <D#> --agent claude-code --message '...'"
-    echo "[GATEKEEPER] 修复导致绕过的根因后，bypass.log 中今日记录将在次日自动清零"
-    exit 1
+    if [ "${SYNO_GATEKEEPER_ACK:-0}" = "1" ]; then
+      echo "[GATEKEEPER] 已人工确认 (SYNO_GATEKEEPER_ACK=1) — 降级为告警放行本次提交"
+      echo "[GATEKEEPER] 绕过根因仍需修复; 今日记录将在次日自动清零"
+    else
+      echo "[GATEKEEPER] 请使用: git synova-commit --task-id <D#> --agent claude-code --message '...'"
+      echo "[GATEKEEPER] 若该记录系误报且已人工复核, 可用 SYNO_GATEKEEPER_ACK=1 放行本次"
+      echo "[GATEKEEPER] 修复导致绕过的根因后，bypass.log 中今日记录将在次日自动清零"
+      exit 1
+    fi
   fi
 fi
 # V4.5.1: 缓存 git diff 结果 — 本机每次 git 调用 ~1s，脚本内 10+ 次调用是超时主因
@@ -708,9 +717,14 @@ if [ -f "$BYPASS_LOG" ]; then
   [ -z "$BYPASS_COUNT" ] && BYPASS_COUNT=0
 fi
 if [ "${BYPASS_COUNT:-0}" -ge 3 ]; then
-  echo -e "  ${RED}❌ 绕过审计: 24h 内 --no-verify ${BYPASS_COUNT} 次 — 已超限  [硬阻断]${RESET}"
-  echo "    连续使用 --no-verify 超过 2 次后，第 3 次起必须修复根因而非绕过"
-  HARD_FAIL=$((HARD_FAIL + 1))
+  if [ "${SYNO_GATEKEEPER_ACK:-0}" = "1" ]; then
+    echo -e "  ${YELLOW}⚠️  绕过审计: 24h 内 --no-verify ${BYPASS_COUNT} 次 — 已超限, 但已人工确认 (SYNO_GATEKEEPER_ACK=1)  [告警]${RESET}"
+  else
+    echo -e "  ${RED}❌ 绕过审计: 24h 内 --no-verify ${BYPASS_COUNT} 次 — 已超限  [硬阻断]${RESET}"
+    echo "    连续使用 --no-verify 超过 2 次后，第 3 次起必须修复根因而非绕过"
+    echo "    若已人工复核为误报, 可用 SYNO_GATEKEEPER_ACK=1 放行本次"
+    HARD_FAIL=$((HARD_FAIL + 1))
+  fi
 elif [ "${BYPASS_COUNT:-0}" -ge 2 ]; then
   echo -e "  ${YELLOW}⚠️  绕过审计: 24h 内 --no-verify ${BYPASS_COUNT} 次 — 警告${RESET}"
 else
