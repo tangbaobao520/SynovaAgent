@@ -278,3 +278,8 @@ Binary file .claude/bypass.log matches
 2026-08-18T01:20:00+08:00 | COMMITTED | pre-commit PASS (D439 补记: chore: audit-result 运行时) | TASK_ID=D439 | AGENT=DeepSeek-Harness | HASH=fd78b4766ee5873ca9b20433b86a0be013884171
 2026-08-18T01:20:00+08:00 | COMMITTED | pre-commit PASS (D439 补记: chore: bypass.log 运行时追加) | TASK_ID=D439 | AGENT=DeepSeek-Harness | HASH=e817ab698bfcb714afd4772e61d89ff8a31c9f7f
 2026-08-18T01:20:00+08:00 | COMMITTED | pre-commit PASS (D439 补记: chore: bypass.log 补记 D438) | TASK_ID=D439 | AGENT=DeepSeek-Harness | HASH=981bd484c0f709721c6c07df0024ea628266fbf1
+2026-08-17T17:12:03Z possible-bypass diff=4043s
+2026-08-18T01:25:00+08:00 | COMMITTED | pre-commit PASS (D439 补记) | TASK_ID=D439 | AGENT=DeepSeek-Harness | HASH=8ee7f5a885c08bc69c8daec0960c423ae6aba8b9
+2026-08-18T01:14:47+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D440 | AGENT=DeepSeek-Harness
+2026-08-18T01:15:41+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D440 | AGENT=DeepSeek-Harness | HASH=48de29e7d4d477905b76ae562918652352aeca05
+

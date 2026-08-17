@@ -1,0 +1,76 @@
+# dashboard-auto.yml — 创始人控制台自动生成（D439 后接线）
+#
+# 背景: 2026-08-17 创始人 — 控制台右边栏"老样子"，根因 = generate-dashboard.py / founder-truth.py
+#       是手动生成快照，无自动触发（M3 机制建成未接线）。
+#
+# 触发: push 到 main（= 数据变化事件）+ 手动 workflow_dispatch
+# 产出: app/founder-dashboard.html + docs/synova/founder-console.html
+#       产物有变化 → 提交 bot 分支 auto/dashboard + 开 PR（合并走 PR，不直接推 main；
+#       对齐 MULTI-MACHINE-PR-WORKFLOW）。无变化 → 什么都不做（幂等）。
+#
+# 红线: 只调用 scripts/control-tower/ 的生成器（Harness 代码，进审计范围）；
+#       不触碰 scripts/audit/、不写审计标准。
+# founder-truth 用 --offline（跳过 CI API 调用——避免 workflow 内自调用 GitHub API 的死循环，
+#        且 CI token 权限不足时降级）。generate-dashboard 纯本地无外部依赖。
+
+name: Dashboard Auto (D439)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 生成创始人仪表盘（六维物理核验）
+        run: |
+          python3 scripts/control-tower/generate-dashboard.py --output app/founder-dashboard.html
+
+      - name: 生成创始人零信任控制台（三问面板，--offline 跳过 CI 网络）
+        run: |
+          python3 scripts/control-tower/founder-truth.py --html --offline || {
+            echo "⚠ founder-truth 降级（生成失败不阻断——离线模式无网络依赖，见 stderr）" >&2
+          }
+
+      - name: 产物有变化则提交 bot 分支并开 PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "synova-bot"
+          git config user.email "bot@synova.local"
+          # D373 自愈: 悬挂 bot 分支清理（有分支无 PR 的历史遗留）
+          if git ls-remote --exit-code origin auto/dashboard >/dev/null 2>&1 \
+             && ! (gh pr list --head auto/dashboard --state open --limit 1 --json number -q '.[0].number // empty' | grep -qE '^[0-9]+$'); then
+            echo "检测到悬挂 bot 分支，自动清理"
+            git push origin :auto/dashboard || true
+          fi
+          if git diff --quiet -- app/founder-dashboard.html docs/synova/founder-console.html; then
+            echo "无变化，跳过（幂等）"
+            exit 0
+          fi
+          git checkout -b auto/dashboard
+          git add app/founder-dashboard.html docs/synova/founder-console.html
+          git commit -m "chore(D439): 控制台自动更新 $(date -u +%Y-%m-%d)"
+          git push origin auto/dashboard --force
+          if gh pr list --head auto/dashboard --state open --limit 1 --json number -q '.[0].number // empty' | grep -qE '^[0-9]+$'; then
+            echo "✅ PR 已存在，无需新建"
+          else
+            # D373 fail-closed: PR 创建失败 = 本 step 失败 = workflow 红灯（绝不绿灯假装成功）
+            echo "创建 PR（失败即红灯，不静默）"
+            gh pr create --title "chore(D439): 控制台自动更新" \
+              --body "自动生成（founder-dashboard 六维核验 + founder-console 三问面板）。产物: app/founder-dashboard.html / docs/synova/founder-console.html。合并前可双击打开查看最新真相。CI 绿后点 Merge 即可。"
+          fi
