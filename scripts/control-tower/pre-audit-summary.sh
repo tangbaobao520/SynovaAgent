@@ -11,7 +11,7 @@
 #   风险分级表是"建议"（采纳权在创始人 + K3），本脚本只读取并展示，不裁决。
 #
 # 聚合的机器可查项（对应 UPGRADE-SPEC U1-U4/U7）:
-#   U1 bypass 证据链对账  → reconcile-bypass-log.sh（存量 check-bypass-log.sh 有 SSH hang bug，不回退）
+#   U1 bypass 证据链对账  → check-bypass-log.sh origin/main（U1 实际落地脚本；GIT_SSH_COMMAND 防 hang）
 #   U2 dev doc 写集对账   → check-dev-doc-write-set.sh
 #   U3 生成器产物可复现   → gen-cto-health.py --strict
 #   U4 声称↔证据自证表    → verify-claims-table.sh
@@ -41,11 +41,12 @@ done
 
 # ── 门禁清单: name | script(相对 REPO) | args | 描述 ──
 GATES=(
-  # 注: U1 不回退存量 check-bypass-log.sh（它有 git fetch SSH hang 的 fail-open bug，正是 U1 要修的）
-  "U1-bypass-reconcile|scripts/control-tower/reconcile-bypass-log.sh||绕过证据链对账"
+  # U1: check-bypass-log.sh 是 U1 实际落地的对账脚本（spec 契约里拟新建的对账脚本未单独建，U1 改为修复存量脚本）
+  #     显式 base=origin/main（原默认 origin/feat/prompt-architecture 已过时）；run_gate 已注入 GIT_SSH_COMMAND 防 SSH hang
+  "U1-bypass-reconcile|scripts/control-tower/check-bypass-log.sh|origin/main|绕过证据链对账"
   "U2-writeset-reconcile|scripts/workflow/check-dev-doc-write-set.sh||dev doc 写集双向对账"
   "U3-artifact-repro|scripts/control-tower/gen-cto-health.py|--strict|生成器产物可复现"
-  "U4-claims-table|scripts/control-tower/verify-claims-table.sh||声称↔证据自证表"
+  "U4-claims-table|scripts/control-tower/verify-claims-table.sh|@DEV_DOCS|声称↔证据自证表"
   "U7-ct-test-gate|scripts/control-tower/ct-test-gate.sh||控制塔脚本测试门禁"
 )
 
@@ -71,10 +72,12 @@ run_gate() {
     *.py) runner="python3" ;;
   esac
   python3 - "$runner" "$full" "$@" >/dev/null 2>&1 <<'PYEOF'
-import subprocess, sys
+import os, subprocess, sys
 try:
     cmd = [sys.argv[1], sys.argv[2]] + list(sys.argv[3:])
-    r = subprocess.run(cmd, capture_output=True, timeout=20)
+    env = dict(os.environ)
+    env.setdefault("GIT_SSH_COMMAND", "ssh -o BatchMode=yes -o ConnectTimeout=10")
+    r = subprocess.run(cmd, capture_output=True, timeout=20, env=env)
     sys.exit(0 if r.returncode == 0 else (1 if r.returncode == 1 else 2))
 except subprocess.TimeoutExpired:
     sys.exit(2)
@@ -89,6 +92,13 @@ PASS_N=0; FAIL_N=0; DEGRADED_N=0; MISSING_N=0
 
 for gate in "${GATES[@]}"; do
   IFS='|' read -r gname gscript gargs gdesc <<< "$gate"
+  if [ "$gargs" = "@DEV_DOCS" ]; then
+    gargs=$(find "$REPO_DIR/docs/plans/codex/implementation" -maxdepth 1 -name "SYNOVA-IMPL-*.md" 2>/dev/null | sort | head -50)  # swallow-ok: 目录不存在时 find 报错可忽略，空结果走跳过分支
+    if [ -z "$gargs" ]; then
+      PASS_N=$((PASS_N+1)); RESULTS+=("$gname|pass|$gdesc (无 dev doc, 跳过)")
+      continue
+    fi
+  fi
   run_gate "$gscript" $gargs
   code=$?
   case "$code" in
