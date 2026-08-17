@@ -144,3 +144,46 @@ Binary file .claude/bypass.log matches
 
 2026-08-17T09:15:00+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D407 | AGENT=DeepSeek-Harness | HASH=d8c2705937e902582c375ae2588095c220453047
 2026-08-17T09:15:00+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D407 | AGENT=DeepSeek-Harness | HASH=5ad95c1089394f7ab2b2d585800944be8514370e
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: chore(D407): bypass.log full-hash 补记（K3 报告 + API m) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=81c1bb073d4a513c0287640754e84215b1855190
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: docs(D391): K3 审计报告 v2 — 转 CONDITIONAL PASS（�) | TASK_ID=recon | AGENT=kimi-k3-audit | HASH=e51e1b0a540d6ace8160c960e4cb0e746ead00ac
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: docs(D391): K3 独立审计报告 — FAIL（交付声称无) | TASK_ID=recon | AGENT=kimi-k3-audit | HASH=f68b9d680e3ce8d0d3fecde3090f09255d0551a0
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: docs(D399): K3 复审报告 — CONDITIONAL PASS（P0-1闭�) | TASK_ID=recon | AGENT=kimi-k3-audit | HASH=56a3bb711b5af45bcd7f0e874c19c1947c986d5a
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: fix(D391): admin-knowledge L1→L4 跨层修复 + M3 注入�) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=a60e45f076e5d5acaa681e9f7b5875a5d324351d
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: docs(D393): K3 独立审计报告 — FAIL（验收测试交) | TASK_ID=recon | AGENT=kimi-k3-audit | HASH=6f75f6e571548ffe5576744ab8c1cb6a9ce956c2
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: docs(D383): CTO 2026-08-16 batch - sentinel count, dispatch ) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=98b0d4d1206f6605e5113b329376f03444227440
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: docs(D363): 交付报告 — DS1-DS6 逐项验证 + 基线�) | TASK_ID=recon | AGENT=Synova-Win | HASH=89d84c0451b91e30e4be11b595613ef397411f8e
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: feat(D363): LLM 运行时 failover 接线 — createProvider) | TASK_ID=recon | AGENT=Synova-Win | HASH=162b7700549717fb5dacf6794bf50eb649180905
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: docs(D363): dev doc §3.2 最终形态回填 + §4.5 决策�) | TASK_ID=recon | AGENT=Synova-Win | HASH=6b2abaad1ffa382af94aa0dbd5fd45de696fe0b6
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: docs(D378): sentinel count fix 45+4=49 active + 12 retired, ) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=3ab3f6a186e6c25774495ea377735a1b13ca62e0
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: docs(D377): CTO 交接文档定稿 + DSH 任务编号规范 ) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=1d081d190d7b26de7d56c7c3fca41a89a367a09c
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: docs(D376): 分工章程 v4 + 路由表 v4（编码双轨/�) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=b18bfe1d0585db94b5d81cd96eb92e8840d8a145
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: docs(harness): 设计文档v1.5对齐K3 + 路由表v3双线�) | TASK_ID=recon | AGENT=Synova-Win | HASH=d2aa241241407c5055359997420749fd12654c2a
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: docs(Codex): 双仪表盘完成标准对齐 + 台账 CT-34 �) | TASK_ID=recon | AGENT=Synova-Win | HASH=9edd35fd0181fdd61f6b6d8b567974339869b836
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: feat(D375): DSH 审计+CTO 预设 + A2 机器验证接线) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=d41dedf7db2daa91585742f78f41c59b5ef774f5
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: docs(D307): 交付报告 — DS1-DS10 判定 + 决策记录4) | TASK_ID=recon | AGENT=Synova-Win | HASH=c5209c021c823624142f1d872d205cb752e9022a
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: feat(D374): DSH dev-doc 预设 + north-star-guard 技能 + i) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=84758bf4737f818662fd970907a46c94901c250c
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: feat(D307): worktree隔离层 — manager+attach+registry+sy) | TASK_ID=recon | AGENT=Synova-Win | HASH=0f459189b74eabb62204af2d0ef5e90a8889a6ea
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: docs(D366): K3 审计登记) | TASK_ID=recon | AGENT=Synova-Win | HASH=21c53e041d0d7c94b3f57f38a2f8c0ca1e00f97d
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: docs(harness): 路由表v3双线分工 + 设计文档v1.5对) | TASK_ID=recon | AGENT=Synova-Win | HASH=ec2bb2191a46bbc3ff77f425ba5c7ba7bd208828
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: docs(D366): K3 审计登记 CONDITIONAL PASS + 台账 CT-31~) | TASK_ID=recon | AGENT=Synova-Win | HASH=51602497a102ca21427c0015cd7544b47513bff8
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: docs(K3): 审计标准定稿 v1（维度16-20）+ 审计任�) | TASK_ID=recon | AGENT=Synova-Win | HASH=1b6df8d44037e0b82862eae294583f47c0c61a9d
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: docs(K3): 审计标准定稿 v1（维度16-20）+ 审计任�) | TASK_ID=recon | AGENT=Synova-Win | HASH=6d82ec77d8a82a6555d3ea1a5b79314402a36229
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: fix(D373): bot PR 创建 fail-closed + 悬挂分支自愈 �) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=cb846c85466b884fa9c636924d7ad60f96b5f6d6
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: feat(D366): 门禁今日判定 mtime→文件名日期 + las) | TASK_ID=recon | AGENT=Synova-Win | HASH=eacfdf6657cc168d0c0a4a46d7d1a2659e1ece53
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: fix(D372): 产品进度链时间戳幂等 — 消除 CI 噪�) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=7c45bbfb6b8b680019844a8a20277ead4b870205
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: feat(D371): 产品完成度仪表盘 Phase 1 — 26 线 yaml) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=42b62070c315080c1d2a119470c6f5f57737f0b5
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: chore(D370): 认领交还 — 路由表 D370 标记已完成) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=bab9b232dce0197c4a320c7a5da18417c1dc3ddd
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: fix(D370): install-dsh-preset 探测路径 set -u unbound �) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=b95e2dcdb3c228928d7e354e74a7ab11e528bcfc
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: feat(D370-P2P3): persona 接入 DSH 原生能力(goal/workfl) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=00e271a7632cfd884e719f25f8e4fd327fed4783
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: feat(D370-P1): DSH 专属流程技能 — pr-review / ctrl-t) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=88a8b9d078e62dcfdaa8c60b0b4ce2051737a192
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: feat(D370-P0): DSH 技能同步基座 — sync-dsh-skills.sh) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=c6432f6f3e060dab0d62e0c471ee144ba1e62291
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: docs(harness): 创始人操作模式 + 产品完成度仪表) | TASK_ID=recon | AGENT=Synova-Win | HASH=631f762dc02e642fb65409dd9508a704c67eb852
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: docs(D362): 文档索引重生成(845文件) + HARNESS-ONBOA) | TASK_ID=recon | AGENT=Synova-Win | HASH=3e2e67471379dbf4578a155ddf0fcef334c1578d
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: chore(D362): 品牌替换 ClawOrg→Synova — 仓库URL/Doc) | TASK_ID=recon | AGENT=Synova-Win | HASH=b5e58d70511f4dfcb398270d71f2644d13ae3ec9
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: chore(D362): gitignore 补 release/打包产物 + 飞书会�) | TASK_ID=recon | AGENT=Synova-Win | HASH=9249c1b9d10baf10de85feb56cf289ed85fdafc1
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: chore(D362): 文档拉平 — 归档审计报告/coordinatio) | TASK_ID=recon | AGENT=Synova-Win | HASH=8d64c4332321403e291635fa349306f12038637b
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: docs(D336): 文档拉平指引顺序修正 — 先提交再�) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=985ff60464991f5a94f2f25f26db83386e983249
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: docs(D336): 文档拉平指引 DOC-SYNC-GUIDE — Codex 整�) | TASK_ID=recon | AGENT=ClawOrg-Mac | HASH=ef0bffd98a50089f60a432d21630845b81a09064
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: feat(D335): 防线闭环 — 提交端同步门禁 check-bra) | TASK_ID=recon | AGENT=ClawOrg-Mac | HASH=473502228770a63a7b37bff20401d33325075f86
+2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: feat(D334): 多机 PR 工作流 — pre-push 门禁 0 同步) | TASK_ID=recon | AGENT=ClawOrg-Mac | HASH=8ff09a9061fe10c90969b1abbe996c3b84c626fa
+
