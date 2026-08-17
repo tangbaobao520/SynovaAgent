@@ -269,3 +269,5 @@ Binary file .claude/bypass.log matches
 2026-08-18T01:30:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: D438) | TASK_ID=merge | AGENT=kimi-k3-audit | HASH=fc78fe5c247d61023ec080ed799c5b682baa7488
 2026-08-18T01:30:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: D438) | TASK_ID=merge | AGENT=kimi-k3-audit | HASH=9cb364480870c362c07aa6bf215ee9ab900ad29e
 2026-08-17T17:10:31Z possible-bypass diff=3951s
+2026-08-17T17:10:39Z possible-bypass diff=3959s
+2026-08-17T17:10:47Z possible-bypass diff=3967s
