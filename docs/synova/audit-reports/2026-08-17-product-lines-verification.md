@@ -141,15 +141,14 @@ A2 接线逻辑物理完整（`product-progress.yml:44-57`：vitest 全绿 → l
 1. **vitest 从未全绿**：origin/main 快照复现 60 文件/98 用例失败，其中 57 处是 `tests/sentinels/` 引用 main 上物理不存在的 `extensions/sentinels/<旧名>/computes/`（git ls-tree 验证）。ci.yml 的 test job 有"pre-existing failures 不阻断"豁免 → PR 能绿着合并，但 A2 的 `npx vitest run` 永远非零 → 永不写证据。
 2. **bot PR 链未走通**：产物提交到 bot 分支 + 开 PR 的链路历史零成功（`gh pr create` fail-closed 红灯），且无 auto-merge 机制 → 即使证据生成也到不了 main。
 
-### 3.4 ⚠️ 关键发现：GSS 基建"建成未提交"（本评审最重要发现）
+### 3.4 ⚠️ 关键发现：GSS 基建"建成但未合并进 main"（本评审最重要发现）
 
 任务书附录 A 声称"GSS 基建四工具已建成（D361，有测试且全绿）"。K3 物理复核：
 
-- **四工具（assert/bootstrap/fresh-db/inject + expect-schema.json）物理存在于工作区**（`/Users/wane/SynovaAgent/scripts/golden-scenarios/common/`，含完整契约 JSDoc），**但全部 untracked——从未 git add/commit，不在任何分支**（`git ls-tree origin/main` 零命中）。
-- **测试 `tests/golden-scenarios/gss-common.test.ts` 同样 untracked**（不在 git HEAD）。
-- 任务书起草方提到的 commit `f67174c0` **在 git 中不存在**（Not a valid object name）——疑似记录/转述失真。
+- **四工具（assert/bootstrap/fresh-db/inject + expect-schema.json）+ 测试（gss-common.test.ts）已建成**（含完整契约 JSDoc，工作区物理存在）。但它们**只提交到了一个 feature 分支**——`f67174c0` "feat(D361): GSS 基建"，位于 `feat/mac-d374-routing-d361-gss-base`（已推送该远程分支），**从未合并进 main**：`git ls-tree origin/main` 零命中，`git merge-base --is-ancestor f67174c0 origin/main` 物理证伪（未进 main），当前主工作区（feat/d395a 分支）里它们仍是 untracked。即"已建成"仅在一个未合并分支成立，对 main/CI/其他协作者而言**不存在**。
+- 注：复核过程中一度有材料称 f67174c0"已合入 main"——经 `merge-base` 物理证伪（未进 main）。这正是"合并状态也要物理核验、不凭转述"的例证。
 
-**含义**：基建"已建成"仅在工作区成立；对 git 真相 / CI / 其他协作者而言**它们不存在**。这正是产品线"机器证据层为零"的隐藏根因之一——**不是没有建，而是建了没进 git**。这也是"声称 vs 事实"（M2）在基建层的活样本：物理建成 ≠ 已交付。**修复前置：先提交四工具 + 测试进 git（走正常门禁 + K3 审计），套件方案才有地基。**
+**含义**：基建"已建成"仅在一个未合并 feature 分支成立；对 main / CI / 其他协作者而言**它们不存在**。这正是产品线"机器证据层为零"的隐藏根因之一——**不是没有建，而是建了没合并进 main**。这也是"声称 vs 事实"（M2）在基建层的活样本：物理建成 ≠ 已交付 main。**修复前置：把 feat/mac-d374-routing-d361-gss-base 合并进 main（走 PR + K3 审计），套件方案才有地基。**
 
 （另修正任务书表述：contract-check 绑定点为 5-2/10-1，非 5-2/10-2；10-2 仅绑 scenario:GS-03。）
 
@@ -218,12 +217,12 @@ A2 接线逻辑物理完整（`product-progress.yml:44-57`：vitest 全绿 → l
 
 | 级 | 发现 |
 |---|---|
-| **P0** | **GSS 基建四工具 + 测试建成但未提交 git（untracked）**——套件方案的地基在版本控制里不存在（§3.4）。不先入库，一切免谈 |
+| **P0** | **GSS 基建四工具 + 测试建成并提交到 feat 分支，但从未合并进 main**（§3.4）——套件方案的地基不在 main。先合并 feat/mac-d374-routing-d361-gss-base 进 main，一切才好谈 |
 | **P1** | A2 零入库双断点：vitest 从未全绿（57 处 tests/sentinels 引用 main 不存在的旧 computes 路径）+ bot PR 链历史零成功（§3.3） |
 | **P1** | 契约对账器零实现（5-2/10-1 两个 contract-check 点无对账器） |
 | **P2** | 2 对真重复验收点（5-2/10-2 逐字重复、4-5/10-1 包含关系）需措辞裁决 |
 | **P2** | 7 个仅 K 点中 6 个应改绑 M（7-1/7-2/9-2/11-1/11-2/18-1），可立即减负 |
-| **P2** | 任务书附录 A 的"f67174c0"commit 引用在 git 不存在（转述失真，已修正为"工作区建成未提交"） |
+| **P2** | 任务书附录 A 称四工具已合入 main（f67174c0）——经物理核验，该 commit 在未合并的 feat 分支，未进 main（转述失真已修正） |
 
 ### 给创始人的行动建议（按优先级）
 
