@@ -229,7 +229,9 @@ def analyze_task_state() -> list:
         has_impl = num in impl_hits  # D399: 纯派生, json impl 字段 deprecated 忽略
         audit_txt = "—"
         if num in audit_files:
-            for f in sorted(audit_dir.glob(f"*D{num}.md")):
+            # D395a 变体支持: 精确 *D{num}.md 优先, 其次 *D{num}[a-z].md (e.g. D395a)
+            candidates = sorted(audit_dir.glob(f"*D{num}.md")) or sorted(audit_dir.glob(f"*D{num}[a-z].md"))
+            for f in candidates:
                 try:
                     txt = f.read_text(encoding="utf-8", errors="replace")
                     if "CONDITIONAL PASS" in txt:

@@ -17,8 +17,17 @@
       "tests/routes/admin-knowledge.test.ts"
     ]
   },
-  "audit": null,
-  "fix_task_id": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-08-16-D391.md",
+    "verdict": "CONDITIONAL_PASS",
+    "by": "K3",
+    "at": "2026-08-16",
+    "findings": [
+      "P1-1 federated 兜底写入即蒸发返回201假成功（功能性）",
+      "P1-2 无 dev doc/brief 且偏离 D309 方案（流程性）"
+    ]
+  },
+  "fix_task_id": "D402",
   "updated_at": "2026-08-16",
-  "updated_by": "DSH"
+  "updated_by": "CTO"
 }
