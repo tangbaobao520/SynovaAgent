@@ -42,6 +42,7 @@
 |---|---|---|
 | 10 | `audit/product-lines-verification` | K3 产品线验证评审（26 线/163 点） |
 | 11 | `feat/console-panels` | 控制台三问面板（**已包含** founder-truth-mvp，合并它即可，不用单独合并 founder-truth-mvp） |
+| 12 | `feat/u8-pre-audit-summary` | U8 工程侧：机器预审汇总脚本（第0层，聚合 U1-U4/U7 + risk 分级）——只读汇总，不碰审计口径，可安全合并 |
 
 ---
 
