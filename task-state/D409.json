@@ -1,11 +1,12 @@
 {
   "task_id": "D409",
   "title": "cto-taskstate-consistency",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": null,
   "impl": null,
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-08-17",
-  "updated_by": "alloc-task-id"
+  "updated_by": "CTO",
+  "note": "task-state 三件套一致性修正：D356/D379/D395/D396/D406 状态对齐物理工件，入 main b7ad28d2"
 }
