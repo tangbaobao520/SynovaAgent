@@ -1,11 +1,15 @@
 {
   "task_id": "D406",
   "title": "D395-a 审计 P1 修复（P1-2 腐化通道优先：check-lessons-learned 改向 + P1-1 层1门禁落点）",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": null,
-  "impl": null,
+  "impl": {
+    "commit": "108d343a56367c97b3a9b67b1768eb31a5f4fe01",
+    "by": "coding",
+    "at": "2026-08-17"
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-08-17",
-  "updated_by": "alloc-task-id"
+  "updated_by": "CTO"
 }

@@ -1,16 +1,20 @@
 {
   "task_id": "D356",
   "title": "P0 哨兵阈值告警接线 + 降级误报修复",
-  "status": "spec_done",
+  "status": "audited",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D356-sentinel-threshold-alert-20260816.md",
     "commit": "bc552aae",
     "by": "dev-doc",
     "at": "2026-08-16"
   },
-  "impl": null,
+  "impl": {
+    "commit": "6db5a17a",
+    "by": "coding",
+    "at": "2026-08-16"
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-08-16",
+  "updated_at": "2026-08-17",
   "updated_by": "CTO"
 }
