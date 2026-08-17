@@ -85,7 +85,8 @@ describe('MainAgent — 注册与状态', () => {
     ]);
     expect(r1.status).toBe('completed');
     expect(r2.status).toBe('completed');
-    expect(r3.status).toBe('completed');
+    // D333: loop-3 真实化后 (N13 接线) — 测试环境无反馈信号 → degraded, 不再伪造 completed
+    expect(r3.status).toBe('degraded');
     expect(r1.loopId).toBe('loop-1');
     expect(r2.loopId).toBe('loop-2');
     expect(r3.loopId).toBe('loop-3');
