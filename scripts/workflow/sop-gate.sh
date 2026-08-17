@@ -33,8 +33,13 @@ fail() { echo "  ❌ step $STEP 证据缺失: $1"; echo "     补救: $2"; exit 
 # ── 解析 brief 路径（--brief 指定 / current-brief / 今日最新）──
 resolve_brief() {
   if [ -n "$BRIEF" ]; then [ -f "$ROOT/.claude/task-briefs/$BRIEF" ] && echo "$ROOT/.claude/task-briefs/$BRIEF"; return; fi
-  if [ -f "$ROOT/.claude/current-brief" ]; then
-    bn=$(cat "$ROOT/.claude/current-brief" 2>/dev/null | tr -d '[:space:]' || true)  # swallow-ok: current-brief 可缺失, 回退今日最新 brief
+  # CT-42: session 专属 current-brief 优先，无则回退全局
+  _cb_src="$ROOT/.claude/current-brief"
+  if [ -n "${DSH_SESSION_ID:-}" ] && [ -f "$ROOT/.claude/current-brief.$DSH_SESSION_ID" ]; then
+    _cb_src="$ROOT/.claude/current-brief.$DSH_SESSION_ID"
+  fi
+  if [ -f "$_cb_src" ]; then
+    bn=$(cat "$_cb_src" 2>/dev/null | tr -d '[:space:]' || true)  # swallow-ok: current-brief 可缺失, 回退今日最新 brief
     [ -n "$bn" ] && [ -f "$ROOT/.claude/task-briefs/$bn" ] && { echo "$ROOT/.claude/task-briefs/$bn"; return; }
   fi
   ls -t "$ROOT"/.claude/task-briefs/*.md 2>/dev/null | head -1 || true  # swallow-ok: 无 brief 时返回空, 调用方判空
