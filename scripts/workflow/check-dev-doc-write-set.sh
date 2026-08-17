@@ -72,14 +72,14 @@ STATUS=$(echo "$OUT" | python3 -c "import json,sys; print(json.load(sys.stdin).g
 if [ "$STATUS" = "skip" ]; then
   REASON=$(echo "$OUT" | python3 -c "import json,sys; print(json.load(sys.stdin).get('reason',''))" 2>/dev/null || echo "解析跳过")
   log_degraded "$DOC: $REASON"
-  echo "  ⚠️  SKIP — $REASON (fail-open)"
-  exit 0
+  echo "  ❌ dev doc 存在但无写集表 — $REASON (U2b: 有 dev doc 无写集表 → exit 1)"
+  exit 1
 fi
 
 CLEANED=$(echo "$OUT" | python3 -c "import json,sys; print('\n'.join(json.load(sys.stdin).get('cleaned', [])))" 2>/dev/null || echo "")
 if [ -z "$CLEANED" ]; then
-  echo "  ⚠️  SKIP — 写集表无有效条目 (fail-open)"
-  exit 0
+  echo "  ❌ 写集表无有效条目 (U2b: 有 dev doc 无写集表 → exit 1)"
+  exit 1
 fi
 
 # 逐条目核验: (a) 存在性 (b) git diff 命中

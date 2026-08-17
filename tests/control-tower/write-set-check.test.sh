@@ -5,7 +5,7 @@
 # 覆盖（铁律 48：正常/降级/边界）:
 #   1. 声明 3 文件，2 命中 → 漂移 1 + exit 1
 #   2. 声明全命中 → exit 0 + 漂移 0
-#   3. 无写集表 → fail-open skip + degraded + exit 0
+#   3. 无写集表 → exit 1（U2b fail-closed: 有 dev doc 无写集表 = 契约违例）
 #   4. 链接/反斜杠/行号形态清洗后命中
 #   5. 目录级声明 vs 实际 → 漂移判定正确
 #
@@ -65,15 +65,15 @@ assert_exit 0 "$EXIT" "全命中 → exit 0"
 assert_contains "$OUT" "漂移 0" "输出含漂移 0"
 echo ""
 
-echo "── 3. 无写集表 → fail-open ──"
+echo "── 3. 无写集表 → exit 1（U2b 修复: 有 dev doc 无写集表 = 契约违例）──"
 cat > "$TMP_DIR/ws-doc3.md" <<'EOF'
 # Test Doc
 没有写集表章节
 EOF
 EXIT=0
 OUT=$(SYNO_DEV_DOC="$TMP_DIR/ws-doc3.md" bash "$TOOL" 2>&1) || EXIT=$?
-assert_exit 0 "$EXIT" "无写集表 → exit 0（fail-open）"
-assert_contains "$OUT" "SKIP" "输出含 SKIP 标记"
+assert_exit 1 "$EXIT" "无写集表 → exit 1（U2b fail-closed）"
+assert_contains "$OUT" "无写集表" "输出点名无写集表"
 echo ""
 
 echo "── 4. 链接/反斜杠/行号清洗 ──"
