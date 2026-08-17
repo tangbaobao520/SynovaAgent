@@ -257,3 +257,11 @@ Binary file .claude/bypass.log matches
 2026-08-18T00:35:00+08:00 | COMMITTED | pre-commit PASS (D430 补记) | TASK_ID=D430 | AGENT=DeepSeek-Harness | HASH=a14ebbc430922c12027018278c53d1f68cff3f54
 
 
+2026-08-18T00:50:00+08:00 | COMMITTED | pre-commit PASS (D430) | TASK_ID=D430 | AGENT=DeepSeek-Harness | HASH=ebf447c4f8091448436770b6a5f5e90ad6efd3f5
+2026-08-18T00:55:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: feat(D437): 仪表盘固定输出 app/founder-dashboar) | TASK_ID=merge | AGENT=kimi-k3-audit | HASH=fa2c4b080cb52bdd0f84609179384a662cf25b97
+2026-08-18T00:55:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: ci(D436): 重加控制塔门禁测试 job（只跑 5 个 mktemp 密封) | TASK_ID=merge | AGENT=kimi-k3-audit | HASH=ed28e50ab8a4dba4cd3cb4fc21decbc614d54285
+2026-08-18T00:55:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: docs(D435): 合并决策权归属文档 + 刷新 founder-conso) | TASK_ID=merge | AGENT=kimi-k3-audit | HASH=0bb50159835521fe372e91aa6fc7b2f82fce11ef
+2026-08-18T00:55:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: docs(D435): 决策权归属 + 第一性原理决策参考（U8风险分级/U5a) | TASK_ID=merge | AGENT=kimi-k3-audit | HASH=97be83b67b5c4222e738c67fb2493bb08b0f9e98
+2026-08-18T00:55:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: chore(D434): bypass.log 补记 CI 修复证据链) | TASK_ID=merge | AGENT=kimi-k3-audit | HASH=fbc9498f33e42aa5c79f8813994817801dbd8e02
+2026-08-18T00:55:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: chore(D433): bypass.log 补记 fail-open-bat) | TASK_ID=merge | AGENT=kimi-k3-audit | HASH=2741368097df995222b06eead40bfb374b8d357a
+2026-08-18T00:55:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: chore(D432): bypass.log 补记 3 提交证据链 + 落盘 ) | TASK_ID=merge | AGENT=kimi-k3-audit | HASH=179d5a9604ce03fce2d180ae78babf28a0debc16
