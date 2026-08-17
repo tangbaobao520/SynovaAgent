@@ -1,0 +1,13 @@
+{
+  "task_id": "D453",
+  "title": "哨兵触发路径修复 runSentinelOnce db:undefined",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-18",
+  "updated_by": "alloc-task-id",
+  "note": "DSH 领地。runSentinelOnce（src/agent/sentinel-service.ts:173）传 db:undefined → 哨兵空 store → 恒 degraded。修复：仿 SentinelRunner.check（runner.ts:835-841）包装真实 GraphStore。D442 GS-03 转绿前置之一。",
+  "priority": "P0"
+}
