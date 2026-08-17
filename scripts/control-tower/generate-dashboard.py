@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 generate-dashboard.py — 创始人全局仪表盘 (D220)
 
@@ -771,8 +771,8 @@ def generate_static(output_path: str = ""):
     write_dashboard_checkpoint(data)
 
     if not output_path:
-        ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-        output_path = str(PROJECT_ROOT / f"app/synova-founder-dashboard-{ts}.html")
+        # D437: 固定路径，创始人永远双击同一个文件（不再生成带时间戳的散文件）
+        output_path = str(PROJECT_ROOT / "app" / "founder-dashboard.html")
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as f:

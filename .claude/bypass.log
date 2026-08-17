@@ -243,3 +243,4 @@ Binary file .claude/bypass.log matches
 2026-08-17T23:12:13+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
 2026-08-17T23:12:14+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
 2026-08-17T23:13:10+08:00 | COMMITTED | pre-commit PASS (补记: 沙箱 plain git commit) | TASK_ID=D436 | AGENT=dsh | HASH=98dc393c30accb7986bae6106e9d7a57ca72d334
+2026-08-17T23:23:16+08:00 | COMMITTED | pre-commit PASS (补记: 沙箱 plain git commit) | TASK_ID=D437 | AGENT=dsh | HASH=487fd0424886b70ab4e454c57f978f72b0354400
