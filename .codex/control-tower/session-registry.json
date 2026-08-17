@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-08-17T12:50:49+00:00",
+  "updated_at": "2026-08-17T12:52:35+00:00",
   "sessions": [
     {
       "session_id": "D317-engine-core-retirement-cleanup",
@@ -1095,9 +1095,9 @@
       "task_id": "D428",
       "pid": null,
       "started_at": "2026-08-17T12:50:49+00:00",
-      "last_seen_at": "2026-08-17T12:50:49+00:00",
+      "last_seen_at": "2026-08-17T12:52:35+00:00",
       "phase": "CP2",
-      "phase_entered_at": "2026-08-17T12:50:49+00:00",
+      "phase_entered_at": "2026-08-17T12:52:35+00:00",
       "write_set": [
         {
           "file": "task-state/D428.json",
