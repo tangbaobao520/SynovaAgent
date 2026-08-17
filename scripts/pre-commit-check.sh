@@ -1028,6 +1028,20 @@ if echo "$STAGED_ALL" | grep -qE 'docs/plans/codex/implementation/SYNOVA-IMPL-.*
   fi
 fi
 
+# U4 (D423): 附挂声称↔证据对照表校验（暂存含 SYNOVA-IMPL-*.md 时；脚本内部按有无「交付声明」节跳过）
+CLAIMS_DOCS=$(echo "$STAGED_ALL" | grep -E 'docs/plans/codex/implementation/SYNOVA-IMPL-.*\.md' || true)
+if [ -n "$CLAIMS_DOCS" ]; then
+  CLAIMS_OUT=$(bash "$ROOT/scripts/control-tower/verify-claims-table.sh" $CLAIMS_DOCS 2>&1)
+  CLAIMS_EXIT=$?
+  if [ "$CLAIMS_EXIT" -eq 0 ]; then
+    soft_pass "G12d: 声称↔证据对照表 (U4 D423)"
+  elif [ "$CLAIMS_EXIT" -eq 1 ]; then
+    hard_check "G12d: 声称↔证据对照表不完整 (U4 D423)" "$CLAIMS_OUT"
+  else
+    hard_check "G12d: 声称↔证据校验执行失败 (U4 D423, exit=$CLAIMS_EXIT)" "$CLAIMS_OUT"
+  fi
+fi
+
 # ═══ 组 13/13: 技能同步一致性 (.claude/skills ↔ .dsh/skills, D370) ═══
 # 背景: DSH 技能发现根 .dsh/skills（rank 100）不读 .claude/skills → 单源复制 + 漂移门禁。
 # fail-closed (D328): 检查脚本 exit 2 = 检查执行失败 → 同样硬阻断, 不与"通过"混同。
