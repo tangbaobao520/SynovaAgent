@@ -1,0 +1,11 @@
+{
+  "task_id": "D417",
+  "title": "u5-secrets-failopen",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-17",
+  "updated_by": "alloc-task-id"
+}
