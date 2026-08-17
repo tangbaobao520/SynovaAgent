@@ -79,6 +79,28 @@ jobs:
 
   
 
+  control-tower-tests:
+    name: Control Tower Gate Tests (U7c 兜底)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run hermetic control-tower gate tests
+        # 只跑 mktemp/注入缝密封的 5 个门禁核心测试（U2/U4/U5a/U5c/U7）。
+        # 其余 29 个测试依赖 git 历史/运行时数据(.codex/task-state)，非密封，
+        # 全量密封化是单独立项（K3 P2-4 测试密封性）。此 job 是"门禁坏了能抓到"的 canary。
+        run: |
+          FAIL=0
+          for t in \
+            tests/control-tower/verify-parallel.test.sh \
+            tests/control-tower/verify-claims-table.test.sh \
+            tests/control-tower/write-set-check.test.sh \
+            tests/control-tower/post-commit-marker.test.sh \
+            tests/control-tower/ct-test-gate.test.sh; do
+            echo "── $t"
+            bash "$t" || { echo "FAIL: $t"; FAIL=1; }
+          done
+          exit $FAIL
+
   integration-check:
     name: Integration Contract Check
     runs-on: ubuntu-latest
