@@ -311,3 +311,6 @@ Binary file .claude/bypass.log matches
 2026-08-18T02:07:10+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
 2026-08-18T02:07:43+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D451 | AGENT=DeepSeek-Harness
 2026-08-18T02:07:57+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D451 | AGENT=DeepSeek-Harness
+2026-08-18T02:09:14+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D451 | AGENT=DeepSeek-Harness | HASH=e3348f68b6b3b82f2975c5f39464a435e6218f16
+
+2026-08-16T12:00:00+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D384-TEST | AGENT=test

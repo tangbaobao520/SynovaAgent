@@ -63,33 +63,47 @@ def git_committed_dns():
 
 
 def collect(offline=False):
-    """采集每个任务的 声称 status vs 物理验证。返回 (rows, git_ok)。"""
+    """采集每个任务的 声称 status vs 物理验证。返回 (rows, git_ok)。
+
+    方案 B（2026-08-18 创始人定）: task-state 目录只有 Mac DSH 侧 52 个任务，
+    全项目 git log 有 258 个 D#。历史任务（git 有、task-state 无）也纳入，
+    但标记 hist=True——渲染时折叠，红绿灯只算活跃任务（不淹没当下信号）。
+    """
     committed, merged = git_committed_dns()
     git_ok = committed is not None
     rows = []
-    if not TASK_STATE.exists():
-        return rows, git_ok
-    for p in sorted(TASK_STATE.glob("*.json")):
-        if p.name == "TEMPLATE.json":
-            continue
-        try:
-            d = json.loads(p.read_text(encoding="utf-8", errors="replace"))
-        except Exception:
-            continue
-        tid = d.get("task_id", p.stem)
-        m = re.search(r"D(\d{3})", tid)
-        num = int(m.group(1)) if m else None
-        claimed = d.get("status", "?")
-        if not git_ok:
-            phys = "degraded"
-        elif num in merged:
-            phys = "已提交且进 main"
-        elif num in committed:
-            phys = "已提交未进 main"
-        else:
-            phys = "无提交记录"
-        rows.append({"id": tid, "title": (d.get("title") or "")[:20],
-                     "claimed": claimed, "phys": phys, "num": num})
+    seen = set()
+    if TASK_STATE.exists():
+        for p in sorted(TASK_STATE.glob("*.json")):
+            if p.name == "TEMPLATE.json":
+                continue
+            try:
+                d = json.loads(p.read_text(encoding="utf-8", errors="replace"))
+            except Exception:
+                continue
+            tid = d.get("task_id", p.stem)
+            m = re.search(r"D(\d{3})", tid)
+            num = int(m.group(1)) if m else None
+            claimed = d.get("status", "?")
+            if num is not None:
+                seen.add(num)
+            if not git_ok:
+                phys = "degraded"
+            elif num in merged:
+                phys = "已提交且进 main"
+            elif num in committed:
+                phys = "已提交未进 main"
+            else:
+                phys = "无提交记录"
+            rows.append({"id": tid, "title": (d.get("title") or "")[:20],
+                         "claimed": claimed, "phys": phys, "num": num, "hist": False})
+    # 方案 B: git 里有、task-state 无的历史任务 → 折叠纳入（status 从 git 派生=impl_done）
+    if git_ok and committed is not None:
+        for num in sorted(committed - seen):
+            tid = "D%03d" % num
+            phys = "已提交且进 main" if num in (merged or set()) else "已提交未进 main"
+            rows.append({"id": tid, "title": "(历史任务)",
+                         "claimed": "impl_done", "phys": phys, "num": num, "hist": True})
     return rows, git_ok
 
 
@@ -296,7 +310,23 @@ def render_html(rows, green, yellow, red, git_ok, ledger, north, ci):
                 '<td style="color:%s;font-weight:600">%s %s</td></tr>'
                 % (r["id"], r["title"], r["claimed"], r["phys"], colors[emoji], emoji, note))
 
-    rows_html = "".join(row_html(r) for r in rows)
+    # 方案 B: 活跃任务展开，历史任务折叠成一行（可点击展开）
+    active_rows = [r for r in rows if not r.get("hist")]
+    hist_rows = [r for r in rows if r.get("hist")]
+    rows_html = "".join(row_html(r) for r in active_rows)
+    if hist_rows:
+        hist_in_main = sum(1 for r in hist_rows if r["phys"] == "已提交且进 main")
+        hist_detail = "".join(row_html(r) for r in hist_rows)
+        hist_html = (
+            '<div class="h2">📦 历史任务（' + str(len(hist_rows)) + ' 个，'
+            + str(hist_in_main) + ' 个进 main）— git log 全项目派生，点击展开</div>\n'
+            '<details><summary style="cursor:pointer;color:#666;padding:8px">'
+            '展开/收起历史任务（这些是 task-state 未登记、但 git 里确有提交的全项目任务）</summary>\n'
+            '<table><tr><th>任务</th><th>它说</th><th>物理核验</th><th>判定</th></tr>'
+            + hist_detail + '</table></details>\n'
+        )
+    else:
+        hist_html = ""
     ok = red == 0
     status_bg = "#16a34a" if ok else "#dc2626"
     status_txt = "全部声称与物理一致 ✅" if ok else "⚠️ 发现 " + str(red) + " 个疑似虚报（点下方任务看证据）"
@@ -360,7 +390,8 @@ def render_html(rows, green, yellow, red, git_ok, ledger, north, ci):
             + "</div>\n" + degraded + "\n"
             "<div class=\"h2\">面板 1 · 哪些真做完了？（任务真相）</div>\n"
             "<table><tr><th>任务</th><th>它说</th><th>物理核验</th><th>判定</th></tr>" + rows_html + "</table>\n"
-            "<div class=\"h2\">面板 2 · 哪些骗了我？（诚信账本）</div>\n" + ledger_html + "\n"
+            + hist_html
+            + "<div class=\"h2\">面板 2 · 哪些骗了我？（诚信账本）</div>\n" + ledger_html + "\n"
             "<div class=\"h2\">面板 3 · 方向跑偏了吗？（北星对齐）</div>\n" + north_html + "\n"
             "<p style=\"color:#999;font-size:12px\">每个判定都可复核：git log --all --format=%s | grep \"(D#)\" 验证提交；git merge-base 验证是否进 main。</p>\n"
             "</body></html>")
@@ -371,9 +402,12 @@ def main():
     rows, git_ok = collect(offline)
     if not git_ok:
         print("⚠ degraded: git 不可用，物理核验降级", file=sys.stderr)
-    green = sum(1 for r in rows if judge(r["claimed"], r["phys"])[0] == "🟢")
-    red = sum(1 for r in rows if judge(r["claimed"], r["phys"])[0] == "🔴")
-    yellow = sum(1 for r in rows if judge(r["claimed"], r["phys"])[0] == "🟡")
+    # 方案 B: 红绿灯只算活跃任务（hist=False）；历史任务折叠，不淹没当下信号
+    active = [r for r in rows if not r.get("hist")]
+    hist = [r for r in rows if r.get("hist")]
+    green = sum(1 for r in active if judge(r["claimed"], r["phys"])[0] == "🟢")
+    red = sum(1 for r in active if judge(r["claimed"], r["phys"])[0] == "🔴")
+    yellow = sum(1 for r in active if judge(r["claimed"], r["phys"])[0] == "🟡")
 
     ledger = integrity_ledger()
     north, north_degraded = north_star_alignment(rows)
@@ -388,10 +422,13 @@ def main():
     print("# 创始人控制台 · 零信任（物理核验，非 agent 自报）\n")
     print("| 任务 | 它说 | 物理核验 | 判定 |")
     print("|------|------|----------|------|")
-    for r in rows:
+    for r in active:
         emoji, note = judge(r["claimed"], r["phys"])
         print("| " + r["id"] + " " + r["title"] + " | " + r["claimed"] + " | " + r["phys"] + " | " + emoji + " " + note + " |")
-    print("\n**小结：🟢 真实 " + str(green) + " · 🟡 待复核 " + str(yellow) + " · 🔴 疑似虚报 " + str(red) + "**")
+    if hist:
+        hist_in_main = sum(1 for r in hist if r["phys"] == "已提交且进 main")
+        print("\n> 📦 历史任务（已折叠）: " + str(len(hist)) + " 个（" + str(hist_in_main) + " 个进 main）——git log 全项目派生，非 task-state 登记")
+    print("\n**小结：🟢 真实 " + str(green) + " · 🟡 待复核 " + str(yellow) + " · 🔴 疑似虚报 " + str(red) + "**（活跃任务 " + str(len(active)) + " 个 + 历史 " + str(len(hist)) + " 个）")
     # 面板2
     print("\n## 诚信账本（bypass.log 对账）")
     if ledger is None:

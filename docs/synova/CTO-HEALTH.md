@@ -1,10 +1,10 @@
 # Synova CTO 健康仪表盘（第③面）
 
-> 打开即真相。生成: 2026-08-17 20:57:52 | 数据源指纹: 64f6a80e2373
+> 打开即真相。生成: 2026-08-18 02:24:52 | 数据源指纹: 5ddc4f8ad9c2
 
 <!-- CTO-HEALTH:AUTO:START -->
 ## CTO 健康仪表盘（第③面）— 自动区
-> 生成: 2026-08-17 20:57:52 | 数据源: bypass.log / pre-commit-failures.log / AUDIT-FINDINGS-LEDGER
+> 生成: 2026-08-18 02:24:52 | 数据源: bypass.log / pre-commit-failures.log / AUDIT-FINDINGS-LEDGER
 
 **总体判定: 🟡 黄 — 历史有 M 模式复发记录 (见 §三; 多为 D328-D331 已闭环项, 需 CTO 确认无新增)**
 
@@ -12,13 +12,13 @@
 
 | 事件 | 全量 | 24h 内 |
 |------|:---:|:---:|
-| COMMITTED（正常提交） | 131 | 86 |
-| BLOCKED（被门禁拒绝） | 35 | 9 |
-| DEGRADED（降级放行） | 31 | 0 |
+| COMMITTED（正常提交） | 201 | 152 |
+| BLOCKED（被门禁拒绝） | 46 | 19 |
+| DEGRADED（降级放行） | 42 | 11 |
 | TIMEOUT（超时） | 3 | 0 |
 | **detected-bypass（真绕过）** | **5** | **0** |
 
-近 7 天事件: 2026-08-10:1 | 2026-08-11:3 | 2026-08-12:28 | 2026-08-13:8 | 2026-08-14:14 | 2026-08-16:26 | 2026-08-17:91
+近 7 天事件: 2026-08-11:3 | 2026-08-12:28 | 2026-08-13:8 | 2026-08-14:14 | 2026-08-16:27 | 2026-08-17:127 | 2026-08-18:55
 
 **绕过历史（全部）** — 集中在 07-26~28（旧 marker 时代），此后零绕过：
 - `2026-07-26T18:34:35Z` no-precommit-marker
@@ -51,7 +51,7 @@
 
 | 任务 | 状态 | spec | impl | audit | FIX |
 |------|------|:---:|:---:|:---:|------|
-| D356 | audited | ⚠ | ✅ | CONDITIONAL_PASS |  |
+| D356 | audited | ✅ | ✅ | CONDITIONAL_PASS |  |
 | D379 | impl_done | ⚠ | ✅ | — |  |
 | D383 | audited | — | ✅ | CONDITIONAL_PASS | D384 |
 | D384 | impl_done | — | ✅ | — |  |
@@ -88,12 +88,38 @@
 | D417 | impl_done | — | ✅ | — |  |
 | D419 | impl_done | — | ✅ | — |  |
 | D428 | impl_done | — | ✅ | — |  |
+| D429 | impl_done | — | ✅ | — |  |
+| D430 | impl_done | — | ✅ | — |  |
+| D439 | impl_done | — | ✅ | — |  |
+| D440 | impl_done | — | ✅ | — |  |
+| D441 | impl_done | — | ✅ | — |  |
+| D442 | claimed | — | — | — |  |
+| D443 | claimed | — | — | — |  |
+| D444 | claimed | — | — | — |  |
+| D445 | claimed | — | — | — |  |
+| D446 | claimed | — | — | — |  |
+| D447 | claimed | — | — | — |  |
+| D448 | claimed | — | — | — |  |
+| D449 | claimed | — | — | — |  |
+| D450 | impl_done | — | ✅ | — |  |
+| D451 | impl_done | — | ✅ | — |  |
+| D452 | claimed | — | — | — |  |
+
+> 📦 历史任务（已折叠）: **142** 个（git log 全项目派生，非 task-state 登记；8 个有审计报告）
+> 这些是 task-state 未登记、但 git 里确有提交的全项目任务（D5~D398 早期 + Win/Codex 侧），状态按 impl 派生。
 
 ### 六、CI 状态（CT-41①, GitHub API）
 
 | Run | 结论 | 分支 | 标题 |
 |-----|------|------|------|
-| — | ⚠ 无法拉取（degraded） | | |
+| #885 | 🟡 action_required | auto/product-progress | chore(D371): 产品进度自动更新 |
+| #884 | 🟡 action_required | auto/dashboard | chore(D439): 控制台自动更新 |
+| #11 | 🟢 success | main | Merge feat/d395a-notes-four-state into main |
+| #883 | 🟢 success | main | Merge feat/d395a-notes-four-state into main |
+| #85 | 🟢 success | main | Merge feat/d395a-notes-four-state into main |
+| #882 | 🟢 success | feat/d395a-notes-four-sta | fix(D451): CT-42 session 专属 brief 读侧接线 + D331 补记死循 |
+| #881 | 🟡 action_required | auto/dashboard | chore(D439): 控制台自动更新 |
+| #880 | 🟢 success | main | Merge feat/d395a-notes-four-state into main |
 
 > 红线提醒: 不碰 scripts/audit/；不写审计标准；禁止自我审计。
 > 同类错误第二次出现 = 防线系统性失效，升级创始人。

@@ -245,6 +245,7 @@ def analyze_task_state() -> Tuple[list, dict]:
             if m:
                 (audit_files if _committed(f) else phantom_audit).add(int(m.group(1)))
 
+    seen_nums = set()  # 方案 B: 记录 task-state 已覆盖的 D#，循环后补 git 派生历史任务
     for p in sorted(TASK_STATE_DIR.glob("*.json")):
         if p.name == "TEMPLATE.json":
             continue
@@ -256,6 +257,8 @@ def analyze_task_state() -> Tuple[list, dict]:
         tid = d.get("task_id", p.stem)
         m = re.search(r"D(\d{3})", tid)
         num = int(m.group(1)) if m else None
+        if num is not None:
+            seen_nums.add(num)
 # 派生判定 (工件优先; json 字段兜底展示但不算真)
         # D399 (P1-2)/D400: spec = glob 扫描 OR json spec.path 兜底（文件必须真实存在——存在即算真, 消除幻影）
         # D412/U3: json spec.path 分支同样过仓库态校验（工作区存在 且 已提交 HEAD）
@@ -312,6 +315,21 @@ def analyze_task_state() -> Tuple[list, dict]:
         })
         if spec_phantom or audit_txt == "⚠phantom":
             phantom_n += 1
+    # 方案 B (2026-08-18 创始人): git 有、task-state 无的历史任务补录（全项目视野，不只 Mac 侧）
+    for num in sorted(impl_hits - seen_nums):
+        tid = "D%03d" % num
+        audit_txt_hist = "—"
+        if num in audit_files:
+            audit_txt_hist = "✅"
+        tasks.append({
+            "task_id": tid,
+            "title": "(历史任务)",
+            "status": "impl_done",
+            "spec": "—",
+            "impl": "✅",
+            "audit": audit_txt_hist,
+            "fix": "",
+        })
     return tasks, {"phantom": phantom_n, "repo_degraded": repo_degraded}
 
 
@@ -418,9 +436,16 @@ def render(bypass: dict, fail: dict, ledger: dict, tasks: list, ci: dict = None)
         "|------|------|:---:|:---:|:---:|------|",
     ]
     if tasks:
-        for t in tasks:
+        active_tasks = [t for t in tasks if t["title"] != "(历史任务)"]
+        hist_tasks = [t for t in tasks if t["title"] == "(历史任务)"]
+        for t in active_tasks:
             lines.append(f"| {t['task_id']} | {t['status']} | {t['spec']} | {t['impl']} | {t['audit']} | {t['fix']} |")
         lines.append("")
+        if hist_tasks:
+            hist_audited = sum(1 for t in hist_tasks if t["audit"] == "✅")
+            lines.append(f"> 📦 历史任务（已折叠）: **{len(hist_tasks)}** 个（git log 全项目派生，非 task-state 登记；{hist_audited} 个有审计报告）")
+            lines.append("> 这些是 task-state 未登记、但 git 里确有提交的全项目任务（D5~D398 早期 + Win/Codex 侧），状态按 impl 派生。")
+            lines.append("")
     else:
         lines.append("| — | 无 task-state 文件 | | | | |")
         lines.append("")

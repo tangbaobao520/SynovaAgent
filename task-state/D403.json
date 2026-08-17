@@ -1,11 +1,15 @@
 {
   "task_id": "D403",
   "title": "派活文件落库（4 brief + dev-doc 启动指引 + 认领表）",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": null,
-  "impl": null,
+  "impl": {
+    "commit": "8cfac218",
+    "by": "coding",
+    "at": "2026-08-16"
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-08-17",
-  "updated_by": "alloc-task-id"
+  "updated_at": "2026-08-18",
+  "updated_by": "CTO"
 }
