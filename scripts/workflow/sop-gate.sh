@@ -10,7 +10,7 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 #       从"请自觉"升级为"机器卡点"——每步必须物理证据齐全才放行。
 #
 # 契约 (铁律 47):
-#   @input  — --step <2|5|7> [--brief <name>]；测试注入 SYNO_TEST_ARM=1 + 各步骤证据注入
+#   @input  — --step <2|5|7> [--brief <name>]（无注入缝；测试在真实 task-briefs 目录建临时文件 + trap 清理）
 #   @output — 该步骤物理证据校验报告 + 缺失时的补救命令
 #   @exit   — 0 = 该步证据齐全可进下一步；1 = 证据缺失（阻断 + 补救提示）；
 #             2 = 校验执行失败/降级（环境不可用等）

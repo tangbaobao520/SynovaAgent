@@ -107,7 +107,7 @@ fi
 echo ""
 
 # ═══ 1. .env 意外暂存 ═══
-if git diff --cached --name-only 2>/dev/null | grep -q '^\.env$'; then
+if git diff --cached --name-only 2>/dev/null | grep -qE '(^|/)\.env$'; then
   echo -e "  ${RED}❌ .env 文件被暂存 — 请立即 git rm --cached .env${NC}"
   VIOLATIONS=$((VIOLATIONS + 1))
 else

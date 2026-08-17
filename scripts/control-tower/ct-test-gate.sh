@@ -25,7 +25,10 @@ ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 if [ "${SYNO_TEST_ARM:-0}" = "1" ]; then
   STAGED_ALL="${SYNO_CT_STAGED:-}"
 else
-  STAGED_ALL="$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)"
+  if ! STAGED_ALL="$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null)"; then
+    echo "degraded: git 不可用，无法读取暂存区（fail-closed，不当作无变更）" >&2
+    exit 2
+  fi
 fi
 
 CT_SCRIPTS=$(echo "$STAGED_ALL" | grep -E '^scripts/(control-tower|workflow|hooks)/.*\.(sh|py)$' || true)

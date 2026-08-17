@@ -38,9 +38,9 @@ if ! git rev-parse --verify "$BASE" >/dev/null 2>&1; then
   fi
   git fetch origin >/dev/null 2>&1 || true
   if ! git rev-parse --verify "$BASE" >/dev/null 2>&1; then
-    echo -e "${YELLOW}⚠️  base 引用缺失 ($BASE) — 对账跳过（degraded 显式提示，记 degraded-events.log）${RESET}"
+    echo -e "${YELLOW}⚠️  base 引用缺失 ($BASE) — 对账无法执行（fail-closed，exit 2 不当作通过）${RESET}"
     echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) check-bypass-log degraded: base $BASE 不可解析, 对账跳过" >> "$ROOT/.claude/degraded-events.log" 2>/dev/null || true
-    exit 0
+    exit 2
   fi
 fi
 
