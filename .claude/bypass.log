@@ -269,3 +269,6 @@ Binary file .claude/bypass.log matches
 2026-08-17T17:10:39Z possible-bypass diff=3959s
 2026-08-17T17:10:47Z possible-bypass diff=3967s
 2026-08-18T00:31:14+08:00 | COMMITTED | pre-commit PASS (补记: 沙箱 plain git commit) | TASK_ID=D438 | AGENT=synova-dsh | HASH=90670fa8aea5321bfd37be48d3428c3809055d76
+2026-08-17T17:10:57Z possible-bypass diff=3977s
+2026-08-17T17:11:29Z possible-bypass diff=4009s
+2026-08-18T01:15:00+08:00 | COMMITTED | pre-commit PASS (D439) | TASK_ID=D439 | AGENT=DeepSeek-Harness | HASH=842fbd4313addf7ac852271fc1c9cefee906838e
