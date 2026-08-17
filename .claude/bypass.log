@@ -268,3 +268,4 @@ Binary file .claude/bypass.log matches
 2026-08-18T01:00:00+08:00 | COMMITTED | pre-commit PASS (D430 补记 0070be2b) | TASK_ID=D430 | AGENT=DeepSeek-Harness | HASH=0070be2bec1d5de04edff8154bf4ee5a4a57f691
 2026-08-18T01:30:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: D438) | TASK_ID=merge | AGENT=kimi-k3-audit | HASH=fc78fe5c247d61023ec080ed799c5b682baa7488
 2026-08-18T01:30:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: D438) | TASK_ID=merge | AGENT=kimi-k3-audit | HASH=9cb364480870c362c07aa6bf215ee9ab900ad29e
+2026-08-17T17:10:31Z possible-bypass diff=3951s
