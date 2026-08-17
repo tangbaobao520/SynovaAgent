@@ -265,3 +265,6 @@ Binary file .claude/bypass.log matches
 2026-08-18T00:55:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: chore(D434): bypass.log 补记 CI 修复证据链) | TASK_ID=merge | AGENT=kimi-k3-audit | HASH=fbc9498f33e42aa5c79f8813994817801dbd8e02
 2026-08-18T00:55:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: chore(D433): bypass.log 补记 fail-open-bat) | TASK_ID=merge | AGENT=kimi-k3-audit | HASH=2741368097df995222b06eead40bfb374b8d357a
 2026-08-18T00:55:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: chore(D432): bypass.log 补记 3 提交证据链 + 落盘 ) | TASK_ID=merge | AGENT=kimi-k3-audit | HASH=179d5a9604ce03fce2d180ae78babf28a0debc16
+2026-08-18T01:00:00+08:00 | COMMITTED | pre-commit PASS (D430 补记 0070be2b) | TASK_ID=D430 | AGENT=DeepSeek-Harness | HASH=0070be2bec1d5de04edff8154bf4ee5a4a57f691
+2026-08-18T01:30:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: D438) | TASK_ID=merge | AGENT=kimi-k3-audit | HASH=fc78fe5c247d61023ec080ed799c5b682baa7488
+2026-08-18T01:30:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: D438) | TASK_ID=merge | AGENT=kimi-k3-audit | HASH=9cb364480870c362c07aa6bf215ee9ab900ad29e
