@@ -190,4 +190,44 @@ Binary file .claude/bypass.log matches
 2026-08-17T09:13:48+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D407 | AGENT=DeepSeek-Harness | HASH=93de5ccb13b3364b4ec93e86a154ebb5a68fa1ea
 2026-08-17T09:15:22+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D407 | AGENT=DeepSeek-Harness | HASH=5b979d6f94c738a08c8610b4602514b702b7a75b
 2026-08-17T09:16:40+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D407 | AGENT=DeepSeek-Harness | HASH=f90f91702443099cb33f0a81c4ce7f2a4d095072
+2026-08-17T11:48:19+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D408 | AGENT=DeepSeek-Harness | HASH=0e9cd28e5297e2aa43a9c8062e0a5f4d34a51aac
+2026-08-17T11:49:39+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D408 | AGENT=DeepSeek-Harness | HASH=6be67ba09c7e42115ea7ab4c142adf6c246777ee
+2026-08-17T11:51:27+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D409 | AGENT=DeepSeek-Harness | HASH=d02d41cba245c2f4772907636d7f71d0a9987e9b
+2026-08-17T11:52:45+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D409 | AGENT=DeepSeek-Harness | HASH=f118f3222a992f740cd1ea7a2ddf2ec4c237bc6c
+2026-08-17T12:10:30+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D410 | AGENT=DeepSeek-Harness | HASH=a1d5c3cb0863f5a4c1bee2b03defe2c8b9a9f451
+2026-08-17T12:11:44+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D410 | AGENT=DeepSeek-Harness | HASH=768c7c0300a263521ceb3e4adca187072e42ea16
+2026-08-17T10:40:00+08:00 | COMMITTED | pre-commit PASS (D428 收尾, synova-commit 13组过) | TASK_ID=D428 | AGENT=DeepSeek-Harness | HASH=d80aed37
+2026-08-17T10:40:00+08:00 | COMMITTED | pre-commit PASS (D428 收尾, git commit 补记) | TASK_ID=D428 | AGENT=DeepSeek-Harness | HASH=c30335e2
+2026-08-17T10:40:00+08:00 | COMMITTED | pre-commit PASS (D428 收尾, git commit 补记) | TASK_ID=D428 | AGENT=DeepSeek-Harness | HASH=d087df33
+2026-08-17T10:45:00+08:00 | COMMITTED | pre-commit PASS (D428 收尾补记: chore(D428): bypass.log 补记 D428 三提交（D331 对账）) | TASK_ID=D428 | AGENT=DeepSeek-Harness | HASH=7e23fe3ed207b7f1efd6c838e8f6ced875383919
+2026-08-17T10:45:00+08:00 | COMMITTED | pre-commit PASS (D428 收尾补记: chore(D428): audit-result 运行时证据落库) | TASK_ID=D428 | AGENT=DeepSeek-Harness | HASH=d087df331e1a48c16a78fe5965b2b2f570dfb0a5
+2026-08-17T10:45:00+08:00 | COMMITTED | pre-commit PASS (D428 收尾补记: chore(D428): session-registry 释放 D408 写集（收尾证据）) | TASK_ID=D428 | AGENT=DeepSeek-Harness | HASH=c30335e2af02e18bf46345e67c501e10067dfee3
+2026-08-17T10:45:00+08:00 | COMMITTED | pre-commit PASS (D428 收尾补记: chore(D428): K3 U1-U8 控制塔升级 15 分支合并入 main 收尾登记（tas) | TASK_ID=D428 | AGENT=DeepSeek-Harness | HASH=d80aed37522aef6070a9420e4919899f6636ffc1
+2026-08-17T10:50:00+08:00 | COMMITTED | pre-commit PASS (D428 收尾补记: bypass.log full-hash) | TASK_ID=D428 | AGENT=DeepSeek-Harness | HASH=43291d92d222912f2089121a95c6e9a20c33d704
+2026-08-17T11:00:00+08:00 | COMMITTED | pre-commit PASS (D428 补记 43291d92) | TASK_ID=D428 | AGENT=DeepSeek-Harness | HASH=b4c843ea5950742a29b659bb903552a6ec494f21
+2026-08-17T11:05:00+08:00 | COMMITTED | pre-commit PASS (D428 merge 前补记) | TASK_ID=D428 | AGENT=DeepSeek-Harness | HASH=7d24b9d2b8ac1c43724486989e20796ab35b1c95
 2026-08-17T15:21:52+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D414 | AGENT=DeepSeek-Harness
+2026-08-16T12:00:00+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D384-TEST | AGENT=test
+2026-08-17T11:20:00+08:00 | COMMITTED | pre-commit PASS (merge 引入补记: chore(D428): bypass.log merge 前补记) | TASK_ID=merge | AGENT=DeepSeek-Harness | HASH=64e5e3ecfc20f1c533f5b3ff69e070bd257ddfd7
+2026-08-17T11:25:00+08:00 | COMMITTED | pre-commit PASS (M4 补记: docs(D427): 合并清单补 U8 机器预审汇总分支（feat/u8-pr) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=2b7aeb311304bd98530d161aee363ef35a66dc21
+2026-08-17T11:25:00+08:00 | COMMITTED | pre-commit PASS (M4 补记: feat(D426): U8 工程侧 机器预审汇总脚本（三层审计模型第0层，聚合) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=d685dd3c3eafc9cf59442058ba11225d9ce06c33
+2026-08-17T11:25:00+08:00 | COMMITTED | pre-commit PASS (M4 补记: docs(D425): 创始人合并清单（13 分支终版，U1-U7+U4/U5a) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=43acbf212bee44c5d719569faad928a896f97bd8
+2026-08-17T11:25:00+08:00 | COMMITTED | pre-commit PASS (M4 补记: feat(D424): founder-truth 三问面板扩展（诚信账本+北星) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=1fb22665ba99082d04d2690cb48963098bc21f1b
+2026-08-17T11:25:00+08:00 | COMMITTED | pre-commit PASS (M4 补记: feat(D423): U4 声称↔证据自证表（格式版，白名单只读校验不预跑命令) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=aadc1b045faf5551d343ab8b593ad8709a8c396a
+2026-08-17T11:25:00+08:00 | COMMITTED | pre-commit PASS (M4 补记: feat(D422): U5c verify-parallel 三态化（CT-2) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=b9aa191bfffefc75c571fd0c7d096a4e4ba2d173
+2026-08-17T11:25:00+08:00 | COMMITTED | pre-commit PASS (M4 补记: feat(D421): U5a marker 三判（CT-29 并发/amend) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=9376c0c94bad2577890583c9a81ff3f6eceeeec9
+2026-08-17T11:25:00+08:00 | COMMITTED | pre-commit PASS (M4 补记: docs(review): 复盘交接 — 9分支审阅合并清单 + 剩余6模块要点) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=c372d8a42a8b97be8bd2bff0865b63049264af35
+2026-08-17T11:25:00+08:00 | COMMITTED | pre-commit PASS (M4 补记: feat(D419): founder-truth 加 --html 自包含控制) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=d0339a81b87ba5f8d986175a054db274fd7a6ca9
+2026-08-17T11:25:00+08:00 | COMMITTED | pre-commit PASS (M4 补记: docs(audit): 产品线验证报告精确化 — GSS 基建修正为'建成并提) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=476690dccd708c53fe7b311ea9693565bfe5aed9
+2026-08-17T11:25:00+08:00 | COMMITTED | pre-commit PASS (M4 补记: feat(D419): 创始人真相采集器 MVP — founder-truth) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=8ce78e24a4e97ed2f43068da042178b9ec93c737
+2026-08-17T11:25:00+08:00 | COMMITTED | pre-commit PASS (M4 补记: docs(audit): K3 产品线验证体系独立评审报告 — 26线合理 + ) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=4724f9a898523027b59a82bb1385e462c98f4c16
+2026-08-17T11:25:00+08:00 | COMMITTED | pre-commit PASS (M4 补记: fix(D417): secrets 门禁 git 可用性 fail-open ) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=413b97642cf9c06e752ddbefa6e7f1f1c46269ee
+2026-08-17T11:25:00+08:00 | COMMITTED | pre-commit PASS (M4 补记: fix(D416): sop-gate 测试 step 7 修正为可控场景（备份) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=0394b7011e27afb396304ed424ed88df2fbf12eb
+2026-08-17T11:25:00+08:00 | COMMITTED | pre-commit PASS (M4 补记: feat(D416): Mac DSH SOP 步骤物理卡点 — sop-gat) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=001f6df5cd543f0b7c274a4f2b14733730adabbc
+2026-08-17T11:25:00+08:00 | COMMITTED | pre-commit PASS (M4 补记: feat(D415): dev doc 写集双向对账 — check-dev-d) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=64e7758e9eb37c8a8eb6f1ecf0659a2ffb7859ea
+2026-08-17T11:25:00+08:00 | COMMITTED | pre-commit PASS (M4 补记: feat(D414): bypass 证据链对账门禁 — commit 前 ad) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=a3cec965ff791dd3d521512fa9b739ba3aefe85c
+2026-08-17T11:25:00+08:00 | COMMITTED | pre-commit PASS (M4 补记: feat(D413): 控制塔测试门禁 — ct-test-gate.sh 配对) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=b8d4051980264a10c8be287be79409b62a64017a
+2026-08-17T11:25:00+08:00 | COMMITTED | pre-commit PASS (M4 补记: feat(D412): 生成器产物可复现校验 — spec/audit 工件 g) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=8df7be16253a45729a31c173c13b20a2aa4490fe
+2026-08-17T11:25:00+08:00 | COMMITTED | pre-commit PASS (M4 补记: docs(D411): 双侧质量体系评估 + 控制塔升级spec（U1-U8）+) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=745bfc4f41ba69b54a6deb99cd1269672df6bfc7
+2026-08-17T11:25:00+08:00 | COMMITTED | pre-commit PASS (M4 补记: feat(D333): N13 进化闭环接线 — loop-3/5 真实化 + ) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=6279f451ef9c0d5359b6f96401372f9769706e0b
+2026-08-17T11:25:00+08:00 | COMMITTED | pre-commit PASS (M4 补记: fix(D356): 哨兵阈值告警接线 P0-1 + 降级/缺字段误报拦截 P1) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=82c21d8d4bf4cbcfae22f231199d74d402289f19
