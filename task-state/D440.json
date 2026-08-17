@@ -1,0 +1,17 @@
+{
+  "task_id": "D440",
+  "title": "控制台自动生成接 CI（dashboard-auto.yml）",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "commit": "local",
+    "by": "cto-api",
+    "at": "2026-08-18",
+    "note": ".github/workflows/dashboard-auto.yml：push main 自动跑 generate-dashboard + founder-truth --offline，产物变化开 bot PR"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-18",
+  "updated_by": "CTO",
+  "note": "修 M3 机制未接线：控制台手动生成→CI 自动。复用 product-progress bot 分支模式"
+}
