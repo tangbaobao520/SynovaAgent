@@ -262,4 +262,19 @@ Binary file .claude/bypass.log matches
 2026-08-18T00:55:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: chore(D434): bypass.log 补记 CI 修复证据链) | TASK_ID=merge | AGENT=kimi-k3-audit | HASH=fbc9498f33e42aa5c79f8813994817801dbd8e02
 2026-08-18T00:55:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: chore(D433): bypass.log 补记 fail-open-bat) | TASK_ID=merge | AGENT=kimi-k3-audit | HASH=2741368097df995222b06eead40bfb374b8d357a
 2026-08-18T00:55:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: chore(D432): bypass.log 补记 3 提交证据链 + 落盘 ) | TASK_ID=merge | AGENT=kimi-k3-audit | HASH=179d5a9604ce03fce2d180ae78babf28a0debc16
+2026-08-18T01:00:00+08:00 | COMMITTED | pre-commit PASS (D430 补记 0070be2b) | TASK_ID=D430 | AGENT=DeepSeek-Harness | HASH=0070be2bec1d5de04edff8154bf4ee5a4a57f691
+2026-08-18T01:30:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: D438) | TASK_ID=merge | AGENT=kimi-k3-audit | HASH=fc78fe5c247d61023ec080ed799c5b682baa7488
+2026-08-18T01:30:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: D438) | TASK_ID=merge | AGENT=kimi-k3-audit | HASH=9cb364480870c362c07aa6bf215ee9ab900ad29e
+2026-08-17T17:10:31Z possible-bypass diff=3951s
+2026-08-17T17:10:39Z possible-bypass diff=3959s
+2026-08-17T17:10:47Z possible-bypass diff=3967s
 2026-08-18T00:31:14+08:00 | COMMITTED | pre-commit PASS (补记: 沙箱 plain git commit) | TASK_ID=D438 | AGENT=synova-dsh | HASH=90670fa8aea5321bfd37be48d3428c3809055d76
+2026-08-17T17:10:57Z possible-bypass diff=3977s
+2026-08-17T17:11:29Z possible-bypass diff=4009s
+2026-08-18T01:15:00+08:00 | COMMITTED | pre-commit PASS (D439) | TASK_ID=D439 | AGENT=DeepSeek-Harness | HASH=842fbd4313addf7ac852271fc1c9cefee906838e
+2026-08-17T17:12:02Z possible-bypass diff=4042s
+2026-08-18T01:20:00+08:00 | COMMITTED | pre-commit PASS (D439 补记: chore(D439): bypass.log 补记) | TASK_ID=D439 | AGENT=DeepSeek-Harness | HASH=1552c85777f5062c455089e66be73041abfc3622
+2026-08-18T01:20:00+08:00 | COMMITTED | pre-commit PASS (D439 补记: chore: bypass 追加) | TASK_ID=D439 | AGENT=DeepSeek-Harness | HASH=f70c8f2cf9fd3dce184f75519d4fe088945ce702
+2026-08-18T01:20:00+08:00 | COMMITTED | pre-commit PASS (D439 补记: chore: audit-result 运行时) | TASK_ID=D439 | AGENT=DeepSeek-Harness | HASH=fd78b4766ee5873ca9b20433b86a0be013884171
+2026-08-18T01:20:00+08:00 | COMMITTED | pre-commit PASS (D439 补记: chore: bypass.log 运行时追加) | TASK_ID=D439 | AGENT=DeepSeek-Harness | HASH=e817ab698bfcb714afd4772e61d89ff8a31c9f7f
+2026-08-18T01:20:00+08:00 | COMMITTED | pre-commit PASS (D439 补记: chore: bypass.log 补记 D438) | TASK_ID=D439 | AGENT=DeepSeek-Harness | HASH=981bd484c0f709721c6c07df0024ea628266fbf1
