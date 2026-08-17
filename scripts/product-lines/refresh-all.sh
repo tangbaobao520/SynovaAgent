@@ -36,6 +36,9 @@ run() {
 
 # A3 待办聚合 → A4 进度计算（含 A1 惰性失效）→ A5 页面生成（含 A8 待裁决区）
 run "A3 待办聚合"   scripts/product-lines/aggregate-todos.py
+# A3.5 任务交付兑换（2026-08-17 创始人: 完成一个任务就要体现在仪表盘）
+# task-state 声明 acceptance_points + impl/audit 闭环 → 自动生成证据记录 → A4 消费翻绿
+run "A3.5 任务兑换" scripts/product-lines/redeem-progress.py
 run "A4 进度计算"   scripts/product-lines/calc-progress.py
 run "A5 页面生成"   scripts/product-lines/gen-progress-page.py
 

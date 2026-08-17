@@ -25,5 +25,8 @@
   "updated_at": "2026-08-17",
   "updated_by": "CTO",
   "note": "K3 咨询定：片1 哨兵 findings 事件化（2-3天，治重启即丢，含修 sentinel-service.ts durationMs bug :97 + 第6项 findings 正名）；片2 诊断会话事件化（6-8天，部署后，硬依赖 D355-D360 契约稳定 + PII append 前过 Scrubber）；片3 fork/resume（Q4 期权）。三条 invariant：I1 可重建/I2 单源/I3 可审计。 | 终版补：OpenViking HTTP 集成现在不做（L3 数据不出企业），留 D398 片2 开工决策点",
-  "priority": "P0-片1/P1-片2/P2-片3"
+  "priority": "P0-片1/P1-片2/P2-片3",
+  "acceptance_points": [
+    "7-3"
+  ]
 }

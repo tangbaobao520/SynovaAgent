@@ -16,5 +16,7 @@
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-08-17",
-  "updated_by": "CTO"
+  "updated_by": "CTO",
+  "acceptance_points": [],
+  "note": "7-2 修复待 K3 复审后兑换（诚实规则：无审计报告不自动翻绿）"
 }
