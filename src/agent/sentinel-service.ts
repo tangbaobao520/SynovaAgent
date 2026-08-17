@@ -170,7 +170,21 @@ export async function runSentinelOnce(sentinelId: string): Promise<RunOnceRespon
     }
     if (!sentinel) return { ok: false, sentinelId, result: null, error: `哨兵不存在: ${sentinelId}` };
 
-    const context = { db: undefined, now: new Date(), registry };
+    // D453: 修复 db:undefined → 哨兵空 store。构造 GraphStore 上下文（对齐 runner.ts:835-852）。
+    // 降级: GraphStore 构造失败 → 回退原始 db（log.warn，不静默，铁律 24/31）。
+    const { getDatabase } = await import('../init/engine-context');
+    const rawDb = getDatabase();
+    let graphCtx: unknown = rawDb;
+    if (typeof rawDb === 'object' && rawDb !== null && !('queryNodes' in rawDb)) {
+      try {
+        const { SqliteGraphStore } = await import('../adapters/sqlite-graph-store');
+        graphCtx = new SqliteGraphStore(rawDb);
+      } catch (err: unknown) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, '[runSentinelOnce] GraphStore 创建失败 — 降级至原始 db');
+        graphCtx = rawDb;
+      }
+    }
+    const context = { db: graphCtx, now: new Date(), registry };
     const result = await sentinel.check(context);
     return { ok: true, sentinelId, result };
   } catch (err: unknown) {
