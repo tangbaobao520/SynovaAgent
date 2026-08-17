@@ -293,3 +293,21 @@ Binary file .claude/bypass.log matches
 
 2026-08-17T17:54:19Z possible-bypass diff=584s
 2026-08-18T03:30:00+08:00 | COMMITTED | pre-commit PASS (D357 边界澄清) | TASK_ID=D450 | AGENT=DeepSeek-Harness | HASH=b9cb6409959bc5a7698eff4a39d9ce8d75b4e354
+2026-08-18T03:45:00+08:00 | COMMITTED | pre-commit PASS (D357 边界补记: chore: bypass 运行时) | TASK_ID=D450 | AGENT=DeepSeek-Harness | HASH=c20501ba05c5fd93315f7ed8021bf9ed8e6f4e5b
+2026-08-18T03:50:00+08:00 | COMMITTED | pre-commit PASS (merge 补记 bot/codex: chore(D439): 控制台自动更新 2026-08-17) | TASK_ID=merge | AGENT=synova-bot | HASH=ddd3cb04b7a21eb8a80bfc33ef90e656ff01e009
+2026-08-18T03:50:00+08:00 | COMMITTED | pre-commit PASS (merge 补记 bot/codex: chore(D439): 控制台自动更新 2026-08-17) | TASK_ID=merge | AGENT=synova-bot | HASH=3019b942f4e0cf65a954a18c243de1734af2ff51
+2026-08-18T03:50:00+08:00 | COMMITTED | pre-commit PASS (merge 补记 bot/codex: chore(D439): 控制台自动更新 2026-08-17) | TASK_ID=merge | AGENT=synova-bot | HASH=bb6588b055d5688033171b8792ace747b35eccbf
+2026-08-18T03:50:00+08:00 | COMMITTED | pre-commit PASS (merge 补记 bot/codex: docs(codex): D356 dev doc + K3 审计报告补入库) | TASK_ID=merge | AGENT=synova-bot | HASH=34b4d80fd4a13d9eee7b6254aca99b21e4406a4a
+2026-08-17T17:59:42Z possible-bypass diff=907s
+2026-08-18T04:00:00+08:00 | COMMITTED | pre-commit PASS (GS 派活更新) | TASK_ID=D450 | AGENT=DeepSeek-Harness | HASH=89e14f21ec08c43f539e62d7d7ca302bc1a5bd2f
+2026-08-18T02:06:51+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-18T02:06:51+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-18T02:06:52+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-18T02:06:59+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-18T02:07:00+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-18T02:07:01+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-18T02:07:09+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-18T02:07:09+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-18T02:07:10+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-18T02:07:43+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D451 | AGENT=DeepSeek-Harness
+2026-08-18T02:07:57+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D451 | AGENT=DeepSeek-Harness

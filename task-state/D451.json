@@ -1,0 +1,17 @@
+{
+  "task_id": "D451",
+  "title": "CT-42 session 专属 brief 读侧接线 + D331 补记死循环豁免",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "commit": "local",
+    "by": "cto-api",
+    "at": "2026-08-18",
+    "note": "pre-commit-check.sh + sop-gate.sh 读 session 专属 current-brief；check-bypass-log.sh 豁免纯补记提交"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-18",
+  "updated_by": "CTO",
+  "note": "修两个体系缺陷：CT-42 并行隔离（读侧漏接 D329 session 专属）+ D331 补记死循环（纯补记提交豁免）"
+}

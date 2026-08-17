@@ -901,9 +901,15 @@ TODAY=$(date +%Y-%m-%d)
 #     并发 session 的 brief 不再误伤 (D291 事故: session 提交被另一 session 的 brief 阻断)
 #   - 排除 (不做什么) 仅取 current-brief — 他人 brief 的排除项不适用于本 session 的文件
 #   - current-brief 缺失/陈旧 → 回退全部 (单 session 语义)
+#   - CT-42: session 专属 current-brief（.claude/current-brief.<sid>）优先，无则回退全局
+#     写侧 attach.py 已写专属文件（D329），读侧此前漏接 → 并行 session 互相覆盖全局文件
 CUR_BRIEF_PATH=""
-if [ -f "$ROOT/.claude/current-brief" ]; then
-  _bname=$(cat "$ROOT/.claude/current-brief" 2>/dev/null | tr -d '[:space:]')
+_CB_SRC="$ROOT/.claude/current-brief"
+if [ -n "${DSH_SESSION_ID:-}" ] && [ -f "$ROOT/.claude/current-brief.$DSH_SESSION_ID" ]; then
+  _CB_SRC="$ROOT/.claude/current-brief.$DSH_SESSION_ID"
+fi
+if [ -f "$_CB_SRC" ]; then
+  _bname=$(cat "$_CB_SRC" 2>/dev/null | tr -d '[:space:]')  # swallow-ok: current-brief 缺失/读失败 → _bname 空 → 回退认领，非错误吞掉
   _cb_date=$(echo "$_bname" | grep -oP '\d{4}-\d{2}-\d{2}' | head -1 || true)
   if [ -n "$_cb_date" ] && [ "$_cb_date" != "$TODAY" ]; then
     :  # 陈旧的 current-brief，忽略它
