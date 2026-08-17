@@ -145,6 +145,84 @@ def read_component_signals() -> Dict[str, Any]:
     return signals
 
 
+# ═══ 右边栏升级 (Option A, D431): 六维物理核验 — 替代 6 组件自报信号 ═══
+# 数据源 = git/bypass.log/PRODUCT-BRIEF/CI，零 agent 自报；复用 founder-truth.py 的物理计算（铁律 37 不重复造）。
+def _load_founder_truth():
+    """按文件路径加载 founder-truth.py（文件名含连字符，不能用普通 import）。"""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "founder_truth", str(PROJECT_ROOT / "scripts" / "control-tower" / "founder-truth.py"))
+    if spec is None or spec.loader is None:
+        raise ImportError("founder-truth.py 不存在")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+_PHYSICAL_DIMS = ["任务真相", "代码提交", "合并 main", "诚信账本", "北星对齐", "CI 状态"]
+
+
+def _ci_status_key(ci_label, ci_ok):
+    if ci_label == "🟢":
+        return "green"
+    if ci_label == "🔴":
+        return "red"
+    if ci_label == "🟡":
+        return "yellow"
+    return "unknown"
+
+
+def read_physical_facts() -> Dict[str, Any]:
+    """右边栏六维物理核验。founder-truth 缺失/异常 → 全 unknown 显式降级（不静默当真）。"""
+    try:
+        ft = _load_founder_truth()
+    except Exception as _e:
+        return {n: {"status": "unknown", "reason": f"founder-truth 不可用: {_e}", "how": "—"} for n in _PHYSICAL_DIMS}
+
+    try:
+        committed, merged = ft.git_committed_dns()
+        rows, _git_ok = ft.collect(offline=True)
+        red = green = yellow = 0
+        for r in rows:
+            e, _ = ft.judge(r["claimed"], r["phys"])
+            if e == "🟢":
+                green += 1
+            elif e == "🔴":
+                red += 1
+            elif e == "🟡":
+                yellow += 1
+        ledger = ft.integrity_ledger()
+        bypass = (ledger or {}).get("bypass_total", 0)
+        north, _ = ft.north_star_alignment(rows)
+        aligned = sum(1 for _t, sec in (north or []) if sec) if north else 0
+        total_n = len(north) if north else 0
+        unaligned = total_n - aligned
+        ci_label, ci_detail, ci_ok, _ = ft.ci_status()
+    except Exception as _e:
+        return {n: {"status": "unknown", "reason": f"物理核验降级: {_e}", "how": "—"} for n in _PHYSICAL_DIMS}
+
+    return {
+        "任务真相": {"status": "green" if red == 0 else "red",
+                     "reason": f"🟢{green} 真 · 🟡{yellow} 待复核 · 🔴{red} 疑似虚报",
+                     "how": "git log 对账 task-state（founder-truth.py）"},
+        "代码提交": {"status": "green" if committed else "unknown",
+                     "reason": f"{len(committed or [])} 个任务有 git 提交记录",
+                     "how": "git log --all --format=%s"},
+        "合并 main": {"status": "green" if merged else "unknown",
+                      "reason": f"{len(merged or [])} 个已合并进 origin/main",
+                      "how": "git log origin/main --format=%s"},
+        "诚信账本": {"status": "red" if bypass > 0 else "green",
+                     "reason": f"真绕过(detected-bypass) {bypass} 次",
+                     "how": "grep detected-bypass .claude/bypass.log"},
+        "北星对齐": {"status": "green" if unaligned == 0 else "red",
+                     "reason": f"{aligned}/{total_n} 对齐 · {unaligned} 北星无对应",
+                     "how": "task brief Q0 对照 PRODUCT-BRIEF.md"},
+        "CI 状态": {"status": _ci_status_key(ci_label, ci_ok),
+                    "reason": ci_detail if ci_detail else "未接入 CI",
+                    "how": "gh run list / GitHub Actions API"},
+    }
+
+
 def read_audit_summary() -> Dict[str, Any]:
     """读取审计结果"""
     audit_path = PROJECT_ROOT / ".codex/audit/audit-result.json"
@@ -309,7 +387,7 @@ def collect_dashboard_data() -> Dict[str, Any]:
         "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "authDocs": scan_auth_docs(),
         "rdcPipeline": derive_rdc_pipeline(),
-        "signals": read_component_signals(),
+        "signals": read_physical_facts(),
         "audit": read_audit_summary(),
         "gates": read_gate_status(),
         "env": read_env_status(),
@@ -445,38 +523,23 @@ def render_html(data: Dict[str, Any]) -> str:
     status_colors = {"green": "#22c55e", "yellow": "#f59e0b", "red": "#ef4444", "unknown": "#6b7280"}
     status_labels = {"green": "正常", "yellow": "警告", "red": "严重", "unknown": "未知"}
 
-    for comp in ["context-injector", "gatekeeper", "external-auditor", "contract-archiver", "write-lock", "env-validator"]:
-        sig = signals.get(comp, {"status": "unknown", "reason": "Signal file not found"})
+    # 右边栏六维物理核验（Option A, D431）: 迭代物理事实（name/status/reason/how），
+    # 每个卡片带 "🔍 怎么算的" 可复核数据源，替代原 6 组件自报信号的硬编码渲染。
+    for name, sig in signals.items():
         st = sig.get("status", "unknown")
-
-
-
-
-        st_icon = "●"  # always available
-        cnt_icon = "○"  # default: not available
-        tr_icon = "○"   # default: not available
-        cnt_color = "#6b7280"
-        cnt_tier = "数据积累中"
-        if st != "unknown" and not (sig.get("p0") or sig.get("p1") or sig.get("p2")):
-            cnt_icon = "●"
-            cnt_color = "#f59e0b"
-            cnt_tier = "依赖升级"
-        if sig.get("p0") or sig.get("p1") or sig.get("p2"):
-            cnt_icon = "●"  # counts available
-            cnt_color = "#22c55e"
-            cnt_tier = "计数可用"
         color = status_colors.get(st, "#6b7280")
         icon = status_icons.get(st, "&#9678;")
-        label = status_labels.get(st, "Unknown")
+        label = status_labels.get(st, "未知")
         reason = esc(sig.get("reason", ""))
+        how = esc(sig.get("how", "—"))
         signal_cards += f"""
         <div class="signal-card" style="border-left:3px solid {color}">
             <div class="signal-header">
-                <span class="signal-name">{esc(comp)}</span>
+                <span class="signal-name">{esc(name)}</span>
                 <span class="signal-status" style="color:{color}">{icon} {label}</span>
             </div>
             <div class="signal-reason">{reason}</div>
-            <div class="signal-tier" style="font-size:10px;color:#64748b;margin-top:4px"><span style="color:#22c55e">{st_icon} 🟢 当前可实现</span><span style="color:{cnt_color};margin-left:8px">{cnt_icon} {cnt_tier}</span><span style="color:#9ca3af;margin-left:8px">{tr_icon} ⚪ 数据积累中</span></div>
+            <div class="signal-how" style="font-size:10px;color:#64748b;margin-top:4px">🔍 怎么算的: {how}</div>
         </div>"""
 
     # 文档状态

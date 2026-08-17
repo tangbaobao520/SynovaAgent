@@ -38,19 +38,20 @@ class TestDashboardAlignment(unittest.TestCase):
     # Test 1: 6 张信号卡片含 env-validator 而非 dev-doc-gatekeeper
     # ════════════════════════════════════════════════════════════════
 
-    def test_component_list_has_env_validator(self):
-        """env-validator 出现在组件循环中"""
-        # grep 组件列表
-        content = open(_SCRIPT, encoding="utf-8").read()
-        # 检查 .py 源文件中的组件列表
-        env_in_list = "env-validator" in content
-        dev_doc_gone = "dev-doc-gatekeeper" not in content
-        self.assertTrue(env_in_list, "env-validator should be in component list")
-        self.assertTrue(dev_doc_gone, "dev-doc-gatekeeper should be removed from component list")
+    def test_physical_facts_dimensions_in_source(self):
+        """右边栏六维物理核验维度出现在源（Option A, D431: 替代 6 组件自报）"""
+        content = open(_SCRIPT, encoding="utf-8-sig").read()
+        for dim in ("任务真相", "代码提交", "合并 main", "诚信账本", "北星对齐", "CI 状态"):
+            self.assertIn(dim, content, f"{dim} 应出现在物理事实维度里")
+        # 自报信号渲染循环已被物理事实替代（不再硬编码 env-validator 渲染）
+        self.assertIn("read_physical_facts", content)
 
-    def test_env_validator_in_rendered_html(self):
-        """env-validator 出现在渲染 HTML 的卡片区"""
-        self.assertIn("env-validator", self.html)
+    def test_physical_facts_in_rendered_html(self):
+        """六维物理事实出现在渲染 HTML 的卡片区 + 每个带"怎么算的"可复核数据源"""
+        for dim in ("任务真相", "代码提交", "合并 main", "诚信账本", "北星对齐", "CI 状态"):
+            self.assertIn(dim, self.html, f"{dim} 应出现在渲染 HTML")
+        # 6 个卡片各带一个"怎么算的"
+        self.assertEqual(self.html.count("怎么算的"), 6, "六维各带一个可复核数据源")
 
     # ════════════════════════════════════════════════════════════════
     # Test 2: 网守卡片点击展开 L1-L11（非组件信号）
