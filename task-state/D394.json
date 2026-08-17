@@ -9,21 +9,21 @@
     "at": "2026-08-16"
   },
   "impl": {
-    "commit": null,
-    "by": "DeepSeek Harness",
+    "commit": "a8a5857e693d9aaf3dbc57c3abd03c47eebbaabf",
+    "by": "coding",
     "at": "2026-08-17",
-    "files": [
-      "src/sentinel/sentinel-events.ts",
-      "src/sentinel/runner.ts",
-      "src/sentinel/types.ts",
-      "src/agent/sentinel-service.ts",
-      "tests/sentinel/sentinel-events.test.ts"
-    ]
+    "note": "哨兵 findings 事件化（片1）：sentinel_events append-only 表 + 事件流投影 + durationMs bug 修复；分支 feat/d394-sentinel-events，已入 main"
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-08-17-D394.md",
+    "verdict": "CONDITIONAL_PASS",
+    "by": "K3",
+    "at": "2026-08-17",
+    "note": "spec 可放行进入实现；P1-1 M4 复发（bypass 零记录）；P2-1 payload 白名单漏 detectedAt（实现用完整对象已规避）/P2-2 数据安全框架（实现注释不含 L3，PIIScrubber 待 impl 抽查）"
+  },
   "fix_task_id": null,
   "updated_at": "2026-08-17",
-  "updated_by": "DeepSeek Harness",
+  "updated_by": "CTO",
   "note": "K3 咨询定：片1 哨兵 findings 事件化（2-3天，治重启即丢，含修 sentinel-service.ts durationMs bug :97 + 第6项 findings 正名）；片2 诊断会话事件化（6-8天，部署后，硬依赖 D355-D360 契约稳定 + PII append 前过 Scrubber）；片3 fork/resume（Q4 期权）。三条 invariant：I1 可重建/I2 单源/I3 可审计。 | 终版补：OpenViking HTTP 集成现在不做（L3 数据不出企业），留 D398 片2 开工决策点",
   "priority": "P0-片1/P1-片2/P2-片3"
 }
