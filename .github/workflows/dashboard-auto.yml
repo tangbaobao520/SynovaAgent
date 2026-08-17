@@ -38,6 +38,8 @@ jobs:
 
       - name: 生成创始人仪表盘（六维物理核验）
         run: |
+          git config user.name "synova-bot"
+          git config user.email "bot@synova.local"
           python3 scripts/control-tower/generate-dashboard.py --output app/founder-dashboard.html
 
       - name: 生成创始人零信任控制台（三问面板，--offline 跳过 CI 网络）
@@ -45,6 +47,9 @@ jobs:
           python3 scripts/control-tower/founder-truth.py --html --offline || {
             echo "⚠ founder-truth 降级（生成失败不阻断——离线模式无网络依赖，见 stderr）" >&2
           }
+          # 重新生成后强制更新工作区（生成器可能写时间戳快照）
+          git add app/founder-dashboard.html docs/synova/founder-console.html
+          git diff --cached --quiet || echo "有产物变化，准备提交"
 
       - name: 产物有变化则提交 bot 分支并开 PR
         env:
@@ -58,11 +63,13 @@ jobs:
             echo "检测到悬挂 bot 分支，自动清理"
             git push origin :auto/dashboard || true
           fi
-          if git diff --quiet -- app/founder-dashboard.html docs/synova/founder-console.html; then
+          # 基于 origin/main 开分支（不依赖 checkout 时的 HEAD，防 detached 问题）
+          git fetch origin main
+          if git diff --quiet origin/main -- app/founder-dashboard.html docs/synova/founder-console.html; then
             echo "无变化，跳过（幂等）"
             exit 0
           fi
-          git checkout -b auto/dashboard
+          git checkout -B auto/dashboard origin/main
           git add app/founder-dashboard.html docs/synova/founder-console.html
           git commit -m "chore(D439): 控制台自动更新 $(date -u +%Y-%m-%d)"
           git push origin auto/dashboard --force
