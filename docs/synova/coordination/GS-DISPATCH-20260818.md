@@ -20,10 +20,10 @@
 
 | D# | 场景 | 数据 | 关键断言 | 依赖 |
 |---|---|---|---|---|
-| D442 | GS-03 资本循环 | erp-standard | manifest 挂载 + cashBalance↔cash 对齐 + 阈值触发 | ✅ D356 已就绪（audited） |
-| D443 | GS-02 客户循环 | crm-standard | Market→Client 收敛 + customer-demand-shift 出 critical | ⏳ 依赖 Win：D355（L4 契约）+ D357（CRM 连接器，**交回 Win**） |
-| D444 | GS-04 人才循环 | hr-standard | People→Person 收敛 + key-person-risk 产出 | ⏳ 依赖 Win：D355（L4 契约）+ D357（HR 连接器，**交回 Win**） |
-| D445 | GS-05 告警闭环 | 越阈 fixture | sentinel_tickets 有行 + 推送去重键稳定 | D356 ✅ + D354 |
+| D442 | GS-03 资本循环 | erp-standard | manifest 挂载 + cashBalance↔cash 对齐 + 阈值触发 | ✅ **可立即开工**：D355（99fa8df5）+ D356（audited）均已入 main |
+| D443 | GS-02 客户循环 | crm-standard | Market→Client 收敛 + customer-demand-shift 出 critical | ⏳ 依赖 Win：D355（L4 契约已就绪）+ D357（CRM 连接器，**交回 Win**） |
+| D444 | GS-04 人才循环 | hr-standard | People→Person 收敛 + key-person-risk 产出 | ⏳ 依赖 Win：D355（L4 契约已就绪）+ D357（HR 连接器，**交回 Win**） |
+| D445 | GS-05 告警闭环 | 越阈 fixture | sentinel_tickets 有行 + 推送去重键稳定 | ✅ **可立即开工**：D356 已就绪 + D354（去重键，待确认） |
 | D446 | GS-01 首诊旅程 | 问卷 | 首诊报告产出 ≤3 天路径 + ≥1 盲区命中 | D232/D233 确认 |
 | D447 | GS-06 进化闭环 | 反馈注入 | loop-3/5 真实执行体 + 规则变更可验证 | D333 确认 |
 | D448 | GS-07 数据安全 | 敏感数据 | PII 脱敏 + 越权拒绝 + 本地库不出网 | D338 + security/ |
