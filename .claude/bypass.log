@@ -133,3 +133,11 @@ Binary file .claude/bypass.log matches
 2026-08-17T06:07:51+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D395 | AGENT=DeepSeek Harness | HASH=9c786b51b0a90451bae25d9e4666971cae215f44
 2026-08-17T06:08:55+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D395 | AGENT=DeepSeek Harness | HASH=5428a21caf27568f6f9bfd76c5b0414e2a966b6b
 2026-08-17T08:37:19+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D406 | AGENT=DeepSeek-Harness | HASH=108d343a56367c97b3a9b67b1768eb31a5f4fe01
+2026-08-17T09:10:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: D395a K3 报告, API merge 193713ea) | TASK_ID=D395a | AGENT=kimi-k3-audit | HASH=8439c0dd
+2026-08-17T09:10:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: D395a K3 补记报告, API merge 193713ea) | TASK_ID=D395a | AGENT=kimi-k3-audit | HASH=0c2a9da4
+2026-08-17T09:10:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: D394 K3 报告, API merge c68ab4c1) | TASK_ID=D394 | AGENT=kimi-k3-audit | HASH=416558b4
+2026-08-17T09:10:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: D396 K3 报告, API merge c41017e1) | TASK_ID=D396 | AGENT=kimi-k3-audit | HASH=4a94ebda
+2026-08-17T09:10:00+08:00 | COMMITTED | merge 补记: audit/d395a-report → main | TASK_ID=D395a | AGENT=cto-api | HASH=193713ea
+2026-08-17T09:10:00+08:00 | COMMITTED | merge 补记: feat/d406-lessons-fix → main | TASK_ID=D406 | AGENT=cto-api | HASH=4017afeb
+2026-08-17T09:10:00+08:00 | COMMITTED | merge 补记: audit/d396-report → main | TASK_ID=D396 | AGENT=cto-api | HASH=c41017e1
+2026-08-17T09:10:00+08:00 | COMMITTED | merge 补记: audit/d394-report → main | TASK_ID=D394 | AGENT=cto-api | HASH=c68ab4c1
