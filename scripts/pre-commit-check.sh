@@ -397,6 +397,20 @@ fi
 hard_check "桩测试: 新测试需 ≥3 expect()" "${STUB_FAIL:-}"
 hard_check "跨模块集成: bridge/context 类需 .integration.test.ts" "${INTG_FAIL:-}"
 
+# 2d. 控制塔脚本测试门禁 (U7 — CT-40: 控制塔最高风险变更须配对测试且测试绿)
+#   历史: D393 控制塔脚本改了没测试门禁 → 交付态红灯无物理拦截。
+#   逻辑在独立脚本 scripts/control-tower/ct-test-gate.sh（铁律 35 可独立测试）。
+#   三态判定（沿用组 13 范式）: 0 过/绿或跳过 / 1 缺配对或测试红 / 2 检查执行失败
+CT_GATE_OUT=$(bash "$ROOT/scripts/control-tower/ct-test-gate.sh" 2>&1)
+CT_GATE_EXIT=$?
+if [ "$CT_GATE_EXIT" -eq 0 ]; then
+  soft_pass "控制塔脚本测试门禁 (U7/CT-40)"
+elif [ "$CT_GATE_EXIT" -eq 1 ]; then
+  hard_check "控制塔脚本测试门禁 (U7/CT-40)" "$CT_GATE_OUT"
+else
+  hard_check "控制塔脚本测试门禁执行失败 (exit=$CT_GATE_EXIT, D328 三态)" "$CT_GATE_OUT"
+fi
+
 # ═══════════════════════════════════════════════════════════════════
 # 组 3: Secrets (原 3 — 独立脚本，逻辑复杂不适合合并)
 #
