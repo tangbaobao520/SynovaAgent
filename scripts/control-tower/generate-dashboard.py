@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 generate-dashboard.py — 创始人全局仪表盘 (D220)
 
@@ -696,8 +696,10 @@ h2 {{ font-size:15px; margin:20px 0 10px; color:#94a3b8; text-transform:uppercas
 
 <div class="grid">
     <div class="card card-full">
-        <h2>6 组件信号</h2>
+        <h2>六维物理核验 <span style="font-weight:400;color:#64748b;font-size:11px">（git/测试/CI 物理事实，非组件自报）</span></h2>
         {signal_cards}
+        <a href="../docs/synova/founder-console.html" target="_blank" style="display:block;margin-top:10px;padding:9px 12px;background:#1d4ed8;color:#fff;border-radius:6px;text-align:center;text-decoration:none;font-weight:600">🔍 打开完整控制台（三问面板）</a>
+        <div style="font-size:10px;color:#64748b;margin-top:5px">完整版含「哪些真做完了 / 哪些骗了我 / 方向跑偏」三问 + 诚信账本明细。若页面过期，运行 <code>python3 scripts/control-tower/founder-truth.py --html</code> 刷新。</div>
     </div>
 </div>
 
