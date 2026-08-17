@@ -283,3 +283,9 @@ Binary file .claude/bypass.log matches
 2026-08-18T01:14:47+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D440 | AGENT=DeepSeek-Harness
 2026-08-18T01:15:41+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D440 | AGENT=DeepSeek-Harness | HASH=48de29e7d4d477905b76ae562918652352aeca05
 
+2026-08-18T01:45:00+08:00 | COMMITTED | pre-commit PASS (D440) | TASK_ID=D440 | AGENT=DeepSeek-Harness | HASH=0d604d2608347bbac31ddcf2f5819a97da62b6ac
+2026-08-18T02:00:00+08:00 | COMMITTED | pre-commit PASS (D440 fix) | TASK_ID=D440 | AGENT=DeepSeek-Harness | HASH=dcc9b20cfef7a39a406b1e9f0d0ca5664a8e1d29
+2026-08-17T17:30:15Z possible-bypass diff=898s
+2026-08-18T02:30:00+08:00 | COMMITTED | pre-commit PASS (D441) | TASK_ID=D441 | AGENT=DeepSeek-Harness | HASH=a0d9b7fe81066a53c761d38efbfc309bd9bf15ff
+2026-08-18T01:44:00+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D450 | AGENT=DeepSeek-Harness
+2026-08-18T01:44:12+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D450 | AGENT=DeepSeek-Harness
