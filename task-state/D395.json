@@ -1,7 +1,7 @@
 {
   "task_id": "D395",
   "title": "Agent Notes 四态（D395-a 开发组织版，1天——K3 拆分）",
-  "status": "impl_done",
+  "status": "audited",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D395a-notes-four-state-20260816.md",
     "commit": "4df237a497d5efd4f0fd364c7d764026f6dced1d",
@@ -9,15 +9,9 @@
     "at": "2026-08-16"
   },
   "impl": {
-    "commit": null,
-    "by": "DeepSeek Harness",
-    "at": "2026-08-17",
-    "files": [
-      "memory/notes/README.md",
-      "scripts/workflow/generate-task-brief.py",
-      "scripts/commit-msg-check.sh",
-      "tests/control-tower/notes-four-state.test.sh"
-    ]
+    "commit": "9c786b51b0a90451bae25d9e4666971cae215f44",
+    "by": "coding",
+    "at": "2026-08-17"
   },
   "audit": {
     "verdict": "CONDITIONAL_PASS",

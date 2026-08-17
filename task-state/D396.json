@@ -9,16 +9,9 @@
     "at": "2026-08-16"
   },
   "impl": {
-    "commit": null,
-    "by": "DeepSeek Harness",
-    "at": "2026-08-17",
-    "files": [
-      "scripts/ci/golden-case-checker.ts",
-      "scripts/ci/golden-snapshot-runner.ts",
-      "tests/fixtures/golden-cases/golden-case-11-cash-runway-threshold.json",
-      "tests/ci/golden-case-checker.test.ts",
-      "tests/ci/golden-case-gate.test.ts"
-    ]
+    "commit": "9aaf0cde85f7643c73e18de0557cbc5af69352d2",
+    "by": "coding",
+    "at": "2026-08-17"
   },
   "audit": {
     "verdict": "PASS",

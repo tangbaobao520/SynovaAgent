@@ -1,16 +1,20 @@
 {
   "task_id": "D379",
   "title": "path-dependency 哨兵空壳补实现",
-  "status": "spec_done",
+  "status": "impl_done",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D379-path-dependency-shell-20260816.md",
     "commit": "bc552aae",
     "by": "dev-doc",
     "at": "2026-08-16"
   },
-  "impl": null,
+  "impl": {
+    "commit": "afbc5fd18ace69d41121d988c50da126a92b5d4d",
+    "by": "coding",
+    "at": "2026-08-16"
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-08-16",
+  "updated_at": "2026-08-17",
   "updated_by": "CTO"
 }

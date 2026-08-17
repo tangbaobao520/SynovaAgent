@@ -1,10 +1,10 @@
 # Synova CTO 健康仪表盘（第③面）
 
-> 打开即真相。生成: 2026-08-17 09:14:32 | 数据源指纹: 37d682f0b0bf
+> 打开即真相。生成: 2026-08-17 11:50:33 | 数据源指纹: 97d9f4cd2f5f
 
 <!-- CTO-HEALTH:AUTO:START -->
 ## CTO 健康仪表盘（第③面）— 自动区
-> 生成: 2026-08-17 09:14:32 | 数据源: bypass.log / pre-commit-failures.log / AUDIT-FINDINGS-LEDGER
+> 生成: 2026-08-17 11:50:33 | 数据源: bypass.log / pre-commit-failures.log / AUDIT-FINDINGS-LEDGER
 
 **总体判定: 🟡 黄 — 历史有 M 模式复发记录 (见 §三; 多为 D328-D331 已闭环项, 需 CTO 确认无新增)**
 
@@ -12,13 +12,13 @@
 
 | 事件 | 全量 | 24h 内 |
 |------|:---:|:---:|
-| COMMITTED（正常提交） | 113 | 86 |
+| COMMITTED（正常提交） | 117 | 90 |
 | BLOCKED（被门禁拒绝） | 34 | 12 |
 | DEGRADED（降级放行） | 31 | 0 |
 | TIMEOUT（超时） | 3 | 0 |
 | **detected-bypass（真绕过）** | **5** | **0** |
 
-近 7 天事件: 2026-08-10:1 | 2026-08-11:3 | 2026-08-12:28 | 2026-08-13:8 | 2026-08-14:14 | 2026-08-16:26 | 2026-08-17:72
+近 7 天事件: 2026-08-10:1 | 2026-08-11:3 | 2026-08-12:28 | 2026-08-13:8 | 2026-08-14:14 | 2026-08-16:26 | 2026-08-17:76
 
 **绕过历史（全部）** — 集中在 07-26~28（旧 marker 时代），此后零绕过：
 - `2026-07-26T18:34:35Z` no-precommit-marker
@@ -77,19 +77,20 @@
 | D405 | impl_done | — | ✅ | — |  |
 | D406 | impl_done | — | ✅ | — |  |
 | D407 | impl_done | — | ✅ | — |  |
+| D408 | impl_done | — | ✅ | — |  |
 
 ### 六、CI 状态（CT-41①, GitHub API）
 
 | Run | 结论 | 分支 | 标题 |
 |-----|------|------|------|
-| #35 | 🟡 pending | main | Merge feat/d395a-notes-four-state into main |
-| #781 | 🟡 pending | main | Merge feat/d395a-notes-four-state into main |
-| #780 | 🟡 pending | feat/d395a-notes-four-sta | chore(D407): bypass.log M4 一次性补记 42 条（K3 报告 + API  |
-| #34 | 🔴 failure | main | Merge audit/d394-report into main |
-| #779 | 🟢 success | main | Merge audit/d394-report into main |
-| #778 | 🟢 success | main | Merge audit/d396-report into main |
-| #33 | 🔴 failure | main | Merge audit/d396-report into main |
-| #777 | 🟢 success | main | Merge feat/d406-lessons-fix into main |
+| #39 | 🟡 pending | main | Merge feat/d395a-notes-four-state into main |
+| #789 | 🟡 pending | main | Merge feat/d395a-notes-four-state into main |
+| #788 | 🟡 pending | feat/d395a-notes-four-sta | chore(D408): task-state 转 impl_done（收尾批次已入 main 89 |
+| #38 | 🟢 success | main | Merge feat/d395a-notes-four-state into main |
+| #787 | 🟡 pending | main | Merge feat/d395a-notes-four-state into main |
+| #786 | 🟡 pending | feat/d395a-notes-four-sta | chore(D408): 收尾批次 — session-registry DSH 登记 + todo |
+| #37 | 🔴 failure | main | Merge feat/d395a-notes-four-state into main |
+| #785 | 🟢 success | main | Merge feat/d395a-notes-four-state into main |
 
 > 红线提醒: 不碰 scripts/audit/；不写审计标准；禁止自我审计。
 > 同类错误第二次出现 = 防线系统性失效，升级创始人。
