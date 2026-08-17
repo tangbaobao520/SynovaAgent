@@ -239,3 +239,4 @@ Binary file .claude/bypass.log matches
 2026-08-17T22:19:49+08:00 | COMMITTED | pre-commit PASS (补记: 沙箱资源耗尽改用 plain git commit, 测试/语法已单独验证) | TASK_ID=D430 | AGENT=dsh | HASH=2e4715f3d46d79ec500503bbcc9942ef80b5a982
 2026-08-17T22:19:49+08:00 | COMMITTED | pre-commit PASS (补记: 同上) | TASK_ID=D431 | AGENT=dsh | HASH=21b307c7f1f69bec80fb42b80954fc204c63ccb5
 2026-08-17T22:19:49+08:00 | COMMITTED | pre-commit PASS (补记: 同上) | TASK_ID=D431 | AGENT=dsh | HASH=5a60993ee00a18ed298930fdeffc9b94c00e7574
+2026-08-17T22:45:54+08:00 | COMMITTED | pre-commit PASS (补记: 沙箱资源耗尽 plain git commit, 6 配对测试+语法已单独验证) | TASK_ID=D433 | AGENT=dsh | HASH=5f7b1135d82a9defaf813ab5f3a5782c3dac7d1b
