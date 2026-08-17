@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-17 12:09:22",
+  "generated_at": "2026-08-18 00:01:57",
   "version": "1.0",
   "product_progress_pct": 4,
   "total_lines": 26,
@@ -96,9 +96,9 @@
       "progress_pct": 0,
       "k3_gate": "",
       "status_counts": {
-        "uncommitted": 7,
+        "uncommitted": 6,
         "failed": 0,
-        "pending_k3": 0,
+        "pending_k3": 1,
         "verified": 0,
         "rejected": 0,
         "stale": 0
@@ -135,8 +135,11 @@
         {
           "id": "2-5",
           "desc": "多轮对话上下文不丢（聊到第 10 轮还记得第 1 轮）",
-          "status": "uncommitted",
-          "evidence_files": [],
+          "status": "pending_k3",
+          "evidence_files": [
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+          ],
           "note": "线程存在，长会话上下文管理见线 20"
         },
         {
@@ -247,9 +250,9 @@
       "progress_pct": 0,
       "k3_gate": "",
       "status_counts": {
-        "uncommitted": 8,
+        "uncommitted": 7,
         "failed": 0,
-        "pending_k3": 0,
+        "pending_k3": 1,
         "verified": 0,
         "rejected": 0,
         "stale": 0
@@ -272,8 +275,11 @@
         {
           "id": "4-3",
           "desc": "飞书连接器",
-          "status": "uncommitted",
-          "evidence_files": [],
+          "status": "pending_k3",
+          "evidence_files": [
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+          ],
           "note": "已有（K3 P0-2：仅飞书+CSV）"
         },
         {
@@ -463,9 +469,9 @@
       "progress_pct": 25,
       "k3_gate": "",
       "status_counts": {
-        "uncommitted": 5,
+        "uncommitted": 4,
         "failed": 0,
-        "pending_k3": 0,
+        "pending_k3": 1,
         "verified": 2,
         "rejected": 1,
         "stale": 0
@@ -522,8 +528,11 @@
         {
           "id": "7-7",
           "desc": "定时任务容错（cron 失败有记录、可重试）",
-          "status": "uncommitted",
-          "evidence_files": [],
+          "status": "pending_k3",
+          "evidence_files": [
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+          ],
           "note": ""
         },
         {
@@ -675,9 +684,9 @@
       "progress_pct": 0,
       "k3_gate": "",
       "status_counts": {
-        "uncommitted": 8,
+        "uncommitted": 7,
         "failed": 0,
-        "pending_k3": 0,
+        "pending_k3": 1,
         "verified": 0,
         "rejected": 0,
         "stale": 0
@@ -707,8 +716,11 @@
         {
           "id": "10-4",
           "desc": "现金流跑道计算正确（filter bug 修复）",
-          "status": "uncommitted",
-          "evidence_files": [],
+          "status": "pending_k3",
+          "evidence_files": [
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+          ],
           "note": "K3：compute-cash-runway-months.ts:60 filter bug"
         },
         {
@@ -1004,9 +1016,9 @@
       "progress_pct": 14,
       "k3_gate": "",
       "status_counts": {
-        "uncommitted": 6,
+        "uncommitted": 4,
         "failed": 0,
-        "pending_k3": 0,
+        "pending_k3": 2,
         "verified": 1,
         "rejected": 0,
         "stale": 0
@@ -1015,8 +1027,11 @@
         {
           "id": "15-1",
           "desc": "专家注册表 + 文件驱动自动发现（7 位专家全注册）",
-          "status": "uncommitted",
-          "evidence_files": [],
+          "status": "pending_k3",
+          "evidence_files": [
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+          ],
           "note": "代码实证存在；K3 v1.1：V5 视图硬编码旧 6 专家（D282 未传播）"
         },
         {
@@ -1029,8 +1044,11 @@
         {
           "id": "15-3",
           "desc": "工具/技能工作流接线（专家真能用工具）",
-          "status": "uncommitted",
-          "evidence_files": [],
+          "status": "pending_k3",
+          "evidence_files": [
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+          ],
           "note": "接线存在（代码实证）"
         },
         {
@@ -1038,7 +1056,9 @@
           "desc": "专家提示词效果验证（黄金数据集命中率）",
           "status": "verified",
           "evidence_files": [
-            "docs/synova/product-lines/evidence/task-D396.json"
+            "docs/synova/product-lines/evidence/task-D396.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18.json"
           ],
           "note": "创始人 13 问第 10 问：提示词效果未验证"
         },
@@ -1196,9 +1216,9 @@
       "progress_pct": 17,
       "k3_gate": "",
       "status_counts": {
-        "uncommitted": 5,
+        "uncommitted": 3,
         "failed": 0,
-        "pending_k3": 0,
+        "pending_k3": 2,
         "verified": 1,
         "rejected": 0,
         "stale": 0
@@ -1216,8 +1236,11 @@
         {
           "id": "18-2",
           "desc": "SessionStore + 重启恢复（重启后记忆还在）",
-          "status": "uncommitted",
-          "evidence_files": [],
+          "status": "pending_k3",
+          "evidence_files": [
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+          ],
           "note": "代码实证存在；重启恢复测试未作为证据登记"
         },
         {
@@ -1237,8 +1260,11 @@
         {
           "id": "18-5",
           "desc": "版本化 + superseded_by 链（事实更新可追溯）",
-          "status": "uncommitted",
-          "evidence_files": [],
+          "status": "pending_k3",
+          "evidence_files": [
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+          ],
           "note": "企业事实层设计存在"
         },
         {
@@ -1263,9 +1289,9 @@
       "progress_pct": 0,
       "k3_gate": "",
       "status_counts": {
-        "uncommitted": 4,
+        "uncommitted": 3,
         "failed": 0,
-        "pending_k3": 0,
+        "pending_k3": 1,
         "verified": 0,
         "rejected": 1,
         "stale": 0
@@ -1283,8 +1309,11 @@
         {
           "id": "19-2",
           "desc": "方向失效信号定义（什么算失效，规则明确）",
-          "status": "uncommitted",
-          "evidence_files": [],
+          "status": "pending_k3",
+          "evidence_files": [
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+          ],
           "note": ""
         },
         {
@@ -1323,9 +1352,9 @@
       "progress_pct": 0,
       "k3_gate": "",
       "status_counts": {
-        "uncommitted": 6,
+        "uncommitted": 5,
         "failed": 0,
-        "pending_k3": 0,
+        "pending_k3": 1,
         "verified": 0,
         "rejected": 0,
         "stale": 0
@@ -1362,8 +1391,11 @@
         {
           "id": "20-5",
           "desc": "熔断/优雅停机/卡会话检测（异常自愈）",
-          "status": "uncommitted",
-          "evidence_files": [],
+          "status": "pending_k3",
+          "evidence_files": [
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+          ],
           "note": "组件存在（代码实证）"
         },
         {
@@ -1388,9 +1420,9 @@
       "progress_pct": 0,
       "k3_gate": "",
       "status_counts": {
-        "uncommitted": 5,
+        "uncommitted": 3,
         "failed": 0,
-        "pending_k3": 0,
+        "pending_k3": 2,
         "verified": 0,
         "rejected": 0,
         "stale": 0
@@ -1399,15 +1431,21 @@
         {
           "id": "21-1",
           "desc": "DeepSeek 适配器（标准 API 接入）",
-          "status": "uncommitted",
-          "evidence_files": [],
+          "status": "pending_k3",
+          "evidence_files": [
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+          ],
           "note": "providers/deepseek.ts 存在"
         },
         {
           "id": "21-2",
           "desc": "提示词优化策略（效果可测量）",
-          "status": "uncommitted",
-          "evidence_files": [],
+          "status": "pending_k3",
+          "evidence_files": [
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+          ],
           "note": "深度优化 = 0"
         },
         {
@@ -1446,9 +1484,9 @@
       "progress_pct": 0,
       "k3_gate": "",
       "status_counts": {
-        "uncommitted": 6,
+        "uncommitted": 5,
         "failed": 0,
-        "pending_k3": 0,
+        "pending_k3": 1,
         "verified": 0,
         "rejected": 0,
         "stale": 0
@@ -1457,8 +1495,11 @@
         {
           "id": "22-1",
           "desc": "看门狗/熔断/健康检查（自我健康机制）",
-          "status": "uncommitted",
-          "evidence_files": [],
+          "status": "pending_k3",
+          "evidence_files": [
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+          ],
           "note": "组件存在（代码实证）"
         },
         {
@@ -1576,9 +1617,9 @@
       "progress_pct": 0,
       "k3_gate": "",
       "status_counts": {
-        "uncommitted": 5,
+        "uncommitted": 4,
         "failed": 1,
-        "pending_k3": 0,
+        "pending_k3": 1,
         "verified": 0,
         "rejected": 0,
         "stale": 0
@@ -1608,8 +1649,11 @@
         {
           "id": "24-4",
           "desc": "防篡改（审计哈希链）",
-          "status": "uncommitted",
-          "evidence_files": [],
+          "status": "pending_k3",
+          "evidence_files": [
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+          ],
           "note": "组件存在（代码实证）"
         },
         {
@@ -1641,9 +1685,9 @@
       "progress_pct": 0,
       "k3_gate": "",
       "status_counts": {
-        "uncommitted": 7,
+        "uncommitted": 4,
         "failed": 0,
-        "pending_k3": 0,
+        "pending_k3": 3,
         "verified": 0,
         "rejected": 0,
         "stale": 0
@@ -1652,22 +1696,31 @@
         {
           "id": "25-1",
           "desc": "专家插件（新专家 = 加文件自动注册）",
-          "status": "uncommitted",
-          "evidence_files": [],
+          "status": "pending_k3",
+          "evidence_files": [
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+          ],
           "note": "文件驱动已有"
         },
         {
           "id": "25-2",
           "desc": "技能插件（新技能 = 加目录自动发现）",
-          "status": "uncommitted",
-          "evidence_files": [],
+          "status": "pending_k3",
+          "evidence_files": [
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+          ],
           "note": ""
         },
         {
           "id": "25-3",
           "desc": "哨兵插件（新哨兵 = 加文件自动加载）",
-          "status": "uncommitted",
-          "evidence_files": [],
+          "status": "pending_k3",
+          "evidence_files": [
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+          ],
           "note": "builtins 自动扫描存在"
         },
         {

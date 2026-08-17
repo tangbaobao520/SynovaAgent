@@ -1,10 +1,10 @@
 # Synova CTO 健康仪表盘（第③面）
 
-> 打开即真相。生成: 2026-08-17 11:50:33 | 数据源指纹: 97d9f4cd2f5f
+> 打开即真相。生成: 2026-08-17 20:57:52 | 数据源指纹: 64f6a80e2373
 
 <!-- CTO-HEALTH:AUTO:START -->
 ## CTO 健康仪表盘（第③面）— 自动区
-> 生成: 2026-08-17 11:50:33 | 数据源: bypass.log / pre-commit-failures.log / AUDIT-FINDINGS-LEDGER
+> 生成: 2026-08-17 20:57:52 | 数据源: bypass.log / pre-commit-failures.log / AUDIT-FINDINGS-LEDGER
 
 **总体判定: 🟡 黄 — 历史有 M 模式复发记录 (见 §三; 多为 D328-D331 已闭环项, 需 CTO 确认无新增)**
 
@@ -12,13 +12,13 @@
 
 | 事件 | 全量 | 24h 内 |
 |------|:---:|:---:|
-| COMMITTED（正常提交） | 117 | 90 |
-| BLOCKED（被门禁拒绝） | 34 | 12 |
+| COMMITTED（正常提交） | 131 | 86 |
+| BLOCKED（被门禁拒绝） | 35 | 9 |
 | DEGRADED（降级放行） | 31 | 0 |
 | TIMEOUT（超时） | 3 | 0 |
 | **detected-bypass（真绕过）** | **5** | **0** |
 
-近 7 天事件: 2026-08-10:1 | 2026-08-11:3 | 2026-08-12:28 | 2026-08-13:8 | 2026-08-14:14 | 2026-08-16:26 | 2026-08-17:76
+近 7 天事件: 2026-08-10:1 | 2026-08-11:3 | 2026-08-12:28 | 2026-08-13:8 | 2026-08-14:14 | 2026-08-16:26 | 2026-08-17:91
 
 **绕过历史（全部）** — 集中在 07-26~28（旧 marker 时代），此后零绕过：
 - `2026-07-26T18:34:35Z` no-precommit-marker
@@ -29,7 +29,7 @@
 
 ### 二、门禁拒绝（pre-commit-failures.log）
 
-- 累计拒绝: **13** 次 | 最近: 2026-08-17
+- 累计拒绝: **15** 次 | 最近: 2026-08-17
 - 阈值: >10 次/24h → 门禁过激警告（健康审计项）
 
 ### 三、M 模式复发（AUDIT-FINDINGS-LEDGER §二）
@@ -51,8 +51,8 @@
 
 | 任务 | 状态 | spec | impl | audit | FIX |
 |------|------|:---:|:---:|:---:|------|
-| D356 | audited | ✅ | ✅ | CONDITIONAL_PASS |  |
-| D379 | impl_done | ✅ | ✅ | — |  |
+| D356 | audited | ⚠ | ✅ | CONDITIONAL_PASS |  |
+| D379 | impl_done | ⚠ | ✅ | — |  |
 | D383 | audited | — | ✅ | CONDITIONAL_PASS | D384 |
 | D384 | impl_done | — | ✅ | — |  |
 | D385 | impl_done | — | ✅ | — |  |
@@ -78,19 +78,22 @@
 | D406 | impl_done | — | ✅ | — |  |
 | D407 | impl_done | — | ✅ | — |  |
 | D408 | impl_done | — | ✅ | — |  |
+| D409 | impl_done | — | ✅ | — |  |
+| D410 | impl_done | — | ✅ | — |  |
+| D412 | impl_done | — | ✅ | — |  |
+| D413 | impl_done | — | ✅ | — |  |
+| D414 | impl_done | — | ✅ | — |  |
+| D415 | impl_done | — | ✅ | — |  |
+| D416 | impl_done | — | ✅ | — |  |
+| D417 | impl_done | — | ✅ | — |  |
+| D419 | impl_done | — | ✅ | — |  |
+| D428 | impl_done | — | ✅ | — |  |
 
 ### 六、CI 状态（CT-41①, GitHub API）
 
 | Run | 结论 | 分支 | 标题 |
 |-----|------|------|------|
-| #39 | 🟡 pending | main | Merge feat/d395a-notes-four-state into main |
-| #789 | 🟡 pending | main | Merge feat/d395a-notes-four-state into main |
-| #788 | 🟡 pending | feat/d395a-notes-four-sta | chore(D408): task-state 转 impl_done（收尾批次已入 main 89 |
-| #38 | 🟢 success | main | Merge feat/d395a-notes-four-state into main |
-| #787 | 🟡 pending | main | Merge feat/d395a-notes-four-state into main |
-| #786 | 🟡 pending | feat/d395a-notes-four-sta | chore(D408): 收尾批次 — session-registry DSH 登记 + todo |
-| #37 | 🔴 failure | main | Merge feat/d395a-notes-four-state into main |
-| #785 | 🟢 success | main | Merge feat/d395a-notes-four-state into main |
+| — | ⚠ 无法拉取（degraded） | | |
 
 > 红线提醒: 不碰 scripts/audit/；不写审计标准；禁止自我审计。
 > 同类错误第二次出现 = 防线系统性失效，升级创始人。

@@ -36,6 +36,12 @@ run() {
 
 # A3 待办聚合 → A4 进度计算（含 A1 惰性失效）→ A5 页面生成（含 A8 待裁决区）
 run "A3 待办聚合"   scripts/product-lines/aggregate-todos.py
+# A2 机器验证入库（2026-08-17 创始人: 不调 K3 大模型，机器补完成度）
+# vitest 全量绿 → 自动写 test 证据 → calc-progress 消费 → 完成度 🟡待复核
+# （K3 U1-U8 管新任务门禁；本环节管旧任务证据回填——互补）
+bash scripts/product-lines/run-machine-evidence.sh --skip-vitest || {
+  echo "⚠ A2 机器证据降级（不阻断主链，见上方 degraded 说明）" >&2
+}
 # A3.5 任务交付兑换（2026-08-17 创始人: 完成一个任务就要体现在仪表盘）
 # task-state 声明 acceptance_points + impl/audit 闭环 → 自动生成证据记录 → A4 消费翻绿
 run "A3.5 任务兑换" scripts/product-lines/redeem-progress.py
