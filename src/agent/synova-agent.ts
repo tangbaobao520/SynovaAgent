@@ -23,6 +23,7 @@ import { RestartRecovery } from '../services/restart-recovery';
 import { GracefulShutdown, setGlobalGracefulShutdown } from '../services/graceful-shutdown';
 import { ProactivePush } from './proactive-push';
 import { ActionStore } from '../growth/action-store';
+import { getFeedbackCollector } from '../growth/feedback-collector';
 
 const log = createLogger('agent/synova-agent');
 
@@ -61,6 +62,9 @@ export class SynovaAgent {
     const { getBaselineStore } = await import('../sentinel/baseline-store');
     const baselineStore = getBaselineStore();
     baselineStore.setDatabase(this.db);
+    // N13 反馈→规则闭环 — feedback-collector 注入生产 DB (D333 接线)
+    // 此前 setDatabase 零生产调用 → 单例 db 恒 null → 聚合信号恒空 → 进化循环永远饿死
+    getFeedbackCollector().setDatabase(this.db);
     // 从 synova.json 加载哨兵阈值配置
     if (config.sentinel) {
       baselineStore.updateConfig(config.sentinel);

@@ -12,7 +12,7 @@
  * 铁律 38: 零 as any
  */
 import { createLogger } from '@synova/logger';
-import { getFeedbackCollector, type FeedbackCollector, type AggregatedSignal } from '../growth/feedback-collector';
+import type { AggregatedSignal } from '../growth/feedback-collector';
 
 const log = createLogger('loops/middle-evolution-engine');
 
@@ -55,8 +55,15 @@ export interface GAProtectionResult {
 /**
  * 处理 5 类进化信号，生成进化动作列表。
  *
+ * 纯函数（D333 起）：只生成动作，不回写。回写由调用方执行
+ * （src/agent/loop-handlers.ts defaultEvolutionHandler → applyEvolutionActions），
+ * 保证一次信号周期只有一次回写（原内部直调 applyEvolutionActions 会造成双次回写，
+ * correction 计数 2 倍加速，破坏 MIN_TRIGGER_COUNT=3 语义）。
+ * D262 GA 反馈记录块随纯化移除（decision:'accept' 违反 FeedbackDecision 类型 +
+ * feedback_log DDL CHECK，从未成功写入 = 死代码；语义修复为独立任务）。
+ *
  * @param signals - D93 AggregatedSignal 数组
- * @returns 进化动作列表
+ * @returns 进化动作列表（无副作用）
  */
 export function processFeedbackSignals(signals: AggregatedSignal[]): EvolutionAction[] {
   if (!signals || signals.length === 0) {
@@ -128,35 +135,6 @@ export function processFeedbackSignals(signals: AggregatedSignal[]): EvolutionAc
 
     if (actions.length > 0) {
       log.info({ actionCount: actions.length }, '进化信号处理完成');
-      // D262: GA 反馈记录 — 写入 FeedbackCollector
-      try {
-        const fb = getFeedbackCollector();
-        for (const action of actions) {
-          fb.collectFeedback({
-            enterpriseId: 'synova',
-            actorId: 'system:middle-evolution-engine',
-            decision: 'accept',
-            targetType: 'sentinel_alert',
-            targetId: action.type,
-            reason: action.reason,
-            source: 'middle_evolution',
-            eligibility: 'confirmed',
-          });
-        }
-        log.info({ count: actions.length }, 'GA 反馈已记录');
-      } catch (err) {
-        log.warn({ err }, 'GA 反馈记录失败 — 降级');
-      }
-
-      // D273: 进化动作回写 — 将阈值调整写入行业阈值文件
-      try {
-        const result = applyEvolutionActions(actions);
-        if (result.applied > 0 || result.errors.length > 0) {
-          log.info({ applied: result.applied, errors: result.errors.length }, '进化动作回写');
-        }
-      } catch (err) {
-        log.warn({ err }, '进化动作回写失败 — 降级（不阻断主流程）');
-      }
     }
 
     return actions;

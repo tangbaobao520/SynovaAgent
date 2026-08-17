@@ -55,10 +55,14 @@ export const revenueHealthSentinel = {
         } else if (cr5 >= t.customer_concentration.warning) {
           findings.push({ id: 'rev_conc_warning', severity: 'warning', title: '客户集中度偏高', description: `CR5估算${(cr5 * 100).toFixed(0)}%，超出warning阈值。`, detectedAt: new Date().toISOString() });
         }
-        // 收入增长率
-        if (!growthResult.degraded && growthResult.value <= t.revenue_growth.critical) {
+        // 收入增长率 — P1-1 (K3 20260813): degraded 短路改发可见 warning finding。
+        // 此前 !degraded 静默跳过 → 降级不可见 = 静默降级（铁律 31）复发，
+        // 且 K3 P0-1 修复（manifest 挂载）激活本路径后该隐患会扩大。
+        if (growthResult.degraded) {
+          findings.push({ id: 'rev_growth_degraded', severity: 'warning', title: '收入数据不完整', description: `收入增长率计算降级：${growthResult.warnings.join('；')}`, evidence: growthResult.evidence, suggestion: '请确认收入数据是否完整。', detectedAt: new Date().toISOString() });
+        } else if (growthResult.value <= t.revenue_growth.critical) {
           findings.push({ id: 'rev_growth_critical', severity: 'critical', title: '收入增长停滞', description: `收入增长率${(growthResult.value * 100).toFixed(1)}%，低于critical阈值。`, evidence: [`当期: ${growthResult.totalRevenue}`, `上期: ${growthResult.previousRevenue}`], suggestion: '审查市场策略，寻找新增长点。', detectedAt: new Date().toISOString() });
-        } else if (!growthResult.degraded && growthResult.value <= t.revenue_growth.warning) {
+        } else if (growthResult.value <= t.revenue_growth.warning) {
           findings.push({ id: 'rev_growth_warning', severity: 'warning', title: '收入增长放缓', description: `收入增长率${(growthResult.value * 100).toFixed(1)}%，低于warning阈值。`, detectedAt: new Date().toISOString() });
         }
       }

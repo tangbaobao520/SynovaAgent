@@ -139,6 +139,14 @@ export async function registerLoadedSentinels(): Promise<{ registered: number; e
         continue;
       }
 
+      // P0-1 (K3 20260813): 注册前把 manifest 挂到哨兵对象 — cash-runway/revenue-health
+      // 的阈值 finding 依赖 `this.manifest`（aggregate.ts 中 if (this.manifest) 门控）。
+      // 修复前从不挂载 → this.manifest 恒 null → 阈值告警死代码（活运行 findings=0）。
+      // 守卫: 只挂声明了 manifest 字段的哨兵对象（无 manifest 字段的如 capital-health 不注入）。
+      if ('manifest' in sentinelObj) {
+        sentinelObj.manifest = manifest;
+      }
+
       // V4.2.9: dependsOn 数据依赖校验
       if (manifest.dependsOn) {
         try {

@@ -48,6 +48,13 @@ FULL_SCAN=$(grep -rn \
 # D370: 未跟踪 .env 豁免（grep 输出路径为相对 REPO_ROOT 的 "<path>:<line>:<content>"）
 FULL_SCAN_FILTERED=""
 if [ -n "$FULL_SCAN" ]; then
+  # D417/U5b: git 可用性预检 — git 不可用时 ls-files 会把"git 故障"误判为"未跟踪"而静默豁免（fail-open, M1）。
+  # secrets 是安全关键门禁: 豁免判定失效 → fail-closed（exit 2 degraded, 不静默放行）。
+  if ! git -C "$REPO_ROOT" rev-parse --git-dir >/dev/null 2>&1; then
+    echo -e "${YELLOW}⚠️  git 不可用 — .env 跟踪状态无法判定, secrets 扫描降级（fail-closed, 不静默豁免）${NC}" >&2
+    echo "degraded: git 不可用, .env 豁免判定失效 (code=SECRETS_GATE_ERROR, phase=scan, retryable=true)" >&2
+    exit 2
+  fi
   while IFS= read -r line; do
     FILE=$(echo "$line" | cut -d: -f1)
     if echo "$FILE" | grep -qE '(^|/)\.env$'; then

@@ -11,7 +11,8 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 # 测试策略: 在临时 git 仓库运行**真实** scripts/hooks/post-commit.sh
 #   (cp 到 .githooks + core.hooksPath), 不 mock 判定逻辑。
 #   覆盖: head 匹配=pass / head 不匹配=detected-bypass / 无 marker=detected-bypass /
-#         超时=possible-bypass / legacy 纯时间戳格式 / CT-29 交错时序 (S6)。
+#         超时=possible-bypass / legacy 纯时间戳格式 / CT-29 交错时序 (S6) /
+#         D421 三判: amend (S7) / 并发祖先 (S8) / 真绕过 stale marker 仍被 freshness 抓 (S9)。
 # ═══════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
 
@@ -51,6 +52,7 @@ new_repo() { # new_repo <名字> — init + 初始提交 (无 hook) + .claude + 
   git -C "$REPO" -c core.hooksPath="$NO_HOOKS" commit -q -m "init"
   mkdir -p "$REPO/.claude" "$REPO/.githooks"
   cp "$REAL_HOOK" "$REPO/.githooks/post-commit"
+  chmod +x "$REPO/.githooks/post-commit"   # macOS/Linux 需可执行位, git 才认 hook (Windows 无此位)
 }
 commit_hooked() { git -C "$REPO" -c core.hooksPath="$REPO/.githooks" commit -q --allow-empty -m "$1"; }
 commit_nohook() { git -C "$REPO" -c core.hooksPath="$NO_HOOKS" commit -q --allow-empty -m "$1"; }
@@ -83,10 +85,10 @@ commit_hooked m3
 check_contains "S3: 无 marker → detected-bypass" "$REPO/.claude/bypass.log" "detected-bypass no-precommit-marker"
 
 echo ""
-echo "── S4. head 匹配 + 超时 (diff>120s) → possible-bypass ──"
+echo "── S4. head 匹配 + 超时 (diff>300s) → possible-bypass ──"
 new_repo r4
 HEAD_B=$(git -C "$REPO" rev-parse HEAD)
-echo "$HEAD_B|$(( $(date +%s) - 300 ))" > "$REPO/.claude/last-precommit-success"
+echo "$HEAD_B|$(( $(date +%s) - 600 ))" > "$REPO/.claude/last-precommit-success"
 commit_hooked m4
 check_contains "S4: 超时 → possible-bypass" "$REPO/.claude/bypass.log" "possible-bypass diff="
 
@@ -97,7 +99,7 @@ echo "$(date +%s)" > "$REPO/.claude/last-precommit-success"
 commit_hooked m5a
 check "S5a: legacy 新鲜 → pass (不新增)" "0" "$(log_lines "$REPO/.claude/bypass.log")"
 new_repo r5b
-echo "$(( $(date +%s) - 300 ))" > "$REPO/.claude/last-precommit-success"
+echo "$(( $(date +%s) - 600 ))" > "$REPO/.claude/last-precommit-success"
 commit_hooked m5b
 check_contains "S5b: legacy 超时 → possible-bypass" "$REPO/.claude/bypass.log" "possible-bypass diff="
 
@@ -123,6 +125,38 @@ else
   fail "S6c: marker 被删除 (CT-29 未修复)"
 fi
 check "S6d: marker 保持 B 的 pre-commit 写入 (head=A1)" "$A1" "$(cut -d'|' -f1 "$REPO/.claude/last-precommit-success")"
+
+echo ""
+echo "── S7. D421 amend 三判: marker_head 为被 amend 掉的旧 commit → ② 同父 pass ──"
+new_repo r7
+X=$(git -C "$REPO" rev-parse HEAD)                       # init
+echo "$X|$(date +%s)" > "$REPO/.claude/last-precommit-success"   # A 的 pre-commit 写 marker=X
+commit_nohook A1                                          # A 提交 (无 hook), HEAD=A1 (parent X)
+A1=$(git -C "$REPO" rev-parse HEAD)
+echo "$A1|$(date +%s)" > "$REPO/.claude/last-precommit-success"  # amend 的 pre-commit 写 marker=A1
+git -C "$REPO" -c core.hooksPath="$NO_HOOKS" commit -q --amend --allow-empty -m "A-amended"
+(cd "$REPO" && bash "$REAL_HOOK")                          # HEAD=A2, HEAD^=X, marker=A1
+check "S7: amend → ② 同父 pass (无误报)" "0" "$(log_lines "$REPO/.claude/bypass.log")"
+
+echo ""
+echo "── S8. D421 并发三判: marker 停在旧祖先 → ③ 祖先 pass ──"
+new_repo r8
+X=$(git -C "$REPO" rev-parse HEAD)                       # init
+commit_nohook A1
+commit_nohook B1                                          # HEAD=B1 (parent A1)
+echo "$X|$(date +%s)" > "$REPO/.claude/last-precommit-success"   # marker 停在旧 X (X 是 HEAD 祖先)
+(cd "$REPO" && bash "$REAL_HOOK")                          # HEAD=B1, HEAD^=A1
+check "S8: 并发祖先 → ③ 祖先 pass (无误报)" "0" "$(log_lines "$REPO/.claude/bypass.log")"
+
+echo ""
+echo "── S9. D421 真绕过: marker 停在旧祖先 + 时间戳过旧 → freshness 抓 possible-bypass ──"
+new_repo r9
+X=$(git -C "$REPO" rev-parse HEAD)
+commit_nohook A1
+commit_nohook B1                                          # HEAD=B1
+echo "$X|$(( $(date +%s) - 600 ))" > "$REPO/.claude/last-precommit-success"   # stale marker (真 --no-verify)
+(cd "$REPO" && bash "$REAL_HOOK")
+check_contains "S9: 真绕过 stale marker → possible-bypass" "$REPO/.claude/bypass.log" "possible-bypass diff="
 
 echo ""
 echo "结果: 通过 $PASS / 失败 $FAIL"
