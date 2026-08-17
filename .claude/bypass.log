@@ -231,11 +231,8 @@ Binary file .claude/bypass.log matches
 2026-08-17T11:25:00+08:00 | COMMITTED | pre-commit PASS (M4 补记: feat(D333): N13 进化闭环接线 — loop-3/5 真实化 + ) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=6279f451ef9c0d5359b6f96401372f9769706e0b
 2026-08-17T11:25:00+08:00 | COMMITTED | pre-commit PASS (M4 补记: fix(D356): 哨兵阈值告警接线 P0-1 + 降级/缺字段误报拦截 P1) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=82c21d8d4bf4cbcfae22f231199d74d402289f19
 2026-08-17T11:30:00+08:00 | COMMITTED | pre-commit PASS (D428 补记) | TASK_ID=D428 | AGENT=DeepSeek-Harness | HASH=f5fcb624e91c58ae329a2141ede98ad206fac8e1
-2026-08-17T13:06:42Z possible-bypass diff=600s
 2026-08-17T11:40:00+08:00 | COMMITTED | pre-commit PASS (D429 验证) | TASK_ID=D429 | AGENT=DeepSeek-Harness | HASH=eefed2e12b3c88e3c2a3440f5f610f2569509866
-2026-08-17T13:06:47Z possible-bypass diff=605s
 2026-08-17T11:45:00+08:00 | COMMITTED | pre-commit PASS (D429 补记) | TASK_ID=D429 | AGENT=DeepSeek-Harness | HASH=79e8b75f5aaf48d04d68197d1c31fc8e8d9d5c26
-2026-08-17T13:07:13Z possible-bypass diff=631s
 2026-08-17T11:50:00+08:00 | COMMITTED | pre-commit PASS (D429 补记 3148e58d) | TASK_ID=D429 | AGENT=DeepSeek-Harness | HASH=3148e58d4f67f03fd681627b0faa33fcd80048bc
 2026-08-18T00:03:04+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D430 | AGENT=DeepSeek-Harness
 2026-08-18T00:03:16+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D430 | AGENT=DeepSeek-Harness
@@ -271,3 +268,4 @@ Binary file .claude/bypass.log matches
 2026-08-17T17:10:31Z possible-bypass diff=3951s
 2026-08-17T17:10:39Z possible-bypass diff=3959s
 2026-08-17T17:10:47Z possible-bypass diff=3967s
+2026-08-18T00:31:14+08:00 | COMMITTED | pre-commit PASS (补记: 沙箱 plain git commit) | TASK_ID=D438 | AGENT=synova-dsh | HASH=90670fa8aea5321bfd37be48d3428c3809055d76

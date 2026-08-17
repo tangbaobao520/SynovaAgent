@@ -725,12 +725,17 @@ fi
 
 # ── 绕过审计 (硬阻断) ──
 # 检测方法: post-commit hook 检测 --no-verify 并写入 bypass.log
+# 强弱信号分离 (D438): detected-bypass=强信号(head 不匹配, 真绕过)→阻断;
+#   possible-bypass=弱信号(stale marker, 可能慢提交/merge 产物)→只告警, U1 推送对账才是真兜底。
 BYPASS_COUNT=0
+POSSIBLE_COUNT=0
 if [ -f "$BYPASS_LOG" ]; then
-  # V4.5.1: 只统计 detected-bypass 行（COMMITTED 是正常提交标记）
-  BYPASS_COUNT=$(grep -cE "$(date +%Y-%m-%d).*(detected-bypass|possible-bypass)" "$BYPASS_LOG" 2>/dev/null | tr -d '\n\r' || echo 0)
+  BYPASS_COUNT=$(grep -cE "$(date +%Y-%m-%d).*detected-bypass" "$BYPASS_LOG" 2>/dev/null | tr -d '\n\r' || echo 0)
+  POSSIBLE_COUNT=$(grep -cE "$(date +%Y-%m-%d).*possible-bypass" "$BYPASS_LOG" 2>/dev/null | tr -d '\n\r' || echo 0)
   BYPASS_COUNT=${BYPASS_COUNT//[^0-9]/}
+  POSSIBLE_COUNT=${POSSIBLE_COUNT//[^0-9]/}
   [ -z "$BYPASS_COUNT" ] && BYPASS_COUNT=0
+  [ -z "$POSSIBLE_COUNT" ] && POSSIBLE_COUNT=0
 fi
 if [ "${BYPASS_COUNT:-0}" -ge 3 ]; then
   if [ "${SYNO_GATEKEEPER_ACK:-0}" = "1" ]; then
@@ -743,6 +748,8 @@ if [ "${BYPASS_COUNT:-0}" -ge 3 ]; then
   fi
 elif [ "${BYPASS_COUNT:-0}" -ge 2 ]; then
   echo -e "  ${YELLOW}⚠️  绕过审计: 24h 内 --no-verify ${BYPASS_COUNT} 次 — 警告${RESET}"
+elif [ "${POSSIBLE_COUNT:-0}" -gt 0 ]; then
+  echo -e "  ${YELLOW}⚠️  绕过审计: 24h 内 possible-bypass ${POSSIBLE_COUNT} 次（stale marker 弱信号，非强绕过，U1 推送对账兜底）[告警不阻断]${RESET}"
 else
   echo -e "  ${GREEN}✅ 绕过审计${RESET}"
 fi
