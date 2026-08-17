@@ -45,7 +45,7 @@ fi
 # 消息文件缺失/异常 → MSG_DID 空 → 一致性检查 fail-open（铁律 24: 显式兜底）
 MSG_DID=$(head -1 "$1" 2>/dev/null | grep -oE '\(D[0-9]+\)' | head -1 | tr -d '()') || true # swallow-ok: 消息文件异常时声明为空 → fail-open 不误伤
 # D395-a 注入缝: SYNO_STAGED_FILES 覆盖暂存文件集（测试免跑真实 git diff）
-STAGED_LIST="${SYNO_STAGED_FILES:-$(git diff --cached --name-only 2>/dev/null || true)}"
+STAGED_LIST="${SYNO_STAGED_FILES:-$(git -c core.quotepath=false diff --cached --name-only 2>/dev/null || true)}"  # D339: 中文文件名不被转义，认领 match_path 正常
 if [ -n "$STAGED_LIST" ]; then
   # D317 自包含定位: 临时 repo 测试/异仓库时 git rev-parse ROOT 下无脚本目录
   MSG_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
