@@ -1,11 +1,12 @@
 {
   "task_id": "D410",
   "title": "task-to-progress-auto-redeem",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": null,
   "impl": null,
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-08-17",
-  "updated_by": "alloc-task-id"
+  "updated_by": "CTO",
+  "note": "任务交付→进度条自动兑换通道：redeem-progress A3.5，D394→7-3、D396→15-4 翻绿，进度 3%→4%，入 main dc67d036"
 }
