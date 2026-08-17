@@ -63,6 +63,18 @@ else
   no "边界: risk 字段读取失败"
 fi
 
+# ── 回归 (K3 终审 D426 FAIL 修复): 不得引用不存在的 reconcile-bypass-log.sh ──
+if grep -q "reconcile-bypass-log.sh" "$TOOL"; then
+  no "回归: 仍引用不存在的 reconcile-bypass-log.sh（死引用，K3 判交付即死）"
+else
+  ok "回归: 已去除 reconcile-bypass-log.sh 死引用"
+fi
+if grep -q "check-bypass-log.sh" "$TOOL"; then
+  ok "回归: 引用实际存在的 check-bypass-log.sh（U1 落地脚本）"
+else
+  no "回归: 未引用 check-bypass-log.sh"
+fi
+
 echo ""
 echo "结果: $PASS 通过, $FAIL 失败"
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1
