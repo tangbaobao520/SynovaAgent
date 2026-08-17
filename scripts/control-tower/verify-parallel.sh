@@ -14,7 +14,7 @@
 #   verify-parallel.sh --check-declared <doc> [--json]   # 解析头部 并行: D# (范围) 声明
 #   verify-parallel.sh --scan-today [--json]             # 今日全部 dev doc 两两比对
 #
-# 退出码: 0 = pass/skip/degraded, 1 = block (有交集)
+# 退出码 (CT-28 三态化): 0 = pass/skip, 1 = block (有交集), 2 = degraded (内核执行异常/用法错误)
 # ═══════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
 # D313 M5 UTF-8 强制: Windows 控制台/子进程统一 UTF-8
@@ -64,49 +64,40 @@ fail_open_skip() { # fail_open_skip <doc> <reason>
 }
 
 # ── 核心: python3 写集解析与比对 ──
-compare_docs() { # compare_docs <doc-a> <doc-b> → exit 1 on overlap
+# CT-28 (D422): block 判定直传 devdoc_writeset.py 的 exit code（内核本有三态）,
+#               弃 grep '"status": "block"' 文本匹配（格式漂移即静默放行 M1）。
+compare_docs() { # compare_docs <doc-a> <doc-b> → 0 pass/skip, 1 block, 2 degraded
   local da="$1" db="$2"
   if [ ! -f "$da" ]; then fail_open_skip "$da" "doc 不存在"; return 0; fi
   if [ ! -f "$db" ]; then fail_open_skip "$db" "doc 不存在"; return 0; fi
 
-  local result py_exit
-  result=$(
-    python3 "$SCRIPT_DIR/devdoc_writeset.py" --overlap-a "$da" --overlap-b "$db" 2>&1
-  )
+  local result py_exit st reason
+  result=$(python3 "$SCRIPT_DIR/devdoc_writeset.py" --overlap-a "$da" --overlap-b "$db" 2>&1)
   py_exit=$?
-  result=$(echo "$result" | python3 -c "
-import json, sys
-try:
-    d = json.load(sys.stdin)
-except Exception:
-    sys.exit(0)
-if d.get('status') == 'skip':
-    print(json.dumps({'status': 'skip', 'doc_a': '$da', 'doc_b': '$db', 'reason': d.get('reason','')}, ensure_ascii=False))
-elif d.get('status') == 'block':
-    print(json.dumps({'status': 'block', 'doc_a': '$da', 'doc_b': '$db', 'overlap': d.get('overlap', [])}, ensure_ascii=False))
-else:
-    print(json.dumps({'status': 'pass', 'doc_a': '$da', 'doc_b': '$db', 'overlap': [], 'count_a': 0, 'count_b': 0}, ensure_ascii=False))
-")
-  if echo "$result" | grep -q '"status": "block"'; then py_exit=1; fi
 
   if [ "$py_exit" -eq 1 ]; then
     # block: 有交集（业务判定，不属 fail-open）
     echo "  ❌ 并行声明与实际写集不符 — 重叠文件:"
     echo "$result" | python3 -c "import json,sys; d=json.load(sys.stdin); [print(f\"     - {o}\") for o in d.get('overlap',[])]" 2>/dev/null || echo "$result"
-    echo "$result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(f\"     ({d.get('doc_a','')} vs {d.get('doc_b','')})\")" 2>/dev/null || true
+    echo "     ($da vs $db)"
     emit_json "block" "$da" "$db" "$(echo "$result" | python3 -c "import json,sys; print(','.join('\"%s\"'%o for o in json.load(sys.stdin).get('overlap',[])))" 2>/dev/null || echo "")" "写集重叠"
     return 1
   fi
+  if [ "$py_exit" -ne 0 ]; then
+    # 内核执行异常 (exit 非 0/1) — degraded, 不静默当通过
+    echo "  ⚠️  devdoc_writeset.py 执行异常 (exit=$py_exit) — degraded" >&2
+    log_degraded "devdoc_writeset.py exit=$py_exit ($da/$db)"
+    emit_json "degraded" "$da" "$db" "[]" "内核执行异常 exit=$py_exit"
+    return 2
+  fi
 
-  local st
   st=$(echo "$result" | python3 -c "import json,sys; print(json.load(sys.stdin).get('status','pass'))" 2>/dev/null || echo "pass")
   if [ "$st" = "skip" ]; then
-    local reason
     reason=$(echo "$result" | python3 -c "import json,sys; print(json.load(sys.stdin).get('reason',''))" 2>/dev/null || echo "解析跳过")
     fail_open_skip "$da/$db" "$reason"
     return 0
   fi
-  echo "  ✅ 写集零交集 ($(echo "$result" | python3 -c "import json,sys; d=json.load(sys.stdin); print(f\"{d.get('count_a',0)} vs {d.get('count_b',0)}\")" 2>/dev/null || echo "?") 条目)"
+  echo "  ✅ 写集零交集"
   emit_json "pass" "$da" "$db" "[]" ""
   return 0
 }
@@ -150,9 +141,19 @@ today_files_by_suffix() {
 echo "── verify-parallel (D311): 并行声明物理验证 ──"
 
 BLOCKED=0
+DEGRADED=0
+
+# CT-28: compare_docs 三态 rc → BLOCKED(1)/DEGRADED(2) 归位（0 由 || 短路跳过）
+handle_compare() {
+  case "${1:-0}" in
+    1) BLOCKED=1 ;;
+    2) DEGRADED=1 ;;
+  esac
+  return 0
+}
 
 if [ "$MODE" = "pair" ]; then
-  compare_docs "$DOC_A" "$DOC_B" || BLOCKED=1
+  compare_docs "$DOC_A" "$DOC_B" || handle_compare $?
 
 elif [ "$MODE" = "declared" ]; then
   # 解析头部 "并行: D286 (范围), D300 (范围)" 声明
@@ -169,7 +170,7 @@ elif [ "$MODE" = "declared" ]; then
       log_degraded "声明依赖 $dep dev doc 缺失"
       continue
     fi
-    compare_docs "$DOC_A" "$DEP_DOC" || BLOCKED=1
+    compare_docs "$DOC_A" "$DEP_DOC" || handle_compare $?
   done
 
 elif [ "$MODE" = "today" ]; then
@@ -186,18 +187,23 @@ elif [ "$MODE" = "today" ]; then
   done <<< "$DOCS"
   for ((i = 0; i < ${#DOC_ARR[@]}; i++)); do
     for ((j = i + 1; j < ${#DOC_ARR[@]}; j++)); do
-      compare_docs "${DOC_ARR[$i]}" "${DOC_ARR[$j]}" || BLOCKED=1
+      compare_docs "${DOC_ARR[$i]}" "${DOC_ARR[$j]}" || handle_compare $?
     done
   done
 else
   echo "用法: verify-parallel.sh --doc-a <a> --doc-b <b> | --check-declared <doc> | --scan-today [--json]" >&2
-  exit 0
+  exit 2
 fi
 
 if [ "$BLOCKED" -eq 1 ]; then
   echo ""
   echo "  ❌ 并行声明验证未通过 — 存在写集重叠，禁止并行"
   exit 1
+fi
+if [ "$DEGRADED" -eq 1 ]; then
+  echo ""
+  echo "  ⚠️  verify-parallel 降级 (内核执行异常) — 见 degraded-events.log" >&2
+  exit 2
 fi
 echo "  ✅ 并行声明验证通过"
 exit 0

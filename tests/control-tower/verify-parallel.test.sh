@@ -146,6 +146,26 @@ else
 fi
 echo ""
 
+# ── 场景 6: 用法错误 → exit 2 (CT-28 三态) ──
+echo "── 场景 6: 用法错误 → exit 2 ──"
+EXIT=0
+OUT=$(bash "$TOOL" 2>&1) || EXIT=$?
+assert_exit 2 "$EXIT" "无参调用 → exit 2 (非 exit 0)"
+
+# ── 场景 7: 内核执行异常 (fake python3 crash) → degraded exit 2 ──
+echo "── 场景 7: 内核执行异常 → exit 2 ──"
+FAKEBIN="$TMP_DIR/fakebin"
+mkdir -p "$FAKEBIN"
+cat > "$FAKEBIN/python3" <<'EOF'
+#!/bin/bash
+exit 99
+EOF
+chmod +x "$FAKEBIN/python3"
+EXIT=0
+OUT=$(PATH="$FAKEBIN:$PATH" bash "$TOOL" --doc-a "$TMP_DIR/vp-a2.md" --doc-b "$TMP_DIR/vp-b2.md" --json 2>&1) || EXIT=$?
+assert_exit 2 "$EXIT" "内核 exit 99 → degraded exit 2 (非静默当通过)"
+echo ""
+
 echo "═══════════════════════════════════════════════════════════"
 echo "  结果: $PASS 通过, $FAIL 失败"
 if [ "$FAIL" -gt 0 ]; then

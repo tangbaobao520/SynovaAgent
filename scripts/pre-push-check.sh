@@ -320,10 +320,15 @@ echo ""
 echo -e "${CYAN}── 并行声明物理验证 (D311) ───────────────────────────${RESET}"
 VERIFY_PARALLEL="$SCRIPT_DIR/control-tower/verify-parallel.sh"
 if [[ -f "$VERIFY_PARALLEL" ]]; then
-  if ! bash "$VERIFY_PARALLEL" --scan-today; then
+  # CT-28 (D422): 三态分流 — 0 过 / 1 业务阻断 / 2 降级告警（不阻断, 防工具故障锁死推送）
+  bash "$VERIFY_PARALLEL" --scan-today
+  VP_EXIT=$?
+  if [ "$VP_EXIT" -eq 1 ]; then
     echo ""
     echo -e "  ${RED}❌ 并行声明验证未通过 — 今日 dev doc 写集存在重叠, 推送已拒绝 (D311)${RESET}"
     exit 1
+  elif [ "$VP_EXIT" -eq 2 ]; then
+    echo -e "  ${YELLOW}⚠️  verify-parallel 降级 (exit 2) — 不阻断推送, 见 degraded-events.log${RESET}"
   fi
 else
   echo -e "  ${YELLOW}⚠️  verify-parallel.sh 缺失 — 并行声明验证跳过 (fail-open)${RESET}"
