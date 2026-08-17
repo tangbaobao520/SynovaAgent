@@ -1,11 +1,15 @@
 {
   "task_id": "D401",
   "title": "K3 战略咨询终版 + 分工规划信息落库（台账/TASK-ROUTING/task-state）",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": null,
-  "impl": null,
+  "impl": {
+    "commit": "5e223c1a",
+    "by": "coding",
+    "at": "2026-08-16"
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-08-16",
-  "updated_by": "alloc-task-id"
+  "updated_at": "2026-08-18",
+  "updated_by": "CTO"
 }

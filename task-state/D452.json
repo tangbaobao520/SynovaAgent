@@ -1,0 +1,17 @@
+{
+  "task_id": "D452",
+  "title": "全项目视野修复（方案B）+ 状态对齐 D401/403/404/405",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "commit": "local",
+    "by": "cto-api",
+    "at": "2026-08-18",
+    "note": "founder-truth.py + gen-cto-health.py 纳入 git 全项目历史任务（折叠142个）+ 4任务状态修正"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-18",
+  "updated_by": "CTO",
+  "note": "创始人纠正：CTO 是全局不是 Mac 侧。方案B：数据源 task-state 优先 + git log 全项目回退，历史任务折叠"
+}
