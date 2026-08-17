@@ -2,6 +2,7 @@
   "task_id": "TEMPLATE",
   "title": "<任务名>",
   "status": "claimed",
+  "risk": "medium",
   "spec": null,
   "impl": null,
   "audit": null,
