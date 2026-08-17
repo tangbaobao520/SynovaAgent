@@ -62,10 +62,13 @@ if [ ! -d "$REPO/node_modules" ]; then
   [ "$rc" -eq 2 ] && ok "step 5 无 node_modules → exit 2 degraded" || no "step 5 无 node_modules 应 exit 2, 实际 $rc"
 fi
 
-# ── 正常: step 7 bypass.log 无未提交变更 → exit 0 ──
+# ── 边界: step 7 bypass.log 有未提交变更 → exit 1（可控: 备份→制造变更→测→恢复, 不破坏证据链）──
+cp "$REPO/.claude/bypass.log" "$REPO/.claude/.u6-bypass-bak" 2>/dev/null || true
+echo "# u6-test marker" >> "$REPO/.claude/bypass.log"
 bash "$GATE" --step 7 >/dev/null 2>&1
 rc=$?
-[ "$rc" -eq 0 ] && ok "step 7 bypass.log 无变更 → exit 0" || no "step 7 无变更应 exit 0, 实际 $rc"
+mv "$REPO/.claude/.u6-bypass-bak" "$REPO/.claude/bypass.log" 2>/dev/null || true
+[ "$rc" -eq 1 ] && ok "step 7 bypass.log 有变更 → exit 1" || no "step 7 有变更应 exit 1, 实际 $rc"
 
 echo ""
 echo "结果: $PASS 通过, $FAIL 失败"
