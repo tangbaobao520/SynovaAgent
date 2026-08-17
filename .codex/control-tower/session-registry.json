@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-08-17T03:47:39+00:00",
+  "updated_at": "2026-08-17T12:50:49+00:00",
   "sessions": [
     {
       "session_id": "D317-engine-core-retirement-cleanup",
@@ -891,45 +891,225 @@
       "task_id": "D408",
       "pid": null,
       "started_at": "2026-08-17T03:47:21+00:00",
-      "last_seen_at": "2026-08-17T03:47:39+00:00",
-      "phase": "CP2",
-      "phase_entered_at": "2026-08-17T03:47:39+00:00",
+      "last_seen_at": "2026-08-17T03:49:39+00:00",
+      "phase": "CP4",
+      "phase_entered_at": "2026-08-17T03:49:39+00:00",
       "write_set": [
         {
           "file": ".claude/bypass.log",
           "claimed_at": "2026-08-17T03:47:39+00:00",
-          "status": "dirty",
+          "status": "committed",
           "task_id": "D408"
         },
         {
           "file": ".codex/control-tower/session-registry.json",
           "claimed_at": "2026-08-17T03:47:39+00:00",
-          "status": "dirty",
+          "status": "committed",
           "task_id": "D408"
         },
         {
           "file": "docs/synova/product-lines/todos.yaml",
           "claimed_at": "2026-08-17T03:47:39+00:00",
-          "status": "dirty",
+          "status": "committed",
           "task_id": "D408"
         },
         {
           "file": ".claude/task-briefs/2026-08-17-D408-closeout-registry-todos.md",
           "claimed_at": "2026-08-17T03:47:39+00:00",
-          "status": "dirty",
+          "status": "committed",
           "task_id": "D408"
         },
         {
           "file": "task-state/D408.json",
           "claimed_at": "2026-08-17T03:47:39+00:00",
-          "status": "dirty",
+          "status": "committed",
           "task_id": "D408"
         },
         {
           "file": "memory/notes/implemented/2026-08-17-d408-closeout-registry-todos.md",
           "claimed_at": "2026-08-17T03:47:39+00:00",
-          "status": "dirty",
+          "status": "committed",
           "task_id": "D408"
+        }
+      ],
+      "worktree_path": null,
+      "worktree_branch": null
+    },
+    {
+      "session_id": "D409",
+      "brief": "",
+      "task_id": "D409",
+      "pid": null,
+      "started_at": "2026-08-17T03:50:48+00:00",
+      "last_seen_at": "2026-08-17T03:52:45+00:00",
+      "phase": "CP4",
+      "phase_entered_at": "2026-08-17T03:52:45+00:00",
+      "write_set": [
+        {
+          "file": "task-state/D356.json",
+          "claimed_at": "2026-08-17T03:50:48+00:00",
+          "status": "committed",
+          "task_id": "D409"
+        },
+        {
+          "file": "task-state/D379.json",
+          "claimed_at": "2026-08-17T03:50:48+00:00",
+          "status": "committed",
+          "task_id": "D409"
+        },
+        {
+          "file": "task-state/D395.json",
+          "claimed_at": "2026-08-17T03:50:48+00:00",
+          "status": "committed",
+          "task_id": "D409"
+        },
+        {
+          "file": "task-state/D396.json",
+          "claimed_at": "2026-08-17T03:50:48+00:00",
+          "status": "committed",
+          "task_id": "D409"
+        },
+        {
+          "file": "task-state/D406.json",
+          "claimed_at": "2026-08-17T03:50:48+00:00",
+          "status": "committed",
+          "task_id": "D409"
+        },
+        {
+          "file": "docs/synova/CTO-HEALTH.md",
+          "claimed_at": "2026-08-17T03:50:48+00:00",
+          "status": "committed",
+          "task_id": "D409"
+        },
+        {
+          "file": ".claude/task-briefs/2026-08-17-D409-taskstate-consistency.md",
+          "claimed_at": "2026-08-17T03:50:48+00:00",
+          "status": "committed",
+          "task_id": "D409"
+        },
+        {
+          "file": "task-state/D409.json",
+          "claimed_at": "2026-08-17T03:50:48+00:00",
+          "status": "committed",
+          "task_id": "D409"
+        },
+        {
+          "file": "memory/notes/implemented/2026-08-17-d409-taskstate-consistency.md",
+          "claimed_at": "2026-08-17T03:50:48+00:00",
+          "status": "committed",
+          "task_id": "D409"
+        }
+      ],
+      "worktree_path": null,
+      "worktree_branch": null
+    },
+    {
+      "session_id": "D410",
+      "brief": "",
+      "task_id": "D410",
+      "pid": null,
+      "started_at": "2026-08-17T04:09:48+00:00",
+      "last_seen_at": "2026-08-17T04:11:44+00:00",
+      "phase": "CP4",
+      "phase_entered_at": "2026-08-17T04:11:44+00:00",
+      "write_set": [
+        {
+          "file": "scripts/product-lines/redeem-progress.py",
+          "claimed_at": "2026-08-17T04:09:48+00:00",
+          "status": "committed",
+          "task_id": "D410"
+        },
+        {
+          "file": "scripts/product-lines/refresh-all.sh",
+          "claimed_at": "2026-08-17T04:09:48+00:00",
+          "status": "committed",
+          "task_id": "D410"
+        },
+        {
+          "file": "task-state/D394.json",
+          "claimed_at": "2026-08-17T04:09:48+00:00",
+          "status": "committed",
+          "task_id": "D410"
+        },
+        {
+          "file": "task-state/D396.json",
+          "claimed_at": "2026-08-17T04:09:48+00:00",
+          "status": "committed",
+          "task_id": "D410"
+        },
+        {
+          "file": "task-state/D379.json",
+          "claimed_at": "2026-08-17T04:09:48+00:00",
+          "status": "committed",
+          "task_id": "D410"
+        },
+        {
+          "file": "docs/synova/product-lines/evidence/task-D394.json",
+          "claimed_at": "2026-08-17T04:09:48+00:00",
+          "status": "committed",
+          "task_id": "D410"
+        },
+        {
+          "file": "docs/synova/product-lines/evidence/task-D396.json",
+          "claimed_at": "2026-08-17T04:09:48+00:00",
+          "status": "committed",
+          "task_id": "D410"
+        },
+        {
+          "file": "docs/synova/product-lines/todos.yaml",
+          "claimed_at": "2026-08-17T04:09:48+00:00",
+          "status": "dirty",
+          "task_id": "D410"
+        },
+        {
+          "file": "docs/synova/product-lines/product-progress.html",
+          "claimed_at": "2026-08-17T04:09:48+00:00",
+          "status": "committed",
+          "task_id": "D410"
+        },
+        {
+          "file": ".claude/task-briefs/2026-08-17-D410-task-to-progress-auto-redeem.md",
+          "claimed_at": "2026-08-17T04:09:48+00:00",
+          "status": "committed",
+          "task_id": "D410"
+        },
+        {
+          "file": "task-state/D410.json",
+          "claimed_at": "2026-08-17T04:09:48+00:00",
+          "status": "committed",
+          "task_id": "D410"
+        },
+        {
+          "file": "memory/notes/implemented/2026-08-17-d410-task-to-progress-redeem.md",
+          "claimed_at": "2026-08-17T04:09:48+00:00",
+          "status": "committed",
+          "task_id": "D410"
+        }
+      ],
+      "worktree_path": null,
+      "worktree_branch": null
+    },
+    {
+      "session_id": "D428",
+      "brief": "",
+      "task_id": "D428",
+      "pid": null,
+      "started_at": "2026-08-17T12:50:49+00:00",
+      "last_seen_at": "2026-08-17T12:50:49+00:00",
+      "phase": "CP2",
+      "phase_entered_at": "2026-08-17T12:50:49+00:00",
+      "write_set": [
+        {
+          "file": "task-state/D428.json",
+          "claimed_at": "2026-08-17T12:50:49+00:00",
+          "status": "dirty",
+          "task_id": "D428"
+        },
+        {
+          "file": "docs/synova/coordination/审计发现台账-DSH-CTO.md",
+          "claimed_at": "2026-08-17T12:50:49+00:00",
+          "status": "dirty",
+          "task_id": "D428"
         }
       ],
       "worktree_path": null,

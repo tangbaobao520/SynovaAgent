@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-08-15 02:19:27",
+  "generated_at": "2026-08-17 12:09:22",
   "version": "1.0",
-  "product_progress_pct": 3,
+  "product_progress_pct": 4,
   "total_lines": 26,
   "lines": [
     {
@@ -459,14 +459,14 @@
       "baseline_note": "调度真实（K3 PASS）；告警层死代码",
       "done_definition": "装好后系统自动按周/月/季监测，异常自动发现、自动进报告；重启/断电不丢监测结果",
       "total": 8,
-      "verified": 1,
-      "progress_pct": 12,
+      "verified": 2,
+      "progress_pct": 25,
       "k3_gate": "",
       "status_counts": {
         "uncommitted": 5,
-        "failed": 1,
+        "failed": 0,
         "pending_k3": 0,
-        "verified": 1,
+        "verified": 2,
         "rejected": 1,
         "stale": 0
       },
@@ -492,8 +492,10 @@
         {
           "id": "7-3",
           "desc": "监测结果持久化（重启不丢 findings）",
-          "status": "failed",
-          "evidence_files": [],
+          "status": "verified",
+          "evidence_files": [
+            "docs/synova/product-lines/evidence/task-D394.json"
+          ],
           "note": "K3 P2：findings 来自 runner 内存 records，进程重启即丢"
         },
         {
@@ -998,14 +1000,14 @@
       "baseline_note": "注册表+调度+工具接线存在（代码实证）；提示词效果未验证",
       "done_definition": "诊断时专家真的在干活（老板看得见），交叉验证结论，专家提示词效果有数据证明",
       "total": 7,
-      "verified": 0,
-      "progress_pct": 0,
+      "verified": 1,
+      "progress_pct": 14,
       "k3_gate": "",
       "status_counts": {
-        "uncommitted": 7,
+        "uncommitted": 6,
         "failed": 0,
         "pending_k3": 0,
-        "verified": 0,
+        "verified": 1,
         "rejected": 0,
         "stale": 0
       },
@@ -1034,8 +1036,10 @@
         {
           "id": "15-4",
           "desc": "专家提示词效果验证（黄金数据集命中率）",
-          "status": "uncommitted",
-          "evidence_files": [],
+          "status": "verified",
+          "evidence_files": [
+            "docs/synova/product-lines/evidence/task-D396.json"
+          ],
           "note": "创始人 13 问第 10 问：提示词效果未验证"
         },
         {
