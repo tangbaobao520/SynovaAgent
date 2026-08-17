@@ -187,3 +187,6 @@ Binary file .claude/bypass.log matches
 2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: feat(D335): 防线闭环 — 提交端同步门禁 check-bra) | TASK_ID=recon | AGENT=ClawOrg-Mac | HASH=473502228770a63a7b37bff20401d33325075f86
 2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: feat(D334): 多机 PR 工作流 — pre-push 门禁 0 同步) | TASK_ID=recon | AGENT=ClawOrg-Mac | HASH=8ff09a9061fe10c90969b1abbe996c3b84c626fa
 
+2026-08-17T09:13:48+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D407 | AGENT=DeepSeek-Harness | HASH=93de5ccb13b3364b4ec93e86a154ebb5a68fa1ea
+2026-08-17T09:15:22+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D407 | AGENT=DeepSeek-Harness | HASH=5b979d6f94c738a08c8610b4602514b702b7a75b
+2026-08-17T09:16:40+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D407 | AGENT=DeepSeek-Harness | HASH=f90f91702443099cb33f0a81c4ce7f2a4d095072

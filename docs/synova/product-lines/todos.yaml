@@ -2,7 +2,7 @@
 # AUTO 区机器生成，禁止手写；MANUAL 区人工微调归属，生成器逐字节保留。
 # 改完跑 bash scripts/product-lines/refresh-all.sh 生效。
 version: 1.0
-generated_at: "2026-08-15 02:19:27"
+generated_at: "2026-08-16 20:40:14"
 todos:
 # AUTO:START
   - id: "T-1-01"
@@ -149,7 +149,7 @@ todos:
     owner: "DeepSeek Harness"
     depends: []
     acceptance: "场景 GS-07 转绿（exit 0 + 证据入库）"
-  - id: "T-24-01"
+  - id: "T-24-03"
     line: 24
     title: "✅ **复现成功，P0 保留，根因加深**"
     source: "权威偏差登记册 v2"
@@ -213,6 +213,14 @@ todos:
     owner: "Claude Code"
     depends: []
     acceptance: "场景 GS-02 转绿（exit 0 + 证据入库）"
+  - id: "T-10-03"
+    line: 10
+    title: "CONDITIONAL PASS（无 P0）：P0-2 写侧契约收敛（3 JSON 对齐读侧）+ P0-3 fail-open 修复物理成立（T1/T2 24/（D355）"
+    source: "审计发现台账（K3 D355 审计）"
+    priority: P1
+    owner: "Claude Code"
+    depends: ["D355"]
+    acceptance: "场景 GS-03、GS-05 转绿（exit 0 + 证据入库）"
   - id: "T-15-01"
     line: 15
     title: "①V5 视图硬编码旧 6 专家（D282 未传播，铁律 9 违规实例）；②gate-status.json 缺失（3/19 信号仅 3 文件）；③铁律 36 无（D340）"
@@ -357,7 +365,23 @@ todos:
     owner: "Claude Code"
     depends: ["D239"]
     acceptance: "场景 GS-07 转绿（exit 0 + 证据入库）"
+  - id: "T-24-01"
+    line: 24
+    title: "CONDITIONAL PASS（无 P0）：DS1-DS8 八项物理一致（newermt=0、4 处生产调用、无 rm、T1/T2 双侧 15/15+12/1（D373）"
+    source: "审计发现台账（K3 D366 审计）"
+    priority: P1
+    owner: "Claude Code"
+    depends: ["D373"]
+    acceptance: "场景 GS-07 转绿（exit 0 + 证据入库）"
   - id: "T-24-02"
+    line: 24
+    title: "CONDITIONAL PASS（无 P0）：failover 接线物理成立（17/17 双侧 + K3 真实网络注入：连接拒绝/HTTP 500/双死/hea（D363）"
+    source: "审计发现台账（K3 D363 审计）"
+    priority: P1
+    owner: "Claude Code"
+    depends: ["D363"]
+    acceptance: "场景 GS-07 转绿（exit 0 + 证据入库）"
+  - id: "T-24-04"
     line: 24
     title: "权限与安全（S3-3）: 未验证"
     source: "C线差距清单（第五章）"

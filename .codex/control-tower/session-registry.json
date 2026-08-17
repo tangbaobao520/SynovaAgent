@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-08-14T05:41:48+00:00",
+  "updated_at": "2026-08-17T03:47:39+00:00",
   "sessions": [
     {
       "session_id": "D317-engine-core-retirement-cleanup",
@@ -62,6 +62,878 @@
       "phase": "CP2",
       "phase_entered_at": "2026-08-14T05:41:48+00:00",
       "write_set": []
+    },
+    {
+      "session_id": "D389",
+      "brief": "",
+      "task_id": "D389",
+      "pid": null,
+      "started_at": "2026-08-16T10:15:43+00:00",
+      "last_seen_at": "2026-08-16T10:18:29+00:00",
+      "phase": "CP4",
+      "phase_entered_at": "2026-08-16T10:18:29+00:00",
+      "write_set": [
+        {
+          "file": "task-state/D387.json",
+          "claimed_at": "2026-08-16T10:15:43+00:00",
+          "status": "committed",
+          "task_id": "D389"
+        },
+        {
+          "file": "docs/synova/audit-reports/2026-08-16-D387.md",
+          "claimed_at": "2026-08-16T10:15:43+00:00",
+          "status": "committed",
+          "task_id": "D389"
+        },
+        {
+          "file": "docs/synova/coordination/审计发现台账-DSH-CTO.md",
+          "claimed_at": "2026-08-16T10:15:43+00:00",
+          "status": "dirty",
+          "task_id": "D389"
+        },
+        {
+          "file": ".claude/task-briefs/2026-08-16-D389-audit-ingest-d387.md",
+          "claimed_at": "2026-08-16T10:15:43+00:00",
+          "status": "committed",
+          "task_id": "D389"
+        },
+        {
+          "file": "task-state/D389.json",
+          "claimed_at": "2026-08-16T10:16:51+00:00",
+          "status": "committed",
+          "task_id": "D389"
+        }
+      ],
+      "worktree_path": null,
+      "worktree_branch": null
+    },
+    {
+      "session_id": "D390",
+      "brief": "",
+      "task_id": "D390",
+      "pid": null,
+      "started_at": "2026-08-16T10:29:54+00:00",
+      "last_seen_at": "2026-08-16T10:31:08+00:00",
+      "phase": "CP4",
+      "phase_entered_at": "2026-08-16T10:31:08+00:00",
+      "write_set": [
+        {
+          "file": "scripts/pre-commit-check.sh",
+          "claimed_at": "2026-08-16T10:29:54+00:00",
+          "status": "committed",
+          "task_id": "D390"
+        },
+        {
+          "file": "tests/control-tower/doc-commit-exempt.test.sh",
+          "claimed_at": "2026-08-16T10:29:54+00:00",
+          "status": "committed",
+          "task_id": "D390"
+        },
+        {
+          "file": ".claude/task-briefs/2026-08-16-D390-exempt-guard.md",
+          "claimed_at": "2026-08-16T10:29:54+00:00",
+          "status": "committed",
+          "task_id": "D390"
+        },
+        {
+          "file": "task-state/D390.json",
+          "claimed_at": "2026-08-16T10:29:54+00:00",
+          "status": "committed",
+          "task_id": "D390"
+        }
+      ],
+      "worktree_path": null,
+      "worktree_branch": null
+    },
+    {
+      "session_id": "D392",
+      "brief": "",
+      "task_id": "D392",
+      "pid": null,
+      "started_at": "2026-08-16T11:49:52+00:00",
+      "last_seen_at": "2026-08-16T11:50:40+00:00",
+      "phase": "CP4",
+      "phase_entered_at": "2026-08-16T11:50:40+00:00",
+      "write_set": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "claimed_at": "2026-08-16T11:49:52+00:00",
+          "status": "committed",
+          "task_id": "D392"
+        },
+        {
+          "file": "docs/synova/coordination/审计发现台账-DSH-CTO.md",
+          "claimed_at": "2026-08-16T11:49:52+00:00",
+          "status": "dirty",
+          "task_id": "D392"
+        },
+        {
+          "file": "docs/synova/DASHBOARD-CN.md",
+          "claimed_at": "2026-08-16T11:49:52+00:00",
+          "status": "committed",
+          "task_id": "D392"
+        },
+        {
+          "file": ".claude/task-briefs/2026-08-16-D392-audit-exempt.md",
+          "claimed_at": "2026-08-16T11:49:52+00:00",
+          "status": "committed",
+          "task_id": "D392"
+        },
+        {
+          "file": "task-state/D392.json",
+          "claimed_at": "2026-08-16T11:49:52+00:00",
+          "status": "committed",
+          "task_id": "D392"
+        }
+      ],
+      "worktree_path": null,
+      "worktree_branch": null
+    },
+    {
+      "session_id": "D393",
+      "brief": "",
+      "task_id": "D393",
+      "pid": null,
+      "started_at": "2026-08-16T12:17:37+00:00",
+      "last_seen_at": "2026-08-16T12:18:28+00:00",
+      "phase": "CP4",
+      "phase_entered_at": "2026-08-16T12:18:28+00:00",
+      "write_set": [
+        {
+          "file": "scripts/control-tower/gen-cto-health.py",
+          "claimed_at": "2026-08-16T12:17:38+00:00",
+          "status": "committed",
+          "task_id": "D393"
+        },
+        {
+          "file": "tests/control-tower/gen-cto-health.test.sh",
+          "claimed_at": "2026-08-16T12:17:38+00:00",
+          "status": "committed",
+          "task_id": "D393"
+        },
+        {
+          "file": "task-state/README.md",
+          "claimed_at": "2026-08-16T12:17:38+00:00",
+          "status": "committed",
+          "task_id": "D393"
+        },
+        {
+          "file": "docs/synova/CTO-HEALTH.md",
+          "claimed_at": "2026-08-16T12:17:38+00:00",
+          "status": "committed",
+          "task_id": "D393"
+        },
+        {
+          "file": ".claude/task-briefs/2026-08-16-D393-derived-status.md",
+          "claimed_at": "2026-08-16T12:17:38+00:00",
+          "status": "committed",
+          "task_id": "D393"
+        },
+        {
+          "file": "task-state/D393.json",
+          "claimed_at": "2026-08-16T12:17:38+00:00",
+          "status": "committed",
+          "task_id": "D393"
+        }
+      ],
+      "worktree_path": null,
+      "worktree_branch": null
+    },
+    {
+      "session_id": "D399",
+      "brief": "",
+      "task_id": "D399",
+      "pid": null,
+      "started_at": "2026-08-16T12:59:42+00:00",
+      "last_seen_at": "2026-08-16T13:00:24+00:00",
+      "phase": "CP4",
+      "phase_entered_at": "2026-08-16T13:00:24+00:00",
+      "write_set": [
+        {
+          "file": "scripts/control-tower/gen-cto-health.py",
+          "claimed_at": "2026-08-16T12:59:42+00:00",
+          "status": "committed",
+          "task_id": "D399"
+        },
+        {
+          "file": "tests/control-tower/gen-cto-health.test.sh",
+          "claimed_at": "2026-08-16T12:59:42+00:00",
+          "status": "committed",
+          "task_id": "D399"
+        },
+        {
+          "file": "docs/synova/CTO-HEALTH.md",
+          "claimed_at": "2026-08-16T12:59:42+00:00",
+          "status": "committed",
+          "task_id": "D399"
+        },
+        {
+          "file": "task-state/D385.json",
+          "claimed_at": "2026-08-16T12:59:42+00:00",
+          "status": "committed",
+          "task_id": "D399"
+        },
+        {
+          "file": "task-state/D391.json",
+          "claimed_at": "2026-08-16T12:59:42+00:00",
+          "status": "committed",
+          "task_id": "D399"
+        },
+        {
+          "file": "task-state/D399.json",
+          "claimed_at": "2026-08-16T12:59:42+00:00",
+          "status": "committed",
+          "task_id": "D399"
+        },
+        {
+          "file": ".claude/bypass.log",
+          "claimed_at": "2026-08-16T12:59:42+00:00",
+          "status": "committed",
+          "task_id": "D399"
+        },
+        {
+          "file": ".claude/task-briefs/2026-08-16-D399-audit-fix.md",
+          "claimed_at": "2026-08-16T12:59:42+00:00",
+          "status": "committed",
+          "task_id": "D399"
+        }
+      ],
+      "worktree_path": null,
+      "worktree_branch": null
+    },
+    {
+      "session_id": "D400",
+      "brief": "",
+      "task_id": "D400",
+      "pid": null,
+      "started_at": "2026-08-16T13:26:01+00:00",
+      "last_seen_at": "2026-08-16T13:28:09+00:00",
+      "phase": "CP4",
+      "phase_entered_at": "2026-08-16T13:28:09+00:00",
+      "write_set": [
+        {
+          "file": "task-state/D394.json",
+          "claimed_at": "2026-08-16T13:26:01+00:00",
+          "status": "committed",
+          "task_id": "D400"
+        },
+        {
+          "file": "task-state/D395.json",
+          "claimed_at": "2026-08-16T13:26:01+00:00",
+          "status": "committed",
+          "task_id": "D400"
+        },
+        {
+          "file": "task-state/D396.json",
+          "claimed_at": "2026-08-16T13:26:01+00:00",
+          "status": "committed",
+          "task_id": "D400"
+        },
+        {
+          "file": "task-state/D397.json",
+          "claimed_at": "2026-08-16T13:26:01+00:00",
+          "status": "committed",
+          "task_id": "D400"
+        },
+        {
+          "file": "task-state/D398.json",
+          "claimed_at": "2026-08-16T13:26:01+00:00",
+          "status": "committed",
+          "task_id": "D400"
+        },
+        {
+          "file": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D391-admin-knowledge-l1l4-fix-20260816.md",
+          "claimed_at": "2026-08-16T13:26:01+00:00",
+          "status": "dirty",
+          "task_id": "D400"
+        },
+        {
+          "file": "docs/synova/CTO-HEALTH.md",
+          "claimed_at": "2026-08-16T13:26:01+00:00",
+          "status": "committed",
+          "task_id": "D400"
+        },
+        {
+          "file": "scripts/control-tower/gen-cto-health.py",
+          "claimed_at": "2026-08-16T13:26:01+00:00",
+          "status": "committed",
+          "task_id": "D400"
+        },
+        {
+          "file": "task-state/README.md",
+          "claimed_at": "2026-08-16T13:26:01+00:00",
+          "status": "committed",
+          "task_id": "D400"
+        },
+        {
+          "file": "task-state/D393.json",
+          "claimed_at": "2026-08-16T13:26:01+00:00",
+          "status": "committed",
+          "task_id": "D400"
+        },
+        {
+          "file": "task-state/D400.json",
+          "claimed_at": "2026-08-16T13:26:01+00:00",
+          "status": "committed",
+          "task_id": "D400"
+        },
+        {
+          "file": ".claude/bypass.log",
+          "claimed_at": "2026-08-16T13:26:01+00:00",
+          "status": "committed",
+          "task_id": "D400"
+        },
+        {
+          "file": ".claude/task-briefs/2026-08-16-D400-closeout.md",
+          "claimed_at": "2026-08-16T13:26:01+00:00",
+          "status": "committed",
+          "task_id": "D400"
+        }
+      ],
+      "worktree_path": null,
+      "worktree_branch": null
+    },
+    {
+      "session_id": "D401",
+      "brief": "",
+      "task_id": "D401",
+      "pid": null,
+      "started_at": "2026-08-16T14:21:25+00:00",
+      "last_seen_at": "2026-08-16T14:22:09+00:00",
+      "phase": "CP4",
+      "phase_entered_at": "2026-08-16T14:22:09+00:00",
+      "write_set": [
+        {
+          "file": "docs/synova/coordination/审计发现台账-DSH-CTO.md",
+          "claimed_at": "2026-08-16T14:21:26+00:00",
+          "status": "dirty",
+          "task_id": "D401"
+        },
+        {
+          "file": "docs/synova/coordination/TASK-ROUTING.md",
+          "claimed_at": "2026-08-16T14:21:26+00:00",
+          "status": "committed",
+          "task_id": "D401"
+        },
+        {
+          "file": "task-state/D386.json",
+          "claimed_at": "2026-08-16T14:21:26+00:00",
+          "status": "committed",
+          "task_id": "D401"
+        },
+        {
+          "file": "task-state/D387.json",
+          "claimed_at": "2026-08-16T14:21:26+00:00",
+          "status": "committed",
+          "task_id": "D401"
+        },
+        {
+          "file": "task-state/D389.json",
+          "claimed_at": "2026-08-16T14:21:26+00:00",
+          "status": "committed",
+          "task_id": "D401"
+        },
+        {
+          "file": "task-state/D390.json",
+          "claimed_at": "2026-08-16T14:21:26+00:00",
+          "status": "committed",
+          "task_id": "D401"
+        },
+        {
+          "file": "task-state/D391.json",
+          "claimed_at": "2026-08-16T14:21:26+00:00",
+          "status": "committed",
+          "task_id": "D401"
+        },
+        {
+          "file": "task-state/D392.json",
+          "claimed_at": "2026-08-16T14:21:26+00:00",
+          "status": "committed",
+          "task_id": "D401"
+        },
+        {
+          "file": "task-state/D394.json",
+          "claimed_at": "2026-08-16T14:21:26+00:00",
+          "status": "committed",
+          "task_id": "D401"
+        },
+        {
+          "file": "task-state/D395.json",
+          "claimed_at": "2026-08-16T14:21:26+00:00",
+          "status": "committed",
+          "task_id": "D401"
+        },
+        {
+          "file": "task-state/D396.json",
+          "claimed_at": "2026-08-16T14:21:26+00:00",
+          "status": "committed",
+          "task_id": "D401"
+        },
+        {
+          "file": "task-state/D397.json",
+          "claimed_at": "2026-08-16T14:21:26+00:00",
+          "status": "committed",
+          "task_id": "D401"
+        },
+        {
+          "file": "task-state/D398.json",
+          "claimed_at": "2026-08-16T14:21:26+00:00",
+          "status": "committed",
+          "task_id": "D401"
+        },
+        {
+          "file": "task-state/D399.json",
+          "claimed_at": "2026-08-16T14:21:26+00:00",
+          "status": "committed",
+          "task_id": "D401"
+        },
+        {
+          "file": "task-state/D401.json",
+          "claimed_at": "2026-08-16T14:21:26+00:00",
+          "status": "committed",
+          "task_id": "D401"
+        },
+        {
+          "file": ".claude/task-briefs/2026-08-16-D401-ledger-sync.md",
+          "claimed_at": "2026-08-16T14:21:26+00:00",
+          "status": "committed",
+          "task_id": "D401"
+        }
+      ],
+      "worktree_path": null,
+      "worktree_branch": null
+    },
+    {
+      "session_id": "D403",
+      "brief": "",
+      "task_id": "D403",
+      "pid": null,
+      "started_at": "2026-08-16T20:45:01+00:00",
+      "last_seen_at": "2026-08-16T20:45:55+00:00",
+      "phase": "CP4",
+      "phase_entered_at": "2026-08-16T20:45:55+00:00",
+      "write_set": [
+        {
+          "file": ".claude/task-briefs/D396-snapshot-golden.md",
+          "claimed_at": "2026-08-16T20:45:01+00:00",
+          "status": "committed",
+          "task_id": "D403"
+        },
+        {
+          "file": ".claude/task-briefs/D394-sentinel-events.md",
+          "claimed_at": "2026-08-16T20:45:01+00:00",
+          "status": "committed",
+          "task_id": "D403"
+        },
+        {
+          "file": ".claude/task-briefs/D395a-notes-four-state.md",
+          "claimed_at": "2026-08-16T20:45:01+00:00",
+          "status": "committed",
+          "task_id": "D403"
+        },
+        {
+          "file": ".claude/task-briefs/D402-audit-fix-p1.md",
+          "claimed_at": "2026-08-16T20:45:01+00:00",
+          "status": "committed",
+          "task_id": "D403"
+        },
+        {
+          "file": "docs/synova/coordination/DEV-DOC-DISPATCH-20260816.md",
+          "claimed_at": "2026-08-16T20:45:01+00:00",
+          "status": "committed",
+          "task_id": "D403"
+        },
+        {
+          "file": "docs/synova/coordination/TASK-ROUTING.md",
+          "claimed_at": "2026-08-16T20:45:01+00:00",
+          "status": "committed",
+          "task_id": "D403"
+        },
+        {
+          "file": ".claude/task-briefs/2026-08-16-D403-dispatch-commit.md",
+          "claimed_at": "2026-08-16T20:45:01+00:00",
+          "status": "committed",
+          "task_id": "D403"
+        },
+        {
+          "file": "task-state/D403.json",
+          "claimed_at": "2026-08-16T20:45:01+00:00",
+          "status": "committed",
+          "task_id": "D403"
+        }
+      ],
+      "worktree_path": null,
+      "worktree_branch": null
+    },
+    {
+      "session_id": "D404",
+      "brief": "",
+      "task_id": "D404",
+      "pid": null,
+      "started_at": "2026-08-16T20:54:18+00:00",
+      "last_seen_at": "2026-08-16T20:54:58+00:00",
+      "phase": "CP4",
+      "phase_entered_at": "2026-08-16T20:54:58+00:00",
+      "write_set": [
+        {
+          "file": "docs/synova/audit-reports/2026-08-16-D394-D398-strategy-consult.md",
+          "claimed_at": "2026-08-16T20:54:18+00:00",
+          "status": "committed",
+          "task_id": "D404"
+        },
+        {
+          "file": "docs/synova/coordination/审计发现台账-DSH-CTO.md",
+          "claimed_at": "2026-08-16T20:54:18+00:00",
+          "status": "dirty",
+          "task_id": "D404"
+        },
+        {
+          "file": "docs/synova/CTO-HEALTH.md",
+          "claimed_at": "2026-08-16T20:54:18+00:00",
+          "status": "committed",
+          "task_id": "D404"
+        },
+        {
+          "file": "docs/synova/product-lines/product-progress.html",
+          "claimed_at": "2026-08-16T20:54:18+00:00",
+          "status": "committed",
+          "task_id": "D404"
+        },
+        {
+          "file": ".claude/task-briefs/2026-08-16-D404-context-fix.md",
+          "claimed_at": "2026-08-16T20:54:18+00:00",
+          "status": "committed",
+          "task_id": "D404"
+        },
+        {
+          "file": "task-state/D404.json",
+          "claimed_at": "2026-08-16T20:54:18+00:00",
+          "status": "committed",
+          "task_id": "D404"
+        }
+      ],
+      "worktree_path": null,
+      "worktree_branch": null
+    },
+    {
+      "session_id": "D405",
+      "brief": "",
+      "task_id": "D405",
+      "pid": null,
+      "started_at": "2026-08-16T21:03:38+00:00",
+      "last_seen_at": "2026-08-16T21:05:35+00:00",
+      "phase": "CP4",
+      "phase_entered_at": "2026-08-16T21:05:35+00:00",
+      "write_set": [
+        {
+          "file": "scripts/control-tower/gen-cto-health.py",
+          "claimed_at": "2026-08-16T21:03:38+00:00",
+          "status": "committed",
+          "task_id": "D405"
+        },
+        {
+          "file": "tests/control-tower/gen-cto-health.test.sh",
+          "claimed_at": "2026-08-16T21:03:38+00:00",
+          "status": "committed",
+          "task_id": "D405"
+        },
+        {
+          "file": "docs/synova/CTO-HEALTH.md",
+          "claimed_at": "2026-08-16T21:03:38+00:00",
+          "status": "committed",
+          "task_id": "D405"
+        },
+        {
+          "file": ".claude/task-briefs/2026-08-16-D405-ci-dashboard.md",
+          "claimed_at": "2026-08-16T21:03:38+00:00",
+          "status": "committed",
+          "task_id": "D405"
+        },
+        {
+          "file": "task-state/D405.json",
+          "claimed_at": "2026-08-16T21:03:38+00:00",
+          "status": "committed",
+          "task_id": "D405"
+        }
+      ],
+      "worktree_path": null,
+      "worktree_branch": null
+    },
+    {
+      "session_id": "D396",
+      "brief": "/Users/wane/SynovaAgent/.claude/task-briefs/D396-snapshot-golden.md",
+      "task_id": "D396",
+      "pid": null,
+      "started_at": "2026-08-16T21:19:32+00:00",
+      "last_seen_at": "2026-08-17T03:47:32+00:00",
+      "phase": "CP4",
+      "phase_entered_at": "2026-08-16T21:48:35+00:00",
+      "write_set": [
+        {
+          "file": "task-state/D394.json",
+          "claimed_at": "2026-08-16T21:19:32+00:00",
+          "status": "committed",
+          "task_id": "D396"
+        },
+        {
+          "file": "task-state/D395.json",
+          "claimed_at": "2026-08-16T21:19:32+00:00",
+          "status": "committed",
+          "task_id": "D396"
+        },
+        {
+          "file": "task-state/D396.json",
+          "claimed_at": "2026-08-16T21:19:32+00:00",
+          "status": "committed",
+          "task_id": "D396"
+        },
+        {
+          "file": "task-state/D402.json",
+          "claimed_at": "2026-08-16T21:19:32+00:00",
+          "status": "committed",
+          "task_id": "D396"
+        },
+        {
+          "file": ".claude/bypass.log",
+          "claimed_at": "2026-08-16T21:19:32+00:00",
+          "status": "committed",
+          "task_id": "D396",
+          "released_at": "2026-08-17T09:30:00+00:00"
+        },
+        {
+          "file": "scripts/ci/golden-case-checker.ts",
+          "claimed_at": "2026-08-16T21:46:09+00:00",
+          "status": "committed",
+          "task_id": "D396"
+        },
+        {
+          "file": "scripts/ci/golden-snapshot-runner.ts",
+          "claimed_at": "2026-08-16T21:46:09+00:00",
+          "status": "committed",
+          "task_id": "D396"
+        },
+        {
+          "file": "tests/fixtures/golden-cases/golden-case-11-cash-runway-threshold.json",
+          "claimed_at": "2026-08-16T21:46:09+00:00",
+          "status": "committed",
+          "task_id": "D396"
+        },
+        {
+          "file": "tests/ci/golden-case-checker.test.ts",
+          "claimed_at": "2026-08-16T21:46:09+00:00",
+          "status": "committed",
+          "task_id": "D396"
+        },
+        {
+          "file": "tests/ci/golden-case-gate.test.ts",
+          "claimed_at": "2026-08-16T21:46:09+00:00",
+          "status": "committed",
+          "task_id": "D396"
+        },
+        {
+          "file": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D396-golden-case-gate-20260816.md",
+          "claimed_at": "2026-08-16T21:46:09+00:00",
+          "status": "committed",
+          "task_id": "D396"
+        },
+        {
+          "file": ".claude/task-briefs/D396.md",
+          "claimed_at": "2026-08-16T21:46:09+00:00",
+          "status": "committed",
+          "task_id": "D396"
+        }
+      ],
+      "worktree_path": null,
+      "worktree_branch": null
+    },
+    {
+      "session_id": "D394",
+      "brief": "/Users/wane/SynovaAgent/.claude/task-briefs/D394.md",
+      "task_id": "D394",
+      "pid": null,
+      "started_at": "2026-08-16T21:39:18+00:00",
+      "last_seen_at": "2026-08-16T21:42:35+00:00",
+      "phase": "CP4",
+      "phase_entered_at": "2026-08-16T21:42:35+00:00",
+      "write_set": [
+        {
+          "file": "src/sentinel/sentinel-events.ts",
+          "claimed_at": "2026-08-16T21:39:18+00:00",
+          "status": "committed",
+          "task_id": "D394"
+        },
+        {
+          "file": "src/sentinel/runner.ts",
+          "claimed_at": "2026-08-16T21:39:18+00:00",
+          "status": "committed",
+          "task_id": "D394"
+        },
+        {
+          "file": "src/sentinel/types.ts",
+          "claimed_at": "2026-08-16T21:39:18+00:00",
+          "status": "committed",
+          "task_id": "D394"
+        },
+        {
+          "file": "src/agent/sentinel-service.ts",
+          "claimed_at": "2026-08-16T21:39:18+00:00",
+          "status": "committed",
+          "task_id": "D394"
+        },
+        {
+          "file": "tests/sentinel/sentinel-events.test.ts",
+          "claimed_at": "2026-08-16T21:39:18+00:00",
+          "status": "committed",
+          "task_id": "D394"
+        },
+        {
+          "file": ".claude/task-briefs/D394.md",
+          "claimed_at": "2026-08-16T21:39:18+00:00",
+          "status": "committed",
+          "task_id": "D394"
+        },
+        {
+          "file": "task-state/D394.json",
+          "claimed_at": "2026-08-16T21:39:18+00:00",
+          "status": "committed",
+          "task_id": "D394"
+        }
+      ],
+      "worktree_path": null,
+      "worktree_branch": null
+    },
+    {
+      "session_id": "D395",
+      "brief": "",
+      "task_id": "D395",
+      "pid": null,
+      "started_at": "2026-08-16T21:58:21+00:00",
+      "last_seen_at": "2026-08-16T22:08:55+00:00",
+      "phase": "CP4",
+      "phase_entered_at": "2026-08-16T22:08:55+00:00",
+      "write_set": [],
+      "worktree_path": null,
+      "worktree_branch": null
+    },
+    {
+      "session_id": "D406",
+      "brief": "",
+      "task_id": "D406",
+      "pid": null,
+      "started_at": "2026-08-17T00:36:09+00:00",
+      "last_seen_at": "2026-08-17T00:37:19+00:00",
+      "phase": "CP4",
+      "phase_entered_at": "2026-08-17T00:37:19+00:00",
+      "write_set": [
+        {
+          "file": "scripts/check-lessons-learned.sh",
+          "claimed_at": "2026-08-17T00:36:10+00:00",
+          "status": "committed",
+          "task_id": "D406"
+        },
+        {
+          "file": "memory/notes/proposed/2026-08-17-d406-lessons-channel.md",
+          "claimed_at": "2026-08-17T00:36:10+00:00",
+          "status": "committed",
+          "task_id": "D406"
+        },
+        {
+          "file": ".claude/task-briefs/2026-08-16-D406-lessons-fix.md",
+          "claimed_at": "2026-08-17T00:36:10+00:00",
+          "status": "committed",
+          "task_id": "D406"
+        },
+        {
+          "file": "task-state/D406.json",
+          "claimed_at": "2026-08-17T00:36:10+00:00",
+          "status": "committed",
+          "task_id": "D406"
+        }
+      ],
+      "worktree_path": null,
+      "worktree_branch": null
+    },
+    {
+      "session_id": "D407",
+      "brief": "",
+      "task_id": "D407",
+      "pid": null,
+      "started_at": "2026-08-17T01:11:58+00:00",
+      "last_seen_at": "2026-08-17T01:16:40+00:00",
+      "phase": "CP4",
+      "phase_entered_at": "2026-08-17T01:16:40+00:00",
+      "write_set": [
+        {
+          "file": ".claude/bypass.log",
+          "claimed_at": "2026-08-17T01:11:59+00:00",
+          "status": "committed",
+          "task_id": "D407"
+        },
+        {
+          "file": "docs/synova/CTO-HEALTH.md",
+          "claimed_at": "2026-08-17T01:14:43+00:00",
+          "status": "committed",
+          "task_id": "D407"
+        },
+        {
+          "file": "task-state/D407.json",
+          "claimed_at": "2026-08-17T01:16:02+00:00",
+          "status": "committed",
+          "task_id": "D407"
+        }
+      ],
+      "worktree_path": null,
+      "worktree_branch": null
+    },
+    {
+      "session_id": "D408",
+      "brief": "",
+      "task_id": "D408",
+      "pid": null,
+      "started_at": "2026-08-17T03:47:21+00:00",
+      "last_seen_at": "2026-08-17T03:47:39+00:00",
+      "phase": "CP2",
+      "phase_entered_at": "2026-08-17T03:47:39+00:00",
+      "write_set": [
+        {
+          "file": ".claude/bypass.log",
+          "claimed_at": "2026-08-17T03:47:39+00:00",
+          "status": "dirty",
+          "task_id": "D408"
+        },
+        {
+          "file": ".codex/control-tower/session-registry.json",
+          "claimed_at": "2026-08-17T03:47:39+00:00",
+          "status": "dirty",
+          "task_id": "D408"
+        },
+        {
+          "file": "docs/synova/product-lines/todos.yaml",
+          "claimed_at": "2026-08-17T03:47:39+00:00",
+          "status": "dirty",
+          "task_id": "D408"
+        },
+        {
+          "file": ".claude/task-briefs/2026-08-17-D408-closeout-registry-todos.md",
+          "claimed_at": "2026-08-17T03:47:39+00:00",
+          "status": "dirty",
+          "task_id": "D408"
+        },
+        {
+          "file": "task-state/D408.json",
+          "claimed_at": "2026-08-17T03:47:39+00:00",
+          "status": "dirty",
+          "task_id": "D408"
+        },
+        {
+          "file": "memory/notes/implemented/2026-08-17-d408-closeout-registry-todos.md",
+          "claimed_at": "2026-08-17T03:47:39+00:00",
+          "status": "dirty",
+          "task_id": "D408"
+        }
+      ],
+      "worktree_path": null,
+      "worktree_branch": null
     }
   ],
   "archived": []
