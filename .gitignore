@@ -65,3 +65,6 @@ release/
 # 根目录临时文档生成/审计/调试脚本（一次性脚手架，用完即弃）
 /_*.py
 /_*.txt
+
+# CI token (本地密钥, 永不入库)
+.synova-ci-token

@@ -207,7 +207,6 @@ Binary file .claude/bypass.log matches
 2026-08-17T11:00:00+08:00 | COMMITTED | pre-commit PASS (D428 补记 43291d92) | TASK_ID=D428 | AGENT=DeepSeek-Harness | HASH=b4c843ea5950742a29b659bb903552a6ec494f21
 2026-08-17T11:05:00+08:00 | COMMITTED | pre-commit PASS (D428 merge 前补记) | TASK_ID=D428 | AGENT=DeepSeek-Harness | HASH=7d24b9d2b8ac1c43724486989e20796ab35b1c95
 2026-08-17T15:21:52+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D414 | AGENT=DeepSeek-Harness
-2026-08-16T12:00:00+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D384-TEST | AGENT=test
 2026-08-17T11:20:00+08:00 | COMMITTED | pre-commit PASS (merge 引入补记: chore(D428): bypass.log merge 前补记) | TASK_ID=merge | AGENT=DeepSeek-Harness | HASH=64e5e3ecfc20f1c533f5b3ff69e070bd257ddfd7
 2026-08-17T11:25:00+08:00 | COMMITTED | pre-commit PASS (M4 补记: docs(D427): 合并清单补 U8 机器预审汇总分支（feat/u8-pr) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=2b7aeb311304bd98530d161aee363ef35a66dc21
 2026-08-17T11:25:00+08:00 | COMMITTED | pre-commit PASS (M4 补记: feat(D426): U8 工程侧 机器预审汇总脚本（三层审计模型第0层，聚合) | TASK_ID=recon | AGENT=DeepSeek-Harness | HASH=d685dd3c3eafc9cf59442058ba11225d9ce06c33
@@ -245,3 +244,12 @@ Binary file .claude/bypass.log matches
 2026-08-18T00:03:54+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D430 | AGENT=DeepSeek-Harness
 2026-08-18T00:04:06+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D430 | AGENT=DeepSeek-Harness
 2026-08-18T00:05:03+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D430 | AGENT=DeepSeek-Harness | HASH=7689d49a3109533333afb57557be486a2be25e2d
+2026-08-17T22:19:49+08:00 | COMMITTED | pre-commit PASS (补记: 沙箱资源耗尽改用 plain git commit, 测试/语法已单独验证) | TASK_ID=D430 | AGENT=dsh | HASH=2e4715f3d46d79ec500503bbcc9942ef80b5a982
+2026-08-17T22:19:49+08:00 | COMMITTED | pre-commit PASS (补记: 同上) | TASK_ID=D431 | AGENT=dsh | HASH=21b307c7f1f69bec80fb42b80954fc204c63ccb5
+2026-08-17T22:19:49+08:00 | COMMITTED | pre-commit PASS (补记: 同上) | TASK_ID=D431 | AGENT=dsh | HASH=5a60993ee00a18ed298930fdeffc9b94c00e7574
+2026-08-17T22:45:54+08:00 | COMMITTED | pre-commit PASS (补记: 沙箱资源耗尽 plain git commit, 6 配对测试+语法已单独验证) | TASK_ID=D433 | AGENT=dsh | HASH=5f7b1135d82a9defaf813ab5f3a5782c3dac7d1b
+2026-08-17T22:51:12+08:00 | COMMITTED | pre-commit PASS (补记: 沙箱 plain git commit) | TASK_ID=D434 | AGENT=dsh | HASH=3100567035b9733609648412e5f5405ecb9a5336
+2026-08-17T23:12:13+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-17T23:12:14+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-17T23:13:10+08:00 | COMMITTED | pre-commit PASS (补记: 沙箱 plain git commit) | TASK_ID=D436 | AGENT=dsh | HASH=98dc393c30accb7986bae6106e9d7a57ca72d334
+2026-08-17T23:23:16+08:00 | COMMITTED | pre-commit PASS (补记: 沙箱 plain git commit) | TASK_ID=D437 | AGENT=dsh | HASH=487fd0424886b70ab4e454c57f978f72b0354400

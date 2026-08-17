@@ -110,6 +110,8 @@ if [ -f "$BYPASS_LOG" ]; then
     if [ "${SYNO_GATEKEEPER_ACK:-0}" = "1" ]; then
       echo "[GATEKEEPER] 已人工确认 (SYNO_GATEKEEPER_ACK=1) — 降级为告警放行本次提交"
       echo "[GATEKEEPER] 绕过根因仍需修复; 今日记录将在次日自动清零"
+      mkdir -p "$ROOT/.codex/control-tower/logs"
+      echo "{\"time\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\", \"component\": \"gatekeeper\", \"reason\": \"SYNO_GATEKEEPER_ACK=1 放行 ${BYPASS_COUNT} 次 detected-bypass\"}" >> "$ROOT/.codex/control-tower/logs/degraded-events.log" 2>/dev/null || true
     else
       echo "[GATEKEEPER] 请使用: git synova-commit --task-id <D#> --agent claude-code --message '...'"
       echo "[GATEKEEPER] 若该记录系误报且已人工复核, 可用 SYNO_GATEKEEPER_ACK=1 放行本次"
@@ -726,7 +728,7 @@ fi
 BYPASS_COUNT=0
 if [ -f "$BYPASS_LOG" ]; then
   # V4.5.1: 只统计 detected-bypass 行（COMMITTED 是正常提交标记）
-  BYPASS_COUNT=$(grep -c "$(date +%Y-%m-%d).*detected-bypass" "$BYPASS_LOG" 2>/dev/null | tr -d '\n\r' || echo 0)
+  BYPASS_COUNT=$(grep -cE "$(date +%Y-%m-%d).*(detected-bypass|possible-bypass)" "$BYPASS_LOG" 2>/dev/null | tr -d '\n\r' || echo 0)
   BYPASS_COUNT=${BYPASS_COUNT//[^0-9]/}
   [ -z "$BYPASS_COUNT" ] && BYPASS_COUNT=0
 fi
