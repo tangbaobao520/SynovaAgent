@@ -26,8 +26,11 @@ const UNKNOWN_EXPERT = 'unknown' as const;
 
 // ═══ 类型定义 ═══
 
+/** 循环执行状态全集 — 单一来源（D333: 新增 degraded — handler 执行但降级，禁伪造 completed） */
+const LOOP_STATUSES = ['pending', 'running', 'completed', 'degraded', 'failed'] as const;
+
 /** 循环执行状态 */
-export type LoopStatus = 'pending' | 'running' | 'completed' | 'failed';
+export type LoopStatus = (typeof LOOP_STATUSES)[number];
 
 /** 循环执行记录 */
 export interface LoopExecutionRecord {
@@ -182,7 +185,8 @@ export class MainAgent {
       const record: LoopExecutionRecord = {
         loopId,
         scale,
-        status: result.success ? 'completed' : 'failed',
+        // D333: 状态由 handler.degraded 决定（占位 handler 的假 success 不再伪造 completed）
+        status: result.degraded ? 'degraded' : result.success ? 'completed' : 'failed',
         durationMs,
         output: result.output,
         error: result.error,
@@ -214,7 +218,9 @@ export class MainAgent {
         }
       }
 
-      if (!result.success) {
+      if (record.status === 'degraded') {
+        log.warn({ loopId, scale, output: result.output, error: result.error }, '循环执行降级');
+      } else if (!result.success) {
         log.warn({ loopId, scale, error: result.error }, '循环执行失败 — 降级');
       } else {
         log.info({ loopId, scale, durationMs }, '循环执行完成');
@@ -403,7 +409,8 @@ export class MainAgent {
         orgId: 'synova',
         actorId: 'main-agent',
         actorRole: 'system',
-        action: `loop.${record.status === 'completed' ? 'completed' : 'failed'}`,
+        // D333: loop.completed / loop.degraded / loop.failed 三态真实映射
+        action: `loop.${record.status}`,
         targetType: 'loop',
         targetId: `${loopId}:${scale}`,
         newValue: JSON.stringify({ durationMs: record.durationMs, degraded: record.degraded }),
