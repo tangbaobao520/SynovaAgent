@@ -1,0 +1,17 @@
+{
+  "task_id": "D450",
+  "title": "GS 场景派活落库（8 任务 D442-D449 + 派活文件）",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "commit": "local",
+    "by": "cto-api",
+    "at": "2026-08-18",
+    "note": "GS-DISPATCH-20260818.md + task-state D442-D449 登记"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-18",
+  "updated_by": "CTO",
+  "note": "创始人：写任务说明让其他人跑，CTO 继续派发"
+}

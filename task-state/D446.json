@@ -1,0 +1,13 @@
+{
+  "task_id": "D446",
+  "title": "GS-01 首诊旅程场景脚本（问卷 → 首诊报告 ≤3 天路径）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-18",
+  "updated_by": "alloc-task-id",
+  "note": "GS-01：D232/D233 待确认；场景脚本 = 产品线交付，归属 Harness（进审计无豁免）",
+  "priority": "P1"
+}
