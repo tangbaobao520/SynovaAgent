@@ -566,6 +566,16 @@ if [[ $PRECOMMIT_EXIT -eq 0 ]]; then
   # D214: 发射 gatekeeper 信号
   python3 "$SCRIPT_DIR/emit-signal.py" gatekeeper green "all_checks_pass" 2>/dev/null || true
 
+  # U1a/D414: bypass.log 证据链随提交入库（修 M4 "写了没提交"——:601 追加 COMMITTED 但从不 add，
+  #   证据链只在工作区不进 git、换 worktree/clone 即断）。commit 前把 bypass.log 变更并入本次提交。
+  if [ -f "$BYPASS_LOG" ] && ! git diff --quiet -- "$BYPASS_LOG" 2>/dev/null; then
+    git add "$BYPASS_LOG" 2>/dev/null || true
+    if [[ ${#FILES[@]} -gt 0 ]]; then
+      FILES+=(".claude/bypass.log")  # --files 模式: 显式并入提交文件集
+    fi
+    echo "  ℹ D414: bypass.log 证据链随本次提交入库"
+  fi
+
   # D311 M1b: 显式路径 commit（不用 -a，防误提交工作区杂散文件）
   if [[ ${#FILES[@]} -gt 0 ]]; then
     git commit -m "$MESSAGE" -- "${FILES[@]}"
