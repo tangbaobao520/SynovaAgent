@@ -204,3 +204,5 @@ Binary file .claude/bypass.log matches
 2026-08-17T10:45:00+08:00 | COMMITTED | pre-commit PASS (D428 收尾补记: chore(D428): session-registry 释放 D408 写集（收尾证据）) | TASK_ID=D428 | AGENT=DeepSeek-Harness | HASH=c30335e2af02e18bf46345e67c501e10067dfee3
 2026-08-17T10:45:00+08:00 | COMMITTED | pre-commit PASS (D428 收尾补记: chore(D428): K3 U1-U8 控制塔升级 15 分支合并入 main 收尾登记（tas) | TASK_ID=D428 | AGENT=DeepSeek-Harness | HASH=d80aed37522aef6070a9420e4919899f6636ffc1
 2026-08-17T10:50:00+08:00 | COMMITTED | pre-commit PASS (D428 收尾补记: bypass.log full-hash) | TASK_ID=D428 | AGENT=DeepSeek-Harness | HASH=43291d92d222912f2089121a95c6e9a20c33d704
+2026-08-17T11:00:00+08:00 | COMMITTED | pre-commit PASS (D428 补记 43291d92) | TASK_ID=D428 | AGENT=DeepSeek-Harness | HASH=b4c843ea5950742a29b659bb903552a6ec494f21
+2026-08-17T11:05:00+08:00 | COMMITTED | pre-commit PASS (D428 merge 前补记) | TASK_ID=D428 | AGENT=DeepSeek-Harness | HASH=7d24b9d2b8ac1c43724486989e20796ab35b1c95
