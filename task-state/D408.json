@@ -1,11 +1,12 @@
 {
   "task_id": "D408",
   "title": "cto-closeout-registry-todos",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": null,
   "impl": null,
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-08-17",
-  "updated_by": "alloc-task-id"
+  "updated_by": "CTO",
+  "note": "收尾批次：session-registry D389-D407 登记 + todos 聚合 + bypass 证据落库，入 main 8959591c"
 }
