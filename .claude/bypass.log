@@ -199,3 +199,7 @@ Binary file .claude/bypass.log matches
 2026-08-17T10:40:00+08:00 | COMMITTED | pre-commit PASS (D428 收尾, synova-commit 13组过) | TASK_ID=D428 | AGENT=DeepSeek-Harness | HASH=d80aed37
 2026-08-17T10:40:00+08:00 | COMMITTED | pre-commit PASS (D428 收尾, git commit 补记) | TASK_ID=D428 | AGENT=DeepSeek-Harness | HASH=c30335e2
 2026-08-17T10:40:00+08:00 | COMMITTED | pre-commit PASS (D428 收尾, git commit 补记) | TASK_ID=D428 | AGENT=DeepSeek-Harness | HASH=d087df33
+2026-08-17T10:45:00+08:00 | COMMITTED | pre-commit PASS (D428 收尾补记: chore(D428): bypass.log 补记 D428 三提交（D331 对账）) | TASK_ID=D428 | AGENT=DeepSeek-Harness | HASH=7e23fe3ed207b7f1efd6c838e8f6ced875383919
+2026-08-17T10:45:00+08:00 | COMMITTED | pre-commit PASS (D428 收尾补记: chore(D428): audit-result 运行时证据落库) | TASK_ID=D428 | AGENT=DeepSeek-Harness | HASH=d087df331e1a48c16a78fe5965b2b2f570dfb0a5
+2026-08-17T10:45:00+08:00 | COMMITTED | pre-commit PASS (D428 收尾补记: chore(D428): session-registry 释放 D408 写集（收尾证据）) | TASK_ID=D428 | AGENT=DeepSeek-Harness | HASH=c30335e2af02e18bf46345e67c501e10067dfee3
+2026-08-17T10:45:00+08:00 | COMMITTED | pre-commit PASS (D428 收尾补记: chore(D428): K3 U1-U8 控制塔升级 15 分支合并入 main 收尾登记（tas) | TASK_ID=D428 | AGENT=DeepSeek-Harness | HASH=d80aed37522aef6070a9420e4919899f6636ffc1
