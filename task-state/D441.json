@@ -1,0 +1,17 @@
+{
+  "task_id": "D441",
+  "title": "D339 quotepath 修复移植到 main（Mac 中文文件名门禁误报根治）",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "commit": "local",
+    "by": "cto-api",
+    "at": "2026-08-18",
+    "note": "从 d338 分支移植：commit-msg-check.sh + synova-commit 3 处加 -c core.quotepath=false"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-18",
+  "updated_by": "CTO",
+  "note": "PR #15 冲突多不硬合，改手动移植 D339（中文文件名转义→match_path 失败→认领误报）"
+}

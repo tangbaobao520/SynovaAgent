@@ -389,7 +389,7 @@ fi
 #   rc!=0 非 JSON  → 显式 degraded 提示（执行异常不静默）
 #   python 不可用  → fail-open 显式提示跳过
 if [[ -f "$STAGING_GUARD" ]]; then
-  STAGED_LIST=$(git diff --cached --name-only 2>/dev/null || true)
+  STAGED_LIST=$(git -c core.quotepath=false diff --cached --name-only 2>/dev/null || true)  # D339: 中文文件名不被转义
   if [[ -n "$STAGED_LIST" ]]; then
     PYBIN=""
     for _c in python3 python py; do
@@ -479,7 +479,7 @@ if [[ ! -f "$PRE_COMMIT" ]]; then
   if [[ ${#FILES[@]} -gt 0 ]]; then
     git commit -m "$MESSAGE" -- "${FILES[@]}"
   else
-    git commit -m "$MESSAGE" -- $(git diff --cached --name-only 2>/dev/null || true)
+    git commit -m "$MESSAGE" -- $(git -c core.quotepath=false diff --cached --name-only 2>/dev/null || true)  # D339
   fi
   EXIT_CODE=$?
   echo -e "${GREEN}✅ 提交完成（降级模式）${NC}"
@@ -580,7 +580,7 @@ if [[ $PRECOMMIT_EXIT -eq 0 ]]; then
   if [[ ${#FILES[@]} -gt 0 ]]; then
     git commit -m "$MESSAGE" -- "${FILES[@]}"
   else
-    git commit -m "$MESSAGE" -- $(git diff --cached --name-only 2>/dev/null || true)
+    git commit -m "$MESSAGE" -- $(git -c core.quotepath=false diff --cached --name-only 2>/dev/null || true)  # D339
   fi
   COMMIT_EXIT=$?
 
