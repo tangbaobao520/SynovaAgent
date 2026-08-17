@@ -167,7 +167,29 @@ def analyze_ledger(text: str) -> dict:
     return {"m_recur": m_recur, "ct": ct}
 
 
-def analyze_task_state() -> list:
+def _head_tracked_files():
+    """D412/U3: 一次性取 HEAD 已提交文件集（仓库态），供 phantom 校验.
+
+    契约:
+      @input  — 无（读 REPO 的 git HEAD）
+      @output — set[str]（HEAD 已提交文件相对路径, posix）；None = git 不可用（degraded）
+      @degraded — git 不可用/非 git 仓库 → 返回 None（调用方据此降级，不静默当全部已提交）
+    性能: 单次 git ls-tree，进程内匹配（延续 D393 不逐文件起子进程）.
+    """
+    try:
+        out = subprocess.run(
+            ["git", "ls-tree", "-r", "HEAD", "--name-only"],
+            capture_output=True, text=True, encoding="utf-8", errors="replace",
+            timeout=30, cwd=REPO,
+        )
+        if out.returncode != 0:
+            return None
+        return set(out.stdout.splitlines())
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def analyze_task_state() -> Tuple[list, dict]:
     """D393: 状态从工件自动派生 — 不靠人工维护 status (防失真, GitHub/Linear 同哲学).
 
     派生规则 (每任务):
@@ -178,8 +200,9 @@ def analyze_task_state() -> list:
     json 人工 status/spec/impl/audit 字段被派生结果覆盖 (仅 FIX 指向/title 保留人工).
     """
     tasks = []
+    phantom_n = 0
     if not TASK_STATE_DIR.exists():
-        return tasks
+        return tasks, {"phantom": 0, "repo_degraded": False}
     # 一次采集工件索引 (D393: 全量一次, 进程内匹配, 不逐任务起子进程)
     impl_hits = set()  # 含 (D#) 的提交里的 D#
     try:
@@ -194,20 +217,33 @@ def analyze_task_state() -> list:
     except Exception:  # noqa: BLE001 — git 不可用 → 派生降级
         impl_hits = set()
         print('⚠ degraded: git log 不可用, impl 派生降级为空集 (D399 P2-1)', file=sys.stderr)
+    # D412/U3: phantom 校验 — spec/audit 工件以 git HEAD 仓库态为准（已提交才算真）;
+    # 工作区有但未提交 = phantom（不计真, 记 phantom 集合供 degraded 标记）.
+    head_files = _head_tracked_files()
+    repo_degraded = head_files is None
+    if repo_degraded:
+        print('⚠ degraded: git 不可用, spec/audit phantom 校验降级——按工作区处理 (D412)', file=sys.stderr)
+
+    def _committed(f) -> bool:
+        # git 不可用(repo_degraded) → 当已提交(不制造假 phantom, 整体已 degraded); 否则须在 HEAD 文件集
+        return repo_degraded or f.relative_to(REPO).as_posix() in head_files
+
     spec_files = set()
+    phantom_spec = set()  # 工作区有但未提交 HEAD 的 dev doc D#
     impl_dir = REPO / "docs" / "plans" / "codex" / "implementation"
     if impl_dir.exists():
         for f in impl_dir.glob("SYNOVA-IMPL-D*.md"):
             m = re.search(r"D(\d{3})", f.name)
             if m:
-                spec_files.add(int(m.group(1)))
+                (spec_files if _committed(f) else phantom_spec).add(int(m.group(1)))
     audit_files = set()
+    phantom_audit = set()  # 工作区有但未提交 HEAD 的 audit 报告 D#
     audit_dir = REPO / "docs" / "synova" / "audit-reports"
     if audit_dir.exists():
         for f in audit_dir.glob("*.md"):
             m = re.search(r"D(\d{3})", f.name)
             if m:
-                audit_files.add(int(m.group(1)))
+                (audit_files if _committed(f) else phantom_audit).add(int(m.group(1)))
 
     for p in sorted(TASK_STATE_DIR.glob("*.json")):
         if p.name == "TEMPLATE.json":
@@ -222,9 +258,18 @@ def analyze_task_state() -> list:
         num = int(m.group(1)) if m else None
 # 派生判定 (工件优先; json 字段兜底展示但不算真)
         # D399 (P1-2)/D400: spec = glob 扫描 OR json spec.path 兜底（文件必须真实存在——存在即算真, 消除幻影）
-        has_spec = num in spec_files or bool(
-            (d.get("spec") or {}).get("path")
-            and (REPO / (d["spec"]["path"])).exists()
+        # D412/U3: json spec.path 分支同样过仓库态校验（工作区存在 且 已提交 HEAD）
+        spec_path = (d.get("spec") or {}).get("path")
+        spec_path_ok = bool(
+            spec_path
+            and (REPO / spec_path).exists()
+            and (repo_degraded or spec_path.replace("\\", "/") in head_files)
+        )
+        has_spec = num in spec_files or spec_path_ok
+        # phantom: 工作区有 spec 工件但未提交 HEAD（glob 到 phantom 或 json path 存在但未提交）
+        spec_phantom = (not has_spec) and (
+            num in phantom_spec
+            or bool(spec_path and (REPO / spec_path).exists())
         )
         has_impl = num in impl_hits  # D399: 纯派生, json impl 字段 deprecated 忽略
         audit_txt = "—"
@@ -245,6 +290,8 @@ def analyze_task_state() -> list:
                     break
                 except OSError:
                     continue
+        elif num in phantom_audit:
+            audit_txt = "⚠phantom"  # D412: 工作区有 audit 报告但未提交 HEAD（不计真）
         # 状态组合 (D393): audit 优先 — 有审计报告即 audited (控制塔/CTO 批次无 spec 也成立)
         if audit_txt != "—":
             status = "audited"
@@ -258,12 +305,14 @@ def analyze_task_state() -> list:
             "task_id": tid,
             "title": (d.get("title") or "")[:28],
             "status": status,
-            "spec": "✅" if has_spec else "—",
+            "spec": "✅" if has_spec else ("⚠" if spec_phantom else "—"),
             "impl": "✅" if has_impl else "—",
             "audit": audit_txt,
             "fix": d.get("fix_task_id") or "",
         })
-    return tasks
+        if spec_phantom or audit_txt == "⚠phantom":
+            phantom_n += 1
+    return tasks, {"phantom": phantom_n, "repo_degraded": repo_degraded}
 
 
 def analyze_ci() -> dict:
@@ -402,6 +451,7 @@ def render(bypass: dict, fail: dict, ledger: dict, tasks: list, ci: dict = None)
 def main() -> int:
     ap = argparse.ArgumentParser(description="CTO 健康仪表盘生成器")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--strict", action="store_true", help="phantom 检出即 exit 1（供 CI/门禁）")
     args = ap.parse_args()
 
     raw_b = read_binary_safe(BYpass_LOG)
@@ -410,7 +460,7 @@ def main() -> int:
     b = analyze_bypass(raw_b)
     f = analyze_failures(raw_f)
     l = analyze_ledger(raw_l)
-    t = analyze_task_state()
+    t, ts_meta = analyze_task_state()
     ci = analyze_ci()
 
     # D384/CT-37: 数据源指纹 — bypass/failures/ledger/task-state 内容 hash.
@@ -436,19 +486,27 @@ def main() -> int:
         body = f"{AUTO_START}\n{auto}\n{AUTO_END}\n<!-- CTO-HEALTH:MANUAL:START -->\n(CTO 备注区)\n<!-- CTO-HEALTH:MANUAL:END -->\n"
 
     full = f"# Synova CTO 健康仪表盘（第③面）\n\n> 打开即真相。生成: {datetime.now().astimezone().strftime('%Y-%m-%d %H:%M:%S')} | 数据源指纹: {fingerprint}\n\n{body}"
+    # D412/U3: 三态退出码（统一判定，覆盖 dry-run/幂等/写入所有路径）
+    exit_code = 0
+    if ts_meta["repo_degraded"]:
+        print('⚠ degraded: git 仓库态校验不可用 (D412)', file=sys.stderr)
+        exit_code = 2
+    elif args.strict and ts_meta["phantom"] > 0:
+        print(f"❌ phantom: {ts_meta['phantom']} 个任务工件工作区存在但未提交 HEAD (--strict)", file=sys.stderr)
+        exit_code = 1
     if args.dry_run:
         print(full)
-        return 0
+        return exit_code
     if OUT.exists():
         old = OUT.read_text(encoding="utf-8", errors="replace")
         import re as _re
         old_fp = _re.search(r"数据源指纹: ([0-9a-f]{12})", old)
         if old_fp and old_fp.group(1) == fingerprint:
             print(f"幂等: 数据源指纹 {fingerprint} 未变, 不写文件")
-            return 0
+            return exit_code
     OUT.write_text(full, encoding="utf-8")
     print(f"已生成: {OUT} (指纹 {fingerprint})")
-    return 0
+    return exit_code
 
 
 if __name__ == "__main__":
