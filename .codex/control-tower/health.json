@@ -1,7 +1,7 @@
 {
   "component": "self-health",
   "status": "yellow",
-  "timestamp": "2026-08-17T12:52:35+00:00",
+  "timestamp": "2026-08-17T16:04:25+00:00",
   "dimensions": {
     "gates": "healthy",
     "signals": "healthy",
