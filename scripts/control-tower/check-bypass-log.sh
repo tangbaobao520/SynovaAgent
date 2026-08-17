@@ -38,7 +38,8 @@ if ! git rev-parse --verify "$BASE" >/dev/null 2>&1; then
   fi
   git fetch origin >/dev/null 2>&1 || true
   if ! git rev-parse --verify "$BASE" >/dev/null 2>&1; then
-    echo -e "${YELLOW}⚠️  base 引用缺失 ($BASE) — 对账跳过（fail-open 显式提示，不静默）${RESET}"
+    echo -e "${YELLOW}⚠️  base 引用缺失 ($BASE) — 对账跳过（degraded 显式提示，记 degraded-events.log）${RESET}"
+    echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) check-bypass-log degraded: base $BASE 不可解析, 对账跳过" >> "$ROOT/.claude/degraded-events.log" 2>/dev/null || true
     exit 0
   fi
 fi
@@ -46,7 +47,14 @@ fi
 MISSING=""
 # D334: --no-merges — PR 工作流下 GitHub 网页合并产生的 merge commit 不经过
 # synova-commit（无 COMMITTED 记录），对账只覆盖本地产生的实体提交。
-for h in $(git log "$BASE..HEAD" --format=%H --no-merges 2>/dev/null || true); do
+# D414/U1c: git log 失败检测 — 原 `|| true` 会把"git 失败空循环"当成"对账通过"（M1 假 PASS）。
+GIT_LOG_OUT=$(git log "$BASE..HEAD" --format=%H --no-merges 2>&1)
+if [ $? -ne 0 ]; then
+  echo -e "${RED}❌ git log 执行失败 ($BASE..HEAD) — 对账无法执行（fail-closed, 不当作通过）${RESET}" >&2
+  echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) check-bypass-log degraded: git log $BASE..HEAD 失败" >> "$ROOT/.claude/degraded-events.log" 2>/dev/null || true
+  exit 2
+fi
+for h in $GIT_LOG_OUT; do
   if ! grep -q "$h" "$LOG" 2>/dev/null; then
     SUBJ=$(git log -1 --format=%s "$h" 2>/dev/null || echo "$h")
     MISSING="${MISSING}  $SUBJ [${h:0:8}]\n"
