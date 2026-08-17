@@ -122,6 +122,39 @@ while IFS= read -r entry; do
   fi
 done <<< "$CLEANED"
 
+# U2a/D415: 反向对账 — 实际变更的代码文件须已登记进写集（改了没登记 → 漂移, M2/M7）
+# 豁免口径对齐 G12 skip_re（.claude/docs/memory/task-state/.codex/.github/scripts/workflow 豁免, 原则 7 文档豁免）
+# ACTUAL 注入缝: SYNO_STAGED_FILES（测试免真实 git 暂存）; 否则 git diff --cached
+REVERSE_DRIFT=$(CLEANED_ENTRIES="$CLEANED" python3 - "$REPO_DIR" <<'PYEOF'
+import os, subprocess, sys, re
+repo = sys.argv[1]
+declared = set(l.strip().rstrip("\r").lower() for l in os.environ.get("CLEANED_ENTRIES","").split("\n") if l.strip())
+inj = os.environ.get("SYNO_STAGED_FILES")
+if inj is not None:
+    out = inj
+else:
+    try:
+        out = subprocess.run(["git","diff","--cached","--name-only","--diff-filter=ACMR"],capture_output=True,text=True,cwd=repo).stdout
+    except Exception:
+        out = ""
+CODE = re.compile(r'\.(ts|tsx|js|jsx|py|sh|json)$')
+SKIP = re.compile(r'^(\.claude/|docs/|memory/|task-state/|\.codex/|\.github/|scripts/workflow/)')
+drift = []
+for af in out.split("\n"):
+    af = af.strip()
+    if not af or not CODE.search(af) or SKIP.search(af):
+        continue
+    afl = af.lower()
+    if afl in declared or any(d.endswith("/") and afl.startswith(d) for d in declared):
+        continue
+    drift.append("  " + af + "（实际变更但未登记进写集）")
+print("\n".join(drift))
+PYEOF
+)
+if [ -n "$REVERSE_DRIFT" ]; then
+  DRIFT="${DRIFT}${REVERSE_DRIFT}\n"
+fi
+
 echo "  声明 $CHECKED 条 | 漂移 $(echo -e "$DRIFT" | grep -c '^  ' || echo 0) 条"
 if [ -n "$DRIFT" ]; then
   echo -e "  ❌ 写集漂移:"
