@@ -154,6 +154,7 @@ grep/read 实测（2026-08-18，worktree .wt-d402 @ origin/main）：
 做什么：
 - src/routes/admin-knowledge.ts: getPipeline() 改 federatedPipeline ??= new FederatedPipeline()；getStore() 改 knowledgeStore ??= new KnowledgeStore(getDatabase())；JSDoc 契约同步更新
 - tests/routes/admin-knowledge.test.ts: T6b 改写为写后读回断言；新增惰性单例构造计数/注入优先/getStore 单例/getStore 降级不缓存用例；T7 接线断言补 ??= 检查
+- task-state/D402.json: 实现完成后 impl 段回填 + status → impl_done（SOP ⑦b）
 
 不做什么：
 - 不改 src/services/federated-pipeline.ts — FederatedPipeline 类本体（缺陷根因在实例化，不在类内；DB 持久化是 D244 独立演进项，K3 转 PASS 条件只要求写后读回）
