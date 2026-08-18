@@ -57,10 +57,10 @@ export async function computeCashRunwayMonths(
     }
 
     if (!hasData) {
-      const nodes = store.queryNodes('Financial', { [input.teamId]: input.teamId });
+      const nodes = store.queryNodes('Financial');
       if (nodes.length > 0) {
-        totalCash = nodes.reduce((s, n) => s + (Number(n.props.cashBalance) || 0), 0);
-        monthlyBurn = nodes.reduce((s, n) => s + (Number(n.props.operatingExpenses) || Number(n.props.amount) || 0), 0);
+        totalCash = nodes.reduce((s, n) => s + (Number(n.props.cash) || 0), 0);
+        monthlyBurn = nodes.reduce((s, n) => s + (Number(n.props.operating_expense) || Number(n.props.amount) || 0), 0);
         hasData = true;
       }
     }

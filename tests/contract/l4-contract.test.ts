@@ -4,8 +4,9 @@
  * 铁律 33: *.test.ts 单元测试 (使用 :memory: SQLite)
  * 铁律 48: 真实断言 — 正常路径 + 降级路径 + 边界条件
  *
- * 契约锚点 = dev doc §4.5 决策: compute 读侧现名为契约锚点
- *   (Client / Person / Financial / cashBalance / operatingExpenses)
+ * 契约锚点 = financial.json ontology schema（cash / operating_expense / receivables）
+ *   (Client / Person / Financial / cash / operating_expense)
+ *   （D355 曾误锚 compute 读侧 camelCase cashBalance/operatingExpenses，本修复已改为本体 schema snake_case）
  * 覆盖:
  *   1. 写侧映射 JSON 与读侧锚点一致（缺陷 B 修复回归）
  *   2. 上传→查询 roundtrip（写读闭环，缺陷 B 场景 2 复现）
@@ -88,12 +89,12 @@ describe('D355 L4 契约 — 写侧映射 vs 读侧锚点（缺陷 B）', () => 
     expect(loadMapping('erp-standard').targetNodeType).toBe('Financial');
   });
 
-  it('erp-standard 写侧 prop 对齐 compute 读侧 cashBalance/operatingExpenses（断裂名清零）', () => {
+  it('erp-standard 写侧 prop 对齐 financial schema cash/operating_expense（断裂名清零）', () => {
     const props = loadMapping('erp-standard').mappings.map((m) => m.prop);
-    expect(props).toContain('cashBalance');
-    expect(props).toContain('operatingExpenses');
-    expect(props).not.toContain('cash');
-    expect(props).not.toContain('operating_expense');
+    expect(props).toContain('cash');
+    expect(props).toContain('operating_expense');
+    expect(props).not.toContain('cashBalance');
+    expect(props).not.toContain('operatingExpenses');
   });
 });
 
@@ -113,7 +114,7 @@ describe('D355 L4 契约 — 上传→查询 roundtrip（缺陷 B 场景 2）', 
     expect(nodes[0].props.churn_rate).toBe(1);
   });
 
-  it('按 erp 映射写 Financial 后 props.cashBalance/operatingExpenses 可读', () => {
+  it('按 erp 映射写 Financial 后 props.cash/operating_expense 可读', () => {
     const db = createDb();
     const store = new SqliteGraphStore(db);
     const mapping = loadMapping('erp-standard');
@@ -124,8 +125,8 @@ describe('D355 L4 契约 — 上传→查询 roundtrip（缺陷 B 场景 2）', 
     const nodes = store.queryNodes('Financial', {}, 'enterprise');
 
     expect(nodes).toHaveLength(1);
-    expect(nodes[0].props.cashBalance).toBe(2);
-    expect(nodes[0].props.operatingExpenses).toBe(2);
+    expect(nodes[0].props.cash).toBe(2);
+    expect(nodes[0].props.operating_expense).toBe(2);
   });
 });
 

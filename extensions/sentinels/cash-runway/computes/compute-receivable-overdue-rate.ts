@@ -43,10 +43,10 @@ export async function computeReceivableOverdueRate(
     }
 
     if (!hasData) {
-      const nodes = store.queryNodes('Financial', { [input.teamId]: input.teamId });
+      const nodes = store.queryNodes('Financial');
       if (nodes.length > 0) {
-        totalCash = nodes.reduce((s, n) => s + (Number(n.props.cashBalance) || 0), 0);
-        receivable = nodes.reduce((s, n) => s + (Number(n.props.accountsReceivable) || 0), 0);
+        totalCash = nodes.reduce((s, n) => s + (Number(n.props.cash) || 0), 0);
+        receivable = nodes.reduce((s, n) => s + (Number(n.props.receivables) || 0), 0);
         hasData = true;
       }
     }

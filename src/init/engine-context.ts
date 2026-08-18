@@ -9,6 +9,7 @@ import Database from 'better-sqlite3';
 import { createLogger } from '@synova/logger';
 import { loadConfig } from '../config';
 import { SqliteStorageBackend } from '../store/storage-backend';
+import { reconcileSchema } from '../store/schema-migration';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -130,7 +131,6 @@ export function initEngineContext(): void {
 
   // Phase 4.4: Schema 版本化迁移（必须在任何 query 前执行）
   try {
-    const { reconcileSchema } = require('../store/schema-migration');
     reconcileSchema(db);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
