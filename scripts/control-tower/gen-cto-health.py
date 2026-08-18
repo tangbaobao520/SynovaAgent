@@ -465,6 +465,22 @@ def render(bypass: dict, fail: dict, ledger: dict, tasks: list, ci: dict = None)
     else:
         lines.append("| — | ⚠ 无法拉取（degraded） | | |")
         lines.append("")
+    # CT-39: CI 红超 24h 告警（接入 check-ci-stale-red.sh，红常态化信号失效 M1 同型）
+    try:
+        import subprocess as _sp
+        _sr = _sp.run(["bash", str(REPO / "scripts/control-tower/check-ci-stale-red.sh"), "--json"],
+                      capture_output=True, text=True, timeout=30, cwd=REPO)
+        if _sr.returncode == 1 and _sr.stdout.strip():
+            _sd = json.loads(_sr.stdout.strip())
+            lines.append(f"> 🔴 **CT-39 红灯告警**: main CI run #{_sd.get('run')} 已红 {_sd.get('age_hours')}h（>24h），信号失效——待办见 docs/synova/coordination/CI-STALE-RED.md")
+            lines.append("")
+        elif _sr.returncode == 0 and _sr.stdout.strip():
+            _sd = json.loads(_sr.stdout.strip())
+            if _sd.get("stale") is False and "age_hours" in _sd:
+                lines.append(f"> CI 红灯监测: main 红 {_sd.get('age_hours')}h（<24h 阈值），暂不告警（CT-39）")
+                lines.append("")
+    except Exception:  # noqa: BLE001
+        pass  # stale red 检测降级不影响主表
     lines += [
         "> 红线提醒: 不碰 scripts/audit/；不写审计标准；禁止自我审计。",
         "> 同类错误第二次出现 = 防线系统性失效，升级创始人。",
