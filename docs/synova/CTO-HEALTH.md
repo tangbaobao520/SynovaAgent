@@ -1,10 +1,10 @@
 # Synova CTO 健康仪表盘（第③面）
 
-> 打开即真相。生成: 2026-08-18 22:47:36 | 数据源指纹: c9ae6d773525
+> 打开即真相。生成: 2026-08-18 23:01:08 | 数据源指纹: f7777568ced0
 
 <!-- CTO-HEALTH:AUTO:START -->
 ## CTO 健康仪表盘（第③面）— 自动区
-> 生成: 2026-08-18 22:47:36 | 数据源: bypass.log / pre-commit-failures.log / AUDIT-FINDINGS-LEDGER
+> 生成: 2026-08-18 23:01:07 | 数据源: bypass.log / pre-commit-failures.log / AUDIT-FINDINGS-LEDGER
 
 **总体判定: 🟡 黄 — 历史有 M 模式复发记录 (见 §三; 多为 D328-D331 已闭环项, 需 CTO 确认无新增)**
 
@@ -12,13 +12,13 @@
 
 | 事件 | 全量 | 24h 内 |
 |------|:---:|:---:|
-| COMMITTED（正常提交） | 201 | 39 |
+| COMMITTED（正常提交） | 204 | 41 |
 | BLOCKED（被门禁拒绝） | 52 | 17 |
 | DEGRADED（降级放行） | 42 | 11 |
 | TIMEOUT（超时） | 3 | 0 |
 | **detected-bypass（真绕过）** | **5** | **0** |
 
-近 7 天事件: 2026-08-11:3 | 2026-08-12:28 | 2026-08-13:8 | 2026-08-14:14 | 2026-08-16:26 | 2026-08-17:127 | 2026-08-18:62
+近 7 天事件: 2026-08-11:3 | 2026-08-12:28 | 2026-08-13:8 | 2026-08-14:14 | 2026-08-16:26 | 2026-08-17:127 | 2026-08-18:65
 
 **绕过历史（全部）** — 集中在 07-26~28（旧 marker 时代），此后零绕过：
 - `2026-07-26T18:34:35Z` no-precommit-marker
@@ -113,7 +113,22 @@
 
 | Run | 结论 | 分支 | 标题 |
 |-----|------|------|------|
-| — | ⚠ 无法拉取（degraded） | | |
+| #906 | 🟡 action_required | auto/product-progress | chore(D371): 产品进度自动更新 |
+| #905 | 🟡 action_required | auto/dashboard | chore(D439): 控制台自动更新 |
+| #16 | 🟢 success | main | Merge origin/main (sync 远端 4 提交) |
+| #904 | 🟡 pending | main | Merge origin/main (sync 远端 4 提交) |
+| #90 | 🟢 success | main | Merge origin/main (sync 远端 4 提交) |
+| #903 | 🟡 action_required | auto/product-progress | chore(D371): 产品进度自动更新 |
+| #902 | 🟡 action_required | auto/dashboard | chore(D439): 控制台自动更新 |
+| #901 | 🟢 success | main | Merge feat/d395a-notes-four-state into main |
+
+### 七、开放 PR（待合并，CT-41⑥）
+
+| PR | 标题 | 分支 | 创建 |
+|----|------|------|------|
+| #54 | chore(D371): 产品进度自动更新 | auto/product-progress | 2026-08-18 |
+| #52 | Feat/d361 gss common | feat/d361-gss-common | 2026-08-17 |
+| #51 | chore(D439): 控制台自动更新 | auto/dashboard | 2026-08-17 |
 
 > 红线提醒: 不碰 scripts/audit/；不写审计标准；禁止自我审计。
 > 同类错误第二次出现 = 防线系统性失效，升级创始人。

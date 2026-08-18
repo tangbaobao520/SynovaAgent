@@ -333,13 +333,32 @@ def analyze_task_state() -> Tuple[list, dict]:
     return tasks, {"phantom": phantom_n, "repo_degraded": repo_degraded}
 
 
+def _gh_token() -> str:
+    """GitHub token 只读: GITHUB_TOKEN env → 仓库根 .synova-ci-token（CI 注入，不入库）→ 空。"""
+    import os
+    tok = os.environ.get("GITHUB_TOKEN", "").strip()
+    if tok:
+        return tok
+    _p = REPO / ".synova-ci-token"
+    if _p.exists():
+        try:
+            return _p.read_text(encoding="utf-8").strip()
+        except OSError:
+            return ""
+    return ""
+
+
 def analyze_ci() -> dict:
-    """CT-41①: CI 状态入仪表盘 — GitHub API 匿名拉最近 runs. 失败降级."""
+    """CT-41①: CI 状态入仪表盘 — GitHub API 拉最近 runs. 失败降级。"""
     runs = []
     try:
         import urllib.request
+        headers = {"Accept": "application/vnd.github+json", "User-Agent": "gen-cto-health"}
+        _t = _gh_token()
+        if _t:
+            headers["Authorization"] = f"token {_t}"
         url = "https://api.github.com/repos/tangbaobao520/SynovaAgent/actions/runs?per_page=8"
-        req = urllib.request.Request(url, headers={"Accept": "application/vnd.github+json"})
+        req = urllib.request.Request(url, headers=headers)
         with urllib.request.urlopen(req, timeout=10) as r:
             d = json.loads(r.read().decode("utf-8"))
         for run in d.get("workflow_runs", [])[:8]:
@@ -348,6 +367,28 @@ def analyze_ci() -> dict:
         return {"runs": runs, "degraded": False}
     except Exception:  # noqa: BLE001
         return {"runs": [], "degraded": True}
+
+
+def analyze_prs() -> dict:
+    """CT-41⑥: PR 合并状态入仪表盘 — 开放 PR 列表（积压一眼可见）。失败降级。"""
+    prs = []
+    try:
+        import urllib.request
+        headers = {"Accept": "application/vnd.github+json", "User-Agent": "gen-cto-health"}
+        _t = _gh_token()
+        if _t:
+            headers["Authorization"] = f"token {_t}"
+        url = "https://api.github.com/repos/tangbaobao520/SynovaAgent/pulls?state=open&per_page=20"
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req, timeout=10) as r:
+            d = json.loads(r.read().decode("utf-8"))
+        for p in d:
+            prs.append({"num": p.get("number"), "title": (p.get("title") or "")[:50],
+                        "branch": (p.get("head", {}).get("ref") or "")[:30],
+                        "created": (p.get("created_at") or "")[:10]})
+        return {"prs": prs, "degraded": False}
+    except Exception:  # noqa: BLE001
+        return {"prs": [], "degraded": True}
 
 
 def verdict(bypass: dict, fail: dict, m_recur: list) -> str:
@@ -363,7 +404,7 @@ def verdict(bypass: dict, fail: dict, m_recur: list) -> str:
     return "🟢 绿 — 无绕过, 门禁在拦截, 防线健康"
 
 
-def render(bypass: dict, fail: dict, ledger: dict, tasks: list, ci: dict = None) -> str:
+def render(bypass: dict, fail: dict, ledger: dict, tasks: list, ci: dict = None, prs: dict = None) -> str:
     ci = ci or {"runs": [], "degraded": True}
     v = verdict(bypass, fail, ledger["m_recur"])
     ev = bypass["events"]
@@ -481,6 +522,19 @@ def render(bypass: dict, fail: dict, ledger: dict, tasks: list, ci: dict = None)
                 lines.append("")
     except Exception:  # noqa: BLE001
         pass  # stale red 检测降级不影响主表
+    # CT-41⑥: PR 合并状态（开放 PR 积压一眼可见）
+    if prs and prs.get("prs"):
+        lines += [
+            "### 七、开放 PR（待合并，CT-41⑥）",
+            "",
+            "| PR | 标题 | 分支 | 创建 |",
+            "|----|------|------|------|",
+        ]
+        for p in prs["prs"]:
+            lines.append(f"| #{p['num']} | {p['title']} | {p['branch']} | {p['created']} |")
+        lines.append("")
+    elif prs and prs.get("degraded"):
+        lines += ["### 七、开放 PR（待合并，CT-41⑥）", "", "- ⚠ 无法拉取（degraded）", ""]
     lines += [
         "> 红线提醒: 不碰 scripts/audit/；不写审计标准；禁止自我审计。",
         "> 同类错误第二次出现 = 防线系统性失效，升级创始人。",
@@ -503,6 +557,7 @@ def main() -> int:
     l = analyze_ledger(raw_l)
     t, ts_meta = analyze_task_state()
     ci = analyze_ci()
+    prs = analyze_prs()
 
     # D384/CT-37: 数据源指纹 — bypass/failures/ledger/task-state 内容 hash.
     # 幂等判定 = 指纹比较: 数据源未变 → 不重写 (时间戳差异不影响);
@@ -514,7 +569,7 @@ def main() -> int:
     fp_src = raw_b + raw_f + raw_l + "".join(read_binary_safe(Path(p)) for p in ts_files) + read_binary_safe(Path(__file__))
     fingerprint = hashlib.sha256(fp_src.encode("utf-8", errors="replace")).hexdigest()[:12]
 
-    auto = render(b, f, l, t, ci)
+    auto = render(b, f, l, t, ci, prs)
     # 幂等 + marker 保留 MANUAL 区
     if OUT.exists():
         old = OUT.read_text(encoding="utf-8", errors="replace")

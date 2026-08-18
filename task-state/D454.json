@@ -1,0 +1,17 @@
+{
+  "task_id": "D454",
+  "title": "CT-41⑥ PR 合并状态入仪表盘 + CI/PR API 走 token",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "commit": "local",
+    "by": "cto-api",
+    "at": "2026-08-18",
+    "note": "gen-cto-health.py 加 analyze_prs + _gh_token（env/本地文件，不硬编码）"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-18",
+  "updated_by": "CTO",
+  "note": "CT-41⑥ PR 状态集成；匿名 API rate limit → token 走 env/本地文件"
+}
