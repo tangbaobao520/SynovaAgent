@@ -1,0 +1,17 @@
+{
+  "task_id": "D455",
+  "title": "CT-41③ P0 积压自动化（机器数据源防 MANUAL 误清）",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "commit": "local",
+    "by": "cto-api",
+    "at": "2026-08-18",
+    "note": "p0-backlog.json 结构化数据源 + gen-cto-health analyze_p0 派生 §八段"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-18",
+  "updated_by": "CTO",
+  "note": "CT-41③：P0 待办不依赖 MANUAL 手写，机器数据源 p0-backlog.json 自动派生（D393 P1-3 误清根治）"
+}

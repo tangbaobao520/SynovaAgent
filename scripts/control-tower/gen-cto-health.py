@@ -39,6 +39,7 @@ REPO = Path(__file__).resolve().parent.parent.parent
 BYpass_LOG = REPO / ".claude" / "bypass.log"
 PRE_COMMIT_FAILURES = REPO / ".claude" / "pre-commit-failures.log"
 LEDGER = REPO / "docs" / "synova" / "coordination" / "审计发现台账-DSH-CTO.md"
+P0_BACKLOG = REPO / "docs" / "synova" / "coordination" / "p0-backlog.json"
 TASK_STATE_DIR = REPO / "task-state"
 OUT = REPO / "docs" / "synova" / "CTO-HEALTH.md"
 
@@ -391,6 +392,20 @@ def analyze_prs() -> dict:
         return {"prs": [], "degraded": True}
 
 
+def analyze_p0() -> dict:
+    """CT-41③: P0 积压 — 读结构化 p0-backlog.json（机器数据源，不依赖 MANUAL 手写）。"""
+    try:
+        if not P0_BACKLOG.exists():
+            return {"items": [], "degraded": False}
+        d = json.loads(P0_BACKLOG.read_text(encoding="utf-8"))
+        items = d.get("items", [])
+        # 只显示未闭合（status 不含"已合"且非"已闭环"）
+        active = [i for i in items if "已合" not in str(i.get("status", "")) and "闭环" not in str(i.get("status", ""))]
+        return {"items": active, "degraded": False}
+    except Exception:  # noqa: BLE001
+        return {"items": [], "degraded": True}
+
+
 def verdict(bypass: dict, fail: dict, m_recur: list) -> str:
     """健康判定 (v0.1: 红=物理绕过; 黄=历史复发/降级需确认; 绿=干净)."""
     if bypass["last24h"]["detected-bypass"] > 0:
@@ -404,7 +419,7 @@ def verdict(bypass: dict, fail: dict, m_recur: list) -> str:
     return "🟢 绿 — 无绕过, 门禁在拦截, 防线健康"
 
 
-def render(bypass: dict, fail: dict, ledger: dict, tasks: list, ci: dict = None, prs: dict = None) -> str:
+def render(bypass: dict, fail: dict, ledger: dict, tasks: list, ci: dict = None, prs: dict = None, p0: dict = None) -> str:
     ci = ci or {"runs": [], "degraded": True}
     v = verdict(bypass, fail, ledger["m_recur"])
     ev = bypass["events"]
@@ -535,6 +550,21 @@ def render(bypass: dict, fail: dict, ledger: dict, tasks: list, ci: dict = None,
         lines.append("")
     elif prs and prs.get("degraded"):
         lines += ["### 七、开放 PR（待合并，CT-41⑥）", "", "- ⚠ 无法拉取（degraded）", ""]
+    # CT-41③: P0 积压（机器数据源 p0-backlog.json，MANUAL 误清不影响）
+    if p0 and p0.get("items"):
+        lines += [
+            "### 八、P0 积压（CT-41③，自动派生自 p0-backlog.json）",
+            "",
+            "| ID | 来源 | 问题 | 修复任务 | 状态 | 线 |",
+            "|----|------|------|----------|------|-----|",
+        ]
+        for it in p0["items"]:
+            lines.append(f"| {it.get('id','?')} | {it.get('source','')[:30]} | {it.get('title','')[:40]} | {it.get('fix_task','')} | {it.get('status','')} | {it.get('line','')} |")
+        lines.append("")
+        lines.append("> P0 积压 = 未闭合的 P0 级审计发现，机器可查（不靠 CTO 手写记忆），闭合后从 p0-backlog.json 移出。")
+        lines.append("")
+    elif p0 and p0.get("degraded"):
+        lines += ["### 八、P0 积压（CT-41③）", "", "- ⚠ p0-backlog.json 读取失败（degraded）", ""]
     lines += [
         "> 红线提醒: 不碰 scripts/audit/；不写审计标准；禁止自我审计。",
         "> 同类错误第二次出现 = 防线系统性失效，升级创始人。",
@@ -558,6 +588,7 @@ def main() -> int:
     t, ts_meta = analyze_task_state()
     ci = analyze_ci()
     prs = analyze_prs()
+    p0 = analyze_p0()
 
     # D384/CT-37: 数据源指纹 — bypass/failures/ledger/task-state 内容 hash.
     # 幂等判定 = 指纹比较: 数据源未变 → 不重写 (时间戳差异不影响);
@@ -569,7 +600,7 @@ def main() -> int:
     fp_src = raw_b + raw_f + raw_l + "".join(read_binary_safe(Path(p)) for p in ts_files) + read_binary_safe(Path(__file__))
     fingerprint = hashlib.sha256(fp_src.encode("utf-8", errors="replace")).hexdigest()[:12]
 
-    auto = render(b, f, l, t, ci, prs)
+    auto = render(b, f, l, t, ci, prs, p0)
     # 幂等 + marker 保留 MANUAL 区
     if OUT.exists():
         old = OUT.read_text(encoding="utf-8", errors="replace")
