@@ -40,6 +40,12 @@ REFS_INPUT="$(cat 2>/dev/null || true)"
 # 本脚本取首个分支 ref 用于门禁 0/3 的动态改基）
 PUSH_BRANCH_REF="$(printf '%s\n' "$REFS_INPUT" | awk '$3 ~ /^refs\/heads\// {print $3; exit}')"
 PUSH_BRANCH="${PUSH_BRANCH_REF#refs/heads/}"
+# D457: 删除操作检测 — local_sha 全零 = git push --delete（门禁 0-1 不应做 behind/ahead 检查）
+PUSH_LOCAL_SHA="$(printf '%s\n' "$REFS_INPUT" | awk '$3 ~ /^refs\/heads\// {print $2; exit}' | tr -d '\n\r')"
+IS_DELETE=""
+if [[ -n "$PUSH_LOCAL_SHA" && "$PUSH_LOCAL_SHA" =~ ^0+$ ]]; then
+  IS_DELETE=1
+fi
 if [[ -z "$PUSH_REMOTE" ]]; then
   # hook 未传参（旧 hook 格式/手动运行）→ 从本地 remote 兜底
   PUSH_REMOTE="$(git remote 2>/dev/null | head -1 || echo '')"
@@ -69,6 +75,12 @@ check_push_sync() {
       return 1
     fi
     echo -e "  ${YELLOW}⚠️  门禁 0-2: SYNO_ALLOW_MAIN_PUSH=1 逃生舱生效 — 直推 main (已记 bypass.log)${RESET}"
+  fi
+
+  # D457: 删除操作 (git push --delete) 无 behind/ahead 语义，跳过同步检查
+  if [[ -n "$IS_DELETE" ]]; then
+    echo -e "  ${GREEN}✅ 门禁 0-1: 删除操作 $fbranch — 跳过同步检查（删除无 behind/ahead 语义）${RESET}"
+    return 0
   fi
 
   # 0-1: fetch 目标分支对比同步状态
@@ -200,6 +212,12 @@ if ! check_push_sync "$PUSH_REMOTE" "$PUSH_BRANCH"; then
   echo ""
   echo -e "  ${RED}❌ 多机同步检查未通过 — 推送已拒绝 (D334)${RESET}"
   exit 1
+fi
+
+# D457: 删除操作 (git push --delete) — 同步检查通过后跳过其余门禁（删除分支无新提交/新代码）
+if [[ -n "$IS_DELETE" ]]; then
+  echo -e "  ${GREEN}✅ 删除操作 — 跳过 secrets/golden/vitest/对账等门禁（删除分支无新提交）${RESET}"
+  exit 0
 fi
 
 # ═══ 门禁 1: secrets 终扫 ═══

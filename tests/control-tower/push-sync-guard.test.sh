@@ -13,6 +13,7 @@
 #   8. 生产接线: install-hooks.sh 的 pre-push entry 含 "$1"（D334 传 remote 参数，
 #      旧格式零参数会让门禁 0 拿不到 remote → 退化）(red: 无 → 断言失败)
 #   9. 生产接线: pre-push-check.sh 主流程调用 check_push_sync（red: 零调用 → 失败）
+#   10. 删除操作 (git push --delete, local_sha 全零) → 跳过同步检查 exit 0（D457）
 #
 # 隔离: mktemp 临时 bare 远端 + 本地仓库, file:// 协议零网络。
 #       SYNO_SYNC_ONLY=1 → 只跑门禁 0, 不触及其他门禁。
@@ -129,6 +130,14 @@ if [ "${SYNC_CALLS:-0}" -ge 1 ]; then
 else
   fail "9. pre-push-check.sh 主流程零调用 check_push_sync（未接线）"
 fi
+
+# 10. 删除操作 (local_sha 全零) → 跳过同步检查 exit 0（D457）
+ZERO_SHA="0000000000000000000000000000000000000000"
+EC=$( ( cd "$LOCAL_DIR" && \
+  printf '%s %s %s %s\n' "refs/heads/feat/test" "$ZERO_SHA" "refs/heads/feat/test" "$(git rev-parse HEAD)" | \
+  SYNO_SYNC_ONLY=1 bash "$PRE_PUSH" origin "file://$REMOTE_DIR" > /tmp/pss-out10.txt 2>&1; echo $? ) )
+assert_exit "$EC" 0 "10. 删除操作 (local_sha 全零) → 跳过同步检查 exit 0"
+grep -q "删除操作" /tmp/pss-out10.txt && pass "   删除操作有跳过提示（不静默）" || fail "   删除操作缺跳过提示"
 
 # 清理
 rm -rf "$REMOTE_DIR" "$LOCAL_DIR" "$OTHER_DIR" /tmp/pss-out*.txt
