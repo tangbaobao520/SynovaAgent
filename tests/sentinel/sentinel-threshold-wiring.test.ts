@@ -37,7 +37,7 @@ function storeWith(financials: Array<{ id: string; props: Record<string, unknown
 
 /** 越阈 fixture: 跑道 100/100=1 个月 (critical≤6) + 应收/现金比 0.5 (critical≥0.3) */
 const overThresholdStore = () => storeWith([
-  { id: 'f1', props: { cashBalance: 100, operatingExpenses: 100, accountsReceivable: 50 } },
+  { id: 'f1', props: { cash: 100, operating_expense: 100, receivables: 50 } },
 ]);
 /** 无财务数据 store（compute 全部降级, value=0） */
 const emptyStore = () => storeWith([]);
@@ -139,7 +139,7 @@ describe('D356 回归: 正常数据仍按阈值产出 finding', () => {
     cashRunwaySentinel.manifest = manifestOf('cash-runway');
     // 跑道 1000/100=10 个月（12>10>6 → warning），应收比 0.05（<0.15 → 无告警）
     const healthy = storeWith([
-      { id: 'f1', props: { cashBalance: 1000, operatingExpenses: 100, accountsReceivable: 50 } },
+      { id: 'f1', props: { cash: 1000, operating_expense: 100, receivables: 50 } },
     ]);
 
     const findings = await cashRunwaySentinel.check(healthy, 't1');

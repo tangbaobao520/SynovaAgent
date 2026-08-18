@@ -25,7 +25,7 @@ export const financingConstraintSentinel = {
         netPpe: Number(n.props.netPPE) || Number(n.props.netPpe) || 0,
         totalDebt: Number(n.props.totalDebt) || 0,
         equity: Number(n.props.equity) || 0,
-        cash: Number(n.props.cash) || Number(n.props.cashBalance) || 0,
+        cash: Number(n.props.cash) || 0,
       }));
 
       const result = computeKzIndex(financials);

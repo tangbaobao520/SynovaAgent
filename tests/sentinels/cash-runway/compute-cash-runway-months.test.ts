@@ -39,7 +39,7 @@ describe('computeCashRunwayMonths', () => {
 
   it('should handle Infinity runway (zero burn, positive cash)', async () => {
     const store = createMockStore([
-      { id: 'fin1', type: 'Financial', props: { cashBalance: 50000, operatingExpenses: 0 } },
+      { id: 'fin1', type: 'Financial', props: { cash: 50000, operating_expense: 0 } },
     ]);
     const result = await computeCashRunwayMonths(store, { teamId: 'team1' });
     expect(result.degraded).toBe(false);
@@ -48,11 +48,22 @@ describe('computeCashRunwayMonths', () => {
 
   it('should fallback to queryNodes when traversal fails', async () => {
     const store = createMockStore([
-      { id: 'fin1', type: 'Financial', props: { cashBalance: 100000, amount: 20000 } },
+      { id: 'fin1', type: 'Financial', props: { cash: 100000, amount: 20000 } },
     ]);
     const result = await computeCashRunwayMonths(store, { teamId: 'team1' });
     expect(result.degraded).toBe(false);
     expect(result.value).toBe(5); // 100000 / 20000 = 5
+  });
+
+  it('should query Financial nodes without teamId-value filter (D355 fix)', async () => {
+    let capturedFilter: Record<string, unknown> | undefined;
+    const store: GraphStoreReader = {
+      queryNodes: (type, filter) => { capturedFilter = filter; return []; },
+      queryEdges: () => [],
+      getNode: () => null,
+    };
+    await computeCashRunwayMonths(store, { teamId: 'team1' });
+    expect(capturedFilter).toBeUndefined(); // 修复前是 { team1: 'team1' }（永不匹配）
   });
 
   it('should handle exceptions gracefully', async () => {
