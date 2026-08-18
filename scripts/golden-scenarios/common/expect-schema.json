@@ -1,0 +1,103 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/tangbaobao520/SynovaAgent/scripts/golden-scenarios/common/expect-schema.json",
+  "title": "GSS 场景断言清单（expect.json）",
+  "description": "黄金场景断言规范（GSS 设计 §2.3）。红线：断言只认产品物理输出；每条断言必须带 purpose（证明产品哪个承诺，禁止恒真/空壳）；每场景 ≥3 条（正常 + 降级 + 至少 1 条负向断言）；三态语义区分真空结果与查询失败（K3 P0-3 教训）。执行体为 common/assert.ts 的 validateExpectDoc()。",
+  "type": "object",
+  "required": ["scenario_id", "evidence_map", "assertions"],
+  "properties": {
+    "scenario_id": { "type": "string", "pattern": "^GS-\\d{2}$" },
+    "evidence_map": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["acceptance_point", "assertion_ids"],
+        "properties": {
+          "acceptance_point": { "type": "string", "description": "产品线验收点 id（product-lines.yaml，如 10-1）" },
+          "assertion_ids": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+        }
+      }
+    },
+    "assertions": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "object",
+        "required": ["id", "desc", "purpose", "check", "expect"],
+        "properties": {
+          "id": { "type": "string" },
+          "desc": { "type": "string", "description": "这条断言证明什么（一句话）" },
+          "purpose": {
+            "type": "string",
+            "minLength": 4,
+            "description": "证明产品哪个承诺（对应 C线标准/验收点）——必填，防恒真断言"
+          },
+          "check": {
+            "type": "object",
+            "required": ["type"],
+            "oneOf": [
+              {
+                "properties": {
+                  "type": { "const": "http" },
+                  "method": { "const": "GET" },
+                  "url": { "type": "string" },
+                  "timeoutMs": { "type": "number" }
+                },
+                "required": ["type", "url"]
+              },
+              {
+                "properties": {
+                  "type": { "const": "sqlite" },
+                  "db": { "type": "string", "description": "临时库路径（fresh-db 产物）" },
+                  "sql": { "type": "string" }
+                },
+                "required": ["type", "db", "sql"]
+              },
+              {
+                "properties": {
+                  "type": { "const": "file" },
+                  "path": { "type": "string" }
+                },
+                "required": ["type", "path"]
+              },
+              {
+                "properties": {
+                  "type": { "const": "process" },
+                  "command": { "type": "string" },
+                  "args": { "type": "array", "items": { "type": "string" } },
+                  "cwd": { "type": "string" },
+                  "timeoutMs": { "type": "number" }
+                },
+                "required": ["type", "command"]
+              }
+            ]
+          },
+          "expect": {
+            "type": "object",
+            "minProperties": 1,
+            "description": "期望值。三态语义：查询失败=error（场景 fail），真空结果（零行）必须显式用 rows: '==0' 声明",
+            "properties": {
+              "status": { "type": "number" },
+              "rows": { "enum": [">=1", ">0", "==0", ">=0"] },
+              "cell": {
+                "type": "object",
+                "required": ["column", "op", "value"],
+                "properties": {
+                  "column": { "type": "string" },
+                  "op": { "enum": ["eq", "ne", "gt", "gte", "lt", "lte", "contains", "not_contains"] },
+                  "value": {}
+                }
+              },
+              "exists": { "type": "boolean" },
+              "contains": { "type": "string" },
+              "notContains": { "type": "string", "description": "负向断言：不该出现却出现 = 失败" },
+              "exitCode": { "type": "number" },
+              "stdoutContains": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}
