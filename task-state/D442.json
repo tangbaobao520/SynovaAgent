@@ -1,13 +1,13 @@
 {
   "task_id": "D442",
   "title": "GS-03 资本循环场景脚本（erp-standard → cash 对齐 + 阈值触发）",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": null,
-  "impl": null,
+  "impl": { "commit": "f02edec3", "by": "coding", "at": "2026-08-18" },
   "audit": null,
-  "fix_task_id": null,
+  "fix_task_id": "D453",
   "updated_at": "2026-08-18",
-  "updated_by": "alloc-task-id",
-  "note": "GS-03：D356 已就绪；场景脚本 = 产品线交付，归属 Harness（进审计无豁免）",
+  "updated_by": "DeepSeek-Harness",
+  "note": "GS-03 场景脚本已提交（诚实 RED）。转绿依赖 D355 残留（cashBalance↔cash）+ D453（触发 bug）+ D454（环境崩溃）",
   "priority": "P0"
 }
