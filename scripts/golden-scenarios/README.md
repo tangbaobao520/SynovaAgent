@@ -5,13 +5,33 @@
 >       场景绿 = 验收点证据；场景列表 = 验收点分布的可执行化。
 > 归属: TASK-ROUTING.md 已登记 `scripts/golden-scenarios/ → 进行中·DeepSeek Harness·08-16`
 
-## 当前状态（D371 阶段）
+## 当前状态（D361 已交付 common/ 基建）
 
-- 本目录当前只落**骨架**（本 README + evidence/ 目录）。
-- **GS-01~GS-08 场景脚本本体属下一任务（设计 §八 D361-D364）**，交付顺序按创始人已批：
-  GS-03 资本循环先行（一行修 manifest 起步）→ GS-02/GS-04 → GS-05 → GS-01 → GS-06 → GS-07/08。
+- ✅ **common/ 四工具**（D361）：`bootstrap.ts`（临时端口起服务 + healthz 就绪）/
+  `fresh-db.ts`（临时数据目录）/ `inject.ts`（fixture 契约校验 + 归一）/ `assert.ts`（机器断言引擎）。
+- ✅ **断言规范**：`common/expect-schema.json`（机器契约）+ 本 README §断言规范。
+- ⏳ **GS-01~GS-08 场景脚本本体属 D362-D364**，按创始人仲裁（08-16）：等 Win D366/D355-D357
+  修复合并后再写 GS-02/03/04（脚本与修复解耦，零撞车）。默认顺序：GS-03 先行 → GS-02/GS-04 →
+  GS-05 → GS-01 → GS-06 → GS-07/08。
 
-## 运行契约（设计 §2.2，场景脚本必须满足——下一任务执行）
+## 断言规范（common/expect-schema.json，GSS 设计 §2.3）
+
+1. **断言只认产品物理输出**：HTTP 响应 / 表行数 / 文件内容 / 进程退出码。禁止"人工看看差不多"。
+2. **每条断言必须带 `purpose`**（证明产品哪个承诺，对应 C线标准/验收点）——缺 purpose 引擎拒绝执行（防恒真/空壳）。
+3. **每场景 ≥3 条**：正常路径 + 降级路径 + 至少 1 条负向断言（`notContains` / `not_contains`）。
+4. **三态语义**（K3 P0-3 fail-open 教训）：查询失败 = `error`（场景判 fail，显式告警）≠ 真空结果；
+   真空（零结果）必须显式声明（如 `cell: {op: eq, value: 0}`），绝不当"通过"。
+5. **机器判定**：`npx tsx common/assert.ts --expect <场景>/expect.json` → exit 0 = 全过，exit 1 = 有失败。
+6. **证据自动对接**：证据 JSON 与 calc-progress.py 契约一致（schema=1 / record_type=scenario /
+   verdicts[acceptance_point, verdict, quote]）→ 场景绿直接成为产品进度页的验收点证据（14 天有效期，A1 自动失效）。
+
+## 铁律 0-4 防线（写进代码的物理执法）
+
+- `bootstrap.ts` **只接受系统临时区数据目录**（fresh-db 产物），其余一律 exit 2——场景链结构上不可能触达真实库。
+- fresh-db 不检查环境变量（08-16 实测：开发者会话常自带 SYNOVA_DB_PATH 指向真实库，误报且与本工具无关）。
+- 场景运行绝不 cp data/synova.db；临时目录用完即删。
+
+## 运行契约（设计 §2.2，场景脚本必须满足——D362+ 执行）
 
 1. fresh-db（临时库，测后删除；真实库只读；禁止 cp data/synova.db——铁律 0-4）
 2. bootstrap 服务（临时端口；就绪探测 healthz）

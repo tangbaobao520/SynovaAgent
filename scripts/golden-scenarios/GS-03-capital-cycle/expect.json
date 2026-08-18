@@ -1,0 +1,31 @@
+{
+  "scenario_id": "GS-03",
+  "evidence_map": [
+    { "acceptance_point": "4-5", "assertion_ids": ["erp-upload-ok"] },
+    { "acceptance_point": "5-2", "assertion_ids": ["cash-runway-critical-triggered"] },
+    { "acceptance_point": "4-7", "assertion_ids": ["no-false-critical-zero-runway"] }
+  ],
+  "assertions": [
+    {
+      "id": "erp-upload-ok",
+      "desc": "erp-standard 数据经 field-mapping 写入本体 Financial 节点",
+      "purpose": "证明 ERP 连接器 erp-standard 契约可注入数据（验收点 4-5）",
+      "check": { "type": "file", "path": "__DATA_DIR__/upload-response.json" },
+      "expect": { "exists": true, "contains": "Financial" }
+    },
+    {
+      "id": "cash-runway-critical-triggered",
+      "desc": "低现金数据触发 cash-runway critical 阈值告警「现金流危急」",
+      "purpose": "证明 cashBalance↔cash 对齐后低现金触发阈值（验收点 5-2）",
+      "check": { "type": "file", "path": "__DATA_DIR__/run-response.json" },
+      "expect": { "exists": true, "contains": "现金流危急" }
+    },
+    {
+      "id": "no-false-critical-zero-runway",
+      "desc": "降级时不误报「跑道0.0个月」假 critical（负向断言）",
+      "purpose": "证明数据不足时 fail-closed 降级而非误报（验收点 4-7，D356 守卫）",
+      "check": { "type": "file", "path": "__DATA_DIR__/run-response.json" },
+      "expect": { "exists": true, "notContains": "跑道0.0个月" }
+    }
+  ]
+}

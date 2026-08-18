@@ -186,7 +186,6 @@ Binary file .claude/bypass.log matches
 2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: docs(D336): 文档拉平指引 DOC-SYNC-GUIDE — Codex 整�) | TASK_ID=recon | AGENT=ClawOrg-Mac | HASH=ef0bffd98a50089f60a432d21630845b81a09064
 2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: feat(D335): 防线闭环 — 提交端同步门禁 check-bra) | TASK_ID=recon | AGENT=ClawOrg-Mac | HASH=473502228770a63a7b37bff20401d33325075f86
 2026-08-17T09:20:00+08:00 | COMMITTED | pre-commit PASS (M4 一次性补记: feat(D334): 多机 PR 工作流 — pre-push 门禁 0 同步) | TASK_ID=recon | AGENT=ClawOrg-Mac | HASH=8ff09a9061fe10c90969b1abbe996c3b84c626fa
-
 2026-08-17T09:13:48+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D407 | AGENT=DeepSeek-Harness | HASH=93de5ccb13b3364b4ec93e86a154ebb5a68fa1ea
 2026-08-17T09:15:22+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D407 | AGENT=DeepSeek-Harness | HASH=5b979d6f94c738a08c8610b4602514b702b7a75b
 2026-08-17T09:16:40+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D407 | AGENT=DeepSeek-Harness | HASH=f90f91702443099cb33f0a81c4ce7f2a4d095072
@@ -252,8 +251,6 @@ Binary file .claude/bypass.log matches
 2026-08-17T23:23:16+08:00 | COMMITTED | pre-commit PASS (补记: 沙箱 plain git commit) | TASK_ID=D437 | AGENT=dsh | HASH=487fd0424886b70ab4e454c57f978f72b0354400
 2026-08-18T00:30:00+08:00 | COMMITTED | pre-commit PASS (D430 merge 补记) | TASK_ID=D430 | AGENT=DeepSeek-Harness | HASH=c6bf057f14fc1a806e9f55738a208d48f065efb4
 2026-08-18T00:35:00+08:00 | COMMITTED | pre-commit PASS (D430 补记) | TASK_ID=D430 | AGENT=DeepSeek-Harness | HASH=a14ebbc430922c12027018278c53d1f68cff3f54
-
-
 2026-08-18T00:50:00+08:00 | COMMITTED | pre-commit PASS (D430) | TASK_ID=D430 | AGENT=DeepSeek-Harness | HASH=ebf447c4f8091448436770b6a5f5e90ad6efd3f5
 2026-08-18T00:55:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: feat(D437): 仪表盘固定输出 app/founder-dashboar) | TASK_ID=merge | AGENT=kimi-k3-audit | HASH=fa2c4b080cb52bdd0f84609179384a662cf25b97
 2026-08-18T00:55:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: ci(D436): 重加控制塔门禁测试 job（只跑 5 个 mktemp 密封) | TASK_ID=merge | AGENT=kimi-k3-audit | HASH=ed28e50ab8a4dba4cd3cb4fc21decbc614d54285
@@ -282,7 +279,6 @@ Binary file .claude/bypass.log matches
 2026-08-18T01:25:00+08:00 | COMMITTED | pre-commit PASS (D439 补记) | TASK_ID=D439 | AGENT=DeepSeek-Harness | HASH=8ee7f5a885c08bc69c8daec0960c423ae6aba8b9
 2026-08-18T01:14:47+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D440 | AGENT=DeepSeek-Harness
 2026-08-18T01:15:41+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D440 | AGENT=DeepSeek-Harness | HASH=48de29e7d4d477905b76ae562918652352aeca05
-
 2026-08-18T01:45:00+08:00 | COMMITTED | pre-commit PASS (D440) | TASK_ID=D440 | AGENT=DeepSeek-Harness | HASH=0d604d2608347bbac31ddcf2f5819a97da62b6ac
 2026-08-18T02:00:00+08:00 | COMMITTED | pre-commit PASS (D440 fix) | TASK_ID=D440 | AGENT=DeepSeek-Harness | HASH=dcc9b20cfef7a39a406b1e9f0d0ca5664a8e1d29
 2026-08-17T17:30:15Z possible-bypass diff=898s
@@ -290,7 +286,6 @@ Binary file .claude/bypass.log matches
 2026-08-18T01:44:00+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D450 | AGENT=DeepSeek-Harness
 2026-08-18T01:44:12+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D450 | AGENT=DeepSeek-Harness
 2026-08-18T01:44:57+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D450 | AGENT=DeepSeek-Harness | HASH=bf6ba0f15d8ebfa26ffba4d8f8e26965c6bd134b
-
 2026-08-17T17:54:19Z possible-bypass diff=584s
 2026-08-18T03:30:00+08:00 | COMMITTED | pre-commit PASS (D357 边界澄清) | TASK_ID=D450 | AGENT=DeepSeek-Harness | HASH=b9cb6409959bc5a7698eff4a39d9ce8d75b4e354
 2026-08-18T03:45:00+08:00 | COMMITTED | pre-commit PASS (D357 边界补记: chore: bypass 运行时) | TASK_ID=D450 | AGENT=DeepSeek-Harness | HASH=c20501ba05c5fd93315f7ed8021bf9ed8e6f4e5b
@@ -301,23 +296,22 @@ Binary file .claude/bypass.log matches
 2026-08-17T17:59:42Z possible-bypass diff=907s
 2026-08-18T04:00:00+08:00 | COMMITTED | pre-commit PASS (GS 派活更新) | TASK_ID=D450 | AGENT=DeepSeek-Harness | HASH=89e14f21ec08c43f539e62d7d7ca302bc1a5bd2f
 2026-08-18T02:06:51+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
-2026-08-18T02:06:51+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
 2026-08-18T02:06:52+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
 2026-08-18T02:06:59+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
 2026-08-18T02:07:00+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
 2026-08-18T02:07:01+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
 2026-08-18T02:07:09+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
-2026-08-18T02:07:09+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
 2026-08-18T02:07:10+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
 2026-08-18T02:07:43+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D451 | AGENT=DeepSeek-Harness
 2026-08-18T02:07:57+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D451 | AGENT=DeepSeek-Harness
 2026-08-18T02:09:14+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D451 | AGENT=DeepSeek-Harness | HASH=e3348f68b6b3b82f2975c5f39464a435e6218f16
-
 2026-08-18T02:25:33+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D452 | AGENT=DeepSeek-Harness | HASH=13dfefeecba458d73318e2b0b3155660101c2387
-
 2026-08-18T22:42:21+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D453 | AGENT=DeepSeek-Harness
 2026-08-18T22:43:17+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D453 | AGENT=DeepSeek-Harness
 2026-08-18T22:45:27+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D453 | AGENT=DeepSeek-Harness
 2026-08-18T22:45:51+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D453 | AGENT=DeepSeek-Harness
 2026-08-18T22:46:32+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D453 | AGENT=DeepSeek-Harness
 2026-08-18T22:46:56+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D453 | AGENT=DeepSeek-Harness
+2026-08-17T18:22:24Z possible-bypass diff=1582s
+2026-08-18T02:23:04+08:00 | COMMITTED | pre-commit PASS (D361 补记: rebase 重放到 main 后 bd7234ca) | TASK_ID=D361 | AGENT=DeepSeek-Harness | HASH=bd7234ca1ee0e1d279ee848c3f29ce4c52291517
+2026-08-18T02:23:28+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D442 | AGENT=DeepSeek-Harness
