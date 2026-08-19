@@ -31,6 +31,48 @@ DRY_RUN=false
 TITLE="${1:-}"
 [ -z "$TITLE" ] && { echo "用法: alloc-task-id.sh <任务名> [--dry-run]" >&2; exit 1; }
 
+# ═══ D456: 并发原子锁 — 撞号根治 ═══
+# 背景: 同一 Mac 两个并发 DSH session 各自从陈旧 task-state 读 max，都拿到同一号
+#       → D454/D455 撞车（D382 教训第二次复发）。根因 = 读 max→写 max+1 无原子性。
+# 修法: mkdir 原子锁（跨平台零依赖，macOS 无 flock）包住"读占用表→分配→建壳"临界区。
+#       两个进程同时 mkdir 同一锁目录，只有一个成功；另一个重试等待。
+# 降级: 锁目录无法创建（权限/磁盘）→ 显式告警 + 继续（fail-open 不静默，铁律 11）。
+LOCK_DIR="$ROOT/.alloc-task-id.lock"
+LOCK_WAIT_SEC=30
+LOCK_POLL=0.2
+
+_lock_acquire() {
+  local waited=0
+  while ! mkdir "$LOCK_DIR" 2>/dev/null; do
+    if [ -d "$LOCK_DIR" ]; then
+      local lock_age
+      lock_age=$(python3 -c "import os,time; print(int(time.time()-os.path.getmtime('$LOCK_DIR')))" 2>/dev/null || echo 0)
+      if [ "$lock_age" -gt 60 ] 2>/dev/null; then
+        echo "⚠ 检测到陈旧锁（${lock_age}s），强制清理" >&2
+        rmdir "$LOCK_DIR" 2>/dev/null || true
+        continue
+      fi
+    fi
+    waited=$(python3 -c "print($waited + $LOCK_POLL)" 2>/dev/null || echo 30)
+    if [ "$(python3 -c "print(1 if $waited > $LOCK_WAIT_SEC else 0)" 2>/dev/null || echo 1)" = "1" ]; then
+      echo "❌ 获取分配锁超时（${LOCK_WAIT_SEC}s）— 可能有并发 session 卡住" >&2
+      return 1
+    fi
+    sleep "$LOCK_POLL"
+  done
+  return 0
+}
+
+_lock_release() {
+  rmdir "$LOCK_DIR" 2>/dev/null || true
+}
+
+if ! _lock_acquire; then
+  echo "❌ 无法获取分配锁 — 分配号中止（fail-closed，防撞号）" >&2
+  exit 1
+fi
+trap _lock_release EXIT
+
 # ── 读取已占用号（task-state/D*.json）──
 if [ ! -d "$TASK_STATE_DIR" ]; then
   echo "❌ task-state/ 目录不存在: $TASK_STATE_DIR (fail-closed)" >&2
@@ -40,8 +82,11 @@ fi
 # 提取已用 D 号: 唯一占用表 = task-state/D*.json（先登记后使用；brief 不参与发号）
 USED=$(ls "$TASK_STATE_DIR"/D*.json 2>/dev/null | sed 's/.*\/D\([0-9]*\)\.json/\1/' | grep -E '^[0-9]+$' || true)
 
-ALL_USED=$(printf "%s\n" "$USED" | grep -E '^[0-9]+$' | sort -n | uniq)
+ALL_USED=$(printf "%s\n" "$USED" | grep -E '^[0-9]+$' | sort -n | uniq || true)
 MAX=$(printf "%s\n" "$ALL_USED" | tail -1 | grep -E '^[0-9]+$' || echo "0")
+# D456: pipefail 下空 task-state 时 tail/grep 非零导致静默退出，显式兜底
+MAX="${MAX:-0}"
+[ -z "$MAX" ] && MAX="0"
 NEXT=$((10#$MAX + 1))
 NEW_ID="D${NEXT}"
 
