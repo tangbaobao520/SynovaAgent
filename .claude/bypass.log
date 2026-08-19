@@ -335,3 +335,9 @@ Binary file .claude/bypass.log matches
 2026-08-18T15:13:13Z possible-bypass diff=1510s
 2026-08-18T03:50:00+08:00 | COMMITTED | pre-commit PASS (D455) | TASK_ID=D455 | AGENT=DeepSeek-Harness | HASH=7f478c31e4ce3230d14e7f95ddfc3c5dcfbb79a2
 2026-08-18T03:50:00+08:00 | COMMITTED | pre-commit PASS (D455) | TASK_ID=D455 | AGENT=DeepSeek-Harness | HASH=cb8ab50896e1ae8fc21ad13e1ca3195659a1c32a
+2026-08-18T15:13:22Z possible-bypass diff=1519s
+2026-08-18T23:15:28+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D402 | AGENT=deepseek-harness | HASH=5c7cff5a4d760967a1a6a93c80ffe76e297cd366
+2026-08-18T23:19:03+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D402 | AGENT=deepseek-harness | HASH=96e982d059bbddeae21360c3fee8072397d40388
+2026-08-19T13:06:58Z possible-bypass diff=80335s
+2026-08-18T04:00:00+08:00 | COMMITTED | pre-commit PASS (D456) | TASK_ID=D456 | AGENT=DeepSeek-Harness | HASH=cdf376f655bc80d49db52293b80931cfdbe550d4
+2026-08-18T04:00:00+08:00 | COMMITTED | pre-commit PASS (D456) | TASK_ID=D456 | AGENT=DeepSeek-Harness | HASH=54f215537e472b1cb5f012a048a21e8b37d360f8
