@@ -1,0 +1,36 @@
+{
+  "scenario_id": "GS-05",
+  "evidence_map": [
+    { "acceptance_point": "S0-3", "assertion_ids": ["no-false-critical-empty", "no-false-ticket-empty", "ticket-created", "dedup-stable"] }
+  ],
+  "assertions": [
+    {
+      "id": "no-false-critical-empty",
+      "desc": "空库（未注入）触发 cash-runway → 无 critical 告警（降级 warning 可接受，负向断言）",
+      "purpose": "证明无数据时 fail-closed 降级、不误报 critical 越阈告警（S0-3；K3 P0-3 防假转绿）",
+      "check": { "type": "file", "path": "__DATA_DIR__/run-empty-response.json" },
+      "expect": { "exists": true, "notContains": "\"severity\":\"critical\"" }
+    },
+    {
+      "id": "no-false-ticket-empty",
+      "desc": "空库触发后 sentinel_tickets 零行（tickets API 返回空数组，负向断言）",
+      "purpose": "证明无数据不产生虚假工单——真空零显式声明（S0-3；K3 P0-3 真空≠查询失败）",
+      "check": { "type": "file", "path": "__DATA_DIR__/tickets-empty.json" },
+      "expect": { "exists": true, "contains": "\"tickets\":[]" }
+    },
+    {
+      "id": "ticket-created",
+      "desc": "注入越阈数据（runway 0.25 < critical 6）触发 cash-runway → sentinel_tickets 表 COUNT 值 ≥ 1",
+      "purpose": "证明越阈告警闭环：哨兵发现 → 专家诊断 → 工单落库（S0-3 告警闭环核心，sentinel_tickets 有行——cell 读 COUNT 实际值，防 rows 恒真空壳 K3 P0-3）",
+      "check": { "type": "sqlite", "db": "__DATA_DIR__/synova.db", "sql": "SELECT COUNT(*) AS cnt FROM sentinel_tickets" },
+      "expect": { "cell": { "column": "cnt", "op": "gte", "value": 1 } }
+    },
+    {
+      "id": "dedup-stable",
+      "desc": "同哨兵去重窗口内二次触发 → 工单数不增（run.sh 对比触发#1/#2 tickets 数，机器判定）",
+      "purpose": "证明推送/工单去重键稳定：INSERT OR REPLACE（ticket-{signalId}-{expertType}）+ D6 去重窗口，重复触发不产生重复工单（S0-3；D272 finding.id 去重键语义）",
+      "check": { "type": "file", "path": "__DATA_DIR__/dedup-check.txt" },
+      "expect": { "exists": true, "contains": "DEDUP_STABLE" }
+    }
+  ]
+}
