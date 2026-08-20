@@ -1,0 +1,17 @@
+{
+  "task_id": "D459",
+  "title": "生成物单点生成门禁（G12d，session 禁改 CI 生成物）",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "commit": "local",
+    "by": "cto-api",
+    "at": "2026-08-20",
+    "note": "pre-commit G12d：生成物 M/A 状态阻断，D 放行，CI 裸 git commit 天然绕过"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-20",
+  "updated_by": "CTO",
+  "note": "D458 第二层：session 禁改 founder-console/dashboard/product-progress（CI 单点生成物），根治生成物并行冲突"
+}

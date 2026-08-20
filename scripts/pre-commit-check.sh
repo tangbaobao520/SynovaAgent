@@ -1025,6 +1025,27 @@ else
   soft_pass "G12: 所有文件均在 Q2 范围内"
 fi
 
+# G12d (D458): 生成物单点生成门禁 — session 禁止提交 CI 单点生成的产物
+# 背景: founder-console/founder-dashboard/product-progress 由 CI bot（dashboard-auto.yml /
+#       product-progress.yml）单点生成 + 裸 git commit 提交。session 手改这些文件会制造
+#       并行冲突（D429/D452/D455 多次实证）。CI 走裸 git commit 不触发本门禁，天然放行。
+# 规则: 生成物文件处于新增(A)/修改(M)状态 → 阻断；删除(D)不拦（去跟踪/清理合法）。
+GENERATED_FILES="app/founder-dashboard.html docs/synova/founder-console.html docs/synova/product-lines/product-progress.json docs/synova/product-lines/product-progress.html docs/synova/product-lines/todos.yaml"
+GENERATED_VIOLATION=""
+while IFS= read -r line; do
+  [ -z "$line" ] && continue
+  _status="${line:0:1}"
+  _path="${line:3}"
+  if echo "$GENERATED_FILES" | grep -qw "$_path" 2>/dev/null && [ "$_status" = "M" -o "$_status" = "A" ]; then
+    GENERATED_VIOLATION="${GENERATED_VIOLATION}  $_path (CI 单点生成物，session 禁止提交)\n"
+  fi
+done <<< "$(git diff --cached --name-status 2>/dev/null)"
+if [ -n "$GENERATED_VIOLATION" ]; then
+  hard_check "G12d: 生成物单点生成门禁 (D458)" "$GENERATED_VIOLATION"
+else
+  soft_pass "G12d: 无 session 提交生成物 (CI 单点)"
+fi
+
 # D313 M3: 附挂 brief 契约检查（同源解析器 + #CRITERIA + 架构层 + Done）
 BRIEF_PARSEABLE_OUT=$(bash "$ROOT/scripts/workflow/check-brief-parseable.sh" "$BRIEF" 2>&1 || true)
 if echo "$BRIEF_PARSEABLE_OUT" | grep -q "❌"; then
