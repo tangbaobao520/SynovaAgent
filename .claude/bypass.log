@@ -348,3 +348,6 @@ Binary file .claude/bypass.log matches
 2026-08-20T12:09:50Z possible-bypass diff=82784s
 2026-08-20T13:44:55Z possible-bypass diff=88489s
 2026-08-20T01:00:00+08:00 | COMMITTED | pre-commit PASS (D460) | TASK_ID=D460 | AGENT=DeepSeek-Harness | HASH=90d9dfa92c4e8265c2b41669efdc1622401e6e61
+2026-08-20T13:45:01Z possible-bypass diff=88495s
+2026-08-20T13:58:46Z possible-bypass diff=89320s
+2026-08-20T01:30:00+08:00 | COMMITTED | pre-commit PASS (docs 修正) | TASK_ID=D460 | AGENT=DeepSeek-Harness | HASH=6660c615c918100bfdd79f2cfd0f242aa5eac82f
