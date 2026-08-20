@@ -1,0 +1,17 @@
+{
+  "task_id": "D458",
+  "title": "多 session 并行冲突系统性根治（运行时状态去跟踪 + 版本管理固化）",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "commit": "local",
+    "by": "cto-api",
+    "at": "2026-08-18",
+    "note": "7 个运行时信号 git rm --cached + VERSION.md 固化版本规范"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-18",
+  "updated_by": "CTO",
+  "note": "根因：GIT-SYNC-PLAN(08-14)已定运行时产物不进git但漏执行 rm --cached → 76 文件仍跟踪制造冲突。方案：第一类运行时信号去跟踪（已完成）+ 第二类生成物单点生成门禁（待做）+ 第三类 bypass union（D457已做）"
+}
