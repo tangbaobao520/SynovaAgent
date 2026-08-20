@@ -1,0 +1,210 @@
+# DOCS-REGISTRY.yaml — 文档台账（治理锚点）
+
+# schema v1 (draft) | 维护：DSH 架构线 | 2026-08-19
+# 目的：每份文档有身份证（id/type/status/owner），新文档必须登记（登记门禁设计见 GOVERNANCE.md）
+# type ∈ [navigation, onboarding, chronicle, prd, architecture, status, registry, governance,
+#         research, knowledge, pitfall, retrospective, decision, devdoc, draft, diary, archive]
+# status ∈ [active, superseded, draft, archived]
+# verified-by: 负责验证本文件声明的脚本（planned = 待实施）
+
+documents:
+  # ---- 权威层（现状 = 机器验证）----
+  - id: DOC-0001
+    type: navigation
+    path: INDEX.md
+    status: draft
+    owner: DSH
+
+  - id: DOC-0002
+    type: onboarding
+    path: START-HERE.md
+    status: draft
+    owner: DSH
+
+  - id: DOC-0003
+    type: chronicle
+    path: CHRONICLE.md
+    status: active
+    owner: DSH
+    verified-by: scripts/doc-system/check-chronicle-facts.sh (planned)
+
+  - id: DOC-0004
+    type: prd
+    path: docs/authority/PRD.md
+    status: draft
+    owner: founder + DSH
+
+  - id: DOC-0005
+    type: architecture
+    path: docs/authority/ARCHITECTURE.md
+    status: draft
+    owner: DSH
+    verified-by: scripts/doc-system/check-doc-truth.sh (planned)
+
+  - id: DOC-0006
+    type: status
+    path: docs/authority/STATUS.md
+    status: draft
+    owner: DSH
+    verified-by: scripts/doc-system/generate-status.sh (planned)
+
+  - id: DOC-0007
+    type: registry
+    path: docs/authority/DOCS-REGISTRY.yaml
+    status: draft
+    owner: DSH
+
+  - id: DOC-0008
+    type: governance
+    path: docs/authority/GOVERNANCE.md
+    status: draft
+    owner: DSH
+
+  - id: DOC-0009
+    type: governance
+    path: docs/authority/DRIFT-LEDGER.md
+    status: active
+    owner: DSH
+    note: "文档漂移台账（check-doc-truth.sh 检出项的跟踪）"
+
+  # ---- 历史档案库（只读，不再新增；path 指向唯一幸存副本）----
+  - id: ARCH-001
+    type: archive
+    path: "D:/novis-backup-20260526/Novis/docs/"
+    status: archived
+    owner: founder
+    note: "Novis 时代文档体系（12 类 100+ 份 + Archive 433+）"
+
+  - id: ARCH-002
+    type: archive
+    path: "D:/novis-backup-20260526/Synova-Engine/"
+    status: archived
+    owner: founder
+    note: "Novis 时代引擎仓库（engine-core 前身）"
+
+  - id: ARCH-003
+    type: archive
+    path: "D:/novis-backup-20260526/claude-backup-20260525/projects/E--ClawOrg-BOX/memory/"
+    status: archived
+    owner: founder
+    note: "ClawOrg 时代会话记忆（MEMORY.md/work-session-*/pitfalls-log）"
+
+  - id: ARCH-004
+    type: archive
+    path: "D:/novis-backup-20260526/Novis/work-records/"
+    status: archived
+    owner: founder
+    note: "ClawOrg 时代工作记录（2026-04-25 ~ 05-25）"
+
+  - id: ARCH-005
+    type: archive
+    path: "D:/novis-backup-20260526/Novis/全局规划/"
+    status: archived
+    owner: founder
+    note: "ClawOrg 定位讨论与全局功能盘点（2026-04-28）"
+
+  - id: ARCH-006
+    type: archive
+    path: "D:/novis-backup-20260526/Novis/OpenClaw+X-全览/"
+    status: archived
+    owner: founder
+    note: "ClawOrg 白皮书/PRD/开发指令书（30+ 份）"
+
+  - id: ARCH-007
+    type: archive
+    path: "D:/novis-backup-20260526/Novis/全局规划/../README.md"
+    status: archived
+    owner: founder
+    note: "ClawOrg 文档中心 README（E:\ClawOrg-BOX 时代的目录规范）"
+
+  # ---- 已登记的关键现有文档（分类打标，九类沉淀索引的一部分）----
+  - id: DOC-0101
+    type: retrospective
+    path: docs/synova/audit-reports/
+    status: active
+    owner: K3
+    note: "审计报告（2026-08 系列）"
+
+  - id: DOC-0102
+    type: decision
+    path: docs/synova/coordination/DECISION-REFERENCE.md
+    status: active
+    owner: founder
+    note: "决策参考四步框架（D333）"
+
+  - id: DOC-0103
+    type: decision
+    path: docs/DECISION-文件优先设计范式转型-20260615.md
+    status: active
+    owner: founder
+    note: "文件优先范式转型决策（2026-06-15）"
+
+  - id: DOC-0104
+    type: research
+    path: docs/synova/research/
+    status: active
+    owner: DSH
+    note: "权威文档 01-18 系列 + A/B/C 线审计 + 研究"
+
+  - id: DOC-0105
+    type: devdoc
+    path: docs/synova/coordination/TASK-ROUTING.md
+    status: active
+    owner: founder
+    note: "多 Agent 任务路由（D336）"
+
+  - id: DOC-0106
+    type: diary
+    path: WORKLOG-*.md
+    status: active
+    owner: dev-line
+    note: "WORKLOG 日记系列（2026-06-08 起）"
+
+  - id: DOC-0107
+    type: pitfall
+    path: memory/
+    status: active
+    owner: dev-line
+    note: "教训卡（20 份）+ session/state 记忆"
+
+  - id: DOC-0108
+    type: devdoc
+    path: docs/synova/coordination/DSH-DEVDOC-MODE.md
+    status: active
+    owner: DSH
+    note: "DSH 开发文档模式（2026-08 新增协调文档）"
+
+  - id: DOC-0110
+    type: status
+    path: docs/authority/SYSTEM-HEALTH.md
+    status: active
+    owner: DSH
+    note: "文档体系健康快照（组件/验收/待办）"
+
+  - id: DOC-0109
+    type: devdoc
+    path: docs/synova/coordination/K3-AUDIT-STANDARD-v2-20260820.md
+    status: active
+    owner: K3
+    note: "K3 审计标准 v2（2026-08-20；登记门禁首次实战拦截项）"
+
+  - id: DOC-0111
+    type: draft
+    path: docs/authority/TASK-DRAFTS.md
+    status: draft
+    owner: founder + dev-line
+    note: "文档体系收尾 3 任务草稿（漂移同步/UNK 定性/门禁接线），批准后即开即用"
+
+  - id: DOC-0112
+    type: governance
+    path: docs/authority/TRIAGE-CLASSIFICATION-20260820.md
+    status: active
+    owner: DSH
+    note: "未定性文档分类台账（任务 B：50 份中 48 保留/2 归档）"
+
+  - id: DOC-0113
+    type: governance
+    path: docs/authority/COMMIT-PLAN-20260820.md
+    status: active
+    owner: founder + dev-line
+    note: "文档体系改革交付清单（4 批提交计划 + K3 审计材料 + task brief 模板）"
