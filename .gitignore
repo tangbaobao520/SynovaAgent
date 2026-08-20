@@ -4,6 +4,8 @@ data/
 /coverage/
 .env
 *.log
+# D460: llm-verifier 本地 venv（部署产物，不入 git；Win 侧同装）
+.venv-llmverifier/
 *.tgz
 *.tar.gz
 .DS_Store

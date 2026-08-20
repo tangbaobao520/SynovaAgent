@@ -1,0 +1,12 @@
+{
+  "task_id": "D460",
+  "title": "LLM-as-a-Verifier 部署 + synova-verify skill（A2 语义预筛）",
+  "status": "impl_done",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-20",
+  "updated_by": "CTO",
+  "note": "部署 llm-verifier 0.2.0 到 .venv-llmverifier/（DeepSeek 后端 deepseek-v4-flash 连通）+ synova-verify skill 双轨落位 + 真实任务验证（D456 真实声明1.0 vs 空泛0.0）"
+}
