@@ -1,0 +1,17 @@
+{
+  "task_id": "D457",
+  "title": "bypass.log 多 PR 合并冲突根治（merge=union）",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "commit": "local",
+    "by": "cto-api",
+    "at": "2026-08-18",
+    "note": ".gitattributes merge=union + install-hooks.sh 注册 driver"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-18",
+  "updated_by": "CTO",
+  "note": "CT-47：append-only 日志多 PR 冲突（D357/D358/D354 撞车）。union 驱动自动取并集，每行含唯一 HASH 不重复"
+}

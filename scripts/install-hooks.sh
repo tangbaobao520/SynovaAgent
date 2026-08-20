@@ -82,6 +82,13 @@ install_hook "commit-msg"
 install_hook "pre-push"
 install_hook "post-commit"
 
+# CT-47 / D457: 注册 bypass.log 的 union 合并驱动
+# .gitattributes 声明 .claude/bypass.log merge=union，但 git 需知道 union driver 是什么。
+# 这里注册一次，让 append-only 证据日志多 PR 合并自动取并集（不再冲突）。
+# 幂等: 重复运行 set 覆盖，无害。
+git config merge.union.driver "git merge-file --union %A %O %B" 2>/dev/null || true  # swallow-ok: git config 失败=非 git 仓库/只读, 降级不阻断
+echo "  ✅ git config merge.union.driver — bypass.log 自动合并"
+
 # D201-FIX: 安装 synova-commit git alias（commit gatekeeper）
 SYNOVA_COMMIT="$ROOT/scripts/control-tower/synova-commit"
 if [ -f "$SYNOVA_COMMIT" ]; then
