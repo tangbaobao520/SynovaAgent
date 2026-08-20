@@ -1,35 +1,46 @@
 {
   "version": "1.0",
-  "current_phase": 1,
+  "created": "2026-08-18T00:00:00Z",
+  "approved_by": "founder",
+  "current_phase": 2,
   "principles": [
-    {
-      "rule": "brief 模板必须含 ### c) 决策参考系 字段",
-      "verify": "grep -c '决策参考系' scripts/workflow/generate-task-brief.py >= 1"
-    },
-    {
-      "rule": "DECISION-REFERENCE 必须注册 + 注入器可达",
-      "verify": "grep -c 'DECISION-REFERENCE' scripts/control-tower/doc-registry.json >= 1 && grep -c 'DECISION-REFERENCE' scripts/control-tower/inject-context.py >= 1"
-    },
-    {
-      "rule": "CLAUDE.md 必须引用 DECISION-REFERENCE（新 session 必读）",
-      "verify": "grep -c 'DECISION-REFERENCE' CLAUDE.md >= 1"
-    }
+    "原则2: 先设计验证标准，再设计实现",
+    "原则5: 物理强制，零AI自律",
+    "原则6: 逐步验证，不信任声称完成"
   ],
-  "approach": "复用（模板字段追加 + 注册表追加 + 注入器模式扩展——文件驱动最小机制，不新建组件不加工厂）",
+  "approach": "rewrite",
   "phases": [
     {
       "step": 1,
-      "action": "create+wire",
+      "action": "create",
       "files": [
-        "scripts/workflow/generate-task-brief.py",
-        "scripts/control-tower/inject-context.py",
-        "scripts/control-tower/doc-registry.json",
-        "CLAUDE.md",
-        ".codex/control-tower/VERSION.md",
-        "tests/control-tower/brief-template-decision.test.sh",
-        ".claude/task-briefs/D333-decision-reference-framework.md"
+        "extensions/sentinels/margin-health/computes/compute-gross-margin.ts",
+        "extensions/sentinels/margin-health/computes/compute-fixed-variable-ratio.ts",
+        "extensions/sentinels/margin-health/computes/compute-cost-per-head.ts",
+        "extensions/sentinels/margin-health/computes/compute-incentive-bind.ts",
+        "extensions/sentinels/margin-health/computes/compute-profit-margin-change.ts",
+        "extensions/sentinels/margin-health/computes/compute-margin-vs-benchmark.ts",
+        "extensions/sentinels/margin-health/computes/compute-metric-bind-divergence.ts",
+        "extensions/sentinels/capital-health/computes/roic-wacc-spread.ts",
+        "extensions/sentinels/capital-health/computes/wacc.ts",
+        "extensions/sentinels/capital-health/computes/capital-turnover.ts",
+        "extensions/sentinels/capital-health/computes/debt-equity-ratio.ts",
+        "extensions/sentinels/capital-health/computes/interest-coverage.ts",
+        "extensions/sentinels/capital-health/computes/debt-structure.ts",
+        "extensions/sentinels/capital-health/computes/asset-turnover.ts",
+        "extensions/sentinels/capital-health/computes/receivable-turnover.ts",
+        "extensions/sentinels/capital-health/computes/cash-conversion-cycle.ts"
       ],
-      "checks": { "wiring": "enforce", "test_pairing": "enforce" }
+      "checks": { "wiring": "deferred", "test_pairing": "enforce" }
+    },
+    {
+      "step": 2,
+      "action": "refactor",
+      "files": [
+        "extensions/sentinels/margin-health/aggregate.ts",
+        "extensions/sentinels/capital-health/aggregate.ts"
+      ],
+      "checks": { "wiring": "deferred", "test_pairing": "enforce" }
     }
   ]
 }
