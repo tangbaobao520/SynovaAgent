@@ -348,3 +348,9 @@ Binary file .claude/bypass.log matches
 2026-08-20T12:09:50Z possible-bypass diff=82784s
 2026-08-20T13:44:55Z possible-bypass diff=88489s
 2026-08-20T01:00:00+08:00 | COMMITTED | pre-commit PASS (D460) | TASK_ID=D460 | AGENT=DeepSeek-Harness | HASH=90d9dfa92c4e8265c2b41669efdc1622401e6e61
+2026-08-20T13:45:01Z possible-bypass diff=88495s
+2026-08-20T13:58:46Z possible-bypass diff=89320s
+2026-08-20T01:30:00+08:00 | COMMITTED | pre-commit PASS (docs 修正) | TASK_ID=D460 | AGENT=DeepSeek-Harness | HASH=6660c615c918100bfdd79f2cfd0f242aa5eac82f
+2026-08-20T13:58:51Z possible-bypass diff=89325s
+2026-08-20T01:35:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: feat(doc-system): 文档体系改革新文件落库) | TASK_ID=merge | AGENT=Synova-Win | HASH=c8d358698b281b5db4ff4ffee2d8756c37691b0f
+2026-08-20T01:35:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: docs(research): DSH 迁移施工图 + 一页纸大纲) | TASK_ID=merge | AGENT=Synova-Win | HASH=5fa489f05f1a9671fa85a62cf6672dca58fc155f
