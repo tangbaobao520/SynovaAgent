@@ -338,3 +338,5 @@ Binary file .claude/bypass.log matches
 2026-08-20T09:17:17Z possible-bypass diff=72431s
 2026-08-18T04:31:00+08:00 | COMMITTED | pre-commit PASS (D457) | TASK_ID=D457 | AGENT=DeepSeek-Harness | HASH=551b569eb139ec84bf9676fb4beadd2fdb87e73a
 2026-08-18T04:32:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: fix(D358): 合并哨兵去 _extinct 桥接 + props 契约对齐 erp) | TASK_ID=D358 | AGENT=Synova-Win | HASH=38dda82fbe98034cf8c822f040c61b468489489d
+2026-08-20T10:09:18Z possible-bypass diff=75552s
+2026-08-20T00:00:00+08:00 | COMMITTED | pre-commit PASS (index.html) | TASK_ID=docs | AGENT=DeepSeek-Harness | HASH=4322968194c19bee853418551763971a897abdc3
