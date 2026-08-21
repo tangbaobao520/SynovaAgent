@@ -8,10 +8,64 @@
  * 铁律 32: 错误带 .code + .phase + .retryable
  */
 import { createLogger } from '@synova/logger';
+import { readdirSync, readFileSync, existsSync } from 'fs';
+import { join, resolve } from 'path';
 import type { FileIndex, ExpertFiles, ScannedFile } from './file-scanner';
 import { getExpertRegistry } from '../l3/expert-registry';
 
 const log = createLogger('agent/expert-file-loader');
+
+// ═══ D240: 企业事实 active-only 注入 ═══
+
+function enterpriseFactsRoot(): string {
+  return process.env.SYNO_FACTS_ROOT
+    ? resolve(process.env.SYNO_FACTS_ROOT)
+    : join(process.cwd(), '.codex', 'enterprise', 'facts');
+}
+
+/**
+ * 读取 status=active 的企业事实，格式化为注入串。
+ * 自包含实现（不跨层 import scripts/control-tower）：
+ * 扫描 {root}/**\/*.md，仅注入 front matter `status: active` 的事实；
+ * pending/conflicted/rejected 一律不注入（D240 生命周期硬约束）。
+ */
+export function loadActiveEnterpriseFacts(root?: string): string {
+  const base = root ?? enterpriseFactsRoot();
+  if (!existsSync(base)) return '';
+  const lines: string[] = [];
+  const walk = (dir: string): void => {
+    let entries;
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch (err) {
+      log.warn({ err: err instanceof Error ? err.message : String(err), dir }, '企业事实目录不可读 — 降级跳过');
+      return;
+    }
+    for (const e of entries) {
+      const p = join(dir, e.name);
+      if (e.isDirectory()) {
+        walk(p);
+      } else if (e.isFile() && e.name.endsWith('.md')) {
+        let raw = '';
+        try {
+          raw = readFileSync(p, 'utf-8');
+        } catch (err) {
+          log.warn({ err: err instanceof Error ? err.message : String(err), file: p }, '企业事实文件不可读 — 跳过');
+          continue;
+        }
+        const statusMatch = /^status:\s*(\w+)/m.exec(raw);
+        if (!statusMatch || statusMatch[1] !== 'active') continue;
+        const keyMatch = /^key:\s*(.+)$/m.exec(raw);
+        const key = keyMatch ? keyMatch[1].trim() : e.name.replace(/\.md$/, '');
+        const body = raw.split(/\n---\s*\n/).pop()?.trim() || raw.trim();
+        const firstLine = body.split('\n')[0].trim();
+        if (firstLine) lines.push(`- ${key}: ${firstLine}`);
+      }
+    }
+  };
+  walk(base);
+  return lines.join('\n');
+}
 
 // ═══ Types ═══
 
@@ -123,6 +177,12 @@ export class ExpertFileLoader {
     // 遍历索引中的专家
     for (const expert of index.experts) {
       try {
+        // D240: 企业事实注入 — 未显式提供时从 facts 目录读 active 事实
+        const filesAny = expert.files as Record<string, unknown>;
+        if (!filesAny._enterpriseFacts) {
+          const facts = loadActiveEnterpriseFacts();
+          if (facts) filesAny._enterpriseFacts = facts;
+        }
         const { prompt, sources, missing } = assemblePrompt(expert.files);
 
         if (prompt.trim().length > 0) {

@@ -1100,6 +1100,29 @@ export class Bootstrap {
             ctx.addDegraded(5, 'connector-sync', cronMsg);
           }
 
+          // 企业事实冲突扫描 (D240, 每日 04:00)
+          try {
+            scheduler.schedule('enterprise-facts-conflict-scan', '0 4 * * *', async () => {
+              try {
+                const { ConflictScanner } = await import('../../scripts/control-tower/conflict-scanner');
+                const report = new ConflictScanner().scan();
+                if (report.conflicts.length > 0) {
+                  log.warn({ count: report.conflicts.length }, '企业事实冲突 cron 检测到矛盾');
+                } else {
+                  log.info({ scanned: report.scanned, degraded: report.degraded }, '企业事实冲突 cron 扫描完成');
+                }
+              } catch (scanErr: unknown) {
+                const scanMsg = scanErr instanceof Error ? scanErr.message : String(scanErr);
+                log.warn({ err: scanMsg }, '企业事实冲突扫描失败 — 降级');
+              }
+            });
+            log.info('企业事实冲突扫描调度已启动 (cron: 0 4 * * *)');
+          } catch (cronErr: unknown) {
+            const cronMsg = cronErr instanceof Error ? cronErr.message : String(cronErr);
+            log.warn({ err: cronMsg }, '企业事实冲突扫描调度注册失败 — 降级');
+            ctx.addDegraded(5, 'enterprise-facts-conflict-scan', cronMsg);
+          }
+
           // 每日简报 (19:00)
           try {
             scheduler.schedule('daily-briefing', '0 19 * * *', async () => {

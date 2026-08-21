@@ -1,0 +1,2 @@
+# 桥接 v2.0 起改用官方 @larksuite/cli，不再需要 Python 依赖。
+# 安装 CLI:  npm install -g @larksuite/cli
