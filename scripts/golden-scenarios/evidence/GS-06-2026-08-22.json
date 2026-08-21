@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "record_type": "scenario",
+  "scenario_id": "GS-06",
+  "source": "scripts/golden-scenarios/GS-06-evolution-loop/expect.runtime.json",
+  "date": "2026-08-21",
+  "verdict": "pass",
+  "verdicts": [
+    {
+      "acceptance_point": "L0-1",
+      "verdict": "pass",
+      "quote": "feedback-injected pass: POST /api/evolution/feedback/collect → ok:true（反馈注入到进化候选池）（符合预期）"
+    },
+    {
+      "acceptance_point": "L0-2",
+      "verdict": "pass",
+      "quote": "proposals-ok pass: GET /api/evolution/proposals → HTTP 200 + count 字段（候选池可达）（符合预期） | status-ok pass: GET /api/evolution/status → HTTP 200 + ok（进化引擎运行状态可达）（符合预期）"
+    }
+  ],
+  "assertions": [
+    {
+      "id": "feedback-injected",
+      "desc": "POST /api/evolution/feedback/collect → ok:true（反馈注入到进化候选池）",
+      "purpose": "证明进化闭环数据源：反馈注入可用（L0-1；loop-3/5 真实执行体前置 D333 已就绪）",
+      "verdict": "pass",
+      "detail": "符合预期"
+    },
+    {
+      "id": "proposals-ok",
+      "desc": "GET /api/evolution/proposals → HTTP 200 + count 字段（候选池可达）",
+      "purpose": "证明进化候选池（提案列表）端点可用（L0-2；loop-3 产物）",
+      "verdict": "pass",
+      "detail": "符合预期"
+    },
+    {
+      "id": "status-ok",
+      "desc": "GET /api/evolution/status → HTTP 200 + ok（进化引擎运行状态可达）",
+      "purpose": "证明进化引擎状态监控可用（L0-2；loop-5 知识累积观测）",
+      "verdict": "pass",
+      "detail": "符合预期"
+    }
+  ]
+}
