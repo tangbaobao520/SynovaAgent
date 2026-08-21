@@ -481,6 +481,25 @@ def render(bypass: dict, fail: dict, ledger: dict, tasks: list, ci: dict = None)
                 lines.append("")
     except Exception:  # noqa: BLE001
         pass  # stale red 检测降级不影响主表
+    # worktree 收尾检测（2026-08-21 冻结决策必修项）：孤儿 worktree 有独有提交未合并
+    try:
+        import subprocess as _sp2
+        _ow = _sp2.run(["bash", str(REPO / "scripts/control-tower/check-orphan-worktrees.sh"), "--json"],
+                       capture_output=True, text=True, timeout=30, cwd=REPO)
+        if _ow.returncode == 1 and _ow.stdout.strip():
+            _od = json.loads(_ow.stdout.strip())
+            _cnt = _od.get("orphan_count", 0)
+            if _cnt > 0:
+                lines.append(f"### 九、worktree 收尾（2026-08-21 必修）")
+                lines.append("")
+                lines.append(f"- 🔴 **{_cnt} 个孤儿 worktree 有待收尾**（独有提交未合并进 main，可能是未收尾的交付）")
+                for o in _od.get("orphans", [])[:10]:
+                    lines.append(f"  - {o.get('path','?')} (分支 {o.get('branch','?')}, {o.get('unmerged',0)} 个独有提交)")
+                lines.append("")
+                lines.append("> 处理: 确认独有提交是否该合并（真交付）→ worktree-manager finish 或 merge 进 main；过时则删除。")
+                lines.append("")
+    except Exception:  # noqa: BLE001
+        pass  # 孤儿检测降级不影响主表
     lines += [
         "> 红线提醒: 不碰 scripts/audit/；不写审计标准；禁止自我审计。",
         "> 同类错误第二次出现 = 防线系统性失效，升级创始人。",
