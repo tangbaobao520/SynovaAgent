@@ -1,11 +1,11 @@
 node_modules/
 dist/
 data/
+# Python 虚拟环境（LLM verifier 等本地工具，2026-08-20）
+.venv*/
 /coverage/
 .env
 *.log
-# D460: llm-verifier 本地 venv（部署产物，不入 git；Win 侧同装）
-.venv-llmverifier/
 *.tgz
 *.tar.gz
 .DS_Store
@@ -67,6 +67,3 @@ release/
 # 根目录临时文档生成/审计/调试脚本（一次性脚手架，用完即弃）
 /_*.py
 /_*.txt
-
-# CI token (本地密钥, 永不入库)
-.synova-ci-token
