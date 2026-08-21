@@ -1,0 +1,30 @@
+{
+  "scenario_id": "GS-08",
+  "evidence_map": [
+    { "acceptance_point": "S8-1", "assertion_ids": ["template-loaded", "render-one-page"] },
+    { "acceptance_point": "S8-2", "assertion_ids": ["template-registered"] }
+  ],
+  "assertions": [
+    {
+      "id": "template-loaded",
+      "desc": "loadTemplate('executive-summary') → degraded=false（一页纸模板可用）",
+      "purpose": "证明一页纸报告模板可加载（S8-1；报告模板 K3 定稿前置就绪）",
+      "check": { "type": "file", "path": "__DATA_DIR__/load-result.json" },
+      "expect": { "exists": true, "contains": "\"degraded\":false" }
+    },
+    {
+      "id": "render-one-page",
+      "desc": "render 产物含一页纸结构：title + score + 卡片（移动端友好）",
+      "purpose": "证明一页纸渲染产物可读：标题/评分/卡片（S8-1；GS-01 产物 → 一页纸）",
+      "check": { "type": "file", "path": "__DATA_DIR__/render-meta.json" },
+      "expect": { "exists": true, "contains": "\"hasTitle\":true" }
+    },
+    {
+      "id": "template-registered",
+      "desc": "listTemplates() 含 executive-summary（模板注册可见）",
+      "purpose": "证明一页纸模板在注册表中可见（S8-2；文件驱动扩展）",
+      "check": { "type": "file", "path": "__DATA_DIR__/templates.json" },
+      "expect": { "exists": true, "contains": "executive-summary" }
+    }
+  ]
+}

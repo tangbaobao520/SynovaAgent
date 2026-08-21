@@ -252,8 +252,7 @@ async function checkDiskSpace(): Promise<CheckResult> {
 /** 尝试获取平台 statfs 函数(可能不可用) */
 function tryGetStatFs(): { statfsSync: ((path: string) => { bsize: number; bavail: number }) | null } {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const fsModule = require('fs') as typeof fs & {
+    const fsModule = fs as typeof fs & {
       statfsSync?: (path: string) => { bsize: number; bavail: number };
     };
     if (typeof fsModule.statfsSync === 'function') {

@@ -10,13 +10,14 @@
  */
 import { Router, type Request, type Response } from 'express';
 import { createLogger } from '@synova/logger';
+import { AdapterRegistry } from '../agent/adapter-registry';
+import { reloadAdapters } from '../agent/data-ingest-service';
 
 const log = createLogger('routes/adapters');
 const router = Router();
 
 router.get('/api/adapters', (_req: Request, res: Response) => {
   try {
-    const { AdapterRegistry } = require('../agent/adapter-registry');
     const registry = AdapterRegistry.getInstance();
     const state = registry.state();
     res.json({
@@ -40,7 +41,6 @@ router.get('/api/adapters', (_req: Request, res: Response) => {
 router.post('/api/adapters/reload', (_req: Request, res: Response) => {
   const startedAt = Date.now();
   try {
-    const { reloadAdapters } = require('../agent/data-ingest-service');
     const result = reloadAdapters();
     const durationMs = Date.now() - startedAt;
     log.info({ updated: result.updated, errors: result.errors.length, durationMs }, '适配器重新加载完成');

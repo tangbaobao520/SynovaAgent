@@ -415,4 +415,18 @@ Binary file .claude/bypass.log matches
 2026-08-21T18:40:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=docs | AGENT=deepseek-harness | HASH=a7652e366185ed2dc7499adbee174c466e3bcc6c
 2026-08-21T14:03:35Z possible-bypass diff=16699s
 2026-08-21T18:50:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=docs | AGENT=deepseek-harness | HASH=b9aedb6e619d976019268fa1e50ea99204c84e5a
+2026-08-21T22:37:01+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D454 | AGENT=deepseek-harness
+2026-08-21T22:37:18+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D454 | AGENT=deepseek-harness
+2026-08-21T22:37:34+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D454 | AGENT=deepseek-harness
+2026-08-21T22:37:48+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D454 | AGENT=deepseek-harness
+2026-08-21T22:40:27+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D454 | AGENT=deepseek-harness | HASH=8e4a0f29c40e96dff2f3830197eb68c44271bbd5
+2026-08-21T22:41:31+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D454 | AGENT=deepseek-harness | HASH=080fc7e4f599bca706fbc6adec5d61911fa4b0ed
+2026-08-22T00:56:13+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D446 | AGENT=deepseek-harness
+2026-08-22T00:57:36+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D446 | AGENT=deepseek-harness | HASH=4c8572a39bfc22a45b899a103b804432a905b5db
+2026-08-22T00:58:23+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D446 | AGENT=deepseek-harness
+2026-08-22T00:59:00+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D446 | AGENT=deepseek-harness | HASH=40b95846a8d4a4081ee5d675552b3cc582a4cbb6
+2026-08-22T01:10:16+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D446 | AGENT=deepseek-harness | HASH=71213a03301a5cbcbfb22bf88a4b1b1461721330
+2026-08-22T01:11:13+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D454 | AGENT=deepseek-harness
+2026-08-22T01:11:39+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D454 | AGENT=deepseek-harness
+2026-08-22T01:11:52+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D454 | AGENT=deepseek-harness
 2026-08-22T00:20:28+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/win-feishu-bridge

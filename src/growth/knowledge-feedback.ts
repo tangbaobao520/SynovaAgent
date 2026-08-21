@@ -16,6 +16,7 @@
  */
 import { createLogger } from '@synova/logger';
 import type { Goal } from './goal-types';
+import { getAgentMemoryStore } from '../l4/agent-memory-store';
 
 const log = createLogger('growth/knowledge-feedback');
 
@@ -345,7 +346,6 @@ export interface EffectReport {
  */
 export function writeEffectReport(report: EffectReport): void {
   try {
-    const { getAgentMemoryStore } = require('../l4/agent-memory-store');
     const store = getAgentMemoryStore();
     store.remember({
       orgId: 'default',
@@ -356,7 +356,6 @@ export function writeEffectReport(report: EffectReport): void {
       source: 'diagnosis',
       tags: ['effect_verification', report.status],
       expiresAt: null,
-      status: 'active',
     });
     log.info({ status: report.status, edgeId: report.edgeId, deltaPct: report.deltaPct }, '效果验证已记录');
   } catch (err: unknown) {

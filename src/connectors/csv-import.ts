@@ -15,7 +15,9 @@ import { createLogger } from '@synova/logger';
 import { readFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
 import { NodeType } from '@synova/ontology';
+import { createRequire } from 'module';
 
+const require = createRequire(import.meta.url);
 const log = createLogger('connectors/csv-import');
 
 export interface CSVRow {

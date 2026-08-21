@@ -12,6 +12,7 @@
  */
 import { Router, type Request, type Response } from 'express';
 import { createLogger } from '@synova/logger';
+import { listMemoryByType } from '../services/memory-access-service';
 
 const log = createLogger('routes/notifications');
 const router = Router();
@@ -72,14 +73,10 @@ function entryToNotification(entry: MemoryEntryLike): NotificationResponse {
 // GET /api/notifications — 通知列表
 router.get('/api/notifications', (req: Request, res: Response) => {
   try {
-    const { getAgentMemoryStore } = require('../l4/agent-memory-store');
-    const { getDatabase } = require('../init/engine-context');
-    const memStore = getAgentMemoryStore(getDatabase());
-
     const unreadOnly = req.query.unread === 'true';
 
     // 查询所有 sentinel_finding 类型的记忆（跨组织）
-    const entries: MemoryEntryLike[] = memStore.listByType('sentinel_finding', 50);
+    const entries: MemoryEntryLike[] = listMemoryByType('sentinel_finding', 50);
 
     let notifications: NotificationResponse[] = entries.map(entryToNotification);
 
@@ -114,11 +111,7 @@ router.post('/api/notifications/:id/read', (req: Request<{ id: string }>, res: R
 // POST /api/notifications/read-all — 全部已读
 router.post('/api/notifications/read-all', (req: Request, res: Response) => {
   try {
-    const { getAgentMemoryStore } = require('../l4/agent-memory-store');
-    const { getDatabase } = require('../init/engine-context');
-    const memStore = getAgentMemoryStore(getDatabase());
-
-    const entries: MemoryEntryLike[] = memStore.listByType('sentinel_finding', 200);
+    const entries: MemoryEntryLike[] = listMemoryByType('sentinel_finding', 200);
 
     for (const entry of entries) {
       readIds.add(entry.id);
@@ -135,11 +128,7 @@ router.post('/api/notifications/read-all', (req: Request, res: Response) => {
 // GET /api/notifications/unread-count — 未读数
 router.get('/api/notifications/unread-count', (req: Request, res: Response) => {
   try {
-    const { getAgentMemoryStore } = require('../l4/agent-memory-store');
-    const { getDatabase } = require('../init/engine-context');
-    const memStore = getAgentMemoryStore(getDatabase());
-
-    const entries: MemoryEntryLike[] = memStore.listByType('sentinel_finding', 200);
+    const entries: MemoryEntryLike[] = listMemoryByType('sentinel_finding', 200);
     const unreadCount = entries.filter((e: MemoryEntryLike) => !readIds.has(e.id)).length;
 
     res.json({ ok: true, count: unreadCount, degraded: false });

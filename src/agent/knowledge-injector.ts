@@ -20,6 +20,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { createLogger } from '@synova/logger';
+import { getExpertRegistry } from '../l3/expert-registry';
 
 const log = createLogger('agent/knowledge-injector');
 
@@ -63,7 +64,6 @@ function getBaseScopes(): string[] { return ['global', 'org', 'knowledge']; }
 function isAllowedScope(scope: string): boolean {
   if (getBaseScopes().includes(scope)) return true;
   if (scope.startsWith('expert:')) {
-    const { getExpertRegistry } = require('../l3/expert-registry') as { getExpertRegistry: () => { listTypes: () => string[] } };
     return getExpertRegistry().listTypes().includes(scope.replace('expert:', ''));
   }
   return false;

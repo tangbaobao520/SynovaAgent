@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "record_type": "scenario",
+  "scenario_id": "GS-01",
+  "source": "scripts/golden-scenarios/GS-01-first-diagnosis/expect.runtime.json",
+  "date": "2026-08-21",
+  "verdict": "pass",
+  "verdicts": [
+    {
+      "acceptance_point": "S0-1",
+      "verdict": "pass",
+      "quote": "noauth-401 pass: 无 JWT 调 /api/diagnosis/consult → 401（auth fail-closed）（符合预期）"
+    },
+    {
+      "acceptance_point": "S0-2",
+      "verdict": "pass",
+      "quote": "consult-entry-validated pass: 带 JWT 调 consult 缺 teamId → 400 + VALIDATION_ERROR（入口可达 + 参数契约）（符合预期） | reports-endpoint-ok pass: GET /api/sentinel/reports → HTTP 200（报告产物端点可达）（符合预期）"
+    }
+  ],
+  "assertions": [
+    {
+      "id": "noauth-401",
+      "desc": "无 JWT 调 /api/diagnosis/consult → 401（auth fail-closed）",
+      "purpose": "证明首诊入口鉴权边界：无 token 拒绝（S0-1；D232/D233 Electron 一体化前置就绪）",
+      "verdict": "pass",
+      "detail": "符合预期"
+    },
+    {
+      "id": "consult-entry-validated",
+      "desc": "带 JWT 调 consult 缺 teamId → 400 + VALIDATION_ERROR（入口可达 + 参数契约）",
+      "purpose": "证明首诊入口可达且参数契约正确（S0-2；问卷/诉求 → 六阶段诊断的入口）",
+      "verdict": "pass",
+      "detail": "符合预期"
+    },
+    {
+      "id": "reports-endpoint-ok",
+      "desc": "GET /api/sentinel/reports → HTTP 200（报告产物端点可达）",
+      "purpose": "证明首诊报告查询端点可用（S0-2；报告产物链路）",
+      "verdict": "pass",
+      "detail": "符合预期"
+    }
+  ]
+}

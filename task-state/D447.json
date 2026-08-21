@@ -1,12 +1,17 @@
 {
   "task_id": "D447",
   "title": "GS-06 进化闭环场景脚本（反馈注入 → loop-3/5 真实执行）",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": null,
-  "impl": null,
+  "impl": {
+    "commit": "4c8572a3",
+    "by": "deepseek-harness",
+    "at": "2026-08-22",
+    "note": "GS-06 进化闭环场景脚本（反馈注入 → loop-3/5 真实执行）：GS 场景脚本 + evidence 已提交（4c8572a3，诚实 RED 标注）"
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-08-21",
+  "updated_at": "2026-08-22",
   "updated_by": "deepseek-harness",
   "note": "GS-06：D333；场景脚本 = 产品线交付，归属 Harness（进审计无豁免） | 2026-08-21 CTO 派单给编码 session（见 docs/synova/coordination/编码session派单-20260821.md）",
   "priority": "P1"

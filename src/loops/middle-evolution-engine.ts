@@ -13,6 +13,7 @@
  */
 import { createLogger } from '@synova/logger';
 import type { AggregatedSignal } from '../growth/feedback-collector';
+import { getAgentMemoryStore } from '../l4/agent-memory-store';
 
 const log = createLogger('loops/middle-evolution-engine');
 
@@ -360,7 +361,6 @@ function writeExpertManifest(expertType: string, data: Record<string, unknown>):
  */
 function logCorrection(key: string, actionType: string, details: Record<string, unknown>): void {
   try {
-    const { getAgentMemoryStore } = require("../l4/agent-memory-store");
     const store = getAgentMemoryStore();
     store.remember({
       orgId: "synova",
@@ -371,7 +371,6 @@ function logCorrection(key: string, actionType: string, details: Record<string, 
       source: "ga_correction",
       tags: ["ga_correction", actionType],
       expiresAt: null,
-      status: "active",
     });
   } catch (err) {
     log.warn({ err: err instanceof Error ? err.message : String(err) }, "企业记忆访问失败");

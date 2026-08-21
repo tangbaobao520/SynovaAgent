@@ -9,6 +9,7 @@
  */
 import { Router, type Request, type Response } from 'express';
 import { createLogger } from '@synova/logger';
+import { extractRbacContext, canAccessWorkspace } from '../middleware/rbac';
 
 const log = createLogger('routes/workspaces-api');
 const router = Router();
@@ -127,7 +128,6 @@ router.get('/api/workspaces/:id/context', (req: Request, res: Response) => {
   const ws = store.get(id);
   if (!ws) return res.status(404).json({ ok: false, error: 'workspace not found' });
   // RBAC: 验证请求者是否有权限访问此工作区
-  const { extractRbacContext, canAccessWorkspace } = require('../middleware/rbac') as typeof import('../middleware/rbac');
   const ctx = extractRbacContext(req);
   if (!canAccessWorkspace(ctx, { visibility: ws.visibility, department: ws.department, owner: ws.owner })) {
     return res.status(403).json({ ok: false, error: 'access denied' });

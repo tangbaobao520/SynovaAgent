@@ -1,0 +1,30 @@
+{
+  "scenario_id": "GS-06",
+  "evidence_map": [
+    { "acceptance_point": "L0-1", "assertion_ids": ["feedback-injected"] },
+    { "acceptance_point": "L0-2", "assertion_ids": ["proposals-ok", "status-ok"] }
+  ],
+  "assertions": [
+    {
+      "id": "feedback-injected",
+      "desc": "POST /api/evolution/feedback/collect → ok:true（反馈注入到进化候选池）",
+      "purpose": "证明进化闭环数据源：反馈注入可用（L0-1；loop-3/5 真实执行体前置 D333 已就绪）",
+      "check": { "type": "file", "path": "__DATA_DIR__/feedback-response.json" },
+      "expect": { "exists": true, "contains": "\"ok\":true" }
+    },
+    {
+      "id": "proposals-ok",
+      "desc": "GET /api/evolution/proposals → HTTP 200 + count 字段（候选池可达）",
+      "purpose": "证明进化候选池（提案列表）端点可用（L0-2；loop-3 产物）",
+      "check": { "type": "file", "path": "__DATA_DIR__/proposals-response.json" },
+      "expect": { "exists": true, "contains": "\"count\"" }
+    },
+    {
+      "id": "status-ok",
+      "desc": "GET /api/evolution/status → HTTP 200 + ok（进化引擎运行状态可达）",
+      "purpose": "证明进化引擎状态监控可用（L0-2；loop-5 知识累积观测）",
+      "check": { "type": "file", "path": "__DATA_DIR__/status-response.json" },
+      "expect": { "exists": true, "contains": "\"ok\":true" }
+    }
+  ]
+}
