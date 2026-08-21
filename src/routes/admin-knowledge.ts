@@ -34,25 +34,28 @@ export function setFederatedPipeline(pipeline: FederatedPipeline): void {
 }
 
 /**
- * getStore — D391 M3 兜底：注入优先，未注入时实例化
+ * getStore — D391 M3 兜底 + D402 惰性单例：注入优先，未注入时首次构造后缓存复用
  * 契约:
  *   @input  — 无（读模块级注入状态）
- *   @output — KnowledgeStore 实例（注入的 mock/实例优先；否则 new KnowledgeStore(getDatabase())）
- *   @degraded — DB 未初始化 → getDatabase() throw → 由调用方 handler catch → 500 + degraded:true（铁律 24/31）
+ *   @output — KnowledgeStore 实例（注入的 mock/实例优先；否则 knowledgeStore ??= new KnowledgeStore(getDatabase())
+ *             惰性单例——首次构造成功后缓存，后续请求复用同一实例，避免每请求重跑 initSchema DDL）
+ *   @degraded — DB 未初始化 → getDatabase() throw → ??= 不完成赋值 → knowledgeStore 保持 null → 下次请求重试
+ *              （不缓存失败）；由调用方 handler catch → 500 + degraded:true（铁律 24/31）
  */
 function getStore(): KnowledgeStore {
-  return knowledgeStore ?? new KnowledgeStore(getDatabase());
+  return knowledgeStore ??= new KnowledgeStore(getDatabase());
 }
 
 /**
- * getPipeline — D391 M3 兜底：注入优先，未注入时实例化
+ * getPipeline — D391 M3 兜底 + D402 惰性单例：注入优先，未注入时首次构造后缓存复用
  * 契约:
  *   @input  — 无（读模块级注入状态）
- *   @output — FederatedPipeline 实例（注入优先；否则 new FederatedPipeline()，构造无外部依赖、内存态）
+ *   @output — FederatedPipeline 实例（注入优先；否则 federatedPipeline ??= new FederatedPipeline()
+ *             惰性单例——K3 D391 P1-1 修复：写后读回同一实例，mark-shareable 写入不再蒸发）
  *   @degraded — 无降级路径（构造不触 DB）；方法级错误由调用方 handler catch → 500 + degraded:true
  */
 function getPipeline(): FederatedPipeline {
-  return federatedPipeline ?? new FederatedPipeline();
+  return federatedPipeline ??= new FederatedPipeline();
 }
 
 /**

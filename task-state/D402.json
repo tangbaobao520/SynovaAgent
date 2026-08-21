@@ -1,17 +1,21 @@
 {
   "task_id": "D402",
   "title": "D391 审计 P1 修复（federated 兜底写入即蒸发 + 补 dev doc/brief）",
-  "status": "spec_done",
+  "status": "impl_done",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D402-federated-fix-20260816.md",
     "commit": "4df237a497d5efd4f0fd364c7d764026f6dced1d",
     "by": "dev-doc",
     "at": "2026-08-16"
   },
-  "impl": null,
+  "impl": {
+    "commit": "5c7cff5a4d760967a1a6a93c80ffe76e297cd366",
+    "by": "deepseek-harness",
+    "at": "2026-08-18"
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-08-18",
-  "updated_by": "CTO",
-  "note": "已派发编码 session（2026-08-18，D402-DISPATCH-20260818.md）；spec 就绪，待实现"
+  "updated_by": "deepseek-harness",
+  "note": "实现完成：getPipeline/getStore 惰性单例 ??= + T6b 改写写后读回断言（K3 D391 P1-1 闭合）；测试 27/27 绿；分支 feat/d402-federated-fix 已推送，待 PR 合并"
 }
