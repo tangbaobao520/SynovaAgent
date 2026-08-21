@@ -9,13 +9,14 @@
   },
   "impl": {
     "commit": "a12c4458",
-    "by": "deepseek-harness",
-    "at": "2026-08-19"
+    "by": "coding",
+    "at": "2026-08-19",
+    "note": "GS-05 alert-closure 场景脚本（honest RED 依赖 D356，已合 main 后待重跑转绿）"
   },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-08-19",
-  "updated_by": "deepseek-harness",
+  "updated_at": "2026-08-21",
+  "updated_by": "CTO",
   "note": "GS-05 场景脚本交付（诚实 RED）：2/4 断言绿（负向×2），ticket-created/dedup 诚实 RED——runSentinelOnce 绕过工单管线（D356 缺口）+ tickets API 与 DB 表不一致（独立发现）；隔离加固 SYNOVA_DB_PATH 覆盖已做；evidence 落盘",
   "priority": "P1"
 }
