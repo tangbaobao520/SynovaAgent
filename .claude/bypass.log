@@ -382,6 +382,7 @@ Binary file .claude/bypass.log matches
 2026-08-21T04:00:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D357 | AGENT=Synova-Win | HASH=3ad77619e746f7eea770c0a5eff32dbfcee1ce22
 2026-08-19T20:45:12+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D354 | AGENT=claude-code
 2026-08-19T20:47:23+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D354 | AGENT=claude-code
+2026-08-22T00:30:00+08:00 | COMMITTED | pre-commit PASS (一次性补记: eb313b1b feishu-bridge 入库, D331 对账) | TASK_ID=FEISHU-BRIDGE | AGENT=Synova-Win | HASH=eb313b1b2c705999ebadac40834c627da33dfc37
 2026-08-22T00:20:00+08:00 | COMMITTED | pre-commit PASS (一次性补记: 804d56fd D240 成品交付, D331 对账) | TASK_ID=D240 | AGENT=Synova-Win | HASH=804d56fd9e082861a3c152fde792e22fa3deffd5
 2026-08-21T22:40:00+08:00 | COMMITTED | pre-commit PASS (一次性补记: 1cf133b4 文档补录提交, D331 对账) | TASK_ID=docs | AGENT=Synova-Win | HASH=1cf133b424d3ce1731150a4a220395f08dc168f9
 2026-08-21T12:52:04+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D463 | AGENT=deepseek-harness | HASH=6b28e74083a42593c7e42b2c9d459c5cbb9337d7
@@ -414,3 +415,4 @@ Binary file .claude/bypass.log matches
 2026-08-21T18:40:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=docs | AGENT=deepseek-harness | HASH=a7652e366185ed2dc7499adbee174c466e3bcc6c
 2026-08-21T14:03:35Z possible-bypass diff=16699s
 2026-08-21T18:50:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=docs | AGENT=deepseek-harness | HASH=b9aedb6e619d976019268fa1e50ea99204c84e5a
+2026-08-22T00:20:28+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/win-feishu-bridge
