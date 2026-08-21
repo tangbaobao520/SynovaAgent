@@ -356,3 +356,6 @@ Binary file .claude/bypass.log matches
 2026-08-20T01:35:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: docs(research): DSH 迁移施工图 + 一页纸大纲) | TASK_ID=merge | AGENT=Synova-Win | HASH=5fa489f05f1a9671fa85a62cf6672dca58fc155f
 2026-08-18T23:15:28+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D402 | AGENT=deepseek-harness | HASH=5c7cff5a4d760967a1a6a93c80ffe76e297cd366
 2026-08-21T00:00:00+08:00 | COMMITTED | pre-commit PASS (D402+D445 merge) | TASK_ID=merge | AGENT=DeepSeek-Harness | HASH=96e982d059bbddeae21360c3fee8072397d40388
+2026-08-21T01:45:30Z possible-bypass diff=131724s
+2026-08-21T00:05:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: chore(codex): .gitignore 加 .venv + 台账登记 ) | TASK_ID=merge | AGENT=codex | HASH=5c1a94c6fa8f50e2d05812ddc0b14f4e714c21b1
+2026-08-21T00:05:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: docs(research): 施工图两文件修正（基线/四色/阶段细节）) | TASK_ID=merge | AGENT=codex | HASH=39c832e852d65adb23e5c2bb523156c48a012030
