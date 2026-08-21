@@ -382,6 +382,7 @@ Binary file .claude/bypass.log matches
 2026-08-21T04:00:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D357 | AGENT=Synova-Win | HASH=3ad77619e746f7eea770c0a5eff32dbfcee1ce22
 2026-08-19T20:45:12+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D354 | AGENT=claude-code
 2026-08-19T20:47:23+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D354 | AGENT=claude-code
+2026-08-22T00:20:00+08:00 | COMMITTED | pre-commit PASS (一次性补记: 804d56fd D240 成品交付, D331 对账) | TASK_ID=D240 | AGENT=Synova-Win | HASH=804d56fd9e082861a3c152fde792e22fa3deffd5
 2026-08-21T22:40:00+08:00 | COMMITTED | pre-commit PASS (一次性补记: 1cf133b4 文档补录提交, D331 对账) | TASK_ID=docs | AGENT=Synova-Win | HASH=1cf133b424d3ce1731150a4a220395f08dc168f9
 2026-08-21T12:52:04+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D463 | AGENT=deepseek-harness | HASH=6b28e74083a42593c7e42b2c9d459c5cbb9337d7
 2026-08-21T12:53:47+08:00 | COMMITTED | pre-commit PASS (一次性补记: be9c4cc6 文档措辞提交直提, D331 对账) | TASK_ID=D357 | AGENT=Synova-Win | HASH=be9c4cc68bf979898b82a093a96241d1d9d8bd8a
