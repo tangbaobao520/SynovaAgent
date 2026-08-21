@@ -1,13 +1,17 @@
 {
   "task_id": "D455",
   "title": "修复 D355 残留 — cashBalance↔cash 对齐 + compute filter bug",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": null,
-  "impl": null,
+  "impl": {
+    "commit": "bcfd466b",
+    "by": "synova-mac",
+    "at": "2026-08-18"
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-08-18",
-  "updated_by": "alloc-task-id",
-  "note": "创始人授权修复 D355（99fa8df5）验收不完整：erp-standard cashBalance→cash + operatingExpenses→operating_expense（对齐 financial.json snake_case）+ compute filter {[teamId]:teamId}→无 filter。GS-03 转绿前置。",
+  "updated_at": "2026-08-21",
+  "updated_by": "deepseek-harness",
+  "note": "创始人授权修复 D355（99fa8df5）验收不完整：erp-standard cashBalance→cash + operatingExpenses→operating_expense（对齐 financial.json snake_case）+ compute filter {[teamId]:teamId}→无 filter。GS-03 转绿前置。 | 2026-08-21 CTO 回填：bcfd466b 已在 main",
   "priority": "P0"
 }
