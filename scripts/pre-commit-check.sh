@@ -303,9 +303,9 @@ echo -e "${CYAN}── 组 1/13: 类型安全 + 硬编码数据 ──${RESET}"
 if [ -n "${SYNO_DIFF_BASE:-}" ]; then
   AS_ANY_DIFF="$(git diff "$SYNO_DIFF_BASE"...HEAD -- src/ 2>/dev/null || true)"
 else
-  AS_ANY_DIFF="$GIT_CACHED_DIFF"
+  AS_ANY_DIFF="$(git diff --cached -- src/ 2>/dev/null || true)"
 fi
-M=$(echo "$AS_ANY_DIFF" | grep -E '^\+' | grep -v '^+++' | grep -E 'as any\b' || true)
+M=$(echo "$AS_ANY_DIFF" | grep -E '^\+' | grep -v '^+++' | grep -E 'as any\b' | grep -vE '^\+\s*(//|/\*|\*|#)' || true)
 hard_check "as any 零容忍（新增，铁律 38；存量独立清理）" "$M"
 
 # 1a-2. from" ???? (D93/D95 ????)
