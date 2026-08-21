@@ -1,7 +1,10 @@
 # FEISHU-BRIDGE 入库 — 飞书↔Codex 对话桥 v2.0（2026-08-22）
 
-- **项目身份**: SynovaAgent 运维工具（scripts/feishu-bridge/）——飞书机器人 ↔ Codex 对话桥，供内部/客户对话使用
-- **Q1 调研**: MACBOOK-SETUP.md:97 与 DASHBOARD 已引用 `scripts/feishu-bridge/feishu_bridge.py` 但文件从未入库（悬空引用）；脚本 v2.0（2026-08-07，lark-cli 版）为成品（README + 配置模板 + 日志/超时/白名单齐全）
+## Q0: 定位
+SynovaAgent 运维工具（scripts/feishu-bridge/）——飞书机器人 ↔ Codex 对话桥，供内部/客户对话使用
+
+## Q1: 调研
+MACBOOK-SETUP.md:97 与 DASHBOARD 已引用 `scripts/feishu-bridge/feishu_bridge.py` 但文件从未入库（悬空引用）；脚本 v2.0（2026-08-07，lark-cli 版）为成品（README + 配置模板 + 日志/超时/白名单齐全）
 ## Q2: 范围
 做什么
 - scripts/feishu-bridge/feishu_bridge.py
@@ -47,11 +50,13 @@
 ## Q3: 验收
 入口=`python scripts/feishu-bridge/feishu_bridge.py`（MACBOOK-SETUP 引用路径可解析）；交互=飞书消息→Codex 转发→回复；结果=脚本入库 + README/配置模板齐全 + 悬空引用修复
 
-## 架构层
+## 架构层:
 运维工具层（scripts/），不涉 src 五层
 
 ## 接口审计
 feishu_bridge.py 依赖 lark-cli + codex CLI（README 前置条件写明）；@larksuite/cli 非仓库依赖（全局安装，文档注明）；无 src/ 引用
 
-## Done 验证
-grep -rn "scripts/feishu-bridge" docs/synova/setup/MACBOOK-SETUP.md 命中；git ls-files scripts/feishu-bridge 恰 4 文件；pre-commit 全过；secrets 扫描不含真实凭据
+## Done 标准
+- grep -rn "scripts/feishu-bridge" docs/synova/setup/MACBOOK-SETUP.md 命中
+- git ls-files scripts/feishu-bridge 恰 4 文件
+- pre-commit 全过；secrets 扫描不含真实凭据
