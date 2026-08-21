@@ -365,5 +365,18 @@ Binary file .claude/bypass.log matches
 2026-08-21T01:47:29Z possible-bypass diff=131843s
 2026-08-21T02:12:22Z possible-bypass diff=133336s
 2026-08-21T00:30:00+08:00 | COMMITTED | pre-commit PASS (D461) | TASK_ID=D461 | AGENT=DeepSeek-Harness | HASH=aeb395c80384a9899f71f34dfa9b488352ad3182
+2026-08-21T02:12:29Z possible-bypass diff=133343s
+2026-08-21T10:43:29+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D462 | AGENT=deepseek-harness | HASH=7fe92110ab23c85c2b8d9b350e4253de696cb6b1
+2026-08-21T10:44:27+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D462 | AGENT=deepseek-harness | HASH=85112bd8ac112c69e37cd2e8343575a78c53e07a
+2026-08-21T11:12:01+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D443 | AGENT=deepseek-harness
+2026-08-21T11:12:17+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D443 | AGENT=deepseek-harness
+2026-08-21T11:13:18+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D443 | AGENT=deepseek-harness | HASH=fa8ab73cf6c775286aff6573379dcb4974b9e3f6
+2026-08-21T11:16:43+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D444 | AGENT=deepseek-harness
+2026-08-21T11:16:58+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D444 | AGENT=deepseek-harness
+2026-08-21T11:17:46+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D444 | AGENT=deepseek-harness | HASH=ff524686e5f6e98e54987dc0b5b5649412336243
+2026-08-21T03:32:56Z possible-bypass diff=138170s
+2026-08-21T01:00:00+08:00 | COMMITTED | pre-commit PASS (分工规划) | TASK_ID=docs | AGENT=DeepSeek-Harness | HASH=53e98f89bc2cff90a376099b98d4d8df4ddb9a6e
+2026-08-21T03:33:04Z possible-bypass diff=138178s
 2026-08-21T10:43:29+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D462 | AGENT=deepseek-harness | HASH=7fe92110ab23c85c2b8d9b350e4253de696cb6b1
 2026-08-19T15:41:46+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D357 | AGENT=Claude-Code
+2026-08-21T04:00:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D357 | AGENT=Synova-Win | HASH=3ad77619e746f7eea770c0a5eff32dbfcee1ce22
