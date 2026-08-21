@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "record_type": "scenario",
+  "scenario_id": "GS-03",
+  "source": "scripts/golden-scenarios/GS-03-capital-cycle/expect.runtime.json",
+  "date": "2026-08-21",
+  "verdict": "pass",
+  "verdicts": [
+    {
+      "acceptance_point": "4-5",
+      "verdict": "pass",
+      "quote": "erp-upload-ok pass: erp-standard 数据经 field-mapping 写入本体 Financial 节点（符合预期）"
+    },
+    {
+      "acceptance_point": "5-2",
+      "verdict": "pass",
+      "quote": "cash-runway-critical-triggered pass: 低现金数据触发 cash-runway critical 阈值告警「现金流危急」（符合预期）"
+    },
+    {
+      "acceptance_point": "4-7",
+      "verdict": "pass",
+      "quote": "no-false-critical-zero-runway pass: 降级时不误报「跑道0.0个月」假 critical（负向断言）（符合预期）"
+    }
+  ],
+  "assertions": [
+    {
+      "id": "erp-upload-ok",
+      "desc": "erp-standard 数据经 field-mapping 写入本体 Financial 节点",
+      "purpose": "证明 ERP 连接器 erp-standard 契约可注入数据（验收点 4-5）",
+      "verdict": "pass",
+      "detail": "符合预期"
+    },
+    {
+      "id": "cash-runway-critical-triggered",
+      "desc": "低现金数据触发 cash-runway critical 阈值告警「现金流危急」",
+      "purpose": "证明 cashBalance↔cash 对齐后低现金触发阈值（验收点 5-2）",
+      "verdict": "pass",
+      "detail": "符合预期"
+    },
+    {
+      "id": "no-false-critical-zero-runway",
+      "desc": "降级时不误报「跑道0.0个月」假 critical（负向断言）",
+      "purpose": "证明数据不足时 fail-closed 降级而非误报（验收点 4-7，D356 守卫）",
+      "verdict": "pass",
+      "detail": "符合预期"
+    }
+  ]
+}
