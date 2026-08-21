@@ -9,13 +9,14 @@
     "at": "2026-08-16"
   },
   "impl": {
-    "commit": "5c7cff5a4d760967a1a6a93c80ffe76e297cd366",
-    "by": "deepseek-harness",
-    "at": "2026-08-18"
+    "commit": "5c7cff5a",
+    "by": "coding",
+    "at": "2026-08-18",
+    "note": "getPipeline/getStore ??= 惰性单例 + 写后读回测试，K3 D391 P1-1 闭合"
   },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-08-18",
-  "updated_by": "deepseek-harness",
+  "updated_at": "2026-08-21",
+  "updated_by": "CTO",
   "note": "实现完成：getPipeline/getStore 惰性单例 ??= + T6b 改写写后读回断言（K3 D391 P1-1 闭合）；测试 27/27 绿；分支 feat/d402-federated-fix 已推送，待 PR 合并"
 }
