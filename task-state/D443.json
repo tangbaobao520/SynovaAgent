@@ -1,13 +1,17 @@
 {
   "task_id": "D443",
   "title": "GS-02 客户循环场景脚本（crm-standard → customer-demand-shift critical）",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": null,
-  "impl": null,
+  "impl": {
+    "commit": "PENDING",
+    "by": "deepseek-harness",
+    "at": "2026-08-21"
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-08-18",
-  "updated_by": "alloc-task-id",
-  "note": "GS-02：D355/D357 依赖待确认；场景脚本 = 产品线交付，归属 Harness（进审计无豁免）",
+  "updated_at": "2026-08-21",
+  "updated_by": "deepseek-harness",
+  "note": "GS-02 场景交付（诚实 RED 2/3）：注入绿 + critical RED——crm-standard 映射↔customer-demand-shift compute 契约错位（revenue/churn 缺失，D355 同型），转绿留独立任务",
   "priority": "P1"
 }

@@ -1,0 +1,30 @@
+{
+  "scenario_id": "GS-02",
+  "evidence_map": [
+    { "acceptance_point": "S1-1", "assertion_ids": ["crm-upload-ok", "demand-shift-critical-triggered"] },
+    { "acceptance_point": "S1-4", "assertion_ids": ["no-false-critical-empty"] }
+  ],
+  "assertions": [
+    {
+      "id": "no-false-critical-empty",
+      "desc": "空库（未注入）触发 customer-demand-shift → 无 critical 告警（负向断言）",
+      "purpose": "证明无数据时 fail-closed 降级、不误报客户越阈告警（S1-4；K3 P0-3 防假转绿）",
+      "check": { "type": "file", "path": "__DATA_DIR__/run-empty-response.json" },
+      "expect": { "exists": true, "notContains": "\"severity\":\"critical\"" }
+    },
+    {
+      "id": "crm-upload-ok",
+      "desc": "crm-standard 数据经 field-mapping 写入 Client 节点（Market→Client 收敛前提）",
+      "purpose": "证明 CRM 数据注入链路可用（S1-1；D357 MVP 上传路径）",
+      "check": { "type": "file", "path": "__DATA_DIR__/upload-response.json" },
+      "expect": { "exists": true, "contains": "\"nodeType\":\"Client\"" }
+    },
+    {
+      "id": "demand-shift-critical-triggered",
+      "desc": "高流失/高集中度客户数据触发 customer-demand-shift critical（客户需求迁移）",
+      "purpose": "证明客户循环越阈告警闭环：Client 数据 → 需求迁移哨兵 → critical（S1-1）",
+      "check": { "type": "file", "path": "__DATA_DIR__/run-response.json" },
+      "expect": { "exists": true, "contains": "\"severity\":\"critical\"" }
+    }
+  ]
+}
