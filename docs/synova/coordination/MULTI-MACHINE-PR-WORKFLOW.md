@@ -86,6 +86,7 @@ git merge main          # 推荐（不改 hash，bypass.log 对账不裂）
 4. **禁止 `git stash`**（铁律 0-3，D312 事故）。保存进度用 commit 或 worktree。
 5. **禁止 force push 共享分支**。`git push -f` 只允许在自己的私人分支上使用；对 main 和他人分支的 force push 是事故级操作。
 6. **tag 只由 synova-commit 自动创建**（D319）。手动打 tag 会与 D331 锚点校验冲突。
+7. **同步降频（D468, 2026-08-21）**：提交前同步检查（D335 check-branch-sync）已砍——提交时不再强制"基于最新 main"。**开工前拉平（第 1 条）+ push 前防覆盖（门禁 0-1）保留**，防双机互相覆盖的物理保障不丢。
 
 ## 五、应急联系
 
