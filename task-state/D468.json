@@ -1,11 +1,13 @@
 {
   "task_id": "D468",
-  "title": "sync-downgrade",
-  "status": "claimed",
+  "title": "方案3 同步降频（砍 D335 提交前同步）",
+  "status": "impl_done",
   "spec": null,
-  "impl": null,
+  "impl": {"commit": "622902cf", "by": "deepseek-harness", "at": "2026-08-21"},
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-08-21",
-  "updated_by": "alloc-task-id"
+  "updated_by": "deepseek-harness",
+  "note": "方案3同步降频：砍 D335 提交前同步（synova-commit 不再调用 check-branch-sync），删除 check-branch-sync.sh + test 死代码（铁律37），D334 push 前防覆盖保留。提交时不再强制基于最新 main，push 时 D334 单端兜底",
+  "priority": "P1"
 }
