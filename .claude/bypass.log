@@ -402,3 +402,4 @@ Binary file .claude/bypass.log matches
 2026-08-21T17:15:25+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/d467-move-ci
 2026-08-21T17:00:00+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D467 | AGENT=deepseek-harness | HASH=ab05e2de384b8647142872d39769dd9e1cf65251
 2026-08-21T17:10:00+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D467 | AGENT=deepseek-harness | HASH=18c7bf8fc805a265d4aa766d2f5aaa7c35cabe70
+2026-08-21T17:20:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=D467 | AGENT=deepseek-harness | HASH=de6a62e23cbc4da583bd71db7bcd56407bf4d858
