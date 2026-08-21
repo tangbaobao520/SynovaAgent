@@ -1,13 +1,17 @@
 {
   "task_id": "D444",
   "title": "GS-04 人才循环场景脚本（hr-standard → key-person-risk）",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": null,
-  "impl": null,
+  "impl": {
+    "commit": "PENDING",
+    "by": "deepseek-harness",
+    "at": "2026-08-21"
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-08-18",
-  "updated_by": "alloc-task-id",
-  "note": "GS-04：D355/D357 依赖待确认；场景脚本 = 产品线交付，归属 Harness（进审计无豁免）",
+  "updated_at": "2026-08-21",
+  "updated_by": "deepseek-harness",
+  "note": "GS-04 场景交付（诚实 RED 2/3）：注入绿 + critical RED——hr-standard 映射↔key-person-risk compute 契约错位（name/domains/role 缺失，GS-02 同型），转绿留独立任务",
   "priority": "P1"
 }

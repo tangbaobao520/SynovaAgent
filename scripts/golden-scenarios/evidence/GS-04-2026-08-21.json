@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "record_type": "scenario",
+  "scenario_id": "GS-04",
+  "source": "scripts/golden-scenarios/GS-04-talent-cycle/expect.runtime.json",
+  "date": "2026-08-21",
+  "verdict": "fail",
+  "verdicts": [
+    {
+      "acceptance_point": "S1-1",
+      "verdict": "fail",
+      "quote": "hr-upload-ok pass: hr-standard 数据经 field-mapping 写入 Person 节点（符合预期） | key-person-risk-triggered fail: 关键人数据触发 key-person-risk critical（Bus Factor / 决策集中）（contains \"\"severity\":\"critical\"\" 未命中）"
+    },
+    {
+      "acceptance_point": "S1-4",
+      "verdict": "pass",
+      "quote": "no-false-critical-empty pass: 空库（未注入）触发 key-person-risk → 无 critical 告警（负向断言）（符合预期）"
+    }
+  ],
+  "assertions": [
+    {
+      "id": "no-false-critical-empty",
+      "desc": "空库（未注入）触发 key-person-risk → 无 critical 告警（负向断言）",
+      "purpose": "证明无数据时 fail-closed 降级、不误报关键人风险（S1-4；K3 P0-3 防假转绿）",
+      "verdict": "pass",
+      "detail": "符合预期"
+    },
+    {
+      "id": "hr-upload-ok",
+      "desc": "hr-standard 数据经 field-mapping 写入 Person 节点",
+      "purpose": "证明 HR 数据注入链路可用（S1-1；D357 MVP 上传路径）",
+      "verdict": "pass",
+      "detail": "符合预期"
+    },
+    {
+      "id": "key-person-risk-triggered",
+      "desc": "关键人数据触发 key-person-risk critical（Bus Factor / 决策集中）",
+      "purpose": "证明人才循环越阈告警闭环：Person 数据 → 关键人风险哨兵 → critical（S1-1）",
+      "verdict": "fail",
+      "detail": "contains \"\"severity\":\"critical\"\" 未命中"
+    }
+  ]
+}
