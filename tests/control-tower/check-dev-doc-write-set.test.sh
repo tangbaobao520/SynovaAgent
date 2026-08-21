@@ -9,7 +9,8 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 #   正常 — 写集=实际变更 → exit 0
 #   降级 —（fail-open 路径由既有 write-set-check.test.sh 覆盖）
 #   边界 — 反向漂移（实际变更但未登记）→ exit 1 点名; 文档类豁免（不算漂移）→ exit 0
-#   接线 — 反向对账代码真实存在于脚本（铁律 0-2）
+#   接线 — 反向对账代码真实存在于脚本（铁律 0-2）; quotepath=false 覆盖 3 处 git diff（G12c 中文名盲区）
+#   行为 — 中文文件名在 core.quotepath 下还原（K3 上报 + codex 复踩的盲区，真实 git 验证）
 # 沙箱: SYNO_DEV_DOC 注入 dev doc（跳过得正向对账）+ SYNO_STAGED_FILES 注入暂存文件;
 #       mktemp 沙箱 + trap 清理, 零真实 git 暂存.
 # ═══════════════════════════════════════════════════════════════
@@ -62,6 +63,27 @@ SYNO_DEV_DOC="$DEVDOC" SYNO_STAGED_FILES="$REAL
 docs/foo.md" bash "$GATE" >/dev/null 2>&1
 rc=$?
 [ "$rc" -eq 0 ] && ok "文档豁免: docs/ 不算漂移 → exit 0" || no "文档豁免应 exit 0, 实际 $rc"
+
+# ── 接线: 中文文件名 quotepath 修复（G12c 盲区，K3 上报 + codex 复踩）──
+QW_COUNT=$(grep -c 'git -c core.quotepath=false diff' "$GATE" 2>/dev/null || echo 0)
+QW_COUNT=$(echo "$QW_COUNT" | tr -d '\n\r')
+[ "$QW_COUNT" -ge 3 ] && ok "接线: quotepath=false 覆盖 3 处 git diff（实际 ${QW_COUNT}）" || no "quotepath=false 应 ≥3 处, 实际 ${QW_COUNT}"
+
+# ── 行为: 中文文件名在 core.quotepath 下还原（真实 git 验证）──
+TMPGIT="$TMPD/quotepath-git"
+mkdir -p "$TMPGIT" && cd "$TMPGIT" || exit 1
+git init -q
+git config user.email t@t.com && git config user.name t
+echo x > "数据层-测试.md"
+git add "数据层-测试.md"
+ESCAPED=$(git diff --cached --name-only | head -1)
+NORMAL=$(git -c core.quotepath=false diff --cached --name-only | head -1)
+cd "$REPO" || exit 1
+if echo "$ESCAPED" | grep -q '\\[0-9]' && echo "$NORMAL" | grep -q '数据层-测试'; then
+  ok "行为: 默认转义 → quotepath=false 还原中文"
+else
+  no "quotepath 行为异常: escaped=$ESCAPED normal=$NORMAL"
+fi
 
 echo ""
 echo "结果: $PASS 通过, $FAIL 失败"

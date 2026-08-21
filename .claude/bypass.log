@@ -386,3 +386,4 @@ Binary file .claude/bypass.log matches
 2026-08-21T12:53:47+08:00 | COMMITTED | pre-commit PASS (一次性补记: be9c4cc6 文档措辞提交直提, D331 对账) | TASK_ID=D357 | AGENT=Synova-Win | HASH=be9c4cc68bf979898b82a093a96241d1d9d8bd8a
 2026-08-21T05:30:40Z possible-bypass diff=949s
 2026-08-21T04:10:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=docs | AGENT=deepseek-harness | HASH=c34127d949204c6915dea2fcbde23807212201da
+2026-08-21T15:00:00+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D464 | AGENT=deepseek-harness | HASH=d108d5df1d7010894b1295f3c7fc3fa9c21af903

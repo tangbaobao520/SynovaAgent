@@ -49,7 +49,7 @@ log_degraded() {
 if [ -z "$DOC" ] && [ -n "${SYNO_DEV_DOC:-}" ]; then DOC="$SYNO_DEV_DOC"; fi
 
 if [ -z "$DOC" ]; then
-  DOCS=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep -E '^docs/plans/codex/implementation/SYNOVA-IMPL-.*\.md$' || true)
+  DOCS=$(git -c core.quotepath=false diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep -E '^docs/plans/codex/implementation/SYNOVA-IMPL-.*\.md$' || true)
   if [ -z "$DOCS" ]; then
     echo "[check-dev-doc-write-set] ✅ 无暂存 dev doc — 跳过"
     exit 0
@@ -114,8 +114,8 @@ while IFS= read -r entry; do
   # git diff 命中（声明"修改"但零实际变更 → 漂移；SYNO_DEV_DOC 注入时跳过此检查）
   # D316: grep -qiF 大小写不敏感（VERSION.md vs clean 后 version.md）
   if [ -z "${SYNO_DEV_DOC:-}" ]; then
-    if ! git diff HEAD --name-only 2>/dev/null | grep -qiF "$entry"; then
-      if ! git diff --cached --name-only 2>/dev/null | grep -qiF "$entry"; then
+    if ! git -c core.quotepath=false diff HEAD --name-only 2>/dev/null | grep -qiF "$entry"; then
+      if ! git -c core.quotepath=false diff --cached --name-only 2>/dev/null | grep -qiF "$entry"; then
         DRIFT="${DRIFT}  ${entry}（声明修改但零实际变更）\n"
       fi
     fi
@@ -134,7 +134,7 @@ if inj is not None:
     out = inj
 else:
     try:
-        out = subprocess.run(["git","diff","--cached","--name-only","--diff-filter=ACMR"],capture_output=True,text=True,cwd=repo).stdout
+        out = subprocess.run(["git","-c","core.quotepath=false","diff","--cached","--name-only","--diff-filter=ACMR"],capture_output=True,text=True,cwd=repo).stdout
     except Exception:
         out = ""
 CODE = re.compile(r'\.(ts|tsx|js|jsx|py|sh|json)$')

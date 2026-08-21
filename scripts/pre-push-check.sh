@@ -1,4 +1,7 @@
 #!/bin/bash
+# D313 M5 UTF-8 强制: Windows 控制台/子进程统一 UTF-8
+export PYTHONIOENCODING=utf-8
+export LC_ALL=C.UTF-8 2>/dev/null || true
 # ═══════════════════════════════════════════════════════════════════════════════
 # Loop Engineering V4.7.6+D334 — pre-push (同步检查 + secrets + golden-case + vitest 改基 + 并行协调)
 #
@@ -99,14 +102,16 @@ check_push_sync() {
   if [[ "$behind" -gt 0 && "$ahead" -gt 0 ]]; then
     echo -e "  ${RED}❌ 门禁 0-1: 本地与远端分叉 — 本地领先 $ahead / 落后 $behind${RESET}"
     echo "  禁止直接 push (会覆盖对方工作) 也禁止 force push。先集成远端:"
-    echo "    git rebase $fremote/$fbranch   # 或 git merge $fremote/$fbranch"
+    echo "    git merge $fremote/$fbranch   # 推荐（不改 hash，bypass 对账不裂）"
+    echo "    # 或 git rebase $fremote/${fbranch}（会改 hash → bypass 对账断裂，需按 D451 补记）"
     return 1
   fi
   if [[ "$behind" -gt 0 ]]; then
     echo -e "  ${RED}❌ 门禁 0-1: 远端有 $behind 个本机没有的 commit — 本地已过期${RESET}"
     echo "  注意: git status 的 ahead 是相对本机缓存的远端引用, 不是远端真身。"
     echo "  先拉平再 push:"
-    echo "    git pull --ff-only   # 或 git rebase $fremote/$fbranch"
+    echo "    git pull --ff-only   # 推荐（不改 hash，bypass 对账不裂）"
+    echo "    # 或 git rebase $fremote/${fbranch}（会改 hash → 需按 D451 补记 bypass.log）"
     return 1
   fi
   echo -e "  ${GREEN}✅ 门禁 0-1: 与远端同步 (本地领先 $ahead)${RESET}"
