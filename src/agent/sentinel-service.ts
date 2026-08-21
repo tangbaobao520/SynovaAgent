@@ -170,6 +170,25 @@ export async function runSentinelOnce(sentinelId: string): Promise<RunOnceRespon
     }
     if (!sentinel) return { ok: false, sentinelId, result: null, error: `哨兵不存在: ${sentinelId}` };
 
+    // GS-05 告警闭环（D356 缺口修复）: runner 可用时走 runner 管线——runOnce（记录运行
+    // → recentResults）+ aggregateAndDispatch（信号聚合 → 专家 → sentinel_tickets 工单闭环）。
+    // 复用现有管线（I2 单源），不重复工单逻辑。降级（铁律 24/31）: runner 不可用/管线失败
+    // → 回退直连 check（保持 D453 行为，log.warn 不静默）。
+    const { getGlobalSentinelRunner } = await import('../sentinel/runner');
+    const runner = getGlobalSentinelRunner();
+    if (runner) {
+      try {
+        const runResult = await runner.runOnce(sentinelId);
+        if (runResult) {
+          // 告警闭环: 记录已落 → 聚合信号 → 专家诊断 → 工单（critical/emergency 自动 INSERT OR REPLACE）
+          await runner.aggregateAndDispatch();
+          return { ok: true, sentinelId, result: runResult };
+        }
+      } catch (err: unknown) {
+        log.warn({ err: err instanceof Error ? err.message : String(err), sentinelId }, '[runSentinelOnce] runner 管线失败 — 降级直连 check');
+      }
+    }
+
     // D453: 修复 db:undefined → 哨兵空 store。构造 GraphStore 上下文（对齐 runner.ts:835-852）。
     // 降级: GraphStore 构造失败 → 回退原始 db（log.warn，不静默，铁律 24/31）。
     const { getDatabase } = await import('../init/engine-context');

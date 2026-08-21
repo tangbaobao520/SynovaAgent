@@ -1,0 +1,16 @@
+{
+  "task_id": "D463",
+  "title": "GS-05 告警闭环修复：run-once 接 runner 管线 + critical/emergency 自动建工单（选项 A）",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "commit": "6b28e740",
+    "by": "deepseek-harness",
+    "at": "2026-08-21"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-21",
+  "updated_by": "deepseek-harness",
+  "note": "GS-05 告警闭环（选项 A）：run-once 接 runner 管线 + critical/emergency 自动建工单 → 4/4 全绿（sentinel 134 测试全过）"
+}
