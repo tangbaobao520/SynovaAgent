@@ -9,7 +9,7 @@
  */
 
 import { createLogger } from '@synova/logger';
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync, existsSync, readdirSync } from 'fs';
 import { join } from 'path';
 
 const log = createLogger('agent/skill-lazy-loader');
@@ -97,7 +97,6 @@ export class SkillLazyLoader {
   scanFromFiles(baseDir: string): number {
     let count = 0;
     try {
-      const { readdirSync } = require('fs') as typeof import('fs');
       if (!existsSync(baseDir)) {
         log.debug({ baseDir }, 'Skill 扫描目录不存在, 跳过');
         return 0;

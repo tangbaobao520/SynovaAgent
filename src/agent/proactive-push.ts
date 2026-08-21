@@ -20,6 +20,8 @@ import type { ActionStoreLike } from "../growth/action-types";
 import type { WorkspaceRole } from "../middleware/rbac";
 import { createLogger } from '@synova/logger';
 import { InteractiveCardHandler } from './interactive-card';
+import { execSync } from 'child_process';
+import { join } from 'path';
 
 const log = createLogger('agent/proactive-push');
 
@@ -187,8 +189,7 @@ export class ProactivePush {
 
     // D249: 产出控制塔信号 — Electron main.cjs 轮询 cockpit/data 触发桌面通知
     try {
-      const { execSync } = require('child_process');
-      const script = require('path').join(process.cwd(), 'scripts/control-tower/emit-signal.py');
+      const script = join(process.cwd(), 'scripts/control-tower/emit-signal.py');
       const sigStatus = finding.severity === 'critical' ? 'red' : finding.severity === 'warning' ? 'yellow' : 'green';
       execSync('python "' + script + '" sentinel ' + sigStatus + ' "' + (finding.title || 'P0 finding').slice(0, 80) + '"', { timeout: 5000, stdio: 'ignore' });
     } catch (err) {

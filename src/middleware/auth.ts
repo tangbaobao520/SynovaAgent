@@ -14,6 +14,7 @@ import { createHmac, randomUUID, timingSafeEqual } from 'crypto';
 import type { Request, Response, NextFunction } from 'express';
 import { createLogger } from '@synova/logger';
 import type { WorkspaceRole } from './rbac';
+import { runWithContext } from '../services/request-context';
 
 const log = createLogger('auth');
 
@@ -298,7 +299,6 @@ export function jwtAuthMiddleware(req: Request, res: Response, next: NextFunctio
     // 同步注入 request-context（兼容 runWithContext 模式）
     // request-context 不可用时至少有 req.auth
     try {
-      const { runWithContext } = require('../services/request-context');
       runWithContext({
         user: {
           userId: result.payload.sub,

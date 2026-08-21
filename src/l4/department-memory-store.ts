@@ -16,6 +16,8 @@
  */
 import { createLogger } from '@synova/logger';
 import type { MemoryEntry } from './agent-memory-store';
+import { execSync } from 'child_process';
+import { join } from 'path';
 
 const log = createLogger('l4/department-memory-store');
 
@@ -211,9 +213,7 @@ export function scanCrossDeptSignals(
   // 8. 发射控制塔信号
   if (signals.length > 0) {
     try {
-      const { execSync } = require('child_process');
-      const path = require('path');
-      const script = path.join(process.cwd(), 'scripts/control-tower/emit-signal.py');
+      const script = join(process.cwd(), 'scripts/control-tower/emit-signal.py');
       execSync(
         `python "${script}" cross-dept yellow "${signals.length} 个跨部门信号" --p0 0 --p1 ${signals.length}`,
         { timeout: 5000, stdio: 'ignore' },

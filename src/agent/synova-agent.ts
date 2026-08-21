@@ -13,6 +13,8 @@
  */
 import type { Server } from 'http';
 import type Database from 'better-sqlite3';
+import { execSync } from 'child_process';
+import { join } from 'path';
 import { createServer } from '../server';
 import { CronScheduler, getGlobalScheduler, destroyGlobalScheduler } from '../cron/scheduler';
 import { SentinelRunner, setGlobalSentinelRunner } from '../sentinel';
@@ -24,6 +26,7 @@ import { GracefulShutdown, setGlobalGracefulShutdown } from '../services/gracefu
 import { ProactivePush } from './proactive-push';
 import { ActionStore } from '../growth/action-store';
 import { getFeedbackCollector } from '../growth/feedback-collector';
+import { CommandLanes } from '../infra/command-lanes';
 
 const log = createLogger('agent/synova-agent');
 
@@ -98,11 +101,9 @@ export class SynovaAgent {
         enabled: true,
         send: async (msg) => {
           try {
-            const { execSync } = require('child_process');
-            const script = require('path').join(process.cwd(), 'scripts/control-tower/emit-signal.py');
             const reason = msg.body.slice(0, 120).replace(/"/g, '\\"');
             execSync(
-              `python "${script}" proactive-push red "${reason}" --p0 1`,
+              `python "${join(process.cwd(), 'scripts/control-tower/emit-signal.py')}" proactive-push red "${reason}" --p0 1`,
               { timeout: 5000, stdio: 'ignore' },
             );
             return `signal-${Date.now()}`;
@@ -121,11 +122,9 @@ export class SynovaAgent {
           // 信号文件 + 轮询: electron-main.ts 已有 checkP0Alerts() 消费
           // 同 signal-file 通道写入同一文件以免重复，但用不同 component 名区分
           try {
-            const { execSync } = require('child_process');
-            const script = require('path').join(process.cwd(), 'scripts/control-tower/emit-signal.py');
             const title = msg.title.slice(0, 80).replace(/"/g, '\\"');
             execSync(
-              `python "${script}" electron-notify red "${title}" --p0 1`,
+              `python "${join(process.cwd(), 'scripts/control-tower/emit-signal.py')}" electron-notify red "${title}" --p0 1`,
               { timeout: 5000, stdio: 'ignore' },
             );
             return `notify-${Date.now()}`;
@@ -251,7 +250,6 @@ export class SynovaAgent {
 
     // Phase 4.3: CommandLanes — 工具执行路径隔离（高风险工具走独立 lane）
     try {
-      const { CommandLanes } = require('../infra/command-lanes');
       const lanes = new CommandLanes({ defaultTimeoutMs: 60_000 });
       (this as Record<string, unknown>).__commandLanes = lanes;
       log.info('CommandLanes 已初始化（高风险工具隔离）');
