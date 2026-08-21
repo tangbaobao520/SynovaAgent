@@ -39,18 +39,21 @@ install_hook() {
   local body
   if [ "$name" = "pre-commit" ] && [ -f "$entry" ]; then
     # 双日志分离 + 成功标记（V4.5.1 核心，post-commit 检测 --no-verify 依赖 marker）
+    # 方案1(挪CI, D468): 本地门禁软提示——失败不阻断，CI 权威（merge 前必须绿）
     body='#!/bin/bash
-# v3.7: pre-commit wrapper — 双日志分离 + 成功标记 (D318: toplevel-relative)
+# v4.8.x 方案1(挪CI): pre-commit 软提示 — 本地门禁失败不阻断，CI 权威
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 bash "$ROOT/scripts/pre-commit-check.sh"
 EXIT_CODE=$?
 if [ $EXIT_CODE -ne 0 ]; then
   echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) exit=$EXIT_CODE branch=$(git branch --show-current 2>/dev/null || echo unknown)" >> "$ROOT/.claude/pre-commit-failures.log"
-else
-  # 写成功标记 — post-commit 用它检测 --no-verify 绕过 (D366: head|时间戳 对账)
-  echo "$(git rev-parse HEAD 2>/dev/null || true)|$(date +%s)" > "$ROOT/.claude/last-precommit-success"
+  # 软提示: 记录门禁失败但放行（K3 审计证据），CI 权威判定
+  echo "$(date -Iseconds) | GATE_FAIL_SOFT | exit=$EXIT_CODE | branch=$(git branch --show-current 2>/dev/null || echo unknown)" >> "$ROOT/.claude/bypass.log"
+  echo "⚠️ 本地门禁未通过（exit=$EXIT_CODE）— 已放行，CI 将作为权威判定（merge 前必须绿）" >&2
 fi
-exit $EXIT_CODE'
+# 无论成败都写 marker（失败但放行 = 经过了 pre-commit，非 --no-verify）
+echo "$(git rev-parse HEAD 2>/dev/null || true)|$(date +%s)" > "$ROOT/.claude/last-precommit-success"
+exit 0'
   elif [ -f "$entry" ]; then
     # 门禁入口（commit-msg 需 "$1" 提交信息文件；pre-push 需 "$1" remote 名 "$2" url —
     # D334 多机同步检查要 fetch 目标 remote；hook stdin refs 透传）
