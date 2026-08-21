@@ -1,11 +1,13 @@
 {
   "task_id": "D466",
-  "title": "bypass-log-comment-sync",
-  "status": "claimed",
+  "title": "check-bypass-log 注释同步 + tag-bypass-wiring 测试跨平台修复",
+  "status": "impl_done",
   "spec": null,
-  "impl": null,
+  "impl": {"commit": "9a0a37cc", "by": "deepseek-harness", "at": "2026-08-21"},
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-08-21",
-  "updated_by": "alloc-task-id"
+  "updated_by": "deepseek-harness",
+  "note": "控制塔减负落地项2：①check-bypass-log.sh 头部注释 fail-open→fail-closed 同步（D414 改了代码没改注释）+ 测试用例5断言认 fail-closed exit2；②tag-bypass-wiring 用例6/7 跨平台修复——macOS 系统自带 /usr/bin/python3，shim 同时提供 python+python3 + 用 sys.executable 绝对路径。tag-bypass-wiring 24/24（原4失败）",
+  "priority": "P2"
 }
