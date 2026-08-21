@@ -70,8 +70,11 @@ echo "[GS-05] 服务就绪: $BASE"
 # 3. 负向基线：空库触发 cash-runway（无数据 → 不得产生工单，降级不误报）
 curl -sS -X POST "$BASE/api/sentinel/run/cash-runway" > "$DATA_DIR/run-empty-response.json" 2>&1 || true
 curl -sS "$BASE/api/sentinel/tickets" > "$DATA_DIR/tickets-empty.json" 2>&1 || true
+# 空库时刻 DB 工单快照（断言在末尾运行，届时触发#1 已建工单——须在负向时刻采样，否则断言失真）
+python3 -c "import sqlite3;c=sqlite3.connect('$DATA_DIR/synova.db');print('EMPTY_TICKET_COUNT='+str(c.execute('SELECT COUNT(*) FROM sentinel_tickets').fetchone()[0]))" > "$DATA_DIR/empty-ticket-count.txt" 2>/dev/null || echo "EMPTY_TICKET_COUNT=ERR" > "$DATA_DIR/empty-ticket-count.txt"
 echo "[GS-05] 空库触发响应: $(cat "$DATA_DIR/run-empty-response.json")"
 echo "[GS-05] 空库工单: $(cat "$DATA_DIR/tickets-empty.json")"
+echo "[GS-05] 空库 DB 工单快照: $(cat "$DATA_DIR/empty-ticket-count.txt")"
 
 # 4. inject 越阈 fixture（erp-standard 契约，走 field-mappings；现金 3 万/月耗 12 万 → runway 0.25 < critical 6）
 curl -sS -X POST "$BASE/api/data/upload" \

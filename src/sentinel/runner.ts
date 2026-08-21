@@ -372,11 +372,20 @@ export class SentinelRunner {
   private async dispatchSignalsToExperts(
     signals: Array<{ id: string; severity: string; title: string; sources: Array<any>; entities: string[]; recommendedExperts: string[] }>,
   ): Promise<void> {
+    // D463 告警闭环（选项 A，创始人 2026-08-21 批准）: critical/emergency 信号按严重度
+    // **自动建工单**（不依赖专家——专家是增强，不是门控）。同信号重复触发 → INSERT OR REPLACE
+    // 幂等（去重键稳定，配合 D354 去时间戳）。诊断 = finding 摘要；专家可用时走下方 enrich 路径。
+    for (const signal of signals) {
+      if (signal.severity === 'critical' || signal.severity === 'emergency') {
+        this.createAutoTicket(signal);
+      }
+    }
+
     const { getGlobalExpertDispatcher } = await import('../l3/expert-dispatcher');
     const dispatcher = getGlobalExpertDispatcher();
 
     if (!dispatcher) {
-      log.warn('[runner] ExpertDispatcher 未初始化 — 信号无法路由专家（非阻断）');
+      log.warn({ autoTickets: signals.filter(s => s.severity === 'critical' || s.severity === 'emergency').length }, '[runner] ExpertDispatcher 未初始化 — 自动工单已建，专家增强跳过（非阻断）');
       return;
     }
 
@@ -470,6 +479,49 @@ export class SentinelRunner {
           log.warn({ err: msg, ticketId }, '[runner] ticket_transition 事件写入失败 — 非阻断');
         }
       } catch (err) { log.warn({ err }, '[runner] 工单创建失败 (非阻断)'); }
+    }
+  }
+
+  /**
+   * D463 告警闭环（选项 A）: critical/emergency 信号按严重度自动建工单——不依赖专家。
+   * 诊断 = finding 摘要（title + description + evidence）；同信号重复触发 → INSERT OR REPLACE 幂等
+   * （信号 id 已由 D354 去时间戳 → 去重键稳定）。
+   * 降级（铁律 24/31）: DB 写入失败 → log.warn + 返回（不静默、不阻断信号管线）。
+   */
+  private createAutoTicket(signal: {
+    id: string; severity: string; title: string;
+    sources: Array<{ sentinelId: string; sentinelName: string; finding: SentinelFinding }>;
+  }): void {
+    try {
+      const ticketId = `ticket-${signal.id}-auto`;
+      const findings = signal.sources.map((src) => src.finding);
+      const summary = findings.map((f) => `[${f.severity}] ${f.title}: ${f.description}`).join(' | ') || signal.title;
+      const evidence = findings.flatMap((f) => f.evidence ?? []).slice(0, 5);
+      const suggested = findings.map((f) => f.suggestion).filter(Boolean).slice(0, 3).join('; ');
+      const diagnosis = { title: signal.title, summary, evidence, auto: true };
+
+      (this.db as { prepare(sql: string): { run(...args: unknown[]): void } }).prepare(
+        `INSERT OR REPLACE INTO sentinel_tickets (id, signal_id, severity, expert_type, diagnosis, suggested_actions, status, created_at)
+         VALUES (?, ?, ?, 'auto', ?, ?, 'open', datetime('now'))`
+      ).run(
+        ticketId, signal.id, signal.severity,
+        JSON.stringify(diagnosis),
+        suggested || null
+      );
+      log.info({ ticketId, signalId: signal.id, severity: signal.severity }, '[runner] 自动工单已创建（告警闭环，无专家依赖）');
+      try {
+        appendSentinelEvent(this.db as Database.Database, {
+          event_type: 'ticket_transition',
+          sentinel_id: signal.id,
+          aggregate_id: ticketId,
+          payload: { ticketId, signalId: signal.id, severity: signal.severity, expertType: 'auto', to: 'open', at: new Date().toISOString() },
+        });
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        log.warn({ err: msg, ticketId }, '[runner] auto ticket_transition 事件写入失败 — 非阻断');
+      }
+    } catch (err) {
+      log.warn({ err }, '[runner] 自动工单创建失败 (非阻断)');
     }
   }
 
