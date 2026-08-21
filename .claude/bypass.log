@@ -354,3 +354,4 @@ Binary file .claude/bypass.log matches
 2026-08-20T13:58:51Z possible-bypass diff=89325s
 2026-08-20T01:35:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: feat(doc-system): 文档体系改革新文件落库) | TASK_ID=merge | AGENT=Synova-Win | HASH=c8d358698b281b5db4ff4ffee2d8756c37691b0f
 2026-08-20T01:35:00+08:00 | COMMITTED | pre-commit PASS (merge 补记: docs(research): DSH 迁移施工图 + 一页纸大纲) | TASK_ID=merge | AGENT=Synova-Win | HASH=5fa489f05f1a9671fa85a62cf6672dca58fc155f
+2026-08-18T23:15:28+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D402 | AGENT=deepseek-harness | HASH=5c7cff5a4d760967a1a6a93c80ffe76e297cd366
