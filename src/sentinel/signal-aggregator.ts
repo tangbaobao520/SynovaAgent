@@ -141,7 +141,7 @@ export function aggregateSignals(
     }
 
     signals.push({
-      id: `sig_${entity}_${now.getTime()}`,
+      id: `sig_${entity}`, // D354: 稳定 id — 同 entity 跨轮同 id (proactive-push 去重键, N14)
       severity,
       title: `${distinctSentinels} 个哨兵同时指向: ${entity}`,
       sources: items.slice(0, 5), // 最多保留 5 条原始来源

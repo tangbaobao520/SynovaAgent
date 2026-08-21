@@ -300,7 +300,7 @@ export class SentinelRunner {
         if (this.isNotificationDuplicate(signal)) continue;
         const sentinelId = signal.sources[0]?.sentinelId || signal.id;
         await dispatchNotification({
-          id: `notif-${signal.id}-${Date.now()}`,
+          id: `notif-${signal.id}`, // D354: 稳定 id — 同 signal 跨轮同 id (N14 去重键)
           orgId: signal.entities[0] || 'default',
           title: `[${signal.severity.toUpperCase()}] ${sentinelId}`,
           description: signal.title || signal.sources[0]?.finding?.description || '',
@@ -960,7 +960,7 @@ export class SentinelRunner {
             ? (props.data_versions as unknown[]).length
             : 0;
           result.findings.push({
-            id: `conflict-${finding.relatedNodeId}-${Date.now()}`,
+            id: `conflict-${finding.relatedNodeId}`, // D354: 稳定 id — 同节点跨轮同 id (N14 去重键)
             severity: 'warning',
             title: `数据冲突: 节点 ${finding.relatedNodeId} 存在 ${versions} 个版本`,
             description: '节点数据存在冲突版本，可能影响分析准确性',
