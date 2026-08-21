@@ -1,13 +1,21 @@
 {
   "task_id": "D445",
   "title": "GS-05 告警闭环场景脚本（越阈 fixture → sentinel_tickets + 去重键）",
-  "status": "claimed",
-  "spec": null,
-  "impl": null,
+  "status": "impl_done",
+  "spec": {
+    "path": "docs/plans/codex/strategy/SYNOVA-DESIGN-黄金场景与创始人驾驶舱-v1-20260816.md",
+    "by": "design",
+    "at": "2026-08-16"
+  },
+  "impl": {
+    "commit": "a12c4458",
+    "by": "deepseek-harness",
+    "at": "2026-08-19"
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-08-18",
-  "updated_by": "alloc-task-id",
-  "note": "GS-05：D356 已就绪 + D354；场景脚本 = 产品线交付，归属 Harness（进审计无豁免）",
+  "updated_at": "2026-08-19",
+  "updated_by": "deepseek-harness",
+  "note": "GS-05 场景脚本交付（诚实 RED）：2/4 断言绿（负向×2），ticket-created/dedup 诚实 RED——runSentinelOnce 绕过工单管线（D356 缺口）+ tickets API 与 DB 表不一致（独立发现）；隔离加固 SYNOVA_DB_PATH 覆盖已做；evidence 落盘",
   "priority": "P1"
 }
