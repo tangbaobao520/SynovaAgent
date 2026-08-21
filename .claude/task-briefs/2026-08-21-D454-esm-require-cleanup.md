@@ -35,6 +35,7 @@ D454 = GSS 服务启动原生崩溃修复。三个子问题：
 
 做什么（require → 静态 import，保持现有 try/catch 降级语义）：
 - scripts/golden-scenarios/GS-03-capital-cycle/run.sh
+- scripts/golden-scenarios/evidence/GS-03-2026-08-22.json
 - src/services/memory-access-service.ts
 - tests/services/memory-access-service.test.ts
 - src/agent/synova-agent.ts
