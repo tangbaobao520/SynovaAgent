@@ -418,3 +418,6 @@ Binary file .claude/bypass.log matches
 2026-08-22T00:20:28+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/win-feishu-bridge
 2026-08-22T01:43:58+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D470 | AGENT=claude
 2026-08-22T02:10:12+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D470 | AGENT=claude
+2026-08-22T02:21:50+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D470 | AGENT=claude | HASH=3b4c215b0d5b009e67e7b2c6be7ac0734403e64b
+2026-08-22T02:23:53+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D471 | AGENT=claude-code | HASH=3c9e88e084699ad7a818e0aa51883ba1b53eb64e
+2026-08-22T02:30:00+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D471 | AGENT=claude-code | HASH=756d694a1048fb99b559571f890f64d3cce1277c
