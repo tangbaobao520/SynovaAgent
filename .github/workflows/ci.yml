@@ -12,6 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with: { node-version: '20', cache: 'npm' }
       - run: npm ci
@@ -20,6 +22,7 @@ jobs:
       - name: Iron laws check
         run: bash scripts/pre-commit-check.sh
         env:
+          SYNO_DIFF_BASE: "origin/main"
           SKIP_AS_ANY: "1"
           SKIP_EMPTY_CATCH: "1"
 
