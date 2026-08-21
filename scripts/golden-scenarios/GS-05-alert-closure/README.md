@@ -28,25 +28,18 @@ bash scripts/golden-scenarios/GS-05-alert-closure/run.sh
 | 2 | ticket-created | 正常 | 越阈触发 → sentinel_tickets 表行数 >= 1（S0-3 告警闭环核心） |
 | 3 | dedup-stable | 正常 | 同哨兵二次触发 → 行数不增（INSERT OR REPLACE + 去重窗口，去重键稳定） |
 
-## 当前状态：诚实 RED（2026-08-19 实测，evidence/GS-05-2026-08-19.json）
+## 当前状态：✅ 全绿（2026-08-21 实测，evidence/GS-05-2026-08-21.json，verdict=pass，exit 0）
 
-**实测结果：2/4 断言通过（verdict=fail，exit 1）**——负向全绿、正向诚实 RED。
+**4/4 断言通过**：负向 ×2（空库无 critical / 空库时刻 DB 0 行快照）+ ticket-created（越阈 → critical → DB 工单落库）+ dedup-stable（同窗口二次触发工单不增）。
 
-| # | id | 实测 | 说明 |
-|---|----|:---:|------|
-| 1 | no-false-critical-empty | ✅ GREEN | 空库触发 → 降级 warning（cr_runway_degraded），无 critical 误报（D453 修复生效） |
-| 2 | no-false-ticket-empty | ✅ GREEN | 空库触发 → tickets 空数组（真空零显式声明） |
-| 3 | ticket-created | ❌ RED | 越阈**已触发 critical**（现金跑道0.3个月）但 `sentinel_tickets` COUNT=0——工单未落库 |
-| 4 | dedup-stable | ❌ RED | 无工单 → DEDUP_VACUOUS（去重键无法验证，诚实声明不空壳） |
+**转绿修复链（2026-08-21，D463 告警闭环 + D354 去重键）**：
 
-**正向 RED 阻塞链（grep/read 实测 2026-08-19，两条独立缺口）**：
+1. **D463 告警闭环（选项 A，创始人批准）**：
+   - `runSentinelOnce`（sentinel-service.ts）接线 runner 管线：runner 可用 → `runOnce`（记录）+ `aggregateAndDispatch`（信号聚合 → 工单闭环）；runner 不可用 → 降级直连（D453 行为保持）。
+   - `dispatchSignalsToExperts`（runner.ts）对 critical/emergency 信号**按严重度自动建工单**（`createAutoTicket`，id `ticket-{signalId}-auto`，诊断 = finding 摘要）——**不依赖 ExpertDispatcher/LLM**（此前 ExpertDispatcher 未初始化 → 工单永不落库）。专家可用时 enrich（原有 storeExpertReport 路径不变）。
+2. **D354 去重键稳定化（已合 main）**：信号 id 去时间戳（`sig_{entity}`）→ 同信号重复触发 id 稳定 → INSERT OR REPLACE 幂等 → dedup-stable 成立。
 
-1. **runSentinelOnce 绕过工单管线（D356 缺口）**：`POST /api/sentinel/run/:id`（sentinel-service.ts:161）直接调 `sentinel.check()`，不经过 SentinelRunner——不记录 recent results、不做信号聚合/专家调度 → `storeExpertReport`（runner.ts:429，emergency/critical → INSERT OR REPLACE sentinel_tickets）永不触发。tickets 只由 cron 的 `aggregateAndDispatch()`（每小时 :05）从 runner 记录生成；cash-runway cron 为月度（manifest schedule "0 0 1 * *"），测试窗口内不可达。
-2. **tickets API 与 DB 表不一致（独立发现）**：`getSentinelTickets()`（sentinel-service.ts:225）读 `runner.getRecentResults()`（内存视图），而工单物理真值在 `sentinel_tickets` 表——两条写入路径互不打通，API 永远读不到 DB 落库的工单。
-
-**隔离加固（本次修复，run.sh 侧，未动 common/）**：GSS README 08-16 已警告"开发者会话常自带 SYNOVA_DB_PATH 指向真实库"——config.ts 的 `SYNOVA_DB_PATH` 优先级高于 `SYNOVA_DATA_DIR`，实测（本机 env 自带 `SYNOVA_DB_PATH=./data/synova.db`）场景曾写真实库。run.sh 现显式 `export SYNOVA_DB_PATH=$DATA_DIR/synova.db`，结构上触达不了真实库。
-
-**转绿前置（非本任务范围）**：把 runSentinelOnce 接入 runner 工单管线（或提供手动 aggregateAndDispatch 触发 API），并打通 tickets API 与 DB 表——建议独立修复任务（D356 合入后复核）。
+**断言修正**：负向"空库无工单"改为**空库时刻 DB 快照**（assert 在末尾运行时触发#1 已建工单——负向必须在负向时刻采样，否则断言失真）。
 
 ## 红线
 
