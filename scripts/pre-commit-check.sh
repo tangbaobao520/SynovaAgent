@@ -136,10 +136,21 @@ if [ "${SYNO_TEST_ARM:-0}" = "1" ]; then
   GIT_CACHED_DIFF="${SYNO_GIT_CACHED_DIFF:-$(git diff --cached 2>/dev/null || true)}"
 else
   # 生产路径: 真实 git (注入缝变量被忽略, fail-closed)
-  GIT_CACHED_NAMES="$(git -c core.quotepath=false diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)"
-  GIT_CACHED_ALL_NAMES="$(git -c core.quotepath=false diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)"
-  GIT_CACHED_ADDED_NAMES="$(git -c core.quotepath=false diff --cached --name-only --diff-filter=A 2>/dev/null || true)"
-  GIT_CACHED_DIFF="$(git diff --cached 2>/dev/null || true)"
+  # CI gap 补齐 (2026-08-21): 仅 GITHUB_ACTIONS 环境 + SYNO_DIFF_BASE 注入时，
+  # 用 base...HEAD 替代 --cached，让 CI 空暂存下增量检查仍查"本次 PR 变更"（否则空跑假绿）。
+  # 本地环境 GITHUB_ACTIONS 非 true → 忽略 SYNO_DIFF_BASE（堵注入缝旁路，D390 教训）。
+  if [ "${GITHUB_ACTIONS:-}" = "true" ] && [ -n "${SYNO_DIFF_BASE:-}" ]; then
+    _DIFF_RANGE="${SYNO_DIFF_BASE}...HEAD"
+    GIT_CACHED_NAMES="$(git -c core.quotepath=false diff --name-only --diff-filter=ACMR "$_DIFF_RANGE" 2>/dev/null || true)"
+    GIT_CACHED_ALL_NAMES="$(git -c core.quotepath=false diff --name-only --diff-filter=ACMR "$_DIFF_RANGE" 2>/dev/null || true)"
+    GIT_CACHED_ADDED_NAMES="$(git -c core.quotepath=false diff --name-only --diff-filter=A "$_DIFF_RANGE" 2>/dev/null || true)"
+    GIT_CACHED_DIFF="$(git diff "$_DIFF_RANGE" 2>/dev/null || true)"
+  else
+    GIT_CACHED_NAMES="$(git -c core.quotepath=false diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)"
+    GIT_CACHED_ALL_NAMES="$(git -c core.quotepath=false diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)"
+    GIT_CACHED_ADDED_NAMES="$(git -c core.quotepath=false diff --cached --name-only --diff-filter=A 2>/dev/null || true)"
+    GIT_CACHED_DIFF="$(git diff --cached 2>/dev/null || true)"
+  fi
 fi
 
 STAGED=$(echo "$GIT_CACHED_NAMES" | grep '\.ts$' | grep -v node_modules || true)
