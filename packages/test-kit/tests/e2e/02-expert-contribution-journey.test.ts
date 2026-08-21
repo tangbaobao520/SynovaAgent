@@ -22,7 +22,7 @@ describe('E2E: 行业专家贡献旅程', () => {
       }),
     });
     expect(res.status).toBe(200);
-    const data = await res.json() as any;
+    const data = await res.json() as { ok: boolean; id?: string; status?: string };
     expect(data.ok).toBe(true);
     expect(data.id).toBeDefined();
     console.warn(`⚠ 专家贡献 ID: ${data.id}, 状态: ${data.status}`);
@@ -31,7 +31,7 @@ describe('E2E: 行业专家贡献旅程', () => {
   it('GET /api/expert/marketplace → 200 + templates[]', async () => {
     const res = await fetch(`${BASE}/api/expert/marketplace?industry=manufacturing`);
     expect(res.status).toBe(200);
-    const data = await res.json() as any;
+    const data = await res.json() as { ok: boolean };
     expect(data.ok).toBe(true);
   });
 

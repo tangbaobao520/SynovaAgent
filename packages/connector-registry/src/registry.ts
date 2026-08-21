@@ -116,9 +116,10 @@ export class ConnectorRegistry {
           parameters: tool.parameters,
           executionMode: 'connector',
           handler: async (params: Record<string, unknown>) => {
-            return connector.executeTool(tool.name, params);
+            const result = await connector.executeTool(tool.name, params);
+            return result as Record<string, unknown>;
           },
-        } as any);
+        });
       }
       log.debug({ name, toolCount: connector.getTools().length }, 'Connector 工具已注册到 ToolRegistry');
     }

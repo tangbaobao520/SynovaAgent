@@ -37,7 +37,7 @@ export class SOGSchemaRegistry {
   private edgeRules = new Map<string, EdgeEndpointRule>();
 
   constructor() {
-    // Initialize with v1.0 enum types (14 nodes + 10 edges)
+    // Initialize with v1.0 enum types (18 nodes + 14 edges)
     for (const t of Object.values(SOGNodeType)) {
       this.nodeTypes.set(t, { type: t, description: `SOG v1.0: ${t}`, properties: {} });
     }
@@ -54,24 +54,24 @@ export class SOGSchemaRegistry {
   registerNodeType(name: string, schema: NodeTypeSchema): void {
     if (this.nodeTypes.has(name)) {
       // v1.0 enum types are immutable — skip overwrite
-      if (Object.values(SOGNodeType).includes(name as any)) return;
+      if (Object.values(SOGNodeType).includes(name as SOGNodeType)) return;
     }
     this.nodeTypes.set(name, schema);
-    // Register a no-op validator
-    if (!NODE_VALIDATORS[name as any]) {
-      (NODE_VALIDATORS as any)[name] = () => null;
+    // Register a no-op validator (false 与旧 null 同为 falsy, 消费方 truthiness 语义不变)
+    if (!NODE_VALIDATORS[name]) {
+      NODE_VALIDATORS[name] = () => false;
     }
   }
 
   /** Register a runtime edge type */
   registerEdgeType(name: string, schema: EdgeTypeSchema, rules?: EdgeEndpointRule): void {
     if (this.edgeTypes.has(name)) {
-      if (Object.values(SOGEdgeType).includes(name as any)) return;
+      if (Object.values(SOGEdgeType).includes(name as SOGEdgeType)) return;
     }
     this.edgeTypes.set(name, schema);
     if (rules) this.edgeRules.set(name, rules);
-    if (!EDGE_VALIDATORS[name as any]) {
-      (EDGE_VALIDATORS as any)[name] = () => null;
+    if (!EDGE_VALIDATORS[name]) {
+      EDGE_VALIDATORS[name] = () => false;
     }
   }
 
@@ -102,8 +102,8 @@ export class SOGSchemaRegistry {
     const enumNodes = new Set(Object.values(SOGNodeType));
     const enumEdges = new Set(Object.values(SOGEdgeType));
     return {
-      nodes: this.getNodeTypes().filter(t => !enumNodes.has(t as any)),
-      edges: this.getEdgeTypes().filter(t => !enumEdges.has(t as any)),
+      nodes: this.getNodeTypes().filter(t => !enumNodes.has(t as SOGNodeType)),
+      edges: this.getEdgeTypes().filter(t => !enumEdges.has(t as SOGEdgeType)),
     };
   }
 }
