@@ -382,3 +382,4 @@ Binary file .claude/bypass.log matches
 2026-08-21T04:00:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D357 | AGENT=Synova-Win | HASH=3ad77619e746f7eea770c0a5eff32dbfcee1ce22
 2026-08-19T20:45:12+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D354 | AGENT=claude-code
 2026-08-19T20:47:23+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D354 | AGENT=claude-code
+2026-08-21T12:53:47+08:00 | COMMITTED | pre-commit PASS (一次性补记: 8c9e3b97 文档措辞提交直提, D331 对账) | TASK_ID=D357 | AGENT=Synova-Win | HASH=8c9e3b97268aff6247925c3cb6f32e734c0c26a8
