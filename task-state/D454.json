@@ -6,8 +6,8 @@
   "impl": null,
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-08-18",
-  "updated_by": "alloc-task-id",
-  "note": "DSH 领地（需与 Win Claude 核对写集）。GSS 服务启动原生崩溃：Node v24.19.0 断言 env!=nullptr（哨兵动态 import 时）+ require is not defined（ESM 迁移残留，src/init/engine-context.ts）+ nodemailer 缺失（已补装）。D442 GS-03 转绿前置之一。",
+  "updated_at": "2026-08-21",
+  "updated_by": "deepseek-harness",
+  "note": "DSH 领地（需与 Win Claude 核对写集）。GSS 服务启动原生崩溃：Node v24.19.0 断言 env!=nullptr（哨兵动态 import 时）+ require is not defined（ESM 迁移残留，src/init/engine-context.ts）+ nodemailer 缺失（已补装）。D442 GS-03 转绿前置之一。 | 2026-08-21 CTO 派单给编码 session（见 docs/synova/coordination/编码session派单-20260821.md）",
   "priority": "P0"
 }
