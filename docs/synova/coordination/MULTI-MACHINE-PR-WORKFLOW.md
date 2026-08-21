@@ -60,9 +60,10 @@ git branch -d feat/<分支名>
 
 ```bash
 git fetch ssh
-git rebase main          # 或 git merge main，禁止 git stash（铁律 0-3）
-# 解决冲突后:
-git rebase --continue    # 然后重新 push
+git merge main          # 推荐（不改 hash，bypass.log 对账不裂）
+# 或 git rebase main（会改 hash → bypass 对账断裂，需按 D451 补记新 hash）
+# 禁止 git stash（铁律 0-3）
+# 解决冲突后重新 push
 ```
 
 ---
@@ -71,7 +72,7 @@ git rebase --continue    # 然后重新 push
 
 | 门禁 | 位置 | 行为 |
 |------|------|------|
-| **门禁 0-1 push 前同步检查** | `scripts/pre-push-check.sh` | push 前强制 fetch 目标分支：落后（远端有新 commit）→ 🔴 硬阻断；分叉 → 🔴 硬阻断提示 rebase |
+| **门禁 0-1 push 前同步检查** | `scripts/pre-push-check.sh` | push 前强制 fetch 目标分支：落后（远端有新 commit）→ 🔴 硬阻断；分叉 → 🔴 硬阻断提示 merge（rebase 改 hash 会裂 bypass 对账） |
 | **门禁 0-2 main 分支保护** | `scripts/pre-push-check.sh` | 直接 push 到 `refs/heads/main` → 🔴 硬阻断（"main 只进 PR"）。紧急逃生舱 `SYNO_ALLOW_MAIN_PUSH=1`（会记 bypass.log） |
 | CI（GitHub Actions） | `.github/workflows/ci.yml` | PR 到 main 自动跑：tsc + 铁律 + vitest 双分片 + 架构 + golden-case + 集成 + checker-review |
 

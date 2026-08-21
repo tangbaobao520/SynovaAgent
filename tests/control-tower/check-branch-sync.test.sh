@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# branch-sync-guard.test.sh — D335 提交端同步门禁测试
+# check-branch-sync.test.sh — D335 提交端同步门禁测试（CT-40 配对: check-branch-sync.sh）
 #
 # 覆盖（铁律 48: 正常/降级/边界; 铁律 0-2: red→green）:
 #   1. main 落后远端 main → exit 1（red: 无检查 → exit 0）
@@ -14,7 +14,7 @@
 #
 # 隔离: mktemp 临时 bare 远端 + 本地仓库, file:// 协议零网络。
 #       SYNO_BRANCH_SYNC_ONLY=1 → 只跑本检查。
-# 用法: bash tests/control-tower/branch-sync-guard.test.sh
+# 用法: bash tests/control-tower/check-branch-sync.test.sh
 # 退出码: 0 = 全部通过
 # ═══════════════════════════════════════════════════════════════════════════════
 set -uo pipefail
@@ -59,7 +59,7 @@ run_check() {
   echo $?
 }
 
-echo "=== D335 提交端同步门禁: branch-sync-guard 测试 ==="
+echo "=== D335 提交端同步门禁: check-branch-sync 测试 ==="
 
 # 1. main 落后: 本地 main=HEAD(A), 远端 main=A+B
 commit_empty "$LOCAL_DIR" a.txt "A"
@@ -83,7 +83,7 @@ commit_empty "$OTHER_DIR" c.txt "C"
 git -C "$OTHER_DIR" push -q origin HEAD:main 2>/dev/null # swallow-ok: 模拟另一台机器
 EC=$(run_check "$LOCAL_DIR" origin)
 assert_exit "$EC" 1 "3. feat 基线过期（main 有新提交）→ 硬阻断"
-grep -q "rebase" /tmp/bss-out.txt && pass "   阻断消息含 rebase 提示" || fail "   阻断消息缺 rebase 提示"
+grep -q "git merge" /tmp/bss-out.txt && grep -q "rebase" /tmp/bss-out.txt && pass "   阻断消息含 merge 提示(推荐)+rebase 备选" || fail "   阻断消息缺 merge/rebase 提示"
 
 # 4. feat 分叉: feat 有本地新提交, main 也有新提交
 commit_empty "$LOCAL_DIR" d.txt "D"

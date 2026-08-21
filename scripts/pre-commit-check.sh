@@ -1,4 +1,7 @@
 #!/bin/bash
+# D313 M5 UTF-8 强制: Windows 控制台/子进程统一 UTF-8
+export PYTHONIOENCODING=utf-8
+export LC_ALL=C.UTF-8 2>/dev/null || true
 # ═══════════════════════════════════════════════════════════════════════════════
 # Loop Engineering V4.5.1 — pre-commit 12 组硬阻断 (全部 <10s) + 免疫系统
 #
@@ -127,15 +130,15 @@ fi
 # (K3 实测: SYNO_GIT_CACHED_*=docs/x.md + SYNO_SECRETS_ROOT=/tmp/empty → 全部门禁跳过且零审计)。
 if [ "${SYNO_TEST_ARM:-0}" = "1" ]; then
   # 测试/审计注入缝 (SYNO_TEST_ARM=1 双确认才可注入)
-  GIT_CACHED_NAMES="${SYNO_GIT_CACHED_NAMES:-$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)}"
-  GIT_CACHED_ALL_NAMES="${SYNO_GIT_CACHED_ALL_NAMES:-$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)}"
-  GIT_CACHED_ADDED_NAMES="${SYNO_GIT_CACHED_ADDED_NAMES:-$(git diff --cached --name-only --diff-filter=A 2>/dev/null || true)}"
+  GIT_CACHED_NAMES="${SYNO_GIT_CACHED_NAMES:-$(git -c core.quotepath=false diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)}"
+  GIT_CACHED_ALL_NAMES="${SYNO_GIT_CACHED_ALL_NAMES:-$(git -c core.quotepath=false diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)}"
+  GIT_CACHED_ADDED_NAMES="${SYNO_GIT_CACHED_ADDED_NAMES:-$(git -c core.quotepath=false diff --cached --name-only --diff-filter=A 2>/dev/null || true)}"
   GIT_CACHED_DIFF="${SYNO_GIT_CACHED_DIFF:-$(git diff --cached 2>/dev/null || true)}"
 else
   # 生产路径: 真实 git (注入缝变量被忽略, fail-closed)
-  GIT_CACHED_NAMES="$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)"
-  GIT_CACHED_ALL_NAMES="$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)"
-  GIT_CACHED_ADDED_NAMES="$(git diff --cached --name-only --diff-filter=A 2>/dev/null || true)"
+  GIT_CACHED_NAMES="$(git -c core.quotepath=false diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)"
+  GIT_CACHED_ALL_NAMES="$(git -c core.quotepath=false diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)"
+  GIT_CACHED_ADDED_NAMES="$(git -c core.quotepath=false diff --cached --name-only --diff-filter=A 2>/dev/null || true)"
   GIT_CACHED_DIFF="$(git diff --cached 2>/dev/null || true)"
 fi
 
