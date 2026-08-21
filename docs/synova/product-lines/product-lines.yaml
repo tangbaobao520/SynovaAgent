@@ -179,7 +179,7 @@ lines:
   # ────────────────────────── 04 数据接入 ──────────────────────────
   - id: 4
     name: "数据接入"
-    value: "文件导入 + 问卷 + 飞书连接器（CRM/ERP/HR 直连推迟部署后）"
+    value: "文件导入 + 问卷 + 飞书连接器（CRM/ERP/HR 直连按施工图 Stage 1+ 推进，配置层照常）"
     weight: 1.0
     baseline_pct: 15
     baseline_note: "仅飞书+CSV（K3 P0-2）"
@@ -205,17 +205,17 @@ lines:
         desc: "CRM 连接器（crm-standard 契约）"
         evidence: ["scenario:GS-02"]
         status: deferred
-        note: "K3：L5 无 CRM 连接器；创始人裁决 B：直连推迟部署后"
+        note: "K3：L5 无 CRM 连接器；创始人裁决 B：直连按施工图 Stage 1+ 推进（非搁置），配置层照常"
       - id: "4-5"
         desc: "ERP 连接器（erp-standard 契约）"
         evidence: ["scenario:GS-03"]
         status: deferred
-        note: "K3：L5 无 ERP 连接器；创始人裁决 B：直连推迟部署后"
+        note: "K3：L5 无 ERP 连接器；创始人裁决 B：直连按施工图 Stage 1+ 推进（非搁置），配置层照常"
       - id: "4-6"
         desc: "HR 连接器（hr-standard 契约）"
         evidence: ["scenario:GS-04"]
         status: deferred
-        note: "K3：L5 无 HR 连接器；创始人裁决 B：直连推迟部署后"
+        note: "K3：L5 无 HR 连接器；创始人裁决 B：直连按施工图 Stage 1+ 推进（非搁置），配置层照常"
       - id: "4-7"
         desc: "导入校验：坏数据明确报错，不静默丢（fail-closed）"
         evidence: ["scenario:GS-02", "scenario:GS-03"]
