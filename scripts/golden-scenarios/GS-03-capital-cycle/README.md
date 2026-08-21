@@ -26,18 +26,21 @@ bash scripts/golden-scenarios/GS-03-capital-cycle/run.sh
 | 2 | cash-runway-critical-triggered | 正常 | 触发响应含「现金流危急」（阈值告警） |
 | 3 | no-false-critical-zero-runway | 负向 | 触发响应不含「跑道0.0个月」（降级不误报） |
 
-## 当前状态：诚实 RED（2026-08-18）
+## 当前状态：✅ 全绿（2026-08-21 实测，evidence/GS-03-2026-08-21.json，verdict=pass，exit 0）
 
-断言 2（阈值触发）**当前 RED**，阻塞链（grep 实测）：
+3/3 断言通过：注入成功（Financial 节点）→ 越阈触发 critical「现金流危急—跑道0.3个月」→ 无「跑道0.0个月」误报。
 
-1. **D355（Win Claude）**：erp-standard `现金余额→cashBalance`(camel) vs financial.json schema
-   `cash`(snake) → ingestBatch 字段校验跳过 cashBalance；compute filter bug
-   `{[teamId]: teamId}` 永不匹配。
-2. **触发 bug（DSH 领地，待独立修复）**：`runSentinelOnce`（src/agent/sentinel-service.ts:173）
-   传 `db: undefined` → 哨兵拿空 store → 恒 degraded，读不到注入数据。
+**从诚实 RED 转绿的修复链（2026-08-21，D462 环境修复 + run.sh 修复）**：
 
-断言 1（注入）与断言 3（负向）当前 GREEN：注入链路可用，D356 的 degraded 守卫阻止了
-「跑道0.0个月」误报。
+1. **better-sqlite3 v11.10.0 → v12.11.1（Node 24 兼容）**：v11 的 `Statement::~Statement()` 在 Node 24 下
+   `Assertion failed: (env) != nullptr` 必然崩溃（WiseLibs/better-sqlite3#1376）→ 服务起不来，
+   `file is not a database` 是同一阻塞链的次生症状。升级后服务稳定。
+2. **run.sh 三修复**（对齐 GS-05 模式）：① JWT 自举（bootstrap 强制 DEV_MODE=false → upload 需鉴权）；
+   ② `export SYNOVA_DB_PATH=$DATA_DIR/synova.db`（防开发者 env 泄漏写真实库，铁律 0-4）；
+   ③ bootstrap 后台拉起 + 轮询 state（bootstrap.ts 起服务后进程不退出，命令替换会挂起）。
+3. D355（cashBalance↔cash 对齐）+ D453（runSentinelOnce db:undefined）已入 main → 阈值告警链路完整。
+
+历史（2026-08-18 诚实 RED 记录）：D355 对齐未入 main + D453 触发 bug 未修时，断言 2 RED。
 
 ## 红线
 
