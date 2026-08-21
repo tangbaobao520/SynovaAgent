@@ -16,6 +16,8 @@
 
 import type Database from 'better-sqlite3';
 import { createLogger } from '@synova/logger';
+// D240: enterprise_fact 双写复用文件事实存储（格式唯一源，审批/冲突扫描可解析）
+import { EnterpriseFactStore, type FactStatus } from '../../scripts/control-tower/enterprise-fact-store';
 
 const log = createLogger('l4/agent-memory-store');
 
@@ -42,6 +44,8 @@ export interface MemoryEntry {
   changeReason?: string;
   changedBy?: string;
   effectiveFrom?: string;
+  // D240: 企业事实治理 — pending/active/rejected/conflicted（仅 enterprise_fact 类型有意义）
+  status?: FactStatus;
 }
 
 export interface MemoryQuery {
@@ -53,6 +57,7 @@ export interface MemoryQuery {
   minConfidence?: number;
   limit?: number;
   offset?: number;
+  status?: FactStatus;
 }
 
 export interface MemoryStats {
@@ -68,11 +73,13 @@ export class AgentMemoryStore {
   private db: Database.Database;
   private cache: Map<string, MemoryEntry>;  // LRU cache: orgId:key → entry
   private maxCacheSize: number;
+  private factStore?: EnterpriseFactStore;
 
-  constructor(db: Database.Database, maxCacheSize = 500) {
+  constructor(db: Database.Database, maxCacheSize = 500, factStore?: EnterpriseFactStore) {
     this.db = db;
     this.cache = new Map();
     this.maxCacheSize = maxCacheSize;
+    this.factStore = factStore;
     this.initSchema();
     log.info('AgentMemoryStore 已初始化');
   }
@@ -91,6 +98,8 @@ export class AgentMemoryStore {
       updatedAt: now,
       accessCount: 0,
       tags: entry.tags || [],
+      // D240: enterprise_fact 默认 pending（审批转 active 后才注入专家）
+      status: entry.status ?? (entry.type === 'enterprise_fact' ? 'pending' : undefined),
     };
 
     // UPSERT: 同 orgId+key 覆盖旧值
@@ -100,22 +109,42 @@ export class AgentMemoryStore {
 
     if (existing) {
       this.db.prepare(`
-        UPDATE agent_memory SET value=?, type=?, confidence=?, source=?, tags=?, updated_at=?, expires_at=?
+        UPDATE agent_memory SET value=?, type=?, confidence=?, source=?, tags=?, updated_at=?, expires_at=?, status=?
         WHERE id=?
       `).run(
         full.value, full.type, full.confidence, full.source,
-        JSON.stringify(full.tags), now, full.expiresAt, existing.id,
+        JSON.stringify(full.tags), now, full.expiresAt, full.status ?? 'pending', existing.id,
       );
       full.id = existing.id;
     } else {
       this.db.prepare(`
-        INSERT INTO agent_memory (id, org_id, key, value, type, confidence, source, tags, created_at, updated_at, expires_at, access_count)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+        INSERT INTO agent_memory (id, org_id, key, value, type, confidence, source, tags, created_at, updated_at, expires_at, access_count, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
       `).run(
         full.id, full.orgId, full.key, full.value, full.type,
         full.confidence, full.source, JSON.stringify(full.tags),
-        full.createdAt, full.updatedAt, full.expiresAt,
+        full.createdAt, full.updatedAt, full.expiresAt, full.status ?? 'pending',
       );
+    }
+
+    // D240: enterprise_fact 双写 — SQL 主存 + 文件事实（审批/冲突扫描以文件为准）
+    if (full.type === 'enterprise_fact') {
+      try {
+        const store = this.factStore ?? new EnterpriseFactStore();
+        const categoryTag = full.tags.find((t) => t.startsWith('category:'));
+        const category = categoryTag ? categoryTag.slice('category:'.length) : 'general';
+        store.createFact(category, full.key, full.value, {
+          status: full.status ?? 'pending',
+          confidence: full.confidence,
+          source: full.source,
+        });
+      } catch (err) {
+        // 铁律 24+31: 文件写失败不静默 — SQL 保留 + degraded 记录（不阻断主路径）
+        log.warn(
+          { err: err instanceof Error ? err.message : String(err), key: full.key },
+          '企业事实文件双写失败 — SQL 降级保留',
+        );
+      }
     }
 
     // Update cache
@@ -189,7 +218,6 @@ export class AgentMemoryStore {
         params.push(`%"${tag}"%`);
       }
     }
-
     const where = conditions.join(' AND ');
     const limit = Math.min(query.limit || 50, 200);
     const offset = query.offset || 0;
@@ -198,7 +226,9 @@ export class AgentMemoryStore {
       `SELECT * FROM agent_memory WHERE ${where} ORDER BY updated_at DESC LIMIT ? OFFSET ?`
     ).all(...params, limit, offset) as Record<string, unknown>[];
 
-    return rows.map(r => this.rowToEntry(r));
+    // D240: enterprise_fact 状态以文件为准 — 先同步（审批改文件后 SQL 为缓存），再按 status 过滤
+    const entries = rows.map(r => this.syncEnterpriseFactStatus(this.rowToEntry(r)));
+    return query.status ? entries.filter(e => e.status === query.status) : entries;
   }
 
   /** 按类型列出所有记忆（跨组织 — 用于通知系统等全局查询） */
@@ -324,6 +354,20 @@ export class AgentMemoryStore {
       CREATE INDEX IF NOT EXISTS idx_agent_memory_type ON agent_memory(org_id, type);
       CREATE INDEX IF NOT EXISTS idx_agent_memory_expires ON agent_memory(expires_at);
 
+      -- D240: 企业事实治理 status 列（迁移 — 已存在则跳过）
+      -- 注：ALTER TABLE 不能放进 CREATE TABLE 块，单独执行（下方 migration）
+    `);
+
+    // D240 migration: status 列（新建表已含? 不 — 表定义不含 status，用 ALTER 兼容旧库）
+    try {
+      this.db.exec(`ALTER TABLE agent_memory ADD COLUMN status TEXT DEFAULT 'pending'`);
+      log.info('agent_memory.status 列已添加（D240）');
+    } catch {
+      // 列已存在 — 跳过（幂等迁移）
+    }
+
+    this.db.exec(`
+
       -- Phase 5.2: 双 FTS5 索引
       -- FTS5 unicode61 — 拉丁文本全文搜索
       CREATE VIRTUAL TABLE IF NOT EXISTS agent_memory_fts USING fts5(
@@ -386,7 +430,25 @@ export class AgentMemoryStore {
       updatedAt: row.updated_at as string,
       expiresAt: row.expires_at as string | null,
       accessCount: row.access_count as number,
+      status: row.status as FactStatus | undefined,
     };
+  }
+
+  /** D240: 从企业事实文件同步 status（文件为准 — 审批/驳回改文件，SQL 为缓存） */
+  private syncEnterpriseFactStatus(entry: MemoryEntry): MemoryEntry {
+    if (entry.type !== 'enterprise_fact') return entry;
+    try {
+      const categoryTag = entry.tags.find((t) => t.startsWith('category:'));
+      const category = categoryTag ? categoryTag.slice('category:'.length) : 'general';
+      const fact = (this.factStore ?? new EnterpriseFactStore()).readFact(category, entry.key);
+      if (fact) entry.status = fact.metadata.status;
+    } catch (err) {
+      log.warn(
+        { err: err instanceof Error ? err.message : String(err), key: entry.key },
+        '企业事实状态文件同步失败 — 保持 SQL 值',
+      );
+    }
+    return entry;
   }
 
   private cacheSet(entry: MemoryEntry): void {
