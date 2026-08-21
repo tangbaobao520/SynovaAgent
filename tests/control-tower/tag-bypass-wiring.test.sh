@@ -136,7 +136,7 @@ assert_exit "$EC4" 0 "记录齐全 → exit 0"
 echo ""
 
 # ── 用例 5: bypass 对账 base 边界 ──
-echo "── 5. bypass 对账: base 边界 (fail-open / 显式错误) ──"
+echo "── 5. bypass 对账: base 边界 (fail-closed / 显式错误) ──"
 R5=$(mktemp -d)
 new_repo "$R5" "V9.9.9"
 commit_file "$R5" "f0.md" "base"
@@ -145,8 +145,8 @@ set +e
 OUT5=$(cd "$R5" && bash "$CHECK_BYPASS" 2>&1)
 EC5=$?
 set -e
-assert_exit "$EC5" 0 "无 base 无 origin → fail-open exit 0"
-assert_contains "$OUT5" "跳过" "显式提示含跳过（不静默）"
+assert_exit "$EC5" 2 "无 base 无 origin → fail-closed exit 2（D414 不静默当通过）"
+assert_contains "$OUT5" "对账无法执行" "显式提示含对账无法执行（不静默）"
 set +e
 # 注: 40 位 hex 会被 rev-parse --verify 只查格式放行 → 用 ref 名测不可解析
 OUT5b=$(cd "$R5" && SYNO_BASE_REF="D331-no-such-ref" bash "$CHECK_BYPASS" 2>&1)
@@ -173,18 +173,22 @@ else
   fi
 
   run_guard_case() { # <shim_body_file> <repo> <msg> → OUT + EC（cwd 为 repo）
-    cat > "$SHIM_DIR/python" <<SHIMEOF
+    # shim 同时提供 python 和 python3——macOS 系统自带 /usr/bin/python3，仅提供 python
+    # shim 无法拦截（PYBIN 遍历 python3→python→py 先命中系统 python3，回退永不触发）。
+    for _shimname in python python3; do
+      cat > "$SHIM_DIR/$_shimname" <<SHIMEOF
 #!/bin/bash
 # D331 测试 shim: -c 探测 → 转真实 python；其余调用按用例脚本行为
 if [[ "\$*" == *"-c"* ]]; then
-  exec "$REAL_PY" "\$@"
+  exec "$REAL_PY_BIN" "\$@"   # 绝对路径（sys.executable），不依赖 python 在 PATH
 fi
 $(cat "$1")
 SHIMEOF
-    chmod +x "$SHIM_DIR/python"
+      chmod +x "$SHIM_DIR/$_shimname"
+    done
     rm -f "$SHIM_MARKER"  # 运行前清零（断言在函数返回后检查 marker 残留）
     set +e
-    OUT=$(cd "$2" && SYNO_PRE_COMMIT="$2/.missing-pre-commit" PATH="$SHIM_DIR:$REAL_PY_DIR:$CLEAN_PATH" \
+    OUT=$(cd "$2" && SYNO_PRE_COMMIT="$2/.missing-pre-commit" PATH="$SHIM_DIR:$CLEAN_PATH" \
       bash "$SYNOVA_COMMIT" --task-id "D331-test" --agent "test" --message "$3" --files "x.md" 2>&1)
     EC=$?
     set -e
@@ -197,7 +201,7 @@ SHIMEOF
   echo "x" > "$R6/x.md"  # 不提交 — synova-commit 的 git add 暂存新文件
   SHIM_BODY=$(mktemp)
   # 实值嵌入（heredoc 的 $(cat) 输出不二次展开 — 字面 $ 会落空）
-  printf 'touch "%s"\nexec "%s" "$@"\n' "$SHIM_MARKER" "$REAL_PY" > "$SHIM_BODY"
+  printf 'touch "%s"\nexec "%s" "$@"\n' "$SHIM_MARKER" "$REAL_PY_BIN" > "$SHIM_BODY"
   run_guard_case "$SHIM_BODY" "$R6" "test: guard pybin"
   assert_exit "$EC" 2 "降级路径 commit 完成 (exit 2)"
   if [ -f "$SHIM_MARKER" ]; then pass "guard 经 shim python 执行（PYBIN 回退生效）"; else fail "guard 未经 shim 执行 — PYBIN 未回退"; fi

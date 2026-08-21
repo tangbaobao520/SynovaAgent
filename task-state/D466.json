@@ -1,0 +1,11 @@
+{
+  "task_id": "D466",
+  "title": "bypass-log-comment-sync",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-21",
+  "updated_by": "alloc-task-id"
+}
