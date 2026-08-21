@@ -23,8 +23,6 @@ jobs:
         run: bash scripts/pre-commit-check.sh
         env:
           SYNO_DIFF_BASE: "origin/main"
-          SKIP_AS_ANY: "1"
-          SKIP_EMPTY_CATCH: "1"
 
   test:
     name: Vitest (${{ matrix.shard }})
