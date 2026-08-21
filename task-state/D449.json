@@ -6,8 +6,8 @@
   "impl": null,
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-08-18",
-  "updated_by": "alloc-task-id",
-  "note": "GS-08：报告模板；场景脚本 = 产品线交付，归属 Harness（进审计无豁免）",
+  "updated_at": "2026-08-21",
+  "updated_by": "deepseek-harness",
+  "note": "GS-08：报告模板；场景脚本 = 产品线交付，归属 Harness（进审计无豁免） | 2026-08-21 CTO 派单给编码 session（见 docs/synova/coordination/编码session派单-20260821.md）",
   "priority": "P1"
 }
