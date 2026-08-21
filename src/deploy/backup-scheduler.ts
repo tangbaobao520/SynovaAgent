@@ -13,6 +13,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import * as http from 'http';
 import { createLogger } from '@synova/logger';
 import { getDataDirectory } from './data-directory';
 import { RecoveryPackBuilder } from './recovery-pack';
@@ -172,7 +173,6 @@ export class BackupScheduler {
     log.warn({ message }, '备份连续失败通知');
 
     try {
-      const http = require('http');
       const postData = JSON.stringify({
         title: 'Synova 备份延迟告警',
         body: message.substring(0, 200),
@@ -184,7 +184,7 @@ export class BackupScheduler {
         path: '/api/notifications/send', method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postData) },
         timeout: 5000,
-      }, (res: { statusCode: number }) => {
+      }, (res: http.IncomingMessage) => {
         log.debug({ statusCode: res.statusCode }, '备份延迟通知已发送');
       });
       req.on('error', (err: Error) => {

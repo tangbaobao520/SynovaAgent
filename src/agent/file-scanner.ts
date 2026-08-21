@@ -11,6 +11,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
+import * as crypto from 'crypto';
 import { createLogger } from '@synova/logger';
 
 const log = createLogger('agent/file-scanner');
@@ -169,7 +170,6 @@ export class FileScanner {
 
   /** 生成文件快照——记录文件路径+内容哈希+版本，写入诊断日志 */
   generateSnapshot(): Map<string, { hash: string; version: string; lastModified: string }> {
-    const crypto = require('crypto');
     const snapshot = new Map<string, { hash: string; version: string; lastModified: string }>();
 
     if (!this.index) return snapshot;

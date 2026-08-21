@@ -1,4 +1,5 @@
 import { createLogger } from '@synova/logger';
+import { readFileSync } from 'fs';
 const log = createLogger('src.env.env-snapshot-schema');
 /**
  * src/env/env-snapshot-schema.ts — 环境快照 TypeScript 类型定义 (D217)
@@ -65,8 +66,7 @@ export interface EnvironmentSnapshot {
  */
 export function loadSnapshot(path: string): EnvironmentSnapshot | null {
   try {
-    const fs = require("fs");
-    const raw = fs.readFileSync(path, "utf-8");
+    const raw = readFileSync(path, "utf-8");
     const parsed = JSON.parse(raw) as EnvironmentSnapshot;
     // 基本结构验证
     if (!parsed.version || !parsed.system || !parsed.node || !parsed.hooks) {

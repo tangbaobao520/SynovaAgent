@@ -1,0 +1,30 @@
+{
+  "scenario_id": "GS-01",
+  "evidence_map": [
+    { "acceptance_point": "S0-1", "assertion_ids": ["noauth-401"] },
+    { "acceptance_point": "S0-2", "assertion_ids": ["consult-entry-validated", "reports-endpoint-ok"] }
+  ],
+  "assertions": [
+    {
+      "id": "noauth-401",
+      "desc": "无 JWT 调 /api/diagnosis/consult → 401（auth fail-closed）",
+      "purpose": "证明首诊入口鉴权边界：无 token 拒绝（S0-1；D232/D233 Electron 一体化前置就绪）",
+      "check": { "type": "file", "path": "__DATA_DIR__/noauth-status.txt" },
+      "expect": { "exists": true, "contains": "401" }
+    },
+    {
+      "id": "consult-entry-validated",
+      "desc": "带 JWT 调 consult 缺 teamId → 400 + VALIDATION_ERROR（入口可达 + 参数契约）",
+      "purpose": "证明首诊入口可达且参数契约正确（S0-2；问卷/诉求 → 六阶段诊断的入口）",
+      "check": { "type": "file", "path": "__DATA_DIR__/validate-response.json" },
+      "expect": { "exists": true, "contains": "VALIDATION_ERROR" }
+    },
+    {
+      "id": "reports-endpoint-ok",
+      "desc": "GET /api/sentinel/reports → HTTP 200（报告产物端点可达）",
+      "purpose": "证明首诊报告查询端点可用（S0-2；报告产物链路）",
+      "check": { "type": "file", "path": "__DATA_DIR__/reports-status.txt" },
+      "expect": { "exists": true, "contains": "200" }
+    }
+  ]
+}

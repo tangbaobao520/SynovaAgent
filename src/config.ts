@@ -7,6 +7,7 @@
 import { createLogger } from '@synova/logger';
 import { loadFileConfig } from './config-file';
 import { ConfigRecovery } from './services/config-recovery';
+import { join } from 'path';
 
 const log = createLogger('config');
 
@@ -45,7 +46,7 @@ export function loadConfig(): SynovaConfig {
 
     // Phase 4.2: 验证配置文件完整性
     try {
-      const synovaJsonPath = require('path').join(process.cwd(), 'synova.json');
+      const synovaJsonPath = join(process.cwd(), 'synova.json');
       const recoveryResult = ConfigRecovery.verify(synovaJsonPath);
       if (recoveryResult.restored) {
         log.info('配置文件已从 .bak 恢复 — 重新加载');

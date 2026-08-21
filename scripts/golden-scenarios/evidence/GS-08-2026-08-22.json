@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "record_type": "scenario",
+  "scenario_id": "GS-08",
+  "source": "scripts/golden-scenarios/GS-08-report-readable/expect.runtime.json",
+  "date": "2026-08-21",
+  "verdict": "pass",
+  "verdicts": [
+    {
+      "acceptance_point": "S8-1",
+      "verdict": "pass",
+      "quote": "template-loaded pass: loadTemplate('executive-summary') → degraded=false（一页纸模板可用）（符合预期） | render-one-page pass: render 产物含一页纸结构：title + score + 卡片（移动端友好）（符合预期）"
+    },
+    {
+      "acceptance_point": "S8-2",
+      "verdict": "pass",
+      "quote": "template-registered pass: listTemplates() 含 executive-summary（模板注册可见）（符合预期）"
+    }
+  ],
+  "assertions": [
+    {
+      "id": "template-loaded",
+      "desc": "loadTemplate('executive-summary') → degraded=false（一页纸模板可用）",
+      "purpose": "证明一页纸报告模板可加载（S8-1；报告模板 K3 定稿前置就绪）",
+      "verdict": "pass",
+      "detail": "符合预期"
+    },
+    {
+      "id": "render-one-page",
+      "desc": "render 产物含一页纸结构：title + score + 卡片（移动端友好）",
+      "purpose": "证明一页纸渲染产物可读：标题/评分/卡片（S8-1；GS-01 产物 → 一页纸）",
+      "verdict": "pass",
+      "detail": "符合预期"
+    },
+    {
+      "id": "template-registered",
+      "desc": "listTemplates() 含 executive-summary（模板注册可见）",
+      "purpose": "证明一页纸模板在注册表中可见（S8-2；文件驱动扩展）",
+      "verdict": "pass",
+      "detail": "符合预期"
+    }
+  ]
+}

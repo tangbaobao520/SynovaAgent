@@ -305,7 +305,7 @@ async function checkWatchdogAlive(): Promise<HealthCheck> {
 
 function tryGetStatFs(): { statfsSync: ((path: string) => { bsize: number; bavail: number }) | null } {
   try {
-    const fsModule = require('fs') as typeof fs & {
+    const fsModule = fs as typeof fs & {
       statfsSync?: (path: string) => { bsize: number; bavail: number };
     };
     if (typeof fsModule.statfsSync === 'function') {

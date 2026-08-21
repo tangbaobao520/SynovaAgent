@@ -4,6 +4,7 @@
  */
 import { Router, type Request, type Response } from 'express';
 import { createLogger } from '@synova/logger';
+import { listMemory, rememberMemory } from '../services/memory-access-service';
 
 const log = createLogger('routes/actions-api');
 const router = Router();
@@ -25,10 +26,7 @@ const store = new Map<string, ActionItem>();
 // V4.2.1: 从 AgentMemoryStore 持久化恢复
 function persistAction(id: string, item: ActionItem): void {
   try {
-    const { getAgentMemoryStore } = require('../l4/agent-memory-store');
-    const { getDatabase } = require('../init/engine-context');
-    const memStore = getAgentMemoryStore(getDatabase());
-    memStore.remember({
+    rememberMemory({
       orgId: item.workspaceId,
       key: `action_${id}`,
       value: JSON.stringify(item),
@@ -58,10 +56,7 @@ router.get('/api/actions', (req: Request, res: Response) => {
   // 如果内存为空, 从 AgentMemoryStore 恢复
   if (store.size === 0) {
     try {
-      const { getAgentMemoryStore } = require('../l4/agent-memory-store');
-      const { getDatabase } = require('../init/engine-context');
-      const memStore = getAgentMemoryStore(getDatabase());
-      const records = memStore.recall({ orgId: wsId, type: 'enterprise_fact', tags: ['action'], limit: 50 } as never) as Array<{ value: string }>;
+      const records = listMemory({ orgId: wsId, type: 'enterprise_fact', tags: ['action'], limit: 50 });
       if (records && records.length > 0) {
         for (const r of records) {
           try { const item = JSON.parse(r.value) as ActionItem; store.set(item.id, item); } catch (err) {

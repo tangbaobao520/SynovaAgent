@@ -11,6 +11,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
+import * as os from 'os';
 import * as crypto from 'crypto';
 import { createLogger } from '@synova/logger';
 import type { VerifyResult } from './recovery-pack';
@@ -52,7 +53,7 @@ export async function verifyLocalBackup(packPath: string, password: string): Pro
 
   // 2. 额外检查: 尝试解密并检查 SQLite 文件
   try {
-    const tmpDir = path.join(require('os').tmpdir(), 'synova-verify-' + Date.now());
+    const tmpDir = path.join(os.tmpdir(), 'synova-verify-' + Date.now());
     const restoreResult = builder.restoreFromPack(packPath, password, tmpDir);
 
     if (restoreResult.success) {

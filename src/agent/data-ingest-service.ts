@@ -10,6 +10,8 @@ import { join } from 'path';
 import { createLogger } from '@synova/logger';
 import { getPIIScrubber } from '../security/pii-scrubber';
 import { deriveValidFrom } from '../l3/period-utils';
+import { AdapterRegistry } from './adapter-registry';
+import { scanFieldMappings } from './adapter-scanner';
 
 const log = createLogger('agent/data-ingest');
 
@@ -55,7 +57,6 @@ export interface IngestResult {
  */
 export function getAvailableAdapters(): string[] {
   try {
-    const { AdapterRegistry } = require('./adapter-registry');
     const registry = AdapterRegistry.getInstance();
     return registry.list().map((a: { name: string }) => a.name);
   } catch (err: unknown) {
@@ -70,16 +71,13 @@ export function getAvailableAdapters(): string[] {
  */
 export function reloadAdapters(): { updated: number; errors: string[] } {
   try {
-    const { scanFieldMappings } = require('./adapter-scanner');
-    const { AdapterRegistry } = require('./adapter-registry');
-
     const scanResult = scanFieldMappings();
     const registry = AdapterRegistry.getInstance();
     registry.clear();
 
     const result = registry.registerFromScan(scanResult.adapters);
     log.info({ updated: result.registered, errors: result.errors.length }, '适配器重新加载完成');
-    return result;
+    return { updated: result.registered, errors: result.errors };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     log.error({ err: msg }, '适配器重新加载失败');
