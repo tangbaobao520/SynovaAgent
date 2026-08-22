@@ -432,6 +432,8 @@ Binary file .claude/bypass.log matches
 2026-08-22T00:20:28+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/win-feishu-bridge
 2026-08-21T17:46:01Z possible-bypass diff=1831s
 2026-08-21T19:10:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=docs | AGENT=deepseek-harness | HASH=3620f6a76b033eb1deeaddf190cbc835ba4de531
+2026-08-22T14:16:04+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D473 | AGENT=dsh | HASH=bf05ffdf86511b3ab0ae51a262f26d55c917cb24
+2026-08-22T14:16:04+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D473 | AGENT=dsh | HASH=89cf38e8b485d3d06382c64b6555903e45500bc4
 2026-08-22T12:32:40+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D472 | AGENT=dsh
 2026-08-22T12:32:53+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D472 | AGENT=dsh
 2026-08-22T12:34:15+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D472 | AGENT=dsh
@@ -439,3 +441,8 @@ Binary file .claude/bypass.log matches
 2026-08-22T12:34:44+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D472 | AGENT=dsh
 2026-08-22T14:14:10+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D472 | AGENT=dsh | HASH=083eb2c5bd26136eebe550dac68929889128c9ed
 2026-08-22T14:14:10+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D472 | AGENT=dsh | HASH=f157dedd1b4137ec339b7f54ccc7ba06a5bcad83
+2026-08-22T10:00:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D472 | AGENT=dev-doc | HASH=e05838dcb0e9b258c2b227af3ce15e11a60e70d5
+2026-08-22T10:00:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D472 | AGENT=dev-doc | HASH=35cb086788c8db3bfe06f30437351b81c7fe6910
+2026-08-22T07:19:14Z possible-bypass diff=3780s
+2026-08-22T10:10:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D473 | AGENT=dev-doc | HASH=ea3cc093e68ba3f569ce5a2d321b9a2469dc2daa
+2026-08-22T10:10:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D473 | AGENT=dev-doc | HASH=cc8f2c2a3976c0e1dce72f3e1e6f6de4e027f98d

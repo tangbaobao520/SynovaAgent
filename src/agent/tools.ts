@@ -53,7 +53,27 @@ export interface ToolDefinition {
   sideEffects?: SideEffect;
   /** Hermes P0-3: 资源路径 — 用于路径冲突检测 */
   resourcePath?: string;
+  /**
+   * D473: 单次调用超时（ms）。缺省：local/connector 无超时（保守，不改变现有行为）；
+   * 声明后超时 → 结构化 TOOL_TIMEOUT 结果（对照 DSH timeout-policy，铁律 24/31）。
+   * timeoutMs=0 视为未启用（边界，与缺省同语义）。
+   */
+  timeoutMs?: number;
   handler: (params: Record<string, unknown>) => Promise<Record<string, unknown>>;
+}
+
+/**
+ * D473: 工具调用超时错误（内联定义 — error-types 包无超时专属类，
+ * 避免跨 packages/ 改动归 Win 区域，2026-08-22 修正）。
+ * 对照 DSH dsh-tool-call-timeout-policy 的 ToolTimeoutError。
+ */
+export class ToolTimeoutError extends Error {
+  readonly timeoutMs: number;
+  constructor(timeoutMs: number) {
+    super(`tool call timed out after ${timeoutMs}ms`);
+    this.name = 'ToolTimeoutError';
+    this.timeoutMs = timeoutMs;
+  }
 }
 
 // ═══ Hermes P0-3: 并行门控 ═══
@@ -92,7 +112,11 @@ export class ParallelGate {
 
 export interface ToolCallResult {
   [key: string]: unknown;
-  error?: string;
+  /**
+   * D473: 错误可为字符串（既有）或结构化错误对象（超时 → { name, code, message }，铁律 32 错误分类）。
+   * 调用方按 truthy 判断失败（tool-loop-executor afterCall / postToolUse isError）。
+   */
+  error?: string | { name: string; code: string; message: string };
 }
 
 // ═══ ToolRegistry ═══
@@ -182,7 +206,7 @@ export class ToolRegistry {
 
       switch (mode) {
         case 'local':
-          return await tool.handler(params);
+          return await this.withTimeout(name, tool, () => tool.handler(params));
 
         case 'connector': {
           if (!this.connectorRegistry) {
@@ -193,7 +217,7 @@ export class ToolRegistry {
           if (!connector) {
             return { error: `Connector "${tool.connectorName}" 未注册` };
           }
-          const rawResult = await connector.executeTool(name, params);
+          const rawResult = await this.withTimeout(name, tool, () => connector.executeTool(name, params));
           return this.wrapUntrustedResult(name, rawResult as ToolCallResult);
         }
 
@@ -224,6 +248,53 @@ export class ToolRegistry {
     } catch (err: any) {
       log.error({ err, name, mode }, '工具执行失败');
       return { error: `工具 ${name} 执行失败: ${err.message}` };
+    }
+  }
+
+  /**
+   * D473: 工具调用超时包裹（对照 DSH timeout-policy — 只给声明 timeoutMs 的工具加超时，
+   * 不改变未声明工具行为，无 blanket budget）。
+   * 契约:
+   *   @input  — name: 工具名; tool: ToolDefinition（timeoutMs 可选）; run: 实际执行函数
+   *   @output — 超时 → 结构化 ToolCallResult { error: { name: 'ToolTimeoutError', code: 'TOOL_TIMEOUT', message } }
+   *             正常 → run() 结果适配为 ToolCallResult
+   *   @degraded — 超时 log.warn（铁律 24 不静默）+ 结构化错误（铁律 31 信号传播）
+   *   timeoutMs=0 / 未声明 → 不包裹（保守回归）
+   *   超时后 handler 继续运行（cooperative 语义，DSH timeout-policy 同款——只通知不 kill）
+   */
+  private async withTimeout(
+    name: string,
+    tool: ToolDefinition,
+    run: () => Promise<unknown>,
+  ): Promise<ToolCallResult> {
+    const timeoutMs = tool.timeoutMs;
+    if (!timeoutMs || timeoutMs <= 0) {
+      const result = await run();
+      return (result ?? {}) as ToolCallResult;
+    }
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      return await Promise.race<ToolCallResult>([
+        run().then((result) => (result ?? {}) as ToolCallResult),
+        new Promise<ToolCallResult>((_, reject) => {
+          timer = setTimeout(() => reject(new ToolTimeoutError(timeoutMs)), timeoutMs);
+        }),
+      ]);
+    } catch (err) {
+      if (err instanceof ToolTimeoutError) {
+        log.warn({ name, timeoutMs }, '工具调用超时 — TOOL_TIMEOUT');
+        return {
+          error: {
+            name: 'ToolTimeoutError',
+            code: 'TOOL_TIMEOUT',
+            message: err.message,
+          },
+        };
+      }
+      throw err;
+    } finally {
+      // D473 复核修复: 清理 timer 防泄漏（race 已 settle 后 timer 不再需要）
+      if (timer !== undefined) clearTimeout(timer);
     }
   }
 
