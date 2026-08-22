@@ -20,10 +20,20 @@
       "dsh/plugins/task-board-adapter/package.json"
     ]
   },
-  "audit": null,
+  "audit": {
+    "verdict": "CONDITIONAL_PASS",
+    "by": "kimi-k3",
+    "at": "2026-08-23",
+    "report": "docs/synova/audit-reports/2026-08-23-D502-D503-board-unify.md",
+    "findings": [
+      "P1-2 降级零删除保护不完整：snapshot 有效但单源 degraded（win_tasks/product_lines/todos 空 tasks）时仍误删该域全部卡（sync.js:521-528 无逐源 degraded 判定）。违反设计决策#3「误删破坏性>漏删」。",
+      "P2-1 sync.js:194-195 双 /** JSDoc 畸形",
+      "P2-3 note 数字 stale（33单测应为36、203卡应为205/207）"
+    ]
+  },
   "fix_task_id": null,
   "updated_at": "2026-08-23",
-  "updated_by": "dsh-cto",
+  "updated_by": "kimi-k3",
   "note": "创始人裁决：D502 由 CTO 实现 + 待规划全量上板。四源：task-state / Win git 派生(≥D328) / product-progress 26 线+L00 总览 / todos 48 条 T-*。数据源统一 origin/main（fetch 只动 remote-tracking ref）。验证：33 单测 + 9 集成测试全绿 + 真实仓库 dry-run 203 卡。部署待办：cp 到 profile + 重启 dsh web（会中断会话，待创始人点头）。",
   "priority": "P0"
 }
