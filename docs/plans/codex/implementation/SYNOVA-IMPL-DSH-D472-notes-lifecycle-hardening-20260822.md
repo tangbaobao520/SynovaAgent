@@ -267,4 +267,11 @@ first_seen: ${TODAY}
 - [x] 与 D474（原 D470）/D473/D471 写集零交集（并行安全，S-7/S-8）
 - [x] 不是凭记忆；不用 --no-verify
 
+## 12. 复核修复记录（2026-08-22 impl 后独立复核，commit f157dedd）
+
+> 创始人要求交付后批判性复核。复核发现 1 个真实问题并修复（K3 可核）:
+
+1. **CT-34 纯文档豁免绕过迁移门禁（高严重度）**：`memory/notes/proposed/*.md` 命中纯文档白名单（`memory/.*\.md`），只改 Note 文件的提交（新建/修改决策 Note——D472 门禁的核心场景）走 CT-34 早退分支 exit 0，迁移门禁被豁免绕过。修复：CT-34 早退分支内（secrets 通过后）补跑 `check-notes-lifecycle.sh`（`NOTES_TOUCHED_DOC` 条件，<1s 不破坏秒过性能）。实测：模拟纯文档提交 + proposed 僵尸 → 硬阻断（修复前静默 exit 0）。
+2. **死变量清理（低）**：`check-notes-lifecycle.sh` 未使用变量 `DEGRADED` 删除（铁律 37）。
+
 > 撞车记录（2026-08-22）：D469 号原被 Win 线 8-21 提交的事件溯源 dev doc（SYNOVA-IMPL-D469-session-event-sourcing）占用且未登记 task-state；本任务取号时分配器发 D469 造成撞号。处理：D469 号留给 Win 文档，本任务改号 D472（分配器重取）；D1 事件溯源由 D471 承接并标注取代 D469 草稿（见 D471 dev doc）。
