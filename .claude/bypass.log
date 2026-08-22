@@ -501,3 +501,5 @@ Binary file .claude/bypass.log matches
 2026-08-22T14:09:13Z possible-bypass diff=22115s
 2026-08-22T14:16:22Z possible-bypass diff=22544s
 2026-08-22T14:20:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=docs | AGENT=deepseek-harness | HASH=c730120ea94e58c427f36416d2d32431323ad9c9
+2026-08-22T14:26:03Z possible-bypass diff=23125s
+2026-08-22T14:40:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=docs | AGENT=deepseek-harness | HASH=6042947e95507f333d52611d97b2da841e1be568
