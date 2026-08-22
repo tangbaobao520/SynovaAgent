@@ -1,7 +1,7 @@
 {
   "task_id": "D453",
   "title": "CT-39 CI 红超 24h 自动入待办（信号失效 M1 同型根治）",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "commit": "local",
@@ -9,9 +9,15 @@
     "at": "2026-08-18",
     "note": "check-ci-stale-red.sh（main failure>24h 写待办）+ gen-cto-health 接入告警"
   },
-  "audit": null,
+  "audit": {
+    "verdict": "PASS",
+    "report": "docs/synova/audit-reports/2026-08-22-P2-batch-audit.md",
+    "at": "2026-08-22",
+    "by": "k3",
+    "note": "CT-39 CI 红自动入待办"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-08-18",
-  "updated_by": "CTO",
+  "updated_at": "2026-08-22T13:29:37+00:00",
+  "updated_by": "k3",
   "note": "CT-39 落地：红常态化=信号失效，检测 main failure 持续>24h 自动写待办 CI-STALE-RED.md"
 }

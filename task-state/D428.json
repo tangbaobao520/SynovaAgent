@@ -1,7 +1,7 @@
 {
   "task_id": "D428",
   "title": "CTO 收尾：K3 U1-U8 控制塔升级 15 分支批量合并入 main",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "commit": "f69930e7c006",
@@ -9,9 +9,15 @@
     "at": "2026-08-17",
     "note": "按 K3 MERGE-CHECKLIST-20260817 顺序合并 15 分支：docs/founder-control-system + U3/U7/U1/U2/U5/U6/U5a/U5c/U4 + audit/product-lines-verification + console-panels + U8 + review-handover + merge-checklist + win-d356 + win-d333"
   },
-  "audit": null,
+  "audit": {
+    "verdict": "PASS",
+    "report": "docs/synova/audit-reports/2026-08-22-P2-batch-audit.md",
+    "at": "2026-08-22",
+    "by": "k3",
+    "note": "U1-U8 合并收尾"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-08-17",
-  "updated_by": "CTO",
+  "updated_at": "2026-08-22T13:29:37+00:00",
+  "updated_by": "k3",
   "note": "K3 合并清单 12 步全完成 + Win 2 分支；本地与 main 同步中（工作区有运行时文件待收尾）"
 }

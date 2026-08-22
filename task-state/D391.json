@@ -1,7 +1,7 @@
 {
   "task_id": "D391",
   "title": "admin-knowledge.ts:17 L1→L4 跨层修复（CI Architecture 转绿，D309 落地，K3 P2-5 派单）",
-  "status": "impl_done",
+  "status": "audited",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D391-admin-knowledge-l1l4-fix-20260816.md",
     "commit": null,
@@ -18,16 +18,13 @@
     ]
   },
   "audit": {
+    "verdict": "CONDITIONAL PASS",
     "report": "docs/synova/audit-reports/2026-08-16-D391.md",
-    "verdict": "CONDITIONAL_PASS",
-    "by": "K3",
-    "at": "2026-08-16",
-    "findings": [
-      "P1-1 federated 兜底写入即蒸发返回201假成功（功能性）",
-      "P1-2 无 dev doc/brief 且偏离 D309 方案（流程性）"
-    ]
+    "at": "2026-08-22",
+    "by": "k3",
+    "note": "历史报告回填；P1×2→D402"
   },
   "fix_task_id": "D402",
-  "updated_at": "2026-08-16",
-  "updated_by": "CTO"
+  "updated_at": "2026-08-22T13:29:37+00:00",
+  "updated_by": "k3"
 }

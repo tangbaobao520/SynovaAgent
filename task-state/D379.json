@@ -1,7 +1,7 @@
 {
   "task_id": "D379",
   "title": "path-dependency 哨兵空壳补实现",
-  "status": "impl_done",
+  "status": "audited",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D379-path-dependency-shell-20260816.md",
     "commit": "bc552aae",
@@ -13,10 +13,16 @@
     "by": "coding",
     "at": "2026-08-16"
   },
-  "audit": null,
+  "audit": {
+    "verdict": "PASS",
+    "report": "docs/synova/audit-reports/2026-08-22-P2-batch-audit.md",
+    "at": "2026-08-22",
+    "by": "k3",
+    "note": "path-dependency 哨兵补实现 + 5 exportKey 修复"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-08-17",
-  "updated_by": "CTO",
+  "updated_at": "2026-08-22T13:29:37+00:00",
+  "updated_by": "k3",
   "acceptance_points": [],
   "note": "7-2 修复待 K3 复审后兑换（诚实规则：无审计报告不自动翻绿）"
 }

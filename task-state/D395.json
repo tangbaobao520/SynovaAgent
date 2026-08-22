@@ -14,17 +14,15 @@
     "at": "2026-08-17"
   },
   "audit": {
-    "verdict": "CONDITIONAL_PASS",
-    "level": "spec",
+    "verdict": "CONDITIONAL PASS",
     "report": "docs/synova/audit-reports/2026-08-17-D395a.md",
-    "by": "K3",
-    "at": "2026-08-17",
-    "findings": "P0x0/P1x2/P2x5",
-    "pass_conditions": "P1-1/P1-2 已交付缺陷 → 转修复单（P1-2 优先：check-lessons-learned.sh 改向 notes/proposed）"
+    "at": "2026-08-22",
+    "by": "k3",
+    "note": "历史报告回填；P1×2→D406"
   },
   "fix_task_id": "D406",
-  "updated_at": "2026-08-17",
-  "updated_by": "CTO",
+  "updated_at": "2026-08-22T13:29:37+00:00",
+  "updated_by": "k3",
   "note": "D395-a 开发组织 Notes 四态（memory/notes/{proposed,implemented,archived,rejected}，强化 M7）；D395-b 产品版取消独立，并入 D398（先看记忆长什么样）。 | P1-1 descope（2026-08-17 创始人授权：层1 grep 强制放弃，层2 commit-msg 物理门禁兜底）",
   "priority": "P1-现在就做"
 }

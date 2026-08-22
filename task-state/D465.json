@@ -1,17 +1,23 @@
 {
   "task_id": "D465",
   "title": "CI 门禁 diff 语义补齐（空暂存假绿消除）",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "commit": "10e908f6",
     "by": "deepseek-harness",
     "at": "2026-08-21"
   },
-  "audit": null,
+  "audit": {
+    "verdict": "PASS",
+    "report": "docs/synova/audit-reports/2026-08-22-P0-control-tower-stage1.md",
+    "at": "2026-08-22",
+    "by": "k3",
+    "note": "CI 门禁 diff 语义补齐（空暂存假绿消除）"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-08-21",
-  "updated_by": "deepseek-harness",
+  "updated_at": "2026-08-22T13:29:37+00:00",
+  "updated_by": "k3",
   "note": "控制塔减负审计落地项1：pre-commit-check.sh 加 CI 模式（GITHUB_ACTIONS+SYNO_DIFF_BASE → base...HEAD），ci.yml quality job 注入 SYNO_DIFF_BASE=origin/main + fetch-depth:0，消除 CI 空暂存增量检查假绿。本地模式不回归（无 GITHUB_ACTIONS → --cached）",
   "priority": "P1"
 }
