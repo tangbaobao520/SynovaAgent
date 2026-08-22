@@ -23,6 +23,7 @@ K3 P1-2（2026-08-22）把 as-any 范围从 src/ 扩到 src/+packages/ 时未排
 ## Q2: 范围 — 正确的最简方案
 做什么：
 - scripts/pre-commit-check.sh — 组1 as-any 检查的 git diff 加 pathspec 排除 .test.ts/.test.tsx/.d.ts
+- task-state/D501.json — 任务状态回填（impl.commit）
 不做什么：
 - 不改 packages/test-kit/src/security-scanners.ts（as-any 审计器实现）
 - 不改 .github/workflows/ci.yml（CI 配置）
