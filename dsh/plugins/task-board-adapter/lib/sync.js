@@ -282,13 +282,14 @@ export function mapOverallLineCard(productLines, opts = {}) {
   const lines = Array.isArray(productLines?.lines) ? productLines.lines : [];
   if (typeof pct !== "number" || lines.length === 0) return { error: "product_lines 缺 overall_pct/lines" };
   const done = lines.filter((l) => Number(l?.total ?? 0) > 0 && Number(l?.verified ?? 0) >= Number(l?.total)).length;
+  const allDone = lines.length > 0 && done === lines.length;
   return {
     task: {
       id: "L00",
       title: `L00 · 产品完成度总览 ${pct}%（${lines.length} 线：全绿 ${done}）`,
       description: `产品线加权完成度 ${pct}%（数据源 product-progress.json，CI 自动重算）。`,
       prompt: "这是 Synova 产品完成度总览卡。请按产品线总结当前整体进展，不要修改任何代码、文件或任务状态。",
-      status: pct > 0 ? "running" : "todo",
+      status: allDone ? "done" : pct > 0 ? "running" : "todo",
       createdAt: opts.createdAt ?? now,
       updatedAt: now,
       executions: [],
@@ -513,12 +514,17 @@ export async function syncOnce(opts) {
   await postAction({ apiBase, requestId, action, fetchImpl: opts.fetchImpl });
 
   // 删除僵尸任务（看板有、四源 + backlog 皆无）——治 import 只合并不删除的盲区（D502 扩到全 id 集）
+  // 降级保护（D502 复核）：snapshot 缺失时本轮回退工作区直读，id 集不含 Win/L*/T-* 域，
+  // 且 Win 卡的 id 同为 D# 格式无法区分 → 降级轮一律跳过删除（误删 124 张卡是破坏性的、
+  // 漏删一张僵尸等 derive 恢复后下一轮自愈——两害相权取其轻）。仅在 snapshot 有效时删除。
   let deleted = 0;
-  for (const bt of boardTasks) {
-    const id = String(bt?.id ?? "");
-    if (!id || allIds.has(id)) continue;
-    await postAction({ apiBase, requestId: newId(), action: { kind: "delete", taskId: id }, fetchImpl: opts.fetchImpl });
-    deleted += 1;
+  if (usingSnapshot) {
+    for (const bt of boardTasks) {
+      const id = String(bt?.id ?? "");
+      if (!id || allIds.has(id)) continue;
+      await postAction({ apiBase, requestId: newId(), action: { kind: "delete", taskId: id }, fetchImpl: opts.fetchImpl });
+      deleted += 1;
+    }
   }
 
   return {
