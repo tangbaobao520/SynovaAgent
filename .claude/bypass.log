@@ -514,3 +514,8 @@ Binary file .claude/bypass.log matches
 2026-08-22T14:50:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=docs | AGENT=deepseek-harness | HASH=93048001dbabb7861029dde1f2ac8a73fd0fff76
 2026-08-22T15:00:14Z possible-bypass diff=25176s
 2026-08-22T15:00:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=docs | AGENT=deepseek-harness | HASH=4e95ef2c7ab416164a9d03a35de19d4272ae783c
+2026-08-22T23:21:27+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D501 | AGENT=dsh-cto
+2026-08-22T23:22:55+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D501 | AGENT=dsh-cto
+2026-08-22T23:23:19+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D501 | AGENT=dsh-cto
+2026-08-22T23:23:26+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D501 | AGENT=dsh-cto
+2026-08-22T23:24:29+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D501 | AGENT=dsh-cto | HASH=40d058d5a930bbaefe3725314aa811116d620108
