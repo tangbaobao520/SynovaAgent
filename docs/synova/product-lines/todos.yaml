@@ -2,7 +2,7 @@
 # AUTO 区机器生成，禁止手写；MANUAL 区人工微调归属，生成器逐字节保留。
 # 改完跑 bash scripts/product-lines/refresh-all.sh 生效。
 version: 1.0
-generated_at: "2026-08-16 20:40:14"
+generated_at: "2026-08-22 17:51:18"
 todos:
 # AUTO:START
   - id: "T-1-01"
@@ -220,6 +220,14 @@ todos:
     priority: P1
     owner: "Claude Code"
     depends: ["D355"]
+    acceptance: "场景 GS-03、GS-05 转绿（exit 0 + 证据入库）"
+  - id: "T-10-04"
+    line: 10
+    title: "CONDITIONAL PASS（无 P0）：三目标缺陷（P0-1 manifest 挂载/P1-1 degraded 拦截/P1-3 入口校验）在其层全部物理（D356）"
+    source: "审计发现台账（K3 D356 审计）"
+    priority: P1
+    owner: "Claude Code"
+    depends: ["D356"]
     acceptance: "场景 GS-03、GS-05 转绿（exit 0 + 证据入库）"
   - id: "T-15-01"
     line: 15
