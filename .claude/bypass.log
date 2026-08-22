@@ -562,3 +562,4 @@ Binary file .claude/bypass.log matches
 2026-08-23T02:45:00+08:00 | COMMITTED | pre-commit PASS (一次性补记: D505 spec) | TASK_ID=D505 | AGENT=synova-devdoc | HASH=4d87711545b78ae565969741f6e4086cee9f1013
 2026-08-23T02:46:00+08:00 | COMMITTED | pre-commit PASS (一次性补记: D505 task-state) | TASK_ID=D505 | AGENT=synova-devdoc | HASH=9d0e04827743721ac361e3008a5a4ea224e59bb2
 2026-08-23T02:50:00+08:00 | COMMITTED | pre-commit PASS (一次性补记: D504/D505 派单状态更新) | TASK_ID=D505 | AGENT=synova-devdoc | HASH=24d16619b629450b5bc1bd2c3ed31f62404bd221
+2026-08-23T02:52:00+08:00 | COMMITTED | pre-commit PASS (一次性补记: D505 派单状态+bypass 合并提交) | TASK_ID=D505 | AGENT=synova-devdoc | HASH=f8b49bab
