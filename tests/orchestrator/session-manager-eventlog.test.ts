@@ -55,6 +55,22 @@ describe('D500 SessionManager — 事件持久化 + model-visible⟺logged 断�
     errorLogSpy.mockRestore();
   });
 
+  it('断言分支: store.lastDegraded=true（appendEvent 失败）→ manager 断言失败（复核修复，覆盖 manager:83-86 分支）', () => {
+    const errorLogSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const manager = new SessionManager({}, store);
+    // 先正常写一条（session 有效）
+    manager.addMessage({ role: 'user', content: 'ok' }, sessionId);
+    expect(manager.degraded).toBe(false);
+    // 构造 store.lastDegraded=true：drop session_events 表 → 下次 addMessage 的 appendEvent 失败
+    const db = (store as unknown as { db: Database.Database }).db;
+    db.exec('DROP TABLE session_events');
+    manager.addMessage({ role: 'user', content: 'append-fail' }, sessionId);
+    // manager 断言分支触发（store.lastDegraded → 断言失败 → manager.degraded）
+    expect(store.lastDegraded).toBe(true);
+    expect(manager.degraded).toBe(true);
+    errorLogSpy.mockRestore();
+  });
+
   it('降级信号非粘滞: 失败后成功写入 → degraded 重置为 false（复核修复）', () => {
     const errorLogSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const manager = new SessionManager({}, store);

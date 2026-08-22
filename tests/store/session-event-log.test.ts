@@ -62,6 +62,26 @@ describe('D500 session event log — appendEvent + deriveMessages', () => {
     expect(derived[0].content).toBe('m1'); // 未被覆盖
   });
 
+  it('seq 冲突真实构造: UNIQUE(session_id,seq) 物理拒绝重复 seq（缺陷①防线实证）', () => {
+    const db = (store as unknown as { db: Database.Database }).db;
+    store.addMessage(sessionId, 'user', 'first'); // seq=1
+    // 直接 SQL 插入重复 seq=1 → UNIQUE 约束物理拒绝（抛 SqliteError，不静默覆盖）
+    let threw = false;
+    try {
+      db.prepare('INSERT INTO session_events (session_id, seq, event_type, payload_json) VALUES (?,?,?,?)')
+        .run(sessionId, 1, 'message', JSON.stringify({ role: 'user', content: 'conflict' }));
+    } catch (err) {
+      threw = true;
+      expect((err as Error).message).toContain('UNIQUE constraint failed');
+    }
+    expect(threw).toBe(true);
+    // 原始事件未被覆盖（冲突 INSERT 被拒绝）
+    const events = store.getEvents(sessionId);
+    expect(events).toHaveLength(1);
+    expect(events[0].seq).toBe(1);
+    expect(JSON.parse(events[0].payloadJson).content).toBe('first');
+  });
+
   it('崩溃恢复: 内存回退（模拟 lastSeq=1 再写 seq=1）→ 按持久化 MAX(seq) 续写 2（缺陷②防线）', () => {
     store.addMessage(sessionId, 'user', 'm1'); // 持久化 seq=1
     // 模拟"内存回退"：内存以为 lastSeq=1 想再写 seq=1 —— appendEvent 用持久化 MAX(seq)=1 → 续写 2
