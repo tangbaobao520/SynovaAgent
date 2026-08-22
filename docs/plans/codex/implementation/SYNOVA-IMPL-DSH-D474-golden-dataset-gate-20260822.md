@@ -269,3 +269,10 @@ export function recordComputeSnapshot(section: ComputeSnapshotSection): { snapsh
 - [x] DS 与 dev doc 一一对应（DS1-DS11）；写集表标题紧跟表头（D381 格式契约）
 - [x] 与 D472/D473/D471 写集零交集（并行安全，S-7/S-8）
 - [x] 不是凭记忆；不用 --no-verify
+
+## 12. 复核修复记录（2026-08-22 impl 后独立复核，commit 7e44c02e）
+
+> 创始人要求交付后批判性复核。复核发现 2 个真实问题并修复（K3 可核）:
+
+1. **main 入口阶段 5 失败误绿（高严重度）**：`golden-case-checker.ts` isMainModule 分支只检查 `report.failedCases`（golden-case 计数），阶段 5（黄金数据集 severity 对比）失败时 failedCases=0 但 summary='SOME_FAILED' → 门禁误 exit 0。修复：`failedCases>0 || summary!=='ALL_PASSED'` → exit 1（fail-closed）。红-绿实测：改坏阈值 → exit 1；恢复 → exit 0（修复前误绿）。
+2. **expectedDiagnosis.severity 过度约束（中严重度）**：原实现做"全局 severity ∈ 已登记哨兵期望集合"匹配——全局严重度是跨哨兵聚合结果，未必等于任一单哨兵 expected，未来数据集重建会误伤。修复：放宽为结构断言（存在 + 值域合法 critical|high|medium|low|warning|healthy），不做跨哨兵匹配。测试更新（合法值≠单哨兵期望 → 通过；非法值 → diff）。
