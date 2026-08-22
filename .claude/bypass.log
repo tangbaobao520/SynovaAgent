@@ -456,3 +456,9 @@ Binary file .claude/bypass.log matches
 2026-08-22T07:19:14Z possible-bypass diff=3780s
 2026-08-22T10:10:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D473 | AGENT=dev-doc | HASH=ea3cc093e68ba3f569ce5a2d321b9a2469dc2daa
 2026-08-22T10:10:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D473 | AGENT=dev-doc | HASH=cc8f2c2a3976c0e1dce72f3e1e6f6de4e027f98d
+2026-08-22T10:20:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D474 | AGENT=dev-doc | HASH=48e9d3723a7ea31e555ca7e1a3ef8d17b13c436f
+2026-08-22T10:20:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D474 | AGENT=dev-doc | HASH=a3e47f22a75b9040161d157da32e5e1dfcdd6ed5
+2026-08-22T10:20:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D474 | AGENT=dev-doc | HASH=7e44c02e3abd9a6ea2927fd0c2cb3a5e0623d657
+2026-08-22T10:20:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D474 | AGENT=dev-doc | HASH=1f11cbd917c662c2a03e75fbd6f87130e6214448
+2026-08-22T10:20:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D473 | AGENT=dev-doc | HASH=dff6cf2b32093a795587b5e5ead18bd1b832e21a
+2026-08-22T10:20:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D474 | AGENT=dev-doc | HASH=b25d05c1492c646726eaecd21b67a85d1906a80a
