@@ -264,3 +264,155 @@ describe('golden-case-11 — 集成（真实 fixture + 真实 compute 函数）'
     expect(f1.passed).toBe(true);
   });
 });
+
+// ═══════════════════════════════════════════════════════════
+// D474: 黄金数据集门禁测试 — keyless 录制 + severity 对比 + 降级
+// 铁律 48: 覆盖正常路径 + 降级路径 + 边界条件 + 红-绿演练（非空壳）
+// ═══════════════════════════════════════════════════════════
+
+describe('recordComputeSnapshot — keyless 快照录制（DSH snapshot 范式）', () => {
+  it('合法 compute fixture → 返回 snapshot（正常路径，真跑 computeCashRunway）', async () => {
+    const { recordComputeSnapshot } = await import('../../scripts/ci/golden-snapshot-runner');
+    const rec = recordComputeSnapshot({
+      function: 'computeCashRunway',
+      input: [{ cash: 100000, operatingExpense: 30000 }],
+    });
+    expect(rec.error).toBeUndefined();
+    expect(rec.snapshot).toBeDefined();
+    expect(rec.snapshot?.signal).toBe('critical');
+    expect(rec.snapshot?.runwayMonths).toBe(3.3);
+  });
+
+  it('未登记 function → 返回 error（不静默，降级路径）', async () => {
+    const { recordComputeSnapshot } = await import('../../scripts/ci/golden-snapshot-runner');
+    const rec = recordComputeSnapshot({ function: 'notRegisteredFn', input: {} });
+    expect(rec.snapshot).toBeUndefined();
+    expect(rec.error).toContain('未登记');
+  });
+
+  it('录制 ≠ 判定：返回快照候选但不写 fixture（边界）', async () => {
+    const { recordComputeSnapshot } = await import('../../scripts/ci/golden-snapshot-runner');
+    const rec = recordComputeSnapshot({
+      function: 'computeCashRunway',
+      input: [{ cash: 100000, operatingExpense: 30000 }],
+    });
+    expect(rec.snapshot).toBeDefined();
+    // 录制对象含冻结候选所需字段
+    expect(typeof rec.snapshot?.monthlyBurn).toBe('number');
+    expect(Array.isArray(rec.snapshot?.warnings)).toBe(true);
+  });
+});
+
+describe('runGoldenDatasetCheck — 黄金数据集 severity 级对比', () => {
+  it('已登记哨兵 severity 一致 → passed:true（正常路径）', async () => {
+    const { runGoldenDatasetCheck } = await import('../../scripts/ci/golden-snapshot-runner');
+    const result = runGoldenDatasetCheck(
+      {
+        datasetVersion: 'v1',
+        sentinels: { 'cash-runway': { expected: 'critical', value: 0.22 } },
+        expectedDiagnosis: { severity: 'critical' },
+      },
+      { 'cash-runway': [{ cash: 100000, operatingExpense: 30000 }] },
+    );
+    expect(result.passed).toBe(true);
+    expect(result.diffs).toHaveLength(0);
+  });
+
+  it('红-绿演练: severity 漂移（期望 critical 实际 warning）→ passed:false + diff 点名', async () => {
+    const { runGoldenDatasetCheck } = await import('../../scripts/ci/golden-snapshot-runner');
+    // 等价于改坏 cash-runway 阈值: 用 6 个月以下边界外输入使输出为 warning，与 expected=critical 冲突
+    const result = runGoldenDatasetCheck(
+      {
+        datasetVersion: 'v1',
+        sentinels: { 'cash-runway': { expected: 'critical', value: 0.22 } },
+        expectedDiagnosis: { severity: 'critical' },
+      },
+      { 'cash-runway': [{ cash: 100000, operatingExpense: 10000 }] }, // runway 10 个月 → warning
+    );
+    expect(result.passed).toBe(false);
+    expect(result.diffs.some((d) => d.includes('cash-runway') && d.includes('critical'))).toBe(true);
+  });
+
+  it('数据集缺 sentinels → degraded:true + passed:false（不静默 pass，降级路径）', async () => {
+    const { runGoldenDatasetCheck } = await import('../../scripts/ci/golden-snapshot-runner');
+    const result = runGoldenDatasetCheck(
+      { datasetVersion: 'v1', sentinels: {} },
+      {},
+    );
+    expect(result.passed).toBe(false);
+    expect(result.degraded).toBe(true);
+  });
+
+  it('未登记 compute 哨兵 → 跳过不硬判红（L2c 边界：registry 登记什么查什么）', async () => {
+    const { runGoldenDatasetCheck } = await import('../../scripts/ci/golden-snapshot-runner');
+    // margin-health 无对应 compute 登记 → 该哨兵跳过；cash-runway 已登记且有 input → 检查
+    const result = runGoldenDatasetCheck(
+      {
+        datasetVersion: 'v1',
+        sentinels: {
+          'margin-health': { expected: 'high', value: 0.35 },
+          'cash-runway': { expected: 'critical', value: 0.22 },
+        },
+        expectedDiagnosis: { severity: 'critical' },
+      },
+      { 'cash-runway': [{ cash: 100000, operatingExpense: 30000 }] },
+    );
+    // margin-health 跳过（未登记），cash-runway 通过 → passed（不因未登记哨兵红）
+    expect(result.passed).toBe(true);
+  });
+
+  it('已登记但未提供 input → 跳过不硬判红（L2c 边界）', async () => {
+    const { runGoldenDatasetCheck } = await import('../../scripts/ci/golden-snapshot-runner');
+    const result = runGoldenDatasetCheck(
+      {
+        datasetVersion: 'v1',
+        sentinels: { 'cash-runway': { expected: 'critical', value: 0.22 } },
+        expectedDiagnosis: { severity: 'critical' },
+      },
+      {}, // 无 input
+    );
+    // 已登记但无 input → 跳过（无法跑真实代码不硬判红）→ checked=0 → 显式失败但非降级
+    expect(result.passed).toBe(false);
+    expect(result.degraded).toBe(false);
+    expect(result.diffs.some((d) => d.includes('检查数为 0'))).toBe(true);
+  });
+
+  it('expectedDiagnosis.severity 与哨兵期望集合不一致 → diff（全局对比）', async () => {
+    const { runGoldenDatasetCheck } = await import('../../scripts/ci/golden-snapshot-runner');
+    const result = runGoldenDatasetCheck(
+      {
+        datasetVersion: 'v1',
+        sentinels: { 'cash-runway': { expected: 'critical', value: 0.22 } },
+        expectedDiagnosis: { severity: 'high' }, // 全局 vs 哨兵 critical 不一致
+      },
+      { 'cash-runway': [{ cash: 100000, operatingExpense: 30000 }] },
+    );
+    expect(result.passed).toBe(false);
+    expect(result.diffs.some((d) => d.includes('expectedDiagnosis.severity'))).toBe(true);
+  });
+
+  it('空 dataset → degraded（边界）', async () => {
+    const { runGoldenDatasetCheck } = await import('../../scripts/ci/golden-snapshot-runner');
+    const result = runGoldenDatasetCheck(null as unknown as Parameters<typeof runGoldenDatasetCheck>[0], {});
+    expect(result.passed).toBe(false);
+    expect(result.degraded).toBe(true);
+  });
+});
+
+describe('runGoldenDatasetPhase — 阶段 5 接线（真实 wani-baby 数据集）', () => {
+  it('真实 wani-baby-v1.json → cash-runway severity 对比通过（铁律 12: 真实数据不 mock）', async () => {
+    const { runGoldenDatasetPhase } = await import('../../scripts/ci/golden-case-checker');
+    const result = runGoldenDatasetPhase();
+    // 数据集存在 + 已登记哨兵（cash-runway）对比通过
+    expect(result.passed).toBe(true);
+    expect(result.degraded).toBe(false);
+  });
+
+  it('findingsFnRegistry 保持空 {} 且黄金数据集检查不依赖它（S-10 显式 descope 回归）', async () => {
+    const { findingsFnRegistry } = await import('../../scripts/ci/golden-snapshot-runner');
+    expect(Object.keys(findingsFnRegistry)).toHaveLength(0);
+    const { runGoldenDatasetPhase } = await import('../../scripts/ci/golden-case-checker');
+    const result = runGoldenDatasetPhase();
+    expect(result.degraded).toBe(false); // 空 findingsFnRegistry 不阻塞黄金数据集检查
+  });
+});

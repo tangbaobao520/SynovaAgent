@@ -15,6 +15,8 @@ import {
   runComputeSnapshot,
   runFindingsSnapshot,
   runExpertReportAssertion,
+  recordComputeSnapshot,
+  runGoldenDatasetCheck,
 } from './golden-snapshot-runner';
 import type {
   ComputeSnapshotSection,
@@ -322,11 +324,22 @@ function runAllChecks(): CheckerReport {
 
   const allPassed = failedCases === 0;
 
+  // ═══ D474 阶段 5: 黄金数据集检查（wani-baby 真实数据 + 期望诊断）═══
+  // 数据级快照：对已登记 compute 纯函数跑真实代码 → severity 与 sentinels[哨兵名].expected 对比
+  const goldenResult = runGoldenDatasetPhase();
+  const goldenPassed = goldenResult.passed;
+
   console.log('═══════════════════════════════════════════════════════════');
-  console.log(`  结果: ${allPassed ? '✅ 全部通过' : '❌ 有未通过案例'}`);
+  console.log(`  结果: ${allPassed && goldenPassed ? '✅ 全部通过' : '❌ 有未通过案例'}`);
   console.log(`  通过: ${passedCases}/${files.length}`);
   if (failedCases > 0) {
     console.log(`  失败: ${failedCases}`);
+  }
+  if (!goldenPassed) {
+    console.log(`  黄金数据集: ❌ FAIL`);
+    for (const d of goldenResult.diffs) console.log(`       - ${d}`);
+  } else {
+    console.log(`  黄金数据集: ✅ PASS`);
   }
   console.log('═══════════════════════════════════════════════════════════');
 
@@ -335,8 +348,52 @@ function runAllChecks(): CheckerReport {
     passedCases,
     failedCases,
     results,
-    summary: allPassed ? 'ALL_PASSED' : 'SOME_FAILED',
+    summary: allPassed && goldenPassed ? 'ALL_PASSED' : 'SOME_FAILED',
   };
+}
+
+// ═══ D474: 黄金数据集阶段 ═══
+
+/** 定位仓库根（兼容 ESM + Windows，与 runAllChecks 同法） */
+function repoRootDir(): string {
+  const metaUrl = new URL(import.meta.url);
+  const currentDir = path.dirname(metaUrl.pathname.replace(/^\/([a-zA-Z]:)/, '$1'));
+  return path.resolve(currentDir, '..', '..');
+}
+
+/** 黄金数据集路径（data/golden/wani-baby-v1.json，冻结快照） */
+const GOLDEN_DATASET_PATH = path.join(repoRootDir(), 'data', 'golden', 'wani-baby-v1.json');
+
+/**
+ * 已登记哨兵 compute 的黄金输入（哨兵 value 是 0-1 打分非 compute 入参；
+ * 每个已登记 compute 哨兵提供代表该哨兵语义的输入）。
+ * 2026-08-22: 仅 computeCashRunway 已登记（D396 示范），input 与 golden-case-11 fixture 同源。
+ * 后续 D355-D360 修复对象按同契约增量登记。
+ */
+const GOLDEN_COMPUTE_INPUTS: Record<string, unknown> = {
+  'cash-runway': [{ cash: 100000, operatingExpense: 30000 }],
+};
+
+/**
+ * runGoldenDatasetPhase — 黄金数据集门禁阶段（D474 阶段 5）。
+ * 读 data/golden/wani-baby-v1.json → runGoldenDatasetCheck（真跑已登记 compute + severity 对比）。
+ * @returns SnapshotCheckResult；数据集缺失 → degraded:true（铁律 11/24 不静默 pass）
+ */
+export function runGoldenDatasetPhase(): SnapshotCheckResult {
+  if (!fs.existsSync(GOLDEN_DATASET_PATH)) {
+    console.error(`[ERROR] 黄金数据集不存在: ${GOLDEN_DATASET_PATH}`);
+    return { passed: false, degraded: true, diffs: [`黄金数据集不存在: ${GOLDEN_DATASET_PATH} — 显式降级`] };
+  }
+  let dataset: unknown;
+  try {
+    dataset = JSON.parse(fs.readFileSync(GOLDEN_DATASET_PATH, 'utf-8'));
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[ERROR] 黄金数据集 JSON 解析失败: ${msg}`);
+    return { passed: false, degraded: true, diffs: [`黄金数据集 JSON 解析失败: ${msg} — 显式降级`] };
+  }
+  console.log('──── 阶段 5: 黄金数据集检查 (D474) ────');
+  return runGoldenDatasetCheck(dataset as Parameters<typeof runGoldenDatasetCheck>[0], GOLDEN_COMPUTE_INPUTS);
 }
 
 // ═══ 入口 ═══
@@ -344,6 +401,29 @@ function runAllChecks(): CheckerReport {
 // 只在直接运行脚本时执行（不被 vitest import 时触发）
 const isMainModule = process.argv[1] && import.meta.url.includes(process.argv[1].replace(/\\/g, '/'));
 if (isMainModule) {
+  // D474: --record 模式 — keyless 快照录制（跑真实代码生成冻结候选，不判定）
+  if (process.argv.includes('--record')) {
+    const fixturesDir = path.join(repoRootDir(), 'tests', 'fixtures', 'golden-cases');
+    const files = fs.readdirSync(fixturesDir).filter((f) => f.endsWith('.json') && f.startsWith('golden-case'));
+    files.sort();
+    let recorded = 0;
+    for (const file of files) {
+      const filePath = path.join(fixturesDir, file);
+      const caseData: GoldenCase = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+      if (caseData.compute && caseData.compute.snapshot === undefined) {
+        const rec = recordComputeSnapshot(caseData.compute);
+        if (rec.error) {
+          console.log(`  [${caseData.id}] 录制失败: ${rec.error}`);
+        } else {
+          console.log(`  [${caseData.id}] compute.snapshot 候选: ${JSON.stringify(rec.snapshot)}`);
+          recorded++;
+        }
+      }
+    }
+    console.log(`[GATE] --record 完成: ${recorded} 个 fixture 生成快照候选（人工确认后写入 fixture 冻结）`);
+    process.exit(0);
+  }
+
   const report = runAllChecks();
 
   if (report.failedCases > 0) {
