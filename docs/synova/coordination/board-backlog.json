@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "backlog": [
+    {
+      "id": "PLAN-vitest-typecheck",
+      "title": "流程盲区强化：vitest 类型检查（D473 暴露 TS2322 静默通过）",
+      "note": "等编码 session 完成 D500 后，在 verify-incremental L2 或 CI 强化类型检查"
+    },
+    {
+      "id": "PLAN-u5-u6-gate",
+      "title": "U 系列门禁收尾：U5 secrets-failopen + U6 sop-gate 接线",
+      "note": "D417(u5 脚本未落地) + D416(u6 sop-gate.sh 存在未接线)，pre-audit-summary 目前只聚合 U1-U4/U7"
+    },
+    {
+      "id": "PLAN-win-d338-d357",
+      "title": "Win 侧任务跟踪：D338 orgId 契约网关 + D357 连接器 + D359/D360",
+      "note": "均归 Win（Claude），Mac 仓库暂无其 task-state；D338 落地后 Mac 重跑 GS-07 转绿"
+    },
+    {
+      "id": "PLAN-d1-src-store-coord",
+      "title": "D500 事件溯源编码前：与 Win 核对 src/store 写集归属",
+      "note": "src/store 归 Win（🔵 借 DSH 层），D500 编码前须 grep 确认写集避免撞车"
+    }
+  ]
+}

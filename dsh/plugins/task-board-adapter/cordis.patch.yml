@@ -1,0 +1,6 @@
+# @synova/task-board-adapter bundle layer: mount the Host-side sync plugin.
+# repoRoot 默认取 dsh web 进程 cwd（launchd 配置为 /Users/wane/SynovaAgent），
+# 需要时可在 profile 的 patch 层覆盖 config.repoRoot。
+- insert:
+    - id: task-board-adapter
+      name: '@synova/task-board-adapter'
