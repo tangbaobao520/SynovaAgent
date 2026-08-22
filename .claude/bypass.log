@@ -549,3 +549,4 @@ Binary file .claude/bypass.log matches
 2026-08-22T23:26:10+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D501 | AGENT=dsh-cto | HASH=c5e67984d2556e4072832ecc510ce6ea723b5503
 2026-08-22T23:53:32+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/win-d338-org-isolation
 2026-08-22T22:20:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记: 988f4f7a D501, D331 对账) | TASK_ID=D501 | AGENT=Synova-Win | HASH=988f4f7abbcbb25b6b6e708f19c612ea65f35e8d
+2026-08-23T00:30:00+08:00 | COMMITTED | pre-commit PASS (一次性补记: 370bf1d5 CI 恢复派单, D331 对账) | TASK_ID=CI-RECOVERY | AGENT=Synova-Win | HASH=370bf1d512b8f5a2df807295d0d16764453dd80e
