@@ -97,6 +97,14 @@ export class ToolLoopExecutor {
             messages.push({ role: 'tool', tool_call_id: crypto.randomUUID(), content: JSON.stringify({ error: `工具被阻止: ${guardDecision.reason}` }) });
             continue;
           }
+          // D473: reminder 注入模型可见上下文（不阻断执行，决策留给模型 — DSH advisory 范式）
+          if (guardDecision.level === 'reminder' && guardDecision.reminderMessage) {
+            messages.push({
+              role: 'tool',
+              tool_call_id: crypto.randomUUID(),
+              content: JSON.stringify({ reminder: guardDecision.reminderMessage }),
+            });
+          }
 
           const execResult = await toolRegistry.execute(tc.function.name, effectiveParams);
 
@@ -216,6 +224,14 @@ export class ToolLoopExecutor {
             this.log.warn({ tool: tc.function.name, reason: guardDecision.reason }, '工具被 ToolGuard 阻止');
             messages.push({ role: 'tool', tool_call_id: crypto.randomUUID(), content: JSON.stringify({ error: `工具被阻止: ${guardDecision.reason}` }) });
             continue;
+          }
+          // D473: reminder 注入模型可见上下文（streaming 路径同样消费，不阻断执行）
+          if (guardDecision.level === 'reminder' && guardDecision.reminderMessage) {
+            messages.push({
+              role: 'tool',
+              tool_call_id: crypto.randomUUID(),
+              content: JSON.stringify({ reminder: guardDecision.reminderMessage }),
+            });
           }
 
           let execResult: unknown;

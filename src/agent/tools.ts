@@ -53,7 +53,27 @@ export interface ToolDefinition {
   sideEffects?: SideEffect;
   /** Hermes P0-3: 资源路径 — 用于路径冲突检测 */
   resourcePath?: string;
+  /**
+   * D473: 单次调用超时（ms）。缺省：local/connector 无超时（保守，不改变现有行为）；
+   * 声明后超时 → 结构化 TOOL_TIMEOUT 结果（对照 DSH timeout-policy，铁律 24/31）。
+   * timeoutMs=0 视为未启用（边界，与缺省同语义）。
+   */
+  timeoutMs?: number;
   handler: (params: Record<string, unknown>) => Promise<Record<string, unknown>>;
+}
+
+/**
+ * D473: 工具调用超时错误（内联定义 — error-types 包无超时专属类，
+ * 避免跨 packages/ 改动归 Win 区域，2026-08-22 修正）。
+ * 对照 DSH dsh-tool-call-timeout-policy 的 ToolTimeoutError。
+ */
+export class ToolTimeoutError extends Error {
+  readonly timeoutMs: number;
+  constructor(timeoutMs: number) {
+    super(`tool call timed out after ${timeoutMs}ms`);
+    this.name = 'ToolTimeoutError';
+    this.timeoutMs = timeoutMs;
+  }
 }
 
 // ═══ Hermes P0-3: 并行门控 ═══
@@ -182,7 +202,7 @@ export class ToolRegistry {
 
       switch (mode) {
         case 'local':
-          return await tool.handler(params);
+          return await this.withTimeout(name, tool, () => tool.handler(params));
 
         case 'connector': {
           if (!this.connectorRegistry) {
@@ -193,7 +213,7 @@ export class ToolRegistry {
           if (!connector) {
             return { error: `Connector "${tool.connectorName}" 未注册` };
           }
-          const rawResult = await connector.executeTool(name, params);
+          const rawResult = await this.withTimeout(name, tool, () => connector.executeTool(name, params));
           return this.wrapUntrustedResult(name, rawResult as ToolCallResult);
         }
 
@@ -224,6 +244,47 @@ export class ToolRegistry {
     } catch (err: any) {
       log.error({ err, name, mode }, '工具执行失败');
       return { error: `工具 ${name} 执行失败: ${err.message}` };
+    }
+  }
+
+  /**
+   * D473: 工具调用超时包裹（对照 DSH timeout-policy — 只给声明 timeoutMs 的工具加超时，
+   * 不改变未声明工具行为，无 blanket budget）。
+   * 契约:
+   *   @input  — name: 工具名; tool: ToolDefinition（timeoutMs 可选）; run: 实际执行函数
+   *   @output — 超时 → 结构化 { error: { name: 'ToolTimeoutError', code: 'TOOL_TIMEOUT', message } }
+   *             正常 → run() 结果原样返回
+   *   @degraded — 超时 log.warn（铁律 24 不静默）+ 结构化错误（铁律 31 信号传播）
+   *   timeoutMs=0 / 未声明 → 不包裹（保守回归）
+   */
+  private async withTimeout(
+    name: string,
+    tool: ToolDefinition,
+    run: () => Promise<unknown>,
+  ): Promise<unknown> {
+    const timeoutMs = tool.timeoutMs;
+    if (!timeoutMs || timeoutMs <= 0) {
+      return run();
+    }
+    try {
+      return await Promise.race([
+        run(),
+        new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new ToolTimeoutError(timeoutMs)), timeoutMs);
+        }),
+      ]);
+    } catch (err) {
+      if (err instanceof ToolTimeoutError) {
+        log.warn({ name, timeoutMs }, '工具调用超时 — TOOL_TIMEOUT');
+        return {
+          error: {
+            name: 'ToolTimeoutError',
+            code: 'TOOL_TIMEOUT',
+            message: err.message,
+          },
+        };
+      }
+      throw err;
     }
   }
 
