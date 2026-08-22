@@ -2,6 +2,7 @@
  * data-ingest-service.test.ts — 数据接入编排服务单元测试 (L2)
  *
  * D470: 契约错位修复（crm/hr field-mapping + ingest 目标 schema 校验）。
+ * D477: standardKey 块读收敛（period 取自白名单映射 props，行级英文键旁路关闭）。
  * 铁律 33: *.test.ts 单元测试。铁律 48: 每用例真实 expect 断言，覆盖正常/降级/边界。
  * 铁律 12: 真实 JSON 文件驱动（loadFieldMapping 直读 extensions/ontology/field-mappings/），不 mock 管线。
  *
@@ -9,6 +10,9 @@
  *   修复前（financial 白名单）: 用例1 失败于 props.revenue（全部业务字段被跳过）；
  *   用例2/3/5 因 loadNodeTypeSchema 尚不存在而红（动态导入使 red 定位到用例断言而非模块级 import 错误）；
  *   修复后（目标节点类型 schema 白名单 + crm/hr 映射补字段）: 5 用例全绿。
+ *   D477 red: 修复前用例6a 失败于中文键行 standardKey 缺失（row['period'] 英文键直读拿不到中文键值），
+ *   用例6b 失败于行级英文 period 键绕过白名单注入 props.period + standardKey；
+ *   修复后（standardKey 块消费 props.period）: 6a 生成 D29/D33 契约 standardKey、6b 旁路关闭，全绿。
  */
 import { describe, it, expect } from 'vitest';
 import {
@@ -275,5 +279,61 @@ describe('data-ingest-service — D470 目标 schema 校验', () => {
       expect(props[k], `${k} 应写入`).toBe(v);
     }
     expect(props.financialType).toBe('erp-standard');
+  });
+
+  it('用例6a standardKey 收敛: 中文键「期间」行经白名单映射生成 standardKey（D29/D33 契约回归）', async () => {
+    // D477: standardKey 块 period 来源 = 映射白名单校验后的 props.period。
+    // red 点: 修复前 row['period'] 直读英文键，中文键行 props.period 已写入但 standardKey 不生成。
+    // green: standardKey = ${graph}:${targetNodeType}:${period}:${validFrom}（D29/D33 契约格式不变）
+    const mapping = requireMapping('erp-standard');
+    const fake = fakeStore();
+    const row = {
+      营业收入: '1200',
+      经营现金流: '300',
+      固定资产净值: '800',
+      总负债: '500',
+      所有者权益: '900',
+      现金余额: '150',
+      毛利润: '400',
+      营业费用: '200',
+      总资产: '2000',
+      流动资产: '600',
+      流动负债: '250',
+      应收账款: '180',
+      存货: '120',
+      期间: '2026-Q2',
+    };
+
+    const result = await ingestBatch(fake.store, mapping, [row]);
+
+    expect(result.ok).toBe(true);
+    expect(result.nodesCreated).toBe(1);
+    expect(result.warnings).toEqual([]);
+    expect(fake.nodes[0].props.period).toBe('2026-Q2');
+    // deriveValidFrom('2026-Q2') = '2026-04-01'（src/l3/period-utils.ts 契约）
+    expect(fake.nodes[0].props.standardKey).toBe('default:Financial:2026-Q2:2026-04-01');
+  });
+
+  it('用例6b standardKey 收敛: 行级英文 period 键不再绕过白名单注入 props.period/standardKey', async () => {
+    // D477: 行含英文 'period' 键但映射外部键为中文「期间」（crm-standard）。
+    // red 点: 修复前 row['period'] 直读注入 props.period + standardKey（白名单旁路，D470 审计 #2）。
+    // green: period 仅能经白名单映射通道写入，行级英文键被忽略（本行「期间」缺失 → 无 period/standardKey）。
+    const mapping = requireMapping('crm-standard');
+    const fake = fakeStore();
+    const row = {
+      收入: '1200',
+      客户状态: 'active',
+      period: '2026-Q2',
+    };
+
+    const result = await ingestBatch(fake.store, mapping, [row]);
+
+    expect(result.ok).toBe(true);
+    expect(result.nodesCreated).toBe(1);
+    expect(fake.nodes[0].props.revenue).toBe(1200);
+    expect(fake.nodes[0].props.status).toBe('active');
+    // red 点: 修复前此处被注入（props.period === '2026-Q2'）→ 断言失败；修复后旁路关闭
+    expect(fake.nodes[0].props).not.toHaveProperty('period');
+    expect(fake.nodes[0].props).not.toHaveProperty('standardKey');
   });
 });
