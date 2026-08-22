@@ -198,6 +198,19 @@ if [ "$DOC_ONLY" -eq 1 ]; then
   echo "$(date +%Y-%m-%dT%H:%M:%S%z) | EXEMPT | staged=$(echo "$STAGED_ALL" | tr '\n' ',' | sed 's/,$//')" >> "$EXEMPT_LOG" 2>/dev/null || true
   if bash "$ROOT/scripts/check-secrets.sh" 2>&1; then
     echo -e "  ${GREEN}✅ Secrets 扫描通过${RESET}"
+    # D472 复核修复: 纯文档提交也须过迁移门禁 —— proposed/ Note 变更（新建/修改决策 Note）
+    # 命中纯文档白名单（memory/.*\.md）会走本早退分支，若不检查则迁移门禁被 CT-34 豁免绕过，
+    # "新建 Note"这一 D472 核心场景门禁失效。门禁 <1s，不破坏 CT-34 秒过性能。
+    NOTES_TOUCHED_DOC=$(echo "$STAGED_ALL" | grep -E '^memory/notes/proposed/' || true)
+    if [ -n "$NOTES_TOUCHED_DOC" ]; then
+      if bash "$ROOT/scripts/control-tower/check-notes-lifecycle.sh"; then
+        echo -e "  ${GREEN}✅ Notes 迁移门禁: proposed/ 无僵尸条目${RESET}"
+      else
+        echo -e "  ${RED}❌ Notes 迁移门禁: proposed/ 存在僵尸条目（实现已落地未迁移） [硬阻断]${RESET}"
+        echo "  修复: git mv 到 implemented/ 或 rejected/，或删除测试残留"
+        exit 1
+      fi
+    fi
     echo -e "  ${GREEN}✅ 纯文档提交豁免检查完成 (CT-34)${RESET}"
     exit 0
   else
@@ -650,6 +663,21 @@ if [ -f "$BEFORE_BRIEF_EVI" ]; then
   BEFORE_BRIEF_MSG="代码在 brief 填写前已写入:\n${EVI_CONTENT}\n解决方法: rm ${BEFORE_BRIEF_EVI} && git checkout -- . && bash scripts/workflow/task-start.sh"
 fi
 hard_check "时间戳顺序: brief 必须早于代码写入" "${BEFORE_BRIEF_MSG:-}"
+
+# D472: Agent Notes 迁移门禁 — proposed/ 有变更时扫僵尸条目（条件触发保持 <1s，V4.5.1 性能纪律）
+# 僵尸 = 提取到 D# 且 task-state 该 D# ∈ {impl_done, spec_done}（实现已落地但提案未 git mv）
+NOTES_TOUCHED=$(echo "$STAGED_ALL" | grep -E '^memory/notes/proposed/' || true)
+if [ -n "$NOTES_TOUCHED" ]; then
+  if bash "$ROOT/scripts/control-tower/check-notes-lifecycle.sh"; then
+    soft_pass "Notes 迁移门禁: proposed/ 无僵尸条目"
+  else
+    echo -e "  ${RED}❌ Notes 迁移门禁: proposed/ 存在僵尸条目（实现已落地未迁移） [硬阻断]${RESET}"
+    echo "  修复: git mv 到 implemented/ 或 rejected/，或删除测试残留"
+    HARD_FAIL=$((HARD_FAIL + 1))
+  fi
+else
+  soft_pass "Notes 迁移门禁: 无 proposed/ 变更（跳过）"
+fi
 
 # V4.1: plan-integrity — Q1a/Q1b/Q2 承诺可验证
 par_collect plan-integrity "$PAR_PLAN_INTEGRITY" || HARD_FAIL=$((HARD_FAIL + 1))
