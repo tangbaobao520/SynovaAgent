@@ -4,8 +4,8 @@
  * Given/When/Then 格式，验证注册中心核心功能。
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { ConnectorRegistry, getConnectorRegistry } from '../src/connectors/registry';
-import type { DataConnector, ConnectorHealth, ConnectorTool } from '../src/connectors/registry';
+import { ConnectorRegistry, getConnectorRegistry } from '../src/registry';
+import type { DataConnector, ConnectorHealth, ConnectorTool } from '../src/registry';
 
 function fakeConnector(name: string, tools: ConnectorTool[] = []): DataConnector {
   let connected = false;

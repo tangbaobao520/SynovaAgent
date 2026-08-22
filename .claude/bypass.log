@@ -430,6 +430,15 @@ Binary file .claude/bypass.log matches
 2026-08-22T01:11:39+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D454 | AGENT=deepseek-harness
 2026-08-22T01:11:52+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D454 | AGENT=deepseek-harness
 2026-08-22T00:20:28+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/win-feishu-bridge
+2026-08-22T02:23:53+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D471 | AGENT=claude-code | HASH=3c9e88e084699ad7a818e0aa51883ba1b53eb64e
+2026-08-21T17:46:01Z possible-bypass diff=1831s
+2026-08-21T19:10:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=docs | AGENT=deepseek-harness | HASH=3620f6a76b033eb1deeaddf190cbc835ba4de531
+2026-08-22T02:43:32+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D471 | AGENT=claude-code | HASH=756d694a1048fb99b559571f890f64d3cce1277c
+2026-08-22T12:06:03+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D471 | AGENT=claude-code
+2026-08-22T12:09:42+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D471 | AGENT=claude-code
+2026-08-22T12:10:44+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D471 | AGENT=claude-code
+2026-08-22T13:54:54+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D471 | AGENT=claude-code | HASH=b4ba61ad1c8131bf85d41abee1e5f4ffef0e6de6
+2026-08-22T19:30:32+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D471 | AGENT=claude-code | HASH=3181d7dc614f665c276272864f0771ef79a98ae7
 2026-08-22T01:43:58+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D470 | AGENT=claude
 2026-08-22T02:10:12+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D470 | AGENT=claude
 2026-08-22T02:21:50+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D470 | AGENT=claude | HASH=3b4c215b0d5b009e67e7b2c6be7ac0734403e64b
@@ -491,10 +500,24 @@ Binary file .claude/bypass.log matches
 2026-08-22T12:00:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D500 | AGENT=dev-doc | HASH=4af54eb3a73d67234819dd9fb9b08d7dbd77224e
 2026-08-22T08:08:05Z possible-bypass diff=447s
 2026-08-22T12:10:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=docs | AGENT=deepseek-harness | HASH=65e8c6663607a23556b560dc9984cefd60357b51
+2026-08-22T12:48:36+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D472 | AGENT=claude-code
+2026-08-22T14:21:14+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D475 | AGENT=claude-code | HASH=2b6aaad69fda116dd08ec85635c3655165695dab
+2026-08-22T20:07:59+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D475 | AGENT=claude-code
+2026-08-22T20:10:26+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D475 | AGENT=claude-code
+2026-08-22T20:12:06+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D475 | AGENT=claude-code
 2026-08-22T12:17:05Z possible-bypass diff=15387s
 2026-08-22T12:30:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=docs | AGENT=deepseek-harness | HASH=a02ef0cbdafeb264f12e449f5df3f607e1239660
 2026-08-22T13:00:18Z possible-bypass diff=17980s
 2026-08-22T13:00:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=docs | AGENT=deepseek-harness | HASH=ff404af26485b0b9f61af026ee3232ab7e03ca8a
+2026-08-22T20:18:10+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D475 | AGENT=claude-code | HASH=f9022af36696145c0b6dd6f76171c1ccd04838e4
+2026-08-22T12:48:49+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D471 | AGENT=claude-code
+2026-08-22T12:50:18+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D471 | AGENT=claude-code
+2026-08-22T12:55:21+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D471 | AGENT=claude-code | HASH=b4ba61ad1c8131bf85d41abee1e5f4ffef0e6de6
+2026-08-22T13:58:25+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D471 | AGENT=claude-code | HASH=3eb118eb9d4ba9c10420d4a88fa318a2fab32b7d
+2026-08-22T19:21:08+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D471 | AGENT=claude | HASH=3181d7dc614f665c276272864f0771ef79a98ae7
+2026-08-22T19:31:40+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D471 | AGENT=claude-code
+2026-08-22T19:36:09+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D471 | AGENT=claude-code | HASH=7e670876d051270d576f33571a2fba5a7909f37d
+2026-08-22T22:05:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记: 5848de18 K3 三批审计, D331 对账) | TASK_ID=K3 | AGENT=Synova-Win | HASH=5848de18d440088d345036328d91afe387c5698f
 2026-08-22T22:10:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记: 5848de18 K3 三批审计, D331 对账) | TASK_ID=K3 | AGENT=Synova-Win | HASH=5848de18d440088d345036328d91afe387c5698f
 2026-08-22T13:00:18Z possible-bypass diff=17980s
 2026-08-22T13:44:28Z possible-bypass diff=20630s
@@ -534,3 +557,4 @@ Binary file .claude/bypass.log matches
 2026-08-23T00:46:50+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D503 | AGENT=dsh-cto
 2026-08-23T00:47:41+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D503 | AGENT=dsh-cto | HASH=6b09711586bc8a5655efb3720932ce09f20c3c45
 2026-08-23T00:48:24+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D503 | AGENT=dsh-cto | HASH=1f3123b8aacd2343b42770d673e2b2944af01d89
+2026-08-23T00:30:00+08:00 | COMMITTED | pre-commit PASS (一次性补记: 370bf1d5 CI 恢复派单, D331 对账) | TASK_ID=CI-RECOVERY | AGENT=Synova-Win | HASH=370bf1d512b8f5a2df807295d0d16764453dd80e

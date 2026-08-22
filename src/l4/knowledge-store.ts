@@ -237,6 +237,44 @@ export class KnowledgeStore {
     return { totalChunks: count, totalSizeBytes: size };
   }
 
+  /**
+   * 时间窗口新增知识统计 (D475 loop-5 知识积累循环)
+   *
+   * 契约:
+   *   @input  sinceIso — ISO 8601 起点（如 '2026-08-01T00:00:00.000Z'）
+   *   @output { total, byDomain, bySourceType } — 窗口内新增条目总量 + 分域 + 分源计数
+   *   @degraded 无外部依赖，SQL 查询失败由调用方 catch 处理
+   *
+   * 双格式归一: insert() 写 ISO 格式（L147），schema DEFAULT 写 datetime('now')
+   *   格式（L80）——两边都用 datetime() 归一化后比较，两种格式均可正确入窗口。
+   */
+  recentStats(sinceIso: string): {
+    total: number;
+    byDomain: Record<string, number>;
+    bySourceType: Record<string, number>;
+  } {
+    const since = `datetime(?)`;
+    const total = (
+      this.db.prepare(`SELECT COUNT(*) as c FROM knowledge_chunks WHERE datetime(created_at) >= ${since}`).get(sinceIso) as Record<string, unknown>
+    ).c as number || 0;
+    const domainRows = this.db.prepare(
+      `SELECT pkb_domain as d, COUNT(*) as c FROM knowledge_chunks
+       WHERE datetime(created_at) >= ${since} AND pkb_domain IS NOT NULL
+       GROUP BY pkb_domain`
+    ).all(sinceIso) as Array<Record<string, unknown>>;
+    const sourceRows = this.db.prepare(
+      `SELECT source_type as s, COUNT(*) as c FROM knowledge_chunks
+       WHERE datetime(created_at) >= ${since}
+       GROUP BY source_type`
+    ).all(sinceIso) as Array<Record<string, unknown>>;
+
+    const byDomain: Record<string, number> = {};
+    for (const r of domainRows) byDomain[r.d as string] = r.c as number || 0;
+    const bySourceType: Record<string, number> = {};
+    for (const r of sourceRows) bySourceType[r.s as string] = r.c as number || 0;
+    return { total, byDomain, bySourceType };
+  }
+
   /** 更新知识条目 (PKB Slice 1) */
   update(id: string, props: Record<string, unknown>): void {
     const now = new Date().toISOString();

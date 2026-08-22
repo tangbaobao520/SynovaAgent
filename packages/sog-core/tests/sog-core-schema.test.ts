@@ -7,13 +7,13 @@ import {
   NODE_VALIDATORS, EDGE_VALIDATORS,
   EDGE_ENDPOINT_MAP, validateEdgeEndpoints,
   SOGValidationError,
-} from '../sog-core-schema';
+} from '../src/sog-core-schema';
 
 // ═══ Enums ═══
 
 describe('SOGNodeType', () => {
-  it('has exactly 14 values', () => {
-    expect(Object.values(SOGNodeType)).toHaveLength(14);
+  it('has exactly 18 values', () => {
+    expect(Object.values(SOGNodeType)).toHaveLength(18);
   });
   it('includes all required types', () => {
     expect(SOGNodeType.PERSON).toBe('Person');
@@ -26,8 +26,8 @@ describe('SOGNodeType', () => {
 });
 
 describe('SOGEdgeType', () => {
-  it('has exactly 10 values', () => {
-    expect(Object.values(SOGEdgeType)).toHaveLength(10);
+  it('has exactly 14 values', () => {
+    expect(Object.values(SOGEdgeType)).toHaveLength(14);
   });
   it('includes new types', () => {
     expect(SOGEdgeType.ALIGNS_WITH).toBe('ALIGNS_WITH');
@@ -201,7 +201,7 @@ describe('EDGE_ENDPOINT_MAP — invalid combinations', () => {
 // ═══ EDGE_ENDPOINT_MAP — coverage ═══
 
 describe('EDGE_ENDPOINT_MAP — complete coverage', () => {
-  it('all 10 edge types are defined in the map', () => {
+  it('all 14 edge types are defined in the map', () => {
     for (const edge of Object.values(SOGEdgeType)) {
       expect(EDGE_ENDPOINT_MAP[edge]).toBeDefined();
     }
