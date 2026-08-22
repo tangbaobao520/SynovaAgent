@@ -27,10 +27,10 @@ assert_exit() { if [ "$1" = "$2" ]; then pass "$3 (exit=$2)"; else fail "$3 — 
 mkdir -p "$TMP_DIR"
 rm -rf "$TMP_DIR/task-state" 2>/dev/null || true
 mkdir -p "$TMP_DIR/task-state"
-# 注入缝: 复制 TEMPLATE + 预置占用号 D100 模拟已有任务
+# 注入缝: 复制 TEMPLATE + 预置占用号 D499 模拟已有任务（D500 起步边界：max=499 → +1=500）
 cp "$REPO_DIR/task-state/TEMPLATE.json" "$TMP_DIR/task-state/TEMPLATE.json"
-cat > "$TMP_DIR/task-state/D100.json" <<'EOF'
-{"task_id":"D100","status":"claimed","spec":null,"impl":null,"audit":null}
+cat > "$TMP_DIR/task-state/D499.json" <<'EOF'
+{"task_id":"D499","status":"claimed","spec":null,"impl":null,"audit":null}
 EOF
 
 echo "═══════════════════════════════════════════════════════════"
@@ -38,24 +38,24 @@ echo "  D384 alloc-task-id 分配器测试"
 echo "═══════════════════════════════════════════════════════════"
 echo ""
 
-echo "── 1. 正常分配 → D101 + 建壳 ──"
+echo "── 1. 正常分配 → D500 + 建壳 ──"
 OUT=$(SYNO_TASK_STATE_DIR="$TMP_DIR/task-state" bash "$TOOL" "测试任务A" 2>&1)
-assert_contains "$OUT" "D101" "分配 D101 (max=100 → +1)"
+assert_contains "$OUT" "D500" "分配 D500 (max=499 → +1=500 起步)"
 assert_contains "$OUT" "已登记" "登记提示"
-if [ -f "$TMP_DIR/task-state/D101.json" ]; then pass "空壳已建"; else fail "空壳未建"; fi
-if grep -q '"status": "claimed"' "$TMP_DIR/task-state/D101.json"; then pass "status=claimed"; else fail "status 非 claimed"; fi
+if [ -f "$TMP_DIR/task-state/D500.json" ]; then pass "空壳已建"; else fail "空壳未建"; fi
+if grep -q '"status": "claimed"' "$TMP_DIR/task-state/D500.json"; then pass "status=claimed"; else fail "status 非 claimed"; fi
 echo ""
 
-echo "── 2. 连续分配 → D102 (单调递增) ──"
+echo "── 2. 连续分配 → D501 (单调递增) ──"
 OUT=$(SYNO_TASK_STATE_DIR="$TMP_DIR/task-state" bash "$TOOL" "测试任务B" 2>&1)
-assert_contains "$OUT" "D102" "第二次分配 D102"
+assert_contains "$OUT" "D501" "第二次分配 D501"
 echo ""
 
 echo "── 3. dry-run → 只预览不建壳 ──"
 OUT=$(SYNO_TASK_STATE_DIR="$TMP_DIR/task-state" bash "$TOOL" "预览任务" --dry-run 2>&1)
-assert_contains "$OUT" "D103" "dry-run 预览 D103"
+assert_contains "$OUT" "D502" "dry-run 预览 D502"
 assert_contains "$OUT" "dry-run" "dry-run 标注"
-if [ ! -f "$TMP_DIR/task-state/D103.json" ]; then pass "dry-run 未建壳"; else fail "dry-run 竟建壳了"; fi
+if [ ! -f "$TMP_DIR/task-state/D502.json" ]; then pass "dry-run 未建壳"; else fail "dry-run 竟建壳了"; fi
 echo ""
 
 echo "── 4. 空任务名 → exit 1 + 用法 ──"
