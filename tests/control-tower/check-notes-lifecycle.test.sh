@@ -204,6 +204,16 @@ else
 fi
 echo ""
 
+# ── 10. D472 复核: CT-34 纯文档豁免不得绕过迁移门禁 ──
+echo "── 10. 复核: 纯文档提交（proposed/ Note 变更）仍过迁移门禁 ──"
+if [ -f "$PRE_COMMIT" ]; then
+  # 迁移门禁调用出现在 CT-34 早退分支内（NOTES_TOUCHED_DOC 条件）
+  assert_contains "$(grep -n "NOTES_TOUCHED_DOC" "$PRE_COMMIT" | head -1)" "NOTES_TOUCHED_DOC" "纯文档早退分支内补跑迁移门禁（防 CT-34 绕过）"
+else
+  fail "pre-commit-check.sh 不存在"
+fi
+echo ""
+
 # ═══ 结果 ═══
 echo "═══════════════════════════════════════════════════════════"
 echo "  结果: $PASS 通过, $FAIL 失败"

@@ -34,7 +34,6 @@ TASK_STATE_DIR="${TASK_STATE_DIR:-$ROOT/task-state}"
 PROPOSED_DIR="$NOTES_DIR/proposed"
 
 ZOMBIES=""
-DEGRADED=""
 
 # ── 目录可读性检查（铁律 24: 显式降级，不静默）──
 if [ ! -d "$PROPOSED_DIR" ]; then

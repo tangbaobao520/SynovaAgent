@@ -198,6 +198,19 @@ if [ "$DOC_ONLY" -eq 1 ]; then
   echo "$(date +%Y-%m-%dT%H:%M:%S%z) | EXEMPT | staged=$(echo "$STAGED_ALL" | tr '\n' ',' | sed 's/,$//')" >> "$EXEMPT_LOG" 2>/dev/null || true
   if bash "$ROOT/scripts/check-secrets.sh" 2>&1; then
     echo -e "  ${GREEN}✅ Secrets 扫描通过${RESET}"
+    # D472 复核修复: 纯文档提交也须过迁移门禁 —— proposed/ Note 变更（新建/修改决策 Note）
+    # 命中纯文档白名单（memory/.*\.md）会走本早退分支，若不检查则迁移门禁被 CT-34 豁免绕过，
+    # "新建 Note"这一 D472 核心场景门禁失效。门禁 <1s，不破坏 CT-34 秒过性能。
+    NOTES_TOUCHED_DOC=$(echo "$STAGED_ALL" | grep -E '^memory/notes/proposed/' || true)
+    if [ -n "$NOTES_TOUCHED_DOC" ]; then
+      if bash "$ROOT/scripts/control-tower/check-notes-lifecycle.sh"; then
+        echo -e "  ${GREEN}✅ Notes 迁移门禁: proposed/ 无僵尸条目${RESET}"
+      else
+        echo -e "  ${RED}❌ Notes 迁移门禁: proposed/ 存在僵尸条目（实现已落地未迁移） [硬阻断]${RESET}"
+        echo "  修复: git mv 到 implemented/ 或 rejected/，或删除测试残留"
+        exit 1
+      fi
+    fi
     echo -e "  ${GREEN}✅ 纯文档提交豁免检查完成 (CT-34)${RESET}"
     exit 0
   else
