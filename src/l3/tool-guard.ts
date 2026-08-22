@@ -35,6 +35,13 @@ export interface ToolCallRecord {
 export interface ToolGuardDecision {
   allow: boolean;
   reason?: string;
+  /**
+   * D473: 分级阶梯等级 — 'reminder'（提醒注入，不阻断）/ 'block'（硬阻断）。
+   * 无等级 = 正常放行。对照 DSH repeat-tool-reminder 的 advisory 阶梯。
+   */
+  level?: 'reminder' | 'block';
+  /** D473: reminder 时注入模型可见的提醒消息（非空） */
+  reminderMessage?: string;
 }
 
 export interface LoopRecord {
@@ -46,11 +53,23 @@ export interface LoopRecord {
 
 // ═══ 常量 ═══
 
-/** 循环检测阈值: 同工具+同参数连续 N 次 → block */
+/**
+ * D473: 分级阶梯阈值（2026-08-22 修正 — DSH repeat-tool-reminder 阶梯 [3,5,8] 参考，
+ * 但 Synova tool-loop MAX_TOOL_ROUNDS=3 下同工具同参数最多 3 次，BLOCK=5 永远达不到
+ * → 阶梯压缩为 [2 提醒, 3 阻断]；warning 中档 descope（S-10））。
+ */
+const REMINDER_THRESHOLD = 2;
+/** 循环检测阈值: 同工具+同参数连续 N 次 → block（保持原 LOOP_THRESHOLD=3 语义） */
 const LOOP_THRESHOLD = 3;
 
 /** 重复失败阈值: 同工具连续 N 次失败 → block */
 const FAIL_THRESHOLD = 3;
+
+/** D473: reminder 提醒消息（注入模型可见上下文，DSH advisory 范式） */
+const REMINDER_MESSAGE =
+  'You are repeating the exact same tool call with identical arguments. ' +
+  'Carefully analyze the previous result before calling again: if the task is not complete, ' +
+  'try a different approach or different arguments instead of repeating the call.';
 
 // ═══ ToolGuard ═══
 
@@ -81,7 +100,7 @@ export class ToolGuard {
       if (!args || typeof args !== 'object') {
         const reason = `参数无效: ${typeof args}`;
         log.warn({ tool, reason }, 'ToolGuard 参数校验拒绝');
-        return { allow: false, reason };
+        return { allow: false, level: 'block', reason };
       }
 
       // 2. 重复失败检测
@@ -90,10 +109,10 @@ export class ToolGuard {
         const reason = `工具 "${tool}" 连续失败 ${failCount} 次，建议人工介入`;
         log.warn({ tool, failCount, reason }, 'ToolGuard 重复失败阻断');
         this.detections.push({ tool, args, reason, timestamp: new Date().toISOString() });
-        return { allow: false, reason };
+        return { allow: false, level: 'block', reason };
       }
 
-      // 3. 循环检测: 同工具+同参数连续调用
+      // 3. 循环检测: 同工具+同参数连续调用（D473 分级阶梯: 2 次提醒 / 3 次阻断）
       const key = `${tool}:${JSON.stringify(args)}`;
       const count = (this.callCount.get(key) ?? 0) + 1;
       this.callCount.set(key, count);
@@ -102,7 +121,13 @@ export class ToolGuard {
         const reason = `循环检测: "${tool}" 相同参数连续调用 ${count} 次`;
         log.warn({ tool, args, count, reason }, 'ToolGuard 循环阻断');
         this.detections.push({ tool, args, reason, timestamp: new Date().toISOString() });
-        return { allow: false, reason };
+        return { allow: false, level: 'block', reason };
+      }
+
+      if (count >= REMINDER_THRESHOLD) {
+        // D473: 提醒注入（模型可见，不阻断 — 决策留给模型，DSH advisory 范式）
+        log.warn({ tool, args, count }, 'ToolGuard 循环提醒（advisory）');
+        return { allow: true, level: 'reminder', reminderMessage: REMINDER_MESSAGE };
       }
 
       return { allow: true };

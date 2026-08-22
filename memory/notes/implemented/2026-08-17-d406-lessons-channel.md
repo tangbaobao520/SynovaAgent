@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: implemented
 date: 2026-08-17
 name: D406 lessons-learned 通道改向
 class: D406_M7
