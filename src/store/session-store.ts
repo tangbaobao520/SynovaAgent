@@ -349,13 +349,12 @@ export class SessionStore {
   }
 
   getMessages(sessionId: string): MessageRow[] {
-    const rows = this.db.prepare(
-      'SELECT * FROM agent_messages WHERE session_id=? ORDER BY id ASC'
-    ).all(sessionId) as SqliteRow[];
-    return rows.map(r => ({
-      id: Number(r.id), sessionId: r.session_id as string, role: r.role as MessageRow['role'],
-      content: r.content as string, timestamp: r.timestamp as string,
-    }));
+    // D500 复核修复: getMessages backing deriveMessages —— 消息真相统一从事件流派生
+    // （dev doc §4.1 "deriveMessages backing getMessages" 字面意图）。
+    // 原实现直接查 agent_messages（mutable 快照），缺陷 A 根源——事件流才是唯一事实源。
+    // agent_messages 表保留为兼容 + FTS5 触发器源（双写下沉），但读取走事件派生。
+    // data-exporter 等消费者只读 role/content，id 语义（seq vs 自增）不影响。
+    return this.deriveMessages(sessionId);
   }
 
   // ═══ State ═══
