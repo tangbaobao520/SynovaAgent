@@ -443,3 +443,6 @@ Binary file .claude/bypass.log matches
 2026-08-22T14:14:10+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D472 | AGENT=dsh | HASH=f157dedd1b4137ec339b7f54ccc7ba06a5bcad83
 2026-08-22T10:00:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D472 | AGENT=dev-doc | HASH=e05838dcb0e9b258c2b227af3ce15e11a60e70d5
 2026-08-22T10:00:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D472 | AGENT=dev-doc | HASH=35cb086788c8db3bfe06f30437351b81c7fe6910
+2026-08-22T07:19:14Z possible-bypass diff=3780s
+2026-08-22T10:10:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D473 | AGENT=dev-doc | HASH=ea3cc093e68ba3f569ce5a2d321b9a2469dc2daa
+2026-08-22T10:10:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D473 | AGENT=dev-doc | HASH=cc8f2c2a3976c0e1dce72f3e1e6f6de4e027f98d
