@@ -16,13 +16,13 @@
   "audit": {
     "verdict": "PASS",
     "report": "docs/synova/audit-reports/2026-08-17-D396.md",
-    "by": "K3",
-    "at": "2026-08-17",
-    "findings": "P0=0 P1=0 P2x4（红-绿演练复现、CI 8/8 绿、基线 433 零漂移、M7 回填生效）"
+    "at": "2026-08-22",
+    "by": "k3",
+    "note": "历史报告回填"
   },
   "fix_task_id": null,
-  "updated_at": "2026-08-17",
-  "updated_by": "CTO",
+  "updated_at": "2026-08-22T13:29:37+00:00",
+  "updated_by": "k3",
   "note": "K3 咨询定：提前到 P0 同批（2-3天）——每个 D355-D360 修复带一条黄金用例，扩展既有 golden-case-checker（不做新体系）；防'下次又改坏'。红-绿演练必须跑一次证明门禁真能红。 | 终版补：带宽预算硬约束——借鉴类任务月度 ≤25% 工程带宽（可核账）",
   "priority": "P0 同批",
   "acceptance_points": [

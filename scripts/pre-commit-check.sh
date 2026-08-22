@@ -104,7 +104,9 @@ ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 #   缺省仍硬阻断, 但 SYNO_GATEKEEPER_ACK=1 表示人工已复核该绕过记录 → 降级为告警放行。
 #   与组 7c 共享同一逃生舱语义 (逃生舱写入 degraded-events.log, 铁律 11)。
 BYPASS_LOG="$ROOT/.claude/bypass.log"
-if [ -f "$BYPASS_LOG" ]; then
+# 方案1挪CI(D467)后：本地 pre-commit 软提示 + CI 权威，本地 --no-verify 不再是"绕过"（CI 兜底）。
+# GATEKEEPER 检测"本地 --no-verify"只在本地跑；CI 上跳过（否则 CI 检测 git 跟踪的本地 bypass.log 痕迹 → 自阻断）。
+if [ -f "$BYPASS_LOG" ] && [ "${GITHUB_ACTIONS:-}" != "true" ]; then
   TODAY=$(date +%Y-%m-%d)
   # V4.5.1: 只匹配 detected-bypass 行。COMMITTED 行是正常提交成功标记，不是绕过。
   BYPASS_COUNT=$(grep -c "${TODAY}.*detected-bypass" "$BYPASS_LOG" 2>/dev/null | tr -d '\n\r' || echo 0)
@@ -310,13 +312,14 @@ echo ""
 # ═══════════════════════════════════════════════════════════════════
 echo -e "${CYAN}── 组 1/13: 类型安全 + 硬编码数据 ──${RESET}"
 
-# 1a. as any 零容忍 — 只拦本次变更新增的 as any（存量当前 0，独立治理）
+# 1a. as any 零容忍 — 只拦本次变更新增的 as any（存量独立治理）
 # 方案1(挪CI): 本地用暂存区 diff；CI 用 base...HEAD diff（SYNO_DIFF_BASE 注入）
+# K3 审计 P1-2 修复：范围覆盖 src/ + packages/（原只查 src/ 漏掉 packages/ 33+ 处）；不查 scripts/ 防自引用误报。
 # Anthropic 原则: bash 只做模式匹配。新增行 = diff 的 + 行（排除 +++ diff 头）。
 if [ -n "${SYNO_DIFF_BASE:-}" ]; then
-  AS_ANY_DIFF="$(git diff "$SYNO_DIFF_BASE"...HEAD -- src/ 2>/dev/null || true)"
+  AS_ANY_DIFF="$(git diff "$SYNO_DIFF_BASE"...HEAD -- src/ packages/ 2>/dev/null || true)"
 else
-  AS_ANY_DIFF="$(git diff --cached -- src/ 2>/dev/null || true)"
+  AS_ANY_DIFF="$(git diff --cached -- src/ packages/ 2>/dev/null || true)"
 fi
 M=$(echo "$AS_ANY_DIFF" | grep -E '^\+' | grep -v '^+++' | grep -E 'as any\b' | grep -vE '^\+\s*(//|/\*|\*|#)' || true)
 hard_check "as any 零容忍（新增，铁律 38；存量独立清理）" "$M"

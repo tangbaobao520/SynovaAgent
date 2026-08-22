@@ -1,7 +1,7 @@
 {
   "task_id": "D389",
   "title": "D387 审计产物合入仓库",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "commit": "1b9003ba",
@@ -11,8 +11,14 @@
       "D387 审计产物合入"
     ]
   },
-  "audit": null,
+  "audit": {
+    "verdict": "PASS",
+    "report": "docs/synova/audit-reports/2026-08-22-P2-batch-audit.md",
+    "at": "2026-08-22",
+    "by": "k3",
+    "note": "D387 审计产物入仓"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-08-16",
-  "updated_by": "CTO"
+  "updated_at": "2026-08-22T13:29:37+00:00",
+  "updated_by": "k3"
 }

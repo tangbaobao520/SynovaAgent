@@ -18,7 +18,15 @@ jobs:
         with: { node-version: '20', cache: 'npm' }
       - run: npm ci
       - name: TypeScript check
-        run: npx tsc --noEmit 2>&1 | grep -v "sentinel-service.ts\|industry-loader.ts\|tool-registration.ts\|llm-provider-loader.ts" || true
+        # K3 审计 P1-1 修复：去掉 `|| true` fail-open（CI 类型检查永不红 → 挪 CI 后类型防线真空）。
+        # 过滤存量白名单（_extinct 退役哨兵死代码 + ima.ts/server.ts 已知错误 + 4 个历史文件），
+        # 其余新类型错误 → exit 1 阻断。存量清理后逐步收紧白名单。
+        run: |
+          ERRORS=$(npx tsc --noEmit --pretty false 2>&1 | grep -v "_extinct/\|ima.ts\|server.ts\|sentinel-service.ts\|industry-loader.ts\|tool-registration.ts\|llm-provider-loader.ts" | grep -E "error TS" || true)
+          if [ -n "$ERRORS" ]; then
+            echo "$ERRORS"
+            exit 1
+          fi
       - name: Iron laws check
         run: bash scripts/pre-commit-check.sh
         env:

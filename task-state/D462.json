@@ -1,16 +1,22 @@
 {
   "task_id": "D462",
   "title": "better-sqlite3 v12 升级（Node 24 兼容，解锁 GS-03/GS-05 服务器启动）",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "commit": "7fe92110",
     "by": "deepseek-harness",
     "at": "2026-08-21"
   },
-  "audit": null,
+  "audit": {
+    "verdict": "PASS",
+    "report": "docs/synova/audit-reports/2026-08-22-P1-gs-deploy-u.md",
+    "at": "2026-08-22",
+    "by": "k3",
+    "note": "better-sqlite3 v12 Node24 + GS-03 3/3 绿"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-08-21",
-  "updated_by": "deepseek-harness",
+  "updated_at": "2026-08-22T13:29:37+00:00",
+  "updated_by": "k3",
   "note": "better-sqlite3 v12.11.1 升级（Node 24 崩溃根因修复，WiseLibs/better-sqlite3#1376）+ GS-03 run.sh 三修复（JWT/SYNOVA_DB_PATH/后台 bootstrap）→ GS-03 全绿 3/3，GS-05 重跑 2/4 诚实 RED（D356 缺口）"
 }
