@@ -315,11 +315,14 @@ echo -e "${CYAN}── 组 1/13: 类型安全 + 硬编码数据 ──${RESET}"
 # 1a. as any 零容忍 — 只拦本次变更新增的 as any（存量独立治理）
 # 方案1(挪CI): 本地用暂存区 diff；CI 用 base...HEAD diff（SYNO_DIFF_BASE 注入）
 # K3 审计 P1-2 修复：范围覆盖 src/ + packages/（原只查 src/ 漏掉 packages/ 33+ 处）；不查 scripts/ 防自引用误报。
+# D501 修复：排除测试/声明文件（.test.ts/.test.tsx/.d.ts）——as-any 审计器自己的测试 fixture 含
+#   as any 字符串，D471 引入 packages/test-kit/tests/architecture/05-as-any-audit.test.ts 后 CI 误报 19 处。
+#   与 findTsFiles（packages/test-kit/src/security-scanners.ts）排除规则一致：只查生产代码。
 # Anthropic 原则: bash 只做模式匹配。新增行 = diff 的 + 行（排除 +++ diff 头）。
 if [ -n "${SYNO_DIFF_BASE:-}" ]; then
-  AS_ANY_DIFF="$(git diff "$SYNO_DIFF_BASE"...HEAD -- src/ packages/ 2>/dev/null || true)"
+  AS_ANY_DIFF="$(git diff "$SYNO_DIFF_BASE"...HEAD -- src/ packages/ ':(exclude)**/*.test.ts' ':(exclude)**/*.test.tsx' ':(exclude)**/*.d.ts' 2>/dev/null || true)"
 else
-  AS_ANY_DIFF="$(git diff --cached -- src/ packages/ 2>/dev/null || true)"
+  AS_ANY_DIFF="$(git diff --cached -- src/ packages/ ':(exclude)**/*.test.ts' ':(exclude)**/*.test.tsx' ':(exclude)**/*.d.ts' 2>/dev/null || true)"
 fi
 M=$(echo "$AS_ANY_DIFF" | grep -E '^\+' | grep -v '^+++' | grep -E 'as any\b' | grep -vE '^\+\s*(//|/\*|\*|#)' || true)
 hard_check "as any 零容忍（新增，铁律 38；存量独立清理）" "$M"
