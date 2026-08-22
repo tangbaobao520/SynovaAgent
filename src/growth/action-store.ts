@@ -38,14 +38,24 @@ export function isValidTransition(from: ActionLifecycle, to: ActionLifecycle): b
 
 export class ActionStore implements ActionStoreLike {
   private store: { createNode(type: string, props: Record<string, unknown>, graph: string): string; getNode(id: string, graph: string): unknown | null; updateNode(id: string, props: Record<string, unknown>, graph: string): void; queryNodes(type: string, filters?: Record<string, unknown>, graph?: string): Array<{ id: string; type: string; props: Record<string, unknown> }> } | null = null;
+  private readonly orgId: string | null;
 
-  constructor(store?: typeof ActionStore.prototype.store) {
+  constructor(store?: typeof ActionStore.prototype.store, orgId?: string) {
     this.store = store || null;
+    this.orgId = orgId || null;
   }
 
   /** 注入 GraphStore */
   setStore(s: typeof ActionStore.prototype.store): void {
     this.store = s;
+  }
+
+  /**
+   * 租户图派生 — `${orgId}:growth`。
+   * 缺 orgId → null。调用方必须 fail-closed（拒绝/降级），绝不回落全局 'growth'（D338 缺陷 A）。
+   */
+  private getGraph(): string | null {
+    return this.orgId ? `${this.orgId}:growth` : null;
   }
 
   /**
@@ -69,13 +79,14 @@ export class ActionStore implements ActionStoreLike {
       updatedAt: now,
     };
 
-    if (!this.store) {
-      log.warn({ signalId: finding.id }, 'GraphStore 未配置 — Action 创建降级（仅返回内存对象）');
+    const graph = this.getGraph();
+    if (!this.store || !graph) {
+      log.warn({ signalId: finding.id }, 'GraphStore 或 orgId 未配置 — Action 创建降级（仅返回内存对象）');
       return action;
     }
 
     try {
-      this.store.createNode('ACTION', action as unknown as Record<string, unknown>, 'growth');
+      this.store.createNode('ACTION', action as unknown as Record<string, unknown>, graph);
       log.info({ actionId: action.id, signalId: finding.id }, 'Action 已创建');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -95,11 +106,12 @@ export class ActionStore implements ActionStoreLike {
    * @throws Error — 非法转换或 Action 不存在时
    */
   updateLifecycle(actionId: string, newState: ActionLifecycle): Action {
-    if (!this.store) {
-      throw new Error('GraphStore 未配置');
+    const graph = this.getGraph();
+    if (!this.store || !graph) {
+      throw new Error('GraphStore 或 orgId 未配置');
     }
 
-    const node = this.store.getNode(actionId, 'growth') as { id: string; type: string; props: Record<string, unknown> } | null;
+    const node = this.store.getNode(actionId, graph) as { id: string; type: string; props: Record<string, unknown> } | null;
     if (!node) {
       throw new Error(`Action ${actionId} 不存在`);
     }
@@ -119,7 +131,7 @@ export class ActionStore implements ActionStoreLike {
     };
 
     try {
-      this.store.updateNode(actionId, { ...node.props, ...updated } as Record<string, unknown>, 'growth');
+      this.store.updateNode(actionId, { ...node.props, ...updated } as Record<string, unknown>, graph);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       log.warn({ err: msg, actionId }, 'Action 状态更新失败 — 降级');
@@ -133,9 +145,13 @@ export class ActionStore implements ActionStoreLike {
    * 按信号 ID 查询 Action。
    */
   getActionsBySignal(signalId: string): Action[] {
-    if (!this.store) return [];
+    const graph = this.getGraph();
+    if (!this.store || !graph) {
+      log.warn({ signalId }, 'GraphStore 或 orgId 未配置 — Action 查询降级');
+      return [];
+    }
     try {
-      const nodes = this.store.queryNodes('ACTION', { signalId } as Record<string, unknown>, 'growth');
+      const nodes = this.store.queryNodes('ACTION', { signalId } as Record<string, unknown>, graph);
       return nodes.map(n => n.props as unknown as Action);
     } catch (err) {
       log.warn({ err: err instanceof Error ? err.message : String(err) }, "Action 节点查询");
@@ -147,9 +163,13 @@ export class ActionStore implements ActionStoreLike {
    * 按部门查询 Action。
    */
   getActionsByDepartment(department: string): Action[] {
-    if (!this.store) return [];
+    const graph = this.getGraph();
+    if (!this.store || !graph) {
+      log.warn({ department }, 'GraphStore 或 orgId 未配置 — Action 查询降级');
+      return [];
+    }
     try {
-      const nodes = this.store.queryNodes('ACTION', {} as Record<string, unknown>, 'growth');
+      const nodes = this.store.queryNodes('ACTION', {} as Record<string, unknown>, graph);
       return nodes
         .map(n => n.props as unknown as Action)
         .filter(a => a.department === department || a.collaborators?.includes(department));
@@ -163,9 +183,13 @@ export class ActionStore implements ActionStoreLike {
    * 按循环执行查询 Action。
    */
   getActionsByLoop(loopId: string, executionId: string): Action[] {
-    if (!this.store) return [];
+    const graph = this.getGraph();
+    if (!this.store || !graph) {
+      log.warn({ loopId, executionId }, 'GraphStore 或 orgId 未配置 — Action 查询降级');
+      return [];
+    }
     try {
-      const nodes = this.store.queryNodes('ACTION', {} as Record<string, unknown>, 'growth');
+      const nodes = this.store.queryNodes('ACTION', {} as Record<string, unknown>, graph);
       return nodes
         .map(n => n.props as unknown as Action)
         .filter(a => a.loopAssociation?.loopId === loopId && a.loopAssociation?.executionId === executionId);

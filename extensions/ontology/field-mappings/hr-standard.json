@@ -9,6 +9,10 @@
     { "externalField": "人才密度", "prop": "talent_density", "type": "number" },
     { "externalField": "员工净推荐值", "prop": "e_nps", "type": "number" },
     { "externalField": "平均在职月数", "prop": "avg_tenure_months", "type": "number" },
+    { "externalField": "姓名", "prop": "name", "type": "string" },
+    { "externalField": "知识领域", "prop": "skills", "type": "string" },
+    { "externalField": "角色", "prop": "role", "type": "string" },
+    { "externalField": "所属团队", "prop": "teamId", "type": "string" },
     { "externalField": "期间", "prop": "period", "type": "string" }
   ]
 }

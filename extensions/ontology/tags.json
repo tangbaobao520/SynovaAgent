@@ -3,8 +3,8 @@
   "description": "三层标签体系 — 所有节点/边 Schema 中的 tags 字段值必须来自本文件。pre-commit 硬阻断非法标签。",
   "layers": {
     "domain": {
-      "description": "本体类型所属的诊断领域",
-      "values": ["outcome", "strategic", "organizational", "financial", "technical", "marketing", "operational", "risk", "compliance", "knowledge", "causal", "core", "structural", "competitive", "synergy"]
+      "description": "本体类型所属的诊断领域（resource/outcome 为节点族 kind 轴 — D32/D470 同场景先例: 触碰某族 schema 时同步注册该族缺失标签）",
+      "values": ["outcome", "resource", "strategic", "organizational", "financial", "technical", "marketing", "operational", "risk", "compliance", "knowledge", "causal", "core", "structural", "competitive", "synergy", "market", "intangible", "distribution", "legal", "physical", "supply_chain", "ai"]
     },
     "object": {
       "description": "本体类型代表的企业对象类别",

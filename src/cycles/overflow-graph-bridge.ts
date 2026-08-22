@@ -44,8 +44,15 @@ export interface OverflowHeatmap {
 
 // ═══ GraphBridge ═══
 
-const SNAPSHOT_GRAPH = 'overflow_snapshots';
 const SNAPSHOT_NODE_TYPE = 'OVERFLOW_SNAPSHOT';
+
+/**
+ * 租户图派生 — `${enterpriseId}:cycles`（D338 fail-closed）。
+ * 替代原全局图 'overflow_snapshots'：快照按企业作用域隔离，绝不回落全局命名空间。
+ */
+function snapshotGraph(enterpriseId: string): string {
+  return `${enterpriseId}:cycles`;
+}
 
 /**
  * 将溢出快照写入 GraphStore。
@@ -67,7 +74,7 @@ export function writeOverflowSnapshot(
       id: nodeId,
       enterpriseId,
       ...snapshot,
-    } as unknown as Record<string, unknown>, SNAPSHOT_GRAPH);
+    } as unknown as Record<string, unknown>, snapshotGraph(enterpriseId));
     log.info({ nodeId, cycleId }, '溢出快照已写入');
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -94,7 +101,7 @@ export function getCycleSnapshots(
     const nodes = store.queryNodes(SNAPSHOT_NODE_TYPE, {
       enterpriseId,
       cycleId,
-    } as Record<string, unknown>, SNAPSHOT_GRAPH);
+    } as Record<string, unknown>, snapshotGraph(enterpriseId));
 
     let snapshots = nodes.map(n => n.props as unknown as OverflowSnapshot);
 
@@ -151,7 +158,7 @@ export function getOverflowHeatmap(
   try {
     const allNodes = store.queryNodes(SNAPSHOT_NODE_TYPE, {
       enterpriseId,
-    } as Record<string, unknown>, SNAPSHOT_GRAPH);
+    } as Record<string, unknown>, snapshotGraph(enterpriseId));
 
     let snapshots = allNodes.map(n => n.props as unknown as OverflowSnapshot);
 

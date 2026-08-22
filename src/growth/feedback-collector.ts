@@ -82,6 +82,15 @@ export interface FeedbackQuery {
   limit?: number;
 }
 
+/**
+ * 查询结果（D338 fail-closed）。
+ * 铁律 31: `[]` 无法区分「拒绝查询」与「无结果」，degraded 显式传播降级信号。
+ */
+export interface FeedbackQueryResult {
+  entries: FeedbackRecord[];
+  degraded: boolean;
+}
+
 /** 聚合信号 */
 export interface AggregatedSignal {
   /** 相同的 sentinel/decision 组合 */
@@ -199,20 +208,24 @@ export class FeedbackCollector {
   /**
    * 查询反馈记录。
    *
-   * @param filters - 过滤条件
-   * @returns FeedbackRecord[]
+   * 契约（D338 fail-closed）:
+   *   @input  — filters.enterpriseId 必填（缺 → 拒绝，绝不查询全局）
+   *   @output — FeedbackQueryResult { entries, degraded }
+   *   @degraded — 缺 enterpriseId → log.warn + {entries:[],degraded:true}；
+   *               SQLite 未就绪/查询失败 → 同上（绝不返回跨企业数据）
    */
-  queryFeedback(filters: FeedbackQuery): FeedbackRecord[] {
-    if (!this.db) return [];
+  queryFeedback(filters: FeedbackQuery): FeedbackQueryResult {
+    if (!this.db) return { entries: [], degraded: true };
+
+    if (!filters.enterpriseId) {
+      log.warn({ filters }, '反馈查询拒绝 — 缺少 enterpriseId（fail-closed，不回落全局）');
+      return { entries: [], degraded: true };
+    }
 
     try {
-      let sql = 'SELECT * FROM feedback_log WHERE 1=1';
-      const params: Record<string, unknown> = {};
+      let sql = 'SELECT * FROM feedback_log WHERE enterprise_id = @enterpriseId';
+      const params: Record<string, unknown> = { enterpriseId: filters.enterpriseId };
 
-      if (filters.enterpriseId) {
-        sql += ' AND enterprise_id = @enterpriseId';
-        params.enterpriseId = filters.enterpriseId;
-      }
       if (filters.decision) {
         sql += ' AND decision = @decision';
         params.decision = filters.decision;
@@ -238,7 +251,7 @@ export class FeedbackCollector {
       }
 
       const rows = this.db.prepare(sql).all(params) as Array<Record<string, unknown>>;
-      return rows.map(r => ({
+      const entries: FeedbackRecord[] = rows.map(r => ({
         id: r.id as string,
         enterpriseId: r.enterprise_id as string,
         actorId: r.actor_id as string,
@@ -250,10 +263,11 @@ export class FeedbackCollector {
         actorRole: (r.actor_role as string) || '',
         createdAt: r.created_at as string,
       }));
+      return { entries, degraded: false };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       log.warn({ err: msg }, '反馈查询失败 — 降级');
-      return [];
+      return { entries: [], degraded: true };
     }
   }
 
