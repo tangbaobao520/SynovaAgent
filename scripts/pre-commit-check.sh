@@ -977,6 +977,20 @@ fi
 # 注意: glob 硬编码在函数内 — 变量中的 * 不会被路径名展开 (实测), 字面 glob 才展开
 TODAY_DASH=$(date +%Y-%m-%d)
 TODAY_COMPACT=$(date +%Y%m%d)
+# D503: 时区容差 — brief/dev-doc 认领窗口扩到 ±1 天。Mac(UTC+8) 傍晚建的 brief 日期前缀
+# 对 CI runner(UTC) 是"明天"，单日过滤致 G12 在 CI 上无人认领 → 全部误报"不在 Q2 范围"
+# （D502 实证：本地 13 组全过、CI 红 7 处）；跨午夜连续作业同理。
+# 一次 python3 算三天 glob（G12 本就依赖 python3，无新增环境要求；python 不可用 → 回退单日本地行为）。
+DAY_WINDOW_DAYS=$(python3 -c "
+import datetime
+t = datetime.date.today()
+print('|'.join((t + datetime.timedelta(days=k)).isoformat() + '-*' for k in (-1, 0, 1)))" 2>/dev/null || true)
+[ -z "$DAY_WINDOW_DAYS" ] && DAY_WINDOW_DAYS="${TODAY_DASH}-*"
+DAY_WINDOW_COMPACT=$(python3 -c "
+import datetime
+t = datetime.date.today()
+print('|'.join('*-' + (t + datetime.timedelta(days=k)).strftime('%Y%m%d') + '.md' for k in (-1, 0, 1)))" 2>/dev/null || true)
+[ -z "$DAY_WINDOW_COMPACT" ] && DAY_WINDOW_COMPACT="*-${TODAY_COMPACT}.md"
 today_files_by_prefix() {
   local dir="$1" f b
   dir="${dir%/}"
@@ -985,7 +999,7 @@ today_files_by_prefix() {
     [ -e "$f" ] || continue
     b=${f##*/}
     case "$b" in
-      "${TODAY_DASH}"-*) echo "$f" ;;
+      $DAY_WINDOW_DAYS) echo "$f" ;;
     esac
   done
   return 0
@@ -998,7 +1012,7 @@ today_files_by_suffix() {
     [ -e "$f" ] || continue
     b=${f##*/}
     case "$b" in
-      *-${TODAY_COMPACT}.md) echo "$f" ;;
+      $DAY_WINDOW_COMPACT) echo "$f" ;;
     esac
   done
   return 0
