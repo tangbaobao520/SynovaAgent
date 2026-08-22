@@ -9,7 +9,7 @@
     "at": "2026-08-22"
   },
   "impl": {
-    "commit": "c3196067",
+    "commit": "d7d1c330",
     "by": "dsh",
     "at": "2026-08-22",
     "files": [
@@ -25,6 +25,6 @@
   "fix_task_id": null,
   "updated_at": "2026-08-22T14:30:00+00:00",
   "updated_by": "dsh",
-  "note": "D1 事件溯源 impl 已交付。session_events 表 + appendEvent（MAX(seq) 续写防回退）+ deriveMessages 投影 + addMessage 双写下沉（8 处直连调用方自动受益）+ SessionManager 注入断言 + bootstrap 生产装配。Win 协调：grep 实证 src/store 无在途冲突（desktop-phase0-auth 删 title 分支未合并，风险已标注）。测试 17/17 绿 + tsc 零错误 + store/orchestrator 197/197 回归。",
+  "note": "D1 事件溯源 impl 已交付 + 复核修复（214ac7f2 粘滞 + 4af54eb3 getMessages backing/seq冲突实证/断言分支/engine seam 降级标注）。Win 协调无冲突。测试 28/28 + 205/205 相关回归 + tsc 零错误。",
   "priority": "P1"
 }
