@@ -1,0 +1,16 @@
+{
+  "task_id": "D505",
+  "title": "sentinel-self-diagnosis",
+  "status": "spec_done",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D505-sentinel-self-diagnosis-20260823.md",
+    "commit": "4d877115",
+    "by": "dev-doc",
+    "at": "2026-08-23"
+  },
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-23",
+  "updated_by": "dev-doc"
+}
