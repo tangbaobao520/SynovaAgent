@@ -30,12 +30,21 @@ module.exports = {
 
   files: [
     'electron/main.cjs',
+    'electron/backend-spawn.cjs',
     'electron/preload.cjs',
     'electron/config.json',
     'electron/icon.png',
     'package.json',
     '!node_modules/.cache/**',
     '!node_modules/electron-builder/**',
+  ],
+
+  // D504: 后端运行资产放 resources/（prod spawn: node dist/index.js + extensions 哨兵目录）
+  // renderer 构建产物（vite outDir dist/renderer）→ resources/renderer（prod loadFile 目标）
+  extraResources: [
+    { from: 'dist', to: 'dist', filter: ['**/*', '!renderer/**'] },
+    { from: 'dist/renderer', to: 'renderer' },
+    { from: 'extensions', to: 'extensions' },
   ],
 
   win: {
