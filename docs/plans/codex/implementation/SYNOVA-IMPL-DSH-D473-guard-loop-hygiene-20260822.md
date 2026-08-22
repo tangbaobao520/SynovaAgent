@@ -293,3 +293,11 @@ if (!guardDecision.allow) {
 - [x] DS 与 dev doc 一一对应（DS1-DS11）；写集表标题紧跟表头（D381 格式契约）
 - [x] 与 D472/D474（原 D470）/D471 写集零交集（并行安全）；⚠️ src/ 区域已标注 Win 协调（S-7/S-8）
 - [x] 不是凭记忆；不用 --no-verify
+
+## 12. 复核修复记录（2026-08-22 impl 后独立复核，commit 89cf38e8）
+
+> 创始人要求交付后批判性复核。复核发现 1 个真实问题 + 2 个改进并修复（K3 可核）:
+
+1. **withTimeout 返回类型 TS2322（高严重度，铁律 38）**：`tools.ts:205` `withTimeout` 返回 `Promise<unknown>` 赋给 `ToolCallResult` → tsc 报类型错误。vitest（esbuild 转译）不查类型 + pre-commit 组 1 只查 `as any` → 31/31 绿掩盖了类型违规。修复：withTimeout 返回 `Promise<ToolCallResult>`，run() 结果适配；`ToolCallResult.error` 类型放宽为 `string | { name, code, message }`（容纳结构化超时错误，铁律 32 错误分类）。
+2. **timer 泄漏（低）**：超时 Promise 未 clearTimeout，race settle 后 timer 仍存活。修复：finally clearTimeout。
+3. **block 路径 level 一致性（低）**：参数校验/重复失败 block 缺 `level:'block'`（与循环 block 不一致）。修复：统一补上。测试 32/32 绿（新增 level 一致性用例）。
