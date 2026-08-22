@@ -192,7 +192,6 @@ export function mapBacklogToBoardTask(item, now) {
 }
 
 /**
-/**
  * 读取 derive-board-sources.py 产出的多源 snapshot（D502）。
  * 文件缺失/坏 JSON → null（调用方降级回工作区直读，绝不 import 空数据——M1 教训）。
  * @param {string} snapshotPath - snapshot JSON 路径。
@@ -514,11 +513,16 @@ export async function syncOnce(opts) {
   await postAction({ apiBase, requestId, action, fetchImpl: opts.fetchImpl });
 
   // 删除僵尸任务（看板有、四源 + backlog 皆无）——治 import 只合并不删除的盲区（D502 扩到全 id 集）
-  // 降级保护（D502 复核）：snapshot 缺失时本轮回退工作区直读，id 集不含 Win/L*/T-* 域，
-  // 且 Win 卡的 id 同为 D# 格式无法区分 → 降级轮一律跳过删除（误删 124 张卡是破坏性的、
-  // 漏删一张僵尸等 derive 恢复后下一轮自愈——两害相权取其轻）。仅在 snapshot 有效时删除。
+  // 降级保护（D502 复核 + D506 K3 P1-2 补全）：以下任一情况跳过删除——
+  //   ① snapshot 缺失（工作区直读轮，id 集不含 Win/L*/T-* 域，且 Win 卡 id 同为 D# 格式无法区分）；
+  //   ② snapshot 存在但任一源 degraded（如 win_tasks 空）——该域 id 集不完整，删了等于误删该域全部卡。
+  // 误删是破坏性的、漏删一张僵尸等 derive 恢复后下一轮自愈——两害相权取其轻。
+  const sourcesDegraded =
+    usingSnapshot &&
+    (snapshot?.task_state?.degraded || snapshot?.win_tasks?.degraded ||
+     snapshot?.product_lines?.degraded || snapshot?.todos?.degraded);
   let deleted = 0;
-  if (usingSnapshot) {
+  if (usingSnapshot && !sourcesDegraded) {
     for (const bt of boardTasks) {
       const id = String(bt?.id ?? "");
       if (!id || allIds.has(id)) continue;

@@ -1,0 +1,29 @@
+{
+  "task_id": "D506",
+  "title": "K3 审计 D502/D503 返修（P0 G12 fail-open + P1 降级矩阵 + P2×3）",
+  "status": "impl_done",
+  "spec": {
+    "path": ".claude/task-briefs/2026-08-23-D506-g12-fix-failopen.md",
+    "by": "dsh-cto",
+    "at": "2026-08-23"
+  },
+  "impl": {
+    "commit": "PENDING",
+    "by": "dsh-cto",
+    "at": "2026-08-23",
+    "files": [
+      "scripts/pre-commit-check.sh",
+      "dsh/plugins/task-board-adapter/lib/sync.js",
+      "tests/control-tower/g12-day-window.test.sh",
+      "dsh/plugins/task-board-adapter/test/sync.test.js",
+      "task-state/D502.json",
+      "task-state/D503.json"
+    ]
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-23",
+  "updated_by": "dsh-cto",
+  "note": "D382 铁律另起 FIX。P0-1：case 变量展开 | 字面量 → [[ =~ ]] ERE 正则（K3 审计复现正确，本地独立复现一致）；P1-2：删除循环加任一源 degraded 跳过；P1-3：新增行为级密封测试；P2：双斜杠/死代码/数字 stale。",
+  "priority": "P0"
+}

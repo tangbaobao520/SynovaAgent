@@ -20,10 +20,16 @@
       "dsh/plugins/task-board-adapter/package.json"
     ]
   },
-  "audit": null,
+  "audit": {
+    "verdict": "CONDITIONAL_PASS",
+    "report": "docs/synova/audit-reports/2026-08-23-D502-D503-board-unify.md",
+    "at": "2026-08-23",
+    "by": "k3",
+    "note": "P1-2 降级矩阵 → D506 修复"
+  },
   "fix_task_id": null,
   "updated_at": "2026-08-23",
   "updated_by": "dsh-cto",
-  "note": "创始人裁决：D502 由 CTO 实现 + 待规划全量上板。四源：task-state / Win git 派生(≥D328) / product-progress 26 线+L00 总览 / todos 48 条 T-*。数据源统一 origin/main（fetch 只动 remote-tracking ref）。验证：33 单测 + 9 集成测试全绿 + 真实仓库 dry-run 203 卡。部署待办：cp 到 profile + 重启 dsh web（会中断会话，待创始人点头）。",
+  "note": "创始人裁决：D502 由 CTO 实现 + 待规划全量上板。四源：task-state / Win git 派生(≥D328) / product-progress 26 线+L00 总览 / todos 48 条 T-*。数据源统一 origin/main（fetch 只动 remote-tracking ref）。验证：33 单测 + 9 集成测试全绿 + 真实仓库 dry-run 207 卡。部署待办：cp 到 profile + 重启 dsh web（会中断会话，待创始人点头）。",
   "priority": "P0"
 }
