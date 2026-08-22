@@ -431,3 +431,5 @@ Binary file .claude/bypass.log matches
 2026-08-22T01:11:52+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D454 | AGENT=deepseek-harness
 2026-08-22T00:20:28+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/win-feishu-bridge
 2026-08-22T02:23:53+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D471 | AGENT=claude-code | HASH=3c9e88e084699ad7a818e0aa51883ba1b53eb64e
+2026-08-21T17:46:01Z possible-bypass diff=1831s
+2026-08-21T19:10:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=docs | AGENT=deepseek-harness | HASH=3620f6a76b033eb1deeaddf190cbc835ba4de531
