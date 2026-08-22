@@ -1,0 +1,16 @@
+{
+  "task_id": "D504",
+  "title": "electron-desktop-bootstrap",
+  "status": "spec_done",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D504-electron-desktop-integration-20260823.md",
+    "commit": "3c79328d",
+    "by": "dev-doc",
+    "at": "2026-08-23"
+  },
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-23",
+  "updated_by": "dev-doc"
+}
