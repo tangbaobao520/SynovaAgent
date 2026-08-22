@@ -4,12 +4,12 @@
   "status": "impl_done",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D500-session-event-sourcing-20260822.md",
-    "commit": "pending",
+    "commit": "c3196067",
     "by": "dev-doc",
     "at": "2026-08-22"
   },
   "impl": {
-    "commit": "pending",
+    "commit": "c3196067",
     "by": "dsh",
     "at": "2026-08-22",
     "files": [
