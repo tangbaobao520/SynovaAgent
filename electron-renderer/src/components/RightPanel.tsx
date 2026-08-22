@@ -128,12 +128,12 @@ const SolutionPreview: React.FC<{
   </div>
 );
 
-// ═══ API 基础路径 ═══
-const API_BASE = '';
+// ═══ API 基础路径（D504: Electron 生产态 loadFile 后相对路径失效 → getApiBase） ═══
+import { getApiBase } from '../lib/api';
 
 async function apiFetch<T>(path: string, opts?: RequestInit): Promise<T | null> {
   try {
-    const res = await fetch(`${API_BASE}${path}`, {
+    const res = await fetch(`${getApiBase()}${path}`, {
       headers: { 'Content-Type': 'application/json' },
       ...opts,
     });
