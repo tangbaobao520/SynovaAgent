@@ -293,12 +293,13 @@ export function validateEdgeEndpoints(type: SOGEdgeType, fromType: SOGNodeType, 
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// RUNTIME VALIDATORS — 14 节点 + 10 边, 供 createNode/createEdge 调用
+// RUNTIME VALIDATORS — 18 节点 + 14 边, 供 createNode/createEdge 调用
 // ═══════════════════════════════════════════════════════════════════
 
 // ── Node validators ──
 
-export const NODE_VALIDATORS: Record<SOGNodeType, (props: unknown) => boolean> = {
+// 交叉类型: 枚举键保持穷尽性, 字符串索引供运行时注册类型 (sog-schema-registry) 读写
+export const NODE_VALIDATORS: Record<SOGNodeType, (props: unknown) => boolean> & Record<string, ((props: unknown) => boolean) | undefined> = {
   [SOGNodeType.PERSON]:      (p): p is PersonProps      => hasString(p, 'name'),
   [SOGNodeType.TEAM]:        (p): p is TeamProps         => hasString(p, 'name') && hasTeamType(p),
   [SOGNodeType.AGENT]:       (p): p is AgentProps        => hasString(p, 'name') && hasAgentType(p),
@@ -321,7 +322,7 @@ export const NODE_VALIDATORS: Record<SOGNodeType, (props: unknown) => boolean> =
 
 // ── Edge validators ──
 
-export const EDGE_VALIDATORS: Record<SOGEdgeType, (props: unknown) => boolean> = {
+export const EDGE_VALIDATORS: Record<SOGEdgeType, (props: unknown) => boolean> & Record<string, ((props: unknown) => boolean) | undefined> = {
   [SOGEdgeType.INTERACTS_WITH]:  (p): p is InteractsWithEdgeProps  => hasChannel(p),
   [SOGEdgeType.BELONGS_TO]:      (_p): _p is BelongsToEdgeProps      => true, // role + joinedAt 都是可选
   [SOGEdgeType.OWNS]:            (p): p is OwnsEdgeProps           => hasOwnershipType(p),
@@ -329,7 +330,7 @@ export const EDGE_VALIDATORS: Record<SOGEdgeType, (props: unknown) => boolean> =
   [SOGEdgeType.AFFECTS]:         (p): p is AffectsEdgeProps        => hasDirection(p),
   [SOGEdgeType.DEPENDS_ON]:      (p): p is DependsOnEdgeProps      => hasCriticality(p),
   [SOGEdgeType.CORRESPONDS_TO]:  (p): p is CorrespondsToEdgeProps  => hasCorrespondenceType(p) && hasConfidence(p),
-  [SOGEdgeType.CONSUMES]:        (p): p is ConsumesEdgeProps       => typeof (p as any)?.amount === 'number' && hasString(p, 'period'),
+  [SOGEdgeType.CONSUMES]:        (p): p is ConsumesEdgeProps       => typeof (p as { amount?: number })?.amount === 'number' && hasString(p, 'period'),
   [SOGEdgeType.ALIGNS_WITH]:     (p): p is AlignsWithEdgeProps     => hasAlignmentStrength(p) && hasAlignmentType(p),
   [SOGEdgeType.PROVIDES]:        (_p): _p is ProvidesEdgeProps       => true, // proficiencyLevel + capacity 都是可选
   [SOGEdgeType.HAS_ACCESS_TO]:    (p): p is Record<string, unknown>     => hasString(p, 'resourceType') && hasString(p, 'permission'),
@@ -343,93 +344,94 @@ export const EDGE_VALIDATORS: Record<SOGEdgeType, (props: unknown) => boolean> =
 // ═══════════════════════════════════════════════════════════════════
 
 function hasString(p: unknown, k: string): boolean {
-  return typeof (p as any)?.[k] === 'string' && (p as any)[k].length > 0;
+  const v = (p as Record<string, unknown>)?.[k];
+  return typeof v === 'string' && v.length > 0;
 }
 
 function hasTeamType(p: unknown): boolean {
-  return ['permanent', 'temporary'].includes((p as any)?.teamType);
+  return ['permanent', 'temporary'].includes((p as { teamType: TeamProps['teamType'] })?.teamType);
 }
 
 function hasAgentType(p: unknown): boolean {
-  return ['internal', 'external'].includes((p as any)?.agentType);
+  return ['internal', 'external'].includes((p as { agentType: AgentProps['agentType'] })?.agentType);
 }
 
 function hasEntityType(p: unknown): boolean {
-  return ['internal', 'external'].includes((p as any)?.entityType);
+  return ['internal', 'external'].includes((p as { entityType: ClientProps['entityType'] })?.entityType);
 }
 
 function hasProcessType(p: unknown): boolean {
-  return ['approval', 'deployment', 'meeting', 'other'].includes((p as any)?.processType);
+  return ['approval', 'deployment', 'meeting', 'other'].includes((p as { processType: ProcessProps['processType'] })?.processType);
 }
 
 function hasDocType(p: unknown): boolean {
-  return ['prd', 'meeting_notes', 'report', 'contract', 'other'].includes((p as any)?.docType);
+  return ['prd', 'meeting_notes', 'report', 'contract', 'other'].includes((p as { docType: DocumentProps['docType'] })?.docType);
 }
 
 function hasFinancialType(p: unknown): boolean {
-  return ['cost_center', 'revenue', 'cost', 'token_account'].includes((p as any)?.financialType);
+  return ['cost_center', 'revenue', 'cost', 'token_account'].includes((p as { financialType: FinancialProps['financialType'] })?.financialType);
 }
 
 function hasLocationType(p: unknown): boolean {
-  return ['office', 'remote', 'datacenter', 'factory'].includes((p as any)?.locationType);
+  return ['office', 'remote', 'datacenter', 'factory'].includes((p as { locationType: LocationProps['locationType'] })?.locationType);
 }
 
 function hasGoalType(p: unknown): boolean {
-  return ['mission', 'vision', 'okr', 'north_star'].includes((p as any)?.goalType);
+  return ['mission', 'vision', 'okr', 'north_star'].includes((p as { goalType: GoalProps['goalType'] })?.goalType);
 }
 
 function hasCapCategory(p: unknown): boolean {
-  return ['technical', 'domain', 'compliance', 'leadership'].includes((p as any)?.category);
+  return ['technical', 'domain', 'compliance', 'leadership'].includes((p as { category: CapabilityProps['category'] })?.category);
 }
 
 function hasSeverity(p: unknown): boolean {
-  return ['low', 'medium', 'high', 'critical'].includes((p as any)?.severity);
+  return ['low', 'medium', 'high', 'critical'].includes((p as { severity: RiskProps['severity'] })?.severity);
 }
 
 function hasRiskStatus(p: unknown): boolean {
-  return ['active', 'mitigated', 'resolved'].includes((p as any)?.status);
+  return ['active', 'mitigated', 'resolved'].includes((p as { status: RiskProps['status'] })?.status);
 }
 
 function hasComplianceType(p: unknown): boolean {
-  return ['regulation', 'standard', 'policy'].includes((p as any)?.complianceType);
+  return ['regulation', 'standard', 'policy'].includes((p as { complianceType: ComplianceProps['complianceType'] })?.complianceType);
 }
 
 function hasComplianceStatus(p: unknown): boolean {
-  return ['compliant', 'non_compliant', 'partial'].includes((p as any)?.status);
+  return ['compliant', 'non_compliant', 'partial'].includes((p as { status: ComplianceProps['status'] })?.status);
 }
 
 function hasChannel(p: unknown): boolean {
-  return ['public_channel', 'direct_message', 'email', 'meeting', 'other'].includes((p as any)?.channel);
+  return ['public_channel', 'direct_message', 'email', 'meeting', 'other'].includes((p as { channel: InteractsWithEdgeProps['channel'] })?.channel);
 }
 
 function hasOwnershipType(p: unknown): boolean {
-  return ['executes', 'manages', 'sponsors'].includes((p as any)?.ownershipType);
+  return ['executes', 'manages', 'sponsors'].includes((p as { ownershipType: OwnsEdgeProps['ownershipType'] })?.ownershipType);
 }
 
 function hasDirection(p: unknown): boolean {
-  return ['positive', 'negative'].includes((p as any)?.direction);
+  return ['positive', 'negative'].includes((p as { direction: AffectsEdgeProps['direction'] })?.direction);
 }
 
 function hasCriticality(p: unknown): boolean {
-  return ['required', 'optional'].includes((p as any)?.criticality);
+  return ['required', 'optional'].includes((p as { criticality: DependsOnEdgeProps['criticality'] })?.criticality);
 }
 
 function hasCorrespondenceType(p: unknown): boolean {
-  return ['equivalent', 'related', 'supersedes'].includes((p as any)?.correspondenceType);
+  return ['equivalent', 'related', 'supersedes'].includes((p as { correspondenceType: CorrespondsToEdgeProps['correspondenceType'] })?.correspondenceType);
 }
 
 function hasConfidence(p: unknown): boolean {
-  return typeof (p as any)?.confidence === 'number';
+  return typeof (p as { confidence?: number })?.confidence === 'number';
 }
 
 function hasAlignmentStrength(p: unknown): boolean {
-  return typeof (p as any)?.alignmentStrength === 'number';
+  return typeof (p as { alignmentStrength?: number })?.alignmentStrength === 'number';
 }
 
 function hasAlignmentType(p: unknown): boolean {
-  return ['direct', 'indirect', 'conflicting'].includes((p as any)?.alignmentType);
+  return ['direct', 'indirect', 'conflicting'].includes((p as { alignmentType: AlignsWithEdgeProps['alignmentType'] })?.alignmentType);
 }
 
 function hasCanvasType(p: unknown): boolean {
-  return ['subscription', 'transactional', 'advertising', 'freemium', 'platform', 'hybrid', 'other'].includes((p as any)?.canvasType);
+  return ['subscription', 'transactional', 'advertising', 'freemium', 'platform', 'hybrid', 'other'].includes((p as { canvasType: BusinessModelProps['canvasType'] })?.canvasType);
 }
