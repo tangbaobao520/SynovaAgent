@@ -122,6 +122,28 @@ describe('D500 session event log — appendEvent + deriveMessages', () => {
     expect(store.getEvents(sessionId).length).toBeGreaterThan(0);
   });
 
+  it('降级信号非粘滞: appendEvent 失败后成功写入 → lastDegraded 重置为 false（复核修复）', () => {
+    // 模拟 appendEvent 失败（drop 表 → INSERT 失败 → lastDegraded=true）
+    const db = (store as unknown as { db: Database.Database }).db;
+    db.exec('DROP TABLE session_events');
+    store.addMessage(sessionId, 'user', 'fail-write');
+    expect(store.lastDegraded).toBe(true);
+    // 重建表 → 后续成功写入应重置 lastDegraded（不粘滞）
+    db.exec(`CREATE TABLE IF NOT EXISTS session_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id TEXT NOT NULL REFERENCES agent_sessions(id) ON DELETE CASCADE,
+      seq INTEGER NOT NULL,
+      event_type TEXT NOT NULL CHECK(event_type IN ('message','tool_result','system')),
+      payload_json TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      UNIQUE(session_id, seq)
+    );`);
+    db.exec('CREATE INDEX IF NOT EXISTS idx_session_events_sess ON session_events(session_id, seq);');
+    store.addMessage(sessionId, 'user', 'recover-write');
+    expect(store.lastDegraded).toBe(false);
+    expect(store.getEvents(sessionId).length).toBeGreaterThan(0);
+  });
+
   it('appendEvent 显式 eventType 支持（tool_result 等，扩展性）', () => {
     const res = store.appendEvent(sessionId, 'tool_result', { role: 'tool', content: '{}', toolCallId: 'tc1' });
     expect(res.ok).toBe(true);

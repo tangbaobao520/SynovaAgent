@@ -55,6 +55,19 @@ describe('D500 SessionManager — 事件持久化 + model-visible⟺logged 断�
     errorLogSpy.mockRestore();
   });
 
+  it('降级信号非粘滞: 失败后成功写入 → degraded 重置为 false（复核修复）', () => {
+    const errorLogSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const manager = new SessionManager({}, store);
+    // 失败写入（nonexistent session → 异常 → degraded）
+    manager.addMessage({ role: 'user', content: 'bad' }, 'nonexistent-session');
+    expect(manager.degraded).toBe(true);
+    // 成功写入 → degraded 重置（不粘滞）
+    manager.addMessage({ role: 'user', content: 'good' }, sessionId);
+    expect(manager.degraded).toBe(false);
+    expect(store.getEvents(sessionId).length).toBe(1);
+    errorLogSpy.mockRestore();
+  });
+
   it('未注入 sessionStore → addMessage 走内存态不回退（向后兼容，bootstrap 现状）', () => {
     const manager = new SessionManager();
     manager.addMessage({ role: 'user', content: '仅内存' }, sessionId);

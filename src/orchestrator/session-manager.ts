@@ -80,6 +80,9 @@ export class SessionManager {
       try {
         this.sessionStore.addMessage(sessionId, msg.role as 'user' | 'assistant', msg.content);
         // model-visible⟺logged 断言: 进模型的必已落 log（addMessage 内部双写，未落 → store.lastDegraded）
+        // 2026-08-22 复核修正: 成功路径重置 degraded——降级信号反映"本次"结果，非历史粘滞
+        // （原实现一旦失败永不重置，一次 transient 失败污染整个会话后续断言）
+        this.degraded = false;
         if (this.sessionStore.lastDegraded) {
           log.error({ sessionId, role: msg.role }, 'model-visible⟺logged 断言失败 — 事件未落 log');
           this.degraded = true;

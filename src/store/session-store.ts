@@ -247,10 +247,14 @@ export class SessionStore {
     this.db.prepare('INSERT INTO agent_messages (session_id, role, content) VALUES (?,?,?)')
       .run(sessionId, role, content);
     // D500: 事件流双写（append-only，model-visible⟺logged 根基）
+    // 2026-08-22 复核修正: 事件写入成功时重置 lastDegraded——降级信号反映"本次"结果，
+    // 非历史粘滞（原实现一次失败后永久 true，transient 故障恢复后误报持续）
     const res = this.appendEvent(sessionId, 'message', { role, content });
     if (!res.ok) {
       log.error({ sessionId, role, error: res.error }, 'appendEvent 双写失败 — model-visible⟺logged 断裂');
       this.lastDegraded = true;
+    } else {
+      this.lastDegraded = false;
     }
     this.db.prepare('UPDATE agent_sessions SET updated_at=? WHERE id=?')
       .run(new Date().toISOString(), sessionId);
