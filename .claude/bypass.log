@@ -432,3 +432,5 @@ Binary file .claude/bypass.log matches
 2026-08-22T00:20:28+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/win-feishu-bridge
 2026-08-21T17:46:01Z possible-bypass diff=1831s
 2026-08-21T19:10:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=docs | AGENT=deepseek-harness | HASH=3620f6a76b033eb1deeaddf190cbc835ba4de531
+2026-08-22T14:16:04+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D473 | AGENT=dsh | HASH=bf05ffdf86511b3ab0ae51a262f26d55c917cb24
+2026-08-22T14:16:04+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D473 | AGENT=dsh | HASH=89cf38e8b485d3d06382c64b6555903e45500bc4
