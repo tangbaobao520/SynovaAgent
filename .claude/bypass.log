@@ -475,3 +475,7 @@ Binary file .claude/bypass.log matches
 2026-08-22T15:59:30+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D500 | AGENT=dsh | HASH=4af54eb3a73d67234819dd9fb9b08d7dbd77224e
 2026-08-22T16:00:29+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/d500-session-event-sourcing
 2026-08-22T16:00:38+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D500 | AGENT=dsh | HASH=4d7edd08f6d39e5d136d0b0df408b274befecc5e
+2026-08-22T12:00:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D500 | AGENT=dev-doc | HASH=4f9e9e754aa710ac45a611ae0b77e31a57296193
+2026-08-22T12:00:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D500 | AGENT=dev-doc | HASH=4d7edd08f6d39e5d136d0b0df408b274befecc5e
+2026-08-22T12:00:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D500 | AGENT=dev-doc | HASH=d7d1c3302e85ac92296e752d028b04f5f89d67eb
+2026-08-22T12:00:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D500 | AGENT=dev-doc | HASH=4af54eb3a73d67234819dd9fb9b08d7dbd77224e
