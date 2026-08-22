@@ -36,14 +36,21 @@
 
 ## 3. 实现方案
 
-### 3.1 写集 (3 修改 + 0 新建) — 交付后自审修复 commit（G12c 按 commit 核验写集表）
+### 3.1 写集 (3 修改 + 0 新建) — 交付后二轮自审修复 commit（G12c 按 commit 核验写集表）
+| 文件 | 操作 | 说明 |
+|------|------|------|
+| packages/test-kit/tests/architecture/05-as-any-audit.test.ts | 修改 | 状态机修复行注释陷阱：行注释内含 `/*`（真实案例 src/agent/skill-lazy-loader.ts:107 `// skills/*.md`）误开块注释状态、后续无 `*/` 闭合 → 其后整段文件吞出扫描区（漏报洞）。修复：开块注释前判 `open < lineComment`；新增非空转断言（主扫描实际读入文件数 >100，防 REPO_ROOT 漂移/目录缺失假绿）；排除规则 fixture 增 .test.tsx 用例；real.ts 增 2 行陷阱（行注释内含 /* + 后续违规行），命中数 5→6；已知残余限制注释同步（字符串内 /* 与 // 对称） |
+| docs/plans/codex/implementation/SYNOVA-IMPL-D471-packages-as-any-cleanup-20260822.md | 修改 | §3.1 改述当前 commit 写集；§3.2 回填点 10（二轮自审修复详情）；全量写集历史存档 §3.1b/§3.1c |
+| memory/notes/implemented/2026-08-22-d471-packages-as-any-cleanup.md | 修改 | 交付笔记补二轮自审修复行 + 教训 8（行注释内含 /* 陷阱）；DS3 证据同步 4/4 |
+
+### 3.1b 一轮自审修复 commit 写集（3 文件 — b4ba61ad，历史存档）
 | 文件 | 操作 | 说明 |
 |------|------|------|
 | packages/test-kit/tests/architecture/05-as-any-audit.test.ts | 修改 | 注释过滤重写为跨行块注释状态机——修复初版 `!line.includes('*')` 漏报洞（乘法运算符代码行整行被跳）与同行剥离误报（多行块注释 JSDoc 续行）；排除规则测试扩至 5 命中 + 7 不误报用例；findTsFiles 纳入 .tsx（排除 .test.tsx，src/ 实测 0 处 .tsx as any 后扩） |
-| docs/plans/codex/implementation/SYNOVA-IMPL-D471-packages-as-any-cleanup-20260822.md | 修改 | §3.1 改述当前 commit 写集；§3.2 回填点 9（自审修复详情）；全量写集历史存档 §3.1b |
+| docs/plans/codex/implementation/SYNOVA-IMPL-D471-packages-as-any-cleanup-20260822.md | 修改 | §3.1 改述当时 commit 写集；§3.2 回填点 9（自审修复详情）；全量写集历史存档 |
 | memory/notes/implemented/2026-08-22-d471-packages-as-any-cleanup.md | 修改 | 交付笔记补自审修复行 + 教训 7（审计工具注释过滤不能靠"行内含 \* 即跳过"） |
 
-### 3.1b 任务全量写集（7 文件 — 已随 3c9e88e0 交付，历史存档）
+### 3.1c 任务全量写集（7 文件 — 已随 3c9e88e0 交付，历史存档）
 | 文件 | 操作 | 说明 |
 |------|------|------|
 | packages/sog-core/src/sog-core-schema.ts | 修改 | 24 行 as any → 类型安全替换：动态 key `(p as Record<string, unknown>)?.[k]`（局部变量收窄）；枚举 includes `(p as { teamType: TeamProps['teamType'] })?.teamType`（必选字段接口字面量类型）；typeof 检查 `{ amount?: number }` 等；NODE_VALIDATORS/EDGE_VALIDATORS 声明改交叉类型（枚举穷尽 + 字符串索引） |
@@ -68,6 +75,7 @@
 7. **陈腐计数断言同步**（import 修复连带暴露）：sog-core 测试 2 处硬编码计数（14 节点/10 边）与当前枚举不符——枚举 append-only 合法扩展后为 18 节点/14 边（USER/RESOURCE_USER/KNOWLEDGE_CHUNK/BUSINESS_MODEL + HAS_ACCESS_TO/REVENUE_FROM/COST_DRIVEN_BY/VALUE_PROPOSITION）。同步断言与 3 处注释（"14 节点 + 10 边" → "18 节点 + 14 边" ×2、"all 10" → "all 14"）。不触碰校验语义（§3.3）。
 8. **DS4 "全绿"按零新增判定**：test-kit 全量套件有 16 个基线既有失败（e2e ×12 需 localhost:3099 活服务器、architecture ×4 为 src/ 既有问题，均非本任务写集）。修复后仍 16=16 零新增；sog-core 67/67、connector-registry 7/7 全绿；根 tsc 28=28 零新增。本任务写集内零失败。
 9. **审计测试注释过滤重写为跨行块注释状态机（交付后自审修复）**：初版过滤 `!line.includes('//') && !line.includes('*')` 有漏报洞——代码行含 `*` 运算符（乘法）或字符串内含 `//`（URL）时整行被跳过，`(p as any).z * 2` 这类违规审计抓不到（审计工具自身的盲区，与 P1-C1 同性质）。自审时先改成同行剥离，暴露反向缺陷：多行块注释（JSDoc）续行 ` * 零 as any` 被误报，主扫描 src/ 实测误报 2 处。最终形态：逐行状态机追踪块注释开合（跨行），剥闭合块注释（等长空格保列位）、未闭合 `/*` 尾部视为注释并置跨行状态、`//` 截断后再匹配 `/\bas\s+any\b/`。排除规则测试扩到 5 个命中用例（乘法运算符 / 字符串内 URL / 块注释后代码 / 跨行块注释内 / 闭合符后代码）+ 7 个注释不误报用例（含块注释续行）。已知残余限制（注释中已记录）：字符串/正则字面量内含 `//` 且位于 as any 之前的同行仍漏报。findTsFiles 同步纳入 `.tsx`（排除 `.test.tsx`）——src/ 实测 0 处 .tsx as any 后才扩，扫描声明"src/ + packages/ 生产代码零 as any"覆盖完整。
+10. **行注释内含 `/*` 陷阱修复 + 非空转断言（交付后二轮自审）**：状态机 `rest.indexOf('/*')` 未考虑 `/*` 位于 `//` 之后的场景——真实代码 src/agent/skill-lazy-loader.ts:107 `// skills/*.md — 知识文件 (旧格式兼容)` 会误开块注释状态，该文件后续无 `*/` 闭合 → L108-258 整段吞出扫描区（漏报洞，与点 9 同类盲区）。修复：开块注释前判 `open < lineComment`（`/*` 在 `//` 之后则不开）。实证三连：①fixture RED——real.ts 增陷阱行（行注释内含 `/*` + 后续违规行）修复前 5≠6 失败、修复后 6/6 通过；②真实暴露面——skill-lazy-loader.ts 文件尾种探针 `(p as any).probe`，修复后精确报 L259（旧版吞掉 L107 后全部行、漏报），实测后 git checkout 还原；③非空转断言——findTsFiles 实际读入 >100 文件，防 REPO_ROOT 漂移/目录缺失致假绿（种探针在临时目录验证该断言能拦下空转）。已知残余限制注释同步更新（字符串内 `/*` 与 `//` 对称，代价均远低于旧版整行跳过）。
 
 ### 3.3 不做的事
 * 不改 `scripts/pre-commit-check.sh` 组 1（DSH 地盘——本任务用 test-kit 审计测试在测试侧闭环 P1-C1，门禁扩围交 DSH 排期）。
@@ -80,7 +88,7 @@
 
 | 层 | 类型 | 数量 | 覆盖 |
 |----|------|------|------|
-| L1 | 单元/审计 packages/test-kit/tests/architecture/05-as-any-audit.test.ts | 3+ | 扩围 + 加断言：**red=扩围且未清理（生产 33 处）→ green=清理后 0**；排除规则正确（.d.ts/.test.ts/注释/审计测试自身字符串不误报） |
+| L1 | 单元/审计 packages/test-kit/tests/architecture/05-as-any-audit.test.ts | 4 | 扩围 + 加断言：**red=扩围且未清理（生产 33 处）→ green=清理后 0**；排除规则正确（.d.ts/.test.ts/.test.tsx/注释/审计测试自身字符串不误报）；主扫描非空转（实际读入 >100 文件） |
 | L1 | 回归 cd packages/sog-core && vitest run + cd packages/connector-registry && vitest run + cd packages/test-kit && vitest run | 全量 | sog-core 类型守卫行为不变（schema 校验结果与修复前一致）；e2e 响应 cast 替换后请求/断言不变 |
 
 **RED 必须覆盖失败模式（S-5）**：用例 1 先扩围 + 加 expect（不加清理）→ `cd packages/test-kit && vitest run tests/architecture/05-as-any-audit.test.ts` → **修复前失败（生产 33 处）** → 清理后通过；用例 2 断言排除规则（审计测试自身 "as any" 字符串、.d.ts、注释不误报）。

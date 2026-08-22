@@ -15,14 +15,14 @@ K3 审计 P1-C1：铁律 38「as any 零容忍」声称失效——门禁组 1 �
 | packages/sog-core/src/sog-schema-registry.ts | 8 处 → 枚举语义化转换 + 类型化索引读写 |
 | packages/connector-registry/src/registry.ts | 对象级 `} as any)` → handler 内对 await 结果断言 |
 | packages/test-kit/tests/e2e/02-*.test.ts | 2 处 res.json() as any → 内联响应类型 |
-| packages/test-kit/tests/architecture/05-as-any-audit.test.ts | 扫描根扩 src/+packages/ + expect 断言 + 2 排除规则测试；交付后自审重写注释过滤为跨行块注释状态机 + .tsx 纳入扫描 |
+| packages/test-kit/tests/architecture/05-as-any-audit.test.ts | 扫描根扩 src/+packages/ + expect 断言 + 2 排除规则测试；交付后自审重写注释过滤为跨行块注释状态机 + .tsx 纳入扫描；二轮自审修复行注释陷阱（`//` 内 `/*` 误开块注释状态吞行）+ 非空转断言 |
 | packages/sog-core/tests/sog-core-schema.test.ts | 前置修复坏 import + 陈腐计数断言同步 |
 | packages/connector-registry/tests/connector-registry.test.ts | 前置修复坏 import（×2） |
 
 ## DS 验收证据
 
 - DS1: rg as any → 生产代码 0 命中（仅注释/fixture）
-- DS3: 审计测试 3/3 pass（RED 33 处失败 → GREEN 0）
+- DS3: 审计测试 4/4 pass（RED 33 处失败 → GREEN 0；二轮 RED 5≠6 → GREEN 6）
 - DS4: sog-core 67/67、connector-registry 7/7、test-kit 16=16（基线既有）零新增、根 tsc 28=28
 - DS5-DS7: 暂存 9 文件与写集一致 / 无 no-verify / 已推送 + PR #95
 
@@ -35,3 +35,4 @@ K3 审计 P1-C1：铁律 38「as any 零容忍」声称失效——门禁组 1 �
 5. **synova-commit --files 是多参数**：每个文件独立参数，不能用一个大引号串（会当成单个超长文件名）。
 6. **首推必被 bypass.log 对账拦**（D355/D363 同模式）：synova-commit 的 push 先于 COMMITTED 记录落盘 → 手动重推即过；隔离 worktree 提交后须补记 COMMITTED 到主树 bypass.log。
 7. **审计工具的注释过滤不能靠"行内含 \* 即跳过"**：初版 `!line.includes('*')` 把乘法运算符代码行整行漏报（自审发现的盲区）；同行剥离又会把多行块注释续行（JSDoc ` * 零 as any`）误报。正确解法：跨行块注释状态机（开合追踪 + 等长空格剥离 + `//` 截断后匹配）。
+8. **行注释内含 `/*` 会误开块注释状态**（二轮自审发现）：`// skills/*.md` 这类行注释（真实案例 src/agent/skill-lazy-loader.ts:107）被状态机当作块注释开启，后续无 `*/` 闭合 → L108-258 整段吞出扫描区（漏报洞）。修复：开块注释前判 `open < lineComment`（`/*` 在 `//` 之后则不开）。种探针实证修复前后差异（修复前漏报、修复后精确报 file:line）。另补非空转断言（findTsFiles 实际读入文件数 > 100）防 REPO_ROOT 漂移假绿。

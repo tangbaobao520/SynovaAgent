@@ -20,6 +20,11 @@ describe('铁律 38: as any 审计', () => {
     expect(violations, `发现 ${violations.length} 处 as any:\n  ${violations.join('\n  ')}`).toEqual([]);
   });
 
+  it('主扫描非空转: 实际读入了文件（防 REPO_ROOT 漂移/目录缺失致假绿）', () => {
+    const files = SCAN_ROOTS.flatMap((r) => findTsFiles(r));
+    expect(files.length).toBeGreaterThan(100);
+  });
+
   it('排除规则: .d.ts / .test.ts / node_modules 不参与扫描', () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'as-any-audit-'));
     try {
@@ -29,6 +34,7 @@ describe('铁律 38: as any 审计', () => {
       fs.writeFileSync(path.join(tmp, 'view.tsx'), 'const v = (p as any).ui;\n');
       fs.writeFileSync(path.join(tmp, 'decl.d.ts'), 'const y = (p as any).z;\n');
       fs.writeFileSync(path.join(tmp, 'spec.test.ts'), 'const z = (p as any).w;\n');
+      fs.writeFileSync(path.join(tmp, 'spec.test.tsx'), 'const zx = (p as any).wx;\n');
       fs.writeFileSync(path.join(tmp, 'node_modules', 'dep.ts'), 'const w = (p as any).v;\n');
       const files = findTsFiles(tmp);
       expect(files.map(f => path.basename(f)).sort()).toEqual(['clean.ts', 'view.tsx', 'violation.ts']);
@@ -57,11 +63,14 @@ describe('铁律 38: as any 审计', () => {
         '/* multi', // 多行块注释开启
         'const hidden = (p as any).hidden;', // 块注释内部 → 不报
         ' */ const e = (p as any).q;', // 闭合符之后仍是代码 → 必须命中
+        '// line comment with /* trap', // 行注释内含 /* 不得开启块注释状态
+        'const t = (p as any).trap;', // 后续行仍须被扫描（行注释陷阱不得吞行）
       ].join('\n'));
       const violations = collectAsAnyViolations([tmp]);
-      expect(violations).toHaveLength(5);
+      expect(violations).toHaveLength(6);
       expect(violations[0]).toContain('real.ts:1');
       expect(violations[4]).toContain('real.ts:7');
+      expect(violations[5]).toContain('real.ts:9');
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
@@ -88,16 +97,19 @@ function collectAsAnyViolations(roots: string[]): string[] {
         }
         // 同行内完整闭合的块注释剥离（以等长空格保持列位）
         rest = rest.replace(/\/\*[\s\S]*?\*\//g, (m) => ' '.repeat(m.length));
-        const open = rest.indexOf('/*');
-        if (open >= 0) {
-          inBlockComment = true; // 未闭合: 其后（含跨行续行）视为注释
-          rest = rest.slice(0, open);
-        }
         const lineComment = rest.indexOf('//');
-        if (lineComment >= 0) rest = rest.slice(0, lineComment);
+        const open = rest.indexOf('/*');
+        // 未闭合 /* 且不在行注释内: 其后（含跨行续行）视为注释
+        if (open >= 0 && (lineComment < 0 || open < lineComment)) {
+          inBlockComment = true;
+          rest = rest.slice(0, open);
+        } else if (lineComment >= 0) {
+          rest = rest.slice(0, lineComment);
+        }
         // 已知残余限制（可接受）: 字符串/正则字面量内含 // 且位于 as any 之前
-        // 的同一行（如 'http://x' 之后同一行再写 as any），仍会漏报——
-        // 代价远低于旧版整行跳过。
+        // 的同一行（如 'http://x' 之后同一行再写 as any），仍会漏报;
+        // 字符串字面量内含 /* 会误开块注释状态（与 // 限制对称）——
+        // 两者代价都远低于旧版整行跳过。
         if (/\bas\s+any\b/.test(rest)) {
           const rel = path.relative(REPO_ROOT, file);
           violations.push(`${rel}:${i + 1}: ${lines[i].trim().slice(0, 100)}`);
