@@ -112,7 +112,11 @@ export class ParallelGate {
 
 export interface ToolCallResult {
   [key: string]: unknown;
-  error?: string;
+  /**
+   * D473: 错误可为字符串（既有）或结构化错误对象（超时 → { name, code, message }，铁律 32 错误分类）。
+   * 调用方按 truthy 判断失败（tool-loop-executor afterCall / postToolUse isError）。
+   */
+  error?: string | { name: string; code: string; message: string };
 }
 
 // ═══ ToolRegistry ═══
@@ -252,25 +256,28 @@ export class ToolRegistry {
    * 不改变未声明工具行为，无 blanket budget）。
    * 契约:
    *   @input  — name: 工具名; tool: ToolDefinition（timeoutMs 可选）; run: 实际执行函数
-   *   @output — 超时 → 结构化 { error: { name: 'ToolTimeoutError', code: 'TOOL_TIMEOUT', message } }
-   *             正常 → run() 结果原样返回
+   *   @output — 超时 → 结构化 ToolCallResult { error: { name: 'ToolTimeoutError', code: 'TOOL_TIMEOUT', message } }
+   *             正常 → run() 结果适配为 ToolCallResult
    *   @degraded — 超时 log.warn（铁律 24 不静默）+ 结构化错误（铁律 31 信号传播）
    *   timeoutMs=0 / 未声明 → 不包裹（保守回归）
+   *   超时后 handler 继续运行（cooperative 语义，DSH timeout-policy 同款——只通知不 kill）
    */
   private async withTimeout(
     name: string,
     tool: ToolDefinition,
     run: () => Promise<unknown>,
-  ): Promise<unknown> {
+  ): Promise<ToolCallResult> {
     const timeoutMs = tool.timeoutMs;
     if (!timeoutMs || timeoutMs <= 0) {
-      return run();
+      const result = await run();
+      return (result ?? {}) as ToolCallResult;
     }
+    let timer: ReturnType<typeof setTimeout> | undefined;
     try {
-      return await Promise.race([
-        run(),
-        new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new ToolTimeoutError(timeoutMs)), timeoutMs);
+      return await Promise.race<ToolCallResult>([
+        run().then((result) => (result ?? {}) as ToolCallResult),
+        new Promise<ToolCallResult>((_, reject) => {
+          timer = setTimeout(() => reject(new ToolTimeoutError(timeoutMs)), timeoutMs);
         }),
       ]);
     } catch (err) {
@@ -285,6 +292,9 @@ export class ToolRegistry {
         };
       }
       throw err;
+    } finally {
+      // D473 复核修复: 清理 timer 防泄漏（race 已 settle 后 timer 不再需要）
+      if (timer !== undefined) clearTimeout(timer);
     }
   }
 

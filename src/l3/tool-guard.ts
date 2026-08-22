@@ -100,7 +100,7 @@ export class ToolGuard {
       if (!args || typeof args !== 'object') {
         const reason = `参数无效: ${typeof args}`;
         log.warn({ tool, reason }, 'ToolGuard 参数校验拒绝');
-        return { allow: false, reason };
+        return { allow: false, level: 'block', reason };
       }
 
       // 2. 重复失败检测
@@ -109,7 +109,7 @@ export class ToolGuard {
         const reason = `工具 "${tool}" 连续失败 ${failCount} 次，建议人工介入`;
         log.warn({ tool, failCount, reason }, 'ToolGuard 重复失败阻断');
         this.detections.push({ tool, args, reason, timestamp: new Date().toISOString() });
-        return { allow: false, reason };
+        return { allow: false, level: 'block', reason };
       }
 
       // 3. 循环检测: 同工具+同参数连续调用（D473 分级阶梯: 2 次提醒 / 3 次阻断）

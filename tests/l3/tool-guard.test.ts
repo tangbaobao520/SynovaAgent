@@ -114,11 +114,27 @@ describe('ToolGuard', () => {
       const decision = guard.beforeCall('data_query', null as unknown as Record<string, unknown>);
       expect(decision.allow).toBe(false);
       expect(decision.reason).toContain('参数');
+      expect(decision.level).toBe('block'); // D473 复核: 所有 block 路径统一 level
     });
 
     it('参数为 undefined → blocked', () => {
       const decision = guard.beforeCall('data_query', undefined as unknown as Record<string, unknown>);
       expect(decision.allow).toBe(false);
+      expect(decision.level).toBe('block');
+    });
+  });
+
+  // ═══ D473 复核: 重复失败 block 路径 level 一致性 ═══
+
+  describe('beforeCall — 重复失败 level 一致性（D473 复核）', () => {
+    it('重复失败阻断 → level=block', () => {
+      guard.afterCall('data_query', { error: 'fail' }, 100);
+      guard.afterCall('data_query', { error: 'fail' }, 100);
+      guard.afterCall('data_query', { error: 'fail' }, 100);
+      const decision = guard.beforeCall('data_query', { id: '1' });
+      expect(decision.allow).toBe(false);
+      expect(decision.level).toBe('block');
+      expect(decision.reason).toContain('失败');
     });
   });
 
