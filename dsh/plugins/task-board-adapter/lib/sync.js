@@ -260,11 +260,14 @@ export async function syncOnce(opts) {
   const errors = [...read.errors];
 
   // createdAt 保真（best-effort）：GET 失败不阻断同步，回退为 now。
+  // boardTasks 同时用于僵尸任务删除（看板有、task-state 无 → delete）。
   const existingCreatedAt = new Map();
+  let boardTasks = [];
   if (apiBase) {
     try {
       const state = await fetchBoardState({ apiBase, fetchImpl: opts.fetchImpl });
-      for (const task of state?.tasks ?? []) {
+      boardTasks = state?.tasks ?? [];
+      for (const task of boardTasks) {
         if (typeof task?.id === "string" && typeof task?.createdAt === "number") {
           existingCreatedAt.set(task.id, task.createdAt);
         }
@@ -315,5 +318,17 @@ export async function syncOnce(opts) {
   const requestId = newId();
   const action = buildImportAction(tasks, sourceId);
   await postAction({ apiBase, requestId, action, fetchImpl: opts.fetchImpl });
-  return { imported: tasks.length, sourceId, unknownStatuses, degraded: read.degraded || errors.length > 0, errors };
+
+  // 删除僵尸任务（看板有、task-state 无、且非 backlog 待规划）——治 import 只合并不删除的盲区
+  const tsIds = new Set(read.tasks.map((t) => String(t?.task_id ?? "")));
+  const backlogIds = new Set(backlog.items.map((i) => String(i?.id ?? "")));
+  let deleted = 0;
+  for (const bt of boardTasks) {
+    const id = String(bt?.id ?? "");
+    if (!id || tsIds.has(id) || backlogIds.has(id)) continue;
+    await postAction({ apiBase, requestId: newId(), action: { kind: "delete", taskId: id }, fetchImpl: opts.fetchImpl });
+    deleted += 1;
+  }
+
+  return { imported: tasks.length, deleted, sourceId, unknownStatuses, degraded: read.degraded || errors.length > 0, errors };
 }
