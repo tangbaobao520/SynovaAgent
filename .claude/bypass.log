@@ -430,6 +430,97 @@ Binary file .claude/bypass.log matches
 2026-08-22T01:11:39+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D454 | AGENT=deepseek-harness
 2026-08-22T01:11:52+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D454 | AGENT=deepseek-harness
 2026-08-22T00:20:28+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/win-feishu-bridge
+2026-08-22T01:43:58+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D470 | AGENT=claude
+2026-08-22T02:10:12+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D470 | AGENT=claude
+2026-08-22T02:21:50+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D470 | AGENT=claude | HASH=3b4c215b0d5b009e67e7b2c6be7ac0734403e64b
+2026-08-22T02:23:53+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D471 | AGENT=claude-code | HASH=3c9e88e084699ad7a818e0aa51883ba1b53eb64e
+2026-08-22T02:30:00+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D471 | AGENT=claude-code | HASH=756d694a1048fb99b559571f890f64d3cce1277c
 2026-08-21T17:46:01Z possible-bypass diff=1831s
 2026-08-21T19:10:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=docs | AGENT=deepseek-harness | HASH=3620f6a76b033eb1deeaddf190cbc835ba4de531
 2026-08-22T20:01:22+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D338 | AGENT=Claude | HASH=a3564b4c4767bc98211dcf486242d53c589af8ad
+2026-08-22T03:05:52+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D470 | AGENT=claude | HASH=44a2fbd71c84aa6009d3aa247be37e49f0605bd8
+2026-08-22T03:10:00+08:00 | COMMITTED | pre-commit PASS (merge 引入补记: D454 Mac session 提交, 原记录未随 main 入库) | TASK_ID=merge | AGENT=claude | HASH=73aecd59d47782fbef0d6314fe3261bd9d9133da
+2026-08-22T03:10:00+08:00 | COMMITTED | pre-commit PASS (merge 引入补记: D454 Mac session 提交, 原记录未随 main 入库) | TASK_ID=merge | AGENT=claude | HASH=99633dc1ee2790141441002e975f9c19d537b5ed
+2026-08-22T03:10:00+08:00 | COMMITTED | pre-commit PASS (merge 引入补记: D454 Mac session 提交, 原记录未随 main 入库) | TASK_ID=merge | AGENT=claude | HASH=f1e2d705625e23e2e8994c46b8461afd17460ed0
+2026-08-22T12:26:04+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D473 | AGENT=dsh
+2026-08-22T12:26:18+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D473 | AGENT=dsh
+2026-08-22T12:26:54+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D473 | AGENT=dsh
+2026-08-22T12:27:08+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D473 | AGENT=dsh
+2026-08-22T12:27:37+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D473 | AGENT=dsh
+2026-08-22T12:27:51+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D473 | AGENT=dsh
+2026-08-22T12:30:45+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D473 | AGENT=dsh | HASH=cc8f2c2a3976c0e1dce72f3e1e6f6de4e027f98d
+2026-08-22T12:31:50+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D474 | AGENT=dsh | HASH=b25d05c1492c646726eaecd21b67a85d1906a80a
+2026-08-22T14:15:21+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D474 | AGENT=dsh | HASH=a3e47f22a75b9040161d157da32e5e1dfcdd6ed5
+2026-08-22T14:15:21+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D474 | AGENT=dsh | HASH=7e44c02e3abd9a6ea2927fd0c2cb3a5e0623d657
+2026-08-22T14:16:04+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D473 | AGENT=dsh | HASH=bf05ffdf86511b3ab0ae51a262f26d55c917cb24
+2026-08-22T14:16:04+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D473 | AGENT=dsh | HASH=89cf38e8b485d3d06382c64b6555903e45500bc4
+2026-08-22T12:32:40+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D472 | AGENT=dsh
+2026-08-22T12:32:53+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D472 | AGENT=dsh
+2026-08-22T12:34:15+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D472 | AGENT=dsh
+2026-08-22T12:34:29+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D472 | AGENT=dsh
+2026-08-22T12:34:44+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D472 | AGENT=dsh
+2026-08-22T14:14:10+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D472 | AGENT=dsh | HASH=083eb2c5bd26136eebe550dac68929889128c9ed
+2026-08-22T14:14:10+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D472 | AGENT=dsh | HASH=f157dedd1b4137ec339b7f54ccc7ba06a5bcad83
+2026-08-22T10:00:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D472 | AGENT=dev-doc | HASH=e05838dcb0e9b258c2b227af3ce15e11a60e70d5
+2026-08-22T10:00:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D472 | AGENT=dev-doc | HASH=35cb086788c8db3bfe06f30437351b81c7fe6910
+2026-08-22T07:19:14Z possible-bypass diff=3780s
+2026-08-22T10:10:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D473 | AGENT=dev-doc | HASH=ea3cc093e68ba3f569ce5a2d321b9a2469dc2daa
+2026-08-22T10:10:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D473 | AGENT=dev-doc | HASH=cc8f2c2a3976c0e1dce72f3e1e6f6de4e027f98d
+2026-08-22T10:20:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D474 | AGENT=dev-doc | HASH=48e9d3723a7ea31e555ca7e1a3ef8d17b13c436f
+2026-08-22T10:20:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D474 | AGENT=dev-doc | HASH=a3e47f22a75b9040161d157da32e5e1dfcdd6ed5
+2026-08-22T10:20:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D474 | AGENT=dev-doc | HASH=7e44c02e3abd9a6ea2927fd0c2cb3a5e0623d657
+2026-08-22T10:20:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D474 | AGENT=dev-doc | HASH=1f11cbd917c662c2a03e75fbd6f87130e6214448
+2026-08-22T10:20:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D473 | AGENT=dev-doc | HASH=dff6cf2b32093a795587b5e5ead18bd1b832e21a
+2026-08-22T10:20:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D474 | AGENT=dev-doc | HASH=b25d05c1492c646726eaecd21b67a85d1906a80a
+2026-08-22T07:23:13Z possible-bypass diff=4019s
+2026-08-22T10:30:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=docs | AGENT=deepseek-harness | HASH=9098e21cdb6734943ec44e089966373e30d70618
+2026-08-22T07:27:41Z possible-bypass diff=4287s
+2026-08-22T10:40:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=docs | AGENT=deepseek-harness | HASH=63779f1eb7e39e523fb11b7dd3ec3b736fe98c7d
+2026-08-22T15:40:59+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/d500-session-event-sourcing
+2026-08-22T15:41:10+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D500 | AGENT=dsh | HASH=c31960676dbe16eec107d4f9a3473db0cb182cda
+2026-08-22T15:42:23+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D500 | AGENT=dsh | HASH=528096adc0da06cf1c1f30e30fdccdf084776f8a
+2026-08-22T11:30:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=docs | AGENT=deepseek-harness | HASH=b2a6d84d6c31e54feddf58debd53fbc07af2e6f0
+2026-08-22T11:40:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D500 | AGENT=dev-doc | HASH=214ac7f27d0cd00b2f8380f7c60ae720dfe4121c
+2026-08-22T07:59:08Z detected-bypass head-mismatch marker=eff66bf8513adb435545cbabd373a5fd14efc409 parent=214ac7f27d0cd00b2f8380f7c60ae720dfe4121c
+2026-08-22T15:59:30+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D500 | AGENT=dsh | HASH=4af54eb3a73d67234819dd9fb9b08d7dbd77224e
+2026-08-22T16:00:29+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/d500-session-event-sourcing
+2026-08-22T16:00:38+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D500 | AGENT=dsh | HASH=4d7edd08f6d39e5d136d0b0df408b274befecc5e
+2026-08-22T12:00:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D500 | AGENT=dev-doc | HASH=4f9e9e754aa710ac45a611ae0b77e31a57296193
+2026-08-22T12:00:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D500 | AGENT=dev-doc | HASH=4d7edd08f6d39e5d136d0b0df408b274befecc5e
+2026-08-22T12:00:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D500 | AGENT=dev-doc | HASH=d7d1c3302e85ac92296e752d028b04f5f89d67eb
+2026-08-22T12:00:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D500 | AGENT=dev-doc | HASH=4af54eb3a73d67234819dd9fb9b08d7dbd77224e
+2026-08-22T08:08:05Z possible-bypass diff=447s
+2026-08-22T12:10:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=docs | AGENT=deepseek-harness | HASH=65e8c6663607a23556b560dc9984cefd60357b51
+2026-08-22T12:17:05Z possible-bypass diff=15387s
+2026-08-22T12:30:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=docs | AGENT=deepseek-harness | HASH=a02ef0cbdafeb264f12e449f5df3f607e1239660
+2026-08-22T13:00:18Z possible-bypass diff=17980s
+2026-08-22T13:00:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=docs | AGENT=deepseek-harness | HASH=ff404af26485b0b9f61af026ee3232ab7e03ca8a
+2026-08-22T22:10:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记: 5848de18 K3 三批审计, D331 对账) | TASK_ID=K3 | AGENT=Synova-Win | HASH=5848de18d440088d345036328d91afe387c5698f
+2026-08-22T13:00:18Z possible-bypass diff=17980s
+2026-08-22T13:44:28Z possible-bypass diff=20630s
+2026-08-22T13:30:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=docs | AGENT=deepseek-harness | HASH=69818d86b078cc99b4cd580be61c8c1fd6e94776
+2026-08-22T13:40:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=docs | AGENT=deepseek-harness | HASH=9502adbb2ac1bc770206d9841f5521d3533938da
+2026-08-22T13:40:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=docs | AGENT=deepseek-harness | HASH=69818d86b078cc99b4cd580be61c8c1fd6e94776
+2026-08-22T13:40:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=docs | AGENT=deepseek-harness | HASH=52b2641edb2279a6f8230f3310d34a5b392d29a4
+2026-08-22T13:40:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=docs | AGENT=deepseek-harness | HASH=ff404af26485b0b9f61af026ee3232ab7e03ca8a
+2026-08-22T14:07:18Z possible-bypass diff=22000s
+2026-08-22T13:50:00+08:00 | COMMITTED | pre-commit PASS (合并补记) | TASK_ID=docs | AGENT=deepseek-harness | HASH=1414ed53aa77c4fe0b7c0337012bc01f61d9d032
+2026-08-22T13:50:00+08:00 | COMMITTED | pre-commit PASS (合并补记) | TASK_ID=docs | AGENT=deepseek-harness | HASH=9502adbb2ac1bc770206d9841f5521d3533938da
+2026-08-22T13:50:00+08:00 | COMMITTED | pre-commit PASS (合并补记) | TASK_ID=docs | AGENT=deepseek-harness | HASH=69818d86b078cc99b4cd580be61c8c1fd6e94776
+2026-08-22T14:09:13Z possible-bypass diff=22115s
+2026-08-22T14:00:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=docs | AGENT=deepseek-harness | HASH=f8e24eea6ed9c640d27d215a4c73bdc96288f0c3
+2026-08-22T14:09:13Z possible-bypass diff=22115s
+2026-08-22T14:16:22Z possible-bypass diff=22544s
+2026-08-22T14:20:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=docs | AGENT=deepseek-harness | HASH=c730120ea94e58c427f36416d2d32431323ad9c9
+2026-08-22T14:26:03Z possible-bypass diff=23125s
+2026-08-22T14:40:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=docs | AGENT=deepseek-harness | HASH=6042947e95507f333d52611d97b2da841e1be568
+2026-08-22T14:49:00Z possible-bypass diff=24501s
+2026-08-22T14:50:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=docs | AGENT=deepseek-harness | HASH=93048001dbabb7861029dde1f2ac8a73fd0fff76
+2026-08-22T15:00:14Z possible-bypass diff=25176s
+2026-08-22T15:00:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=docs | AGENT=deepseek-harness | HASH=4e95ef2c7ab416164a9d03a35de19d4272ae783c
+2026-08-22T23:21:27+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D501 | AGENT=dsh-cto
+2026-08-22T23:22:55+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D501 | AGENT=dsh-cto
+2026-08-22T23:23:19+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D501 | AGENT=dsh-cto
+2026-08-22T23:23:26+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D501 | AGENT=dsh-cto
+2026-08-22T23:24:29+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D501 | AGENT=dsh-cto | HASH=40d058d5a930bbaefe3725314aa811116d620108
+2026-08-22T23:26:10+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D501 | AGENT=dsh-cto | HASH=c5e67984d2556e4072832ecc510ce6ea723b5503

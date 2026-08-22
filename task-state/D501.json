@@ -1,0 +1,26 @@
+{
+  "task_id": "D501",
+  "title": "as-any 检查排除测试文件（修 CI 误报 19 处）",
+  "status": "impl_done",
+  "spec": {
+    "path": ".claude/task-briefs/2026-08-22-D501-as-any-exclude-tests.md",
+    "commit": "40d058d5",
+    "by": "dsh-cto",
+    "at": "2026-08-22"
+  },
+  "impl": {
+    "commit": "40d058d5",
+    "by": "dsh-cto",
+    "at": "2026-08-22",
+    "files": [
+      "scripts/pre-commit-check.sh",
+      ".claude/task-briefs/2026-08-22-D501-as-any-exclude-tests.md"
+    ]
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-22",
+  "updated_by": "dsh-cto",
+  "note": "门禁 bug 修复（减负性质，符合 08-21 冻结边界）。根因：K3 P1-2 把 as-any 范围扩到 packages/ 时未排除测试文件，D471 的 as-any 审计测试 fixture 被 CI 误报 19 处。修复：git diff 加 pathspec 排除 .test.ts/.test.tsx/.d.ts，与 findTsFiles 排除规则一致。",
+  "priority": "P0"
+}

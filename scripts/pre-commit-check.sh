@@ -104,7 +104,9 @@ ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 #   缺省仍硬阻断, 但 SYNO_GATEKEEPER_ACK=1 表示人工已复核该绕过记录 → 降级为告警放行。
 #   与组 7c 共享同一逃生舱语义 (逃生舱写入 degraded-events.log, 铁律 11)。
 BYPASS_LOG="$ROOT/.claude/bypass.log"
-if [ -f "$BYPASS_LOG" ]; then
+# 方案1挪CI(D467)后：本地 pre-commit 软提示 + CI 权威，本地 --no-verify 不再是"绕过"（CI 兜底）。
+# GATEKEEPER 检测"本地 --no-verify"只在本地跑；CI 上跳过（否则 CI 检测 git 跟踪的本地 bypass.log 痕迹 → 自阻断）。
+if [ -f "$BYPASS_LOG" ] && [ "${GITHUB_ACTIONS:-}" != "true" ]; then
   TODAY=$(date +%Y-%m-%d)
   # V4.5.1: 只匹配 detected-bypass 行。COMMITTED 行是正常提交成功标记，不是绕过。
   BYPASS_COUNT=$(grep -c "${TODAY}.*detected-bypass" "$BYPASS_LOG" 2>/dev/null | tr -d '\n\r' || echo 0)
@@ -198,6 +200,19 @@ if [ "$DOC_ONLY" -eq 1 ]; then
   echo "$(date +%Y-%m-%dT%H:%M:%S%z) | EXEMPT | staged=$(echo "$STAGED_ALL" | tr '\n' ',' | sed 's/,$//')" >> "$EXEMPT_LOG" 2>/dev/null || true
   if bash "$ROOT/scripts/check-secrets.sh" 2>&1; then
     echo -e "  ${GREEN}✅ Secrets 扫描通过${RESET}"
+    # D472 复核修复: 纯文档提交也须过迁移门禁 —— proposed/ Note 变更（新建/修改决策 Note）
+    # 命中纯文档白名单（memory/.*\.md）会走本早退分支，若不检查则迁移门禁被 CT-34 豁免绕过，
+    # "新建 Note"这一 D472 核心场景门禁失效。门禁 <1s，不破坏 CT-34 秒过性能。
+    NOTES_TOUCHED_DOC=$(echo "$STAGED_ALL" | grep -E '^memory/notes/proposed/' || true)
+    if [ -n "$NOTES_TOUCHED_DOC" ]; then
+      if bash "$ROOT/scripts/control-tower/check-notes-lifecycle.sh"; then
+        echo -e "  ${GREEN}✅ Notes 迁移门禁: proposed/ 无僵尸条目${RESET}"
+      else
+        echo -e "  ${RED}❌ Notes 迁移门禁: proposed/ 存在僵尸条目（实现已落地未迁移） [硬阻断]${RESET}"
+        echo "  修复: git mv 到 implemented/ 或 rejected/，或删除测试残留"
+        exit 1
+      fi
+    fi
     echo -e "  ${GREEN}✅ 纯文档提交豁免检查完成 (CT-34)${RESET}"
     exit 0
   else
@@ -297,13 +312,17 @@ echo ""
 # ═══════════════════════════════════════════════════════════════════
 echo -e "${CYAN}── 组 1/13: 类型安全 + 硬编码数据 ──${RESET}"
 
-# 1a. as any 零容忍 — 只拦本次变更新增的 as any（存量当前 0，独立治理）
+# 1a. as any 零容忍 — 只拦本次变更新增的 as any（存量独立治理）
 # 方案1(挪CI): 本地用暂存区 diff；CI 用 base...HEAD diff（SYNO_DIFF_BASE 注入）
+# K3 审计 P1-2 修复：范围覆盖 src/ + packages/（原只查 src/ 漏掉 packages/ 33+ 处）；不查 scripts/ 防自引用误报。
+# D501 修复：排除测试/声明文件（.test.ts/.test.tsx/.d.ts）——as-any 审计器自己的测试 fixture 含
+#   as any 字符串，D471 引入 packages/test-kit/tests/architecture/05-as-any-audit.test.ts 后 CI 误报 19 处。
+#   与 findTsFiles（packages/test-kit/src/security-scanners.ts）排除规则一致：只查生产代码。
 # Anthropic 原则: bash 只做模式匹配。新增行 = diff 的 + 行（排除 +++ diff 头）。
 if [ -n "${SYNO_DIFF_BASE:-}" ]; then
-  AS_ANY_DIFF="$(git diff "$SYNO_DIFF_BASE"...HEAD -- src/ 2>/dev/null || true)"
+  AS_ANY_DIFF="$(git diff "$SYNO_DIFF_BASE"...HEAD -- src/ packages/ ':(exclude)**/*.test.ts' ':(exclude)**/*.test.tsx' ':(exclude)**/*.d.ts' 2>/dev/null || true)"
 else
-  AS_ANY_DIFF="$(git diff --cached -- src/ 2>/dev/null || true)"
+  AS_ANY_DIFF="$(git diff --cached -- src/ packages/ ':(exclude)**/*.test.ts' ':(exclude)**/*.test.tsx' ':(exclude)**/*.d.ts' 2>/dev/null || true)"
 fi
 M=$(echo "$AS_ANY_DIFF" | grep -E '^\+' | grep -v '^+++' | grep -E 'as any\b' | grep -vE '^\+\s*(//|/\*|\*|#)' || true)
 hard_check "as any 零容忍（新增，铁律 38；存量独立清理）" "$M"
@@ -650,6 +669,21 @@ if [ -f "$BEFORE_BRIEF_EVI" ]; then
   BEFORE_BRIEF_MSG="代码在 brief 填写前已写入:\n${EVI_CONTENT}\n解决方法: rm ${BEFORE_BRIEF_EVI} && git checkout -- . && bash scripts/workflow/task-start.sh"
 fi
 hard_check "时间戳顺序: brief 必须早于代码写入" "${BEFORE_BRIEF_MSG:-}"
+
+# D472: Agent Notes 迁移门禁 — proposed/ 有变更时扫僵尸条目（条件触发保持 <1s，V4.5.1 性能纪律）
+# 僵尸 = 提取到 D# 且 task-state 该 D# ∈ {impl_done, spec_done}（实现已落地但提案未 git mv）
+NOTES_TOUCHED=$(echo "$STAGED_ALL" | grep -E '^memory/notes/proposed/' || true)
+if [ -n "$NOTES_TOUCHED" ]; then
+  if bash "$ROOT/scripts/control-tower/check-notes-lifecycle.sh"; then
+    soft_pass "Notes 迁移门禁: proposed/ 无僵尸条目"
+  else
+    echo -e "  ${RED}❌ Notes 迁移门禁: proposed/ 存在僵尸条目（实现已落地未迁移） [硬阻断]${RESET}"
+    echo "  修复: git mv 到 implemented/ 或 rejected/，或删除测试残留"
+    HARD_FAIL=$((HARD_FAIL + 1))
+  fi
+else
+  soft_pass "Notes 迁移门禁: 无 proposed/ 变更（跳过）"
+fi
 
 # V4.1: plan-integrity — Q1a/Q1b/Q2 承诺可验证
 par_collect plan-integrity "$PAR_PLAN_INTEGRITY" || HARD_FAIL=$((HARD_FAIL + 1))

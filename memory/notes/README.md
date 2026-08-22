@@ -17,6 +17,15 @@
 git mv memory/notes/proposed/2026-08-17-xxx.md memory/notes/implemented/2026-08-17-xxx.md
 ```
 
+## 迁移门禁（D472 — 物理，不靠自觉）
+
+`scripts/control-tower/check-notes-lifecycle.sh` 在 pre-commit 组 6 区域扫描 `proposed/`：
+
+- **僵尸判定**：提取 Note 的 D#（中文头 `任务: DXXX` / `相关 D#: DXXX`，或英文扩展头 `name:/class:/description:` 中的 `D\d+`）→ 若 `task-state/D#.json` 存在且状态 ∈ {`impl_done`, `spec_done`}（实现已落地）→ 判为**僵尸条目** → exit 1 阻断并列出清理清单。
+- **放行**：无 D# 引用 / D# 未落地 / 无 task-state → 视为真实进行中提议，不阻断（不误杀）。
+- **修复**：落地 → `git mv` 到 `implemented/` 并更新头「状态」；否决 → `rejected/`；测试残留 → 删除。
+- 手动执行：`bash scripts/control-tower/check-notes-lifecycle.sh`（exit 0 = 无僵尸）。
+
 ## Note 四字段头契约（每条新 Note 必填）
 
 ```markdown
@@ -32,6 +41,7 @@ git mv memory/notes/proposed/2026-08-17-xxx.md memory/notes/implemented/2026-08-
 
 - 「状态」字段必须与所在目录名一致（门禁可 grep 对账）。
 - 文件名规范：`YYYY-MM-DD-<主题>.md`（主题用短横线分隔的英文/拼音）。
+- **扩展字段**（`check-lessons-learned.sh` 写入，兼容免疫细胞解析）：`name/class/constraint/expected/severity/occurrences/first_seen/description`。四字段头 + 扩展字段同存一个 Note，头字段满足 README 契约，扩展字段供 hook 免疫机制消费（D472 对齐）。
 
 ## Note 引用门禁（物理，不靠自觉）
 
