@@ -20,7 +20,7 @@
     }
   },
   "scripts": {
-    "test": "node --test test/sync.test.js"
+    "test": "node --test test/sync.test.js && bash test/derive.test.sh"
   },
   "license": "MIT"
 }

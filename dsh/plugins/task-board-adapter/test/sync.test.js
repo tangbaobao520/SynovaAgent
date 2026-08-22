@@ -16,6 +16,11 @@ import {
   fetchBoardState,
   DEFAULT_STATUS_MAPPING,
   FALLBACK_STATUS,
+  readSnapshot,
+  mapWinTaskToBoardTask,
+  mapLineToBoardTask,
+  mapOverallLineCard,
+  mapTodoToBoardTask,
 } from "../lib/sync.js";
 
 function makeRepo(files) {
@@ -396,6 +401,164 @@ test("syncOnce: 删除僵尸任务——backlog 待规划不被误删", async ()
     const deletes = actions.filter((a) => a.kind === "delete").map((a) => a.taskId);
     assert.ok(deletes.includes("D999"), "D999 僵尸应删");
     assert.ok(!deletes.includes("PLAN-x"), "PLAN-x backlog 不应删");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// ═══ D502: 多源统一（Win git 派生 / 26 线 / todos / snapshot 驱动）═══
+
+function makeSnapshotFile(root, snapshot) {
+  writeFileSync(join(root, "source-snapshot.json"), JSON.stringify(snapshot));
+  return join(root, "source-snapshot.json");
+}
+
+const baseSnapshot = {
+  generated_at: "2026-08-23T00:00:00+00:00",
+  head: "abc1234def",
+  task_state: {
+    tasks: [{ task_id: "D500", title: "事件溯源", status: "impl_done" }],
+    degraded: false, errors: [],
+  },
+  win_tasks: {
+    tasks: [
+      { task_id: "D338", title: "orgId 隔离", owner: "Win", commits: 3, author: "Synova-Win", date: "2026-08-22", status: "audited" },
+      { task_id: "D357", title: "连接器", owner: "Win", commits: 7, author: "Synova-Win", date: "2026-08-22", status: "committed" },
+    ],
+    degraded: false, errors: [],
+  },
+  product_lines: {
+    lines: [
+      { id: 1, name: "桌面端", total: 8, verified: 0, progress_pct: 0 },
+      { id: 7, name: "持续监测", total: 8, verified: 2, progress_pct: 25 },
+      { id: 9, name: "客户循环", total: 6, verified: 6, progress_pct: 100 },
+    ],
+    overall_pct: 4,
+    degraded: false, errors: [],
+  },
+  todos: {
+    items: [
+      { id: "T-1-01", line: 1, title: "部署门槛（S3-1）: 未验证", priority: "P0", owner: "DSH", acceptance: "GS-01 转绿" },
+      { id: "T-3-01", line: 3, title: '报告"一看就懂"（S0-4）: 未验证', priority: "P0", owner: "DSH", acceptance: "GS-08 转绿" },
+    ],
+    degraded: false, errors: [],
+  },
+  backlog: {
+    items: [{ id: "PLAN-x", title: "人工薄层", note: "说明" }],
+    degraded: false, errors: [],
+  },
+  degraded: false,
+  errors: [],
+};
+
+test("readSnapshot: 正常路径——合法 snapshot 返回对象", () => {
+  const root = mkdtempSync(join(tmpdir(), "synova-snap-"));
+  try {
+    const p = makeSnapshotFile(root, baseSnapshot);
+    const snap = readSnapshot(p);
+    assert.ok(snap && snap.head === "abc1234def");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("readSnapshot: 降级路径——缺失/坏 JSON/缺 head → null（调用方回退工作区直读）", () => {
+  const root = mkdtempSync(join(tmpdir(), "synova-snap-"));
+  try {
+    assert.equal(readSnapshot(join(root, "nope.json")), null);
+    const bad = makeSnapshotFile(root, { not: "a snapshot" });
+    assert.equal(readSnapshot(bad), null);
+    writeFileSync(bad, "{broken json");
+    assert.equal(readSnapshot(bad), null);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("mapWinTaskToBoardTask: audited→done / committed→running（合并≠完成）+ 标题带 Win 标记", () => {
+  const a = mapWinTaskToBoardTask({ task_id: "D338", title: "隔离", status: "audited", author: "Synova-Win", commits: 3, date: "2026-08-22" });
+  assert.equal(a.task.status, "done");
+  assert.ok(a.task.title.startsWith("D338 · Win · "));
+  const b = mapWinTaskToBoardTask({ task_id: "D357", title: "连接器", status: "committed" });
+  assert.equal(b.task.status, "running");
+  const c = mapWinTaskToBoardTask({ task_id: "", title: "x" });
+  assert.ok("error" in c);
+});
+
+test("mapLineToBoardTask: 0 verified→todo / 部分→running / 全绿→done + id 补零", () => {
+  assert.equal(mapLineToBoardTask({ id: 1, name: "桌面端", total: 8, verified: 0 }).task.status, "todo");
+  const mid = mapLineToBoardTask({ id: 7, name: "持续监测", total: 8, verified: 2, progress_pct: 25 });
+  assert.equal(mid.task.status, "running");
+  assert.equal(mid.task.id, "L07");
+  assert.ok(mid.task.title.includes("2/8"));
+  assert.equal(mapLineToBoardTask({ id: 9, name: "客户循环", total: 6, verified: 6 }).task.status, "done");
+  assert.ok("error" in mapLineToBoardTask({ id: 5 }));
+});
+
+test("mapOverallLineCard: L00 总览卡标题含总百分比与线数", () => {
+  const c = mapOverallLineCard(baseSnapshot.product_lines);
+  assert.equal(c.task.id, "L00");
+  assert.ok(c.task.title.includes("4%"));
+  assert.ok(c.task.title.includes("3 线"));
+  assert.equal(c.task.status, "running"); // 4% > 0
+  assert.ok("error" in mapOverallLineCard({ overall_pct: null, lines: [] }));
+});
+
+test("mapTodoToBoardTask: 恒 todo 列 + 标题带优先级与线号", () => {
+  const t = mapTodoToBoardTask({ id: "T-1-01", line: 1, title: "部署门槛", priority: "P0", owner: "DSH", acceptance: "GS-01" });
+  assert.equal(t.task.status, "todo");
+  assert.equal(t.task.id, "T-1-01");
+  assert.ok(t.task.title.includes("[P0][L01]"));
+  assert.ok("error" in mapTodoToBoardTask({ id: "T-9-99" }));
+});
+
+test("syncOnce(snapshot): 四源聚合 import——D#+Win+L00/L线+T-*+PLAN 全部上板", async () => {
+  const root = mkdtempSync(join(tmpdir(), "synova-snap-"));
+  let posted = null;
+  const stateTasks = [{ id: "D500", createdAt: 111 }, { id: "STALE", createdAt: 111 }];
+  try {
+    const snapPath = makeSnapshotFile(root, baseSnapshot);
+    const result = await syncOnce({
+      repoRoot: root,
+      snapshotPath: snapPath,
+      fetchImpl: async (url, opts) => {
+        if (url.includes("/state")) return { ok: true, json: async () => ({ tasks: stateTasks }) };
+        const action = JSON.parse(opts.body).action;
+        if (action.kind === "import") posted = action;
+        return { ok: true, json: async () => ({}) };
+      },
+    });
+    assert.equal(result.usingSnapshot, true);
+    assert.equal(result.imported, 1 + 2 + 1 + 3 + 2 + 1); // task-state1 + win2 + L00 + 3线 + 2todo + 1backlog
+    const ids = posted.tasks.map((t) => t.id);
+    for (const want of ["D500", "D338", "D357", "L00", "L01", "L07", "L09", "T-1-01", "T-3-01", "PLAN-x"]) {
+      assert.ok(ids.includes(want), `缺 ${want}`);
+    }
+    // createdAt 保真：D500 沿用看板旧值 111
+    const d500 = posted.tasks.find((t) => t.id === "D500");
+    assert.equal(d500.createdAt, 111);
+    // 僵尸：STALE 不在四源 → delete
+    assert.equal(result.deleted, 1);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("syncOnce(snapshot): snapshot 缺失 → 回退工作区直读（usingSnapshot=false）且不误删四源外的看板卡", async () => {
+  const root = makeRepo({ "D1.json": sampleTask({ task_id: "D1", title: "一号" }) });
+  const actions = [];
+  try {
+    const result = await syncOnce({
+      repoRoot: root,
+      snapshotPath: join(root, "nope.json"),
+      fetchImpl: async (url, opts) => {
+        if (url.includes("/state")) return { ok: true, json: async () => ({ tasks: [] }) };
+        actions.push(JSON.parse(opts.body).action);
+        return { ok: true, json: async () => ({}) };
+      },
+    });
+    assert.equal(result.usingSnapshot, false);
+    assert.equal(result.imported, 1);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

@@ -1,0 +1,29 @@
+{
+  "task_id": "D502",
+  "title": "任务看板多源统一（Win git 派生 + 26 线 + 待规划全量上板）",
+  "status": "impl_done",
+  "spec": {
+    "path": ".claude/task-briefs/2026-08-23-D502-board-multi-source-unify.md",
+    "by": "dsh-cto",
+    "at": "2026-08-23"
+  },
+  "impl": {
+    "commit": "32aeeef9",
+    "by": "dsh-cto",
+    "at": "2026-08-23",
+    "files": [
+      "dsh/plugins/task-board-adapter/scripts/derive-board-sources.py",
+      "dsh/plugins/task-board-adapter/lib/sync.js",
+      "dsh/plugins/task-board-adapter/lib/index.js",
+      "dsh/plugins/task-board-adapter/test/sync.test.js",
+      "dsh/plugins/task-board-adapter/test/derive.test.sh",
+      "dsh/plugins/task-board-adapter/package.json"
+    ]
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-23",
+  "updated_by": "dsh-cto",
+  "note": "创始人裁决：D502 由 CTO 实现 + 待规划全量上板。四源：task-state / Win git 派生(≥D328) / product-progress 26 线+L00 总览 / todos 48 条 T-*。数据源统一 origin/main（fetch 只动 remote-tracking ref）。验证：33 单测 + 9 集成测试全绿 + 真实仓库 dry-run 203 卡。部署待办：cp 到 profile + 重启 dsh web（会中断会话，待创始人点头）。",
+  "priority": "P0"
+}

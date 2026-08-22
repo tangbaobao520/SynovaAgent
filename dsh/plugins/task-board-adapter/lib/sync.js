@@ -192,6 +192,138 @@ export function mapBacklogToBoardTask(item, now) {
 }
 
 /**
+/**
+ * 读取 derive-board-sources.py 产出的多源 snapshot（D502）。
+ * 文件缺失/坏 JSON → null（调用方降级回工作区直读，绝不 import 空数据——M1 教训）。
+ * @param {string} snapshotPath - snapshot JSON 路径。
+ * @returns {Record<string, unknown> | null}
+ */
+export function readSnapshot(snapshotPath) {
+  if (!snapshotPath || !existsSync(snapshotPath)) return null;
+  try {
+    const raw = JSON.parse(readFileSync(snapshotPath, "utf8"));
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+    if (typeof raw.head !== "string" || !raw.head) return null;
+    return raw;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 映射一条 git 派生 Win 任务为看板 TaskRecord（D502 源②）。
+ * 状态: audited→done / committed→running（合并≠完成，K3 审计才算 done——与 Mac 侧 impl_done→running 口径一致）。
+ */
+export function mapWinTaskToBoardTask(raw, opts = {}) {
+  const now = opts.now ?? Date.now();
+  const createdAt = opts.createdAt ?? now;
+  const id = String(raw?.task_id ?? "").trim();
+  const title = String(raw?.title ?? "").trim();
+  if (!id || !title) {
+    return { error: `win 任务缺 task_id/title: ${JSON.stringify(raw).slice(0, 100)}` };
+  }
+  const status = raw?.status === "audited" ? "done" : "running";
+  const desc = [
+    `来源: git 派生（origin/main，作者 ${raw?.author ?? "—"}）`,
+    `git 提交数: ${raw?.commits ?? "—"}`,
+    `K3 审计: ${raw?.status === "audited" ? "有审计报告" : "未审计（合并≠完成）"}`,
+    `最近活动: ${raw?.date ?? "—"}`,
+  ].join("\n");
+  return {
+    task: {
+      id,
+      title: `${id} · Win · ${title}`,
+      description: desc,
+      prompt: `这是 Synova Win 任务 ${id} 的只读镜像（git 派生）。请总结该任务进展，不要修改任何代码、文件或任务状态。`,
+      status,
+      createdAt,
+      updatedAt: now,
+      executions: [],
+    },
+  };
+}
+
+/**
+ * 映射一条产品线为看板 TaskRecord（D502 源③）。每线一卡（非每验证点，防 200+ 噪音卡）。
+ * 状态: verified==0→todo / 部分→running / 全 verified→done。
+ */
+export function mapLineToBoardTask(raw, opts = {}) {
+  const now = opts.now ?? Date.now();
+  const createdAt = opts.createdAt ?? now;
+  const num = Number(raw?.id);
+  const id = `L${String(Number.isFinite(num) ? num : 0).padStart(2, "0")}`;
+  const name = String(raw?.name ?? "").trim();
+  if (!name) return { error: `产品线缺 name: ${JSON.stringify(raw).slice(0, 100)}` };
+  const total = Number(raw?.total ?? 0);
+  const verified = Number(raw?.verified ?? 0);
+  let status = "running";
+  if (verified <= 0) status = "todo";
+  else if (total > 0 && verified >= total) status = "done";
+  return {
+    task: {
+      id,
+      title: `${id} · ${name} ${verified}/${total} (${raw?.progress_pct ?? 0}%)`,
+      description: `产品线完成度卡（product-progress.json 派生）\n验证点: ${verified}/${total} verified\n完成度: ${raw?.progress_pct ?? 0}%`,
+      prompt: `这是 Synova 产品线 ${id} ${name} 的只读完成度镜像。请总结该线当前进展与差距，不要修改任何代码、文件或任务状态。`,
+      status,
+      createdAt,
+      updatedAt: now,
+      executions: [],
+    },
+  };
+}
+
+/**
+ * 构造产品完成度总览卡（L00 置顶参考卡）。
+ */
+export function mapOverallLineCard(productLines, opts = {}) {
+  const now = opts.now ?? Date.now();
+  const pct = productLines?.overall_pct;
+  const lines = Array.isArray(productLines?.lines) ? productLines.lines : [];
+  if (typeof pct !== "number" || lines.length === 0) return { error: "product_lines 缺 overall_pct/lines" };
+  const done = lines.filter((l) => Number(l?.total ?? 0) > 0 && Number(l?.verified ?? 0) >= Number(l?.total)).length;
+  return {
+    task: {
+      id: "L00",
+      title: `L00 · 产品完成度总览 ${pct}%（${lines.length} 线：全绿 ${done}）`,
+      description: `产品线加权完成度 ${pct}%（数据源 product-progress.json，CI 自动重算）。`,
+      prompt: "这是 Synova 产品完成度总览卡。请按产品线总结当前整体进展，不要修改任何代码、文件或任务状态。",
+      status: pct > 0 ? "running" : "todo",
+      createdAt: opts.createdAt ?? now,
+      updatedAt: now,
+      executions: [],
+    },
+  };
+}
+
+/**
+ * 映射一条待规划 todo（todos.yaml T-*）为看板 TaskRecord（D502 源④）。恒 todo 列。
+ */
+export function mapTodoToBoardTask(raw, opts = {}) {
+  const now = opts.now ?? Date.now();
+  const createdAt = opts.createdAt ?? now;
+  const id = String(raw?.id ?? "").trim();
+  const title = String(raw?.title ?? "").trim();
+  if (!id || !title) {
+    return { error: `todo 缺 id/title: ${JSON.stringify(raw).slice(0, 100)}` };
+  }
+  const line = raw?.line ? `L${String(raw.line).padStart(2, "0")}` : "—";
+  const priority = raw?.priority ?? "—";
+  return {
+    task: {
+      id,
+      title: `${id} · [${priority}][${line}] ${title.slice(0, 60)}`,
+      description: `待规划（todos.yaml 机器聚合）\n优先级: ${priority} | 线: ${line} | 建议归属: ${raw?.owner ?? "—"}\n验收: ${raw?.acceptance ?? "—"}`,
+      prompt: `这是 Synova 待规划事项 ${id} 的只读镜像。请总结该欠账内容，不要修改任何代码、文件或任务状态。`,
+      status: "todo",
+      createdAt,
+      updatedAt: now,
+      executions: [],
+    },
+  };
+}
+
+/**
  * 构造 import 动作（每次同步使用新 sourceId，见设计文档 §3 方案 1）。
  * @param {Array<import("types").BoardTask>} tasks - 映射后的看板任务。
  * @param {string} sourceId - 本次同步的源标识。
@@ -246,21 +378,31 @@ export async function fetchBoardState({ apiBase, fetchImpl = fetch }) {
 }
 
 /**
- * 执行一次完整同步：读 task-state → 映射 → import 动作 → POST loopback。
+ * 执行一次完整同步：读多源（snapshot 优先，缺省回退工作区 task-state）→ 映射 → import → POST loopback。
+ * D502: snapshotPath 存在时读四源（task-state/Win git 派生/26 线/todos + backlog），全部以 origin/main 派生为准。
  * createdAt 保真：先 GET 看板状态，已存在任务的 createdAt 沿用旧值（首次出现才用 now）。
- * @param {{ repoRoot: string, apiBase?: string, mapping?: Record<string, string>, now?: number, fetchImpl?: typeof fetch, requestIdFactory?: () => string }} opts
- * @returns {Promise<{ imported: number, sourceId: string, unknownStatuses: number, degraded: boolean, errors: string[] }>}
+ * @param {{ repoRoot: string, apiBase?: string, mapping?: Record<string, string>, now?: number, fetchImpl?: typeof fetch, requestIdFactory?: () => string, snapshotPath?: string }} opts
+ * @returns {Promise<{ imported: number, deleted: number, sourceId: string, unknownStatuses: number, usingSnapshot: boolean, degraded: boolean, errors: string[] }>}
  * @throws 无有效任务可同步时返回 degraded；API 失败时抛错。
  */
 export async function syncOnce(opts) {
   const apiBase = opts.apiBase ?? "http://127.0.0.1:3080";
   const now = opts.now ?? Date.now();
   const newId = opts.requestIdFactory ?? randomUUID;
-  const read = readTaskState(opts.repoRoot);
+  // D502: snapshot 优先（origin/main 派生，根治工作区滞后）；缺失 → 降级回工作区直读。
+  const snapshot = readSnapshot(opts.snapshotPath);
+  const read = snapshot
+    ? {
+        tasks: Array.isArray(snapshot.task_state?.tasks) ? snapshot.task_state.tasks : [],
+        degraded: Boolean(snapshot.task_state?.degraded),
+        errors: Array.isArray(snapshot.task_state?.errors) ? [...snapshot.task_state.errors] : [],
+      }
+    : readTaskState(opts.repoRoot);
   const errors = [...read.errors];
+  const usingSnapshot = Boolean(snapshot);
 
   // createdAt 保真（best-effort）：GET 失败不阻断同步，回退为 now。
-  // boardTasks 同时用于僵尸任务删除（看板有、task-state 无 → delete）。
+  // boardTasks 同时用于僵尸任务删除（看板有、四源皆无 → delete）。
   const existingCreatedAt = new Map();
   let boardTasks = [];
   if (apiBase) {
@@ -276,14 +418,17 @@ export async function syncOnce(opts) {
       // 保真失败：静默回退（不标记 degraded，同步本身仍成功）
     }
   }
+  const keep = (id) => existingCreatedAt.get(String(id ?? "")) ?? now;
 
   const tasks = [];
+  const allIds = new Set(); // 僵尸删除的全 id 集（四源 + backlog）
   let unknownStatuses = 0;
   for (const raw of read.tasks) {
+    allIds.add(String(raw?.task_id ?? ""));
     const mapped = mapToBoardTask(raw, {
       mapping: opts.mapping,
       now,
-      createdAt: existingCreatedAt.get(String(raw?.task_id ?? "")) ?? now,
+      createdAt: keep(raw?.task_id),
     });
     if ("task" in mapped) {
       tasks.push(mapped.task);
@@ -292,9 +437,57 @@ export async function syncOnce(opts) {
       errors.push(mapped.error);
     }
   }
-  // 合并 backlog（无 D# 的待规划事项，自动化盲区的人工薄层）
-  const backlog = readBacklog(opts.repoRoot);
+
+  if (usingSnapshot) {
+    // ── 源② git 派生 Win 任务（去重: task-state 已有的 D# 已在 derive 侧剔除）──
+    const winTasks = Array.isArray(snapshot.win_tasks?.tasks) ? snapshot.win_tasks.tasks : [];
+    for (const raw of winTasks) {
+      allIds.add(String(raw?.task_id ?? ""));
+      const mapped = mapWinTaskToBoardTask(raw, { now, createdAt: keep(raw?.task_id) });
+      if ("task" in mapped) tasks.push(mapped.task);
+      else errors.push(mapped.error);
+    }
+    if (snapshot.win_tasks?.degraded) errors.push(...(snapshot.win_tasks.errors ?? []));
+
+    // ── 源③ 产品线 26 卡 + L00 总览 ──
+    const pl = snapshot.product_lines ?? {};
+    const lines = Array.isArray(pl.lines) ? pl.lines : [];
+    const overall = mapOverallLineCard(pl, { now, createdAt: keep("L00") });
+    if ("task" in overall) {
+      allIds.add("L00");
+      tasks.push(overall.task);
+    }
+    for (const raw of lines) {
+      const num = Number(raw?.id);
+      const id = `L${String(Number.isFinite(num) ? num : 0).padStart(2, "0")}`;
+      allIds.add(id);
+      const mapped = mapLineToBoardTask(raw, { now, createdAt: keep(id) });
+      if ("task" in mapped) tasks.push(mapped.task);
+      else errors.push(mapped.error);
+    }
+    if (pl.degraded) errors.push(...(pl.errors ?? []));
+
+    // ── 源④ 待规划 todos（T-*，恒 todo）──
+    const todos = Array.isArray(snapshot.todos?.items) ? snapshot.todos.items : [];
+    for (const raw of todos) {
+      allIds.add(String(raw?.id ?? ""));
+      const mapped = mapTodoToBoardTask(raw, { now, createdAt: keep(raw?.id) });
+      if ("task" in mapped) tasks.push(mapped.task);
+      else errors.push(mapped.error);
+    }
+    if (snapshot.todos?.degraded) errors.push(...(snapshot.todos.errors ?? []));
+  }
+
+  // 合并 backlog（无 D# 的待规划事项，自动化盲区的人工薄层；snapshot 有则用 snapshot 版）
+  const backlog = usingSnapshot
+    ? {
+        items: Array.isArray(snapshot.backlog?.items) ? snapshot.backlog.items : [],
+        degraded: Boolean(snapshot.backlog?.degraded),
+        errors: Array.isArray(snapshot.backlog?.errors) ? [...snapshot.backlog.errors] : [],
+      }
+    : readBacklog(opts.repoRoot);
   for (const item of backlog.items) {
+    allIds.add(String(item?.id ?? ""));
     const mapped = mapBacklogToBoardTask(item, now);
     if ("task" in mapped) {
       tasks.push(mapped.task);
@@ -319,16 +512,22 @@ export async function syncOnce(opts) {
   const action = buildImportAction(tasks, sourceId);
   await postAction({ apiBase, requestId, action, fetchImpl: opts.fetchImpl });
 
-  // 删除僵尸任务（看板有、task-state 无、且非 backlog 待规划）——治 import 只合并不删除的盲区
-  const tsIds = new Set(read.tasks.map((t) => String(t?.task_id ?? "")));
-  const backlogIds = new Set(backlog.items.map((i) => String(i?.id ?? "")));
+  // 删除僵尸任务（看板有、四源 + backlog 皆无）——治 import 只合并不删除的盲区（D502 扩到全 id 集）
   let deleted = 0;
   for (const bt of boardTasks) {
     const id = String(bt?.id ?? "");
-    if (!id || tsIds.has(id) || backlogIds.has(id)) continue;
+    if (!id || allIds.has(id)) continue;
     await postAction({ apiBase, requestId: newId(), action: { kind: "delete", taskId: id }, fetchImpl: opts.fetchImpl });
     deleted += 1;
   }
 
-  return { imported: tasks.length, deleted, sourceId, unknownStatuses, degraded: read.degraded || errors.length > 0, errors };
+  return {
+    imported: tasks.length,
+    deleted,
+    sourceId,
+    unknownStatuses,
+    usingSnapshot,
+    degraded: read.degraded || errors.length > 0,
+    errors,
+  };
 }
