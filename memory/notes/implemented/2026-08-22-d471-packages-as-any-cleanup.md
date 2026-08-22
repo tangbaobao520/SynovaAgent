@@ -15,7 +15,7 @@ K3 审计 P1-C1：铁律 38「as any 零容忍」声称失效——门禁组 1 �
 | packages/sog-core/src/sog-schema-registry.ts | 8 处 → 枚举语义化转换 + 类型化索引读写 |
 | packages/connector-registry/src/registry.ts | 对象级 `} as any)` → handler 内对 await 结果断言 |
 | packages/test-kit/tests/e2e/02-*.test.ts | 2 处 res.json() as any → 内联响应类型 |
-| packages/test-kit/tests/architecture/05-as-any-audit.test.ts | 扫描根扩 src/+packages/ + expect 断言 + 2 排除规则测试 |
+| packages/test-kit/tests/architecture/05-as-any-audit.test.ts | 扫描根扩 src/+packages/ + expect 断言 + 2 排除规则测试；交付后自审重写注释过滤为跨行块注释状态机 + .tsx 纳入扫描 |
 | packages/sog-core/tests/sog-core-schema.test.ts | 前置修复坏 import + 陈腐计数断言同步 |
 | packages/connector-registry/tests/connector-registry.test.ts | 前置修复坏 import（×2） |
 
@@ -34,3 +34,4 @@ K3 审计 P1-C1：铁律 38「as any 零容忍」声称失效——门禁组 1 �
 4. **交叉类型声明**（`Record<Enum, fn> & Record<string, fn | undefined>`）同时保住枚举穷尽性和运行时字符串索引读写，比 `Record<string, ...>` 平替更优。
 5. **synova-commit --files 是多参数**：每个文件独立参数，不能用一个大引号串（会当成单个超长文件名）。
 6. **首推必被 bypass.log 对账拦**（D355/D363 同模式）：synova-commit 的 push 先于 COMMITTED 记录落盘 → 手动重推即过；隔离 worktree 提交后须补记 COMMITTED 到主树 bypass.log。
+7. **审计工具的注释过滤不能靠"行内含 \* 即跳过"**：初版 `!line.includes('*')` 把乘法运算符代码行整行漏报（自审发现的盲区）；同行剥离又会把多行块注释续行（JSDoc ` * 零 as any`）误报。正确解法：跨行块注释状态机（开合追踪 + 等长空格剥离 + `//` 截断后匹配）。

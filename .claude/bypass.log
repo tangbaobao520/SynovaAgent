@@ -433,3 +433,7 @@ Binary file .claude/bypass.log matches
 2026-08-22T02:23:53+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D471 | AGENT=claude-code | HASH=3c9e88e084699ad7a818e0aa51883ba1b53eb64e
 2026-08-21T17:46:01Z possible-bypass diff=1831s
 2026-08-21T19:10:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=docs | AGENT=deepseek-harness | HASH=3620f6a76b033eb1deeaddf190cbc835ba4de531
+2026-08-22T02:43:32+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D471 | AGENT=claude-code | HASH=756d694a1048fb99b559571f890f64d3cce1277c
+2026-08-22T12:06:03+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D471 | AGENT=claude-code
+2026-08-22T12:09:42+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D471 | AGENT=claude-code
+2026-08-22T12:10:44+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D471 | AGENT=claude-code

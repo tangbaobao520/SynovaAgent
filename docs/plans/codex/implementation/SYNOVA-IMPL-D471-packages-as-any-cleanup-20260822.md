@@ -36,14 +36,21 @@
 
 ## 3. 实现方案
 
-### 3.1 写集 (7 修改 + 0 新建)
+### 3.1 写集 (3 修改 + 0 新建) — 交付后自审修复 commit（G12c 按 commit 核验写集表）
+| 文件 | 操作 | 说明 |
+|------|------|------|
+| packages/test-kit/tests/architecture/05-as-any-audit.test.ts | 修改 | 注释过滤重写为跨行块注释状态机——修复初版 `!line.includes('*')` 漏报洞（乘法运算符代码行整行被跳）与同行剥离误报（多行块注释 JSDoc 续行）；排除规则测试扩至 5 命中 + 7 不误报用例；findTsFiles 纳入 .tsx（排除 .test.tsx，src/ 实测 0 处 .tsx as any 后扩） |
+| docs/plans/codex/implementation/SYNOVA-IMPL-D471-packages-as-any-cleanup-20260822.md | 修改 | §3.1 改述当前 commit 写集；§3.2 回填点 9（自审修复详情）；全量写集历史存档 §3.1b |
+| memory/notes/implemented/2026-08-22-d471-packages-as-any-cleanup.md | 修改 | 交付笔记补自审修复行 + 教训 7（审计工具注释过滤不能靠"行内含 \* 即跳过"） |
+
+### 3.1b 任务全量写集（7 文件 — 已随 3c9e88e0 交付，历史存档）
 | 文件 | 操作 | 说明 |
 |------|------|------|
 | packages/sog-core/src/sog-core-schema.ts | 修改 | 24 行 as any → 类型安全替换：动态 key `(p as Record<string, unknown>)?.[k]`（局部变量收窄）；枚举 includes `(p as { teamType: TeamProps['teamType'] })?.teamType`（必选字段接口字面量类型）；typeof 检查 `{ amount?: number }` 等；NODE_VALIDATORS/EDGE_VALIDATORS 声明改交叉类型（枚举穷尽 + 字符串索引） |
 | packages/sog-core/src/sog-schema-registry.ts | 修改 | 8 处 as any → `name as SOGNodeType`/`SOGEdgeType`（语义化收窄）；`NODE_VALIDATORS[name]`/`EDGE_VALIDATORS[name]` 类型化索引读写；no-op validator `() => false`；getRuntimeTypes `t as SOGNodeType`/`SOGEdgeType` |
 | packages/connector-registry/src/registry.ts | 修改 | L121 去掉对象级 `} as any)`，handler 内对 await 结果断言：`return result as Record<string, unknown>`（executeTool 返回 Promise<unknown> 是 as any 根因） |
 | packages/test-kit/tests/e2e/02-expert-contribution-journey.test.ts | 修改 | L25/34 `res.json() as any` → 内联响应类型 `{ ok: boolean; id?: string; status?: string }` / `{ ok: boolean }` |
-| packages/test-kit/tests/architecture/05-as-any-audit.test.ts | 修改 | 扫描根 src/ 扩为 src/ + packages/（排除 .d.ts/.test.ts/注释/node_modules）+ **补 `expect(violations).toEqual([])` 断言**（原测试只有 console.warn 不失败——空壳测试违反铁律 48）+ 2 个排除规则 fixture 测试 |
+| packages/test-kit/tests/architecture/05-as-any-audit.test.ts | 修改 | 扫描根 src/ 扩为 src/ + packages/（排除 .d.ts/.test.ts/注释/node_modules）+ **补 `expect(violations).toEqual([])` 断言**（原测试只有 console.warn 不失败——空壳测试违反铁律 48）+ 2 个排除规则 fixture 测试（注释过滤已随自审 commit 重写，见 §3.2 点 9） |
 | packages/sog-core/tests/sog-core-schema.test.ts | 修改 | 前置修复坏 import `../sog-core-schema` → `../src/sog-core-schema`（自 e9100e96 套件从未运行）；连带同步 2 处陈腐计数断言（14/10 → 18/14，枚举 append-only 合法扩展） |
 | packages/connector-registry/tests/connector-registry.test.ts | 修改 | 前置修复坏 import `../src/connectors/registry` → `../src/registry`（×2，src/ 无 connectors/ 目录） |
 
@@ -60,6 +67,7 @@
 6. **connector-registry 对值断言而非对象断言**：去掉 `} as any)` 对象级断言，handler 内 `const result = await connector.executeTool(tool.name, params); return result as Record<string, unknown>;`——executeTool 返回 Promise<unknown>，await 后对 unknown 值断言只覆盖真正需要收窄的最小面，对象其余字段（name/description/parameters/executionMode）全部通过真实类型检查。
 7. **陈腐计数断言同步**（import 修复连带暴露）：sog-core 测试 2 处硬编码计数（14 节点/10 边）与当前枚举不符——枚举 append-only 合法扩展后为 18 节点/14 边（USER/RESOURCE_USER/KNOWLEDGE_CHUNK/BUSINESS_MODEL + HAS_ACCESS_TO/REVENUE_FROM/COST_DRIVEN_BY/VALUE_PROPOSITION）。同步断言与 3 处注释（"14 节点 + 10 边" → "18 节点 + 14 边" ×2、"all 10" → "all 14"）。不触碰校验语义（§3.3）。
 8. **DS4 "全绿"按零新增判定**：test-kit 全量套件有 16 个基线既有失败（e2e ×12 需 localhost:3099 活服务器、architecture ×4 为 src/ 既有问题，均非本任务写集）。修复后仍 16=16 零新增；sog-core 67/67、connector-registry 7/7 全绿；根 tsc 28=28 零新增。本任务写集内零失败。
+9. **审计测试注释过滤重写为跨行块注释状态机（交付后自审修复）**：初版过滤 `!line.includes('//') && !line.includes('*')` 有漏报洞——代码行含 `*` 运算符（乘法）或字符串内含 `//`（URL）时整行被跳过，`(p as any).z * 2` 这类违规审计抓不到（审计工具自身的盲区，与 P1-C1 同性质）。自审时先改成同行剥离，暴露反向缺陷：多行块注释（JSDoc）续行 ` * 零 as any` 被误报，主扫描 src/ 实测误报 2 处。最终形态：逐行状态机追踪块注释开合（跨行），剥闭合块注释（等长空格保列位）、未闭合 `/*` 尾部视为注释并置跨行状态、`//` 截断后再匹配 `/\bas\s+any\b/`。排除规则测试扩到 5 个命中用例（乘法运算符 / 字符串内 URL / 块注释后代码 / 跨行块注释内 / 闭合符后代码）+ 7 个注释不误报用例（含块注释续行）。已知残余限制（注释中已记录）：字符串/正则字面量内含 `//` 且位于 as any 之前的同行仍漏报。findTsFiles 同步纳入 `.tsx`（排除 `.test.tsx`）——src/ 实测 0 处 .tsx as any 后才扩，扫描声明"src/ + packages/ 生产代码零 as any"覆盖完整。
 
 ### 3.3 不做的事
 * 不改 `scripts/pre-commit-check.sh` 组 1（DSH 地盘——本任务用 test-kit 审计测试在测试侧闭环 P1-C1，门禁扩围交 DSH 排期）。
