@@ -1,0 +1,26 @@
+{
+  "name": "@synova/task-board-adapter",
+  "description": "Synova task-state → dsh-web-ui 任务看板镜像同步插件（Host 端只读单向，数据源以仓库为准）",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./sync": {
+      "default": "./lib/sync.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "scripts": {
+    "test": "node --test test/sync.test.js"
+  },
+  "license": "MIT"
+}

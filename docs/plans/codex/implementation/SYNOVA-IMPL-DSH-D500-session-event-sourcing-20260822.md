@@ -86,13 +86,14 @@ C 线 S3-5（自诊断可信度，P0-block 已转交：完成度误判）+ S0（
 
 ## 4. What We Build
 
-### 4.1 写集 (3 修改 + 2 新建)
+### 4.1 写集 (4 修改 + 2 新建)
 
 | 文件 | 操作 | 说明 |
 |------|:---:|------|
 | [src/store/session-store.ts](src/store/session-store.ts) | 修改 | ① 新增 `session_events` 表（session_id/seq/event_type/payload_json/created_at，append-only，seq 单调 + UNIQUE(session_id, seq)）② **`addMessage()` 内部双写**：写 agent_messages（现有，兼容）+ appendEvent 写 session_events——**8 处直连调用方（cli/im-inbound/graceful-shutdown/stuck-session-detector/restart-recovery）自动获得事件流，无需逐个改调用方**（缺陷 A/B）③ `deriveMessages(sessionId)`：从事件流投影 MessageRow[]（backing getMessages）④ 崩溃恢复：基于持久化 lastSeq 续写（不内存回滚），缺陷 A/B/C |
 | [src/orchestrator/session-manager.ts](src/orchestrator/session-manager.ts) | 修改 | ① 注入 SessionStore（constructor 可选参数，兼容 bootstrap 无注入的现状）② `addMessage(msg, sessionId?)` 双写：内存数组（现逻辑，压缩用）+ 经 sessionStore.addMessage 持久化（若注入且传 sessionId）③ 新增 model-visible⟺logged 断言：每次 addMessage 后校验事件已落 log，未落 → log.error + degraded（缺陷 C） |
 | [src/agent/conversation-engine.ts](src/agent/conversation-engine.ts) | 修改 | sessionId 传参：`sessionManager?.addMessage(msg, sessionId)`（现 :616 无 sessionId → 事件无归属；conversation-engine 已有 this.sessionId 字段 :358/:408，缺陷 B 接线） |
+| [src/deploy/bootstrap.ts](src/deploy/bootstrap.ts) | 修改 | **生产装配（2026-08-22 实现补充——写集表初始未列，§8 架构边界已预示"SessionManager 经 bootstrap 注入 SessionStore 不触门禁"）**：`new SessionManager({}, new SessionStore(db))` 注入事件存储——无此装配则生产路径事件流不生效（铁律 4 交付不完整） |
 | [tests/store/session-event-log.test.ts](tests/store/session-event-log.test.ts) | 新建 | 事件流测试（red→green，见 §5） |
 | [tests/orchestrator/session-manager-eventlog.test.ts](tests/orchestrator/session-manager-eventlog.test.ts) | 新建 | 持久化 + 断言测试（red→green，见 §5） |
 
@@ -137,10 +138,13 @@ CREATE INDEX IF NOT EXISTS idx_session_events_sess ON session_events(session_id,
  * deriveMessages — 从事件流投影消息历史
  * 契约:
  *   @input  — sessionId
- *   @output — MessageRow[]（按 seq 排序；仅投影 user/assistant/tool 三类 surface 事件，log-only 事件跳过）
- *   @degraded — 事件流含半截事件（缺尾部）→ log.warn + 返回可重建前缀 + degraded: true（铁律 24）
+ *   @output — MessageRow[]（按 seq 排序；投影 message/tool_result 两类 surface 事件，log-only 跳过）
+ *   @degraded — 事件流含损坏 payload（半截）→ log.warn + 返回可重建前缀 + degraded: true（铁律 24）
  *   空事件流 → []（边界）
  *   model-visible ⟺ logged: 投影输出 = 模型看到的输入（不变量，测试断言）
+ *   ⚠️ 2026-08-22 实现修正：tool_result 事件投影为 assistant 角色（非 "tool"）——
+ *      Synova 消息契约 MessageRow.role = system|user|assistant（agent_messages 表 CHECK 同），
+ *      conversation-engine 用 assistant 承载工具结果，无独立 tool 角色；对齐现有模型避免类型膨胀。
  */
 ```
 
@@ -219,12 +223,12 @@ addMessage(msg: Message, sessionId?: string): void {
 | 新 export/函数 | 生产调用点 | 确认方式 |
 |---------------|-----------|---------|
 | SessionStore.addMessage 双写（appendEvent 下沉） | 8 处直连生产调用方（cli/im-inbound/graceful-shutdown/stuck-session-detector/restart-recovery）+ session-manager 注入路径 | `grep -n "appendEvent" src/store/session-store.ts` 命中（addMessage 内部调用，非仅定义） |
-| SessionStore.deriveMessages | session-manager.ts 或消费方读取路径 | `grep -n "deriveMessages" src/store/session-store.ts` 命中定义 + `grep -n "deriveMessages" src/orchestrator/session-manager.ts` 命中调用 |
+| SessionStore.deriveMessages | **getMessages 内部调用（backing 语义）→ data-exporter 等生产读取路径**（2026-08-22 复核修复：原 deriveMessages 零生产消费方，仅测试调用；现 getMessages 改走 deriveMessages，消息真相统一从事件流派生） | `grep -n "deriveMessages" src/store/session-store.ts` 命中定义 + `grep -n "return this.deriveMessages" src/store/session-store.ts` 命中 getMessages 内调用 |
 | SessionManager 事件持久化 | ConversationEngine:616 addMessage(msg, sessionId) | `grep -n "addMessage" src/agent/conversation-engine.ts` 命中（含 sessionId 实参） |
 | model-visible⟺logged 断言 | session-manager.ts addMessage 内 | `grep -n "degraded\|model-visible" src/orchestrator/session-manager.ts` 命中 |
 | 生产装配 | bootstrap.ts:679 注入链 | `grep -n "new SessionManager\|SessionStore" src/deploy/bootstrap.ts` 命中（确认注入方式） |
 
-> 生产调用点必须（S-3）：appendEvent 双写在 SessionStore.addMessage 内部真实调用（grep 断言），deriveMessages 在生产读取路径被调用；测试调用不计；DS 里 grep 验证。
+> ⚠️ **2026-08-22 复核降级声明（S-10，子代理 C13307E1 交叉审查确认）**：ConversationEngine 的 sessionManager 注入在**生产为悬空 seam**——5 个引擎实例化点（cli.ts:118 / mcp/index.ts:222 / im-inbound.ts:180 / conversation-engine.ts:783 fromState / tui-v2:41）均未传带 SessionStore 的 SessionManager（tui-v2 传的 SessionManager 无 store；bootstrap:682 的注入无 ConversationEngine 消费）。**生产事件流实际生效路径 = 8 处直连 store.addMessage（cli/im-inbound 等，双写下沉覆盖）**；engine 内部消息（reply 等）走 engine.messages 数组不落事件流。conversation-engine.ts:617 传 sessionId 为**能力预留 seam**（engine 注入 sessionManager 时生效）。engine 全量装配归后续任务（需改 4 入口传 store，超本卡写集）。
 
 ## 7. Test Requirements（契约明细，铁律 47/48）
 
@@ -270,7 +274,7 @@ addMessage(msg: Message, sessionId?: string): void {
 6. DS6: seq 冲突防线——重复 seq → 拒绝 + degraded（测试断言，2026-08-22 教训①）
 7. DS7: addMessage 双写下沉——`grep -n "appendEvent" src/store/session-store.ts` 命中 addMessage 内部调用（8 处直连调用方自动受益，测试断言 cli/im-inbound 模式双写命中）
 8. DS8: model-visible⟺logged——SessionManager addMessage 落 log + 断言失败 → log.error + degraded（grep + 测试断言）
-9. DS9: 接线——conversation-engine.ts:616 addMessage 带 sessionId（grep 断言）；SessionManager 注入链在 bootstrap 生产路径
+9. DS9: 接线——conversation-engine.ts:616 addMessage 带 sessionId（grep 断言，✅）；SessionManager 注入链在 bootstrap 生产路径（✅ bootstrap:682 注入 store）。**2026-08-22 复核降级**：ConversationEngine 的 sessionManager 注入为**能力预留 seam**（5 个引擎实例化点未传带 store 的 SessionManager，生产事件流经 8 处直连 store.addMessage 生效）——详见 §6 降级声明
 10. DS10: 零回归——`bash scripts/control-tower/baseline-check.sh` 无新增失败；现有会话/搜索/检查点测试全绿
 11. DS11: 写集一致——`git diff --name-only HEAD^` 与 §4.1 写集一致，无越界文件
 12. DS12: 无绕过——pre-commit 13 组全过、bypass.log 无 `--no-verify`
@@ -306,3 +310,13 @@ addMessage(msg: Message, sessionId?: string): void {
 - [x] DS 与 dev doc 一一对应（DS1-DS13）；写集表标题紧跟表头（D381 格式契约）
 - [x] 与 D472/D474（原 D470）/D473 写集零交集（并行安全，S-7/S-8）；src/store Win 协调已标注
 - [x] 不是凭记忆；不用 --no-verify
+
+## 12. 复核修复记录（2026-08-22 impl 后独立复核 + 子代理 C13307E1 交叉审查，commit 214ac7f2 + 复核提交）
+
+> 创始人要求交付后批判性复核。发现并修复 4 个真实问题 + 1 个诚实降级（K3 可核）:
+
+1. **降级信号粘滞（高）**：`store.lastDegraded` / `manager.degraded` 一旦置 true 永不重置——一次 transient 失败（磁盘满/约束）后，后续成功写入仍持续误报 degraded，污染 model-visible⟺logged 断言。修复：成功路径重置（commit 214ac7f2）。
+2. **deriveMessages 零生产消费方（高）**：事件日志"生产端只写不读"——deriveMessages 仅测试调用，dev doc §6 "在生产读取路径被调用"声称不成立。修复：getMessages 改走 deriveMessages（backing 语义），data-exporter 等生产读取路径统一从事件流派生消息真相。
+3. **seq 冲突测试声称≠实测（中）**：原"seq 冲突"测试从未构造真实冲突（appendEvent 自动 MAX+1 永不冲突）。修复：补真实 UNIQUE 约束冲突测试（直接 SQL 插重复 seq → 物理拒绝 + 原事件不覆盖）。
+4. **断言分支未测（中）**：manager 断言失败测试只走 catch 分支（FK 首写失败），store.lastDegraded→manager 断言分支（:83-86）未覆盖。修复：补 drop 表 → appendEvent 失败 → manager 断言分支测试。
+5. **engine 悬空 seam（诚实降级）**：ConversationEngine 的 sessionManager 注入在生产无消费方（5 个引擎实例化点均未传带 store 的 SessionManager）——生产事件流经 8 处直连 store.addMessage 生效；engine 内部消息事件化归后续装配任务。§6/§9 声明已降级标注。
