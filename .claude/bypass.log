@@ -512,3 +512,4 @@ Binary file .claude/bypass.log matches
 2026-08-22T23:23:19+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D501 | AGENT=dsh-cto
 2026-08-22T23:23:26+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D501 | AGENT=dsh-cto
 2026-08-22T23:24:29+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D501 | AGENT=dsh-cto | HASH=40d058d5a930bbaefe3725314aa811116d620108
+2026-08-22T23:26:10+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D501 | AGENT=dsh-cto | HASH=c5e67984d2556e4072832ecc510ce6ea723b5503
