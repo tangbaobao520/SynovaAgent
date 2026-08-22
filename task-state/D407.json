@@ -1,12 +1,18 @@
 {
   "task_id": "D407",
   "title": "cto-health-audit-glob-fix",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": null,
-  "audit": null,
+  "audit": {
+    "verdict": "PASS",
+    "report": "docs/synova/audit-reports/2026-08-22-P2-batch-audit.md",
+    "at": "2026-08-22",
+    "by": "k3",
+    "note": "task-state 转 impl_done"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-08-17",
-  "updated_by": "CTO",
+  "updated_at": "2026-08-22T13:29:37+00:00",
+  "updated_by": "k3",
   "note": "CTO-HEALTH audit glob 后缀兼容（D395a）+ D394.json 冲突修复 + D394/D396 报告合并入 main + 两仪表盘重建验收，全部已入 main 08d2e645"
 }

@@ -1,12 +1,18 @@
 {
   "task_id": "D410",
   "title": "task-to-progress-auto-redeem",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": null,
-  "audit": null,
+  "audit": {
+    "verdict": "PASS",
+    "report": "docs/synova/audit-reports/2026-08-22-P2-batch-audit.md",
+    "at": "2026-08-22",
+    "by": "k3",
+    "note": "进度条自动兑换通道"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-08-17",
-  "updated_by": "CTO",
+  "updated_at": "2026-08-22T13:29:37+00:00",
+  "updated_by": "k3",
   "note": "任务交付→进度条自动兑换通道：redeem-progress A3.5，D394→7-3、D396→15-4 翻绿，进度 3%→4%，入 main dc67d036"
 }
