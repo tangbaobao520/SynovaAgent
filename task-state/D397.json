@@ -4,10 +4,16 @@
   "status": "claimed",
   "spec": null,
   "impl": null,
-  "audit": null,
+  "audit": {
+    "verdict": "NOT-AUDITABLE",
+    "report": "docs/synova/audit-reports/2026-08-22-P2-batch-audit.md",
+    "at": "2026-08-22",
+    "by": "k3",
+    "note": "NOT-AUDITABLE: claimed 未交付（consult 裁决砍原案，重定义为产品 loop 卫生 P2）"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-08-16",
-  "updated_by": "CTO",
+  "updated_at": "2026-08-22T13:29:45+00:00",
+  "updated_by": "k3",
   "note": "K3 咨询定：现定义（控制塔通用化）砍掉并入 CT 队列（违反预算铁律+与 CT 积压重叠+时机危险）；重定义 D397' = 产品 loop 卫生（诊断阶段超时 + tool-loop 重复提醒 + 哨兵 invariant），P2 Q4 后。 | 终版补：插件供应链红线——装有产品仓库的机器不装第三方 dsh 插件（白名单审批，近期风险）",
   "priority": "P2-Q4后"
 }

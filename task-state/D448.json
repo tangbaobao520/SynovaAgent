@@ -1,7 +1,7 @@
 {
   "task_id": "D448",
   "title": "GS-07 数据安全场景脚本（敏感数据 → PII 脱敏 + 越权拒绝）",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "commit": "4c8572a3",
@@ -9,10 +9,16 @@
     "at": "2026-08-22",
     "note": "GS-07 数据安全场景脚本（敏感数据 → PII 脱敏 + 越权拒绝）：GS 场景脚本 + evidence 已提交（4c8572a3，诚实 RED 标注）"
   },
-  "audit": null,
+  "audit": {
+    "verdict": "PASS",
+    "report": "docs/synova/audit-reports/2026-08-22-P1-gs-deploy-u.md",
+    "at": "2026-08-22",
+    "by": "k3",
+    "note": "GS-07 场景脚本 + evidence（前置 D338）"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-08-22",
-  "updated_by": "deepseek-harness",
+  "updated_at": "2026-08-22T13:29:37+00:00",
+  "updated_by": "k3",
   "note": "GS-07：D338 + security/；场景脚本 = 产品线交付，归属 Harness（进审计无豁免） | 2026-08-21 CTO 派单给编码 session（见 docs/synova/coordination/编码session派单-20260821.md）",
   "priority": "P1"
 }

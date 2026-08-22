@@ -1,7 +1,7 @@
 {
   "task_id": "D399",
   "title": "D393 审计 FAIL 修复（自指悖论/spec 双向失真/CTO-HEALTH 可复现/门禁记录入库）",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "commit": "082326fc",
@@ -15,8 +15,14 @@
       "bypass.log"
     ]
   },
-  "audit": null,
+  "audit": {
+    "verdict": "PASS",
+    "report": "docs/synova/audit-reports/2026-08-16-D399-review.md",
+    "at": "2026-08-22",
+    "by": "k3",
+    "note": "历史报告回填"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-08-16",
-  "updated_by": "CTO"
+  "updated_at": "2026-08-22T13:29:37+00:00",
+  "updated_by": "k3"
 }

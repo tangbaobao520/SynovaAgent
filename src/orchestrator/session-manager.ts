@@ -45,16 +45,55 @@ export interface SessionConfig {
 export class SessionManager {
   private messages: Message[] = [];
   private config: SessionConfig;
+  /**
+   * D500: 注入的 SessionStore（事件持久化）。可选——bootstrap 现状无注入时走内存态（向后兼容）。
+   */
+  private sessionStore: import('../store/session-store').SessionStore | null = null;
+  /**
+   * D500: 降级信号传播（铁律 31）——model-visible⟺logged 断言失败时置 true，
+   * 调用方（ConversationEngine）检查。
+   */
+  degraded = false;
 
-  constructor(config: Partial<SessionConfig> = {}) {
+  constructor(
+    config: Partial<SessionConfig> = {},
+    sessionStore?: import('../store/session-store').SessionStore | null,
+  ) {
     this.config = {
       compactionThresholdTokens: config.compactionThresholdTokens ?? 100_000,
       tokenEstimateCharsPerToken: config.tokenEstimateCharsPerToken ?? 4,
     };
+    this.sessionStore = sessionStore ?? null;
   }
 
-  addMessage(msg: Message): void {
-    this.messages.push(msg);
+  /**
+   * D500: 消息记录（内存 + 事件持久化双写）。
+   * 契约:
+   *   @input  — msg: Message; sessionId?: string（提供 + 注入 store 时持久化）
+   *   @output — void（持久化失败 → log.error + degraded=true，铁律 24/31 不静默）
+   *   model-visible⟺logged: 进模型的 msg 必须已落事件日志——store.addMessage 内部双写，
+   *     未落（store.lastDegraded）→ 断言失败 → degraded 标记传播。
+   */
+  addMessage(msg: Message, sessionId?: string): void {
+    this.messages.push(msg); // 内存态保留（压缩逻辑依赖）
+    if (sessionId && this.sessionStore) {
+      try {
+        this.sessionStore.addMessage(sessionId, msg.role as 'user' | 'assistant', msg.content);
+        // model-visible⟺logged 断言: 进模型的必已落 log（addMessage 内部双写，未落 → store.lastDegraded）
+        // 2026-08-22 复核修正: 成功路径重置 degraded——降级信号反映"本次"结果，非历史粘滞
+        // （原实现一旦失败永不重置，一次 transient 失败污染整个会话后续断言）
+        this.degraded = false;
+        if (this.sessionStore.lastDegraded) {
+          log.error({ sessionId, role: msg.role }, 'model-visible⟺logged 断言失败 — 事件未落 log');
+          this.degraded = true;
+        }
+      } catch (err) {
+        // 铁律 24/31: 持久化异常显式降级，不静默传播
+        const msg_err = err instanceof Error ? err.message : String(err);
+        log.error({ sessionId, role: msg.role, err: msg_err }, '事件持久化失败 — model-visible⟺logged 断裂');
+        this.degraded = true;
+      }
+    }
   }
 
   getMessages(): Message[] { return [...this.messages]; }

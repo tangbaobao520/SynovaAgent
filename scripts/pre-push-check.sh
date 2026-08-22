@@ -247,6 +247,13 @@ if ! npx tsx scripts/ci/golden-case-checker.ts; then
   echo "  修复 golden-case fixture 或诊断管线后重试。"
   exit 1
 fi
+# D474: 黄金数据集完整性（checksum 校验 — 数据没被改坏；代码回归由 golden-case-checker 阶段 5 真跑 compute 兜底）
+if ! bash "$SCRIPT_DIR/workflow/check-golden-regression.sh" --verify-only; then
+  echo ""
+  echo -e "  ${RED}❌ 黄金数据集 checksum 不匹配 — wani-baby-v1.json 可能被修改, 推送已拒绝${RESET}"
+  echo "  冻结快照不可改。若确需更新, 走黄金数据集更新流程（keyless 录制 + 人工确认冻结）。"
+  exit 1
+fi
 if ! bash "$SCRIPT_DIR/ci/diagnosis-quality-check.sh"; then
   echo ""
   echo -e "  ${RED}❌ 诊断结构质量检查失败 — 推送已拒绝${RESET}"
