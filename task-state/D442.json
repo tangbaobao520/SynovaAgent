@@ -1,13 +1,23 @@
 {
   "task_id": "D442",
   "title": "GS-03 资本循环场景脚本（erp-standard → cash 对齐 + 阈值触发）",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
-  "impl": { "commit": "f02edec3", "by": "coding", "at": "2026-08-18" },
-  "audit": null,
+  "impl": {
+    "commit": "f02edec3",
+    "by": "coding",
+    "at": "2026-08-18"
+  },
+  "audit": {
+    "verdict": "PASS",
+    "report": "docs/synova/audit-reports/2026-08-22-P1-gs-deploy-u.md",
+    "at": "2026-08-22",
+    "by": "k3",
+    "note": "GS-03 诚实 RED→D462 转绿 3/3（evidence 核实）"
+  },
   "fix_task_id": "D453",
-  "updated_at": "2026-08-18",
-  "updated_by": "DeepSeek-Harness",
+  "updated_at": "2026-08-22T13:29:37+00:00",
+  "updated_by": "k3",
   "note": "GS-03 场景脚本已提交（诚实 RED）。转绿依赖 D355 残留（cashBalance↔cash）+ D453（触发 bug）+ D454（环境崩溃）",
   "priority": "P0"
 }

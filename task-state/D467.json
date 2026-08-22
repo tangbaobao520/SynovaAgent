@@ -1,13 +1,23 @@
 {
   "task_id": "D467",
   "title": "方案1 挪CI——本地软提示+CI权威",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
-  "impl": {"commit": "249afe66", "by": "deepseek-harness", "at": "2026-08-21"},
-  "audit": null,
+  "impl": {
+    "commit": "249afe66",
+    "by": "deepseek-harness",
+    "at": "2026-08-21"
+  },
+  "audit": {
+    "verdict": "CONDITIONAL PASS",
+    "report": "docs/synova/audit-reports/2026-08-22-P0-control-tower-stage1.md",
+    "at": "2026-08-22",
+    "by": "k3",
+    "note": "P1-1 CI tsc fail-open 类型防线真空（main 28 错永不红）+ P1-2 as-any packages 盲区/声称以偏概全"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-08-21",
-  "updated_by": "deepseek-harness",
+  "updated_at": "2026-08-22T13:29:37+00:00",
+  "updated_by": "k3",
   "note": "创始人授权完全实现控制塔。方案1挪CI核心：① pre-commit hook 硬阻断→软提示（门禁失败写 GATE_FAIL_SOFT 到 bypass.log + exit 0，CI 权威）；② as any 检查全仓库 grep→只拦新增（限制 src/ + 注释排除，消除自引用误报）；③ CI 去无效 SKIP_AS_ANY/SKIP_EMPTY_CATCH（脚本不读 + as any 存量已 0）。测试回归 check-dev-doc-write-set 6/6 + tag-bypass-wiring 24/24",
   "priority": "P1"
 }

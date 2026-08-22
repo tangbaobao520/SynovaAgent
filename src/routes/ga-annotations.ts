@@ -47,6 +47,11 @@ function requireGa(req: Request, res: Response): boolean {
     res.status(401).json({ ok: false, code: 'UNAUTHORIZED', message: '需要认证' });
     return false;
   }
+  // D338 fail-closed 中国墙: 缺组织上下文 → 拒绝，绝不回落 'default' 共享命名空间
+  if (!auth.orgId) {
+    res.status(400).json({ ok: false, code: 'ORG_REQUIRED', message: '缺少组织上下文' });
+    return false;
+  }
   if (auth.role !== 'ga' && auth.role !== 'admin') {
     res.status(403).json({ ok: false, code: 'FORBIDDEN', message: '仅GA可标注' });
     return false;
@@ -98,7 +103,7 @@ router.post('/api/ga/annotations', async (req: Request, res: Response) => {
     const key = `sentinel_annotation:${findingId}:${Date.now()}`;
 
     const entry = store.remember({
-      orgId: auth.orgId || 'default',
+      orgId: auth.orgId,
       key,
       value: JSON.stringify({
         findingId: findingId.trim(),
@@ -108,7 +113,7 @@ router.post('/api/ga/annotations', async (req: Request, res: Response) => {
         annotation,
         correctionNote: correctionNote as string | undefined,
         gaId: auth.userId,
-        orgId: auth.orgId || 'default',
+        orgId: auth.orgId,
         annotatedAt: now,
       }),
       type: 'sentinel_annotation',
@@ -159,7 +164,7 @@ router.get('/api/ga/annotations', async (req: Request, res: Response) => {
     }
 
     let results = store.list({
-      orgId: auth.orgId || 'default',
+      orgId: auth.orgId,
       tags,
       limit: 200, // 获取足够多数据再做二次筛选
       offset: 0,
@@ -220,7 +225,7 @@ router.get('/api/ga/annotations/stats', async (req: Request, res: Response) => {
     const store = await getStore();
 
     const results = store.list({
-      orgId: auth.orgId || 'default',
+      orgId: auth.orgId,
       tags: ['sentinel_annotation'],
       limit: 500,
       offset: 0,

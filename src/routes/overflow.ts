@@ -65,7 +65,9 @@ router.post('/api/overflow/simulate', (req, res) => {
       return;
     }
     const allCycles = cycleRegistry.list();
-    const result = simulateInvestment(cycleId, amount ?? 0, direction ?? '', cycle, graphStore, allCycles);
+    // D338 缺陷 C 消费侧: 快照图按企业作用域，body 可选 enterpriseId，缺省回落到实例默认 org
+    const enterpriseId = (req.body?.enterpriseId as string) || 'default';
+    const result = simulateInvestment(enterpriseId, cycleId, amount ?? 0, direction ?? '', cycle, graphStore, allCycles);
     res.json(result);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);

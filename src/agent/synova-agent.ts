@@ -136,7 +136,7 @@ export class SynovaAgent {
         },
       },
     ]);
-    proactivePush.setActionStore(new ActionStore());
+    proactivePush.setActionStore(new ActionStore(undefined, config.orgId));
     this.sentinelRunner.setProactivePush(proactivePush);
 
     // D224: UserStore 注入 enterprise 路由

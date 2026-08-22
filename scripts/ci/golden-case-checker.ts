@@ -11,6 +11,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'node:url';
 import {
   runComputeSnapshot,
   runFindingsSnapshot,
@@ -354,10 +355,9 @@ function runAllChecks(): CheckerReport {
 
 // ═══ D474: 黄金数据集阶段 ═══
 
-/** 定位仓库根（兼容 ESM + Windows，与 runAllChecks 同法） */
+/** 定位仓库根（fileURLToPath 正确解码非 ASCII 路径——K3 审计 P1-1 修复：中文目录下 URL pathname 百分号编码导致恒误拦） */
 function repoRootDir(): string {
-  const metaUrl = new URL(import.meta.url);
-  const currentDir = path.dirname(metaUrl.pathname.replace(/^\/([a-zA-Z]:)/, '$1'));
+  const currentDir = path.dirname(fileURLToPath(import.meta.url));
   return path.resolve(currentDir, '..', '..');
 }
 

@@ -1,15 +1,21 @@
 {
   "task_id": "D401",
   "title": "K3 战略咨询终版 + 分工规划信息落库（台账/TASK-ROUTING/task-state）",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "commit": "5e223c1a",
     "by": "coding",
     "at": "2026-08-16"
   },
-  "audit": null,
+  "audit": {
+    "verdict": "PASS",
+    "report": "docs/synova/audit-reports/2026-08-22-P2-batch-audit.md",
+    "at": "2026-08-22",
+    "by": "k3",
+    "note": "战略咨询终版落库"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-08-18",
-  "updated_by": "CTO"
+  "updated_at": "2026-08-22T13:29:37+00:00",
+  "updated_by": "k3"
 }

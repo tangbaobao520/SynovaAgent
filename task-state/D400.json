@@ -1,7 +1,7 @@
 {
   "task_id": "D400",
   "title": "D399 复审 CONDITIONAL PASS 收尾（D394-D398/D391 入库 + 纯净重生成 + 注释同步）",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "commit": "local-pending",
@@ -14,8 +14,14 @@
       "注释/README 同步"
     ]
   },
-  "audit": null,
+  "audit": {
+    "verdict": "PASS",
+    "report": "docs/synova/audit-reports/2026-08-22-P2-batch-audit.md",
+    "at": "2026-08-22",
+    "by": "k3",
+    "note": "D399 复审收尾"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-08-16",
-  "updated_by": "CTO"
+  "updated_at": "2026-08-22T13:29:37+00:00",
+  "updated_by": "k3"
 }

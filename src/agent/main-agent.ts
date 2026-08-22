@@ -17,7 +17,7 @@
  */
 import { createLogger } from '@synova/logger';
 import type { LoopTriggerConfig, ScaleName } from '../loops/loop-trigger-config';
-import { defaultDiagnosisHandler, defaultNavigationHandler, defaultEvolutionHandler, defaultOverflowHandler } from './loop-handlers';
+import { defaultDiagnosisHandler, defaultNavigationHandler, defaultEvolutionHandler, defaultSelfCheckHandler, defaultKnowledgeAccumulationHandler, defaultOverflowHandler } from './loop-handlers';
 import type { ConflictArbitrator } from './conflict-arbitrator';
 import { BudgetTracker } from './cost-budget';
 
@@ -280,13 +280,20 @@ export class MainAgent {
     if (loopId.includes('navigation') || loopId === 'loop-2') {
       return defaultNavigationHandler;
     }
-    if (loopId.includes('evolution') || loopId === 'loop-3' || loopId === 'loop-5') {
+    if (loopId.includes('evolution') || loopId === 'loop-3') {
       return defaultEvolutionHandler;
+    }
+    // D475 (K3 P1): loop-4/loop-5 专属处理器 — 不再落 diagnosis / 错挂 evolution
+    if (loopId.includes('self-check') || loopId === 'loop-4') {
+      return defaultSelfCheckHandler;
+    }
+    if (loopId.includes('knowledge') || loopId === 'loop-5') {
+      return defaultKnowledgeAccumulationHandler;
     }
     if (loopId.includes('overflow') || loopId === 'loop-6') {
       return defaultOverflowHandler;
     }
-    // 默认: 诊断处理器
+    // 默认: 诊断处理器（有意兜底 — 未知循环按诊断语义执行）
     return defaultDiagnosisHandler;
   }
 

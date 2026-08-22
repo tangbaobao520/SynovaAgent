@@ -39,19 +39,28 @@ export interface EdgeEval {
 }
 
 export interface GraphTraversal {
-  traverse(startNodeIds: string[], edgeTypes: string[], maxDepth?: number): TraversalResult;
+  traverse(startNodeIds: string[], edgeTypes: string[], maxDepth?: number, graphOverride?: string): TraversalResult;
   getTemporalParams(edgeId: string): TemporalParams;
   scanOutliers(resourcePoolType: string, sigmaThreshold?: number): Array<{ id: string; type: string; props: Record<string, unknown>; deviation: number }>;
   evaluateEdges(nodeIds: string[], edgeTypes: string[]): EdgeEval[];
 }
 
-export function createGraphTraversal(store: GraphStoreReader): GraphTraversal {
+/**
+ * 创建图遍历引擎。
+ *
+ * @param store - GraphStoreReader
+ * @param graph - 绑定租户图（D338 fail-closed：调用方显式传入 org 作用域 graph；
+ *                仅省略时回退 'default'，供既有 DSH 消费点（sentinel-loader）保持零行为变化）
+ */
+export function createGraphTraversal(store: GraphStoreReader, graph: string = 'default'): GraphTraversal {
   return {
     /**
      * BFS 遍历: 从 startNodeIds 出发，沿指定 edgeTypes 向外遍历。
      * 默认深度 1（一步），返回去重的节点和边。
+     * graphOverride — 单次遍历覆盖绑定 graph（仍必须显式非空串）。
      */
-    traverse(startNodeIds: string[], edgeTypes: string[], maxDepth: number = 1): TraversalResult {
+    traverse(startNodeIds: string[], edgeTypes: string[], maxDepth: number = 1, graphOverride?: string): TraversalResult {
+      const graphParam = graphOverride ?? graph;
       const visitedNodes = new Set<string>();
       const visitedEdges = new Set<string>();
       const warnings: string[] = [];
@@ -77,7 +86,7 @@ export function createGraphTraversal(store: GraphStoreReader): GraphTraversal {
 
         // 查找从当前节点出发的边
         try {
-          const outEdges = store.queryEdges(undefined, current.nodeId, undefined);
+          const outEdges = store.queryEdges(undefined, current.nodeId, undefined, graphParam);
           for (const edge of outEdges) {
             if (!visitedEdges.has(edge.id) && edgeTypes.includes(edge.type)) {
               visitedEdges.add(edge.id);
@@ -88,7 +97,7 @@ export function createGraphTraversal(store: GraphStoreReader): GraphTraversal {
                 visitedNodes.add(targetNode);
                 result.path.push(targetNode);
                 // 读取目标节点
-                const node = store.getNode(targetNode, '');
+                const node = store.getNode(targetNode, graphParam);
                 if (node) {
                   const nr = node as { type?: string; props?: Record<string, unknown> };
                   result.nodes.push({
@@ -136,7 +145,7 @@ export function createGraphTraversal(store: GraphStoreReader): GraphTraversal {
      * 对指定 resourcePoolType 的所有节点，计算其数值 props 偏离均值的 sigma 倍数。
      */
     scanOutliers(resourcePoolType: string, sigmaThreshold: number = 3): Array<{ id: string; type: string; props: Record<string, unknown>; deviation: number }> {
-      const nodes = store.queryNodes(resourcePoolType, undefined);
+      const nodes = store.queryNodes(resourcePoolType, undefined, graph);
       if (nodes.length === 0) return [];
 
       // 收集所有数值字段

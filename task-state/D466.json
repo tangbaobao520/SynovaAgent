@@ -1,13 +1,23 @@
 {
   "task_id": "D466",
   "title": "check-bypass-log 注释同步 + tag-bypass-wiring 测试跨平台修复",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
-  "impl": {"commit": "9a0a37cc", "by": "deepseek-harness", "at": "2026-08-21"},
-  "audit": null,
+  "impl": {
+    "commit": "9a0a37cc",
+    "by": "deepseek-harness",
+    "at": "2026-08-21"
+  },
+  "audit": {
+    "verdict": "PASS",
+    "report": "docs/synova/audit-reports/2026-08-22-P0-control-tower-stage1.md",
+    "at": "2026-08-22",
+    "by": "k3",
+    "note": "注释同步+跨平台；测试声称沙箱环境受限不判不实"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-08-21",
-  "updated_by": "deepseek-harness",
+  "updated_at": "2026-08-22T13:29:37+00:00",
+  "updated_by": "k3",
   "note": "控制塔减负落地项2：①check-bypass-log.sh 头部注释 fail-open→fail-closed 同步（D414 改了代码没改注释）+ 测试用例5断言认 fail-closed exit2；②tag-bypass-wiring 用例6/7 跨平台修复——macOS 系统自带 /usr/bin/python3，shim 同时提供 python+python3 + 用 sys.executable 绝对路径。tag-bypass-wiring 24/24（原4失败）",
   "priority": "P2"
 }
