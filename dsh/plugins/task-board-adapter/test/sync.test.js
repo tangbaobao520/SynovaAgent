@@ -360,7 +360,7 @@ test("syncOnce: 合并 backlog——backlog 任务与 task-state 任务一起 im
   }
 });
 
-test("syncOnce: 删除僵尸任务——看板有 task-state 无的任务被 delete", async () => {
+test("syncOnce: 降级轮（无 snapshot）零删除——防误删 Win 域 D# 卡（D502 复核契约）", async () => {
   const root = makeRepo({ "D1.json": sampleTask({ task_id: "D1", title: "一号" }) });
   const actions = [];
   let stateTasks = [{ id: "D1", createdAt: 1000 }, { id: "D999", createdAt: 1000 }, { id: "PLAN-x", createdAt: 1000 }];
@@ -373,16 +373,16 @@ test("syncOnce: 删除僵尸任务——看板有 task-state 无的任务被 del
         return { ok: true, json: async () => ({}) };
       },
     });
-    // 应有 import + delete D999（僵尸）；PLAN-x 不在 task-state 但非 backlog（本测试无 backlog 文件），应被删
+    // D502 复核后契约：无 snapshot（降级轮）零删除——Win 卡同为 D# 格式无法区分，误删是破坏性的
     const deletes = actions.filter((a) => a.kind === "delete").map((a) => a.taskId);
-    assert.ok(deletes.includes("D999"));
-    assert.equal(result.deleted, deletes.length);
+    assert.equal(deletes.length, 0, `降级轮应零删除，实际: ${deletes}`);
+    assert.equal(result.deleted, 0);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
 });
 
-test("syncOnce: 删除僵尸任务——backlog 待规划不被误删", async () => {
+test("syncOnce: 降级轮（无 snapshot）backlog 亦零删除（D502 复核契约）", async () => {
   const root = makeRepo({ "D1.json": sampleTask({ task_id: "D1", title: "一号" }) });
   const dir = join(root, "docs/synova/coordination");
   mkdirSync(dir, { recursive: true });
@@ -399,8 +399,7 @@ test("syncOnce: 删除僵尸任务——backlog 待规划不被误删", async ()
       },
     });
     const deletes = actions.filter((a) => a.kind === "delete").map((a) => a.taskId);
-    assert.ok(deletes.includes("D999"), "D999 僵尸应删");
-    assert.ok(!deletes.includes("PLAN-x"), "PLAN-x backlog 不应删");
+    assert.equal(deletes.length, 0, "降级轮（无 snapshot）零删除——僵尸等 derive 恢复后自愈");
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -562,4 +561,68 @@ test("syncOnce(snapshot): snapshot 缺失 → 回退工作区直读（usingSnaps
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+test("D502复核: 降级保护——snapshot 缺失时只删 D# 域僵尸，不误删 Win/L*/T-* 域卡", async () => {
+  // 场景：看板已有四源卡（含 L01/T-1-01/D357 Win），snapshot 文件突然损坏/被删
+  const root = makeRepo({ "D1.json": sampleTask({ task_id: "D1", title: "一号" }) });
+  const actions = [];
+  // 看板现状：D1（task-state 有）、D999（僵尸）、D357（Win 域）、L01（线卡）、T-1-01（待办）
+  const stateTasks = [
+    { id: "D1", createdAt: 1000 }, { id: "D999", createdAt: 1000 },
+    { id: "D357", createdAt: 1000 }, { id: "L01", createdAt: 1000 }, { id: "T-1-01", createdAt: 1000 },
+  ];
+  try {
+    const result = await syncOnce({
+      repoRoot: root,
+      snapshotPath: join(root, "corrupted.json"),
+      fetchImpl: async (url, opts) => {
+        if (url.includes("/state")) return { ok: true, json: async () => ({ tasks: stateTasks }) };
+        const body = JSON.parse(opts.body);
+        if (body.action.kind === "delete") actions.push(body.action.taskId);
+        return { ok: true, json: async () => ({}) };
+      },
+    });
+    // 先制造一个损坏的 snapshot 文件（readSnapshot → null → 降级）
+    assert.equal(result.usingSnapshot, false);
+    const deletes = actions;
+    assert.equal(deletes.length, 0, `降级轮应零删除（Win 的 D# 格式与 task-state 无法区分），实际删了: ${deletes}`);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("D502复核: snapshot 正常时仍删全部域僵尸（保护不扩大化）", async () => {
+  const root = mkdtempSync(join(tmpdir(), "synova-snap-"));
+  writeFileSync(join(root, "source-snapshot.json"), JSON.stringify(baseSnapshot));
+  const actions = [];
+  const stateTasks = [
+    { id: "D500", createdAt: 1 }, { id: "D338", createdAt: 1 }, { id: "L01", createdAt: 1 }, { id: "T-1-01", createdAt: 1 },
+    { id: "D777", createdAt: 1 },  // 四源皆无的真僵尸
+    { id: "L99", createdAt: 1 },   // 四源皆无的真僵尸（曾上板后被移除的线）
+  ];
+  try {
+    const result = await syncOnce({
+      repoRoot: root,
+      snapshotPath: join(root, "source-snapshot.json"),
+      fetchImpl: async (url, opts) => {
+        if (url.includes("/state")) return { ok: true, json: async () => ({ tasks: stateTasks }) };
+        const body = JSON.parse(opts.body);
+        if (body.action.kind === "delete") actions.push(body.action.taskId);
+        return { ok: true, json: async () => ({}) };
+      },
+    });
+    assert.equal(result.usingSnapshot, true);
+    assert.ok(actions.includes("D777") && actions.includes("L99"), "snapshot 模式下四源外的僵尸应全删");
+    assert.ok(!actions.includes("D338") && !actions.includes("L01") && !actions.includes("T-1-01"));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("D502复核: L00 总览卡——全绿时 done / 0% 时 todo", () => {
+  const all = mapOverallLineCard({ overall_pct: 100, lines: [{ id: 1, total: 5, verified: 5 }] });
+  assert.equal(all.task.status, "done");
+  const zero = mapOverallLineCard({ overall_pct: 0, lines: [{ id: 1, total: 5, verified: 0 }] });
+  assert.equal(zero.task.status, "todo");
 });
