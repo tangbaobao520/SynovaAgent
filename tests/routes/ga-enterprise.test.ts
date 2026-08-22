@@ -27,10 +27,12 @@ describe('D109 — ga-admin: 无mock数据', () => {
 });
 
 describe('D109 — ga-annotations: orgId 上下文', () => {
-  it('POST handler 使用 auth.orgId', () => {
+  it('POST handler 使用 auth.orgId（D338 fail-closed：无 default 回退 + ORG_REQUIRED 门禁）', () => {
     const content = readFileSync('src/routes/ga-annotations.ts', 'utf-8');
     expect(content).toContain('orgId: auth.orgId');
-    expect(content).toContain("orgId: auth.orgId || 'default'");
+    // D338 中国墙: 缺组织上下文拒绝而非回落 'default' 共享命名空间
+    expect(content).not.toContain("|| 'default'");
+    expect(content).toContain('ORG_REQUIRED');
   });
 
   it('使用 enterpriseStore 替代 MOCK_CLIENTS', () => {
@@ -46,9 +48,9 @@ describe('D109 — ga-corrections: orgId 上下文', () => {
     expect(content).toContain('orgId: auth.orgId');
   });
 
-  it('GET 纠错按 orgId 过滤', () => {
+  it('GET 纠错按 orgId 过滤（D338 fail-closed：无 default 回退）', () => {
     const content = readFileSync('src/routes/ga-corrections.ts', 'utf-8');
-    expect(content).toContain("orgId: auth.orgId || 'default'");
+    expect(content).not.toContain("|| 'default'");
     expect(content).not.toContain("orgId: 'default'");
   });
 });

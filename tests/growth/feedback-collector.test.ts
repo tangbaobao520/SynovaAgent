@@ -44,16 +44,17 @@ describe('FeedbackCollector', () => {
       });
 
       const results = collector.queryFeedback({ enterpriseId: 'e1' });
-      expect(results.length).toBe(1);
-      expect(results[0].decision).toBe('reject');
+      expect(results.degraded).toBe(false);
+      expect(results.entries.length).toBe(1);
+      expect(results.entries[0].decision).toBe('reject');
 
       db.close();
     });
   });
 
   describe('queryFeedback', () => {
-    it('无 SQLite → 空数组', () => {
-      expect(collector.queryFeedback({})).toEqual([]);
+    it('无 SQLite → 降级空结果', () => {
+      expect(collector.queryFeedback({ enterpriseId: 'e1' })).toEqual({ entries: [], degraded: true });
     });
 
     it('按 enterpriseId 过滤', () => {
@@ -66,7 +67,8 @@ describe('FeedbackCollector', () => {
       collector.collectFeedback({ enterpriseId: 'e2', actorId: 'u1', decision: 'modify', targetType: 'goal', targetId: 'g1' });
 
       const e1 = collector.queryFeedback({ enterpriseId: 'e1' });
-      expect(e1.length).toBe(1);
+      expect(e1.degraded).toBe(false);
+      expect(e1.entries.length).toBe(1);
 
       db.close();
     });
@@ -80,9 +82,10 @@ describe('FeedbackCollector', () => {
       collector.collectFeedback({ enterpriseId: 'e1', actorId: 'u1', decision: 'reject', targetType: 'sentinel_alert', targetId: 'a1' });
       collector.collectFeedback({ enterpriseId: 'e1', actorId: 'u1', decision: 'modify', targetType: 'goal', targetId: 'g1' });
 
-      const rejects = collector.queryFeedback({ decision: 'reject' });
-      expect(rejects.length).toBe(1);
-      expect(rejects[0].decision).toBe('reject');
+      const rejects = collector.queryFeedback({ enterpriseId: 'e1', decision: 'reject' });
+      expect(rejects.degraded).toBe(false);
+      expect(rejects.entries.length).toBe(1);
+      expect(rejects.entries[0].decision).toBe('reject');
 
       db.close();
     });

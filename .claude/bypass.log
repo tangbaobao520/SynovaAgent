@@ -437,6 +437,7 @@ Binary file .claude/bypass.log matches
 2026-08-22T02:30:00+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D471 | AGENT=claude-code | HASH=756d694a1048fb99b559571f890f64d3cce1277c
 2026-08-21T17:46:01Z possible-bypass diff=1831s
 2026-08-21T19:10:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=docs | AGENT=deepseek-harness | HASH=3620f6a76b033eb1deeaddf190cbc835ba4de531
+2026-08-22T20:01:22+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D338 | AGENT=Claude | HASH=a3564b4c4767bc98211dcf486242d53c589af8ad
 2026-08-22T03:05:52+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D470 | AGENT=claude | HASH=44a2fbd71c84aa6009d3aa247be37e49f0605bd8
 2026-08-22T03:10:00+08:00 | COMMITTED | pre-commit PASS (merge 引入补记: D454 Mac session 提交, 原记录未随 main 入库) | TASK_ID=merge | AGENT=claude | HASH=73aecd59d47782fbef0d6314fe3261bd9d9133da
 2026-08-22T03:10:00+08:00 | COMMITTED | pre-commit PASS (merge 引入补记: D454 Mac session 提交, 原记录未随 main 入库) | TASK_ID=merge | AGENT=claude | HASH=99633dc1ee2790141441002e975f9c19d537b5ed
@@ -523,3 +524,5 @@ Binary file .claude/bypass.log matches
 2026-08-22T23:23:26+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D501 | AGENT=dsh-cto
 2026-08-22T23:24:29+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D501 | AGENT=dsh-cto | HASH=40d058d5a930bbaefe3725314aa811116d620108
 2026-08-22T23:26:10+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D501 | AGENT=dsh-cto | HASH=c5e67984d2556e4072832ecc510ce6ea723b5503
+2026-08-22T23:53:32+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/win-d338-org-isolation
+2026-08-22T22:20:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记: 988f4f7a D501, D331 对账) | TASK_ID=D501 | AGENT=Synova-Win | HASH=988f4f7abbcbb25b6b6e708f19c612ea65f35e8d

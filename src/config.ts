@@ -15,6 +15,8 @@ export interface SynovaConfig {
   port: number;
   devMode: boolean;
   dbPath: string;
+  /** 实例级组织身份（P0-7 物理隔离语义）— SYNOVA_ORG_ID，默认 'default' */
+  orgId: string;
   llmApiKey: string;
   llmBaseUrl: string;
   llmModel: string;
@@ -90,6 +92,9 @@ export function loadConfig(): SynovaConfig {
 
   const port = parseInt(process.env.PORT || String(filePort || 3000), 10);
 
+  // 实例级组织身份 — 多租户逻辑隔离的根来源（D338）。缺省 'default' 即本实例的唯一 org
+  const orgId = process.env.SYNOVA_ORG_ID || 'default';
+
   if (!devMode && !llmApiKey && !gatewayHost) {
     log.warn('⚠️  未设置 LLM_API_KEY 且未设置 OPENCLAW_GATEWAY_HOST');
     log.warn('   诊断功能将不可用。设置 LLM_API_KEY 或 OPENCLAW_GATEWAY_HOST 后重启。');
@@ -99,5 +104,5 @@ export function loadConfig(): SynovaConfig {
 
   log.info({ port, devMode, dbPath, model: llmModel, llmConfigured }, '配置加载完成');
 
-  return { port, devMode, dbPath, llmApiKey, llmBaseUrl, llmModel, engineTokens, gatewayHost, llmConfigured, sentinel: fileSentinel };
+  return { port, devMode, dbPath, orgId, llmApiKey, llmBaseUrl, llmModel, engineTokens, gatewayHost, llmConfigured, sentinel: fileSentinel };
 }

@@ -142,7 +142,8 @@ export class DiagnosisLauncher {
       // T7b: L3 诊断模块 — 外部假设监控 + 平台依赖检查 (通过 runModules 消费)
       if (graphStore && typeof graphStore.queryNodes === 'function') {
         const store = graphStore as Parameters<typeof checkExternalAssumptions>[0];
-        const traversal = createGraphTraversal(store);
+        // D338: 绑定 teamId 作为租户图 — 诊断遍历绝不回落全局 'default' 图
+        const traversal = createGraphTraversal(store, teamId);
         checkExternalAssumptions(store, teamId, traversal)
           .then(ar => log.info({ teamId, totalAssumptions: ar.totalAssumptions, findings: ar.findings.length }, '外部假设监控完成'))
           .catch(err => log.warn({ err, teamId }, '[assumption-monitor] 异步失败'));

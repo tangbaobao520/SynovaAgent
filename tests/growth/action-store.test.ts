@@ -43,7 +43,7 @@ function createMockStore() {
 describe('ActionStore', () => {
   describe('createAction', () => {
     it('从哨兵信号创建 → 返回 Action 含完整字段', () => {
-      const store = new ActionStore(createMockStore());
+      const store = new ActionStore(createMockStore(), 'test-org');
       const action = store.createAction(BASE_FINDING, 'user-1', 'dept-sales');
       expect(action.id).toBeTruthy();
       expect(action.signalId).toBe('finding-1');
@@ -62,7 +62,7 @@ describe('ActionStore', () => {
 
   describe('updateLifecycle — 状态转换', () => {
     it('created → assigned → in_progress → completed → verified → closed 完整链', () => {
-      const store = new ActionStore(createMockStore());
+      const store = new ActionStore(createMockStore(), 'test-org');
       const action = store.createAction(BASE_FINDING);
       expect(action.lifecycle).toBe('created');
 
@@ -84,13 +84,13 @@ describe('ActionStore', () => {
     });
 
     it('created → verified（跳转）→ 拒绝', () => {
-      const store = new ActionStore(createMockStore());
+      const store = new ActionStore(createMockStore(), 'test-org');
       const action = store.createAction(BASE_FINDING);
       expect(() => store.updateLifecycle(action.id, 'verified')).toThrow('非法');
     });
 
     it('closed → 任何状态 → 拒绝', () => {
-      const store = new ActionStore(createMockStore());
+      const store = new ActionStore(createMockStore(), 'test-org');
       const action = store.createAction(BASE_FINDING);
       store.updateLifecycle(action.id, 'assigned');
       store.updateLifecycle(action.id, 'in_progress');
@@ -101,7 +101,7 @@ describe('ActionStore', () => {
     });
 
     it('不存在的 Action → 抛出 Error', () => {
-      const store = new ActionStore(createMockStore());
+      const store = new ActionStore(createMockStore(), 'test-org');
       expect(() => store.updateLifecycle('nonexistent', 'assigned')).toThrow('不存在');
     });
   });
@@ -109,7 +109,7 @@ describe('ActionStore', () => {
   describe('query 方法', () => {
     it('getActionsBySignal → 返回匹配的 Action', () => {
       const mock = createMockStore();
-      const store = new ActionStore(mock);
+      const store = new ActionStore(mock, 'test-org');
       store.createAction(BASE_FINDING);
       store.createAction({ ...BASE_FINDING, id: 'finding-2' });
       const actions = store.getActionsBySignal('finding-1');
@@ -118,7 +118,7 @@ describe('ActionStore', () => {
 
     it('getActionsByDepartment → 包含主部门和协作部门', () => {
       const mock = createMockStore();
-      const store = new ActionStore(mock);
+      const store = new ActionStore(mock, 'test-org');
       store.createAction(BASE_FINDING, 'u1', 'dept-sales');
       const sales = store.getActionsByDepartment('dept-sales');
       expect(sales.length).toBe(1);
