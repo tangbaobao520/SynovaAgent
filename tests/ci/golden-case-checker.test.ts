@@ -377,13 +377,29 @@ describe('runGoldenDatasetCheck — 黄金数据集 severity 级对比', () => {
     expect(result.diffs.some((d) => d.includes('检查数为 0'))).toBe(true);
   });
 
-  it('expectedDiagnosis.severity 与哨兵期望集合不一致 → diff（全局对比）', async () => {
+  it('expectedDiagnosis.severity 合法值（≠单哨兵期望）→ 通过（D474 复核: 结构断言不跨哨兵匹配）', async () => {
+    const { runGoldenDatasetCheck } = await import('../../scripts/ci/golden-snapshot-runner');
+    // 全局 severity=high 与唯一登记哨兵 cash-runway expected=critical 不同，
+    // 但 high 是合法值 → 不误伤（全局是聚合结果，未必等于单哨兵期望）
+    const result = runGoldenDatasetCheck(
+      {
+        datasetVersion: 'v1',
+        sentinels: { 'cash-runway': { expected: 'critical', value: 0.22 } },
+        expectedDiagnosis: { severity: 'high' },
+      },
+      { 'cash-runway': [{ cash: 100000, operatingExpense: 30000 }] },
+    );
+    expect(result.passed).toBe(true);
+    expect(result.diffs.some((d) => d.includes('expectedDiagnosis.severity'))).toBe(false);
+  });
+
+  it('expectedDiagnosis.severity 非法值 → diff（结构断言，边界）', async () => {
     const { runGoldenDatasetCheck } = await import('../../scripts/ci/golden-snapshot-runner');
     const result = runGoldenDatasetCheck(
       {
         datasetVersion: 'v1',
         sentinels: { 'cash-runway': { expected: 'critical', value: 0.22 } },
-        expectedDiagnosis: { severity: 'high' }, // 全局 vs 哨兵 critical 不一致
+        expectedDiagnosis: { severity: 'URGENT' }, // 非法 severity
       },
       { 'cash-runway': [{ cash: 100000, operatingExpense: 30000 }] },
     );

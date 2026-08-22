@@ -426,8 +426,11 @@ if (isMainModule) {
 
   const report = runAllChecks();
 
-  if (report.failedCases > 0) {
-    console.error(`\n[GATE] ${report.failedCases} 个黄金案例未通过 — F1 门禁拒绝`);
+  // D474 复核修复: main 入口必须同时检查 golden 阶段（阶段5）结果——
+  // 原实现只看 failedCases（golden-case 计数），阶段5（黄金数据集 severity 对比）失败时
+  // failedCases=0 但 summary='SOME_FAILED' → 门禁误 exit 0（红但绿）。fail-closed 修复。
+  if (report.failedCases > 0 || report.summary !== 'ALL_PASSED') {
+    console.error(`\n[GATE] ${report.failedCases} 个黄金案例未通过 或 黄金数据集阶段失败 — 门禁拒绝`);
     process.exit(1);
   } else {
     console.log(`\n[GATE] 全部 ${report.totalCases} 个黄金案例通过 — F1 门禁开放`);

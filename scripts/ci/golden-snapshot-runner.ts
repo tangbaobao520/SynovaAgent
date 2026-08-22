@@ -368,19 +368,18 @@ export function runGoldenDatasetCheck(
     }
   }
 
-  // ② expectedDiagnosis.severity 全局对比
+  // ② expectedDiagnosis.severity 结构断言（D474 复核修正: 放宽为"存在 + 合法值域"）
+  // 原实现做"全局 severity ∈ 已登记哨兵期望集合"匹配——过度约束:
+  //   全局严重度是综合诊断结果（跨哨兵聚合），未必等于任一单哨兵 expected；
+  //   未来 wani-baby 数据集重建或哨兵登记变化会误伤（代码正确但门禁红）。
+  //   修正: 只断言字段存在 + 值域合法（critical|high|medium|low|warning|healthy），
+  //   不做跨哨兵匹配（dev doc 无此对比的测试锚点，S-10 保守 descope）。
   const expectedDiagnosis = dataset.expectedDiagnosis;
   if (expectedDiagnosis && typeof expectedDiagnosis === 'object' && typeof expectedDiagnosis.severity === 'string') {
     const globalSeverity = expectedDiagnosis.severity;
-    const registrySeverities = new Set<string>();
-    for (const [sentinelName, sentinel] of Object.entries(dataset.sentinels)) {
-      if (sentinel && typeof sentinel === 'object' && typeof sentinel.expected === 'string') {
-        const computeFnName = computeFnForSentinel(sentinelName);
-        if (computeFnRegistry[computeFnName]) registrySeverities.add(sentinel.expected);
-      }
-    }
-    if (registrySeverities.size > 0 && !registrySeverities.has(globalSeverity)) {
-      diffs.push(`expectedDiagnosis.severity="${globalSeverity}" 与已登记哨兵期望集合 {${[...registrySeverities].join(', ')}} 不一致`);
+    const VALID_SEVERITIES = new Set(['critical', 'high', 'medium', 'low', 'warning', 'healthy']);
+    if (!VALID_SEVERITIES.has(globalSeverity)) {
+      diffs.push(`expectedDiagnosis.severity="${globalSeverity}" 非合法 severity 值（critical|high|medium|low|warning|healthy）`);
     }
   }
 
