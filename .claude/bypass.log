@@ -473,3 +473,5 @@ Binary file .claude/bypass.log matches
 2026-08-22T11:40:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=D500 | AGENT=dev-doc | HASH=214ac7f27d0cd00b2f8380f7c60ae720dfe4121c
 2026-08-22T07:59:08Z detected-bypass head-mismatch marker=eff66bf8513adb435545cbabd373a5fd14efc409 parent=214ac7f27d0cd00b2f8380f7c60ae720dfe4121c
 2026-08-22T15:59:30+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D500 | AGENT=dsh | HASH=4af54eb3a73d67234819dd9fb9b08d7dbd77224e
+2026-08-22T16:00:29+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/d500-session-event-sourcing
+2026-08-22T16:00:38+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D500 | AGENT=dsh | HASH=4d7edd08f6d39e5d136d0b0df408b274befecc5e
