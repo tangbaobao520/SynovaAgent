@@ -33,18 +33,22 @@ if [ -n "$EXISTING" ]; then
   # 更新 occurrences
   OCC=$(awk '/^occurrences:/{gsub(/^occurrences: */,""); print; exit}' "$EXISTING" 2>/dev/null || echo "0")
   OCC=$((OCC + 1))
-  sed -i "s/^occurrences:.*/occurrences: $OCC/" "$EXISTING" 2>/dev/null
+  # D472: -i.bak 跨平台（GNU/BSD sed 兼容；Windows 同 MSYS 无备份文件问题）
+  sed -i.bak "s/^occurrences:.*/occurrences: $OCC/" "$EXISTING" 2>/dev/null && rm -f "${EXISTING}.bak" 2>/dev/null || true
   echo "[lessons-learned] 更新已有条目: $(basename $EXISTING) (occurrences: $OCC)"
   if [ "$OCC" -ge 2 ]; then
     echo "  ⚠️  同一错误类别已出现 ${OCC} 次。建议升级 severity 为 block。"
     echo "  sed -i 's/^severity: warn/severity: block/' $EXISTING"
   fi
 else
-  # 新建条目（四态头字段，状态=proposed 与目录一致）
+  # 新建条目（D472: 头字段对齐 README 四字段契约 状态/日期/决策/理由，保留扩展字段兼容已有解析）
   cat > "$MEMFILE" << EOF
 ---
-status: proposed
-date: ${TODAY}
+状态: proposed
+日期: ${TODAY}
+决策: ${NAME}
+理由: ${DESCRIPTION}
+# 扩展字段（check-lessons-learned 专用，保留兼容）:
 name: ${NAME}
 class: ${CLASS}
 constraint: "${CONSTRAINT}"
