@@ -354,3 +354,49 @@ test("syncOnce: 合并 backlog——backlog 任务与 task-state 任务一起 im
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("syncOnce: 删除僵尸任务——看板有 task-state 无的任务被 delete", async () => {
+  const root = makeRepo({ "D1.json": sampleTask({ task_id: "D1", title: "一号" }) });
+  const actions = [];
+  let stateTasks = [{ id: "D1", createdAt: 1000 }, { id: "D999", createdAt: 1000 }, { id: "PLAN-x", createdAt: 1000 }];
+  try {
+    const result = await syncOnce({
+      repoRoot: root,
+      fetchImpl: async (url, opts) => {
+        if (url.includes("/state")) return { ok: true, json: async () => ({ tasks: stateTasks }) };
+        actions.push(JSON.parse(opts.body).action);
+        return { ok: true, json: async () => ({}) };
+      },
+    });
+    // 应有 import + delete D999（僵尸）；PLAN-x 不在 task-state 但非 backlog（本测试无 backlog 文件），应被删
+    const deletes = actions.filter((a) => a.kind === "delete").map((a) => a.taskId);
+    assert.ok(deletes.includes("D999"));
+    assert.equal(result.deleted, deletes.length);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("syncOnce: 删除僵尸任务——backlog 待规划不被误删", async () => {
+  const root = makeRepo({ "D1.json": sampleTask({ task_id: "D1", title: "一号" }) });
+  const dir = join(root, "docs/synova/coordination");
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, "board-backlog.json"), JSON.stringify({ backlog: [{ id: "PLAN-x", title: "待规划项" }] }));
+  const actions = [];
+  const stateTasks = [{ id: "D1", createdAt: 1000 }, { id: "D999", createdAt: 1000 }, { id: "PLAN-x", createdAt: 1000 }];
+  try {
+    await syncOnce({
+      repoRoot: root,
+      fetchImpl: async (url, opts) => {
+        if (url.includes("/state")) return { ok: true, json: async () => ({ tasks: stateTasks }) };
+        actions.push(JSON.parse(opts.body).action);
+        return { ok: true, json: async () => ({}) };
+      },
+    });
+    const deletes = actions.filter((a) => a.kind === "delete").map((a) => a.taskId);
+    assert.ok(deletes.includes("D999"), "D999 僵尸应删");
+    assert.ok(!deletes.includes("PLAN-x"), "PLAN-x backlog 不应删");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
