@@ -438,3 +438,4 @@ Binary file .claude/bypass.log matches
 2026-08-22T12:09:42+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D471 | AGENT=claude-code
 2026-08-22T12:10:44+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D471 | AGENT=claude-code
 2026-08-22T13:54:54+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D471 | AGENT=claude-code | HASH=b4ba61ad1c8131bf85d41abee1e5f4ffef0e6de6
+2026-08-22T19:30:32+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D471 | AGENT=claude-code | HASH=3181d7dc614f665c276272864f0771ef79a98ae7
