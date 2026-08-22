@@ -18,7 +18,8 @@ SKIP_HOOK_WRITES=0
 if git_op_window_active 2>/dev/null; then SKIP_HOOK_WRITES=1; fi
 
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-MEMORY_DIR="$ROOT/memory"
+# D472: 只读活态 — proposed + implemented；archived/rejected/索引零注入（K3 §4.2 "archived/rejected 不注入"）
+MEMORY_DIR="$ROOT/memory/notes"
 TODAY=$(date +%Y-%m-%d)
 
 # ── 1. 找到当前 task brief ──
@@ -55,7 +56,7 @@ while IFS= read -r memfile; do
       break
     fi
   done <<< "$KEYWORDS"
-done < <(find "$MEMORY_DIR" -name "*.md" -type f 2>/dev/null || true)
+done < <(find "$MEMORY_DIR/proposed" "$MEMORY_DIR/implemented" -name "*.md" -type f 2>/dev/null || true)
 
 MATCHED_MEMORIES=$(echo "$MATCHED_MEMORIES" | sort -u | grep -v '^$' || true)
 
@@ -124,7 +125,8 @@ while IFS= read -r memfile; do
     OCCURRENCES=$(awk '/^occurrences:/{gsub(/^occurrences: */,""); print; exit}' "$memfile" 2>/dev/null || echo "0")
     OCCURRENCES=$((OCCURRENCES + 1))
     if [ -z "${SKIP_HOOK_WRITES:-}" ]; then
-      sed -i "s/^occurrences:.*/occurrences: $OCCURRENCES/" "$memfile" 2>/dev/null || true
+      # D472: -i.bak 跨平台（GNU/BSD sed 兼容）
+      sed -i.bak "s/^occurrences:.*/occurrences: $OCCURRENCES/" "$memfile" 2>/dev/null && rm -f "${memfile}.bak" 2>/dev/null || true
     fi
 
     if [ "$SEVERITY" = "block" ]; then
