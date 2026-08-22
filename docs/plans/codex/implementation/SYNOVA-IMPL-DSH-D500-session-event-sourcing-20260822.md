@@ -86,13 +86,14 @@ C 线 S3-5（自诊断可信度，P0-block 已转交：完成度误判）+ S0（
 
 ## 4. What We Build
 
-### 4.1 写集 (3 修改 + 2 新建)
+### 4.1 写集 (4 修改 + 2 新建)
 
 | 文件 | 操作 | 说明 |
 |------|:---:|------|
 | [src/store/session-store.ts](src/store/session-store.ts) | 修改 | ① 新增 `session_events` 表（session_id/seq/event_type/payload_json/created_at，append-only，seq 单调 + UNIQUE(session_id, seq)）② **`addMessage()` 内部双写**：写 agent_messages（现有，兼容）+ appendEvent 写 session_events——**8 处直连调用方（cli/im-inbound/graceful-shutdown/stuck-session-detector/restart-recovery）自动获得事件流，无需逐个改调用方**（缺陷 A/B）③ `deriveMessages(sessionId)`：从事件流投影 MessageRow[]（backing getMessages）④ 崩溃恢复：基于持久化 lastSeq 续写（不内存回滚），缺陷 A/B/C |
 | [src/orchestrator/session-manager.ts](src/orchestrator/session-manager.ts) | 修改 | ① 注入 SessionStore（constructor 可选参数，兼容 bootstrap 无注入的现状）② `addMessage(msg, sessionId?)` 双写：内存数组（现逻辑，压缩用）+ 经 sessionStore.addMessage 持久化（若注入且传 sessionId）③ 新增 model-visible⟺logged 断言：每次 addMessage 后校验事件已落 log，未落 → log.error + degraded（缺陷 C） |
 | [src/agent/conversation-engine.ts](src/agent/conversation-engine.ts) | 修改 | sessionId 传参：`sessionManager?.addMessage(msg, sessionId)`（现 :616 无 sessionId → 事件无归属；conversation-engine 已有 this.sessionId 字段 :358/:408，缺陷 B 接线） |
+| [src/deploy/bootstrap.ts](src/deploy/bootstrap.ts) | 修改 | **生产装配（2026-08-22 实现补充——写集表初始未列，§8 架构边界已预示"SessionManager 经 bootstrap 注入 SessionStore 不触门禁"）**：`new SessionManager({}, new SessionStore(db))` 注入事件存储——无此装配则生产路径事件流不生效（铁律 4 交付不完整） |
 | [tests/store/session-event-log.test.ts](tests/store/session-event-log.test.ts) | 新建 | 事件流测试（red→green，见 §5） |
 | [tests/orchestrator/session-manager-eventlog.test.ts](tests/orchestrator/session-manager-eventlog.test.ts) | 新建 | 持久化 + 断言测试（red→green，见 §5） |
 
@@ -137,10 +138,13 @@ CREATE INDEX IF NOT EXISTS idx_session_events_sess ON session_events(session_id,
  * deriveMessages — 从事件流投影消息历史
  * 契约:
  *   @input  — sessionId
- *   @output — MessageRow[]（按 seq 排序；仅投影 user/assistant/tool 三类 surface 事件，log-only 事件跳过）
- *   @degraded — 事件流含半截事件（缺尾部）→ log.warn + 返回可重建前缀 + degraded: true（铁律 24）
+ *   @output — MessageRow[]（按 seq 排序；投影 message/tool_result 两类 surface 事件，log-only 跳过）
+ *   @degraded — 事件流含损坏 payload（半截）→ log.warn + 返回可重建前缀 + degraded: true（铁律 24）
  *   空事件流 → []（边界）
  *   model-visible ⟺ logged: 投影输出 = 模型看到的输入（不变量，测试断言）
+ *   ⚠️ 2026-08-22 实现修正：tool_result 事件投影为 assistant 角色（非 "tool"）——
+ *      Synova 消息契约 MessageRow.role = system|user|assistant（agent_messages 表 CHECK 同），
+ *      conversation-engine 用 assistant 承载工具结果，无独立 tool 角色；对齐现有模型避免类型膨胀。
  */
 ```
 

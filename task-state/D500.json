@@ -1,18 +1,30 @@
 {
   "task_id": "D500",
   "title": "事件溯源 session log（Stage1-D1，取代 Win D469 草稿）",
-  "status": "spec_done",
+  "status": "impl_done",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D500-session-event-sourcing-20260822.md",
     "commit": "pending",
     "by": "dev-doc",
     "at": "2026-08-22"
   },
-  "impl": null,
+  "impl": {
+    "commit": "pending",
+    "by": "dsh",
+    "at": "2026-08-22",
+    "files": [
+      "src/store/session-store.ts",
+      "src/orchestrator/session-manager.ts",
+      "src/agent/conversation-engine.ts",
+      "src/deploy/bootstrap.ts",
+      "tests/store/session-event-log.test.ts",
+      "tests/orchestrator/session-manager-eventlog.test.ts"
+    ]
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-08-21T19:05:12+00:00",
-  "updated_by": "dev-doc",
-  "note": "D1 事件溯源 spec 已交付（gatekeeper ALL PASS + verify-parallel 零交集）。取代 Win D469 草稿（gatekeeper FAIL：C3/C4 缺失、无 north-star、未登记）。⚠️ 涉及 src/store 归 Win，编码前须与 Win 核对写集（S-7/S-8）",
+  "updated_at": "2026-08-22T14:30:00+00:00",
+  "updated_by": "dsh",
+  "note": "D1 事件溯源 impl 已交付。session_events 表 + appendEvent（MAX(seq) 续写防回退）+ deriveMessages 投影 + addMessage 双写下沉（8 处直连调用方自动受益）+ SessionManager 注入断言 + bootstrap 生产装配。Win 协调：grep 实证 src/store 无在途冲突（desktop-phase0-auth 删 title 分支未合并，风险已标注）。测试 17/17 绿 + tsc 零错误 + store/orchestrator 197/197 回归。",
   "priority": "P1"
 }

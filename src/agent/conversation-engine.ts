@@ -613,7 +613,8 @@ export class ConversationEngine {
                 }
               }
             }
-            this.sessionManager?.addMessage({ role: 'user', content: userInput });
+            // D500: 传 sessionId 使事件可归属（model-visible⟺logged 根基；无 id 时走内存态兼容）
+            this.sessionManager?.addMessage({ role: 'user', content: userInput }, this.sessionId);
           }
         } catch (err: any) { log.warn({ err: err.message }, '意图分类失败，降级为原有轮次逻辑'); }
       }

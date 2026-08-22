@@ -52,10 +52,36 @@ export interface ConversationState {
   startedAt: string;
 }
 
+// ═══ D500: 事件溯源类型 ═══
+
+/** 事件类型（surface 事件 = 投影到消息历史的；log-only 事件 = 仅审计） */
+export type SessionEventType = 'message' | 'tool_result' | 'system';
+
+/** session_events 表行 */
+export interface SessionEvent {
+  id: number;
+  sessionId: string;
+  seq: number;
+  eventType: SessionEventType;
+  payloadJson: string;
+  createdAt: string;
+}
+
+/** appendEvent 结果契约（铁律 24/31: 失败显式降级） */
+export type AppendEventResult =
+  | { ok: true; seq: number }
+  | { ok: false; degraded: true; error: string };
+
 // ═══ SessionStore ═══
 
 export class SessionStore {
   private db: Database.Database;
+
+  /**
+   * D500: 降级信号传播（铁律 31）——appendEvent 双写失败时置 true，
+   * 调用方（SessionManager model-visible⟺logged 断言）检查。
+   */
+  lastDegraded = false;
 
   constructor(db: Database.Database) {
     this.db = db;
@@ -95,6 +121,19 @@ export class SessionStore {
         content,
         tokenize='unicode61'
       );
+
+      -- D500: 事件溯源 append-only 事件流（会话唯一事实源）
+      -- seq 单调 + UNIQUE(session_id, seq) 物理防并发 seq 重复（2026-08-22 缺陷①防线）
+      CREATE TABLE IF NOT EXISTS session_events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_id TEXT NOT NULL REFERENCES agent_sessions(id) ON DELETE CASCADE,
+        seq INTEGER NOT NULL,
+        event_type TEXT NOT NULL CHECK(event_type IN ('message','tool_result','system')),
+        payload_json TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        UNIQUE(session_id, seq)
+      );
+      CREATE INDEX IF NOT EXISTS idx_session_events_sess ON session_events(session_id, seq);
     `);
 
     // 诊断检查点表
@@ -195,11 +234,114 @@ export class SessionStore {
 
   // ═══ Messages ═══
 
+  /**
+   * D500: 消息写入（双写——agent_messages 兼容 + session_events 事件流下沉）。
+   * 契约:
+   *   @input  — sessionId, role, content
+   *   @output — void（事件双写失败 → lastDegraded=true，铁律 31 降级信号传播）
+   *   双写下沉决策（2026-08-22）: 8 处直连生产调用方（cli/im-inbound/graceful-shutdown/
+   *     stuck-session-detector/restart-recovery）经本方法写入，自动获得事件流，
+   *     无需逐个修改调用方。
+   */
   addMessage(sessionId: string, role: MessageRow['role'], content: string): void {
     this.db.prepare('INSERT INTO agent_messages (session_id, role, content) VALUES (?,?,?)')
       .run(sessionId, role, content);
+    // D500: 事件流双写（append-only，model-visible⟺logged 根基）
+    const res = this.appendEvent(sessionId, 'message', { role, content });
+    if (!res.ok) {
+      log.error({ sessionId, role, error: res.error }, 'appendEvent 双写失败 — model-visible⟺logged 断裂');
+      this.lastDegraded = true;
+    }
     this.db.prepare('UPDATE agent_sessions SET updated_at=? WHERE id=?')
       .run(new Date().toISOString(), sessionId);
+  }
+
+  /**
+   * D500: append-only 事件写入。
+   * 契约（铁律 47 — 契约优先）:
+   *   @input  — sessionId, eventType, payload（payload 序列化为 JSON 存 payload_json）
+   *   @output — { ok: true, seq } | { ok: false, degraded: true, error }（写入失败显式降级，铁律 24/31）
+   *   @error  — UNIQUE(session_id, seq) 冲突 → log.error + degraded（并发防线，seq 不重放）
+   *   崩溃恢复: 续写基于 SELECT MAX(seq)（持久化 lastSeq），禁止内存 seq 回退（2026-08-22 缺陷②防线）
+   *   seq 单调: 基于持久化 MAX(seq)+1，无内存计数器（缺陷①防线）
+   */
+  appendEvent(sessionId: string, eventType: SessionEventType, payload: unknown): AppendEventResult {
+    try {
+      // 持久化 lastSeq: 基于 MAX(seq) 续写，禁止内存回退（缺陷②防线）
+      const row = this.db.prepare('SELECT MAX(seq) as max_seq FROM session_events WHERE session_id=?')
+        .get(sessionId) as SqliteRow | undefined;
+      const nextSeq = Number((row?.max_seq as number | null) ?? 0) + 1;
+      this.db.prepare(
+        'INSERT INTO session_events (session_id, seq, event_type, payload_json) VALUES (?,?,?,?)'
+      ).run(sessionId, nextSeq, eventType, JSON.stringify(payload));
+      return { ok: true, seq: nextSeq };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.error({ sessionId, eventType, error: msg }, 'appendEvent 写入失败 — degraded');
+      return { ok: false, degraded: true, error: msg };
+    }
+  }
+
+  /** 读取某会话全部事件（按 seq 升序） */
+  getEvents(sessionId: string): SessionEvent[] {
+    const rows = this.db.prepare(
+      'SELECT * FROM session_events WHERE session_id=? ORDER BY seq ASC'
+    ).all(sessionId) as SqliteRow[];
+    return rows.map((r) => ({
+      id: Number(r.id), sessionId: r.session_id as string, seq: Number(r.seq),
+      eventType: r.event_type as SessionEventType,
+      payloadJson: r.payload_json as string, createdAt: r.created_at as string,
+    }));
+  }
+
+  /**
+   * D500: 从事件流投影消息历史（dsh-session deriveMessages 范式，B1）。
+   * 契约:
+   *   @input  — sessionId
+   *   @output — MessageRow[]（按 seq 排序；投影 message/tool_result 两类 surface 事件，log-only 跳过）
+   *   @degraded — 事件流含半截事件（缺尾部）→ log.warn + 返回可重建前缀 + lastDegraded=true（铁律 24）
+   *   空事件流 → []（边界）
+   *   model-visible ⟺ logged: 投影输出 = 模型看到的输入（不变量，测试断言）
+   */
+  deriveMessages(sessionId: string): MessageRow[] {
+    const events = this.getEvents(sessionId);
+    const messages: MessageRow[] = [];
+    let truncated = false;
+    for (let i = 0; i < events.length; i++) {
+      const ev = events[i];
+      try {
+        const payload = JSON.parse(ev.payloadJson) as { role?: string; content?: string };
+        if (ev.eventType !== 'message' && ev.eventType !== 'tool_result') continue; // log-only 跳过
+        // tool_result 事件投影为 assistant 角色（2026-08-22 实测修正：Synova 消息契约
+        // MessageRow.role = system|user|assistant，conversation-engine 用 assistant 承载工具结果；
+        // 无独立 tool 角色——对齐现有模型，避免 MessageRow 类型膨胀）
+        const role = ev.eventType === 'tool_result' ? 'assistant' : (payload.role as MessageRow['role']);
+        if (role !== 'user' && role !== 'assistant' && role !== 'system') {
+          log.warn({ sessionId, seq: ev.seq }, '事件 payload 角色非法 — 跳过');
+          continue;
+        }
+        messages.push({
+          id: Number(ev.seq), sessionId, role,
+          content: payload.content ?? '', timestamp: ev.createdAt,
+        });
+      } catch (err) {
+        // payload 非 JSON 或半截 → 截断检测
+        truncated = true;
+        log.warn({ sessionId, seq: ev.seq, err }, '事件 payload 解析失败 — 投影截断');
+        break; // 半截事件: 停止投影（保留前缀），degraded
+      }
+    }
+    if (truncated) {
+      this.lastDegraded = true;
+    }
+    return messages;
+  }
+
+  /** D500 测试辅助: 把某会话最后一条事件 payload 改成非法 JSON（模拟物理半截/损坏） */
+  corruptLastEventPayload(sessionId: string): void {
+    this.db.prepare(
+      "UPDATE session_events SET payload_json='{broken' WHERE session_id=? AND seq=(SELECT MAX(seq) FROM session_events WHERE session_id=?)"
+    ).run(sessionId, sessionId);
   }
 
   getMessages(sessionId: string): MessageRow[] {
