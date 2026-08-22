@@ -1,0 +1,28 @@
+{
+  "task_id": "D473",
+  "title": "guard 循环卫生+超时（Stage1-D4）",
+  "status": "impl_done",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D473-guard-loop-hygiene-20260822.md",
+    "commit": "cc8f2c2a",
+    "by": "dev-doc",
+    "at": "2026-08-22"
+  },
+  "impl": {
+    "commit": "cc8f2c2a",
+    "by": "dsh",
+    "at": "2026-08-22",
+    "files": [
+      "src/agent/tools.ts",
+      "src/l3/tool-guard.ts",
+      "src/agent/tool-loop-executor.ts",
+      "tests/l3/tool-guard.test.ts"
+    ]
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-22T13:05:00+00:00",
+  "updated_by": "dsh",
+  "note": "D4 guard impl 已交付（cc8f2c2a，4 文件，pre-commit 13 组全过）。ToolDefinition.timeoutMs + ToolTimeoutError（结构化 TOOL_TIMEOUT）+ ToolGuard 分级阶梯 [2 提醒/3 阻断]（2026-08-22 修正：MAX_TOOL_ROUNDS=3 下 5 次不可达）+ 提醒注入两路径。测试 31/31 绿（原 19 回归 + 新增 12）。",
+  "priority": "P1"
+}

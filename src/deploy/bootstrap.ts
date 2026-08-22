@@ -20,6 +20,7 @@ import { EventStore } from '../orchestrator/event-store';
 import { EventBus } from '../orchestrator/event-bus';
 import { HookRunner } from '../orchestrator/hook-runner';
 import { SessionManager } from '../orchestrator/session-manager';
+import { SessionStore } from '../store/session-store';
 import { PhaseStateMachine } from '../orchestrator/phase-state-machine';
 import { createOrchestrationWiring, type OrchestrationWiring } from '../orchestrator/wiring';
 import { ToolRegistry } from '../agent/tools';
@@ -676,7 +677,9 @@ export class Bootstrap {
         const eventStore = new EventStore(db);
         const eventBus = new EventBus(eventStore);
         const hookRunner = new HookRunner();
-        const sessionManager = new SessionManager();
+        // D500: 注入 SessionStore 启用事件溯源（model-visible⟺logged 生产装配；
+        // SessionManager 注入为可选参数，无 db 环境仍兼容）
+        const sessionManager = new SessionManager({}, new SessionStore(db));
         const stateMachine = new PhaseStateMachine({
           0: { label: '目标访谈', required: true, maxDurationMs: 600_000 },
           1: { label: '数据采集', required: true, maxDurationMs: 120_000 },

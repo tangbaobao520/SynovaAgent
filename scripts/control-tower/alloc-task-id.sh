@@ -88,6 +88,9 @@ MAX=$(printf "%s\n" "$ALL_USED" | tail -1 | grep -E '^[0-9]+$' || echo "0")
 MAX="${MAX:-0}"
 [ -z "$MAX" ] && MAX="0"
 NEXT=$((10#$MAX + 1))
+# D500 起步（2026-08-22 创始人定）：Mac/DSH 线编号与 Win 段撞车（D471 冲突），
+# 500 起避开 Win 段。Win 继续用 <500 段，两线互不干扰。
+[ "$NEXT" -lt 500 ] && NEXT=500
 NEW_ID="D${NEXT}"
 
 if [ "$DRY_RUN" = true ]; then

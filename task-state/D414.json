@@ -1,11 +1,16 @@
 {
   "task_id": "D414",
   "title": "u1-bypass-evidence-chain",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": null,
-  "impl": null,
+  "impl": {
+    "commit": "pending",
+    "by": "deepseek-harness",
+    "at": "2026-08-22"
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-08-17",
-  "updated_by": "alloc-task-id"
+  "updated_at": "2026-08-22",
+  "updated_by": "deepseek-harness",
+  "note": " | 2026-08-22 CTO 核实回填：u1-bypass-evidence-chain → check-bypass-log.sh 已接线（pre-push/pre-audit）"
 }
