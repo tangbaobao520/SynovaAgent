@@ -1,7 +1,7 @@
 {
   "task_id": "D472",
   "title": "Agent Notes 四态铁律结构化（Stage1-D2）",
-  "status": "impl_done",
+  "status": "audited",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D472-notes-lifecycle-hardening-20260822.md",
     "commit": "35cb0867",
@@ -25,10 +25,16 @@
       "memory/notes/archived/2026-08-17-test-d406.md"
     ]
   },
-  "audit": null,
+  "audit": {
+    "verdict": "PASS",
+    "report": "docs/synova/audit-reports/2026-08-22-P0-control-tower-stage1.md",
+    "at": "2026-08-22",
+    "by": "k3",
+    "note": "Notes 四态；CT-34 绕过修复属实；测试 18/18+4/4"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-08-22T13:00:00+00:00",
-  "updated_by": "dsh",
+  "updated_at": "2026-08-22T13:29:37+00:00",
+  "updated_by": "k3",
   "note": "D2 Agent Notes 四态铁律结构化 impl 已交付（35cb0867，14 文件，pre-commit 13 组全过）。hook 注入过滤（archived 零注入）+ proposed→implemented 迁移门禁（真实僵尸 D406 被点名并顺手归档）+ 字段契约统一。测试 21/21 绿。",
   "priority": "P1"
 }

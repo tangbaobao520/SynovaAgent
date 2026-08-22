@@ -1,7 +1,7 @@
 {
   "task_id": "D386",
   "title": "修复 sentinel-loader.test.ts 断言容忍规范外哨兵 computes 空（CI Vitest 预存红）",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "commit": "7bc829bf",
@@ -11,8 +11,14 @@
       "Vitest 断言修复（CI 预存红消除）"
     ]
   },
-  "audit": null,
+  "audit": {
+    "verdict": "PASS",
+    "report": "docs/synova/audit-reports/2026-08-22-P2-batch-audit.md",
+    "at": "2026-08-22",
+    "by": "k3",
+    "note": "sentinel-loader 测试容忍修复"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-08-16",
-  "updated_by": "CTO"
+  "updated_at": "2026-08-22T13:29:37+00:00",
+  "updated_by": "k3"
 }

@@ -1,7 +1,7 @@
 {
   "task_id": "D440",
   "title": "控制台自动生成接 CI（dashboard-auto.yml）",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "commit": "local",
@@ -9,9 +9,15 @@
     "at": "2026-08-18",
     "note": ".github/workflows/dashboard-auto.yml：push main 自动跑 generate-dashboard + founder-truth --offline，产物变化开 bot PR"
   },
-  "audit": null,
+  "audit": {
+    "verdict": "PASS",
+    "report": "docs/synova/audit-reports/2026-08-22-P2-batch-audit.md",
+    "at": "2026-08-22",
+    "by": "k3",
+    "note": "dashboard-auto CI 修复"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-08-18",
-  "updated_by": "CTO",
+  "updated_at": "2026-08-22T13:29:37+00:00",
+  "updated_by": "k3",
   "note": "修 M3 机制未接线：控制台手动生成→CI 自动。复用 product-progress bot 分支模式"
 }

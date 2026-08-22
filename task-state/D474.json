@@ -1,7 +1,7 @@
 {
   "task_id": "D474",
   "title": "snapshot keyless 回放门禁（Stage1-D3）",
-  "status": "impl_done",
+  "status": "audited",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D474-golden-dataset-gate-20260822.md",
     "commit": "b25d05c1",
@@ -19,10 +19,16 @@
       "tests/ci/golden-case-checker.test.ts"
     ]
   },
-  "audit": null,
+  "audit": {
+    "verdict": "CONDITIONAL PASS",
+    "report": "docs/synova/audit-reports/2026-08-22-P0-control-tower-stage1.md",
+    "at": "2026-08-22",
+    "by": "k3",
+    "note": "P1-1 repoRootDir 非 ASCII 路径 bug（中文路径恒误拦）；测试 2 失败=审计工作区路径编码环境依赖"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-08-22T13:10:00+00:00",
-  "updated_by": "dsh",
+  "updated_at": "2026-08-22T13:29:37+00:00",
+  "updated_by": "k3",
   "note": "D3 snapshot impl 已交付（b25d05c1，4 文件，pre-commit 13 组全过）。recordComputeSnapshot（keyless 录制）+ runGoldenDatasetCheck（severity 级对比，findings 层显式 descope S-10）+ runAllChecks 阶段 5 + --record 模式 + pre-push 接线 check-golden-regression --verify-only。红-绿演练机器复现（改坏阈值 → 红，恢复 → 绿）。测试 35/35 绿。",
   "priority": "P1"
 }

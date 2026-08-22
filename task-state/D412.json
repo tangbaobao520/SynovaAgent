@@ -1,16 +1,22 @@
 {
   "task_id": "D412",
   "title": "u3-artifact-gate",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "commit": "pending",
     "by": "deepseek-harness",
     "at": "2026-08-22"
   },
-  "audit": null,
+  "audit": {
+    "verdict": "PASS",
+    "report": "docs/synova/audit-reports/2026-08-22-P1-gs-deploy-u.md",
+    "at": "2026-08-22",
+    "by": "k3",
+    "note": "u3-artifact-gate 接线核实（08-17 终审引用）"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-08-22",
-  "updated_by": "deepseek-harness",
+  "updated_at": "2026-08-22T13:29:37+00:00",
+  "updated_by": "k3",
   "note": " | 2026-08-22 CTO 核实回填：u3-artifact-gate → gen-cto-health.py 已接线（pre-audit-summary/check-orphan-worktrees）"
 }

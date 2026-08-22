@@ -1,12 +1,18 @@
 {
   "task_id": "D409",
   "title": "cto-taskstate-consistency",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": null,
-  "audit": null,
+  "audit": {
+    "verdict": "PASS",
+    "report": "docs/synova/audit-reports/2026-08-22-P2-batch-audit.md",
+    "at": "2026-08-22",
+    "by": "k3",
+    "note": "task-state 三件套一致性"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-08-17",
-  "updated_by": "CTO",
+  "updated_at": "2026-08-22T13:29:37+00:00",
+  "updated_by": "k3",
   "note": "task-state 三件套一致性修正：D356/D379/D395/D396/D406 状态对齐物理工件，入 main b7ad28d2"
 }
