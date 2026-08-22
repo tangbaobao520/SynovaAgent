@@ -36,12 +36,20 @@ interface FinancialSchema {
   optionalProps: Record<string, string>;
 }
 
+/** 节点类型 JSON Schema 结构（resource/ 或 outcome/；optionalProps 值形态不校验，仅消费 keys） */
+interface NodeTypeSchema {
+  requiredProps: string[];
+  optionalProps: Record<string, unknown>;
+}
+
 /** 数据写入结果 */
 export interface IngestResult {
   ok: boolean;
   nodeType: string;
   nodesCreated: number;
   errors: string[];
+  /** D470: 跳过/降级信号（铁律 31 信号传播，非静默） */
+  warnings: string[];
 }
 
 /**
@@ -106,12 +114,45 @@ export function loadFinancialSchema(): FinancialSchema {
 }
 
 /**
+ * 按目标节点类型加载 JSON Schema 用于字段白名单校验（D470: 契约对齐）。
+ *
+ * 契约:
+ *   输入: targetNodeType（mapping.targetNodeType，单词 PascalCase，如 Client/Person/Operational）
+ *   输出: { requiredProps, optionalProps } 或 null
+ *   降级: Financial 显式回退 loadFinancialSchema()（向后兼容 legacy 空白名单语义）；
+ *         schema 文件缺失/解析失败 → log.warn + null，调用方 fail-open 并记录 warnings 信号。
+ *
+ * 搜索顺序: resource/{lower(targetNodeType)}.json → outcome/ 同名文件
+ * （约定: 文件名全小写 ↔ targetNodeType 单词 PascalCase，当前 8 个映射类型均成立）。
+ */
+export function loadNodeTypeSchema(targetNodeType: string): NodeTypeSchema | null {
+  // D470: Financial 回退 financial.json（向后兼容 legacy 空白名单语义）
+  if (targetNodeType === 'Financial') {
+    return loadFinancialSchema();
+  }
+  const fileName = `${targetNodeType.toLowerCase()}.json`;
+  for (const dir of ['resource', 'outcome']) {
+    const path = join(process.cwd(), 'extensions', 'ontology', dir, fileName);
+    if (!existsSync(path)) continue;
+    try {
+      return JSON.parse(readFileSync(path, 'utf-8')) as NodeTypeSchema;
+    } catch (err: unknown) {
+      log.warn({ err, targetNodeType, dir }, '节点类型 Schema 解析失败');
+      return null;
+    }
+  }
+  log.warn({ targetNodeType }, '节点类型 Schema 不存在 — 跳过字段校验（fail-open）');
+  return null;
+}
+
+/**
  * 将一行数据写入 GraphStore。
  * @param store - GraphStore 实例（需有 createNode 方法）
  * @param mapping - 字段映射配置
  * @param row - 一行数据 (externalField → value)
  * @param graph - 图命名空间
- * @returns nodeId
+ * @param validProps - 目标节点类型 schema 白名单；undefined = 跳过校验（fail-open）
+ * @returns nodeId + errors + warnings（warnings 记录被白名单跳过的字段，非静默信号）
  */
 export async function ingestRow(
   store: { createNode(type: string, props: Record<string, unknown>, graph: string): string },
@@ -119,14 +160,17 @@ export async function ingestRow(
   row: Record<string, unknown>,
   graph = 'default',
   validProps?: Set<string>,
-): Promise<{ nodeId: string; errors: string[] }> {
+): Promise<{ nodeId: string; errors: string[]; warnings: string[] }> {
   const props: Record<string, unknown> = { financialType: mapping.name };
   const errors: string[] = [];
+  const warnings: string[] = [];
 
   for (const m of mapping.mappings) {
-    // D4: 字段名校验 — 不在 financial Schema 中则跳过
+    // D4/D470: 字段名校验 — 不在目标节点类型 Schema 中则跳过（warnings 非静默）
     if (validProps && !validProps.has(m.prop)) {
-      log.warn({ prop: m.prop }, '字段不在financial Schema中→跳过');
+      const msg = `字段 ${m.prop} 不在 ${mapping.targetNodeType} Schema 中→跳过`;
+      log.warn({ prop: m.prop, targetNodeType: mapping.targetNodeType }, msg);
+      warnings.push(msg);
       continue;
     }
     const raw = row[m.externalField];
@@ -166,11 +210,11 @@ export async function ingestRow(
 
   try {
     const nodeId = store.createNode(mapping.targetNodeType, props, graph);
-    return { nodeId, errors };
+    return { nodeId, errors, warnings };
   } catch (err: unknown) {
     log.warn({ err: err instanceof Error ? err.message : String(err) }, "写入失败");
     const msg = err instanceof Error ? err.message : String(err);
-    return { nodeId: '', errors: [msg] };
+    return { nodeId: '', errors: [msg], warnings };
   }
 }
 
@@ -183,24 +227,35 @@ export async function ingestBatch(
   rows: Array<Record<string, unknown>>,
   graph = 'default',
 ): Promise<IngestResult> {
-  // D4: 加载 financial.json Schema 做字段校验
-  const schema = loadFinancialSchema();
-  const validPropNames = new Set([...Object.keys(schema.optionalProps), ...schema.requiredProps]);
+  // D470: 按目标节点类型加载 schema 做字段白名单校验（替代 financial-only）
+  const schema = loadNodeTypeSchema(mapping.targetNodeType);
+  const allWarnings: string[] = [];
+  let validPropNames: Set<string> | undefined;
+  if (schema) {
+    validPropNames = new Set([...Object.keys(schema.optionalProps), ...schema.requiredProps]);
+  } else {
+    // 目标 schema 缺失 → fail-open 不阻断上传，warnings 可追溯（铁律 24/31）
+    const msg = `目标 Schema 缺失: ${mapping.targetNodeType} → 跳过字段校验（fail-open）`;
+    log.warn({ targetNodeType: mapping.targetNodeType }, msg);
+    allWarnings.push(msg);
+  }
 
   let nodesCreated = 0;
   const allErrors: string[] = [];
 
   for (const row of rows) {
-    const { nodeId, errors } = await ingestRow(store, mapping, row, graph, validPropNames);
+    const { nodeId, errors, warnings } = await ingestRow(store, mapping, row, graph, validPropNames);
     if (nodeId) nodesCreated++;
     allErrors.push(...errors);
+    allWarnings.push(...warnings);
   }
 
-  log.info({ mapping: mapping.name, nodesCreated, errors: allErrors.length }, '数据接入完成');
+  log.info({ mapping: mapping.name, nodesCreated, errors: allErrors.length, warnings: allWarnings.length }, '数据接入完成');
   return {
     ok: allErrors.length === 0 || nodesCreated > 0,
     nodeType: mapping.targetNodeType,
     nodesCreated,
     errors: allErrors.slice(0, 20), // 前20条错误
+    warnings: allWarnings.slice(0, 20), // 前20条警告
   };
 }

@@ -9,6 +9,8 @@
     { "externalField": "品牌知名度", "prop": "brand_awareness", "type": "number" },
     { "externalField": "客户集中度", "prop": "client_concentration_hhi", "type": "number" },
     { "externalField": "流失率", "prop": "churn_rate", "type": "number" },
+    { "externalField": "收入", "prop": "revenue", "type": "number" },
+    { "externalField": "客户状态", "prop": "status", "type": "string" },
     { "externalField": "期间", "prop": "period", "type": "string" }
   ]
 }
