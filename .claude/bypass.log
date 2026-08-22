@@ -485,3 +485,14 @@ Binary file .claude/bypass.log matches
 2026-08-22T12:30:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=docs | AGENT=deepseek-harness | HASH=a02ef0cbdafeb264f12e449f5df3f607e1239660
 2026-08-22T13:00:18Z possible-bypass diff=17980s
 2026-08-22T13:00:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=docs | AGENT=deepseek-harness | HASH=ff404af26485b0b9f61af026ee3232ab7e03ca8a
+2026-08-22T13:00:18Z possible-bypass diff=17980s
+2026-08-22T13:44:28Z possible-bypass diff=20630s
+2026-08-22T13:30:00+08:00 | COMMITTED | pre-commit PASS (纯文档 CT-34) | TASK_ID=docs | AGENT=deepseek-harness | HASH=69818d86b078cc99b4cd580be61c8c1fd6e94776
+2026-08-22T13:40:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=docs | AGENT=deepseek-harness | HASH=9502adbb2ac1bc770206d9841f5521d3533938da
+2026-08-22T13:40:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=docs | AGENT=deepseek-harness | HASH=69818d86b078cc99b4cd580be61c8c1fd6e94776
+2026-08-22T13:40:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=docs | AGENT=deepseek-harness | HASH=52b2641edb2279a6f8230f3310d34a5b392d29a4
+2026-08-22T13:40:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记) | TASK_ID=docs | AGENT=deepseek-harness | HASH=ff404af26485b0b9f61af026ee3232ab7e03ca8a
+2026-08-22T14:07:18Z possible-bypass diff=22000s
+2026-08-22T13:50:00+08:00 | COMMITTED | pre-commit PASS (合并补记) | TASK_ID=docs | AGENT=deepseek-harness | HASH=1414ed53aa77c4fe0b7c0337012bc01f61d9d032
+2026-08-22T13:50:00+08:00 | COMMITTED | pre-commit PASS (合并补记) | TASK_ID=docs | AGENT=deepseek-harness | HASH=9502adbb2ac1bc770206d9841f5521d3533938da
+2026-08-22T13:50:00+08:00 | COMMITTED | pre-commit PASS (合并补记) | TASK_ID=docs | AGENT=deepseek-harness | HASH=69818d86b078cc99b4cd580be61c8c1fd6e94776
