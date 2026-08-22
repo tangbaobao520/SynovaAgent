@@ -72,7 +72,8 @@ export async function executePurge(
   const gs = graphStore as GraphStore;
   const sessionStore = new SessionStore(getDatabase());
   const memoryStore = getAgentMemoryStore();
-  const purger = new DataPurger(gs, sessionStore, memoryStore);
+  // D338: 清除操作显式绑定 tenantId 租户图，绝不回落全局 'default'
+  const purger = new DataPurger(gs, sessionStore, memoryStore, tenantId);
 
   const result = await purger.purge(tenantId, immediate);
   log.info({ tenantId, purgeId: result.job.id }, '数据清除已发起');

@@ -79,6 +79,7 @@ const DEFAULT_CONSTRAINTS: ExecutionConstraint[] = [
  * @returns InvestmentSimulationResult
  */
 export function simulateInvestment(
+  enterpriseId: string,
   cycleId: string,
   amount: number,
   direction: string,
@@ -86,8 +87,9 @@ export function simulateInvestment(
   store: GraphStore,
   allCycles: CycleConfig[],
 ): InvestmentSimulationResult {
-  const latest = getLatestSnapshot('default', cycleId, store);
-  const snapshots = getCycleSnapshots('default', cycleId, store);
+  // D338 缺陷 C 消费侧: 快照图按 `${enterpriseId}:cycles` 作用域，不得硬编码 'default'
+  const latest = getLatestSnapshot(enterpriseId, cycleId, store);
+  const snapshots = getCycleSnapshots(enterpriseId, cycleId, store);
 
   // 传导方向模拟
   const nodes = cycle.nodes.map(n => n.label).join(' → ');
@@ -122,8 +124,8 @@ export function simulateInvestment(
 
   // 相对效果排序：计算每个循环的边际溢出减少量
   const relativeEffectRanking: RelativeEffectRanking[] = allCycles.map(c => {
-    const cLatest = getLatestSnapshot('default', c.cycleId, store);
-    const cSnapshots = getCycleSnapshots('default', c.cycleId, store);
+    const cLatest = getLatestSnapshot(enterpriseId, c.cycleId, store);
+    const cSnapshots = getCycleSnapshots(enterpriseId, c.cycleId, store);
     const avg = cSnapshots.length > 0
       ? cSnapshots.reduce((s, sn) => s + sn.overflowValue, 0) / cSnapshots.length
       : 0;

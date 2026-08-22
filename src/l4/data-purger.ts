@@ -78,15 +78,19 @@ export class DataPurger {
   private graphStore: GraphStore;
   private sessionStore: SessionStore;
   private memoryStore: AgentMemoryStore;
+  /** 租户图（D338 fail-closed）：所有图操作显式携带，绝不省略或传空串 */
+  private graph: string;
 
   constructor(
     graphStore: GraphStore,
     sessionStore: SessionStore,
     memoryStore: AgentMemoryStore,
+    graph: string = 'default',
   ) {
     this.graphStore = graphStore;
     this.sessionStore = sessionStore;
     this.memoryStore = memoryStore;
+    this.graph = graph;
   }
 
   /**
@@ -183,7 +187,7 @@ export class DataPurger {
       const nodes = this.collectTenantNodes(job.tenantId);
       for (const node of nodes) {
         try {
-          this.graphStore.updateNode(node.id, { ...node.props, _purgeLocked: true, _purgeJobId: job.id }, '');
+          this.graphStore.updateNode(node.id, { ...node.props, _purgeLocked: true, _purgeJobId: job.id }, this.graph);
         } catch (err) {
           log.warn({ err: err instanceof Error ? err.message : String(err) }, "节点更新");
           // 单个节点锁定失败不影响整体
@@ -252,7 +256,7 @@ export class DataPurger {
       const nodes = this.collectTenantNodes(tenantId);
       for (const node of nodes) {
         try {
-          this.graphStore.deleteNode(node.id, '');
+          this.graphStore.deleteNode(node.id, this.graph);
           nodesDeleted++;
         } catch (err) {
           log.warn({ err: err instanceof Error ? err.message : String(err) }, "删除失败");
@@ -263,10 +267,10 @@ export class DataPurger {
       const edgeTypes: string[] = (ALL_EDGE_TYPES as string[]) || [];
       for (const type of edgeTypes) {
         try {
-          const edges = this.graphStore.queryEdges(type);
+          const edges = this.graphStore.queryEdges(type, undefined, undefined, this.graph);
           for (const e of edges) {
             try {
-              this.graphStore.deleteEdge(e.id, '');
+              this.graphStore.deleteEdge(e.id, this.graph);
               edgesDeleted++;
             } catch (err) {
               log.warn({ err: err instanceof Error ? err.message : String(err) }, "删除失败");
@@ -408,7 +412,7 @@ export class DataPurger {
 
     for (const type of nodeTypes) {
       try {
-        const nodes = this.graphStore.queryNodes(type, {}, undefined);
+        const nodes = this.graphStore.queryNodes(type, {}, this.graph);
         for (const n of nodes) {
           if (this.matchesTenant(n.props, tenantId)) {
             results.push({ id: n.id, props: n.props });

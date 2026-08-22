@@ -20,8 +20,9 @@ const log = createLogger('l4/entity-resolver');
 // ═══ Types ═══
 
 interface GraphStoreRO {
-  queryNodes(type: string): Array<{id:string, type:string, props:Record<string,unknown>}>;
-  queryEdges(type?: string, from?: string, to?: string): Array<{from:string, to:string, type:string}>;
+  // D338: graph 参数必须保留 — 调用方已按租户传递，接口不得丢弃（缺陷 B 同型）
+  queryNodes(type: string, filters?: Record<string,unknown>, graph?: string): Array<{id:string, type:string, props:Record<string,unknown>}>;
+  queryEdges(type?: string, from?: string, to?: string, graph?: string): Array<{from:string, to:string, type:string}>;
 }
 
 export interface EntityMatch {
@@ -48,14 +49,14 @@ export async function resolveEntitiesL3(store: GraphStoreRO, graph: string): Pro
   const nodeTypes = ALL_NODE_TYPES;
 
   for (const type of nodeTypes) {
-    const nodes = store.queryNodes(type).filter(n => n.props);
+    const nodes = store.queryNodes(type, undefined, graph).filter(n => n.props);
     if (nodes.length < 2) continue;
 
     // Pairwise comparison within same type (blocking)
     for (let i = 0; i < Math.min(nodes.length, 100); i++) {
       for (let j = i + 1; j < Math.min(nodes.length, 100); j++) {
         const textSim = computeTextSimilarity(nodes[i].props, nodes[j].props);
-        const structSim = computeStructuralSimilarity(nodes[i].id, nodes[j].id, store);
+        const structSim = computeStructuralSimilarity(nodes[i].id, nodes[j].id, store, graph);
         const fusedScore = 0.6 * textSim + 0.4 * structSim;
 
         // Fix 2: Semantic matching for borderline cases [0.65, 0.85)
@@ -198,11 +199,11 @@ async function semanticSimilarity(textA: string, textB: string): Promise<number>
 
 // ═══ Structural Similarity — neighbor type distribution ═══
 
-function computeStructuralSimilarity(nodeIdA: string, nodeIdB: string, store: GraphStoreRO): number {
+function computeStructuralSimilarity(nodeIdA: string, nodeIdB: string, store: GraphStoreRO, graph: string): number {
   const getNeighborTypes = (nodeId: string): number[] => {
     const edges = [
-      ...store.queryEdges(undefined, nodeId, undefined),
-      ...store.queryEdges(undefined, undefined, nodeId),
+      ...store.queryEdges(undefined, nodeId, undefined, graph),
+      ...store.queryEdges(undefined, undefined, nodeId, graph),
     ];
     // Count neighbor types (14-dim vector)
     const typeCounts = new Map<string, number>();
