@@ -63,6 +63,19 @@ fail_open_skip() { # fail_open_skip <doc> <reason>
   emit_json "skip" "$1" "" "[]" "$2"
 }
 
+# D513/②(Win 8f33e82a): PYBIN 三级探测替换裸 python3 —— Win Git Bash 无
+# python3（仅 python/py）→ exit 127 degraded → pre-push 拦截（D329/D330 已修
+# commit-msg/resolver 两处，本文件是第三处漏网）。探测后试运行验证可用性（D330）。
+PYBIN=""
+for _c in python3 python py; do
+  if command -v "$_c" >/dev/null 2>&1 && "$_c" -c "import sys" >/dev/null 2>&1; then
+    PYBIN="$_c"; break
+  fi
+done
+if [ -z "$PYBIN" ]; then
+  echo "⚠ D513: python 不可用（python3/python/py 均无）— 写集比对降级跳过（显式提示，不静默）" >&2
+fi
+
 # ── 核心: python3 写集解析与比对 ──
 # CT-28 (D422): block 判定直传 devdoc_writeset.py 的 exit code（内核本有三态）,
 #               弃 grep '"status": "block"' 文本匹配（格式漂移即静默放行 M1）。
@@ -72,15 +85,15 @@ compare_docs() { # compare_docs <doc-a> <doc-b> → 0 pass/skip, 1 block, 2 degr
   if [ ! -f "$db" ]; then fail_open_skip "$db" "doc 不存在"; return 0; fi
 
   local result py_exit st reason
-  result=$(python3 "$SCRIPT_DIR/devdoc_writeset.py" --overlap-a "$da" --overlap-b "$db" 2>&1)
+  result=$($PYBIN "$SCRIPT_DIR/devdoc_writeset.py" --overlap-a "$da" --overlap-b "$db" 2>&1)
   py_exit=$?
 
   if [ "$py_exit" -eq 1 ]; then
     # block: 有交集（业务判定，不属 fail-open）
     echo "  ❌ 并行声明与实际写集不符 — 重叠文件:"
-    echo "$result" | python3 -c "import json,sys; d=json.load(sys.stdin); [print(f\"     - {o}\") for o in d.get('overlap',[])]" 2>/dev/null || echo "$result"
+    echo "$result" | "$PYBIN" -c "import json,sys; d=json.load(sys.stdin); [print(f\"     - {o}\") for o in d.get('overlap',[])]" 2>/dev/null || echo "$result"
     echo "     ($da vs $db)"
-    emit_json "block" "$da" "$db" "$(echo "$result" | python3 -c "import json,sys; print(','.join('\"%s\"'%o for o in json.load(sys.stdin).get('overlap',[])))" 2>/dev/null || echo "")" "写集重叠"
+    emit_json "block" "$da" "$db" "$(echo "$result" | "$PYBIN" -c "import json,sys; print(','.join('\"%s\"'%o for o in json.load(sys.stdin).get('overlap',[])))" 2>/dev/null || echo "")" "写集重叠"
     return 1
   fi
   if [ "$py_exit" -ne 0 ]; then
@@ -91,9 +104,9 @@ compare_docs() { # compare_docs <doc-a> <doc-b> → 0 pass/skip, 1 block, 2 degr
     return 2
   fi
 
-  st=$(echo "$result" | python3 -c "import json,sys; print(json.load(sys.stdin).get('status','pass'))" 2>/dev/null || echo "pass")
+  st=$(echo "$result" | "$PYBIN" -c "import json,sys; print(json.load(sys.stdin).get('status','pass'))" 2>/dev/null || echo "pass")
   if [ "$st" = "skip" ]; then
-    reason=$(echo "$result" | python3 -c "import json,sys; print(json.load(sys.stdin).get('reason',''))" 2>/dev/null || echo "解析跳过")
+    reason=$(echo "$result" | "$PYBIN" -c "import json,sys; print(json.load(sys.stdin).get('reason',''))" 2>/dev/null || echo "解析跳过")
     fail_open_skip "$da/$db" "$reason"
     return 0
   fi
