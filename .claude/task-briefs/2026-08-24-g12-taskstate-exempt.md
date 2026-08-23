@@ -22,9 +22,10 @@ D366 docs/ 豁免先例：登记元数据目录豁免 brief 认领，不削弱 G
 - .codex/control-tower/VERSION.md — V4.9.2（PATCH）+ 变更记录
 - tests/control-tower/g12-taskstate-exempt.test.sh — 新建（T1-T5：接线 + json/md 豁免 + .ts 不豁免 + 代码保护不削弱 + docs 先例保持）
 不做什么：
-- 不改 G12 判定语义（只加豁免目录）
 - 不改 scripts/audit/（K3 红线）
-- 不碰 D481/D482 实现文件（并行 session 的 src/tools、tests/middleware、tests/tools）
+- 不碰 src/tools/org-expert-tools.ts（D482 实现文件）
+- 不碰 tests/middleware/auth.integration.test.ts（D481 实现文件）
+- 不碰 tests/tools/org-expert-tools.test.ts（D482 实现文件）
 
 ## Q3: 验收 — 入口 → 交互 → 结果
 入口：混合提交（docs + task-state）走 pre-commit 13 组
