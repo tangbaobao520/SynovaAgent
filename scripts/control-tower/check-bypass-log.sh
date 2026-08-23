@@ -22,6 +22,16 @@ set -uo pipefail
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 LOG="$ROOT/.claude/bypass.log"
 BASE="${SYNO_BASE_REF:-${1:-origin/feat/prompt-architecture}}"
+
+# D513/③(Win 37dc1cae 根因): 防御性刷新 base —— `git push <URL>` 不更新本地
+# remote-tracking ref，BASE 解析到陈旧 ref → merge-base 化失效 → 对账范围扩大 →
+# 补记循环（Win 实测 11 条）。fetch 最新 tracking ref 后再对账；失败不阻断（显式
+# 降级——本地 ref 至少是最新的已知态，比静默用陈旧 ref 强）。
+_base_remote="${BASE%%/*}"
+_base_branch="${BASE#*/}"
+if [ -n "$_base_remote" ] && [ "$_base_remote" != "$_base_branch" ] && [ "${SYNO_BASE_REF:-}" = "" ]; then
+  git fetch --no-tags "$_base_remote" "$_base_branch" --quiet 2>/dev/null || true  # swallow-ok: fetch 失败降级用本地 ref（铁律 11 显式）
+fi
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RESET='\033[0m'
 
 if [[ ! -f "$LOG" ]]; then

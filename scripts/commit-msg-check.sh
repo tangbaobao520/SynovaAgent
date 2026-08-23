@@ -4,6 +4,14 @@
 # 格式: type(scope): subject
 # 要求: commit body 含 issue/task 引用 (#C1, P1-2, SOG-001 等)
 # ═══════════════════════════════════════════════════════════════════════════════
+# D513/①(Win 8f33e82a): merge 提交豁免 D328 —— 本地 merge 的构成提交各自已过
+# D328（声明一致），merge commit 本身无新声明语义（GitHub 网页 merge 也不经本地
+# hook）。无检测时本地 merge 必被「消息无 D# vs 认领 D#」拦死，Win 被迫走注入缝。
+if [ -f "$(git rev-parse --git-dir 2>/dev/null)/MERGE_HEAD" ]; then  # swallow-ok: rev-parse 失败=非 git 环境=条件自然 false
+  echo "  ℹ D513: MERGE_HEAD 存在 — merge 提交，D328 一致性检查跳过（构成提交已各自校验）"
+  exit 0
+fi
+
 set -euo pipefail
 
 COMMIT_MSG=$(cat "$1" 2>/dev/null || echo "")

@@ -31,6 +31,10 @@ export BRIEF_FILE TASK_DESC
 python3 "$SCRIPT_DIR/generate-task-brief.py"
 
 echo "✅ Task brief 已生成: $BRIEF_FILE"
+# D513/⑤: 恢复写 current-brief —— Claude Code 线 attach 依赖此文件定位当前 brief；
+# 停写后陈旧指向有 G12 误伤风险（Win 8f33e82a 观察）。取最新 mtime 防多 brief 挑错。
+LATEST_BRIEF=$(ls -t "$PROJECT_ROOT/.claude/task-briefs/"*.md 2>/dev/null | head -1)  # swallow-ok: 目录空 → 跳过
+[ -n "$LATEST_BRIEF" ] && basename "$LATEST_BRIEF" > "$PROJECT_ROOT/.claude/current-brief"
 
 # D284-FIX: task-start 完成后清除 session-locked（不依赖 hook 触发）
 rm -f "$PROJECT_ROOT/.claude/session-locked" 2>/dev/null

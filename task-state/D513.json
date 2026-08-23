@@ -1,0 +1,17 @@
+{
+  "task_id": "D513",
+  "title": "控制塔四项返修（Win反馈+D331残余）",
+  "status": "impl_done",
+  "spec": {
+    "path": ".claude/task-briefs/2026-08-23-D513-tower-repairs.md",
+    "by": "dsh-cto",
+    "at": "2026-08-23"
+  },
+  "impl": {
+    "commit": "PENDING",
+    "by": "dsh-cto",
+    "at": "2026-08-23"
+  },
+  "updated_by": "dsh-cto",
+  "priority": "P0"
+}
