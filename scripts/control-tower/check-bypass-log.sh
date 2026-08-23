@@ -50,7 +50,16 @@ MISSING=""
 # D414/U1c: git log 失败检测 — 原 `|| true` 会把"git 失败空循环"当成"对账通过"（M1 假 PASS）。
 # D451: 豁免"纯补记提交"——只改 .claude/bypass.log 的提交本身就是补记动作，
 #   它改的就是证据文件，不能被要求"自己被自己记录"（否则补记→新提交→再缺→死循环）。
-GIT_LOG_OUT=$(git log "$BASE..HEAD" --format=%H --no-merges 2>&1)
+# D508: 对账范围 merge-base 化（Win PR#128 #7 实测 6+ 次补记循环根治）——
+#   "$BASE..HEAD" 在 merge main 后会把 main 侧已验提交也落入范围，只制造补记死循环。
+#   merge-base 起点后范围=分支自己的新提交；main 引入提交天然排除（merge-base 是其祖先）。
+MB=$(git merge-base "$BASE" HEAD 2>/dev/null || echo "")
+if [ -n "$MB" ]; then
+  RANGE="${MB}..HEAD"
+else
+  RANGE="$BASE..HEAD"  # 无共同历史 → 回退原语义
+fi
+GIT_LOG_OUT=$(git log "$RANGE" --format=%H --no-merges 2>&1)
 if [ $? -ne 0 ]; then
   echo -e "${RED}❌ git log 执行失败 ($BASE..HEAD) — 对账无法执行（fail-closed, 不当作通过）${RESET}" >&2
   echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) check-bypass-log degraded: git log $BASE..HEAD 失败" >> "$ROOT/.claude/degraded-events.log" 2>/dev/null || true
@@ -76,5 +85,5 @@ if [[ -n "$MISSING" ]]; then
   exit 1
 fi
 
-echo -e "${GREEN}✅ bypass.log 对账通过: $BASE..HEAD 全部提交有记录${RESET}"
+echo -e "${GREEN}✅ bypass.log 对账通过: ${RANGE} 全部提交有记录${RESET}"
 exit 0

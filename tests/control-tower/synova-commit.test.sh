@@ -44,5 +44,20 @@ else
 fi
 
 echo ""
+# ═══ D508: --check / 登记提前 / 软日志 / brief 骨架 用例 ═══
+grep -q '\-\-check)' "$SC" && ok "D508: --check 参数存在" || no "D508: --check 缺失"
+grep -q "D508 --check: 全量检查" "$SC" && ok "D508: --check 执行体存在" || no "D508: 执行体缺失"
+grep -q "一次修完后再真提交" "$SC" && ok "D508: 汇总报告提示存在" || no "D508: 提示缺失"
+REG_LINE=$(grep -n 'COMMITTED | pre-commit PASS' "$SC" | head -1 | cut -d: -f1)
+PUSH_LINE=$(grep -n 'auto_tag_and_version$' "$SC" | tail -1 | cut -d: -f1)
+if [ -n "$REG_LINE" ] && [ -n "$PUSH_LINE" ] && [ "$REG_LINE" -lt "$PUSH_LINE" ]; then
+  ok "D508: COMMITTED 登记在 push 之前（死循环根因修复）"
+else
+  no "D508: 登记仍在 push 后"
+fi
+grep -q "DEGRADED-PASS" "$SC" && ok "D508: 降级路径同样登记" || no "D508: 降级路径缺登记"
+grep -q "gate-soft-warnings.log" "$(dirname "$SC")/../install-hooks.sh" && ok "D508: GATE_FAIL_SOFT 移独立日志" || no "D508: 软日志未迁移"
+grep -q "brief 骨架已生成" "$(dirname "$SC")/alloc-task-id.sh" && ok "D508: alloc-task-id 生成 brief 骨架" || no "D508: 骨架缺失"
+
 echo "结果: $PASS 通过, $FAIL 失败"
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1
