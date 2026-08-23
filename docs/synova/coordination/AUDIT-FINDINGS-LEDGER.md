@@ -172,6 +172,7 @@ K3 发现 → 查本台账 M 模式 → 归属判定
 | 2026-08-19 | **D357/D354/D358 三任务交付（均未合并 main）**：D357 连接器 descope（PR#55 OPEN，外部审计 P0/1/2=0，含 IM 企微同族降级）；D354 去重键稳定化（commit dc4f4232 已推送，gh 凭据失效 PR 待建，DS1-DS7 全绿）；D358 合并哨兵去 _extinct（PR#58 OPEN，16 compute 迁入 + 2 aggregate 重写，DS1-DS8 全绿，CI 双 job 绿）。**问题如实登记**：CT-43 injectConflictFindings 潜在无限循环（D354 存量 D37 隐患）、CT-44 org-expert-tools.ts:43 同类声称、CT-45 calc-progress.py 无 deferred 态（DSH）、CT-46 gh 凭据失效；门禁拦截教训：G12c 写集 glob 被当字面路径（D358 改逐文件枚举）、D366 跨午夜 brief 改名（D357/D358）、hook 敷衍词误中（D358） |
 | 2026-08-19 | **控制塔升级版本编排审计**：U4/U7/U8（D423/D433/D438）门禁行为变化未 bump VERSION.md（仍 V4.8.0）→ CT-42 登记（门禁行为变化强制 bump + CT-35 盲区识别：只查「声称版本号→bump」不查「改门禁→bump」）；顺带发现 D333 编号复用（旧=决策参考框架 V4.7.5 / 新=N13 进化闭环）= CT-38 任务 ID 唯一性校验又一实证 |
 | 2026-08-17 | **K3 D356 审计**：CONDITIONAL PASS（无 P0，P1×2/P2×3）——三目标缺陷在其层全成立，但结论边界=「装配接通+降级诚实」，生产真警依赖 D355/D358（P0-2 存量）；P1-2 dev doc+brief 未入库 + 一任务两 dev doc 并存 → 补入库 + 旧线 6db5a17 退役；CT-39~41 登记（mock 语义保真度 / dev doc 入库硬要求 / 旧线退役动作） |
+| 2026-08-23 | **D476/D477 交付 + 合并（PR #124/#123，终审 PASS）**：D476=GA 上游 enterpriseId 断点 + overflow 隔离收紧（D338 移交 O7/O8；auth.orgId 权威 + 跨租户 403 + config.orgId 兜底，测试 20/20，CI 9/9 全绿含 Vitest 双 shard）；D477=standardKey 块读收敛 + outcome 族 4 标签注册（D470 审计遗留 #2/#3，测试 7/7，CI 9/9 全绿）。**遗留登记（另立任务跟踪）**：① **overflow 路由未挂载 server.ts**（D90 声称挂载实为仅 import；D476 为预防性硬化）——挂载 + graphStore 生产注入归 Win（server.ts=Claude 串行点）；② **sentinel.ts L119 `\|\| 'synova'`**（O6 类，D338 已 defer）——归 DSH（src/sentinel）；③ **auth.ts L366 x-synova-token legacy 合成 'default'**——归 Win（src/middleware）。另：CI Vitest matrix 已修复（PR 上真实运行双 shard 全绿），DSH 任务卡子任务 3 提前闭环 | 
 
 ## 六、流程减负清单（省时不丢质量，2026-08-16 创始人提出）
 
@@ -187,6 +188,11 @@ K3 发现 → 查本台账 M 模式 → 归属判定
 | 4 | 版本编排统一入口（CT-35） | 孤儿 tag / 幻影版本号（V4.8.0 孤儿、V4.7.10 未落库）从源头消失 | 版本三同步（VERSION.md/version.log/tag）约束保留 | DSH | P1 |
 | 5 | 任务 ID 唯一性校验（CT-38） | ID 复用（D363 被用两次）的混同排查省掉 | ID 唯一性保障证据链/仪表盘对账 | DSH | P1 |
 | 6 | synova-commit 双重执行消除 | 门禁跑两次（synova-commit 内部跑 + git commit hook 再跑）→ 一次（D362 实测 554s 超时根因） | 门禁内容不变，只去掉重复执行 | DSH | P1 |
+| 7 | **merge 引入提交的 D331 对账豁免**（对账 base 改 merge-base） | 本次 D476/D477/台账三 PR 每次 merge main 后 push 都被 D331 拦，需逐条补记 merge 引入的 main 提交（5848de18/988f4f7a/b13b2489/869df05e/9b68cb7a 等，共 6+ 次补记循环）——对账只应查"未入 main 的提交"，已合入 main 的提交天然有主侧记录 | 证据链语义不变（仍查本地新提交），只是不再重复验证 main 已验过的提交 | DSH | P0 |
+| 8 | **reference-map.md 注册 union merge driver**（.gitattributes + merge driver，bypass.log 同先例） | 每次 merge main 都手工 union 解决 reference-map.md 冲突（本 session 6+ 次）——append-only 文档天然冲突 | 文档内容两侧全保留（union），无信息丢失 | DSH（.gitattributes/config） | P1 |
+| 9 | **D334 远端分叉策略**（禁止/协调 session 往他人分支推 tmp-merge） | D470/D475/D471 分支多次被其他 session 推 `Merge ... into tmp-dXXX` → D334 拦 → 强制 merge 远端再推（3+ 次循环） | 分支归属清晰，防覆盖语义保留 | DSH | P1 |
+| 10 | **hook 软门禁失败不写 GATE_FAIL_SOLL 进 bypass.log** | 每次 commit 后 bypass.log 被 hook 噪声污染 → 下一次 commit/merge 前必须 `checkout -- bypass.log`（本 session 10+ 次） | 证据链只记真实提交/真实失败，软门禁告警走独立日志 | DSH | P2 |
+| 11 | **golden-case/D100 门禁增量或并行** | pre-push 固定全量 11 golden-case + D100（60-90s/次），docs 提交也跑 | 受影响范围判定替代全量，或并行化 | DSH | P2 |
 
 ### 6.2 保留项（防误伤——这些不减）
 

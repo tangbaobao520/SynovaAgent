@@ -13,8 +13,14 @@
  *   @degraded — 再诊断失败 → log.warn + 返回失败标记，原始报告不变
  */
 import { createLogger } from '@synova/logger';
+import { loadConfig } from '../config';
 
 const log = createLogger('l3/ga-collaboration');
+
+// D476 O8: orgId 是启动期常量（SYNOVA_ORG_ID 只在进程启动时读取）。
+// 反馈写入在请求热路径上，模块级一次加载避免每请求文件 I/O + 日志；
+// 与仓内 per-call loadConfig() 惯例不同，属有意例外（dev doc §3.2 回填）。
+const config = loadConfig();
 
 // ═══ Types ═══
 
@@ -103,7 +109,7 @@ export class GAFeedbackHandler {
    * GA 纠正：写入 D93 feedbackCollector，标记为 ga_correction。
    */
   private async handleCorrect(action: GAFeedbackAction, timestamp: string): Promise<GAFeedbackResult> {
-    const correctionId = await this.recordCorrection(action.findingId, action.correction || '无修正内容', action.gaUserId);
+    const correctionId = await this.recordCorrection(action.findingId, action.correction || '无修正内容', action.gaUserId, action.enterpriseId);
 
     const result: GAFeedbackResult = {
       findingId: action.findingId, action: 'correct',
@@ -198,9 +204,13 @@ export class GAFeedbackHandler {
 
   /**
    * 记录 GA 纠正到 D93 feedbackCollector。
-   * 降级: collector 未配置 → 返回 'unrecorded' + log.warn。
+   * 契约 (D476 O8):
+   *   @input  — findingId / correction / gaUserId / enterpriseId?（缺省回落实例默认 org config.orgId）
+   *   @output — collector 返回的 id（无 id 字段 → 'recorded'）
+   *   @degraded — collector 未配置 → 'unrecorded' + log.warn；写入抛错 → 'unrecorded' + log.warn
+   * 组织上下文: 显式传入或实例 org，绝不回落全局 'default' 命名空间（D338 fail-closed）。
    */
-  async recordCorrection(findingId: string, correction: string, gaUserId: string): Promise<string> {
+  async recordCorrection(findingId: string, correction: string, gaUserId: string, enterpriseId?: string): Promise<string> {
     if (!this.feedbackCollector) {
       log.warn({ findingId }, 'feedbackCollector 未配置 — 降级');
       return 'unrecorded';
@@ -208,7 +218,7 @@ export class GAFeedbackHandler {
 
     try {
       const result = await this.feedbackCollector.collectFeedback({
-        enterpriseId: 'default',
+        enterpriseId: enterpriseId || config.orgId,
         actorId: gaUserId,
         actorRole: 'ga',
         decision: 'modify',

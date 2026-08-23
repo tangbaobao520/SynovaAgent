@@ -200,12 +200,12 @@ export async function ingestRow(
 
   // D29: 标准键冲突检测 — 用外部 period 字段生成 standardKey
   // D33: standardKey 扩展为含 validFrom 时间维度
-  const period = row['period'];
+  // D477: period 取自映射白名单校验后的 props.period——行级英文键不再直读（防白名单旁路，D470 审计 #2）
+  const period = props.period;
   if (period !== undefined && period !== null) {
     const periodStr = String(period);
     const validFrom = deriveValidFrom(periodStr);
     props.standardKey = `${graph}:${mapping.targetNodeType}:${periodStr}:${validFrom}`;
-    props.period = periodStr; // D33: 传递给 createNode 用于时间字段推导
   }
 
   try {
