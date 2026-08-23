@@ -12,3 +12,9 @@
 # 注意: union 驱动需在 .git/config 注册一次（git config merge.union.driver），
 #       见 scripts/control-tower/install-hooks.sh 的自动注册逻辑。
 .claude/bypass.log merge=union
+
+# CT-48 / D508 补充（Win PR#128 #8）: reference-map.md append-only 符号地图 — merge=union
+# 背景: grep-refs.sh 每次写 reference-map.md（append-only），merge main 时手工 union
+#       冲突（Win 实测 6+ 次）。与 bypass.log（D457）同型：每行含唯一符号+行号不会重复，
+#       合并 = 取并集。union 驱动复用 merge.union.driver（install-hooks.sh 已注册）。
+.claude/reference-map.md merge=union
