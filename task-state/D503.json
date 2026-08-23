@@ -17,14 +17,8 @@
       ".claude/task-briefs/2026-08-23-D503-g12-timezone-window.md"
     ]
   },
-  "audit": {
-    "verdict": "FAIL",
-    "report": "docs/synova/audit-reports/2026-08-23-D502-D503-board-unify.md",
-    "at": "2026-08-23",
-    "by": "k3",
-    "note": "P0-1 G12 fail-open + P1-3 验收浅绿 → D506 返修"
-  },
-  "fix_task_id": "D506",
+  "audit": null,
+  "fix_task_id": null,
   "updated_at": "2026-08-23",
   "updated_by": "dsh-cto",
   "note": "根因：Mac(UTC+8) 傍晚建的 brief 对 CI runner(UTC) 是明天，G12 单日认领窗口致 D502 PR#117 CI 红 7 处。修复：±1 天 glob（python3 一次计算，缺失回退单日）。验证：模拟 CI 条件 G12 由红转绿 + 13 组全过。",
