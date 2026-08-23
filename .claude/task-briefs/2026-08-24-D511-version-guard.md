@@ -20,7 +20,8 @@ c) memory 教训: CT-42（六批未 bump，第二次违反——物理强制唯�
 - scripts/pre-commit-check.sh — 组 14 接线（组 13 之后/CP3 之前）+ 收尾文案 13 组→14 组，既有组 1-13 判定逻辑零改动
 - .codex/control-tower/VERSION.md — 顶部插 V4.10.0 条目（§5.3-B 决策，新增门禁组=MINOR，规范§二）
 - .codex/control-tower/logs/version.log — control_tower_log.py version 追加 V4.10.0 行，git add -f 入库（§5.4-3 决策）
-- .claude/task-briefs/D511.md — 本 brief
+- .claude/task-briefs/2026-08-24-D511-version-guard.md — 本 brief
+- task-state/D511.json — impl 段回填（impl.commit=ab0e81f4，status=impl_done，D382 状态机）
 
 不做什么:
 - 不改 scripts/pre-commit-check.sh 组 1-13 判定逻辑（仅追加组 14 块）

@@ -1,16 +1,30 @@
 {
   "task_id": "D511",
   "title": "version-guard-gate",
-  "status": "spec_done",
+  "status": "impl_done",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D511-version-guard-20260823.md",
     "commit": "27d1ca5f",
     "by": "dev-doc",
     "at": "2026-08-23"
   },
-  "impl": null,
+  "impl": {
+    "commit": "ab0e81f4",
+    "by": "dsh",
+    "at": "2026-08-24",
+    "branch": "feat/d511-version-guard",
+    "pushed": "c0ed0054",
+    "summary": "版本守卫门禁 V4.10.0：check-version-guard.sh（三态 fail-closed + 逃生舱）+ pre-commit 组 14 接线 + VERSION.md bump 同 commit（吃自己的药）+ 15 用例测试全绿；附带修复 G12 BSD sed 可移植性 P0（Mac 上代码文件全误报不在 Q2 范围）",
+    "notes": [
+      "测试命名 check-version-guard.test.sh（U7/CT-40 配对规则物理门禁权威 > dev doc §5.1 的 version-guard.test.sh）",
+      "bump 级别 V4.10.0（MINOR，规范§二）非派单标题 V4.9.1——分歧记录 dev doc §5.3",
+      "version.log 实际路径 .codex/control-tower/logs/version.log（非 schema 目录 logs/version/v1/），git add -f 入库",
+      "存量失败隔离：13 个 control-tower .test.sh + 63 个 vitest 失败均在未改动 D512 worktree 复现，与 D511 写集零交集",
+      "vitest 失败集与基线 diff 仅时间戳/pid/路径——零回归"
+    ]
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-08-23",
-  "updated_by": "dev-doc"
+  "updated_at": "2026-08-24",
+  "updated_by": "dsh"
 }
