@@ -566,3 +566,4 @@ Binary file .claude/bypass.log matches
 2026-08-23T13:40:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记: b13b2489, D331 对账) | TASK_ID=merge | AGENT=Synova-Win | HASH=b13b24893f2d8c51ae630ce21b53c66e889721d1
 2026-08-23T13:40:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记: 869df05e, D331 对账) | TASK_ID=merge | AGENT=Synova-Win | HASH=869df05e2e9a61663d54683a4ed2ad88a32f5b6e
 2026-08-23T13:45:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记: 9b68cb7a D477, D331 对账) | TASK_ID=D477 | AGENT=Synova-Win | HASH=9b68cb7ad95fe2185ef13381f028aed011f53162
+2026-08-23T14:20:00+08:00 | COMMITTED | pre-commit PASS (一次性补记: a057cf07 台账效率项, D331 对账) | TASK_ID=ledger | AGENT=Synova-Win | HASH=a057cf075341afc38259a89d5e5b95dffff83f7e

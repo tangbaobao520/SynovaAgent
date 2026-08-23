@@ -188,6 +188,11 @@ K3 发现 → 查本台账 M 模式 → 归属判定
 | 4 | 版本编排统一入口（CT-35） | 孤儿 tag / 幻影版本号（V4.8.0 孤儿、V4.7.10 未落库）从源头消失 | 版本三同步（VERSION.md/version.log/tag）约束保留 | DSH | P1 |
 | 5 | 任务 ID 唯一性校验（CT-38） | ID 复用（D363 被用两次）的混同排查省掉 | ID 唯一性保障证据链/仪表盘对账 | DSH | P1 |
 | 6 | synova-commit 双重执行消除 | 门禁跑两次（synova-commit 内部跑 + git commit hook 再跑）→ 一次（D362 实测 554s 超时根因） | 门禁内容不变，只去掉重复执行 | DSH | P1 |
+| 7 | **merge 引入提交的 D331 对账豁免**（对账 base 改 merge-base） | 本次 D476/D477/台账三 PR 每次 merge main 后 push 都被 D331 拦，需逐条补记 merge 引入的 main 提交（5848de18/988f4f7a/b13b2489/869df05e/9b68cb7a 等，共 6+ 次补记循环）——对账只应查"未入 main 的提交"，已合入 main 的提交天然有主侧记录 | 证据链语义不变（仍查本地新提交），只是不再重复验证 main 已验过的提交 | DSH | P0 |
+| 8 | **reference-map.md 注册 union merge driver**（.gitattributes + merge driver，bypass.log 同先例） | 每次 merge main 都手工 union 解决 reference-map.md 冲突（本 session 6+ 次）——append-only 文档天然冲突 | 文档内容两侧全保留（union），无信息丢失 | DSH（.gitattributes/config） | P1 |
+| 9 | **D334 远端分叉策略**（禁止/协调 session 往他人分支推 tmp-merge） | D470/D475/D471 分支多次被其他 session 推 `Merge ... into tmp-dXXX` → D334 拦 → 强制 merge 远端再推（3+ 次循环） | 分支归属清晰，防覆盖语义保留 | DSH | P1 |
+| 10 | **hook 软门禁失败不写 GATE_FAIL_SOLL 进 bypass.log** | 每次 commit 后 bypass.log 被 hook 噪声污染 → 下一次 commit/merge 前必须 `checkout -- bypass.log`（本 session 10+ 次） | 证据链只记真实提交/真实失败，软门禁告警走独立日志 | DSH | P2 |
+| 11 | **golden-case/D100 门禁增量或并行** | pre-push 固定全量 11 golden-case + D100（60-90s/次），docs 提交也跑 | 受影响范围判定替代全量，或并行化 | DSH | P2 |
 
 ### 6.2 保留项（防误伤——这些不减）
 
