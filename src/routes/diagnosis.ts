@@ -4,9 +4,11 @@
  * POST /api/diagnosis/consult → SSE 流式六阶段诊断
  * GET  /api/diagnosis/consult/:id/status → 查询进行中的诊断
  * POST /api/diagnosis/consult/:id/interrupt → 中断诊断
+ * GET  /api/diagnosis/consult/:id/report → D480 读取完成报告（?format=markdown 一页纸）
  *
  * 铁律 39: L1 通过 DiagnosisEngine 接口调用引擎，不直接 import engine-core。
  * D10: engine-core 退役 — 使用 SynovaDiagnosisEngineImpl 自研引擎。
+ * D480: 完成时渲染 onePager（executive_summary 模板，经 L2 report-assembler）+ 有界缓存供 GET。
  */
 import { Router, type Request, type Response } from 'express';
 import { createProvider } from '../providers';
@@ -38,6 +40,34 @@ interface ActiveConsultation {
 }
 
 const activeConsultations = new Map<string, ActiveConsultation>();
+
+// ═══ D480: 已完成诊断报告缓存 — GET /consult/:id/report 数据源 ═══
+// activeConsultations 在 finally 删除且无报告持久化设施（grep 零 saveDiagnosisReport 类），
+// 故用有界内存缓存（routes/ 内存 Map 为仓库既有模式，diagnosis-upload-v2 jobStore 同型但无界——
+// 本缓存上限 50 条 FIFO 淘汰防 OOM）。进程重启即清空——重启后 GET 返回 404（可接受：SSE 已送达）。
+
+type DiagnosisReportLike = import('../l3/synova-diagnosis-engine').DiagnosisReport;
+
+interface CompletedConsultation {
+  consultId: string;
+  teamId: string;
+  report: DiagnosisReportLike;
+  /** 咨询时渲染的 markdown 一页纸；raw 深度/渲染失败时为 null → GET 按需补渲染 */
+  onePager: string | null;
+  completedAt: string;
+}
+
+const completedReports = new Map<string, CompletedConsultation>();
+const COMPLETED_REPORTS_MAX = 50;
+
+/** D480: 有界缓存写入（Map 插入序 FIFO 淘汰最旧）——存值快照，不存 active 引用 */
+function cacheCompletedReport(entry: CompletedConsultation): void {
+  if (completedReports.size >= COMPLETED_REPORTS_MAX) {
+    const oldest = completedReports.keys().next().value;
+    if (oldest !== undefined) completedReports.delete(oldest);
+  }
+  completedReports.set(entry.consultId, entry);
+}
 
 // ═══ SSE helpers ═══
 
@@ -239,6 +269,8 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
     if (!active.aborted) {
       // V4.2.9: 按 scope.depth/layers/language 组装报告
       const reportDepth = (scope?.reportDepth || scope?.depth || 'raw') as 'ceo' | 'flywheel' | 'expert' | 'raw';
+      // D480: 一页纸（markdown），raw 深度不渲染（GET 端点按需补渲染）
+      let onePager: string | null = null;
       if (reportDepth !== 'raw') {
         try {
           const { assembleReport } = await import('../agent/report-assembler');
@@ -249,7 +281,26 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
           );
           (result.report as Record<string, unknown>).assembled = assembled;
         } catch (err) { log.warn({ err }, '报告组装失败 — 原始报告已包含在 result 中'); }
+        // D480: 一页纸渲染 — 消费 executive_summary 模板输出 markdown（GS-08 报告可读）。
+        // expert 深度映射 flywheel（更全量）；渲染失败不阻断——log.warn + 原报告保留。
+        try {
+          const { renderOnePager } = await import('../agent/report-assembler');
+          onePager = renderOnePager(
+            result.report as DiagnosisReportLike,
+            reportDepth === 'ceo' ? 'ceo' : 'flywheel',
+          );
+          (result.report as Record<string, unknown>).onePager = onePager;
+        } catch (err) { log.warn({ err, consultId }, '一页纸渲染失败 — 原报告保留'); }
       }
+      // D480: 完成报告入有界缓存（GET /report 数据源；raw 咨询也入缓存，GET 时按需渲染）。
+      // 须在 sseClose 前执行——sseClose 序列化 result.report（onePager 已挂在其上）。
+      cacheCompletedReport({
+        consultId,
+        teamId,
+        report: result.report as DiagnosisReportLike,
+        onePager,
+        completedAt: new Date().toISOString(),
+      });
       sseClose(res, result);
     }
   } catch (err: any) {
@@ -318,6 +369,42 @@ router.post('/api/diagnosis/consult/:consultId/resume', async (req: Request, res
     active.aborted = false;
     res.json({ ok: true, consultId, resumed: true, checkpoint: null, message: '检查点加载失败，从头开始' });
   }
+});
+
+// ═══ GET /consult/:id/report — D480 一页纸/报告读取（GS-08 报告可读） ═══
+
+/**
+ * D480: GET 按需渲染一页纸（raw 深度咨询未在完成时渲染）。
+ * renderOnePager 自身永不抛出（whole-body catch），此处只兜模块加载失败。
+ */
+async function renderOnePagerOnDemand(report: DiagnosisReportLike): Promise<string> {
+  try {
+    const { renderOnePager } = await import('../agent/report-assembler');
+    return renderOnePager(report, 'ceo');
+  } catch (err: unknown) {
+    log.warn({ err }, '一页纸按需渲染失败 — degraded（返回摘要提示文本）');
+    return `诊断摘要: ${report.summary || '诊断完成'}（一页纸渲染不可用，请使用 JSON 格式查看完整报告）`;
+  }
+}
+
+router.get('/api/diagnosis/consult/:consultId/report', async (req: Request, res: Response) => {
+  const { consultId } = req.params as { consultId: string };
+  const completed = completedReports.get(consultId);
+  if (!completed) {
+    return res.status(404).json({ ok: false, error: '诊断报告不存在（可能尚未完成或已过期）', code: 'NOT_FOUND' });
+  }
+  const format = typeof req.query.format === 'string' ? req.query.format : 'json';
+  if (format === 'markdown') {
+    const markdown = completed.onePager ?? (await renderOnePagerOnDemand(completed.report));
+    return res.type('text/markdown; charset=utf-8').send(markdown);
+  }
+  res.json({
+    ok: true,
+    consultId,
+    teamId: completed.teamId,
+    completedAt: completed.completedAt,
+    report: completed.report,
+  });
 });
 
 export default router;
