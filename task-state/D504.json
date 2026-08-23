@@ -1,0 +1,62 @@
+{
+  "task_id": "D504",
+  "title": "electron-desktop-bootstrap",
+  "status": "impl_done",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D504-electron-desktop-integration-20260823.md",
+    "commit": "3c79328d",
+    "by": "dev-doc",
+    "at": "2026-08-23",
+    "branch": "feat/d504-dev-doc"
+  },
+  "impl": {
+    "by": "deepseek-harness",
+    "at": "2026-08-23",
+    "branch": "feat/d504-impl",
+    "files": [
+      "electron/backend-spawn.cjs",
+      "electron/main.cjs",
+      "electron/package.json",
+      "build-synova.cjs",
+      "electron-renderer/index.html",
+      "electron-renderer/vite.config.ts",
+      "electron-renderer/src/lib/api.ts",
+      "electron-renderer/src/App.tsx",
+      "electron-renderer/src/ipc/bridge.ts",
+      "electron-renderer/src/hooks/useStreaming.ts",
+      "electron-renderer/src/hooks/useNotifications.ts",
+      "electron-renderer/src/components/LeftPanel.tsx",
+      "electron-renderer/src/components/RightPanel.tsx",
+      "scripts/golden-scenarios/GS-01-first-diagnosis/run.sh",
+      "scripts/golden-scenarios/GS-01-first-diagnosis/expect.json",
+      "tests/electron/backend-spawn.test.ts",
+      "tests/electron/desktop-build.test.ts",
+      "task-state/D504.json"
+    ],
+    "evidence": {
+      "unit": "tests/electron/ 25/25 passed（backend-spawn 契约 8 + desktop-build 静态断言 15 + auto-update 存量 2）",
+      "gs01": "GS-01 增强断言 7/7 pass, exit 0, evidence JSON 入库（含 L1-1/L1-4/L1-5/L1-7 四条 Electron 断言）",
+      "renderer_build": "vite build 产出 dist/renderer/index.html（DS5；index.html 入口实测缺失已补齐）",
+      "wire_check": "grep ensureBackend/SYNOVA_DB_PATH/app.isPackaged electron/main.cjs 非零；renderer 8 处 fetch 全部经 getApiBase（铁律 9）"
+    }
+  },
+  "audit": {
+    "verdict": "CONDITIONAL_PASS",
+    "by": "kimi-k3",
+    "at": "2026-08-23",
+    "report": "docs/synova/audit-reports/2026-08-23-D504-D505.md",
+    "findings": [
+      "F1 P1 DS4 声称矛盾：commit message 称 electron-builder --dir 实测产出 release/mac/SynovaAgent.app，但 note 称 DS4 受限→CI 执行，commit 无 release/ 产物，GS-01 L1-1 实为静态 grep 配置断言",
+      "F2 P1 DS11 未完成：dmg 产出+安装+双击实测留待 founder-demo，spec DS11 未闭环",
+      "F3 P2 pre-commit 门禁处置不明：bypass.log 仅 BLOCKED 无 PASS/bypass 记录",
+      "F4 P2 注释漂移：backend-spawn.cjs L12 + main.cjs L123 仍写 dist/index.js，代码实为 dist/src/index.js",
+      "F5 P2 commit message 测试数夸大：契约 10 vs 实际 8"
+    ],
+    "note": "25/25 electron 测试 + 8 处 fetch 接线 + 零 src/ 越界物理复现通过。P1 修复要求：F1 DS4 需在 CI 产出真实 release/ unpacked 产物证据，或 commit message 降级为静态配置断言；F2 DS11 显式 descope 或补 dmg 实测。"
+  },
+  "fix_task_id": null,
+  "updated_at": "2026-08-23",
+  "updated_by": "kimi-k3",
+  "note": "DS 覆盖：DS1-9 实现于本分支；DS4 electron-builder --dir 受限说明——@electron/rebuild 尝试在 ~/.electron-gyp 重编译 bcrypt（工作区外写入被沙箱拒 + 主仓 node_modules 共享只读），CI 环境（可写 HOME）执行该验证；本地机器判定以 GS-01 断言组（配置有效性 + spawn 契约无头验证）替代。DS11 dmg 手装实测留待 founder-demo。DS12 中 renderer 既有 108 个 tsc 错误为 main 基线债务（Q2 排除：不重构 renderer UI），vite build 不受影响（esbuild 转译）。",
+  "priority": "P0"
+}
