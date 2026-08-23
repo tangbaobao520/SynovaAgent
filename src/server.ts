@@ -65,7 +65,7 @@ import solutionsRoutes from './routes/solutions';
 import notificationsRoutes from './routes/notifications';
 import backupRoutes from './routes/backup';
 import selfOpsRoutes from './routes/self-ops';
-import overflowRoutes from './routes/overflow';
+import overflowRoutes, { setOverflowGraphStore } from './routes/overflow'; // D478 — 挂载 + graphStore 生产注入
 import loopRoutes from "./routes/loops";
 import enterpriseRoutes from './routes/enterprise'; // D103
 import importRoutes from './routes/import'; // D231
@@ -355,6 +355,7 @@ export async function createServer(): Promise<Server> {
   app.use(importRoutes); // D231
   app.use(loopRoutes); // D20 — 循环状态 API
   app.use(cockpitRoutes); // D220-PHASE3 — 创始人仪表盘
+  app.use(overflowRoutes); // D478 — 溢出仪表盘 API（D476 认证+隔离已就绪；修复 D90 仅 import 未挂载）
 
   // ═══ A2: Connector Pipeline — 手动触发 ═══
   app.post('/api/connector/sync', async (req, res) => {
@@ -393,6 +394,12 @@ export async function createServer(): Promise<Server> {
       }
       setMainAgent(mainAgent);
       setGraphBridge(graphStore); // D231
+      // D478: overflow 路由 graphStore 生产注入。services.graphStore 为 unknown（BootstrapServices），
+      // 判空守卫 + 显式收窄到 GraphStore（类型源与 setter 形参同源，非 any 断言，铁律 38 合规）。
+      // graphStore 缺席（Bootstrap 降级）→ 跳过注入，路由侧既有 if (!graphStore) 503 degraded 语义保持（铁律 31）。
+      if (graphStore) {
+        setOverflowGraphStore(graphStore as import('./l4/graph-bridge').GraphStore);
+      }
     } catch (err: unknown) {
       logger.warn({ err }, "MainAgent 初始化失败 — loops 路由降级");
     }
