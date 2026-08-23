@@ -972,25 +972,23 @@ fi
 # 认领候选: 今日全部 brief (含并发 session 的) — D366: 文件名日期前缀 (mtime 会被 git pull 刷, 不可靠)
 # D366: 按文件名日期判断"今日" — 替代 find 按 mtime 的今日判定
 # 用法: today_files_by_prefix <dir>   # brief: YYYY-MM-DD 文件名前缀 (扫描 *.md)
-#       today_files_by_suffix <dir>   # dev doc: -YYYYMMDD.md 文件名后缀 (扫描 SYNOVA-IMPL-*.md)
 # 性能: 纯 bash for+case 零子进程 — grep|head 每文件 3 spawn × 349 brief = Windows 分钟级 (实测回退)
 # 注意: glob 硬编码在函数内 — 变量中的 * 不会被路径名展开 (实测), 字面 glob 才展开
 TODAY_DASH=$(date +%Y-%m-%d)
-TODAY_COMPACT=$(date +%Y%m%d)
-# D503: 时区容差 — brief/dev-doc 认领窗口扩到 ±1 天。Mac(UTC+8) 傍晚建的 brief 日期前缀
+# D503→D506: 时区容差 — brief 认领窗口扩到 ±1 天。Mac(UTC+8) 傍晚建的 brief 日期前缀
 # 对 CI runner(UTC) 是"明天"，单日过滤致 G12 在 CI 上无人认领 → 全部误报"不在 Q2 范围"
 # （D502 实证：本地 13 组全过、CI 红 7 处）；跨午夜连续作业同理。
-# 一次 python3 算三天 glob（G12 本就依赖 python3，无新增环境要求；python 不可用 → 回退单日本地行为）。
-DAY_WINDOW_DAYS=$(python3 -c "
+# D506 修正（K3 审计 P0-1）: 旧实现把 DAY_WINDOW_DAYS（含 |）放进 case 模式 ——
+#   case 的 pattern 在 parse-time 解析，变量展开是 runtime，展开结果里的 | 是字面量
+#   不是 alternation → 匹配恒失败 → ALL_TODAY_BRIEFS 空 → G12 整段跳过 soft_pass（fail-open）。
+#   改用 [[ $b =~ $RE ]]：=~ 的 RHS 在 runtime 展开后按 ERE 解析，| 作为 alternation 生效
+#   （bash 3.x/5.x 一致，K3 审计实测 + CTO 本地独立复现）。
+# 一次 python3 算三天 ERE（G12 本就依赖 python3；python 不可用 → 回退单日本地 glob 行为）。
+DAY_WINDOW_RE=$(python3 -c "
 import datetime
 t = datetime.date.today()
-print('|'.join((t + datetime.timedelta(days=k)).isoformat() + '-*' for k in (-1, 0, 1)))" 2>/dev/null || true)
-[ -z "$DAY_WINDOW_DAYS" ] && DAY_WINDOW_DAYS="${TODAY_DASH}-*"
-DAY_WINDOW_COMPACT=$(python3 -c "
-import datetime
-t = datetime.date.today()
-print('|'.join('*-' + (t + datetime.timedelta(days=k)).strftime('%Y%m%d') + '.md' for k in (-1, 0, 1)))" 2>/dev/null || true)
-[ -z "$DAY_WINDOW_COMPACT" ] && DAY_WINDOW_COMPACT="*-${TODAY_COMPACT}.md"
+print('^(' + '|'.join((t + datetime.timedelta(days=k)).isoformat() for k in (-1, 0, 1)) + ')-')" 2>/dev/null || true)
+[ -z "$DAY_WINDOW_RE" ] && DAY_WINDOW_RE="^${TODAY_DASH}-"
 today_files_by_prefix() {
   local dir="$1" f b
   dir="${dir%/}"
@@ -998,22 +996,9 @@ today_files_by_prefix() {
   for f in "$dir"/*.md; do
     [ -e "$f" ] || continue
     b=${f##*/}
-    case "$b" in
-      $DAY_WINDOW_DAYS) echo "$f" ;;
-    esac
-  done
-  return 0
-}
-today_files_by_suffix() {
-  local dir="$1" f b
-  dir="${dir%/}"
-  [ -d "$dir" ] || return 0
-  for f in "$dir"/SYNOVA-IMPL-*.md; do
-    [ -e "$f" ] || continue
-    b=${f##*/}
-    case "$b" in
-      $DAY_WINDOW_COMPACT) echo "$f" ;;
-    esac
+    if [[ "$b" =~ $DAY_WINDOW_RE ]]; then
+      echo "$f"
+    fi
   done
   return 0
 }

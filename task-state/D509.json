@@ -1,0 +1,23 @@
+{
+  "task_id": "D509",
+  "title": "union driver + G12 修复回归 main（API 合并遗漏补救）",
+  "status": "impl_done",
+  "impl": {
+    "commit": "PENDING",
+    "by": "dsh-cto",
+    "at": "2026-08-23",
+    "files": [
+      ".gitattributes",
+      "scripts/pre-commit-check.sh"
+    ]
+  },
+  "spec": {
+    "path": "-",
+    "by": "dsh-cto",
+    "at": "2026-08-23"
+  },
+  "updated_at": "2026-08-23",
+  "updated_by": "dsh-cto",
+  "note": "Codex 反馈自查：reference-map union driver 缺失（Win#8）+ API 合并 #125 漏推 pre-commit-check.sh 致 D506 G12 修复未进 main（P0）。两项一次修复。g12 测试 10/10。",
+  "priority": "P0"
+}

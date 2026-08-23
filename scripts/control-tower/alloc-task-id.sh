@@ -121,4 +121,49 @@ EOF
 
 echo "$NEW_ID"
 echo "已登记: $STATE_FILE (status=claimed)"
+# D508: 生成 brief 骨架（六字段模板接线——认领即有模板，格式错误不靠提交失败发现）
+BRIEF_DIR="$ROOT/.claude/task-briefs"
+BRIEF_FILE="$BRIEF_DIR/$(date +%Y-%m-%d)-${NEW_ID}-$(echo "$TITLE" | tr " " "-").md"
+if [ -n "${NEW_ID:-}" ] && [ ! -f "$BRIEF_FILE" ]; then
+  mkdir -p "$BRIEF_DIR"
+  cat > "$BRIEF_FILE" <<SKEL
+# Task Brief: ${NEW_ID} ${TITLE}
+
+> 生成: $(date +%Y-%m-%d) | 任务: ${NEW_ID} | 认领: <agent>
+> 参考: D333 决策四步（第一性原理→Anthropic→开源实证→收敛）
+
+#CRITERIA: A
+
+## Q0: 定位 — 项目拼图 + 文件审计
+### a) 项目拼图
+<本任务在哪一层？该层现有模块？>
+### b) 文件审计
+<grep 关键文件，file:line 引用>
+### c) 决策
+<复用/新建/取消 及理由>
+
+## Q1: 调研 — 业界最佳实践 / Anthropic 决策链 / memory 历史教训
+<引用铁律编号 + memory/ 教训；多选项必填决策参考小节>
+参考：<参考系 + 结论>
+
+## Q2: 范围 — 正确的最简方案
+做什么：
+- <path/to/file.ts — 改什么>
+不做什么：
+- 不改 scripts/audit/（K3 红线）
+- 不改 <具体文件路径，排除项必须含文件名>
+
+## Q3: 验收 — 入口 → 交互 → 结果
+入口：<从哪触发>
+处理：<中间步骤>
+结果：<最终可验证输出>
+
+## 架构层:
+<L1-L5 或 scripts（控制塔）>
+
+## Done 标准
+- [ ] verify: <可执行命令> <预期>
+SKEL
+  echo "brief 骨架已生成: $BRIEF_FILE（填写后开工）"
+fi
 exit 0

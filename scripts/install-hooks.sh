@@ -48,7 +48,9 @@ EXIT_CODE=$?
 if [ $EXIT_CODE -ne 0 ]; then
   echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) exit=$EXIT_CODE branch=$(git branch --show-current 2>/dev/null || echo unknown)" >> "$ROOT/.claude/pre-commit-failures.log"
   # 软提示: 记录门禁失败但放行（K3 审计证据），CI 权威判定
-  echo "$(date -Iseconds) | GATE_FAIL_SOFT | exit=$EXIT_CODE | branch=$(git branch --show-current 2>/dev/null || echo unknown)" >> "$ROOT/.claude/bypass.log"
+  # D508/Win#10: 软门禁噪声移出 bypass.log（证据链只记真实提交/绕过；软告警独立日志——
+  #   否则每次 commit 污染 bypass.log → 下次操作前必 checkout 清理，实测 10+ 次）
+  echo "$(date -Iseconds) | GATE_FAIL_SOFT | exit=$EXIT_CODE | branch=$(git branch --show-current 2>/dev/null || echo unknown)" >> "$ROOT/.claude/gate-soft-warnings.log"
   echo "⚠️ 本地门禁未通过（exit=$EXIT_CODE）— 已放行，CI 将作为权威判定（merge 前必须绿）" >&2
 fi
 # 无论成败都写 marker（失败但放行 = 经过了 pre-commit，非 --no-verify）

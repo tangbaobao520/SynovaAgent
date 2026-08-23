@@ -11,6 +11,23 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V4.9.0 (2026-08-23) — D506/D507/D508 批次（提交链路减负 + 并行物理隔离 + 门禁时区修复）
+
+> 创始人指示的流程减负专项：CTO 自查 + Win PR#128 五摩擦项综合。质量根（13 组判定本体/K3 注入/S-6/S-10/接线验收）零触碰。
+
+### V4.9.0 变更明细
+
+- **D506 门禁时区修复**: G12 认领窗口 case 变量展开 `|` 是字面量（parse-time vs runtime）→ 匹配恒失败 → G12 CI 上 fail-open 静默跳过。改 `[[ =~ ]]` ERE（bash 3.x/5.x 一致）+ 行为级密封测试（K3 审计 P0-1 返修，D382 铁律另起 FIX）
+- **D507 并行物理隔离**: session 专属 worktree 三层防线（worktree-manager 生命周期 + 四预设"开工三步"注入 + synova-commit 硬阻断门禁：多活跃 session 且不在 worktree → 拦截；单人时段放行零摩擦）。M8 第 4 次复发（D506 提交被打进他人分支）的根治，创始人批准
+- **D508 提交流程减负四项**:
+  1. D331 对账 merge-base 化 — merge main 后 main 侧已验提交不再要求补记（Win 实测 6+ 次死循环根治；无记录新提交仍拦，双断言测试）
+  2. `synova-commit --check` 全量 dry-run — plan-integrity + 13 组 + message 格式一次跑完汇总（逐个揭穿 7 轮 → 1-2 轮）
+  3. alloc-task-id 生成 brief 六字段骨架（真实变量 NEW_ID/TITLE + 未定义守卫）
+  4. COMMITTED 登记提前到 commit 成功瞬间（push 失败不再丢记录）+ GATE_FAIL_SOFT 移独立日志 gate-soft-warnings.log
+- **附带根治**: 测试沙箱 index 污染（本批次开发中三次事故）— GIT_DIR/GIT_WORK_TREE 结构性隔离 + 宿主 index 不变断言
+- **验证**: check-bypass-log 7 用例 / synova-commit 10 用例 / G12 窗口 10 用例 / worktree-manager 13 用例全绿；PR #125/#126/#134 CI 全绿
+- **作者**: dsh-cto
+
 ## V4.8.0 (2026-08-15) — D307 批次（session 级 worktree 隔离：物理根治共享 index 拉锯/劫持）
 
 > MINOR bump — 新机制（git worktree 隔离层）。D320 写集被吞、D330-D331 共享暂存区

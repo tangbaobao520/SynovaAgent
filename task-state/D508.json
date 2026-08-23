@@ -1,0 +1,29 @@
+{
+  "task_id": "D508",
+  "title": "提交流程减负四项（对账 merge-base/--check 全量/brief 骨架/双清洁）",
+  "status": "impl_done",
+  "spec": {
+    "path": ".claude/task-briefs/2026-08-23-D508-commit-flow-dedrag.md",
+    "by": "dsh-cto",
+    "at": "2026-08-23"
+  },
+  "impl": {
+    "commit": "35367fe6",
+    "by": "dsh-cto",
+    "at": "2026-08-23",
+    "files": [
+      "scripts/control-tower/check-bypass-log.sh",
+      "scripts/control-tower/synova-commit",
+      "scripts/control-tower/alloc-task-id.sh",
+      "scripts/install-hooks.sh",
+      "tests/control-tower/check-bypass-log.test.sh",
+      "tests/control-tower/synova-commit.test.sh"
+    ]
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-23",
+  "updated_by": "dsh-cto",
+  "note": "CTO 自查 + Win PR#128 五摩擦项综合。四项：对账 merge-base 化（死循环根治，双断言）/--check 全量 dry-run（7 轮→1-2 轮）/alloc-task-id brief 骨架/COMMITTED 登记提前+软噪声独立日志。含三次 index 污染事故的根因修复（测试 GIT_DIR 结构性隔离 + 宿主 index 不变断言）。",
+  "priority": "P0"
+}
