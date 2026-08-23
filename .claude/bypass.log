@@ -612,3 +612,6 @@ Binary file .claude/bypass.log matches
 2026-08-24T02:10:23+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D481 | AGENT=Synova-Win
 2026-08-24T02:19:44+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D481 | AGENT=Synova-Win
 2026-08-24T02:22:20+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D481 | AGENT=Synova-Win
+2026-08-24T02:28:54+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D481 | AGENT=Synova-Win | HASH=b1aaab0e2401f56b9fa99045de7b865dae8ecb86
+2026-08-24T03:18:09+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D481 | AGENT=Synova-Win
+2026-08-24T03:19:30+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D481 | AGENT=Synova-Win
