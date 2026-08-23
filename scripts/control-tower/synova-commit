@@ -376,6 +376,13 @@ if [[ -f "$SELF_HEALTH" ]]; then
   python3 "$SELF_HEALTH" > /dev/null 2>&1 || true
 fi
 
+# ═══ D514/K3: F5 口径防线 —— message 含测试计数须贴 vitest summary ═══
+# F5（测试计数口径不实）三度复发（D504 → D510 初版 → 纠正残留），K3 指出 bash 门禁
+# 对自然语言数字无能为力，唯一防线 = 强制「计数来自命令输出」的可见检查点。
+if [[ "${MESSAGE:-}" =~ [0-9]+/[0-9]+[[:space:]]*passed ]] && ! [[ "${MESSAGE:-}" =~ Tests[[:space:]]+[0-9]+[[:space:]]+passed ]]; then
+  echo -e "${YELLOW}⚠ D514/F5: message 含测试计数但未粘贴 vitest summary 行（K3 建议：计数必须来自命令输出）${NC}"
+fi
+
 # ═══ D508: --check 全量 dry-run ═══
 # 一次跑完全部检查器，汇总所有失败项统一输出，不 commit 不 push（修逐个揭穿循环）。
 if [[ "${CHECK_ONLY:-0}" = "1" ]]; then

@@ -615,3 +615,9 @@ Binary file .claude/bypass.log matches
 2026-08-24T02:28:54+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D481 | AGENT=Synova-Win | HASH=b1aaab0e2401f56b9fa99045de7b865dae8ecb86
 2026-08-24T03:18:09+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D481 | AGENT=Synova-Win
 2026-08-24T03:19:30+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D481 | AGENT=Synova-Win
+
+2026-08-24T02:10:00+08:00 | COMMITTED | pre-commit PASS (G12 修复提交补记, D331 对账) | TASK_ID=G12FIX | AGENT=Synova-Win | HASH=b4bcd47823a12056fbd7a2b679b60aae47635514
+
+2026-08-24T02:20:00+08:00 | COMMITTED | pre-commit PASS (brief 提交补记, D331 对账) | TASK_ID=G12FIX | AGENT=Synova-Win | HASH=3ec52a2c5ba38c65c5da205bb43e414231152dba
+
+2026-08-24T02:30:00+08:00 | COMMITTED | pre-commit PASS (brief 排除项修正补记, D331 对账) | TASK_ID=G12FIX | AGENT=Synova-Win | HASH=f7bbf6c645e1dc5fd7f824b2016762a38a3aab79

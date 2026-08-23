@@ -11,6 +11,12 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V4.9.2 (2026-08-24) — G12 豁免 task-state 登记元数据（Win 反馈）
+
+- **G12 skip_re 豁免 task-state/**（P2，Win 2026-08-24 实测 PR #139 首跑 CI 红）: task-state/*.json|*.md 是任务登记元数据（D382 状态机，各角色按阶段更新），非代码实现；dev-doc 提交 spec 时无"实现 brief"，混合提交走全量 13 组被 G12「不在 Q2 范围」误拦。修法: skip_re 增加 `task-state/.*\.(json|md)$`——与 is_doc_only 的 DOC_PREFIX_RE（L175 同正则）语义对齐（D366 docs/ 豁免同型）；**仅豁免 json/md，task-state/ 下若出现 .ts 仍被 G12 检查**（防藏代码，fail-closed）。
+- **测试**: tests/control-tower/g12-taskstate-exempt.test.sh（新建，T1-T5：接线 + json/md 豁免 + .ts 不豁免 + 代码保护不削弱 + docs 先例保持）。
+- **作者**: Synova-Win（创始人授权越界补丁，DSH 预审）
+
 ## V4.9.1 (2026-08-23) — D513 批次（控制塔四项返修：Win 台账反馈 + D331 残余根因）
 
 - **③ 对账 base 防御性刷新**（P0，Win 37dc1cae 根因）: `git push <URL>` 不更新 tracking ref → BYPASS_BASE 陈旧 → merge-base 失效 → 补记循环残余。check-bypass-log.sh 对账前 fetch 最新 tracking ref（失败显式降级）。

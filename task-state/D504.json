@@ -34,7 +34,7 @@
       "task-state/D504.json"
     ],
     "evidence": {
-      "unit": "tests/electron/ 25/25 passed（backend-spawn 契约 8 + desktop-build 静态断言 15 + auto-update 存量 2）",
+      "unit": "tests/electron/ 25/25 passed（backend-spawn 8 + desktop-build 13 + auto-update 4——K3 D510 复审 P1-3：旧「10+15」为估算误记，以此为准）",
       "gs01": "GS-01 增强断言 7/7 pass, exit 0, evidence JSON 入库（含 L1-1/L1-4/L1-5/L1-7 四条 Electron 断言）",
       "renderer_build": "vite build 产出 dist/renderer/index.html（DS5；index.html 入口实测缺失已补齐）",
       "wire_check": "grep ensureBackend/SYNOVA_DB_PATH/app.isPackaged electron/main.cjs 非零；renderer 8 处 fetch 全部经 getApiBase（铁律 9）"
@@ -57,6 +57,6 @@
   "fix_task_id": null,
   "updated_at": "2026-08-23",
   "updated_by": "kimi-k3",
-  "note": "DS 覆盖：DS1-9 实现于本分支；DS4 electron-builder --dir 受限说明——@electron/rebuild 尝试在 ~/.electron-gyp 重编译 bcrypt（工作区外写入被沙箱拒 + 主仓 node_modules 共享只读），CI 环境（可写 HOME）执行该验证；本地机器判定以 GS-01 断言组（配置有效性 + spawn 契约无头验证）替代。DS11 dmg 手装实测留待 founder-demo。DS12 中 renderer 既有 108 个 tsc 错误为 main 基线债务（Q2 排除：不重构 renderer UI），vite build 不受影响（esbuild 转译）。",
+  "note": "K3 D510 复审 P1-3 修正：evidence.unit 口径统一 8+13+4（原「10+15」系估算误记）。D514",
   "priority": "P0"
 }

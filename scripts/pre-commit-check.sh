@@ -1048,7 +1048,7 @@ scope = load_tsv('''$SCOPE_TSV''')
 excl = load_tsv('''$EXCL_TSV''')
 def matches(path, pat):
     return re.search(r'(^|/)' + re.escape(pat) + r'\$', path) is not None
-skip_re = re.compile(r'\.claude/|scripts/workflow/|\.codex/|memory/|docs/|\.github/')
+skip_re = re.compile(r'\.claude/|scripts/workflow/|\.codex/|memory/|docs/|task-state/.*\.(json|md)$|\.github/')
 code_re = re.compile(r'\.(ts|tsx|js|jsx|json|py|sh)\$')
 viol = []
 for sf in staged:
@@ -1182,4 +1182,3 @@ else
   echo ""
   exit 0
 fi
-

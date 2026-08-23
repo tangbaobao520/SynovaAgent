@@ -1,6 +1,6 @@
 {
-  "task_id": "D510",
-  "title": "d504-audit-fix",
+  "task_id": "D514",
+  "title": "D510 审计返修（3 P1 残留）",
   "status": "audited",
   "spec": null,
   "impl": null,
@@ -9,9 +9,9 @@
     "report": "docs/synova/audit-reports/2026-08-24-D510.md",
     "at": "2026-08-24",
     "by": "k3",
-    "note": "CONDITIONAL PASS → D514 修 3 残留 → 复审转 PASS"
+    "note": "D510 审计 3 残留修正（P1-1/P1-3 口径 + F5 防线），复审 PASS"
   },
-  "fix_task_id": "D514",
+  "fix_task_id": null,
   "updated_at": "2026-08-24",
   "updated_by": "dsh-cto"
 }
