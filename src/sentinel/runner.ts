@@ -16,14 +16,12 @@ import type { Sentinel, SentinelCheckResult, SentinelFinding } from './types';
 import type { Evidence } from '../evidence/types';
 import { getSentinelRegistry } from './registry';
 import { getBaselineStore } from './baseline-store';
-import {
-  evaluateSentinelHealth,
+import { HEALTH_REGISTRY_RATIO_WARNING, HEALTH_FAILURES_WARNING, HEALTH_FAILURES_CRITICAL, HEALTH_UPTIME_IDLE_MS, HEALTH_STALENESS_MULTIPLIER, evaluateSentinelHealth,
   estimateCronIntervalMs,
   SELF_CHECK_SENTINEL_ID,
   SELF_CHECK_SENTINEL_NAME,
   CRON_INTERVAL_FALLBACK_MS,
-  type SentinelHealthState,
-} from './self-check';
+  type SentinelHealthState, } from './self-check';
 import {
   createSentinelEventsTable,
   appendSentinelEvent,
