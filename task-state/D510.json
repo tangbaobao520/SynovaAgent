@@ -1,0 +1,47 @@
+{
+  "task_id": "D510",
+  "title": "d504-audit-fix",
+  "status": "impl_done",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D510-d504-audit-remediation-20260823.md",
+    "commit": "f1d7ae97",
+    "by": "dev-doc",
+    "at": "2026-08-23"
+  },
+  "impl": {
+    "by": "deepseek-harness",
+    "at": "2026-08-23",
+    "branch": "feat/d510-audit-remediation",
+    "files": [
+      "scripts/golden-scenarios/GS-01-first-diagnosis/run.sh",
+      "electron/backend-spawn.cjs",
+      "electron/main.cjs",
+      "build-synova.cjs",
+      "task-state/D504.json",
+      "task-state/D510.json",
+      ".claude/task-briefs/2026-08-23-D510-d504-audit-fix.md"
+    ],
+    "evidence": {
+      "f1_route": "降级路线——pack:dir 实测失败（electron-builder command not found），commit message 措辞「静态配置断言 + 无头契约验证」，无 release/ 产物为声明事实",
+      "l1_regression": "npx vitest run tests/electron/ 25/25 passed（backend-spawn 8 + desktop-build 13 + auto-update 4——复核纠正初版误写的 15+2 分解，总数 25 不变）",
+      "gs01": "GS-01 exit 0, 7/7 断言通过（evidence/GS-01-2026-08-23.json），断言①已标注静态检查性质",
+      "l2a_consistency": "grep dist/index.js 三文件=0；run.sh 含「静态检查非打包验证」×2；D504.json note 含「静态配置断言」+「DESCOPE」三方一致声明",
+      "deliverable_report": ".claude/task-briefs/2026-08-23-D510-d504-audit-fix.md（U4 DS1-13 声明表 + DESCOPE 表 2 行 + founder-demo checklist + 门禁处置段 + F5 口径 8+15+2=25）"
+    }
+  },
+  "audit": {
+    "by": "kimi-k3",
+    "at": "2026-08-24",
+    "verdict": "conditional_pass",
+    "report": "docs/synova/audit-reports/2026-08-24-D510.md",
+    "findings": [
+      "P1-1 task-state/D510.json:29 deliverable_report 残留旧口径 8+15+2（F5 残留）",
+      "P1-2 d0094b26 自身无 COMMITTED 补记，『全部入库』声明 2/3（F3 残留）",
+      "P1-3 task-state/D504.json:37 evidence.unit 仍为第三套错误口径 10+15（F5 残留）"
+    ],
+    "next": "修复上述 3 行后仅复审变更即可转 PASS；GS-01 在审计 clone 因 better-sqlite3 原生崩溃不可复现，判环境依赖（evidence JSON 已入库）"
+  },
+  "fix_task_id": "D504",
+  "updated_at": "2026-08-24",
+  "updated_by": "kimi-k3"
+}
