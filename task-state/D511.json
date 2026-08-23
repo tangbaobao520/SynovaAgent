@@ -1,0 +1,41 @@
+{
+  "task_id": "D511",
+  "title": "version-guard-gate",
+  "status": "impl_done",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D511-version-guard-20260823.md",
+    "commit": "27d1ca5f",
+    "by": "dev-doc",
+    "at": "2026-08-23"
+  },
+  "impl": {
+    "commit": "ab0e81f4",
+    "by": "dsh",
+    "at": "2026-08-24",
+    "branch": "feat/d511-version-guard",
+    "pushed": "c0ed0054",
+    "summary": "版本守卫门禁 V4.10.0：check-version-guard.sh（三态 fail-closed + 逃生舱）+ pre-commit 组 14 接线 + VERSION.md bump 同 commit（吃自己的药）+ 15 用例测试全绿；附带修复 G12 BSD sed 可移植性 P0（Mac 上代码文件全误报不在 Q2 范围）",
+    "notes": [
+      "测试命名 check-version-guard.test.sh（U7/CT-40 配对规则物理门禁权威 > dev doc §5.1 的 version-guard.test.sh）",
+      "bump 级别 V4.10.0（MINOR，规范§二）非派单标题 V4.9.1——分歧记录 dev doc §5.3",
+      "version.log 实际路径 .codex/control-tower/logs/version.log（非 schema 目录 logs/version/v1/），git add -f 入库",
+      "存量失败隔离：13 个 control-tower .test.sh + 63 个 vitest 失败均在未改动 D512 worktree 复现，与 D511 写集零交集",
+      "vitest 失败集与基线 diff 仅时间戳/pid/路径——零回归"
+    ]
+  },
+  "audit": {
+    "by": "kimi-k3",
+    "at": "2026-08-24",
+    "verdict": "conditional_pass",
+    "report": "docs/synova/audit-reports/2026-08-24-D511-D512.md",
+    "findings": [
+      "P1-1 .codex/control-tower/logs/version.log 混入 V9.9.9 测试残留（auto-tag V9.9.9，tag-consistency 测试假版本经 synova-commit auto_tag_and_version 写穿真实仓库；LOG_PY 固定 PROJECT_ROOT 而 VERSION_MD 跟随 cwd）——三处同步被破坏，需删行+隔离修复",
+      "P2-1 G12 BSD sed 附带修复超出 dev doc §5.1 写集（已显式声明+必要性自证成立，控制塔变更建议独立评审）",
+      "P2-2 ab0e81f4（吃自己的药提交）pre-commit 记录为一次性补记（D331 对账）非实时；db1b9431 有实时 PASS",
+      "P2-3 组 14 标题实际 L1155（声称 L1152），行号小偏差无实质"
+    ]
+  },
+  "fix_task_id": null,
+  "updated_at": "2026-08-24",
+  "updated_by": "kimi-k3"
+}

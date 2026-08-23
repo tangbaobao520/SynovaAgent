@@ -1,0 +1,48 @@
+{
+  "task_id": "D512",
+  "title": "gs-refresh-evidence",
+  "status": "impl_done",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D512-gs-refresh-20260823.md",
+    "commit": "988154a7",
+    "by": "dev-doc",
+    "at": "2026-08-23"
+  },
+  "impl": {
+    "commit": "e9e2be93",
+    "by": "deepseek-harness",
+    "at": "2026-08-24",
+    "files": [
+      "scripts/golden-scenarios/run-all.sh",
+      "tests/control-tower/run-all.test.sh",
+      ".github/workflows/product-progress.yml",
+      "scripts/golden-scenarios/GS-07-data-security/README.md",
+      "scripts/golden-scenarios/evidence/GS-02-2026-08-24.json",
+      "scripts/golden-scenarios/evidence/GS-03-2026-08-24.json",
+      "scripts/golden-scenarios/evidence/GS-04-2026-08-24.json",
+      "scripts/golden-scenarios/evidence/GS-05-2026-08-24.json",
+      "scripts/golden-scenarios/evidence/GS-06-2026-08-24.json",
+      "scripts/golden-scenarios/evidence/GS-07-2026-08-24.json",
+      "scripts/golden-scenarios/evidence/GS-08-2026-08-24.json",
+      "docs/synova/product-lines/product-progress.json",
+      "docs/synova/product-lines/product-progress.html",
+      "docs/synova/product-lines/todos.yaml",
+      "docs/synova/product-lines/evidence/test-2026-08-24.json"
+    ]
+  },
+  "audit": {
+    "by": "kimi-k3",
+    "at": "2026-08-24",
+    "verdict": "conditional_pass",
+    "report": "docs/synova/audit-reports/2026-08-24-D511-D512.md",
+    "findings": [
+      "P1-1 main_sha 字段值与 main 不符：23c091ad 是 rebase 前 D512 分支提交（非 main 祖先）——run-all.sh 取 git rev-parse --short HEAD（运行分支 HEAD），契约未约束运行分支",
+      "P2-1 run-all.sh --skip 契约声称不区分大小写但 case 匹配大小写敏感（--skip=GS01 不生效）",
+      "P2-2 D512 无 task brief（.claude/task-briefs/ 无条目；仅未跟踪模板占位）——组 6 仅对 src/ 暂存强制 brief，scripts/ 变更无 brief 门禁",
+      "P2-3 evidence/test-2026-08-24.json A2 证据 quote 'vitest 套件全绿' 仅指 yaml 绑定套件子集，与全量 63 失败并存，措辞易误导"
+    ]
+  },
+  "fix_task_id": null,
+  "updated_at": "2026-08-24",
+  "updated_by": "kimi-k3"
+}
