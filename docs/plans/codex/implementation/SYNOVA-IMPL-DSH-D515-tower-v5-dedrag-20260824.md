@@ -82,6 +82,7 @@ VERSION.md 条目 + version.log + tag **与最后一批代码同 commit 或紧�
 1. task-start.sh 开头（参数校验后）加检测：
    - `git status --porcelain` 非空（主树有未提交改动）**且** session-registry 有其他活跃 session（复用 synova-commit D507 段的判定方式：`python3 session_registry.py list --active` 计数去重本人）→ **硬拦截**（exit 1），提示文案含具体命令：
      `python3 scripts/control-tower/worktree-manager.py create <任务名>` + `cd ../synova-wt-<任务名>`
+     （main 上的 Win D307 版：分支名自动为 `session/<任务名>`，worktree 目录 `../synova-wt-<任务名>`——finish 时 manager 会校验已 push 后清理）
    - registry 不可读 → 显式降级提示（不静默，铁律 11）
 2. pre-commit-check.sh 组 6 区域加软检查（主树提交时活跃 session>1 → 黄色告警，不阻断——CI 权威原则）
 
@@ -97,10 +98,16 @@ VERSION.md 条目 + version.log + tag **与最后一批代码同 commit 或紧�
 **规格**：在组 1 之前加前置判定：
 ```bash
 # V5/P2: 纯补记提交（仅 .claude/bypass.log）→ 只跑 Secrets + 跳过其余组
-_STAGED_ONLY=$(git diff --cached --name-only 2>/dev/null)
-if [ "$_STAGED_ONLY" = ".claude/bypass.log" ]; then
-  # 跑 Secrets（证据文件也可能泄密）→ 过了直接 exit 0
+# ⚠️ 坑（D515 spec 自查发现）: synova-commit 的 D414 机制会把 bypass.log 自动 add
+# 进正常提交——判定必须用「--check 场景标志 or 用户显式 --files 仅为 bypass.log」，
+# 不能裸看 git diff --cached（会被 D414 误触发 → 正常提交走快速通道 = 质量根被绕过）。
+# 正确判定：synova-commit 传 SYNO_FASTLANE=1 环境变量（当且仅当 --files 列表仅
+# 含 .claude/bypass.log 时），pre-commit-check.sh 检查该变量而非自己猜暂存区。
+if [ "${SYNO_FASTLANE:-0}" = "1" ]; then
+  # 仅跑 Secrets（证据文件也可能泄密）→ 过了直接 exit 0
 fi
+# synova-commit 侧配套: --files 解析后，若 FILES 数组长度==1 且为 .claude/bypass.log
+# → export SYNO_FASTLANE=1 再调 pre-commit-check.sh
 ```
 - Secrets 保留（bypass.log 内容也扫）；对账（D331）由 pre-push 兜底无需重复
 - 输出必须显式："✅ V5 纯补记快速通道：仅 bypass.log + Secrets，跳过 12 组"
@@ -211,6 +218,16 @@ fi
 
 ## 4. 执行纪律（防你自己被拉扯——本任务就是治拉扯的，别自己陷进去）
 
+### 4.0 环境自愈（开工前必做，30 秒）
+```bash
+cd /Users/wane/SynovaAgent
+# 坑0a: core.bare 可能被历史事故误设 true（Codex P10 记录过、2026-08-24 仍复发）——
+#        症状 "fatal: this operation must be run in a work tree"
+git config core.bare false
+# 坑0b: 主树可能被其他 session 占用（分支非 main/有暂存）——不要 checkout/清理，
+#        你只做 fetch + worktree（都不碰工作区）
+```
+
 ### 4.1 开工
 ```bash
 cd /Users/wane/SynovaAgent
@@ -225,6 +242,11 @@ cd ../synova-wt-D515 && ln -sf /Users/wane/SynovaAgent/node_modules node_modules
 - **网络断**（443 不通）：GitHub REST API 通道已验证可行（blob→tree→commit→ref），但**必须推完整文件集**（历史上挑文件推送曾导致内容丢失——D509 教训），推后用 contents API 逐项核验落地
 - push 被对账拦：先看缺哪个 hash（脚本会列）→ D451 补记一行（含完整 40 位 hash）→ 再推。最多一轮，不死循环（D508 登记提前机制已在 main，新提交不会再自指）
 
+### 4.2.1 finish 与网络
+worktree-manager finish 用 ls-remote 校验分支已 push（PUSH_URL=github.com）。网络断时
+finish 会误判"未 push"拒绝清理——此时可 `--keep-branch` 先清理目录、分支留待网络恢复；
+或直接 `git worktree remove ../synova-wt-D515`（提交已 push 过即可安全清）。
+
 ### 4.3 完成标准（全部满足才算完）
 - [ ] 13 项逐项验收命令全绿（每项的 verify 在 §1）
 - [ ] 新增配对测试全绿 + 既有 check-bypass-log/synova-commit/g12 系列测试无回归
@@ -235,7 +257,7 @@ cd ../synova-wt-D515 && ln -sf /Users/wane/SynovaAgent/node_modules node_modules
 
 ## 5. 并行冲突声明
 
-- D511（版本守卫门禁）dev-doc 线在做——**与项 3 都改 pre-commit-check.sh，冲突！** 执行前先查 D511 状态（task-state/D511.json）：若已 impl_done/merged → 基于其之上做；若在进行中 → **项 3 等 D511 合并后再动**（先做项 1/2/4-13）
+- D511（版本守卫门禁）dev-doc 线在做——**与项 3 都改 pre-commit-check.sh，冲突！** 执行前先查 D511 状态（spec 撰写时 D511=claimed 未动工）：若已 impl_done/merged → 基于其之上做；若在进行中 → **项 3 等 D511 合并后再动**（先做项 1/2/4-13）
 - D512（GS 刷新）改 golden-scenarios/evidence——与本项目零重叠 ✅
 - D510 线已全部闭环 ✅
 
