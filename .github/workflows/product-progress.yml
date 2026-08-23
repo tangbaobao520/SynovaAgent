@@ -55,6 +55,13 @@ jobs:
           else
             echo "vitest 未全绿（exit=$?），跳过证据写入——不写假绿证据（fail-closed）"
           fi
+      - name: D512 GS 场景刷新（诚实记录，不阻断进度重算）
+        run: |
+          # GS fail = 证据诚实 RED（evidence verdict=fail 入库），不阻断 A1-A4 主流程（fail-closed 记日志）
+          # --skip=gs01: GS-01 断言诚实性归 D510，D510 合并 main 后去掉 skip
+          if ! bash scripts/golden-scenarios/run-all.sh --skip=gs01; then
+            echo "::warning::GS 场景部分失败——如实记录 evidence verdict=fail，不阻断进度重算（D512 dev doc §5.3 决策 A）"
+          fi
       - name: 一键刷新（A3+A4+A5，含 A1 惰性失效）
         run: bash scripts/product-lines/refresh-all.sh
       - name: 产物有变化则提交到 bot 分支并开 PR

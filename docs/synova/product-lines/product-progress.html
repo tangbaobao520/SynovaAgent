@@ -70,7 +70,7 @@ table.points td, table.points th { border: 1px solid #eee; padding: 4px 6px; tex
   <ul class="d-options"><li>○ 资本循环（线 10） — 演示刚需（持续监测叙事）；审计员已给出转绿路径，第一步只需修一行配置 <b class='sug'>建议</b></li><li>○ 首次诊断（线 06） — 演示刚需（首诊叙事）；但从未端到端实测，路径最长</li></ul>
   <div class='suggestion'>建议：<b>资本循环（线 10）</b>。理由：修复路径最短、每步都有审计员给的断点清单，最快立信</div>
 </div></div>
-
+<div class='degraded'><b>⚠️ 数据源降级（页面据此标注，不静默）：</b><ul><li>状态判定异常 3 处（详见 product-progress.json）</li></ul></div>
 <div class="lines">
 <div class="line" id="line-1">
   <div class="line-head">
@@ -117,14 +117,14 @@ table.points td, table.points th { border: 1px solid #eee; padding: 4px 6px; tex
 <div class="line" id="line-4">
   <div class="line-head">
     <span class="line-name">4. 数据接入</span>
-    <span class="line-value">CRM/ERP/HR 连接器 + 文件导入 + 问卷，三条路都能把企业数据接进来</span>
+    <span class="line-value">文件导入 + 问卷 + 飞书连接器（CRM/ERP/HR 直连按施工图 Stage 1+ 推进，配置层照常）</span>
     <span class="pct">0%</span>
   </div>
   <div class="bar"><div class="bar-fill" style="width:0%;background:#9e9e9e"></div></div>
   <div class="meta">已验证 0/8 个验收点 · 此前粗估 ~15%（仅飞书+CSV（审计员 严重问题-2））</div>
   
   <details><summary>验收点清单（点击展开）</summary>
-    <table class="points"><tr><th>#</th><th>什么叫做完</th><th>状态</th></tr><tr><td>4-1</td><td>问卷路径（没数据也能起步）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>入口存在，端到端未实测</span></td></tr><tr><td>4-2</td><td>CSV 文件导入</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>已有</span></td></tr><tr><td>4-3</td><td>飞书连接器</td><td><b style='color:#f9a825'>🟡 待审计员确认</b> <span class='ev'>证据：证据记录</span><span class='note'>已有（审计员 严重问题-2：仅飞书+CSV）</span></td></tr><tr><td>4-4</td><td>CRM 连接器（crm-standard 契约）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>审计员：L5 无 CRM 连接器</span></td></tr><tr><td>4-5</td><td>ERP 连接器（erp-standard 契约）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>审计员：L5 无 ERP 连接器</span></td></tr><tr><td>4-6</td><td>HR 连接器（hr-standard 契约）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>审计员：L5 无 HR 连接器</span></td></tr><tr><td>4-7</td><td>导入校验：坏数据明确报错，不静默丢（fail-closed）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>审计员 严重问题-3 静默放行 教训</span></td></tr><tr><td>4-8</td><td>审计员复核连接器链路</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> </td></tr></table>
+    <table class="points"><tr><th>#</th><th>什么叫做完</th><th>状态</th></tr><tr><td>4-1</td><td>问卷路径（没数据也能起步）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>入口存在，端到端未实测</span></td></tr><tr><td>4-2</td><td>CSV 文件导入</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>已有</span></td></tr><tr><td>4-3</td><td>飞书连接器</td><td><b style='color:#f9a825'>🟡 待审计员确认</b> <span class='ev'>证据：证据记录</span><span class='note'>已有（审计员 严重问题-2：仅飞书+CSV）</span></td></tr><tr><td>4-4</td><td>CRM 连接器（crm-standard 契约）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>审计员：L5 无 CRM 连接器；创始人裁决 B：直连按施工图 Stage 1+ 推进（非搁置），配置层照常</span></td></tr><tr><td>4-5</td><td>ERP 连接器（erp-standard 契约）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>审计员：L5 无 ERP 连接器；创始人裁决 B：直连按施工图 Stage 1+ 推进（非搁置），配置层照常</span></td></tr><tr><td>4-6</td><td>HR 连接器（hr-standard 契约）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>审计员：L5 无 HR 连接器；创始人裁决 B：直连按施工图 Stage 1+ 推进（非搁置），配置层照常</span></td></tr><tr><td>4-7</td><td>导入校验：坏数据明确报错，不静默丢（fail-closed）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>审计员 严重问题-3 静默放行 教训</span></td></tr><tr><td>4-8</td><td>审计员复核连接器链路</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> </td></tr></table>
   </details>
   <div class='todos'><b>还差 1 件事：</b><ul><li><b style='color:#c62828'>严重问题</b> · Agent 核心能力全链路 FAIL（0/3 贯通）：L5 无 CRM/财务/HR 连接器；L4 类型契约断裂（Market≠Client、People≠Per（任务编号 357） <span class='who'>（Claude Code · 来自审计发现台账（审计员 全链路审计））</span><div class='accept'>做完标准：场景 实测场景 01、实测场景 02、实测场景 03、实测场景 04 转绿（exit 0 + 证据入库）</div></li></ul></div>
 </div>
@@ -210,7 +210,7 @@ table.points td, table.points th { border: 1px solid #eee; padding: 4px 6px; tex
   <details><summary>验收点清单（点击展开）</summary>
     <table class="points"><tr><th>#</th><th>什么叫做完</th><th>状态</th></tr><tr><td>10-1</td><td>ERP 财务数据上传 → Financial 节点（erp-standard 契约）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>审计员：L5 无 ERP 连接器</span></td></tr><tr><td>10-2</td><td>属性契约对齐（cashBalance↔cash 等 snake/camel）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>审计员：属性契约断裂</span></td></tr><tr><td>10-3</td><td>严重问题 哨兵 配置表 挂载，阈值真实触发</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>审计员 已给转绿路径：一行修 配置表 起步</span></td></tr><tr><td>10-4</td><td>现金流跑道计算正确（filter bug 修复）</td><td><b style='color:#f9a825'>🟡 待审计员确认</b> <span class='ev'>证据：证据记录</span><span class='note'>审计员：计算-现金流跑道-months.ts:60 filter bug</span></td></tr><tr><td>10-5</td><td>告警 → 工单 → 推送链路（资本异常老板收得到）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> </td></tr><tr><td>10-6</td><td>无数据不误报 严重告警（降级诚实）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>审计员 T3：负向断言待补</span></td></tr><tr><td>10-7</td><td>报告一页纸含资本结论</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> </td></tr><tr><td>10-8</td><td>审计员全链路复核通过（审计员 维度 20c 线 100% 门槛）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> </td></tr></table>
   </details>
-  <div class='todos'><b>还差 3 件事：</b><ul><li><b style='color:#c62828'>严重问题</b> · Agent 核心能力全链路 FAIL（0/3 贯通）：L5 无 CRM/财务/HR 连接器；L4 类型契约断裂（Market≠Client、People≠Per（任务编号 355） <span class='who'>（Claude Code · 来自审计发现台账（审计员 全链路审计））</span><div class='accept'>做完标准：场景 实测场景 03、实测场景 05 转绿（exit 0 + 证据入库）</div></li><li><b style='color:#c62828'>严重问题</b> · Agent 核心能力全链路 FAIL（0/3 贯通）：L5 无 CRM/财务/HR 连接器；L4 类型契约断裂（Market≠Client、People≠Per（任务编号 356） <span class='who'>（Claude Code · 来自审计发现台账（审计员 全链路审计））</span><div class='accept'>做完标准：场景 实测场景 03、实测场景 05 转绿（exit 0 + 证据入库）</div></li><li><b style='color:#ef6c00'>优先改进</b> · CONDITIONAL PASS（无 严重问题）：严重问题-2 写侧契约收敛（3 JSON 对齐读侧）+ 严重问题-3 静默放行 修复物理成立（T1/T2 24/（任务编号 355） <span class='who'>（Claude Code · 来自审计发现台账（审计员 任务编号 355 审计））</span><div class='accept'>做完标准：场景 实测场景 03、实测场景 05 转绿（exit 0 + 证据入库）</div></li></ul></div>
+  <div class='todos'><b>还差 4 件事：</b><ul><li><b style='color:#c62828'>严重问题</b> · Agent 核心能力全链路 FAIL（0/3 贯通）：L5 无 CRM/财务/HR 连接器；L4 类型契约断裂（Market≠Client、People≠Per（任务编号 355） <span class='who'>（Claude Code · 来自审计发现台账（审计员 全链路审计））</span><div class='accept'>做完标准：场景 实测场景 03、实测场景 05 转绿（exit 0 + 证据入库）</div></li><li><b style='color:#c62828'>严重问题</b> · Agent 核心能力全链路 FAIL（0/3 贯通）：L5 无 CRM/财务/HR 连接器；L4 类型契约断裂（Market≠Client、People≠Per（任务编号 356） <span class='who'>（Claude Code · 来自审计发现台账（审计员 全链路审计））</span><div class='accept'>做完标准：场景 实测场景 03、实测场景 05 转绿（exit 0 + 证据入库）</div></li><li><b style='color:#ef6c00'>优先改进</b> · CONDITIONAL PASS（无 严重问题）：严重问题-2 写侧契约收敛（3 JSON 对齐读侧）+ 严重问题-3 静默放行 修复物理成立（T1/T2 24/（任务编号 355） <span class='who'>（Claude Code · 来自审计发现台账（审计员 任务编号 355 审计））</span><div class='accept'>做完标准：场景 实测场景 03、实测场景 05 转绿（exit 0 + 证据入库）</div></li><li><b style='color:#ef6c00'>优先改进</b> · CONDITIONAL PASS（无 严重问题）：三目标缺陷（严重问题-1 配置表 挂载/优先改进-1 降级 拦截/优先改进-3 入口校验）在其层全部物理（任务编号 356） <span class='who'>（Claude Code · 来自审计发现台账（审计员 任务编号 356 审计））</span><div class='accept'>做完标准：场景 实测场景 03、实测场景 05 转绿（exit 0 + 证据入库）</div></li></ul></div>
 </div>
 <div class="line" id="line-11">
   <div class="line-head">
@@ -437,7 +437,7 @@ table.points td, table.points th { border: 1px solid #eee; padding: 4px 6px; tex
   <div class='todos none'>暂无待办（好事）</div>
 </div></div>
 <div class="footer">
-  生成时间：2026-08-17 16:56:57（北京时间）<br>
+  生成时间：2026-08-24 01:54:10（北京时间）<br>
   进度怎么算：每条线写死了"到 100% 的定义"（验收点清单），进度 = 被证据验证的验收点比例。
   代码一变，相关证据自动变黄要求重跑；任何线要到 100%，必须审计员全量复核。<br>
   待办从哪来：审计发现台账、权威偏差登记、C线差距清单、任务看板、场景实测，五个现成来源自动聚合，零新增维护。<br>
