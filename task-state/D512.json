@@ -1,16 +1,37 @@
 {
   "task_id": "D512",
   "title": "gs-refresh-evidence",
-  "status": "spec_done",
+  "status": "impl_done",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D512-gs-refresh-20260823.md",
     "commit": "988154a7",
     "by": "dev-doc",
     "at": "2026-08-23"
   },
-  "impl": null,
+  "impl": {
+    "commit": "8af829f8",
+    "by": "deepseek-harness",
+    "at": "2026-08-24",
+    "files": [
+      "scripts/golden-scenarios/run-all.sh",
+      "tests/control-tower/run-all.test.sh",
+      ".github/workflows/product-progress.yml",
+      "scripts/golden-scenarios/GS-07-data-security/README.md",
+      "scripts/golden-scenarios/evidence/GS-02-2026-08-24.json",
+      "scripts/golden-scenarios/evidence/GS-03-2026-08-24.json",
+      "scripts/golden-scenarios/evidence/GS-04-2026-08-24.json",
+      "scripts/golden-scenarios/evidence/GS-05-2026-08-24.json",
+      "scripts/golden-scenarios/evidence/GS-06-2026-08-24.json",
+      "scripts/golden-scenarios/evidence/GS-07-2026-08-24.json",
+      "scripts/golden-scenarios/evidence/GS-08-2026-08-24.json",
+      "docs/synova/product-lines/product-progress.json",
+      "docs/synova/product-lines/product-progress.html",
+      "docs/synova/product-lines/todos.yaml",
+      "docs/synova/product-lines/evidence/test-2026-08-24.json"
+    ]
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-08-23",
-  "updated_by": "dev-doc"
+  "updated_at": "2026-08-24",
+  "updated_by": "deepseek-harness"
 }
