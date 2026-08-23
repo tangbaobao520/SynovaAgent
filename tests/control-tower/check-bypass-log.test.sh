@@ -86,6 +86,15 @@ rc=$?
   fi
 )
 
+# ═══ D513/③: 防御 fetch 接线断言（本地 base 对账 + 接线 grep 双验）═══
+if grep -q "防御性刷新 base" "$GATE"; then
+  echo "  ✅ D513/③: 防御 fetch 已接线"
+  PASS=$((PASS+1))
+else
+  echo "  ❌ D513/③: 防御 fetch 未接线"
+  FAIL=$((FAIL+1))
+fi
+
 echo ""
 echo "结果: $PASS 通过, $FAIL 失败"
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1

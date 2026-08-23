@@ -115,7 +115,8 @@ if [ -n "$WF_TS" ] && [ "$WF_STEP" != "brief-filled" ]; then
 fi
 
 TODAY=$(date +%Y-%m-%d)
-BRIEF=$(find .claude/task-briefs/ -name "${TODAY}*" 2>/dev/null | head -1)
+# D513/⑥: ls -t 取最新 mtime —— find|head -1 按文件系统序，多 brief 时挑错证据对象（Win 8f33e82a）
+BRIEF=$(ls -t .claude/task-briefs/${TODAY}*.md 2>/dev/null | head -1)  # swallow-ok: 无今日 brief → 空 → 走既有阻断分支
 if [ -z "$BRIEF" ]; then
   echo "⛔ 写代码前物理阻断 — 无今日 task brief"
   echo "   必须先运行: bash scripts/workflow/task-start.sh \"你的任务描述\""

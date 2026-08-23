@@ -26,6 +26,14 @@
 - **级别口径**: 派单标题"V4.9.1 候选"低估——新增门禁组按规范 §二 = MINOR → V4.10.0（决策记录见 dev doc §5.3）
 - **验证**: tests/control-tower/version-guard.test.sh 15 用例全绿（拦/放行/跳过/降级/接线/边界）；D511 自身提交带本条 bump 通过组 14——吃自己的药
 - **作者**: dsh-cto（DSH 编码 session）
+## V4.9.1 (2026-08-23) — D513 批次（控制塔四项返修：Win 台账反馈 + D331 残余根因）
+
+- **③ 对账 base 防御性刷新**（P0，Win 37dc1cae 根因）: `git push <URL>` 不更新 tracking ref → BYPASS_BASE 陈旧 → merge-base 失效 → 补记循环残余。check-bypass-log.sh 对账前 fetch 最新 tracking ref（失败显式降级）。
+- **① D328 merge 豁免**: MERGE_HEAD 存在即跳过——本地 merge 构成提交各自已过 D328；Win 曾被迫走注入缝绕过。
+- **② verify-parallel PYBIN 探测**: 裸 python3 → 三级探测（D329/D330 同型第三处漏网；Win Git Bash 无 python3 曾 exit 127）。
+- **⑤⑥ brief 指向**: task-start.sh 恢复写 current-brief（最新 mtime）；hook-block-write.sh `find|head -1` 改 `ls -t`。
+- **M13 教训（本批开发中第四次 index/config 污染事故根因）**: 测试沙箱的 `git config` 写入会污染宿主（GIT_DIR 只隔 index 不隔 config）——沙箱 git 身份必须 `git -c user.*=` 一次性参数，禁止 `git config` 持久写入。commit-msg-merge.test.sh 已按此重写。
+- **作者**: dsh-cto
 
 ## V4.9.0 (2026-08-23) — D506/D507/D508 批次（提交链路减负 + 并行物理隔离 + 门禁时区修复）
 
