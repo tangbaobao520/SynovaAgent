@@ -1,0 +1,107 @@
+<!--
+  SYNOVA-IMPL-D481: auth.integration.test.ts 契约对齐修复（D479 审计遗留）
+  状态: dev doc | 2026-08-24 | 优先级 P2
+  权威文档: docs/synova/audit-reports/2026-08-17-D356.md 无; D479 交付报告（K3 可核）「诚实上报 #1：auth.integration.test.ts 在 main 基线即 7 failed——login 路由已重写为 email/phone/wechatId + password bcrypt 契约（auth.ts:118），该测试仍发旧格式 {userId, role, orgId} → 确定性 400 → 级联 401。建议另立任务修复」; src/routes/auth.ts（D102 bcrypt 登录+注册契约）; AGENTS.md 铁律 12（集成测试 cover 真实路由，不 mock 管线）+ 铁律 47（契约优先）
+  依赖: D479（auth legacy orgId 收敛已合并——本任务收其审计遗留）
+  并行: 写集=tests/middleware/auth.integration.test.ts，与 D482（src/tools/ + tests/tools/）**文件级零交集**，可 worktree 隔离并行；与 DSH 线（scripts/、src/sentinel/）零重叠；若必须并行先 worktree 隔离
+-->
+
+# SYNOVA-IMPL-D481 auth.integration.test.ts 契约对齐修复
+
+## 1. 权威文档引用
+
+* **D479 交付报告**（K3 可核，2026-08-23）：「诚实上报 #1——auth.integration.test.ts 在 main 基线就是 7 failed：login 路由已重写为 email/phone/wechatId + password bcrypt 契约（auth.ts:118），该测试仍发旧格式 {userId, role, orgId} → 确定性 400 → 级联 401。**建议另立任务修复该测试**（不在我的写集内，不越界）」。
+* **login 路由契约**（src/routes/auth.ts L114-118）：`POST /api/auth/login` 要求 `email/phone/wechatId`（至少一个）+ `password`，缺失 → 400 VALIDATION_ERROR；账户不存在/密码错 → 401 AUTH_FAILED；停用 → 403 ACCOUNT_DISABLED。
+* **register 路由契约**（src/routes/auth.ts L68-101）：`POST /api/auth/register` 要求 `email/phone/wechatId` + `password(≥6)`，可选 role/orgId；成功 → 201 `{ ok, token, payload: { userId, role, orgId } }`。
+* **铁律 12**（AGENTS.md）：集成测试 cover 真实路由，不 mock 管线——本任务保持测试走真实 express 挂载。
+
+## 2. 代码审计——现状（全部实测 file:line）
+
+### 缺陷 A：integration 测试全部 login 请求体用旧契约（无 email/password）
+* `tests/middleware/auth.integration.test.ts` L75：`body: JSON.stringify({ userId: 'ga_001', role: 'ga', orgId: 'acme-corp' })`——login 请求体无 email/password。
+* 同文件 L84（validate 用例 login 体 `{ userId: 'val_user', role: 'manager', orgId: 'test' }`）、L93-97（`loginAs(role, userId)` helper：`{ userId, role, orgId: 'acme-corp' }`）——全部旧格式。
+* 路由契约（src/routes/auth.ts L116-118）：`const { email, phone, wechatId, password } = req.body`；`if (!loginKey || !password) return 400`——旧格式请求 → `loginKey=undefined` → 400 → 测试断言 200/401/403 全部落空。
+
+### 缺陷 B：测试未先注册用户（即使请求体改对也 401）
+* login 路由（src/routes/auth.ts L121-129）：先查用户 store（getUserStore）→ 找不到 → 401 AUTH_FAILED。测试直接 login 无用户前置——必须经 `POST /api/auth/register` 建号（L68-101 已实现）。
+
+### 现状基线（实测）
+* `vitest run tests/middleware/auth.integration.test.ts` = **7 failed / 4 pass**（D479 实测；11 用例中依赖 login 的 7 个失败，无 token/无效 token/过期 token 3 个 + 1 个 pass）。
+* `tests/middleware/auth.test.ts`（unit）23/23 绿（D479 报告）——unit 已对齐新契约，仅 integration 未跟上。
+
+## 3. 实现方案
+
+### 3.1 写集 (1 修改 + 0 新建)
+| 文件 | 操作 | 说明 |
+|------|------|------|
+| tests/middleware/auth.integration.test.ts | 修改 | ① 新增 `registerAndLogin(role, tag)` helper：POST /api/auth/register（唯一 email=`${tag}-${Date.now()}@test.local` + password + role + orgId）→ 201 → POST /api/auth/login（{email, password}）→ 200 → 返回 {token, userId: regBody.payload.userId}；② login/validate/GA/Admin 用例改用 helper，断言 userId 取自注册响应（不硬编码）；③ 保留无 token/无效 token/过期 token 3 个失败模式用例原样 |
+
+> 共享资源标注（S-8）：本写集不含 VERSION.md（测试契约对齐，非门禁/工具行为变化，不 bump）；current-brief / 暂存区共享，串行触碰；tests/middleware/ 与 D482 的 tests/tools/ 不同目录，零交集。
+
+### 3.2 最终实现同 commit 回填
+若实现偏离方案（如 login 响应断言改用登录返回的 payload.userId、或注册 email 生成策略不同、或发现更多旧契约用例），必须在本节同 commit 回填最终形态（S-6）。
+
+### 3.3 不做的事
+* 不改 src/routes/auth.ts / src/middleware/auth.ts——bcrypt 契约正确（D102/D479 已定），本任务只对齐测试。
+* 不改 tests/middleware/auth.test.ts（unit 已 23/23 绿）。
+* 不碰 rbac 中间件与 workspace 路由（非本任务范围）。
+
+## 4. 测试要求（测试优先：先红 → 再绿）
+
+| 层 | 类型 | 数量 | 覆盖 |
+|----|------|------|------|
+| L1 | 集成 tests/middleware/auth.integration.test.ts（修改既有 11 用例） | 11 | ①注册+登录+validate 正常链路；②GA 读工作区 200 / GA 删 403 / Admin 删 200（角色边界）；③失败模式：无 token/无效 token/过期 token → 401 |
+
+**RED 必须覆盖失败模式（S-5）**：修复前 `vitest run tests/middleware/auth.integration.test.ts` = **7 failed**（旧契约 400 级联，D479 实测）——这就是 red 基准；修复后 11/11 绿。
+
+## 4.5 决策参考（S-12）
+* 决策点 1：对齐测试到新契约 vs 回退路由到旧契约？
+  * 参考系：第一性原理——email/phone/wechatId + password bcrypt 是 D102/D479 确立的安全契约（组织真实标识登录），测试应跟随实现；回退契约是产品倒退。
+  * 结论：改测试。
+* 决策点 2：loginAs 每次注册（隔离）vs 共享 fixture？
+  * 参考系：Anthropic——测试隔离，用例间零状态耦合；每次注册唯一 email 防 store 分支 DUPLICATE（registerUs 存在时 409）。
+  * 结论：registerAndLogin 独立注册 + 唯一 email（Date.now 后缀）。
+
+## 5. 接线要求
+
+| 新 export/函数 | 调用方 | 确认方式 |
+|---------------|--------|---------|
+| registerAndLogin helper | 测试内 login/validate/GA/Admin 各用例 | `grep -n "registerAndLogin" tests/middleware/auth.integration.test.ts` 命中 ≥5 处 |
+
+> 本任务无新生产 export（纯测试修复）；集成测试真实挂载 authRoutes（铁律 12，不 mock 管线）。
+
+## 6. 完成标准
+
+* **DS1 契约对齐**：`grep -n "userId.*role.*orgId" tests/middleware/auth.integration.test.ts` 中 login 请求体零旧格式（注册响应取 userId 除外）。
+* **DS2 注册前置**：`grep -n "api/auth/register" tests/middleware/auth.integration.test.ts` 命中（helper 内）。
+* **DS3 测试全绿**：`vitest run tests/middleware/auth.integration.test.ts` 11/11 pass（red 先行 7 failed 已证）。
+* **DS4 零回归**：`vitest run tests/middleware/auth.test.ts tests/routes/auth.test.ts` 全绿 + `tsc --noEmit` 零新增（28=28）。
+* **DS5 范围一致**：`git diff --name-only HEAD^` 与 §3.1 写集一致（仅测试文件 + 簿记），无越界。
+* **DS6 无绕过**：`grep -n "no-verify" .claude/bypass.log` 零命中。
+* **DS7 推送 + CI**：`git push` 后 `git log origin/main..HEAD --oneline` 空 + CI 任务相关 job 绿（auth 相关）。
+
+## 7. 自检清单
+
+* [ ] 每个代码审计 claim 有 file:line 证据（§2 实测 grep，不是凭记忆）
+* [ ] 写集表标题后紧跟表格（无空行）
+* [ ] 测试 red→green 覆盖失败模式（旧契约 7 failed → 新契约 11/11）
+* [ ] 接线要求真实（registerAndLogin 被 ≥5 用例调用）
+* [ ] DS verify 命令真实可执行、映射到实际用例
+* [ ] 版本编排：测试修复，非门禁/工具行为变化，不 bump VERSION.md
+* [ ] 不用 --no-verify
+
+## 8. 交付声明（声称↔证据对照表，U4 D423）
+
+| 声称 | 证据命令 | 预期 |
+|------|---------|------|
+| DS1 契约对齐 | grep -n "userId.*role.*orgId" tests/middleware/auth.integration.test.ts | login 请求体零旧格式 |
+| DS2 注册前置 | grep -n "api/auth/register" tests/middleware/auth.integration.test.ts | 命中 |
+| DS3 测试全绿 | vitest run tests/middleware/auth.integration.test.ts | 11/11 pass |
+| DS4 零回归 | vitest run tests/middleware/auth.test.ts tests/routes/auth.test.ts + tsc --noEmit | 全绿 + 零新增 |
+| DS5 范围一致 | git diff --name-only HEAD^ | 与写集一致 |
+| DS6 无绕过 | grep -n "no-verify" .claude/bypass.log | 零命中 |
+| DS7 推送 + CI | git log origin/main..HEAD --oneline | 空（推送后） |
+
+---
+
+> 交付声明 DS 须与本文档 DS1-DS7 一一对应（S-10）；派发说明：与 D482 **可并行**（写集零交集：tests/middleware/ vs src/tools/+tests/tools/），必须 worktree 隔离；**只改测试不改 auth.ts 契约**；注册 email 必须唯一（防 DUPLICATE 409）；暂存前查 session-registry（S-9）；merge main 时 reference-map 冲突由本任务所有者解决、bypass.log 噪声行不提交。
