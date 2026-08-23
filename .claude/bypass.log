@@ -614,3 +614,4 @@ Binary file .claude/bypass.log matches
 2026-08-24T02:02:37+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D512 | AGENT=deepseek-harness
 2026-08-24T02:03:56+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D512 | AGENT=deepseek-harness
 2026-08-24T02:05:59+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D512 | AGENT=deepseek-harness | HASH=8af829f895cbc7940c4c89a14ba6199b0ccfa5ff
+2026-08-24T02:20:00+08:00 | COMMITTED | pre-commit PASS (一次性补记: rebase 改 hash——8af829f8→e9e2be93, a2c27482→dd27a040, D331/D451 对账) | TASK_ID=D512 | AGENT=deepseek-harness | HASH=e9e2be93,dd27a040
