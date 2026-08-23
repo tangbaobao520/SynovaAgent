@@ -1,9 +1,9 @@
 <!--
   SYNOVA-IMPL-D481: auth.integration.test.ts 契约对齐修复（D479 审计遗留）
   状态: dev doc | 2026-08-24 | 优先级 P2
-  权威文档: docs/synova/audit-reports/2026-08-17-D356.md 无; D479 交付报告（K3 可核）「诚实上报 #1：auth.integration.test.ts 在 main 基线即 7 failed——login 路由已重写为 email/phone/wechatId + password bcrypt 契约（auth.ts:118），该测试仍发旧格式 {userId, role, orgId} → 确定性 400 → 级联 401。建议另立任务修复」; src/routes/auth.ts（D102 bcrypt 登录+注册契约）; AGENTS.md 铁律 12（集成测试 cover 真实路由，不 mock 管线）+ 铁律 47（契约优先）
+  权威文档: D479 交付报告（K3 可核）「诚实上报 #1：auth.integration.test.ts 在 main 基线即 7 failed——login 路由已重写为 email/phone/wechatId + password bcrypt 契约（auth.ts:118），该测试仍发旧格式 {userId, role, orgId} → 确定性 400 → 级联 401。建议另立任务修复」; src/routes/auth.ts（D102 bcrypt 登录+注册契约）; AGENTS.md 铁律 12（集成测试 cover 真实路由，不 mock 管线）+ 铁律 47（契约优先）
   依赖: D479（auth legacy orgId 收敛已合并——本任务收其审计遗留）
-  并行: 写集=tests/middleware/auth.integration.test.ts，与 D482（src/tools/ + tests/tools/）**文件级零交集**，可 worktree 隔离并行；与 DSH 线（scripts/、src/sentinel/）零重叠；若必须并行先 worktree 隔离
+  并行: 写集=tests/middleware/auth.integration.test.ts，与 D482（src/tools/org-expert-tools.ts + tests/tools/org-expert-tools.test.ts）**文件级零交集**，可 worktree 隔离并行；与 DSH 线（scripts/、src/sentinel/）零重叠；若必须并行先 worktree 隔离
 -->
 
 # SYNOVA-IMPL-D481 auth.integration.test.ts 契约对齐修复
@@ -17,16 +17,21 @@
 
 ## 2. 代码审计——现状（全部实测 file:line）
 
-### 缺陷 A：integration 测试全部 login 请求体用旧契约（无 email/password）
-* `tests/middleware/auth.integration.test.ts` L75：`body: JSON.stringify({ userId: 'ga_001', role: 'ga', orgId: 'acme-corp' })`——login 请求体无 email/password。
-* 同文件 L84（validate 用例 login 体 `{ userId: 'val_user', role: 'manager', orgId: 'test' }`）、L93-97（`loginAs(role, userId)` helper：`{ userId, role, orgId: 'acme-corp' }`）——全部旧格式。
+### 缺陷 A：integration 测试全部 login 请求体用旧契约（无 email/password）——共 6 处
+* `tests/middleware/auth.integration.test.ts` 旧格式 login 请求体共 **6 处**（实测 Select-String 全列）：
+  * L73：login 200 用例 `body: JSON.stringify({ userId: 'ga_001', role: 'ga', orgId: 'acme-corp' })`；
+  * L89：validate 用例 `{ userId: 'val_user', role: 'manager', orgId: 'test' }`；
+  * L114：`loginAs(role, userId)` helper `{ userId, role, orgId: 'acme-corp' }`（GA 读 L121 / GA 删 L132 / Admin 删 L143 三个用例共用）；
+  * L203：refresh 用例 `{ userId: 'refresh_user', role: 'admin', orgId: 'test' }`；
+  * L227：revoke 用例 `{ userId: 'revoke_me', role: 'ga', orgId: 'test' }`；
+  * L235：revoke 用例的 adminLogin `{ userId: 'owner', role: 'admin', orgId: 'test' }`。
 * 路由契约（src/routes/auth.ts L116-118）：`const { email, phone, wechatId, password } = req.body`；`if (!loginKey || !password) return 400`——旧格式请求 → `loginKey=undefined` → 400 → 测试断言 200/401/403 全部落空。
 
 ### 缺陷 B：测试未先注册用户（即使请求体改对也 401）
 * login 路由（src/routes/auth.ts L121-129）：先查用户 store（getUserStore）→ 找不到 → 401 AUTH_FAILED。测试直接 login 无用户前置——必须经 `POST /api/auth/register` 建号（L68-101 已实现）。
 
-### 现状基线（实测）
-* `vitest run tests/middleware/auth.integration.test.ts` = **7 failed / 4 pass**（D479 实测；11 用例中依赖 login 的 7 个失败，无 token/无效 token/过期 token 3 个 + 1 个 pass）。
+### 现状基线（实测，2026-08-24 复核亲跑）
+* `vitest run tests/middleware/auth.integration.test.ts` = **7 failed / 3 passed（10 用例）**——依赖 login 的 7 个用例全失败（login 200 / validate / GA 读 / GA 删 / Admin 删 / refresh / revoke），无 token/无效 token/过期 token 3 个失败模式用例 pass。
 * `tests/middleware/auth.test.ts`（unit）23/23 绿（D479 报告）——unit 已对齐新契约，仅 integration 未跟上。
 
 ## 3. 实现方案
@@ -34,7 +39,7 @@
 ### 3.1 写集 (1 修改 + 0 新建)
 | 文件 | 操作 | 说明 |
 |------|------|------|
-| tests/middleware/auth.integration.test.ts | 修改 | ① 新增 `registerAndLogin(role, tag)` helper：POST /api/auth/register（唯一 email=`${tag}-${Date.now()}@test.local` + password + role + orgId）→ 201 → POST /api/auth/login（{email, password}）→ 200 → 返回 {token, userId: regBody.payload.userId}；② login/validate/GA/Admin 用例改用 helper，断言 userId 取自注册响应（不硬编码）；③ 保留无 token/无效 token/过期 token 3 个失败模式用例原样 |
+| tests/middleware/auth.integration.test.ts | 修改 | ① 新增 `registerAndLogin(role, tag)` helper：POST /api/auth/register（唯一 email=`${tag}-${Date.now()}@test.local` + password + role + orgId）→ 201 → POST /api/auth/login（{email, password}）→ 200 → 返回 {token, userId: regBody.payload.userId}；② **全部 6 处旧格式 login 体改走 helper**（login 200 / validate / GA 读 / GA 删 / Admin 删 / refresh / revoke 用例），断言 userId 取自注册响应（不硬编码）；③ 保留无 token/无效 token/过期 token 3 个失败模式用例原样 |
 
 > 共享资源标注（S-8）：本写集不含 VERSION.md（测试契约对齐，非门禁/工具行为变化，不 bump）；current-brief / 暂存区共享，串行触碰；tests/middleware/ 与 D482 的 tests/tools/ 不同目录，零交集。
 
@@ -50,9 +55,9 @@
 
 | 层 | 类型 | 数量 | 覆盖 |
 |----|------|------|------|
-| L1 | 集成 tests/middleware/auth.integration.test.ts（修改既有 11 用例） | 11 | ①注册+登录+validate 正常链路；②GA 读工作区 200 / GA 删 403 / Admin 删 200（角色边界）；③失败模式：无 token/无效 token/过期 token → 401 |
+| L1 | 集成 tests/middleware/auth.integration.test.ts（修改既有 10 用例） | 10 | ①注册+登录+validate 正常链路；②GA 读工作区 200 / GA 删 403 / Admin 删 200 + refresh/revoke 角色边界；③失败模式：无 token/无效 token/过期 token → 401 |
 
-**RED 必须覆盖失败模式（S-5）**：修复前 `vitest run tests/middleware/auth.integration.test.ts` = **7 failed**（旧契约 400 级联，D479 实测）——这就是 red 基准；修复后 11/11 绿。
+**RED 必须覆盖失败模式（S-5）**：修复前 `vitest run tests/middleware/auth.integration.test.ts` = **7 failed / 3 passed（2026-08-24 亲跑实测）**——旧契约 400 级联；修复后 10/10 绿。
 
 ## 4.5 决策参考（S-12）
 * 决策点 1：对齐测试到新契约 vs 回退路由到旧契约？
@@ -66,15 +71,15 @@
 
 | 新 export/函数 | 调用方 | 确认方式 |
 |---------------|--------|---------|
-| registerAndLogin helper | 测试内 login/validate/GA/Admin 各用例 | `grep -n "registerAndLogin" tests/middleware/auth.integration.test.ts` 命中 ≥5 处 |
+| registerAndLogin helper | 测试内 login/validate/GA/Admin/refresh/revoke 各用例 | `grep -n "registerAndLogin" tests/middleware/auth.integration.test.ts` 命中 ≥6 处 |
 
 > 本任务无新生产 export（纯测试修复）；集成测试真实挂载 authRoutes（铁律 12，不 mock 管线）。
 
 ## 6. 完成标准
 
-* **DS1 契约对齐**：`grep -n "userId.*role.*orgId" tests/middleware/auth.integration.test.ts` 中 login 请求体零旧格式（注册响应取 userId 除外）。
+* **DS1 契约对齐**：`grep -n "body: JSON.stringify({ userId" tests/middleware/auth.integration.test.ts` 零命中（旧格式 login 请求体 6 处全清除）。
 * **DS2 注册前置**：`grep -n "api/auth/register" tests/middleware/auth.integration.test.ts` 命中（helper 内）。
-* **DS3 测试全绿**：`vitest run tests/middleware/auth.integration.test.ts` 11/11 pass（red 先行 7 failed 已证）。
+* **DS3 测试全绿**：`vitest run tests/middleware/auth.integration.test.ts` 10/10 pass（red 先行 7 failed 已证）。
 * **DS4 零回归**：`vitest run tests/middleware/auth.test.ts tests/routes/auth.test.ts` 全绿 + `tsc --noEmit` 零新增（28=28）。
 * **DS5 范围一致**：`git diff --name-only HEAD^` 与 §3.1 写集一致（仅测试文件 + 簿记），无越界。
 * **DS6 无绕过**：`grep -n "no-verify" .claude/bypass.log` 零命中。
@@ -84,8 +89,8 @@
 
 * [ ] 每个代码审计 claim 有 file:line 证据（§2 实测 grep，不是凭记忆）
 * [ ] 写集表标题后紧跟表格（无空行）
-* [ ] 测试 red→green 覆盖失败模式（旧契约 7 failed → 新契约 11/11）
-* [ ] 接线要求真实（registerAndLogin 被 ≥5 用例调用）
+* [ ] 测试 red→green 覆盖失败模式（旧契约 7 failed → 新契约 10/10）
+* [ ] 接线要求真实（registerAndLogin 被 ≥6 用例调用）
 * [ ] DS verify 命令真实可执行、映射到实际用例
 * [ ] 版本编排：测试修复，非门禁/工具行为变化，不 bump VERSION.md
 * [ ] 不用 --no-verify
@@ -94,9 +99,9 @@
 
 | 声称 | 证据命令 | 预期 |
 |------|---------|------|
-| DS1 契约对齐 | grep -n "userId.*role.*orgId" tests/middleware/auth.integration.test.ts | login 请求体零旧格式 |
+| DS1 契约对齐 | grep -n "body: JSON.stringify({ userId" tests/middleware/auth.integration.test.ts | 零命中 |
 | DS2 注册前置 | grep -n "api/auth/register" tests/middleware/auth.integration.test.ts | 命中 |
-| DS3 测试全绿 | vitest run tests/middleware/auth.integration.test.ts | 11/11 pass |
+| DS3 测试全绿 | vitest run tests/middleware/auth.integration.test.ts | 10/10 pass |
 | DS4 零回归 | vitest run tests/middleware/auth.test.ts tests/routes/auth.test.ts + tsc --noEmit | 全绿 + 零新增 |
 | DS5 范围一致 | git diff --name-only HEAD^ | 与写集一致 |
 | DS6 无绕过 | grep -n "no-verify" .claude/bypass.log | 零命中 |
