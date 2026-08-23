@@ -62,7 +62,7 @@ D504（Electron 桌面端一体化）被 K3 判 CONDITIONAL PASS，两个 P1 阻
 | scripts/golden-scenarios/GS-01-first-diagnosis/run.sh | 5.5 段断言① L1-1 打包配置 = `grep -q extraResources` 静态检查（K3 判非真实打包） | 修改（F1 注释标注） |
 | task-state/D504.json | note 已诚实写 DS4 受限 + DS11 留待 founder-demo；audit=CONDITIONAL_PASS（K3 回填） | 修改（三方一致声明 + DS11 DESCOPE 行） |
 | .claude/task-briefs/2026-08-23-D504-electron-desktop-impl.md | D504 交付报告（U4 声明在 spec §10 DS 列表 + note） | 不修改（原任务证据链）；D510 交付报告新建 |
-| task-state/D510.json | 壳（claimed，alloc-task-id 建） | 修改（spec 段 → spec_done） |
+| task-state/D510.json | 壳（claimed，alloc-task-id 建） | 新建（spec 段 → spec_done） |
 | tests/electron/backend-spawn.test.ts | 8 用例（契约三路径） | 只读（25/25 回归） |
 | tests/electron/desktop-build.test.ts | 15 静态断言 | 只读（25/25 回归） |
 
@@ -148,7 +148,7 @@ D504（Electron 桌面端一体化）被 K3 判 CONDITIONAL PASS，两个 P1 阻
 | 符号 | 位置 | 说明 |
 |------|------|------|
 | `ensureBackend` | electron/backend-spawn.cjs:1-156 | 仅改注释（F4），逻辑不动 |
-| GS-01 断言组 5.5 段 | run.sh L97-128 | 断言①加性质标注（F1） |
+| GS-01 断言组 5.5 段 | run.sh L97-133 | 断言①（L100-105）加性质标注（F1） |
 | task-state/D504.json note | task-state/D504.json | 更新为三方一致声明（F1/F2） |
 | electron-builder `--dir` | electron/package.json pack:dir 脚本 | 实跑路线唯一动作点（可执行但环境受限） |
 
@@ -164,9 +164,8 @@ D504（Electron 桌面端一体化）被 K3 判 CONDITIONAL PASS，两个 P1 阻
 | [build-synova.cjs](build-synova.cjs) | 修改 | F4: L42 注释同款修正——仅注释 |
 | [task-state/D504.json](task-state/D504.json) | 修改 | F1/F2: note 补「三方一致声明」（DS4=静态断言+无头契约 / DS11=DESCOPE）+ audit 字段保持 K3 回填 |
 | [.claude/task-briefs/2026-08-23-D510-d504-audit-fix.md](.claude/task-briefs/2026-08-23-D510-d504-audit-fix.md) | 新建 | D510 交付报告：U4 DESCOPE 表 + F3 门禁处置段 + F5 口径说明 + founder-demo checklist（模板见 §5.2） |
-| [scripts/electron/build-dir-check.sh](scripts/electron/build-dir-check.sh) | 新建（实跑路线） | `electron-builder --dir` 产物断言：release/ 存在 + ls/du + md5 落 evidence——若环境可实跑才建（§5.2 判据） |
 | [docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D510-d504-audit-remediation-20260823.md](docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D510-d504-audit-remediation-20260823.md) | 新建 | 本 dev doc |
-| [task-state/D510.json](task-state/D510.json) | 修改 | spec 段 + status → spec_done（流程产物） |
+| [task-state/D510.json](task-state/D510.json) | 新建 | spec 段 + status → spec_done（流程产物；该文件在 feat/d504-impl 分支不存在，为 D510 新建） |
 
 ### 5.2 修复模式（编码 session 实现蓝图）
 
@@ -248,6 +247,7 @@ docs(D510): D504 审计返修 F1/F2 —— 交付声明诚实化（声称=事实
 1. **F1 路线实测**：开工先跑一次 `npx electron-builder --dir`（或 `npm run pack:dir`，electron/ 目录），5 分钟内失败（~/.electron-gyp 拒写）→ 确认降级路线；成功 → 实跑路线（§5.2 判据）。
 2. **F3 追溯**：D504 原提交 BLOCKED 后处置路径——编码 session 自查（git reflog / 会话记录），查不到就诚实声明证据缺失（模板已给）。
 3. **D505 的 F6（分支卫生）**：归 D505 PR 处理（用干净版 4fc2183a），本任务不碰——如发现 main 上 D505 合并分支有 D506 混入，提醒 CTO 走 D506 独立 PR。
+4. **实跑路线补充写集**：若 F1 判据走实跑路线，可加建 `scripts/electron/build-dir-check.sh`（产物断言辅助脚本：release/ 存在 + ls/du + md5）——该文件**不写入 §5.1 写集表**（条件文件：降级路线不建，入表会导致 check-dev-doc-write-set「声明但文件不存在」漂移）；产物证据直接落 `evidence/` 不入 git（体积）。
 
 ## 6. What We Don't Do
 
