@@ -16,6 +16,12 @@ import type { Sentinel, SentinelCheckResult, SentinelFinding } from './types';
 import type { Evidence } from '../evidence/types';
 import { getSentinelRegistry } from './registry';
 import { getBaselineStore } from './baseline-store';
+import { HEALTH_REGISTRY_RATIO_WARNING, HEALTH_FAILURES_WARNING, HEALTH_FAILURES_CRITICAL, HEALTH_UPTIME_IDLE_MS, HEALTH_STALENESS_MULTIPLIER, evaluateSentinelHealth,
+  estimateCronIntervalMs,
+  SELF_CHECK_SENTINEL_ID,
+  SELF_CHECK_SENTINEL_NAME,
+  CRON_INTERVAL_FALLBACK_MS,
+  type SentinelHealthState, } from './self-check';
 import {
   createSentinelEventsTable,
   appendSentinelEvent,
@@ -182,6 +188,12 @@ export class SentinelRunner {
     const registry = getSentinelRegistry();
     const cronSentinels = registry.listCronSentinels();
 
+    // D505: 哨兵自诊断 — 必须在空 registry 早退之前注册（loader 全挂 → registry 空
+    // 正是 H1/H3 要捕获的故障，自检不能随早退静默消失）
+    this.scheduler.schedule('SentinelSelfCheck', '0 * * * *', async () => {
+      await this.runSelfCheck();
+    });
+
     if (cronSentinels.length === 0) {
       log.info('[runner] 无 cron-mode 哨兵 — 跳过启动');
       return;
@@ -247,6 +259,161 @@ export class SentinelRunner {
     };
   }
 
+  // ═══ D505: 哨兵自诊断（S3-5 自诊断可信度） ═══
+
+  /** 进程启动时刻（uptimeMs 计算） */
+  private readonly startedAtMs = Date.now();
+
+  /**
+   * 收集哨兵体系健康指标（H1/H2/H3 数据源）。
+   * 每个指标独立 try/catch（铁律 24/31）：单项失败 → log.warn + 保守默认值，
+   * 由 evaluateSentinelHealth 的 fail-closed 语义兜底（检查没跑 ≠ 检查通过）。
+   */
+  private async collectHealthState(): Promise<SentinelHealthState> {
+    const state: SentinelHealthState = {
+      registryCount: 0,
+      expectedCount: 0,
+      cronJobs: [],
+      lastRunAt: null,
+      maxScheduleMs: CRON_INTERVAL_FALLBACK_MS,
+      uptimeMs: Date.now() - this.startedAtMs,
+    };
+
+    try {
+      state.registryCount = getSentinelRegistry().count();
+    } catch (err: unknown) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, '[self-check] registry.count() 收集失败 — 保守取 0');
+    }
+
+    try {
+      const { loadSentinels, clearSentinelCache } = await import('./sentinel-loader');
+      clearSentinelCache(); // 运行期重扫（cache 含启动期快照，每次自检取最新 manifest 面）
+      state.expectedCount = loadSentinels().sentinels.length;
+    } catch (err: unknown) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, '[self-check] loadSentinels() 收集失败 — 保守取 0（fail-closed：expectedCount=0 不误报 H1）');
+    }
+
+    try {
+      state.cronJobs = this.scheduler.listJobs().map((j) => ({
+        id: j.id, failures: j.failures, lastRunAt: j.lastRunAt, lastError: j.lastError,
+      }));
+    } catch (err: unknown) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, '[self-check] scheduler.listJobs() 收集失败 — 适配器健康未知（fail-closed 见 runSelfCheck）');
+      state.cronJobs = [{ id: 'SentinelSelfCheck-collection', failures: Number.MAX_SAFE_INTEGER, lastRunAt: null, lastError: '指标收集失败：listJobs 不可用' }];
+    }
+
+    try {
+      state.lastRunAt = this.getStats().lastRunAt;
+    } catch (err: unknown) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, '[self-check] getStats() 收集失败 — 保守取 null');
+    }
+
+    try {
+      const crons = getSentinelRegistry().listCronSentinels().map((e) => e.cron);
+      if (crons.length > 0) {
+        state.maxScheduleMs = Math.max(...crons.map((c) => estimateCronIntervalMs(c)));
+      }
+    } catch (err: unknown) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, '[self-check] cron 间隔估算失败 — 兜底 24h');
+    }
+
+    return state;
+  }
+
+  /**
+   * D505 哨兵自诊断 — 评估哨兵体系自身健康（loader/适配器/调度三维）。
+   *
+   * 契约:
+   *   @input  explicitState — 显式健康快照（测试/工具注入用）；省略时内部收集（collectHealthState）
+   *   @output 无返回；健康时零副作用（零噪音，宁缺毋滥），异常时 findings 流入:
+   *           ① records（sentinel-self-check，GET /api/sentinel/findings 可见，零 routes 改动）
+   *           ② sentinel_events（I2 单源，persistRunEvents 唯一写入口）
+   *           ③ critical → createAutoTicket（D463 工单闭环）
+   *           ④ warning/critical → dispatchNotification（D6 桌面通知，10min 去重）
+   *   @degraded — 指标收集单项失败 → log.warn + 保守 fail-closed（不静默，铁律 24/31）
+   *   @error    — 不抛（内部全捕获；评估/写事件/工单/通知各自独立降级）
+   *   不进 dispatchSignalsToExperts — 企业专家诊断企业，不诊断哨兵自身（D505 §5.3 决策）。
+   */
+  async runSelfCheck(explicitState?: SentinelHealthState): Promise<void> {
+    const startTime = Date.now();
+    let state: SentinelHealthState;
+    try {
+      state = explicitState ?? await this.collectHealthState();
+    } catch (err: unknown) {
+      log.error({ err: err instanceof Error ? err.message : String(err) }, '[self-check] 健康指标收集失败 — fail-closed：保守产出降级 finding');
+      state = {
+        registryCount: 0, expectedCount: 1, cronJobs: [],
+        lastRunAt: null, maxScheduleMs: CRON_INTERVAL_FALLBACK_MS,
+        uptimeMs: Date.now() - this.startedAtMs,
+      };
+    }
+
+    const { healthy, findings } = evaluateSentinelHealth(state);
+    if (healthy) return; // 健康零噪音（宁缺毋滥）
+
+    const checkedAt = new Date().toISOString();
+    const record: SentinelRunRecord = {
+      sentinelId: SELF_CHECK_SENTINEL_ID,
+      sentinelName: SELF_CHECK_SENTINEL_NAME,
+      cronJobId: 'SentinelSelfCheck',
+      result: {
+        sentinelId: SELF_CHECK_SENTINEL_ID,
+        ok: true,
+        findings,
+        durationMs: Date.now() - startTime,
+        checkedAt,
+        degraded: true, // 自诊断出 finding = 哨兵体系处于 degraded 态（铁律 31 显式标记）
+      },
+    };
+
+    // I2 单源: 先落事件流（唯一写入口），再物化投影
+    try {
+      this.persistRunEvents(record);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.error({ err: msg }, '[self-check] 事件持久化失败 — 降级为纯内存态（重启即丢）');
+    }
+    this.projectRunRecord(record);
+    this.totalRuns++;
+
+    log.warn({ findings: findings.length, h: findings.map((f) => f.id) }, '[self-check] 哨兵体系自诊断发现异常 — degraded 信号已产出');
+
+    // D463 工单闭环: 最高严重度 critical → 自动工单（稳定去重键 = 小时窗口，INSERT OR REPLACE 幂等）
+    const worst = findings.some((f) => f.severity === 'critical') ? 'critical' : 'warning';
+    if (worst === 'critical') {
+      this.createAutoTicket({
+        id: `self-check-${checkedAt.slice(0, 13)}`, // 小时级稳定 id（同窗口幂等）
+        severity: worst,
+        title: '哨兵体系自诊断异常（D505）',
+        sources: findings.map((f) => ({
+          sentinelId: SELF_CHECK_SENTINEL_ID,
+          sentinelName: SELF_CHECK_SENTINEL_NAME,
+          finding: f,
+        })),
+      });
+    }
+
+    // D6 桌面通知: warning/critical → dispatchNotification（10min 去重窗口）
+    const notifSignal = { sources: [{ sentinelId: SELF_CHECK_SENTINEL_ID }] };
+    if (!this.isNotificationDuplicate(notifSignal)) {
+      try {
+        await dispatchNotification({
+          id: `notif-self-check-${checkedAt.slice(0, 13)}`,
+          orgId: 'default',
+          title: `[${worst.toUpperCase()}] 哨兵体系自诊断`,
+          description: findings.map((f) => f.title).join('；'),
+          priority: worst === 'critical' ? 'P0' : 'P1',
+          targetSystem: 'electron',
+          metadata: { severity: worst, sentinelId: SELF_CHECK_SENTINEL_ID },
+          createdAt: checkedAt,
+        });
+        this.markNotificationSent(notifSignal);
+      } catch (err: unknown) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, '[self-check] 桌面通知派发失败 — 非阻断');
+      }
+    }
+  }
+
   /**
    * 信号聚合 — 收集所有哨兵最新结果，交叉关联，输出聚合信号。
    * 每小时调用一次 (在所有哨兵 cron tick 之后)。
@@ -254,7 +421,9 @@ export class SentinelRunner {
   async aggregateAndDispatch(): Promise<void> {
     try {
       const results: SentinelCheckResult[] = [];
-      for (const [, history] of this.records) {
+      for (const [sentinelId, history] of this.records) {
+        // D505 DS8: 自诊断 finding 不进企业信号聚合（企业专家诊断企业，不诊断哨兵自身）
+        if (sentinelId === SELF_CHECK_SENTINEL_ID) continue;
         if (history.length > 0) {
           results.push(history[history.length - 1].result);
         }
