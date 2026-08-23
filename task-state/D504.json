@@ -44,6 +44,6 @@
   "fix_task_id": null,
   "updated_at": "2026-08-23",
   "updated_by": "deepseek-harness",
-  "note": "DS 覆盖：DS1-9 实现于本分支；DS4 electron-builder --dir 受限说明——@electron/rebuild 尝试在 ~/.electron-gyp 重编译 bcrypt（工作区外写入被沙箱拒 + 主仓 node_modules 共享只读），CI 环境（可写 HOME）执行该验证；本地机器判定以 GS-01 断言组（配置有效性 + spawn 契约无头验证）替代。DS11 dmg 手装实测留待 founder-demo。DS12 中 renderer 既有 108 个 tsc 错误为 main 基线债务（Q2 排除：不重构 renderer UI），vite build 不受影响（esbuild 转译）。",
+  "note": "DS 覆盖：DS1-9 实现于本分支；DS4 electron-builder --dir 受限说明——@electron/rebuild 尝试在 ~/.electron-gyp 重编译 bcrypt（工作区外写入被沙箱拒 + 主仓 node_modules 共享只读），CI 环境（可写 HOME）执行该验证；本地机器判定以 GS-01 断言组（配置有效性 + spawn 契约无头验证）替代。DS11 dmg 手装实测留待 founder-demo。DS12 中 renderer 既有 108 个 tsc 错误为 main 基线债务（Q2 排除：不重构 renderer UI），vite build 不受影响（esbuild 转译）。【D510 三方一致声明 2026-08-23】DS4 = 静态配置断言 + 无头契约验证（electron-builder --dir 未实跑，无 release/ 产物；D510 实测 pack:dir 失败：electron-builder command not found，依赖受限），与 D510 commit message 措辞一致；DS11 = DESCOPE（dmg 产出+安装+双击需真实桌面，founder-demo checklist 见 D510 交付报告）；DESCOPE 明细表见 .claude/task-briefs/2026-08-23-D510-d504-audit-fix.md。",
   "priority": "P0"
 }

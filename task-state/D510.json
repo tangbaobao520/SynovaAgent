@@ -1,16 +1,36 @@
 {
   "task_id": "D510",
   "title": "d504-audit-fix",
-  "status": "spec_done",
+  "status": "impl_done",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D510-d504-audit-remediation-20260823.md",
     "commit": "f1d7ae97",
     "by": "dev-doc",
     "at": "2026-08-23"
   },
-  "impl": null,
+  "impl": {
+    "by": "deepseek-harness",
+    "at": "2026-08-23",
+    "branch": "feat/d510-audit-remediation",
+    "files": [
+      "scripts/golden-scenarios/GS-01-first-diagnosis/run.sh",
+      "electron/backend-spawn.cjs",
+      "electron/main.cjs",
+      "build-synova.cjs",
+      "task-state/D504.json",
+      "task-state/D510.json",
+      ".claude/task-briefs/2026-08-23-D510-d504-audit-fix.md"
+    ],
+    "evidence": {
+      "f1_route": "降级路线——pack:dir 实测失败（electron-builder command not found），commit message 措辞「静态配置断言 + 无头契约验证」，无 release/ 产物为声明事实",
+      "l1_regression": "npx vitest run tests/electron/ 25/25 passed（backend-spawn 8 + desktop-build 15 + auto-update 2）",
+      "gs01": "GS-01 exit 0, 7/7 断言通过（evidence/GS-01-2026-08-23.json），断言①已标注静态检查性质",
+      "l2a_consistency": "grep dist/index.js 三文件=0；run.sh 含「静态检查非打包验证」×2；D504.json note 含「静态配置断言」+「DESCOPE」三方一致声明",
+      "deliverable_report": ".claude/task-briefs/2026-08-23-D510-d504-audit-fix.md（U4 DS1-13 声明表 + DESCOPE 表 2 行 + founder-demo checklist + 门禁处置段 + F5 口径 8+15+2=25）"
+    }
+  },
   "audit": null,
   "fix_task_id": "D504",
   "updated_at": "2026-08-23",
-  "updated_by": "dev-doc"
+  "updated_by": "deepseek-harness"
 }

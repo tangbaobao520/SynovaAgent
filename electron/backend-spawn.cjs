@@ -9,7 +9,7 @@
  *     @input  options: {
  *       serverUrl: string;                  // 探活目标（GET /api/healthz）
  *       cwd: string;                        // spawn 工作目录
- *       mode: 'dev' | 'prod';               // dev: npx tsx src/index.ts; prod: node dist/index.js
+ *       mode: 'dev' | 'prod';               // dev: npx tsx src/index.ts; prod: node dist/src/index.js
  *       dbPath?: string;                    // prod: 注入 SYNOVA_DB_PATH（userData 数据目录，L1-7）
  *       logFile?: string;                   // 后端 stdout/stderr 落盘
  *       maxRestarts?: number;               // 默认 3（10min 窗口语义——计数器+时间戳）
@@ -56,8 +56,8 @@ async function probeUntil(url, windowMs, pollIntervalMs) {
 
 /** 双模式默认命令（导出供测试直测） */
 function buildCommand(mode) {
-  // 注意: tsc 实际产物入口为 dist/src/index.js（package.json main 声明 dist/index.js 为存量不一致，
-  // 以磁盘事实为准——D504 实测 electron-builder --dir 产物 Resources/dist/src/index.js）
+  // 注意: tsc 实际产物入口为 dist 根下的 src/index.js（package.json main 的 dist 根声明为存量不一致，
+  // 以 buildCommand prod 契约参数为准——未在本机做 electron-builder 打包产物验证，见 D510 DESCOPE 表）
   return mode === 'prod'
     ? { bin: 'node', args: ['dist/src/index.js'] }
     : { bin: 'npx', args: ['tsx', 'src/index.ts'] };

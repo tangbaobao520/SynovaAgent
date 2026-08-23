@@ -95,9 +95,11 @@ echo "[GS-01] reports HTTP 状态: $(cat "$DATA_DIR/reports-status.txt")"
 echo "[GS-01] reports 响应: $(cat "$DATA_DIR/reports-response.json")"
 
 # 5.5 D504 Electron 断言组（静态配置 + 无头契约验证——CI 无 GUI 也能验桌面端产物面）
+# D510 F1 标注: 以下断言①为静态检查非打包验证——真实打包产物验证见 D510 DESCOPE 表（founder-demo/CI）
 ELECTRON_DIR="$REPO_ROOT/electron"
 
 # ① L1-1 打包配置：backend-spawn/renderer 产物入包 + extraResources 后端资产
+# ⚠️ 静态检查非打包验证（D510 F1）: 仅 grep build-synova.cjs 配置声明，不产出/不校验 release/ 产物
 if grep -q "electron/backend-spawn.cjs" "$REPO_ROOT/build-synova.cjs"    && grep -q "dist/renderer" "$REPO_ROOT/build-synova.cjs"    && grep -q "extraResources" "$REPO_ROOT/build-synova.cjs"; then
   echo "PACK_CONFIG_OK" > "$DATA_DIR/electron-pack-check.txt"
 else

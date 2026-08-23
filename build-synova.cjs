@@ -39,7 +39,7 @@ module.exports = {
     '!node_modules/electron-builder/**',
   ],
 
-  // D504: 后端运行资产放 resources/（prod spawn: node dist/index.js + extensions 哨兵目录）
+  // D504: 后端运行资产放 resources/（prod spawn: node dist/src/index.js + extensions 哨兵目录）
   // renderer 构建产物（vite outDir dist/renderer）→ resources/renderer（prod loadFile 目标）
   extraResources: [
     { from: 'dist', to: 'dist', filter: ['**/*', '!renderer/**'] },

@@ -3,7 +3,7 @@
   "record_type": "scenario",
   "scenario_id": "GS-01",
   "source": "scripts/golden-scenarios/GS-01-first-diagnosis/expect.runtime.json",
-  "date": "2026-08-22",
+  "date": "2026-08-23",
   "verdict": "pass",
   "verdicts": [
     {

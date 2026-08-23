@@ -120,7 +120,7 @@ async function createWindow() {
 
 app.whenReady().then(async () => {
   // D504 服务自启（L1-4 开窗即用——用户不碰命令行）:
-  //   dev: npx tsx src/index.ts; prod: node dist/index.js + SYNOVA_DB_PATH=userData（L1-7 升级不丢数据）
+  //   dev: npx tsx src/index.ts; prod: node dist/src/index.js + SYNOVA_DB_PATH=userData（L1-7 升级不丢数据）
   const isProdBoot = app.isPackaged;
   try {
     backendHandle = await ensureBackend({
