@@ -563,3 +563,5 @@ Binary file .claude/bypass.log matches
 2026-08-23T13:50:17+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D507 | AGENT=dsh-cto
 2026-08-23T13:51:39+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D507 | AGENT=dsh-cto
 2026-08-23T13:58:40+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D507 | AGENT=dsh-cto | HASH=7cdea49f08d31f6bf5c2695c8f8a45be5fb6cf30
+2026-08-23T14:06:35+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D507 | AGENT=dsh-cto | HASH=6cd2c7ed43f01576c8672102d6f8c3229d92b1a3
+2026-08-23T14:08:02+0800 | COMMITTED | pre-commit PASS (纯文档 CT-34 合并引入补记) | TASK_ID=D507 | AGENT=dsh-cto | HASH=2256581f5a54ac95c8289be230eb87666a591826
