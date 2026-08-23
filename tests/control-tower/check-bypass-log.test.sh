@@ -47,6 +47,45 @@ SYNO_BASE_REF="nonexistent-ref-xyz" bash "$GATE" >/dev/null 2>&1
 rc=$?
 [ "$rc" -eq 1 ] && ok "显式 base 不可解析 → exit 1" || no "显式 base 不可解析应 exit 1, 实际 $rc"
 
+# ═══ D508: merge-base 对账用例（Win#7 死循环根治验证）═══
+# 沙箱加固（事故教训: 2026-08-23 三次 index 污染）: 所有沙箱 git 一律 GIT_DIR/
+#   GIT_WORK_TREE 显式绑定（结构性隔离，与 cwd 无关），并断言宿主 index 前后不变。
+(
+  SB="$(mktemp -d /tmp/d508-mb.XXXXXX)"
+  HOST_BEFORE=$(git write-tree 2>/dev/null || echo na)  # swallow-ok: 宿主基线
+  trap 'rm -rf "$SB"' EXIT
+  g() { GIT_DIR="$SB/.git" GIT_WORK_TREE="$SB" git "$@"; }
+  git -C "$SB" init -q
+  g config user.email t@t; g config user.name tester
+  mkdir -p "$SB/.claude"; : > "$SB/.claude/bypass.log"
+  echo a > "$SB/a"; g add -A; g commit -qm base
+  g branch -m main
+  echo m1 > "$SB/m1"; g add -A; g commit -qm main-side
+  g checkout -q -b feat/x HEAD~1
+  echo b > "$SB/b"; g add -A; g commit -qm feat-task
+  TASK_HASH=$(g rev-parse HEAD)
+  echo "$(date -Iseconds) | COMMITTED | pre-commit PASS | TASK_ID=X | AGENT=t | HASH=$TASK_HASH" >> "$SB/.claude/bypass.log"
+  g merge -q main -m merge-main 2>/dev/null || true  # swallow-ok: 沙箱夹具
+  if (cd "$SB" && SYNO_BASE_REF=main bash "$GATE" >/dev/null 2>&1); then
+    echo "  ✅ D508: merge main 后 main 侧提交不再要求补记（死循环根治）"
+  else
+    echo "  ❌ D508: merge 后对账仍失败"; exit 1
+  fi
+  echo c > "$SB/c"; g add -A; g commit -qm unrecorded
+  if (cd "$SB" && SYNO_BASE_REF=main bash "$GATE" >/dev/null 2>&1); then
+    echo "  ❌ D508: 无记录提交漏拦！"; exit 1
+  else
+    echo "  ✅ D508: 无记录新提交仍被拦（对账强度不降）"
+  fi
+  HOST_AFTER=$(git write-tree 2>/dev/null || echo na)  # swallow-ok: 宿主复核
+  if [ "$HOST_BEFORE" = "$HOST_AFTER" ]; then
+    echo "  ✅ D508: 宿主 index 未被沙箱污染"
+    PASS=$((PASS+3))
+  else
+    echo "  ❌ D508: 宿主 index 被改写！"; exit 1
+  fi
+)
+
 echo ""
 echo "结果: $PASS 通过, $FAIL 失败"
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1
