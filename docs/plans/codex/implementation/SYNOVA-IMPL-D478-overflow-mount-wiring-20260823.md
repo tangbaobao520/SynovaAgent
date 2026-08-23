@@ -25,11 +25,11 @@
 
 ## 3. 实现方案
 
-### 3.1 写集 (2 修改 + 0 新建)
+### 3.1 写集 (1 修改 + 1 新建)
 | 文件 | 操作 | 说明 |
 |------|------|------|
 | src/server.ts | 修改 | ①挂载区（L311+，对齐 gaDiagnosisRoutes 等）加 `app.use(overflowRoutes)`；②graphStore 注入点（L395 setGraphBridge 同区）加 `setOverflowGraphStore(graphStore)`（graphStore 可为 null 时 fail-open：setter 接受 null 或调用前判空，与 overflow.ts 现有 `if (!graphStore) 503` 降级语义一致） |
-| tests/routes/overflow.test.ts | 修改 | 新增挂载断言用例：server.ts 含 `app.use(overflowRoutes)` + `setOverflowGraphStore`（red=当前仅 import 零命中 → green=挂载+注入）；既有 D476 用例保持绿 |
+| tests/routes/overflow-mount.test.ts | 新建 | 挂载断言用例：读取 src/server.ts 断言含 `app.use(overflowRoutes)` + `setOverflowGraphStore`（red=当前仅 import 零命中 → green=挂载+注入）——**独立新文件，与 D476 写集（tests/routes/overflow.test.ts）零重叠（verify-parallel 契约）** |
 
 > 共享资源标注（S-8）：本写集不含 VERSION.md（接线修复，非门禁/工具行为变化，不 bump）；**src/server.ts 是 TASK-ROUTING 串行点（Claude 专属）**——DSH 不碰，本任务唯一改动文件；current-brief / 暂存区共享，串行触碰。
 
@@ -46,7 +46,7 @@
 
 | 层 | 类型 | 数量 | 覆盖 |
 |----|------|------|------|
-| L2 | 静态/接线 tests/（server 挂载断言，可放 tests/routes/overflow.test.ts 或新增） | +1 | 断言 server.ts 挂载 + 注入（grep 式静态断言或 module 导入验证）——**red=当前仅 import 无挂载 → green=app.use + setOverflowGraphStore 存在** |
+| L2 | 静态/接线 tests/routes/overflow-mount.test.ts（新建） | +1 | 断言 server.ts 挂载 + 注入（grep 式静态断言）——**red=当前仅 import 无挂载 → green=app.use + setOverflowGraphStore 存在**；D476 的 overflow.test.ts 保持只读回归 |
 | L2 | 集成（可选，能起 server 时） | +1 | 带 auth 请求 GET /api/overflow/dashboard/:orgId 不再 404（可达性） |
 
 **RED 必须覆盖失败模式（S-5）**：用例①先以现状断言「server.ts 含 app.use(overflowRoutes) + setOverflowGraphStore」→ **修复前失败（零命中）** → 修复后通过。
@@ -72,7 +72,7 @@
 
 * **DS1 路由挂载**：`grep -n "app.use(overflowRoutes)" src/server.ts` 命中。
 * **DS2 生产注入**：`grep -n "setOverflowGraphStore" src/server.ts` 命中且传 graphStore（`services.graphStore`）。
-* **DS3 测试全绿**：`vitest run tests/routes/overflow.test.ts`（+挂载断言）全 pass（red 先行已证）。
+* **DS3 测试全绿**：`vitest run tests/routes/overflow-mount.test.ts tests/routes/overflow.test.ts` 全 pass（red 先行已证；D476 既有用例回归）。
 * **DS4 零回归**：server 相关既有测试绿 + `tsc --noEmit` 零新增（28=28）。
 * **DS5 范围一致**：`git diff --name-only HEAD^` 与 §3.1 写集一致（唯一文件 src/server.ts + 测试），无越界。
 * **DS6 无绕过**：`grep -n "no-verify" .claude/bypass.log` 零命中。
@@ -94,7 +94,7 @@
 |------|---------|------|
 | DS1 路由挂载 | grep -n "app.use(overflowRoutes)" src/server.ts | 命中 |
 | DS2 生产注入 | grep -n "setOverflowGraphStore" src/server.ts | 命中且传 graphStore |
-| DS3 测试全绿 | vitest run tests/routes/overflow.test.ts | 全 pass |
+| DS3 测试全绿 | vitest run tests/routes/overflow-mount.test.ts tests/routes/overflow.test.ts | 全 pass |
 | DS4 零回归 | vitest run 相关 + tsc --noEmit | 全绿 + 零新增 |
 | DS5 范围一致 | git diff --name-only HEAD^ | 与写集一致（src/server.ts + 测试） |
 | DS6 无绕过 | grep -n "no-verify" .claude/bypass.log | 零命中 |
