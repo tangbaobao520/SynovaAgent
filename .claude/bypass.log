@@ -570,3 +570,4 @@ Binary file .claude/bypass.log matches
 2026-08-23T22:46:06+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D510 | AGENT=synova-devdoc | HASH=50252ed365a9a067ccf7b019e8d03aa41c453371
 2026-08-23T22:47:28+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D510 | AGENT=synova-devdoc | HASH=1912eb97946485addc44829685f705df3c13332f
 2026-08-23T23:30:00+08:00 | COMMITTED | pre-commit PASS (一次性补记: D510 spec 修正 1e7d0f7c——纯文档豁免 CT-34) | TASK_ID=D510 | AGENT=synova-devdoc | HASH=1e7d0f7c81560584f3602801b170849df9275fdb
+2026-08-23T23:19:32+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D510 | AGENT=deepseek-harness | HASH=7324ec57af6b43adcc0ad76d5f30153e60f34642

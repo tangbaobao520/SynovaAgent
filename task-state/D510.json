@@ -23,7 +23,7 @@
     ],
     "evidence": {
       "f1_route": "降级路线——pack:dir 实测失败（electron-builder command not found），commit message 措辞「静态配置断言 + 无头契约验证」，无 release/ 产物为声明事实",
-      "l1_regression": "npx vitest run tests/electron/ 25/25 passed（backend-spawn 8 + desktop-build 15 + auto-update 2）",
+      "l1_regression": "npx vitest run tests/electron/ 25/25 passed（backend-spawn 8 + desktop-build 13 + auto-update 4——复核纠正初版误写的 15+2 分解，总数 25 不变）",
       "gs01": "GS-01 exit 0, 7/7 断言通过（evidence/GS-01-2026-08-23.json），断言①已标注静态检查性质",
       "l2a_consistency": "grep dist/index.js 三文件=0；run.sh 含「静态检查非打包验证」×2；D504.json note 含「静态配置断言」+「DESCOPE」三方一致声明",
       "deliverable_report": ".claude/task-briefs/2026-08-23-D510-d504-audit-fix.md（U4 DS1-13 声明表 + DESCOPE 表 2 行 + founder-demo checklist + 门禁处置段 + F5 口径 8+15+2=25）"
