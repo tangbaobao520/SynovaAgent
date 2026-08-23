@@ -315,7 +315,6 @@ Binary file .claude/bypass.log matches
 2026-08-17T18:22:24Z possible-bypass diff=1582s
 2026-08-18T02:23:04+08:00 | COMMITTED | pre-commit PASS (D361 补记: rebase 重放到 main 后 bd7234ca) | TASK_ID=D361 | AGENT=DeepSeek-Harness | HASH=bd7234ca1ee0e1d279ee848c3f29ce4c52291517
 2026-08-18T02:23:28+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D442 | AGENT=DeepSeek-Harness
-2026-08-16T12:00:00+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D384-TEST | AGENT=test
 2026-08-18T02:41:03+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D450 | AGENT=DeepSeek-Harness | HASH=687981223a96ee5a10b036dcdb40e8266ba61b4c
 2026-08-18T22:06:35+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D455 | AGENT=DeepSeek-Harness
 2026-08-18T22:09:41+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D455 | AGENT=DeepSeek-Harness | HASH=bcfd466b6cd82ce081109e2d834c753d860fdcd7
@@ -602,3 +601,9 @@ Binary file .claude/bypass.log matches
 2026-08-24T00:21:00+08:00 | COMMITTED | pre-commit PASS (一次性补记: D511 task-state 回填 3af772d5——原生 commit 纯文档豁免) | TASK_ID=D511 | AGENT=synova-devdoc | HASH=3af772d55128a9e4d00262b1c7fafe931799da4c
 
 2026-08-23T23:00:00+08:00 | COMMITTED | pre-commit PASS (台账提交补记: 8f33e82a, D331 对账) | TASK_ID=LEDGER | AGENT=Synova-Win | HASH=8f33e82aa670225297c69361fd14ae6a447fa0f5
+2026-08-24T00:17:48+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-24T00:17:48+08:00 | COMMITTED | pre-commit DEGRADED-PASS | TASK_ID=D331-test | AGENT=test | HASH=5fe479b53f41267323afa31a4bc2064a7fc82f0c
+2026-08-24T00:17:49+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-24T00:17:49+08:00 | COMMITTED | pre-commit DEGRADED-PASS | TASK_ID=D331-test | AGENT=test | HASH=1b90e8beaf82877848c797a8b31ff3955c530226
+2026-08-24T00:17:50+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-24T00:17:50+08:00 | COMMITTED | pre-commit DEGRADED-PASS | TASK_ID=D331-test | AGENT=test | HASH=d46014b191e91fd549846988f8e9f9b721dcecbf

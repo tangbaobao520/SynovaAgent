@@ -1020,10 +1020,13 @@ if [ -n "$ALL_TODAY_BRIEFS" ] && [ -n "$STAGED_ALL" ]; then
     [ -z "$BRIEF" ] && continue
     BNAME=$(basename "$BRIEF")
     # D313 M3 同源: G12 awk → brief_parser.py（消灭双副本，语义 = parse_q2）
+    # D511 附带修复: BSD sed（macOS）replacement 不展开 \t → TSV 变 "D511.mdt<路径>" →
+    #   认领永远匹配失败 → Mac 上所有代码文件误报"不在 Q2 范围"（Mac 此前仅纯文档提交
+    #   走 DOC_ONLY 早退幸免）。改 awk 拼 tab（GNU/BSD 一致，判定逻辑零变化）。
     python3 "$ROOT/scripts/control-tower/brief_parser.py" --q2-include "$BRIEF" 2>/dev/null \
-      | sed "s|^|$BNAME\\t|" >> "$SCOPE_TSV" || true
+      | awk -v b="$BNAME" '{print b "\t" $0}' >> "$SCOPE_TSV" || true
     python3 "$ROOT/scripts/control-tower/brief_parser.py" --q2-exclude "$BRIEF" 2>/dev/null \
-      | sed "s|^|$BNAME\\t|" >> "$EXCL_TSV" || true
+      | awk -v b="$BNAME" '{print b "\t" $0}' >> "$EXCL_TSV" || true
   done <<< "$ALL_TODAY_BRIEFS"
 
   # 检查每个暂存文件 — 修复 (D291): Python 单进程匹配, 替代 12321 次 grep 子进程 (Windows 10+ 分钟 → <1s)
@@ -1149,6 +1152,27 @@ else
   soft_pass "G13: 无技能文件变更(跳过)"
 fi
 
+# ═══ 组 14: 版本守卫 (D511, V4.10.0) — 门禁文件变更须同 commit bump VERSION.md ═══
+# 背景: V4.8.0 后六批门禁行为变更未 bump（CT-42 第二次违反）。版本管理规范 §四待办机器化。
+# fail-closed (D328): 守卫 exit 2（git/VERSION.md 不可用）→ 同样硬阻断, 不与"通过"混同。
+# 逃生舱: SYNO_SKIP_VERSION_GUARD=1（守卫内部记 degraded-events.log, 铁律 11 不静默）。
+echo ""
+echo -e "${CYAN}── 组 14: 版本守卫 (D511) ──${RESET}"
+VG_GATE_TOUCHED=$(echo "$STAGED_ALL" | grep -E '^(scripts/control-tower/|scripts/pre-commit-check\.sh|scripts/workflow/|scripts/install-hooks\.sh|scripts/hooks/|scripts/check-[^/]+\.sh)' || true)
+if [ -n "$VG_GATE_TOUCHED" ]; then
+  VG_OUT=$(bash "$ROOT/scripts/control-tower/check-version-guard.sh" 2>&1)
+  VG_EXIT=$?
+  if [ "$VG_EXIT" -eq 0 ]; then
+    soft_pass "G14: 版本守卫 ($(echo "$VG_OUT" | head -1))"
+  elif [ "$VG_EXIT" -eq 1 ]; then
+    hard_check "G14: 版本守卫 — 门禁文件变更未同 commit bump VERSION.md（规范§一铁律 2）" "$VG_OUT"
+  else
+    hard_check "G14: 版本守卫降级 fail-closed (exit=$VG_EXIT, D328/D331)" "$VG_OUT"
+  fi
+else
+  soft_pass "G14: 无门禁文件变更(跳过)"
+fi
+
 # V3: 写 CP3 检查点
 mkdir -p "$ROOT/.codex/checkpoints"
 G10_FAIL=$([ -n "$MISMATCH" ] && echo "true" || echo "false")
@@ -1176,7 +1200,7 @@ if [ "$HARD_FAIL" -gt 0 ]; then
   echo ""
   exit 1
 else
-  echo -e "  ${GREEN}✅ 全部 13 组通过${RESET}"
+  echo -e "  ${GREEN}✅ 全部 14 组通过${RESET}"
   [ "$WARN_COUNT" -gt 0 ] && echo -e "  ${YELLOW}⚠️  ${WARN_COUNT} 项警告 (不阻断)${RESET}"
   echo "═══════════════════════════════════════════════════════════"
   echo ""

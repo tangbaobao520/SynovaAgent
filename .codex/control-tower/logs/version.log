@@ -1,0 +1,2 @@
+{"version": "4.10.0", "changes": "D511 版本守卫门禁：pre-commit 组 14 + check-version-guard.sh（门禁文件变更须同 commit bump VERSION.md，fail-closed 三态）", "incident": "", "schema": "control-tower/logs/version/v1", "time": "2026-08-24T00:13:10+0800"}
+{"version": "9.9.9", "changes": "auto-tag V9.9.9", "incident": "", "schema": "control-tower/logs/version/v1", "time": "2026-08-24T00:17:48+0800"}

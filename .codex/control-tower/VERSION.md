@@ -11,6 +11,22 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V4.10.0 (2026-08-23) — D511 版本守卫门禁（组 14）
+
+> 版本管理规范 §四待办机器化：改门禁不 bump = 提交失败。CT-42 教训（六批未 bump，第二次违反）的物理根治——bump 靠记忆必漏，物理强制是唯一解（铁律 35 自动化优先）。
+
+### V4.10.0 变更明细
+
+- **D511 新增 pre-commit 组 14「版本守卫」**: 新建 `scripts/control-tower/check-version-guard.sh` + 组 14 接线（DOC_ONLY 早退之后、组 13 之后）。门禁文件变更（scripts/control-tower/、scripts/pre-commit-check.sh、scripts/workflow/、scripts/install-hooks.sh、scripts/hooks/、scripts/check-*.sh）⟹ `.codex/control-tower/VERSION.md` 必须同 commit bump，否则硬阻断
+- **三态退出（D328）**: exit 0 通过（无门禁变更/带 bump/逃生舱）/ exit 1 硬阻断（门禁变更无 bump）/ exit 2 守卫自身降级 fail-closed（git 或 VERSION.md 不可解析，D331"检查没跑 ≠ 检查通过"）
+- **逃生舱 SYNO_SKIP_VERSION_GUARD=1**: 跳过并追加 degraded-events.log（铁律 11 静默降级禁止）
+- **零打扰边界**: 纯文档走 DOC_ONLY 既有早退天然豁免；src/、scripts/backup/、scripts/golden-scenarios/ 等非门禁文件不触发（D508 减负精神）；无门禁文件时组 14 秒过（<1s，模式 3 条件跳过）
+- **宁紧勿松（CT-42）**: 注释/文案类门禁改动也要求 bump（PATCH 起步）或走逃生舱留痕；不做注释行解析豁免（复杂易误判）
+- **附带修复（G12 可移植性 P0）**: 组 12 认领 TSV 生成 `sed "s|^|$BNAME\t|"` 在 macOS BSD sed 下 `\t` 不展开 → TSV 损坏 → Mac 上所有代码文件误报"不在 Q2 范围"（Mac 此前仅纯文档提交走 DOC_ONLY 早退幸免）。改 awk 拼 tab（GNU/BSD 一致，G12 判定逻辑零变化）。同为 D511 提交（同 commit bump 铁律 2）
+- **级别口径**: 派单标题"V4.9.1 候选"低估——新增门禁组按规范 §二 = MINOR → V4.10.0（决策记录见 dev doc §5.3）
+- **验证**: tests/control-tower/version-guard.test.sh 15 用例全绿（拦/放行/跳过/降级/接线/边界）；D511 自身提交带本条 bump 通过组 14——吃自己的药
+- **作者**: dsh-cto（DSH 编码 session）
+
 ## V4.9.0 (2026-08-23) — D506/D507/D508 批次（提交链路减负 + 并行物理隔离 + 门禁时区修复）
 
 > 创始人指示的流程减负专项：CTO 自查 + Win PR#128 五摩擦项综合。质量根（13 组判定本体/K3 注入/S-6/S-10/接线验收）零触碰。
