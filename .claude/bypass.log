@@ -598,3 +598,5 @@ Binary file .claude/bypass.log matches
 2026-08-23T22:10:00+08:00 | COMMITTED | pre-commit PASS (合并引入补记: 6d6e4d0b V4.9.0, D331 对账) | TASK_ID=CT-V4.9 | AGENT=Synova-Win | HASH=6d6e4d0b4c43d1a8228065f21cdc7897df875d6e
 
 2026-08-23T22:30:00+08:00 | COMMITTED | pre-commit PASS (一次性补记: 0ef48d3f D480, D331 对账) | TASK_ID=D480 | AGENT=Synova-Win | HASH=0ef48d3fd14f191af68c5786a80f092b9611f32e
+
+2026-08-23T23:00:00+08:00 | COMMITTED | pre-commit PASS (台账提交补记: 8f33e82a, D331 对账) | TASK_ID=LEDGER | AGENT=Synova-Win | HASH=8f33e82aa670225297c69361fd14ae6a447fa0f5
