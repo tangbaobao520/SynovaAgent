@@ -257,7 +257,8 @@ export function jwtAuthMiddleware(req: Request, res: Response, next: NextFunctio
       (req as Request & { auth?: JwtPayload }).auth = {
         sub: 'dev-admin',
         role: 'admin',
-        orgId: 'default',
+        // D479: 实例 org 唯一权威是 SYNOVA_ORG_ID（与 config.ts orgId 同源），'default' 仅作 env 缺失兜底
+        orgId: process.env.SYNOVA_ORG_ID || 'default',
         iat: Math.floor(Date.now() / 1000),
         exp: Math.floor(Date.now() / 1000) + 86400,
         jti: 'dev-mode-no-jwt',
@@ -363,7 +364,8 @@ export function extractAuthFromRequest(req: {
     return {
       role: (parts[0] as WorkspaceRole | 'ga') || 'staff',
       userId: parts[2] || 'dev',
-      orgId: parts[1] || 'default',
+      // D479: legacy token 缺 orgId 段时回退实例 org（SYNOVA_ORG_ID，与 config.ts orgId 同源），'default' 仅作 env 缺失兜底
+      orgId: parts[1] || process.env.SYNOVA_ORG_ID || 'default',
     };
   }
 

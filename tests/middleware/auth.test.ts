@@ -313,6 +313,38 @@ describe('jwtAuthMiddleware', () => {
     expect(nextCalled).toBe(false);
     expect(res.statusCode).toBe(401);
   });
+
+  it('DEV_MODE 自动 admin 会话 orgId 取 SYNOVA_ORG_ID 配置值（D479）', () => {
+    const prevOrg = process.env.SYNOVA_ORG_ID;
+    const prevSecret = process.env.JWT_SECRET;
+    const prevDev = process.env.DEV_MODE;
+    process.env.SYNOVA_ORG_ID = 'org-x';
+    delete process.env.JWT_SECRET; // 触发 DEV_MODE 无密钥分支
+    process.env.DEV_MODE = 'true';
+    try {
+      const req: Record<string, unknown> & { path: string; headers: Record<string, string>; auth?: unknown } = {
+        path: '/api/workspaces',
+        headers: {},
+      };
+      const res: Record<string, unknown> & { statusCode?: number } = {};
+      res.status = (code: number) => { res.statusCode = code; return res as unknown as Response; };
+      res.json = (body: unknown) => { return res as unknown as Response; };
+      let nextCalled = false;
+
+      jwtAuthMiddleware(req as unknown as Request, res as unknown as Response, () => { nextCalled = true; });
+
+      expect(nextCalled).toBe(true);
+      expect(res.statusCode).toBeUndefined();
+      expect(req.auth).toBeTruthy();
+      // D479: DEV_MODE 会话不得落字面 'default'，须与 config.orgId 同源（SYNOVA_ORG_ID）
+      expect((req.auth as Record<string, unknown>)?.orgId).toBe('org-x');
+    } finally {
+      if (prevOrg === undefined) delete process.env.SYNOVA_ORG_ID;
+      else process.env.SYNOVA_ORG_ID = prevOrg;
+      if (prevSecret !== undefined) process.env.JWT_SECRET = prevSecret;
+      if (prevDev !== undefined) process.env.DEV_MODE = prevDev;
+    }
+  });
 });
 
 // ============================================================
@@ -349,5 +381,27 @@ describe('extractAuthFromRequest', () => {
     const req = { headers: { 'x-synova-token': 'not-a-valid-format' } };
     const result = extractAuthFromRequest(req as never);
     expect(result).toBeNull();
+  });
+
+  it('legacy x-synova-token 缺 orgId 段 + SYNOVA_ORG_ID 已配置 → orgId 取配置值（D479）', () => {
+    const prevOrg = process.env.SYNOVA_ORG_ID;
+    process.env.SYNOVA_ORG_ID = 'org-x';
+    try {
+      // 'admin::user1' = role:orgId:userId，orgId 段为空 → 回退实例 org（SYNOVA_ORG_ID）
+      const req = { headers: { 'x-synova-token': 'admin::user1' } };
+      const result = extractAuthFromRequest(req as never);
+      expect(result).toBeTruthy();
+      expect(result!.orgId).toBe('org-x');
+      expect(result!.role).toBe('admin');
+      expect(result!.userId).toBe('user1');
+
+      // 兜底契约保持：SYNOVA_ORG_ID 未配置时最终回落 'default'（与 config.ts L96 同源）
+      delete process.env.SYNOVA_ORG_ID;
+      const fallback = extractAuthFromRequest({ headers: { 'x-synova-token': 'admin::user2' } } as never);
+      expect(fallback!.orgId).toBe('default');
+    } finally {
+      if (prevOrg === undefined) delete process.env.SYNOVA_ORG_ID;
+      else process.env.SYNOVA_ORG_ID = prevOrg;
+    }
   });
 });
