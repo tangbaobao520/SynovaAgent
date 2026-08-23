@@ -365,6 +365,35 @@ if [[ -f "$SESSION_REGISTRY" ]]; then
   python3 "$WAIT_MANAGER" phase --session-id "$SESSION_ID" --phase CP2 2>/dev/null || true
 fi
 
+# ═══ D507: 并行 session 物理隔离门禁（创始人批准 2026-08-23）═══
+# 多活跃 session + 不在专属 worktree → 硬阻断（M8 第 4 次复发 D506 的根治，第 3 层防线）。
+# 单 session 放行（单人零摩擦）。降级（铁律 24/31）: registry 不可读 → 显式提示跳过。
+if [[ -z "$IS_LINKED_WT" && -f "$PROJECT_ROOT/scripts/control-tower/worktree-manager.py" ]]; then
+  _WM="$PROJECT_ROOT/scripts/control-tower/worktree-manager.py"
+  _REGOUT=$(python3 "$SESSION_REGISTRY" list --active 2>/dev/null || echo "")
+  if [[ -n "$_REGOUT" ]]; then
+    _OTHERS=$(echo "$_REGOUT" | python3 -c "
+import sys, json
+try:
+    d = json.load(sys.stdin)
+    sessions = d if isinstance(d, list) else d.get('sessions', [])
+    print(len([s for s in sessions if s.get('session_id') != '$SESSION_ID']))
+except Exception:
+    print('-1')
+" 2>/dev/null || echo "-1")
+    if [[ "$_OTHERS" -gt 0 ]]; then
+      echo -e "${RED}❌ [D507] 检测到并行 session（${_OTHERS} 个其他活跃 session），且当前不在专属 worktree${NC}"
+      echo -e "    并行时共享 HEAD/暂存区会互踩（D506 实证）。请使用隔离 worktree:"
+      echo -e "      python3 ${_WM} create ${TASK_ID}"
+      echo -e "      cd ../synova-wt-${TASK_ID}"
+      echo -e "    主工作区仅允许只读。单人时段可正常提交。"
+      exit 1
+    fi
+  else
+    echo -e "${YELLOW}⚠ [D507] registry 不可读，并行检测跳过（显式降级）${NC}"
+  fi
+fi
+
 # D314: 提交前 self-health 快照（fail-open，不阻断）
 if [[ -f "$SELF_HEALTH" ]]; then
   python3 "$SELF_HEALTH" > /dev/null 2>&1 || true

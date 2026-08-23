@@ -21,12 +21,15 @@
 
 ## Q2: 范围
 做什么：
-- docs/synova/coordination/并行撞车根治方案-D507-20260823.md — 三层防线方案
+- docs/synova/coordination/并行撞车根治方案-D507-20260823.md — 三层防线方案（已先行提交 2256581f）
+- scripts/control-tower/synova-commit — D507 硬阻断门禁（多活跃 session + 主区 → 拦截并指引 worktree；单人/worktree 内放行；registry 不可读显式降级）
+- tests/control-tower/synova-commit.test.sh — 门禁配对测试（U7/CT-40 强制；7 用例：接线/阻断条件/单人放行/降级/JSON 判定语义）
+- docs/synova/coordination/PARALLEL-DISCIPLINE.md — D507 落地声明（软纪律降级为补充）
 - task-state/D507.json — 登记回填
 不做什么：
 - 不改 scripts/audit/（K3 红线）
-- 本提交不含 worktree-manager.py 实现（方案获批后另起实现提交，避免方案与实现混批）
-- 不改四个预设文件（落地步骤 3，待方案批准）
+- 不改 scripts/control-tower/worktree-manager.py（Win D307 已在 main 的既有产物，本任务只在其上加门禁；其 attach.py 的 Python 3.10 语法兼容问题另行登记）
+- 不改 .github/workflows/ 内任何 yml 文件（CI 无关）
 
 ## Q3: 验收 — 入口 → 交互 → 结果
 入口: 创始人审批方案
@@ -39,4 +42,6 @@
 ## Done 标准
 - [x] verify: 方案文档落库（含根因分析/三层防线/落地计划/止血规则/创始人裁决点）
 - [x] verify: 本提交在独立 worktree（synova-wt-D507）完成——立即以身作则
-- [ ] verify: worktree-manager.py 实现+测试（获批后，另起提交）
+- [x] verify: bash tests/control-tower/synova-commit.test.sh 7/7 全绿
+- [x] verify: 主区 check in_worktree=false / worktree 内=true（worktree-manager check 实测）
+- [x] verify: 预设注入 grep D507 ~/.dsh/.agent-presets/{synova-dsh,synova-devdoc,synova-k3-audit,synova-cto}/agent.cordis.yml 各命中
