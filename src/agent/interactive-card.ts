@@ -10,9 +10,15 @@
  * 铁律 38: 零 as any
  */
 import { createLogger } from '@synova/logger';
+import { loadConfig } from '../config';
 import type { GAFeedbackHandler, GAFeedbackActionType } from '../l3/ga-collaboration';
 
 const log = createLogger('agent/interactive-card');
+
+// D476 O8: orgId 是启动期常量（SYNOVA_ORG_ID 只在进程启动时读取）。
+// GA 反馈构建在请求热路径上，模块级一次加载避免每请求文件 I/O + 日志；
+// 与仓内 per-call loadConfig() 惯例不同，属有意例外（dev doc §3.2 回填）。
+const config = loadConfig();
 
 // ═══ Types ═══
 
@@ -170,7 +176,8 @@ export class InteractiveCardHandler {
               action: action.action as GAFeedbackActionType,
               findingId: action.findingId,
               gaUserId: action.userId || 'unknown',
-              enterpriseId: 'default',
+              // D476 O8: 源头携带企业上下文（action.enterpriseId），兜底实例默认 org——不再硬编码 'default'
+              enterpriseId: action.enterpriseId || config.orgId,
             });
             return {
               ...base,
