@@ -600,3 +600,5 @@ Binary file .claude/bypass.log matches
 2026-08-23T22:30:00+08:00 | COMMITTED | pre-commit PASS (一次性补记: 0ef48d3f D480, D331 对账) | TASK_ID=D480 | AGENT=Synova-Win | HASH=0ef48d3fd14f191af68c5786a80f092b9611f32e
 2026-08-24T00:20:00+08:00 | COMMITTED | pre-commit PASS (一次性补记: D511 spec 27d1ca5f——纯文档豁免 CT-34) | TASK_ID=D511 | AGENT=synova-devdoc | HASH=27d1ca5f99f7590400a8fa5effb2a9e24d3c0c0e
 2026-08-24T00:21:00+08:00 | COMMITTED | pre-commit PASS (一次性补记: D511 task-state 回填 3af772d5——原生 commit 纯文档豁免) | TASK_ID=D511 | AGENT=synova-devdoc | HASH=3af772d55128a9e4d00262b1c7fafe931799da4c
+
+2026-08-23T23:00:00+08:00 | COMMITTED | pre-commit PASS (台账提交补记: 8f33e82a, D331 对账) | TASK_ID=LEDGER | AGENT=Synova-Win | HASH=8f33e82aa670225297c69361fd14ae6a447fa0f5
