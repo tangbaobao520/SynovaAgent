@@ -11,3 +11,11 @@
 4. **双平台 CI 是平台 bug 的唯一系统性防线**：CRLF 空转 3 次复发都是"等 Win 实测暴露"。矩阵 `os: [ubuntu, windows]` + `shell: bash` + 密封测试 10 个，平台问题在 PR 上即时红。
 5. **checklist 要物理接线才有牙**：PLATFORM-CHECKLIST.md 单独存在 = 文档（V3.9 教训：信息注入型检查对 agent 不可见）。接线 pre-commit 软检查（新脚本含裸平台命令 → 点名 checklist；SYNO_CI=1 转硬）后才是门禁。
 6. **测试断言 grep 陷阱两则**：① `grep "tr -d '\r\n'"` 中 `\r` 被 grep 当转义吃掉 → 用 `-F`；② "文件名被点名"断言会误捕 G12 范围提示 → 断言必须限定在目标检查的输出行（`grep -A1 "平台敏感命令"`）。
+
+## 执行中追加教训（CI 双平台调参过程）
+
+7. **sed -i 是第 9 个平台坑（当场踩中）**：q2 测试用 BSD 语法 `sed -i ''`，GNU sed（Linux/Git Bash runner）把 `''` 当脚本、替换静默不生效——本地 mac 全绿、双平台 CI 全红。已沉淀 checklist 第 9 条；跨平台文件替换一律 python。
+8. **CI 失败无日志时的注解通道**：本机无 gh/token 拉不了日志 → 临时给 job 加 `::error title=..::消息` workflow command，失败输出经 check-runs annotations 匿名 API 可读——两次定位（q2/G12）全靠它。用完即撤。
+9. **CI strict 的语义边界**：`SYNO_CI=1` 把一切 warn 转硬会误炸"可选"类提示（PRD 章节引用）→ 新增 `opt_check()`（永不转硬）。质量类才配 CI 权威。
+10. **brief 写集裸路径 + 全覆盖**：全角括号注释附着路径（`xxx.sh（说明）`）让 brief_parser 提取不匹配 → G12 误报"不在范围"（本地软提示不可见，CI strict 才暴露）；且写集漏列一个实际修改的文件同样被 G12 抓住——两次都是真问题。
+11. **版本号撞车处置**：spec 定 V5.0.1 但推送时发现 Win 线已用（remote tag 指向他人提交、D331 锚点拦截）→ 顺延 V5.0.2 并在 VERSION.md 注明。孤儿 tag（V4.7.1 本地残留）会被 fetch 反复带回，push 前需再清。
