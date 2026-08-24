@@ -617,3 +617,4 @@ Binary file .claude/bypass.log matches
 2026-08-24T11:12:23+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D515 | AGENT=dsh-cto | HASH=8cdf9957032e043a91ba7cda0c04bbda5901a9a0
 2026-08-24T11:15:55+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D515 | AGENT=dsh-cto | HASH=fe94490b1207e9b80bec8582495a7e1b1ddd22c6
 2026-08-24T11:19:14+08:00 | COMMITTED | pre-commit PASS (task-state 回填, D331 对账, D451 补记) | TASK_ID=D515 | AGENT=dsh-cto | HASH=102d4f3e53bc6e8ca4c69b5062a1abcb69a8aa88
+2026-08-24T12:19:20+08:00 | COMMITTED | pre-commit PASS（D451 补记） | TASK_ID=D516 | AGENT=dsh-cto | HASH=d3e63e8f396103f71c52e1729dce1e419aadb3d5
