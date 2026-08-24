@@ -1,12 +1,30 @@
 {
   "task_id": "D518",
   "title": "L1-A 安装引导单入口(1-5)",
-  "status": "claimed",
+  "status": "impl_done",
   "slice": "L1-A",
-  "spec": null,
-  "impl": null,
+  "spec": {
+    "doc": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D518-single-entry-20260824.md",
+    "commit": "683d2252（spec 初稿，分支 docs/slice-a-specs；定稿 tip 见分支 HEAD）",
+    "gatekeeper": "exit 0 (C1-C6 ALL PASS, 2026-08-24)"
+  },
+  "impl": {
+    "branch": "feat/slice-a-d517-d519",
+    "agent": "dsh-impl",
+    "writeset": "electron/main.cjs, electron/backend-spawn.cjs, tests/electron/backend-spawn.test.ts, docs/synova/runbooks/desktop-dev-prod.md",
+    "evidence": {
+      "DS1_wire": "grep -n 'ensureBackend(' electron/main.cjs → whenReady 真实调用（main.cjs:127）。运行双证: env -u ELECTRON_RUN_AS_NODE（DSH 宿主环境默认置 1 会令 Electron 以 node 模式启动——记录为环境坑）启动后终端日志第 1 行: '[electron] boot mode=dev server=http://localhost:18790'，spawn 后 curl localhost:18790/api/healthz → HTTP 200",
+      "DS1_log_excerpt": "/tmp/d518-electron-dev.log: L1 boot mode=dev；L8 起后端 pino 日志可见（pid 86478 配置加载完成 ×4）——stdio inherit 修复后后端日志直通终端=运行态 WIRE 证据",
+      "DS2_tests": "npx vitest run tests/electron/ → 3 files 36 passed (36)（backend-spawn 10 含新增 F4 漂移零容忍回归 + boot mode 日志回归）",
+      "DS3_f4": "grep -n 'dist/index.js' electron/*.cjs → 零结果（backend-spawn.cjs 头 JSDoc L12 + main.cjs L123 + 说明句改写，全部为 dist/src/index.js）；F4 机器回归用例锁死（lookbehind 正则零容忍）",
+      "DS4_runbook": "docs/synova/runbooks/desktop-dev-prod.md: prod 链路图（双击→whenReady→boot 日志→ensureBackend spawn node dist/src/index.js+SYNOVA_DB_PATH→loadFile renderer→首诊页）+ dev 三命令标注仅开发 + SERVER_URL 收敛说明",
+      "DS5_prod": "与 D519 实测合并执行（spec §10 明示），evidence 共享 mac-install-verify 四断言",
+      "缺陷修复": "spawnOnce stdio: 无 logFile 时 pipe 无读者→64KB 缓冲写满→子进程 stdout 阻塞→探活永不转健康（实测 4×60s 窗口全超时，直跑 25s 健康）。修复=缺省 logFile 时 stdio inherit。契约 JSDoc 语义不变，brief Q2 已补记"
+    },
+    "notes": "DSH 宿主环境 ELECTRON_RUN_AS_NODE=1 会使 electron 以纯 node 启动（require('electron') 返回路径字符串）——runbook 未记（仅本机 agent 环境特殊），K3 复跑时须 env -u。"
+  },
   "audit": null,
-  "updated_at": "2026-08-24",
-  "updated_by": "dsh-cto",
+  "updated_at": "2026-08-25",
+  "updated_by": "dsh-impl",
   "priority": "P1"
 }

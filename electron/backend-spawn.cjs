@@ -9,7 +9,7 @@
  *     @input  options: {
  *       serverUrl: string;                  // 探活目标（GET /api/healthz）
  *       cwd: string;                        // spawn 工作目录
- *       mode: 'dev' | 'prod';               // dev: npx tsx src/index.ts; prod: node dist/index.js
+ *       mode: 'dev' | 'prod';               // dev: npx tsx src/index.ts; prod: node dist/src/index.js（F4 同步: tsc 磁盘事实）
  *       dbPath?: string;                    // prod: 注入 SYNOVA_DB_PATH（userData 数据目录，L1-7）
  *       logFile?: string;                   // 后端 stdout/stderr 落盘
  *       maxRestarts?: number;               // 默认 3（10min 窗口语义——计数器+时间戳）
@@ -56,8 +56,9 @@ async function probeUntil(url, windowMs, pollIntervalMs) {
 
 /** 双模式默认命令（导出供测试直测） */
 function buildCommand(mode) {
-  // 注意: tsc 实际产物入口为 dist/src/index.js（package.json main 声明 dist/index.js 为存量不一致，
-  // 以磁盘事实为准——D504 实测 electron-builder --dir 产物 Resources/dist/src/index.js）
+  // 注意: tsc 实际产物入口为 dist/src/index.js（package.json main 字段声明的旧入口路径为存量不一致，
+  // 以磁盘事实为准——D504 实测 electron-builder --dir 产物 Resources/dist/src/index.js；
+  // F5 纪律: electron/ 内禁止出现旧入口字面量，tests F4 回归用例零容忍）
   return mode === 'prod'
     ? { bin: 'node', args: ['dist/src/index.js'] }
     : { bin: 'npx', args: ['tsx', 'src/index.ts'] };
@@ -114,7 +115,11 @@ async function ensureBackend(options) {
   const restarts = [];
 
   const spawnOnce = () => {
-    const c = spawn(cmd.bin, cmd.args, { cwd, env, stdio: ['ignore', 'pipe', 'pipe'] });
+    // D518 修复: 无 logFile 时用 inherit 而非 pipe——pipe 无人读取会写满 64KB 缓冲导致子进程
+    // 阻塞在 stdout 写、探活永不转健康（实测: dev 模式 spawn 后 60s 窗口 ×4 全超时，直跑 25s 即健康）。
+    // inherit = 共享 Electron 进程 stdout（自动排空 + 后端日志直接可见=运行证据）。铁律 24: 不静默。
+    const stdio = logFile ? ['ignore', 'pipe', 'pipe'] : ['ignore', 'inherit', 'inherit'];
+    const c = spawn(cmd.bin, cmd.args, { cwd, env, stdio });
     attachLogStream(c, logFile);
     c.on('error', (err) => {
       console.error(`[backend-spawn] spawn 失败: ${err.message}`);
