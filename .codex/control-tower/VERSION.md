@@ -11,6 +11,12 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V5.0.1 (2026-08-24) — verify-parallel 已完成任务文档豁免（Win 反馈，D483 派发实测）
+
+- **verify-parallel 误判已合并任务为并行冲突**（P2，Win 2026-08-24 D483 派发实测）: `--scan-today` 对比今日全部 dev doc 写集，D481（已合并 #144）与 D483（修订其 auth.integration.test.ts）被判写集重叠 → pre-push 硬拦。修法: compare_docs 前置检查——任一文档写集全部已在 origin/main → 视为已完成任务，跳过（串行演进非并行冲突）；origin/main 不可解析 → 不豁免（fail-closed）。
+- **测试**: tests/control-tower/verify-parallel.test.sh 重写（T1-T5：接线 + 已完成 vs 活跃跳过 + 活跃重叠仍 block + PYBIN 回归，5/5 过）。
+- **作者**: Synova-Win（创始人授权越界补丁，DSH 预审）
+
 ## V5.0.0 (2026-08-24) — D515 控制塔减负重构（三批 13 项，MAJOR）
 
 > 门禁体系收缩性重构：提交端硬阻断收敛到 4 道质量根 + 其余软提示（CI Iron Laws 为权威）+ 命中统计。
