@@ -11,6 +11,14 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V5.0.3 (2026-08-24) — D521-1 parser 剥壳对称 + tag 校验收窄（PATCH）
+
+- **不变量3 parser 剥壳对称**: brief_parser.py parse_q2 的 include 段与 exclude 段同等剥壳——剥动词前缀（改/修改/新增/新建/修复/扩展/实现/更新/重构/升级/创建/编写/增加/优化/调整/添加）+ 剥全角/半角括号描述（"src/x（说明）"→"src/x"）；exclude 前缀补「不动」（对齐 check-plan-integrity 动词表）。resolve-commit-brief.sh 内嵌降级解析器同步。修复: D328 动词前缀误拦 + G12 全角括号误报（同一病根：剥壳规则不对称）。
+- **不变量1 tag 校验收窄（D331）**: check_tag_ancestry 从「所有本地 tag 须为 HEAD 祖先」改为「非 HEAD 祖先的孤儿 tag 跳过不拦；HEAD 祖先 tag 须为 origin/main 祖先」——孤儿 tag（V4.7.1 类历史事故/其他分支 tag）不再拦死无关分支推送（D520 实证×3）；未合并分支上的 tag 仍拦（tag 只在 main 可达时合法）；origin/main 不可解析 → 显式降级（铁律 11）。
+- **D319 时机契约（§6 配套）**: feature 分支推送时 VERSION.md 最新版本无 tag = 合法中间态（§6: tag 在 main 合并后打），降级显式提示；main/无分支上下文（SYNO_TAG_ONLY 测试）保持严格。
+- **测试**: tag-ancestry.test.sh（新，8/8：孤儿不拦/未合并拦/main 可达放/降级提示）+ brief-parser-strip.test.sh（新，10/10：5 动词剥壳 + 裸路径回归 + exclude 对称 + resolver 接线），均进双平台 CI。
+- **作者**: dsh-cto（并行 CTO session，spec 执行方）
+
 ## V5.0.2 (2026-08-24) — D520 跨平台适配收口（PATCH；V5.0.1 已被 Win 线 verify-parallel 豁免占用，本任务顺延）
 
 - **任务1 task-start CRLF 修复（P0）**: 并行拦截 `_PAR_N` 双步清洗（`tr -d '\r\n'` + `//[^0-9]/`）——修 Win 下 `[[ "3\r" -gt 0 ]]` 算术错误致并行隔离空转（08-16 起 3 次复发 P1 病根）；同时发现并修复 main 合并事故把 `tr -d '\n\r'` mangle 成字面双 LF。pre-commit `_ACT_N` 同型加固。
