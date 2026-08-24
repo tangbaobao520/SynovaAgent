@@ -241,13 +241,6 @@ def cmd_status(sid: str, repo: Path) -> dict:
     dirty = ""
     if match:
         dirty = _git(Path(match["path"]), "status", "--porcelain").stdout.strip()
-    # D515 项12: merge driver 配置健康度 — bypass.log/reference-map 的 union 是否在 .gitattributes 注册
-    # （D513 曾计划 union driver 之外的 .gitattributes 检查，此处补齐为 status 的顺带体检）
-    union_health = {}
-    ga = repo / ".gitattributes"
-    ga_lines = ga.read_text(encoding="utf-8", errors="ignore").splitlines() if ga.exists() else []
-    for f in (".claude/bypass.log", ".claude/reference-map.md"):
-        union_health[f] = any(ln.strip().startswith(f) and "union" in ln for ln in ga_lines)
     return ok({
         "session_id": sid,
         "worktree_exists": match is not None,
@@ -255,7 +248,6 @@ def cmd_status(sid: str, repo: Path) -> dict:
         "branch_exists": branch_exists,
         "merged": merged,
         "worktree_dirty": bool(dirty),
-        "merge_driver_health": union_health,
     })
 
 

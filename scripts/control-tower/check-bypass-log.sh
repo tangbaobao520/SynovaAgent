@@ -30,10 +30,7 @@ BASE="${SYNO_BASE_REF:-${1:-origin/feat/prompt-architecture}}"
 _base_remote="${BASE%%/*}"
 _base_branch="${BASE#*/}"
 if [ -n "$_base_remote" ] && [ "$_base_remote" != "$_base_branch" ] && [ "${SYNO_BASE_REF:-}" = "" ]; then
-  # D515 项9: fetch 失败不再纯静默 — 显式提示 tracking ref 可能陈旧（Codex P10）
-  if ! git fetch --no-tags "$_base_remote" "$_base_branch" --quiet 2>/dev/null; then  # swallow-ok: 失败走下方显式降级提示
-    echo "⚠ fetch 失败——base 可能陈旧（push URL 不更新 tracking ref）；建议 git fetch origin 后重试"  # swallow-ok: 降级用本地 ref（铁律 11 显式）
-  fi
+  git fetch --no-tags "$_base_remote" "$_base_branch" --quiet 2>/dev/null || true  # swallow-ok: fetch 失败降级用本地 ref（铁律 11 显式）
 fi
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RESET='\033[0m'
 

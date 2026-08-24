@@ -105,20 +105,16 @@ fi
 
 # ═══ 5. Q2 排除项必须含文件路径 ═══
 if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
-  # D515 项5: 带行号提取 — 报错附违规排除项原文 + brief 内行号 + 修复示例（Codex P6）
-  Q2_SEC=$(awk '/^## Q2:/{found=1; next} /^## /{if(found) exit} found {print NR "|" $0}' "$BRIEF" 2>/dev/null)  # swallow-ok: brief 缺失/读失败 → Q2_SEC 空 → 跳过本节
+  Q2_SEC=$(awk '/^## Q2:/{found=1; next} /^## /{if(found) exit} found' "$BRIEF" 2>/dev/null)
   if [ -n "$Q2_SEC" ]; then
-    EXCLUDED=$(echo "$Q2_SEC" | grep -E '(不改|不修改|不动)' || true)
+    EXCLUDED=$(echo "$Q2_SEC" | grep -oiE '(不改|不修改|不动)\s+\S+' || true)
     if [ -n "$EXCLUDED" ]; then
       BAD=""
       while IFS= read -r line; do
         [ -z "$line" ] && continue
-        QLN="${line%%|*}"   # 注意不可命名 LINENO——bash 保留变量会自动覆写
-        TEXT="${line#*|}"
-        # 排除项必须包含文件扩展名（.ts/.sh/.json/.py/.md/.yaml）或完整路径（/ 兼容目录路径）
-        TOKEN=$(echo "$TEXT" | grep -oiE '(不改|不修改|不动)[[:space:]]+[^ ，,;；、]+' | sed -E 's/^[^[:space:]]+[[:space:]]+//' | head -1 || true)
-        if [ -n "$TOKEN" ] && ! echo "$TOKEN" | grep -qiE '(\.ts|\.sh|\.json|\.py|\.md|\.yaml|/)' 2>/dev/null; then
-          BAD="${BAD}  brief 第 ${QLN} 行: ${TEXT}\n     修复示例: - 不改 src/xxx/yyy.ts — 原因\n"
+        # 排除项必须包含文件扩展名（.ts/.sh/.json/.py/.md/.yaml）或完整路径（/\S* 兼容 src/ 尾斜杠目录路径）
+        if ! echo "$line" | grep -qiE '(\.ts|\.sh|\.json|\.py|\.md|\.yaml|/\S*)' 2>/dev/null; then
+          BAD="${BAD}  ${line}\n"
         fi
       done <<< "$EXCLUDED"
       if [ -n "$BAD" ]; then

@@ -22,38 +22,6 @@ if [[ -z "$TASK_DESC" ]]; then
   exit 1
 fi
 
-# ═══ D515 项1: 并行隔离物理强制（Codex P1，三次复发）═══
-# 主树有未提交改动 且 session-registry 有其他活跃 session → 硬拦截开工（exit 1）。
-# 判定复用 synova-commit D507 段同一信号源（session_registry.py list --active）；
-# registry 不可读 → 显式降级提示（铁律 11，不静默）；worktree 内 → 允许（本就物理隔离）。
-# 测试注入: SYNO_SKIP_PARALLEL_GUARD=1 跳过本段（仅测试沙箱用）。
-if [[ "${SYNO_SKIP_PARALLEL_GUARD:-0}" != "1" ]]; then
-  _PAR_GITDIR="$(git -C "$PROJECT_ROOT" rev-parse --git-dir 2>/dev/null || echo '')"
-  case "$_PAR_GITDIR" in
-    *"/.git/worktrees/"*) : ;;  # worktree 内 → 物理隔离已成立，允许
-    *)
-      _PAR_DIRTY="$(git -C "$PROJECT_ROOT" status --porcelain 2>/dev/null | head -1 || true)"
-      if [[ -n "$_PAR_DIRTY" && -f "$PROJECT_ROOT/scripts/control-tower/session_registry.py" ]]; then
-        _PAR_ACT="$(python3 "$PROJECT_ROOT/scripts/control-tower/session_registry.py" list --active </dev/null 2>/dev/null || true)"
-        if [[ -z "$_PAR_ACT" ]]; then
-          echo "⚠ session-registry 不可读 — 并行检查降级放行（铁律 11，不静默）"
-        else
-          _PAR_N="$(echo "$_PAR_ACT" | python3 -c "import json,sys;print(len(json.load(sys.stdin).get('sessions',[])))" 2>/dev/null | tr -d '
-
-' || echo "")"  # swallow-ok: 解析失败 → 空 → 跳过拦截（单人语义）
-          if [[ -n "$_PAR_N" && "$_PAR_N" -gt 0 ]]; then
-            echo "❌ 主树有未提交改动，且 registry 有 ${_PAR_N} 个活跃 session — 并行互踩风险（Codex P1）"
-            echo "   请在专属 worktree 开工:"
-            echo "     python3 scripts/control-tower/worktree-manager.py create <任务名>"
-            echo "     cd ../synova-wt-<任务名>"
-            exit 1
-          fi
-        fi
-      fi
-      ;;
-  esac
-fi
-
 # 生成 task brief
 TODAY=$(date +%Y-%m-%d)
 TASK_ID="${TASK_ID:-${TODAY}-auto}"

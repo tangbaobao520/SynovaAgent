@@ -94,12 +94,6 @@ install_hook "post-commit"
 git config merge.union.driver "git merge-file --union %A %O %B" 2>/dev/null || true  # swallow-ok: git config 失败=非 git 仓库/只读, 降级不阻断
 echo "  ✅ git config merge.union.driver — bypass.log 自动合并"
 
-# D515 项8: git 网络韧性（Codex P9）— 30s 低于 1KB/s 即断，快速失败。
-# 幂等: 重复运行 set 覆盖，无害。慢连接被快速断开后建议直接重试 push。
-git config http.lowSpeedLimit 1000 2>/dev/null || true  # swallow-ok: 非 git 仓库/只读降级不阻断
-git config http.lowSpeedTime 30 2>/dev/null || true
-echo "  ✅ git config http.lowSpeedLimit/Time — 慢连接 30s 快速失败"
-
 # D201-FIX: 安装 synova-commit git alias（commit gatekeeper）
 SYNOVA_COMMIT="$ROOT/scripts/control-tower/synova-commit"
 if [ -f "$SYNOVA_COMMIT" ]; then
