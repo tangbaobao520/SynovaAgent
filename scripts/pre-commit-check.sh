@@ -53,6 +53,12 @@ hard_check() {
   if [ "$count" -gt 0 ]; then
     echo -e "  ${RED}❌ ${name}: ${count} 处  [硬阻断]${RESET}"
     echo "$matches" | head -8 | while read -r line; do [ -n "$line" ] && echo "     ${line}"; done
+    # D521/工具1: CI 上失败进 GitHub annotations（无 token 也可经 check-runs API 读到——
+    #   见 docs/synova/coordination/CI-诊断通道.md；本地输出不污染）
+    if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
+      _first=$(echo "$matches" | head -1 | tr -d '%' | cut -c1-300)
+      echo "::error title=IronLaws:${name}::${_first}"
+    fi
     HARD_FAIL=$((HARD_FAIL + 1))
     log_gate "$name" hit
   else
@@ -1353,6 +1359,7 @@ echo ""
 echo "═══════════════════════════════════════════════════════════"
 if [ "$HARD_FAIL" -gt 0 ]; then
   echo -e "  ${RED}❌ ${HARD_FAIL} 组未通过 — 提交已拒绝${RESET}"
+  [ "${GITHUB_ACTIONS:-}" = "true" ] && echo "::error title=IronLaws:提交已拒绝::${HARD_FAIL} 组未通过（详见上方 ❌ 行）"
   [ "$WARN_COUNT" -gt 0 ] && echo -e "  ${YELLOW}⚠️  ${WARN_COUNT} 项警告${RESET}"
   [ "$SOFT_COUNT" -gt 0 ] && echo -e "  ${YELLOW}⚠ V5: ${SOFT_COUNT} 项软提示（详情见上）——CI 为权威，本地不阻断${RESET}"
   echo "═══════════════════════════════════════════════════════════"

@@ -14,6 +14,9 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 # 沙箱: mktemp git 仓库 + 指向真实 hook 的委托（M13: git -c 一次性身份参数）
 # ═══════════════════════════════════════════════════════════════
 set -uo pipefail
+# M13/D521: hook 上下文会导出 GIT_DIR/GIT_WORK_TREE——沙箱 git 命令必须剥掉
+# （git -C 不覆盖 GIT_DIR env；D521-3 实证沙箱提交落到宿主分支）
+unset GIT_DIR GIT_WORK_TREE
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 HOOK_SRC="$REPO/scripts/hooks/post-commit.sh"
 PASS=0; FAIL=0

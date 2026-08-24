@@ -59,7 +59,10 @@ if [ -f "$MARKER" ]; then
         # 解法: 任何 commit（裸 git / synova-commit）过检后，hook 立即把本提交 HASH 的
         #   COMMITTED 行追加 + 成对登记提交（marker message 防递归）——bypass.log 永不脏。
         # 只在 PASS_WAY≠0（pre-commit 真跑过）时登记；--no-verify 提交不登记（不洗白绕过）。
+        # SYNO_SKIP_AUTOREG=1 跳过登记（post-commit-marker 等针对检测语义的测试隔离用；
+        #   登记自身有 bypass-precommit.test.sh 覆盖——测试分层，互不干扰）
         LAST_MSG=$(git log -1 --format=%s 2>/dev/null || true)
+        if [ "${SYNO_SKIP_AUTOREG:-0}" = "1" ]; then LAST_MSG="bypass COMMITTED 登记 (skip)"; fi
         case "$LAST_MSG" in
           *"bypass COMMITTED 登记"*) : ;;  # 登记提交自身 → 跳过（防递归）
           *)

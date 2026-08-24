@@ -122,7 +122,10 @@ EOF
 echo "$NEW_ID"
 echo "已登记: $STATE_FILE (status=claimed)"
 # D508: 生成 brief 骨架（六字段模板接线——认领即有模板，格式错误不靠提交失败发现）
-BRIEF_DIR="$ROOT/.claude/task-briefs"
+# D521: SYNO_BRIEF_DIR 注入缝（测试隔离，同 SYNO_TASK_STATE_DIR 模式）——
+#   修测试污染: alloc-task-id.test.sh 曾在真实 brief 目录生成占位 brief（含模板排除项
+#   占位文本，CI strict 下 plan-integrity 硬炸）
+BRIEF_DIR="${SYNO_BRIEF_DIR:-$ROOT/.claude/task-briefs}"
 BRIEF_FILE="$BRIEF_DIR/$(date +%Y-%m-%d)-${NEW_ID}-$(echo "$TITLE" | tr " " "-").md"
 if [ -n "${NEW_ID:-}" ] && [ ! -f "$BRIEF_FILE" ]; then
   mkdir -p "$BRIEF_DIR"

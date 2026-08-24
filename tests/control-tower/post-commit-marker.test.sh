@@ -15,6 +15,9 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 #         D421 三判: amend (S7) / 并发祖先 (S8) / 真绕过 stale marker 仍被 freshness 抓 (S9)。
 # ═══════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
+# D521: 本测试针对 bypass 检测语义（marker 三判）；hook 层的 COMMITTED 自动登记会
+# 产生影子提交、干扰提交序列断言——检测语义与登记语义分层测试，此处关闭登记。
+export SYNO_SKIP_AUTOREG=1
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 REAL_HOOK="$TEST_ROOT/scripts/hooks/post-commit.sh"

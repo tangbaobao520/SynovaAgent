@@ -11,6 +11,14 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V5.0.5 (2026-08-25) — D521-3 CI 诊断通道 + push 前 CI 等价模拟（PATCH）
+
+- **工具1 CI 诊断通道**: docs/synova/coordination/CI-诊断通道.md——无 token 时经匿名 check-runs annotations API 读 CI 失败（curl 模板 + 边界）；pre-commit-check.sh 的 hard_check 失败与终局 verdict 在 GITHUB_ACTIONS 下输出 `::error` 注解（失败点名进 annotations，本地输出不污染）。
+- **工具2 simulate-ci.sh**: push 前 CI 等价模拟——① Iron Laws（GITHUB_ACTIONS=true SYNO_CI=1 SYNO_DIFF_BASE=origin/main）+ ② 密封 gate 测试（清单从 ci.yml CT job 单源提取，防漂移）。SYNO_SIM_PRECOMMIT 注入缝（测试用）；三态退出（D328）。
+- **模拟首战立功（吃自己的药）**: 抓到 3 个真问题——① alloc-task-id.test.sh 测试污染（在真实 brief 目录生成占位 brief，模板排除项文本在 CI strict 下硬炸）→ alloc-task-id.sh 加 SYNO_BRIEF_DIR 注入缝 + 测试沙箱化；② brief 排除项无文件路径（修）；③ 跨午夜 brief 日期漂移 + 写集漏列 scripts/hooks/post-commit.sh（修）。
+- **测试**: simulate-ci.test.sh（新，7/7：绿桩/红桩抓差异/缺失 exit 2 降级/接线三断言）；post-commit-marker 15/15（SYNO_SKIP_AUTOREG 测试隔离分层）。
+- **作者**: dsh-cto
+
 ## V5.0.4 (2026-08-24) — D521-2 bypass COMMITTED 挪 hook 层（PATCH）
 
 - **不变量2 hook 层登记**: post-commit.sh 在 bypass 检测通过（PASS_WAY≠0，即 pre-commit 真跑过）后，立即追加本提交 HASH 的 COMMITTED 行 + 成对影子登记提交（message 标记「bypass COMMITTED 登记」防递归）——覆盖裸 git commit 与 synova-commit 两条路径；bypass.log 提交后永干净（无脏文件挡 merge），D451 补记循环从根消除。--no-verify 提交不登记（不洗白绕过）。
