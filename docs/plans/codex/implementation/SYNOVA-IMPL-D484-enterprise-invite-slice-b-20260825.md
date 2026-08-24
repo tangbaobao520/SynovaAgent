@@ -35,6 +35,12 @@
 * invite 生成 `nextId('inv')`（L151），token 含 email/orgId/role/expiresAt（7 天），accept 校验 pending/expired（L219-222）。
 * accept 以 `inv.email` 创建用户（L225-227）——**token 即凭证**（设计如此，不校验请求者身份）。
 
+### 无重复造轮子审计（DSH 迁移排查，2026-08-25 实测）
+* **邀请实现全仓唯一**：`grep -rn invite|invitation` 仅命中 `src/routes/enterprise.ts`（packages/、synova_worker/、src/ 其余零命中）——无已存在替代。
+* **engine-auth 是 RBAC 层不覆盖注册/邀请**：`packages/engine-auth/src/index.ts`（AuthProvider 接口 + RBAC 权限过滤器）——管"已认证用户的权限上下文"，不含用户注册/登录/邀请端点；本切片与其零交集。
+* **DSH 迁移施工图无认证领域**：`docs/synova/coordination/DSH-迁移施工图-20260820.md` grep 认证/注册/用户/邀请零命中——认证属自有业务线（src/routes/auth.ts + enterprise.ts 均非 DSH 迁移来源，D102/D103 为早期自有任务）。
+* **切片 C 预警**：enterprise/register（L96）已创建 orgId + admin（onboarding 底座）——切片 C（注册后 onboarding）必须先复用此路径，禁止另起炉灶。
+
 ## 3. 实现方案
 
 ### 3.1 写集 (2 修改 + 1 新建)
@@ -65,7 +71,7 @@
 
 ## 4.5 决策参考（S-12）
 * 决策点 1：邀请令牌从零实现 vs 打通现有 enterprise 体系？
-  * 参考系：第一性原理——enterprise.ts 的 invite/accept 已完整实现（token 生成/有效期/状态/绑定 orgId/role），重建是浪费；真正缺口是匿名可达性（被认证层挡）+ 测试真空。
+  * 参考系：第一性原理——enterprise.ts 的 invite/accept 已完整实现（token 生成/有效期/状态/绑定 orgId/role，全仓唯一），重建是浪费且违背"不重复造轮子"（DSH 迁移排查已证无替代）；真正缺口是匿名可达性（被认证层挡）+ 测试真空。
   * 结论：打通现有体系（白名单 + 全链路测试），不重建。
 * 决策点 2：invitations 内存持久化是否本次做？
   * 参考系：Anthropic——垂直切片聚焦（本次=链路可达 + 可验证）；持久化涉及存储层新模型，混入会扩写集、拖长验收。
