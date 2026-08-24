@@ -19,6 +19,12 @@ L1 交互层引导逻辑。扩展 D504 交付（非重写）: electron/main.cjs 
 - docs/synova/runbooks/desktop-dev-prod.md
 - task-state/D518.json
 - docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D518-single-entry-20260824.md
+- package.json （build:backend script——prod 后端 bundle 构建链入口）
+- build-synova.cjs （extraResources 原生模块 externals 映射 + 契约注释修订）
+- .github/workflows/desktop-build.yml （步骤1 改 build:backend——tsc 不在打包链，存量错误 ci.yml 白名单管理）
+- scripts/desktop/build-backend.sh （esbuild bundle 脚本，D518 补充提交）
+- docs/synova/runbooks/desktop-build.md （构建链契约同步）
+- tests/electron/desktop-build.test.ts （backend.mjs/natives 产物断言，D518 补充提交）
 不做什么：
 - 不改 src/config.ts（src/ 红线，端口/配置零改动）
 - 不改 electron/config.json（serverUrl 语义保持 localhost:18790 单源）
