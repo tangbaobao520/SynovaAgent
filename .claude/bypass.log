@@ -637,3 +637,5 @@ Binary file .claude/bypass.log matches
 2026-08-24T16:56:50+08:00 | COMMITTED | pre-commit PASS (D520 CI 修复批补记, D451) | TASK_ID=D520 | AGENT=dsh-cto | HASH=d0ba79d1d3f80968fef4da81414decb8a0b2fefb
 2026-08-24T17:27:25+08:00 | COMMITTED | pre-commit PASS (D520 诊断批补记, D451) | TASK_ID=D520 | AGENT=dsh-cto | HASH=e9f9fc90e243630c1165e9a480141ebe97feebdd
 2026-08-24T17:27:25+08:00 | COMMITTED | pre-commit PASS (D520 诊断批补记, D451) | TASK_ID=D520 | AGENT=dsh-cto | HASH=d9b90f1d738e2b747097d5ed3f8cf21b91cd3ba0
+2026-08-24T17:41:52+08:00 | COMMITTED | pre-commit PASS (D520 sed 修复批补记, D451) | TASK_ID=D520 | AGENT=dsh-cto | HASH=b1eff76906ce996d3c232178ec55bee7e916b30c
+2026-08-24T17:41:52+08:00 | COMMITTED | pre-commit PASS (D520 sed 修复批补记, D451) | TASK_ID=D520 | AGENT=dsh-cto | HASH=40dc1827704682fcd7843ace6be0b51cdeaef77c
