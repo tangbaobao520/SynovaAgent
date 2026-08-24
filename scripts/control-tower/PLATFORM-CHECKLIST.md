@@ -53,6 +53,10 @@
 - **为什么**：macOS 无 `timeout`，外层超时防门禁卡死失效（D334）。
 - **修法**：`for _c in timeout gtimeout; do command -v $_c ...` 探测；无则显式降级提示"无外层超时直接执行"。
 
+### 9. sed -i BSD/GNU 后缀语法不兼容
+- **为什么**：macOS BSD sed 必须 `sed -i '' 's/..//'`；GNU sed（Linux/Git Bash）的 `-i` 后缀必须紧跟——独立 `''` 会被当脚本，替换静默不生效（D520 CI 实证：测试本地绿、双平台 CI 红）。
+- **修法**：跨平台文件内替换一律用 python：`python3 -c "import pathlib; p=pathlib.Path(f); p.write_text(p.read_text().replace(a,b))"`。
+
 ## 附：已知双平台安全命令（Git Bash on Windows 均有）
 `mktemp` / `date -Iseconds` / `tr` / `sed` / `awk` / `basename` / `dirname`
 （跑不通的测试加平台守卫：`uname | grep -qi MINGW && skip 并计数`）

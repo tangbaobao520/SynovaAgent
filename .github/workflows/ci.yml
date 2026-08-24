@@ -124,7 +124,6 @@ jobs:
         # 全量密封化是单独立项（K3 P2-4）。此 job 是"门禁坏了能抓到"的 canary。
         run: |
           FAIL=0
-          DIAG="$GITHUB_STEP_SUMMARY"
           for t in \
             tests/control-tower/verify-parallel.test.sh \
             tests/control-tower/verify-claims-table.test.sh \
@@ -137,15 +136,8 @@ jobs:
             tests/control-tower/q2-error-locating.test.sh \
             tests/control-tower/platform-checklist.test.sh; do
             echo "── $t"
-            if ! bash "$t" > /tmp/ct-out.log 2>&1; then
-              echo "FAIL: $t"
-              MSG=$(tail -10 /tmp/ct-out.log | tr '\n' '|' | cut -c1-600)
-              echo "::error title=$t::$MSG"
-              { echo "### $t"; echo '```'; tail -30 /tmp/ct-out.log; echo '```'; } >> "$DIAG"
-              FAIL=1
-            fi
+            bash "$t" || { echo "FAIL: $t"; FAIL=1; }
           done
-          { echo "### env"; echo '```'; uname -a; bash --version | head -1; git --version; echo '```'; } >> "$DIAG"
           exit $FAIL
 
   integration-check:

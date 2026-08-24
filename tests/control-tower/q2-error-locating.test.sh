@@ -57,7 +57,13 @@ echo "$OUT" | grep -q "不改 某某全局配置" && ok "报错含违规排除�
 echo "$OUT" | grep -q "修复示例: - 不改" && ok "报错含一行修复示例" || no "缺修复示例"
 
 # 正常路径: 排除项全部含路径 → 该节通过
-sed -i '' 's|- 不改 某某全局配置|- 不改 src/global-config.ts — 原因|' "$BRIEF"
+# D520: 便携替换（sed -i 的 BSD/GNU 后缀语法不兼容——CI GNU sed 上 '-i //' 不生效）
+python3 - "$BRIEF" <<'PYFIX'
+import sys, pathlib
+p = pathlib.Path(sys.argv[1])
+p.write_text(p.read_text(encoding="utf-8").replace(
+    "- 不改 某某全局配置", "- 不改 src/global-config.ts — 原因"), encoding="utf-8")
+PYFIX
 OUT2=$(cd "$SB" && bash "$SB/scripts/check-plan-integrity.sh" 2>&1); rc2=$?
 [ "$rc2" -eq 0 ] && echo "$OUT2" | grep -q "Q2 排除项均含文件路径" && ok "排除项含路径 → 通过" || no "合法排除项被误报: $rc2 :: $OUT2"
 
