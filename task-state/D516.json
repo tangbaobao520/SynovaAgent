@@ -1,0 +1,19 @@
+{
+  "task_id": "D516",
+  "title": "D515 审计返修 — CI strict 模式（P0 权威落地）+ 去重 + P2×4",
+  "status": "audited",
+  "spec": null,
+  "impl": null,
+  "audit": {
+    "verdict": "PASS",
+    "report": "docs/synova/audit-reports/2026-08-24-D515.md",
+    "at": "2026-08-24",
+    "by": "k3/dsh-cto",
+    "note": "P0-1 SYNO_CI strict 落地（7/7 测试）+去重 690 行+P2×4；CI 全绿已合并"
+  },
+  "fix_task_id": null,
+  "updated_at": "2026-08-24",
+  "updated_by": "dsh-cto",
+  "note": "K3 D515 FAIL 返修。P0-1: SYNO_CI strict 模式让软检查在 CI 转硬（spec 项3 本意落地）。P1-1: 三重定义去重。P2: tag/version.log/报告/文件修正。",
+  "priority": "P0"
+}
