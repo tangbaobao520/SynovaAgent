@@ -79,12 +79,15 @@ function getExpiresIn(): number {
 /**
  * 白名单路径——跳过认证。
  * 与 server.ts 的白名单同步。
+ * 白名单含 login/register（D483: 匿名注册可达，多租户 onboarding 底座）；
+ * 注册收紧为邀请令牌验证留切片 B（D102 注释方向，产品决策后做）。
  */
 function isWhitelisted(path: string): boolean {
   return (
     path === '/health' ||
     path === '/' ||
     path === '/api/auth/login' ||
+    path === '/api/auth/register' ||
     path.startsWith('/api/status') ||
     path.startsWith('/assets/') ||
     path.endsWith('.html') ||

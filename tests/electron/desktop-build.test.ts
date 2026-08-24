@@ -105,6 +105,124 @@ describe('D504 renderer — base URL 接线（缺陷 C/D 修复）', () => {
   });
 });
 
+// ═══ D517 新增断言组（spec §7——L1 单元 + 产物物理断言 + workflow 契约）═══
+
+describe('D517 打包配置 — mac zip target + 构建链契约', () => {
+  it('mac target 含 dmg + zip 双 target（zip 供 CI artifact 与解包验证）', () => {
+    const cfg = read('build-synova.cjs');
+    expect(cfg).toMatch(/target:\s*'dmg'/);
+    expect(cfg).toMatch(/target:\s*'zip'/);
+  });
+
+  it('构建链三步契约写入 build-synova.cjs 头注释（顺序错=空包）', () => {
+    const cfg = read('build-synova.cjs');
+    expect(cfg).toMatch(/构建链契约/);
+    expect(cfg).toMatch(/npm run build:backend/);
+    expect(cfg).toMatch(/electron-renderer/);
+    expect(cfg).toMatch(/顺序不可颠倒/);
+  });
+
+  it('extraResources 携带后端 bundle 与原生模块 externals（D518 prod 运行时）', () => {
+    const cfg = read('build-synova.cjs');
+    expect(cfg).toMatch(/backend\.mjs/);
+    expect(cfg).toMatch(/better-sqlite3\/\*\*/);
+    expect(cfg).toMatch(/bcrypt\/\*\*/);
+    // node_modules→node_modules 映射存在（externals 落包）
+    expect(cfg).toMatch(/from:\s*'node_modules',\s*to:\s*'node_modules'/);
+  });
+});
+
+describe('D517 CI — desktop-build workflow 契约', () => {
+  const wfPath = path.join(ROOT, '.github/workflows/desktop-build.yml');
+
+  it('workflow 文件存在且含 macos/windows 双平台 matrix', () => {
+    expect(fs.existsSync(wfPath)).toBe(true);
+    const wf = fs.readFileSync(wfPath, 'utf-8');
+    expect(wf).toMatch(/macos-latest/);
+    expect(wf).toMatch(/windows-latest/);
+    expect(wf).toMatch(/matrix/);
+  });
+
+  it('构建链三步顺序 + 产物断言 + upload-artifact（产物缺失即红）', () => {
+    const wf = fs.readFileSync(wfPath, 'utf-8');
+    expect(wf).toMatch(/npm run build:backend/);
+    expect(wf).toMatch(/test -f dist\/backend\.mjs/);
+    expect(wf).toMatch(/working-directory: electron-renderer/);
+    expect(wf).toMatch(/npx electron-builder --config build-synova\.cjs/);
+    expect(wf).toMatch(/upload-artifact@v4/);
+    expect(wf).toMatch(/if-no-files-found: error/);
+    expect(wf).toMatch(/::error::no dmg produced/);
+  });
+
+  it('触发器: push main + workflow_dispatch（任何人可手动复现）', () => {
+    const wf = fs.readFileSync(wfPath, 'utf-8');
+    expect(wf).toMatch(/push:[\s\S]*?branches:\s*\[main\]/);
+    expect(wf).toMatch(/workflow_dispatch:/);
+  });
+});
+
+describe('D517 产物物理断言组（release/ 存在时生效；未构建环境 skip+warn 不误报）', () => {
+  const releaseDir = path.join(ROOT, 'release');
+
+  const maybe = fs.existsSync(releaseDir) ? it : it.skip;
+  if (!fs.existsSync(releaseDir)) {
+    // 铁律 11/24: skip 不静默——console.warn 留痕
+    console.warn('[desktop-build.test] release/ 不存在——产物断言组 skip（未构建环境，非失败）');
+  }
+
+  // electron-builder 25 磁盘事实: 配置声明多 arch 时 --dir 产物目录带 arch 后缀
+  // （release/mac-arm64 / release/mac-x64；单 arch 时为 release/mac）。以磁盘为准自动发现。
+  const findMacAppDir = (): string => {
+    const cands = fs.readdirSync(releaseDir)
+      .filter((d) => /^mac(-\w+)?$/.test(d))
+      .map((d) => path.join(releaseDir, d, 'SynovaAgent.app'))
+      .filter((d) => fs.existsSync(d))
+      // 多 arch 产物目录并存时取最新（历史构建残留的残缺目录不干扰断言）
+      .sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs);
+    if (cands.length === 0) throw new Error('release/ 存在但未找到 mac*/SynovaAgent.app——疑似空打包');
+    return cands[0];
+  };
+
+  maybe('--dir 产物 release/mac*/SynovaAgent.app 存在且 >100MB（DS1 物理契约）', () => {
+    const appDir = findMacAppDir();
+    const total = require('child_process').execSync(
+      `du -sm "${appDir}" | cut -f1`, { encoding: 'utf-8' },
+    ).trim();
+    expect(Number(total)).toBeGreaterThan(100);
+  });
+
+  maybe('--dir 产物含后端 bundle 与 renderer 运行资产（extraResources 真实落包，非空包）', () => {
+    const res = path.join(findMacAppDir(), 'Contents', 'Resources');
+    expect(fs.existsSync(path.join(res, 'dist', 'backend.mjs'))).toBe(true);
+    expect(fs.existsSync(path.join(res, 'renderer', 'index.html'))).toBe(true);
+    expect(fs.existsSync(path.join(res, 'extensions'))).toBe(true);
+    // 原生模块 externals 落包（D518 prod 运行时）
+    expect(fs.existsSync(path.join(res, 'node_modules', 'better-sqlite3'))).toBe(true);
+    expect(fs.existsSync(path.join(res, 'node_modules', 'bcrypt'))).toBe(true);
+  });
+
+  maybe('full 构建产物 dmg/zip 存在且 zip >10MB（<10MB=空包红，L2c 边界）', () => {
+    const files = fs.readdirSync(releaseDir);
+    const dmg = files.filter((f) => f.endsWith('.dmg'));
+    const zip = files.filter((f) => /-mac.*\.zip$/.test(f));
+    if (dmg.length === 0 && zip.length === 0) return; // 只跑过 --dir 的环境: 无 full 产物，不误报
+    expect(dmg.length).toBeGreaterThan(0);
+    expect(zip.length).toBeGreaterThan(0);
+    for (const z of zip) {
+      const st = fs.statSync(path.join(releaseDir, z));
+      expect(st.size).toBeGreaterThan(10 * 1024 * 1024);
+    }
+  });
+});
+
+describe('D517 renderer 类型冲突修复回归（window.electronAPI 单一类型源）', () => {
+  it('api.ts 不再独立声明 ElectronServerApi 全局（与 bridge.ts ElectronAPI 冲突=build 红）', () => {
+    const api = read('electron-renderer/src/lib/api.ts');
+    expect(api).not.toMatch(/interface ElectronServerApi/);
+    expect(api).toMatch(/import type \{ ElectronAPI \}/);
+  });
+});
+
 describe('D504 GS-01 — Electron 产物断言组接线', () => {
   it('run.sh 含 Electron 断言组（backend-spawn 契约 + renderer 产物 + 配置断言）', () => {
     const run = read('scripts/golden-scenarios/GS-01-first-diagnosis/run.sh');

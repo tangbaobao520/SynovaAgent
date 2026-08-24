@@ -110,6 +110,7 @@ v5_soft() {
   # D503 P0-1 同型复发）。ci.yml Iron Laws job 注入 SYNO_CI: "1"。
   if [ "${SYNO_CI:-0}" = "1" ]; then
     echo -e "  ${RED}❌ ${1}: 检查未过 [CI strict——本地软提示在 CI 上为硬阻断]${RESET}"
+    echo "::error title=IronLaws:${1}::检查未过（CI strict 转硬）"
     HARD_FAIL=$((HARD_FAIL + 1))
     log_gate "$1" hit
     return

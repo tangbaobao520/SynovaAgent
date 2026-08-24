@@ -664,17 +664,13 @@ if [[ $PRECOMMIT_EXIT -eq 0 ]]; then
 
   if [[ $COMMIT_EXIT -eq 0 ]]; then
     echo -e "${GREEN}✅ 提交完成${NC}"
-    # D521/不变量2: COMMITTED 登记已由 post-commit hook 层统一完成（覆盖裸 git 与本路径，
-    #   原 D508 追加已去重删除——再写会与 hook 重复且留脏）。
-    #   注意: hook 的登记提交使 HEAD 前移一位——真实提交 = HEAD^（影子为登记提交时）。
+    # D508: 证据链登记提前到 commit 成功瞬间——原位置在 auto_tag/push 之后，
+    #   set -e 下 push 失败直接退出 → 记录永缺 → D331 补记死循环（D506/D507 实证）。
+    echo "$(date -Iseconds) | COMMITTED | pre-commit PASS | TASK_ID=$TASK_ID | AGENT=$AGENT | HASH=$(git rev-parse HEAD 2>/dev/null)" >> "$BYPASS_LOG"
     set -e # D334: 成功路径恢复 set -e — 保护 auto_tag/push 等后续函数 (bash 3.2 elif bug 规避)
     # D319: 提交成功后自动 tag + version.log + push --follow-tags
     # D307: session/<sid> 隔离分支跳过 auto-tag/auto-push（本地分支, finish 合并后主推）
-    # D521: SYNO_SUBMIT_MODE=1（synova-submit 编排）——只做 commit；tag/push 由 submit 第⑥步
-    #   按 §6 纪律处理（tag 在 main 合并后打，绝不在分支自动打）
-    if [[ "${SYNO_SUBMIT_MODE:-0}" == "1" ]]; then
-      echo -e "  ${YELLOW}ℹ D521: submit 模式——跳过 auto-tag/auto-push（tag 在 main 合并后打，§6）${NC}"
-    elif [[ -n "$SESSION_WT_BRANCH" ]]; then
+    if [[ -n "$SESSION_WT_BRANCH" ]]; then
       echo -e "  ${YELLOW}ℹ D307: ${CURRENT_BRANCH_D307} 是本地隔离分支 — 跳过 auto-tag/auto-push（finish 合并回主后推送）${NC}"
     else
       auto_tag_and_version
@@ -686,10 +682,7 @@ if [[ $PRECOMMIT_EXIT -eq 0 ]]; then
     fi
     # D311 M1b: 提交成功后释放写集（标记 committed）+ 阶段 CP4
     if [[ -f "$SESSION_REGISTRY" ]]; then
-      # D521: HEAD 可能是 hook 的登记影子提交（只含 bypass.log）——回退到真实提交取文件清单
-      _CF_REF="HEAD"
-      if git log -1 --format=%s 2>/dev/null | grep -q "bypass COMMITTED 登记"; then _CF_REF="HEAD^"; fi
-      COMMITTED_FILES=$(git show --name-only --format="" "$_CF_REF" 2>/dev/null | grep -v '^$' | head -50 || true)
+      COMMITTED_FILES=$(git show --name-only --format="" HEAD 2>/dev/null | grep -v '^$' | head -50 || true)
       for cf in $COMMITTED_FILES; do
         python3 "$SESSION_REGISTRY" write-set --session-id "$SESSION_ID" --status "$cf" committed 2>/dev/null || true
       done
