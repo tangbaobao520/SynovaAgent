@@ -1,6 +1,6 @@
 # 控制塔 VERSION — 版本与变更记录
 
-> 控制塔产品契约（设计文档 §2.6/§2.7）。版本只增不减；任何门禁/工具行为变化必须 bump（PATCH 起步）；bump 与代码同 commit。
+> 控制塔产品契约（设计文档 §2.6/§2.7）。版本只增不减；任何门禁/工具行为变化必须 bump（PATCH 起步）；bump 与代码同 commit。**bump 必须同 commit 打 tag**（synova-commit 自动；手动 git commit 场景：`git tag V<x.y.z> && git push origin V<x.y.z>`，否则 push 被 D319 拦）。
 
 ## 版本规则
 
@@ -10,6 +10,27 @@
 - MINOR (第二位): 中升级 — 新机制/新组件/新门禁组 → 4.6.0 → 4.7.0
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
+
+## V5.0.0 (2026-08-24) — D515 控制塔减负重构（三批 13 项，MAJOR）
+
+> 门禁体系收缩性重构：提交端硬阻断收敛到 4 道质量根 + 其余软提示（CI Iron Laws 为权威）+ 命中统计。
+> spec: docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D515-tower-v5-dedrag-20260824.md
+
+- **项1 并行隔离物理强制**: task-start.sh 开工拦截（主树脏 + registry 有活跃 session → exit 1，提示 worktree 命令）；pre-commit 组 6 软告警。
+- **项2 纯补记快速通道**: synova-commit `--files` 仅 .claude/bypass.log → SYNO_FASTLANE=1，pre-commit 只跑 Secrets（90-120s → <3s）。防 D414 误触发：只认环境变量不裸看暂存区。
+- **项3 硬阻断收敛**: 保留 4 道质量根（as any / 测试配对+expect / Secrets / 接线物理事实）+ 特例 G12d 生成物单点（D458）、G13 技能同步（D370）。其余全部 hard_check → soft_check：判定代码与输出原样保留（--check 报告与 K3 审计依赖），本地不再阻断，汇总行 `⚠ V5: X 项软提示——CI 为权威，本地不阻断`。前置 GATEKEEPER（当日 detected-bypass 硬拦）与检查器执行失败（D328 exit 2）保持硬阻断。
+- **项4 门禁命中统计**: hard/soft 每次触发写 JSONL 到 .claude/gate-hits.log（gitignore），gate-stats.sh 汇总近 30 天命中/拦截/误报代理指标——月度清理数据地基。
+- **项5 Q2 排除项报错定位**: check-plan-integrity.sh 报错附违规原文 + brief 行号 + 修复示例（Codex P6）。
+- **项6 VERSION 头部 bump-tag 说明**: 两文档加"bump 必须同 commit 打 tag"（Codex P3）。
+- **项7 纯文档 PR CI 瘦身**: ci.yml quality job 前置 docs-only 探测，全 md/json/task-state/.claude → 跳过 TS+Iron Laws 步骤（Secrets 保留；只跳步骤不跳 job）。
+- **项8 git 网络韧性**: install-hooks.sh 幂等配置 http.lowSpeedLimit=1000 / lowSpeedTime=30（Codex P9）。
+- **项9 tracking ref 陈旧提示**: check-bypass-log.sh 防御 fetch 失败时显式提示 base 可能陈旧（Codex P10）。
+- **项10 改 scripts/ 需认领 brief**: 版本管理规范新增章节 + G12 拦截输出附修复指引（Codex P5）。
+- **项11 --check 快速通道**: synova-commit --check 的 plan-integrity 段对纯补记/纯 docs 场景跳过（与项 2 联动）；pre-commit 失败判定改认硬失败标记（软提示不再让 --check 红）。
+- **项12 worktree-manager merge driver 健康度**: status 子命令顺带显示 bypass.log/reference-map 的 union 注册状态（.gitattributes）。
+- **项13 经验沉淀**: memory/notes/implemented/ D515 Note（D395-a）。
+- **测试**: tests/control-tower/{task-start-parallel,fastlane-bypass-only,hard-gate-convergence,gate-stats,q2-error-locating}.test.sh（新建 5 个，先 red 后 green；M13 沙箱纪律）。
+- **作者**: dsh-cto（新 CTO session，spec 执行方）
 
 ## V4.9.2 (2026-08-24) — G12 豁免 task-state 登记元数据（Win 反馈）
 
