@@ -14,3 +14,11 @@
 
 - D319 与 §6 纪律的内在冲突必须同时修：纪律说"合并后才打 tag"，门禁却要求"push 前有 tag"——不修门禁，纪律就会被执行方用孤儿 tag 绕过（D520 的实证）。
 - tag-ancestry 测试的 D319 隔离：场景设计要先把 VERSION.md 对应 tag 放到 main 上，否则 D319 先于 D331 拦截，测不到收窄语义。
+
+## 执行中追加教训（521-3/521-4）
+
+6. **hook 上下文导出 GIT_DIR 是沉默杀手**：`git commit` 的 hook 链（pre-commit→ct-test-gate→配对测试）里，测试沙箱的 `git -C` 不覆盖 GIT_DIR env → 沙箱提交直接落到宿主分支（ref 被覆写，reflog 可救）。治本 = 编排层 `env -u GIT_DIR -u GIT_WORK_TREE`；测试自带 unset 双保险。
+7. **递归陷阱**：simulate-ci 的测试清单从 ci.yml 提取时必须排除自身——ct-test-gate 跑它 → 它跑 simulate-ci → simulate-ci 跑它 → 提交挂死 600s。凡"从清单跑测试"的工具，自排除是标配。
+8. **D328 的 task-id 正则是 `\(D[0-9]+\)`**：message 写 "feat(D521-3)" 不匹配（声明=无）→ 提交被拦。批量提交 message 用纯 D 号、子任务号放正文。
+9. **跨午夜长任务**：brief 文件名日期跨天后，resolver 的"今日 brief"失效 → CI strict 下"须有今日 brief"硬炸。长任务 brief 当天改名即可（rename 被 git 识别，历史干净）。
+10. **simulate-ci 首日抓 4 真问题**：alloc 测试污染真实 brief 目录、brief 排除项无路径、跨午夜日期漂移、写集漏列——工具 2 的价值在第一轮就被自己证明。

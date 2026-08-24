@@ -670,7 +670,11 @@ if [[ $PRECOMMIT_EXIT -eq 0 ]]; then
     set -e # D334: 成功路径恢复 set -e — 保护 auto_tag/push 等后续函数 (bash 3.2 elif bug 规避)
     # D319: 提交成功后自动 tag + version.log + push --follow-tags
     # D307: session/<sid> 隔离分支跳过 auto-tag/auto-push（本地分支, finish 合并后主推）
-    if [[ -n "$SESSION_WT_BRANCH" ]]; then
+    # D521: SYNO_SUBMIT_MODE=1（synova-submit 编排）——只做 commit；tag/push 由 submit 第⑥步
+    #   按 §6 纪律处理（tag 在 main 合并后打，绝不在分支自动打）
+    if [[ "${SYNO_SUBMIT_MODE:-0}" == "1" ]]; then
+      echo -e "  ${YELLOW}ℹ D521: submit 模式——跳过 auto-tag/auto-push（tag 在 main 合并后打，§6）${NC}"
+    elif [[ -n "$SESSION_WT_BRANCH" ]]; then
       echo -e "  ${YELLOW}ℹ D307: ${CURRENT_BRANCH_D307} 是本地隔离分支 — 跳过 auto-tag/auto-push（finish 合并回主后推送）${NC}"
     else
       auto_tag_and_version

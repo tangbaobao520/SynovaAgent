@@ -11,6 +11,14 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V5.1.0 (2026-08-25) — D521-4 synova submit 统一提交入口（MINOR：新机制）
+
+- **synova-submit.sh（新）**: 六步编排——① tag 时机检查（孤儿 tag 提前黄色警告，不再 push 时撞 D331 盲猜）→ ② bypass 竞态确认（hook 层登记接线验证）→ ③ 门禁 dry-run（synova-commit --check 一次报全）→ ④ CI 等价模拟（simulate-ci.sh，本地能抓的错不送 CI）→ ⑤ git commit（SYNO_SUBMIT_MODE=1：不 auto-tag 不 auto-push，§6 纪律）→ ⑥ push + 失败诊断（::error 注解通道，CI-诊断通道.md）。--dry-run 只跑 ①-④；--no-push 留本地。SYNO_SUBMIT_CHECK_CMD/SIM_CMD 注入缝（测试）。
+- **synova-commit**: SYNO_SUBMIT_MODE=1 跳过 auto_tag_and_version + push_with_tags（tag 在 main 合并后打——§6 纪律由编排层物理落地）。
+- **设计原则**: 编排而非新门禁——每阶段调用现有 check 脚本（--check/simulate-ci/pre-push 语义），只是顺序和时机正确。
+- **测试**: synova-submit.test.sh（新，10/10：六段物理顺序/全绿 dry-run/④红⑤不执行/③红④不执行/缺参 exit 2），进双平台 CI。
+- **作者**: dsh-cto
+
 ## V5.0.5 (2026-08-25) — D521-3 CI 诊断通道 + push 前 CI 等价模拟（PATCH）
 
 - **工具1 CI 诊断通道**: docs/synova/coordination/CI-诊断通道.md——无 token 时经匿名 check-runs annotations API 读 CI 失败（curl 模板 + 边界）；pre-commit-check.sh 的 hard_check 失败与终局 verdict 在 GITHUB_ACTIONS 下输出 `::error` 注解（失败点名进 annotations，本地输出不污染）。
