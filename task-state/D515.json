@@ -1,22 +1,45 @@
 {
   "task_id": "D515",
   "title": "控制塔 V5.0.0 减负重构（三批 13 项）",
-  "status": "audited",
+  "status": "impl_done",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D515-tower-v5-dedrag-20260824.md",
     "by": "dsh-cto",
     "at": "2026-08-24"
   },
-  "impl": null,
-  "audit": {
-    "verdict": "FAIL→D516修复",
-    "report": "docs/synova/audit-reports/2026-08-24-D515.md",
+  "impl": {
+    "by": "dsh-cto",
     "at": "2026-08-24",
-    "by": "k3/dsh-cto",
-    "note": "K3 FAIL（CI 权威幻觉+三重复制）→ D516 修复（SYNO_CI strict+去重）→ 复审待 K3；PR #152 已合并"
+    "branch": "feat/d515-tower-v5",
+    "commit": "8cdf9957032e043a91ba7cda0c04bbda5901a9a0",
+    "files": [
+      "scripts/workflow/task-start.sh",
+      "scripts/pre-commit-check.sh",
+      "scripts/check-plan-integrity.sh",
+      "scripts/control-tower/gate-stats.sh",
+      "scripts/control-tower/synova-commit",
+      "scripts/control-tower/check-bypass-log.sh",
+      "scripts/control-tower/worktree-manager.py",
+      "scripts/install-hooks.sh",
+      ".github/workflows/ci.yml",
+      ".codex/control-tower/VERSION.md",
+      "docs/synova/coordination/版本管理规范-控制塔.md",
+      "tests/control-tower/task-start-parallel.test.sh",
+      "tests/control-tower/fastlane-bypass-only.test.sh",
+      "tests/control-tower/hard-gate-convergence.test.sh",
+      "tests/control-tower/gate-stats.test.sh",
+      "tests/control-tower/q2-error-locating.test.sh",
+      "tests/control-tower/worktree-manager.test.sh",
+      "memory/notes/implemented/2026-08-24-d515-tower-v5-dedrag.md",
+      ".gitignore",
+      "task-state/D516.json",
+      "tests/control-tower/ci-strict-mode.test.sh"
+    ]
   },
+  "audit": null,
+  "fix_task_id": "D516",
   "updated_at": "2026-08-24",
   "updated_by": "dsh-cto",
-  "note": "创始人裁决：三批全做。当前 CTO session 出 spec，新 CTO session 执行。",
+  "note": "创始人裁决：三批全做。V5.0.0：4 道硬门禁 + 其余软提示（CI 为权威）+ SYNO_FASTLANE 纯补记快速通道 + 命中统计。D511 并行冲突：D511 impl_done 未合并，D515 基于 origin/main，改动区域不重叠。",
   "priority": "P0"
 }
