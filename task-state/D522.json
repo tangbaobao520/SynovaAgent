@@ -1,17 +1,33 @@
 {
   "task_id": "D522",
   "title": "L1-B 服务自启开窗即用(1-4)",
-  "status": "spec_done",
+  "status": "impl_done",
   "slice": "L1-B",
   "spec": {
     "doc": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D522-service-boot-20260825.md",
     "branch": "docs/slice-b-specs",
-    "commit": "见分支 HEAD（docs/slice-b-specs）",
+    "commit": "5110fb21",
     "gatekeeper": "exit 0 (C1-C6 ALL PASS, 2026-08-25)"
   },
-  "impl": null,
+  "impl": {
+    "branch": "feat/d522-service-boot-teardown",
+    "write_set": [
+      "electron/backend-spawn.cjs — spawn detached(POSIX 进程组) + signalTree/taskkillProcessTree/makeStop(SIGTERM→graceMs→SIGKILL, 幂等) + degraded 清理统一走进程树回收 + 导出新辅助函数",
+      "tests/electron/backend-spawn.test.ts — 补 D522 teardown 7 用例(正常/幂等/SIGKILL 升级/进程组孙进程/taskkill 降级/pid≤0 边界/五段链路集成)"
+    ],
+    "evidence": {
+      "DS1_test_output": "Test Files 1 passed (1) | Tests 15 passed (15) — npx vitest run tests/electron/backend-spawn.test.ts（含 D522 teardown 7 用例；red 已证: 改造前 4 failed | 11 passed）",
+      "DS2_pid_dead": "assertDead(pid): process.kill(pid,0) 抛 ESRCH — 用例「正常路径: stop() → SIGTERM → 子进程 pid 已死」",
+      "DS3_grandchild": "用例「进程组: spawn detached 后孙进程也被回收」: process.kill(gcPid,0) 前置存活断言 → stop() 后 waitDead(gcPid)=true + assertDead(gcPid)",
+      "DS4_sigkill": "用例「升级路径: 子进程忽略 SIGTERM → graceMs(500ms 注入) 后 SIGKILL 杀死」物理断言 pid 已死",
+      "DS5_wiring": "grep electron/main.cjs: L19 require ensureBackend / L126 backendHandle = await ensureBackend / L189 backendHandle.stop() — 接线 D504 已就绪，本 D 验证未改（git diff 写集对账零 main.cjs）",
+      "DS6_scope": "git diff --name-only = electron/backend-spawn.cjs + tests/electron/backend-spawn.test.ts（+ .claude 门禁工件）；src/ 与 scripts/audit/ 零触碰；grep -rn '@deepseek-ai/dsh' electron/ package.json 零结果"
+    },
+    "red_lines": "探活(probeOnce/probeUntil)零改动；main.cjs/build-synova.cjs/src/ 零改动；零 DSH 依赖（借鉴范式自研）",
+    "known_preexisting": "npm run lint 在 src/server.ts 有 2 个预存在 TS 错误（本任务写集外，git diff 确认非本任务引入）"
+  },
   "audit": null,
   "updated_at": "2026-08-25",
-  "updated_by": "dsh-dev-doc",
+  "updated_by": "dsh",
   "priority": "P1"
 }

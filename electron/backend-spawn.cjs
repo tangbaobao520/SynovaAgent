@@ -21,13 +21,13 @@
  *       started=true  → 探活失败 → spawn → 探活成功
  *       reused=true   → 探活成功（已有服务在跑，不重复 spawn——端口冲突安全网）
  *       degraded=true → spawn 后探活仍失败 / 重启超限 / ENOENT（显式标记，铁律 24/31 不静默）
- *       stop()        → SIGTERM 回收子进程（before-quit 挂钩，孤儿保护）
+ *       stop()        → 进程树回收（D522: Win taskkill /T /F；POSIX kill(-pid) 进程组 + SIGTERM→graceMs→SIGKILL 升级；幂等）
  *     @error — 无（内部全捕获，返回对象；不抛）
  *
  * @state: real — D504 交付，main.cjs whenReady 集成
  */
 
-const { spawn } = require('child_process');
+const { spawn, spawnSync } = require('child_process');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -63,7 +63,66 @@ function buildCommand(mode) {
     : { bin: 'npx', args: ['tsx', 'src/index.ts'] };
 }
 
-/** 日志流: 后端 stdout/stderr 追加写 logFile（degraded 可见，铁律 11/24） */
+/**
+ * Win 进程树终止（D522，借鉴 DSH taskkillProcessTree 范式自研，非 copy）。
+ * 契约: taskkill /PID <pid> /T /F；pid≤0 no-op；taskkill 二进制缺失/非零状态 → log.warn + 继续（幂等，铁律 11/24）。
+ * @param {number} pid 目标进程 pid
+ * @param {(pid: number) => void} [taskkill] 可注入的 taskkill runner（测试用；缺省 spawnSync taskkill）
+ */
+function taskkillProcessTree(pid, taskkill) {
+  if (!pid || pid <= 0) return;
+  const run = taskkill || ((p) => {
+    spawnSync('taskkill', ['/PID', String(p), '/T', '/F'], { stdio: 'ignore' });
+  });
+  try {
+    run(pid);
+  } catch (err) {
+    console.warn(`[backend-spawn] taskkill 失败（幂等继续）: ${err.message}`);
+  }
+}
+
+/**
+ * 跨平台信号树（D522，借鉴 DSH signalTree 范式自研）。
+ * 契约: win32 → taskkillProcessTree；POSIX → kill(-pid)（进程组，spawn detached 后子进程自建进程组）
+ *        失败回退 child.kill(sig)；pid≤0 no-op；全程不抛（幂等）。
+ * @param {string} platform 'win32' | 其他（POSIX）
+ * @param {number} pid 目标 pid（POSIX 下即进程组 id——spawn detached 保证）
+ * @param {string} sig NodeJS 信号名
+ * @param {import('child_process').ChildProcess | null} child 回退 kill 用的 child 句柄
+ * @param {(pid: number) => void} [taskkill] 可注入 taskkill runner（测试）
+ */
+function signalTree(platform, pid, sig, child, taskkill) {
+  if (platform === 'win32') { taskkillProcessTree(pid, taskkill); return; }
+  if (!pid || pid <= 0) return;
+  try {
+    process.kill(-pid, sig); // 进程组信号（覆盖孙进程）
+  } catch {
+    try { if (child) child.kill(sig); } catch { /* already gone — 幂等 */ }
+  }
+}
+
+/**
+ * teardown 构造器（D522，借鉴 DSH terminate 范式自研）。
+ * 契约: 首次调用 signalTree(SIGTERM) → graceMs 后 signalTree(SIGKILL) 升级；定时器 unref 不阻塞退出；
+ *        幂等（stopped/child.killed/pid≤0 短路，重复调用无副作用）。
+ * @returns {() => void} stop 函数
+ */
+function makeStop(platform, pid, child, graceMs = 5000) {
+  let stopped = false;
+  return () => {
+    if (stopped || (child && child.killed) || !pid || pid <= 0) return; // 幂等短路
+    stopped = true;
+    signalTree(platform, pid, 'SIGTERM', child);
+    const t = setTimeout(() => signalTree(platform, pid, 'SIGKILL', child), graceMs);
+    if (t.unref) t.unref(); // 不阻塞应用退出
+  };
+}
+
+/**
+ * 日志流: 后端 stdout/stderr 追加写 logFile（degraded 可见，铁律 11/24）
+ * @param {import('child_process').ChildProcess} child
+ * @param {string} [logFile]
+ */
 function attachLogStream(child, logFile) {
   if (!logFile) return;
   try {
@@ -93,6 +152,7 @@ async function ensureBackend(options) {
     command,
     probeTimeoutMs = 60000,
     pollIntervalMs = 1000,
+    graceMs = 5000, // D522: SIGTERM→SIGKILL 升级窗口（可注入缩短供测试）
   } = options;
 
   // 1. 探活 — 已有健康服务 → reused（端口冲突安全网，不重复 spawn）
@@ -114,7 +174,13 @@ async function ensureBackend(options) {
   const restarts = [];
 
   const spawnOnce = () => {
-    const c = spawn(cmd.bin, cmd.args, { cwd, env, stdio: ['ignore', 'pipe', 'pipe'] });
+    // D522: POSIX 下 detached 让子进程自建进程组——kill(-pid) 可及孙进程（无孤儿）
+    const c = spawn(cmd.bin, cmd.args, {
+      cwd,
+      env,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      detached: process.platform !== 'win32',
+    });
     attachLogStream(c, logFile);
     c.on('error', (err) => {
       console.error(`[backend-spawn] spawn 失败: ${err.message}`);
@@ -128,11 +194,8 @@ async function ensureBackend(options) {
   while (attempt < Math.max(1, maxRestarts) + 1) {
     const healthy = await probeUntil(serverUrl, probeTimeoutMs, pollIntervalMs);
     if (healthy) {
-      const stop = () => {
-        if (child && !child.killed) {
-          try { child.kill('SIGTERM'); } catch (err) { console.warn(`[backend-spawn] stop 失败: ${err.message}`); }
-        }
-      };
+      // D522: stop = signalTree(SIGTERM) → graceMs → SIGKILL 升级（幂等，进程组回收）
+      const stop = makeStop(process.platform, child.pid, child, graceMs);
       return { started: true, pid: child.pid, stop, child };
     }
     // 探活失败 — 记录重启（窗口外重置计数）
@@ -144,7 +207,7 @@ async function ensureBackend(options) {
     if (restarts.length > maxRestarts || attempt > maxRestarts + 1 || child.exitCode !== null) {
       // 超限 / 子进程已死且不可再拉 — degraded 显式（铁律 24/31：不静默）
       console.error(`[backend-spawn] 后端自启降级 — 重启 ${restarts.length} 次未恢复: ${lastError}`);
-      try { if (child && !child.killed) child.kill('SIGTERM'); } catch { /* already gone */ }
+      makeStop(process.platform, child.pid, child, graceMs)(); // D522: degraded 清理统一走进程树回收
       return { started: false, degraded: true, error: lastError };
     }
     child = spawnOnce();
@@ -153,4 +216,4 @@ async function ensureBackend(options) {
   return { started: false, degraded: true, error: lastError || 'unreachable' };
 }
 
-module.exports = { ensureBackend, buildCommand, probeOnce };
+module.exports = { ensureBackend, buildCommand, probeOnce, signalTree, taskkillProcessTree, makeStop };
