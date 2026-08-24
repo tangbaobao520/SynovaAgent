@@ -1,0 +1,16 @@
+{
+  "task_id": "D515",
+  "title": "控制塔 V5.0.0 减负重构（三批 13 项）",
+  "status": "spec_done",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D515-tower-v5-dedrag-20260824.md",
+    "by": "dsh-cto",
+    "at": "2026-08-24"
+  },
+  "impl": null,
+  "audit": null,
+  "updated_at": "2026-08-24",
+  "updated_by": "dsh-cto",
+  "note": "创始人裁决：三批全做。当前 CTO session 出 spec，新 CTO session 执行。",
+  "priority": "P0"
+}
