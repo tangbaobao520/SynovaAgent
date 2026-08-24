@@ -46,6 +46,14 @@
 ### 3.2 最终实现同 commit 回填
 若实现偏离方案（如 login 响应断言改用登录返回的 payload.userId、或注册 email 生成策略不同、或发现更多旧契约用例），必须在本节同 commit 回填最终形态（S-6）。
 
+**回填（2026-08-24 实现时，全部探针实测）**：
+1. **register 请求须携带 bootstrap token（方案偏离主项）**：§3.1 方案假设 helper 匿名 POST register → 201。实测（探针脚本，挂载与 server.ts L290-293 同构）：`/api/auth/register` **不在 jwtAuthMiddleware 白名单**（src/middleware/auth.ts L83-99 仅 `/api/auth/login` 在列）→ 匿名 register = 401 UNAUTHORIZED；带真实 `signJwtToken` 签发 token = 201。最终形态：helper 内 `signJwtToken({ sub: 'test-bootstrap', role: 'admin', orgId: 'acme-corp' })` 签发 bootstrap token 供 register 请求过认证层，中间件真实验证该 token，注册路由逻辑（校验/bcrypt 哈希/去重/token 签发）100% 真实执行（铁律 12 保持）。login 在白名单，无需 token。
+2. **诚实上报（D102 遗留缺口，不越界修）**：生产环境 `POST /api/auth/register` 在当前白名单下**不可匿名到达**（需已认证身份）。本任务写集仅测试，未改 src/middleware/auth.ts。建议另立任务决策：register 加入白名单 vs 邀请令牌验证（routes/auth.ts L5 注释"注册 (验证邀请令牌)"尚未实现）。
+3. **login 200 用例断言形态增强**：断言从 login 响应 payload 改为 JWT 三段结构 + base64url 解码 payload 段断言 `sub=注册 userId / role / orgId`（用例意图"login 返回合法 JWT 且内容正确"不变，证据更强）。
+4. **测试环境 store 形态（实测确认）**：getDatabase() 未初始化 → getUserStore() 降级内存 Map（log.warn 降级路径，铁律 11 合规），register 响应 userId 形如 `usr-1`（内存分支 src/routes/auth.ts L93），零 SQLite 副作用。
+5. **顺手清理**：删除存量 unused import `canAccessWorkspace`（原 L18，grep 确认零使用，oxlint error，铁律 37 dead code）。
+6. email 生成策略与方案一致：`${tag}-${Date.now()}@test.local`，8 个调用点 tag 各异（login200/validate/ga-reader/ga-deleter/admin-deleter/refresh/revoke-ga/revoke-admin），vitest 文件内串行 + bcrypt 往返 >1ms 保证唯一；连跑 3 次 10/10 无 flake。
+
 ### 3.3 不做的事
 * 不改 src/routes/auth.ts / src/middleware/auth.ts——bcrypt 契约正确（D102/D479 已定），本任务只对齐测试。
 * 不改 tests/middleware/auth.test.ts（unit 已 23/23 绿）。
