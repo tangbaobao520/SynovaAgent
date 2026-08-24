@@ -1,0 +1,12 @@
+{
+  "task_id": "D519",
+  "title": "L1-A Mac 安装实测(1-3)",
+  "status": "claimed",
+  "slice": "L1-A",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "updated_at": "2026-08-24",
+  "updated_by": "dsh-cto",
+  "priority": "P1"
+}
