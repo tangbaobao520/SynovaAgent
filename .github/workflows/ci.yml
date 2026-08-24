@@ -115,6 +115,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # D520: verify-parallel 豁免逻辑依赖 origin/main ref（depth=1 时缺失→误红）
       - name: Run hermetic control-tower gate tests
         shell: bash
         # 密封测试扩容（D520）：原 5 个（U2/U4/U5a/U5c/U7）+ D515/D520 新增的

@@ -125,6 +125,21 @@ v5_soft() {
 # D515 项3 / V5.0.0: 软提示检查 — 输出格式与 hard_check 一致（报告完整，--check/K3 可见），
 # 但只计 SOFT_COUNT 不计 HARD_FAIL：本地不阻断，CI Iron Laws job 为权威。
 # D515 项3: par_collect 类软门禁失败时统一提示（判定脚本输出原样打印，不阻断）
+# D520: 可选信息类检查——永不转硬（即使 SYNO_CI=1）。CI strict 的语义边界：
+#   "本地减负+CI 权威"只对质量类检查成立；标注"可选"的提示（PRD 章节引用等）
+#   在 CI 转硬 = 提交 brief 的分支永远红（D520 实证：PRD 对照误炸 Iron Laws）。
+opt_check() {
+  local name="$1" matches="$2"
+  local count=0
+  [ -n "$matches" ] && count=$(echo "$matches" | grep -c . 2>/dev/null) || count=0
+  if [ "$count" -gt 0 ]; then
+    echo -e "  ${YELLOW}⚠️  ${name}: ${count} 处  [可选提示——永不阻断]${RESET}"
+    echo "$matches" | head -3 | while read -r line; do [ -n "$line" ] && echo "     ${line}"; done
+    WARN_COUNT=$((WARN_COUNT + 1))
+    log_gate "$name" hit
+  fi
+}
+
 warn_check() {
   local name="$1" matches="$2"
   local count=0
@@ -868,7 +883,7 @@ if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
     PRD_REF="Done 标准未引用 PRD 章节 - 重大 feature 建议标注 secX.Y"
   fi
 fi
-warn_check "PRD 对照: Done 标准引用 PRD 章节(可选)" "${PRD_REF:-}"
+opt_check "PRD 对照: Done 标准引用 PRD 章节(可选)" "${PRD_REF:-}"
 
 # ═══════════════════════════════════════════════════════════════════
 # 组 7: 架构合规 (原 6, 9, 14, 18 合并)
