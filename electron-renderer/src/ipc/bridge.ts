@@ -2,6 +2,8 @@
  * ipc/bridge.ts — Electron IPC 桥接 (Phase 4.1)
  */
 export interface ElectronAPI {
+  getServerUrl: () => string;
+  getConfig: () => Record<string, unknown>;
   minimizeToTray: () => void;
   getAppVersion: () => Promise<string>;
   showNotification: (title: string, body: string, id?: string) => void;
@@ -22,7 +24,7 @@ export function isElectron(): boolean {
 
 export function minimizeToTray(): void { window.electronAPI?.minimizeToTray(); }
 export async function getAppVersion(): Promise<string> {
-  try { return await window.electronAPI?.getAppVersion() || '0.1.0'; } catch { return '0.1.0'; }
+  try { return await window.electronAPI?.getAppVersion() || '0.1.0'; } catch (err) { console.warn('[bridge] getAppVersion 失败 — 降级 0.1.0:', err); return '0.1.0'; }
 }
 
 /** 弹出系统通知 */

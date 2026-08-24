@@ -14,6 +14,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { useConversationStore } from '../stores/conversation-store';
 import type { ChatMessage, ExpertAttr } from '../types/chat';
+import { getApiBase } from '../lib/api';
 
 export type SSEEventType =
   | 'phase' | 'expert_hypothesis' | 'hypothesis_generated'
@@ -176,7 +177,7 @@ export function useStreaming(): UseStreamingReturn {
     abortRef.current = abortCtrl;
 
     try {
-      const res = await fetch('/api/diagnosis/consult', {
+      const res = await fetch(`${getApiBase()}/api/diagnosis/consult`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

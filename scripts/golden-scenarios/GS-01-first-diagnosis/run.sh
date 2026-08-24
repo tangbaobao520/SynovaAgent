@@ -94,6 +94,45 @@ curl -sS -o "$DATA_DIR/reports-response.json" -w "%{http_code}" \
 echo "[GS-01] reports HTTP 状态: $(cat "$DATA_DIR/reports-status.txt")"
 echo "[GS-01] reports 响应: $(cat "$DATA_DIR/reports-response.json")"
 
+# 5.5 D504 Electron 断言组（静态配置 + 无头契约验证——CI 无 GUI 也能验桌面端产物面）
+ELECTRON_DIR="$REPO_ROOT/electron"
+
+# ① L1-1 打包配置：backend-spawn/renderer 产物入包 + extraResources 后端资产
+if grep -q "electron/backend-spawn.cjs" "$REPO_ROOT/build-synova.cjs"    && grep -q "dist/renderer" "$REPO_ROOT/build-synova.cjs"    && grep -q "extraResources" "$REPO_ROOT/build-synova.cjs"; then
+  echo "PACK_CONFIG_OK" > "$DATA_DIR/electron-pack-check.txt"
+else
+  echo "PACK_CONFIG_MISSING" > "$DATA_DIR/electron-pack-check.txt"
+fi
+
+# ② L1-4 服务自启契约：node 无头直调 backend-spawn（reused 路径——本场景后端已在跑，探活必成功）
+node -e '
+  const { ensureBackend, buildCommand } = require(process.argv[1] + "/backend-spawn.cjs");
+  (async () => {
+    const dev = buildCommand("dev"), prod = buildCommand("prod");
+    if (dev.bin !== "npx" || prod.bin !== "node") { console.error("buildCommand 契约失败"); process.exit(1); }
+    const r = await ensureBackend({
+      serverUrl: process.argv[2], cwd: process.argv[3], mode: "dev",
+      command: { bin: "never-spawned", args: [] },
+    });
+    if (r.reused !== true) { console.error("reused 契约失败:", JSON.stringify(r)); process.exit(1); }
+    console.log("SPAWN_CONTRACT_OK");
+  })().catch((e) => { console.error("spawn 契约异常:", e.message); process.exit(1); });
+' "$ELECTRON_DIR" "$BASE" "$REPO_ROOT" > "$DATA_DIR/electron-spawn-check.txt" 2>"$DATA_DIR/electron-spawn-check.err"   || echo "SPAWN_CONTRACT_FAIL" >> "$DATA_DIR/electron-spawn-check.txt"
+
+# ③ L1-5 双引导收敛：main.cjs isPackaged 分支 + prod loadFile renderer
+if grep -q "app.isPackaged" "$ELECTRON_DIR/main.cjs"    && grep -q "loadFile" "$ELECTRON_DIR/main.cjs"    && grep -q "renderer" "$ELECTRON_DIR/main.cjs"    && grep -q "ensureBackend" "$ELECTRON_DIR/main.cjs"; then
+  echo "DUAL_BOOTSTRAP_OK" > "$DATA_DIR/electron-bootstrap-check.txt"
+else
+  echo "DUAL_BOOTSTRAP_MISSING" > "$DATA_DIR/electron-bootstrap-check.txt"
+fi
+
+# ④ L1-7 数据目录重定向：SYNOVA_DB_PATH 注入 + userData + src/config.ts:90 只读消费
+if grep -q "SYNOVA_DB_PATH" "$ELECTRON_DIR/main.cjs"    && grep -q "getPath('userData')" "$ELECTRON_DIR/main.cjs"    && grep -q "SYNOVA_DB_PATH" "$REPO_ROOT/src/config.ts"; then
+  echo "DBPATH_REDIRECT_OK" > "$DATA_DIR/electron-dbpath-check.txt"
+else
+  echo "DBPATH_REDIRECT_MISSING" > "$DATA_DIR/electron-dbpath-check.txt"
+fi
+
 # 6. 断言（expect.json 模板 → 注入 DATA_DIR 实际路径）
 sed "s|__DATA_DIR__|$DATA_DIR|g" "$SCRIPT_DIR/expect.json" > "$SCRIPT_DIR/expect.runtime.json"
 

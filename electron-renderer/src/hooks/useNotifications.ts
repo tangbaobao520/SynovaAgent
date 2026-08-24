@@ -6,6 +6,7 @@
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAppStore } from '../stores/app-store';
+import { getApiBase } from '../lib/api';
 
 export interface AppNotification {
   id: string;
@@ -30,7 +31,7 @@ export function useNotifications() {
   const fetchNotifications = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/notifications');
+      const res = await fetch(`${getApiBase()}/api/notifications`);
       const data = await res.json() as { ok: boolean; notifications: AppNotification[]; degraded?: boolean };
       if (data.ok) {
         setNotifications(data.notifications);
@@ -51,7 +52,7 @@ export function useNotifications() {
 
   const markAsRead = useCallback(async (id: string) => {
     try {
-      await fetch(`/api/notifications/${id}/read`, { method: 'POST' });
+      await fetch(`${getApiBase()}/api/notifications/${id}/read`, { method: 'POST' });
       setNotifications(prev => {
         const next = prev.map(n => n.id === id ? { ...n, read: true } : n);
         setAlertCount(next.filter(n => !n.read).length);
@@ -64,7 +65,7 @@ export function useNotifications() {
 
   const markAllRead = useCallback(async () => {
     try {
-      await fetch('/api/notifications/read-all', { method: 'POST' });
+      await fetch(`${getApiBase()}/api/notifications/read-all`, { method: 'POST' });
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
       setAlertCount(0);
     } catch (err: unknown) {

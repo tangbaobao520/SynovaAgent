@@ -1,1 +1,13 @@
-{"main":"main.cjs","type":"commonjs","devDependencies":{"electron":"^33.4.11"}}
+{
+  "main": "main.cjs",
+  "type": "commonjs",
+  "devDependencies": {
+    "electron": "^33.4.11"
+  },
+  "scripts": {
+    "pack": "cd .. && electron-builder --config build-synova.cjs",
+    "pack:dir": "cd .. && electron-builder --config build-synova.cjs --dir",
+    "pack:mac": "cd .. && electron-builder --config build-synova.cjs --mac",
+    "pack:win": "cd .. && electron-builder --config build-synova.cjs --win"
+  }
+}
