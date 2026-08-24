@@ -1,12 +1,16 @@
 {
   "task_id": "D519",
   "title": "L1-A Mac 安装实测(1-3)",
-  "status": "claimed",
+  "status": "spec_done",
   "slice": "L1-A",
-  "spec": null,
+  "spec": {
+    "doc": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D519-mac-install-test-20260824.md",
+    "commit": "pending-push",
+    "gatekeeper": "exit 0 (C1-C6 ALL PASS, 2026-08-24)"
+  },
   "impl": null,
   "audit": null,
   "updated_at": "2026-08-24",
-  "updated_by": "dsh-cto",
+  "updated_by": "dsh-dev-doc",
   "priority": "P1"
 }
