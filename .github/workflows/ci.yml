@@ -14,10 +14,25 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      # D515 项7: 纯文档 PR 的 CI 瘦身 — 全部变更为 md/json/task-state/.claude 时
+      # 跳过 TS+Iron Laws 重检查（只跳 job 内步骤，不跳 job——PR 状态仍可读）。
+      # Secrets 由独立 job 扫描，不受影响。混合 PR 正常全量。
+      # 注: main push 合并后 diff 为空 → 按纯文档跳过（PR 门已验证，避免空跑）。
+      - name: Detect docs-only change (D515)
+        id: docsonly
+        run: |
+          if git diff --name-only origin/main...HEAD | grep -qvE '\.(md|json)$|task-state/|\.claude/'; then
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "docs_only=true" >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/setup-node@v4
         with: { node-version: '20', cache: 'npm' }
+        if: steps.docsonly.outputs.docs_only != 'true'
       - run: npm ci
+        if: steps.docsonly.outputs.docs_only != 'true'
       - name: TypeScript check
+        if: steps.docsonly.outputs.docs_only != 'true'
         # K3 审计 P1-1 修复：去掉 `|| true` fail-open（CI 类型检查永不红 → 挪 CI 后类型防线真空）。
         # 过滤存量白名单（_extinct 退役哨兵死代码 + ima.ts/server.ts 已知错误 + 4 个历史文件），
         # 其余新类型错误 → exit 1 阻断。存量清理后逐步收紧白名单。
@@ -28,9 +43,11 @@ jobs:
             exit 1
           fi
       - name: Iron laws check
+        if: steps.docsonly.outputs.docs_only != 'true'
         run: bash scripts/pre-commit-check.sh
         env:
           SYNO_DIFF_BASE: "origin/main"
+          SYNO_CI: "1"  # D516/K3 P0-1: CI strict——本地 V5 软提示在 CI 转硬（权威物理落地）
 
   test:
     name: Vitest (${{ matrix.shard }})

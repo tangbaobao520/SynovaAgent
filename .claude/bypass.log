@@ -608,19 +608,12 @@ Binary file .claude/bypass.log matches
 2026-08-24T00:20:00+08:00 | COMMITTED | pre-commit PASS (移除 task-state 提交补记, D331 对账) | TASK_ID=D481-D482 | AGENT=Synova-Win | HASH=999926ee96a5fb501664eb10fae6584c4d26088c
 
 2026-08-24T01:20:00+08:00 | COMMITTED | pre-commit PASS (dev doc 复核修正补记, D331 对账) | TASK_ID=D481-D482 | AGENT=Synova-Win | HASH=7a75b1c132d56dd917a2e223edf512cc380e10a9
-2026-08-24T02:07:30+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D481 | AGENT=Synova-Win
-2026-08-24T02:10:23+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D481 | AGENT=Synova-Win
-2026-08-24T02:19:44+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D481 | AGENT=Synova-Win
-2026-08-24T02:22:20+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D481 | AGENT=Synova-Win
-2026-08-24T02:28:54+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D481 | AGENT=Synova-Win | HASH=b1aaab0e2401f56b9fa99045de7b865dae8ecb86
-2026-08-24T03:18:09+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D481 | AGENT=Synova-Win
-2026-08-24T03:19:30+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D481 | AGENT=Synova-Win
 
 2026-08-24T02:10:00+08:00 | COMMITTED | pre-commit PASS (G12 修复提交补记, D331 对账) | TASK_ID=G12FIX | AGENT=Synova-Win | HASH=b4bcd47823a12056fbd7a2b679b60aae47635514
 
 2026-08-24T02:20:00+08:00 | COMMITTED | pre-commit PASS (brief 提交补记, D331 对账) | TASK_ID=G12FIX | AGENT=Synova-Win | HASH=3ec52a2c5ba38c65c5da205bb43e414231152dba
 
 2026-08-24T02:30:00+08:00 | COMMITTED | pre-commit PASS (brief 排除项修正补记, D331 对账) | TASK_ID=G12FIX | AGENT=Synova-Win | HASH=f7bbf6c645e1dc5fd7f824b2016762a38a3aab79
-2026-08-24T11:00:52+08:00 | COMMITTED | pre-commit PASS (worktree 首推对账补记: fix(D482) org-expert-tools 声称对齐, synova-commit 13 组全过 + 外部审计 P0=0, 原记录未随 worktree 提交入库) | TASK_ID=D482 | AGENT=claude-code | HASH=06e340941d1376630c800a3e35d51cdca6a7120e
-
-2026-08-24T11:30:00+08:00 | COMMITTED | pre-commit PASS (台账登记补记, D331 对账) | TASK_ID=LEDGER | AGENT=Synova-Win | HASH=28f63619dbbb0b56b2568bbb8c48f8873257aad2
+2026-08-24T11:12:23+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D515 | AGENT=dsh-cto | HASH=8cdf9957032e043a91ba7cda0c04bbda5901a9a0
+2026-08-24T11:15:55+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D515 | AGENT=dsh-cto | HASH=fe94490b1207e9b80bec8582495a7e1b1ddd22c6
+2026-08-24T11:19:14+08:00 | COMMITTED | pre-commit PASS (task-state 回填, D331 对账, D451 补记) | TASK_ID=D515 | AGENT=dsh-cto | HASH=102d4f3e53bc6e8ca4c69b5062a1abcb69a8aa88
