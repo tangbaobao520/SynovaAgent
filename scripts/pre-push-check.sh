@@ -196,8 +196,17 @@ check_tag_ancestry() {
   done
   if [[ -f "$VERSION_MD" ]]; then
     ver=$(grep -oE '^## V[0-9]+\.[0-9]+\.[0-9]+' "$VERSION_MD" | head -1 | awk '{print $2}')
-    if [[ -n "$ver" ]] && ! git merge-base --is-ancestor "$ver" HEAD 2>/dev/null; then # swallow-ok: if 条件消费 rc（锚点断裂判断）
-      TAG_FAIL="${TAG_FAIL}  $ver 缺失或非祖先（VERSION.md 最新版本锚点断裂）\n"
+    if [[ -n "$ver" ]]; then
+      if ! git tag -l "$ver" | grep -q .; then
+        # D521/§6: tag 不存在且推送目标非 main = 合法中间态（tag 在 main 合并后打）
+        if [[ -n "${PUSH_BRANCH:-}" && "$PUSH_BRANCH" != "main" ]]; then
+          echo -e "  ${YELLOW}⚠️  D331: $ver tag 未打 — feature 推送合法（§6: 合并后补打）${RESET}"
+        else
+          TAG_FAIL="${TAG_FAIL}  $ver 缺失（VERSION.md 最新版本无 tag）\n"
+        fi
+      elif ! git merge-base --is-ancestor "$ver" HEAD 2>/dev/null; then # swallow-ok: if 条件消费 rc（锚点断裂判断）
+        TAG_FAIL="${TAG_FAIL}  $ver 非 HEAD 祖先（VERSION.md 最新版本锚点断裂）\n"
+      fi
     fi
   fi
   if [[ -n "$TAG_FAIL" ]]; then
