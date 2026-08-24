@@ -19,12 +19,12 @@
 ## 2. 代码审计——现状（全部实测 file:line）
 
 ### 缺陷 A：register 不在认证白名单，匿名注册 401
-* `src/middleware/auth.ts` L83-99 `isWhitelisted`：白名单含 `/api/auth/login`（L88）但**无 `/api/auth/register`**——匿名 POST register 被 jwtAuthMiddleware 拦 401（D481 探针实测）。
+* `src/middleware/auth.ts` L83-99 `isWhitelisted`：白名单含 `/api/auth/login`（L87）但**无 `/api/auth/register`**——匿名 POST register 被 jwtAuthMiddleware 拦 401（D481 探针实测）。
 * `src/server.ts` L290 `app.use(jwtAuthMiddleware)`：全局挂载，白名单判定唯一来源是 auth.ts（server.ts 无独立白名单）。
 * `src/routes/auth.ts` L68-101 register 路由：校验/bcrypt/去重/token 签发全部实现——**逻辑完整，仅认证层挡住**。
 
 ### 缺陷 B：D481 集成测试用 bootstrap token 绕过（掩盖缺口）
-* `tests/middleware/auth.integration.test.ts`：D481 交付的 `registerAndLogin` helper 用 `signJwtToken({ sub: 'test-bootstrap', ... })` 签发 bootstrap token 过认证层（6 处 bootstrap/signJwtToken）——注册逻辑真实执行但"匿名注册 401"被绕过，**白名单缺口在测试层不可见**。
+* `tests/middleware/auth.integration.test.ts`：D481 交付的 `registerAndLogin` helper 用 `signJwtToken({ sub: 'test-bootstrap', ... })` 签发 bootstrap token 过认证层——**代码 2 处**：import（L24）+ 签发（L92），另有 bootstrap 说明注释（L11/L12/L84）与 `bootstrapToken` 使用（L95）——注册逻辑真实执行但"匿名注册 401"被绕过，**白名单缺口在测试层不可见**。
 
 ### 现状（实测）
 * `tests/middleware/auth.test.ts` L217/L227：白名单单元用例仅覆盖 `/health`、`/api/auth/login`——无 register。
@@ -35,9 +35,9 @@
 ### 3.1 写集 (3 修改 + 0 新建)
 | 文件 | 操作 | 说明 |
 |------|------|------|
-| src/middleware/auth.ts | 修改 | isWhitelisted L88 后加 `path === '/api/auth/register'`（与 login 并列）——注册入口匿名可达；注释同步（"白名单含 login/register，注册走邀请令牌后收紧"留待切片 B） |
+| src/middleware/auth.ts | 修改 | isWhitelisted L87 后加 `path === '/api/auth/register'`（与 login 并列）——注册入口匿名可达；注释同步（"白名单含 login/register，注册走邀请令牌后收紧"留待切片 B） |
 | tests/middleware/auth.test.ts | 修改 | 白名单 describe 加 1 用例：`whitelisted path /api/auth/register → pass through`（red=现状 401/拦截 → green=放行） |
-| tests/middleware/auth.integration.test.ts | 修改 | registerAndLogin helper：移除 bootstrap token 绕过（6 处）→ 直接匿名 POST register 断言 201；保留 login（本就白名单）→ 返回 {token, userId}；断言注册响应 payload 结构不变 |
+| tests/middleware/auth.integration.test.ts | 修改 | registerAndLogin helper：移除 bootstrap 绕过（signJwtToken import L24 + 签发 L92 + bootstrap 注释 L11/L12/L84）→ 直接匿名 POST register 断言 201；保留 login（本就白名单）→ 返回 {token, userId}；断言注册响应 payload 结构不变 |
 
 > 共享资源标注（S-8）：本写集不含 VERSION.md（功能修复，非门禁/工具行为变化，不 bump）；current-brief / 暂存区共享，串行触碰；tests/middleware/ 与 D484（切片 B，串行）不同时跑。
 
@@ -79,7 +79,7 @@
 
 * **DS1 白名单接线**：`grep -n "api/auth/register" src/middleware/auth.ts` 命中（isWhitelisted 内，与 login 并列）。
 * **DS2 单元用例**：`vitest run tests/middleware/auth.test.ts` 全绿（含新增 register 白名单用例）。
-* **DS3 匿名注册可达**：`vitest run tests/middleware/auth.integration.test.ts` 10/10 绿（匿名 register 201，无 bootstrap 绕过——`grep -c "signJwtToken" tests/middleware/auth.integration.test.ts` 归零或仅保留过期 token 构造所需）。
+* **DS3 匿名注册可达**：`vitest run tests/middleware/auth.integration.test.ts` 10/10 绿（匿名 register 201，无 bootstrap 绕过——`grep -c "signJwtToken" tests/middleware/auth.integration.test.ts` **零命中**；过期 token 用例用 createHmac 构造（L212-223），不需要 signJwtToken）。
 * **DS4 零回归**：`vitest run tests/routes/auth.test.ts` 绿 + `tsc --noEmit` 零新增（28=28）。
 * **DS5 范围一致**：`git diff --name-only HEAD^` 与 §3.1 写集一致（3 文件 + 簿记），无越界。
 * **DS6 无绕过**：`grep -n "no-verify" .claude/bypass.log` 零命中。
