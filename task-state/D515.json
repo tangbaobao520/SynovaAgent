@@ -23,7 +23,6 @@
       "scripts/install-hooks.sh",
       ".github/workflows/ci.yml",
       ".codex/control-tower/VERSION.md",
-      ".codex/control-tower/version.log",
       "docs/synova/coordination/版本管理规范-控制塔.md",
       "tests/control-tower/task-start-parallel.test.sh",
       "tests/control-tower/fastlane-bypass-only.test.sh",
@@ -32,11 +31,13 @@
       "tests/control-tower/q2-error-locating.test.sh",
       "tests/control-tower/worktree-manager.test.sh",
       "memory/notes/implemented/2026-08-24-d515-tower-v5-dedrag.md",
-      ".gitignore"
+      ".gitignore",
+      "task-state/D516.json",
+      "tests/control-tower/ci-strict-mode.test.sh"
     ]
   },
   "audit": null,
-  "fix_task_id": null,
+  "fix_task_id": "D516",
   "updated_at": "2026-08-24",
   "updated_by": "dsh-cto",
   "note": "创始人裁决：三批全做。V5.0.0：4 道硬门禁 + 其余软提示（CI 为权威）+ SYNO_FASTLANE 纯补记快速通道 + 命中统计。D511 并行冲突：D511 impl_done 未合并，D515 基于 origin/main，改动区域不重叠。",

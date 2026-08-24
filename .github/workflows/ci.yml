@@ -47,6 +47,7 @@ jobs:
         run: bash scripts/pre-commit-check.sh
         env:
           SYNO_DIFF_BASE: "origin/main"
+          SYNO_CI: "1"  # D516/K3 P0-1: CI strict——本地 V5 软提示在 CI 转硬（权威物理落地）
 
   test:
     name: Vitest (${{ matrix.shard }})
