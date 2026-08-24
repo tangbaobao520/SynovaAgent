@@ -6,6 +6,7 @@
  */
 import React, { useEffect, useState } from 'react';
 import { useAppStore } from '../stores/app-store';
+import { getApiBase } from '../lib/api';
 
 const ICON_ITEMS = [
   { icon: '🔍', label: '搜索', id: 'search' },
@@ -34,7 +35,7 @@ const LeftPanel: React.FC = () => {
   // 加载 GA 客户列表
   useEffect(() => {
     if (userRole === 'ga' && gaClients.length === 0) {
-      fetch('/api/ga/clients')
+      fetch(`${getApiBase()}/api/ga/clients`)
         .then((r) => r.json())
         .then((d) => { if (d.ok) setGaClients(d.clients); setClientLoadError(null); })
         .catch((err) => { console.warn('[LeftPanel] 加载客户列表失败', err); setClientLoadError('加载客户列表失败，请重试'); });
@@ -42,7 +43,7 @@ const LeftPanel: React.FC = () => {
   }, [userRole, gaClients.length, setGaClients]);
 
   const handleSwitchOrg = (orgId: string) => {
-    fetch(`/api/ga/switch/${orgId}`, { method: 'POST' })
+    fetch(`${getApiBase()}/api/ga/switch/${orgId}`, { method: 'POST' })
       .then(() => {
         setActiveOrgId(orgId);
         setActiveWorkspaceId(null);

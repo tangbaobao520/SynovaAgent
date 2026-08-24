@@ -622,3 +622,7 @@ Binary file .claude/bypass.log matches
 2026-08-24T07:54:06Z detected-bypass no-precommit-marker
 2026-08-24T16:01:59+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D520 | AGENT=dsh-cto | HASH=f8205f27c56c6543ed7bde8e10e72c8b6d3601fd
 2026-08-24T16:04:17+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D520 | AGENT=dsh-cto | HASH=d3e281b4928ca436ab664bb974614f24b14382b3
+2026-08-23T05:52:15+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D504 | AGENT=deepseek-harness
+2026-08-24T07:37:00Z detected-bypass no-precommit-marker
+2026-08-24T15:37:44+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/d504-merge
+2026-08-24T15:41:02+08:00 | COMMITTED | pre-commit PASS（D451 补记） | TASK_ID=D504 | AGENT=dsh-cto | HASH=0da174e0e8b33eea9d9c2e0f38126dcc03a31904
