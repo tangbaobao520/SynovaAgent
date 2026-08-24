@@ -1,7 +1,7 @@
 {
   "task_id": "D518",
   "title": "L1-A 安装引导单入口(1-5)",
-  "status": "impl_done",
+  "status": "audited",
   "slice": "L1-A",
   "spec": {
     "doc": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D518-single-entry-20260824.md",
@@ -24,8 +24,23 @@
     },
     "notes": "DSH 宿主环境 ELECTRON_RUN_AS_NODE=1 会使 electron 以纯 node 启动（require('electron') 返回路径字符串）——runbook 未记（仅本机 agent 环境特殊），K3 复跑时须 env -u。"
   },
-  "audit": null,
+  "audit": {
+    "auditor": "k3",
+    "date": "2026-08-25",
+    "verdict": "CONDITIONAL PASS",
+    "report": "docs/synova/audit-reports/2026-08-25-D517-D519.md",
+    "conditions": [
+      "C1: 合并后 push main 触发 desktop-build CI，artifact URL 回填 task-state（D517 DS3 / D519 DS6）",
+      "C2: D518 dev doc 回填 prod 契约（dist/src/index.js → dist/backend.mjs + Electron node 模式，§2/§5.1/§7）"
+    ],
+    "findings": [
+      "P1-1 (devdoc): D518 dev doc 未回填 prod 运行时契约变更 (M7)",
+      "P2-1..4: 用例计数少报22vs23 / 产物证据易失 / 并发环境敏感 / DS5口径"
+    ],
+    "slice": "L1-A"
+  },
   "updated_at": "2026-08-25",
   "updated_by": "dsh-impl",
-  "priority": "P1"
+  "priority": "P1",
+  "verdict": "CONDITIONAL_PASS"
 }

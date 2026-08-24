@@ -1,7 +1,7 @@
 {
   "task_id": "D517",
   "title": "L1-A 安装包可产出(1-1)",
-  "status": "impl_done",
+  "status": "audited",
   "slice": "L1-A",
   "spec": {
     "doc": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D517-installer-build-20260824.md",
@@ -22,8 +22,23 @@
     },
     "notes": "main 存量 src/server.ts 2 处 tsc 类型错误（TS2345 MainAgentLike/GraphBridgeLike）与本任务无关，未触碰（src/ 红线），登记待后续任务。"
   },
-  "audit": null,
+  "audit": {
+    "auditor": "k3",
+    "date": "2026-08-25",
+    "verdict": "CONDITIONAL PASS",
+    "report": "docs/synova/audit-reports/2026-08-25-D517-D519.md",
+    "conditions": [
+      "C1: 合并后 push main 触发 desktop-build CI，artifact URL 回填 task-state（D517 DS3 / D519 DS6）",
+      "C2: D518 dev doc 回填 prod 契约（dist/src/index.js → dist/backend.mjs + Electron node 模式，§2/§5.1/§7）"
+    ],
+    "findings": [
+      "P1-1 (devdoc): D518 dev doc 未回填 prod 运行时契约变更 (M7)",
+      "P2-1..4: 用例计数少报22vs23 / 产物证据易失 / 并发环境敏感 / DS5口径"
+    ],
+    "slice": "L1-A"
+  },
   "updated_at": "2026-08-24",
   "updated_by": "dsh-impl",
-  "priority": "P1"
+  "priority": "P1",
+  "verdict": "CONDITIONAL_PASS"
 }

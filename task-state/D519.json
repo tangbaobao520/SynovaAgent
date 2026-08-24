@@ -1,7 +1,7 @@
 {
   "task_id": "D519",
   "title": "L1-A Mac 安装实测(1-3)",
-  "status": "impl_done",
+  "status": "audited",
   "slice": "L1-A",
   "spec": {
     "doc": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D519-mac-install-test-20260824.md",
@@ -24,8 +24,23 @@
       "实跑踩坑记录": "① electron-builder APFS dmg 卷名含版本+arch（/Volumes/SynovaAgent 0.1.0-arm64）——挂载点从 mount.log 解析非硬编码；② bash 变量名后紧贴全角括号在 set -u 下解析异常（INSTALLED_APP（→ unbound）——改 ASCII 分隔；③ 宿主 ELECTRON_RUN_AS_NODE=1 全程显式 unset。均已固化进脚本/测试。"
     }
   },
-  "audit": null,
+  "audit": {
+    "auditor": "k3",
+    "date": "2026-08-25",
+    "verdict": "CONDITIONAL PASS",
+    "report": "docs/synova/audit-reports/2026-08-25-D517-D519.md",
+    "conditions": [
+      "C1: 合并后 push main 触发 desktop-build CI，artifact URL 回填 task-state（D517 DS3 / D519 DS6）",
+      "C2: D518 dev doc 回填 prod 契约（dist/src/index.js → dist/backend.mjs + Electron node 模式，§2/§5.1/§7）"
+    ],
+    "findings": [
+      "P1-1 (devdoc): D518 dev doc 未回填 prod 运行时契约变更 (M7)",
+      "P2-1..4: 用例计数少报22vs23 / 产物证据易失 / 并发环境敏感 / DS5口径"
+    ],
+    "slice": "L1-A"
+  },
   "updated_at": "2026-08-25",
   "updated_by": "dsh-impl",
-  "priority": "P1"
+  "priority": "P1",
+  "verdict": "CONDITIONAL_PASS"
 }
