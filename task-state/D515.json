@@ -1,14 +1,20 @@
 {
   "task_id": "D515",
   "title": "控制塔 V5.0.0 减负重构（三批 13 项）",
-  "status": "spec_done",
+  "status": "audited",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D515-tower-v5-dedrag-20260824.md",
     "by": "dsh-cto",
     "at": "2026-08-24"
   },
   "impl": null,
-  "audit": null,
+  "audit": {
+    "verdict": "FAIL→D516修复",
+    "report": "docs/synova/audit-reports/2026-08-24-D515.md",
+    "at": "2026-08-24",
+    "by": "k3/dsh-cto",
+    "note": "K3 FAIL（CI 权威幻觉+三重复制）→ D516 修复（SYNO_CI strict+去重）→ 复审待 K3；PR #152 已合并"
+  },
   "updated_at": "2026-08-24",
   "updated_by": "dsh-cto",
   "note": "创始人裁决：三批全做。当前 CTO session 出 spec，新 CTO session 执行。",
