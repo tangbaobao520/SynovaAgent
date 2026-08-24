@@ -11,7 +11,7 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
-## V5.0.1 (2026-08-24) — D520 跨平台适配收口（PATCH）
+## V5.0.2 (2026-08-24) — D520 跨平台适配收口（PATCH；V5.0.1 已被 Win 线 verify-parallel 豁免占用，本任务顺延）
 
 - **任务1 task-start CRLF 修复（P0）**: 并行拦截 `_PAR_N` 双步清洗（`tr -d '\r\n'` + `//[^0-9]/`）——修 Win 下 `[[ "3\r" -gt 0 ]]` 算术错误致并行隔离空转（08-16 起 3 次复发 P1 病根）；同时发现并修复 main 合并事故把 `tr -d '\n\r'` mangle 成字面双 LF。pre-commit `_ACT_N` 同型加固。
 - **任务2 双平台 CI**: control-tower-tests job 加 `os: [ubuntu-latest, windows-latest]` 矩阵（`shell: bash`）；密封测试 5 → 10（+task-start-parallel/fastlane-bypass-only/gate-stats/q2-error-locating/platform-checklist）。
@@ -20,6 +20,11 @@
 - **任务4 API 禁 merge 纪律（M15）**: 版本管理规范新增 §六——API 只允许 push 传输、禁 merge（D509/D516 两次数据丢失实证）+ 树写入后冒烟终验清单。
 - **测试**: task-start-parallel（+CRLF 回归 4 例，12/12）/ platform-checklist（新，14/14）/ ci-strict-mode 7/7 保持绿。
 - **作者**: dsh-cto（并行 CTO session，spec 执行方）
+## V5.0.1 (2026-08-24) — verify-parallel 已完成任务文档豁免（Win 反馈，D483 派发实测）
+
+- **verify-parallel 误判已合并任务为并行冲突**（P2，Win 2026-08-24 D483 派发实测）: `--scan-today` 对比今日全部 dev doc 写集，D481（已合并 #144）与 D483（修订其 auth.integration.test.ts）被判写集重叠 → pre-push 硬拦。修法: compare_docs 前置检查——任一文档写集全部已在 origin/main → 视为已完成任务，跳过（串行演进非并行冲突）；origin/main 不可解析 → 不豁免（fail-closed）。
+- **测试**: tests/control-tower/verify-parallel.test.sh 重写（T1-T5：接线 + 已完成 vs 活跃跳过 + 活跃重叠仍 block + PYBIN 回归，5/5 过）。
+- **作者**: Synova-Win（创始人授权越界补丁，DSH 预审）
 
 ## V5.0.0 (2026-08-24) — D515 控制塔减负重构（三批 13 项，MAJOR）
 
