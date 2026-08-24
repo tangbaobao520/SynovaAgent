@@ -625,3 +625,4 @@ Binary file .claude/bypass.log matches
 2026-08-24T07:37:00Z detected-bypass no-precommit-marker
 2026-08-24T15:37:44+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/d504-merge
 2026-08-24T15:41:02+08:00 | COMMITTED | pre-commit PASS（D451 补记） | TASK_ID=D504 | AGENT=dsh-cto | HASH=0da174e0e8b33eea9d9c2e0f38126dcc03a31904
+2026-08-24T17:53:00+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D517 | AGENT=dsh-impl
