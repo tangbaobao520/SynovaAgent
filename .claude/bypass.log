@@ -619,6 +619,8 @@ Binary file .claude/bypass.log matches
 2026-08-24T11:19:14+08:00 | COMMITTED | pre-commit PASS (task-state 回填, D331 对账, D451 补记) | TASK_ID=D515 | AGENT=dsh-cto | HASH=102d4f3e53bc6e8ca4c69b5062a1abcb69a8aa88
 
 2026-08-24T13:10:00+08:00 | COMMITTED | pre-commit PASS (D481/D482 恢复提交补记, D331 对账) | TASK_ID=D481-D482 | AGENT=Synova-Win | HASH=82decfabde35ff1f5f093b081ff74871c5e20c92
+
+2026-08-24T14:30:00+08:00 | COMMITTED | pre-commit PASS (V5.0.1 修复提交补记, D331 对账) | TASK_ID=V5.0.1 | AGENT=Synova-Win | HASH=c5dd80298d044a728944db7b8e7bd9a8a187f070
 2026-08-23T05:52:15+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D504 | AGENT=deepseek-harness
 2026-08-24T07:37:00Z detected-bypass no-precommit-marker
 2026-08-24T15:37:44+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/d504-merge

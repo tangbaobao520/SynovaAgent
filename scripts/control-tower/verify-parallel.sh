@@ -84,6 +84,33 @@ compare_docs() { # compare_docs <doc-a> <doc-b> → 0 pass/skip, 1 block, 2 degr
   if [ ! -f "$da" ]; then fail_open_skip "$da" "doc 不存在"; return 0; fi
   if [ ! -f "$db" ]; then fail_open_skip "$db" "doc 不存在"; return 0; fi
 
+  # V5.0.1 (Win 反馈, 2026-08-24): 已完成任务文档豁免——写集全部已在 origin/main 的任务
+  # 视为已交付，后续任务继承/修订其写集是串行演进，不是并行冲突（D481 已合并、
+  # D483 修订其 auth.integration.test.ts 被 --scan-today 误判重叠的实证）。
+  # origin/main 不可解析 → 不豁免（fail-closed，保持原判定）。
+  if git -C "$REPO_DIR" rev-parse --verify -q origin/main >/dev/null 2>&1; then
+    local _doc _files _f _missing
+    for _doc in "$da" "$db"; do
+      _files=$($PYBIN "$SCRIPT_DIR/devdoc_writeset.py" --extract "$_doc" 2>/dev/null | "$PYBIN" -c "import json,sys
+try:
+  d=json.load(sys.stdin)
+  print(chr(10).join(d.get('entries',[])))
+except Exception:
+  pass" 2>/dev/null || true)
+      [ -z "$_files" ] && continue
+      _missing=0
+      while IFS= read -r _f || [ -n "$_f" ]; do
+        [ -z "$_f" ] && continue
+        git -C "$REPO_DIR" cat-file -e "origin/main:$_f" 2>/dev/null || { _missing=1; break; }
+      done <<< "$_files"
+      if [ "$_missing" -eq 0 ]; then
+        echo "  ⏭ 跳过已完成任务文档（写集全部已在 origin/main）: $_doc" >&2
+        emit_json "skip" "$da" "$db" "[]" "已完成任务文档（写集已在 origin/main）"
+        return 0
+      fi
+    done
+  fi
+
   local result py_exit st reason
   result=$($PYBIN "$SCRIPT_DIR/devdoc_writeset.py" --overlap-a "$da" --overlap-b "$db" 2>&1)
   py_exit=$?
