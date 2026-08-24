@@ -234,6 +234,17 @@ describe('jwtAuthMiddleware', () => {
     expect(nextCalled).toBe(true);
   });
 
+  // D483: 匿名注册可达——register 与 login 并列入白名单（修复前此用例红：无 Authorization 头被 401 拦截）
+  it('whitelisted path /api/auth/register → pass through', () => {
+    const req = { path: '/api/auth/register', headers: {} } as Request;
+    const res = { statusCode: undefined, status() { return this; }, json() { return this; } } as unknown as Response & { statusCode?: number };
+    let nextCalled = false;
+
+    jwtAuthMiddleware(req, res, () => { nextCalled = true; });
+
+    expect(nextCalled).toBe(true);
+  });
+
   it('无 Authorization header → 401', () => {
     const req = { path: '/api/workspaces', headers: {} } as Request;
     const res: Record<string, unknown> & { statusCode?: number; body?: unknown } = {};
