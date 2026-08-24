@@ -660,3 +660,6 @@ Binary file .claude/bypass.log matches
 2026-08-25T02:50:09+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=e25df38ef2623a284bbfcc5b0c873c9196d120ed
 2026-08-25T02:58:03+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/d521-submit-chain
 2026-08-25T02:58:03+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=d93391e229249aeb4624c9c7aa13de6326d42b67
+2026-08-25T03:00:20+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D319-test | AGENT=test
+2026-08-25T03:00:20+08:00 | COMMITTED | pre-commit DEGRADED-PASS | TASK_ID=D319-test | AGENT=test | HASH=2b79f8db96a955d661e704dca9914ea540441895
+2026-08-25T03:01:16+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=6c3117f719fc9f1f9bec005bee091f512656e1f7
