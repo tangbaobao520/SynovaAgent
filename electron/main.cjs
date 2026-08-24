@@ -119,9 +119,11 @@ async function createWindow() {
 }
 
 app.whenReady().then(async () => {
-  // D504 服务自启（L1-4 开窗即用——用户不碰命令行）:
-  //   dev: npx tsx src/index.ts; prod: node dist/index.js + SYNOVA_DB_PATH=userData（L1-7 升级不丢数据）
+  // D518: 模式显式化——启动第一行日志即证据（dev/prod 判定唯一事实源 app.isPackaged）
   const isProdBoot = app.isPackaged;
+  console.log('[electron] boot mode=' + (isProdBoot ? 'prod' : 'dev') + ' server=' + SERVER_URL);
+  // D504 服务自启（L1-4 开窗即用——用户不碰命令行）:
+  //   dev: npx tsx src/index.ts; prod: node dist/src/index.js + SYNOVA_DB_PATH=userData（L1-7 升级不丢数据; F4 注释同步——磁盘事实 dist/src/index.js）
   try {
     backendHandle = await ensureBackend({
       serverUrl: SERVER_URL,
