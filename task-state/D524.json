@@ -1,0 +1,16 @@
+{
+  "task_id": "D524",
+  "title": "D518 dev doc prod 契约返修（M7 漂移，K3 C2）",
+  "status": "claimed",
+  "spec": {
+    "doc": "docs/synova/coordination/派单-D524-devdoc-fix-20260825.md",
+    "source": "K3 切片 A 审计 P1-1 (C2)",
+    "report": "docs/synova/audit-reports/2026-08-25-D517-D519.md"
+  },
+  "impl": null,
+  "audit": null,
+  "fix_task_id": "D518",
+  "updated_at": "2026-08-25",
+  "updated_by": "alloc-task-id",
+  "slice": "L1-A"
+}
