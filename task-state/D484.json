@@ -1,0 +1,18 @@
+{
+  "task_id": "D484",
+  "title": "register 认证闭环 切片 B——企业邀请注册链路打通（D102 邀请令牌补全）",
+  "slice": "AUTH-B",
+  "status": "spec_done",
+  "risk": "medium",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-D484-enterprise-invite-slice-b-20260825.md",
+    "commit": "PENDING",
+    "by": "dev-doc",
+    "at": "2026-08-25"
+  },
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-25T00:00:00+08:00",
+  "updated_by": "dev-doc"
+}

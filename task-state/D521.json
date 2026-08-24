@@ -1,0 +1,17 @@
+{
+  "task_id": "D521",
+  "title": "控制塔提交链路收敛 — tag时机/bypass竞态/语义parser/CI诊断/push模拟（治本）",
+  "status": "spec_done",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D521-submit-chain-20260824.md",
+    "by": "dsh-cto",
+    "at": "2026-08-24"
+  },
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-24",
+  "updated_by": "dsh-cto",
+  "note": "综合 D520 时间复盘（执行方）+ Win 台账三登记 + CTO 全链路核实。治本：提交链路五病根收敛为一个自洽契约。",
+  "priority": "P0"
+}
