@@ -19,7 +19,7 @@ Agent，不是 ChatBot。驻扎企业，持续观测，主动发现，自动诊�
 代码按 L1-L5 架构分层，每层只与相邻层通信。L1 交互层不知道 L4 用什么数据库，L3 洞察层不知道 L5 数据存在哪。换底层存储，上层零改动。pre-commit 物理阻断跨层 import——L2→L4 的代码提交不进去。
 
 **横向解耦：11 个独立 Monorepo 包**
-五层内部拆为独立包：@synova/sog-core（本体图类型）、@synova/sentinel-engine（哨兵调度）、@synova/expert-platform（专家加载）、@synova/connector-registry（数据连接器）。每个包接口边界明确，拆卸一个不影响其余 19 个。核心包已落地运行；已存在的功能规划从 src/ 迁移到独立包；未来新增须遵循此结构。
+五层内部划分为独立包：@synova/sog-core（本体图类型）、@synova/sentinel-engine（哨兵调度）、@synova/expert-platform（专家加载）、@synova/connector-registry（数据连接器）。每个包接口边界明确，拆卸一个不影响其余 19 个。核心包已落地运行；已存在的功能规划从 src/ 移到独立包；未来新增须遵循此结构。
 
 **扩展解耦：文件驱动，不改代码**
 新增能力靠文件，不靠改代码：
@@ -45,7 +45,7 @@ L1 入口: POST /api/diagnosis/consult (GA诊断) / Cron→Sentinel.check() (哨
 L0 进化: evolution/ 两路反馈→候选池→确认/执行验证→写入知识库
 文件化扩展: expert/ knowledge/shared/ theory/ skills/ — 新增=加文件,不改代码
 数据安全: L0公开摘要→L1聚合信号→L2脱敏证据→L3原始数据(仅客户内Agent可见,GA不可见)
-引擎: packages/engine-core/ (Novis遗产,逐步迁移)。禁止src/新增engine-core引用(铁律46)。
+引擎: packages/engine-core/ (Novis遗产,逐步搬迁)。禁止src/新增engine-core引用(铁律46)。
 安全: security/ (PIIScrubber, DataBoundary)
 LLM: providers/ (DeepSeek, OpenAI, Gateway)
 
@@ -53,7 +53,7 @@ LLM: providers/ (DeepSeek, OpenAI, Gateway)
 
 ### a) 项目拼图
 - [x] 纵向（改 L1-L5 代码/架构）——L1 交互层认证中间件（src/middleware/auth.ts isWhitelisted）+ L1 测试。
-- [ ] 横向（迁移到独立包 / 新建包）
+- [ ] 横向（搬迁到独立包 / 新建包）
 - [ ] 扩展（文件驱动，不改 TypeScript）
 
 系统: 基础设施/认证（JWT 认证闭环）。触及 L1（middleware + routes 挂载层）。
