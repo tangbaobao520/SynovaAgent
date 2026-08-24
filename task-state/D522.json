@@ -1,12 +1,17 @@
 {
   "task_id": "D522",
   "title": "L1-B 服务自启开窗即用(1-4)",
-  "status": "claimed",
+  "status": "spec_done",
   "slice": "L1-B",
-  "spec": null,
+  "spec": {
+    "doc": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D522-service-boot-20260825.md",
+    "branch": "docs/slice-b-specs",
+    "commit": "见分支 HEAD（docs/slice-b-specs）",
+    "gatekeeper": "exit 0 (C1-C6 ALL PASS, 2026-08-25)"
+  },
   "impl": null,
   "audit": null,
-  "updated_at": "2026-08-24",
-  "updated_by": "cto",
+  "updated_at": "2026-08-25",
+  "updated_by": "dsh-dev-doc",
   "priority": "P1"
 }
