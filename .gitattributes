@@ -18,3 +18,8 @@
 #       冲突（Win 实测 6+ 次）。与 bypass.log（D457）同型：每行含唯一符号+行号不会重复，
 #       合并 = 取并集。union 驱动复用 merge.union.driver（install-hooks.sh 已注册）。
 .claude/reference-map.md merge=union
+
+# D520/任务2: bash/python 脚本强制 LF——Windows runner autocrlf=true 会把 .sh 检出成
+# CRLF 导致 bash 全线 ": command not found"（双平台 CI 必备）
+*.sh text eol=lf
+*.py text eol=lf

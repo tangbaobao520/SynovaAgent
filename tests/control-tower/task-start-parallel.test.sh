@@ -53,6 +53,21 @@ OUT2=$(cd "$SB" && bash "$SB/scripts/workflow/task-start.sh" "单人测试任务
 # ── 场景C: registry 输出不可解析 → 显式降级不静默 ──
 grep -q "session-registry 不可读" "$TS" && ok "降级: 不可读时显式提示代码存在" || no "降级提示缺失"
 
+# ── D520/任务1: Windows CRLF 回归用例 ──
+# 病根：python 输出经 Windows 管道带 \r → [[ "3\r" -gt 0 ]] 算术错误 → 拦截空转。
+# 断言清洗逻辑真实存在且语义正确（模拟 _PAR_N="3\r" / "0"）。
+echo ""
+echo "── D520: CRLF 回归用例 ──"
+TS_SRC="$(grep -cF "tr -d '\r\n'" "$TS")"
+[ "$TS_SRC" -ge 1 ] && ok "接线: tr -d '\\r\\n' 清洗存在（D520 任务1）" || no "缺 \\r 清洗（Win 下拦截空转）"
+grep -qF '_PAR_N//' "$TS" && grep -qF '//[^0-9]/' "$TS" && ok "接线: 二次数字清洗 \${_PAR_N//[^0-9]/} 存在" || no "缺二次数字清洗"
+# 行为: 模拟 CRLF 残留值过清洗逻辑（与脚本同型双步清洗）
+sim_clean() { printf '%s' "$1" | tr -d '\r\n'; }
+V=$(sim_clean "$(printf '3\r')"); V="${V//[^0-9]/}"
+[ "$V" = "3" ] && ok "行为: \"3\\r\" 清洗后 = 3（算术可用，拦截可达）" || no "清洗失败: 得到 '$V'"
+V0=$(sim_clean "0"); V0="${V0//[^0-9]/}"
+[ "$V0" = "0" ] && ok "行为: \"0\" 保持 0（单人语义保留，不误拦）" || no "单人语义被破坏: '$V0'"
+
 echo ""
 echo "结果: $PASS 通过, $FAIL 失败"
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1
