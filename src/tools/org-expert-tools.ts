@@ -40,7 +40,16 @@ export const buildOrgGraphTool: ToolDefinition = {
         orgId, dataSource, status: 'manual_mode',
         nodesCreated: 0, edgesCreated: 0,
         message: '手动模式——请通过 Phase 0 访谈提供组织信息，或输入团队成员姓名和部门。',
-        nextStep: '使用 POST /api/ontology/ingest 上传组织结构文档，或授权飞书/钉钉/企微连接器自动拉取。',
+        nextStep: '使用 POST /api/ontology/ingest 上传组织结构文档，或接入飞书连接器自动拉取（钉钉/企微连接器待接入）。',
+      };
+    }
+
+    // D482: 连接器声称对齐 — 仅 feishu 真实接入（src/connectors/index.ts 只 export FeishuConnector）。
+    // dingtalk/wecom 未实现，降级为待接入提示而非虚假「已就绪」（D357 创始人裁决 B：直连推迟部署后）。
+    if (dataSource !== 'feishu') {
+      return {
+        orgId, dataSource, status: 'pending',
+        message: '钉钉/企微连接器待接入（当前仅飞书可用），请通过手动模式或 POST /api/ontology/ingest 上传组织数据。',
       };
     }
 
