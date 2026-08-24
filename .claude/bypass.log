@@ -649,3 +649,5 @@ Binary file .claude/bypass.log matches
 2026-08-25T00:10:00+08:00 | COMMITTED | pre-commit PASS (D484 dev doc 提交补记, D331 对账) | TASK_ID=D484 | AGENT=Synova-Win | HASH=334787bd0c4e22facf102c2296648b351d354b24
 
 2026-08-25T00:30:00+08:00 | COMMITTED | pre-commit PASS (D484 补充补记, D331 对账) | TASK_ID=D484 | AGENT=Synova-Win | HASH=21bf64e25d9efe48e52215806ee3eb2a14ba9af1
+2026-08-25T03:21:35+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D522 | AGENT=dsh | HASH=9d394ad736093fe43794c87e96fbcb6a797150c5
+2026-08-25T03:13:41+08:00 | COMMITTED | pre-commit PASS (D522-D523 spec 提交补记, D331 对账; gatekeeper exit 0 见 task-state) | TASK_ID=D522 | AGENT=dsh-dev-doc | HASH=5110fb2129938644ed8dfce0ff9e7ba1051ac9cf
