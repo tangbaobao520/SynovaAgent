@@ -38,9 +38,8 @@ if [[ "${SYNO_SKIP_PARALLEL_GUARD:-0}" != "1" ]]; then
         if [[ -z "$_PAR_ACT" ]]; then
           echo "⚠ session-registry 不可读 — 并行检查降级放行（铁律 11，不静默）"
         else
-          _PAR_N="$(echo "$_PAR_ACT" | python3 -c "import json,sys;print(len(json.load(sys.stdin).get('sessions',[])))" 2>/dev/null | tr -d '
-
-' || echo "")"  # swallow-ok: 解析失败 → 空 → 跳过拦截（单人语义）
+          _PAR_N="$(echo "$_PAR_ACT" | python3 -c "import json,sys;print(len(json.load(sys.stdin).get('sessions',[])))" 2>/dev/null | tr -d '\r\n' || echo "")"  # swallow-ok: 解析失败 → 空 → 跳过拦截（单人语义）
+          _PAR_N="${_PAR_N//[^0-9]/}"  # D520/任务1: 二次清洗——只留数字，杜绝任何隐藏字符
           if [[ -n "$_PAR_N" && "$_PAR_N" -gt 0 ]]; then
             echo "❌ 主树有未提交改动，且 registry 有 ${_PAR_N} 个活跃 session — 并行互踩风险（Codex P1）"
             echo "   请在专属 worktree 开工:"

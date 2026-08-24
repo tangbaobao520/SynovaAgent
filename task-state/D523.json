@@ -1,0 +1,12 @@
+{
+  "task_id": "D523",
+  "title": "L1-B Windows 双击安装启动出窗(1-2)",
+  "status": "claimed",
+  "slice": "L1-B",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "updated_at": "2026-08-24",
+  "updated_by": "cto",
+  "priority": "P1"
+}
