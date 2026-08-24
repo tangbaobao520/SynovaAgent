@@ -230,8 +230,9 @@ describe('ensureBackend — env 与命令契约（DS8 双模式）', () => {
     expect(dev.bin).toBe('npx');
     expect(dev.args).toEqual(['tsx', 'src/index.ts']);
     const prod = buildCommand('prod');
-    expect(prod.bin).toBe('node');
-    expect(prod.args).toEqual(['dist/src/index.js']); // tsc 实际产物入口（磁盘事实）
+    // D518 prod 运行时: 包内 Electron 二进制（node 模式）跑 esbuild 单文件 bundle
+    expect(prod.bin).toBe(process.execPath);
+    expect(prod.args).toEqual(['dist/backend.mjs']);
   });
 
   // ═══ D518 新增: F4 注释漂移回归（K3 D504 审计 F4——注释与磁盘事实不一致）═══

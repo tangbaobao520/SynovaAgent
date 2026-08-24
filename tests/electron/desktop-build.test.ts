@@ -117,9 +117,18 @@ describe('D517 打包配置 — mac zip target + 构建链契约', () => {
   it('构建链三步契约写入 build-synova.cjs 头注释（顺序错=空包）', () => {
     const cfg = read('build-synova.cjs');
     expect(cfg).toMatch(/构建链契约/);
-    expect(cfg).toMatch(/npm run build/);
+    expect(cfg).toMatch(/npm run build:backend/);
     expect(cfg).toMatch(/electron-renderer/);
     expect(cfg).toMatch(/顺序不可颠倒/);
+  });
+
+  it('extraResources 携带后端 bundle 与原生模块 externals（D518 prod 运行时）', () => {
+    const cfg = read('build-synova.cjs');
+    expect(cfg).toMatch(/backend\.mjs/);
+    expect(cfg).toMatch(/better-sqlite3\/\*\*/);
+    expect(cfg).toMatch(/bcrypt\/\*\*/);
+    // node_modules→node_modules 映射存在（externals 落包）
+    expect(cfg).toMatch(/from:\s*'node_modules',\s*to:\s*'node_modules'/);
   });
 });
 
@@ -136,7 +145,8 @@ describe('D517 CI — desktop-build workflow 契约', () => {
 
   it('构建链三步顺序 + 产物断言 + upload-artifact（产物缺失即红）', () => {
     const wf = fs.readFileSync(wfPath, 'utf-8');
-    expect(wf).toMatch(/npm ci[\s\S]*?npm run build/);
+    expect(wf).toMatch(/npm run build:backend/);
+    expect(wf).toMatch(/test -f dist\/backend\.mjs/);
     expect(wf).toMatch(/working-directory: electron-renderer/);
     expect(wf).toMatch(/npx electron-builder --config build-synova\.cjs/);
     expect(wf).toMatch(/upload-artifact@v4/);
@@ -166,7 +176,9 @@ describe('D517 产物物理断言组（release/ 存在时生效；未构建环�
     const cands = fs.readdirSync(releaseDir)
       .filter((d) => /^mac(-\w+)?$/.test(d))
       .map((d) => path.join(releaseDir, d, 'SynovaAgent.app'))
-      .filter((d) => fs.existsSync(d));
+      .filter((d) => fs.existsSync(d))
+      // 多 arch 产物目录并存时取最新（历史构建残留的残缺目录不干扰断言）
+      .sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs);
     if (cands.length === 0) throw new Error('release/ 存在但未找到 mac*/SynovaAgent.app——疑似空打包');
     return cands[0];
   };
@@ -179,11 +191,14 @@ describe('D517 产物物理断言组（release/ 存在时生效；未构建环�
     expect(Number(total)).toBeGreaterThan(100);
   });
 
-  maybe('--dir 产物含后端与 renderer 运行资产（extraResources 真实落包，非空包）', () => {
+  maybe('--dir 产物含后端 bundle 与 renderer 运行资产（extraResources 真实落包，非空包）', () => {
     const res = path.join(findMacAppDir(), 'Contents', 'Resources');
-    expect(fs.existsSync(path.join(res, 'dist', 'src', 'index.js'))).toBe(true);
+    expect(fs.existsSync(path.join(res, 'dist', 'backend.mjs'))).toBe(true);
     expect(fs.existsSync(path.join(res, 'renderer', 'index.html'))).toBe(true);
     expect(fs.existsSync(path.join(res, 'extensions'))).toBe(true);
+    // 原生模块 externals 落包（D518 prod 运行时）
+    expect(fs.existsSync(path.join(res, 'node_modules', 'better-sqlite3'))).toBe(true);
+    expect(fs.existsSync(path.join(res, 'node_modules', 'bcrypt'))).toBe(true);
   });
 
   maybe('full 构建产物 dmg/zip 存在且 zip >10MB（<10MB=空包红，L2c 边界）', () => {

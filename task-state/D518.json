@@ -18,8 +18,9 @@
       "DS2_tests": "npx vitest run tests/electron/ → 3 files 36 passed (36)（backend-spawn 10 含新增 F4 漂移零容忍回归 + boot mode 日志回归）",
       "DS3_f4": "grep -n 'dist/index.js' electron/*.cjs → 零结果（backend-spawn.cjs 头 JSDoc L12 + main.cjs L123 + 说明句改写，全部为 dist/src/index.js）；F4 机器回归用例锁死（lookbehind 正则零容忍）",
       "DS4_runbook": "docs/synova/runbooks/desktop-dev-prod.md: prod 链路图（双击→whenReady→boot 日志→ensureBackend spawn node dist/src/index.js+SYNOVA_DB_PATH→loadFile renderer→首诊页）+ dev 三命令标注仅开发 + SERVER_URL 收敛说明",
-      "DS5_prod": "与 D519 实测合并执行（spec §10 明示），evidence 共享 mac-install-verify 四断言",
-      "缺陷修复": "spawnOnce stdio: 无 logFile 时 pipe 无读者→64KB 缓冲写满→子进程 stdout 阻塞→探活永不转健康（实测 4×60s 窗口全超时，直跑 25s 健康）。修复=缺省 logFile 时 stdio inherit。契约 JSDoc 语义不变，brief Q2 已补记"
+      "DS5_prod": "已实测 ✅（提前于 D519 完成）: 打包 app（--dir 产物）启动 → 首行日志 '[electron] boot mode=prod server=http://localhost:18790' → spawn 包内 Electron(node 模式) 跑 dist/backend.mjs → curl localhost:18790/api/healthz HTTP 200（响应体业务级 degraded=首次未初始化/无 LLM key，HTTP 200=服务健康）→ 后端日志落 ~/Library/Application Support/synova-agent/logs/backend.log",
+      "缺陷修复": "spawnOnce stdio: 无 logFile 时 pipe 无读者→64KB 缓冲写满→子进程 stdout 阻塞→探活永不转健康（实测 4×60s 窗口全超时，直跑 25s 健康）。修复=缺省 logFile 时 stdio inherit。契约 JSDoc 语义不变，brief Q2 已补记",
+      "prod运行时修复": "D518 补充提交: ①裸 node 跑 dist 物理不可行三重阻塞（ESM 无扩展名 import ERR_MODULE_NOT_FOUND / asar 内依赖不可达 / 原生模块 Electron ABI）②FDE 无 Node 前提 ③定案=esbuild 单文件 bundle dist/backend.mjs + 包内 Electron ELECTRON_RUN_AS_NODE=1 执行 + extraResources 原生模块 externals。实测闭环。"
     },
     "notes": "DSH 宿主环境 ELECTRON_RUN_AS_NODE=1 会使 electron 以纯 node 启动（require('electron') 返回路径字符串）——runbook 未记（仅本机 agent 环境特殊），K3 复跑时须 env -u。"
   },

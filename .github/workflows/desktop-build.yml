@@ -31,12 +31,12 @@ jobs:
         with:
           node-version: 20
 
-      # 构建链步骤1: 根目录 tsc → dist/src/index.js（后端入口）
-      - name: Build backend (tsc)
+      # 构建链步骤1: 后端单文件 bundle → dist/backend.mjs（prod 入口；tsc 独立门禁不在打包链）
+      - name: Build backend (esbuild bundle)
         run: |
           npm ci
-          npm run build
-          test -f dist/src/index.js
+          npm run build:backend
+          test -f dist/backend.mjs
 
       # 构建链步骤2: renderer vite → dist/renderer（首诊 UI）
       - name: Build renderer (vite)

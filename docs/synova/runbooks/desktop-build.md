@@ -7,9 +7,12 @@
 
 | 步骤 | 命令 | 产物 | 说明 |
 |---|---|---|---|
-| 1 | 根目录 `npm ci && npm run build` | `dist/src/index.js` | tsc 编译后端（prod spawn 入口） |
+| 1 | 根目录 `npm ci && npm run build:backend` | `dist/backend.mjs` | esbuild 单文件后端 bundle（prod 入口） |
 | 2 | `cd electron-renderer && npm ci && npm run build` | `dist/renderer/` | vite 构建首诊 UI（React） |
 | 3 | `npx electron-builder --config build-synova.cjs [--dir\|--mac\|--win]` | `release/` | electron-builder 打包 |
+
+> tsc 不在打包链内：`dist/src/` 在 prod 链路无消费者（prod 入口=backend.mjs），tsc 全量类型
+> 门禁独立存在（`npm run lint`），其 main 存量错误由 ci.yml 白名单管理，非本切片债务。
 
 **为什么顺序不能错**：`extraResources` 三条映射引用步骤 1/2 的产物
 （`dist→dist(!renderer)`、`dist/renderer→renderer`、`extensions→extensions`）。
