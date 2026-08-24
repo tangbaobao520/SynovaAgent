@@ -1,13 +1,31 @@
 {
   "task_id": "D520",
   "title": "控制塔跨平台适配收口（CRLF/python3/fastlane/双平台CI/checklist）+ 版本纪律",
-  "status": "spec_done",
+  "status": "impl_done",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D520-platform-adapters-20260824.md",
     "by": "dsh-cto",
     "at": "2026-08-24"
   },
-  "impl": null,
+  "impl": {
+    "by": "dsh-cto",
+    "at": "2026-08-24",
+    "branch": "feat/d520-platform",
+    "commit": null,
+    "files": [
+      "scripts/workflow/task-start.sh",
+      "scripts/pre-commit-check.sh",
+      "scripts/control-tower/PLATFORM-CHECKLIST.md",
+      ".github/workflows/ci.yml",
+      ".codex/control-tower/VERSION.md",
+      ".codex/control-tower/version.log",
+      "docs/synova/coordination/版本管理规范-控制塔.md",
+      "tests/control-tower/task-start-parallel.test.sh",
+      "tests/control-tower/platform-checklist.test.sh",
+      "memory/notes/implemented/2026-08-24-d520-platform-adapters.md"
+    ],
+    "note": "附带 P0: 重建被 d3e63e8f 误删的 pre-commit 组 6.5-13 + verdict（保留 SYNO_CI 演化）"
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-08-24",

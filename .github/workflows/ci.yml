@@ -106,14 +106,20 @@ jobs:
   
 
   control-tower-tests:
-    name: Control Tower Gate Tests (U7c 兜底)
-    runs-on: ubuntu-latest
+    name: Control Tower Gate Tests (${{ matrix.os }})
+    # D520/任务2: 双平台矩阵——平台问题（CRLF/python3/路径）不再等 Win 实测暴露。
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - name: Run hermetic control-tower gate tests
-        # 只跑 mktemp/注入缝密封的 5 个门禁核心测试（U2/U4/U5a/U5c/U7）。
-        # 其余 29 个测试依赖 git 历史/运行时数据(.codex/task-state)，非密封，
-        # 全量密封化是单独立项（K3 P2-4 测试密封性）。此 job 是"门禁坏了能抓到"的 canary。
+        shell: bash
+        # 密封测试扩容（D520）：原 5 个（U2/U4/U5a/U5c/U7）+ D515/D520 新增的
+        # mktemp/注入缝密封测试。其余测试依赖 git 历史/运行时数据，非密封，
+        # 全量密封化是单独立项（K3 P2-4）。此 job 是"门禁坏了能抓到"的 canary。
         run: |
           FAIL=0
           for t in \
@@ -121,7 +127,12 @@ jobs:
             tests/control-tower/verify-claims-table.test.sh \
             tests/control-tower/write-set-check.test.sh \
             tests/control-tower/post-commit-marker.test.sh \
-            tests/control-tower/ct-test-gate.test.sh; do
+            tests/control-tower/ct-test-gate.test.sh \
+            tests/control-tower/task-start-parallel.test.sh \
+            tests/control-tower/fastlane-bypass-only.test.sh \
+            tests/control-tower/gate-stats.test.sh \
+            tests/control-tower/q2-error-locating.test.sh \
+            tests/control-tower/platform-checklist.test.sh; do
             echo "── $t"
             bash "$t" || { echo "FAIL: $t"; FAIL=1; }
           done

@@ -11,6 +11,16 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V5.0.1 (2026-08-24) — D520 跨平台适配收口（PATCH）
+
+- **任务1 task-start CRLF 修复（P0）**: 并行拦截 `_PAR_N` 双步清洗（`tr -d '\r\n'` + `//[^0-9]/`）——修 Win 下 `[[ "3\r" -gt 0 ]]` 算术错误致并行隔离空转（08-16 起 3 次复发 P1 病根）；同时发现并修复 main 合并事故把 `tr -d '\n\r'` mangle 成字面双 LF。pre-commit `_ACT_N` 同型加固。
+- **任务2 双平台 CI**: control-tower-tests job 加 `os: [ubuntu-latest, windows-latest]` 矩阵（`shell: bash`）；密封测试 5 → 10（+task-start-parallel/fastlane-bypass-only/gate-stats/q2-error-locating/platform-checklist）。
+- **任务3 PLATFORM-CHECKLIST.md**: 8 条平台差异清单（PYBIN/CRLF/quotepath/UTF-8/date/mktemp/grep -P/timeout）+ pre-commit 软检查接线（新控制塔脚本含裸 python3/date +%s/date -v/grep -P → 点名 checklist；SYNO_CI=1 转硬）。
+- **附带 P0 修复（冒烟终验发现）**: d3e63e8f"D516 去重 690 行"误删 pre-commit 组 6.5-13 + 结果判定（G12d/G13 质量根特例在 main 消失、脚本无 exit 静默 fail-open）。本次自 8cdf9957 完整版重建：保留 SYNO_CI strict 演化 + 恢复全部组与 verdict + 消除三重定义（D515 补丁重放瑕疵）。
+- **任务4 API 禁 merge 纪律（M15）**: 版本管理规范新增 §六——API 只允许 push 传输、禁 merge（D509/D516 两次数据丢失实证）+ 树写入后冒烟终验清单。
+- **测试**: task-start-parallel（+CRLF 回归 4 例，12/12）/ platform-checklist（新，14/14）/ ci-strict-mode 7/7 保持绿。
+- **作者**: dsh-cto（并行 CTO session，spec 执行方）
+
 ## V5.0.0 (2026-08-24) — D515 控制塔减负重构（三批 13 项，MAJOR）
 
 > 门禁体系收缩性重构：提交端硬阻断收敛到 4 道质量根 + 其余软提示（CI Iron Laws 为权威）+ 命中统计。
