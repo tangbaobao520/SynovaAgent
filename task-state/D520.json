@@ -11,7 +11,7 @@
     "by": "dsh-cto",
     "at": "2026-08-24",
     "branch": "feat/d520-platform",
-    "commit": "b8e1eb20",
+    "commit": "248e290f",
     "files": [
       "scripts/workflow/task-start.sh",
       "scripts/pre-commit-check.sh",
@@ -24,7 +24,7 @@
       "tests/control-tower/platform-checklist.test.sh",
       "memory/notes/implemented/2026-08-24-d520-platform-adapters.md"
     ],
-    "note": "附带 P0: 重建被 d3e63e8f 误删的 pre-commit 组 6.5-13 + verdict（保留 SYNO_CI 演化）"
+    "note": "V5.0.2（V5.0.1 被 Win 线 verify-parallel 豁免占用，顺延）"
   },
   "audit": null,
   "fix_task_id": null,
