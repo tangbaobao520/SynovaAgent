@@ -1,0 +1,17 @@
+{
+  "task_id": "D520",
+  "title": "控制塔跨平台适配收口（CRLF/python3/fastlane/双平台CI/checklist）+ 版本纪律",
+  "status": "spec_done",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D520-platform-adapters-20260824.md",
+    "by": "dsh-cto",
+    "at": "2026-08-24"
+  },
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-24",
+  "updated_by": "dsh-cto",
+  "note": "Codex 跨平台建议（Win 侧实测 CRLF bug P0 + 双平台 CI 缺失 + 适配层未收口）。创始人批准执行。并行 CTO session 认领。",
+  "priority": "P0"
+}

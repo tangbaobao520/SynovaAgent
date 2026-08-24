@@ -16,8 +16,10 @@
 const { app, BrowserWindow, Tray, Menu, Notification } = require('electron');
 const path = require('path');
 const http = require('http');
+const { ensureBackend } = require('./backend-spawn.cjs');
 
 let mainWindow, tray;
+let backendHandle = null; // D504: ensureBackend 返回句柄（stop 回收用）
 let isQuitting = false;
 const config = require('./config.json');
 const SERVER_URL = config.serverUrl || 'http://localhost:18790';
@@ -27,9 +29,9 @@ const POLL_INTERVAL = config.pollInterval || 300000; // 5 min
  * 检测 Server 是否可达。
  * GET /api/healthz，5 秒超时。
  */
-function checkServer(url) {
+function checkServer(url, healthPath = '/api/healthz') {
   return new Promise((resolve) => {
-    const req = http.get(`${url}/api/healthz`, { timeout: 5000 }, (res) => {
+    const req = http.get(`${url}${healthPath}`, { timeout: 5000 }, (res) => {
       resolve(res.statusCode === 200);
     });
     req.on('error', () => resolve(false));
@@ -88,12 +90,24 @@ async function createWindow() {
     console.warn('[electron] icon 设置失败 — 跳过 (degraded)');
   }
 
-  // Server 可达性检测
-  const online = await checkServer(SERVER_URL);
-  if (online) {
-    mainWindow.loadURL(`${SERVER_URL}/app/login.html`);
-  } else {
+  // D504 双引导收敛（L1-5 单一入口）:
+  //   prod（双击安装包, app.isPackaged）→ 加载打包内 renderer 产物（React 对话 UI + consult 首诊链路）
+  //   dev → 优先 vite dev server（renderer 热更新），不可达则回退服务器登录页
+  const isProd = app.isPackaged;
+  const backendDegraded = backendHandle && backendHandle.degraded;
+  if (isProd) {
+    mainWindow.loadFile(path.join(process.resourcesPath, 'renderer', 'index.html'));
+  } else if (await checkServer('http://localhost:5173', '/')) {
+    // dev: renderer vite dev server 在跑（npm run dev 于 electron-renderer/）→ 热更新 UI
+    mainWindow.loadURL('http://localhost:5173');
+  } else if (backendDegraded || !(await checkServer(SERVER_URL))) {
+    // 服务自启降级或仍不可达 → 离线页 + degraded 提示（铁律 11/24：不静默）
+    if (backendDegraded) {
+      console.error('[electron] 后端自启降级 —', backendHandle.error || '未知原因');
+    }
     mainWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(getOfflineHTML(SERVER_URL))}`);
+  } else {
+    mainWindow.loadURL(`${SERVER_URL}/app/login.html`);
   }
 
   mainWindow.on('close', (e) => {
@@ -105,6 +119,26 @@ async function createWindow() {
 }
 
 app.whenReady().then(async () => {
+  // D504 服务自启（L1-4 开窗即用——用户不碰命令行）:
+  //   dev: npx tsx src/index.ts; prod: node dist/index.js + SYNOVA_DB_PATH=userData（L1-7 升级不丢数据）
+  const isProdBoot = app.isPackaged;
+  try {
+    backendHandle = await ensureBackend({
+      serverUrl: SERVER_URL,
+      cwd: isProdBoot ? process.resourcesPath : process.cwd(),
+      mode: isProdBoot ? 'prod' : 'dev',
+      dbPath: isProdBoot ? path.join(app.getPath('userData'), 'data', 'synova.db') : undefined,
+      logFile: isProdBoot ? path.join(app.getPath('userData'), 'logs', 'backend.log') : undefined,
+    });
+    if (backendHandle.degraded) {
+      console.error('[electron] 后端自启 degraded —', backendHandle.error || '未知原因');
+    }
+  } catch (err) {
+    // ensureBackend 契约不抛——此处为防御性兜底（铁律 24：log.error 不静默）
+    console.error('[electron] ensureBackend 异常（防御性兜底）—', err && err.message);
+    backendHandle = { started: false, degraded: true, error: String(err && err.message) };
+  }
+
   await createWindow();
 
   // ── 系统托盘 (try/catch 降级) ──
@@ -149,5 +183,11 @@ async function checkP0Alerts() {
   }
 }
 
-app.on('before-quit', () => { isQuitting = true; });
+app.on('before-quit', () => {
+  isQuitting = true;
+  // D504: 退出回收后端子进程（生命周期闭环，无孤儿）
+  try { backendHandle && backendHandle.stop && backendHandle.stop(); } catch (e) {
+    console.warn('[electron] backend stop 失败 —', e.message);
+  }
+});
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });

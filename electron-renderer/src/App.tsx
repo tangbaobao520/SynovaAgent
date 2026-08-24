@@ -15,6 +15,7 @@ import NotificationCenter from './components/NotificationCenter';
 import { useAppStore } from './stores/app-store';
 import { useKeyboard } from './hooks/useKeyboard';
 import { isElectron, getAppVersion, updateTrayState } from './ipc/bridge';
+import { getApiBase } from './lib/api';
 
 const App: React.FC = () => {
   const toggleLeftPanel = useAppStore((s) => s.toggleLeftPanel);
@@ -46,7 +47,7 @@ const App: React.FC = () => {
   useEffect(() => {
     const checkHealth = async () => {
       try {
-        const res = await fetch('/health');
+        const res = await fetch(`${getApiBase()}/health`);
         setOnlineStatus(res.ok ? 'connected' : 'disconnected');
       } catch { setOnlineStatus('disconnected'); }
     };
