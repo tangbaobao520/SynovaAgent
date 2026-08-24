@@ -628,3 +628,8 @@ Binary file .claude/bypass.log matches
 2026-08-24T07:37:00Z detected-bypass no-precommit-marker
 2026-08-24T15:37:44+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/d504-merge
 2026-08-24T15:41:02+08:00 | COMMITTED | pre-commit PASS（D451 补记） | TASK_ID=D504 | AGENT=dsh-cto | HASH=0da174e0e8b33eea9d9c2e0f38126dcc03a31904
+2026-08-24T16:28:49+08:00 | COMMITTED | pre-commit PASS (D520 历史整理补记, D331 对账, D451 一次性) | TASK_ID=D520 | AGENT=dsh-cto | HASH=5211729915b432518ffacb1f87760ae5143e9b8f
+2026-08-24T16:28:49+08:00 | COMMITTED | pre-commit PASS (D520 历史整理补记, D331 对账, D451 一次性) | TASK_ID=D520 | AGENT=dsh-cto | HASH=248e290ff7dbc81b21b2f4f670c8ce0276377bd6
+2026-08-24T16:28:49+08:00 | COMMITTED | pre-commit PASS (D520 历史整理补记, D331 对账, D451 一次性) | TASK_ID=D520 | AGENT=dsh-cto | HASH=af38ca15a1265131687254d5c3ec20c867202709
+2026-08-24T16:28:49+08:00 | COMMITTED | pre-commit PASS (D520 历史整理补记, D331 对账, D451 一次性) | TASK_ID=D520 | AGENT=dsh-cto | HASH=877d7c9db75df02c44673dd2380980d8738b8a32
+2026-08-24T16:28:49+08:00 | COMMITTED | pre-commit PASS (D520 历史整理补记, D331 对账, D451 一次性) | TASK_ID=D520 | AGENT=dsh-cto | HASH=b8e1eb20b2c54d409a70f7890010e244c93408f1
