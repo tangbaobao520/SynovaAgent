@@ -12,7 +12,7 @@ north-star:
   SYNOVA-IMPL-DSH-D519: L1-A Mac 安装包实测（验证点 1-3）
   状态: dev doc | 2026-08-24 | 优先级 P1 | slice: L1-A
   权威: 派单-L1切片A §D519（4 必答题）+ D510 审计遗留 DS11（founder-demo 补做）+ D510 F1（物理实测禁模拟）
-  依赖: D517（dmg 产物）+ D518（入口收敛）+ D504 合入 main（前置）
+  依赖: D517（dmg 产物）+ D518（入口收敛）；D504 已合入 main（ea89dee9）
   并行: 无（串行第三棒；scripts/desktop/ 新领地独占）
 -->
 
@@ -116,3 +116,14 @@ L1 交互层验证基建（不进运行时链路）。脚本只消费产物+HTTP
 - docs/synova/coordination/切片A总览-L1-D517-D519-20260824.md
 - .claude/PRODUCT-BRIEF.md（§二/§六）
 - AGENTS.md（铁律 0-2/4/24/35/47/48）
+
+## 12. 自检清单（dev-doc 侧，K3 可核）
+
+- [x] 派单 4 必答题逐条覆盖（①实测步骤脚本=写集 mac-install-verify.sh 八步 ②founder-demo checklist=写集+DS4 ③Win 侧明确不做=§6 ④双平台验收口径=DS6）
+- [x] 四断言全部物理命令（pgrep/osascript/curl/日志非空），脚本 exit 语义 0/1/2 契约化（铁律 47）
+- [x] scripts/desktop/ 不存在已实测（新领地无冲突）；healthz 端点 src/routes/healthz.ts:323 实测存在
+- [x] 清理回收+幂等（--keep-data/--dry-run）入 L2c 边界用例——防实测污染开发者本机
+- [x] evidence 不入库（.gitignore）+ 原文摘录进 task-state——大文件不进 git
+- [x] 写集 4 条目；不碰 electron/（D518 领地）、src/、scripts/audit/
+- [x] gatekeeper exit 0（C1-C6）
+- [x] 依赖声明: D517 产物 + D518 入口收敛

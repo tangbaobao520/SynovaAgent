@@ -5,14 +5,14 @@ north-star:
   模块终态: 唯一用户路径"双击装→开窗即用"（main.cjs 生产引导: ensureBackend 自起后端 + loadFile renderer）；npm run dev 降为显式开发模式
   对齐北星: PRODUCT-BRIEF §二（FDE 缺工具不缺命令行）+ §六 P0
   完成标准: 打包产物启动后 GET /api/healthz 200 且窗口加载 renderer（进程+日志物理证据）；dev 路径文档化；ensureBackend 在 main.cjs 有真实调用点（grep+运行双证）
-  当前进度: D504 已实现 dev/prod 双分支引导（main.cjs whenReady 集成 ensureBackend，**待合 main 前置**）；缺口=模式判定显式化、SERVER_URL 收敛说明、链路图、dev runbook、契约回归测试补强
+  当前进度: D504 已实现 dev/prod 双分支引导（main.cjs:126 whenReady 集成 ensureBackend，**已在 main，D504 审计 CP**）；缺口=模式判定显式化、SERVER_URL 收敛说明、链路图、dev runbook、契约回归测试补强
 ---
 
 <!--
   SYNOVA-IMPL-DSH-D518: L1-A 安装引导单一入口（验证点 1-5）
   状态: dev doc | 2026-08-24 | 优先级 P1 | slice: L1-A
   权威: 派单-L1切片A §D518（4 必答题）+ PRODUCT-BRIEF §二 + AGENTS.md 铁律 0-2/4/24/31
-  依赖: D504 合入 main（ensureBackend/main.cjs 集成）；D517（产物形态 resources/renderer + dist）
+  依赖: D504 已合入 main（ea89dee9，ensureBackend/main.cjs:126 集成）；D517（产物形态 resources/renderer + dist）
   并行: 无（串行第二棒；electron/main.cjs 本任务独占）
 -->
 
@@ -39,7 +39,7 @@ D504 已把双分支引导写进 main.cjs（dev: vite 5173 热更新→回退 SE
 **Q3 验收**: 入口=安装包双击（prod）/ `npm run electron:dev`（dev，文档标注）；处理=whenReady→ensureBackend→探活/spawn→createWindow 分支加载；结果=prod: 窗口加载 renderer + healthz 200（进程+日志证据）；dev: vite 5173 或登录页。
 **Q4 契约与测试**: 见 §7。
 
-## 4. Current State（2026-08-24 实测，D504 分支 5f08f82b，前置合入后即 main 现状）
+## 4. Current State（2026-08-24 实测，main ea89dee9——D504 已合入）
 
 - `electron/main.cjs`（D504 版）: whenReady 中 `ensureBackend({ serverUrl: SERVER_URL, cwd: isProdBoot ? process.resourcesPath : process.cwd(), mode: isProdBoot?'prod':'dev', dbPath: userData/data/synova.db, logFile: userData/logs/backend.log })`；degraded → console.error（不静默）；createWindow 分支: isProd→loadFile(resources/renderer/index.html)；dev→5173→SERVER_URL 登录页→离线页。
 - `electron/backend-spawn.cjs`（156 行）: 导出 ensureBackend/buildCommand/probeOnce；探活 GET /api/healthz（src/routes/healthz.ts:323 实测存在）；reused 语义=已有健康服务不重复 spawn（端口冲突安全网）；maxRestarts 3/10min；stop() SIGTERM 回收。
@@ -52,7 +52,7 @@ D504 已把双分支引导写进 main.cjs（dev: vite 5173 热更新→回退 SE
 ### 5.1 写集 (3 修改 + 1 新建)
 | 文件 | 操作 | 说明 |
 |------|:---:|------|
-| electron/main.cjs | 修改 | ①whenReady 起始加 `console.log('[electron] boot mode=' + (isProdBoot?'prod':'dev') + ' server=' + SERVER_URL)`（模式显式化，日志即证据）；②F4 注释同步: 注释中 `dist/index.js` → `dist/src/index.js`（与 backend-spawn buildCommand 磁盘事实一致）；③before-quit 挂 `backendHandle?.stop?.()`（若 D504 未挂则补，退出回收 WIRE） |
+| electron/main.cjs | 修改 | ①whenReady 起始加 `console.log('[electron] boot mode=' + (isProdBoot?'prod':'dev') + ' server=' + SERVER_URL)`（模式显式化，日志即证据）；②F4 注释同步: 注释中 `dist/index.js` → `dist/src/index.js`（与 backend-spawn buildCommand 磁盘事实一致）；③before-quit stop 回收**已在 main**（实测 electron/main.cjs:186-190）——本任务不改，仅 WIRE 回归断言（见 §8） |
 | electron/backend-spawn.cjs | 修改 | 仅注释修复 F4（L12 JSDoc、L62 附近注释 `dist/index.js`→`dist/src/index.js`）；逻辑零改动（K3 已审 CP 的契约不动） |
 | tests/electron/backend-spawn.test.ts | 修改 | 补 2 用例: ①prod 模式 buildCommand 返回 `node dist/src/index.js`（锁磁盘事实，防注释漂移回归）；②ensureBackend reused 路径再注入假健康服务（command 注入）断言 `{started:false,reused:true}`（端口冲突安全网回归） |
 | docs/synova/runbooks/desktop-dev-prod.md | 新建 | 双引导收敛声明: 用户唯一路径=安装包双击（链路图: 双击→main.cjs whenReady→ensureBackend(prod)探活/spawn node dist/src/index.js(SYNOVA_DB_PATH=userData)→loadFile resources/renderer/index.html→首诊页）；开发路径=`npm run dev`（后端 tsx）+ `cd electron-renderer && npm run dev`（vite 5173）+ `npm run electron:dev`（标注"仅开发"）；spawn vs 外连语义（本机 spawn 优先，reused 兜底已跑实例）；SERVER_URL 收敛说明（config.json 单源，prod 本机实例同端口） |
@@ -116,3 +116,13 @@ L1 交互层（Electron 主进程引导）。backend-spawn 经 HTTP /api/healthz
 - .claude/PRODUCT-BRIEF.md（§二/§六）
 - docs/synova/audit-reports/2026-08-23-D504-D505.md（F4 + 契约核验）
 - AGENTS.md（铁律 0-2/4/24/31/47/48）
+
+## 12. 自检清单（dev-doc 侧，K3 可核）
+
+- [x] 派单 4 必答题逐条覆盖（①双路径差异盘点=§4 ②收敛策略=Q1/Q2+写集① ③spawn 契约+WIRE=§4+§8+DS1 ④开窗即用链路图=写集 runbook+DS4）
+- [x] ensureBackend 被 main.cjs 真调用已实测（main.cjs:126，非凭文档推断——D381 接线纪律）
+- [x] before-quit stop 已实测在 main（:186-190）——写集表述改为"回归断言"，不虚列修改项
+- [x] F4 注释漂移定位精确（backend-spawn.cjs 注释 + main.cjs 注释，逻辑零改动——K3 CP 契约不碰）
+- [x] 写集 4 条目；不重写已审计代码；不碰 src/、GS-01
+- [x] gatekeeper exit 0（C1-C6）
+- [x] 依赖声明: D504 前置完成；D517 产物形态先行

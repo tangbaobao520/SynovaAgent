@@ -5,7 +5,7 @@
   "slice": "L1-A",
   "spec": {
     "doc": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D518-single-entry-20260824.md",
-    "commit": "pending-push",
+    "commit": "ad7d9b59 (docs/slice-a-specs，推送被 D331 孤儿 tag V5.0.1 门禁阻塞，待 CTO 仲裁)",
     "gatekeeper": "exit 0 (C1-C6 ALL PASS, 2026-08-24)"
   },
   "impl": null,

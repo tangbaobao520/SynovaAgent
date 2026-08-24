@@ -5,14 +5,14 @@ north-star:
   模块终态: `electron-builder` 一条命令产出双平台安装包（.dmg/.exe），CI push main 自动构建并上传 artifact，任何人可下载验证
   对齐北星: PRODUCT-BRIEF §二（直接用户=FDE）+ §六 P0（没有安装能力不能给 FDE 用）
   完成标准: 本地 `npx electron-builder --config build-synova.cjs --dir` → release/mac/SynovaAgent.app 存在+大小>100MB+CI artifact 可下载（物理产物，非 grep）
-  当前进度: D504 交付 build-synova.cjs 骨架（extraResources renderer/dist/extensions + electron/package.json pack scripts），**未合 main（前置）**；缺 mac zip target、CI 构建 job、构建链契约文档与产物物理断言测试
+  当前进度: D504 已合 main（ea89dee9，审计 CP）——build-synova.cjs（extraResources renderer/dist/extensions）+ electron/package.json pack scripts 均已在 main；缺 mac zip target、CI 构建 job、构建链契约文档与产物物理断言测试
 ---
 
 <!--
   SYNOVA-IMPL-DSH-D517: L1-A 安装包可产出（验证点 1-1）
   状态: dev doc | 2026-08-24 | 优先级 P1 | slice: L1-A
   权威: 派单-L1切片A §D517 + PRODUCT-BRIEF §二/六 + D510 审计 F1 教训（物理验证，禁 grep 冒充）
-  依赖: D504 合入 main（CTO 安排中——backend-spawn.cjs / build-synova.cjs extraResources / electron/package.json pack scripts）
+  依赖: D504 已合入 main（ea89dee9）——backend-spawn.cjs / build-synova.cjs extraResources / electron/package.json pack scripts 均在 main
   并行: 无（串行 D517→D518→D519，electron/ 领地独占）
 -->
 
@@ -44,7 +44,7 @@ north-star:
 
 ## 4. Current State（2026-08-24 实测）
 
-- `build-synova.cjs`（D504 分支版，前置合入后为基线）: appId com.synova.agent / productName SynovaAgent / output release / files 白名单含 electron/{main,backend-spawn,preload}.cjs+config.json+icon.png / extraResources: dist→dist(!renderer)、dist/renderer→renderer、extensions→extensions / win nsis x64 / **mac 仅 dmg [x64,arm64]** / linux AppImage。
+- `build-synova.cjs`（main 实测，D504 交付已在 main）: appId com.synova.agent / productName SynovaAgent / output release / files 白名单含 electron/{main,backend-spawn,preload}.cjs+config.json+icon.png / extraResources: dist→dist(!renderer)、dist/renderer→renderer、extensions→extensions / win nsis x64 / **mac 仅 dmg [x64,arm64]** / linux AppImage。
 - `electron/package.json`（D504 版）: pack/pack:dir/pack:mac/pack:win scripts（cd .. 调根目录 config）。
 - 根 `package.json`: electron-builder ^25.1.8 devDep + electron:build* scripts + build:"tsc"（tsconfig outDir ./dist，实测产物入口 dist/src/index.js——backend-spawn.cjs buildCommand 已按磁盘事实用 dist/src/index.js）。
 - `electron-renderer/package.json`: build:"tsc && vite build"；vite.config.ts outDir `../dist/renderer`、base './'。
@@ -123,3 +123,32 @@ L1 交互层（Electron 打包=分发形态）。零跨层——构建配置不 
 - .claude/PRODUCT-BRIEF.md（§二/§六）
 - docs/synova/audit-reports/2026-08-23-D504-D505.md（D504 基线核验）
 - AGENTS.md（铁律 0-2/4/47/48）
+
+## 12. 必答题 1 补充——target 配置骨架（修改后终态，编码照抄）
+
+```js
+// build-synova.cjs（本任务改动的两段；files/extraResources/nsis 等其余段保持 main 现状不动）
+  mac: {
+    target: [
+      { target: 'dmg', arch: ['x64', 'arm64'] },
+      { target: 'zip', arch: ['x64', 'arm64'] },   // D517 新增: CI artifact + 解包验证
+    ],
+    category: 'public.app-category.business',
+  },
+  win: {
+    target: [{ target: 'nsis', arch: ['x64'] }],   // main 现状保留，无改动
+    icon: 'assets/icon.ico',
+    artifactName: 'SynovaAgent-${version}-win32-x64.${ext}',
+  },
+```
+
+> files 白名单已在 main（electron/{main,backend-spawn,preload}.cjs + config.json + icon.png）；extraResources 三映射已在 main（dist→dist!renderer、dist/renderer→renderer、extensions→extensions）。**本任务对 files/extraResources 零改动**——写集表只含 §5.1 四条目。
+
+## 13. 自检清单（dev-doc 侧，K3 可核）
+
+- [x] 派单 4 必答题逐条覆盖（①配置骨架=§12 ②产物物理验证=DS1 ③CI=写集 desktop-build.yml+DS3 ④构建链契约=写集 build-synova.cjs 注释+DS4）
+- [x] 现状全部实测（main ea89dee9: build-synova.cjs/electron/package.json/根 package.json scripts/vite.config.ts outDir/CI workflows 逐文件 read）
+- [x] Done 标准 = 物理命令断言（test -d / du -sm / CI artifact），零 grep 冒充（D510 F1）
+- [x] 写集 4 条目与 §12 声明一致；不碰 src/、electron/*.cjs（D518 领地）、scripts/audit/
+- [x] gatekeeper exit 0（C1-C6）
+- [x] 依赖声明: D504 已合 main（前置完成）；D518/D519 依赖本任务产物形态
