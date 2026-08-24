@@ -622,3 +622,5 @@ Binary file .claude/bypass.log matches
 
 2026-08-24T02:30:00+08:00 | COMMITTED | pre-commit PASS (brief 排除项修正补记, D331 对账) | TASK_ID=G12FIX | AGENT=Synova-Win | HASH=f7bbf6c645e1dc5fd7f824b2016762a38a3aab79
 2026-08-24T11:00:52+08:00 | COMMITTED | pre-commit PASS (worktree 首推对账补记: fix(D482) org-expert-tools 声称对齐, synova-commit 13 组全过 + 外部审计 P0=0, 原记录未随 worktree 提交入库) | TASK_ID=D482 | AGENT=claude-code | HASH=06e340941d1376630c800a3e35d51cdca6a7120e
+
+2026-08-24T11:30:00+08:00 | COMMITTED | pre-commit PASS (台账登记补记, D331 对账) | TASK_ID=LEDGER | AGENT=Synova-Win | HASH=28f63619dbbb0b56b2568bbb8c48f8873257aad2
