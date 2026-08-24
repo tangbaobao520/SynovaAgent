@@ -11,6 +11,14 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V5.0.4 (2026-08-24) — D521-2 bypass COMMITTED 挪 hook 层（PATCH）
+
+- **不变量2 hook 层登记**: post-commit.sh 在 bypass 检测通过（PASS_WAY≠0，即 pre-commit 真跑过）后，立即追加本提交 HASH 的 COMMITTED 行 + 成对影子登记提交（message 标记「bypass COMMITTED 登记」防递归）——覆盖裸 git commit 与 synova-commit 两条路径；bypass.log 提交后永干净（无脏文件挡 merge），D451 补记循环从根消除。--no-verify 提交不登记（不洗白绕过）。
+- **影子提交天然豁免对账**: 影子只改 .claude/bypass.log → 命中既有 D451 豁免（纯补记提交不能被要求自己被自己记录），无需改对账逻辑。
+- **synova-commit 去重**: D508 的 COMMITTED 追加删除（hook 已统一登记，双写必留脏）；write-set 释放识别影子提交回退 HEAD^ 取真实文件清单。
+- **测试**: bypass-precommit.test.sh（新，7/7：裸 commit 含 HASH/树干净/影子标记/链长稳定无嵌套/绕过不登记/接线双断言），进双平台 CI。
+- **作者**: dsh-cto
+
 ## V5.0.3 (2026-08-24) — D521-1 parser 剥壳对称 + tag 校验收窄（PATCH）
 
 - **不变量3 parser 剥壳对称**: brief_parser.py parse_q2 的 include 段与 exclude 段同等剥壳——剥动词前缀（改/修改/新增/新建/修复/扩展/实现/更新/重构/升级/创建/编写/增加/优化/调整/添加）+ 剥全角/半角括号描述（"src/x（说明）"→"src/x"）；exclude 前缀补「不动」（对齐 check-plan-integrity 动词表）。resolve-commit-brief.sh 内嵌降级解析器同步。修复: D328 动词前缀误拦 + G12 全角括号误报（同一病根：剥壳规则不对称）。

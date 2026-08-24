@@ -136,7 +136,8 @@ jobs:
             tests/control-tower/q2-error-locating.test.sh \
             tests/control-tower/platform-checklist.test.sh \
             tests/control-tower/tag-ancestry.test.sh \
-            tests/control-tower/brief-parser-strip.test.sh; do
+            tests/control-tower/brief-parser-strip.test.sh \
+            tests/control-tower/bypass-precommit.test.sh; do
             echo "── $t"
             bash "$t" || { echo "FAIL: $t"; FAIL=1; }
           done

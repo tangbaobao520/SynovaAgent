@@ -52,6 +52,28 @@ if [ -f "$MARKER" ]; then
              fi ;;
         esac
         # pass — D366: 不 rm, marker 只由 pre-commit 覆盖 (并发 session 互不误删)
+
+        # ═══ D521/不变量2: COMMITTED 登记（hook 层——commit 后立即成对登记，树永干净）═══
+        # 病根: D508 登记只在 synova-commit 路径且在 commit 后追加 → bypass.log 永脏 →
+        #   挡 merge → 逼裸 git → 对账失败 → D451 补记循环（D520 复盘病根 2）。
+        # 解法: 任何 commit（裸 git / synova-commit）过检后，hook 立即把本提交 HASH 的
+        #   COMMITTED 行追加 + 成对登记提交（marker message 防递归）——bypass.log 永不脏。
+        # 只在 PASS_WAY≠0（pre-commit 真跑过）时登记；--no-verify 提交不登记（不洗白绕过）。
+        LAST_MSG=$(git log -1 --format=%s 2>/dev/null || true)
+        case "$LAST_MSG" in
+          *"bypass COMMITTED 登记"*) : ;;  # 登记提交自身 → 跳过（防递归）
+          *)
+            HASH_NOW=$(git rev-parse HEAD 2>/dev/null || true)
+            if [ -n "$HASH_NOW" ]; then
+              echo "$(date -Iseconds) | COMMITTED | pre-commit PASS (hook 层登记) | HASH=$HASH_NOW" >> "$ROOT/.claude/bypass.log"
+              if git add "$ROOT/.claude/bypass.log" 2>/dev/null &&                  git commit --no-verify -q -m "chore: bypass COMMITTED 登记 (auto hook, D521)" 2>/dev/null; then
+                :  # 登记提交完成——bypass.log 保持干净
+              else
+                echo "  ⚠️  post-commit: bypass 登记提交失败（identity 未配置?）— 降级，对账时按 D451 补记" >&2
+              fi
+            fi
+            ;;
+        esac
       else
         echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) detected-bypass head-mismatch marker=$MARKER_HEAD parent=$PARENT" >> "$ROOT/.claude/bypass.log"
       fi
