@@ -128,9 +128,7 @@ if git push origin "$BRANCH" 2>&1; then
   exit 0
 else
   echo -e "${RED}❌ push 失败${RESET}"
-  echo "── CI 失败诊断（无 token 通道，见 docs/synova/coordination/CI-诊断通道.md）──"
-  echo "  1) RID=\$(curl -s \"https://api.github.com/repos/tangbaobao520/SynovaAgent/actions/runs?branch=$BRANCH&per_page=1\" | python3 -c \"import json,sys;print(json.load(sys.stdin)['workflow_runs'][0]['id'])\")"
-  echo "  2) curl -s \"https://api.github.com/repos/tangbaobao520/SynovaAgent/actions/runs/\$RID/jobs\" | python3 -c \"import json,sys;[print(j['id'],j['name']) for j in json.load(sys.stdin)['jobs'] if j['conclusion']=='failure']\""
-  echo "  3) curl -s \"https://api.github.com/repos/tangbaobao520/SynovaAgent/check-runs/<JID>/annotations\""
+  echo "── CI 失败诊断: 无 token 注解通道（::error 输出 → 匿名 annotations API）──"
+  echo "   curl 模板与操作步骤见 docs/synova/coordination/CI-诊断通道.md §二（单源，不在脚本内复制）"
   exit 1
 fi
