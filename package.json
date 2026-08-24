@@ -46,7 +46,8 @@
     "docker:down": "docker compose down",
     "check:all": "bash scripts/pre-push-check.sh",
     "hooks:install": "bash scripts/install-hooks.sh",
-    "hooks:test": "echo 'feat(test): verify hook' | bash scripts/commit-msg-check.sh /dev/stdin"
+    "hooks:test": "echo 'feat(test): verify hook' | bash scripts/commit-msg-check.sh /dev/stdin",
+    "build:backend": "bash scripts/desktop/build-backend.sh"
   },
   "dependencies": {
     "@unblessed/node": "^1.0.0-alpha.23",

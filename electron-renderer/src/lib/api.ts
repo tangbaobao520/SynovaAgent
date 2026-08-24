@@ -13,13 +13,15 @@
  *   @error    — 不抛
  */
 
-interface ElectronServerApi {
-  getServerUrl?: () => string;
-}
+// D517 修复: 原本此文件独立声明 window.electronAPI?: ElectronServerApi（仅 getServerUrl），
+// 与 ipc/bridge.ts 的 ElectronAPI 全局声明冲突（tsc 取前者 → bridge.ts 全部方法 TS2339，
+// electron-renderer `npm run build` 失败 → D517 构建链/CI 无法产出安装包）。
+// 修复 = 单一类型源: 统一复用 bridge.ts 的完整 ElectronAPI（getServerUrl/getConfig 等全量）。
+import type { ElectronAPI } from '../ipc/bridge';
 
 declare global {
   interface Window {
-    electronAPI?: ElectronServerApi;
+    electronAPI?: ElectronAPI;
   }
 }
 
