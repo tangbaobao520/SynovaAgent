@@ -24,7 +24,7 @@
 * 对照 auth/register（src/routes/auth.ts L87-89）与企业注册（enterprise.ts L108-110）：均做三标识符去重——**accept 是唯一不查重的创建路径**（D102 邀请令牌语义应绑已有账号）。
 
 ### 缺陷 B：UserStore.updateUser 无法更新 orgId（绑定缺能力）
-* `src/growth/user-store.ts` L214-216：`updateUser(userId, props: Partial<Pick<UserRecord, 'role' | 'status' | 'displayName' | 'department' | 'phone' | 'wechatId'>>)`——**不含 orgId**；绑定个人账号到企业需要更新 orgId，当前不可行。
+* `src/growth/user-store.ts` L214-216：`updateUser(userId, props: Partial<Pick<UserRecord, 'role' | 'status' | 'displayName' | 'department'>>)`（实测 L214 仅 4 个字段，无 phone/wechatId/orgId）——**不含 orgId**；绑定个人账号到企业需要更新 orgId，当前不可行。
 
 ### 现状确认（实测）
 * 个人轨：auth/register 创建 orgId='default'、role='staff'（L79-80）；调企业端点（members/ima/ga-access 等）被 requireAdmin 拦（staff 非 admin/manager）。
@@ -38,10 +38,10 @@
 
 ## 3. 实现方案
 
-### 3.1 写集 (2 修改 + 0 新建)
+### 3.1 写集 (3 修改 + 0 新建)
 | 文件 | 操作 | 说明 |
 |------|------|------|
-| src/growth/user-store.ts | 修改 | `updateUser` props 类型扩展含 `orgId?: string`（Partial<Pick<UserRecord, ... | 'orgId'>>）——绑定个人账号到企业需更新 orgId |
+| src/growth/user-store.ts | 修改 | `updateUser` props 类型扩展含 `'orgId'`（Partial<Pick<UserRecord, 'role' | 'status' | 'displayName' | 'department' | 'orgId'>>）——绑定个人账号到企业需更新 orgId |
 | src/routes/enterprise.ts | 修改 | accept 逻辑：`queryByEmail(inv.email)` 查重——已存在 → `updateUser(existing.userId, { orgId: inv.orgId, role: inv.role })`（**绑定**：userId/密码保留，inv.status='accepted'，响应带 userId=existing.userId + `linked: true`）；不存在 → createUser（现状，响应 `linked: false`）；password 对已存在账号**不重置**（个人账号密码延续） |
 | tests/routes/enterprise.test.ts | 修改 | 新增 3 用例：①个人注册（auth/register）→ 同 email 被邀请 → accept → **userId 不变 + orgId 更新为企业 + linked=true**；②新 email accept → 新建 + linked=false（现状回归）；③个人账号（未绑定）调企业 members 端点 → 403（边界不削弱） |
 
@@ -86,7 +86,7 @@
 
 ## 6. 完成标准
 
-* **DS1 绑定能力**：`grep -rn "queryByEmail" src/routes/enterprise.ts` 命中（accept 查重）+ `grep -n "orgId" src/growth/user-store.ts` 命中（updateUser props 含 orgId）。
+* **DS1 绑定能力**：`grep -rn "queryByEmail" src/routes/enterprise.ts` 命中（accept 查重）+ `grep -n "'orgId'" src/growth/user-store.ts` 命中（updateUser props 类型含 orgId——单引号精确匹配 Pick 类型，排除 createUser 参数 L79 的 orgId）。
 * **DS2 绑定语义**：`grep -n "linked" src/routes/enterprise.ts` 命中（响应区分 linked true/false）。
 * **DS3 测试全绿**：`vitest run tests/routes/enterprise.test.ts` 全 pass（20 用例 = 既有 17 + 新增 3；red 先行已证）。
 * **DS4 零回归**：`vitest run tests/middleware/auth.test.ts tests/middleware/auth.integration.test.ts tests/routes/auth.test.ts` 全绿 + `tsc --noEmit` 零新增（28=28）。
@@ -108,7 +108,7 @@
 
 | 声称 | 证据命令 | 预期 |
 |------|---------|------|
-| DS1 绑定能力 | grep -rn "queryByEmail" src/routes/enterprise.ts + grep -n "orgId" src/growth/user-store.ts | 双命中 |
+| DS1 绑定能力 | grep -rn "queryByEmail" src/routes/enterprise.ts + grep -n "'orgId'" src/growth/user-store.ts | 双命中 |
 | DS2 绑定语义 | grep -n "linked" src/routes/enterprise.ts | 命中 |
 | DS3 测试全绿 | vitest run tests/routes/enterprise.test.ts | 20/20 pass |
 | DS4 零回归 | vitest run tests/middleware/* + tests/routes/auth.test.ts + tsc --noEmit | 全绿 + 零新增 |
