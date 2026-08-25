@@ -1,15 +1,27 @@
 {
   "task_id": "D535",
   "title": "guard 循环卫生+超时（Stage1-D4，控制塔防跑偏）",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": {
     "doc": "docs/synova/coordination/派单-Stage1续-D534-D535-20260825.md",
     "source": "施工图 Stage 1-D4",
     "slice": "stage1-cont"
   },
-  "impl": null,
+  "impl": {
+    "commit": "9d9b3f8e",
+    "by": "dsh",
+    "at": "2026-08-26",
+    "files": [
+      "scripts/control-tower/incident-loop.py",
+      "scripts/control-tower/synova-commit",
+      "docs/synova/coordination/控制塔循环卫生标准-20260826.md",
+      "tests/control-tower/incident-loop-hygiene.test.sh",
+      "tests/control-tower/incident-loop.test.sh"
+    ],
+    "evidence": "DS1-DS11 全绿: incident-loop-hygiene.test.sh PASS=12/12; synova-commit:509 incident-loop record 调用; 循环卫生标准文档含超时契约/提醒/接线; 超时验证除 attach.py:203 基线缺口外全达标; incident-loop.test.sh 8/8(4b 跨平台修正); 与 main 基线回归一致"
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-08-26",
-  "updated_by": "alloc-task-id"
+  "updated_by": "dsh"
 }
