@@ -728,3 +728,5 @@ Binary file .claude/bypass.log matches
 2026-08-25T21:06:23+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=1304d76c0d62b0fac6fbf40f3242188aaa3ab52a
 2026-08-25T13:06:23Z possible-bypass diff=572s
 2026-08-25T20:55:00+08:00 | COMMITTED | pre-commit N/A (CI 机器人回传 debug 日志，非 agent 提交; D529 debug 步骤产物，root cause 定位用，终态移除) | TASK_ID=D529 | AGENT=ci-debug | HASH=899c8144fbe3b58f8dd1944dc6a8ec1c07518453
+2026-08-25T13:07:28Z possible-bypass diff=637s
+2026-08-25T21:07:28+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=bb1a45addadd6c22a0dfb2be833200e9848afc9c
