@@ -10,7 +10,7 @@
     "by": "dsh-cto",
     "at": "2026-08-25",
     "branch": "feat/d525-d526-red-cleanup",
-    "commit": null,
+    "commit": "61182a9785183750769bc26879232b8a46670fd7",
     "note": "断言对齐 staging_guard 现行为；测试入 canary"
   },
   "audit": null,

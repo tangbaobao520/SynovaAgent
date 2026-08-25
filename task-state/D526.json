@@ -10,7 +10,7 @@
     "by": "dsh-cto",
     "at": "2026-08-25",
     "branch": "feat/d525-d526-red-cleanup",
-    "commit": null,
+    "commit": "61182a9785183750769bc26879232b8a46670fd7",
     "note": "check-canary-drift.sh + ci.yml 接线；存量 47 项曝光"
   },
   "audit": null,
