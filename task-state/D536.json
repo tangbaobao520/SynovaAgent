@@ -1,15 +1,17 @@
 {
   "task_id": "D536",
   "title": "部署轨：桌面端实际部署验收（Track A，founder-demo checklist Mac+Win）",
-  "status": "claimed",
+  "status": "spec_done",
   "spec": {
-    "doc": "docs/synova/coordination/派单-部署轨-D536-20260826.md",
-    "source": "施工图 Track A 部署轨",
+    "doc": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D536-deploy-acceptance-20260826.md",
+    "commit": "39a45814",
+    "branch": "docs/d536-deploy-spec",
+    "gatekeeper": "exit 0 (C1-C6 ALL PASS, 2026-08-26)",
     "slice": "deploy-acceptance"
   },
   "impl": null,
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-08-26",
-  "updated_by": "alloc-task-id"
+  "updated_by": "dev-doc-dsh"
 }
