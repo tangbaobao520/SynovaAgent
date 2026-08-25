@@ -12,8 +12,14 @@ export interface ConversationState {
   phase: ConversationPhase;
   welcomeState: WelcomeState;
   errorMessage: string | null;
+  /** D527: 六阶段进度（phase_started 驱动，-1 = 尚未开始） */
+  phaseIndex: number;
+  phaseLabel: string;
+  phaseTotal: number;
 
   setWelcomeState: (state: WelcomeState) => void;
+  /** D527: 六阶段进度更新（sse-contract phase_started 归约结果落库） */
+  setPhaseProgress: (index: number, label: string) => void;
   addMessage: (msg: ChatMessage) => void;
   updateLastMessage: (updater: (msg: ChatMessage) => ChatMessage) => void;
   removeLastMessage: () => void;
@@ -29,8 +35,12 @@ export const useConversationStore = create<ConversationState>((set) => ({
   phase: 'idle',
   welcomeState: 'firstLaunch',
   errorMessage: null,
+  phaseIndex: -1,
+  phaseLabel: '',
+  phaseTotal: 6,
 
   setWelcomeState: (welcomeState) => set({ welcomeState }),
+  setPhaseProgress: (phaseIndex, phaseLabel) => set({ phaseIndex, phaseLabel }),
 
   addMessage: (msg) => set((s) => ({
     messages: [...s.messages, { ...msg, _id: ++_id } as ChatMessage & { _id: number }],

@@ -16,6 +16,11 @@ const CenterPanel: React.FC = () => {
   const messages = useConversationStore((s) => s.messages);
   const welcomeState = useConversationStore((s) => s.welcomeState);
   const phase = useConversationStore((s) => s.phase);
+  // D527: 六阶段进度 + 降级错误条（铁律 24/31 前端侧）
+  const phaseIndex = useConversationStore((s) => s.phaseIndex);
+  const phaseLabel = useConversationStore((s) => s.phaseLabel);
+  const phaseTotal = useConversationStore((s) => s.phaseTotal);
+  const errorMessage = useConversationStore((s) => s.errorMessage);
   const { isStreaming, thinkingExperts, sendMessage, cancelStreaming } = useStreaming();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -63,6 +68,21 @@ const CenterPanel: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* D527: 六阶段进度条（phase_started 0-5 推进；done 后由 header 显示完成态）。内联样式：写集不含 global.css */}
+      {phaseIndex >= 0 && phaseIndex < phaseTotal && phase !== 'done' && (
+        <div role="status" style={{ padding: '6px 16px', borderBottom: '1px solid var(--border, #2a3348)', fontSize: 11, color: 'var(--dim, #94a3b8)', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span>阶段 {phaseIndex + 1}/{phaseTotal} · {phaseLabel}</span>
+          <progress value={phaseIndex + 1} max={phaseTotal} style={{ flex: 1, height: 6 }} />
+        </div>
+      )}
+
+      {/* D527: 降级错误条（LLM 不可用/后端未就绪 → 用户可见，不静默不白屏，铁律 24/31） */}
+      {phase === 'error' && errorMessage && (
+        <div role="alert" style={{ padding: '8px 16px', background: 'rgba(239, 68, 68, 0.12)', color: 'var(--red, #ef4444)', fontSize: 12, borderBottom: '1px solid rgba(239, 68, 68, 0.3)' }}>
+          ⚠ {errorMessage}
+        </div>
+      )}
 
       {/* Messages */}
       <div className="center-messages">

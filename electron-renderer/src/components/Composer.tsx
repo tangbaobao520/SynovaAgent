@@ -84,12 +84,19 @@ const Composer: React.FC<ComposerProps> = ({
     textareaRef.current?.focus();
   }, []);
 
-  // 选择命令
+  // 选择命令（D527: /diagnosis 语义化——选命令即触发诊断，其余命令保持文本填充）
   const selectCommand = useCallback((cmd: string) => {
-    setValue(cmd + ' ');
     setShowCommands(false);
+    if (cmd === '/diagnosis' && !disabled) {
+      onSend('/诊断 请对我们的组织做一次全面诊断，重点关注增长卡点', []);
+      setValue('');
+      setMentions([]);
+      textareaRef.current?.focus();
+      return;
+    }
+    setValue(cmd + ' ');
     textareaRef.current?.focus();
-  }, []);
+  }, [onSend, disabled]);
 
   // 发送消息
   const handleSend = useCallback(() => {

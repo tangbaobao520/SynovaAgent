@@ -37,6 +37,12 @@
       "assertion_ids": [
         "electron-userdata-dbpath"
       ]
+    },
+    {
+      "acceptance_point": "L1-6",
+      "assertion_ids": [
+        "consult-llm-recorded"
+      ]
     }
   ],
   "assertions": [
@@ -129,6 +135,19 @@
       "expect": {
         "exists": true,
         "contains": "DBPATH_REDIRECT_OK"
+      }
+    },
+    {
+      "id": "consult-llm-recorded",
+      "desc": "D527 LLM 门控 consult 组状态落盘（GREEN=phase_started 0-5 + complete + reportId + GET /report 200 / RED=LLM key 未提供，诚实标注）",
+      "purpose": "证明首诊端到端全链路状态被物理记录且不伪造——GS01_LLM=1 时须 GREEN，无 key 时须如实 RED（L1-6，D527；断言引擎无条件分支，GREEN/RED 由 evidence quote 呈现 + README 诚实 RED 契约约束）",
+      "check": {
+        "type": "file",
+        "path": "__DATA_DIR__/consult-llm-status.txt"
+      },
+      "expect": {
+        "exists": true,
+        "contains": "CONSULT_LLM_"
       }
     }
   ]
