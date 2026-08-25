@@ -130,6 +130,8 @@ const SolutionPreview: React.FC<{
 
 // ═══ API 基础路径（D504: Electron 生产态 loadFile 后相对路径失效 → getApiBase） ═══
 import { getApiBase } from '../lib/api';
+// D527: 诊断报告 onePager markdown 渲染（同 MessageItem 模式）
+import ReactMarkdown from 'react-markdown';
 
 async function apiFetch<T>(path: string, opts?: RequestInit): Promise<T | null> {
   try {
@@ -169,9 +171,62 @@ interface SolutionsResponse {
   degraded?: boolean;
 }
 
-/** GA 工作区 3 标签 — 真实 API 驱动 (Phase 3.4) */
+/** D527: 诊断报告 tab — GET /consult/:id/report?format=markdown 渲染 onePager（ReactMarkdown） */
+const DiagnosisReportTab: React.FC = () => {
+  const currentReportId = useAppStore((s) => s.currentReportId);
+  const [markdown, setMarkdown] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [degradedReason, setDegradedReason] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!currentReportId) return;
+    let alive = true;
+    (async () => {
+      setLoading(true);
+      setDegradedReason(null);
+      try {
+        const res = await fetch(
+          `${getApiBase()}/api/diagnosis/consult/${currentReportId}/report?format=markdown`,
+        );
+        if (!res.ok) {
+          // 404 = 报告不在内存缓存（服务重启后清空）——降级提示，不静默（铁律 24/31）
+          if (!alive) return;
+          setDegradedReason(`报告不可用（HTTP ${res.status}；服务重启后内存缓存已清，请重新诊断）`);
+          console.warn('[DiagnosisReportTab] 报告获取失败', res.status);
+          return;
+        }
+        const text = await res.text();
+        if (alive) setMarkdown(text);
+      } catch (err: unknown) {
+        if (!alive) return;
+        setDegradedReason('报告服务不可达，请确认后端服务已启动');
+        console.warn('[DiagnosisReportTab] 报告请求异常', err instanceof Error ? err.message : String(err));
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => { alive = false; };
+  }, [currentReportId]);
+
+  if (!currentReportId) return <Section title="📄 诊断报告"><Empty text="请先进行一次诊断" /></Section>;
+  return (
+    <Section title="📄 诊断报告">
+      {loading && <div style={{ padding: 8, fontSize: 11, color: 'var(--dim)' }}>加载报告...</div>}
+      {degradedReason && (
+        <div style={{ padding: '4px 8px', fontSize: 10, color: 'var(--orange)' }}>⚠ {degradedReason}</div>
+      )}
+      {!loading && !degradedReason && markdown !== null && (
+        <div className="report-markdown" style={{ fontSize: 11, lineHeight: 1.6 }}>
+          <ReactMarkdown>{markdown}</ReactMarkdown>
+        </div>
+      )}
+    </Section>
+  );
+};
+
+/** GA 工作区 4 标签 — 真实 API 驱动 (Phase 3.4 + D527 诊断报告 tab) */
 const GAWorkspaceTabs: React.FC = () => {
-  const [tab, setTab] = useState<'action' | 'sentinel' | 'pattern'>('pattern');
+  const [tab, setTab] = useState<'action' | 'sentinel' | 'pattern' | 'report'>('report');
   const [solutions, setSolutions] = useState<SolutionData[]>([]);
   const [showSolution, setShowSolution] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -236,12 +291,14 @@ const GAWorkspaceTabs: React.FC = () => {
   return (
     <>
       <div className="right-panel-tabs">
-        {(['action', 'sentinel', 'pattern'] as const).map((t) => (
+        {(['action', 'sentinel', 'pattern', 'report'] as const).map((t) => (
           <button key={t} className={`right-panel-tab${tab === t ? ' active' : ''}`} onClick={() => setTab(t)}>
-            {t === 'action' ? '行动跟踪' : t === 'sentinel' ? '哨兵数据' : '落地模式'}
+            {t === 'action' ? '行动跟踪' : t === 'sentinel' ? '哨兵数据' : t === 'pattern' ? '落地模式' : '诊断报告'}
           </button>
         ))}
       </div>
+
+      {tab === 'report' && <DiagnosisReportTab />}
 
       {tab === 'action' && (
         <Section title="✅ 行动跟踪">

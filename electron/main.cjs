@@ -118,6 +118,27 @@ async function createWindow() {
   });
 }
 
+// ═══ D528: 单实例锁（多实例写同一 SQLite 保护，Electron 官方模式）═══
+// 契约: 二次启动 → 本实例 app.quit() 退出；首实例收到 second-instance → 聚焦已有窗口。
+// @degraded: requestSingleInstanceLock 抛异常（罕见）→ try/catch + log，不阻断首实例正常启动（铁律 24）。
+let gotSingleInstanceLock = true;
+try {
+  gotSingleInstanceLock = app.requestSingleInstanceLock();
+} catch (err) {
+  console.warn('[electron] requestSingleInstanceLock 异常（继续单实例路径）:', err && err.message);
+}
+if (!gotSingleInstanceLock) {
+  console.log('[electron] 已有实例运行，本实例退出（单实例锁）');
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+}
+
 app.whenReady().then(async () => {
   // D518: 模式显式化——启动第一行日志即证据（dev/prod 判定唯一事实源 app.isPackaged）
   const isProdBoot = app.isPackaged;
