@@ -1,16 +1,28 @@
 {
   "task_id": "D524",
   "title": "D518 dev doc prod 契约返修（M7 漂移，K3 C2）",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": {
     "doc": "docs/synova/coordination/派单-D524-devdoc-fix-20260825.md",
     "source": "K3 切片 A 审计 P1-1 (C2)",
     "report": "docs/synova/audit-reports/2026-08-25-D517-D519.md"
   },
-  "impl": null,
+  "impl": {
+    "commit": "532aaa41 (docs/d524-devdoc-fix)",
+    "by": "dsh-dev-doc",
+    "at": "2026-08-25",
+    "files": [
+      "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D518-single-entry-20260824.md"
+    ],
+    "evidence": {
+      "grep_old_contract": "grep -n 'node dist/src/index.js' SYNOVA-IMPL-DSH-D518-single-entry-20260824.md → 零结果",
+      "grep_new_contract": "grep -n 'dist/backend.mjs' → §2/§5.1/§7 三处",
+      "gatekeeper": "exit 0 (C1-C6 ALL PASS, 2026-08-25)"
+    }
+  },
   "audit": null,
   "fix_task_id": "D518",
   "updated_at": "2026-08-25",
-  "updated_by": "alloc-task-id",
+  "updated_by": "dsh-dev-doc",
   "slice": "L1-A"
 }
