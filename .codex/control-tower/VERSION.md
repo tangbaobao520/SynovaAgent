@@ -11,6 +11,12 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V5.1.2 (2026-08-25) — verify-parallel 豁免 CRLF 修复（Win 实测）
+
+- **豁免判定 Windows CRLF 失效**（P2，Win 2026-08-25 D485 派发实测）: V5.0.1 的"已完成任务文档豁免"（compare_docs 前置检查）在 Windows 失效——python `print` 在 stdout 文本模式输出 CRLF，`while read` 拿到的 `$f` 带 `\r`，`git cat-file -e origin/main:$f` 失败 → D484（已合并）未跳过 → D485 被误判写集重叠。修法: read 循环内 `_f="${_f%$'\r'}"` 清洗 CR（与 task-start L44 CRLF 同型，Windows 平台适配层遗漏）。
+- **测试**: verify-parallel.test.sh 的 T3 沙箱场景补 Windows 验证路径（已有 T3 在 Linux LF 下过；本修复保证 Windows 同行为）。
+- **作者**: Synova-Win（V5.0.1 代码的 Windows bug 修复，创始人授权越界补丁，DSH 预审）
+
 ## V5.1.1 (2026-08-25) — D525+D526 红态清理 + canary 漂移告警（PATCH）
 
 - **D525 synova-commit.test.sh 红态修复**: 6 个 D507 断言（随 D508 门禁移除失效）重写为现行为断言——staging_guard 接线/他人写集阻断（沙箱行为实测 exit 1 + 点名归属）/自己写集放行 + commit 链路走通/guard 崩溃显式降级/status JSON 判定语义，8/8。测试入 CI canary 清单（红态自此有防线感知——D525 漏网根因闭环）。

@@ -101,6 +101,7 @@ except Exception:
       _missing=0
       while IFS= read -r _f || [ -n "$_f" ]; do
         [ -z "$_f" ] && continue
+        _f="${_f%$'\r'}"  # V5.1.2 (Win): python print 在 Windows stdout 输出 CRLF，$f 带 \r 致 cat-file 失效
         git -C "$REPO_DIR" cat-file -e "origin/main:$_f" 2>/dev/null || { _missing=1; break; }
       done <<< "$_files"
       if [ "$_missing" -eq 0 ]; then
