@@ -11,6 +11,13 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V5.1.1 (2026-08-25) — D525+D526 红态清理 + canary 漂移告警（PATCH）
+
+- **D525 synova-commit.test.sh 红态修复**: 6 个 D507 断言（随 D508 门禁移除失效）重写为现行为断言——staging_guard 接线/他人写集阻断（沙箱行为实测 exit 1 + 点名归属）/自己写集放行 + commit 链路走通/guard 崩溃显式降级/status JSON 判定语义，8/8。测试入 CI canary 清单（红态自此有防线感知——D525 漏网根因闭环）。
+- **D526 canary 漂移告警**: check-canary-drift.sh（新）——tests/*.test.sh vs CI canary 清单对账，漂移/幽灵双向点名 + ::warning（CI warnings 面板可见），告警不阻断（派单明确防误伤）；接 ci.yml canary 步骤。存量漂移 47 项即刻曝光（全量密封化 = K3 P2-4 单独立项）。
+- **测试**: check-canary-drift.test.sh（新，11/11：漂移出现/消失双态/幽灵/.ts 不计/降级/真机机制自检），入 canary。
+- **作者**: dsh-cto（并行 CTO，K3 D521 审计遗留闭环）
+
 ## V5.1.0 (2026-08-25) — D521-4 synova submit 统一提交入口（MINOR：新机制）
 
 - **synova-submit.sh（新）**: 六步编排——① tag 时机检查（孤儿 tag 提前黄色警告，不再 push 时撞 D331 盲猜）→ ② bypass 竞态确认（hook 层登记接线验证）→ ③ 门禁 dry-run（synova-commit --check 一次报全）→ ④ CI 等价模拟（simulate-ci.sh，本地能抓的错不送 CI）→ ⑤ git commit（SYNO_SUBMIT_MODE=1：不 auto-tag 不 auto-push，§6 纪律）→ ⑥ push + 失败诊断（::error 注解通道，CI-诊断通道.md）。--dry-run 只跑 ①-④；--no-push 留本地。SYNO_SUBMIT_CHECK_CMD/SIM_CMD 注入缝（测试）。
