@@ -1,6 +1,6 @@
 # CLAUDE.md — SynovaAgent
 
-> V4.5.1 "Main Agent" | 2026-07-22 | L2 MainAgent 决策中心 + 创始人控制塔三位一体防御
+> V5.1.1 "Main Agent" | 2026-08-25 | L2 MainAgent 决策中心 + 创始人控制塔三位一体防御 + 桌面端（品牌表层，切片 A/B/C 已闭环；本地软提示 + CI 权威门禁）
 
 > 组织数字孪生诊断 + 持续增长导航系统。诊断是手段，目的是增长。
 > 核心问题：这家企业的增长卡在哪里？现在该做什么？
@@ -23,7 +23,7 @@
                          ↓
                     交叉关联 + 严重度升级 + 专家路由
                          ↓
-              8位专家(strategy/org/finance/tech/marketing/action/business_model/knowledge)
+              7位专家(host/capital-cycle/customer-cycle/talent-cycle/tech/finance-structure/competitive-strategy)  — 文件驱动 @expert/，2026-08 实测 7 个
                          ↓
                     ReAct推理 + 交叉验证
                          ↓

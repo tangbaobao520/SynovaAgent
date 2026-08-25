@@ -749,3 +749,16 @@ Binary file .claude/bypass.log matches
 2026-08-25T23:53:15+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=85124b321b0a1110d387c301796678be1bc4a7e0
 2026-08-25T06:00:00+08:00 | COMMITTED | pre-commit N/A (CI 机器人回传 debug 日志) | TASK_ID=D529 | AGENT=ci-debug | HASH=f946da7a7dc832242b82cb09c684d31a94c2a8e5
 2026-08-25T23:53:21+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=57fd4ed36db71a3034bd9e9b15736ccf5d1073d1
+2026-08-25T20:47:49+08:00 | GATE_FAIL_SOFT | exit=1 | branch=docs/d524-devdoc-fix
+2026-08-25T20:47:50+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=532aaa41d1abc3405ee1b2fa4c7ae2ede702d5dd
+2026-08-25T20:48:13+08:00 | GATE_FAIL_SOFT | exit=1 | branch=docs/d524-devdoc-fix
+2026-08-25T20:48:14+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=77bdaa8ce86ea8c86669480467de5d01e76d71fc
+2026-08-25T20:52:51+08:00 | GATE_FAIL_SOFT | exit=1 | branch=docs/d524-devdoc-fix
+2026-08-25T20:52:51+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=aef5fbef9f7043e3f4447032e6965026e66fbf37
+2026-08-25T21:03:29+08:00 | GATE_FAIL_SOFT | exit=1 | branch=docs/d524-devdoc-fix
+2026-08-25T21:04:03+08:00 | GATE_FAIL_SOFT | exit=1 | branch=docs/d524-devdoc-fix
+2026-08-25T21:04:17+08:00 | GATE_FAIL_SOFT | exit=1 | branch=docs/d524-devdoc-fix
+2026-08-25T21:04:17+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=2b5333c5b215d94bdfddc24580c135eaaf24942a
+2026-08-25T21:22:43+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D524 | AGENT=dsh-deepseek-harness
+2026-08-25T21:31:07+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=4cf53f5c0597e657738712d75530424e2c4b89e2
+2026-08-25T14:12:40Z COMMITTED pre-commit PASS（D451 补记） TASK_ID=D530 AGENT=dsh-cto HASH=734ab32e

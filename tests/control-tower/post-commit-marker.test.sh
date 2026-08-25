@@ -15,9 +15,6 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 #         D421 三判: amend (S7) / 并发祖先 (S8) / 真绕过 stale marker 仍被 freshness 抓 (S9)。
 # ═══════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
-# D521: 本测试针对 bypass 检测语义（marker 三判）；hook 层的 COMMITTED 自动登记会
-# 产生影子提交、干扰提交序列断言——检测语义与登记语义分层测试，此处关闭登记。
-export SYNO_SKIP_AUTOREG=1
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 REAL_HOOK="$TEST_ROOT/scripts/hooks/post-commit.sh"
@@ -160,6 +157,22 @@ commit_nohook B1                                          # HEAD=B1
 echo "$X|$(( $(date +%s) - 600 ))" > "$REPO/.claude/last-precommit-success"   # stale marker (真 --no-verify)
 (cd "$REPO" && bash "$REAL_HOOK")
 check_contains "S9: 真绕过 stale marker → possible-bypass" "$REPO/.claude/bypass.log" "possible-bypass diff="
+
+echo ""
+echo "── S10. CT-45: merge 提交豁免 — HEAD^2 存在时不写 detected-bypass ──"
+new_repo r10
+git -C "$REPO" checkout -q -b side
+commit_nohook S10side                                          # side 分支提交
+git -C "$REPO" checkout -q main
+commit_nohook S10main                                          # main 分支提交
+git -C "$REPO" merge side --no-edit -q                         # merge 提交 (HEAD^2 存在, 无 pre-commit marker)
+if git -C "$REPO" rev-parse HEAD^2 >/dev/null 2>&1; then
+  ok "S10a: 成功构造 merge 提交 (HEAD^2 存在)"
+else
+  fail "S10a: 未能构造 merge 提交"
+fi
+(cd "$REPO" && bash "$REAL_HOOK")                              # merge 提交 + 无 marker → 应豁免 (CT-45)
+check "S10b: merge 提交豁免 (不写 detected-bypass)" "0" "$(log_lines "$REPO/.claude/bypass.log")"
 
 echo ""
 echo "结果: 通过 $PASS / 失败 $FAIL"
