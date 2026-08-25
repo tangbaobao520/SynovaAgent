@@ -28,9 +28,11 @@ $USER_DATA = Join-Path $env:APPDATA $APP_NAME
 function Write-Step { param($msg) Write-Host "[win-install-verify] $msg" }
 
 # ① 前置检查: 切片 A D517 产物 release/*.exe 存在 + md5 落 evidence（无则 exit 2 waiting，不伪造）
+# P1-1 修复: 本分支禁用 Write-Error——$ErrorActionPreference='Stop' 下 Write-Error 抛终止错误，
+#            后续 exit 2 不可达（实际退出码 1）。waiting 是受控状态非错误 → Write-Host + 显式 exit 2。
 $exe = Get-ChildItem $EXE_DIR -Filter '*.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
 if (-not $exe) {
-  Write-Error "waiting: 切片 A D517 .exe 缺失（$EXE_DIR 无产物）——D523 物理实测进 waiting，不伪造（DS4）"
+  Write-Host "[win-install-verify] waiting: 切片 A D517 .exe 缺失（$EXE_DIR 无产物）——D523 物理实测进 waiting，不伪造（DS4）"
   exit 2
 }
 New-Item -ItemType Directory -Force -Path $EVIDENCE_DIR | Out-Null
@@ -53,7 +55,7 @@ if (-not $SkipInstall) {
 $app = Join-Path $INSTALL_DIR "$APP_NAME.exe"
 if (-not (Test-Path $app)) {
   "$app 不存在（安装失败）" | Out-File (Join-Path $EVIDENCE_DIR 'failed.txt') -Encoding utf8
-  Write-Error "断言失败: 安装目录无 $APP_NAME.exe（evidence/failed.txt 已记录）"
+  Write-Host "[win-install-verify] 断言失败: 安装目录无 $APP_NAME.exe（evidence/failed.txt 已记录）" # P1-1: EAP=Stop 下错误型输出会吞掉显式 exit，故用 Write-Host
   exit 1
 }
 Write-Step "③ 启动: $app"
@@ -83,7 +85,7 @@ elseif (-not $logOk) { $failStep = 'D 后端日志: userData logs/backend.log �
 
 # ⑥ 清理: 只杀本实例 pid（严禁 taskkill /IM node.exe——铁律 0-3）+ 静默卸载
 if ($failStep) {
-  Write-Error "断言失败: $failStep（evidence 已落 $EVIDENCE_DIR）"
+  Write-Host "[win-install-verify] 断言失败: $failStep（evidence 已落 $EVIDENCE_DIR）" # P1-1: EAP=Stop 下错误型输出会跳过清理与显式 exit，故用 Write-Host
   $failStep | Out-File (Join-Path $EVIDENCE_DIR 'failed.txt') -Encoding utf8
 }
 foreach ($pp in (Get-Process -Name $APP_NAME -ErrorAction SilentlyContinue)) { Stop-Process -Id $pp.Id -Force -ErrorAction SilentlyContinue }

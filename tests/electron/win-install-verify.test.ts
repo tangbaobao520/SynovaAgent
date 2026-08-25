@@ -66,7 +66,7 @@ describe('D523 win-install-verify.ps1 — 脚本契约静态断言', () => {
     const s = readScript();
     expect(s).toContain('$failStep');
     expect(s).toContain('failed.txt');
-    expect(s).toContain('Write-Error');
+    expect(s).toContain('Write-Host'); // P1-1 后失败输出走 Write-Host（Write-Error 在 EAP=Stop 下吞显式 exit）
   });
 
   it('前置缺失不伪造: 无 .exe → exit 2 + waiting 提示（DS4）', () => {
@@ -74,5 +74,13 @@ describe('D523 win-install-verify.ps1 — 脚本契约静态断言', () => {
     expect(s).toContain('exit 2');
     expect(s).toContain('waiting');
     expect(s).toContain('不伪造');
+  });
+
+  it('P1-1 回归: exit 2/1 分支可达——脚本正文零 Write-Error（EAP=Stop 下会吞掉显式 exit）', () => {
+    const codeLines = readScript().split('\n').filter((l) => !l.trim().startsWith('#'));
+    const writeError = codeLines.filter((l) => l.includes('Write-Error'));
+    expect(writeError, `P1-1 回归: Write-Error 出现在有效代码: ${writeError.join('; ')}`).toHaveLength(0);
+    // 前置缺失分支: Write-Host + exit 2（可达控制流）
+    expect(readScript()).toMatch(/Write-Host[^\n]*waiting[^\n]*\n\s*exit 2/);
   });
 });
