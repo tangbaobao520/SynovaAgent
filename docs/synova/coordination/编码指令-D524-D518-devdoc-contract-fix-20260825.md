@@ -10,7 +10,8 @@
 
 | 文档 | 路径 | 作用 |
 |---|---|---|
-| D518 spec（**已返修**） | `docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D518-single-entry-20260824.md` | 编码唯一契约——§2/§5.1/§7 已回填 `dist/backend.mjs` + `ELECTRON_RUN_AS_NODE=1`（D524 交付，commit 532aaa41） |
+| **D524 spec（本任务）** | `docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D524-devdoc-contract-fix-20260825.md` | **编码唯一契约**——D524 返修规格（§5 写集 / §7 验证命令 / §10 DS） |
+| D518 spec（被返修对象） | `docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D518-single-entry-20260824.md` | 已回填 `dist/backend.mjs` + `ELECTRON_RUN_AS_NODE=1`（commit 532aaa41）——核验对象 |
 | 派单 | `docs/synova/coordination/派单-D524-devdoc-fix-20260825.md` | 问题定义/验证命令/写集约束/完成动作 |
 | K3 切片 A 审计 | `docs/synova/audit-reports/2026-08-25-D517-D519.md`（P1-1） | 前车之鉴：M7 文档-实现漂移，照 spec §7 旧断言写测试会红 |
 | 北星 | `.claude/PRODUCT-BRIEF.md` §二/§六 | 产品方向锚点（FDE 零 Node 前提） |

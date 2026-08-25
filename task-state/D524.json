@@ -3,20 +3,23 @@
   "title": "D518 dev doc prod 契约返修（M7 漂移，K3 C2）",
   "status": "impl_done",
   "spec": {
-    "doc": "docs/synova/coordination/派单-D524-devdoc-fix-20260825.md",
+    "doc": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D524-devdoc-contract-fix-20260825.md",
     "source": "K3 切片 A 审计 P1-1 (C2)",
-    "report": "docs/synova/audit-reports/2026-08-25-D517-D519.md"
+    "report": "docs/synova/audit-reports/2026-08-25-D517-D519.md",
+    "dispatch": "docs/synova/coordination/派单-D524-devdoc-fix-20260825.md",
+    "commit": "aef5fbef（dev doc 定稿，分支 docs/d524-devdoc-fix）"
   },
   "impl": {
-    "commit": "532aaa41 (docs/d524-devdoc-fix)",
+    "commit": "532aaa41 (docs/d524-devdoc-fix) + 77bdaa8c (task-state)",
     "by": "dsh-dev-doc",
     "at": "2026-08-25",
     "files": [
-      "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D518-single-entry-20260824.md"
+      "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D518-single-entry-20260824.md",
+      "docs/synova/coordination/编码指令-D524-D518-devdoc-contract-fix-20260825.md"
     ],
     "evidence": {
-      "grep_old_contract": "grep -n 'node dist/src/index.js' SYNOVA-IMPL-DSH-D518-single-entry-20260824.md → 零结果",
-      "grep_new_contract": "grep -n 'dist/backend.mjs' → §2/§5.1/§7 三处",
+      "grep_old_contract": "grep -c 'node dist/src/index.js' SYNOVA-IMPL-DSH-D518-single-entry-20260824.md → 0",
+      "grep_new_contract": "grep -n 'dist/backend.mjs' → 9 处覆盖 §2/§5.1/§7",
       "gatekeeper": "exit 0 (C1-C6 ALL PASS, 2026-08-25)"
     }
   },
