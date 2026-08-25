@@ -1,0 +1,15 @@
+{
+  "task_id": "D529",
+  "title": "C1 desktop-build CI 修复（macos electron-builder + windows backend 失败）",
+  "status": "claimed",
+  "spec": {
+    "doc": "docs/synova/coordination/派单-C1C2-遗留闭环-20260825.md",
+    "source": "切片 A C1 条件项",
+    "slice": "L1-A"
+  },
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-25",
+  "updated_by": "alloc-task-id"
+}

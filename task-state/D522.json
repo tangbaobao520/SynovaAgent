@@ -1,11 +1,11 @@
 {
   "task_id": "D522",
   "title": "L1-B 服务自启开窗即用(1-4)",
-  "status": "impl_done",
+  "status": "audited",
   "slice": "L1-B",
   "spec": {
     "doc": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D522-service-boot-20260825.md",
-    "branch": "docs/slice-b-specs",
+    "branch": "spec 提交 5110fb21 在 impl 分支内（P1-2/P2-8 修正）",
     "commit": "5110fb21",
     "gatekeeper": "exit 0 (C1-C6 ALL PASS, 2026-08-25)"
   },
@@ -33,12 +33,11 @@
     "known_preexisting": "npm run lint 在 src/server.ts 有预存在 TS 错误（非本任务引入，git diff 可证）"
   },
   "audit": {
-    "verdict": "CONDITIONAL PASS",
-    "blocker": "P0-1: 分支基 5d6f487d 陈旧落后 main 68，缺 D518 prod 修复，须 rebase 合并保留双侧",
-    "fix_dispatch": "docs/synova/coordination/派单-D522D523-P01-fix-20260825.md",
-    "fix_status": "P0-1 已修（merge origin/main 双侧保留 + 断言更新 + 全量复跑）——待 K3 复审",
+    "auditor": "k3",
+    "verdict": "PASS",
     "report": "docs/synova/audit-reports/2026-08-25-D522-D523.md",
-    "audit_branch": "audit/k3-20260825-d522-d523"
+    "date": "2026-08-25",
+    "recheck": "P0-1 修复后复审：双侧保留 + 树终验零删除 + 59/3/62 复跑 + 基线零新增"
   },
   "updated_at": "2026-08-25",
   "updated_by": "dsh",

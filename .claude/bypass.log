@@ -710,3 +710,27 @@ Binary file .claude/bypass.log matches
 2026-08-25T17:10:53+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=c32b542f4f6a8ef2a559bc5d996c184a8f667d6c
 2026-08-25T23:33:09+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=7c2c0350aafffc2d257004ec8c6eec0cde44c0e5
 2026-08-25T23:45:34+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=49626706f1ba6fb936f7af947e16cf6d9d4e8e87
+2026-08-25T04:30:00+08:00 | COMMITTED | pre-commit PASS（D451 补记） | TASK_ID=D522 | AGENT=dsh-cto | HASH=8b8ad79c
+2026-08-25T04:31:00+08:00 | COMMITTED | pre-commit PASS（D451 补记） | TASK_ID=D523 | AGENT=dsh-cto | HASH=df2502eb
+2026-08-25T04:32:00+08:00 | COMMITTED | pre-commit PASS（D451 补记） | TASK_ID=D522 | AGENT=dsh-cto | HASH=b24b447a
+2026-08-25T04:33:00+08:00 | COMMITTED | pre-commit PASS（D451 补记） | TASK_ID=D523 | AGENT=dsh-cto | HASH=aa9c1951
+2026-08-25T04:34:00+08:00 | COMMITTED | pre-commit PASS（D451 补记） | TASK_ID=D522/D523 | AGENT=dsh-cto | HASH=bccc9195
+2026-08-25T18:03:55+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=5335711d8c18e9cb72ec7b34996ddce351ade606
+2026-08-25T18:04:44+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=11784bb2116d87e8a6dbbfd6fbdfed812699eb3b
+2026-08-25T12:21:35Z detected-bypass no-precommit-marker
+2026-08-25T20:21:57+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/slicec-taskstate-fix
+2026-08-25T20:21:57+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=98c5ceffa6b189ac6b4c61074fbce2c539f00a35
+2026-08-25T20:22:15+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=30102ceb908903bd7748f3d051bdd646e95693d4
+2026-08-25T20:47:49+08:00 | GATE_FAIL_SOFT | exit=1 | branch=docs/d524-devdoc-fix
+2026-08-25T20:47:50+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=532aaa41d1abc3405ee1b2fa4c7ae2ede702d5dd
+2026-08-25T20:48:13+08:00 | GATE_FAIL_SOFT | exit=1 | branch=docs/d524-devdoc-fix
+2026-08-25T20:48:14+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=77bdaa8ce86ea8c86669480467de5d01e76d71fc
+2026-08-25T20:52:51+08:00 | GATE_FAIL_SOFT | exit=1 | branch=docs/d524-devdoc-fix
+2026-08-25T20:52:51+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=aef5fbef9f7043e3f4447032e6965026e66fbf37
+2026-08-25T21:03:29+08:00 | GATE_FAIL_SOFT | exit=1 | branch=docs/d524-devdoc-fix
+2026-08-25T21:04:03+08:00 | GATE_FAIL_SOFT | exit=1 | branch=docs/d524-devdoc-fix
+2026-08-25T21:04:17+08:00 | GATE_FAIL_SOFT | exit=1 | branch=docs/d524-devdoc-fix
+2026-08-25T21:04:17+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=2b5333c5b215d94bdfddc24580c135eaaf24942a
+2026-08-25T21:22:43+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D524 | AGENT=dsh-deepseek-harness
+2026-08-25T21:31:07+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=4cf53f5c0597e657738712d75530424e2c4b89e2
+2026-08-25T14:12:40Z COMMITTED pre-commit PASS（D451 补记） TASK_ID=D530 AGENT=dsh-cto HASH=734ab32e

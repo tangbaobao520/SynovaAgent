@@ -1,11 +1,11 @@
 {
   "task_id": "D523",
   "title": "L1-B Windows 双击安装启动出窗(1-2)",
-  "status": "impl_done_waiting_exe",
+  "status": "audited",
   "slice": "L1-B",
   "spec": {
     "doc": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D523-win-double-click-20260825.md",
-    "branch": "docs/slice-b-specs",
+    "branch": "spec 提交 5110fb21 在 impl 分支内（P1-2/P2-8 修正）",
     "commit": "5110fb21",
     "gatekeeper": "exit 0 (C1-C6 ALL PASS, 2026-08-25)",
     "p12_fix": "P1-2: spec.branch 'docs/slice-b-specs' 为 spec worktree 临时分支，已随 P0-1 在 impl 段回填真实 impl 分支 feat/d523-win-double-click"
@@ -28,12 +28,11 @@
     "pending": "DS1（Win 本机 powershell 实跑 exit 0 + evidence 五类文件）与 DS2（evidence 关键摘录回填）waiting 切片 A D517 .exe 落地——按 spec §头部硬约束不伪造实测（DS4 教训）"
   },
   "audit": {
-    "verdict": "CONDITIONAL PASS",
-    "blocker": "P0-1 同 D522（分支基陈旧缺 D518 修复）",
-    "fix_dispatch": "docs/synova/coordination/派单-D522D523-P01-fix-20260825.md",
-    "fix_status": "P0-1/P1-1/P1-2 已修（D523 叠于修复后 D522 之上）——待 K3 复审",
+    "auditor": "k3",
+    "verdict": "PASS",
     "report": "docs/synova/audit-reports/2026-08-25-D522-D523.md",
-    "audit_branch": "audit/k3-20260825-d522-d523"
+    "date": "2026-08-25",
+    "recheck": "P0-1 修复后复审：双侧保留 + 树终验零删除 + 59/3/62 复跑 + 基线零新增"
   },
   "updated_at": "2026-08-25",
   "updated_by": "dsh",
