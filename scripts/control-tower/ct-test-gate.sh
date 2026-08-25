@@ -45,7 +45,10 @@ while IFS= read -r sf; do
   t="$ROOT/tests/control-tower/${bn}.test.sh"
   if [ ! -f "$t" ]; then
     MISSING="${MISSING}  ${sf} → 缺配对测试 tests/control-tower/${bn}.test.sh\n"
-  elif ! ( cd "$ROOT" && bash "$t" >/dev/null 2>&1 ); then
+  # D521/M13: 剥 GIT_DIR/GIT_WORK_TREE——hook 上下文（pre-commit→本门禁）会导出它们，
+  #   测试内沙箱 git commit（git -C 不覆盖 GIT_DIR env）会污染宿主分支（D521-3 实证:
+  #   bypass-precommit/post-commit-marker 沙箱提交落到执行分支，branch ref 被覆写）。
+  elif ! ( cd "$ROOT" && env -u GIT_DIR -u GIT_WORK_TREE bash "$t" >/dev/null 2>&1 ); then
     RED="${RED}  ${sf} 配对测试红: tests/control-tower/${bn}.test.sh\n"
   fi
 done <<< "$CT_SCRIPTS"

@@ -11,6 +11,38 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V5.1.0 (2026-08-25) — D521-4 synova submit 统一提交入口（MINOR：新机制）
+
+- **synova-submit.sh（新）**: 六步编排——① tag 时机检查（孤儿 tag 提前黄色警告，不再 push 时撞 D331 盲猜）→ ② bypass 竞态确认（hook 层登记接线验证）→ ③ 门禁 dry-run（synova-commit --check 一次报全）→ ④ CI 等价模拟（simulate-ci.sh，本地能抓的错不送 CI）→ ⑤ git commit（SYNO_SUBMIT_MODE=1：不 auto-tag 不 auto-push，§6 纪律）→ ⑥ push + 失败诊断（::error 注解通道，CI-诊断通道.md）。--dry-run 只跑 ①-④；--no-push 留本地。SYNO_SUBMIT_CHECK_CMD/SIM_CMD 注入缝（测试）。
+- **synova-commit**: SYNO_SUBMIT_MODE=1 跳过 auto_tag_and_version + push_with_tags（tag 在 main 合并后打——§6 纪律由编排层物理落地）。
+- **设计原则**: 编排而非新门禁——每阶段调用现有 check 脚本（--check/simulate-ci/pre-push 语义），只是顺序和时机正确。
+- **测试**: synova-submit.test.sh（新，10/10：六段物理顺序/全绿 dry-run/④红⑤不执行/③红④不执行/缺参 exit 2），进双平台 CI。
+- **作者**: dsh-cto
+
+## V5.0.5 (2026-08-25) — D521-3 CI 诊断通道 + push 前 CI 等价模拟（PATCH）
+
+- **工具1 CI 诊断通道**: docs/synova/coordination/CI-诊断通道.md——无 token 时经匿名 check-runs annotations API 读 CI 失败（curl 模板 + 边界）；pre-commit-check.sh 的 hard_check 失败与终局 verdict 在 GITHUB_ACTIONS 下输出 `::error` 注解（失败点名进 annotations，本地输出不污染）。
+- **工具2 simulate-ci.sh**: push 前 CI 等价模拟——① Iron Laws（GITHUB_ACTIONS=true SYNO_CI=1 SYNO_DIFF_BASE=origin/main）+ ② 密封 gate 测试（清单从 ci.yml CT job 单源提取，防漂移）。SYNO_SIM_PRECOMMIT 注入缝（测试用）；三态退出（D328）。
+- **模拟首战立功（吃自己的药）**: 抓到 3 个真问题——① alloc-task-id.test.sh 测试污染（在真实 brief 目录生成占位 brief，模板排除项文本在 CI strict 下硬炸）→ alloc-task-id.sh 加 SYNO_BRIEF_DIR 注入缝 + 测试沙箱化；② brief 排除项无文件路径（修）；③ 跨午夜 brief 日期漂移 + 写集漏列 scripts/hooks/post-commit.sh（修）。
+- **测试**: simulate-ci.test.sh（新，7/7：绿桩/红桩抓差异/缺失 exit 2 降级/接线三断言）；post-commit-marker 15/15（SYNO_SKIP_AUTOREG 测试隔离分层）。
+- **作者**: dsh-cto
+
+## V5.0.4 (2026-08-24) — D521-2 bypass COMMITTED 挪 hook 层（PATCH）
+
+- **不变量2 hook 层登记**: post-commit.sh 在 bypass 检测通过（PASS_WAY≠0，即 pre-commit 真跑过）后，立即追加本提交 HASH 的 COMMITTED 行 + 成对影子登记提交（message 标记「bypass COMMITTED 登记」防递归）——覆盖裸 git commit 与 synova-commit 两条路径；bypass.log 提交后永干净（无脏文件挡 merge），D451 补记循环从根消除。--no-verify 提交不登记（不洗白绕过）。
+- **影子提交天然豁免对账**: 影子只改 .claude/bypass.log → 命中既有 D451 豁免（纯补记提交不能被要求自己被自己记录），无需改对账逻辑。
+- **synova-commit 去重**: D508 的 COMMITTED 追加删除（hook 已统一登记，双写必留脏）；write-set 释放识别影子提交回退 HEAD^ 取真实文件清单。
+- **测试**: bypass-precommit.test.sh（新，7/7：裸 commit 含 HASH/树干净/影子标记/链长稳定无嵌套/绕过不登记/接线双断言），进双平台 CI。
+- **作者**: dsh-cto
+
+## V5.0.3 (2026-08-24) — D521-1 parser 剥壳对称 + tag 校验收窄（PATCH）
+
+- **不变量3 parser 剥壳对称**: brief_parser.py parse_q2 的 include 段与 exclude 段同等剥壳——剥动词前缀（改/修改/新增/新建/修复/扩展/实现/更新/重构/升级/创建/编写/增加/优化/调整/添加）+ 剥全角/半角括号描述（"src/x（说明）"→"src/x"）；exclude 前缀补「不动」（对齐 check-plan-integrity 动词表）。resolve-commit-brief.sh 内嵌降级解析器同步。修复: D328 动词前缀误拦 + G12 全角括号误报（同一病根：剥壳规则不对称）。
+- **不变量1 tag 校验收窄（D331）**: check_tag_ancestry 从「所有本地 tag 须为 HEAD 祖先」改为「非 HEAD 祖先的孤儿 tag 跳过不拦；HEAD 祖先 tag 须为 origin/main 祖先」——孤儿 tag（V4.7.1 类历史事故/其他分支 tag）不再拦死无关分支推送（D520 实证×3）；未合并分支上的 tag 仍拦（tag 只在 main 可达时合法）；origin/main 不可解析 → 显式降级（铁律 11）。
+- **D319 时机契约（§6 配套）**: feature 分支推送时 VERSION.md 最新版本无 tag = 合法中间态（§6: tag 在 main 合并后打），降级显式提示；main/无分支上下文（SYNO_TAG_ONLY 测试）保持严格。
+- **测试**: tag-ancestry.test.sh（新，8/8：孤儿不拦/未合并拦/main 可达放/降级提示）+ brief-parser-strip.test.sh（新，10/10：5 动词剥壳 + 裸路径回归 + exclude 对称 + resolver 接线），均进双平台 CI。
+- **作者**: dsh-cto（并行 CTO session，spec 执行方）
+
 ## V5.0.2 (2026-08-24) — D520 跨平台适配收口（PATCH；V5.0.1 已被 Win 线 verify-parallel 豁免占用，本任务顺延）
 
 - **任务1 task-start CRLF 修复（P0）**: 并行拦截 `_PAR_N` 双步清洗（`tr -d '\r\n'` + `//[^0-9]/`）——修 Win 下 `[[ "3\r" -gt 0 ]]` 算术错误致并行隔离空转（08-16 起 3 次复发 P1 病根）；同时发现并修复 main 合并事故把 `tr -d '\n\r'` mangle 成字面双 LF。pre-commit `_ACT_N` 同型加固。

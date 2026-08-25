@@ -1,0 +1,18 @@
+{
+  "task_id": "D483",
+  "title": "register 认证闭环 切片 A——匿名注册可达（D481 产品发现收尾）",
+  "slice": "AUTH-A",
+  "status": "spec_done",
+  "risk": "medium",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-D483-register-auth-slice-a-20260824.md",
+    "commit": "PENDING",
+    "by": "dev-doc",
+    "at": "2026-08-24"
+  },
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-24T14:00:00+08:00",
+  "updated_by": "dev-doc"
+}

@@ -52,8 +52,14 @@
 
 > 共享资源标注（S-8）：本写集不含 VERSION.md（功能打通，非门禁/工具行为变化，不 bump）；current-brief / 暂存区共享，串行触碰；与 D483（切片 A）共享 auth.ts——**串行，D483 合并后本切片才开工**。
 
-### 3.2 最终实现同 commit 回填
-若实现偏离方案（如白名单用前缀匹配而非逐路径、或 accept 需补 email 校验、或测试暴露 enterprise.ts bug 需修），必须在本节同 commit 回填最终形态（S-6）。
+### 3.2 最终实现同 commit 回填（2026-08-25 交付时回填）
+最终实现与 §3.1 方案一致 + 三处偏差如实记录（S-6）：
+* **一致**: isWhitelisted 加 2 条分支（`path === '/api/enterprise/register'` 精确 + `path.startsWith('/api/enterprise/invitation/')` 前缀，auth.ts L92-93）；invite/管理端点保持认证 + requireAdmin；enterprise.ts **零改动**（集成测试未暴露 bug，符合方案预期）。
+* **偏差 1（§2 缺口 C 表述修正）**: tests/routes/enterprise.test.ts **已存在**（D102+D103 遗留，108 行，commit 34eeff0b）——dev doc 原文"不存在（grep 确认）"字面不准确；实测其内容为 bcrypt 单元测试 + 内存 Map 操作 + 模块导出检查，零 HTTP 路由覆盖，邀请链路零断言——**实质主张（邀请链路零真实覆盖）成立**。实际操作为**扩充**（保留旧 11 断言 + 新增 D484 集成 describe 6 用例），非新建。
+* **偏差 2（测试挂载增强）**: 集成测试挂载 `express.json() → jwtAuthMiddleware → authRoutes → enterpriseRoutes`（生产 server.ts 同构），并按生产 synova-agent.ts D224 模式将**同一 UserStore 实例**注入 auth/enterprise 两路由模块——用例②的 admin token 经真实 login 获取（非直接签发），register→login→invite→query→accept 全链路 100% 真实（铁律 12）。
+* **偏差 3（requireAdmin 语义实测修正）**: requireAdmin 放行 admin **与 manager**（enterprise.ts L80）——用例⑥的 403 断言使用 **staff** 角色邀请（INVITE_ROLE='staff'），staff 不在 requireAdmin 白名单。
+* **过期邀请分支实现**: 用例⑤用过期分支以 `vi.useFakeTimers({ now: +8d, toFake: ['Date'] })` 精确 fake 时钟构造（只冻结路由内 new Date()，不拦 HTTP 栈 setTimeout）——GET/accept 均 400 INVITATION_EXPIRED 实测覆盖。
+* 交付: RED 基线 6 failed | 11 passed（匿名 401，dev doc §4 预期一致）→ GREEN 17/17 + 零回归 40/40 + tsc 28=28 零新增。提交 a6d4af07（PR #170）。
 
 ### 3.3 不做的事
 * **不做 invitations 持久化**（缺口 B）——涉及 GraphStore 企业/邀请元数据模型，独立任务（本切片记录遗留，不扩写集）。

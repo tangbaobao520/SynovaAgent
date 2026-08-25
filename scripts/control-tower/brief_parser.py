@@ -65,15 +65,21 @@ def parse_q2(text: str) -> dict:
             continue
         if in_q2 and line.startswith("- "):
             raw = line[2:]
-            # 排除段: 剥否定前缀
+            # D521/不变量3: 剥壳对称——include 段与 exclude 段同等剥壳
+            # （修复: include 不剥动词前缀/括号描述 → 认领失效 → D328 动词前缀误拦
+            #   + G12 全角括号误报；剥壳规则不对称是同一病根）
             if in_exclude:
-                for prefix in ("不修改", "不改", "不涉及", "不包括"):
+                for prefix in ("不修改", "不改", "不动", "不涉及", "不包括"):
                     raw = re.sub(rf"^{prefix}", "", raw)
+            else:
+                # include 段剥动词前缀（长词优先，防"改"吃掉"修改"）
+                raw = re.sub(
+                    r"^(修改|新增|新建|修复|扩展|实现|更新|重构|升级|创建|编写|增加|优化|调整|添加|改)\s*",
+                    "", raw)
             # strip 后置分隔
             path = re.split(r"[:：]| — ", raw, 1)[0].strip()
-            # 排除段: 剥括号描述
-            if in_exclude:
-                path = re.split(r"[（(]", path, 1)[0].strip()
+            # 剥括号描述（include/exclude 同规则）
+            path = re.split(r"[（(]", path, 1)[0].strip()
             if path:
                 (exclude if in_exclude else include).append(path)
     return {"include": include, "exclude": exclude}

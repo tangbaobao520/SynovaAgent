@@ -11,22 +11,35 @@
   },
   "impl": {
     "branch": "feat/d522-service-boot-teardown",
+    "p01_fix": {
+      "merge": "merge origin/main@e8f55c1c（P0-1 修复，2026-08-25）——backend-spawn.cjs 双侧保留: main 侧 D518 三项 prod 修复（buildCommand prod=process.execPath dist/backend.mjs + ELECTRON_RUN_AS_NODE=1 + stdio logFile?pipe:inherit）+ 分支侧 D522 teardown（signalTree/taskkillProcessTree/makeStop/SIGKILL 升级/幂等/进程组 detached）",
+      "test_assertion": "tests/electron/backend-spawn.test.ts buildCommand prod 断言 ['dist/src/index.js'] → ['dist/backend.mjs'] + bin=process.execPath（D518 新契约）",
+      "verify": "grep dist/src/index.js electron/ tests/electron/ 零结果；tests/electron/ 全绿（见 evidence）"
+    },
     "write_set": [
-      "electron/backend-spawn.cjs — spawn detached(POSIX 进程组) + signalTree/taskkillProcessTree/makeStop(SIGTERM→graceMs→SIGKILL, 幂等) + degraded 清理统一走进程树回收 + 导出新辅助函数",
-      "tests/electron/backend-spawn.test.ts — 补 D522 teardown 7 用例(正常/幂等/SIGKILL 升级/进程组孙进程/taskkill 降级/pid≤0 边界/五段链路集成)"
+      "electron/backend-spawn.cjs — spawn detached(POSIX 进程组) + signalTree/taskkillProcessTree/makeStop(SIGTERM→graceMs→SIGKILL, 幂等) + degraded 清理统一走进程树回收 + 导出新辅助函数；P0-1 合并后保留 main 侧 D518 三项 prod 修复",
+      "tests/electron/backend-spawn.test.ts — D522 teardown 7 用例(正常/幂等/SIGKILL 升级/进程组孙进程/taskkill 降级/pid≤0 边界/五段链路集成) + P0-1: buildCommand prod 断言更新为 D518 新契约"
     ],
     "evidence": {
-      "DS1_test_output": "Test Files 1 passed (1) | Tests 15 passed (15) — npx vitest run tests/electron/backend-spawn.test.ts（含 D522 teardown 7 用例；red 已证: 改造前 4 failed | 11 passed）",
+      "DS1_test_output": "P0-1 修复后复跑: tests/electron/ 4 文件全绿（39/39，见本轮提交后复跑输出）",
       "DS2_pid_dead": "assertDead(pid): process.kill(pid,0) 抛 ESRCH — 用例「正常路径: stop() → SIGTERM → 子进程 pid 已死」",
-      "DS3_grandchild": "用例「进程组: spawn detached 后孙进程也被回收」: process.kill(gcPid,0) 前置存活断言 → stop() 后 waitDead(gcPid)=true + assertDead(gcPid)",
-      "DS4_sigkill": "用例「升级路径: 子进程忽略 SIGTERM → graceMs(500ms 注入) 后 SIGKILL 杀死」物理断言 pid 已死",
-      "DS5_wiring": "grep electron/main.cjs: L19 require ensureBackend / L126 backendHandle = await ensureBackend / L189 backendHandle.stop() — 接线 D504 已就绪，本 D 验证未改（git diff 写集对账零 main.cjs）",
-      "DS6_scope": "git diff --name-only = electron/backend-spawn.cjs + tests/electron/backend-spawn.test.ts（+ .claude 门禁工件）；src/ 与 scripts/audit/ 零触碰；grep -rn '@deepseek-ai/dsh' electron/ package.json 零结果"
+      "DS3_grandchild": "用例「进程组: spawn detached 后孙进程也被回收」: process.kill(gcPid,0) 前置存活断言 → stop() 后 waitDead(gcPid)=true",
+      "DS4_sigkill": "用例「升级路径: 子进程忽略 SIGTERM → graceMs(500ms 注入) 后 SIGKILL 杀死」",
+      "DS5_wiring": "electron/main.cjs: require ensureBackend + whenReady 调用 + before-quit stop()（D504 接线，P0-1 合并后 main 侧 main.cjs 同样保留）",
+      "DS6_scope": "P0-1 写集 = 冲突解决（backend-spawn.cjs/task-state×2）+ 测试断言更新；src/ 与 scripts/audit/ 与 .github/workflows/desktop-build.yml 零触碰",
+      "P01_grep": "grep -rn 'dist/src/index.js' electron/backend-spawn.cjs tests/electron/ → 零结果；buildCommand('prod') = process.execPath + ['dist/backend.mjs']"
     },
-    "red_lines": "探活(probeOnce/probeUntil)零改动；main.cjs/build-synova.cjs/src/ 零改动；零 DSH 依赖（借鉴范式自研）",
-    "known_preexisting": "npm run lint 在 src/server.ts 有 2 个预存在 TS 错误（本任务写集外，git diff 确认非本任务引入）"
+    "red_lines": "探活(probeOnce/probeUntil)零改动；零 DSH 依赖（借鉴范式自研）",
+    "known_preexisting": "npm run lint 在 src/server.ts 有预存在 TS 错误（非本任务引入，git diff 可证）"
   },
-  "audit": null,
+  "audit": {
+    "verdict": "CONDITIONAL PASS",
+    "blocker": "P0-1: 分支基 5d6f487d 陈旧落后 main 68，缺 D518 prod 修复，须 rebase 合并保留双侧",
+    "fix_dispatch": "docs/synova/coordination/派单-D522D523-P01-fix-20260825.md",
+    "fix_status": "P0-1 已修（merge origin/main 双侧保留 + 断言更新 + 全量复跑）——待 K3 复审",
+    "report": "docs/synova/audit-reports/2026-08-25-D522-D523.md",
+    "audit_branch": "audit/k3-20260825-d522-d523"
+  },
   "updated_at": "2026-08-25",
   "updated_by": "dsh",
   "priority": "P1"

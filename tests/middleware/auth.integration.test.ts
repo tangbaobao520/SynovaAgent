@@ -7,9 +7,9 @@
  * D481: 对齐 D102/D479 确立的 login 契约——email/phone/wechatId + password bcrypt
  * (src/routes/auth.ts L114-146)。用户前置经真实 POST /api/auth/register 建立（唯一 email
  * 防 UserStore 分支 409 DUPLICATE；测试环境 getDatabase() 未初始化 → 内存 Map 降级，零 DB 副作用）。
- * 注: /api/auth/register 不在 jwtAuthMiddleware 白名单 (src/middleware/auth.ts L83-99)，
- * 与生产 server.ts 同构的挂载下需已认证身份方可到达——helper 用真实 signJwtToken 签发
- * bootstrap token 过认证层，注册路由逻辑（校验/bcrypt 哈希/去重/token 签发）100% 真实执行。
+ * D483: /api/auth/register 已加入 jwtAuthMiddleware 白名单 (src/middleware/auth.ts
+ * isWhitelisted，与 login 并列)——helper 匿名直连注册（无 Authorization 头），与真实用户
+ * 入口一致；bootstrap token 绕过已移除，白名单缺口不再被测试层掩盖。
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import express from 'express';
@@ -21,7 +21,7 @@ const TEST_PASSWORD = 'test-pass-123'; // register 契约: password ≥ 6 位 (s
 process.env.JWT_SECRET = TEST_SECRET;
 process.env.DEV_MODE = 'false';
 
-import { jwtAuthMiddleware, signJwtToken } from '../../src/middleware/auth';
+import { jwtAuthMiddleware } from '../../src/middleware/auth';
 import authRoutes from '../../src/routes/auth';
 import { rbacMiddleware, canModifyWorkspace } from '../../src/middleware/rbac';
 
@@ -81,18 +81,17 @@ beforeAll(async () => {
  * - 输出: { token: login 签发的 JWT, userId: 注册响应 payload.userId }
  * - 降级: register/login 任一步非预期状态码 → expect 直接 fail 该用例（fixture 失败 = 用例失败，不静默）
  *
- * register 请求携带真实 signJwtToken 签发的 bootstrap token: /api/auth/register
- * 不在 jwtAuthMiddleware 白名单（src/middleware/auth.ts L83-99），生产同构挂载下
- * 需已认证身份方可到达。中间件真实验证该 token，注册路由逻辑 100% 真实执行（铁律 12）。
+ * D483: 注册匿名直连（无 Authorization 头）——/api/auth/register 在 jwtAuthMiddleware
+ * 白名单（src/middleware/auth.ts isWhitelisted，与 login 并列），与真实用户入口一致，
+ * 注册路由逻辑（校验/bcrypt 哈希/去重/token 签发）100% 真实执行（铁律 12）。
  */
 async function registerAndLogin(role: string, tag: string): Promise<{ token: string; userId: string }> {
   const email = `${tag}-${Date.now()}@test.local`;
 
-  // ① 注册（唯一 email + password + role + orgId → 201 + payload.userId）
-  const bootstrapToken = signJwtToken({ sub: 'test-bootstrap', role: 'admin', orgId: 'acme-corp' });
+  // ① 匿名注册（唯一 email + password + role + orgId → 201 + payload.userId；无 Authorization 头 = 真实用户路径）
   const reg = await fetch(`${baseUrl}/api/auth/register`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${bootstrapToken}` },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password: TEST_PASSWORD, role, orgId: 'acme-corp' }),
   });
   expect(reg.status).toBe(201);

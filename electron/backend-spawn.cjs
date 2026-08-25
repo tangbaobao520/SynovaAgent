@@ -9,13 +9,14 @@
  *     @input  options: {
  *       serverUrl: string;                  // 探活目标（GET /api/healthz）
  *       cwd: string;                        // spawn 工作目录
- *       mode: 'dev' | 'prod';               // dev: npx tsx src/index.ts; prod: node dist/index.js
+ *       mode: 'dev' | 'prod';               // dev: npx tsx src/index.ts; prod: 包内 Electron 以 node 模式跑 dist/backend.mjs（D518）
  *       dbPath?: string;                    // prod: 注入 SYNOVA_DB_PATH（userData 数据目录，L1-7）
  *       logFile?: string;                   // 后端 stdout/stderr 落盘
  *       maxRestarts?: number;               // 默认 3（10min 窗口语义——计数器+时间戳）
  *       command?: { bin, args };            // 测试注入覆盖默认命令
  *       probeTimeoutMs?: number;            // 单轮探活窗口，默认 60000
  *       pollIntervalMs?: number;            // 探活轮询间隔，默认 1000
+ *       graceMs?: number;                    // D522: SIGTERM→SIGKILL 升级窗口，默认 5000（可注入缩短供测试）
  *     }
  *     @output { started, pid?, reused?, degraded?, error?, stop }
  *       started=true  → 探活失败 → spawn → 探活成功
@@ -54,12 +55,19 @@ async function probeUntil(url, windowMs, pollIntervalMs) {
   return false;
 }
 
-/** 双模式默认命令（导出供测试直测） */
+/**
+ * 双模式默认命令（导出供测试直测）。
+ * D518 prod 运行时修复（实测三重阻塞后的定案，runbook desktop-dev-prod.md §五）:
+ *   ① dist/src/*.js 是 ESM 无扩展名 import——裸 node 直接 ERR_MODULE_NOT_FOUND（main 存量）
+ *   ② 打包产物依赖在 app.asar 内，裸 node 的 node_modules 解析不可达
+ *   ③ 原生模块（better-sqlite3/bcrypt）在产物内为 Electron ABI——任何外部 node 都 ABI 不匹配
+ *   且 FDE 机器无 Node 前提（北星 §二）。
+ *   → prod = 包内 Electron 二进制以 node 模式跑 esbuild 单文件 bundle（dist/backend.mjs，
+ *     externals 原生模块经 extraResources 落 resources/node_modules，ESM 向上解析可达 + ABI 一致）。
+ */
 function buildCommand(mode) {
-  // 注意: tsc 实际产物入口为 dist/src/index.js（package.json main 声明 dist/index.js 为存量不一致，
-  // 以磁盘事实为准——D504 实测 electron-builder --dir 产物 Resources/dist/src/index.js）
   return mode === 'prod'
-    ? { bin: 'node', args: ['dist/src/index.js'] }
+    ? { bin: process.execPath, args: ['dist/backend.mjs'] }
     : { bin: 'npx', args: ['tsx', 'src/index.ts'] };
 }
 
@@ -118,11 +126,7 @@ function makeStop(platform, pid, child, graceMs = 5000) {
   };
 }
 
-/**
- * 日志流: 后端 stdout/stderr 追加写 logFile（degraded 可见，铁律 11/24）
- * @param {import('child_process').ChildProcess} child
- * @param {string} [logFile]
- */
+/** 日志流: 后端 stdout/stderr 追加写 logFile（degraded 可见，铁律 11/24） */
 function attachLogStream(child, logFile) {
   if (!logFile) return;
   try {
@@ -163,8 +167,12 @@ async function ensureBackend(options) {
   // 2. spawn + 探活轮询 + 重启限次
   const cmd = command || buildCommand(mode);
   const env = { ...process.env };
-  if (mode === 'prod' && dbPath) {
-    env.SYNOVA_DB_PATH = dbPath; // src/config.ts:90 只读消费（Win 领地零改动）
+  if (mode === 'prod') {
+    // 包内 Electron 以 node 模式执行 backend.mjs（见 buildCommand 注释；FDE 零 Node 前提）
+    env.ELECTRON_RUN_AS_NODE = '1';
+    if (dbPath) {
+      env.SYNOVA_DB_PATH = dbPath; // src/config.ts:90 只读消费（Win 领地零改动）
+    }
   }
 
   let child = null;
@@ -174,11 +182,15 @@ async function ensureBackend(options) {
   const restarts = [];
 
   const spawnOnce = () => {
+    // D518 修复: 无 logFile 时用 inherit 而非 pipe——pipe 无人读取会写满 64KB 缓冲导致子进程
+    // 阻塞在 stdout 写、探活永不转健康（实测: dev 模式 spawn 后 60s 窗口 ×4 全超时，直跑 25s 即健康）。
+    // inherit = 共享 Electron 进程 stdout（自动排空 + 后端日志直接可见=运行证据）。铁律 24: 不静默。
+    const stdio = logFile ? ['ignore', 'pipe', 'pipe'] : ['ignore', 'inherit', 'inherit'];
     // D522: POSIX 下 detached 让子进程自建进程组——kill(-pid) 可及孙进程（无孤儿）
     const c = spawn(cmd.bin, cmd.args, {
       cwd,
       env,
-      stdio: ['ignore', 'pipe', 'pipe'],
+      stdio,
       detached: process.platform !== 'win32',
     });
     attachLogStream(c, logFile);

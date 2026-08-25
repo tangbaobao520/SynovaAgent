@@ -136,7 +136,10 @@ except ImportError:
                 in_inc = True
                 continue
             if in_q2 and in_inc and line.startswith('- '):
-                p = line[2:].split(':', 1)[0].split('：', 1)[0].split(' — ', 1)[0].strip()
+                # D521/不变量3: 与 brief_parser.parse_q2 同步剥壳（动词前缀 + 括号描述）
+                raw = re.sub(r'^(修改|新增|新建|修复|扩展|实现|更新|重构|升级|创建|编写|增加|优化|调整|添加|改)\s*', '', line[2:])
+                p = raw.split(':', 1)[0].split('：', 1)[0].split(' — ', 1)[0].strip()
+                p = re.split(r'[（(]', p, 1)[0].strip()
                 if p:
                     paths.append(p)
         # D329: 对齐 brief_parser.parse_q2 契约（返回 dict）——旧实现返回 list，
