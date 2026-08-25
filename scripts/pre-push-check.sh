@@ -154,6 +154,12 @@ check_tag_consistency() {
     echo -e "  ${GREEN}✅ D319: VERSION.md 最新版本 $ver 已有对应 tag${RESET}"
     return 0
   fi
+  # D521/§6 纪律: tag 只在 main 合并后打——feature 分支推送时最新版本无 tag 是
+  #   合法中间态（合并方负责打 tag；D331 仍校验已存在 tag 的锚点，门禁 0-2 仍拦直推 main）。
+  if [[ -n "${PUSH_BRANCH:-}" && "$PUSH_BRANCH" != "main" ]]; then
+    echo -e "  ${YELLOW}⚠️  D319: $ver 尚无 tag — feature 分支推送合法（§6: tag 在 main 合并后打）${RESET}"
+    return 0
+  fi
   echo -e "  ${RED}❌ D319: VERSION.md 最新版本 $ver 缺少对应 tag${RESET}"
   echo -e "  ${RED}    请先运行 synova-commit（提交成功后自动打 tag）或手动: git tag -a $ver -m \"bump $ver\"${RESET}"
   return 1
@@ -173,15 +179,34 @@ check_tag_ancestry() {
   VERSION_MD="${SYNO_VERSION_MD:-$REPO_ROOT/.codex/control-tower/VERSION.md}"
   TAG_FAIL=""
   echo -e "${CYAN}── D331: 版本 tag 锚点校验 ─────────────────────────────${RESET}"
+  # D521/不变量1: 校验范围收窄——孤儿 tag（非 HEAD 祖先，属其他分支或历史事故）
+  #   与本次推送无关 → 跳过不拦（D520 实证: V4.7.1 孤儿 tag 拦死无关分支推送×3）；
+  #   属于本分支（HEAD 祖先）的 tag 必须同时是 origin/main 祖先——tag 只在 main
+  #   可达时合法（版本纪律: 合并后才打 tag；submit 第①步会提前黄色警告同一件事）。
+  _HAS_MAIN_REF=1
+  if ! git rev-parse --verify origin/main >/dev/null 2>&1; then
+    _HAS_MAIN_REF=0
+    echo -e "  ${YELLOW}⚠️  origin/main 不可解析 — tag/main 锚点段降级跳过（沙箱/离线语义，铁律 11 显式）${RESET}"
+  fi
   for t in $(git tag -l 'V[0-9]*.[0-9]*.[0-9]*'); do
-    if ! git merge-base --is-ancestor "$t" HEAD 2>/dev/null; then # swallow-ok: if 条件消费 rc（孤儿 tag 判断）
-      TAG_FAIL="${TAG_FAIL}  $t 不是 HEAD 祖先（孤儿 tag）\n"
+    git merge-base --is-ancestor "$t" HEAD 2>/dev/null || continue # swallow-ok: 非 HEAD 祖先的 tag 与本推送无关，跳过
+    if [[ "$_HAS_MAIN_REF" == "1" ]] && ! git merge-base --is-ancestor "$t" origin/main 2>/dev/null; then # swallow-ok: if 条件消费 rc（锚点判断）
+      TAG_FAIL="${TAG_FAIL}  $t 是 HEAD 祖先但不在 origin/main 上（未合并分支 tag——合并后再打，或删除）\n"
     fi
   done
   if [[ -f "$VERSION_MD" ]]; then
     ver=$(grep -oE '^## V[0-9]+\.[0-9]+\.[0-9]+' "$VERSION_MD" | head -1 | awk '{print $2}')
-    if [[ -n "$ver" ]] && ! git merge-base --is-ancestor "$ver" HEAD 2>/dev/null; then # swallow-ok: if 条件消费 rc（锚点断裂判断）
-      TAG_FAIL="${TAG_FAIL}  $ver 缺失或非祖先（VERSION.md 最新版本锚点断裂）\n"
+    if [[ -n "$ver" ]]; then
+      if ! git tag -l "$ver" | grep -q .; then
+        # D521/§6: tag 不存在且推送目标非 main = 合法中间态（tag 在 main 合并后打）
+        if [[ -n "${PUSH_BRANCH:-}" && "$PUSH_BRANCH" != "main" ]]; then
+          echo -e "  ${YELLOW}⚠️  D331: $ver tag 未打 — feature 推送合法（§6: 合并后补打）${RESET}"
+        else
+          TAG_FAIL="${TAG_FAIL}  $ver 缺失（VERSION.md 最新版本无 tag）\n"
+        fi
+      elif ! git merge-base --is-ancestor "$ver" HEAD 2>/dev/null; then # swallow-ok: if 条件消费 rc（锚点断裂判断）
+        TAG_FAIL="${TAG_FAIL}  $ver 非 HEAD 祖先（VERSION.md 最新版本锚点断裂）\n"
+      fi
     fi
   fi
   if [[ -n "$TAG_FAIL" ]]; then
@@ -190,7 +215,7 @@ check_tag_ancestry() {
     echo -e "  ${RED}    请运行 git tag -f -a $ver -m \"retag $ver (D331)\" <真实提交> 重指（或删除孤儿 tag）${RESET}"
     return 1
   fi
-  echo -e "  ${GREEN}✅ D331: 所有版本 tag 均为 HEAD 祖先${RESET}"
+  echo -e "  ${GREEN}✅ D331: HEAD 祖先 tag 均为 main 可达（孤儿 tag 已豁免）${RESET}"
   return 0
 }
 
@@ -401,10 +426,13 @@ if [[ -f "$CHECK_BYPASS" ]]; then
   # D334: 对账 base 动态化 — PR 工作流下分支名每机器不同, 硬编码旧分支失效。
   # 优先 $PUSH_REMOTE/$PUSH_BRANCH（存在时），fallback origin/main（main 是唯一真相）。
   BYPASS_BASE=""
-  if [[ -n "$PUSH_REMOTE" && -n "$PUSH_BRANCH" ]] && git rev-parse --verify "$PUSH_REMOTE/$PUSH_BRANCH" >/dev/null 2>&1; then
-    BYPASS_BASE="$PUSH_REMOTE/$PUSH_BRANCH"
-  elif git rev-parse --verify origin/main >/dev/null 2>&1; then
+  # D521: 对账基永远取 origin/main——D508 merge-base 语义的前提（main 引入提交天然排除）。
+  #   分支 ref 为基时，merge main 后 main 侧新提交落入分支范围 → 它们没有也不该有本分支
+  #   登记 → 误拦（本批实证: merge 今日 main 后 8 个 main 提交被索登记）。
+  if git rev-parse --verify origin/main >/dev/null 2>&1; then
     BYPASS_BASE="origin/main"
+  elif [[ -n "$PUSH_REMOTE" && -n "$PUSH_BRANCH" ]] && git rev-parse --verify "$PUSH_REMOTE/$PUSH_BRANCH" >/dev/null 2>&1; then
+    BYPASS_BASE="$PUSH_REMOTE/$PUSH_BRANCH"
   fi
   if ! bash "$CHECK_BYPASS" "$BYPASS_BASE"; then
     echo ""

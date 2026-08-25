@@ -7,24 +7,34 @@
     "doc": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D523-win-double-click-20260825.md",
     "branch": "docs/slice-b-specs",
     "commit": "5110fb21",
-    "gatekeeper": "exit 0 (C1-C6 ALL PASS, 2026-08-25)"
+    "gatekeeper": "exit 0 (C1-C6 ALL PASS, 2026-08-25)",
+    "p12_fix": "P1-2: spec.branch 'docs/slice-b-specs' 为 spec worktree 临时分支，已随 P0-1 在 impl 段回填真实 impl 分支 feat/d523-win-double-click"
   },
   "impl": {
     "branch": "feat/d523-win-double-click",
+    "p01_fix": "P0-1: 叠于修复后的 feat/d522-service-boot-teardown 之上（merge origin/main 保留 D518 修复 + D522 teardown），合并顺序先 D522 后 D523（K3 P2-3）",
     "write_set": [
-      "scripts/desktop/win-install-verify.ps1 — 新建: 七步验证（前置 .exe+md5 → NSIS /S 静默安装 → 启动 → 60s 四断言 Get-Process/MainWindowTitle/Invoke-WebRequest healthz/backend.log → evidence 五类落盘 → Stop-Process 本实例清理+静默卸载 → 失败路径 failed.txt 不静默）；-DryRun/-SkipInstall/-KeepData 参数；exit 0/1/2 语义",
-      "docs/synova/runbooks/founder-demo-win.md — 新建: 4 步 checklist（安装/启动/出窗/首诊可达），每步命令+预期+证据落点（D510 DS11 Win 半边闭环）",
-      "tests/electron/win-install-verify.test.ts — 新建: 7 用例静态契约断言（存在+四断言关键字+参数分支消费+exit 语义注释与实现一致+有效代码零 taskkill+失败不静默+waiting 不伪造）"
+      "scripts/desktop/win-install-verify.ps1 — 七步验证（前置 .exe+md5 → NSIS /S 静默安装 → 启动 → 60s 四断言 Get-Process/MainWindowTitle/Invoke-WebRequest healthz/backend.log → evidence 五类落盘 → Stop-Process 本实例清理+静默卸载 → 失败路径 failed.txt 不静默）；-DryRun/-SkipInstall/-KeepData；exit 0/1/2",
+      "docs/synova/runbooks/founder-demo-win.md — 4 步 checklist（安装/启动/出窗/首诊可达），每步命令+预期+证据落点",
+      "tests/electron/win-install-verify.test.ts — 7 用例静态契约断言（含有效代码零 taskkill 红线 + waiting 不伪造）"
     ],
     "evidence": {
-      "DS5_static_test": "Test Files 1 passed (1) | Tests 7 passed (7) — npx vitest run tests/electron/win-install-verify.test.ts（红线用例剥离 # 注释后检测有效代码，零 taskkill）",
-      "DS3_precondition": "前置依赖未满足: release/*.exe 不存在（ls 实测，2026-08-25）——脚本 exit 2 = waiting，物理实测（DS1）不伪造，等切片 A D517 产物落地后在 Win 本机实跑",
+      "DS5_static_test": "Test Files 1 passed (1) | Tests 7 passed (7) — npx vitest run tests/electron/win-install-verify.test.ts",
+      "DS3_precondition": "前置 release/*.exe 不存在（ls 实测）——脚本 exit 2 = waiting，物理实测（DS1）不伪造，等切片 A D517 产物落地后在 Win 本机实跑",
       "DS4_checklist": "docs/synova/runbooks/founder-demo-win.md 4 步各含命令/预期/evidence 字段名映射",
-      "DS7_scope": "git diff --name-only = 3 新建 + task-state + brief；electron/、src/、build-synova.cjs、scripts/audit/ 零触碰"
+      "DS7_scope": "P0-1 写集外零触碰: electron/、src/、build-synova.cjs、scripts/audit/、.github/workflows/desktop-build.yml 零改动",
+      "P11_ps1_exit2": "P1-1: ps1 exit 2 路径实测记录——无 release/*.exe 时脚本输出 'waiting: 切片 A D517 .exe 缺失' 后 exit 2（PowerShell 语义依赖 Windows 本机；macOS 无 powershell，等待 Win 机器上 `powershell -File ... ; echo $LASTEXITCODE` 物理复跑核验，静态断言已覆盖 exit 2 分支存在与 waiting 提示）"
     },
     "pending": "DS1（Win 本机 powershell 实跑 exit 0 + evidence 五类文件）与 DS2（evidence 关键摘录回填）waiting 切片 A D517 .exe 落地——按 spec §头部硬约束不伪造实测（DS4 教训）"
   },
-  "audit": null,
+  "audit": {
+    "verdict": "CONDITIONAL PASS",
+    "blocker": "P0-1 同 D522（分支基陈旧缺 D518 修复）",
+    "fix_dispatch": "docs/synova/coordination/派单-D522D523-P01-fix-20260825.md",
+    "fix_status": "P0-1/P1-1/P1-2 已修（D523 叠于修复后 D522 之上）——待 K3 复审",
+    "report": "docs/synova/audit-reports/2026-08-25-D522-D523.md",
+    "audit_branch": "audit/k3-20260825-d522-d523"
+  },
   "updated_at": "2026-08-25",
   "updated_by": "dsh",
   "priority": "P1"

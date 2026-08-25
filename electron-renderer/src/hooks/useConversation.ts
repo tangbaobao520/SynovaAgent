@@ -19,8 +19,10 @@ export function useConversation() {
 
   const { isStreaming, thinkingExperts, sendMessage, cancelStreaming } = useStreaming();
 
-  const send = useCallback((text: string, mentions?: string[]) => {
-    sendMessage(text, mentions);
+  // D517 修复: useStreaming.sendMessage 只收 text（后端 /api/diagnosis/consult 尚无 mentions 字段，
+  // 静默丢弃会造成假接线）——本 hook 当前零消费者，签名收敛为单参，mentions 待后端支持后再上。
+  const send = useCallback((text: string) => {
+    void sendMessage(text);
   }, [sendMessage]);
 
   return {

@@ -26,6 +26,7 @@ import os from 'os';
  */
 import { createRequire } from 'module';
 const require_ = createRequire(import.meta.url);
+const ROOT = path.resolve(__dirname, '../..');
 const backendSpawnPath = path.resolve(__dirname, '../../electron/backend-spawn.cjs');
 
 /** 起一个假后端：healthServer 立即 200；delayServer 探活 N 次后转 200（模拟慢启动） */
@@ -229,8 +230,28 @@ describe('ensureBackend — env 与命令契约（DS8 双模式）', () => {
     expect(dev.bin).toBe('npx');
     expect(dev.args).toEqual(['tsx', 'src/index.ts']);
     const prod = buildCommand('prod');
-    expect(prod.bin).toBe('node');
-    expect(prod.args).toEqual(['dist/src/index.js']); // tsc 实际产物入口（磁盘事实）
+    // D518 prod 运行时: 包内 Electron 二进制（node 模式）跑 esbuild 单文件 bundle
+    expect(prod.bin).toBe(process.execPath);
+    expect(prod.args).toEqual(['dist/backend.mjs']);
+  });
+
+  // ═══ D518 新增: F4 注释漂移回归（K3 D504 审计 F4——注释与磁盘事实不一致）═══
+  it('F4 回归: electron/*.cjs 注释零裸 dist/index.js 残留（P0-1 后 prod 契约 = dist/backend.mjs）', () => {
+    const electronDir = path.join(ROOT, 'electron');
+    const files = fs.readdirSync(electronDir).filter((f) => f.endsWith('.cjs'));
+    expect(files.length).toBeGreaterThan(0);
+    for (const f of files) {
+      const src = fs.readFileSync(path.join(electronDir, f), 'utf-8');
+      // 匹配未被 "src/" 前缀修饰的 dist/index.js（注释或代码——一律禁）
+      const stale = src.match(/(?<!src\/)dist\/index\.js/g) ?? [];
+      expect(stale, `${f} 存在 F4 注释漂移残留: ${stale.join(', ')}`).toHaveLength(0);
+    }
+  });
+
+  it('D518 回归: main.cjs 启动首行含 boot mode 显式日志（模式显式化——日志即证据）', () => {
+    const main = fs.readFileSync(path.join(ROOT, 'electron', 'main.cjs'), 'utf-8');
+    expect(main).toMatch(/\[electron\] boot mode=/);
+    expect(main).toMatch(/isProdBoot \? 'prod' : 'dev'/);
   });
 
   it('stop() 生命周期：started 后 stop → 子进程退出（无孤儿，DS 契约 lifecycle）', async () => {

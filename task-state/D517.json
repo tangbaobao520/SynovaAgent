@@ -1,12 +1,44 @@
 {
   "task_id": "D517",
   "title": "L1-A 安装包可产出(1-1)",
-  "status": "claimed",
+  "status": "audited",
   "slice": "L1-A",
-  "spec": null,
-  "impl": null,
-  "audit": null,
+  "spec": {
+    "doc": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D517-installer-build-20260824.md",
+    "commit": "683d2252（spec 初稿，分支 docs/slice-a-specs；定稿 tip 见分支 HEAD）",
+    "gatekeeper": "exit 0 (C1-C6 ALL PASS, 2026-08-24)"
+  },
+  "impl": {
+    "branch": "feat/slice-a-d517-d519",
+    "agent": "dsh-impl",
+    "writeset": "build-synova.cjs, .github/workflows/desktop-build.yml, tests/electron/desktop-build.test.ts, docs/synova/runbooks/desktop-build.md + 存量阻塞修复 electron-renderer/src/lib/api.ts & src/hooks/useConversation.ts（D333 技术自决，见 brief Q2 与交付报告）",
+    "evidence": {
+      "DS1_dir_build": "release/mac-arm64/SynovaAgent.app, du -sm = 301 (>100) — 命令: npx electron-builder --config build-synova.cjs --dir（本机 arm64，多 arch 配置产物目录带 arch 后缀——磁盘事实）",
+      "DS2_tests": "npx vitest run tests/electron/ → 3 files 34 passed (34)（desktop-build 22 含 D517 新增 4 组；backend-spawn/auto-update 回归绿）",
+      "DS3_full_build": "本地 full 构建 ✓: npx electron-builder --config build-synova.cjs --mac → release/SynovaAgent-0.1.0.dmg(112M,x64) / SynovaAgent-0.1.0-arm64.dmg(107M,md5=5a71c2593e40e66dbac33ca7784c77ce) / SynovaAgent-0.1.0-mac.zip(109M,x64) / SynovaAgent-0.1.0-arm64-mac.zip(104M,md5=1933adcf6bc674704177585914e9729e)。CI artifact 部分 ⏸ 待合并后 push main 触发 desktop-build workflow 补证据（本分支 push 不触发 on: push main）。",
+      "DS4_contract": "build-synova.cjs 头注释『构建链契约（D517，顺序不可颠倒——顺序错 = 空包）』三步 + docs/synova/runbooks/desktop-build.md",
+      "DS5_scope": "git diff --name-only ssh/main...HEAD 全部在 brief Q2 写集（含 2 个存量阻塞修复，已补记 brief）",
+      "存量修复说明": "electron-renderer npm run build 在 main 即红（api.ts 与 bridge.ts window.electronAPI 双重全局声明冲突 TS2339 + useConversation 双参调用 TS2554）→ 构建链物理不可能。最小修复：api.ts 复用 bridge.ts ElectronAPI 单源；useConversation send 收敛单参（零消费者、后端无 mentions 字段）。运行时行为零改动。"
+    },
+    "notes": "main 存量 src/server.ts 2 处 tsc 类型错误（TS2345 MainAgentLike/GraphBridgeLike）与本任务无关，未触碰（src/ 红线），登记待后续任务。"
+  },
+  "audit": {
+    "auditor": "k3",
+    "date": "2026-08-25",
+    "verdict": "CONDITIONAL PASS",
+    "report": "docs/synova/audit-reports/2026-08-25-D517-D519.md",
+    "conditions": [
+      "C1: 合并后 push main 触发 desktop-build CI，artifact URL 回填 task-state（D517 DS3 / D519 DS6）",
+      "C2: D518 dev doc 回填 prod 契约（dist/src/index.js → dist/backend.mjs + Electron node 模式，§2/§5.1/§7）"
+    ],
+    "findings": [
+      "P1-1 (devdoc): D518 dev doc 未回填 prod 运行时契约变更 (M7)",
+      "P2-1..4: 用例计数少报22vs23 / 产物证据易失 / 并发环境敏感 / DS5口径"
+    ],
+    "slice": "L1-A"
+  },
   "updated_at": "2026-08-24",
-  "updated_by": "dsh-cto",
-  "priority": "P1"
+  "updated_by": "dsh-impl",
+  "priority": "P1",
+  "verdict": "CONDITIONAL_PASS"
 }

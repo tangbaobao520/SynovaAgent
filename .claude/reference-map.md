@@ -3,27 +3,27 @@
 | 符号 | 文件 | 行 | 内容 |
 |------|------|-----|------|
 
-## setOverflowGraphStore
-| `setOverflowGraphStore` | D | /novis-backup-20260526/Novis/synova-agent/src/routes/overflow.ts | `23:export function setOverflowGraphStore(store: import('../l4/graph-bridge').GraphStore): void {` |
-| `setOverflowGraphStore` | **D** 📋 | /novis-backup-20260526/Novis/synova-agent/tests/routes/overflow.test.ts | `24:import overflowRoutes, { setOverflowGraphStore } from '../../src/routes/overflow';` |
-| `setOverflowGraphStore` | **D** 📋 | /novis-backup-20260526/Novis/synova-agent/tests/routes/overflow.test.ts | `85:    setOverflowGraphStore({} as unknown as import('../../src/l4/graph-bridge').GraphStore);` |
-## renderOnePager
-| `renderOnePager` | *(无引用)* | — | — |
+## isWhitelisted
+| `isWhitelisted` | D | /novis-backup-20260526/Novis/synova-agent/src/middleware/auth.ts | `85:function isWhitelisted(path: string): boolean {` |
+| `isWhitelisted` | D | /novis-backup-20260526/Novis/synova-agent/src/middleware/auth.ts | `252:    if (isWhitelisted(req.path)) {` |
+| `isWhitelisted` | D | /novis-backup-20260526/Novis/synova-agent/src/middleware/sanitize-check.ts | `43:function isWhitelisted(path: string): boolean {` |
+| `isWhitelisted` | D | /novis-backup-20260526/Novis/synova-agent/src/middleware/sanitize-check.ts | `106:  if (isWhitelisted(req.path)) {` |
+| `isWhitelisted` | **D** 📋 | /novis-backup-20260526/Novis/synova-agent/tests/middleware/auth.integration.test.ts | `11: * isWhitelisted，与 login 并列)——helper 匿名直连注册（无 Authorization 头），与真实用户` |
+| `isWhitelisted` | **D** 📋 | /novis-backup-20260526/Novis/synova-agent/tests/middleware/auth.integration.test.ts | `85: * 白名单（src/middleware/auth.ts isWhitelisted，与 login 并列），与真实用户入口一致，` |
 
-## executive_summary（D480 消费对象 — 👀 不改但要注意）
-| `executive_summary` | src/l3/report-templates.ts | L5/L117 | 模板定义+注册（DS3 零改动） |
-| `executive_summary` | *(消费方)* | — | **零渲染调用（闲置资产）→ D480 renderOnePager 成为首个消费者** |
+## api/enterprise/register
+| `api/enterprise/register` | D | /novis-backup-20260526/Novis/synova-agent/src/routes/enterprise.ts | `96:router.post('/api/enterprise/register', async (req: Request, res: Response) => {` |
+| `api/enterprise/register` | **D** 📋 | /novis-backup-20260526/Novis/synova-agent/tests/e2e/customer-flow.e2e.test.ts | `49:      const reg = await api('/api/enterprise/register', {` |
+| `api/enterprise/register` | **D** 📋 | /novis-backup-20260526/Novis/synova-agent/tests/routes/enterprise.test.ts | `206:    const res = await fetch(`${baseUrl}/api/enterprise/register`, {` |
 
-## assembleReport（👀 不改但要注意 — 回归守护对象）
-| `assembleReport` | src/agent/report-assembler.ts | L98 | 定义（四层组装，零行为改动） |
-| `assembleReport` | src/routes/diagnosis.ts | L244-245 | 生产调用（完成块，本任务并列追加 onePager 块） |
-| `assembleReport` | tests/e2e/full-pipeline.integration.test.ts | L171/L189 | Stage 5a 回归断言（CI 排除 e2e，本地验证） |
-
-## getReportTemplateRegistry（👀 复用模式参考）
-| `getReportTemplateRegistry` | src/l3/report-templates.ts | L181 | 定义（inject seam — 测试③注入点） |
-| `getReportTemplateRegistry` | src/l3/briefing-generator.ts | L14/L125 | 既有消费先例（每次调用时获取 — renderOnePager 同款） |
-
-## D480 审查结论（写前）
-- ✅ renderOnePager：全新符号零引用 — 新建无断裂面
-- 👀 report-templates.ts / registry：只消费不修改（DS3，G12c 漂移规避）
-- 👀 assembleReport 四层行为冻结：仅尾部追加新函数，回归用例⑤守护
+## api/enterprise/invitation
+| `api/enterprise/invitation` | D | /novis-backup-20260526/Novis/synova-agent/src/routes/enterprise.ts | `171:router.get('/api/enterprise/invitations', (req: Request, res: Response) => {` |
+| `api/enterprise/invitation` | D | /novis-backup-20260526/Novis/synova-agent/src/routes/enterprise.ts | `184:router.delete('/api/enterprise/invitations/:id', (req: Request, res: Response) => {` |
+| `api/enterprise/invitation` | D | /novis-backup-20260526/Novis/synova-agent/src/routes/enterprise.ts | `199:router.get('/api/enterprise/invitation/:token', (req: Request, res: Response) => {` |
+| `api/enterprise/invitation` | D | /novis-backup-20260526/Novis/synova-agent/src/routes/enterprise.ts | `214:router.post('/api/enterprise/invitation/accept', async (req: Request, res: Response) => {` |
+| `api/enterprise/invitation` | **D** 📋 | /novis-backup-20260526/Novis/synova-agent/tests/routes/enterprise.test.ts | `255:    const res = await fetch(`${baseUrl}/api/enterprise/invitation/${inviteToken}`);` |
+| `api/enterprise/invitation` | **D** 📋 | /novis-backup-20260526/Novis/synova-agent/tests/routes/enterprise.test.ts | `265:    const res = await fetch(`${baseUrl}/api/enterprise/invitation/accept`, {` |
+| `api/enterprise/invitation` | **D** 📋 | /novis-backup-20260526/Novis/synova-agent/tests/routes/enterprise.test.ts | `290:    const reAccept = await fetch(`${baseUrl}/api/enterprise/invitation/accept`, {` |
+| `api/enterprise/invitation` | **D** 📋 | /novis-backup-20260526/Novis/synova-agent/tests/routes/enterprise.test.ts | `300:    const reQuery = await fetch(`${baseUrl}/api/enterprise/invitation/${inviteToken}`);` |
+| `api/enterprise/invitation` | **D** 📋 | /novis-backup-20260526/Novis/synova-agent/tests/routes/enterprise.test.ts | `318:      const expiredQuery = await fetch(`${baseUrl}/api/enterprise/invitation/${expiredToken}`);` |
+| `api/enterprise/invitation` | **D** 📋 | /novis-backup-20260526/Novis/synova-agent/tests/routes/enterprise.test.ts | `323:      const expiredAccept = await fetch(`${baseUrl}/api/enterprise/invitation/accept`, {` |
