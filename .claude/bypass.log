@@ -766,3 +766,5 @@ Binary file .claude/bypass.log matches
 2026-08-25T07:00:00+08:00 | COMMITTED | pre-commit PASS (synova-commit 13 组通过; ACK 路径自动登记缺失补录) | TASK_ID=D529 | AGENT=dsh | HASH=2044c636439a5d3632bb059632a8ae32a0ad4029
 2026-08-25T07:10:00+08:00 | COMMITTED | pre-commit PASS (git commit 直提，13 组本机软提示通过) | TASK_ID=D529 | AGENT=dsh | HASH=bed5f685d1b33c644dcd9bc19d133bf898f505b5
 2026-08-25T07:20:00+08:00 | COMMITTED | pre-commit PASS (synova-commit 13 组通过; ACK 路径自动登记缺失补录) | TASK_ID=D529 | AGENT=dsh | HASH=58b83dca832f81b00d8024ef765185acba9211a5
+2026-08-25T16:49:04Z possible-bypass diff=592s
+2026-08-25T07:30:00+08:00 | COMMITTED | pre-commit N/A (task-state 终态回填, 无代码) | TASK_ID=D529 | AGENT=dsh | HASH=1185604a6aa2e4c24b98d1d96cdfcee96993f1fc
