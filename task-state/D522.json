@@ -7,10 +7,11 @@
   "impl": null,
   "audit": {
     "report": "docs/synova/audit-reports/2026-08-25-D522-D523.md",
-    "verdict": "CONDITIONAL PASS",
+    "verdict": "PASS",
     "date": "2026-08-25",
     "by": "K3",
-    "blockers": "P0-1 分支基点落后 main 34 提交（缺 D518 prod 运行时修复，buildCommand prod 断言需更新）——rebase 后转 PASS；impl/evidence 在 feat/d522-service-boot-teardown，合并后以分支版 task-state 为准"
+    "recheck": "2026-08-25 二次复审 PASS（C1 P0-1 闭合: merge 双侧保留 D518 prod 修复 + D522 teardown，grep dist/src/index.js 清零，59/3/62 独占复跑；C2 ps1 exit 2 修复静态闭合；C3 spec.branch 字段降级 P2 非阻断）",
+    "blockers": "合并顺序 D522 → D523 → 审计分支；非阻断跟进: P1-3 CTO 修复 commit bypass 补记、P2-6 T1.md 清理、P2-8 spec.branch 修正"
   },
   "updated_at": "2026-08-25",
   "updated_by": "cto",

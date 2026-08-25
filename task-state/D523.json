@@ -7,10 +7,11 @@
   "impl": null,
   "audit": {
     "report": "docs/synova/audit-reports/2026-08-25-D522-D523.md",
-    "verdict": "CONDITIONAL PASS",
+    "verdict": "PASS",
     "date": "2026-08-25",
     "by": "K3",
-    "blockers": "C2 ps1 前置缺失 exit 2 语义不可达（Write-Error+EAP=Stop，实际退出码 1）需修 + Win 实跑复验；impl 状态 impl_done_waiting_exe 维持至切片 A .exe 落地"
+    "recheck": "2026-08-25 二次复审 PASS（C1 P0-1 闭合: 双侧保留 + 树终验零删除无沙箱残留 + 59/3/62 独占复跑；C2 ps1 exit 2 修复静态闭合，Win 实跑待验; C3 spec.branch 字段降级 P2 非阻断）",
+    "blockers": "合并顺序 D522 → D523 → 审计分支；impl 状态 impl_done_waiting_exe 维持至切片 A .exe 落地后 Win 本机实跑（DS1/DS2）；非阻断跟进同 D522"
   },
   "updated_at": "2026-08-25",
   "updated_by": "cto",
