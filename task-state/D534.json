@@ -1,0 +1,15 @@
+{
+  "task_id": "D534",
+  "title": "Agent Notes 四态（Stage1-D2，S5-3 知识沉淀）",
+  "status": "claimed",
+  "spec": {
+    "doc": "docs/synova/coordination/派单-Stage1续-D534-D535-20260825.md",
+    "source": "施工图 Stage 1-D2",
+    "slice": "stage1-cont"
+  },
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-26",
+  "updated_by": "alloc-task-id"
+}
