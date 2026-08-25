@@ -23,3 +23,10 @@
 # CRLF 导致 bash 全线 ": command not found"（双平台 CI 必备）
 *.sh text eol=lf
 *.py text eol=lf
+
+# D533: K3 红线保护 — 审计脚本永不参与 CRLF 规范化（scripts/audit/ 禁碰）
+scripts/audit/** -text
+
+# D533: 控制塔脚本存量 CRLF（env_validator/inject-context 无配对测试，CT-40 禁改）
+# 保持字节不变 → 零噪音且不触发 U7/CT-40 测试配对门禁（新增脚本不受影响，走 *.py text eol=lf）
+scripts/control-tower/*.py -text
