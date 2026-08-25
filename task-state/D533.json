@@ -1,0 +1,16 @@
+{
+  "task_id": "D533",
+  "title": "CI 调试时间黑洞根治（gh CLI+token / CRLF / merge 豁免 / 挂起探针 / debug 纪律）",
+  "status": "claimed",
+  "spec": {
+    "doc": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D533-ci-diagnostics-20260825.md",
+    "dispatch": "docs/synova/coordination/派单-D533-并行CTO-20260825.md",
+    "source": "D529 复盘 + CT-46"
+  },
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-26",
+  "updated_by": "alloc-task-id",
+  "slice": "control-tower"
+}
