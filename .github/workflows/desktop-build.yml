@@ -64,27 +64,26 @@ jobs:
           { npm ci && npm run build && test -f ../dist/renderer/index.html; } 2>&1 | tee ../step-renderer.log
           test ${PIPESTATUS[0]} -eq 0
 
-      # 构建链步骤3a: 显式只重建 better-sqlite3（D529 定案——electron-builder 内建 rebuild 已
-      # 被 npmRebuild:false 禁用，见 build-synova.cjs）:
-      #   bcrypt 6.0.0 是 N-API（prebuildify --napi, install=node-gyp-build）——ABI 无关，无需重建；
-      #   之前 @electron/rebuild 误判它为 node-gyp 模块去源码编译 → 双平台挂死 30min+。
-      #   better-sqlite3 v12.11.1 有 electron-v130（Electron 33.4.11）全平台预编译 → 预编译直达，
-      #   免源码编译、免 VS 工具链（windows-latest 已切 VS2026，旧 node-gyp 无法识别）。
-      #   若预编译下载失败则回退 node-gyp@12 源码编译（VS2026 兼容，nodejs/node-gyp#3228）。
-      - name: Prep native deps (rebuild better-sqlite3 only)
+      # 构建链步骤3a: 原生依赖准备（D529 定案 v3——彻底不用 @electron/rebuild）:
+      #   ① bcrypt 6.0.0 是 N-API（prebuildify --napi, install=node-gyp-build）——ABI 无关，免重建；
+      #      之前 @electron/rebuild 误判为 node-gyp 模块源码编译 → 双平台挂死。
+      #   ② @electron/rebuild 的依赖树搜索在 CI（node 22）卡死（10min+ 无输出，swap 嵌套 node-gyp
+      #      依旧）——弃用，改 prebuild-install 直下（无树遍历）。
+      #   ③ better-sqlite3 v12.11.1 有 electron-v130（Electron 33.4.11）全平台预编译 → 直下免编译
+      #      免 VS（windows-latest 已切 VS2026，旧 node-gyp 无法识别）。
+      #   ④ 兜底: 预编译下载失败 → node-gyp@12 源码编译（VS2026 兼容，nodejs/node-gyp#3228）。
+      - name: Prep native deps (better-sqlite3 electron prebuild)
         timeout-minutes: 10
         shell: bash
         run: |
           set -o pipefail
           npm i --no-save node-gyp@12 2>&1 | tee step-prep-nodegyp.log
           test ${PIPESTATUS[0]} -eq 0
-          if [ -d node_modules/@electron/rebuild/node_modules ]; then
-            rm -rf node_modules/@electron/rebuild/node_modules/node-gyp
-            cp -R node_modules/node-gyp node_modules/@electron/rebuild/node_modules/node-gyp
+          if ! (cd node_modules/better-sqlite3 && npx prebuild-install -r electron -t 33.4.11 2>&1 | tee ../step-prep-rebuild.log; test ${PIPESTATUS[0]} -eq 0); then
+            echo "prebuild-install 失败 → node-gyp@12 源码编译兜底"
+            (cd node_modules/better-sqlite3 && npx node-gyp rebuild --release 2>&1 | tee ../step-prep-rebuild.log; test ${PIPESTATUS[0]} -eq 0)
           fi
-          npx @electron/rebuild -f -w better-sqlite3 2>&1 | tee step-prep-rebuild.log
-          test ${PIPESTATUS[0]} -eq 0
-          ls node_modules/better-sqlite3/build/Release/*.node >/dev/null && echo "better-sqlite3 electron-ABI prebuild in place"
+          ls node_modules/better-sqlite3/build/Release/*.node >/dev/null && echo "better-sqlite3 electron-ABI 就位"
 
       # 构建链步骤3b: electron-builder → release/（--publish never: CI 下无 GH_TOKEN 时发布检查必红，
       # 产物实际已构建——mac 实测 dmg/zip/blockmap 全部产出后才在发布检查翻红）
