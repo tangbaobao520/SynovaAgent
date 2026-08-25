@@ -49,6 +49,18 @@
 ### 3.2 最终实现同 commit 回填
 若缺口修复涉及 §3.1 未列的 src 文件、或 e2e 阶段设计与方案偏离（如首诊入口改用 /api/diagnosis/consult 健康探测而非 GET status），必须在本节同 commit 回填最终形态（S-6）。
 
+> **回填（2026-08-26 实测，Claude Code 执行回填）**：
+>
+> **e2e 阶段设计最终形态**（与 §4 表的实现选择，无 src 文件追加）：
+> 1. 首诊入口探测 = `POST /api/diagnosis/consult` + 有效 token + 空 body → **400 VALIDATION_ERROR**（diagnosis.ts L103-106 同步校验在 SSE writeHead 之前——验证 token 穿透认证层且路由处理器真实到达，不触发六阶段 LLM）。
+> 2. 企业端点可达（阶段③）= `GET /api/enterprise/status`（staff 可达；members 需 admin，staff 会 403 无法作为"可达"证据）。
+> 3. server 探活 = `GET /api/healthz` + AbortSignal.timeout(3000)（比 customer-flow 的 fetch catch 更精准区分 server 未启动 vs 请求失败）→ serverDown 标记 → 各 it() 显式 ctx.skip()。
+> 4. server 运行契约（测试文件头注释 + 交付报告留证）：`PORT=3099 JWT_SECRET=d486-e2e-test-secret DEV_MODE=true SYNOVA_DB_PATH=./data/e2e-scratch.db npx tsx src/index.ts`（显式 JWT_SECRET 保证真实认证语义——DEV_MODE 自动 admin 只在无 secret 时触发；阶段①无 token 401 断言会抓住环境错误）。
+>
+> **缺口处理结论**：首次跑即 4/4 绿（真实 server，非 skip）——D483/D484 合并产物在真实 server 下双轨链路完好，无 D486 范围内缺口 → **无 src 修复**（本节无 src 文件追加）。server 启动日志仅见既有 sentinel/builtins Windows ESM `'d:'` 路径注册失败（auth 链之外，既有问题，不在本切片范围）。
+>
+> **零回归基线**：`npx vitest run` 三套件 51/51 绿；`npx tsc --noEmit` 28=28 零新增（既有 28 处：extensions/sentinels/_extinct/ 25 + src/connectors/ima.ts 1 + src/server.ts 2——均非本切片写集，K3 可核）。
+
 ### 3.3 不做的事
 * **不碰 enterprise.ts / user-store.ts**（D485 写集）——若 e2e 跑出绑定/账号相关缺口（D485 绑定未实现），显式记录"待 D485"而非本切片修。
 * 不触发完整诊断流程（首诊入口仅断言可达性，不跑六阶段——耗时与环境依赖）。
