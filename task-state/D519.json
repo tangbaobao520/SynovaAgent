@@ -13,7 +13,7 @@
     "agent": "dsh-impl",
     "writeset": "scripts/desktop/mac-install-verify.sh, docs/synova/runbooks/founder-demo-mac.md, tests/electron/mac-install-verify.test.ts, .gitignore",
     "evidence": {
-      "DS1_real_run": "bash scripts/desktop/mac-install-verify.sh --skip-build → exit 0，四断言于第 5s 全过。构建（无 --skip-build）已在同日 02:03 全链跑过（dmg be55d9dbaf1e1b4dec856803e5b9ca6e 为该次新构建）",
+      "DS1_real_run": "bash scripts/desktop/mac-install-verify.sh --skip-build → exit 0，四断言于第 5s 全过。构建（无 --skip-build）已在同日 02:03 全链跑过（dmg be55d9dbaf1e1b4dec856803e5b9ca6e 为该次新构建）\nCI artifact（C1 闭环，run 32870900391）: macOS=https://github.com/tangbaobao520/SynovaAgent/actions/runs/32870900391/artifacts/9572118172 / Windows=https://github.com/tangbaobao520/SynovaAgent/actions/runs/32870900391/artifacts/9572059369",
       "dmg_fingerprint": "MD5 (release/SynovaAgent-0.1.0-arm64.dmg) = be55d9dbaf1e1b4dec856803e5b9ca6e",
       "assertions": "A1 进程存活: 1 (pgrep -f /Applications/SynovaAgent.app); A2 窗口存在: 1 (osascript System Events); A3 服务健康: 1 (curl -sf http://localhost:18790/api/healthz); A4 后端日志: 1 (/Users/wane/Library/Application Support/synova-agent/logs/backend.log 非空)",
       "healthz": "{\"status\":\"degraded\",\"checks\":{\"database\":{\"status\":\"degraded\",\"detail\":\"数据库文件不存在(首次启动尚未初始化)\"},\"llm_connectivity\":{\"stat...",
