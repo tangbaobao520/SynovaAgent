@@ -95,37 +95,8 @@ jobs:
           npx electron-builder --config build-synova.cjs ${{ matrix.builder-args }} --publish never 2>&1 | tee step-installer.log
           test ${PIPESTATUS[0]} -eq 0
 
-      # D529 debug: 失败根因回传（REST API commit 到 ci-debug/ + 注解；本步零失败化——不掩盖构建红）
-      - name: Capture failure log (debug, remove after root cause fixed)
-        if: failure()
-        shell: bash
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set +e
-          LOG="ci-debug/${RUNNER_OS,,}-${GITHUB_RUN_ID}.log"
-          mkdir -p ci-debug
-          { echo "run=${GITHUB_RUN_ID} job=${RUNNER_OS} ref=${GITHUB_REF_NAME}";
-            for f in step-backend.log step-renderer.log step-prep-nodegyp.log step-prep-rebuild.log step-installer.log; do
-              echo; echo "════════ $f (tail 200) ════════";
-              [ -f "$f" ] && tail -200 "$f" || echo "(missing)"
-            done; } > "$LOG"
-          # 通道1: 注解（check-runs API 公开可读；上限 10 条——按诊断价值排序: installer 优先）
-          tail -5 step-installer.log 2>/dev/null | while IFS= read -r line; do echo "::error::${RUNNER_OS}/installer: ${line:0:230}"; done
-          tail -3 step-prep-rebuild.log 2>/dev/null | while IFS= read -r line; do echo "::error::${RUNNER_OS}/rebuild: ${line:0:230}"; done
-          grep -iE "error|failed|fatal|not found|ERR_" step-backend.log step-renderer.log 2>/dev/null | tail -3 | while IFS= read -r line; do
-            echo "::error::${RUNNER_OS}: ${line:0:240}"
-          done
-          # 通道2: REST API commit（绕开 git 客户端环境差异；失败时把响应体也打进注解）
-          B64=$(base64 -w0 "$LOG" 2>/dev/null || base64 < "$LOG" | tr -d '\n')
-          HTTP=$(curl -s -o /tmp/ci-debug-resp.json -w "%{http_code}" -X PUT \
-            -H "Authorization: token ${GITHUB_TOKEN}" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}/contents/${LOG}" \
-            -d "{\"message\":\"ci-debug: ${RUNNER_OS} failure run ${GITHUB_RUN_ID}\",\"content\":\"${B64}\",\"branch\":\"${GITHUB_REF_NAME}\"}")
-          if [ "$HTTP" = "200" ] || [ "$HTTP" = "201" ]; then echo "ci-debug committed (HTTP $HTTP)"
-          else echo "::error::ci-debug commit HTTP $HTTP: $(head -c 300 /tmp/ci-debug-resp.json)"; fi
-          exit 0
+      # D529 终态: 根因已定位修复（--publish never / node 22 / npmRebuild:false + prebuild-install），
+      # debug 回传步骤移除（迭代期日志见 ci-debug/ 历史 + 本文件 git 历史注释）。
 
       - name: Assert artifacts exist
         shell: bash
