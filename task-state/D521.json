@@ -11,7 +11,7 @@
     "by": "dsh-cto",
     "at": "2026-08-25",
     "branch": "feat/d521-submit-chain",
-    "commit": null,
+    "commit": "01334c0c1d9ce825b6beef14a06ce3fc74e03eac",
     "files": [
       "scripts/pre-push-check.sh",
       "scripts/control-tower/brief_parser.py",
