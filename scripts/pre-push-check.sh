@@ -426,10 +426,13 @@ if [[ -f "$CHECK_BYPASS" ]]; then
   # D334: 对账 base 动态化 — PR 工作流下分支名每机器不同, 硬编码旧分支失效。
   # 优先 $PUSH_REMOTE/$PUSH_BRANCH（存在时），fallback origin/main（main 是唯一真相）。
   BYPASS_BASE=""
-  if [[ -n "$PUSH_REMOTE" && -n "$PUSH_BRANCH" ]] && git rev-parse --verify "$PUSH_REMOTE/$PUSH_BRANCH" >/dev/null 2>&1; then
-    BYPASS_BASE="$PUSH_REMOTE/$PUSH_BRANCH"
-  elif git rev-parse --verify origin/main >/dev/null 2>&1; then
+  # D521: 对账基永远取 origin/main——D508 merge-base 语义的前提（main 引入提交天然排除）。
+  #   分支 ref 为基时，merge main 后 main 侧新提交落入分支范围 → 它们没有也不该有本分支
+  #   登记 → 误拦（本批实证: merge 今日 main 后 8 个 main 提交被索登记）。
+  if git rev-parse --verify origin/main >/dev/null 2>&1; then
     BYPASS_BASE="origin/main"
+  elif [[ -n "$PUSH_REMOTE" && -n "$PUSH_BRANCH" ]] && git rev-parse --verify "$PUSH_REMOTE/$PUSH_BRANCH" >/dev/null 2>&1; then
+    BYPASS_BASE="$PUSH_REMOTE/$PUSH_BRANCH"
   fi
   if ! bash "$CHECK_BYPASS" "$BYPASS_BASE"; then
     echo ""
