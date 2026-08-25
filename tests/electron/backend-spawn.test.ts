@@ -236,7 +236,7 @@ describe('ensureBackend — env 与命令契约（DS8 双模式）', () => {
   });
 
   // ═══ D518 新增: F4 注释漂移回归（K3 D504 审计 F4——注释与磁盘事实不一致）═══
-  it('F4 回归: electron/*.cjs 注释零 "dist/index.js" 残留（全部为 dist/src/index.js）', () => {
+  it('F4 回归: electron/*.cjs 注释零裸 dist/index.js 残留（P0-1 后 prod 契约 = dist/backend.mjs）', () => {
     const electronDir = path.join(ROOT, 'electron');
     const files = fs.readdirSync(electronDir).filter((f) => f.endsWith('.cjs'));
     expect(files.length).toBeGreaterThan(0);
