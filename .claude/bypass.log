@@ -697,3 +697,4 @@ Binary file .claude/bypass.log matches
 2026-08-25T11:24:49+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/d523-win-double-click
 2026-08-25T11:24:49+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=a10e3f51b2a559773ea5f52313c086d8beb356ba
 2026-08-25T11:27:30+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=97c67c74ad469a26972b38701d63c2f67524135c
+2026-08-25T03:31:00+08:00 | COMMITTED | pre-commit PASS (D523 首次提交 fa0d3496 补记——当时 push 时 bypass.log 对账已通过，merge main 后对账窗口扩大需补录; 13 组通过见交付) | TASK_ID=D523 | AGENT=dsh | HASH=fa0d3496945cac683d6df96b1d1e756e294d87e8
