@@ -1,0 +1,14 @@
+{
+  "task_id": "D525",
+  "title": "P1-1 synova-commit.test.sh 红态修复（D507 段配对测试，K3 D521 遗留）",
+  "status": "claimed",
+  "spec": {
+    "doc": "docs/synova/coordination/派单-D525D526-并行CTO-20260825.md",
+    "source": "K3 D521 审计 P1-1"
+  },
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-25",
+  "updated_by": "alloc-task-id"
+}
