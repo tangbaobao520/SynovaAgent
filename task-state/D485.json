@@ -2,7 +2,7 @@
   "task_id": "D485",
   "title": "register 认证闭环 切片 C——双轨账号关联（个人账号绑定企业，飞书/钉钉模式）",
   "slice": "AUTH-C",
-  "status": "spec_done",
+  "status": "impl_done",
   "risk": "medium",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-D485-account-link-slice-c-20260825.md",
@@ -10,9 +10,33 @@
     "by": "dev-doc",
     "at": "2026-08-25"
   },
-  "impl": null,
+  "impl": {
+    "branch": "feat/win-d485-account-link-c",
+    "by": "claude-code",
+    "write_set": [
+      "src/growth/user-store.ts — updateUser props 类型 Partial<Pick<UserRecord,...>> 扩展含 'orgId'（类型层最小扩展；JSDoc 注明 D485 绑定语义与 SqliteGraphStore.updateNode 通用 merge 生产可持久化依据）",
+      "src/routes/enterprise.ts — accept 加 queryByEmail(inv.email) 查重：已存在且 active → bcrypt.compare 密码验证（失败 401 AUTH_FAILED + 邀请保持 pending 可重试）+ updateUser({orgId, role}) 绑定（userId/密码保留，linked=true）；已存在但 disabled → 403 ACCOUNT_DISABLED（冻结账号不得经邀请复活）；不存在 → createUser 现状路径（linked=false）。§3.2 回填两项偏离",
+      "tests/routes/enterprise.test.ts — 新增 D485 describe 3 用例（复用 D484 真实 express + native fetch + 共享 UserStore 基建）：⑦绑定全链路（userId 不变/orgId 更新/linked=true/GraphStore 实证/default 组织移除/原密码 login 身份即企业/错误密码 401+邀请不消耗）⑧新 email accept 新建 linked=false 现状回归 ⑨未绑定个人账号调 members 403 边界不削弱",
+      "docs/plans/codex/implementation/SYNOVA-IMPL-D485-account-link-slice-c-20260825.md — §3.2 同 commit 回填（密码验证 + disabled 拒绝两项偏离 + 威胁模型 + 参考系 + 决策沉淀指针）",
+      ".claude/task-briefs/2026-08-25-D485-account-link-slice-c.md — 6 核心字段 brief（Q1c 决策参考系 + 措辞规避铁律47模板误触发）",
+      ".claude/reference-map.md — V4.5.0 改前 grep 引用图（queryByEmail + updateUser 全调用点）",
+      "memory/notes/proposed/2026-08-25-d485-account-link.md — 决策沉淀（匿名绑定必须验密码的安全边界）"
+    ],
+    "evidence": {
+      "DS1_binding_ability": "grep -n queryByEmail src/routes/enterprise.ts → L108(register 既有)+L229(accept 新增)；grep -n \"'orgId'\" src/growth/user-store.ts → L218(Pick 类型行)",
+      "DS2_binding_semantics": "grep -n linked src/routes/enterprise.ts → L243(绑定 true)+L253(新建 false)",
+      "DS3_tests_green": "npx vitest run tests/routes/enterprise.test.ts → 20/20 passed（既有 17 + 新增 3）；RED 实测: 修复前 ⑦⑧ fail 于 linked undefined（2 failed|18 passed），⑨ 现状绿（边界守护）",
+      "DS4_zero_regression": "vitest run tests/middleware/auth.test.ts tests/middleware/auth.integration.test.ts tests/routes/auth.test.ts → 40/40；tsc --noEmit 28=28 基线零新增（写集文件零 error）；updateUser 消费方 tests/growth/user-store.test.ts + tests/integration/wiring-integration.test.ts → 28/28；全量套件基线对照（单命令 revert→run→restore）：差异 4 条全部与写集无关（2 条 flaky 对称漂移 + zero-code-industry 工作区敏感断言 git diff --name-only≠0，提交后即绿）",
+      "DS5_scope": "git diff --name-only 98bc4765^ 98bc4765 = 3 写集 + 4 簿记，零越界",
+      "DS6_no_bypass": "grep -c no-verify .claude/bypass.log → 0",
+      "DS7_push_ci": "PR #194 CI 10/10 全绿（TypeScript+Lint+IronLaws / Vitest 2 shards / Architecture / Checker / 双平台 Control Tower Gate / Integration Contract / Golden Case F1 / npm audit）"
+    },
+    "red_lines": "scripts/audit/ 零触碰; K3 审计脚本零触碰; electron-renderer/ 前端零触碰; auth/register 个人轨语义零改动",
+    "known_preexisting": "tsc 既有 28 errors 为 main 基线（DS4 口径 28=28）; 全量套件 ~149 基线失败为 main 既有状态（sentinels 等领域，与本切片零关联，基线对照实证）",
+    "carried_fix": "合入 fix/v5.1.2-verify-parallel-crlf（427b4e7b，另一会话停在本地未推的合法修复: verify-parallel 豁免段 CRLF 剥离——本 PR 推送被 D484/D485 串行演进误判重叠拦死，该修复为解锁前提，推送成功即实证）; V5.1.2 tag 待 main 合并后由合并方打（D331 纪律，synova-commit 自动 tag 已两次删除避免 feature 分支 tag 违规）"
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-08-25T16:00:00+08:00",
-  "updated_by": "dev-doc"
+  "updated_at": "2026-08-25T22:20:00+08:00",
+  "updated_by": "claude-code"
 }
