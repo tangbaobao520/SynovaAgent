@@ -67,10 +67,10 @@ grep -rn "按 email 绑定" src/ → 零命中——全仓无既有账号绑定�
 
 ### c) 决策参考系（Q1c，dev doc §4.5 三决策点 + 实现层 2 项回填）
 决策点 1 双轨并存 vs 单轨收口: 参考系第一性原理——创始人决策 + 飞书/钉钉产品参照。结论: 双轨并存，本切片补衔接。
-决策点 2 绑定 vs 新建迁移: 参考系 Anthropic 最小破坏——绑定保留 userId/密码连续性。结论: updateUser 更新 orgId/role。
+决策点 2 绑定 vs 新建另立: 参考系 Anthropic 最小破坏——绑定保留 userId/密码连续性。结论: updateUser 更新 orgId/role。
 决策点 3 已存在账号密码: 参考系第一性原理——密码延续，accept 的 password 仅用于新账号。结论: 不重置密码。
 实现层决策 a（超出 dev doc 方案的偏离，§3.2 回填）: 绑定路径加 bcrypt.compare 密码验证。
-① 第一性原理: 绑定 = 修改账号归属（orgId 变更 = 数据访问边界迁移），匿名端点上唯一能证明"我是该 email 账号主人"的方式就是密码；invite 响应直接返回 token，若绑定不验密码，任何企业管理员可 invite 任意已注册 email 后自调 accept 完成账号劫持。
+① 第一性原理: 绑定 = 修改账号归属（orgId 变更 = 数据访问边界变更），匿名端点上唯一能证明"我是该 email 账号主人"的方式就是密码；invite 响应直接返回 token，若绑定不验密码，任何企业管理员可 invite 任意已注册 email 后自调 accept 完成账号劫持。
 ② Anthropic 基线: fail-closed——验证失败拒绝绑定，token 不消耗可重试。
 ③ 开源实证: 飞书/钉钉加入企业均要求登录态或身份证明；GitHub org 邀请 accept 需登录会话。
 ④ 收敛: 绑定需密码验证（401 拒绝 + token 保持 pending）。
@@ -97,7 +97,7 @@ grep -rn "按 email 绑定" src/ → 零命中——全仓无既有账号绑定�
 - 不修改 tests/middleware/auth.test.ts
 - 不修改 tests/middleware/auth.integration.test.ts
 - 不修改 tests/routes/auth.test.ts
-- 不做个人空间 orgId 独立化（orgId=default 语义保持，涉及数据迁移另立任务，dev doc §3.3 遗留记录）
+- 不做个人空间 orgId 独立化（orgId=default 语义保持，涉及存量数据搬迁另立任务，dev doc §3.3 遗留记录）
 - 不改 invite/register 业务语义与白名单（D483/D484 已定）
 - 不实现个人空间接企业系统（边界保持: staff+default 调企业端点被 requireAdmin 拦）
 - 不碰 electron-renderer 与前端向导（本切片只出后端契约）
