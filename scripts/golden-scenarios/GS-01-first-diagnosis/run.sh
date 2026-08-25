@@ -105,11 +105,14 @@ else
 fi
 
 # ② L1-4 服务自启契约：node 无头直调 backend-spawn（reused 路径——本场景后端已在跑，探活必成功）
+#    D527 对齐切片 B prod 契约: prod = process.execPath + ['dist/backend.mjs']（backend.mjs 包内执行，非旧 'node'）
 node -e '
   const { ensureBackend, buildCommand } = require(process.argv[1] + "/backend-spawn.cjs");
   (async () => {
     const dev = buildCommand("dev"), prod = buildCommand("prod");
-    if (dev.bin !== "npx" || prod.bin !== "node") { console.error("buildCommand 契约失败"); process.exit(1); }
+    const prodOk = prod.bin === process.execPath
+      && Array.isArray(prod.args) && prod.args.length === 1 && prod.args[0] === "dist/backend.mjs";
+    if (dev.bin !== "npx" || !prodOk) { console.error("buildCommand 契约失败:", JSON.stringify({ dev, prod })); process.exit(1); }
     const r = await ensureBackend({
       serverUrl: process.argv[2], cwd: process.argv[3], mode: "dev",
       command: { bin: "never-spawned", args: [] },
@@ -131,6 +134,67 @@ if grep -q "SYNOVA_DB_PATH" "$ELECTRON_DIR/main.cjs"    && grep -q "getPath('use
   echo "DBPATH_REDIRECT_OK" > "$DATA_DIR/electron-dbpath-check.txt"
 else
   echo "DBPATH_REDIRECT_MISSING" > "$DATA_DIR/electron-dbpath-check.txt"
+fi
+
+# 5.6 D527: LLM 门控真实 consult 组（GS01_LLM=1 时跑真实六阶段；未设则诚实 RED 标注，不伪造绿）
+#    产物: consult-llm-status.txt（断言输入）+ consult-llm-stream.txt（SSE 事件流原文，evidence 落盘）
+LLM_STREAM="$DATA_DIR/consult-llm-stream.txt"
+LLM_STATUS="$DATA_DIR/consult-llm-status.txt"
+TIMING_FILE="$DATA_DIR/consult-timing.json"
+if [ "${GS01_LLM:-0}" = "1" ]; then
+  step_ms() { date +%s%3N 2>/dev/null || python3 -c 'import time;print(int(time.time()*1000))'; }
+  TIMING_CONSULT_START="$(step_ms)"
+  echo "{\"timing_consult_start_ms\": $TIMING_CONSULT_START}" > "$TIMING_FILE"
+  echo "[GS-01] GS01_LLM=1 — 发起真实 consult（teamId=gs01-e2e，SSE 六阶段，最长 15 分钟）"
+  set +e
+  curl -sS -N --max-time 900 -D "$DATA_DIR/consult-llm-headers.txt" \
+    -X POST "$BASE/api/diagnosis/consult" \
+    -H 'Content-Type: application/json' \
+    -H "$AUTH_HEADER" \
+    -d '{"teamId":"gs01-e2e","initiator":{"role":"ga","name":"gs01","concerns":["首诊旅程端到端验证：请对组织做一次全面诊断"]}}' \
+    > "$LLM_STREAM" 2>"$DATA_DIR/consult-llm-curl.err"
+  CURL_EXIT=$?
+  set -e
+  # consultId 从响应头 X-Consult-Id 提取（diagnosis.ts:112/119 契约）
+  CONSULT_ID="$(grep -i '^x-consult-id:' "$DATA_DIR/consult-llm-headers.txt" | head -1 | tr -d '\r' | sed 's/^[Xx]-[Cc]onsult-[Ii]d:[[:space:]]*//')"
+  PHASE_OK=1
+  for i in 0 1 2 3 4 5; do
+    CNT="$(grep -c "\"type\":\"phase_started\",\"phase\":$i," "$LLM_STREAM")" || CNT=0
+    [ "${CNT:-0}" -ge 1 ] || PHASE_OK=0
+  done
+  HAS_COMPLETE="$(grep -c '"type":"complete"' "$LLM_STREAM")" || HAS_COMPLETE=0
+  REPORT_ID="$(grep -o '"reportId":"[^"]*"' "$LLM_STREAM" | head -1 | sed 's/"reportId":"//;s/"//')"
+  TIMING_CONSULT_END="$(step_ms)"
+  python3 - "$TIMING_FILE" "$TIMING_CONSULT_START" "$TIMING_CONSULT_END" <<'PYEOF'
+import json, sys
+p, s, e = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
+d = json.load(open(p)); d["timing_consult_end_ms"] = e; d["duration_sec"] = round((e - s) / 1000, 1)
+json.dump(d, open(p, "w"))
+PYEOF
+  if [ "$CURL_EXIT" -ne 0 ]; then
+    echo "CONSULT_LLM_RED (curl exit=$CURL_EXIT — SSE 连接失败/超时，见 consult-llm-curl.err)" > "$LLM_STATUS"
+  elif [ "$PHASE_OK" = "1" ] && [ "${HAS_COMPLETE:-0}" -ge 1 ] && [ -n "$REPORT_ID" ]; then
+    # 报告端点物理断言: GET /consult/:consultId/report → 200（onePager markdown）
+    REPORT_CODE="$(curl -sS -o "$DATA_DIR/consult-report.md" -w "%{http_code}" \
+      -H "$AUTH_HEADER" "$BASE/api/diagnosis/consult/$CONSULT_ID/report?format=markdown" 2>/dev/null)" || REPORT_CODE=000
+    if [ "$REPORT_CODE" = "200" ]; then
+      echo "CONSULT_LLM_GREEN phase_started=0-5-complete reportId=$REPORT_ID report_http=200 consultId=$CONSULT_ID" > "$LLM_STATUS"
+    else
+      echo "CONSULT_LLM_RED (report endpoint HTTP $REPORT_CODE, consultId=$CONSULT_ID)" > "$LLM_STATUS"
+    fi
+  else
+    echo "CONSULT_LLM_RED (phase_started 全 6 缺失或无 complete/reportId — 见 consult-llm-stream.txt)" > "$LLM_STATUS"
+  fi
+  # P2-2: SSE 事件流原文 + 计时落 evidence（独立于 assert 产物，K3 可独立复核）
+  EVIDENCE_DIR_GS="$REPO_ROOT/scripts/golden-scenarios/evidence"
+  mkdir -p "$EVIDENCE_DIR_GS"
+  cp "$LLM_STREAM" "$EVIDENCE_DIR_GS/GS-01-llm-stream-$DATE.txt"
+  cp "$TIMING_FILE" "$EVIDENCE_DIR_GS/GS-01-llm-timing-$DATE.json"
+  echo "[GS-01] LLM 组状态: $(cat "$LLM_STATUS")"
+else
+  echo "CONSULT_LLM_RED (LLM key 未提供 — GS01_LLM 未设置，诚实 RED，不伪造全链路绿)" > "$LLM_STATUS"
+  echo "{\"timing_consult_start_ms\": null, \"note\": \"GS01_LLM 未设置，未发起 consult\"}" > "$TIMING_FILE"
+  echo "[GS-01] GS01_LLM 未设置 — consult 六阶段断言如实 RED（README §诚实 RED）"
 fi
 
 # 6. 断言（expect.json 模板 → 注入 DATA_DIR 实际路径）

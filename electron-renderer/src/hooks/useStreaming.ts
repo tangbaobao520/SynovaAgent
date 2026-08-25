@@ -13,19 +13,15 @@
  */
 import { useState, useCallback, useRef } from 'react';
 import { useConversationStore } from '../stores/conversation-store';
+import { useAppStore } from '../stores/app-store';
 import type { ChatMessage, ExpertAttr } from '../types/chat';
 import { getApiBase } from '../lib/api';
+// D527: SSE 事件契约单源（类型全集 + applySSEEvent 归约，未知事件不静默丢弃）
+import { applySSEEvent, type SSEEventType, type SSEEventLike, type SSEContractState } from './sse-contract';
 
-export type SSEEventType =
-  | 'phase' | 'expert_hypothesis' | 'hypothesis_generated'
-  | 'interim_finding' | 'community_reports' | 'entity_resolution'
-  | 'judgment_card' | 'complete' | 'error';
+export type { SSEEventType };
 
-export interface SSEEvent {
-  type: SSEEventType;
-  phase?: number;
-  label?: string;
-  message?: string;
+export interface SSEEvent extends SSEEventLike {
   findings?: Array<{ dimension: string; description: string; confidence?: number }>;
   confidence?: number;
   cardType?: string;
@@ -73,10 +69,34 @@ export function useStreaming(): UseStreamingReturn {
   }, [flushBuffer]);
 
   const store = useConversationStore.getState();
+  // D527: 契约状态机（跨事件保持：六阶段进度/降级标记）
+  const contractStateRef = useRef<SSEContractState>({
+    phaseIndex: -1, phaseLabel: '', phase: 'idle', errorMessage: null, degraded: false,
+  });
 
   const handleEvent = useCallback((evt: SSEEvent) => {
     const storeNow = useConversationStore.getState();
 
+    // ① 契约归约（单一数据流，D527）：六阶段进度 / reportId / 降级 / 未知事件 warn
+    const r = applySSEEvent(contractStateRef.current, evt);
+    contractStateRef.current = r.state;
+    if (r.state.phaseIndex >= 0) {
+      storeNow.setPhaseProgress(r.state.phaseIndex, r.state.phaseLabel);
+    }
+    if (r.reportId) {
+      // D527 缺口 2 修复：诊断完成 → reportId 落 app-store（RightPanel 报告/方案首次可达）
+      useAppStore.getState().setCurrentReportId(r.reportId);
+    }
+    if (r.systemMessage && (evt.type === 'phase_started' || evt.type === 'degraded')) {
+      storeNow.addMessage({
+        type: 'system',
+        content: r.systemMessage.content,
+        subType: r.systemMessage.type === 'degraded' ? 'info' : 'phase',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // ② 消息渲染（既有 case 保留）
     switch (evt.type) {
       case 'phase':
         // 阶段变更: 添加系统消息
@@ -230,8 +250,10 @@ export function useStreaming(): UseStreamingReturn {
                 evt.type = currentEventType as SSEEventType;
               }
               handleEvent(evt);
-            } catch {
-              // JSON 解析失败，跳过
+            } catch (parseErr: unknown) {
+              // 铁律 24: 不静默吞解析失败
+              console.warn('[useStreaming] SSE data JSON 解析失败，跳过该帧:', raw.slice(0, 120),
+                parseErr instanceof Error ? parseErr.message : String(parseErr));
             }
           }
         }
