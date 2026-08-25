@@ -236,7 +236,7 @@ describe('ensureBackend — env 与命令契约（DS8 双模式）', () => {
   });
 
   // ═══ D518 新增: F4 注释漂移回归（K3 D504 审计 F4——注释与磁盘事实不一致）═══
-  it('F4 回归: electron/*.cjs 注释零 "dist/index.js" 残留（全部为 dist/src/index.js）', () => {
+  it('F4 回归: electron/*.cjs 注释零裸 dist/index.js 残留（P0-1 后 prod 契约 = dist/backend.mjs）', () => {
     const electronDir = path.join(ROOT, 'electron');
     const files = fs.readdirSync(electronDir).filter((f) => f.endsWith('.cjs'));
     expect(files.length).toBeGreaterThan(0);
@@ -285,6 +285,215 @@ describe('ensureBackend — env 与命令契约（DS8 双模式）', () => {
     let alive = true;
     try { process.kill(pid as number, 0); } catch (err) { console.warn('[test] 子进程已退出（ESRCH 预期）:', err instanceof Error ? err.message : String(err)); alive = false; }
     expect(alive).toBe(false);
+  }, 40000);
+});
+
+/**
+ * D522 teardown 契约（铁律 47，先于实现定义 — dev doc §7）:
+ *   stop():
+ *     POSIX: signalTree(pid, 'SIGTERM') → graceMs 后 signalTree(pid, 'SIGKILL')
+ *     Win:   taskkillProcessTree(pid)（taskkill /T /F）
+ *     幂等（child.killed / pid≤0 短路，重复调用无副作用）
+ *     taskkill 失败 → log.warn + 继续（不抛不静默，铁律 11/24）
+ *   物理断言: kill(pid, 0) 抛 ESRCH = 进程已死（非 grep 冒充——D510 F1）
+ */
+describe('D522 teardown — stop() 进程树回收契约', () => {
+  /** 物理断言辅助: pid 已死（kill(pid,0) 抛 ESRCH/EPERM 以外错误） */
+  const assertDead = (pid: number) => {
+    let alive = true;
+    try { process.kill(pid, 0); } catch { alive = false; }
+    expect(alive, `pid ${pid} 应已死（kill(pid,0) 应抛 ESRCH）`).toBe(false);
+  };
+
+  /** 等待 pid 死亡（轮询，最长 maxMs） */
+  const waitDead = async (pid: number, maxMs: number): Promise<boolean> => {
+    const deadline = Date.now() + maxMs;
+    while (Date.now() < deadline) {
+      try { process.kill(pid, 0); } catch { return true; }
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    return false;
+  };
+
+  it('正常路径：stop() → SIGTERM → 子进程 pid 已死（kill(pid,0) 抛 ESRCH，物理断言非 grep）', async () => {
+    const stub = path.join(os.tmpdir(), `d522-term-${Date.now()}.cjs`);
+    fs.writeFileSync(stub, 'process.on("SIGTERM", () => process.exit(0));\nsetInterval(() => {}, 10000);\n');
+    handles.push(() => { try { fs.unlinkSync(stub); } catch { /* gone */ } });
+
+    const { ensureBackend } = require_(backendSpawnPath) as {
+      ensureBackend: (o: Record<string, unknown>) => Promise<{ pid?: number; stop?: () => void } & Record<string, unknown>>;
+    };
+    const fake = await startFakeServer(600);
+    handles.push(() => fake.close());
+
+    const result = await ensureBackend({
+      serverUrl: `http://127.0.0.1:${fake.port}`,
+      cwd: process.cwd(),
+      mode: 'prod',
+      command: { bin: process.execPath, args: [stub] },
+      probeTimeoutMs: 30000,
+      pollIntervalMs: 200,
+    });
+
+    const pid = result.pid as number;
+    expect(typeof pid).toBe('number');
+    result.stop?.();
+    expect(await waitDead(pid, 5000)).toBe(true);
+    assertDead(pid);
+  }, 40000);
+
+  it('边界：stop() 幂等——连续两次调用不抛、无二次副作用', async () => {
+    const stub = path.join(os.tmpdir(), `d522-idem-${Date.now()}.cjs`);
+    fs.writeFileSync(stub, 'process.on("SIGTERM", () => process.exit(0));\nsetInterval(() => {}, 10000);\n');
+    handles.push(() => { try { fs.unlinkSync(stub); } catch { /* gone */ } });
+
+    const { ensureBackend } = require_(backendSpawnPath) as {
+      ensureBackend: (o: Record<string, unknown>) => Promise<{ pid?: number; stop?: () => void } & Record<string, unknown>>;
+    };
+    const fake = await startFakeServer(600);
+    handles.push(() => fake.close());
+
+    const result = await ensureBackend({
+      serverUrl: `http://127.0.0.1:${fake.port}`,
+      cwd: process.cwd(),
+      mode: 'prod',
+      command: { bin: process.execPath, args: [stub] },
+      probeTimeoutMs: 30000,
+      pollIntervalMs: 200,
+    });
+
+    const pid = result.pid as number;
+    expect(() => result.stop?.()).not.toThrow();
+    expect(await waitDead(pid, 5000)).toBe(true);
+    // 第二次 stop：pid 已死，幂等短路——不抛（POSIX 对已死 pid kill 会 ESRCH，必须被吞）
+    expect(() => result.stop?.()).not.toThrow();
+    assertDead(pid);
+  }, 40000);
+
+  it('升级路径：子进程忽略 SIGTERM → graceMs 后 SIGKILL 杀死（物理断言）', async () => {
+    const stub = path.join(os.tmpdir(), `d522-sigkill-${Date.now()}.cjs`);
+    fs.writeFileSync(stub, 'process.on("SIGTERM", () => {});\nsetInterval(() => {}, 1000);\n');
+    handles.push(() => { try { fs.unlinkSync(stub); } catch { /* gone */ } });
+
+    const { ensureBackend } = require_(backendSpawnPath) as {
+      ensureBackend: (o: Record<string, unknown>) => Promise<{ pid?: number; stop?: () => void } & Record<string, unknown>>;
+    };
+    const fake = await startFakeServer(600);
+    handles.push(() => fake.close());
+
+    const result = await ensureBackend({
+      serverUrl: `http://127.0.0.1:${fake.port}`,
+      cwd: process.cwd(),
+      mode: 'prod',
+      command: { bin: process.execPath, args: [stub] },
+      probeTimeoutMs: 30000,
+      pollIntervalMs: 200,
+      graceMs: 500, // 测试缩短优雅窗口
+    });
+
+    const pid = result.pid as number;
+    result.stop?.();
+    // SIGTERM 被忽略——graceMs 后 SIGKILL 升级必须杀死
+    expect(await waitDead(pid, 5000)).toBe(true);
+    assertDead(pid);
+  }, 40000);
+
+  it('进程组：spawn detached 后孙进程也被回收（无孤儿，DS3）', async () => {
+    const gcPidFile = path.join(os.tmpdir(), `d522-gc-${Date.now()}.pid`);
+    const stub = path.join(os.tmpdir(), `d522-group-${Date.now()}.cjs`);
+    fs.writeFileSync(stub, `const g = require('child_process').spawn('sleep', ['60'], { stdio: 'ignore' });\nrequire('fs').writeFileSync(${JSON.stringify(gcPidFile)}, String(g.pid));\nsetInterval(() => {}, 1000);\n`);
+    handles.push(() => {
+      try { fs.unlinkSync(stub); } catch { /* gone */ }
+      try { fs.unlinkSync(gcPidFile); } catch { /* gone */ }
+    });
+
+    const { ensureBackend } = require_(backendSpawnPath) as {
+      ensureBackend: (o: Record<string, unknown>) => Promise<{ pid?: number; stop?: () => void } & Record<string, unknown>>;
+    };
+    const fake = await startFakeServer(600);
+    handles.push(() => fake.close());
+
+    const result = await ensureBackend({
+      serverUrl: `http://127.0.0.1:${fake.port}`,
+      cwd: process.cwd(),
+      mode: 'prod',
+      command: { bin: process.execPath, args: [stub] },
+      probeTimeoutMs: 30000,
+      pollIntervalMs: 200,
+      graceMs: 500,
+    });
+
+    const pid = result.pid as number;
+    // 等 stub 写出孙进程 pid
+    let gcPid = 0;
+    for (let i = 0; i < 50; i += 1) {
+      try { gcPid = parseInt(fs.readFileSync(gcPidFile, 'utf-8'), 10); if (gcPid > 0) break; } catch { /* not yet */ }
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    expect(gcPid).toBeGreaterThan(0);
+    process.kill(gcPid, 0); // 孙进程确实活着（前置物理断言）
+
+    result.stop?.();
+    expect(await waitDead(pid, 5000)).toBe(true);
+    // 孙进程必须也被进程组信号回收（kill(-pgid)）——无孤儿
+    expect(await waitDead(gcPid, 5000)).toBe(true);
+    assertDead(gcPid);
+  }, 40000);
+
+  it('降级：Win taskkill 失败（注入抛错的 taskkill runner）→ 不抛 + 继续（幂等，铁律 11/24）', () => {
+    const { signalTree, taskkillProcessTree } = require_(backendSpawnPath) as {
+      signalTree: (platform: string, pid: number, sig: NodeJS.Signals, child: { kill: (s: NodeJS.Signals) => void } | null, taskkill?: (pid: number) => void) => void;
+      taskkillProcessTree: (pid: number, taskkill?: (pid: number) => void) => void;
+    };
+    const boom = (_pid: number): void => { throw new Error('taskkill binary missing'); };
+    // taskkillProcessTree 捕获 + console.warn（不静默）
+    expect(() => taskkillProcessTree(4321, boom)).not.toThrow();
+    // signalTree win32 分支传导: 同样不抛
+    expect(() => signalTree('win32', 4321, 'SIGTERM', null, boom)).not.toThrow();
+  });
+
+  it('边界：pid≤0 / child.killed → stop no-op 不抛', () => {
+    const { signalTree, taskkillProcessTree } = require_(backendSpawnPath) as {
+      signalTree: (platform: string, pid: number, sig: NodeJS.Signals, child: { kill: (s: NodeJS.Signals) => void } | null, taskkill?: (pid: number) => void) => void;
+      taskkillProcessTree: (pid: number, taskkill?: (pid: number) => void) => void;
+    };
+    let taskkillCalled = false;
+    const spy = (): void => { taskkillCalled = true; };
+    expect(() => signalTree('win32', 0, 'SIGTERM', null, spy)).not.toThrow();
+    expect(() => signalTree('linux', -1, 'SIGTERM', null, spy)).not.toThrow();
+    expect(() => taskkillProcessTree(0, spy)).not.toThrow();
+    expect(taskkillCalled).toBe(false); // pid≤0 全部 no-op
+  });
+
+  it('五段链路集成：慢启动假后端 → started+pid → stop() → 假后端进程已死（L2a 全链）', async () => {
+    // spawn 的"后端"自己起 healthz（先 503 后 200）——真实五段链路，探活对象即 spawn 的进程
+    const port = 39000 + (Date.now() % 1000);
+    const stub = path.join(os.tmpdir(), `d522-full-${Date.now()}.cjs`);
+    fs.writeFileSync(stub, `const http = require('http');\nconst t0 = Date.now();\nhttp.createServer((q, s) => {\n  if (Date.now() - t0 < 800) { s.statusCode = 503; s.end('starting'); return; }\n  s.statusCode = 200; s.end('{"status":"healthy"}');\n}).listen(${port}, '127.0.0.1');\n`);
+    handles.push(() => { try { fs.unlinkSync(stub); } catch { /* gone */ } });
+
+    const { ensureBackend } = require_(backendSpawnPath) as {
+      ensureBackend: (o: Record<string, unknown>) => Promise<{ started: boolean; pid?: number; reused?: boolean; degraded?: boolean; stop?: () => void } & Record<string, unknown>>;
+    };
+
+    const result = await ensureBackend({
+      serverUrl: `http://127.0.0.1:${port}`,
+      cwd: process.cwd(),
+      mode: 'prod',
+      command: { bin: process.execPath, args: [stub] },
+      probeTimeoutMs: 30000,
+      pollIntervalMs: 200,
+      graceMs: 500,
+    });
+
+    expect(result.started).toBe(true);
+    expect(result.reused).toBeFalsy();
+    expect(result.degraded).toBeFalsy();
+    const pid = result.pid as number;
+
+    result.stop?.();
+    expect(await waitDead(pid, 5000)).toBe(true);
+    assertDead(pid); // 五段链路终点: stop 回收，无孤儿
   }, 40000);
 });
 
