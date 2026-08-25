@@ -11,6 +11,17 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V5.1.2 (2026-08-26) — D533 CI 调试可达性根治（凭证共享 + CRLF 治本 + debug 纪律）（PATCH）
+
+> 收敛 3 项（D529 复盘后审计收敛，原 5 项 → 3 项）。spec: docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D533-ci-diagnostics-20260825.md
+
+- **① 凭证共享（开发环境治理，不入库）**: GITHUB_TOKEN 落 `~/.dsh/.credentials.yaml`（0600，与 DEEPSEEK 等 key 同文件）——CI 日志 403 盲猜根因消除；curl 验证 `actions/jobs/<id>/logs` HTTP 200 拉到完整失败日志（run 32879994891 / job 97906882065 / 48KB，定位失败测试）。
+- **② CRLF 治本（.gitattributes 行为变化）**: D520 已加 `*.sh/*.py text eol=lf` 但从未 renormalize → 17 个 CRLF blob 让每次全新 checkout 永久脏（D529 根因）。本版本 `git add --renormalize` 规范化 15 个脏文件 + 追加两条豁免：`scripts/audit/** -text`（K3 红线，审计脚本字节不变）+ `scripts/control-tower/*.py -text`（存量 CRLF 无配对测试，CT-40 禁改）→ `git status` 零噪音，audit/control-tower 脚本 vs main 零 diff。
+- **③ debug 回传纪律（文档级）**: docs/synova/coordination/CI-诊断通道.md 新增 §五——CI debug 回传必须推 `ci-debug/*` 独立分支（永不动工作分支）+ 首选 curl/gh 日志通道。
+- **明确不做（防膨胀）**: ~~CI 挂起探针~~（挂起根因已消除：prebuild-install 无编译）/ ~~机器人 merge 豁免~~（无 CI bot 提交）/ ~~gh CLI 强制~~（可选工具）。
+- **验证**: git status 零噪音（worktree 实测复现 D529 → 修复后干净）；pre-commit 6 组本地全绿 + CI TS+Lint+Iron Laws/Vitest 全绿；D331 bypass 对账通过。
+- **作者**: dsh-parallel-cto（D533，控制塔线）
+
 ## V5.1.1 (2026-08-25) — D525+D526 红态清理 + canary 漂移告警（PATCH）
 
 - **D525 synova-commit.test.sh 红态修复**: 6 个 D507 断言（随 D508 门禁移除失效）重写为现行为断言——staging_guard 接线/他人写集阻断（沙箱行为实测 exit 1 + 点名归属）/自己写集放行 + commit 链路走通/guard 崩溃显式降级/status JSON 判定语义，8/8。测试入 CI canary 清单（红态自此有防线感知——D525 漏网根因闭环）。

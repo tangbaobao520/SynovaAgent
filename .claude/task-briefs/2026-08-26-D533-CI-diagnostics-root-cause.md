@@ -41,6 +41,7 @@ CI 调试可达性根治（控制塔 slice）。D529 复盘：真正机制病根
 - tests/control-tower/brief-template-decision.test.sh — git add --renormalize 规范化（CRLF→LF）
 - tests/doc-system/doc-registry-gate.test.sh — git add --renormalize 规范化（CRLF→LF）
 - docs/synova/coordination/CI-诊断通道.md — 加 ci-debug/* 独立分支回传纪律
+- .codex/control-tower/VERSION.md — bump V5.1.2（D533 控制塔行为变更，PATCH）
 - ~/.dsh/.credentials.yaml — 补 GITHUB_TOKEN 条目（本地 0600，不 commit）
 - task-state/D533.json — 回填 impl.commit + 证据
 不做什么：
