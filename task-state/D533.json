@@ -13,8 +13,14 @@
     "date": "2026-08-26",
     "items": {
       "1_credentials": {
-        "status": "pending-token",
-        "note": "GITHUB_TOKEN 待主 CTO 提供后落 ~/.dsh/.credentials.yaml（0600 本地不 commit），curl 拉日志验证"
+        "status": "done",
+        "evidence": [
+          "GITHUB_TOKEN 已落 ~/.dsh/.credentials.yaml refs.GITHUB_TOKEN（0600，与 DEEPSEEK 等 key 同文件，本地不 commit）",
+          "curl 验证：GET /actions/runs/32879994891/jobs 找到失败 job 97906882065（Control Tower Gate Tests ubuntu）",
+          "curl -H 'Authorization: token $GITHUB_TOKEN' .../actions/jobs/97906882065/logs → HTTP 200，48KB 完整日志",
+          "日志定位实际失败：tests/control-tower/{post-commit-marker,bypass-precommit,simulate-ci}.test.sh",
+          "D529 盲猜 15-20 分钟的问题 → 凭证落位后一条 curl 即达"
+        ]
       },
       "2_crlf": {
         "status": "done",
