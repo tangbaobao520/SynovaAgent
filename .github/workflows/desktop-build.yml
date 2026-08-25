@@ -5,7 +5,8 @@
 # D529: ①所有含 bash 语法（test/compgen）的步骤显式 shell: bash——Windows runner 默认 pwsh，
 #         `test -f` 在 pwsh 是 CommandNotFound 必红（PR #175 只修了 distutils 没修这个）。
 #       ②fix/d529-* 分支也触发（修复迭代期拿新鲜日志——旧日志 BlobNotFound）。
-#       ③失败时把错误尾部 commit 回 ci-debug/（无 gh CLI 的本地 session 可读根因，不猜）。
+#       ③失败时错误尾部走双通道回传：REST API commit 到 ci-debug/ + ::error:: 注解
+#         （check-runs 注解 API 公开可读——本地无 gh/token 的 session 不猜根因）。
 name: desktop-build
 
 on:
@@ -48,36 +49,55 @@ jobs:
       - name: Build backend (esbuild bundle)
         shell: bash
         run: |
-          npm ci
-          npm run build:backend
-          test -f dist/backend.mjs
+          set -o pipefail
+          { npm ci && npm run build:backend && test -f dist/backend.mjs; } 2>&1 | tee step-backend.log
+          test ${PIPESTATUS[0]} -eq 0
 
       # 构建链步骤2: renderer vite → dist/renderer（首诊 UI）
       - name: Build renderer (vite)
         shell: bash
         working-directory: electron-renderer
         run: |
-          npm ci
-          npm run build
-          test -f ../dist/renderer/index.html
+          set -o pipefail
+          { npm ci && npm run build && test -f ../dist/renderer/index.html; } 2>&1 | tee ../step-renderer.log
+          test ${PIPESTATUS[0]} -eq 0
 
       # 构建链步骤3: electron-builder → release/
       - name: Build installer (electron-builder)
         shell: bash
-        run: npx electron-builder --config build-synova.cjs ${{ matrix.builder-args }} 2>&1 | tee build-installer.log; test ${PIPESTATUS[0]:-0} -eq 0
+        run: |
+          set -o pipefail
+          npx electron-builder --config build-synova.cjs ${{ matrix.builder-args }} 2>&1 | tee step-installer.log
+          test ${PIPESTATUS[0]} -eq 0
 
-      # D529 debug: 失败时把构建日志尾部 commit 回 ci-debug/<platform>-<run>.log（定位根因用，移除于终态）
+      # D529 debug: 失败根因回传（REST API commit 到 ci-debug/ + 注解；本步零失败化——不掩盖构建红）
       - name: Capture failure log (debug, remove after root cause fixed)
         if: failure()
         shell: bash
-        run: |
-          mkdir -p ci-debug
-          { echo "run=${GITHUB_RUN_ID} job=${RUNNER_OS}"; tail -c 60000 build-installer.log 2>/dev/null || echo "(no build-installer.log)"; } > "ci-debug/${RUNNER_OS,,}-${GITHUB_RUN_ID}.log"
-          git config user.name "ci-debug" && git config user.email "ci-debug@users.noreply.github.com"
-          git add ci-debug/ && git commit -m "ci-debug: ${RUNNER_OS} failure log run ${GITHUB_RUN_ID}" || echo "nothing to commit"
-          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:${GITHUB_REF_NAME}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+          LOG="ci-debug/${RUNNER_OS,,}-${GITHUB_RUN_ID}.log"
+          mkdir -p ci-debug
+          { echo "run=${GITHUB_RUN_ID} job=${RUNNER_OS} ref=${GITHUB_REF_NAME}";
+            for f in step-backend.log step-renderer.log step-installer.log; do
+              echo; echo "════════ $f (tail 200) ════════";
+              [ -f "$f" ] && tail -200 "$f" || echo "(missing)"
+            done; } > "$LOG"
+          # 通道1: 注解（check-runs API 公开可读；10 条上限——取错误附近关键行）
+          grep -iE "error|failed|fatal|not found|ERR_" "$LOG" | tail -8 | while IFS= read -r line; do
+            echo "::error::${RUNNER_OS}: ${line:0:240}"
+          done
+          # 通道2: REST API commit（绕开 git 客户端环境差异）
+          B64=$(base64 -w0 "$LOG" 2>/dev/null || base64 < "$LOG" | tr -d '\n')
+          curl -sf -X PUT \
+            -H "Authorization: token ${GITHUB_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/contents/${LOG}" \
+            -d "{\"message\":\"ci-debug: ${RUNNER_OS} failure run ${GITHUB_RUN_ID}\",\"content\":\"${B64}\",\"branch\":\"${GITHUB_REF_NAME}\"}" \
+            && echo "ci-debug committed" || echo "::warning::ci-debug commit failed (see annotations)"
+          exit 0
 
       - name: Assert artifacts exist
         shell: bash
