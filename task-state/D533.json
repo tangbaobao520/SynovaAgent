@@ -1,16 +1,43 @@
 {
   "task_id": "D533",
   "title": "CI 调试可达性根治（凭证共享 / CRLF 治本 / debug 纪律——审计收敛版 3 项）",
-  "status": "claimed",
+  "status": "impl-done",
   "spec": {
     "doc": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D533-ci-diagnostics-20260825.md",
     "dispatch": "docs/synova/coordination/派单-D533-并行CTO-20260825.md",
     "source": "D529 复盘 + 审计收敛（原 5 项 → 3 项）"
   },
-  "impl": null,
+  "impl": {
+    "commit": "f540085a",
+    "branch": "chore/d533-ci-diagnostics",
+    "date": "2026-08-26",
+    "items": {
+      "1_credentials": {
+        "status": "pending-token",
+        "note": "GITHUB_TOKEN 待主 CTO 提供后落 ~/.dsh/.credentials.yaml（0600 本地不 commit），curl 拉日志验证"
+      },
+      "2_crlf": {
+        "status": "done",
+        "evidence": [
+          "git add --renormalize 规范化 15 个 CRLF 脏文件（新 worktree 实测复现 D529 永久脏）",
+          ".gitattributes 追加 scripts/audit/** -text（K3 红线，审计脚本字节不变：check-gates-v2.py 1763 CR 原样）",
+          ".gitattributes 追加 scripts/control-tower/*.py -text（存量 CRLF 无配对测试，CT-40 禁改）",
+          "git status 零噪音：git diff origin/main -- scripts/audit/ = 0 行，scripts/control-tower/env_validator.py + inject-context.py = 0 行",
+          "origin/main 已有 *.sh/*.py text eol=lf（D520），本任务补 renormalize 治本"
+        ]
+      },
+      "3_debug_discipline": {
+        "status": "done",
+        "evidence": [
+          "docs/synova/coordination/CI-诊断通道.md 新增 §五 debug 回传纪律：grep 'ci-debug' = 2 处，grep 'GITHUB_TOKEN' = 2 处",
+          "纪律内容：CI debug 回传必须推 ci-debug/* 独立分支，永不动工作分支；首选 curl/gh 日志通道"
+        ]
+      }
+    }
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-08-26",
-  "updated_by": "alloc-task-id",
+  "updated_by": "并行 CTO（D533）",
   "slice": "control-tower"
 }
