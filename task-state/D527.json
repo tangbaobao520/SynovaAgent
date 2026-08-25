@@ -1,7 +1,7 @@
 {
   "task_id": "D527",
   "title": "L1-C 首诊旅程端到端(1-6)",
-  "status": "impl_done",
+  "status": "audited",
   "slice": "L1-C",
   "spec": {
     "doc": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D527-first-diagnosis-e2e-20260825.md",
@@ -41,5 +41,16 @@
   },
   "updated_at": "2026-08-25",
   "updated_by": "dsh",
-  "priority": "P1"
+  "priority": "P1",
+  "audit": {
+    "auditor": "k3",
+    "verdict": "PASS",
+    "report": "docs/synova/audit-reports/2026-08-25-D527-D528-slice-c.md",
+    "date": "2026-08-25",
+    "findings": [
+      "P2-1 RightPanel 默认 tab 变更未入 dev doc §5.1（devdoc）",
+      "P2-2 GS-01 断言漂移期间金场景静默红（control-tower）",
+      "P2-3 审计工作区 better-sqlite3 ABI（环境）"
+    ]
+  }
 }
