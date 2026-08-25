@@ -1,45 +1,19 @@
 {
   "task_id": "D527",
   "title": "L1-C 首诊旅程端到端(1-6)",
-  "status": "impl_done",
+  "status": "audited",
   "slice": "L1-C",
-  "spec": {
-    "doc": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D527-first-diagnosis-e2e-20260825.md",
-    "branch": "feat/slice-c-d527-d528",
-    "baseline_recheck": "切片 A/B 合入 main(@90c232f8) 后重新核验: engine 事件全集 10 种不变（grep 实测 6×phase_started/6×phase_completed/report_ready/right_column_update/degraded/error/expert_hypothesis/hypothesis_generated/root_cause_identified）; useStreaming 仍 9 case 无 default; setCurrentReportId 仍零生产调用; GS-01 electron-backend-spawn-contract 断言因切片 B prod=process.execPath+dist/backend.mjs 而既有失败（本 D 修正对齐，非预存在绿）"
-  },
-  "impl": {
-    "branch": "feat/slice-c-d527-d528",
-    "by": "dsh",
-    "write_set": [
-      "electron-renderer/src/hooks/sse-contract.ts — 新建 SSE 事件契约纯函数（15 类型全集 + applySSEEvent reducer: phase_started 进度/phase_completed 不回落/report_ready+complete 提取 reportId/error/degraded/未知 warn 不静默；JSDoc 契约头铁律 47）",
-      "electron-renderer/src/hooks/useStreaming.ts — handleEvent 改走 applySSEEvent（单一数据流）+ reportId→setCurrentReportId（缺口 2 修复）+ SSEEventType 单源导入 + JSON.parse 失败 console.warn（铁律 24）",
-      "electron-renderer/src/stores/conversation-store.ts — 新增 phaseIndex/phaseLabel/phaseTotal(=6) + setPhaseProgress",
-      "electron-renderer/src/components/CenterPanel.tsx — 六阶段进度条（阶段 N/6·label + progress bar）+ errorMessage 红色错误条（缺口 3 修复，铁律 24/31；内联样式守写集）",
-      "electron-renderer/src/components/RightPanel.tsx — GAWorkspaceTabs 第 4 tab「诊断报告」: GET /consult/:id/report?format=markdown 渲染 onePager(ReactMarkdown)，失败/404 degraded 提示不静默",
-      "electron-renderer/src/components/Composer.tsx — /diagnosis 命令语义化（选中即触发诊断，其余命令保持填充）",
-      "tests/electron/use-streaming-contract.test.ts — 12 用例（正常/降级/边界；red 已证: sse-contract 不存在时 import 失败全红）",
-      "scripts/golden-scenarios/GS-01-first-diagnosis/run.sh — GS01_LLM 门控真实 consult 组（SSE 流断言 phase_started 0-5+complete+reportId+GET /report 200；无 key 如实 CONSULT_LLM_RED）+ SSE 原文/计时落 evidence(P2-2) + 修正 electron-backend-spawn-contract 断言对齐切片 B prod 契约",
-      "scripts/golden-scenarios/GS-01-first-diagnosis/expect.json — 新增 L1-6/consult-llm-recorded 断言（状态文件 contains CONSULT_LLM_）",
-      "scripts/golden-scenarios/GS-01-first-diagnosis/README.md — 诚实 RED 声明更新（8 断言契约 + LLM 门控语义）",
-      "scripts/desktop/first-diagnosis-timing.sh — 30 分钟计时脚本（5 里程碑 epoch ms + total_sec + verdict；--dry-run 零副作用 exit 0；prod 缺 --installer exit 2；30 分钟目标值非硬断言）",
-      "docs/synova/runbooks/first-diagnosis-e2e.md — 端到端实测 runbook（dev/prod 双路径 + 观测点 + K3 复核产物清单 + 已知边界诚实声明）"
-    ],
-    "evidence": {
-      "DS1_test": "npx vitest run tests/electron/use-streaming-contract.test.ts → 12/12 passed（red: 改造前 import 失败 1 failed/no tests）",
-      "DS2_phase_ui": "⏸ 六阶段进度条 UI 运行态截图——本编码环境无 LLM key 无 GUI，sse-contract 12 用例含 phase 0→5 逐一推进断言；运行态实测待 LLM 环境按 runbook §1 补（如实 ⏸ 不伪造）",
-      "DS3_report_visible": "接线 grep: useStreaming.ts:88 setCurrentReportId(r.reportId) → RightPanel 12 处 currentReportId 消费 + :189 GET /consult/:id/report?format=markdown 渲染；运行态 ⏸ 待 LLM 环境",
-      "DS4_e2e_evidence": "⏸/部分: GS-01 无 LLM 跑 8/8 pass + consult-llm-status=CONSULT_LLM_RED(如实)；SSE 事件流 evidence 待 GS01_LLM=1 环境落 GS-01-llm-stream-<date>.txt",
-      "DS5_timing": "bash scripts/desktop/first-diagnosis-timing.sh --mode dev --dry-run → exit 0；--mode prod 缺 --installer → exit 2；实跑计时 JSON 待 prod 安装包环境（runbook §3）",
-      "DS6_gs01": "bash run.sh → 8/8 断言 pass（assert exit 0）+ LLM 组 evidence 标 CONSULT_LLM_RED（README+evidence 双处诚实 RED）；GS01_LLM=1 全链路绿待 LLM key 环境",
-      "DS7_degraded": "sse-contract 用例: error→errorMessage+phase=error / degraded→系统消息+degraded=true；CenterPanel.tsx:81 errorMessage 红条渲染（phase==='error'&&errorMessage）；运行态截图 ⏸",
-      "DS8_scope": "git diff --name-only = 写集 12 文件 + D528 写集 4 + task-state×2 + spec×2 + task brief（CRLF 幻影 M 文件未暂存，diff --summary 仅行尾差异）",
-      "DS9_task_state": "本文件回填（slice L1-C + impl evidence）"
-    },
-    "red_lines": "src/ 零触碰（git diff 可证）; scripts/audit/ 零触碰; grep -rn '@deepseek-ai/dsh' electron-renderer/ 零结果（Stage 3 前零 DSH 依赖）",
-    "known_preexisting": "tests/electron 现有 5 文件（spec 写 3——切片 A/B 新增 mac/win-install-verify.test.ts，非漂移）; GS-01 electron-backend-spawn-contract 在 main 上因切片 B prod 契约变更既有 fail（本 D 修正）"
+  "spec": null,
+  "impl": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-08-25-D527-D528-slice-c.md",
+    "verdict": "PASS",
+    "date": "2026-08-25",
+    "by": "K3",
+    "recheck": "写集 12/12 命中（90c232f8..ae9e9044 diff 对账）；sse-contract 15 类型契约 + applySSEEvent 接线（useStreaming.ts:20/:81/:88）复跑核验；测试 12/12 复跑绿 + tests/electron 回归 80/3；GS-01 8/8 属实（编码证据 GS-01-2026-08-25.json 17:52 + 代码路径复核；审计工作区复跑受 better-sqlite3 ABI 崩溃/沙箱限制 = 环境依赖非缺陷）；脚本 exit 0/2 复现；前置核验 4 项声明全部属实；GS-01 漂移修正正确（main run.sh:112 旧断言 → 切片 C 新契约断言）",
+    "blockers": "合并顺序 feat/slice-c-d527-d528 → main 后应用本回填；非阻断跟进: P2-1 RightPanel 默认 tab 行为变更未入 dev doc、P2-2 金场景绿保持门禁（控制塔待办）、P2-3 审计工作区 better-sqlite3 Node24 ABI（D462 已列 P1）"
   },
   "updated_at": "2026-08-25",
-  "updated_by": "dsh",
+  "updated_by": "k3",
   "priority": "P1"
 }

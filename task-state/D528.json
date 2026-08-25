@@ -1,37 +1,19 @@
 {
   "task_id": "D528",
   "title": "L1-C 升级/重装不丢数据(1-7)",
-  "status": "impl_done",
+  "status": "audited",
   "slice": "L1-C",
-  "spec": {
-    "doc": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D528-upgrade-data-retention-20260825.md",
-    "branch": "feat/slice-c-d527-d528",
-    "baseline_recheck": "切片 A/B 合入 main(@90c232f8) 后重新核验: main.cjs 195 行（D518 模式日志版）无 requestSingleInstanceLock; backend-spawn.cjs buildCommand prod=process.execPath+['dist/backend.mjs']（切片 B）; build-synova.cjs NSIS 无 deleteAppDataOnUninstall（默认保留）; scripts/desktop/ 有 mac-install-verify.sh 模式可对齐"
-  },
-  "impl": {
-    "branch": "feat/slice-c-d527-d528",
-    "by": "dsh",
-    "write_set": [
-      "scripts/desktop/upgrade-data-verify.sh — 升级实测核心脚本（装 v1→临时 userData 造数据→v2 覆盖安装→断言 表清单/关键表行数/db md5/integrity_check 前后一致；契约头 @input/@output/@degraded；--dry-run 零副作用 exit 0；缺 dmg/hdiutil/sqlite3 exit 2；真实 userData 零触碰——mktemp 临时目录+SYNOVA_DB_PATH 注入；evidence/upgrade-data-<date>-<ts>/ 断言原文落盘 P2-2；幂等清理）",
-      "tests/electron/upgrade-data-verify.test.ts — 9 用例脚本契约测试（red 已证: 脚本不存在 9/9 fail → green 9/9）+ main.cjs 单实例锁接线断言",
-      "electron/main.cjs — requestSingleInstanceLock 单实例锁（二次启动 app.quit + second-instance 聚焦已有窗口；lock API 异常 try/catch+log 不阻断首实例，铁律 24）",
-      "docs/synova/runbooks/upgrade-data-retention.md — 数据目录隔离契约（userData 物理位置+注入链路）+ 升级语义事实表（dmg/NSIS/卸载重装/会清数据的路径）+ 实测步骤 + K3 复核路径",
-      "build-synova.cjs — 条件性触碰结论: 实测确认 NSIS 默认保留 AppData（deleteAppDataOnUninstall 未配置=false），零改动仅文档化（spec §5.1 预设路径）"
-    ],
-    "evidence": {
-      "DS1_test": "npx vitest run tests/electron/upgrade-data-verify.test.ts → 9/9 passed（red: 脚本不存在时 9 failed）",
-      "DS2_upgrade_e2e": "⏸ 升级实测 evidence——本编码环境无 dmg 产物（release/ 空），脚本跑前置 exit 2（degraded 显式提示，不伪造）；有 dmg 环境按 runbook §3 执行落 evidence/upgrade-data-*/summary.txt verdict:DATA_RETAINED",
-      "DS3_contract_doc": "runbook §1: mac userData 实测路径 ~/Library/Application Support/synova-agent/ + 注入链路（main.cjs→backend-spawn.cjs SYNOVA_DB_PATH→config.ts 只读）+ 物理隔离原理",
-      "DS4_upgrade_semantics": "runbook §2 事实表: dmg 替换/NSIS 覆盖/卸载重装均保留 + 会清数据路径枚举 + win 侧待实测诚实标注; build-synova.cjs 零改动（默认行为满足）",
-      "DS5_script_exec": "--dry-run exit 0（零副作用）; 缺 dmg exit 2（前置缺失显式提示）; 无 cp data/synova.db（契约测试用例 ⑥ 断言，铁律 0-4）",
-      "DS6_single_lock": "grep electron/main.cjs:126 requestSingleInstanceLock + app.on('second-instance') 聚焦 + app.quit; 契约测试用例 9 接线断言; 双开运行态实测待 GUI 环境（⏸ 如实标注）",
-      "DS7_db_corrupt": "降级链路验证（脚本 ③造数据段）: healthz 120s 未就绪 → die + server-v1-tail.log 落 evidence（不静默）; 既有链路 ensureBackend degraded→offline 页在 runbook §4 文档化; 损坏 db 注入运行态实测 ⏸ 待 GUI 环境",
-      "DS8_scope": "git diff --name-only = D528 写集 4 文件（build-synova.cjs 零改动）+ D527 写集 12 + task-state×2 + spec×2 + task brief; src/ 与 scripts/audit/ 零触碰"
-    },
-    "red_lines": "src/ 零触碰; scripts/audit/ 零触碰; 真实库零 cp（mktemp 临时目录）",
-    "known_preexisting": "win 侧升级语义待 D523 后 win 安装包实测（runbook 诚实标注）"
+  "spec": null,
+  "impl": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-08-25-D527-D528-slice-c.md",
+    "verdict": "PASS",
+    "date": "2026-08-25",
+    "by": "K3",
+    "recheck": "写集 4/4 命中 + build-synova.cjs 零改动（条件性路径未触发，符合 spec §5.1 预设）；测试 9/9 复跑绿（含 main.cjs 单实例锁接线断言）；main.cjs:126 requestSingleInstanceLock + second-instance 聚焦 + lock 异常 try/catch+log 逐行核验；upgrade-data-verify.sh --dry-run exit 0 / 缺 dmg exit 2 复现；无 cp data/synova.db（测试用例⑥断言 + 脚本 grep）；runbook 隔离契约 + NSIS/dmg 升级语义事实表 + win 侧待实测诚实标注；⏸ dmg 升级实测（release/ 无 dmg）如实标注未伪造",
+    "blockers": "合并顺序 feat/slice-c-d527-d528 → main 后应用本回填；⏸ DS2 dmg 升级实测待有 dmg 环境按 runbook §3 执行（evidence/upgrade-data-*/summary.txt verdict:DATA_RETAINED）"
   },
   "updated_at": "2026-08-25",
-  "updated_by": "dsh",
+  "updated_by": "k3",
   "priority": "P1"
 }
