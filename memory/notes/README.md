@@ -17,6 +17,17 @@
 git mv memory/notes/proposed/2026-08-17-xxx.md memory/notes/implemented/2026-08-17-xxx.md
 ```
 
+## 四态迁移语义（D534 补全，2026-08-26）
+
+| 迁移 | 门槛/触发 | 判定（物理可验证） |
+|------|-----------|-------------------|
+| proposed → implemented | 决策**落地**：task-state 对应 D# 状态 ∈ {impl_done, audited}（实现已提交+审计通过），或决策被采纳执行 | `task-state/D#.json` grep status + 头字段 `状态: implemented` 与目录一致 |
+| implemented → archived | 决策被**替代**（新 Note 明确取代）或**超期不活跃**（>60 天无 commit 引用，人工判定） | git mv + 头字段 `状态: archived`；被替代时新 Note 引用旧 Note 路径 |
+| proposed → rejected | 提案被**否决**（评审/实践否决） | git mv + 头字段 `状态: rejected` + 理由节保留否决原因（防重蹈） |
+| rejected → 恢复 | 决策被重新采纳 | git mv 回 proposed/ 重新走流程（极少见，留规则） |
+
+**非平凡变更定义**（D534）：改 `scripts/{control-tower,workflow,hooks}/`、`src/orchestrator/`、`AGENTS.md`/`CLAUDE.md`、`memory/notes/README.md` 的 commit 必须引用 Note（commit-msg 物理门禁，见 scripts/commit-msg-check.sh）。测试文件（*.test.sh）与纯文档（docs/）不属非平凡。
+
 ## 迁移门禁（D472 — 物理，不靠自觉）
 
 `scripts/control-tower/check-notes-lifecycle.sh` 在 pre-commit 组 6 区域扫描 `proposed/`：
@@ -45,7 +56,7 @@ git mv memory/notes/proposed/2026-08-17-xxx.md memory/notes/implemented/2026-08-
 
 ## Note 引用门禁（物理，不靠自觉）
 
-改 `scripts/control-tower/` 或 `src/orchestrator/` 的 commit，**commit message 必须引用 Note 路径**（`memory/notes/...`），且引用的 Note 文件真实存在——否则 `scripts/commit-msg-check.sh` 阻断（D395-a）。
+改非平凡变更区（`scripts/{control-tower,workflow,hooks}/`、`src/orchestrator/`、`AGENTS.md`/`CLAUDE.md`、`memory/notes/README.md`）的 commit，**commit message 必须引用 Note 路径**（`memory/notes/...`），且引用的 Note 文件真实存在——否则 `scripts/commit-msg-check.sh` 阻断（D395-a 落点，D534 扩展触发面）。测试文件（*.test.sh）与 docs/ 纯文档豁免。
 
 > 落点：commit-msg hook（查 commit message），非 pre-commit 组 6（K3 §4.2 L219 + spec §4.5 决策 D）。
 

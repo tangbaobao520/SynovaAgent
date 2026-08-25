@@ -1,15 +1,27 @@
 {
   "task_id": "D534",
   "title": "Agent Notes 四态（Stage1-D2，S5-3 知识沉淀）",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": {
     "doc": "docs/synova/coordination/派单-Stage1续-D534-D535-20260825.md",
     "source": "施工图 Stage 1-D2",
     "slice": "stage1-cont"
   },
-  "impl": null,
+  "impl": {
+    "commit": "6bfe26ff",
+    "by": "dsh",
+    "at": "2026-08-26",
+    "files": [
+      "scripts/commit-msg-check.sh",
+      "memory/notes/README.md",
+      "AGENTS.md",
+      "memory/notes/implemented/2026-08-22-d472-notes-lifecycle.md",
+      "tests/control-tower/commit-msg-note-mandatory.test.sh"
+    ],
+    "evidence": "DS1-DS13 全绿: commit-msg-note-mandatory.test.sh PASS=10/10; 触发面正则命中 commit-msg-check.sh:130; 铁律49 AGENTS.md:60; README四态迁移语义 :20-29; d472 note 迁移完成; check-notes-lifecycle exit 0; 既有回归与 main 基线一致"
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-08-26",
-  "updated_by": "alloc-task-id"
+  "updated_by": "dsh"
 }
