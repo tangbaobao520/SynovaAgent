@@ -715,3 +715,7 @@ Binary file .claude/bypass.log matches
 2026-08-25T04:34:00+08:00 | COMMITTED | pre-commit PASS（D451 补记） | TASK_ID=D522/D523 | AGENT=dsh-cto | HASH=bccc9195
 2026-08-25T18:03:55+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=5335711d8c18e9cb72ec7b34996ddce351ade606
 2026-08-25T18:04:44+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=11784bb2116d87e8a6dbbfd6fbdfed812699eb3b
+2026-08-25T12:21:35Z detected-bypass no-precommit-marker
+2026-08-25T20:21:57+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/slicec-taskstate-fix
+2026-08-25T20:21:57+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=98c5ceffa6b189ac6b4c61074fbce2c539f00a35
+2026-08-25T20:22:15+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=30102ceb908903bd7748f3d051bdd646e95693d4
