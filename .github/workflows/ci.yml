@@ -139,10 +139,15 @@ jobs:
             tests/control-tower/brief-parser-strip.test.sh \
             tests/control-tower/bypass-precommit.test.sh \
             tests/control-tower/simulate-ci.test.sh \
-            tests/control-tower/synova-submit.test.sh; do
+            tests/control-tower/synova-submit.test.sh \
+            tests/control-tower/synova-commit.test.sh \
+            tests/control-tower/check-canary-drift.test.sh; do
             echo "── $t"
             bash "$t" || { echo "FAIL: $t"; FAIL=1; }
           done
+          # D526: canary 密封清单漂移告警（::warning 可见，不阻断——防误伤；
+          #   存量漂移由 K3/人工月度清理，全量密封化是 K3 P2-4 单独立项）
+          bash scripts/control-tower/check-canary-drift.sh || true
           exit $FAIL
 
   integration-check:
