@@ -33,6 +33,10 @@ grep -q "降级放行，请检查其日志" "$SC" && ok "④ guard 崩溃显式�
 SB="$TMPD/sb"; mkdir -p "$SB/.claude" "$SB/.codex/control-tower"
 cp -R "$HERE/../../scripts" "$SB/scripts"
 git -C "$SB" init -q
+# 沙箱仓库本地身份（post-commit-marker.test.sh 同款先例）——CI runner 无全局 git 身份，
+# synova-commit 内部 git commit + hook 影子提交都需要；写入的是沙箱自身 config，非宿主（M13 语义）
+git -C "$SB" config user.email "test@test.local"
+git -C "$SB" config user.name "test"
 touch "$SB/.claude/bypass.log"
 STUB="$TMPD/stub-precommit.sh"; printf '#!/bin/bash\nexit 0\n' > "$STUB"; chmod +x "$STUB"
 
