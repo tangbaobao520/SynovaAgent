@@ -26,13 +26,27 @@ CI 调试可达性根治（控制塔 slice）。D529 复盘：真正机制病根
 
 ## Q2: 范围 — 正确的最简方案
 做什么：
-- .gitattributes — 追加 `scripts/audit/** -text`（K3 红线保护，既有 `*.sh/*.py text eol=lf` 保留）
-- tests/control-tower/*.test.sh — git add --renormalize 规范化（CRLF→LF，15 个脏文件）
+- .gitattributes — 追加 `scripts/audit/** -text` + `scripts/control-tower/*.py -text`（K3/CT-40 红线保护，既有 `*.sh/*.py text eol=lf` 保留）
+- git add --renormalize 规范化全部 CRLF 脏文件（D520 加了 eol 规则但从未 renormalize）：
+  - scripts/doc-system/check-doc-truth.sh
+  - scripts/doc-system/doc-categories.sh
+  - scripts/doc-system/doc-registry-gate.sh
+  - scripts/doc-system/doc-staleness.sh
+  - scripts/doc-system/doc-triage.sh
+  - scripts/doc-system/generate-chronicle-monthly.sh
+  - scripts/doc-system/install-chronicle-schedule.sh
+  - scripts/jtbd-dedup-v2.py
+  - scripts/jtbd-dedup.py
+  - docs/research/growth-diagnostics/_build.py
+  - docs/research/growth-diagnostics/gen_epsilon.py
+  - tests/control-tower/brief-template-decision.test.sh
+  - tests/doc-system/doc-registry-gate.test.sh
 - docs/synova/coordination/CI-诊断通道.md — 加 ci-debug/* 独立分支回传纪律
 - ~/.dsh/.credentials.yaml — 补 GITHUB_TOKEN 条目（本地 0600，不 commit）
 - task-state/D533.json — 回填 impl.commit + 证据
 不做什么：
 - 不改 scripts/audit/（K3 红线，-text 豁免保证零 diff）
+- 不改 scripts/control-tower/env_validator.py / inject-context.py 内容（-text 豁免，字节不变）
 - 不改 src/（产品代码）
 - 不新增控制塔脚本
 - 不装 gh CLI（可选工具，curl + token 即可）
