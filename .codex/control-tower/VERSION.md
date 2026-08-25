@@ -11,9 +11,10 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
-## V5.1.2 (2026-08-26) — D533 CI 调试可达性根治（凭证共享 + CRLF 治本 + debug 纪律）（PATCH）
+## V5.1.3 (2026-08-26) — D533 CI 调试可达性根治（凭证共享 + CRLF 治本 + debug 纪律）（PATCH）
 
 > 收敛 3 项（D529 复盘后审计收敛，原 5 项 → 3 项）。spec: docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D533-ci-diagnostics-20260825.md
+> 版本号顺延说明: V5.1.2 已被 Win 线 verify-parallel CRLF 修复占用（427b4e7b，feat/win-d485-account-link-c）——按 V5.0.1 先例顺延 V5.1.3。
 
 - **① 凭证共享（开发环境治理，不入库）**: GITHUB_TOKEN 落 `~/.dsh/.credentials.yaml`（0600，与 DEEPSEEK 等 key 同文件）——CI 日志 403 盲猜根因消除；curl 验证 `actions/jobs/<id>/logs` HTTP 200 拉到完整失败日志（run 32879994891 / job 97906882065 / 48KB，定位失败测试）。
 - **② CRLF 治本（.gitattributes 行为变化）**: D520 已加 `*.sh/*.py text eol=lf` 但从未 renormalize → 17 个 CRLF blob 让每次全新 checkout 永久脏（D529 根因）。本版本 `git add --renormalize` 规范化 15 个脏文件 + 追加两条豁免：`scripts/audit/** -text`（K3 红线，审计脚本字节不变）+ `scripts/control-tower/*.py -text`（存量 CRLF 无配对测试，CT-40 禁改）→ `git status` 零噪音，audit/control-tower 脚本 vs main 零 diff。
