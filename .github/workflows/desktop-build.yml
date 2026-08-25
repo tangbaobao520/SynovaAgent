@@ -31,11 +31,11 @@ jobs:
         with:
           node-version: 20
 
-      # node-gyp 编译 better-sqlite3 需要 distutils（Python 3.12 仍含，3.13+ 移除；macos-latest 默认 Python 3.14 已无 distutils → npm ci 编译失败）
-      - name: Setup Python 3.12 (node-gyp distutils compat)
+      # node-gyp 9.4.1 编译 better-sqlite3 需要 stdlib distutils（实证：Python 3.12.10 也已无 distutils，仅 3.11 及更早原生含 → 固定 3.11）
+      - name: Setup Python 3.11 (node-gyp distutils compat)
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.11'
 
       # 构建链步骤1: 后端单文件 bundle → dist/backend.mjs（prod 入口；tsc 独立门禁不在打包链）
       - name: Build backend (esbuild bundle)
