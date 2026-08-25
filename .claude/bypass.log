@@ -729,3 +729,4 @@ Binary file .claude/bypass.log matches
 2026-08-25T21:04:03+08:00 | GATE_FAIL_SOFT | exit=1 | branch=docs/d524-devdoc-fix
 2026-08-25T21:04:17+08:00 | GATE_FAIL_SOFT | exit=1 | branch=docs/d524-devdoc-fix
 2026-08-25T21:04:17+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=2b5333c5b215d94bdfddc24580c135eaaf24942a
+2026-08-25T21:22:43+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D524 | AGENT=dsh-deepseek-harness

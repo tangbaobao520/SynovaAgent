@@ -23,6 +23,18 @@
       "gatekeeper": "exit 0 (C1-C6 ALL PASS, 2026-08-25)"
     }
   },
+  "recheck": {
+    "by": "dsh-deepseek-harness（D524 编码 session）",
+    "at": "2026-08-25 21:21:37 +0800",
+    "branch": "docs/d524-devdoc-fix",
+    "branch_tip": "53651029",
+    "k3_c2_grep_clean": "grep -c 'node dist/src/index.js' → 0（零残留）",
+    "k3_c2_backfill_three": "grep -n 'dist/backend.mjs' → 9 处覆盖 §2:32/§5.1:55-58/§7:76（含 §1/§4/§10）",
+    "spec7_verify": "六命令全 PASS：旧契约 0 / 新契约 9 / ELECTRON_RUN_AS_NODE 3 / §7 断言 prod.args===['dist/backend.mjs'] / origin/main :70/:172 逐字一致 / gatekeeper exit 0",
+    "vitest": "env -u ELECTRON_RUN_AS_NODE npx vitest run tests/electron/backend-spawn.test.ts → 17/17 全绿（exit 0）",
+    "redline": "零 src/ electron/ tests/ scripts/audit/ 改动；分支 vs main 仅 5 文档/流程文件",
+    "evidence_file": "docs/synova/product-lines/evidence/D524-verify-20260825-2121.json"
+  },
   "audit": null,
   "fix_task_id": "D518",
   "updated_at": "2026-08-25",
