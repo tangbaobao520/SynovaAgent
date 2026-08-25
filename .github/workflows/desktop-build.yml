@@ -37,7 +37,9 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # D529: node 20 (ABI 115) 无 better-sqlite3 v12 预编译（只发 ABI 127+）→ 回退 node-gyp
+          # 源码编译 → runner VS 18 与 node-gyp 9.4.1 不兼容必红。node 22 = ABI 127 ✓ 预编译直达。
+          node-version: 22
 
       # node-gyp 9.4.1 编译 better-sqlite3 需要 stdlib distutils（实证：Python 3.12.10 也已无 distutils，仅 3.11 及更早原生含 → 固定 3.11）
       - name: Setup Python 3.11 (node-gyp distutils compat)
@@ -85,18 +87,24 @@ jobs:
               echo; echo "════════ $f (tail 200) ════════";
               [ -f "$f" ] && tail -200 "$f" || echo "(missing)"
             done; } > "$LOG"
-          # 通道1: 注解（check-runs API 公开可读；10 条上限——取错误附近关键行）
-          grep -iE "error|failed|fatal|not found|ERR_" "$LOG" | tail -8 | while IFS= read -r line; do
+          # 通道1: 注解（check-runs API 公开可读；无条件取失败步日志尾部——不只 grep 命中行）
+          for f in step-backend.log step-renderer.log step-installer.log; do
+            if [ -f "$f" ]; then
+              tail -5 "$f" | while IFS= read -r line; do echo "::error::${RUNNER_OS}/${f}: ${line:0:230}"; done
+            fi
+          done
+          grep -iE "error|failed|fatal|not found|ERR_" "$LOG" | tail -5 | while IFS= read -r line; do
             echo "::error::${RUNNER_OS}: ${line:0:240}"
           done
-          # 通道2: REST API commit（绕开 git 客户端环境差异）
+          # 通道2: REST API commit（绕开 git 客户端环境差异；失败时把响应体也打进注解）
           B64=$(base64 -w0 "$LOG" 2>/dev/null || base64 < "$LOG" | tr -d '\n')
-          curl -sf -X PUT \
+          HTTP=$(curl -s -o /tmp/ci-debug-resp.json -w "%{http_code}" -X PUT \
             -H "Authorization: token ${GITHUB_TOKEN}" \
             -H "Accept: application/vnd.github+json" \
             "https://api.github.com/repos/${GITHUB_REPOSITORY}/contents/${LOG}" \
-            -d "{\"message\":\"ci-debug: ${RUNNER_OS} failure run ${GITHUB_RUN_ID}\",\"content\":\"${B64}\",\"branch\":\"${GITHUB_REF_NAME}\"}" \
-            && echo "ci-debug committed" || echo "::warning::ci-debug commit failed (see annotations)"
+            -d "{\"message\":\"ci-debug: ${RUNNER_OS} failure run ${GITHUB_RUN_ID}\",\"content\":\"${B64}\",\"branch\":\"${GITHUB_REF_NAME}\"}")
+          if [ "$HTTP" = "200" ] || [ "$HTTP" = "201" ]; then echo "ci-debug committed (HTTP $HTTP)"
+          else echo "::error::ci-debug commit HTTP $HTTP: $(head -c 300 /tmp/ci-debug-resp.json)"; fi
           exit 0
 
       - name: Assert artifacts exist
