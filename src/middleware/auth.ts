@@ -79,8 +79,9 @@ function getExpiresIn(): number {
 /**
  * 白名单路径——跳过认证。
  * 与 server.ts 的白名单同步。
- * 白名单含 login/register（D483: 匿名注册可达，多租户 onboarding 底座）；
- * 注册收紧为邀请令牌验证留切片 B（D102 注释方向，产品决策后做）。
+ * 白名单含 login/register（D483: 匿名注册可达，多租户 onboarding 底座）。
+ * D484: enterprise 匿名端点——企业注册 + 邀请查询/接受（邀请链接直达语义，token 即凭证；
+ * 复数 /api/enterprise/invitations 管理端点不匹配 invitation/ 前缀，保持认证 + requireAdmin）。
  */
 function isWhitelisted(path: string): boolean {
   return (
@@ -88,6 +89,8 @@ function isWhitelisted(path: string): boolean {
     path === '/' ||
     path === '/api/auth/login' ||
     path === '/api/auth/register' ||
+    path === '/api/enterprise/register' ||
+    path.startsWith('/api/enterprise/invitation/') ||
     path.startsWith('/api/status') ||
     path.startsWith('/assets/') ||
     path.endsWith('.html') ||
