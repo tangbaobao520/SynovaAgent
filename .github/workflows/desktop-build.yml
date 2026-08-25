@@ -65,15 +65,24 @@ jobs:
           test ${PIPESTATUS[0]} -eq 0
 
       # 构建链步骤3: electron-builder → release/
-      # D529: windows-latest 已切 VS 2026 (18)，npm 捆绑 node-gyp 9.4.1 无法识别 → bcrypt 6.0.0
-      # 无预编译资产（release 0 assets）必走源码编译 → VS 识别失败。node-gyp@12 支持 VS2026
-      # （nodejs/node-gyp#3228）。--no-save 不改 package.json。
+      # D529 修复三件套（双平台 installer 失败根因，实测日志见 ci-debug/）:
+      # ① --publish never: electron-builder 检测到 CI 后尝试 GitHub 发布检查（查 draft release），
+      #    缺 GH_TOKEN 报错——产物（dmg/zip/blockmap）实际已构建完成，仅发布检查翻红（mac 实测）。
+      # ② node-gyp@12（--no-save 不改 package.json）: windows-latest 已切 VS 2026 (18)，
+      #    旧 node-gyp 无法识别（nodejs/node-gyp#3228）。
+      # ③ 替换 @electron/rebuild 的嵌套 node-gyp: 实测它不用项目级 node-gyp，而是自带的
+      #    node_modules/@electron/rebuild/node_modules/node-gyp（旧版）——必须物理替换。
+      #    bcrypt 6.0.0 零预编译资产（release 0 assets）必走源码编译，绕不开 VS 工具链。
       - name: Build installer (electron-builder)
         shell: bash
         run: |
           set -o pipefail
           npm i --no-save node-gyp@12
-          npx electron-builder --config build-synova.cjs ${{ matrix.builder-args }} 2>&1 | tee step-installer.log
+          if [ -d node_modules/@electron/rebuild/node_modules ]; then
+            rm -rf node_modules/@electron/rebuild/node_modules/node-gyp
+            cp -R node_modules/node-gyp node_modules/@electron/rebuild/node_modules/node-gyp
+          fi
+          npx electron-builder --config build-synova.cjs ${{ matrix.builder-args }} --publish never 2>&1 | tee step-installer.log
           test ${PIPESTATUS[0]} -eq 0
 
       # D529 debug: 失败根因回传（REST API commit 到 ci-debug/ + 注解；本步零失败化——不掩盖构建红）
