@@ -119,11 +119,27 @@ if [ -f "$REPO_DIR/.claude/skills/cto-handover/SKILL.md" ]; then
 fi
 
 # ═══ 输出 ═══
+if [ "$MODE" = "--report" ]; then
+  # launchd 自动模式：写报告到 docs/synova/CTO-HEALTH.md 自检段（创始人/CTO 打开可见）
+  REPORT_FILE="$REPO_DIR/docs/synova/CTO-HEALTH.md"
+  STAMP="$(date +%Y-%m-%d)"
+  {
+    echo ""
+    echo "## 每周自检（${STAMP}）"
+    if [ "$DRIFT" -eq 0 ]; then
+      echo "- ✅ 对齐通过（控制塔 ${LATEST}）"
+    else
+      echo "- ⚠️ 发现 ${#REPORT[@]} 项漂移："
+      for line in "${REPORT[@]}"; do echo "  - ${line}"; done
+    fi
+  } >> "$REPORT_FILE" 2>/dev/null
+  echo "自检报告已写入 $REPORT_FILE"
+fi
 if [ "$DRIFT" -eq 0 ]; then
   echo "[OK] 自检对齐通过 — 文档与代码一致（版本 ${LATEST}）"
   exit 0
 else
-  echo "[自检漂移报告] 控制塔版本 $LATEST | $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  echo "[自检漂移报告] 控制塔版本 ${LATEST} | $(date -u +%Y-%m-%dT%H:%M:%SZ)"
   for line in "${REPORT[@]}"; do echo "$line"; done
   echo "[提示] 漂移项由 CTO 安排对齐（AGENTS.md/CLAUDE.md 同步自代码，门禁语义对照实际脚本）"
   exit 1
