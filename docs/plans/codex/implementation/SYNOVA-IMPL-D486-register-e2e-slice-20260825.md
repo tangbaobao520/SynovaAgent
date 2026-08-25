@@ -28,7 +28,7 @@
 * 首诊入口：`POST /api/diagnosis/consult`（GS-01 已验证）——e2e 断言注册后可达（不触发完整诊断，仅健康/入口可达性）。
 
 ### 现状确认（实测）
-* auth/register 白名单（auth.ts L90）、enterprise 匿名端点白名单（auth.ts L92-93，D484）——真实 server 下匿名可达（D483/D484 已合并验证）。
+* auth/register 白名单（auth.ts L91）、enterprise 匿名端点白名单（auth.ts L92-93，D484）——真实 server 下匿名可达（D483/D484 已合并验证）。
 * requireAdmin（enterprise.ts L78-83）：个人账号（staff）调企业 admin 端点 → 403（边界应保持）。
 * e2e 模式：customer-flow 用 `detectPort()` + `api()` + `skipIfServerDown()`——可直接复用模式。
 
