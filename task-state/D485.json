@@ -1,0 +1,18 @@
+{
+  "task_id": "D485",
+  "title": "register 认证闭环 切片 C——双轨账号关联（个人账号绑定企业，飞书/钉钉模式）",
+  "slice": "AUTH-C",
+  "status": "spec_done",
+  "risk": "medium",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-D485-account-link-slice-c-20260825.md",
+    "commit": "PENDING",
+    "by": "dev-doc",
+    "at": "2026-08-25"
+  },
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-25T16:00:00+08:00",
+  "updated_by": "dev-doc"
+}
