@@ -22,3 +22,11 @@
 8. **D328 的 task-id 正则是 `\(D[0-9]+\)`**：message 写 "feat(D521-3)" 不匹配（声明=无）→ 提交被拦。批量提交 message 用纯 D 号、子任务号放正文。
 9. **跨午夜长任务**：brief 文件名日期跨天后，resolver 的"今日 brief"失效 → CI strict 下"须有今日 brief"硬炸。长任务 brief 当天改名即可（rename 被 git 识别，历史干净）。
 10. **simulate-ci 首日抓 4 真问题**：alloc 测试污染真实 brief 目录、brief 排除项无路径、跨午夜日期漂移、写集漏列——工具 2 的价值在第一轮就被自己证明。
+
+## 事故级教训（本任务自伤记录，M15 冒烟终验的实际操作版）
+
+11. **hook GIT_DIR 泄漏可毁树**：沙箱提交落宿主分支只是第一级；更狠的是 index 污染残留进后续提交 → 树静默丢失 492 文件 + 混入沙箱文件 + eol 幻影。**推 push 前必须跑 `git diff --stat origin/main...HEAD` 核对只含写集**——本次事故若早跑此一行，第一轮就能拦住。
+12. **树手术的白名单必须按路径精确匹配**：writeset 过滤正则 `\.(sh|py)$` 漏掉无扩展名的 synova-commit → 被 checkout origin/main 误还原。教训：白名单用 `grep -vF -f 精确路径清单`，永不手写模式。
+13. **`git add -A` 在 eol=lf 仓库是凶器**：会把 CRLF 幻影文件（working tree 被属性强制 LF）以真实修改卷进提交。本任务所有 add 必须显式路径。
+14. **bypass 对账基必须恒为 origin/main**：分支 ref 为基时，merge main 后 main 新提交落入对账范围被误索登记——D508 merge-base 语义的前提就是 main 为基。
+15. **污染恢复的标准动作**：reflog 找最后好点 → `git reset`（mixed，保工作区）→ 重建 index → 按精确写集恢复 → `git diff origin/main...HEAD` 终验清零 → 再提交。全程禁止 force push。
