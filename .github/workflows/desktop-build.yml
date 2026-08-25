@@ -2,20 +2,14 @@
 # 契约: push main / workflow_dispatch 触发；按 build-synova.cjs 头注释构建链三步顺序执行；
 #       各平台原生构建（不做 linux 交叉）；CI 无 GUI → 只构建不启动（启动实测归 D519 本机）；
 #       产物缺失 → 步骤 fail（exit 非 0 即红）。
-# D529: ①所有含 bash 语法（test/compgen）的步骤显式 shell: bash——Windows runner 默认 pwsh，
+# D529: 所有含 bash 语法（test/compgen）的步骤显式 shell: bash——Windows runner 默认 pwsh，
 #         `test -f` 在 pwsh 是 CommandNotFound 必红（PR #175 只修了 distutils 没修这个）。
-#       ②fix/d529-* 分支也触发（修复迭代期拿新鲜日志——旧日志 BlobNotFound）。
-#       ③失败时错误尾部走双通道回传：REST API commit 到 ci-debug/ + ::error:: 注解
-#         （check-runs 注解 API 公开可读——本地无 gh/token 的 session 不猜根因）。
 name: desktop-build
 
 on:
   push:
-    branches: [main, 'fix/d529-**']
+    branches: [main]
   workflow_dispatch:
-
-permissions:
-  contents: write
 
 jobs:
   build:
