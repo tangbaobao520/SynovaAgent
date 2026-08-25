@@ -65,10 +65,14 @@ jobs:
           test ${PIPESTATUS[0]} -eq 0
 
       # 构建链步骤3: electron-builder → release/
+      # D529: windows-latest 已切 VS 2026 (18)，npm 捆绑 node-gyp 9.4.1 无法识别 → bcrypt 6.0.0
+      # 无预编译资产（release 0 assets）必走源码编译 → VS 识别失败。node-gyp@12 支持 VS2026
+      # （nodejs/node-gyp#3228）。--no-save 不改 package.json。
       - name: Build installer (electron-builder)
         shell: bash
         run: |
           set -o pipefail
+          npm i --no-save node-gyp@12
           npx electron-builder --config build-synova.cjs ${{ matrix.builder-args }} 2>&1 | tee step-installer.log
           test ${PIPESTATUS[0]} -eq 0
 
@@ -87,13 +91,9 @@ jobs:
               echo; echo "════════ $f (tail 200) ════════";
               [ -f "$f" ] && tail -200 "$f" || echo "(missing)"
             done; } > "$LOG"
-          # 通道1: 注解（check-runs API 公开可读；无条件取失败步日志尾部——不只 grep 命中行）
-          for f in step-backend.log step-renderer.log step-installer.log; do
-            if [ -f "$f" ]; then
-              tail -5 "$f" | while IFS= read -r line; do echo "::error::${RUNNER_OS}/${f}: ${line:0:230}"; done
-            fi
-          done
-          grep -iE "error|failed|fatal|not found|ERR_" "$LOG" | tail -5 | while IFS= read -r line; do
+          # 通道1: 注解（check-runs API 公开可读；上限 10 条——按诊断价值排序: installer 优先）
+          tail -5 step-installer.log 2>/dev/null | while IFS= read -r line; do echo "::error::${RUNNER_OS}/installer: ${line:0:230}"; done
+          grep -iE "error|failed|fatal|not found|ERR_" step-backend.log step-renderer.log 2>/dev/null | tail -3 | while IFS= read -r line; do
             echo "::error::${RUNNER_OS}: ${line:0:240}"
           done
           # 通道2: REST API commit（绕开 git 客户端环境差异；失败时把响应体也打进注解）
