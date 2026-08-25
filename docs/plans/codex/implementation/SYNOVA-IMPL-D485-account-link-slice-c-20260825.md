@@ -50,6 +50,16 @@
 ### 3.2 最终实现同 commit 回填
 若实现偏离方案（如绑定改为新建账号再迁移数据、或 accept 需校验邀请 email 与请求者一致、或 updateUser 实现需加 orgId 校验），必须在本节同 commit 回填最终形态（S-6）。
 
+**实现回填（2026-08-25，同 commit）**——绑定主路径与 §3.1 方案一致（queryByEmail 查重 → updateUser({ orgId, role }) → linked=true；新建 → linked=false；密码不重置）。两项实现层安全增强偏离，均超出 §3.1 字面方案：
+
+1. **绑定路径加 bcrypt.compare 密码验证**（src/routes/enterprise.ts accept 绑定分支）：验证失败 → 401 `AUTH_FAILED` + **邀请 token 不消耗**（inv.status 保持 pending，可重试）。
+   * 威胁模型（§3.1 方案未覆盖）：invite 不验证 email 归属（管理员可 invite 任意 email）且响应直接返回 token；accept 是匿名端点。若绑定不验密码，恶意企业管理员可 invite 任意已注册 email 后自调 accept，把受害者个人账号 orgId/role 划进自己企业（数据访问边界迁移 = 账号劫持）。绑定 = 修改账号归属，匿名上下文唯一的所有权证明是密码。
+   * 参考：Anthropic（fail-closed：验证失败拒绝 + token 不消耗）/ 第一性原理（归属变更需所有权证明）/ 开源实证（飞书/钉钉加入企业需登录态；GitHub org 邀请 accept 需登录会话）→ 收敛。
+   * 决策沉淀：memory/notes/proposed/2026-08-25-d485-account-link.md。
+2. **绑定路径拒绝非 active 账号**：queryByEmail 命中且 status !== 'active' → 403 `ACCOUNT_DISABLED`（冻结/软删账号不得经邀请链接复活，与 auth login 同语义）。
+
+测试相应增强：用例①含「错误密码 401 + 邀请仍 pending（GET 200）」子断言（用例总数不变，仍 3 个）。
+
 ### 3.3 不做的事
 * **不重构个人空间 orgId**（个人账号 orgId='default' 语义保持——个人数据空间；企业独立 orgId 隔离，D338 已立）。个人空间标识独立化（如 personal-<userId>）记录为遗留（涉及数据迁移，另立任务）。
 * 不改 auth/register 个人轨（双轨并存，创始人决策）。
