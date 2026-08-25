@@ -658,9 +658,33 @@ Binary file .claude/bypass.log matches
 2026-08-24T17:57:28+08:00 | COMMITTED | pre-commit PASS (D520 Note 批补记, D451) | TASK_ID=D520 | AGENT=dsh-cto | HASH=19a136de0ff2d15c6f2ec274de6038871b6a43dc
 
 2026-08-25T00:10:00+08:00 | COMMITTED | pre-commit PASS (D484 dev doc 提交补记, D331 对账) | TASK_ID=D484 | AGENT=Synova-Win | HASH=334787bd0c4e22facf102c2296648b351d354b24
+2026-08-25T01:49:03+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/d521-submit-chain
+2026-08-25T01:49:03+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=44982e057d4869e5be03da15ab46f88086046b71
+2026-08-25T02:35:31+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/d521-submit-chain
+2026-08-25T02:38:11+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/d521-submit-chain
+2026-08-25T02:38:12+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=ebfefef19dc235e0092a8cc267042b783df4bdc8
+2026-08-25T02:48:27+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/d521-submit-chain
+2026-08-25T02:48:28+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=f8ccd0fad791870302871ebc7fa65fa190b41c91
 
 2026-08-25T00:30:00+08:00 | COMMITTED | pre-commit PASS (D484 补充补记, D331 对账) | TASK_ID=D484 | AGENT=Synova-Win | HASH=21bf64e25d9efe48e52215806ee3eb2a14ba9af1
+2026-08-25T02:50:06+08:00 | COMMITTED | pre-commit PASS (521-1 hook 前时代补记, D451) | TASK_ID=D521 | AGENT=dsh-cto | HASH=e95a36d28fafd177add9e88bc27aa206d6d2811a
+2026-08-25T02:50:09+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=e25df38ef2623a284bbfcc5b0c873c9196d120ed
+2026-08-25T02:58:03+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/d521-submit-chain
+2026-08-25T02:58:03+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=d93391e229249aeb4624c9c7aa13de6326d42b67
+2026-08-25T03:00:20+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D319-test | AGENT=test
+2026-08-25T03:00:20+08:00 | COMMITTED | pre-commit DEGRADED-PASS | TASK_ID=D319-test | AGENT=test | HASH=2b79f8db96a955d661e704dca9914ea540441895
+2026-08-25T03:01:16+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=6c3117f719fc9f1f9bec005bee091f512656e1f7
+2026-08-25T03:31:23+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/d521-submit-chain
+2026-08-25T03:31:23+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=502a363bdd3b570b8e1f7b8e1bb86e499238d709
 2026-08-25T02:55:00+08:00 | COMMITTED | pre-commit PASS (merge 引入补记: D521 DSH main 侧提交, D483 分支 merge main 后对账范围误含 — 非 D483 写集) | TASK_ID=merge | AGENT=claude | HASH=15b5ef0b53234ed4806c9337044eb684c0942b5c
 2026-08-25T03:20:00+08:00 | COMMITTED | pre-commit PASS (D483 brief 措辞修复以过 D516 CI strict, merge 前置) | TASK_ID=D483 | AGENT=claude | HASH=17eeb4856808b152ca7c24dc83d28e38d0833c23
+2026-08-25T03:34:16+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=98554e1a9b00ebc1d0b179d2e2ee2be94bee1ffb
+2026-08-25T03:34:48+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/d521-submit-chain
+2026-08-25T03:36:37+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/d521-submit-chain
+2026-08-25T03:36:37+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=529b3b0815d6c766f195e398adef730d1c78ee1d
+2026-08-25T03:43:12+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=97dcd82a230650423b0e2cf7c3e2d23c0c754b9a
+2026-08-25T10:15:28+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=af610126f3142d17e46111fa3b246f9fb0e71e81
+2026-08-25T10:36:59+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=63dc785ff05a00579b8bf42031f42f84e6804b25
+2026-08-25T10:38:13+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=d924bd62fcd9863a0a14566c25351ba1da3fd7c6
 2026-08-25T10:17:24+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D484 | AGENT=claude | HASH=a6d4af07191508dd1b5c8a0c116bc7ba744e9679
 2026-08-25T10:50:30+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D484 | AGENT=claude | HASH=3ea261bff381fd5ac62f30f60fd7d87a58187168
