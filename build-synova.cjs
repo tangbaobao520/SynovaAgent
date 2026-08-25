@@ -37,6 +37,12 @@ module.exports = {
     buildResources: 'assets',
   },
 
+  // D529: 禁用 electron-builder 内建 @electron/rebuild——它把 N-API 的 bcrypt 6.0.0 误判为
+  // node-gyp 模块去源码编译（bcrypt 6 是 prebuildify --napi，install=node-gyp-build，ABI 无关，
+  // 无需为 Electron 重建），双平台实测挂死 30min+（VS2026/node-gyp 组合下 node-gyp rebuild 不返回）。
+  // 改为 CI 显式 `npx @electron/rebuild -f -w better-sqlite3`（electron-v130 预编译直达，免源码编译）。
+  npmRebuild: false,
+
   extraMetadata: {
     main: 'electron/main.cjs',
   },

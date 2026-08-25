@@ -1,0 +1,16 @@
+{
+  "task_id": "D533",
+  "title": "CI 调试可达性根治（凭证共享 / CRLF 治本 / debug 纪律——审计收敛版 3 项）",
+  "status": "claimed",
+  "spec": {
+    "doc": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D533-ci-diagnostics-20260825.md",
+    "dispatch": "docs/synova/coordination/派单-D533-并行CTO-20260825.md",
+    "source": "D529 复盘 + 审计收敛（原 5 项 → 3 项）"
+  },
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-26",
+  "updated_by": "alloc-task-id",
+  "slice": "control-tower"
+}

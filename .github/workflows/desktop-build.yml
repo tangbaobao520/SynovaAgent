@@ -2,12 +2,20 @@
 # 契约: push main / workflow_dispatch 触发；按 build-synova.cjs 头注释构建链三步顺序执行；
 #       各平台原生构建（不做 linux 交叉）；CI 无 GUI → 只构建不启动（启动实测归 D519 本机）；
 #       产物缺失 → 步骤 fail（exit 非 0 即红）。
+# D529: ①所有含 bash 语法（test/compgen）的步骤显式 shell: bash——Windows runner 默认 pwsh，
+#         `test -f` 在 pwsh 是 CommandNotFound 必红（PR #175 只修了 distutils 没修这个）。
+#       ②fix/d529-* 分支也触发（修复迭代期拿新鲜日志——旧日志 BlobNotFound）。
+#       ③失败时错误尾部走双通道回传：REST API commit 到 ci-debug/ + ::error:: 注解
+#         （check-runs 注解 API 公开可读——本地无 gh/token 的 session 不猜根因）。
 name: desktop-build
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'fix/d529-**']
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -29,7 +37,9 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # D529: node 20 (ABI 115) 无 better-sqlite3 v12 预编译（只发 ABI 127+）→ 回退 node-gyp
+          # 源码编译 → runner VS 18 与 node-gyp 9.4.1 不兼容必红。node 22 = ABI 127 ✓ 预编译直达。
+          node-version: 22
 
       # node-gyp 9.4.1 编译 better-sqlite3 需要 stdlib distutils（实证：Python 3.12.10 也已无 distutils，仅 3.11 及更早原生含 → 固定 3.11）
       - name: Setup Python 3.11 (node-gyp distutils compat)
@@ -39,22 +49,54 @@ jobs:
 
       # 构建链步骤1: 后端单文件 bundle → dist/backend.mjs（prod 入口；tsc 独立门禁不在打包链）
       - name: Build backend (esbuild bundle)
+        shell: bash
         run: |
-          npm ci
-          npm run build:backend
-          test -f dist/backend.mjs
+          set -o pipefail
+          { npm ci && npm run build:backend && test -f dist/backend.mjs; } 2>&1 | tee step-backend.log
+          test ${PIPESTATUS[0]} -eq 0
 
       # 构建链步骤2: renderer vite → dist/renderer（首诊 UI）
       - name: Build renderer (vite)
+        shell: bash
         working-directory: electron-renderer
         run: |
-          npm ci
-          npm run build
-          test -f ../dist/renderer/index.html
+          set -o pipefail
+          { npm ci && npm run build && test -f ../dist/renderer/index.html; } 2>&1 | tee ../step-renderer.log
+          test ${PIPESTATUS[0]} -eq 0
 
-      # 构建链步骤3: electron-builder → release/
+      # 构建链步骤3a: 原生依赖准备（D529 定案 v3——彻底不用 @electron/rebuild）:
+      #   ① bcrypt 6.0.0 是 N-API（prebuildify --napi, install=node-gyp-build）——ABI 无关，免重建；
+      #      之前 @electron/rebuild 误判为 node-gyp 模块源码编译 → 双平台挂死。
+      #   ② @electron/rebuild 的依赖树搜索在 CI（node 22）卡死（10min+ 无输出，swap 嵌套 node-gyp
+      #      依旧）——弃用，改 prebuild-install 直下（无树遍历）。
+      #   ③ better-sqlite3 v12.11.1 有 electron-v130（Electron 33.4.11）全平台预编译 → 直下免编译
+      #      免 VS（windows-latest 已切 VS2026，旧 node-gyp 无法识别）。
+      #   ④ 兜底: 预编译下载失败 → node-gyp@12 源码编译（VS2026 兼容，nodejs/node-gyp#3228）。
+      - name: Prep native deps (better-sqlite3 electron prebuild)
+        timeout-minutes: 10
+        shell: bash
+        run: |
+          set -o pipefail
+          npm i --no-save node-gyp@12 2>&1 | tee step-prep-nodegyp.log
+          test ${PIPESTATUS[0]} -eq 0
+          if ! (cd node_modules/better-sqlite3 && npx prebuild-install -r electron -t 33.4.11 2>&1 | tee ../step-prep-rebuild.log; test ${PIPESTATUS[0]} -eq 0); then
+            echo "prebuild-install 失败 → node-gyp@12 源码编译兜底"
+            (cd node_modules/better-sqlite3 && npx node-gyp rebuild --release 2>&1 | tee ../step-prep-rebuild.log; test ${PIPESTATUS[0]} -eq 0)
+          fi
+          ls node_modules/better-sqlite3/build/Release/*.node >/dev/null && echo "better-sqlite3 electron-ABI 就位"
+
+      # 构建链步骤3b: electron-builder → release/（--publish never: CI 下无 GH_TOKEN 时发布检查必红，
+      # 产物实际已构建——mac 实测 dmg/zip/blockmap 全部产出后才在发布检查翻红）
       - name: Build installer (electron-builder)
-        run: npx electron-builder --config build-synova.cjs ${{ matrix.builder-args }}
+        timeout-minutes: 30
+        shell: bash
+        run: |
+          set -o pipefail
+          npx electron-builder --config build-synova.cjs ${{ matrix.builder-args }} --publish never 2>&1 | tee step-installer.log
+          test ${PIPESTATUS[0]} -eq 0
+
+      # D529 终态: 根因已定位修复（--publish never / node 22 / npmRebuild:false + prebuild-install），
+      # debug 回传步骤移除（迭代期日志见 ci-debug/ 历史 + 本文件 git 历史注释）。
 
       - name: Assert artifacts exist
         shell: bash

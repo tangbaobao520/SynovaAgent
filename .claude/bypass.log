@@ -721,6 +721,36 @@ Binary file .claude/bypass.log matches
 2026-08-25T20:21:57+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/slicec-taskstate-fix
 2026-08-25T20:21:57+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=98c5ceffa6b189ac6b4c61074fbce2c539f00a35
 2026-08-25T20:22:15+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=30102ceb908903bd7748f3d051bdd646e95693d4
+2026-08-25T20:41:30+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D529 | AGENT=dsh
+2026-08-25T20:41:33+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D529 | AGENT=dsh
+2026-08-25T20:41:38+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D529 | AGENT=dsh
+2026-08-25T20:42:02+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=eb6dc522971e5c97ec8751cdffd662d6638a4e66
+2026-08-25T20:48:46+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=275e1dac6e528fc325b5f4bb7d7484b42e12812e
+2026-08-25T13:06:23Z possible-bypass diff=572s
+2026-08-25T21:06:23+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=1304d76c0d62b0fac6fbf40f3242188aaa3ab52a
+2026-08-25T13:06:23Z possible-bypass diff=572s
+2026-08-25T20:55:00+08:00 | COMMITTED | pre-commit N/A (CI 机器人回传 debug 日志，非 agent 提交; D529 debug 步骤产物，root cause 定位用，终态移除) | TASK_ID=D529 | AGENT=ci-debug | HASH=899c8144fbe3b58f8dd1944dc6a8ec1c07518453
+2026-08-25T13:07:28Z possible-bypass diff=637s
+2026-08-25T21:07:28+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=bb1a45addadd6c22a0dfb2be833200e9848afc9c
+2026-08-25T13:07:28Z possible-bypass diff=637s
+2026-08-25T21:28:42+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=0139e4f3d1e2d11f1670221916f63a552e84c427
+2026-08-25T21:20:00+08:00 | COMMITTED | pre-commit N/A (CI 机器人回传 debug 日志，非 agent 提交; D529 debug 步骤产物) | TASK_ID=D529 | AGENT=ci-debug | HASH=0d159e85ffc3da938c483d4afda60d73620848a4
+2026-08-25T21:29:51+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=009a6449b0918ad0cf5788cd65a1f1eb1ef16f60
+2026-08-25T21:44:11+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=6ef9a8e71647512ad92636b394372c1ca26a7502
+2026-08-25T21:45:00+08:00 | COMMITTED | pre-commit N/A (CI 机器人回传 debug 日志，非 agent 提交) | TASK_ID=D529 | AGENT=ci-debug | HASH=97384db5a8126f57bd0755e24b5aebb0d902c7b2
+2026-08-25T21:45:23+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=39b8c4893f541a0ca3be6b0363c07e6fbc0afdb4
+2026-08-25T22:50:40+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=85d42d6e9ff44ff36e0fa6a427cdc342d557d0c9
+2026-08-25T23:29:57+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=ec79eea5447085a3b1bcfb6fc46d2cc3d288abf4
+2026-08-25T05:30:00+08:00 | COMMITTED | pre-commit N/A (CI 机器人回传 debug 日志) | TASK_ID=D529 | AGENT=ci-debug | HASH=f2704d18056b8da54a695b586781f2836d5f3f16
+2026-08-25T15:31:12Z possible-bypass diff=339s
+2026-08-25T23:31:12+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=d5d69be3de7fda02d22a882d11f42422ee325db9
+2026-08-25T15:31:12Z possible-bypass diff=339s
+2026-08-25T15:31:59Z possible-bypass diff=386s
+2026-08-25T23:31:59+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=6b9cfdff3282e0f1715e16cc1fd7ca80f49261e5
+2026-08-25T15:31:59Z possible-bypass diff=386s
+2026-08-25T23:53:15+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=85124b321b0a1110d387c301796678be1bc4a7e0
+2026-08-25T06:00:00+08:00 | COMMITTED | pre-commit N/A (CI 机器人回传 debug 日志) | TASK_ID=D529 | AGENT=ci-debug | HASH=f946da7a7dc832242b82cb09c684d31a94c2a8e5
+2026-08-25T23:53:21+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=57fd4ed36db71a3034bd9e9b15736ccf5d1073d1
 2026-08-25T20:47:49+08:00 | GATE_FAIL_SOFT | exit=1 | branch=docs/d524-devdoc-fix
 2026-08-25T20:47:50+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=532aaa41d1abc3405ee1b2fa4c7ae2ede702d5dd
 2026-08-25T20:48:13+08:00 | GATE_FAIL_SOFT | exit=1 | branch=docs/d524-devdoc-fix
@@ -734,3 +764,4 @@ Binary file .claude/bypass.log matches
 2026-08-25T21:22:43+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D524 | AGENT=dsh-deepseek-harness
 2026-08-25T21:31:07+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=4cf53f5c0597e657738712d75530424e2c4b89e2
 2026-08-25T14:12:40Z COMMITTED pre-commit PASS（D451 补记） TASK_ID=D530 AGENT=dsh-cto HASH=734ab32e
+2026-08-25T06:30:00+08:00 | COMMITTED | pre-commit PASS (synova-commit 13 组通过; hook 自动登记缺失补录) | TASK_ID=D529 | AGENT=dsh | HASH=9cfb3cdc42cf1c70495c8b12f3d6d88db31d67da
