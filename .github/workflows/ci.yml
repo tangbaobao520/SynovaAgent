@@ -143,7 +143,13 @@ jobs:
             tests/control-tower/synova-commit.test.sh \
             tests/control-tower/check-canary-drift.test.sh; do
             echo "── $t"
-            bash "$t" || { echo "FAIL: $t"; FAIL=1; }
+            # D526: 测试失败输出进 ::error 注解——无 token 也能经 annotations 定位（D521 工具1 语义）
+            if ! bash "$t" > /tmp/ct-out.log 2>&1; then
+              echo "FAIL: $t"
+              MSG=$(tail -8 /tmp/ct-out.log | tr '\n' '|' | tr -d '%' | cut -c1-450)
+              echo "::error title=$t::$MSG"
+              FAIL=1
+            fi
           done
           # D526: canary 密封清单漂移告警（::warning 可见，不阻断——防误伤；
           #   存量漂移由 K3/人工月度清理，全量密封化是 K3 P2-4 单独立项）
