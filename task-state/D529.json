@@ -1,15 +1,32 @@
 {
   "task_id": "D529",
   "title": "C1 desktop-build CI 修复（macos electron-builder + windows backend 失败）",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": {
     "doc": "docs/synova/coordination/派单-C1C2-遗留闭环-20260825.md",
     "source": "切片 A C1 条件项",
-    "slice": "L1-A"
+    "slice": "L1-A",
+    "branch": "fix/d529-desktop-ci",
+    "commit": "3096a19f（终态 workflow）+ 55d26bf3（终态连续第 2 绿）"
   },
-  "impl": null,
+  "impl": {
+    "agent": "dsh",
+    "branch": "fix/d529-desktop-ci",
+    "writeset": [
+      ".github/workflows/desktop-build.yml — ①bash 语法步补 shell: bash（Windows runner 默认 pwsh，test -f 必红）；②node 20→22（better-sqlite3 v12.11.1 只发 ABI 127+ 预编译，node 20 ABI 115 必回退源码编译）；③--publish never（CI 无 GH_TOKEN 时 electron-builder 发布检查必红，产物实际已构建）；④npmRebuild:false + prebuild-install 直下 electron 预编译（bcrypt 6.0.0 是 N-API 免重建——@electron/rebuild 误判源码编译双平台挂死 30min+；@electron/rebuild 依赖树搜索在 CI node22 亦卡死）；⑤失败日志回传 debug 步骤（迭代期定位用，终态已移除）",
+      "build-synova.cjs — npmRebuild:false（含根因注释）",
+      "task-state/D517.json + D519.json — C1 闭环 artifact URL 回填"
+    ],
+    "evidence": {
+      "CI_green_runs": "GitHub Actions desktop-build 双平台连续 2 次 success（终态 workflow）: run 32870900391（3096a19f）+ run 32871572485（55d26bf3）；修复迭代 9 轮 run 全记录在 ci-debug/（git 历史）与 check-run 注解",
+      "artifact_urls": "macOS=https://github.com/tangbaobao520/SynovaAgent/actions/runs/32871572485/artifacts/9572369504（synova-desktop-macOS-38: dmg+zip）；Windows=https://github.com/tangbaobao520/SynovaAgent/actions/runs/32871572485/artifacts/9572323357（synova-desktop-Windows-38: nsis exe）",
+      "root_cause_chain": "①Windows backend 红 = pwsh 无 test -f（shell 缺失）；②Windows installer 红 = better-sqlite3 无 node20 预编译→node-gyp→VS2026 与 node-gyp 9.4.1 不兼容；③mac installer 红 = 缺 GH_TOKEN 发布检查；④双平台挂死 = @electron/rebuild 把 N-API bcrypt 当 node-gyp 模块源码编译（bcrypt 6.0.0 release 0 预编译资产）+ @electron/rebuild 树搜索在 CI node22 卡死——终态绕开（npmRebuild:false + prebuild-install 直下 electron-v130 预编译，免源码编译免 VS）",
+      "known_limits": "产物未代码签名/公证——mac Gatekeeper 首次打开需右键→打开（或 xattr -d com.apple.quarantine）；Win SmartScreen 需'更多信息→仍要运行'；CI artifact 需登录 GitHub、retention 14 天；Win 侧安装启动出窗物理实测仍 waiting D523（切片 A .exe 落地后实跑，不伪造）"
+    }
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-08-25",
-  "updated_by": "alloc-task-id"
+  "updated_by": "dsh",
+  "priority": "P1"
 }

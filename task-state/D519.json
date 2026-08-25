@@ -13,14 +13,14 @@
     "agent": "dsh-impl",
     "writeset": "scripts/desktop/mac-install-verify.sh, docs/synova/runbooks/founder-demo-mac.md, tests/electron/mac-install-verify.test.ts, .gitignore",
     "evidence": {
-      "DS1_real_run": "bash scripts/desktop/mac-install-verify.sh --skip-build → exit 0，四断言于第 5s 全过。构建（无 --skip-build）已在同日 02:03 全链跑过（dmg be55d9dbaf1e1b4dec856803e5b9ca6e 为该次新构建）",
+      "DS1_real_run": "bash scripts/desktop/mac-install-verify.sh --skip-build → exit 0，四断言于第 5s 全过。构建（无 --skip-build）已在同日 02:03 全链跑过（dmg be55d9dbaf1e1b4dec856803e5b9ca6e 为该次新构建）\nCI artifact（C1 闭环，run 32870900391）: macOS=https://github.com/tangbaobao520/SynovaAgent/actions/runs/32870900391/artifacts/9572118172 / Windows=https://github.com/tangbaobao520/SynovaAgent/actions/runs/32870900391/artifacts/9572059369",
       "dmg_fingerprint": "MD5 (release/SynovaAgent-0.1.0-arm64.dmg) = be55d9dbaf1e1b4dec856803e5b9ca6e",
       "assertions": "A1 进程存活: 1 (pgrep -f /Applications/SynovaAgent.app); A2 窗口存在: 1 (osascript System Events); A3 服务健康: 1 (curl -sf http://localhost:18790/api/healthz); A4 后端日志: 1 (/Users/wane/Library/Application Support/synova-agent/logs/backend.log 非空)",
       "healthz": "{\"status\":\"degraded\",\"checks\":{\"database\":{\"status\":\"degraded\",\"detail\":\"数据库文件不存在(首次启动尚未初始化)\"},\"llm_connectivity\":{\"stat...",
       "evidence_dir": "evidence/D519-mac-20260825-020611（10 文件: assertions/backend.log/detach/dmg-ls/healthz.json/install.log/md5/mount.log/process.txt/window.txt）",
       "DS3_tests": "npx vitest run tests/electron/mac-install-verify.test.ts → 10 passed；tests/electron/ 全组 47 passed（3 文件）",
       "DS5_idempotent": "连续两次实跑 exit 0（第二次幂等清理残留 /Applications/SynovaAgent.app 后装）；--dry-run 输出八步清单 exit 0",
-      "DS6_dual_platform": "Mac=本任务 DS1 实测；Win=D517 CI desktop-build artifact（⏸ 合并后 push main 触发，Actions URL 补记本字段）",
+      "DS6_dual_platform": "Mac=本任务 DS1 实测（dmg 本地全链安装启动出窗四断言 exit 0）；Win=D529 修复后 CI 双平台连续 2 绿（run 32871572485），Windows artifact 可下载:\n  Windows=https://github.com/tangbaobao520/SynovaAgent/actions/runs/32871572485/artifacts/9572323357（nsis exe）\n  macOS=https://github.com/tangbaobao520/SynovaAgent/actions/runs/32871572485/artifacts/9572369504（dmg+zip，D517 CI artifact）\n  已知限制（如实标注）: 未签名/公证——Win SmartScreen 需\"更多信息→仍要运行\"；mac Gatekeeper 需右键打开或 xattr 去 quarantine；CI artifact 登录可见、retention 14 天；Win 侧安装-启动-出窗四断言的物理实测仍 waiting 切片 A .exe 落地（D523 DS1，不伪造）。",
       "实跑踩坑记录": "① electron-builder APFS dmg 卷名含版本+arch（/Volumes/SynovaAgent 0.1.0-arm64）——挂载点从 mount.log 解析非硬编码；② bash 变量名后紧贴全角括号在 set -u 下解析异常（INSTALLED_APP（→ unbound）——改 ASCII 分隔；③ 宿主 ELECTRON_RUN_AS_NODE=1 全程显式 unset。均已固化进脚本/测试。"
     }
   },
