@@ -5,7 +5,13 @@
   "slice": "L1-B",
   "spec": null,
   "impl": null,
-  "audit": null,
+  "audit": {
+    "verdict": "CONDITIONAL PASS",
+    "blocker": "P0-1: 分支基 5d6f487d 陈旧落后 main 68，缺 D518 prod 修复，须 rebase 合并保留双侧",
+    "fix_dispatch": "docs/synova/coordination/派单-D522D523-P01-fix-20260825.md",
+    "report": "docs/synova/audit-reports/2026-08-25-D522-D523.md",
+    "audit_branch": "audit/k3-20260825-d522-d523"
+  },
   "updated_at": "2026-08-24",
   "updated_by": "cto",
   "priority": "P1"
