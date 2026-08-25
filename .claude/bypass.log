@@ -765,3 +765,7 @@ Binary file .claude/bypass.log matches
 2026-08-25T06:30:00+08:00 | COMMITTED | pre-commit PASS (synova-commit 13 组通过; hook 自动登记缺失补录) | TASK_ID=D529 | AGENT=dsh | HASH=9cfb3cdc42cf1c70495c8b12f3d6d88db31d67da
 2026-08-26T02:27:15+08:00 | COMMITTED | pre-commit PASS (synova-commit 13 组通过; hook 自动登记缺失补录) | TASK_ID=D534 | AGENT=dsh | HASH=6bfe26ff3593003a36d54fa95625f0ce8112f1d4
 2026-08-26T02:34:25+08:00 | COMMITTED | pre-commit PASS (synova-commit 13 组通过; hook 自动登记缺失补录) | TASK_ID=D534 | AGENT=dsh | HASH=b5a59b6bbddae416640a178442e04328da38c84f
+2026-08-26T02:35:08+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D535 | AGENT=dsh
+2026-08-26T02:35:13+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D535 | AGENT=dsh
+2026-08-26T02:35:29+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D535 | AGENT=dsh
+2026-08-26T02:35:34+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D535 | AGENT=dsh
