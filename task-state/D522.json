@@ -5,8 +5,14 @@
   "slice": "L1-B",
   "spec": null,
   "impl": null,
-  "audit": null,
-  "updated_at": "2026-08-24",
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-08-25-D522-D523.md",
+    "verdict": "CONDITIONAL PASS",
+    "date": "2026-08-25",
+    "by": "K3",
+    "blockers": "P0-1 分支基点落后 main 34 提交（缺 D518 prod 运行时修复，buildCommand prod 断言需更新）——rebase 后转 PASS；impl/evidence 在 feat/d522-service-boot-teardown，合并后以分支版 task-state 为准"
+  },
+  "updated_at": "2026-08-25",
   "updated_by": "cto",
   "priority": "P1"
 }

@@ -5,8 +5,14 @@
   "slice": "L1-B",
   "spec": null,
   "impl": null,
-  "audit": null,
-  "updated_at": "2026-08-24",
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-08-25-D522-D523.md",
+    "verdict": "CONDITIONAL PASS",
+    "date": "2026-08-25",
+    "by": "K3",
+    "blockers": "C2 ps1 前置缺失 exit 2 语义不可达（Write-Error+EAP=Stop，实际退出码 1）需修 + Win 实跑复验；impl 状态 impl_done_waiting_exe 维持至切片 A .exe 落地"
+  },
+  "updated_at": "2026-08-25",
   "updated_by": "cto",
   "priority": "P1"
 }
