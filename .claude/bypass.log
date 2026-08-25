@@ -736,3 +736,4 @@ Binary file .claude/bypass.log matches
 2026-08-25T21:29:51+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=009a6449b0918ad0cf5788cd65a1f1eb1ef16f60
 2026-08-25T21:44:11+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=6ef9a8e71647512ad92636b394372c1ca26a7502
 2026-08-25T21:45:00+08:00 | COMMITTED | pre-commit N/A (CI 机器人回传 debug 日志，非 agent 提交) | TASK_ID=D529 | AGENT=ci-debug | HASH=97384db5a8126f57bd0755e24b5aebb0d902c7b2
+2026-08-25T21:45:23+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=39b8c4893f541a0ca3be6b0363c07e6fbc0afdb4
