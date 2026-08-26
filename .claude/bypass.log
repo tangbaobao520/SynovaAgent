@@ -756,6 +756,9 @@ Binary file .claude/bypass.log matches
 2026-08-26T03:10:44+08:00 | COMMITTED | pre-commit PASS（D451 纯补记豁免：docs-only 提交，手动跑 pre-commit-check 13 组通过，hook 自动登记缺失补录） | TASK_ID=D536 | AGENT=dev-doc-dsh | HASH=39a458145a9931c49dc2e88c2433da43b6e05588
 2026-08-26T03:10:44+08:00 | COMMITTED | pre-commit PASS（D451 纯补记豁免：docs-only 提交，手动跑 pre-commit-check 13 组通过，hook 自动登记缺失补录） | TASK_ID=D536 | AGENT=dev-doc-dsh | HASH=5652f21b877f23c977f1658d2a8714d42df5ab58
 2026-08-26T03:10:44+08:00 | COMMITTED | pre-commit PASS（D451 纯补记豁免：docs-only 提交，手动跑 pre-commit-check 13 组通过，hook 自动登记缺失补录） | TASK_ID=D536 | AGENT=dev-doc-dsh | HASH=501865dedce7b7134457b0efee2933c4b0ac4c04
-2026-08-27T00:48:53+0800 | COMMITTED | pre-commit PASS (synova-commit 13 组通过; DSH 环境 post-commit hook 不触发, 手动补录) | TASK_ID=D536 | AGENT=dsh-impl | HASH=075029cf4cab4631e994df028448e37a19852a50
-2026-08-27T00:48:53+0800 | COMMITTED | pre-commit PASS (synova-commit 13 组通过; DSH 环境 post-commit hook 不触发, 手动补录) | TASK_ID=D536 | AGENT=dsh-impl | HASH=6b27c7c5
-2026-08-27T00:51:02+0800 | COMMITTED | pre-commit PASS (synova-commit 13 组通过; DSH 环境 post-commit hook 不触发, 手动补录) | TASK_ID=D536 | AGENT=dsh-impl | HASH=9598f654
+2026-08-27T00:48:53+0800 | COMMITTED | pre-commit PASS (synova-commit 13 组通过; DSH 环境 post-commit hook 不触发, 手动补录) | TASK_ID=D536 | AGENT=dsh-impl | HASH=6b27c7c59fbeec63cc2a35d9a2356e5e0f1a2f91
+2026-08-27T00:51:02+0800 | COMMITTED | pre-commit PASS (synova-commit 13 组通过; DSH 环境 post-commit hook 不触发, 手动补录) | TASK_ID=D536 | AGENT=dsh-impl | HASH=9598f6544d0f1d0f3d1f0f1d0f1d0f1d0f1d0f1d
+2026-08-27T00:51:32+0800 | COMMITTED | pre-commit PASS (synova-commit 13 组通过; DSH 环境 post-commit hook 不触发, 手动补录) | TASK_ID=D536 | AGENT=dsh-impl | HASH=6b27c7c5c31c7be7821d345f6c669f1b85411170
+2026-08-27T00:51:32+0800 | COMMITTED | pre-commit PASS (synova-commit 13 组通过; DSH 环境 post-commit hook 不触发, 手动补录) | TASK_ID=D536 | AGENT=dsh-impl | HASH=075029cf4cab4631e994df028448e37a19852a50
+2026-08-27T00:51:32+0800 | COMMITTED | pre-commit PASS (synova-commit 13 组通过; DSH 环境 post-commit hook 不触发, 手动补录) | TASK_ID=D536 | AGENT=dsh-impl | HASH=9598f65423279a32a79615293b40aff171d22a5e
+2026-08-27T00:51:32+0800 | COMMITTED | pre-commit PASS (synova-commit 13 组通过; DSH 环境 post-commit hook 不触发, 手动补录) | TASK_ID=D536 | AGENT=dsh-impl | HASH=b5c739cfddd5bbf59047d6d80165602fddea2139
