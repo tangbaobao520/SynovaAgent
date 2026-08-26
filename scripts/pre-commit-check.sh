@@ -768,29 +768,54 @@ warn_check "铁律 47: 声称完成须 grep 物理证明" "${CLEANUP_CLAIM:-}"
 echo ""
 echo -e "${CYAN}── 组 6/13: Task Brief (6 核心字段) ──${RESET}"
 
-# D515 项1: 并行隔离软告警 — 主树提交时活跃 session>1（CI 权威原则，本地只告警不阻断；
-#   开工端的硬拦截在 task-start.sh——那才是防互踩的第一道闸）
-_ACTIVE_SESS_WARN=""
-if [ "${SYNO_SKIP_PARALLEL_WARN:-0}" != "1" ]; then
+# ═══ D537 #2: 主树占用检测前移（M8 变体治本——P1 清单落地）═══
+# 病根: 并行污染只拦"新开工"（task-start），不拦"存量"（已在主树工作的 session 直接
+#   提交）→ M8 变体第四次复发（D394→D481/482→D486）。检测前移到 pre-commit（物理门禁、
+#   每次提交强制）——修根因非症状。
+# 三态:
+#   拦   — 主树脏 + 近期活跃 session > 1（有并行 session 在主树工作）
+#   放行 — worktree 内（物理隔离）/ 单 session（无并行风险）/ 主树干净
+#   降级 — registry 不可读（铁律 11，显式提示不硬拦）
+# 活跃判定 = last_seen_at 在 SYNO_PARALLEL_WINDOW（默认 1800s）内（synova-commit 每次
+#   register 刷新 last_seen_at，比 pid 更可靠——pid=None 的僵尸 session 不误拦）。
+#   复用 session_registry.py list --active（同一信号源，不新建 registry）。
+_PAR_BLOCK_MSG=""
+if [ "${SYNO_SKIP_PARALLEL_GUARD:-0}" != "1" ] && [ "${SYNO_SKIP_PARALLEL_WARN:-0}" != "1" ]; then
   case "$(git rev-parse --git-dir 2>/dev/null || echo '')" in
-    *"/.git/worktrees/"*) : ;;  # worktree 内本就物理隔离，不告警
+    *"/.git/worktrees/"*) : ;;  # worktree 内 → 物理隔离已成立，放行
     *)
-      if [ -f "$ROOT/scripts/control-tower/session_registry.py" ]; then
+      # 主树脏检测: 有任何未提交改动（暂存/未暂存）→ 有 session 在主树工作
+      _MAIN_DIRTY="$(git -C "$ROOT" status --porcelain 2>/dev/null | head -1 || true)"
+      if [ -n "$_MAIN_DIRTY" ] && [ -f "$ROOT/scripts/control-tower/session_registry.py" ]; then
         _ACT_JSON=$(python3 "$ROOT/scripts/control-tower/session_registry.py" list --active 2>/dev/null </dev/null || true)
         if [ -n "$_ACT_JSON" ]; then
-          _ACT_N=$(echo "$_ACT_JSON" | python3 -c "import json,sys;print(len(json.load(sys.stdin).get('sessions',[])))" 2>/dev/null | tr -d '\r\n' || echo "")
-          _ACT_N="${_ACT_N//[^0-9]/}"  # D520/任务1: 同型加固——数字清洗防 CRLF 残留致算术错误
+          _ACT_N=$(echo "$_ACT_JSON" | python3 -c "
+import json,sys,os,datetime
+d=json.load(sys.stdin)
+ss=d.get('sessions',[])
+window=int(os.environ.get('SYNO_PARALLEL_WINDOW','1800'))
+now=datetime.datetime.now(datetime.timezone.utc)
+def recent(s):
+    try:
+        t=datetime.datetime.fromisoformat(s.get('last_seen_at',''))
+        if t.tzinfo is None: t=t.replace(tzinfo=datetime.timezone.utc)
+        return (now-t).total_seconds() < window
+    except Exception:
+        return False
+print(sum(1 for s in ss if recent(s)))
+" 2>/dev/null | tr -d '\r\n' || echo "")
+          _ACT_N="${_ACT_N//[^0-9]/}"  # D520/任务1: 数字清洗防 CRLF 残留致算术错误
           if [ -n "$_ACT_N" ] && [ "$_ACT_N" -gt 1 ]; then
-            _ACTIVE_SESS_WARN="主树提交时检测到 ${_ACT_N} 个活跃 session — 建议 worktree 物理隔离: python3 scripts/control-tower/worktree-manager.py create <任务名>"
+            _PAR_BLOCK_MSG="主树有未提交改动且 ${_ACT_N} 个近期活跃 session — 并行互踩风险（M8）: python3 scripts/control-tower/worktree-manager.py create <任务名>"
           fi
         else
-          _ACTIVE_SESS_WARN="session-registry 不可读 — 并行隔离检查降级（铁律 11，不静默）"
+          echo -e "  ${YELLOW}⚠️  主树占用检测: session-registry 不可读 — 降级放行（铁律 11）${RESET}"
         fi
       fi
       ;;
   esac
 fi
-warn_check "V5 并行隔离: 活跃 session 数" "${_ACTIVE_SESS_WARN:-}"
+hard_check "主树占用检测 (D537 #2): 主树脏 + 多活跃 session" "${_PAR_BLOCK_MSG:-}"
 
 
 

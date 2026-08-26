@@ -137,10 +137,12 @@ jobs:
             tests/control-tower/platform-checklist.test.sh \
             tests/control-tower/tag-ancestry.test.sh \
             tests/control-tower/brief-parser-strip.test.sh \
-            tests/control-tower/bypass-precommit.test.sh \
+            tests/control-tower/post-commit.test.sh \
             tests/control-tower/simulate-ci.test.sh \
             tests/control-tower/synova-submit.test.sh \
             tests/control-tower/synova-commit.test.sh \
+            tests/control-tower/parallel-main-tree-occupancy.test.sh \
+            tests/control-tower/fastlane-extended.test.sh \
             tests/control-tower/check-canary-drift.test.sh; do
             echo "── $t"
             # D526: 测试失败输出进 ::error 注解——无 token 也能经 annotations 定位（D521 工具1 语义）

@@ -36,6 +36,9 @@ assert_exit() {
 mkdir -p "$TMP_DIR"
 rm -f "$TMP_DIR"/bc-*.txt "$TMP_DIR"/bc-ct/* 2>/dev/null || true
 
+# D537 #5: 本分支改动集注入（模拟"本分支引入"的 2 个新错误文件——src/server.ts + new-engine.ts）
+BRANCH_FILES=$'src/server.ts\nsrc/loops/new-engine.ts'
+
 # ── 测试 fixture: 3 条已知 + 2 条新错 ──
 cat > "$TMP_REL/bc-known.txt" <<'EOF'
 extensions/sentinels/_extinct/adaptation-velocity/aggregate.ts(1,38): error TS2307: Cannot find module '../../../src/sentinel/types'
@@ -58,16 +61,27 @@ echo ""
 # 每个场景独立 CT_DIR（隔离 baseline 状态）
 CT_DIR="$TMP_REL/bc-ct"
 
-echo "── 1. seed 3 条 → 5 条运行 → 存量 3 + 新增 2 ──"
+echo "── 1. seed 3 条 → 5 条运行 → 存量 3 + 新增 2（本分支引入）──"
 rm -rf "$CT_DIR"; mkdir -p "$CT_DIR"
 SYNO_CT_DIR="$CT_DIR" SYNO_TSC_OUTPUT="$TMP_REL/bc-known.txt" \
   bash "$TOOL" --tsc --seed > /dev/null 2>&1 || true
 EXIT=0
 OUT=$(SYNO_CT_DIR="$CT_DIR" SYNO_TSC_OUTPUT="$TMP_REL/bc-new.txt" \
+  SYNO_BRANCH_CHANGED="$BRANCH_FILES" \
   bash "$TOOL" --tsc 2>&1) || EXIT=$?
 assert_exit 1 "$EXIT" "新增 2 条 → exit 1"
 assert_contains "$OUT" "存量 3" "输出含存量 3"
 assert_contains "$OUT" "新增 2" "输出含新增 2"
+echo ""
+
+echo "── 1b. D537 #5: main 既有漂移自动归因 → 不拦（改动集不含错误文件）──"
+EXIT=0
+OUT=$(SYNO_CT_DIR="$CT_DIR" SYNO_TSC_OUTPUT="$TMP_REL/bc-new.txt" \
+  SYNO_BRANCH_CHANGED=$'docs/foo.md' \
+  bash "$TOOL" --tsc 2>&1) || EXIT=$?
+assert_exit 0 "$EXIT" "main 漂移 → exit 0（自动归因不拦）"
+assert_contains "$OUT" "main 漂移 2" "输出含 main 漂移 2"
+assert_contains "$OUT" "新增 0" "输出含新增 0（本分支无新增）"
 echo ""
 
 echo "── 2. 仅 3 条已知 → 新增 0 + exit 0 ──"
@@ -80,6 +94,7 @@ echo ""
 
 echo "── 3. --json 机器可读契约 ──"
 OUT=$(SYNO_CT_DIR="$CT_DIR" SYNO_TSC_OUTPUT="$TMP_REL/bc-new.txt" \
+  SYNO_BRANCH_CHANGED="$BRANCH_FILES" \
   bash "$TOOL" --tsc --json 2>&1) || true
 assert_contains "$OUT" '"added":2' '--json 含 "added":2'
 assert_contains "$OUT" '"existing":3' '--json 含 "existing":3'
@@ -102,16 +117,17 @@ echo ""
 
 echo "── 5. --update-baseline 后全转存量 ──"
 # update 需先有基线：seed 3 条 known → update 并入 5 条 new（并集 5 条）→ 再跑全存量
-# 注: settings.json PostToolUse hook 可能拦截测试内 bash 写文件（verify-incremental 拖慢）→ timeout 保护
+# 注: settings.json PostToolUse hook 可能拦截测试内 bash 写文件（verify-incremental 拖慢）
+# D537: 去掉 `timeout`（Mac 无 GNU timeout，D334 双机差异）——baseline-check 自身 <10s 无需外层兜底
 SYNO_CT_DIR="$CT_DIR" SYNO_TSC_OUTPUT="$TMP_REL/bc-known.txt" \
-  timeout 20 bash "$TOOL" --tsc --seed > /dev/null 2>&1 || true
+  bash "$TOOL" --tsc --seed > /dev/null 2>&1 || true
 OUT=$(SYNO_CT_DIR="$CT_DIR" SYNO_TSC_OUTPUT="$TMP_REL/bc-new.txt" \
-  timeout 20 bash "$TOOL" --tsc --update-baseline 2>&1) || true
+  bash "$TOOL" --tsc --update-baseline 2>&1) || true
 assert_contains "$OUT" "基线已更新" "update 输出含基线已更新"
 # update 后以 5 条 fixture 运行应全为存量
 EXIT=0
 OUT2=$(SYNO_CT_DIR="$CT_DIR" SYNO_TSC_OUTPUT="$TMP_REL/bc-new.txt" \
-  timeout 20 bash "$TOOL" --tsc 2>&1) || EXIT=$?
+  bash "$TOOL" --tsc 2>&1) || EXIT=$?
 assert_exit 0 "$EXIT" "update 后再跑 → exit 0"
 assert_contains "$OUT2" "新增 0" "update 后新增 0"
 echo ""

@@ -11,6 +11,21 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V5.1.4 (2026-08-26) — D537 控制塔并行污染 + 提交链摩擦根治（Win 反馈 #2-#6）（PATCH）
+
+> spec: docs/synova/coordination/派单-D537-并行CTO-20260826.md。5 项修已有 bug（#1 CRLF 已由 D520 修复，#6 windows 矩阵已由 D520 建立）。
+> 单源原则（创始人定）: 控制塔 scripts/ 一份，所有修复在唯一源（Mac 控制塔线）做，不分叉。
+
+- **① #2 主树占用检测前移（M8 变体治本）**: 并行污染只拦"新开工"（task-start）不拦"存量"（已在主树工作的 session 直接提交）→ M8 第四次复发（D394→D481/482→D486）。检测前移到 pre-commit（物理门禁、每次提交强制）：主树脏 + 近期活跃 session > 1 → hard_check 拦。活跃判定 = last_seen_at 在 SYNO_PARALLEL_WINDOW（默认 1800s）内（synova-commit 每次 register 刷新；pid=None 僵尸 session 不误拦——主树 registry 实测 14 个僵尸）。
+- **② #3 fastlane 扩展（补记摩擦）**: 原 fastlane 只覆盖纯 bypass.log 单文件；merge commit（MERGE_HEAD，同 D328/D513 豁免）+ 纯补记组合（bypass.log + docs/task-state/memory 白名单）也走轻量门禁（<10s）。普通提交（含任何代码）仍全量（防误放行）。
+- **③ #4 worktree 补记自动同步（D521-2 恢复）**: D530（734ab32e CT-45 merge 豁免）重写 post-commit.sh 时丢失 D521-2 的 "bypass COMMITTED 登记" hook 层——bypass-precommit.test.sh 红态（登记段缺失/HASH 未登记/仍脏/影子提交缺失）。恢复该段（COMMITTED 成对登记 + 影子提交防递归），bypass.log 永不脏，D451 补记循环根治。
+- **④ #5 baseline 漂移自动归因**: merge main 引入 mac 提交后 tsc 基线变化，每次人工确认"main 现状 vs 本分支引入"。扩展 baseline-check.sh：新增"错误"按文件归属本分支改动集（vs origin/main）→ 本分支引入才拦（exit 1）；main 既有漂移自动归因不拦。归因不可用 → fail-closed 拦全部（绝不静默放行）。
+- **⑤ baseline-check.sh Mac 兼容（grep -oP → grep -oE）**: BSD grep 无 -P，baseline-check.sh 在 Mac 上全量失败（extract 函数 + 主流程计数）。修 9 处 `grep -oP` → `grep -oE` + `\d`/`\S` → `[0-9]`/`[^[:space:]]`（windows-compat 模式库同型）。
+- **⑥ #6 双平台 CI**: control-tower-tests windows-latest 矩阵已由 D520 建立；本版把新增测试（parallel-main-tree-occupancy / fastlane-extended）纳入 canary 清单（ubuntu + windows 双平台全绿）。
+- **测试**: parallel-main-tree-occupancy.test.sh（新，10/10）/ fastlane-extended.test.sh（新，10/10）/ bypass-precommit.test.sh（恢复后 7/7）/ baseline-check.test.sh（更新 + 归因场景，16/16），均入 canary。
+- **防膨胀**: 全部复用既有机制（session_registry 近期过滤 / fastlane 白名单 / D521-2 hook 登记 / baseline 快照 + 改动集归因），零新独立机制。
+- **作者**: dsh-parallel-cto（D537，控制塔线）
+
 ## V5.1.3 (2026-08-26) — D533 CI 调试可达性根治（凭证共享 + CRLF 治本 + debug 纪律）（PATCH）
 
 > 收敛 3 项（D529 复盘后审计收敛，原 5 项 → 3 项）。spec: docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D533-ci-diagnostics-20260825.md
