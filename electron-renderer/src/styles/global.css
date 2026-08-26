@@ -427,6 +427,198 @@ body {
   font-size: 14px;
 }
 
+/* ═══ D538 产品独有能力导航（Codex 风格，一行一个导航项，无折叠卡片边框） ═══
+   仅使用现有 token：hover=var(--border) / 文字=var(--text) / dim=var(--dim) /
+   选中=var(--accent2) / active 底=rgba(108,92,231,0.15) / 禁用=var(--dim)。
+   角标色 red/orange/green 用 var(--red/--orange/--green)；不硬编码 token 之外颜色（spec §4.1）。 */
+
+.cap-section {
+  margin-top: 6px;
+  padding: 0 0 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.cap-section-title {
+  font-size: 10px;
+  color: var(--dim);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 10px 8px 6px;
+  font-weight: 600;
+}
+
+.cap-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-size: 12px;
+  color: var(--text);
+  text-align: left;
+  font-family: inherit;
+}
+
+.cap-item:hover {
+  background: var(--border);
+}
+
+.cap-item.active {
+  background: rgba(108, 92, 231, 0.15);
+  color: var(--accent2);
+  font-weight: 700;
+}
+
+.cap-item.disabled {
+  color: var(--dim);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* 图标列：定宽 16px，color 继承文字色（currentColor 由 lucide 组件默认） */
+.cap-ico {
+  width: 16px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: currentColor;
+}
+
+.cap-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 简洁数字角标：小号圆角胶囊，红/橙/绿语义 */
+.cap-badge {
+  min-width: 16px;
+  height: 16px;
+  padding: 0 5px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.cap-badge-red { background: var(--red); }
+.cap-badge-orange { background: var(--orange); }
+.cap-badge-green { background: var(--green); }
+
+.cap-chev {
+  display: inline-flex;
+  align-items: center;
+  color: var(--dim);
+  flex-shrink: 0;
+}
+
+/* 折叠态 44px 图标条中的能力图标按钮 */
+.left-panel-collapsed-caps {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 0;
+}
+
+.cap-collapsed {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  color: var(--text);
+}
+
+.cap-collapsed.active {
+  background: rgba(108, 92, 231, 0.15);
+  color: var(--accent2);
+}
+
+.cap-collapsed.disabled {
+  color: var(--dim);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* 右栏能力详情 */
+.cap-degraded-banner {
+  padding: 6px 8px;
+  font-size: 10px;
+  color: var(--orange);
+  background: rgba(243, 156, 18, 0.08);
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.cap-detail-card {
+  padding: 8px 10px;
+  margin: 6px 0;
+  border-radius: 8px;
+  background: var(--border);
+  border: 1px solid var(--panel);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.cap-detail-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  margin-bottom: 2px;
+  font-size: 12px;
+}
+
+.cap-detail-source {
+  padding: 4px 6px;
+  margin: 4px 0;
+  border-radius: 6px;
+  background: var(--panel);
+}
+
+.cap-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.cap-dot-green { background: var(--green); }
+.cap-dot-red { background: var(--red); }
+.cap-dot-orange { background: var(--orange); }
+.cap-dot-grey { background: var(--dim); }
+.cap-dot-critical { background: var(--red); }
+.cap-dot-warning { background: var(--orange); }
+.cap-dot-info { background: var(--cyan); }
+
+.cap-status {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.cap-status-pending { color: var(--dim); }
+.cap-status-confirmed { color: var(--accent2); }
+.cap-status-executing { color: var(--orange); }
+.cap-status-completed { color: var(--green); }
+.cap-status-rejected { color: var(--red); }
+
 /* ═══ Center Panel (Chat) ═══ */
 
 .center-header {

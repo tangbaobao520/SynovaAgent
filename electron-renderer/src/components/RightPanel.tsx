@@ -3,6 +3,8 @@
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAppStore } from '../stores/app-store';
+// D538: 能力导航纯逻辑契约（状态机/权限/标签） + 详情分派类型
+import { capabilityLabel, loopStatusColor, type SelectedCap } from '../stores/capability';
 
 // ═══ 视图解析 ═══
 
@@ -423,30 +425,260 @@ const GAWorkspaceTabs: React.FC = () => {
   );
 };
 
+// ═══ D538 能力详情组件（真实接口数据渲染；Ga 占位不伪造） ═══
+
+// 信号 Story 卡片（AggregatedSignal 真实 shape）
+interface SourceFinding {
+  sentinelId: string;
+  sentinelName: string;
+  finding: { id?: string; severity?: string; title?: string; description?: string; suggestion?: string; detectedAt?: string; status?: string };
+}
+interface AggregatedSignal {
+  id: string;
+  severity: 'critical' | 'warning' | 'info';
+  title: string;
+  sources: SourceFinding[];
+  entities: string[];
+  recommendedExperts: string[];
+  aggregatedAt: string;
+  degraded: boolean;
+}
+interface SignalsResponse {
+  ok: boolean;
+  total: number;
+  criticalCount: number;
+  warningCount: number;
+  signals: AggregatedSignal[];
+  degraded?: boolean;
+}
+
+const SEVERITY_COLOR: Record<string, string> = { critical: 'var(--red)', warning: 'var(--orange)', info: 'var(--cyan)' };
+
+/** 主动触达 — GET /api/sentinel/signals 真实数据渲染 */
+const ReachDetail: React.FC = () => {
+  const [data, setData] = useState<SignalsResponse | null>(null);
+  const [degraded, setDegraded] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const res = await apiFetch<SignalsResponse>('/api/sentinel/signals');
+      if (!alive) return;
+      if (res?.ok) {
+        setData(res);
+        if (res.degraded) setDegraded(true);
+      } else {
+        // 铁律 24/31: 失败 → console.warn + 降级提示条（apiFetch 已 log，标记 degraded）
+        setDegraded(true);
+      }
+      setLoading(false);
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  return (
+    <Section title="主动触达 · 信号聚合">
+      {!loading && degraded && <div className="cap-degraded-banner">⚠ 信号服务降级，部分数据可能不可用</div>}
+      {loading && <div style={{ padding: 8, fontSize: 11, color: 'var(--dim)' }}>加载信号...</div>}
+      {!loading && !degraded && data && data.signals.length === 0 && <Empty text="暂无聚合信号" />}
+      {!loading && data?.signals.map((sig) => (
+        <div key={sig.id} className="cap-detail-card">
+          <div className="cap-detail-title" style={{ color: SEVERITY_COLOR[sig.severity] || 'var(--text)' }}>
+            <span className={`cap-detail-dot cap-dot-${sig.severity}`} />{sig.title}
+          </div>
+          {sig.entities.length > 0 && (
+            <div style={{ fontSize: 10, color: 'var(--dim)', margin: '2px 0' }}>实体: {sig.entities.join('、')}</div>
+          )}
+          {sig.recommendedExperts.length > 0 && (
+            <div style={{ fontSize: 10, color: 'var(--accent2)', marginBottom: 4 }}>推荐专家: {sig.recommendedExperts.join(' · ')}</div>
+          )}
+          {sig.sources.slice(0, 3).map((src, i) => (
+            <div key={i} className="cap-detail-source">
+              <div style={{ fontSize: 10, color: 'var(--dim)' }}>{src.sentinelName}</div>
+              {src.finding.title && <div style={{ fontSize: 11 }}>{src.finding.title}</div>}
+              {src.finding.description && <div style={{ fontSize: 10, color: 'var(--dim)' }}>{src.finding.description}</div>}
+              {src.finding.suggestion && <div style={{ fontSize: 10, color: 'var(--accent2)' }}>建议: {src.finding.suggestion}</div>}
+            </div>
+          ))}
+        </div>
+      ))}
+    </Section>
+  );
+};
+
+interface LoopEntry {
+  loopId: string;
+  loopName: string;
+  status: string;
+  executionCount: number;
+  lastExecution: { status: string; startedAt: string; completedAt?: string; durationMs?: number } | null;
+  scales: Array<{ name: string; nextAt: string; period?: string }>;
+}
+interface LoopsResponse {
+  ok: boolean;
+  loops: LoopEntry[];
+  degraded?: boolean;
+}
+
+/** 五循环状态 — GET /api/loops/status 真实数据渲染（按 loops.length 动态渲染，禁硬编码 5/6） */
+const LoopsDetail: React.FC = () => {
+  const [data, setData] = useState<LoopsResponse | null>(null);
+  const [degraded, setDegraded] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const res = await apiFetch<LoopsResponse>('/api/loops/status');
+      if (!alive) return;
+      if (res?.ok) {
+        setData(res);
+        if (res.degraded) setDegraded(true);
+      } else setDegraded(true);
+      setLoading(false);
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  return (
+    <Section title="五循环状态">
+      {!loading && degraded && <div className="cap-degraded-banner">⚠ 降级：循环状态不可用</div>}
+      {loading && <div style={{ padding: 8, fontSize: 11, color: 'var(--dim)' }}>加载循环...</div>}
+      {!loading && !degraded && data && data.loops.length === 0 && <Empty text="暂无循环" />}
+      {!loading && data?.loops.map((loop) => (
+        <div key={loop.loopId} className="cap-detail-card">
+          <div className="cap-detail-title">
+            <span className={`cap-dot cap-dot-${loopStatusColor(loop.status)}`} />
+            {loop.loopName}
+            <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--dim)' }}>x{loop.executionCount}</span>
+          </div>
+          {loop.lastExecution && (
+            <div style={{ fontSize: 10, color: 'var(--dim)' }}>
+              {loop.lastExecution.status} · {loop.lastExecution.startedAt?.slice(0, 16).replace('T', ' ')}
+              {typeof loop.lastExecution.durationMs === 'number' ? ` · ${(loop.lastExecution.durationMs / 1000).toFixed(1)}s` : ''}
+            </div>
+          )}
+          {loop.scales.map((sc, i) => (
+            <div key={i} style={{ fontSize: 10, color: 'var(--dim)', margin: '2px 0' }}>· {sc.name} next: {sc.nextAt?.slice(0, 16).replace('T', ' ')}</div>
+          ))}
+        </div>
+      ))}
+    </Section>
+  );
+};
+
+interface ActionItem {
+  id: string;
+  title: string;
+  description?: string;
+  status: 'pending' | 'confirmed' | 'executing' | 'completed' | 'rejected';
+  priority: 'critical' | 'high' | 'medium' | 'low';
+  owner?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+interface ActionsResponse {
+  ok: boolean;
+  actions: ActionItem[];
+  degraded?: boolean;
+}
+
+const ACTION_STATUS_LABEL: Record<ActionItem['status'], string> = {
+  pending: '待开始', confirmed: '已确认', executing: '执行中', completed: '已完成', rejected: '已拒绝',
+};
+
+/** Action 闭环 — GET /api/actions 真实数据渲染 */
+const ActionDetail: React.FC = () => {
+  const [data, setData] = useState<ActionsResponse | null>(null);
+  const [degraded, setDegraded] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const res = await apiFetch<ActionsResponse>('/api/actions');
+      if (!alive) return;
+      if (res?.ok) {
+        setData(res);
+        if (res.degraded) setDegraded(true);
+      } else setDegraded(true);
+      setLoading(false);
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  return (
+    <Section title="Action 闭环 · 执行承诺">
+      {!loading && degraded && <div className="cap-degraded-banner">⚠ 行动项服务降级</div>}
+      {loading && <div style={{ padding: 8, fontSize: 11, color: 'var(--dim)' }}>加载行动项...</div>}
+      {!loading && !degraded && data && data.actions.length === 0 && <Empty text="暂无行动项" />}
+      {!loading && data?.actions.map((a) => (
+        <div key={a.id} className="cap-detail-card">
+          <div className="cap-detail-title">{a.title}</div>
+          <div style={{ fontSize: 10, margin: '2px 0' }}>
+            <span className={`cap-status cap-status-${a.status}`}>{ACTION_STATUS_LABEL[a.status]}</span>
+            <span style={{ color: 'var(--dim)' }}> · {a.priority} 优先级</span>
+            {a.owner && <span style={{ color: 'var(--dim)' }}> · 负责人 {a.owner}</span>}
+          </div>
+          {a.description && <div style={{ fontSize: 10, color: 'var(--dim)' }}>{a.description}</div>}
+          <div style={{ fontSize: 9, color: 'var(--dim)', marginTop: 2 }}>更新: {a.updatedAt?.slice(0, 16).replace('T', ' ')}</div>
+        </div>
+      ))}
+    </Section>
+  );
+};
+
+/** GA 协同 — 结构占位（后端校准接口不存在 → 不伪造、不发 fetch · 铁律 8） */
+const GaDetail: React.FC = () => (
+  <Section title="GA 人机协同（仅 GA 可见）">
+    <div className="cap-degraded-banner">⚠ 后端校准接口待接入</div>
+    <div className="cap-detail-card"><div className="cap-detail-title">🧬 诊断校准面板</div><Empty text="Agent 结论待审（标记错误/补背景/重写逻辑/降级标记）" /></div>
+    <div className="cap-detail-card"><div className="cap-detail-title">📥 手动信号注入</div><Empty text="线下黑域信息 → 系统" /></div>
+    <div className="cap-detail-card"><div className="cap-detail-title">📊 反馈效用仪表</div><Empty text="纠错/信号/采纳率" /></div>
+  </Section>
+);
+
+/** D538: 详情分派 —— 非 null 覆盖默认视图 */
+const CAP_DETAIL_VIEW: Record<Exclude<SelectedCap, null>, React.FC> = {
+  reach: ReachDetail,
+  loops: LoopsDetail,
+  action: ActionDetail,
+  ga: GaDetail,
+};
+
 // ═══ 主组件 ═══
 
 const RightPanel: React.FC = () => {
   const open = useAppStore((s) => s.rightPanelOpen);
   const userRole = useAppStore((s) => s.userRole);
   const activeWorkspaceId = useAppStore((s) => s.activeWorkspaceId);
+  const selectedCap = useAppStore((s) => s.selectedCap);
   if (!open) return null;
 
   const view = resolveView(userRole, activeWorkspaceId);
   const title = activeWorkspaceId ? '工作区面板' : '全局面板';
+  const capTitle = selectedCap ? capabilityLabel(selectedCap) : '';
 
   return (
     <aside className="panel-right open fade-in">
       <div className="right-panel-header">
-        <span>📊</span><span>{title}</span>
+        <span>📊</span><span>{selectedCap ? `产品独有能力 · ${capTitle}` : title}</span>
         <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--dim)' }}>{userRole}</span>
       </div>
       <div className="right-panel-content">
-        {view === 'ga_dashboard' && <GADashboard />}
-        {view === 'ga_admin' && <><Section title="📌 目标跟踪"><Empty /><Section title="🚨 关键告警"><Empty /></Section></Section></>}
-        {view === 'ws_ga' && <GAWorkspaceTabs />}
-        {view === 'ws_detail' && <><Section title="📌 目标跟踪"><Empty /><Section title="🚨 关键告警"><Empty /></Section></Section></>}
-        {view === 'readonly' && <Section title="📌 概览"><Empty /></Section>}
-        {(view === 'ws_readonly' || view === 'ws_detail') && <Section title="📌 概览"><Empty /></Section>}
+        {selectedCap ? (
+          (() => { const Detail = CAP_DETAIL_VIEW[selectedCap]; return <Detail />; })()
+        ) : (
+          <>
+            {view === 'ga_dashboard' && <GADashboard />}
+            {view === 'ga_admin' && <><Section title="📌 目标跟踪"><Empty /><Section title="🚨 关键告警"><Empty /></Section></Section></>}
+            {view === 'ws_ga' && <GAWorkspaceTabs />}
+            {view === 'ws_detail' && <><Section title="📌 目标跟踪"><Empty /><Section title="🚨 关键告警"><Empty /></Section></Section></>}
+            {view === 'readonly' && <Section title="📌 概览"><Empty /></Section>}
+            {(view === 'ws_readonly' || view === 'ws_detail') && <Section title="📌 概览"><Empty /></Section>}
+          </>
+        )}
       </div>
     </aside>
   );
