@@ -1,16 +1,31 @@
 {
   "task_id": "D538",
   "title": "前端交互实现：左栏 Codex 风格（产品独有能力导航）",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": {
-    "doc": "docs/synova/coordination/SYNOVA-IMPL-DSH-前端交互设计-左栏Codex风格-v1.md",
+    "doc": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D538-frontend-leftbar-codex-20260827.md",
+    "design": "docs/synova/coordination/SYNOVA-IMPL-DSH-前端交互设计-左栏Codex风格-v1.md",
     "dispatch": "docs/synova/coordination/派单-D538-前端左栏Codex-20260826.md",
-    "source": "Win 侧 Codex 推送设计规格",
+    "source": "Win 侧 Codex 推送设计规格 + 编码实现",
     "slice": "frontend-leftbar"
   },
-  "impl": null,
+  "impl": {
+    "commit": "d2b183a1",
+    "by": "deepseek-harness",
+    "at": "2026-08-27",
+    "files": [
+      "electron-renderer/src/stores/capability.ts",
+      "electron-renderer/src/stores/app-store.ts",
+      "electron-renderer/src/components/LeftPanel.tsx",
+      "electron-renderer/src/components/RightPanel.tsx",
+      "electron-renderer/src/styles/global.css",
+      "electron-renderer/package.json",
+      "electron-renderer/package-lock.json",
+      "tests/electron/capability.test.ts"
+    ]
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-08-27",
-  "updated_by": "alloc-task-id"
+  "updated_by": "deepseek-harness"
 }
