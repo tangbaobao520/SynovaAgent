@@ -1,0 +1,18 @@
+{
+  "task_id": "D486",
+  "title": "register 认证闭环 端到端测试切片（A/B 真实 server 全链路验证 + 缺口补充）",
+  "slice": "AUTH-E2E",
+  "status": "spec_done",
+  "risk": "low",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-D486-register-e2e-slice-20260825.md",
+    "commit": "PENDING",
+    "by": "dev-doc",
+    "at": "2026-08-25"
+  },
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-25T16:30:00+08:00",
+  "updated_by": "dev-doc"
+}
