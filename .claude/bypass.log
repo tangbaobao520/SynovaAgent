@@ -781,3 +781,5 @@ Binary file .claude/bypass.log matches
 2026-08-26T03:10:44+08:00 | COMMITTED | pre-commit PASS（D451 纯补记豁免：docs-only 提交，手动跑 pre-commit-check 13 组通过，hook 自动登记缺失补录） | TASK_ID=D536 | AGENT=dev-doc-dsh | HASH=501865dedce7b7134457b0efee2933c4b0ac4c04
 
 2026-08-26T00:30:00+08:00 | COMMITTED | pre-commit PASS (补记 a74237e5 D486 交付笔记, D331 对账) | TASK_ID=D486 | AGENT=Synova-Win | HASH=a74237e57ae7634f5ab5c1bfdac5b3144e90428a
+
+2026-08-27T09:30:00+08:00 | COMMITTED | pre-commit PASS (补记 8149ad3a baseline 收录, D331 对账) | TASK_ID=D486 | AGENT=Synova-Win | HASH=8149ad3a552f01c03dab2656b388445cc69b2607
