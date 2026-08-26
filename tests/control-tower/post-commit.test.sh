@@ -3,7 +3,7 @@
 export PYTHONIOENCODING=utf-8
 export LC_ALL=C.UTF-8 2>/dev/null || true
 # ═══════════════════════════════════════════════════════════════
-# bypass-precommit.test.sh — D521/不变量2: bypass.log COMMITTED hook 层登记
+# post-commit.test.sh — D521/不变量2: bypass.log COMMITTED hook 层登记
 #
 # 覆盖矩阵（铁律 48 三路径 + 接线）:
 #   正常 — 裸 git commit（marker 新鲜=pre-commit 跑过）→ 影子登记提交：

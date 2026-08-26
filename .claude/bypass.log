@@ -783,3 +783,10 @@ Binary file .claude/bypass.log matches
 2026-08-26T00:30:00+08:00 | COMMITTED | pre-commit PASS (补记 a74237e5 D486 交付笔记, D331 对账) | TASK_ID=D486 | AGENT=Synova-Win | HASH=a74237e57ae7634f5ab5c1bfdac5b3144e90428a
 
 2026-08-27T09:30:00+08:00 | COMMITTED | pre-commit PASS (补记 8149ad3a baseline 收录, D331 对账) | TASK_ID=D486 | AGENT=Synova-Win | HASH=8149ad3a552f01c03dab2656b388445cc69b2607
+2026-08-27T00:58:47+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D537 | AGENT=dsh-parallel-cto
+2026-08-27T01:01:38+08:00 | GATE_FAIL_SOFT | exit=1 | branch=fix/d537-tower-parallel-commit-friction
+2026-08-27T01:01:38+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=95b09aec08d6814928894244aa02bf5ec9d71d1b
+2026-08-27T01:03:38+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=c78c5f569f47b2a8c53acdd7a53c3a07776d097f
+2026-08-27T01:04:22+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=b1a6ae3717c6d581340b88e3442e41dc3a3a35ed
+2026-08-27T01:10:13+08:00 | COMMITTED | pre-commit PASS（一次性补记：影子提交 421b4503 污染清理） | TASK_ID=D537 | AGENT=dsh-parallel-cto | HASH=421b4503b81598143254e428f7c9fd6f717de2fa
+2026-08-27T01:10:15+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=9e240a43522403abf24c0d551cef606efd21aeb6
