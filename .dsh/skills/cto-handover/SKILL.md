@@ -216,6 +216,8 @@ git-sync-pr / brief-compose / claim-verifier / windows-compat / synova-audit / p
 
 ## 十二、红线（违反 = 事故）
 
+- **所有遗漏/漏洞/待办主动登记台账，不问创始人**（CTO 核心职责——创始人 2026-08-26 定：一点点遗漏都要登记，台账是"不遗忘"的唯一机制；发现即登记，禁止"要不要登记"式询问）
+
 - 不碰 scripts/audit/、不写审计标准、禁止自我审计（K3 专属）
 - 不写产品代码（src/ L1-L5 除哨兵切片 + mcp 外，归 Claude）
 - 预设/skill 改动走草稿→创始人审→落位
