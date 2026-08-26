@@ -777,3 +777,4 @@
 2026-08-27T01:10:15+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=9e240a43522403abf24c0d551cef606efd21aeb6
 2026-08-27T09:30:00+08:00 | COMMITTED | pre-commit PASS (补记 8149ad3a baseline 收录, D331 对账) | TASK_ID=D486 | AGENT=Synova-Win | HASH=8149ad3a552f01c03dab2656b388445cc69b2607
 Binary file .claude/bypass.log matches
+2026-08-27T01:54:21+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=16123bbd663d1ed4c9c40fcd1716c47b455db1a5
