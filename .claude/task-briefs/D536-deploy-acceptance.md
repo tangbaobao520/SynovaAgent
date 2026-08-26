@@ -20,7 +20,9 @@ L1 桌面端部署验收（Track A 部署轨）。消费切片 A/B/C 产物：CI
 - scripts/desktop/mac-install-verify.sh
 - scripts/desktop/win-install-verify.ps1
 - task-state/D536.json
-- docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D536-deploy-acceptance-20260826.md
+- docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D536-deploy-acceptance-20260826.md（§5.2b 微调回填）
+- scripts/desktop/first-diagnosis-timing.sh（仅实测暴露缺口微调——now_ms %3N macOS 兼容 + verdict 单位；spec §5.2b 回填）
+- scripts/golden-scenarios/GS-01-first-diagnosis/run.sh（仅实测暴露缺口微调——step_ms %3N macOS 兼容；spec §5.2b 回填）
 不做什么：
 - 不改 src/ 任何文件（派单红线，本单只消费产物）
 - 不改 scripts/audit/run-auditor.sh（K3 专属红线）

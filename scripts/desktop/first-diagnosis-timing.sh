@@ -70,7 +70,8 @@ fi
 
 mkdir -p "$EVIDENCE_DIR"
 
-now_ms() { date +%s%3N 2>/dev/null || python3 -c 'import time;print(int(time.time()*1000))'; }
+# macOS BSD date 不支持 %3N（输出字面 N 且 exit 0，GNU 语法）——python3 优先跨平台（D536 实测暴露，2026-08-27）
+now_ms() { python3 -c 'import time;print(int(time.time()*1000))' 2>/dev/null || date +%s%3N 2>/dev/null; }
 
 # ── 里程碑计时 ──
 M_INSTALL_START="null"; M_INSTALL_DONE="null"; M_APP_LAUNCH="null"; M_HEALTHZ="null"; M_READY="null"
@@ -149,7 +150,8 @@ if [ "$START_REF" != "null" ] && [ "$M_READY" != "null" ]; then
 fi
 if [ "$TOTAL" = "null" ]; then
   VERDICT="INCOMPLETE"
-elif [ "$TOTAL" -le "$TARGET_SEC" ]; then VERDICT="WITHIN_TARGET"; else VERDICT="OVER_TARGET"; fi
+# D536 实测暴露（2026-08-27）: TOTAL 是毫秒、TARGET_SEC 是秒——单位不一致导致 1.9s 误判 OVER_TARGET
+elif [ "$TOTAL" -le $((TARGET_SEC * 1000)) ]; then VERDICT="WITHIN_TARGET"; else VERDICT="OVER_TARGET"; fi
 [ -n "$FAILURES" ] && VERDICT="FAILED"
 
 python3 - "$OUT_PATH" "$MODE" "$M_INSTALL_START" "$M_INSTALL_DONE" "$M_APP_LAUNCH" "$M_HEALTHZ" "$M_READY" "$TOTAL" "$VERDICT" "$TARGET_SEC" "$FAILURES" <<'PYEOF'
