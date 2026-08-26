@@ -787,3 +787,4 @@ Binary file .claude/bypass.log matches
 2026-08-27T01:01:38+08:00 | GATE_FAIL_SOFT | exit=1 | branch=fix/d537-tower-parallel-commit-friction
 2026-08-27T01:01:38+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=95b09aec08d6814928894244aa02bf5ec9d71d1b
 2026-08-27T01:03:38+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=c78c5f569f47b2a8c53acdd7a53c3a07776d097f
+2026-08-27T01:04:22+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=b1a6ae3717c6d581340b88e3442e41dc3a3a35ed
