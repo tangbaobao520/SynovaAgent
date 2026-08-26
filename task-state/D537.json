@@ -1,0 +1,15 @@
+{
+  "task_id": "D537",
+  "title": "控制塔并行污染+提交链摩擦根治（Win 反馈 #2-#6，5 项修 bug）",
+  "status": "claimed",
+  "spec": {
+    "doc": "docs/synova/coordination/派单-D537-并行CTO-20260826.md",
+    "source": "Win 侧 D486 实录反馈",
+    "slice": "control-tower"
+  },
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-26",
+  "updated_by": "alloc-task-id"
+}
