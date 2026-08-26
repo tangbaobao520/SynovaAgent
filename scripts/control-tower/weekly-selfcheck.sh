@@ -131,13 +131,13 @@ if [ -f "$REPO_DIR/.claude/backup-health.json" ]; then
   fi
 fi
 if [ -f "$REPO_DIR/data/synova.db" ] && command -v sqlite3 >/dev/null 2>&1; then
-  INTEGRITY="$(sqlite3 "$REPO_DIR/data/synova.db" 'PRAGMA integrity_check;' 2>/dev/null | head -1 || echo '')"
+  INTEGRITY="$(sqlite3 "$REPO_DIR/data/synova.db" 'PRAGMA integrity_check;' 2>/dev/null | head -1 || echo '')" # swallow-ok: 失败经空值+下方 integrity!=ok 检查 fail-closed
   if [ "$INTEGRITY" != "ok" ]; then
     report_alert "数据库" "data/synova.db 完整性异常: ${INTEGRITY:-<无法读取>}"
   fi
 fi
 ICLOUD_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/SynovaAgent-backups"
-LATEST_BAK="$(ls -1t "$ICLOUD_DIR"/synova-backup-*.db 2>/dev/null | head -1)"
+LATEST_BAK="$(ls -1t "$ICLOUD_DIR"/synova-backup-*.db 2>/dev/null | head -1)" # swallow-ok: 无备份文件时 ls 报错经下方 else 分支 fail-closed
 if [ -n "$LATEST_BAK" ]; then
   BAK_AGE_HOURS=$(( ($(date +%s) - $(stat -f%m "$LATEST_BAK")) / 3600 ))
   if [ "$BAK_AGE_HOURS" -gt 48 ]; then
