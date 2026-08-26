@@ -42,7 +42,7 @@ else
 fi
 
 # ── 正常: 健康状态 → 无 [ALERT] ──
-sqlite3 "$TMP/data/synova.db" "CREATE TABLE t(x);" 2>/dev/null
+sqlite3 "$TMP/data/synova.db" "CREATE TABLE t(x);" 2>/dev/null # swallow-ok: 建表失败不影响断言（后续独立断言覆盖）
 printf '{"status":"ok"}' > "$TMP/.claude/backup-health.json"
 OUT=$(bash "$SELF" 2>&1)
 if echo "$OUT" | grep -q "\[ALERT\]"; then
