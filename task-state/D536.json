@@ -1,7 +1,7 @@
 {
   "task_id": "D536",
   "title": "部署轨：桌面端实际部署验收（Track A，founder-demo checklist Mac+Win）",
-  "status": "spec_done",
+  "status": "impl_done",
   "spec": {
     "doc": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D536-deploy-acceptance-20260826.md",
     "commit": "39a45814",
@@ -9,9 +9,47 @@
     "gatekeeper": "exit 0 (C1-C6 ALL PASS, 2026-08-26)",
     "slice": "deploy-acceptance"
   },
-  "impl": null,
+  "impl": {
+    "commit": "待提交后回填",
+    "branch": "feat/d536-deploy-acceptance",
+    "by": "dsh-impl",
+    "date": "2026-08-27",
+    "write_set": [
+      "docs/synova/runbooks/founder-demo-mac.md — 补全部署验收 checklist（第 0 步 CI artifact 下载+md5 / 首诊旅程 / 数据不丢 / 完成态记录）",
+      "docs/synova/runbooks/founder-demo-win.md — 补全部署验收 checklist（第 0 步下载+md5 / 远程执行路径 / waiting 完成态）",
+      "docs/synova/runbooks/desktop-deploy-acceptance.md — 新建部署验收 runbook（K3 独立复核路径 + 完成态）",
+      "scripts/desktop/first-diagnosis-timing.sh — 实测暴露缺口微调（now_ms %3N macOS 兼容 + verdict 毫秒/秒单位，spec §5.2b 回填）",
+      "scripts/golden-scenarios/GS-01-first-diagnosis/run.sh — 实测暴露缺口微调（step_ms %3N macOS 兼容，spec §5.2b 回填）",
+      "task-state/D536.json — impl 段回填",
+      "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D536-deploy-acceptance-20260826.md — §5.2b 微调回填"
+    ],
+    "evidence": {
+      "artifact_md5": {
+        "synova-macos.zip": "ac0a222a8ed99bebb63ba4a51c310629",
+        "SynovaAgent-0.1.0-arm64.dmg": "d1a4a4464b06dd55be903d4cf317c072",
+        "SynovaAgent-0.1.0.dmg": "1b19ccad00e748ea0a90aeb44d588da1",
+        "synova-win.zip": "20b9ca670f6668edbc3d7329caddf4ac",
+        "SynovaAgent-0.1.0-win32-x64.exe": "6ab76715bb6c92aa40be15d2d475e79d"
+      },
+      "mac_install_verify": "exit 0；A1-A4 四断言于第 4s 全过（首次）与第 8s（幂等复跑）——evidence/D519-mac-20260827-001651 + -003948/assertions.txt",
+      "mac_first_diagnosis": "first-diagnosis-timing.sh --mode prod exit 0；total_sec=1.8 verdict=WITHIN_TARGET（目标 1800s）——scripts/golden-scenarios/evidence/first-diagnosis-timing-2026-08-27.json",
+      "mac_llm_green": "GS-01 GS01_LLM=1 + shell env LLM_API_KEY → CONSULT_LLM_GREEN（phase 0-5 + complete + report_http=200）；契约断言 8/8 pass",
+      "mac_data_retained": "upgrade-data-verify.sh --installer exit 0；verdict=DATA_RETAINED（md5_v1=md5_v2=d234cadf... + integrity=ok）",
+      "win_status": "waiting——GUI dsh-ssh 未配置 Windows 目标机（ssh_list 无主机），D523 DS4 不伪造；exe 已下载校验待补测（evidence/D536-win-20260827/win-status.txt）",
+      "known_limits": "签名/公证未做（Gatekeeper 挂载+cp 路径实测过）；LLM key 注入=shell env + launchctl setenv 双验证；better-sqlite3 需 Node 24（GS-01/upgrade-data 用 v24 node）；vitest tests/electron/ 1 存量红（D529 分支触发未同步测试，非 D536 引入）"
+    },
+    "verdict": {
+      "DS1": "✅ artifact 下载+md5 五指纹落盘",
+      "DS2": "✅ Mac 全链：安装/启动/首诊(含 LLM GREEN)/数据不丢 四段物理断言全过",
+      "DS3": "⏸ Win waiting（无目标机，D523 DS4）",
+      "DS4": "✅ founder-demo-mac/win checklist 完成态（每段 evidence 落点+日期+结论）",
+      "DS5": "✅ 已知限制如实（签名/Gatekeeper/LLM 注入/Win waiting）",
+      "DS6": "✅ desktop-deploy-acceptance.md 可独立复核 + vitest 回归（1 存量红为 D529 债）",
+      "DS7": "✅ 写集外零触碰（git diff 核对）+ scripts/audit/ 零触碰 + task-state 回填"
+    }
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-08-26",
-  "updated_by": "dev-doc-dsh"
+  "updated_at": "2026-08-27",
+  "updated_by": "dsh-impl"
 }

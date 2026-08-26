@@ -136,6 +136,18 @@ src/config.ts:72  const llmApiKey = process.env.LLM_API_KEY || ...     ← 后�
 
 > 收敛检查：B 是各决策点收敛答案（创始人裁决 + D519/D523 先例 + 派单约束），无分歧。**参考: Anthropic（fail-closed/不伪造）+ D519/D523 先例 + 派单防膨胀约束**。
 
+### 5.2b 实测暴露缺口回填（D536 编码 session，2026-08-27，spec §5.1 回填义务）
+
+> 写集默认零改动；以下微调为**实测暴露的脚本缺口**（非新增机制），契约（exit 0/1/2）均未变，逐项回填：
+
+| 脚本 | 行 | 微调 | 缺口（实测暴露） | 契约影响 |
+|---|---|---|---|---|
+| `scripts/desktop/first-diagnosis-timing.sh` | :73 `now_ms()` | `date +%s%3N` → python3 优先 | macOS BSD date 不支持 `%3N`（输出字面 N 且 exit 0，GNU 语法）→ 里程碑全 null → verdict=INCOMPLETE | 无（0/1/2 不变） |
+| 同上 | :152 verdict 比较 | `TARGET_SEC` → `$((TARGET_SEC * 1000))` | TOTAL 是毫秒、TARGET_SEC 是秒——单位不一致导致 1.8s 误判 OVER_TARGET | 无 |
+| `scripts/golden-scenarios/GS-01-first-diagnosis/run.sh` | :145 `step_ms()` | 同上 python3 优先 | 同 `%3N` bug → LLM 组计时崩溃（GS01_LLM=1 路径） | 无 |
+
+> 环境注意（非脚本缺口，运行环境事实）: 主工作区 `better-sqlite3` 编译于 Node 24（NODE_MODULE_VERSION 137，v22 加载失败）→ GS-01/upgrade-data 需 `PATH=~/.nvm/versions/node/v24.19.0/bin:$PATH`；LLM key 注入走 **shell env**（dev 服务读 process.env；launchctl setenv 只对 GUI app 生效）——首诊实测两种注入方式均验证。
+
 ## 6. What We Don't Do
 
 | 不做 | 原因 |
