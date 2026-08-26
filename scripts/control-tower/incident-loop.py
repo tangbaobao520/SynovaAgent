@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-scripts/control-tower/incident-loop.py — D314 学习闭环
+scripts/control-tower/incident-loop.py — D314 学习闭环 + D535 循环卫生
 
 设计文档 §2.4: incident → 根因归类 → 规则生成 → 验证 → 防复发。
 
@@ -9,6 +9,11 @@ scripts/control-tower/incident-loop.py — D314 学习闭环
   record  → incident.log 追加 + known-error-patterns.json 匹配
   suggest → 根因 R1-R4 → 机制推荐（门禁/工具/基线/文档）
   verify  → 取已闭环案例跑对应门禁于合成输入 → 被拦 = 闭环成功
+
+D535（2026-08-26）循环卫生 — 重复事故提醒（借鉴 DSH repeat-tool-reminder）:
+  record 同 id 重复 → 不再静默 duplicate，返回 repeat_count + reminder +
+  last_recorded（"该事故已重复出现 N 次 — 检查机制是否未闭环"），调用方打印提醒不阻断。
+  幂等保持: 同 id 不重复追加 incident.log（行数不变）。
 
 根因 R1-R4（设计文档 §1.2）:
   R1 多会话共享工作区无协调
@@ -24,7 +29,14 @@ scripts/control-tower/incident-loop.py — D314 学习闭环
 
 fail-open: incident.log 不可写 → degraded 记录不阻断。
 UTF-8: stdout reconfigure。
+
+循环卫生契约（D535，详见 docs/synova/coordination/控制塔循环卫生标准-20260826.md）:
+  ① subprocess 调用必须带 timeout（默认 30s）— verify 已 timeout=10
+  ② 重复事故提醒 — record 同 id 重复返回 reminder（本文件）
+  ③ 防跑偏信号接线 — staging-guard block → synova-commit 调 record 沉淀
 """
+from __future__ import annotations
+
 import argparse
 import json
 import os
@@ -109,6 +121,30 @@ def _now() -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%S+00:00", time.gmtime())
 
 
+def _last_record_time(incident_id: str) -> str | None:
+    """查 incident.log 中同 id 的最后一条记录时间（重复提醒用）。
+
+    契约（铁律 47）:
+      @input  — incident_id: 事故 id
+      @output — 同 id 最后记录时间字符串（ISO8601）或 None（log 不可读/无记录）
+      @degraded — log 读取异常 → 返回 None（不抛，调用方降级为无时间戳提醒）
+    """
+    if not INCIDENT_LOG.exists():
+        return None
+    try:
+        last = None
+        for line in INCIDENT_LOG.read_text(encoding="utf-8", errors="replace").splitlines():
+            try:
+                rec = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if rec.get("id") == incident_id:
+                last = rec.get("time")
+        return last
+    except OSError:
+        return None
+
+
 def _load_known_patterns() -> list:
     """known-error-patterns.json（复用 completion-engine 的规则库）。"""
     try:
@@ -141,17 +177,42 @@ def _match_known(symptom: str) -> list:
 
 def record(incident_id: str, symptom: str, root_cause: str,
            sessions: str, fix: str, version: str) -> dict:
-    """记录 incident + 匹配已知 pattern。幂等: 同 id 不重复追加。"""
-    # 幂等: 同 id 已存在 → 标注
+    """记录 incident + 匹配已知 pattern。幂等: 同 id 不重复追加。
+
+    契约（铁律 47，D535 补全）:
+      @input  — incident_id/symptom/root_cause/sessions/fix/version
+      @output — recorded: {status, id, known_patterns?}
+                duplicate: {status, id, repeat_count, reminder, last_recorded}
+                degraded:  {status, reason}（INCIDENT_LOG 不可写，铁律 24/31）
+      @error  — 幂等保持: 同 id 不重复追加 log（repeat_count 从 log 统计）
+    """
+    # 幂等: 同 id 已存在 → 重复提醒（D535: 非静默 — repeat-tool-reminder 范式）
     existing_ids = set()
+    id_count = {}
     if INCIDENT_LOG.exists():
         for line in INCIDENT_LOG.read_text(encoding="utf-8", errors="replace").splitlines():
             try:
-                existing_ids.add(json.loads(line).get("id", ""))
+                rid = json.loads(line).get("id", "")
             except json.JSONDecodeError:
-                pass
+                continue
+            existing_ids.add(rid)
+            id_count[rid] = id_count.get(rid, 0) + 1
     if incident_id in existing_ids:
-        return {"status": "duplicate", "id": incident_id}
+        # D535: 同 id 重复 record → 显式提醒"该问题反复出现，检查机制是否未闭环"
+        last = _last_record_time(incident_id)
+        repeat_count = id_count.get(incident_id, 0) + 1
+        reminder = (
+            f"该事故（{incident_id}）已重复出现 {repeat_count} 次"
+            + (f"（上次 {last}）" if last else "")
+            + "——检查是否机制未闭环（repeat-tool-reminder 范式，D535）"
+        )
+        return {
+            "status": "duplicate",
+            "id": incident_id,
+            "repeat_count": repeat_count,
+            "reminder": reminder,
+            "last_recorded": last,
+        }
 
     # D314: 复用 control_tower_log.py 写入器（五件套格式统一）
     try:

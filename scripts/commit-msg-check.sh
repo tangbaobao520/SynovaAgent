@@ -116,20 +116,23 @@ print(1 if any(match_path(s, p) for s in staged for p in inc) else 0)
   fi
 fi
 
-# ── D395-a: Note 引用门禁（改 control-tower/orchestrator 的 commit 须引用 Note）──
+# ── D395-a + D534: Note 引用门禁（非平凡变更的 commit 须引用 Note）──
 # 背景: K3 咨询 §4.2 —— 开发组织的决策可沉淀、可检索、不腐化（强化 M7）。
 #   形似神不似防线: 目录建了、旧文件归档了，但新决策不写 Note → 三个月后又非结构化。
 #   防法 = 物理门禁（commit message 引用 Note 路径），不靠自觉。
-# 触发: 暂存文件命中 scripts/control-tower/ 或 src/orchestrator/（决策密集区）。
+# 触发: D395-a 仅 scripts/control-tower/ + src/orchestrator/；D534 扩展为
+#   非平凡变更定义 = 治理脚本区（scripts/{control-tower,workflow,hooks}/）+
+#   编排器（src/orchestrator/）+ 规则文档区（AGENTS.md/CLAUDE.md/memory/notes/README.md）。
+#   排除 *.test.sh（测试产物不承载决策）与 docs/ 纯文档（D534 §4.2）。
 # 条件跳过保持 <1s（ctrl-tower-change 模式 3）: 无相关变更 → 软过。
 # 两层检查: ① commit message 含 memory/notes/ 引用 ② 引用的 Note 文件真实存在。
 # 落点: commit-msg hook（查 commit message），非 pre-commit 组 6（K3 §4.2 L219）。
-CT_ORCH_TOUCHED=$(echo "$STAGED_LIST" | grep -E '^(scripts/control-tower/|src/orchestrator/)' || true)
+CT_ORCH_TOUCHED=$(echo "$STAGED_LIST" | grep -E '^(scripts/(control-tower|workflow|hooks)/|src/orchestrator/|AGENTS\.md$|CLAUDE\.md$|memory/notes/README\.md$)' | grep -vE '\.test\.sh$' || true)
 if [ -n "$CT_ORCH_TOUCHED" ]; then
   if ! echo "$COMMIT_MSG" | grep -qE 'memory/notes/'; then
     echo ""
-    echo -e "${RED}❌ D395-a Note 引用门禁: 改 control-tower/orchestrator 的 commit 必须引用 Note 路径${RESET}"
-    echo "   本次 commit 改动命中 scripts/control-tower/ 或 src/orchestrator/:"
+    echo -e "${RED}❌ D395-a/D534 Note 引用门禁: 非平凡变更的 commit 必须引用 Note 路径${RESET}"
+    echo "   本次 commit 改动命中治理脚本区/规则文档区（scripts/{control-tower,workflow,hooks}/ 或 src/orchestrator/ 或 AGENTS.md/CLAUDE.md/memory/notes/README.md）:"
     echo "$CT_ORCH_TOUCHED" | sed 's/^/     - /'
     echo "   请在 commit message 中引用决策 Note（如 memory/notes/implemented/2026-08-17-<主题>.md）"
     echo "   （K3 §4.2: 决策可沉淀、可检索、不腐化 — 强化 M7，物理门禁不靠自觉）"
@@ -151,6 +154,6 @@ if [ -n "$CT_ORCH_TOUCHED" ]; then
   done
   echo -e "${GREEN}✅ D395-a Note 引用门禁: commit 引用 Note ${NOTE_PATHS}（文件存在）${RESET}"
 else
-  echo -e "${GREEN}✅ D395-a Note 引用门禁: 无 control-tower/orchestrator 变更（跳过）${RESET}"
+  echo -e "${GREEN}✅ D395-a/D534 Note 引用门禁: 无治理/规则区变更（跳过）${RESET}"
 fi
 exit 0

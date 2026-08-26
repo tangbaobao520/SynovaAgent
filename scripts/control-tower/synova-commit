@@ -502,6 +502,23 @@ if [[ -f "$STAGING_GUARD" ]]; then
       echo -e "${YELLOW}⚠ staging-guard 跳过: python 不可用或损坏（fail-open 显式提示，不静默）${NC}"
     fi
     if [[ "$GUARD_STATUS" == "block" ]]; then
+      # D535: 防跑偏信号接线 — block 事件自动沉淀到学习闭环（incident-loop）
+      # fail-open: incident-loop 不可用 → 显式提示不阻断（铁律 24/31）
+      if [[ -n "$PYBIN" ]]; then
+        set +e
+        INC_OUT=$("$PYBIN" "$PROJECT_ROOT/scripts/control-tower/incident-loop.py" record \
+          --id "staging-block-$(date +%Y%m%d)" \
+          --symptom "staging-guard block: 暂存区含他人文件" \
+          --root-cause "R1" \
+          --sessions "$SESSION_ID" \
+          --fix "与对应 session 协调或移出文件" 2>&1)
+        INC_RC=$?
+        set -e
+        if [[ "$INC_RC" -eq 0 ]] && echo "$INC_OUT" | grep -q '"reminder"'; then
+          INC_REMINDER=$(echo "$INC_OUT" | "$PYBIN" -c "import json,sys; print(json.load(sys.stdin).get('reminder',''))" 2>/dev/null || echo "$INC_OUT")
+          echo -e "${YELLOW}⚠ 事故频发提醒: ${INC_REMINDER}${NC}"
+        fi
+      fi
       echo ""
       echo -e "${RED}❌ 暂存区隔离 (D311 M1b) — 暂存区含他人文件:${NC}"
       echo "$GUARD_OUT" | python3 -c "
