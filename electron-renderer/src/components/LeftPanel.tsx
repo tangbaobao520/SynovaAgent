@@ -1,19 +1,36 @@
 /**
- * components/LeftPanel.tsx — 左栏面板 (Phase 3.1)
+ * components/LeftPanel.tsx — 左栏面板 (Phase 3.1 + D538 能力导航)
  *
- * 折叠态: 44px 图标条
- * 展开态: 搜索 → 对话 → 工作区 → (GA) 客户列表可切换
+ * 折叠态: 44px 图标条（Lucide 线性）
+ * 展开态: 搜索 → 产品独有能力（cap-section，Codex 一行一导航） → 最近对话 → 工作区 → (GA) 客户列表
+ *
+ * D538: 顶部 ICON_ITEMS emoji → Lucide；搜索之下插入"产品独有能力"导航组（4 能力 + 数字角标 + GA 置灰），
+ *      点击 → setSelectedCap(toggleCap(...)) 右栏联动；折叠态为 Lucide 图标条，点击同步联动。
  */
 import React, { useEffect, useState } from 'react';
+import { Search, MessageSquare, Folder, Bell, Radar, RefreshCw, ListChecks, Users, ChevronRight, Ticket, Settings, type LucideIcon } from 'lucide-react';
 import { useAppStore } from '../stores/app-store';
 import { getApiBase } from '../lib/api';
+import { CAPABILITY_IDS, toggleCap, canAccessCap, capabilityLabel, badgeColorFor, type CapabilityId, type SelectedCap } from '../stores/capability';
 
+// ═══ 顶部通用图标条（lucide，16px currentColor，无 emoji） ═══
 const ICON_ITEMS = [
-  { icon: '🔍', label: '搜索', id: 'search' },
-  { icon: '💬', label: '对话', id: 'conversations' },
-  { icon: '📁', label: '工作区', id: 'workspaces' },
-  { icon: '🔔', label: '通知', id: 'notifications' },
+  { icon: Search, label: '搜索', id: 'search' },
+  { icon: MessageSquare, label: '对话', id: 'conversations' },
+  { icon: Folder, label: '工作区', id: 'workspaces' },
+  { icon: Bell, label: '通知', id: 'notifications' },
 ];
+
+// ═══ 能力 → lucide 图标映射（组件层，保持 capability.ts 纯逻辑） ═══
+const CAP_ICON: Record<CapabilityId, LucideIcon> = {
+  reach: Radar,
+  loops: RefreshCw,
+  action: ListChecks,
+  ga: Users,
+};
+
+/** 角标计数类型：null = 未加载/降级 → 隐藏角标 */
+type BadgeStats = { criticalCount: number; warningCount: number } | null;
 
 const LeftPanel: React.FC = () => {
   const open = useAppStore((s) => s.leftPanelOpen);
@@ -28,9 +45,16 @@ const LeftPanel: React.FC = () => {
   const setActiveOrgId = useAppStore((s) => s.setActiveOrgId);
   const gaClients = useAppStore((s) => s.gaClients);
   const setGaClients = useAppStore((s) => s.setGaClients);
+  const selectedCap = useAppStore((s) => s.selectedCap);
+  const setSelectedCap = useAppStore((s) => s.setSelectedCap);
 
   const [activeSection, setActiveSection] = React.useState('conversations');
   const [clientLoadError, setClientLoadError] = useState<string | null>(null);
+
+  // D538: 角标计数（null = 降级/未加载 → 隐藏，不渲染假数字 — 铁律 24/31）
+  const [reachBadge, setReachBadge] = useState<BadgeStats>(null);
+  const [loopsBadge, setLoopsBadge] = useState<BadgeStats>(null);
+  const [actionBadge, setActionBadge] = useState<BadgeStats>(null);
 
   // 加载 GA 客户列表
   useEffect(() => {
@@ -42,6 +66,48 @@ const LeftPanel: React.FC = () => {
     }
   }, [userRole, gaClients.length, setGaClients]);
 
+  // D538: 挂载时拉 3 个接口做角标计数；任一失败 → 该角标隐藏 + console.warn（铁律 24/31）
+  useEffect(() => {
+    let alive = true;
+    // reach: /api/sentinel/signals → criticalCount/warningCount（真实路径，派单/设计的 /api/signals 是伪信息）
+    fetch(`${getApiBase()}/api/sentinel/signals`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!alive) return;
+        if (d && typeof d === 'object' && typeof (d as { criticalCount?: unknown }).criticalCount === 'number') {
+          setReachBadge({ criticalCount: Number((d as { criticalCount: number }).criticalCount) || 0, warningCount: Number((d as { warningCount: number }).warningCount) || 0 });
+        } else setReachBadge(null);
+      })
+      .catch((err) => { if (alive) { console.warn('[LeftPanel] signals 角标拉取失败', err); setReachBadge(null); } });
+    // loops: /api/loops/status → 非 completed 数量（failed→红 / degraded→橙）
+    fetch(`${getApiBase()}/api/loops/status`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!alive) return;
+        const loops = (d && typeof d === 'object' && Array.isArray((d as { loops?: unknown }).loops)) ? (d as { loops: Array<{ status: string }> }).loops : null;
+        if (loops !== null) {
+          const failed = loops.filter((l) => l.status === 'failed').length;
+          const abnormal = loops.filter((l) => l.status !== 'completed').length - failed;
+          setLoopsBadge({ criticalCount: failed, warningCount: abnormal });
+        } else setLoopsBadge(null);
+      })
+      .catch((err) => { if (alive) { console.warn('[LeftPanel] loops 角标拉取失败', err); setLoopsBadge(null); } });
+    // action: /api/actions → pending+executing 数量（含 critical/high priority→红）
+    fetch(`${getApiBase()}/api/actions`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!alive) return;
+        const actions = (d && typeof d === 'object' && Array.isArray((d as { actions?: unknown }).actions)) ? (d as { actions: Array<{ status: string; priority: string }> }).actions : null;
+        if (actions !== null) {
+          const active = actions.filter((a) => a.status === 'pending' || a.status === 'executing');
+          const crit = active.filter((a) => a.priority === 'critical').length;
+          setActionBadge({ criticalCount: crit, warningCount: active.length - crit });
+        } else setActionBadge(null);
+      })
+      .catch((err) => { if (alive) { console.warn('[LeftPanel] actions 角标拉取失败', err); setActionBadge(null); } });
+    return () => { alive = false; };
+  }, []);
+
   const handleSwitchOrg = (orgId: string) => {
     fetch(`${getApiBase()}/api/ga/switch/${orgId}`, { method: 'POST' })
       .then(() => {
@@ -49,6 +115,15 @@ const LeftPanel: React.FC = () => {
         setActiveWorkspaceId(null);
       })
       .catch((err) => { console.warn('[LeftPanel] 组织切换失败', err); });
+  };
+
+  // D538: 能力项点击 → toggleCap 状态机（同项取消/异项切换）+ GA 权限 pre-check（fail-closed）
+  const handleCapClick = (cap: CapabilityId) => {
+    if (!canAccessCap(userRole, cap)) {
+      console.warn(`[LeftPanel] 角色 ${userRole} 无权访问能力 ${cap}`);
+      return;
+    }
+    setSelectedCap(toggleCap(selectedCap, cap) as SelectedCap);
   };
 
   const filteredConvs = conversations.filter(
@@ -59,16 +134,22 @@ const LeftPanel: React.FC = () => {
   );
   const activeClient = gaClients.find((c) => c.orgId === activeOrgId);
 
+  // D538: 折叠态渲染 4 能力 lucide 图标条（点击联动右栏）
+  const collapsedCaps: CapabilityId[] = ['reach', 'loops', 'action', 'ga'];
+
   return (
     <nav className={`panel-left ${open ? 'open' : 'closed'}`}>
       <div className="left-panel-header">
-        {ICON_ITEMS.map((item) => (
-          <button key={item.id} className="icon-btn" title={item.label}
-            onClick={() => setActiveSection(item.id)}
-            style={{ background: activeSection === item.id ? 'var(--border)' : undefined }}>
-            {item.icon}
-          </button>
-        ))}
+        {ICON_ITEMS.map((item) => {
+          const Icon = item.icon;
+          return (
+            <button key={item.id} className="icon-btn" title={item.label}
+              onClick={() => setActiveSection(item.id)}
+              style={{ background: activeSection === item.id ? 'var(--border)' : undefined }}>
+              <Icon size={16} strokeWidth={2} />
+            </button>
+          );
+        })}
       </div>
 
       {open && (
@@ -79,6 +160,54 @@ const LeftPanel: React.FC = () => {
             <input className="left-search-input" type="text"
               placeholder="搜索工作区或对话..." value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)} />
+          </div>
+
+          {/* D538: 产品独有能力导航组（搜索之下、最近对话/工作区之上） */}
+          <div className="cap-section">
+            <div className="cap-section-title">产品独有能力</div>
+            {CAPABILITY_IDS.map((cap) => {
+              const Icon = CAP_ICON[cap];
+              const badgeStats = cap === 'reach' ? reachBadge : cap === 'loops' ? loopsBadge : cap === 'action' ? actionBadge : null;
+              const badgeColor = badgeColorFor(badgeStats);
+              const disabled = !canAccessCap(userRole, cap);
+              const active = selectedCap === cap;
+              const badgeCount = badgeStats ? badgeStats.criticalCount + badgeStats.warningCount : null;
+              return (
+                <button
+                  key={cap}
+                  data-cap={cap}
+                  className={`cap-item${active ? ' active' : ''}${disabled ? ' disabled' : ''}`}
+                  onClick={() => handleCapClick(cap)}
+                  aria-disabled={disabled}
+                  title={disabled ? '仅 GA 可用' : capabilityLabel(cap)}
+                >
+                  <span className="cap-ico"><Icon size={16} strokeWidth={2} /></span>
+                  <span className="cap-label">{capabilityLabel(cap)}</span>
+                  {cap === 'ga' ? (
+                    <span className="cap-chev"><ChevronRight size={14} strokeWidth={2} /></span>
+                  ) : badgeColor && badgeCount !== null ? (
+                    <span className={`cap-badge cap-badge-${badgeColor}`}>{badgeCount}</span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* 通用导航（对话/工单/设置）*/}
+          <div className="cap-section">
+            <div className="cap-section-title">导航</div>
+            <button className="cap-item" data-cap="nav-conv" onClick={() => setActiveSection('conversations')}>
+              <span className="cap-ico"><MessageSquare size={16} strokeWidth={2} /></span>
+              <span className="cap-label">对话</span>
+            </button>
+            <button className="cap-item" data-cap="nav-ticket">
+              <span className="cap-ico"><Ticket size={16} strokeWidth={2} /></span>
+              <span className="cap-label">工单</span>
+            </button>
+            <button className="cap-item" data-cap="nav-settings">
+              <span className="cap-ico"><Settings size={16} strokeWidth={2} /></span>
+              <span className="cap-label">设置</span>
+            </button>
           </div>
 
           {/* 对话列表 */}
@@ -138,6 +267,28 @@ const LeftPanel: React.FC = () => {
               )}
             </>
           )}
+        </div>
+      )}
+
+      {/* D538: 折叠态 44px 图标条 — 4 能力 lucide 图标，点击联动右栏 */}
+      {!open && (
+        <div className="left-panel-collapsed-caps">
+          {collapsedCaps.map((cap) => {
+            const Icon = CAP_ICON[cap];
+            const disabled = !canAccessCap(userRole, cap);
+            return (
+              <button
+                key={cap}
+                data-cap-collapsed={cap}
+                className={`icon-btn cap-collapsed${selectedCap === cap ? ' active' : ''}${disabled ? ' disabled' : ''}`}
+                title={capabilityLabel(cap)}
+                aria-disabled={disabled}
+                onClick={() => handleCapClick(cap)}
+              >
+                <Icon size={16} strokeWidth={2} />
+              </button>
+            );
+          })}
         </div>
       )}
     </nav>
