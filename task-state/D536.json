@@ -10,7 +10,7 @@
     "slice": "deploy-acceptance"
   },
   "impl": {
-    "commit": "待提交后回填",
+    "commit": "075029cf4cab4631e994df028448e37a19852a50",
     "branch": "feat/d536-deploy-acceptance",
     "by": "dsh-impl",
     "date": "2026-08-27",
