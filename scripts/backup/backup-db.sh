@@ -33,6 +33,22 @@ TIMESTAMP="$(date -u +%Y-%m-%dT%H-%M-%SZ)"
 DEST_FILE="$DEST_DIR/synova-backup-$TIMESTAMP.db"
 TMP_FILE="$DEST_DIR/.tmp-synova-backup-$TIMESTAMP.db"
 LOG_FILE="$DEST_DIR/backup.log"
+HEALTH_FILE="$REPO_ROOT/.claude/backup-health.json"
+
+# ── 健康状态落盘（trap EXIT：成功/失败都写，供 CTO 开工 + weekly-selfcheck 读取）──
+# 2026-08-27 P0 数据事故教训：备份失败曾静默 7 天无告警 → 状态落盘到仓库内可见位置
+write_health() {
+  local rc=$?
+  if [ "$rc" -eq 0 ] && [ -n "${DEST_FILE:-}" ]; then
+    printf '{"status":"ok","last_success":"%s","db_bytes":%s}\n' \
+      "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+      "$(stat -f%z "$DEST_FILE" 2>/dev/null || echo 0)" > "$HEALTH_FILE" 2>/dev/null || true
+  else
+    printf '{"status":"fail","last_failure":"%s","exit_code":%s}\n' \
+      "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$rc" > "$HEALTH_FILE" 2>/dev/null || true
+  fi
+}
+trap write_health EXIT
 
 log_msg() { # <msg>
   echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) $1"

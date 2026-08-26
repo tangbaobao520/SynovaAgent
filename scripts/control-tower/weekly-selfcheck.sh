@@ -57,6 +57,11 @@ report_drift() { # report_drift <文档> <差异点>
   REPORT+=("[DRIFT] $1: $2")
 }
 
+report_alert() { # report_alert <项> <详情> — 告警级（数据/备份健康），比文档漂移更紧急
+  DRIFT=1
+  REPORT+=("[ALERT] $1: $2")
+}
+
 # ═══ ① 版本漂移: AGENTS.md / CLAUDE.md vs VERSION.md ═══
 LATEST="$(get_latest_version)"
 if [ "$LATEST" = "unknown" ]; then
@@ -118,6 +123,30 @@ if [ -f "$REPO_DIR/.claude/skills/cto-handover/SKILL.md" ]; then
   fi
 fi
 
+# ═══ ⑦ 备份健康 + db 完整性（2026-08-27 P0 数据事故教训：备份失败曾静默 7 天）═══
+# 三查：① backup-health.json 记录失败 ② data/synova.db 完整性 ③ iCloud 最新备份新鲜度（48h 阈值）
+if [ -f "$REPO_DIR/.claude/backup-health.json" ]; then
+  if grep -q '"status":"fail"' "$REPO_DIR/.claude/backup-health.json"; then
+    report_alert "备份健康" "backup-health.json 记录最近一次备份失败（数据异地副本停更风险）"
+  fi
+fi
+if [ -f "$REPO_DIR/data/synova.db" ] && command -v sqlite3 >/dev/null 2>&1; then
+  INTEGRITY="$(sqlite3 "$REPO_DIR/data/synova.db" 'PRAGMA integrity_check;' 2>/dev/null | head -1 || echo '')"
+  if [ "$INTEGRITY" != "ok" ]; then
+    report_alert "数据库" "data/synova.db 完整性异常: ${INTEGRITY:-<无法读取>}"
+  fi
+fi
+ICLOUD_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/SynovaAgent-backups"
+LATEST_BAK="$(ls -1t "$ICLOUD_DIR"/synova-backup-*.db 2>/dev/null | head -1)"
+if [ -n "$LATEST_BAK" ]; then
+  BAK_AGE_HOURS=$(( ($(date +%s) - $(stat -f%m "$LATEST_BAK")) / 3600 ))
+  if [ "$BAK_AGE_HOURS" -gt 48 ]; then
+    report_alert "备份新鲜度" "iCloud 最新备份 ${BAK_AGE_HOURS} 小时前（>48h 阈值）"
+  fi
+else
+  report_alert "备份新鲜度" "iCloud 目录无备份文件"
+fi
+
 # ═══ 输出 ═══
 if [ "$MODE" = "--report" ]; then
   # launchd 自动模式：写报告到 docs/synova/CTO-HEALTH.md 自检段（创始人/CTO 打开可见）
@@ -129,7 +158,7 @@ if [ "$MODE" = "--report" ]; then
     if [ "$DRIFT" -eq 0 ]; then
       echo "- ✅ 对齐通过（控制塔 ${LATEST}）"
     else
-      echo "- ⚠️ 发现 ${#REPORT[@]} 项漂移："
+      echo "- ⚠️ 发现 ${#REPORT[@]} 项问题（[ALERT] 告警 / [DRIFT] 漂移）："
       for line in "${REPORT[@]}"; do echo "  - ${line}"; done
     fi
   } >> "$REPORT_FILE" 2>/dev/null
