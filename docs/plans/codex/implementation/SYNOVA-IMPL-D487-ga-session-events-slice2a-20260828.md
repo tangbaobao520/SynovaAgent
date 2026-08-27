@@ -33,7 +33,7 @@
 * 后果：诊断的阶段推进/模块结果/报告产出不可回放——「上次诊断为什么得出这个结论」无法从事件流追溯（K3 咨询的核心价值）。
 
 ### 现状确认（实测）
-* `session-store.ts` L60-65：SessionEventType = 'message' | 'tool_result' | 'system'——**无诊断事件类型**（phase/module/report）——需扩展。
+* `session-store.ts` L58：`SessionEventType = 'message' | 'tool_result' | 'system'`——**无诊断事件类型**（phase/module/report）——需扩展；L131 的 `event_type CHECK(event_type IN ('message','tool_result','system'))` **约束需同步扩展**（否则诊断事件 INSERT 失败）。
 * `conversation-engine.ts` 支持 `config.sessionManager` 注入（L399）——装配点就绪，只差实例化点传参。
 * GA 诊断链路：diagnosis.ts（L1 接口）→ diagnosis-launcher（会话上下文 + eventBus L62）→ ConversationEngine——装配路径清晰。
 
@@ -49,7 +49,7 @@
 |------|------|------|
 | src/agent/conversation-engine.ts | 修改 | sessionManager 装配——5 个引擎实例化点（bootstrap/server/tui 等）统一传 `config.sessionManager`；生产路径（L617 附近）消费 sessionManager（消息走 SessionStore 而非仅内存/旧路径） |
 | src/agent/diagnosis-launcher.ts | 修改 | 诊断阶段事件落流——eventBus 的阶段推进/模块结果/报告产出调 `appendEvent(sessionId, 'system'/'tool_result', {phase, module, ...})`（诊断事件类型，见 session-store） |
-| src/store/session-store.ts | 修改 | SessionEventType 扩展诊断事件类型（如 'diagnosis_phase' | 'diagnosis_module' | 'diagnosis_report'），appendEvent 类型校验同步 |
+| src/store/session-store.ts | 修改 | SessionEventType 扩展诊断事件类型（如 'diagnosis_phase' \| 'diagnosis_module' \| 'diagnosis_report'）+ **L131 event_type CHECK 约束同步扩展**（漏扩则 INSERT 失败）+ appendEvent 类型校验同步 |
 | src/deploy/bootstrap.ts + src/server.ts | 修改 | 实例化点传 sessionManager（bootstrap L682 已创建 → 传入 ConversationEngine；server L116 services.sessionManager 传入诊断链路） |
 | tests/agent/diagnosis-session-events.test.ts | 新建 | 诊断全链路事件流断言：① consult 一次 → session_events 含阶段/模块/报告事件（red=现状仅 checkpoint 无事件 → green）；② 回放 deriveMessages/事件序列与诊断过程一致（交付物可自证）；③ 双写失败 → degraded 显式（铁律 31） |
 
