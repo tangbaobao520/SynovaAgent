@@ -2,7 +2,7 @@
 # AUTO 区机器生成，禁止手写；MANUAL 区人工微调归属，生成器逐字节保留。
 # 改完跑 bash scripts/product-lines/refresh-all.sh 生效。
 version: 1.0
-generated_at: "2026-08-16 20:40:14"
+generated_at: "2026-08-28 03:39:54"
 todos:
 # AUTO:START
   - id: "T-1-01"
@@ -221,6 +221,14 @@ todos:
     owner: "Claude Code"
     depends: ["D355"]
     acceptance: "场景 GS-03、GS-05 转绿（exit 0 + 证据入库）"
+  - id: "T-10-04"
+    line: 10
+    title: "CONDITIONAL PASS（无 P0）：三目标缺陷（P0-1 manifest 挂载/P1-1 degraded 拦截/P1-3 入口校验）在其层全部物理（D356）"
+    source: "审计发现台账（K3 D356 审计）"
+    priority: P1
+    owner: "Claude Code"
+    depends: ["D356"]
+    acceptance: "场景 GS-03、GS-05 转绿（exit 0 + 证据入库）"
   - id: "T-15-01"
     line: 15
     title: "①V5 视图硬编码旧 6 专家（D282 未传播，铁律 9 违规实例）；②gate-status.json 缺失（3/19 信号仅 3 文件）；③铁律 36 无（D340）"
@@ -391,5 +399,70 @@ todos:
     acceptance: "场景 GS-07 转绿（exit 0 + 证据入库）"
 # AUTO:END
 # MANUAL:START
-manual: []
+manual:
+  # ── 2026-08-28 CTO 补录：战略级任务全景（此前 todos 只聚合审计发现，缺战略层）──
+  - id: "T-M-01"
+    line: 1
+    title: "桌面端 Win 部署验收（D536 waiting 项）: 双击安装→启动→出窗实测"
+    source: "D536 部署验收（Mac 闭环，Win waiting）"
+    priority: P0
+    owner: "Win 侧"
+    depends: []
+    acceptance: "Win 安装包实测四断言 exit 0 + 证据入库（runbook: founder-demo-win）"
+  - id: "T-M-02"
+    line: 1
+    title: "左栏 Codex 风格验收合并（D538 实现 910 行躺分支）+ 设计文档 8 条可证伪验收逐条核"
+    source: "前端交互设计-左栏Codex风格-v1（PR #220）+ feat/d538 分支"
+    priority: P0
+    owner: "DeepSeek Harness"
+    depends: []
+    acceptance: "vitest 绿 + CI 绿 + 合并 main + 设计文档 8 验收项逐条标注"
+  - id: "T-M-03"
+    line: 1
+    title: "左栏 GA 置灰项转真数据（等 /api/ga/calibration 后端）"
+    source: "D538 派单统筹（GA 后端缺失已登记）"
+    priority: P1
+    owner: "编码 session"
+    depends: ["T-M-02"]
+    acceptance: "GA 项从置灰转真实数据渲染（Module-3 后端就绪后）"
+  - id: "T-M-04"
+    line: 20
+    title: "施工图 Track A 部署轨收尾（哇呢宝贝部署主线）"
+    source: "DSH迁移施工图-20260820 §Track A（最高优先）"
+    priority: P0
+    owner: "CTO 统筹"
+    depends: ["T-M-01", "T-M-02"]
+    acceptance: "哇呢宝贝可实际部署使用（桌面端 L01 8 验证点 ≥6 verified）"
+  - id: "T-M-05"
+    line: 20
+    title: "K3 战略咨询 D394 片1: 哨兵 findings 事件化（2-3 天）"
+    source: "K3 战略咨询 2026-08-16（Mac 线现在做）"
+    priority: P1
+    owner: "DeepSeek Harness"
+    depends: []
+    acceptance: "sentinel findings 事件流接线（含 durationMs 时间戳 bug 修复）"
+  - id: "T-M-06"
+    line: 20
+    title: "施工图 Track B Stage 0-1（部署后启动；D1 事件溯源 spec 已有 D500）"
+    source: "DSH迁移施工图 §Track B（08-21 定：Stage 0 部署后 / Stage 1 9~10月）"
+    priority: P2
+    owner: "CTO 统筹"
+    depends: ["T-M-04"]
+    acceptance: "Stage 0 评估会 + Stage 1 切片排期（D500 spec 复核起点）"
+  - id: "T-M-07"
+    line: 20
+    title: "K3 战略咨询 D394 片2: 诊断会话事件化（6-8 天，依赖 D355-D360 契约）"
+    source: "K3 战略咨询（Win 部署后）"
+    priority: P2
+    owner: "Win 侧"
+    depends: ["T-M-04"]
+    acceptance: "诊断会话事件溯源接线"
+  - id: "T-M-08"
+    line: 17
+    title: "D397' 产品 loop 卫生（Q4）+ D398 组织记忆（数据回流后）"
+    source: "K3 战略咨询（排序末位）"
+    priority: P2
+    owner: "CTO 统筹"
+    depends: ["T-M-07"]
+    acceptance: "按 K3 咨询成功标准（GA 确认率）"
 # MANUAL:END
