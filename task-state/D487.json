@@ -1,0 +1,18 @@
+{
+  "task_id": "D487",
+  "title": "D394 片2-A——GA 诊断会话事件化装配（D500 地基接线，交付物可自证）",
+  "slice": "GA-SESS-2A",
+  "status": "spec_done",
+  "risk": "medium",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-D487-ga-session-events-slice2a-20260828.md",
+    "commit": "PENDING",
+    "by": "dev-doc",
+    "at": "2026-08-28"
+  },
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-28T10:00:00+08:00",
+  "updated_by": "dev-doc"
+}
