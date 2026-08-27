@@ -90,7 +90,6 @@
 2026-08-14T12:23:51+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D336 | AGENT=DeepSeek-Harness | HASH=ac57df3be2cb9f58e79acc9d63c2e91b098df35c
 2026-08-16T08:34:58Z | COMMITTED | pre-commit PASS (D388 一次性补记: rebase 后哈希变化, 原提交 13 组全过) | TASK_ID=D388 | AGENT=DeepSeek-Harness | HASH=01130ae14e13734703255c4f81e24a1dccf3d93f
 2026-08-16T08:38:36Z | CLARIFIED | CT-29 已知缺陷误报: rebase 后 post-commit marker 与 HEAD 对不上, 误判 no-precommit-marker; 原提交 01130ae1 经 pre-commit 13 组 (非绕过) | TASK_ID=D388 | AGENT=DeepSeek-Harness
-2026-08-16T12:00:00+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D384-TEST | AGENT=test
 2026-08-16T16:35:05+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D388 | AGENT=DeepSeek-Harness
 2026-08-16T16:41:15+08:00 | COMMITTED | pre-commit PASS | TASK_ID=D388 | AGENT=DeepSeek-Harness | HASH=cda95169898810cae16fc360b9f1b8a825d9fd50
 2026-08-16T18:17:00+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D389 | AGENT=DeepSeek-Harness
@@ -790,3 +789,11 @@ Binary file .claude/bypass.log matches
 2026-08-27T02:58:15+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=be20ac63d90ecff2125e3b880cec49a8b8dee55c
 2026-08-27T10:59:13+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=cb0473f880b59c642499fdbcf4ddf9282234a9ca
 2026-08-27T11:10:23+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=95991d2752babed80ebbab5740440863f4e0e863
+2026-08-27T12:47:03+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-27T12:47:03+08:00 | COMMITTED | pre-commit DEGRADED-PASS | TASK_ID=D331-test | AGENT=test | HASH=0981e2d54963cd56ec364fa2674b7813facc5767
+2026-08-27T12:47:04+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-27T12:47:04+08:00 | COMMITTED | pre-commit DEGRADED-PASS | TASK_ID=D331-test | AGENT=test | HASH=f114873390dad096e437fd7b267218410e727ecf
+2026-08-27T12:47:04+08:00 | DEGRADED | pre-commit-check.sh not found | TASK_ID=D331-test | AGENT=test
+2026-08-27T12:47:04+08:00 | COMMITTED | pre-commit DEGRADED-PASS | TASK_ID=D331-test | AGENT=test | HASH=cd7f55c38e9bf496769c1c22e03e8b394a8ab38c
+2026-08-27T12:59:14+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=82705a9bcd554889118f6f157b2d99c7b3b355b1
+2026-08-27T13:01:14+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=7e629f5ef5ecee733039a7d55d38be7e0c8875a2
