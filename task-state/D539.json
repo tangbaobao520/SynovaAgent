@@ -1,7 +1,7 @@
 {
   "task_id": "D539",
   "title": "session-worktree-isolation",
-  "status": "impl_done",
+  "status": "audited",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D539-session-worktree-isolation-20260827.md",
     "by": "dsh-devdoc",
@@ -22,9 +22,16 @@
       "memory/notes/implemented/2026-08-27-d539-session-worktree-isolation.md"
     ]
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-08-27-D539.md",
+    "verdict": "CONDITIONAL PASS",
+    "priority": "P0",
+    "p1": "spec 产物从未提交 git（dev-doc 在 stale 主树 feat/d505-impl 写 spec 未提交）——CTO 已补交（PR #235）",
+    "by": "k3",
+    "at": "2026-08-27"
+  },
   "fix_task_id": null,
   "slice": "parallel-isolation",
   "updated_at": "2026-08-27",
-  "updated_by": "DeepSeek-Harness"
+  "updated_by": "CTO"
 }
