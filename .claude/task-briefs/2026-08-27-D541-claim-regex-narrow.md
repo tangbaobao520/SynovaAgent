@@ -48,4 +48,4 @@ L0（控制塔工具层，门禁脚本）
 - [x] verify: bash tests/control-tower/claim-regex-narrow.test.sh — 全过（9 断言：接线/正常/降级/边界）
 - [x] verify: bash -n scripts/pre-commit-check.sh — 语法过
 - [x] verify: SYNO_CI=1 SYNO_DIFF_BASE=origin/main bash scripts/pre-commit-check.sh — 13 组全绿（退出 0）
-- [x] verify: grep -qF '完成.*迁移' scripts/pre-commit-check.sh — L750 正则为收窄后完成语义（『完成…X』方向已含）
+- [x] verify: grep -cF '迁移' scripts/pre-commit-check.sh — L750 正则行存在（三类方向由上方 claim-regex-narrow.test.sh 断言）
