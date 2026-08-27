@@ -46,8 +46,11 @@ OUT=$(cd "$SB" && bash "$SB/scripts/workflow/task-start.sh" "并行测试任务"
 echo "$OUT" | grep -q "worktree-manager.py create" && ok "拦截输出含 worktree 创建命令" || no "拦截输出缺命令提示"
 
 # ── 场景B: 无活跃 session → 不拦截（brief 生成 = 走到后续流程）──
+# D539 主仓只读化: 主树已由 _assert_dev_worktree 拦截；本用例测的是 D515 并行守卫
+# （主树脏 + 活跃 session 才拦），故需 SYNO_ALLOW_MAIN=1 站在"豁免主树"语境下验证
+# 单人放行语义（不渗入 D539 的主仓只读阻断）。
 rm -rf "$SYNO_CT_DIR"; export SYNO_CT_DIR="$TMPD/ct2"; mkdir -p "$SYNO_CT_DIR"
-OUT2=$(cd "$SB" && bash "$SB/scripts/workflow/task-start.sh" "单人测试任务" 2>&1); rc2=$?
+OUT2=$(cd "$SB" && SYNO_ALLOW_MAIN=1 bash "$SB/scripts/workflow/task-start.sh" "单人测试任务" 2>&1); rc2=$?
 [ "$rc2" -eq 0 ] && ok "单人场景: 不拦截 (exit 0)" || no "单人不应拦截, exit=$rc2 :: $OUT2"
 
 # ── 场景C: registry 输出不可解析 → 显式降级不静默 ──
