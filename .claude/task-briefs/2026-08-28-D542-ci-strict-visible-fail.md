@@ -18,10 +18,10 @@ c) memory/ 教训：M1 fail-open 静默失效（检查未执行==检查通过—
 - scripts/pre-commit-check.sh：soft_check() 与 warn_check() 的显示分支重排——SYNO_CI=1 时打印 RED ❌ + [CI strict]，本地打印 YELLOW ⚠️ 原样；计数逻辑一字不动
 - tests/control-tower/ci-strict-visible.test.sh：新建配对测试（6 断言：接线/本地⚠️/CI❌/warn 同型/边界 miss）
 不做什么（含文件路径）：
-- 不改 v5_soft()（已是正确行为）
-- 不改任何判定/计数语义（HARD_FAIL/SOFT_COUNT/WARN_COUNT 的加减条件原样）
-- 不改 scripts/audit/、src/、其他门禁组逻辑
-- 不改 ci.yml（工作流层无变化）
+- 不改 scripts/pre-commit-check.sh 内 v5_soft() 函数（已是正确行为，L106-114）
+- 不改 scripts/audit/ 下任何审计脚本（K3 红线）、src/ 下任何产品代码
+- 不改 scripts/hooks/post-commit.sh、scripts/control-tower/synova-commit（影子提交链路）
+- 不改 .github/workflows/ci.yml（工作流层无变化）
 
 ## Q3: 验收 — 入口 → 交互 → 结果
 入口（从哪触发）：pre-commit / CI Iron Laws job 跑 pre-commit-check.sh 时任一 soft_check/warn_check 命中
