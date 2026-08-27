@@ -22,6 +22,20 @@
 - **防膨胀**: 只动 L750 一行正则 + 同行 swallow-ok；不碰其他门禁逻辑。
 - **作者**: dsh（D541，编码 session）
 
+## V5.2.0 (2026-08-28) — D540 独立 clone 试点 + 影子提交 clone 环境验证 + verify-parallel 迁 CI/PR（MINOR）
+
+> spec: docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D540-clone-pilot-shadow-commit-20260827.md（唯一契约）。
+> 隔离机制从 worktree 升格独立 clone（治理定稿 v3：层1 单机隔离治本 + 层2 跨机单源化）。
+
+- **① install-hooks.sh 新增 _ensure_clone_git_config（clone 环境 git 配置初始化，影子提交前置）**: 幂等初始化 user.name/user.email/core.quotepath=false/credential.helper（local 未设才写、已设不覆盖；env SYNO_GIT_NAME/EMAIL/CREDENTIAL_HELPER 可覆盖；git config 失败 → _degraded_log 记录 + 提示，不阻断 hooks 安装，铁律 11）。堵 post-commit.sh L87「identity 未配置?」降级路径——clone 后同批执行即前置堵漏。
+- **② verify-parallel.sh 新增 --ci-pr \<base\> 模式（写集比对迁 CI/PR）**: base..HEAD 写集 × origin/main 已合 dev doc 写集比对（排除 PR 自身 doc）；新增 compare_writesets_ci（不做 V5.0.1 已完成任务豁免——CI 要拦「本 PR 写集 vs 已合任务写集」重叠，豁免会让对比恒过）。exit 三态 0/1/2（D328 模式 1）。
+- **③ pre-push-check.sh 门禁5 迁移**: 本地不再 --scan-today 强阻断（单机多 session 场景语义不准）→ 软提示 + 脚本缺失探针；CI 权威物理拦截。
+- **④ ci.yml quality job 加 Verify parallel declaration 步骤**: verify-parallel --ci-pr origin/main（docs-only 跳过；fetch-depth:0 已确认）。D540 实测该步骤首次真实执行并通过（此前本地 pre-push 强阻断语义不准）。
+- **⑤ 删 scripts/workflow/post-merge-cleanup.sh（铁律 37）**: 孤儿脚本（零生产调用，仅 loop-score 检查存在项）；其职责已被 影子提交 + union 合并覆盖。
+- **测试**: clone-config-init.test.sh（13 断言）/ clone-shadow-commit.test.sh（9 断言，真实沙箱 git + 真实 hook 链：identity 配置→真实 commit→COMMITTED+影子提交+树干净；无 identity→L87 降级；防递归；双 clone 隔离 sha256）/ verify-parallel-ci.test.sh（7 断言 block/pass/degraded+接线）。
+- **防膨胀**: 零新组件（复用 install-hooks/verify-parallel + git 原生 clone）；不改 post-commit.sh/synova-commit（D537 #4 已恢复，防 D530 二次覆盖）。
+- **作者**: dsh（D540，编码 session）
+
 ## V5.1.4 (2026-08-26) — D537 控制塔并行污染 + 提交链摩擦根治（Win 反馈 #2-#6）（PATCH）
 
 > spec: docs/synova/coordination/派单-D537-并行CTO-20260826.md。5 项修已有 bug（#1 CRLF 已由 D520 修复，#6 windows 矩阵已由 D520 建立）。
