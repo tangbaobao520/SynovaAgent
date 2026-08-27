@@ -19,7 +19,7 @@
 - tests/control-tower/clone-shadow-commit.test.sh — 新建（影子提交 clone 集成 harness，真实沙箱 git + 真实 hook 链）。
 - tests/control-tower/verify-parallel-ci.test.sh — 新建（L1 沙箱：--ci-pr block/pass/degraded + 接线）。
 ### c) 决策
-影子提交机制已恢复（D537 #4，post-commit.sh L69-84）→ 不改 post-commit.sh/synova-commit（D530 二次覆盖风险）；clone 配置初始化放 install-hooks.sh（clone 后一次，幂等）；verify-parallel 迁移改 pre-push + ci.yml + verify-parallel.sh 三处；删除 post-merge-cleanup.sh（loop-score 检查存在项自然计 0）。无冲突，直接接线。
+影子提交机制已恢复（D537 #4，post-commit.sh L69-84）→ 不改 post-commit.sh/synova-commit（D530 二次覆盖风险）；clone 配置初始化放 install-hooks.sh（clone 后一次，幂等）；verify-parallel 三处改动（pre-push + ci.yml + verify-parallel.sh）；删除 post-merge-cleanup.sh（loop-score 检查存在项自然计 0）。无冲突，直接接线。
 
 ## Q1: 调研 — 业界最佳实践 / Anthropic 决策链 / memory 历史教训
 a) 业界：`git clone` 是 git 官方「完全隔离工作区」最小原生机制（独立 .git 对象库 + index + HEAD + 提交历史）。clone 后标准初始化 = user.name/email（或 global）+ core.quotepath=false + credential helper —— 三步缺一不可。
