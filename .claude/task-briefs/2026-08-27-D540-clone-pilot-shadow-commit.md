@@ -34,7 +34,9 @@ c) memory/ 教训：M8 共享暂存区竞争（4 次复发）、M13 测试沙箱
 - scripts/pre-push-check.sh — 门禁5 去 `--scan-today` 强阻断（不再 exit 1 拦推送），改软提示 + 脚本缺失探针
 - .github/workflows/ci.yml — quality job 加 verify-parallel `--ci-pr`（docs-only 跳过）
 - scripts/workflow/post-merge-cleanup.sh — 删除（铁律 37）
-- tests/control-tower/clone-config-init.test.sh / clone-shadow-commit.test.sh / verify-parallel-ci.test.sh — 三个 L1 沙箱测试
+- tests/control-tower/clone-config-init.test.sh — 新建（配置初始化幂等/缺失才写/env/覆盖未动/降级）
+- tests/control-tower/clone-shadow-commit.test.sh — 新建（影子提交 clone 集成 harness，物理断言 C1-C4）
+- tests/control-tower/verify-parallel-ci.test.sh — 新建（--ci-pr block/pass/degraded + 接线）
 - .claude/task-briefs/2026-08-27-D540-clone-pilot-shadow-commit.md — 本任务 brief（Gate 0）
 
 不做什么：
