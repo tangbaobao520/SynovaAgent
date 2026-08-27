@@ -10,6 +10,7 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 #   正常 — include「新增 src/y.sh — 原因」→ 裸路径
 #   边界 — include 无修饰裸路径 → 原样通过（不回归）
 #   边界 — exclude「不改 scripts/audit/（红线）」→ 剥壳保持（既有语义不回归）
+#   D543 — include「scripts/x.sh L750」剥行号后缀 → 裸路径（对齐 devdoc_writeset）
 #   接线 — resolve-commit-brief.sh 内嵌降级解析器同步含剥壳正则
 # 沙箱: 纯文本 fixture 注入，零 git
 # ═══════════════════════════════════════════════════════════════
@@ -33,6 +34,7 @@ cat > "$FIXTURE" <<'EOF'
 - 修复 scripts/workflow/task-start.sh: CRLF
 - 实现 tests/l3/foo.test.ts
 - src/plain/already-bare.py
+- scripts/pre-commit-check.sh L750
 不做什么:
 - 不改 scripts/audit/（K3 专属红线）
 - 不动 src/immutable/core.ts
@@ -50,6 +52,10 @@ echo "$INCLUDES" | grep -qx "src/l4/bar.ts" && ok "include 剥「修改 + — �
 echo "$INCLUDES" | grep -qx "scripts/control-tower/new-gate.sh" && ok "include 剥「新增」" || no "新增未剥"
 echo "$INCLUDES" | grep -qx "scripts/workflow/task-start.sh" && ok "include 剥「修复 + : 后缀」" || no "修复/: 未剥"
 echo "$INCLUDES" | grep -qx "tests/l3/foo.test.ts" && ok "include 剥「实现」" || no "实现未剥"
+
+# ── D543: 剥行号后缀「path L750」（对齐 devdoc_writeset 同款正则；D541 CI 红第三处根因）──
+echo "$INCLUDES" | grep -qx "scripts/pre-commit-check.sh" && ok "D543: 剥「L750」行号后缀 → 裸路径" || no "D543: L\d+ 后缀未剥: $(echo "$INCLUDES" | grep pre-commit | head -1)"
+echo "$INCLUDES" | grep -qE "pre-commit-check.sh L[0-9]" && no "D543: 行号后缀残留" || ok "D543: 无 L\d+ 残留"
 
 # ── 边界: 裸路径原样、exclude 剥壳语义不回归 ──
 echo "$INCLUDES" | grep -qx "src/plain/already-bare.py" && ok "裸路径原样通过（不回归）" || no "裸路径被破坏"
