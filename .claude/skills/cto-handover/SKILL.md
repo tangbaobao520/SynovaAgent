@@ -78,7 +78,7 @@ description: Synova CTO 交接文档——完整上下文（过渡 CTO 交接给
 8. 无遗漏（LLM 环境/执行方/交付要求/审计验收项）
 
 ### ④ 提交（固定动作）
-worktree（基于 origin/main）→ commit → push → PR → 合并 → task-state 登记
+clone（基于 origin/main，git clone --local 主工作区 + 修正 origin + git 配置 + install-hooks）→ commit → push → PR → 合并 → task-state 登记
 
 ### ⑤ 给创始人（可直接复制粘贴的派单说明）
 完成后必须给创始人一段**自包含的派单说明**（创始人直接复制转执行方，零查找）：
