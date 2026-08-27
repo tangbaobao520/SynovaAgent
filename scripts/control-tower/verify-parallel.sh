@@ -33,12 +33,14 @@ JSON_OUT="no"
 MODE=""
 DOC_A=""
 DOC_B=""
+CI_PR_BASE="origin/main"   # D540: --ci-pr 默认基准 ref（可被 --ci-pr <base> 覆盖）
 for arg in "$@"; do
   case "$arg" in
     --doc-a) MODE="pair"; DOC_A="${2:-}"; shift 2 ;;
     --doc-b) DOC_B="${2:-}"; shift 2 ;;
     --check-declared) MODE="declared"; DOC_A="${2:-}"; shift 2 ;;
     --scan-today) MODE="today" ;;
+    --ci-pr) MODE="ci-pr"; CI_PR_BASE="${2:-origin/main}"; shift 2 ;;
     --json) JSON_OUT="yes" ;;
     *) : ;;
   esac
@@ -142,6 +144,44 @@ except Exception:
   return 0
 }
 
+# D540: compare_writesets_ci — CI/PR 模式下的纯写集比对（不做 V5.0.1 已完成任务豁免——
+#   CI 要拦的是「本 PR 写集 vs 已合任务写集」的重叠；若沿用豁免，已合 doc 恒被跳过，
+#   对比恒过，失去 CI 物理拦截意义）。与 compare_docs 的区别只在「不豁免」。
+#   @input  <doc-a> <doc-b> 均须为可读文件（已合 doc 已物化到临时文件）
+#   @output 0 = 无交集 / 1 = 写集重叠（业务阻断）/ 2 = 内核异常 degraded
+compare_writesets_ci() {
+  local da="$1" db="$2"
+  if [ ! -f "$da" ]; then fail_open_skip "$da" "doc 不存在"; return 0; fi
+  if [ ! -f "$db" ]; then fail_open_skip "$db" "doc 不存在"; return 0; fi
+  local result py_exit st reason
+  result=$($PYBIN "$SCRIPT_DIR/devdoc_writeset.py" --overlap-a "$da" --overlap-b "$db" 2>&1)
+  py_exit=$?
+  if [ "$py_exit" -eq 1 ]; then
+    # block: 有交集（业务判定）
+    echo "  ❌ 并行声明与实际写集不符 — 重叠文件:"
+    echo "$result" | "$PYBIN" -c "import json,sys; d=json.load(sys.stdin); [print(f\"     - {o}\") for o in d.get('overlap',[])]" 2>/dev/null || echo "$result"
+    echo "     ($da vs $db)"
+    emit_json "block" "$da" "$db" "$(echo "$result" | "$PYBIN" -c "import json,sys; print(','.join('\"%s\"'%o for o in json.load(sys.stdin).get('overlap',[])))" 2>/dev/null || echo "")" "写集重叠"
+    return 1
+  fi
+  if [ "$py_exit" -ne 0 ]; then
+    # 内核执行异常 (exit 非 0/1) — degraded, 不静默当通过
+    echo "  ⚠️  devdoc_writeset.py 执行异常 (exit=$py_exit) — degraded ($da/$db)" >&2
+    log_degraded "devdoc_writeset.py exit=$py_exit ($da/$db)"
+    emit_json "degraded" "$da" "$db" "[]" "内核执行异常 exit=$py_exit"
+    return 2
+  fi
+  st=$(echo "$result" | "$PYBIN" -c "import json,sys; print(json.load(sys.stdin).get('status','pass'))" 2>/dev/null || echo "pass")
+  if [ "$st" = "skip" ]; then
+    reason=$(echo "$result" | "$PYBIN" -c "import json,sys; print(json.load(sys.stdin).get('reason',''))" 2>/dev/null || echo "解析跳过")
+    fail_open_skip "$da/$db" "$reason"
+    return 0
+  fi
+  echo "  ✅ 写集零交集 ($(basename "$da") vs $(basename "$db"))"
+  emit_json "pass" "$da" "$db" "[]" ""
+  return 0
+}
+
 # ── 今日文件筛选 (D366) — 必须在模式分发之前定义: 分支内的定义只在分支执行时生效 ──
 # D366: 按文件名日期判断"今日" — 替代 find 按 mtime 的今日判定 (git pull/checkout 刷 mtime 不可靠)
 # 用法: today_files_by_prefix <dir>   # brief: YYYY-MM-DD 文件名前缀 (扫描 *.md)
@@ -230,8 +270,59 @@ elif [ "$MODE" = "today" ]; then
       compare_docs "${DOC_ARR[$i]}" "${DOC_ARR[$j]}" || handle_compare $?
     done
   done
+
+elif [ "$MODE" = "ci-pr" ]; then
+  # D540: CI/PR 模式 —— base..HEAD 写集 × origin/main 已合 dev doc 写集比对
+  #   用法: verify-parallel.sh --ci-pr <base> (默认 origin/main)
+  #   base = 已合 ref; HEAD = PR head。exit 1=写集重叠 / 0=无交集 / 2=内核异常 degraded
+  #   fetch-depth:0 依赖: git diff base...HEAD + ls-tree base 需完整历史（ci.yml 已确认）
+  if ! git -C "$REPO_DIR" rev-parse --verify -q "$CI_PR_BASE" >/dev/null 2>&1; then
+    echo "  ⚠️  基准 $CI_PR_BASE 不可解析 — degraded (fail-closed)" >&2
+    log_degraded "ci-pr base $CI_PR_BASE 不可解析"
+    emit_json "degraded" "" "" "[]" "base 不可解析"
+    exit 2
+  fi
+  # base..HEAD 中的 dev doc（本 PR 自身 doc）
+  PR_DOCS=$(git -C "$REPO_DIR" diff --name-only --diff-filter=d "$CI_PR_BASE"...HEAD 2>/dev/null \
+             | grep -E '^docs/plans/codex/implementation/SYNOVA-IMPL-[^/]+\.md$' || true)
+  if [ -z "$PR_DOCS" ]; then
+    echo "  ✅ 无 dev doc 写集变化（${CI_PR_BASE}..HEAD）— 跳过"
+    exit 0
+  fi
+  TMPD="$(mktemp -d)"; trap 'rm -rf "$TMPD"' EXIT
+  # 物化已合 dev doc 到临时文件（排除 PR 自身 doc = 同路径 = 同一任务演进，非并行冲突）
+  MERGED_DOCS=""
+  while IFS= read -r mpath || [ -n "$mpath" ]; do
+    [ -z "$mpath" ] && continue
+    # 排除 PR 自身 doc（同路径 = PR 修订自己的任务 doc，不是与已合任务并行冲突）
+    if printf '%s\n' "$PR_DOCS" | grep -qxF "$mpath"; then continue; fi
+    local_mtmp="$TMPD/$(basename "$mpath")"
+    if git -C "$REPO_DIR" show "$CI_PR_BASE:$mpath" > "$local_mtmp" 2>/dev/null; then  # swallow-ok: 物化失败走 else 分支 degraded 记录（不静默当 pass）
+      MERGED_DOCS="$MERGED_DOCS $local_mtmp"
+    else
+      echo "  ⚠️  物化 $mpath 失败 — degraded" >&2
+      log_degraded "ci-pr show $mpath 失败"
+      DEGRADED=1
+    fi
+  done < <(git -C "$REPO_DIR" ls-tree -r --name-only "$CI_PR_BASE" 2>/dev/null \
+             | grep -E '^docs/plans/codex/implementation/SYNOVA-IMPL-[^/]+\.md$' || true)
+  if [ -z "$MERGED_DOCS" ]; then
+    if [ "$DEGRADED" -eq 1 ]; then
+      echo "  ⚠️  已合 dev doc 物化全部失败 — degraded" >&2
+      exit 2
+    fi
+    echo "  ✅ 无已合 dev doc 可比对（${CI_PR_BASE}）— 跳过"
+    exit 0
+  fi
+  # 两两比对：本 PR doc vs 已合 doc（compare_writesets_ci —— 无豁免，纯重叠判定）
+  while IFS= read -r pdoc || [ -n "$pdoc" ]; do
+    [ -z "$pdoc" ] && continue
+    for mtmp in $MERGED_DOCS; do
+      compare_writesets_ci "$pdoc" "$mtmp" || handle_compare $?
+    done
+  done <<< "$PR_DOCS"
 else
-  echo "用法: verify-parallel.sh --doc-a <a> --doc-b <b> | --check-declared <doc> | --scan-today [--json]" >&2
+  echo "用法: verify-parallel.sh --doc-a <a> --doc-b <b> | --check-declared <doc> | --scan-today [--json] | --ci-pr <base> [--json]" >&2
   exit 2
 fi
 
