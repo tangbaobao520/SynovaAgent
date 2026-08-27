@@ -18,3 +18,17 @@
 - **BSD grep 无 `-P` 使本地「假通过」**：pre-commit-check.sh 组8/组10 用 `grep -P`，本地 BSD grep 报「invalid option -- P」→ 这些检查本地不评估（假通过）；CI 用 GNU grep 正确评估。凡涉及 `grep -P` 的控制塔检查，本地无法完整复验 CI 行为——需 CI 日志或 GNU grep 环境。
 
 > 备注：D541 CI quality job 一度显示「2 组未通过」（不可本地复现，疑为 GNU grep -P 差异）；以 SYNO_CI=1 干净复验 exit 0 为准，K3 审计用 CI 日志核对。
+
+## CI 红三处根因链（CI 日志实证修复，2026-08-28 补记）
+
+D541 首次推送 CI「2 组未通过」→ 修复 memory_refs 后变「1 组」→ 修复 G12 后**绿**。三处根因（均从 CI 日志实证，token 按 V5.1.3① 惯例取 ~/.dsh/.credentials.yaml）：
+
+1. **组5 铁律47（brief 自我触发）**: 本任务 brief 的 Done verify 行写了 `grep -qF '完成.*迁移'`——该字面量**命中收窄后正则的『完成…X』方向** → 铁律47 误触发。修法：改用不含完成声称字面量的锚（bare『迁移』且同行无『完成』）。**教训：验证正则存在的 verify 行不能写正则字面量本身**。
+2. **组6 memory_refs 为空**: plan.json 无 memory_refs 字段 → soft_check「Q1a 未引用 memory/ 文件」。修法：plan.json 回填 brief Q1c 引用的 memory 教训路径（须真实存在，check 对缺失路径硬阻断）。
+3. **组12 G12 Q2 行号后缀**: brief Q2 写成 `scripts/pre-commit-check.sh L750` —— **brief_parser.parse_q2 不剥 ` L\d+` 后缀**（devdoc_writeset.clean_entry 会剥，brief_parser 不会）→ match_path 精确尾匹配失败 → 判「不在 Q2 范围」。修法：Q2 路径行禁带行号后缀。
+
+**方法论教训（M4/M2 完整闭环）**: 本地 SYNO_CI=1 复验有两类盲区——① staged 为空时 resolve-commit-brief 解析不到 brief → 铁律47/G12 被跳过（假绿）；② 日期翻篇（brief 文件名前缀非「今日」）→ 同样解析不到。**唯一可靠复验 = push 后用 token 拉 CI 日志逐行核对 ❌**（本地三层直验只作辅助）。
+
+## 版本管理（规范补齐，2026-08-28）
+
+按 docs/synova/coordination/版本管理规范-控制塔.md 执行：D540 → V5.2.0（MINOR：install-hooks clone 配置初始化 + verify-parallel --ci-pr 新模式 + 门禁5 迁移）；D541 → V5.2.1（PATCH：铁律47 门禁判定逻辑变化）。VERSION.md 条目 + logs/version.log（runtime，gitignored）已写；tag 按 §6 合并 main 后补打（D319 feature 推送合法）。
