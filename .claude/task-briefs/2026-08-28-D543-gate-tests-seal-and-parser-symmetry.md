@@ -18,6 +18,7 @@ c) memory/ 教训：M7 测试-实现漂移；D541 三处根因实录（brief_par
 - 更新 tests/control-tower/post-commit-marker.test.sh（S1a/S6a/S7/S8 断言对齐 D521 hook 层登记：pass → 新增 1 行 COMMITTED）
 - 更新 scripts/control-tower/brief_parser.py（parse_q2 path 链补 `L\d+` 后缀剥离，对齐 devdoc_writeset.py:76）
 - 更新 tests/control-tower/brief-parser-strip.test.sh（加 D543 剥后缀用例）
+- 新建 tests/control-tower/brief_parser.test.sh（U7/CT-40 同名配对测试，6 断言含 L750 剥后缀）
 不做什么（含文件路径）:
 - 不改 scripts/hooks/post-commit.sh（hook 行为正确，是测试过时）
 - 不改 scripts/workflow/check-dev-doc-write-set.sh、scripts/control-tower/devdoc_writeset.py（既有模式为参照）
