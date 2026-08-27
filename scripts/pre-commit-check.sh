@@ -88,13 +88,15 @@ soft_check() {
   local count=0
   [ -n "$matches" ] && count=$(echo "$matches" | grep -c . 2>/dev/null) || count=0
   if [ "$count" -gt 0 ]; then
-    echo -e "  ${YELLOW}⚠️  ${name}: ${count} 处  [V5 软提示——CI 为权威，本地不阻断]${RESET}"
-    echo "$matches" | head -8 | while read -r line; do [ -n "$line" ] && echo "     ${line}"; done
+    # D542: CI strict 下必须显示 ❌（此前显示 ⚠️ 导致「N 组未通过」在日志中找不到对应组——M1 类失败不点名）
     if [ "${SYNO_CI:-0}" = "1" ]; then
-    HARD_FAIL=$((HARD_FAIL + 1))  # D516 CI strict
-  else
-    SOFT_COUNT=$((SOFT_COUNT + 1))
-  fi
+      echo -e "  ${RED}❌ ${name}: ${count} 处  [CI strict——软提示在 CI 上为硬阻断]${RESET}"
+      HARD_FAIL=$((HARD_FAIL + 1))  # D516 CI strict
+    else
+      echo -e "  ${YELLOW}⚠️  ${name}: ${count} 处  [V5 软提示——CI 为权威，本地不阻断]${RESET}"
+      SOFT_COUNT=$((SOFT_COUNT + 1))
+    fi
+    echo "$matches" | head -8 | while read -r line; do [ -n "$line" ] && echo "     ${line}"; done
     log_gate "$name" hit
   else
     echo -e "  ${GREEN}✅ ${name}${RESET}"
@@ -152,13 +154,15 @@ warn_check() {
   local count=0
   [ -n "$matches" ] && count=$(echo "$matches" | grep -c . 2>/dev/null) || count=0
   if [ "$count" -gt 0 ]; then
-    echo -e "  ${YELLOW}⚠️  ${name}: ${count} 处  [警告]${RESET}"
-    echo "$matches" | head -5 | while read -r line; do [ -n "$line" ] && echo "     ${line}"; done
+    # D542: CI strict 下必须显示 ❌（与 soft_check 同修——失败不点名则「N 组未通过」无法定位）
     if [ "${SYNO_CI:-0}" = "1" ]; then
+      echo -e "  ${RED}❌ ${name}: ${count} 处  [CI strict——历史 WARN 类在 CI 也转硬]${RESET}"
       HARD_FAIL=$((HARD_FAIL + 1))  # D516 CI strict: 历史 WARN 类在 CI 也转硬
     else
+      echo -e "  ${YELLOW}⚠️  ${name}: ${count} 处  [警告]${RESET}"
       WARN_COUNT=$((WARN_COUNT + 1))
     fi
+    echo "$matches" | head -5 | while read -r line; do [ -n "$line" ] && echo "     ${line}"; done
   fi
 }
 

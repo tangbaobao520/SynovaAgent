@@ -1,0 +1,19 @@
+{
+  "task_id": "D542",
+  "title": "ci-strict-visible-fail",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "by": "CTO",
+    "at": "2026-08-28",
+    "branch": "fix/d542-ci-strict-visible",
+    "files": [
+      "scripts/pre-commit-check.sh",
+      "tests/control-tower/ci-strict-visible.test.sh"
+    ]
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-28",
+  "updated_by": "alloc-task-id"
+}
