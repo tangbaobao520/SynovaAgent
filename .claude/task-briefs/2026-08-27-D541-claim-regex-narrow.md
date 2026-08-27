@@ -24,7 +24,7 @@ c) memory/ 教训：D537「改共享 hook 先看全历史段落」（pre-commit-
 
 ## Q2: 范围 — 正确的最简方案
 做什么：
-- scripts/pre-commit-check.sh L750 — 正则改为只认『已X / X.*完成 / 完成.*X』三类完成语义，去掉 bare 字形匹配
+- scripts/pre-commit-check.sh — 正则改为只认『已X / X.*完成 / 完成.*X』三类完成语义，去掉 bare 字形匹配
 - tests/control-tower/claim-regex-narrow.test.sh — 新建配对测试
 - task-state/D541.json — impl 段 + status=impl_done
 - .claude/task-briefs/2026-08-27-D541-claim-regex-narrow.md — 本任务 brief
