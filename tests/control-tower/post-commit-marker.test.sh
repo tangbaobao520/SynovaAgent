@@ -44,7 +44,12 @@ NO_HOOKS="$TEST_ROOT/nonexistent-hooks-path"   # 显式覆盖全局 hooksPath �
 
 new_repo() { # new_repo <名字> — init + 初始提交 (无 hook) + .claude + hook 安装
   REPO="$TMPROOT/$1"
-  git -C "$TMPROOT" init -q "$REPO"
+  # D543: 显式 -b main——git init 默认分支名随宿主配置漂移（本地 main / CI runner master），
+  #   S10 的 `checkout main` 依赖此名。密封性修复（M12 同族：测试不得依赖宿主 git 配置）。
+  git -C "$TMPROOT" init -q -b main "$REPO" 2>/dev/null || {
+    git -C "$TMPROOT" init -q "$REPO"
+    git -C "$REPO" branch -q -m main 2>/dev/null || true
+  }
   git -C "$REPO" config user.email "test@test.local"
   git -C "$REPO" config user.name "test"
   echo "x" > "$REPO/f.txt"
