@@ -1,8 +1,8 @@
 # 派单：左栏 Codex 风格验收合并（D544）
 
-> 派单: CTO | 2026-08-28 | 认领: 🛠 编码 session（验收 + 修红）→ CTO 合并
+> 派单: CTO | 2026-08-28 | 认领: 📋 dev-doc（撰写验收 spec）→ 🛠 编码（按 spec 执行）→ CTO 复验合并
 > 方法论: 战略待办 T-M-02——桌面端前端能力落地 + 消除孤儿实现（D402/D445 同型风险）
-> 流程: 编码 session 执行验收测试 + 修红 → CTO 复验合并
+> 流程: dev-doc 出验收 spec → 编码按 spec 执行 → K3/CTO 复验合并
 > 上一轮教训: D538 实现 910 行躺分支未合并（孤儿风险）；D540 CI 红（本地绿 ≠ CI 绿，交付必须 CI check-runs 确认）
 
 ---
@@ -55,13 +55,13 @@
 
 **spec 必答题**（编码 session 必须回答，缺一返修）:
 
-1. **测试实跑**: electron-renderer `npm install` → `npm test`（vitest run capability.test.ts）——结果如实（过/红 + 红的修复清单）。红修复在分支上做（follow-up commit）。
+1. **「测试实跑」章节**: npm install → npm test 执行步骤 + 预期输出 + 红时修复清单模板（红修复在分支 follow-up commit）。
 2. **8 条验收逐条核**（§六原文对照实现代码，每条标注 + 证据）:
    - ①能力位位置 ②Lucide 线性图标无 emoji ③右栏四联动 ④取消选中回三标签 ⑤GA 权限置灰 ⑥折叠态图标条 ⑦代码质量（as any=0/接线/degraded/expect）⑧术语无 FDE
-   - 标注格式: `验收N: 通过|部分|未实现 — 证据（文件:行 或 测试名）`。**UI 呈现类（1/2/6）允许"代码核对"级证据（组件 JSX 结构对照），但必须给 file:line**。
-3. **接口真接线核实**: capability store 对 /api/signals、/api/loops/status、/api/actions 的调用点（fetch 代码 file:line）+ GA 项置灰实现（非 GA 角色渲染分支）。
-4. **合并就绪**: merge 分支方案（feat 分支 merge origin/main → 解冲突 → push → CI 三 job 绿确认 check-runs）。**交付前必须贴 check-runs 结果**（本地绿不算）。
-5. **红与缺口清单**: 若 8 条有"未实现/部分"，列修复项（每项 file:line + 修法），小项直接修，大项报 CTO 裁决。
+   UI 呈现类（1/2/6）证据标准 = 组件 JSX file:line 对照；逻辑类（3/4/5/7）= 测试名 + store/组件 file:line。
+3. **「接口接线核对清单」章节**: 3 接口调用点核验方法 + GA 置灰渲染分支核验方法。
+4. **「合并流程」章节**: merge 分支方案步骤 + CI 三 job 确认方法——明确「本地绿不算，CI check-runs 为准」。
+5. **「缺口分级」章节**: 小项编码直接修 / 大项停手报 CTO 裁决的分级标准。
 
 **验收**（物理可复现，禁止文档声称）:
 
@@ -83,12 +83,13 @@
 - task-state 加 `"slice": "leftbar-acceptance"` 字段。
 - 审计验收 = 8 条标注表 + CI 三绿 + 分支合并进 main。
 
-## 给编码 session 的交付要求
+## 给 dev-doc 的交付要求
 
-1. **工作方式**: 基于 origin/main 新建 worktree/clone，将 feat/d538-frontend-leftbar merge 进来后在**该工作树**内验收与修复（不要在旧 feat 分支直接改）。
-2. **验收标注表**必须贴交付报告（8 行，每行证据 file:line），禁止"已完成"式空泛声称（M2）。
-3. **CI check-runs 结果必须贴**（三 job 全 success 才算交付完成）。
-4. **诚实声明**: npm install 依赖问题/vitest 环境问题如实报（不静默绕过）。
+1. **spec 文件命名**: `docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D544-leftbar-acceptance-20260828.md`
+2. **spec 读者是编码 session**：拿到即可执行，零二次提问。
+3. **验收标准引用设计文档 §六原文**（不转述失真）。
+4. **spec 中固化执行纪律**: 环境问题如实报不绕过；CI check-runs 为准。
+5. **写集声明**: Q2 = electron-renderer/ + tests/electron/；排除 src/、scripts/audit/、pre-commit-check.sh、ci.yml。
 
 ---
 
@@ -111,7 +112,7 @@
 
 ```
 【派单】左栏 Codex 风格验收合并（D544）
-> 认领: 🛠 编码 session（验收+修红）→ CTO 复验合并 | slice: leftbar-acceptance
+> 认领: 📋 dev-doc（撰写验收 spec）→ 🛠 编码（按 spec 执行）→ CTO 复验合并 | slice: leftbar-acceptance
 
 ## 背景（一句话）
 左栏前端实现 910 行躺在 feat/d538-frontend-leftbar 分支从未合并（孤儿风险），
@@ -125,13 +126,12 @@
 - 后端 3 接口: /api/signals、/api/loops/status、/api/actions（已存在，核前端调用点）
 - 注意: electron-renderer 无 node_modules，先 npm install
 
-## spec 必答题
-1. vitest 实跑结果（红则修复清单）
-2. 设计文档 8 条验收逐条标注: 验收N: 通过|部分|未实现 — 证据（file:line 或测试名）
-   UI 呈现类（1/2/6）允许代码核对级证据，但必须 file:line
-3. 3 接口前端调用点 + GA 置灰渲染分支（file:line）
-4. merge 分支方案合入最新 main + CI 三 job 全绿（check-runs 结果贴报告）
-5. 红与缺口清单（小项直接修，大项报 CTO）
+## spec 必须覆盖（dev-doc 撰写）
+1. 「测试实跑」章节: npm install → npm test 步骤 + 红时修复清单模板
+2. 「8 条验收核验表」: 每条核验方法 + 证据标准 + 标注格式（引用 §六原文）
+3. 「接口接线核对清单」: 3 接口调用点 + GA 置灰分支的核验方法
+4. 「合并流程」: merge 分支方案 + CI check-runs 确认（本地绿不算）
+5. 「缺口分级」: 小项编码直接修 / 大项停手报 CTO
 
 ## 写集约束
 - 可碰: electron-renderer/、tests/electron/
@@ -143,8 +143,8 @@
 - 8 条标注表（每行 file:line 证据）
 - CI check-runs 三 job 全 success（贴结果，本地绿不算）
 
-## 交付要求
-1. 在 origin/main 新建工作树，把 feat 分支 merge 进来后在工作树内验收修复
-2. 8 条标注表 + CI 证据贴交付报告（M2 红线：禁止空泛声称）
-3. npm/vitest 环境问题如实报，不静默绕过
+## 交付要求（给 dev-doc）
+1. spec: docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D544-leftbar-acceptance-20260828.md
+2. spec 读者是编码 session，拿到即可执行零二次提问
+3. 验收标准引用设计 §六原文；写集 Q2 = electron-renderer/ + tests/electron/
 ```
