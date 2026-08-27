@@ -1,0 +1,20 @@
+{
+  "task_id": "D543",
+  "title": "gate-tests-seal-and-parser-symmetry",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "by": "CTO",
+    "at": "2026-08-28",
+    "branch": "fix/d543-gate-seal-parser",
+    "files": [
+      "tests/control-tower/post-commit-marker.test.sh",
+      "scripts/control-tower/brief_parser.py",
+      "tests/control-tower/brief-parser-strip.test.sh"
+    ]
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-28",
+  "updated_by": "alloc-task-id"
+}
