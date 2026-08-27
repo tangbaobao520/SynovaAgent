@@ -9,6 +9,10 @@
     "原则6: 逐步验证，不信任声称完成"
   ],
   "approach": "rewrite",
+  "memory_refs": [
+    "memory/notes/implemented/2026-08-26-d537-tower-parallel-commit-friction.md",
+    "memory/notes/implemented/2026-08-27-d541-claim-regex-narrow.md"
+  ],
   "phases": [
     {
       "step": 1,
