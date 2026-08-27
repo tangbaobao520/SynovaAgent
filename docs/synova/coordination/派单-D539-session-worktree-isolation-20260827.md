@@ -45,23 +45,22 @@
 |---|---|---|---|
 | task-start.sh | `scripts/workflow/task-start.sh` | :66-69 写全局 current-brief | 需加「主工作区检测 → 强制建 worktree」 |
 | worktree-manager.py | `scripts/control-tower/worktree-manager.py` | **create `<sid>` / list 已存在** | 现成 worktree 建仓工具，需接线到 task-start 流程 |
-| 主树软告警 | `scripts/pre-commit-check.sh:749-761` | 本地软告警不阻断 | 需升级为「开工端物理阻断」（不是提交端软告警） |
-| resolver | `scripts/control-tower/resolve-commit-brief.sh` | **无 `--session` 参数** | ⚠️ D329 声称的会话专属机制需核实（M2 嫌疑） |
-| 会话专属 brief 残留 | `.claude/current-brief.D502/D503/D506` | 曾存在会话专属文件 | 证明机制曾写过专属文件，但 resolver 现在不读 |
+| 主树占用检测（D537 #2） | `scripts/pre-commit-check.sh`（已合 main V5.1.4） | **已硬阻断**：主树脏 + 活跃 session>1 → hard_check（last_seen_at 1800s 窗口） | 提交端已拦；本单补「开工端（task-start）阻断」 |
+| 会话专属 brief（D329） | `scripts/workflow/resolve-commit-brief.sh:18`（`--session <sid>`）+ `scripts/control-tower/attach.py:13`（写 `current-brief.<sid>`） | **已实现** | 但 task-start.sh:66-69 仍写全局 current-brief（D513 恢复），两套并存 → 本单强制专属 |
 
 ## D539：session-worktree-isolation（根治并行干扰）
 
 **目标**：两个 session 并行时，各自在独立 worktree 工作，物理上不互相覆盖协调文件、不抢写 index、不污染真实仓库。
 
-**依赖**：无（上游 D515/D537 软告警已合 main，本单把它们升级为物理强制）。
+**依赖**：无（上游 D537 #2「主树占用检测」提交端硬阻断已合 main V5.1.4；本单补「开工端」阻断 + 会话专属强制）。
 
 **spec 必答题**（dev-doc 必须回答，缺一返修）：
 
-1. **主仓只读化**：`feat/d505-impl`（主工作区，已落后 main 426 commit）如何废弃/归档？主仓作为 worktree 源头的具体机制是什么？——需给出「session 在主工作区 commit/checkout 时被物理阻断」的 hook 设计（复用现有 hook-block-write.sh 还是新检测？）。
+1. **主仓只读化 + 开工端阻断**：D537 #2 已在 **pre-commit 提交端**硬阻断「主树脏 + 活跃 session>1」。本单补 **task-start 开工端**——`feat/d505-impl`（主工作区，落后 main 426 commit）如何废弃/归档？session 开工时若检测到自己在主工作区，如何阻断并引导建 worktree？（复用 hook-block-write.sh 还是 task-start 内检测？与 worktree-manager.py 的接线设计）。
 
-2. **开工强制 worktree**：`task-start.sh` 如何检测「session 在主工作区操作」？检测到后如何阻断并引导 `worktree-manager.py create <sid>`？——需给出检测逻辑 + 阻断点 + 与 worktree-manager.py 的接线设计（接线审计：新函数 grep 有生产调用点）。
+2. **开工强制 worktree**：`task-start.sh` 的检测逻辑 + 阻断点 + 引导 `worktree-manager.py create <sid>` 的完整流程（接线审计：新函数 grep 有生产调用点）。
 
-3. **会话专属 brief 接线（CT-42）**：**先核实 D329 的真实现状**——`resolve-commit-brief.sh` 是否曾支持 `--session` 读 `current-brief.<sid>`？若已退化/未实现，spec 需诚实标注「机制需重写，非接线」；若在其他文件，给出真实位置。然后设计「废除全局 current-brief，强制会话专属」的完整方案。
+3. **会话专属 brief 强制（CT-42）**：D329 机制**已实现**（attach.py:13 写 `current-brief.<sid>` + resolve-commit-brief.sh:18 `--session` 读专属），但 task-start.sh:66-69 仍写全局 current-brief（D513 恢复，Claude 线 attach 依赖）——两套并存，全局仍被覆盖。本单设计「废除全局、强制专属」的接线方案（含 Claude 线 attach 兼容性处理）。
 
 **验收**（物理可复现，禁止静态 grep 冒充）：
 
@@ -86,7 +85,7 @@
 
 1. **spec 文件命名**：`docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D539-session-worktree-isolation-20260827.md`
 2. **验收物理可复现**：每条验收带「命令 + 断言 + 预期输出」，禁止文档声称冒充（M2 红线）。
-3. **诚实声明**：D329 会话专属机制若核实为「未实现/退化」，spec 开头显式声明「机制需重写，非接线」（防 M7 文档-实现漂移）。
+3. **现状核实结论写实**：D329 会话专属机制**已实现**（attach.py + resolver --session），但 task-start.sh 仍写全局 current-brief——spec 按此现状设计（不要写成「机制未实现需重写」，那是误判）。
 4. **DSH 借鉴落地**：spec 含「借鉴 dsh-session 隔离范式」小结（理念，不引代码）。
 
 ---
@@ -97,7 +96,7 @@
 - [x] ② D# 未占用（alloc-task-id 确认：D539，task-state 已登记）
 - [x] ③ 依赖链正确（上游 D515/D537 已合 main；本单三问内部依赖序：主仓只读化 → 强制 worktree → 会话 brief）
 - [x] ④ DSH 借鉴核查三步完整（四色 🟡/🔵 + 借鉴边界「理念级」+ 源码 dsh-session/dsh-session-persistence-jsonl）
-- [x] ⑤ 现状材料全部核实过（grep/ls 物理确认：task-start.sh:66-69、worktree-manager.py create、pre-commit:749-761、resolver 无 --session）
+- [x] ⑤ 现状材料全部核实过（grep/ls 物理确认：task-start.sh:66-69 写全局、worktree-manager.py create、D537 #2 主树硬阻断已合 main、resolve-commit-brief.sh:18 --session + attach.py:13 会话专属已实现）
 - [x] ⑥ 验收物理可复现（隔离断言/阻断断言/接线断言，均命令+断言）
 - [x] ⑦ 术语一致（控制塔「session 隔离」口径，非 Win 线 AUTH 口径）
 - [x] ⑧ 无遗漏（执行方=dev-doc、交付要求 spec 命名+诚实声明、审计验收项）
@@ -118,13 +117,13 @@
 ## 现状材料（执行方必读）
 - scripts/control-tower/worktree-manager.py —— 已有 create <sid> 建 worktree 工具，直接接线
 - scripts/workflow/task-start.sh:66-69 —— 现在写全局 current-brief，要改成会话专属
-- scripts/pre-commit-check.sh:749-761 —— 主树占用软告警已存在，要升级为开工物理阻断
-- scripts/control-tower/resolve-commit-brief.sh —— ⚠️ 无 --session 参数，D329 声称的会话专属机制疑似未实现（先核实再设计）
+- scripts/pre-commit-check.sh —— D537 #2 主树占用检测已硬阻断（提交端），本单补开工端
+- scripts/workflow/resolve-commit-brief.sh:18 + scripts/control-tower/attach.py:13 —— D329 会话专属 brief 已实现（--session + current-brief.<sid>），但 task-start 仍写全局，需强制专属
 
 ## spec 必答题
-1. 主仓只读化：feat/d505-impl 如何废弃？session 在主工作区 commit 如何物理阻断？
+1. 主仓只读化 + 开工端阻断：feat/d505-impl 如何废弃？session 开工在主工作区如何阻断并引导建 worktree？
 2. 开工强制 worktree：task-start.sh 检测主工作区 + 阻断 + 引导 worktree-manager.py create 的接线设计
-3. 会话专属 brief：先核实 D329 现状（resolver 是否曾支持 --session），再设计 current-brief.<sid> 强制方案
+3. 会话专属 brief 强制：D329 已实现（attach.py + resolver --session），但 task-start 仍写全局（D513），设计「废除全局、强制专属」接线（含 Claude 线 attach 兼容）
 
 ## 写集约束
 - 可碰: scripts/workflow/task-start.sh、scripts/control-tower/、.claude/current-brief* 逻辑
@@ -139,5 +138,5 @@
 ## 交付要求
 1. spec 命名: docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D539-session-worktree-isolation-20260827.md
 2. 验收物理可复现（命令+断言，禁止文档声称）
-3. 诚实声明 D329 现状（未实现就说未实现，防 M7 漂移）
+3. 现状核实写实（D329 已实现 + task-start 仍写全局，按此设计，防 M7 漂移）
 ```
