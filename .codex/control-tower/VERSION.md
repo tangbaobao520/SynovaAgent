@@ -11,6 +11,17 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V5.2.1 (2026-08-28) — D541 铁律47 声称完成正则收窄（bare 字形误伤根治）+ D541 CI 红修复（PATCH）
+
+> spec: CTO 内联指令（D541 正则收窄 + 配对测试）。D540 brief 的工作描述措辞（bare 字形）被旧正则误判为完成声称 → 铁律47 → CI strict 硬阻断（CI 日志实证：组5 铁律47 + 组6 memory_refs 两处）。
+
+- **① pre-commit-check.sh L750 铁律47 正则收窄**: 旧正则把 bare 字形（拆分/迁移）也当完成声称 → 工作描述措辞误触发。收窄为三类完成语义『已X / X…完成 / 完成…X』（bare 字形不再匹配；完成声称仍触发）。补充『完成…X』方向（用户给定正则缺此向，而用户测试用例要求该方向必须触发——以测试为具体规范）。
+- **② 配对测试 claim-regex-narrow.test.sh（9 断言）**: 接线（收窄后正则 present + 旧 bare 正则移除）/ 正常（工作描述不触发）/ 降级（完成声称触发）/ 边界（空 brief / 无 brief guard）。
+- **③ D541 CI 两处红修复（CI 日志实证定位）**: brief verify 行去『完成…X』字面量（该字面量命中收窄后正则）；plan.json memory_refs 回填 D541 brief Q1c 引用的 memory 教训路径（消组6 memory_refs 为空 soft_check）。
+- **验证**: SYNO_CI=1 全量 13 组 exit 0；claim-regex-narrow 9/9；收窄正则 vs 修复后 brief 零命中（铁律47 忠实复刻）；check-plan-integrity 直跑 memory_refs ✅ 全部存在。
+- **防膨胀**: 只动 L750 一行正则 + 同行 swallow-ok；不碰其他门禁逻辑。
+- **作者**: dsh（D541，编码 session）
+
 ## V5.1.4 (2026-08-26) — D537 控制塔并行污染 + 提交链摩擦根治（Win 反馈 #2-#6）（PATCH）
 
 > spec: docs/synova/coordination/派单-D537-并行CTO-20260826.md。5 项修已有 bug（#1 CRLF 已由 D520 修复，#6 windows 矩阵已由 D520 建立）。
