@@ -11,6 +11,13 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V5.2.2 (2026-08-28) — D542 CI 失败可见性 + D543 密封 canary 转绿 + 解析器对称（PATCH）
+
+- **① D542 soft_check/warn_check CI strict 打印 ❌**（此前计硬失败却显示 ⚠️，「N 组未通过」在日志中无组名可查——D541 排查黑洞根因）。计数语义零变化，纯可观察性。配对测试 ci-strict-visible.test.sh 6 断言。
+- **② D543 post-commit-marker.test.sh 断言对齐 D521 hook 层登记**（pass → 新增 1 行 COMMITTED，D537 #4 设计意图；旧断言停留 D508 行为致 canary 双平台红两周）。**连带修 S10 密封性**：new_repo 显式 `git init -b main`（CI runner 默认分支 master 致 pathspec 错误）。**Control Tower Gate Tests 双平台两周来首次全绿**。
+- **③ D543 brief_parser.parse_q2 剥行号后缀**（`\s+L\d+$`，对齐 devdoc_writeset.py:76——D541 CI 红第三处根因根治，两解析器对称）。同名配对测试 6 断言 + strip 测试 12 断言。
+- **作者**: CTO（D542/D543 自修，CI 实证三 job 全绿）
+
 ## V5.2.1 (2026-08-28) — D541 铁律47 声称完成正则收窄（bare 字形误伤根治）+ D541 CI 红修复（PATCH）
 
 > spec: CTO 内联指令（D541 正则收窄 + 配对测试）。D540 brief 的工作描述措辞（bare 字形）被旧正则误判为完成声称 → 铁律47 → CI strict 硬阻断（CI 日志实证：组5 铁律47 + 组6 memory_refs 两处）。
