@@ -48,8 +48,13 @@
       "DS7": "✅ 写集外零触碰（git diff 核对）+ scripts/audit/ 零触碰 + task-state 回填"
     }
   },
-  "audit": null,
+  "audit": {
+    "verdict": "CTO 验收通过（非 K3）",
+    "note": "PR #226/#227+#229；evidence 不入 git 为既定设计",
+    "by": "CTO",
+    "at": "2026-08-27"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-08-27",
-  "updated_by": "dsh-impl"
+  "updated_at": "2026-08-28",
+  "updated_by": "CTO"
 }
