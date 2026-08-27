@@ -131,14 +131,14 @@ git clone -q "file://$BASE" "$TMPD/cloneA" 2>/dev/null || no "clone A 失败"
 git clone -q "file://$BASE" "$TMPD/cloneB" 2>/dev/null || no "clone B 失败"
 if [ -d "$TMPD/cloneA/.git" ] && [ -d "$TMPD/cloneB/.git" ]; then
   B_HEAD_BEFORE=$(git -C "$TMPD/cloneB" rev-parse HEAD)
-  B_INDEX_BEFORE=$(sha256sum "$TMPD/cloneB/.git/index" 2>/dev/null | awk '{print $1}')
+  B_INDEX_BEFORE=$(sha256sum "$TMPD/cloneB/.git/index" | awk '{print $1}')
   # A 里做一个真实 commit（配 identity）
   git -C "$TMPD/cloneA" config --local user.name "synova-mac"
   git -C "$TMPD/cloneA" config --local user.email "claworg@users.noreply.github.com"
   echo "a" > "$TMPD/cloneA/a.txt"; git -C "$TMPD/cloneA" add a.txt
   git -C "$TMPD/cloneA" commit -q -m "feat: A-only change"
   B_HEAD_AFTER=$(git -C "$TMPD/cloneB" rev-parse HEAD)
-  B_INDEX_AFTER=$(sha256sum "$TMPD/cloneB/.git/index" 2>/dev/null | awk '{print $1}')
+  B_INDEX_AFTER=$(sha256sum "$TMPD/cloneB/.git/index" | awk '{print $1}')
   [ "$B_HEAD_BEFORE" = "$B_HEAD_AFTER" ] && ok "C4 隔离: B 的 HEAD 零变化" || no "C4 B 的 HEAD 被污染: $B_HEAD_BEFORE vs $B_HEAD_AFTER"
   [ "$B_INDEX_BEFORE" = "$B_INDEX_AFTER" ] && ok "C4 隔离: B 的 index 零变化 (sha256)" || no "C4 B 的 index 被污染"
 else

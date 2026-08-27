@@ -297,7 +297,7 @@ elif [ "$MODE" = "ci-pr" ]; then
     # 排除 PR 自身 doc（同路径 = PR 修订自己的任务 doc，不是与已合任务并行冲突）
     if printf '%s\n' "$PR_DOCS" | grep -qxF "$mpath"; then continue; fi
     local_mtmp="$TMPD/$(basename "$mpath")"
-    if git -C "$REPO_DIR" show "$CI_PR_BASE:$mpath" > "$local_mtmp" 2>/dev/null; then
+    if git -C "$REPO_DIR" show "$CI_PR_BASE:$mpath" > "$local_mtmp" 2>/dev/null; then  # swallow-ok: 物化失败走 else 分支 degraded 记录（不静默当 pass）
       MERGED_DOCS="$MERGED_DOCS $local_mtmp"
     else
       echo "  ⚠️  物化 $mpath 失败 — degraded" >&2

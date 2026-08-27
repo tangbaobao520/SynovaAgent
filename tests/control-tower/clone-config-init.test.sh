@@ -58,7 +58,7 @@ if [ -z "$FN_BODY" ]; then
   no "提取 _ensure_clone_git_config 失败（函数体为空）"
   echo "结果: $PASS 通过, $FAIL 失败"; [ "$FAIL" -eq 0 ] && exit 0 || exit 1
 fi
-if ! eval "$FN_BODY" 2>/dev/null; then
+if ! eval "$FN_BODY"; then
   no "装载 _ensure_clone_git_config 失败"
   echo "结果: $PASS 通过, $FAIL 失败"; [ "$FAIL" -eq 0 ] && exit 0 || exit 1
 fi
