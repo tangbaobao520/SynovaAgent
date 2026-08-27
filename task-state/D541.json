@@ -13,8 +13,14 @@
       "tests/control-tower/claim-regex-narrow.test.sh"
     ]
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-08-27-D540.md（含 D541）",
+    "verdict": "CI 红→修复闭环（未复审）",
+    "fix": "brief 三处根因 + 正则收窄，PR #246 CI 绿",
+    "by": "k3 + coding fix",
+    "at": "2026-08-28"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-08-27",
-  "updated_by": "dsh"
+  "updated_at": "2026-08-28",
+  "updated_by": "CTO"
 }
