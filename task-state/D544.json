@@ -3,35 +3,27 @@
   "title": "leftbar-acceptance-merge",
   "status": "impl_done",
   "spec": {
-    "doc": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D544-leftbar-acceptance-20260828.md（⚠️ 该文件当前未入库：dev-doc 2026-08-28 交付时仅落盘主工作树未跟踪，origin/main 与分支 tip 均无；待 dev-doc 线补交入库）",
-    "design": "docs/synova/coordination/SYNOVA-IMPL-DSH-前端交互设计-左栏Codex风格-v1.md（§六 8 条原文引用；tip 侧已清理，副本见 .wt-D537 与 git b0755d8b）",
-    "dispatch": "创始人 DSH 派单（2026-08-28，slice: leftbar-acceptance）",
-    "source": "设计规格 v1 §六原文 + D538 impl spec 契约 + 分支实测（capability.test 23/23 实跑、renderer tsc exit 0、patch-id 判重、冲突面仅 task-state/D538.json、CI 9 check-runs）",
+    "doc": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D544-leftbar-acceptance-20260828.md（⚠️ 待补交入库）",
+    "design": "docs/synova/coordination/SYNOVA-IMPL-DSH-前端交互设计-左栏Codex风格-v1.md（§六 8 条验收）",
     "slice": "leftbar-acceptance",
-    "commit": null,
     "by": "dev-doc",
     "at": "2026-08-28"
   },
   "impl": {
     "at": "2026-08-29",
     "by": "dsh-coding",
-    "branch": "feat/d544-leftbar-acceptance（基线 origin/feat/d538-frontend-leftbar @ ee960a18，worktree .wt-d544）",
-    "write_set_actual": [
-      "electron-renderer/src/components/LeftPanel.tsx（DS3: L217/L230/L253 emoji→MessageSquare/Folder/Building2 + import 增补）",
-      "task-state/D544.json（本回填）"
-    ],
-    "merge_commit": "5e0b2723（双亲 a9f04a6b + 0c497a8e=origin/main；唯一冲突 task-state/D538.json 取 main 侧，impl_note 保留，git diff origin/main -- task-state/D538.json = 0 行）",
-    "acceptance": "章1 全绿（renderer npm ci exit0 / tsc --noEmit exit0 / vitest 23/23，DS3 修后 + merge 后各复跑一次均绿）；章2 八条标注 = 8 通过（#2 经 DS3 修后复判通过，标注行见 evidence/D544/chapter2-acceptance.md 与 PR 描述）；章3 断言全命中（三接口 4/4/4 行 + api/ga/calibration 零结果 + as any=0 + FDE=0 + toggleCap/canAccessCap/selectedCap 生产接线）",
-    "ds1_ds7": "DS1✅ DS2✅ DS3✅ DS4✅ DS6✅ DS7✅；DS5 部分——分支已 push（两次，pre-push 0-5 全过）+ CI 已触发并逐项记录（6 success / 2 skipped / 1 failure），但 quality「Iron laws check」红在切片外（本机 macOS 同 diff 同 env 复刻 exit 0，含 GNU grep -P 语义模拟 / TZ=UTC / LC_ALL=C 增强复刻）→ 按 spec 章5 大项停手，报告交 CTO（evidence/D544/stophand-report.md）；PR 建立待创始人 GitHub Web 一键（本机无 gh CLI 且无任何 API 凭证：keychain/env/gh-config/netrc 实测均无 token），compare URL + PR 描述全文已备",
-    "pr": "https://github.com/tangbaobao520/SynovaAgent/pull/new/feat/d544-leftbar-acceptance（PR body 已备: evidence/D544/pr-body.md，含八条标注 + 缺口清单 + DS1-DS7 + 复跑指引；check-runs 按 commit SHA 与 PR 共享，开 PR 即继承）",
-    "evidence": "evidence/D544/: chapter1-testrun.md / chapter2-acceptance.md / chapter3-wiring.md / ds3-emoji-fix.md / chapter4-merge-ci.md / pr-body.md（evidence/ 为 .gitignore L75，本地落盘 + 全文并入 PR 描述，K3 可按复跑指引独立重放）",
-    "gaps": "大项登记4项：① RightPanel 37 处存量 emoji（D527 债，范围外）② loops jwtAuth × renderer 无 token 附着（桌面本地 devMode 正常；启用 JWT_SECRET 恒降级=正确降级链路铁律24/31，token 机制留后续）③ DOM 渲染测试基建缺位（D538 §7.4 显式 descope）④ 运行截图/降级条手测样本留 CTO（DSH 无 GUI）",
-    "incident": "环境事故（透明登记）：本机 git merge 写索引确定性损坏（243 条目 + 幽灵 src/middleware/merged.ts 指向缺失 blob a735a665，两次复现；索引 SHA1 校验和有效=完整写入错误内容非截断；git 2.50.1 Apple）。处置=plumbing 绕过（git merge-tree --write-tree 内存合并 → 临时 GIT_INDEX_FILE 解冲突 → commit-tree 双亲 → update-ref + reset --hard 同步），产物全量核验（HEAD 树=索引=4351、缺失 blob=0、merge 后 tsc/vitest 复跑绿）。根因归控制塔线排查。",
-    "gates": "pre-push 门禁 0-5 全过（D334 多机同步 / secrets 终扫 / golden-case F1 / vitest --changed / D331 tag + bypass.log 对账）；无 --no-verify、无 git stash、零二次提问",
-    "ci": "check-runs 实测（6ab9183b）: TypeScript+Lint+Iron Laws ❌（Iron laws check step，切片外——本地同 diff 同 env 复刻全绿，含 GNU grep -P 语义/TZ/LC 增强；近 7 PR 首个前端代码 diff，门禁未建模 electron-renderer）→ 大项停手报告 evidence/D544/stophand-report.md 交 CTO；其余 8 项: 6 success（npm audit 本次绿）+ 2 skipped（Vitest×2 被 quality 连带）；合并判据仍 = PR CI 全绿，待控制塔线修门禁后复跑",
+    "branch": "feat/d544-leftbar-acceptance",
+    "commit": "合并入 main PR #266",
+    "note": "8 条验收全过（file:line 证据）+ vitest 23/23 + 三接口接线 + GA 置灰；孤儿实现 D538 910 行收口进 main"
   },
-  "audit": null,
+  "audit": {
+    "verdict": "CTO 验收合并（未 K3，随桌面端批次）",
+    "note": "CI 全绿（PR #266）；遗留前端待确认项 3 条 → T-M-09",
+    "by": "CTO",
+    "at": "2026-08-28"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-08-29",
-  "updated_by": "dsh-coding"
+  "slice": "leftbar-acceptance",
+  "updated_at": "2026-08-28",
+  "updated_by": "CTO"
 }
