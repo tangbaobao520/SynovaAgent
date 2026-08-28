@@ -18,6 +18,9 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 # 退出码: 0 = 全部通过（T3 期望 exit 1，T4 期望 exit 0，T5 期望 exit 2）
 # ═══════════════════════════════════════════════════════════════
 set -uo pipefail
+# D555: hook 上下文导出 GIT_INDEX_FILE（ct-test-gate 只剥 GIT_DIR/GIT_WORK_TREE，D521-3 泄漏未根治面）——
+# 测试内剥掉，防沙箱 commit 污染宿主 index（D555 实证：merged.ts 垃圾条目入宿主 index 致 commit 失败）
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -104,6 +107,40 @@ SB_DEG="$TMPD/deg"
 setup_repo "$SB_DEG" "SYNOVA-IMPL-D993-deg-20260827.md"
 OUT=$(cd "$SB_DEG" && bash "$SB_DEG/scripts/control-tower/verify-parallel.sh" --ci-pr does-not-exist-ref 2>&1); rc=$?
 if [ "$rc" -eq 2 ]; then ok "T5 base 不可解析 degraded (exit 2)"; else no "T5 期望 exit 2 实际 $rc :: $OUT"; fi
+
+# ── D555: 已关闭任务豁免（serial reuse）──
+if grep -q "_is_closed_doc" "$VP" && grep -q "已关闭任务豁免" "$VP"; then
+  ok "T6 接线: _is_closed_doc + ci-pr 豁免分支在位"
+else
+  no "T6 _is_closed_doc/豁免分支缺失"
+fi
+
+echo ""
+echo "── T7 CI 模式: 已合 doc 任务已关闭（task-state audited）→ 豁免 pass (exit 0) ──"
+PR_FILE="src/middleware/merged.ts"   # 与 D990 重叠，但 D990 audited → 应豁免
+SB_CLOSED1="$TMPD/closed1"
+setup_repo "$SB_CLOSED1" "SYNOVA-IMPL-D994-closed-20260827.md"
+mkdir -p "$SB_CLOSED1/task-state"
+printf '{"task_id":"D990","status":"audited"}\n' > "$SB_CLOSED1/task-state/D990.json"
+OUT=$(cd "$SB_CLOSED1" && bash "$SB_CLOSED1/scripts/control-tower/verify-parallel.sh" --ci-pr origin/main 2>&1); rc=$?
+if [ "$rc" -eq 0 ]; then ok "T7 audited 豁免 pass (exit 0)"; else no "T7 期望 exit 0 实际 $rc :: $OUT"; fi
+[ "$(echo "$OUT" | grep -c "已关闭任务豁免" | tr -d '\n\r' || true)" -ge 1 ] && ok "T7 输出点名豁免" || no "T7 未输出豁免 :: $OUT"
+
+echo ""
+echo "── T8 CI 模式: 历史任务无 task-state 但有审计报告 → 豁免 pass (exit 0) ──"
+SB_CLOSED2="$TMPD/closed2"
+setup_repo "$SB_CLOSED2" "SYNOVA-IMPL-D995-closed2-20260827.md"
+mkdir -p "$SB_CLOSED2/docs/synova/audit-reports"
+printf '# audit D990\n' > "$SB_CLOSED2/docs/synova/audit-reports/2026-08-22-D990-merged.md"
+OUT=$(cd "$SB_CLOSED2" && bash "$SB_CLOSED2/scripts/control-tower/verify-parallel.sh" --ci-pr origin/main 2>&1); rc=$?
+if [ "$rc" -eq 0 ]; then ok "T8 审计报告豁免 pass (exit 0)"; else no "T8 期望 exit 0 实际 $rc :: $OUT"; fi
+
+echo ""
+echo "── T9 CI 模式: 无关闭信号（无 task-state 无报告）→ 仍 block (fail-closed 不削弱) ──"
+SB_OPEN="$TMPD/open"
+setup_repo "$SB_OPEN" "SYNOVA-IMPL-D996-open-20260827.md"
+OUT=$(cd "$SB_OPEN" && bash "$SB_OPEN/scripts/control-tower/verify-parallel.sh" --ci-pr origin/main 2>&1); rc=$?
+if [ "$rc" -eq 1 ]; then ok "T9 无信号仍 block (exit 1)"; else no "T9 期望 exit 1 实际 $rc :: $OUT"; fi
 
 echo ""
 echo "结果: $PASS 通过, $FAIL 失败"
