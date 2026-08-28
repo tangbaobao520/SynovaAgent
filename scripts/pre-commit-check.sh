@@ -88,13 +88,15 @@ soft_check() {
   local count=0
   [ -n "$matches" ] && count=$(echo "$matches" | grep -c . 2>/dev/null) || count=0
   if [ "$count" -gt 0 ]; then
-    echo -e "  ${YELLOW}⚠️  ${name}: ${count} 处  [V5 软提示——CI 为权威，本地不阻断]${RESET}"
-    echo "$matches" | head -8 | while read -r line; do [ -n "$line" ] && echo "     ${line}"; done
+    # D542: CI strict 下必须显示 ❌（此前显示 ⚠️ 导致「N 组未通过」在日志中找不到对应组——M1 类失败不点名）
     if [ "${SYNO_CI:-0}" = "1" ]; then
-    HARD_FAIL=$((HARD_FAIL + 1))  # D516 CI strict
-  else
-    SOFT_COUNT=$((SOFT_COUNT + 1))
-  fi
+      echo -e "  ${RED}❌ ${name}: ${count} 处  [CI strict——软提示在 CI 上为硬阻断]${RESET}"
+      HARD_FAIL=$((HARD_FAIL + 1))  # D516 CI strict
+    else
+      echo -e "  ${YELLOW}⚠️  ${name}: ${count} 处  [V5 软提示——CI 为权威，本地不阻断]${RESET}"
+      SOFT_COUNT=$((SOFT_COUNT + 1))
+    fi
+    echo "$matches" | head -8 | while read -r line; do [ -n "$line" ] && echo "     ${line}"; done
     log_gate "$name" hit
   else
     echo -e "  ${GREEN}✅ ${name}${RESET}"
@@ -152,13 +154,15 @@ warn_check() {
   local count=0
   [ -n "$matches" ] && count=$(echo "$matches" | grep -c . 2>/dev/null) || count=0
   if [ "$count" -gt 0 ]; then
-    echo -e "  ${YELLOW}⚠️  ${name}: ${count} 处  [警告]${RESET}"
-    echo "$matches" | head -5 | while read -r line; do [ -n "$line" ] && echo "     ${line}"; done
+    # D542: CI strict 下必须显示 ❌（与 soft_check 同修——失败不点名则「N 组未通过」无法定位）
     if [ "${SYNO_CI:-0}" = "1" ]; then
+      echo -e "  ${RED}❌ ${name}: ${count} 处  [CI strict——历史 WARN 类在 CI 也转硬]${RESET}"
       HARD_FAIL=$((HARD_FAIL + 1))  # D516 CI strict: 历史 WARN 类在 CI 也转硬
     else
+      echo -e "  ${YELLOW}⚠️  ${name}: ${count} 处  [警告]${RESET}"
       WARN_COUNT=$((WARN_COUNT + 1))
     fi
+    echo "$matches" | head -5 | while read -r line; do [ -n "$line" ] && echo "     ${line}"; done
   fi
 }
 
@@ -747,7 +751,7 @@ TODAY=$(date +%Y-%m-%d)
 BRIEF=$(bash "$ROOT/scripts/workflow/resolve-commit-brief.sh" "$STAGED_ALL" 2>/dev/null || true)
 CLEANUP_CLAIM=""
 if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
-  if grep -qi "拆分\|迁移\|清理.*完成\|已拆\|已迁移\|已清理" "$BRIEF" 2>/dev/null; then
+  if grep -qi "已拆\|已迁移\|已清理\|拆分.*完成\|迁移.*完成\|清理.*完成\|完成.*拆分\|完成.*迁移\|完成.*清理" "$BRIEF" 2>/dev/null; then  # swallow-ok: brief 不可读→grep 静默→CLEANUP_CLAIM 空（拆分/迁移裸词不作完成声称，避免误伤工作描述）
     CLEANUP_CLAIM="task brief 声称拆分/迁移/清理完成 — 请确认 grep -r 'packages/engine-core' src/ 零结果"
   fi
 fi

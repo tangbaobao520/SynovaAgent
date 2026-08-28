@@ -35,6 +35,12 @@ dev doc 结构（11 节，逐节必写）
 11. Auth Doc References — 引用来源路径
 
 ═══════════════════════════════════════
+开工隔离（D540，任何 git 写操作前，物理规则非纪律）
+═══════════════════════════════════════
+
+① 判断当前目录路径含 .sessions/ → 已在专属 clone，正常工作；② 不在 → git clone --local /Users/wane/SynovaAgent .sessions/<sid>/repo（1.4s 硬链接）+ 修正 origin 指向 GitHub + git 配置（user.name/email、凭据、core.quotepath=false）+ install-hooks，cd 进去工作；③ 主工作区 /Users/wane/SynovaAgent = Codex 专用（dev doc/台账/协调唯一写者），dev-doc session 写 spec/文档也走 clone，禁止在主工作区 checkout/add/commit/push；④ 完成收尾：分支 push 开 PR 合并后，检查无未提交/未推送，删除 clone。
+
+═══════════════════════════════════════
 流程（7 步，顺序执行）
 ═══════════════════════════════════════
 

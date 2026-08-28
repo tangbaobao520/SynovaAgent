@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-17 16:56:57",
+  "generated_at": "2026-08-28 03:39:55",
   "version": "1.0",
   "product_progress_pct": 4,
   "total_lines": 26,
@@ -138,7 +138,8 @@
           "status": "pending_k3",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+            "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-08-28.json"
           ],
           "note": "线程存在，长会话上下文管理见线 20"
         },
@@ -240,7 +241,7 @@
     {
       "id": 4,
       "name": "数据接入",
-      "value": "CRM/ERP/HR 连接器 + 文件导入 + 问卷，三条路都能把企业数据接进来",
+      "value": "文件导入 + 问卷 + 飞书连接器（CRM/ERP/HR 直连按施工图 Stage 1+ 推进，配置层照常）",
       "weight": 1.0,
       "baseline_pct": 15,
       "baseline_note": "仅飞书+CSV（K3 P0-2）",
@@ -278,7 +279,8 @@
           "status": "pending_k3",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+            "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-08-28.json"
           ],
           "note": "已有（K3 P0-2：仅飞书+CSV）"
         },
@@ -287,21 +289,21 @@
           "desc": "CRM 连接器（crm-standard 契约）",
           "status": "uncommitted",
           "evidence_files": [],
-          "note": "K3：L5 无 CRM 连接器"
+          "note": "K3：L5 无 CRM 连接器；创始人裁决 B：直连按施工图 Stage 1+ 推进（非搁置），配置层照常"
         },
         {
           "id": "4-5",
           "desc": "ERP 连接器（erp-standard 契约）",
           "status": "uncommitted",
           "evidence_files": [],
-          "note": "K3：L5 无 ERP 连接器"
+          "note": "K3：L5 无 ERP 连接器；创始人裁决 B：直连按施工图 Stage 1+ 推进（非搁置），配置层照常"
         },
         {
           "id": "4-6",
           "desc": "HR 连接器（hr-standard 契约）",
           "status": "uncommitted",
           "evidence_files": [],
-          "note": "K3：L5 无 HR 连接器"
+          "note": "K3：L5 无 HR 连接器；创始人裁决 B：直连按施工图 Stage 1+ 推进（非搁置），配置层照常"
         },
         {
           "id": "4-7",
@@ -531,7 +533,8 @@
           "status": "pending_k3",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+            "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-08-28.json"
           ],
           "note": ""
         },
@@ -719,7 +722,8 @@
           "status": "pending_k3",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+            "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-08-28.json"
           ],
           "note": "K3：compute-cash-runway-months.ts:60 filter bug"
         },
@@ -1030,7 +1034,8 @@
           "status": "pending_k3",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+            "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-08-28.json"
           ],
           "note": "代码实证存在；K3 v1.1：V5 视图硬编码旧 6 专家（D282 未传播）"
         },
@@ -1047,7 +1052,8 @@
           "status": "pending_k3",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+            "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-08-28.json"
           ],
           "note": "接线存在（代码实证）"
         },
@@ -1058,7 +1064,8 @@
           "evidence_files": [
             "docs/synova/product-lines/evidence/task-D396.json",
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+            "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-08-28.json"
           ],
           "note": "创始人 13 问第 10 问：提示词效果未验证"
         },
@@ -1218,10 +1225,10 @@
       "status_counts": {
         "uncommitted": 3,
         "failed": 0,
-        "pending_k3": 2,
+        "pending_k3": 0,
         "verified": 1,
         "rejected": 0,
-        "stale": 0
+        "stale": 2
       },
       "points": [
         {
@@ -1236,10 +1243,11 @@
         {
           "id": "18-2",
           "desc": "SessionStore + 重启恢复（重启后记忆还在）",
-          "status": "pending_k3",
+          "status": "stale",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+            "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-08-28.json"
           ],
           "note": "代码实证存在；重启恢复测试未作为证据登记"
         },
@@ -1260,10 +1268,11 @@
         {
           "id": "18-5",
           "desc": "版本化 + superseded_by 链（事实更新可追溯）",
-          "status": "pending_k3",
+          "status": "stale",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+            "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-08-28.json"
           ],
           "note": "企业事实层设计存在"
         },
@@ -1312,7 +1321,8 @@
           "status": "pending_k3",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+            "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-08-28.json"
           ],
           "note": ""
         },
@@ -1394,7 +1404,8 @@
           "status": "pending_k3",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+            "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-08-28.json"
           ],
           "note": "组件存在（代码实证）"
         },
@@ -1434,7 +1445,8 @@
           "status": "pending_k3",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+            "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-08-28.json"
           ],
           "note": "providers/deepseek.ts 存在"
         },
@@ -1444,7 +1456,8 @@
           "status": "pending_k3",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+            "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-08-28.json"
           ],
           "note": "深度优化 = 0"
         },
@@ -1498,7 +1511,8 @@
           "status": "pending_k3",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+            "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-08-28.json"
           ],
           "note": "组件存在（代码实证）"
         },
@@ -1652,7 +1666,8 @@
           "status": "pending_k3",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+            "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-08-28.json"
           ],
           "note": "组件存在（代码实证）"
         },
@@ -1699,7 +1714,8 @@
           "status": "pending_k3",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+            "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-08-28.json"
           ],
           "note": "文件驱动已有"
         },
@@ -1709,7 +1725,8 @@
           "status": "pending_k3",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+            "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-08-28.json"
           ],
           "note": ""
         },
@@ -1719,7 +1736,8 @@
           "status": "pending_k3",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18.json"
+            "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-08-28.json"
           ],
           "note": "builtins 自动扫描存在"
         },
@@ -1862,8 +1880,14 @@
     }
   ],
   "degraded": {
-    "sources": [],
-    "problems": [],
-    "git_check": "ok"
+    "sources": [
+      "证据记录损坏: D524-verify-20260825-2121.json (缺 record_type/date/verdicts 字段)"
+    ],
+    "problems": [
+      "点 4-4 非法 status 种子: 'deferred'",
+      "点 4-5 非法 status 种子: 'deferred'",
+      "点 4-6 非法 status 种子: 'deferred'"
+    ],
+    "git_check": "partial"
   }
 }

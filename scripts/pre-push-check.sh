@@ -371,22 +371,16 @@ else
 fi
 
 # ═══ 门禁 5: 并行声明物理验证 (D311 M1 — verify-parallel) ═══
+# D540: verify-parallel 已移 CI/PR —— 本地不再强制 --scan-today（单机多 session 场景语义不准）。
+# CI/PR 由 ci.yml 调 verify-parallel --ci-pr 做 base..head × 已合写集比对（权威物理拦截）。
 echo ""
 echo -e "${CYAN}── 并行声明物理验证 (D311) ───────────────────────────${RESET}"
 VERIFY_PARALLEL="$SCRIPT_DIR/control-tower/verify-parallel.sh"
 if [[ -f "$VERIFY_PARALLEL" ]]; then
-  # CT-28 (D422): 三态分流 — 0 过 / 1 业务阻断 / 2 降级告警（不阻断, 防工具故障锁死推送）
-  bash "$VERIFY_PARALLEL" --scan-today
-  VP_EXIT=$?
-  if [ "$VP_EXIT" -eq 1 ]; then
-    echo ""
-    echo -e "  ${RED}❌ 并行声明验证未通过 — 今日 dev doc 写集存在重叠, 推送已拒绝 (D311)${RESET}"
-    exit 1
-  elif [ "$VP_EXIT" -eq 2 ]; then
-    echo -e "  ${YELLOW}⚠️  verify-parallel 降级 (exit 2) — 不阻断推送, 见 degraded-events.log${RESET}"
-  fi
+  echo -e "  ${YELLOW}ℹ️  并行声明验证已移 CI/PR（D540）— 本地不再强制 --scan-today${RESET}"
+  # 保留脚本可用性探针（fail-closed：脚本缺失 = CI 降级信号）；本地不再 exit 1 拦推送
 else
-  echo -e "  ${YELLOW}⚠️  verify-parallel.sh 缺失 — 并行声明验证跳过 (fail-open)${RESET}"
+  echo -e "  ${YELLOW}⚠️  verify-parallel.sh 缺失 — CI 并行声明验证将降级 (fail-open)${RESET}"
 fi
 
 # ═══ 门禁 6: 基线展示 (D312 M2 — baseline-check, 警告不阻断) ═══

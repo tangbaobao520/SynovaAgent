@@ -82,10 +82,57 @@ exec bash "$(git rev-parse --show-toplevel)/scripts/hooks/'"$name"'.sh"'
   echo "  ✅ $name"
 }
 
+# ═══ D540: 降级记录（degraded-events.log，铁律 11 不静默）═══
+_degraded_log() {
+  # 契约(铁律 47): @input $1=component $2=reason; @output append degraded-events.log;
+  #               @degraded 写失败静默（降级记录失败不阻断脚本，铁律 31）
+  local comp="$1" reason="$2"
+  local dlog="${SYNO_CT_DIR:-$ROOT/.codex/control-tower}/logs/degraded-events.log"
+  mkdir -p "$(dirname "$dlog")" 2>/dev/null || true  # swallow-ok: 目录创建失败不阻断
+  echo "{\"time\": \"$(date -u +%Y-%m-%dT%H:%M:%S+00:00)\", \"component\": \"$comp\", \"reason\": \"$reason\"}" >> "$dlog" 2>/dev/null || true  # swallow-ok: 降级记录失败不阻断
+}
+
+# D540: clone 环境 git 配置初始化（幂等）——影子提交前置（post-commit.sh L87 降级路径堵漏）
+# 仅在 local 未设时写默认；已设则不覆盖（尊重已有配置，主仓重复跑无害）。
+_ensure_clone_git_config() {
+  # 契约(铁律 47):
+  #   @input  — $ROOT（仓库根）+ env: SYNO_GIT_NAME(默认 synova-mac) / SYNO_GIT_EMAIL(默认 claworg@users.noreply.github.com)
+  #             / SYNO_GIT_CREDENTIAL_HELPER(默认 osxkeychain)
+  #   @output — user.name/user.email 已设（local 未设则写 local；local 已有则跳过不覆盖）;
+  #             core.quotepath=false; credential.helper（若 local 未设）
+  #   @degraded — 任一 git config 写入失败 → degraded 记录（铁律 11），不阻断 hooks 安装
+  #   @error  — 不抛（bash 函数，配置失败返回非 0 由调用方处理）
+  local name="${SYNO_GIT_NAME:-synova-mac}"
+  local email="${SYNO_GIT_EMAIL:-claworg@users.noreply.github.com}"
+  local degraded=0
+  # user.name / user.email —— 影子提交（post-commit.sh L84 git commit）的前置，缺失 → L87 降级
+  if ! git -C "$ROOT" config --local user.name >/dev/null 2>&1; then
+    git -C "$ROOT" config --local user.name "$name" || degraded=1
+  fi
+  if ! git -C "$ROOT" config --local user.email >/dev/null 2>&1; then
+    git -C "$ROOT" config --local user.email "$email" || degraded=1
+  fi
+  # core.quotepath=false —— 中文文件名不被转义（D339 synova-commit 同款）
+  git -C "$ROOT" config --local core.quotepath false || degraded=1
+  # credential.helper —— push 凭据；local 未设才配（已有则不动，尊重 token）
+  if ! git -C "$ROOT" config --local credential.helper >/dev/null 2>&1; then
+    git -C "$ROOT" config --local credential.helper "${SYNO_GIT_CREDENTIAL_HELPER:-osxkeychain}" 2>/dev/null || degraded=1
+  fi
+  if [ "$degraded" -ne 0 ]; then
+    echo "  ⚠️  部分 git 配置写入失败 — 影子提交/中文文件名/push 可能降级 (degraded)" >&2
+    _degraded_log "install-hooks.clone-config" "git config 写入部分失败 (degraded=$degraded)"
+  fi
+  echo "  ✅ clone git 配置初始化 — user=$name <$email> / quotepath=false / credential.helper"
+}
+
 install_hook "pre-commit"
 install_hook "commit-msg"
 install_hook "pre-push"
 install_hook "post-commit"
+
+# D540: clone 环境 git 配置初始化（在装完 hooks 后调用）——影子提交前置（post-commit.sh L87 降级路径堵漏）
+# 幂等: 在 clone 与主仓重复运行均无害（local 已设 -> 跳过不覆盖）。
+_ensure_clone_git_config
 
 # CT-47 / D457: 注册 bypass.log 的 union 合并驱动
 # .gitattributes 声明 .claude/bypass.log merge=union，但 git 需知道 union driver 是什么。

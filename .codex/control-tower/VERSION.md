@@ -11,6 +11,38 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V5.2.2 (2026-08-28) — D542 CI 失败可见性 + D543 密封 canary 转绿 + 解析器对称（PATCH）
+
+- **① D542 soft_check/warn_check CI strict 打印 ❌**（此前计硬失败却显示 ⚠️，「N 组未通过」在日志中无组名可查——D541 排查黑洞根因）。计数语义零变化，纯可观察性。配对测试 ci-strict-visible.test.sh 6 断言。
+- **② D543 post-commit-marker.test.sh 断言对齐 D521 hook 层登记**（pass → 新增 1 行 COMMITTED，D537 #4 设计意图；旧断言停留 D508 行为致 canary 双平台红两周）。**连带修 S10 密封性**：new_repo 显式 `git init -b main`（CI runner 默认分支 master 致 pathspec 错误）。**Control Tower Gate Tests 双平台两周来首次全绿**。
+- **③ D543 brief_parser.parse_q2 剥行号后缀**（`\s+L\d+$`，对齐 devdoc_writeset.py:76——D541 CI 红第三处根因根治，两解析器对称）。同名配对测试 6 断言 + strip 测试 12 断言。
+- **作者**: CTO（D542/D543 自修，CI 实证三 job 全绿）
+
+## V5.2.1 (2026-08-28) — D541 铁律47 声称完成正则收窄（bare 字形误伤根治）+ D541 CI 红修复（PATCH）
+
+> spec: CTO 内联指令（D541 正则收窄 + 配对测试）。D540 brief 的工作描述措辞（bare 字形）被旧正则误判为完成声称 → 铁律47 → CI strict 硬阻断（CI 日志实证：组5 铁律47 + 组6 memory_refs 两处）。
+
+- **① pre-commit-check.sh L750 铁律47 正则收窄**: 旧正则把 bare 字形（拆分/迁移）也当完成声称 → 工作描述措辞误触发。收窄为三类完成语义『已X / X…完成 / 完成…X』（bare 字形不再匹配；完成声称仍触发）。补充『完成…X』方向（用户给定正则缺此向，而用户测试用例要求该方向必须触发——以测试为具体规范）。
+- **② 配对测试 claim-regex-narrow.test.sh（9 断言）**: 接线（收窄后正则 present + 旧 bare 正则移除）/ 正常（工作描述不触发）/ 降级（完成声称触发）/ 边界（空 brief / 无 brief guard）。
+- **③ D541 CI 两处红修复（CI 日志实证定位）**: brief verify 行去『完成…X』字面量（该字面量命中收窄后正则）；plan.json memory_refs 回填 D541 brief Q1c 引用的 memory 教训路径（消组6 memory_refs 为空 soft_check）。
+- **验证**: SYNO_CI=1 全量 13 组 exit 0；claim-regex-narrow 9/9；收窄正则 vs 修复后 brief 零命中（铁律47 忠实复刻）；check-plan-integrity 直跑 memory_refs ✅ 全部存在。
+- **防膨胀**: 只动 L750 一行正则 + 同行 swallow-ok；不碰其他门禁逻辑。
+- **作者**: dsh（D541，编码 session）
+
+## V5.2.0 (2026-08-28) — D540 独立 clone 试点 + 影子提交 clone 环境验证 + verify-parallel 迁 CI/PR（MINOR）
+
+> spec: docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D540-clone-pilot-shadow-commit-20260827.md（唯一契约）。
+> 隔离机制从 worktree 升格独立 clone（治理定稿 v3：层1 单机隔离治本 + 层2 跨机单源化）。
+
+- **① install-hooks.sh 新增 _ensure_clone_git_config（clone 环境 git 配置初始化，影子提交前置）**: 幂等初始化 user.name/user.email/core.quotepath=false/credential.helper（local 未设才写、已设不覆盖；env SYNO_GIT_NAME/EMAIL/CREDENTIAL_HELPER 可覆盖；git config 失败 → _degraded_log 记录 + 提示，不阻断 hooks 安装，铁律 11）。堵 post-commit.sh L87「identity 未配置?」降级路径——clone 后同批执行即前置堵漏。
+- **② verify-parallel.sh 新增 --ci-pr \<base\> 模式（写集比对迁 CI/PR）**: base..HEAD 写集 × origin/main 已合 dev doc 写集比对（排除 PR 自身 doc）；新增 compare_writesets_ci（不做 V5.0.1 已完成任务豁免——CI 要拦「本 PR 写集 vs 已合任务写集」重叠，豁免会让对比恒过）。exit 三态 0/1/2（D328 模式 1）。
+- **③ pre-push-check.sh 门禁5 迁移**: 本地不再 --scan-today 强阻断（单机多 session 场景语义不准）→ 软提示 + 脚本缺失探针；CI 权威物理拦截。
+- **④ ci.yml quality job 加 Verify parallel declaration 步骤**: verify-parallel --ci-pr origin/main（docs-only 跳过；fetch-depth:0 已确认）。D540 实测该步骤首次真实执行并通过（此前本地 pre-push 强阻断语义不准）。
+- **⑤ 删 scripts/workflow/post-merge-cleanup.sh（铁律 37）**: 孤儿脚本（零生产调用，仅 loop-score 检查存在项）；其职责已被 影子提交 + union 合并覆盖。
+- **测试**: clone-config-init.test.sh（13 断言）/ clone-shadow-commit.test.sh（9 断言，真实沙箱 git + 真实 hook 链：identity 配置→真实 commit→COMMITTED+影子提交+树干净；无 identity→L87 降级；防递归；双 clone 隔离 sha256）/ verify-parallel-ci.test.sh（7 断言 block/pass/degraded+接线）。
+- **防膨胀**: 零新组件（复用 install-hooks/verify-parallel + git 原生 clone）；不改 post-commit.sh/synova-commit（D537 #4 已恢复，防 D530 二次覆盖）。
+- **作者**: dsh（D540，编码 session）
+
 ## V5.1.4 (2026-08-26) — D537 控制塔并行污染 + 提交链摩擦根治（Win 反馈 #2-#6）（PATCH）
 
 > spec: docs/synova/coordination/派单-D537-并行CTO-20260826.md。5 项修已有 bug（#1 CRLF 已由 D520 修复，#6 windows 矩阵已由 D520 建立）。
