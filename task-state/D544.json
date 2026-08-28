@@ -17,13 +17,21 @@
     "note": "8 条验收全过（file:line 证据）+ vitest 23/23 + 三接口接线 + GA 置灰；孤儿实现 D538 910 行收口进 main"
   },
   "audit": {
-    "verdict": "CTO 验收合并（未 K3，随桌面端批次）",
-    "note": "CI 全绿（PR #266）；遗留前端待确认项 3 条 → T-M-09",
-    "by": "CTO",
+    "report": "docs/synova/audit-reports/2026-08-28-D540-D547-governance-closeout.md",
+    "verdict": "CONDITIONAL PASS",
+    "blockers": [
+      "P1-2: brief Done 声称「evidence/D544/chapter2-acceptance.md、chapter3-wiring.md 落盘」但两文件 git 全历史零记录（未入库，M7/M2）。K3 已按代码独立复验 8 条验收 + 3 接口重建证据链，交付方须补交证据文件入库。"
+    ],
+    "findings": [
+      "8 条验收逐条 file:line 复验通过（LeftPanel.tsx/RightPanel.tsx/capability.ts/capability.test.ts）",
+      "三接口接线属实，但派单所列 /api/signals 是伪路径，实际 /api/sentinel/signals（实现方已正确识破）",
+      "孤儿实现 D538 910 行收口进 main（PR #266）"
+    ],
+    "by": "K3",
     "at": "2026-08-28"
   },
-  "fix_task_id": null,
+  "fix_task_id": "FIX-D544",
   "slice": "leftbar-acceptance",
   "updated_at": "2026-08-28",
-  "updated_by": "CTO"
+  "updated_by": "K3"
 }
