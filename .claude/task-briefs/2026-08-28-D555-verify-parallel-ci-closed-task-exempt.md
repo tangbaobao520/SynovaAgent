@@ -29,7 +29,9 @@ D551 实证：新任务 spec 写集含 src/server.ts（D478 已合终审）与 s
 
 做什么：
 - scripts/control-tower/verify-parallel.sh：+_is_closed_doc()（task-state audited / audit-reports glob 两信号）+ ci-pr 循环对已关闭 mtmp 豁免（输出点名）
+- scripts/control-tower/ct-test-gate.sh：剥 GIT_INDEX_FILE（D521-3 泄漏根治——沙箱测试提交污染宿主 index，D555 实证 invalid object）
 - tests/control-tower/verify-parallel-ci.test.sh：+T6 接线 / T7 audited 豁免 / T8 审计报告豁免 / T9 无信号仍 block（7→12 断言）
+- tests/control-tower/alloc-task-id.test.sh：修 $MAIN_MAX（全角标点当变量名（模式2 潜伏 bug，gate 改动后暴露）
 - .codex/control-tower/VERSION.md：V5.2.4（PATCH，bump 同 commit，tag 待 main 合并后打）
 
 不做什么：
