@@ -38,7 +38,9 @@ L0 控制塔（门禁脚本层，非 L1-L5 产品层）。pre-commit 组 1「类
 处理：26 断言（结构 10 场景 + 行为 A/A2/A3/A4/B 系列）
 结果：26/26 全绿 + ct-test-gate 通过 + 全 13 组自检通过（CI 权威复核）
 
-## 架构层: L0 控制塔（scripts/ + tests/control-tower/，非 L1-L5 产品层）
+## 架构层:
+
+L0 控制塔（scripts/ + tests/control-tower/，非 L1-L5 产品层）
 
 ## Done 标准
 - [x] 行为断言 A2/A3/A4 全绿 verify: bash tests/control-tower/hard-gate-convergence.test.sh 2>&1 | grep "26 通过, 0 失败"
