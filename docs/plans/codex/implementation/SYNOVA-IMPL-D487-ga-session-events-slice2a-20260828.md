@@ -44,13 +44,14 @@
 
 ## 3. 实现方案
 
-### 3.1 写集 (4 修改 + 1 新建)
+### 3.1 写集 (5 修改 + 1 新建)
 | 文件 | 操作 | 说明 |
 |------|------|------|
 | src/agent/conversation-engine.ts | 修改 | sessionManager 装配——5 个引擎实例化点（bootstrap/server/tui 等）统一传 `config.sessionManager`；生产路径（L617 附近）消费 sessionManager（消息走 SessionStore 而非仅内存/旧路径） |
 | src/agent/diagnosis-launcher.ts | 修改 | 诊断阶段事件落流——eventBus 的阶段推进/模块结果/报告产出调 `appendEvent(sessionId, 'system'/'tool_result', {phase, module, ...})`（诊断事件类型，见 session-store） |
 | src/store/session-store.ts | 修改 | SessionEventType 扩展诊断事件类型（如 'diagnosis_phase' \| 'diagnosis_module' \| 'diagnosis_report'）+ **L131 event_type CHECK 约束同步扩展**（漏扩则 INSERT 失败）+ appendEvent 类型校验同步 |
-| src/deploy/bootstrap.ts + src/server.ts | 修改 | 实例化点传 sessionManager（bootstrap L682 已创建 → 传入 ConversationEngine；server L116 services.sessionManager 传入诊断链路） |
+| src/deploy/bootstrap.ts | 修改 | 实例化点传 sessionManager（L682 已创建带 store SessionManager → 传入 ConversationEngine） |
+| src/server.ts | 修改 | services.sessionManager（L116）传入诊断链路（诊断会话事件化装配） |
 | tests/agent/diagnosis-session-events.test.ts | 新建 | 诊断全链路事件流断言：① consult 一次 → session_events 含阶段/模块/报告事件（red=现状仅 checkpoint 无事件 → green）；② 回放 deriveMessages/事件序列与诊断过程一致（交付物可自证）；③ 双写失败 → degraded 显式（铁律 31） |
 
 > 共享资源标注（S-8）：本写集不含 VERSION.md（功能装配，非门禁/工具行为变化，不 bump）；current-brief / 暂存区共享，串行触碰；与 DSH 线零交集。
@@ -126,4 +127,4 @@
 
 ---
 
-> 交付声明 DS 须与本文档 DS1-DS7 一一对应（S-10）；派发说明：**本切片是 D394 片2 第一子切片（GA-SESS-2A）**——只做"诊断过程可回放"的生产装配（D500 地基接线 + 诊断事件落流），**不重建事件溯源、不做 fork/resume（片3 Q4）、不做 D398**；**复用 D500 的 session_events/appendEvent/deriveMessages（S-14 无重复审计已证）**；GA 表述（不用 FDE）；暂存前查 session-registry（S-9）+ 主树占用检测（V5.0.0 项1）；merge main 时 reference-map 冲突由本任务所有者解决、bypass.log 噪声行不提交。
+> 交付声明 DS 须与本文档 DS1-DS7 一一对应（S-10）；派发说明：**本切片是 D394 片2 第一子切片（GA-SESS-2A）**——只做"诊断过程可回放"的生产装配（D500 地基接线 + 诊断事件落流），**不重建事件溯源、不做 fork/resume（片3 Q4）、不做 D398**；**复用 D500 的 session_events/appendEvent/deriveMessages（S-14 无重复审计已证）**；GA 表述（不用 FDE）。**隔离（V5.2.0 强制）**：任务开工 `git clone --local <主工作区> .sessions/D487/repo && bash scripts/install-hooks.sh`，基于 origin/main 建分支，**禁止在主工作区写代码**（主工作区 = Codex 专用）；写集表每行一个文件（bootstrap.ts / server.ts 分行——verify-parallel 对账依赖，合并条目会漏检）；merge main 时 reference-map 冲突由本任务所有者解决、bypass.log 噪声行不提交。
