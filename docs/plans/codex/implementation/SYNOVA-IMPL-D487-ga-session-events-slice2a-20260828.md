@@ -55,8 +55,23 @@
 
 > 共享资源标注（S-8）：本写集不含 VERSION.md（功能装配，非门禁/工具行为变化，不 bump）；current-brief / 暂存区共享，串行触碰；与 DSH 线零交集。
 
-### 3.2 最终实现同 commit 回填
+### 3.2 最终实现同 commit 回填（D487 实测，2026-08-28）
 若实现偏离方案（如诊断事件类型命名不同、或装配点在 orchestrator 而非 bootstrap、或事件落流改在 diagnosis.ts 路由层而非 launcher），必须在本节同 commit 回填最终形态（S-6）。
+
+**事件类型命名（无偏离）**：diagnosis_phase / diagnosis_module / diagnosis_report，按 §3.1 建议落地。
+
+**装配点（偏离回填）**：§3.1 假设实例化点在 bootstrap/server——grep 实测 ConversationEngine 实例化点为 **cli.ts（新建 + fromState 恢复）×2、l1/im-inbound.ts、mcp/index.ts、tui-v2/index.ts、conversation-engine.fromState**；server.ts **无** ConversationEngine 实例化（services.sessionManager 已入 orchestration wiring，零改动即命中 DS1 grep）；routes/diagnosis.ts 的 consult 路由直建 SynovaDiagnosisEngine、不经 DiagnosisLauncher（片2-B 范围）。最终装配形态：
+* `EngineConfig.sessionStore?: SessionStoreLike`（launcher 导出内联类型，铁律 39 不 import L5）→ 构造器注入 engineCtx（内联 cast，EngineContext 接口不加 L5 字段）→ launcher `persistingOnEvent` 双写落流。
+* cli 新建/恢复两分支传 `sessionManager+sessionStore`；im-inbound 同（builtinStore 先建）；mcp 经 getDatabase() 守卫（无 db 环境降级内存态，log.warn）；tui-v2 透传 services。
+* deploy/bootstrap：SessionStore 提升具名实例 + `ctx.set('sessionStore')` + BootstrapServices.sessionStore（供 server 侧消费与片2-B）。
+
+**落流机制（偏离回填）**：§3.1 说"eventBus 的阶段推进调 appendEvent"——launcher 现状不经 eventBus 发诊断事件，实际为 **onEvent 包装器 persistingOnEvent 双写**（onEvent 透传给调用方 + appendEvent 落 session_events）；phase_started/phase_completed → diagnosis_phase，其余（模块/发现/降级/错误）→ diagnosis_module；runConsultation 成功后追加 diagnosis_report（回放顺序终点）；失败路径 error 事件也落流。写入失败 log.warn + 诊断继续（铁律 24/31）。
+
+**CHECK 迁移（偏离回填）**：§3.1 只提"L131 CHECK 同步扩展"——CREATE TABLE IF NOT EXISTS 不更新已有表约束，实际追加**旧库幂等表重建迁移**（sqlite_master 建表 SQL 缺 diagnosis_phase 判定 + BEGIN/COMMIT 原子重建 + ROLLBACK 保护）。
+
+**附加发现（D500 第二处悬空）**：tui-v2/lib/bootstrap.ts L130 `new SessionManager({...})` 未注入 store（本文件不在原写集）——一并接入，tui-v2 入口消息事件持久化生效。
+
+**其他**：fromState 增加可选 wiring 参数（恢复会话续写同一事件流）；L669 自动诊断发起人 'FDE'→'GA'（GA 表述约束；L139-163 系统 prompt 内 FDE 文案为 prompt copy 未动）。测试 5 用例映射 §4 ①-⑤（⑤"无 sessionManager 注入"实测以 sessionStore 为轴，sessionManager 为同型可选依赖）。
 
 ### 3.3 不做的事
 * **不重建事件溯源**（D500 已交付 session_events/appendEvent/deriveMessages——复用）。

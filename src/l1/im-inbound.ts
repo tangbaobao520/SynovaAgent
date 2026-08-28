@@ -177,8 +177,14 @@ async function generateAIReply(
     baseUrl: process.env.LLM_BASE_URL,
   });
 
-  const conv = new ConversationEngine(provider);
+  // D487: 会话事件装配 — builtinStore 先建，sessionManager+sessionStore 注入引擎
+  // （诊断事件落 session_events；SessionManager 与 store 同源，消息事件持久化生效）
+  const { SessionManager } = await import('../orchestrator/session-manager');
   const builtinStore = new SessionStore(store['db' as keyof typeof store] as never);
+  const conv = new ConversationEngine(provider, {
+    sessionManager: new SessionManager({}, builtinStore),
+    sessionStore: builtinStore,
+  });
   registerBuiltinTools(conv.getToolRegistry(), store as unknown as Parameters<typeof registerBuiltinTools>[1], sessionId, () => conv.getPhase(), () => identity.teamId);
 
   // 恢复会话历史

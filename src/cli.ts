@@ -19,6 +19,7 @@ import { detectProvider } from './providers/detect';
 import { isLLMConfigured, runSetup } from './setup';
 import { ConversationEngine } from './agent/conversation-engine';
 import { SessionStore } from './store/session-store';
+import { SessionManager } from './orchestrator/session-manager';
 import { registerBuiltinTools } from './agent/builtin-tools';
 import type { LLMProvider } from './providers/types';
 import { loadConfig } from './config';
@@ -93,7 +94,11 @@ async function main() {
     if (idx >= 0 && idx < sessions.length) {
       const state = store.loadState(sessions[idx].id);
       if (state) {
-        conv = ConversationEngine.fromState(provider, state);
+        // D487: 恢复会话 — 传 sessionManager/sessionStore，诊断事件流续写同一会话
+        conv = ConversationEngine.fromState(provider, state, {
+          sessionManager: new SessionManager({}, store),
+          sessionStore: store,
+        });
         sessionId = sessions[idx].id;
         console.log(`${GREEN}✅ 恢复会话: ${state.orgId}${RESET} (Phase ${state.phase}, ${state.messages.length} 条消息)\n`);
         // 回放最近几条消息
@@ -115,7 +120,12 @@ async function main() {
   const orgName = await new Promise<string>(r => rl.question(`${CYAN}组织名称:${RESET} `, r));
   rl.close();
 
-  conv = new ConversationEngine(provider, { orgId: orgName || 'default' });
+  // D487: 会话事件装配 — sessionManager(压缩+事件持久化) + sessionStore(诊断事件落流)
+  conv = new ConversationEngine(provider, {
+    orgId: orgName || 'default',
+    sessionManager: new SessionManager({}, store),
+    sessionStore: store,
+  });
   const sess = store.createSession(orgName || 'default');
   sessionId = sess.id;
   store.saveState(sessionId, conv.serialize());
