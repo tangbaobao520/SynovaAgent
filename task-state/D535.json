@@ -8,7 +8,7 @@
     "slice": "stage1-cont"
   },
   "impl": {
-    "commit": "9d9b3f8e",
+    "commit": "02381ad7",
     "by": "dsh",
     "at": "2026-08-26",
     "files": [
@@ -18,7 +18,8 @@
       "tests/control-tower/incident-loop-hygiene.test.sh",
       "tests/control-tower/incident-loop.test.sh"
     ],
-    "evidence": "DS1-DS11 全绿: incident-loop-hygiene.test.sh PASS=12/12; synova-commit:509 incident-loop record 调用; 循环卫生标准文档含超时契约/提醒/接线; 超时验证除 attach.py:203 基线缺口外全达标; incident-loop.test.sh 8/8(4b 跨平台修正); 与 main 基线回归一致"
+    "evidence": "DS1-DS11 全绿: incident-loop-hygiene.test.sh PASS=12/12; synova-commit:509 incident-loop record 调用; 循环卫生标准文档含超时契约/提醒/接线; 超时验证除 attach.py:203 基线缺口外全达标; incident-loop.test.sh 8/8(4b 跨平台修正); 与 main 基线回归一致",
+    "commit_note": "CTO 复核修正（2026-08-29）：原 9d9b3f8e 为影子登记/废弃分支提交，真实实现提交 02381ad7（M7 纪律）"
   },
   "audit": null,
   "fix_task_id": null,
