@@ -73,6 +73,8 @@
 
 **其他**：fromState 增加可选 wiring 参数（恢复会话续写同一事件流）；L669 自动诊断发起人 'FDE'→'GA'（GA 表述约束；L139-163 系统 prompt 内 FDE 文案为 prompt copy 未动）。测试 5 用例映射 §4 ①-⑤（⑤"无 sessionManager 注入"实测以 sessionStore 为轴，sessionManager 为同型可选依赖）。
 
+**D540 写集接力豁免（CI 复核补强）**：CI verify-parallel --ci-pr 纯重叠判定（无 V5.0.1 豁免）拦截本卡写集 × 已合 D500 写集（session-store/conversation-engine 两文件）。本卡是 D500 的指定后继（§1 权威文档链），属串行演进非并行冲突——按 ci-pr 唯一 carve-out（同路径修订 = 同一任务演进）在 D500 doc 写集表后补接力登记，物理记录交接（D500 交付不变量零改动）。
+
 **sessionId 归属（复核补强，c796da55）**：复核发现 cli/im-inbound/mcp 原装配未传 EngineConfig.sessionId——引擎 sessionId 为空串，诊断事件（及 SessionManager 消息事件）会落 `session_id=''` 桶，按会话回放失效。修复：cli 新建分支先 createSession 再构造引擎、恢复分支经 fromState wiring.sessionId 传入；im-inbound 传参 sessionId；mcp 每次 diagnose 独立 createSession；launcher persistEvent 增加空 sessionId 跳过防护（与 addMessage "无 id 走内存态" 语义一致）。
 
 ### 3.3 不做的事

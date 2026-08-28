@@ -97,6 +97,8 @@ C 线 S3-5（自诊断可信度，P0-block 已转交：完成度误判）+ S0（
 | [tests/store/session-event-log.test.ts](tests/store/session-event-log.test.ts) | 新建 | 事件流测试（red→green，见 §5） |
 | [tests/orchestrator/session-manager-eventlog.test.ts](tests/orchestrator/session-manager-eventlog.test.ts) | 新建 | 持久化 + 断言测试（red→green，见 §5） |
 
+
+> **接力登记（2026-08-28, D487）**：本卡写集（session-store / conversation-engine / bootstrap 等）由 **D487 GA 诊断会话事件化装配（D394 片2-A）** 串行继承演进——本卡已合入 origin/main（写集全部落地，V5.0.1 惯例：已交付任务的写集被后继任务继承是串行演进，非并行冲突）。D487 在 D500 地基（session_events/appendEvent/deriveMessages 不变量）上做生产装配，未重建、未回退任何 D500 交付。见 [SYNOVA-IMPL-D487-ga-session-events-slice2a-20260828.md](SYNOVA-IMPL-D487-ga-session-events-slice2a-20260828.md)。
 > ⚠️ **Win 协调（S-7/S-8 共享资源标注）**：`src/store/session-store.ts` 按 TASK-ROUTING §一归 Win Claude（src/ 除 sentinel/cron/mcp 外）；派发文档 Spec 1 明示"涉及 src/store 归 Win，写集需与 Win 核对"。编码实现前：① 编码 session 先 grep `src/store/` 当前认领状态（check 是否有 Win 在途改动）② 与 Win 核对写集（本卡 5 文件 vs Win 在途工作区）③ 核对通过才开工。`conversation-engine.ts` 本卡只读 + 一行传参（:616），风险最低。
 >
 > **事件写入下沉决策（2026-08-22 实测修正）**：SessionStore.addMessage 直连生产调用方 8 处（cli.ts:143/209/228、im-inbound.ts:144/196、graceful-shutdown.ts:129、stuck-session-detector.ts:101、restart-recovery.ts:120）——若只在 SessionManager 层做双写，这些路径产生的事件流缺失（model-visible⟺logged 在这些路径断裂）。修正：**双写下沉到 SessionStore.addMessage 内部**，SessionManager 注入后经同一路径，全部调用方自动获得事件流。

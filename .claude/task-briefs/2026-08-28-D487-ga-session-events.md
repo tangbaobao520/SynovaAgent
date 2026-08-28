@@ -36,6 +36,7 @@ c) memory：铁律 0-2 测试先行（red→green）；铁律 31 降级显式（
 - launcher onEvent 包装落流（phase/module 映射 + report 事件）+ SessionStoreLike 导出
 - engine EngineConfig.sessionStore 注入 ctx + fromState 可选装配参 + L669 FDE 改 GA
 - cli/im-inbound/mcp 传 sessionManager+sessionStore（mcp getDatabase 守卫降级）、bootstrap ctx.set sessionStore、tui-v2 透传
+- docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D500-session-event-sourcing-20260822.md（接力登记：CI D540 同路径演进 carve-out，仅追加交接注记，不改 D500 声明）
 不做什么（含文件路径）：
 - 不改 src/orchestrator/session-manager.ts（D500 已审计交付，不加 getStore——经 EngineConfig.sessionStore 直传）
 - 不改 src/server.ts（services.sessionManager 已入 wiring，无 ConversationEngine 实例化点，DS1 grep 现状已命中）
