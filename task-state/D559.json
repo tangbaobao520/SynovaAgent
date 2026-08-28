@@ -1,0 +1,13 @@
+{
+  "task_id": "D558",
+  "title": "CT-46 pre-commit 组1 类型安全模式扩 as never / as unknown as",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-29",
+  "updated_by": "alloc-task-id",
+  "id": "D559",
+  "note": " 手工登记：alloc 无法看见未合并分支的 D558 注册（D550 残余风险），按 D551 改号先例"
+}

@@ -67,34 +67,41 @@ fi
 
 # 今日全部 brief (认领候选) — D366: 文件名日期前缀 (mtime 会被 git pull 刷, 不可靠)
 # D366: 按文件名日期判断"今日" — 替代 find 按 mtime 的今日判定
+# D559 (CT-46 连带): 窗口扩 ±1 天 — CI runner UTC vs brief 日期 UTC+8：北京时间 08-29 写的
+#   brief 对 UTC runner 是"明天"，认领被排除 → resolver 回退到认领同文件的陈旧 brief
+#   （PR #295 实证：D541 brief 架构层为空 → CI 6 字段红）。D506 时区容差同型。
 # 用法: today_files_by_prefix <dir>   # brief: YYYY-MM-DD 文件名前缀 (扫描 *.md)
 #       today_files_by_suffix <dir>   # dev doc: -YYYYMMDD.md 文件名后缀 (扫描 SYNOVA-IMPL-*.md)
 # 性能: 纯 bash for+case 零子进程 — grep|head 每文件 3 spawn × 349 brief = Windows 分钟级 (实测回退)
 # 注意: glob 硬编码在函数内 — 变量中的 * 不会被路径名展开 (实测), 字面 glob 才展开
 TODAY_DASH=$(date +%Y-%m-%d)
 TODAY_COMPACT=$(date +%Y%m%d)
+DATES="$("$PYBIN" -c "from datetime import date, timedelta as td; t=date.today(); print(t-td(days=1), t, t+td(days=1))" 2>/dev/null || echo "$TODAY_DASH")"  # swallow-ok: 窗口计算失败→按仅今日处理（原语义）
+DATES_C="$("$PYBIN" -c "from datetime import date, timedelta as td; t=date.today(); print((t-td(days=1)).strftime('%Y%m%d'), t.strftime('%Y%m%d'), (t+td(days=1)).strftime('%Y%m%d'))" 2>/dev/null || echo "$TODAY_COMPACT")"  # swallow-ok: 同上
 today_files_by_prefix() {
-  local dir="$1" f b
+  local dir="$1" f b d
   dir="${dir%/}"
   [ -d "$dir" ] || return 0
   for f in "$dir"/*.md; do
     [ -e "$f" ] || continue
     b=${f##*/}
-    case "$b" in
-      "${TODAY_DASH}"-*) echo "$f" ;;
+    d=${b:0:10}
+    case " $DATES " in
+      *" $d "*) echo "$f" ;;
     esac
   done
   return 0
 }
 today_files_by_suffix() {
-  local dir="$1" f b
+  local dir="$1" f b d
   dir="${dir%/}"
   [ -d "$dir" ] || return 0
   for f in "$dir"/SYNOVA-IMPL-*.md; do
     [ -e "$f" ] || continue
     b=${f##*/}
-    case "$b" in
-      *-${TODAY_COMPACT}.md) echo "$f" ;;
+    d=${b%.md}; d=${d##*-}
+    case " $DATES_C " in
+      *" $d "*) echo "$f" ;;
     esac
   done
   return 0

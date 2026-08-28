@@ -35,7 +35,7 @@ echo "=== D515 项3: 硬阻断收敛（10 场景：4 保 6 放）==="
 
 # ── 结构断言: 4 保 + 2 特例仍是 hard_check ──
 KEEP_HARD=(
-  'hard_check "as any 零容忍（新增，铁律 38；存量独立清理）"'
+  'hard_check "as any / as never / as unknown as 零容忍（新增，铁律 38；存量独立清理）"'
   'hard_check "新文件配对: impl 须同 commit 有 test"'
   'hard_check "桩测试: 新测试需 ≥3 expect()"'
   'hard_check "接线审计: 新 export 必须被引用 (物理事实)"'
@@ -70,8 +70,37 @@ git -C "$REPO" add -- "$PROBE1" >/dev/null 2>&1
 OUTA=$(cd "$REPO" && SYNO_GATEKEEPER_ACK=1 SYNO_SKIP_PARALLEL_WARN=1 \
   SYNO_GATE_HITS_LOG="$(mktemp)" bash "$PC" 2>&1); rcA=$?
 [ "$rcA" -eq 1 ] && ok "行为A: as any 探针被硬拦 (exit 1)" || no "行为A: 应 exit 1, 实际 $rcA"
-echo "$OUTA" | grep -q "as any 零容忍" && ok "行为A: 命中 as any 零容忍检查点" || no "行为A: 未点名 as any"
+echo "$OUTA" | grep -q "as any / as never / as unknown as 零容忍" && ok "行为A: 命中 as any 零容忍检查点" || no "行为A: 未点名 as any"
 echo "$OUTA" | grep -q "提交已拒绝" && ok "行为A: 硬失败输出「提交已拒绝」标记" || no "行为A: 缺硬失败标记"
+cleanup
+
+# ── 行为断言A2 (CT-46): as never 探针 → 硬拦（mcp L236 同型逃逸）──
+echo 'export const probeNever = (x: unknown) => x as never;' > "$PROBE1"
+git -C "$REPO" add -- "$PROBE1" >/dev/null 2>&1
+OUTA2=$(cd "$REPO" && SYNO_GATEKEEPER_ACK=1 SYNO_SKIP_PARALLEL_WARN=1 \
+  SYNO_GATE_HITS_LOG="$(mktemp)" bash "$PC" 2>&1); rcA2=$?
+[ "$rcA2" -eq 1 ] && ok "行为A2: as never 探针被硬拦 (exit 1)" || no "行为A2: 应 exit 1, 实际 $rcA2"
+echo "$OUTA2" | grep -q "as any / as never / as unknown as 零容忍" && ok "行为A2: 命中扩展检查点" || no "行为A2: 未点名 as never"
+cleanup
+
+# ── 行为断言A3 (CT-46): as unknown as 双断言链 → 硬拦 ──
+echo 'export const probeDouble = (x: unknown) => x as unknown as string;' > "$PROBE1"
+git -C "$REPO" add -- "$PROBE1" >/dev/null 2>&1
+OUTA3=$(cd "$REPO" && SYNO_GATEKEEPER_ACK=1 SYNO_SKIP_PARALLEL_WARN=1 \
+  SYNO_GATE_HITS_LOG="$(mktemp)" bash "$PC" 2>&1); rcA3=$?
+[ "$rcA3" -eq 1 ] && ok "行为A3: as unknown as 双断言被硬拦 (exit 1)" || no "行为A3: 应 exit 1, 实际 $rcA3"
+cleanup
+
+# ── 行为断言A4 (CT-46): 裸 as unknown（合法中间态）→ 不拦（exit 0，防过度阻断）──
+# 设计: 追加行到已有跟踪文件（新建 .ts 文件会触发"新文件配对"门禁，测不到组 1 本意）
+PROBE_HOST="$REPO/src/agent/diagnosis-launcher.ts"
+echo "" >> "$PROBE_HOST"
+echo 'const __probeA4 = (x: unknown) => x as unknown; // CT-46 probe' >> "$PROBE_HOST"
+git -C "$REPO" add -- "$PROBE_HOST" >/dev/null 2>&1
+OUTA4=$(cd "$REPO" && SYNO_GATEKEEPER_ACK=1 SYNO_SKIP_PARALLEL_WARN=1 \
+  SYNO_GATE_HITS_LOG="$(mktemp)" bash "$PC" 2>&1); rcA4=$?
+[ "$rcA4" -eq 0 ] && ok "行为A4: 裸 as unknown 不误拦 (exit 0)" || no "行为A4: 应 exit 0, 实际 $rcA4 :: $(echo "$OUTA4" | grep -B2 '提交已拒绝' | head -8)"
+git -C "$REPO" restore --staged --worktree -- "$PROBE_HOST" >/dev/null 2>&1 || true
 cleanup
 
 # ── 行为断言B: G12 越界探针（无 brief 认领的 json）→ 软提示放行（exit 0）──
