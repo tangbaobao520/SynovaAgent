@@ -81,7 +81,10 @@ if [ -f "$MARKER" ]; then
             HASH_NOW=$(git rev-parse HEAD 2>/dev/null || true)
             if [ -n "$HASH_NOW" ]; then
               echo "$(date -Iseconds) | COMMITTED | pre-commit PASS (hook 层登记) | HASH=$HASH_NOW" >> "$ROOT/.claude/bypass.log"
-              if git add "$ROOT/.claude/bypass.log" 2>/dev/null && git commit --no-verify -q -m "chore: bypass COMMITTED 登记 (auto hook, D521)" 2>/dev/null; then
+              # CT-43（D554）: `-o -m ... -- <path>` 限定登记提交只含 bypass.log——不卷走暂存区遗留文件
+              # （D552 实证: D311 guard 阻断后遗留 staged 文件被本提交整体卷入 8b6deaf4，M8 变体；
+              #   注意 -m 必须在 -- 之前，否则被当 pathspec）
+              if git add "$ROOT/.claude/bypass.log" 2>/dev/null && git commit --no-verify -q -o -m "chore: bypass COMMITTED 登记 (auto hook, D521)" -- "$ROOT/.claude/bypass.log" 2>/dev/null; then
                 :  # 登记提交完成——bypass.log 保持干净
               else
                 echo "  ⚠️  post-commit: bypass 登记提交失败（identity 未配置?）— 降级，对账时按 D451 补记" >&2

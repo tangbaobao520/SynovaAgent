@@ -11,6 +11,16 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V5.2.3 (2026-08-28) — CT-43 auto-hook 影子提交路径限定（防卷走暂存区遗留文件）（PATCH）
+
+> spec: D554 brief（CTO 内联指令）。D552 实证：D311 staging-guard 阻断后遗留的 staged 文件（dsh/plugins 插件 8 文件）被 post-commit hook 的「bypass COMMITTED 登记」影子提交整体卷入 8b6deaf4（消息与内容不符）——M8/D286 同型变体，防线缺口 = 影子提交未限定路径。
+
+- **① scripts/hooks/post-commit.sh 登记提交限定路径**: `git commit --no-verify -q -m "..."` → `git commit --no-verify -q -o -m "..." -- "$ROOT/.claude/bypass.log"`——`-o` 用命名路径的工作区快照建临时索引提交，只含 bypass.log，不消费/不卷走暂存区其他文件（foreign 文件保持 staged）。**注意 -m 必须在 -- 之前**（-- 之后全部按 pathspec 解析，-m 会被当路径）。
+- **② 配对测试 post-commit.test.sh 扩展（7→12 断言）**: 场景D（暂存区遗留他人文件 → 影子提交树只含 bypass.log + 遗留文件仍 staged + pathspec 提交语义保持）+ 接线断言（-o + pathspec 在位）+ 降级（真实提交失败沙箱可继续）。**连带修 M5 环境依赖**：沙箱仓库内配置 user.name/email（本机无全局 identity 时影子提交必败——测试机器无关化）。
+- **验证**: post-commit.test.sh 12/12 本地全绿（含新 5 断言）；bash -n 语法过；CI 双平台 canary（post-commit.test.sh 已在密封清单）。
+- **防膨胀**: 只动 post-commit.sh 一行提交命令 + 测试扩展；零新组件/新机制。
+- **作者**: dsh-cto（D554，CT-43 修复）
+
 ## V5.2.2 (2026-08-28) — D542 CI 失败可见性 + D543 密封 canary 转绿 + 解析器对称（PATCH）
 
 - **① D542 soft_check/warn_check CI strict 打印 ❌**（此前计硬失败却显示 ⚠️，「N 组未通过」在日志中无组名可查——D541 排查黑洞根因）。计数语义零变化，纯可观察性。配对测试 ci-strict-visible.test.sh 6 断言。

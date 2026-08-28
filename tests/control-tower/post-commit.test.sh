@@ -10,13 +10,18 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 #          bypass.log 含本提交 HASH + 工作区无脏变更 + 影子 message 标记
 #   防递归 — 再做一个 commit → 影子不再嵌套影子（链长稳定）
 #   边界 — marker 缺失（--no-verify 等价场景）→ 不登记（不洗白绕过）
+#   CT-43/D554 — 暂存区遗留他人文件 → 影子提交只含 bypass.log（-o 限定），遗留文件不卷入、暂存状态保持
+#   降级 — identity 缺失 → 登记提交失败显式提示（不崩溃不静默）
 #   接线 — post-commit.sh 含登记段；synova-commit D508 追加已去重
 # 沙箱: mktemp git 仓库 + 指向真实 hook 的委托（M13: git -c 一次性身份参数）
 # ═══════════════════════════════════════════════════════════════
 set -uo pipefail
 # M13/D521: hook 上下文会导出 GIT_DIR/GIT_WORK_TREE——沙箱 git 命令必须剥掉
 # （git -C 不覆盖 GIT_DIR env；D521-3 实证沙箱提交落到宿主分支）
-unset GIT_DIR GIT_WORK_TREE
+# D554 补充: GIT_INDEX_FILE 同样会被 git hook 上下文导出（pre-commit hook 运行时
+# 指向宿主 index）——ct-test-gate 只剥 GIT_DIR/GIT_WORK_TREE（D521-3 未根治泄漏），
+# 测试内再剥 GIT_INDEX_FILE 防沙箱 commit 误用宿主 index。
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 HOOK_SRC="$REPO/scripts/hooks/post-commit.sh"
 PASS=0; FAIL=0
@@ -37,6 +42,10 @@ fi
 # ── 沙箱: git init + 委托 hook 指向真实脚本 ──
 SB="$TMPD/sb"; mkdir -p "$SB/.claude" "$SB/.git/hooks"
 git -C "$SB" init -q
+# M5: hook 内部影子提交用沙箱仓库身份——本机无全局 identity 时影子提交必败（环境依赖），
+# 在沙箱仓库内配置（git -C 写沙箱 .git/config，不污染宿主——M13 边界内）
+git -C "$SB" config user.name t
+git -C "$SB" config user.email t@t
 printf '#!/bin/bash\nexec bash "%s"\n' "$HOOK_SRC" > "$SB/.git/hooks/post-commit"
 chmod +x "$SB/.git/hooks/post-commit"
 echo "seed" > "$SB/.claude/bypass.log"
@@ -75,6 +84,42 @@ if grep -q "$C_HASH" "$SB/.claude/bypass.log"; then
 else
   ok "marker 缺失（绕过）→ 不登记（证据诚实）"
 fi
+
+# 场景D（CT-43/D554）: 暂存区有遗留他人文件 → 影子登记提交只含 bypass.log，不卷走遗留
+if grep -q -- '--no-verify -q -o -m' "$HOOK_SRC" && grep -q -- '"\$ROOT/.claude/bypass.log"' "$HOOK_SRC"; then
+  ok "接线: 登记提交限定 -o + pathspec bypass.log（CT-43 修复在位）"
+else
+  no "登记提交未限定路径（-o/pathspec 缺失，卷带风险）"
+fi
+echo "foreign" > "$SB/foreign.txt"
+git -C "$SB" add foreign.txt              # 模拟 D311 guard 阻断后遗留的他人 staged 文件
+echo "feature-d" > "$SB/d.txt"
+git -C "$SB" add d.txt                     # 本提交自己的文件（pathspec 提交要求已在索引）
+echo "$(git -C "$SB" rev-parse HEAD)|$(date +%s)" > "$SB/.claude/last-precommit-success"
+git -C "$SB" -c user.name=t -c user.email=t@t commit -q --no-verify -m "feat: real commit D" -- d.txt
+SHADOW_FILES=$(git -C "$SB" show HEAD --name-only --format= 2>/dev/null) # swallow-ok: 场景D 前序提交失败时 show 报错属预期，由后续断言点名
+if [ "$SHADOW_FILES" = ".claude/bypass.log" ]; then
+  ok "影子登记提交只含 bypass.log（foreign.txt 未卷入）"
+else
+  no "影子提交卷走遗留文件: $SHADOW_FILES"
+fi
+if git -C "$SB" status --porcelain | grep -q '^A  foreign.txt'; then
+  ok "foreign.txt 仍留在暂存区（-o 不消费他人 staged）"
+else
+  no "foreign.txt 暂存状态被破坏（$(git -C "$SB" status --porcelain | tr '\n' ' ' | head -c 80)）"
+fi
+if git -C "$SB" cat-file -e "HEAD^:foreign.txt" 2>/dev/null; then # swallow-ok: 文件不存在=断言目标状态（未卷入），非错误吞
+  no "foreign.txt 被卷进真实提交（pathspec 失效）"
+else
+  ok "真实提交未包含 foreign.txt（pathspec 提交语义保持）"
+fi
+
+# 降级（-o 修复面外，保持不变）: 真实提交本身失败（identity 清空）→ hook 不触发、沙箱可继续操作
+echo "feature-e" > "$SB/e.txt"
+echo "$(git -C "$SB" rev-parse HEAD)|$(date +%s)" > "$SB/.claude/last-precommit-success"
+git -C "$SB" add e.txt
+git -C "$SB" -c user.name='' -c user.email='' commit --no-verify -m "feat: no-identity commit E" -- e.txt >/dev/null 2>&1 || true
+git -C "$SB" status --porcelain -- e.txt | grep -q '^A' && ok "降级: 真实提交失败后沙箱状态可继续（e.txt 仍 staged）" || no "沙箱状态被破坏"
 
 echo ""
 echo "结果: $PASS 通过, $FAIL 失败"
