@@ -19,7 +19,7 @@ description: 多机协作 git 同步与 PR 流程（D334 定；V5.2.0 起为独�
 # 0. 关键判断：当前路径含 .sessions/ → 已在专属 clone，直接跳第 4 步。
 #    不含 → 未按新规开工。在主工作区的【父目录】执行以下命令（禁止在主工作区内部操作）：
 git clone --local <主工作区路径> .sessions/<session-id>/repo   # 1. 独立 clone
-#    Win 例: cd /d/novis-backup-20260526/Novis && git clone --local synova-agent .sessions/D544/repo
+#    Win 例: cd /d/novis-backup-20260526/Novis && git clone --local synova-agent .sessions/<任务号>/repo
 cd .sessions/<session-id>/repo                                 # 2. 进入任务仓库
 git remote set-url origin git@github.com:tangbaobao520/SynovaAgent.git  # 2b. ★必做：local clone 的 origin 指向本地路径，不修正 = push 打进主工作区
 bash scripts/install-hooks.sh                                  # 3. hooks + user.name/email + quotepath + credential（自动、幂等）
