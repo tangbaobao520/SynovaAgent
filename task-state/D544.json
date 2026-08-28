@@ -28,7 +28,13 @@
       "孤儿实现 D538 910 行收口进 main（PR #266）"
     ],
     "by": "K3",
-    "at": "2026-08-28"
+    "at": "2026-08-28",
+    "fix_d544": {
+      "issue": "brief 声称 evidence/D544/chapter2-acceptance.md 等「落盘」但 git 零记录（K3 FIX-D544，M7/M2 同 D356/D539 型）",
+      "clarify": "evidence/ 被 .gitignore:75 忽略（既定设计，D536 确认：K3 靠 runbook 复跑）。8 条验收标注经 PR 描述可核（K3 已复验通过）。修复 = 如实声明：evidence 本地落盘不入 git，复跑入口 = docs/synova/runbooks/desktop-deploy-acceptance.md 或 PR 描述",
+      "by": "CTO",
+      "at": "2026-08-28"
+    }
   },
   "fix_task_id": "FIX-D544",
   "slice": "leftbar-acceptance",
