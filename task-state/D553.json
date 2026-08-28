@@ -1,0 +1,18 @@
+{
+  "task_id": "D553",
+  "title": "impl-done-disposal-and-audit-dispatch",
+  "status": "impl_done",
+  "spec": {
+    "doc": ".claude/task-briefs/2026-08-28-D553-impl-done-disposal-and-audit-dispatch.md",
+    "note": "30 impl_done 分类：13 有报告（派生制闭环）+ 17 无审计结论（派 K3 初审/复审批）"
+  },
+  "impl": {
+    "commits": ["impl.commit 回填×3", "审计派单-20260828-impl-done处置批.md", "CTO-HEALTH 重生成"],
+    "pr": "#279",
+    "note": "与 D552 同 PR 交付（chore/cto-governance-backfill 分支）"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-28",
+  "updated_by": "dsh-cto"
+}

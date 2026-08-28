@@ -1,0 +1,16 @@
+{
+  "task_id": "D531",
+  "title": "AGENTS.md/CLAUDE.md 对齐 V5.1.1 + 每周自检机制",
+  "status": "impl_done",
+  "spec": {
+    "doc": "docs/synova/coordination/每周自检对齐机制-20260825.md",
+    "note": "commit 8ee044ba 用 D531 未走分配器，补登记"
+  },
+  "impl": {
+    "commit": "8ee044ba",
+    "branch": "chore/docs-align-v511"
+  },
+  "updated_at": "2026-08-25",
+  "updated_by": "cto",
+  "priority": "P1"
+}

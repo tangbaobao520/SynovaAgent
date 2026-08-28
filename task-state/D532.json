@@ -1,0 +1,16 @@
+{
+  "task_id": "D532",
+  "title": "自检脚本 --report + launchd 每周日 8:00 自动自检落位",
+  "status": "impl_done",
+  "spec": {
+    "doc": "docs/synova/coordination/每周自检对齐机制-20260825.md",
+    "note": "launchd com.synova.weekly-selfcheck 已加载"
+  },
+  "impl": {
+    "commit": "dc5a5108",
+    "branch": "chore/selfcheck-launchd"
+  },
+  "updated_at": "2026-08-25",
+  "updated_by": "cto",
+  "priority": "P1"
+}
