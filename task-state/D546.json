@@ -1,11 +1,22 @@
 {
   "task_id": "D546",
   "title": "sentinel-findings-event",
-  "status": "claimed",
+  "slice": "d394-slice1",
+  "status": "impl_done",
   "spec": null,
-  "impl": null,
+  "impl": {
+    "commit": "787e4f82417f790143bb85deeec79ef5f359eb5b",
+    "by": "coding",
+    "at": "2026-08-28",
+    "files": [
+      "tests/sentinel/sentinel-events-contract.test.ts",
+      "tests/sentinel/durationms-regression.test.ts",
+      "tests/sentinel/sentinel-events.test.ts"
+    ],
+    "note": "D546 收口（D394 片1, slice: d394-slice1）：src/ 零改动（事件化本体 a8a5857e 已 audited PASS，不重建）。交付 = 测试层三件：① DS2 双线公共契约测试（sentinel_events vs session_events 信封 C1-C6 + durationMs 冒充 checkedAt 违约注入 red + 双线信封映射同构含 C7 双形态）；② DS3 I1 回放等价强化 canonical-JSON sha256 全投影等价 + 删事件注入 red（既有 kill -9 用例保持绿）；③ DS4 durationMs 回归网 4 用例（真实 check 经 executeSentinel 正值 (0,60000] + 纪元防护年份 ≥2026 + sentinel-service L97 来源锁定 + 历史缺陷形态 new Date(durationMs).toISOString() 注入 red）。诚实标注：派单『runner 5 处 durationMs 恒 1970』与代码不符（逐行实读均为正确 duration 语义），历史缺陷在 sentinel-service.ts:97 且已随 a8a5857e 修复——只补回归网不做伪修复。L07 收益标注：L07-3 监测结果持久化（verified）→ 持久化 + 可回放（canonical-JSON sha256 可证）+ 双线契约统一（与 Win 片2-A D487 公共信封 C1-C6）。evidence/D546/ + PR 描述携带 CI check-runs（D540 教训）。"
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-08-28",
-  "updated_by": "alloc-task-id"
+  "updated_at": "2026-08-28T15:40:00+08:00",
+  "updated_by": "coding"
 }
