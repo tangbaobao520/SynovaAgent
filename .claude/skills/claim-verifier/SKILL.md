@@ -34,6 +34,7 @@ description: 核实审计/测试/dev doc 声明 + 声称完成的物理证明。
 4. **写集验证**：`bash scripts/workflow/check-dev-doc-write-set.sh`（dev doc 写集 vs 实际改动，漂移 0）
 5. **审计基线**：`python3 scripts/audit/audit-check.py --full` 与基线一致（D316: 439 FAIL 不变）
 6. **推送落库**：`git log origin/feat/prompt-architecture..HEAD` 为空
+7. **独立 clone 交付声明**（V5.2.0 起）：交付声明必须写明在 `.sessions/<sid>/repo` clone 内完成；物理核验 = 交付分支存在于 GitHub origin + 主工作区无未提交代码改动（主工作区 = Codex 专用，出现 src/tests/scripts 改动即为违规信号）。"在主工作区直接改代码交付"的声称直接判不实
 
 ## 核实产出格式
 
