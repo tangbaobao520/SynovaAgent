@@ -91,6 +91,7 @@
 | CT-41 | **仪表盘完整性专项（创始人确认盲区 6 项）**：① CI 状态入仪表盘（CT-39 并入）；② 审计结论联动 26 线（D347/D349）；③ P0 积压自动化（防 MANUAL 误清）；④ 跨机一致性（P2-8）；⑤ 历史任务补录；⑥ PR 合并状态集成 | 2026-08-16 创始人 | 🔧 待排（主线 dev-doc 写 4 spec 并行） |
 | CT-40 | **控制塔测试接入门禁**（tests/control-tower/*.test.sh 不跑于 pre-commit/CI → D393 P0-1 红灯无物理拦截；M1 强化） | K3 D393 审计 P0-1 防线缺口 | 🔧 待排 |
 | CT-42 | **current-brief session 专属接线**（D329 机制已存在，写侧 current-brief.$SESSION_ID D539 已闭环；读侧解析器 --session 生产调用点） | 2026-08-16 D394 并行冲突实证 | 🔧 D539 已闭环写侧；读侧待验证 |
+| CT-44 | **gen-cto-health.py 审计派生多 D# 支持**——L214 `re.search` 只取文件名第一个 D#，批次报告（D483-D484-D486）只自动派生首个任务 audited，其余靠手工回填（K3 2026-08-29 提醒；治理冻结期，非 P0 暂不修） | K3 D483-D486 批审计 | 🔧 待排 |
 | CT-43 | **post-commit auto-hook（D521 登记）提交限定路径**——auto-hook 提交只应含 `.claude/bypass.log`（`git commit --only`），现状会卷走暂存区遗留文件（D552 实证：D311 guard 阻断后 dsh/plugins 插件被卷入 8b6deaf4「bypass 登记」提交，M8/D286 同型变体） | 2026-08-28 D552 回填实证 | ✅ **D554 已修（V5.2.3，PR #280）**：`git commit -o -m ... -- bypass.log` 路径限定 + 配对测试 7→12 断言（场景D 卷带防护） |
 | CT-39 | **CI 红超 24h 自动入 CTO 待办**（红常态化 = 信号失效 M1 同型；D387 P2-5 实证 CI 双红无人认领） | K3 D387 补核 P2-5 | 🔧 待排（CI 状态回写仓库后自动触发） |
 | CT-38 | **新 .py 脚本必须有测试配对门禁**（pre-commit 组 2 只对 .ts/.tsx；gen-cto-health.py 329 行零测试漏网） | K3 D383 审计 L4-4 | 🔧 D384 折入 + 门禁化 |
