@@ -38,7 +38,8 @@
 - dsh/plugins/synova-dashboards/lib/index.js
 - dsh/plugins/synova-dashboards/scripts/install-dashboards.sh
 - dsh/plugins/synova-dashboards/scripts/restart-dsh-web.sh
-- 治理文档：D391 brief、D523 brief、派单-L1切片C、编码指令×6、K3-PRODUCT-LINES-VERIFICATION-TASK、founder-alerts.md、plans/PLAN-task-state-derived-status、research/会话并发seq乱序缺陷、docs/archive/D382、impl plan×7
+- 治理文档：D391 brief、D523 brief、派单-L1切片C、编码指令×6、K3-PRODUCT-LINES-VERIFICATION-TASK、founder-alerts.md、plans/PLAN-task-state-derived-status、research/会话并发seq乱序缺陷、docs/archive/D382
+- impl 计划历史件 6 份归档 docs/archive/（verify-parallel 门禁禁止 implementation/ 历史回填——写集重叠已关闭任务；DSH-D356 重复件删除，main 已有 D356×2）
 - task-state/D530-D532.json（D530 状态 claimed→impl_done 补证据注记）
 - memory/notes/proposed/（tool-cordis-preset-mutex note + MEMORY.md 索引修正链接）
 - 救援的新版仪表盘：founder-console.html + CTO-HEALTH.md（来自 .wt-D539，较 main 新）
