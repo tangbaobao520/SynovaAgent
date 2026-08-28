@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+// D538: 能力导航纯逻辑契约（状态机/权限/标签）—— store 只消费类型
+import type { SelectedCap } from './capability';
 
 export type OnlineStatus = 'connected' | 'disconnected' | 'connecting';
 export type ActiveView = 'chat' | 'dashboard' | 'settings';
@@ -39,6 +41,9 @@ export interface AppState {
   activeWorkspaceId: string | null;
   searchQuery: string;
 
+  // D538: 左栏能力导航选中态（null = 右栏显示默认三标签）
+  selectedCap: SelectedCap;
+
   // GA 管理 (Phase 3.1)
   activeOrgId: string | null;
   gaClients: ClientInfo[];
@@ -63,6 +68,7 @@ export interface AppState {
   setUserRole: (r: UserRole) => void;
   setActiveWorkspaceId: (id: string | null) => void;
   setSearchQuery: (q: string) => void;
+  setSelectedCap: (cap: SelectedCap) => void;
   setLeftPanelWidth: (w: number) => void;
   setRightPanelWidth: (w: number) => void;
   setDiagnosisInfo: (t: string, c: number, tot: number) => void;
@@ -90,6 +96,7 @@ export const useAppStore = create<AppState>((set) => ({
   onlineStatus: 'connecting', alertCount: 0, activeView: 'chat', theme: 'dark',
 
   userRole: 'admin', activeWorkspaceId: null, searchQuery: '',
+  selectedCap: null,
   activeOrgId: null,
   gaClients: [],
 
@@ -105,6 +112,7 @@ export const useAppStore = create<AppState>((set) => ({
   setUserRole: (userRole) => set({ userRole }),
   setActiveWorkspaceId: (activeWorkspaceId) => set({ activeWorkspaceId }),
   setSearchQuery: (searchQuery) => set({ searchQuery }),
+  setSelectedCap: (selectedCap) => set({ selectedCap }),
   setLeftPanelWidth: (leftPanelWidth) => set({ leftPanelWidth }),
   setRightPanelWidth: (rightPanelWidth) => set({ rightPanelWidth }),
   setDiagnosisInfo: (time, covered, total) => set({
