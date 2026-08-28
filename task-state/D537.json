@@ -11,7 +11,7 @@
     "by": "dsh-parallel-cto",
     "at": "2026-08-26",
     "branch": "fix/d537-tower-parallel-commit-friction",
-    "commit": "95b09aec08d6814928894244aa02bf5ec9d71d1b",
+    "commit": "e4cb41ab",
     "files": [
       "scripts/hooks/post-commit.sh",
       "scripts/pre-commit-check.sh",
@@ -25,7 +25,8 @@
       "tests/control-tower/post-commit.test.sh",
       "memory/notes/implemented/2026-08-26-d537-tower-parallel-commit-friction.md"
     ],
-    "note": "5 项修已有 bug（#1 CRLF 已由 D520 修复；#6 windows 矩阵已由 D520 建立）。#2 主树占用检测前移 pre-commit（last_seen_at 近期过滤，僵尸 session 不误拦）；#3 fastlane 扩展（merge MERGE_HEAD + 补记组合白名单）；#4 D521-2 hook 层登记恢复（D530 覆盖丢失根治补记循环）；#5 baseline 漂移归因（vs origin/main 改动集，本分支引入才拦）；#6 canary 补 2 新测试双平台全绿。V5.1.4 PATCH。防膨胀：全复用既有机制，零新独立机制。"
+    "note": "5 项修已有 bug（#1 CRLF 已由 D520 修复；#6 windows 矩阵已由 D520 建立）。#2 主树占用检测前移 pre-commit（last_seen_at 近期过滤，僵尸 session 不误拦）；#3 fastlane 扩展（merge MERGE_HEAD + 补记组合白名单）；#4 D521-2 hook 层登记恢复（D530 覆盖丢失根治补记循环）；#5 baseline 漂移归因（vs origin/main 改动集，本分支引入才拦）；#6 canary 补 2 新测试双平台全绿。V5.1.4 PATCH。防膨胀：全复用既有机制，零新独立机制。",
+    "commit_note": "CTO 复核修正（2026-08-29）：原 95b09aec08d6814928894244aa02bf5ec9d71d1b 为影子登记/废弃分支提交，真实实现提交 e4cb41ab（M7 纪律）"
   },
   "audit": null,
   "fix_task_id": null,

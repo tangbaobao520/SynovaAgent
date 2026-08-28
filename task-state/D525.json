@@ -10,8 +10,9 @@
     "by": "dsh-cto",
     "at": "2026-08-25",
     "branch": "feat/d525-d526-red-cleanup",
-    "commit": "61182a9785183750769bc26879232b8a46670fd7",
-    "note": "断言对齐 staging_guard 现行为；测试入 canary"
+    "commit": "d5286c52",
+    "note": "断言对齐 staging_guard 现行为；测试入 canary",
+    "commit_note": "CTO 复核修正（2026-08-29）：原 61182a9785183750769bc26879232b8a46670fd7 为影子登记/废弃分支提交，真实实现提交 d5286c52（M7 纪律）"
   },
   "audit": null,
   "fix_task_id": null,

@@ -8,7 +8,7 @@
     "slice": "stage1-cont"
   },
   "impl": {
-    "commit": "6bfe26ff",
+    "commit": "02381ad7",
     "by": "dsh",
     "at": "2026-08-26",
     "files": [
@@ -18,7 +18,8 @@
       "memory/notes/implemented/2026-08-22-d472-notes-lifecycle.md",
       "tests/control-tower/commit-msg-note-mandatory.test.sh"
     ],
-    "evidence": "DS1-DS13 全绿: commit-msg-note-mandatory.test.sh PASS=10/10; 触发面正则命中 commit-msg-check.sh:130; 铁律49 AGENTS.md:60; README四态迁移语义 :20-29; d472 note 迁移完成; check-notes-lifecycle exit 0; 既有回归与 main 基线一致"
+    "evidence": "DS1-DS13 全绿: commit-msg-note-mandatory.test.sh PASS=10/10; 触发面正则命中 commit-msg-check.sh:130; 铁律49 AGENTS.md:60; README四态迁移语义 :20-29; d472 note 迁移完成; check-notes-lifecycle exit 0; 既有回归与 main 基线一致",
+    "commit_note": "CTO 复核修正（2026-08-29）：原 6bfe26ff 为影子登记/废弃分支提交，真实实现提交 02381ad7（M7 纪律）"
   },
   "audit": null,
   "fix_task_id": null,

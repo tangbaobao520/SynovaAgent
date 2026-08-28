@@ -8,7 +8,7 @@
     "at": "2026-08-23"
   },
   "impl": {
-    "commit": "35367fe6",
+    "commit": "4982f978",
     "by": "dsh-cto",
     "at": "2026-08-23",
     "files": [
@@ -18,7 +18,8 @@
       "scripts/install-hooks.sh",
       "tests/control-tower/check-bypass-log.test.sh",
       "tests/control-tower/synova-commit.test.sh"
-    ]
+    ],
+    "commit_note": "CTO 复核修正（2026-08-29）：原 35367fe6 为影子登记/废弃分支提交，真实实现提交 4982f978（M7 纪律）"
   },
   "audit": null,
   "fix_task_id": null,
