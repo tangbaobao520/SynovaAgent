@@ -73,6 +73,8 @@
 
 **其他**：fromState 增加可选 wiring 参数（恢复会话续写同一事件流）；L669 自动诊断发起人 'FDE'→'GA'（GA 表述约束；L139-163 系统 prompt 内 FDE 文案为 prompt copy 未动）。测试 5 用例映射 §4 ①-⑤（⑤"无 sessionManager 注入"实测以 sessionStore 为轴，sessionManager 为同型可选依赖）。
 
+**sessionId 归属（复核补强，c796da55）**：复核发现 cli/im-inbound/mcp 原装配未传 EngineConfig.sessionId——引擎 sessionId 为空串，诊断事件（及 SessionManager 消息事件）会落 `session_id=''` 桶，按会话回放失效。修复：cli 新建分支先 createSession 再构造引擎、恢复分支经 fromState wiring.sessionId 传入；im-inbound 传参 sessionId；mcp 每次 diagnose 独立 createSession；launcher persistEvent 增加空 sessionId 跳过防护（与 addMessage "无 id 走内存态" 语义一致）。
+
 ### 3.3 不做的事
 * **不重建事件溯源**（D500 已交付 session_events/appendEvent/deriveMessages——复用）。
 * 不做 fork/resume（D394 片3，Q4 期权，本切片只做可回放）。
