@@ -11,6 +11,14 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V5.2.6 (2026-08-29) — verify-parallel 关闭信号 4：无 task-state + 写集全合 base（D469 类合并未登记历史任务）（PATCH）
+
+- **① 第四关闭信号**: 无 task-state 记录 且 devdoc_writeset --extract 的写集文件全部存在于 base → 合并但未走状态机的历史任务豁免。**D487/Win 实证（创始人核实定论 PR #261 评论 + 台账条目）**: D469（session-event-sourcing，impl 在 main、无审计报告、无括号式提交）无法被信号 1/2/3 豁免——信号 4 补全。**防漏网论证**: D483 类在途任务有 task-state → 不豁免；D485/D488 类在途 Win 任务 doc 未合 main → 不进比较集。
+- **② 与 Win 修复建议的关系**: Win 建议「今日 ±1 天日期窗口过滤」；本实现选「任务状态信号」而非「日期信号」——日期窗口会把 N 天前仍在途的任务漏拦、把今日已关闭的任务误拦（V5.0.1 豁免被移除的同一原因：存在性/时间信号恒真或失真，状态信号才判别串行 vs 并行）。信号 4 覆盖 Win 建议的意图（历史已合任务不拦）。
+- **③ 配对测试 verify-parallel-ci.test.sh 13→14 断言**: T8c（无 task-state + 写集全在 base → 豁免 exit 0）；T9 保持 block（写集文件不在 base → 不豁免，fail-closed 不削弱）。
+- **验证**: verify-parallel-ci 14/14 本地全绿；D487 分支实测（144824d3）exit 0——D292/D338/D469/D500 四对重叠全部豁免、零 ❌。
+- **作者**: dsh-cto（D557）
+
 ## V5.2.5 (2026-08-28) — verify-parallel 关闭信号 3：括号式 (D#) 合入提交（D478 类无 task-state 无报告任务）（PATCH）
 
 - **① 第三关闭信号**: `git log --grep="(D#)"` 在 CI_PR_BASE 命中 → 任务已合 main = 关闭（fix(D478)/feat(D551) 实现提交带括号；dispatch 提交「docs(dispatch): D551」无括号 → 在途任务不误豁免）。**D551 实证**: D478 无 task-state、无审计报告（Win 线终审仅台账记录），仅信号 1/2 无法豁免——信号 3 补全。
