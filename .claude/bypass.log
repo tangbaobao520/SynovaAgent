@@ -850,3 +850,4 @@ Binary file .claude/bypass.log matches
 2026-08-28T16:20:58+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=bed4c249dd0c926e2d838053079bcb6258578ebd
 2026-08-28T16:32:50+08:00 | GATE_FAIL_SOFT | exit=1 | branch=fix/d547-skeleton-brief-gate
 2026-08-28T16:32:50+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=187c7460d729b51b3d12e5a68cdb971c45e28edb
+2026-08-28T16:38:11+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=4511994f6c51293cb31cc68b657cc0982ad6c0ed
