@@ -14,26 +14,197 @@ status: "由 scripts/control-tower/gen-task-board.py 生成 — 自动区为 git
 > 数据源: git log 全历史 D# + dev docs 头 + task briefs + board-override.yaml。逐项缺失 → degraded 标注。
 | D# | 任务 | 状态 | 提交 | 作者 | 日期 | 推送 | CI | 审计 |
 |----|-----|------|------|------|------|:---:|:---:|:---:|
+| D553 | 2026-08-28-D553-impl-done-disposal-and-audit-di… | ✅ 已提交 | b0b54e2 | synova-mac | 2026-08-28 | ❌ | — | — |
+| D552 | 2026-08-28-D552-cto-governance-backfill-workspa… | ✅ 已提交 | 9d226fd | synova-mac | 2026-08-28 | ❌ | — | — |
+| D551 | DSH-D551-ga-calibration-backend | ✅ 已提交 | 212a0f1 | synova-mac | 2026-08-28 | ❌ | — | — |
+| D550 | 2026-08-28-D550-alloc-origin-merge | ✅ 已提交 | 0af7be0 | synova-mac | 2026-08-28 | ❌ | — | — |
+| D549 | fix(D549): claim-regex 测试硬编码行号修复（K3 FIX-D541）+ … | ✅ 已提交 | 731d246 | synova-mac | 2026-08-28 | ❌ | — | — |
+| D548 | docs(dispatch): D548 L01 验证点回填派单 + D547 task-st… | ✅ 已提交 | c139f7d | synova-mac | 2026-08-28 | ❌ | — | — |
+| D547 | 2026-08-28-D547-skeleton-brief-gate | ✅ 已提交 | 34bdb9a | synova-mac | 2026-08-28 | ❌ | — | — |
+| D546 | DSH-D546-sentinel-findings-event | ✅ 已提交 | 388cc10 | synova-mac | 2026-08-28 | ❌ | — | — |
+| D545 | 2026-08-28-D545-v520-skill-sync | ✅ 已提交 | b8de815 | synova-mac | 2026-08-28 | ❌ | — | — |
+| D544 | DSH-D544-leftbar-acceptance | ✅ 已提交 | c010653 | synova-mac | 2026-08-28 | ❌ | — | — |
+| D543 | 2026-08-28-D543-gate-tests-seal-and-parser-symm… | ✅ 已提交 | 7b4b9e9 | synova-mac | 2026-08-28 | ❌ | — | — |
+| D542 | 2026-08-28-D542-ci-strict-visible-fail | ✅ 已提交 | 79f739c | synova-mac | 2026-08-28 | ❌ | — | — |
+| D541 | 2026-08-27-D541-claim-regex-narrow | ✅ 已提交 | 5db6ca9 | synova-mac | 2026-08-28 | ❌ | — | — |
+| D540 | DSH-D540-clone-pilot-shadow-commit | ✅ 已提交 | e47e9ec | synova-mac | 2026-08-28 | ❌ | — | — |
+| D539 | DSH-D539-session-worktree-isolation | ✅ 已提交 | bd761cc | synova-mac | 2026-08-27 | ❌ | — | — |
+| D538 | DSH-D538-frontend-leftbar-codex | ✅ 已提交 | 5e0b272 | synova-mac | 2026-08-28 | ❌ | — | — |
+| D537 | fix(D537): 控制塔并行污染+提交链摩擦根治（V5.1.4） | ✅ 已提交 | e4cb41a | tangbaobao520 | 2026-08-27 | ❌ | — | — |
+| D536 | DSH-D536-deploy-acceptance | dev doc（P1） | c97a9bb | synova-mac | 2026-08-27 | ❌ | — | — |
+| D535 | DSH-D535-guard-loop-hygiene | dev doc（P1） | — | — | 2026-08-26 | 未知 | — | — |
+| D534 | DSH-D534-notes-four-state-mechanism | dev doc（P1） | 02381ad | synova-mac | 2026-08-26 | ❌ | — | — |
+| D533 | DSH-D533-ci-diagnostics | ✅ 已提交 | f833131 | synova-mac | 2026-08-26 | ❌ | — | — |
+| D532 | chore(D532): 自检脚本加 --report 模式 + launchd 每周日 8:… | ✅ 已提交 | dc5a510 | synova-mac | 2026-08-25 | ❌ | — | — |
+| D531 | docs(D531): AGENTS.md/CLAUDE.md 对齐 V5.1.1 + 每周自… | ✅ 已提交 | 8ee044b | synova-mac | 2026-08-25 | ❌ | — | — |
+| D530 | chore(task-state): D530-D532 回填补登记 四态索引修正 D552 … | ✅ 已提交 | 09ec65f | synova-mac | 2026-08-28 | ❌ | — | — |
+| D529 | 2026-08-25-D529-desktop-ci | ✅ 已提交 | 424f5d8 | synova-mac | 2026-08-26 | ❌ | — | — |
+| D528 | DSH-D528-upgrade-data-retention | dev doc（P1） | 11784bb | synova-mac | 2026-08-25 | ❌ | — | — |
+| D527 | DSH-D527-first-diagnosis-e2e | dev doc（P1） | 1a13ccd | synova-mac | 2026-08-25 | ❌ | — | — |
+| D525 | 2026-08-25-D525-D526 | ✅ 已提交 | 252536a | dsh-cto | 2026-08-25 | ❌ | — | — |
+| D524 | DSH-D524-devdoc-contract-fix | dev doc（P1） | f255d7e | synova-mac | 2026-08-25 | ❌ | — | — |
+| D523 | DSH-D523-win-double-click | dev doc（P1） | aa9c195 | synova-mac | 2026-08-25 | ❌ | — | — |
+| D522 | DSH-D522-service-boot | dev doc（P1） | bccc919 | synova-mac | 2026-08-25 | ❌ | — | — |
+| D521 | DSH-D521-submit-chain | ✅ 已提交 | 06834ca | synova-mac | 2026-08-28 | ❌ | — | — |
+| D520 | DSH-D520-platform-adapters | ✅ 已提交 | a3ebbaa | synova-mac | 2026-08-24 | ❌ | — | — |
+| D519 | DSH-D519-mac-install-test | dev doc（P1） | 9994d5e | synova-mac | 2026-08-25 | ❌ | — | — |
+| D518 | DSH-D518-single-entry | dev doc（P1） | 563807e | synova-mac | 2026-08-25 | ❌ | — | — |
+| D517 | DSH-D517-installer-build | dev doc（P1） | 068da78 | synova-mac | 2026-08-25 | ❌ | — | — |
+| D516 | 2026-08-24-D516-ci-strict | ✅ 已提交 | 503d04c | tangbaobao520 | 2026-08-24 | ❌ | — | — |
+| D515 | DSH-D515-tower-v5-dedrag | ✅ 已提交 | f1d7f51 | tangbaobao520 | 2026-08-24 | ❌ | — | — |
+| D514 | 2026-08-24-D514-d510-audit-fix | ✅ 已提交 | fd67826 | tangbaobao520 | 2026-08-24 | ❌ | — | — |
+| D513 | 2026-08-23-D513-tower-repairs | ✅ 已提交 | 90d787c | tangbaobao520 | 2026-08-24 | ❌ | — | — |
+| D511 | docs: 并行派单 D511（版本守卫门禁）+ D512（GS 全量刷新+进度重算）— 与 … | ✅ 已提交 | 97f85b2 | tangbaobao520 | 2026-08-23 | ❌ | — | — |
+| D510 | chore(task-state): D510/D514 审计闭环回填 + D504 复审结论 | ✅ 已提交 | e220ece | tangbaobao520 | 2026-08-24 | ❌ | — | — |
+| D509 | fix(D509): reference-map union driver + G12 tim… | ✅ 已提交 | dbdcdbc | tangbaobao520 | 2026-08-23 | ❌ | — | — |
+| D508 | 2026-08-23-D508-commit-flow-dedrag | ✅ 已提交 | 6d6e4d0 | tangbaobao520 | 2026-08-23 | ❌ | — | — |
+| D507 | chore(D507): merge main — synova-commit 合并版(D50… | ✅ 已提交 | f3e08eb | tangbaobao520 | 2026-08-23 | ❌ | — | — |
+| D506 | chore(D506): merge main + bypass 补记 2370fc88（D4… | ✅ 已提交 | fcda941 | tangbaobao520 | 2026-08-23 | ❌ | — | — |
+| D505 | 2026-08-23-D505-sentinel-self-check-impl | ✅ 已提交 | 1a35085 | tangbaobao520 | 2026-08-23 | ❌ | — | — |
+| D504 | 2026-08-23-D504-electron-desktop-impl | ✅ 已提交 | 877d7c9 | synova-mac | 2026-08-24 | ❌ | — | — |
+| D503 | 2026-08-23-D503-g12-timezone-window | ✅ 已提交 | 1f3123b | synova-mac | 2026-08-23 | ❌ | — | — |
+| D502 | 2026-08-23-D502-board-multi-source-unify | ✅ 已提交 | 223efb0 | tangbaobao520 | 2026-08-23 | ❌ | — | — |
+| D501 | 2026-08-22-D501-as-any-exclude-tests | ✅ 已提交 | 988f4f7 | synova-mac | 2026-08-22 | ❌ | — | — |
+| D500 | DSH-D500-session-event-sourcing | dev doc（P1） | 6042947 | synova-mac | 2026-08-22 | ❌ | — | — |
+| D487 | ga-session-events-slice2a | dev doc（P1） | 6795598 | synova-mac | 2026-08-28 | ❌ | — | — |
+| D486 | register-e2e-slice | dev doc（P1） | 2f35e3f | Synova-Win | 2026-08-26 | ❌ | — | — |
+| D484 | enterprise-invite-slice-b | dev doc（P1） | 0af8d7b | Synova-Win | 2026-08-25 | ❌ | — | — |
+| D483 | register-auth-slice-a | dev doc（P1） | 9b0409f | synova-mac | 2026-08-28 | ❌ | — | — |
+| D482 | org-expert-connector-claims | dev doc（P2） | 0f9ca69 | Synova-Win | 2026-08-24 | ❌ | — | — |
+| D481 | auth-integration-contract-fix | dev doc（P2） | 82decfa | Synova-Win | 2026-08-24 | ❌ | — | — |
+| D480 | report-onepager | dev doc（P1） | 0ef48d3 | Synova-Win | 2026-08-23 | ❌ | — | — |
+| D479 | auth-legacy-orgid | dev doc（P2） | 8984e21 | Synova-Win | 2026-08-23 | ❌ | — | — |
+| D478 | overflow-mount-wiring | dev doc（P1） | 8f33e82 | Synova-Win | 2026-08-23 | ❌ | — | — |
+| D477 | standardkey-tags-cleanup | dev doc（P2） | 9b68cb7 | Synova-Win | 2026-08-23 | ❌ | — | — |
+| D476 | ga-enterprise-scope | dev doc（P1） | f9fc203 | Synova-Win | 2026-08-23 | ❌ | — | — |
+| D475 | loop-handlers-realization | dev doc（P1） | f9022af | Synova-Win | 2026-08-22 | ❌ | — | — |
+| D474 | DSH-D474-golden-dataset-gate | dev doc（P1） | c730120 | synova-mac | 2026-08-22 | ❌ | — | — |
+| D473 | DSH-D473-guard-loop-hygiene | dev doc（P1） | eb1f2bc | synova-mac | 2026-08-22 | ❌ | — | — |
+| D472 | DSH-D472-notes-lifecycle-hardening | dev doc（P1） | 9098e21 | synova-mac | 2026-08-22 | ❌ | — | — |
+| D471 | packages-as-any-cleanup | dev doc（P1） | 7e67087 | Synova-Win | 2026-08-22 | ❌ | — | — |
+| D470 | field-mapping-contract | dev doc（P0） | 44a2fbd | Synova-Win | 2026-08-22 | ❌ | — | — |
+| D469 | session-event-sourcing | dev doc（P1） | — | — | 2026-08-21 | 未知 | — | — |
+| D468 | 2026-08-21-D468-sync-downgrade | ✅ 已提交 | e833ec3 | synova-mac | 2026-08-21 | ❌ | — | — |
+| D467 | 2026-08-21-D467-move-ci-authority | ✅ 已提交 | de6a62e | synova-mac | 2026-08-21 | ❌ | — | — |
+| D466 | 2026-08-21-D466-bypass-log-comment-sync | ✅ 已提交 | e18de9e | synova-mac | 2026-08-21 | ❌ | — | — |
+| D465 | 2026-08-21-D465-ci-diff-gap-fix | ✅ 已提交 | 81e8c8e | synova-mac | 2026-08-21 | ❌ | — | — |
+| D464 | 2026-08-21-D464-control-tower-gate-fix | ✅ 已提交 | 07f73bc | synova-mac | 2026-08-21 | ❌ | — | — |
+| D463 | 2026-08-21-D463-gs05-closure-fix | ✅ 已提交 | 22509a1 | tangbaobao520 | 2026-08-21 | ❌ | — | — |
+| D462 | 2026-08-21-D462-sqlite-v12 | ✅ 已提交 | 72aa65a | tangbaobao520 | 2026-08-21 | ❌ | — | — |
+| D461 | 2026-08-21-D461-worktree-closeout | ✅ 已提交 | aeb395c | synova-mac | 2026-08-21 | ❌ | — | — |
+| D460 | 2026-08-20-D460-llm-verifier | ✅ 已提交 | c1cc973 | synova-mac | 2026-08-20 | ❌ | — | — |
+| D459 | 2026-08-20-D459-generated-gate | ✅ 已提交 | 72de434 | synova-mac | 2026-08-20 | ❌ | — | — |
+| D458 | 2026-08-18-D458-parallel-root-fix | ✅ 已提交 | da6ce6e | synova-mac | 2026-08-20 | ❌ | — | — |
+| D457 | 2026-08-18-D457-bypass-union | ✅ 已提交 | db61bc5 | synova-mac | 2026-08-20 | ❌ | — | — |
+| D456 | 2026-08-18-D456-alloc-lock | ✅ 已提交 | 8d20d21 | synova-mac | 2026-08-19 | ❌ | — | — |
+| D455 | 2026-08-18-D455-d355-cash-fix | ✅ 已提交 | a7652e3 | synova-mac | 2026-08-21 | ❌ | — | — |
+| D454 | 2026-08-18-D454-env-esm-fix | ✅ 已提交 | 555687c | Synova-Win | 2026-08-22 | ❌ | — | — |
+| D453 | 2026-08-18-D453-ct39-ci-stale-red | ✅ 已提交 | a5ade90 | synova-mac | 2026-08-18 | ❌ | — | — |
+| D452 | 2026-08-18-D452-full-project-view | ✅ 已提交 | 13dfefe | synova-mac | 2026-08-18 | ❌ | — | — |
+| D451 | 2026-08-18-D451-ct42-d331 | ✅ 已提交 | 34a9c28 | Synova-Win | 2026-08-27 | ❌ | — | — |
+| D450 | 2026-08-18-D450-gs-dispatch | ✅ 已提交 | 6879812 | synova-mac | 2026-08-18 | ❌ | — | — |
+| D446 | 2026-08-21-D446-D449-gs-scenarios | ✅ 已提交 | 71213a0 | synova-mac | 2026-08-22 | ❌ | — | — |
+| D445 | 2026-08-19-D445-gs05-alert-loop | ✅ 已提交 | 47b1812 | synova-mac | 2026-08-19 | ❌ | — | — |
+| D444 | 2026-08-21-D444-gs04-talent-cycle | ✅ 已提交 | ff52468 | synova-mac | 2026-08-21 | ❌ | — | — |
+| D443 | 2026-08-21-D443-gs02-customer-cycle | ✅ 已提交 | fa8ab73 | synova-mac | 2026-08-21 | ❌ | — | — |
+| D442 | 2026-08-18-D442-gs03-capital-cycle | ✅ 已提交 | f02edec | synova-mac | 2026-08-18 | ❌ | — | — |
+| D441 | fix(D441): D339 quotepath 移植 — 中文文件名不被转义（认领/对账 … | ✅ 已提交 | a0d9b7f | synova-mac | 2026-08-18 | ❌ | — | — |
+| D440 | 2026-08-18-D440-dashboard-ci | ✅ 已提交 | dcc9b20 | synova-mac | 2026-08-18 | ❌ | — | — |
+| D439 | chore(D439): 控制台自动更新 2026-08-17 | ✅ 已提交 | ddd3cb0 | synova-bot | 2026-08-17 | ❌ | — | — |
+| D438 | 2026-08-17-D438-bypass-audit-signal-split | ✅ 已提交 | 981bd48 | synova-mac | 2026-08-18 | ❌ | — | — |
+| D437 | feat(D437): 仪表盘固定输出 app/founder-dashboard.html（… | ✅ 已提交 | fa2c4b0 | synova-dsh | 2026-08-17 | ❌ | — | — |
+| D436 | ci(D436): 重加控制塔门禁测试 job（只跑 5 个 mktemp 密封核心测试，非密… | ✅ 已提交 | ed28e50 | synova-dsh | 2026-08-17 | ❌ | — | — |
+| D435 | docs(D435): 合并决策权归属文档 + 刷新 founder-console.html… | ✅ 已提交 | 0bb5015 | synova-dsh | 2026-08-17 | ❌ | — | — |
+| D434 | chore(D434): bypass.log 补记 CI 修复证据链 | ✅ 已提交 | fbc9498 | kimi-k3-audit | 2026-08-17 | ❌ | — | — |
+| D433 | 2026-08-17-D433-fail-open-batch | ✅ 已提交 | 2741368 | kimi-k3-audit | 2026-08-17 | ❌ | — | — |
+| D432 | chore(D432): bypass.log 补记 3 提交证据链 + 落盘 U5a 5分钟… | ✅ 已提交 | 179d5a9 | kimi-k3-audit | 2026-08-17 | ❌ | — | — |
+| D431 | 2026-08-17-D431-sidebar-upgrade | ✅ 已提交 | 5a60993 | kimi-k3-audit | 2026-08-17 | ❌ | — | — |
+| D430 | 2026-08-17-D430-u8-deadref-hotfix | ✅ 已提交 | 0070be2 | synova-mac | 2026-08-18 | ❌ | — | — |
+| D429 | chore(D429): bypass.log 补记 | ✅ 已提交 | 3148e58 | synova-mac | 2026-08-17 | ❌ | — | — |
+| D428 | 2026-08-17-D428-closeout-merge-batch | ✅ 已提交 | f5fcb62 | synova-mac | 2026-08-17 | ❌ | — | — |
+| D427 | docs(D427): 合并清单补 U8 机器预审汇总分支（feat/u8-pre-audit… | ✅ 已提交 | 2b7aeb3 | kimi-k3-audit | 2026-08-17 | ❌ | — | — |
+| D426 | 2026-08-17-D426-u8-pre-audit-summary | ✅ 已提交 | d685dd3 | kimi-k3-audit | 2026-08-17 | ❌ | — | — |
+| D425 | docs(D425): 创始人合并清单（13 分支终版，U1-U7+U4/U5a/U5c+控制… | ✅ 已提交 | 43acbf2 | kimi-k3-audit | 2026-08-17 | ❌ | — | — |
+| D424 | 2026-08-17-D424-console-panels | ✅ 已提交 | 1fb2266 | kimi-k3-audit | 2026-08-17 | ❌ | — | — |
+| D423 | 2026-08-17-D423-u4-claims-table | ✅ 已提交 | aadc1b0 | kimi-k3-audit | 2026-08-17 | ❌ | — | — |
+| D422 | 2026-08-17-D422-u5c-verify-parallel-tristate | ✅ 已提交 | b9aa191 | kimi-k3-audit | 2026-08-17 | ❌ | — | — |
+| D421 | 2026-08-17-D421-u5a-marker-tristate | ✅ 已提交 | 9376c0c | kimi-k3-audit | 2026-08-17 | ❌ | — | — |
+| D419 | 2026-08-17-D419-founder-truth | ✅ 已提交 | d0339a8 | kimi-k3-audit | 2026-08-17 | ❌ | — | — |
+| D417 | 2026-08-17-D417-secrets-failopen | ✅ 已提交 | 413b976 | kimi-k3-audit | 2026-08-17 | ❌ | — | — |
+| D416 | 2026-08-17-D416-sop-gate | ✅ 已提交 | 0394b70 | kimi-k3-audit | 2026-08-17 | ❌ | — | — |
+| D415 | 2026-08-17-D415-writeset-reconcile | ✅ 已提交 | 64e7758 | kimi-k3-audit | 2026-08-17 | ❌ | — | — |
+| D414 | 2026-08-17-D414-bypass-evidence-chain | ✅ 已提交 | a3cec96 | kimi-k3-audit | 2026-08-17 | ❌ | — | — |
+| D413 | 2026-08-17-D413-ct-test-gate | ✅ 已提交 | b8d4051 | kimi-k3-audit | 2026-08-17 | ❌ | — | — |
+| D412 | 2026-08-17-D412-artifact-reproducibility | ✅ 已提交 | 8df7be1 | kimi-k3-audit | 2026-08-17 | ❌ | — | — |
+| D411 | docs(D411): 双侧质量体系评估 + 控制塔升级spec（U1-U8）+ 创始人零信任… | ✅ 已提交 | 745bfc4 | kimi-k3-audit | 2026-08-17 | ❌ | — | — |
+| D410 | 2026-08-17-D410-task-to-progress-auto-redeem | ✅ 已提交 | 768c7c0 | synova-mac | 2026-08-17 | ❌ | — | — |
+| D409 | 2026-08-17-D409-taskstate-consistency | ✅ 已提交 | f118f32 | synova-mac | 2026-08-17 | ❌ | — | — |
+| D408 | 2026-08-17-D408-closeout-registry-todos | ✅ 已提交 | 6be67ba | synova-mac | 2026-08-17 | ❌ | — | — |
+| D407 | 2026-08-17-D407-cto-health-audit-glob | ✅ 已提交 | f90f917 | synova-mac | 2026-08-17 | ❌ | — | — |
+| D406 | 2026-08-16-D406-lessons-fix | ✅ 已提交 | 108d343 | synova-mac | 2026-08-17 | ❌ | — | — |
+| D405 | 2026-08-16-D405-ci-dashboard | ✅ 已提交 | 972aa87 | synova-mac | 2026-08-17 | ❌ | — | — |
+| D404 | 2026-08-16-D404-context-fix | ✅ 已提交 | 1336d6b | synova-mac | 2026-08-17 | ❌ | — | — |
+| D403 | 2026-08-16-D403-dispatch-commit | ✅ 已提交 | 8cfac21 | synova-mac | 2026-08-17 | ❌ | — | — |
+| D402 | DSH-D402-federated-fix | dev doc（P1） | ba67450 | synova-mac | 2026-08-21 | ❌ | — | — |
+| D401 | 2026-08-16-D401-ledger-sync | ✅ 已提交 | 5e223c1 | synova-mac | 2026-08-16 | ❌ | — | — |
+| D400 | 2026-08-16-D400-closeout | ✅ 已提交 | bfb6b4a | synova-mac | 2026-08-16 | ❌ | — | — |
+| D399 | 2026-08-16-D399-audit-fix | ✅ 已提交 | 56a3bb7 | kimi-k3-audit | 2026-08-16 | ❌ | — | — |
+| D396 | DSH-D396-golden-case-gate | dev doc（P0） | 4a94ebd | kimi-k3-audit | 2026-08-17 | ❌ | — | — |
+| D395 | DSH-D395a-notes-four-state | dev doc（P1） | 0c2a9da | kimi-k3-audit | 2026-08-17 | ❌ | — | — |
+| D394 | DSH-D394-sentinel-events | dev doc（P0） | 416558b | kimi-k3-audit | 2026-08-17 | ❌ | — | — |
+| D393 | 2026-08-16-D393-derived-status | ✅ 已提交 | 6f75f6e | kimi-k3-audit | 2026-08-16 | ❌ | — | — |
+| D392 | 2026-08-16-D392-audit-exempt | ✅ 已提交 | f34c2ac | synova-mac | 2026-08-16 | ❌ | — | — |
+| D391 | admin-knowledge-fix | ✅ 已提交 | e51e1b0 | kimi-k3-audit | 2026-08-16 | ❌ | — | — |
+| D390 | 2026-08-16-D390-exempt-guard | ✅ 已提交 | 4a0f666 | synova-mac | 2026-08-16 | ❌ | — | — |
+| D389 | 2026-08-16-D389-audit-ingest-d387 | ✅ 已提交 | 1b9003b | synova-mac | 2026-08-16 | ❌ | — | — |
+| D387 | DSH-D387-doc-commit-exempt | dev doc（P1） | e9bc1ec | kimi-k3-audit | 2026-08-16 | ❌ | — | — |
+| D386 | 2026-08-16-D386-vitest-sentinel-assert | ✅ 已提交 | 7bc829b | synova-mac | 2026-08-16 | ❌ | — | — |
+| D385 | 2026-08-16-D385-audit-ingest | ✅ 已提交 | 1e708bd | synova-mac | 2026-08-16 | ❌ | — | — |
+| D384 | 2026-08-16-D384-cto-audit-fix | ✅ 已提交 | ef307a8 | synova-mac | 2026-08-16 | ❌ | — | — |
+| D383 | 2026-08-16-D383-cto-batch | ✅ 已提交 | 98b0d4d | synova-mac | 2026-08-16 | ❌ | — | — |
+| D379 | DSH-D379-path-dependency-shell | dev doc（P2） | afbc5fd | synova-mac | 2026-08-16 | ❌ | — | — |
+| D378 | sentinel-count-fix | ✅ 已提交 | 3ab3f6a | synova-mac | 2026-08-16 | ❌ | — | — |
+| D377 | cto-handover-finalize | ✅ 已提交 | 1d081d1 | synova-mac | 2026-08-16 | ❌ | — | — |
+| D376 | routing-charter-v4 | ✅ 已提交 | b18bfe1 | synova-mac | 2026-08-16 | ❌ | — | — |
+| D375 | dsh-cto-audit-a2 | ✅ 已提交 | d41dedf | synova-mac | 2026-08-16 | ❌ | — | — |
+| D374 | dsh-devdoc-preset | ✅ 已提交 | 84758bf | synova-mac | 2026-08-15 | ❌ | — | — |
+| D373 | product-progress-pr-fix | ✅ 已提交 | cb846c8 | synova-mac | 2026-08-15 | ❌ | — | — |
+| D372 | product-progress-idempotency | ✅ 已提交 | 7c45bbf | synova-mac | 2026-08-15 | ❌ | — | — |
+| D371 | product-progress-phase1 | ✅ 已提交 | fc78fe5 | synova-bot | 2026-08-17 | ❌ | — | — |
+| D370 | chore(D370): 认领交还 — 路由表 D370 标记已完成（PR 已合并） | ✅ 已提交 | bab9b23 | synova-mac | 2026-08-15 | ❌ | — | — |
+| D366 | 2026-08-15-D366-gate-today-marker | ✅ 已提交 | 21c53e0 | Synova-Win | 2026-08-15 | ❌ | — | — |
+| D363 | LLM运行时failover接线 | dev doc（P1） | 89d84c0 | Synova-Win | 2026-08-16 | ❌ | — | — |
+| D362 | docs-sync | ✅ 已提交 | 3e2e674 | Synova-Win | 2026-08-14 | ❌ | — | — |
+| D361 | 2026-08-18-D361-gss-common | ✅ 已提交 | f56dcee | synova-mac | 2026-08-18 | ❌ | — | — |
+| D358 | merged-sentinel-de-extinct | dev doc（P1） | 38dda82 | Synova-Win | 2026-08-19 | ❌ | — | — |
+| D357 | connector-descope | dev doc（P1） | b18989f | Synova-Win | 2026-08-21 | ❌ | — | — |
+| D356 | sentinel-threshold-alert | dev doc（P0） | 6a01928 | synova-mac | 2026-08-28 | ❌ | — | — |
+| D355 | L4数据契约收敛-fail-open修复 | dev doc（P0） | 89e14f2 | synova-mac | 2026-08-18 | ❌ | — | — |
+| D354 | dedup-key-stability | dev doc（P1） | 1cf133b | Synova-Win | 2026-08-21 | ❌ | — | — |
 | D352 | resolver硬化 | dev doc（P0） | — | — | 2026-08-13 | 未知 | — | — |
-| D333 | decision-reference-framework | ✅ 已提交 | d869560 | Synova-Win | 2026-08-13 | ✅ | ❌ | — |
+| D338 | org-isolation-audit | dev doc（P1） | 29c6d71 | Synova-Win | 2026-08-22 | ❌ | — | — |
+| D336 | multi-agent-collab | ✅ 已提交 | 985ff60 | synova-mac | 2026-08-14 | ❌ | — | — |
+| D335 | sync-backup | ✅ 已提交 | c141da4 | synova-mac | 2026-08-21 | ❌ | — | — |
+| D334 | multi-machine-pr-workflow | ✅ 已提交 | 54c7a36 | Synova-Mac | 2026-08-14 | ❌ | — | — |
+| D333 | 进化闭环N13接线-loop真实化 | dev doc（P0） | 6279f45 | Synova-Win | 2026-08-17 | ❌ | — | — |
 | D332 | 控制塔并行协调补丁 | dev doc（P0） | — | — | 2026-08-12 | 未知 | — | — |
-| D331 | D329审计P1修复 | dev doc（P1） | 7ace35e | Synova-Win | 2026-08-12 | ✅ | — | — |
+| D331 | D329审计P1修复 | dev doc（P1） | 37dc1ca | Synova-Win | 2026-08-23 | ❌ | — | — |
 | D330 | D328审计P1修复 | dev doc（P1） | 407ff1f | Synova-Win | 2026-08-12 | ✅ | — | — |
 | D329 | session身份与暂存归属根治 | dev doc（P0） | dc369fd | Synova-Win | 2026-08-11 | ✅ | — | — |
 | D328 | commit声明内容一致性门禁 | dev doc（P0） | ea1cb71 | Synova-Win | 2026-08-10 | ✅ | — | — |
-| D321 | git notes 读取独立任务 (D320 dev doc §依赖 — 生成器已留 hook… | ✅ 已提交 | 46b9271 | Synova-Mac | 2026-08-11 | ✅ | ❌ | — |
+| D321 | git notes 读取独立任务 (D320 dev doc §依赖 — 生成器已留 hook… | ✅ 已提交 | 46b9271 | Synova-Mac | 2026-08-11 | ✅ | — | — |
 | D320 | 仪表盘git化生成器 | dev doc（P1） | 8b1fdab | Synova-Win | 2026-08-09 | ✅ | — | — |
-| D319 | git-tag自动化 | dev doc（P1） | 300660e | Synova-Win | 2026-08-09 | ✅ | ❌ | — |
-| D318 | 双机身份与hooks可移植 | dev doc（P0） | 86871ac | Synova-Win | 2026-08-10 | ✅ | ❌ | — |
-| D317 | G12b-CI-Fix | dev doc（P0） | ba653c3 | Synova-Mac | 2026-08-09 | ✅ | ❌ | — |
+| D319 | git-tag自动化 | dev doc（P1） | 300660e | Synova-Win | 2026-08-09 | ✅ | — | — |
+| D318 | 双机身份与hooks可移植 | dev doc（P0） | 86871ac | Synova-Win | 2026-08-10 | ✅ | — | — |
+| D317 | G12b-CI-Fix | dev doc（P0） | ba653c3 | Synova-Mac | 2026-08-09 | ✅ | — | — |
 | D316 | CT-V4.6.0-Fix | dev doc（P1） | fdad612 | Synova | 2026-08-06 | ✅ | — | — |
 | D315 | utf8-batch-closeout | ✅ 已提交 | 6a5eb01 | Synova | 2026-08-05 | ✅ | — | — |
 | D314 | feat(D314): M4 基线豁免 + 独立化底座 — tsc 豁免/日志五件套/atta… | ✅ 已提交 | c5d8d15 | Synova | 2026-08-05 | ✅ | — | — |
 | D313 | control-tower-finalize | ✅ 已提交 | 624281f | Synova | 2026-08-05 | ✅ | — | — |
-| D312 | baseline-tools | ✅ 已提交 | e9b7e1c | Synova | 2026-08-03 | ✅ | — | — |
+| D312 | baseline-tools | ✅ 已提交 | 8149ad3 | Synova-Win | 2026-08-27 | ❌ | — | — |
 | D311 | multi-session-coordination | ✅ 已提交 | 9096993 | Synova | 2026-08-03 | ✅ | — | — |
 | D309 | AdminKnowledge-L1L4 | dev doc（P0） | — | — | 2026-08-06 | 未知 | — | — |
-| D307 | session级worktree隔离 | dev doc（P0） | — | — | 2026-08-12 | 未知 | — | — |
+| D307 | session级worktree隔离 | dev doc（P0） | c5209c0 | Synova-Win | 2026-08-15 | ❌ | — | — |
 | D300 | GoldenCase-Gate | dev doc（P1） | 02500e7 | Synova | 2026-08-02 | ✅ | — | — |
 | D296 | ControlTower-Truthfulness | dev doc（P0） | 4c664c7 | Synova | 2026-08-02 | ✅ | — | — |
 | D292 | L2L4-CrossLayer | ✅ 已提交 | 6a485b3 | Synova | 2026-08-02 | ✅ | — | — |
@@ -77,7 +248,7 @@ status: "由 scripts/control-tower/gen-task-board.py 生成 — 自动区为 git
 | D243 | Anti-Sabotage-v1-0 | ✅ 已提交 | f136b5d | Synova | 2026-07-27 | ✅ | — | — |
 | D242 | Permission-Templates-v1-0 | ✅ 已提交 | 0bcea95 | Synova | 2026-07-27 | ✅ | — | — |
 | D241 | Knowledge-Approval-v1-0 | ✅ 已提交 | af7eb79 | Synova | 2026-07-27 | ✅ | — | — |
-| D240 | Enterprise-Facts-v1-0 | ✅ 已提交 | 062c73c | Synova | 2026-07-27 | ✅ | — | — |
+| D240 | Enterprise-Facts-v1-0 | ✅ 已提交 | a81da09 | Synova-Win | 2026-08-22 | ❌ | — | — |
 | D239 | GA-Boundary-v1-0 | ✅ 已提交 | 0eb7d2f | Synova | 2026-07-27 | ✅ | — | — |
 | D238 | Loop6-Overflow-Monitor-v1-0 | ✅ 已提交 | 483ee47 | Synova | 2026-07-27 | ✅ | — | — |
 | D237 | Loop3-GA-Evolution-v1-0 | ✅ 已提交 | 5b0be74 | Synova | 2026-07-27 | ✅ | — | — |
@@ -125,7 +296,7 @@ status: "由 scripts/control-tower/gen-task-board.py 生成 — 自动区为 git
 | D102 | D103-auth-upgrade-enterprise-routes-v1 | ✅ 已提交 | 34eeff0 | Synova | 2026-07-21 | ✅ | — | — |
 | D101 | deployment-drill-production-hardening-v1 | ✅ 已提交 | 246aacf | Synova | 2026-07-17 | ✅ | — | — |
 | D100 | diagnosis-quality-calibration-v1 | ✅ 已提交 | a008600 | Synova | 2026-07-17 | ✅ | — | — |
-| D99 | e2e-full-pipeline-test-v1 | ✅ 已提交 | e652334 | Synova | 2026-07-17 | ✅ | — | — |
+| D99 | FIX-stage5-diagnosis-pipeline-v1 | ✅ 已提交 | e652334 | Synova | 2026-07-17 | ✅ | — | — |
 | D98 | report-viewer-ui-v1 | ✅ 已提交 | f57c620 | Synova | 2026-07-17 | ✅ | — | — |
 | D97 | dashboard-ui-v1 | ✅ 已提交 | e35c36d | Synova | 2026-07-17 | ✅ | — | — |
 | D96 | login-auth-ui-v1 | ✅ 已提交 | c3f5164 | Synova | 2026-07-17 | ✅ | — | — |
@@ -169,7 +340,7 @@ status: "由 scripts/control-tower/gen-task-board.py 生成 — 自动区为 git
 | D56 | 2026-07-13-D56-data-conflict-protocol | ✅ 已提交 | 1613acb | Synova | 2026-07-13 | ✅ | — | — |
 | D55 | 2026-07-13-D55-reasoning-crossval | ✅ 已提交 | a1121bc | Synova | 2026-07-13 | ✅ | — | — |
 | D54 | 2026-07-13-D54-prompt-assembler | ✅ 已提交 | 0caa95e | Synova | 2026-07-13 | ✅ | — | — |
-| D53 | 2026-07-12-D53-专家AgentSpec文件化 | ✅ 已提交 | 5683883 | Synova | 2026-07-13 | ✅ | — | — |
+| D53 | 2026-06-14-1143-D53-API | ✅ 已提交 | 5683883 | Synova | 2026-07-13 | ✅ | — | — |
 | D52 | 规模化运维-行业Skill包-v1 | ✅ 已提交 | 12e8266 | Synova | 2026-07-15 | ✅ | — | — |
 | D51 | CI-CD-golden-case-F1-v1 | ✅ 已提交 | 0f7cd8f | Synova | 2026-07-15 | ✅ | — | — |
 | D50 | 一键恢复包-备份验证-v1 | ✅ 已提交 | ad49ab2 | Synova | 2026-07-14 | ✅ | — | — |
@@ -191,7 +362,7 @@ status: "由 scripts/control-tower/gen-task-board.py 生成 — 自动区为 git
 | D29 | feat(D29): 数据冲突机制 — GraphStore/data-ingest/Agen… | ✅ 已提交 | 1e0dab3 | Synova | 2026-07-11 | ✅ | — | — |
 | D26 | golden-case-extension-v1 | ✅ 已提交 | ee73e23 | Synova | 2026-07-21 | ✅ | — | — |
 | D25 | contract-test-completion-v1 | ✅ 已提交 | 6ca97b2 | Synova | 2026-07-20 | ✅ | — | — |
-| D21 | action-closed-loop-v1 | ✅ 已提交 | 26b0770 | Synova | 2026-07-22 | ✅ | — | — |
+| D21 | FIX-action-wiring-v1 | ✅ 已提交 | 26b0770 | Synova | 2026-07-22 | ✅ | — | — |
 | D20 | loop-interaction-display-v1 | ✅ 已提交 | de23cf6 | Synova | 2026-07-23 | ✅ | — | — |
 | D19 | ga-collaboration-v1 | ✅ 已提交 | 714845e | Synova | 2026-07-21 | ✅ | — | — |
 | D18 | interactive-card-replies-v1 | ✅ 已提交 | 31f1152 | Synova | 2026-07-21 | ✅ | — | — |
@@ -206,12 +377,33 @@ status: "由 scripts/control-tower/gen-task-board.py 生成 — 自动区为 git
 | D4 | 2026-07-10-D4-Financial字段统一 | ✅ 已提交 | 7d0f1de | Synova | 2026-07-10 | ✅ | — | — |
 | D3 | 2026-07-10-D3-THEORY-METRIC_BINDS修复 | ✅ 已提交 | 31fa5a3 | Synova | 2026-07-01 | ✅ | — | — |
 | D2 | feat(I2-3a): 已有compute边引用迁移(12处)+D2死引用删除 | ✅ 已提交 | 0bb2f58 | Synova | 2026-07-10 | ✅ | — | — |
-| D1 | 2026-06-18-1653-Phase-0-Week-3-6--D1D3D5- | ✅ 已提交 | 40b9681 | Synova | 2026-06-24 | ✅ | — | — |
-> 审计（audit-result.json）: P0 0 / P1 0 / P2 0 @ 2026-07-29T12:08:21Z
+| D1 | 2026-06-14-1208-D1D46 | ✅ 已提交 | 3620f6a | synova-mac | 2026-08-22 | ❌ | — | — |
+> 审计（audit-result.json）: degraded: 审计 JSON 损坏: Invalid \escape: line 10 column 204 (char 368)
 ## 版本历史
 > 数据源: VERSION.md + version.log + git tag（D319 后增强）。
 | 版本 | 日期/时间 | 变更 | git tag |
 |------|------------|------|:---:|
+| V5.2.2 | 2026-08-28 | D542 CI 失败可见性 + D543 密封 canary 转绿 + 解析器对称（PATCH） | ✅ |
+| V5.2.1 | 2026-08-28 | D541 铁律47 声称完成正则收窄（bare 字形误伤根治）+ D541 CI 红修复（PATCH） | ✅ |
+| V5.2.0 | 2026-08-28 | D540 独立 clone 试点 + 影子提交 clone 环境验证 + verify-parallel 迁 CI/P… | ✅ |
+| V5.1.4 | 2026-08-26 | D537 控制塔并行污染 + 提交链摩擦根治（Win 反馈 #2-#6）（PATCH） | ✅ |
+| V5.1.3 | 2026-08-26 | D533 CI 调试可达性根治（凭证共享 + CRLF 治本 + debug 纪律）（PATCH） | ✅ |
+| V5.1.1 | 2026-08-25 | D525+D526 红态清理 + canary 漂移告警（PATCH） | ✅ |
+| V5.1.0 | 2026-08-25 | D521-4 synova submit 统一提交入口（MINOR：新机制） | ✅ |
+| V5.0.5 | 2026-08-25 | D521-3 CI 诊断通道 + push 前 CI 等价模拟（PATCH） | ✅ |
+| V5.0.4 | 2026-08-24 | D521-2 bypass COMMITTED 挪 hook 层（PATCH） | ✅ |
+| V5.0.3 | 2026-08-24 | D521-1 parser 剥壳对称 + tag 校验收窄（PATCH） | ✅ |
+| V5.0.2 | 2026-08-24 | D520 跨平台适配收口（PATCH；V5.0.1 已被 Win 线 verify-parallel 豁免占用，本任务… | ✅ |
+| V5.0.1 | 2026-08-24 | verify-parallel 已完成任务文档豁免（Win 反馈，D483 派发实测） | ✅ |
+| V5.0.0 | 2026-08-24 | D515 控制塔减负重构（三批 13 项，MAJOR） | ✅ |
+| V4.9.2 | 2026-08-24 | G12 豁免 task-state 登记元数据（Win 反馈） | ✅ |
+| V4.9.1 | 2026-08-23 | D513 批次（控制塔四项返修：Win 台账反馈 + D331 残余根因） | ✅ |
+| V4.9.0 | 2026-08-23 | D506/D507/D508 批次（提交链路减负 + 并行物理隔离 + 门禁时区修复） | ✅ |
+| V4.8.0 | 2026-08-15 | D307 批次（session 级 worktree 隔离：物理根治共享 index 拉锯/劫持） | ✅ |
+| V4.7.9 | 2026-08-15 | D366 批次（门禁"今日/本次"判定修复：mtime → 文件名日期 + marker head 对账） | ✅ |
+| V4.7.8 | 2026-08-14 | D336 批次（多 Agent 协作协议：四角色两线 + 审计红线 + 任务路由） | ✅ |
+| V4.7.7 | 2026-08-14 | D335 批次（防线闭环：提交端同步门禁 + synova.db 异地自动备份） | ✅ |
+| V4.7.6 | 2026-08-14 | D334 批次（多机 PR 工作流：门禁 0 同步检查 + main 保护 + 协作规范落地） | ✅ |
 | V4.7.5 | 2026-08-13 | D333 批次（决策参考四步框架落地：brief 模板 Q1c + 注入器全文注入 + CLAUDE.md 引用） | ✅ |
 | V4.7.3 | 2026-08-12 | D331 批次（D329 审计 P1 修复：tag 重指 + 防线补齐 + 接线落地） | ✅ |
 | V4.7.2 | 2026-08-12 | D330 批次（D328 审计 P1 修复：python 损坏探测 + 豁免测试补全 + 文档回填） | ✅ |
@@ -220,25 +412,17 @@ status: "由 scripts/control-tower/gen-task-board.py 生成 — 自动区为 git
 | V4.6.2 | 2026-08-07 | D317 修复（G12b/brief 解析 CI 红） | ✅ |
 | V4.6.1 | 2026-08-05 | D316 修复（incident-loop 跨平台 + version.log 补写） | ✅ |
 | V4.6.0 | 2026-08-04 | 控制塔独立化正式首发 | ✅ |
-- 4.7.5 2026-08-13T02:11:03+0800: auto-tag V4.7.5
-- 4.7.5 2026-08-13T01:55:02+0800: D333 决策参考框架落地
-- 4.7.3 2026-08-12T23:39:42+0800: auto-tag V4.7.3
+- 9.9.9 2026-08-25T22:09:53+0800: auto-tag V9.9.9
+- 9.9.9 2026-08-25T22:09:16+0800: auto-tag V9.9.9
+- 9.9.9 2026-08-21T17:24:02+0800: auto-tag V9.9.9
 ## CI 状态（gh run）
+> degraded: gh 不可用: [Errno 2] No such file or directory: 'gh'
 | Run | 工作流 | 状态 | 结论 | 关联 D# |
 |:---:|------|:---:|:---:|------|
-| 1 | CI �� SynovaAgent | completed | ❌ failure | — |
-| 2 | CI �� SynovaAgent | completed | ❌ failure | D333 |
-| 3 | CI �� SynovaAgent | completed | ❌ failure | D321 |
-| 4 | CI �� SynovaAgent | completed | ❌ failure | D317 |
-| 5 | CI �� SynovaAgent | completed | ❌ failure | D318 |
-| 6 | CI �� SynovaAgent | completed | ❌ failure | D318 |
-| 7 | CI �� SynovaAgent | completed | ❌ failure | D318 |
-| 8 | CI �� SynovaAgent | completed | ❌ failure | D319 |
-| 9 | CI �� SynovaAgent | completed | ❌ failure | D317 |
-| 10 | CI �� SynovaAgent | completed | ❌ failure | D317 |
+| — | （无 gh run 数据） | — | — | — |
 ## 同步健康（D323 预留）
-- 未推送提交: 0（origin/<branch>..HEAD）
-- 工作区变更: 335 个文件（git status --porcelain）
+- 未推送提交: 1222（origin/<branch>..HEAD）
+- 工作区变更: 5 个文件（git status --porcelain）
 > D323 填充: 双机同步健康完整视图。
 <!-- AUTO:END -->
 <!-- MANUAL:START -->
