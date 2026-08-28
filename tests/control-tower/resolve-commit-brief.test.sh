@@ -35,9 +35,9 @@ assert_not_contains() { # <haystack> <needle> <msg>
 TODAY=$(date +%Y-%m-%d)
 
 # resolver 修复后 exit 1 会触发外层 set -e → 统一在子 shell 捕获
-run_resolver() { # <repo> → 设置 OUT + EC
+run_resolver() { # <repo> [staged] → 设置 OUT + EC
   set +e
-  OUT=$(cd "$1" && bash "$RESOLVER" "" 2>&1)
+  OUT=$(cd "$1" && bash "$RESOLVER" "${2:-}" 2>&1)
   EC=$?
   set -e
 }
@@ -129,6 +129,105 @@ run_resolver "$R4"
 assert_exit "$EC" 0 "过期 current-brief 忽略后回退成功"
 assert_contains "$OUT" "with-stale-cur" "回退返回今日可解析 brief（非陈旧 current-brief）"
 assert_not_contains "$OUT" "D83" "不返回陈旧 current-brief"
+echo ""
+
+echo "── 5. 日期窗口 +1 天：明日（UTC+8 vs CI UTC）brief 认领更多文件 → 胜出（D559/PR #295 实证）──"
+R5=$(new_repo)
+TOMORROW=$(python3 -c "from datetime import date,timedelta; print((date.today()+timedelta(days=1)).isoformat())" 2>/dev/null || echo "")
+TWO_AGO=$(python3 -c "from datetime import date,timedelta; print((date.today()-timedelta(days=2)).isoformat())" 2>/dev/null || echo "")
+# 明日 brief 认领 2 个文件；今日 brief 只认领 1 个——窗口失效时明日被排除、今日以 n=1 胜出（错误结果）
+cat > "$R5/.claude/task-briefs/${TOMORROW}-tomorrow-claims2.md" <<EOF
+## Q0: 定位 — 明日双文件认领
+
+## Q1: 调研 — 明日双文件认领
+#CRITERIA: A
+
+## Q2: 范围 — 明日双文件认领
+做什么：
+- scripts/a.sh
+- scripts/b.sh
+
+不做什么：
+- 不改 docs/other.md
+
+## Q3: 验收 — 明日双文件认领
+
+## 架构层: 基础设施
+## Done 标准
+- [ ] 可验证
+EOF
+cat > "$R5/.claude/task-briefs/${TODAY}-today-claims1.md" <<EOF
+## Q0: 定位 — 今日单文件认领
+
+## Q1: 调研 — 今日单文件认领
+#CRITERIA: A
+
+## Q2: 范围 — 今日单文件认领
+做什么：
+- scripts/a.sh
+
+不做什么：
+- 不改 docs/other.md
+
+## Q3: 验收 — 今日单文件认领
+
+## 架构层: 基础设施
+## Done 标准
+- [ ] 可验证
+EOF
+run_resolver "$R5" "scripts/a.sh
+scripts/b.sh"
+assert_exit "$EC" 0 "明日 brief 认领成功"
+assert_contains "$OUT" "tomorrow-claims2" "窗口内明日 brief 以认领数胜出（UTC 时区容差）"
+assert_not_contains "$OUT" "today-claims1" "不误选认领更少的今日 brief"
+echo ""
+
+echo "── 6. 窗口边界：前日（today-2）brief 不参与认领（防窗口过度放宽）──"
+R6=$(new_repo)
+cat > "$R6/.claude/task-briefs/${TWO_AGO}-stale-claims2.md" <<EOF
+## Q0: 定位 — 前日双文件认领
+
+## Q1: 调研 — 前日双文件认领
+#CRITERIA: A
+
+## Q2: 范围 — 前日双文件认领
+做什么：
+- scripts/a.sh
+- scripts/b.sh
+
+不做什么：
+- 不改 docs/other.md
+
+## Q3: 验收 — 前日双文件认领
+
+## 架构层: 基础设施
+## Done 标准
+- [ ] 可验证
+EOF
+cat > "$R6/.claude/task-briefs/${TODAY}-today-claims1b.md" <<EOF
+## Q0: 定位 — 今日单文件认领
+
+## Q1: 调研 — 今日单文件认领
+#CRITERIA: A
+
+## Q2: 范围 — 今日单文件认领
+做什么：
+- scripts/a.sh
+
+不做什么：
+- 不改 docs/other.md
+
+## Q3: 验收 — 今日单文件认领
+
+## 架构层: 基础设施
+## Done 标准
+- [ ] 可验证
+EOF
+run_resolver "$R6" "scripts/a.sh
+scripts/b.sh"
+assert_exit "$EC" 0 "今日 brief 认领成功"
+assert_contains "$OUT" "today-claims1b" "窗口外（today-2）brief 不参与，今日 brief 胜出"
+assert_not_contains "$OUT" "stale-claims2" "前日 brief 被窗口排除（±1 天边界）"
 echo ""
 
 echo "═══════════════════════════════════════════════════════════"

@@ -24,6 +24,8 @@ L0 控制塔（门禁脚本层，非 L1-L5 产品层）。pre-commit 组 1「类
 做什么：
 - 修改 scripts/pre-commit-check.sh：L471 模式 `as any\b` → `as (any|never)\b|as unknown as` + hard_check 标签同步 + 头部注释（L19/L24）
 - 修改 tests/control-tower/hard-gate-convergence.test.sh：结构断言标签同步 + 行为断言 A2（as never 硬拦）/ A3（as unknown as 双断言硬拦）/ A4（裸 as unknown 合法中间态不拦，用已有跟踪文件追加行设计避开新文件配对门禁干扰）
+- 修改 scripts/workflow/resolve-commit-brief.sh：认领候选日期窗口 ±1 天（DATES/DATES_C，PR #295 CI 实证：UTC+8 日期 brief 对 UTC runner 是明天 → 认领被排除 → 回退陈旧 brief 致 6 字段红）
+- 修改 tests/control-tower/resolve-commit-brief.test.sh：场景 5（明日 brief 认领数胜出）/ 场景 6（today-2 窗口外排除）
 - 修改 .codex/control-tower/VERSION.md：V5.2.7 条目（PATCH）
 
 不做什么：

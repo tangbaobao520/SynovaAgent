@@ -15,6 +15,7 @@
 
 - **① 盲区修复**: 组 1 原只匹配 `as any\b` 字面量——`getDatabase() as never`（src/mcp/index.ts L236，K3 审计实证）与 `as unknown as` 双断言链同属类型信任崩溃却全部逃逸。模式扩为 `as (any|never)\b|as unknown as`（仅拦新增行，存量独立清理惯例不变）。
 - **② 配对测试 hard-gate-convergence.test.sh 行为断言 +3**: A2（as never 硬拦 exit 1）/ A3（as unknown as 双断言硬拦 exit 1）/ A4（裸 as unknown 合法中间态不拦 exit 0，防过度阻断）；结构断言同步新检查点标签。
+- **④ 连带修复：resolver 认领候选日期窗口 ±1 天**——PR #295 CI 实证：UTC+8 日期 brief 对 UTC runner 是"明天"→ 认领被排除 → 回退到认领同文件的陈旧 brief（D541 架构层为空 → 6 字段红）。D506 时区容差同型。resolver 今日过滤（today_files_by_prefix/suffix）改为窗口匹配（DATES/DATES_C，python 计算昨天/今天/明天；失败回落原语义=仅今日）；配对测试 resolve-commit-brief.test.sh 17 断言（+场景 5 明日 brief 认领数胜出 / 场景 6 today-2 窗口外排除）。
 - **③ 存量实例处置（不属本 PATCH）**: mcp/index.ts L236 的 as never 为冗余断言（getDatabase() 返回类型已是 Database.Database，engine-context.ts L50）——清理 + 05-as-any-audit.test.ts 同步扩展折入 D558（编码线）。
 - **验证**: hard-gate-convergence.test.sh 全绿（A/A2/A3/A4 + 结构断言）；ct-test-gate 通过。
 - **作者**: dsh-cto（CT-46）
