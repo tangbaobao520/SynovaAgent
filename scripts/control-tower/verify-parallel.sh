@@ -188,6 +188,8 @@ compare_writesets_ci() {
 # 关闭信号（机器可验，任一命中即豁免；都无 → 继续比对，fail-closed 不削弱）:
 #   1) task-state/<D#>.json status=audited（D382 状态机终态）
 #   2) docs/synova/audit-reports/ 含 *-<D#>[-.md]（历史任务无 task-state，D393 派生制同源信号）
+#   3) D556: origin/main 含括号式 (D#) 提交（fix(D478)/feat(D551) 实现/合并提交——任务已合 main = 关闭；
+#      dispatch 提交「docs(dispatch): D551」无括号不误豁免在途任务）
 # 只豁免「已合 doc 侧」（mtmp）——PR 自身 doc 恒为新任务，不做关闭判定。
 _is_closed_doc() {
   local db did
@@ -201,6 +203,9 @@ _is_closed_doc() {
   fi
   if ls "$REPO_DIR"/docs/synova/audit-reports/*-"$did"-*.md >/dev/null 2>&1; then return 0; fi  # swallow-ok: 无匹配=不豁免，glob 失败非错误
   if ls "$REPO_DIR"/docs/synova/audit-reports/*-"$did".md >/dev/null 2>&1; then return 0; fi    # swallow-ok: 同上
+  # 注意: git log 无匹配也 exit 0（空输出）——必须判输出非空，否则恒豁免
+  _mc="$(git -C "$REPO_DIR" log --format=%H --grep="($did)" --max-count=1 "$CI_PR_BASE" 2>/dev/null || true)"  # swallow-ok: log 失败=不豁免
+  [ -n "$_mc" ] && return 0
   return 1
 }
 
