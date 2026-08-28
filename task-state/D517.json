@@ -20,7 +20,8 @@
       "DS5_scope": "git diff --name-only ssh/main...HEAD 全部在 brief Q2 写集（含 2 个存量阻塞修复，已补记 brief）",
       "存量修复说明": "electron-renderer npm run build 在 main 即红（api.ts 与 bridge.ts window.electronAPI 双重全局声明冲突 TS2339 + useConversation 双参调用 TS2554）→ 构建链物理不可能。最小修复：api.ts 复用 bridge.ts ElectronAPI 单源；useConversation send 收敛单参（零消费者、后端无 mentions 字段）。运行时行为零改动。"
     },
-    "notes": "main 存量 src/server.ts 2 处 tsc 类型错误（TS2345 MainAgentLike/GraphBridgeLike）与本任务无关，未触碰（src/ 红线），登记待后续任务。"
+    "notes": "main 存量 src/server.ts 2 处 tsc 类型错误（TS2345 MainAgentLike/GraphBridgeLike）与本任务无关，未触碰（src/ 红线），登记待后续任务。",
+    "commit": "a95d7a3d"
   },
   "audit": {
     "auditor": "k3",
@@ -37,8 +38,11 @@
     ],
     "slice": "L1-A"
   },
-  "updated_at": "2026-08-24",
-  "updated_by": "dsh-impl",
+  "updated_at": "2026-08-29",
+  "updated_by": "dsh-cto-parallel",
   "priority": "P1",
-  "verdict": "CONDITIONAL_PASS"
+  "verdict": "CONDITIONAL_PASS",
+  "acceptance_points": [
+    "1-1"
+  ]
 }

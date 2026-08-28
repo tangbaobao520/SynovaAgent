@@ -22,7 +22,8 @@
       "DS5_idempotent": "连续两次实跑 exit 0（第二次幂等清理残留 /Applications/SynovaAgent.app 后装）；--dry-run 输出八步清单 exit 0",
       "DS6_dual_platform": "Mac=本任务 DS1 实测；Win=D517 CI desktop-build artifact（⏸ 合并后 push main 触发，Actions URL 补记本字段）",
       "实跑踩坑记录": "① electron-builder APFS dmg 卷名含版本+arch（/Volumes/SynovaAgent 0.1.0-arm64）——挂载点从 mount.log 解析非硬编码；② bash 变量名后紧贴全角括号在 set -u 下解析异常（INSTALLED_APP（→ unbound）——改 ASCII 分隔；③ 宿主 ELECTRON_RUN_AS_NODE=1 全程显式 unset。均已固化进脚本/测试。"
-    }
+    },
+    "commit": "9994d5e9"
   },
   "audit": {
     "auditor": "k3",
@@ -39,8 +40,11 @@
     ],
     "slice": "L1-A"
   },
-  "updated_at": "2026-08-25",
-  "updated_by": "dsh-impl",
+  "updated_at": "2026-08-29",
+  "updated_by": "dsh-cto-parallel",
   "priority": "P1",
-  "verdict": "CONDITIONAL_PASS"
+  "verdict": "CONDITIONAL_PASS",
+  "acceptance_points": [
+    "1-3"
+  ]
 }
