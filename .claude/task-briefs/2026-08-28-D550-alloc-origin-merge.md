@@ -17,6 +17,7 @@ D547/D548 撞号实录（2026-08-28）；D454/D455 撞车先例（同脚本 L35 
 空本地发号 > main max（不漏号）；13/13 测试绿
 
 ## 架构层: L0 控制塔
+L0 控制塔发号器（scripts/control-tower/alloc-task-id.sh + tests/control-tower/）
 ## Done 标准:
 - [x] 占用合并 origin/main（落后本地不漏号）
 - [x] 测试 13/13 绿（含用例 6 origin/main 合并）
