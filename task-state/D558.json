@@ -1,0 +1,11 @@
+{
+  "task_id": "D558",
+  "title": "D487 session_events 迁移回归测试补写（K3 P1）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-29",
+  "updated_by": "alloc-task-id"
+}
