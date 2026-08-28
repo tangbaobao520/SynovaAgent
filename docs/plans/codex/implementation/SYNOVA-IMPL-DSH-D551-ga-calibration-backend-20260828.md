@@ -80,16 +80,21 @@ Module-3 蓝图定义了 GA 人机协同的三大后端能力（诊断校准/手
 
 **编码阶段写集（spec 定义，目录粒度——文件级明细在说明列）**:
 
-### 3.3.1 写集 (0 修改 + 0 新建——本 spec 零代码写入；编码执行写集 = 6 目录，文件级明细见说明列)
+### 3.3.1 写集 (0 修改 + 0 新建——本 spec 零代码写入；编码执行写集 = 11 文件，文件级明细；2026-08-28 CTO 收紧：目录粒度被 verify-parallel CI 判重叠，对齐 D540 先例文件级)
 
 | 文件 | 操作 | 说明 |
 |---|---|---|
-| src/routes/ | 新建×2 + 挂载 | ga-calibration.ts (端点族，§8) + ga-auth.ts (requireGa 从 ga-annotations.ts L44-60 模式提取共享，存量三路由不回改) + src/server.ts 挂载一行（对齐 L346-349 模式） |
-| src/agent/ | 修改 | sentinel-service.ts + injectManualSignal（§6.2，对齐 L79 getGlobalSentinelRunner 模式） |
-| src/sentinel/ | 修改 | runner.ts + injectManualFinding 公开方法（内部调 persistRunEvents L713 + projectRunRecord L742，I2 单源不旁路） |
-| src/growth/ | 修改 | feedback-collector.ts target_type CHECK 扩 'diagnosis_conclusion'（L118）+ schema_version 迁移 'd551_target_type'（先例 L128-130） |
-| src/loops/ | 预计零改动 | processFeedbackSignals 白名单不改（回流层 2 descope——§7.3 诚实标注） |
-| tests/ | 新建×2 | tests/routes/ga-calibration.test.ts (遵循 ga-annotations.test.ts 动态导入惯例) + tests/sentinel/ga-manual-injection.test.ts (对齐 sentinel-events.test.ts 惯例) |
+| src/routes/ga-calibration.ts | 新建 | 端点族（§8）——四端点 + 版本链 + 统计 |
+| src/routes/ga-auth.ts | 新建 | requireGa 从 ga-annotations.ts L44-60 模式提取共享（存量三路由不回改） |
+| src/server.ts | 修改 | gaCalibrationRoutes 挂载（对齐 L346-349 模式） |
+| src/agent/sentinel-service.ts | 修改 | +injectManualSignal（§6.2，对齐 L79 getGlobalSentinelRunner 模式） |
+| src/sentinel/runner.ts | 修改 | +injectManualFinding 公开方法（内部调 persistRunEvents L713 + projectRunRecord L742，I2 单源不旁路） |
+| src/growth/feedback-collector.ts | 修改 | target_type CHECK 扩 'diagnosis_conclusion'（L118）+ schema_version 迁移 'd551_target_type'（先例 L128-130） |
+| src/l4/agent-memory-store.ts | 修改 | MemoryType +2 值 + agent_memory.type CHECK 迁移 'd551_memory_type'（spec §6.1 前提——写集偏差，三处声明） |
+| tests/routes/ga-calibration.test.ts | 新建 | 遵循 ga-annotations.test.ts 动态导入惯例 |
+| tests/routes/ga-auth.test.ts | 新建 | 认证三态（401/400 ORG_REQUIRED/403） |
+| tests/sentinel/ga-manual-injection.test.ts | 新建 | 对齐 sentinel-events.test.ts 惯例 |
+| task-state/D551.json | 修改 | impl_done + slice=ga-module-3 |
 
 **不做什么（含文件路径，铁律 Q2 排除项）**:
 - ❌ 不回改存量 GA 路由（ga-annotations/ga-corrections/ga-admin——已 audited，提取共享仅向前用）
