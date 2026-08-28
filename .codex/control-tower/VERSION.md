@@ -11,6 +11,17 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V5.2.4 (2026-08-28) — verify-parallel --ci-pr 已关闭任务豁免（serial reuse 误拦根治）（PATCH）
+
+> spec: D555 brief（CTO 内联指令）。D551 实证：新任务 spec 写集含 src/server.ts（D478 已合终审）与 src/growth/feedback-collector.ts（D338 已合有审计报告）——V5.2.0 的 --ci-pr「无豁免纯重叠判定」把**串行复用**（已关闭任务的合法文件复用）误判为并行冲突，CI 恒拦。
+
+- **① _is_closed_doc() 关闭信号判定**: 机器可验两信号任一命中即豁免——task-state/<D#>.json status=audited（D382 终态）/ docs/synova/audit-reports/*-<D#>[-.md] 存在（历史任务无 task-state，D393 派生制同源信号）。都无 → 继续比对（fail-closed 不削弱，在途任务并行冲突仍拦）。
+- **② 只豁免已合 doc 侧**: PR 自身 doc 恒为新任务，不做关闭判定；豁免输出显式点名（审计可核）。
+- **③ 配对测试 verify-parallel-ci.test.sh 7→12 断言**: T6 接线（_is_closed_doc + 豁免分支）/ T7 audited 豁免 exit 0 / T8 审计报告豁免 exit 0 / T9 无信号仍 block exit 1（不削弱）。
+- **验证**: verify-parallel-ci 12/12 本地全绿；D551 实证重叠两对（vs D338/D478）本地复跑豁免放行。
+- **防膨胀**: 零新组件（复用 task-state + audit-reports 既有信号源）；不改 compare_writesets_ci 判定本体。
+- **作者**: dsh-cto（D555）
+
 ## V5.2.3 (2026-08-28) — CT-43 auto-hook 影子提交路径限定（防卷走暂存区遗留文件）（PATCH）
 
 > spec: D554 brief（CTO 内联指令）。D552 实证：D311 staging-guard 阻断后遗留的 staged 文件（dsh/plugins 插件 8 文件）被 post-commit hook 的「bypass COMMITTED 登记」影子提交整体卷入 8b6deaf4（消息与内容不符）——M8/D286 同型变体，防线缺口 = 影子提交未限定路径。
