@@ -31,6 +31,13 @@
 做什么（回填入 git，分批提交）：
 - dev-doc-delivery 技能双轨（.claude/skills + .dsh/skills）
 - dsh/plugins/synova-dashboards 插件
+- dsh/plugins/synova-dashboards/README.md
+- dsh/plugins/synova-dashboards/package.json
+- dsh/plugins/synova-dashboards/lib/client.js
+- dsh/plugins/synova-dashboards/lib/collect.js
+- dsh/plugins/synova-dashboards/lib/index.js
+- dsh/plugins/synova-dashboards/scripts/install-dashboards.sh
+- dsh/plugins/synova-dashboards/scripts/restart-dsh-web.sh
 - 治理文档：D391 brief、D523 brief、派单-L1切片C、编码指令×6、K3-PRODUCT-LINES-VERIFICATION-TASK、founder-alerts.md、plans/PLAN-task-state-derived-status、research/会话并发seq乱序缺陷、docs/archive/D382、impl plan×7
 - task-state/D530-D532.json（D530 状态 claimed→impl_done 补证据注记）
 - memory/notes/proposed/（tool-cordis-preset-mutex note + MEMORY.md 索引修正链接）
