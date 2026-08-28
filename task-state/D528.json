@@ -29,15 +29,19 @@
       "DS8_scope": "git diff --name-only = D528 写集 4 文件（build-synova.cjs 零改动）+ D527 写集 12 + task-state×2 + spec×2 + task brief; src/ 与 scripts/audit/ 零触碰"
     },
     "red_lines": "src/ 零触碰; scripts/audit/ 零触碰; 真实库零 cp（mktemp 临时目录）",
-    "known_preexisting": "win 侧升级语义待 D523 后 win 安装包实测（runbook 诚实标注）"
+    "known_preexisting": "win 侧升级语义待 D523 后 win 安装包实测（runbook 诚实标注）",
+    "commit": "11784bb2"
   },
-  "updated_at": "2026-08-25",
-  "updated_by": "dsh",
+  "updated_at": "2026-08-29",
+  "updated_by": "dsh-cto-parallel",
   "priority": "P1",
   "audit": {
     "auditor": "k3",
     "verdict": "PASS",
     "report": "docs/synova/audit-reports/2026-08-25-D527-D528-slice-c.md",
     "date": "2026-08-25"
-  }
+  },
+  "acceptance_points": [
+    "1-7"
+  ]
 }

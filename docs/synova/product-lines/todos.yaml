@@ -2,7 +2,7 @@
 # AUTO 区机器生成，禁止手写；MANUAL 区人工微调归属，生成器逐字节保留。
 # 改完跑 bash scripts/product-lines/refresh-all.sh 生效。
 version: 1.0
-generated_at: "2026-08-28 19:18:30"
+generated_at: "2026-08-29 01:33:50"
 todos:
 # AUTO:START
   - id: "T-3-01"
@@ -53,6 +53,22 @@ todos:
     owner: "DeepSeek Harness"
     depends: []
     acceptance: "场景 GS-05 转绿（exit 0 + 证据入库）"
+  - id: "T-10-05"
+    line: 10
+    title: "D356: sentinel-threshold-alert"
+    source: "任务看板（未完成）"
+    priority: P0
+    owner: "Claude Code"
+    depends: ["D356"]
+    acceptance: "场景 GS-03、GS-05 转绿（exit 0 + 证据入库）"
+  - id: "T-10-06"
+    line: 10
+    title: "D355: L4数据契约收敛-fail-open修复"
+    source: "任务看板（未完成）"
+    priority: P0
+    owner: "Claude Code"
+    depends: ["D355"]
+    acceptance: "场景 GS-03、GS-05 转绿（exit 0 + 证据入库）"
   - id: "T-16-01"
     line: 16
     title: "闭环验证（S0-2）: 断裂"
@@ -85,6 +101,14 @@ todos:
     owner: "Claude Code"
     depends: []
     acceptance: "场景 GS-06 转绿（exit 0 + 证据入库）"
+  - id: "T-17-12"
+    line: 17
+    title: "D333: 进化闭环N13接线-loop真实化"
+    source: "任务看板（未完成）"
+    priority: P0
+    owner: "Claude Code"
+    depends: ["D333"]
+    acceptance: "场景 GS-06 转绿（exit 0 + 证据入库）"
   - id: "T-22-02"
     line: 22
     title: "自诊断可信度（S3-5）: 断裂"
@@ -109,6 +133,22 @@ todos:
     owner: "DeepSeek Harness"
     depends: []
     acceptance: "场景 GS-08 转绿（exit 0 + 证据入库）"
+  - id: "T-4-02"
+    line: 4
+    title: "D482: org-expert-connector-claims"
+    source: "任务看板（未完成）"
+    priority: P1
+    owner: "Claude Code"
+    depends: ["D482"]
+    acceptance: "场景 GS-01、GS-02、GS-03、GS-04 转绿（exit 0 + 证据入库）"
+  - id: "T-4-03"
+    line: 4
+    title: "D357: connector-descope"
+    source: "任务看板（未完成）"
+    priority: P1
+    owner: "Claude Code"
+    depends: ["D357"]
+    acceptance: "场景 GS-01、GS-02、GS-03、GS-04 转绿（exit 0 + 证据入库）"
   - id: "T-6-03"
     line: 6
     title: "无数据诊断（S3-2）: 断裂"
@@ -125,6 +165,14 @@ todos:
     owner: "DeepSeek Harness"
     depends: []
     acceptance: "场景 GS-05 转绿（exit 0 + 证据入库）"
+  - id: "T-8-03"
+    line: 8
+    title: "D354: dedup-key-stability"
+    source: "任务看板（未完成）"
+    priority: P1
+    owner: "DeepSeek Harness"
+    depends: ["D354"]
+    acceptance: "场景 GS-05 转绿（exit 0 + 证据入库）"
   - id: "T-9-02"
     line: 9
     title: "根因命中率（S1-1）: 未测量"
@@ -132,6 +180,14 @@ todos:
     priority: P1
     owner: "Claude Code"
     depends: []
+    acceptance: "场景 GS-02 转绿（exit 0 + 证据入库）"
+  - id: "T-9-03"
+    line: 9
+    title: "D358: merged-sentinel-de-extinct"
+    source: "任务看板（未完成）"
+    priority: P1
+    owner: "Claude Code"
+    depends: ["D358"]
     acceptance: "场景 GS-02 转绿（exit 0 + 证据入库）"
   - id: "T-15-01"
     line: 15
@@ -197,6 +253,30 @@ todos:
     owner: "Claude Code"
     depends: []
     acceptance: "场景 GS-06 转绿（exit 0 + 证据入库）"
+  - id: "T-17-09"
+    line: 17
+    title: "D535: DSH-D535-guard-loop-hygiene"
+    source: "任务看板（未完成）"
+    priority: P1
+    owner: "Claude Code"
+    depends: ["D535"]
+    acceptance: "场景 GS-06 转绿（exit 0 + 证据入库）"
+  - id: "T-17-10"
+    line: 17
+    title: "D475: loop-handlers-realization"
+    source: "任务看板（未完成）"
+    priority: P1
+    owner: "Claude Code"
+    depends: ["D475"]
+    acceptance: "场景 GS-06 转绿（exit 0 + 证据入库）"
+  - id: "T-17-11"
+    line: 17
+    title: "D473: DSH-D473-guard-loop-hygiene"
+    source: "任务看板（未完成）"
+    priority: P1
+    owner: "Claude Code"
+    depends: ["D473"]
+    acceptance: "场景 GS-06 转绿（exit 0 + 证据入库）"
   - id: "T-18-01"
     line: 18
     title: "组织记忆自动生成（S5-4）: 缺失"
@@ -236,6 +316,14 @@ todos:
     priority: P1
     owner: "Claude Code"
     depends: ["D338"]
+    acceptance: "场景 GS-07 转绿（exit 0 + 证据入库）"
+  - id: "T-23-03"
+    line: 23
+    title: "D239: GA权限边界 (14测试)"
+    source: "任务看板（未完成）"
+    priority: P1
+    owner: "Claude Code"
+    depends: ["D239"]
     acceptance: "场景 GS-07 转绿（exit 0 + 证据入库）"
   - id: "T-24-04"
     line: 24
