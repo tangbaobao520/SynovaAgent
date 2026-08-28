@@ -855,6 +855,17 @@ fi
 soft_check "Task Brief: 编码变更须有今日 task brief" "${TASK_BRIEF_MISSING:-}"
 soft_check "Task Brief: 6 核心字段必须填写 (Q0/Q1/Q2/Q3/架构层/Done)" "${TASK_BRIEF_EMPTY:-}"
 
+# D547 教训固化（物理门禁，非台账）：alloc-task-id 生成的骨架 brief 含 <agent>/<本任务在哪一层>
+#   占位符，不得随派单提交进 main——曾致 check-plan-integrity 在 CI 回退命中占位符，
+#   全局阻断所有非 docs PR（D544/D546 实证）。同类失误第三次复发 → 升级为物理硬阻断。
+SKEL_BRIEF=""
+for bf in $(echo "$STAGED_ALL" | grep -E '^\.claude/task-briefs/.*\.md$' || true); do
+  if [ -f "$ROOT/$bf" ] && grep -q '认领: <agent>\|<本任务在哪一层' "$ROOT/$bf" 2>/dev/null; then
+    SKEL_BRIEF="${SKEL_BRIEF}  ${bf}（alloc-task-id 骨架占位符未填）\n"
+  fi
+done
+hard_check "骨架 brief 占位符检测（认领 agent 填写后提交，禁提交骨架）" "${SKEL_BRIEF:-}"
+
 # V4.5.1: 时间戳顺序检查 — PreToolUse 发现 brief 未填就写代码时记录证据到 /tmp/
 # 此文件在 git 之外，不能被 git checkout 抹掉。必须显式 rm 才能解除阻断。
 BEFORE_BRIEF_EVI="/tmp/.synova-before-brief"
