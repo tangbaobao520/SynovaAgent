@@ -11,6 +11,14 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V5.2.5 (2026-08-28) — verify-parallel 关闭信号 3：括号式 (D#) 合入提交（D478 类无 task-state 无报告任务）（PATCH）
+
+- **① 第三关闭信号**: `git log --grep="(D#)"` 在 CI_PR_BASE 命中 → 任务已合 main = 关闭（fix(D478)/feat(D551) 实现提交带括号；dispatch 提交「docs(dispatch): D551」无括号 → 在途任务不误豁免）。**D551 实证**: D478 无 task-state、无审计报告（Win 线终审仅台账记录），仅信号 1/2 无法豁免——信号 3 补全。
+- **② 关键正确性修复（首版实现踩坑）**: `git log` 无匹配也 exit 0（空输出）——直接 `if git log ...; then` 恒真导致全量豁免（T9 抓到）；改为捕获输出判非空。
+- **③ 配对测试 verify-parallel-ci.test.sh 12→13 断言**: T8b（无 task-state 无报告，但 (D#) 提交在 base → 豁免 exit 0）；T9 保持 block（fail-closed 不削弱）。
+- **验证**: verify-parallel-ci 13/13 本地全绿；D551 实证本地复跑 exit 0（D338 报告信号 + D478 提交信号双路径豁免，173 个已关闭 doc 豁免、零 ❌）。
+- **作者**: dsh-cto（D555 追加）
+
 ## V5.2.4 (2026-08-28) — verify-parallel --ci-pr 已关闭任务豁免（serial reuse 误拦根治）（PATCH）
 
 > spec: D555 brief（CTO 内联指令）。D551 实证：新任务 spec 写集含 src/server.ts（D478 已合终审）与 src/growth/feedback-collector.ts（D338 已合有审计报告）——V5.2.0 的 --ci-pr「无豁免纯重叠判定」把**串行复用**（已关闭任务的合法文件复用）误判为并行冲突，CI 恒拦。

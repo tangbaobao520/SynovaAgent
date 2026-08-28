@@ -136,6 +136,15 @@ OUT=$(cd "$SB_CLOSED2" && bash "$SB_CLOSED2/scripts/control-tower/verify-paralle
 if [ "$rc" -eq 0 ]; then ok "T8 审计报告豁免 pass (exit 0)"; else no "T8 期望 exit 0 实际 $rc :: $OUT"; fi
 
 echo ""
+echo "── T8b CI 模式: 无 task-state 无报告，但 (D#) 合并提交在 base → 豁免 pass (exit 0) ──"
+SB_MERGED="$TMPD/merged"
+setup_repo "$SB_MERGED" "SYNOVA-IMPL-D997-merged2-20260827.md"
+git -C "$SB_MERGED" -c user.email=t@t -c user.name=t commit -q --allow-empty -m "fix(D990): merged task commit"
+git -C "$SB_MERGED" update-ref refs/remotes/origin/main HEAD
+OUT=$(cd "$SB_MERGED" && bash "$SB_MERGED/scripts/control-tower/verify-parallel.sh" --ci-pr origin/main 2>&1); rc=$?
+if [ "$rc" -eq 0 ]; then ok "T8b 合并提交信号豁免 pass (exit 0)"; else no "T8b 期望 exit 0 实际 $rc :: $OUT"; fi
+
+echo ""
 echo "── T9 CI 模式: 无关闭信号（无 task-state 无报告）→ 仍 block (fail-closed 不削弱) ──"
 SB_OPEN="$TMPD/open"
 setup_repo "$SB_OPEN" "SYNOVA-IMPL-D996-open-20260827.md"
