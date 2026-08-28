@@ -8,7 +8,7 @@
  *      点击 → setSelectedCap(toggleCap(...)) 右栏联动；折叠态为 Lucide 图标条，点击同步联动。
  */
 import React, { useEffect, useState } from 'react';
-import { Search, MessageSquare, Folder, Bell, Radar, RefreshCw, ListChecks, Users, ChevronRight, Ticket, Settings, type LucideIcon } from 'lucide-react';
+import { Search, MessageSquare, Folder, Bell, Radar, RefreshCw, ListChecks, Users, ChevronRight, Ticket, Settings, Building2, type LucideIcon } from 'lucide-react';
 import { useAppStore } from '../stores/app-store';
 import { getApiBase } from '../lib/api';
 import { CAPABILITY_IDS, toggleCap, canAccessCap, capabilityLabel, badgeColorFor, type CapabilityId, type SelectedCap } from '../stores/capability';
@@ -214,7 +214,7 @@ const LeftPanel: React.FC = () => {
           <div className="panel-section-title">最近对话</div>
           {filteredConvs.map((conv) => (
             <div key={conv.id} className="panel-item">
-              <span className="panel-item-icon">💬</span>
+              <span className="panel-item-icon"><MessageSquare size={16} strokeWidth={2} /></span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{conv.title}</div>
                 <div style={{ fontSize: 10, color: 'var(--dim)' }}>{conv.preview}</div>
@@ -227,7 +227,7 @@ const LeftPanel: React.FC = () => {
           {filteredWss.map((ws) => (
             <div key={ws.id} className={`panel-item${activeWorkspaceId === ws.id ? ' active' : ''}`}
               onClick={() => setActiveWorkspaceId(ws.id)}>
-              <span className="panel-item-icon">📁</span>
+              <span className="panel-item-icon"><Folder size={16} strokeWidth={2} /></span>
               <span>{ws.title}</span>
               {ws.type === 'diagnostic' && (
                 <span style={{ marginLeft: 'auto', fontSize: 9, color: 'var(--accent2)' }}>诊断</span>
@@ -250,7 +250,7 @@ const LeftPanel: React.FC = () => {
                 <div key={client.orgId}
                   className={`panel-item${activeOrgId === client.orgId ? ' active' : ''}`}
                   onClick={() => handleSwitchOrg(client.orgId)}>
-                  <span className="panel-item-icon">🏢</span>
+                  <span className="panel-item-icon"><Building2 size={16} strokeWidth={2} /></span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 12 }}>{client.name}</div>
                     <div style={{ fontSize: 10, color: 'var(--dim)' }}>{client.industry}</div>
