@@ -17,4 +17,6 @@
 骨架 brief（占位符未填）提交被 hard_check 拦；填好 brief 放行；配对测试 6/6
 
 ## 架构层: L0 控制塔
-## Done 标准: 配对测试 6/6 绿 + CI quality 绿
+## Done 标准:
+- [x] 配对测试 skeleton-brief-gate.test.sh 6/6 绿
+- [x] CI quality job 绿（骨架 brief 占位符检测生效）
