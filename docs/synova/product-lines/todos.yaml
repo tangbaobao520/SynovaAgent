@@ -465,4 +465,21 @@ manual:
     owner: "CTO 统筹"
     depends: ["T-M-07"]
     acceptance: "按 K3 咨询成功标准（GA 确认率）"
+  # ── 2026-08-28 CTO 补录：前端待确认项 + DSH 借鉴清单（创始人提醒不得忽略）──
+  - id: "T-M-09"
+    line: 1
+    title: "前端交互待确认项 3 条：①能力导航上移品牌行正下 ②默认收起紧凑态 ③DSH 式输入框（多行自适应/模式/LLM——借鉴 DSH 输入框范式）"
+    source: "前端交互设计-左栏Codex风格-v1 末尾「下一版待确认项」"
+    priority: P1
+    owner: "dev-doc + 编码"
+    depends: []
+    acceptance: "3 条逐条裁决（创始人拍板方向）+ 纳入实现切片"
+  - id: "T-M-10"
+    line: 20
+    title: "DSH 迁移施工图 §4 借鉴清单 9 项（会话存储/agent-loop/子代理/LLM 适配/定时调度/后台作业/反馈闭环/安全边界/门禁体系）按 Stage 1/2/3 排期"
+    source: "DSH迁移施工图-20260820 §4 能力映射表（🔵 借 DSH）"
+    priority: P2
+    owner: "CTO 统筹"
+    depends: ["T-M-04"]
+    acceptance: "Stage 1 借鉴理念项（会话存储 D500/定时调度/反馈闭环 D333）复核 + Stage 2/3 排期落地"
 # MANUAL:END
