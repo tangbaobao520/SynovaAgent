@@ -24,21 +24,16 @@ K3 物理实测该迁移 PASS（旧库 3 行保留 + seq 连续 + id 连续 + �
 
 ## Q2: 范围
 做什么：
-1. `tests/store/session-event-log.test.ts` 新增 describe「D487 重建迁移（K3 P1 闭合）」≥4 断言：
-   ① 旧库模拟（手工建无 diagnosis_phase CHECK 的 session_events + 预置 3 行）→ new SessionStore(db) → 行保留（id/session_id/seq/event_type/payload_json 全字段一致）
-   ② 约束升级：迁移后可成功写入 diagnosis_phase 事件（旧 CHECK 会拒绝，新表接受）
-   ③ seq 连续：迁移后 appendEvent 续写 seq = 旧 MAX+1（无回退）
-   ④ 幂等：同库再次 new SessionStore → 无重复重建、数据零损失、不报错
-2. `docs/plans/codex/implementation/SYNOVA-IMPL-D487-ga-session-events-slice2a-20260828.md` §4 测试表补一行：迁移测试（tests/store/session-event-log.test.ts，D558 闭合 K3 P1），并在 §3.2 注明测试落点
-3. P2 清理（同批 K3 P2×3 中两项，编码线顺手修）：
-   a. `src/mcp/index.ts` L236 `new SessionStore(getDatabase() as never)` → 去冗余断言（getDatabase() 已返回 Database.Database，engine-context.ts L50）——CT-46 存量实例
-   b. `packages/test-kit/tests/architecture/05-as-any-audit.test.ts` 同步扩展扫描模式 as never / as unknown as（与 pre-commit 组 1 CT-46 修复一致）——**必须在 a 之后**，否则全仓扫描命中 mcp 存量实例 CI 红
-4. task-state/D558.json 回填（impl_done + commit hash + evidence）
+- 新增 tests/store/session-event-log.test.ts：describe「D487 重建迁移（K3 P1 闭合）」≥4 断言：① 旧库模拟（手工建无 diagnosis_phase CHECK 的 session_events + 预置 3 行）→ new SessionStore(db) → 行保留（id/session_id/seq/event_type/payload_json 全字段一致）② 约束升级：迁移后可成功写入 diagnosis_phase 事件（旧 CHECK 会拒绝，新表接受）③ seq 连续：迁移后 appendEvent 续写 seq = 旧 MAX+1（无回退）④ 幂等：同库再次 new SessionStore → 无重复重建、数据零损失、不报错
+- 修改 docs/plans/codex/implementation/SYNOVA-IMPL-D487-ga-session-events-slice2a-20260828.md：§4 测试表补一行：迁移测试（tests/store/session-event-log.test.ts，D558 闭合 K3 P1），并在 §3.2 注明测试落点
+- 修改 src/mcp/index.ts：L236 去冗余 as never 断言（getDatabase() 已返回 Database.Database，engine-context.ts L50）——CT-46 存量实例
+- 修改 packages/test-kit/tests/architecture/05-as-any-audit.test.ts：扫描模式扩 as never / as unknown as（与 pre-commit 组 1 CT-46 修复一致）——必须在 mcp 清理之后，否则全仓扫描命中存量实例 CI 红
+- task-state/D558.json：回填（impl_done + commit hash + evidence）
 
 不做什么：
-- 不改 src/store/session-store.ts 迁移逻辑（K3 物理实测 PASS，无代码缺陷）
-- 不碰 scripts/audit/、不写审计标准（审计红线）
-- 不改 D487.json（审计结论由 K3 已回填）
+- 不改 src/store/session-store.ts：迁移逻辑（K3 物理实测 PASS，无代码缺陷）
+- 不改 scripts/audit/：审计红线（审计红线）
+- 不改 task-state/D487.json：审计结论由 K3 已回填
 
 ## Q3: 验收
 入口：`npx vitest run tests/store/session-event-log.test.ts`（Node 24，better-sqlite3 ABI 137）
@@ -47,6 +42,7 @@ K3 物理实测该迁移 PASS（旧库 3 行保留 + seq 连续 + id 连续 + �
 
 ## 架构层: L5
 ## Done 标准
-- [x] 新增迁移测试 ≥4 断言全绿（命令输出为准）
-- [x] spec §4 测试表已同步（grep 迁移测试行命中）
-- [x] task-state/D558.json impl_done + commit 回填
+- [x] 新增迁移测试 ≥4 断言全绿 verify: npx vitest run tests/store/session-event-log.test.ts 2>&1 | grep -E "Test Files.*1 passed|Tests.*[4-9][0-9]* passed"
+- [x] spec §4 测试表已同步 verify: grep -c "迁移" docs/plans/codex/implementation/SYNOVA-IMPL-D487-ga-session-events-slice2a-20260828.md | xargs test 3 -le
+- [x] mcp 无 as never 残留 verify: grep -c "as never" src/mcp/index.ts | xargs test 0 -eq
+- [x] task-state/D558.json impl_done + commit 回填 verify: python3 -c "import json; d=json.load(open('task-state/D558.json')); assert d['status']=='impl_done' and d['impl']['commit']" 
