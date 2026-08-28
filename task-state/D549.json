@@ -1,0 +1,11 @@
+{
+  "task_id": "D549",
+  "title": "sealed-tests-ci-canary",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-28",
+  "updated_by": "alloc-task-id"
+}
