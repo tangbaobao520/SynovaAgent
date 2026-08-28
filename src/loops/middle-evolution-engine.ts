@@ -7,6 +7,9 @@
  *   3. 路径排名降级 (same path rejected ≥3)
  *   4. 专家置信度降级 (same expert × breakpoint ≥3)
  *   5. 跨部门矛盾仲裁 (finance vs marketing 对立)
+ * D556 追加第 6 类（回流层 2 闭环 — spec §6.2）:
+ *   6. GA 校准审核 (diagnosis_conclusion × reject/modify/ineffective ≥3 → agent_memory 审核条目，
+ *      不自动改诊断逻辑权重——层 3 descope，诚实边界)
  *
  * 铁律 24+31: collector 不可用 → log.warn + 返回空
  * 铁律 38: 零 as any
@@ -24,7 +27,8 @@ export type EvolutionActionType =
   | 'goal_formula_tweak'
   | 'path_rank_downgrade'
   | 'expert_confidence_downgrade'
-  | 'cross_dept_arbitration';
+  | 'cross_dept_arbitration'
+  | 'diagnosis_calibration_review'; // D556: GA 校准回流审核（spec §6.2 追加，三既有信号类语义零变化）
 
 /** 进化动作 — 由 processFeedbackSignals 生成的自动调整指令 */
 export interface EvolutionAction {
@@ -133,6 +137,34 @@ export function processFeedbackSignals(signals: AggregatedSignal[]): EvolutionAc
     // Signal 5: 跨部门矛盾仲裁 — 同一事实两个不同决策
     const contradictionActions = detectContradictions(signals);
     actions.push(...contradictionActions);
+
+    // Signal 6 (D556; spec §6.2 概念编号 Signal 5 — 文件内既有注释 Signal 5 = 矛盾仲裁，为保
+    // DS6「只增不改」本信号顺延编号): GA 校准回流审核 — diagnosis_conclusion ×
+    // reject/modify/ineffective ≥3（阈值与 MIN_TRIGGER_COUNT 同源）。getAggregatedSignals 已按
+    // decision,target_type,actor_role 分组 → 三决策各自成组、每组一条动作（spec §6.1 动作映射表）。
+    // 诚实边界: 动作 = agent_memory 审核队列条目，不自动改诊断逻辑权重（层 3 descope）。
+    // 注: ineffective × diagnosis_conclusion 组同时命中既有 Signal 4（其 filter 无 targetType
+    // 限定，语义不动——DS6 只增不改），重叠为既有白名单语义的既定行为，测试显式断言记录。
+    const calibrationReviewSignals = signals.filter(s =>
+      s.targetType === 'diagnosis_conclusion' &&
+      (s.decision === 'reject' || s.decision === 'modify' || s.decision === 'ineffective') &&
+      s.count >= MIN_TRIGGER_COUNT,
+    );
+    for (const sig of calibrationReviewSignals) {
+      const decision = sig.decision;
+      const hint = decision === 'reject'
+        ? '结论块反复被标记错误 → 进人工审核队列'
+        : decision === 'modify'
+          ? 'GA 重写版本与 Agent 版本并列 → 审核队列'
+          : '信号相关性降级建议 → 审核队列';
+      actions.push({
+        type: 'diagnosis_calibration_review',
+        reason: `诊断结论 ${sig.key} 被 GA 以 ${decision} 标记 ${sig.count} 次，进入校准审核队列`,
+        parameter: { decision, targetIds: sig.targetIds, sampleCount: sig.count, hint },
+        confidence: Math.min(sig.count / 10, 0.9),
+        triggeredAt: sig.latestTimestamp,
+      });
+    }
 
     if (actions.length > 0) {
       log.info({ actionCount: actions.length }, '进化信号处理完成');
@@ -513,6 +545,85 @@ function applyExpertConfidenceDowngrade(action: EvolutionAction, result: ApplyAc
   result.applied++;
 }
 
+// ═══ D556: GA 校准审核动作落盘（回流层 2 — spec §6.1/§6.2.3） ═══
+
+/**
+ * targetIds 确定性短哈希（djb2 → 无符号 hex）——审核条目 key 去重可读，同组回流可关联。
+ * 契约: @input targetIds 字符串数组; @output 8 位内 hex 字符串（确定性，同输入恒同输出）; 不抛。
+ */
+function hashTargetIds(targetIds: string[]): string {
+  let hash = 5381;
+  for (const id of targetIds) {
+    for (let i = 0; i < id.length; i++) {
+      hash = ((hash << 5) + hash + id.charCodeAt(i)) | 0;
+    }
+  }
+  return (hash >>> 0).toString(16);
+}
+
+/**
+ * D556: applyDiagnosisCalibrationReview — 校准审核动作 → agent_memory 审核条目。
+ *
+ * sink = logCorrection 同款调用形态（getAgentMemoryStore().remember，D273 L362-379 先例、
+ * applyGoalFormulaTweak L453-455 同款），但条目字段按 spec §6.1 审核 key/tags 独立组装:
+ *   key   = `ga_calibration_review:${decision}:${targetIdsHash}:${Date.now()}`
+ *   tags  = ['ga_calibration_review', decision]
+ *   type  = 'ga_correction'（MemoryType 枚举内最邻近值——spec §6.1 的 'ga_calibration_review'
+ *           不在 MemoryType 枚举/DDL CHECK（agent-memory-store.ts L27-39/L355，不在本单写集），
+ *           判别值冗余携带于 key 前缀 + tags[0] + value.actionType 三处，K3 可查）
+ *
+ * 契约（铁律 47）:
+ *   @input  — action: EvolutionAction(type='diagnosis_calibration_review',
+ *             parameter={decision, targetIds, sampleCount, hint})；result: 计数累加器
+ *   @output — 无返回值；成功 result.applied++；写失败/参数缺失 result.skipped++
+ *             （对齐 L541-546 错误语义，诚实性不变量 loop-handlers L367-368 保持）
+ *   @degraded — store 未初始化/写入异常 → log.warn + skipped++（不抛、不阻断其余动作）
+ *   @诚实边界 — 审核条目 = 待办队列，不自动改诊断逻辑权重（层 3 descope，spec §6.1）
+ */
+function applyDiagnosisCalibrationReview(action: EvolutionAction, result: ApplyActionResult): void {
+  const decision = action.parameter.decision;
+  const targetIds = action.parameter.targetIds;
+  if (typeof decision !== "string" || decision.length === 0 || !Array.isArray(targetIds)) {
+    result.skipped++;
+    return;
+  }
+  const cleanTargetIds = targetIds.filter((id): id is string => typeof id === "string");
+  const targetIdsHash = hashTargetIds(cleanTargetIds);
+
+  try {
+    const store = getAgentMemoryStore();
+    store.remember({
+      orgId: "synova",
+      key: `ga_calibration_review:${decision}:${targetIdsHash}:${Date.now()}`,
+      value: JSON.stringify({
+        actionType: action.type,
+        decision,
+        targetIds: cleanTargetIds,
+        sampleCount: action.parameter.sampleCount,
+        hint: action.parameter.hint,
+        reason: action.reason,
+        triggeredAt: action.triggeredAt,
+      }),
+      type: "ga_correction",
+      confidence: action.confidence,
+      source: "ga_calibration_review",
+      tags: ["ga_calibration_review", decision],
+      expiresAt: null,
+    });
+    log.info(
+      { decision, targetCount: cleanTargetIds.length },
+      "GA 校准审核条目已写入 agent_memory（待人工审核——不自动改诊断权重，层 3 descope）",
+    );
+    result.applied++;
+  } catch (err: unknown) {
+    log.warn(
+      { err: err instanceof Error ? err.message : String(err), decision },
+      "GA 校准审核条目写入失败 — skipped",
+    );
+    result.skipped++;
+  }
+}
+
 // ═══ 主入口: 按类型分发 ═══
 
 export function applyEvolutionActions(actions: EvolutionAction[]): ApplyActionResult {
@@ -534,6 +645,9 @@ export function applyEvolutionActions(actions: EvolutionAction[]): ApplyActionRe
           break;
         case "expert_confidence_downgrade":
           applyExpertConfidenceDowngrade(action, result);
+          break;
+        case "diagnosis_calibration_review":
+          applyDiagnosisCalibrationReview(action, result);
           break;
         default:
           result.skipped++;
