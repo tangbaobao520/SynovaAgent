@@ -1,0 +1,13 @@
+{
+  "task_id": "D557",
+  "title": "verify-parallel-signal4-no-taskstate-merged",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "note": "信号4：无 task-state + 写集全合 base 豁免（V5.2.6）；测试 14/14；D487 实测 exit 0"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-29",
+  "updated_by": "dsh-cto"
+}

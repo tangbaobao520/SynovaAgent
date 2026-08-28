@@ -145,6 +145,33 @@ OUT=$(cd "$SB_MERGED" && bash "$SB_MERGED/scripts/control-tower/verify-parallel.
 if [ "$rc" -eq 0 ]; then ok "T8b 合并提交信号豁免 pass (exit 0)"; else no "T8b 期望 exit 0 实际 $rc :: $OUT"; fi
 
 echo ""
+echo "── T8c CI 模式: 无 task-state 无报告无(D#)提交，但写集文件全在 base → 豁免 pass (exit 0) ──"
+SB_S4="$TMPD/s4"; rm -rf "$SB_S4"; mkdir -p "$SB_S4/src/middleware" "$SB_S4/docs/plans/codex/implementation"
+cp -R "$REPO/scripts" "$SB_S4/scripts"
+git -C "$SB_S4" init -q -b main
+cat > "$SB_S4/docs/plans/codex/implementation/SYNOVA-IMPL-D998-merged-hist-20260827.md" <<'DOCEOF'
+### 3.1 写集 (1 修改 + 0 新建)
+| 文件 | 操作 | 说明 |
+|------|------|------|
+| src/middleware/merged.ts | 修改 | 已合历史任务写集（无 task-state 无报告） |
+DOCEOF
+echo delivered > "$SB_S4/src/middleware/merged.ts"
+git -C "$SB_S4" -c user.email=t@t -c user.name=t add -A >/dev/null 2>&1
+git -C "$SB_S4" -c user.email=t@t -c user.name=t commit -qm base
+git -C "$SB_S4" update-ref refs/remotes/origin/main HEAD
+git -C "$SB_S4" checkout -qb feat/d557-test
+cat > "$SB_S4/docs/plans/codex/implementation/SYNOVA-IMPL-D999-pr-20260828.md" <<'DOCEOF'
+### 3.1 写集 (1 修改 + 0 新建)
+| 文件 | 操作 | 说明 |
+|------|------|------|
+| src/middleware/merged.ts | 修改 | PR 串行复用 |
+DOCEOF
+git -C "$SB_S4" -c user.email=t@t -c user.name=t add -A >/dev/null 2>&1
+git -C "$SB_S4" -c user.email=t@t -c user.name=t commit -qm "feat: pr serial reuse"
+OUT=$(cd "$SB_S4" && bash "$SB_S4/scripts/control-tower/verify-parallel.sh" --ci-pr origin/main 2>&1); rc=$?
+if [ "$rc" -eq 0 ]; then ok "T8c 写集全在 base 且无 task-state → 豁免 (exit 0)"; else no "T8c 期望 exit 0 实际 $rc :: $OUT"; fi
+
+echo ""
 echo "── T9 CI 模式: 无关闭信号（无 task-state 无报告）→ 仍 block (fail-closed 不削弱) ──"
 SB_OPEN="$TMPD/open"
 setup_repo "$SB_OPEN" "SYNOVA-IMPL-D996-open-20260827.md"

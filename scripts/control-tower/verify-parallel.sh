@@ -190,6 +190,9 @@ compare_writesets_ci() {
 #   2) docs/synova/audit-reports/ 含 *-<D#>[-.md]（历史任务无 task-state，D393 派生制同源信号）
 #   3) D556: origin/main 含括号式 (D#) 提交（fix(D478)/feat(D551) 实现/合并提交——任务已合 main = 关闭；
 #      dispatch 提交「docs(dispatch): D551」无括号不误豁免在途任务）
+#   4) D557: 无 task-state 记录 且 写集文件全部已合 base——合并但未走状态机的历史任务
+#      （D469 实证: impl 在 main、无审计报告、无括号式提交；D483 类在途任务有 task-state → 不豁免；
+#       D485/D488 类在途 Win 任务 doc 未在 main → 不进入比较集，无漏网）
 # 只豁免「已合 doc 侧」（mtmp）——PR 自身 doc 恒为新任务，不做关闭判定。
 _is_closed_doc() {
   local db did
@@ -206,6 +209,27 @@ _is_closed_doc() {
   # 注意: git log 无匹配也 exit 0（空输出）——必须判输出非空，否则恒豁免
   _mc="$(git -C "$REPO_DIR" log --format=%H --grep="($did)" --max-count=1 "$CI_PR_BASE" 2>/dev/null || true)"  # swallow-ok: log 失败=不豁免
   [ -n "$_mc" ] && return 0
+  # 信号 4（D557）: 无 task-state 记录 → 写集文件全部已合 base = 合并未登记历史任务
+  if [ ! -f "$REPO_DIR/task-state/$did.json" ]; then
+    _closed4="$($PYBIN - "$1" "$CI_PR_BASE" "$REPO_DIR" "$SCRIPT_DIR" 2>/dev/null <<'PYEOF' || true
+import json, subprocess, sys
+doc, base, repo, sdir = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+r = subprocess.run([sys.executable, sdir + '/devdoc_writeset.py', '--extract', doc],
+                   capture_output=True, text=True)
+try:
+    entries = json.loads(r.stdout).get('entries', [])
+except Exception:
+    sys.exit(1)
+if not entries:
+    sys.exit(1)
+for f in entries:
+    if subprocess.run(['git', '-C', repo, 'cat-file', '-e', base + ':' + f]).returncode != 0:
+        sys.exit(1)
+print('closed4')
+PYEOF
+)"
+    [ -n "$_closed4" ] && return 0
+  fi
   return 1
 }
 
