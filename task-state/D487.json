@@ -2,7 +2,7 @@
   "task_id": "D487",
   "title": "D394 片2-A——GA 诊断会话事件化装配（D500 地基接线，交付物可自证）",
   "slice": "GA-SESS-2A",
-  "status": "impl_done",
+  "status": "audited",
   "risk": "medium",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-D487-ga-session-events-slice2a-20260828.md",
@@ -29,9 +29,25 @@
       "task-state/D487.json"
     ]
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-08-29-D551-D487-ga-line.md",
+    "verdict": "CONDITIONAL PASS",
+    "blockers": [],
+    "findings": [
+      "双写链路属实：persistingOnEvent phase_*→diagnosis_phase/其余→diagnosis_module（diagnosis-launcher.ts L98-104）+ 报告事件 L187-193 + 失败 error 落流 L323-326",
+      "迁移物理实测 PASS：行保留+seq 1-4 连续+id 连续+幂等（/tmp/d487-migration-verify.mjs）",
+      "5 实例化点全装配（cli×2/im-inbound/mcp/tui-v2+bootstrap）——tui-v2/lib/bootstrap.ts L131 = D500 第二处悬空已修；server 零实例化点声明属实",
+      "写集 13+台账声明 vs 实际 15 一致；零 scripts/——与 D555/D557 门禁修复互相独立",
+      "D469 信号4 豁免前提属实（无 task-state/D469.json + dev doc 写集全在 main + D557 V5.2.6 一致性）",
+      "测试 5/5 + 回归 11+21 绿（Node 24）；tsc 零新增；CI 产品门禁 job 级全 success",
+      "P1：session_events 重建表迁移无提交测试（D551 同类迁移有测试；spec §4 测试表未同步 §3.2 新增迁移）——建议另起 FIX 小任务",
+      "P2：mcp/index.ts L236 as never 门禁盲区（组1 只拦 as any）；red 先行声称无法事后物理核验（标注声称无据）；Win 线 dev doc 缺北星 front-matter"
+    ],
+    "by": "K3",
+    "at": "2026-08-29"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-08-28",
-  "updated_by": "claude",
+  "updated_at": "2026-08-29",
+  "updated_by": "K3",
   "note": "装配点实测偏离 §3.1（cli/im-inbound/mcp/tui-v2/fromState，server 无 ConversationEngine 实例化）——已按 S-6 回填 dev doc §3.2。附加发现并修复：tui-v2/lib/bootstrap.ts SessionManager 未注入 store（D500 第二处悬空）。验证：新测试 5/5（red 3 败先行已证）+ 相关回归 141 绿 + tsc 28=28 + 全量对照基线无新增失败。"
 }
