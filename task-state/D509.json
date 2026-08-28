@@ -1,23 +1,37 @@
 {
-  "task_id": "D509",
-  "title": "union driver + G12 修复回归 main（API 合并遗漏补救）",
-  "status": "impl_done",
-  "impl": {
-    "commit": "dbdcdbcf",
-    "by": "dsh-cto",
-    "at": "2026-08-23",
-    "files": [
-      ".gitattributes",
-      "scripts/pre-commit-check.sh"
-    ]
-  },
-  "spec": {
-    "path": "-",
-    "by": "dsh-cto",
-    "at": "2026-08-23"
-  },
-  "updated_at": "2026-08-23",
-  "updated_by": "dsh-cto",
-  "note": "Codex 反馈自查：reference-map union driver 缺失（Win#8）+ API 合并 #125 漏推 pre-commit-check.sh 致 D506 G12 修复未进 main（P0）。两项一次修复。g12 测试 10/10。",
-  "priority": "P0"
+ "task_id": "D509",
+ "title": "union driver + G12 修复回归 main（API 合并遗漏补救）",
+ "status": "impl_done",
+ "impl": {
+  "commit": "dbdcdbcf",
+  "by": "dsh-cto",
+  "at": "2026-08-23",
+  "files": [
+   ".gitattributes",
+   "scripts/pre-commit-check.sh"
+  ]
+ },
+ "spec": {
+  "path": "-",
+  "by": "dsh-cto",
+  "at": "2026-08-23"
+ },
+ "updated_at": "2026-08-29",
+ "updated_by": "K3",
+ "note": "Codex 反馈自查：reference-map union driver 缺失（Win#8）+ API 合并 #125 漏推 pre-commit-check.sh 致 D506 G12 修复未进 main（P0）。两项一次修复。g12 测试 10/10。",
+ "priority": "P0",
+ "audit": {
+  "report": "docs/synova/audit-reports/2026-08-28-D501-D550-impl-done-batch.md",
+  "verdict": "CONDITIONAL PASS",
+  "blockers": [
+   "P1-1: 「g12 测试 10/10 复跑」声称无法在 main 复现——tests/control-tower/g12-day-window.test.sh 在 main 不存在（2370fc88 创建，6d6e4d0b API-merge 树误用后消失，任何分支未恢复）。G12 认领窗口逻辑现无配对回归测试。归因: control-tower（API-merge 家族第 3 次）"
+  ],
+  "findings": [
+   "union driver 接线属实：.gitattributes .claude/reference-map.md merge=union + install-hooks.sh:141 驱动注册（复用）",
+   "G12 修复在 main 属实：pre-commit-check.sh:1196-1210 [[ =~ ]] ERE（D506 P0-1 回归内容）",
+   "P2-1: g12-taskstate-exempt.test.sh 裸 python（本机仅 python3 → 2/7 红；加 shim 后 7/7）——环境依赖测试缺陷（M5/PYBIN 未对齐），CI Ubuntu 有 python 故 CI 绿"
+  ],
+  "by": "K3",
+  "at": "2026-08-29"
+ }
 }

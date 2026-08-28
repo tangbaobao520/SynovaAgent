@@ -1,21 +1,33 @@
 {
-  "task_id": "D526",
-  "title": "CI canary 密封清单漂移告警（L4，K3 D521 遗留）",
-  "status": "impl_done",
-  "spec": {
-    "doc": "docs/synova/coordination/派单-D525D526-并行CTO-20260825.md",
-    "source": "K3 D521 审计 L4"
-  },
-  "impl": {
-    "by": "dsh-cto",
-    "at": "2026-08-25",
-    "branch": "feat/d525-d526-red-cleanup",
-    "commit": "d5286c52",
-    "note": "check-canary-drift.sh + ci.yml 接线；存量 47 项曝光",
-    "commit_note": "CTO 复核修正（2026-08-29）：原 61182a9785183750769bc26879232b8a46670fd7 为影子登记/废弃分支提交，真实实现提交 d5286c52（M7 纪律）"
-  },
-  "audit": null,
-  "fix_task_id": null,
-  "updated_at": "2026-08-25",
-  "updated_by": "dsh-cto"
+ "task_id": "D526",
+ "title": "CI canary 密封清单漂移告警（L4，K3 D521 遗留）",
+ "status": "impl_done",
+ "spec": {
+  "doc": "docs/synova/coordination/派单-D525D526-并行CTO-20260825.md",
+  "source": "K3 D521 审计 L4"
+ },
+ "impl": {
+  "by": "dsh-cto",
+  "at": "2026-08-25",
+  "branch": "feat/d525-d526-red-cleanup",
+  "commit": "d5286c52",
+  "note": "check-canary-drift.sh + ci.yml 接线；存量 47 项曝光",
+  "commit_note": "CTO 复核修正（2026-08-29）：原 61182a9785183750769bc26879232b8a46670fd7 为影子登记/废弃分支提交，真实实现提交 d5286c52（M7 纪律）"
+ },
+ "audit": {
+  "report": "docs/synova/audit-reports/2026-08-28-D501-D550-impl-done-batch.md",
+  "verdict": "PASS",
+  "blockers": [],
+  "findings": [
+   "漂移告警实现：双向对账（drift/ghost）+ ::warning 注解 + 契约注释（铁律47）",
+   "告警触发实测：658 测试 vs 19 清单 → 64 项 .test.sh 漂移点名（交付声称 47 项为当日口径，随仓库增长）",
+   "接线：ci.yml:166 告警不阻断（|| true，派单明确）；check-canary-drift.test.sh 11/11",
+   "L4 归属：K3 D521 审计 L4（task-state spec.source 一致）"
+  ],
+  "by": "K3",
+  "at": "2026-08-29"
+ },
+ "fix_task_id": null,
+ "updated_at": "2026-08-29",
+ "updated_by": "K3"
 }

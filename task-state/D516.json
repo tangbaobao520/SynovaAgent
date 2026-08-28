@@ -1,25 +1,39 @@
 {
-  "task_id": "D516",
-  "title": "D515 审计返修 — CI strict 模式（P0 权威落地）+ 去重 + P2×4",
-  "status": "impl_done",
-  "spec": null,
-  "impl": {
-    "commit": "503d04ca",
-    "by": "dsh-cto",
-    "at": "2026-08-24",
-    "files": [
-      "scripts/pre-commit-check.sh",
-      ".github/workflows/ci.yml",
-      "tests/control-tower/ci-strict-mode.test.sh",
-      "task-state/D515.json",
-      "task-state/D516.json",
-      "memory/notes/implemented/2026-08-24-d516-ci-strict.md"
-    ]
-  },
-  "audit": null,
-  "fix_task_id": null,
-  "updated_at": "2026-08-24",
-  "updated_by": "dsh-cto",
-  "note": "K3 D515 FAIL 返修。P0-1: SYNO_CI strict 模式让软检查在 CI 转硬（spec 项3 本意落地）。P1-1: 三重定义去重。P2: tag/version.log/报告/文件修正。",
-  "priority": "P0"
+ "task_id": "D516",
+ "title": "D515 审计返修 — CI strict 模式（P0 权威落地）+ 去重 + P2×4",
+ "status": "impl_done",
+ "spec": null,
+ "impl": {
+  "commit": "503d04ca",
+  "by": "dsh-cto",
+  "at": "2026-08-24",
+  "files": [
+   "scripts/pre-commit-check.sh",
+   ".github/workflows/ci.yml",
+   "tests/control-tower/ci-strict-mode.test.sh",
+   "task-state/D515.json",
+   "task-state/D516.json",
+   "memory/notes/implemented/2026-08-24-d516-ci-strict.md"
+  ]
+ },
+ "audit": {
+  "report": "docs/synova/audit-reports/2026-08-28-D501-D550-impl-done-batch.md",
+  "verdict": "CONDITIONAL PASS",
+  "blockers": [
+   "P1-1: tag V5.0.0 重打未执行（M6）——tag 仍指 8cdf9957，其树为 1444 行三重复制版 + SYNO_CI=0（K3 FAIL 态树）；D516 memory Note 自记「待合并后重打」未闭环。归因: implement"
+  ],
+  "findings": [
+   "P0-1 闭合：ci.yml:50 SYNO_CI:\"1\" 注入 + soft_check:87-88/v5_soft:105-107/warn_check:135-136 转硬；ci-strict-mode.test.sh 7/7",
+   "P1-1 闭合：log_gate/soft_check/v5_soft 各定义 1 次，1444→771 行；残留 SOFT_COUNT=0 ×3（:44-46）+注释块重复（:115-124）为 P2-1（无功能影响）",
+   "P2×4：version.log 运行时不可核⏸；impl.files 终态修正属实；G12d 措辞修正属实（VERSION.md V5.0.0 条目精确）；tag 重打未执行→P1-1",
+   "P2-2: 503d04ca job 级 Vitest (2/2) failure+（1/2）cancelled（TS/CT 绿），随后 PR #157 恢复——瞬时态，日志无权限不可深核"
+  ],
+  "by": "K3",
+  "at": "2026-08-29"
+ },
+ "fix_task_id": null,
+ "updated_at": "2026-08-29",
+ "updated_by": "K3",
+ "note": "K3 D515 FAIL 返修。P0-1: SYNO_CI strict 模式让软检查在 CI 转硬（spec 项3 本意落地）。P1-1: 三重定义去重。P2: tag/version.log/报告/文件修正。",
+ "priority": "P0"
 }
