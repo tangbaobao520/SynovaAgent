@@ -37,7 +37,7 @@
       "DS6": "存量零回改: git diff origin/main -- src/routes/ src/growth/ src/middleware/ src/agent/loop-handlers.ts capability.ts = 空；middle-evolution-engine diff 零删除行（三既有信号类只增不改）",
       "DS7": "E2E walkthrough evidence/D556/: seed.md + walkthrough-api.log（四端点真实 HTTP + 计数 9/1/9 + note 透传）+ walkthrough-evolution.log（defaultEvolutionHandler 真实管线: 3 回流→applied=4→agent_memory 3 审核条目）+ render-snapshot-loaded.html。截图限制: 无显示器 agent 环境以 DOM 渲染快照 + 五场景断言 + API 日志三重替代（seed.md 有声明）",
       "DS8": "as any=0（新增文件）；每 fetch catch console.warn + degraded UI（decideBlockState/deriveOverallPhase + 分块降级条）；tsc 零新增（root 白名单过滤 0 错 + electron-renderer tsc exit 0）",
-      "DS9": "CI 三 job 结果 + Architecture Check 待 push 后回填（见 audit.note CI 段）"
+      "DS9": "CI 全绿 @ 818dfccc（轮 3 = b9d11032 起 IronLaws 通过；轮 4 = 818dfccc 十项全 success）：TypeScript+Lint+Iron Laws / Vitest 1/2 / Vitest 2/2 / Architecture Check / Checker Review / Control Tower Gate Tests ×2 / Integration Contract / npm audit / Golden Case F1 全 success——API check-runs 匿名可查；CI 取证 evidence/D556/ci-check-runs.md（含两轮红根因 + date-shim 复现命令）"
     },
     "deviations": [
       "① 渲染桥接: spec §8 renderToStaticMarkup 经 renderer node_modules 解析 react-dom——物理不成立（root package-lock 零 react-dom/zustand/react-markdown + ci.yml vitest job 仅 root npm ci）。等价实现: test-support/render.ts 零依赖元素树序列化器（API/字符串断言形态不变，仅 tests 引用）。证据可核: grep react-dom electron-renderer/src/test-support/render.ts = 0",
