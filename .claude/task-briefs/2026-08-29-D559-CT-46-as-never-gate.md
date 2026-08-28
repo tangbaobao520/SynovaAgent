@@ -27,6 +27,9 @@ L0 控制塔（门禁脚本层，非 L1-L5 产品层）。pre-commit 组 1「类
 - 修改 scripts/workflow/resolve-commit-brief.sh：认领候选日期窗口 ±1 天（DATES/DATES_C，PR #295 CI 实证：UTC+8 日期 brief 对 UTC runner 是明天 → 认领被排除 → 回退陈旧 brief 致 6 字段红）
 - 修改 tests/control-tower/resolve-commit-brief.test.sh：场景 5（明日 brief 认领数胜出）/ 场景 6（today-2 窗口外排除）
 - 修改 .codex/control-tower/VERSION.md：V5.2.7 条目（PATCH）
+- 修改 docs/synova/coordination/审计发现台账-DSH-CTO.md：CT-46 状态翻 ✅（合并后收尾）
+- memory/notes/proposed/2026-08-29-d559-resolver-date-window.md：落地删除侧
+- memory/notes/implemented/2026-08-29-d559-resolver-date-window.md：四态落地（铁律 49）
 
 不做什么：
 - 不改 src/mcp/index.ts（存量 as never 清理归 D558 编码线）
