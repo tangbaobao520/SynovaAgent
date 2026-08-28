@@ -39,7 +39,7 @@ echo "════════════════════════�
 echo ""
 
 echo "── 1. 正常分配 → D500 + 建壳 ──"
-OUT=$(SYNO_TASK_STATE_DIR="$TMP_DIR/task-state" SYNO_BRIEF_DIR="$TMP_DIR/task-briefs" bash "$TOOL" "测试任务A" 2>&1)
+OUT=$(SYNO_TASK_STATE_DIR="$TMP_DIR/task-state" SYNO_BRIEF_DIR="$TMP_DIR/task-briefs" SYNO_ALLOC_NO_REMOTE=1 bash "$TOOL" "测试任务A" 2>&1)
 assert_contains "$OUT" "D500" "分配 D500 (max=499 → +1=500 起步)"
 assert_contains "$OUT" "已登记" "登记提示"
 if [ -f "$TMP_DIR/task-state/D500.json" ]; then pass "空壳已建"; else fail "空壳未建"; fi
@@ -47,12 +47,12 @@ if grep -q '"status": "claimed"' "$TMP_DIR/task-state/D500.json"; then pass "sta
 echo ""
 
 echo "── 2. 连续分配 → D501 (单调递增) ──"
-OUT=$(SYNO_TASK_STATE_DIR="$TMP_DIR/task-state" SYNO_BRIEF_DIR="$TMP_DIR/task-briefs" bash "$TOOL" "测试任务B" 2>&1)
+OUT=$(SYNO_TASK_STATE_DIR="$TMP_DIR/task-state" SYNO_BRIEF_DIR="$TMP_DIR/task-briefs" SYNO_ALLOC_NO_REMOTE=1 bash "$TOOL" "测试任务B" 2>&1)
 assert_contains "$OUT" "D501" "第二次分配 D501"
 echo ""
 
 echo "── 3. dry-run → 只预览不建壳 ──"
-OUT=$(SYNO_TASK_STATE_DIR="$TMP_DIR/task-state" SYNO_BRIEF_DIR="$TMP_DIR/task-briefs" bash "$TOOL" "预览任务" --dry-run 2>&1)
+OUT=$(SYNO_TASK_STATE_DIR="$TMP_DIR/task-state" SYNO_BRIEF_DIR="$TMP_DIR/task-briefs" SYNO_ALLOC_NO_REMOTE=1 bash "$TOOL" "预览任务" --dry-run 2>&1)
 assert_contains "$OUT" "D502" "dry-run 预览 D502"
 assert_contains "$OUT" "dry-run" "dry-run 标注"
 if [ ! -f "$TMP_DIR/task-state/D502.json" ]; then pass "dry-run 未建壳"; else fail "dry-run 竟建壳了"; fi
@@ -60,7 +60,7 @@ echo ""
 
 echo "── 4. 空任务名 → exit 1 + 用法 ──"
 EXIT=0
-OUT=$(SYNO_TASK_STATE_DIR="$TMP_DIR/task-state" SYNO_BRIEF_DIR="$TMP_DIR/task-briefs" bash "$TOOL" 2>&1) || EXIT=$?
+OUT=$(SYNO_TASK_STATE_DIR="$TMP_DIR/task-state" SYNO_BRIEF_DIR="$TMP_DIR/task-briefs" SYNO_ALLOC_NO_REMOTE=1 bash "$TOOL" 2>&1) || EXIT=$?
 assert_exit 1 "$EXIT" "空名拒绝"
 assert_contains "$OUT" "用法" "用法提示"
 echo ""
@@ -70,8 +70,23 @@ echo "── 5. 撞车防护逻辑存在（并发竞态防御；单进程不可�
 # 单测验证防护代码存在 + 正常流程不误触发。
 if grep -q '已存在\|STATE_FILE' "$TOOL"; then pass "防护逻辑存在 (建壳前检查)"; else fail "防护逻辑缺失"; fi
 EXIT=0
-OUT=$(SYNO_TASK_STATE_DIR="$TMP_DIR/task-state" SYNO_BRIEF_DIR="$TMP_DIR/task-briefs" bash "$TOOL" "正常任务" 2>&1) || EXIT=$?
+OUT=$(SYNO_TASK_STATE_DIR="$TMP_DIR/task-state" SYNO_BRIEF_DIR="$TMP_DIR/task-briefs" SYNO_ALLOC_NO_REMOTE=1 bash "$TOOL" "正常任务" 2>&1) || EXIT=$?
 assert_exit 0 "$EXIT" "正常流程不误触发 (exit 0)"
+echo ""
+
+echo "── 6. D550: origin/main 占用合并（落后本地不漏号——D547/D548 撞号实证）──"
+MAIN_MAX=$(git ls-tree --name-only origin/main task-state/ 2>/dev/null | grep -oE 'D[0-9]+\.json' | sed 's/D\([0-9]*\)\.json/\1/' | sort -n | tail -1)
+rm -rf "$TMP_DIR/ts-empty"; mkdir -p "$TMP_DIR/ts-empty"
+cp "$REPO_DIR/task-state/TEMPLATE.json" "$TMP_DIR/ts-empty/TEMPLATE.json"
+OUT=$(SYNO_TASK_STATE_DIR="$TMP_DIR/ts-empty" SYNO_BRIEF_DIR="$TMP_DIR/task-briefs" bash "$TOOL" "空目录测试" 2>&1)
+GOT=$(echo "$OUT" | grep -oE 'D[0-9]+' | head -1 | sed 's/D//')
+if [ -n "$MAIN_MAX" ] && [ -n "$GOT" ] && [ "$GOT" -gt "$MAIN_MAX" ]; then
+  pass "origin/main 合并: 空本地发 D$GOT > main max D$MAIN_MAX（不漏号）"
+elif [ -z "$MAIN_MAX" ]; then
+  pass "origin/main 不可读 → 降级本地发号（CI 无 origin 时预期路径）"
+else
+  fail "origin/main 合并失败: 发 D$GOT 应 > main max $MAIN_MAX"
+fi
 echo ""
 
 echo "═══════════════════════════════════════════════════════════"
