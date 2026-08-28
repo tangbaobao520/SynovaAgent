@@ -182,6 +182,28 @@ compare_writesets_ci() {
   return 0
 }
 
+# ── D555: 已关闭任务豁免（serial reuse）——V5.2.0 --ci-pr 按设计无豁免，但「串行复用」被误判并行 ──
+# D551 实证: 新任务 spec 写集含 src/server.ts（D478 已合）/ src/growth/feedback-collector.ts（D338 已合），
+# 两任务均已关闭（终审/审计报告在 main），文件复用合法 → CI 误拦。
+# 关闭信号（机器可验，任一命中即豁免；都无 → 继续比对，fail-closed 不削弱）:
+#   1) task-state/<D#>.json status=audited（D382 状态机终态）
+#   2) docs/synova/audit-reports/ 含 *-<D#>[-.md]（历史任务无 task-state，D393 派生制同源信号）
+# 只豁免「已合 doc 侧」（mtmp）——PR 自身 doc 恒为新任务，不做关闭判定。
+_is_closed_doc() {
+  local db did
+  db="$(basename "${1:-}")"
+  did="$(echo "$db" | grep -oE 'D[0-9]+' | head -1 || true)"  # swallow-ok: 无 D# → 空 → 返回 1（不豁免）
+  [ -z "$did" ] && return 1
+  if [ -f "$REPO_DIR/task-state/$did.json" ]; then
+    if grep -qE '"status"[[:space:]]*:[[:space:]]*"audited"' "$REPO_DIR/task-state/$did.json" 2>/dev/null; then
+      return 0
+    fi
+  fi
+  if ls "$REPO_DIR"/docs/synova/audit-reports/*-"$did"-*.md >/dev/null 2>&1; then return 0; fi  # swallow-ok: 无匹配=不豁免，glob 失败非错误
+  if ls "$REPO_DIR"/docs/synova/audit-reports/*-"$did".md >/dev/null 2>&1; then return 0; fi    # swallow-ok: 同上
+  return 1
+}
+
 # ── 今日文件筛选 (D366) — 必须在模式分发之前定义: 分支内的定义只在分支执行时生效 ──
 # D366: 按文件名日期判断"今日" — 替代 find 按 mtime 的今日判定 (git pull/checkout 刷 mtime 不可靠)
 # 用法: today_files_by_prefix <dir>   # brief: YYYY-MM-DD 文件名前缀 (扫描 *.md)
@@ -314,10 +336,14 @@ elif [ "$MODE" = "ci-pr" ]; then
     echo "  ✅ 无已合 dev doc 可比对（${CI_PR_BASE}）— 跳过"
     exit 0
   fi
-  # 两两比对：本 PR doc vs 已合 doc（compare_writesets_ci —— 无豁免，纯重叠判定）
+  # 两两比对：本 PR doc vs 已合 doc（compare_writesets_ci —— D555: 已关闭任务豁免，串行复用合法）
   while IFS= read -r pdoc || [ -n "$pdoc" ]; do
     [ -z "$pdoc" ] && continue
     for mtmp in $MERGED_DOCS; do
+      if _is_closed_doc "$mtmp"; then
+        echo "  ✅ 已关闭任务豁免（serial reuse）: $(basename "$mtmp")"
+        continue
+      fi
       compare_writesets_ci "$pdoc" "$mtmp" || handle_compare $?
     done
   done <<< "$PR_DOCS"

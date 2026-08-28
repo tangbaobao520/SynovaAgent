@@ -81,7 +81,7 @@ cp "$REPO_DIR/task-state/TEMPLATE.json" "$TMP_DIR/ts-empty/TEMPLATE.json"
 OUT=$(SYNO_TASK_STATE_DIR="$TMP_DIR/ts-empty" SYNO_BRIEF_DIR="$TMP_DIR/task-briefs" bash "$TOOL" "空目录测试" 2>&1)
 GOT=$(echo "$OUT" | grep -oE 'D[0-9]+' | head -1 | sed 's/D//')
 if [ -n "$MAIN_MAX" ] && [ -n "$GOT" ] && [ "$GOT" -gt "$MAIN_MAX" ]; then
-  pass "origin/main 合并: 空本地发 D$GOT > main max D$MAIN_MAX（不漏号）"
+  pass "origin/main 合并: 空本地发 D${GOT} > main max D${MAIN_MAX}（不漏号）"
 elif [ -z "$MAIN_MAX" ]; then
   pass "origin/main 不可读 → 降级本地发号（CI 无 origin 时预期路径）"
 else
