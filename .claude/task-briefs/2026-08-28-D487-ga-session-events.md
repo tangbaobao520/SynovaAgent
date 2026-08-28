@@ -50,6 +50,7 @@ c) memory：铁律 0-2 测试先行（red→green）；铁律 31 降级显式（
 结果（最终展示）：consult 一次后 getEvents 可回放完整事件流（阶段→模块→报告顺序）；deriveMessages 投影不受诊断事件污染；双写失败显式 degraded 诊断不崩。
 
 ## 架构层: L2
+编排层装配（conversation-engine/diagnosis-launcher/cli/im-inbound/mcp/tui-v2）+ L5 session-store 事件类型扩展
 ## Done 标准
 - [ ] verify: grep -c "appendEvent" src/agent/diagnosis-launcher.ts 输出 >=1
 - [ ] verify: grep -cE "diagnosis_phase|diagnosis_module|diagnosis_report" src/store/session-store.ts 输出 >=3

@@ -229,7 +229,10 @@ async function handleToolCall(name: string, params: Record<string, unknown>): Pr
       let mcpSessionId: string | undefined;
       try {
         const { getDatabase, initEngineContext } = await import('../init/engine-context');
-        try { getDatabase(); } catch { initEngineContext(); }
+        try { getDatabase(); } catch (err: unknown) {
+          log.warn({ err: err instanceof Error ? err.message : String(err) }, '数据库未初始化 — 执行懒初始化');
+          initEngineContext();
+        }
         const { SessionStore } = await import('../store/session-store');
         const { SessionManager: SessionManagerImpl } = await import('../orchestrator/session-manager');
         const store = new SessionStore(getDatabase() as never);
