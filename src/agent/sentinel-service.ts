@@ -10,7 +10,7 @@
 
 import type { SentinelFinding, SentinelCheckResult } from '../sentinel/types';
 import type { AggregatedSignal } from '../sentinel/signal-aggregator';
-import { getGlobalSentinelRunner } from '../sentinel/runner';
+import { getGlobalSentinelRunner, type GaManualSignalInput } from '../sentinel/runner';
 import { aggregateSignals } from '../sentinel/signal-aggregator';
 import { createLogger } from '@synova/logger';
 
@@ -70,6 +70,15 @@ export interface TicketsResponse {
     severity: 'critical' | 'warning' | 'info';
     createdAt: string;
   }>;
+}
+
+/** D551: GA 手动信号注入结果（degraded 显式传播，铁律 31） */
+export interface ManualSignalInjectionResult {
+  ok: boolean;
+  /** 注入的 finding id（可在 GET /api/sentinel/findings 按 sentinelId='ga-manual' 查） */
+  findingId: string | null;
+  degraded?: boolean;
+  error?: string;
 }
 
 // ═══ Service ═══
@@ -266,5 +275,31 @@ export function getSentinelTickets(): TicketsResponse {
   } catch (err: unknown) {
     log.warn({ err }, 'getSentinelTickets 失败 — degraded');
     return { ok: true, tickets: [] };
+  }
+}
+
+/**
+ * D551: GA 手动信号注入（L2 编排入口 — L1 路由专用，模式对齐 getSentinelFindings 的
+ * 全局单例 runner 访问，不绕层直触 L3，铁律 39）。
+ *
+ * 契约:
+ *   @input  — GaManualSignalInput（severity 1-10 / confidence 0-100；越界校验在路由层）
+ *   @output — ManualSignalInjectionResult；ok=true 时 findingId 可在 /api/sentinel/findings 查
+ *   @degraded — runner 未初始化 → log.warn + {ok:false, findingId:null, degraded:true}
+ *               （对齐 getSentinelFindings L79-84 模式，不静默，铁律 24/31）
+ *   @error  — 不抛（runner 注入异常 → log.error + degraded 返回）
+ */
+export function injectManualSignal(input: GaManualSignalInput): ManualSignalInjectionResult {
+  const runner = getGlobalSentinelRunner();
+  if (!runner) {
+    log.warn({ signalType: input.signalType, gaId: input.gaId }, '[injectManualSignal] runner 未初始化 — 注入降级');
+    return { ok: false, findingId: null, degraded: true, error: 'SENTINEL_RUNNER_UNAVAILABLE' };
+  }
+  try {
+    return runner.injectManualFinding(input);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log.error({ err: msg, signalType: input.signalType }, '[injectManualSignal] 注入异常 — degraded');
+    return { ok: false, findingId: null, degraded: true, error: msg };
   }
 }

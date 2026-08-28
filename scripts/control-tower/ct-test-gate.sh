@@ -48,7 +48,11 @@ while IFS= read -r sf; do
   # D521/M13: 剥 GIT_DIR/GIT_WORK_TREE——hook 上下文（pre-commit→本门禁）会导出它们，
   #   测试内沙箱 git commit（git -C 不覆盖 GIT_DIR env）会污染宿主分支（D521-3 实证:
   #   bypass-precommit/post-commit-marker 沙箱提交落到执行分支，branch ref 被覆写）。
-  elif ! ( cd "$ROOT" && env -u GIT_DIR -u GIT_WORK_TREE bash "$t" >/dev/null 2>&1 ); then
+  # D555: 同源剥 GIT_INDEX_FILE——git 触发 pre-commit hook 时导出宿主 index 路径，
+  #   GIT_INDEX_FILE 优先级高于仓库默认 index，沙箱 git add/commit 会把沙箱条目
+  #   写进宿主 index（D555 实证: verify-parallel.test.sh 沙箱 src/middleware/merged.ts
+  #   入宿主 index，blob 不在宿主 odb → git commit「invalid object」失败）。根治于此。
+  elif ! ( cd "$ROOT" && env -u GIT_DIR -u GIT_WORK_TREE -u GIT_INDEX_FILE bash "$t" >/dev/null 2>&1 ); then
     RED="${RED}  ${sf} 配对测试红: tests/control-tower/${bn}.test.sh\n"
   fi
 done <<< "$CT_SCRIPTS"

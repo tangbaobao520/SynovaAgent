@@ -3,7 +3,7 @@
   "title": "union driver + G12 修复回归 main（API 合并遗漏补救）",
   "status": "impl_done",
   "impl": {
-    "commit": "PENDING",
+    "commit": "dbdcdbcf",
     "by": "dsh-cto",
     "at": "2026-08-23",
     "files": [

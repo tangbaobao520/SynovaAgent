@@ -18,7 +18,17 @@ import { checkPlatformDependencies } from '../l3/platform-dependency-check';
 // D292: L2→L3 适配层 — L2 禁触 L4 (铁律 39)
 import { createGraphTraversal } from '../l3/graph-traversal-adapter';
 // V4.2.4: 内联 SessionStore 类型 — 避免 L2→L5 直接 import (铁律 39)
-interface SessionStoreLike { saveDiagnosisCheckpoint?: (cp: { sessionId: string; phase: number; completedModules: string[]; partialReport: unknown; savedAt: string }) => void; }
+// D487: 导出 + 扩展 appendEvent 形状（事件类型内联联合 = SessionEventType 结构等价，
+// SessionStore 可直接赋值；属性函数语法下严格派生须参数逆变一致），
+// ConversationEngine.sessionStore / EngineConfig 复用此类型做装配。
+export type SessionStoreLike = {
+  saveDiagnosisCheckpoint?: (cp: { sessionId: string; phase: number; completedModules: string[]; partialReport: unknown; savedAt: string }) => void;
+  appendEvent?: (
+    sessionId: string,
+    eventType: 'message' | 'tool_result' | 'system' | 'diagnosis_phase' | 'diagnosis_module' | 'diagnosis_report',
+    payload: unknown,
+  ) => { ok: true; seq: number } | { ok: false; degraded: true; error: string };
+};
 
 // 诊断检查点 — 每个 Phase 完成后保存状态到 SessionStore
 interface DiagnosisCheckpoint {
@@ -61,6 +71,38 @@ export class DiagnosisLauncher {
     const teamId = this.ctx.orgId || 'default';
     const { eventBus, sessionId, graphBridge, graphStore, flags } = this.ctx;
 
+    // ═══ D487: 诊断事件落流 — 阶段/模块/报告事件写 session_events（D500 地基装配） ═══
+    // 契约:
+    //   @input  — eventType ∈ diagnosis_phase|diagnosis_module|diagnosis_report + payload
+    //   @output — void；store 未装配 → 跳过（可选依赖）；写入失败 → log.warn + 诊断继续（铁律 24/31）
+    //   诊断事件 log-only: deriveMessages 投影跳过，不影响消息历史
+    const persistEvent = (
+      eventType: 'diagnosis_phase' | 'diagnosis_module' | 'diagnosis_report',
+      payload: Record<string, unknown>,
+    ): void => {
+      try {
+        const store: SessionStoreLike | undefined = (this.ctx as { sessionStore?: SessionStoreLike }).sessionStore;
+        // 无 sessionId（引擎未装配会话 id）→ 跳过，事件不落 '' 桶（与 L622 addMessage 内存态兼容语义一致）
+        if (!this.ctx.sessionId) return;
+        if (!store?.appendEvent) return;
+        const res = store.appendEvent(this.ctx.sessionId, eventType, payload);
+        if (!res.ok) {
+          log.warn({ sessionId: this.ctx.sessionId, eventType, error: res.error }, '诊断事件落流失败 — degraded');
+        }
+      } catch (err) {
+        log.warn({ err, eventType }, '诊断事件落流异常 — degraded');
+      }
+    };
+    // onEvent 透传 + 双写：phase_* → diagnosis_phase，其余（模块/发现/降级/错误）→ diagnosis_module
+    const persistingOnEvent = (event: DiagnosisEvent): void => {
+      onEvent?.(event);
+      if (event.type === 'phase_started' || event.type === 'phase_completed') {
+        persistEvent('diagnosis_phase', { type: event.type, phase: event.phase, label: event.label ?? null });
+      } else {
+        persistEvent('diagnosis_module', { type: event.type, phase: event.phase, label: event.label ?? null, message: event.message ?? null });
+      }
+    };
+
     try {
       // ═══ Batch 2: 六阶段追踪 — 每阶段发射 phase_started 事件 ═══
       // D215: 契约门禁 — 启动前验证接口契约
@@ -79,7 +121,7 @@ export class DiagnosisLauncher {
         '组织访谈', '数据采集', '假设生成', '根因分析', '报告生成', '交付',
       ];
       // Phase 0 完成信号 (ConversationEngine 已在 Phase 0 完成后调用 startDiagnosis)
-      onEvent?.({ type: 'phase_started', phase: 1, label: phaseLabels[1], confidence: 0.9 });
+      persistingOnEvent({ type: 'phase_started', phase: 1, label: phaseLabels[1], confidence: 0.9 });
 
       log.info({ teamId, initiatorRole }, '启动六阶段诊断');
 
@@ -97,7 +139,7 @@ export class DiagnosisLauncher {
             const contradictions = this.ctx.corroborationEngine.detectContradictions({ orgId: teamId });
             if (contradictions.length > 0) {
               log.info({ count: contradictions.length }, '证据矛盾检测完成');
-              onEvent?.({ type: 'evidence_contradictions', phase: 1, message: `发现 ${contradictions.length} 处证据矛盾`, findings: contradictions.slice(0, 3).map(c => ({ moduleId: c.evidenceA?.id || 'evidence', summary: c.description || '矛盾信号', confidence: 1 - Math.min(c.scoreDifference, 1) })), confidence: 0.85 });
+              persistingOnEvent({ type: 'evidence_contradictions', phase: 1, message: `发现 ${contradictions.length} 处证据矛盾`, findings: contradictions.slice(0, 3).map(c => ({ moduleId: c.evidenceA?.id || 'evidence', summary: c.description || '矛盾信号', confidence: 1 - Math.min(c.scoreDifference, 1) })), confidence: 0.85 });
             }
           }
         } catch (err: any) {
@@ -113,7 +155,7 @@ export class DiagnosisLauncher {
         auditEnabled: !!this.ctx.eventBus,
       });
       if (!gate.passed) {
-        onEvent?.({ type: 'degraded', phase: 0, label: '安全门禁', message: gate.blockReasons.join('; ') });
+        persistingOnEvent({ type: 'degraded', phase: 0, label: '安全门禁', message: gate.blockReasons.join('; ') });
       }
 
       // 诊断检查点保存 — 每个 Phase 完成后写入 SessionStore
@@ -135,9 +177,18 @@ export class DiagnosisLauncher {
         name: initiatorName,
         teamId,
         concerns: this.ctx.messages.filter(m => m.role === 'user').map(m => m.content.slice(0, 200)),
-      }, onEvent);
+      }, persistingOnEvent);
 
       log.info({ teamId, durationMs: result.totalDurationMs, degraded: result.degradedModules.length }, '诊断完成');
+
+      // D487: 报告事件落流 — 回放流的终点（阶段→模块→报告顺序）
+      persistEvent('diagnosis_report', {
+        teamId,
+        phase: 5,
+        summary: (result.report as { summary?: string } | undefined)?.summary ?? null,
+        totalDurationMs: result.totalDurationMs,
+        degradedModules: result.degradedModules,
+      });
 
       // T7b: L3 诊断模块 — 外部假设监控 + 平台依赖检查 (通过 runModules 消费)
       if (graphStore && typeof graphStore.queryNodes === 'function') {
@@ -232,7 +283,7 @@ export class DiagnosisLauncher {
             const { generateCommunityReports: genCR } = await import('../l3/community-reports-adapter');
             const communities = genCR(graphStore, teamId);
             log.info({ communityCount: communities.length }, '社区报告已生成');
-            onEvent?.({ type: 'community_reports', phase: 2, message: `发现 ${communities.length} 个协作圈`, findings: communities.slice(0, 3).map((c: any) => ({ moduleId: c.id || 'community', summary: c.label || `协作圈 ${c.size || 0} 人`, confidence: c.confidence || 0.7 })), confidence: 0.7 });
+            persistingOnEvent({ type: 'community_reports', phase: 2, message: `发现 ${communities.length} 个协作圈`, findings: communities.slice(0, 3).map((c: any) => ({ moduleId: c.id || 'community', summary: c.label || `协作圈 ${c.size || 0} 人`, confidence: c.confidence || 0.7 })), confidence: 0.7 });
           } catch (err: any) {
             log.warn({ err }, 'CommunityReports failed — degraded');
           }
@@ -245,7 +296,7 @@ export class DiagnosisLauncher {
           const resolution = await resolveL3(graphStore, teamId);
           log.info({ autoMerged: resolution.autoMerged, queued: resolution.queuedForReview }, 'L3 实体解析完成');
           if (resolution.autoMerged > 0 || resolution.queuedForReview > 0) {
-            onEvent?.({ type: 'entity_resolution', phase: 3,
+            persistingOnEvent({ type: 'entity_resolution', phase: 3,
               message: `发现 ${resolution.autoMerged} 对重复实体(自动合并), ${resolution.queuedForReview} 对待审核`,
               confidence: 0.8 });
           }
@@ -269,7 +320,8 @@ export class DiagnosisLauncher {
       };
     } catch (err: any) {
       log.error({ err, teamId }, '诊断引擎启动失败');
-      onEvent?.({ type: 'error', phase: 0, label: '引擎错误', message: `诊断引擎不可用: ${err.message}` });
+      // D487: 失败也落流（回放可见失败诊断；persistingOnEvent 内部降级，不再抛出）
+      persistingOnEvent({ type: 'error', phase: 0, label: '引擎错误', message: `诊断引擎不可用: ${err.message}` });
       return null;
     }
   }

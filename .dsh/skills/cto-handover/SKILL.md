@@ -77,6 +77,21 @@ description: Synova CTO 交接文档——完整上下文（过渡 CTO 交接给
 7. 术语一致（L1 桌面端切片前缀 vs Win 线 AUTH 切片，防双轨混淆）
 8. 无遗漏（LLM 环境/执行方/交付要求/审计验收项）
 
+### ③' 交付前物理复核（2026-08-28 创始人定——写完派单必做，勾 checklist ≠ 复核）
+
+> 历史教训：D539 resolver 路径凭记忆（未 ls）/ D540 影子提交状态未核实 / D545-D546 骨架 brief 误提交 / D551 alloc 撞号——全部是「勾了 8 项自检但没物理执行」。**勾选不产生证据，命令输出才产生证据。**
+
+派单交付前，跑以下物理复核（实测命令，输出贴进交付说明）：
+
+1. **基线引用复核**: 派单「现状材料」每个路径+行号，逐条实测——
+   `git show origin/main:<路径> | sed -n '<行号>p'` 命中即对，不命中 = 基线错，修正后重核。
+2. **缺失声明复核**: 派单声明「X 缺失/未实现」的，`git grep <关键词> origin/main` 实测零命中才可写（D546 durationMs 误标教训）。
+3. **D# 占用复核**: `git ls-tree --name-only origin/main task-state/ | grep -oE 'D[0-9]+' | sort -V | tail -3` 对照，确认本单号未被占（D547/D548/D550 撞号教训）。
+4. **DSH 借鉴核查**（§〇b 三步）：借鉴结论引用施工图具体行；无借鉴写原因。
+5. **写集边界复核**: 派单写集与实际改动预演（`git diff --name-only` 或清单对照）——骨架 brief/占位文件不得在写集（D545/D546 教训）。
+
+**复核通过才交付**；复核发现错误 → 修正派单 → 重核 → 再交付。
+
 ### ④ 提交（固定动作）
 clone（基于 origin/main，git clone --local 主工作区 + 修正 origin + git 配置 + install-hooks）→ commit → push → PR → 合并 → task-state 登记
 

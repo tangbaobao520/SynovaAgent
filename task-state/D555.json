@@ -1,0 +1,15 @@
+{
+  "task_id": "D555",
+  "title": "verify-parallel-ci-closed-task-exempt",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "commit": "<待提交>",
+    "pr": "#282",
+    "note": "verify-parallel --ci-pr 已关闭任务豁免；测试 12/12；V5.2.4"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-28",
+  "updated_by": "dsh-cto"
+}

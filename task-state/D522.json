@@ -30,7 +30,8 @@
       "P01_grep": "grep -rn 'dist/src/index.js' electron/backend-spawn.cjs tests/electron/ → 零结果；buildCommand('prod') = process.execPath + ['dist/backend.mjs']"
     },
     "red_lines": "探活(probeOnce/probeUntil)零改动；零 DSH 依赖（借鉴范式自研）",
-    "known_preexisting": "npm run lint 在 src/server.ts 有预存在 TS 错误（非本任务引入，git diff 可证）"
+    "known_preexisting": "npm run lint 在 src/server.ts 有预存在 TS 错误（非本任务引入，git diff 可证）",
+    "commit": "947c8300"
   },
   "audit": {
     "auditor": "k3",
@@ -39,7 +40,10 @@
     "date": "2026-08-25",
     "recheck": "P0-1 修复后复审：双侧保留 + 树终验零删除 + 59/3/62 复跑 + 基线零新增"
   },
-  "updated_at": "2026-08-25",
-  "updated_by": "dsh",
-  "priority": "P1"
+  "updated_at": "2026-08-29",
+  "updated_by": "dsh-cto-parallel",
+  "priority": "P1",
+  "acceptance_points": [
+    "1-4"
+  ]
 }
