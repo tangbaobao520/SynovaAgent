@@ -5,7 +5,8 @@
   "spec": null,
   "impl": null,
   "audit": null,
-  "fix_task_id": null,
-  "updated_at": "2026-08-23",
-  "updated_by": "alloc-task-id"
+  "fix_task_id": "superseded-by-D539-D540",
+  "updated_at": "2026-08-28",
+  "updated_by": "CTO",
+  "note": "看板大扫除：worktree-isolation 已被 D539（开工端硬门禁）+ D540（独立 clone）实现覆盖"
 }
