@@ -777,6 +777,10 @@
 2026-08-27T09:30:00+08:00 | COMMITTED | pre-commit PASS (补记 8149ad3a baseline 收录, D331 对账) | TASK_ID=D486 | AGENT=Synova-Win | HASH=8149ad3a552f01c03dab2656b388445cc69b2607
 Binary file .claude/bypass.log matches
 2026-08-27T01:43:30+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=c97a9bb803d6d6e74a37d378daa98ebdf7c45f2c
+2026-08-27T01:55:19+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=d2b183a119bcd770695a051260bc05f7076e058f
+2026-08-27T01:54:21+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=16123bbd663d1ed4c9c40fcd1716c47b455db1a5
+2026-08-27T01:57:27+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=af950b6f517613e298a3171be457512a52d5f1e3
+2026-08-28T12:44:48+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=04bfbc232bf270da1d315f3e02b69a0d34d90ec5
 2026-08-27T02:43:55+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=229dae97436187b6085392f66012c86bce0f388e
 2026-08-27T02:50:13+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/backup-alert
 2026-08-27T02:50:46+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/backup-alert
@@ -832,6 +836,8 @@ Binary file .claude/bypass.log matches
 2026-08-28T03:40:15+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=7c0bca3eec411fa84fc437ae87c6b0939e9f875d
 2026-08-28T03:44:59+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=0f025a704d9cdacc4d01f19bf430780044e5ed4a
 2026-08-28T03:49:48+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=95b93a2171aeb021c87ae52f885c3f99faea3a2d
+2026-08-28T13:05:14+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=63798e530171b3d132b100ee18bff773f9212be6
+2026-08-28T13:46:59+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=bac5610bce1c663b4c936a00a626ed2188ce7737
 2026-08-28T12:39:09+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D545 | AGENT=claude
 2026-08-28T12:44:56+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=d344496e1b150a81a91d668d490ce6f772bad816
 2026-08-28T13:41:36+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=e375a38efcc6e5c34ec8dbc21789738ae75187ef
@@ -843,3 +849,15 @@ Binary file .claude/bypass.log matches
 2026-08-28T16:27:03+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=0e97b20b78c700c74810afc0cf4d23dff366332d
 2026-08-28T16:57:24+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=2bbe170bc39d89ea8c82a19098827cd9208c2155
 2026-08-28T17:35:58+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=c1fad25022e0cfca127128e7d254b2add4c05993
+2026-08-28T14:59:53+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=55c36b42941af62788e4cf5ebd890734559be33d
+2026-08-28T14:24:51+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=658d30199fe67c8c60b2b1973584a3127b329826
+2026-08-28T16:09:52+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=b8de815a735650b51d3796dee8215257089d958e
+2026-08-28T15:38:21+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=787e4f82417f790143bb85deeec79ef5f359eb5b
+2026-08-28T15:39:51+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=b0a85b1e9bdf93850087ac0f2691700dda827ba5
+2026-08-28T15:25:04+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=f12f326bce3c2bc9c614d67ce4e0ac092e0b9543
+2026-08-28T16:20:58+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=bed4c249dd0c926e2d838053079bcb6258578ebd
+2026-08-28T16:32:50+08:00 | GATE_FAIL_SOFT | exit=1 | branch=fix/d547-skeleton-brief-gate
+2026-08-28T16:32:50+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=187c7460d729b51b3d12e5a68cdb971c45e28edb
+2026-08-28T16:38:11+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=4511994f6c51293cb31cc68b657cc0982ad6c0ed
+2026-08-28T16:42:03+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=bc78ca3470820d864a8faf17b964c81ec467aa21
+2026-08-28T16:45:28+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=34bdb9a1cf9d6c6ce7b76e8dea57de0c137ef8f5

@@ -1,11 +1,43 @@
 {
   "task_id": "D544",
   "title": "leftbar-acceptance-merge",
-  "status": "claimed",
-  "spec": null,
-  "impl": null,
-  "audit": null,
-  "fix_task_id": null,
+  "status": "impl_done",
+  "spec": {
+    "doc": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D544-leftbar-acceptance-20260828.md（⚠️ 待补交入库）",
+    "design": "docs/synova/coordination/SYNOVA-IMPL-DSH-前端交互设计-左栏Codex风格-v1.md（§六 8 条验收）",
+    "slice": "leftbar-acceptance",
+    "by": "dev-doc",
+    "at": "2026-08-28"
+  },
+  "impl": {
+    "at": "2026-08-29",
+    "by": "dsh-coding",
+    "branch": "feat/d544-leftbar-acceptance",
+    "commit": "合并入 main PR #266",
+    "note": "8 条验收全过（file:line 证据）+ vitest 23/23 + 三接口接线 + GA 置灰；孤儿实现 D538 910 行收口进 main"
+  },
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-08-28-D540-D547-governance-closeout.md",
+    "verdict": "CONDITIONAL PASS",
+    "blockers": [
+      "P1-2: brief Done 声称「evidence/D544/chapter2-acceptance.md、chapter3-wiring.md 落盘」但两文件 git 全历史零记录（未入库，M7/M2）。K3 已按代码独立复验 8 条验收 + 3 接口重建证据链，交付方须补交证据文件入库。"
+    ],
+    "findings": [
+      "8 条验收逐条 file:line 复验通过（LeftPanel.tsx/RightPanel.tsx/capability.ts/capability.test.ts）",
+      "三接口接线属实，但派单所列 /api/signals 是伪路径，实际 /api/sentinel/signals（实现方已正确识破）",
+      "孤儿实现 D538 910 行收口进 main（PR #266）"
+    ],
+    "by": "K3",
+    "at": "2026-08-28",
+    "fix_d544": {
+      "issue": "brief 声称 evidence/D544/chapter2-acceptance.md 等「落盘」但 git 零记录（K3 FIX-D544，M7/M2 同 D356/D539 型）",
+      "clarify": "evidence/ 被 .gitignore:75 忽略（既定设计，D536 确认：K3 靠 runbook 复跑）。8 条验收标注经 PR 描述可核（K3 已复验通过）。修复 = 如实声明：evidence 本地落盘不入 git，复跑入口 = docs/synova/runbooks/desktop-deploy-acceptance.md 或 PR 描述",
+      "by": "CTO",
+      "at": "2026-08-28"
+    }
+  },
+  "fix_task_id": "FIX-D544",
+  "slice": "leftbar-acceptance",
   "updated_at": "2026-08-28",
-  "updated_by": "alloc-task-id"
+  "updated_by": "K3"
 }
