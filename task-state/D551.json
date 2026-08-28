@@ -1,11 +1,22 @@
 {
   "task_id": "D551",
   "title": "ga-calibration-backend-spec",
-  "status": "claimed",
-  "impl": null,
+  "status": "impl_done",
+  "impl": {
+    "commit": "35ccd574",
+    "by": "dsh",
+    "at": "2026-08-28",
+    "note": "CTO 补交 task-state 回填（编码 session 已实现未提交此文件）+ spec 入库（D539 P1 先例）"
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-08-28",
-  "updated_by": "CTO",
-  "note": null
+  "updated_by": "dsh-cto-backfill",
+  "note": null,
+  "slice": "ga-module-3",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D551-ga-calibration-backend-20260828.md",
+    "by": "dev-doc",
+    "at": "2026-08-28"
+  }
 }
