@@ -13,6 +13,7 @@ description: PR 合并前审查流程（DeepSeek Harness 专属职责）。收�
 ### ① 范围与撞车（D336 认领制）
 - PR 涉及模块在 `docs/synova/coordination/TASK-ROUTING.md` 当前认领状态是否与 PR 作者一致？撞车 → 停，转创始人仲裁
 - 分支是否 feat//fix//chore/（铁律 34）？是否曾 force push（`git reflog` 检查）？禁止直接 push main（铁律 0-3）
+- V5.2.0：PR 描述宜含"clone 完成"声明（在 `.sessions/<sid>/repo` 独立 clone 内完成）；写集对账已由 CI/PR 阶段 verify-parallel `--ci-pr` 权威兜底，审查仍需抽查写集与 dev doc 一致，但不重复跑本地全量对账
 
 ### ② 铁律逐项物理检查（bash 说话）
 ```bash
