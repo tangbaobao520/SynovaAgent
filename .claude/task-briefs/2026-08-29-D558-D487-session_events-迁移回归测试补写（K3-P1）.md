@@ -30,7 +30,10 @@ K3 物理实测该迁移 PASS（旧库 3 行保留 + seq 连续 + id 连续 + �
    ③ seq 连续：迁移后 appendEvent 续写 seq = 旧 MAX+1（无回退）
    ④ 幂等：同库再次 new SessionStore → 无重复重建、数据零损失、不报错
 2. `docs/plans/codex/implementation/SYNOVA-IMPL-D487-ga-session-events-slice2a-20260828.md` §4 测试表补一行：迁移测试（tests/store/session-event-log.test.ts，D558 闭合 K3 P1），并在 §3.2 注明测试落点
-3. task-state/D558.json 回填（impl_done + commit hash + evidence）
+3. P2 清理（同批 K3 P2×3 中两项，编码线顺手修）：
+   a. `src/mcp/index.ts` L236 `new SessionStore(getDatabase() as never)` → 去冗余断言（getDatabase() 已返回 Database.Database，engine-context.ts L50）——CT-46 存量实例
+   b. `packages/test-kit/tests/architecture/05-as-any-audit.test.ts` 同步扩展扫描模式 as never / as unknown as（与 pre-commit 组 1 CT-46 修复一致）——**必须在 a 之后**，否则全仓扫描命中 mcp 存量实例 CI 红
+4. task-state/D558.json 回填（impl_done + commit hash + evidence）
 
 不做什么：
 - 不改 src/store/session-store.ts 迁移逻辑（K3 物理实测 PASS，无代码缺陷）
