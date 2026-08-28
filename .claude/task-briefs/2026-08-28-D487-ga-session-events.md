@@ -36,11 +36,12 @@ c) memory：铁律 0-2 测试先行（red→green）；铁律 31 降级显式（
 - launcher onEvent 包装落流（phase/module 映射 + report 事件）+ SessionStoreLike 导出
 - engine EngineConfig.sessionStore 注入 ctx + fromState 可选装配参 + L669 FDE 改 GA
 - cli/im-inbound/mcp 传 sessionManager+sessionStore（mcp getDatabase 守卫降级）、bootstrap ctx.set sessionStore、tui-v2 透传
+- docs/synova/coordination/审计发现台账-DSH-CTO.md（verify-parallel ci-pr 缺陷登记一条——只登记不实现，归属控制塔/DSH，见 dev doc §3.2）
 不做什么（含文件路径）：
 - 不改 src/orchestrator/session-manager.ts（D500 已审计交付，不加 getStore——经 EngineConfig.sessionStore 直传）
 - 不改 src/server.ts（services.sessionManager 已入 wiring，无 ConversationEngine 实例化点，DS1 grep 现状已命中）
 - 不改 src/routes/diagnosis.ts（consult 路由直建 SynovaDiagnosisEngine，不经过 launcher——片2-B 范围）
-- 不改 src/orchestrator/wiring.ts（无事件桥职责，本切片零接触）
+- 不改 scripts/control-tower/verify-parallel.sh + tests/control-tower/verify-parallel-ci.test.sh + docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D540-clone-pilot-shadow-commit-20260827.md（控制塔/DSH 写集——ci-pr 缺「今日窗口」误拦已交付任务串行演进，只登记台账不实现，待单独派单）
 - 不改 scripts/sentinel 与 src/sentinel/（DSH 线禁入）
 - 不做 fork/resume 与 D398（片3 期权）
 

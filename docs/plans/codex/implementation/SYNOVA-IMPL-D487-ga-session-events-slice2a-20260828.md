@@ -50,7 +50,8 @@
 | src/agent/conversation-engine.ts | 修改 | sessionManager 装配——5 个引擎实例化点（bootstrap/server/tui 等）统一传 `config.sessionManager`；生产路径（L617 附近）消费 sessionManager（消息走 SessionStore 而非仅内存/旧路径） |
 | src/agent/diagnosis-launcher.ts | 修改 | 诊断阶段事件落流——eventBus 的阶段推进/模块结果/报告产出调 `appendEvent(sessionId, 'system'/'tool_result', {phase, module, ...})`（诊断事件类型，见 session-store） |
 | src/store/session-store.ts | 修改 | SessionEventType 扩展诊断事件类型（如 'diagnosis_phase' \| 'diagnosis_module' \| 'diagnosis_report'）+ **L131 event_type CHECK 约束同步扩展**（漏扩则 INSERT 失败）+ appendEvent 类型校验同步 |
-| src/deploy/bootstrap.ts + src/server.ts | 修改 | 实例化点传 sessionManager（bootstrap L682 已创建 → 传入 ConversationEngine；server L116 services.sessionManager 传入诊断链路） |
+| src/deploy/bootstrap.ts | 修改 | 实例化点传 sessionManager/sessionStore（L685 SessionStore 具名实例 + ctx.set + BootstrapServices） |
+| src/server.ts | 不改 | 实测无 ConversationEngine 实例化点（services.sessionManager 已入 wiring，DS1 grep 现状命中）——见 §3.2 |
 | tests/agent/diagnosis-session-events.test.ts | 新建 | 诊断全链路事件流断言：① consult 一次 → session_events 含阶段/模块/报告事件（red=现状仅 checkpoint 无事件 → green）；② 回放 deriveMessages/事件序列与诊断过程一致（交付物可自证）；③ 双写失败 → degraded 显式（铁律 31） |
 
 > 共享资源标注（S-8）：本写集不含 VERSION.md（功能装配，非门禁/工具行为变化，不 bump）；current-brief / 暂存区共享，串行触碰；与 DSH 线零交集。
@@ -73,7 +74,7 @@
 
 **其他**：fromState 增加可选 wiring 参数（恢复会话续写同一事件流）；L669 自动诊断发起人 'FDE'→'GA'（GA 表述约束；L139-163 系统 prompt 内 FDE 文案为 prompt copy 未动）。测试 5 用例映射 §4 ①-⑤（⑤"无 sessionManager 注入"实测以 sessionStore 为轴，sessionManager 为同型可选依赖）。
 
-**D540 写集重叠（CI 复核发现——按 TASK-ROUTING 停手上报创始人）**：CI verify-parallel --ci-pr 纯重叠判定（无 V5.0.1 豁免、无「今日」窗口）拦截本卡写集 × 4 个非今日已合 doc（D292 07-31 / D338 / D469 / D500——diagnosis-launcher.ts、session-store.ts、conversation-engine.ts）。本卡是 D500 指定后继（§1 权威文档链），串行演进非并行冲突。曾按同路径 carve-out 在 D500 doc 补接力登记验证（实测级联出新重叠 D500×D469/D286——已 revert，不越 DSH 线）。缺陷定位：D540 派单原文为「base..head 写集 × **今日**已合 PR 写集」（权威引用②），实现丢了「今日」窗口——与同脚本 V5.0.1 教义「已交付任务写集被后继继承 = 串行演进」冲突；实测今日窗口下 MERGED_DOCS 为空 → 本 PR 转绿。门禁脚本 DSH 专属（TASK-ROUTING CODEOWNERS），按串行点「重叠 → 停手问创始人」上报。
+**verify-parallel ci-pr 缺陷（登记，不实施——归属控制塔/DSH，2026-08-28）**：CI verify-parallel --ci-pr 实现为「base..head 写集 × 全部历史已合 doc」纯重叠判定，缺 D540 派单原文的「**今日**已合 PR 写集」窗口——D487 被 4 个非今日已合 doc 误拦为并行冲突：diagnosis-launcher.ts（vs D292 20260731 / D338 20260822）、session-store.ts（vs D469 20260821）、conversation-engine.ts + session-store.ts（vs DSH-D500 20260822）。经核 4 者写集文件均已存在于 origin/main（已交付任务），本卡是 D500「会话事件溯源」指定后继接线，属串行演进非并行冲突（同脚本 V5.0.1 教义明文：已交付任务写集被后继继承 = 串行演进）。处置：本卡不修 gate（控制塔写集非 D487 范围），缺陷与修复建议（按 doc 文件名日期后缀 ±1 天今日窗口过滤，参考 patch /tmp/d487-verify-parallel-defect.patch）已登记 `docs/synova/coordination/审计发现台账-DSH-CTO.md`，待控制塔单独派单修复后 CI 重跑。曾试 D500 doc 同路径接力登记 carve-out——实测级联新重叠（D500×D469/D286）即 revert（c1fad250）。
 
 **sessionId 归属（复核补强，c796da55）**：复核发现 cli/im-inbound/mcp 原装配未传 EngineConfig.sessionId——引擎 sessionId 为空串，诊断事件（及 SessionManager 消息事件）会落 `session_id=''` 桶，按会话回放失效。修复：cli 新建分支先 createSession 再构造引擎、恢复分支经 fromState wiring.sessionId 传入；im-inbound 传参 sessionId；mcp 每次 diagnose 独立 createSession；launcher persistEvent 增加空 sessionId 跳过防护（与 addMessage "无 id 走内存态" 语义一致）。
 
