@@ -23,7 +23,20 @@ const log = createLogger('l4/agent-memory-store');
 
 // ═══ Types ═══
 
-export type MemoryType = 'fact' | 'preference' | 'decision' | 'pattern' | 'entity' | 'enterprise_fact' | 'ga_correction' | 'implementation_plan' | 'sentinel_annotation';
+// D551: + 'ga_calibration' | 'manual_signal'（GA 诊断校准/手动信号注入 — spec SYNOVA-IMPL-DSH-D551 §6.1；联合类型历史上按功能逐次扩展: ga_correction/sentinel_annotation 同款先例）
+export type MemoryType =
+  | 'fact'
+  | 'preference'
+  | 'decision'
+  | 'pattern'
+  | 'entity'
+  | 'enterprise_fact'
+  | 'ga_correction'
+  | 'implementation_plan'
+  | 'sentinel_annotation'
+  // D551: GA 校准/手动信号注入（存储判别值，非本体类型）
+  | 'ga_calibration'
+  | 'manual_signal';
 
 export interface MemoryEntry {
   id: string;
@@ -339,7 +352,7 @@ export class AgentMemoryStore {
         org_id TEXT NOT NULL,
         key TEXT NOT NULL,
         value TEXT NOT NULL,
-        type TEXT NOT NULL CHECK(type IN ('fact','preference','decision','pattern','entity','enterprise_fact','ga_correction','implementation_plan','sentinel_annotation')),
+        type TEXT NOT NULL CHECK(type IN ('fact','preference','decision','pattern','entity','enterprise_fact','ga_correction','implementation_plan','sentinel_annotation','ga_calibration','manual_signal')),
         confidence REAL NOT NULL DEFAULT 0.5,
         source TEXT NOT NULL DEFAULT 'manual',
         tags TEXT NOT NULL DEFAULT '[]',
@@ -365,6 +378,9 @@ export class AgentMemoryStore {
     } catch {
       // 列已存在 — 跳过（幂等迁移）
     }
+
+    // D551 migration: type CHECK 扩 'ga_calibration'/'manual_signal'（存量旧库重建表迁移）
+    this.migrateD551MemoryType();
 
     this.db.exec(`
 
@@ -408,6 +424,83 @@ export class AgentMemoryStore {
         VALUES (new.rowid, new.id, new.key, new.value);
       END;
     `);
+  }
+
+  /**
+   * D551 migration 'd551_memory_type' — agent_memory.type CHECK 扩 'ga_calibration'/'manual_signal'。
+   *
+   * D487 教训: 扩枚举必须同步 DDL CHECK——新建库走 initSchema 新 DDL，但存量库的表级 CHECK
+   * 仍拒绝新值（SQLite 无法 ALTER CHECK）。解法 = 重建表迁移（CREATE agent_memory_new →
+   * INSERT SELECT 复制（含 D240 status 列）→ DROP → RENAME → 重建索引 → FTS 全量重索引），
+   * 机制先例 schema_version（feedback-collector 'd93b_actor_role'/'d551_target_type'）。
+   * 调用时点在 initSchema 的 FTS 块之前: DROP 表自动连带旧触发器，FTS 块随后幂等重建触发器。
+   *
+   * 契约:
+   *   @input  — 无（内部读 schema_version + sqlite_master 判定）
+   *   @output — 迁移后 agent_memory.type CHECK 含新值 + schema_version 含 'd551_memory_type' + 数据零丢失
+   *   @degraded — 迁移失败 → log.warn 不阻断（事务回滚保留原表；新 type 写入将被旧 CHECK 拒绝，
+   *               调用方走各自 degraded 路径，不静默，铁律 24/31）
+   */
+  private migrateD551MemoryType(): void {
+    try {
+      this.db.exec(`CREATE TABLE IF NOT EXISTS schema_version (version TEXT PRIMARY KEY)`);
+      const done = this.db.prepare(`SELECT 1 FROM schema_version WHERE version = 'd551_memory_type'`).get();
+      if (done) return;
+
+      const table = this.db.prepare(
+        `SELECT sql FROM sqlite_master WHERE type='table' AND name='agent_memory'`,
+      ).get() as { sql: string } | undefined;
+      if (table?.sql && table.sql.includes(`'ga_calibration'`)) {
+        // 新建库: DDL 已含新枚举 → 仅补版本标记，不重建
+        this.db.prepare(`INSERT OR IGNORE INTO schema_version (version) VALUES ('d551_memory_type')`).run();
+        return;
+      }
+
+      this.db.exec('BEGIN');
+      try {
+        this.db.exec(`
+          CREATE TABLE agent_memory_new (
+            id TEXT PRIMARY KEY,
+            org_id TEXT NOT NULL,
+            key TEXT NOT NULL,
+            value TEXT NOT NULL,
+            type TEXT NOT NULL CHECK(type IN ('fact','preference','decision','pattern','entity','enterprise_fact','ga_correction','implementation_plan','sentinel_annotation','ga_calibration','manual_signal')),
+            confidence REAL NOT NULL DEFAULT 0.5,
+            source TEXT NOT NULL DEFAULT 'manual',
+            tags TEXT NOT NULL DEFAULT '[]',
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+            expires_at TEXT,
+            access_count INTEGER NOT NULL DEFAULT 0,
+            status TEXT DEFAULT 'pending',
+            UNIQUE(org_id, key)
+          );
+        `);
+        this.db.exec(`
+          INSERT INTO agent_memory_new (id, org_id, key, value, type, confidence, source, tags, created_at, updated_at, expires_at, access_count, status)
+          SELECT id, org_id, key, value, type, confidence, source, tags, created_at, updated_at, expires_at, access_count, status FROM agent_memory;
+        `);
+        this.db.exec('DROP TABLE agent_memory');
+        this.db.exec('ALTER TABLE agent_memory_new RENAME TO agent_memory');
+        this.db.exec(`
+          CREATE INDEX IF NOT EXISTS idx_agent_memory_org ON agent_memory(org_id);
+          CREATE INDEX IF NOT EXISTS idx_agent_memory_type ON agent_memory(org_id, type);
+          CREATE INDEX IF NOT EXISTS idx_agent_memory_expires ON agent_memory(expires_at);
+        `);
+        this.db.exec(`INSERT OR IGNORE INTO schema_version (version) VALUES ('d551_memory_type')`);
+        // FTS5 外部内容表随内容表重建而失效 → 事务内全量重索引（失败即整体回滚，fail-closed）
+        this.db.exec(`INSERT INTO agent_memory_fts(agent_memory_fts) VALUES('rebuild')`);
+        this.db.exec(`INSERT INTO memory_fts_trigram(memory_fts_trigram) VALUES('rebuild')`);
+        this.db.exec('COMMIT');
+      } catch (inner: unknown) {
+        this.db.exec('ROLLBACK');
+        throw inner;
+      }
+      log.info("migration 'd551_memory_type' 完成 — agent_memory.type CHECK 已扩 'ga_calibration'/'manual_signal'");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg }, "migration 'd551_memory_type' 失败 — 降级保留原表（新 type 写入将被旧 CHECK 拒绝）");
+    }
   }
 
   private rowToEntry(row: Record<string, unknown>): MemoryEntry {

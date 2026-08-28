@@ -182,6 +182,57 @@ compare_writesets_ci() {
   return 0
 }
 
+# ── D555: 已关闭任务豁免（serial reuse）——V5.2.0 --ci-pr 按设计无豁免，但「串行复用」被误判并行 ──
+# D551 实证: 新任务 spec 写集含 src/server.ts（D478 已合）/ src/growth/feedback-collector.ts（D338 已合），
+# 两任务均已关闭（终审/审计报告在 main），文件复用合法 → CI 误拦。
+# 关闭信号（机器可验，任一命中即豁免；都无 → 继续比对，fail-closed 不削弱）:
+#   1) task-state/<D#>.json status=audited（D382 状态机终态）
+#   2) docs/synova/audit-reports/ 含 *-<D#>[-.md]（历史任务无 task-state，D393 派生制同源信号）
+#   3) D556: origin/main 含括号式 (D#) 提交（fix(D478)/feat(D551) 实现/合并提交——任务已合 main = 关闭；
+#      dispatch 提交「docs(dispatch): D551」无括号不误豁免在途任务）
+#   4) D557: 无 task-state 记录 且 写集文件全部已合 base——合并但未走状态机的历史任务
+#      （D469 实证: impl 在 main、无审计报告、无括号式提交；D483 类在途任务有 task-state → 不豁免；
+#       D485/D488 类在途 Win 任务 doc 未在 main → 不进入比较集，无漏网）
+# 只豁免「已合 doc 侧」（mtmp）——PR 自身 doc 恒为新任务，不做关闭判定。
+_is_closed_doc() {
+  local db did
+  db="$(basename "${1:-}")"
+  did="$(echo "$db" | grep -oE 'D[0-9]+' | head -1 || true)"  # swallow-ok: 无 D# → 空 → 返回 1（不豁免）
+  [ -z "$did" ] && return 1
+  if [ -f "$REPO_DIR/task-state/$did.json" ]; then
+    if grep -qE '"status"[[:space:]]*:[[:space:]]*"audited"' "$REPO_DIR/task-state/$did.json" 2>/dev/null; then
+      return 0
+    fi
+  fi
+  if ls "$REPO_DIR"/docs/synova/audit-reports/*-"$did"-*.md >/dev/null 2>&1; then return 0; fi  # swallow-ok: 无匹配=不豁免，glob 失败非错误
+  if ls "$REPO_DIR"/docs/synova/audit-reports/*-"$did".md >/dev/null 2>&1; then return 0; fi    # swallow-ok: 同上
+  # 注意: git log 无匹配也 exit 0（空输出）——必须判输出非空，否则恒豁免
+  _mc="$(git -C "$REPO_DIR" log --format=%H --grep="($did)" --max-count=1 "$CI_PR_BASE" 2>/dev/null || true)"  # swallow-ok: log 失败=不豁免
+  [ -n "$_mc" ] && return 0
+  # 信号 4（D557）: 无 task-state 记录 → 写集文件全部已合 base = 合并未登记历史任务
+  if [ ! -f "$REPO_DIR/task-state/$did.json" ]; then
+    _closed4="$($PYBIN - "$1" "$CI_PR_BASE" "$REPO_DIR" "$SCRIPT_DIR" 2>/dev/null <<'PYEOF' || true
+import json, subprocess, sys
+doc, base, repo, sdir = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+r = subprocess.run([sys.executable, sdir + '/devdoc_writeset.py', '--extract', doc],
+                   capture_output=True, text=True)
+try:
+    entries = json.loads(r.stdout).get('entries', [])
+except Exception:
+    sys.exit(1)
+if not entries:
+    sys.exit(1)
+for f in entries:
+    if subprocess.run(['git', '-C', repo, 'cat-file', '-e', base + ':' + f]).returncode != 0:
+        sys.exit(1)
+print('closed4')
+PYEOF
+)"
+    [ -n "$_closed4" ] && return 0
+  fi
+  return 1
+}
+
 # ── 今日文件筛选 (D366) — 必须在模式分发之前定义: 分支内的定义只在分支执行时生效 ──
 # D366: 按文件名日期判断"今日" — 替代 find 按 mtime 的今日判定 (git pull/checkout 刷 mtime 不可靠)
 # 用法: today_files_by_prefix <dir>   # brief: YYYY-MM-DD 文件名前缀 (扫描 *.md)
@@ -314,10 +365,14 @@ elif [ "$MODE" = "ci-pr" ]; then
     echo "  ✅ 无已合 dev doc 可比对（${CI_PR_BASE}）— 跳过"
     exit 0
   fi
-  # 两两比对：本 PR doc vs 已合 doc（compare_writesets_ci —— 无豁免，纯重叠判定）
+  # 两两比对：本 PR doc vs 已合 doc（compare_writesets_ci —— D555: 已关闭任务豁免，串行复用合法）
   while IFS= read -r pdoc || [ -n "$pdoc" ]; do
     [ -z "$pdoc" ] && continue
     for mtmp in $MERGED_DOCS; do
+      if _is_closed_doc "$mtmp"; then
+        echo "  ✅ 已关闭任务豁免（serial reuse）: $(basename "$mtmp")"
+        continue
+      fi
       compare_writesets_ci "$pdoc" "$mtmp" || handle_compare $?
     done
   done <<< "$PR_DOCS"

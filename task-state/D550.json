@@ -1,0 +1,16 @@
+{
+  "task_id": "D550",
+  "title": "alloc-origin-merge（发号器占用合并 origin/main）",
+  "status": "impl_done",
+  "impl": {
+    "by": "CTO",
+    "at": "2026-08-28",
+    "branch": "fix/d550-alloc-origin",
+    "commit": "PR #276 合并（f1c9be5a）",
+    "note": "D547/D548 撞号盲区修复：占用检查合并 origin/main + SYNO_ALLOC_NO_REMOTE 测试注入缝，测试 13/13"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-28",
+  "updated_by": "CTO"
+}

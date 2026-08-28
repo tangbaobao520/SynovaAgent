@@ -25,8 +25,13 @@ const log = createLogger('growth/feedback-collector');
 /** 反馈决策类型 */
 export type FeedbackDecision = 'reject' | 'modify' | 'reject_path' | 'ineffective';
 
-/** 反馈目标类型 */
-export type FeedbackTargetType = 'sentinel_alert' | 'goal' | 'proposal';
+/** 反馈目标类型（D551: + 'diagnosis_conclusion' — GA 诊断校准回流，spec SYNOVA-IMPL-DSH-D551 §6.3） */
+export type FeedbackTargetType =
+  | 'sentinel_alert'
+  | 'goal'
+  | 'proposal'
+  // D551: GA 诊断校准回流（存储判别值，非本体类型）
+  | 'diagnosis_conclusion';
 
 /** 收集反馈的输入 */
 export interface MiddleFeedbackInput {
@@ -115,7 +120,7 @@ CREATE TABLE IF NOT EXISTS feedback_log (
   enterprise_id TEXT NOT NULL,
   actor_id      TEXT NOT NULL,
   decision      TEXT NOT NULL CHECK(decision IN ('reject','modify','reject_path','ineffective')),
-  target_type   TEXT NOT NULL CHECK(target_type IN ('sentinel_alert','goal','proposal')),
+  target_type   TEXT NOT NULL CHECK(target_type IN ('sentinel_alert','goal','proposal','diagnosis_conclusion')),
   target_id     TEXT NOT NULL,
   reason        TEXT DEFAULT '',
   evidence_refs TEXT DEFAULT '[]',
@@ -128,6 +133,25 @@ CREATE INDEX IF NOT EXISTS idx_feedback_target ON feedback_log(target_type, targ
 -- D93b: migration
 CREATE TABLE IF NOT EXISTS schema_version (version TEXT PRIMARY KEY);
 INSERT OR IGNORE INTO schema_version (version) VALUES ('d93b_actor_role');
+`;
+
+/**
+ * D551: feedback_log 重建表目标结构（target_type CHECK 扩 'diagnosis_conclusion'）。
+ * 仅用于旧 schema 库的重建迁移（SQLite 无法 ALTER CHECK → CREATE new → INSERT SELECT → DROP → RENAME）。
+ */
+const FEEDBACK_LOG_DDL_D551 = `
+CREATE TABLE feedback_log (
+  id            TEXT PRIMARY KEY,
+  enterprise_id TEXT NOT NULL,
+  actor_id      TEXT NOT NULL,
+  decision      TEXT NOT NULL CHECK(decision IN ('reject','modify','reject_path','ineffective')),
+  target_type   TEXT NOT NULL CHECK(target_type IN ('sentinel_alert','goal','proposal','diagnosis_conclusion')),
+  target_id     TEXT NOT NULL,
+  reason        TEXT DEFAULT '',
+  evidence_refs TEXT DEFAULT '[]',
+  actor_role    TEXT DEFAULT '',
+  created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
 `;
 
 // ═══ FeedbackCollector ═══
@@ -146,10 +170,67 @@ export class FeedbackCollector {
     if (!this.db) return;
     try {
       this.db.exec(FEEDBACK_DDL);
+      this.migrateD551TargetType();
       log.info('feedback_log 表就绪');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       log.warn({ err: msg }, 'feedback_log 表初始化失败 — 降级（内存模式）');
+    }
+  }
+
+  /**
+   * D551 migration 'd551_target_type' — feedback_log.target_type CHECK 扩 'diagnosis_conclusion'。
+   *
+   * SQLite 无法 ALTER CHECK → 重建表迁移（CREATE feedback_log_new → INSERT SELECT 复制 →
+   * DROP → RENAME → 重建索引），机制先例 schema_version（'d93b_actor_role'，D93b）。
+   * D487 教训: 扩枚举必须同步 DDL CHECK，否则 INSERT 失败——本迁移保证存量旧库同步升级。
+   *
+   * 契约:
+   *   @input  — 无（内部读 schema_version + sqlite_master 判定）
+   *   @output — 迁移后 feedback_log CHECK 含 'diagnosis_conclusion' + schema_version 含 'd551_target_type'
+   *   @degraded — 迁移失败 → log.warn 不阻断启动（新值写入将被旧 CHECK 拒绝 → collectFeedback
+   *               走既有 degraded 降级路径，不静默，铁律 24/31）
+   */
+  private migrateD551TargetType(): void {
+    if (!this.db) return;
+    try {
+      const done = this.db.prepare(`SELECT 1 FROM schema_version WHERE version = 'd551_target_type'`).get();
+      if (done) return;
+
+      const table = this.db.prepare(
+        `SELECT sql FROM sqlite_master WHERE type='table' AND name='feedback_log'`,
+      ).get() as { sql: string } | undefined;
+      if (table?.sql && table.sql.includes('diagnosis_conclusion')) {
+        // 新建库: FEEDBACK_DDL 已含新枚举 → 仅补版本标记，不重建
+        this.db.prepare(`INSERT OR IGNORE INTO schema_version (version) VALUES ('d551_target_type')`).run();
+        return;
+      }
+
+      // 旧 schema 库: 事务内重建表（复制存量数据 + 重建索引，防中途失败丢表）
+      this.db.exec('BEGIN');
+      try {
+        this.db.exec(FEEDBACK_LOG_DDL_D551.replace('CREATE TABLE feedback_log', 'CREATE TABLE feedback_log_new'));
+        this.db.exec(`
+          INSERT INTO feedback_log_new (id, enterprise_id, actor_id, decision, target_type, target_id, reason, evidence_refs, actor_role, created_at)
+          SELECT id, enterprise_id, actor_id, decision, target_type, target_id, reason, evidence_refs, actor_role, created_at FROM feedback_log;
+        `);
+        this.db.exec('DROP TABLE feedback_log');
+        this.db.exec('ALTER TABLE feedback_log_new RENAME TO feedback_log');
+        this.db.exec(`
+          CREATE INDEX IF NOT EXISTS idx_feedback_enterprise ON feedback_log(enterprise_id);
+          CREATE INDEX IF NOT EXISTS idx_feedback_decision ON feedback_log(decision);
+          CREATE INDEX IF NOT EXISTS idx_feedback_target ON feedback_log(target_type, target_id);
+        `);
+        this.db.exec(`INSERT OR IGNORE INTO schema_version (version) VALUES ('d551_target_type')`);
+        this.db.exec('COMMIT');
+      } catch (inner: unknown) {
+        this.db.exec('ROLLBACK');
+        throw inner;
+      }
+      log.info("migration 'd551_target_type' 完成 — feedback_log.target_type 已扩 'diagnosis_conclusion'");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg }, "migration 'd551_target_type' 失败 — 降级（新枚举写入将被旧 CHECK 拒绝，collectFeedback 走 degraded 路径）");
     }
   }
 

@@ -20,8 +20,8 @@ c) memory 历史教训: D316 dev doc 声称不实 → 全程实测留痕；接�
 - app-store.ts — D538 selectedCap/setSelectedCap（随 merge 入 diff，本 brief 认领）
 - capability.ts — D538 纯逻辑契约（随 merge 入 diff，本 brief 认领）
 - global.css — D538 .cap-* 样式（随 merge 入 diff，本 brief 认领）
-- package.json — lucide-react 1.34.0 依赖（随 merge 入 diff，本 brief 认领）
-- package-lock.json — lock 重生成（随 merge 入 diff，本 brief 认领）
+- electron-renderer/package.json — lucide-react 1.34.0 依赖（随 merge 入 diff，本 brief 认领；D552 收窄路径防裸 basename 误伤 dsh/plugins/synova-dashboards/package.json）
+- electron-renderer/package-lock.json — lock 重生成（随 merge 入 diff，本 brief 认领；D552 同款收窄）
 - capability.test.ts — 23 用例纯逻辑测试（随 merge 入 diff，本 brief 认领）
 - D544.json — task-state 回填 impl 段 + status=impl_done
 不做什么:

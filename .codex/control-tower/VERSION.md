@@ -11,6 +11,43 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V5.2.6 (2026-08-29) — verify-parallel 关闭信号 4：无 task-state + 写集全合 base（D469 类合并未登记历史任务）（PATCH）
+
+- **① 第四关闭信号**: 无 task-state 记录 且 devdoc_writeset --extract 的写集文件全部存在于 base → 合并但未走状态机的历史任务豁免。**D487/Win 实证（创始人核实定论 PR #261 评论 + 台账条目）**: D469（session-event-sourcing，impl 在 main、无审计报告、无括号式提交）无法被信号 1/2/3 豁免——信号 4 补全。**防漏网论证**: D483 类在途任务有 task-state → 不豁免；D485/D488 类在途 Win 任务 doc 未合 main → 不进比较集。
+- **② 与 Win 修复建议的关系**: Win 建议「今日 ±1 天日期窗口过滤」；本实现选「任务状态信号」而非「日期信号」——日期窗口会把 N 天前仍在途的任务漏拦、把今日已关闭的任务误拦（V5.0.1 豁免被移除的同一原因：存在性/时间信号恒真或失真，状态信号才判别串行 vs 并行）。信号 4 覆盖 Win 建议的意图（历史已合任务不拦）。
+- **③ 配对测试 verify-parallel-ci.test.sh 13→14 断言**: T8c（无 task-state + 写集全在 base → 豁免 exit 0）；T9 保持 block（写集文件不在 base → 不豁免，fail-closed 不削弱）。
+- **验证**: verify-parallel-ci 14/14 本地全绿；D487 分支实测（144824d3）exit 0——D292/D338/D469/D500 四对重叠全部豁免、零 ❌。
+- **作者**: dsh-cto（D557）
+
+## V5.2.5 (2026-08-28) — verify-parallel 关闭信号 3：括号式 (D#) 合入提交（D478 类无 task-state 无报告任务）（PATCH）
+
+- **① 第三关闭信号**: `git log --grep="(D#)"` 在 CI_PR_BASE 命中 → 任务已合 main = 关闭（fix(D478)/feat(D551) 实现提交带括号；dispatch 提交「docs(dispatch): D551」无括号 → 在途任务不误豁免）。**D551 实证**: D478 无 task-state、无审计报告（Win 线终审仅台账记录），仅信号 1/2 无法豁免——信号 3 补全。
+- **② 关键正确性修复（首版实现踩坑）**: `git log` 无匹配也 exit 0（空输出）——直接 `if git log ...; then` 恒真导致全量豁免（T9 抓到）；改为捕获输出判非空。
+- **③ 配对测试 verify-parallel-ci.test.sh 12→13 断言**: T8b（无 task-state 无报告，但 (D#) 提交在 base → 豁免 exit 0）；T9 保持 block（fail-closed 不削弱）。
+- **验证**: verify-parallel-ci 13/13 本地全绿；D551 实证本地复跑 exit 0（D338 报告信号 + D478 提交信号双路径豁免，173 个已关闭 doc 豁免、零 ❌）。
+- **作者**: dsh-cto（D555 追加）
+
+## V5.2.4 (2026-08-28) — verify-parallel --ci-pr 已关闭任务豁免（serial reuse 误拦根治）（PATCH）
+
+> spec: D555 brief（CTO 内联指令）。D551 实证：新任务 spec 写集含 src/server.ts（D478 已合终审）与 src/growth/feedback-collector.ts（D338 已合有审计报告）——V5.2.0 的 --ci-pr「无豁免纯重叠判定」把**串行复用**（已关闭任务的合法文件复用）误判为并行冲突，CI 恒拦。
+
+- **① _is_closed_doc() 关闭信号判定**: 机器可验两信号任一命中即豁免——task-state/<D#>.json status=audited（D382 终态）/ docs/synova/audit-reports/*-<D#>[-.md] 存在（历史任务无 task-state，D393 派生制同源信号）。都无 → 继续比对（fail-closed 不削弱，在途任务并行冲突仍拦）。
+- **② 只豁免已合 doc 侧**: PR 自身 doc 恒为新任务，不做关闭判定；豁免输出显式点名（审计可核）。
+- **③ 配对测试 verify-parallel-ci.test.sh 7→12 断言**: T6 接线（_is_closed_doc + 豁免分支）/ T7 audited 豁免 exit 0 / T8 审计报告豁免 exit 0 / T9 无信号仍 block exit 1（不削弱）。
+- **验证**: verify-parallel-ci 12/12 本地全绿；D551 实证重叠两对（vs D338/D478）本地复跑豁免放行。
+- **防膨胀**: 零新组件（复用 task-state + audit-reports 既有信号源）；不改 compare_writesets_ci 判定本体。
+- **作者**: dsh-cto（D555）
+
+## V5.2.3 (2026-08-28) — CT-43 auto-hook 影子提交路径限定（防卷走暂存区遗留文件）（PATCH）
+
+> spec: D554 brief（CTO 内联指令）。D552 实证：D311 staging-guard 阻断后遗留的 staged 文件（dsh/plugins 插件 8 文件）被 post-commit hook 的「bypass COMMITTED 登记」影子提交整体卷入 8b6deaf4（消息与内容不符）——M8/D286 同型变体，防线缺口 = 影子提交未限定路径。
+
+- **① scripts/hooks/post-commit.sh 登记提交限定路径**: `git commit --no-verify -q -m "..."` → `git commit --no-verify -q -o -m "..." -- "$ROOT/.claude/bypass.log"`——`-o` 用命名路径的工作区快照建临时索引提交，只含 bypass.log，不消费/不卷走暂存区其他文件（foreign 文件保持 staged）。**注意 -m 必须在 -- 之前**（-- 之后全部按 pathspec 解析，-m 会被当路径）。
+- **② 配对测试 post-commit.test.sh 扩展（7→12 断言）**: 场景D（暂存区遗留他人文件 → 影子提交树只含 bypass.log + 遗留文件仍 staged + pathspec 提交语义保持）+ 接线断言（-o + pathspec 在位）+ 降级（真实提交失败沙箱可继续）。**连带修 M5 环境依赖**：沙箱仓库内配置 user.name/email（本机无全局 identity 时影子提交必败——测试机器无关化）。
+- **验证**: post-commit.test.sh 12/12 本地全绿（含新 5 断言）；bash -n 语法过；CI 双平台 canary（post-commit.test.sh 已在密封清单）。
+- **防膨胀**: 只动 post-commit.sh 一行提交命令 + 测试扩展；零新组件/新机制。
+- **作者**: dsh-cto（D554，CT-43 修复）
+
 ## V5.2.2 (2026-08-28) — D542 CI 失败可见性 + D543 密封 canary 转绿 + 解析器对称（PATCH）
 
 - **① D542 soft_check/warn_check CI strict 打印 ❌**（此前计硬失败却显示 ⚠️，「N 组未通过」在日志中无组名可查——D541 排查黑洞根因）。计数语义零变化，纯可观察性。配对测试 ci-strict-visible.test.sh 6 断言。

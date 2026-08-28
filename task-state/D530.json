@@ -1,0 +1,18 @@
+{
+  "task_id": "D530",
+  "title": "CT45-gatekeeper-merge-exempt",
+  "status": "impl_done",
+  "spec": {
+    "doc": ".claude/task-briefs/D530 原任务（2026-08-25 派单）",
+    "note": "CT-45：post-commit 对 merge 提交跳过 bypass 判定（HEAD^2 豁免）"
+  },
+  "impl": {
+    "commit": "734ab32e",
+    "pr": "#191",
+    "note": "主工作区 rebase 后发现 task-state/D530.json 缺失于 main，回填补登记（D552）"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-28",
+  "updated_by": "cto-backfill-d552"
+}
