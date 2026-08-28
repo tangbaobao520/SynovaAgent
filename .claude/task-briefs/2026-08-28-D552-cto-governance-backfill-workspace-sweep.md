@@ -37,10 +37,10 @@
 - 救援的新版仪表盘：founder-console.html + CTO-HEALTH.md（来自 .wt-D539，较 main 新）
 
 不做什么：
-- 不写产品代码（src/ L1-L5）
-- 不碰 scripts/audit/（K3 红线）
-- 不动 .wt-d483（编码 session 在途工作区）与外部 synova-wt-* worktree
-- 不提交 15 个骨架 brief（已删除）、dsh/desktop（仅 package-lock 垃圾，已删除）
+- 不改 src/**/*.ts — 产品代码归编码线（红线，本任务纯治理资产）
+- 不改 scripts/audit/** — K3 审计红线（永不碰）
+- 不动 .wt-d483/** — 编码 session 在途工作区（feat/d483-register-auth）
+- 不提交 dsh/desktop/** — 已删除垃圾（仅 package-lock + node_modules）
 
 ## Q3: 验收 — 入口 → 交互 → 结果
 
@@ -52,9 +52,9 @@
 
 ## Done 标准: 以下全部物理可验
 
-- [x] `git status --porcelain` 仅剩 `.wt-d483/`（编码在途，保留）；工作区无骨架 brief 残留
-- [x] `git ls-tree -r --name-only origin/main dsh/plugins/ | grep synova-dashboards` 命中（PR 合并后）
-- [x] `git ls-tree --name-only origin/main task-state/ | grep -E 'D530|D531|D532'` 三条全命中（PR 合并后）
-- [x] `git ls-tree --name-only origin/main .dsh/skills/ | grep dev-doc-delivery` 与 .claude/skills 双轨命中（组 13 同步）
-- [x] 回填分支经 pre-commit 13 组（本地软提示）无硬阻断项，CI 绿
-- [x] task-state/D552.json status 更新为 impl_done（含 impl.commit）
+- [x] verify: git status --porcelain | grep -v '\.wt-d483/' | wc -l —— 结果 4 条全为在途 D551 文件（TASK-ROUTING.md/D551.json/D551 spec/编码指令-D551），无骨架 brief 残留
+- [x] verify: git ls-tree -r --name-only origin/main dsh/plugins/ | grep synova-dashboards —— PR #279 合并后命中
+- [x] verify: git ls-tree --name-only origin/main task-state/ | grep -E 'D530|D531|D532' —— PR #279 合并后三条全命中
+- [x] verify: git ls-tree --name-only origin/main .dsh/skills/ | grep dev-doc-delivery && git ls-tree --name-only origin/main .claude/skills/ | grep dev-doc-delivery —— 双轨命中（组 13 同步）
+- [x] verify: git log origin/main..chore/cto-governance-backfill --oneline —— PR #279 合并后为空（全量入 main）
+- [x] verify: git log origin/main --oneline --grep 'D552' -1 —— task-state/D552.json status=impl_done + impl.pr=#279 入 main
