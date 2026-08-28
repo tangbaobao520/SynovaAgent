@@ -2,7 +2,7 @@
   "task_id": "D487",
   "title": "D394 片2-A——GA 诊断会话事件化装配（D500 地基接线，交付物可自证）",
   "slice": "GA-SESS-2A",
-  "status": "spec_done",
+  "status": "impl_done",
   "risk": "medium",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-D487-ga-session-events-slice2a-20260828.md",
@@ -10,9 +10,28 @@
     "by": "dev-doc",
     "at": "2026-08-28"
   },
-  "impl": null,
+  "impl": {
+    "commit": "a8ee995f",
+    "by": "claude",
+    "at": "2026-08-28",
+    "files": [
+      "src/store/session-store.ts",
+      "src/agent/diagnosis-launcher.ts",
+      "src/agent/conversation-engine.ts",
+      "src/deploy/bootstrap.ts",
+      "src/cli.ts",
+      "src/l1/im-inbound.ts",
+      "src/mcp/index.ts",
+      "src/tui-v2/index.ts",
+      "src/tui-v2/lib/bootstrap.ts",
+      "tests/agent/diagnosis-session-events.test.ts",
+      "docs/plans/codex/implementation/SYNOVA-IMPL-D487-ga-session-events-slice2a-20260828.md",
+      "task-state/D487.json"
+    ]
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-08-28T10:00:00+08:00",
-  "updated_by": "dev-doc"
+  "updated_at": "2026-08-28",
+  "updated_by": "claude",
+  "note": "装配点实测偏离 §3.1（cli/im-inbound/mcp/tui-v2/fromState，server 无 ConversationEngine 实例化）——已按 S-6 回填 dev doc §3.2。附加发现并修复：tui-v2/lib/bootstrap.ts SessionManager 未注入 store（D500 第二处悬空）。验证：新测试 5/5（red 3 败先行已证）+ 相关回归 141 绿 + tsc 28=28 + 全量对照基线无新增失败。"
 }

@@ -38,7 +38,7 @@ import type { L3ResolutionResult } from '../l4/entity-resolver';
 import type { CommunityReport } from '../l4/community-reports';
 // P1-01: 子组件提取 — 单体引擎拆分为 3 个独立类
 import { ToolLoopExecutor } from './tool-loop-executor';
-import { DiagnosisLauncher, type DiagnosisEvent, type ConsultationResult } from './diagnosis-launcher';
+import { DiagnosisLauncher, type DiagnosisEvent, type ConsultationResult, type SessionStoreLike } from './diagnosis-launcher';
 import { OntologySyncer, type OntologySyncResult } from './ontology-syncer';
 import type { EngineContext } from './engine-context';
 import { SqliteGraphStore } from '../adapters/sqlite-graph-store';
@@ -65,6 +65,8 @@ export interface EngineConfig {
   hookRunner?: HookRunner;
   /** 编排层: SessionManager (自动压缩) */
   sessionManager?: SessionManager;
+  /** D487: SessionStore 装配 — 注入 engineCtx 后 DiagnosisLauncher 落诊断事件流到 session_events */
+  sessionStore?: SessionStoreLike;
   /** 编排层: EventBus (事件追踪) */
   eventBus?: EventBus;
   /** 编排层: PhaseStateMachine (Batch 2: 状态机驱动 Phase 转换) */
@@ -439,6 +441,9 @@ export class ConversationEngine {
       },
       loggerPrefix: 'agent',
     };
+    // D487: 会话事件 store 注入 — launcher 经 ctx.sessionStore 落诊断事件流
+    // （铁律 39: 内联类型注入，EngineContext 接口不加 L5 字段）
+    (engineCtx as { sessionStore?: SessionStoreLike }).sessionStore = config.sessionStore;
     this.toolLoop = new ToolLoopExecutor(engineCtx);
     this.diagnosisLauncher = new DiagnosisLauncher(engineCtx, diagnosisEngine);
     this.ontologySyncer = new OntologySyncer(engineCtx);
@@ -666,7 +671,8 @@ export class ConversationEngine {
         });
 
         // 审计 P0-20260620: Phase 0 完成后自动启动诊断管线
-        this.startDiagnosis('FDE', '用户').then(result => {
+        // D487: 发起人表述统一 GA（增长顾问）——FDE 是部署角色，不是诊断发起角色
+        this.startDiagnosis('GA', '用户').then(result => {
           if (result) {
             log.info({ teamId: result.teamId, durationMs: result.totalDurationMs }, '诊断管线已完成');
           }
@@ -778,9 +784,19 @@ export class ConversationEngine {
   /**
    * Restore engine from a previously serialized state.
    * Provider must be supplied (not stored in state).
+   * D487: wiring — 恢复会话时可传 sessionManager/sessionStore（诊断事件流续写同一会话）。
    */
-  static fromState(provider: LLMProvider, state: EngineState): ConversationEngine {
-    const engine = new ConversationEngine(provider, { orgId: state.orgId });
+  static fromState(
+    provider: LLMProvider,
+    state: EngineState,
+    wiring?: { sessionManager?: SessionManager; sessionStore?: SessionStoreLike; sessionId?: string },
+  ): ConversationEngine {
+    const engine = new ConversationEngine(provider, {
+      orgId: state.orgId,
+      sessionId: wiring?.sessionId,
+      sessionManager: wiring?.sessionManager,
+      sessionStore: wiring?.sessionStore,
+    });
     engine.phase = state.phase;
     engine.messages = [...state.messages];
     return engine;

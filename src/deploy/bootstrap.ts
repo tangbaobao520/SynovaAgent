@@ -89,6 +89,8 @@ export interface BootstrapServices {
   eventBus: EventBus;
   hookRunner: HookRunner;
   sessionManager: SessionManager;
+  /** D487: 会话事件 store — 诊断事件落 session_events 的装配源 */
+  sessionStore: SessionStore;
   stateMachine: PhaseStateMachine;
   wiring: OrchestrationWiring;
   graphStore?: unknown;
@@ -628,6 +630,7 @@ export class Bootstrap {
       eventBus: this.ctx.get<EventBus>('eventBus')!,
       hookRunner: this.ctx.get<HookRunner>('hookRunner')!,
       sessionManager: this.ctx.get<SessionManager>('sessionManager')!,
+      sessionStore: this.ctx.get<SessionStore>('sessionStore')!,
       stateMachine: this.ctx.get<PhaseStateMachine>('stateMachine')!,
       wiring: this.ctx.get<OrchestrationWiring>('wiring')!,
       graphStore: this.ctx.get('graphStore'),
@@ -679,7 +682,10 @@ export class Bootstrap {
         const hookRunner = new HookRunner();
         // D500: 注入 SessionStore 启用事件溯源（model-visible⟺logged 生产装配；
         // SessionManager 注入为可选参数，无 db 环境仍兼容）
-        const sessionManager = new SessionManager({}, new SessionStore(db));
+        // D487: store 提升为具名实例并注册到 ctx —— ConversationEngine 经
+        // EngineConfig.sessionStore 装配，诊断事件落 session_events
+        const sessionStore = new SessionStore(db);
+        const sessionManager = new SessionManager({}, sessionStore);
         const stateMachine = new PhaseStateMachine({
           0: { label: '目标访谈', required: true, maxDurationMs: 600_000 },
           1: { label: '数据采集', required: true, maxDurationMs: 120_000 },
@@ -694,6 +700,7 @@ export class Bootstrap {
         ctx.set('eventBus', eventBus);
         ctx.set('hookRunner', hookRunner);
         ctx.set('sessionManager', sessionManager);
+        ctx.set('sessionStore', sessionStore);
         ctx.set('stateMachine', stateMachine);
         ctx.set('wiring', wiring);
         log.info('编排层已初始化 (EventBus + PhaseStateMachine + SessionManager)');

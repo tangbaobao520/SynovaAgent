@@ -127,7 +127,8 @@ export async function bootstrap(): Promise<BootstrapResult> {
   const eventStore = new EventStore(db);
   const eventBus = new EventBus(eventStore);
   const hookRunner = new HookRunner();
-  const sessionManager = new SessionManager({ compactionThresholdTokens: 4000 });
+  // D487: SessionManager 注入 store — 消息事件持久化（D500）在此入口原本悬空
+  const sessionManager = new SessionManager({ compactionThresholdTokens: 4000 }, store);
   const stateMachine = new PhaseStateMachine({
     0: { label: '目标访谈', required: true, maxDurationMs: 600_000 },
     1: { label: '数据采集', required: true, maxDurationMs: 120_000 },
