@@ -16,12 +16,12 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 # v3.6 → v3.8 核心变化 (2026-06-23):
 #   + plan.json 支持: 分阶段任务可 deferred wiring/test_pairing 检查
 #   + 双日志: pre-commit-failures.log (门禁正常拒绝) vs bypass.log (--no-verify 绕过)
-#   + as any 跳过注释行 (不再把 "Iron law #38: as any = 0" 误报为违规)
+#   + as any 跳过注释行 (不再把 "Iron law #38: as any = 0" 误报为违规)；CT-46 扩 as never / as unknown as
 #   + bash 退位: 只做物理验证 (符号存在? 文件存在? 语法合法?)
 #   + agent 进位: 语义判断 (调用链正确? 降级诚实? 阶段合理?)
 #
 # 13 组:
-#   1. 类型安全 + 硬编码数据    (as any 跳过注释行 + 硬编码业务字段)
+#   1. 类型安全 + 硬编码数据    (as any / as never / as unknown as 跳过注释行 + 硬编码业务字段)
 #   2. 测试质量                  (catch 无 log + 测试配对[可 deferred] + 桩测试)
 #   3. Secrets                   (全工作区 + .claude/ + 暂存区 + .env)
 #   4. 接线完整性               (new export 有调用方[可 deferred] + 接线深度)
@@ -468,8 +468,10 @@ if [ -n "${SYNO_DIFF_BASE:-}" ]; then
 else
   AS_ANY_DIFF="$(git diff --cached -- src/ packages/ ':(exclude)**/*.test.ts' ':(exclude)**/*.test.tsx' ':(exclude)**/*.d.ts' 2>/dev/null || true)"
 fi
-M=$(echo "$AS_ANY_DIFF" | grep -E '^\+' | grep -v '^+++' | grep -E 'as any\b' | grep -vE '^\+\s*(//|/\*|\*|#)' || true)
-hard_check "as any 零容忍（新增，铁律 38；存量独立清理）" "$M"
+# CT-46 (K3 GA 线闭环批, 2026-08-29): 模式扩 as never / as unknown as——mcp/index.ts L236 `getDatabase() as never`
+#   实证组 1 只匹配 as any 字面量存在逃逸盲区；双断言链 as unknown as 同属类型信任崩溃（铁律 38 精神）。
+M=$(echo "$AS_ANY_DIFF" | grep -E '^\+' | grep -v '^+++' | grep -E 'as (any|never)\b|as unknown as' | grep -vE '^\+\s*(//|/\*|\*|#)' || true)
+hard_check "as any / as never / as unknown as 零容忍（新增，铁律 38；存量独立清理）" "$M"
 
 # 1a-2. from" ???? (D93/D95 ????)
 # ??: Claude Code ?????? import ??????? from ?????
