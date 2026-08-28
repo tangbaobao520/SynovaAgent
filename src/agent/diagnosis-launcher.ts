@@ -82,6 +82,8 @@ export class DiagnosisLauncher {
     ): void => {
       try {
         const store: SessionStoreLike | undefined = (this.ctx as { sessionStore?: SessionStoreLike }).sessionStore;
+        // 无 sessionId（引擎未装配会话 id）→ 跳过，事件不落 '' 桶（与 L622 addMessage 内存态兼容语义一致）
+        if (!this.ctx.sessionId) return;
         if (!store?.appendEvent) return;
         const res = store.appendEvent(this.ctx.sessionId, eventType, payload);
         if (!res.ok) {

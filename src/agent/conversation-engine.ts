@@ -789,10 +789,11 @@ export class ConversationEngine {
   static fromState(
     provider: LLMProvider,
     state: EngineState,
-    wiring?: { sessionManager?: SessionManager; sessionStore?: SessionStoreLike },
+    wiring?: { sessionManager?: SessionManager; sessionStore?: SessionStoreLike; sessionId?: string },
   ): ConversationEngine {
     const engine = new ConversationEngine(provider, {
       orgId: state.orgId,
+      sessionId: wiring?.sessionId,
       sessionManager: wiring?.sessionManager,
       sessionStore: wiring?.sessionStore,
     });

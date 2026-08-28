@@ -182,6 +182,7 @@ async function generateAIReply(
   const { SessionManager } = await import('../orchestrator/session-manager');
   const builtinStore = new SessionStore(store['db' as keyof typeof store] as never);
   const conv = new ConversationEngine(provider, {
+    sessionId,
     sessionManager: new SessionManager({}, builtinStore),
     sessionStore: builtinStore,
   });
