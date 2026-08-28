@@ -11,6 +11,7 @@
  */
 
 import type Database from 'better-sqlite3';
+import { randomUUID } from 'crypto';
 import type { CronScheduler } from '../cron/scheduler';
 import type { Sentinel, SentinelCheckResult, SentinelFinding } from './types';
 import type { Evidence } from '../evidence/types';
@@ -126,6 +127,46 @@ export interface SentinelRunnerStats {
   criticalFindings: number;
   warningFindings: number;
   lastRunAt: string | null;
+}
+
+// ═══ D551: GA 手动信号注入（Module-3 蓝图 §3.3，spec SYNOVA-IMPL-DSH-D551 §6.2） ═══
+
+/** GA 手动信号注入落点的哨兵 ID（findings API 按 sentinelId='ga-manual' 可查） */
+export const GA_MANUAL_SENTINEL_ID = 'ga-manual';
+/** GA 手动信号注入落点的哨兵显示名 */
+export const GA_MANUAL_SENTINEL_NAME = 'GA 手动信号注入';
+
+/** GA 手动信号注入输入（蓝图 §3.3.1 五要素 + 关联载荷；越界校验在路由层完成） */
+export interface GaManualSignalInput {
+  /** 信号类型（蓝图 10 枚举: 人员变动/战略转向/…/其他） */
+  signalType: string;
+  title: string;
+  description: string;
+  /** 严重度 1-10（映射: ≥9 emergency / ≥7 critical / ≥4 warning / ≤3 info） */
+  severity: number;
+  /** 置信度 0-100 */
+  confidence: number;
+  /** 蓝图"关联42边"多选（载荷承载，不写 L4 本体节点 — spec §7.3 诚实分层） */
+  relatedEdges?: string[];
+  /** 蓝图"关联节点"多选（同上） */
+  relatedNodes?: string[];
+  gaId: string;
+  orgId: string;
+}
+
+/** 合成 finding（含 GA_MANUAL 元数据 — spec §6.2"source 字段载 GA_MANUAL 元数据"） */
+export interface GaManualFinding extends SentinelFinding {
+  source: 'GA_MANUAL';
+  signalType: string;
+  confidence: number;
+}
+
+/** severity 1-10 → SentinelFinding 四级映射（契约边界，测试锚定） */
+function mapManualSeverity(severity: number): SentinelFinding['severity'] {
+  if (severity >= 9) return 'emergency';
+  if (severity >= 7) return 'critical';
+  if (severity >= 4) return 'warning';
+  return 'info';
 }
 
 // ═══ SentinelRunner ═══
@@ -702,6 +743,77 @@ export class SentinelRunner {
   /** 获取最近哨兵运行记录 (供外部 API 查询) */
   getRecentResults(): Map<string, SentinelRunRecord[]> {
     return this.records;
+  }
+
+  /**
+   * D551: GA 手动信号注入（L3 公开方法 — sentinel-service.injectManualSignal 经 L2 调用，L1 路由不绕层）。
+   *
+   * 蓝图 §3.3.2 反应链落地: ①写入系统 = 本方法（合成 SentinelRunRecord → persistRunEvents
+   * I2 单源落 sentinel_events → projectRunRecord 投影，GET /api/sentinel/findings 立即可见）；
+   * ③下轮 aggregateAndDispatch 自然消费（本方法不改聚合白名单 — SELF_CHECK 除外既有逻辑）。
+   * 第②步"定向触发哨兵重新评估"诚实 descope（spec §7.3——注入 finding 经常规 cron/聚合管线流动）。
+   *
+   * 契约:
+   *   @input  — GaManualSignalInput（severity 1-10 / confidence 0-100；越界校验在路由层）
+   *   @output — { ok:true, findingId } 成功（degraded:true 表示事件持久化失败、投影为纯内存态）；
+   *             本方法不返回 ok:false（不抛、内部降级，铁律 24/31）
+   *   @degraded — persistRunEvents 失败 → log.error + 保留投影（重启即丢）+ degraded:true 传播
+   *   @error  — 不抛
+   */
+  injectManualFinding(input: GaManualSignalInput): { ok: boolean; findingId: string; degraded?: boolean; error?: string } {
+    const checkedAt = new Date().toISOString();
+    const findingId = `ga-manual-${Date.now().toString(36)}-${randomUUID().slice(0, 8)}`;
+    const finding: GaManualFinding = {
+      id: findingId,
+      severity: mapManualSeverity(input.severity),
+      title: input.title,
+      description: `[GA 手动信号|${input.signalType}|置信度 ${input.confidence}%] ${input.description}`,
+      evidence: [
+        'source=GA_MANUAL',
+        `signalType=${input.signalType}`,
+        `confidence=${input.confidence}`,
+        `gaId=${input.gaId}`,
+        `orgId=${input.orgId}`,
+        ...(input.relatedEdges ?? []).map((e) => `edge=${e}`),
+        ...(input.relatedNodes ?? []).map((n) => `node=${n}`),
+      ],
+      suggestion: 'GA 手动注入信号 — 请人工研判并跟踪',
+      detectedAt: checkedAt,
+      ...(input.relatedNodes && input.relatedNodes.length > 0 ? { relatedNodeId: input.relatedNodes[0] } : {}),
+      status: 'open',
+      source: 'GA_MANUAL',
+      signalType: input.signalType,
+      confidence: input.confidence,
+    };
+    const record: SentinelRunRecord = {
+      sentinelId: GA_MANUAL_SENTINEL_ID,
+      sentinelName: GA_MANUAL_SENTINEL_NAME,
+      cronJobId: 'ga-manual-injection',
+      result: {
+        sentinelId: GA_MANUAL_SENTINEL_ID,
+        ok: true,
+        findings: [finding],
+        durationMs: 0,
+        checkedAt,
+      },
+    };
+
+    // I2 单源: 先落事件流（唯一写入口），再物化投影（对齐 runSelfCheck L369-377 既有次序）
+    let degraded = false;
+    try {
+      this.persistRunEvents(record);
+    } catch (err: unknown) {
+      degraded = true;
+      const msg = err instanceof Error ? err.message : String(err);
+      log.error({ err: msg, findingId }, '[runner] GA 手动信号事件持久化失败 — 降级为纯内存投影（重启即丢）');
+    }
+    this.projectRunRecord(record);
+    this.totalRuns++;
+
+    log.info({ findingId, signalType: input.signalType, severity: input.severity, gaId: input.gaId }, '[runner] GA 手动信号已注入哨兵事件流');
+    return degraded
+      ? { ok: true, findingId, degraded: true, error: '事件持久化失败 — 内存投影可见，重启即丢' }
+      : { ok: true, findingId };
   }
 
   // ═══ 事件溯源 (I1 可重建 / I2 单源 / I3 可审计) ═══

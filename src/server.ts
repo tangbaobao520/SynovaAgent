@@ -61,6 +61,7 @@ import adminKnowledgeRoutes from "./routes/admin-knowledge";
 import gaAdminRoutes from './routes/ga-admin';
 import gaCorrectionsRoutes from './routes/ga-corrections';
 import gaAnnotationsRoutes from './routes/ga-annotations';
+import gaCalibrationRoutes from './routes/ga-calibration'; // D551 — GA 诊断校准/手动信号注入/效用仪表
 import solutionsRoutes from './routes/solutions';
 import notificationsRoutes from './routes/notifications';
 import backupRoutes from './routes/backup';
@@ -347,6 +348,7 @@ export async function createServer(): Promise<Server> {
   app.use(adminKnowledgeRoutes);
   app.use(gaCorrectionsRoutes);
   app.use(gaAnnotationsRoutes);
+  app.use(gaCalibrationRoutes); // D551 — /api/ga/calibration 端点族
   app.use(solutionsRoutes);
   app.use(notificationsRoutes);
   app.use(backupRoutes);
