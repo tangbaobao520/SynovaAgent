@@ -1,0 +1,12 @@
+{
+  "task_id": "D545",
+  "title": "sentinel-findings-event（作废：D545 号与 Win 侧 feat/win-d545-v520-skill-sync 同号）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": "renumber-to-D546",
+  "updated_at": "2026-08-28",
+  "updated_by": "alloc-task-id",
+  "note": "编号让渡：Win 侧已用 D545 于 skill-sync（分支名占用，task-state 未登记）。本号作废，工作改用 D546。教训：跨线取号前应先 ls-remote 查 Win 分支名。"
+}
