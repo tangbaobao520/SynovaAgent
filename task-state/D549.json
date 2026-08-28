@@ -1,11 +1,22 @@
 {
   "task_id": "D549",
   "title": "sealed-tests-ci-canary",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": null,
-  "impl": null,
-  "audit": null,
+  "impl": {
+    "by": "CTO",
+    "at": "2026-08-28",
+    "branch": "fix/d549-sealed-tests",
+    "commit": "PR #272 合并（756573df）",
+    "note": "K3 FIX-D541 + P1-3：claim-regex T5b 硬编码行号 → 动态 grep；6 新密封测试入 CI canary（19→25），CI 双平台绿"
+  },
+  "audit": {
+    "verdict": "CTO 自修（未 K3）",
+    "note": "修复 K3 审计发现，变更面小（测试一行 + ci.yml 清单），随下批审计",
+    "by": "CTO",
+    "at": "2026-08-28"
+  },
   "fix_task_id": null,
   "updated_at": "2026-08-28",
-  "updated_by": "alloc-task-id"
+  "updated_by": "CTO"
 }
