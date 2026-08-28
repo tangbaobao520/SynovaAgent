@@ -1,15 +1,17 @@
 {
-  "task_id": "D542",
-  "title": "ci-strict-visible-fail",
+  "task_id": "D547",
+  "title": "skeleton-brief-gate",
   "status": "impl_done",
   "spec": null,
   "impl": {
     "by": "CTO",
     "at": "2026-08-28",
-    "branch": "fix/d542-ci-strict-visible",
+    "branch": "fix/d547-skeleton-brief-gate",
+    "commit": "187c7460",
     "files": [
       "scripts/pre-commit-check.sh",
-      "tests/control-tower/ci-strict-visible.test.sh"
+      "tests/control-tower/skeleton-brief-gate.test.sh",
+      ".claude/task-briefs/2026-08-28-D547-skeleton-brief-gate.md"
     ]
   },
   "audit": {
@@ -17,9 +19,7 @@
     "verdict": "PASS",
     "blockers": [],
     "findings": [
-      "计数语义零变化：HARD_FAIL/SOFT_COUNT/WARN_COUNT 加减条件原样（仅显示分支 ⚠️→❌ 重排）",
-      "配对测试 6/6 绿",
-      "P2: ci-strict-visible.test.sh 未入 CI 密封清单（见 P1-3）"
+      "P2: skeleton-brief-gate.test.sh 未入 CI 密封清单（见 P1-3 系统级发现）"
     ],
     "by": "K3",
     "at": "2026-08-28"

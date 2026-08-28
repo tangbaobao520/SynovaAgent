@@ -13,8 +13,20 @@
       "tests/control-tower/brief-parser-strip.test.sh"
     ]
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-08-28-D540-D547-governance-closeout.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "findings": [
+      "CI 双平台 canary 两周来首次全绿（check-runs 实证：ubuntu+windows Control Tower Gate Tests=success）",
+      "post-commit-marker 18/18 绿（S1a/S6a/S7/S8 对齐 D521 hook 登记 1 行 COMMITTED）",
+      "S10 密封性 new_repo 显式 init -b main",
+      "parse_q2 补 \\s+L\\d+$ 剥离（对齐 devdoc_writeset.py:76）"
+    ],
+    "by": "K3",
+    "at": "2026-08-28"
+  },
   "fix_task_id": null,
   "updated_at": "2026-08-28",
-  "updated_by": "alloc-task-id"
+  "updated_by": "K3"
 }

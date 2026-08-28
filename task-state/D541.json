@@ -14,13 +14,19 @@
     ]
   },
   "audit": {
-    "report": "docs/synova/audit-reports/2026-08-27-D540.md（含 D541）",
-    "verdict": "CI 红→修复闭环（未复审）",
-    "fix": "brief 三处根因 + 正则收窄，PR #246 CI 绿",
-    "by": "k3 + coding fix",
+    "report": "docs/synova/audit-reports/2026-08-28-D540-D547-governance-closeout.md",
+    "verdict": "CONDITIONAL PASS",
+    "blockers": [
+      "P1-1: claim-regex-narrow.test.sh 在 main 上确定性失败（T5b 挂）——tests/control-tower/claim-regex-narrow.test.sh:71 硬编码 sed -n '749p'，但 D542 加行致 guard 漂移到 scripts/pre-commit-check.sh:753。且该测试未入 CI 密封清单，CI 全绿掩盖断裂。"
+    ],
+    "findings": [
+      "正则收窄正确性已验证：工作描述「迁移改三处」不触发，完成声称「已完成迁移/迁移完成/已拆」触发",
+      "V5.2.1 bump + tag 正确（控制塔版本链 V5.2.0→V5.2.1→V5.2.2）"
+    ],
+    "by": "K3",
     "at": "2026-08-28"
   },
-  "fix_task_id": null,
+  "fix_task_id": "FIX-D541",
   "updated_at": "2026-08-28",
-  "updated_by": "CTO"
+  "updated_by": "K3"
 }
