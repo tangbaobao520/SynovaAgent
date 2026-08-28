@@ -873,3 +873,4 @@ Binary file .claude/bypass.log matches
 2026-08-28T22:28:08+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/d554-post-commit-no-sweep
 2026-08-28T22:28:58+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/d554-post-commit-no-sweep
 2026-08-28T22:29:10+08:00 | GATE_FAIL_SOFT | exit=1 | branch=chore/d554-post-commit-no-sweep
+2026-08-28T22:31:46+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=91f52fcb2c1e86d04137f78270af48114eb2abc2
