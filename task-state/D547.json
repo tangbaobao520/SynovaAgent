@@ -1,18 +1,30 @@
 {
   "task_id": "D547",
-  "title": "skeleton-brief-gate（骨架 brief 占位符物理门禁）",
+  "title": "skeleton-brief-gate",
   "status": "impl_done",
   "spec": null,
   "impl": {
     "by": "CTO",
     "at": "2026-08-28",
     "branch": "fix/d547-skeleton-brief-gate",
-    "commit": "PR #268 合并（d812e0f5）",
-    "note": "教训机制固化：pre-commit 组6 hard_check 骨架 brief 占位符（<agent>/<本任务在哪一层）→ 硬阻断；配对测试 6/6；三次同类失误归一类一机制"
+    "commit": "187c7460",
+    "files": [
+      "scripts/pre-commit-check.sh",
+      "tests/control-tower/skeleton-brief-gate.test.sh",
+      ".claude/task-briefs/2026-08-28-D547-skeleton-brief-gate.md"
+    ]
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-08-28-D540-D547-governance-closeout.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "findings": [
+      "P2: skeleton-brief-gate.test.sh 未入 CI 密封清单（见 P1-3 系统级发现）"
+    ],
+    "by": "K3",
+    "at": "2026-08-28"
+  },
   "fix_task_id": null,
-  "slice": "governance-closeout",
   "updated_at": "2026-08-28",
-  "updated_by": "CTO"
+  "updated_by": "K3"
 }
