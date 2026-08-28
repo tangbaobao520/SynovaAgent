@@ -1,0 +1,18 @@
+{
+  "task_id": "D547",
+  "title": "skeleton-brief-gate（骨架 brief 占位符物理门禁）",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "by": "CTO",
+    "at": "2026-08-28",
+    "branch": "fix/d547-skeleton-brief-gate",
+    "commit": "PR #268 合并（d812e0f5）",
+    "note": "教训机制固化：pre-commit 组6 hard_check 骨架 brief 占位符（<agent>/<本任务在哪一层）→ 硬阻断；配对测试 6/6；三次同类失误归一类一机制"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "slice": "governance-closeout",
+  "updated_at": "2026-08-28",
+  "updated_by": "CTO"
+}
