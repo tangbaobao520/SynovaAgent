@@ -63,9 +63,13 @@ MISSING=""
 # D414/U1c: git log 失败检测 — 原 `|| true` 会把"git 失败空循环"当成"对账通过"（M1 假 PASS）。
 # D451: 豁免"纯补记提交"——只改 .claude/bypass.log 的提交本身就是补记动作，
 #   它改的就是证据文件，不能被要求"自己被自己记录"（否则补记→新提交→再缺→死循环）。
-# D508: 对账范围 merge-base 化（Win PR#128 #7 实测 6+ 次补记循环根治）——
-#   "$BASE..HEAD" 在 merge main 后会把 main 侧已验提交也落入范围，只制造补记死循环。
-#   merge-base 起点后范围=分支自己的新提交；main 引入提交天然排除（merge-base 是其祖先）。
+# D508: 对账范围 merge-base 化（范围收窄优化）——"$BASE..HEAD" 在 merge main 后
+#   会把 main 侧已验提交也落入范围，只制造补记噪音；merge-base 起点后范围=分支自己的
+#   新提交，main 引入提交天然排除（merge-base 是其祖先）。
+#   如实注记（D561，K3 P1-D508——原注释声称「6+ 次补记循环根治」不实）:
+#   merge-base 化只是范围收窄，非根治——已 merge 场景下 merge-base(BASE, HEAD) 收敛到
+#   同一点，范围与原语义恒等；补记循环的真根治 = D513 防御性 fetch 刷新（本文件上方，
+#   tracking ref 陈旧才是根因）+ D451 纯补记豁免（打断「补记→新提交→再缺」死循环）。
 MB=$(git merge-base "$BASE" HEAD 2>/dev/null || echo "")
 if [ -n "$MB" ]; then
   RANGE="${MB}..HEAD"

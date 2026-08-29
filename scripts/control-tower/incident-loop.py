@@ -57,10 +57,19 @@ INCIDENT_LOG = LOGS_DIR / "incident.log"
 KNOWN_PATTERNS = REPO_ROOT / ".codex" / "audit" / "known-error-patterns.json"
 
 # D316: Git 安装若未写入 bash 到 PATH（常见: 仅 Git\cmd 入 PATH），须显式查找。
-# 先试 PATH（shutil.which），再试 Git 标准安装路径，最后 None → 调用方 fail-open。
+# 先试 PATH（shutil.which），再试平台标准安装路径，最后 None → 调用方 fail-open。
 GIT_BASH_CANDIDATES = (
     r"C:\Program Files\Git\bin\bash.exe",
     r"C:\Program Files\Git\usr\bin\bash.exe",
+)
+# D561 (K3 P1-D535): POSIX 平台 bash 恒存于标准路径（macOS /bin/bash）——
+# 原 fallback 仅 Windows 候选，macOS 受限 PATH 下 _find_bash 返回 None → verify 恒
+# degraded（incident-loop.test.sh 4b 恒红 7/8）。POSIX 候选使 fallback 跨平台对齐。
+POSIX_BASH_CANDIDATES = (
+    "/bin/bash",
+    "/usr/bin/bash",
+    "/usr/local/bin/bash",
+    "/opt/homebrew/bin/bash",
 )
 
 
@@ -70,11 +79,15 @@ def _find_bash() -> str | None:
     Why (D316): 纯系统 PATH（CI/任务计划/非 Git Bash 启动的 python）下
     subprocess.run(["bash", ...]) 抛 WinError 2 → verify() 恒 degraded，
     学习闭环的"verify 闭环成功"不可用。修复后任何环境都能解析 Git bash。
+    Why (D561): macOS/Linux 下受限于 PATH 时（incident-loop.test.sh 4b），需
+    回退 POSIX 标准路径——bash 恒存于 /bin/bash（POSIX 规范），无平台感知
+    候选则 macOS 恒 degraded。Windows 候选行为不变（D316 修复保持）。
     """
     found = shutil.which("bash")
     if found:
         return found
-    for cand in GIT_BASH_CANDIDATES:
+    candidates = GIT_BASH_CANDIDATES if os.name == "nt" else POSIX_BASH_CANDIDATES
+    for cand in candidates:
         if os.path.exists(cand):
             return cand
     return None
@@ -89,7 +102,20 @@ def _bash_env(bash: str) -> dict:
       Git bins（usr/bin+bin+cmd+mingw64）→ cat/grep/sed
       sys.executable 目录 + WindowsApps → python3
     MSYS bash 的 PATH 分隔符是 ':'（Windows ';' 会被当作普通字符）。
+    D561 (POSIX): macOS/Linux 下 hook 依赖 cat/grep（/bin、/usr/bin）——
+    受限 PATH 时同需显式补全 POSIX 标准目录 + python3 目录（Windows 分支不变）。
     """
+    env = dict(os.environ)
+    if os.name != "nt":
+        # D561: POSIX 平台——hook 依赖链 cat/grep/git 恒在 /bin、/usr/bin（部分
+        # brew 工具在 /usr/local/bin、/opt/homebrew/bin）；prepend 标准目录，
+        # 保留原 PATH 尾接（受限 PATH 场景下其余依赖经 python3 目录解析）。
+        env["PATH"] = ":".join([
+            "/bin", "/usr/bin", "/usr/local/bin", "/opt/homebrew/bin",
+            str(Path(sys.executable).parent),
+            env.get("PATH", ""),
+        ])
+        return env
     root = Path(bash).parent.parent
     if root.name == "usr":          # .../Git/usr/bin/bash.exe → 上移一级
         root = root.parent
