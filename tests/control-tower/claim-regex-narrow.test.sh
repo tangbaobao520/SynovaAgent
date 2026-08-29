@@ -17,6 +17,8 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 #   T5 边界: 空 brief 内容 → 不触发; 无 brief 文件 → 不触发（检查有 guard）
 #
 # 退出码: 0 = 全部通过
+# D560 (D549 重做, K3 FAIL 闭合): T5b guard 行动态定位（D542 同款）——
+#   硬编码 sed -n '749p' 在 D542/D543 加行后漂移 → T5b 恒红且无人察觉（不在 canary）。
 # ═══════════════════════════════════════════════════════════════
 set -uo pipefail
 
@@ -67,11 +69,15 @@ triggers "engine-core 拆分已完成，旧引用清零" && ok "T4d 降级: '拆
 
 # ── T5 边界: 空 brief / 无 brief 不触发 ──
 triggers "" && no "T5a 空 brief 误触发" || ok "T5a 边界: 空 brief 不触发"
-# 无 brief 文件 → pre-commit L749 guard `[ -n "$BRIEF" ] && [ -f "$BRIEF" ]` 直接跳过 grep（不触发）
-if sed -n '749p' "$PCC" | grep -qF '[ -f "$BRIEF" ]'; then
-  ok "T5b 边界: 无 brief 文件 guard 存在（跳过 grep → 不触发）"
+# 无 brief 文件 → guard `[ -n "$BRIEF" ] && [ -f "$BRIEF" ]` 直接跳过 grep（不触发）
+# D560 动态化（D542 同款手法，D549 恒红教训）：guard 行禁止硬编码行号——
+# 取正则检查行（LINE）上方最近的 [ -f "$BRIEF" ] guard（≤10 行 = 紧邻包裹本检查），
+# D542/D543 加行致 749 漂移到 755 时本测试仍自动跟随
+GUARD_LINE=$(head -n "$((LINE - 1))" "$PCC" | grep -nF '[ -f "$BRIEF" ]' | tail -1 | cut -d: -f1)
+if [ -n "$GUARD_LINE" ] && [ "$((LINE - GUARD_LINE))" -le 10 ] && sed -n "${GUARD_LINE}p" "$PCC" | grep -qF '[ -f "$BRIEF" ]'; then
+  ok "T5b 边界: 无 brief 文件 guard 存在（L${GUARD_LINE}，动态定位）"
 else
-  no "T5b 无 brief guard 缺失"
+  no "T5b 无 brief guard 缺失或漂离正则检查行（LINE=${LINE}）"
 fi
 
 echo ""
