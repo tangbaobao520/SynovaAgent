@@ -1,0 +1,11 @@
+{
+  "task_id": "D560",
+  "title": "D549 重做 — claim-regex 动态化 + canary 密封补齐（K3 FAIL 闭合）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-29",
+  "updated_by": "alloc-task-id"
+}
