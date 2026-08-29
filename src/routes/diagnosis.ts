@@ -9,6 +9,7 @@
  * 铁律 39: L1 通过 DiagnosisEngine 接口调用引擎，不直接 import engine-core。
  * D10: engine-core 退役 — 使用 SynovaDiagnosisEngineImpl 自研引擎。
  * D480: 完成时渲染 onePager（executive_summary 模板，经 L2 report-assembler）+ 有界缓存供 GET。
+ * D489: consult 改经 DiagnosisLauncher — 诊断阶段/模块/报告事件落 session_events（D394 片2-B 可回放）。
  */
 import { Router, type Request, type Response } from 'express';
 import { createProvider } from '../providers';
@@ -17,6 +18,9 @@ import { loadConfig } from '../config';
 import { createLogger } from '@synova/logger';
 import type { DiagnosisEngine, DiagnosisEvent, ConsultationResult } from '../l2-interfaces/diagnosis-engine';
 import { ToolRegistry } from '../agent/tools';
+// D489: consult 路由经 DiagnosisLauncher 落流（L1→L2 合法方向；SessionStoreLike 内联类型复用）
+import { DiagnosisLauncher, type SessionStoreLike } from '../agent/diagnosis-launcher';
+import type { EngineContext } from '../agent/engine-context';
 // 铁律 39: L1 不直接引用 L4。GraphStoreLike 由 L2 post-diagnosis-processor 声明。
 import type { GraphStoreLike, CommunityReportLike, PostProcessEvents } from '../agent/post-diagnosis-processor';
 // Slice 3: 判断卡片生成器
@@ -165,6 +169,47 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
       },
     };
 
+    // D489: 会话装配 — 从 orchestration.db 构造 SessionStore（resume 路由 L358-359 先例）+ createSession
+    // 得非空 sessionId（D487 空 id 桶缺陷防线：无 id 不落 '' 桶）。无 db 环境降级不崩
+    // （sessionStore 为可选依赖，launcher 内部守卫跳过落流，铁律 24/31）。
+    const orchestrationDb = (req.app.locals.orchestration as { db?: unknown } | undefined)?.db;
+    let sessionStore: SessionStoreLike | undefined;
+    let sessionId = '';
+    if (orchestrationDb) {
+      try {
+        const { SessionStore } = await import('../store/session-store');
+        const store = new SessionStore(orchestrationDb as never);
+        sessionStore = store;
+        sessionId = store.createSession(teamId).id;
+      } catch (err: unknown) {
+        log.warn({ err, consultId }, '会话装配失败 — degraded（诊断继续，不落流）');
+        sessionStore = undefined;
+        sessionId = '';
+      }
+    }
+
+    // D489: 最小 EngineContext + DiagnosisLauncher 装配（铁律 39: L1 经 launcher → DiagnosisEngine 接口）。
+    // 可选组件全 null 走 launcher 内部守卫降级（dev doc §4.5）；graphBridge=null 保持零行为变化（§3.3，
+    // GraphBridge 同步归 ConversationEngine 路径）；flags 双 false 关闭社区报告/实体解析（现状 consult 无此二步）。
+    const engineCtx = {
+      provider,
+      messages: (initiator.concerns || []).map(c => ({ role: 'user' as const, content: c })),
+      orgId: teamId,
+      sessionId,
+      toolRegistry,
+      hookRunner: null,
+      eventBus: null,
+      evidenceCollector: null,
+      corroborationEngine: null,
+      graphBridge: null,
+      graphStore: null,
+      flags: { enableCommunityReports: false, enableEntityResolution: false },
+      loggerPrefix: 'routes/diagnosis',
+      diagnosisEngine: engine,
+      sessionStore,
+    } as EngineContext;
+    const launcher = new DiagnosisLauncher(engineCtx, engine);
+
     const active: ActiveConsultation = {
       consultId, teamId, phase: 0, aborted: false,
       engine, events: [],
@@ -177,16 +222,11 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
       setTimeout(() => activeConsultations.delete(consultId), 5000);
     });
 
+    // D489: 引擎运行改经 launcher.startDiagnosis（onEvent 双写落流后透传，SSE 行为不变）。
+    // launcher 消费 ctx.orgId 作 teamId、ctx.messages user 消息作 concerns（每条截 200 字，
+    // 与 ConversationEngine 路径一致）；initiator 语义（role/name）透传不变。
     // 通过 onEvent 回调推送 SSE 事件（替代旧代码的 500ms 轮询 tracer.events()）
-    const result = await engine.runConsultation(
-      teamId,
-      {
-        role: initiator.role,
-        name: initiator.name || initiator.role,
-        teamId,
-        concerns: initiator.concerns || [],
-      },
-      (event: DiagnosisEvent) => {
+    const onEvent = (event: DiagnosisEvent): void => {
         if (active.aborted) return;
         active.phase = event.phase;
         active.events.push({
@@ -228,8 +268,20 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
             log.warn({ cardErr, eventType: event.type }, '判断卡片生成失败 — degraded');
           }
         }
-      },
+    };
+
+    const result = await launcher.startDiagnosis(
+      initiator.role,
+      initiator.name || initiator.role,
+      onEvent,
     );
+
+    // D489: launcher 内部已捕获引擎异常（发射 error 事件 + 落流）并返回 null — 显式收尾不静默（铁律 24/31）
+    if (!result) {
+      const failed = active.events.find(e => e.type === 'error');
+      sseError(res, 'DIAGNOSIS_FAILED', failed?.message || '诊断引擎不可用');
+      return;
+    }
 
     // ═══ P0-1: 诊断后处理 — GraphBridge 同步 + 社区报告 + 实体解析 ═══
     // 铁律 39: L1 通过 L2 post-diagnosis-processor 调用 L4, 不直接 import L4。

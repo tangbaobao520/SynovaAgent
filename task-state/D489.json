@@ -1,0 +1,28 @@
+{
+  "task_id": "D489",
+  "title": "D394 片2-B——GA 诊断会话事件化·consult 路由接线（DiagnosisLauncher 完整替换）",
+  "slice": "GA-SESS-2B",
+  "status": "impl_done",
+  "risk": "medium",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-D489-ga-consult-events-slice2b-20260829.md",
+    "commit": "PENDING",
+    "by": "dev-doc",
+    "at": "2026-08-29"
+  },
+  "impl": {
+    "commit": "PENDING",
+    "by": "claude",
+    "at": "2026-08-29",
+    "files": [
+      "src/routes/diagnosis.ts",
+      "tests/routes/diagnosis-consult-events.test.ts",
+      "task-state/D489.json"
+    ]
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-29",
+  "updated_by": "claude",
+  "note": "测试先行 red→green：red=① SqliteError no such table agent_sessions（现状直建引擎零事件零会话）→ green=4/4；D487 回归 5/5；tsc 基线对照零新增（revert→run→restore 实证）。行为差异如实声明（dev doc §4.5 已裁定）：concerns 经 launcher slice(0,200)；SSE 首条多 launcher 初始 phase_started(phase 1)；ctx.provider 在场触发 background-review（fire-and-forget + .catch(log.warn) 降级）；report 事件只落库不推 SSE。"
+}
