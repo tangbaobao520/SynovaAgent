@@ -1,11 +1,34 @@
 {
   "task_id": "D564",
   "title": "incident-loop.test.sh Windows 兼容修复 canary 首测双失败",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": null,
-  "impl": null,
+  "impl": {
+    "commit": "a20cd54a",
+    "by": "deepseek-harness",
+    "at": "2026-08-30",
+    "files": [
+      "tests/control-tower/incident-loop.test.sh",
+      "scripts/control-tower/incident-loop.py",
+      "scripts/hooks/hook-git-detect.sh",
+      ".github/workflows/ci.yml",
+      ".claude/task-briefs/2026-08-29-D564-incident-loop-win-fix.md",
+      "memory/notes/implemented/2026-08-30-d564-win-bash-python-injection.md",
+      "task-state/D564.json"
+    ],
+    "evidence": [
+      "失败定位（无 gh 凭据 → GitHub API check-run annotations 物理证据）: 失败 run 33257792825（head 15d6f64e）windows check-run 99114428263 annotations 捕获「结果: 6 通过, 2 失败」+ 断言 5 幂等通过；排除法锁定双失败 = 断言 6 + 4b（仅有的两条依赖子进程 hook 环境的 verify 断言——record/suggest/幂等依赖会话 python3 已被 6/8 证明可用，known-error-patterns.json 为 git 跟踪文件）",
+      "根因链: hook-git-detect.sh L33 依赖 python3 → _bash_env（D316）拼接 PATH 中 WindowsApps python3 = Store 占位 stub（执行 9009）且先于原 PATH → hook 静默 exit 0（fail-open）→ 输出无「禁止」→ verify open",
+      "修复: incident-loop.py _bash_env 注入 SYNO_PYTHON=sys.executable（POSIX/nt 单一语义）+ hook 优先消费、缺省回落 PATH python3（D312 原行为零变化）；第一性原理——调用方已知确定可用解释器，显式传递优于 PATH 赌博",
+      "S-5 先红: 新增 4c 回归断言（PATH 无 python3 下 hook 仍拦 stash，双平台确定性）未修 hook 实测红 8 通过 1 失败 → 修复后 9 通过 0 失败（本地 macOS 全量实跑）",
+      "回归: hook-git-detect.test.sh 13/13 + ban-stash.test.sh 6/6 绿（hook 消费端向后兼容证实）；bash -n ×2 + py_compile PASS；check-plan-integrity + check-brief-parseable PASS",
+      "canary 回列: ci.yml incident-loop 复位 18ae1b80 原位（g12 之后），26→27；grep 确认全仓无别处硬编码 canary 数量",
+      "决策 Note: memory/notes/implemented/2026-08-30-d564-win-bash-python-injection.md（D395-a/D534 commit-msg 门禁）"
+    ],
+    "notes": "唯一有效验收通道 = CI Windows job（本地 macOS 无法复现 Win 失败语义）——CTO 合并前须查 check-runs job 级 windows-latest success。边界: hook-git-guard.sh 内部 python3（窗口标记写入）在坏 python3 环境仍 fail-open degraded（本批不改，同型根因记入 Note 后续）；brief Done「8 通过」按新增 4c 断言如实修正为「9 通过」（macOS 原 8 断言零变化）。观察: brief Q0 原文称失败 run「3323...」与实际 33257792825 不符（brief 笔误，annotations 为准）"
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-08-29",
-  "updated_by": "alloc-task-id"
+  "updated_at": "2026-08-30",
+  "updated_by": "deepseek-harness"
 }
