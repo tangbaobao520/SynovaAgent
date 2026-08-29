@@ -1,35 +1,51 @@
 {
-  "task_id": "D537",
-  "title": "控制塔并行污染+提交链摩擦根治（Win 反馈 #1-#6，单源 6 项）",
-  "status": "impl_done",
-  "spec": {
-    "doc": "docs/synova/coordination/派单-D537-并行CTO-20260826.md",
-    "source": "Win 侧 D486 实录反馈",
-    "slice": "control-tower"
-  },
-  "impl": {
-    "by": "dsh-parallel-cto",
-    "at": "2026-08-26",
-    "branch": "fix/d537-tower-parallel-commit-friction",
-    "commit": "e4cb41ab",
-    "files": [
-      "scripts/hooks/post-commit.sh",
-      "scripts/pre-commit-check.sh",
-      "scripts/control-tower/synova-commit",
-      "scripts/control-tower/baseline-check.sh",
-      ".github/workflows/ci.yml",
-      ".codex/control-tower/VERSION.md",
-      "tests/control-tower/parallel-main-tree-occupancy.test.sh",
-      "tests/control-tower/fastlane-extended.test.sh",
-      "tests/control-tower/baseline-check.test.sh",
-      "tests/control-tower/post-commit.test.sh",
-      "memory/notes/implemented/2026-08-26-d537-tower-parallel-commit-friction.md"
-    ],
-    "note": "5 项修已有 bug（#1 CRLF 已由 D520 修复；#6 windows 矩阵已由 D520 建立）。#2 主树占用检测前移 pre-commit（last_seen_at 近期过滤，僵尸 session 不误拦）；#3 fastlane 扩展（merge MERGE_HEAD + 补记组合白名单）；#4 D521-2 hook 层登记恢复（D530 覆盖丢失根治补记循环）；#5 baseline 漂移归因（vs origin/main 改动集，本分支引入才拦）；#6 canary 补 2 新测试双平台全绿。V5.1.4 PATCH。防膨胀：全复用既有机制，零新独立机制。",
-    "commit_note": "CTO 复核修正（2026-08-29）：原 95b09aec08d6814928894244aa02bf5ec9d71d1b 为影子登记/废弃分支提交，真实实现提交 e4cb41ab（M7 纪律）"
-  },
-  "audit": null,
-  "fix_task_id": null,
-  "updated_at": "2026-08-26",
-  "updated_by": "dsh-parallel-cto"
+ "task_id": "D537",
+ "title": "控制塔并行污染+提交链摩擦根治（Win 反馈 #1-#6，单源 6 项）",
+ "status": "impl_done",
+ "spec": {
+  "doc": "docs/synova/coordination/派单-D537-并行CTO-20260826.md",
+  "source": "Win 侧 D486 实录反馈",
+  "slice": "control-tower"
+ },
+ "impl": {
+  "by": "dsh-parallel-cto",
+  "at": "2026-08-26",
+  "branch": "fix/d537-tower-parallel-commit-friction",
+  "commit": "e4cb41ab",
+  "files": [
+   "scripts/hooks/post-commit.sh",
+   "scripts/pre-commit-check.sh",
+   "scripts/control-tower/synova-commit",
+   "scripts/control-tower/baseline-check.sh",
+   ".github/workflows/ci.yml",
+   ".codex/control-tower/VERSION.md",
+   "tests/control-tower/parallel-main-tree-occupancy.test.sh",
+   "tests/control-tower/fastlane-extended.test.sh",
+   "tests/control-tower/baseline-check.test.sh",
+   "tests/control-tower/post-commit.test.sh",
+   "memory/notes/implemented/2026-08-26-d537-tower-parallel-commit-friction.md"
+  ],
+  "note": "5 项修已有 bug（#1 CRLF 已由 D520 修复；#6 windows 矩阵已由 D520 建立）。#2 主树占用检测前移 pre-commit（last_seen_at 近期过滤，僵尸 session 不误拦）；#3 fastlane 扩展（merge MERGE_HEAD + 补记组合白名单）；#4 D521-2 hook 层登记恢复（D530 覆盖丢失根治补记循环）；#5 baseline 漂移归因（vs origin/main 改动集，本分支引入才拦）；#6 canary 补 2 新测试双平台全绿。V5.1.4 PATCH。防膨胀：全复用既有机制，零新独立机制。",
+  "commit_note": "CTO 复核修正（2026-08-29）：原 95b09aec08d6814928894244aa02bf5ec9d71d1b 为影子登记/废弃分支提交，真实实现提交 e4cb41ab（M7 纪律）"
+ },
+ "audit": {
+  "report": "docs/synova/audit-reports/2026-08-28-D501-D550-impl-done-batch.md",
+  "verdict": "CONDITIONAL PASS",
+  "blockers": [
+   "P1-1（M2）: 「#6 canary 补 2 新测试双平台全绿」与 job 级证据矛盾——e4cb41ab（PR #223 合并）Control Tower ubuntu=FAILURE + windows=FAILURE（Vitest/TS 绿），红态在 main 存续 ~2 天（361a3bfd/be99d625 均双红）才恢复。根因候选：D537 #4 重写 post-commit.test.sh 沙箱缺 git identity（`git config user.name` 由 D554 补入）→ CI runner 无全局身份影子提交 128；post-commit-marker 默认分支 master/main（D543 3b1a65a9 修复）。归因: implement + control-tower"
+  ],
+  "findings": [
+   "#1 CRLF 引用正确（D520 已修）；#2 主树占用前移 pre-commit:776+（三态+1800s last_seen_at 过滤）",
+   "#3 fastlane 三通道扩展 synova-commit:331-355（只认 --files 显式列表防 D414）",
+   "#4 post-commit hook 层登记恢复 post-commit.sh:69-94（post-commit.test.sh 12/12 本机绿）",
+   "#5 baseline 漂移归因 baseline-check.sh（vs origin/main 改动集，归因不可用 fail-closed；测试 16/16）",
+   "#6 2 新测试入 canary 属实（parallel-main-tree-occupancy + fastlane-extended，本机均绿）",
+   "L4: PR #223 分支 CI 末跑 failure 仍合并——合并门禁缺失 → 台账 CT 队列"
+  ],
+  "by": "K3",
+  "at": "2026-08-29"
+ },
+ "fix_task_id": null,
+ "updated_at": "2026-08-29",
+ "updated_by": "K3"
 }
