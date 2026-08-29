@@ -1,11 +1,29 @@
 {
   "task_id": "D560",
   "title": "D549 重做 — claim-regex 动态化 + canary 密封补齐（K3 FAIL 闭合）",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": null,
-  "impl": null,
+  "impl": {
+    "commit": "2615844e",
+    "by": "deepseek-harness",
+    "at": "2026-08-29",
+    "files": [
+      "tests/control-tower/claim-regex-narrow.test.sh",
+      ".github/workflows/ci.yml",
+      "task-state/D560.json"
+    ],
+    "evidence": [
+      "先红：修复前 T5b 实测 8/9 失败（sed -n '749p' 指向空行，guard 实际漂至 :755）——K3 声称属实",
+      "修复：T5b 动态定位（D542 同款）取正则检查行上方最近 [ -f \"$BRIEF\" ] guard（≤10 行邻接）；漂移弹性证明：guard 上方临时插 3 行（755→759）动态版自动跟随 9/9 绿，还原 0 diff",
+      "canary 补齐：ci.yml 清单 19→25，6 测试具名源 = K3 报告 2026-08-28-D540-D547 §2 P1-3 表（claim-regex-narrow/ci-strict-visible/skeleton-brief-gate/clone-config-init/clone-shadow-commit/verify-parallel-ci），6 测试本地全绿后入列",
+      "25 项 canary 本地全量模拟 FAIL=0（无 node_modules 干净态，与 CI canary job 环境同构）+ simulate-ci 7/7",
+      "真实代码 diff 核对：git show 2615844e --stat = ci.yml +11 / claim-regex-narrow.test.sh +14（D549 731d2469 为零代码 task-state 11 行）",
+      "Done verify 全过：grep -c \"sed -n '749p'\" = 0；grep -c claim-regex-narrow ci.yml ≥1；bash 测试 0 失败；task-state impl_done"
+    ],
+    "notes": "brief Q2 所列台账 CT-47 登记 + K3 审计清单翻转/立项行——d0960c40（#298）已由 CTO 完成，本批不重复不冒领（如实登记）。D549 声称的 6 测试从未具名，本批以 K3 P1-3 表为准补齐，「19→25」经由本 PR 成真。fastlane-bypass-only/simulate-ci 本机初跑红 = node_modules 拖慢 git 扫描的环境时序（单变量证明：移除 node_modules 后同分支 8/8、7/7 绿；CI canary job 无 node_modules 不受影响）"
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-08-29",
-  "updated_by": "alloc-task-id"
+  "updated_by": "deepseek-harness"
 }
