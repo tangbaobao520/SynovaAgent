@@ -75,7 +75,7 @@
 * **DS1 动态断言**：`grep -n "expert-registry" tests/e2e/full-pipeline.integration.test.ts` 命中（yaml 读取）。
 * **DS2 断言对齐**：`grep -n "toBe(N)\|expect(experts.length)" tests/e2e/full-pipeline.integration.test.ts` 命中（动态 N 断言，非硬编码 9）。
 * **DS3 测试全绿**：本地 dev server 运行态 `npx vitest run tests/e2e/full-pipeline.integration.test.ts` 全 pass（含 Stage 5b；red 先行 9 断言失败已证）。
-* **DS4 零回归**：`vitest run tests/e2e/customer-flow.e2e.test.ts tests/agent/diagnosis-launcher.test.ts` 绿 + `tsc --noEmit` 零新增（30=30）。
+* **DS4 零回归**：`vitest run tests/e2e/customer-flow.e2e.test.ts tests/agent/diagnosis-session-events.test.ts` 绿 + `tsc --noEmit` 零新增（30=30）。
 * **DS5 范围一致**：`git diff --name-only HEAD^` 与 §3.1 写集一致（1 文件 + 簿记），无越界。
 * **DS6 无绕过**：`grep -n "no-verify" .claude/bypass.log` 零命中。
 * **DS7 推送 + CI**：`git push` 后 `git log origin/main..HEAD --oneline` 空 + CI 任务相关 job 绿（e2e 本身本地验证，交付报告留 server 启动证据）。
@@ -97,7 +97,7 @@
 | DS1 动态断言 | grep -n "expert-registry" tests/e2e/full-pipeline.integration.test.ts | 命中 |
 | DS2 断言对齐 | grep -n "expect(experts.length)" tests/e2e/full-pipeline.integration.test.ts | 动态 N（非硬编码 9） |
 | DS3 测试全绿 | npx vitest run tests/e2e/full-pipeline.integration.test.ts（server 运行态） | 全 pass（非 skip） |
-| DS4 零回归 | vitest run tests/e2e/customer-flow.e2e.test.ts tests/agent/diagnosis-launcher.test.ts + tsc --noEmit | 全绿 + 零新增 |
+| DS4 零回归 | vitest run tests/e2e/customer-flow.e2e.test.ts tests/agent/diagnosis-session-events.test.ts + tsc --noEmit | 全绿 + 零新增 |
 | DS5 范围一致 | git diff --name-only HEAD^ | 与写集一致 |
 | DS6 无绕过 | grep -n "no-verify" .claude/bypass.log | 零命中 |
 | DS7 推送 + CI | git log origin/main..HEAD --oneline | 空（推送后） |
