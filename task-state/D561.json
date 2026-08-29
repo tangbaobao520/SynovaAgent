@@ -1,11 +1,30 @@
 {
   "task_id": "D561",
   "title": "D509/D535/D508 三 P1 恢复批 — g12-day-window 恢复 + incident-loop 4b + 注释如实化",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": null,
-  "impl": null,
+  "impl": {
+    "commit": "faf79023",
+    "by": "deepseek-harness",
+    "at": "2026-08-29",
+    "files": [
+      "tests/control-tower/g12-day-window.test.sh",
+      "scripts/control-tower/incident-loop.py",
+      "scripts/control-tower/check-bypass-log.sh",
+      "memory/notes/implemented/2026-08-29-d561-three-p1-restore.md",
+      "task-state/D561.json"
+    ],
+    "evidence": [
+      "D509 恢复：g12-day-window.test.sh 自 dangling 9cb09dbb 恢复（77 行）+ 适配（输出格式对齐仓库惯例）；实测 10/10 绿（三接线断言匹配当前 main D506 ERE 实现 L1198/L1210 + 行为断言 7 项）",
+      "D535 修复：incident-loop.test.sh 4b 先红 7/8（K3/CTO 声称属实）→ _find_bash POSIX 候选 + _bash_env POSIX 分支 → 8/8 绿；Windows 分支 os.name 隔离零变化",
+      "D508 如实化：check-bypass-log.sh 注释不再声称「6+ 次补记循环根治」，明示 merge-base 化 = 范围收窄、真根治 = D513 fetch 刷新 + D451 纯补记豁免；配对测试 5/5 绿（行为零变化）",
+      "决策 Note: memory/notes/implemented/2026-08-29-d561-three-p1-restore.md（D395-a commit-msg 门禁过）",
+      "bash -n ×2 PASS；check-plan-integrity Q2 排除项 PASS；check-silent-swallow --utf8 的 11 缺头块 = main 存量（基线对照相同，非本批引入）"
+    ],
+    "notes": "D316 Windows 修复保持不变（D316 教训的平台盲区补全：修一类错时问「其他平台呢」）；Done verify「grep 0 失败」经输出格式适配后命中"
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-08-29",
-  "updated_by": "alloc-task-id"
+  "updated_by": "deepseek-harness"
 }
