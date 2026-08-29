@@ -22,8 +22,22 @@
     ],
     "notes": "brief Q2 所列台账 CT-47 登记 + K3 审计清单翻转/立项行——d0960c40（#298）已由 CTO 完成，本批不重复不冒领（如实登记）。D549 声称的 6 测试从未具名，本批以 K3 P1-3 表为准补齐，「19→25」经由本 PR 成真。fastlane-bypass-only/simulate-ci 本机初跑红 = node_modules 拖慢 git 扫描的环境时序（单变量证明：移除 node_modules 后同分支 8/8、7/7 绿；CI canary job 无 node_modules 不受影响）"
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-08-29-D558-D561-reaudit.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "reaudit": true,
+    "findings": [
+      "① 真实代码：claim-regex-narrow.test.sh +14（L49 LINE 定位 + L76-81 T5b 动态 guard）+ ci.yml +11（6 测试入列）——对比 D549 零代码壳",
+      "② 漂移弹性独立复现：guard 上方插 3 行（755→758）→ T5b 动态跟随仍 9/9 绿",
+      "③ canary 清单 25 项（sort -u 实测）；新增 6 项与 D540-D547 报告 §2 P1-3 具名表逐字一致；6 测试本地全绿",
+      "④ 恒红根除：父提交 8/9（T5b 红，上轮 K3 声称复现）→ head 9/9；CI canary exit $FAIL（ci.yml:176）+ 5be1e03d CT 双平台 success = 25 项真跑全绿，真空绿根除",
+      "K3 复核项：grep -c \"sed -n '749p'\" = 1（L21 注释行残留，声称 0 过报）；可执行行 0 命中——实质成立，编码 P2（归因 implement，M2），不影响结论"
+    ],
+    "by": "K3",
+    "at": "2026-08-29"
+  },
   "fix_task_id": null,
   "updated_at": "2026-08-29",
-  "updated_by": "deepseek-harness"
+  "updated_by": "K3"
 }

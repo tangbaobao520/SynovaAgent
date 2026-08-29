@@ -23,8 +23,22 @@
     ],
     "notes": "D316 Windows 修复保持不变（D316 教训的平台盲区补全：修一类错时问「其他平台呢」）；Done verify「grep 0 失败」经输出格式适配后命中"
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-08-29-D558-D561-reaudit.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "reaudit": true,
+    "findings": [
+      "① g12 10/10 绿；三接线断言命中 main 实现（pre-commit-check.sh L1198 python3 ERE / L1210 [[ =~ ]] / today_files_by_suffix 零命中）；与 D506 原版 2370fc88 逐行 diff 仅 4 处路径/注释/输出格式适配，行为零变化；「dangling 9cb09dbb」来源对象不在共享仓库不可独立核验（P2 可追溯性）",
+      "② incident-loop 8/8 绿；父提交 7/8 红独立复现（4b 受限 PATH → POSIX 候选兜底）；Windows 分支（os.name==nt 候选 + _bash_env msys 路径）与父提交逐行一致，D316 修复保持",
+      "③ bypass 注释如实化：非注释变更行 = 0（行为零变化）；「补记循环根治」原声称已删，仅余 L69 如实注记（标明原声称不实）；check-bypass-log.test.sh 5/5 绿",
+      "P2×2 记录跟进：g12/incident-loop 两 hermetic 测试未入 CI canary（ci.yml 零命中，M3 家族复发，D526 告警可见）；incident-loop.test.sh L69-70 注释未同步 POSIX 机制",
+      "CI job 级：4df4f981 CT ubuntu/windows success；build(desktop) failure = main 预存"
+    ],
+    "by": "K3",
+    "at": "2026-08-29"
+  },
   "fix_task_id": null,
   "updated_at": "2026-08-29",
-  "updated_by": "deepseek-harness"
+  "updated_by": "K3"
 }
