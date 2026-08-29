@@ -1,43 +1,55 @@
 {
-  "task_id": "D524",
-  "title": "D518 dev doc prod 契约返修（M7 漂移，K3 C2）",
-  "status": "impl_done",
-  "spec": {
-    "doc": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D524-devdoc-contract-fix-20260825.md",
-    "source": "K3 切片 A 审计 P1-1 (C2)",
-    "report": "docs/synova/audit-reports/2026-08-25-D517-D519.md",
-    "dispatch": "docs/synova/coordination/派单-D524-devdoc-fix-20260825.md",
-    "commit": "aef5fbef（dev doc 定稿，分支 docs/d524-devdoc-fix）"
-  },
-  "impl": {
-    "commit": "532aaa41 (docs/d524-devdoc-fix) + 77bdaa8c (task-state)",
-    "by": "dsh-dev-doc",
-    "at": "2026-08-25",
-    "files": [
-      "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D518-single-entry-20260824.md",
-      "docs/synova/coordination/编码指令-D524-D518-devdoc-contract-fix-20260825.md"
-    ],
-    "evidence": {
-      "grep_old_contract": "grep -c 'node dist/src/index.js' SYNOVA-IMPL-DSH-D518-single-entry-20260824.md → 0",
-      "grep_new_contract": "grep -n 'dist/backend.mjs' → 9 处覆盖 §2/§5.1/§7",
-      "gatekeeper": "exit 0 (C1-C6 ALL PASS, 2026-08-25)"
-    }
-  },
-  "recheck": {
-    "by": "dsh-deepseek-harness（D524 编码 session）",
-    "at": "2026-08-25 21:21:37 +0800",
-    "branch": "docs/d524-devdoc-fix",
-    "branch_tip": "53651029",
-    "k3_c2_grep_clean": "grep -c 'node dist/src/index.js' → 0（零残留）",
-    "k3_c2_backfill_three": "grep -n 'dist/backend.mjs' → 9 处覆盖 §2:32/§5.1:55-58/§7:76（含 §1/§4/§10）",
-    "spec7_verify": "六命令全 PASS：旧契约 0 / 新契约 9 / ELECTRON_RUN_AS_NODE 3 / §7 断言 prod.args===['dist/backend.mjs'] / origin/main :70/:172 逐字一致 / gatekeeper exit 0",
-    "vitest": "env -u ELECTRON_RUN_AS_NODE npx vitest run tests/electron/backend-spawn.test.ts → 17/17 全绿（exit 0）",
-    "redline": "零 src/ electron/ tests/ scripts/audit/ 改动；分支 vs main 仅 5 文档/流程文件",
-    "evidence_file": "docs/synova/product-lines/evidence/D524-verify-20260825-2121.json"
-  },
-  "audit": null,
-  "fix_task_id": "D518",
-  "updated_at": "2026-08-25",
-  "updated_by": "dsh-dev-doc",
-  "slice": "L1-A"
+ "task_id": "D524",
+ "title": "D518 dev doc prod 契约返修（M7 漂移，K3 C2）",
+ "status": "impl_done",
+ "spec": {
+  "doc": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D524-devdoc-contract-fix-20260825.md",
+  "source": "K3 切片 A 审计 P1-1 (C2)",
+  "report": "docs/synova/audit-reports/2026-08-25-D517-D519.md",
+  "dispatch": "docs/synova/coordination/派单-D524-devdoc-fix-20260825.md",
+  "commit": "aef5fbef（dev doc 定稿，分支 docs/d524-devdoc-fix）"
+ },
+ "impl": {
+  "commit": "532aaa41 (docs/d524-devdoc-fix) + 77bdaa8c (task-state)",
+  "by": "dsh-dev-doc",
+  "at": "2026-08-25",
+  "files": [
+   "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D518-single-entry-20260824.md",
+   "docs/synova/coordination/编码指令-D524-D518-devdoc-contract-fix-20260825.md"
+  ],
+  "evidence": {
+   "grep_old_contract": "grep -c 'node dist/src/index.js' SYNOVA-IMPL-DSH-D518-single-entry-20260824.md → 0",
+   "grep_new_contract": "grep -n 'dist/backend.mjs' → 9 处覆盖 §2/§5.1/§7",
+   "gatekeeper": "exit 0 (C1-C6 ALL PASS, 2026-08-25)"
+  }
+ },
+ "recheck": {
+  "by": "dsh-deepseek-harness（D524 编码 session）",
+  "at": "2026-08-25 21:21:37 +0800",
+  "branch": "docs/d524-devdoc-fix",
+  "branch_tip": "53651029",
+  "k3_c2_grep_clean": "grep -c 'node dist/src/index.js' → 0（零残留）",
+  "k3_c2_backfill_three": "grep -n 'dist/backend.mjs' → 9 处覆盖 §2:32/§5.1:55-58/§7:76（含 §1/§4/§10）",
+  "spec7_verify": "六命令全 PASS：旧契约 0 / 新契约 9 / ELECTRON_RUN_AS_NODE 3 / §7 断言 prod.args===['dist/backend.mjs'] / origin/main :70/:172 逐字一致 / gatekeeper exit 0",
+  "vitest": "env -u ELECTRON_RUN_AS_NODE npx vitest run tests/electron/backend-spawn.test.ts → 17/17 全绿（exit 0）",
+  "redline": "零 src/ electron/ tests/ scripts/audit/ 改动；分支 vs main 仅 5 文档/流程文件",
+  "evidence_file": "docs/synova/product-lines/evidence/D524-verify-20260825-2121.json"
+ },
+ "audit": {
+  "report": "docs/synova/audit-reports/2026-08-28-D501-D550-impl-done-batch.md",
+  "verdict": "PASS",
+  "blockers": [],
+  "findings": [
+   "C2 闭合：旧契约 'node dist/src/index.js' grep=0；新契约 'dist/backend.mjs' 9 处覆盖 §2:32/§5.1:55-58/§7:76；ELECTRON_RUN_AS_NODE 3 处",
+   "doc=代码=测试三方一致（backend-spawn.cjs:70 + backend-spawn.test.ts:235）",
+   "vitest backend-spawn 17/17 绿（与 recheck 声称一致）",
+   "红线：532aaa41 仅 dev doc（9+/9-），77bdaa8c 仅 task-state；零 src/ electron/ scripts/audit/ 触碰"
+  ],
+  "by": "K3",
+  "at": "2026-08-29"
+ },
+ "fix_task_id": "D518",
+ "updated_at": "2026-08-29",
+ "updated_by": "K3",
+ "slice": "L1-A"
 }

@@ -1,16 +1,28 @@
 {
-  "task_id": "D550",
-  "title": "alloc-origin-merge（发号器占用合并 origin/main）",
-  "status": "impl_done",
-  "impl": {
-    "by": "CTO",
-    "at": "2026-08-28",
-    "branch": "fix/d550-alloc-origin",
-    "commit": "PR #276 合并（f1c9be5a）",
-    "note": "D547/D548 撞号盲区修复：占用检查合并 origin/main + SYNO_ALLOC_NO_REMOTE 测试注入缝，测试 13/13"
-  },
-  "audit": null,
-  "fix_task_id": null,
-  "updated_at": "2026-08-28",
-  "updated_by": "CTO"
+ "task_id": "D550",
+ "title": "alloc-origin-merge（发号器占用合并 origin/main）",
+ "status": "impl_done",
+ "impl": {
+  "by": "CTO",
+  "at": "2026-08-28",
+  "branch": "fix/d550-alloc-origin",
+  "commit": "PR #276 合并（f1c9be5a）",
+  "note": "D547/D548 撞号盲区修复：占用检查合并 origin/main + SYNO_ALLOC_NO_REMOTE 测试注入缝，测试 13/13"
+ },
+ "audit": {
+  "report": "docs/synova/audit-reports/2026-08-28-D501-D550-impl-done-batch.md",
+  "verdict": "PASS",
+  "blockers": [],
+  "findings": [
+   "①REMOTE_USED 合并：alloc-task-id.sh:84-95 origin/main 占用并入 + 不可读显式降级",
+   "②测试 seam：SYNO_ALLOC_NO_REMOTE=1（用例 1-5 隔离，用例 6 真实合并）",
+   "③撞号不复现：独立实测空本地 task-state → 发 D558 > main max D557",
+   "④alloc-task-id.test.sh 13/13；job 级（f1c9be5a）CT 双平台 success"
+  ],
+  "by": "K3",
+  "at": "2026-08-29"
+ },
+ "fix_task_id": null,
+ "updated_at": "2026-08-29",
+ "updated_by": "K3"
 }

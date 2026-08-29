@@ -1,35 +1,47 @@
 {
-  "task_id": "D520",
-  "title": "控制塔跨平台适配收口（CRLF/python3/fastlane/双平台CI/checklist）+ 版本纪律",
-  "status": "impl_done",
-  "spec": {
-    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D520-platform-adapters-20260824.md",
-    "by": "dsh-cto",
-    "at": "2026-08-24"
-  },
-  "impl": {
-    "by": "dsh-cto",
-    "at": "2026-08-24",
-    "branch": "feat/d520-platform",
-    "commit": "248e290f",
-    "files": [
-      "scripts/workflow/task-start.sh",
-      "scripts/pre-commit-check.sh",
-      "scripts/control-tower/PLATFORM-CHECKLIST.md",
-      ".github/workflows/ci.yml",
-      ".codex/control-tower/VERSION.md",
-      ".codex/control-tower/version.log",
-      "docs/synova/coordination/版本管理规范-控制塔.md",
-      "tests/control-tower/task-start-parallel.test.sh",
-      "tests/control-tower/platform-checklist.test.sh",
-      "memory/notes/implemented/2026-08-24-d520-platform-adapters.md"
-    ],
-    "note": "V5.0.2（V5.0.1 被 Win 线 verify-parallel 豁免占用，顺延）"
-  },
-  "audit": null,
-  "fix_task_id": null,
-  "updated_at": "2026-08-24",
-  "updated_by": "dsh-cto",
-  "note": "Codex 跨平台建议（Win 侧实测 CRLF bug P0 + 双平台 CI 缺失 + 适配层未收口）。创始人批准执行。并行 CTO session 认领。",
-  "priority": "P0"
+ "task_id": "D520",
+ "title": "控制塔跨平台适配收口（CRLF/python3/fastlane/双平台CI/checklist）+ 版本纪律",
+ "status": "impl_done",
+ "spec": {
+  "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D520-platform-adapters-20260824.md",
+  "by": "dsh-cto",
+  "at": "2026-08-24"
+ },
+ "impl": {
+  "by": "dsh-cto",
+  "at": "2026-08-24",
+  "branch": "feat/d520-platform",
+  "commit": "248e290f",
+  "files": [
+   "scripts/workflow/task-start.sh",
+   "scripts/pre-commit-check.sh",
+   "scripts/control-tower/PLATFORM-CHECKLIST.md",
+   ".github/workflows/ci.yml",
+   ".codex/control-tower/VERSION.md",
+   ".codex/control-tower/version.log",
+   "docs/synova/coordination/版本管理规范-控制塔.md",
+   "tests/control-tower/task-start-parallel.test.sh",
+   "tests/control-tower/platform-checklist.test.sh",
+   "memory/notes/implemented/2026-08-24-d520-platform-adapters.md"
+  ],
+  "note": "V5.0.2（V5.0.1 被 Win 线 verify-parallel 豁免占用，顺延）"
+ },
+ "audit": {
+  "report": "docs/synova/audit-reports/2026-08-28-D501-D550-impl-done-batch.md",
+  "verdict": "PASS",
+  "blockers": [],
+  "findings": [
+   "①eol=lf 终态正确：*.sh/*.py eol=lf（D520）+ renormalize 15 脏文件（D533）+ audit/control-tower -text 豁免；git ls-files --eol 实测仅豁免名单 4 个 .py 为 CRLF",
+   "②PYBIN 回退链：verify-parallel 三级探测 + task-start _PAR_N 双步清洗 + PLATFORM-CHECKLIST 第 1 条 + pre-commit:1363-1378 软检查接线",
+   "③fastlane：fastlane-bypass-only 密封进双平台 canary",
+   "④job 级（a8c9f8bb PR #157）: CT ubuntu+windows success / TS+Iron Laws success / Vitest 双 shard success；build job failure=存量（958e5d5d 已红，D529 修复）"
+  ],
+  "by": "K3",
+  "at": "2026-08-29"
+ },
+ "fix_task_id": null,
+ "updated_at": "2026-08-29",
+ "updated_by": "K3",
+ "note": "Codex 跨平台建议（Win 侧实测 CRLF bug P0 + 双平台 CI 缺失 + 适配层未收口）。创始人批准执行。并行 CTO session 认领。",
+ "priority": "P0"
 }

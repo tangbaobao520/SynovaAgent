@@ -68,7 +68,7 @@
 
 **落流机制（偏离回填）**：§3.1 说"eventBus 的阶段推进调 appendEvent"——launcher 现状不经 eventBus 发诊断事件，实际为 **onEvent 包装器 persistingOnEvent 双写**（onEvent 透传给调用方 + appendEvent 落 session_events）；phase_started/phase_completed → diagnosis_phase，其余（模块/发现/降级/错误）→ diagnosis_module；runConsultation 成功后追加 diagnosis_report（回放顺序终点）；失败路径 error 事件也落流。写入失败 log.warn + 诊断继续（铁律 24/31）。
 
-**CHECK 迁移（偏离回填）**：§3.1 只提"L131 CHECK 同步扩展"——CREATE TABLE IF NOT EXISTS 不更新已有表约束，实际追加**旧库幂等表重建迁移**（sqlite_master 建表 SQL 缺 diagnosis_phase 判定 + BEGIN/COMMIT 原子重建 + ROLLBACK 保护）。
+**CHECK 迁移（偏离回填）**：§3.1 只提"L131 CHECK 同步扩展"——CREATE TABLE IF NOT EXISTS 不更新已有表约束，实际追加**旧库幂等表重建迁移**（sqlite_master 建表 SQL 缺 diagnosis_phase 判定 + BEGIN/COMMIT 原子重建 + ROLLBACK 保护）。迁移测试落点（D558 补写）：tests/store/session-event-log.test.ts「D487 重建迁移」describe（4 断言：行保留/约束升级/seq 连续/幂等；S-5 red 已证——迁移禁用时 4 断言全红）。
 
 **附加发现（D500 第二处悬空）**：tui-v2/lib/bootstrap.ts L130 `new SessionManager({...})` 未注入 store（本文件不在原写集）——一并接入，tui-v2 入口消息事件持久化生效。
 
@@ -89,6 +89,7 @@
 | 层 | 类型 | 数量 | 覆盖 |
 |----|------|------|------|
 | L1 | 集成 tests/agent/diagnosis-session-events.test.ts（新建） | 5 | ①consult 一次 → session_events 含诊断阶段/模块/报告事件（red=现状仅 checkpoint）；②回放事件序列与诊断一致（可自证）；③双写失败 → degraded 显式；④deriveMessages 不破坏既有消息（回归）；⑤无 sessionManager 注入时降级不崩（兼容旧路径） |
+| L5 | 单元 tests/store/session-event-log.test.ts「D487 重建迁移」describe（D558 补写，K3 P1 闭合） | 4 | 旧库模拟（CHECK 缺 diagnosis_phase + 预置 3 行）→ 迁移后：①行全字段保留 + 约束升级到位；②迁移前旧 CHECK 物理拒绝 diagnosis_phase（red 自证）→ 迁移后可写；③seq 续写 = 旧 MAX+1（无回退）；④幂等（二次构造无重复重建/数据零损失/id 续写） |
 
 **RED 必须覆盖失败模式（S-5）**：用例①以现状断言——consult 后 session_events **无诊断事件**（只有 checkpoint，red=未装配）→ 修复后事件流完整（green=可回放）。用例③双写失败显式 degraded（铁律 31，不静默）。
 

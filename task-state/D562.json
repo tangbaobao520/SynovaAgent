@@ -1,0 +1,11 @@
+{
+  "task_id": "D562",
+  "title": "K3 复审批 D558-D561 派单 + 三连验收台账登记",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-29",
+  "updated_by": "alloc-task-id"
+}

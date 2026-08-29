@@ -1,30 +1,44 @@
 {
-  "task_id": "D508",
-  "title": "提交流程减负四项（对账 merge-base/--check 全量/brief 骨架/双清洁）",
-  "status": "impl_done",
-  "spec": {
-    "path": ".claude/task-briefs/2026-08-23-D508-commit-flow-dedrag.md",
-    "by": "dsh-cto",
-    "at": "2026-08-23"
-  },
-  "impl": {
-    "commit": "4982f978",
-    "by": "dsh-cto",
-    "at": "2026-08-23",
-    "files": [
-      "scripts/control-tower/check-bypass-log.sh",
-      "scripts/control-tower/synova-commit",
-      "scripts/control-tower/alloc-task-id.sh",
-      "scripts/install-hooks.sh",
-      "tests/control-tower/check-bypass-log.test.sh",
-      "tests/control-tower/synova-commit.test.sh"
-    ],
-    "commit_note": "CTO 复核修正（2026-08-29）：原 35367fe6 为影子登记/废弃分支提交，真实实现提交 4982f978（M7 纪律）"
-  },
-  "audit": null,
-  "fix_task_id": null,
-  "updated_at": "2026-08-23",
-  "updated_by": "dsh-cto",
-  "note": "CTO 自查 + Win PR#128 五摩擦项综合。四项：对账 merge-base 化（死循环根治，双断言）/--check 全量 dry-run（7 轮→1-2 轮）/alloc-task-id brief 骨架/COMMITTED 登记提前+软噪声独立日志。含三次 index 污染事故的根因修复（测试 GIT_DIR 结构性隔离 + 宿主 index 不变断言）。",
-  "priority": "P0"
+ "task_id": "D508",
+ "title": "提交流程减负四项（对账 merge-base/--check 全量/brief 骨架/双清洁）",
+ "status": "impl_done",
+ "spec": {
+  "path": ".claude/task-briefs/2026-08-23-D508-commit-flow-dedrag.md",
+  "by": "dsh-cto",
+  "at": "2026-08-23"
+ },
+ "impl": {
+  "commit": "4982f978",
+  "by": "dsh-cto",
+  "at": "2026-08-23",
+  "files": [
+   "scripts/control-tower/check-bypass-log.sh",
+   "scripts/control-tower/synova-commit",
+   "scripts/control-tower/alloc-task-id.sh",
+   "scripts/install-hooks.sh",
+   "tests/control-tower/check-bypass-log.test.sh",
+   "tests/control-tower/synova-commit.test.sh"
+  ],
+  "commit_note": "CTO 复核修正（2026-08-29）：原 35367fe6 为影子登记/废弃分支提交，真实实现提交 4982f978（M7 纪律）"
+ },
+ "audit": {
+  "report": "docs/synova/audit-reports/2026-08-28-D501-D550-impl-done-batch.md",
+  "verdict": "CONDITIONAL PASS",
+  "blockers": [
+   "P1-1: merge-base 化声称不实（M2）——git 恒等式 A..B ≡ merge-base(A,B)..B（两场景实测新旧范围相同），check-bypass-log.sh 对账范围零行为变化；死循环真根治是 D513/③ 防御 fetch（check-bypass-log.sh:26-37，D513 注释自认「merge-base 化失效」）。测试为终态断言，旧代码同样通过。归因: implement + control-tower"
+  ],
+  "findings": [
+   "--check 全量 dry-run 属实（synova-commit --check 段：plan-integrity+pre-commit 13 组+commit-msg 三段汇总，不 commit 不 push）",
+   "brief 骨架属实（alloc-task-id.sh:125-169 六字段模板）",
+   "COMMITTED 登记提前属实（synova-commit:643-645 成功路径 + :548-549 降级路径）",
+   "测试绿：check-bypass-log 5/5 + synova-commit 8/8"
+  ],
+  "by": "K3",
+  "at": "2026-08-29"
+ },
+ "fix_task_id": null,
+ "updated_at": "2026-08-29",
+ "updated_by": "K3",
+ "note": "CTO 自查 + Win PR#128 五摩擦项综合。四项：对账 merge-base 化（死循环根治，双断言）/--check 全量 dry-run（7 轮→1-2 轮）/alloc-task-id brief 骨架/COMMITTED 登记提前+软噪声独立日志。含三次 index 污染事故的根因修复（测试 GIT_DIR 结构性隔离 + 宿主 index 不变断言）。",
+ "priority": "P0"
 }
