@@ -20,6 +20,10 @@ L1 交互层。D489（GA consult 路由经 DiagnosisLauncher 落流）引入 `ne
 ## Q1: 调研
 铁律 38（类型断言零容忍）+ 铁律 24/31（降级显式）；CT-46 先例（mcp as never 已由 D558 清理）；D558 棘轮基线含 as never 9 处——本任务清理 2 处后编码方应同步下调棘轮基线（9→7，只许收紧）。
 
+### Q1c 决策参考系（D333）+ 实测修正记录
+参考：第一性原理 + Anthropic 工程基线（fail-closed→显式降级）+ 结论：类型谓词（方法探测）优于任何断言形式。
+**实测修正（D563 执行时）**：全仓棘轮扫描器实测 as never = 10（非 brief 假设的 9）——D489 的 L181 在「门禁红但 PR 先合并」（CT-47 台账）下进 main，击穿 D558 基线。brief「9→7」的前提「仅当全仓实测=7」不成立；按实测修正：清理 2 处 → 基线 9→**8**（棘轮只许收紧，9→8 仍是收紧）。S-5 先红证据 = main 现状棘轮测试红（`as never 存量 10 > 基线 9`，1 failed | 5 passed，D489 合并后果），非临时加断言。
+
 ## Q2: 范围
 做什么：
 - 修改 src/routes/diagnosis.ts：L181+L411 as never → 类型谓词/窄化（保留降级语义）
@@ -49,5 +53,5 @@ L1 交互（routes/）+ 测试工具层
 - [x] 零 as never verify: grep -c "as never" src/routes/diagnosis.ts | xargs test 0 -eq
 - [x] tsc 零新增 verify: npx tsc --noEmit --pretty false 2>&1 | grep -cE "error TS" | xargs test 28 -eq
 - [x] 回归绿 verify: npx vitest run tests/routes/diagnosis-consult-events.test.ts tests/agent/diagnosis-session-events.test.ts 2>&1 | grep "9 passed"
-- [x] 棘轮同步 verify: grep -c "'as never': 7" packages/test-kit/tests/architecture/05-as-any-audit.test.ts | xargs test 1 -ge
+- [x] 棘轮同步 verify: grep -c "'as never': 8" packages/test-kit/tests/architecture/05-as-any-audit.test.ts | xargs test 1 -ge
 - [x] 回填 verify: python3 -c "import json; d=json.load(open('task-state/D563.json')); assert d['status']=='impl_done'"

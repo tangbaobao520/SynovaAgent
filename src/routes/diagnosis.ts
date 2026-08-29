@@ -25,6 +25,8 @@ import type { EngineContext } from '../agent/engine-context';
 import type { GraphStoreLike, CommunityReportLike, PostProcessEvents } from '../agent/post-diagnosis-processor';
 // Slice 3: 判断卡片生成器
 import { generateJudgmentCard, formatForSSE } from '../pipeline/judgment-card';
+// D563: better-sqlite3 类型仅用于谓词窄化（type-only import，零运行时成本）
+import type Database from 'better-sqlite3';
 
 const log = createLogger('routes/diagnosis');
 const router = Router();
@@ -44,6 +46,26 @@ interface ActiveConsultation {
 }
 
 const activeConsultations = new Map<string, ActiveConsultation>();
+
+// ═══ D563（CT-46/D489 验收返修）: orchestration.db 类型谓词窄化 ═══
+
+/**
+ * better-sqlite3 Database 鸭子类型谓词 — unknown → Database.Database 窄化（替代原 never 断言）。
+ *
+ * 契约（铁律 47）:
+ *   @input    — v: unknown（req.app.locals.orchestration.db 等运行时未类型化句柄）
+ *   @output   — 类型谓词；true = 可安全传入 `new SessionStore(db)`（Database.Database）
+ *   @degraded — false（非对象 / 缺关键方法）→ 调用方把谓词失败转译为 TypeError，
+ *               走既有 try/catch log.warn 降级通道（铁律 24/31，行为零变化）
+ *
+ * 方法探测取 prepare/exec/pragma 三方法（better-sqlite3 Database 的最小读写面；
+ * SessionStore.initSchema 实际只用 exec）。非断言——失败路径显式降级，不静默信任 unknown。
+ */
+function isSqliteDatabase(v: unknown): v is Database.Database {
+  if (typeof v !== 'object' || v === null) return false;
+  const o = v as { prepare?: unknown; exec?: unknown; pragma?: unknown };
+  return typeof o.prepare === 'function' && typeof o.exec === 'function' && typeof o.pragma === 'function';
+}
 
 // ═══ D480: 已完成诊断报告缓存 — GET /consult/:id/report 数据源 ═══
 // activeConsultations 在 finally 删除且无报告持久化设施（grep 零 saveDiagnosisReport 类），
@@ -177,8 +199,12 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
     let sessionId = '';
     if (orchestrationDb) {
       try {
+        if (!isSqliteDatabase(orchestrationDb)) {
+          // D563: 谓词失败与构造器抛错同走既有降级通道（不静默信任 unknown）
+          throw new TypeError('orchestration.db 非 better-sqlite3 句柄（D563 谓词窄化失败）');
+        }
         const { SessionStore } = await import('../store/session-store');
-        const store = new SessionStore(orchestrationDb as never);
+        const store = new SessionStore(orchestrationDb);
         sessionStore = store;
         sessionId = store.createSession(teamId).id;
       } catch (err: unknown) {
@@ -408,7 +434,14 @@ router.post('/api/diagnosis/consult/:consultId/resume', async (req: Request, res
   // 从 SessionStore 加载检查点
   try {
     const { SessionStore } = await import('../store/session-store');
-    const store = new SessionStore((req.app.locals.orchestration as { db: unknown })?.db as never);
+    // D563: 存量 never 断言窄化——谓词失败（含 db 为 undefined/非句柄）与原构造器
+    // 抛错（initSchema 对 undefined 调 .exec 必抛 TypeError）同走 catch log.warn
+    // 降级（响应 checkpoint=null 语义零变化，铁律 24/31）
+    const db = (req.app.locals.orchestration as { db?: unknown } | undefined)?.db;
+    if (!isSqliteDatabase(db)) {
+      throw new TypeError('orchestration.db 非 better-sqlite3 句柄（D563 谓词窄化失败）');
+    }
+    const store = new SessionStore(db);
     const checkpoint = store.getDiagnosisCheckpoint ? store.getDiagnosisCheckpoint(consultId) : null;
     active.aborted = false;
     res.json({
