@@ -1,11 +1,31 @@
 {
   "task_id": "D558",
   "title": "D487 session_events 迁移回归测试补写（K3 P1）",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": null,
-  "impl": null,
+  "impl": {
+    "commit": "81a5d2f5",
+    "by": "deepseek-harness",
+    "at": "2026-08-29",
+    "files": [
+      "tests/store/session-event-log.test.ts",
+      "docs/plans/codex/implementation/SYNOVA-IMPL-D487-ga-session-events-slice2a-20260828.md",
+      "src/mcp/index.ts",
+      "packages/test-kit/tests/architecture/05-as-any-audit.test.ts",
+      "task-state/D558.json"
+    ],
+    "evidence": [
+      "S-5 先红：临时禁用迁移 → 新 describe 4 断言全红（13 旧用例不受影响），还原后 17/17 全绿",
+      "npx vitest run tests/store/session-event-log.test.ts → 17 passed；tests/agent/diagnosis-session-events.test.ts → 5 passed 回归",
+      "spec §4 测试表补迁移行 + §3.2 测试落点注；grep -c 迁移 spec = PASS(≥3)",
+      "src/mcp/index.ts as never = 0（L146 SqliteGraphStore + L238 SessionStore 两处冗余断言清除，构造器签名均已核实收 Database.Database）",
+      "test-kit 05-as-any-audit 扫描扩 as never/as unknown as（含 .tsx）+ 棘轮基线 9/87（清理后扫描器实测），6/6 绿",
+      "tsc --noEmit 28=28 基线零新增（错误均属 extensions/_extinct、ima.ts、server.ts 存量）"
+    ],
+    "notes": "brief 点名 L236 单处，Done 标准「文件内 as never=0」要求同文件 L146 同类冗余一并清理（D333 自决：Done 标准优先 + 构造器签名核实）；test-kit 棘轮语义与 pre-commit 组 1 CT-46 一致（拦新增、存量独立清理），全仓存量 as never 9 处 + as unknown as 87 处待后续独立清理任务"
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-08-29",
-  "updated_by": "alloc-task-id"
+  "updated_by": "deepseek-harness"
 }
