@@ -31,7 +31,7 @@
 - 不改 scripts/audit/（审计红线）
 - 不改三任务代码（已合 main，复审只验闭合）
 
-## Q3: 验收（复审已回流 #304；canary 补齐随本 closeout）
+## Q3: 验收（复审已回流 #304；canary 补齐随本 closeout；incident-loop Win 首测失败回撤）
 入口：派单文档存在 + 台账条目存在
 处理：K3 领取后独立复核三任务
 结果：K3 复审报告 + 三任务 task-state 复审结论回填

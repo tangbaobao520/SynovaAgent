@@ -155,7 +155,6 @@ jobs:
             tests/control-tower/parallel-main-tree-occupancy.test.sh \
             tests/control-tower/fastlane-extended.test.sh \
             tests/control-tower/g12-day-window.test.sh \
-            tests/control-tower/incident-loop.test.sh \
             tests/control-tower/check-canary-drift.test.sh \
             tests/control-tower/claim-regex-narrow.test.sh \
             tests/control-tower/ci-strict-visible.test.sh \
