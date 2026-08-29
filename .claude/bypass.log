@@ -951,3 +951,5 @@ Binary file .claude/bypass.log matches
 2026-08-30T02:56:13+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=b969c7d003e0f14d5cb1893e961aa7e85831004a
 2026-08-30T03:13:08+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=5949257dedd4c47b52c8938d734951f320b63d44
 2026-08-30T03:26:27+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=541810cb65dd5a5a33fd431991badaa3dfca5299
+2026-08-29T19:33:16Z detected-bypass head-mismatch marker=020443b663efba3a9052a0650860c10b56b5ad60 parent=9b2e7cff32310e18e89ae3c67580d84a993b6e79
+2026-08-30T03:35:00+08:00 | COMMITTED | pre-commit PASS（D451 纯补记豁免：merge 冲突解决提交，手动跑 pre-commit-check 13 组通过，hook 自动登记缺失补录） | TASK_ID=D556 | AGENT=dsh-cto | HASH=c8a18e99
