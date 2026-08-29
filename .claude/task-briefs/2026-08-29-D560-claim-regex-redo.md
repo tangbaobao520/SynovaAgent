@@ -30,7 +30,7 @@ L0 控制塔测试层。K3 判 D549 FAIL：PR #272（756573df）合并的 FIX �
 
 不做什么：
 - 不改 scripts/pre-commit-check.sh（guard 本身无缺陷，D542/D543 已修）
-- 不改 scripts/audit/（审计红线）
+- 不改 scripts/audit/K3-AUDIT-PROTOCOL.md 等审计文件：审计红线
 - 不改 D549.json（K3 审计结论保留；D560 完成后复审由 K3 回填）
 
 ## Q3: 验收

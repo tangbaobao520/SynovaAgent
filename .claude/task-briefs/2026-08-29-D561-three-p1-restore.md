@@ -32,9 +32,9 @@ L0 控制塔。三个「丢失/红态」型 P1：
 - task-state/D561.json：回填
 
 不做什么：
-- 不改 D549 相关（D560）
-- 不改 tag V5.0.0（CTO 复核：当前指向 503d04ca 修复树，K3 此条 P1 不成立）
-- 不改 scripts/audit/（审计红线）
+- 不改 tests/control-tower/claim-regex-narrow.test.sh：D549 重做归 D560
+- 不改 task-state/D516.json：CTO 复核 tag V5.0.0 已指向修复树，K3 此条 P1 不成立
+- 不改 scripts/audit/K3-AUDIT-PROTOCOL.md 等审计文件：审计红线
 
 ## Q3: 验收
 入口：bash tests/control-tower/g12-day-window.test.sh && bash tests/control-tower/incident-loop.test.sh
