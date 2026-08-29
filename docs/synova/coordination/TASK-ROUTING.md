@@ -112,6 +112,7 @@
 | scripts/golden-scenarios/ | 进行中·DeepSeek Harness |
 | 战略借鉴（**K3 咨询定序**）：D396 + D394 片1 + D395-a + D402 = **dev-doc 线写 spec 中**（派活 brief 就绪，启动指引 docs/synova/coordination/DEV-DOC-DISPATCH-20260816.md）；D394 片2/D397'/D398 = Win 部署后 | 进行中·synova-devdoc（2026-08-16 派活） |
 | scripts/audit/ | Kimi K3 专属（双轨：Win + Mac） |
+| electron-renderer GaDetail + src/loops/middle-evolution-engine + tests（GA 人机协同端到端·D556，slice ga-collab-e2e） | spec 已交付·dev-doc（DSH 线 2026-08-29：docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D556-ga-collab-e2e-20260829.md；前端接线 + 回流层 2 → 待编码 → K3 → CTO 合并；task-state/D556.json spec_done） |
 | **DSH 迁移轨（Stage 0-4）** | 当前全部冻结（施工图 §6：Stage 0 部署后 / Stage 1 9~10月 / Stage 2 10~11月 / Stage 3 Q4评估 / Stage 4 影子后）。Stage 1（D1-D4 范式借鉴）归 **Mac DSH**；Stage 0（⚫删除+AGENTS.md漂移）归 **Mac DSH**（部署后）；Stage 2-4 未分配。详见 docs/synova/coordination/DSH-迁移分工规划-20260821.md |
 
 ## 五、认领/交还流程（不变）
