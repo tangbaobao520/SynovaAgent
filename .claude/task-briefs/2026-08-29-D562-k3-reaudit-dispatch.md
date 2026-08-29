@@ -24,6 +24,8 @@
 - 修改 docs/synova/coordination/审计发现台账-DSH-CTO.md：三连验收闭环登记（CTO 物理复核记录 + 编码质量记录 + CTO 自误 D547 第四次 + 编码 P2 过报 749p 注释残留）
 - task-state/D562.json：回填
 - 修改 .claude/task-briefs/2026-08-29-D562-k3-reaudit-dispatch.md：本派单 brief 自身
+- 修改 .github/workflows/ci.yml：g12/incident-loop 两 hermetic 测试入 canary（K3 P2-1 处置，25→27）
+- 修改 docs/synova/coordination/K3审计清单-20260822.md：D558/D560/D561 复审 PASS 翻转
 
 不做什么：
 - 不改 scripts/audit/（审计红线）
