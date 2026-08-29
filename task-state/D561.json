@@ -1,0 +1,11 @@
+{
+  "task_id": "D561",
+  "title": "D509/D535/D508 三 P1 恢复批 — g12-day-window 恢复 + incident-loop 4b + 注释如实化",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-29",
+  "updated_by": "alloc-task-id"
+}
