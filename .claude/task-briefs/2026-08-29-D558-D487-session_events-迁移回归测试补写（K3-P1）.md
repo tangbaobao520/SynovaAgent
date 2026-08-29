@@ -40,7 +40,9 @@ K3 物理实测该迁移 PASS（旧库 3 行保留 + seq 连续 + id 连续 + �
 处理：先红（在模拟旧库上断言诊断事件可写——无迁移时 CHECK 拒绝）→ 实现触发迁移 → 绿
 结果：新增用例全绿 + session-event-log 全文件绿 + 零回归（diagnosis-session-events.test.ts 仍 5/5）
 
-## 架构层: L5
+## 架构层:
+
+L5 存储（SessionStore 迁移测试 + mcp 类型断言 + test-kit 扫描器，测试/工具层）
 ## Done 标准
 - [x] 新增迁移测试 ≥4 断言全绿 verify: npx vitest run tests/store/session-event-log.test.ts 2>&1 | grep -E "Test Files.*1 passed|Tests.*[4-9][0-9]* passed"
 - [x] spec §4 测试表已同步 verify: grep -c "迁移" docs/plans/codex/implementation/SYNOVA-IMPL-D487-ga-session-events-slice2a-20260828.md | xargs test 3 -le

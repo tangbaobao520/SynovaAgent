@@ -143,7 +143,7 @@ async function handleToolCall(name: string, params: Record<string, unknown>): Pr
           log.warn({ err }, '数据库未初始化 — 执行懒初始化');
           initEngineContext();
         }
-        const store = new SqliteGraphStore(getDatabase() as never);
+        const store = new SqliteGraphStore(getDatabase()); // CT-46 去冗余类型断言 (D558，构造器同收 Database.Database)
         const findings = await runSentinelForTeam(sentinelId, store);
         return JSON.stringify({ ok: true, sentinelId, findings: findings.length });
       } catch (err: unknown) {
@@ -235,7 +235,7 @@ async function handleToolCall(name: string, params: Record<string, unknown>): Pr
         }
         const { SessionStore } = await import('../store/session-store');
         const { SessionManager: SessionManagerImpl } = await import('../orchestrator/session-manager');
-        const store = new SessionStore(getDatabase() as never);
+        const store = new SessionStore(getDatabase()); // getDatabase() 已返回 Database.Database（engine-context L50），CT-46 去冗余类型断言 (D558)
         // D487: 每次 MCP 诊断独立会话——事件流按会话可回放
         const sess = store.createSession(orgName);
         sessionStore = store;
