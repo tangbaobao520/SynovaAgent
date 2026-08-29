@@ -1,7 +1,7 @@
 {
   "task_id": "D556",
   "title": "ga-calibration-frontend-wire-plus-return-loop-layer2",
-  "status": "impl_done",
+  "status": "audited",
   "spec": {
     "doc": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D556-ga-collab-e2e-20260829.md",
     "baseline": "origin/main @ 0010eefb",
@@ -56,9 +56,27 @@
     "updated_at": "2026-08-29",
     "updated_by": "dsh-d556-coding-session"
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-08-30-D556-ga-collab-e2e.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "findings": [
+      "五场景 UI 断言 17 用例独立重跑绿（tests/ga-collab-ui.test.ts 含源码级镜像断言 L77-86：readFileSync 读 RightPanel.tsx 断言占位零残留 + GaDetailSections 真接线）",
+      "3 回流→3 动作 9 用例逐 case 绿（tests/loops/ga-calibration-evolution.test.ts：reject/modify/ineffective 各一条 diagnosis_calibration_review + sink 真实落盘 + 阈值 count=2 零动作 + DS6 Signal 4 重叠）",
+      "层 3/采纳率 descope 未越界：stats note '回流计数 ≠ 采纳率' 原文透传 E2E 实测（ui test L134/L148 + ga-detail-sections L193-198 + mapStatsResponse L222-224）；引擎日志 '待人工审核——不自动改诊断权重'（middle-evolution-engine L601-605）",
+      "seed 通道不可达偏离 ② 两段代码路径物理成立（server.ts L291 全局 jwtAuthMiddleware + auth.ts L86-104 白名单零 /api/ga/*；DEV_MODE=true dev-admin 覆盖 L260-267 / false 401 L274-281；extractAuthFromRequest req.auth 优先 L359-364）——spec §7.2.3 前提错误，实现如实登记未跨写集修，层 2 不受影响（actorRole='ga' 硬编码 ga-calibration L215/L461）",
+      "三处受控偏离逐条核属实：① 渲染桥接等价实现（root package-lock 零 react-dom + ci.yml vitest 仅 root npm ci + render.ts 零依赖序列化器仅 tests 引用）② seed 通道 ③ sink type 落 MemoryType 枚举 'ga_correction'（agent-memory-store L34/L355，spec 'ga_calibration_review' 不在枚举）+ DS6 措辞 Signal 5→6 更正",
+      "D556.json main 终版 JSON 合法零冲突标记（python3 json.load 通过）；历史冲突提交 9b2e7cff/c8a18e99 不在 ref（squash-merge 摧毁），终态干净",
+      "DS6 存量零回改（src/routes//src/growth//src/middleware//loop-handlers/capability 零改动；引擎 diff 恰 1 删除行 = union 终止符）；as any/as never/as unknown as = 0",
+      "CI job 级 10/10 属实（PR 分支 818dfccc/e440a086/b9d11032 十项 ci.yml 门禁全 success）；merge 69d81c58 checker-review skipped（main 不触发）+ GitHub Pages build 预存失败（f8dadf7b/581543d2 同失败）",
+      "P1：seed 通道服务端不可达——CTO 已上报创始人裁决（D483-D486 JWT vs auth 白名单），非 D556 引入",
+      "P2：① '63 断言' 措辞（实为 63 用例 / 187 expect）② DS7 E2E evidence gitignored 不可核 ③ PRODUCT-BRIEF L83 '前端 UI 伪需求' 过期"
+    ],
+    "by": "K3",
+    "at": "2026-08-30"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-08-29",
-  "updated_by": "dsh-cto",
+  "updated_at": "2026-08-30",
+  "updated_by": "K3",
   "slice": "ga-collab-e2e"
 }
