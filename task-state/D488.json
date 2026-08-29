@@ -1,0 +1,18 @@
+{
+  "task_id": "D488",
+  "title": "full-pipeline Stage 5b 专家数断言修复（D282 9→7 迁移后过时，动态读 yaml）",
+  "slice": null,
+  "status": "spec_done",
+  "risk": "low",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-D488-stage5b-expert-fix-20260828.md",
+    "commit": "PENDING",
+    "by": "dev-doc",
+    "at": "2026-08-28"
+  },
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-28T11:00:00+08:00",
+  "updated_by": "dev-doc"
+}
