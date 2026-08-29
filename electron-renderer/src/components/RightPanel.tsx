@@ -4,7 +4,22 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAppStore } from '../stores/app-store';
 // D538: 能力导航纯逻辑契约（状态机/权限/标签） + 详情分派类型
-import { capabilityLabel, loopStatusColor, type SelectedCap } from '../stores/capability';
+import { capabilityLabel, loopStatusColor, canAccessCap, type SelectedCap } from '../stores/capability';
+// D556: GA 协同纯逻辑数据层（状态机/请求构建/响应映射/降级决策/seed——零 react/zustand）
+import {
+  getSeedToken,
+  decideBlockState,
+  deriveOverallPhase,
+  mapStatsResponse,
+  mapCalibrationsResponse,
+  buildCalibrationRequest,
+  buildSignalRequest,
+  type GaCalibrationItem,
+  type GaStatsData,
+  type GaCollabPhase,
+} from '../stores/ga-collab';
+// D556: GA 协同纯展示组件（三块渲染——容器/展示拆分，renderToStaticMarkup 可断言）
+import { GaDetailSections, type GaInjectedRecord } from './ga-detail-sections';
 
 // ═══ 视图解析 ═══
 
@@ -135,12 +150,19 @@ import { getApiBase } from '../lib/api';
 // D527: 诊断报告 onePager markdown 渲染（同 MessageItem 模式）
 import ReactMarkdown from 'react-markdown';
 
-async function apiFetch<T>(path: string, opts?: RequestInit): Promise<T | null> {
+async function apiFetch<T>(path: string, opts?: RequestInit, capture?: { status?: number }): Promise<T | null> {
   try {
+    // D556 §7.3: seed 存在时附 legacy x-synova-token 头（auth.ts L366-376 既有通道）；
+    // 无 seed → 请求形态与现状完全一致（DS4 零行为变化）
+    const seedToken = getSeedToken();
+    const baseHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (seedToken) baseHeaders['x-synova-token'] = seedToken;
     const res = await fetch(`${getApiBase()}${path}`, {
-      headers: { 'Content-Type': 'application/json' },
       ...opts,
+      headers: opts?.headers ?? baseHeaders,
     });
+    // D556: 状态码捕获（decideBlockState 判别 403→blocked vs 5xx/网络→degraded）——既有调用方零感知
+    if (capture) capture.status = res.status;
     if (!res.ok) return null;
     return await res.json() as T;
   } catch (err: unknown) {
@@ -425,7 +447,7 @@ const GAWorkspaceTabs: React.FC = () => {
   );
 };
 
-// ═══ D538 能力详情组件（真实接口数据渲染；Ga 占位不伪造） ═══
+// ═══ D538 能力详情组件（真实接口数据渲染；Ga 块自 D556 起接线 D551 四端点） ═══
 
 // 信号 Story 卡片（AggregatedSignal 真实 shape）
 interface SourceFinding {
@@ -629,15 +651,160 @@ const ActionDetail: React.FC = () => {
   );
 };
 
-/** GA 协同 — 结构占位（后端校准接口不存在 → 不伪造、不发 fetch · 铁律 8） */
-const GaDetail: React.FC = () => (
-  <Section title="GA 人机协同（仅 GA 可见）">
-    <div className="cap-degraded-banner">⚠ 后端校准接口待接入</div>
-    <div className="cap-detail-card"><div className="cap-detail-title">🧬 诊断校准面板</div><Empty text="Agent 结论待审（标记错误/补背景/重写逻辑/降级标记）" /></div>
-    <div className="cap-detail-card"><div className="cap-detail-title">📥 手动信号注入</div><Empty text="线下黑域信息 → 系统" /></div>
-    <div className="cap-detail-card"><div className="cap-detail-title">📊 反馈效用仪表</div><Empty text="纠错/信号/采纳率" /></div>
-  </Section>
-);
+// ═══ D556: GA 协同容器（role 防御 + 三块 fetch 编排 + 表单提交回显） ═══
+
+/**
+ * GaDetail 容器 — 占位转真实（D551 四端点消费，spec §5 三块端点映射）。
+ * 纯展示渲染委托 GaDetailSections（props 驱动，可独立 UI 断言）；本组件持有全部
+ * hooks/fetch/表单编排。旧占位组件已删除（占位文案零残留——S-5 ② 回归断言）。
+ */
+const GaDetail: React.FC = () => {
+  const userRole = useAppStore((s) => s.userRole);
+  // fail-closed 双保险（spec §5.2）: 左栏置灰（capability.ts L43-45，不改）+ 容器内防御复查
+  const allowed = canAccessCap(userRole, 'ga');
+  const [calibrationState, setCalibrationState] = useState<GaCollabPhase>('idle');
+  const [statsState, setStatsState] = useState<GaCollabPhase>('idle');
+  const [calibrations, setCalibrations] = useState<GaCalibrationItem[]>([]);
+  const [stats, setStats] = useState<GaStatsData | null>(null);
+  const [calibrationFormError, setCalibrationFormError] = useState<string | null>(null);
+  const [signalFormError, setSignalFormError] = useState<string | null>(null);
+  const [lastCalibrationId, setLastCalibrationId] = useState<string | null>(null);
+  const [lastSignal, setLastSignal] = useState<{ signalId: string; findingId: string } | null>(null);
+  const [injectedHistory, setInjectedHistory] = useState<GaInjectedRecord[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // 挂载/重试时拉取两块 GET（校准列表 + 效用仪表）——分块独立状态（spec §5.3 不连坐）
+  useEffect(() => {
+    if (!allowed) return; // blocked → 零 fetch（spec §5.2 fail-closed）
+    let alive = true;
+    (async () => {
+      setCalibrationState('loading');
+      setStatsState('loading');
+      const calCapture: { status?: number } = {};
+      const calRaw = await apiFetch<unknown>('/api/ga/calibration?limit=50', undefined, calCapture);
+      if (!alive) return;
+      if (calRaw === null) {
+        setCalibrationState(decideBlockState(calCapture.status ?? null));
+      } else {
+        const calMapped = mapCalibrationsResponse(calRaw);
+        if (calMapped.ok) {
+          setCalibrations(calMapped.data);
+          setCalibrationState('loaded');
+        } else {
+          setCalibrationState('degraded'); // 200 但结构畸形 → 诚实降级（铁律 24/31）
+        }
+      }
+      const statsCapture: { status?: number } = {};
+      const statsRaw = await apiFetch<unknown>('/api/ga/calibration/stats', undefined, statsCapture);
+      if (!alive) return;
+      if (statsRaw === null) {
+        setStatsState(decideBlockState(statsCapture.status ?? null));
+      } else {
+        const statsMapped = mapStatsResponse(statsRaw);
+        if (statsMapped.ok) {
+          setStats(statsMapped.data);
+          setStatsState('loaded');
+        } else {
+          setStatsState('degraded');
+        }
+      }
+    })();
+    return () => { alive = false; };
+  }, [allowed, refreshKey]);
+
+  const handleRetry = useCallback(() => setRefreshKey((k) => k + 1), []);
+
+  // 校准提交（四动作表单）→ buildCalibrationRequest 客户端校验（镜像 D551 服务端）→ POST → 回显
+  const handleCalibrationSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setCalibrationFormError(null);
+    const built = buildCalibrationRequest(Object.fromEntries(new FormData(e.currentTarget).entries()));
+    if (!built.ok) {
+      setCalibrationFormError(built.error);
+      return;
+    }
+    setSubmitting(true);
+    const capture: { status?: number } = {};
+    const res = await apiFetch<{ ok?: boolean; calibrationId?: string }>(
+      '/api/ga/calibration',
+      { method: 'POST', body: JSON.stringify(built.body) },
+      capture,
+    );
+    setSubmitting(false);
+    if (res?.ok && res.calibrationId) {
+      setLastCalibrationId(res.calibrationId); // 回显 201 {calibrationId}（spec §5.1）
+      setRefreshKey((k) => k + 1);             // 提交成功 → 列表刷新
+    } else if (res === null) {
+      setCalibrationFormError(`校准提交失败（HTTP ${capture.status ?? '网络异常'}）— 稍后重试`);
+      console.warn('[GaDetail] 校准提交失败', capture.status ?? 'network');
+    } else {
+      setCalibrationFormError('校准提交未成功（服务端返回异常）— 稍后重试');
+      console.warn('[GaDetail] 校准提交响应异常');
+    }
+  }, []);
+
+  // 信号注入（五要素表单）→ buildSignalRequest → POST → 回显 signalId/findingId + 会话内历史
+  const handleSignalSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSignalFormError(null);
+    const built = buildSignalRequest(Object.fromEntries(new FormData(e.currentTarget).entries()));
+    if (!built.ok) {
+      setSignalFormError(built.error);
+      return;
+    }
+    setSubmitting(true);
+    const capture: { status?: number } = {};
+    const res = await apiFetch<{ ok?: boolean; signalId?: string; findingId?: string }>(
+      '/api/ga/calibration/signals',
+      { method: 'POST', body: JSON.stringify(built.body) },
+      capture,
+    );
+    setSubmitting(false);
+    if (res?.ok && res.signalId && res.findingId) {
+      const { signalId, findingId } = res;
+      setLastSignal({ signalId, findingId }); // 回显 201 {signalId, findingId}（spec §5.1）
+      setInjectedHistory((history) => [
+        {
+          signalType: built.body.signalType,
+          title: built.body.title,
+          signalId,
+          findingId,
+          at: new Date().toISOString(),
+        },
+        ...history,
+      ]);
+    } else if (res === null) {
+      setSignalFormError(`信号注入失败（HTTP ${capture.status ?? '网络异常'}）— 稍后重试`);
+      console.warn('[GaDetail] 信号注入失败', capture.status ?? 'network');
+    } else {
+      setSignalFormError('信号注入未成功（服务端返回异常）— 稍后重试');
+      console.warn('[GaDetail] 信号注入响应异常');
+    }
+  }, []);
+
+  const phase = deriveOverallPhase(allowed, calibrationState, statsState);
+
+  return (
+    <GaDetailSections
+      phase={phase}
+      role={userRole}
+      calibrationState={calibrationState}
+      statsState={statsState}
+      calibrations={calibrations}
+      stats={stats}
+      calibrationFormError={calibrationFormError}
+      signalFormError={signalFormError}
+      lastCalibrationId={lastCalibrationId}
+      lastSignal={lastSignal}
+      injectedHistory={injectedHistory}
+      submitting={submitting}
+      onRetry={handleRetry}
+      onCalibrationSubmit={(e) => { void handleCalibrationSubmit(e); }}
+      onSignalSubmit={(e) => { void handleSignalSubmit(e); }}
+    />
+  );
+};
 
 /** D538: 详情分派 —— 非 null 覆盖默认视图 */
 const CAP_DETAIL_VIEW: Record<Exclude<SelectedCap, null>, React.FC> = {
