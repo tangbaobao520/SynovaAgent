@@ -1,6 +1,7 @@
 {
   "task_id": "D556",
   "title": "ga-calibration-frontend-wire-plus-return-loop-layer2",
+<<<<<<< HEAD
   "status": "impl_done",
   "spec": {
     "note": "SYNOVA-IMPL-DSH-D556-ga-collab-e2e-20260829.md 已交付；随编码首 commit 同批入库（§3.3.1 提交策略，check-dev-doc-write-set 零漂移）",
@@ -49,10 +50,25 @@
     "tests": "三层 63 断言全绿（logic 37 + ui 17 + engine 9）；既有 middle-evolution-engine.test.ts 13 断言零回归；verify-incremental L1-L4 通过",
     "updated_at": "2026-08-29",
     "updated_by": "dsh-d556-coding-session"
+=======
+  "status": "spec_done",
+  "slice": "ga-collab-e2e",
+  "spec": {
+    "doc": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D556-ga-collab-e2e-20260829.md",
+    "baseline": "origin/main @ 0010eefb",
+    "dispatch": "创始人 DSH 派单（2026-08-29，slice: ga-collab-e2e）",
+    "source": "D551 后端已合 main（6e9626f9）——D556 = 前端 GaDetail 接线（renderToStaticMarkup 零新依赖 UI 断言）+ 回流层 2（diagnosis_conclusion → 'diagnosis_calibration_review' 动作，阈值 3，sink=agent_memory logCorrection 先例）+ seed 身份（legacy x-synova-token，不耦合 D483-D486）；写集文件级（D551 教训），spec-only 提交 8 条预期漂移已预登记（§3.3.1 提交策略）",
+    "by": "dev-doc",
+    "at": "2026-08-29"
+>>>>>>> origin/main
   },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-08-29",
+<<<<<<< HEAD
   "updated_by": "dsh-d556-coding-session",
   "slice": "ga-collab-e2e"
+=======
+  "updated_by": "dev-doc"
+>>>>>>> origin/main
 }
