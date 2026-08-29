@@ -1,26 +1,37 @@
 {
-  "task_id": "D501",
-  "title": "as-any 检查排除测试文件（修 CI 误报 19 处）",
-  "status": "impl_done",
-  "spec": {
-    "path": ".claude/task-briefs/2026-08-22-D501-as-any-exclude-tests.md",
-    "commit": "40d058d5",
-    "by": "dsh-cto",
-    "at": "2026-08-22"
-  },
-  "impl": {
-    "commit": "40d058d5",
-    "by": "dsh-cto",
-    "at": "2026-08-22",
-    "files": [
-      "scripts/pre-commit-check.sh",
-      ".claude/task-briefs/2026-08-22-D501-as-any-exclude-tests.md"
-    ]
-  },
-  "audit": null,
-  "fix_task_id": null,
-  "updated_at": "2026-08-22",
-  "updated_by": "dsh-cto",
-  "note": "门禁 bug 修复（减负性质，符合 08-21 冻结边界）。根因：K3 P1-2 把 as-any 范围扩到 packages/ 时未排除测试文件，D471 的 as-any 审计测试 fixture 被 CI 误报 19 处。修复：git diff 加 pathspec 排除 .test.ts/.test.tsx/.d.ts，与 findTsFiles 排除规则一致。",
-  "priority": "P0"
+ "task_id": "D501",
+ "title": "as-any 检查排除测试文件（修 CI 误报 19 处）",
+ "status": "impl_done",
+ "spec": {
+  "path": ".claude/task-briefs/2026-08-22-D501-as-any-exclude-tests.md",
+  "commit": "40d058d5",
+  "by": "dsh-cto",
+  "at": "2026-08-22"
+ },
+ "impl": {
+  "commit": "40d058d5",
+  "by": "dsh-cto",
+  "at": "2026-08-22",
+  "files": [
+   "scripts/pre-commit-check.sh",
+   ".claude/task-briefs/2026-08-22-D501-as-any-exclude-tests.md"
+  ]
+ },
+ "audit": {
+  "report": "docs/synova/audit-reports/2026-08-28-D501-D550-impl-done-batch.md",
+  "verdict": "PASS",
+  "blockers": [],
+  "findings": [
+   "pathspec 排除落地：scripts/pre-commit-check.sh:467（CI 分支）/:469（本地 cached 分支）含 :(exclude)**/*.test.ts|.test.tsx|.d.ts，与 findTsFiles 排除语义一致（D501 时代 05-as-any-audit.test.ts:44）",
+   "19→0 机制复现：git diff df0a0af7...3c9e88e0 无排除=10 处 as any，加排除=0，且 0 生产残留（全在测试 fixture）",
+   "P2-1：pre-commit-check.sh:464 注释称 findTsFiles 位于 packages/test-kit/src/security-scanners.ts——实际该文件无此函数（引用路径陈旧，归因 implement）"
+  ],
+  "by": "K3",
+  "at": "2026-08-29"
+ },
+ "fix_task_id": null,
+ "updated_at": "2026-08-29",
+ "updated_by": "K3",
+ "note": "门禁 bug 修复（减负性质，符合 08-21 冻结边界）。根因：K3 P1-2 把 as-any 范围扩到 packages/ 时未排除测试文件，D471 的 as-any 审计测试 fixture 被 CI 误报 19 处。修复：git diff 加 pathspec 排除 .test.ts/.test.tsx/.d.ts，与 findTsFiles 排除规则一致。",
+ "priority": "P0"
 }

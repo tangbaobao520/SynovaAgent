@@ -1,22 +1,31 @@
 {
-  "task_id": "D549",
-  "title": "sealed-tests-ci-canary",
-  "status": "impl_done",
-  "spec": null,
-  "impl": {
-    "by": "CTO",
-    "at": "2026-08-28",
-    "branch": "fix/d549-sealed-tests",
-    "commit": "PR #272 合并（756573df）",
-    "note": "K3 FIX-D541 + P1-3：claim-regex T5b 硬编码行号 → 动态 grep；6 新密封测试入 CI canary（19→25），CI 双平台绿"
-  },
-  "audit": {
-    "verdict": "CTO 自修（未 K3）",
-    "note": "修复 K3 审计发现，变更面小（测试一行 + ci.yml 清单），随下批审计",
-    "by": "CTO",
-    "at": "2026-08-28"
-  },
-  "fix_task_id": null,
-  "updated_at": "2026-08-28",
-  "updated_by": "CTO"
+ "task_id": "D549",
+ "title": "sealed-tests-ci-canary",
+ "status": "impl_done",
+ "spec": null,
+ "impl": {
+  "by": "CTO",
+  "at": "2026-08-28",
+  "branch": "fix/d549-sealed-tests",
+  "commit": "PR #272 合并（756573df）",
+  "note": "K3 FIX-D541 + P1-3：claim-regex T5b 硬编码行号 → 动态 grep；6 新密封测试入 CI canary（19→25），CI 双平台绿"
+ },
+ "audit": {
+  "report": "docs/synova/audit-reports/2026-08-28-D501-D550-impl-done-batch.md",
+  "verdict": "FAIL",
+  "blockers": [
+   "P1-1: 声称修复未落地——PR #272 唯一提交 731d2469 的 diff 仅新增 task-state/D549.json（零代码）；claim-regex-narrow.test.sh 全分支历史仅 48914b89（D541 创建），T5b 仍硬编码 sed -n '749p'（:71），guard 已漂移到 pre-commit-check.sh:753 → main 上恒红（实测 8/9，exit 1）",
+   "P1-2: 「6 新密封测试入 CI canary（19→25）」不实——ci.yml 清单实测 19 项，claim-regex-narrow 不在清单，「双平台绿」为真空绿（红态测试 CI 根本没跑）",
+   "K3 FIX-D541 + P1-3（D540-D547 批）原样未闭环；task-state audit 段「CTO 自修」声称与 PR 物理内容矛盾"
+  ],
+  "findings": [
+   "归因: implement/CTO（M2 声称 vs 事实）；另起 FIX 任务：claim-regex 动态 grep + canary 清单扩展（重执行原 FIX-D541 内容）",
+   "D526 漂移告警已点名该测试（64 项之一）——红态可见性存在但无人处置"
+  ],
+  "by": "K3",
+  "at": "2026-08-29"
+ },
+ "fix_task_id": null,
+ "updated_at": "2026-08-29",
+ "updated_by": "K3"
 }

@@ -15,6 +15,9 @@ import * as readline from 'readline';
 import { createProvider } from '../providers';
 import { detectProvider } from '../providers/detect';
 import { ConversationEngine } from '../agent/conversation-engine';
+// D487: 装配类型（type-only，零运行时加载）
+import type { SessionManager } from '../orchestrator/session-manager';
+import type { SessionStoreLike } from '../agent/diagnosis-launcher';
 import { createLogger } from '@synova/logger';
 const log = createLogger('src.mcp.index');
 
@@ -140,7 +143,7 @@ async function handleToolCall(name: string, params: Record<string, unknown>): Pr
           log.warn({ err }, '数据库未初始化 — 执行懒初始化');
           initEngineContext();
         }
-        const store = new SqliteGraphStore(getDatabase() as never);
+        const store = new SqliteGraphStore(getDatabase()); // CT-46 去冗余类型断言 (D558，构造器同收 Database.Database)
         const findings = await runSentinelForTeam(sentinelId, store);
         return JSON.stringify({ ok: true, sentinelId, findings: findings.length });
       } catch (err: unknown) {
@@ -219,7 +222,29 @@ async function handleToolCall(name: string, params: Record<string, unknown>): Pr
         apiKey: process.env.LLM_API_KEY || process.env.DEEPSEEK_API_KEY,
         gatewayHost: process.env.OPENCLAW_GATEWAY_HOST,
       });
-      const conv = new ConversationEngine(provider, { orgId: orgName, maxTurns: 3 });
+      // D487: 会话事件装配 — db 可用时传 sessionManager+sessionStore（诊断事件落
+      // session_events）；无 db 环境（独立 MCP 进程未初始化引擎上下文）→ 内存态降级
+      let sessionManager: SessionManager | undefined;
+      let sessionStore: SessionStoreLike | undefined;
+      let mcpSessionId: string | undefined;
+      try {
+        const { getDatabase, initEngineContext } = await import('../init/engine-context');
+        try { getDatabase(); } catch (err: unknown) {
+          log.warn({ err: err instanceof Error ? err.message : String(err) }, '数据库未初始化 — 执行懒初始化');
+          initEngineContext();
+        }
+        const { SessionStore } = await import('../store/session-store');
+        const { SessionManager: SessionManagerImpl } = await import('../orchestrator/session-manager');
+        const store = new SessionStore(getDatabase()); // getDatabase() 已返回 Database.Database（engine-context L50），CT-46 去冗余类型断言 (D558)
+        // D487: 每次 MCP 诊断独立会话——事件流按会话可回放
+        const sess = store.createSession(orgName);
+        sessionStore = store;
+        sessionManager = new SessionManagerImpl({}, store);
+        mcpSessionId = sess.id;
+      } catch (err: unknown) {
+        log.warn({ err: err instanceof Error ? err.message : String(err) }, '会话事件装配失败 — 无 db 环境，内存态降级');
+      }
+      const conv = new ConversationEngine(provider, { orgId: orgName, maxTurns: 3, sessionId: mcpSessionId, sessionManager, sessionStore });
       const result = await conv.processMessage(
         `我的组织"${orgName}"需要诊断。角色: ${params.initiatorRole || '管理者'}`,
       );

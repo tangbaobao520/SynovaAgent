@@ -1,0 +1,46 @@
+{
+  "task_id": "D558",
+  "title": "D487 session_events 迁移回归测试补写（K3 P1）",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "commit": "81a5d2f5",
+    "by": "deepseek-harness",
+    "at": "2026-08-29",
+    "files": [
+      "tests/store/session-event-log.test.ts",
+      "docs/plans/codex/implementation/SYNOVA-IMPL-D487-ga-session-events-slice2a-20260828.md",
+      "src/mcp/index.ts",
+      "packages/test-kit/tests/architecture/05-as-any-audit.test.ts",
+      "task-state/D558.json"
+    ],
+    "evidence": [
+      "S-5 先红：临时禁用迁移 → 新 describe 4 断言全红（13 旧用例不受影响），还原后 17/17 全绿",
+      "npx vitest run tests/store/session-event-log.test.ts → 17 passed；tests/agent/diagnosis-session-events.test.ts → 5 passed 回归",
+      "spec §4 测试表补迁移行 + §3.2 测试落点注；grep -c 迁移 spec = PASS(≥3)",
+      "src/mcp/index.ts as never = 0（L146 SqliteGraphStore + L238 SessionStore 两处冗余断言清除，构造器签名均已核实收 Database.Database）",
+      "test-kit 05-as-any-audit 扫描扩 as never/as unknown as（含 .tsx）+ 棘轮基线 9/87（清理后扫描器实测），6/6 绿",
+      "tsc --noEmit 28=28 基线零新增（错误均属 extensions/_extinct、ima.ts、server.ts 存量）"
+    ],
+    "notes": "brief 点名 L236 单处，Done 标准「文件内 as never=0」要求同文件 L146 同类冗余一并清理（D333 自决：Done 标准优先 + 构造器签名核实）；test-kit 棘轮语义与 pre-commit 组 1 CT-46 一致（拦新增、存量独立清理），全仓存量 as never 9 处 + as unknown as 87 处待后续独立清理任务"
+  },
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-08-29-D558-D561-reaudit.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "reaudit": true,
+    "findings": [
+      "① 4 断言真覆盖迁移非空壳：session-event-log.test.ts L222/L232/L252/L261 各有 expect（行保留/约束升级 red 自证/seq 连续/幂等），语义与迁移实现 session-store.ts L150-184 吻合；22/22 绿（Node 24）",
+      "② S-5 先红独立复现：隔离 worktree 禁迁移（L156 if(false)）→ 恰好 4 failed | 13 passed，失败原因正确（CHECK constraint failed / 缺 diagnosis_phase）",
+      "③ 棘轮基线 9/87 与全仓独立扫描一致（476 文件，复刻扫描器口径）；test-kit 05-as-any-audit 6/6；architecture 另 3 文件 4 失败 = main 存量（父提交同失败）",
+      "④ mcp 零 as never；getDatabase(): Database.Database（engine-context.ts:50）+ 两构造器 Database.Database 核实，断言删除类型安全；tsc 28=28 零新增",
+      "spec §4 测试表 + §3.2 同步补迁移行——上轮 P1 归因项（devdoc）闭环",
+      "CI job 级：CT ubuntu/windows + Vitest 1/2+2/2 + TS+Iron + Golden F1 全 success；build(desktop) failure = main 预存（≤2d3522e8）"
+    ],
+    "by": "K3",
+    "at": "2026-08-29"
+  },
+  "fix_task_id": null,
+  "updated_at": "2026-08-29",
+  "updated_by": "K3"
+}

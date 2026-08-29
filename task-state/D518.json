@@ -22,7 +22,8 @@
       "缺陷修复": "spawnOnce stdio: 无 logFile 时 pipe 无读者→64KB 缓冲写满→子进程 stdout 阻塞→探活永不转健康（实测 4×60s 窗口全超时，直跑 25s 健康）。修复=缺省 logFile 时 stdio inherit。契约 JSDoc 语义不变，brief Q2 已补记",
       "prod运行时修复": "D518 补充提交: ①裸 node 跑 dist 物理不可行三重阻塞（ESM 无扩展名 import ERR_MODULE_NOT_FOUND / asar 内依赖不可达 / 原生模块 Electron ABI）②FDE 无 Node 前提 ③定案=esbuild 单文件 bundle dist/backend.mjs + 包内 Electron ELECTRON_RUN_AS_NODE=1 执行 + extraResources 原生模块 externals。实测闭环。"
     },
-    "notes": "DSH 宿主环境 ELECTRON_RUN_AS_NODE=1 会使 electron 以纯 node 启动（require('electron') 返回路径字符串）——runbook 未记（仅本机 agent 环境特殊），K3 复跑时须 env -u。"
+    "notes": "DSH 宿主环境 ELECTRON_RUN_AS_NODE=1 会使 electron 以纯 node 启动（require('electron') 返回路径字符串）——runbook 未记（仅本机 agent 环境特殊），K3 复跑时须 env -u。",
+    "commit": "563807ed"
   },
   "audit": {
     "auditor": "k3",
@@ -39,8 +40,11 @@
     ],
     "slice": "L1-A"
   },
-  "updated_at": "2026-08-25",
-  "updated_by": "dsh-impl",
+  "updated_at": "2026-08-29",
+  "updated_by": "dsh-cto-parallel",
   "priority": "P1",
-  "verdict": "CONDITIONAL_PASS"
+  "verdict": "CONDITIONAL_PASS",
+  "acceptance_points": [
+    "1-5"
+  ]
 }
