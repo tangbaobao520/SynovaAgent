@@ -1,11 +1,29 @@
 {
   "task_id": "D563",
   "title": "D489 验收返修 diagnosis.ts as never 双处类型窄化",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": null,
-  "impl": null,
+  "impl": {
+    "commit": "293c3291",
+    "by": "deepseek-harness",
+    "at": "2026-08-30",
+    "files": [
+      "src/routes/diagnosis.ts",
+      "packages/test-kit/tests/architecture/05-as-any-audit.test.ts",
+      ".claude/task-briefs/2026-08-29-D563-diagnosis-as-never-fix.md",
+      "task-state/D563.json"
+    ],
+    "evidence": [
+      "窄化: diagnosis.ts L181（D489 新增）+L411（存量）as never → isSqliteDatabase 类型谓词（unknown → Database.Database，方法探测 prepare/exec/pragma，非断言）；谓词失败转译 TypeError 走既有 try/catch log.warn 降级——行为零变化（铁律 24/31；SessionStore 构造器 initSchema 对 undefined/非句柄本就抛 TypeError，降级路径等价）",
+      "实测修正: 全仓棘轮扫描器实测 as never = 10（非 brief 假设 9）——D489 带红合并 L181 击穿 D558 基线 9（CT-47 台账）；清理 2 处后实测 = 8 → 基线 9→8（brief「9→7」前提「实测=7」不成立，按 brief 自带条件守卫修正，棘轮只许收紧）",
+      "S-5 先红: main 现状棘轮测试红「as never 存量 10 > 基线 9」（1 failed | 5 passed 物理留痕，非临时加断言）→ 窄化后 6/6 绿",
+      "Done verify 全实跑: ① grep -c 'as never' src/routes/diagnosis.ts = 0；② npx tsc --noEmit error TS 计数 = 28（基线 28=28 零新增）；③ 棘轮 05-as-any-audit.test.ts 6/6 绿（基线 'as never': 8）；④ diagnosis-consult-events 4/4 + diagnosis-session-events 5/5 = 9 passed",
+      "brief Done 棘轮行同步修正 'as never': 7 → 8（实测驱动，Q1c 决策参考系记录在案）"
+    ],
+    "notes": "自检 5 问: 接线=isSqliteDatabase 为文件内局部函数（非 export，无接线需求）；异常=两处 catch 均保留原 log.warn + degraded 语义；类型安全=零 as any/零 as never/零 as unknown as（as { prepare?: unknown } 为 AGENTS 铁律 38 认可内联类型式）；测试=棘轮 6 断言含非空转/排除规则/注释不误报；残留=无死代码（grep-refs 无需：未删改任何既有符号）。观察项（超范围不修）: CI Vitest job 在 main 上绿但棘轮测试 main 本地红——packages/test-kit 的 vitest 套件疑似未入 CI Vitest（M3 家族同型风险，建议 K3/CTO 关注）"
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-08-29",
-  "updated_by": "alloc-task-id"
+  "updated_at": "2026-08-30",
+  "updated_by": "deepseek-harness"
 }
