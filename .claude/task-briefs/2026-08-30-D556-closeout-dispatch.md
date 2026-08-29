@@ -27,8 +27,8 @@ D556 已双线合并（spec #308 + 实现 #309），本任务 = 收尾协调：K
 - 修改 .claude/task-briefs/2026-08-30-D556-closeout-dispatch.md：本 brief
 
 不做什么：
-- 不改 scripts/audit/（审计红线）
-- 不改 D556 代码（已合并）
+- 不改 scripts/audit/K3-AUDIT-PROTOCOL.md 等审计文件：审计红线
+- 不改 electron-renderer/src/stores/ga-collab.ts：D556 代码已合并
 
 ## Q3: 验收
 入口：三文档在 main
