@@ -7,6 +7,8 @@
 #   2. suggest --root-cause R2 → 推荐机制非空
 #   3. 已知 pattern 命中 → record 输出"已存在相似 pattern"
 #   4. verify --case INC-20260802-stash → 运行 hook-git-detect 于合成 stash → 被拦
+#   4b. 受限 PATH 下 verify 仍 closed（_find_bash 平台候选兜底，D316/D561）
+#   4c. SYNO_PYTHON 注入下 hook 拦 stash（PATH 无 python3，D564 Windows 根因回归）
 #   5. record 幂等：同 id 重复不重复追加
 #
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -66,11 +68,32 @@ assert_contains "$OUT" '"closed"' "verify 输出 closed"
 echo ""
 
 echo "── 4b. verify 受限 PATH（bash 不在 PATH → _find_bash 显式 fallback）──"
-# D316: 修复前硬编码 ["bash", 在受限 PATH 下 FileNotFoundError → degraded（本断言 FAIL = red）
-#       修复后 _find_bash 显式查找 Git 安装路径 → closed（本断言 PASS = green）
+# D316: Windows 下 _find_bash 显式候选（Git 安装路径）；D561: POSIX 候选（/bin/bash 等 4 路）
+# ——受限 PATH 下 bash 不在 PATH 时双平台兜底 → closed（本断言 PASS = green）。
+# （K3 P2② 原注释只述 D316 机制、未同步 D561 POSIX——本批如实化）
 PYBIN=$(command -v python3)
 OUT=$(SYNO_CT_DIR="$CT_DIR" env PATH="/c/Windows/system32:/c/Windows" "$PYBIN" "$TOOL" verify --case "INC-20260802-stash" 2>&1) || true
 assert_contains "$OUT" '"closed"' "受限 PATH 下 verify 仍 closed（_find_bash 显式 fallback）"
+echo ""
+
+echo "── 4c. SYNO_PYTHON 注入（D564 Windows 根因回归）──"
+# D564: PR #305 Windows gate 实测 6/8（run 33257792825 annotations 物理证据，双失败 =
+# 断言 6 + 4b 两条 verify）——根因: hook-git-detect.sh 的 python3 依赖在 _bash_env
+# 重建的 PATH 下解析到 WindowsApps Store 占位 stub（非真 python）→ hook 静默 exit 0
+# （fail-open 设计）→ 输出无「禁止」→ verify 返回 open。
+# 治法: 工具侧注入确定可用解释器（SYNO_PYTHON=sys.executable）+ hook 优先消费。
+# 本断言在「PATH 无 python3（仅 cat/grep）」下锁定该契约，双平台确定性。
+if grep -qiE 'MINGW|MSYS|CYGWIN' <<< "$(uname -s)"; then
+  NO_PY3_BIN="$(dirname "$(command -v cat)")"   # Git usr/bin: cat/grep/dirname 有、python3 无
+else
+  NO_PY3_BIN="$CT_DIR/fakebin"
+  mkdir -p "$NO_PY3_BIN"
+  ln -sf "$(command -v cat)" "$NO_PY3_BIN/cat"
+  ln -sf "$(command -v grep)" "$NO_PY3_BIN/grep"
+  ln -sf "$(command -v dirname)" "$NO_PY3_BIN/dirname"   # 主 hook L25 顶层调用（set -e 硬依赖）
+fi
+OUT=$(printf '{"tool_input":{"command":"git stash"}}' | SYNO_CT_DIR="$CT_DIR" env PATH="$NO_PY3_BIN" SYNO_PYTHON="$PYBIN" "$(command -v bash)" "$DETECT" 2>&1) || true
+assert_contains "$OUT" "禁止" "SYNO_PYTHON 注入: hook 在 PATH 无 python3 下仍拦 stash"
 echo ""
 
 echo "── 5. record 幂等 ──"
