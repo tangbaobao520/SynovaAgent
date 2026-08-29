@@ -24,8 +24,23 @@
     ],
     "notes": "brief 点名 L236 单处，Done 标准「文件内 as never=0」要求同文件 L146 同类冗余一并清理（D333 自决：Done 标准优先 + 构造器签名核实）；test-kit 棘轮语义与 pre-commit 组 1 CT-46 一致（拦新增、存量独立清理），全仓存量 as never 9 处 + as unknown as 87 处待后续独立清理任务"
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-08-29-D558-D561-reaudit.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "reaudit": true,
+    "findings": [
+      "① 4 断言真覆盖迁移非空壳：session-event-log.test.ts L222/L232/L252/L261 各有 expect（行保留/约束升级 red 自证/seq 连续/幂等），语义与迁移实现 session-store.ts L150-184 吻合；22/22 绿（Node 24）",
+      "② S-5 先红独立复现：隔离 worktree 禁迁移（L156 if(false)）→ 恰好 4 failed | 13 passed，失败原因正确（CHECK constraint failed / 缺 diagnosis_phase）",
+      "③ 棘轮基线 9/87 与全仓独立扫描一致（476 文件，复刻扫描器口径）；test-kit 05-as-any-audit 6/6；architecture 另 3 文件 4 失败 = main 存量（父提交同失败）",
+      "④ mcp 零 as never；getDatabase(): Database.Database（engine-context.ts:50）+ 两构造器 Database.Database 核实，断言删除类型安全；tsc 28=28 零新增",
+      "spec §4 测试表 + §3.2 同步补迁移行——上轮 P1 归因项（devdoc）闭环",
+      "CI job 级：CT ubuntu/windows + Vitest 1/2+2/2 + TS+Iron + Golden F1 全 success；build(desktop) failure = main 预存（≤2d3522e8）"
+    ],
+    "by": "K3",
+    "at": "2026-08-29"
+  },
   "fix_task_id": null,
   "updated_at": "2026-08-29",
-  "updated_by": "deepseek-harness"
+  "updated_by": "K3"
 }
