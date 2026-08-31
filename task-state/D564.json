@@ -12,7 +12,7 @@
       "scripts/control-tower/incident-loop.py",
       "scripts/hooks/hook-git-detect.sh",
       ".github/workflows/ci.yml",
-      ".claude/task-briefs/2026-08-29-D564-incident-loop-win-fix.md",
+      ".claude/task-briefs/2026-08-31-D564-incident-loop-win-fix.md",
       "memory/notes/implemented/2026-08-30-d564-win-bash-python-injection.md",
       "task-state/D564.json"
     ],
@@ -23,7 +23,8 @@
       "S-5 先红: 新增 4c 回归断言（PATH 无 python3 下 hook 仍拦 stash，双平台确定性）未修 hook 实测红 8 通过 1 失败 → 修复后 9 通过 0 失败（本地 macOS 全量实跑）",
       "回归: hook-git-detect.test.sh 13/13 + ban-stash.test.sh 6/6 绿（hook 消费端向后兼容证实）；bash -n ×2 + py_compile PASS；check-plan-integrity + check-brief-parseable PASS",
       "canary 回列: ci.yml incident-loop 复位 18ae1b80 原位（g12 之后），26→27；grep 确认全仓无别处硬编码 canary 数量",
-      "决策 Note: memory/notes/implemented/2026-08-30-d564-win-bash-python-injection.md（D395-a/D534 commit-msg 门禁）"
+      "决策 Note: memory/notes/implemented/2026-08-30-d564-win-bash-python-injection.md（D395-a/D534 commit-msg 门禁）",
+      "返工（CTO 验收退回 2026-08-30）: G12 brief 日期窗口过期 → git mv 至 2026-08-31-D564-incident-loop-win-fix.md（无代码变更，impl.commit 保持 a20cd54a）；复验 macOS 9/9 + hook 13/13 + ban-stash 6/6 + canary 27 全绿"
     ],
     "notes": "唯一有效验收通道 = CI Windows job（本地 macOS 无法复现 Win 失败语义）——CTO 合并前须查 check-runs job 级 windows-latest success。边界: hook-git-guard.sh 内部 python3（窗口标记写入）在坏 python3 环境仍 fail-open degraded（本批不改，同型根因记入 Note 后续）；brief Done「8 通过」按新增 4c 断言如实修正为「9 通过」（macOS 原 8 断言零变化）。观察: brief Q0 原文称失败 run「3323...」与实际 33257792825 不符（brief 笔误，annotations 为准）"
   },
