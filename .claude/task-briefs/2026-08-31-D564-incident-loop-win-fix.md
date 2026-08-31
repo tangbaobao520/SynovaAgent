@@ -45,7 +45,7 @@ Anthropic 工程基线（fail-open 保持、契约显式）+ 结论：工具侧�
 - task-state/D564.json：回填
 
 不做什么：
-- 不改 macOS 语义（8/8 保持）
+- 不改 tests/control-tower/incident-loop.test.sh：macOS 8/8 语义保持
 - 不改 scripts/audit/（审计红线）
 
 ## Q3: 验收
