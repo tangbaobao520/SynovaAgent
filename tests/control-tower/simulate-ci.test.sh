@@ -30,9 +30,17 @@ grep -q "grep -oE 'tests/control-tower" "$SIM" \
   && ok "接线: 测试清单从 ci.yml 单源提取（不散列防漂移）" || no "清单硬编码（漂移风险）"
 
 # ── 正常: 全绿桩 → exit 0 ──
+# D563/D564 验收（2026-08-31）: 原实现把内层输出丢 /dev/null —— Windows simulate-ci 红时
+#   内层失败测试名不可诊断（诊断黑洞）。改为捕获输出，失败时把内层 ❌ 行拼进断言信息，
+#   CI ::error annotation 直接给出失败测试名。
 GREEN_STUB="$TMPD/green.sh"; printf '#!/bin/bash\nexit 0\n' > "$GREEN_STUB"
-SYNO_SIM_PRECOMMIT="$GREEN_STUB" bash "$SIM" >/dev/null 2>&1; rc=$?
-[ "$rc" -eq 0 ] && ok "全绿桩 → exit 0" || no "应 exit 0, 实际 $rc"
+OUT=$(SYNO_SIM_PRECOMMIT="$GREEN_STUB" bash "$SIM" 2>&1); rc=$?
+if [ "$rc" -eq 0 ]; then
+  ok "全绿桩 → exit 0"
+else
+  INNER=$(echo "$OUT" | grep -E "❌|FAIL" | tr '\n' '|' | tr -d '%' | cut -c1-400)
+  no "应 exit 0, 实际 $rc :: 内层失败: ${INNER:-（无 ❌ 行，见上方输出）}"
+fi
 
 # ── 失败: 红桩 → exit 1 + 报告（环境差异类错误本地可抓）──
 RED_STUB="$TMPD/red.sh"; printf '#!/bin/bash\necho "❌ 模拟 CI 差异错误 (GNU sed 类)"\nexit 1\n' > "$RED_STUB"
