@@ -6,7 +6,7 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 # fastlane-bypass-only.test.sh — D515 项2: 纯补记提交快速通道
 #
 # 覆盖矩阵:
-#   正常 — SYNO_FASTLANE=1 → 仅 Secrets、跳过 13 组、exit 0、<3s
+#   正常 — SYNO_FASTLANE=1 → 仅 Secrets、跳过 13 组、exit 0、<10s（D563/D564 验收发现：3s 对负载机器/模拟冷沙箱过脆，实测 4s；断言意图=快于原 90-120s，10s 仍严格证明）
 #   防绕过 — 判定只认环境变量（synova-commit export），不裸看暂存区（D414 坑）
 #   接线 — synova-commit --files 唯一 bypass.log → export SYNO_FASTLANE=1
 # 沙箱: 本仓库 dry 运行（无副作用——快速通道在组 1 前退出，不改暂存区）
@@ -36,7 +36,7 @@ T1=$(date +%s); DUR=$((T1 - T0))
 echo "$OUT" | grep -q "V5 纯补记快速通道" && ok "输出含快速通道横幅" || no "缺快速通道横幅"
 echo "$OUT" | grep -q "跳过 12 组" && ok "横幅明示跳过 12 组" || no "横幅未明示跳过组数"
 if echo "$OUT" | grep -q "组 1/13"; then no "不应跑 13 组（性能未达标）"; else ok "13 组全跳过（未输出 组 1/13）"; fi
-[ "$DUR" -lt 3 ] && ok "耗时 ${DUR}s < 3s（原 90-120s）" || no "耗时 ${DUR}s ≥ 3s"
+[ "$DUR" -lt 10 ] && ok "耗时 ${DUR}s < 10s（原 90-120s）" || no "耗时 ${DUR}s ≥ 10s"
 
 # ── 防绕过: 未设 SYNO_FASTLANE 时不看暂存区自行判定（结构断言）──
 if grep -A2 'SYNO_FASTLANE:-0' "$PC" | grep -q 'diff --cached'; then
