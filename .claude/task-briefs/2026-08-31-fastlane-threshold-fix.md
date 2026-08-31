@@ -22,7 +22,7 @@ D333 四步；CI 时间断言脆性（Anthropic 基线：性能断言给宽界�
 - 修改 tests/control-tower/fastlane-bypass-only.test.sh：阈值 3s→10s + 注释记录根因
 不做什么：
 - 不改 scripts/audit/K3-AUDIT-PROTOCOL.md 等审计文件：审计红线
-- 不改 fastlane 机制本身（行为零变化）
+- 不改 scripts/control-tower/synova-commit：fastlane 判定机制本身（行为零变化）
 
 ## Q3: 验收
 入口：bash tests/control-tower/fastlane-bypass-only.test.sh
