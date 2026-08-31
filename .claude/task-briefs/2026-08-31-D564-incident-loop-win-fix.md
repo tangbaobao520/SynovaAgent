@@ -35,6 +35,12 @@ Anthropic 工程基线（fail-open 保持、契约显式）+ 结论：工具侧�
 实测红（8 通过 1 失败）→ 修复后 9 通过 0 失败。
 **返工记录（2026-08-30 CTO 验收退回）**：G12 brief 日期窗口过期 → git mv 至 2026-08-31
 文件名（无代码变更；task-state 引用同步）。
+**返工·第3轮**：brief Q2 排除项补文件路径（CTO 指引，后于第 4 轮自认有误删除）+ merge
+main（#315 fastlane 阈值修复）。
+**返工·第4轮（真 Win CI 实证 7/9，4b/4c 仍红）**：① 删矛盾排除项行（include/exclude
+冲突，CTO 自认第 3 轮指引有误）；② 4b 平台适配——真 Win 下原硬编码受限 PATH 会命中
+System32 WSL bash → 按平台构造（win: Git usr/bin；mac: 原值，D561 语义零变化），断言
+目标不变；③ 4b/4c 加失败诊断输出（CI annotation 可捕获，供下轮真 Win 定位）。
 
 ## Q2: 范围
 做什么：
@@ -45,7 +51,6 @@ Anthropic 工程基线（fail-open 保持、契约显式）+ 结论：工具侧�
 - task-state/D564.json：回填
 
 不做什么：
-- 不改 tests/control-tower/incident-loop.test.sh：macOS 8/8 语义保持
 - 不改 scripts/audit/（审计红线）
 
 ## Q3: 验收

@@ -24,7 +24,8 @@
       "回归: hook-git-detect.test.sh 13/13 + ban-stash.test.sh 6/6 绿（hook 消费端向后兼容证实）；bash -n ×2 + py_compile PASS；check-plan-integrity + check-brief-parseable PASS",
       "canary 回列: ci.yml incident-loop 复位 18ae1b80 原位（g12 之后），26→27；grep 确认全仓无别处硬编码 canary 数量",
       "决策 Note: memory/notes/implemented/2026-08-30-d564-win-bash-python-injection.md（D395-a/D534 commit-msg 门禁）",
-      "返工（CTO 验收退回 2026-08-30）: G12 brief 日期窗口过期 → git mv 至 2026-08-31-D564-incident-loop-win-fix.md（无代码变更，impl.commit 保持 a20cd54a）；复验 macOS 9/9 + hook 13/13 + ban-stash 6/6 + canary 27 全绿"
+      "返工（CTO 验收退回 2026-08-30）: G12 brief 日期窗口过期 → git mv 至 2026-08-31-D564-incident-loop-win-fix.md（无代码变更，impl.commit 保持 a20cd54a）；复验 macOS 9/9 + hook 13/13 + ban-stash 6/6 + canary 27 全绿",
+      "返工·第4轮（真 Win CI 实证 7/9，4b/4c 仍红）: ① CTO 自认第3轮排除项指引有误 → 删 brief 矛盾排除项行；② 4b 平台适配——原硬编码 PATH=\"/c/Windows/system32:/c/Windows\" 在真 Win 原生 python 的 which() 下命中 System32 WSL bash（若存在）→ 错误 bash 跑 hook；改为按平台构造受限 PATH（win: Git usr/bin，bash 可达 python3 不在；mac: 原值不变，D561 POSIX 兜底语义零变化），断言目标不变；③ assert_contains 增加可选第 4 参诊断 + diag_out helper（失败时输出 OUT 压单行 + NO_PY3_BIN/PYBIN/bash 定位值，经 CI ::error annotation tail-8 可捕获）——4c 若真 Win 仍红可凭诊断定位；④ 本地回归 macOS 9/9 + 13/13 + 6/6 全绿（行为零变化实证）"
     ],
     "notes": "唯一有效验收通道 = CI Windows job（本地 macOS 无法复现 Win 失败语义）——CTO 合并前须查 check-runs job 级 windows-latest success。边界: hook-git-guard.sh 内部 python3（窗口标记写入）在坏 python3 环境仍 fail-open degraded（本批不改，同型根因记入 Note 后续）；brief Done「8 通过」按新增 4c 断言如实修正为「9 通过」（macOS 原 8 断言零变化）。观察: brief Q0 原文称失败 run「3323...」与实际 33257792825 不符（brief 笔误，annotations 为准）"
   },

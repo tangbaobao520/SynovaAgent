@@ -24,7 +24,9 @@ CT_DIR=".codex/control-tower/tmp/il-ct"
 PASS=0; FAIL=0
 pass() { PASS=$((PASS + 1)); echo "  ✅ $1"; }
 fail() { FAIL=$((FAIL + 1)); echo "  ❌ $1" >&2; }
-assert_contains() { if echo "$1" | grep -qF "$2"; then pass "$3"; else fail "$3 — 未找到: $2"; fi; }
+assert_contains() { if echo "$1" | grep -qF "$2"; then pass "$3"; else fail "$3 — 未找到: $2${4:+ — 诊断: $4}"; fi; }
+# 第4轮: 失败诊断输出（CI ::error annotation tail-8 可捕获）——压单行 + 去 % 防 annotation 注入
+diag_out() { printf '%s' "$1" | tr '\n' '|' | tr -d '%' | cut -c1-260; }
 
 rm -rf "$CT_DIR"; mkdir -p "$CT_DIR"
 
@@ -67,13 +69,22 @@ OUT=$(SYNO_CT_DIR="$CT_DIR" python3 "$TOOL" verify --case "INC-20260802-stash" 2
 assert_contains "$OUT" '"closed"' "verify 输出 closed"
 echo ""
 
-echo "── 4b. verify 受限 PATH（bash 不在 PATH → _find_bash 显式 fallback）──"
-# D316: Windows 下 _find_bash 显式候选（Git 安装路径）；D561: POSIX 候选（/bin/bash 等 4 路）
-# ——受限 PATH 下 bash 不在 PATH 时双平台兜底 → closed（本断言 PASS = green）。
-# （K3 P2② 原注释只述 D316 机制、未同步 D561 POSIX——本批如实化）
+echo "── 4b. verify 受限 PATH（平台适配构造）──"
+# D316: _find_bash 显式候选；D561: POSIX 候选（/bin/bash 等 4 路）。
+# 第4轮（真 Win CI 实证 4b 红）: 原硬编码 PATH="/c/Windows/system32:/c/Windows" 在
+# Windows 原生 python 的 which() 下会命中 System32 的 WSL bash（若存在）→ 错误 bash
+# 跑 hook → 无「禁止」→ open。修法 = 按平台构造受限 PATH（断言目标不变: 受限 PATH
+# 下闭环仍工作）:
+#   mac/linux: bash 不在 PATH → _find_bash POSIX 候选兜底（D561，macOS 语义零变化）
+#   windows: Git usr/bin（bash 可达、python3 不在）→ which 命中正确 Git bash
+if grep -qiE 'MINGW|MSYS|CYGWIN' <<< "$(uname -s)"; then
+  RESTRICTED_PATH="$(dirname "$(command -v bash)")"
+else
+  RESTRICTED_PATH="/c/Windows/system32:/c/Windows"
+fi
 PYBIN=$(command -v python3)
-OUT=$(SYNO_CT_DIR="$CT_DIR" env PATH="/c/Windows/system32:/c/Windows" "$PYBIN" "$TOOL" verify --case "INC-20260802-stash" 2>&1) || true
-assert_contains "$OUT" '"closed"' "受限 PATH 下 verify 仍 closed（_find_bash 显式 fallback）"
+OUT=$(SYNO_CT_DIR="$CT_DIR" env PATH="$RESTRICTED_PATH" "$PYBIN" "$TOOL" verify --case "INC-20260802-stash" 2>&1) || true
+assert_contains "$OUT" '"closed"' "受限 PATH 下 verify 仍 closed（平台受限 PATH 构造）" "RESTRICTED_PATH[$RESTRICTED_PATH] $(diag_out "$OUT")"
 echo ""
 
 echo "── 4c. SYNO_PYTHON 注入（D564 Windows 根因回归）──"
@@ -84,7 +95,7 @@ echo "── 4c. SYNO_PYTHON 注入（D564 Windows 根因回归）──"
 # 治法: 工具侧注入确定可用解释器（SYNO_PYTHON=sys.executable）+ hook 优先消费。
 # 本断言在「PATH 无 python3（仅 cat/grep）」下锁定该契约，双平台确定性。
 if grep -qiE 'MINGW|MSYS|CYGWIN' <<< "$(uname -s)"; then
-  NO_PY3_BIN="$(dirname "$(command -v cat)")"   # Git usr/bin: cat/grep/dirname 有、python3 无
+  NO_PY3_BIN="$(dirname "$(command -v cat)")"   # Git usr/bin: cat/grep/dirname 有、python3 无（bash 由绝对路径调用，不受 PATH 影响）
 else
   NO_PY3_BIN="$CT_DIR/fakebin"
   mkdir -p "$NO_PY3_BIN"
@@ -93,7 +104,7 @@ else
   ln -sf "$(command -v dirname)" "$NO_PY3_BIN/dirname"   # 主 hook L25 顶层调用（set -e 硬依赖）
 fi
 OUT=$(printf '{"tool_input":{"command":"git stash"}}' | SYNO_CT_DIR="$CT_DIR" env PATH="$NO_PY3_BIN" SYNO_PYTHON="$PYBIN" "$(command -v bash)" "$DETECT" 2>&1) || true
-assert_contains "$OUT" "禁止" "SYNO_PYTHON 注入: hook 在 PATH 无 python3 下仍拦 stash"
+assert_contains "$OUT" "禁止" "SYNO_PYTHON 注入: hook 在 PATH 无 python3 下仍拦 stash" "NO_PY3_BIN[$NO_PY3_BIN] PYBIN[$PYBIN] bash[$(command -v bash)] $(diag_out "$OUT")"
 echo ""
 
 echo "── 5. record 幂等 ──"
