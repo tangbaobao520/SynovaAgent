@@ -38,7 +38,7 @@ L1 交互层。D489（GA consult 路由经 DiagnosisLauncher 落流）引入 `ne
 - 修改 .claude/task-briefs/2026-08-29-D564-incident-loop-win-fix.md：同批 D564 brief（CTO 派单批量提交）
 
 不做什么：
-- 不改 SessionStore 构造器签名（Database.Database 契约不变）
+- 不改 src/store/session-store.ts：构造器签名（Database.Database 契约不变）
 - 不改 diagnosis.ts 其他逻辑（D489 功能已按 dev doc 验收中）
 - 不改 scripts/audit/（审计红线）
 
