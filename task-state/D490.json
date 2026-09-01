@@ -1,0 +1,19 @@
+{
+  "task_id": "D490",
+  "title": "expert-config-loader parseSimpleYaml 死分支修复（yaml 驱动专家路由）",
+  "slice": null,
+  "status": "spec_done",
+  "risk": "medium",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-D490-expert-config-parser-fix-20260901.md",
+    "commit": "PENDING",
+    "by": "dev-doc",
+    "at": "2026-09-01"
+  },
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-01",
+  "updated_by": "dev-doc",
+  "note": "D488 v2 上报的生产缺陷独立修复：parseSimpleYaml 专家键分支自相矛盾恒假 + regex 不匹配连字符，导致 yaml 声明式过滤失效、诊断回退全专家。修复后 3 诊断 + 4 后台。"
+}
