@@ -18,7 +18,7 @@
 
 ### 缺陷：expert-router.ts 与测试仍用 D282 已删的旧专家名
 
-`src/agent/expert-router.ts:136-151` `selectExpert` 返回旧专家名：
+`src/agent/expert-router.ts:165-181` `selectExpert` 返回旧专家名：
 
 ```ts
 if (s.includes('finance') || ...) return 'finance';      // 旧名，已删 → 应 finance-structure
@@ -39,7 +39,7 @@ if (s.includes('knowledge') || ...) return 'knowledge';    // 旧名，已删 �
 
 ### 生产使用范围（grep 实证）
 
-- `ExpertRouter.dispatch` 生产调用方：`cross-validator.ts:158`、`task-decomposer.ts:249`。
+- `ExpertRouter.dispatch` 生产调用方：`cross-validator.ts:164`、`task-decomposer.ts:249`。
 - `ExpertRouter.selectExpert` **零生产调用**（仅测试用，死代码——但为一致性仍须修）。
 
 ### 无重复造轮子审计（S-14）
@@ -54,7 +54,7 @@ if (s.includes('knowledge') || ...) return 'knowledge';    // 旧名，已删 �
 ### 3.1 写集 (2 修改 + 0 新建)
 | 文件 | 操作 | 说明 |
 |------|------|------|
-| src/agent/expert-router.ts | 修改 | `selectExpert`（L136-151）映射旧专家名 → 7 位新专家名（见 §4.5 映射表）；fallback 'org' → 'host'；action/business_model/knowledge 旧名分支删除（无对应专家） |
+| src/agent/expert-router.ts | 修改 | `selectExpert`（L165-181）映射旧专家名 → 7 位新专家名（见 §4.5 映射表）；fallback 'org' → 'host'；action/business_model/knowledge 旧名分支删除（无对应专家） |
 | tests/agent/expert-router.test.ts | 修改 | 4 个失败用例 + selectExpert 用例全部改用 7 位专家名（finance→finance-structure、strategy→competitive-strategy、org→talent-cycle、marketing→customer-cycle） |
 
 > 共享资源标注（S-8）：写集不含 VERSION.md（测试/映射修复，非门禁/工具行为变化，不 bump）。
@@ -100,7 +100,7 @@ RED 必须覆盖失败模式（S-5）：现状 dispatch('finance') / loadExpertM
 | export/函数 | 调用方 | 确认方式 |
 |-------------|--------|---------|
 | selectExpert（已 export） | 零生产调用（仅测试） | grep -rn "selectExpert" src/ --include="*.ts" 非 test 零命中 |
-| dispatch（已 export） | cross-validator.ts:158 / task-decomposer.ts:249 | grep 命中（不改 dispatch，仅保证 expertType 用新名时非 degraded） |
+| dispatch（已 export） | cross-validator.ts:164 / task-decomposer.ts:249 | grep 命中（不改 dispatch，仅保证 expertType 用新名时非 degraded） |
 
 本任务无新 export，接线为「修 selectExpert 旧名映射 + 测试对齐」。
 
