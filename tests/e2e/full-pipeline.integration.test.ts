@@ -198,13 +198,32 @@ describe('D99: Full Pipeline E2E — 完整管线集成测试', () => {
     }
   });
 
-  it('Stage 5b: 专家加载 — 所有 9 位专家 manifest + PROMPT.md', async () => {
+  it('Stage 5b: 专家加载 — expert-registry.yaml enabled 专家 manifest + PROMPT.md', async () => {
     const fs = await import('fs');
     const path = await import('path');
+    // D282 9→7 迁移后硬编码专家数恒失败（D480 上报）— 改为动态读 expert-registry.yaml
+    // （声明式单一事实源），专家数再变时只改 yaml，测试自动跟随，不再漂移。
+    // 轻量解析（dev doc §4.5 决策点 2）：enabled: true 条目数 + 2 空格缩进的专家键集合。
+    // fail-closed: yaml 缺失 → readFileSync 抛错；yaml 为空/解析为 0 → 与目录数必不等 → 测试红。
+    // 注: 不复用 src/agent/expert-config-loader 的 loadExpertConfig — 2026-08-28 实证其对
+    // v2.0 嵌套格式恒解析 0 专家（parseSimpleYaml 专家键分支 /^  [a-z_]+:$/ && !includes(':')
+    // 自相矛盾为死分支，expertCount:0，上游靠 expert-file-loader 文件扫描静默兜底），缺陷已单独
+    // 上报；其修复后本测试可切回 loadExpertConfig 与生产同源。
+    const registryPath = path.join(process.cwd(), 'expert', 'expert-registry.yaml');
+    const registryContent = fs.readFileSync(registryPath, 'utf-8');
+    const registryLines = registryContent.split('\n');
+    const expectedExperts = registryLines.filter((line) => /^\s+enabled:\s*true\s*$/.test(line)).length;
+    const declaredNames = registryLines
+      .map((line) => /^ {2}([a-z][a-z0-9-]*):\s*$/.exec(line))
+      .filter((m): m is RegExpExecArray => m !== null)
+      .map((m) => m[1]);
+
     const expertDir = path.join(process.cwd(), 'expert');
     const entries = fs.readdirSync(expertDir, { withFileTypes: true });
     const experts = entries.filter((e) => e.isDirectory() && !e.name.startsWith('_'));
-    expect(experts.length).toBeGreaterThanOrEqual(9);
+    expect(experts.length).toBe(expectedExperts);
+    // 目录集合与声明集合必须一致（仅比计数多一道交叉验证：计数相等但名单漂移也拦下）
+    expect(experts.map((e) => e.name).sort()).toEqual([...declaredNames].sort());
 
     for (const exp of experts) {
       const manifestPath = path.join(expertDir, exp.name, 'manifest.json');
