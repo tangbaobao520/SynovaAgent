@@ -62,14 +62,16 @@ const expertTypes = enabledFromConfig.length > 0
 ### 3.1 写集 (2 修改 + 0 新建)
 | 文件 | 操作 | 说明 |
 |------|------|------|
-| src/agent/expert-config-loader.ts | 修改 | L39 专家键分支修正：`/^  [a-z_]+:$/.test(line) && !line.includes(':')` → `/^  [a-z0-9_-]+:$/.test(line)`（去自相矛盾的 !includes(':')，regex 扩连字符/数字）；enabled/background 解析（L43-47）保持；model/tools 字段接口保留（grep 证实无消费方，不为此扩面） |
-| tests/agent/expert-config-loader.test.ts | 修改（补强） | 现状仅验返回类型（Array/Set），补强为 parseSimpleYaml 断言（7 专家 + enabled/background 正确，见 §4） |
+| src/agent/expert-config-loader.ts | 修改 | L39 专家键分支修正：`/^  [a-z_]+:$/.test(line) && !line.includes(':')` → `/^  [a-z0-9_-]+:$/.test(line)`（去自相矛盾的 !includes(':')，regex 扩连字符/数字）；L36 `split('\n')` → `split(/\r?\n/)`（CRLF 容错，见 §3.2）；enabled/background 解析（L43-47）保持；model/tools 字段接口保留（grep 证实无消费方，不为此扩面） |
+| tests/agent/expert-config-loader.test.ts | 修改（补强） | 现状仅验返回类型（Array/Set），补强为 parseSimpleYaml 契约断言 5 用例（≥4 要求：7 专家 + enabled/background + fail-open 降级 + 缓存语义 + 合成 yaml 边界，见 §4） |
 
 > 共享资源标注（S-8）：写集不含 VERSION.md（业务代码修复，非门禁/工具行为变化，不 bump）；与 D556（src/loops）零交集。
 
 ### 3.2 最终实现同 commit 回填（S-6）
 
-若实现偏离（如改用 js-yaml、或 model/tools 一并解析、或增加嵌套层级校验），必须在同一提交更新本节为最终形态。
+实现相对原方案有 1 处偏离，已实测必要（非扩面）：
+- **偏离 1：`split('\n')` → `split(/\r?\n/)`（src/agent/expert-config-loader.ts:36）**。实测发现：本机 core.autocrlf=true → 工作区 expert/expert-registry.yaml 为 CRLF（`file` 实测 "with CRLF line terminators"），`split('\n')` 残留 `\r` 使 `$` 锚定的专家键正则恒不匹配 → 仅修 L39 regex 本机仍 0 专家（vitest 实测 ① 2 failed）。CRLF 容错是 DS3 在 Windows 工作区变绿的必要条件；LF 环境（CI/Linux）行为不变。
+- 最终测试形态：5 用例（dev doc §4 要 ≥4）：① 真实 yaml 7 专家全解析（连字符键）② enabled/background → 3 诊断 + 4 后台 ③ yaml 缺失 fail-open 空配置 ④ 缓存语义（同对象/clear 重读）⑤ 合成 yaml 边界（连字符键 + enabled/background 组合 + disabled 排除）。RED 实证：修复前 ①②⑤ 红（0 专家 / undefined），③④ 绿（降级与缓存语义本就正确）。
 
 ### 3.3 不做的事
 
