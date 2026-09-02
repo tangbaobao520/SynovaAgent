@@ -111,7 +111,29 @@ jobs:
       - name: GraphStore compatibility
         run: npx vitest run tests/architecture/
 
-  
+  test-kit-architecture:
+    name: Test-Kit Architecture Tests (${{ matrix.os }})
+    # D565 (K3 D489 批 P1, M3 家族): packages/test-kit 是独立 package（自带 lock，
+    # 不在 root workspaces）——root Vitest/Architecture job 结构性覆盖不到它，
+    # 棘轮基线（05-as-any-audit, as never 基线）此前只在本地执行。双平台接线闭环。
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: 'npm' }
+      - name: Install test-kit deps
+        working-directory: packages/test-kit
+        run: npm ci
+      - name: Run ratchet baseline test (05-as-any-audit)
+        working-directory: packages/test-kit
+        run: npx vitest run tests/architecture/05-as-any-audit.test.ts
+      # D565 登记: architecture 套件余 4 文件（01/02/04）存量红（wiring-audit 引用已
+      # 拆接线、>1000 行文件、l4 import）——从未入 CI 故腐化未察。修复归编码线
+      # （CT-51 队列），修复一个入列一个；全绿后本 job 收敛为跑全目录。
 
   control-tower-tests:
     name: Control Tower Gate Tests (${{ matrix.os }})
