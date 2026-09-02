@@ -1,11 +1,53 @@
 {
   "task_id": "D564",
   "title": "incident-loop.test.sh Windows 兼容修复 canary 首测双失败",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": null,
-  "impl": null,
-  "audit": null,
+  "impl": {
+    "commit": "a20cd54a",
+    "by": "deepseek-harness",
+    "at": "2026-08-30",
+    "files": [
+      "tests/control-tower/incident-loop.test.sh",
+      "tests/control-tower/platform-checklist.test.sh",
+      "scripts/control-tower/incident-loop.py",
+      "scripts/hooks/hook-git-detect.sh",
+      ".github/workflows/ci.yml",
+      ".claude/task-briefs/2026-09-02-D564-incident-loop-win-fix.md",
+      "memory/notes/implemented/2026-08-30-d564-win-bash-python-injection.md",
+      "task-state/D564.json"
+    ],
+    "evidence": [
+      "失败定位（无 gh 凭据 → GitHub API check-run annotations 物理证据）: 失败 run 33257792825（head 15d6f64e）windows check-run 99114428263 annotations 捕获「结果: 6 通过, 2 失败」+ 断言 5 幂等通过；排除法锁定双失败 = 断言 6 + 4b（仅有的两条依赖子进程 hook 环境的 verify 断言——record/suggest/幂等依赖会话 python3 已被 6/8 证明可用，known-error-patterns.json 为 git 跟踪文件）",
+      "根因链: hook-git-detect.sh L33 依赖 python3 → _bash_env（D316）拼接 PATH 中 WindowsApps python3 = Store 占位 stub（执行 9009）且先于原 PATH → hook 静默 exit 0（fail-open）→ 输出无「禁止」→ verify open",
+      "修复: incident-loop.py _bash_env 注入 SYNO_PYTHON=sys.executable（POSIX/nt 单一语义）+ hook 优先消费、缺省回落 PATH python3（D312 原行为零变化）；第一性原理——调用方已知确定可用解释器，显式传递优于 PATH 赌博",
+      "S-5 先红: 新增 4c 回归断言（PATH 无 python3 下 hook 仍拦 stash，双平台确定性）未修 hook 实测红 8 通过 1 失败 → 修复后 9 通过 0 失败（本地 macOS 全量实跑）",
+      "回归: hook-git-detect.test.sh 13/13 + ban-stash.test.sh 6/6 绿（hook 消费端向后兼容证实）；bash -n ×2 + py_compile PASS；check-plan-integrity + check-brief-parseable PASS",
+      "canary 回列: ci.yml incident-loop 复位 18ae1b80 原位（g12 之后），26→27；grep 确认全仓无别处硬编码 canary 数量",
+      "决策 Note: memory/notes/implemented/2026-08-30-d564-win-bash-python-injection.md（D395-a/D534 commit-msg 门禁）",
+      "返工（CTO 验收退回 2026-08-30）: G12 brief 日期窗口过期 → git mv 至 2026-08-31-D564-incident-loop-win-fix.md（无代码变更，impl.commit 保持 a20cd54a）；复验 macOS 9/9 + hook 13/13 + ban-stash 6/6 + canary 27 全绿",
+      "返工·第4轮（真 Win CI 实证 7/9，4b/4c 仍红）: ① CTO 自认第3轮排除项指引有误 → 删 brief 矛盾排除项行；② 4b 平台适配——原硬编码 PATH=\"/c/Windows/system32:/c/Windows\" 在真 Win 原生 python 的 which() 下命中 System32 WSL bash（若存在）→ 错误 bash 跑 hook；改为按平台构造受限 PATH（win: Git usr/bin，bash 可达 python3 不在；mac: 原值不变，D561 POSIX 兜底语义零变化），断言目标不变；③ assert_contains 增加可选第 4 参诊断 + diag_out helper（失败时输出 OUT 压单行 + NO_PY3_BIN/PYBIN/bash 定位值，经 CI ::error annotation tail-8 可捕获）——4c 若真 Win 仍红可凭诊断定位；④ 本地回归 macOS 9/9 + 13/13 + 6/6 全绿（行为零变化实证）",
+      "返工·第6轮: fail() 增 FAIL_NAMES 累积 + 「失败断言:」汇总行落 tail-8 注解窗口（CTO 指令，终结盲猜）",
+      "返工·第7轮（2026-09-02，CTO 授权全修三件; 第6轮 FAIL_NAMES 揭示真失败对 = 断言 6 + 4b，4c 一直绿——第4轮归因修正）: ① 真根因 cp1252——verify() subprocess text=True 在 Windows 用 locale 编码解码 hook UTF-8「禁止」（0x81 cp1252 未定义，本地机制证明 b'\\xe7\\xa6\\x81'.decode('cp1252') → UnicodeDecodeError）→ except → degraded → 无 closed；断言 6/4b 均经工具 verify 双红、4c 直调 hook 不经 subprocess 故绿；与 SYNO_PYTHON（第2轮修 hook 内 python 解析）是两个独立故障 → 修法 subprocess.run 显式 encoding=utf-8 errors=replace（macOS/Linux 零行为变化），Note 扩展决策记录；② brief 日期窗口再过期（08-31<09-02）→ 改名 2026-09-02；③ platform-checklist.test.sh 存量三联缺陷（探针绝对路径不匹配检查块 ^scripts/ 相对锚定 + L54 rm 先于 strict 复用 + 点名断言被 ✅ 头行空洞满足；main 巧合 rc2=1 掩盖，本地复现 13/14）→ 相对名注入 + rm 挪后 + 断言改命中探针文件名，本地 14/14"
+    ],
+    "notes": "唯一有效验收通道 = CI Windows job（本地 macOS 无法复现 Win 失败语义）——CTO 合并前须查 check-runs job 级 windows-latest success。边界: hook-git-guard.sh 内部 python3（窗口标记写入）在坏 python3 环境仍 fail-open degraded（本批不改，同型根因记入 Note 后续）；brief Done「8 通过」按新增 4c 断言如实修正为「9 通过」（macOS 原 8 断言零变化）。观察: brief Q0 原文称失败 run「3323...」与实际 33257792825 不符（brief 笔误，annotations 为准）"
+  },
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-09-02-D489-D563-D564.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "findings": [
+      "cp1252 根因修复实证：incident-loop.py L307-312 subprocess.run 显式 encoding=utf-8 errors=replace；本地机制证明 b'\\xe7\\xa6\\x81'.decode('cp1252') → UnicodeDecodeError（0x81 未定义）→ degraded → verify 误报 open 的根因链物理成立",
+      "SYNO_PYTHON 注入/消费：incident-loop.py L117-118 + hook-git-detect.sh L37-41（优先 SYNO_PYTHON 回落 PATH python3，D312 向后兼容）；hook-git-detect 13/13 + ban-stash 6/6 实测",
+      "macOS 语义零变化：incident-loop 9/9（原 8 断言 + 4c 新增）；4b 平台适配 + assert_contains 第 4 参/diag_out 诊断输出（L27-29/L72-107）；platform-checklist 14/14（该文件实际 D563 修，D564 验证一致）",
+      "canary 27：ci.yml L139-165 计数 27 项，incident-loop L158 原位（g12 之后 26→27）",
+      "PR #314 CI job 级 10/10 success——含 Control Tower Gate Tests (windows-latest) success（唯一有效验收通道，job 级确认）",
+      "P2 记录：hook-git-guard.sh 内部 python3 fail-open 边界未修（task-state 已如实声明）；D564 task-state evidence 对 platform-checklist 修复归属表述不精确（实际 D563 提交，最终文件一致无功能影响）"
+    ],
+    "by": "K3",
+    "at": "2026-09-02"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-08-29",
-  "updated_by": "alloc-task-id"
+  "updated_at": "2026-09-02",
+  "updated_by": "K3"
 }

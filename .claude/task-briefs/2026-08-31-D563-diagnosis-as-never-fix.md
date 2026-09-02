@@ -20,9 +20,15 @@ L1 交互层。D489（GA consult 路由经 DiagnosisLauncher 落流）引入 `ne
 ## Q1: 调研
 铁律 38（类型断言零容忍）+ 铁律 24/31（降级显式）；CT-46 先例（mcp as never 已由 D558 清理）；D558 棘轮基线含 as never 9 处——本任务清理 2 处后编码方应同步下调棘轮基线（9→7，只许收紧）。
 
+### Q1c 决策参考系（D333）+ 实测修正记录
+参考：第一性原理 + Anthropic 工程基线（fail-closed→显式降级）+ 结论：类型谓词（方法探测）优于任何断言形式。
+**实测修正（D563 执行时）**：全仓棘轮扫描器实测 as never = 10（非 brief 假设的 9）——D489 的 L181 在「门禁红但 PR 先合并」（CT-47 台账）下进 main，击穿 D558 基线。brief「9→7」的前提「仅当全仓实测=7」不成立；按实测修正：清理 2 处 → 基线 9→**8**（棘轮只许收紧，9→8 仍是收紧）。S-5 先红证据 = main 现状棘轮测试红（`as never 存量 10 > 基线 9`，1 failed | 5 passed，D489 合并后果），非临时加断言。
+**返工记录（2026-08-30 CTO 验收退回）**：① Architecture Check 1d 红（L1→L5 跨层引用 5 处——谓词 better-sqlite3 类型/注释/消息字样均计红）→ isSqliteDatabase 整体移入 src/store/session-store.ts 导出（谓词归 L5 存储层），diagnosis.ts 删 better-sqlite3 type import、经既有动态 import 通道解构，TypeError 消息改「非 SQLite 句柄」；② G12 brief 日期窗口过期 → git mv 至 2026-08-31 文件名。
+
 ## Q2: 范围
 做什么：
 - 修改 src/routes/diagnosis.ts：L181+L411 as never → 类型谓词/窄化（保留降级语义）
+- 修改 src/store/session-store.ts：isSqliteDatabase 谓词导出（2026-08-30 返工：Architecture L1→L5 门禁——谓词归 L5 存储层，L1 经既有动态 import 通道解构）
 - 修改 packages/test-kit/tests/architecture/05-as-any-audit.test.ts：棘轮基线 9→7（as never，仅当全仓实测=7）
 - task-state/D563.json：回填
 - 修改 docs/synova/coordination/审计派单-20260829-D489-GA片2B.md：本批 K3 派单（D489 初审 + D563/D564 复审）
@@ -32,7 +38,6 @@ L1 交互层。D489（GA consult 路由经 DiagnosisLauncher 落流）引入 `ne
 - 修改 .claude/task-briefs/2026-08-29-D564-incident-loop-win-fix.md：同批 D564 brief（CTO 派单批量提交）
 
 不做什么：
-- 不改 SessionStore 构造器签名（Database.Database 契约不变）
 - 不改 diagnosis.ts 其他逻辑（D489 功能已按 dev doc 验收中）
 - 不改 scripts/audit/（审计红线）
 
@@ -49,5 +54,5 @@ L1 交互（routes/）+ 测试工具层
 - [x] 零 as never verify: grep -c "as never" src/routes/diagnosis.ts | xargs test 0 -eq
 - [x] tsc 零新增 verify: npx tsc --noEmit --pretty false 2>&1 | grep -cE "error TS" | xargs test 28 -eq
 - [x] 回归绿 verify: npx vitest run tests/routes/diagnosis-consult-events.test.ts tests/agent/diagnosis-session-events.test.ts 2>&1 | grep "9 passed"
-- [x] 棘轮同步 verify: grep -c "'as never': 7" packages/test-kit/tests/architecture/05-as-any-audit.test.ts | xargs test 1 -ge
+- [x] 棘轮同步 verify: grep -c "'as never': 8" packages/test-kit/tests/architecture/05-as-any-audit.test.ts | xargs test 1 -ge
 - [x] 回填 verify: python3 -c "import json; d=json.load(open('task-state/D563.json')); assert d['status']=='impl_done'"

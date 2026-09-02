@@ -44,29 +44,37 @@ OUT=$(cd "$REPO" && SYNO_TEST_ARM=1 SYNO_CI=0 \
 TMPD="$(mktemp -d)"; trap 'rm -rf "$TMPD"' EXIT
 mkdir -p "$REPO/scripts/control-tower"
 PROBE="$REPO/scripts/control-tower/tmp-d520-plat-probe.sh"
+# D564r7: 检查块锚定 ^scripts/ 相对路径（与 git diff --cached 输出一致）——原传
+# 绝对路径永不匹配 → 检查空转（软/strict 双空转）。探针以相对名注入，实体仍按 $PROBE 读写
+PROBE_REL="scripts/control-tower/tmp-d520-plat-probe.sh"
 printf '#!/bin/bash\npython3 -c "print(1)"\ndate +%%s\ngrep -P x f\n' > "$PROBE"
 OUT=$(cd "$REPO" && SYNO_TEST_ARM=1 SYNO_CI=0 \
-  SYNO_GIT_CACHED_NAMES="$PROBE" \
-  SYNO_GIT_CACHED_ALL_NAMES="$PROBE" \
-  SYNO_GIT_CACHED_ADDED_NAMES="$PROBE" \
+  SYNO_GIT_CACHED_NAMES="$PROBE_REL" \
+  SYNO_GIT_CACHED_ALL_NAMES="$PROBE_REL" \
+  SYNO_GIT_CACHED_ADDED_NAMES="$PROBE_REL" \
   SYNO_GATEKEEPER_ACK=1 SYNO_SKIP_PARALLEL_WARN=1 SYNO_GATE_HITS_LOG="$(mktemp)" \
   bash scripts/pre-commit-check.sh 2>&1); rc=$?
-rm -f "$PROBE"
 [ "$rc" -eq 0 ] && ok "行为: 软提示不阻断本地 (exit 0)" || no "应 exit 0, 实际 $rc"
-echo "$OUT" | grep -q "平台敏感命令" && echo "$OUT" | grep -q "PLATFORM-CHECKLIST.md" \
+# D564r7: 点名断言非空洞化——原双关键词 grep 被 ✅ 头行（恒含两关键词）空洞满足；
+# 须命中探针文件名（仅 hit 行含文件名）
+echo "$OUT" | grep -q "tmp-d520-plat-probe" \
   && ok "行为: 裸 python3/date +%s/grep -P 被点名 checklist" || no "未点名: $(echo "$OUT" | grep 平台 | head -2)"
 # CI strict: SYNO_CI=1 时同一检查转硬
 OUT2=$(cd "$REPO" && SYNO_TEST_ARM=1 SYNO_CI=1 \
-  SYNO_GIT_CACHED_NAMES="$PROBE" SYNO_GIT_CACHED_ALL_NAMES="$PROBE" SYNO_GIT_CACHED_ADDED_NAMES="$PROBE" \
+  SYNO_GIT_CACHED_NAMES="$PROBE_REL" SYNO_GIT_CACHED_ALL_NAMES="$PROBE_REL" SYNO_GIT_CACHED_ADDED_NAMES="$PROBE_REL" \
   SYNO_GATEKEEPER_ACK=1 SYNO_SKIP_PARALLEL_WARN=1 SYNO_GATE_HITS_LOG="$(mktemp)" \
   bash scripts/pre-commit-check.sh 2>&1); rc2=$?
+# D564r7: 探针清理移到 strict 复用之后（原 rm 先于 strict → strict 恒空转 rc2=0）
+rm -f "$PROBE"
 [ "$rc2" -eq 1 ] && ok "CI strict: SYNO_CI=1 同检查转硬阻断 (exit 1)" || no "CI strict 未生效: $rc2"
 
 # ── 通过: 干净脚本 → 无点名 ──
 CLEAN="$REPO/scripts/control-tower/tmp-d520-clean-probe.sh"
+# D564r7: 同 PROBE——相对名注入（原绝对路径致检查空转、零误报断言空洞绿）
+CLEAN_REL="scripts/control-tower/tmp-d520-clean-probe.sh"
 printf '#!/bin/bash\nPYBIN=""\nfor _c in python3 python py; do command -v "$_c" >/dev/null 2>&1 && PYBIN="$_c" && break; done\necho ok\n' > "$CLEAN"
 OUT3=$(cd "$REPO" && SYNO_TEST_ARM=1 SYNO_CI=0 \
-  SYNO_GIT_CACHED_NAMES="$CLEAN" SYNO_GIT_CACHED_ALL_NAMES="$CLEAN" SYNO_GIT_CACHED_ADDED_NAMES="$CLEAN" \
+  SYNO_GIT_CACHED_NAMES="$CLEAN_REL" SYNO_GIT_CACHED_ALL_NAMES="$CLEAN_REL" SYNO_GIT_CACHED_ADDED_NAMES="$CLEAN_REL" \
   SYNO_GATEKEEPER_ACK=1 SYNO_SKIP_PARALLEL_WARN=1 SYNO_GATE_HITS_LOG="$(mktemp)" \
   bash scripts/pre-commit-check.sh 2>&1); rc3=$?
 rm -f "$CLEAN"
