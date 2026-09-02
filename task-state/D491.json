@@ -1,0 +1,19 @@
+{
+  "task_id": "D491",
+  "title": "expert-router 测试债修复（selectExpert 映射 + 测试对齐 7 位专家）",
+  "slice": null,
+  "status": "spec_done",
+  "risk": "low",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-D491-expert-router-test-debt-20260902.md",
+    "commit": "PENDING",
+    "by": "dev-doc",
+    "at": "2026-09-02"
+  },
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-02",
+  "updated_by": "dev-doc",
+  "note": "D490 遗留测试债：expert-router.ts selectExpert + 测试仍用 D282 已删旧专家名（finance/strategy/org/marketing/action/business_model/knowledge）。修 selectExpert 映射到 7 位专家 + 测试对齐。"
+}
