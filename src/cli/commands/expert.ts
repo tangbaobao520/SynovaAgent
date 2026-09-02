@@ -10,12 +10,33 @@ import { existsSync, readFileSync, writeFileSync, readdirSync, mkdirSync, rmSync
 import { join } from 'path';
 import * as readline from 'readline';
 import type { CLICommand } from '../types';
+import { getAllExpertIds } from '../../agent/expert-config-loader';
 
 const EXPERT_BASE = () => join(process.cwd(), 'expert');
 
-const BUILTIN_EXPERTS = [
-  'strategy', 'org', 'finance', 'tech', 'marketing', 'action', 'business_model', 'knowledge',
-];
+/**
+ * 内置专家清单 — D567: 以 expert/expert-registry.yaml 为唯一事实源动态读取，
+ * 消灭旧 8 位硬编码封闭枚举（D282 9→7 迁移遗留）。
+ *
+ * 契约:
+ *   @input  — 无（内部 getAllExpertIds() 带缓存）
+ *   @output — registry 声明的专家 ID 数组
+ *   @degraded — yaml 缺失/为空 → 降级目录扫描（expert/ 下含 manifest.json 的非 _ 目录），
+ *               目录不可读 → console.error + 返回 []（不静默，铁律 24）
+ */
+function builtinExperts(): string[] {
+  const ids = getAllExpertIds();
+  if (ids.length > 0) return ids;
+  try {
+    return readdirSync(EXPERT_BASE(), { withFileTypes: true })
+      .filter((e) => e.isDirectory() && !e.name.startsWith('_'))
+      .filter((e) => existsSync(join(EXPERT_BASE(), e.name, 'manifest.json')))
+      .map((e) => e.name);
+  } catch (err: unknown) {
+    console.error(`expert 目录不可读 — 专家清单降级为空: ${err instanceof Error ? err.message : String(err)}`);
+    return [];
+  }
+}
 
 export function createExpertCommand(): CLICommand {
   return {
@@ -37,7 +58,7 @@ export function createExpertCommand(): CLICommand {
   delete <type>           删除自定义专家
 
 说明:
-  - 内置 8 位专家 (${BUILTIN_EXPERTS.join('/')}) 不可删除
+  - 内置 ${builtinExperts().length} 位专家 (${builtinExperts().join('/')}) 不可删除（以 expert-registry.yaml 为准）
   - 自定义专家存储在 expert/ 目录
 `);
         return;
@@ -72,8 +93,9 @@ export function createExpertCommand(): CLICommand {
 }
 
 async function listExperts(): Promise<void> {
+  const builtins = builtinExperts();
   console.log('\n内置专家:');
-  for (const name of BUILTIN_EXPERTS) {
+  for (const name of builtins) {
     const dir = join(EXPERT_BASE(), name);
     const hasFiles = existsSync(dir) ? ' (已自定义)' : '';
     console.log(`  ✅ ${name}${hasFiles}`);
@@ -82,7 +104,7 @@ async function listExperts(): Promise<void> {
   // 列出自定义专家
   if (existsSync(EXPERT_BASE())) {
     const entries = readdirSync(EXPERT_BASE(), { withFileTypes: true });
-    const custom = entries.filter(e => e.isDirectory() && !BUILTIN_EXPERTS.includes(e.name));
+    const custom = entries.filter(e => e.isDirectory() && !builtins.includes(e.name));
     if (custom.length > 0) {
       console.log('\n自定义专家:');
       for (const dir of custom) {
@@ -171,7 +193,7 @@ async function editExpert(type: string): Promise<void> {
 }
 
 async function deleteExpert(type: string): Promise<void> {
-  if (BUILTIN_EXPERTS.includes(type)) {
+  if (builtinExperts().includes(type)) {
     console.error(`❌ 不能删除内置专家 "${type}"`);
     return;
   }
