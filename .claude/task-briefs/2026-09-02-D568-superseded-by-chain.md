@@ -22,7 +22,8 @@ D551 supersede 先例（ga-calibration 版本链语义）；L4-3 归因（语义
 ## Q2: 范围
 做什么：
 - 修改 scripts/control-tower/enterprise-fact-store.ts：版本链真实实现（旧条目保留 + supersededBy 回填 + 默认查链头）
-- 新增 tests/（版本链三断言：写入→更新→旧条目 supersededBy 非空 + 可追溯 + 默认读链头）
+- 新增 tests/control-tower/enterprise-fact-chain.test.ts：版本链三断言（写入→更新→旧条目 supersededBy 非空 + 可追溯 + 默认读链头）+ 链头语义断言
+- 新增 memory/notes/proposed/2026-09-02-d568-enterprise-fact-superseded-chain.md：D395-a/D534 决策 Note（版本链方案）
 - 修改 task-state/D568.json：回填
 
 不做什么：
