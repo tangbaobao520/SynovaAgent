@@ -161,21 +161,21 @@ export class ExpertRouter {
   /**
    * 根据输入发现选择最适合的专家类型。
    * MVP: 基于 sentinel ID 的命名惯例匹配。
+   * D491: 映射对齐 expert-registry.yaml v2.0 的 7 位专家（D282 删除旧 9 专家命名）。
+   * 映射表: docs/plans/codex/implementation/SYNOVA-IMPL-D491-expert-router-test-debt-20260902.md §4.5（按默认表执行，未微调）。
    */
-  selectExpert(inputFindings: Array<{ id: string; severity: string; title: string; sentinel?: string }>, fallback = 'org'): string {
+  selectExpert(inputFindings: Array<{ id: string; severity: string; title: string; sentinel?: string }>, fallback = 'host'): string {
     if (!inputFindings || inputFindings.length === 0) return fallback;
 
     // 从 sentinel ID 推断维度
     for (const f of inputFindings) {
       const s = (f.sentinel || f.id).toLowerCase();
-      if (s.includes('finance') || s.includes('capital') || s.includes('cash') || s.includes('margin') || s.includes('cost') || s.includes('revenue') || s.includes('break') || s.includes('dol') || s.includes('npv')) return 'finance';
-      if (s.includes('market') || s.includes('customer') || s.includes('churn') || s.includes('brand') || s.includes('channel') || s.includes('competition') || s.includes('hhi') || s.includes('position')) return 'marketing';
-      if (s.includes('talent') || s.includes('hr') || s.includes('people') || s.includes('org') || s.includes('culture') || s.includes('knowledge') || s.includes('learning')) return 'org';
+      if (s.includes('finance') || s.includes('cash') || s.includes('margin') || s.includes('cost') || s.includes('revenue') || s.includes('break') || s.includes('dol') || s.includes('npv')) return 'finance-structure';
+      if (s.includes('capital')) return 'capital-cycle';
+      if (s.includes('market') || s.includes('customer') || s.includes('churn') || s.includes('brand') || s.includes('channel')) return 'customer-cycle';
+      if (s.includes('competition') || s.includes('hhi') || s.includes('position') || s.includes('strategy') || s.includes('governance') || s.includes('risk') || s.includes('seven') || s.includes('power')) return 'competitive-strategy';
+      if (s.includes('talent') || s.includes('hr') || s.includes('people') || s.includes('org') || s.includes('culture')) return 'talent-cycle';
       if (s.includes('tech') || s.includes('product') || s.includes('innovation') || s.includes('data') || s.includes('system') || s.includes('software') || s.includes('infra')) return 'tech';
-      if (s.includes('strategy') || s.includes('executive') || s.includes('governance') || s.includes('risk') || s.includes('seven') || s.includes('power')) return 'strategy';
-      if (s.includes('action') || s.includes('playbook') || s.includes('task')) return 'action';
-      if (s.includes('business') || s.includes('model') || s.includes('bm')) return 'business_model';
-      if (s.includes('knowledge') || s.includes('learn') || s.includes('skill')) return 'knowledge';
     }
 
     return fallback;
