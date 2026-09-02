@@ -104,8 +104,18 @@ def _bash_env(bash: str) -> dict:
     MSYS bash 的 PATH 分隔符是 ':'（Windows ';' 会被当作普通字符）。
     D561 (POSIX): macOS/Linux 下 hook 依赖 cat/grep（/bin、/usr/bin）——
     受限 PATH 时同需显式补全 POSIX 标准目录 + python3 目录（Windows 分支不变）。
+    D564: Windows CI 实测 6/8（PR #305 run 33257792825 annotations）——
+    WindowsApps 的 python3 是 Store 占位 stub（执行即 9009），且被 D316 前置在
+    拼接 PATH 中先于原 PATH → hook 内 `python3 -c` 解析到坏 shim → 静默
+    exit 0（fail-open）→ verify 误报 open（双 verify 断言失败）。
+    治法（第一性原理）: 调用方已知一个确定可用的解释器（sys.executable），
+    显式注入 SYNO_PYTHON，hook 不再赌 PATH 解析。POSIX 分支同注入（单一
+    语义）；hook 侧 SYNO_PYTHON 缺省时回落原 PATH python3（向后兼容）。
     """
     env = dict(os.environ)
+    # D564: 显式注入确定可用的解释器（hook 消费端: scripts/hooks/hook-git-detect.sh）
+    if sys.executable:
+        env["SYNO_PYTHON"] = sys.executable
     if os.name != "nt":
         # D561: POSIX 平台——hook 依赖链 cat/grep/git 恒在 /bin、/usr/bin（部分
         # brew 工具在 /usr/local/bin、/opt/homebrew/bin）；prepend 标准目录，
@@ -289,10 +299,16 @@ def verify(case_id: str) -> dict:
             return {"status": "degraded", "case": case_id,
                     "reason": "bash 不可用 — 无法执行门禁验证 (fail-open)"}
         try:
+            # D564r7: 显式 UTF-8 解码——text=True 在 Windows 用 locale 编码（cp1252）
+            # 解码 hook 的 UTF-8 输出（含「禁止」），0x81 在 cp1252 未定义 →
+            # UnicodeDecodeError → except → degraded → verify 误报 open（真 Win CI
+            # 实证：断言 6+4b 双红而 4c 绿，4c 不经本 subprocess）。macOS/Linux
+            # locale 本就 UTF-8，行为零变化。errors="replace" 兜底极端字节不抛。
             r = subprocess.run(
                 [bash, str(REPO_ROOT / "scripts/hooks/hook-git-detect.sh")],
                 input='{"tool_input":{"command":"git stash"}}',
                 capture_output=True, text=True, timeout=10,
+                encoding="utf-8", errors="replace",
                 env=_bash_env(bash),
             )
             out = r.stdout + r.stderr

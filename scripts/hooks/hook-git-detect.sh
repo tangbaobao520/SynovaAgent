@@ -30,7 +30,15 @@ POST_MODE=0
 
 # ── 从 stdin 解析 tool_input.command（与 hook-block-write.sh 同构）──
 INPUT=$(cat 2>/dev/null || echo '{}')
-COMMAND=$(echo "$INPUT" | python3 -c "
+# D564: python 解析——优先 SYNO_PYTHON（incident-loop.py _bash_env 显式注入的确定
+# 可用解释器；Windows hostedtoolcache 无 python3.exe 且 WindowsApps python3 为
+# Store 占位 stub 时，PATH 解析拿到坏 shim → 本 hook 静默 exit 0（fail-open）→
+# verify 误报 open，CI 实测 6/8）。未注入时回落 PATH python3（D312 原行为不变）。
+PY_BIN="${SYNO_PYTHON:-}"
+if [ -z "$PY_BIN" ]; then
+  PY_BIN="$(command -v python3 2>/dev/null || true)"
+fi
+COMMAND=$(echo "$INPUT" | ${PY_BIN:+"$PY_BIN"} -c "
 import json, sys
 try:
     data = json.load(sys.stdin)
