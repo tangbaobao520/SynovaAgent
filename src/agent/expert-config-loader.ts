@@ -92,6 +92,20 @@ export function clearExpertConfigCache(): void {
   _cachedConfig = null;
 }
 
+/**
+ * 全量专家 ID 列表（expert-registry.yaml 声明序）— D567 唯一事实源访问器。
+ *
+ * 契约:
+ *   @input  — 可选注入 config（默认 loadExpertConfig() 带缓存）
+ *   @output — yaml experts 键名数组（插入序 = yaml 声明序）；空配置（yaml 缺失/解析失败）→ []
+ *   @degraded — yaml 缺失/解析失败时返回 []（loadExpertConfig 内部已 log.warn/error），
+ *               调用方须自行降级（目录扫描 / 兜底默认专家），不得静默假设非空
+ */
+export function getAllExpertIds(config?: ExpertRegistryConfig): string[] {
+  const cfg = config || loadExpertConfig();
+  return Object.keys(cfg.experts || {});
+}
+
 /** 从配置获取启用的诊断专家列表（排除 background） */
 export function getEnabledDiagnosticExperts(config?: ExpertRegistryConfig): string[] {
   const cfg = config || loadExpertConfig();

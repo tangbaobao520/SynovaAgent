@@ -70,37 +70,40 @@ function findSignalRoute(sentinelId: string): SignalRouteResult | undefined {
   // 优先使用 manifest 中的 layer 字段，fallback 到旧 category
   const layer: string = sentinel.config.layer || sentinel.config.category;
 
+  // D567: 路由目标专家 ID 全部对齐 expert-registry.yaml v2.0 的 7 位
+  // （旧 strategy/org/finance 值在注册表中已失效，会被下游 VALID_EXPERTS 过滤成空路由）；
+  // 层→专家为路由语义映射（非封闭枚举），最终派发仍经注册表校验（:636 VALID_EXPERTS）
   const LAYER_EXPERTS: Record<string, string[]> = {
-    environment: ['strategy'],
-    capital: ['finance'],
-    interface: ['strategy'],
+    environment: ['competitive-strategy'],
+    capital: ['finance-structure'],
+    interface: ['competitive-strategy'],
     technology: ['tech'],
-    alignment: ['org'],
-    internal: ['org'],
+    alignment: ['talent-cycle'],
+    internal: ['talent-cycle'],
     // layer fallback: 旧 category 兼容
-    risk: ['org', 'finance'],
-    capability: ['org'],
-    collaboration: ['org', 'tech'],
+    risk: ['talent-cycle', 'finance-structure'],
+    capability: ['talent-cycle'],
+    collaboration: ['talent-cycle', 'tech'],
     health: ['tech'],
     'data-quality': ['tech'],
-    strategy: ['strategy'],
+    strategy: ['competitive-strategy'],
   };
-  const experts = LAYER_EXPERTS[layer] || ['org'];
+  const experts = LAYER_EXPERTS[layer] || ['host'];
 
   // 根据哨兵 ID 细化 interface 层路由
   if (layer === 'interface' || layer === 'interface') {
     const sid = sentinel.config.id.toLowerCase();
     if (sid.includes('value-capture') || sid.includes('unit-economics') || sid.includes('ltv')) {
-      return { experts: ['finance'], crossValidateAt: 'high' };
+      return { experts: ['finance-structure'], crossValidateAt: 'high' };
     }
     if (sid.includes('niche') || sid.includes('moat') || sid.includes('competitive')) {
-      return { experts: ['strategy'], crossValidateAt: 'high' };
+      return { experts: ['competitive-strategy'], crossValidateAt: 'high' };
     }
     if (sid.includes('network') || sid.includes('transaction-cost') || sid.includes('power')) {
-      return { experts: ['org', 'finance'], crossValidateAt: 'high' };
+      return { experts: ['talent-cycle', 'finance-structure'], crossValidateAt: 'high' };
     }
     if (sid.includes('business') || sid.includes('make-or-buy') || sid.includes('time')) {
-      return { experts: ['business_model', 'strategy'], crossValidateAt: 'high' };
+      return { experts: ['competitive-strategy'], crossValidateAt: 'high' };
     }
   }
 
@@ -639,8 +642,11 @@ export class SentinelRunner {
         try {
           log.info({ signal: signal.id, expert: expertType, evidenceCount: evidenceItems.length, crossValidate: shouldCrossValidate },
             '[runner] 信号路由专家 → 启动推理');
+          // D567: 删除旧 6 位类型 union cast — ExpertType 自 v3.3 起即 string
+          // （subagent-coordinator.ts:19），此处硬编码 union 是枚举复制残留；
+          // 运行时合法性已由上方 VALID_EXPERTS（registry.listTypes()）过滤保证
           const report = await dispatcher.runExpert(
-            expertType as 'strategy' | 'org' | 'finance' | 'tech' | 'marketing' | 'action',
+            expertType,
             evidenceItems as unknown as Evidence[],
           );
           if (report) {

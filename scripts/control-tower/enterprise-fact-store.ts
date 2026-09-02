@@ -55,7 +55,15 @@ export class EnterpriseFactStore {
     this.root = root ?? FACTS_ROOT;
   }
 
-  /** 创建或更新一条企业事实文件 */
+  /**
+   * 创建或更新一条企业事实文件（链头写入）
+   *
+   * 契约（D568 版本链）:
+   *   @input  — category + key + content + metadata（Partial<FactMetadata>）
+   *   @output — 链头文件路径 {root}/{category}/{key}.md；version 递增
+   *   @degraded — 无既有条目 → 写入 v1 链头；有既有条目 → 旧条目归档 {key}.v{N}.md
+   *               并回填 supersededBy={key}#v{新版本}（不覆盖、可追溯），链头写新版本
+   */
   createFact(
     category: string,
     key: string,
@@ -88,8 +96,20 @@ export class EnterpriseFactStore {
     if (metadata?.approvedAt) fullMeta.approvedAt = metadata.approvedAt;
     if (metadata?.rejectedReason) fullMeta.rejectedReason = metadata.rejectedReason;
 
-    // 如果存在旧文件且修改了内容，旧文件保留为历史版本
-    // (不覆盖 — 后续可通过 version 链追溯)
+    // D568: 版本链 — 旧条目不覆盖：归档为 {key}.v{N}.md 并回填 supersededBy={key}#v{新版本}，
+    // {key}.md 恒为链头，历史经 readFactVersion/listFactVersions 追溯（注释与实现一致化）
+    if (existing) {
+      const archivedMeta: FactMetadata = {
+        ...existing.metadata,
+        supersededBy: `${key}#v${version}`,
+      };
+      const archivedMd = this.formatFile(archivedMeta, existing.content);
+      writeFileSync(this.versionFilePath(category, key, existing.metadata.version), archivedMd, "utf-8");
+      log.info(
+        { category, key, archivedVersion: existing.metadata.version, supersededBy: archivedMeta.supersededBy },
+        "企业事实旧版本已归档（supersededBy 回填）",
+      );
+    }
 
     const md = this.formatFile(fullMeta, content);
     writeFileSync(filePath, md, "utf-8");
@@ -114,7 +134,8 @@ export class EnterpriseFactStore {
     for (const cat of categories) {
       const dirPath = join(this.root, cat);
       if (!existsSync(dirPath)) continue;
-      const files = readdirSync(dirPath).filter((f) => f.endsWith(".md"));
+      // D568: 只列链头文件，过滤 {key}.v{N}.md 历史版本
+      const files = readdirSync(dirPath).filter((f) => f.endsWith(".md") && !this.isVersionFileName(f));
 
       for (const file of files) {
         const raw = readFileSync(join(dirPath, file), "utf-8");
@@ -136,13 +157,71 @@ export class EnterpriseFactStore {
       .map((d) => d.name);
   }
 
-  /** 删除事实文件 */
+  /**
+   * 删除事实文件（链头 + 全部历史版本）
+   *
+   * 契约（D568）:
+   *   @input  — category + key
+   *   @output — true=已删除链头及 {key}.v{N}.md 全部历史；false=链头不存在
+   *   @degraded — 历史清理失败不阻断链头删除（逐文件 try 隔离，log.warn）
+   */
   deleteFact(category: string, key: string): boolean {
-    const filePath = join(this.root, category, `${key}.md`);
+    const dirPath = join(this.root, category);
+    const filePath = join(dirPath, `${key}.md`);
     if (!existsSync(filePath)) return false;
     unlinkSync(filePath);
-    log.info({ category, key }, "企业事实已删除");
+    // D568: 链头删除后历史不可达 — 同步清理历史版本（防孤儿/复活）
+    if (existsSync(dirPath)) {
+      for (const f of readdirSync(dirPath)) {
+        if (!this.isVersionFileName(f, key)) continue;
+        try {
+          unlinkSync(join(dirPath, f));
+        } catch (err: unknown) {
+          log.warn({ err: err instanceof Error ? err.message : String(err), file: f }, "历史版本清理失败 — 跳过（链头已删除）");
+        }
+      }
+    }
+    log.info({ category, key }, "企业事实已删除（含历史版本）");
     return true;
+  }
+
+  /**
+   * 读取指定历史版本 — D568 版本链追溯
+   *
+   * 契约:
+   *   @input  — category + key + version
+   *   @output — 该版本 EnterpriseFact（version 为链头时返回链头）；不存在 → null
+   *   @degraded — 版本文件缺失 → null（正常未发生路径，非错误）
+   */
+  readFactVersion(category: string, key: string, version: number): EnterpriseFact | null {
+    const head = this.readFact(category, key);
+    if (head && head.metadata.version === version) return head;
+    const p = this.versionFilePath(category, key, version);
+    if (!existsSync(p)) return null;
+    return this.parseFile(readFileSync(p, "utf-8"));
+  }
+
+  /**
+   * 列出某事实全部版本号（升序，含链头）— D568 版本链追溯
+   *
+   * 契约:
+   *   @input  — category + key
+   *   @output — 版本号升序数组（如 [1,2,3]）；key 不存在 → []
+   *   @degraded — 目录不可读 → []（正常未创建路径，非错误）
+   */
+  listFactVersions(category: string, key: string): number[] {
+    const dirPath = join(this.root, category);
+    if (!existsSync(dirPath)) return [];
+    const versions = new Set<number>();
+    const head = this.readFact(category, key);
+    if (head) versions.add(head.metadata.version);
+    const prefix = `${key}.v`;
+    for (const f of readdirSync(dirPath)) {
+      if (!this.isVersionFileName(f, key)) continue;
+      const n = parseInt(f.slice(prefix.length, -3), 10);
+      if (Number.isFinite(n)) versions.add(n);
+    }
+    return [...versions].sort((a, b) => a - b);
   }
 
   /** 更新事实状态（直接修改文件 front matter） */
@@ -162,6 +241,20 @@ export class EnterpriseFactStore {
   }
 
   // ═══ 文件解析/格式化 ═══
+
+  /** {key}.v{N}.md 历史版本文件路径（D568 版本链） */
+  private versionFilePath(category: string, key: string, version: number): string {
+    return join(this.root, category, `${key}.v${version}.md`);
+  }
+
+  /** 文件名是否为 {key}.v{N}.md 历史版本文件（D568）；传入 key 时仅匹配该 key 的版本文件 */
+  private isVersionFileName(name: string, key?: string): boolean {
+    if (!name.endsWith(".md")) return false;
+    const stem = name.slice(0, -3);
+    const at = stem.lastIndexOf(".v");
+    if (at === -1 || !/^\d+$/.test(stem.slice(at + 2))) return false;
+    return key ? stem.slice(0, at) === key : true;
+  }
 
   private formatFile(meta: FactMetadata, content: string): string {
     const lines = ["---"];
