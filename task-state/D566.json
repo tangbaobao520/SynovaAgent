@@ -1,0 +1,11 @@
+{
+  "task_id": "D566",
+  "title": "提示词优化策略不实修复（K3 21-2 不实转 FIX）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-02",
+  "updated_by": "alloc-task-id"
+}
