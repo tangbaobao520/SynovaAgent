@@ -21,7 +21,7 @@ M3 家族第三次（D540 P2-1 → D549 P1-3 → D561 P2-1）+ K3 D489 批 P1 �
 
 ## Q2: 范围
 做什么：
-- 修改 .github/workflows/ci.yml：新增 test-kit-architecture job（ubuntu+windows 矩阵；cd packages/test-kit && npm ci && npx vitest run tests/architecture/）
+- 修改 .github/workflows/ci.yml：新增 test-kit-architecture job（ubuntu+windows 矩阵；范围先限 05-as-any-audit.test.ts——本地实跑发现 01/02/04 存量红 4 失败从未入 CI 故腐化，登记 CT-51 归编码线修复，修一个入列一个）
 - 修改 packages/test-kit/tests/architecture/05-as-any-audit.test.ts：无需改（本任务纯接线；若 Windows 路径敏感就地适配）
 - 修改 docs/synova/coordination/审计发现台账-DSH-CTO.md：P1 闭环登记
 - 修改 docs/synova/coordination/K3审计清单-20260822.md：P1-testkit 翻转
