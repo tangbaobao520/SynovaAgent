@@ -1,29 +1,30 @@
 /**
  * tests/agent/expert-router.test.ts — D8c 专家路由算法测试
+ * D491: 对齐 expert-registry.yaml v2.0 的 7 位专家（D282 删除 finance/strategy/org/marketing 等旧名）
  */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 
 describe('ExpertRouter — dispatch', () => {
-  it('finance expert → 返回非空分析', async () => {
+  it('finance-structure expert → 返回非空分析', async () => {
     const { ExpertRouter } = await import('../../src/agent/expert-router');
     const router = new ExpertRouter();
     const result = await router.dispatch({
-      subTaskId: 'st-1', expertType: 'finance',
+      subTaskId: 'st-1', expertType: 'finance-structure',
       inputFindings: [{ id: 'F1', severity: 'critical', title: '利润偏低', description: '净利润率5%' }],
       context: { enterpriseId: 'test', diagnosisId: 'd1' },
     });
-    expect(result.expertType).toBe('finance');
+    expect(result.expertType).toBe('finance-structure');
     expect(result.analysis.length).toBeGreaterThan(0);
     expect(result.confidence).toBeGreaterThan(0);
     expect(result.degraded).toBe(false);
     expect(Array.isArray(result.edgeIds)).toBe(true);
   });
 
-  it('strategy expert → 返回非空分析', async () => {
+  it('competitive-strategy expert → 返回非空分析', async () => {
     const { ExpertRouter } = await import('../../src/agent/expert-router');
     const router = new ExpertRouter();
     const result = await router.dispatch({
-      subTaskId: 'st-2', expertType: 'strategy',
+      subTaskId: 'st-2', expertType: 'competitive-strategy',
       inputFindings: [{ id: 'F1', severity: 'warning', title: '竞争加剧', description: '市场份额下降' }],
       context: { enterpriseId: 'test', diagnosisId: 'd2' },
     });
@@ -45,39 +46,66 @@ describe('ExpertRouter — dispatch', () => {
 });
 
 describe('ExpertRouter — selectExpert', () => {
-  it('financial finding → finance', async () => {
+  it('financial finding → finance-structure', async () => {
     const { ExpertRouter } = await import('../../src/agent/expert-router');
     const router = new ExpertRouter();
     const result = router.selectExpert([
       { id: 'F1', severity: 'critical', title: 'margin', sentinel: 'margin-health' },
     ]);
-    expect(result).toBe('finance');
+    expect(result).toBe('finance-structure');
   });
 
-  it('talent finding → org', async () => {
+  it('capital finding → capital-cycle', async () => {
+    const { ExpertRouter } = await import('../../src/agent/expert-router');
+    const router = new ExpertRouter();
+    const result = router.selectExpert([
+      { id: 'F1', severity: 'warning', title: 'capital', sentinel: 'capital-efficiency' },
+    ]);
+    expect(result).toBe('capital-cycle');
+  });
+
+  it('strategy finding → competitive-strategy', async () => {
+    const { ExpertRouter } = await import('../../src/agent/expert-router');
+    const router = new ExpertRouter();
+    const result = router.selectExpert([
+      { id: 'F1', severity: 'warning', title: 'strategy', sentinel: 'strategy-review' },
+    ]);
+    expect(result).toBe('competitive-strategy');
+  });
+
+  it('market finding → customer-cycle', async () => {
+    const { ExpertRouter } = await import('../../src/agent/expert-router');
+    const router = new ExpertRouter();
+    const result = router.selectExpert([
+      { id: 'F1', severity: 'warning', title: 'market', sentinel: 'market-share' },
+    ]);
+    expect(result).toBe('customer-cycle');
+  });
+
+  it('talent finding → talent-cycle', async () => {
     const { ExpertRouter } = await import('../../src/agent/expert-router');
     const router = new ExpertRouter();
     const result = router.selectExpert([
       { id: 'F1', severity: 'warning', title: 'talent', sentinel: 'talent-density' },
     ]);
-    expect(result).toBe('org');
+    expect(result).toBe('talent-cycle');
   });
 
-  it('empty findings → fallback', async () => {
+  it('empty findings → fallback host', async () => {
     const { ExpertRouter } = await import('../../src/agent/expert-router');
     const router = new ExpertRouter();
     const result = router.selectExpert([]);
-    expect(result).toBe('org');
+    expect(result).toBe('host');
   });
 });
 
 describe('ExpertRouter — loadExpertManifest', () => {
-  it('finance manifest → 含必需字段', async () => {
+  it('finance-structure manifest → 含必需字段', async () => {
     const { ExpertRouter } = await import('../../src/agent/expert-router');
     const router = new ExpertRouter();
-    const manifest = router.loadExpertManifest('finance');
+    const manifest = router.loadExpertManifest('finance-structure');
     expect(manifest).not.toBeNull();
-    expect(manifest!.name).toBe('finance');
+    expect(manifest!.name).toBe('finance-structure');
     expect(manifest!.displayName).toBeTruthy();
     expect(Array.isArray(manifest!.edges)).toBe(true);
     expect(Array.isArray(manifest!.frameworks)).toBe(true);
@@ -96,7 +124,7 @@ describe('ExpertResponse — 结构验证', () => {
     const { ExpertRouter } = await import('../../src/agent/expert-router');
     const router = new ExpertRouter();
     const result = await router.dispatch({
-      subTaskId: 'st-test', expertType: 'finance',
+      subTaskId: 'st-test', expertType: 'finance-structure',
       inputFindings: [{ id: 'F1', severity: 'info', title: 'test', description: 'test' }],
       context: { enterpriseId: 'test', diagnosisId: 'd-test' },
     });
@@ -115,12 +143,15 @@ describe('ExpertResponse — 结构验证', () => {
 });
 
 describe('TaskDecomposer — ExpertRouter 集成', () => {
-  it('executeSubTask 通过 ExpertRouter 路由', async () => {
+  it('executeSubTask 通过 ExpertRouter 路由到在册专家', async () => {
+    // D491 注: executeSubTask 按 subTask.dimension 经 DIMENSION_EXPERT_MAP 路由, 不读 subTask.expertType。
+    // 选 dimension 'technology' 因其映射值 'tech' 是 7 位在册专家; 'financial' 映射值 'finance' 已被 D282
+    // 删除, 该映射修属 task-decomposer.ts 写集（本任务写集外, 见交付报告越界发现）。
     const { TaskDecomposer } = await import('../../src/agent/task-decomposer');
     const td = new TaskDecomposer();
     const result = await td.executeSubTask({
-      id: 'st-int', dimension: 'financial', priority: 0, expertType: 'finance',
-      inputFindings: [{ id: 'F1', severity: 'critical', title: '利润', description: '' }],
+      id: 'st-int', dimension: 'technology', priority: 0, expertType: 'tech',
+      inputFindings: [{ id: 'F1', severity: 'critical', title: '系统可用性', description: '' }],
       status: 'pending',
     });
     expect(result.status).toBe('completed');
