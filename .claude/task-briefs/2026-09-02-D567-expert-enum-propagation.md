@@ -12,9 +12,9 @@
 ### b) 文件审计（K3 实证 file:line）
 - src/tui-v2/chat.tsx:409-411 EXPERT_NAMES 6 位
 - src/cli/commands/expert.ts:16-18
-- src/l3/cross-validator.ts:75 附近
-- src/engine/synova-diagnosis-engine-impl.ts:528-534
-- src/sentinel/runner.ts:643 附近
+- src/agent/cross-validator.ts:75（勘误 2026-09-02 编码 session: brief 原文误写 src/l3/，K3 原文 2026-09-02-productlines-17points.md §15-1 实证为 src/agent/cross-validator.ts:75 ALL_EXPERTS 旧 9 位）
+- src/l3/synova-diagnosis-engine-impl.ts:528-534（勘误 2026-09-02 编码 session: brief 原文误写 src/engine/，实际位于 src/l3/）
+- src/sentinel/runner.ts:643 附近（另有 :73-88 LAYER_EXPERTS 旧 ID 路由值同型残留）
 - 唯一事实源: expert/expert-registry.yaml（7 位）
 
 ### c) 决策
@@ -26,16 +26,19 @@
 ## Q2: 范围
 做什么：
 - 修改 src/tui-v2/chat.tsx：EXPERT_NAMES → registry 动态读取
-- 修改 src/cli/commands/expert.ts：同
-- 修改 src/l3/cross-validator.ts：同
-- 修改 src/engine/synova-diagnosis-engine-impl.ts：同
-- 修改 src/sentinel/runner.ts：同
-- 修改 tests/（受影响断言适配 7 位）
+- 修改 src/cli/commands/expert.ts：BUILTIN_EXPERTS → registry 动态读取（目录扫描降级）
+- 修改 src/agent/cross-validator.ts：ALL_EXPERTS → registry 动态读取（勘误后真实路径）
+- 修改 src/l3/synova-diagnosis-engine-impl.ts：维度映射 7 位对齐 + registry 运行时校验（勘误后真实路径）
+- 修改 src/sentinel/runner.ts：LAYER_EXPERTS 7 位对齐 + 删 :643 旧 6 位类型 union cast
+- 修改 src/agent/expert-config-loader.ts：新增 getAllExpertIds 导出（唯一事实源访问器）
+- 新增 tests/expert/expert-enum-propagation.test.ts：S-5 回归锁（先红后绿）
+- 修改 tests/expert/manifest-consistency.test.ts：9 位硬编码 → registry 动态 7 位（main 存量红 14 断言适配）
 - task-state/D567.json：回填
 
 不做什么：
 - 不改 expert/expert-registry.yaml 内容（7 位为权威）
 - 不改 scripts/audit/K3-AUDIT-PROTOCOL.md 等审计文件：审计红线
+- 不改 extensions/sentinels/ manifests（其 auxiliaryExperts/route 旧 ID 为数据层传播问题，另立任务）
 
 ## Q3: 验收
 入口：grep -rn "strategy: '战略'" src/ = 0（四处全灭）
