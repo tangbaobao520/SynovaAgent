@@ -32,8 +32,22 @@
     ],
     "notes": "唯一有效验收通道 = CI Windows job（本地 macOS 无法复现 Win 失败语义）——CTO 合并前须查 check-runs job 级 windows-latest success。边界: hook-git-guard.sh 内部 python3（窗口标记写入）在坏 python3 环境仍 fail-open degraded（本批不改，同型根因记入 Note 后续）；brief Done「8 通过」按新增 4c 断言如实修正为「9 通过」（macOS 原 8 断言零变化）。观察: brief Q0 原文称失败 run「3323...」与实际 33257792825 不符（brief 笔误，annotations 为准）"
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-09-02-D489-D563-D564.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "findings": [
+      "cp1252 根因修复实证：incident-loop.py L307-312 subprocess.run 显式 encoding=utf-8 errors=replace；本地机制证明 b'\\xe7\\xa6\\x81'.decode('cp1252') → UnicodeDecodeError（0x81 未定义）→ degraded → verify 误报 open 的根因链物理成立",
+      "SYNO_PYTHON 注入/消费：incident-loop.py L117-118 + hook-git-detect.sh L37-41（优先 SYNO_PYTHON 回落 PATH python3，D312 向后兼容）；hook-git-detect 13/13 + ban-stash 6/6 实测",
+      "macOS 语义零变化：incident-loop 9/9（原 8 断言 + 4c 新增）；4b 平台适配 + assert_contains 第 4 参/diag_out 诊断输出（L27-29/L72-107）；platform-checklist 14/14（该文件实际 D563 修，D564 验证一致）",
+      "canary 27：ci.yml L139-165 计数 27 项，incident-loop L158 原位（g12 之后 26→27）",
+      "PR #314 CI job 级 10/10 success——含 Control Tower Gate Tests (windows-latest) success（唯一有效验收通道，job 级确认）",
+      "P2 记录：hook-git-guard.sh 内部 python3 fail-open 边界未修（task-state 已如实声明）；D564 task-state evidence 对 platform-checklist 修复归属表述不精确（实际 D563 提交，最终文件一致无功能影响）"
+    ],
+    "by": "K3",
+    "at": "2026-09-02"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-08-30",
-  "updated_by": "deepseek-harness"
+  "updated_at": "2026-09-02",
+  "updated_by": "K3"
 }
