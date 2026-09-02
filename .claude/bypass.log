@@ -956,9 +956,16 @@ Binary file .claude/bypass.log matches
 2026-08-30T03:35:00+08:00 | COMMITTED | pre-commit PASS（D451 纯补记豁免：merge 冲突解决提交，手动跑 pre-commit-check 13 组通过，hook 自动登记缺失补录） | TASK_ID=D556 | AGENT=dsh-cto | HASH=c8a18e99
 2026-08-30T03:49:04+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=2bb563b0add31c0dd6c83ac07485d291857dc6bd
 2026-08-30T03:54:06+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=66d319383a888b0ba827558fa8bc2a870de44e6e
+2026-08-30T04:34:43+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=293c329173d7ff88784122cc8df120f96ffe41e6
+2026-08-30T04:35:53+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=bfcb32683dc0a81bb55d7416756df253430c8806
+2026-08-31T12:13:09+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=1307cd8898a9935b4be69df5f47d68095d8665b2
+2026-08-31T12:14:20+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=982d64d1dad6d283c4c3f52a9674edec2d8daf1a
+2026-08-31T16:05:42+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=f592234be8aa29f572e0d508230cc4269ca64669
 2026-08-31T23:59:30+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=a397fdef63ae219a80cdec6b724ef4ab73fcebb8
 2026-08-31T13:52:28+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=24ff8bf8bd3ddfae84fe0ecf6d2abab44d136635
 2026-08-31T13:52:43+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=ecd370642d5a21eb791de0680cf0e0ca6076e01e
+2026-08-31T16:56:38+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=eab77a8125580a27e509f226b843a1392765db65
 2026-08-31T17:11:56+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=e99985146eeeb8c1590cc982a7cfdb85dbba24ae
 2026-09-01T09:30:30+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=61ad195c663cee44f4a8f42e81472af30c4871eb
+2026-09-02T11:39:52+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=b2db430c6304f9a10125bb293d05704ba3f532c2
 2026-09-02T11:51:08+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=2aa21b8a7a41451ef2b4ab2247b32a81dca25689

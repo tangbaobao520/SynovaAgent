@@ -177,8 +177,14 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
     let sessionId = '';
     if (orchestrationDb) {
       try {
-        const { SessionStore } = await import('../store/session-store');
-        const store = new SessionStore(orchestrationDb as never);
+        // D563: isSqliteDatabase 属 L5（session-store 导出）——经既有动态 import
+        // 通道解构（铁律 39: 谓词归存储层，L1 不直接引用数据库层实现）
+        const { SessionStore, isSqliteDatabase } = await import('../store/session-store');
+        if (!isSqliteDatabase(orchestrationDb)) {
+          // 谓词失败与构造器抛错同走既有降级通道（不静默信任 unknown）
+          throw new TypeError('orchestration.db 非 SQLite 句柄（D563 谓词窄化失败）');
+        }
+        const store = new SessionStore(orchestrationDb);
         sessionStore = store;
         sessionId = store.createSession(teamId).id;
       } catch (err: unknown) {
@@ -407,8 +413,15 @@ router.post('/api/diagnosis/consult/:consultId/resume', async (req: Request, res
   }
   // 从 SessionStore 加载检查点
   try {
-    const { SessionStore } = await import('../store/session-store');
-    const store = new SessionStore((req.app.locals.orchestration as { db: unknown })?.db as never);
+    // D563: 存量 never 断言窄化——谓词自 L5（session-store）经本通道解构；谓词失败
+    // （含 db 为 undefined/非句柄）与原构造器抛错（initSchema 对 undefined 调 exec
+    // 必抛 TypeError）同走 catch log.warn 降级（响应 checkpoint=null 语义零变化）
+    const { SessionStore, isSqliteDatabase } = await import('../store/session-store');
+    const db = (req.app.locals.orchestration as { db?: unknown } | undefined)?.db;
+    if (!isSqliteDatabase(db)) {
+      throw new TypeError('orchestration.db 非 SQLite 句柄（D563 谓词窄化失败）');
+    }
+    const store = new SessionStore(db);
     const checkpoint = store.getDiagnosisCheckpoint ? store.getDiagnosisCheckpoint(consultId) : null;
     active.aborted = false;
     res.json({

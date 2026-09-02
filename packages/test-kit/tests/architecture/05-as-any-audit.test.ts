@@ -32,7 +32,10 @@ const TYPE_ESCAPE_PATTERNS: EscapePattern[] = [
  * 清理存量后必须同步下调本基线（棘轮只许收紧）；上调 = 新增类型逃逸 = 违规。
  */
 const ESCAPE_BASELINE: Record<string, number> = {
-  'as never': 9, // D558: mcp/index.ts 两处 getDatabase() 冗余断言清理后实测（含 .tsx 口径）
+  'as never': 8, // D563: diagnosis.ts L181+L411 双处清理后全仓实测。9 为 D558 基线，
+  // 已被 D489 带红合并的 L181 逃逸击穿至 10（CT-47：门禁红但 PR 先合并）——
+  // 本批清理 2 处并下调收紧（棘轮只许收紧；brief 原「9→7」前提「实测=7」
+  // 不成立，按实测修正为 8，见 task-state/D563.json 证据链）。
   'as unknown as': 87, // 含 .tsx（grep 仅 *.ts 会低估 4 处，以本扫描器实测为准）
 };
 

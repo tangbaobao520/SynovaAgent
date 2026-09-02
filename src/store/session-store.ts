@@ -19,6 +19,30 @@ const log = createLogger('store/session-store');
 /** Raw SQLite row (P1-02: 替代 `as-any`) */
 type SqliteRow = Record<string, unknown>;
 
+// ═══ D563（CT-46/D489 验收返修）: 类型谓词导出 ═══
+
+/**
+ * better-sqlite3 Database 鸭子类型谓词 — unknown → Database.Database 窄化（替代 L1 侧 never 断言）。
+ *
+ * 架构位（铁律 39 + D563 返工）: 本谓词属 L5 存储层——数据库驱动类型只归 L5 所有；
+ * L1（routes/diagnosis.ts）经既有动态 import 通道解构使用，不经行任何数据库层引用
+ * （Architecture Check 1d: L1→L5 跨层引用零容忍，注释/消息字样同样计红）。
+ *
+ * 契约（铁律 47）:
+ *   @input    — v: unknown（req.app.locals.orchestration.db 等运行时未类型化句柄）
+ *   @output   — 类型谓词；true = 可安全传入 `new SessionStore(db)`（Database.Database）
+ *   @degraded — false（非对象 / 缺关键方法）→ 调用方把谓词失败转译为 TypeError，
+ *               走既有 try/catch log.warn 降级通道（铁律 24/31，行为零变化）
+ *
+ * 方法探测取 prepare/exec/pragma 三方法（better-sqlite3 Database 的最小读写面；
+ * SessionStore.initSchema 实际只用 exec）。非断言——失败路径显式降级，不静默信任 unknown。
+ */
+export function isSqliteDatabase(v: unknown): v is Database.Database {
+  if (typeof v !== 'object' || v === null) return false;
+  const o = v as { prepare?: unknown; exec?: unknown; pragma?: unknown };
+  return typeof o.prepare === 'function' && typeof o.exec === 'function' && typeof o.pragma === 'function';
+}
+
 export interface SessionRow {
   id: string;
   orgId: string;
