@@ -145,10 +145,12 @@ grep selectExpert 全仓库: 仅定义处 src/agent/expert-router.ts:165 与单�
 不做什么（排除项）：
 - 不修改 src/agent/expert-dispatcher.ts — D490 已修, yaml 驱动不重复
 - 不修改 src/agent/expert-config-loader.ts — D490 已修
-- 不修改 expert 目录与 expert/expert-registry.yaml — D282 定稿只读
+- 不修改 expert/expert-registry.yaml — D282 定稿只读
 - 不修改 src/l2/expert-router.ts — 同名异类 L2 协调者非本任务范围
-- 不重写 selectExpert 为 yaml 驱动 — 死代码 MVP 修名即可避免扩面
-- 不新增任何新 export 与新文件 — 纯映射修复
+- 不重写 src/agent/expert-router.ts 的 selectExpert 为 yaml 驱动 — 死代码 MVP 修名即可
+- 不新增 src/ 下任何新文件与新 export — 纯映射修复
+
+整个 expert/ 目录（registry 除外）全部只读, 含 7 位专家目录与 _deprecated/_template。
 
 ## Q3: 验收 — 入口 → 交互 → 结果
 
