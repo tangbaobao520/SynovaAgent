@@ -1,11 +1,27 @@
 {
   "task_id": "D569",
   "title": "dsh 仪表盘 collector 改 git 权威读取（治数据陈旧）",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": null,
-  "impl": null,
+  "impl": {
+    "commit": "4c48a21c",
+    "by": "dsh-cto",
+    "at": "2026-09-02",
+    "files": [
+      "dsh/plugins/synova-dashboards/lib/collect.js",
+      ".claude/task-briefs/2026-09-02-D569-dashboards-git-read.md",
+      "task-state/D569.json"
+    ],
+    "evidence": [
+      "语法 verify: node --check 通过",
+      "实测: collectDashboards 跑通——states=149（含 D491 spec_done 最新任务）、pct=11、三 section 零 degraded",
+      "接线: gitShow/gitLs/gitCommitDate 三函数被 readText/mtimeIso/collectTasks 生产调用（grep 计数 ≥2）",
+      "审查修复（CTO 接管，2026-09-02 追平后）: ①gitLs 冷启动竞态——原实现不 await fetch，用旧 ref 列目录会漏新 task-state 文件 → ensureFresh 返回 fetch promise + gitLs await；②注释 D565→D569；③brief Done verify 命令语法修正"
+    ],
+    "notes": "自检5问: ①接线=三 git 读函数均有生产调用方（readText→gitShow、collectTasks→gitLs、mtimeIso→gitCommitDate）；②异常=全部 catch 返回 null → 回退磁盘读（显式降级路径，注释声明）；③类型安全=纯 JS 无 as any；④测试=DSH 插件无 vitest 配套（历史同构），验收走 node 实测三 verify；⑤残留=无死代码。边界: 不改 client.js/index.js 渲染层；不改 scripts/audit/"
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-02",
-  "updated_by": "alloc-task-id"
+  "updated_by": "dsh-cto"
 }

@@ -35,5 +35,5 @@ DSH 插件（dsh/plugins/，非 L1-L5 产品层）
 
 ## Done 标准
 - [x] collector 语法 verify: node --check dsh/plugins/synova-dashboards/lib/collect.js
-- [x] git 优先接线 verify: grep -c "gitShow\|gitLs" dsh/plugins/synova-dashboards/lib/collect.js | xargs test 2 -ge
-- [x] 实测新鲜 verify: node -e "import('./dsh/plugins/synova-dashboards/lib/collect.js').then(async m=>{const d=await m.collectDashboards(process.cwd());console.log(d.tasks.states.length, d.product.product_progress_pct)})" | xargs test 100 -le
+- [x] git 优先接线 verify: test "$(grep -c 'gitShow' dsh/plugins/synova-dashboards/lib/collect.js)" -ge 2
+- [x] 实测新鲜 verify: node -e "import('./dsh/plugins/synova-dashboards/lib/collect.js').then(async m=>{const d=await m.collectDashboards(process.cwd());const n=d.tasks.states.length,p=d.product.product_progress_pct;if(n<100||p<11){console.error('FAIL',n,p);process.exit(1)}console.log('PASS',n,p)})"

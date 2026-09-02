@@ -18,22 +18,24 @@ const execFileP = promisify(execFile);
 const MAX_BYPASS_LINES = 400;
 const MAX_FAILURE_LINES = 200;
 
-// ── git 权威读取层（D565 治本，2026-09-02）────────────────────────────────────
+// ── git 权威读取层（D569 治本，2026-09-02）────────────────────────────────────
 // 主工作区长期是陈旧 checkout（落后 origin/main 数十~上百提交），直接读盘会拿到旧数据。
 // 数据源改为 git 追踪的 origin/main（D334「main 是唯一真相」同源）：git show / ls-tree。
 // 降级：git 失败（离线/无 .git）→ 回退读盘；fetch 60s 冷却防每请求重复拉取。
 let _repoRoot = null;
 let _lastFetchAt = 0;
+let _fetchPromise = null;
 const FETCH_COOLDOWN_MS = 60_000;
 
+/** 确保 origin/main ref 新鲜。返回进行中的 fetch promise（调用方 await 它，防冷启动用旧 ref）。 */
 async function ensureFresh() {
-  if (!_repoRoot) return;
+  if (!_repoRoot) return null;
   const now = Date.now();
-  if (now - _lastFetchAt < FETCH_COOLDOWN_MS) return;
+  if (now - _lastFetchAt < FETCH_COOLDOWN_MS) return _fetchPromise; // 冷却内 → 复用进行中的 fetch
   _lastFetchAt = now; // 先占位，失败也冷却（避免连续请求反复超时）
-  try {
-    await execFileP("git", ["-C", _repoRoot, "fetch", "origin", "main", "--quiet"], { timeout: 15000 });
-  } catch { /* fetch 失败 → 回退磁盘读（降级） */ }
+  _fetchPromise = execFileP("git", ["-C", _repoRoot, "fetch", "origin", "main", "--quiet"], { timeout: 15000 })
+    .catch(() => {}); // fetch 失败 → 回退磁盘读（降级）；catch 防 unhandled rejection
+  return _fetchPromise;
 }
 
 async function gitShow(relPath) {
@@ -46,6 +48,7 @@ async function gitShow(relPath) {
 
 async function gitLs(relDir) {
   if (!_repoRoot) return null;
+  await ensureFresh(); // 修冷启动竞态：不等待 fetch 会用旧 ref 列目录 → 漏新文件（D569 修复）
   try {
     const { stdout } = await execFileP("git", ["-C", _repoRoot, "ls-tree", "-r", "--name-only", "origin/main", relDir], { timeout: 10000, maxBuffer: 4 * 1024 * 1024 });
     return stdout.split("\n").map((l) => l.trim()).filter(Boolean);
