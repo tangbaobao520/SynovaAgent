@@ -1,0 +1,11 @@
+{
+  "task_id": "D569",
+  "title": "dsh 仪表盘 collector 改 git 权威读取（治数据陈旧）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-02",
+  "updated_by": "alloc-task-id"
+}

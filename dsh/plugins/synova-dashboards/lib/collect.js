@@ -11,12 +11,57 @@
 //   降级: 每个 section 独立 try/catch，失败返回 { ok:false, degraded:true, error }，不整体抛错（铁律 24/31）。
 import { readFile, readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+const execFileP = promisify(execFile);
 
 const MAX_BYPASS_LINES = 400;
 const MAX_FAILURE_LINES = 200;
 
-/** 读取文本文件，ENOENT 返回 null，其他错误抛出（由调用方降级）。 */
-async function readText(path) {
+// ── git 权威读取层（D565 治本，2026-09-02）────────────────────────────────────
+// 主工作区长期是陈旧 checkout（落后 origin/main 数十~上百提交），直接读盘会拿到旧数据。
+// 数据源改为 git 追踪的 origin/main（D334「main 是唯一真相」同源）：git show / ls-tree。
+// 降级：git 失败（离线/无 .git）→ 回退读盘；fetch 60s 冷却防每请求重复拉取。
+let _repoRoot = null;
+let _lastFetchAt = 0;
+const FETCH_COOLDOWN_MS = 60_000;
+
+async function ensureFresh() {
+  if (!_repoRoot) return;
+  const now = Date.now();
+  if (now - _lastFetchAt < FETCH_COOLDOWN_MS) return;
+  _lastFetchAt = now; // 先占位，失败也冷却（避免连续请求反复超时）
+  try {
+    await execFileP("git", ["-C", _repoRoot, "fetch", "origin", "main", "--quiet"], { timeout: 15000 });
+  } catch { /* fetch 失败 → 回退磁盘读（降级） */ }
+}
+
+async function gitShow(relPath) {
+  if (!_repoRoot) return null;
+  try {
+    const { stdout } = await execFileP("git", ["-C", _repoRoot, "show", `origin/main:${relPath}`], { timeout: 10000, maxBuffer: 16 * 1024 * 1024 });
+    return stdout;
+  } catch { return null; }
+}
+
+async function gitLs(relDir) {
+  if (!_repoRoot) return null;
+  try {
+    const { stdout } = await execFileP("git", ["-C", _repoRoot, "ls-tree", "-r", "--name-only", "origin/main", relDir], { timeout: 10000, maxBuffer: 4 * 1024 * 1024 });
+    return stdout.split("\n").map((l) => l.trim()).filter(Boolean);
+  } catch { return null; }
+}
+
+async function gitCommitDate(relPath) {
+  if (!_repoRoot) return null;
+  try {
+    const { stdout } = await execFileP("git", ["-C", _repoRoot, "log", "-1", "--format=%cI", "origin/main", "--", relPath], { timeout: 10000 });
+    return stdout.trim() || null;
+  } catch { return null; }
+}
+
+/** 磁盘读：ENOENT 返回 null，其他错误抛出。 */
+async function readTextDisk(path) {
   try {
     return await readFile(path, "utf8");
   } catch (err) {
@@ -25,17 +70,27 @@ async function readText(path) {
   }
 }
 
-/** 读取 JSON 文件，解析失败抛错（由调用方降级）。 */
-async function readJson(path) {
-  const text = await readText(path);
+/** git 优先读（origin/main 权威版），失败回退磁盘。返回文本或 null。 */
+async function readText(repoRoot, relPath) {
+  await ensureFresh();
+  const viaGit = await gitShow(relPath);
+  if (viaGit !== null) return viaGit;
+  return readTextDisk(join(repoRoot, relPath));
+}
+
+/** 读取 JSON（git 优先）。 */
+async function readJson(repoRoot, relPath) {
+  const text = await readText(repoRoot, relPath);
   if (text === null) return null;
   return JSON.parse(text);
 }
 
-/** 文件 mtime ISO，ENOENT 返回 null。 */
-async function mtimeIso(path) {
+/** 文件 mtime ISO（git 提交时间优先，回退磁盘 mtime），ENOENT/无记录返回 null。 */
+async function mtimeIso(repoRoot, relPath) {
+  const viaGit = await gitCommitDate(relPath);
+  if (viaGit) return viaGit;
   try {
-    const s = await stat(path);
+    const s = await stat(join(repoRoot, relPath));
     return s.mtime.toISOString();
   } catch {
     return null;
@@ -44,8 +99,7 @@ async function mtimeIso(path) {
 
 // ── ① 产品完成度 ──────────────────────────────────────────────────────────
 async function collectProduct(root) {
-  const file = join(root, "docs/synova/product-lines/product-progress.json");
-  const raw = await readJson(file);
+  const raw = await readJson(root, "docs/synova/product-lines/product-progress.json");
   if (raw === null) return { ok: false, degraded: true, error: "product-progress.json 缺失" };
   const lines = (Array.isArray(raw.lines) ? raw.lines : []).map((l) => ({
     id: l.id,
@@ -88,15 +142,18 @@ function parseTaskTable(md) {
 }
 
 async function collectTasks(root) {
-  const stateDir = join(root, "task-state");
   const states = [];
   let stateError = null;
   try {
-    const entries = await readdir(stateDir);
+    // git 优先列目录（陈旧 checkout 会漏新文件）；回退磁盘 readdir
+    const viaGit = await gitLs("task-state");
+    const entries = viaGit !== null
+      ? viaGit.map((f) => f.replace(/^task-state\//, ""))
+      : await readdir(join(root, "task-state"));
     for (const name of entries) {
       if (!name.endsWith(".json") || name === "TEMPLATE.json") continue;
       try {
-        const raw = JSON.parse(await readFile(join(stateDir, name), "utf8"));
+        const raw = await readJson(root, `task-state/${name}`);
         states.push({
           task_id: raw.task_id ?? name.replace(/\.json$/, ""),
           title: (raw.title ?? "").slice(0, 80),
@@ -104,7 +161,7 @@ async function collectTasks(root) {
           updated_at: raw.updated_at ?? null,
           updated_by: raw.updated_by ?? null,
           impl_commit: raw.impl?.commit ?? null,
-          audit_status: raw.audit?.status ?? null,
+          audit_status: raw.audit?.verdict ?? raw.audit?.status ?? null,
           fix_task_id: raw.fix_task_id ?? null
         });
       } catch (err) {
@@ -117,7 +174,7 @@ async function collectTasks(root) {
     throw err;
   }
   // DASHBOARD-CN.md 任务表（历史 D# 全量，取最近 12 条）
-  const board = await readText(join(root, "docs/synova/DASHBOARD-CN.md"));
+  const board = await readText(root, "docs/synova/DASHBOARD-CN.md");
   const rows = parseTaskTable(board);
   const recent = rows.slice(0, 12);
   return {
@@ -191,10 +248,10 @@ function parseMPatterns(text) {
 
 async function collectHealth(root) {
   const [bypassText, failText, ledgerText, ctoText] = await Promise.all([
-    readText(join(root, ".claude/bypass.log")),
-    readText(join(root, ".claude/pre-commit-failures.log")),
-    readText(join(root, "docs/synova/coordination/AUDIT-FINDINGS-LEDGER.md")),
-    readText(join(root, "docs/synova/CTO-HEALTH.md"))
+    readText(root, ".claude/bypass.log"),
+    readText(root, ".claude/pre-commit-failures.log"),
+    readText(root, "docs/synova/coordination/AUDIT-FINDINGS-LEDGER.md"),
+    readText(root, "docs/synova/CTO-HEALTH.md")
   ]);
   const events = parseBypass(bypassText).slice(-MAX_BYPASS_LINES);
   const counts = {};
@@ -223,12 +280,13 @@ async function collectHealth(root) {
     },
     m_patterns: parseMPatterns(ledgerText),
     cto_verdict: ctoVerdict,
-    ledger_mtime: await mtimeIso(join(root, "docs/synova/coordination/AUDIT-FINDINGS-LEDGER.md"))
+    ledger_mtime: await mtimeIso(root, "docs/synova/coordination/AUDIT-FINDINGS-LEDGER.md")
   };
 }
 
 // ── 汇总 ──────────────────────────────────────────────────────────────────
 async function collectDashboards(repoRoot) {
+  _repoRoot = repoRoot;
   const [product, tasks, health] = await Promise.all([
     safe(collectProduct(repoRoot)),
     safe(collectTasks(repoRoot)),
@@ -238,9 +296,9 @@ async function collectDashboards(repoRoot) {
     meta: {
       repoRoot,
       generated_at: new Date().toISOString(),
-      product_mtime: await mtimeIso(join(repoRoot, "docs/synova/product-lines/product-progress.json")),
-      task_dashboard_mtime: await mtimeIso(join(repoRoot, "docs/synova/DASHBOARD-CN.md")),
-      cto_health_mtime: await mtimeIso(join(repoRoot, "docs/synova/CTO-HEALTH.md"))
+      product_mtime: await mtimeIso(repoRoot, "docs/synova/product-lines/product-progress.json"),
+      task_dashboard_mtime: await mtimeIso(repoRoot, "docs/synova/DASHBOARD-CN.md"),
+      cto_health_mtime: await mtimeIso(repoRoot, "docs/synova/CTO-HEALTH.md")
     },
     product,
     tasks,
