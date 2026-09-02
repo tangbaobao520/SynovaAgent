@@ -29,6 +29,21 @@ D316 的修复（把 WindowsApps 加进 PATH 找 python3 shim）在 GitHub runne
 - `scripts/hooks/hook-git-detect.sh`: `PY_BIN="${SYNO_PYTHON:-}"` 优先，空则回落 `command -v python3`（D312 原行为）
 - 回归: tests/control-tower/incident-loop.test.sh 4c（PATH 无 python3 下 hook 仍拦 stash，双平台确定性；先红 8/1 → 后绿 9/0）
 
+## 扩展决策（D564 第7轮，2026-09-02）：subprocess 解码显式 UTF-8
+
+第6轮 FAIL_NAMES 注解揭示真 Win 失败对 = 断言 6（verify closed）+ 4b（4c 一直绿）。
+真根因与 SYNO_PYTHON 是**两个独立故障**：verify() 的 `subprocess.run(text=True)` 在
+Windows 用 locale 编码（cp1252）解码 hook 的 UTF-8「禁止」输出——0x81 在 cp1252
+未定义（`b'\xe7\xa6\x81'.decode('cp1252')` → UnicodeDecodeError，本地机制证明）→
+except → degraded → verify 误报 open。断言 6/4b 均经工具 verify 故双红；4c 直调
+hook（不经 subprocess）故绿。
+
+**决策**：`subprocess.run(..., encoding="utf-8", errors="replace")` 显式解码。
+理由（第一性原理）：被调用方（hook）的输出编码是**已知契约**（UTF-8 头块强制），
+不该赌运行环境 locale。macOS/Linux locale 本就 UTF-8 → 行为零变化。
+**教训**：`text=True` 裸用在跨平台工具链 = 隐式 locale 依赖 = Windows cp1252 地雷；
+凡 subprocess 捕获含非 ASCII 的输出，必须显式 encoding。
+
 ## 相关 D#
 
 D316（bash 显式查找）、D561（POSIX 候选）、D312（stash 禁令 hook）、D535（incident-loop）

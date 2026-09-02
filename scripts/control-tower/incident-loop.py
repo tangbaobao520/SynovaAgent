@@ -299,10 +299,16 @@ def verify(case_id: str) -> dict:
             return {"status": "degraded", "case": case_id,
                     "reason": "bash 不可用 — 无法执行门禁验证 (fail-open)"}
         try:
+            # D564r7: 显式 UTF-8 解码——text=True 在 Windows 用 locale 编码（cp1252）
+            # 解码 hook 的 UTF-8 输出（含「禁止」），0x81 在 cp1252 未定义 →
+            # UnicodeDecodeError → except → degraded → verify 误报 open（真 Win CI
+            # 实证：断言 6+4b 双红而 4c 绿，4c 不经本 subprocess）。macOS/Linux
+            # locale 本就 UTF-8，行为零变化。errors="replace" 兜底极端字节不抛。
             r = subprocess.run(
                 [bash, str(REPO_ROOT / "scripts/hooks/hook-git-detect.sh")],
                 input='{"tool_input":{"command":"git stash"}}',
                 capture_output=True, text=True, timeout=10,
+                encoding="utf-8", errors="replace",
                 env=_bash_env(bash),
             )
             out = r.stdout + r.stderr
