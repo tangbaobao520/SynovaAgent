@@ -33,10 +33,10 @@ function parseSimpleYaml(content: string): ExpertRegistryConfig {
   let currentExpert = '';
   let inTools = false;
 
-  for (const line of content.split('\n')) {
+  for (const line of content.split(/\r?\n/)) {
     if (line.startsWith('version:')) {
       config.version = parseInt(line.split(':')[1]?.trim() || '1', 10);
-    } else if (/^  [a-z_]+:$/.test(line) && !line.includes(':')) {
+    } else if (/^  [a-z0-9_-]+:$/.test(line)) {
       // Top-level expert key like "  strategy:"
       currentExpert = line.trim().replace(':', '');
       if (currentExpert && currentExpert !== 'experts' && currentExpert !== 'version') {
