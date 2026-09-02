@@ -23,7 +23,7 @@ CT_DIR=".codex/control-tower/tmp/il-ct"
 
 PASS=0; FAIL=0
 pass() { PASS=$((PASS + 1)); echo "  ✅ $1"; }
-fail() { FAIL=$((FAIL + 1)); echo "  ❌ $1" >&2; }
+fail() { FAIL=$((FAIL + 1)); FAIL_NAMES="${FAIL_NAMES:+$FAIL_NAMES | }$1"; echo "  ❌ $1" >&2; }
 assert_contains() { if echo "$1" | grep -qF "$2"; then pass "$3"; else fail "$3 — 未找到: $2${4:+ — 诊断: $4}"; fi; }
 # 第4轮: 失败诊断输出（CI ::error annotation tail-8 可捕获）——压单行 + 去 % 防 annotation 注入
 diag_out() { printf '%s' "$1" | tr '\n' '|' | tr -d '%' | cut -c1-260; }
@@ -114,6 +114,8 @@ if [ "$N" -eq 2 ]; then pass "同 id 重复 record 不重复追加（保持 2 �
 echo ""
 
 echo "═══════════════════════════════════════════════════════════"
+# 第6轮: 失败断言名汇总——进 CI ::error annotation 的 tail-8 窗口（终结盲猜）
+echo "失败断言: ${FAIL_NAMES:-无}"
 echo "  结果: $PASS 通过, $FAIL 失败"
 if [ "$FAIL" -gt 0 ]; then
   echo "  Status: ❌ incident-loop 测试未通过"
