@@ -48,17 +48,17 @@ Synova 的 LLM key 只能从 `process.env` 读（src/config.ts L72-82 的 14 级
 |---|---|---|
 | src/config.ts | L72-82 llmApiKey 14 级 env 链（LLM_API_KEY 最高→各 provider 专属→''）；L45-46 loadFileConfig 只消费 server.port+sentinel（llm 段死配置）；L83 baseUrl 默认 `https://api.deepseek.com/v1`；L84 model 默认 `deepseek-v4-flash`；L98-101 未配置仅 warn；L103 llmConfigured | **修改对象**（key 解析接 resolve + model/baseUrl 激活链） |
 | src/routes/credentials.ts | 61 行：内存 Map（L17）；POST/GET /api/credentials/:provider；脱敏 `'****'+slice(-4)`（L44）；L55 getStoredCredentials 内部导出先例；无认证中间件 | **范式参照**（只读，不碰） |
-| src/server.ts | L24 import CredentialVault；L49 import credentialRoutes；L339 `app.use(credentialRoutes)` 挂载段 L330-345；L371-374 vault 用法 `req.app.locals.credentialVault` | **修改对象**（L340 附近挂载 llmConfigRoutes + onChanged 订阅） |
+| src/server.ts | L24 import CredentialVault；L49 import credentialRoutes；L339 `app.use(credentialRoutes)` 挂载段 L330-345；L370 vault 用法 `req.app.locals.credentialVault` | **修改对象**（L340 附近挂载 llmConfigRoutes + onChanged 订阅） |
 | src/deploy/bootstrap.ts | L891 masterSecret = `CREDENTIAL_MASTER_KEY \|\| config.engineTokens \|\| (devMode?'synova-dev-secret':'')` ——可预测；Phase 4a 初始化失败降级 | vault 复用否决证据（§6 决策 1） |
 | src/security/credential-vault.ts | AES-256-GCM + better-sqlite3 表 connector_credentials；构造需 (db, masterSecret, salt) | 评估后**不复用不碰**（§6 决策 1） |
-| src/providers/index.ts | L25 ProviderType 10 值枚举（deepseek/qwen/glm/kimi/yi/minimax/step/ernie/openai/gateway）；L54 createProvider(type,config) 每请求构造（diagnosis-upload-v2.ts L528 在请求处理器内调用）；listProviderTypes() 带中文 label | **只读消费**（POST provider 校验对齐 10 值枚举；零改动） |
+| src/providers/index.ts | L22 ProviderType 10 值枚举（deepseek/qwen/glm/kimi/yi/minimax/step/ernie/openai/gateway）；L54 createProvider(type,config) 每请求构造（diagnosis-upload-v2.ts L528 在请求处理器内调用）；listProviderTypes() 带中文 label | **只读消费**（POST provider 校验对齐 10 值枚举；零改动） |
 | src/routes/diagnosis-upload-v2.ts | L245/L526 **每请求 `loadConfig()`**；L528 createProvider 在请求处理器内 | 热重载机制依据（§6 决策 3） |
 | src/routes/chat.ts | L21-25 GET /api/status 每请求 loadConfig() 返回 llmConfigured/hasApiKey | 空值=200 非 error 的既有范式佐证 |
 | src/config-file.ts | L20-42 SynovaFileConfig.llm={provider,model,baseUrl}；L132 saveFileConfig **全量写回**；L44 路径 process.cwd()/synova.json | 决策 2 证据（运行时写 git 追踪文件的风险） |
 | synova.json | llm 段现值 `{provider:"deepseek", model:"deepseek-chat", baseUrl:"https://api.deepseek.com/v1"}`；git 追踪（未 ignore）；data/ 在 .gitignore L3（data/llm-credentials.json 天然不进 git） | **显式不变声明**（§3.3.1 下） |
-| electron-renderer/src/components/WelcomeScreen.tsx | 105 行；三态 welcomeState（L46 useConversationStore，L36 默认 'firstLaunch'）；CenterPanel.tsx L37 挂载 | **修改对象**（firstLaunch 分支渲染向导） |
+| electron-renderer/src/components/WelcomeScreen.tsx | 105 行；三态 welcomeState（L46 useConversationStore，L36 默认 'firstLaunch'）；CenterPanel.tsx L34 `welcomeState!=='ready'` 渲染 WelcomeScreen、L37 挂载；hasConfigNoData 现状无生产设置者（grep 实证仅 WelcomeScreen 自引用——测试经 store 手动注入） | **修改对象**（firstLaunch 分支渲染向导；CenterPanel 渲染条件零改动） |
 | electron-renderer/src/stores/app-store.ts | zustand；L100-102 bootUserRole 先例（D556）；L117-132 actions | **修改对象**（+llmUnconfigured 状态） |
-| electron-renderer/src/components/StatusBar.tsx | 51 行 footer 状态栏（L28 useAppStore） | **修改对象**（黄条渲染） |
+| electron-renderer/src/components/StatusBar.tsx | 51 行 footer 状态栏（L7 import useAppStore，L10-12 selector） | **修改对象**（黄条渲染） |
 | electron-renderer/src/App.tsx | L18 getApiBase（lib/api.ts D504）；L50 boot health fetch 先例；L95 StatusBar 挂载 | **修改对象**（boot fetch /api/llm/config） |
 | electron-renderer/src/test-support/render.ts | 已存在（D556 交付）：renderToStaticMarkup 桥接 | **只读复用**（UI 测试零新依赖） |
 | tests/sessions-api.test.ts | 集成测试先例：createServer() + PORT=0 + SYNOVA_DB_PATH=:memory: + 真实 fetch 断言 | 集成测试模板（L2a 走真实路由，铁律 12） |
@@ -82,7 +82,7 @@ Synova 的 LLM key 只能从 `process.env` 读（src/config.ts L72-82 的 14 级
 |---|---|---|
 | src/config.ts | 修改 | L72-82 区间最小侵入：llmApiKey = `resolveLlmApiKey().value \|\|`（原 14 级 env 链原样保留）；L83-84 区间：llmModel/llmBaseUrl = `getStoredLlmRuntime()` 优先 → 原 env 链 → `fileCfg.llm.model/baseUrl`（synova.json llm 段只读激活，消死配置）→ 原默认值不变；fileCfg 变量提升 try 外（约 2 行）；import 自 src/services/llm-credential-store（同 config-recovery 先例） |
 | src/server.ts | 修改 | L340 附近（credentialRoutes 挂载相邻）`app.use(llmConfigRoutes)` + `onLlmCredentialChanged` 订阅一条 `config/llm-changed` 事件日志（进程不重启声明） |
-| electron-renderer/src/components/WelcomeScreen.tsx | 修改 | welcomeState==='firstLaunch' 分支提前 return `<LlmSetupCard onConfigured={…} onSkip={…}/>`（配置向导第一步）；hasConfigNoData/ready 两态渲染路径零改动；WELCOME_COPY 保留（另两态在用，无死代码） |
+| electron-renderer/src/components/WelcomeScreen.tsx | 修改 | welcomeState==='firstLaunch' 分支提前 return `<LlmSetupCard onConfigured={…} onSkip={…}/>`（配置向导第一步）；hasConfigNoData/ready 两态渲染路径零改动。**死代码同步清理（铁律 37）**：`WELCOME_COPY.firstLaunch` 键随之删除（改后零引用）；类型防坑——WELCOME_COPY 类型收窄为 `Record<Exclude<WelcomeState,'firstLaunch'>,…>`（firstLaunch 分支提前 return 后 TS 控制流自动收窄 welcomeState，`WELCOME_COPY[welcomeState]` 零 as 通过，禁 as any/as unknown as 铁律 38） |
 | electron-renderer/src/components/StatusBar.tsx | 修改 | footer 追加黄条段：`llmUnconfigured===true` 时渲染「⚠ LLM 未配置，诊断不可用——请在设置中配置」（铁律 31 不静默） |
 | electron-renderer/src/App.tsx | 修改 | boot effect（L50 health fetch 相邻）追加 GET /api/llm/config：configured → conversation-store setWelcomeState('ready')（已配置用户跳过向导）；未配置 → app-store setLlmUnconfigured(true) |
 | electron-renderer/src/stores/app-store.ts | 修改 | +`llmUnconfigured: boolean`（默认 false）+`setLlmUnconfigured` action（bootUserRole D556 同型最小扩展） |
@@ -162,6 +162,7 @@ Synova 的 LLM key 只能从 `process.env` 读（src/config.ts L72-82 的 14 级
  * 契约:
  *   @input  — POST /api/llm/config {provider(10值枚举), model, baseUrl?, apiKey}
  *             body 白名单校验：白名单外未知字段 → 400；retryPolicy 字段收下不消费（B-02 预留）
+ *             400 code ∈ {INVALID_API_KEY(key 空/非法字符), VALIDATION_ERROR(provider 非枚举/未知字段)}
  *   @output — GET  /api/llm/config → 200 {ok, configured, provider, model, baseUrl,
  *             maskedKey: '****'+尾4|null(长度<8 全掩), source: 'stored'|'env'|null}
  *             未配置 = 200 + configured:false（空值语义，不报错——A1）
@@ -275,7 +276,7 @@ Stub 上游 = node http.createServer 按 header 分支返回（真实 HTTP 全�
 | 前端提交/测试 | grep -rn "submitLlmConfig\|testLlmConnection" electron-renderer/src --include="*.ts*" | ≥2（LlmSetupCard 调用） |
 | 黄条接线 | grep -rn "llmUnconfigured" electron-renderer/src --include="*.ts*" | store 定义 + App 写入 + StatusBar 消费 ≥3 |
 | G1 零依赖 | grep -rn "@deepseek-ai" src/ packages/ --include="*.ts" | 零结果 |
-| 存量零回改 | git diff main..HEAD -- src/routes/credentials.ts src/providers/ src/security/credential-vault.ts src/deploy/bootstrap.ts synova.json electron/main.cjs electron/backend-spawn.cjs scripts/ | 空 |
+| 存量零回改 | git diff $(git merge-base main HEAD)..HEAD -- src/routes/credentials.ts src/providers/ src/security/credential-vault.ts src/deploy/bootstrap.ts synova.json electron/main.cjs electron/backend-spawn.cjs scripts/ | 空（merge-base 形态——main 前进不受污染） |
 | key 零进 synova.json | grep -c "apiKey\|api_key" synova.json | 0（E2E 后） |
 | key 零进日志 | grep -rn "apiKey" src/services/llm-credential-store.ts src/routes/llm-config.ts \| grep "log\." | 零命中（日志语句零 key 引用） |
 
@@ -300,10 +301,10 @@ Stub 上游 = node http.createServer 按 header 分支返回（真实 HTTP 全�
 3. **DS3** tests/llm-config-api.integration.test.ts 全绿（L2a+L2b+L2c：真实路由 + stub 上游错误码分类 + 400 不回显 + 热重载同进程断言）。verify: `npx vitest run tests/llm-config-api.integration.test.ts`
 4. **DS4** config.ts 生产接线：§8 前四行 grep 断言全过 + tsc --noEmit 零新增。verify: `npx tsc --noEmit`
 5. **DS5** tests/llm-config-frontend.test.ts 全绿（七码人话 / 预校验 / 五态+三态渲染）。verify: `npx vitest run tests/llm-config-frontend.test.ts`
-6. **DS6**（派单验收 2·冷启动全链路）渲染层 dist 产物 + `npm run dev` 后端 → 首屏配置卡片 → 粘贴真实 key → 测试连接绿（maskedKey+latency）→ 保存并进入 → 主界面 → 发起一次诊断成功且后端日志显示请求走该 key。evidence/D575/e2e-first-run.md（截图+日志）。
+6. **DS6**（派单验收 2·冷启动全链路）**桌面端冷启动**（Electron 壳：加载渲染层 dist + backend-spawn 自启后端，勿动 spawn 链）→ 首屏配置卡片 → 粘贴真实 key → 测试连接绿（maskedKey+latency）→ 保存并进入（welcomeState→ready 即 CenterPanel Chat 视图，CenterPanel.tsx L34 实证）→ 主界面 → 发起一次诊断成功且后端日志显示请求走该 key。开发期辅助：`npm run dev` 后端 + vite proxy 可调 API，但验收以桌面端冷启动为准。evidence/D575/e2e-first-run.md（截图+日志）。
 7. **DS7**（派单验收 3·向导再现）删除 data/llm-credentials.json → 重启桌面端 → 首启向导再次出现（firstLaunch 判定含 LLM 未配置）。evidence 落盘。
 8. **DS8**（派单验收 4·热重载，进程 PID 不变）后端保持运行记录 PID → UI 改 key 保存 → 下一次诊断用新 key；DS3 热重载集成断言为自动化代理。evidence 落盘（含 PID 前后一致）。诚实声明：派单原文「kill 后端进程后…不重启进程」按热重载本义固化为「进程保持运行（PID 不变）」，kill+重启场景由 DS7 覆盖。
-9. **DS9**（派单验收 5·错误码人话 + 安全四断言）手动填错 key → 「密钥无效，请重新粘贴」非堆栈；`grep -c "apiKey\|api_key" synova.json`=0；日志零 key 片段（§8 末行）；凭证文件 `stat -f "%Lp" data/llm-credentials.json`=600。
+9. **DS9**（派单验收 5·错误码人话 + 安全四断言）手动填错 key → 「密钥无效，请重新粘贴」非堆栈；`grep -c "apiKey\|api_key" synova.json`=0；日志零 key 片段（§8 末行）；凭证文件权限（macOS: `stat -f "%Lp" data/llm-credentials.json`=600；Linux: `stat -c "%a"`；Windows 免测——NTFS 用户目录 ACL）。
 10. **DS10** vitest 全量零失败（铁律 36）+ as any/as never/as unknown as = 0（铁律 38）+ §8 存量零回改 diff 为空。
 11. **DS11** evidence/D575/ 落盘（测试输出 + 5 条 E2E 实测）+ task-state/D575.json impl 段回填（编码 session 职责）+ spec 文件随编码首个 commit 同批提交（消解 §3.3.1 预登记漂移）。
 
