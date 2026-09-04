@@ -78,6 +78,7 @@ Synova = AI 诊断 Agent。桌面端 D538 已裁定"界面无 FDE，统一 GA"�
 - tests/run-e2e-pipeline.cjs
 - scripts/check-fde-terms.sh
 - package.json
+- docs/synova/coordination/审计发现台账-DSH-CTO.md（merge 双写合并条目，CTO 接手合并时产生）
 - .claude/task-briefs/2026-09-04-D573-fde-to-ga-terminology.md
 - memory/notes/proposed/2026-09-04-d573-fde-to-ga-terminology.md
 - .github/CODEOWNERS
@@ -102,7 +103,9 @@ Synova = AI 诊断 Agent。桌面端 D538 已裁定"界面无 FDE，统一 GA"�
 处理（中间步骤）：运行时字符串 FDE→GA（含"前线部署工程师"括注→"Growth Advisor，增长顾问"）；tool-profiles `case 'FDE'` → `case 'ga'`（修复 ga 角色掉 minimal 的潜伏 bug）；门禁脚本展示文案/排除词表同步（check-dataflow 排除项加 ^GA$ 保留 ^FDE$ 兼容旧 brief）。
 结果（最终展示）：白名单外全仓零 FDE（新门禁脚本物理验证）；GA 全称在 GLOSSARY 统一为 Growth Advisor；四态 Note 沉淀决策。
 
-## 架构层: L1+L2 交互与编排表层 + 治理文档锚点链
+## 架构层:
+
+L1+L2 交互与编排表层 + 治理文档锚点链
 
 ## Done 标准:
 - [ ] bash scripts/check-fde-terms.sh 返回 exit 0（白名单外大小写敏感 "FDE" 零命中）
