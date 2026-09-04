@@ -29,6 +29,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -50,6 +51,36 @@ AUDIT_DIR = PROJECT_ROOT / "docs" / "synova" / "audit-reports"
 REDEEMABLE_STATUS = ("impl_done", "audited")
 # 审计 verdict 黑名单（FAIL 不兑换）
 FAIL_VERDICTS = ("FAIL",)
+# D576（CT-53）: 兑换证据类型 = 任务闭环声明，**非审计裁决**（此前冒充 record_type=k3
+# 被 calc-progress 一票翻绿——2026-09-04 K3 D572 审计实证 1-2 假绿根因）。
+# task_redeem 在 calc-progress 走 machine 路径（TTL/代码变更失效 → pending_k3），
+# 翻绿仍需真 K3 复核或创始人演示核验。
+REDEEM_RECORD_TYPE = "task_redeem"
+# 审计复核类验收点的识别关键词：此类点（每线收尾的「审计员复核…」）禁止任务兑换
+# ——任务声明推进它 = 自我指认（1-8 型，K3 D572 实证）。只有 K3 复核流程可写。
+K3_ONLY_DESC_KEYWORDS = ("审计员复核",)
+
+
+def load_k3_only_points(yaml_path: Path) -> set:
+    """从 product-lines.yaml 提取 k3_only 点 id 集合（desc 含审计复核关键词）。"""
+    k3_only = set()
+    try:
+        text = yaml_path.read_text(encoding="utf-8")
+    except OSError:
+        return k3_only
+    current_id = None
+    for line in text.splitlines():
+        m = re.match(r'\s*- id: "(\d+-\d+)"', line)
+        if m:
+            current_id = m.group(1)
+            continue
+        if current_id:
+            dm = re.match(r'\s+desc: "(.*)"', line)
+            if dm:
+                if any(k in dm.group(1) for k in K3_ONLY_DESC_KEYWORDS):
+                    k3_only.add(current_id)
+                current_id = None
+    return k3_only
 
 
 def git_commit_exists(commit: str) -> bool:
@@ -83,11 +114,18 @@ def audit_ok(task: dict) -> tuple[bool, str]:
     return True, str(report_path)
 
 
-def redeem(task_id: str, task: dict, evidence_dir: Path) -> dict:
+def redeem(task_id: str, task: dict, evidence_dir: Path, k3_only_points: set) -> dict:
     """为单个任务生成证据记录。返回 {written: int, skipped: list}。"""
     points = task.get("acceptance_points") or []
     if not points:
         return {"written": 0, "skipped": ["无 acceptance_points 声明"]}
+
+    # D576/CT-53: 审计复核类点禁任务兑换（自我指认禁止——1-8 型，K3 D572 实证）
+    k3_only_hits = [pt for pt in points if pt in k3_only_points]
+    if k3_only_hits:
+        points = [pt for pt in points if pt not in k3_only_points]
+        if not points:
+            return {"written": 0, "skipped": [f"全部为 k3_only 点（仅 K3 复核可写）: {k3_only_hits}"]}
 
     status = task.get("status", "")
     if status not in REDEEMABLE_STATUS:
@@ -129,10 +167,10 @@ def redeem(task_id: str, task: dict, evidence_dir: Path) -> dict:
 
     record = {
         "schema": 1,
-        "record_type": "k3",
+        "record_type": REDEEM_RECORD_TYPE,
         "source": str(ref),
         "date": str(task.get("audit", {}).get("at", "") or task.get("updated_at", "")),
-        "note": f"任务 {task_id} 自动兑换（redeem-progress.py）：impl {commit[:10]} 在 git + audit 非 FAIL",
+        "note": f"任务 {task_id} 自动兑换（redeem-progress.py）：impl {commit[:10]} 在 git + audit 非 FAIL。task_redeem=任务闭环声明，非审计裁决，翻绿需真 K3 复核或创始人核验",
         "verdicts": list(verdicts.values()),
     }
     if written > 0 or not out_path.exists():
@@ -155,6 +193,9 @@ def main() -> int:
 
     total_written = 0
     total_skipped = []
+    k3_only_points = load_k3_only_points(PROJECT_ROOT / "docs" / "synova" / "product-lines" / "product-lines.yaml")
+    if k3_only_points:
+        log.info("k3_only 点（禁任务兑换）: %d 个", len(k3_only_points))
     for p in sorted(args.task_state_dir.glob("D*.json")):
         if p.name == "TEMPLATE.json":
             continue
@@ -169,7 +210,7 @@ def main() -> int:
             if points:
                 log.info("[dry-run] %s → %s", tid, points)
             continue
-        r = redeem(tid, task, args.evidence_dir)
+        r = redeem(tid, task, args.evidence_dir, k3_only_points)
         total_written += r["written"]
         if r["skipped"]:
             for s in r["skipped"]:

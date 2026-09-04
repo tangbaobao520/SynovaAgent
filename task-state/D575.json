@@ -1,0 +1,12 @@
+{
+  "task_id": "D575",
+  "title": "LLM 配置首启向导——借鉴 DSH credential seam（打开产品第一步即配置）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-04",
+  "updated_by": "dsh-cto",
+  "note": "D# 手动占用：alloc 给了 D573 但该号已被在途分支 chore/d573-fde-to-ga-terminology 占用（alloc 只查 origin/main 看不到在途分支，D550 同型根因）；D574 已用，取 D575。alloc 的在途分支盲区登记 CT-54 候选。"
+}
