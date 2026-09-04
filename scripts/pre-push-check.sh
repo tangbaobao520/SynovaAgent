@@ -73,10 +73,17 @@ check_push_sync() {
   if [[ "$PUSH_BRANCH_REF" == "refs/heads/main" ]] || [[ "$fbranch" == "main" ]]; then
     if [[ "${SYNO_ALLOW_MAIN_PUSH:-}" != "1" ]]; then
       echo -e "  ${RED}❌ 门禁 0-2: 禁止直接 push main — main 只进 PR${RESET}"
-      echo "  正确流程: push 自己的 feat/ 分支 → 开 PR → 创始人在 GitHub 点 Merge。"
-      echo "  紧急逃生舱(需创始人批准): SYNO_ALLOW_MAIN_PUSH=1 git push ... (记 bypass.log)"
+      echo "  正确流程: push 自己的 feat/ 分支 → 开 PR → GitHub PR 机制合并（CTO 用 API token 执行）。"
+      echo "  紧急逃生舱(需创始人批准, 禁止用于常规合并): SYNO_ALLOW_MAIN_PUSH=1 git push ... (记 bypass.log)"
       return 1
     fi
+    # D571: 真实写 bypass.log——此前只 echo 声称「已记」未实现写入（M2 审计链断裂，2026-09-03 复盘发现）
+    _escape_repo_root="$(cd "$SCRIPT_DIR/.." && pwd)"
+    _escape_bypass_log="${SYNO_BYPASS_LOG:-${_escape_repo_root}/.claude/bypass.log}"  # 测试注入缝: 沙箱覆盖路径
+    _escape_ts="$(date +%Y-%m-%dT%H:%M:%S%z 2>/dev/null || date -u +%Y-%m-%dT%H:%M:%SZ)" # swallow-ok: 无 %z 的 date 用 UTC 兜底
+    _escape_user="$(whoami 2>/dev/null || echo unknown)" # swallow-ok: 身份获取失败不阻断逃生舱，unknown 留痕
+    printf '%s\n' "${_escape_ts} | ALLOW_MAIN_PUSH | SYNO_ALLOW_MAIN_PUSH=1 逃生舱直推 main（需创始人批准）| BRANCH=${PUSH_BRANCH:-main} | USER=${_escape_user}" \
+      >> "${_escape_bypass_log}" 2>/dev/null || echo -e "  ${RED}⚠️  逃生舱 bypass.log 写入失败 — 审计链断裂${RESET}" >&2
     echo -e "  ${YELLOW}⚠️  门禁 0-2: SYNO_ALLOW_MAIN_PUSH=1 逃生舱生效 — 直推 main (已记 bypass.log)${RESET}"
   fi
 

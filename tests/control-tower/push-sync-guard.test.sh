@@ -78,9 +78,18 @@ EC=$(run_sync "$LOCAL_DIR" origin "file://$REMOTE_DIR" "refs/heads/main" "")
 assert_exit "$EC" 1 "1. main 直推 → 硬阻断"
 grep -q "0-2" /tmp/pss-out.txt && pass "   阻断消息含门禁 0-2" || fail "   阻断消息缺门禁 0-2 标识"
 
-# 2. main + 逃生舱 → 放行（fetch 会成功: 远端空 → 同步放行）
-EC=$(run_sync "$LOCAL_DIR" origin "file://$REMOTE_DIR" "refs/heads/main" "SYNO_ALLOW_MAIN_PUSH=1")
+# 2. main + 逃生舱 → 放行 + 真实写 bypass.log（D571: 断言审计链，此前只 echo 未写入）
+ESCAPE_LOG=$(mktemp /tmp/pss-bypass.XXXXXX)
+EC=$( ( cd "$LOCAL_DIR" && \
+  printf '%s %s %s %s\n' "refs/heads/main" "$(git rev-parse HEAD)" "refs/heads/main" "$(git rev-parse HEAD)" | \
+  env SYNO_ALLOW_MAIN_PUSH=1 SYNO_BYPASS_LOG="$ESCAPE_LOG" SYNO_SYNC_ONLY=1 bash "$PRE_PUSH" origin "file://$REMOTE_DIR" > /tmp/pss-out.txt 2>&1; echo $? ) )
 assert_exit "$EC" 0 "2. main + SYNO_ALLOW_MAIN_PUSH=1 逃生舱 → 放行"
+if grep -q "ALLOW_MAIN_PUSH" "$ESCAPE_LOG" 2>/dev/null; then
+  pass "2b. 逃生舱真实写 bypass.log（ALLOW_MAIN_PUSH 条目存在，D571 审计链闭环）"
+else
+  fail "2b. 逃生舱未写 bypass.log（审计链断裂——echo 声称已记但无落盘）"
+fi
+rm -f "$ESCAPE_LOG"
 
 # 准备基线: 本地推送 A 到远端 feat/test 分支
 git -C "$LOCAL_DIR" push -q origin HEAD:feat/test 2>/dev/null # swallow-ok: 基线推送, 失败由后续断言暴露
