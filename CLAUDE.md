@@ -14,7 +14,7 @@
 ```
 原始数据 → 本体层(电子病历) → 7维度×25测量器(compute)
                                      ↓
-                    按需(FDE触发)          定时(Cron触发)
+                    按需(GA触发)          定时(Cron触发)
                     runModules()          Sentinel.check()
                          ↓                      ↓
                     Evidence池           SentinelFinding[]
@@ -29,7 +29,7 @@
                          ↓
                     综合诊断报告
                          ↓
-                    FDE 收到警报 + 报告
+                    GA 收到警报 + 报告
                     GET /api/sentinel/reports
                     GET /api/sentinel/tickets
 ```

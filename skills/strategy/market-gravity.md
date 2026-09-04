@@ -2,7 +2,7 @@
 name: market-gravity
 version: 1.0
 description: 市场引力分析——波特五力量化 + PEST+CC + 利润池迁移，判断赛道是否值得进入或留在其中
-when_to_use: 系统检测到客户所在行业数据 ≥ 3 条，或 FDE 手动触发"市场分析"
+when_to_use: 系统检测到客户所在行业数据 ≥ 3 条，或 GA 手动触发"市场分析"
 required_tools: [market_gravity, query_graph]
 depends_on: []
 ---

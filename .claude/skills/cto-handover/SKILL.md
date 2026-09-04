@@ -144,7 +144,7 @@ clone（基于 origin/main，git clone --local 主工作区 + 修正 origin + gi
 |---|---|---|---|
 | 控制体系 + CTO | **我（主 CTO）** | Win DSH 副手（影子） | Mac 独担主 |
 | dev doc | 📋 synova-devdoc | Codex | DSH 自出（SYNOVA-IMPL-DSH 编号），Claude 线 Codex |
-| 编码 | 🛠 synova-dsh（**哨兵切片** src/sentinel+cron） | Claude（诊断体系 FDE+本体/存储/交互） | 垂直切片互不重叠 |
+| 编码 | 🛠 synova-dsh（**哨兵切片** src/sentinel+cron） | Claude（诊断体系 GA+本体/存储/交互） | 垂直切片互不重叠 |
 | 审计 | 🔍 synova-k3-audit（DSH+K3） | Kimi code CLI + K3 | 双轨独立 |
 
 **CTO 主从**：主 CTO = Mac DSH（建体系+盯全局+补丁+周报+管员工+盯双轨效率/质量/成本）；副手 = Win DSH（只读复核、异议升级、不主动改）。

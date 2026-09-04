@@ -7,7 +7,7 @@
 # app.asar 里，裸 node/node_modules 解析不可达 + 原生模块 ABI 不匹配。
 # 方案: esbuild 单文件 ESM bundle（dist/backend.mjs）+ externals 仅原生模块
 # （better-sqlite3/bcrypt，经 extraResources 落 resources/node_modules，electron ABI），
-# prod 由包内 Electron 以 node 模式执行（ELECTRON_RUN_AS_NODE=1，ABI 一致，FDE 零 Node 前提）。
+# prod 由包内 Electron 以 node 模式执行（ELECTRON_RUN_AS_NODE=1，ABI 一致，GA 零 Node 前提）。
 #
 # 契约（铁律 47）:
 #   @input  src/index.ts + tsconfig paths（esbuild 原生支持）+ node_modules（externals 解析）

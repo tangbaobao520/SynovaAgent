@@ -1,6 +1,6 @@
 /**
  * routes/home.ts — Synova 首页 (双入口 + 主题切换)
- * Day 2: FDE 诊断入口页面
+ * Day 2: GA 诊断入口页面
  */
 import { Router, type Request, type Response } from 'express';
 import { createLogger } from '@synova/logger';

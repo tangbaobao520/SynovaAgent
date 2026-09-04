@@ -2,7 +2,7 @@
 name: jtbd-interview
 version: 1.0
 description: JTBD 客户需求访谈框架——识别客户"雇佣"产品的真实任务，区分功能需求与进步需求
-when_to_use: FDE 手动触发"客户需求分析"，或检测到客户反馈数据（NPS、访谈记录、退款原因）
+when_to_use: GA 手动触发"客户需求分析"，或检测到客户反馈数据（NPS、访谈记录、退款原因）
 required_tools: [behavioral_economics, query_graph]
 depends_on: []
 ---

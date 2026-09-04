@@ -13,7 +13,7 @@
 | 谁 | 管什么 | 打比方 |
 |----|--------|--------|
 | **Mac DSH** | 控制塔 + 验证系统 + 门面（MCP/桌面）+ **哨兵体系核心代码** + 主 CTO（盯全局） | 建仪表盘 + 修哨兵 + 总管家的人 |
-| **Win Claude** | 产品核心（诊断体系 FDE + 本体/存储/交互） | 修发动机的人 |
+| **Win Claude** | 产品核心（诊断体系 GA + 本体/存储/交互） | 修发动机的人 |
 | **Codex** | Claude 线 dev doc + Claude 线 D# 分配（**不再跟仪表盘**） | 画图纸的人 |
 | **K3**（双轨：Win Kimi CLI + Mac DSH+K3） | 验收（审两边） | 监理 |
 | **你** | 定产品 + 点 Merge + 看评估看板 | 老板 |
@@ -35,7 +35,7 @@
 | src/mcp/ | **Mac DSH** | MCP 企业接入 |
 | electron/ + electron-renderer/ | **Mac DSH** | Electron 一体化 |
 | scripts/control-tower/ + scripts/backup/ + 门禁脚本 + docs/synova/coordination/ + DSH 预设与技能 | **Mac DSH** | 控制塔持续维护 |
-| **src/（除 sentinel/cron/mcp 外）L1-L5 + extensions/ + packages/ + synova_worker/** | **Win Claude Code** | 诊断体系（FDE 6阶段）+ 本体/存储/交互 |
+| **src/（除 sentinel/cron/mcp 外）L1-L5 + extensions/ + packages/ + synova_worker/** | **Win Claude Code** | 诊断体系（GA 6阶段）+ 本体/存储/交互 |
 | docs/计划库（Claude 线 dev doc） | **Codex (Win)** | Claude 线 dev doc + Claude 线 D# 分配 + 任务登记 |
 | scripts/audit/ + 审计标准 | **Kimi K3** | 红线：其他角色禁碰 |
 

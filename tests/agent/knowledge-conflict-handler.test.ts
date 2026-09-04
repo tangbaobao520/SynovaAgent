@@ -45,10 +45,10 @@ describe('KnowledgeConflictHandler', () => {
       timestamp: new Date().toISOString(),
       status: 'open',
     });
-    const resolved = handler.resolve(c.id, 'keep_higher_priority', 'FDE-tester', '选择客户版本');
+    const resolved = handler.resolve(c.id, 'keep_higher_priority', 'GA-tester', '选择客户版本');
     expect(resolved).toBeTruthy();
     expect(resolved!.status).toBe('resolved');
-    expect(resolved!.resolvedBy).toBe('FDE-tester');
+    expect(resolved!.resolvedBy).toBe('GA-tester');
   });
 
   it('Given 不存在id, When resolve, Then 返回null', () => {

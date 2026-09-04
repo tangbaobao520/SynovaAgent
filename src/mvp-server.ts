@@ -274,7 +274,7 @@ ${s.findings.map((f:any) => `
 
 <div class="section">
   <h2>数据说明</h2>
-  <p><strong>已覆盖数据源：</strong>FDE采访文档（八维度提取）</p>
+  <p><strong>已覆盖数据源：</strong>GA采访文档（八维度提取）</p>
   ${dimensions.filter((d:any)=>!d.sufficient).length>0
     ?`<p style="color:var(--orange);"><strong>⚠️ 数据缺口：</strong>${dimensions.filter((d:any)=>!d.sufficient).map((d:any)=>d.dimensionLabel+'维度的访谈信息不足').join('、')}。相关结论可能不完整。</p>`
     :''}
