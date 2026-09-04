@@ -1,0 +1,29 @@
+{
+  "task_id": "D576",
+  "title": "产品线兑换机制修复 CT-53 + alloc 在途盲区 CT-54",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "by": "dsh-cto",
+    "at": "2026-09-04",
+    "files": [
+      "scripts/product-lines/redeem-progress.py",
+      "scripts/product-lines/calc-progress.py",
+      "docs/synova/product-lines/product-lines.yaml",
+      "scripts/control-tower/alloc-task-id.sh",
+      "tests/control-tower/redeem-task-redeem.test.sh",
+      "memory/notes/implemented/2026-09-04-d576-redeem-honesty-ct53-ct54.md"
+    ],
+    "evidence": [
+      "redeem-task-redeem.test.sh 5/5（正常兑换类型/k3_only跳过/存量降级/k3_only封顶/无k3冒充）",
+      "alloc-task-id.test.sh 13/13 + lock 3/3（worktree 扫描零破坏）",
+      "主仓库 calc 重跑: 11%→6%（20→10 verified，假绿水分挤出，诚实回落）",
+      "YamlSubsetError: 测试 mini yaml 发现字段名 acceptance_points（非 points）——首次踩坑即修"
+    ],
+    "notes": "自检5问: ①接线=calc/redeem 由 refresh-all.sh A3.5/A4 环节调用（不变）②异常=calc 存量降级记 degraded 显式③无 as any ④测试=5断言+回归13+3 全绿⑤残留=无。边界: 不改 scripts/audit/；不改 refresh-all.sh 集成点。CT-53/CT-54 闭环。"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-04",
+  "updated_by": "alloc-task-id"
+}
