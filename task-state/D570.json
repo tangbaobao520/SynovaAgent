@@ -1,0 +1,27 @@
+{
+  "task_id": "D570",
+  "title": "AGENTS/CLAUDE 版本对齐 V5.2.7 + CTO 自检发现台账消化",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "by": "dsh-cto",
+    "at": "2026-09-03",
+    "files": [
+      "AGENTS.md",
+      "CLAUDE.md",
+      "docs/synova/coordination/审计发现台账-DSH-CTO.md",
+      ".claude/task-briefs/2026-09-03-D570-版本对齐.md",
+      "task-state/D570.json"
+    ],
+    "evidence": [
+      "verify: grep -c 'V5.2.7' AGENTS.md=2 CLAUDE.md=2",
+      "verify: grep -c 'as never' AGENTS.md=2 CLAUDE.md=2",
+      "台账含「CTO 接管批」条目（追平/D569审查/worktree收尾/自检消化四项）"
+    ],
+    "notes": "自检5问: ①接线=N/A（纯文档）②异常=N/A ③类型安全=N/A ④测试=N/A（治理文档无测试配套，D531 同型）⑤残留=无。边界: 不改 VERSION.md（已 V5.2.7）/scripts/audit/"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-03",
+  "updated_by": "alloc-task-id"
+}

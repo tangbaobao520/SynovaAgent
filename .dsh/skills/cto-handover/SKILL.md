@@ -239,7 +239,31 @@ git-sync-pr / brief-compose / claim-verifier / windows-compat / synova-audit / p
 - 同一模块同一时间只一个角色认领（撞车停手问创始人）
 - 同类错误第二次出现 = 防线失效，升级创始人
 
+### 🔴 合并通道与逃生舱（2026-09-03 D570 违规复盘固化，D571 起生效）
+
+- **PR 合并走 GitHub PR 机制，由 CTO 执行**（创始人 2026-09-03 定「合并 PR 是 CTO 的工作」）。
+  执行通道 = GitHub API token：`~/.dsh/.credentials.yaml` 的 `GITHUB_TOKEN`（ghp_ 开头，
+  已验有效，login=tangbaobao520）。API merge 流程见 §十三「合并命令」。
+- **SYNO_ALLOW_MAIN_PUSH=1 逃生舱绝对禁止用于常规合并**——它是「紧急 + 创始人显式批准」
+  双条件的抢修通道。创始人说「合并是 CTO 的工作」≠ 逃生舱授权。违规记录：D570 曾用
+  逃生舱直推 main ×3（D569/D570/D551 补交），已登记台账。
+- 用逃生舱前必须创始人逐次显式批准；用后 bypass.log 必有 ALLOW_MAIN_PUSH 条目
+  （D571 已实现真实写入 + 测试断言；此前只 echo 未落盘 = 审计链断裂）。
+- 提交绝不 `--no-verify`（D570 同批自误，已自纠；bypass.log 的 possible-bypass 是耻辱标记）。
+- 找不到 token 先找 `~/.dsh/.credentials.yaml`，不要只查 ~/.netrc/gh（2026-09-03 教训：
+  token 一直在，漏查了 dsh 凭据文件）。
+
 ## 十三、关键命令
+
+### 合并 PR（正确通道，API token）
+
+```bash
+TOKEN=$(grep -E '^\s*GITHUB_TOKEN:' ~/.dsh/.credentials.yaml | sed 's/.*GITHUB_TOKEN:[[:space:]]*//' | tr -d '\r\n')
+curl -X PUT -H "Authorization: token $TOKEN" \
+  "https://api.github.com/repos/tangbaobao520/SynovaAgent/pulls/<PR号>/merge" \
+  -d '{"merge_method":"squash"}'
+# 验证: GET .../pulls/<PR号> → merged=true, merged_by=tangbaobao520
+```
 
 ```bash
 bash scripts/product-lines/refresh-all.sh          # 26线进度刷新
