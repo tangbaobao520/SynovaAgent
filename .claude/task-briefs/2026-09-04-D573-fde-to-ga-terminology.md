@@ -42,6 +42,7 @@ Synova = AI 诊断 Agent。桌面端 D538 已裁定"界面无 FDE，统一 GA"�
 - docs/synova/report-template.html
 - src/agent/tool-profiles.ts
 - tests/agent/tool-profiles.test.ts
+- tests/agent/knowledge-conflict-handler.test.ts
 - src/orchestrator/subagent-coordinator.ts
 - src/l3/pkb-lifecycle.ts
 - src/sentinel/baseline-store.ts
