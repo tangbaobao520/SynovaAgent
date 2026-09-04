@@ -1,0 +1,12 @@
+{
+  "task_id": "D577",
+  "title": "哨兵阈值配置真实挂载——死代码转活（7-2/8-1/10-3）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-05",
+  "updated_by": "dsh-cto",
+  "note": "CTO 派单 → dev-doc 写 spec。派单含断裂链路精确画像（三段两断点）+ 6 项物理复核。无 DSH 借鉴（自研哨兵体系内部缺陷）。"
+}
