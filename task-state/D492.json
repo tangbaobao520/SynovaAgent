@@ -2,18 +2,27 @@
   "task_id": "D492",
   "title": "task-decomposer DIMENSION_EXPERT_MAP 对齐 7 位专家",
   "slice": null,
-  "status": "spec_done",
+  "status": "impl_done",
   "risk": "medium",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-D492-task-decomposer-expert-map-20260902.md",
-    "commit": "PENDING",
+    "commit": "c27628462efce06ff36cb16a443935e739f35b32",
     "by": "dev-doc",
     "at": "2026-09-02"
   },
-  "impl": null,
-  "audit": null,
+  "impl": {
+    "commit": "c27628462efce06ff36cb16a443935e739f35b32",
+    "by": "codex",
+    "at": "2026-09-04"
+  },
+  "audit": {
+    "result": "pass",
+    "by": "codex",
+    "at": "2026-09-04",
+    "note": "Codex 验收 PASS：10 映射值对齐 v2.0 七专家 + fallback org→host，写集 2 代码文件+测试零越界；PR #341 squash 合并 main c2762846。"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-02",
-  "updated_by": "dev-doc",
+  "updated_at": "2026-09-04",
+  "updated_by": "codex",
   "note": "D491 验收越界发现：task-decomposer.ts DIMENSION_EXPERT_MAP + fallback 'org' 映射到 D282 已删专家，季度诊断 loop-1 非 tech 维度全线 degraded。修映射对齐 7 位专家。"
 }
