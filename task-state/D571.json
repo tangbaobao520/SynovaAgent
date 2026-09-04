@@ -1,0 +1,30 @@
+{
+  "task_id": "D571",
+  "title": "pre-push 逃生舱审计链修复 + CTO 合并通道纪律固化",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "by": "dsh-cto",
+    "at": "2026-09-03",
+    "files": [
+      "scripts/pre-push-check.sh",
+      "tests/control-tower/push-sync-guard.test.sh",
+      ".claude/skills/cto-handover/SKILL.md",
+      ".dsh/skills/cto-handover/SKILL.md",
+      "memory/notes/implemented/2026-09-03-d571-escape-hatch-audit-chain.md",
+      "docs/synova/coordination/审计发现台账-DSH-CTO.md",
+      ".claude/task-briefs/2026-09-03-D571-逃生舱审计链修复.md",
+      "task-state/D571.json"
+    ],
+    "evidence": [
+      "push-sync-guard.test.sh 16/16 绿（含 2b 审计链断言）",
+      "grep -c ALLOW_MAIN_PUSH scripts/pre-push-check.sh = 1（真实写入实现）",
+      "sync-dsh-skills SYNC-OK 12 技能，.dsh 版含新红线节"
+    ],
+    "notes": "自检5问: ①接线=门禁 0-2 逃生舱分支真实调用 printf>>bypass.log（2b 断言验证）②异常=写失败显式告警不静默（铁律 11）③类型安全=bash 无 as any ④测试=2b 断言 + 既有 15 断言全绿，覆盖正常(放行+留痕)/降级(写失败告警)/边界(main 直推阻断) ⑤残留=无。边界: 不改门禁 0-2 阻断语义（fail-closed 不变）；不改 scripts/audit/。待办: K3 审计 D571 控制塔变更 + D570 违规条目。"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-04",
+  "updated_by": "alloc-task-id"
+}
