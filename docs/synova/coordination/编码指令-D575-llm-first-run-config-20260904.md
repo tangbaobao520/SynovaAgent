@@ -46,7 +46,7 @@
 3. **无 bug**：spec §11 verify 命令逐条跑通 + `npx vitest run` 全量零失败（铁律 36）+ `npx tsc --noEmit` 零新增 + renderer 侧 tsc/build 过 + pre-commit 13 组全过（**禁 --no-verify**）+ 提交走 synova-commit（**禁 git stash**，铁律 0-3）。
 4. **接线完整**：spec §8 每条 grep 出真实生产调用点（热重载链：POST → setLlmCredential → onChanged → server.ts 订阅日志；消费链：config.ts resolve → 每请求 loadConfig → diagnosis-upload-v2 L528 createProvider）。
 5. **测试到位**：red→green 已证（实现前用例先红）、覆盖正常/降级/边界、expect 断言非空壳；集成测试走真实路由（铁律 12）。
-6. **其他你认为需要复核的点**：残留清理（WELCOME_COPY 仅删 firstLaunch 引用时确认另两态在用）、G1 零 DSH 依赖 grep、synova.json/data/ 双文件纯净性、evidence 可复现性——你判断需要就查。
+6. **其他你认为需要复核的点**：残留清理（spec 复核修正已定案：`WELCOME_COPY.firstLaunch` 键删除 + WELCOME_COPY 类型收窄为 `Record<Exclude<WelcomeState,'firstLaunch'>,…>`——零 as 通过 TS 控制流收窄）、G1 零 DSH 依赖 grep、synova.json/data/ 双文件纯净性、evidence 可复现性——你判断需要就查。
 
 ## 五、K3 审计提示（收尾要求）
 
