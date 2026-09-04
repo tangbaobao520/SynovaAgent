@@ -1,7 +1,7 @@
 {
   "task_id": "D572",
   "title": "线1桌面端K3全量复核派单",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "by": "dsh-cto",
@@ -16,8 +16,17 @@
     ],
     "notes": "CTO 派单职责任务；待 K3 接单执行。写集=派单文档+task-state，无代码。"
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-09-04-D572-line1-desktop.md",
+    "verdict": "FAIL",
+    "blockers": [
+      "P0: 验收点1-2 Windows 双击安装→出窗从未真机实测（D523 DS1/DS2 pending、D536 win_status waiting、yaml note 仍'从未实测'），verified 为自动兑换假绿——k3_gate 不放行",
+      "P1: k3 verdict 无 stale 机制（D556 electron-renderer 大变更后证据未重验）；1-6 计时证据不可复核；D517-519 verdict 滞留 CONDITIONAL PASS"
+    ],
+    "by": "K3",
+    "at": "2026-09-04"
+  },
   "fix_task_id": null,
   "updated_at": "2026-09-04",
-  "updated_by": "alloc-task-id"
+  "updated_by": "k3-audit"
 }
