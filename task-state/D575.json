@@ -1,12 +1,17 @@
 {
   "task_id": "D575",
   "title": "LLM 配置首启向导——借鉴 DSH credential seam（打开产品第一步即配置）",
-  "status": "claimed",
-  "spec": null,
+  "status": "spec_done",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D575-llm-first-run-config-20260904.md",
+    "commit": "cbcb25aa",
+    "by": "dsh-dev-doc",
+    "at": "2026-09-04"
+  },
   "impl": null,
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-04",
-  "updated_by": "dsh-cto",
-  "note": "D# 手动占用：alloc 给了 D573 但该号已被在途分支 chore/d573-fde-to-ga-terminology 占用（alloc 只查 origin/main 看不到在途分支，D550 同型根因）；D574 已用，取 D575。alloc 的在途分支盲区登记 CT-54 候选。"
+  "updated_by": "dsh-dev-doc",
+  "note": "D# 手动占用：alloc 给了 D573 但该号已被在途分支 chore/d573-fde-to-ga-terminology 占用（alloc 只查 origin/main 看不到在途分支，D550 同型根因）；D574 已用，取 D575。alloc 的在途分支盲区登记 CT-54 候选。spec 2026-09-04 交付（gatekeeper exit 0 / 写集 13 条 spec-only 预登记漂移 / DSH 锚点抽验 2 处全中）；编码 session=synova-dsh，分支 feat/d575-llm-first-run-config，编码指令 docs/synova/coordination/编码指令-D575-llm-first-run-config-20260904.md。"
 }
