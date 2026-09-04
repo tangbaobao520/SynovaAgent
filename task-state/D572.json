@@ -1,0 +1,23 @@
+{
+  "task_id": "D572",
+  "title": "线1桌面端K3全量复核派单",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "by": "dsh-cto",
+    "at": "2026-09-04",
+    "files": [
+      "docs/synova/coordination/审计派单-20260904-D572-line1桌面端全量复核.md",
+      "task-state/D572.json"
+    ],
+    "evidence": [
+      "派单前物理核实: 任务书 7 个证据文件 git cat-file -e origin/main 全命中",
+      "任务书由 A7 规则自动生成（线1 8/8 verified 触发 100% 全量复核规则）"
+    ],
+    "notes": "CTO 派单职责任务；待 K3 接单执行。写集=派单文档+task-state，无代码。"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-04",
+  "updated_by": "alloc-task-id"
+}
