@@ -24,8 +24,8 @@ describe('ContextCompressor with confirmedFacts', () => {
       messages.push(msg('user', `第${i}轮问题`));
       messages.push(msg('assistant', `第${i}轮回答`));
     }
-    // FDE 在第 5 轮纠正了错误判断
-    messages[10] = msg('assistant', 'FDE纠正：根因不是应收账款延长，是采购流程临时异常。已确认。');
+    // GA 在第 5 轮纠正了错误判断
+    messages[10] = msg('assistant', 'GA纠正：根因不是应收账款延长，是采购流程临时异常。已确认。');
 
     // 最近 10 轮
     for (let i = 25; i < 35; i++) {
@@ -34,7 +34,7 @@ describe('ContextCompressor with confirmedFacts', () => {
     }
 
     const confirmedFacts = [
-      '根因: 采购流程临时异常（FDE纠正后确认）',
+      '根因: 采购流程临时异常（GA纠正后确认）',
       '建议: 暂不催收，下月复查',
     ];
 
@@ -114,7 +114,7 @@ describe('ContextCompressor with confirmedFacts', () => {
       messages.push(msg('assistant', `回答${i}`));
     }
 
-    const facts = ['根因: 采购流程异常(FDE确认)', '建议: 暂不催收'];
+    const facts = ['根因: 采购流程异常(GA确认)', '建议: 暂不催收'];
 
     // 直接调用 compress() 传入 confirmedFacts
     const result = compressor.compress(messages, '', {

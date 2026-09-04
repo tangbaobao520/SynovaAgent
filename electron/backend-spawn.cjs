@@ -61,7 +61,7 @@ async function probeUntil(url, windowMs, pollIntervalMs) {
  *   ① dist/src/*.js 是 ESM 无扩展名 import——裸 node 直接 ERR_MODULE_NOT_FOUND（main 存量）
  *   ② 打包产物依赖在 app.asar 内，裸 node 的 node_modules 解析不可达
  *   ③ 原生模块（better-sqlite3/bcrypt）在产物内为 Electron ABI——任何外部 node 都 ABI 不匹配
- *   且 FDE 机器无 Node 前提（北星 §二）。
+ *   且 GA 机器无 Node 前提（北星 §二）。
  *   → prod = 包内 Electron 二进制以 node 模式跑 esbuild 单文件 bundle（dist/backend.mjs，
  *     externals 原生模块经 extraResources 落 resources/node_modules，ESM 向上解析可达 + ABI 一致）。
  */
@@ -168,7 +168,7 @@ async function ensureBackend(options) {
   const cmd = command || buildCommand(mode);
   const env = { ...process.env };
   if (mode === 'prod') {
-    // 包内 Electron 以 node 模式执行 backend.mjs（见 buildCommand 注释；FDE 零 Node 前提）
+    // 包内 Electron 以 node 模式执行 backend.mjs（见 buildCommand 注释；GA 零 Node 前提）
     env.ELECTRON_RUN_AS_NODE = '1';
     if (dbPath) {
       env.SYNOVA_DB_PATH = dbPath; // src/config.ts:90 只读消费（Win 领地零改动）

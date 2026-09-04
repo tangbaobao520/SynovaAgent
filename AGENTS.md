@@ -13,7 +13,7 @@
 ```
 原始数据 → 本体层(电子病历) → 7维度×25测量器(compute)
                                      ↓
-                    按需(FDE触发)          定时(Cron触发)
+                    按需(GA触发)          定时(Cron触发)
                     runModules()          Sentinel.check()
                          ↓                      ↓
                     Evidence池           SentinelFinding[]
@@ -28,7 +28,7 @@
                          ↓
                     综合诊断报告
                          ↓
-                    FDE 收到警报 + 报告
+                    GA 收到警报 + 报告
                     GET /api/sentinel/reports
                     GET /api/sentinel/tickets
 ```
@@ -119,7 +119,7 @@ pre-commit `check-architecture.sh` 检测 L2→L4 / L3→L5 跨层违规。
 **市场**: 5-1000人团队的组织诊断与增长导航。
 
 **两大核心系统**:
-1. **FDE 按需诊断** — 用户触发，6阶段管道，全部测量器+专家 → 综合诊断报告
+1. **GA 按需诊断** — 用户触发，6阶段管道，全部测量器+专家 → 综合诊断报告
 2. **Sentinel 定时哨兵** — Cron 自动，基线对比+异常检测 → 信号聚合 → 专家 → 工单
 
 **五层架构**:

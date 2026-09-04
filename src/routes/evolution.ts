@@ -1,7 +1,7 @@
 /**
  * routes/evolution.ts — L0 进化引擎管理 API (L1)
  *
- * 提供 FDE（前线部署工程师）操作 L0 进化引擎的 HTTP 接口：
+ * 提供 GA（Growth Advisor，增长顾问）操作 L0 进化引擎的 HTTP 接口：
  *   GET    /api/evolution/proposals            — 列出提案（可选 ?status=）
  *   POST   /api/evolution/proposals/:id/approve — 审批通过
  *   POST   /api/evolution/proposals/:id/reject  — 拒绝
@@ -159,7 +159,7 @@ router.post('/api/evolution/proposals/:id/reject', async (req: Request, res: Res
 /**
  * 手动触发行业阈值聚合。
  * 聚合结果自动写入 extensions/industries/{name}/thresholds.json，
- * 同时生成 EvolutionProposal 供 FDE 审批。
+ * 同时生成 EvolutionProposal 供 GA 审批。
  */
 router.post('/api/evolution/aggregate/:industry', async (req: Request, res: Response) => {
   const { industry } = req.params as { industry: string };

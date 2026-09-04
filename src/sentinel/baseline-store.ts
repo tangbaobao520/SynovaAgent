@@ -7,7 +7,7 @@
  * 基线策略:
  *   - 前 N 次运行 (默认 3) → 建立基线 (不告警)
  *   - 基线就绪后 → 对比基线，偏离 > 阈值 → 升级 finding 严重度
- *   - 阈值从 synova.json 读取，支持 FDE 按客户调整
+ *   - 阈值从 synova.json 读取，支持 GA 按客户调整
  */
 
 import type { SentinelFinding } from './types';

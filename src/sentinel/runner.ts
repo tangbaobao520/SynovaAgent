@@ -38,7 +38,7 @@ const log = createLogger('sentinel/runner');
 
 // ═══ 信号路由表 (手册 §19.1) ═══
 // 哨兵 → 专家 预定义映射。规则驱动，只有模糊场景丢给 LLM。
-// 信号级别: Low(只记录) / Medium(通知专家) / High(交叉验证) / Emergency(告警FDE)
+// 信号级别: Low(只记录) / Medium(通知专家) / High(交叉验证) / Emergency(告警GA)
 
 interface SignalRoute {
   sentinelId: string;

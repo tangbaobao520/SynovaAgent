@@ -1,6 +1,6 @@
 # Runbook: 桌面端部署验收（D536，Track A 部署轨）
 
-> 目标: **CI 打出的双平台安装包被真实装到目标机验收**——安装/启动/首诊/数据四段物理断言，任何 FDE/创始人/审计员可照本 runbook 独立复核。
+> 目标: **CI 打出的双平台安装包被真实装到目标机验收**——安装/启动/首诊/数据四段物理断言，任何 GA/创始人/审计员可照本 runbook 独立复核。
 > 归属: D536（slice: deploy-acceptance）。K3 独立复核路径 = 本 runbook 逐段命令重跑。
 > 前提: 切片 A/B/C 产物就位——CI artifact（run 32870900391）+ 验证脚本 4 个 + runbooks（origin/main 实测存在）。
 

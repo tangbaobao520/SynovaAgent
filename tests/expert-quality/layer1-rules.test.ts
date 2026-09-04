@@ -38,7 +38,7 @@ const INTERNAL_TERMS = [
   '测量器', 'GapDimension', 'DimensionNode',
   '本体层', 'EvidenceRef', 'GraphBridge',
   'L1', 'L2', 'L3', 'L4', 'L5', 'L1交互', 'L2编排', 'L3洞察', 'L4本体', 'L5存储',
-  'PKB', 'SOG', 'FDE',
+  'PKB', 'SOG', 'GA',
 ];
 
 const DOMAIN_KEYWORDS: Record<string, string[]> = {

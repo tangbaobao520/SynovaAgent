@@ -26,6 +26,7 @@
     "lint": "tsc --noEmit",
     "check:iron-laws": "bash scripts/pre-commit-check.sh",
     "check:as-any": "bash scripts/check-as-any.sh",
+    "check:terms": "bash scripts/check-fde-terms.sh",
     "check:architecture": "bash scripts/check-architecture.sh",
     "check:secrets": "bash scripts/check-secrets.sh",
     "check:security": "bash scripts/check-security.sh",
