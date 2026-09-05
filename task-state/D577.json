@@ -1,12 +1,18 @@
 {
   "task_id": "D577",
   "title": "哨兵阈值配置真实挂载——死代码转活（7-2/8-1/10-3）",
-  "status": "claimed",
-  "spec": null,
+  "status": "spec_done",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D577-sentinel-threshold-wiring-20260905.md",
+    "commit": "e7a44f5f",
+    "by": "dev-doc",
+    "at": "2026-09-05",
+    "note": "派单 5 必答全落位：SentinelContext.thresholds 注入契约（§3-Q4）+ 三方对照表 39 判定点（§4.2，A 组 10 哨兵 30 处值一致 / B 组 4 哨兵 9 处补 key 或回填现值）+ DEPLOYS 静默降级修复（DS6，含 loader degraded 传播）+ memStore 覆写进 check 闭环（DS7）+ flip 物理验证（DS8）。写集 21 修改 + 2 新建（§5.1，spec-only 提交 23 条预期漂移已预登记，D556 先例）。决策 5 项带参考系（§5.3）。编码指令随附（docs/synova/coordination/编码指令-D577-sentinel-threshold-wiring-20260905.md，分支 feat/d577-sentinel-threshold-wiring）。"
+  },
   "impl": null,
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-05",
-  "updated_by": "dsh-cto",
-  "note": "CTO 派单 → dev-doc 写 spec。派单含断裂链路精确画像（三段两断点）+ 6 项物理复核。无 DSH 借鉴（自研哨兵体系内部缺陷）。"
+  "updated_by": "dev-doc",
+  "note": "CTO 派单 → dev-doc spec 交付完成。gatekeeper exit 0（6 项全过）+ 写集对账 23/23 与预登记一致 + brief parseable PASS。待编码实现（写集零重叠 D575 可并行）→ K3 审计。"
 }
