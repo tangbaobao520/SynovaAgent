@@ -1,45 +1,60 @@
 {
-  "task_id": "D515",
-  "title": "控制塔 V5.0.0 减负重构（三批 13 项）",
-  "status": "impl_done",
-  "spec": {
-    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D515-tower-v5-dedrag-20260824.md",
-    "by": "dsh-cto",
-    "at": "2026-08-24"
-  },
-  "impl": {
-    "by": "dsh-cto",
-    "at": "2026-08-24",
-    "branch": "feat/d515-tower-v5",
-    "commit": "8cdf9957032e043a91ba7cda0c04bbda5901a9a0",
-    "files": [
-      "scripts/workflow/task-start.sh",
-      "scripts/pre-commit-check.sh",
-      "scripts/check-plan-integrity.sh",
-      "scripts/control-tower/gate-stats.sh",
-      "scripts/control-tower/synova-commit",
-      "scripts/control-tower/check-bypass-log.sh",
-      "scripts/control-tower/worktree-manager.py",
-      "scripts/install-hooks.sh",
-      ".github/workflows/ci.yml",
-      ".codex/control-tower/VERSION.md",
-      "docs/synova/coordination/版本管理规范-控制塔.md",
-      "tests/control-tower/task-start-parallel.test.sh",
-      "tests/control-tower/fastlane-bypass-only.test.sh",
-      "tests/control-tower/hard-gate-convergence.test.sh",
-      "tests/control-tower/gate-stats.test.sh",
-      "tests/control-tower/q2-error-locating.test.sh",
-      "tests/control-tower/worktree-manager.test.sh",
-      "memory/notes/implemented/2026-08-24-d515-tower-v5-dedrag.md",
-      ".gitignore",
-      "task-state/D516.json",
-      "tests/control-tower/ci-strict-mode.test.sh"
-    ]
-  },
-  "audit": null,
-  "fix_task_id": "D516",
-  "updated_at": "2026-08-24",
-  "updated_by": "dsh-cto",
-  "note": "创始人裁决：三批全做。V5.0.0：4 道硬门禁 + 其余软提示（CI 为权威）+ SYNO_FASTLANE 纯补记快速通道 + 命中统计。D511 并行冲突：D511 impl_done 未合并，D515 基于 origin/main，改动区域不重叠。",
-  "priority": "P0"
+ "task_id": "D515",
+ "title": "控制塔 V5.0.0 减负重构（三批 13 项）",
+ "status": "impl_done",
+ "spec": {
+  "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D515-tower-v5-dedrag-20260824.md",
+  "by": "dsh-cto",
+  "at": "2026-08-24"
+ },
+ "impl": {
+  "by": "dsh-cto",
+  "at": "2026-08-24",
+  "branch": "feat/d515-tower-v5",
+  "commit": "8cdf9957032e043a91ba7cda0c04bbda5901a9a0",
+  "files": [
+   "scripts/workflow/task-start.sh",
+   "scripts/pre-commit-check.sh",
+   "scripts/check-plan-integrity.sh",
+   "scripts/control-tower/gate-stats.sh",
+   "scripts/control-tower/synova-commit",
+   "scripts/control-tower/check-bypass-log.sh",
+   "scripts/control-tower/worktree-manager.py",
+   "scripts/install-hooks.sh",
+   ".github/workflows/ci.yml",
+   ".codex/control-tower/VERSION.md",
+   "docs/synova/coordination/版本管理规范-控制塔.md",
+   "tests/control-tower/task-start-parallel.test.sh",
+   "tests/control-tower/fastlane-bypass-only.test.sh",
+   "tests/control-tower/hard-gate-convergence.test.sh",
+   "tests/control-tower/gate-stats.test.sh",
+   "tests/control-tower/q2-error-locating.test.sh",
+   "tests/control-tower/worktree-manager.test.sh",
+   "memory/notes/implemented/2026-08-24-d515-tower-v5-dedrag.md",
+   ".gitignore",
+   "task-state/D516.json",
+   "tests/control-tower/ci-strict-mode.test.sh"
+  ]
+ },
+ "audit": {
+  "report": "docs/synova/audit-reports/2026-08-28-D501-D550-impl-done-batch.md",
+  "verdict": "FAIL",
+  "blockers": [
+   "P0-1（2026-08-24 原判）: 「CI 为权威」幻觉——~20 项软检查在 CI 跑同一份软脚本（pre-commit-check.sh:80-93 只计 SOFT_COUNT；判定只看 HARD_FAIL；ci.yml:47 无 strict 分支）→ 门禁形同虚设",
+   "P1-1: 三重代码复制 ~200 行（log_gate/soft_check/v5_soft/SYNO_FASTLANE 等 7 块 ×3）"
+  ],
+  "findings": [
+   "13 项交付结构/接线/测试大体属实（6 新测试 57 断言绿、scripts/audit/ 零触碰）",
+   "P2-1 version.log V9.9.9 污染（auto-tag 读版本号系统性存量）；P2-2 tag V5.0.0 指向 8cdf9957 非分支头；P2-3 「G12d 保持 hard」措辞不精确（U4 D423 分支实为 soft）",
+   "北星：方向不偏离（infra），技术/执行缺陷按 P0/P1 记",
+   "来源: K3 2026-08-24 报告（本批入库 docs/synova/audit-reports/2026-08-24-D515.md）；修复=D516 已复审"
+  ],
+  "by": "K3",
+  "at": "2026-08-29"
+ },
+ "fix_task_id": "D516",
+ "updated_at": "2026-08-29",
+ "updated_by": "K3",
+ "note": "创始人裁决：三批全做。V5.0.0：4 道硬门禁 + 其余软提示（CI 为权威）+ SYNO_FASTLANE 纯补记快速通道 + 命中统计。D511 并行冲突：D511 impl_done 未合并，D515 基于 origin/main，改动区域不重叠。",
+ "priority": "P0"
 }

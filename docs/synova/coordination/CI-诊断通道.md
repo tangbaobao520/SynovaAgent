@@ -37,3 +37,16 @@ curl -s "https://api.github.com/repos/$REPO/check-runs/$JID/annotations" \
 
 - 机密仓库 annotations 需鉴权 → 此通道失效，需申请 token。
 - 测试逻辑级 debug（非门禁点名）→ 用 simulate-ci 本地复现，不靠 CI 日志。
+
+## 五、debug 回传纪律（D533，2026-08-26 立）
+
+> 背景: D529 期间曾把 CI debug 回传直接推到工作分支（synova-mac 人工提交，被误判为"机器人提交"），
+> 污染分支历史 + 干扰 merge。控制塔纪律如下：
+
+1. **任何 CI debug 回传必须推独立 `ci-debug/*` 分支**（如 `ci-debug/d529-logs`），**永不动工作分支**。
+   工作分支只承载功能变更；debug 产物（临时日志、诊断输出、临时脚本）一律走 ci-debug/*。
+2. **首选 curl/gh 日志通道**：凭证已共享（`.credentials.yaml` 的 `GITHUB_TOKEN`，见 D533 ①），
+   用 `curl -H "Authorization: token $GITHUB_TOKEN" .../actions/jobs/<id>/logs` 直接拉日志，
+   或 `gh run view <id> --log`（如已装 gh CLI）。不需要把日志 commit 进仓库。
+3. debug 产物用完即撤（临时分支删除），不留仓库垃圾；与 `simulate-ci.sh` 本地复现互补——
+   能本地抓的错不送 CI，送 CI 的 debug 走独立分支。

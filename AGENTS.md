@@ -1,5 +1,5 @@
 # AGENTS.md — SynovaAgent
-> V4.5.1 | 2026-08-02 | 9→13 组 pre-commit + 契约门禁 + 认领制 + 跨 session 隔离 (同步自代码, 研究 session 核对)
+> V5.2.7 | 2026-09-02 | 本地软提示 + CI 权威门禁 + 契约门禁 + 认领制 + 跨 session 隔离 + 桌面端（同步自代码，CTO 每周自检对齐）
 
 > 组织数字孪生诊断 + 持续增长导航系统。诊断是手段，目的是增长。
 > 核心问题：这家企业的增长卡在哪里？现在该做什么？
@@ -13,7 +13,7 @@
 ```
 原始数据 → 本体层(电子病历) → 7维度×25测量器(compute)
                                      ↓
-                    按需(FDE触发)          定时(Cron触发)
+                    按需(GA触发)          定时(Cron触发)
                     runModules()          Sentinel.check()
                          ↓                      ↓
                     Evidence池           SentinelFinding[]
@@ -28,7 +28,7 @@
                          ↓
                     综合诊断报告
                          ↓
-                    FDE 收到警报 + 报告
+                    GA 收到警报 + 报告
                     GET /api/sentinel/reports
                     GET /api/sentinel/tickets
 ```
@@ -56,6 +56,8 @@ hook 已检测 `git stash` 并提示（hook-git-detect.sh）。
 
 **铁律 47. 契约优先。** 新增 compute 函数必须先定义输入/输出/降级契约（JSDoc），再实现。参见 SYNOVA-ARCH-质量与测试体系-20260707.md §二。
 **铁律 48. 测试不可为空壳。** 测试文件必须有 expect() 断言。空壳测试 → commit 阻断。每个 compute 函数至少覆盖：正常路径 + 降级路径 + 边界条件。
+
+**铁律 49（D534 新增）. 决策必须沉淀。** 非平凡变更（治理脚本/铁律/规则文档）的 commit 必须引用 memory/notes/ 四态 Note（commit-msg 物理门禁）；新决策写 proposed/，落地 git mv 到 implemented/，否决 rejected/，过时 archived/。规范见 `memory/notes/README.md`。
 
 ### 一、接线铁律
 
@@ -94,6 +96,7 @@ hook 已检测 `git stash` 并提示（hook-git-detect.sh）。
 ### 五、类型安全与架构
 
 **铁律 38. `as any` 零容忍。** 47 次历史教训。pre-commit 硬阻断，`as any` 代码中零存在。
+V5.2.7 扩展（CT-46）：`as never` / `as unknown as` 同样零容忍（曾逃逸 `getDatabase() as never`）。
 替代：内联类型 `as { field?: string }` / `Record<string, unknown>` / `unknown` + 类型守卫。
 
 **铁律 39. 五层架构边界。** 每层只与相邻层通信：
@@ -112,11 +115,11 @@ pre-commit `check-architecture.sh` 检测 L2→L4 / L3→L5 跨层违规。
 ## 项目身份
 
 **产品**: SynovaAgent — 组织数字孪生诊断 + 持续增长导航系统。
-**定位**: 独立 Agent 进程，通过 HTTP API + MCP 对外服务。不依赖任何前端或桌面端。
+**定位**: 独立 Agent 进程，通过 HTTP API + MCP 对外服务；**桌面端**（Electron，品牌表层，施工图 🟢）：能装/能开/能用 8 验证点已闭环（切片 A/B/C，2026-08-25）。
 **市场**: 5-1000人团队的组织诊断与增长导航。
 
 **两大核心系统**:
-1. **FDE 按需诊断** — 用户触发，6阶段管道，全部测量器+专家 → 综合诊断报告
+1. **GA 按需诊断** — 用户触发，6阶段管道，全部测量器+专家 → 综合诊断报告
 2. **Sentinel 定时哨兵** — Cron 自动，基线对比+异常检测 → 信号聚合 → 专家 → 工单
 
 **五层架构**:
@@ -152,7 +155,7 @@ LLM       → providers/ (DeepSeek, OpenAI, Gateway)
 v2.5 的 38 项 pre-commit + 12 脚本 + 3 次 tsc/vitest 重跑，
 导致 `--no-verify` 泛滥——一个被绕过的门禁 = 没有门禁。
 
-v3.0 只设 5 项物理阻断 → v4.4.2 扩展到 7 项 → V4.5.1 扩展到 13 组。新增：契约优先（铁律47）、测试非空壳（铁律48）。
+v3.0 只设 5 项物理阻断 → V4.4.2 扩展到 7 项 → V5.1.1 扩展到 13 组（D515 起本地软提示 + CI 权威，D516 SYNO_CI strict）。新增：契约优先（铁律47）、测试非空壳（铁律48）。
 **从代码规范执法 → 行为契约执法。测试不是写完代码后的验证——在代码被写出来之前，对和错的标准已经被定义。**
 
 ### 执法架构: 五层精简
@@ -161,8 +164,8 @@ v3.0 只设 5 项物理阻断 → v4.4.2 扩展到 7 项 → V4.5.1 扩展到 13
 📋 任务启动 (人工)   →  task-start.sh — 3 问翻译意图→规格
 🧠 写前注入 (自动)    →  hook-check-memory.sh — 历史教训
 ✍️ 写后验证 (自动)    →  verify-incremental.sh — L1 oxlint → L2 tsc → L3 vitest → L4 接线
-🔴 提交阻断 (自动)    →  pre-commit 13 组 — 全部 <10s
-🚀 推送阻断 (自动)    →  pre-push 3 项 — secrets + golden-case F1 + vitest --changed
+🔴 提交阻断 (自动)    →  pre-commit 13 组 — 本地软提示，CI 权威（SYNO_CI strict）
+🚀 推送阻断 (自动)    →  pre-push 门禁 0-5 — 多机同步 + secrets + golden-case + vitest + tag 校验
 ```
 
 | 时机 | 脚本 | 阻断 | 耗时 |
@@ -171,14 +174,14 @@ v3.0 只设 5 项物理阻断 → v4.4.2 扩展到 7 项 → V4.5.1 扩展到 13
 | PreToolUse | hook-block-write.sh (task brief 字段) | 🔴 阻断 | <1s |
 | PreToolUse | hook-enforce-v25.sh (loop-state) | 🔴 阻断 | <1s |
 | PostToolUse | verify-incremental.sh (L1→L4) + baseline-check.sh (L5) | 🔴 阻断 | 5-30s |
-| pre-commit | pre-commit-check.sh (13 组) | 🔴 阻断 | <10s |
-| pre-push | pre-push-check.sh (3 项) | 🔴 阻断 | <3s |
+| pre-commit | pre-commit-check.sh (13 组) | 本地 ⚠️ 软提示（D515）；CI 权威硬阻断（SYNO_CI strict，D516） | <10s |
+| pre-push | pre-push-check.sh (门禁 0-5) | 🔴 阻断 | <3s |
 
-### pre-commit 13 组硬阻断 (V4.5.1, 组号沿用脚本 echo)
+### pre-commit 13 组 (V5.1.1, 组号沿用脚本 echo) — 本地软提示，CI 权威（SYNO_CI=1 时转硬阻断）
 
 | # | 检查 | 历史事故 | 耗时 |
 |---|------|---------|------|
-| 1 | 类型安全 + 硬编码数据 (`as any`=0) | 47 次 | <1s |
+| 1 | 类型安全 + 硬编码数据 (`as any`/`as never`/`as unknown as`=0) | 47 次 | <1s |
 | 2 | 测试质量 (新文件配对测试 + expect) | 4 次接线失败 | <1s |
 | 3 | Secrets 扫描 | API key 暴露 | <1s |
 | 4 | 接线完整性 (新 export 有调用方) | 4 次接线失败 | <1s |
@@ -251,9 +254,9 @@ npm run workflow:deploy   # 部署后验证
 ```
 ① 任务开始 → pre-commit 强制 (Gate 0: task brief 不存在 + 未填写 → 拒绝提交)
 ② 设计完成 → pre-commit 强制 (Gate 1: SPEC.md + 设计文档不存在 → 拒绝提交)
-③ 实现完成 → pre-commit 强制 (Gate 2: 13 组物理阻断 + task brief 完整)
-④ 提交前   → Git Hook (.git/hooks/pre-commit) 13 组硬阻断（全 <10s）—— 无超时逃生舱
-⑤ 推送前   → Git Hook (.git/hooks/pre-push) 3 道门禁（secrets + golden-case F1 + vitest --changed）
+③ 实现完成 → pre-commit 强制 (Gate 2: 13 组 + task brief 完整；本地软提示，CI 权威)
+④ 提交前   → Git Hook (.git/hooks/pre-commit) 13 组（本地软提示，CI 权威硬阻断）
+⑤ 推送前   → Git Hook (.git/hooks/pre-push) 门禁 0-5（D334 多机同步/防覆盖 + secrets + golden-case F1 + vitest --changed + D331 tag 校验/对账）
 ⑥ 部署后   → 人工触发 (checkpoint-deploy.sh)
 ⑦ 线上     → Cron
 ```
@@ -305,10 +308,10 @@ crontab -e  # 添加: */30 * * * * bash /path/to/scripts/workflow/checkpoint-run
 
 | Hook | 触发时机 | 内容 |
 |------|---------|------|
-| pre-commit | `git commit` | 13 组硬阻断 (类型安全/测试/Secrets/接线/架构边界/Task Brief/架构合规/文件驱动/契约门禁/CP3/Task Scope) |
-| commit-msg | `git commit` | Conventional Commits 格式强制 |
-| post-commit | `git commit` | 决策流程建议 (decide-next.sh) |
-| pre-push | `git push` | 3 项 (secrets 终扫 + golden-case F1 + vitest --changed) |
+| pre-commit | `git commit` | 13 组（本地软提示；CI SYNO_CI strict 硬阻断） |
+| commit-msg | `git commit` | Conventional Commits 格式强制（D328 merge 提交 MERGE_HEAD 豁免） |
+| post-commit | `git commit` | bypass 检测（D366 三判 + CT-45 merge 提交豁免）+ 外部审计器（D210/D256）+ 决策流程建议 |
+| pre-push | `git push` | 门禁 0-5：D334 多机同步/防覆盖 + secrets 终扫 + golden-case F1 + vitest --changed + D331 tag 校验/对账 |
 
 ---
 

@@ -10,6 +10,8 @@ const StatusBar: React.FC = () => {
   const onlineStatus = useAppStore((s) => s.onlineStatus);
   const alertCount = useAppStore((s) => s.alertCount);
   const lastDiagnosisTime = useAppStore((s) => s.lastDiagnosisTime);
+  // D575: LLM 未配置黄条（铁律 31 不静默——「暂不配置」进主界面后常驻提示）
+  const llmUnconfigured = useAppStore((s) => s.llmUnconfigured);
 
   const statusColors: Record<string, string> = {
     connected: 'var(--green)',
@@ -38,6 +40,11 @@ const StatusBar: React.FC = () => {
             ? `${alertCount} 条告警`
             : '无告警'}
         </span>
+        {llmUnconfigured && (
+          <span className="statusbar-item statusbar-llm-warning">
+            ⚠ LLM 未配置，诊断不可用——请在设置中配置
+          </span>
+        )}
       </div>
       <div className="statusbar-right">
         <span className="statusbar-item">

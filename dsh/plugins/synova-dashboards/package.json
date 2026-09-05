@@ -1,0 +1,28 @@
+{
+  "name": "@synova/dsh-dashboards",
+  "description": "Synova 全局跟踪三仪表盘（产品完成度 / 任务进展 / 项目健康）——DSH Web 右侧栏实时可视化插件（Host 数据路由 + Client 右栏 UI 双面）",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "default": "./lib/client.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-ui-layout"
+      ]
+    }
+  },
+  "license": "MIT"
+}

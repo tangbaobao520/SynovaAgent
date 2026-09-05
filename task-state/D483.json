@@ -2,7 +2,7 @@
   "task_id": "D483",
   "title": "register 认证闭环 切片 A——匿名注册可达（D481 产品发现收尾）",
   "slice": "AUTH-A",
-  "status": "spec_done",
+  "status": "audited",
   "risk": "medium",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-D483-register-auth-slice-a-20260824.md",
@@ -10,9 +10,27 @@
     "by": "dev-doc",
     "at": "2026-08-24"
   },
-  "impl": null,
-  "audit": null,
+  "impl": {
+    "commit": "78c5a84f",
+    "by": "coding",
+    "at": "2026-08-25",
+    "note": "PR #156 merged (head 25dfec21)"
+  },
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-08-28-D483-D484-D486.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "findings": [
+      "auth.ts L91 register 白名单属实（isWhitelisted 内，grep 实测命中）",
+      "bootstrap 绕过已移除：tests/middleware/auth.integration.test.ts signJwtToken 零命中",
+      "单元用例 auth.test.ts L237-243 register pass-through 属实",
+      "PR #156 CI 全 success（GitHub check-runs 独立取证，含双平台 Control Tower Gate）",
+      "零回归 57/57 + tsc 28=28 基线零新增"
+    ],
+    "by": "K3",
+    "at": "2026-08-28"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-08-24T14:00:00+08:00",
-  "updated_by": "dev-doc"
+  "updated_at": "2026-08-28",
+  "updated_by": "K3"
 }

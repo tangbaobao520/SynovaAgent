@@ -142,7 +142,8 @@ LLM_STREAM="$DATA_DIR/consult-llm-stream.txt"
 LLM_STATUS="$DATA_DIR/consult-llm-status.txt"
 TIMING_FILE="$DATA_DIR/consult-timing.json"
 if [ "${GS01_LLM:-0}" = "1" ]; then
-  step_ms() { date +%s%3N 2>/dev/null || python3 -c 'import time;print(int(time.time()*1000))'; }
+  # macOS BSD date 不支持 %3N（输出字面 N 且 exit 0）——python3 优先跨平台（D536 实测暴露，2026-08-27）
+  step_ms() { python3 -c 'import time;print(int(time.time()*1000))' 2>/dev/null || date +%s%3N 2>/dev/null; }
   TIMING_CONSULT_START="$(step_ms)"
   echo "{\"timing_consult_start_ms\": $TIMING_CONSULT_START}" > "$TIMING_FILE"
   echo "[GS-01] GS01_LLM=1 — 发起真实 consult（teamId=gs01-e2e，SSE 六阶段，最长 15 分钟）"

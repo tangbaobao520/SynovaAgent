@@ -76,16 +76,17 @@ export const TOOL_PROFILES: Record<ToolProfile, ProfileConfig> = {
 
 /**
  * 根据角色获取工具配置。
- * admin → full, FDE → diagnosis, employee → minimal
+ * admin → full, ga/manager → diagnosis, staff/employee → minimal
  */
 export function getProfileForRole(role: string): ProfileConfig {
   switch (role) {
     case 'admin':
       return TOOL_PROFILES.full;
-    case 'FDE':
+    case 'ga':
     case 'manager':
       return TOOL_PROFILES.diagnosis;
     case 'employee':
+    case 'staff':
     case 'viewer':
     default:
       return TOOL_PROFILES.minimal;

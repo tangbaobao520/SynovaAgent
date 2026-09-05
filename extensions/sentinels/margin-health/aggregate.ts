@@ -31,13 +31,15 @@ interface MarginThreshold {
   critical: number;
 }
 
-/** manifest 阈值直连单测无注入时的契约默认值（path-dependency 先例） */
+/** manifest 阈值直连单测无注入时的契约默认值（path-dependency 先例；D577 B1 补 ib/mbd 两 key = 现值新增） */
 const DEFAULT_THRESHOLDS: Record<string, MarginThreshold> = {
   gross_margin: { warning: -0.05, critical: -0.15 },
   fixed_ratio: { warning: 0.6, critical: 0.75 },
   cost_per_head: { warning: 0.1, critical: 0.25 },
   profit_margin_change: { warning: -0.02, critical: -0.05 },
   margin_vs_benchmark: { warning: -0.05, critical: -0.15 },
+  incentive_bind: { warning: 0.4, critical: 0.4 },
+  metric_bind_divergence: { warning: 0.3, critical: 0.5 },
 };
 
 /** 入口必填字段组（D358 snake 化; 契约字段缺失 → 假 0 的源头，必须拦截） */
@@ -244,7 +246,8 @@ export const marginHealthSentinel = {
         computeIncentiveBindGap(store, { teamId, traversal }),
         computeMetricBindDivergence(store, { teamId, traversal }),
       ]);
-      if (!ib.degraded && ib.value > 0.4) {
+      // D577 B1: ib/mbd 接入既有 th() 机制（this.manifest 通道，D356 交付不动）；阈值 = 现硬编码值回填 manifest
+      if (!ib.degraded && ib.value > th('incentive_bind').warning) {
         findings.push({
           id: 'cost_incentive_gap', severity: 'warning',
           title: '激励行为差距大',
@@ -256,7 +259,7 @@ export const marginHealthSentinel = {
       } else if (ib.degraded) {
         log.warn({ teamId, warnings: ib.warnings }, '激励绑定降级 — 跳过该指标');
       }
-      if (!mbd.degraded && mbd.value > 0.5) {
+      if (!mbd.degraded && mbd.value > th('metric_bind_divergence').critical) {
         findings.push({
           id: 'profit_metric_divergence', severity: 'critical',
           title: 'KPI与现金流严重偏离',
@@ -265,7 +268,7 @@ export const marginHealthSentinel = {
           suggestion: '审查KPI体系的cash alignment，减少CustomAdj指标。',
           detectedAt: checkedAt,
         });
-      } else if (!mbd.degraded && mbd.value > 0.3) {
+      } else if (!mbd.degraded && mbd.value > th('metric_bind_divergence').warning) {
         findings.push({
           id: 'profit_metric_divergence_warn', severity: 'warning',
           title: 'KPI与现金流偏离偏高',

@@ -48,6 +48,14 @@ jobs:
         env:
           SYNO_DIFF_BASE: "origin/main"
           SYNO_CI: "1"  # D516/K3 P0-1: CI strict——本地 V5 软提示在 CI 转硬（权威物理落地）
+      # D540: verify-parallel 已从本地 pre-push 移 CI/PR —— CI 权威物理拦截写集重叠
+      #   base..HEAD write set vs origin/main 已合 dev doc write set（fetch-depth:0 需完整历史，已确认）
+      #   纯文档 PR 跳过；混合 PR 正常跑。
+      - name: Verify parallel declaration (D540, moved from local pre-push)
+        if: steps.docsonly.outputs.docs_only != 'true'
+        run: |
+          # base..head 写集 × 已合 PR 写集 —— CI 权威物理拦截写集重叠
+          bash scripts/control-tower/verify-parallel.sh --ci-pr origin/main
 
   test:
     name: Vitest (${{ matrix.shard }})
@@ -103,7 +111,29 @@ jobs:
       - name: GraphStore compatibility
         run: npx vitest run tests/architecture/
 
-  
+  test-kit-architecture:
+    name: Test-Kit Architecture Tests (${{ matrix.os }})
+    # D565 (K3 D489 批 P1, M3 家族): packages/test-kit 是独立 package（自带 lock，
+    # 不在 root workspaces）——root Vitest/Architecture job 结构性覆盖不到它，
+    # 棘轮基线（05-as-any-audit, as never 基线）此前只在本地执行。双平台接线闭环。
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: 'npm' }
+      - name: Install test-kit deps
+        working-directory: packages/test-kit
+        run: npm ci
+      - name: Run ratchet baseline test (05-as-any-audit)
+        working-directory: packages/test-kit
+        run: npx vitest run tests/architecture/05-as-any-audit.test.ts
+      # D565 登记: architecture 套件余 4 文件（01/02/04）存量红（wiring-audit 引用已
+      # 拆接线、>1000 行文件、l4 import）——从未入 CI 故腐化未察。修复归编码线
+      # （CT-51 队列），修复一个入列一个；全绿后本 job 收敛为跑全目录。
 
   control-tower-tests:
     name: Control Tower Gate Tests (${{ matrix.os }})
@@ -122,6 +152,9 @@ jobs:
         # 密封测试扩容（D520）：原 5 个（U2/U4/U5a/U5c/U7）+ D515/D520 新增的
         # mktemp/注入缝密封测试。其余测试依赖 git 历史/运行时数据，非密封，
         # 全量密封化是单独立项（K3 P2-4）。此 job 是"门禁坏了能抓到"的 canary。
+        # D560（D549 重做，K3 FAIL 闭合）：补 P1-3 点名的 6 个密封测试入列（19→25）——
+        #   D540-D547 批产出（K3 报告 2026-08-28-D540-D547 §2 P1-3 具名）；D549 声称入列
+        #   实为零代码提交（M2），本批真实落地；6 测试本地全绿后入列。
         run: |
           FAIL=0
           for t in \
@@ -137,11 +170,21 @@ jobs:
             tests/control-tower/platform-checklist.test.sh \
             tests/control-tower/tag-ancestry.test.sh \
             tests/control-tower/brief-parser-strip.test.sh \
-            tests/control-tower/bypass-precommit.test.sh \
+            tests/control-tower/post-commit.test.sh \
             tests/control-tower/simulate-ci.test.sh \
             tests/control-tower/synova-submit.test.sh \
             tests/control-tower/synova-commit.test.sh \
-            tests/control-tower/check-canary-drift.test.sh; do
+            tests/control-tower/parallel-main-tree-occupancy.test.sh \
+            tests/control-tower/fastlane-extended.test.sh \
+            tests/control-tower/g12-day-window.test.sh \
+            tests/control-tower/incident-loop.test.sh \
+            tests/control-tower/check-canary-drift.test.sh \
+            tests/control-tower/claim-regex-narrow.test.sh \
+            tests/control-tower/ci-strict-visible.test.sh \
+            tests/control-tower/skeleton-brief-gate.test.sh \
+            tests/control-tower/clone-config-init.test.sh \
+            tests/control-tower/clone-shadow-commit.test.sh \
+            tests/control-tower/verify-parallel-ci.test.sh; do
             echo "── $t"
             # D526: 测试失败输出进 ::error 注解——无 token 也能经 annotations 定位（D521 工具1 语义）
             if ! bash "$t" > /tmp/ct-out.log 2>&1; then

@@ -21,6 +21,7 @@
  */
 import { createLogger } from '@synova/logger';
 import type { ExpertResponse } from './expert-router';
+import { getAllExpertIds } from './expert-config-loader';
 
 const log = createLogger('agent/cross-validator');
 const UNKNOWN_EXPERT = 'unknown' as const;
@@ -70,9 +71,14 @@ export interface CrossValidationResult {
   degraded: boolean;
 }
 
-// ═══ 所有 9 专家列表（用于选择第三方裁决） ═══
+// ═══ 第三方裁决候选 — D567: 从 expert-registry.yaml 动态读取（唯一事实源，消灭旧 9 位封闭枚举） ═══
 
-const ALL_EXPERTS = ['finance', 'strategy', 'org', 'tech', 'marketing', 'action', 'business_model', 'knowledge', 'host'];
+/**
+ * 裁决候选专家列表。
+ * @degraded — yaml 缺失/为空时返回 []（getAllExpertIds 内部 log.warn），
+ *             triggerTieBreaker 侧已有 `|| 'host'` 兜底，不阻断裁决流程。
+ */
+const allExperts = (): string[] => getAllExpertIds();
 
 /**
  * CrossValidationTrigger — 交叉验证触发器。
@@ -137,7 +143,7 @@ export class CrossValidationTrigger {
     try {
       // 选择第三方专家（不在冲突双方中的第一位可用专家）
       const conflictingExperts = new Set(conflict.experts);
-      const tieBreakerExpert = ALL_EXPERTS.find((e) => !conflictingExperts.has(e)) || 'host';
+      const tieBreakerExpert = allExperts().find((e) => !conflictingExperts.has(e)) || 'host';
 
       log.info({
         conflictId: conflict.id,

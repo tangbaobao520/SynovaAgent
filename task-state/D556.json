@@ -1,0 +1,64 @@
+{
+  "task_id": "D556",
+  "title": "ga-calibration-frontend-wire-plus-return-loop-layer2",
+  "status": "impl_done",
+  "spec": {
+    "doc": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D556-ga-collab-e2e-20260829.md",
+    "baseline": "origin/main @ 0010eefb",
+    "dispatch": "创始人 DSH 派单（2026-08-29，slice: ga-collab-e2e）",
+    "source": "D551 后端已合 main（6e9626f9）——D556 = 前端 GaDetail 接线（renderToStaticMarkup 零新依赖 UI 断言）+ 回流层 2（diagnosis_conclusion → 'diagnosis_calibration_review' 动作，阈值 3，sink=agent_memory logCorrection 先例）+ seed 身份（legacy x-synova-token，不耦合 D483-D486）；写集文件级（D551 教训），spec-only 提交 8 条预期漂移已预登记（§3.3.1 提交策略）",
+    "by": "dev-doc",
+    "at": "2026-08-29"
+  },
+  "impl": {
+    "branch": "feat/d556-ga-collab-e2e",
+    "baseline": "origin/main @ fe9bac14（spec 锚定 0010eefb；写集文件 0010eefb..fe9bac14 零 diff，三处抽验逐行成立——无漂移）",
+    "commits": [
+      "80a19f0d feat(D556): GA 人机协同端到端——前端接线 + 回流层 2 (slice: ga-collab-e2e)"
+    ],
+    "write_set": {
+      "modified": [
+        "electron-renderer/src/components/RightPanel.tsx",
+        "electron-renderer/src/stores/app-store.ts",
+        "src/loops/middle-evolution-engine.ts"
+      ],
+      "added": [
+        "electron-renderer/src/stores/ga-collab.ts",
+        "electron-renderer/src/components/ga-detail-sections.tsx",
+        "electron-renderer/src/test-support/render.ts",
+        "tests/ga-collab-logic.test.ts",
+        "tests/ga-collab-ui.test.ts",
+        "tests/loops/ga-calibration-evolution.test.ts",
+        "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D556-ga-collab-e2e-20260829.md",
+        ".claude/task-briefs/D556.md"
+      ],
+      "note": "写集 8 文件 + spec + brief（G12 认领必需，D551 教训 391734c3）。偏离 +1: ga-detail-sections.tsx（spec §3.3.1 置于 RightPanel 内——但 RightPanel 模块图含 react-markdown/zustand，不在 root lockfile 且 CI vitest 仅 root npm ci → CI 必解析失败；独立纯展示文件 = 容器/展示拆分（spec §14 决策 B）且 CI 绿可达成。D333 决策记录于 brief Q1c + commit message。"
+    },
+    "ds_matrix": {
+      "DS1": "端点映射/动作映射/身份方案落 spec §5/§6/§7 — dev-doc 交付完成",
+      "DS2": "stores/ga-collab.ts 纯逻辑层 + tests/ga-collab-logic.test.ts 37 断言全绿（状态机/降级决策/请求构建/seed）",
+      "DS3": "GaDetail 容器+GaDetailSections 重写 + tests/ga-collab-ui.test.ts 17 断言全绿（五场景含占位零残留；诚实 RED→GREEN 链有实录：容器重写前源码级断言红）",
+      "DS4": "app-store boot seed + apiFetch legacy 头；无 seed → getSeedIdentity()=null → 'admin' 原语义（37 断言覆盖）",
+      "DS5": "层 2: EvolutionActionType 扩 + Signal 6 + applyDiagnosisCalibrationReview + apply case；tests/loops/ga-calibration-evolution.test.ts 9 断言全绿（3 回流→3 动作 + sink 真实写入 + count=2 零动作 + 既有白名单不动）",
+      "DS6": "存量零回改: git diff origin/main -- src/routes/ src/growth/ src/middleware/ src/agent/loop-handlers.ts capability.ts = 空；middle-evolution-engine diff 零删除行（三既有信号类只增不改）",
+      "DS7": "E2E walkthrough evidence/D556/: seed.md + walkthrough-api.log（四端点真实 HTTP + 计数 9/1/9 + note 透传）+ walkthrough-evolution.log（defaultEvolutionHandler 真实管线: 3 回流→applied=4→agent_memory 3 审核条目）+ render-snapshot-loaded.html。截图限制: 无显示器 agent 环境以 DOM 渲染快照 + 五场景断言 + API 日志三重替代（seed.md 有声明）",
+      "DS8": "as any=0（新增文件）；每 fetch catch console.warn + degraded UI（decideBlockState/deriveOverallPhase + 分块降级条）；tsc 零新增（root 白名单过滤 0 错 + electron-renderer tsc exit 0）",
+      "DS9": "CI 全绿 @ 818dfccc（轮 3 = b9d11032 起 IronLaws 通过；轮 4 = 818dfccc 十项全 success）：TypeScript+Lint+Iron Laws / Vitest 1/2 / Vitest 2/2 / Architecture Check / Checker Review / Control Tower Gate Tests ×2 / Integration Contract / npm audit / Golden Case F1 全 success——API check-runs 匿名可查；CI 取证 evidence/D556/ci-check-runs.md（含两轮红根因 + date-shim 复现命令）"
+    },
+    "deviations": [
+      "① 渲染桥接: spec §8 renderToStaticMarkup 经 renderer node_modules 解析 react-dom——物理不成立（root package-lock 零 react-dom/zustand/react-markdown + ci.yml vitest job 仅 root npm ci）。等价实现: test-support/render.ts 零依赖元素树序列化器（API/字符串断言形态不变，仅 tests 引用）。证据可核: grep react-dom electron-renderer/src/test-support/render.ts = 0",
+      "② seed 通道服务端可达性（上报 CTO，不跨写集修）: 全局 jwtAuthMiddleware（server.ts L291）+ 白名单（auth.ts L86 不含 /api/ga/*）→ legacy x-synova-token 在两模式下均不可达 requireGa（DEV_MODE=true 被 dev-admin 覆盖 / false 被 401 拦截——两段实测已归档 evidence）。spec §7.2.3 前提与 auth 拓扑偏差。层 2 回流不受影响（actorRole='ga' 为 D551 路由硬编码 L159，聚合分组与身份来源无关）；前端 seed 交付面（面板可见+附头+DS4 不变式）完整。修复路径: D483-D486 真实 JWT 落地（派单既定替代方案）或 auth 白名单放行 /api/ga/*（auth 领地，D483 在途禁碰）",
+      "③ 层 2 sink type 值: spec §6.1 'ga_calibration_review' 不在 MemoryType 枚举/DDL CHECK（agent-memory-store.ts 不在写集）→ 落地为枚举内 'ga_correction'（logCorrection sink 谱系），判别值冗余携带于 key 前缀 + tags[0] + value.actionType 三处（K3 可查）"
+    ],
+    "honesty_boundary": "回流收口 = 进化动作生成 + agent_memory 审核条目（待办队列）；权重自动更新/采纳率/诊断变好不在本单（层 3 descope）；stats note 原文透传 UI（'回流计数 ≠ 采纳率'）——E2E 实测渲染含原文",
+    "evidence": "evidence/D556/（seed.md + walkthrough-api.log + walkthrough-evolution.log + render-snapshot-loaded.html + test-ds2/ds3/ds5 日志 + wiring-greps-ds6.log）",
+    "tests": "三层 63 断言全绿（logic 37 + ui 17 + engine 9）；既有 middle-evolution-engine.test.ts 13 断言零回归；verify-incremental L1-L4 通过",
+    "updated_at": "2026-08-29",
+    "updated_by": "dsh-d556-coding-session"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-29",
+  "updated_by": "dsh-cto",
+  "slice": "ga-collab-e2e"
+}

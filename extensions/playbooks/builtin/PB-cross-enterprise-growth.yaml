@@ -3,10 +3,10 @@ name: 全企业增长诊断剧本
 version: 1.0.0
 expert: multi
 type: playbook
-description: FDE触发的全维度增长诊断。覆盖全部7维度和8位专家，识别增长阻碍者并给出跨维度因果链。
+description: GA触发的全维度增长诊断。覆盖全部7维度和8位专家，识别增长阻碍者并给出跨维度因果链。
 trigger:
   manual: true
-  condition: FDE全维度请求
+  condition: GA全维度请求
 steps:
   - id: step-1
     name: 全维度数据采集

@@ -47,6 +47,8 @@ import agentObserverRoutes from './routes/agent-observer';
 import imRoutes from './routes/im';
 import knowledgeRoutes from './routes/knowledge';
 import credentialRoutes from './routes/credentials';
+import { llmConfigRoutes } from './routes/llm-config';
+import { onLlmCredentialChanged } from './services/llm-credential-store';
 import documentRoutes from './routes/documents';
 import permissionRoutes from './routes/permissions';
 import diagnosisUploadRoutes from './routes/diagnosis-upload-v2';
@@ -61,6 +63,7 @@ import adminKnowledgeRoutes from "./routes/admin-knowledge";
 import gaAdminRoutes from './routes/ga-admin';
 import gaCorrectionsRoutes from './routes/ga-corrections';
 import gaAnnotationsRoutes from './routes/ga-annotations';
+import gaCalibrationRoutes from './routes/ga-calibration'; // D551 — GA 诊断校准/手动信号注入/效用仪表
 import solutionsRoutes from './routes/solutions';
 import notificationsRoutes from './routes/notifications';
 import backupRoutes from './routes/backup';
@@ -287,6 +290,11 @@ export async function createServer(): Promise<Server> {
   app.use(sanitizeCheckMiddleware);
 
   // Phase 0.1: JWT 认证中间件
+  // D575: llmConfigRoutes 必须挂载在本行之前——首启向导在无用户系统时必须可用
+  // （spec §6 决策 5: 无认证，对齐 credentials.ts 语义；credentials.ts 本体在 L34x 挂载点
+  // 位于 auth 之后，生产态被全局 JWT 拦截——其"无认证"仅路由层成立，本卡实测发现，
+  // 已在 evidence/D575/ 登记。/api/llm/* 走"先于 JWT 挂载"路径实现同等语义）。
+  app.use(llmConfigRoutes);
   app.use(jwtAuthMiddleware);
 
   // Phase 0.1: JWT 认证路由
@@ -347,6 +355,7 @@ export async function createServer(): Promise<Server> {
   app.use(adminKnowledgeRoutes);
   app.use(gaCorrectionsRoutes);
   app.use(gaAnnotationsRoutes);
+  app.use(gaCalibrationRoutes); // D551 — /api/ga/calibration 端点族
   app.use(solutionsRoutes);
   app.use(notificationsRoutes);
   app.use(backupRoutes);
@@ -356,6 +365,18 @@ export async function createServer(): Promise<Server> {
   app.use(loopRoutes); // D20 — 循环状态 API
   app.use(cockpitRoutes); // D220-PHASE3 — 创始人仪表盘
   app.use(overflowRoutes); // D478 — 溢出仪表盘 API（D476 认证+隔离已就绪；修复 D90 仅 import 未挂载）
+
+  // ═══ D575: LLM 凭证变更热生效（A4 onChanged）═══
+  // 按请求解析架构（routes 每请求 loadConfig + createProvider）——凭证更新无需重建任何
+  // 客户端单例，下一请求即用新 key；本订阅只落一条 config/llm-changed 审计日志（进程不重启）。
+  onLlmCredentialChanged((info) => {
+    logger.info({
+      event: 'config/llm-changed',
+      provider: info.provider,
+      maskedKey: info.maskedKey,
+      pid: process.pid,
+    }, 'LLM 凭证已更新 — 热生效（进程不重启，下一请求按新 key 解析）');
+  });
 
   // ═══ A2: Connector Pipeline — 手动触发 ═══
   app.post('/api/connector/sync', async (req, res) => {

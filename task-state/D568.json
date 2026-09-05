@@ -1,0 +1,32 @@
+{
+  "task_id": "D568",
+  "title": "enterprise-fact superseded_by 语义实现（K3 18-5）",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "commit": "51ade2c1",
+    "by": "deepseek-harness",
+    "at": "2026-09-02",
+    "files": [
+      "scripts/control-tower/enterprise-fact-store.ts",
+      "tests/control-tower/enterprise-fact-chain.test.ts",
+      "memory/notes/proposed/2026-09-02-d568-enterprise-fact-superseded-chain.md",
+      ".claude/task-briefs/2026-09-02-D568-superseded-by-chain.md",
+      "task-state/D568.json"
+    ],
+    "evidence": [
+      "S-5 先红: tests/control-tower/enterprise-fact-chain.test.ts 实现前 vitest 实跑 3 failed/1 passed——断言①（旧条目物理保留+supersededBy 非空）②（readFactVersion/listFactVersions 追溯）红 = 现状覆盖式写入旧条目丢失；断言③（默认读链头）绿 = 覆盖式写入下 head 恰为最新，与 brief Q3 '先红（现状覆盖式写入，旧条目丢失）' 预判一致",
+      "红转绿: 实现后 4/4 全绿（三断言 + 链头语义：listFacts 只列链头 / deleteFact 清理全链）",
+      "Done① 版本链测试绿: npx vitest run tests/control-tower/enterprise-fact-chain.test.ts → Tests 4 passed",
+      "Done② 注释一致: grep -c '不覆盖' scripts/control-tower/enterprise-fact-store.ts = 1（≥1 达标——注释保留'不覆盖'字样，实现归档后该声明首次为真）",
+      "实现语义: createFact 更新时旧条目归档 {key}.v{N}.md 且 front matter 回填 supersededBy={key}#v{新版本}；{key}.md 恒为链头；readFact 默认链头（调用方零改动）；新增 readFactVersion/listFactVersions 追溯；listFacts 过滤版本文件；deleteFact 删链头同步清理历史",
+      "调用方回归: enterprise-facts.test.ts + agent-memory-store.test.ts + department-memory-store.test.ts 实跑 9 failed/13 passed/1 skipped 与 .wt-baseline-d567（origin/main 原状）逐一相同——存量红，零新增回归；tsc 28=28 基线",
+      "语义对齐: D551 ga-calibration supersede/supersededBy+默认链头先例；L4 AgentMemoryStore（enterprise_fact 版本化+superseded_by 链）文件侧一致；方案决策沉淀 memory/notes/proposed/2026-09-02-d568-enterprise-fact-superseded-chain.md（D395-a 门禁实测通过）"
+    ],
+    "notes": "自检5问: ①接线=readFactVersion/listFactVersions 为类方法非新模块 export（无未接线 export）；②异常=deleteFact 历史清理逐文件 try 隔离 log.warn 不阻断、readFactVersion 版本缺失返回 null（正常未发生路径）；③类型安全=as any=0；④测试=4 断言含 expect+失败消息非空壳，先红后绿，覆盖正常/追溯/链头/清理四路径；⑤残留=无死代码，原注释矛盾已一致化。边界说明: updateStatus 仍直改链头 front matter（状态流转非内容版本，不产生新版本号——与 D551 语义一致）；brief 原文'grep writeFact'路径不准，实际调用方为 fact-approval-service/conflict-scanner/agent-memory-store（grep createFact 实证）"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-02",
+  "updated_by": "deepseek-harness"
+}

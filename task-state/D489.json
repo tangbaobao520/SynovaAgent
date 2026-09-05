@@ -1,0 +1,40 @@
+{
+  "task_id": "D489",
+  "title": "D394 片2-B——GA 诊断会话事件化·consult 路由接线（DiagnosisLauncher 完整替换）",
+  "slice": "GA-SESS-2B",
+  "status": "impl_done",
+  "risk": "medium",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-D489-ga-consult-events-slice2b-20260829.md",
+    "commit": "PENDING",
+    "by": "dev-doc",
+    "at": "2026-08-29"
+  },
+  "impl": {
+    "commit": "82d0463a",
+    "by": "claude",
+    "at": "2026-08-29",
+    "files": [
+      "src/routes/diagnosis.ts",
+      "tests/routes/diagnosis-consult-events.test.ts",
+      "task-state/D489.json"
+    ]
+  },
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-09-02-D489-D563-D564.md",
+    "verdict": "CONDITIONAL PASS",
+    "blockers": [],
+    "findings": [
+      "六重点全过（file:line）：落流接线 diagnosis.ts:217 new DiagnosisLauncher + launcher/session-store 零改动（无内联复制）；会话装配 L187 new SessionStore + L189 createSession 非空 id + L190-194 构造失败 log.warn 降级；四行为差异逐条属实（launcher L124 phase_started(1) 首条 / L179 slice(0,200) / L309-313 background-review fire-and-forget / L185-191 report 只落库）；测试 4/4 非空壳 + red 独立复现（worktree f55a6dbf^ = SqliteError no such table agent_sessions，1 failed|3 passed）；D487 回归 5/5 + tsc 28=28；北星三问对齐（PRODUCT-BRIEF §三.1 FDE 按需诊断）",
+      "CT-47 红态合并二次实证（API 物理证据）：PR #299 merged_at 14:08:42Z 早于 Iron Laws failure completed_at 14:10:18Z（检查运行中即合并）——门禁立功、合并通道失守；as never 逃逸（f55a6dbf 版 L181）已由 D563 修复（main 现态 diagnosis.ts 零 as never），条件满足",
+      "P2 观察：`} as EngineContext;`（diagnosis.ts L216）整对象断言非棘轮三族，ConversationEngine L448 同型，dev doc §3.2 已声明，不阻断",
+      "L4：D489 as never 本该被 CI 组 1 拦（正确红了），缺口在合并通道无 required checks——CT-47 系统性失效第二次，升级创始人（台账 L98）"
+    ],
+    "by": "K3",
+    "at": "2026-09-02"
+  },
+  "fix_task_id": null,
+  "updated_at": "2026-09-02",
+  "updated_by": "K3",
+  "note": "测试先行 red→green：red=① SqliteError no such table agent_sessions（现状直建引擎零事件零会话）→ green=4/4；D487 回归 5/5；tsc 基线对照零新增（revert→run→restore 实证）。行为差异如实声明（dev doc §4.5 已裁定）：concerns 经 launcher slice(0,200)；SSE 首条多 launcher 初始 phase_started(phase 1)；ctx.provider 在场触发 background-review（fire-and-forget + .catch(log.warn) 降级）；report 事件只落库不推 SSE。"
+}

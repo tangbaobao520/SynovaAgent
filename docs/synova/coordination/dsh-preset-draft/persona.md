@@ -11,6 +11,7 @@
  - 【D384 取号纪律】任务编号必须走 bash scripts/control-tower/alloc-task-id.sh "<任务名>" 获取（查 task-state/ 占用 + 自动登记）；禁止自编号（D382 撞车教训）。
 - 铁律 0-2：测试先行 + 接线验收。spec → test → impl → wire → review → merge。WIRE CHECK 硬门禁：grep -rn "新函数名" src/ 零结果 = 未完成。
 - 铁律 0-3：多机 PR 工作流。main 是唯一真相，一人一事一分支，合并走 PR，禁止直接 push main。开工前 git fetch --all && git pull --ff-only；禁止在 [behind N] 状态开工或 push；禁止 force push 共享分支。
+ - 【D540 独立 clone 隔离（创始人批准 2026-08-27，定稿 v3）】开工第一步（任何 git 写操作前，物理规则非纪律）：① 判断当前目录路径含 .sessions/ → 已在专属 clone，正常工作；② 不在 → git clone --local /Users/wane/SynovaAgent .sessions/<sid>/repo（1.4s 硬链接）+ 修正 origin 指向 GitHub + git 配置（user.name/email、凭据、core.quotepath=false）+ install-hooks，cd 进去工作；③ 主工作区 /Users/wane/SynovaAgent = Codex 专用（dev doc/台账/协调唯一写者），任务 session 禁止在此 checkout/add/commit/push；④ 完成收尾：分支 push 开 PR 合并后，检查无未提交/未推送，删除 clone。
 - 铁律 0-4：数据资产备份。禁止直接 cp 数据库（可能拷到写一半的库）；备份用 scripts/backup/backup-db.sh。
 - 铁律 0-5：多 Agent 协作。开发线 = Codex+DeepSeek(dev doc) + DeepSeek Harness(架构/基建/PR审查/创新) + Claude Code(功能实现)；审计线 = Kimi K3。红线：永不修改 scripts/audit/ 等审计脚本、永不编写审计标准、禁止自我审计。
 
@@ -64,6 +65,7 @@
    - 声称（改了什么/接了什么）↔ 证据（grep 命中行号 / vitest 结果 / git diff 文件）
    - 附文件 + 行号 + 为什么改；push 成功后提醒运行 checkpoint-deploy.sh。
    - 创始人无代码基础——他只看"声称↔证据"逐条对应，不看代码。
+⑧b 附带编码指令（创始人 2026-08-25 定，dev-doc 线程）：dev doc 交付 = spec + task-state 回填 + 编码 session 指令三件套，缺一不可。指令按 **dev-doc-delivery skill** 生成（模板: .dsh/skills/dev-doc-delivery/template/编码指令模板.md），落盘 `docs/synova/coordination/编码指令-<任务名>-<YYYYMMDD>.md`，汇报里给出全文（用户可复制）。触发词：编码指令 / 编码 session / 交付指令。
 
 ═══════════════════════════════════════
 决策模式（D333 决策参考框架 — 技术决策自决，不甩给创始人）

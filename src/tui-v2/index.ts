@@ -32,7 +32,8 @@ async function main() {
 
 async function bootstrapWithEngine() {
   const ctx = await bootstrap();
-  const { provider, eventBus, hookRunner, sessionManager, stateMachine } = ctx;
+  // D487: BootstrapResult 暴露的是 store（SessionStore 实例）——别名传入引擎
+  const { provider, eventBus, hookRunner, sessionManager, store: sessionStore, stateMachine } = ctx;
   let engine;
 
   if (provider) {
@@ -43,6 +44,7 @@ async function bootstrapWithEngine() {
         eventBus,
         hookRunner,
         sessionManager,
+        sessionStore,
         phaseStateMachine: stateMachine,
       });
     } catch (err) {

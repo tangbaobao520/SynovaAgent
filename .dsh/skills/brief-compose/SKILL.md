@@ -8,6 +8,9 @@ description: 撰写符合控制塔 pre-commit 门禁的 task brief（6 字段 + 
 ## 使用时机
 在 `scripts/workflow/task-start.sh` 或手动创建 `.claude/task-briefs/<name>.md` 时。写完必须自查以下全部格式要求（pre-commit 组 6/12 物理验证，失败 = 提交阻断）。
 
+## V5.2.0 开工位置自检（先于一切格式检查）
+任务开工前确认当前路径在 `.sessions/<session-id>/repo` clone 内（不在主工作区——主工作区 = Codex 专用，禁止写代码）。brief 写在 **clone 内** 的 `.claude/task-briefs/`，随 feature 分支进 PR。不在 clone 内 → 先按 git-sync-pr"开工 clone 5 步"clone，再回来写 brief。
+
 ## 硬性格式（组 6/G12b 解析）
 
 1. **6 个 `##` 标题**，冒号紧跟 Q 编号（`## Q0:` 不是 `## Q0：`）：

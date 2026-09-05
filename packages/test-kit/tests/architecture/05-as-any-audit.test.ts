@@ -5,6 +5,9 @@
  * 47 次历史教训。除测试文件外，生产代码中 .as any 零存在。
  * D471 (K3 P1-C1): 扫描根扩到 src/ + packages/，并补 expect 断言
  * （原测试只有 console.warn，violations > 0 时照样通过 = 空壳测试，违反铁律 48）。
+ * D558 (CT-46 配套): 扫描模式扩 as never / as unknown as（类型信任崩溃同族）。
+ *   与 pre-commit 组 1 语义一致（CT-46 拦新增、存量独立清理）：
+ *   全仓扫描用「棘轮基线」——存量不高于基线，新增即红；清理存量后应同步下调基线。
  */
 import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
@@ -14,10 +17,63 @@ import * as path from 'path';
 const REPO_ROOT = path.resolve(import.meta.dirname, '../../../..');
 const SCAN_ROOTS = [path.join(REPO_ROOT, 'src'), path.join(REPO_ROOT, 'packages')];
 
+/** 类型逃逸模式（铁律 38 精神：类型断言信任崩溃三族） */
+interface EscapePattern { label: string; regex: RegExp }
+const AS_ANY: EscapePattern = { label: 'as any', regex: /\bas\s+any\b/ };
+const TYPE_ESCAPE_PATTERNS: EscapePattern[] = [
+  AS_ANY,
+  { label: 'as never', regex: /\bas\s+never\b/ },
+  { label: 'as unknown as', regex: /\bas\s+unknown\s+as\b/ },
+];
+
+/**
+ * 棘轮基线（D558, 2026-08-29）——mcp/index.ts getDatabase() as never 清理后由本扫描器实测。
+ * 语义与 pre-commit 组 1 CT-46 修复一致：拦新增（> 基线即红）、存量独立清理。
+ * 清理存量后必须同步下调本基线（棘轮只许收紧）；上调 = 新增类型逃逸 = 违规。
+ */
+const ESCAPE_BASELINE: Record<string, number> = {
+  'as never': 8, // D563: diagnosis.ts L181+L411 双处清理后全仓实测。9 为 D558 基线，
+  // 已被 D489 带红合并的 L181 逃逸击穿至 10（CT-47：门禁红但 PR 先合并）——
+  // 本批清理 2 处并下调收紧（棘轮只许收紧；brief 原「9→7」前提「实测=7」
+  // 不成立，按实测修正为 8，见 task-state/D563.json 证据链）。
+  'as unknown as': 87, // 含 .tsx（grep 仅 *.ts 会低估 4 处，以本扫描器实测为准）
+};
+
 describe('铁律 38: as any 审计', () => {
   it('src/ 与 packages/ 生产代码中无 as any (非测试/非声明文件)', () => {
     const violations = collectAsAnyViolations(SCAN_ROOTS);
     expect(violations, `发现 ${violations.length} 处 as any:\n  ${violations.join('\n  ')}`).toEqual([]);
+  });
+
+  it('棘轮: as never / as unknown as 代码行存量不高于基线（新增即红，CT-46/D558）', () => {
+    const counts = countByLabel(collectViolations(SCAN_ROOTS, TYPE_ESCAPE_PATTERNS));
+    for (const { label } of TYPE_ESCAPE_PATTERNS) {
+      const baseline = ESCAPE_BASELINE[label];
+      if (baseline === undefined) continue; // as any 由上方零容忍断言覆盖
+      expect(
+        counts[label] ?? 0,
+        `${label} 存量 ${counts[label] ?? 0} > 基线 ${baseline}——新增类型逃逸被棘轮拦截；` +
+        `清理存量后请同步下调 ESCAPE_BASELINE（棘轮只许收紧）`,
+      ).toBeLessThanOrEqual(baseline);
+    }
+  });
+
+  it('棘轮非空转: as never / as unknown as 代码行命中 + 注释行不误报', () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'type-escape-audit-'));
+    try {
+      fs.writeFileSync(path.join(tmp, 'escape.ts'), [
+        'const a = p as never;',
+        'const b = q as unknown as Shape;',
+        '// const c = r as never;', // 行注释不误报
+        '/* const d = s as unknown as T; */', // 同行块注释不误报
+        'const ok = 1;',
+      ].join('\n'));
+      const counts = countByLabel(collectViolations([tmp], TYPE_ESCAPE_PATTERNS));
+      expect(counts['as never']).toBe(1);
+      expect(counts['as unknown as']).toBe(1);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
   });
 
   it('主扫描非空转: 实际读入了文件（防 REPO_ROOT 漂移/目录缺失致假绿）', () => {
@@ -78,6 +134,11 @@ describe('铁律 38: as any 审计', () => {
 });
 
 function collectAsAnyViolations(roots: string[]): string[] {
+  return collectViolations(roots, [AS_ANY]);
+}
+
+/** 按模式集扫描代码行（注释剥离状态机同 D471），命中行格式 `${rel}:${line}: ${code}` */
+function collectViolations(roots: string[], patterns: EscapePattern[]): string[] {
   const violations: string[] = [];
   for (const root of roots) {
     for (const file of findTsFiles(root)) {
@@ -106,18 +167,29 @@ function collectAsAnyViolations(roots: string[]): string[] {
         } else if (lineComment >= 0) {
           rest = rest.slice(0, lineComment);
         }
-        // 已知残余限制（可接受）: 字符串/正则字面量内含 // 且位于 as any 之前
-        // 的同一行（如 'http://x' 之后同一行再写 as any），仍会漏报;
-        // 字符串字面量内含 /* 会误开块注释状态（与 // 限制对称）——
+        // 已知残余限制（可接受）: 字符串/正则字面量内含 // 且位于模式之前
+        // 的同一行仍会漏报; 字符串字面量内含 /* 会误开块注释状态（与 // 限制对称）——
         // 两者代价都远低于旧版整行跳过。
-        if (/\bas\s+any\b/.test(rest)) {
-          const rel = path.relative(REPO_ROOT, file);
-          violations.push(`${rel}:${i + 1}: ${lines[i].trim().slice(0, 100)}`);
+        for (const { label, regex } of patterns) {
+          if (regex.test(rest)) {
+            const rel = path.relative(REPO_ROOT, file);
+            violations.push(`${label}\t${rel}:${i + 1}: ${lines[i].trim().slice(0, 100)}`);
+            break; // 一行只记一次（归入最靠前的命中模式）
+          }
         }
       }
     }
   }
   return violations;
+}
+
+function countByLabel(violations: string[]): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const v of violations) {
+    const label = v.split('\t')[0];
+    counts[label] = (counts[label] ?? 0) + 1;
+  }
+  return counts;
 }
 
 function findTsFiles(dir: string): string[] {

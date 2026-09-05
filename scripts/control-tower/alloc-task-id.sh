@@ -81,6 +81,52 @@ fi
 
 # 提取已用 D 号: 唯一占用表 = task-state/D*.json（先登记后使用；brief 不参与发号）
 USED=$(ls "$TASK_STATE_DIR"/D*.json 2>/dev/null | sed 's/.*\/D\([0-9]*\)\.json/\1/' | grep -E '^[0-9]+$' || true)  # swallow-ok: 空目录 ls 无匹配=正常（D# 从 1 开始）
+# D550: 合并 origin/main 的 task-state 占用（防落后主工作区漏号——D547/D548 撞号实证：
+#   本地 task-state 无 D547.json 而 main 已有 → alloc 重发 D547）。降级：无 origin 时仅本地 + 显式提示。
+REMOTE_USED=""
+if [ "${SYNO_ALLOC_NO_REMOTE:-0}" = "1" ]; then
+  :  # 测试注入缝: 禁用 remote 合并（隔离 origin/main 依赖，测本地发号语义）
+elif git ls-tree --name-only origin/main task-state/ >/dev/null 2>&1; then
+  REMOTE_USED=$(git ls-tree --name-only origin/main task-state/ 2>/dev/null | sed 's/.*\/D\([0-9]*\)\.json/\1/' | grep -E '^[0-9]+$' || true)
+else
+  echo "⚠ alloc-task-id: origin/main 不可读——仅按本地 task-state 发号（可能漏号，建议先 git fetch）" >&2
+fi
+USED="$(printf '%s\n%s\n' "$USED" "$REMOTE_USED" | grep -E '^[0-9]+$' || true)"
+
+# D576（CT-54）: 在途分支/worktree 盲区修复——alloc 只看 origin/main + 本地主 task-state，
+# 看不到其他 worktree / 本地分支 task-state 里「先登记后使用」的壳（D575 撞 D573 在途分支实证：
+# alloc 发了 D573 而 chore/d573-* 分支已占用）。扫 git worktree list 的每个 worktree 的
+# task-state/D*.json 合入占用表。语义：扫描跟随 TASK_STATE_DIR 所属仓库（测试注入临时目录
+# = 非 git → 自动跳过）；SYNO_ALLOC_NO_WORKTREE=1 测试注入缝；降级显式提示（不静默）。
+WORKTREE_USED=""
+if [ "${SYNO_ALLOC_NO_WORKTREE:-0}" = "1" ]; then
+  :  # 测试注入缝: 禁用 worktree 扫描
+else
+  TS_TOP="$(git -C "$TASK_STATE_DIR" rev-parse --show-toplevel 2>/dev/null || echo "")"
+  if [ -z "$TS_TOP" ]; then
+    :  # task-state 目录不在 git 仓库内（测试沙箱/非常规布局）→ 无 worktree 语义，跳过
+  elif WORKTREE_LIST=$(git -C "$TS_TOP" worktree list --porcelain 2>/dev/null); then
+    WT_DIRS=$(printf '%s\n' "$WORKTREE_LIST" | awk '/^worktree /{print $2}')
+    for wt in $WT_DIRS; do
+      [ "$wt" = "$TS_TOP" ] && continue  # 主工作区已读（TASK_STATE_DIR）
+      for f in "$wt"/task-state/D*.json; do
+        [ -e "$f" ] || continue
+        bn=$(basename "$f")
+        case "$bn" in
+          D[0-9]*.json)
+            n=${bn#D}; n=${n%.json}
+            case "$n" in ''|*[!0-9]*) continue ;; esac
+            WORKTREE_USED="${WORKTREE_USED}${n}
+"
+            ;;
+        esac
+      done
+    done
+  else
+    echo "⚠ alloc-task-id: git worktree list 失败——在途 worktree 占用检查跳过（可能漏号）" >&2
+  fi
+fi
+USED="$(printf '%s\n%s\n' "$USED" "$WORKTREE_USED" | grep -E '^[0-9]+$' || true)"
 
 ALL_USED=$(printf "%s\n" "$USED" | grep -E '^[0-9]+$' | sort -n | uniq || true)
 MAX=$(printf "%s\n" "$ALL_USED" | tail -1 | grep -E '^[0-9]+$' || echo "0")

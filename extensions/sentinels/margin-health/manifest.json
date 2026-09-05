@@ -40,6 +40,14 @@
     "margin_vs_benchmark": {
       "warning": -0.05,
       "critical": -0.15
+    },
+    "incentive_bind": {
+      "warning": 0.4,
+      "critical": 0.4
+    },
+    "metric_bind_divergence": {
+      "warning": 0.3,
+      "critical": 0.5
     }
   },
   "aggregation": "worst_first",

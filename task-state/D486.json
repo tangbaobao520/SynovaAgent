@@ -1,0 +1,37 @@
+{
+  "task_id": "D486",
+  "title": "register 认证闭环 端到端测试切片（A/B 真实 server 全链路验证 + 缺口补充）",
+  "slice": "AUTH-E2E",
+  "status": "audited",
+  "risk": "low",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-D486-register-e2e-slice-20260825.md",
+    "commit": "PENDING",
+    "by": "dev-doc",
+    "at": "2026-08-25"
+  },
+  "impl": {
+    "commit": "b036d380",
+    "by": "coding",
+    "at": "2026-08-26",
+    "note": "PR #208 merged (head 34a9c28d); commit 消息 test: D486 无 ASCII 括号（派生缺口由交付报告 commit 83aae166 的 docs(D486): 补齐）"
+  },
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-08-28-D483-D484-D486.md",
+    "verdict": "CONDITIONAL PASS",
+    "blockers": [
+      "P1-环境: E2E '4/4 非 skip' 未能在 K3 工作区独立复现——K3 工作区 better-sqlite3 11.10.0（陈旧）Node 24 GC 崩溃 / Node 22 ABI 不匹配，主仓 12.11.1 可跑。非 D486 代码缺陷（写集仅 e2e 测试文件），归属 D462 依赖同步。判定环境依赖，采信 win+DSH 双线声称（代码/测试/CI 已独立验证正确）。",
+      "簿记闭环 PENDING: feat/d483-register-auth 分支尚未合并 main，合并后 D486 派生 impl_done 生效"
+    ],
+    "findings": [
+      "e2e 文件 4 个 it() 块 / 39 expect / 显式 ctx.skip 降级语义属实（grep 'it('=5 含 L17 注释）",
+      "PR #208 CI 分类诚实：Control Tower Gate 双平台 failure（08-26 门禁变更窗口，无因果路径），main 54ed1cf5 已恢复双平台 success",
+      "簿记机制核实：gen-cto-health.py L214 正则 \\(D(\\d{3})\\) 匹配不上 test: D486 → 派生 spec_done 属实"
+    ],
+    "by": "K3",
+    "at": "2026-08-28"
+  },
+  "fix_task_id": null,
+  "updated_at": "2026-08-28",
+  "updated_by": "K3"
+}

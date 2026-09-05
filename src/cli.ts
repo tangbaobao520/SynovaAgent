@@ -19,6 +19,7 @@ import { detectProvider } from './providers/detect';
 import { isLLMConfigured, runSetup } from './setup';
 import { ConversationEngine } from './agent/conversation-engine';
 import { SessionStore } from './store/session-store';
+import { SessionManager } from './orchestrator/session-manager';
 import { registerBuiltinTools } from './agent/builtin-tools';
 import type { LLMProvider } from './providers/types';
 import { loadConfig } from './config';
@@ -93,8 +94,13 @@ async function main() {
     if (idx >= 0 && idx < sessions.length) {
       const state = store.loadState(sessions[idx].id);
       if (state) {
-        conv = ConversationEngine.fromState(provider, state);
+        // D487: 恢复会话 — 传 sessionId+sessionManager/sessionStore，诊断事件流续写同一会话
         sessionId = sessions[idx].id;
+        conv = ConversationEngine.fromState(provider, state, {
+          sessionId,
+          sessionManager: new SessionManager({}, store),
+          sessionStore: store,
+        });
         console.log(`${GREEN}✅ 恢复会话: ${state.orgId}${RESET} (Phase ${state.phase}, ${state.messages.length} 条消息)\n`);
         // 回放最近几条消息
         const msgs = state.messages.slice(-4);
@@ -115,9 +121,15 @@ async function main() {
   const orgName = await new Promise<string>(r => rl.question(`${CYAN}组织名称:${RESET} `, r));
   rl.close();
 
-  conv = new ConversationEngine(provider, { orgId: orgName || 'default' });
+  // D487: 会话事件装配 — 先建会话再构造引擎，sessionId 归属事件流（诊断+消息落同一 session）
   const sess = store.createSession(orgName || 'default');
   sessionId = sess.id;
+  conv = new ConversationEngine(provider, {
+    orgId: orgName || 'default',
+    sessionId,
+    sessionManager: new SessionManager({}, store),
+    sessionStore: store,
+  });
   store.saveState(sessionId, conv.serialize());
   registerBuiltinTools(conv.getToolRegistry(), store, sessionId, () => conv.getPhase(), () => conv.getOrgId());
 

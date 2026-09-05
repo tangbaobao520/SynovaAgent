@@ -26,6 +26,7 @@
     "lint": "tsc --noEmit",
     "check:iron-laws": "bash scripts/pre-commit-check.sh",
     "check:as-any": "bash scripts/check-as-any.sh",
+    "check:terms": "bash scripts/check-fde-terms.sh",
     "check:architecture": "bash scripts/check-architecture.sh",
     "check:secrets": "bash scripts/check-secrets.sh",
     "check:security": "bash scripts/check-security.sh",
@@ -84,6 +85,7 @@
     "patch-package": "^8.0.1",
     "tsx": "4.22.4",
     "typescript": "5.9.3",
-    "vitest": "4.1.8"
+    "vitest": "4.1.8",
+    "zustand": "^4.5.0"
   }
 }

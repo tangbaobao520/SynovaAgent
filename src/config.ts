@@ -7,6 +7,7 @@
 import { createLogger } from '@synova/logger';
 import { loadFileConfig } from './config-file';
 import { ConfigRecovery } from './services/config-recovery';
+import { resolveLlmApiKey, getStoredLlmRuntime } from './services/llm-credential-store';
 import { join } from 'path';
 
 const log = createLogger('config');
@@ -38,10 +39,12 @@ export interface SynovaConfig {
 
 export function loadConfig(): SynovaConfig {
   // C5: 优先加载 synova.json, 失败降级到环境变量
+  // D575: fileCfg 提升到 try 外（spec §3.3.1）——llm 段作为 model/baseUrl 的只读回退（消死配置）
+  let fileCfg: ReturnType<typeof loadFileConfig> | undefined;
   let filePort: number | undefined;
   let fileSentinel: SynovaConfig['sentinel'] | undefined;
   try {
-    const fileCfg = loadFileConfig();
+    fileCfg = loadFileConfig();
     filePort = fileCfg.server.port;
     fileSentinel = fileCfg.sentinel;
     log.info({ port: filePort, source: 'synova.json' }, '使用文件配置');
@@ -53,6 +56,7 @@ export function loadConfig(): SynovaConfig {
       if (recoveryResult.restored) {
         log.info('配置文件已从 .bak 恢复 — 重新加载');
         const restoredCfg = loadFileConfig();
+        fileCfg = restoredCfg;
         filePort = restoredCfg.server.port;
         fileSentinel = restoredCfg.sentinel;
       } else if (recoveryResult.corrupted) {
@@ -68,8 +72,10 @@ export function loadConfig(): SynovaConfig {
   const devMode = process.env.DEV_MODE === 'true';
 
   // LLM 配置 — 多 Provider 支持
-  // 通用: LLM_API_KEY (最高优先级) → Provider 专属 env → ''
-  const llmApiKey = process.env.LLM_API_KEY
+  // 通用: D575 分层解析 凭证文件(stored) → 14 级 env 链（原样保留, LLM_API_KEY 最高）→ ''
+  // 每请求 loadConfig() 均重读凭证文件 → 保存后下一请求即用新 key（热重载, spec §6 决策 3）
+  const llmApiKey = resolveLlmApiKey().value
+    || process.env.LLM_API_KEY
     || process.env.DEEPSEEK_API_KEY
     || process.env.QWEN_API_KEY || process.env.DASHSCOPE_API_KEY
     || process.env.GLM_API_KEY || process.env.ZHIPU_API_KEY
@@ -80,8 +86,16 @@ export function loadConfig(): SynovaConfig {
     || process.env.ERNIE_API_KEY
     || process.env.OPENAI_API_KEY
     || '';
-  const llmBaseUrl = process.env.LLM_BASE_URL || process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com/v1';
-  const llmModel = process.env.LLM_MODEL || 'deepseek-v4-flash';
+  // model/baseUrl: getStoredLlmRuntime() → 原 env 链 → synova.json llm 段（只读激活, 消死配置）→ 原默认
+  const storedLlmRuntime = getStoredLlmRuntime();
+  const llmBaseUrl = storedLlmRuntime?.baseUrl
+    || process.env.LLM_BASE_URL || process.env.DEEPSEEK_BASE_URL
+    || fileCfg?.llm.baseUrl
+    || 'https://api.deepseek.com/v1';
+  const llmModel = storedLlmRuntime?.model
+    || process.env.LLM_MODEL
+    || fileCfg?.llm.model
+    || 'deepseek-v4-flash';
   const gatewayHost = process.env.OPENCLAW_GATEWAY_HOST || '';
   const engineTokens = process.env.ENGINE_TOKENS || (devMode ? 'synova-dev-token' : '');
 

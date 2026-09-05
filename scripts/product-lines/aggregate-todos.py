@@ -373,6 +373,21 @@ def aggregate(args):
     todos = finalize(dedup(todos), line_scenarios, default_owner, harness_lines,
                      datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
+    # 看板大扫除（2026-08-28 CTO）: closed 清单过滤（僵尸/已覆盖/审计记录类条目）
+    _closed_path = PROJECT_ROOT / "docs/synova/product-lines/todos-closed.yaml"
+    if _closed_path.is_file():
+        try:
+            _closed_ids = set()
+            for _ln in _closed_path.read_text(encoding="utf-8").splitlines():
+                _m = re.match(r"\s*- id: \"([^\"]+)\"", _ln)
+                if _m:
+                    _closed_ids.add(_m.group(1))
+            if _closed_ids:
+                todos = [t for t in todos if t.get("id") not in _closed_ids]
+                log.info("closed 清单过滤: 跳过 %d 条", len(_closed_ids))
+        except Exception as _e:
+            degraded.append("closed 清单解析失败: %s" % _e)
+
     out_path = Path(args.out)
     manual_block = ""
     if out_path.is_file():

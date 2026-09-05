@@ -11,11 +11,110 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
-## V5.1.2 (2026-08-25) — verify-parallel 豁免 CRLF 修复（Win 实测）
+## V5.2.7 (2026-08-29) — 组 1 类型安全模式扩 as never / as unknown as（CT-46，K3 GA 线闭环批发现）（PATCH）
 
-- **豁免判定 Windows CRLF 失效**（P2，Win 2026-08-25 D485 派发实测）: V5.0.1 的"已完成任务文档豁免"（compare_docs 前置检查）在 Windows 失效——python `print` 在 stdout 文本模式输出 CRLF，`while read` 拿到的 `$f` 带 `\r`，`git cat-file -e origin/main:$f` 失败 → D484（已合并）未跳过 → D485 被误判写集重叠。修法: read 循环内 `_f="${_f%$'\r'}"` 清洗 CR（与 task-start L44 CRLF 同型，Windows 平台适配层遗漏）。
-- **测试**: verify-parallel.test.sh 的 T3 沙箱场景补 Windows 验证路径（已有 T3 在 Linux LF 下过；本修复保证 Windows 同行为）。
-- **作者**: Synova-Win（V5.0.1 代码的 Windows bug 修复，创始人授权越界补丁，DSH 预审）
+- **① 盲区修复**: 组 1 原只匹配 `as any\b` 字面量——`getDatabase() as never`（src/mcp/index.ts L236，K3 审计实证）与 `as unknown as` 双断言链同属类型信任崩溃却全部逃逸。模式扩为 `as (any|never)\b|as unknown as`（仅拦新增行，存量独立清理惯例不变）。
+- **② 配对测试 hard-gate-convergence.test.sh 行为断言 +3**: A2（as never 硬拦 exit 1）/ A3（as unknown as 双断言硬拦 exit 1）/ A4（裸 as unknown 合法中间态不拦 exit 0，防过度阻断）；结构断言同步新检查点标签。
+- **④ 连带修复：resolver 认领候选日期窗口 ±1 天**——PR #295 CI 实证：UTC+8 日期 brief 对 UTC runner 是"明天"→ 认领被排除 → 回退到认领同文件的陈旧 brief（D541 架构层为空 → 6 字段红）。D506 时区容差同型。resolver 今日过滤（today_files_by_prefix/suffix）改为窗口匹配（DATES/DATES_C，python 计算昨天/今天/明天；失败回落原语义=仅今日）；配对测试 resolve-commit-brief.test.sh 17 断言（+场景 5 明日 brief 认领数胜出 / 场景 6 today-2 窗口外排除）。
+- **③ 存量实例处置（不属本 PATCH）**: mcp/index.ts L236 的 as never 为冗余断言（getDatabase() 返回类型已是 Database.Database，engine-context.ts L50）——清理 + 05-as-any-audit.test.ts 同步扩展折入 D558（编码线）。
+- **验证**: hard-gate-convergence.test.sh 全绿（A/A2/A3/A4 + 结构断言）；ct-test-gate 通过。
+- **作者**: dsh-cto（CT-46）
+
+## V5.2.6 (2026-08-29) — verify-parallel 关闭信号 4：无 task-state + 写集全合 base（D469 类合并未登记历史任务）（PATCH）
+
+- **① 第四关闭信号**: 无 task-state 记录 且 devdoc_writeset --extract 的写集文件全部存在于 base → 合并但未走状态机的历史任务豁免。**D487/Win 实证（创始人核实定论 PR #261 评论 + 台账条目）**: D469（session-event-sourcing，impl 在 main、无审计报告、无括号式提交）无法被信号 1/2/3 豁免——信号 4 补全。**防漏网论证**: D483 类在途任务有 task-state → 不豁免；D485/D488 类在途 Win 任务 doc 未合 main → 不进比较集。
+- **② 与 Win 修复建议的关系**: Win 建议「今日 ±1 天日期窗口过滤」；本实现选「任务状态信号」而非「日期信号」——日期窗口会把 N 天前仍在途的任务漏拦、把今日已关闭的任务误拦（V5.0.1 豁免被移除的同一原因：存在性/时间信号恒真或失真，状态信号才判别串行 vs 并行）。信号 4 覆盖 Win 建议的意图（历史已合任务不拦）。
+- **③ 配对测试 verify-parallel-ci.test.sh 13→14 断言**: T8c（无 task-state + 写集全在 base → 豁免 exit 0）；T9 保持 block（写集文件不在 base → 不豁免，fail-closed 不削弱）。
+- **验证**: verify-parallel-ci 14/14 本地全绿；D487 分支实测（144824d3）exit 0——D292/D338/D469/D500 四对重叠全部豁免、零 ❌。
+- **作者**: dsh-cto（D557）
+
+## V5.2.5 (2026-08-28) — verify-parallel 关闭信号 3：括号式 (D#) 合入提交（D478 类无 task-state 无报告任务）（PATCH）
+
+- **① 第三关闭信号**: `git log --grep="(D#)"` 在 CI_PR_BASE 命中 → 任务已合 main = 关闭（fix(D478)/feat(D551) 实现提交带括号；dispatch 提交「docs(dispatch): D551」无括号 → 在途任务不误豁免）。**D551 实证**: D478 无 task-state、无审计报告（Win 线终审仅台账记录），仅信号 1/2 无法豁免——信号 3 补全。
+- **② 关键正确性修复（首版实现踩坑）**: `git log` 无匹配也 exit 0（空输出）——直接 `if git log ...; then` 恒真导致全量豁免（T9 抓到）；改为捕获输出判非空。
+- **③ 配对测试 verify-parallel-ci.test.sh 12→13 断言**: T8b（无 task-state 无报告，但 (D#) 提交在 base → 豁免 exit 0）；T9 保持 block（fail-closed 不削弱）。
+- **验证**: verify-parallel-ci 13/13 本地全绿；D551 实证本地复跑 exit 0（D338 报告信号 + D478 提交信号双路径豁免，173 个已关闭 doc 豁免、零 ❌）。
+- **作者**: dsh-cto（D555 追加）
+
+## V5.2.4 (2026-08-28) — verify-parallel --ci-pr 已关闭任务豁免（serial reuse 误拦根治）（PATCH）
+
+> spec: D555 brief（CTO 内联指令）。D551 实证：新任务 spec 写集含 src/server.ts（D478 已合终审）与 src/growth/feedback-collector.ts（D338 已合有审计报告）——V5.2.0 的 --ci-pr「无豁免纯重叠判定」把**串行复用**（已关闭任务的合法文件复用）误判为并行冲突，CI 恒拦。
+
+- **① _is_closed_doc() 关闭信号判定**: 机器可验两信号任一命中即豁免——task-state/<D#>.json status=audited（D382 终态）/ docs/synova/audit-reports/*-<D#>[-.md] 存在（历史任务无 task-state，D393 派生制同源信号）。都无 → 继续比对（fail-closed 不削弱，在途任务并行冲突仍拦）。
+- **② 只豁免已合 doc 侧**: PR 自身 doc 恒为新任务，不做关闭判定；豁免输出显式点名（审计可核）。
+- **③ 配对测试 verify-parallel-ci.test.sh 7→12 断言**: T6 接线（_is_closed_doc + 豁免分支）/ T7 audited 豁免 exit 0 / T8 审计报告豁免 exit 0 / T9 无信号仍 block exit 1（不削弱）。
+- **验证**: verify-parallel-ci 12/12 本地全绿；D551 实证重叠两对（vs D338/D478）本地复跑豁免放行。
+- **防膨胀**: 零新组件（复用 task-state + audit-reports 既有信号源）；不改 compare_writesets_ci 判定本体。
+- **作者**: dsh-cto（D555）
+
+## V5.2.3 (2026-08-28) — CT-43 auto-hook 影子提交路径限定（防卷走暂存区遗留文件）（PATCH）
+
+> spec: D554 brief（CTO 内联指令）。D552 实证：D311 staging-guard 阻断后遗留的 staged 文件（dsh/plugins 插件 8 文件）被 post-commit hook 的「bypass COMMITTED 登记」影子提交整体卷入 8b6deaf4（消息与内容不符）——M8/D286 同型变体，防线缺口 = 影子提交未限定路径。
+
+- **① scripts/hooks/post-commit.sh 登记提交限定路径**: `git commit --no-verify -q -m "..."` → `git commit --no-verify -q -o -m "..." -- "$ROOT/.claude/bypass.log"`——`-o` 用命名路径的工作区快照建临时索引提交，只含 bypass.log，不消费/不卷走暂存区其他文件（foreign 文件保持 staged）。**注意 -m 必须在 -- 之前**（-- 之后全部按 pathspec 解析，-m 会被当路径）。
+- **② 配对测试 post-commit.test.sh 扩展（7→12 断言）**: 场景D（暂存区遗留他人文件 → 影子提交树只含 bypass.log + 遗留文件仍 staged + pathspec 提交语义保持）+ 接线断言（-o + pathspec 在位）+ 降级（真实提交失败沙箱可继续）。**连带修 M5 环境依赖**：沙箱仓库内配置 user.name/email（本机无全局 identity 时影子提交必败——测试机器无关化）。
+- **验证**: post-commit.test.sh 12/12 本地全绿（含新 5 断言）；bash -n 语法过；CI 双平台 canary（post-commit.test.sh 已在密封清单）。
+- **防膨胀**: 只动 post-commit.sh 一行提交命令 + 测试扩展；零新组件/新机制。
+- **作者**: dsh-cto（D554，CT-43 修复）
+
+## V5.2.2 (2026-08-28) — D542 CI 失败可见性 + D543 密封 canary 转绿 + 解析器对称（PATCH）
+
+- **① D542 soft_check/warn_check CI strict 打印 ❌**（此前计硬失败却显示 ⚠️，「N 组未通过」在日志中无组名可查——D541 排查黑洞根因）。计数语义零变化，纯可观察性。配对测试 ci-strict-visible.test.sh 6 断言。
+- **② D543 post-commit-marker.test.sh 断言对齐 D521 hook 层登记**（pass → 新增 1 行 COMMITTED，D537 #4 设计意图；旧断言停留 D508 行为致 canary 双平台红两周）。**连带修 S10 密封性**：new_repo 显式 `git init -b main`（CI runner 默认分支 master 致 pathspec 错误）。**Control Tower Gate Tests 双平台两周来首次全绿**。
+- **③ D543 brief_parser.parse_q2 剥行号后缀**（`\s+L\d+$`，对齐 devdoc_writeset.py:76——D541 CI 红第三处根因根治，两解析器对称）。同名配对测试 6 断言 + strip 测试 12 断言。
+- **作者**: CTO（D542/D543 自修，CI 实证三 job 全绿）
+
+## V5.2.1 (2026-08-28) — D541 铁律47 声称完成正则收窄（bare 字形误伤根治）+ D541 CI 红修复（PATCH）
+
+> spec: CTO 内联指令（D541 正则收窄 + 配对测试）。D540 brief 的工作描述措辞（bare 字形）被旧正则误判为完成声称 → 铁律47 → CI strict 硬阻断（CI 日志实证：组5 铁律47 + 组6 memory_refs 两处）。
+
+- **① pre-commit-check.sh L750 铁律47 正则收窄**: 旧正则把 bare 字形（拆分/迁移）也当完成声称 → 工作描述措辞误触发。收窄为三类完成语义『已X / X…完成 / 完成…X』（bare 字形不再匹配；完成声称仍触发）。补充『完成…X』方向（用户给定正则缺此向，而用户测试用例要求该方向必须触发——以测试为具体规范）。
+- **② 配对测试 claim-regex-narrow.test.sh（9 断言）**: 接线（收窄后正则 present + 旧 bare 正则移除）/ 正常（工作描述不触发）/ 降级（完成声称触发）/ 边界（空 brief / 无 brief guard）。
+- **③ D541 CI 两处红修复（CI 日志实证定位）**: brief verify 行去『完成…X』字面量（该字面量命中收窄后正则）；plan.json memory_refs 回填 D541 brief Q1c 引用的 memory 教训路径（消组6 memory_refs 为空 soft_check）。
+- **验证**: SYNO_CI=1 全量 13 组 exit 0；claim-regex-narrow 9/9；收窄正则 vs 修复后 brief 零命中（铁律47 忠实复刻）；check-plan-integrity 直跑 memory_refs ✅ 全部存在。
+- **防膨胀**: 只动 L750 一行正则 + 同行 swallow-ok；不碰其他门禁逻辑。
+- **作者**: dsh（D541，编码 session）
+
+## V5.2.0 (2026-08-28) — D540 独立 clone 试点 + 影子提交 clone 环境验证 + verify-parallel 迁 CI/PR（MINOR）
+
+> spec: docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D540-clone-pilot-shadow-commit-20260827.md（唯一契约）。
+> 隔离机制从 worktree 升格独立 clone（治理定稿 v3：层1 单机隔离治本 + 层2 跨机单源化）。
+
+- **① install-hooks.sh 新增 _ensure_clone_git_config（clone 环境 git 配置初始化，影子提交前置）**: 幂等初始化 user.name/user.email/core.quotepath=false/credential.helper（local 未设才写、已设不覆盖；env SYNO_GIT_NAME/EMAIL/CREDENTIAL_HELPER 可覆盖；git config 失败 → _degraded_log 记录 + 提示，不阻断 hooks 安装，铁律 11）。堵 post-commit.sh L87「identity 未配置?」降级路径——clone 后同批执行即前置堵漏。
+- **② verify-parallel.sh 新增 --ci-pr \<base\> 模式（写集比对迁 CI/PR）**: base..HEAD 写集 × origin/main 已合 dev doc 写集比对（排除 PR 自身 doc）；新增 compare_writesets_ci（不做 V5.0.1 已完成任务豁免——CI 要拦「本 PR 写集 vs 已合任务写集」重叠，豁免会让对比恒过）。exit 三态 0/1/2（D328 模式 1）。
+- **③ pre-push-check.sh 门禁5 迁移**: 本地不再 --scan-today 强阻断（单机多 session 场景语义不准）→ 软提示 + 脚本缺失探针；CI 权威物理拦截。
+- **④ ci.yml quality job 加 Verify parallel declaration 步骤**: verify-parallel --ci-pr origin/main（docs-only 跳过；fetch-depth:0 已确认）。D540 实测该步骤首次真实执行并通过（此前本地 pre-push 强阻断语义不准）。
+- **⑤ 删 scripts/workflow/post-merge-cleanup.sh（铁律 37）**: 孤儿脚本（零生产调用，仅 loop-score 检查存在项）；其职责已被 影子提交 + union 合并覆盖。
+- **测试**: clone-config-init.test.sh（13 断言）/ clone-shadow-commit.test.sh（9 断言，真实沙箱 git + 真实 hook 链：identity 配置→真实 commit→COMMITTED+影子提交+树干净；无 identity→L87 降级；防递归；双 clone 隔离 sha256）/ verify-parallel-ci.test.sh（7 断言 block/pass/degraded+接线）。
+- **防膨胀**: 零新组件（复用 install-hooks/verify-parallel + git 原生 clone）；不改 post-commit.sh/synova-commit（D537 #4 已恢复，防 D530 二次覆盖）。
+- **作者**: dsh（D540，编码 session）
+
+## V5.1.4 (2026-08-26) — D537 控制塔并行污染 + 提交链摩擦根治（Win 反馈 #2-#6）（PATCH）
+
+> spec: docs/synova/coordination/派单-D537-并行CTO-20260826.md。5 项修已有 bug（#1 CRLF 已由 D520 修复，#6 windows 矩阵已由 D520 建立）。
+> 单源原则（创始人定）: 控制塔 scripts/ 一份，所有修复在唯一源（Mac 控制塔线）做，不分叉。
+
+- **① #2 主树占用检测前移（M8 变体治本）**: 并行污染只拦"新开工"（task-start）不拦"存量"（已在主树工作的 session 直接提交）→ M8 第四次复发（D394→D481/482→D486）。检测前移到 pre-commit（物理门禁、每次提交强制）：主树脏 + 近期活跃 session > 1 → hard_check 拦。活跃判定 = last_seen_at 在 SYNO_PARALLEL_WINDOW（默认 1800s）内（synova-commit 每次 register 刷新；pid=None 僵尸 session 不误拦——主树 registry 实测 14 个僵尸）。
+- **② #3 fastlane 扩展（补记摩擦）**: 原 fastlane 只覆盖纯 bypass.log 单文件；merge commit（MERGE_HEAD，同 D328/D513 豁免）+ 纯补记组合（bypass.log + docs/task-state/memory 白名单）也走轻量门禁（<10s）。普通提交（含任何代码）仍全量（防误放行）。
+- **③ #4 worktree 补记自动同步（D521-2 恢复）**: D530（734ab32e CT-45 merge 豁免）重写 post-commit.sh 时丢失 D521-2 的 "bypass COMMITTED 登记" hook 层——bypass-precommit.test.sh 红态（登记段缺失/HASH 未登记/仍脏/影子提交缺失）。恢复该段（COMMITTED 成对登记 + 影子提交防递归），bypass.log 永不脏，D451 补记循环根治。
+- **④ #5 baseline 漂移自动归因**: merge main 引入 mac 提交后 tsc 基线变化，每次人工确认"main 现状 vs 本分支引入"。扩展 baseline-check.sh：新增"错误"按文件归属本分支改动集（vs origin/main）→ 本分支引入才拦（exit 1）；main 既有漂移自动归因不拦。归因不可用 → fail-closed 拦全部（绝不静默放行）。
+- **⑤ baseline-check.sh Mac 兼容（grep -oP → grep -oE）**: BSD grep 无 -P，baseline-check.sh 在 Mac 上全量失败（extract 函数 + 主流程计数）。修 9 处 `grep -oP` → `grep -oE` + `\d`/`\S` → `[0-9]`/`[^[:space:]]`（windows-compat 模式库同型）。
+- **⑥ #6 双平台 CI**: control-tower-tests windows-latest 矩阵已由 D520 建立；本版把新增测试（parallel-main-tree-occupancy / fastlane-extended）纳入 canary 清单（ubuntu + windows 双平台全绿）。
+- **测试**: parallel-main-tree-occupancy.test.sh（新，10/10）/ fastlane-extended.test.sh（新，10/10）/ bypass-precommit.test.sh（恢复后 7/7）/ baseline-check.test.sh（更新 + 归因场景，16/16），均入 canary。
+- **防膨胀**: 全部复用既有机制（session_registry 近期过滤 / fastlane 白名单 / D521-2 hook 登记 / baseline 快照 + 改动集归因），零新独立机制。
+- **作者**: dsh-parallel-cto（D537，控制塔线）
+
+## V5.1.3 (2026-08-26) — D533 CI 调试可达性根治（凭证共享 + CRLF 治本 + debug 纪律）（PATCH）
+
+> 收敛 3 项（D529 复盘后审计收敛，原 5 项 → 3 项）。spec: docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D533-ci-diagnostics-20260825.md
+> 版本号顺延说明: V5.1.2 已被 Win 线 verify-parallel CRLF 修复占用（427b4e7b，feat/win-d485-account-link-c）——按 V5.0.1 先例顺延 V5.1.3。
+
+- **① 凭证共享（开发环境治理，不入库）**: GITHUB_TOKEN 落 `~/.dsh/.credentials.yaml`（0600，与 DEEPSEEK 等 key 同文件）——CI 日志 403 盲猜根因消除；curl 验证 `actions/jobs/<id>/logs` HTTP 200 拉到完整失败日志（run 32879994891 / job 97906882065 / 48KB，定位失败测试）。
+- **② CRLF 治本（.gitattributes 行为变化）**: D520 已加 `*.sh/*.py text eol=lf` 但从未 renormalize → 17 个 CRLF blob 让每次全新 checkout 永久脏（D529 根因）。本版本 `git add --renormalize` 规范化 15 个脏文件 + 追加两条豁免：`scripts/audit/** -text`（K3 红线，审计脚本字节不变）+ `scripts/control-tower/*.py -text`（存量 CRLF 无配对测试，CT-40 禁改）→ `git status` 零噪音，audit/control-tower 脚本 vs main 零 diff。
+- **③ debug 回传纪律（文档级）**: docs/synova/coordination/CI-诊断通道.md 新增 §五——CI debug 回传必须推 `ci-debug/*` 独立分支（永不动工作分支）+ 首选 curl/gh 日志通道。
+- **明确不做（防膨胀）**: ~~CI 挂起探针~~（挂起根因已消除：prebuild-install 无编译）/ ~~机器人 merge 豁免~~（无 CI bot 提交）/ ~~gh CLI 强制~~（可选工具）。
+- **验证**: git status 零噪音（worktree 实测复现 D529 → 修复后干净）；pre-commit 6 组本地全绿 + CI TS+Lint+Iron Laws/Vitest 全绿；D331 bypass 对账通过。
+- **作者**: dsh-parallel-cto（D533，控制塔线）
 
 ## V5.1.1 (2026-08-25) — D525+D526 红态清理 + canary 漂移告警（PATCH）
 

@@ -1,0 +1,30 @@
+{
+  "task_id": "D547",
+  "title": "skeleton-brief-gate",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "by": "CTO",
+    "at": "2026-08-28",
+    "branch": "fix/d547-skeleton-brief-gate",
+    "commit": "187c7460",
+    "files": [
+      "scripts/pre-commit-check.sh",
+      "tests/control-tower/skeleton-brief-gate.test.sh",
+      ".claude/task-briefs/2026-08-28-D547-skeleton-brief-gate.md"
+    ]
+  },
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-08-28-D540-D547-governance-closeout.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "findings": [
+      "P2: skeleton-brief-gate.test.sh 未入 CI 密封清单（见 P1-3 系统级发现）"
+    ],
+    "by": "K3",
+    "at": "2026-08-28"
+  },
+  "fix_task_id": null,
+  "updated_at": "2026-08-28",
+  "updated_by": "K3"
+}

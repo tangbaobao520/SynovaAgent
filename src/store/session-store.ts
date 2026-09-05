@@ -19,6 +19,30 @@ const log = createLogger('store/session-store');
 /** Raw SQLite row (P1-02: 替代 `as-any`) */
 type SqliteRow = Record<string, unknown>;
 
+// ═══ D563（CT-46/D489 验收返修）: 类型谓词导出 ═══
+
+/**
+ * better-sqlite3 Database 鸭子类型谓词 — unknown → Database.Database 窄化（替代 L1 侧 never 断言）。
+ *
+ * 架构位（铁律 39 + D563 返工）: 本谓词属 L5 存储层——数据库驱动类型只归 L5 所有；
+ * L1（routes/diagnosis.ts）经既有动态 import 通道解构使用，不经行任何数据库层引用
+ * （Architecture Check 1d: L1→L5 跨层引用零容忍，注释/消息字样同样计红）。
+ *
+ * 契约（铁律 47）:
+ *   @input    — v: unknown（req.app.locals.orchestration.db 等运行时未类型化句柄）
+ *   @output   — 类型谓词；true = 可安全传入 `new SessionStore(db)`（Database.Database）
+ *   @degraded — false（非对象 / 缺关键方法）→ 调用方把谓词失败转译为 TypeError，
+ *               走既有 try/catch log.warn 降级通道（铁律 24/31，行为零变化）
+ *
+ * 方法探测取 prepare/exec/pragma 三方法（better-sqlite3 Database 的最小读写面；
+ * SessionStore.initSchema 实际只用 exec）。非断言——失败路径显式降级，不静默信任 unknown。
+ */
+export function isSqliteDatabase(v: unknown): v is Database.Database {
+  if (typeof v !== 'object' || v === null) return false;
+  const o = v as { prepare?: unknown; exec?: unknown; pragma?: unknown };
+  return typeof o.prepare === 'function' && typeof o.exec === 'function' && typeof o.pragma === 'function';
+}
+
 export interface SessionRow {
   id: string;
   orgId: string;
@@ -54,8 +78,18 @@ export interface ConversationState {
 
 // ═══ D500: 事件溯源类型 ═══
 
-/** 事件类型（surface 事件 = 投影到消息历史的；log-only 事件 = 仅审计） */
-export type SessionEventType = 'message' | 'tool_result' | 'system';
+/**
+ * 事件类型（surface 事件 = 投影到消息历史的；log-only 事件 = 仅审计）。
+ * D487: 新增诊断事件三类——GA 诊断过程落 session_events 可回放；
+ * deriveMessages 投影跳过（log-only，不污染消息历史）。
+ */
+export type SessionEventType =
+  | 'message'
+  | 'tool_result'
+  | 'system'
+  | 'diagnosis_phase'
+  | 'diagnosis_module'
+  | 'diagnosis_report';
 
 /** session_events 表行 */
 export interface SessionEvent {
@@ -124,17 +158,54 @@ export class SessionStore {
 
       -- D500: 事件溯源 append-only 事件流（会话唯一事实源）
       -- seq 单调 + UNIQUE(session_id, seq) 物理防并发 seq 重复（2026-08-22 缺陷①防线）
+      -- D487: CHECK 扩展诊断事件三类（旧库经下方表重建迁移升级，CREATE IF NOT EXISTS 不更新已有约束）
       CREATE TABLE IF NOT EXISTS session_events (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         session_id TEXT NOT NULL REFERENCES agent_sessions(id) ON DELETE CASCADE,
         seq INTEGER NOT NULL,
-        event_type TEXT NOT NULL CHECK(event_type IN ('message','tool_result','system')),
+        event_type TEXT NOT NULL CHECK(event_type IN ('message','tool_result','system','diagnosis_phase','diagnosis_module','diagnosis_report')),
         payload_json TEXT NOT NULL,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         UNIQUE(session_id, seq)
       );
       CREATE INDEX IF NOT EXISTS idx_session_events_sess ON session_events(session_id, seq);
     `);
+
+    // D487: 旧库 session_events CHECK 约束升级 — ALTER 不支持修改 CHECK，
+    // 幂等表重建（仅当现有建表 SQL 缺 diagnosis_phase 时执行；BEGIN/COMMIT 保证原子）
+    try {
+      const tpl = this.db.prepare(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='session_events'"
+      ).get() as { sql?: string } | undefined;
+      if (tpl?.sql && !tpl.sql.includes('diagnosis_phase')) {
+        this.db.exec('BEGIN');
+        try {
+          this.db.exec(`
+            CREATE TABLE session_events_new (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              session_id TEXT NOT NULL REFERENCES agent_sessions(id) ON DELETE CASCADE,
+              seq INTEGER NOT NULL,
+              event_type TEXT NOT NULL CHECK(event_type IN ('message','tool_result','system','diagnosis_phase','diagnosis_module','diagnosis_report')),
+              payload_json TEXT NOT NULL,
+              created_at TEXT NOT NULL DEFAULT (datetime('now')),
+              UNIQUE(session_id, seq)
+            );
+            INSERT INTO session_events_new (id, session_id, seq, event_type, payload_json, created_at)
+              SELECT id, session_id, seq, event_type, payload_json, created_at FROM session_events;
+            DROP TABLE session_events;
+            ALTER TABLE session_events_new RENAME TO session_events;
+            CREATE INDEX IF NOT EXISTS idx_session_events_sess ON session_events(session_id, seq);
+          `);
+          this.db.exec('COMMIT');
+          log.info('session_events CHECK 约束已升级 — 诊断事件类型启用 (D487)');
+        } catch (migErr) {
+          this.db.exec('ROLLBACK');
+          throw migErr;
+        }
+      }
+    } catch (err) {
+      log.warn({ err }, 'session_events 诊断事件约束迁移失败 — degraded（旧库继续用三事件类型）');
+    }
 
     // 诊断检查点表
     try {

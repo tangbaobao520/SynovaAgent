@@ -2,7 +2,7 @@
   "task_id": "D484",
   "title": "register 认证闭环 切片 B——企业邀请注册链路打通（D102 邀请令牌补全）",
   "slice": "AUTH-B",
-  "status": "spec_done",
+  "status": "audited",
   "risk": "medium",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-D484-enterprise-invite-slice-b-20260825.md",
@@ -10,9 +10,26 @@
     "by": "dev-doc",
     "at": "2026-08-25"
   },
-  "impl": null,
-  "audit": null,
+  "impl": {
+    "commit": "a6d4af07",
+    "by": "coding",
+    "at": "2026-08-25",
+    "note": "PR #170 merged (head 0af8d7b5)"
+  },
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-08-28-D483-D484-D486.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "findings": [
+      "auth.ts L92-93 enterprise 匿名端点两分支 + L84 注释（复数 /invitations 管理端点保持认证）属实",
+      "enterprise.test.ts 17 it()/366 行全链路 17/17 绿（本机实测）",
+      "PR #170 CI 全 success（10 项检查含双平台 Control Tower Gate）",
+      "缺口 B 内存存储遗留属实（enterprise.ts 4 个 Map 保持内存，UserStore 走 SqliteGraphStore）——按 spec §3.3 descope，建议另立任务跟踪持久化"
+    ],
+    "by": "K3",
+    "at": "2026-08-28"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-08-25T00:00:00+08:00",
-  "updated_by": "dev-doc"
+  "updated_at": "2026-08-28",
+  "updated_by": "K3"
 }

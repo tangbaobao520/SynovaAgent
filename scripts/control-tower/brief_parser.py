@@ -80,6 +80,10 @@ def parse_q2(text: str) -> dict:
             path = re.split(r"[:：]| — ", raw, 1)[0].strip()
             # 剥括号描述（include/exclude 同规则）
             path = re.split(r"[（(]", path, 1)[0].strip()
+            # D543: 剥行号后缀「path L750」——对齐 devdoc_writeset.py:76 同款正则。
+            # 缺此步时 Q2 写「pre-commit-check.sh L750」整体当路径 → 与实际改动
+            # 「pre-commit-check.sh」不匹配 → G12 误判越界（D541 CI 红第三处根因）。
+            path = re.sub(r"\s+L\d+$", "", path)
             if path:
                 (exclude if in_exclude else include).append(path)
     return {"include": include, "exclude": exclude}

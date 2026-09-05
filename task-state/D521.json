@@ -1,46 +1,61 @@
 {
-  "task_id": "D521",
-  "title": "控制塔提交链路收敛 — tag时机/bypass竞态/语义parser/CI诊断/push模拟（治本）",
-  "status": "impl_done",
-  "spec": {
-    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D521-submit-chain-20260824.md",
-    "by": "dsh-cto",
-    "at": "2026-08-24"
-  },
-  "impl": {
-    "by": "dsh-cto",
-    "at": "2026-08-25",
-    "branch": "feat/d521-submit-chain",
-    "commit": "01334c0c1d9ce825b6beef14a06ce3fc74e03eac",
-    "files": [
-      "scripts/pre-push-check.sh",
-      "scripts/control-tower/brief_parser.py",
-      "scripts/workflow/resolve-commit-brief.sh",
-      "scripts/pre-commit-check.sh",
-      "scripts/control-tower/synova-commit",
-      "scripts/hooks/post-commit.sh",
-      "scripts/control-tower/simulate-ci.sh",
-      "scripts/control-tower/synova-submit.sh",
-      "scripts/control-tower/alloc-task-id.sh",
-      "scripts/control-tower/ct-test-gate.sh",
-      "docs/synova/coordination/CI-诊断通道.md",
-      ".github/workflows/ci.yml",
-      "tests/control-tower/tag-ancestry.test.sh",
-      "tests/control-tower/brief-parser-strip.test.sh",
-      "tests/control-tower/bypass-precommit.test.sh",
-      "tests/control-tower/simulate-ci.test.sh",
-      "tests/control-tower/synova-submit.test.sh",
-      ".codex/control-tower/VERSION.md",
-      ".codex/control-tower/version.log",
-      "memory/notes/implemented/2026-08-24-d521-submit-chain.md",
-      ".claude/task-briefs/2026-08-25-D521.md"
-    ],
-    "note": "tag 按 §6 纪律在 main 合并后打（V5.0.3/4/5/5.1.0 均不在分支打）"
-  },
-  "audit": null,
-  "fix_task_id": null,
-  "updated_at": "2026-08-25",
-  "updated_by": "dsh-cto",
-  "note": "综合 D520 时间复盘（执行方）+ Win 台账三登记 + CTO 全链路核实。治本：提交链路五病根收敛为一个自洽契约。",
-  "priority": "P0"
+ "task_id": "D521",
+ "title": "控制塔提交链路收敛 — tag时机/bypass竞态/语义parser/CI诊断/push模拟（治本）",
+ "status": "impl_done",
+ "spec": {
+  "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D521-submit-chain-20260824.md",
+  "by": "dsh-cto",
+  "at": "2026-08-24"
+ },
+ "impl": {
+  "by": "dsh-cto",
+  "at": "2026-08-25",
+  "branch": "feat/d521-submit-chain",
+  "commit": "40b90520",
+  "files": [
+   "scripts/pre-push-check.sh",
+   "scripts/control-tower/brief_parser.py",
+   "scripts/workflow/resolve-commit-brief.sh",
+   "scripts/pre-commit-check.sh",
+   "scripts/control-tower/synova-commit",
+   "scripts/hooks/post-commit.sh",
+   "scripts/control-tower/simulate-ci.sh",
+   "scripts/control-tower/synova-submit.sh",
+   "scripts/control-tower/alloc-task-id.sh",
+   "scripts/control-tower/ct-test-gate.sh",
+   "docs/synova/coordination/CI-诊断通道.md",
+   ".github/workflows/ci.yml",
+   "tests/control-tower/tag-ancestry.test.sh",
+   "tests/control-tower/brief-parser-strip.test.sh",
+   "tests/control-tower/bypass-precommit.test.sh",
+   "tests/control-tower/simulate-ci.test.sh",
+   "tests/control-tower/synova-submit.test.sh",
+   ".codex/control-tower/VERSION.md",
+   ".codex/control-tower/version.log",
+   "memory/notes/implemented/2026-08-24-d521-submit-chain.md",
+   ".claude/task-briefs/2026-08-25-D521.md"
+  ],
+  "note": "tag 按 §6 纪律在 main 合并后打（V5.0.3/4/5/5.1.0 均不在分支打）",
+  "commit_note": "CTO 复核修正（2026-08-29）：原 01334c0c1d9ce825b6beef14a06ce3fc74e03eac 为影子登记/废弃分支提交，真实实现提交 40b90520（M7 纪律）"
+ },
+ "audit": {
+  "report": "docs/synova/audit-reports/2026-08-28-D501-D550-impl-done-batch.md",
+  "verdict": "PASS",
+  "blockers": [],
+  "findings": [
+   "①tag 时机：V5.0.3/5.0.4/5.0.5/5.1.0/5.1.1 全指 main 提交，无分支/孤儿 tag",
+   "②bypass 竞态：COMMITTED 登记挪 post-commit hook 层（post-commit.sh:69-94，防递归 marker message，--no-verify 不洗白）；post-commit.test.sh 12/12",
+   "③parser 语义：brief_parser 剥壳对称 12/12 + tag-ancestry 8/8",
+   "④job 级（40b90520）: TS+Iron Laws/CT ubuntu/CT windows/Vitest×2/Golden F1/npm audit/Architecture 全 success（desktop-build 为存量失败线）",
+   "专项（CT-43）: auto-hook 路径限定缺陷确认存在（8b6deaf4 卷带 905 行实证，D552），已由 D554 修复（post-commit.sh:87 -o -- path），修复后影子提交全只含 bypass.log + 测试 12/12 含卷带断言——缺陷已闭环",
+   "P2-1: simulate-ci.test.sh 全绿桩用例环境敏感（桩不替 canary 清单，本机 fastlane 耗时断言红 6/7）"
+  ],
+  "by": "K3",
+  "at": "2026-08-29"
+ },
+ "fix_task_id": null,
+ "updated_at": "2026-08-29",
+ "updated_by": "K3",
+ "note": "综合 D520 时间复盘（执行方）+ Win 台账三登记 + CTO 全链路核实。治本：提交链路五病根收敛为一个自洽契约。",
+ "priority": "P0"
 }

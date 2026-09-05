@@ -2,7 +2,7 @@
  * agent/builtin-tools.ts — 内置工具注册 (Era 2.2)
  *
  * SynovaAgent 对话中可用的 4 个内置工具。
- * 对标 engine-core 的 FDE_TOOLS + agent-tool-registry。
+ * 内置工具集 + agent-tool-registry 注册范式（原 engine-core 工具集已随引擎退役）。
  */
 import type { ToolRegistry } from './tools';
 import type { SessionStore } from '../store/session-store';

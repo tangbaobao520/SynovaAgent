@@ -73,10 +73,17 @@ check_push_sync() {
   if [[ "$PUSH_BRANCH_REF" == "refs/heads/main" ]] || [[ "$fbranch" == "main" ]]; then
     if [[ "${SYNO_ALLOW_MAIN_PUSH:-}" != "1" ]]; then
       echo -e "  ${RED}❌ 门禁 0-2: 禁止直接 push main — main 只进 PR${RESET}"
-      echo "  正确流程: push 自己的 feat/ 分支 → 开 PR → 创始人在 GitHub 点 Merge。"
-      echo "  紧急逃生舱(需创始人批准): SYNO_ALLOW_MAIN_PUSH=1 git push ... (记 bypass.log)"
+      echo "  正确流程: push 自己的 feat/ 分支 → 开 PR → GitHub PR 机制合并（CTO 用 API token 执行）。"
+      echo "  紧急逃生舱(需创始人批准, 禁止用于常规合并): SYNO_ALLOW_MAIN_PUSH=1 git push ... (记 bypass.log)"
       return 1
     fi
+    # D571: 真实写 bypass.log——此前只 echo 声称「已记」未实现写入（M2 审计链断裂，2026-09-03 复盘发现）
+    _escape_repo_root="$(cd "$SCRIPT_DIR/.." && pwd)"
+    _escape_bypass_log="${SYNO_BYPASS_LOG:-${_escape_repo_root}/.claude/bypass.log}"  # 测试注入缝: 沙箱覆盖路径
+    _escape_ts="$(date +%Y-%m-%dT%H:%M:%S%z 2>/dev/null || date -u +%Y-%m-%dT%H:%M:%SZ)" # swallow-ok: 无 %z 的 date 用 UTC 兜底
+    _escape_user="$(whoami 2>/dev/null || echo unknown)" # swallow-ok: 身份获取失败不阻断逃生舱，unknown 留痕
+    printf '%s\n' "${_escape_ts} | ALLOW_MAIN_PUSH | SYNO_ALLOW_MAIN_PUSH=1 逃生舱直推 main（需创始人批准）| BRANCH=${PUSH_BRANCH:-main} | USER=${_escape_user}" \
+      >> "${_escape_bypass_log}" 2>/dev/null || echo -e "  ${RED}⚠️  逃生舱 bypass.log 写入失败 — 审计链断裂${RESET}" >&2
     echo -e "  ${YELLOW}⚠️  门禁 0-2: SYNO_ALLOW_MAIN_PUSH=1 逃生舱生效 — 直推 main (已记 bypass.log)${RESET}"
   fi
 
@@ -371,22 +378,16 @@ else
 fi
 
 # ═══ 门禁 5: 并行声明物理验证 (D311 M1 — verify-parallel) ═══
+# D540: verify-parallel 已移 CI/PR —— 本地不再强制 --scan-today（单机多 session 场景语义不准）。
+# CI/PR 由 ci.yml 调 verify-parallel --ci-pr 做 base..head × 已合写集比对（权威物理拦截）。
 echo ""
 echo -e "${CYAN}── 并行声明物理验证 (D311) ───────────────────────────${RESET}"
 VERIFY_PARALLEL="$SCRIPT_DIR/control-tower/verify-parallel.sh"
 if [[ -f "$VERIFY_PARALLEL" ]]; then
-  # CT-28 (D422): 三态分流 — 0 过 / 1 业务阻断 / 2 降级告警（不阻断, 防工具故障锁死推送）
-  bash "$VERIFY_PARALLEL" --scan-today
-  VP_EXIT=$?
-  if [ "$VP_EXIT" -eq 1 ]; then
-    echo ""
-    echo -e "  ${RED}❌ 并行声明验证未通过 — 今日 dev doc 写集存在重叠, 推送已拒绝 (D311)${RESET}"
-    exit 1
-  elif [ "$VP_EXIT" -eq 2 ]; then
-    echo -e "  ${YELLOW}⚠️  verify-parallel 降级 (exit 2) — 不阻断推送, 见 degraded-events.log${RESET}"
-  fi
+  echo -e "  ${YELLOW}ℹ️  并行声明验证已移 CI/PR（D540）— 本地不再强制 --scan-today${RESET}"
+  # 保留脚本可用性探针（fail-closed：脚本缺失 = CI 降级信号）；本地不再 exit 1 拦推送
 else
-  echo -e "  ${YELLOW}⚠️  verify-parallel.sh 缺失 — 并行声明验证跳过 (fail-open)${RESET}"
+  echo -e "  ${YELLOW}⚠️  verify-parallel.sh 缺失 — CI 并行声明验证将降级 (fail-open)${RESET}"
 fi
 
 # ═══ 门禁 6: 基线展示 (D312 M2 — baseline-check, 警告不阻断) ═══

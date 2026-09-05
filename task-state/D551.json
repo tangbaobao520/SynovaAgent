@@ -1,0 +1,38 @@
+{
+  "task_id": "D551",
+  "title": "ga-calibration-backend-spec",
+  "status": "audited",
+  "impl": {
+    "commit": "35ccd574",
+    "by": "dsh",
+    "at": "2026-08-28",
+    "note": "CTO 补交 task-state 回填（编码 session 已实现未提交此文件）+ spec 入库（D539 P1 先例）"
+  },
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-08-29-D551-D487-ga-line.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "findings": [
+      "四端点契约逐条比对一致（ga-calibration.ts L121/L239/L314/L419 + ga-auth.ts L20-36 + 版本链 L160-172/L269-278）",
+      "回流诚实边界属实：engine 白名单零 diagnosis_conclusion 分支（grep 零命中；D556 层2 未合 main）；stats note 显式诚实降级",
+      "双迁移事务+幂等+有测试（d551_target_type ga-calibration.test.ts L494-551 / d551_memory_type L557-604）",
+      "三测试独立重跑 40/40 绿（Node 24；Node 22 为环境依赖失败 ABI 137 vs 127）",
+      "域回归抽验 61/61 绿；tsc 28=28 零新增（28 处全预存）；as any 代码行 0",
+      "§9 九条接线 grep 全命中；存量三路由 diff=0；写集 11 文件一致（agent-memory-store 偏差三处声明）",
+      "CI 产品门禁 job 级全 success；GitHub Pages build 预存失败（基线同失败，非本批引入）",
+      "P2 备注：GET limit 负数不 guard / stats reflux 1000 硬上限 / supersedes 窗口 200 条 / L1→L4 惰性导入继承 ga-annotations 既有模式"
+    ],
+    "by": "K3",
+    "at": "2026-08-29"
+  },
+  "fix_task_id": null,
+  "updated_at": "2026-08-29",
+  "updated_by": "K3",
+  "note": null,
+  "slice": "ga-module-3",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D551-ga-calibration-backend-20260828.md",
+    "by": "dev-doc",
+    "at": "2026-08-28"
+  }
+}

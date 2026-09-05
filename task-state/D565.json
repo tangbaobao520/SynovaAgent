@@ -1,0 +1,11 @@
+{
+  "task_id": "D565",
+  "title": "test-kit CI 接线 — 棘轮基线测试入 CI 双平台（K3 P1）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-02",
+  "updated_by": "alloc-task-id"
+}

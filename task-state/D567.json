@@ -1,0 +1,37 @@
+{
+  "task_id": "D567",
+  "title": "专家枚举硬编码残留 ×4 传播修复（K3 15-1）",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "commit": "55eba51f",
+    "by": "deepseek-harness",
+    "at": "2026-09-02",
+    "files": [
+      "src/agent/expert-config-loader.ts",
+      "src/tui-v2/chat.tsx",
+      "src/cli/commands/expert.ts",
+      "src/agent/cross-validator.ts",
+      "src/l3/synova-diagnosis-engine-impl.ts",
+      "src/sentinel/runner.ts",
+      "tests/expert/expert-enum-propagation.test.ts",
+      "tests/expert/manifest-consistency.test.ts",
+      ".claude/task-briefs/2026-09-02-D567-expert-enum-propagation.md",
+      "task-state/D567.json"
+    ],
+    "evidence": [
+      "S-5 先红: tests/expert/expert-enum-propagation.test.ts 实现前 vitest 实跑 7/7 全红（加载器 getAllExpertIds 不存在 + 5 处现场封闭枚举模式全命中），非临时断言",
+      "红转绿: 实现后 expert-enum-propagation 7/7 + manifest-consistency（D567 适配）+ cross-validator 回归 = 25/25 绿",
+      "Done① 枚举残留清零: grep -rn \"marketing: '营销'\" src/ = 0；Done② registry 唯一源: grep -c business_model src/tui-v2/chat.tsx = 0（≤1 达标）；Done③ 回归: npx tsc --noEmit error TS = 28 = 基线 28（28 条全为存量: extensions/sentinels/_extinct、connectors/ima.ts、server.ts，零新增）",
+      "回归对照（零新增回归）: .wt-baseline-d567（origin/main@1f50e442 原状）同套件 tests/l3+tests/sentinel+tests/agent 实跑 68 failed/453 passed/12 文件，与本 worktree 失败文件清单逐文件 diff 一致——全部为 main 存量红，非本任务引入",
+      "K3 15-1 实证 5 处全闭合（派单点名 chat.tsx + 另 4 处）: chat.tsx EXPERT_NAMES→registry 动态；expert.ts BUILTIN_EXPERTS→builtinExperts()（yaml 优先/目录扫描降级/console.error）；cross-validator.ts:75 ALL_EXPERTS 旧9位→allExperts()；engine-impl 维度映射值 7 位对齐+运行时校验降级 host；runner.ts LAYER_EXPERTS 7 位对齐 + :646 旧6位 union cast 删除（ExpertType v3.3 起即 string）",
+      "路径勘误（brief 已改注）: cross-validator 实为 src/agent/（K3 原文 §15-1 正确，brief 误写 src/l3/）；engine-impl 实为 src/l3/（brief 误写 src/engine/）；K3 说的'另4处'+派单 chat.tsx = 5 处全部修复",
+      "S-5 过程自纠（铁律45 现行犯）: chat.tsx 新注释曾写 expert/*/manifest.json，*/ 提前终止块注释致 tsc 8 条语法错（28→8 假信号）——改为 expert/<id>/ 后恢复 28=28；此为铁律 45 描述的同一病根，物理门禁仅 warn 未拦，建议 K3 关注 warn→block"
+    ],
+    "notes": "自检5问: ①接线=getAllExpertIds 新 export 被 chat.tsx/expert.ts/cross-validator/engine-impl/runner 5 个 src 文件引用；②异常=builtinExperts 目录不可读 console.error+[]、loader 空配置 log.warn、tiebreaker ||'host' 兜底、engine 映射失效值降级 host（全部显式降级不静默）；③类型安全=新增代码 as any=0、as never=0，净删 1 处 6 位 union 断言 cast；④测试=回归锁含 expect+失败消息非空壳，先红后绿；⑤残留=BUILTIN_EXPERTS/ALL_EXPERTS 旧符号全仓 grep 清零（tests/agent/expert-file-loader.integration.test.ts 等存量红中的旧 ID 为 main 存量，未动）。观察项（超范围未修）: extensions/sentinels/ manifests 的 auxiliaryExperts/route 大量旧专家 ID（strategy×31/org×16/finance×13...），被 runner VALID_EXPERTS 静默过滤=路由空转——数据层传播问题建议另立任务；post-commit 决策建议脚本中'八专家'静态提示文案同型过时（纯 advisory 文本）"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-02",
+  "updated_by": "deepseek-harness"
+}

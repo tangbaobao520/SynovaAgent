@@ -1,0 +1,15 @@
+{
+  "task_id": "D554",
+  "title": "post-commit-no-sweep-ct43",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "commit": "91f52fcb",
+    "pr": "#280",
+    "note": "CT-43 修复：影子提交 -o 路径限定；配对测试 12/12；V5.2.3"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-28",
+  "updated_by": "dsh-cto"
+}

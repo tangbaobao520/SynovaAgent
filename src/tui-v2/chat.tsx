@@ -17,6 +17,7 @@ import { checkForUpdates, formatUpdateMessage, type UpdateCheckResult } from '..
 import { getCostTracker, formatCost } from '../services/llm-cost';
 import { fetchDeepseekBalance, formatBalance, type BalanceResult } from '../services/deepseek-balance';
 import { loadConfig } from '../config';
+import { getAllExpertIds } from '../agent/expert-config-loader';
 
 import { Header } from './components/header';
 import { ChatPanel } from './components/chat-panel';
@@ -33,6 +34,21 @@ const RED = '\x1b[31m';
 const RESET = '\x1b[0m';
 const OPENING_MESSAGE = '你好！我是 Synova 增长导航助手。\n\n我能帮助你：\n- 设定增长目标\n- 发现增长障碍\n- 协调 AI 专家分析\n- 生成诊断报告';
 const STATUS_HINTS = '↑↓ 滚动 │ PgUp/PgDn 翻页 │ /setup │ /balance │ /help │ Ctrl+C 退出';
+
+/**
+ * 专家展示标签（仅供展示，非集合来源）— D567: 专家集合以 expert/expert-registry.yaml
+ * 为唯一事实源（getAllExpertIds 动态读取）；新增专家未配标签时降级显示 ID 本身。
+ * 标签内容与 expert/<id>/manifest.json 的 displayName 对齐（2026-09-02）。
+ */
+const EXPERT_DISPLAY_NAMES: Record<string, string> = {
+  host: '主持人',
+  'capital-cycle': '资本循环专家',
+  'customer-cycle': '客户循环专家',
+  'talent-cycle': '人才循环专家',
+  tech: '技术专家',
+  'finance-structure': '财务结构专家',
+  'competitive-strategy': '竞争与战略专家',
+};
 
 // ═══ 辅助: 从 GraphStore 加载增长目标 ═══
 
@@ -406,9 +422,11 @@ function TuiApp({ bctx }: { bctx: BootstrapResult }) {
     const sidebarAgg = sidebarAggRef.current;
     expertStatusMap.clear();
 
-    const EXPERT_NAMES: Record<string, string> = {
-      strategy: '战略', org: '组织', finance: '财务', tech: '技术', marketing: '营销', action: '行动',
-    };
+    // D567: 专家集合从 expert-registry.yaml 动态读取（消灭旧 6 位硬编码枚举），
+    // yaml 变更（增删专家）后侧栏自动跟随，无需改代码
+    const EXPERT_NAMES: Record<string, string> = Object.fromEntries(
+      getAllExpertIds().map((id) => [id, EXPERT_DISPLAY_NAMES[id] ?? id]),
+    );
     for (const [id, name] of Object.entries(EXPERT_NAMES)) {
       expertStatusMap.set(id, { name, status: 'queued' });
     }

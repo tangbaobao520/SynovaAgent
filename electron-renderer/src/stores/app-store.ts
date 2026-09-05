@@ -1,4 +1,8 @@
 import { create } from 'zustand';
+// D538: 能力导航纯逻辑契约（状态机/权限/标签）—— store 只消费类型
+import type { SelectedCap } from './capability';
+// D556: GA 协同纯逻辑数据层（seed 身份读取——零 react/zustand，node 可测）
+import { getSeedIdentity } from './ga-collab';
 
 export type OnlineStatus = 'connected' | 'disconnected' | 'connecting';
 export type ActiveView = 'chat' | 'dashboard' | 'settings';
@@ -39,6 +43,9 @@ export interface AppState {
   activeWorkspaceId: string | null;
   searchQuery: string;
 
+  // D538: 左栏能力导航选中态（null = 右栏显示默认三标签）
+  selectedCap: SelectedCap;
+
   // GA 管理 (Phase 3.1)
   activeOrgId: string | null;
   gaClients: ClientInfo[];
@@ -53,6 +60,9 @@ export interface AppState {
   dimensionCovered: number;
   dimensionTotal: number;
 
+  // D575: LLM 未配置黄条（boot 判定 / 「暂不配置」置 true；保存配置置 false）
+  llmUnconfigured: boolean;
+
   // Actions
   toggleLeftPanel: () => void;
   toggleRightPanel: () => void;
@@ -63,10 +73,12 @@ export interface AppState {
   setUserRole: (r: UserRole) => void;
   setActiveWorkspaceId: (id: string | null) => void;
   setSearchQuery: (q: string) => void;
+  setSelectedCap: (cap: SelectedCap) => void;
   setLeftPanelWidth: (w: number) => void;
   setRightPanelWidth: (w: number) => void;
   setDiagnosisInfo: (t: string, c: number, tot: number) => void;
   setCurrentReportId: (id: string) => void;
+  setLlmUnconfigured: (v: boolean) => void;
 
   // GA Actions (Phase 3.1)
   setGaClients: (clients: ClientInfo[]) => void;
@@ -84,17 +96,28 @@ const MOCK_CONVERSATIONS: ConversationInfo[] = [
   { id: 'conv-3', title: '关键人风险评估', preview: '评估了核心岗位风险', updatedAt: new Date().toISOString() },
 ];
 
+/**
+ * bootUserRole — D556 boot seed（spec §7.2）: localStorage 'synova.dev-identity' 存在且
+ * role==='ga' 时初始化 userRole='ga'；无 seed / 非 ga → 'admin'（L98 原语义不变——
+ * DS4: 无 seed 行为与现状完全一致）。seed 仅 dev 语义，D483-D486 落地后由真实 JWT 替代。
+ */
+function bootUserRole(): UserRole {
+  return getSeedIdentity() ? 'ga' : 'admin';
+}
+
 export const useAppStore = create<AppState>((set) => ({
   leftPanelOpen: true, rightPanelOpen: true,
   leftPanelWidth: 240, rightPanelWidth: 320,
   onlineStatus: 'connecting', alertCount: 0, activeView: 'chat', theme: 'dark',
 
-  userRole: 'admin', activeWorkspaceId: null, searchQuery: '',
+  userRole: bootUserRole(), activeWorkspaceId: null, searchQuery: '',
+  selectedCap: null,
   activeOrgId: null,
   gaClients: [],
 
   workspaces: MOCK_WORKSPACES, conversations: MOCK_CONVERSATIONS,
   lastDiagnosisTime: null, currentReportId: null, dimensionCovered: 0, dimensionTotal: 8,
+  llmUnconfigured: false,
 
   toggleLeftPanel: () => set((s) => ({ leftPanelOpen: !s.leftPanelOpen })),
   toggleRightPanel: () => set((s) => ({ rightPanelOpen: !s.rightPanelOpen })),
@@ -105,12 +128,14 @@ export const useAppStore = create<AppState>((set) => ({
   setUserRole: (userRole) => set({ userRole }),
   setActiveWorkspaceId: (activeWorkspaceId) => set({ activeWorkspaceId }),
   setSearchQuery: (searchQuery) => set({ searchQuery }),
+  setSelectedCap: (selectedCap) => set({ selectedCap }),
   setLeftPanelWidth: (leftPanelWidth) => set({ leftPanelWidth }),
   setRightPanelWidth: (rightPanelWidth) => set({ rightPanelWidth }),
   setDiagnosisInfo: (time, covered, total) => set({
     lastDiagnosisTime: time, dimensionCovered: covered, dimensionTotal: total,
   }),
   setCurrentReportId: (reportId) => set({ currentReportId: reportId }),
+  setLlmUnconfigured: (llmUnconfigured) => set({ llmUnconfigured }),
 
   setGaClients: (gaClients) => set({ gaClients }),
   setActiveOrgId: (orgId) => set((s) => ({

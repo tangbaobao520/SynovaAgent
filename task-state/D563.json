@@ -1,0 +1,46 @@
+{
+  "task_id": "D563",
+  "title": "D489 验收返修 diagnosis.ts as never 双处类型窄化",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "commit": "1307cd88",
+    "by": "deepseek-harness",
+    "at": "2026-08-30",
+    "files": [
+      "src/routes/diagnosis.ts",
+      "src/store/session-store.ts",
+      "packages/test-kit/tests/architecture/05-as-any-audit.test.ts",
+      "tests/control-tower/platform-checklist.test.sh",
+      ".claude/task-briefs/2026-09-02-D563-diagnosis-as-never-fix.md",
+      "task-state/D563.json"
+    ],
+    "evidence": [
+      "窄化: diagnosis.ts L181（D489 新增）+L411（存量）as never → isSqliteDatabase 类型谓词（unknown → Database.Database，方法探测 prepare/exec/pragma，非断言）；谓词失败转译 TypeError 走既有 try/catch log.warn 降级——行为零变化（铁律 24/31；SessionStore 构造器 initSchema 对 undefined/非句柄本就抛 TypeError，降级路径等价）",
+      "实测修正: 全仓棘轮扫描器实测 as never = 10（非 brief 假设 9）——D489 带红合并 L181 击穿 D558 基线 9（CT-47 台账）；清理 2 处后实测 = 8 → 基线 9→8（brief「9→7」前提「实测=7」不成立，按 brief 自带条件守卫修正，棘轮只许收紧）",
+      "S-5 先红: main 现状棘轮测试红「as never 存量 10 > 基线 9」（1 failed | 5 passed 物理留痕，非临时加断言）→ 窄化后 6/6 绿",
+      "返工 ①（CTO 验收退回 2026-08-30，commit 1307cd88）: Architecture Check 1d 红 L1→L5 跨层引用 5 处（谓词的 better-sqlite3 类型/注释/消息字样均计红）→ isSqliteDatabase 整体移入 src/store/session-store.ts 导出（谓词归 L5），diagnosis.ts 删 type import 经既有动态 import 通道解构 { SessionStore, isSqliteDatabase }（consult L182 + resume L419），消息改「非 SQLite 句柄」；复验 Architecture 全绿（L1→L3/L1→L4/L1→L5/L3→L5 ✅）+ diagnosis.ts 门禁模式零残留",
+      "返工 ②: G12 brief 日期窗口过期 → git mv 至 2026-08-31-D563-diagnosis-as-never-fix.md（brief Q2 include 补 session-store.ts + Q1c 返工记录）",
+      "返工·第7轮（2026-09-02，CTO 授权全修三件）: ① Iron Laws 红 = 组6 今日 brief 窗口再过期（GITHUB_ACTIONS=true 本地复现「编码变更须有今日 task brief: 1 处」）→ brief 改名 2026-09-02；② gate 双平台红 = platform-checklist.test.sh 存量三联缺陷（探针绝对路径不匹配检查块 ^scripts/ 相对锚定 → 检查空转 + L54 rm 先于 strict 复用 + 点名断言被 ✅ 头行空洞满足；main 巧合 rc2=1 掩盖，本地复现 13/14）→ 修复：相对名注入 + rm 挪至 strict 后 + 断言改命中探针文件名，本地 14/14 全绿（strict 转为正确理由的确定性 exit 1）",
+      "Done verify 全实跑（返工后）: ① grep -c 'as never' src/routes/diagnosis.ts = 0；② npx tsc --noEmit error TS 计数 = 28（基线 28=28 零新增）；③ diagnosis-consult-events 4/4 + diagnosis-session-events 5/5 = 9 passed；④ 棘轮 05-as-any-audit.test.ts 6/6 绿（基线 'as never': 8 不变）；⑤ 接线 grep 两处动态解构调用确认"
+    ],
+    "notes": "自检 5 问: 接线=isSqliteDatabase 为 session-store.ts 新 export，diagnosis.ts 两处动态解构调用（grep 留痕）；异常=两处 catch 均保留原 log.warn + degraded 语义；类型安全=零 as any/零 as never/零 as unknown as（as { prepare?: unknown } 为 AGENTS 铁律 38 认可内联类型式）；测试=棘轮 6 断言非空壳；残留=无死代码（diagnosis.ts 本地谓词定义已删净）。观察项（超范围不修）: CI Vitest job 在 main 上绿但棘轮测试 main 本地红——packages/test-kit 的 vitest 套件疑似未入 CI Vitest（M3 家族同型风险，建议 K3/CTO 关注）"
+  },
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-09-02-D489-D563-D564.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "findings": [
+      "谓词窄化语义零变化：isSqliteDatabase（session-store.ts L40-44 方法探测 + JSDoc 契约）失败 → TypeError → 既有 catch log.warn 降级（consult diagnosis.ts L183-194 / resume L419-436）；与原构造器对非句柄抛 TypeError 等价，降级路径双 catch 收敛",
+      "棘轮基线 8 与全仓一致：ESCAPE_BASELINE L35=8；独立 grep src/=8（全存量 knowledge-agent/bootstrap/im-inbound/server）+ packages 非 test 零 + diagnosis.ts 零 as never/as any/as unknown as；棘轮 6/6 实测（packages/test-kit vitest）",
+      "Architecture Check 全绿（1d L1→L5 无直接数据库操作；diagnosis.ts 零 better-sqlite3 字样）；platform-checklist 14/14（fc4424d5 实际修复该文件，D564 并行同修合并后一致）；tsc 28=28",
+      "PR #313 CI job 级 10/10 success（GitHub API head 2ea9c87b，含 windows Control Tower）",
+      "P1（新确认，M3 家族）：棘轮基线测试未入 CI——根 vitest include 仅 ./tests/**，ci.yml test/architecture job 均不覆盖 packages/test-kit；棘轮只在本地执行，CI 权威通道不覆盖存量逃逸。D563 notes 自注观察项成立。排 FIX 队列（归因 control-tower）"
+    ],
+    "by": "K3",
+    "at": "2026-09-02"
+  },
+  "fix_task_id": null,
+  "updated_at": "2026-09-02",
+  "updated_by": "K3"
+}

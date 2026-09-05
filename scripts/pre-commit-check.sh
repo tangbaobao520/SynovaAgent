@@ -16,12 +16,12 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 # v3.6 → v3.8 核心变化 (2026-06-23):
 #   + plan.json 支持: 分阶段任务可 deferred wiring/test_pairing 检查
 #   + 双日志: pre-commit-failures.log (门禁正常拒绝) vs bypass.log (--no-verify 绕过)
-#   + as any 跳过注释行 (不再把 "Iron law #38: as any = 0" 误报为违规)
+#   + as any 跳过注释行 (不再把 "Iron law #38: as any = 0" 误报为违规)；CT-46 扩 as never / as unknown as
 #   + bash 退位: 只做物理验证 (符号存在? 文件存在? 语法合法?)
 #   + agent 进位: 语义判断 (调用链正确? 降级诚实? 阶段合理?)
 #
 # 13 组:
-#   1. 类型安全 + 硬编码数据    (as any 跳过注释行 + 硬编码业务字段)
+#   1. 类型安全 + 硬编码数据    (as any / as never / as unknown as 跳过注释行 + 硬编码业务字段)
 #   2. 测试质量                  (catch 无 log + 测试配对[可 deferred] + 桩测试)
 #   3. Secrets                   (全工作区 + .claude/ + 暂存区 + .env)
 #   4. 接线完整性               (new export 有调用方[可 deferred] + 接线深度)
@@ -88,13 +88,15 @@ soft_check() {
   local count=0
   [ -n "$matches" ] && count=$(echo "$matches" | grep -c . 2>/dev/null) || count=0
   if [ "$count" -gt 0 ]; then
-    echo -e "  ${YELLOW}⚠️  ${name}: ${count} 处  [V5 软提示——CI 为权威，本地不阻断]${RESET}"
-    echo "$matches" | head -8 | while read -r line; do [ -n "$line" ] && echo "     ${line}"; done
+    # D542: CI strict 下必须显示 ❌（此前显示 ⚠️ 导致「N 组未通过」在日志中找不到对应组——M1 类失败不点名）
     if [ "${SYNO_CI:-0}" = "1" ]; then
-    HARD_FAIL=$((HARD_FAIL + 1))  # D516 CI strict
-  else
-    SOFT_COUNT=$((SOFT_COUNT + 1))
-  fi
+      echo -e "  ${RED}❌ ${name}: ${count} 处  [CI strict——软提示在 CI 上为硬阻断]${RESET}"
+      HARD_FAIL=$((HARD_FAIL + 1))  # D516 CI strict
+    else
+      echo -e "  ${YELLOW}⚠️  ${name}: ${count} 处  [V5 软提示——CI 为权威，本地不阻断]${RESET}"
+      SOFT_COUNT=$((SOFT_COUNT + 1))
+    fi
+    echo "$matches" | head -8 | while read -r line; do [ -n "$line" ] && echo "     ${line}"; done
     log_gate "$name" hit
   else
     echo -e "  ${GREEN}✅ ${name}${RESET}"
@@ -152,13 +154,15 @@ warn_check() {
   local count=0
   [ -n "$matches" ] && count=$(echo "$matches" | grep -c . 2>/dev/null) || count=0
   if [ "$count" -gt 0 ]; then
-    echo -e "  ${YELLOW}⚠️  ${name}: ${count} 处  [警告]${RESET}"
-    echo "$matches" | head -5 | while read -r line; do [ -n "$line" ] && echo "     ${line}"; done
+    # D542: CI strict 下必须显示 ❌（与 soft_check 同修——失败不点名则「N 组未通过」无法定位）
     if [ "${SYNO_CI:-0}" = "1" ]; then
+      echo -e "  ${RED}❌ ${name}: ${count} 处  [CI strict——历史 WARN 类在 CI 也转硬]${RESET}"
       HARD_FAIL=$((HARD_FAIL + 1))  # D516 CI strict: 历史 WARN 类在 CI 也转硬
     else
+      echo -e "  ${YELLOW}⚠️  ${name}: ${count} 处  [警告]${RESET}"
       WARN_COUNT=$((WARN_COUNT + 1))
     fi
+    echo "$matches" | head -5 | while read -r line; do [ -n "$line" ] && echo "     ${line}"; done
   fi
 }
 
@@ -464,8 +468,10 @@ if [ -n "${SYNO_DIFF_BASE:-}" ]; then
 else
   AS_ANY_DIFF="$(git diff --cached -- src/ packages/ ':(exclude)**/*.test.ts' ':(exclude)**/*.test.tsx' ':(exclude)**/*.d.ts' 2>/dev/null || true)"
 fi
-M=$(echo "$AS_ANY_DIFF" | grep -E '^\+' | grep -v '^+++' | grep -E 'as any\b' | grep -vE '^\+\s*(//|/\*|\*|#)' || true)
-hard_check "as any 零容忍（新增，铁律 38；存量独立清理）" "$M"
+# CT-46 (K3 GA 线闭环批, 2026-08-29): 模式扩 as never / as unknown as——mcp/index.ts L236 `getDatabase() as never`
+#   实证组 1 只匹配 as any 字面量存在逃逸盲区；双断言链 as unknown as 同属类型信任崩溃（铁律 38 精神）。
+M=$(echo "$AS_ANY_DIFF" | grep -E '^\+' | grep -v '^+++' | grep -E 'as (any|never)\b|as unknown as' | grep -vE '^\+\s*(//|/\*|\*|#)' || true)
+hard_check "as any / as never / as unknown as 零容忍（新增，铁律 38；存量独立清理）" "$M"
 
 # 1a-2. from" ???? (D93/D95 ????)
 # ??: Claude Code ?????? import ??????? from ?????
@@ -747,7 +753,7 @@ TODAY=$(date +%Y-%m-%d)
 BRIEF=$(bash "$ROOT/scripts/workflow/resolve-commit-brief.sh" "$STAGED_ALL" 2>/dev/null || true)
 CLEANUP_CLAIM=""
 if [ -n "$BRIEF" ] && [ -f "$BRIEF" ]; then
-  if grep -qi "拆分\|迁移\|清理.*完成\|已拆\|已迁移\|已清理" "$BRIEF" 2>/dev/null; then
+  if grep -qi "已拆\|已迁移\|已清理\|拆分.*完成\|迁移.*完成\|清理.*完成\|完成.*拆分\|完成.*迁移\|完成.*清理" "$BRIEF" 2>/dev/null; then  # swallow-ok: brief 不可读→grep 静默→CLEANUP_CLAIM 空（拆分/迁移裸词不作完成声称，避免误伤工作描述）
     CLEANUP_CLAIM="task brief 声称拆分/迁移/清理完成 — 请确认 grep -r 'packages/engine-core' src/ 零结果"
   fi
 fi
@@ -768,29 +774,54 @@ warn_check "铁律 47: 声称完成须 grep 物理证明" "${CLEANUP_CLAIM:-}"
 echo ""
 echo -e "${CYAN}── 组 6/13: Task Brief (6 核心字段) ──${RESET}"
 
-# D515 项1: 并行隔离软告警 — 主树提交时活跃 session>1（CI 权威原则，本地只告警不阻断；
-#   开工端的硬拦截在 task-start.sh——那才是防互踩的第一道闸）
-_ACTIVE_SESS_WARN=""
-if [ "${SYNO_SKIP_PARALLEL_WARN:-0}" != "1" ]; then
+# ═══ D537 #2: 主树占用检测前移（M8 变体治本——P1 清单落地）═══
+# 病根: 并行污染只拦"新开工"（task-start），不拦"存量"（已在主树工作的 session 直接
+#   提交）→ M8 变体第四次复发（D394→D481/482→D486）。检测前移到 pre-commit（物理门禁、
+#   每次提交强制）——修根因非症状。
+# 三态:
+#   拦   — 主树脏 + 近期活跃 session > 1（有并行 session 在主树工作）
+#   放行 — worktree 内（物理隔离）/ 单 session（无并行风险）/ 主树干净
+#   降级 — registry 不可读（铁律 11，显式提示不硬拦）
+# 活跃判定 = last_seen_at 在 SYNO_PARALLEL_WINDOW（默认 1800s）内（synova-commit 每次
+#   register 刷新 last_seen_at，比 pid 更可靠——pid=None 的僵尸 session 不误拦）。
+#   复用 session_registry.py list --active（同一信号源，不新建 registry）。
+_PAR_BLOCK_MSG=""
+if [ "${SYNO_SKIP_PARALLEL_GUARD:-0}" != "1" ] && [ "${SYNO_SKIP_PARALLEL_WARN:-0}" != "1" ]; then
   case "$(git rev-parse --git-dir 2>/dev/null || echo '')" in
-    *"/.git/worktrees/"*) : ;;  # worktree 内本就物理隔离，不告警
+    *"/.git/worktrees/"*) : ;;  # worktree 内 → 物理隔离已成立，放行
     *)
-      if [ -f "$ROOT/scripts/control-tower/session_registry.py" ]; then
+      # 主树脏检测: 有任何未提交改动（暂存/未暂存）→ 有 session 在主树工作
+      _MAIN_DIRTY="$(git -C "$ROOT" status --porcelain 2>/dev/null | head -1 || true)"
+      if [ -n "$_MAIN_DIRTY" ] && [ -f "$ROOT/scripts/control-tower/session_registry.py" ]; then
         _ACT_JSON=$(python3 "$ROOT/scripts/control-tower/session_registry.py" list --active 2>/dev/null </dev/null || true)
         if [ -n "$_ACT_JSON" ]; then
-          _ACT_N=$(echo "$_ACT_JSON" | python3 -c "import json,sys;print(len(json.load(sys.stdin).get('sessions',[])))" 2>/dev/null | tr -d '\r\n' || echo "")
-          _ACT_N="${_ACT_N//[^0-9]/}"  # D520/任务1: 同型加固——数字清洗防 CRLF 残留致算术错误
+          _ACT_N=$(echo "$_ACT_JSON" | python3 -c "
+import json,sys,os,datetime
+d=json.load(sys.stdin)
+ss=d.get('sessions',[])
+window=int(os.environ.get('SYNO_PARALLEL_WINDOW','1800'))
+now=datetime.datetime.now(datetime.timezone.utc)
+def recent(s):
+    try:
+        t=datetime.datetime.fromisoformat(s.get('last_seen_at',''))
+        if t.tzinfo is None: t=t.replace(tzinfo=datetime.timezone.utc)
+        return (now-t).total_seconds() < window
+    except Exception:
+        return False
+print(sum(1 for s in ss if recent(s)))
+" 2>/dev/null | tr -d '\r\n' || echo "")
+          _ACT_N="${_ACT_N//[^0-9]/}"  # D520/任务1: 数字清洗防 CRLF 残留致算术错误
           if [ -n "$_ACT_N" ] && [ "$_ACT_N" -gt 1 ]; then
-            _ACTIVE_SESS_WARN="主树提交时检测到 ${_ACT_N} 个活跃 session — 建议 worktree 物理隔离: python3 scripts/control-tower/worktree-manager.py create <任务名>"
+            _PAR_BLOCK_MSG="主树有未提交改动且 ${_ACT_N} 个近期活跃 session — 并行互踩风险（M8）: python3 scripts/control-tower/worktree-manager.py create <任务名>"
           fi
         else
-          _ACTIVE_SESS_WARN="session-registry 不可读 — 并行隔离检查降级（铁律 11，不静默）"
+          echo -e "  ${YELLOW}⚠️  主树占用检测: session-registry 不可读 — 降级放行（铁律 11）${RESET}"
         fi
       fi
       ;;
   esac
 fi
-warn_check "V5 并行隔离: 活跃 session 数" "${_ACTIVE_SESS_WARN:-}"
+hard_check "主树占用检测 (D537 #2): 主树脏 + 多活跃 session" "${_PAR_BLOCK_MSG:-}"
 
 
 
@@ -825,6 +856,17 @@ if [ -n "$STAGED_SRC" ]; then
 fi
 soft_check "Task Brief: 编码变更须有今日 task brief" "${TASK_BRIEF_MISSING:-}"
 soft_check "Task Brief: 6 核心字段必须填写 (Q0/Q1/Q2/Q3/架构层/Done)" "${TASK_BRIEF_EMPTY:-}"
+
+# D547 教训固化（物理门禁，非台账）：alloc-task-id 生成的骨架 brief 含 <agent>/<本任务在哪一层>
+#   占位符，不得随派单提交进 main——曾致 check-plan-integrity 在 CI 回退命中占位符，
+#   全局阻断所有非 docs PR（D544/D546 实证）。同类失误第三次复发 → 升级为物理硬阻断。
+SKEL_BRIEF=""
+for bf in $(echo "$STAGED_ALL" | grep -E '^\.claude/task-briefs/.*\.md$' || true); do
+  if [ -f "$ROOT/$bf" ] && grep -q '认领: <agent>\|<本任务在哪一层' "$ROOT/$bf" 2>/dev/null; then
+    SKEL_BRIEF="${SKEL_BRIEF}  ${bf}（alloc-task-id 骨架占位符未填）\n"
+  fi
+done
+hard_check "骨架 brief 占位符检测（认领 agent 填写后提交，禁提交骨架）" "${SKEL_BRIEF:-}"
 
 # V4.5.1: 时间戳顺序检查 — PreToolUse 发现 brief 未填就写代码时记录证据到 /tmp/
 # 此文件在 git 之外，不能被 git checkout 抹掉。必须显式 rm 才能解除阻断。

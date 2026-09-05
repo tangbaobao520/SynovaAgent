@@ -39,7 +39,7 @@ export interface SubAgentReport {
   qualityWarnings?: string[];
   /** 降级标记: 本专家因数据不足/防火墙拒绝/异常而无法产生有效结论 */
   degraded?: boolean;
-  /** 降级原因描述 (供下游展示给 FDE) */
+  /** 降级原因描述 (供下游展示给 GA) */
   degradedReason?: string;
 }
 

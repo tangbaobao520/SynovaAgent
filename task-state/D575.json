@@ -1,0 +1,60 @@
+{
+  "task_id": "D575",
+  "title": "LLM 配置首启向导——借鉴 DSH credential seam（打开产品第一步即配置）",
+  "status": "impl_done",
+  "spec": {
+    "commit": "6517c052",
+    "note": "spec 随编码首个 commit 同批提交（消解 §3.3.1 预登记漂移）；写集表两处测试路径 + server.ts 挂载位按编码实测修正（注记在案）"
+  },
+  "impl": {
+    "commit": "6517c052",
+    "by": "dsh",
+    "branch": "feat/d575-llm-first-run-config",
+    "slice": "llm-first-run-config",
+    "files": [
+      "src/services/llm-credential-store.ts",
+      "src/routes/llm-config.ts",
+      "src/config.ts",
+      "src/server.ts",
+      "electron-renderer/src/stores/llm-config.ts",
+      "electron-renderer/src/components/LlmSetupCard.tsx",
+      "electron-renderer/src/components/WelcomeScreen.tsx",
+      "electron-renderer/src/components/StatusBar.tsx",
+      "electron-renderer/src/App.tsx",
+      "electron-renderer/src/stores/app-store.ts",
+      "tests/services/llm-credential-store.test.ts",
+      "tests/routes/llm-config.test.ts",
+      "tests/llm-config-frontend.test.ts"
+    ],
+    "tests": {
+      "total": 64,
+      "files": "store 单元 12 / API 集成 21（真实路由+stub 上游，铁律 12）/ 前端逻辑+渲染 31",
+      "red_green": "实现前 21 用例证 red（路由 404 + 模块缺失），实现后 64/64 green（evidence/D575/red-first-run-full.txt → green-d575-tests.txt）"
+    },
+    "evidence": "evidence/D575/（12 件：README + red/green 测试输出 + DS7 GUI 双重启截图 ×3 + DS8/DS9 生产态证据 + 全量 vitest worktree/main 基线对比 + 生产态探测）",
+    "ds_status": {
+      "DS1": "✅ G1 零 DSH 依赖",
+      "DS2": "✅ store 单元全绿",
+      "DS3": "✅ API 集成全绿（含热重载同进程断言）",
+      "DS4": "✅ config.ts 接线（§8 grep 全过 + tsc 28 错=main 基线同数零新增）",
+      "DS5": "✅ 前端测试全绿",
+      "DS6": "⏸ 部分——冷启动向导渲染 + 黄条 + 预填已截图（e2e-ds6-first-run-wizard.png）；『真实 key→测试连接绿→发起诊断』需创始人提供真实 DeepSeek key（指令 §三-4 诚实标注）",
+      "DS7": "✅ GUI 级双重启闭环（存凭证→重启跳过向导；删文件→重启向导再现，截图 ×2）",
+      "DS8": "✅ 生产态 API 级（PID 不变 + config/llm-changed 事件 + POST 后 GET 立即新值）；集成测试同进程断言为自动化代理",
+      "DS9": "✅ API 级（真实 DeepSeek 401→『密钥无效，请重新粘贴』）+ 0600 指纹 + synova.json 零 key + 日志零 key",
+      "DS10": "✅ 全量 vitest 失败集与 main 基线同源（环境态差异，零 D575 新增）+ as any/never/unknown-as 零命中",
+      "DS11": "✅ evidence 落盘 + task-state 回填 + spec 同批提交"
+    },
+    "deviations": [
+      "测试路径: spec 原声明 tests/llm-credential-store.test.ts、tests/llm-config-api.integration.test.ts → 实际 tests/services/、tests/routes/（pre-commit 组 2b 配对映射 CI 权威硬阻断；tests/routes/*.test.ts 既有惯例，sessions-api.test.ts 先例）；用例内容 100% 保留，spec §3.3.1/§7/§11 已同步修正+注记",
+      "挂载位: llmConfigRoutes 实际挂载于 jwtAuthMiddleware 之前——编码实测全局 JWT 拦截 L340 位置（credentials.ts 生产态同样 401，spec §3.1『无认证中间件』仅路由层成立）；spec §6 决策 5 首启无用户系统必须可用 → server.ts 写集内实现，spec 已注记",
+      "E2E DS6 全链路 ⏸ 需创始人真实 DeepSeek key（指令 §三-4 预授权诚实标注）；等价证据链已交付"
+    ],
+    "env_notes": "DSH shell ELECTRON_RUN_AS_NODE=1 须 env -u 剥离；Chromium 沙箱受限须 --no-sandbox --user-data-dir（workspace 内）；复现步骤见 evidence/D575/README.md"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-05",
+  "updated_by": "dsh",
+  "note": "D# 手动占用：alloc 给了 D573 但该号已被在途分支 chore/d573-fde-to-ga-terminology 占用（alloc 只查 origin/main 看不到在途分支，D550 同型根因）；D574 已用，取 D575。alloc 的在途分支盲区登记 CT-54 候选。2026-09-05 编码交付 impl_done，待创始人统一安排 K3 审计。"
+}

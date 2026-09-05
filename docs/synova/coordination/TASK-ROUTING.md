@@ -13,7 +13,7 @@
 | 谁 | 管什么 | 打比方 |
 |----|--------|--------|
 | **Mac DSH** | 控制塔 + 验证系统 + 门面（MCP/桌面）+ **哨兵体系核心代码** + 主 CTO（盯全局） | 建仪表盘 + 修哨兵 + 总管家的人 |
-| **Win Claude** | 产品核心（诊断体系 FDE + 本体/存储/交互） | 修发动机的人 |
+| **Win Claude** | 产品核心（诊断体系 GA + 本体/存储/交互） | 修发动机的人 |
 | **Codex** | Claude 线 dev doc + Claude 线 D# 分配（**不再跟仪表盘**） | 画图纸的人 |
 | **K3**（双轨：Win Kimi CLI + Mac DSH+K3） | 验收（审两边） | 监理 |
 | **你** | 定产品 + 点 Merge + 看评估看板 | 老板 |
@@ -35,7 +35,7 @@
 | src/mcp/ | **Mac DSH** | MCP 企业接入 |
 | electron/ + electron-renderer/ | **Mac DSH** | Electron 一体化 |
 | scripts/control-tower/ + scripts/backup/ + 门禁脚本 + docs/synova/coordination/ + DSH 预设与技能 | **Mac DSH** | 控制塔持续维护 |
-| **src/（除 sentinel/cron/mcp 外）L1-L5 + extensions/ + packages/ + synova_worker/** | **Win Claude Code** | 诊断体系（FDE 6阶段）+ 本体/存储/交互 |
+| **src/（除 sentinel/cron/mcp 外）L1-L5 + extensions/ + packages/ + synova_worker/** | **Win Claude Code** | 诊断体系（GA 6阶段）+ 本体/存储/交互 |
 | docs/计划库（Claude 线 dev doc） | **Codex (Win)** | Claude 线 dev doc + Claude 线 D# 分配 + 任务登记 |
 | scripts/audit/ + 审计标准 | **Kimi K3** | 红线：其他角色禁碰 |
 
@@ -106,12 +106,13 @@
 | 模块/区域 | 状态 |
 |-----------|------|
 | scripts/control-tower/ + coordination + DSH 预设/技能 | 进行中·DeepSeek Harness |
-| src/sentinel/ + src/cron/（哨兵切片） | 进行中·DeepSeek Harness（编码线 2026-08-16 认领；**D379 path-dependency 空壳补实现** 进行中，**D356 P0 阈值告警接线** spec 已交付待实现） |
+| src/sentinel/ + src/cron/（哨兵切片） | 进行中·DeepSeek Harness（编码线 2026-08-16 认领；D379 path-dependency 补实现、D356 P0 阈值告警接线 均已交付 audited PASS；**D577 哨兵阈值配置真实挂载 spec 进行中·synova-devdoc 2026-09-05**，派单 docs/synova/coordination/派单-D577-sentinel-threshold-wiring-20260905.md） |
 | src/ 其余业务（诊断体系 L1-L5） | Win Claude Code 主力（**D355-D360 P0 全链路修复进行中**；D391 已完成；部署后负载 D394片2/D397'/D398）。**D357（L5 连接器 src/connectors/）= 🟢 死守层，Win 继续开发**（施工图 DOC-0114 §3 第75行明确归 🟢 领域核心，非 🔵 借DSH；终态经 MCP 消费，但连接器本体持续投入）——GS 场景脚本归 Mac Harness 但 GS-02/GS-04 依赖 D357，等 Win 交付后跑通 |
 | scripts/product-lines/ + 双仪表盘 | DeepSeek Harness（主导） |
 | scripts/golden-scenarios/ | 进行中·DeepSeek Harness |
 | 战略借鉴（**K3 咨询定序**）：D396 + D394 片1 + D395-a + D402 = **dev-doc 线写 spec 中**（派活 brief 就绪，启动指引 docs/synova/coordination/DEV-DOC-DISPATCH-20260816.md）；D394 片2/D397'/D398 = Win 部署后 | 进行中·synova-devdoc（2026-08-16 派活） |
 | scripts/audit/ | Kimi K3 专属（双轨：Win + Mac） |
+| electron-renderer GaDetail + src/loops/middle-evolution-engine + tests（GA 人机协同端到端·D556，slice ga-collab-e2e） | spec 已交付·dev-doc（DSH 线 2026-08-29：docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D556-ga-collab-e2e-20260829.md；前端接线 + 回流层 2 → 待编码 → K3 → CTO 合并；task-state/D556.json spec_done） |
 | **DSH 迁移轨（Stage 0-4）** | 当前全部冻结（施工图 §6：Stage 0 部署后 / Stage 1 9~10月 / Stage 2 10~11月 / Stage 3 Q4评估 / Stage 4 影子后）。Stage 1（D1-D4 范式借鉴）归 **Mac DSH**；Stage 0（⚫删除+AGENTS.md漂移）归 **Mac DSH**（部署后）；Stage 2-4 未分配。详见 docs/synova/coordination/DSH-迁移分工规划-20260821.md |
 
 ## 五、认领/交还流程（不变）

@@ -19,7 +19,16 @@ scripts/control-tower/attach.py — D314 SessionStart 轻量 attach
 
 用法: python3 attach.py --session-id <id> [--tool <tool>] [--brief <path>] [--parallel]
 支持 SYNO_CT_DIR 注入（测试隔离）。
+
+D539: 启用延迟注解求值（from __future__ import annotations）——本模块用 `str | None`
+等 PEP 604 联合类型注解，Python 3.9 缺 `X | Y` 运行时求值（TypeError），导致此前
+attach.py 在本机 Python 3.9 下全程无法加载（hook-session-start.sh 的调用被 2>/dev/null
+静默吞掉 → CT-42 的 current-brief.<sid> 写入从未真正执行）。延迟求值（字符串化注解）
+是 PEP 563 官方兼容手段，Python 3.10+ 下语义不变，3.9 下可加载，便于本模块的
+「不 clobber」（D539）改动做真实行为验证。
 """
+from __future__ import annotations
+
 import json
 import os
 import shutil
@@ -170,8 +179,16 @@ def _run_current_brief_snapshot(session_id: str, brief: str | None) -> None:
     --brief 参数，否则快照全局 current-brief（会话启动时的活跃 brief）；
     均无 → 不写（无 brief 可快照，不产生空文件）。fail-open: 写失败仅
     degraded 记录，绝不阻断会话启动（铁律 24/31）。
+
+    D539（CT-42 写侧闭环）: 若 current-brief.<sid> 已存在则跳过（不 clobber）——
+    task-start.sh 在任务启动时写 current-brief.<sid> 是权威写方（最新 brief），
+    attach 的 SessionStart snapshot 若覆盖它会把最新指向冲成过期。已存在 →
+    尊重 task-start 权威写入，绝不覆盖（Anthropic: 写方一致性）。
     """
     try:
+        target = REPO_ROOT / ".claude" / f"current-brief.{session_id}"
+        if target.exists():
+            return  # D539: 已存在 → 不 clobber（task-start 为权威写方）
         brief_name = Path(brief).name if brief else None
         if not brief_name:
             global_cb = REPO_ROOT / ".claude" / "current-brief"
@@ -181,9 +198,7 @@ def _run_current_brief_snapshot(session_id: str, brief: str | None) -> None:
                 ).strip() or None
         if not brief_name:
             return
-        (REPO_ROOT / ".claude" / f"current-brief.{session_id}").write_text(
-            brief_name + "\n", encoding="utf-8"
-        )
+        target.write_text(brief_name + "\n", encoding="utf-8")
     except Exception as exc:
         _degraded("attach.current-brief", str(exc))
 

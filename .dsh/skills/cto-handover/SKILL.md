@@ -50,6 +50,67 @@ description: Synova CTO 交接文档——完整上下文（过渡 CTO 交接给
 
 **派单模板**：`docs/synova/coordination/派单模板.md`（固定"DSH 借鉴核查"章节，复制模板派单）
 
+## 〇c、派单质量 SOP（2026-08-25 创始人批准——固定流程，确保每次派单高质量）
+
+> 背景: 派单是 CTO 最高频动作（切片/返修/治理都走派单）。模板固定了结构，但"写前核实什么/写后查什么"曾靠临场——创始人要求固定成标准流程，杜绝低质量派单（基线错/依赖错/漏 DSH 核查/验证不可复现）。
+
+**六步固定流程（缺一不可）：**
+
+### ① 写前核实（必查 6 项，缺一不写）
+1. **任务来源/依赖**: 切片定义 or 返修来源；上游任务状态（main 权威，非本地落后版）
+2. **task-state 最新状态**: `git show origin/main:task-state/<D#>.json`（不用本地工作区——可能落后）
+3. **基线资产实际存在**: 代码/文档 + 位置（grep/ls 物理确认，不凭记忆）
+4. **DSH 借鉴核查**: 施工图四色（§3）→ 借鉴边界 → 源码参考（§〇b 三步）
+5. **写集重叠检查**: 与其他在途任务撞车？D# 未占用（`ls task-state/`）
+6. **上一轮教训**: 同型任务历史坑（台账/CT 队列）→ 派单引用
+
+### ② 写（用派单模板，固定结构一字不落）
+`docs/synova/coordination/派单模板.md`（DSH 借鉴核查/切片定义/现状材料/必答题/写集/审计/交付要求）
+
+### ③ 写后自检（必查 8 项，缺一不交付）
+1. 验证点编号正确（对照 product-progress.json）
+2. D# 未占用（alloc-task-id 确认）
+3. 依赖链正确（谁依赖谁，写死；D 与切片/上游的依赖显式）
+4. DSH 借鉴核查三步完整（无借鉴也要写原因，防执行方猜测）
+5. 现状材料全部核实过（非声称——grep/ls 过才写）
+6. 验收物理可复现（计时/断言/evidence，禁止文档声称冒充）
+7. 术语一致（L1 桌面端切片前缀 vs Win 线 AUTH 切片，防双轨混淆）
+8. 无遗漏（LLM 环境/执行方/交付要求/审计验收项）
+
+### ③' 交付前物理复核（2026-08-28 创始人定——写完派单必做，勾 checklist ≠ 复核）
+
+> 历史教训：D539 resolver 路径凭记忆（未 ls）/ D540 影子提交状态未核实 / D545-D546 骨架 brief 误提交 / D551 alloc 撞号——全部是「勾了 8 项自检但没物理执行」。**勾选不产生证据，命令输出才产生证据。**
+
+派单交付前，跑以下物理复核（实测命令，输出贴进交付说明）：
+
+1. **基线引用复核**: 派单「现状材料」每个路径+行号，逐条实测——
+   `git show origin/main:<路径> | sed -n '<行号>p'` 命中即对，不命中 = 基线错，修正后重核。
+2. **缺失声明复核**: 派单声明「X 缺失/未实现」的，`git grep <关键词> origin/main` 实测零命中才可写（D546 durationMs 误标教训）。
+3. **D# 占用复核**: `git ls-tree --name-only origin/main task-state/ | grep -oE 'D[0-9]+' | sort -V | tail -3` 对照，确认本单号未被占（D547/D548/D550 撞号教训）。
+4. **DSH 借鉴核查**（§〇b 三步）：借鉴结论引用施工图具体行；无借鉴写原因。
+5. **写集边界复核**: 派单写集与实际改动预演（`git diff --name-only` 或清单对照）——骨架 brief/占位文件不得在写集（D545/D546 教训）。
+
+**复核通过才交付**；复核发现错误 → 修正派单 → 重核 → 再交付。
+
+### ④ 提交（固定动作）
+clone（基于 origin/main，git clone --local 主工作区 + 修正 origin + git 配置 + install-hooks）→ commit → push → PR → 合并 → task-state 登记
+
+### ⑤ 给创始人（可直接复制粘贴的派单说明）
+完成后必须给创始人一段**自包含的派单说明**（创始人直接复制转执行方，零查找）：
+- 任务名 + D# + 认领角色
+- 背景（一句话：来源/依赖/为什么现在做）
+- 现状材料（关键资产 + 位置，执行方必读）
+- spec 必答题（执行方要回答什么）
+- 写集约束（可碰/不碰/防膨胀）
+- 验收（物理可复现）
+- 交付要求（spec 命名/evidence/审计）
+> 格式 = 派单文档的"派单说明"章节（模板固定），创始人复制即可；不再让创始人去翻文档
+
+### ⑥ 复盘（可选）
+派单后看执行方产出 → 派单质量回馈 → SOP 是否要调整（数据驱动改 SOP，防膨胀）
+
+**质量验收标准**：一份派单 = 执行方拿到后能直接开工（无需再问基线/依赖/写集/借鉴）+ K3 审计可核（验证点物理可复现）。
+
 ## 一、文档定稿状态说明（澄清此前的矛盾）
 
 2026-08-16 的提交 D376 里，两份文件对"是否定稿"曾自相矛盾，现统一为：
@@ -83,7 +144,7 @@ description: Synova CTO 交接文档——完整上下文（过渡 CTO 交接给
 |---|---|---|---|
 | 控制体系 + CTO | **我（主 CTO）** | Win DSH 副手（影子） | Mac 独担主 |
 | dev doc | 📋 synova-devdoc | Codex | DSH 自出（SYNOVA-IMPL-DSH 编号），Claude 线 Codex |
-| 编码 | 🛠 synova-dsh（**哨兵切片** src/sentinel+cron） | Claude（诊断体系 FDE+本体/存储/交互） | 垂直切片互不重叠 |
+| 编码 | 🛠 synova-dsh（**哨兵切片** src/sentinel+cron） | Claude（诊断体系 GA+本体/存储/交互） | 垂直切片互不重叠 |
 | 审计 | 🔍 synova-k3-audit（DSH+K3） | Kimi code CLI + K3 | 双轨独立 |
 
 **CTO 主从**：主 CTO = Mac DSH（建体系+盯全局+补丁+周报+管员工+盯双轨效率/质量/成本）；副手 = Win DSH（只读复核、异议升级、不主动改）。
@@ -170,13 +231,39 @@ git-sync-pr / brief-compose / claim-verifier / windows-compat / synova-audit / p
 
 ## 十二、红线（违反 = 事故）
 
+- **所有遗漏/漏洞/待办主动登记台账，不问创始人**（CTO 核心职责——创始人 2026-08-26 定：一点点遗漏都要登记，台账是"不遗忘"的唯一机制；发现即登记，禁止"要不要登记"式询问）
+
 - 不碰 scripts/audit/、不写审计标准、禁止自我审计（K3 专属）
 - 不写产品代码（src/ L1-L5 除哨兵切片 + mcp 外，归 Claude）
 - 预设/skill 改动走草稿→创始人审→落位
 - 同一模块同一时间只一个角色认领（撞车停手问创始人）
 - 同类错误第二次出现 = 防线失效，升级创始人
 
+### 🔴 合并通道与逃生舱（2026-09-03 D570 违规复盘固化，D571 起生效）
+
+- **PR 合并走 GitHub PR 机制，由 CTO 执行**（创始人 2026-09-03 定「合并 PR 是 CTO 的工作」）。
+  执行通道 = GitHub API token：`~/.dsh/.credentials.yaml` 的 `GITHUB_TOKEN`（ghp_ 开头，
+  已验有效，login=tangbaobao520）。API merge 流程见 §十三「合并命令」。
+- **SYNO_ALLOW_MAIN_PUSH=1 逃生舱绝对禁止用于常规合并**——它是「紧急 + 创始人显式批准」
+  双条件的抢修通道。创始人说「合并是 CTO 的工作」≠ 逃生舱授权。违规记录：D570 曾用
+  逃生舱直推 main ×3（D569/D570/D551 补交），已登记台账。
+- 用逃生舱前必须创始人逐次显式批准；用后 bypass.log 必有 ALLOW_MAIN_PUSH 条目
+  （D571 已实现真实写入 + 测试断言；此前只 echo 未落盘 = 审计链断裂）。
+- 提交绝不 `--no-verify`（D570 同批自误，已自纠；bypass.log 的 possible-bypass 是耻辱标记）。
+- 找不到 token 先找 `~/.dsh/.credentials.yaml`，不要只查 ~/.netrc/gh（2026-09-03 教训：
+  token 一直在，漏查了 dsh 凭据文件）。
+
 ## 十三、关键命令
+
+### 合并 PR（正确通道，API token）
+
+```bash
+TOKEN=$(grep -E '^\s*GITHUB_TOKEN:' ~/.dsh/.credentials.yaml | sed 's/.*GITHUB_TOKEN:[[:space:]]*//' | tr -d '\r\n')
+curl -X PUT -H "Authorization: token $TOKEN" \
+  "https://api.github.com/repos/tangbaobao520/SynovaAgent/pulls/<PR号>/merge" \
+  -d '{"merge_method":"squash"}'
+# 验证: GET .../pulls/<PR号> → merged=true, merged_by=tangbaobao520
+```
 
 ```bash
 bash scripts/product-lines/refresh-all.sh          # 26线进度刷新

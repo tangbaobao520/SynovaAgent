@@ -1,0 +1,30 @@
+{
+  "task_id": "D542",
+  "title": "ci-strict-visible-fail",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "by": "CTO",
+    "at": "2026-08-28",
+    "branch": "fix/d542-ci-strict-visible",
+    "files": [
+      "scripts/pre-commit-check.sh",
+      "tests/control-tower/ci-strict-visible.test.sh"
+    ]
+  },
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-08-28-D540-D547-governance-closeout.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "findings": [
+      "计数语义零变化：HARD_FAIL/SOFT_COUNT/WARN_COUNT 加减条件原样（仅显示分支 ⚠️→❌ 重排）",
+      "配对测试 6/6 绿",
+      "P2: ci-strict-visible.test.sh 未入 CI 密封清单（见 P1-3）"
+    ],
+    "by": "K3",
+    "at": "2026-08-28"
+  },
+  "fix_task_id": null,
+  "updated_at": "2026-08-28",
+  "updated_by": "K3"
+}

@@ -1,0 +1,45 @@
+{
+ "task_id": "D538",
+ "title": "前端交互实现：左栏 Codex 风格（产品独有能力导航）",
+ "status": "impl_done",
+ "spec": {
+  "doc": "docs/synova/coordination/SYNOVA-IMPL-DSH-前端交互设计-左栏Codex风格-v1.md",
+  "dispatch": "docs/synova/coordination/派单-D538-前端左栏Codex-20260826.md",
+  "source": "Win 侧 Codex 推送设计规格",
+  "slice": "frontend-leftbar"
+ },
+ "impl": {
+  "commit": "d2b183a1",
+  "by": "deepseek-harness",
+  "at": "2026-08-27",
+  "files": [
+   "electron-renderer/src/stores/capability.ts",
+   "electron-renderer/src/stores/app-store.ts",
+   "electron-renderer/src/components/LeftPanel.tsx",
+   "electron-renderer/src/components/RightPanel.tsx",
+   "electron-renderer/src/styles/global.css",
+   "electron-renderer/package.json",
+   "electron-renderer/package-lock.json",
+   "tests/electron/capability.test.ts"
+  ]
+ },
+ "audit": {
+  "report": "docs/synova/audit-reports/2026-08-28-D501-D550-impl-done-batch.md",
+  "verdict": "PASS",
+  "blockers": [],
+  "findings": [
+   "与设计文档一致：cap-section 主导航 4 项/lucide 16px currentColor 无 emoji/selectedCap 状态机（再点取消回默认）/折叠态图标条",
+   "DSH 借鉴理念不引代码：electron-renderer/src/ grep dsh = 0",
+   "三能力接口接真数据：/api/sentinel/signals（sentinel.ts:44）+ /api/loops/status（loops.ts:80）+ /api/actions（actions-api.ts:54），三路由均真实挂载 server.ts",
+   "GA 置灰：GaDetail 结构占位不发 fetch（铁律 8）+ canAccessCap fail-closed",
+   "质量：as any=0；FDE 术语=0；capability.test.ts 23/23",
+   "北星三问全过（服务 FDE/企业主桌面端，接近终态，产品不变味）"
+  ],
+  "by": "K3",
+  "at": "2026-08-29"
+ },
+ "fix_task_id": null,
+ "updated_at": "2026-08-29",
+ "updated_by": "K3",
+ "impl_note": "实现躺分支 feat/d538-frontend-leftbar（910 行/10 文件）未合并——验收合并列下一片首任务"
+}

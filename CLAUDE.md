@@ -1,6 +1,6 @@
 # CLAUDE.md — SynovaAgent
 
-> V4.5.1 "Main Agent" | 2026-07-22 | L2 MainAgent 决策中心 + 创始人控制塔三位一体防御
+> V5.2.7 "Main Agent" | 2026-09-02 | L2 MainAgent 决策中心 + 创始人控制塔三位一体防御 + 桌面端（品牌表层，切片 A/B/C 已闭环；本地软提示 + CI 权威门禁）
 
 > 组织数字孪生诊断 + 持续增长导航系统。诊断是手段，目的是增长。
 > 核心问题：这家企业的增长卡在哪里？现在该做什么？
@@ -14,7 +14,7 @@
 ```
 原始数据 → 本体层(电子病历) → 7维度×25测量器(compute)
                                      ↓
-                    按需(FDE触发)          定时(Cron触发)
+                    按需(GA触发)          定时(Cron触发)
                     runModules()          Sentinel.check()
                          ↓                      ↓
                     Evidence池           SentinelFinding[]
@@ -23,13 +23,13 @@
                          ↓
                     交叉关联 + 严重度升级 + 专家路由
                          ↓
-              8位专家(strategy/org/finance/tech/marketing/action/business_model/knowledge)
+              7位专家(host/capital-cycle/customer-cycle/talent-cycle/tech/finance-structure/competitive-strategy)  — 文件驱动 @expert/，2026-08 实测 7 个
                          ↓
                     ReAct推理 + 交叉验证
                          ↓
                     综合诊断报告
                          ↓
-                    FDE 收到警报 + 报告
+                    GA 收到警报 + 报告
                     GET /api/sentinel/reports
                     GET /api/sentinel/tickets
 ```
@@ -105,6 +105,7 @@ PR 审查 ≠ 审计：审计结论只认 K3 报告。同一模块同一时间�
 ### 五、类型安全与架构
 
 **铁律 38. `as any` 零容忍。** 47 次历史教训。pre-commit 硬阻断，`as any` 代码中零存在。
+V5.2.7 扩展（CT-46）：`as never` / `as unknown as` 同样零容忍（曾逃逸 `getDatabase() as never`）。
 替代：内联类型 `as { field?: string }` / `Record<string, unknown>` / `unknown` + 类型守卫。
 
 **铁律 39. 五层架构边界。** 每层只与相邻层通信：
@@ -481,7 +482,7 @@ compute 函数签名统一为 `(store: GraphStoreReader, teamId: string) => Comp
 
 | 组 | 检查内容 | bash 判断 | agent 自检判断 |
 |----|---------|----------|--------------|
-| **1** | **类型安全 + 硬编码数据** | as any 在代码行（跳过注释行）| 硬编码数据是否合理 |
+| **1** | **类型安全 + 硬编码数据** | as any / as never / as unknown as 在代码行（跳过注释行）| 硬编码数据是否合理 |
 | **2** | **测试质量** | 文件配对 + empty catch 有 degraded/throw/log | 测试质量 + 跨模块覆盖 |
 | **3** | **Secrets** | 全工作区模式匹配 | — |
 | **4** | **接线完整性** | 新 export 是否被任何 src/ 文件引用 | 引用是否在正确的调用链中 |

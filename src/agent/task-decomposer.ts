@@ -80,16 +80,16 @@ export interface AggregatedResult {
 
 /** sentinel 维度到专家类型的映射表 */
 const DIMENSION_EXPERT_MAP: Record<string, string> = {
-  financial: 'finance',
-  market: 'marketing',
-  organizational: 'org',
+  financial: 'finance-structure',
+  market: 'customer-cycle',
+  organizational: 'talent-cycle',
   technology: 'tech',
-  strategic: 'strategy',
-  operational: 'operations',
-  talent: 'org',
-  customer: 'marketing',
+  strategic: 'competitive-strategy',
+  operational: 'host',
+  talent: 'talent-cycle',
+  customer: 'customer-cycle',
   product: 'tech',
-  risk: 'finance',
+  risk: 'competitive-strategy',
 };
 
 /** sentinel ID 到维度的推断映射（基于命名惯例） */
@@ -136,7 +136,7 @@ export class TaskDecomposer {
 
       const subTasks: SubTask[] = sentinelFindings.map((finding, index) => {
         const dimension = finding.dimension || inferDimensionFromSentinel(finding.sentinel || finding.id, 'organizational');
-        const expertType = DIMENSION_EXPERT_MAP[dimension] || 'org';
+        const expertType = DIMENSION_EXPERT_MAP[dimension] || 'host';
         const priority = severityToPriority(finding.severity);
 
         return {
@@ -248,7 +248,7 @@ export class TaskDecomposer {
       const router = new ExpertRouter();
       const response = await router.dispatch({
         subTaskId: `dim-${dimension}-${Date.now()}`,
-        expertType: DIMENSION_EXPERT_MAP[dimension] || 'org',
+        expertType: DIMENSION_EXPERT_MAP[dimension] || 'host',
         inputFindings: [],
         context: { enterpriseId: 'default', diagnosisId: 'auto' },
       });

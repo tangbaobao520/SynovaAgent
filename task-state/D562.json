@@ -1,0 +1,14 @@
+{
+  "task_id": "D562",
+  "title": "K3 复审批 D558-D561 派单 + 三连验收台账登记",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "commit": "8cdac2b2",
+    "note": "K3 复审批执行完毕并经 PR #304 回流（4f4dcb9a），三任务 PASS 全闭合"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-08-29",
+  "updated_by": "alloc-task-id"
+}

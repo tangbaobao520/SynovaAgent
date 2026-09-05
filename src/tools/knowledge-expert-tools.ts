@@ -66,7 +66,7 @@ export const structuredWriterTool: ToolDefinition = {
 
 export const conflictDetectorTool: ToolDefinition = {
   name: 'conflict_detector',
-  description: '冲突检测—新旧知识对比/演化链管理/FDE确认推送',
+  description: '冲突检测—新旧知识对比/演化链管理/GA确认推送',
   parameters: { type: 'object', properties: {
     knowledgeId: { type: 'string', description: '知识条目 ID' },
     newContent: { type: 'string', description: '新知识内容' },

@@ -1,20 +1,32 @@
 {
-  "task_id": "D525",
-  "title": "P1-1 synova-commit.test.sh 红态修复（D507 段配对测试，K3 D521 遗留）",
-  "status": "impl_done",
-  "spec": {
-    "doc": "docs/synova/coordination/派单-D525D526-并行CTO-20260825.md",
-    "source": "K3 D521 审计 P1-1"
-  },
-  "impl": {
-    "by": "dsh-cto",
-    "at": "2026-08-25",
-    "branch": "feat/d525-d526-red-cleanup",
-    "commit": "61182a9785183750769bc26879232b8a46670fd7",
-    "note": "断言对齐 staging_guard 现行为；测试入 canary"
-  },
-  "audit": null,
-  "fix_task_id": null,
-  "updated_at": "2026-08-25",
-  "updated_by": "dsh-cto"
+ "task_id": "D525",
+ "title": "P1-1 synova-commit.test.sh 红态修复（D507 段配对测试，K3 D521 遗留）",
+ "status": "impl_done",
+ "spec": {
+  "doc": "docs/synova/coordination/派单-D525D526-并行CTO-20260825.md",
+  "source": "K3 D521 审计 P1-1"
+ },
+ "impl": {
+  "by": "dsh-cto",
+  "at": "2026-08-25",
+  "branch": "feat/d525-d526-red-cleanup",
+  "commit": "d5286c52",
+  "note": "断言对齐 staging_guard 现行为；测试入 canary",
+  "commit_note": "CTO 复核修正（2026-08-29）：原 61182a9785183750769bc26879232b8a46670fd7 为影子登记/废弃分支提交，真实实现提交 d5286c52（M7 纪律）"
+ },
+ "audit": {
+  "report": "docs/synova/audit-reports/2026-08-28-D501-D550-impl-done-batch.md",
+  "verdict": "PASS",
+  "blockers": [],
+  "findings": [
+   "红态根因：D508 移除 D507 内联并行段后旧 grep 断言恒失配；重写对齐 staging_guard（D311）现行为",
+   "测试复跑 8/8 绿（接线/他人写集 exit 1+点名/自己写集放行+commit 落库/降级显式/status JSON）",
+   "synova-commit.test.sh 已入 CI canary；2826abc7 沙箱 git 身份跟进（CI runner 无全局身份）属实"
+  ],
+  "by": "K3",
+  "at": "2026-08-29"
+ },
+ "fix_task_id": null,
+ "updated_at": "2026-08-29",
+ "updated_by": "K3"
 }

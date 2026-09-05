@@ -23,6 +23,19 @@ MARKER="$ROOT/.claude/last-precommit-success"
 # legacy 纯时间戳 (旧 install-hooks 过渡期) → 旧语义, 但不 rm
 # root commit (无 HEAD^) → 显式降级, 不误报
 FRESHNESS_SEC=300
+# ═══ CT-45: merge 提交跳过 bypass 判定 ═══
+# merge 提交（HEAD 有第二 parent：本地 git merge 冲突解决后 commit / GitHub PR merge 同步拉取）不经
+# 本地 pre-commit hook 或 marker 语义不同（冲突解决 + 门禁拦截时常以 --no-verify 完成 merge commit）——
+# 写 detected-bypass 会污染今日计数 → Gatekeeper 熔断同日其他 session 的合法提交（D524 实证：98c5ceff 熔断 D524）。
+# 判定: git rev-parse HEAD^2 存在 = 第二 parent 存在 = merge commit。
+MERGE_COMMIT=0
+if git rev-parse HEAD^2 >/dev/null 2>&1; then
+  MERGE_COMMIT=1
+fi
+if [ "$MERGE_COMMIT" = "1" ]; then
+  # merge 提交——合法豁免 bypass 判定（CT-45，语义同 D328 commit-msg MERGE_HEAD 豁免）
+  :
+else
 if [ -f "$MARKER" ]; then
   RAW=$(cat "$MARKER" | tr -d '[:space:]')
   if echo "$RAW" | grep -q '|'; then
@@ -54,22 +67,24 @@ if [ -f "$MARKER" ]; then
         # pass — D366: 不 rm, marker 只由 pre-commit 覆盖 (并发 session 互不误删)
 
         # ═══ D521/不变量2: COMMITTED 登记（hook 层——commit 后立即成对登记，树永干净）═══
-        # 病根: D508 登记只在 synova-commit 路径且在 commit 后追加 → bypass.log 永脏 →
-        #   挡 merge → 逼裸 git → 对账失败 → D451 补记循环（D520 复盘病根 2）。
+        # 病根（D537 #4 恢复）: D508 登记只在 synova-commit 路径且在 commit 后追加 →
+        #   bypass.log 永脏 → 挡 merge → 逼裸 git → 对账失败 → D451 补记循环（D520 复盘病根 2）。
+        #   该段在 D530（734ab32e CT-45 merge 豁免）重写 post-commit.sh 时被覆盖丢失——
+        #   post-commit.test.sh 红态（登记段缺失/HASH 未登记/仍脏/影子提交缺失）。
         # 解法: 任何 commit（裸 git / synova-commit）过检后，hook 立即把本提交 HASH 的
         #   COMMITTED 行追加 + 成对登记提交（marker message 防递归）——bypass.log 永不脏。
         # 只在 PASS_WAY≠0（pre-commit 真跑过）时登记；--no-verify 提交不登记（不洗白绕过）。
-        # SYNO_SKIP_AUTOREG=1 跳过登记（post-commit-marker 等针对检测语义的测试隔离用；
-        #   登记自身有 bypass-precommit.test.sh 覆盖——测试分层，互不干扰）
         LAST_MSG=$(git log -1 --format=%s 2>/dev/null || true)
-        if [ "${SYNO_SKIP_AUTOREG:-0}" = "1" ]; then LAST_MSG="bypass COMMITTED 登记 (skip)"; fi
         case "$LAST_MSG" in
           *"bypass COMMITTED 登记"*) : ;;  # 登记提交自身 → 跳过（防递归）
           *)
             HASH_NOW=$(git rev-parse HEAD 2>/dev/null || true)
             if [ -n "$HASH_NOW" ]; then
               echo "$(date -Iseconds) | COMMITTED | pre-commit PASS (hook 层登记) | HASH=$HASH_NOW" >> "$ROOT/.claude/bypass.log"
-              if git add "$ROOT/.claude/bypass.log" 2>/dev/null &&                  git commit --no-verify -q -m "chore: bypass COMMITTED 登记 (auto hook, D521)" 2>/dev/null; then
+              # CT-43（D554）: `-o -m ... -- <path>` 限定登记提交只含 bypass.log——不卷走暂存区遗留文件
+              # （D552 实证: D311 guard 阻断后遗留 staged 文件被本提交整体卷入 8b6deaf4，M8 变体；
+              #   注意 -m 必须在 -- 之前，否则被当 pathspec）
+              if git add "$ROOT/.claude/bypass.log" 2>/dev/null && git commit --no-verify -q -o -m "chore: bypass COMMITTED 登记 (auto hook, D521)" -- "$ROOT/.claude/bypass.log" 2>/dev/null; then
                 :  # 登记提交完成——bypass.log 保持干净
               else
                 echo "  ⚠️  post-commit: bypass 登记提交失败（identity 未配置?）— 降级，对账时按 D451 补记" >&2
@@ -95,6 +110,7 @@ if [ -f "$MARKER" ]; then
   fi
 else
   echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) detected-bypass no-precommit-marker" >> "$ROOT/.claude/bypass.log"
+fi
 fi
 
 # V4.5.1: STATE.md 已移除。证据链由 git log 提供。

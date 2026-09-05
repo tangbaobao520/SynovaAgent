@@ -56,7 +56,7 @@ L('<p><strong>设计哲学：边承载语义，节点承载状态。</strong>在
 L('<p><strong>哨兵的计算逻辑是"沿着边做图遍历"，不是"读节点的 props 做算术"。</strong>这是一个根本性的架构差异——新加一个客户不需要改动 Financial 节点的 schema，增加一条 <code>REVENUE_FROM</code> 边即可。</p>')
 
 L('<h3>0.4 数据流全景</h3>')
-L('<div class="arch">原始数据 → 本体层(企业知识图谱) → 7维度×25测量器(compute)\n    按需(FDE触发)          定时(Cron触发)\n    runModules()          Sentinel.check()\n              ↓                      ↓\n         Evidence池           SentinelFinding[]\n              ↓                      ↓\n         信号聚合引擎 ←←←←←←←←←←←←←\n              ↓\n         交叉关联 + 严重度升级 + 专家路由\n              ↓\n   8位专家(strategy/org/finance/tech/marketing/action/business_model/knowledge)\n              ↓\n         ReAct推理 + 交叉验证\n              ↓\n         综合诊断报告 → FDE 收到警报\n         GET /api/sentinel/reports\n         GET /api/sentinel/tickets</div>')
+L('<div class="arch">原始数据 → 本体层(企业知识图谱) → 7维度×25测量器(compute)\n    按需(GA触发)          定时(Cron触发)\n    runModules()          Sentinel.check()\n              ↓                      ↓\n         Evidence池           SentinelFinding[]\n              ↓                      ↓\n         信号聚合引擎 ←←←←←←←←←←←←←\n              ↓\n         交叉关联 + 严重度升级 + 专家路由\n              ↓\n   8位专家(strategy/org/finance/tech/marketing/action/business_model/knowledge)\n              ↓\n         ReAct推理 + 交叉验证\n              ↓\n         综合诊断报告 → GA 收到警报\n         GET /api/sentinel/reports\n         GET /api/sentinel/tickets</div>')
 
 L('<h3>0.5 三层颗粒度</h3>')
 L('<table>')
@@ -68,7 +68,7 @@ L('</table>')
 
 L('<h3>0.6 两大核心系统</h3>')
 L('<ol>')
-L('<li><strong>FDE 按需诊断</strong> — 用户触发，6阶段管道，全部测量器+专家 → 综合诊断报告</li>')
+L('<li><strong>GA 按需诊断</strong> — 用户触发，6阶段管道，全部测量器+专家 → 综合诊断报告</li>')
 L('<li><strong>Sentinel 定时哨兵</strong> — Cron 自动，基线对比+异常检测 → 信号聚合 → 专家 → 工单</li>')
 L('</ol>')
 

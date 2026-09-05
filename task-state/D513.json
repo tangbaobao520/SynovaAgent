@@ -1,17 +1,32 @@
 {
-  "task_id": "D513",
-  "title": "控制塔四项返修（Win反馈+D331残余）",
-  "status": "impl_done",
-  "spec": {
-    "path": ".claude/task-briefs/2026-08-23-D513-tower-repairs.md",
-    "by": "dsh-cto",
-    "at": "2026-08-23"
-  },
-  "impl": {
-    "commit": "PENDING",
-    "by": "dsh-cto",
-    "at": "2026-08-23"
-  },
-  "updated_by": "dsh-cto",
-  "priority": "P0"
+ "task_id": "D513",
+ "title": "控制塔四项返修（Win反馈+D331残余）",
+ "status": "impl_done",
+ "spec": {
+  "path": ".claude/task-briefs/2026-08-23-D513-tower-repairs.md",
+  "by": "dsh-cto",
+  "at": "2026-08-23"
+ },
+ "impl": {
+  "commit": "90d787c2",
+  "by": "dsh-cto",
+  "at": "2026-08-23"
+ },
+ "updated_by": "K3",
+ "priority": "P0",
+ "audit": {
+  "report": "docs/synova/audit-reports/2026-08-28-D501-D550-impl-done-batch.md",
+  "verdict": "PASS",
+  "blockers": [],
+  "findings": [
+   "①D328 merge 豁免：commit-msg-check.sh:8-13 MERGE_HEAD → exit 0",
+   "②PYBIN 探测：verify-parallel.sh:67-78 三级探测+import sys 可用性（第三处漏网清零）",
+   "③对账 base 防御：check-bypass-log.sh:26-37 fetch tracking ref 失败显式降级（Win 37dc1cae 真根因）",
+   "⑤⑥brief 指向：task-start.sh:34-37 恢复写 current-brief（ls -t）；hook-block-write.sh:118-119 ls -t 替换 find|head",
+   "测试绿：commit-msg-merge / task-start / hook-block-write / verify-parallel 5/5（含 PYBIN 接线）"
+  ],
+  "by": "K3",
+  "at": "2026-08-29"
+ },
+ "updated_at": "2026-08-29"
 }

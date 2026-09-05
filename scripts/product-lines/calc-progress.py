@@ -90,6 +90,12 @@ def load_evidence_records(evidence_dir: Path):
                 raise ValueError("schema != 1")
             if "record_type" not in rec or "date" not in rec or "verdicts" not in rec:
                 raise ValueError("缺 record_type/date/verdicts 字段")
+            # D576（CT-53）: 存量降级——redeem-progress 曾把任务闭环兑换冒充 record_type=k3
+            # （一票翻绿假绿，K3 D572 实证 1-2）。识别特征 = note 含「自动兑换（redeem-progress.py）」，
+            # 降级为 task_redeem（走 machine 路径），不改历史文件（加载时修正）。
+            if rec.get("record_type") == "k3" and "自动兑换（redeem-progress.py）" in str(rec.get("note", "")):
+                rec["record_type"] = "task_redeem"
+                degraded.append("%s: 存量自动兑换证据降级 k3→task_redeem（假 k3 冒充修正，CT-53）" % f.name)
             records.append((f, rec))
         except (OSError, ValueError, json.JSONDecodeError) as e:
             log.warning("证据记录损坏，跳过: %s (%s)", f, e)
@@ -132,7 +138,16 @@ def status_for_point(point, verdicts_by_point, line_modules, git_cmd, today, pro
 
     k3 = [v for v in verdicts if v["record_type"] == "k3"]
     demo = [v for v in verdicts if v["record_type"] == "founder_demo"]
-    machine = [v for v in verdicts if v["record_type"] in ("scenario", "test", "ci")]
+    machine = [v for v in verdicts if v["record_type"] in ("scenario", "test", "ci", "task_redeem")]
+
+    # D576（CT-53）: k3_only 点（desc 含「审计员复核」的每线收尾点）只有 k3 裁决能 verified——
+    # 任务兑换/演示核验最高到 pending_k3（自我指认禁止，1-8 型，K3 D572 实证）。
+    if point.get("k3_only"):
+        if any(v["verdict"] == "fail" for v in k3):
+            return "rejected"
+        if any(v["verdict"] == "pass" for v in k3):
+            return "verified"
+        return "pending_k3"
 
     # 审计员裁决最高优先（一票否决/一票通过）
     if any(v["verdict"] == "fail" for v in k3):

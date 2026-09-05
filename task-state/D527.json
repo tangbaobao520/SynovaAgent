@@ -37,15 +37,20 @@
       "DS9_task_state": "本文件回填（slice L1-C + impl evidence）"
     },
     "red_lines": "src/ 零触碰（git diff 可证）; scripts/audit/ 零触碰; grep -rn '@deepseek-ai/dsh' electron-renderer/ 零结果（Stage 3 前零 DSH 依赖）",
-    "known_preexisting": "tests/electron 现有 5 文件（spec 写 3——切片 A/B 新增 mac/win-install-verify.test.ts，非漂移）; GS-01 electron-backend-spawn-contract 在 main 上因切片 B prod 契约变更既有 fail（本 D 修正）"
+    "known_preexisting": "tests/electron 现有 5 文件（spec 写 3——切片 A/B 新增 mac/win-install-verify.test.ts，非漂移）; GS-01 electron-backend-spawn-contract 在 main 上因切片 B prod 契约变更既有 fail（本 D 修正）",
+    "commit": "5335711d"
   },
-  "updated_at": "2026-08-25",
-  "updated_by": "dsh",
+  "updated_at": "2026-08-29",
+  "updated_by": "dsh-cto-parallel",
   "priority": "P1",
   "audit": {
     "auditor": "k3",
     "verdict": "PASS",
     "report": "docs/synova/audit-reports/2026-08-25-D527-D528-slice-c.md",
     "date": "2026-08-25"
-  }
+  },
+  "acceptance_points": [
+    "1-6",
+    "1-8"
+  ]
 }

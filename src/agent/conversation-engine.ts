@@ -38,7 +38,7 @@ import type { L3ResolutionResult } from '../l4/entity-resolver';
 import type { CommunityReport } from '../l4/community-reports';
 // P1-01: 子组件提取 — 单体引擎拆分为 3 个独立类
 import { ToolLoopExecutor } from './tool-loop-executor';
-import { DiagnosisLauncher, type DiagnosisEvent, type ConsultationResult } from './diagnosis-launcher';
+import { DiagnosisLauncher, type DiagnosisEvent, type ConsultationResult, type SessionStoreLike } from './diagnosis-launcher';
 import { OntologySyncer, type OntologySyncResult } from './ontology-syncer';
 import type { EngineContext } from './engine-context';
 import { SqliteGraphStore } from '../adapters/sqlite-graph-store';
@@ -65,6 +65,8 @@ export interface EngineConfig {
   hookRunner?: HookRunner;
   /** 编排层: SessionManager (自动压缩) */
   sessionManager?: SessionManager;
+  /** D487: SessionStore 装配 — 注入 engineCtx 后 DiagnosisLauncher 落诊断事件流到 session_events */
+  sessionStore?: SessionStoreLike;
   /** 编排层: EventBus (事件追踪) */
   eventBus?: EventBus;
   /** 编排层: PhaseStateMachine (Batch 2: 状态机驱动 Phase 转换) */
@@ -136,19 +138,19 @@ import { L0_GLOBAL_PROMPT } from '../l1/l0-global-prompt';
 
 const L1_DIALOG_LAYER = `## 你的角色
 你是 Synova 的前线交互界面。你的对话对象有两种：
-1. FDE（前线部署工程师）——专业用户，直接操作工具
+1. GA（Growth Advisor，增长顾问）——专业用户，直接操作工具
 2. 企业主/决策者——需要看到结论，不需要了解技术细节
 
 ## 三阶段对话流
 
 ### 阶段A：信息采集（八维度框架）
-FDE采访时你不在场。采访结束后FDE上传记录文档，你做：
+GA采访时你不在场。采访结束后GA上传记录文档，你做：
 - 解析文档→按八维度提取关键信息
 - 输出覆盖度报告（✅ 4/8够用 ⚠️ 2/8偏弱 ❌ 2/8缺失）
-- 覆盖度不足→提示FDE补充哪些维度
+- 覆盖度不足→提示GA补充哪些维度
 - 不要猜——信息不足的维度标注"待补充"而非用默认值填充
 
-### 阶段B：诊断演示（FDE和客户一起看）
+### 阶段B：诊断演示（GA和客户一起看）
 - 六/七专家并行启动，过程对客户可见
 - 每个专家输出结论摘要→综合器交叉验证→四层报告
 - 演示结束后客户带走报告
@@ -157,10 +159,10 @@ FDE采访时你不在场。采访结束后FDE上传记录文档，你做：
 ### 阶段C：持续监测（部署后）
 - 哨兵 7×24 运行
 - 异常信号→关联→推送到客户看板
-- FDE 定期回访
+- GA 定期回访
 
 ## 交互规则
-- 对FDE：简洁、高效、多客户管理视角。FDE是专家用户。
+- 对GA：简洁、高效、多客户管理视角。GA是专家用户。
 - 对企业主：结论先行、解释后行、可对话修改报告
 - 永远不让用户猜"系统还需要什么"——直接告诉他还差什么
 - 对话中不要主动提及技术术语（"六维模型""测量器""D1-D6"）`;
@@ -439,6 +441,9 @@ export class ConversationEngine {
       },
       loggerPrefix: 'agent',
     };
+    // D487: 会话事件 store 注入 — launcher 经 ctx.sessionStore 落诊断事件流
+    // （铁律 39: 内联类型注入，EngineContext 接口不加 L5 字段）
+    (engineCtx as { sessionStore?: SessionStoreLike }).sessionStore = config.sessionStore;
     this.toolLoop = new ToolLoopExecutor(engineCtx);
     this.diagnosisLauncher = new DiagnosisLauncher(engineCtx, diagnosisEngine);
     this.ontologySyncer = new OntologySyncer(engineCtx);
@@ -666,7 +671,8 @@ export class ConversationEngine {
         });
 
         // 审计 P0-20260620: Phase 0 完成后自动启动诊断管线
-        this.startDiagnosis('FDE', '用户').then(result => {
+        // D487: 发起人表述统一 GA（Growth Advisor，增长顾问）；前身称谓已退役
+        this.startDiagnosis('GA', '用户').then(result => {
           if (result) {
             log.info({ teamId: result.teamId, durationMs: result.totalDurationMs }, '诊断管线已完成');
           }
@@ -778,9 +784,19 @@ export class ConversationEngine {
   /**
    * Restore engine from a previously serialized state.
    * Provider must be supplied (not stored in state).
+   * D487: wiring — 恢复会话时可传 sessionManager/sessionStore（诊断事件流续写同一会话）。
    */
-  static fromState(provider: LLMProvider, state: EngineState): ConversationEngine {
-    const engine = new ConversationEngine(provider, { orgId: state.orgId });
+  static fromState(
+    provider: LLMProvider,
+    state: EngineState,
+    wiring?: { sessionManager?: SessionManager; sessionStore?: SessionStoreLike; sessionId?: string },
+  ): ConversationEngine {
+    const engine = new ConversationEngine(provider, {
+      orgId: state.orgId,
+      sessionId: wiring?.sessionId,
+      sessionManager: wiring?.sessionManager,
+      sessionStore: wiring?.sessionStore,
+    });
     engine.phase = state.phase;
     engine.messages = [...state.messages];
     return engine;
