@@ -66,7 +66,7 @@ margin-health 走既有 this.manifest 通道不动（§6），B1 仅补 2 key。
 - 不改 extensions/sentinels/ 其余 11 处 DEPLOYS 静默（后续任务清单）；不接 D 组 15 哨兵（无判定点）
 - 不改 src/sentinel/ 存量 4 消费者通道（cash-runway/revenue-health/capital-health 主体、margin-health 通道）
 - 不改 L3WriteAPI 签名（packages/evolution/src/evolution-types.ts）、不碰 scripts/audit/、src/server.ts、src/config.ts、electron/
-- 不改其余 41 个 manifest 的任何字节；不做 manifest 调参（改值=产品调参另事）
+- 不改 extensions/sentinels/ 其余 41 个 manifest.json 的任何字节；不做 manifest 调参（改值=产品调参另事）
 
 ## Q3: 验收 — 入口 → 交互 → 结果
 
