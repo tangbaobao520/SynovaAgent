@@ -1,7 +1,7 @@
 {
   "task_id": "D577",
   "title": "哨兵阈值配置真实挂载——死代码转活（7-2/8-1/10-3）",
-  "status": "spec_done",
+  "status": "impl_done",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D577-sentinel-threshold-wiring-20260905.md",
     "commit": "e7a44f5f",
@@ -9,10 +9,68 @@
     "at": "2026-09-05",
     "note": "派单 5 必答全落位：SentinelContext.thresholds 注入契约（§3-Q4）+ 三方对照表 39 判定点（§4.2，A 组 10 哨兵 30 处值一致 / B 组 4 哨兵 9 处补 key 或回填现值）+ DEPLOYS 静默降级修复（DS6，含 loader degraded 传播）+ memStore 覆写进 check 闭环（DS7）+ flip 物理验证（DS8）。写集 21 修改 + 2 新建（§5.1，spec-only 提交 23 条预期漂移已预登记，D556 先例）。决策 5 项带参考系（§5.3）。编码指令随附（docs/synova/coordination/编码指令-D577-sentinel-threshold-wiring-20260905.md，分支 feat/d577-sentinel-threshold-wiring）。"
   },
-  "impl": null,
+  "impl": {
+    "commit": "46d296bd",
+    "branch": "feat/d577-sentinel-threshold-wiring",
+    "baseline": "origin/main 436e216d（+spec docs 提交至 6c854ecc，spec 文件随编码分支同批入库）",
+    "by": "synova-dsh (claude-code, DSH 编码 session)",
+    "at": "2026-09-05",
+    "files": [
+      "src/sentinel/types.ts",
+      "src/sentinel/sentinel-loader.ts",
+      "src/sentinel/runner.ts",
+      "extensions/sentinels/api-coverage/aggregate.ts",
+      "extensions/sentinels/customer-demand-shift/aggregate.ts",
+      "extensions/sentinels/data-health/aggregate.ts",
+      "extensions/sentinels/environment-rent-dependency/aggregate.ts",
+      "extensions/sentinels/financing-constraint/aggregate.ts",
+      "extensions/sentinels/growth-quality/aggregate.ts",
+      "extensions/sentinels/network-power/aggregate.ts",
+      "extensions/sentinels/niche-breadth/aggregate.ts",
+      "extensions/sentinels/opportunity-window/aggregate.ts",
+      "extensions/sentinels/software-health/aggregate.ts",
+      "extensions/sentinels/margin-health/aggregate.ts",
+      "extensions/sentinels/key-person-risk/aggregate.ts",
+      "extensions/sentinels/resource-misallocation/aggregate.ts",
+      "extensions/sentinels/strategy-capability-fit/aggregate.ts",
+      "extensions/sentinels/margin-health/manifest.json",
+      "extensions/sentinels/key-person-risk/manifest.json",
+      "extensions/sentinels/resource-misallocation/manifest.json",
+      "extensions/sentinels/strategy-capability-fit/manifest.json",
+      "tests/sentinel/threshold-injection.test.ts",
+      "tests/sentinel/threshold-manifest-flip.test.ts"
+    ],
+    "files_note": "写集 = spec §5.1 的 21 修改 + 2 新建（上表 23 文件）；commit 46d296bd 另含 4 个流程文件（evidence 4 份 + task brief 1 份，共 28 文件），代码写集与 spec §5.1 逐文件对账一致（git diff --name-only，见 evidence wiring §6）。",
+    "evidence": "docs/synova/audit-reports/D577-sentinel-threshold-wiring-evidence-20260905/（README + DS8 flip + T1-T10 red→green + 接线卫生对账）",
+    "evidence_path_note": "spec DS8 提议的 docs/synova/audit-reports/evidence/ 与 .codex/control-tower/evidence/ 均被 .gitignore L76 `evidence/` 全局忽略（synova-commit 暂存失败实测），按 D524 evidence 入库先例（2c0b1f0f）落盘同域非忽略目录。",
+    "ds": {
+      "DS1": "✅ 契约类型落位：SentinelThresholdPair + SentinelContext.thresholds + SentinelAggregateResult（JSDoc 三要素齐全，types.ts）；tsc 28=28（写集零命中）",
+      "DS2": "✅ resolveThresholds 实现 + wrapper 注入（ctx.thresholds + 第 4 参，唯一生产解析点）；§8 grep 生产调用点=2（loader L259 wrapper + runner L1028 getThreshold）；T4/T5 通过",
+      "DS3": "✅ degraded 传播：wrapper 消费对象形态 → SentinelCheckResult.degraded；T7 通过（red: degraded 恒 undefined）",
+      "DS4": "✅ A 组 10 哨兵 30 判定点换判定源（§4.2 逐行核对零漂移）；T2 蓝绿逐一相同；T8 零裸阈值",
+      "DS5": "✅ B 组 4 哨兵 9 判定点 + 4 manifest（B1 新增 2 key / B2 新增 1 key bus_factor 留置 / B3 回填 {0.2,0.5} / B4 回填 {0.6,0.3}，现值非调参）；manifest diff 对账见 evidence wiring §6",
+      "DS6": "✅ customer-demand-shift DEPLOYS 静默 → log.warn + { findings: [], degraded: true }；旧 L29 形态 grep 零命中；T7 端到端 degraded===true",
+      "DS7": "✅ runner.getThreshold 委托 resolveThresholds（行为等价：memStore→manifest 首 key→{0.5,1.0}；新增双键兼容 + Number 严格校验，updateThreshold 未动）；T5/T9 通过",
+      "DS8": "✅ flip 物理验证：red 1 次（改盘后 crit 不消失）+ green 3 次幂等（改盘→crit 消失→恢复→crit 回归）；afterEach 字节级恢复 + clearSentinelCache；evidence 落盘（含时间戳）",
+      "DS9": "✅ 阈值卫生双证：T8 常驻断言 14 文件零裸阈值比较（ALLOWLIST 18 条逐条注释理由）+ grep 双证（customer-demand-shift 0.4 仅剩 DEFAULT_THRESHOLDS 数据表 1 处——契约 §3-Q4 要求的蓝绿基准，非判定比较；this.manifest 仍恰 4 文件）",
+      "DS10": "✅ 回归：tests/sentinel/ 全绿（25 文件 179 测试）+ tests/sentinel/+tests/sentinels/ FAIL 集合与 pristine origin/main 基线逐行相同（39 个 pre-existing _extinct 引用错，与本任务零关联）+ tsc 28=28（写集零命中）+ 新增行 as any/as never/as unknown as =0 + pre-commit 13 组全过（synova-commit 46d296bd，无 --no-verify）",
+      "DS11": "✅ 完成报告含决策记录（§5.3 D-1~D-5 复述）+ §4.2 对照表 39 判定点逐项勾选（见 evidence README + 编码 session 最终报告）"
+    },
+    "verify": [
+      "npx vitest run tests/sentinel/threshold-injection.test.ts  # 10 passed",
+      "D577_FLIP_TEST=1 npx vitest run tests/sentinel/threshold-manifest-flip.test.ts  # 1 passed ×3 幂等（独占运行）",
+      "npx vitest run tests/sentinel/  # 25 文件 179 测试全绿",
+      "npx tsc --noEmit  # 28=28 基线，写集文件零命中"
+    ],
+    "known_gaps": [
+      "org_adapter 真实 orgId 覆写对 cron 链路（teamId='default'）不生效——预存在语义缺口（spec §6 明示不做），DS7 闭环以 orgKey 注入缝 + orgKey='default' 证明机制，未声称全 orgId 闭环",
+      "resolveThresholds 对 memStore 垃圾值（非 Number/NaN）按契约拒绝覆写回退 manifest 基线——比旧 getThreshold『原样返回 parsed.newThreshold』更严格（契约内改进，spec §5.2 骨架同款）",
+      "strategy-capability-fit L76 info 档边界（score ≥ warning 才发 info）一并接线至 th('score').warning——同 key 同值蓝绿零行为变化，消除同源字面量残留"
+    ]
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-05",
-  "updated_by": "dev-doc",
-  "note": "CTO 派单 → dev-doc spec 交付完成。gatekeeper exit 0（6 项全过）+ 写集对账 23/23 与预登记一致 + brief parseable PASS。待编码实现（写集零重叠 D575 可并行）→ K3 审计。"
+  "updated_by": "synova-dsh",
+  "note": "编码实现完成（commit 46d296bd + task-state 回填 commit）：39 判定点接线 + memStore 覆写闭环 + degraded 传播 + DS8 flip 物理验证 ×3 幂等。pre-commit 13 组全过、无 --no-verify、已推 origin。待 K3 一次提审（验收点级 evidence 已落盘，7-2/8-1/10-3 映射见 evidence README）。"
 }
