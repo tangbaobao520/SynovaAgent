@@ -32,10 +32,11 @@ $ npx vitest run tests/sentinel/finding-id-stability.test.ts   # 4/4 绿（双�
 $ grep -rc 'getTime()\|Date.now()' extensions/sentinels/*/aggregate.ts   # 42 文件 0; 2 文件各 2（非 id 计时行）
 ```
 
-架构自检: L1 routes 只 import L2 sentinel-service（import 块 L13-22, 新增 transitionSentinelTicket 同块）+
-`import type { TicketStatus } from '../sentinel/runner'`（**type-only** import, 编译期擦除, 零运行时跨层）;
-L2 只 import L3 runner（既有）+ signal-aggregator（既有）。零新增跨层运行时依赖（铁律 39）。runner 直 SQL
-有 L677/L787/L1176 既有先例且不在 check-architecture.sh 拦截面（spec §3 Q0-a 实测）。
+架构自检（§7 修复后现值）: L1 routes 只 import L2 sentinel-service——`TicketStatus` 类型经 L2 出口
+`export type { TicketStatus }`（sentinel-service.ts, 重导出自 L3 runner）消费, **零 L1→L3 直触**;
+L2 只 import L3 runner（既有）+ signal-aggregator（既有）。runner 直 SQL 有 L677/L787/L1176 既有先例
+且不在 check-architecture.sh 拦截面（spec §3 Q0-a 实测; 注: 拦截面含 L1→L3 **含 type-only import** —
+首版 type-only 直触被 CI 实测拦截, 修复见 §7）。
 
 ## 2. 写集对账（DS10 — git diff vs spec §5.1 表 11 条目）
 
@@ -159,3 +160,24 @@ D463 既有语义: 复现重开单合理, 保留并文档化 — 测试未当 bu
 - 修复记录（诚实留痕, 铁律 11）: docs commit 首次提交因 shell 多字节传输截断 commit message 且误用
   --no-verify 一次（2cf8159d, 未推送, 内容与 2766ea3b 相同）→ 已 soft reset 后以 -F 文件方式重新提交并
   完整执行 hooks（2766ea3b）; 纠错过程留痕于本节
+
+## 7. CI 修复记录 — 铁律 39 L1→L3 type-only import（2026-09-06, CTO 反馈驱动）
+
+**拦截实证**（本地复现 = CI 同款）: `bash scripts/check-architecture.sh` exit 1 —
+`❌ L1→L3 跨层引用: 1 处 src/routes/sentinel.ts:24:import type { TicketStatus } from '../sentinel/runner'`
+（教训: 该门禁**连 type-only import 同拦**, 首版「编译期擦除=零运行时跨层」的辩护不成立, 编码期未实跑
+check-architecture.sh 属验证缺口, 已入修复记录）。
+
+**修复**（L1 类型消费改经 L2 出口, 零行为变更）:
+1. `src/agent/sentinel-service.ts` — 导出区新增 `export type { TicketStatus };`（该文件既有 type import,
+   type-only 重导出）
+2. `src/routes/sentinel.ts:24` — 改 `import type { TicketStatus } from '../agent/sentinel-service';`
+
+**修复后验证**:
+```
+bash scripts/check-architecture.sh          # exit 0, 架构检查全部通过 ✅（red 原样输出 logs/arch-red.log.txt）
+npx tsc --noEmit                            # 28 = 28 基线逐条相等
+npx vitest run tests/routes/sentinel-tickets.test.ts tests/sentinel/   # 30 文件 223 用例全绿
+```
+写集影响: 仅 L1/L2 两文件 import 路径行 + 本 evidence — 在 §5.1 表 runner.ts/sentinel-service.ts/
+routes/sentinel.ts 三条目范围内, 零写集漂移。

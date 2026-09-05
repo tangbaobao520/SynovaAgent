@@ -98,6 +98,12 @@ export interface TicketsResponse {
 export const TRANSITION_TARGETS = ['acknowledged', 'resolved', 'dismissed'] as const;
 
 /**
+ * L1 类型出口（铁律 39 修复）: TicketStatus 重导出自 L3 runner——L1 routes 只经 L2 消费类型,
+ * 禁止直触 '../sentinel/runner'（CI check-architecture L1→L3 拦截实证 2026-09-06, type-only import 同拦）。
+ */
+export type { TicketStatus };
+
+/**
  * transitionSentinelTicket 返回（D580 8-4）: runner TransitionResult 原样传播 + L2 专属分类:
  *   INVALID_TARGET（to 非法枚举 → 路由 400）/ SENTINEL_RUNNER_UNAVAILABLE（runner 未初始化 → 503）。
  */

@@ -21,7 +21,7 @@ import {
   getSentinelTickets,
   transitionSentinelTicket,
 } from '../agent/sentinel-service';
-import type { TicketStatus } from '../sentinel/runner';
+import type { TicketStatus } from '../agent/sentinel-service'; // 铁律 39: L1 类型经 L2 出口（L1→L3 直触已被 CI 拦截, 2026-09-06 修复）
 import { createLogger } from '@synova/logger';
 
 const log = createLogger('routes/sentinel');
