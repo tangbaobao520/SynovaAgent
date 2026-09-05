@@ -26,7 +26,8 @@
     "by": "K3",
     "at": "2026-09-04"
   },
-  "fix_task_id": null,
+  "fix_task_id": "D578",
   "updated_at": "2026-09-04",
-  "updated_by": "k3-audit"
+  "updated_by": "k3-audit",
+  "fix_task_note": "P0 本体修复=D578(Win真机实测)；机制侧=D579(stale/TTL)+D576已close(CT-53)；P2 登记 CT-56/57/59"
 }
