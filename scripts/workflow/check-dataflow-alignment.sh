@@ -24,7 +24,7 @@ if [ -z "$DATAFLOW" ]; then
 fi
 
 # 提取 → 之间的关键词（取每个步骤的函数名或模块名）
-KEYWORDS=$(echo "$DATAFLOW" | grep -oP '[a-zA-Z_][a-zA-Z0-9_.]*' | grep -v '^http$\|^api$\|^FDE$\|^Cron$\|^GET$\|^POST$\|^src$\|^GET$\|^POST$' | sort -u || true)
+KEYWORDS=$(echo "$DATAFLOW" | grep -oP '[a-zA-Z_][a-zA-Z0-9_.]*' | grep -v '^http$\|^api$\|^FDE$\|^GA$\|^Cron$\|^GET$\|^POST$\|^src$\|^GET$\|^POST$' | sort -u || true)
 if [ -z "$KEYWORDS" ]; then
   exit 0
 fi

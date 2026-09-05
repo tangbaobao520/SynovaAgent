@@ -39,9 +39,14 @@ describe('Tool Profiles', () => {
       expect(profile).toBe(TOOL_PROFILES.full);
     });
 
-    it('Given FDE role, Then returns diagnosis profile', () => {
-      const profile = getProfileForRole('FDE');
+    it('Given GA role, Then returns diagnosis profile', () => {
+      const profile = getProfileForRole('ga');
       expect(profile).toBe(TOOL_PROFILES.diagnosis);
+    });
+
+    it('Given staff role, Then returns minimal profile', () => {
+      const profile = getProfileForRole('staff');
+      expect(profile).toBe(TOOL_PROFILES.minimal);
     });
 
     it('Given manager role, Then returns diagnosis profile', () => {

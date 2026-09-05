@@ -42,7 +42,7 @@ interface DiagnosisJob {
 }
 const jobStore = new Map<string, DiagnosisJob>();
 
-// P0-3: FDE 采访文档上传界面
+// P0-3: GA 采访文档上传界面
 router.get('/upload', (_req: Request, res: Response) => {
   const html = `<!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -465,7 +465,7 @@ router.get('/report/:jobId', (req: Request, res: Response) => {
   else { res.json({ jobId: job.jobId, status: job.status }); }
 });
 
-// P0-3: 管线进度页 — FDE 提交后可以看到实时阶段变化
+// P0-3: 管线进度页 — GA 提交后可以看到实时阶段变化
 router.get('/status/:jobId', (req: Request, res: Response) => {
   const jid = Array.isArray(req.params.jobId) ? req.params.jobId[0] : req.params.jobId;
   const job = jobStore.get(jid);
@@ -649,7 +649,7 @@ async function runDiagnosisPipeline(jobId: string, content: string, teamId: stri
     extraction, sections,
     crossValidation: (extractCrossRefs(expOutput) as string[]).join('; '),
     dataTrust: {
-      coveredSources: ['FDE采访文档（八维度LLM提取）'],
+      coveredSources: ['GA采访文档（八维度LLM提取）'],
       missingSources: [
         ...extraction.insufficientDimensions.map((d: string) => `${d}维度的访谈信息不足`),
         ...(allDegraded.length > 0 ? ['部分管道降级: ' + allDegraded.join(', ')] : []),

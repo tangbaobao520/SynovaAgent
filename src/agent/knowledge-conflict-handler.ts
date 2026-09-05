@@ -2,7 +2,7 @@
  * agent/knowledge-conflict-handler.ts — 知识冲突处理器
  *
  * 管理 knowledge/ 加载过程中检测到的知识冲突。
- * 提供 CRUD 接口供 FDE 工作台使用。
+ * 提供 CRUD 接口供 GA 工作台使用。
  *
  * 铁律 39: L2 编排层——通过 KnowledgeStore(L4) 操作数据。
  */
@@ -72,7 +72,7 @@ export class KnowledgeConflictHandler {
     return record;
   }
 
-  /** 查询未解决的冲突（供 FDE 工作台使用） */
+  /** 查询未解决的冲突（供 GA 工作台使用） */
   listOpen(): KnowledgeConflict[] {
     const rows = this.db.prepare(`
       SELECT * FROM knowledge_conflicts WHERE status = 'open' ORDER BY timestamp DESC

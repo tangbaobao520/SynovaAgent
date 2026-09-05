@@ -35,7 +35,7 @@ docs/synova/product-lines/                       @tangbaobao520
 .claude/task-briefs/                             @tangbaobao520
 .dsh/                                            @tangbaobao520
 
-# ── Win Claude Code 领地（诊断体系 FDE + 本体/存储/交互）──
+# ── Win Claude Code 领地（诊断体系 GA + 本体/存储/交互）──
 src/                                             @tangbaobao520
 extensions/                                      @tangbaobao520
 packages/                                        @tangbaobao520

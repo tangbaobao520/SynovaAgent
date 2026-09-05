@@ -37,7 +37,7 @@ echo ""
 # ── 产品身份 ──
 echo -e "  ${GREEN}产品:${RESET} Synova — AI 诊断 Agent"
 echo "  定位: 驻扎企业内部的 7×24 诊断系统。Agent 不是 ChatBot。"
-echo "  用户: FDE(前线部署工程师) → 企业主(最终受益者)"
+echo "  用户: GA(Growth Advisor，增长顾问) → 企业主(最终受益者)"
 echo "  核心问题: 这家企业的增长卡在哪里？现在该做什么？"
 echo ""
 
@@ -132,11 +132,11 @@ echo ""
 
 echo -e "${YELLOW}Q1: 拼图位置 — 这个任务在产品的哪一块？${RESET}"
 echo "  触及哪一层 (L1-L5)？哪个维度 (D1-D7)？哪几个专家？"
-echo "  是 FDE 路径还是 Sentinel 路径？还是基础设施？"
+echo "  是 GA 按需诊断路径还是 Sentinel 路径？还是基础设施？"
 echo ""
 
 echo -e "${YELLOW}Q2: 用户可见 — 做完后，用户能看到什么？${RESET}"
-echo "  入口: 用户从哪触发？（API？cron？FDE 操作台？）"
+echo "  入口: 用户从哪触发？（API？cron？GA 操作台？）"
 echo "  处理: 中间经过哪些步骤？"
 echo "  结果: 最终展示在哪？（HTML 报告？API 响应？哨兵工单？）"
 echo "  说不清入口→处理→结果三环节 = 还没想清楚。"

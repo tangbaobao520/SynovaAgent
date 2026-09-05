@@ -2,7 +2,7 @@
  * routes/reload.ts — 热加载端点 (Phase 0 文件优先范式)
  *
  * POST /api/reload — 重新扫描文件目录, 重新加载专家定义。
- * 不需要重启进程。FDE 改完 SOUL.md 后调用此端点即可生效。
+ * 不需要重启进程。GA 改完 SOUL.md 后调用此端点即可生效。
  *
  * 铁律 31: reload 失败返回 degraded 标记, 不影响已运行的引擎。
  */

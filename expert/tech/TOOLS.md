@@ -10,7 +10,7 @@
 - cross_validate: 与其他专家的发现交叉验证
 - query_graph: 查询本体层节点和边
 
-## 受限工具 (需FDE确认)
+## 受限工具 (需GA确认)
 - architecture_redesign: 技术架构重构建议 — 需充分了解业务约束
 - vendor_selection: 软件选型建议 — 需了解采购预算和合规要求
 
