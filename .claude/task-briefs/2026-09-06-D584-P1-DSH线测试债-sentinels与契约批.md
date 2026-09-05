@@ -32,7 +32,10 @@ layer2-judge 41 测试 36 失败（Mac 实测）；l4-edges validateEdgeEndpoint
 - task-state/D584.json
 不做什么：
 - 不改 scripts/audit/（K3 红线）
-- 不改 <具体文件路径，排除项必须含文件名>
+- 不改 src/sentinel/（D580 已合并领地）
+- 不改 scripts/product-lines/、scripts/desktop/（D579/D581 领地）
+- 不改 scripts/audit/（K3 红线）
+- 不改 docs/synova/product-lines/product-lines.yaml（兑换由 CTO）
 
 ## Q3: 验收 — 入口 → 交互 → 结果
 入口：<从哪触发>
