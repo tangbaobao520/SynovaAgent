@@ -170,7 +170,8 @@ class TestCalcStateMachine(unittest.TestCase):
         old = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
         fresh = datetime.now().strftime("%Y-%m-%d")
         ev = {
-            "k3.json": k3_record("2026-08-13", [
+            # D579: k3 pass 受 freshness_gate 约束——夹具日期相对化（2026-08-13 固定日期已会 TTL 过期）
+            "k3.json": k3_record(fresh, [
                 {"acceptance_point": "1-1", "verdict": "pass"},
                 {"acceptance_point": "1-2", "verdict": "fail"}]),
             "scenario.json": json.dumps({"schema": 1, "record_type": "scenario", "source": "s",
@@ -231,12 +232,15 @@ class TestCalcStateMachine(unittest.TestCase):
                         "git 失败必须显式进入 problems（不静默）")
 
     def test_hundred_percent_gate(self):
+        from datetime import datetime
         mini = MINI_YAML.replace('evidence: ["k3:test"]\n        status: uncommitted',
                                  'evidence: ["k3:test"]\n        status: uncommitted', 1)
         # 全部 6 点都绑 k3 pass（1-1~1-5 已有绑定, 1-6 改为 k3 pass 且 seed uncommitted）
         mini = mini.replace('evidence: []\n        status: verified',
                             'evidence: ["k3:test"]\n        status: uncommitted')
-        ev = {"k3.json": k3_record("2026-08-13", [
+        # D579: k3 pass 受 freshness_gate 约束——夹具日期相对化（不再依赖墙钟漂移的固定日期）
+        fresh = datetime.now().strftime("%Y-%m-%d")
+        ev = {"k3.json": k3_record(fresh, [
             {"acceptance_point": "1-%d" % i, "verdict": "pass"} for i in range(1, 7)])}
         _, data = self._run(tempfile.mkdtemp(), ev, mini_yaml=mini)
         line = data["lines"][0]
@@ -244,7 +248,7 @@ class TestCalcStateMachine(unittest.TestCase):
         self.assertEqual(line["k3_gate"], "pending")
         self.assertEqual(line["progress_pct"], 99, "无审计员线级复核 → 封顶 99")
 
-        # 补线级复核记录 → 100 放行
+        # 补线级复核记录 → 100 放行（line: 级复核不经 freshness_gate——spec §6 边界，零 k3 记录实证）
         ev["k3line.json"] = k3_record("2026-08-14", [
             {"acceptance_point": "line:1", "verdict": "pass"}])
         _, data = self._run(tempfile.mkdtemp(), ev, mini_yaml=mini)

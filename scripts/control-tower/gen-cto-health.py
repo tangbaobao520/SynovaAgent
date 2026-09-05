@@ -28,6 +28,7 @@ gen-cto-health.py — CTO 健康仪表盘（第③面）生成器 v0.1 (D381, 20
 """
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -189,6 +190,45 @@ def _head_tracked_files():
         return None
 
 
+def resolve_audit_report(num, audit_dict, audit_dir, is_committed):
+    """CT-58 机制侧（D579）: 解析任务 D# 的审计报告路径。
+
+    @input  — num: int（D 编号）; audit_dict: task-state 的 audit 块（可 None）
+              audit_dir: Path; is_committed: Callable[[Path], bool]（D412 口径注入）
+    @output — (report_path|None, source: "state"|"filename"|None)
+              ① audit_dict["report"] 存在且文件在盘且已提交 HEAD → 权威采信（"state"）
+              ② 否则回落现有文件名 glob（*D{num}.md / *D{num}[a-z].md，"filename"，现状语义）
+              ③ 均无 → (None, None)
+    @degraded — state 指向的文件缺失/未提交/越出仓库根 → 静默回落 filename（回落本身是
+                既定语义链一环，不新增降级态；调用方 verdict 解析失败路径维持现状）
+    @contract — 与 redeem-progress.py L108-113 同一信任源（audit.report 权威，路径按仓库根解析）；
+                不新增 phantom 机制（D412 口径复用 is_committed 注入，兜底候选同样过滤）。
+    """
+    # ① task-state audit.report 显式字段优先（audit 流程自己写的事实源，非文件名猜测）
+    if isinstance(audit_dict, dict):
+        report = str(audit_dict.get("report") or "").replace("\\", "/")
+        if report:
+            f = REPO / report
+            try:
+                # normpath 折叠 ".." 后做词法包含校验——防路径越出仓库根（is_committed 内部
+                # relative_to 会炸；且 D412 口径只对仓内路径有意义）
+                f = Path(os.path.normpath(str(f)))
+                f.relative_to(REPO)
+                if f.is_file() and is_committed(f):
+                    return f, "state"
+            except ValueError:
+                pass  # 越出仓库根 → 不采信 state，回落 filename
+    # ② 文件名 glob 兜底（现状语义: 精确 *D{num}.md 优先, 其次 *D{num}[a-z].md D395a 变体;
+    #    候选同样过 is_committed——未提交工件不采信，phantom 判定留给调用方）
+    if audit_dir.is_dir():
+        candidates = sorted(audit_dir.glob(f"*D{num}.md")) or sorted(audit_dir.glob(f"*D{num}[a-z].md"))
+        for f in candidates:
+            if is_committed(f):
+                return f, "filename"
+    # ③ 均无
+    return None, None
+
+
 def analyze_task_state() -> Tuple[list, dict]:
     """D393: 状态从工件自动派生 — 不靠人工维护 status (防失真, GitHub/Linear 同哲学).
 
@@ -276,23 +316,23 @@ def analyze_task_state() -> Tuple[list, dict]:
         )
         has_impl = num in impl_hits  # D399: 纯派生, json impl 字段 deprecated 忽略
         audit_txt = "—"
-        if num in audit_files:
-            # D395a 变体支持: 精确 *D{num}.md 优先, 其次 *D{num}[a-z].md (e.g. D395a)
-            candidates = sorted(audit_dir.glob(f"*D{num}.md")) or sorted(audit_dir.glob(f"*D{num}[a-z].md"))
-            for f in candidates:
-                try:
-                    txt = f.read_text(encoding="utf-8", errors="replace")
-                    if "CONDITIONAL PASS" in txt:
-                        audit_txt = "CONDITIONAL_PASS"
-                    elif "PASS" in txt:
-                        audit_txt = "PASS"
-                    elif "FAIL" in txt:
-                        audit_txt = "FAIL"
-                    else:
-                        audit_txt = "?"
-                    break
-                except OSError:
-                    continue
+        # D579（CT-58）: 报告解析唯一入口 = resolve_audit_report——task-state audit.report
+        # 显式字段优先（D412 口径），文件名 glob 兜底（批次报告中间 D# 不再隐形）
+        rep_path, _rep_src = resolve_audit_report(num, d.get("audit"), audit_dir, _committed)
+        if rep_path is not None:
+            try:
+                txt = rep_path.read_text(encoding="utf-8", errors="replace")
+                # D395a verdict 优先序不变: CONDITIONAL PASS > PASS > FAIL > ?
+                if "CONDITIONAL PASS" in txt:
+                    audit_txt = "CONDITIONAL_PASS"
+                elif "PASS" in txt:
+                    audit_txt = "PASS"
+                elif "FAIL" in txt:
+                    audit_txt = "FAIL"
+                else:
+                    audit_txt = "?"
+            except OSError:
+                pass  # 读取失败 → 维持 "—"（不可读不计真，D412 口径）
         elif num in phantom_audit:
             audit_txt = "⚠phantom"  # D412: 工作区有 audit 报告但未提交 HEAD（不计真）
         # 状态组合 (D393): audit 优先 — 有审计报告即 audited (控制塔/CTO 批次无 spec 也成立)
