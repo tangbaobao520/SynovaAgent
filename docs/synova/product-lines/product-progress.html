@@ -96,7 +96,7 @@ table.points td, table.points th { border: 1px solid #eee; padding: 4px 6px; tex
   <div class="meta">已验证 0/7 个验收点 · 此前粗估 ~50%（聊天+SSE+线程存在；主动交互蓝图未全接线）</div>
   
   <details><summary>验收点清单（点击展开）</summary>
-    <table class="points"><tr><th>#</th><th>什么叫做完</th><th>状态</th></tr><tr><td>2-1</td><td>对话触发诊断（说人话就能开一次诊断）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>ConversationEngine 存在，端到端未验证</span></td></tr><tr><td>2-2</td><td>回答是流式的（逐字出来，不等整段）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>SSE 存在；流式质量有 TUI 铁律 40-45 保护</span></td></tr><tr><td>2-3</td><td>关键选择给交互卡片（不是让老板打字选）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>权威05 蓝图未全接线</span></td></tr><tr><td>2-4</td><td>系统主动找老板（该提醒时主动说话）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>主动交互蓝图未全接线</span></td></tr><tr><td>2-5</td><td>多轮对话上下文不丢（聊到第 10 轮还记得第 1 轮）</td><td><b style='color:#f9a825'>🟡 待审计员确认</b> <span class='ev'>证据：证据记录</span><span class='note'>线程存在，长会话上下文管理见线 20</span></td></tr><tr><td>2-6</td><td>对话查询监测结果（老板问『最近有什么异常』能得到答案）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> </td></tr><tr><td>2-7</td><td>审计员复核对话触发诊断链路</td><td><b style='color:#f9a825'>🟡 待审计员确认</b> </td></tr></table>
+    <table class="points"><tr><th>#</th><th>什么叫做完</th><th>状态</th></tr><tr><td>2-1</td><td>对话触发诊断（说人话就能开一次诊断）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>ConversationEngine 存在，端到端未验证</span></td></tr><tr><td>2-2</td><td>回答是流式的（逐字出来，不等整段）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>SSE 存在；流式质量有 TUI 铁律 40-45 保护</span></td></tr><tr><td>2-3</td><td>关键选择给交互卡片（不是让老板打字选）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>权威05 蓝图未全接线</span></td></tr><tr><td>2-4</td><td>系统主动找老板（该提醒时主动说话）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>主动交互蓝图未全接线</span></td></tr><tr><td>2-5</td><td>多轮对话上下文不丢（聊到第 10 轮还记得第 1 轮）</td><td><b style='color:#f9a825'>🟡 待重跑</b> <span class='ev'>证据：证据记录</span><span class='note'>线程存在，长会话上下文管理见线 20</span></td></tr><tr><td>2-6</td><td>对话查询监测结果（老板问『最近有什么异常』能得到答案）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> </td></tr><tr><td>2-7</td><td>审计员复核对话触发诊断链路</td><td><b style='color:#f9a825'>🟡 待审计员确认</b> </td></tr></table>
   </details>
   <div class='todos none'>暂无待办（好事）</div>
 </div>
@@ -437,7 +437,7 @@ table.points td, table.points th { border: 1px solid #eee; padding: 4px 6px; tex
   <div class='todos none'>暂无待办（好事）</div>
 </div></div>
 <div class="footer">
-  生成时间：2026-09-05 15:10:29（北京时间）<br>
+  生成时间：2026-09-05 17:20:52（北京时间）<br>
   进度怎么算：每条线写死了"到 100% 的定义"（验收点清单），进度 = 被证据验证的验收点比例。
   代码一变，相关证据自动变黄要求重跑；任何线要到 100%，必须审计员全量复核。<br>
   待办从哪来：审计发现台账、权威偏差登记、C线差距清单、任务看板、场景实测，五个现成来源自动聚合，零新增维护。<br>

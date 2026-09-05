@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-05 15:10:29",
+  "generated_at": "2026-09-05 17:20:52",
   "version": "1.0",
   "product_progress_pct": 8,
   "total_lines": 26,
@@ -114,10 +114,10 @@
       "status_counts": {
         "uncommitted": 5,
         "failed": 0,
-        "pending_k3": 2,
+        "pending_k3": 1,
         "verified": 0,
         "rejected": 0,
-        "stale": 0
+        "stale": 1
       },
       "points": [
         {
@@ -151,7 +151,7 @@
         {
           "id": "2-5",
           "desc": "多轮对话上下文不丢（聊到第 10 轮还记得第 1 轮）",
-          "status": "pending_k3",
+          "status": "stale",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
