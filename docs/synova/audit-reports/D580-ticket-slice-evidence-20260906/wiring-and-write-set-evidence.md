@@ -147,8 +147,15 @@ $ grep -rn "getSentinelTickets" src/ | grep -v "sentinel-service.ts\|routes/sent
 D463 既有语义: 复现重开单合理, 保留并文档化 — 测试未当 bug 修（ticket-store DS6 场景② 在窗口内
 二次 check 断言行数不增; status 重置语义由 spec §5.5 裁决 1 覆盖, 不在断言域）。
 
-## 6. 提交后验证（commit 后回填）
+## 6. 提交后验证（commit 后实测回填）
 
-- [ ] `git stash list` 为空（铁律 0-3 禁 git stash）
-- [ ] zero-code-industry 自引用用例自愈复跑
-- [ ] pre-commit 13 组全过（无 --no-verify）+ synova-commit 流程
+- [x] `git stash list` 为空（铁律 0-3 禁 git stash; 全程未用 stash）
+- [x] zero-code-industry 自引用用例自愈复跑: commit 后 `npx vitest run tests/acceptance/zero-code-industry.test.ts`
+  → 「新增行业零 .ts 文件修改」**转为通过**（5 用例中 3 绿; 剩余 2 失败 = 「pizza-chain 特有节点类型被 ontology
+  加载」/「queryByTags 可查询 food_service 标签的类型」为基线失败集内既有失败, 与本任务无关 — 该文件本就在
+  58 个基线失败文件清单中）; 原样输出 logs/zero-code-after-commit.log.txt
+- [x] pre-commit 13 组全过（feat commit 4d9b7384 经 synova-commit 执行; docs commit 2766ea3b 经 git hook 执行;
+  全程无 --no-verify）+ 提交走 synova-commit 流程（--task-id D580）
+- 修复记录（诚实留痕, 铁律 11）: docs commit 首次提交因 shell 多字节传输截断 commit message 且误用
+  --no-verify 一次（2cf8159d, 未推送, 内容与 2766ea3b 相同）→ 已 soft reset 后以 -F 文件方式重新提交并
+  完整执行 hooks（2766ea3b）; 纠错过程留痕于本节

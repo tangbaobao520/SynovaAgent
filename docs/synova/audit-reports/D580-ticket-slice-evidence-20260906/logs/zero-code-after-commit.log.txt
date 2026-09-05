@@ -1,0 +1,45 @@
+
+ RUN  v4.1.8 /Users/wane/SynovaAgent/.synova-wt-d580
+
+{"level":40,"time":1788637500107,"pid":90223,"hostname":"192.168.1.2","name":"synova-agent","service":"l4/industry-loader","dir":"test-write","msg":"行业目录缺 manifest.json — 跳过"}
+{"level":30,"time":1788637500107,"pid":90223,"hostname":"192.168.1.2","name":"synova-agent","service":"l4/industry-loader","count":6,"msg":"行业模板加载完成"}
+{"level":30,"time":1788637500122,"pid":90223,"hostname":"192.168.1.2","name":"synova-agent","service":"l4/ontology-loader","nodes":29,"edges":56,"msg":"本体类型加载完成"}
+ ❯ tests/acceptance/zero-code-industry.test.ts (5 tests | 2 failed) 91ms
+     ✓ pizza-chain 行业模板被自动发现 44ms
+     × pizza-chain 特有节点类型被 ontology 加载 17ms
+     × queryByTags 可查询 food_service 标签的类型 0ms
+     ✓ 新增行业零 .ts 文件修改 26ms
+     ✓ 基础 ontology 仍正常加载 (17 node + 14 edge) 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/acceptance/zero-code-industry.test.ts > 零代码接入验收 (pizza-chain) > pizza-chain 特有节点类型被 ontology 加载
+AssertionError: expected undefined to be defined
+ ❯ tests/acceptance/zero-code-industry.test.ts:62:22
+     60|     const { ontology } = loadOntology();
+     61|     const ovenType = ontology.nodeTypes.find(n => n.label === '厨房设备');
+     62|     expect(ovenType).toBeDefined();
+       |                      ^
+     63|     expect(ovenType!.tags).toContain('food_service');
+     64|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  tests/acceptance/zero-code-industry.test.ts > 零代码接入验收 (pizza-chain) > queryByTags 可查询 food_service 标签的类型
+AssertionError: expected 0 to be greater than or equal to 1
+ ❯ tests/acceptance/zero-code-industry.test.ts:69:26
+     67|     const { getTypesByTags } = await import('../../src/l4/ontology-loa…
+     68|     const { nodes } = getTypesByTags(['food_service']);
+     69|     expect(nodes.length).toBeGreaterThanOrEqual(1); // oven node
+       |                          ^
+     70|   });
+     71|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 3 passed (5)
+   Start at  03:44:59
+   Duration  254ms (transform 65ms, setup 0ms, import 51ms, tests 91ms, environment 0ms)
+
