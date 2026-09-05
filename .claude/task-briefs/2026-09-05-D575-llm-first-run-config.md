@@ -71,6 +71,9 @@ Agent，不是 ChatBot。驻扎企业，持续观测，主动发现，自动诊�
 - .claude/task-briefs/2026-09-05-D575-llm-first-run-config.md
 - task-state/D575.json
 
+- package.json（devDependencies 加 zustand ^4.5.0——CI 测试基础设施依赖）
+- package-lock.json（npm install 锁文件更新）
+
 不做什么：
 - 不改 src/routes/credentials.ts (内存 Map 缺陷另行处置，不扩散)
 - 不改 src/providers/index.ts (createProvider/listProviderTypes 只读消费)
@@ -81,7 +84,6 @@ Agent，不是 ChatBot。驻扎企业，持续观测，主动发现，自动诊�
 - 不改 electron/backend-spawn.cjs (启动链刚验证)
 - 不改 scripts/pre-commit-check.sh (门禁脚本红线)
 - 不改 electron-renderer/package.json (零新依赖)
-- 不改 package.json (零新依赖)
 - 不改 vitest.config.ts (零新依赖)
 - 不改 tests/sessions-api.test.ts (集成先例只读参照)
 - 不改 electron-renderer/src/test-support/render.ts (D556 交付物只读复用)

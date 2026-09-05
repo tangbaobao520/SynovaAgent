@@ -78,7 +78,7 @@ Synova = AI 诊断 Agent。桌面端 D538 已裁定"界面无 FDE，统一 GA"�
 - tests/expert-quality/layer1-rules.test.ts
 - tests/run-e2e-pipeline.cjs
 - scripts/check-fde-terms.sh
-- package.json
+- ~~package.json~~ (D573 已合并，此声明失效)
 - docs/synova/coordination/审计发现台账-DSH-CTO.md（merge 双写合并条目，CTO 接手合并时产生）
 - .claude/task-briefs/2026-09-04-D573-fde-to-ga-terminology.md
 - memory/notes/proposed/2026-09-04-d573-fde-to-ga-terminology.md
