@@ -39,13 +39,17 @@
       "acceptance_point": "7-2",
       "verdict": "fail",
       "quote": "K3 全链路审计 P0：P0 哨兵阈值告警生产死代码（sentinel-loader 从不挂 manifest）",
-      "quote_ref": "docs/synova/coordination/AUDIT-FINDINGS-LEDGER.md"
+      "quote_ref": "docs/synova/coordination/AUDIT-FINDINGS-LEDGER.md",
+      "superseded_by": "k3-D575-D577-closeout.json (2026-09-05 K3 PASS——D577 修复后独立复跑验证)",
+      "superseded_note": "D577 已修复本 FAIL（阈值挂载），K3 2026-09-05 独立复跑 PASS"
     },
     {
       "acceptance_point": "8-1",
       "verdict": "fail",
       "quote": "K3 全链路审计 P0-1：阈值硬编码于 aggregate（0.4/0.3/0.2/0.1），不读 manifest（头部注释声称比较 manifest.json 阈值不实）",
-      "quote_ref": "docs/synova/audit-reports/AGENT-CAPABILITY-FULL-CHAIN-AUDIT-20260813.md:49"
+      "quote_ref": "docs/synova/audit-reports/AGENT-CAPABILITY-FULL-CHAIN-AUDIT-20260813.md:49",
+      "superseded_by": "k3-D575-D577-closeout.json (2026-09-05 K3 PASS——D577 修复后独立复跑验证)",
+      "superseded_note": "D577 已修复本 FAIL（阈值挂载），K3 2026-09-05 独立复跑 PASS"
     },
     {
       "acceptance_point": "17-1",
