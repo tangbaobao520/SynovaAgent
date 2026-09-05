@@ -51,7 +51,17 @@ fi
 #   - 消息无 D# 但认领 brief 有 D# → exit 1（提交未声明任务归属）
 #   - Merge/Revert（上方已跳）/无暂存/无认领 brief/认领 brief 无 D#/无真实认领 → fail-open
 # 消息文件缺失/异常 → MSG_DID 空 → 一致性检查 fail-open（铁律 24: 显式兜底）
-MSG_DID=$(head -1 "$1" 2>/dev/null | grep -oE '\(D[0-9]+\)' | head -1 | tr -d '()') || true # swallow-ok: 消息文件异常时声明为空 → fail-open 不误伤
+# CT-60: scope 大小写/后缀兼容 — docs(d578)/feat(d577-closeout) 均提取 D#。
+# 背景: 旧正则 \(D[0-9]+\) 只认大写 D 且要求括号内纯 D#——小写 scope
+# （docs(d578)）被判"声明(无)"误拦（2026-09-06 CTO 单日实测三次），而后缀
+# scope（feat(d577-closeout)）同样漏提取。修复: 先取 conventional scope，
+# 从 scope 前缀提 D#（大小写兼容→归一为大写，brief 文件名恒为 D578-* 大写）；
+# 非常规格式回退旧模式（首行独立 (D578) 引用）。
+MSG_DID=$(head -1 "$1" 2>/dev/null | sed -E 's/^[a-zA-Z]+\(([^)]*)\).*/\1/' | grep -oE '^[Dd][0-9]+' | head -1 | tr '[:lower:]' '[:upper:]') || true # swallow-ok: 消息文件异常时声明为空 → fail-open 不误伤
+if [ -z "$MSG_DID" ]; then
+  # 回退: 非常规格式但首行含独立 (D578)/(d578) 型引用（旧行为兼容，大小写归一）
+  MSG_DID=$(head -1 "$1" 2>/dev/null | grep -oE '\([Dd][0-9]+\)' | head -1 | tr -d '()' | tr '[:lower:]' '[:upper:]') || true # swallow-ok: 同上
+fi
 # D395-a 注入缝: SYNO_STAGED_FILES 覆盖暂存文件集（测试免跑真实 git diff）
 STAGED_LIST="${SYNO_STAGED_FILES:-$(git -c core.quotepath=false diff --cached --name-only 2>/dev/null || true)}"  # D339: 中文文件名不被转义，认领 match_path 正常
 if [ -n "$STAGED_LIST" ]; then

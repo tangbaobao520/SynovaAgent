@@ -1,0 +1,12 @@
+{
+  "task_id": "D581",
+  "title": "D578收尾三残留-Win验证脚本BOM-证据路径-构建守卫",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-06",
+  "updated_by": "dsh-cto",
+  "note": "CTO 直派编码（小任务，D571 先例）：①ps1 UTF-8 BOM ②evidence 路径改 git 跟踪 ③构建守卫 fail-fast。物理取证三处全 HIT。1-2 兑换等 Win 复跑四断言。"
+}
