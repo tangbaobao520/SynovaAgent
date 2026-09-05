@@ -1,9 +1,20 @@
-import type { SentinelFinding } from '../../../src/sentinel/types';
+/**
+ * resource-misallocation/aggregate.ts — S3 资源错配哨兵
+ *
+ * D577: 判定源 = loader 注入 thresholds（manifest 基线 + memStore 覆写，第 4 参）；
+ * 未注入（直调/单测）fallback 内置默认 DEFAULT_THRESHOLDS（与改造前硬编码现值一致，蓝绿基准）。
+ */
+import type { SentinelFinding, SentinelThresholdPair } from '../../../src/sentinel/types';
 import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeResourceMisallocation } from './computes/compute-resource-misallocation';
 import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/resource-misallocation');
+
+/** 内置默认阈值 = 改造前硬编码现值（D577 蓝绿基准：注入与默认行为完全一致） */
+const DEFAULT_THRESHOLDS = {
+  score: { warning: 0.2, critical: 0.5 },
+} as const;
 
 interface GraphStoreReader {
   queryNodes(type: string, filters?: Record<string, unknown>, graph?: string): Array<{
@@ -12,9 +23,19 @@ interface GraphStoreReader {
 }
 
 export const resourceMisallocationSentinel = {
-  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal,
+    thresholds?: Record<string, SentinelThresholdPair>): Promise<SentinelFinding[]> {
     const now = new Date();
     const checkedAt = now.toISOString();
+
+    // D577: 阈值消费契约 — 注入优先；参数在但缺 key → log.warn（真配置缺口）；未注入 → log.debug（直调/单测）
+    const th = (key: keyof typeof DEFAULT_THRESHOLDS): SentinelThresholdPair => {
+      const injected = thresholds?.[key];
+      if (injected) return injected;
+      if (thresholds) log.warn({ sentinel: 'resource-misallocation', key }, 'thresholds 注入缺 key — fallback 内置默认（manifest 配置缺口）');
+      else log.debug({ sentinel: 'resource-misallocation', key }, 'thresholds 未注入（直调/单测）— fallback 内置默认');
+      return DEFAULT_THRESHOLDS[key];
+    };
 
     try {
       // @deprecated — 语义迁移由D15处理
@@ -49,7 +70,7 @@ export const resourceMisallocationSentinel = {
       if (result.degraded) { log.warn({ teamId }, 'compute degraded — data incomplete'); return []; }
       log.debug({ index: result.index }, '资源错配计算完成');
 
-      if (result.index > 0.5) {
+      if (result.index > th('score').critical) {
         return [{
           id: `s3-crit-${now.getTime()}`, severity: 'critical',
           title: `资源错配严重 (${(result.index * 100).toFixed(0)}%)`,
@@ -60,7 +81,7 @@ export const resourceMisallocationSentinel = {
         }];
       }
 
-      if (result.index > 0.2) {
+      if (result.index > th('score').warning) {
         return [{
           id: `s3-warn-${now.getTime()}`, severity: 'warning',
           title: `资源错配 (${(result.index * 100).toFixed(0)}%)`,

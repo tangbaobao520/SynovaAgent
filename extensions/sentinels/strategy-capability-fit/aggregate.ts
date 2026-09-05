@@ -1,9 +1,21 @@
-import type { SentinelFinding } from '../../../src/sentinel/types';
+/**
+ * strategy-capability-fit/aggregate.ts — S1 战略-能力一致性哨兵
+ *
+ * D577: 判定源 = loader 注入 thresholds（manifest 基线 + memStore 覆写，第 4 参）；
+ * 未注入（直调/单测）fallback 内置默认 DEFAULT_THRESHOLDS（与改造前硬编码现值一致，蓝绿基准）。
+ * info 档边界（score ≥ warning 时提示可改善项）复用 score.warning，与 warn 档同一配置源。
+ */
+import type { SentinelFinding, SentinelThresholdPair } from '../../../src/sentinel/types';
 import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeStrategyCapabilityFit } from './computes/compute-strategy-capability-fit';
 import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/strategy-capability-fit');
+
+/** 内置默认阈值 = 改造前硬编码现值（D577 蓝绿基准：注入与默认行为完全一致） */
+const DEFAULT_THRESHOLDS = {
+  score: { warning: 0.6, critical: 0.3 },
+} as const;
 
 interface GraphStoreReader {
   queryNodes(type: string, filters?: Record<string, unknown>, graph?: string): Array<{
@@ -13,9 +25,19 @@ interface GraphStoreReader {
 
 /** S1: 战略-能力一致性。读取 Event + Person 节点评估匹配度。 */
 export const strategyCapabilityFitSentinel = {
-  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal,
+    thresholds?: Record<string, SentinelThresholdPair>): Promise<SentinelFinding[]> {
     const now = new Date();
     const checkedAt = now.toISOString();
+
+    // D577: 阈值消费契约 — 注入优先；参数在但缺 key → log.warn（真配置缺口）；未注入 → log.debug（直调/单测）
+    const th = (key: keyof typeof DEFAULT_THRESHOLDS): SentinelThresholdPair => {
+      const injected = thresholds?.[key];
+      if (injected) return injected;
+      if (thresholds) log.warn({ sentinel: 'strategy-capability-fit', key }, 'thresholds 注入缺 key — fallback 内置默认（manifest 配置缺口）');
+      else log.debug({ sentinel: 'strategy-capability-fit', key }, 'thresholds 未注入（直调/单测）— fallback 内置默认');
+      return DEFAULT_THRESHOLDS[key];
+    };
 
     try {
       // @deprecated — 语义迁移由D15处理
@@ -48,7 +70,7 @@ export const strategyCapabilityFitSentinel = {
       const scorePct = (result.score * 100).toFixed(0);
       const findings: SentinelFinding[] = [];
 
-      if (result.score < 0.3) {
+      if (result.score < th('score').critical) {
         findings.push({
           id: `s1-crit-${now.getTime()}`, severity: 'critical',
           title: `战略-能力一致性低 (${scorePct}%)`,
@@ -62,7 +84,7 @@ export const strategyCapabilityFitSentinel = {
           suggestion: '审视战略目标与核心能力是否匹配，补齐关键能力短板。',
           detectedAt: checkedAt,
         });
-      } else if (result.score < 0.6) {
+      } else if (result.score < th('score').warning) {
         findings.push({
           id: `s1-warn-${now.getTime()}`, severity: 'warning',
           title: `战略-能力一致性偏低 (${scorePct}%)`,
@@ -73,7 +95,7 @@ export const strategyCapabilityFitSentinel = {
         });
       }
 
-      if (result.alignmentGaps.length > 0 && result.score >= 0.6) {
+      if (result.alignmentGaps.length > 0 && result.score >= th('score').warning) {
         findings.push({
           id: `s1-info-${now.getTime()}`, severity: 'info',
           title: `战略-能力一致性: ${scorePct}%，存在可改善项`,

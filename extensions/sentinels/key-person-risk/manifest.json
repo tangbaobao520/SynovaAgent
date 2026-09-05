@@ -15,6 +15,10 @@
     "bus_factor": {
       "warning": 2,
       "critical": 1
+    },
+    "decision_concentration": {
+      "warning": 0.6,
+      "critical": 0.8
     }
   },
   "aggregation": "worst_first",
@@ -46,4 +50,4 @@
     ]
   },
   "id": "sentinel-key-person-risk"
-}
+}

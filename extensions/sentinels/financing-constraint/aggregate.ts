@@ -1,7 +1,10 @@
 /**
  * financing-constraint/aggregate.ts — F1 融资约束指数哨兵
+ *
+ * D577: 判定源 = loader 注入 thresholds（manifest 基线 + memStore 覆写，第 4 参）；
+ * 未注入（直调/单测）fallback 内置默认 DEFAULT_THRESHOLDS（与 manifest 现值一致，蓝绿基准）。
  */
-import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { SentinelFinding, SentinelThresholdPair } from '../../../src/sentinel/types';
 import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeKzIndex } from './computes/kz-index';
 import { computeCashRunway } from './computes/cash-runway';
@@ -9,13 +12,28 @@ import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/financing-constraint');
 
+/** 内置默认阈值 = 改造前硬编码现值（D577 蓝绿基准：注入与默认行为完全一致） */
+const DEFAULT_THRESHOLDS = {
+  kz_index: { warning: 1.0, critical: 2.0 },
+} as const;
+
 interface GraphStoreReader { queryNodes(type: string, f?: Record<string, unknown>, g?: string): Array<{ id: string; type: string; props: Record<string, unknown>; }>; }
 
 export const financingConstraintSentinel = {
-  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal,
+    thresholds?: Record<string, SentinelThresholdPair>): Promise<SentinelFinding[]> {
     const now = new Date(); const checkedAt = now.toISOString();
     let finNodes: Array<{ id: string; type: string; props: Record<string, unknown> }> = [];
     let usedTraversal = false;
+
+    // D577: 阈值消费契约 — 注入优先；参数在但缺 key → log.warn（真配置缺口）；未注入 → log.debug（直调/单测）
+    const th = (key: keyof typeof DEFAULT_THRESHOLDS): SentinelThresholdPair => {
+      const injected = thresholds?.[key];
+      if (injected) return injected;
+      if (thresholds) log.warn({ sentinel: 'financing-constraint', key }, 'thresholds 注入缺 key — fallback 内置默认（manifest 配置缺口）');
+      else log.debug({ sentinel: 'financing-constraint', key }, 'thresholds 未注入（直调/单测）— fallback 内置默认');
+      return DEFAULT_THRESHOLDS[key];
+    };
     try {
       // @deprecated — 语义迁移由D15处理
       try { if (traversal) { const r = traversal.traverse([teamId], ['FUNDS']); if (r.nodes[0]) { finNodes = r.nodes; usedTraversal = true; } } } catch (err: unknown) { log.warn({ err, teamId }, '图遍历失败 — 降级到旧路径'); }
@@ -31,9 +49,9 @@ export const financingConstraintSentinel = {
       const result = computeKzIndex(financials);
       log.debug({ kzIndex: result.kzIndex }, 'KZ指数计算完成');
 
-      if (result.kzIndex > 2.0) {
+      if (result.kzIndex > th('kz_index').critical) {
         return [{ id: `f1-kz-crit-${now.getTime()}`, severity: 'critical', title: `融资约束严重 (KZ=${result.kzIndex.toFixed(2)})`, description: 'KZ>2.0: 企业确定受到融资约束。', evidence: [`KZ: ${result.kzIndex.toFixed(2)}`, `CF/K: ${result.cfRatio.toFixed(3)}`, `杠杆: ${result.leverage.toFixed(3)}`, `现金/K: ${result.cashRatio.toFixed(3)}`, ...result.warnings], suggestion: '评估融资渠道，考虑补充资本或优化现金流。', detectedAt: checkedAt }];
-      } else if (result.kzIndex > 1.0) {
+      } else if (result.kzIndex > th('kz_index').warning) {
         return [{ id: `f1-kz-warn-${now.getTime()}`, severity: 'warning', title: `融资约束偏紧 (KZ=${result.kzIndex.toFixed(2)})`, description: 'KZ 1.0-2.0: 可能存在融资约束。', evidence: [`KZ: ${result.kzIndex.toFixed(2)}`], suggestion: '关注现金流趋势，准备融资预案。', detectedAt: checkedAt }];
       }
       return [];

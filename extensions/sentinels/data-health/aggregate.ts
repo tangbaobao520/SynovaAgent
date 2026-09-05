@@ -2,9 +2,11 @@
  * data-health/aggregate.ts — T3 数据健康度哨兵
  *
  * 综合 computeDataReadiness + computeDataSiloScore 结果，
- * 比较 manifest.json 阈值，输出 SentinelFinding[]。
+ * 按阈值判定输出 SentinelFinding[]。
+ * D577: 判定源 = loader 注入 thresholds（manifest 基线 + memStore 覆写，第 4 参）；
+ * 未注入（直调/单测）fallback 内置默认 DEFAULT_THRESHOLDS（与 manifest 现值一致，蓝绿基准）。
  */
-import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { SentinelFinding, SentinelThresholdPair } from '../../../src/sentinel/types';
 import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeDataReadiness } from './computes/data-readiness-score';
 import { computeDataSiloScore } from './computes/data-silo-score';
@@ -13,6 +15,12 @@ import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/data-health');
 
+/** 内置默认阈值 = 改造前硬编码现值（D577 蓝绿基准：注入与默认行为完全一致） */
+const DEFAULT_THRESHOLDS = {
+  data_readiness: { warning: 0.6, critical: 0.3 },
+  silo_rate: { warning: 0.3, critical: 0.5 },
+} as const;
+
 interface GraphStoreReader {
   queryNodes(type: string, filters?: Record<string, unknown>, graph?: string): Array<{
     id: string; type: string; props: Record<string, unknown>;
@@ -20,10 +28,20 @@ interface GraphStoreReader {
 }
 
 export const dataHealthSentinel = {
-  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal,
+    thresholds?: Record<string, SentinelThresholdPair>): Promise<SentinelFinding[]> {
     const now = new Date();
     const checkedAt = now.toISOString();
     const findings: SentinelFinding[] = [];
+
+    // D577: 阈值消费契约 — 注入优先；参数在但缺 key → log.warn（真配置缺口）；未注入 → log.debug（直调/单测）
+    const th = (key: keyof typeof DEFAULT_THRESHOLDS): SentinelThresholdPair => {
+      const injected = thresholds?.[key];
+      if (injected) return injected;
+      if (thresholds) log.warn({ sentinel: 'data-health', key }, 'thresholds 注入缺 key — fallback 内置默认（manifest 配置缺口）');
+      else log.debug({ sentinel: 'data-health', key }, 'thresholds 未注入（直调/单测）— fallback 内置默认');
+      return DEFAULT_THRESHOLDS[key];
+    };
 
     try {
       // @deprecated — 语义迁移由D15处理
@@ -38,7 +56,7 @@ export const dataHealthSentinel = {
 
       if (!readiness.degraded && readiness.totalNodes > 0) {
         const rdPct = (readiness.readiness * 100).toFixed(0);
-        if (readiness.readiness < 0.3) {
+        if (readiness.readiness < th('data_readiness').critical) {
           findings.push({
             id: `t3-readiness-crit-${now.getTime()}`, severity: 'critical',
             title: `数据就绪度过低 (${rdPct}%)`,
@@ -47,7 +65,7 @@ export const dataHealthSentinel = {
             suggestion: '上传更丰富的企业文档（组织结构图、财务表、客户清单）。',
             detectedAt: checkedAt,
           });
-        } else if (readiness.readiness < 0.6) {
+        } else if (readiness.readiness < th('data_readiness').warning) {
           findings.push({
             id: `t3-readiness-warn-${now.getTime()}`, severity: 'warning',
             title: `数据就绪度偏低 (${rdPct}%)`,
@@ -86,7 +104,7 @@ export const dataHealthSentinel = {
       const siloResult = computeDataSiloScore(allSystems, edges);
       if (!siloResult.degraded && siloResult.totalSystems >= 2) {
         const srPct = (siloResult.siloRate * 100).toFixed(0);
-        if (siloResult.siloRate > 0.5) {
+        if (siloResult.siloRate > th('silo_rate').critical) {
           findings.push({
             id: `t3-silo-crit-${now.getTime()}`, severity: 'critical',
             title: `数据孤岛严重 (${srPct}% 系统孤立)`,
@@ -95,7 +113,7 @@ export const dataHealthSentinel = {
             suggestion: '优先打通核心业务系统之间的数据流。',
             detectedAt: checkedAt,
           });
-        } else if (siloResult.siloRate > 0.3) {
+        } else if (siloResult.siloRate > th('silo_rate').warning) {
           findings.push({
             id: `t3-silo-warn-${now.getTime()}`, severity: 'warning',
             title: `数据孤岛率偏高 (${srPct}%)`,
