@@ -1,12 +1,36 @@
-import type { SentinelFinding } from '../../../src/sentinel/types';
+/**
+ * niche-breadth/aggregate.ts — I1 生态位宽度哨兵
+ *
+ * D577: 判定源 = loader 注入 thresholds（manifest 基线 + memStore 覆写，第 4 参）；
+ * 未注入（直调/单测）fallback 内置默认 DEFAULT_THRESHOLDS（与 manifest 现值一致，蓝绿基准）。
+ * niche_depth 为单档判定（消费 .critical；severity 保持代码现状 warning，不新增 .warning 档 finding）。
+ */
+import type { SentinelFinding, SentinelThresholdPair } from '../../../src/sentinel/types';
 import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeLevinsBreadth } from './computes/levins-breadth';
 import { createLogger } from '@synova/logger';
 const log = createLogger('sentinel/niche-breadth');
+
+/** 内置默认阈值 = 改造前硬编码现值（D577 蓝绿基准：注入与默认行为完全一致） */
+const DEFAULT_THRESHOLDS = {
+  niche_breadth: { warning: 1.5, critical: 1.0 },
+  niche_depth: { warning: 0.3, critical: 0.5 },
+} as const;
+
 interface GraphStoreReader { queryNodes(t: string, f?: Record<string, unknown>, g?: string): Array<{ id: string; type: string; props: Record<string, unknown> }>; }
 export const nicheBreadthSentinel = {
-  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal,
+    thresholds?: Record<string, SentinelThresholdPair>): Promise<SentinelFinding[]> {
     const now = new Date(); const checkedAt = now.toISOString();
+
+    // D577: 阈值消费契约 — 注入优先；参数在但缺 key → log.warn（真配置缺口）；未注入 → log.debug（直调/单测）
+    const th = (key: keyof typeof DEFAULT_THRESHOLDS): SentinelThresholdPair => {
+      const injected = thresholds?.[key];
+      if (injected) return injected;
+      if (thresholds) log.warn({ sentinel: 'niche-breadth', key }, 'thresholds 注入缺 key — fallback 内置默认（manifest 配置缺口）');
+      else log.debug({ sentinel: 'niche-breadth', key }, 'thresholds 未注入（直调/单测）— fallback 内置默认');
+      return DEFAULT_THRESHOLDS[key];
+    };
     try {
       // @deprecated — 语义迁移由D15处理
       if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (!r.nodes[0]) return []; }
@@ -21,12 +45,12 @@ export const nicheBreadthSentinel = {
       if (r.degraded) { log.warn({ teamId }, 'compute degraded — skipping threshold'); return []; }
       log.debug({ breadth: r.breadth, depth: r.depth, volume: r.volume }, '生态位计算完成');
       const f: SentinelFinding[] = [];
-      if (r.breadth < 1.0) {
+      if (r.breadth < th('niche_breadth').critical) {
         f.push({ id: `i1-breadth-crit-${now.getTime()}`, severity: 'critical', title: `生态位过窄 (B=${r.breadth.toFixed(2)})`, description: `单一细分市场占比过高。`, evidence: [`B: ${r.breadth.toFixed(2)}`, `D: ${r.depth.toFixed(2)}`], suggestion: '拓展品类或区域。', detectedAt: checkedAt });
-      } else if (r.breadth < 1.5) {
+      } else if (r.breadth < th('niche_breadth').warning) {
         f.push({ id: `i1-breadth-warn-${now.getTime()}`, severity: 'warning', title: `生态位偏窄 (B=${r.breadth.toFixed(2)})`, description: `B < 1.5, 多样性不足。`, evidence: [`B: ${r.breadth.toFixed(2)}`, `D: ${r.depth.toFixed(2)}`], suggestion: '评估扩展机会。', detectedAt: checkedAt });
       }
-      if (r.depth > 0.5) {
+      if (r.depth > th('niche_depth').critical) {
         f.push({ id: `i1-depth-${now.getTime()}`, severity: 'warning', title: `生态位深度过高 (D=${r.depth.toFixed(2)})`, description: `单一细分市场依赖度过高。`, evidence: [`D: ${r.depth.toFixed(2)}`], suggestion: '分散市场依赖。', detectedAt: checkedAt });
       }
       return f;

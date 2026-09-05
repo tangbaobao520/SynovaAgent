@@ -2,11 +2,13 @@
  * software-health/aggregate.ts — T1 软件资产健康度哨兵
  *
  * 综合 computeSaasUsageScore + computeShadowItScore 结果，
- * 比较 manifest.json 阈值，输出 SentinelFinding[]。
+ * 按阈值判定输出 SentinelFinding[]。
+ * D577: 判定源 = loader 注入 thresholds（manifest 基线 + memStore 覆写，第 4 参）；
+ * 未注入（直调/单测）fallback 内置默认 DEFAULT_THRESHOLDS（与 manifest 现值一致，蓝绿基准）。
  *
  * V4.4.0: 优先使用图遍历，降级到 queryNodes
  */
-import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { SentinelFinding, SentinelThresholdPair } from '../../../src/sentinel/types';
 import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeSaasUsageScore } from './computes/saas-usage-score';
 import { computeShadowItScore } from './computes/shadow-it-score';
@@ -15,6 +17,12 @@ import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/software-health');
 
+/** 内置默认阈值 = 改造前硬编码现值（D577 蓝绿基准：注入与默认行为完全一致） */
+const DEFAULT_THRESHOLDS = {
+  usage_rate: { warning: 0.4, critical: 0.2 },
+  unauthorized_rate: { warning: 0.3, critical: 0.5 },
+} as const;
+
 interface GraphStoreReader {
   queryNodes(type: string, filters?: Record<string, unknown>, graph?: string): Array<{
     id: string; type: string; props: Record<string, unknown>;
@@ -22,12 +30,22 @@ interface GraphStoreReader {
 }
 
 export const softwareHealthSentinel = {
-  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal,
+    thresholds?: Record<string, SentinelThresholdPair>): Promise<SentinelFinding[]> {
     const now = new Date();
     const checkedAt = now.toISOString();
     const findings: SentinelFinding[] = [];
     let allTools: Array<{ id: string; name: string; status: string; category: string; hasUrl: boolean }> = [];
     let hasData = false;
+
+    // D577: 阈值消费契约 — 注入优先；参数在但缺 key → log.warn（真配置缺口）；未注入 → log.debug（直调/单测）
+    const th = (key: keyof typeof DEFAULT_THRESHOLDS): SentinelThresholdPair => {
+      const injected = thresholds?.[key];
+      if (injected) return injected;
+      if (thresholds) log.warn({ sentinel: 'software-health', key }, 'thresholds 注入缺 key — fallback 内置默认（manifest 配置缺口）');
+      else log.debug({ sentinel: 'software-health', key }, 'thresholds 未注入（直调/单测）— fallback 内置默认');
+      return DEFAULT_THRESHOLDS[key];
+    };
 
     try {
       // V4.4.0: 优先使用图遍历
@@ -72,7 +90,7 @@ export const softwareHealthSentinel = {
 
       if (!usage.degraded && usage.totalTools > 0) {
         const usPct = (usage.usageRate * 100).toFixed(0);
-        if (usage.usageRate < 0.2) {
+        if (usage.usageRate < th('usage_rate').critical) {
           findings.push({
             id: `t1-usage-crit-${now.getTime()}`, severity: 'critical',
             title: `SaaS 利用率极低 (${usPct}%)`,
@@ -81,7 +99,7 @@ export const softwareHealthSentinel = {
             suggestion: '审查闲置工具: 是否仍付费？功能是否被其他工具覆盖？',
             detectedAt: checkedAt,
           });
-        } else if (usage.usageRate < 0.4) {
+        } else if (usage.usageRate < th('usage_rate').warning) {
           findings.push({
             id: `t1-usage-warn-${now.getTime()}`, severity: 'warning',
             title: `SaaS 利用率偏低 (${usPct}%)`,
@@ -116,7 +134,7 @@ export const softwareHealthSentinel = {
 
       if (!shadow.degraded && shadow.totalTools > 0) {
         const siPct = (shadow.unauthorizedRate * 100).toFixed(0);
-        if (shadow.unauthorizedRate > 0.5) {
+        if (shadow.unauthorizedRate > th('unauthorized_rate').critical) {
           findings.push({
             id: `t1-shadow-crit-${now.getTime()}`, severity: 'critical',
             title: `影子 IT 风险高 (${siPct}% 未授权)`,
@@ -125,7 +143,7 @@ export const softwareHealthSentinel = {
             suggestion: '全面审计软件使用情况，建立软件准入流程。',
             detectedAt: checkedAt,
           });
-        } else if (shadow.unauthorizedRate > 0.3) {
+        } else if (shadow.unauthorizedRate > th('unauthorized_rate').warning) {
           findings.push({
             id: `t1-shadow-warn-${now.getTime()}`, severity: 'warning',
             title: `影子 IT 风险 (${siPct}% 未授权)`,

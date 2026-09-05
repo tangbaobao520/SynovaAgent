@@ -2,15 +2,24 @@
  * customer-demand-shift/aggregate.ts — E4 客户需求迁移哨兵
  *
  * 综合 computeCustomerConcentration + computeCustomerChurnRisk 结果，
- * 比较 manifest.json 阈值，输出 SentinelFinding[]。
+ * 按阈值判定输出 SentinelFinding[]。
+ * D577: 判定源 = loader 注入 thresholds（manifest 基线 + memStore 覆写，第 4 参）；
+ * 未注入（直调/单测）fallback 内置默认 DEFAULT_THRESHOLDS（与 manifest 现值一致，蓝绿基准）。
+ * DS6: DEPLOYS 无边不再静默空返（铁律 24/31）— log.warn + degraded 传播。
  */
-import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { SentinelFinding, SentinelAggregateResult, SentinelThresholdPair } from '../../../src/sentinel/types';
 import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeCustomerConcentration } from './computes/customer-concentration';
 import { computeCustomerChurnRisk } from './computes/customer-churn-risk';
 import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/customer-demand');
+
+/** 内置默认阈值 = 改造前硬编码现值（D577 蓝绿基准：注入与默认行为完全一致） */
+const DEFAULT_THRESHOLDS = {
+  churn_rate: { warning: 0.1, critical: 0.2 },
+  top_customer_concentration: { warning: 0.3, critical: 0.4 },
+} as const;
 
 interface GraphStoreReader {
   queryNodes(type: string, filters?: Record<string, unknown>, graph?: string): Array<{
@@ -19,14 +28,31 @@ interface GraphStoreReader {
 }
 
 export const customerDemandShiftSentinel = {
-  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal,
+    thresholds?: Record<string, SentinelThresholdPair>): Promise<SentinelFinding[] | SentinelAggregateResult> {
     const now = new Date();
     const checkedAt = now.toISOString();
     const findings: SentinelFinding[] = [];
 
+    // D577: 阈值消费契约 — 注入优先；参数在但缺 key → log.warn（真配置缺口）；未注入 → log.debug（直调/单测）
+    const th = (key: keyof typeof DEFAULT_THRESHOLDS): SentinelThresholdPair => {
+      const injected = thresholds?.[key];
+      if (injected) return injected;
+      if (thresholds) log.warn({ sentinel: 'customer-demand-shift', key }, 'thresholds 注入缺 key — fallback 内置默认（manifest 配置缺口）');
+      else log.debug({ sentinel: 'customer-demand-shift', key }, 'thresholds 未注入（直调/单测）— fallback 内置默认');
+      return DEFAULT_THRESHOLDS[key];
+    };
+
     try {
       // @deprecated — 语义迁移由D15处理
-      if (traversal) { const r = traversal.traverse([teamId], ['DEPLOYS']); if (!r.nodes[0]) return []; }
+      if (traversal) {
+        const r = traversal.traverse([teamId], ['DEPLOYS']);
+        if (!r.nodes[0]) {
+          // DS6（铁律 24/31）: 无 DEPLOYS 边 = 数据不可用而非健康 — 不再静默空返，degraded 传播给调用方
+          log.warn({ teamId }, '无 DEPLOYS 边 — 客户需求迁移检查降级（degraded）');
+          return { findings: [], degraded: true };
+        }
+      }
       // 1. 读取 CLIENT 节点
       const clientNodes = store.queryNodes('Client', { teamId });
       const clients = clientNodes.map(n => ({
@@ -47,7 +73,7 @@ export const customerDemandShiftSentinel = {
       const concentration = computeCustomerConcentration(clients);
       if (!concentration.degraded) {
         const topPct = (concentration.topCustomerShare * 100).toFixed(0);
-        if (concentration.topCustomerShare > 0.4) {
+        if (concentration.topCustomerShare > th('top_customer_concentration').critical) {
           findings.push({
             id: `e4-concent-crit-${now.getTime()}`, severity: 'critical',
             title: `客户集中度过高: ${concentration.topCustomerName} (${topPct}%)`,
@@ -56,7 +82,7 @@ export const customerDemandShiftSentinel = {
             suggestion: '拓展新客户，降低对最大客户的依赖。',
             detectedAt: checkedAt,
           });
-        } else if (concentration.topCustomerShare > 0.3) {
+        } else if (concentration.topCustomerShare > th('top_customer_concentration').warning) {
           findings.push({
             id: `e4-concent-warn-${now.getTime()}`, severity: 'warning',
             title: `客户集中度偏高 (${topPct}%)`,
@@ -74,7 +100,7 @@ export const customerDemandShiftSentinel = {
         const chPct = (churn.churnRate * 100).toFixed(0);
         const rChPct = (churn.revenueChurnRate * 100).toFixed(0);
 
-        if (churn.churnRate > 0.2 || churn.revenueChurnRate > 0.2) {
+        if (churn.churnRate > th('churn_rate').critical || churn.revenueChurnRate > th('churn_rate').critical) {
           findings.push({
             id: `e4-churn-crit-${now.getTime()}`, severity: 'critical',
             title: `客户流失率过高 (数量${chPct}% / 营收${rChPct}%)`,
@@ -83,7 +109,7 @@ export const customerDemandShiftSentinel = {
             suggestion: '排查流失客户共性，建立客户成功团队。',
             detectedAt: checkedAt,
           });
-        } else if (churn.churnRate > 0.1) {
+        } else if (churn.churnRate > th('churn_rate').warning) {
           findings.push({
             id: `e4-churn-warn-${now.getTime()}`, severity: 'warning',
             title: `客户流失趋势 (${chPct}%)`,

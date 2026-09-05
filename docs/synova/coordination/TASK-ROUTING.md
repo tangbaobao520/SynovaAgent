@@ -106,7 +106,7 @@
 | 模块/区域 | 状态 |
 |-----------|------|
 | scripts/control-tower/ + coordination + DSH 预设/技能 | 进行中·DeepSeek Harness |
-| src/sentinel/ + src/cron/（哨兵切片） | 进行中·DeepSeek Harness（编码线 2026-08-16 认领；**D379 path-dependency 空壳补实现** 进行中，**D356 P0 阈值告警接线** spec 已交付待实现） |
+| src/sentinel/ + src/cron/（哨兵切片） | 进行中·DeepSeek Harness（编码线 2026-08-16 认领；D379 path-dependency 补实现、D356 P0 阈值告警接线 均已交付 audited PASS；**D577 哨兵阈值配置真实挂载 spec 进行中·synova-devdoc 2026-09-05**，派单 docs/synova/coordination/派单-D577-sentinel-threshold-wiring-20260905.md） |
 | src/ 其余业务（诊断体系 L1-L5） | Win Claude Code 主力（**D355-D360 P0 全链路修复进行中**；D391 已完成；部署后负载 D394片2/D397'/D398）。**D357（L5 连接器 src/connectors/）= 🟢 死守层，Win 继续开发**（施工图 DOC-0114 §3 第75行明确归 🟢 领域核心，非 🔵 借DSH；终态经 MCP 消费，但连接器本体持续投入）——GS 场景脚本归 Mac Harness 但 GS-02/GS-04 依赖 D357，等 Win 交付后跑通 |
 | scripts/product-lines/ + 双仪表盘 | DeepSeek Harness（主导） |
 | scripts/golden-scenarios/ | 进行中·DeepSeek Harness |
