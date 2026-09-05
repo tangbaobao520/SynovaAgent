@@ -1,0 +1,12 @@
+{
+  "task_id": "D580",
+  "title": "08告警工单切片-8-2入库-8-3去重稳定化-8-4状态机API",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-06",
+  "updated_by": "dsh-cto",
+  "note": "CTO 派单 → dev-doc 写 spec。三点：8-2 写读同源（K3 P2-3 修复）/ 8-3 去重键稳定化（N14 根因，D339 裁决 A 执行）/ 8-4 状态机 API。DSH 借鉴 B-19（持久化分级哲学）。写集与 D579/D578/P0文档批 零重叠。"
+}
