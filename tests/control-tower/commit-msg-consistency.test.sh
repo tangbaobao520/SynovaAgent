@@ -125,12 +125,12 @@ echo ""
 # ════════════════════════════════════════════════════════════════
 echo "── 1. 真实劫持场景: 消息 chore(D318) + D320 brief 认领的文件 → exit 1 ──"
 R1=$(make_repo)
-write_brief "$R1" "$TODAY-D320-hijack.md" "scripts/control-tower/gen-task-board.py"
+write_brief "$R1" "$TODAY-D320-hijack.md" "src/utils/gen-task-board.ts"
 # c576e2b 劫持的 8 个文件 (D320 写集): stage 全部 → 消息声明 D318
 # D330 (P2-2 修正): 第 8 个文件 = .claude/task-briefs/D320-dashboard-gitify.md（D320 brief 本身）
 #   — mtime 设为昨日, 不参与今日认领（resolver 只认今日 mtime brief）, 零干扰
-for f in scripts/control-tower/gen-task-board.py \
-         tests/control-tower/gen-task-board.test.py \
+for f in src/utils/gen-task-board.ts \
+         tests/utils/gen-task-board.test.ts \
          docs/synova/coverage/board-override.yaml \
          docs/synova/coverage/README.md \
          docs/synova/DASHBOARD-CN.md \
@@ -142,7 +142,7 @@ for f in scripts/control-tower/gen-task-board.py \
     cat > "$R1/$f" <<'EOF'
 ## Q2: 范围
 做什么：
-- scripts/control-tower/gen-task-board.py
+- src/utils/gen-task-board.ts
 ## 架构层: 基础设施
 #CRITERIA: A
 ## Done 标准
@@ -156,7 +156,8 @@ EOF
   git -C "$R1" add "$f"
 done
 # 声明-内容一致: 确 staging 8 个文件（D328 审计 P2-2 — 声称 vs 物理必须对齐）
-STAGED_COUNT=$(git -C "$R1" diff --cached --name-only | wc -l)
+# CT-60 同批修复: macOS BSD wc -l 输出带前导空格 → 字符串比较恒失败（存量 bug）
+STAGED_COUNT=$(git -C "$R1" diff --cached --name-only | wc -l | tr -d ' ')
 [ "$STAGED_COUNT" = "8" ] && pass "用例 1 stage 8 文件 (与 commit message 声明一致)" || fail "用例 1 stage 数=$STAGED_COUNT 期望 8"
 EXIT=$(run_check "$R1" "chore(D318): 双机身份与 hooks 可移植")
 assert_exit 1 "$EXIT" "劫持拦截 (8 文件 + chore(D318) → 硬阻断)"
@@ -168,10 +169,10 @@ echo ""
 # ════════════════════════════════════════════════════════════════
 echo "── 2. 一致场景: 消息 chore(D320) == 认领 brief D# → exit 0 ──"
 R2=$(make_repo)
-write_brief "$R2" "$TODAY-D320-ok.md" "scripts/control-tower/gen-task-board.py"
-mkdir -p "$R2/scripts/control-tower"
-echo "content" > "$R2/scripts/control-tower/gen-task-board.py"
-git -C "$R2" add scripts/control-tower/gen-task-board.py
+write_brief "$R2" "$TODAY-D320-ok.md" "src/utils/gen-task-board.ts"
+mkdir -p "$R2/src/utils"
+echo "content" > "$R2/src/utils/gen-task-board.ts"
+git -C "$R2" add src/utils/gen-task-board.ts
 EXIT=$(run_check "$R2" "chore(D320): 仪表盘 git 化生成器")
 assert_exit 0 "$EXIT" "一致提交放行"
 rm -rf "$R2"
@@ -182,10 +183,10 @@ echo ""
 # ════════════════════════════════════════════════════════════════
 echo "── 3. 消息无 D# (chore: 无 scope) + 认领有 D# → exit 1 ──"
 R3=$(make_repo)
-write_brief "$R3" "$TODAY-D320-noscope.md" "scripts/control-tower/gen-task-board.py"
-mkdir -p "$R3/scripts/control-tower"
-echo "content" > "$R3/scripts/control-tower/gen-task-board.py"
-git -C "$R3" add scripts/control-tower/gen-task-board.py
+write_brief "$R3" "$TODAY-D320-noscope.md" "src/utils/gen-task-board.ts"
+mkdir -p "$R3/src/utils"
+echo "content" > "$R3/src/utils/gen-task-board.ts"
+git -C "$R3" add src/utils/gen-task-board.ts
 EXIT=$(run_check "$R3" "chore: 无 scope 提交")
 assert_exit 1 "$EXIT" "无 D# 声明阻断"
 rm -rf "$R3"
@@ -196,10 +197,10 @@ echo ""
 # ════════════════════════════════════════════════════════════════
 echo "── 4. Merge 提交 → 跳过 exit 0 ──"
 R4=$(make_repo)
-write_brief "$R4" "$TODAY-D320-merge.md" "scripts/control-tower/gen-task-board.py"
-mkdir -p "$R4/scripts/control-tower"
-echo "content" > "$R4/scripts/control-tower/gen-task-board.py"
-git -C "$R4" add scripts/control-tower/gen-task-board.py
+write_brief "$R4" "$TODAY-D320-merge.md" "src/utils/gen-task-board.ts"
+mkdir -p "$R4/src/utils"
+echo "content" > "$R4/src/utils/gen-task-board.ts"
+git -C "$R4" add src/utils/gen-task-board.ts
 EXIT=$(run_check "$R4" "Merge branch 'feature-x' into main")
 assert_exit 0 "$EXIT" "Merge 豁免"
 rm -rf "$R4"
@@ -210,10 +211,10 @@ echo ""
 # ════════════════════════════════════════════════════════════════
 echo "── 5. 认领 brief 无 D# (basename 无 D 号) → fail-open exit 0 ──"
 R5=$(make_repo)
-write_brief "$R5" "$TODAY-no-number.md" "scripts/control-tower/gen-task-board.py"
-mkdir -p "$R5/scripts/control-tower"
-echo "content" > "$R5/scripts/control-tower/gen-task-board.py"
-git -C "$R5" add scripts/control-tower/gen-task-board.py
+write_brief "$R5" "$TODAY-no-number.md" "src/utils/gen-task-board.ts"
+mkdir -p "$R5/src/utils"
+echo "content" > "$R5/src/utils/gen-task-board.ts"
+git -C "$R5" add src/utils/gen-task-board.ts
 EXIT=$(run_check "$R5" "chore(D999): 无关任务提交")
 assert_exit 0 "$EXIT" "无 D# brief 跳过"
 rm -rf "$R5"
@@ -225,9 +226,9 @@ echo ""
 echo "── 6. 无真实认领 (resolver 回退到无关 brief) → 跳过 exit 0 ──"
 R6=$(make_repo)
 write_brief "$R6" "$TODAY-D320-unrelated.md" "scripts/other/xyz.py"
-mkdir -p "$R6/scripts/control-tower"
-echo "content" > "$R6/scripts/control-tower/gen-task-board.py"
-git -C "$R6" add scripts/control-tower/gen-task-board.py
+mkdir -p "$R6/src/utils"
+echo "content" > "$R6/src/utils/gen-task-board.ts"
+git -C "$R6" add src/utils/gen-task-board.ts
 EXIT=$(run_check "$R6" "chore(D320): 无关文件提交")
 assert_exit 0 "$EXIT" "无真实认领跳过 (防假阳性)"
 rm -rf "$R6"
@@ -238,10 +239,10 @@ echo ""
 # ════════════════════════════════════════════════════════════
 echo "── 7. Revert 提交 → 跳过 exit 0 ──"
 R7=$(make_repo)
-write_brief "$R7" "$TODAY-D320-revert.md" "scripts/control-tower/gen-task-board.py"
-mkdir -p "$R7/scripts/control-tower"
-echo "content" > "$R7/scripts/control-tower/gen-task-board.py"
-git -C "$R7" add scripts/control-tower/gen-task-board.py
+write_brief "$R7" "$TODAY-D320-revert.md" "src/utils/gen-task-board.ts"
+mkdir -p "$R7/src/utils"
+echo "content" > "$R7/src/utils/gen-task-board.ts"
+git -C "$R7" add src/utils/gen-task-board.ts
 EXIT=$(run_check "$R7" 'Revert "feat(D320): 仪表盘生成器"')
 assert_exit 0 "$EXIT" "Revert 豁免 (D330 补用例)"
 rm -rf "$R7"
@@ -252,7 +253,7 @@ echo ""
 # ════════════════════════════════════════════════════════════
 echo "── 8. 无暂存文件 → fail-open exit 0 ──"
 R8=$(make_repo)
-write_brief "$R8" "$TODAY-D320-nostaged.md" "scripts/control-tower/gen-task-board.py"
+write_brief "$R8" "$TODAY-D320-nostaged.md" "src/utils/gen-task-board.ts"
 EXIT=$(run_check "$R8" "chore(D320): 无暂存提交")
 assert_exit 0 "$EXIT" "无暂存 fail-open (D330 补用例)"
 rm -rf "$R8"
@@ -265,10 +266,10 @@ echo ""
 # ════════════════════════════════════════════════════════════
 echo "── 9. broken-shim: python 全损坏 → 显式 degraded 提示 (red 基准) ──"
 R9=$(make_repo)
-write_brief "$R9" "$TODAY-D320-shim.md" "scripts/control-tower/gen-task-board.py"
-mkdir -p "$R9/scripts/control-tower"
-echo "content" > "$R9/scripts/control-tower/gen-task-board.py"
-git -C "$R9" add scripts/control-tower/gen-task-board.py
+write_brief "$R9" "$TODAY-D320-shim.md" "src/utils/gen-task-board.ts"
+mkdir -p "$R9/src/utils"
+echo "content" > "$R9/src/utils/gen-task-board.ts"
+git -C "$R9" add src/utils/gen-task-board.ts
 FAKE9=$(make_broken_shims python3 python py)
 EXIT=$(run_check "$R9" "chore(D318): 劫持测试" "$FAKE9")
 # 断言 1 (red): 输出必须含显式 degraded 提示 — 修复前静默无提示 → 断言失败
@@ -290,10 +291,10 @@ echo ""
 # ════════════════════════════════════════════════════════════
 echo "── 10. broken-shim 劫持: 损坏 python3 前置 → 修复后仍拦截 exit 1 ──"
 R10=$(make_repo)
-write_brief "$R10" "$TODAY-D320-shimhijack.md" "scripts/control-tower/gen-task-board.py"
-mkdir -p "$R10/scripts/control-tower"
-echo "content" > "$R10/scripts/control-tower/gen-task-board.py"
-git -C "$R10" add scripts/control-tower/gen-task-board.py
+write_brief "$R10" "$TODAY-D320-shimhijack.md" "src/utils/gen-task-board.ts"
+mkdir -p "$R10/src/utils"
+echo "content" > "$R10/src/utils/gen-task-board.ts"
+git -C "$R10" add src/utils/gen-task-board.ts
 FAKE10=$(make_broken_shims python3)
 EXIT=$(run_check "$R10" "chore(D318): 劫持测试" "$FAKE10")
 # dev doc §4 语义: "提示 + 跳过（可追溯）" — 修复前静默放行（exit 0 无提示）,
@@ -306,6 +307,48 @@ else
 fi
 assert_exit 0 "$EXIT" "broken-shim 劫持 fail-open exit 0"
 rm -rf "$R10" "$FAKE10"
+echo ""
+
+# ════════════════════════════════════════════════════════════
+# 用例 11-13: CT-60 scope 大小写/后缀兼容（2026-09-06 CTO 实测三次误拦）
+# 背景: MSG_DID 提取正则 \(D[0-9]+\) 只认大写 D——小写 scope（docs(d578)）
+# 被判"声明(无)"误拦；修复前 (d320) 小写 = 空声明 → 劫持误报。
+# ════════════════════════════════════════════════════════════
+
+# 用例 11: 小写 scope (d320) + 认领 D320 → 一致 exit 0（修复前 exit 1 = red 基准）
+echo "── 11. CT-60: 小写 scope (d320) 一致 → exit 0 ──"
+R11=$(make_repo)
+write_brief "$R11" "$TODAY-D320-lowercase.md" "src/utils/gen-task-board.ts"
+mkdir -p "$R11/src/utils"
+echo "content" > "$R11/src/utils/gen-task-board.ts"
+git -C "$R11" add src/utils/gen-task-board.ts
+EXIT=$(run_check "$R11" "chore(d320): 小写 scope 声明一致性")
+assert_exit 0 "$EXIT" "小写 (d320) 声明一致 (CT-60)"
+rm -rf "$R11"
+echo ""
+
+# 用例 12: scope 带后缀 (d320-closeout) → 提取 D320 前缀 → 一致 exit 0
+echo "── 12. CT-60: scope 后缀 (d320-closeout) → 提取 D320 ──"
+R12=$(make_repo)
+write_brief "$R12" "$TODAY-D320-closeout.md" "src/utils/gen-task-board.ts"
+mkdir -p "$R12/src/utils"
+echo "content" > "$R12/src/utils/gen-task-board.ts"
+git -C "$R12" add src/utils/gen-task-board.ts
+EXIT=$(run_check "$R12" "feat(d320-closeout): scope 后缀提取前缀")
+assert_exit 0 "$EXIT" "后缀 scope 提取 D320 (CT-60)"
+rm -rf "$R12"
+echo ""
+
+# 用例 13: 小写劫持仍拦 (d318) vs 认领 D320 → exit 1（大小写兼容不放松劫持检测）
+echo "── 13. CT-60: 小写劫持 (d318) vs 认领 D320 → 仍 exit 1 ──"
+R13=$(make_repo)
+write_brief "$R13" "$TODAY-D320-hijack.md" "src/utils/gen-task-board.ts"
+mkdir -p "$R13/src/utils"
+echo "content" > "$R13/src/utils/gen-task-board.ts"
+git -C "$R13" add src/utils/gen-task-board.ts
+EXIT=$(run_check "$R13" "chore(d318): 小写劫持仍应拦截")
+assert_exit 1 "$EXIT" "小写劫持仍拦 (CT-60)"
+rm -rf "$R13"
 echo ""
 
 echo "═══════════════════════════════════════════════════════════"
