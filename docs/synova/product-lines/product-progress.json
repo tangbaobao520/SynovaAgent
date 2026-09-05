@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-09-05 14:37:22",
+  "generated_at": "2026-09-05 22:47:06",
   "version": "1.0",
-  "product_progress_pct": 6,
+  "product_progress_pct": 8,
   "total_lines": 26,
   "lines": [
     {
@@ -114,10 +114,10 @@
       "status_counts": {
         "uncommitted": 5,
         "failed": 0,
-        "pending_k3": 2,
+        "pending_k3": 1,
         "verified": 0,
         "rejected": 0,
-        "stale": 0
+        "stale": 1
       },
       "points": [
         {
@@ -151,10 +151,12 @@
         {
           "id": "2-5",
           "desc": "多轮对话上下文不丢（聊到第 10 轮还记得第 1 轮）",
-          "status": "pending_k3",
+          "status": "stale",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-09-04.json",
             "docs/synova/product-lines/evidence/test-2026-09-05.json"
           ],
           "note": "线程存在，长会话上下文管理见线 20"
@@ -295,7 +297,9 @@
           "status": "pending_k3",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-09-04.json",
             "docs/synova/product-lines/evidence/test-2026-09-05.json"
           ],
           "note": "已有（K3 P0-2：仅飞书+CSV）"
@@ -483,15 +487,15 @@
       "baseline_note": "调度真实（K3 PASS）；告警层死代码",
       "done_definition": "装好后系统自动按周/月/季监测，异常自动发现、自动进报告；重启/断电不丢监测结果",
       "total": 8,
-      "verified": 1,
-      "progress_pct": 12,
+      "verified": 2,
+      "progress_pct": 25,
       "k3_gate": "",
       "status_counts": {
         "uncommitted": 3,
         "failed": 0,
         "pending_k3": 1,
-        "verified": 1,
-        "rejected": 1,
+        "verified": 2,
+        "rejected": 0,
         "stale": 2
       },
       "points": [
@@ -507,8 +511,9 @@
         {
           "id": "7-2",
           "desc": "哨兵全量注册（manifest 挂载无死代码）",
-          "status": "rejected",
+          "status": "verified",
           "evidence_files": [
+            "docs/synova/product-lines/evidence/k3-D575-D577-closeout.json",
             "docs/synova/product-lines/evidence/k3-full-chain-20260813.json"
           ],
           "note": "K3：P0 哨兵阈值告警生产死代码（sentinel-loader 从不挂 manifest）"
@@ -549,7 +554,9 @@
           "status": "stale",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-09-04.json",
             "docs/synova/product-lines/evidence/test-2026-09-05.json"
           ],
           "note": ""
@@ -572,23 +579,24 @@
       "baseline_note": "工单表路径有；manifest 死代码+去重键不稳定",
       "done_definition": "异常发生时老板收到一条提醒；同一异常只提醒一次；处理完自动销单",
       "total": 5,
-      "verified": 0,
-      "progress_pct": 0,
+      "verified": 1,
+      "progress_pct": 20,
       "k3_gate": "",
       "status_counts": {
         "uncommitted": 2,
         "failed": 1,
         "pending_k3": 1,
-        "verified": 0,
-        "rejected": 1,
+        "verified": 1,
+        "rejected": 0,
         "stale": 0
       },
       "points": [
         {
           "id": "8-1",
           "desc": "阈值真实触发（读 manifest 配置，不硬编码）",
-          "status": "rejected",
+          "status": "verified",
           "evidence_files": [
+            "docs/synova/product-lines/evidence/k3-D575-D577-closeout.json",
             "docs/synova/product-lines/evidence/k3-full-chain-20260813.json"
           ],
           "note": "K3 P0-1：阈值硬编码于 aggregate（0.4/0.3/0.2/0.1），不读 manifest"
@@ -699,14 +707,14 @@
       "baseline_note": "K3 三重缺陷；建议第一条 100% 线",
       "done_definition": "老板能接财务数据，系统自动产出现金流/成本/利润的持续监测与告警，每条结论可回溯证据",
       "total": 8,
-      "verified": 1,
-      "progress_pct": 12,
+      "verified": 2,
+      "progress_pct": 25,
       "k3_gate": "",
       "status_counts": {
-        "uncommitted": 7,
+        "uncommitted": 6,
         "failed": 0,
         "pending_k3": 0,
-        "verified": 1,
+        "verified": 2,
         "rejected": 0,
         "stale": 0
       },
@@ -728,8 +736,10 @@
         {
           "id": "10-3",
           "desc": "P0 哨兵 manifest 挂载，阈值真实触发",
-          "status": "uncommitted",
-          "evidence_files": [],
+          "status": "verified",
+          "evidence_files": [
+            "docs/synova/product-lines/evidence/k3-D575-D577-closeout.json"
+          ],
           "note": "K3 已给转绿路径：一行修 manifest 起步"
         },
         {
@@ -739,7 +749,9 @@
           "evidence_files": [
             "docs/synova/product-lines/evidence/k3-2026-09-02-productlines.json",
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-09-04.json",
             "docs/synova/product-lines/evidence/test-2026-09-05.json"
           ],
           "note": "K3：compute-cash-runway-months.ts:60 filter bug"
@@ -1039,19 +1051,21 @@
       "status_counts": {
         "uncommitted": 3,
         "failed": 0,
-        "pending_k3": 4,
+        "pending_k3": 1,
         "verified": 0,
         "rejected": 0,
-        "stale": 0
+        "stale": 3
       },
       "points": [
         {
           "id": "15-1",
           "desc": "专家注册表 + 文件驱动自动发现（7 位专家全注册）",
-          "status": "pending_k3",
+          "status": "stale",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-09-04.json",
             "docs/synova/product-lines/evidence/test-2026-09-05.json"
           ],
           "note": "代码实证存在；K3 v1.1：V5 视图硬编码旧 6 专家（D282 未传播）"
@@ -1066,10 +1080,12 @@
         {
           "id": "15-3",
           "desc": "工具/技能工作流接线（专家真能用工具）",
-          "status": "pending_k3",
+          "status": "stale",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-09-04.json",
             "docs/synova/product-lines/evidence/test-2026-09-05.json"
           ],
           "note": "接线存在（代码实证）"
@@ -1077,11 +1093,13 @@
         {
           "id": "15-4",
           "desc": "专家提示词效果验证（黄金数据集命中率）",
-          "status": "pending_k3",
+          "status": "stale",
           "evidence_files": [
             "docs/synova/product-lines/evidence/task-D396.json",
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-09-04.json",
             "docs/synova/product-lines/evidence/test-2026-09-05.json"
           ],
           "note": "创始人 13 问第 10 问：提示词效果未验证"
@@ -1263,7 +1281,9 @@
           "status": "stale",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-09-04.json",
             "docs/synova/product-lines/evidence/test-2026-09-05.json"
           ],
           "note": "代码实证存在；重启恢复测试未作为证据登记"
@@ -1288,7 +1308,9 @@
           "status": "stale",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-09-04.json",
             "docs/synova/product-lines/evidence/test-2026-09-05.json"
           ],
           "note": "企业事实层设计存在"
@@ -1339,7 +1361,9 @@
           "evidence_files": [
             "docs/synova/product-lines/evidence/k3-2026-09-02-productlines.json",
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-09-04.json",
             "docs/synova/product-lines/evidence/test-2026-09-05.json"
           ],
           "note": ""
@@ -1423,7 +1447,9 @@
           "evidence_files": [
             "docs/synova/product-lines/evidence/k3-2026-09-02-productlines.json",
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-09-04.json",
             "docs/synova/product-lines/evidence/test-2026-09-05.json"
           ],
           "note": "组件存在（代码实证）"
@@ -1464,7 +1490,9 @@
           "status": "pending_k3",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-09-04.json",
             "docs/synova/product-lines/evidence/test-2026-09-05.json"
           ],
           "note": "providers/deepseek.ts 存在"
@@ -1475,7 +1503,9 @@
           "status": "pending_k3",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-09-04.json",
             "docs/synova/product-lines/evidence/test-2026-09-05.json"
           ],
           "note": "深度优化 = 0"
@@ -1531,7 +1561,9 @@
           "evidence_files": [
             "docs/synova/product-lines/evidence/k3-2026-09-02-productlines.json",
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-09-04.json",
             "docs/synova/product-lines/evidence/test-2026-09-05.json"
           ],
           "note": "组件存在（代码实证）"
@@ -1687,7 +1719,9 @@
           "evidence_files": [
             "docs/synova/product-lines/evidence/k3-2026-09-02-productlines.json",
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-09-04.json",
             "docs/synova/product-lines/evidence/test-2026-09-05.json"
           ],
           "note": "组件存在（代码实证）"
@@ -1735,7 +1769,9 @@
           "status": "stale",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-09-04.json",
             "docs/synova/product-lines/evidence/test-2026-09-05.json"
           ],
           "note": "文件驱动已有"
@@ -1746,7 +1782,9 @@
           "status": "stale",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-09-04.json",
             "docs/synova/product-lines/evidence/test-2026-09-05.json"
           ],
           "note": ""
@@ -1757,7 +1795,9 @@
           "status": "stale",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-09-04.json",
             "docs/synova/product-lines/evidence/test-2026-09-05.json"
           ],
           "note": "builtins 自动扫描存在"

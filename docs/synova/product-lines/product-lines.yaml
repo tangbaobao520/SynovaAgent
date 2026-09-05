@@ -338,7 +338,7 @@ lines:
       - id: "7-2"
         desc: "哨兵全量注册（manifest 挂载无死代码）"
         evidence: ["k3:AGENT-CAPABILITY-FULL-CHAIN-AUDIT-20260813"]
-        status: failed
+        status: uncommitted
         note: "K3：P0 哨兵阈值告警生产死代码（sentinel-loader 从不挂 manifest）"
       - id: "7-3"
         desc: "监测结果持久化（重启不丢 findings）"
@@ -385,7 +385,7 @@ lines:
       - id: "8-1"
         desc: "阈值真实触发（读 manifest 配置，不硬编码）"
         evidence: ["scenario:GS-05", "k3:AGENT-CAPABILITY-FULL-CHAIN-AUDIT-20260813"]
-        status: failed
+        status: uncommitted
         note: "K3 P0-1：阈值硬编码于 aggregate（0.4/0.3/0.2/0.1），不读 manifest"
       - id: "8-2"
         desc: "工单入库（sentinel_tickets 表有行）"
