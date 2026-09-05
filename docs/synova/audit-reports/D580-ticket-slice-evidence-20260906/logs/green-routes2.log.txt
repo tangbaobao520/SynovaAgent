@@ -1,0 +1,56 @@
+
+ RUN  v4.1.8 /Users/wane/SynovaAgent/.synova-wt-d580
+
+{"level":30,"time":1788635103746,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"services/escalation-engine","ruleCount":0,"msg":"EscalationEngine 初始化完成"}
+{"level":30,"time":1788635103747,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-cash-runway","name":"sentinel-cash-runway","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788635103758,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"adapters/sqlite-graph-store","pragmaResult":"memory","msg":"WAL 不可用 — 降级到 DELETE 模式"}
+{"level":30,"time":1788635103759,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"store/schema-migration","version":2,"name":"graph-nodes-props","msg":"执行迁移 2: graph-nodes-props"}
+{"level":30,"time":1788635103759,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"store/schema-migration","version":2,"msg":"迁移 2 完成"}
+{"level":40,"time":1788635103760,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-cash-runway","total":1,"critical":1,"warning":0,"durationMs":12,"msg":"[runner] 哨兵发现: 1 条 (1 critical, 0 warning)"}
+{"level":30,"time":1788635103760,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/signal-aggregator","totalFindings":1,"signals":1,"critical":1,"msg":"[aggregator] 信号聚合完成"}
+{"level":40,"time":1788635103760,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/runner","totalFindings":1,"aggregatedSignals":1,"criticalSignals":1,"msg":"[runner] 聚合信号 — 发现 critical 信号，准备路由专家"}
+{"level":30,"time":1788635103761,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/runner","ticketId":"ticket-sig_团队A-auto","signalId":"sig_团队A","severity":"critical","msg":"[runner] 自动工单已创建（告警闭环，无专家依赖）"}
+{"level":40,"time":1788635103820,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/runner","autoTickets":1,"msg":"[runner] ExpertDispatcher 未初始化 — 自动工单已建，专家增强跳过（非阻断）"}
+{"level":30,"time":1788635103834,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"services/escalation-engine","ruleCount":0,"msg":"EscalationEngine 初始化完成"}
+{"level":30,"time":1788635103839,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"services/escalation-engine","ruleCount":0,"msg":"EscalationEngine 初始化完成"}
+{"level":30,"time":1788635103840,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-cash-runway","name":"sentinel-cash-runway","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788635103840,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"adapters/sqlite-graph-store","pragmaResult":"memory","msg":"WAL 不可用 — 降级到 DELETE 模式"}
+{"level":30,"time":1788635103840,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"store/schema-migration","version":2,"name":"graph-nodes-props","msg":"执行迁移 2: graph-nodes-props"}
+{"level":30,"time":1788635103840,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"store/schema-migration","version":2,"msg":"迁移 2 完成"}
+{"level":40,"time":1788635103840,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-cash-runway","total":1,"critical":1,"warning":0,"durationMs":0,"msg":"[runner] 哨兵发现: 1 条 (1 critical, 0 warning)"}
+{"level":30,"time":1788635103841,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"agent/sentinel-service","status":"all","msg":"[getSentinelTickets] 工单表空 — 内存派生兜底（degraded）"}
+{"level":30,"time":1788635103843,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"agent/sentinel-service","status":"open","msg":"[getSentinelTickets] 工单表空 — 内存派生兜底（degraded）"}
+{"level":30,"time":1788635103845,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"agent/sentinel-service","status":"resolved","msg":"[getSentinelTickets] 工单表空 — 内存派生兜底（degraded）"}
+{"level":30,"time":1788635103846,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"services/escalation-engine","ruleCount":0,"msg":"EscalationEngine 初始化完成"}
+{"level":30,"time":1788635103846,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"services/escalation-engine","ruleCount":0,"msg":"EscalationEngine 初始化完成"}
+{"level":30,"time":1788635103846,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-cash-runway","name":"sentinel-cash-runway","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788635103846,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"adapters/sqlite-graph-store","err":"this.db.pragma is not a function","msg":"WAL 启用失败 — 使用 SQLite 默认日志模式"}
+{"level":40,"time":1788635103846,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"adapters/sqlite-graph-store","err":"this.db.exec is not a function","msg":"图存储表初始化失败"}
+{"level":40,"time":1788635103846,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-cash-runway","msg":"GraphStore 创建失败 — 降级至原始 db"}
+{"level":50,"time":1788635103846,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/runner","err":"sentinel_events 追加失败: db handle corrupted","sentinelId":"sentinel-cash-runway","msg":"[runner] 哨兵事件持久化失败 — 降级为纯内存态（重启即丢）"}
+{"level":40,"time":1788635103846,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-cash-runway","total":1,"critical":1,"warning":0,"durationMs":0,"msg":"[runner] 哨兵发现: 1 条 (1 critical, 0 warning)"}
+{"level":40,"time":1788635103846,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"agent/sentinel-service","err":"db handle corrupted","msg":"[getSentinelTickets] 工单表读取失败 — 内存派生兜底（degraded）"}
+{"level":30,"time":1788635103847,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"services/escalation-engine","ruleCount":0,"msg":"EscalationEngine 初始化完成"}
+{"level":30,"time":1788635103847,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-cash-runway","name":"sentinel-cash-runway","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788635103847,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"adapters/sqlite-graph-store","pragmaResult":"memory","msg":"WAL 不可用 — 降级到 DELETE 模式"}
+{"level":30,"time":1788635103848,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"store/schema-migration","version":2,"name":"graph-nodes-props","msg":"执行迁移 2: graph-nodes-props"}
+{"level":30,"time":1788635103848,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"store/schema-migration","version":2,"msg":"迁移 2 完成"}
+{"level":40,"time":1788635103848,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-cash-runway","total":1,"critical":1,"warning":0,"durationMs":1,"msg":"[runner] 哨兵发现: 1 条 (1 critical, 0 warning)"}
+{"level":30,"time":1788635103848,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/signal-aggregator","totalFindings":1,"signals":1,"critical":1,"msg":"[aggregator] 信号聚合完成"}
+{"level":40,"time":1788635103848,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/runner","totalFindings":1,"aggregatedSignals":1,"criticalSignals":1,"msg":"[runner] 聚合信号 — 发现 critical 信号，准备路由专家"}
+{"level":30,"time":1788635103848,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/runner","ticketId":"ticket-sig_团队A-auto","signalId":"sig_团队A","severity":"critical","msg":"[runner] 自动工单已创建（告警闭环，无专家依赖）"}
+{"level":40,"time":1788635103848,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/runner","autoTickets":1,"msg":"[runner] ExpertDispatcher 未初始化 — 自动工单已建，专家增强跳过（非阻断）"}
+{"level":30,"time":1788635103865,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"agent/sentinel-service","status":"open","msg":"[getSentinelTickets] 工单表空 — 内存派生兜底（degraded）"}
+{"level":30,"time":1788635103866,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"services/escalation-engine","ruleCount":0,"msg":"EscalationEngine 初始化完成"}
+{"level":30,"time":1788635103868,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"services/escalation-engine","ruleCount":0,"msg":"EscalationEngine 初始化完成"}
+{"level":30,"time":1788635103870,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"services/escalation-engine","ruleCount":0,"msg":"EscalationEngine 初始化完成"}
+{"level":30,"time":1788635103872,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"services/escalation-engine","ruleCount":0,"msg":"EscalationEngine 初始化完成"}
+{"level":30,"time":1788635103872,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"services/escalation-engine","ruleCount":0,"msg":"EscalationEngine 初始化完成"}
+{"level":40,"time":1788635103872,"pid":15306,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/runner","err":"db gone","ticketId":"any-ticket","to":"acknowledged","msg":"[runner] transitionTicket db 失败 — degraded"}
+ ✓ tests/routes/sentinel-tickets.test.ts (9 tests) 140ms
+
+ Test Files  1 passed (1)
+      Tests  9 passed (9)
+   Start at  03:05:03
+   Duration  454ms (transform 145ms, setup 0ms, import 224ms, tests 140ms, environment 0ms)
+

@@ -1,0 +1,124 @@
+
+ RUN  v4.1.8 /Users/wane/SynovaAgent/.synova-wt-d580
+
+ ❯ tests/sentinel/ticket-transition.test.ts (8 tests | 1 failed) 16ms
+     ✓ open → acknowledged: 状态落表 + resolved_at 保持 NULL + 审计事件 10ms
+     ✓ acknowledged → resolved: resolved_at 写入（仅 resolved 写 — 裁决表第 4 行） 1ms
+     ✓ open → dismissed: 状态落表 + resolved_at 保持 NULL（dismissed 不写 resolved_at） 1ms
+     × acknowledged → dismissed: ILLEGAL_TRANSITION + from/to 字段 3ms
+     ✓ 终态拒绝: resolved → acknowledged / resolved → dismissed; dismissed → acknowledged 1ms
+     ✓ 同态迁移亦 ILLEGAL（acknowledged → acknowledged, 409 语义） 0ms
+     ✓ 未知 id → TICKET_NOT_FOUND 0ms
+     ✓ db 失败 → { ok:false, degraded:true } + log.warn（不抛, HTTP 503 映射在 L1） 0ms
+ ❯ tests/sentinel/ticket-store.test.ts (12 tests | 4 failed) 94ms
+     ✓ 正常路径: 插入工单后返回行, 字段对齐 DDL 5ms
+     ✓ status 过滤真实生效（表路径 SQL WHERE） 1ms
+     ✓ 降级传播: 表不存在 → 抛出（L3 不吞错, 降级决策单点在 L2 — 铁律 31） 1ms
+     × 表有行 → source:table, status 字段在场, severity emergency 映射 critical 3ms
+     × 空表 → memory-fallback + degraded:true + source 标注（裁决 3: 表空即降级, 比静默空列表诚实） 16ms
+     × db 句柄损坏 → fallback + log.warn 非静默（mock 断言, 铁律 24） 1ms
+     × runner 未初始化 → degraded 空列表（无数据源, 不静默） 0ms
+     ✓ runner A 发送 → 销毁 → 同库新 runner B: 窗口内不重发（重启恢复的物理证明） 60ms
+     ✓ 窗口缺省 5min（D339 裁决 A）: 3 分钟命中去重, 6 分钟重发 2ms
+     ✓ env 覆盖生效: SENTINEL_NOTIFICATION_DEDUP_MS=60000 → 1 分钟窗口 2ms
+     ✓ 非法 env 回退缺省 + log.warn 非静默 1ms
+     ✓ DS6 场景②: 同 finding 二次 check 不重复开单/不重复通知（id 稳定 + 表去重） 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/sentinel/ticket-store.test.ts > D580 8-2 — getSentinelTickets 表读优先 + 降级（L2 写读同源） > 表有行 → source:table, status 字段在场, severity emergency 映射 critical
+AssertionError: expected undefined to be 'table' // Object.is equality
+
+- Expected:
+"table"
+
++ Received:
+undefined
+
+ ❯ tests/sentinel/ticket-store.test.ts:162:24
+    160|     const res = getSentinelTickets();
+    161|     expect(res.ok).toBe(true);
+    162|     expect(res.source).toBe('table');
+       |                        ^
+    163|     expect(res.degraded).toBeUndefined();
+    164|     expect(res.tickets).toHaveLength(1);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  tests/sentinel/ticket-store.test.ts > D580 8-2 — getSentinelTickets 表读优先 + 降级（L2 写读同源） > 空表 → memory-fallback + degraded:true + source 标注（裁决 3: 表空即降级, 比静默空列表诚实）
+AssertionError: expected undefined to be 'memory-fallback' // Object.is equality
+
+- Expected:
+"memory-fallback"
+
++ Received:
+undefined
+
+ ❯ tests/sentinel/ticket-store.test.ts:178:24
+    176|     const res = getSentinelTickets();
+    177|     expect(res.ok).toBe(true);
+    178|     expect(res.source).toBe('memory-fallback');
+       |                        ^
+    179|     expect(res.degraded).toBe(true);
+    180|     expect(res.tickets.length).toBeGreaterThanOrEqual(1); // 内存派生兜底非空
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  tests/sentinel/ticket-store.test.ts > D580 8-2 — getSentinelTickets 表读优先 + 降级（L2 写读同源） > db 句柄损坏 → fallback + log.warn 非静默（mock 断言, 铁律 24）
+AssertionError: expected undefined to be 'memory-fallback' // Object.is equality
+
+- Expected:
+"memory-fallback"
+
++ Received:
+undefined
+
+ ❯ tests/sentinel/ticket-store.test.ts:191:24
+    189|     await runner.runOnce('sentinel-cash-runway');
+    190|     const res = getSentinelTickets();
+    191|     expect(res.source).toBe('memory-fallback');
+       |                        ^
+    192|     expect(res.degraded).toBe(true);
+    193|     expect(res.tickets.length).toBeGreaterThanOrEqual(1);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  tests/sentinel/ticket-store.test.ts > D580 8-2 — getSentinelTickets 表读优先 + 降级（L2 写读同源） > runner 未初始化 → degraded 空列表（无数据源, 不静默）
+AssertionError: expected undefined to be 'memory-fallback' // Object.is equality
+
+- Expected:
+"memory-fallback"
+
++ Received:
+undefined
+
+ ❯ tests/sentinel/ticket-store.test.ts:201:24
+    199|     const res = getSentinelTickets();
+    200|     expect(res.ok).toBe(true);
+    201|     expect(res.source).toBe('memory-fallback');
+       |                        ^
+    202|     expect(res.degraded).toBe(true);
+    203|     expect(res.tickets).toEqual([]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  tests/sentinel/ticket-transition.test.ts > D580 8-4 — transitionTicket 状态机（L3） > acknowledged → dismissed: ILLEGAL_TRANSITION + from/to 字段
+SqliteError: no such table: sentinel_events
+ ❯ Database.prepare ../node_modules/better-sqlite3/lib/methods/wrappers.js:5:21
+ ❯ eventsOf tests/sentinel/ticket-transition.test.ts:62:15
+     60|
+     61|   function eventsOf(ticketId: string): Array<{ event_type: string; agg…
+     62|     return db.prepare(
+       |               ^
+     63|       `SELECT event_type, aggregate_id, payload FROM sentinel_events
+     64|        WHERE event_type = 'ticket_transition' AND aggregate_id = ? ORD…
+ ❯ tests/sentinel/ticket-transition.test.ts:115:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  5 failed | 15 passed (20)
+   Start at  03:02:29
+   Duration  387ms (transform 267ms, setup 0ms, import 289ms, tests 111ms, environment 0ms)
+

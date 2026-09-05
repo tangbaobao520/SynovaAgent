@@ -32,7 +32,7 @@ export const competitiveMoatStructuralSentinel = {
         ? allNodes.reduce((s, n) => s + (Number(n.props.price) || 0), 0) / allNodes.length
         : 0;
       if (allNodes.length === 0 || ourPrice === 0 || ourRevenue === 0) {
-        return [{ id: `i3-nodata-${now.getTime()}`, severity: 'info',
+        return [{ id: `i3-nodata`, severity: 'info',
           title: '护城河数据不足', description: '缺少市场价格或财务数据，无法计算结构性壁垒。',
           evidence: [`节点数: ${allNodes.length}`, `均价: ${ourPrice}`, `营收: ${ourRevenue}`],
           suggestion: '补充 Market Outcome 和 Financial 节点数据。', detectedAt: checkedAt }];
@@ -61,9 +61,9 @@ try {
       const score = (se.score + ne.score + sc.score + pp.score + (slm.applicable ? slm.slm : 0) + cr.score + lockScore) / 7;
       const scores = `规模${(se.score*100).toFixed(0)}% 网络${(ne.score*100).toFixed(0)}% 切换${(sc.score*100).toFixed(0)}% 流程${(pp.score*100).toFixed(0)}% SLM${slm.applicable ? (slm.slm*100).toFixed(0)+'%' : 'N/A'} 资源${(cr.score*100).toFixed(0)}% 锁定${(lockScore*100).toFixed(0)}%`;
       log.debug({ score }, '护城河强度计算完成');
-      if (score < 0.3) return [{ id: `i3-crit-${now.getTime()}`, severity: 'critical', title: `护城河结构性弱 (${(score*100).toFixed(0)}%)`, description: '七力聚合得分低于 30%。', evidence: [`总分: ${(score*100).toFixed(0)}%`, scores], suggestion: '系统性构建竞争壁垒。', detectedAt: checkedAt }];
-      if (score < 0.5) return [{ id: `i3-warn-${now.getTime()}`, severity: 'warning', title: `护城河结构偏弱 (${(score*100).toFixed(0)}%)`, description: '壁垒不够坚实。', evidence: [`总分: ${(score*100).toFixed(0)}%`, scores], suggestion: '识别最弱的维度并针对性强化。', detectedAt: checkedAt }];
+      if (score < 0.3) return [{ id: `i3-crit`, severity: 'critical', title: `护城河结构性弱 (${(score*100).toFixed(0)}%)`, description: '七力聚合得分低于 30%。', evidence: [`总分: ${(score*100).toFixed(0)}%`, scores], suggestion: '系统性构建竞争壁垒。', detectedAt: checkedAt }];
+      if (score < 0.5) return [{ id: `i3-warn`, severity: 'warning', title: `护城河结构偏弱 (${(score*100).toFixed(0)}%)`, description: '壁垒不够坚实。', evidence: [`总分: ${(score*100).toFixed(0)}%`, scores], suggestion: '识别最弱的维度并针对性强化。', detectedAt: checkedAt }];
       return [];
-    } catch (err: unknown) { log.error({ err }, '[moat-structural] 失败'); return [{ id: `i3-error-${now.getTime()}`, severity: 'warning', title: '检测异常', description: `${(err as Error)?.message || String(err)}`, evidence: [], suggestion: '检查数据源。', detectedAt: checkedAt }]; }
+    } catch (err: unknown) { log.error({ err }, '[moat-structural] 失败'); return [{ id: `i3-error`, severity: 'warning', title: '检测异常', description: `${(err as Error)?.message || String(err)}`, evidence: [], suggestion: '检查数据源。', detectedAt: checkedAt }]; }
   },
 };

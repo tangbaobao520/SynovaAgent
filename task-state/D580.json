@@ -1,12 +1,74 @@
 {
   "task_id": "D580",
   "title": "08告警工单切片-8-2入库-8-3去重稳定化-8-4状态机API",
-  "status": "claimed",
-  "spec": null,
-  "impl": null,
+  "status": "impl_done",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D580-ticket-slice-20260906.md",
+    "by": "dev-doc",
+    "at": "2026-09-06",
+    "note": "spec 必答 4 题全落位（§5.5, 均带实测证据）: ①finding.id 稳定键=去时间戳后缀不加哈希（43 文件互斥分支实测, 值漂移由 INSERT OR REPLACE 内容刷新承载, 消失复现=同 finding 同 id, 窗口过后重通知+工单重置 open）; ②去重载体=独立表 sentinel_notification_dedup（B-19 裁决: 需复活→持久化, 介质选最简 KV 表; journal=两处状态源拒绝; TTL 启动清理; 窗口 10min→5min 落地 D339 裁决 A, env 可配）; ③8-2 降级=source+degraded 双标记, 表为准内存只兜底, 表空即降级（派单字面）; ④signal_id 关联实测不含 finding.id（sig_${entity}）→零迁移需要; 顺带实测发现 closeTicket LIKE 匹配不到 auto 工单的既有缺口——记录不修（spec §6）。写集 7 修改 + 4 新建（§5.1, 43 aggregate 走目录级条目）; 波及面红线已执行: finding.id 消费方全清单 7 项 grep 实测（§4.2）, 其中 2 处测试尾横杠断言会破已纳入写集修复。新增波及发现: GET /tickets 的 status query 是死变量（读而不用）, 8-2 一并接通; finding.id 还是事件重放投影索引（runner L909）——稳定化后 finding_transition 跨轮可命中（改善）。gatekeeper 6/6 ALL PASS（exit 0）; 决策 5 项带参考系（§5.5）; spec-only 提交预期漂移预登记（文件头, D577 先例）。编码指令随附（docs/synova/coordination/编码指令-D580-20260906.md, 分支 feat/d580-ticket-slice-spec 的 PR 交付 spec, 编码分支 feat/d580-ticket-slice-impl）。"
+  },
+  "impl": {
+    "commit": "4d9b7384",
+    "branch": "feat/d580-ticket-slice",
+    "baseline": "origin/main 7afbb23f（D580 派单 + D579 spec 入库 commit; spec/docs 三件套 d48fef5f..a214b83e 随本编码分支同批到达 main）",
+    "by": "synova-dsh (claude-code, DSH 编码 session, worktree .synova-wt-d580)",
+    "at": "2026-09-06",
+    "files": [
+      "src/sentinel/runner.ts",
+      "src/agent/sentinel-service.ts",
+      "src/routes/sentinel.ts",
+      "extensions/sentinels/（43 个单层 aggregate 仅 id 生成行）",
+      "extensions/sentinels/_extinct/competitive-moat-perceptual/aggregate.ts（偏差, 见 deviation）",
+      "extensions/sentinels/_extinct/competitive-moat-structural/aggregate.ts（偏差, 见 deviation）",
+      "extensions/sentinels/_extinct/competitive-dynamics/aggregate.ts（偏差, 见 deviation）",
+      "extensions/sentinels/_extinct/market-lifecycle/aggregate.ts（偏差, 见 deviation）",
+      "tests/sentinel/dedup-key-stability.test.ts",
+      "tests/sentinel/threshold-injection.test.ts",
+      "tests/sentinel/threshold-manifest-flip.test.ts",
+      "tests/sentinel/finding-id-stability.test.ts（新建）",
+      "tests/sentinel/ticket-store.test.ts（新建）",
+      "tests/sentinel/ticket-transition.test.ts（新建）",
+      "tests/routes/sentinel-tickets.test.ts（新建）",
+      "memory/notes/implemented/2026-09-06-d580-ticket-dedup-persistence.md（proposed→implemented 随 commit, git mv）",
+      "docs/synova/audit-reports/D580-ticket-slice-evidence-20260906/（4 件 + logs/ 17 件）"
+    ],
+    "files_note": "代码写集 = spec §5.1 表 11 条目全命中（git show 4d9b7384 --name-only 共 79 文件 = 50 extensions + 3 src + 6 tests + 1 note + 19 evidence 流程件, 逐条对账见 evidence wiring-and-write-set-evidence.md §2）；task-state/D580.json 本文件随 docs 后继 commit 回填（D577 先例 c89feae3 模式）。",
+    "evidence": "docs/synova/audit-reports/D580-ticket-slice-evidence-20260906/（README+DS 对照 / finding-id-consumers-grep / red-green 双轮 / wiring+写集对账; logs/ 存双轮原样输出; *.log 因 .gitignore:8 全局忽略改名 *.log.txt）",
+    "ds": {
+      "DS1": "✅ 45 个 aggregate id 行去时间戳（43 单层全命中 + 2 个 -${start} 同类形态）+ 4 个 _extinct 生产可达子哨兵（显式偏差, 见 deviation）; 逐文件 grep -c 归零表入 evidence（仅剩 2 文件×2 行非 id 计时行, DS1 口径）; finding-id-stability 4/4 绿（44 文件全扫双跑同 id + 单轮互异 + 降级路径稳定）+ 幂等复跑 2 次一致",
+      "DS2": "✅ sentinel_notification_dedup 表（key TEXT PK + last_sent_ms INTEGER）+ 内存写穿 + 读表回填缓存 + db 失败内存兜底（log.warn 非静默）+ 启动 TTL 清理（DELETE < now-window, 不建定时任务, 最少机制）+ 窗口 5min（D339 裁决 A）+ SENTINEL_NOTIFICATION_DEDUP_MS env 覆盖（正整数校验/非法回退+warn）; ticket-store 重启恢复用例绿（runner A 发送→销毁→同库新 runner B 窗口内命中）+ dedup-key-stability 窗口内命中用例绿 + 既有 12min 用例口径同步（12>5 仍绿）",
+      "DS3": "✅ getSentinelTickets 表读同源: 表有行 source:'table'; 空表（log.info）/读失败（log.warn, mock 断言非静默）→ memory-fallback + degraded:true 双标记; status 过滤双路径真实生效（SQL WHERE + 内存过滤, 死变量修复）; runner 未初始化 → degraded 空列表; severity emergency→critical 映射; diagnosis JSON parse 失败 log.warn + signal_id 兜底",
+      "DS4": "✅ transitionTicket 白名单（open→acknowledged / open→dismissed / acknowledged→resolved; 终态再迁移+同态一律 ILLEGAL_TRANSITION+from/to, 无后门）+ TICKET_NOT_FOUND + db 失败 degraded 分类不抛 + resolved_at 仅 resolved 写（dismissed 保持 NULL）+ ticket_transition 审计事件落 sentinel_events（含 from/to payload; 非法迁移不写事件）",
+      "DS5": "✅ routes POST /tickets/:id/transition 注册 + 200/400(缺 to)/400(INVALID_TARGET)/404/409/503 全映射（真实 router + 真实 http server + fetch, 9 用例绿）+ 文件头端点清单注释同步",
+      "DS6": "✅ 三场景以集成用例真实跑通: ① routes 'DS6 场景①'（critical 注入→runOnce+aggregate→INSERT 落表→GET source:table 可见）② ticket-store 'DS6 场景②'（同 finding 二次 check 行数不增 + 窗口内通知不重发）③ routes 'DS6 场景③'（ack→resolve 全链路 200 → GET ?status=resolved 含该行 / open 不含）",
+      "DS7": "✅ evidence 落盘 git 跟踪路径 docs/synova/audit-reports/D580-ticket-slice-evidence-20260906/（README+DS1-DS12 对照 / finding-id-consumers-grep（§4.2 七项消费方现值 grep + 43 文件归零表 + 182 行对 id-only 纪律逐对校验）/ red-green 双轮全文+幂等 / wiring+写集对账; logs/ 17 件原样输出; 根级 evidence/ 被 .gitignore L76 禁用已规避, *.log 被 L8 禁用改名 .log.txt）",
+      "DS8": "✅ tests/sentinel/ + tests/routes/sentinel-tickets 30 文件 223 用例全绿（26 既有含 D577 threshold-injection/flip + 4 新建; +1 skip = 既有 D577_FLIP_TEST 独占门控, 基线同态）; tsc 28=28（逐条 diff 相等, 全为 _extinct 既有 import 错）; 全量 vitest 失败文件集 58=58 逐文件 diff=空（测试用例级 +1 = tests/acceptance/zero-code-industry '零 .ts 修改' 自引用用例, 断言 git diff 无 .ts → 编码期必红, vitest.config.ts CI exclude 名单在案, commit 后自愈, 非回归）; 新增代码 as any=0（runner 既有 2 处 : any 未触碰）",
+      "DS9": "✅ 新契约 JSDoc 三要素在场（listSentinelTickets/transitionTicket/getSentinelTickets/transitionSentinelTicket/resolveNotificationDedupMs + routes 端点映射表注释）; catch 全部 log+degraded 分类（10 处降级点表列 evidence wiring §5.2）; 无死代码（旧主读路径派生已替换为 deriveTicketsFromMemory 降级 helper 全仓唯一引用点; getSentinelTickets 生产消费方仅 routes L100; transitionTicket/listSentinelTickets 生产调用链 grep 实测 evidence wiring §1）",
+      "DS10": "✅（含 1 显式偏差, 已登记 deviation 域）11 条目全命中零缺项; Q2 排除项 diff 零出现（signal-aggregator/server.ts/config.ts/VERSION.md/product-lines/desktop/audit/electron-renderer/authority 全未触碰）; 偏差 = _extinct 4 文件仅 id 行（见 deviation）",
+      "DS11": "✅ 本表即 DS 一一对应（无重编号/跳号/静默缺项）; 决策 5 项带参考系（spec §5.5, 编码阶段零偏离, 结论复述见 evidence README 决策记录）; 已知限制 3 项声明（known_gaps）",
+      "DS12": "✅ 零 VERSION bump / 零 scripts/product-lines 触碰（CT-42 不触发）; memory note 随 4d9b7384 git mv proposed→implemented 且 commit body 引用 note 路径（铁律 49）; K3 审计入口 = evidence 目录 + 本 JSON（audit 段留待 K3 填写）"
+    },
+    "verify": [
+      "npx vitest run tests/sentinel/finding-id-stability.test.ts tests/sentinel/ticket-store.test.ts tests/sentinel/ticket-transition.test.ts tests/routes/sentinel-tickets.test.ts  # 4 文件 33 用例全绿",
+      "npx vitest run tests/sentinel/ tests/routes/sentinel-tickets.test.ts  # 30 文件 223 用例全绿",
+      "npx tsc --noEmit  # 28=28 基线逐条相等",
+      "grep -rn 'getTime()\\|Date.now()' extensions/sentinels/*/aggregate.ts  # 仅 4 行非 id 计时行（2 文件）",
+      "bash scripts/control-tower/dev-doc-gatekeeper.sh docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D580-ticket-slice-20260906.md  # ALL PASS 6/6, 写集 11 条目可提取",
+      "bash scripts/pre-commit-check.sh  # 13 组全过（synova-commit 4d9b7384 内执行, 无 --no-verify）"
+    ],
+    "known_gaps": [
+      "closeTicket 的 signal_id LIKE '%sentinelId%' 匹配不到 auto 工单（sig_${entity} 不含 sentinelId 字面）— spec §5.5 裁决 4 记录不修, git diff 无 closeTicket 写入值改动（runner.ts L1171-1177 现值）",
+      "signal-aggregator extractEntityKey（L177-183, 写集外未触碰）title 含活值无冒号走 30 字符截断 → entity 键/sig id/auto 工单 id 值漂移 — 同输入双跑不受影响, 修复需动 extractEntityKey 值剥离（memory note 遗留缺口 #2 供独立任务认领）",
+      "_extinct 其余 8 文件 id 行含时间戳 — 全仓无 import 死代码（审计参考件）, 零行为影响, 清扫应独立任务",
+      "extensions/industries/*/thresholds.json 在本机全量 vitest 下被既有测试写残留（实测两次, git checkout -- 可清）— 与本任务写集无关, 环境注记已入 evidence README"
+    ],
+    "deviation": [
+      "DS10 显式偏差: extensions/sentinels/_extinct/{competitive-moat-perceptual, competitive-moat-structural, competitive-dynamics, market-lifecycle}/aggregate.ts 4 文件仅 id 生成行去时间戳（13 行对, id-line-only 同款纪律校验通过）。依据: 其父哨兵 competitive-moat/competitive-position（在 43 单层清单内）check() 经 await import('../_extinct/...') 生产委托合并子 findings, 子 id 时间戳持续进入生产 finding 流 = N14 残留; spec §5.1 单层 glob（extensions/sentinels/*/aggregate.ts）普查结构性漏计 _extinct 层; spec §5.1 新建测试行 'finding-id-stability（import.meta.glob 全扫 + fake timer 双跑同 id）' 物理要求修复。red→green 链: 43 文件修复后仍红（evidence logs/green-finding-id.log.txt, 失败点 competitive-moat 探针[empty] 'i4-crit-<ts>'）→ +4 文件后 4/4 绿。其余 8 个 _extinct 文件无生产可达路径（全仓无 import）, 零触碰。审计员如判超范围, 可 revert 该 4 文件独立评估（不影响其余 DS）。"
+    ]
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-06",
-  "updated_by": "dsh-cto",
-  "note": "CTO 派单 → dev-doc 写 spec。三点：8-2 写读同源（K3 P2-3 修复）/ 8-3 去重键稳定化（N14 根因，D339 裁决 A 执行）/ 8-4 状态机 API。DSH 借鉴 B-19（持久化分级哲学）。写集与 D579/D578/P0文档批 零重叠。"
+  "updated_by": "synova-dsh (claude-code coding session)"
 }

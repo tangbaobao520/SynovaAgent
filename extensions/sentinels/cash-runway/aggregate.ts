@@ -97,7 +97,7 @@ export const cashRunwaySentinel = {
       if (findings.length) log.info({ teamId, count: findings.length }, '现金流检查完成');
     } catch (err: unknown) {
       log.error({ err, teamId }, '[cash-runway] check失败');
-      return [{ id: `cr-error-${Date.now()}`, severity: 'warning' as const,
+      return [{ id: `cr-error`, severity: 'warning' as const,
         title: '现金流检测异常', description: `${(err as Error)?.message || String(err)}`,
         evidence: [], suggestion: '检查Financial节点数据源。', detectedAt: new Date().toISOString() }];
     }

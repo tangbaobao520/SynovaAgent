@@ -29,7 +29,7 @@ export const marketLifecycleSentinel = {
 
       if (marketNodes.length === 0 || finNodes.length === 0) {
         return [{
-          id: `e1-nodata-${now.getTime()}`, severity: 'info',
+          id: `e1-nodata`, severity: 'info',
           title: '市场数据不足',
           description: '缺少 Market 或 FINANCIAL 节点，无法判定生命周期。',
           evidence: [`Market节点: ${marketNodes.length}`, `FINANCIAL节点: ${finNodes.length}`],
@@ -72,7 +72,7 @@ export const marketLifecycleSentinel = {
       };
 
       findings.push({
-        id: `e1-stage-${now.getTime()}`, severity,
+        id: `e1-stage`, severity,
         title: `产业处于${stageLabels[result.stage]}（增长率 ${grPct}%）`,
         description: `基于Klepper规则判定: 增长率${grPct}%，竞争者${result.competitorCount}个。`,
         evidence: [
@@ -93,7 +93,7 @@ export const marketLifecycleSentinel = {
     } catch (err: unknown) {
       log.error({ err }, '[market-lifecycle] check 失败');
       return [{
-        id: `e1-error-${now.getTime()}`, severity: 'warning',
+        id: `e1-error`, severity: 'warning',
         title: '市场生命周期检测异常',
         description: `${(err as Error)?.message || String(err)}`,
         evidence: [], suggestion: '检查 SOG 图数据源。', detectedAt: checkedAt,

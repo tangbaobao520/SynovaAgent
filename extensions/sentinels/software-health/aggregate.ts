@@ -92,7 +92,7 @@ export const softwareHealthSentinel = {
         const usPct = (usage.usageRate * 100).toFixed(0);
         if (usage.usageRate < th('usage_rate').critical) {
           findings.push({
-            id: `t1-usage-crit-${now.getTime()}`, severity: 'critical',
+            id: `t1-usage-crit`, severity: 'critical',
             title: `SaaS 利用率极低 (${usPct}%)`,
             description: `${usage.totalTools} 个工具中仅 ${usage.activeCount} 个在用。`,
             evidence: [`利用率: ${usPct}%`, `闲置: ${usage.idleCount}`],
@@ -101,7 +101,7 @@ export const softwareHealthSentinel = {
           });
         } else if (usage.usageRate < th('usage_rate').warning) {
           findings.push({
-            id: `t1-usage-warn-${now.getTime()}`, severity: 'warning',
+            id: `t1-usage-warn`, severity: 'warning',
             title: `SaaS 利用率偏低 (${usPct}%)`,
             description: `${usage.idleCount}/${usage.totalTools} 个工具闲置或状态未知。`,
             evidence: [`利用率: ${usPct}%`, `闲置: ${usage.idleCount}`],
@@ -112,7 +112,7 @@ export const softwareHealthSentinel = {
 
         for (const oc of usage.overlappingCategories) {
           findings.push({
-            id: `t1-overlap-${oc.category}-${now.getTime()}`, severity: 'warning',
+            id: `t1-overlap-${oc.category}`, severity: 'warning',
             title: `${oc.category} 类别 ${oc.toolCount} 个工具可能重叠`,
             description: `同类工具: ${oc.toolNames.join(', ')}。`,
             evidence: [`类别: ${oc.category}`, `工具数: ${oc.toolCount}`],
@@ -136,7 +136,7 @@ export const softwareHealthSentinel = {
         const siPct = (shadow.unauthorizedRate * 100).toFixed(0);
         if (shadow.unauthorizedRate > th('unauthorized_rate').critical) {
           findings.push({
-            id: `t1-shadow-crit-${now.getTime()}`, severity: 'critical',
+            id: `t1-shadow-crit`, severity: 'critical',
             title: `影子 IT 风险高 (${siPct}% 未授权)`,
             description: `${shadow.unauthorizedCount}/${shadow.totalTools} 个工具无明确授权记录。`,
             evidence: [`未授权率: ${siPct}%`, `高风险: ${shadow.highRiskUnauthorized.join(', ') || '无'}`],
@@ -145,7 +145,7 @@ export const softwareHealthSentinel = {
           });
         } else if (shadow.unauthorizedRate > th('unauthorized_rate').warning) {
           findings.push({
-            id: `t1-shadow-warn-${now.getTime()}`, severity: 'warning',
+            id: `t1-shadow-warn`, severity: 'warning',
             title: `影子 IT 风险 (${siPct}% 未授权)`,
             description: `${shadow.unauthorizedCount} 个工具有潜在合规风险。`,
             evidence: [`未授权率: ${siPct}%`],
@@ -163,7 +163,7 @@ export const softwareHealthSentinel = {
       if (!ih.degraded && ih.totalSystems > 0) {
         if (ih.signal === 'critical') {
           findings.push({
-            id: `t1-ih-crit-${now.getTime()}`, severity: 'critical',
+            id: `t1-ih-crit`, severity: 'critical',
             title: `数据孤岛严重 — ${(ih.connectivityRate * 100).toFixed(0)}% 系统已连通`,
             description: `${ih.totalSystems} 个系统中仅 ${ih.connectedSystems} 个有 API 连接。`,
             evidence: [`连通率: ${(ih.connectivityRate * 100).toFixed(0)}%`, `孤立系统: ${ih.isolatedSystems.slice(0, 5).join(', ')}`],
@@ -172,7 +172,7 @@ export const softwareHealthSentinel = {
           });
         } else if (ih.signal === 'warning') {
           findings.push({
-            id: `t1-ih-warn-${now.getTime()}`, severity: 'warning',
+            id: `t1-ih-warn`, severity: 'warning',
             title: `系统连通率偏低 (${(ih.connectivityRate * 100).toFixed(0)}%)`,
             description: `${ih.totalSystems} 个系统中 ${ih.isolatedSystems.length} 个可能处于孤立状态。`,
             evidence: [`连通率: ${(ih.connectivityRate * 100).toFixed(0)}%`],
@@ -186,7 +186,7 @@ export const softwareHealthSentinel = {
     } catch (err: unknown) {
       log.error({ err }, '[software-health] check 失败');
       return [{
-        id: `t1-error-${now.getTime()}`, severity: 'warning',
+        id: `t1-error`, severity: 'warning',
         title: '软件资产健康度检测异常',
         description: `检测出错: ${(err as Error)?.message || String(err)}`,
         evidence: [],

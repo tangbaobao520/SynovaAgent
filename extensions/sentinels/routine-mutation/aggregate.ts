@@ -37,7 +37,7 @@ export const routineMutationSentinel = {
 
       if (result.degraded) {
         return [{
-          id: `o2-nodata-${now.getTime()}`, severity: 'info',
+          id: `o2-nodata`, severity: 'info',
           title: '惯例数据不足', description: '未检测到 Process 节点。',
           evidence: [], suggestion: '添加工序/流程数据。', detectedAt: checkedAt,
         }];
@@ -47,7 +47,7 @@ export const routineMutationSentinel = {
 
       if (result.assessment === 'frozen') {
         return [{
-          id: `o2-frozen-${now.getTime()}`, severity: 'warning',
+          id: `o2-frozen`, severity: 'warning',
           title: `惯例僵化 — 变异率仅 ${ratePct}%`,
           description: `过去12个月内仅 ${result.mutatedRoutines}/${result.totalRoutines} 个惯例发生过变化。Nelson & Winter 认为过低变异率意味着组织丧失适应能力。`,
           evidence: [`变异率: ${ratePct}%`, `总惯例: ${result.totalRoutines}`, `变异数: ${result.mutatedRoutines}`],
@@ -58,7 +58,7 @@ export const routineMutationSentinel = {
 
       if (result.assessment === 'unstable') {
         return [{
-          id: `o2-unstable-${now.getTime()}`, severity: 'warning',
+          id: `o2-unstable`, severity: 'warning',
           title: `惯例过高变异 — ${ratePct}% 的惯例在变化`,
           description: `大量惯例同时处于变动状态，可能意味着组织缺乏稳定的运作基础。`,
           evidence: [`变异率: ${ratePct}%`, `变异数: ${result.mutatedRoutines}/${result.totalRoutines}`],
@@ -68,7 +68,7 @@ export const routineMutationSentinel = {
       }
 
       return [{
-        id: `o2-healthy-${now.getTime()}`, severity: 'info',
+        id: `o2-healthy`, severity: 'info',
         title: `惯例变异健康 (${ratePct}%)`,
         description: `${result.totalRoutines} 个惯例中 ${result.mutatedRoutines} 个有变化，变异率在健康区间。`,
         evidence: [`变异率: ${ratePct}%`],
@@ -78,7 +78,7 @@ export const routineMutationSentinel = {
     } catch (err: unknown) {
       log.error({ err }, '[routine-mutation] check 失败');
       return [{
-        id: `o2-error-${now.getTime()}`, severity: 'warning',
+        id: `o2-error`, severity: 'warning',
         title: '惯例变异率检测异常', description: `${(err as Error)?.message || String(err)}`,
         evidence: [], suggestion: '检查数据源。', detectedAt: checkedAt,
       }];

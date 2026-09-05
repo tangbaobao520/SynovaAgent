@@ -47,8 +47,8 @@ async function checkCustomerDemandShift(): Promise<{ critPresent: boolean; warnP
   const result = await sentinel!.check({ db: churnStore() as unknown, now: new Date(), teamId: 't1' });
   expect(result.ok).toBe(true);
   return {
-    critPresent: result.findings.some(f => f.id.startsWith('e4-churn-crit-')),
-    warnPresent: result.findings.some(f => f.id.startsWith('e4-churn-warn-')),
+    critPresent: result.findings.some(f => f.id.startsWith('e4-churn-crit')),
+    warnPresent: result.findings.some(f => f.id.startsWith('e4-churn-warn')),
   };
 }
 

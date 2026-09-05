@@ -58,7 +58,7 @@ export const dataHealthSentinel = {
         const rdPct = (readiness.readiness * 100).toFixed(0);
         if (readiness.readiness < th('data_readiness').critical) {
           findings.push({
-            id: `t3-readiness-crit-${now.getTime()}`, severity: 'critical',
+            id: `t3-readiness-crit`, severity: 'critical',
             title: `数据就绪度过低 (${rdPct}%)`,
             description: `${readiness.totalNodes} 个节点中 ${(readiness.missingFieldRate * 100).toFixed(0)}% 仅含基础字段。`,
             evidence: [`就绪度: ${rdPct}%`, `缺失字段率: ${(readiness.missingFieldRate * 100).toFixed(0)}%`],
@@ -67,7 +67,7 @@ export const dataHealthSentinel = {
           });
         } else if (readiness.readiness < th('data_readiness').warning) {
           findings.push({
-            id: `t3-readiness-warn-${now.getTime()}`, severity: 'warning',
+            id: `t3-readiness-warn`, severity: 'warning',
             title: `数据就绪度偏低 (${rdPct}%)`,
             description: `结构化数据占比 ${(readiness.structuredRate * 100).toFixed(0)}%。`,
             evidence: [`就绪度: ${rdPct}%`, `结构化率: ${(readiness.structuredRate * 100).toFixed(0)}%`],
@@ -77,7 +77,7 @@ export const dataHealthSentinel = {
         }
         if (readiness.piiHitCount > 0) {
           findings.push({
-            id: `t3-pii-${now.getTime()}`, severity: 'warning',
+            id: `t3-pii`, severity: 'warning',
             title: `检测到 ${readiness.piiHitCount} 个节点含潜在 PII`,
             description: '个人身份信息(手机/身份证/薪资)混入本体层，存在隐私合规风险。',
             evidence: [`PII 命中: ${readiness.piiHitCount}/${readiness.totalNodes}`],
@@ -106,7 +106,7 @@ export const dataHealthSentinel = {
         const srPct = (siloResult.siloRate * 100).toFixed(0);
         if (siloResult.siloRate > th('silo_rate').critical) {
           findings.push({
-            id: `t3-silo-crit-${now.getTime()}`, severity: 'critical',
+            id: `t3-silo-crit`, severity: 'critical',
             title: `数据孤岛严重 (${srPct}% 系统孤立)`,
             description: `${siloResult.siloCount}/${siloResult.totalSystems} 个系统无数据流通。`,
             evidence: [`孤岛率: ${srPct}%`, `连接密度: ${(siloResult.connectivityDensity * 100).toFixed(1)}%`],
@@ -115,7 +115,7 @@ export const dataHealthSentinel = {
           });
         } else if (siloResult.siloRate > th('silo_rate').warning) {
           findings.push({
-            id: `t3-silo-warn-${now.getTime()}`, severity: 'warning',
+            id: `t3-silo-warn`, severity: 'warning',
             title: `数据孤岛率偏高 (${srPct}%)`,
             description: `${siloResult.siloCount} 个系统处于孤立状态。`,
             evidence: [`孤岛率: ${srPct}%`, `连接密度: ${(siloResult.connectivityDensity * 100).toFixed(1)}%`],
@@ -129,7 +129,7 @@ export const dataHealthSentinel = {
     } catch (err: unknown) {
       log.error({ err }, '[data-health] check 失败');
       return [{
-        id: `t3-error-${now.getTime()}`, severity: 'warning',
+        id: `t3-error`, severity: 'warning',
         title: '数据健康度检测异常',
         description: `检测过程出错: ${(err as Error)?.message || String(err)}`,
         evidence: [],

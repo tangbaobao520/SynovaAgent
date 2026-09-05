@@ -1,0 +1,11 @@
+
+ RUN  v4.1.8 /Users/wane/SynovaAgent/.synova-wt-d580
+
+ ✓ tests/sentinel/ticket-transition.test.ts (8 tests) 15ms
+ ✓ tests/sentinel/ticket-store.test.ts (12 tests) 129ms
+
+ Test Files  2 passed (2)
+      Tests  20 passed (20)
+   Start at  03:03:51
+   Duration  429ms (transform 358ms, setup 0ms, import 392ms, tests 144ms, environment 0ms)
+

@@ -43,7 +43,7 @@ export const competitivePositionSentinel = {
     } catch (err: unknown) {
       log.error({ err }, '[competitive-position] check 失败');
       return [{
-        id: `cp-error-${now.getTime()}`, severity: 'warning' as const,
+        id: `cp-error`, severity: 'warning' as const,
         title: '竞争定位检测异常',
         description: `${(err as Error)?.message || String(err)}`,
         evidence: [], suggestion: '检查源哨兵 aggregate.ts 和 Market/Financial 数据源。',

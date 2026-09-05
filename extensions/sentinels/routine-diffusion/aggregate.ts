@@ -31,7 +31,7 @@ export const routineDiffusionSentinel = {
 
       if (result.degraded) {
         return [{
-          id: `o5-nodata-${now.getTime()}`, severity: 'info',
+          id: `o5-nodata`, severity: 'info',
           title: '扩散数据不足',
           description: '未检测到 Process 或 Team 节点。',
           evidence: [], suggestion: '添加工序和团队数据。', detectedAt: checkedAt,
@@ -42,7 +42,7 @@ export const routineDiffusionSentinel = {
 
       if (result.assessment === 'slow') {
         return [{
-          id: `o5-crit-${now.getTime()}`, severity: 'warning',
+          id: `o5-crit`, severity: 'warning',
           title: `惯例扩散缓慢 (${sp}%)`,
           description: `${result.totalProcesses} 个流程在团队中使用率低。`,
           evidence: [`扩散: ${sp}%`, `流程/团队: ${result.processesPerTeam}`],
@@ -52,7 +52,7 @@ export const routineDiffusionSentinel = {
 
       if (result.assessment === 'moderate') {
         return [{
-          id: `o5-warn-${now.getTime()}`, severity: 'info',
+          id: `o5-warn`, severity: 'info',
           title: `惯例扩散中等 (${sp}%)`,
           description: '部分流程已跨团队推广。', evidence: [`扩散: ${sp}%`],
           suggestion: '识别尚未采纳关键流程的团队。', detectedAt: checkedAt,
@@ -60,14 +60,14 @@ export const routineDiffusionSentinel = {
       }
 
       return [{
-        id: `o5-healthy-${now.getTime()}`, severity: 'info',
+        id: `o5-healthy`, severity: 'info',
         title: `惯例扩散快速 (${sp}%)`,
         description: '新惯例在各团队间快速扩散。', evidence: [`扩散: ${sp}%`],
         suggestion: '维持知识共享机制。', detectedAt: checkedAt,
       }];
     } catch (err: unknown) {
       log.error({ err }, '[routine-diffusion] 失败');
-      return [{ id: `o5-error-${now.getTime()}`, severity: 'warning',
+      return [{ id: `o5-error`, severity: 'warning',
         title: '检测异常', description: `${(err as Error)?.message || String(err)}`,
         evidence: [], suggestion: '检查数据。', detectedAt: checkedAt }];
     }

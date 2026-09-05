@@ -98,13 +98,13 @@ export const unitEconomicsSentinel = {
       // 2a. LTV/CAC (existing)
       const ltv = computeLtvCac(fin);
       if (!ltv.degraded) {
-        if (ltv.ltvCac < 1) findings.push({ id: `i10-ltv-crit-${now.getTime()}`, severity: 'critical', title: `LTV/CAC过低 (${ltv.ltvCac.toFixed(1)}x)`, description: '< 1x, 获客成本高于客户终身价值。', evidence: [`LTV/CAC: ${ltv.ltvCac.toFixed(1)}x`, `LTV: ${ltv.ltv}`, `CAC: ${ltv.cac}`], suggestion: '降低获客成本或提升客户终身价值。', detectedAt: checkedAt });
-        else if (ltv.ltvCac < 3) findings.push({ id: `i10-ltv-warn-${now.getTime()}`, severity: 'warning', title: `LTV/CAC偏低 (${ltv.ltvCac.toFixed(1)}x)`, description: '< 3x。', evidence: [`LTV/CAC: ${ltv.ltvCac.toFixed(1)}x`], suggestion: '优化获客效率。', detectedAt: checkedAt });
+        if (ltv.ltvCac < 1) findings.push({ id: `i10-ltv-crit`, severity: 'critical', title: `LTV/CAC过低 (${ltv.ltvCac.toFixed(1)}x)`, description: '< 1x, 获客成本高于客户终身价值。', evidence: [`LTV/CAC: ${ltv.ltvCac.toFixed(1)}x`, `LTV: ${ltv.ltv}`, `CAC: ${ltv.cac}`], suggestion: '降低获客成本或提升客户终身价值。', detectedAt: checkedAt });
+        else if (ltv.ltvCac < 3) findings.push({ id: `i10-ltv-warn`, severity: 'warning', title: `LTV/CAC偏低 (${ltv.ltvCac.toFixed(1)}x)`, description: '< 3x。', evidence: [`LTV/CAC: ${ltv.ltvCac.toFixed(1)}x`], suggestion: '优化获客效率。', detectedAt: checkedAt });
       }
 
       // 2b. Gross margin (existing)
       const um = computeUnitMargin(fin);
-      if (!um.degraded && um.margin < 0.1) findings.push({ id: `i10-margin-crit-${now.getTime()}`, severity: 'critical', title: `单位毛利率过低 (${(um.margin * 100).toFixed(0)}%)`, description: '单位毛利 < 10%。', evidence: [`毛利率: ${(um.margin * 100).toFixed(0)}%`, `单位收入: ${um.unitRevenue}`, `单位成本: ${um.unitCost}`], suggestion: '审查定价策略和单位成本。', detectedAt: checkedAt });
+      if (!um.degraded && um.margin < 0.1) findings.push({ id: `i10-margin-crit`, severity: 'critical', title: `单位毛利率过低 (${(um.margin * 100).toFixed(0)}%)`, description: '单位毛利 < 10%。', evidence: [`毛利率: ${(um.margin * 100).toFixed(0)}%`, `单位收入: ${um.unitRevenue}`, `单位成本: ${um.unitCost}`], suggestion: '审查定价策略和单位成本。', detectedAt: checkedAt });
 
       // 2c. Variable costs (P0 new)
       const vc = computeVariableCosts(costEdges);
@@ -113,14 +113,14 @@ export const unitEconomicsSentinel = {
       const mc = computeMarginalContribution(clientGroups);
       if (!mc.degraded && mc.negativeMcGroups > 0) {
         const negGroups = mc.groups.filter(g => !g.isPositive);
-        findings.push({ id: `i10-mc-crit-${now.getTime()}`, severity: 'critical', title: `${mc.negativeMcGroups}个客户群边际贡献为负`, description: `存在 ${mc.negativeMcGroups} 个边际贡献非正客户群。`, evidence: negGroups.slice(0, 3).map(g => `${g.groupId}: MC=${g.marginalContribution}, 比率=${g.mcRatio}`), suggestion: '审查负MC客户群的成本结构或重新定价。', detectedAt: checkedAt });
+        findings.push({ id: `i10-mc-crit`, severity: 'critical', title: `${mc.negativeMcGroups}个客户群边际贡献为负`, description: `存在 ${mc.negativeMcGroups} 个边际贡献非正客户群。`, evidence: negGroups.slice(0, 3).map(g => `${g.groupId}: MC=${g.marginalContribution}, 比率=${g.mcRatio}`), suggestion: '审查负MC客户群的成本结构或重新定价。', detectedAt: checkedAt });
       }
 
       // 2e. Fixed cost rigidity + scenario simulation (P0 new)
       if (!vc.degraded && vc.totalFixedMonthly > 0) {
         const rigidity = computeFixedCostRigidity(vc.fixedCosts.map(c => ({ name: c.name, amount: c.amount })));
         if (rigidity.signal === 'rigid') {
-          findings.push({ id: `i10-rigidity-crit-${now.getTime()}`, severity: 'warning', title: `固定成本结构刚性 (可削减仅${((1 - rigidity.rigidityRatio) * 100).toFixed(0)}%)`, description: `固定成本 ${rigidity.totalFixed} 中仅 ${rigidity.totalReducible} 可削减。`, evidence: [`刚性比率: ${rigidity.rigidityRatio}`, `总固定成本: ${rigidity.totalFixed}`, `可削减: ${rigidity.totalReducible}`], suggestion: '优化固定成本结构。', detectedAt: checkedAt });
+          findings.push({ id: `i10-rigidity-crit`, severity: 'warning', title: `固定成本结构刚性 (可削减仅${((1 - rigidity.rigidityRatio) * 100).toFixed(0)}%)`, description: `固定成本 ${rigidity.totalFixed} 中仅 ${rigidity.totalReducible} 可削减。`, evidence: [`刚性比率: ${rigidity.rigidityRatio}`, `总固定成本: ${rigidity.totalFixed}`, `可削减: ${rigidity.totalReducible}`], suggestion: '优化固定成本结构。', detectedAt: checkedAt });
         }
 
         if (mc.groups.length > 1) {
@@ -128,10 +128,10 @@ export const unitEconomicsSentinel = {
           const sim = computeScenarioSimulation(mc.groups, rigidity.costItems.map(c => ({ name: c.name, amount: c.amount, reducible: c.reducible, reductionPercent: c.reductionPercent })), currentProfit);
           if (sim.scenarios.length > 0) {
             if (sim.bestScenario && sim.bestScenario.profitChange > 0) {
-              findings.push({ id: `i10-sim-opt-${now.getTime()}`, severity: 'info', title: `优化建议: 砍掉${sim.bestScenario.dropCount}个低产群可提升利润`, description: sim.bestScenario.description, evidence: [`砍掉: ${sim.bestScenario.dropCount}个群`, `利润变化: ${sim.bestScenario.profitChange > 0 ? '+' : ''}${Math.round(sim.bestScenario.profitChange * 100) / 100}`], suggestion: '考虑优化客户组合。', detectedAt: checkedAt });
+              findings.push({ id: `i10-sim-opt`, severity: 'info', title: `优化建议: 砍掉${sim.bestScenario.dropCount}个低产群可提升利润`, description: sim.bestScenario.description, evidence: [`砍掉: ${sim.bestScenario.dropCount}个群`, `利润变化: ${sim.bestScenario.profitChange > 0 ? '+' : ''}${Math.round(sim.bestScenario.profitChange * 100) / 100}`], suggestion: '考虑优化客户组合。', detectedAt: checkedAt });
             }
             if (!sim.profitImprovementPossible) {
-              findings.push({ id: `i10-sim-warn-${now.getTime()}`, severity: 'warning', title: `固定成本刚性 — 砍低产群不能改善利润`, description: '模拟显示，由于固定成本不能等比例缩减，砍掉低产客户群后利润反而可能下降。', evidence: [`总场景数: ${sim.scenarios.length}`, `所有场景利润变化均 ≤ 0`], suggestion: '提高固定成本灵活性。', detectedAt: checkedAt });
+              findings.push({ id: `i10-sim-warn`, severity: 'warning', title: `固定成本刚性 — 砍低产群不能改善利润`, description: '模拟显示，由于固定成本不能等比例缩减，砍掉低产客户群后利润反而可能下降。', evidence: [`总场景数: ${sim.scenarios.length}`, `所有场景利润变化均 ≤ 0`], suggestion: '提高固定成本灵活性。', detectedAt: checkedAt });
             }
           }
         }
@@ -142,7 +142,7 @@ export const unitEconomicsSentinel = {
           const avgVarCost = clientGroups.reduce((s, g) => s + g.variableCost, 0) / clientGroups.length;
           const bep = computeBreakEven(vc.totalFixedMonthly, avgPrice, avgVarCost, clientGroups.length);
           if (!bep.degraded && !bep.isProfitable && bep.currentUnits > 0) {
-            findings.push({ id: `i10-bep-crit-${now.getTime()}`, severity: 'warning', title: `当前产量低于盈亏平衡点`, description: `需 ${Math.ceil(bep.breakEvenUnits)} 单位才能盈亏平衡。`, evidence: [`BEP: ${Math.ceil(bep.breakEvenUnits)}单位`, `安全边际: ${(bep.safetyMargin * 100).toFixed(0)}%`], suggestion: '提升产量或降低成本结构。', detectedAt: checkedAt });
+            findings.push({ id: `i10-bep-crit`, severity: 'warning', title: `当前产量低于盈亏平衡点`, description: `需 ${Math.ceil(bep.breakEvenUnits)} 单位才能盈亏平衡。`, evidence: [`BEP: ${Math.ceil(bep.breakEvenUnits)}单位`, `安全边际: ${(bep.safetyMargin * 100).toFixed(0)}%`], suggestion: '提升产量或降低成本结构。', detectedAt: checkedAt });
           }
         }
       }
@@ -150,7 +150,7 @@ export const unitEconomicsSentinel = {
       return findings;
     } catch (err: unknown) {
       log.error({ err }, '[unit-economics] 失败');
-      return [{ id: `i10-error-${now.getTime()}`, severity: 'warning', title: '单位经济检测异常', description: `${(err as Error)?.message || String(err)}`, evidence: [], suggestion: '检查数据源。', detectedAt: checkedAt }];
+      return [{ id: `i10-error`, severity: 'warning', title: '单位经济检测异常', description: `${(err as Error)?.message || String(err)}`, evidence: [], suggestion: '检查数据源。', detectedAt: checkedAt }];
     }
   },
 };

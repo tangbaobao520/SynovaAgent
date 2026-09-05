@@ -39,7 +39,7 @@ export const competitiveDynamicsSentinel = {
       if (!hhi.degraded) {
         if (hhi.concentration === 'high') {
           findings.push({
-            id: `e3-hhi-${now.getTime()}`, severity: 'warning',
+            id: `e3-hhi`, severity: 'warning',
             title: `市场高度集中 (HHI=${hhi.hhi})`,
             description: `HHI > 2500, 少数企业主导市场。`,
             evidence: [`HHI: ${hhi.hhi}`, ...hhi.marketShareChanges.slice(0, 5).map(s => `${s.name}: ${(s.share * 100).toFixed(0)}%`)],
@@ -64,7 +64,7 @@ export const competitiveDynamicsSentinel = {
 
       if (!intensity.degraded && intensity.intensity > 0.7) {
         findings.push({
-          id: `e3-intensity-${now.getTime()}`, severity: 'warning',
+          id: `e3-intensity`, severity: 'warning',
           title: `竞争强度高 (${(intensity.intensity * 100).toFixed(0)}%)`,
           description: `${intensity.competitorCount} 个竞争者，竞争激烈。`,
           evidence: [`强度: ${(intensity.intensity * 100).toFixed(0)}%`, `竞争者: ${intensity.competitorCount}`],
@@ -75,7 +75,7 @@ export const competitiveDynamicsSentinel = {
       return findings;
     } catch (err: unknown) {
       log.error({ err }, '[competitive-dynamics] check 失败');
-      return [{ id: `e3-error-${now.getTime()}`, severity: 'warning', title: '竞争格局检测异常', description: `${(err as Error)?.message || String(err)}`, evidence: [], suggestion: '检查数据源。', detectedAt: checkedAt }];
+      return [{ id: `e3-error`, severity: 'warning', title: '竞争格局检测异常', description: `${(err as Error)?.message || String(err)}`, evidence: [], suggestion: '检查数据源。', detectedAt: checkedAt }];
     }
   },
 };

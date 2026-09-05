@@ -20,9 +20,9 @@ export const AiEcosystemFitSentinel = {
         totalPlatforms: 5,
         devEcosystemScore: Math.min(aiPlatforms.length / 3, 1),
       });
-      if (r.degraded) return [{description:'',id:`t-na-${now.getTime()}`,severity:"info",title:"无AI生态数据",evidence:[],suggestion:"",detectedAt:ca}];
-      if (r.score < 0.3) return [{id:`t-ai-${now.getTime()}`,severity:"warning",title:"AI生态匹配度偏低",description:`匹配度${(r.score*100).toFixed(0)}%`,evidence:[`匹配度: ${(r.score*100).toFixed(0)}%`],suggestion:"增加对主流AI平台的API兼容性",detectedAt:ca}];
+      if (r.degraded) return [{description:'',id:`t-na`,severity:"info",title:"无AI生态数据",evidence:[],suggestion:"",detectedAt:ca}];
+      if (r.score < 0.3) return [{id:`t-ai`,severity:"warning",title:"AI生态匹配度偏低",description:`匹配度${(r.score*100).toFixed(0)}%`,evidence:[`匹配度: ${(r.score*100).toFixed(0)}%`],suggestion:"增加对主流AI平台的API兼容性",detectedAt:ca}];
       return [];
-    } catch(e: unknown) { log.error({e}); return [{id:`e-${now.getTime()}`,severity:"warning",title:"异常",description:`${(e as Error)?.message||""}`,evidence:[],suggestion:"",detectedAt:ca}]; }
+    } catch(e: unknown) { log.error({e}); return [{id:`e`,severity:"warning",title:"异常",description:`${(e as Error)?.message||""}`,evidence:[],suggestion:"",detectedAt:ca}]; }
   },
 };

@@ -64,7 +64,7 @@ export const apiCoverageSentinel = {
         const apPct = (apiResult.rate * 100).toFixed(0);
         if (apiResult.rate < th('api_availability').critical) {
           findings.push({
-            id: `t2-api-crit-${now.getTime()}`, severity: 'critical',
+            id: `t2-api-crit`, severity: 'critical',
             title: `API 可达率过低 (${apPct}%)`,
             description: `${apiResult.totalTools} 个系统中仅 ${apiResult.reachableNames.length} 个可达。`,
             evidence: [`可达率: ${apPct}%`, `不可达: ${apiResult.unreachableDetails.join('; ')}`],
@@ -73,7 +73,7 @@ export const apiCoverageSentinel = {
           });
         } else if (apiResult.rate < th('api_availability').warning) {
           findings.push({
-            id: `t2-api-warn-${now.getTime()}`, severity: 'warning',
+            id: `t2-api-warn`, severity: 'warning',
             title: `API 可达率偏低 (${apPct}%)`,
             description: `${apiResult.unreachableDetails.length}/${apiResult.totalTools} 个系统不可达。`,
             evidence: [`可达率: ${apPct}%`, `不可达: ${apiResult.unreachableDetails.join('; ')}`],
@@ -91,7 +91,7 @@ export const apiCoverageSentinel = {
         const pcPct = (protoResult.coverage * 100).toFixed(0);
         if (protoResult.coverage < th('protocol_coverage').critical) {
           findings.push({
-            id: `t2-proto-crit-${now.getTime()}`, severity: 'critical',
+            id: `t2-proto-crit`, severity: 'critical',
             title: `协议覆盖率过低 (${pcPct}%)`,
             description: `${protoResult.totalTools} 个工具中仅覆盖 ${protoResult.coveredProtocols.length}/6 种标准协议。`,
             evidence: [`覆盖率: ${pcPct}%`, `未覆盖: ${protoResult.uncoveredProtocols.join(', ')}`],
@@ -100,7 +100,7 @@ export const apiCoverageSentinel = {
           });
         } else if (protoResult.coverage < th('protocol_coverage').warning) {
           findings.push({
-            id: `t2-proto-warn-${now.getTime()}`, severity: 'warning',
+            id: `t2-proto-warn`, severity: 'warning',
             title: `协议覆盖率不足 (${pcPct}%)`,
             description: `还有 ${protoResult.uncoveredProtocols.length}/6 种标准协议未覆盖。`,
             evidence: [`覆盖率: ${pcPct}%`, `未覆盖: ${protoResult.uncoveredProtocols.join(', ')}`],
@@ -115,7 +115,7 @@ export const apiCoverageSentinel = {
       log.error({ err }, '[api-coverage] check 失败');
       // 铁律24: catch 必须有 log + degraded
       return [{
-        id: `t2-error-${now.getTime()}`, severity: 'warning',
+        id: `t2-error`, severity: 'warning',
         title: 'API 覆盖检测异常',
         description: `检测过程出错: ${(err as Error)?.message || String(err)}`,
         evidence: [],

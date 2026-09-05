@@ -10,6 +10,8 @@
  *                 修复后同输入同 id (green)。
  * 消费传导: signal.id → proactive-push dedupKey (finding.id) → 5 分钟窗口命中;
  *           notif id → dispatchNotification → electron externalId。
+ * D580 8-3 口径同步: 通知去重窗口 10min → 5min（D339 裁决 A 落地, runner.resolveNotificationDedupMs）;
+ *           去重状态持久化（sentinel_notification_dedup 表, 重启不丢 — 持久化用例见 ticket-store.test.ts）。
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { aggregateSignals } from '../../src/sentinel/signal-aggregator';
@@ -149,7 +151,7 @@ describe('D354 去重键稳定性 — notification id (runner)', () => {
     vi.useRealTimers();
   });
 
-  it('同一 signal 跨两轮分发 (间隔 12 分钟, 越过 10 分钟通知去重窗口) → notif id 相同', async () => {
+  it('同一 signal 跨两轮分发 (间隔 12 分钟, 越过 5 分钟通知去重窗口 — D339 裁决 A) → notif id 相同', async () => {
     const runner = makeRunner();
     getSentinelRegistry().register(makeSentinel('test-notif', [
       makeFinding({ id: 'f1', severity: 'warning', title: '团队A: 协议缺失' }),
@@ -158,12 +160,26 @@ describe('D354 去重键稳定性 — notification id (runner)', () => {
     await runner.runOnce('test-notif');
     await runner.aggregateAndDispatch(); // 第 1 轮分发
     vi.setSystemTime(new Date('2026-08-18T10:12:00.000Z'));
-    await runner.aggregateAndDispatch(); // 第 2 轮分发 (12 分钟 > 10 分钟通知去重窗口)
+    await runner.aggregateAndDispatch(); // 第 2 轮分发 (12 分钟 > 5 分钟通知去重窗口 — D580 8-3 口径)
 
     const notifIds = dispatchNotificationMock.mock.calls.map(c => (c[0] as { id: string }).id);
     expect(notifIds).toHaveLength(2);
     expect(notifIds[0]).toBe(notifIds[1]);
     expect(notifIds[0]).toBe('notif-sig_团队A');
+  });
+
+  it('D580 8-3: 同一 signal 窗口内再次聚合 (间隔 3 分钟 < 5 分钟窗口) → 命中去重, 不重发', async () => {
+    const runner = makeRunner();
+    getSentinelRegistry().register(makeSentinel('test-notif-window', [
+      makeFinding({ id: 'f1', severity: 'warning', title: '团队A: 协议缺失' }),
+    ]));
+
+    await runner.runOnce('test-notif-window');
+    await runner.aggregateAndDispatch(); // 第 1 轮分发
+    vi.setSystemTime(new Date('2026-08-18T10:03:00.000Z'));
+    await runner.aggregateAndDispatch(); // 第 2 轮 (3 分钟 < 5 分钟窗口) → isNotificationDuplicate 命中
+
+    expect(dispatchNotificationMock).toHaveBeenCalledTimes(1); // 窗口内不重发（去重键稳定 + 窗口语义）
   });
 
   it('不同 signal → 不同 notif id (回归: id 仍唯一区分)', async () => {

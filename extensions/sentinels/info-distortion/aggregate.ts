@@ -45,31 +45,31 @@ export const infoDistortionSentinel = {
       log.debug({ distortion: result.distortionRate, depth: result.orgDepth }, '信息失真率计算完成');
 
       if (result.degraded) {
-        return [{ id: `o7-nodata-${now.getTime()}`, severity: 'info', title: '数据不足',
+        return [{ id: `o7-nodata`, severity: 'info', title: '数据不足',
           description: '未检测到人员和事件数据。', evidence: [], suggestion: '添加组织数据。', detectedAt: checkedAt }];
       }
 
       const drPct = (result.distortionRate * 100).toFixed(0);
 
       if (result.assessment === 'high') {
-        return [{ id: `o7-crit-${now.getTime()}`, severity: 'critical', title: `信息失真率高 (${drPct}%)`,
+        return [{ id: `o7-crit`, severity: 'critical', title: `信息失真率高 (${drPct}%)`,
           description: `${result.orgDepth} 个管理层级, ${result.communicationFailures} 起沟通故障事件。信息在传递中严重变形。`,
           evidence: [`失真率: ${drPct}%`, `管理层级: ${result.orgDepth}`, `沟通故障: ${result.communicationFailures}`],
           suggestion: '减少管理层级，建立信息确认和反馈机制。', detectedAt: checkedAt }];
       }
 
       if (result.assessment === 'moderate') {
-        return [{ id: `o7-warn-${now.getTime()}`, severity: 'warning', title: `信息失真率中等 (${drPct}%)`,
+        return [{ id: `o7-warn`, severity: 'warning', title: `信息失真率中等 (${drPct}%)`,
           description: '部分信息可能在传递中丢失或变形。', evidence: [`失真率: ${drPct}%`],
           suggestion: '审视信息传递路径，减少中间环节。', detectedAt: checkedAt }];
       }
 
-      return [{ id: `o7-healthy-${now.getTime()}`, severity: 'info', title: `信息失真率低 (${drPct}%)`,
+      return [{ id: `o7-healthy`, severity: 'info', title: `信息失真率低 (${drPct}%)`,
         description: '组织信息传递清晰。', evidence: [`失真率: ${drPct}%`],
         suggestion: '维持现状。', detectedAt: checkedAt }];
     } catch (err: unknown) {
       log.error({ err }, '[info-distortion] 失败');
-      return [{ id: `o7-error-${now.getTime()}`, severity: 'warning', title: '检测异常',
+      return [{ id: `o7-error`, severity: 'warning', title: '检测异常',
         description: `${(err as Error)?.message || String(err)}`, evidence: [], suggestion: '检查数据。', detectedAt: checkedAt }];
     }
   },

@@ -10,7 +10,14 @@
 
 import type { SentinelFinding, SentinelCheckResult } from '../sentinel/types';
 import type { AggregatedSignal } from '../sentinel/signal-aggregator';
-import { getGlobalSentinelRunner, type GaManualSignalInput } from '../sentinel/runner';
+import {
+  getGlobalSentinelRunner,
+  type GaManualSignalInput,
+  type TicketRow,
+  type TicketStatus,
+  type TicketTransitionTarget,
+  type TransitionResult,
+} from '../sentinel/runner';
 import { aggregateSignals } from '../sentinel/signal-aggregator';
 import { createLogger } from '@synova/logger';
 
@@ -62,15 +69,48 @@ export interface ExpertReportsResponse {
   }>;
 }
 
+/**
+ * 工单视图（D580 8-2 扩展）: 旧字段 id/title/severity/createdAt 保持（向后兼容, spec §5.2）;
+ * 新增 status 与 resolvedAt?（表行权威字段）。
+ */
+export interface SentinelTicketView {
+  id: string;
+  title: string;
+  severity: 'critical' | 'warning' | 'info';
+  createdAt: string;
+  status: TicketStatus;
+  resolvedAt?: string;
+}
+
+/**
+ * 工单查询响应（D580 8-2: source + degraded 双标记 — 裁决 3, 结构化字段优先于约定字符串）:
+ *   source: 'table'           — 表有行（权威路径, 写读同源）
+ *   source: 'memory-fallback' — 表空/db 失败 → 内存派生兜底（+ degraded: true）
+ */
 export interface TicketsResponse {
   ok: boolean;
-  tickets: Array<{
-    id: string;
-    title: string;
-    severity: 'critical' | 'warning' | 'info';
-    createdAt: string;
-  }>;
+  source: 'table' | 'memory-fallback';
+  degraded?: boolean;
+  tickets: SentinelTicketView[];
 }
+
+/** 工单状态机迁移目标枚举（L1 body.to 校验依据） */
+export const TRANSITION_TARGETS = ['acknowledged', 'resolved', 'dismissed'] as const;
+
+/**
+ * L1 类型出口（铁律 39 修复）: TicketStatus 重导出自 L3 runner——L1 routes 只经 L2 消费类型,
+ * 禁止直触 '../sentinel/runner'（CI check-architecture L1→L3 拦截实证 2026-09-06, type-only import 同拦）。
+ */
+export type { TicketStatus };
+
+/**
+ * transitionSentinelTicket 返回（D580 8-4）: runner TransitionResult 原样传播 + L2 专属分类:
+ *   INVALID_TARGET（to 非法枚举 → 路由 400）/ SENTINEL_RUNNER_UNAVAILABLE（runner 未初始化 → 503）。
+ */
+export type SentinelTicketTransitionResult =
+  | TransitionResult
+  | { ok: false; error: 'INVALID_TARGET' }
+  | { ok: false; degraded: true; error: 'SENTINEL_RUNNER_UNAVAILABLE' };
 
 /** D551: GA 手动信号注入结果（degraded 显式传播，铁律 31） */
 export interface ManualSignalInjectionResult {
@@ -249,33 +289,117 @@ export function getSentinelExpertReports(): ExpertReportsResponse {
   }
 }
 
-/** 获取哨兵工单 */
-export function getSentinelTickets(): TicketsResponse {
-  const runner = getGlobalSentinelRunner();
-  if (!runner) return { ok: true, tickets: [] };
-  try {
-    // 从上轮运行结果提取 tickets
-    const tickets: TicketsResponse['tickets'] = [];
-    for (const [sentinelId, runs] of runner.getRecentResults()) {
-      for (const run of runs) {
-        if (!run.result.findings) continue;
-        for (const f of run.result.findings) {
-          if (f.severity === 'critical' || f.severity === 'warning') {
-            tickets.push({
-              id: `${sentinelId}_${f.id}`,
-              title: f.title,
-              severity: f.severity === 'critical' ? 'critical' : 'warning',
-              createdAt: f.detectedAt,
-            });
-          }
-        }
+/** 表行 → 视图映射（severity emergency→critical 对齐内存派生先例; title 按 spec §5.2 派生） */
+function rowToTicketView(row: TicketRow): SentinelTicketView {
+  let title = row.signal_id; // 兜底: 无 diagnosis 或解析失败 → signal_id
+  if (row.diagnosis) {
+    try {
+      const parsed = JSON.parse(row.diagnosis) as { title?: unknown; summary?: unknown };
+      const parsedTitle = typeof parsed.title === 'string' ? parsed.title : undefined;
+      const parsedSummary = typeof parsed.summary === 'string' ? parsed.summary : undefined;
+      title = parsedTitle ?? (parsedSummary !== undefined ? parsedSummary.slice(0, 80) : row.signal_id);
+    } catch (err: unknown) {
+      // JSON 损坏（区别于 diagnosis 缺失）: log.warn + signal_id 兜底 — 铁律 24 不静默
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg, ticketId: row.id }, '[getSentinelTickets] diagnosis JSON 损坏 — signal_id 兜底');
+    }
+  }
+  const view: SentinelTicketView = {
+    id: row.id,
+    title,
+    severity: row.severity === 'warning' ? 'warning' : row.severity === 'info' ? 'info' : 'critical',
+    createdAt: row.created_at,
+    status: row.status,
+  };
+  if (row.resolved_at) view.resolvedAt = row.resolved_at;
+  return view;
+}
+
+/** 内存派生兜底（降级专用）: 从 runner 内存 findings 派生伪工单（旧 getSentinelTickets 派生逻辑, 唯一引用点） */
+function deriveTicketsFromMemory(runner: NonNullable<ReturnType<typeof getGlobalSentinelRunner>>, status?: TicketStatus): SentinelTicketView[] {
+  const tickets: SentinelTicketView[] = [];
+  for (const [sentinelId, runs] of runner.getRecentResults()) {
+    for (const run of runs) {
+      if (!run.result.findings) continue;
+      for (const f of run.result.findings) {
+        if (f.severity !== 'critical' && f.severity !== 'warning') continue;
+        // 内存派生项 = 未处理的 finding 投影 → open 语义（status 过滤在兜底路径同样真实生效）
+        if (status && status !== 'open') continue;
+        tickets.push({
+          id: `${sentinelId}_${f.id}`,
+          title: f.title,
+          severity: f.severity === 'critical' ? 'critical' : 'warning',
+          createdAt: f.detectedAt,
+          status: 'open',
+        });
       }
     }
-    return { ok: true, tickets: tickets.slice(0, 20) };
-  } catch (err: unknown) {
-    log.warn({ err }, 'getSentinelTickets 失败 — degraded');
-    return { ok: true, tickets: [] };
   }
+  return tickets.slice(0, 20); // 保持旧派生 20 条上限（向后兼容）
+}
+
+/**
+ * getSentinelTickets — 工单查询（D580 8-2: 表为准, 内存只兜底）
+ * 契约:
+ *   @input  — status?: TicketStatus（透传; 表路径 SQL WHERE, fallback 路径内存过滤 — 双路径真实生效）
+ *   @output — { ok: true, source: 'table', tickets } — 表有行（权威路径）
+ *             { ok: true, source: 'memory-fallback', degraded: true, tickets } — 表空或读失败
+ *   @degraded — 表空（0 行）或 db 异常 → 内存派生 fallback + degraded: true + log
+ *               （铁律 24: 区分 db 失败[warn] 与表空[info 级 fallback]；两者都显式标注）
+ *   @error  — 不抛（内部全捕获，降级形状完整）
+ */
+export function getSentinelTickets(status?: TicketStatus): TicketsResponse {
+  const runner = getGlobalSentinelRunner();
+  if (!runner) {
+    log.warn('[getSentinelTickets] runner 未初始化 — 无数据源, degraded 空列表');
+    return { ok: true, source: 'memory-fallback', degraded: true, tickets: [] };
+  }
+
+  // ① 表读优先（写读同源 — K3 P2-3 修复）
+  try {
+    const rows = runner.listSentinelTickets(status);
+    if (rows.length > 0) {
+      return { ok: true, source: 'table', tickets: rows.map(rowToTicketView) };
+    }
+    // ② 表空即降级（裁决 3: 健康系统 critical 历史应为表行, 0 行通常意味着写路径故障或冷启动
+    //    — 降级标注比静默空列表诚实; info 级, 非错误）
+    log.info({ status: status ?? 'all' }, '[getSentinelTickets] 工单表空 — 内存派生兜底（degraded）');
+    return { ok: true, source: 'memory-fallback', degraded: true, tickets: deriveTicketsFromMemory(runner, status) };
+  } catch (err: unknown) {
+    // ③ db 失败 → 内存派生兜底（warn 级 — 区分于表空 info, 铁律 24/31）
+    const msg = err instanceof Error ? err.message : String(err);
+    log.warn({ err: msg }, '[getSentinelTickets] 工单表读取失败 — 内存派生兜底（degraded）');
+    try {
+      return { ok: true, source: 'memory-fallback', degraded: true, tickets: deriveTicketsFromMemory(runner, status) };
+    } catch (memErr: unknown) {
+      const memMsg = memErr instanceof Error ? memErr.message : String(memErr);
+      log.warn({ err: memMsg }, '[getSentinelTickets] 内存派生兜底失败 — 返回 degraded 空列表');
+      return { ok: true, source: 'memory-fallback', degraded: true, tickets: [] };
+    }
+  }
+}
+
+/**
+ * transitionSentinelTicket — 工单状态机迁移（D580 8-4 L2 入口, 模式对齐 getSentinelTickets 的
+ * 全局单例 runner 访问, 不绕层直触 L3, 铁律 39）。
+ *
+ * 契约:
+ *   @input  — ticketId: string; to: string（原始 body 值, 枚举校验在此）
+ *   @output — runner TransitionResult 原样传播（含 degraded）; to 非法 → { ok:false, error:'INVALID_TARGET' };
+ *             runner 未初始化 → { ok:false, degraded:true, error:'SENTINEL_RUNNER_UNAVAILABLE' }
+ *   @degraded — runner 不可用/runner db 失败 → degraded 标注传播（铁律 31 全链）
+ *   @error  — 不抛（分类返回, HTTP 映射在 L1）
+ */
+export function transitionSentinelTicket(ticketId: string, to: string): SentinelTicketTransitionResult {
+  if (!(TRANSITION_TARGETS as readonly string[]).includes(to)) {
+    return { ok: false, error: 'INVALID_TARGET' };
+  }
+  const runner = getGlobalSentinelRunner();
+  if (!runner) {
+    log.warn({ ticketId }, '[transitionSentinelTicket] runner 未初始化 — 迁移降级（503）');
+    return { ok: false, degraded: true, error: 'SENTINEL_RUNNER_UNAVAILABLE' };
+  }
+  return runner.transitionTicket(ticketId, to as TicketTransitionTarget);
 }
 
 /**

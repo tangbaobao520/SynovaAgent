@@ -46,14 +46,14 @@ export const nicheBreadthSentinel = {
       log.debug({ breadth: r.breadth, depth: r.depth, volume: r.volume }, '生态位计算完成');
       const f: SentinelFinding[] = [];
       if (r.breadth < th('niche_breadth').critical) {
-        f.push({ id: `i1-breadth-crit-${now.getTime()}`, severity: 'critical', title: `生态位过窄 (B=${r.breadth.toFixed(2)})`, description: `单一细分市场占比过高。`, evidence: [`B: ${r.breadth.toFixed(2)}`, `D: ${r.depth.toFixed(2)}`], suggestion: '拓展品类或区域。', detectedAt: checkedAt });
+        f.push({ id: `i1-breadth-crit`, severity: 'critical', title: `生态位过窄 (B=${r.breadth.toFixed(2)})`, description: `单一细分市场占比过高。`, evidence: [`B: ${r.breadth.toFixed(2)}`, `D: ${r.depth.toFixed(2)}`], suggestion: '拓展品类或区域。', detectedAt: checkedAt });
       } else if (r.breadth < th('niche_breadth').warning) {
-        f.push({ id: `i1-breadth-warn-${now.getTime()}`, severity: 'warning', title: `生态位偏窄 (B=${r.breadth.toFixed(2)})`, description: `B < 1.5, 多样性不足。`, evidence: [`B: ${r.breadth.toFixed(2)}`, `D: ${r.depth.toFixed(2)}`], suggestion: '评估扩展机会。', detectedAt: checkedAt });
+        f.push({ id: `i1-breadth-warn`, severity: 'warning', title: `生态位偏窄 (B=${r.breadth.toFixed(2)})`, description: `B < 1.5, 多样性不足。`, evidence: [`B: ${r.breadth.toFixed(2)}`, `D: ${r.depth.toFixed(2)}`], suggestion: '评估扩展机会。', detectedAt: checkedAt });
       }
       if (r.depth > th('niche_depth').critical) {
-        f.push({ id: `i1-depth-${now.getTime()}`, severity: 'warning', title: `生态位深度过高 (D=${r.depth.toFixed(2)})`, description: `单一细分市场依赖度过高。`, evidence: [`D: ${r.depth.toFixed(2)}`], suggestion: '分散市场依赖。', detectedAt: checkedAt });
+        f.push({ id: `i1-depth`, severity: 'warning', title: `生态位深度过高 (D=${r.depth.toFixed(2)})`, description: `单一细分市场依赖度过高。`, evidence: [`D: ${r.depth.toFixed(2)}`], suggestion: '分散市场依赖。', detectedAt: checkedAt });
       }
       return f;
-    } catch (err: unknown) { log.error({ err }, '[niche-breadth] 失败'); return [{ id: `i1-error-${now.getTime()}`, severity: 'warning', title: '生态位检测异常', description: `${(err as Error)?.message || String(err)}`, evidence: [], suggestion: '检查数据源。', detectedAt: checkedAt }]; }
+    } catch (err: unknown) { log.error({ err }, '[niche-breadth] 失败'); return [{ id: `i1-error`, severity: 'warning', title: '生态位检测异常', description: `${(err as Error)?.message || String(err)}`, evidence: [], suggestion: '检查数据源。', detectedAt: checkedAt }]; }
   },
 };

@@ -54,39 +54,39 @@ export const powerRigiditySentinel = {
       log.debug({ powerIndex: result.powerIndex, signal: result.signal, stageExempt: result.stageExempt }, '权力结构指数计算完成 (Finkelstein升级版)');
 
       if (result.degraded) {
-        return [{ id: `o9-nodata-${now.getTime()}`, severity: 'info', title: '人员数据不足',
+        return [{ id: `o9-nodata`, severity: 'info', title: '人员数据不足',
           description: '未检测到 Person 节点。', evidence: [], suggestion: '添加组织人员数据。', detectedAt: checkedAt }];
       }
 
       // Stage0-1 豁免
       if (result.signal === 'stage0_exempt') {
-        return [{ id: `o9-exempt-${now.getTime()}`, severity: 'info', title: `权力结构 — 阶段0-1豁免 (${totalPeople}人)`,
+        return [{ id: `o9-exempt`, severity: 'info', title: `权力结构 — 阶段0-1豁免 (${totalPeople}人)`,
           description: `组织人数不足20人（当前${totalPeople}人），创业阶段权力集中属于正常现象，不适用Finkelstein权力结构评估。`,
           evidence: [`人数: ${totalPeople}`, `权力指数: ${result.powerIndex}`, `豁免: 阶段0-1`],
           suggestion: '随着组织扩张至20人以上，逐步建立分权机制。', detectedAt: checkedAt }];
       }
 
       if (result.signal === 'critical') {
-        return [{ id: `o9-crit-${now.getTime()}`, severity: 'critical', title: `权力结构刚性 (指数 ${result.powerIndex})`,
+        return [{ id: `o9-crit`, severity: 'critical', title: `权力结构刚性 (指数 ${result.powerIndex})`,
           description: `Finkelstein四维度: 结构权力${result.structuralPower} / 所有权${result.ownershipPower} / 专家${result.expertisePower} / 声望${result.prestigePower}`,
           evidence: [`权力指数: ${result.powerIndex}`, `管理比: ${(result.managerRatio * 100).toFixed(0)}%`],
           suggestion: '建立分权机制，授权一线决策。', detectedAt: checkedAt }];
       }
 
       if (result.signal === 'warning') {
-        return [{ id: `o9-warn-${now.getTime()}`, severity: 'warning', title: `权力结构偏集中 (指数 ${result.powerIndex})`,
+        return [{ id: `o9-warn`, severity: 'warning', title: `权力结构偏集中 (指数 ${result.powerIndex})`,
           description: `Finkelstein指数 ${result.powerIndex}，在 0.5-0.8 预警区间。`,
           evidence: [`权力指数: ${result.powerIndex}`, `管理比: ${(result.managerRatio * 100).toFixed(0)}%`],
           suggestion: '评估授权机制是否充足。', detectedAt: checkedAt }];
       }
 
-      return [{ id: `o9-healthy-${now.getTime()}`, severity: 'info', title: `权力结构平衡 (指数 ${result.powerIndex})`,
+      return [{ id: `o9-healthy`, severity: 'info', title: `权力结构平衡 (指数 ${result.powerIndex})`,
         description: `Finkelstein指数 ${result.powerIndex}，低于 0.5 健康阈值。`,
         evidence: [`权力指数: ${result.powerIndex}`, `管理比: ${(result.managerRatio * 100).toFixed(0)}%`],
         suggestion: '维持当前组织结构。', detectedAt: checkedAt }];
     } catch (err: unknown) {
       log.error({ err }, '[power-rigidity] 失败');
-      return [{ id: `o9-error-${now.getTime()}`, severity: 'warning', title: '检测异常',
+      return [{ id: `o9-error`, severity: 'warning', title: '检测异常',
         description: `${(err as Error)?.message || String(err)}`, evidence: [], suggestion: '检查数据。', detectedAt: checkedAt }];
     }
   },

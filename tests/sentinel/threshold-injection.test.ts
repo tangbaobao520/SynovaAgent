@@ -131,7 +131,7 @@ describe('D577 T4/T7: registry 全链路（wrapper 注入 + degraded 传播）',
     expect(ctxThresholds?.churn_rate).toEqual(MANIFEST_VALUES.churn_rate);
     expect(ctxThresholds?.top_customer_concentration).toEqual(MANIFEST_VALUES.top_customer_concentration);
     // 判定用 manifest 值: churnRate 0.25 > manifest critical 0.2 → crit（硬编码解除前的唯一判定源等价）
-    expect(result.findings.some(f => f.id.startsWith('e4-churn-crit-'))).toBe(true);
+    expect(result.findings.some(f => f.id.startsWith('e4-churn-crit'))).toBe(true);
   });
 
   it('T7 DEPLOYS 无边经 registry check → result.degraded === true（red: 旧代码静默 [] 且 degraded 丢失）', async () => {
