@@ -84,7 +84,7 @@
     "electron-builder": "^25.1.8",
     "patch-package": "^8.0.1",
     "tsx": "4.22.4",
-    "typescript": "5.9.3",
+    "typescript": "7.0.2",
     "vitest": "4.1.8",
     "zustand": "^4.5.0"
   }
