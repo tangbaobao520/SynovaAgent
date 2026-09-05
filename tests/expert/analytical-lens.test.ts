@@ -11,7 +11,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 
-const EXPERTS = ['host', 'capital-cycle', 'customer-cycle', 'talent-cycle', 'tech', 'finance-structure', 'competitive-strategy'];
+const EXPERTS = ['finance', 'strategy', 'org', 'marketing', 'tech', 'action', 'business_model', 'knowledge', 'host'];
 const EXPECTED_FIELDS = ['default_dimension', 'primary_edges', 'blind_spots'];
 
 describe('analytical_lens 完整性', () => {
