@@ -80,10 +80,10 @@ git merge main          # 推荐（不改 hash，bypass.log 对账不裂）
 
 ## 四、规则明细
 
-1. **main 是唯一真相**。任何机器开工前必须先 `fetch + pull --ff-only`，禁止在过期的 main 上开分支。
-2. **一人一事一分支**。每台机器每个任务一个独立分支（`feat/mac-xxx` / `feat/win-xxx`），禁止两台机器共用同一分支并行工作。
+1. **main 是唯一真相**。任何机器开工前必须先 `fetch + pull --ff-only`，禁止在过期的 main 上开分支。**V5.2.0 起：任务一律走独立 clone（`git clone --local <主工作区> .sessions/<sid>/repo`），主工作区 = Codex 专用（dev doc/台账/协调）；任务 session 禁止在主工作区写代码。**
+2. **一人一事一分支**。每个任务一个独立分支（`feat/mac-xxx` / `feat/win-xxx`）且在独立 clone 内工作，禁止两台机器/两个 session 共用同一分支并行工作。
 3. **合并走 PR**。所有代码进 main 必须经过 GitHub Pull Request。PR 是"显式的、有记录的合并点"。
-4. **禁止 `git stash`**（铁律 0-3，D312 事故）。保存进度用 commit 或 worktree。
+4. **禁止 `git stash`**（铁律 0-3，D312 事故）。保存进度用 commit；隔离用独立 clone（V5.2.0 worktree 模型已退役）。
 5. **禁止 force push 共享分支**。`git push -f` 只允许在自己的私人分支上使用；对 main 和他人分支的 force push 是事故级操作。
 6. **tag 只由 synova-commit 自动创建**（D319）。手动打 tag 会与 D331 锚点校验冲突。
 7. **同步降频（D468, 2026-08-21）**：提交前同步检查（D335 check-branch-sync）已砍——提交时不再强制"基于最新 main"。**开工前拉平（第 1 条）+ push 前防覆盖（门禁 0-1）保留**，防双机互相覆盖的物理保障不丢。
