@@ -136,7 +136,7 @@ def status_for_point(point, verdicts_by_point, line_modules, git_cmd, today, pro
         problems.append("点 %s 非法 status 种子: %r" % (pid, seed))
         seed = "uncommitted"
 
-    k3 = [v for v in verdicts if v["record_type"] == "k3"]
+    k3 = [v for v in verdicts if v["record_type"] == "k3" and not v.get("superseded_by")]
     demo = [v for v in verdicts if v["record_type"] == "founder_demo"]
     machine = [v for v in verdicts if v["record_type"] in ("scenario", "test", "ci", "task_redeem")]
 
@@ -215,6 +215,7 @@ def compute(yaml_path, evidence_dir, override_path, git_cmd, out_path):
                 "date": rec["date"],
                 "record_path": _rel(f),
                 "quote": v.get("quote", ""),
+                "superseded_by": v.get("superseded_by"),
             })
 
     # 待裁决清单（A8）
