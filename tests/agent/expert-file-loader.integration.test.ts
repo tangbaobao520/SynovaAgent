@@ -22,28 +22,28 @@ describe('ExpertFileLoader — 8段组装集成测试', () => {
     loader = new ExpertFileLoader();
   });
 
-  it('Given FileScanner 扫描, Then 发现 8 位专家', () => {
+  it('Given FileScanner 扫描, Then 发现 7 位专家', () => {
     const names = scanner.listExpertNames();
-    expect(names.length).toBeGreaterThanOrEqual(8);
-    expect(names).toContain('strategy');
-    expect(names).toContain('business_model');
-    expect(names).toContain('org');
-    expect(names).toContain('finance');
+    expect(names.length).toBeGreaterThanOrEqual(7);
+    expect(names).toContain('host');
+    expect(names).toContain('capital-cycle');
+    expect(names).toContain('customer-cycle');
+    expect(names).toContain('talent-cycle');
   });
 
-  it('Given strategy 专家, Then 包含关键文件', () => {
-    const expert = scanner.getExpert('strategy');
+  it('Given host 专家, Then 包含关键文件', () => {
+    const expert = scanner.getExpert('host');
     expect(expert).toBeDefined();
     expect(expert!.files).toBeDefined();
     expect(Object.keys(expert!.files).length).toBeGreaterThanOrEqual(3);
   });
 
-  it('Given 完整索引, When loadFromIndex, Then 8 位专家全部加载成功', () => {
+  it('Given 完整索引, When loadFromIndex, Then 7 位专家全部加载成功', () => {
     const index = scanner.getIndex()!;
     expect(index).toBeDefined();
 
     const result = loader.loadFromIndex(index, {});
-    expect(result.fromFiles).toBeGreaterThanOrEqual(8);
+    expect(result.fromFiles).toBeGreaterThanOrEqual(7);
     expect(result.errors.length).toBe(0);
   });
 
@@ -51,7 +51,7 @@ describe('ExpertFileLoader — 8段组装集成测试', () => {
     const index = scanner.getIndex()!;
     loader.loadFromIndex(index, {});
 
-    const prompt = getExpertRegistry().getPrompt('strategy');
+    const prompt = getExpertRegistry().getPrompt('host');
     expect(prompt).toBeDefined();
     expect(prompt).toContain('角色');
     expect(prompt).toContain('规则');
@@ -62,14 +62,14 @@ describe('ExpertFileLoader — 8段组装集成测试', () => {
     const index = scanner.getIndex()!;
     loader.loadFromIndex(index, {});
 
-    const prompt = getExpertRegistry().getPrompt('strategy')!;
+    const prompt = getExpertRegistry().getPrompt('host')!;
     expect(prompt.length).toBeGreaterThan(100);
-    expect(prompt).toContain('身份');
-    expect(prompt).toContain('角色');
-    expect(prompt).toContain('知识');
+    expect(prompt).toContain('角色定义');
+    expect(prompt).toContain('规则');
+    expect(prompt).toContain('工具');
   });
 
-  it('Given 所有 8 位专家, Then prompt 非空且包含 IDENTITY', () => {
+  it('Given 所有 7 位专家, Then prompt 非空且包含 IDENTITY', () => {
     const index = scanner.getIndex()!;
     loader.loadFromIndex(index, {});
 
