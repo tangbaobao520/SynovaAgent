@@ -13,6 +13,8 @@ import ResizeHandle from './components/ResizeHandle';
 import CommandPalette from './components/CommandPalette';
 import NotificationCenter from './components/NotificationCenter';
 import { useAppStore } from './stores/app-store';
+import { useConversationStore } from './stores/conversation-store';
+import { fetchLlmConfigStatus } from './stores/llm-config';
 import { useKeyboard } from './hooks/useKeyboard';
 import { isElectron, getAppVersion, updateTrayState } from './ipc/bridge';
 import { getApiBase } from './lib/api';
@@ -55,6 +57,22 @@ const App: React.FC = () => {
     const interval = setInterval(checkHealth, 30000);
     return () => clearInterval(interval);
   }, [setOnlineStatus]);
+
+  // D575: boot LLM 配置判定（spec §5.3 首启向导状态机）
+  // configured（source=stored/env）→ 直接进主界面（已配置用户跳过向导）；
+  // 未配置 / 状态拉取降级（null）→ firstLaunch 向导保留 + 黄条预备（llmUnconfigured=true）。
+  // 注意: 向导内「保存并进入」成功会置 llmUnconfigured=false，黄条随之消失（结果可见）。
+  useEffect(() => {
+    const checkLlmConfig = async () => {
+      const status = await fetchLlmConfigStatus();
+      if (status !== null && status.configured) {
+        useConversationStore.getState().setWelcomeState('ready');
+      } else {
+        useAppStore.getState().setLlmUnconfigured(true);
+      }
+    };
+    void checkLlmConfig();
+  }, []);
 
   // sync alert count to tray
   useEffect(() => {
