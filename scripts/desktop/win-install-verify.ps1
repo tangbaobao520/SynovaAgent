@@ -1,7 +1,8 @@
-# scripts/desktop/win-install-verify.ps1 — Win 侧安装启动出窗四断言（切片 B D523）
+﻿# scripts/desktop/win-install-verify.ps1 — Win 侧安装启动出窗四断言（切片 B D523）
 #
 # 契约（铁律 47）:
-#   入口:  powershell -File scripts/desktop/win-install-verify.ps1 [-DryRun] [-SkipInstall] [-KeepData]
+#   入口:  powershell.exe 5.1 与 pwsh 7 均可跑（D581 BOM 修复后两版均正确解析中文注释）:
+#          powershell -File scripts/desktop/win-install-verify.ps1 [-DryRun] [-SkipInstall] [-KeepData]
 #   出口:  exit 0 = 四断言全过（安装→启动→出窗→首诊后端健康）
 #          exit 1 = 任一断言失败（evidence 记录失败步，不静默——铁律 24）
 #          exit 2 = 前置缺失（切片 A D517 的 release/*.exe 不存在）→ waiting，不伪造实测（DS4）
@@ -21,7 +22,10 @@ $SERVER = 'http://localhost:18790'
 $APP_NAME = 'SynovaAgent'
 $REPO_ROOT = Split-Path -Parent $PSScriptRoot | Split-Path -Parent
 $EXE_DIR = Join-Path $REPO_ROOT 'release'
-$EVIDENCE_DIR = Join-Path $REPO_ROOT ("evidence/D523-win-" + (Get-Date -Format 'yyyy-MM-dd'))
+# D581 证据路径: 落 git 跟踪目录（CT-57 口径: 断言摘要/md5 入 git，1-2 兑换证据链）。
+# 根级 evidence/ 被 .gitignore:76 禁用（K3 P1-1 同型）；本目录靠 .gitignore 豁免行
+# `!docs/synova/product-lines/evidence/` 保持非忽略，evidence 文件 git add 无需 -f。
+$EVIDENCE_DIR = Join-Path $REPO_ROOT 'docs/synova/product-lines/evidence/D578-win-real-machine'
 $INSTALL_DIR = Join-Path $env:LOCALAPPDATA "Programs\$APP_NAME"
 $USER_DATA = Join-Path $env:APPDATA $APP_NAME
 

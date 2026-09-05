@@ -1,7 +1,7 @@
 # Founder Demo — Windows 部署验收 checklist（D523 + D536）
 
 > 目标：创始人在 Windows 电脑上零命令行验证「双击安装 → 启动 → 出窗 → 首诊页可达」。
-> 一键实跑：`powershell -File scripts/desktop/win-install-verify.ps1`（exit 0 = 全过）。
+> 一键实跑：`powershell -File scripts/desktop/win-install-verify.ps1`（exit 0 = 全过）。`powershell.exe` 5.1 与 `pwsh` 7 均可跑（D581 BOM 修复后两版均正确解析中文注释）。
 > 前置：切片 A D517 的 `release/*.exe` 存在（缺失则脚本 exit 2 = waiting，不伪造）。
 > ✅ **D536 部署验收完成态（2026-08-26）**：CI artifact 已下载校验（exe md5 落盘）；**实际安装实测 waiting——GUI dsh-ssh 未配置 Windows 目标机**（D523 DS4 先例，不伪造）。
 

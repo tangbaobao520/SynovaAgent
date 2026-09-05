@@ -9,10 +9,12 @@
  *   ⑤ vite proxy 指向 18790（缺陷 D 修复）
  *   ⑥ renderer fetch 全部经 getApiBase（生产 loadFile 后相对路径失效）
  *   ⑦ SYNOVA_DB_PATH 注入（userData 数据目录，L1-7）
+ *   ⑧ D581 构建守卫: beforePack 断言 dist/backend.mjs 存在，缺失 fail-fast（不出空包）
  * 铁律 48: 每条断言有 expect()，物理 grep/read 文件内容。
  */
 import { describe, it, expect } from 'vitest';
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 
 const ROOT = path.resolve(__dirname, '../..');
@@ -156,7 +158,9 @@ describe('D517 CI — desktop-build workflow 契约', () => {
 
   it('触发器: push main + workflow_dispatch（任何人可手动复现）', () => {
     const wf = fs.readFileSync(wfPath, 'utf-8');
-    expect(wf).toMatch(/push:[\s\S]*?branches:\s*\[main\]/);
+    // D581 存量红修复: D529 给 push 触发补加了 'fix/d529-**' 分支（workflow 头注释②），
+    // 旧断言 /branches:\s*\[main\]/ 对 [main, 'fix/d529-**'] 必红。契约不变: main 恒为首触发分支。
+    expect(wf).toMatch(/push:[\s\S]*?branches:\s*\[main[,\]]/);
     expect(wf).toMatch(/workflow_dispatch:/);
   });
 });
@@ -228,5 +232,56 @@ describe('D504 GS-01 — Electron 产物断言组接线', () => {
     const run = read('scripts/golden-scenarios/GS-01-first-diagnosis/run.sh');
     expect(run).toMatch(/backend-spawn/);
     expect(run).toMatch(/electron/i);
+  });
+});
+
+// ═══ D581 新增断言组（构建守卫——dist/backend.mjs 缺失 fail-fast，不出空包）═══
+
+describe('D581 构建守卫 — beforePack fail-fast（CI test -f 同语义）', () => {
+  // require 惰性加载 CJS 配置（build-synova.cjs 为 electron-builder 配置源，不在 tsc 检查面）
+  const config = require('../../build-synova.cjs') as {
+    beforePack?: (ctx: { appDir: string }) => unknown;
+  };
+
+  // 统一归一为 Promise: 兼容守卫同步 throw 与异步 reject 两种 fail-fast 形态
+  const run = (appDir: string): Promise<unknown> => {
+    if (typeof config.beforePack !== 'function') {
+      return Promise.reject(new Error('[d581-test] beforePack 未接线'));
+    }
+    try {
+      return Promise.resolve(config.beforePack({ appDir }));
+    } catch (err) {
+      return Promise.reject(err);
+    }
+  };
+
+  it('守卫已接线: beforePack 为函数 + assertBackendArtifact 与 build:backend 指引在位（WIRE CHECK 铁律 0-2）', () => {
+    expect(typeof config.beforePack).toBe('function');
+    const cfg = read('build-synova.cjs');
+    expect(cfg).toMatch(/assertBackendArtifact/);
+    expect(cfg).toMatch(/build:backend/);
+    // 死钩子禁止回归: beforeBuild 在 npmRebuild:false 下永不执行（packager.js 提前 return），
+    // 只断言"未被声明为配置键"，头注释中的解释性提及不限
+    expect(cfg).not.toMatch(/^\s*beforeBuild:/m);
+  });
+
+  it('正常路径: dist/backend.mjs 存在 → 守卫放行（resolve undefined，不误伤）', async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'd581-guard-ok-'));
+    try {
+      fs.mkdirSync(path.join(tmp, 'dist'), { recursive: true });
+      fs.writeFileSync(path.join(tmp, 'dist', 'backend.mjs'), '// d581 test fixture\n');
+      await expect(run(tmp)).resolves.toBeUndefined();
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it('缺失路径: dist/backend.mjs 不存在 → fail-fast 且错误信息含 build:backend（阻断空包）', async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'd581-guard-miss-'));
+    try {
+      await expect(run(tmp)).rejects.toThrow(/build:backend/);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
   });
 });
