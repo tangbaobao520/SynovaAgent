@@ -235,7 +235,7 @@ const SEEDS: SeedEntry[] = [
   { domain: 'knowledge', type: 'benchmark', confidence: 0.85, level: 2, content: '零售/消费品基准: 毛利率60-75%(护肤品),净利率5-15%,库存周转>4次/年健康,复购率>40%健康,渠道集中度(单渠道)<40%健康。致命风险: 渠道依赖(平台规则一变就冲击营收)+SKU过长(长尾库存积压)。线下拓展缺经验团队。代工厂核心原料独家供应。' },
   { domain: 'knowledge', type: 'benchmark', confidence: 0.85, level: 2, content: '连锁餐饮基准: 单店净利润率>15%健康,盈利店占比>90%健康,新店养店期<6月健康,翻台率(午市)>3健康,店长流失率(年)<15%健康。致命风险: 店长培养速度跟不上开店计划。中央厨房配送半径限制跨区域扩张。关键配方只有核心人知道。' },
   { domain: 'knowledge', type: 'rule', confidence: 0.9, level: 2, content: '跨行业模式识别规则: 当不同行业的两个企业在同一乘数因子上得分相似时,它们的诊断结论可能互鉴。例: 一个培训公司(核心人依赖)和一个精密制造(核心工程师依赖)——在"组织能力"乘数上的瓶颈模式相同,解决方案可以跨行业借鉴。knowledge 专家应主动检索跨行业相似模式。' },
-  { domain: 'knowledge', type: 'best_practice', confidence: 0.8, level: 1, content: '诊断知识积累原则: 每次诊断完成后,被验证正确的发现(用户确认+FDE审核)→自动沉淀为PKB条目(confidence=0.6,随重复验证次数上升)。被验证错误的发现→原条目confidence降级,superseded_by指向新条目。未验证的发现→不自动沉淀,由FDE手动判断。' },
+  { domain: 'knowledge', type: 'best_practice', confidence: 0.8, level: 1, content: '诊断知识积累原则: 每次诊断完成后,被验证正确的发现(用户确认+GA审核)→自动沉淀为PKB条目(confidence=0.6,随重复验证次数上升)。被验证错误的发现→原条目confidence降级,superseded_by指向新条目。未验证的发现→不自动沉淀,由GA手动判断。' },
 ];
 
 /**

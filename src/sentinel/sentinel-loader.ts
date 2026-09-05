@@ -10,7 +10,7 @@ import { readdirSync, readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { pathToFileURL } from 'url';
 import { createLogger } from '@synova/logger';
-import type { SentinelFinding, SentinelCheckResult } from './types';
+import type { SentinelFinding, SentinelCheckResult, SentinelThresholdPair } from './types';
 
 const log = createLogger('sentinel/loader');
 
@@ -113,6 +113,63 @@ export function clearSentinelCache(): void {
   log.info('哨兵缓存已清除');
 }
 
+/**
+ * resolveThresholds — 哨兵阈值解析（manifest 基线 + L0 memStore 覆写合并，单一解析点）
+ * 契约:
+ *   @input  — sentinelName: manifest.name（memStore 键兼容双形态: threshold_${name} 与 threshold_sentinel-${name}，
+ *             后者兼容 org-adapter 传 config.id 的存量写入）；orgKey: 检查时 teamId || 'default'；
+ *             deps?: 测试注入缝 { memoryStore?: { recall(orgId, key): { value: string } | null } }——缺省动态 import
+ *             AgentMemoryStore + getDatabase（生产路径）。
+ *   @output — { thresholds: Record<string, SentinelThresholdPair>, overrideApplied: boolean, overrideMetric?: string }
+ *             基线 = loadSentinels() 中该哨兵 manifest.thresholds 全量；覆写 = memStore recall 命中的
+ *             newThreshold，应用于 manifest.thresholds 的首个 key（主指标）。
+ *   @degraded — memStore 值 JSON.parse 失败或数值非法 → log.warn + 忽略覆写（基线可用，不 throw，铁律 24）；
+ *             loadSentinels 失败/找不到哨兵 → { thresholds: {}, overrideApplied: false }（空表，aggregate 走自有 fallback）。
+ *   @error  — 不抛异常（所有失败路径降级返回，铁律 24/31）。
+ */
+export async function resolveThresholds(
+  sentinelName: string,
+  orgKey: string,
+  deps?: { memoryStore?: { recall(orgId: string, key: string): { value: string } | null } },
+): Promise<{ thresholds: Record<string, SentinelThresholdPair>; overrideApplied: boolean; overrideMetric?: string }> {
+  const { sentinels } = loadSentinels();
+  const found = sentinels.find(s => s.manifest.name === sentinelName);
+  const thresholds: Record<string, SentinelThresholdPair> = {};
+  for (const [k, v] of Object.entries(found?.manifest.thresholds ?? {})) {
+    thresholds[k] = { ...v };
+  }
+  if (Object.keys(thresholds).length === 0) {
+    return { thresholds, overrideApplied: false };
+  }
+  try {
+    const memoryStore = deps?.memoryStore ?? await (async () => {
+      const { getAgentMemoryStore } = await import('../l4/agent-memory-store');
+      const { getDatabase } = await import('../init/engine-context');
+      return getAgentMemoryStore(getDatabase());
+    })();
+    const primary = Object.keys(thresholds)[0];
+    const stored = memoryStore.recall(orgKey, `threshold_${sentinelName}`)
+      ?? memoryStore.recall(orgKey, `threshold_sentinel-${sentinelName}`);
+    if (stored) {
+      const parsed = JSON.parse(stored.value) as { newThreshold?: { warning?: number; critical?: number } };
+      const w = parsed.newThreshold?.warning;
+      const c = parsed.newThreshold?.critical;
+      if (typeof w === 'number' && Number.isFinite(w) && typeof c === 'number' && Number.isFinite(c)) {
+        thresholds[primary] = { warning: w, critical: c };
+        log.info({ sentinel: sentinelName, orgKey, metric: primary }, 'D577 阈值覆写生效（memStore → check）');
+        return { thresholds, overrideApplied: true, overrideMetric: primary };
+      }
+      log.warn({ sentinel: sentinelName }, 'memStore 阈值非法 — 忽略覆写，使用 manifest 基线');
+    }
+  } catch (err: unknown) {
+    log.warn({
+      err: err instanceof Error ? err.message : String(err),
+      sentinel: sentinelName,
+    }, 'memStore 阈值读取失败 — 使用 manifest 基线（degraded）');
+  }
+  return { thresholds, overrideApplied: false };
+}
+
 // ═══ Registry 注册 ═══
 
 /**
@@ -198,6 +255,10 @@ export async function registerLoadedSentinels(): Promise<{ registered: number; e
           const store = (context.db ?? {}) as Record<string, unknown>;
           const teamId = (ctx.teamId as string) || 'default';
 
+          // D577: 阈值注入（唯一生产解析点）—— manifest 基线 + memStore 覆写
+          const { thresholds } = await resolveThresholds(manifest.name, teamId);
+          (context as { thresholds?: Record<string, SentinelThresholdPair> }).thresholds = thresholds;
+
           // V4.3.0: 从 store 构建 GraphTraversal 实例，作为第 3 参注入 aggregate
           let traversal: import('../l4/graph-traversal').GraphTraversal | undefined;
           try {
@@ -210,10 +271,25 @@ export async function registerLoadedSentinels(): Promise<{ registered: number; e
             log.warn({ err }, 'GraphTraversal 构建失败 — 降级，不使用图遍历');
           }
 
-          const raw = await sentinelObj.check(store, teamId, traversal);
+          // D577: 第 4 参注入 thresholds（aggregate 可选参，未声明者零影响）
+          const checkFn = sentinelObj as {
+            check: (store: unknown, teamId: string, traversal?: unknown,
+              thresholds?: Record<string, SentinelThresholdPair>) => unknown;
+          };
+          const raw = await checkFn.check(store, teamId, traversal, thresholds);
           // 兼容两种返回格式: SentinelFinding[] 或 { findings: SentinelFinding[] }
           const findings: SentinelFinding[] = Array.isArray(raw) ? raw : ((raw as Record<string, unknown>)?.findings as SentinelFinding[]) || [];
-          return { sentinelId: `sentinel-${manifest.name}`, ok: true, findings, durationMs: 0, checkedAt: new Date().toISOString() };
+          // D577 缺陷 C: degraded 传播（aggregate 对象形态返回时），不再硬编码丢失（铁律 31）
+          const degraded = !Array.isArray(raw) && (raw as Record<string, unknown>)?.degraded === true;
+          const result: SentinelCheckResult = {
+            sentinelId: `sentinel-${manifest.name}`,
+            ok: true,
+            findings,
+            durationMs: 0,
+            checkedAt: new Date().toISOString(),
+          };
+          if (degraded) result.degraded = true;
+          return result;
         },
       });
 

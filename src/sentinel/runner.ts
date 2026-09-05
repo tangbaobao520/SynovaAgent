@@ -38,7 +38,7 @@ const log = createLogger('sentinel/runner');
 
 // ═══ 信号路由表 (手册 §19.1) ═══
 // 哨兵 → 专家 预定义映射。规则驱动，只有模糊场景丢给 LLM。
-// 信号级别: Low(只记录) / Medium(通知专家) / High(交叉验证) / Emergency(告警FDE)
+// 信号级别: Low(只记录) / Medium(通知专家) / High(交叉验证) / Emergency(告警GA)
 
 interface SignalRoute {
   sentinelId: string;
@@ -1019,32 +1019,22 @@ export class SentinelRunner {
       },
 
       async getThreshold(orgId: string, sentinelId: string): Promise<{ warning: number; critical: number } | null> {
+        // D577 DS7: 委托 resolveThresholds（manifest 基线 + memStore 覆写合并，单一解析点）。
+        // 行为等价: memStore 命中 → 覆写主指标对；未命中 → manifest 首个 key；两者皆缺 → { 0.5, 1.0 }。
+        // 兼容双键: threshold_${name} 与 threshold_sentinel-${name}（org-adapter 传 config.id 的存量写入）。
         try {
-          // 1. 先查 AgentMemoryStore 中的自定义阈值
-          const { getAgentMemoryStore } = await import('../l4/agent-memory-store');
-          const { getDatabase } = await import('../init/engine-context');
-          const db = getDatabase();
-          const memStore = getAgentMemoryStore(db);
-          const stored = memStore.recall(orgId, `threshold_${sentinelId}`);
-          if (stored) {
-            const parsed = JSON.parse(stored.value) as { newThreshold?: { warning: number; critical: number } };
-            if (parsed.newThreshold) return parsed.newThreshold;
+          const { resolveThresholds } = await import('./sentinel-loader');
+          const bareId = sentinelId.replace(/^sentinel-/, '');
+          const { thresholds, overrideMetric } = await resolveThresholds(bareId, orgId);
+          const primary = overrideMetric ?? Object.keys(thresholds)[0];
+          if (primary && thresholds[primary]) {
+            return { ...thresholds[primary] };
           }
-        } catch {
-          log.warn({ sentinelId }, 'getThreshold memory store 失败 — fallback to manifest');
-        }
-
-        // 2. Fallback 到 SentinelManifest 默认阈值
-        try {
-          const { loadSentinels } = await import('./sentinel-loader');
-          const { sentinels } = loadSentinels();
-          const sentinel = sentinels.find((s: { manifest: { name: string } }) => s.manifest.name === sentinelId || s.manifest.name === sentinelId.replace('sentinel-', ''));
-          if (sentinel?.manifest.thresholds) {
-            const key = Object.keys(sentinel.manifest.thresholds)[0];
-            if (key) return sentinel.manifest.thresholds[key];
-          }
-        } catch {
-          log.warn({ sentinelId }, 'getThreshold manifest fallback 失败 — 使用默认值');
+        } catch (err: unknown) {
+          log.warn({
+            err: err instanceof Error ? err.message : String(err),
+            sentinelId,
+          }, 'getThreshold 阈值解析失败 — 使用默认值');
         }
 
         // 3. 通用默认值

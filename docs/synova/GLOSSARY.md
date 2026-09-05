@@ -33,7 +33,7 @@ aliases: "术语表 / 跨层级映射 / 命名规范"
 | 13 | **硬度** | edge.transfer_function.params.hardness——衡量因果关系的刚性程度。高硬度=强约束（几乎不可改变）。 | Hardness、因果刚性 | — |
 | 14 | **Finding** | 哨兵/专家诊断的最小输出单元。含 severity/title/description/evidence。多个 Finding 聚合为信号。 | 发现、SentinelFinding | 告警信号(已废弃，使用"Finding") |
 | 15 | **证据链** | 一条 Finding 从"原始数据→compute→证据→发现"的完整追溯路径。 | 证据线、Evidence Chain | — |
-| 16 | **GA** | Growth Architect 的缩写。系统的主要操作者——配置诊断、审批 Goal、查看仪表盘。 | Growth Architect、FDE(前线部署工程师) | — |
+| 16 | **GA** | Growth Advisor（增长顾问）的缩写（创始人裁决 2026-09-04）。系统的主要操作者——配置诊断、审批 Goal、查看仪表盘。 | 前身术语 FDE（前线部署工程师，已退役并入 GA） | — |
 | 17 | **ME（管理经济学）** | 管理经济学——系统的理论基础。每一条因果边的 transfer_function 均源于管理经济学实证研究。 | 管理经济学、Managerial Economics | — |
 | 18 | **哇呢宝贝** | 系统 MVS 阶段的示例企业客户。用于演示/golden 数据集/回归测试。企业 ID: `wowbaby`。 | wani-baby、Wani Baby、MVS Client | — |
 

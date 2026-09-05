@@ -60,6 +60,9 @@ export interface AppState {
   dimensionCovered: number;
   dimensionTotal: number;
 
+  // D575: LLM 未配置黄条（boot 判定 / 「暂不配置」置 true；保存配置置 false）
+  llmUnconfigured: boolean;
+
   // Actions
   toggleLeftPanel: () => void;
   toggleRightPanel: () => void;
@@ -75,6 +78,7 @@ export interface AppState {
   setRightPanelWidth: (w: number) => void;
   setDiagnosisInfo: (t: string, c: number, tot: number) => void;
   setCurrentReportId: (id: string) => void;
+  setLlmUnconfigured: (v: boolean) => void;
 
   // GA Actions (Phase 3.1)
   setGaClients: (clients: ClientInfo[]) => void;
@@ -113,6 +117,7 @@ export const useAppStore = create<AppState>((set) => ({
 
   workspaces: MOCK_WORKSPACES, conversations: MOCK_CONVERSATIONS,
   lastDiagnosisTime: null, currentReportId: null, dimensionCovered: 0, dimensionTotal: 8,
+  llmUnconfigured: false,
 
   toggleLeftPanel: () => set((s) => ({ leftPanelOpen: !s.leftPanelOpen })),
   toggleRightPanel: () => set((s) => ({ rightPanelOpen: !s.rightPanelOpen })),
@@ -130,6 +135,7 @@ export const useAppStore = create<AppState>((set) => ({
     lastDiagnosisTime: time, dimensionCovered: covered, dimensionTotal: total,
   }),
   setCurrentReportId: (reportId) => set({ currentReportId: reportId }),
+  setLlmUnconfigured: (llmUnconfigured) => set({ llmUnconfigured }),
 
   setGaClients: (gaClients) => set({ gaClients }),
   setActiveOrgId: (orgId) => set((s) => ({

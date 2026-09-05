@@ -1,12 +1,22 @@
 /**
  * opportunity-window/aggregate.ts — E2 结构性机会窗口哨兵
+ *
+ * D577: 判定源 = loader 注入 thresholds（manifest 基线 + memStore 覆写，第 4 参）；
+ * 未注入（直调/单测）fallback 内置默认 DEFAULT_THRESHOLDS（与 manifest 现值一致，蓝绿基准）。
+ * opportunity_score 为单档判定（消费 .critical；severity 保持代码现状 warning）。
+ * L49 `score > 0.7` 为正向 info 发现（非告警阈值，manifest 无对应 key）— 保持现状不接线（spec §6）。
  */
-import type { SentinelFinding } from '../../../src/sentinel/types';
+import type { SentinelFinding, SentinelThresholdPair } from '../../../src/sentinel/types';
 import type { GraphTraversal } from '../../../src/l4/graph-traversal';
 import { computeOpportunityWindowScore } from './computes/opportunity-window-score';
 import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/opportunity-window');
+
+/** 内置默认阈值 = 改造前硬编码现值（D577 蓝绿基准：注入与默认行为完全一致） */
+const DEFAULT_THRESHOLDS = {
+  opportunity_score: { warning: 0.4, critical: 0.2 },
+} as const;
 
 interface GraphStoreReader {
   queryNodes(type: string, filters?: Record<string, unknown>, graph?: string): Array<{
@@ -15,10 +25,20 @@ interface GraphStoreReader {
 }
 
 export const opportunityWindowSentinel = {
-  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal): Promise<SentinelFinding[]> {
+  async check(store: GraphStoreReader, teamId: string, traversal?: GraphTraversal,
+    thresholds?: Record<string, SentinelThresholdPair>): Promise<SentinelFinding[]> {
     const now = new Date();
     const checkedAt = now.toISOString();
     const findings: SentinelFinding[] = [];
+
+    // D577: 阈值消费契约 — 注入优先；参数在但缺 key → log.warn（真配置缺口）；未注入 → log.debug（直调/单测）
+    const th = (key: keyof typeof DEFAULT_THRESHOLDS): SentinelThresholdPair => {
+      const injected = thresholds?.[key];
+      if (injected) return injected;
+      if (thresholds) log.warn({ sentinel: 'opportunity-window', key }, 'thresholds 注入缺 key — fallback 内置默认（manifest 配置缺口）');
+      else log.debug({ sentinel: 'opportunity-window', key }, 'thresholds 未注入（直调/单测）— fallback 内置默认');
+      return DEFAULT_THRESHOLDS[key];
+    };
 
     try {
       // @deprecated — 语义迁移由D15处理
@@ -37,7 +57,7 @@ export const opportunityWindowSentinel = {
 
       const scorePct = (result.score * 100).toFixed(0);
 
-      if (result.score < 0.2) {
+      if (result.score < th('opportunity_score').critical) {
         findings.push({
           id: `e2-low-${now.getTime()}`, severity: 'warning',
           title: `结构性变化机会少 (${scorePct}%)`,

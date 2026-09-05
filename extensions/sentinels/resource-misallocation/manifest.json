@@ -15,8 +15,8 @@
   ],
   "thresholds": {
     "score": {
-      "warning": 0.4,
-      "critical": 0.2
+      "warning": 0.2,
+      "critical": 0.5
     }
   },
   "aggregation": "worst_first",
@@ -37,4 +37,4 @@
     "strategy"
   ],
   "id": "sentinel-resource-misallocation"
-}
+}

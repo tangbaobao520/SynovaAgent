@@ -65,7 +65,7 @@ export function runPKBLifecycle(db: Database.Database): { decayed: number; confl
  *   - confidence < 0.7 → 跳过（信号不够强，不自动沉淀）
  *   - 同 domain + 相似 content 已存在 → 标记 superseded_by 关系
  *
- * 自动沉淀的知识需要 FDE 审核后才能变为 active。
+ * 自动沉淀的知识需要 GA 审核后才能变为 active。
  * 被驳回的条目 30 天后归档。
  *
  * @param db SQLite 数据库实例

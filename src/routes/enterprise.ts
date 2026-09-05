@@ -221,14 +221,36 @@ router.post('/api/enterprise/invitation/accept', async (req: Request, res: Respo
     if (inv.status !== 'pending') return res.status(400).json({ ok: false, code: 'INVITATION_USED', message: '邀请已使用' });
     if (new Date(inv.expiresAt) < new Date()) return res.status(400).json({ ok: false, code: 'INVITATION_EXPIRED', message: '邀请已过期' });
 
-    // D106: UserStore.createUser — GraphStore 持久化
-    const result = await getUserStore().createUser(
+    const store = getUserStore();
+
+    // D485: 双轨衔接——个人轨已注册 email 被邀请 → 绑定已有账号（不新建重复账号）。
+    // 绑定 = 修改账号归属（orgId 变更即数据访问边界迁移），须验证账号密码（所有权证明）；
+    // 密码错误不消耗邀请 token（保持 pending 可重试）；已停用账号不得经邀请链接复活。
+    const existing = store.queryByEmail(inv.email);
+    if (existing) {
+      if (existing.status !== 'active') {
+        return res.status(403).json({ ok: false, code: 'ACCOUNT_DISABLED', message: '账户已停用，无法接受邀请' });
+      }
+      const passwordMatch = await bcrypt.compare(password, existing.passwordHash);
+      if (!passwordMatch) {
+        log.warn({ email: inv.email }, '绑定已有账号密码验证失败 — 邀请保持 pending');
+        return res.status(401).json({ ok: false, code: 'AUTH_FAILED', message: '密码错误 — 绑定已有账号需验证账号密码' });
+      }
+      store.updateUser(existing.userId, { orgId: inv.orgId, role: inv.role });
+      inv.status = 'accepted';
+
+      log.info({ userId: existing.userId, email: inv.email, orgId: inv.orgId }, '邀请已接受(绑定已有账号)');
+      return res.json({ ok: true, data: { userId: existing.userId, email: inv.email, role: inv.role, orgId: inv.orgId, linked: true } });
+    }
+
+    // 不存在 → 新建账号（D106: UserStore.createUser — GraphStore 持久化）
+    const result = await store.createUser(
       inv.email, password, inv.role as 'admin' | 'manager' | 'liaison' | 'staff', inv.orgId,
     );
     inv.status = 'accepted';
 
     log.info({ userId: result.userId, email: inv.email, orgId: inv.orgId }, '邀请已接受');
-    return res.json({ ok: true, data: { userId: result.userId, email: inv.email, role: inv.role, orgId: inv.orgId } });
+    return res.json({ ok: true, data: { userId: result.userId, email: inv.email, role: inv.role, orgId: inv.orgId, linked: false } });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     log.error({ err }, '接受邀请失败');

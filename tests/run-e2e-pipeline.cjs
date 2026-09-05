@@ -141,7 +141,7 @@ async function main() {
   '<div class="section"><h2>测量数据明细</h2><table style="width:100%;font-size:.85rem;"><tr><th>测量器</th><th>维度</th><th>评分</th><th>置信度</th></tr>' +
   measOutput.results.map(r => '<tr><td>' + esc(r.measurerId) + '</td><td>' + r.dimension + '</td><td>' + r.score.toFixed(1) + '</td><td>' + r.confidence + '</td></tr>').join('\n') +
   '</table></div>\n' +
-  '<div class="section"><h2>数据说明</h2><p>数据源：FDE采访文档（八维度LLM提取）</p><p>测量器：4个活跃（从提取文本中计算）</p><p>专家推理：3个活跃（LLM推理，非模板）</p>' +
+  '<div class="section"><h2>数据说明</h2><p>数据源：GA采访文档（八维度LLM提取）</p><p>测量器：4个活跃（从提取文本中计算）</p><p>专家推理：3个活跃（LLM推理，非模板）</p>' +
   (expOutput.degradedModules.length ? '<p style="color:var(--orange);">⚠️ 部分专家降级</p>' : '') +
   '</div>\n<p style="text-align:center;color:var(--muted);font-size:.8rem;margin-top:3rem;">Synova 组织诊断系统 · 结论来自真实计算和专家推理</p>\n</body></html>';
 

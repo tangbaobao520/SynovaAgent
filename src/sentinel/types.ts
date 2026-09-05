@@ -81,6 +81,23 @@ export interface SentinelCheckResult {
   degraded?: boolean;
 }
 
+/**
+ * aggregate.check 可选返回形态（D577）。
+ * 返回数组 = 纯 findings（兼容存量）；返回对象可携带 degraded（铁律 31 传播）。
+ * 生产产出方: customer-demand-shift/aggregate.ts DEPLOYS 无边降级路径；
+ * 生产消费者: sentinel-loader.ts check wrapper（degraded 写入 SentinelCheckResult）。
+ */
+export interface SentinelAggregateResult {
+  findings: SentinelFinding[];
+  degraded?: boolean;
+}
+
+/** 哨兵阈值对（manifest.json thresholds 字段值形态）。warning/critical 数值语义随指标方向而定（高于/低于触发），由各 aggregate 判定式决定。 */
+export interface SentinelThresholdPair {
+  warning: number;
+  critical: number;
+}
+
 // ═══ Sentinel 接口 ═══
 
 /** 哨兵配置 */
@@ -151,6 +168,14 @@ export interface SentinelContext {
   traversal?: import('../l4/graph-traversal').GraphTraversal;
   /** V4.3.0: 团队 ID (上下文透传) */
   teamId?: string;
+  /**
+   * D577: 哨兵阈值表（注入契约）。
+   * 来源 = manifest.thresholds 全量（基线）+ AgentMemoryStore 覆写（orgKey = check 时 teamId || 'default'，
+   * 覆写应用于 manifest.thresholds 首个 key 即主指标——与 runner.getThreshold L1043 语义一致）。
+   * 缺省 undefined = 未注入（直调/内置适配器场景），aggregate 走自有 fallback。
+   * 由 sentinel-loader.ts registerLoadedSentinels 的 check wrapper 注入（唯一生产注入点）。
+   */
+  thresholds?: Record<string, SentinelThresholdPair>;
 }
 
 // ═══ SentinelRegistry 接口 ═══
