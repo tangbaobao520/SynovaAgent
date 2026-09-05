@@ -1,0 +1,12 @@
+{
+  "task_id": "D583",
+  "title": "P0专家名测试债-D282迁移余波",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-06",
+  "updated_by": "dsh-cto",
+  "note": "P0 专家名测试债 ~20 文件（D282 余波）。逐文件判定过时/真bug，真bug转FIX。绿测试=P1 改名安全网。"
+}

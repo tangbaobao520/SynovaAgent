@@ -1,0 +1,12 @@
+{
+  "task_id": "D584",
+  "title": "P1-DSH线测试债-sentinels与契约批",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-06",
+  "updated_by": "dsh-cto",
+  "note": "P1 DSH 线测试债 ~50 文件（tests/sentinels 38 + 契约/控制塔/electron 12）。平台豁免登记纪律。"
+}
