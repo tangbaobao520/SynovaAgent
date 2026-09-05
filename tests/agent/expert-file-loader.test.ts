@@ -26,7 +26,7 @@ describe('ExpertFileLoader', () => {
     // 重置 registry
     const registry = getExpertRegistry();
     for (const type of registry.listTypes()) {
-      if (!['host', 'capital-cycle', 'customer-cycle', 'talent-cycle', 'tech', 'finance-structure', 'competitive-strategy'].includes(type)) {
+      if (!['strategy', 'org', 'finance', 'tech', 'marketing', 'action', 'business_model', 'knowledge'].includes(type)) {
         registry.unregister(type);
       }
     }
@@ -34,8 +34,8 @@ describe('ExpertFileLoader', () => {
 
   it('空索引 — 使用默认 prompt 注册所有专家', () => {
     const defaults: Record<string, string> = {
-      host: 'default host prompt',
-      'capital-cycle': 'default capital-cycle prompt',
+      strategy: 'default strategy prompt',
+      org: 'default org prompt',
     };
 
     const result = loader.loadFromIndex(makeIndex(), defaults);
@@ -46,25 +46,25 @@ describe('ExpertFileLoader', () => {
     expect(result.errors).toHaveLength(0);
 
     const registry = getExpertRegistry();
-    expect(registry.getPrompt('host')).toBe('default host prompt');
-    expect(registry.getPrompt('capital-cycle')).toBe('default capital-cycle prompt');
+    expect(registry.getPrompt('strategy')).toBe('default strategy prompt');
+    expect(registry.getPrompt('org')).toBe('default org prompt');
   });
 
   it('有专家文件 — 文件内容覆盖默认 prompt', () => {
     const index = makeIndex({
       experts: [{
-        name: 'host',
+        name: 'strategy',
         files: {
           IDENTITY: {
-            relativePath: 'expert/host/IDENTITY.md',
-            absolutePath: '/test/expert/host/IDENTITY.md',
+            relativePath: 'expert/strategy/IDENTITY.md',
+            absolutePath: '/test/expert/strategy/IDENTITY.md',
             content: '战略分析专家',
             size: 100,
             lastModified: new Date().toISOString(),
           },
           SOUL: {
-            relativePath: 'expert/host/SOUL.md',
-            absolutePath: '/test/expert/host/SOUL.md',
+            relativePath: 'expert/strategy/SOUL.md',
+            absolutePath: '/test/expert/strategy/SOUL.md',
             content: '三层诊断框架',
             size: 200,
             lastModified: new Date().toISOString(),
@@ -73,27 +73,27 @@ describe('ExpertFileLoader', () => {
       }],
     });
 
-    const defaults = { host: 'OLD default' };
+    const defaults = { strategy: 'OLD default' };
     const result = loader.loadFromIndex(index, defaults);
 
     expect(result.fromFiles).toBe(1);
     expect(result.fromDefaults).toBe(0);
     const registry = getExpertRegistry();
-    const prompt = registry.getPrompt('host')!;
+    const prompt = registry.getPrompt('strategy')!;
     expect(prompt).toContain('战略分析专家');
     expect(prompt).toContain('三层诊断框架');
-    // 文件源被记录（IDENTITY + SOUL + IDENTITY 的 analytical_lens 派生源）
-    expect(result.loaded[0].sources.length).toBeGreaterThanOrEqual(2);
+    // 文件源被记录
+    expect(result.loaded[0].sources).toHaveLength(2);
   });
 
   it('部分文件缺失 — loaded expert 标记 degraded', () => {
     const index = makeIndex({
       experts: [{
-        name: 'host',
+        name: 'strategy',
         files: {
           IDENTITY: {
-            relativePath: 'expert/host/IDENTITY.md',
-            absolutePath: '/test/expert/host/IDENTITY.md',
+            relativePath: 'expert/strategy/IDENTITY.md',
+            absolutePath: '/test/expert/strategy/IDENTITY.md',
             content: 'only identity, no SOUL',
             size: 50,
             lastModified: new Date().toISOString(),
@@ -102,7 +102,7 @@ describe('ExpertFileLoader', () => {
       }],
     });
 
-    const defaults = { host: 'fallback' };
+    const defaults = { strategy: 'fallback' };
     const result = loader.loadFromIndex(index, defaults);
 
     expect(result.fromFiles).toBe(1);
@@ -114,11 +114,11 @@ describe('ExpertFileLoader', () => {
   it('文件为空 — 降级使用默认 prompt', () => {
     const index = makeIndex({
       experts: [{
-        name: 'host',
+        name: 'strategy',
         files: {
           SOUL: {
-            relativePath: 'expert/host/SOUL.md',
-            absolutePath: '/test/expert/host/SOUL.md',
+            relativePath: 'expert/strategy/SOUL.md',
+            absolutePath: '/test/expert/strategy/SOUL.md',
             content: '',  // 空内容
             size: 0,
             lastModified: new Date().toISOString(),
@@ -127,13 +127,13 @@ describe('ExpertFileLoader', () => {
       }],
     });
 
-    const defaults = { host: 'default host' };
+    const defaults = { strategy: 'default strategy' };
     const result = loader.loadFromIndex(index, defaults);
 
     // 所有文件为空 → 降级使用默认
     expect(result.fromDefaults).toBeGreaterThanOrEqual(0);
     const registry = getExpertRegistry();
-    const prompt = registry.getPrompt('host');
+    const prompt = registry.getPrompt('strategy');
     expect(prompt).toBeDefined();
   });
 });
