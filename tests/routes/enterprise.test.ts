@@ -1,7 +1,10 @@
 /**
- * tests/routes/enterprise.test.ts — D102+D103 企业路由测试 + D484 邀请全链路集成测试
+ * tests/routes/enterprise.test.ts — D102+D103 企业路由测试 + D484 邀请全链路 + D485 双轨账号关联集成测试
  *
  * D102+D103（保留）: bcrypt/内存 store 操作/模块导出接线检查
+ * D485（新增）: 双轨账号关联——个人轨已注册 email 被邀请 → accept 绑定（userId/密码保留，
+ *   orgId/role 更新，linked=true）；新 email accept 新建（linked=false 现状回归）；
+ *   未绑定个人账号调企业端点 403（边界不削弱）。复用 D484 真实 HTTP 基建。
  * D484（新增）: 企业邀请注册全链路——匿名 register→login→invite→query→accept 真实 HTTP。
  *   铁律 12: 真实 express 挂载（jwtAuthMiddleware→authRoutes→enterpriseRoutes，与生产
  *   server.ts L290/L293/L354 顺序同构），native fetch，真实 signJwtToken/UserStore/bcrypt。
@@ -362,5 +365,165 @@ describe('D484 — 企业邀请注册全链路（集成）', () => {
     expect(staffInvite.status).toBe(403);
     const staffInviteBody = await staffInvite.json() as { code: string };
     expect(staffInviteBody.code).toBe('FORBIDDEN');
+  });
+});
+
+// ════════════════════════════════════════════════════════════════
+// D485 — 双轨账号关联（个人账号绑定企业，飞书/钉钉模式）
+// 个人轨已注册 email 被企业邀请 → accept 绑定（userId/密码保留，orgId/role 更新）
+// → 新 email accept 新建（现状回归）→ 未绑定个人账号边界 403 不削弱
+// ════════════════════════════════════════════════════════════════
+
+describe('D485 — 双轨账号关联（个人账号绑定企业）', () => {
+  const PERSONAL_EMAIL = 'd485-personal@synova.test';
+  const PERSONAL_PASSWORD = 'd485-personal-pass';
+  const FRESH_EMAIL = 'd485-fresh@synova.test';
+  const FRESH_PASSWORD = 'd485-fresh-pass';
+  const LONER_EMAIL = 'd485-loner@synova.test';
+  const LONER_PASSWORD = 'd485-loner-pass';
+
+  it('⑦ 个人注册→同 email 被邀请→accept 绑定: userId 不变 + orgId/role 更新 + linked=true + 密码延续 + 错误密码 401 可重试', async () => {
+    // 1) 个人轨注册（auth/register 个人空间: orgId=default, role=staff）
+    const register = await fetch(`${baseUrl}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: PERSONAL_EMAIL, password: PERSONAL_PASSWORD }),
+    });
+    expect(register.status).toBe(201);
+    const registerBody = await register.json() as { ok: boolean; payload: { userId: string; role: string; orgId: string } };
+    expect(registerBody.ok).toBe(true);
+    const personalUserId = registerBody.payload.userId;
+    expect(personalUserId).toBeTruthy();
+    expect(registerBody.payload.role).toBe('staff');
+    expect(registerBody.payload.orgId).toBe('default');
+
+    // 2) 企业 admin 邀请同 email（role=manager——绑定后 role 真实更新的断言力）
+    const invite = await fetch(`${baseUrl}/api/enterprise/invite`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
+      body: JSON.stringify({ email: PERSONAL_EMAIL, role: 'manager' }),
+    });
+    expect(invite.status).toBe(200);
+    const inviteBody = await invite.json() as { data: { token: string } };
+    const bindToken = inviteBody.data.token;
+    expect(bindToken).toMatch(/^inv-/);
+
+    // 3) accept 绑定（携带个人注册密码——账号所有权证明）
+    const accept = await fetch(`${baseUrl}/api/enterprise/invitation/accept`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: bindToken, password: PERSONAL_PASSWORD }),
+    });
+    expect(accept.status).toBe(200);
+    const acceptBody = await accept.json() as { ok: boolean; data: { userId: string; email: string; role: string; orgId: string; linked: boolean } };
+    expect(acceptBody.ok).toBe(true);
+    expect(acceptBody.data.linked).toBe(true);           // 绑定语义（非新建）
+    expect(acceptBody.data.userId).toBe(personalUserId); // userId 不变（现状缺陷: 新建重复账号断裂）
+    expect(acceptBody.data.email).toBe(PERSONAL_EMAIL);
+    expect(acceptBody.data.role).toBe('manager');
+    expect(acceptBody.data.orgId).toBe(orgId);
+
+    // 4) GraphStore 实证: 绑定而非新建（userId 不变，orgId/role 已更新，default 组织移除）
+    const bound = userStore.queryByEmail(PERSONAL_EMAIL);
+    expect(bound).not.toBeNull();
+    expect(bound?.userId).toBe(personalUserId);
+    expect(bound?.orgId).toBe(orgId);
+    expect(bound?.role).toBe('manager');
+    expect(userStore.listByOrg(orgId).some(u => u.userId === personalUserId)).toBe(true);
+    expect(userStore.listByOrg('default').some(u => u.userId === personalUserId)).toBe(false);
+
+    // 5) 密码延续实证: 原密码可登录，登录身份已是企业（payload.orgId/role 更新）
+    const relogin = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: PERSONAL_EMAIL, password: PERSONAL_PASSWORD }),
+    });
+    expect(relogin.status).toBe(200);
+    const reloginBody = await relogin.json() as { ok: boolean; payload: { userId: string; role: string; orgId: string } };
+    expect(reloginBody.ok).toBe(true);
+    expect(reloginBody.payload.userId).toBe(personalUserId);
+    expect(reloginBody.payload.role).toBe('manager');
+    expect(reloginBody.payload.orgId).toBe(orgId);
+
+    // 6) 安全边界: 错误密码 accept → 401 + 邀请不消耗（仍 pending 可重试）
+    const invite2 = await fetch(`${baseUrl}/api/enterprise/invite`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
+      body: JSON.stringify({ email: PERSONAL_EMAIL, role: 'staff' }),
+    });
+    expect(invite2.status).toBe(200);
+    const invite2Body = await invite2.json() as { data: { token: string } };
+    const retryToken = invite2Body.data.token;
+
+    const wrongPass = await fetch(`${baseUrl}/api/enterprise/invitation/accept`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: retryToken, password: 'd485-wrong-password' }),
+    });
+    expect(wrongPass.status).toBe(401);
+    const wrongPassBody = await wrongPass.json() as { code: string };
+    expect(wrongPassBody.code).toBe('AUTH_FAILED');
+
+    // 邀请未被消耗: 同 token 仍 pending（GET 200 而非 400 INVITATION_USED）
+    const pendingQuery = await fetch(`${baseUrl}/api/enterprise/invitation/${retryToken}`);
+    expect(pendingQuery.status).toBe(200);
+  });
+
+  it('⑧ 新 email accept → 新建账号 + linked=false（现状回归，与⑦绑定路径对照）', async () => {
+    const invite = await fetch(`${baseUrl}/api/enterprise/invite`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
+      body: JSON.stringify({ email: FRESH_EMAIL, role: 'staff' }),
+    });
+    expect(invite.status).toBe(200);
+    const inviteBody = await invite.json() as { data: { token: string } };
+
+    const accept = await fetch(`${baseUrl}/api/enterprise/invitation/accept`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: inviteBody.data.token, password: FRESH_PASSWORD }),
+    });
+    expect(accept.status).toBe(200);
+    const acceptBody = await accept.json() as { ok: boolean; data: { userId: string; email: string; role: string; orgId: string; linked: boolean } };
+    expect(acceptBody.ok).toBe(true);
+    expect(acceptBody.data.linked).toBe(false); // 新建语义显式区分
+    expect(acceptBody.data.email).toBe(FRESH_EMAIL);
+    expect(acceptBody.data.role).toBe('staff');
+    expect(acceptBody.data.orgId).toBe(orgId);
+    expect(acceptBody.data.userId).toBeTruthy();
+
+    const created = userStore.queryByEmail(FRESH_EMAIL);
+    expect(created).not.toBeNull();
+    expect(created?.userId).toBe(acceptBody.data.userId);
+    expect(created?.orgId).toBe(orgId);
+    expect(created?.passwordHash).not.toBe(FRESH_PASSWORD);
+    expect(created?.passwordHash.startsWith('$2')).toBe(true);
+  });
+
+  it('⑨ 未绑定个人账号调企业 members → 403（双轨边界不削弱: staff+default 不接企业系统）', async () => {
+    const register = await fetch(`${baseUrl}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: LONER_EMAIL, password: LONER_PASSWORD }),
+    });
+    expect(register.status).toBe(201);
+
+    const login = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: LONER_EMAIL, password: LONER_PASSWORD }),
+    });
+    expect(login.status).toBe(200);
+    const loginBody = await login.json() as { ok: boolean; token: string; payload: { role: string; orgId: string } };
+    expect(loginBody.ok).toBe(true);
+    expect(loginBody.payload.role).toBe('staff');
+    expect(loginBody.payload.orgId).toBe('default');
+
+    const members = await fetch(`${baseUrl}/api/enterprise/members`, {
+      headers: { Authorization: `Bearer ${loginBody.token}` },
+    });
+    expect(members.status).toBe(403);
+    const membersBody = await members.json() as { code: string };
+    expect(membersBody.code).toBe('FORBIDDEN');
   });
 });

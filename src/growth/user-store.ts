@@ -210,8 +210,12 @@ export class UserStore {
 
   /**
    * 更新用户属性。
+   *
+   * D485: props 扩展含 'orgId'——双轨账号关联（个人账号被邀请加入企业）需要
+   * 更新 orgId 完成绑定（userId/密码保留，SqliteGraphStore.updateNode 为通用
+   * props merge，orgId 可持久化）。
    */
-  updateUser(userId: string, props: Partial<Pick<UserRecord, 'role' | 'status' | 'displayName' | 'department'>>): void {
+  updateUser(userId: string, props: Partial<Pick<UserRecord, 'role' | 'status' | 'displayName' | 'department' | 'orgId'>>): void {
     try {
       this.store.updateNode(userId, props as Record<string, unknown>, USER_GRAPH);
       log.info({ userId }, '用户已更新');
