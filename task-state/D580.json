@@ -1,12 +1,16 @@
 {
   "task_id": "D580",
   "title": "08告警工单切片-8-2入库-8-3去重稳定化-8-4状态机API",
-  "status": "claimed",
-  "spec": null,
+  "status": "spec_done",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D580-ticket-slice-20260906.md",
+    "by": "dev-doc",
+    "at": "2026-09-06",
+    "note": "spec 必答 4 题全落位（§5.5, 均带实测证据）: ①finding.id 稳定键=去时间戳后缀不加哈希（43 文件互斥分支实测, 值漂移由 INSERT OR REPLACE 内容刷新承载, 消失复现=同 finding 同 id, 窗口过后重通知+工单重置 open）; ②去重载体=独立表 sentinel_notification_dedup（B-19 裁决: 需复活→持久化, 介质选最简 KV 表; journal=两处状态源拒绝; TTL 启动清理; 窗口 10min→5min 落地 D339 裁决 A, env 可配）; ③8-2 降级=source+degraded 双标记, 表为准内存只兜底, 表空即降级（派单字面）; ④signal_id 关联实测不含 finding.id（sig_${entity}）→零迁移需要; 顺带实测发现 closeTicket LIKE 匹配不到 auto 工单的既有缺口——记录不修（spec §6）。写集 7 修改 + 4 新建（§5.1, 43 aggregate 走目录级条目）; 波及面红线已执行: finding.id 消费方全清单 7 项 grep 实测（§4.2）, 其中 2 处测试尾横杠断言会破已纳入写集修复。新增波及发现: GET /tickets 的 status query 是死变量（读而不用）, 8-2 一并接通; finding.id 还是事件重放投影索引（runner L909）——稳定化后 finding_transition 跨轮可命中（改善）。gatekeeper 6/6 ALL PASS（exit 0）; 决策 5 项带参考系（§5.5）; spec-only 提交预期漂移预登记（文件头, D577 先例）。编码指令随附（docs/synova/coordination/编码指令-D580-20260906.md, 分支 feat/d580-ticket-slice-spec 的 PR 交付 spec, 编码分支 feat/d580-ticket-slice-impl）。"
+  },
   "impl": null,
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-06",
-  "updated_by": "dsh-cto",
-  "note": "CTO 派单 → dev-doc 写 spec。三点：8-2 写读同源（K3 P2-3 修复）/ 8-3 去重键稳定化（N14 根因，D339 裁决 A 执行）/ 8-4 状态机 API。DSH 借鉴 B-19（持久化分级哲学）。写集与 D579/D578/P0文档批 零重叠。"
+  "updated_by": "synova-devdoc"
 }
