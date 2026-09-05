@@ -1,11 +1,16 @@
 {
   "task_id": "D579",
   "title": "FIX-D572-k3verdict-stale机制",
-  "status": "claimed",
-  "spec": null,
+  "status": "spec_done",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D579-k3-verdict-stale-20260905.md",
+    "by": "dev-doc",
+    "at": "2026-09-06",
+    "note": "spec 必答 4 题全落位（§3.6，均带实测证据）：①映射=线级 modules 同 machine 路径（D572 G2 建议原文），降级=TTL 必然执行 + git 子检查显式 problems + 落点 pending_k3（不假绿不假黄）；②UX=落既有第六态 stale（不计分，待重跑，零第七态）；③B 项=方案二 task-state audit.report 显式字段优先（123/126 已有字段零迁移，redeem L108-113 已当权威；文件名四种形态含降序对 D551-D487 证明范围解析脆弱）；④真实用例对账修正一处派单前提——D576 CT-53 使线 1 七点已 machine 路径 stale（实跑取证），本单线 1 零改变，「不误伤」对照组改由真 k3 点 19-2/22-1 承担，8 点转 stale（5 点 TTL 过期 + 3 点模块变更）矩阵见 §3.6。写集 5 修改 + 7 新建（§5.1）；⚠写集偏差申报：B 项唯一消费方 scripts/control-tower/gen-cto-health.py 不在派单可碰清单，已申报待 CTO 裁决，未批则 B 项 descope。测试基线实测：product-lines.test.py 28 用例 3 既有失败（本单回归门显式排除）；两处 enshrined 夹具（test_six_states/test_hundred_percent_gate）需随修复更新。gatekeeper 6/6 ALL PASS（exit 0）；决策 4 项带参考系（§5.3）。编码指令随附（docs/synova/coordination/编码指令-D579-20260906.md，分支 feat/d579-k3-verdict-stale）。"
+  },
   "impl": null,
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-09-05",
-  "updated_by": "alloc-task-id"
+  "updated_at": "2026-09-06",
+  "updated_by": "synova-devdoc"
 }
