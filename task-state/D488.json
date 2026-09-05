@@ -1,6 +1,6 @@
 {
   "task_id": "D488",
-  "title": "full-pipeline Stage 5b 专家数断言修复（D282 9→7 迁移后过时，动态读 yaml）",
+  "title": "full-pipeline Stage 5b 专家数断言修复（D282 9→7 迁移后过时，动态读 yaml）（Stage 5b 断言修复已随 D567/7b576c89 落地 main，PR #259 同稿已关闭，CTO 对账 2026-09-05）",
   "slice": null,
   "status": "spec_done",
   "risk": "low",
