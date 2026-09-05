@@ -1,11 +1,21 @@
 {
   "task_id": "D578",
   "title": "FIX-D572-Win真机实测1-2",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": null,
-  "impl": null,
-  "audit": null,
-  "fix_task_id": null,
-  "updated_at": "2026-09-05",
-  "updated_by": "alloc-task-id"
+  "impl": {
+    "by": "codex",
+    "at": "2026-09-06",
+    "commit": "1493539f",
+    "note": "Win 真机实测完成。根因=旧 release 0.1.0 是坏包：resources 缺 dist/backend.mjs（build:backend 未跑进打包）→ prod spawn ENOENT → 窗口 Server Offline。修复=CI desktop-build 重打正确包（run 33980824064，test -f dist/backend.mjs 门禁过）。新包启动实测 healthz=200。台账登记 PR #370。"
+  },
+  "audit": {
+    "result": "pass",
+    "by": "codex",
+    "at": "2026-09-06",
+    "note": "四断言实测：安装✓ 启动出窗✓（新包窗口标题 SynovaAgent 非 Server Offline）healthz 200✓。后端本体无 bug（本地补建 bundle 实测 healthz 200）。旧包已清理（C 盘卸载 + repo 坏 release exe 删除）。"
+  },
+  "fix_task_id": "D572",
+  "updated_at": "2026-09-06",
+  "updated_by": "codex"
 }
