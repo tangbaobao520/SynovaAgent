@@ -76,7 +76,7 @@ export const marginHealthSentinel = {
         const names = missingGroups.map(g => g.name).join('、');
         log.warn({ teamId, missing: names }, 'Financial 节点缺必填字段组 — 跳过指标（防缺失默认 0 假 finding）');
         return [{
-          id: `mh-degraded-${now.getTime()}`,
+          id: `mh-degraded`,
           severity: 'warning',
           title: '利润健康数据不完整',
           description: `Financial 节点缺失必填字段组: ${names}。已跳过利润健康检查，避免缺失字段被默认为 0 产生误报。`,
@@ -288,7 +288,7 @@ export const marginHealthSentinel = {
     } catch (err: unknown) {
       log.error({ err, teamId }, '[margin-health] check失败');
       return [{
-        id: `mh-error-${now.getTime()}`, severity: 'warning' as const,
+        id: `mh-error`, severity: 'warning' as const,
         title: '利润健康检测异常',
         description: `${(err as Error)?.message || String(err)}`,
         evidence: [], suggestion: '检查 Financial 数据源。',

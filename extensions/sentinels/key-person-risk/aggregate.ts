@@ -46,7 +46,7 @@ export const keyPersonRiskSentinel = {
               const ci = Number(edge.props.concentration_index) || 0;
               if (ci > th('decision_concentration').critical) {
                 findings.push({
-                  id: `kpr-dc-crit-${Date.now()}`,
+                  id: `kpr-dc-crit`,
                   severity: 'critical' as const,
                   title: '决策高度集中',
                   description: `决策集中度 ${(ci * 100).toFixed(0)}% > 80%，关键人依赖风险加重。`,
@@ -56,7 +56,7 @@ export const keyPersonRiskSentinel = {
                 });
               } else if (ci > th('decision_concentration').warning) {
                 findings.push({
-                  id: `kpr-dc-warn-${Date.now()}`,
+                  id: `kpr-dc-warn`,
                   severity: 'warning' as const,
                   title: '决策偏集中',
                   description: `决策集中度 ${(ci * 100).toFixed(0)}% > 60%，建议关注关键人依赖。`,
@@ -74,7 +74,7 @@ export const keyPersonRiskSentinel = {
       const msg = err instanceof Error ? err.message : String(err);
       log.error({ err, teamId }, '[key-person-risk] aggregate check失败');
       return [{
-        id: `kpr-error-${Date.now()}`,
+        id: `kpr-error`,
         severity: 'warning' as const,
         title: '关键人风险检测异常',
         description: msg,

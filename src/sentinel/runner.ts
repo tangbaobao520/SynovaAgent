@@ -172,6 +172,34 @@ function mapManualSeverity(severity: number): SentinelFinding['severity'] {
   return 'info';
 }
 
+// ═══ D580 8-2/8-4: 工单类型（sentinel_tickets DDL 对齐） ═══
+
+/** sentinel_tickets.status 四态（DDL CHECK 枚举） */
+export type TicketStatus = 'open' | 'acknowledged' | 'resolved' | 'dismissed';
+
+/** 工单状态机迁移目标（open 是初始态, 不作为迁移目标; 终态 resolved/dismissed 不可再迁移） */
+export type TicketTransitionTarget = 'acknowledged' | 'resolved' | 'dismissed';
+
+/** sentinel_tickets 行（listSentinelTickets/transitionTicket 返回, 字段对齐 DDL） */
+export interface TicketRow {
+  id: string;
+  signal_id: string;
+  severity: 'emergency' | 'critical' | 'warning' | 'info';
+  expert_type: string;
+  diagnosis: string | null;
+  suggested_actions: string | null;
+  status: TicketStatus;
+  created_at: string;
+  resolved_at: string | null;
+}
+
+/** transitionTicket 分类返回（不抛, HTTP 映射在 L1 routes — spec §5.4） */
+export type TransitionResult =
+  | { ok: true; ticket: TicketRow }
+  | { ok: false; error: 'TICKET_NOT_FOUND' }
+  | { ok: false; error: 'ILLEGAL_TRANSITION'; from: TicketStatus; to: TicketTransitionTarget }
+  | { ok: false; degraded: true; error: string };
+
 // ═══ SentinelRunner ═══
 
 export class SentinelRunner {
@@ -182,15 +210,37 @@ export class SentinelRunner {
   private totalRuns = 0;
   /** G3: 升级链引擎 — 对接人忽略告警后自动升级到上级 */
   readonly escalationEngine = new EscalationEngine();
-  /** D6: 哨兵通知去重 — 记录每个 sentinelId 的最后推送时间戳 */
+  /** D6: 哨兵通知去重 — 记录每个 sentinelId 的最后推送时间戳（内存缓存, 持久化权威为 dedup 表） */
   private notificationSentTimestamps = new Map<string, number>();
-  private readonly NOTIFICATION_DEDUP_MS = 10 * 60 * 1000; // 10分钟去重窗口
+  /** D580 8-3: 通知去重窗口 — 缺省 5min（D339 裁决 A 落地）, env SENTINEL_NOTIFICATION_DEDUP_MS 覆盖 */
+  private readonly NOTIFICATION_DEDUP_MS: number;
   /** D17: P0 主动推送实例 (注入) */
   private proactivePush: ProactivePush | null = null;
 
   constructor(scheduler: CronScheduler, db: unknown) {
     this.scheduler = scheduler;
     this.db = db;
+    this.NOTIFICATION_DEDUP_MS = SentinelRunner.resolveNotificationDedupMs();
+  }
+
+  /**
+   * resolveNotificationDedupMs — D580 8-3: 去重窗口解析（缺省 5min = D339 裁决 A）。
+   * 契约:
+   *   @input  — env SENTINEL_NOTIFICATION_DEDUP_MS（可缺省）
+   *   @output — 窗口毫秒数（正整数）
+   *   @degraded — env 非法（非正整数）→ log.warn + 回退缺省（不静默, 不抛）
+   *   @error  — 无
+   */
+  private static resolveNotificationDedupMs(): number {
+    const DEFAULT_MS = 5 * 60 * 1000; // D339 裁决 A: 5 分钟（2026-08-13 创始人裁决, 台账 L106）
+    const raw = process.env.SENTINEL_NOTIFICATION_DEDUP_MS;
+    if (raw === undefined || raw === '') return DEFAULT_MS;
+    const parsed = Number(raw);
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+      log.warn({ env: raw, fallbackMs: DEFAULT_MS }, '[runner] SENTINEL_NOTIFICATION_DEDUP_MS 非法（需正整数）— 回退缺省 5min');
+      return DEFAULT_MS;
+    }
+    return parsed;
   }
 
   /** 注入 ProactivePush 实例 (D17) */
@@ -219,6 +269,31 @@ export class SentinelRunner {
         );
       `);
     } catch { log.debug('哨兵工单表初始化失败 — 可能已存在或 db 不可用'); }
+
+    // D580 8-3: 通知去重持久化表（B-19 裁决 2: 独立 KV 表, 同库同事务域 = 单一权威;
+    //   key = sources[0].sentinelId（键粒度与内存 Map 一致）; INTEGER epoch ms 便于窗口精确比较）
+    try {
+      (this.db as { exec(sql: string): void }).exec(`
+        CREATE TABLE IF NOT EXISTS sentinel_notification_dedup (
+          key TEXT PRIMARY KEY,
+          last_sent_ms INTEGER NOT NULL
+        );
+      `);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg }, '[runner] 通知去重表初始化失败 — degraded, 运行期回退内存 Map');
+    }
+
+    // D580 8-3: 去重表启动 TTL 清理（过期记录惰性无害 — 窗口判断天然返回 false;
+    //   启动清一次防表膨胀, 不建定时任务 — 最少机制, spec §5.3-②）
+    try {
+      (this.db as { prepare(sql: string): { run(...args: unknown[]): unknown } })
+        .prepare('DELETE FROM sentinel_notification_dedup WHERE last_sent_ms < ?')
+        .run(Date.now() - this.NOTIFICATION_DEDUP_MS);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg }, '[runner] 通知去重表 TTL 清理失败 — 非阻断');
+    }
 
     // sentinel_events 事件表 (L5 append-only) + 启动重放重建投影 (I1 可重建)
     try {
@@ -969,6 +1044,113 @@ export class SentinelRunner {
     return changed;
   }
 
+  // ═══ D580 8-2/8-4: 工单读路径 + 状态机（写读同源, 紧邻 closeTicket 放置） ═══
+
+  /**
+   * listSentinelTickets — 工单读路径（写读同源, D580 8-2 修复 K3 P2-3）
+   * 契约:
+   *   @input  — status?: 'open' | 'acknowledged' | 'resolved' | 'dismissed'（缺省返回全部）
+   *   @output — 工单行数组（created_at DESC, LIMIT 200），字段对齐 sentinel_tickets DDL
+   *   @degraded — 本方法不吞错: db 失败/表不存在 → 抛出，由 L2 调用方统一降级
+   *               （降级决策单点在 sentinel-service，铁律 31 传播链清晰）
+   *   @error  — 表不存在（start() 未调用）→ 同上抛出
+   */
+  listSentinelTickets(status?: TicketStatus): TicketRow[] {
+    const db = this.db as {
+      prepare(sql: string): { all(...args: unknown[]): unknown[] };
+    };
+    if (status !== undefined) {
+      return db.prepare(
+        `SELECT id, signal_id, severity, expert_type, diagnosis, suggested_actions, status, created_at, resolved_at
+         FROM sentinel_tickets WHERE status = ? ORDER BY created_at DESC LIMIT 200`,
+      ).all(status) as TicketRow[];
+    }
+    return db.prepare(
+      `SELECT id, signal_id, severity, expert_type, diagnosis, suggested_actions, status, created_at, resolved_at
+       FROM sentinel_tickets ORDER BY created_at DESC LIMIT 200`,
+    ).all() as TicketRow[];
+  }
+
+  /**
+   * transitionTicket — 工单状态机迁移（D580 8-4）
+   * 契约:
+   *   @input  — ticketId: string; to: 'acknowledged' | 'resolved' | 'dismissed'
+   *   @output — { ok: true, ticket: TicketRow }（迁移后行）
+   *             { ok: false, error: 'TICKET_NOT_FOUND' }            （无此行）
+   *             { ok: false, error: 'ILLEGAL_TRANSITION', from, to } （白名单外迁移）
+   *   @degraded — db 失败 → { ok: false, degraded: true, error } + log.warn（铁律 24/31）
+   *   @error  — 不抛（全捕获分类返回, HTTP 映射在 L1）
+   * 状态机（白名单, 其余一律 ILLEGAL_TRANSITION, 含终态再迁移与同态迁移 — 无后门）:
+   *   open → acknowledged | open → dismissed | acknowledged → resolved
+   *   resolved / dismissed = 终态（任何再迁移 → ILLEGAL_TRANSITION; 同态迁移亦 409）
+   * resolved_at 语义: 仅 'resolved' 写 datetime('now')（列名语义纯度; dismissed 保持 NULL——
+   *   不为它新增 closed_at 列, 最少机制, spec §5.5 决策表）
+   * 审计: 迁移成功 → appendSentinelEvent({ event_type: 'ticket_transition', aggregate_id: ticketId,
+   *   sentinel_id: row.signal_id || ticketId, payload: { ticketId, from, to, at } })——
+   *   事件写入失败 → log.warn 不阻断（对齐 L687-696 既有降级先例）
+   */
+  transitionTicket(ticketId: string, to: TicketTransitionTarget): TransitionResult {
+    const LEGAL_TRANSITIONS: Readonly<Record<TicketStatus, readonly TicketTransitionTarget[]>> = {
+      open: ['acknowledged', 'dismissed'],
+      acknowledged: ['resolved'],
+      resolved: [],
+      dismissed: [],
+    };
+    try {
+      const db = this.db as {
+        prepare(sql: string): {
+          get(...args: unknown[]): unknown;
+          run(...args: unknown[]): { changes: number };
+        };
+      };
+      const row = db.prepare(
+        `SELECT id, signal_id, severity, expert_type, diagnosis, suggested_actions, status, created_at, resolved_at
+         FROM sentinel_tickets WHERE id = ?`,
+      ).get(ticketId) as TicketRow | undefined;
+      if (!row) return { ok: false, error: 'TICKET_NOT_FOUND' };
+
+      const from = row.status;
+      if (!LEGAL_TRANSITIONS[from].includes(to)) {
+        return { ok: false, error: 'ILLEGAL_TRANSITION', from, to };
+      }
+
+      // resolved_at 语义: 仅 'resolved' 写（datetime('now') = DDL 既有时钟口径）
+      if (to === 'resolved') {
+        db.prepare(
+          `UPDATE sentinel_tickets SET status = 'resolved', resolved_at = datetime('now') WHERE id = ?`,
+        ).run(ticketId);
+      } else {
+        db.prepare('UPDATE sentinel_tickets SET status = ? WHERE id = ?').run(to, ticketId);
+      }
+
+      // 迁移后行以表为准重读（原样传播权威行, 不拼装内存副本）
+      const updated = db.prepare(
+        `SELECT id, signal_id, severity, expert_type, diagnosis, suggested_actions, status, created_at, resolved_at
+         FROM sentinel_tickets WHERE id = ?`,
+      ).get(ticketId) as TicketRow | undefined;
+      if (!updated) return { ok: false, degraded: true, error: '迁移后行重读失败（并发删除?）' };
+
+      // I3 审计: 迁移成功 → ticket_transition 事件（写入失败 log.warn 不阻断, 对齐既有先例）
+      try {
+        appendSentinelEvent(this.db as Database.Database, {
+          event_type: 'ticket_transition',
+          sentinel_id: row.signal_id || ticketId,
+          aggregate_id: ticketId,
+          payload: { ticketId, from, to, at: new Date().toISOString() },
+        });
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        log.warn({ err: msg, ticketId }, '[runner] ticket_transition 事件写入失败 — 非阻断');
+      }
+
+      return { ok: true, ticket: updated };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg, ticketId, to }, '[runner] transitionTicket db 失败 — degraded');
+      return { ok: false, degraded: true, error: msg };
+    }
+  }
+
   // ═══ Phase P1-1: L3WriteAPI (L0 进化层接口) ═══
 
   /**
@@ -1126,11 +1308,25 @@ export class SentinelRunner {
     };
   }
 
-  // ═══ D6: 通知去重 ═══
+  // ═══ D6: 通知去重（D580 8-3: 持久化优先, 内存兜底 — B-19 裁决 2） ═══
 
   private isNotificationDuplicate(signal: { sources: Array<{ sentinelId: string }> }): boolean {
     const sentinelId = signal.sources[0]?.sentinelId;
     if (!sentinelId) return false;
+    // D580 8-3: 优先读持久化表（重启复活; 命中即回填内存缓存）; db 失败 → 回退内存 Map + log.warn（不静默）
+    try {
+      const db = this.db as {
+        prepare(sql: string): { get(key: string): { last_sent_ms: number } | undefined };
+      };
+      const row = db.prepare('SELECT last_sent_ms FROM sentinel_notification_dedup WHERE key = ?').get(sentinelId);
+      if (row && typeof row.last_sent_ms === 'number') {
+        this.notificationSentTimestamps.set(sentinelId, row.last_sent_ms);
+        return Date.now() - row.last_sent_ms < this.NOTIFICATION_DEDUP_MS;
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg, sentinelId }, '[runner] 去重表读取失败 — 回退内存 Map（degraded）');
+    }
     const lastSent = this.notificationSentTimestamps.get(sentinelId);
     if (!lastSent) return false;
     return Date.now() - lastSent < this.NOTIFICATION_DEDUP_MS;
@@ -1138,8 +1334,18 @@ export class SentinelRunner {
 
   private markNotificationSent(signal: { sources: Array<{ sentinelId: string }> }): void {
     const sentinelId = signal.sources[0]?.sentinelId;
-    if (sentinelId) {
-      this.notificationSentTimestamps.set(sentinelId, Date.now());
+    if (!sentinelId) return;
+    const now = Date.now();
+    // 内存缓存写穿 + 持久化表 UPSERT（失败 → log.warn 内存兜底 — 行为与改造前一致, 不静默）
+    this.notificationSentTimestamps.set(sentinelId, now);
+    try {
+      (this.db as {
+        prepare(sql: string): { run(...args: unknown[]): unknown };
+      }).prepare('INSERT OR REPLACE INTO sentinel_notification_dedup (key, last_sent_ms) VALUES (?, ?)')
+        .run(sentinelId, now);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg, sentinelId }, '[runner] 去重表写入失败 — 内存兜底（degraded）');
     }
   }
 

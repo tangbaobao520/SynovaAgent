@@ -64,7 +64,7 @@ export const strategyCapabilityFitSentinel = {
       log.debug({ score: result.score, gaps: result.alignmentGaps.length }, '战略-能力一致性计算完成');
 
       if (result.degraded) {
-        return [{ id: `s1-nodata-${now.getTime()}`, severity: 'info', title: '战略与能力数据不足', description: '缺少 Event 或 Person 节点，无法评估一致性。', evidence: [], suggestion: '上传事件与人员能力数据。', detectedAt: checkedAt }];
+        return [{ id: `s1-nodata`, severity: 'info', title: '战略与能力数据不足', description: '缺少 Event 或 Person 节点，无法评估一致性。', evidence: [], suggestion: '上传事件与人员能力数据。', detectedAt: checkedAt }];
       }
 
       const scorePct = (result.score * 100).toFixed(0);
@@ -72,7 +72,7 @@ export const strategyCapabilityFitSentinel = {
 
       if (result.score < th('score').critical) {
         findings.push({
-          id: `s1-crit-${now.getTime()}`, severity: 'critical',
+          id: `s1-crit`, severity: 'critical',
           title: `战略-能力一致性低 (${scorePct}%)`,
           description: `战略目标与现有能力存在显著差距。`,
           evidence: [
@@ -86,7 +86,7 @@ export const strategyCapabilityFitSentinel = {
         });
       } else if (result.score < th('score').warning) {
         findings.push({
-          id: `s1-warn-${now.getTime()}`, severity: 'warning',
+          id: `s1-warn`, severity: 'warning',
           title: `战略-能力一致性偏低 (${scorePct}%)`,
           description: '部分战略目标缺乏对应能力支撑。',
           evidence: [`一致性评分: ${scorePct}%`, ...result.alignmentGaps],
@@ -97,7 +97,7 @@ export const strategyCapabilityFitSentinel = {
 
       if (result.alignmentGaps.length > 0 && result.score >= th('score').warning) {
         findings.push({
-          id: `s1-info-${now.getTime()}`, severity: 'info',
+          id: `s1-info`, severity: 'info',
           title: `战略-能力一致性: ${scorePct}%，存在可改善项`,
           description: result.alignmentGaps.join('; '),
           evidence: result.alignmentGaps,
@@ -110,7 +110,7 @@ export const strategyCapabilityFitSentinel = {
     } catch (err: unknown) {
       log.error({ err }, '[strategy-capability-fit] check 失败');
       return [{
-        id: `s1-error-${now.getTime()}`, severity: 'warning',
+        id: `s1-error`, severity: 'warning',
         title: '战略-能力一致性检测异常',
         description: `${(err as Error)?.message || String(err)}`,
         evidence: [], suggestion: '检查 SOG 图数据源。', detectedAt: checkedAt,

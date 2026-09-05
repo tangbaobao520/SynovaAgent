@@ -51,21 +51,21 @@ export const growthQualitySentinel = {
       const findings: SentinelFinding[] = [];
 
       if (!ccr.degraded && ccr.rate < th('cash_conversion').critical) {
-        findings.push({ id: `f4-ccr-crit-${now.getTime()}`, severity: 'critical', title: `现金流转化率过低 (${(ccr.rate * 100).toFixed(0)}%)`, description: '净利润转化为经营现金流不足 50%，应收账款或存货积压严重。', evidence: [`转化率: ${(ccr.rate * 100).toFixed(0)}%`, `经营现金流: ${ccr.operatingCashFlow}`, `净利润: ${ccr.netIncome}`], suggestion: '收紧信用政策，加速应收账款回收。', detectedAt: checkedAt });
+        findings.push({ id: `f4-ccr-crit`, severity: 'critical', title: `现金流转化率过低 (${(ccr.rate * 100).toFixed(0)}%)`, description: '净利润转化为经营现金流不足 50%，应收账款或存货积压严重。', evidence: [`转化率: ${(ccr.rate * 100).toFixed(0)}%`, `经营现金流: ${ccr.operatingCashFlow}`, `净利润: ${ccr.netIncome}`], suggestion: '收紧信用政策，加速应收账款回收。', detectedAt: checkedAt });
       } else if (!ccr.degraded && ccr.rate < th('cash_conversion').warning) {
-        findings.push({ id: `f4-ccr-warn-${now.getTime()}`, severity: 'warning', title: `现金流转化率偏低 (${(ccr.rate * 100).toFixed(0)}%)`, description: '转化率 < 70%。', evidence: [`转化率: ${(ccr.rate * 100).toFixed(0)}%`], suggestion: '检查应收账款和存货周转情况。', detectedAt: checkedAt });
+        findings.push({ id: `f4-ccr-warn`, severity: 'warning', title: `现金流转化率偏低 (${(ccr.rate * 100).toFixed(0)}%)`, description: '转化率 < 70%。', evidence: [`转化率: ${(ccr.rate * 100).toFixed(0)}%`], suggestion: '检查应收账款和存货周转情况。', detectedAt: checkedAt });
       }
 
       if (!ogr.degraded && ogr.organicPct < th('organic_growth').critical) {
-        findings.push({ id: `f4-org-crit-${now.getTime()}`, severity: 'critical', title: `有机增长比例过低 (${(ogr.organicPct * 100).toFixed(0)}%)`, description: '增长高度依赖并购而非内生能力。', evidence: [`有机增长占比: ${(ogr.organicPct * 100).toFixed(0)}%`, `总增长率: ${ogr.totalGrowth}%`], suggestion: '评估并购整合效果，加强内生增长能力。', detectedAt: checkedAt });
+        findings.push({ id: `f4-org-crit`, severity: 'critical', title: `有机增长比例过低 (${(ogr.organicPct * 100).toFixed(0)}%)`, description: '增长高度依赖并购而非内生能力。', evidence: [`有机增长占比: ${(ogr.organicPct * 100).toFixed(0)}%`, `总增长率: ${ogr.totalGrowth}%`], suggestion: '评估并购整合效果，加强内生增长能力。', detectedAt: checkedAt });
       } else if (!ogr.degraded && ogr.organicPct < th('organic_growth').warning) {
-        findings.push({ id: `f4-org-warn-${now.getTime()}`, severity: 'warning', title: `有机增长比例偏低 (${(ogr.organicPct * 100).toFixed(0)}%)`, description: '有机增长 < 50%。', evidence: [`有机增长占比: ${(ogr.organicPct * 100).toFixed(0)}%`], suggestion: '关注内生增长动力。', detectedAt: checkedAt });
+        findings.push({ id: `f4-org-warn`, severity: 'warning', title: `有机增长比例偏低 (${(ogr.organicPct * 100).toFixed(0)}%)`, description: '有机增长 < 50%。', evidence: [`有机增长占比: ${(ogr.organicPct * 100).toFixed(0)}%`], suggestion: '关注内生增长动力。', detectedAt: checkedAt });
       }
 
       return findings;
     } catch (err: unknown) {
       log.error({ err }, '[growth-quality] check 失败');
-      return [{ id: `f4-error-${now.getTime()}`, severity: 'warning', title: '增长质量检测异常', description: `${(err as Error)?.message || String(err)}`, evidence: [], suggestion: '检查数据源。', detectedAt: checkedAt }];
+      return [{ id: `f4-error`, severity: 'warning', title: '增长质量检测异常', description: `${(err as Error)?.message || String(err)}`, evidence: [], suggestion: '检查数据源。', detectedAt: checkedAt }];
     }
   },
 };

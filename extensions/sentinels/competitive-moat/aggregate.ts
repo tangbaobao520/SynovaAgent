@@ -43,7 +43,7 @@ export const competitiveMoatSentinel = {
     } catch (err: unknown) {
       log.error({ err }, '[competitive-moat] check 失败');
       return [{
-        id: `cm-error-${now.getTime()}`, severity: 'warning' as const,
+        id: `cm-error`, severity: 'warning' as const,
         title: '竞争护城河检测异常',
         description: `${(err as Error)?.message || String(err)}`,
         evidence: [], suggestion: '检查源哨兵 aggregate.ts 和 Product/Market 数据源。',

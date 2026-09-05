@@ -72,7 +72,7 @@ export const resourceMisallocationSentinel = {
 
       if (result.index > th('score').critical) {
         return [{
-          id: `s3-crit-${now.getTime()}`, severity: 'critical',
+          id: `s3-crit`, severity: 'critical',
           title: `资源错配严重 (${(result.index * 100).toFixed(0)}%)`,
           description: `${result.underfundedGoals.length} 个高优目标缺资源，${result.overstaffedAreas.length} 个领域可能资源过剩。`,
           evidence: [`错配指数: ${(result.index * 100).toFixed(0)}%`, `缺资源目标: ${result.underfundedGoals.join(', ') || '无'}`, `可能过剩: ${result.overstaffedAreas.join(', ') || '无'}`],
@@ -83,7 +83,7 @@ export const resourceMisallocationSentinel = {
 
       if (result.index > th('score').warning) {
         return [{
-          id: `s3-warn-${now.getTime()}`, severity: 'warning',
+          id: `s3-warn`, severity: 'warning',
           title: `资源错配 (${(result.index * 100).toFixed(0)}%)`,
           description: '部分资源分配与战略目标不匹配。',
           evidence: [`错配指数: ${(result.index * 100).toFixed(0)}%`, ...result.underfundedGoals.map(g => `${g}: 缺资源`)],
@@ -96,7 +96,7 @@ export const resourceMisallocationSentinel = {
     } catch (err: unknown) {
       log.error({ err }, '[resource-misallocation] check 失败');
       return [{
-        id: `s3-error-${now.getTime()}`, severity: 'warning',
+        id: `s3-error`, severity: 'warning',
         title: '资源错配检测异常', description: `${(err as Error)?.message || String(err)}`,
         evidence: [], suggestion: '检查数据源。', detectedAt: checkedAt,
       }];

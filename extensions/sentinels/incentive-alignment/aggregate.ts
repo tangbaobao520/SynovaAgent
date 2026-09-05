@@ -38,7 +38,7 @@ export const incentiveAlignmentSentinel = {
 
       if (result.degraded) {
         return [{
-          id: `o3-nodata-${now.getTime()}`, severity: 'info',
+          id: `o3-nodata`, severity: 'info',
           title: '激励与目标数据不足',
           description: '未检测到 Person 或 Event 节点。',
           evidence: [], suggestion: '补充人员激励和事件数据。',
@@ -50,7 +50,7 @@ export const incentiveAlignmentSentinel = {
 
       if (result.assessment === 'misaligned') {
         return [{
-          id: `o3-crit-${now.getTime()}`, severity: 'critical',
+          id: `o3-crit`, severity: 'critical',
           title: `激励与增长目标不匹配 (${scorePct}%)`,
           description: `激励体系与增长目标存在显著偏差。增长目标占 ${(result.growthGoalRatio * 100).toFixed(0)}%，但短期激励事件占 ${(result.shortTermIncentiveRatio * 100).toFixed(0)}%。`,
           evidence: [`对齐度: ${scorePct}%`, `增长目标: ${(result.growthGoalRatio * 100).toFixed(0)}%`, `短期激励: ${(result.shortTermIncentiveRatio * 100).toFixed(0)}%`],
@@ -61,7 +61,7 @@ export const incentiveAlignmentSentinel = {
 
       if (result.assessment === 'partially') {
         return [{
-          id: `o3-warn-${now.getTime()}`, severity: 'warning',
+          id: `o3-warn`, severity: 'warning',
           title: `激励对齐度有待提升 (${scorePct}%)`,
           description: '部分激励与增长目标不一致。',
           evidence: [`对齐度: ${scorePct}%`, `增长目标: ${(result.growthGoalRatio * 100).toFixed(0)}%`],
@@ -71,7 +71,7 @@ export const incentiveAlignmentSentinel = {
       }
 
       return [{
-        id: `o3-healthy-${now.getTime()}`, severity: 'info',
+        id: `o3-healthy`, severity: 'info',
         title: `激励与增长目标对齐 (${scorePct}%)`,
         description: '激励体系与增长目标一致。',
         evidence: [`对齐度: ${scorePct}%`, `增长目标: ${(result.growthGoalRatio * 100).toFixed(0)}%`],
@@ -81,7 +81,7 @@ export const incentiveAlignmentSentinel = {
     } catch (err: unknown) {
       log.error({ err }, '[incentive-alignment] check 失败');
       return [{
-        id: `o3-error-${now.getTime()}`, severity: 'warning',
+        id: `o3-error`, severity: 'warning',
         title: '激励对齐度检测异常', description: `${(err as Error)?.message || String(err)}`,
         evidence: [], suggestion: '检查数据源。', detectedAt: checkedAt,
       }];

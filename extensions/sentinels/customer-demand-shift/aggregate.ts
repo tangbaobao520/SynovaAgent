@@ -75,7 +75,7 @@ export const customerDemandShiftSentinel = {
         const topPct = (concentration.topCustomerShare * 100).toFixed(0);
         if (concentration.topCustomerShare > th('top_customer_concentration').critical) {
           findings.push({
-            id: `e4-concent-crit-${now.getTime()}`, severity: 'critical',
+            id: `e4-concent-crit`, severity: 'critical',
             title: `客户集中度过高: ${concentration.topCustomerName} (${topPct}%)`,
             description: `最大客户占比超过 40%。单一客户流失将严重影响营收。`,
             evidence: [`最大客户: ${concentration.topCustomerName}`, `占比: ${topPct}%`],
@@ -84,7 +84,7 @@ export const customerDemandShiftSentinel = {
           });
         } else if (concentration.topCustomerShare > th('top_customer_concentration').warning) {
           findings.push({
-            id: `e4-concent-warn-${now.getTime()}`, severity: 'warning',
+            id: `e4-concent-warn`, severity: 'warning',
             title: `客户集中度偏高 (${topPct}%)`,
             description: `${concentration.topCustomerName} 占比 > 30%。`,
             evidence: [`占比: ${topPct}%`, `活跃客户: ${concentration.activeClientCount}`],
@@ -102,7 +102,7 @@ export const customerDemandShiftSentinel = {
 
         if (churn.churnRate > th('churn_rate').critical || churn.revenueChurnRate > th('churn_rate').critical) {
           findings.push({
-            id: `e4-churn-crit-${now.getTime()}`, severity: 'critical',
+            id: `e4-churn-crit`, severity: 'critical',
             title: `客户流失率过高 (数量${chPct}% / 营收${rChPct}%)`,
             description: `${clients.length} 个客户中流失率超过 20%。`,
             evidence: [`流失率: ${chPct}%`, `营收流失率: ${rChPct}%`],
@@ -111,7 +111,7 @@ export const customerDemandShiftSentinel = {
           });
         } else if (churn.churnRate > th('churn_rate').warning) {
           findings.push({
-            id: `e4-churn-warn-${now.getTime()}`, severity: 'warning',
+            id: `e4-churn-warn`, severity: 'warning',
             title: `客户流失趋势 (${chPct}%)`,
             description: `流失率超过 10% 警戒线。`,
             evidence: [`流失率: ${chPct}%`],
@@ -122,7 +122,7 @@ export const customerDemandShiftSentinel = {
 
         if (churn.highValueAtRisk.length > 0) {
           findings.push({
-            id: `e4-atrisk-${now.getTime()}`, severity: 'warning',
+            id: `e4-atrisk`, severity: 'warning',
             title: `高价值客户满意度低: ${churn.highValueAtRisk.join(', ')}`,
             description: `${churn.highValueAtRisk.length} 个高价值客户 NPS < 30。`,
             evidence: churn.highValueAtRisk.map(n => `${n}: 高价值低 NPS`),
@@ -134,7 +134,7 @@ export const customerDemandShiftSentinel = {
 
       if (findings.length === 0 && clients.length > 0) {
         findings.push({
-          id: `e4-healthy-${now.getTime()}`, severity: 'info',
+          id: `e4-healthy`, severity: 'info',
           title: '客户需求稳定',
           description: `${clients.length} 个活跃客户，无异常流失或集中风险。`,
           evidence: [`活跃客户: ${clients.length}`],
@@ -147,7 +147,7 @@ export const customerDemandShiftSentinel = {
     } catch (err: unknown) {
       log.error({ err }, '[customer-demand-shift] check 失败');
       return [{
-        id: `e4-error-${now.getTime()}`, severity: 'warning',
+        id: `e4-error`, severity: 'warning',
         title: '客户需求迁移检测异常',
         description: `检测出错: ${(err as Error)?.message || String(err)}`,
         evidence: [],

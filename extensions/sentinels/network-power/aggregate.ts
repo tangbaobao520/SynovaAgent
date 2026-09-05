@@ -40,9 +40,9 @@ export const networkPowerSentinel = {
       const r = computeNetworkPower(nodes);
       if (r.degraded) { log.warn({ teamId }, 'compute degraded — skipping threshold'); return []; }
       log.debug({ powerIndex: r.powerIndex }, '网络权力计算完成');
-      if (r.powerIndex > th('power_index').critical) return [{ id: `i5-crit-${now.getTime()}`, severity: 'critical', title: `网络权力集中 (指数${r.powerIndex.toFixed(2)})`, description: '权力或信息流高度集中在少数节点。', evidence: [`权力指数: ${r.powerIndex.toFixed(2)}`, `关键节点: ${r.keyNodes.join(', ')}`], suggestion: '分散关键决策权，降低单点故障风险。', detectedAt: checkedAt }];
-      if (r.powerIndex > th('power_index').warning) return [{ id: `i5-warn-${now.getTime()}`, severity: 'warning', title: `网络权力偏高 (${r.powerIndex.toFixed(2)})`, description: '部分节点权力过大。', evidence: [`指数: ${r.powerIndex.toFixed(2)}`, `总节点: ${r.totalNodes}`], suggestion: '评估关键人员的备份计划。', detectedAt: checkedAt }];
+      if (r.powerIndex > th('power_index').critical) return [{ id: `i5-crit`, severity: 'critical', title: `网络权力集中 (指数${r.powerIndex.toFixed(2)})`, description: '权力或信息流高度集中在少数节点。', evidence: [`权力指数: ${r.powerIndex.toFixed(2)}`, `关键节点: ${r.keyNodes.join(', ')}`], suggestion: '分散关键决策权，降低单点故障风险。', detectedAt: checkedAt }];
+      if (r.powerIndex > th('power_index').warning) return [{ id: `i5-warn`, severity: 'warning', title: `网络权力偏高 (${r.powerIndex.toFixed(2)})`, description: '部分节点权力过大。', evidence: [`指数: ${r.powerIndex.toFixed(2)}`, `总节点: ${r.totalNodes}`], suggestion: '评估关键人员的备份计划。', detectedAt: checkedAt }];
       return [];
-    } catch (err: unknown) { log.error({ err }, '[network-power] 失败'); return [{ id: `i5-error-${now.getTime()}`, severity: 'warning', title: '检测异常', description: `${(err as Error)?.message || String(err)}`, evidence: [], suggestion: '检查数据源。', detectedAt: checkedAt }]; }
+    } catch (err: unknown) { log.error({ err }, '[network-power] 失败'); return [{ id: `i5-error`, severity: 'warning', title: '检测异常', description: `${(err as Error)?.message || String(err)}`, evidence: [], suggestion: '检查数据源。', detectedAt: checkedAt }]; }
   },
 };

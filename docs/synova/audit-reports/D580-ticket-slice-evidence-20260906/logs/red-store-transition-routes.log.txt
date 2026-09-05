@@ -1,0 +1,496 @@
+
+ RUN  v4.1.8 /Users/wane/SynovaAgent/.synova-wt-d580
+
+ ❯ tests/sentinel/ticket-transition.test.ts (8 tests | 8 failed) 27ms
+     × open → acknowledged: 状态落表 + resolved_at 保持 NULL + 审计事件 23ms
+     × acknowledged → resolved: resolved_at 写入（仅 resolved 写 — 裁决表第 4 行） 1ms
+     × open → dismissed: 状态落表 + resolved_at 保持 NULL（dismissed 不写 resolved_at） 1ms
+     × acknowledged → dismissed: ILLEGAL_TRANSITION + from/to 字段 0ms
+     × 终态拒绝: resolved → acknowledged / resolved → dismissed; dismissed → acknowledged 0ms
+     × 同态迁移亦 ILLEGAL（acknowledged → acknowledged, 409 语义） 0ms
+     × 未知 id → TICKET_NOT_FOUND 0ms
+     × db 失败 → { ok:false, degraded:true } + log.warn（不抛, HTTP 503 映射在 L1） 0ms
+{"level":30,"time":1788634264722,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"services/escalation-engine","ruleCount":0,"msg":"EscalationEngine 初始化完成"}
+{"level":30,"time":1788634264724,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-cash-runway","name":"sentinel-cash-runway","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788634264726,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"adapters/sqlite-graph-store","pragmaResult":"memory","msg":"WAL 不可用 — 降级到 DELETE 模式"}
+{"level":30,"time":1788634264726,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"store/schema-migration","version":2,"name":"graph-nodes-props","msg":"执行迁移 2: graph-nodes-props"}
+{"level":30,"time":1788634264726,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"store/schema-migration","version":2,"msg":"迁移 2 完成"}
+{"level":40,"time":1788634264727,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-cash-runway","total":1,"critical":1,"warning":0,"durationMs":3,"msg":"[runner] 哨兵发现: 1 条 (1 critical, 0 warning)"}
+{"level":30,"time":1788634264727,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/signal-aggregator","totalFindings":1,"signals":1,"critical":1,"msg":"[aggregator] 信号聚合完成"}
+{"level":40,"time":1788634264728,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/runner","totalFindings":1,"aggregatedSignals":1,"criticalSignals":1,"msg":"[runner] 聚合信号 — 发现 critical 信号，准备路由专家"}
+{"level":30,"time":1788634264728,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/runner","ticketId":"ticket-sig_团队A-auto","signalId":"sig_团队A","severity":"critical","msg":"[runner] 自动工单已创建（告警闭环，无专家依赖）"}
+{"level":40,"time":1788634264764,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/runner","autoTickets":1,"msg":"[runner] ExpertDispatcher 未初始化 — 自动工单已建，专家增强跳过（非阻断）"}
+ ❯ tests/sentinel/ticket-store.test.ts (12 tests | 11 failed) 137ms
+     × 正常路径: 插入工单后返回行, 字段对齐 DDL 10ms
+     × status 过滤真实生效（表路径 SQL WHERE） 1ms
+     × 降级传播: 表不存在 → 抛出（L3 不吞错, 降级决策单点在 L2 — 铁律 31） 3ms
+     × 表有行 → source:table, status 字段在场, severity emergency 映射 critical 1ms
+     × 空表 → memory-fallback + degraded:true + source 标注（裁决 3: 表空即降级, 比静默空列表诚实） 38ms
+     × db 句柄损坏 → fallback + log.warn 非静默（mock 断言, 铁律 24） 1ms
+     × runner 未初始化 → degraded 空列表（无数据源, 不静默） 1ms
+     × runner A 发送 → 销毁 → 同库新 runner B: 窗口内不重发（重启恢复的物理证明） 76ms
+     × 窗口缺省 5min（D339 裁决 A）: 3 分钟命中去重, 6 分钟重发 2ms
+     × env 覆盖生效: SENTINEL_NOTIFICATION_DEDUP_MS=60000 → 1 分钟窗口 2ms
+     × 非法 env 回退缺省 + log.warn 非静默 1ms
+     ✓ DS6 场景②: 同 finding 二次 check 不重复开单/不重复通知（id 稳定 + 表去重） 1ms
+{"level":30,"time":1788634264781,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"services/escalation-engine","ruleCount":0,"msg":"EscalationEngine 初始化完成"}
+{"level":30,"time":1788634264786,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"services/escalation-engine","ruleCount":0,"msg":"EscalationEngine 初始化完成"}
+{"level":30,"time":1788634264786,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-cash-runway","name":"sentinel-cash-runway","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788634264786,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"adapters/sqlite-graph-store","pragmaResult":"memory","msg":"WAL 不可用 — 降级到 DELETE 模式"}
+{"level":30,"time":1788634264786,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"store/schema-migration","version":2,"name":"graph-nodes-props","msg":"执行迁移 2: graph-nodes-props"}
+{"level":30,"time":1788634264786,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"store/schema-migration","version":2,"msg":"迁移 2 完成"}
+{"level":40,"time":1788634264786,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-cash-runway","total":1,"critical":1,"warning":0,"durationMs":0,"msg":"[runner] 哨兵发现: 1 条 (1 critical, 0 warning)"}
+{"level":30,"time":1788634264789,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"services/escalation-engine","ruleCount":0,"msg":"EscalationEngine 初始化完成"}
+{"level":30,"time":1788634264789,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"services/escalation-engine","ruleCount":0,"msg":"EscalationEngine 初始化完成"}
+{"level":30,"time":1788634264789,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-cash-runway","name":"sentinel-cash-runway","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788634264789,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"adapters/sqlite-graph-store","err":"this.db.pragma is not a function","msg":"WAL 启用失败 — 使用 SQLite 默认日志模式"}
+{"level":40,"time":1788634264790,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"adapters/sqlite-graph-store","err":"this.db.exec is not a function","msg":"图存储表初始化失败"}
+{"level":40,"time":1788634264790,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-cash-runway","msg":"GraphStore 创建失败 — 降级至原始 db"}
+{"level":50,"time":1788634264790,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/runner","err":"sentinel_events 追加失败: db handle corrupted","sentinelId":"sentinel-cash-runway","msg":"[runner] 哨兵事件持久化失败 — 降级为纯内存态（重启即丢）"}
+{"level":40,"time":1788634264790,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-cash-runway","total":1,"critical":1,"warning":0,"durationMs":1,"msg":"[runner] 哨兵发现: 1 条 (1 critical, 0 warning)"}
+{"level":30,"time":1788634264792,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"services/escalation-engine","ruleCount":0,"msg":"EscalationEngine 初始化完成"}
+{"level":30,"time":1788634264792,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-cash-runway","name":"sentinel-cash-runway","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788634264792,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"adapters/sqlite-graph-store","pragmaResult":"memory","msg":"WAL 不可用 — 降级到 DELETE 模式"}
+{"level":30,"time":1788634264793,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"store/schema-migration","version":2,"name":"graph-nodes-props","msg":"执行迁移 2: graph-nodes-props"}
+{"level":30,"time":1788634264793,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"store/schema-migration","version":2,"msg":"迁移 2 完成"}
+{"level":40,"time":1788634264793,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-cash-runway","total":1,"critical":1,"warning":0,"durationMs":1,"msg":"[runner] 哨兵发现: 1 条 (1 critical, 0 warning)"}
+{"level":30,"time":1788634264793,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/signal-aggregator","totalFindings":1,"signals":1,"critical":1,"msg":"[aggregator] 信号聚合完成"}
+{"level":40,"time":1788634264793,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/runner","totalFindings":1,"aggregatedSignals":1,"criticalSignals":1,"msg":"[runner] 聚合信号 — 发现 critical 信号，准备路由专家"}
+{"level":30,"time":1788634264793,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/runner","ticketId":"ticket-sig_团队A-auto","signalId":"sig_团队A","severity":"critical","msg":"[runner] 自动工单已创建（告警闭环，无专家依赖）"}
+{"level":40,"time":1788634264793,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"sentinel/runner","autoTickets":1,"msg":"[runner] ExpertDispatcher 未初始化 — 自动工单已建，专家增强跳过（非阻断）"}
+{"level":30,"time":1788634264804,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"services/escalation-engine","ruleCount":0,"msg":"EscalationEngine 初始化完成"}
+{"level":30,"time":1788634264807,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"services/escalation-engine","ruleCount":0,"msg":"EscalationEngine 初始化完成"}
+{"level":30,"time":1788634264809,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"services/escalation-engine","ruleCount":0,"msg":"EscalationEngine 初始化完成"}
+{"level":30,"time":1788634264810,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"services/escalation-engine","ruleCount":0,"msg":"EscalationEngine 初始化完成"}
+{"level":30,"time":1788634264810,"pid":96982,"hostname":"192.168.1.2","name":"synova-agent","service":"services/escalation-engine","ruleCount":0,"msg":"EscalationEngine 初始化完成"}
+ ❯ tests/routes/sentinel-tickets.test.ts (9 tests | 9 failed) 100ms
+     × DS6 场景①: critical 注入 → 自动工单落表 → GET 可见（source:table, status 字段在场） 61ms
+     × GET ?status= 过滤真实生效（表路径, 死变量修复的物理证明） 5ms
+     × 空表 → 200 + memory-fallback + degraded:true（内存兜底路径 status 过滤同样生效） 3ms
+     × db 句柄损坏 → 200 + memory-fallback + degraded:true（L2 统一降级, L1 不 500） 3ms
+     × DS6 场景③: acknowledge → resolve 全链路 200, GET 反映终态 12ms
+     × 非法迁移 → 409 + from/to（白名单外无后门） 3ms
+     × 未知工单 → 404 TICKET_NOT_FOUND 2ms
+     × body 缺 to → 400; to 非法枚举 → 400（INVALID_TARGET） 1ms
+     × db 不可用 → 503 + degraded:true（降级传播链 L3→L2→L1, 铁律 31 全链） 3ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 28 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/routes/sentinel-tickets.test.ts > D580 — /api/sentinel/tickets 真实接线（GET 双源 + POST transition 五映射） > DS6 场景①: critical 注入 → 自动工单落表 → GET 可见（source:table, status 字段在场）
+AssertionError: expected undefined to be 'table' // Object.is equality
+
+- Expected:
+"table"
+
++ Received:
+undefined
+
+ ❯ tests/routes/sentinel-tickets.test.ts:132:29
+    130|     const res = await GET('/api/sentinel/tickets');
+    131|     expect(res.status).toBe(200);
+    132|     expect(res.body.source).toBe('table');
+       |                             ^
+    133|     expect(res.body.degraded).toBeUndefined();
+    134|     const tickets = res.body.tickets as Array<Record<string, unknown>>;
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/28]⎯
+
+ FAIL  tests/routes/sentinel-tickets.test.ts > D580 — /api/sentinel/tickets 真实接线（GET 双源 + POST transition 五映射） > GET ?status= 过滤真实生效（表路径, 死变量修复的物理证明）
+AssertionError: expected [] to deeply equal [ 'ticket-a' ]
+
+- Expected
++ Received
+
+- [
+-   "ticket-a",
+- ]
++ []
+
+ ❯ tests/routes/sentinel-tickets.test.ts:152:83
+    150|
+    151|     const open = await GET('/api/sentinel/tickets?status=open');
+    152|     expect((open.body.tickets as unknown[]).map((t) => (t as { id: str…
+       |                                                                                   ^
+    153|
+    154|     const resolved = await GET('/api/sentinel/tickets?status=resolved'…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/28]⎯
+
+ FAIL  tests/routes/sentinel-tickets.test.ts > D580 — /api/sentinel/tickets 真实接线（GET 双源 + POST transition 五映射） > 空表 → 200 + memory-fallback + degraded:true（内存兜底路径 status 过滤同样生效）
+AssertionError: expected undefined to be 'memory-fallback' // Object.is equality
+
+- Expected:
+"memory-fallback"
+
++ Received:
+undefined
+
+ ❯ tests/routes/sentinel-tickets.test.ts:167:29
+    165|     const res = await GET('/api/sentinel/tickets');
+    166|     expect(res.status).toBe(200);
+    167|     expect(res.body.source).toBe('memory-fallback');
+       |                             ^
+    168|     expect(res.body.degraded).toBe(true);
+    169|     expect((res.body.tickets as unknown[]).length).toBeGreaterThanOrEq…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/28]⎯
+
+ FAIL  tests/routes/sentinel-tickets.test.ts > D580 — /api/sentinel/tickets 真实接线（GET 双源 + POST transition 五映射） > db 句柄损坏 → 200 + memory-fallback + degraded:true（L2 统一降级, L1 不 500）
+AssertionError: expected undefined to be 'memory-fallback' // Object.is equality
+
+- Expected:
+"memory-fallback"
+
++ Received:
+undefined
+
+ ❯ tests/routes/sentinel-tickets.test.ts:189:29
+    187|     const res = await GET('/api/sentinel/tickets');
+    188|     expect(res.status).toBe(200);
+    189|     expect(res.body.source).toBe('memory-fallback');
+       |                             ^
+    190|     expect(res.body.degraded).toBe(true);
+    191|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/28]⎯
+
+ FAIL  tests/routes/sentinel-tickets.test.ts > D580 — /api/sentinel/tickets 真实接线（GET 双源 + POST transition 五映射） > DS6 场景③: acknowledge → resolve 全链路 200, GET 反映终态
+SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+ ❯ POST tests/routes/sentinel-tickets.test.ts:115:41
+    113|       body: JSON.stringify(body),
+    114|     });
+    115|     return { status: res.status, body: (await res.json()) as Record<st…
+       |                                         ^
+    116|   }
+    117|
+ ❯ tests/routes/sentinel-tickets.test.ts:208:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/28]⎯
+
+ FAIL  tests/routes/sentinel-tickets.test.ts > D580 — /api/sentinel/tickets 真实接线（GET 双源 + POST transition 五映射） > 非法迁移 → 409 + from/to（白名单外无后门）
+SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+ ❯ POST tests/routes/sentinel-tickets.test.ts:115:41
+    113|       body: JSON.stringify(body),
+    114|     });
+    115|     return { status: res.status, body: (await res.json()) as Record<st…
+       |                                         ^
+    116|   }
+    117|
+ ❯ tests/routes/sentinel-tickets.test.ts:228:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/28]⎯
+
+ FAIL  tests/routes/sentinel-tickets.test.ts > D580 — /api/sentinel/tickets 真实接线（GET 双源 + POST transition 五映射） > 未知工单 → 404 TICKET_NOT_FOUND
+SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+ ❯ POST tests/routes/sentinel-tickets.test.ts:115:41
+    113|       body: JSON.stringify(body),
+    114|     });
+    115|     return { status: res.status, body: (await res.json()) as Record<st…
+       |                                         ^
+    116|   }
+    117|
+ ❯ tests/routes/sentinel-tickets.test.ts:234:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/28]⎯
+
+ FAIL  tests/routes/sentinel-tickets.test.ts > D580 — /api/sentinel/tickets 真实接线（GET 双源 + POST transition 五映射） > body 缺 to → 400; to 非法枚举 → 400（INVALID_TARGET）
+SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+ ❯ POST tests/routes/sentinel-tickets.test.ts:115:41
+    113|       body: JSON.stringify(body),
+    114|     });
+    115|     return { status: res.status, body: (await res.json()) as Record<st…
+       |                                         ^
+    116|   }
+    117|
+ ❯ tests/routes/sentinel-tickets.test.ts:241:21
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/28]⎯
+
+ FAIL  tests/routes/sentinel-tickets.test.ts > D580 — /api/sentinel/tickets 真实接线（GET 双源 + POST transition 五映射） > db 不可用 → 503 + degraded:true（降级传播链 L3→L2→L1, 铁律 31 全链）
+SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+ ❯ POST tests/routes/sentinel-tickets.test.ts:115:41
+    113|       body: JSON.stringify(body),
+    114|     });
+    115|     return { status: res.status, body: (await res.json()) as Record<st…
+       |                                         ^
+    116|   }
+    117|
+ ❯ tests/routes/sentinel-tickets.test.ts:256:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/28]⎯
+
+ FAIL  tests/sentinel/ticket-store.test.ts > D580 8-2 — listSentinelTickets 表读（L3） > 正常路径: 插入工单后返回行, 字段对齐 DDL
+TypeError: runner.listSentinelTickets is not a function
+ ❯ tests/sentinel/ticket-store.test.ts:113:25
+    111|     insertTicketRow(db, { id: 'ticket-b', status: 'resolved', createdA…
+    112|     const runner = makeRunner(db);
+    113|     const rows = runner.listSentinelTickets();
+       |                         ^
+    114|     expect(rows).toHaveLength(2);
+    115|     expect(rows[0].id).toBe('ticket-a'); // created_at DESC
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/28]⎯
+
+ FAIL  tests/sentinel/ticket-store.test.ts > D580 8-2 — listSentinelTickets 表读（L3） > status 过滤真实生效（表路径 SQL WHERE）
+TypeError: runner.listSentinelTickets is not a function
+ ❯ tests/sentinel/ticket-store.test.ts:124:25
+    122|     insertTicketRow(db, { id: 'ticket-b', status: 'resolved', createdA…
+    123|     const runner = makeRunner(db);
+    124|     const open = runner.listSentinelTickets('open');
+       |                         ^
+    125|     expect(open).toHaveLength(1);
+    126|     expect(open[0].id).toBe('ticket-a');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/28]⎯
+
+ FAIL  tests/sentinel/ticket-store.test.ts > D580 8-2 — listSentinelTickets 表读（L3） > 降级传播: 表不存在 → 抛出（L3 不吞错, 降级决策单点在 L2 — 铁律 31）
+AssertionError: expected [Function] to throw error matching /no such table/i but got 'runner.listSentinelTickets is not a f…'
+
+- Expected:
+/no such table/i
+
++ Received:
+"runner.listSentinelTickets is not a function"
+
+ ❯ tests/sentinel/ticket-store.test.ts:133:48
+    131|     const bareDb = new Database(':memory:'); // 无 DDL
+    132|     const runner = makeRunner(bareDb);
+    133|     expect(() => runner.listSentinelTickets()).toThrow(/no such table/…
+       |                                                ^
+    134|     bareDb.close();
+    135|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/28]⎯
+
+ FAIL  tests/sentinel/ticket-store.test.ts > D580 8-2 — getSentinelTickets 表读优先 + 降级（L2 写读同源） > 表有行 → source:table, status 字段在场, severity emergency 映射 critical
+AssertionError: expected undefined to be 'table' // Object.is equality
+
+- Expected:
+"table"
+
++ Received:
+undefined
+
+ ❯ tests/sentinel/ticket-store.test.ts:162:24
+    160|     const res = getSentinelTickets();
+    161|     expect(res.ok).toBe(true);
+    162|     expect(res.source).toBe('table');
+       |                        ^
+    163|     expect(res.degraded).toBeUndefined();
+    164|     expect(res.tickets).toHaveLength(1);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/28]⎯
+
+ FAIL  tests/sentinel/ticket-store.test.ts > D580 8-2 — getSentinelTickets 表读优先 + 降级（L2 写读同源） > 空表 → memory-fallback + degraded:true + source 标注（裁决 3: 表空即降级, 比静默空列表诚实）
+AssertionError: expected undefined to be 'memory-fallback' // Object.is equality
+
+- Expected:
+"memory-fallback"
+
++ Received:
+undefined
+
+ ❯ tests/sentinel/ticket-store.test.ts:178:24
+    176|     const res = getSentinelTickets();
+    177|     expect(res.ok).toBe(true);
+    178|     expect(res.source).toBe('memory-fallback');
+       |                        ^
+    179|     expect(res.degraded).toBe(true);
+    180|     expect(res.tickets.length).toBeGreaterThanOrEqual(1); // 内存派生兜底非空
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/28]⎯
+
+ FAIL  tests/sentinel/ticket-store.test.ts > D580 8-2 — getSentinelTickets 表读优先 + 降级（L2 写读同源） > db 句柄损坏 → fallback + log.warn 非静默（mock 断言, 铁律 24）
+AssertionError: expected undefined to be 'memory-fallback' // Object.is equality
+
+- Expected:
+"memory-fallback"
+
++ Received:
+undefined
+
+ ❯ tests/sentinel/ticket-store.test.ts:191:24
+    189|     await runner.runOnce('sentinel-cash-runway');
+    190|     const res = getSentinelTickets();
+    191|     expect(res.source).toBe('memory-fallback');
+       |                        ^
+    192|     expect(res.degraded).toBe(true);
+    193|     expect(res.tickets.length).toBeGreaterThanOrEqual(1);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/28]⎯
+
+ FAIL  tests/sentinel/ticket-store.test.ts > D580 8-2 — getSentinelTickets 表读优先 + 降级（L2 写读同源） > runner 未初始化 → degraded 空列表（无数据源, 不静默）
+AssertionError: expected undefined to be 'memory-fallback' // Object.is equality
+
+- Expected:
+"memory-fallback"
+
++ Received:
+undefined
+
+ ❯ tests/sentinel/ticket-store.test.ts:201:24
+    199|     const res = getSentinelTickets();
+    200|     expect(res.ok).toBe(true);
+    201|     expect(res.source).toBe('memory-fallback');
+       |                        ^
+    202|     expect(res.degraded).toBe(true);
+    203|     expect(res.tickets).toEqual([]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/28]⎯
+
+ FAIL  tests/sentinel/ticket-store.test.ts > D580 8-3 — 通知去重持久化（B-19 裁决 2: 重启复活） > runner A 发送 → 销毁 → 同库新 runner B: 窗口内不重发（重启恢复的物理证明）
+AssertionError: expected "vi.fn()" to be called 1 times, but got 2 times
+ ❯ tests/sentinel/ticket-store.test.ts:241:38
+    239|     const runnerB = makeRunner(db);
+    240|     await primeOneDispatch(runnerB);
+    241|     expect(dispatchNotificationMock).toHaveBeenCalledTimes(1); // 不重发
+       |                                      ^
+    242|
+    243|     // 窗口过后 → 重发（窗口语义: 过后重新通知）
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/28]⎯
+
+ FAIL  tests/sentinel/ticket-store.test.ts > D580 8-3 — 通知去重持久化（B-19 裁决 2: 重启复活） > 窗口缺省 5min（D339 裁决 A）: 3 分钟命中去重, 6 分钟重发
+AssertionError: expected "vi.fn()" to be called 2 times, but got 1 times
+ ❯ tests/sentinel/ticket-store.test.ts:257:38
+    255|     vi.setSystemTime(new Date(T0.getTime() + 6 * 60 * 1000));
+    256|     await primeOneDispatch(runner);
+    257|     expect(dispatchNotificationMock).toHaveBeenCalledTimes(2); // > 5m…
+       |                                      ^
+    258|   });
+    259|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/28]⎯
+
+ FAIL  tests/sentinel/ticket-store.test.ts > D580 8-3 — 通知去重持久化（B-19 裁决 2: 重启复活） > env 覆盖生效: SENTINEL_NOTIFICATION_DEDUP_MS=60000 → 1 分钟窗口
+AssertionError: expected "vi.fn()" to be called 2 times, but got 1 times
+ ❯ tests/sentinel/ticket-store.test.ts:269:38
+    267|     vi.setSystemTime(new Date(T0.getTime() + 61 * 1000));
+    268|     await primeOneDispatch(runner);
+    269|     expect(dispatchNotificationMock).toHaveBeenCalledTimes(2); // > 1m…
+       |                                      ^
+    270|   });
+    271|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/28]⎯
+
+ FAIL  tests/sentinel/ticket-store.test.ts > D580 8-3 — 通知去重持久化（B-19 裁决 2: 重启复活） > 非法 env 回退缺省 + log.warn 非静默
+AssertionError: expected '' to contain 'SENTINEL_NOTIFICATION_DEDUP_MS'
+
+- Expected
++ Received
+
+- SENTINEL_NOTIFICATION_DEDUP_MS
+
+ ❯ tests/sentinel/ticket-store.test.ts:276:8
+    274|     const runner = makeRunner(db);
+    275|     expect(logMock.warn.mock.calls.map((c) => c.map(String).join(' '))…
+    276|       .toContain('SENTINEL_NOTIFICATION_DEDUP_MS');
+       |        ^
+    277|     await primeOneDispatch(runner);
+    278|     vi.setSystemTime(new Date(T0.getTime() + 3 * 60 * 1000));
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/28]⎯
+
+ FAIL  tests/sentinel/ticket-transition.test.ts > D580 8-4 — transitionTicket 状态机（L3） > open → acknowledged: 状态落表 + resolved_at 保持 NULL + 审计事件
+TypeError: runner.transitionTicket is not a function
+ ❯ tests/sentinel/ticket-transition.test.ts:72:24
+     70|   it('open → acknowledged: 状态落表 + resolved_at 保持 NULL + 审计事件', () => {
+     71|     insertTicket('t1', 'open');
+     72|     const res = runner.transitionTicket('t1', 'acknowledged');
+       |                        ^
+     73|     expect(res.ok).toBe(true);
+     74|     if (res.ok) {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/28]⎯
+
+ FAIL  tests/sentinel/ticket-transition.test.ts > D580 8-4 — transitionTicket 状态机（L3） > acknowledged → resolved: resolved_at 写入（仅 resolved 写 — 裁决表第 4 行）
+TypeError: runner.transitionTicket is not a function
+ ❯ tests/sentinel/ticket-transition.test.ts:91:24
+     89|   it('acknowledged → resolved: resolved_at 写入（仅 resolved 写 — 裁决表第 4 行）…
+     90|     insertTicket('t2', 'acknowledged');
+     91|     const res = runner.transitionTicket('t2', 'resolved');
+       |                        ^
+     92|     expect(res.ok).toBe(true);
+     93|     const row = db.prepare('SELECT status, resolved_at FROM sentinel_t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/28]⎯
+
+ FAIL  tests/sentinel/ticket-transition.test.ts > D580 8-4 — transitionTicket 状态机（L3） > open → dismissed: 状态落表 + resolved_at 保持 NULL（dismissed 不写 resolved_at）
+TypeError: runner.transitionTicket is not a function
+ ❯ tests/sentinel/ticket-transition.test.ts:102:24
+    100|   it('open → dismissed: 状态落表 + resolved_at 保持 NULL（dismissed 不写 resolv…
+    101|     insertTicket('t3', 'open');
+    102|     const res = runner.transitionTicket('t3', 'dismissed');
+       |                        ^
+    103|     expect(res.ok).toBe(true);
+    104|     const row = db.prepare('SELECT status, resolved_at FROM sentinel_t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[23/28]⎯
+
+ FAIL  tests/sentinel/ticket-transition.test.ts > D580 8-4 — transitionTicket 状态机（L3） > acknowledged → dismissed: ILLEGAL_TRANSITION + from/to 字段
+TypeError: runner.transitionTicket is not a function
+ ❯ tests/sentinel/ticket-transition.test.ts:113:24
+    111|   it('acknowledged → dismissed: ILLEGAL_TRANSITION + from/to 字段', () =…
+    112|     insertTicket('t4', 'acknowledged');
+    113|     const res = runner.transitionTicket('t4', 'dismissed');
+       |                        ^
+    114|     expect(res).toMatchObject({ ok: false, error: 'ILLEGAL_TRANSITION'…
+    115|     expect(eventsOf('t4')).toHaveLength(0); // 非法迁移不写审计事件
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[24/28]⎯
+
+ FAIL  tests/sentinel/ticket-transition.test.ts > D580 8-4 — transitionTicket 状态机（L3） > 终态拒绝: resolved → acknowledged / resolved → dismissed; dismissed → acknowledged
+TypeError: runner.transitionTicket is not a function
+ ❯ tests/sentinel/ticket-transition.test.ts:120:19
+    118|   it('终态拒绝: resolved → acknowledged / resolved → dismissed; dismissed …
+    119|     insertTicket('t5', 'resolved');
+    120|     expect(runner.transitionTicket('t5', 'acknowledged'))
+       |                   ^
+    121|       .toMatchObject({ ok: false, error: 'ILLEGAL_TRANSITION', from: '…
+    122|     expect(runner.transitionTicket('t5', 'dismissed'))
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[25/28]⎯
+
+ FAIL  tests/sentinel/ticket-transition.test.ts > D580 8-4 — transitionTicket 状态机（L3） > 同态迁移亦 ILLEGAL（acknowledged → acknowledged, 409 语义）
+TypeError: runner.transitionTicket is not a function
+ ❯ tests/sentinel/ticket-transition.test.ts:133:19
+    131|   it('同态迁移亦 ILLEGAL（acknowledged → acknowledged, 409 语义）', () => {
+    132|     insertTicket('t7', 'acknowledged');
+    133|     expect(runner.transitionTicket('t7', 'acknowledged'))
+       |                   ^
+    134|       .toMatchObject({ ok: false, error: 'ILLEGAL_TRANSITION', from: '…
+    135|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[26/28]⎯
+
+ FAIL  tests/sentinel/ticket-transition.test.ts > D580 8-4 — transitionTicket 状态机（L3） > 未知 id → TICKET_NOT_FOUND
+TypeError: runner.transitionTicket is not a function
+ ❯ tests/sentinel/ticket-transition.test.ts:138:19
+    136|
+    137|   it('未知 id → TICKET_NOT_FOUND', () => {
+    138|     expect(runner.transitionTicket('no-such-ticket', 'acknowledged'))
+       |                   ^
+    139|       .toEqual({ ok: false, error: 'TICKET_NOT_FOUND' });
+    140|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[27/28]⎯
+
+ FAIL  tests/sentinel/ticket-transition.test.ts > D580 8-4 — transitionTicket 状态机（L3） > db 失败 → { ok:false, degraded:true } + log.warn（不抛, HTTP 503 映射在 L1）
+TypeError: throwingRunner.transitionTicket is not a function
+ ❯ tests/sentinel/ticket-transition.test.ts:146:32
+    144|   it('db 失败 → { ok:false, degraded:true } + log.warn（不抛, HTTP 503 映射在 …
+    145|     const throwingRunner = makeRunner({ prepare: () => { throw new Err…
+    146|     const res = throwingRunner.transitionTicket('t1', 'acknowledged');
+       |                                ^
+    147|     expect(res.ok).toBe(false);
+    148|     if (!res.ok) {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[28/28]⎯
+
+
+ Test Files  3 failed (3)
+      Tests  28 failed | 1 passed (29)
+   Start at  02:51:04
+   Duration  438ms (transform 368ms, setup 0ms, import 546ms, tests 263ms, environment 0ms)
+

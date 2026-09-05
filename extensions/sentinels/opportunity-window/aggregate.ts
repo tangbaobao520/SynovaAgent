@@ -59,7 +59,7 @@ export const opportunityWindowSentinel = {
 
       if (result.score < th('opportunity_score').critical) {
         findings.push({
-          id: `e2-low-${now.getTime()}`, severity: 'warning',
+          id: `e2-low`, severity: 'warning',
           title: `结构性变化机会少 (${scorePct}%)`,
           description: '外部环境相对稳定，无明显技术/法规/竞争变化信号。',
           evidence: result.signals.length > 0 ? result.signals : ['无显著变化信号'],
@@ -68,7 +68,7 @@ export const opportunityWindowSentinel = {
         });
       } else if (result.score > 0.7) {
         findings.push({
-          id: `e2-high-${now.getTime()}`, severity: 'info',
+          id: `e2-high`, severity: 'info',
           title: `结构性机会窗口打开 (${scorePct}%)`,
           description: `检测到 ${result.techChangeSignals + result.regulatorySignals + result.competitiveSignals} 个结构性变化信号。`,
           evidence: result.signals,
@@ -81,7 +81,7 @@ export const opportunityWindowSentinel = {
     } catch (err: unknown) {
       log.error({ err }, '[opportunity-window] check 失败');
       return [{
-        id: `e2-error-${now.getTime()}`, severity: 'warning',
+        id: `e2-error`, severity: 'warning',
         title: '机会窗口检测异常', description: `${(err as Error)?.message || String(err)}`,
         evidence: [], suggestion: '检查数据源。', detectedAt: checkedAt,
       }];

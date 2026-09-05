@@ -42,14 +42,14 @@ export const environmentRentDependencySentinel = {
       log.debug({ index: result.index }, '环境红利依赖计算完成');
 
       if (result.index > th('rent_dependency').critical) {
-        return [{ id: `e5-rent-${now.getTime()}`, severity: 'critical', title: `环境红利依赖度过高 (${(result.index * 100).toFixed(0)}%)`, description: `企业过度依赖外部环境红利。`, evidence: result.signals, suggestion: '建立独立于外部红利的核心竞争力。', detectedAt: checkedAt }];
+        return [{ id: `e5-rent`, severity: 'critical', title: `环境红利依赖度过高 (${(result.index * 100).toFixed(0)}%)`, description: `企业过度依赖外部环境红利。`, evidence: result.signals, suggestion: '建立独立于外部红利的核心竞争力。', detectedAt: checkedAt }];
       } else if (result.index > th('rent_dependency').warning) {
-        return [{ id: `e5-rent-warn-${now.getTime()}`, severity: 'warning', title: `环境红利依赖中等 (${(result.index * 100).toFixed(0)}%)`, description: '部分营收依赖外部红利。', evidence: result.signals, suggestion: '评估外部红利可持续性。', detectedAt: checkedAt }];
+        return [{ id: `e5-rent-warn`, severity: 'warning', title: `环境红利依赖中等 (${(result.index * 100).toFixed(0)}%)`, description: '部分营收依赖外部红利。', evidence: result.signals, suggestion: '评估外部红利可持续性。', detectedAt: checkedAt }];
       }
       return [];
     } catch (err: unknown) {
       log.error({ err }, '[rent-dependency] check 失败');
-      return [{ id: `e5-error-${now.getTime()}`, severity: 'warning', title: '环境红利检测异常', description: `${(err as Error)?.message || String(err)}`, evidence: [], suggestion: '检查数据源。', detectedAt: checkedAt }];
+      return [{ id: `e5-error`, severity: 'warning', title: '环境红利检测异常', description: `${(err as Error)?.message || String(err)}`, evidence: [], suggestion: '检查数据源。', detectedAt: checkedAt }];
     }
   },
 };

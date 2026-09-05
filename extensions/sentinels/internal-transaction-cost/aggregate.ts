@@ -23,9 +23,9 @@ export const internalTransactionCostSentinel = {
       const hasHistoricalData = fin[0]?.props?.previousAdminCost !== undefined && fin[0]?.props?.previousTotalCost !== undefined;
       const r = computeTransactionCostTrend({ totalCost, adminCost, teamCount: teams.length, eventCount: events.length, previousAdminCost, previousTotalCost });
       log.debug({ trend: r.trend }, '内部交易成本计算完成');
-      if (r.trend > 0.1) return [{ id: `i11-trend-crit-${now.getTime()}`, severity: 'critical', title: `内部交易成本上升 (${(r.trend*100).toFixed(1)}%)`, description: '管理成本占比显著增加。', evidence: [`趋势: ${(r.trend*100).toFixed(1)}%`, `管理占比: ${(r.adminCostRatio*100).toFixed(0)}%`, ...r.signals], suggestion: '审查组织复杂度，简化流程。', detectedAt: checkedAt }];
-      if (r.trend > 0.05) return [{ id: `i11-trend-warn-${now.getTime()}`, severity: 'warning', title: `内部交易成本微增 (${(r.trend*100).toFixed(1)}%)`, description: '管理成本有上升趋势。', evidence: [`趋势: ${(r.trend*100).toFixed(1)}%`], suggestion: '关注组织效率。', detectedAt: checkedAt }];
+      if (r.trend > 0.1) return [{ id: `i11-trend-crit`, severity: 'critical', title: `内部交易成本上升 (${(r.trend*100).toFixed(1)}%)`, description: '管理成本占比显著增加。', evidence: [`趋势: ${(r.trend*100).toFixed(1)}%`, `管理占比: ${(r.adminCostRatio*100).toFixed(0)}%`, ...r.signals], suggestion: '审查组织复杂度，简化流程。', detectedAt: checkedAt }];
+      if (r.trend > 0.05) return [{ id: `i11-trend-warn`, severity: 'warning', title: `内部交易成本微增 (${(r.trend*100).toFixed(1)}%)`, description: '管理成本有上升趋势。', evidence: [`趋势: ${(r.trend*100).toFixed(1)}%`], suggestion: '关注组织效率。', detectedAt: checkedAt }];
       return [];
-    } catch (err: unknown) { log.error({ err }, '[transaction-cost] 失败'); return [{ id: `i11-error-${now.getTime()}`, severity: 'warning', title: '检测异常', description: `${(err as Error)?.message || String(err)}`, evidence: [], suggestion: '检查数据源。', detectedAt: checkedAt }]; }
+    } catch (err: unknown) { log.error({ err }, '[transaction-cost] 失败'); return [{ id: `i11-error`, severity: 'warning', title: '检测异常', description: `${(err as Error)?.message || String(err)}`, evidence: [], suggestion: '检查数据源。', detectedAt: checkedAt }]; }
   },
 };

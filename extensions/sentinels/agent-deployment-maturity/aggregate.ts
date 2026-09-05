@@ -23,9 +23,9 @@ export const AgentDeploymentMaturitySentinel = {
         recentErrors,
         totalOperations: totalOps,
       });
-      if (r.degraded) return [{description:'',id:`t-na-${now.getTime()}`,severity:"info",title:"无Agent数据",evidence:[],suggestion:"",detectedAt:ca}];
-      if (r.score < 0.3) return [{id:`t-age-${now.getTime()}`,severity:"warning",title:"Agent部署成熟度偏低",description:`成熟度${(r.score*100).toFixed(0)}%`,evidence:[`成熟度: ${(r.score*100).toFixed(0)}%`],suggestion:"增加Agent监控和自治等级",detectedAt:ca}];
+      if (r.degraded) return [{description:'',id:`t-na`,severity:"info",title:"无Agent数据",evidence:[],suggestion:"",detectedAt:ca}];
+      if (r.score < 0.3) return [{id:`t-age`,severity:"warning",title:"Agent部署成熟度偏低",description:`成熟度${(r.score*100).toFixed(0)}%`,evidence:[`成熟度: ${(r.score*100).toFixed(0)}%`],suggestion:"增加Agent监控和自治等级",detectedAt:ca}];
       return [];
-    } catch(e: unknown) { log.error({e}); return [{id:`e-${now.getTime()}`,severity:"warning",title:"异常",description:`${(e as Error)?.message||""}`,evidence:[],suggestion:"",detectedAt:ca}]; }
+    } catch(e: unknown) { log.error({e}); return [{id:`e`,severity:"warning",title:"异常",description:`${(e as Error)?.message||""}`,evidence:[],suggestion:"",detectedAt:ca}]; }
   },
 };

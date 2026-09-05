@@ -25,11 +25,11 @@ export const pricingStrategySentinel = {
         hasUniformPricing: true, profitGainFromDiscrimination: 0.2, price: 100, marginalCost: 80,
       };
       if (input.hasUniformPricing && input.profitGainFromDiscrimination > 0.15) {
-        findings.push({ id: `pricing-disc-${start}`, severity: 'warning', title: '统一定价可能错失价格歧视收益',
+        findings.push({ id: `pricing-disc`, severity: 'warning', title: '统一定价可能错失价格歧视收益',
           description: `价格歧视可提升利润 ${(input.profitGainFromDiscrimination * 100).toFixed(0)}% (>15%阈值)`, evidence: [], suggestion: '评估客户细分定价策略', detectedAt: new Date().toISOString() });
       }
       if (input.price < input.marginalCost) {
-        findings.push({ id: `pricing-below-mc-${start}`, severity: 'critical', title: '价格低于边际成本',
+        findings.push({ id: `pricing-below-mc`, severity: 'critical', title: '价格低于边际成本',
           description: `价格=${input.price} < 边际成本=${input.marginalCost}`, evidence: [], suggestion: '立即审查定价策略', detectedAt: new Date().toISOString() });
       }
     } catch (err) { log.warn({ err }, 'pricing-strategy check error'); }

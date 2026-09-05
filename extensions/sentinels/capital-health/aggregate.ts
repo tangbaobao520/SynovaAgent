@@ -104,7 +104,7 @@ export const capitalHealthSentinel = {
         const names = missingGroups.map(g => g.name).join('、');
         log.warn({ teamId, missing: names }, 'Financial 节点缺必填字段组 — 跳过指标（防缺失默认 0 假 finding）');
         return [{
-          id: `ch-degraded-${now.getTime()}`,
+          id: `ch-degraded`,
           severity: 'warning',
           title: '资本健康数据不完整',
           description: `Financial 节点缺失必填字段组: ${names}。已跳过资本健康检查，避免缺失字段被默认为 0 产生误报。`,
@@ -172,7 +172,7 @@ export const capitalHealthSentinel = {
           const waccPct = (spreadResult.wacc * 100).toFixed(1);
           if (spreadResult.spread < t.critical) {
             findings.push({
-              id: `f3-spread-crit-${now.getTime()}`, severity: 'critical',
+              id: `f3-spread-crit`, severity: 'critical',
               title: `ROIC (${roicPct}%) 低于 WACC (${waccPct}%) — 价值毁灭`,
               description: `ROIC/WACC 差距 ${spPct} 个百分点。`,
               evidence: [`ROIC: ${roicPct}%`, `WACC: ${waccPct}%`, `差距: ${spPct}%`, ...spreadResult.warnings],
@@ -181,7 +181,7 @@ export const capitalHealthSentinel = {
             });
           } else if (spreadResult.spread < t.warning) {
             findings.push({
-              id: `f3-spread-warn-${now.getTime()}`, severity: 'warning',
+              id: `f3-spread-warn`, severity: 'warning',
               title: `ROIC (${roicPct}%) 略低于 WACC (${waccPct}%)`,
               description: `资本配置效率不足，差距 ${Math.abs(spreadResult.spread * 100).toFixed(1)} 个百分点。`,
               evidence: [`ROIC: ${roicPct}%`, `WACC: ${waccPct}%`, ...spreadResult.warnings],
@@ -202,7 +202,7 @@ export const capitalHealthSentinel = {
         const t = th('capital_turnover');
         if (ct.turnover < t.critical) {
           findings.push({
-            id: `f3-turnover-crit-${now.getTime()}`, severity: 'critical',
+            id: `f3-turnover-crit`, severity: 'critical',
             title: `资本周转率过低 (${ct.turnover.toFixed(2)})`,
             description: `每单位资本仅产生 ${ct.turnover.toFixed(2)} 倍营收。`,
             evidence: [`周转率: ${ct.turnover.toFixed(2)}`, `营收: ${ct.totalRevenue}`, `资本: ${ct.totalCapital}`],
@@ -211,7 +211,7 @@ export const capitalHealthSentinel = {
           });
         } else if (ct.turnover < t.warning) {
           findings.push({
-            id: `f3-turnover-warn-${now.getTime()}`, severity: 'warning',
+            id: `f3-turnover-warn`, severity: 'warning',
             title: `资本周转率偏低 (${ct.turnover.toFixed(2)})`,
             description: '资本使用效率不足。',
             evidence: [`周转率: ${ct.turnover.toFixed(2)}`],
@@ -231,7 +231,7 @@ export const capitalHealthSentinel = {
         const t = th('debt_equity');
         if (de.debtEquity > t.critical) {
           findings.push({
-            id: `f2-de-crit-${now.getTime()}`, severity: 'critical',
+            id: `f2-de-crit`, severity: 'critical',
             title: `负债权益比过高 (${de.debtEquity.toFixed(1)})`,
             description: '负债/权益 > 2.5，财务杠杆过高。',
             evidence: [`D/E: ${de.debtEquity.toFixed(1)}`, `长期负债占比: ${(de.longTermDebtRatio * 100).toFixed(0)}%`],
@@ -240,7 +240,7 @@ export const capitalHealthSentinel = {
           });
         } else if (de.debtEquity > t.warning) {
           findings.push({
-            id: `f2-de-warn-${now.getTime()}`, severity: 'warning',
+            id: `f2-de-warn`, severity: 'warning',
             title: `负债权益比偏高 (${de.debtEquity.toFixed(1)})`,
             description: 'D/E > 1.5，需关注。',
             evidence: [`D/E: ${de.debtEquity.toFixed(1)}`],
@@ -263,7 +263,7 @@ export const capitalHealthSentinel = {
           const t = th('interest_coverage');
           if (ic.icr < t.critical) {
             findings.push({
-              id: `f2-icr-crit-${now.getTime()}`, severity: 'critical',
+              id: `f2-icr-crit`, severity: 'critical',
               title: `利息覆盖倍数过低 (${ic.icr.toFixed(1)}x)`,
               description: 'EBIT/利息 < 1.5，偿债能力不足。',
               evidence: [`ICR: ${ic.icr.toFixed(1)}x`, `EBIT: ${ic.ebit}`, `利息: ${ic.interestExpense}`],
@@ -272,7 +272,7 @@ export const capitalHealthSentinel = {
             });
           } else if (ic.icr < t.warning) {
             findings.push({
-              id: `f2-icr-warn-${now.getTime()}`, severity: 'warning',
+              id: `f2-icr-warn`, severity: 'warning',
               title: `利息覆盖倍数偏低 (${ic.icr.toFixed(1)}x)`,
               description: 'EBIT/利息 < 3.0。',
               evidence: [`ICR: ${ic.icr.toFixed(1)}x`],
@@ -295,7 +295,7 @@ export const capitalHealthSentinel = {
         if (!ds.degraded) {
           if (ds.signal === 'critical') {
             findings.push({
-              id: `f2-ds-crit-${now.getTime()}`, severity: 'critical',
+              id: `f2-ds-crit`, severity: 'critical',
               title: `短债占比过高 (${(ds.shortTermRatio * 100).toFixed(0)}%)`,
               description: `短期债务占总债务 ${(ds.shortTermRatio * 100).toFixed(0)}%，超过 70% 警戒线。`,
               evidence: [`短债比: ${(ds.shortTermRatio * 100).toFixed(0)}%`],
@@ -304,7 +304,7 @@ export const capitalHealthSentinel = {
             });
           } else if (ds.signal === 'warning') {
             findings.push({
-              id: `f2-ds-warn-${now.getTime()}`, severity: 'warning',
+              id: `f2-ds-warn`, severity: 'warning',
               title: `短债占比偏高 (${(ds.shortTermRatio * 100).toFixed(0)}%)`,
               description: `短期债务占比 ${(ds.shortTermRatio * 100).toFixed(0)}%，超过 50%。`,
               evidence: [`短债比: ${(ds.shortTermRatio * 100).toFixed(0)}%`],
@@ -328,7 +328,7 @@ export const capitalHealthSentinel = {
           const t = th('asset_turnover');
           if (at.totalTurnover < t.critical) {
             findings.push({
-              id: `f5-at-crit-${now.getTime()}`, severity: 'critical',
+              id: `f5-at-crit`, severity: 'critical',
               title: `总资产周转率过低 (${at.totalTurnover.toFixed(2)})`,
               description: '每单位资产营收不足 0.5。',
               evidence: [`周转率: ${at.totalTurnover.toFixed(2)}`, `营收: ${at.totalRevenue}`, `总资产: ${at.totalAssets}`],
@@ -337,7 +337,7 @@ export const capitalHealthSentinel = {
             });
           } else if (at.totalTurnover < t.warning) {
             findings.push({
-              id: `f5-at-warn-${now.getTime()}`, severity: 'warning',
+              id: `f5-at-warn`, severity: 'warning',
               title: `总资产周转率偏低 (${at.totalTurnover.toFixed(2)})`,
               description: '周转率 < 0.8。',
               evidence: [`周转率: ${at.totalTurnover.toFixed(2)}`],
@@ -361,7 +361,7 @@ export const capitalHealthSentinel = {
           const t = th('receivable_turnover_days');
           if (rt.daysOutstanding > t.critical) {
             findings.push({
-              id: `f5-rt-crit-${now.getTime()}`, severity: 'critical',
+              id: `f5-rt-crit`, severity: 'critical',
               title: `应收周转天数过长 (${rt.daysOutstanding}d)`,
               description: '应收 > 90 天。',
               evidence: [`周转天数: ${rt.daysOutstanding}d`, `应收: ${rt.avgReceivables}`, `年营收: ${rt.totalRevenue}`],
@@ -370,7 +370,7 @@ export const capitalHealthSentinel = {
             });
           } else if (rt.daysOutstanding > t.warning) {
             findings.push({
-              id: `f5-rt-warn-${now.getTime()}`, severity: 'warning',
+              id: `f5-rt-warn`, severity: 'warning',
               title: `应收周转天数偏长 (${rt.daysOutstanding}d)`,
               description: '应收 > 60 天。',
               evidence: [`周转天数: ${rt.daysOutstanding}d`],
@@ -400,7 +400,7 @@ export const capitalHealthSentinel = {
         if (!ccc.degraded) {
           if (ccc.signal === 'critical') {
             findings.push({
-              id: `f5-ccc-crit-${now.getTime()}`, severity: 'critical',
+              id: `f5-ccc-crit`, severity: 'critical',
               title: `现金转换周期过长 (${ccc.cccDays}天)`,
               description: `CCC ${ccc.cccDays} 天，超过 120 天警戒线（制造/零售基线）。`,
               evidence: [`CCC: ${ccc.cccDays}天`, `DIO: ${ccc.dio}天`, `DSO: ${ccc.dso}天`, `DPO: ${ccc.dpo}天`, ...ccc.warnings],
@@ -409,7 +409,7 @@ export const capitalHealthSentinel = {
             });
           } else if (ccc.signal === 'warning') {
             findings.push({
-              id: `f5-ccc-warn-${now.getTime()}`, severity: 'warning',
+              id: `f5-ccc-warn`, severity: 'warning',
               title: `现金转换周期偏长 (${ccc.cccDays}天)`,
               description: `CCC ${ccc.cccDays} 天，超过 90 天预警线。`,
               evidence: [`CCC: ${ccc.cccDays}天`, `DIO: ${ccc.dio}天`, `DSO: ${ccc.dso}天`, `DPO: ${ccc.dpo}天`],
@@ -427,7 +427,7 @@ export const capitalHealthSentinel = {
     } catch (err: unknown) {
       log.error({ err }, '[capital-health] check 失败');
       return [{
-        id: `ch-error-${now.getTime()}`, severity: 'warning' as const,
+        id: `ch-error`, severity: 'warning' as const,
         title: '资本健康检测异常',
         description: `${(err as Error)?.message || String(err)}`,
         evidence: [], suggestion: '检查 Financial 数据源。',

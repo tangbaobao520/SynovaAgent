@@ -1,0 +1,86 @@
+ FAIL  tests/data-pipeline.feishu.integration.test.ts [ tests/data-pipeline.feishu.integration.test.ts ]
+ FAIL  tests/data-pipeline.ingest.integration.test.ts [ tests/data-pipeline.ingest.integration.test.ts ]
+ FAIL  tests/e2e/p0-wane-baby.test.ts [ tests/e2e/p0-wane-baby.test.ts ]
+ FAIL  tests/expert/org-theory-injection.test.ts [ tests/expert/org-theory-injection.test.ts ]
+ FAIL  tests/sentinels/adaptation-velocity.test.ts [ tests/sentinels/adaptation-velocity.test.ts ]
+ FAIL  tests/sentinels/capital-efficiency.test.ts [ tests/sentinels/capital-efficiency.test.ts ]
+ FAIL  tests/sentinels/capital-structure.test.ts [ tests/sentinels/capital-structure.test.ts ]
+ FAIL  tests/sentinels/capital-turnover.test.ts [ tests/sentinels/capital-turnover.test.ts ]
+ FAIL  tests/sentinels/competitive-dynamics.test.ts [ tests/sentinels/competitive-dynamics.test.ts ]
+ FAIL  tests/sentinels/competitive-moat-perceptual.test.ts [ tests/sentinels/competitive-moat-perceptual.test.ts ]
+ FAIL  tests/sentinels/competitive-moat-structural.test.ts [ tests/sentinels/competitive-moat-structural.test.ts ]
+ FAIL  tests/sentinels/connector-coverage.test.ts [ tests/sentinels/connector-coverage.test.ts ]
+ FAIL  tests/sentinels/cost-health.test.ts [ tests/sentinels/cost-health.test.ts ]
+ FAIL  tests/sentinels/lifecycle-stage.test.ts [ tests/sentinels/lifecycle-stage.test.ts ]
+ FAIL  tests/sentinels/market-lifecycle.test.ts [ tests/sentinels/market-lifecycle.test.ts ]
+ FAIL  tests/sentinels/profit-health.test.ts [ tests/sentinels/profit-health.test.ts ]
+ FAIL  tests/sentinels/structural-change.test.ts [ tests/sentinels/structural-change.test.ts ]
+ FAIL  tests/sentinels/capital-efficiency/capital-efficiency.test.ts [ tests/sentinels/capital-efficiency/capital-efficiency.test.ts ]
+ FAIL  tests/sentinels/capital-efficiency/capital-turnover.test.ts [ tests/sentinels/capital-efficiency/capital-turnover.test.ts ]
+ FAIL  tests/sentinels/capital-efficiency/roic-wacc-spread.test.ts [ tests/sentinels/capital-efficiency/roic-wacc-spread.test.ts ]
+ FAIL  tests/sentinels/capital-efficiency/wacc.test.ts [ tests/sentinels/capital-efficiency/wacc.test.ts ]
+ FAIL  tests/sentinels/capital-structure/debt-equity-ratio.test.ts [ tests/sentinels/capital-structure/debt-equity-ratio.test.ts ]
+ FAIL  tests/sentinels/capital-structure/debt-structure.test.ts [ tests/sentinels/capital-structure/debt-structure.test.ts ]
+ FAIL  tests/sentinels/capital-structure/interest-coverage.test.ts [ tests/sentinels/capital-structure/interest-coverage.test.ts ]
+ FAIL  tests/sentinels/capital-turnover/asset-turnover.test.ts [ tests/sentinels/capital-turnover/asset-turnover.test.ts ]
+ FAIL  tests/sentinels/capital-turnover/cash-conversion-cycle.test.ts [ tests/sentinels/capital-turnover/cash-conversion-cycle.test.ts ]
+ FAIL  tests/sentinels/capital-turnover/receivable-turnover.test.ts [ tests/sentinels/capital-turnover/receivable-turnover.test.ts ]
+ FAIL  tests/sentinels/competitive-dynamics/hhi-index.test.ts [ tests/sentinels/competitive-dynamics/hhi-index.test.ts ]
+ FAIL  tests/sentinels/collaboration-health/cpc.test.ts [ tests/sentinels/collaboration-health/cpc.test.ts ]
+ FAIL  tests/sentinels/cost-health/compute-cost-per-head.test.ts [ tests/sentinels/cost-health/compute-cost-per-head.test.ts ]
+ FAIL  tests/sentinels/cost-health/compute-fixed-variable-ratio.test.ts [ tests/sentinels/cost-health/compute-fixed-variable-ratio.test.ts ]
+ FAIL  tests/sentinels/cost-health/compute-gross-margin.test.ts [ tests/sentinels/cost-health/compute-gross-margin.test.ts ]
+ FAIL  tests/sentinels/cost-health/compute-incentive-bind.test.ts [ tests/sentinels/cost-health/compute-incentive-bind.test.ts ]
+ FAIL  tests/sentinels/financial-snapshot/snapshot.test.ts [ tests/sentinels/financial-snapshot/snapshot.test.ts ]
+ FAIL  tests/sentinels/hona/network.test.ts [ tests/sentinels/hona/network.test.ts ]
+ FAIL  tests/sentinels/market-lifecycle/lifecycle-stage.test.ts [ tests/sentinels/market-lifecycle/lifecycle-stage.test.ts ]
+ FAIL  tests/sentinels/profit-health/compute-margin-vs-benchmark.test.ts [ tests/sentinels/profit-health/compute-margin-vs-benchmark.test.ts ]
+ FAIL  tests/sentinels/profit-health/compute-metric-bind-divergence.test.ts [ tests/sentinels/profit-health/compute-metric-bind-divergence.test.ts ]
+ FAIL  tests/sentinels/profit-health/compute-profit-margin-change.test.ts [ tests/sentinels/profit-health/compute-profit-margin-change.test.ts ]
+ FAIL  tests/sentinels/self-awareness/bias.test.ts [ tests/sentinels/self-awareness/bias.test.ts ]
+ FAIL  tests/sentinels/seven-powers/score.test.ts [ tests/sentinels/seven-powers/score.test.ts ]
+ FAIL  tests/sentinels/structural-change/structural-change-signal.test.ts [ tests/sentinels/structural-change/structural-change-signal.test.ts ]
+ FAIL  tests/sentinels/token-economics/cost.test.ts [ tests/sentinels/token-economics/cost.test.ts ]
+ FAIL  tests/acceptance/zero-code-industry.test.ts > 零代码接入验收 (pizza-chain) > pizza-chain 特有节点类型被 ontology 加载
+ FAIL  tests/acceptance/zero-code-industry.test.ts > 零代码接入验收 (pizza-chain) > queryByTags 可查询 food_service 标签的类型
+ FAIL  tests/acceptance/zero-code-industry.test.ts > 零代码接入验收 (pizza-chain) > 新增行业零 .ts 文件修改
+ FAIL  tests/agent/expert-file-loader.integration.test.ts > ExpertFileLoader — 8段组装集成测试 > Given FileScanner 扫描, Then 发现 8 位专家
+ FAIL  tests/agent/expert-file-loader.integration.test.ts > ExpertFileLoader — 8段组装集成测试 > Given strategy 专家, Then 包含关键文件
+ FAIL  tests/agent/expert-file-loader.integration.test.ts > ExpertFileLoader — 8段组装集成测试 > Given 完整索引, When loadFromIndex, Then 8 位专家全部加载成功
+ FAIL  tests/agent/expert-file-loader.integration.test.ts > ExpertFileLoader — 8段组装集成测试 > Given 已加载专家, When getPrompt, Then prompt 包含必要章节
+ FAIL  tests/agent/expert-file-loader.integration.test.ts > ExpertFileLoader — 8段组装集成测试 > Given 已加载专家, Then prompt 包含身份和规则
+ FAIL  tests/deploy/data-directory.test.ts > D47: data-directory — 平台路径 > Windows → %LOCALAPPDATA%/Synova/data
+ FAIL  tests/env/env-completion.test.ts > D217: agent-start.sh > L2a: package.json dev 指向 agent-start.sh (接线验证)
+ FAIL  tests/env/env-completion.test.ts > D217: agent-start.sh > L1: agent-start.sh 包含 3 步启动流程
+ FAIL  tests/electron/desktop-build.test.ts > D517 CI — desktop-build workflow 契约 > 触发器: push main + workflow_dispatch（任何人可手动复现）
+ FAIL  tests/expert/analytical-lens.test.ts > analytical_lens 完整性 > finance IDENTITY.md 存在
+ FAIL  tests/expert/analytical-lens.test.ts > analytical_lens 完整性 > strategy IDENTITY.md 存在
+ FAIL  tests/expert/analytical-lens.test.ts > analytical_lens 完整性 > org IDENTITY.md 存在
+ FAIL  tests/expert/analytical-lens.test.ts > analytical_lens 完整性 > marketing IDENTITY.md 存在
+ FAIL  tests/expert/analytical-lens.test.ts > analytical_lens 完整性 > action IDENTITY.md 存在
+ FAIL  tests/expert/analytical-lens.test.ts > analytical_lens 完整性 > business_model IDENTITY.md 存在
+ FAIL  tests/expert/analytical-lens.test.ts > analytical_lens 完整性 > knowledge IDENTITY.md 存在
+ FAIL  tests/experts/d64-knowledge-files.test.ts > D64 — marketing/TOOLS.md 追加 > 文件存在
+ FAIL  tests/experts/d64-knowledge-files.test.ts > D64 — marketing/TOOLS.md 追加 > 包含需求预测框架章节
+ FAIL  tests/experts/d64-knowledge-files.test.ts > D64 — marketing/TOOLS.md 追加 > ≥3个##段落
+ FAIL  tests/experts/d64-knowledge-files.test.ts > D64 — strategy/KNOWLEDGE.md 新建 > 文件存在
+ FAIL  tests/experts/d64-knowledge-files.test.ts > D64 — strategy/KNOWLEDGE.md 新建 > 包含市场结构四象限
+ FAIL  tests/experts/d64-knowledge-files.test.ts > D64 — strategy/KNOWLEDGE.md 新建 > ≥3个##段落
+ FAIL  tests/experts/d64-knowledge-files.test.ts > D64 — finance/KNOWLEDGE.md 新建 > 文件存在
+ FAIL  tests/experts/d64-knowledge-files.test.ts > D64 — finance/KNOWLEDGE.md 新建 > 包含资本预算决策树
+ FAIL  tests/experts/d64-knowledge-files.test.ts > D64 — finance/KNOWLEDGE.md 新建 > ≥2个##段落
+ FAIL  tests/experts/d64-knowledge-files.test.ts > D64 — org/KNOWLEDGE.md 新建 > 文件存在
+ FAIL  tests/experts/d64-knowledge-files.test.ts > D64 — org/KNOWLEDGE.md 新建 > 包含代理成本理论
+ FAIL  tests/experts/d64-knowledge-files.test.ts > D64 — org/KNOWLEDGE.md 新建 > ≥3个##段落
+ FAIL  tests/l3/e2e-autonomy.integration.test.ts > E2E: Phase 2 Expert Autonomy > Given evidence posted, When /api/test/phase2-autonomy called, Then all 7 experts produce hypotheses through ReAct
+ FAIL  tests/l3/e2e-autonomy.integration.test.ts > E2E: Phase 2 Expert Autonomy > E2E User Journey: expert autonomy produces distinct hypotheses per expert type
+ FAIL  tests/l3/graphbridge-wiring.test.ts > GraphBridge → ModuleRunner.afterRun → Phase 1 > Given a failing module, When afterRun with GraphBridge, Then only successful modules create nodes
+ FAIL  tests/orchestrator/l3-wiring.test.ts > SubAgentCoordinator → Phase 2 wiring > Given Phase 1 evidence, When SubAgentCoordinator dispatches, Then all 7 experts produce reports
+ FAIL  tests/orchestrator/phase1-diagnosis-wiring.test.ts > Phase 2 Hypothesis — SubAgentCoordinator接入 > Given 7 expert types, When dispatch, Then all 7 produce reports
+ FAIL  tests/l4/edges/depends_on_platform.test.ts > EDGE: DEPENDS_ON_PLATFORM > 端点验证: allowedFrom/To 正确
+ FAIL  tests/l4/edges/metric_binds.test.ts > EDGE: METRIC_BINDS > 端点验证: allowedFrom/To 正确
+ FAIL  tests/l4/edges/replenishes.test.ts > EDGE: REPLENISHES > 端点验证: allowedFrom/To 正确
+ FAIL  tests/l4/edges/substitutes.test.ts > EDGE: SUBSTITUTES > 端点验证: allowedFrom/To 正确
+ Test Files  58 failed | 524 passed | 3 skipped (585)
+      Tests  40 failed | 3934 passed | 13 skipped (3987)
+Tests closed successfully but something prevents Vite server from exiting
