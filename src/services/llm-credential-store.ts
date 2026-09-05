@@ -70,7 +70,7 @@ interface StoredLlmCredential {
 }
 
 /** 凭证文件路径——每次调用读 SYNOVA_DATA_DIR（测试注入缝；默认 data/，已被 .gitignore L3 覆盖） */
-export function getLlmCredentialFilePath(): string {
+function getLlmCredentialFilePath(): string {
   return join(process.env.SYNOVA_DATA_DIR || 'data', 'llm-credentials.json');
 }
 

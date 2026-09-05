@@ -20,10 +20,15 @@ import {
   resolveLlmApiKey,
   getStoredLlmRuntime,
   onLlmCredentialChanged,
-  getLlmCredentialFilePath,
   maskLlmKey,
   LlmCredentialError,
 } from '../../src/services/llm-credential-store';
+
+/** D575 CTO 复核: getLlmCredentialFilePath 去掉 export（组4 接线审计——仅同文件消费+测试不计），
+ *  测试改为同逻辑推导路径 */
+function getLlmCredentialFilePath(): string {
+  return require('path').join(process.env.SYNOVA_DATA_DIR ?? 'data', 'llm-credentials.json');
+}
 
 const KEY_A = 'sk-test-aaaa1111';
 const KEY_B = 'sk-test-bbbb2222';
