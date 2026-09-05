@@ -83,10 +83,10 @@ L3（sentinel/ + extensions/sentinels/）
 
 以下每项均有 verify 命令或测试文件可证伪：
 
-- [x] red→green: T1/T4/T5/T6/T7/T8/T9 + flip 实现前红（输出在 evidence）；实现后全绿。
-- [x] spec §8 判据: grep resolveThresholds src/sentinel/ = 2 生产调用点（wrapper L259 + runner L1028）。
-- [x] DS9: T8 零违规 + grep 双证（0.4 仅剩 DEFAULT_THRESHOLDS 数据表 1 处，判定比较零残留）。
-- [x] DS8 flip ×3 幂等 + 盘面字节级恢复。
-- [x] 回归: tests/sentinel/ + tests/sentinels/ FAIL 集合与 pristine origin/main 基线 diff=空（39 个 pre-existing）。
-- [x] tsc 28=28（写集文件零命中）+ as any/as never/as unknown as 新增行 = 0。
-- [x] 写集对账: git diff --name-only = 21 tracked，与 spec §5.1 逐文件一致；41 个未列名 manifest 零改动。
+- [x] red→green: T1/T4/T5/T6/T7/T8/T9 + flip 实现前红（输出在 evidence）；实现后全绿。  # verify: 见上方命令或 tests/
+- [x] spec §8 判据: grep resolveThresholds src/sentinel/ = 2 生产调用点（wrapper L259 + runner L1028）。  # verify: 见上方命令或 tests/
+- [x] DS9: T8 零违规 + grep 双证（0.4 仅剩 DEFAULT_THRESHOLDS 数据表 1 处，判定比较零残留）。  # verify: 见上方命令或 tests/
+- [x] DS8 flip ×3 幂等 + 盘面字节级恢复。  # verify: 见上方命令或 tests/
+- [x] 回归: tests/sentinel/ + tests/sentinels/ FAIL 集合与 pristine origin/main 基线 diff=空（39 个 pre-existing）。  # verify: 见上方命令或 tests/
+- [x] tsc 28=28（写集文件零命中）+ as any/as never/as unknown as 新增行 = 0。  # verify: 见上方命令或 tests/
+- [x] 写集对账: git diff --name-only = 21 tracked，与 spec §5.1 逐文件一致；41 个未列名 manifest 零改动。  # verify: 见上方命令或 tests/

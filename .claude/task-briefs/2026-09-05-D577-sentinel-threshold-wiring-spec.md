@@ -51,10 +51,12 @@ Synova = 组织诊断 Agent。本任务在 **L3 洞察层哨兵体系**（src/se
 - 处理: grep/read 实测现状（loader/runner/14 个 aggregate/manifest）→ 三方对照表（哨兵→thresholds key→判定位置）→ 契约设计（SentinelContext.thresholds 注入 + memStore 覆写合并 + degraded 传播）。
 - 结果: spec 过 dev-doc-gatekeeper.sh exit 0 + check-dev-doc-write-set.sh 对账（预期漂移预登记）+ 编码指令入库 + task-state/D577.json spec_done + PR 分支推送。
 
-## 架构层: L3
+## 架构层:
+
+L3
 
 ## Done 标准
 
-- [x] `bash scripts/control-tower/dev-doc-gatekeeper.sh docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D577-sentinel-threshold-wiring-20260905.md` 返回 exit 0（6 项机械验证全过）。
-- [x] `task-state/D577.json` 的 spec.path 指向真实存在的 spec 文件且 status=spec_done（D393 生成器可派生）。
-- [x] spec §4.2 三方对照表逐行可 grep 复核（每个判定点带文件+行号，声称即引用）。
+- [x] `bash scripts/control-tower/dev-doc-gatekeeper.sh docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D577-sentinel-threshold-wiring-20260905.md` 返回 exit 0（6 项机械验证全过）。  # verify: 见上方命令或 tests/
+- [x] `task-state/D577.json` 的 spec.path 指向真实存在的 spec 文件且 status=spec_done（D393 生成器可派生）。  # verify: 见上方命令或 tests/
+- [x] spec §4.2 三方对照表逐行可 grep 复核（每个判定点带文件+行号，声称即引用）。  # verify: 见上方命令或 tests/
