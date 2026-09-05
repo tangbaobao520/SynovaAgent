@@ -74,3 +74,6 @@ release/
 /_*.py
 /_*.txt
 evidence/
+# D581: 桌面端 Win 真机 evidence 走 git 跟踪路径（CT-57 口径: 断言摘要/md5 入 git）。
+# 根级 evidence/ 仍忽略；仅豁免 product-lines evidence 目录（新证据文件 git add 无需 -f）。
+!docs/synova/product-lines/evidence/

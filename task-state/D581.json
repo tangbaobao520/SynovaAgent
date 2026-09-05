@@ -1,0 +1,18 @@
+{
+  "task_id": "D581",
+  "title": "D578收尾三残留-Win验证脚本BOM-证据路径-构建守卫",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "by": "dsh-harness",
+    "at": "2026-09-06",
+    "evidence": "worktree .synova-wt-d581 @ feat/mac-d581-win-verify-guard：① ps1 首三字节 EF BB BF（xxd 实证）+ 入口行注明 powershell.exe 5.1/pwsh 7；② EVIDENCE_DIR→docs/synova/product-lines/evidence/D578-win-real-machine（evidence/D523 零命中）+ .gitignore 豁免行（check-ignore exit=1 非忽略实证）；③ 守卫 beforePack 载体（beforeBuild 在 npmRebuild:false 下永不执行——app-builder-lib packager.js:405 实证）：真实 npm run electron:build:win 缺产物 fail-fast 输出含 build:backend exit=1，dummy 产物放行返回 undefined；desktop-build.test.ts 23 passed|3 skipped 全绿（守卫三路径新增），tsc 28=28",
+    "residuals": "D 连带已登记台账: 1-7 NSIS 升级路径实测缺（Win 下次真机会话）；1-2 兑换等 Win 复跑四断言 + evidence git add 入 git",
+    "notes": "存量红修复: desktop-build.test.ts D517 触发器断言未跟 D529 workflow branches 演进（pristine main 复现同红）——正则对齐 [main, 'fix/d529-**']，main 恒为首触发分支契约不变"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-06",
+  "updated_by": "dsh-harness",
+  "note": "CTO 直派编码（小任务，D571 先例）：①ps1 UTF-8 BOM ②evidence 路径改 git 跟踪 ③构建守卫 fail-fast。物理取证三处全 HIT。1-2 兑换等 Win 复跑四断言。"
+}

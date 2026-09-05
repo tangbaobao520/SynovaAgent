@@ -8,9 +8,49 @@
     "at": "2026-09-06",
     "note": "spec 必答 4 题全落位（§3.6，均带实测证据）：①映射=线级 modules 同 machine 路径（D572 G2 建议原文），降级=TTL 必然执行 + git 子检查显式 problems + 落点 pending_k3（不假绿不假黄）；②UX=落既有第六态 stale（不计分，待重跑，零第七态）；③B 项=方案二 task-state audit.report 显式字段优先（123/126 已有字段零迁移，redeem L108-113 已当权威；文件名四种形态含降序对 D551-D487 证明范围解析脆弱）；④真实用例对账修正一处派单前提——D576 CT-53 使线 1 七点已 machine 路径 stale（实跑取证），本单线 1 零改变，「不误伤」对照组改由真 k3 点 19-2/22-1 承担，8 点转 stale（5 点 TTL 过期 + 3 点模块变更）矩阵见 §3.6。写集 5 修改 + 7 新建（§5.1）；⚠写集偏差申报：B 项唯一消费方 scripts/control-tower/gen-cto-health.py 不在派单可碰清单，已申报待 CTO 裁决，未批则 B 项 descope。测试基线实测：product-lines.test.py 28 用例 3 既有失败（本单回归门显式排除）；两处 enshrined 夹具（test_six_states/test_hundred_percent_gate）需随修复更新。gatekeeper 6/6 ALL PASS（exit 0）；决策 4 项带参考系（§5.3）。编码指令随附（docs/synova/coordination/编码指令-D579-20260906.md，分支 feat/d579-k3-verdict-stale）。"
   },
-  "impl": null,
+  "impl": {
+    "commit": "self-referential（本文件随 impl commit 入库，hash 见 feat/d579-k3-verdict-stale 分支 git log）",
+    "by": "dsh-coding",
+    "at": "2026-09-06",
+    "files": [
+      "scripts/product-lines/calc-progress.py",
+      "scripts/control-tower/gen-cto-health.py",
+      "tests/control-tower/calc-k3-stale.test.py",
+      "tests/control-tower/gen-cto-health-batch-report.test.py",
+      "tests/control-tower/product-lines.test.py",
+      "VERSION.md",
+      "task-state/D579.json",
+      "memory/notes/proposed/2026-09-06-d579-k3-stale-wiring-ct55-ct58.md",
+      "docs/synova/audit-reports/D579-k3-verdict-stale-evidence-20260906/calc-diff.md",
+      "docs/synova/audit-reports/D579-k3-verdict-stale-evidence-20260906/test-output.md",
+      ".claude/task-briefs/2026-09-05-D579-FIX-D572-k3verdict-stale机制.md"
+    ],
+    "ds_checklist": {
+      "DS1": "✅ freshness_gate 契约 docstring（输入/输出/降级三段）落地 calc-progress.py L130；两个 k3→verified 出口（L186 k3_only / L201 通用）均经 freshness_gate（grep + A1/A5 证明）",
+      "DS2": "✅ rejected 短路保持在前——k3 fail 不受 TTL/git 影响（A4）",
+      "DS3": "✅ 降级契约生效——日期非法/git 失败/映射缺失均 pending_k3 + problems 显式（A6a/A6b/A6c；§7 A6③ 'verified' 表述与 §5.2 契约矛盾，CTO 2026-09-06 裁决按契约 pending_k3，已留证）",
+      "DS4": "✅ 真实数据对账——spec 8 点全部 stale + 19-2/22-1 保持 verified + 线 1 逐点零变化；另 3 点（7-2/8-1/10-3）为 closeout K3 记录（09-05）先于 D577 提交 ece4e268 的机制正确失效（spec §4.1 基线枚举遗漏，git 实证留档 calc-diff.md §3.1）；11 点全部 verified→stale 零逆向",
+      "DS5": "✅ calc-k3-stale.test.py 13/13 + gen-cto-health-batch-report.test.py 5/5 全绿；red 已证（8 fail + 4 error + 1 fail，test-output.md §1；A9 中间红 §2）",
+      "DS6": "⏸ gen-cto-health --strict 子项——HEAD 既有 D445 假 phantom（_head_tracked_files quotepath 八进制转义根因，本单变更零新增 phantom）致 exit 1，非本单引入、写集不修另立任务（calc-diff.md §5.2）；DS6 其余三件套全绿（product-lines 25/28 + redeem 5/5 + alloc 13/13 + gen-cto-health.test.sh 7/7）",
+      "DS7": "✅ B 项生效——audit.report 权威源；实跑 D517/518/519 audit 列 '—'→CONDITIONAL_PASS + status→audited（B1-B5 + test-output.md §5）；未提交报告不采信（B4）",
+      "DS8": "✅ VERSION.md 含 V4.9.1（同 commit）",
+      "DS9": "✅ 四态 Note memory/notes/proposed/2026-09-06-d579-k3-stale-wiring-ct55-ct58.md 随 impl commit（铁律 49）",
+      "DS10": "✅ 写集合规——git diff 与 spec §5.1 一致（扩围项 gen-cto-health.py 获 CTO 2026-09-06 批准）；红线（scripts/audit/、product-lines.yaml、src/、electron-renderer/、pre-commit 脚本、task-state/D517-519）零触碰；无 --no-verify",
+      "DS11": "✅ 交付声明含决策记录（§5.3 四项参考系）+ agent 自检 5 问逐项作答；CT-58 零手工改 D517-519（git diff 可验）"
+    },
+    "evidence": [
+      "calc-k3-stale.test.py 13/13（red 8 fail 先行留证）",
+      "gen-cto-health-batch-report.test.py 5/5（red 4 error + 1 fail 先行留证）",
+      "product-lines.test.py 25/28（3 既有失败精确保持；两处 enshrined 夹具相对日期化）",
+      "redeem-task-redeem.test.sh 5/5 + alloc-task-id.test.sh 13/13 + gen-cto-health.test.sh 7/7",
+      "真数据对账: 8%→1%（13→2 verified，21→32 stale，11 点全部 verified→stale 零逆向）",
+      "gen-cto-health 实跑: D517/518/519 audit 列 '—'→CONDITIONAL_PASS",
+      "evidence 落盘: docs/synova/audit-reports/D579-k3-verdict-stale-evidence-20260906/{calc-diff.md,test-output.md}"
+    ],
+    "notes": "自检5问: ①接线=freshness_gate 由 calc 两个 k3 出口调用（refresh-all L48/L55→A4 生产链）；resolve_audit_report 由 analyze_task_state L321 调用（pre-audit-summary L48 U3 消费链）②异常=降级三场景 problems 显式登记，resolve OSError 维持 '—' 不计真 ③无 as any（Python 无此模式，无类型逃逸）④测试=18 新用例全带 assert，正常/降级/边界三路径 ⑤残留=无死代码（grep 两个新函数仅 def+调用点+测试）。写集纪律: gen-cto-health _head_tracked_files quotepath bug 顺手修的诱惑已拒绝（spec §6 先例：记入已知局限另立任务）。测试运行曾生成 evidence/test-2026-09-06*.json 运行时产物（gitignored）污染第一轮 after——已移出重跑，calc-diff.md §1 如实记录。"
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-06",
-  "updated_by": "synova-devdoc"
+  "updated_by": "dsh-coding"
 }

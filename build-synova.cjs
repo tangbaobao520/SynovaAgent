@@ -25,6 +25,31 @@
  */
 
 const pkg = require('./package.json');
+const fs = require('fs');
+const path = require('path');
+
+/**
+ * D581 构建守卫契约（铁律 47）:
+ *   输入: root — 仓库根目录（默认 __dirname；测试注入临时目录以覆盖 正常/缺失 两路径。
+ *         字段名对齐 electron-builder BeforeBuildContext.appDir——BeforePackContext 实际
+ *         无此字段，真实调用恒走 __dirname fallback，两者同为仓库根，语义等价）
+ *   输出: dist/backend.mjs 存在 → undefined（放行打包）；缺失 → throw Error（message 含
+ *         `npm run build:backend` 修复指引，electron-builder 以非零退出呈现，空包不出）
+ *   降级: 无——静默放行 = 空包，fail-fast 是唯一行为（与 CI desktop-build.yml `test -f
+ *         dist/backend.mjs` 门禁同语义）
+ *   载体: module.exports.beforePack——beforeBuild 钩子挂在 installAppDependencies() 内，
+ *         npmRebuild:false（D529 冻结项）时提前 return 永不执行；beforePack 在 doPack()
+ *         开头无条件调用（app-builder-lib/out/platformPackager.js doPack），真实打包路径必经。
+ */
+function assertBackendArtifact(root = __dirname) {
+  const backendArtifact = path.join(root, 'dist', 'backend.mjs');
+  if (!fs.existsSync(backendArtifact)) {
+    throw new Error(
+      '[build-synova] 构建守卫: dist/backend.mjs 不存在（三步构建链步骤1产物，缺失必出空包）。' +
+      '先跑 `npm run build:backend` 再打包（顺序契约见本文件头注释；CI desktop-build.yml test -f 同语义）。'
+    );
+  }
+}
 
 /** @type {import('electron-builder').Configuration} */
 module.exports = {
@@ -36,6 +61,11 @@ module.exports = {
     output: 'release',
     buildResources: 'assets',
   },
+
+  // ══ D581 构建守卫（方案 b 语义: fail-fast 断言，不强制重建——CI test -f 同语义）══
+  // 成功路径必须返回 undefined: packager.js 实证 beforeBuild/beforePack 返回 false 会被
+  // 解读为"node_modules 由外部处理"而跳过依赖处理，绝不 return false。
+  beforePack: (context) => assertBackendArtifact((context && context.appDir) || __dirname),
 
   // D529: 禁用 electron-builder 内建 @electron/rebuild——它把 N-API 的 bcrypt 6.0.0 误判为
   // node-gyp 模块去源码编译（bcrypt 6 是 prebuildify --napi，install=node-gyp-build，ABI 无关，

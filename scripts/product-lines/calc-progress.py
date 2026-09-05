@@ -127,6 +127,40 @@ def git_touched_after(modules, since_date: str, git_cmd: str):
     return False, None
 
 
+def freshness_gate(evidence_date, line_modules, git_cmd, today, pid, problems):
+    """CT-55（D579）: 证据新鲜度门——k3 pass 与 machine 绿共用的失效判定。
+
+    @input  — evidence_date: str YYYY-MM-DD（被检裁决/证据的日期）
+              line_modules: list[str]（yaml 线级 modules，可空=映射缺失）
+              git_cmd: str（测试可注入）; today: datetime
+              pid: str（验收点 id，降级留痕用）; problems: list[str]（显式降级登记）
+    @output — "fresh"   → 调用方落 verified（TTL 内 且 modules 无变更）
+              "stale"  → 调用方落 stale（TTL 过期 或 证据日期后 modules 有变更）
+              "unknown" → 调用方落 pending_k3 + 已登记 problem（日期非法 / git 不可用 /
+                          modules 映射缺失——"无法判定新鲜" ≠ "判定过时"，不计分不假黄）
+    @degraded — 日期非法 / git 调用失败 / 映射缺失 → problems 显式登记（铁律 24/31，不静默）
+    @contract — TTL 复用 EVIDENCE_TTL_DAYS（L67）与 machine 路径同一比较语义（> N 天）；
+                git 检测复用 git_touched_after（L106）；D572 G2 修复建议原文的机制化。
+    """
+    try:
+        date_dt = datetime.strptime(evidence_date, "%Y-%m-%d")
+    except ValueError:
+        problems.append("点 %s 证据日期格式非法: %r" % (pid, evidence_date))
+        return "unknown"
+    if (today - date_dt).days > EVIDENCE_TTL_DAYS:
+        return "stale"
+    if not line_modules:
+        problems.append("点 %s 线 modules 映射缺失，git 失效子检查未执行" % pid)
+        return "unknown"
+    touched, err = git_touched_after(line_modules, evidence_date, git_cmd)
+    if err:
+        problems.append("点 %s 失效检测降级: %s" % (pid, err))
+        return "unknown"
+    if touched:
+        return "stale"
+    return "fresh"
+
+
 def status_for_point(point, verdicts_by_point, line_modules, git_cmd, today, problems):
     """按六态状态机计算单个验收点的最终状态。"""
     pid = point["id"]
@@ -145,14 +179,30 @@ def status_for_point(point, verdicts_by_point, line_modules, git_cmd, today, pro
     if point.get("k3_only"):
         if any(v["verdict"] == "fail" for v in k3):
             return "rejected"
-        if any(v["verdict"] == "pass" for v in k3):
+        # D579（CT-55）: k3 pass 不再永久免疫失效检查——与 machine 类同语义。
+        passes = [v for v in k3 if v["verdict"] == "pass"]
+        if passes:
+            latest = max(passes, key=lambda v: v["date"])  # 最新 pass 裁决 governs 新鲜度
+            gate = freshness_gate(latest["date"], line_modules, git_cmd, today, pid, problems)
+            if gate == "stale":
+                return "stale"
+            if gate == "unknown":
+                return "pending_k3"  # 降级语义见 spec §3.6 必答 1（自愈: git 恢复/映射补齐后回 verified）
             return "verified"
         return "pending_k3"
 
     # 审计员裁决最高优先（一票否决/一票通过）
     if any(v["verdict"] == "fail" for v in k3):
         return "rejected"
-    if any(v["verdict"] == "pass" for v in k3):
+    # D579（CT-55）: 通用 k3 出口同构接线——pass 翻绿前必须过新鲜度门（D572 P1-1 闭环）。
+    passes = [v for v in k3 if v["verdict"] == "pass"]
+    if passes:
+        latest = max(passes, key=lambda v: v["date"])  # 最新 pass 裁决 governs 新鲜度
+        gate = freshness_gate(latest["date"], line_modules, git_cmd, today, pid, problems)
+        if gate == "stale":
+            return "stale"
+        if gate == "unknown":
+            return "pending_k3"  # 降级语义见 spec §3.6 必答 1
         return "verified"
 
     # 创始人演示核验 = 里程碑证据
