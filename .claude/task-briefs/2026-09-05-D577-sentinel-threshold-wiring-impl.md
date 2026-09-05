@@ -63,8 +63,8 @@ margin-health 走既有 this.manifest 通道不动（§6），B1 仅补 2 key。
 - task-state/D577.json
 
 不做什么（spec §6）:
-- 不改其余 11 处 DEPLOYS 静默（后续任务清单）；不接 D 组 15 哨兵（无判定点）
-- 不改存量 4 消费者通道（cash-runway/revenue-health/capital-health 主体、margin-health 通道）
+- 不改 extensions/sentinels/ 其余 11 处 DEPLOYS 静默（后续任务清单）；不接 D 组 15 哨兵（无判定点）
+- 不改 src/sentinel/ 存量 4 消费者通道（cash-runway/revenue-health/capital-health 主体、margin-health 通道）
 - 不改 L3WriteAPI 签名（packages/evolution/src/evolution-types.ts）、不碰 scripts/audit/、src/server.ts、src/config.ts、electron/
 - 不改其余 41 个 manifest 的任何字节；不做 manifest 调参（改值=产品调参另事）
 
@@ -75,9 +75,13 @@ margin-health 走既有 this.manifest 通道不动（§6），B1 仅补 2 key。
 - 结果: findings 变化（flip 测试 3 次幂等通过）；阈值字面量零残留（T8）；7-2/8-1/10-3 验收点级 evidence 落盘；
   vitest tests/sentinel/ 全绿（FAIL 集合与 pristine main 基线逐行相同）+ tsc 28=28 + as any 新增=0。
 
-## 架构层: L3（sentinel/ + extensions/sentinels/；L3→L4 动态 import 为既有先例同款）
+## 架构层:
+
+L3（sentinel/ + extensions/sentinels/）
 
 ## Done 标准
+
+以下每项均有 verify 命令或测试文件可证伪：
 
 - [x] red→green: T1/T4/T5/T6/T7/T8/T9 + flip 实现前红（输出在 evidence）；实现后全绿。
 - [x] spec §8 判据: grep resolveThresholds src/sentinel/ = 2 生产调用点（wrapper L259 + runner L1028）。
