@@ -54,7 +54,7 @@ table.points td, table.points th { border: 1px solid #eee; padding: 4px 6px; tex
 <h1>Synova 产品完成度</h1>
 <div class="sub">页面即真相：不推送、不摘要，打开即见最新。本页由脚本自动生成，人工不手改。</div>
 <div class="header-box">
-  产品总进度 <span class="big">1%</span>　·　26 条产品线　·　已通过审计员或创始人核验的验收点 2 个<br>
+  产品总进度 <span class="big">4%</span>　·　26 条产品线　·　已通过审计员或创始人核验的验收点 5 个<br>
   <span class="sub">每个"绿"都有证据可查：审计员结论 / 创始人核验 / 场景实测 / 自动测试。没有证据 = 不算数。</span>
 </div>
 <div class='decisions'><h2>需要创始人拍板（今天只做这些，每项 30 秒）</h2>
@@ -96,7 +96,7 @@ table.points td, table.points th { border: 1px solid #eee; padding: 4px 6px; tex
   <div class="meta">已验证 0/7 个验收点 · 此前粗估 ~50%（聊天+SSE+线程存在；主动交互蓝图未全接线）</div>
   
   <details><summary>验收点清单（点击展开）</summary>
-    <table class="points"><tr><th>#</th><th>什么叫做完</th><th>状态</th></tr><tr><td>2-1</td><td>对话触发诊断（说人话就能开一次诊断）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>ConversationEngine 存在，端到端未验证</span></td></tr><tr><td>2-2</td><td>回答是流式的（逐字出来，不等整段）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>SSE 存在；流式质量有 TUI 铁律 40-45 保护</span></td></tr><tr><td>2-3</td><td>关键选择给交互卡片（不是让老板打字选）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>权威05 蓝图未全接线</span></td></tr><tr><td>2-4</td><td>系统主动找老板（该提醒时主动说话）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>主动交互蓝图未全接线</span></td></tr><tr><td>2-5</td><td>多轮对话上下文不丢（聊到第 10 轮还记得第 1 轮）</td><td><b style='color:#f9a825'>🟡 待审计员确认</b> <span class='ev'>证据：证据记录</span><span class='note'>线程存在，长会话上下文管理见线 20</span></td></tr><tr><td>2-6</td><td>对话查询监测结果（老板问『最近有什么异常』能得到答案）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> </td></tr><tr><td>2-7</td><td>审计员复核对话触发诊断链路</td><td><b style='color:#f9a825'>🟡 待审计员确认</b> </td></tr></table>
+    <table class="points"><tr><th>#</th><th>什么叫做完</th><th>状态</th></tr><tr><td>2-1</td><td>对话触发诊断（说人话就能开一次诊断）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>ConversationEngine 存在，端到端未验证</span></td></tr><tr><td>2-2</td><td>回答是流式的（逐字出来，不等整段）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>SSE 存在；流式质量有 TUI 铁律 40-45 保护</span></td></tr><tr><td>2-3</td><td>关键选择给交互卡片（不是让老板打字选）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>权威05 蓝图未全接线</span></td></tr><tr><td>2-4</td><td>系统主动找老板（该提醒时主动说话）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>主动交互蓝图未全接线</span></td></tr><tr><td>2-5</td><td>多轮对话上下文不丢（聊到第 10 轮还记得第 1 轮）</td><td><b style='color:#f9a825'>🟡 待重跑</b> <span class='ev'>证据：证据记录</span><span class='note'>线程存在，长会话上下文管理见线 20</span></td></tr><tr><td>2-6</td><td>对话查询监测结果（老板问『最近有什么异常』能得到答案）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> </td></tr><tr><td>2-7</td><td>审计员复核对话触发诊断链路</td><td><b style='color:#f9a825'>🟡 待审计员确认</b> </td></tr></table>
   </details>
   <div class='todos none'>暂无待办（好事）</div>
 </div>
@@ -166,7 +166,7 @@ table.points td, table.points th { border: 1px solid #eee; padding: 4px 6px; tex
   <div class="meta">已验证 0/8 个验收点 · 此前粗估 ~40%（调度真实（审计员 PASS）；告警层死代码）</div>
   
   <details><summary>验收点清单（点击展开）</summary>
-    <table class="points"><tr><th>#</th><th>什么叫做完</th><th>状态</th></tr><tr><td>7-1</td><td>哨兵调度真实运行（周/月/季 定时任务 注册并生效）</td><td><b style='color:#f9a825'>🟡 待重跑</b> <span class='ev'>证据：审计员结论</span><span class='note'>审计员 全链路审计 L2 PASS：runner.ts:169 listCronSentinels → CronScheduler 注册，配置表 schedule 真实生效</span></td></tr><tr><td>7-2</td><td>哨兵全量注册（配置表 挂载无死代码）</td><td><b style='color:#f9a825'>🟡 待重跑</b> <span class='ev'>证据：审计员结论</span><span class='note'>审计员：严重问题 哨兵阈值告警生产死代码（监测项-loader 从不挂 配置表）</span></td></tr><tr><td>7-3</td><td>监测结果持久化（重启不丢 findings）</td><td><b style='color:#f9a825'>🟡 待重跑</b> <span class='ev'>证据：证据记录</span><span class='note'>审计员 可选：findings 来自 runner 内存 records，进程重启即丢</span></td></tr><tr><td>7-4</td><td>基线对比与异常检测（哨兵发现异常自动告警）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> </td></tr><tr><td>7-5</td><td>信号聚合 → 专家解读 → 监测报告</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> </td></tr><tr><td>7-6</td><td>周期报告产出（周报/月报自动生成）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> </td></tr><tr><td>7-7</td><td>定时任务容错（定时任务 失败有记录、可重试）</td><td><b style='color:#f9a825'>🟡 待审计员确认</b> <span class='ev'>证据：证据记录</span></td></tr><tr><td>7-8</td><td>审计员复核持续监测闭环</td><td><b style='color:#f9a825'>🟡 待审计员确认</b> </td></tr></table>
+    <table class="points"><tr><th>#</th><th>什么叫做完</th><th>状态</th></tr><tr><td>7-1</td><td>哨兵调度真实运行（周/月/季 定时任务 注册并生效）</td><td><b style='color:#f9a825'>🟡 待重跑</b> <span class='ev'>证据：审计员结论</span><span class='note'>审计员 全链路审计 L2 PASS：runner.ts:169 listCronSentinels → CronScheduler 注册，配置表 schedule 真实生效</span></td></tr><tr><td>7-2</td><td>哨兵全量注册（配置表 挂载无死代码）</td><td><b style='color:#f9a825'>🟡 待重跑</b> <span class='ev'>证据：审计员结论</span><span class='note'>审计员：严重问题 哨兵阈值告警生产死代码（监测项-loader 从不挂 配置表）</span></td></tr><tr><td>7-3</td><td>监测结果持久化（重启不丢 findings）</td><td><b style='color:#f9a825'>🟡 待重跑</b> <span class='ev'>证据：证据记录</span><span class='note'>审计员 可选：findings 来自 runner 内存 records，进程重启即丢</span></td></tr><tr><td>7-4</td><td>基线对比与异常检测（哨兵发现异常自动告警）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> </td></tr><tr><td>7-5</td><td>信号聚合 → 专家解读 → 监测报告</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> </td></tr><tr><td>7-6</td><td>周期报告产出（周报/月报自动生成）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> </td></tr><tr><td>7-7</td><td>定时任务容错（定时任务 失败有记录、可重试）</td><td><b style='color:#f9a825'>🟡 待重跑</b> <span class='ev'>证据：证据记录</span></td></tr><tr><td>7-8</td><td>审计员复核持续监测闭环</td><td><b style='color:#f9a825'>🟡 待审计员确认</b> </td></tr></table>
   </details>
   <div class='todos none'>暂无待办（好事）</div>
 </div>
@@ -174,13 +174,13 @@ table.points td, table.points th { border: 1px solid #eee; padding: 4px 6px; tex
   <div class="line-head">
     <span class="line-name">8. 告警推送</span>
     <span class="line-value">阈值触发 → 工单 → 推送老板，同一件事不反复轰炸</span>
-    <span class="pct">0%</span>
+    <span class="pct">60%</span>
   </div>
-  <div class="bar"><div class="bar-fill" style="width:0%;background:#9e9e9e"></div></div>
-  <div class="meta">已验证 0/5 个验收点 · 此前粗估 ~15%（工单表路径有；配置表 死代码+去重键不稳定）</div>
+  <div class="bar"><div class="bar-fill" style="width:60%;background:#1976d2"></div></div>
+  <div class="meta">已验证 3/5 个验收点 · 此前粗估 ~15%（工单表路径有；配置表 死代码+去重键不稳定）</div>
   
   <details><summary>验收点清单（点击展开）</summary>
-    <table class="points"><tr><th>#</th><th>什么叫做完</th><th>状态</th></tr><tr><td>8-1</td><td>阈值真实触发（读 配置表 配置，不硬编码）</td><td><b style='color:#f9a825'>🟡 待重跑</b> <span class='ev'>证据：审计员结论</span><span class='note'>审计员 严重问题-1：阈值硬编码于 聚合（0.4/0.3/0.2/0.1），不读 配置表</span></td></tr><tr><td>8-2</td><td>工单入库（监测项_tickets 表有行）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>工单表路径存在，未场景断言</span></td></tr><tr><td>8-3</td><td>推送去重（同一异常只推一次，去重键稳定）</td><td><b style='color:#c62828'>🔴 有问题</b> <span class='note'>N14 去重键不稳定；窗口大小待创始人裁决（见待裁决区）</span></td></tr><tr><td>8-4</td><td>工单状态机（新建 → 处理 → 销单闭环）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> </td></tr><tr><td>8-5</td><td>审计员复核告警闭环（严重问题-1 + N14 修复验证）</td><td><b style='color:#f9a825'>🟡 待审计员确认</b> </td></tr></table>
+    <table class="points"><tr><th>#</th><th>什么叫做完</th><th>状态</th></tr><tr><td>8-1</td><td>阈值真实触发（读 配置表 配置，不硬编码）</td><td><b style='color:#f9a825'>🟡 待重跑</b> <span class='ev'>证据：审计员结论</span><span class='note'>审计员 严重问题-1：阈值硬编码于 聚合（0.4/0.3/0.2/0.1），不读 配置表</span></td></tr><tr><td>8-2</td><td>工单入库（监测项_tickets 表有行）</td><td><b style='color:#2e7d32'>🟢 已验证</b> <span class='ev'>证据：审计员结论</span><span class='note'>工单表路径存在，未场景断言</span></td></tr><tr><td>8-3</td><td>推送去重（同一异常只推一次，去重键稳定）</td><td><b style='color:#2e7d32'>🟢 已验证</b> <span class='ev'>证据：审计员结论</span><span class='note'>N14 去重键不稳定；窗口大小待创始人裁决（见待裁决区）</span></td></tr><tr><td>8-4</td><td>工单状态机（新建 → 处理 → 销单闭环）</td><td><b style='color:#2e7d32'>🟢 已验证</b> <span class='ev'>证据：审计员结论</span></td></tr><tr><td>8-5</td><td>审计员复核告警闭环（严重问题-1 + N14 修复验证）</td><td><b style='color:#f9a825'>🟡 待审计员确认</b> </td></tr></table>
   </details>
   <div class='todos'><b>还差 3 件事：</b><ul><li><b style='color:#c62828'>严重问题</b> · 严重问题-8（3 处 boss 幽灵引用 + 两选项影响面）、N14（去重键不稳定为前置缺陷 + 窗口权衡） <span class='who'>（DeepSeek Harness · 来自权威偏差登记册 v2）</span><div class='accept'>做完标准：场景 实测场景 05 转绿（exit 0 + 证据入库）</div></li><li><b style='color:#ef6c00'>优先改进</b> · 制衡机制（S0-3）: 未验证 <span class='who'>（DeepSeek Harness · 来自C线差距清单（第五章））</span><div class='accept'>做完标准：场景 实测场景 05 转绿（exit 0 + 证据入库）</div></li><li><b style='color:#ef6c00'>优先改进</b> · 任务编号 354: dedup-key-stability <span class='who'>（DeepSeek Harness · 来自任务看板（未完成））</span><div class='accept'>做完标准：场景 实测场景 05 转绿（exit 0 + 证据入库）</div></li></ul></div>
 </div>
@@ -320,7 +320,7 @@ table.points td, table.points th { border: 1px solid #eee; padding: 4px 6px; tex
   <div class="meta">已验证 0/6 个验收点 · 此前粗估 ~50%（记忆库 9 类+SessionStore+重启恢复存在（代码实证）；消费端接线未全验证）</div>
   
   <details><summary>验收点清单（点击展开）</summary>
-    <table class="points"><tr><th>#</th><th>什么叫做完</th><th>状态</th></tr><tr><td>18-1</td><td>记忆库 9 类记忆存储（fact/preference/decision/pattern/entity/enterprise_fact/ga_correction/implementation_plan/监测项_annotation）</td><td><b style='color:#f9a825'>🟡 待重跑</b> <span class='ev'>证据：审计员结论</span><span class='note'>代码实证存在（创始人 13 问第 3 问：Agent 记忆 + 组织记忆合并为记忆体系）</span></td></tr><tr><td>18-2</td><td>SessionStore + 重启恢复（重启后记忆还在）</td><td><b style='color:#f9a825'>🟡 待审计员确认</b> <span class='ev'>证据：证据记录</span><span class='note'>代码实证存在；重启恢复测试未作为证据登记</span></td></tr><tr><td>18-3</td><td>消费端接线（诊断真的读记忆，不是存而不用）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>消费端接线未全验证</span></td></tr><tr><td>18-4</td><td>组织记忆自动生成（&lt;30% 人工，S5-4）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>S5-4：未排期（缺失）</span></td></tr><tr><td>18-5</td><td>版本化 + superseded_by 链（事实更新可追溯）</td><td><b style='color:#f9a825'>🟡 待审计员确认</b> <span class='ev'>证据：证据记录</span><span class='note'>企业事实层设计存在</span></td></tr><tr><td>18-6</td><td>审计员复核记忆体系</td><td><b style='color:#f9a825'>🟡 待审计员确认</b> </td></tr></table>
+    <table class="points"><tr><th>#</th><th>什么叫做完</th><th>状态</th></tr><tr><td>18-1</td><td>记忆库 9 类记忆存储（fact/preference/decision/pattern/entity/enterprise_fact/ga_correction/implementation_plan/监测项_annotation）</td><td><b style='color:#f9a825'>🟡 待重跑</b> <span class='ev'>证据：审计员结论</span><span class='note'>代码实证存在（创始人 13 问第 3 问：Agent 记忆 + 组织记忆合并为记忆体系）</span></td></tr><tr><td>18-2</td><td>SessionStore + 重启恢复（重启后记忆还在）</td><td><b style='color:#f9a825'>🟡 待重跑</b> <span class='ev'>证据：证据记录</span><span class='note'>代码实证存在；重启恢复测试未作为证据登记</span></td></tr><tr><td>18-3</td><td>消费端接线（诊断真的读记忆，不是存而不用）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>消费端接线未全验证</span></td></tr><tr><td>18-4</td><td>组织记忆自动生成（&lt;30% 人工，S5-4）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>S5-4：未排期（缺失）</span></td></tr><tr><td>18-5</td><td>版本化 + superseded_by 链（事实更新可追溯）</td><td><b style='color:#f9a825'>🟡 待重跑</b> <span class='ev'>证据：证据记录</span><span class='note'>企业事实层设计存在</span></td></tr><tr><td>18-6</td><td>审计员复核记忆体系</td><td><b style='color:#f9a825'>🟡 待审计员确认</b> </td></tr></table>
   </details>
   <div class='todos'><b>还差 1 件事：</b><ul><li><b style='color:#ef6c00'>优先改进</b> · 组织记忆自动生成（S5-4）: 缺失 <span class='who'>（Claude Code · 来自C线差距清单（第五章））</span><div class='accept'>做完标准：场景 实测场景 01、实测场景 06 转绿（exit 0 + 证据入库）</div></li></ul></div>
 </div>
@@ -418,7 +418,7 @@ table.points td, table.points th { border: 1px solid #eee; padding: 4px 6px; tex
   <div class="meta">已验证 0/7 个验收点 · 此前粗估 ~20%（文件驱动有；运行时插件化/多模式框架 = 0）</div>
   
   <details><summary>验收点清单（点击展开）</summary>
-    <table class="points"><tr><th>#</th><th>什么叫做完</th><th>状态</th></tr><tr><td>25-1</td><td>专家插件（新专家 = 加文件自动注册）</td><td><b style='color:#f9a825'>🟡 待审计员确认</b> <span class='ev'>证据：证据记录</span><span class='note'>文件驱动已有</span></td></tr><tr><td>25-2</td><td>技能插件（新技能 = 加目录自动发现）</td><td><b style='color:#f9a825'>🟡 待审计员确认</b> <span class='ev'>证据：证据记录</span></td></tr><tr><td>25-3</td><td>哨兵插件（新哨兵 = 加文件自动加载）</td><td><b style='color:#f9a825'>🟡 待审计员确认</b> <span class='ev'>证据：证据记录</span><span class='note'>builtins 自动扫描存在</span></td></tr><tr><td>25-4</td><td>连接器插件（新数据源 = 加连接器文件）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>connector-registry 包存在</span></td></tr><tr><td>25-5</td><td>模式框架（诊断模式/导航模式/未来模式）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>创始人 13 问第 9 问：多模式框架 = 0</span></td></tr><tr><td>25-6</td><td>运行时插件化（运行中加载，不改代码不重启）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>文件驱动是 1.0，运行时插件化是 2.0</span></td></tr><tr><td>25-7</td><td>审计员复核插件化体系</td><td><b style='color:#f9a825'>🟡 待审计员确认</b> </td></tr></table>
+    <table class="points"><tr><th>#</th><th>什么叫做完</th><th>状态</th></tr><tr><td>25-1</td><td>专家插件（新专家 = 加文件自动注册）</td><td><b style='color:#f9a825'>🟡 待重跑</b> <span class='ev'>证据：证据记录</span><span class='note'>文件驱动已有</span></td></tr><tr><td>25-2</td><td>技能插件（新技能 = 加目录自动发现）</td><td><b style='color:#f9a825'>🟡 待重跑</b> <span class='ev'>证据：证据记录</span></td></tr><tr><td>25-3</td><td>哨兵插件（新哨兵 = 加文件自动加载）</td><td><b style='color:#f9a825'>🟡 待重跑</b> <span class='ev'>证据：证据记录</span><span class='note'>builtins 自动扫描存在</span></td></tr><tr><td>25-4</td><td>连接器插件（新数据源 = 加连接器文件）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>connector-registry 包存在</span></td></tr><tr><td>25-5</td><td>模式框架（诊断模式/导航模式/未来模式）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>创始人 13 问第 9 问：多模式框架 = 0</span></td></tr><tr><td>25-6</td><td>运行时插件化（运行中加载，不改代码不重启）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>文件驱动是 1.0，运行时插件化是 2.0</span></td></tr><tr><td>25-7</td><td>审计员复核插件化体系</td><td><b style='color:#f9a825'>🟡 待审计员确认</b> </td></tr></table>
   </details>
   <div class='todos none'>暂无待办（好事）</div>
 </div>
@@ -437,7 +437,7 @@ table.points td, table.points th { border: 1px solid #eee; padding: 4px 6px; tex
   <div class='todos none'>暂无待办（好事）</div>
 </div></div>
 <div class="footer">
-  生成时间：2026-09-06 07:01:17（北京时间）<br>
+  生成时间：2026-09-06 20:37:40（北京时间）<br>
   进度怎么算：每条线写死了"到 100% 的定义"（验收点清单），进度 = 被证据验证的验收点比例。
   代码一变，相关证据自动变黄要求重跑；任何线要到 100%，必须审计员全量复核。<br>
   待办从哪来：审计发现台账、权威偏差登记、C线差距清单、任务看板、场景实测，五个现成来源自动聚合，零新增维护。<br>
