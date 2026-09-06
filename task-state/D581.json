@@ -1,7 +1,7 @@
 {
   "task_id": "D581",
   "title": "D578收尾三残留-Win验证脚本BOM-证据路径-构建守卫",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "by": "dsh-harness",
@@ -10,9 +10,14 @@
     "residuals": "D 连带已登记台账: 1-7 NSIS 升级路径实测缺（Win 下次真机会话）；1-2 兑换等 Win 复跑四断言 + evidence git add 入 git",
     "notes": "存量红修复: desktop-build.test.ts D517 触发器断言未跟 D529 workflow branches 演进（pristine main 复现同红）——正则对齐 [main, 'fix/d529-**']，main 恒为首触发分支契约不变"
   },
-  "audit": null,
+  "audit": {
+    "verdict": "PASS",
+    "report": "docs/synova/audit-reports/2026-09-06-K3-D579D580D581D582-closeout.md",
+    "by": "K3 independent session",
+    "at": "2026-09-06"
+  },
   "fix_task_id": null,
   "updated_at": "2026-09-06",
-  "updated_by": "dsh-harness",
+  "updated_by": "dsh-cto",
   "note": "CTO 直派编码（小任务，D571 先例）：①ps1 UTF-8 BOM ②evidence 路径改 git 跟踪 ③构建守卫 fail-fast。物理取证三处全 HIT。1-2 兑换等 Win 复跑四断言。"
 }
