@@ -124,9 +124,12 @@ FAKE_GIT_BOUNDARY = (
 )
 
 
-def k3_record(date, verdicts):
-    return json.dumps({"schema": 1, "record_type": "k3", "source": "s",
-                       "date": date, "verdicts": verdicts}, ensure_ascii=False)
+def k3_record(date, verdicts, at=None):
+    rec = {"schema": 1, "record_type": "k3", "source": "s",
+           "date": date, "verdicts": verdicts}
+    if at:
+        rec["at"] = at  # CT-62: 证据时间戳粒度（ISO datetime）
+    return json.dumps(rec, ensure_ascii=False)
 
 
 def statuses(data):
@@ -292,5 +295,41 @@ class TestCalcK3Stale(unittest.TestCase):
                          "在世的最新 pass（TTL 过期） governs——被接替的新记录不抢救")
 
 
+    # ── CT-62: 证据时间戳粒度（同日验证不被当日提交误杀）──
+    # 场景: 当日 07:30 有 src 提交（D580 merge 同款）；K3 证据 08:00 铸造（晚于提交）。
+    # 修复前: since=date+T00:00 → 07:30 提交被算 touched → 同日验证必 stale（误杀）。
+    # 修复后: since=at(08:00) → 提交(07:30) 早于 since → fresh。
+    FAKE_GIT_AT_BOUNDARY = (
+        "#!/usr/bin/env bash\n"
+        'for a in "$@"; do\n'
+        '  case "$a" in\n'
+        '    --since=*) d="${a#--since=}";;\n'
+        "  esac\n"
+        "done\n"
+        'if [ -n "$d" ] && [ "$d" \< "2026-09-06T07:30:00" ]; then\n'
+        "  echo src/sentinel/runner.ts\n"
+        "fi\n"
+        "exit 0\n"
+    )
+
+    def test_ct62_at_after_same_day_commit_fresh(self):
+        """K3 证据 at=08:00 晚于当日 07:30 提交 → fresh（修复前 date+T00:00 误判 stale）"""
+        ev = {"k3.json": k3_record("2026-09-06",
+              [{"acceptance_point": "1-1", "verdict": "pass"}],
+              at="2026-09-06T08:00:00")}
+        _, data = self._run(ev, git_cmd=self._fake_git(self.FAKE_GIT_AT_BOUNDARY))
+        self.assertEqual(statuses(data)["1-1"], "verified",
+                         "CT-62: at 晚于当日提交 → 同日验证 fresh（修复前 stale）")
+
+    def test_ct62_at_before_same_day_commit_stale(self):
+        """at=07:00 早于当日 07:30 提交 → stale（粒度增强不放松失效检测）"""
+        ev = {"k3.json": k3_record("2026-09-06",
+              [{"acceptance_point": "1-2", "verdict": "pass"}],
+              at="2026-09-06T07:00:00")}
+        _, data = self._run(ev, git_cmd=self._fake_git(self.FAKE_GIT_AT_BOUNDARY))
+        self.assertEqual(statuses(data)["1-2"], "stale",
+                         "CT-62: at 早于当日提交 → stale（不放松）")
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
