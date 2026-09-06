@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-06 20:37:40",
+  "generated_at": "2026-09-06 13:01:02",
   "version": "1.0",
   "product_progress_pct": 4,
   "total_lines": 26,
@@ -154,10 +154,7 @@
           "status": "stale",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
-            "docs/synova/product-lines/evidence/test-2026-09-04.json",
-            "docs/synova/product-lines/evidence/test-2026-09-05.json",
             "docs/synova/product-lines/evidence/test-2026-09-06-1.json",
             "docs/synova/product-lines/evidence/test-2026-09-06.json"
           ],
@@ -299,10 +296,7 @@
           "status": "pending_k3",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
-            "docs/synova/product-lines/evidence/test-2026-09-04.json",
-            "docs/synova/product-lines/evidence/test-2026-09-05.json",
             "docs/synova/product-lines/evidence/test-2026-09-06-1.json",
             "docs/synova/product-lines/evidence/test-2026-09-06.json"
           ],
@@ -497,10 +491,10 @@
       "status_counts": {
         "uncommitted": 3,
         "failed": 0,
-        "pending_k3": 1,
+        "pending_k3": 2,
         "verified": 0,
         "rejected": 0,
-        "stale": 4
+        "stale": 3
       },
       "points": [
         {
@@ -555,13 +549,10 @@
         {
           "id": "7-7",
           "desc": "定时任务容错（cron 失败有记录、可重试）",
-          "status": "stale",
+          "status": "pending_k3",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
-            "docs/synova/product-lines/evidence/test-2026-09-04.json",
-            "docs/synova/product-lines/evidence/test-2026-09-05.json",
             "docs/synova/product-lines/evidence/test-2026-09-06-1.json",
             "docs/synova/product-lines/evidence/test-2026-09-06.json"
           ],
@@ -761,10 +752,7 @@
           "evidence_files": [
             "docs/synova/product-lines/evidence/k3-2026-09-02-productlines.json",
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
-            "docs/synova/product-lines/evidence/test-2026-09-04.json",
-            "docs/synova/product-lines/evidence/test-2026-09-05.json",
             "docs/synova/product-lines/evidence/test-2026-09-06-1.json",
             "docs/synova/product-lines/evidence/test-2026-09-06.json"
           ],
@@ -1077,10 +1065,7 @@
           "status": "pending_k3",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
-            "docs/synova/product-lines/evidence/test-2026-09-04.json",
-            "docs/synova/product-lines/evidence/test-2026-09-05.json",
             "docs/synova/product-lines/evidence/test-2026-09-06-1.json",
             "docs/synova/product-lines/evidence/test-2026-09-06.json"
           ],
@@ -1099,10 +1084,7 @@
           "status": "pending_k3",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
-            "docs/synova/product-lines/evidence/test-2026-09-04.json",
-            "docs/synova/product-lines/evidence/test-2026-09-05.json",
             "docs/synova/product-lines/evidence/test-2026-09-06-1.json",
             "docs/synova/product-lines/evidence/test-2026-09-06.json"
           ],
@@ -1115,10 +1097,7 @@
           "evidence_files": [
             "docs/synova/product-lines/evidence/task-D396.json",
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
-            "docs/synova/product-lines/evidence/test-2026-09-04.json",
-            "docs/synova/product-lines/evidence/test-2026-09-05.json",
             "docs/synova/product-lines/evidence/test-2026-09-06-1.json",
             "docs/synova/product-lines/evidence/test-2026-09-06.json"
           ],
@@ -1301,10 +1280,7 @@
           "status": "stale",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
-            "docs/synova/product-lines/evidence/test-2026-09-04.json",
-            "docs/synova/product-lines/evidence/test-2026-09-05.json",
             "docs/synova/product-lines/evidence/test-2026-09-06-1.json",
             "docs/synova/product-lines/evidence/test-2026-09-06.json"
           ],
@@ -1330,10 +1306,7 @@
           "status": "stale",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
-            "docs/synova/product-lines/evidence/test-2026-09-04.json",
-            "docs/synova/product-lines/evidence/test-2026-09-05.json",
             "docs/synova/product-lines/evidence/test-2026-09-06-1.json",
             "docs/synova/product-lines/evidence/test-2026-09-06.json"
           ],
@@ -1385,10 +1358,7 @@
           "evidence_files": [
             "docs/synova/product-lines/evidence/k3-2026-09-02-productlines.json",
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
-            "docs/synova/product-lines/evidence/test-2026-09-04.json",
-            "docs/synova/product-lines/evidence/test-2026-09-05.json",
             "docs/synova/product-lines/evidence/test-2026-09-06-1.json",
             "docs/synova/product-lines/evidence/test-2026-09-06.json"
           ],
@@ -1473,10 +1443,7 @@
           "evidence_files": [
             "docs/synova/product-lines/evidence/k3-2026-09-02-productlines.json",
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
-            "docs/synova/product-lines/evidence/test-2026-09-04.json",
-            "docs/synova/product-lines/evidence/test-2026-09-05.json",
             "docs/synova/product-lines/evidence/test-2026-09-06-1.json",
             "docs/synova/product-lines/evidence/test-2026-09-06.json"
           ],
@@ -1518,10 +1485,7 @@
           "status": "pending_k3",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
-            "docs/synova/product-lines/evidence/test-2026-09-04.json",
-            "docs/synova/product-lines/evidence/test-2026-09-05.json",
             "docs/synova/product-lines/evidence/test-2026-09-06-1.json",
             "docs/synova/product-lines/evidence/test-2026-09-06.json"
           ],
@@ -1533,10 +1497,7 @@
           "status": "pending_k3",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
-            "docs/synova/product-lines/evidence/test-2026-09-04.json",
-            "docs/synova/product-lines/evidence/test-2026-09-05.json",
             "docs/synova/product-lines/evidence/test-2026-09-06-1.json",
             "docs/synova/product-lines/evidence/test-2026-09-06.json"
           ],
@@ -1593,10 +1554,7 @@
           "evidence_files": [
             "docs/synova/product-lines/evidence/k3-2026-09-02-productlines.json",
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
-            "docs/synova/product-lines/evidence/test-2026-09-04.json",
-            "docs/synova/product-lines/evidence/test-2026-09-05.json",
             "docs/synova/product-lines/evidence/test-2026-09-06-1.json",
             "docs/synova/product-lines/evidence/test-2026-09-06.json"
           ],
@@ -1753,10 +1711,7 @@
           "evidence_files": [
             "docs/synova/product-lines/evidence/k3-2026-09-02-productlines.json",
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
-            "docs/synova/product-lines/evidence/test-2026-09-04.json",
-            "docs/synova/product-lines/evidence/test-2026-09-05.json",
             "docs/synova/product-lines/evidence/test-2026-09-06-1.json",
             "docs/synova/product-lines/evidence/test-2026-09-06.json"
           ],
@@ -1793,22 +1748,19 @@
       "status_counts": {
         "uncommitted": 3,
         "failed": 0,
-        "pending_k3": 1,
+        "pending_k3": 4,
         "verified": 0,
         "rejected": 0,
-        "stale": 3
+        "stale": 0
       },
       "points": [
         {
           "id": "25-1",
           "desc": "专家插件（新专家 = 加文件自动注册）",
-          "status": "stale",
+          "status": "pending_k3",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
-            "docs/synova/product-lines/evidence/test-2026-09-04.json",
-            "docs/synova/product-lines/evidence/test-2026-09-05.json",
             "docs/synova/product-lines/evidence/test-2026-09-06-1.json",
             "docs/synova/product-lines/evidence/test-2026-09-06.json"
           ],
@@ -1817,13 +1769,10 @@
         {
           "id": "25-2",
           "desc": "技能插件（新技能 = 加目录自动发现）",
-          "status": "stale",
+          "status": "pending_k3",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
-            "docs/synova/product-lines/evidence/test-2026-09-04.json",
-            "docs/synova/product-lines/evidence/test-2026-09-05.json",
             "docs/synova/product-lines/evidence/test-2026-09-06-1.json",
             "docs/synova/product-lines/evidence/test-2026-09-06.json"
           ],
@@ -1832,13 +1781,10 @@
         {
           "id": "25-3",
           "desc": "哨兵插件（新哨兵 = 加文件自动加载）",
-          "status": "stale",
+          "status": "pending_k3",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
-            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
-            "docs/synova/product-lines/evidence/test-2026-09-04.json",
-            "docs/synova/product-lines/evidence/test-2026-09-05.json",
             "docs/synova/product-lines/evidence/test-2026-09-06-1.json",
             "docs/synova/product-lines/evidence/test-2026-09-06.json"
           ],
