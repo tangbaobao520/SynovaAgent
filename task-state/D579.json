@@ -1,7 +1,7 @@
 {
   "task_id": "D579",
   "title": "FIX-D572-k3verdict-stale机制",
-  "status": "impl_done",
+  "status": "spec_done",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D579-k3-verdict-stale-20260905.md",
     "by": "dev-doc",
@@ -10,7 +10,7 @@
   },
   "impl": {
     "commit": "self-referential（本文件随 impl commit 入库，hash 见 feat/d579-k3-verdict-stale 分支 git log）",
-    "by": "dsh-coding + cto-accept",
+    "by": "dsh-coding",
     "at": "2026-09-06",
     "files": [
       "scripts/product-lines/calc-progress.py",
@@ -38,11 +38,19 @@
       "DS10": "✅ 写集合规——git diff 与 spec §5.1 一致（扩围项 gen-cto-health.py 获 CTO 2026-09-06 批准）；红线（scripts/audit/、product-lines.yaml、src/、electron-renderer/、pre-commit 脚本、task-state/D517-519）零触碰；无 --no-verify",
       "DS11": "✅ 交付声明含决策记录（§5.3 四项参考系）+ agent 自检 5 问逐项作答；CT-58 零手工改 D517-519（git diff 可验）"
     },
-    "evidence": "PR #374 squash 1c084775，CI 24/24；CTO 验收 8 项过",
+    "evidence": [
+      "calc-k3-stale.test.py 13/13（red 8 fail 先行留证）",
+      "gen-cto-health-batch-report.test.py 5/5（red 4 error + 1 fail 先行留证）",
+      "product-lines.test.py 25/28（3 既有失败精确保持；两处 enshrined 夹具相对日期化）",
+      "redeem-task-redeem.test.sh 5/5 + alloc-task-id.test.sh 13/13 + gen-cto-health.test.sh 7/7",
+      "真数据对账: 8%→1%（13→2 verified，21→32 stale，11 点全部 verified→stale 零逆向）",
+      "gen-cto-health 实跑: D517/518/519 audit 列 '—'→CONDITIONAL_PASS",
+      "evidence 落盘: docs/synova/audit-reports/D579-k3-verdict-stale-evidence-20260906/{calc-diff.md,test-output.md}"
+    ],
     "notes": "自检5问: ①接线=freshness_gate 由 calc 两个 k3 出口调用（refresh-all L48/L55→A4 生产链）；resolve_audit_report 由 analyze_task_state L321 调用（pre-audit-summary L48 U3 消费链）②异常=降级三场景 problems 显式登记，resolve OSError 维持 '—' 不计真 ③无 as any（Python 无此模式，无类型逃逸）④测试=18 新用例全带 assert，正常/降级/边界三路径 ⑤残留=无死代码（grep 两个新函数仅 def+调用点+测试）。写集纪律: gen-cto-health _head_tracked_files quotepath bug 顺手修的诱惑已拒绝（spec §6 先例：记入已知局限另立任务）。测试运行曾生成 evidence/test-2026-09-06*.json 运行时产物（gitignored）污染第一轮 after——已移出重跑，calc-diff.md §1 如实记录。"
   },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-06",
-  "updated_by": "dsh-cto"
+  "updated_by": "dsh-coding"
 }
