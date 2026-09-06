@@ -1,11 +1,14 @@
 {
   "task_id": "D582",
   "title": "CT-60 D328 提取大小写兼容",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": null,
-  "impl": null,
+  "impl": {
+    "evidence": "PR #372 squash 8e7f4c40，CI 12/12；CT-60 + 套件 16/16",
+    "by": "dsh-coding + cto-accept"
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-06",
-  "updated_by": "alloc-task-id"
+  "updated_by": "dsh-cto"
 }
