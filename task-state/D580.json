@@ -1,7 +1,7 @@
 {
   "task_id": "D580",
   "title": "08告警工单切片-8-2入库-8-3去重稳定化-8-4状态机API",
-  "status": "impl_done",
+  "status": "audited",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D580-ticket-slice-20260906.md",
     "by": "dev-doc",
@@ -67,8 +67,13 @@
       "DS10 显式偏差: extensions/sentinels/_extinct/{competitive-moat-perceptual, competitive-moat-structural, competitive-dynamics, market-lifecycle}/aggregate.ts 4 文件仅 id 生成行去时间戳（13 行对, id-line-only 同款纪律校验通过）。依据: 其父哨兵 competitive-moat/competitive-position（在 43 单层清单内）check() 经 await import('../_extinct/...') 生产委托合并子 findings, 子 id 时间戳持续进入生产 finding 流 = N14 残留; spec §5.1 单层 glob（extensions/sentinels/*/aggregate.ts）普查结构性漏计 _extinct 层; spec §5.1 新建测试行 'finding-id-stability（import.meta.glob 全扫 + fake timer 双跑同 id）' 物理要求修复。red→green 链: 43 文件修复后仍红（evidence logs/green-finding-id.log.txt, 失败点 competitive-moat 探针[empty] 'i4-crit-<ts>'）→ +4 文件后 4/4 绿。其余 8 个 _extinct 文件无生产可达路径（全仓无 import）, 零触碰。审计员如判超范围, 可 revert 该 4 文件独立评估（不影响其余 DS）。"
     ]
   },
-  "audit": null,
+  "audit": {
+    "verdict": "PASS",
+    "report": "docs/synova/audit-reports/2026-09-06-K3-D579D580D581D582-closeout.md",
+    "by": "K3 independent session",
+    "at": "2026-09-06"
+  },
   "fix_task_id": null,
   "updated_at": "2026-09-06",
-  "updated_by": "synova-dsh (claude-code coding session)"
+  "updated_by": "dsh-cto"
 }
