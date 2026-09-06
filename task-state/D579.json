@@ -1,7 +1,7 @@
 {
   "task_id": "D579",
   "title": "FIX-D572-k3verdict-stale机制",
-  "status": "spec_done",
+  "status": "audited",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D579-k3-verdict-stale-20260905.md",
     "by": "dev-doc",
@@ -49,8 +49,13 @@
     ],
     "notes": "自检5问: ①接线=freshness_gate 由 calc 两个 k3 出口调用（refresh-all L48/L55→A4 生产链）；resolve_audit_report 由 analyze_task_state L321 调用（pre-audit-summary L48 U3 消费链）②异常=降级三场景 problems 显式登记，resolve OSError 维持 '—' 不计真 ③无 as any（Python 无此模式，无类型逃逸）④测试=18 新用例全带 assert，正常/降级/边界三路径 ⑤残留=无死代码（grep 两个新函数仅 def+调用点+测试）。写集纪律: gen-cto-health _head_tracked_files quotepath bug 顺手修的诱惑已拒绝（spec §6 先例：记入已知局限另立任务）。测试运行曾生成 evidence/test-2026-09-06*.json 运行时产物（gitignored）污染第一轮 after——已移出重跑，calc-diff.md §1 如实记录。"
   },
-  "audit": null,
+  "audit": {
+    "verdict": "PASS",
+    "report": "docs/synova/audit-reports/2026-09-06-K3-D579D580D581D582-closeout.md",
+    "by": "K3 independent session",
+    "at": "2026-09-06"
+  },
   "fix_task_id": null,
   "updated_at": "2026-09-06",
-  "updated_by": "dsh-coding"
+  "updated_by": "dsh-cto"
 }

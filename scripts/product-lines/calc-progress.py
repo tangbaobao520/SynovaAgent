@@ -112,7 +112,9 @@ def git_touched_after(modules, since_date: str, git_cmd: str):
     """
     if not modules:
         return False, None
-    since = since_date + "T00:00:00"
+    # CT-62: 证据时间戳粒度——at 全量 ISO datetime 直接用（同日验证不被当日提交误杀）；
+    # date-only（YYYY-MM-DD）保持旧语义 T00:00:00（保守：当日提交算 touched）
+    since = since_date if "T" in since_date else since_date + "T00:00:00"
     cmd = [git_cmd, "log", "--since=%s" % since, "--name-only", "--format=", "--"] + list(modules)
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=30,
@@ -127,7 +129,7 @@ def git_touched_after(modules, since_date: str, git_cmd: str):
     return False, None
 
 
-def freshness_gate(evidence_date, line_modules, git_cmd, today, pid, problems):
+def freshness_gate(evidence_date, line_modules, git_cmd, today, pid, problems, evidence_at=None):
     """CT-55（D579）: 证据新鲜度门——k3 pass 与 machine 绿共用的失效判定。
 
     @input  — evidence_date: str YYYY-MM-DD（被检裁决/证据的日期）
@@ -152,7 +154,8 @@ def freshness_gate(evidence_date, line_modules, git_cmd, today, pid, problems):
     if not line_modules:
         problems.append("点 %s 线 modules 映射缺失，git 失效子检查未执行" % pid)
         return "unknown"
-    touched, err = git_touched_after(line_modules, evidence_date, git_cmd)
+    # CT-62: at 时间戳优先（同日验证语义），缺省回退 date-only
+    touched, err = git_touched_after(line_modules, evidence_at or evidence_date, git_cmd)
     if err:
         problems.append("点 %s 失效检测降级: %s" % (pid, err))
         return "unknown"
@@ -182,8 +185,8 @@ def status_for_point(point, verdicts_by_point, line_modules, git_cmd, today, pro
         # D579（CT-55）: k3 pass 不再永久免疫失效检查——与 machine 类同语义。
         passes = [v for v in k3 if v["verdict"] == "pass"]
         if passes:
-            latest = max(passes, key=lambda v: v["date"])  # 最新 pass 裁决 governs 新鲜度
-            gate = freshness_gate(latest["date"], line_modules, git_cmd, today, pid, problems)
+            latest = max(passes, key=lambda v: (v["date"], v.get("at") or ""))  # 最新 pass 裁决 governs 新鲜度
+            gate = freshness_gate(latest["date"], line_modules, git_cmd, today, pid, problems, evidence_at=latest.get("at"))
             if gate == "stale":
                 return "stale"
             if gate == "unknown":
@@ -197,8 +200,8 @@ def status_for_point(point, verdicts_by_point, line_modules, git_cmd, today, pro
     # D579（CT-55）: 通用 k3 出口同构接线——pass 翻绿前必须过新鲜度门（D572 P1-1 闭环）。
     passes = [v for v in k3 if v["verdict"] == "pass"]
     if passes:
-        latest = max(passes, key=lambda v: v["date"])  # 最新 pass 裁决 governs 新鲜度
-        gate = freshness_gate(latest["date"], line_modules, git_cmd, today, pid, problems)
+        latest = max(passes, key=lambda v: (v["date"], v.get("at") or ""))  # 最新 pass 裁决 governs 新鲜度
+        gate = freshness_gate(latest["date"], line_modules, git_cmd, today, pid, problems, evidence_at=latest.get("at"))
         if gate == "stale":
             return "stale"
         if gate == "unknown":
@@ -266,6 +269,7 @@ def compute(yaml_path, evidence_dir, override_path, git_cmd, out_path):
                 "record_path": _rel(f),
                 "quote": v.get("quote", ""),
                 "superseded_by": v.get("superseded_by"),
+                "at": rec.get("at"),
             })
 
     # 待裁决清单（A8）
