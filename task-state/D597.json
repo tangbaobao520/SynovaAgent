@@ -1,0 +1,12 @@
+{
+  "task_id": "D597",
+  "title": "D588会话投影接线-M3第5次修复",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-08",
+  "updated_by": "dsh-cto",
+  "note": "D588 CONDITIONAL 三条件之① 接线 D# 立项。微任务：bootstrap.ts +1 行副作用 import。"
+}
