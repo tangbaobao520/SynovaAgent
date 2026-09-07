@@ -1,0 +1,39 @@
+{
+  "task_id": "D588",
+  "title": "会话投影注册表（DSH 借鉴卡 B-07）",
+  "status": "audited",
+  "spec": {
+    "commit": "d3dcfb9e",
+    "note": "dev doc 与 D587 合稿；plan.json phase 3（create session-projection.ts，wiring deferred）+ phase 4（wire src/agent/synova-agent.ts）approved_by founder；K3 壳补登记（D384 登记债审计侧闭合）"
+  },
+  "impl": {
+    "commit": "eebd9c99",
+    "by": "claude",
+    "branch": "feat/win-d588-session-projection（squash 入 main）",
+    "files": [
+      "src/store/session-projection.ts",
+      "tests/store/session-projection.test.ts",
+      ".claude/plan.json",
+      ".claude/task-briefs/D588 相关 brief"
+    ],
+    "tests": "npx vitest run tests/store/session-projection.test.ts = 7/7（K3 独立复跑 2026-09-08）"
+  },
+  "audit": {
+    "verdict": "CONDITIONAL PASS",
+    "report": "docs/synova/audit-reports/2026-09-08-K3-win-backlog-11-closeout.md",
+    "by": "K3 independent session",
+    "at": "2026-09-08",
+    "conditions": [
+      "C1: 接线 D597 已实现于 origin/fix/d597-session-projection-wiring（0a192e6f，bootstrap.ts:27 副作用 import + server.ts:84-85 生产图）——未合 main，合并即闭合；合并后复审范围=0a192e6f diff",
+      "C2: task-state/D588.json 壳补登记——本批 K3 回填闭合",
+      "C3: spec DS1 与 brief 口径统一——建议 DS1 判据改为「grep session-projection src/ 非测试命中」（bootstrap 副作用 import 即接线点）或随 D597 合并按 phase-4 完成路径闭合"
+    ],
+    "notes": [
+      "创建阶段（eebd9c99）质量已前审 PASS：7/7 绿 + whole-value 承重不变量 + 降级诚实 + 零 as any"
+    ],
+    "prior_report": "docs/synova/audit-reports/2026-09-08-K3-seven-task-batch-closeout.md"
+  },
+  "fix_task_id": "D597",
+  "updated_at": "2026-09-08",
+  "updated_by": "K3 independent session"
+}

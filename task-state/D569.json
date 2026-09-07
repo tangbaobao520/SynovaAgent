@@ -1,7 +1,7 @@
 {
   "task_id": "D569",
   "title": "dsh 仪表盘 collector 改 git 权威读取（治数据陈旧）",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "commit": "4c48a21c",
@@ -20,8 +20,16 @@
     ],
     "notes": "自检5问: ①接线=三 git 读函数均有生产调用方（readText→gitShow、collectTasks→gitLs、mtimeIso→gitCommitDate）；②异常=全部 catch 返回 null → 回退磁盘读（显式降级路径，注释声明）；③类型安全=纯 JS 无 as any；④测试=DSH 插件无 vitest 配套（历史同构），验收走 node 实测三 verify；⑤残留=无死代码。边界: 不改 client.js/index.js 渲染层；不改 scripts/audit/"
   },
-  "audit": null,
+  "audit": {
+    "verdict": "PASS",
+    "report": "docs/synova/audit-reports/2026-09-08-K3-win-backlog-11-closeout.md",
+    "by": "K3 independent session",
+    "at": "2026-09-08",
+    "p2": [
+      "F2(M2): 审计清单写集/复跑命令错引（scripts/control-tower/collect-dashboard.js 不存在；gen-cto-health.py 未触碰）——实际 dsh/plugins/synova-dashboards/lib/collect.js；实测 states=174/pct=5/三 section 零 degraded（pct 11→5 由 CT-53/CT-62 诚实化解释，非缺陷）"
+    ]
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-02",
-  "updated_by": "dsh-cto"
+  "updated_at": "2026-09-08",
+  "updated_by": "K3 independent session"
 }
