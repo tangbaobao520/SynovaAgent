@@ -32,7 +32,7 @@
 | **TUI 是活的但是孤儿** | npm run tui 可跑、铁律 40-45 冻结 7 项完好；但它是**进程内直调 ConversationEngine 的独立交互面**（chat.tsx:184 进程内 new 引擎），与 HTTP/桌面零共享路径。tui-v3 是死实验（施工图 ⚫ 已判） |
 | **MCP 有服务无防護** | 手写 stdio JSON-RPC（9 工具，mcp/index.ts）零认证零权限零打包；另有反向 MCP client（tool-registration.ts 接 brave/github） |
 | **文档-现实漂移实锤** | 权威文档05补充研究声称 chat.ts 有 POST /api/chat/stream——`git log -S` 全历史证明**从未存在**（M2/M7）；铁律 40/41/44 声称 pre-commit 硬阻断，scripts/ 零执法逻辑；credentials.ts 声称加密实为内存明文 Map；产线线2 modules 仍写不存在的 `tui/` |
-| **跨层违规漏网** | L1→L3 5 文件、L1→L4 6 文件、L1→L5 3 文件（含 3 处静态 import）——check-architecture.sh 只查 L2→L4/L3→L5，L1 违规不在检测范围 |
+| **跨层违规存续（检测四类漏网）** | L1→L3 5 文件、L1→L4 6 文件、L1→L5 3 文件（含 3 处静态 import）。检测其实存在（check-architecture.sh §1b/1c 查 L1→L3/L4）但四类形态漏网: ① 只匹配 `from` 静态导入，**动态 import() 全部逃逸**（违规主体形态）② 按名字豁免（ga-annotations、agent-observer——恰是违规文件）③ 路径形态不匹配（`../expert-platform/` 不命中 `/expert/`）④ pre-commit 内为 soft_check 本地不阻断 |
 | **好的一面** | 51 个路由文件全部接线（零死文件）；49 挂载+2 共享；sentinel 路由全经 L2（纪律样本）；D575 凭证存储契约优先+原子写+真实连通测试；diagnosis.ts consult 五件套（status/interrupt/resume/report）完整；tests/electron 8 文件 1444 行 |
 
 **收工路径**: 三阶段（§7）——Phase 1 用 1 个新 HTTP SSE 端点把 ConversationEngine 接进 HTTP+桌面端（复活 web-adapter 而非新造）+ 鉴权姿态落地，Phase 2 报告落盘+桌面呈现+卡片，Phase 3 MCP 认证+TUI 清理+文档拉平。合计约 12.5-19.5 编码日，双线并行 ~2 周自然周。3 项需创始人裁决（§8.1）: 终端形态去留、upload-v2 修复或收敛、鉴权姿态。
@@ -346,7 +346,7 @@ L1 共有 **7 个交互面**，状态各异：
 
 ### 跨切治理（CTO 自领，不占编码线写集）
 
-1. check-architecture.sh 扩展 L1→L3/L4/L5 检测（现仅查 L2→L4/L3→L5，11 个违规文件全部漏网——本次审计实证）→ ctrl-tower-change 流程，审计 PR 合并后另行开工。
+1. 跨层检测加固: check-architecture.sh（存在，scripts/check-architecture.sh:34-48 已查 L1→L3/L4）需补四类漏网——动态 `import()` 形态、按名字豁免清单复核（ga-annotations/agent-observer 恰是违规文件）、`expert-platform` 等路径形态、soft_check 升级策略 → ctrl-tower-change 流程，审计 PR 合并后另行开工。
 2. `npm run dev` 指向 .bat 的跨平台修复（agent-start.sh 已存在）。
 3. 铁律 40-45「pre-commit 执法」声称与实现拉平（§4.4）。
 4. 台账登记: preload 断链/假流式/报告内存态/upload-v2 假绿（M2 模式）/credentials 假声称，按审计闭环铁律另起 FIX 任务。
@@ -370,7 +370,7 @@ L1 共有 **7 个交互面**，状态各异：
 3. **ConversationEngine 首次 E2E 的缺陷翻出风险**: 862 行从未真跑，接 HTTP 后 provider 链/工具循环/相位机可能暴露连锁缺陷——D590 预估已含缓冲，超 3 天即停下来按 FIX 任务拆分，不硬扛。
 4. **sqlite WAL 双进程写**: 方案 A 下 TUI/CLI 与 API server 并发写 synova.db。短期纪律（文档标注），长期随 TUI 处置消解。
 5. **SSE 契约变更波及**: D590 新增 token 事件+D591 真流式会动 sse-contract.ts——use-streaming-contract.test.ts 需同步更新，属预期内改动（契约测试正是为此存在）。
-6. **K3 审计点**: 本报告是架构盘点（非 K3 审计、未定义审计标准）；D590-D596 每个任务交付仍走常规 K3 审计。本次 11 个跨层违规是否含 check-architecture.sh 漏检（动态 import 形态）值得 K3 在下次门禁审计中核查。
+6. **K3 审计点**: 本报告是架构盘点（非 K3 审计、未定义审计标准）；D590-D596 每个任务交付仍走常规 K3 审计。跨层检测的四类漏网形态已由本审计实证（§7 治理项 1），修复属控制塔域不在编码线写集。
 
 ### 8.3 风险登记（移交台账，按审计闭环铁律另起 FIX 任务）
 
@@ -403,4 +403,4 @@ L1 共有 **7 个交互面**，状态各异：
 1. task-state 取号 D590-D596（scripts/control-tower/alloc-task-id.sh，7 壳已登记，随本 PR 提交）——§7 计划任务号真实可用。
 2. 发现 D588.json 缺失（dev doc d3dcfb9e 已提交但 task-state 未登记壳）→ 移交 dev-doc 线补登记（不在本 PR 范围，防写集越界）。
 3. 台账移交清单（§8.3 六项，M 模式已标注）→ 审计 PR 合并后由 CTO 登记 AUDIT-FINDINGS-LEDGER 并按审计闭环铁律另起 FIX 任务。
-4. CTO 自领跨切治理四项（§7 末）: check-architecture 扩展 L1 检测 / npm run dev 跨平台 / 铁律执法声称拉平 / npm run dev=.bat 修复——均属 scripts/control-tower 域，走 ctrl-tower-change 流程另行开工。
+4. CTO 自领跨切治理四项（§7 末）: check-architecture 四类漏网加固 / npm run dev=.bat 跨平台修复 / 铁律 40-45 执法声称拉平 / 台账六项登记——均属 scripts/control-tower 域，走 ctrl-tower-change 流程另行开工。
