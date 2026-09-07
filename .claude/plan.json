@@ -1,64 +1,36 @@
 {
   "version": "1.0",
-  "created": "2026-08-18T00:00:00Z",
+  "created": "2026-09-08T00:00:00Z",
   "approved_by": "founder",
-  "current_phase": 3,
+  "current_phase": 2,
   "principles": [
     "原则2: 先设计验证标准，再设计实现",
-    "原则5: 物理强制，零AI自律",
-    "原则6: 逐步验证，不信任声称完成"
+    "策略：显式 options > provider 注册策略 > 默认，schema fail-fast + Object.freeze（DSH retry-policy 范式）",
+    "超时语义：截止超时=调用方意图立即结果化不重试；流空闲=传输健康可重试，耗尽才落 TOOL_TIMEOUT"
   ],
-  "approach": "rewrite",
+  "approach": "extend",
   "memory_refs": [
-    "memory/notes/implemented/2026-08-26-d537-tower-parallel-commit-friction.md",
-    "memory/notes/implemented/2026-08-27-d541-claim-regex-narrow.md"
+    "memory/notes/implemented/2026-08-30-d564-win-bash-python-injection.md",
+    "memory/notes/implemented/2026-09-06-ct62-freshness-timestamp.md"
   ],
   "phases": [
     {
       "step": 1,
-      "action": "create",
-      "files": [
-        "extensions/sentinels/margin-health/computes/compute-gross-margin.ts",
-        "extensions/sentinels/margin-health/computes/compute-fixed-variable-ratio.ts",
-        "extensions/sentinels/margin-health/computes/compute-cost-per-head.ts",
-        "extensions/sentinels/margin-health/computes/compute-incentive-bind.ts",
-        "extensions/sentinels/margin-health/computes/compute-profit-margin-change.ts",
-        "extensions/sentinels/margin-health/computes/compute-margin-vs-benchmark.ts",
-        "extensions/sentinels/margin-health/computes/compute-metric-bind-divergence.ts",
-        "extensions/sentinels/capital-health/computes/roic-wacc-spread.ts",
-        "extensions/sentinels/capital-health/computes/wacc.ts",
-        "extensions/sentinels/capital-health/computes/capital-turnover.ts",
-        "extensions/sentinels/capital-health/computes/debt-equity-ratio.ts",
-        "extensions/sentinels/capital-health/computes/interest-coverage.ts",
-        "extensions/sentinels/capital-health/computes/debt-structure.ts",
-        "extensions/sentinels/capital-health/computes/asset-turnover.ts",
-        "extensions/sentinels/capital-health/computes/receivable-turnover.ts",
-        "extensions/sentinels/capital-health/computes/cash-conversion-cycle.ts"
-      ],
+      "action": "retry-projection 4 exports have no src consumers yet (L2 wiring is a later stage) - wiring deferred, D588 precedent",
+      "files": ["src/store/retry-projection.ts"],
+      "exports": ["RETRY_PROJECTION_KEY", "RETRY_EVENT_KIND", "retryProjectionDefinition", "appendRetryEvent"],
       "checks": { "wiring": "deferred", "test_pairing": "enforce" }
     },
     {
       "step": 2,
-      "action": "refactor",
+      "action": "timeout exports are wired into retry-middleware (group 4a physical hits); paired tests delivered in same commit",
       "files": [
-        "extensions/sentinels/margin-health/aggregate.ts",
-        "extensions/sentinels/capital-health/aggregate.ts"
-      ],
-      "checks": { "wiring": "deferred", "test_pairing": "enforce" }
-    },
-    {
-      "step": 3,
-      "action": "create",
-      "files": [
-        "src/store/session-projection.ts"
-      ],
-      "checks": { "wiring": "deferred", "test_pairing": "enforce" }
-    },
-    {
-      "step": 4,
-      "action": "wire",
-      "files": [
-        "src/agent/synova-agent.ts"
+        "src/llm/timeout.ts",
+        "src/llm/types.ts",
+        "src/llm/retry-middleware.ts",
+        "tests/llm/timeout.test.ts",
+        "tests/llm/call-resilience.test.ts",
+        "tests/store/retry-projection.test.ts"
       ],
       "checks": { "wiring": "enforce", "test_pairing": "enforce" }
     }
