@@ -306,7 +306,7 @@ L1 共有 **7 个交互面**，状态各异：
 |---|---|---|---|
 | **dsh-agent-loop** | ConversationEngine 从未实测、无中断语义 | ① 请求重建不变量自检（lib/invariant.js:15-33：请求消息必须严格等于持久日志重建结果，失同步即 fail）② 中断锚（lib/index.js:637-655：abort 后已投递前缀落 `interrupted:true` 锚，历史仍可重放）③ 独占屏障+有界并行池工具调度（:164-274，结果保模型序） | **现在就借鉴范式进 D590/D592**: 给对话会话加"重放自检"测试；中断时已见 token 落库。Stage 3 后整体替换 ConversationEngine（施工图 §4 既定） |
 | **dsh-api-gateway** | SSE 推送无纪律、裸路由无输入边界 | ① 提交后才通知（语义 update 只从已落日志投影）② 单流多路+心跳+取消帧协议（/api/remote.mux lib/index.js:11,122-133,199-269：open/cancel/item/end/error 五帧+2s 心跳）③ 边界 JSON 纯度校验（assertJsonValue :1074-1103） | **D590 直接借鉴**: 新对话 SSE 的事件命名/心跳/断线重连语义对齐该帧协议；consult/对话路由输入校验补边界检查。Stage 3 接缝预留（附录A 判定） |
-| **dsh-api-session-controller** | 会话模型空白（对话轨/诊断轨/内存报告三套并存） | ① 逐端点激活策略（冷读不复活引擎 lib/index.js:142-170）② resume/create 单飞去重（:213-267）③ fork 只切完成 turn 边界+seed 前缀（:655-725） | **借鉴范式**: sessions.ts 会话列表读路径不触碰引擎；"从某轮重试"若做，按 turn 边界切。与在途 D587/D588（工具结果修剪/会话投影）同向，D590 设计前必读其 spec 防冲突 |
+| **dsh-api-session-controller** | 会话模型空白（对话轨/诊断轨/内存报告三套并存） | ① 逐端点激活策略（冷读不复活引擎 lib/index.js:142-170）② resume/create 单飞去重（:213-267）③ fork 只切完成 turn 边界+seed 前缀（:655-725） | **借鉴范式**: sessions.ts 会话列表读路径不触碰引擎；"从某轮重试"若做，按 turn 边界切。D587/D588（工具结果修剪/会话投影）实现已落 main（ccbbc9ac / eebd9c99，2026-09-08 复核时确认），D590 设计前必读其实现与 spec 防冲突 |
 | **dsh-client-ui-session** | 桌面端 fetch+setState 散乱、假流式 | ① 外部存储订阅（getSnapshot/subscribe+notifySubscribers lib/client.js:83-126,211-226，配 useSyncExternalStore）② 提交回声 beginSubmission（api-session-controller/lib/client.js:875-896：发送前同步插入 pending 帧，requestId 贯穿到持久化回执，断线可对账） | **D591 直接借鉴**: 桌面已有 zustand（外部 store），补"提交回声"语义（用户消息乐观上屏+服务端确认对账）与真流式 token 水源。附录A「纯 UI 不适用」判定偏粗，本审计修正：状态接缝范式可搬 |
 | **dsh-agent-presets** | 交互面无声明式组合（工具/提示段/技能按 hardcode 装配） | ① preset 目录=组合文件+元数据（agent.cordis.yml，isolate realm 分组）② 常设挂载+文件 stamp 代际（lib/index.js:1768-1803，改文件不伤在跑会话）③ 空白会话锁（:1730-1751）+泄漏审计 | 长期借鉴（Stage 2+）：expert-registry.yaml 已是声明式雏形，升级方向=每 agent 一份组合。**不在 L1 收工范围** |
 | **dsh-acp** | MCP 零认证零权限 | ① 权限桥（approval/request→协议级 allow-once/reject-once 一次性选项 :1118-1141）② 诚实能力广告（能力实时探测后才 advertise :78-88,1143-1163）③ stdout 纯度/启动闩（acp-app lib/index.js:31-38） | **D595 直接借鉴**: MCP 工具权限走显式一次性授权语义；server 启动时显式声明能力与信任模型（单机本机信任=明文写入握手响应/README），替代隐式无认证 |
@@ -422,6 +422,6 @@ L1 共有 **7 个交互面**，状态各异：
 ## 附录B: 本次审计产出的治理动作
 
 1. task-state 取号 D590-D596（scripts/control-tower/alloc-task-id.sh，7 壳已登记，随本 PR 提交）——§7 计划任务号真实可用。
-2. 发现 D588.json 缺失（dev doc d3dcfb9e 已提交但 task-state 未登记壳）→ 移交 dev-doc 线补登记（不在本 PR 范围，防写集越界）。
+2. 发现 D588.json 缺失（dev doc d3dcfb9e 已提交但 task-state 未登记壳）→ 移交 dev-doc 线补登记（不在本 PR 范围，防写集越界）。**复核更新（2026-09-08）**: D588 实现已落 main（eebd9c99）、D587 实现已落（ccbbc9ac）且壳在——但 **D588.json 壳至今仍缺**，"先登记后使用"（D384）登记债升级，移交 dev-doc/编码线尽快补登记。
 3. 台账移交清单（§8.3 六项，M 模式已标注）→ 审计 PR 合并后由 CTO 登记 AUDIT-FINDINGS-LEDGER 并按审计闭环铁律另起 FIX 任务。
 4. CTO 自领跨切治理四项（§7 末）: check-architecture 四类漏网加固 / npm run dev=.bat 跨平台修复 / 铁律 40-45 执法声称拉平 / 台账六项登记——均属 scripts/control-tower 域，走 ctrl-tower-change 流程另行开工。
