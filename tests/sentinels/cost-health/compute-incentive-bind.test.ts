@@ -1,11 +1,11 @@
 /**
- * tests/sentinels/cost-health/compute-incentive-bind.test.ts
+ * compute-incentive-bind.test.ts — computeIncentiveBindGap 契约测试
  *
- * 消费边: INCENTIVE_BINDS
- * 测试: 正常路径 + 降级路径
+ * 消费边: INCENTIVE_BINDS; 测试: 正常路径 + 降级路径。
+ * D584 对齐: cost-health/profit-health 已 D358 去灭绝并入 margin-health（自家 computes/ 计算），import 对齐 live 契约。（调用签名兼容: (store, {teamId, traversal?})）。
  */
 import { describe, it, expect } from 'vitest';
-import { computeIncentiveBindGap } from '../../../extensions/sentinels/cost-health/computes/compute-incentive-bind';
+import { computeIncentiveBindGap } from '../../../extensions/sentinels/margin-health/computes/compute-incentive-bind';
 
 function createMockStore(hasData: boolean) {
   const nodes = hasData ? [
