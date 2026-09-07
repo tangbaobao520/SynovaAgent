@@ -159,16 +159,16 @@ SessionStore（store/session-store.ts，530 行）**持久化能力已齐**（D5
 | src/server.ts | 修改 | ①import + 挂载 conversations 路由（:338 sessionsRoutes 旁）；②:48 删 diagnosisUploadRoutes import、:344 挂载替换为 410 拦截（§5.2-E） |
 | src/middleware/auth.ts | 修改 | isWhitelisted()（:86-105）加三前缀：`/api/diagnosis/consult`（覆盖 consult 五端点族）、`/api/conversations`、`/api/sessions`；JSDoc 更新单机本地信任模型声明（裁决 ①，对齐 /api/sentinel/* 先例） |
 | src/l1-interaction/web-adapter.ts | 修改 | 复活改造：①emit 签名 `(type, payload: unknown)` → `data: JSON.stringify(payload)`（帧自描述，桌面解析器 evt.type 直接可用）；②六方法改发对象帧（`{content}`/`{text}`…）；③新增具体类方法 emitDiagnosisEvent(evt)——诊断事件 flat 透传（不加进 ViewAdapter 接口，路由持具体类）；④新增 setOnClosed 钩子供路由感知断开；⑤删死字段 messageBuffer（:17/:45 写而不读） |
-| src/routes/ | 新建 | 目录级条目；精确文件 = src/routes/ 下 **conversations.ts**（对话 SSE 路由，契约见 §5.2） |
+| src/routes/conversations.ts | 新建 | 对话 SSE 路由（契约见 §5.2）；实现期由目录级条目精确化——文件已落地，精确路径消除与并行分支的目录级重叠误判（verify-parallel 2026-09-08 CI 实测） |
 | src/routes/chat.ts | 修改 | ①:321/:726/:823/:885 四处浏览器脚本 `log.warn({err...},...)` → `console.warn(...)`（消 ReferenceError）；②:2-4 头注释诚实化（"内嵌诊断发射页 + 3 辅助接口"，删"统一 SSE"不实声称） |
 | src/routes/ga-diagnosis.ts | 修改 | pollResults（:149-164）加 410 止停：`r.status===410` → 显示"文档诊断已下线，请使用对话诊断"并 return（消无限轮询；裁决 ② 连带） |
 | electron-renderer/src/hooks/sse-contract.ts | 修改 | SSEEventType 联合加 `'open' \| 'token' \| 'agent_message' \| 'end'`；SSEEventLike 加 `sessionId?/text?/content?/phaseComplete?`；SSEContractResult 加 `sessionId?`；applySSEEvent 加 open（回声 sessionId）/token/agent_message/end 归约分支（known-passthrough，未知仍 warn）——契约先行，消费在 D591（审计 §8.2.5 预期内改动） |
 | README.md | 修改 | 增"安全模型"短节：单机本地信任声明（白名单端点族清单 + 多用户阶段按施工图 §5.5 重构，借鉴 dsh-acp 诚实能力广告） |
-| tests/routes/ | 新建 | conversations.test.ts——对话端点集成测试（铁律 12 真实路由 + listen(0) + fetch），用例表见 §7 |
+| tests/routes/conversations.test.ts | 新建 | 对话端点集成测试（铁律 12 真实路由 + listen(0) + fetch），用例表见 §7；目录级条目精确化同上 |
 | tests/architecture/graphstore-unify.test.ts | 修改 | :98 callSites 数组移除 diagnosis-upload-v2 条目（随删除清单） |
 | tests/electron/use-streaming-contract.test.ts | 修改 | 新事件类型归约用例（open/token/agent_message/end）+ 既有 15 类型零回归 |
 
-> 注：两个新建文件以**目录级条目**声明（check-dev-doc-write-set 对未存在文件报"文件不存在"假阳；D580 目录级条目先例）。确切文件名：src/routes/ 下 **conversations.ts**、tests/routes/ 下 **conversations.test.ts**（契约见 §5.2 / §7）。
+> 注：两个新建文件在 dev doc 交付时以**目录级条目**声明（未存在文件报"文件不存在"假阳；D580 先例）；实现提交后已精确化为确切文件名（src/routes/conversations.ts、tests/routes/conversations.test.ts，契约见 §5.2 / §7）——目录级条目在 verify-parallel 并行对账中与其它分支的 routes 文件产生重叠误判，精确化即消除（2026-09-08 CI 实测）。
 
 ### 5.2 关键实现契约
 
