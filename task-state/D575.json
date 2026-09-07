@@ -1,7 +1,7 @@
 {
   "task_id": "D575",
   "title": "LLM 配置首启向导——借鉴 DSH credential seam（打开产品第一步即配置）",
-  "status": "impl_done",
+  "status": "audited",
   "spec": {
     "commit": "6517c052",
     "note": "spec 随编码首个 commit 同批提交（消解 §3.3.1 预登记漂移）；写集表两处测试路径 + server.ts 挂载位按编码实测修正（注记在案）"
@@ -52,9 +52,20 @@
     ],
     "env_notes": "DSH shell ELECTRON_RUN_AS_NODE=1 须 env -u 剥离；Chromium 沙箱受限须 --no-sandbox --user-data-dir（workspace 内）；复现步骤见 evidence/D575/README.md"
   },
-  "audit": null,
+  "audit": {
+    "verdict": "PASS",
+    "report": "docs/synova/audit-reports/2026-09-08-K3-win-backlog-11-closeout.md",
+    "by": "K3 independent session",
+    "at": "2026-09-08",
+    "p1": [
+      "前审 P1×2 存续: ① evidence 落盘被 .gitignore:76 忽略不可复核（等价自动化代理 64 用例已绿）② llm-config 挂载于 JWT 之前（server.ts:297-298，spec 决策 5 已登记，D483-D486 收编窗口）"
+    ],
+    "p2": [
+      "前审 P2-4 存续: 桌面端「首启 LLM 配置」未挂产品线验收点"
+    ]
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-05",
-  "updated_by": "dsh",
+  "updated_at": "2026-09-08",
+  "updated_by": "K3 independent session",
   "note": "D# 手动占用：alloc 给了 D573 但该号已被在途分支 chore/d573-fde-to-ga-terminology 占用（alloc 只查 origin/main 看不到在途分支，D550 同型根因）；D574 已用，取 D575。alloc 的在途分支盲区登记 CT-54 候选。2026-09-05 编码交付 impl_done，待创始人统一安排 K3 审计。"
 }

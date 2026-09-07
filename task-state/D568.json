@@ -1,7 +1,7 @@
 {
   "task_id": "D568",
   "title": "enterprise-fact superseded_by 语义实现（K3 18-5）",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "commit": "51ade2c1",
@@ -25,8 +25,16 @@
     ],
     "notes": "自检5问: ①接线=readFactVersion/listFactVersions 为类方法非新模块 export（无未接线 export）；②异常=deleteFact 历史清理逐文件 try 隔离 log.warn 不阻断、readFactVersion 版本缺失返回 null（正常未发生路径）；③类型安全=as any=0；④测试=4 断言含 expect+失败消息非空壳，先红后绿，覆盖正常/追溯/链头/清理四路径；⑤残留=无死代码，原注释矛盾已一致化。边界说明: updateStatus 仍直改链头 front matter（状态流转非内容版本，不产生新版本号——与 D551 语义一致）；brief 原文'grep writeFact'路径不准，实际调用方为 fact-approval-service/conflict-scanner/agent-memory-store（grep createFact 实证）"
   },
-  "audit": null,
+  "audit": {
+    "verdict": "PASS",
+    "report": "docs/synova/audit-reports/2026-09-08-K3-win-backlog-11-closeout.md",
+    "by": "K3 independent session",
+    "at": "2026-09-08",
+    "p2": [
+      "F2(M2): 审计清单写集含不存在的 src/agent/enterprise-fact-store.ts + src/agent/agent-memory-store.ts——实际仅 scripts/control-tower/enterprise-fact-store.ts（agent-memory-store 为消费方非写集）"
+    ]
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-02",
-  "updated_by": "deepseek-harness"
+  "updated_at": "2026-09-08",
+  "updated_by": "K3 independent session"
 }
