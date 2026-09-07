@@ -44,8 +44,13 @@ import type { EngineContext } from './engine-context';
 import { SqliteGraphStore } from '../adapters/sqlite-graph-store';
 import { getGlobalSentinelRunner } from '../sentinel/runner';
 import { ContextEngine } from '../orchestrator/context-engine';
+// D594: 会话级上下文压缩引擎（DSH compaction-basic 范式借鉴，读源码自研零依赖）
+import { ContextCompaction, ContextCompactionError, createProviderSummarizer, wrapProviderWithOverflowRecovery } from './context-compaction';
 
 const log = createLogger('agent/conversation-engine');
+
+/** D594: 默认上下文窗口 token 预算（估算 ceil(chars/4) 惯例下的安全档；可用 EngineConfig 覆盖） */
+const DEFAULT_CONTEXT_WINDOW_TOKENS = 65536;
 
 // ═══ Types ═══
 
@@ -77,6 +82,8 @@ export interface EngineConfig {
   sessionId?: string;
   /** D363: 备用 LLMProvider — 主 provider 失败时 chain 自动切换。undefined → 从环境变量派生（主 deepseek→备 openai，主非 deepseek→备 deepseek）；null → 显式禁用 failover */
   fallbackProvider?: LLMProvider | null;
+  /** D594: 上下文窗口 token 预算 — 压缩 threshold=window×0.8 / retain=window×0.16（默认 65536） */
+  contextWindowTokens?: number;
   /** L3: EvidenceCollector (Phase 0 证据采集) */
   evidenceCollector?: EvidenceCollector;
   /** L4: GraphBridge (Phase 1 自动写入本体图) */
@@ -373,14 +380,25 @@ export class ConversationEngine {
   private diagnosisLauncher: DiagnosisLauncher;
   private ontologySyncer: OntologySyncer;
   private contextEngine: ContextEngine;
+  /** D594: 会话级上下文压缩（threshold/retain + 压缩事件 + 溢出恢复） */
+  private readonly compaction: ContextCompaction;
 
   constructor(provider: LLMProvider, config: EngineConfig = {}) {
     // D363: 运行时 failover 接线 — 注入的单 provider 包装为 failover chain。
     // tool-loop-executor 消费的 ctx.provider（经 engineCtx 注入）自动获得
     // "主 provider 失败 → 切换备用"能力；无备用（显式 null 或凭据缺失）时
     // 保持原 provider，行为与修复前完全一致。
+    // D594: 上下文压缩 — 溢出恢复包装在 failover chain 内侧（registry chain 会把
+    // provider 错误归一为普通 Error 重新抛出，wrapper 必须先于 chain 看到原始错误码）；
+    // 摘要器惰性经 failover chain（this.provider 就绪后可用），复用同一 KV-cache 前缀。
+    this.compaction = new ContextCompaction({
+      contextWindowTokens: config.contextWindowTokens ?? DEFAULT_CONTEXT_WINDOW_TOKENS,
+      summarizer: {
+        summarize: (prefix) => createProviderSummarizer(this.provider).summarize(prefix),
+      },
+    });
     this.provider = wrapProviderWithFailover(
-      provider,
+      wrapProviderWithOverflowRecovery(provider, this.compaction),
       config.fallbackProvider !== undefined ? config.fallbackProvider : buildFallbackProvider(provider),
     );
     this.phase = 0;
@@ -389,6 +407,7 @@ export class ConversationEngine {
     this.config = {
       maxTurns: config.maxTurns ?? 6,
       orgId: config.orgId || '',
+      contextWindowTokens: config.contextWindowTokens ?? DEFAULT_CONTEXT_WINDOW_TOKENS,
     } as Required<EngineConfig>;
     this.messages = [{ role: 'system', content: buildSystemPrompt(0, 0, this.dimensionCoverage, this.dimensionRegistry) }];
     this.toolRegistry = new ToolRegistry();
@@ -571,13 +590,27 @@ export class ConversationEngine {
     // Hermes P0-2: 易变层追加到 user message — 保护 Prefix Cache
     this.messages.push({ role: 'user', content: `${input}\n\n${buildVolatileLayer(this.turnCount, this.phase)}` });
 
+    // D594: 长会话压力压缩（DSH agent/pre-step 范式）— 超阈值先压缩再调用 LLM。
+    // 失败 warn 降级继续本轮（铁律 24/31: 不阻断对话）。
+    try {
+      const compacted = await this.compaction.compactIfNeeded(this.messages, 'pressure');
+      if (compacted) {
+        log.info({ shadowedMessageCount: compacted.shadowedMessageCount, shadowedTokenCount: compacted.shadowedTokenCount }, '长会话触发上下文压缩');
+      }
+    } catch (err) {
+      const code = err instanceof ContextCompactionError ? err.code : 'UNKNOWN';
+      log.warn({ err, code }, '压力压缩失败 — 继续本轮对话（降级不阻断）');
+    }
+
     // G1: 上下文可插拔引擎 — 文件驱动策略，LLM 不可用降级
     const estimatedTokens = this.messages.reduce((sum, m) => sum + m.content.length, 0);
     if (this.contextEngine.shouldCompress(this.messages, estimatedTokens)) {
       try {
         const confirmedFacts = await this.loadConfirmedFacts();
         const result = await this.contextEngine.compress(this.messages, estimatedTokens, confirmedFacts);
-        this.messages = result.messages;
+        // D594: 原地替换 — engineCtx.messages 与 this.messages 共享同一数组引用，
+        // reassign 会脱钩（toolLoop / 压缩引擎将看到旧数组）
+        this.messages.splice(0, this.messages.length, ...result.messages);
         log.debug({
           before: result.messages.length + result.stats.discardedCount,
           after: result.messages.length,
@@ -713,6 +746,17 @@ export class ConversationEngine {
     const input = this.piiScrubber?.scrub(userInput, 'S2').cleaned ?? userInput;
     // Hermes P0-2: 易变层追加到 user message — 保护 Prefix Cache
     this.messages.push({ role: 'user', content: `${input}\n\n${buildVolatileLayer(this.turnCount, this.phase)}` });
+
+    // D594: 长会话压力压缩（与 processMessage 同一背压语义 — 流式入口同样先压缩再调用 LLM）
+    try {
+      const compacted = await this.compaction.compactIfNeeded(this.messages, 'pressure');
+      if (compacted) {
+        log.info({ shadowedMessageCount: compacted.shadowedMessageCount, shadowedTokenCount: compacted.shadowedTokenCount }, '长会话触发上下文压缩');
+      }
+    } catch (err) {
+      const code = err instanceof ContextCompactionError ? err.code : 'UNKNOWN';
+      log.warn({ err, code }, '压力压缩失败 — 继续本轮对话（降级不阻断）');
+    }
 
     // L1 decoupling: onToken 已处理 TUI 显示，不再重复调用 viewAdapter
     const display = (token: string) => {
