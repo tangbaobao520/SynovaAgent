@@ -19,12 +19,14 @@ grep 证实：projection/stateVersion/restoreFloor 在 src/ 零命中（本次�
 - dev doc 写集与测试契约：docs/plans/codex/implementation/SYNOVA-IMPL-D588-session-projection-20260907.md（1 新建 + 0 修改；测试 ≥4 用例含 ver 不匹配全量重放 + whole-value 断言 + 空 log）。
 - 决策参考：参考 Anthropic/DeepSeek/第一性原理 + 结论——投影状态承接 DSH whole-value 不变量（状态承载事件必须携带完整 post-change 状态，禁裸 delta），机械化为 wholeValue 定义标志：apply(init,e) 与 apply(prev,e) 深等价才自描述，违反即 log.warn + 报警记录（铁律 24）；订阅缝取原型级 wrap SessionStore.prototype.appendEvent——dev doc 写集 0 修改下唯一能让 8+ 构造点全部自动获得 drive 的方案，import 即安装。
 - memory/ 教训：engine-core-split-fraud（借范式必须读源码自研，交付前 grep @deepseek-ai src/ 零结果）；2026-09-01-d490（零回归 = FAIL 集恒等）；2026-08-28-d488（clone 交付：brief 复制主区 + hook ROOT 随 harness CWD）；2026-08-23-d477（tsc 基线对照单命令完成）。
+- 决策参考（CI 组4 红定位与修复）：写集 1 新建 + 0 修改的底座模块结构性无法满足组 4a——SessionProjectionRegistry/toProjectionEvents 等 5 export 是 dev doc 后续任务的库级 API，今日生产代码无诚实消费点（getEvents/deriveMessages 消费面 grep 已穷尽），伪造消费 = 骗 grep（铁律 47 精神）。修复走 plan.json wiring:deferred 通道（CLAUDE.md 三权分立表："锁定的 plan 覆盖 bash"，deferred 检查降级为警告；plan.json 任务版先例 D333/D541/D358/D296——人类审批 = PR review）。明确不做：comment 提及符号骗 grep、改审计脚本（K3 红线）、文件改名蹭 helpers.ts 排除项、砍 export 破坏 dev doc API 契约。phase 4 声明消费方接线属后续任务。
 
 ## Q2: 范围 — 正确的最简方案
 做什么：
 - src/store/session-projection.ts
 - tests/store/session-projection.test.ts
 - .claude/task-briefs/2026-09-07-D588-session-projection.md
+- .claude/plan.json（组4 接线审计 deferred 通道声明——CI 读提交版 plan.json）
 不做什么（含文件路径）：
 - 不改 src/store/session-store.ts（写集 0 修改——订阅缝内建新文件原型 wrap）
 - 不改 package.json（零新依赖，structuredClone 用 Node 全局）
@@ -58,3 +60,4 @@ memory/ engine-core-split-fraud：借范式必须读源码自研（本任务 DSH
 - [x] 零 DSH 代码依赖（DS2/G1） — verify: grep -rn "@deepseek-ai" src/ | wc -l
 - [x] 新测试 + tests/store/ 全绿且 tsc 28 基线零新增（DS4） — verify: npx vitest run tests/store/session-projection.test.ts tests/store/session-store.test.ts
 - [x] as any 新增 = 0（DS5） — verify: git diff -U0 -- src/ tests/ | grep "+.*as any" | wc -l
+- [x] CI 组4 红闭合：plan.json 声明 D588 phase（wiring deferred）随 PR 提交供 CI 读取（人类审批 = PR review） — verify: git show HEAD:.claude/plan.json | grep session-projection | wc -l
