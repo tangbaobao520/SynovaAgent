@@ -1,11 +1,41 @@
 {
-  "task_id": "D590",
-  "title": "L1-P1对话HTTP-SSE端点",
-  "status": "claimed",
-  "spec": null,
-  "impl": null,
-  "audit": null,
-  "fix_task_id": null,
-  "updated_at": "2026-09-08",
-  "updated_by": "alloc-task-id"
+ "task_id": "D590",
+ "title": "L1-P1对话HTTP-SSE端点",
+ "status": "impl_done",
+ "spec": {
+  "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D590-chat-sse-endpoint-20260908.md",
+  "baseline": "origin/main 891dcdbe（spec 撰写时点）→ 实际基线 e0308d35（D589 后重核，写集零交集）"
+ },
+ "impl": {
+  "commit": "46b99809",
+  "followup": [
+   "fe991a34 (bypass 登记 auto-hook)",
+   "CRLF 修复提交（见 git log chore(D590)）"
+  ],
+  "branch": "feat/d590-chat-sse（worktree .synova-wt-d590，基 origin/main e0308d35）",
+  "baseline": "origin/main e0308d35（D589 批审计 closeout 后；spec 基线 891dcdbe → 开工重核，锚点行号漂移 2 处已按语义对位）",
+  "by": "synova-dsh (DSH 编码 session, worktree .synova-wt-d590)",
+  "at": "2026-09-08",
+  "files": [
+   "src/routes/conversations.ts（新建，333 行）",
+   "tests/routes/conversations.test.ts（新建，13 用例集成测试）",
+   "src/server.ts（conversations 挂载 + uploadV2GoneRouter 410 先于 JWT + 删 upload import）",
+   "src/middleware/auth.ts（白名单三前缀 + 单机信任 JSDoc）",
+   "src/l1-interaction/web-adapter.ts（复活：对象帧/emitDiagnosisEvent/setOnClosed/心跳/删 messageBuffer）",
+   "src/routes/chat.ts（头注释诚实化 + 4 处浏览器 log.warn→console.warn）",
+   "src/routes/ga-diagnosis.ts（pollResults 410 止停）",
+   "electron-renderer/src/hooks/sse-contract.ts（+4 对话帧类型 + 归约分支）",
+   "README.md（安全模型节）",
+   "tests/electron/use-streaming-contract.test.ts（D590 帧归约 5 用例）",
+   "tests/architecture/graphstore-unify.test.ts（callSites 12→11）",
+   "删除：src/routes/diagnosis-upload-v2.ts、tests/test-http-route.ts（裁决②）",
+   "docs/synova/audit-reports/D590-chat-sse-evidence-20260908/（evidence 9 件套 + 可重跑脚本）"
+  ],
+  "evidence": "docs/synova/audit-reports/D590-chat-sse-evidence-20260908/（red→green 双轮、§8 接线 grep、DS2/DS3 生产态物理 curl + 重启持久化 PASS、全量 vitest A/B 对账零新失败、tsc A/B 零新增）",
+  "notes": "DS1-DS13 全绿（DS2/DS3 的 LLM 为本地替身服务器——本机无真实 key，生产代码全链路真实，K3 可换真实 endpoint 复现）；七项决策中 2 项实现口径微调：①诊断桥走 DiagnosisLauncher 直连（fromState 恢复引擎 diagnosisEngine 恒为 noop，L2 零修改红线）②会话级引擎缓存（spec §5.2-A'每请求实例'与用例⑪ turnCount 语义物理矛盾）；新发现 L2 侧缺陷 1 个（fromState 数组替换致 toolLoop 上下文丢失）已在完成报告登记"
+ },
+ "audit": null,
+ "fix_task_id": null,
+ "updated_at": "2026-09-08",
+ "updated_by": "synova-dsh"
 }
