@@ -1,11 +1,12 @@
 {
   "task_id": "D566",
   "title": "提示词优化策略不实修复（K3 21-2 不实转 FIX）",
-  "status": "claimed",
+  "status": "closed",
   "spec": null,
   "impl": null,
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-09-02",
-  "updated_by": "alloc-task-id"
+  "updated_at": "2026-09-08",
+  "updated_by": "dsh-cto",
+  "note": "CTO 清理 2026-09-08：K3 审计 21-2 后续修复——长期零进展（08-02 至今无提交），原始问题可能已被后续提示词更新覆盖"
 }

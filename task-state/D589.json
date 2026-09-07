@@ -1,0 +1,18 @@
+{
+  "task_id": "D589",
+  "title": "stale 26 点重验批（D579 机制生效后首轮回绿工程）",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "by": "dsh-harness",
+    "at": "2026-09-08",
+    "evidence": "worktree .synova-wt-d589 @ c1119d23：Node v22.23.2（better-sqlite3 ABI=127 对齐；v24 出 350 ABI 假败——D316 先例复现）全量 vitest 3974 过/26 基线败/13 skip；9 份 per-line evidence（schema1/test/带 at/真实 quote）落 docs/synova/product-lines/evidence/；calc 重算 stale 17→10、pending_k3 36→44（+8 机器治理点：1-1/1-3~1-7/7-3）、verified 维持 8",
+    "residuals": "留 stale 10 点三类清单落 evidence/README.md：k3 治理 8（TTL 过期 5 + 裁决后代码变更 3——恢复只能靠 K3 新裁决）；1-2 Win 目标机；2-5 机制缺口（CT-62 at 粒度只接 k3 路径，machine 分支 date-only 被当日 D587 提交误判——FIX 一行建议已登记，scripts/ 本单不碰）",
+    "notes": "派单验收1 verified≥18 与状态机设计冲突（test 绿→pending_k3 不计分，CT-53/D576 反假绿语义；run-machine-evidence.sh docstring 自证）——verified≥18 的合法路径=K3 对 44 个 pending_k3 点出裁决；product-progress.{json,html} 属 G12d CI 单点生成物未入库（本地 calc 只出数），merge 后 CI bot 重生成"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-08",
+  "updated_by": "dsh-harness",
+  "note": "CTO 派单 → 编码 session 执行。26 stale 点逐线重验（跑既有测试出新 evidence），可绿部分出 verified，红留 stale 转 FIX。evidence 带 at 时间戳（CT-62）。"
+}

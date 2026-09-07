@@ -2,7 +2,7 @@
   "version": "1.0",
   "created": "2026-08-18T00:00:00Z",
   "approved_by": "founder",
-  "current_phase": 2,
+  "current_phase": 3,
   "principles": [
     "原则2: 先设计验证标准，再设计实现",
     "原则5: 物理强制，零AI自律",
@@ -45,6 +45,22 @@
         "extensions/sentinels/capital-health/aggregate.ts"
       ],
       "checks": { "wiring": "deferred", "test_pairing": "enforce" }
+    },
+    {
+      "step": 3,
+      "action": "create",
+      "files": [
+        "src/store/session-projection.ts"
+      ],
+      "checks": { "wiring": "deferred", "test_pairing": "enforce" }
+    },
+    {
+      "step": 4,
+      "action": "wire",
+      "files": [
+        "src/agent/synova-agent.ts"
+      ],
+      "checks": { "wiring": "enforce", "test_pairing": "enforce" }
     }
   ]
 }

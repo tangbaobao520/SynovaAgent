@@ -1,11 +1,12 @@
 {
   "task_id": "D565",
   "title": "test-kit CI 接线 — 棘轮基线测试入 CI 双平台（K3 P1）",
-  "status": "claimed",
+  "status": "closed",
   "spec": null,
   "impl": null,
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-09-02",
-  "updated_by": "alloc-task-id"
+  "updated_at": "2026-09-08",
+  "updated_by": "dsh-cto",
+  "note": "CTO 清理 2026-09-08：被 D565 后续的棘轮基线测试覆盖（tests/control-tower/baseline-check.test.sh 已在 main）"
 }
