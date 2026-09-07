@@ -43,7 +43,7 @@ grep 证实：normalizeLlmFailure / isContextWindowExceededError / isQuotaExceed
 ## 架构层: L3（本任务在哪一层 = L3 洞察层 LLM 底座：src/errors + src/providers，邻接 L2 编排）
 
 ## 文档引用
-docs/plans/codex/implementation/SYNOVA-IMPL-D586-llm-error-taxonomy-align-20260907.md §2 现状 / §4 写集表 / §5 测试要求 / §7 完成标准；docs/synova/research/DSH迁移施工图-20260820/DSH借鉴指引-v2-20260904.md B-01；CLAUDE.md 铁律 0-2 / 32 / 38 / 46。
+docs/plans/codex/implementation/SYNOVA-IMPL-D586-llm-error-taxonomy-align-20260907.md §2 现状 / §4 写集表 / §5 测试要求 / §7 DS 判据（DS1-DS5）；docs/synova/research/DSH迁移施工图-20260820/DSH借鉴指引-v2-20260904.md B-01；CLAUDE.md 铁律 0-2 / 32 / 38 / 46。
 
 ## 接口审计
 src/errors/types.ts: classifyApiError
