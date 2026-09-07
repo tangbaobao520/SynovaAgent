@@ -82,6 +82,12 @@ function getExpiresIn(): number {
  * 白名单含 login/register（D483: 匿名注册可达，多租户 onboarding 底座）。
  * D484: enterprise 匿名端点——企业注册 + 邀请查询/接受（邀请链接直达语义，token 即凭证；
  * 复数 /api/enterprise/invitations 管理端点不匹配 invitation/ 前缀，保持认证 + requireAdmin）。
+ *
+ * D590（创始人裁决① 鉴权过桥）: 新增三前缀——/api/diagnosis/consult（consult 五端点族）、
+ * /api/conversations（对话 SSE）、/api/sessions（会话读回）。
+ * 安全模型 = 单机本地信任（对齐 /api/sentinel/* 先例）：本进程面向单 GA 的本地桌面/内网部署，
+ * 信任边界是机器本身而非 HTTP 凭证——"配置完 LLM 即可对话"（D575 承诺）依赖免 JWT 直达。
+ * 多用户/公网阶段按施工图 §5.5 重构为会话级鉴权（README「安全模型」节有显式声明）。
  */
 function isWhitelisted(path: string): boolean {
   return (
@@ -100,7 +106,10 @@ function isWhitelisted(path: string): boolean {
     path === '/cockpit' ||
     path === '/api/healthz' ||
     path.startsWith('/api/sentinel/') ||
-    path.startsWith('/api/cockpit/')
+    path.startsWith('/api/cockpit/') ||
+    path.startsWith('/api/diagnosis/consult') || // D590 裁决① — 桌面端诊断链路（consult 五端点族）
+    path.startsWith('/api/conversations') ||     // D590 裁决① — 对话 SSE 端点
+    path.startsWith('/api/sessions')             // D590 裁决① — 会话读回（对话验收闭环）
   );
 }
 
