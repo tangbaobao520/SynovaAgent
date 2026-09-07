@@ -1,0 +1,12 @@
+{
+  "task_id": "D589",
+  "title": "stale 26 点重验批（D579 机制生效后首轮回绿工程）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-07",
+  "updated_by": "dsh-cto",
+  "note": "CTO 派单 → 编码 session 执行。26 stale 点逐线重验（跑既有测试出新 evidence），可绿部分出 verified，红留 stale 转 FIX。evidence 带 at 时间戳（CT-62）。"
+}
