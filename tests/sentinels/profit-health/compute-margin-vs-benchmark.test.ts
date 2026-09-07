@@ -1,38 +1,33 @@
+/**
+ * compute-margin-vs-benchmark.test.ts — computeMarginVsBenchmark 契约测试
+ * D584 对齐: cost-health/profit-health 已 D358 去灭绝并入 margin-health（自家 computes/ 计算），import 对齐 live 契约。
+ * live 契约: (financials, {benchmark?}) → {profitMargin, benchmark, gap, degraded}; 默认基准 0.25。
+ */
 import { describe, it, expect } from 'vitest';
-import { computeMarginVsBenchmark } from '../../../extensions/sentinels/profit-health/computes/compute-margin-vs-benchmark';
-import type { GraphStoreReader } from '../../../src/l4/graph-traversal';
-
-function mockStore(nodes: Array<{ id: string; type: string; props: Record<string, unknown> }>): GraphStoreReader {
-  return { queryNodes: () => nodes, queryEdges: () => [], getNode: () => null };
-}
+import { computeMarginVsBenchmark } from '../../../extensions/sentinels/margin-health/computes/compute-margin-vs-benchmark';
 
 describe('computeMarginVsBenchmark', () => {
-  it('should compute gap vs default benchmark (25%)', async () => {
-    const store = mockStore([
-      { id: 'r1', type: 'Financial', props: { financialType: 'revenue', amount: 200000 } },
-      { id: 'c1', type: 'Financial', props: { financialType: 'cost', amount: 120000 } },
+  it('should compute gap vs default benchmark (25%)', () => {
+    const r = computeMarginVsBenchmark([
+      { total_revenue: 200000, gross_margin: 120000, operatingExpenses: 40000 },
     ]);
-    const r = await computeMarginVsBenchmark(store, { teamId: 't1' });
     expect(r.degraded).toBe(false);
     expect(r.profitMargin).toBe(0.4);
-    expect(r.gap).toBe(0.15); // 0.4 - 0.25 = 0.15
+    expect(r.gap).toBeCloseTo(0.15, 5); // 0.4 - 0.25
   });
 
-  it('should compute with custom benchmark', async () => {
-    const store = mockStore([
-      { id: 'r1', type: 'Financial', props: { financialType: 'revenue', amount: 100000 } },
-      { id: 'c1', type: 'Financial', props: { financialType: 'cost', amount: 90000 } },
-    ]);
-    const r = await computeMarginVsBenchmark(store, { teamId: 't1', benchmark: 0.15 });
+  it('should compute with custom benchmark', () => {
+    const r = computeMarginVsBenchmark([
+      { total_revenue: 100000, gross_margin: 60000, operatingExpenses: 30000 },
+    ], { benchmark: 0.15 });
     expect(r.degraded).toBe(false);
-    expect(r.profitMargin).toBe(0.1);
-    expect(r.gap).toBe(-0.05);
+    expect(r.profitMargin).toBe(0.3);
+    expect(r.gap).toBeCloseTo(0.15, 5);
   });
 
-  it('should degrade on empty data', async () => {
-    const store = mockStore([]);
-    const r = await computeMarginVsBenchmark(store, { teamId: 't1' });
+  it('should degrade on empty data', () => {
+    const r = computeMarginVsBenchmark([]);
     expect(r.degraded).toBe(true);
-    expect(r.gap).toBeLessThan(0);
+    expect(r.gap).toBe(0); // 降级路径 gap = 0（live 契约）
   });
 });

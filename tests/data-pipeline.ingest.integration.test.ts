@@ -6,7 +6,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { ingestFile, type IngestResult } from '../src/ingest/index';
-import { createLogger } from '../src/logger';
+import { createLogger } from '@synova/logger'; // D584: src/logger 已迁 @synova/logger 包（死路径修复）
 import * as path from 'path';
 
 const log = createLogger('test:ingest');
@@ -14,7 +14,7 @@ const log = createLogger('test:ingest');
 // 测试用文档路径
 const DOCS = path.resolve(process.cwd(), 'docs');
 const INDEX_MD = path.join(DOCS, 'INDEX.md');
-const DEVELOPMENT_PLAN = path.join(DOCS, 'DEVELOPMENT-PLAN-20260606.html');
+// D584 对齐: DEVELOPMENT-PLAN-20260606.html 已从 docs/ 移除，HTML 用例改用现存 SYNOVA-ROADMAP.html（同一契约: HTML 摘要提取）
 const ROADMAP = path.join(DOCS, 'SYNOVA-ROADMAP.html');
 const TEST_STRATEGY = path.join(DOCS, '07-TEST-STRATEGY-20260605.md');
 
@@ -48,8 +48,8 @@ describe('数据管道 - 文档上传', () => {
 
   // ═══ 2. HTML 文档 ═══
   describe('HTML 文件', () => {
-    it('should ingest DEVELOPMENT-PLAN.html', async () => {
-      const result = await ingestFile(DEVELOPMENT_PLAN, 'test-org');
+    it('should ingest SYNOVA-ROADMAP.html', async () => {
+      const result = await ingestFile(ROADMAP, 'test-org');
       log.info(result, 'DEVELOPMENT-PLAN 摄入结果');
 
       expect(result.error).toBeUndefined();

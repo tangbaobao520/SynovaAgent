@@ -86,20 +86,23 @@ describe("D217: agent-start.sh", () => {
   // L2a: 接线 — package.json → agent-start.sh
   // ════════════════════════════════════════════════════════════════════
 
-  it("L2a: package.json dev 指向 agent-start.sh (接线验证)", () => {
+  it("L2a: package.json dev 指向 agent-start 入口 (接线验证)", () => {
+    // D584 对齐现契约: D513 起 dev = scripts\agent-start.bat（Win 零 bash 依赖 shim，
+    // 与 agent-start.sh 等价入口）; 接线意图不变——dev 必须指向 agent-start*。
     const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf-8"));
-    expect(pkg.scripts.dev).toBe("bash scripts/agent-start.sh");
+    expect(pkg.scripts.dev).toMatch(/agent-start\.(bat|sh)$/);
   });
 
   // ════════════════════════════════════════════════════════════════════
   // L1: agent-start.sh 结构 — 包含 3 个启动步骤
   // ════════════════════════════════════════════════════════════════════
 
-  it("L1: agent-start.sh 包含 3 步启动流程", () => {
+  it("L1: agent-start.sh 包含 4 步启动流程（D219 现行标记 [N/5]）", () => {
     const content = readFileSync(AGENT_START, "utf-8");
-    expect(content).toContain("[1/3]");
-    expect(content).toContain("[2/3]");
-    expect(content).toContain("[3/3]");
+    expect(content).toContain("[1/5]");
+    expect(content).toContain("[2/5]");
+    expect(content).toContain("[3/5]");
+    expect(content).toContain("[4/5]");
     expect(content).toContain("validate-env.sh");
     expect(content).toContain("run-contract-gate.ts");
     expect(content).toContain(".write-locks");
@@ -123,9 +126,9 @@ describe("D217: agent-start.sh", () => {
       timeout: 30000,
     });
 
-    expect(output).toContain("[1/3]");
-    expect(output).toContain("[2/3]");
-    expect(output).toContain("[3/3]");
+    expect(output).toContain("[1/5]");
+    expect(output).toContain("[2/5]");
+    expect(output).toContain("[3/5]");
     expect(output).toContain("[DRY-RUN]");
     expect(output).toContain("[PASS]");
   });

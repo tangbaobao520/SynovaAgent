@@ -23,7 +23,7 @@ export type CircuitState = 'CLOSED' | 'OPEN' | 'HALF_OPEN';
 export interface LLMCallOptions {
   /** 首 token 超时 (ms), 默认 15_000 */
   firstTokenTimeoutMs?: number;
-  /** 总超时 (ms), 默认 120_000 */
+  /** 总超时 (ms), 默认 120_000 — callWithResilience 经 deadline() 变成绝对截止 */
   totalTimeoutMs?: number;
   /** 最大重试次数, 默认 3 */
   maxRetries?: number;
@@ -37,6 +37,16 @@ export interface LLMCallOptions {
   circuitBreakerThreshold?: number;
   /** 熔断冷却时间 (ms), 默认 60_000 */
   circuitBreakerCooldownMs?: number;
+  /** 抖动比例 ∈ [0,1], 默认 0.2 (±20%) — localDelay 指数退避去惊群 (D593/DSH B-02) */
+  jitterRatio?: number;
+  /** 可重试失败码 (Synova ErrorCode 词汇), 默认 DEFAULT_RETRYABLE_CODES (D593) */
+  retryableCodes?: string[];
+  /** 重试初始延迟 (ms), 默认 500 (DSH retry-policy 默认) */
+  initialDelayMs?: number;
+  /** 重试最大延迟 (ms), 默认 10_000 (DSH retry-policy 默认) */
+  maxDelayMs?: number;
+  /** 流式空闲看门狗超时 (ms), 默认 30_000 — streamWithRetry 每 token pulse 重臂 (D593/DSH B-06) */
+  idleTimeoutMs?: number;
 }
 
 export const DEFAULT_LLM_CALL_OPTIONS: Required<LLMCallOptions> = {
@@ -48,6 +58,18 @@ export const DEFAULT_LLM_CALL_OPTIONS: Required<LLMCallOptions> = {
   maxBackoffMs: 16_000,
   circuitBreakerThreshold: 3,
   circuitBreakerCooldownMs: 60_000,
+  jitterRatio: 0.2,
+  retryableCodes: [
+    'EMPTY_RESPONSE',   // DSH B-01: 正常完成但零内容 → 产物为零，可安全重试
+    'RATE_LIMITED',     // 429（DSH RATE_LIMIT 的 Synova 词）
+    'SERVER_ERROR',     // 500/502（DSH SERVER 的 Synova 词）
+    'OVERLOADED',       // 503/529
+    'TIMEOUT',
+    'NETWORK',          // 传输层瞬态（DSH TRANSPORT 的 Synova 词）
+  ],
+  initialDelayMs: 500,
+  maxDelayMs: 10_000,
+  idleTimeoutMs: 30_000,
 };
 
 /** 判断错误是否可重试 */
@@ -64,9 +86,9 @@ export function isRetryableError(err: Error): boolean {
 }
 
 /** 计算指数退避延迟 */
-export function computeBackoff(retryCount: number, opts: Required<LLMCallOptions>): number {
+export function computeBackoff(retryCount: number, opts: Required<LLMCallOptions>, jitterRatio: number = 0.2): number {
   const delay = opts.backoffBaseMs * Math.pow(opts.backoffMultiplier, retryCount);
-  // 加 jitter (±20%) — 避免惊群效应
-  const jitter = delay * 0.2 * (Math.random() * 2 - 1);
+  // 加 jitter (默认 ±20%) — 避免惊群效应；比例可配 (D593)
+  const jitter = delay * jitterRatio * (Math.random() * 2 - 1);
   return Math.min(delay + jitter, opts.maxBackoffMs);
 }
