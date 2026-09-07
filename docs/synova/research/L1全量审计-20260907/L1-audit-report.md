@@ -1,6 +1,6 @@
 # SynovaAgent L1 交互层全量审计报告
 
-> 派单: 创始人 | 审计: CTO（DSH 线） | 日期: 2026-09-07
+> 派单: 创始人 | 审计: CTO（DSH 线） | 日期: 2026-09-07（2026-09-08 复核修订: 补 §3.6 逐文件 DSH 对标速查、§5 明确零 import 结论、修正 §0 文件计数/P0-1 凭证表述/§2 行B 锚点、补 MCP 工具缺口清单）
 > 性质: **架构盘点与收工规划**（非 K3 审计，不定义审计标准）
 > 基线: 创始人指令给定 ad617ed6；实际审计基于 origin/main @ d3dcfb9e（ad617ed6 的直接后代，+7 提交，含 D587/D588 dev doc）。分支 `research/l1-full-audit`。
 > 红线遵守: 零源码修改（本 PR 仅新增本报告 + task-state 取号壳）；DSH 源码只读；未触碰 scripts/audit/、scripts/product-lines/。
@@ -9,7 +9,7 @@
 
 ## 0. 审计方法
 
-1. **逐文件盘点**: 范围内 137 个源文件（routes 51 + agent 43 中 L1 相关 4+ / tui-v2 23 + tui-v3 3 + l1-interaction 3 + cli 3 + mcp 5 + electron 5 + electron-renderer 32）逐一读取关键面（导入/导出/路由注册/调用链），全部断言带 file:line 或 grep 证据。
+1. **逐文件盘点**: 范围内 137 个源文件（routes 51 + agent L1 相关 6 + tui-v2 23 + tui-v3 3 + l1-interaction 3 + cli 7〔cli.ts + cli-manager.ts + src/cli/ 5〕 + mcp 5 + electron 7〔含孤儿 preload.js〕 + electron-renderer 32 = 137）逐一读取关键面（导入/导出/路由注册/调用链），全部断言带 file:line 或 grep 证据。
 2. **接线判定**: 以"谁 import / 谁挂载 / 谁调用 / 结果在哪呈现"四问追踪（铁律 4/5），静态 grep + 动态 import()/require() 全形态检测（吸取施工图 §3 locale/infra 误判教训）。
 3. **DSH 对标**: DSH 0.1.2-rc.1（Mac 依赖目录）7 个目标包一手源码阅读 + 既有资产交叉验证（施工图 §3/§4、附录A 224 包处置表、附录B 运行时深潜）。
 4. **文档-现实核对**: 产线 yaml 验证点状态、权威文档05 补充研究声称、AGENTS.md L1 章节逐一对源码核实。
@@ -46,7 +46,7 @@ L1 共有 **7 个交互面**，状态各异：
 | # | 交互面 | 入口 | 后端路径 | 状态 |
 |---|---|---|---|---|
 | A | CLI 终端对话 | `npx tsx src/cli.ts` | cli.ts → ConversationEngine（进程内，流式） | **工作**（唯一真实对话 E2E 路径，但从未被创始人实测记录） |
-| B | TUI v2 | `npm run tui` | tui-v2/chat.tsx → ConversationEngine（进程内，tui-v2/index.ts:41 动态 import） | 工作（孤儿面，与 HTTP 零共享） |
+| B | TUI v2 | `npm run tui` | tui-v2/chat.tsx:184-185 动态 import 并进程内 new ConversationEngine（index.ts:41 是死入口B的同款 import） | 工作（孤儿面，与 HTTP 零共享） |
 | C | Web 内嵌页 | GET /chat | 内嵌 HTML → POST /api/diagnosis/consult（SSE 诊断）+ GET /api/status 等 3 接口 | 部分工作（是诊断发射器，非对话；无会话） |
 | D | MCP server | `npx tsx src/mcp/index.ts` | 手写 stdio JSON-RPC → ConversationEngine + 哨兵/本体 | 工作（9 工具；零认证/权限/打包） |
 | E | IM 通道 | routes/im.ts → l1/im-inbound.ts:170 | ConversationEngine + interactive-card + proactive-push | 工作（飞书桥接；卡片回复链路存在） |
@@ -176,9 +176,10 @@ L1 共有 **7 个交互面**，状态各异：
 | skill-installer.ts | 167 | 技能安装器 | ✅ | 独立职责 | 保留 |
 
 **要点**: Synova 的 MCP 是**双向的**——server（对外暴露诊断能力，A 形态连接点：未来 DSH mcp-client 消费它）+ client（消费外部工具）。缺口集中在 server 侧: 认证/权限/打包/协议实现方式。
+**工具清单缺口（哪些暴露/哪些缺失）**: 已暴露 9 工具覆盖哨兵/飞轮/数据源/诊断/本体/文档/会话查询；**缺失候选**: ① 报告与工单查询（GET /api/sentinel/reports、tickets 无 MCP 对应——外部 Agent 拿不到诊断产物）② 知识问答（routes/knowledge-ask 能力未暴露）③ 多轮对话工具（MCP 侧只有一次性 diagnose_organization，ConversationEngine 会话式交互未暴露）④ 契约版本化元数据（Stage 2 固化前置）。→ 全部列入 D595 评估范围。
 
 **P0 断链（子代理盘点 + CTO 亲证）**:
-- **P0-1 对话 401**: renderer 全部请求零凭证（无登录/token 代码）；server.ts:298 jwtAuthMiddleware 全局门禁；白名单 auth.ts:85-107 含 /api/sentinel/* 但**不含 /api/diagnosis/consult、/api/solutions、/api/notifications、/api/ga/clients**；DEV_MODE 逃生口（auth.ts:273-285）在 .env DEV_MODE=false（亲证）+ 生产包无 .env 下不触发。→ **D575 配置完→首条消息即 401**（红条英文报错，诚实失败不白屏）。D575 只豁免了向导 3 端点（server.ts:293-298 挂载序），没豁免向导完成后要用的端点。
+- **P0-1 对话 401**: renderer 无登录/token 获取流程（唯一凭证附着是 GA 端点的 dev-seed x-synova-token，RightPanel.tsx:157-159，且仅 localStorage 有 seed 时生效；consult/notifications/solutions 等请求不带任何凭证）；server.ts:298 jwtAuthMiddleware 全局门禁；白名单 auth.ts:85-107 含 /api/sentinel/* 但**不含 /api/diagnosis/consult、/api/solutions、/api/notifications、/api/ga/clients**；DEV_MODE 逃生口（auth.ts:273-285）在 .env DEV_MODE=false（亲证）+ 生产包无 .env 下不触发。→ **D575 配置完→首条消息即 401**（红条英文报错，诚实失败不白屏）。D575 只豁免了向导 3 端点（server.ts:293-298 挂载序），没豁免向导完成后要用的端点。
 - **P0-2 preload 断链**: main.cjs:77 加载 electron/preload.cjs（仅 2 方法）；electron-renderer/preload.js 声明 10 方法但是**死文件**（build-synova.cjs:80-89 打包白名单不含它）且 main.cjs 零 ipcMain 注册→bridge.ts 10 方法中 8 个 `?.` 静默 no-op（托盘角标/系统通知/版本号恒 '0.1.0'）。
 - **假流式**: 桌面 useStreaming 的 16ms buffer 管道（:56-69）**零数据流入**——consult SSE 事件是整块消息，scheduleFlush 无调用方；store 只收整块 addMessage。产线 2-2"回答是流式的"在桌面端**不成立**。
 
@@ -235,6 +236,26 @@ L1 共有 **7 个交互面**，状态各异：
 
 **构建/启动**: dev = vite:5173(proxy→18790) + 根 npm run dev + electron 壳三态（main.cjs:96-111: prod renderer / dev 5173 / 降级 /app/login.html 旧路径）；prod = 三步链（build-synova.cjs:11-19，beforePack 守卫 backend.mjs）+ ensureBackend 自启（ELECTRON_RUN_AS_NODE 跑 dist/backend.mjs，SYNOVA_DB_PATH=userData）。另: `npm run dev` 根脚本指向 **scripts/agent-start.bat（Windows 批处理）**——Mac 上 `npm run dev` 不可用（agent-start.sh 存在但未接线）——L1 开发链路的跨平台缺口。
 
+### 3.6 逐文件 DSH 对标速查（补清单表「DSH 对标」列）
+
+> §3.1-3.5 各表中未标 DSH 对标的文件，其对标一律为「🟢 品牌表层/领域层自留，DSH 无对应包」（routes 的 GA/工作台/哨兵查询族、electron-renderer 领域组件、app/ 静态报表等——这正是施工图"品牌活在表层"的含义）。通用管道类（store/cron/providers/orchestrator）按施工图 §3 🔵/⚠️ 处置，不在 L1 收工范围。**有实质对应的文件如下**：
+
+| 文件 | DSH 对标（包 + 机制锚点） | 判定 |
+|---|---|---|
+| agent/conversation-engine.ts | dsh-agent-loop: turn/step 状态机（lib/index.js:337-778）、请求重建 invariant（lib/invariant.js:15-33）、中断锚（:637-655） | 自研简版 → 范式借鉴（D590/D592）；Stage 3 替换 |
+| agent/tool-loop-executor.ts | dsh-agent-loop 工具调度: 独占屏障+有界并行池（:164-274），结果保模型序 | 自研简版 |
+| routes/diagnosis.ts（consult SSE） | dsh-api-gateway 流帧协议: open/cancel/item/end/error 五帧+心跳（:122-133,:199-269） | 自研简版 → 帧语义 D590 借鉴 |
+| routes/chat.ts + l1-interaction/web-adapter.ts | dsh-api-gateway 单 /api 拦截器+端点认领（:454-456,:510-517）；输入边界校验（:1074-1103） | 空白 → D590 建新端点时借鉴 |
+| routes/sessions.ts（+store/session-store.ts） | dsh-api-session-controller: 冷读激活策略（lib/index.js:142-170）、resume/create 单飞去重（:213-267）、fork turn 边界切点（:655-725）；dsh-session 事件溯源（附录B §4） | 空白 → 范式借鉴（与 D587/D588 在途同向） |
+| routes/llm-config.ts + services/llm-credential-store.ts | DSH credential seam（D575 已按此借鉴，spec 在案） | 已对标 ✅ |
+| agent/main-agent.ts + 进程装配 | dsh-agent-presets 声明式组合（agent.cordis.yml、常设挂载+stamp 代际 lib/index.js:1768-1803、空白会话锁 :1730-1751） | 自研简版 → Stage 2+ 升级 expert-registry.yaml |
+| src/mcp/index.ts（server） | dsh-acp: 诚实能力广告（lib/index.js:1143-1163）、权限桥一次性授权（:1118-1141）；DSH 侧 mcp-client 是未来消费方（A 形态连接点） | 空白 → D595 |
+| src/mcp/bridge.ts + tool-registration.ts | DSH mcp-client（消费方同型机制） | 相当 |
+| electron-renderer/hooks/useStreaming.ts + sse-contract.ts | dsh-client-ui-session 外部存储订阅（lib/client.js:83-126,:211-226）+ 提交回声（dsh-api-session-controller lib/client.js:875-896） | 自研简版 → D591 借鉴 |
+| electron/backend-spawn.cjs | DSH 子进程生命周期范式（spawn/探活/限次回收） | 相当（有测试） |
+| tui-v2/**（方案A 保留时） | 无对应（DSH 无 TUI 形态）；流式模式受铁律 41 冻结 | 自留 |
+| l1-interaction/types.ts（ViewAdapter 接口） | 与 dsh-agent-loop 的 surface/投影思想同型（loop 只认事件流，呈现层可换） | 自留（D590 复活其 web 实现） |
+
 ---
 
 ## 4. TUI 清理方案
@@ -279,7 +300,7 @@ L1 共有 **7 个交互面**，状态各异：
 
 ## 5. DSH 可复用组件映射（哪个包解决哪个 L1 缺口 + 集成方式）
 
-> DSH 0.1.2-rc.1，七包一手源码深读（file:line 相对包根），与施工图附录A 既有判定交叉验证一致。**借鉴=读范式自研，零 npm 依赖（G1 红线）**；标「Stage 3」的按施工图绞杀者节奏走。
+> DSH 0.1.2-rc.1，七包一手源码深读（file:line 相对包根），与施工图附录A 既有判定交叉验证一致。**可直接 import（npm 依赖）的包 = 0**——G1 零依赖红线 + 施工图 Stage 3 前零依赖约束，全部为范式借鉴/改造自研；标「Stage 3」的按施工图绞杀者节奏走。
 
 | DSH 包 | 解决的 L1 缺口 | 最值得搬的机制（锚点） | 集成方式 |
 |---|---|---|---|
