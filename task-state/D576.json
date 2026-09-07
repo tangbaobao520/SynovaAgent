@@ -1,7 +1,7 @@
 {
   "task_id": "D576",
   "title": "产品线兑换机制修复 CT-53 + alloc 在途盲区 CT-54",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "by": "dsh-cto",
@@ -22,8 +22,13 @@
     ],
     "notes": "自检5问: ①接线=calc/redeem 由 refresh-all.sh A3.5/A4 环节调用（不变）②异常=calc 存量降级记 degraded 显式③无 as any ④测试=5断言+回归13+3 全绿⑤残留=无。边界: 不改 scripts/audit/；不改 refresh-all.sh 集成点。CT-53/CT-54 闭环。"
   },
-  "audit": null,
+  "audit": {
+    "verdict": "PASS",
+    "report": "docs/synova/audit-reports/2026-09-08-K3-win-backlog-11-closeout.md",
+    "by": "K3 independent session",
+    "at": "2026-09-08"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-04",
-  "updated_by": "alloc-task-id"
+  "updated_at": "2026-09-08",
+  "updated_by": "K3 independent session"
 }

@@ -12,9 +12,10 @@ import * as fs from 'fs';
 import Database from 'better-sqlite3';
 import { getPythonBridge } from '../src/providers/python-bridge';
 import { feishuHealthCheck, syncFeishuMembersToSOG } from '../src/connectors/feishu-bridge';
-import { createLogger } from '../src/logger';
+import { createLogger } from '@synova/logger'; // D584: src/logger 已迁 @synova/logger 包（死路径修复）
 import type { GraphStore } from '../src/l4/graph-bridge';
-import { createGraphStore as createEngineGraphStore } from '@synova/diagnosis-engine';
+// D584 对齐: @synova/diagnosis-engine 包不存在（历史残留引用）→ 现行 GraphStore = SqliteGraphStore
+import { SqliteGraphStore } from '../src/adapters/sqlite-graph-store';
 
 // ═══ 加载 .env (必须在 SKIP_FEISHU 之前) ═══
 (function loadEnv() {
@@ -36,6 +37,17 @@ import { createGraphStore as createEngineGraphStore } from '@synova/diagnosis-en
 const log = createLogger('test:data-pipeline');
 const SKIP_FEISHU = !process.env.FEISHU_APP_ID || !process.env.FEISHU_APP_SECRET;
 
+// D584 环境豁免登记（非删除）: PythonBridge 依赖 python3 + synova_worker 模块（外部服务依赖，
+// 铁律 33 集成测试真实 API 不 mock）。无 worker 环境（本机/CI 常态）→ 显式 skip，不静默。
+import { execSync } from 'child_process';
+let SKIP_PY_BRIDGE = false;
+try {
+  execSync('python3 -c "import synova_worker"', { stdio: 'pipe', timeout: 10000 });
+} catch {
+  SKIP_PY_BRIDGE = true;
+  log.warn('[D584 环境豁免] python3 synova_worker 不可用 — PythonBridge 用例 skip（需要外部 worker 环境）');
+}
+
 if (SKIP_FEISHU) {
   log.warn({ FEISHU_APP_ID: process.env.FEISHU_APP_ID ? 'set' : 'missing', FEISHU_APP_SECRET: process.env.FEISHU_APP_SECRET ? 'set' : 'missing' }, 'FEISHU_* env 未设置, 飞书测试将跳过');
 }
@@ -46,7 +58,7 @@ const FEISHU_APP_SECRET = process.env.FEISHU_APP_SECRET || '';
 describe('数据管道 - 飞书连接器', () => {
   // ═══ 1. Python Bridge 可用性 ═══
   describe('PythonBridge health', () => {
-    it('should ping Python worker successfully', async () => {
+    it.runIf(!SKIP_PY_BRIDGE)('should ping Python worker successfully', async () => {
       const bridge = getPythonBridge();
       const healthy = await bridge.healthCheck();
       expect(healthy).toBe(true);
@@ -68,7 +80,7 @@ describe('数据管道 - 飞书连接器', () => {
       const db = new Database(':memory:');
       db.pragma('journal_mode = WAL');
 
-      const store = createEngineGraphStore('sqlite', db) as unknown as GraphStore;
+      const store = new SqliteGraphStore(db) as unknown as GraphStore;
       const orgId = 'test-org-feishu';
 
       const result = await syncFeishuMembersToSOG(

@@ -1,0 +1,16 @@
+{
+  "task_id": "D597",
+  "title": "D588会话投影接线-M3第5次修复",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "commit": "0a192e6f",
+    "by": "dsh",
+    "at": "2026-09-08"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-08",
+  "updated_by": "dsh",
+  "note": "D588 CONDITIONAL 三条件之① 接线落地：bootstrap.ts +1 行副作用 import（0a192e6f）。验收 4/4：grep 命中 :27、vitest 7/7、check-architecture 零违规、tsc 28=28。待 PR CI + CTO merge + K3 复审升 PASS。"
+}

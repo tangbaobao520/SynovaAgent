@@ -1,0 +1,56 @@
+{
+  "task_id": "D586",
+  "title": "LLM 稳定错误码 taxonomy 收敛对齐（DSH 借鉴卡 B-01）",
+  "slice": "llm-error-taxonomy",
+  "status": "audited",
+  "risk": "P1（模型底座）",
+  "spec": {
+    "commit": "da9b37db",
+    "note": "dev doc SYNOVA-IMPL-D586-llm-error-taxonomy-align-20260907.md 独立 docs commit 入库（先于 squash merge）；引用 DSH 0.1.1-rc.2 锚点（Win），Mac node_modules 0.1.2-rc.1 四 canonical 码 L22-42 逐字命中未漂移（K3 独立核验）"
+  },
+  "impl": {
+    "commit": "56c4dd1d",
+    "by": "claude",
+    "branch": "feat/win-d586-llm-error-taxonomy",
+    "slice": "llm-error-taxonomy",
+    "files": [
+      "src/errors/types.ts",
+      "src/providers/base.ts",
+      "tests/errors/llm-error-taxonomy.test.ts",
+      ".claude/task-briefs/2026-09-07-D586-win-llm-error-taxonomy.md"
+    ],
+    "tests": {
+      "total": 22,
+      "red_green": "red 21 failed|1 passed (22) → green 22 passed (22)（K3 独立实测 green 22/22）"
+    },
+    "ds_status": {
+      "DS1": "✅ normalizeLlmFailure 接线 base.ts:39 + finalizeAdapterFailure 三边界 237/248/258",
+      "DS2": "✅ @deepseek-ai src/ 零结果",
+      "DS3": "✅ red→green（green 独立实测 22/22）",
+      "DS4": "✅ 22+3=25 全绿 + tsc 28 基线恒等零新增",
+      "DS5": "✅ as any / as never / as unknown as = 0"
+    },
+    "deviations": [
+      "spec §4 写集表头「2 修改 + 0 新建」实为「2 修改 + 1 新建」（测试文件新建，§5 已声明未计入表头）",
+      "D575 已实现 INVALID_CREDENTIAL/RATE_LIMIT 保留不重建（S-14 无重复造轮子）"
+    ],
+    "env_notes": "Win 线（Claude Code）独立 clone 交付；K3 审计于 Mac Node 22 独立 worktree 复跑"
+  },
+  "audit": {
+    "verdict": "PASS",
+    "report": "docs/synova/audit-reports/2026-09-08-K3-win-backlog-11-closeout.md",
+    "by": "K3 independent session",
+    "at": "2026-09-08",
+    "p1": [
+      "前审 P1 闭合: task-state/D586.json 壳本批随 K3 回填入 git"
+    ],
+    "p2": [
+      "前审 P2×3 存续: ①(M7) spec 写集表 2+0 vs 2+1 ②finalizeAdapterFailure INTERNAL fallback retryable:true vs isRetryable(INTERNAL)=false 语义缝 ③chat catch 无 log.warn（存量）"
+    ],
+    "prior_report": "docs/synova/audit-reports/2026-09-07-K3-D586-closeout.md"
+  },
+  "fix_task_id": null,
+  "updated_at": "2026-09-08",
+  "updated_by": "K3 independent session",
+  "note": "D586 由 Win 线（Claude Code）交付，PR #400 squash 合并入 main（56c4dd1d）。K3 独立审计 PASS（无 P0，P1×1 task-state 缺失 + P2×3）。"
+}

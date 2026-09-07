@@ -1,7 +1,7 @@
 {
   "task_id": "D567",
   "title": "专家枚举硬编码残留 ×4 传播修复（K3 15-1）",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "commit": "55eba51f",
@@ -30,8 +30,17 @@
     ],
     "notes": "自检5问: ①接线=getAllExpertIds 新 export 被 chat.tsx/expert.ts/cross-validator/engine-impl/runner 5 个 src 文件引用；②异常=builtinExperts 目录不可读 console.error+[]、loader 空配置 log.warn、tiebreaker ||'host' 兜底、engine 映射失效值降级 host（全部显式降级不静默）；③类型安全=新增代码 as any=0、as never=0，净删 1 处 6 位 union 断言 cast；④测试=回归锁含 expect+失败消息非空壳，先红后绿；⑤残留=BUILTIN_EXPERTS/ALL_EXPERTS 旧符号全仓 grep 清零（tests/agent/expert-file-loader.integration.test.ts 等存量红中的旧 ID 为 main 存量，未动）。观察项（超范围未修）: extensions/sentinels/ manifests 的 auxiliaryExperts/route 大量旧专家 ID（strategy×31/org×16/finance×13...），被 runner VALID_EXPERTS 静默过滤=路由空转——数据层传播问题建议另立任务；post-commit 决策建议脚本中'八专家'静态提示文案同型过时（纯 advisory 文本）"
   },
-  "audit": null,
+  "audit": {
+    "verdict": "PASS",
+    "report": "docs/synova/audit-reports/2026-09-08-K3-win-backlog-11-closeout.md",
+    "by": "K3 independent session",
+    "at": "2026-09-08",
+    "p2": [
+      "F4: runner.ts:714-715 无效专家 ID 静默 continue（存量模式，铁律 11 精神）——建议另立 D# 加 log.warn",
+      "F2(M2): 审计清单写集/测试路径不准（expert-config-loader.ts+cli/commands/expert.ts；tests/expert/）"
+    ]
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-02",
-  "updated_by": "deepseek-harness"
+  "updated_at": "2026-09-08",
+  "updated_by": "K3 independent session"
 }

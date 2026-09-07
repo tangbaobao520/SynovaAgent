@@ -1,7 +1,7 @@
 {
   "task_id": "D578",
   "title": "FIX-D572-Win真机实测1-2",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "by": "win-session",
@@ -10,8 +10,20 @@
     "residuals": "3 项转 D581（ps1 BOM/证据路径/构建守卫）；1-7 NSIS 升级路径未测（Win 下次会话）",
     "notes": "1-2 兑换等四断言 evidence 入 git（D581 修脚本后 Win 复跑）"
   },
-  "audit": null,
+  "audit": {
+    "verdict": "PASS",
+    "report": "docs/synova/audit-reports/2026-09-08-K3-win-backlog-11-closeout.md",
+    "by": "K3 independent session",
+    "at": "2026-09-08",
+    "conditions": [
+      "1-2 四断言 evidence 待 Win 复跑入 git（docs/synova/product-lines/evidence/）——K3 标注状态，不兑换；复跑证据入 git 后 K3 复核"
+    ],
+    "notes": [
+      "Win 真机实测本体为机器记录（台账 1493539f + CI run 33980824064），Mac 审计机不可复现，按台账登记采信不升格",
+      "1-7 NSIS 升级路径未测（Win 下次会话）存续"
+    ]
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-05",
-  "updated_by": "dsh-cto"
+  "updated_at": "2026-09-08",
+  "updated_by": "K3 independent session"
 }

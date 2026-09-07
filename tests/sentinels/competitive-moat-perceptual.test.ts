@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { computeBrandPremium } from '../../extensions/sentinels/competitive-moat-perceptual/computes/brand-premium';
-import { computeCustomerLoyalty } from '../../extensions/sentinels/competitive-moat-perceptual/computes/customer-loyalty';
+import { computeBrandPremium } from '../../extensions/sentinels/_extinct/competitive-moat-perceptual/computes/brand-premium';
+import { computeCustomerLoyalty } from '../../extensions/sentinels/_extinct/competitive-moat-perceptual/computes/customer-loyalty';
 describe('computeBrandPremium', () => {
   it('空degraded', () => { expect(computeBrandPremium([]).degraded).toBe(true); });
   it('高价=正溢价', () => { const r = computeBrandPremium([{name:'A',price:150,category:'cat'},{name:'B',price:50,category:'cat'}]); expect(r.premium).toBeGreaterThan(0); });

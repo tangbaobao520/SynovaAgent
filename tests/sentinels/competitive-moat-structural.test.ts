@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { computeScaleEconomy } from '../../extensions/sentinels/competitive-moat-structural/computes/scale-economy-score';
-import { computeNetworkEffect } from '../../extensions/sentinels/competitive-moat-structural/computes/network-effect-score';
-import { computeCounterPositioningSlm } from '../../extensions/sentinels/competitive-moat-structural/computes/counter-positioning-slm';
+import { computeScaleEconomy } from '../../extensions/sentinels/_extinct/competitive-moat-structural/computes/scale-economy-score';
+import { computeNetworkEffect } from '../../extensions/sentinels/_extinct/competitive-moat-structural/computes/network-effect-score';
+import { computeCounterPositioningSlm } from '../../extensions/sentinels/_extinct/competitive-moat-structural/computes/counter-positioning-slm';
 describe('computeScaleEconomy', () => {
   it('空degraded', () => { expect(computeScaleEconomy([]).degraded).toBe(true); });
   it('收入高=高规模', () => { const r = computeScaleEconomy([{revenue:300,totalAssets:100}]); expect(r.score).toBeGreaterThan(0.5); });

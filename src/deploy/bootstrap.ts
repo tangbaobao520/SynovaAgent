@@ -21,6 +21,10 @@ import { EventBus } from '../orchestrator/event-bus';
 import { HookRunner } from '../orchestrator/hook-runner';
 import { SessionManager } from '../orchestrator/session-manager';
 import { SessionStore } from '../store/session-store';
+// M3 修复（D597/D588）：副作用导入——session-projection 模块加载时原型级 wrap
+// SessionStore.prototype.appendEvent，生产 8+ 构造点零修改自动获得投影 drive（import 即接线）。
+// 无此行 = wrap 从未触发 = 投影死代码（铁律 0-2 接线）。
+import '../store/session-projection';
 import { PhaseStateMachine } from '../orchestrator/phase-state-machine';
 import { createOrchestrationWiring, type OrchestrationWiring } from '../orchestrator/wiring';
 import { ToolRegistry } from '../agent/tools';
