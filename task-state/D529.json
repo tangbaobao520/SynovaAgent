@@ -1,7 +1,7 @@
 {
   "task_id": "D529",
   "title": "C1 desktop-build CI 修复（macos electron-builder + windows backend 失败）",
-  "status": "claimed",
+  "status": "closed",
   "spec": {
     "doc": "docs/synova/coordination/派单-C1C2-遗留闭环-20260825.md",
     "source": "切片 A C1 条件项",
@@ -10,7 +10,7 @@
   "impl": null,
   "audit": null,
   "fix_task_id": "superseded-by-D517",
-  "updated_at": "2026-08-28",
-  "updated_by": "CTO",
-  "note": "僵尸：C1 desktop-build CI 由 D517 覆盖；本号保留防重用"
+  "updated_at": "2026-09-08",
+  "updated_by": "dsh-cto",
+  "note": "CTO 清理 2026-09-08：被 D517/D581 覆盖（desktop-build CI 已由 D581 beforePack 守卫修复）"
 }

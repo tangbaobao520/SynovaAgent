@@ -1,12 +1,12 @@
 {
   "task_id": "D512",
   "title": "gs-refresh-evidence",
-  "status": "claimed",
+  "status": "closed",
   "spec": null,
   "impl": null,
   "audit": null,
   "fix_task_id": "zombie-cancelled",
-  "updated_at": "2026-08-28",
-  "updated_by": "CTO",
-  "note": "看板大扫除（2026-08-28）：僵尸关闭——gs-refresh：08-23 空壳（无 spec/impl）"
+  "updated_at": "2026-09-08",
+  "updated_by": "dsh-cto",
+  "note": "CTO 清理 2026-09-08：僵尸关闭（无 spec/impl）——2026-08-28 看板大扫除判定"
 }
