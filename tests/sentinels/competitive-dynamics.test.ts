@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { computeHhiIndex } from '../../extensions/sentinels/competitive-dynamics/computes/hhi-index';
-import { computeCompetitiveIntensity } from '../../extensions/sentinels/competitive-dynamics/computes/competitive-intensity';
+import { computeHhiIndex } from '../../extensions/sentinels/_extinct/competitive-dynamics/computes/hhi-index';
+import { computeCompetitiveIntensity } from '../../extensions/sentinels/_extinct/competitive-dynamics/computes/competitive-intensity';
 
 describe('computeHhiIndex', () => {
   it('单企业=10000', () => {
