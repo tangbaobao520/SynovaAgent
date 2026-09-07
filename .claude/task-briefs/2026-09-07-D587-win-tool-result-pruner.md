@@ -44,7 +44,8 @@ grep 实证（clone 基线 da9b37db）：`grep -rn "slice(0" src/agent/ src/prov
 处理（中间）：工具执行产出 execResult → `JSON.stringify` 后、push 进 messages（role: tool）前，经 `pruneForPrompt()` → `pruneToolResult(text)` 确定性修剪（超阈值才修剪：保留头 headChars + 固定 marker + 尾 tailChars，码点计数不拆代理对）→ messages 传给 provider.chat 进入提示词。
 结果（呈现）：LLM 收到的工具结果 ≤ thresholdChars 且中文/emoji 完整；同输入同输出可回放；修剪失败时 log.warn 降级为原文，对话不阻断。
 
-## 架构层: L2 编排层（src/agent/）+ 新增 src/llm/ 纯函数层；L2→src/llm 为同仓内模块依赖，不触 L3/L4/L5 边界（check-architecture.sh 只检 L2→L4 与 L1 越层，src/llm 无层约束）
+## 架构层:
+L2 编排层（src/agent/）+ 新增 src/llm/ 纯函数层；L2→src/llm 为同仓内模块依赖，不触 L3/L4/L5 边界（check-architecture.sh 只检 L2→L4 与 L1 越层，src/llm 无层约束）
 
 ## Done 标准:
 - [x] DS3 新测试 red→green 全绿 ≥4 用例 verify: npx vitest run tests/llm/tool-result-pruner.test.ts
