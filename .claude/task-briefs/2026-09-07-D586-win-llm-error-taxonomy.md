@@ -40,7 +40,8 @@ grep 证实：normalizeLlmFailure / isContextWindowExceededError / isQuotaExceed
 处理：src/providers/base.ts 最终 throw 边界接 normalizeLlmFailure（任意 throw → 冻结 {message, code}，敌意值不逃逸）→ 合一 detail（provider code+type+message）正则分类 → canonical 码（CONTEXT_OVERFLOW / BILLING_EXCEEDED / EMPTY_RESPONSE / AUTH_FAILED）→ 抛出 DiagnosticAgentError（既有消费方接口不变）。
 结果：npx vitest run tests/errors/llm-error-taxonomy.test.ts tests/providers/ 全绿；tsc 28 基线零新增；grep normalizeLlmFailure src/providers/ 命中（真实接线）；grep @deepseek-ai src/ 零结果。
 
-## 架构层: L3（本任务在哪一层 = L3 洞察层 LLM 底座：src/errors + src/providers，邻接 L2 编排）
+## 架构层:
+L3 洞察层 LLM 底座（本任务在哪一层）— src/errors + src/providers，邻接 L2 编排
 
 ## 文档引用
 docs/plans/codex/implementation/SYNOVA-IMPL-D586-llm-error-taxonomy-align-20260907.md §2 现状 / §4 写集表 / §5 测试要求 / §7 DS 判据（DS1-DS5）；docs/synova/research/DSH迁移施工图-20260820/DSH借鉴指引-v2-20260904.md B-01；CLAUDE.md 铁律 0-2 / 32 / 38 / 46。
