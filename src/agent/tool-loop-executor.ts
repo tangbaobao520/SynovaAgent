@@ -11,6 +11,7 @@ import type { LLMMessage } from '../providers/types';
 import type { EngineContext } from './engine-context';
 import { createLogger } from '@synova/logger';
 import { ToolGuard } from '../l3/tool-guard';
+import { pruneToolResult, ToolResultPruneError } from '../llm/tool-result-pruner';
 import * as crypto from 'crypto';
 
 /** Tool execution result — may contain error property on failure */
@@ -26,6 +27,24 @@ export class ToolLoopExecutor {
 
   constructor(ctx: EngineContext) {
     this.ctx = ctx;
+  }
+
+  /**
+   * D587: 工具结果进提示词前的确定性修剪（head+marker+tail、码点计数、replay-safe）。
+   * 降级契约（铁律 24/31）: 修剪层抛错 → log.warn + 降级为原文——不阻断对话、不丢数据。
+   * ToolResultPruneError 携带稳定错误码（D586 taxonomy 风格），进结构化日志可检索。
+   */
+  private pruneForPrompt(text: string): string {
+    try {
+      return pruneToolResult(text);
+    } catch (err) {
+      if (err instanceof ToolResultPruneError) {
+        this.log.warn({ code: err.code, phase: err.phase, degraded: true }, `工具结果修剪失败 — 降级为原文: ${err.message}`);
+      } else {
+        this.log.warn({ err, degraded: true }, '工具结果修剪失败 — 降级为原文');
+      }
+      return text;
+    }
   }
 
   /**
@@ -129,7 +148,7 @@ export class ToolLoopExecutor {
           messages.push({
             role: 'tool',
             tool_call_id: crypto.randomUUID(),
-            content: JSON.stringify(execResult),
+            content: this.pruneForPrompt(JSON.stringify(execResult)),
           });
         }
 
@@ -260,7 +279,7 @@ export class ToolLoopExecutor {
           messages.push({
             role: 'tool',
             tool_call_id: crypto.randomUUID(),
-            content: JSON.stringify(execResult),
+            content: this.pruneForPrompt(JSON.stringify(execResult)),
           });
         }
         onToken(']\n');
