@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-09-06 20:37:40",
+  "generated_at": "2026-09-07 14:13:44",
   "version": "1.0",
-  "product_progress_pct": 4,
+  "product_progress_pct": 5,
   "total_lines": 26,
   "lines": [
     {
@@ -491,16 +491,16 @@
       "baseline_note": "调度真实（K3 PASS）；告警层死代码",
       "done_definition": "装好后系统自动按周/月/季监测，异常自动发现、自动进报告；重启/断电不丢监测结果",
       "total": 8,
-      "verified": 0,
-      "progress_pct": 0,
+      "verified": 1,
+      "progress_pct": 12,
       "k3_gate": "",
       "status_counts": {
         "uncommitted": 3,
         "failed": 0,
         "pending_k3": 1,
-        "verified": 0,
+        "verified": 1,
         "rejected": 0,
-        "stale": 4
+        "stale": 3
       },
       "points": [
         {
@@ -515,7 +515,7 @@
         {
           "id": "7-2",
           "desc": "哨兵全量注册（manifest 挂载无死代码）",
-          "status": "stale",
+          "status": "verified",
           "evidence_files": [
             "docs/synova/product-lines/evidence/k3-D575-D577-closeout.json",
             "docs/synova/product-lines/evidence/k3-full-chain-20260813.json"
@@ -585,22 +585,22 @@
       "baseline_note": "工单表路径有；manifest 死代码+去重键不稳定",
       "done_definition": "异常发生时老板收到一条提醒；同一异常只提醒一次；处理完自动销单",
       "total": 5,
-      "verified": 3,
-      "progress_pct": 60,
+      "verified": 4,
+      "progress_pct": 80,
       "k3_gate": "",
       "status_counts": {
         "uncommitted": 0,
         "failed": 0,
         "pending_k3": 1,
-        "verified": 3,
+        "verified": 4,
         "rejected": 0,
-        "stale": 1
+        "stale": 0
       },
       "points": [
         {
           "id": "8-1",
           "desc": "阈值真实触发（读 manifest 配置，不硬编码）",
-          "status": "stale",
+          "status": "verified",
           "evidence_files": [
             "docs/synova/product-lines/evidence/k3-D575-D577-closeout.json",
             "docs/synova/product-lines/evidence/k3-full-chain-20260813.json"
@@ -719,16 +719,16 @@
       "baseline_note": "K3 三重缺陷；建议第一条 100% 线",
       "done_definition": "老板能接财务数据，系统自动产出现金流/成本/利润的持续监测与告警，每条结论可回溯证据",
       "total": 8,
-      "verified": 0,
-      "progress_pct": 0,
+      "verified": 1,
+      "progress_pct": 12,
       "k3_gate": "",
       "status_counts": {
         "uncommitted": 6,
         "failed": 0,
         "pending_k3": 0,
-        "verified": 0,
+        "verified": 1,
         "rejected": 0,
-        "stale": 2
+        "stale": 1
       },
       "points": [
         {
@@ -748,7 +748,7 @@
         {
           "id": "10-3",
           "desc": "P0 哨兵 manifest 挂载，阈值真实触发",
-          "status": "stale",
+          "status": "verified",
           "evidence_files": [
             "docs/synova/product-lines/evidence/k3-D575-D577-closeout.json"
           ],
