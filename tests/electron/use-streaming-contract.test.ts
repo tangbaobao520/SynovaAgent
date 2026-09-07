@@ -19,6 +19,7 @@ import {
   applySSEEvent,
   type SSEContractState,
   type SSEEventLike,
+  type SSEEventType,
 } from '../../electron-renderer/src/hooks/sse-contract';
 
 const initialState = (): SSEContractState => ({
@@ -130,5 +131,59 @@ describe('D527 sse-contract: 边界条件', () => {
     for (const t of allTypes) {
       expect(() => applySSEEvent(initialState(), { type: t })).not.toThrow();
     }
+  });
+});
+
+describe('D590 对话帧类型（open/token/agent_message/end）', () => {
+  let warn: ReturnType<typeof vi.spyOn>;
+  beforeEach(() => {
+    warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    // 既有 describe 的 spy 从不 mockRestore——清掉继承的历史调用计数，只统计本用例
+    warn.mockClear();
+  });
+
+  it('D590-① open 回声 sessionId → result.sessionId 携带（提交回声语义，客户端据此对账）', () => {
+    const r = applySSEEvent(initialState(), { type: 'open', sessionId: 'sess_d590_echo', phase: 0 });
+    expect(r.sessionId).toBe('sess_d590_echo');
+    expect(r.state.phase).toBe('idle'); // 状态机无变化
+    expect(warn).not.toHaveBeenCalled(); // 已知类型不得走未知告警分支
+  });
+
+  it('D590-② open 缺 sessionId → 不告警不落（降级容忍，known-passthrough）', () => {
+    const r = applySSEEvent(initialState(), { type: 'open' });
+    expect(r.sessionId).toBeUndefined();
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('D590-③ token/agent_message/end → known-passthrough，状态不变且不告警', () => {
+    const passthrough: SSEEventLike[] = [
+      { type: 'token', text: '你' },
+      { type: 'agent_message', content: '你好' },
+      { type: 'end' },
+    ];
+    for (const evt of passthrough) {
+      warn.mockClear();
+      const r = applySSEEvent(initialState(), evt);
+      expect(r.state).toEqual(initialState());
+      expect(warn).not.toHaveBeenCalled();
+    }
+  });
+
+  it('D590-④ SSEEventType 联合含 4 个对话帧类型（19 类型全集 no-throw，既有 15 零回归）', () => {
+    const allTypes: SSEEventType[] = [
+      'phase', 'phase_started', 'phase_completed', 'report_ready', 'right_column_update',
+      'degraded', 'root_cause_identified', 'expert_hypothesis', 'hypothesis_generated',
+      'interim_finding', 'community_reports', 'entity_resolution', 'judgment_card',
+      'complete', 'error', 'open', 'token', 'agent_message', 'end',
+    ];
+    expect(allTypes.length).toBe(19);
+    for (const t of allTypes) {
+      expect(() => applySSEEvent(initialState(), { type: t })).not.toThrow();
+    }
+  });
+
+  it('D590-⑤ 未知类型仍 warn（对话帧上线后未知类型防线不回退）', () => {
+    applySSEEvent(initialState(), { type: 'totally_unknown_d590' });
+    expect(warn).toHaveBeenCalled();
   });
 });

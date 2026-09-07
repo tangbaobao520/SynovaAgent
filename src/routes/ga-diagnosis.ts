@@ -147,7 +147,15 @@ async function startDiagnosis(){
 async function pollResults(jobId){
   document.getElementById('phaseLabel').textContent='等待专家分析...';
   try{
-    const r=await fetch('/api/diagnosis/report/'+jobId);if(!r.ok)throw new Error('报告未就绪');
+    const r=await fetch('/api/diagnosis/report/'+jobId);
+    if(r.status===410){
+      // D590 裁决②连带：upload-v2 已 410 下线——止停无限轮询，显式指路替代入口
+      document.getElementById('phaseLabel').textContent='文档诊断已下线——请改用对话诊断（POST /api/conversations）或 POST /api/diagnosis/consult';
+      document.getElementById('progress').style.display='none';
+      document.getElementById('startBtn').disabled=false;
+      return;
+    }
+    if(!r.ok)throw new Error('报告未就绪');
     const html=await r.text();
     document.getElementById('progress').style.display='none';
     document.getElementById('results').style.display='block';

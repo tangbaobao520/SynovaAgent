@@ -1,20 +1,40 @@
 /**
- * l1-interaction/web-adapter.ts — Web ViewAdapter 实现 (Slice C)
+ * l1-interaction/web-adapter.ts — Web ViewAdapter 实现 (Slice C / D590 复活接线)
  *
- * 通过 SSE 响应流与浏览器通信。
- * 每个 ViewAdapter 方法对应一个 SSE event type。
+ * 通过 SSE 响应流与浏览器/桌面端通信。每个 ViewAdapter 方法对应一个 SSE 帧；
+ * 帧载荷为自描述对象 `{type, ...}`（桌面端 sse-contract.applySSEEvent 直接可解，
+ * 命名对齐 D527 SSEEventType）。帧语义借鉴 dsh-api-gateway open/item/end/error
+ * + 心跳范式（零 import，G1 零依赖红线）。
+ *
+ * 契约（铁律 47）:
+ *   @input    — express Response（SSE 目标流）；本类持有具体连接，路由每请求 new 一个
+ *   @output   — SSE 帧 `event: <type>\ndata: {json}\n\n` + `: ping` 心跳注释帧（15s，
+ *               close/end 后清除）
+ *   @degraded — 客户端断开（res close）→ 置 closed 停写 + 停心跳 + 触发 onClosed 钩子
+ *               （路由据此感知断线，settle 后仍完整落库——DSH 中断锚语义）；
+ *               写入异常仅 log 不抛（引擎流式管线不应因下游断开而崩溃，铁律 24 显式留痕）
  *
  * @since 0.2.0
  */
 import type { ViewAdapter } from './types';
 import type { Response } from 'express';
+import type { DiagnosisEvent } from '../l2-interfaces/diagnosis-engine';
 import { createLogger } from '@synova/logger';
 
 const log = createLogger('l1/web-adapter');
 
+/** 心跳注释帧间隔——本机单机无代理场景取 15s（dsh-api-gateway 用 2s 是多跳代理场景） */
+const HEARTBEAT_INTERVAL_MS = 15_000;
+
+/** SSE 协议帧载荷（type 自描述；sendFrame 按 payload.type 写 event 行） */
+export type SseFramePayload = { type: string } & Record<string, unknown>;
+
 export class WebViewAdapter implements ViewAdapter {
   private res: Response;
-  private messageBuffer: string[] = [];
+  /** 断线/关闭后置 true——停写停心跳（写前检查，防止向已销毁 socket 写入） */
+  private closed = false;
+  private onClosedCallback: (() => void) | null = null;
+  private heartbeat: ReturnType<typeof setInterval> | null = null;
 
   constructor(res: Response) {
     this.res = res;
@@ -23,48 +43,96 @@ export class WebViewAdapter implements ViewAdapter {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders();
+
+    // 心跳注释帧——防代理/负载均衡空闲断连（": " 开头为 SSE 注释，客户端忽略）
+    this.heartbeat = setInterval(() => this.writeRaw(': ping\n\n'), HEARTBEAT_INTERVAL_MS);
+
+    // 断线感知——路由经 setOnClosed 注册后续动作（在途轮次 settle 后仍完整落库）
+    res.on('close', () => {
+      const wasClosed = this.closed;
+      this.closed = true;
+      this.clearHeartbeat();
+      if (!wasClosed) {
+        log.debug('SSE 连接关闭 — 停写停心跳');
+        this.onClosedCallback?.();
+      }
+    });
+    // 流错误不冒泡为 uncaughtException（半截写入等瞬态，铁律 24：显式记录不空吞）
+    res.on('error', (err: Error) => {
+      log.debug({ err }, 'SSE 流错误 — 客户端侧连接异常');
+    });
   }
 
-  private emit(type: string, data: string): void {
+  /** 注册断线回调（路由用于感知客户端断开；close 后不再触发） */
+  setOnClosed(fn: () => void): void {
+    this.onClosedCallback = fn;
+  }
+
+  private clearHeartbeat(): void {
+    if (this.heartbeat !== null) {
+      clearInterval(this.heartbeat);
+      this.heartbeat = null;
+    }
+  }
+
+  private writeRaw(chunk: string): void {
+    if (this.closed) return; // 断线停写（中断锚语义：在途轮次由路由继续 settle 落库）
     try {
-      this.res.write(`event: ${type}\ndata: ${JSON.stringify(data)}\n\n`);
+      this.res.write(chunk);
     } catch (err) {
       log.debug({ err }, 'Web 适配器 SSE 写入失败 — 客户端断开');
     }
   }
 
+  /** 通用协议帧写出（路由侧使用：open/complete/error/end 等；按 payload.type 写 event 行） */
+  sendFrame(payload: SseFramePayload): void {
+    this.writeRaw(`event: ${payload.type}\ndata: ${JSON.stringify(payload)}\n\n`);
+  }
+
+  /** 诊断事件 flat 透传（引擎 DiagnosisEvent 原样入流——桌面 sse-contract 既有类型零改动可解） */
+  emitDiagnosisEvent(evt: DiagnosisEvent): void {
+    // spread 出新字面量（interface 无隐式索引签名，直接传参会卡 Record<string, unknown>——零 as 断言写法）
+    this.sendFrame({ ...evt, type: evt.type });
+  }
+
+  // ── ViewAdapter 七方法（帧载荷一律对象帧）──
+
   showAgentMessage(text: string): void {
-    this.emit('agent_message', text);
+    this.sendFrame({ type: 'agent_message', content: text });
   }
 
   showUserMessage(text: string): void {
-    this.emit('user_message', text);
+    this.sendFrame({ type: 'user_message', content: text });
   }
 
   appendToken(token: string): void {
-    this.messageBuffer.push(token);
-    this.emit('token', token);
+    this.sendFrame({ type: 'token', text: token });
   }
 
   showSystemMessage(text: string): void {
-    this.emit('system_message', text);
+    this.sendFrame({ type: 'system_message', message: text });
   }
 
   showError(text: string): void {
-    this.emit('error', text);
+    this.sendFrame({ type: 'error', code: 'ENGINE_ERROR', message: text });
   }
 
   setStatus(text: string): void {
-    this.emit('status', text);
+    this.sendFrame({ type: 'status', message: text });
   }
 
   render(): void {
     // Web SSE — no explicit render needed, each event is flushed immediately
   }
 
-  /** Close the SSE connection */
+  /** Close the SSE connection（终帧由路由发送；本方法只负责 end + 停心跳） */
   close(): void {
-    try { this.res.end(); } catch (err) {
+    this.clearHeartbeat();
+    if (this.closed) return;
+    this.closed = true;
+    try {
+      this.res.end();
+    } catch (err) {
       log.warn({ err }, 'SSE 连接关闭失败 — already closed');
     }
   }

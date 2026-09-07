@@ -1,0 +1,44 @@
+=== §8 接线验证（D590 spec §8 表逐条）===
+
+1) conversationsRoutes 挂载（server.ts，要求 ≥2）:
+43:import conversationsRoutes from './routes/conversations'; // D590 — 对话 SSE 端点（ConversationEngine × HTTP 接线）
+353:  app.use(conversationsRoutes); // D590 — 对话 SSE 端点（sessionsRoutes 旁，spec §5.1）
+
+2) WebViewAdapter 消费（routes/，要求 ≥1）:
+src/routes/conversations.ts:43:import { WebViewAdapter } from '../l1-interaction/web-adapter';
+src/routes/conversations.ts:215:  const adapter = new WebViewAdapter(res);
+
+3) setViewAdapter 生产调用点（≥1）:
+src/routes/conversations.ts:245:    conv.setViewAdapter(adapter);
+
+4) emitDiagnosisEvent / setOnClosed 消费（conversations.ts 各 ≥1）:
+217:  adapter.setOnClosed(() => {
+296:      const diagnosisResult = await launcher.startDiagnosis(orgId, 'GA', (evt) => adapter.emitDiagnosisEvent(evt));
+
+5) 白名单三前缀（auth.ts ≥1）:
+86: * D590（创始人裁决① 鉴权过桥）: 新增三前缀——/api/diagnosis/consult（consult 五端点族）、
+87: * /api/conversations（对话 SSE）、/api/sessions（会话读回）。
+110:    path.startsWith('/api/diagnosis/consult') || // D590 裁决① — 桌面端诊断链路（consult 五端点族）
+111:    path.startsWith('/api/conversations') ||     // D590 裁决① — 对话 SSE 端点
+112:    path.startsWith('/api/sessions')             // D590 裁决① — 会话读回（对话验收闭环）
+
+6) 410 拦截（server.ts code: 'GONE' ≥1）:
+95:      code: 'GONE',
+90:export const uploadV2GoneRouter: Router = Router().all(
+359:  app.use(uploadV2GoneRouter); // D590 裁决② — 替换 upload-v2 旧挂载（410 Gone 显式下线）
+
+7) sse-contract 新类型归约（producer 侧 + switch 分支）:
+145:    case 'open': {
+150:    case 'token':
+151:    case 'agent_message':
+152:    case 'end':
+
+8) 删除复核:
+src/routes/diagnosis.ts:50:// 故用有界内存缓存（routes/ 内存 Map 为仓库既有模式，diagnosis-upload-v2 jobStore 同型但无界——
+src/mvp-server.ts:13:// ═══ 内联路由 (不 import diagnosis-upload-v2 — 它依赖 @synova/sog-core 等有问题包) ═══
+src/services/llm-credential-store.ts:16: * 热重载机制: routes 每请求 loadConfig()（diagnosis-upload-v2.ts L245/L526 实测），
+tests/routes/llm-config.test.ts:174:    const cfg = loadConfig(); // 每请求 loadConfig 的生产路径（diagnosis-upload-v2 L526 同款）
+--- messageBuffer:
+(零结果)
+--- test-http-route:
+(零结果)

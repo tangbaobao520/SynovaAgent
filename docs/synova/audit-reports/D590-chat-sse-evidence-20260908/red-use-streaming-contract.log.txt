@@ -1,0 +1,134 @@
+
+ RUN  v4.1.8 /Users/wane/SynovaAgent
+
+ ❯ tests/electron/use-streaming-contract.test.ts (17 tests | 3 failed) 14ms
+     × D590-① open 回声 sessionId → result.sessionId 携带（提交回声语义，客户端据此对账） 4ms
+     × D590-② open 缺 sessionId → 不告警不落（降级容忍，known-passthrough） 1ms
+     × D590-③ token/agent_message/end → known-passthrough，状态不变且不告警 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/electron/use-streaming-contract.test.ts > D590 对话帧类型（open/token/agent_message/end） > D590-① open 回声 sessionId → result.sessionId 携带（提交回声语义，客户端据此对账）
+AssertionError: expected undefined to be 'sess_d590_echo' // Object.is equality
+
+- Expected:
+"sess_d590_echo"
+
++ Received:
+undefined
+
+ ❯ tests/electron/use-streaming-contract.test.ts:145:25
+    143|   it('D590-① open 回声 sessionId → result.sessionId 携带（提交回声语义，客户端据此对账）',…
+    144|     const r = applySSEEvent(initialState(), { type: 'open', sessionId:…
+    145|     expect(r.sessionId).toBe('sess_d590_echo');
+       |                         ^
+    146|     expect(r.state.phase).toBe('idle'); // 状态机无变化
+    147|     expect(warn).not.toHaveBeenCalled(); // 已知类型不得走未知告警分支
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  tests/electron/use-streaming-contract.test.ts > D590 对话帧类型（open/token/agent_message/end） > D590-② open 缺 sessionId → 不告警不落（降级容忍，known-passthrough）
+AssertionError: expected "warn" to not be called at all, but actually been called 8 times
+
+Received:
+
+  1st warn call:
+
+    Array [
+      "[sse-contract] 未处理的 SSE 事件类型:",
+      "root_cause_identified",
+    ]
+
+  2nd warn call:
+
+    Array [
+      "[sse-contract] 未处理的 SSE 事件类型:",
+      "right_column_update",
+    ]
+
+  3rd warn call:
+
+    Array [
+      "[sse-contract] report_ready 缺 reportId，跳过",
+      "{"type":"report_ready"}",
+    ]
+
+  4th warn call:
+
+    Array [
+      "[sse-contract] 未处理的 SSE 事件类型:",
+      "right_column_update",
+    ]
+
+  5th warn call:
+
+    Array [
+      "[sse-contract] 未处理的 SSE 事件类型:",
+      "root_cause_identified",
+    ]
+
+  6th warn call:
+
+    Array [
+      "[sse-contract] complete 缺 report.reportId，跳过落库",
+      "{"type":"complete"}",
+    ]
+
+  7th warn call:
+
+    Array [
+      "[sse-contract] 未处理的 SSE 事件类型:",
+      "open",
+    ]
+
+  8th warn call:
+
+    Array [
+      "[sse-contract] 未处理的 SSE 事件类型:",
+      "open",
+    ]
+
+
+Number of calls: 8
+
+ ❯ tests/electron/use-streaming-contract.test.ts:153:22
+    151|     const r = applySSEEvent(initialState(), { type: 'open' });
+    152|     expect(r.sessionId).toBeUndefined();
+    153|     expect(warn).not.toHaveBeenCalled();
+       |                      ^
+    154|   });
+    155|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  tests/electron/use-streaming-contract.test.ts > D590 对话帧类型（open/token/agent_message/end） > D590-③ token/agent_message/end → known-passthrough，状态不变且不告警
+AssertionError: expected "warn" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st warn call:
+
+    Array [
+      "[sse-contract] 未处理的 SSE 事件类型:",
+      "token",
+    ]
+
+
+Number of calls: 1
+
+ ❯ tests/electron/use-streaming-contract.test.ts:166:24
+    164|       const r = applySSEEvent(initialState(), evt);
+    165|       expect(r.state).toEqual(initialState());
+    166|       expect(warn).not.toHaveBeenCalled();
+       |                        ^
+    167|     }
+    168|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 14 passed (17)
+   Start at  02:58:30
+   Duration  164ms (transform 31ms, setup 0ms, import 45ms, tests 14ms, environment 0ms)
+

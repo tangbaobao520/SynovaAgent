@@ -1,8 +1,14 @@
 /**
- * chat.ts — 内置 Web 对话界面 (L1-P0: 统一 SSE + 进度可视化 + 中间发现卡片)
+ * chat.ts — 内嵌诊断发射页 + 3 辅助接口（诚实化：D590，对齐审计附录A M7 勘误）
  *
- * GET / → Web 对话界面
+ * 本页是"一次性诊断发射器"（内嵌 JS 只调 POST /api/diagnosis/consult），
+ * 不是多轮对话 UI——多轮对话走 D590 对话 SSE 端点（src/routes/conversations.ts，
+ * POST /api/conversations）；本文件也无对话 SSE（"统一 SSE"系旧头注释不实声称，已删）。
+ *
+ * GET /chat → 内嵌诊断发射页
  * GET /api/status → API Key 配置状态
+ * GET /api/user-state → 用户状态检测
+ * POST /api/proposal/:id/resolve → 提议确认
  */
 import { Router, type Request, type Response } from 'express';
 import { loadConfig } from '../config';
@@ -318,7 +324,7 @@ async function init() {
       addSystem('msg', '👋 我是 Synova，你的 AI 组织诊断助手。<br>点击下方按钮开始，或直接输入你的组织名称。');
     }
   } catch(e) {
-    log.warn({ err: e instanceof Error ? e.message : String(e) }, "网络请求失败");
+    console.warn("网络请求失败", e instanceof Error ? e.message : String(e));
     dot.className = 'dot off';
     statusText.textContent = '服务异常';
   }
@@ -723,7 +729,7 @@ async function send() {
       }
     }
   } catch(e) {
-    log.warn({ err: e instanceof Error ? e.message : String(e) }, "JSON 解析失败");
+    console.warn("JSON 解析失败", e instanceof Error ? e.message : String(e));
     if (e.name !== 'AbortError') {
       addError('连接失败：' + e.message);
     }
@@ -820,7 +826,7 @@ async function loadGraphView() {
 
     addSystem('msg', '📊 团队全景图已加载 (' + nodes.length + ' 人, ' + edges.length + ' 关联)');
   } catch(e) {
-    log.warn({ err: e instanceof Error ? e.message : String(e) }, "网络请求失败");
+    console.warn("网络请求失败", e instanceof Error ? e.message : String(e));
     addSystem('msg', '⚠️ 团队全景图暂不可用 — 需要先运行诊断生成数据');
   }
 }
@@ -882,7 +888,7 @@ async function resolveProposal(id, action) {
       (action === 'confirm' ? '✅ 已确认' : action === 'reject' ? '❌ 已拒绝' : '💬 已记录看法') :
       '⚠️ ' + (data.error || '操作失败'));
   } catch(e) {
-    log.warn({ err: e instanceof Error ? e.message : String(e) }, "网络请求失败");
+    console.warn("网络请求失败", e instanceof Error ? e.message : String(e));
     addSystem('msg', '⚠️ 操作失败: ' + e.message);
   }
 }
