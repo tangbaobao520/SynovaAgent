@@ -1,0 +1,99 @@
+== 0. 环境声明 ==
+date: Tue Sep  8 04:06:22 CST 2026
+DEV_MODE=false / JWT_SECRET=<unset> / 全程无 Authorization 头
+LLM = 本地替身 http://127.0.0.1:9201（本机无真实 key；生产代码全链路真实——
+     HTTP→路由→引擎→provider HTTP 调用→SSE→落库；K3 用真实 endpoint 改两行 env 即可复现）
+
+== 1. DS2: 生产态无凭证 curl 对话端点（SSE 流）==
+$ curl -sN http://localhost:18901/api/conversations -d '{"message":"你好，请介绍一下你自己"}'   # 无 Authorization 头
+event: open
+data: {"type":"open","sessionId":"sess_mtro8eqt_1sve","phase":0}
+
+event: token
+data: {"type":"token","text":"你"}
+
+event: token
+data: {"type":"token","text":"好"}
+
+event: token
+data: {"type":"token","text":"！"}
+
+event: token
+data: {"type":"token","text":"我"}
+
+event: token
+data: {"type":"token","text":"是"}
+
+event: token
+data: {"type":"token","text":" "}
+
+event: token
+data: {"type":"token","text":"S"}
+
+event: token
+data: {"type":"token","text":"y"}
+
+event: token
+data: {"type":"token","text":"n"}
+
+event: token
+data: {"type":"token","text":"o"}
+
+event: token
+data: {"type":"token","text":"v"}
+
+event: token
+data: {"type":"token","text":"a"}
+
+event: token
+data: {"type":"token","text":"。"}
+
+event: token
+data: {"type":"token","text":"请"}
+
+event: token
+data: {"type":"token","text":"告"}
+
+event: token
+data: {"type":"token","text":"诉"}
+
+event: token
+data: {"type":"token","text":"我"}
+
+event: token
+data: {"type":"token","text":"贵"}
+
+event: token
+data: {"type":"token","……（完整流已存 e2e-sse-full-stream.log.txt；帧统计：）
+open帧=1 token帧=42 agent_message帧=1 end帧=1
+sessionId=sess_mtro8eqt_1sve
+
+== 2. DS3a: GET /api/sessions/:id 读回（无凭证）==
+ok: True | sessionId: sess_mtro8eqt_1sve
+  user → 你好，请介绍一下你自己
+  assistant → 你好！我是 Synova。请告诉我贵团队的规模，以及当前最影响增长的一个瓶颈是什么？
+
+== 3. 对照: 白名单外端点无凭证仍 401（中间件在岗证明）+ consult 非 401 ==
+GET /api/ga/calibration → HTTP 401（期望 401）
+POST /api/diagnosis/consult 无凭证 → HTTP 200（非 401 即白名单生效）
+
+== 4. DS8: upload-v2 四路径 410 GONE（真实服务器）==
+POST /api/diagnosis/upload → HTTP 410（期望 410）
+GET /api/diagnosis/status/job-1 → HTTP 410（期望 410）
+GET /api/diagnosis/report/job-1 → HTTP 410（期望 410）
+POST /api/diagnosis/interview → HTTP 410（期望 410）
+POST /api/diagnosis/upload 响应体:
+{"ok":false,"code":"GONE","message":"文档诊断 upload-v2 已下线——请改用 POST /api/diagnosis/consult（SSE 六阶段诊断）或对话端点 POST /api/conversations"}
+
+== 5. DS3b: 服务器重启后同会话仍可查（持久化跨重启）==
+重启前对话消息: 2 | 重启后对话消息: 2 | 逐条一致: True
+重启后 system 消息（restart-recovery 平台行为）: ['服务已恢复，请继续之前的对话。如果您的问题已经变化，请重新描述。']
+结论: DS3 重启持久化 PASS
+
+== 6. 服务器日志尾部（server1，含 bootstrap 降级情况）==
+npm notice
+npm notice New major version of npm available! 10.9.8 -> 12.0.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.0.2
+npm notice To update run: npm install -g npm@12.0.2
+npm notice
+DONE

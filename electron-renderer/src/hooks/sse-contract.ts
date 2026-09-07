@@ -18,16 +18,22 @@
  *           其余既有类型     → 状态不变（useStreaming 侧已有 case 消费）
  *           未知类型         → console.warn（不抛、不静默）
  *   @degraded 事件缺字段（无 report/reportId/label）→ 不抛，console.warn + 跳过该字段更新
+ *
+ * D590 追加（对话帧，producer: src/routes/conversations.ts + l1-interaction/web-adapter.ts）:
+ *   open            → sessionId=evt.sessionId（回声语义，result.sessionId 供调用方对账）
+ *   token / agent_message / end → known-passthrough（状态机无变化；消息渲染消费归 D591 useStreaming）
  */
 
-/** 事件类型全集 = engine 10 种 + diagnosis.ts 补发 5 种（'phase' 为兼容旧事件保留） */
+/** 事件类型全集 = engine 10 种 + diagnosis.ts 补发 5 种（'phase' 为兼容旧事件保留）
+ *  + D590 对话帧 4 种（open/token/agent_message/end，producer 为对话 SSE 端点） */
 export type SSEEventType =
   | 'phase' | 'phase_started' | 'phase_completed'
   | 'report_ready'
   | 'right_column_update' | 'degraded' | 'root_cause_identified'
   | 'expert_hypothesis' | 'hypothesis_generated' | 'interim_finding'
   | 'community_reports' | 'entity_resolution' | 'judgment_card'
-  | 'complete' | 'error';
+  | 'complete' | 'error'
+  | 'open' | 'token' | 'agent_message' | 'end';
 
 /** SSE data JSON 的宽松形状（字段全部 optional，运行时守卫提取） */
 export interface SSEEventLike {
@@ -38,6 +44,11 @@ export interface SSEEventLike {
   moduleId?: string;
   reportId?: string;
   report?: { reportId?: string; summary?: string } | null;
+  /** D590 对话帧: open.sessionId 回声 / token.text / agent_message.content / phaseComplete */
+  sessionId?: string;
+  text?: string;
+  content?: string;
+  phaseComplete?: boolean;
   [key: string]: unknown;
 }
 
@@ -54,8 +65,9 @@ export interface SSEContractState {
 
 export interface SSEContractResult {
   state: SSEContractState;
-  /** complete/report_ready 时返回（供调用方 setCurrentReportId） */
+  /** complete/report_ready 时返回（供调用方 setCurrentReportId）；D590: open 帧回声 sessionId */
   reportId?: string;
+  sessionId?: string;
   /** 供调用方落 conversation-store 的系统消息（phase 进度 / degraded 提示） */
   systemMessage?: { type: 'phase' | 'degraded' | 'info'; content: string };
 }
@@ -127,6 +139,17 @@ export function applySSEEvent(prev: SSEContractState, evt: SSEEventLike): SSECon
     case 'community_reports':
     case 'entity_resolution':
     case 'judgment_card':
+      return { state: { ...prev } };
+
+    // ── D590 对话帧：known-passthrough（状态机无变化，不走未知告警分支）──
+    case 'open': {
+      // 提交回声语义：sessionId 供客户端与请求对账（缺失不落、不告警）
+      const sessionId = typeof evt.sessionId === 'string' && evt.sessionId.length > 0 ? evt.sessionId : undefined;
+      return { state: { ...prev }, sessionId };
+    }
+    case 'token':
+    case 'agent_message':
+    case 'end':
       return { state: { ...prev } };
 
     default:

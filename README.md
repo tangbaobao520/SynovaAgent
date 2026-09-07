@@ -92,8 +92,24 @@ POST /api/ontology/ingest            → 文档摄取
 GET  /api/ontology/graph/:orgId      → 图查询
 GET  /api/ontology/graph/:orgId.html → HTML 可视化
 POST /api/diagnosis/consult          → SSE 流式诊断
+POST /api/conversations              → 对话 SSE 端点（多轮对话，D590）
 GET  /api/sessions                   → 会话列表
 ```
+
+## 安全模型（D590，单机本地信任声明）
+
+本进程的部署形态是**单 GA 本地桌面/内网单机**：信任边界是机器本身，不是 HTTP 凭证。
+以下端点族免 JWT 直达（`src/middleware/auth.ts` 白名单，对齐 /api/sentinel/* 先例），
+这是"配置完 LLM 即可对话"（D575 承诺）的承重设计：
+
+- `POST /api/conversations`、`POST /api/conversations/:id/messages` — 对话 SSE
+- `POST /api/diagnosis/consult*` — SSE 六阶段诊断
+- `GET|POST /api/sessions*` — 会话读回/管理
+- 其余既有免认证面（/health、/api/auth/login、邀请直达等）不变
+
+其余全部端点仍走 JWT 认证（DEV_MODE=false + 无 Authorization → 401）。
+**多用户 / 公网部署前必须按施工图 §5.5 重构为会话级鉴权**（能力广告诚实化：
+当前版本不承诺多租户隔离，勿暴露到公网）。
 
 ### CLI 对话
 ```bash

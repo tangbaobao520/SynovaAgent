@@ -1,0 +1,43 @@
+
+ RUN  v4.1.8 /Users/wane/SynovaAgent
+
+{"level":30,"time":1788806886140,"pid":50721,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"store/schema-migration","version":2,"name":"graph-nodes-props","msg":"执行迁移 2: graph-nodes-props"}
+{"level":30,"time":1788806886141,"pid":50721,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"store/schema-migration","version":2,"msg":"迁移 2 完成"}
+{"level":30,"time":1788806886141,"pid":50721,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"init/engine-context","path":":memory:","msg":"SQLite 数据库已打开"}
+{"level":30,"time":1788806886141,"pid":50721,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"init/engine-context","msg":"EngineContext 注入完成 (SQLite 持久化存储模式)"}
+ ❯ tests/routes/conversations.test.ts (13 tests | 13 skipped) 46ms
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/routes/conversations.test.ts > D590: 对话 SSE 端点 + SessionStore 持久化 + 鉴权落地
+Error: Cannot find module '/src/routes/conversations' imported from /Users/wane/SynovaAgent/tests/routes/conversations.test.ts
+ ❯ tests/routes/conversations.test.ts:170:34
+    168|     db = getDatabase();
+    169|
+    170|     const conversationsRouter = (await import('../../src/routes/conver…
+       |                                  ^
+    171|     const sessionsRoutes = (await import('../../src/routes/sessions'))…
+    172|     const diagnosisRoutes = (await import('../../src/routes/diagnosis'…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  tests/routes/conversations.test.ts > D590: 对话 SSE 端点 + SessionStore 持久化 + 鉴权落地
+TypeError: Cannot read properties of undefined (reading 'close')
+ ❯ tests/routes/conversations.test.ts:220:40
+    218|   afterAll(async () => {
+    219|     await Promise.all([server, serverNoAuth, serverNoDb, server410].ma…
+    220|       new Promise<void>(resolve => srv.close(() => resolve())),
+       |                                        ^
+    221|     ));
+    222|     for (const socket of sockets) socket.destroy();
+ ❯ tests/routes/conversations.test.ts:220:7
+ ❯ tests/routes/conversations.test.ts:219:69
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  13 skipped (13)
+   Start at  02:48:05
+   Duration  375ms (transform 125ms, setup 0ms, import 225ms, tests 46ms, environment 0ms)
+

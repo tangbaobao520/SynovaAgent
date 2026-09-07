@@ -5,7 +5,7 @@
  * 初始化逻辑委托给 Bootstrap (src/deploy/bootstrap.ts)。
  * 不引入 Novis 的任何依赖。
  */
-import express from 'express';
+import express, { Router } from 'express';
 import * as path from 'path';
 import cors from 'cors';
 import type { Server } from 'http';
@@ -40,6 +40,7 @@ import ontologyRoutes from './routes/ontology';
 import ontologyAdminRoutes from './routes/ontology-admin';
 import diagnosisRoutes from './routes/diagnosis';
 import sessionsRoutes from './routes/sessions';
+import conversationsRoutes from './routes/conversations'; // D590 — 对话 SSE 端点（ConversationEngine × HTTP 接线）
 import metricsRoutes from './monitoring/routes';
 import reviewRoutes from './routes/review';
 import expertRoutes from './routes/expert';
@@ -51,7 +52,6 @@ import { llmConfigRoutes } from './routes/llm-config';
 import { onLlmCredentialChanged } from './services/llm-credential-store';
 import documentRoutes from './routes/documents';
 import permissionRoutes from './routes/permissions';
-import diagnosisUploadRoutes from './routes/diagnosis-upload-v2';
 import sentinelHealthRoutes from './routes/sentinel-health';
 import sentinelRoutes from './routes/sentinel';
 import dataRoutes from './routes/data'; // V4.2.9 — 数据上传 API
@@ -83,6 +83,20 @@ import { registerGlobalErrorHandlers, unregisterGlobalErrorHandlers } from './se
 
 import { Bootstrap } from './deploy/bootstrap';
 import type { BootstrapResult } from './deploy/bootstrap';
+
+// ═══ D590 裁决②: upload-v2 下线 — 410 Gone 显式（非静默 404），指路替代入口 ═══
+// 活路由零撞路径（L1 审计 §4.3 已证 /consult* 与 upload 五路径零交集，精确匹配零误伤）。
+// 模块级导出便于集成测试直接挂载验证（tests/routes/conversations.test.ts 用例⑩）。
+export const uploadV2GoneRouter: Router = Router().all(
+  ['/api/diagnosis/upload', '/api/diagnosis/interview', '/api/diagnosis/status/:jobId', '/api/diagnosis/report/:jobId'],
+  (_req, res) => {
+    res.status(410).json({
+      ok: false,
+      code: 'GONE',
+      message: '文档诊断 upload-v2 已下线——请改用 POST /api/diagnosis/consult（SSE 六阶段诊断）或对话端点 POST /api/conversations',
+    });
+  },
+);
 
 export async function createServer(): Promise<Server> {
   // ═══ D83: Bootstrap 启动序列 — 6 Phase 统一初始化 ═══
@@ -295,6 +309,9 @@ export async function createServer(): Promise<Server> {
   // 位于 auth 之后，生产态被全局 JWT 拦截——其"无认证"仅路由层成立，本卡实测发现，
   // 已在 evidence/D575/ 登记。/api/llm/* 走"先于 JWT 挂载"路径实现同等语义）。
   app.use(llmConfigRoutes);
+  // D590 裁决②: 410 拦截先于 JWT——下线信号对所有客户端显式（含未认证的 ga 页轮询器，
+  // 否则未认证客户端看到 401，裁决②的"显式下线 + 轮询止停"对它们不生效）
+  app.use(uploadV2GoneRouter);
   app.use(jwtAuthMiddleware);
 
   // Phase 0.1: JWT 认证路由
@@ -336,12 +353,12 @@ export async function createServer(): Promise<Server> {
   app.use(ontologyAdminRoutes);
   app.use(diagnosisRoutes);
   app.use(sessionsRoutes);
+  app.use(conversationsRoutes); // D590 — 对话 SSE 端点（sessionsRoutes 旁，spec §5.1）
   app.use(metricsRoutes);
   app.use(reviewRoutes);
   app.use(expertRoutes);
   app.use(agentObserverRoutes);
   app.use(imRoutes);
-  app.use('/api/diagnosis', diagnosisUploadRoutes);
   app.use(knowledgeRoutes);
   app.use(credentialRoutes);
   app.use(documentRoutes);

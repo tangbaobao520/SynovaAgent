@@ -1,0 +1,135 @@
+event: open
+data: {"type":"open","sessionId":"sess_mtro8eqt_1sve","phase":0}
+
+event: token
+data: {"type":"token","text":"你"}
+
+event: token
+data: {"type":"token","text":"好"}
+
+event: token
+data: {"type":"token","text":"！"}
+
+event: token
+data: {"type":"token","text":"我"}
+
+event: token
+data: {"type":"token","text":"是"}
+
+event: token
+data: {"type":"token","text":" "}
+
+event: token
+data: {"type":"token","text":"S"}
+
+event: token
+data: {"type":"token","text":"y"}
+
+event: token
+data: {"type":"token","text":"n"}
+
+event: token
+data: {"type":"token","text":"o"}
+
+event: token
+data: {"type":"token","text":"v"}
+
+event: token
+data: {"type":"token","text":"a"}
+
+event: token
+data: {"type":"token","text":"。"}
+
+event: token
+data: {"type":"token","text":"请"}
+
+event: token
+data: {"type":"token","text":"告"}
+
+event: token
+data: {"type":"token","text":"诉"}
+
+event: token
+data: {"type":"token","text":"我"}
+
+event: token
+data: {"type":"token","text":"贵"}
+
+event: token
+data: {"type":"token","text":"团"}
+
+event: token
+data: {"type":"token","text":"队"}
+
+event: token
+data: {"type":"token","text":"的"}
+
+event: token
+data: {"type":"token","text":"规"}
+
+event: token
+data: {"type":"token","text":"模"}
+
+event: token
+data: {"type":"token","text":"，"}
+
+event: token
+data: {"type":"token","text":"以"}
+
+event: token
+data: {"type":"token","text":"及"}
+
+event: token
+data: {"type":"token","text":"当"}
+
+event: token
+data: {"type":"token","text":"前"}
+
+event: token
+data: {"type":"token","text":"最"}
+
+event: token
+data: {"type":"token","text":"影"}
+
+event: token
+data: {"type":"token","text":"响"}
+
+event: token
+data: {"type":"token","text":"增"}
+
+event: token
+data: {"type":"token","text":"长"}
+
+event: token
+data: {"type":"token","text":"的"}
+
+event: token
+data: {"type":"token","text":"一"}
+
+event: token
+data: {"type":"token","text":"个"}
+
+event: token
+data: {"type":"token","text":"瓶"}
+
+event: token
+data: {"type":"token","text":"颈"}
+
+event: token
+data: {"type":"token","text":"是"}
+
+event: token
+data: {"type":"token","text":"什"}
+
+event: token
+data: {"type":"token","text":"么"}
+
+event: token
+data: {"type":"token","text":"？"}
+
+event: agent_message
+data: {"type":"agent_message","content":"你好！我是 Synova。请告诉我贵团队的规模，以及当前最影响增长的一个瓶颈是什么？"}
+
+event: end
+data: {"type":"end"}
+
