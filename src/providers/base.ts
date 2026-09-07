@@ -18,8 +18,48 @@ import { CircuitBreaker } from '../llm/circuit-breaker';
 import { createLogger } from '@synova/logger';
 import { PromptInjectionDetector, PolicyDeniedError } from '../security/prompt-injection-detector';
 import { AuditService } from '../services/audit-service';
+import {
+  DiagnosticAgentError, ErrorCode, isRetryable,
+  normalizeLlmFailure, isContextWindowExceededError, isQuotaExceededError,
+} from '../errors/types';
 
 const log = createLogger('providers/base');
+
+/**
+ * DSH B-01: adapter 最终 throw 边界 — 归一化 + 合一 detail 分类（真实路由接线）。
+ * 任意 throw → normalizeLlmFailure（冻结 {message, code}，敌意值不逃逸）→
+ * provider code+type+message 合一 detail 正则分类 → canonical 稳定码
+ * （CONTEXT_OVERFLOW ≈ DSH CONTEXT_WINDOW_EXCEEDED；BILLING_EXCEEDED ≈ DSH QUOTA）。
+ * 已分类错误（onError 产物）与安全错误原样透传（capability seam，DiagnosticAgentError
+ * 既有消费方接口不变）。原始 throw 保留在 .cause 上。
+ */
+function finalizeAdapterFailure(err: unknown, provider: string, context: string): Error {
+  if (err instanceof DiagnosticAgentError) return err;
+  if (err instanceof PolicyDeniedError) return err;
+  const failure = normalizeLlmFailure(err);
+  const errType = err instanceof Error ? err.name : '';
+  const detail = [failure.code, errType, failure.message].filter(Boolean).join(' ');
+  const message = `${provider} ${context}: ${failure.message}`;
+  if (isContextWindowExceededError(detail)) {
+    return new DiagnosticAgentError({
+      code: ErrorCode.CONTEXT_OVERFLOW, message, phase: 0,
+      retryable: isRetryable(ErrorCode.CONTEXT_OVERFLOW), shouldCompress: true,
+      cause: err, provider,
+    });
+  }
+  if (isQuotaExceededError(detail)) {
+    return new DiagnosticAgentError({
+      code: ErrorCode.BILLING_EXCEEDED, message, phase: 0, retryable: false,
+      shouldRotateCredential: true, shouldFallback: true,
+      cause: err, provider,
+    });
+  }
+  // 未知失败: Hermes Stage 8 语义 — unknown 默认可重试
+  return new DiagnosticAgentError({
+    code: ErrorCode.INTERNAL, message, phase: 0, retryable: true,
+    cause: err, provider,
+  });
+}
 
 /** D43: 在 LLM 调用前检查用户消息是否包含提示注入攻击 */
 function checkPromptInjection(messages: LLMMessage[]): void {
@@ -87,7 +127,14 @@ export function createOpenAICompatibleProvider(cfg: ProviderAdapterConfig): LLMP
       throw new Error(`${cfg.name} CircuitBreaker OPEN — too many failures`);
     }
     if (cfg.apiKey !== undefined && !cfg.apiKey) {
-      throw new Error(`${cfg.name} API Key 未配置`);
+      // DSH B-01: INVALID_CREDENTIAL 分类走 adapter 侧（api-key 路径）—
+      // 供了但不可用的凭据（空值）: 修正存储值而非补供；永不重试，轮换+回退
+      throw new DiagnosticAgentError({
+        code: ErrorCode.AUTH_FAILED,
+        message: `${cfg.name} API Key 未配置（INVALID_CREDENTIAL 语义 — 修正存储值而非补供）`,
+        phase: 0, retryable: false,
+        shouldRotateCredential: true, shouldFallback: true,
+      });
     }
     const body: Record<string, unknown> = {
       model: opts?.model || model,
@@ -173,13 +220,21 @@ export function createOpenAICompatibleProvider(cfg: ProviderAdapterConfig): LLMP
         await checkResponse(res, 'API 错误');
         const data = await res.json() as ChatCompletionResponse;
         const content = data?.choices?.[0]?.message?.content;
-        if (!content) throw new Error(`${cfg.name} 返回缺少 content`);
+        if (!content) {
+          // DSH B-01 assembler 侧分类: 正常完成但零内容 → EMPTY_RESPONSE
+          // （产物为零，重试策略视为可安全重复）
+          throw new DiagnosticAgentError({
+            code: ErrorCode.EMPTY_RESPONSE,
+            message: `${cfg.name} 返回缺少 content（退化空响应 EMPTY_RESPONSE）`,
+            phase: 0, retryable: true, shouldFallback: true,
+          });
+        }
         const extra = cfg.afterResponse ? cfg.afterResponse(data, opts) : {};
         breaker.recordSuccess();
         return { content, model: data.model || model, ...extra };
       } catch (err) {
         breaker.recordFailure();
-        throw err;
+        throw finalizeAdapterFailure(err, cfg.name, 'chat');
       }
     },
 
@@ -190,7 +245,7 @@ export function createOpenAICompatibleProvider(cfg: ProviderAdapterConfig): LLMP
         if (!res.ok) {
           await checkResponse(res, '流式错误').catch((err: Error) => {
             log.warn({ err }, '流式响应错误检查失败 — 转发 onError 回调');
-            cb.onError?.(err);
+            cb.onError?.(finalizeAdapterFailure(err, cfg.name, '流式错误'));
           });
           breaker.recordFailure();
           return;
@@ -200,7 +255,7 @@ export function createOpenAICompatibleProvider(cfg: ProviderAdapterConfig): LLMP
       } catch (err: unknown) {
         log.warn({ err: err instanceof Error ? err.message : String(err) }, "提示注入检测");
         const e = err instanceof Error ? err : new Error(String(err));
-        cb.onError?.(cfg.onError ? cfg.onError(e, 'stream') : e);
+        cb.onError?.(finalizeAdapterFailure(cfg.onError ? cfg.onError(e, 'stream') : e, cfg.name, 'stream'));
         breaker.recordFailure();
       }
     },

@@ -47,6 +47,7 @@ export const ErrorCode = {
   // Model / Provider
   MODEL_NOT_FOUND: 'MODEL_NOT_FOUND',
   CONTENT_POLICY_BLOCKED: 'CONTENT_POLICY_BLOCKED', // Hermes: safety filter → fallback
+  EMPTY_RESPONSE: 'EMPTY_RESPONSE',       // DSH B-01 对齐: 正常完成但零内容 → 产物为零，可安全重试
 
   // Engine
   ENGINE_UNAVAILABLE: 'ENGINE_UNAVAILABLE',
@@ -519,6 +520,7 @@ export function isRetryable(code: ErrorCodeType): boolean {
     case ErrorCode.SERVER_ERROR:
     case ErrorCode.CONTEXT_OVERFLOW:
     case ErrorCode.PAYLOAD_TOO_LARGE:
+    case ErrorCode.EMPTY_RESPONSE:
     case ErrorCode.AUTH_FAILED:
       return true;
     case ErrorCode.AUTH_PERMANENT:
@@ -633,4 +635,160 @@ export function normalizeError(
     });
   }
   return classified;
+}
+
+// ═══ DSH B-01 借鉴: 归一化边界 + 合一 detail 分类（读源码自研，零代码依赖 G1）═══
+// 借鉴锚点: DSH 0.1.1-rc.2 packages/llm/llm/lib/types/error.js + adapter-failure.js
+// canonical 词汇表对齐（DSH 4 码 → Synova）:
+//   CONTEXT_WINDOW_EXCEEDED → CONTEXT_OVERFLOW（既有码，压缩后重试语义一致）
+//   QUOTA                   → BILLING_EXCEEDED（既有码，终态配额/余额耗尽）
+//   EMPTY_RESPONSE          → EMPTY_RESPONSE（本次新增: 正常完成但零内容 → 产物为零 → 可安全重试）
+//   INVALID_CREDENTIAL      → 不新增码，分类走 adapter 侧（AUTH_FAILED + shouldRotateCredential；
+//                             语义: 凭据已供但不可用，修正存储值而非补供，永不重试）
+
+/** normalizeLlmFailure 的返回 — 可序列化 provider-neutral 失败事实（冻结） */
+export interface NormalizedLlmFailure {
+  readonly message: string;
+  /** 稳定可路由失败类；非自有类错误一律 'UNKNOWN'（第三方 SDK 码不属于本 taxonomy） */
+  readonly code: string;
+  readonly status?: number;
+  readonly providerRetryAfterMs?: number;
+  readonly requestId?: string;
+}
+
+/** 非 Error throw 的消息渲染，敌意 toString 不逃逸归一化（DSH thrownMessage 范式） */
+function thrownMessage(value: unknown): string {
+  try {
+    const message = String(value);
+    return message.length > 0 ? message : 'LLM adapter failed';
+  } catch (_hostileThrownValue) {
+    return 'LLM adapter failed';
+  }
+}
+
+/** 读取自有数据属性 code，不触发 SDK 定义的访问器（DSH ownErrorCode 范式） */
+function ownErrorCode(error: object): unknown {
+  try {
+    const descriptor = Object.getOwnPropertyDescriptor(error, 'code');
+    return descriptor !== undefined && 'value' in descriptor ? descriptor.value : undefined;
+  } catch (_sdkPropertyTrap) {
+    return undefined;
+  }
+}
+
+/** 快照自有数据属性 failure，不触发 SDK 定义的访问器（DSH ownFailureSnapshot 范式） */
+function ownFailureSnapshot(error: object): NormalizedLlmFailure | undefined {
+  try {
+    const descriptor = Object.getOwnPropertyDescriptor(error, 'failure');
+    return descriptor !== undefined && 'value' in descriptor
+      ? toFailureSnapshot(descriptor.value)
+      : undefined;
+  } catch (_sdkPropertyTrap) {
+    return undefined;
+  }
+}
+
+/** 校验并剥离任意可序列化失败载荷（DSH failureSnapshot 范式: 字段全部合法才信任） */
+function toFailureSnapshot(value: unknown): NormalizedLlmFailure | undefined {
+  if (typeof value !== 'object' || value === null) return undefined;
+  try {
+    const candidate = value as Record<string, unknown>;
+    const message = candidate.message;
+    const code = candidate.code;
+    const status = candidate.status;
+    const providerRetryAfterMs = candidate.providerRetryAfterMs;
+    const requestId = candidate.requestId;
+    const statusValid = status === undefined
+      || (typeof status === 'number' && Number.isInteger(status) && status >= 100 && status <= 599);
+    const retryAfterValid = providerRetryAfterMs === undefined
+      || (typeof providerRetryAfterMs === 'number' && Number.isFinite(providerRetryAfterMs) && providerRetryAfterMs > 0);
+    const requestIdValid = requestId === undefined
+      || (typeof requestId === 'string' && requestId.length > 0);
+    if (typeof message !== 'string' || message.length === 0
+      || typeof code !== 'string' || code.length === 0
+      || !statusValid || !retryAfterValid || !requestIdValid) {
+      return undefined;
+    }
+    const snapshot: {
+      message: string; code: string;
+      status?: number; providerRetryAfterMs?: number; requestId?: string;
+    } = { message, code };
+    if (typeof status === 'number') snapshot.status = status;
+    if (typeof providerRetryAfterMs === 'number') snapshot.providerRetryAfterMs = providerRetryAfterMs;
+    if (typeof requestId === 'string') snapshot.requestId = requestId;
+    return Object.freeze(snapshot);
+  } catch (_sdkFailureGetter) {
+    return undefined;
+  }
+}
+
+/** 读取 Error 的 message 而不让敌意访问器替换主失败（DSH errorMessage 范式） */
+function errorMessage(error: Error): string {
+  try {
+    const message = error.message;
+    if (typeof message === 'string' && message.length > 0) return message;
+  } catch (_sdkMessageGetter) {
+    return 'LLM adapter failed';
+  }
+  return 'LLM adapter failed';
+}
+
+/**
+ * DSH B-01 归一化边界（adapter-failure.js 范式，读源码自研零依赖）:
+ * 把 LLM adapter 边界抛出的任意值（Error / 非 Error / 敌意值 / 跨包拷贝）归一化为
+ * 冻结的可序列化失败事实。跨包拷贝保留 own 数据但丢失类身份——只有 own failure
+ * 快照与 own code 一致（且字段全部通过校验）时才信任携带事实，否则回落
+ * {message, code}（自有类 DiagnosticAgentError 的码可信，其余一律 'UNKNOWN'）。
+ * 原始值由调用方作为 cause 保留（见 src/providers/base.ts 最终 throw 边界）。
+ */
+export function normalizeLlmFailure(value: unknown): NormalizedLlmFailure {
+  if (value instanceof Error) {
+    const carried = ownFailureSnapshot(value);
+    if (carried !== undefined && carried.code === ownErrorCode(value)) return carried;
+    return Object.freeze({
+      message: errorMessage(value),
+      code: value instanceof DiagnosticAgentError ? value.code : 'UNKNOWN',
+    });
+  }
+  return Object.freeze({ message: thrownMessage(value), code: 'UNKNOWN' });
+}
+
+// ── DSH B-01 合一 detail 正则分类（error.js 范式）──
+// 分类只在 adapter 边界发生一次: provider 的 code/type/message 合一为一个 detail 字符串，
+// thrown 与 in-band 两种投递风格共享同一个分类器；下游一律路由稳定码，不解析 message。
+
+/** 结构化短语: 明确点名 context 上限被超出（context_length_exceeded / context window overflowed） */
+const STRUCTURED_CONTEXT_OVERFLOW = /(?:^|[^a-z0-9])context[\s_-]+(?:length|window|size)[\s_-]+(?:exceed(?:ed|s)?|overflow(?:ed)?|limit[\s_-]+exceeded)(?:$|[^a-z0-9])/i;
+/** 把 too large/long 直接绑定到模型上下文容量的请求尺寸措辞 */
+const TOO_LARGE_FOR_CONTEXT = /\b(?:request|prompt|input|messages?)\s+(?:is\s+|are\s+)?too\s+(?:large|long)\s+for\s+(?:(?:this|the)\s+)?(?:model(?:'s)?\s+)?context(?:\s+window)?\b/i;
+/** "exceeds" 类措辞仅当宾语明确是模型 context 时才命中 */
+const EXCEEDS_MODEL_CONTEXT = /\b(?:input|prompt|request|messages?)\b.{0,40}\b(?:exceed(?:s|ed)?|overflows?|is\s+larger\s+than)\b.{0,40}\b(?:the\s+)?(?:model(?:'s)?\s+)?context(?:\s+(?:length|window))?\b/i;
+/** 中文 context 超限措辞（与既有 CONTEXT_OVERFLOW 词汇库对齐） */
+const CJK_CONTEXT_OVERFLOW = /超过最大长度|上下文长度(?:超出|超限|过长|超过)/;
+
+/**
+ * 识别 OpenAI 兼容 provider 与库适配器的 context 超限措辞（DSH isContextWindowExceededError 范式）。
+ * @param detail — provider error 的 code/type/message 文本合一字符串。
+ * @returns true 表示该请求因超出模型上下文窗口被拒（应压缩后重试）。
+ */
+export function isContextWindowExceededError(detail: string): boolean {
+  return STRUCTURED_CONTEXT_OVERFLOW.test(detail)
+    || /\b(?:maximum|max)(?:\s+(?:allowed|supported))?\s+context\s+(?:length|window)\b/i.test(detail)
+    || TOO_LARGE_FOR_CONTEXT.test(detail)
+    || /\b(?:input|prompt|request)\s+(?:is\s+)?too\s+(?:long|large)\s+for\s+(?:this|the)\s+model\b/i.test(detail)
+    || EXCEEDS_MODEL_CONTEXT.test(detail)
+    || CJK_CONTEXT_OVERFLOW.test(detail);
+}
+
+/**
+ * 识别终态配额/余额/额度耗尽措辞（区别于瞬态请求限速；DSH isQuotaExceededError 范式）。
+ * @param detail — provider error 的 code/type/message 文本合一字符串。
+ * @returns true 仅当措辞为终态 quota/balance/credit/budget 耗尽（不重试，轮换或回退）。
+ */
+export function isQuotaExceededError(detail: string): boolean {
+  return /\binsufficient[\s_-]+(?:quota|balance|credits?)\b/i.test(detail)
+    || /\b(?:quota|usage[\s_-]+limit)[\s_-]+(?:exceeded|exhausted|reached)\b/i.test(detail)
+    || /\bexceed(?:ed|s)?[\s_-]+(?:(?:your|the)[\s_-]+)?(?:current[\s_-]+)?quota\b/i.test(detail)
+    || /\b(?:balance|credits?)[\s_-]+(?:exhausted|depleted)\b/i.test(detail)
+    || /\bout[\s_-]+of[\s_-]+(?:credits?|budget|funds?)\b/i.test(detail);
 }
