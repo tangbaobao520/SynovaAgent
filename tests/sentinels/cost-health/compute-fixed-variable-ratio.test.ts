@@ -1,33 +1,33 @@
+/**
+ * compute-fixed-variable-ratio.test.ts — computeFixedVariableRatio 契约测试
+ * D584 对齐: cost-health/profit-health 已 D358 去灭绝并入 margin-health（自家 computes/ 计算），import 对齐 live 契约。
+ * live 契约: input {total_revenue, gross_margin, operatingExpenses, fixed_cost?}[]; value = fixedCost/totalCost。
+ */
 import { describe, it, expect } from 'vitest';
-import { computeFixedVariableRatio } from '../../../extensions/sentinels/cost-health/computes/compute-fixed-variable-ratio';
-import type { GraphStoreReader } from '../../../src/l4/graph-traversal';
-
-function mockStore(nodes: Array<{ id: string; type: string; props: Record<string, unknown> }>): GraphStoreReader {
-  return { queryNodes: () => nodes, queryEdges: () => [], getNode: () => null };
-}
+import { computeFixedVariableRatio } from '../../../extensions/sentinels/margin-health/computes/compute-fixed-variable-ratio';
 
 describe('computeFixedVariableRatio', () => {
-  it('should compute fixed ratio correctly', async () => {
-    const store = mockStore([
-      { id: 'c1', type: 'Financial', props: { financialType: 'cost', amount: 100000, fixedAmount: 70000 } },
+  it('should compute fixed ratio correctly', () => {
+    const r = computeFixedVariableRatio([
+      { total_revenue: 100000, gross_margin: 40000, operatingExpenses: 30000, fixed_cost: 70000 },
     ]);
-    const r = await computeFixedVariableRatio(store, { teamId: 't1' });
+    // cogs = 100000-40000 = 60000; totalCost = 60000+30000 = 90000; value = 70000/90000
     expect(r.degraded).toBe(false);
-    expect(r.value).toBe(0.7); // 70000/100000
+    expect(r.fixedCost).toBe(70000);
+    expect(r.totalCost).toBe(90000);
+    expect(r.value).toBeCloseTo(70000 / 90000, 3);
   });
 
-  it('should degrade on empty data', async () => {
-    const store = mockStore([]);
-    const r = await computeFixedVariableRatio(store, { teamId: 't1' });
+  it('should degrade on empty data', () => {
+    const r = computeFixedVariableRatio([]);
     expect(r.degraded).toBe(true);
   });
 
-  it('should handle zero total cost', async () => {
-    const store = mockStore([
-      { id: 'c1', type: 'Financial', props: { financialType: 'cost', amount: 0, fixedAmount: 0 } },
+  it('fixed_cost 缺失 → degraded（erp 契约外扩展字段 guard）', () => {
+    const r = computeFixedVariableRatio([
+      { total_revenue: 100000, gross_margin: 40000, operatingExpenses: 30000 },
     ]);
-    const r = await computeFixedVariableRatio(store, { teamId: 't1' });
-    expect(r.degraded).toBe(false);
-    expect(r.value).toBe(0);
+    expect(r.degraded).toBe(true);
+    expect(r.warnings.length).toBeGreaterThan(0);
   });
 });

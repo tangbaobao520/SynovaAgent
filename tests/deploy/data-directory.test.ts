@@ -20,7 +20,10 @@ describe('D47: data-directory — 平台路径', () => {
     process.env = { ...ORIG_ENV };
   });
 
-  it('Windows → %LOCALAPPDATA%/Synova/data', async () => {
+  // D584 平台豁免登记（非删除）: win32 分支的 path.join 语义绑定真实 OS（Node 的 path 模块在
+  // 启动时按真实平台选定，process.platform 模拟无法改变分隔符）——本用例只能在真实 Windows 上
+  // 执行验证；POSIX/macOS 环境显式 skip（非静默: 平台注记在此）。
+  it.skipIf(process.platform !== 'win32')('Windows → %LOCALAPPDATA%\\Synova\\data', async () => {
     Object.defineProperty(process, 'platform', { value: 'win32', configurable: true });
     process.env.LOCALAPPDATA = 'C:\\Users\\test\\AppData\\Local';
     const { getDataDirectory } = await import('../../src/deploy/data-directory');

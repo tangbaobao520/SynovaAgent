@@ -1,6 +1,10 @@
+/**
+ * capital-efficiency.test.ts — 资本效率 computes 组合回归（子目录版）
+ * D584 对齐: retired capital-efficiency/computes → capital-health/computes live 契约。
+ */
 import { describe, it, expect } from 'vitest';
-import { computeRoicWaccSpread } from '../../../extensions/sentinels/capital-efficiency/computes/roic-wacc-spread';
-import { computeCapitalTurnover } from '../../../extensions/sentinels/capital-efficiency/computes/capital-turnover';
+import { computeRoicWaccSpread } from '../../../extensions/sentinels/capital-health/computes/roic-wacc-spread';
+import { computeCapitalTurnover } from '../../../extensions/sentinels/capital-health/computes/capital-turnover';
 
 describe('computeRoicWaccSpread', () => {
   it('空列表 degraded', () => {
@@ -9,15 +13,15 @@ describe('computeRoicWaccSpread', () => {
 
   it('高利润应产生正价差', () => {
     const r = computeRoicWaccSpread([
-      { revenue: 1000, cost: 400, operatingExpenses: 200 },
+      { total_revenue: 1000, cogs: 400, operatingExpenses: 200, total_debt: 200, equity: 300 },
     ]);
     expect(r.roic).toBeGreaterThan(r.wacc);
     expect(r.degraded).toBe(false);
   });
 
-  it('自定义WACC', () => {
+  it('自定义 WACC（wacc_override）', () => {
     const r = computeRoicWaccSpread([
-      { revenue: 100, cost: 90, operatingExpenses: 20, waccOverride: 0.15 },
+      { total_revenue: 100, cogs: 90, operatingExpenses: 20, total_debt: 50, equity: 50, wacc_override: 0.15 },
     ]);
     expect(r.wacc).toBe(0.15);
   });
@@ -30,7 +34,7 @@ describe('computeCapitalTurnover', () => {
 
   it('有营收有资本', () => {
     const r = computeCapitalTurnover([
-      { revenue: 1000, totalDebt: 200, equity: 300 },
+      { total_revenue: 1000, total_debt: 200, equity: 300 },
     ]);
     expect(r.turnover).toBeCloseTo(1000 / 500, 2);
     expect(r.degraded).toBe(false);

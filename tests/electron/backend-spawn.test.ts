@@ -254,7 +254,8 @@ describe('ensureBackend — env 与命令契约（DS8 双模式）', () => {
     expect(main).toMatch(/isProdBoot \? 'prod' : 'dev'/);
   });
 
-  it('stop() 生命周期：started 后 stop → 子进程退出（无孤儿，DS 契约 lifecycle）', async () => {
+  // D584 平台豁免登记: POSIX SIGTERM 语义物理断言，win32 走 taskkill 分支（非删除）
+  it.skipIf(process.platform === 'win32')('stop() 生命周期：started 后 stop → 子进程退出（无孤儿，DS 契约 lifecycle）', async () => {
     const stub = path.join(os.tmpdir(), `d504-stub4-${Date.now()}.cjs`);
     fs.writeFileSync(stub, 'process.on(\"SIGTERM\", () => process.exit(0));\nsetInterval(() => {}, 10000);\n');
     handles.push(() => { try { fs.unlinkSync(stub); } catch { /* gone */ } });
@@ -315,7 +316,8 @@ describe('D522 teardown — stop() 进程树回收契约', () => {
     return false;
   };
 
-  it('正常路径：stop() → SIGTERM → 子进程 pid 已死（kill(pid,0) 抛 ESRCH，物理断言非 grep）', async () => {
+  // D584 平台豁免登记: kill(pid,0) ESRCH 探活 + SIGTERM 递送为 POSIX 语义
+  it.skipIf(process.platform === 'win32')('正常路径：stop() → SIGTERM → 子进程 pid 已死（kill(pid,0) 抛 ESRCH，物理断言非 grep）', async () => {
     const stub = path.join(os.tmpdir(), `d522-term-${Date.now()}.cjs`);
     fs.writeFileSync(stub, 'process.on("SIGTERM", () => process.exit(0));\nsetInterval(() => {}, 10000);\n');
     handles.push(() => { try { fs.unlinkSync(stub); } catch { /* gone */ } });
@@ -342,7 +344,8 @@ describe('D522 teardown — stop() 进程树回收契约', () => {
     assertDead(pid);
   }, 40000);
 
-  it('边界：stop() 幂等——连续两次调用不抛、无二次副作用', async () => {
+  // D584 平台豁免登记: 同上，POSIX 进程树回收物理路径
+  it.skipIf(process.platform === 'win32')('边界：stop() 幂等——连续两次调用不抛、无二次副作用', async () => {
     const stub = path.join(os.tmpdir(), `d522-idem-${Date.now()}.cjs`);
     fs.writeFileSync(stub, 'process.on("SIGTERM", () => process.exit(0));\nsetInterval(() => {}, 10000);\n');
     handles.push(() => { try { fs.unlinkSync(stub); } catch { /* gone */ } });
