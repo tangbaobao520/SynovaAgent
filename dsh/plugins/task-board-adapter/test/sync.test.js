@@ -102,19 +102,27 @@ test("readTaskState: 边界——非对象 JSON（数组/字符串）记入 erro
   }
 });
 
-test("mapToBoardTask: 正常路径——三态映射（audited→done, impl_done→running, claimed→running）", () => {
+test("mapToBoardTask: 正常路径——七态映射（running 仅 claimed+spec_done；impl_done→todo 待审计；done=audited+closed）", () => {
   const now = 1_000_000;
   const cases = [
     ["audited", "done"],
-    ["impl_done", "running"],
+    ["impl_done", "todo"],
     ["claimed", "running"],
-    ["spec_done", "todo"],
+    ["spec_done", "running"],
+    ["closed", "done"],
+    ["cancelled", "failed"],
+    ["failed", "failed"],
   ];
   for (const [syn, board] of cases) {
     const r = mapToBoardTask(sampleTask({ status: syn }), { now });
     assert.ok("task" in r, `${syn} 应映射成功`);
     assert.equal(r.task.status, board, `${syn} → ${board}`);
   }
+});
+
+test("mapToBoardTask: 边界——impl_done 描述含待审计说明（2026-09-08 校准）", () => {
+  const r = mapToBoardTask(sampleTask({ status: "impl_done" }), { now: 1 });
+  assert.ok(r.task.description.includes("待 K3 审计"));
 });
 
 test("mapToBoardTask: 降级路径——未知状态落入 fallback 并标记 unknown", () => {
@@ -287,8 +295,9 @@ test("syncOnce: 降级路径——API 非 2xx → 抛错（由插件壳捕获）
   rmSync(root, { recursive: true, force: true });
 });
 
-test("DEFAULT_STATUS_MAPPING 覆盖五种 Synova 状态且取值合法", () => {
+test("DEFAULT_STATUS_MAPPING 覆盖七种 Synova 状态且取值合法", () => {
   const valid = new Set(["backlog", "todo", "running", "done", "failed"]);
+  assert.equal(Object.keys(DEFAULT_STATUS_MAPPING).length, 7);
   for (const board of Object.values(DEFAULT_STATUS_MAPPING)) {
     assert.ok(valid.has(board), `非法看板状态: ${board}`);
   }
@@ -474,12 +483,13 @@ test("readSnapshot: 降级路径——缺失/坏 JSON/缺 head → null（调用
   }
 });
 
-test("mapWinTaskToBoardTask: audited→done / committed→running（合并≠完成）+ 标题带 Win 标记", () => {
+test("mapWinTaskToBoardTask: audited→done / committed→todo（合并≠完成，待审计；2026-09-08 校准）+ 标题带 Win 标记", () => {
   const a = mapWinTaskToBoardTask({ task_id: "D338", title: "隔离", status: "audited", author: "Synova-Win", commits: 3, date: "2026-08-22" });
   assert.equal(a.task.status, "done");
   assert.ok(a.task.title.startsWith("D338 · Win · "));
   const b = mapWinTaskToBoardTask({ task_id: "D357", title: "连接器", status: "committed" });
-  assert.equal(b.task.status, "running");
+  assert.equal(b.task.status, "todo");
+  assert.ok(b.task.description.includes("待 K3 审计"));
   const c = mapWinTaskToBoardTask({ task_id: "", title: "x" });
   assert.ok("error" in c);
 });
