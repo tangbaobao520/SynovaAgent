@@ -76,6 +76,7 @@ grep mergeLayers|config-layer|dumpConfig|customer-config|客户配置包 在 src
 - src/routes/diagnosis.ts（修改，consult 生产路径调用 resolveCustomerConfig(teamId)，解析结果经 SSE config_resolved 事件可观测）
 - tests/config/config-layers.test.ts（新建，≥8 用例）
 - tests/config/customer-config-package.test.ts（新建，≥6 用例）
+- .claude/plan.json（修改，机制 API 面接线 deferred 声明随 PR 提交 + memory_refs，D588/D333 先例）
 
 写集（G12c 对照表）：
 

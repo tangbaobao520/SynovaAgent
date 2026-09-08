@@ -10,8 +10,8 @@
   ],
   "approach": "extend",
   "memory_refs": [
-    "memory/2026-09-08-d599-customer-config-package.md",
-    "memory/2026-09-07-d588-session-projection-delivery.md"
+    "memory/notes/implemented/2026-08-28-d542-ci-strict-visible.md",
+    "memory/notes/implemented/2026-09-06-ct60-d328-case-compat.md"
   ],
   "phases": [
     {
