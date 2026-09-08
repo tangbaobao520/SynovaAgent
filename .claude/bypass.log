@@ -1167,3 +1167,4 @@ Binary file .claude/bypass.log matches
 2026-09-08T23:17:34+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=9744ffc174682fc254b1c19fc1b6447ecb1e67e8
 2026-09-08T15:20:28Z detected-bypass head-mismatch marker=a1604eee99a810486c2a521f10b253c5c60bc504 parent=95e1c9fa5b192cb2bae1c35cf505dc8cc353eb2f
 2026-09-08T23:20:49+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D601 | AGENT=dsh-cto
+2026-09-08T23:21:55+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=95c9c187e1218ff9378341f4f600f03738272198
