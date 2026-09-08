@@ -1,0 +1,69 @@
+== 0. 环境声明 ==
+date: Tue Sep  8 16:02:41 CST 2026
+DEV_MODE=false / JWT_SECRET=<unset> / 全程无 Authorization 头
+LLM = 本地替身 http://127.0.0.1:9202（本机无真实 key；生产代码全链路真实——
+     桌面消费核心 createStreamingController/restoreLastSession + 真实 fetch → HTTP → 路由 → 引擎 → SSE → 落库）
+驱动器: ds2-driver.ts（生产模块 import，fetch 仅日志透传）
+server ready (pid=63760, port=18902)
+[+   1ms] node=v22.23.2 target=http://localhost:18902 DEV_MODE=false（后端侧） LLM=本地替身（D590 先例）
+[+ 113ms] == DS2 第一轮: sendMessage("你好，请介绍一下你自己")（conversation 模式，缺省） ==
+[+ 114ms] [host] setExperts(3)
+[+ 114ms] [host] setStreaming=true
+[+ 114ms] [host] resetStreaming（agent_message 全文落库后清流式区，最终累计=""）
+[+ 114ms] [fetch] POST http://localhost:18902/api/conversations body={"message":"你好，请介绍一下你自己"}
+[+ 185ms] [flush #1] +"你好！我" → streamingText="你好！我"
+[+ 208ms] [flush #2] +"是 Sy" → streamingText="你好！我是 Sy"
+[+ 231ms] [flush #3] +"nova" → streamingText="你好！我是 Synova"
+[+ 252ms] [flush #4] +"。请告" → streamingText="你好！我是 Synova。请告"
+[+ 270ms] [flush #5] +"诉我贵团" → streamingText="你好！我是 Synova。请告诉我贵团"
+[+ 293ms] [flush #6] +"队的规模" → streamingText="你好！我是 Synova。请告诉我贵团队的规模"
+[+ 315ms] [flush #7] +"，以及当" → streamingText="你好！我是 Synova。请告诉我贵团队的规模，以及当"
+[+ 337ms] [flush #8] +"前最影响" → streamingText="你好！我是 Synova。请告诉我贵团队的规模，以及当前最影响"
+[+ 359ms] [flush #9] +"增长的" → streamingText="你好！我是 Synova。请告诉我贵团队的规模，以及当前最影响增长的"
+[+ 377ms] [flush #10] +"一个瓶颈" → streamingText="你好！我是 Synova。请告诉我贵团队的规模，以及当前最影响增长的一个瓶颈"
+[+ 398ms] [flush #11] +"是什么" → streamingText="你好！我是 Synova。请告诉我贵团队的规模，以及当前最影响增长的一个瓶颈是什么"
+[+ 406ms] [host] resetStreaming（agent_message 全文落库后清流式区，最终累计="你好！我是 Synova。请告诉我贵团队的规模，以及当前最影响增长的一个瓶颈是什么"）
+[+ 407ms] [host] setStreaming=false
+[+ 407ms] 第一轮结果: 消息总数=2 user=1 assistant=1 flush次数=11
+[+ 407ms] 最后 assistant 全文: "你好！我是 Synova。请告诉我贵团队的规模，以及当前最影响增长的一个瓶颈是什么？"
+[+ 407ms] ✅ DS2-a 真流式: token 帧 16ms flush 逐字进 streamingText（flush 次数 > 1）
+[+ 407ms] ✅ DS2-b agent_message 全文落消息列表（assistant 消息存在且非空）
+[+ 407ms] ✅ DS2-c 用户消息乐观上屏（提交回声）
+[+ 407ms] == DS3 提交回声对账: currentSessionId=sess_mtsdtn59_avj9 localStorage=sess_mtsdtn59_avj9 ==
+[+ 407ms] ✅ DS3-a open 帧 sessionId 落 store
+[+ 407ms] ✅ DS3-b sessionId 落 localStorage 键
+[+ 407ms] == DS3 续轮: sendMessage("继续")（应携带 sessionId） ==
+[+ 407ms] [host] setExperts(3)
+[+ 407ms] [host] setStreaming=true
+[+ 407ms] [host] resetStreaming（agent_message 全文落库后清流式区，最终累计="你好！我是 Synova。请告诉我贵团队的规模，以及当前最影响增长的一个瓶颈是什么"）
+[+ 407ms] [fetch] POST http://localhost:18902/api/conversations body={"message":"继续","sessionId":"sess_mtsdtn59_avj9"}
+[+ 431ms] [flush #12] +"你好！" → streamingText="你好！我是 Synova。请告诉我贵团队的规模，以及当前最影响增长的一个瓶颈是什么你好！"
+[+ 449ms] [flush #13] +"我是 S" → streamingText="你好！我是 Synova。请告诉我贵团队的规模，以及当前最影响增长的一个瓶颈是什么你好！我是 S"
+[+ 470ms] [flush #14] +"yno" → streamingText="你好！我是 Synova。请告诉我贵团队的规模，以及当前最影响增长的一个瓶颈是什么你好！我是 Syno"
+[+ 486ms] [flush #15] +"va。" → streamingText="你好！我是 Synova。请告诉我贵团队的规模，以及当前最影响增长的一个瓶颈是什么你好！我是 Synova。"
+[+ 504ms] [flush #16] +"请告诉" → streamingText="你好！我是 Synova。请告诉我贵团队的规模，以及当前最影响增长的一个瓶颈是什么你好！我是 Synova。请告诉"
+[+ 520ms] [flush #17] +"我贵团" → streamingText="你好！我是 Synova。请告诉我贵团队的规模，以及当前最影响增长的一个瓶颈是什么你好！我是 Synova。请告诉我贵团"
+[+ 538ms] [flush #18] +"队的规" → streamingText="你好！我是 Synova。请告诉我贵团队的规模，以及当前最影响增长的一个瓶颈是什么你好！我是 Synova。请告诉我贵团队的规"
+[+ 554ms] [flush #19] +"模，以及" → streamingText="你好！我是 Synova。请告诉我贵团队的规模，以及当前最影响增长的一个瓶颈是什么你好！我是 Synova。请告诉我贵团队的规模，以及"
+[+ 576ms] [flush #20] +"当前最" → streamingText="你好！我是 Synova。请告诉我贵团队的规模，以及当前最影响增长的一个瓶颈是什么你好！我是 Synova。请告诉我贵团队的规模，以及当前最"
+[+ 594ms] [flush #21] +"影响增长" → streamingText="你好！我是 Synova。请告诉我贵团队的规模，以及当前最影响增长的一个瓶颈是什么你好！我是 Synova。请告诉我贵团队的规模，以及当前最影响增长"
+[+ 616ms] [flush #22] +"的一个" → streamingText="你好！我是 Synova。请告诉我贵团队的规模，以及当前最影响增长的一个瓶颈是什么你好！我是 Synova。请告诉我贵团队的规模，以及当前最影响增长的一个"
+[+ 634ms] [flush #23] +"瓶颈是" → streamingText="你好！我是 Synova。请告诉我贵团队的规模，以及当前最影响增长的一个瓶颈是什么你好！我是 Synova。请告诉我贵团队的规模，以及当前最影响增长的一个瓶颈是"
+[+ 651ms] [flush #24] +"什么？" → streamingText="你好！我是 Synova。请告诉我贵团队的规模，以及当前最影响增长的一个瓶颈是什么你好！我是 Synova。请告诉我贵团队的规模，以及当前最影响增长的一个瓶颈是什么？"
+[+ 652ms] [host] resetStreaming（agent_message 全文落库后清流式区，最终累计="你好！我是 Synova。请告诉我贵团队的规模，以及当前最影响增长的一个瓶颈是什么你好！我是 Synova。请告诉我贵团队的规模，以及当前最影响增长的一个瓶颈是什么？"）
+[+ 652ms] [host] setStreaming=false
+[+ 652ms] ✅ DS3-c 续轮 body 携带 sessionId（服务端 fromState 续轮）
+[+ 652ms] == DS4 模拟重启: 清内存态（保留 localStorage 锚）→ restoreLastSession() ==
+[+ 653ms] ✅ DS4-a 重启模拟: 消息区已清零、localStorage 锚仍在
+[+ 653ms] [fetch] GET http://localhost:18902/api/sessions/sess_mtsdtn59_avj9
+[+ 656ms] 恢复结果: restored 消息数=4 投影数=4
+[+ 656ms] ✅ DS4-b 刷新恢复: restoreLastSession 返回 restored 且消息区非空
+[+ 656ms] ✅ DS4-c 恢复后续轮锚回到 currentSessionId
+[+ 656ms] == D591 e2e 证据驱动: 全部 PASS ==
+driver exit=0
+ok: True | sessionId: sess_mtsdtn59_avj9
+  user → 你好，请介绍一下你自己
+  assistant → 你好！我是 Synova。请告诉我贵团队的规模，以及当前最影响增长的一个瓶颈是什么？
+  user → 继续
+  assistant → 你好！我是 Synova。请告诉我贵团队的规模，以及当前最影响增长的一个瓶颈是什么？
+DONE (driver exit=0)

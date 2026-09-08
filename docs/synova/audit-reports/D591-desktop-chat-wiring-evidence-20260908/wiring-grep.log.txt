@@ -1,0 +1,48 @@
+== D591 §8 接线验证（Tue Sep  8 16:03:12 CST 2026）==
+-- 1. sendMessage mode 参数: grep mode: 'diagnosis' → WelcomeScreen→CenterPanel 链路 --
+electron-renderer/src/components/CenterPanel.tsx:86:      void sendMessage(text, { mode: 'diagnosis' });
+-- 2a. setCurrentSessionId 生产调用（useStreaming open 帧 + CenterPanel 恢复）--
+electron-renderer/src/components/CenterPanel.tsx:27: * @output 'restored' — 投影成功: store.restoreMessages(投影) + setCurrentSessionId(id)（续轮锚）
+electron-renderer/src/components/CenterPanel.tsx:29: *         'degraded' — 404/网络/解析失败: console.warn 留痕 + 清锚（setCurrentSessionId(null)）
+electron-renderer/src/components/CenterPanel.tsx:43:    store.setCurrentSessionId(id);
+electron-renderer/src/components/CenterPanel.tsx:48:    useConversationStore.getState().setCurrentSessionId(null);
+electron-renderer/src/hooks/useStreaming.ts:7: *     open 帧 sessionId → setCurrentSessionId（提交回声对账，localStorage 持久化）；
+electron-renderer/src/hooks/useStreaming.ts:147:        if (r.sessionId) storeNow.setCurrentSessionId(r.sessionId);
+-- 2b. restoreMessages 生产调用（CenterPanel）--
+electron-renderer/src/components/CenterPanel.tsx:18:import { useConversationStore, readLastSessionId, restoreMessages } from '../stores/conversation-store';
+electron-renderer/src/components/CenterPanel.tsx:27: * @output 'restored' — 投影成功: store.restoreMessages(投影) + setCurrentSessionId(id)（续轮锚）
+electron-renderer/src/components/CenterPanel.tsx:42:    store.restoreMessages(restoreMessages(payload));
+-- 2c. clearSession（§8 登记预留 API，本期 UI 零调用——预期仅 store 定义）--
+electron-renderer/src/stores/conversation-store.ts:42:  clearSession: () => void;
+electron-renderer/src/stores/conversation-store.ts:168:  clearSession: () => {
+-- 3. draftPrefill: WelcomeScreen 产出 + CenterPanel 消费 --
+electron-renderer/src/components/CenterPanel.tsx:63:  const draftPrefill = useConversationStore((s) => s.draftPrefill);
+electron-renderer/src/components/CenterPanel.tsx:95:    const text = storeNow.draftPrefill;
+electron-renderer/src/components/CenterPanel.tsx:189:      {(draftPrefill !== null || pendingIntent === 'diagnosis') && !isStreaming && (
+electron-renderer/src/components/CenterPanel.tsx:191:          {draftPrefill !== null ? (
+electron-renderer/src/components/CenterPanel.tsx:194:                ✍️ {draftPrefill}
+electron-renderer/src/components/WelcomeScreen.tsx:61: * 其余 → draftPrefill 预填文本（CenterPanel 待发送条一键发送，conversation 模式）。
+-- 4. 恢复 fetch: /api/sessions/ in electron-renderer/src --
+electron-renderer/src/stores/conversation-store.ts:86: * @input  sessionPayload: unknown — GET /api/sessions/:id 响应体（{ok, session, messages}），形状不可信
+electron-renderer/src/components/CenterPanel.tsx:26: *         + GET {getApiBase()}/api/sessions/:id（D590 白名单前缀，零凭证）
+electron-renderer/src/components/CenterPanel.tsx:39:    const res = await fetch(`${getApiBase()}/api/sessions/${encodeURIComponent(id)}`);
+-- 5. 删除复核: useConversation\b 排除 useConversationStore --
+零结果 ✓
+-- 6. 删除复核: MOCK_* --
+零结果 ✓
+-- 7. useStreaming 仍活着: CenterPanel 唯一组件消费方 --
+electron-renderer/src/components/CenterPanel.tsx:65:  const { isStreaming, thinkingExperts, sendMessage, cancelStreaming } = useStreaming();
+electron-renderer/src/hooks/useStreaming.ts:375:export function useStreaming(): UseStreamingReturn {
+-- 8. applyQuickAction（快速行动单源，CenterPanel 空态可达调用）--
+electron-renderer/src/components/CenterPanel.tsx:13:  applyQuickAction,
+electron-renderer/src/components/CenterPanel.tsx:164:                与欢迎页共用 WELCOME_QUICK_ACTIONS/applyQuickAction 单源（偏差 D-1：欢迎页
+electron-renderer/src/components/CenterPanel.tsx:172:                    onClick={() => applyQuickAction(qa.kind)}
+electron-renderer/src/components/WelcomeScreen.tsx:59: * applyQuickAction — D591 快速行动意图写入（spec §5.1：经 store 传递预填文本/诊断意图）。
+electron-renderer/src/components/WelcomeScreen.tsx:63:export function applyQuickAction(kind: QuickActionKind): void {
+electron-renderer/src/components/WelcomeScreen.tsx:100:  /** D591: 快速行动意图写入（applyQuickAction；缺省兼容既有纯展示测试） */
+electron-renderer/src/components/WelcomeScreen.tsx:235:      onQuickAction={applyQuickAction}
+-- 9. as any / as never / as unknown as = 0（写集 + 新测试文件）--
+零结果 ✓
+-- 10. 多层缓冲/限帧抽象类名禁入（铁律 41 模式纪律）--
+零结果 ✓
+分支       28 条 = 基线       28 条（逐文件零差异）
