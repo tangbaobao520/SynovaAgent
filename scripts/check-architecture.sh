@@ -1,12 +1,37 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# 铁律 39: 五层架构边界检查
+# 铁律 39: 五层架构边界检查 (CT-64 修补: 四类漏网形态根除)
 # 检测跨层 import 违规 + 多租户安全
+#
+# 契约(铁律 47):
+#   @input  扫描源 SYNO_ARCH_SRC (默认 src/)；存量基线 SYNO_ARCH_BASELINE
+#           (默认 tests/architecture/l1-cross-layer-baseline.txt)；SYNO_CI=1 进入 CI strict。
+#   @output 按方向(L1→L3/L1→L4/L1→L5)逐行打印违规 file:line:内容；
+#           基线内存量只提示不阻断(棘轮)；基线外新增: 本地 ⚠ exit 0 / SYNO_CI=1 ❌ exit 1。
+#   @exit   0 = 通过(含棘轮内存量)；1 = 基线外新增违规且 CI strict；
+#           2 = 检查自身失败(fail-closed——扫描源缺失，绝不与通过混同)。
+#   @degraded 无——门禁不允许降级放行(根除 M1 fail-open: 目录缺失显式可见)。
+#
+# CT-64 四类漏网修补 (2026-09-08, docs/synova/research/L1跨层违规扫描-20260908.md):
+#   ① 动态 import 逃逸 → 匹配锚定 import 语法结构: from '...' / import('...') / require('...')，
+#      不再依赖 from 关键词(修补前 42 处动态 runtime 全部不可见)
+#   ② 名字豁免恰中违规 → 删除 agent-observer|ga-annotations 整行 grep -v(两文件恰是违规
+#      重灾区)；真豁免改为行内标注 // arch-allow(层): 理由，豁免行仍列出(K3 可审计)
+#   ③ 路径形态不匹配 → 精确层模式补全 expert-platform / store / cron / l5 /
+#      init/engine-context / adapters/sqlite-graph-store / graph-bridge；
+#      扫描范围扩到 L1 全文件集(routes/tui-v2/tui-v3/mcp/cli/l1/l1-interaction + 根文件，附录 A)
+#   ④ soft 不转硬 + fail-open → SYNO_CI=1 转硬(D515/D516 先例) + 扫描源缺失 exit 2
+#
+# 治理语义(台账 CT-64): 先修脚本可见性 → 分批修 src/ 六簇(扫描报告 §三)——
+# 存量 68 处登记于基线文件(只减不增)，避免一次性全红压垮编码线。
 # ═══════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
 
-RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RESET='\033[0m'
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; RESET='\033[0m'
 FAIL=0
+SYNO_CI="${SYNO_CI:-0}"
+SYNO_ARCH_SRC="${SYNO_ARCH_SRC:-src}"
+SYNO_ARCH_BASELINE="${SYNO_ARCH_BASELINE:-tests/architecture/l1-cross-layer-baseline.txt}"
 
 echo ""
 echo "═══ 架构边界检查 (铁律 39) ═══"
@@ -20,7 +45,8 @@ L2_L4=$(grep -rn "from.*l4/" src/agent/ src/orchestrator/ --include="*.ts" 2>/de
   | grep -v "node_modules" | grep -v "\.test\." \
   | grep -v "conversation-engine.ts\|engine-context.ts\|diagnosis-launcher.ts\|knowledge-bridge-service.ts\|review-service.ts\|sentinel-health-service.ts\|workspace-context-bridge.ts\|data-ingest-service.ts" \
   || true)
-L2_L4_COUNT=$(echo "$L2_L4" | grep -c . 2>/dev/null) || L2_L4_COUNT=0
+L2_L4_COUNT=$(echo "$L2_L4" | grep -c . 2>/dev/null | tr -d '\n\r') || L2_L4_COUNT=0
+[ -z "$L2_L4_COUNT" ] && L2_L4_COUNT=0
 
 if [ "$L2_L4_COUNT" -gt 0 ]; then
   echo -e "  ${RED}❌ L2→L4 跨层引用: ${L2_L4_COUNT} 处${RESET}"
@@ -31,54 +57,123 @@ else
   echo -e "  ${GREEN}✅ L2→L4 边界: 无直接引用${RESET}"
 fi
 
-# ═══ 1b. L1→L3 跨层引用 ═══
-# L1 (routes/ / server.ts) 不得直接 import L3 (l3/ / sentinel/ / evidence/ / expert/)
-L1_L3=$(grep -rn "from.*\.\.\/l3\/\|from.*\/sentinel\/\|from.*\/evidence\/\|from.*\/expert\/" src/routes/ src/server.ts --include="*.ts" 2>/dev/null \
-  | grep -v "node_modules" | grep -v "\.test\." \
-  | grep -v "agent-observer\|ga-annotations\|//.*L1.*L3\|铁律.*39" \
-  || true)
-L1_L3_COUNT=$(echo "$L1_L3" | grep -c . 2>/dev/null) || L1_L3_COUNT=0
-if [ "${L1_L3_COUNT:-0}" -gt 0 ]; then
-  echo -e "  ${RED}❌ L1→L3 跨层引用: ${L1_L3_COUNT} 处${RESET}"
-  echo "$L1_L3" | while read -r line; do echo "     ${line}"; done
-  echo "     铁律 39: L1 只能依赖 L2。sentinel/l3/evidence/expert 是 L3 层。"
-  echo "     正确做法: L1 → L2 (synova-agent.ts / conversation-engine.ts) → L3"
-  FAIL=$((FAIL + 1))
-else
-  echo -e "  ${GREEN}✅ L1→L3 边界: 无直接引用${RESET}"
+# ═══ 1b/1c/1d. L1 跨层引用 (CT-64 重写: L1 全文件集 × 全 import 形态 × 精确层模式) ═══
+# fail-closed: 扫描源缺失 = 检查自身失败 = exit 2 (绝不假绿)
+if [ ! -d "$SYNO_ARCH_SRC" ]; then
+  echo -e "  ${RED}❌ 检查自身失败: 扫描源 ${SYNO_ARCH_SRC} 不存在 (fail-closed, exit 2)${RESET}"
+  echo ""
+  exit 2
 fi
 
-# ═══ 1c. L1→L4 跨层引用 ═══
-# L1 不得直接 import L4 (GraphStore / KnowledgeStore / l4/)
-L1_L4=$(grep -rn "from.*\.\.\/l4\/\|from.*GraphStore\|from.*KnowledgeStore" src/routes/ src/server.ts --include="*.ts" 2>/dev/null \
-  | grep -v "node_modules" | grep -v "\.test\." \
-  | grep -v "//.*L1.*L4\|铁律.*39" \
-  || true)
-L1_L4_COUNT=$(echo "$L1_L4" | grep -c . 2>/dev/null) || L1_L4_COUNT=0
-if [ "${L1_L4_COUNT:-0}" -gt 0 ]; then
-  echo -e "  ${RED}❌ L1→L4 跨层引用: ${L1_L4_COUNT} 处${RESET}"
-  echo "$L1_L4" | while read -r line; do echo "     ${line}"; done
-  echo "     铁律 39: L1 不得直接访问 L4。必须通过 L2 编排层。"
-  FAIL=$((FAIL + 1))
-else
-  echo -e "  ${GREEN}✅ L1→L4 边界: 无直接引用${RESET}"
+# L1 文件集 (扫描报告附录 A: 99 文件) —— 目录/文件缺失显式警告(可见性)，不静默缩小扫描面
+L1_DIRS=""; L1_FILES=""
+for d in routes tui-v2 tui-v3 mcp cli l1 l1-interaction; do
+  if [ -d "$SYNO_ARCH_SRC/$d" ]; then L1_DIRS="$L1_DIRS $SYNO_ARCH_SRC/$d"; else
+    echo -e "  ${YELLOW}⚠ L1 扫描目标缺失(跳过): ${SYNO_ARCH_SRC}/$d${RESET}"
+  fi
+done
+for f in server.ts index.ts mvp-server.ts cli.ts cli-manager.ts setup.ts; do
+  if [ -f "$SYNO_ARCH_SRC/$f" ]; then L1_FILES="$L1_FILES $SYNO_ARCH_SRC/$f"; else
+    echo -e "  ${YELLOW}⚠ L1 扫描目标缺失(跳过): ${SYNO_ARCH_SRC}/$f${RESET}"
+  fi
+done
+if [ -z "$L1_DIRS" ] && [ -z "$L1_FILES" ]; then
+  echo -e "  ${RED}❌ 检查自身失败: L1 扫描目标为空 (fail-closed, exit 2)${RESET}"
+  echo ""
+  exit 2
 fi
 
-# ═══ 1d. L1→L5 跨层引用 ═══
-# L1 不得直接操作数据库 (better-sqlite3 / db.prepare)
-L1_L5=$(grep -rn "better-sqlite3\|\.prepare(\|db\.run\|db\.exec" src/routes/ src/server.ts --include="*.ts" 2>/dev/null \
-  | grep -v "import type" | grep -v "node_modules" | grep -v "\.test\." \
-  | grep -v "//.*DI\|//.*注入\|铁律.*39" \
-  || true)
-L1_L5_COUNT=$(echo "$L1_L5" | grep -c . 2>/dev/null) || L1_L5_COUNT=0
-if [ "${L1_L5_COUNT:-0}" -gt 0 ]; then
-  echo -e "  ${RED}❌ L1→L5 跨层引用: ${L1_L5_COUNT} 处${RESET}"
-  echo "$L1_L5" | while read -r line; do echo "     ${line}"; done
-  echo "     铁律 39: L1 不得直接操作数据库。必须通过 L4 接口。"
-  FAIL=$((FAIL + 1))
-else
-  echo -e "  ${GREEN}✅ L1→L5 边界: 无直接数据库操作${RESET}"
-fi
+# 跨层路径模式(精确锚定)——裸 expert/sentinel 会误中 L2 的 agent/expert-file-loader、
+# agent/sentinel-service(修补②同源教训: 形态必须锚定，宁可精确不可贪宽)
+PAT_L3='(/l3/|/sentinel/|/expert-platform/|/expert/)'
+PAT_L4='(/l4/|/evidence/|/adapters/sqlite-graph-store|graph-bridge)'
+PAT_L5='(/store/|/cron/|/l5/|init/engine-context|better-sqlite3)'
+
+# 修补①: import 语法结构锚定——静态 from '...' / 动态 import('...') / require('...') 三形态统一
+# 类型位置四形态排除(扫描报告 §2.4 编译期耦合单列治理，不阻断): import type / : import( / as import( / type X = import(
+strip_type_position() {
+  grep -v "import type" | grep -v ": import(" | grep -v "as import(" | grep -vE "type [A-Za-z0-9_]+ = import\(" || true
+}
+
+# 基线棘轮对比: 命中按 file 聚合(file=count, 行号漂移免疫)，与基线同方向段逐一比对
+# 输出: NEW<tab>file<tab>actual<tab>baseline / FIXED<tab>file<tab>a<tab>b / SUMMARY total=N new=M
+compare_baseline() { # $1=方向段  $2=actual 流 (file=count)
+  awk -v SEC="$1" -v BL="$SYNO_ARCH_BASELINE" '
+    BEGIN {
+      sec = ""
+      while ((getline line < BL) > 0) {
+        if (line ~ /^\[L1→L3\]/) sec = "L1→L3"
+        else if (line ~ /^\[L1→L4\]/) sec = "L1→L4"
+        else if (line ~ /^\[L1→L5\]/) sec = "L1→L5"
+        else if (sec == SEC && line !~ /^#/ && index(line, "=") > 1) {
+          eq = index(line, "=")
+          base[substr(line, 1, eq - 1)] = substr(line, eq + 1) + 0
+        }
+      }
+    }
+    {
+      eq = index($0, "=")
+      f = substr($0, 1, eq - 1); a = substr($0, eq + 1) + 0
+      b = (f in base) ? base[f] : 0
+      if (a > b) { printf "NEW\t%s\t%d\t%d\n", f, a, b; new += a - b }
+      else if (a < b) { printf "FIXED\t%s\t%d\t%d\n", f, a, b }
+      total += a
+    }
+    END { printf "SUMMARY\ttotal=%d\tnew=%d\n", total + 0, new + 0 }
+ ' <<< "$2" || true
+}
+
+NEW_TOTAL=0
+check_l1_boundary() { # $1=方向段  $2=层模式  $3=标题  $4=修复提示
+  local sec="$1" pat="$2" label="$3" hint="$4"
+  local raw viol allowed actual cmp_out summary total new stock
+  raw=$(grep -rnE "(from[[:space:]]*['\"]|import\(['\"]|require\(['\"])[^'\"]*${pat}" $L1_DIRS $L1_FILES --include="*.ts" --include="*.tsx" 2>/dev/null \
+    | grep -v "node_modules" | grep -v "\.test\." || true)
+  allowed=$(echo "$raw" | grep "// arch-allow(" || true)
+  viol=$(echo "$raw" | grep -v "// arch-allow(" | strip_type_position || true)
+  actual=$(echo "$viol" | awk -F: 'NF >= 2 && $2 ~ /^[0-9]+$/ { c[$1]++ } END { for (f in c) print f "=" c[f] }' || true)
+  cmp_out=$(compare_baseline "$sec" "$actual")
+  summary=$(echo "$cmp_out" | grep "^SUMMARY" | head -1 || true)
+  total=$(echo "$summary" | sed -E 's/.*total=([0-9]+).*/\1/'); total="${total:-0}"
+  new=$(echo "$summary" | sed -E 's/.*new=([0-9]+).*/\1/'); new="${new:-0}"
+  stock=$((total - new))
+
+  echo "─── ${label} ───"
+  if [ "$total" -gt 0 ]; then
+    echo -e "  ${YELLOW}⚠ 存量违规 ${stock} 处 (基线棘轮内, 不阻断——修复后请收紧 ${SYNO_ARCH_BASELINE}):${RESET}"
+    echo "$viol" | sed 's/^/     /'
+  else
+    echo -e "  ${GREEN}✅ ${label}: 无违规${RESET}"
+  fi
+  if [ "$new" -gt 0 ]; then
+    NEW_TOTAL=$((NEW_TOTAL + new))
+    echo "$cmp_out" | grep "^NEW" | while IFS=$'\t' read -r _ nf na nb; do
+      echo -e "     ${RED}↳ ${nf}: 实际 ${na} > 基线 ${nb} (新增 $((na - nb)))${RESET}"
+    done || true
+    if [ "$SYNO_CI" = "1" ]; then
+      echo -e "  ${RED}❌ ${label}: 基线外新增 ${new} 处 [CI strict——软提示在 CI 上为硬阻断]${RESET}"
+      FAIL=$((FAIL + 1))
+    else
+      echo -e "  ${YELLOW}⚠️ ${label}: 基线外新增 ${new} 处 [V5 软提示——CI 为权威(SYNO_CI), 本地不阻断]${RESET}"
+    fi
+  fi
+  if echo "$cmp_out" | grep -q "^FIXED"; then
+    echo -e "  ${CYAN}ℹ 检测到已修复项——棘轮只减不增, 请同步收紧基线文件对应计数${RESET}"
+  fi
+  if [ -n "$allowed" ]; then
+    echo -e "  ${CYAN}ℹ 豁免 $(echo "$allowed" | grep -c . | tr -d '\n\r') 处 (// arch-allow 行内标注, 透明可见, K3 可审计):${RESET}"
+    echo "$allowed" | sed 's/^/     /'
+  fi
+  echo "     ${hint}"
+  echo ""
+}
+
+check_l1_boundary "L1→L3" "$PAT_L3" "1b. L1→L3 跨层引用" \
+  "铁律 39: L1 只能依赖 L2。l3/ sentinel/ expert-platform/ expert/ 是 L3 层。正确做法: L1 → L2 (agent/ orchestrator/) → L3。"
+check_l1_boundary "L1→L4" "$PAT_L4" "1c. L1→L4 跨层引用" \
+  "铁律 39: L1 不得直接访问 L4 (l4/ evidence/ sqlite-graph-store 图桥接)。必须通过 L2 编排层。"
+check_l1_boundary "L1→L5" "$PAT_L5" "1d. L1→L5 跨层引用" \
+  "铁律 39: L1 不得直触 L5 (store/ cron/ l5/ better-sqlite3 / init/engine-context 句柄直取)。存储实例由 L2 bootstrap 组装后 DI 注入。"
 
 # ═══ 2. L3→L5 跨层引用 ═══
 # L3 (l3/) 不得直接操作数据库 (.prepare / db.run / db.exec / better-sqlite3)
@@ -89,7 +184,8 @@ L3_DB=$(grep -rn "better-sqlite3\|\.prepare(\|db\.run\|\.exec(" src/l3/ --includ
   | grep -v "node_modules" | grep -v "\.test\." \
   | grep -v "executeQuery\|//.*bridge\|//.*query" \
   || true)
-L3_DB_COUNT=$(echo "$L3_DB" | grep -c . 2>/dev/null) || L3_DB_COUNT=0
+L3_DB_COUNT=$(echo "$L3_DB" | grep -c . 2>/dev/null | tr -d '\n\r') || L3_DB_COUNT=0
+[ -z "$L3_DB_COUNT" ] && L3_DB_COUNT=0
 
 if [ "$L3_DB_COUNT" -gt 0 ]; then
   echo -e "  ${RED}❌ L3→L5 跨层引用: ${L3_DB_COUNT} 处${RESET}"
@@ -104,7 +200,8 @@ fi
 # 只允许 graph-bridge.ts 声明 GraphStore。禁止在其他文件新增声明。
 GS_DECLARATIONS=$(grep -rn "export interface GraphStore " src/ --include="*.ts" 2>/dev/null \
   | grep -v "node_modules" | grep -v "\.test\." || true)
-GS_COUNT=$(echo "$GS_DECLARATIONS" | grep -c . 2>/dev/null) || GS_COUNT=0
+GS_COUNT=$(echo "$GS_DECLARATIONS" | grep -c . 2>/dev/null | tr -d '\n\r') || GS_COUNT=0
+[ -z "$GS_COUNT" ] && GS_COUNT=0
 if [ "$GS_COUNT" -gt 1 ]; then
   echo -e "  ${RED}❌ GraphStore 接口多处声明: ${GS_COUNT} 处${RESET}"
   echo "$GS_DECLARATIONS" | while read -r line; do echo "     ${line}"; done
@@ -124,7 +221,8 @@ MISSING_GRAPH=$(grep -rn "queryNodes\|queryEdges" src/l4/ --include="*.ts" 2>/de
   | grep -v "graph" \
   | grep -v "node_modules" | grep -v "\.test\." \
   || true)
-MISSING_GRAPH_COUNT=$(echo "$MISSING_GRAPH" | grep -c . 2>/dev/null) || MISSING_GRAPH_COUNT=0
+MISSING_GRAPH_COUNT=$(echo "$MISSING_GRAPH" | grep -c . 2>/dev/null | tr -d '\n\r') || MISSING_GRAPH_COUNT=0
+[ -z "$MISSING_GRAPH_COUNT" ] && MISSING_GRAPH_COUNT=0
 
 if [ "$MISSING_GRAPH_COUNT" -gt 0 ]; then
   echo -e "  ${YELLOW}⚠  多租户安全: ${MISSING_GRAPH_COUNT} 处 queryNodes/queryEdges 调用待审查 graph 参数${RESET}"
@@ -139,7 +237,11 @@ if [ "$FAIL" -gt 0 ]; then
   echo ""
   exit 1
 else
-  echo -e "  ${GREEN}架构检查: 全部通过 ✅${RESET}"
+  if [ "$NEW_TOTAL" -gt 0 ]; then
+    echo -e "  ${YELLOW}架构检查: 存量 ${NEW_TOTAL} 处基线外新增 (本地软提示不阻断; SYNO_CI=1 时转硬)${RESET}"
+  else
+    echo -e "  ${GREEN}架构检查: 全部通过 ✅${RESET}"
+  fi
   echo ""
   exit 0
 fi
