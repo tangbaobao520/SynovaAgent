@@ -57,22 +57,23 @@ const EXPECTED_62: string[] = [
   'src/routes/evolution.ts:34', 'src/routes/expert.ts:11', 'src/routes/expert.ts:12',
   'src/routes/ga-annotations.ts:28', 'src/server.ts:180', 'src/server.ts:181',
   'src/server.ts:249', 'src/server.ts:251', 'src/tui-v2/chat.tsx:187',
-  // §2.2 L1→L4（14 处——D595: :141 修复移出；:203 迁移至 tool-definitions.ts:390）
-  'src/mcp/tool-definitions.ts:390', 'src/mcp/tool-registration.ts:104',
+  // §2.2 L1→L4（14 处——D595: :141 修复移出；:203 迁移至 tool-definitions.ts:391）
+  'src/mcp/tool-definitions.ts:391', 'src/mcp/tool-registration.ts:104',
   'src/routes/agent-observer.ts:11', 'src/routes/auth.ts:16', 'src/routes/chat.ts:38',
   'src/routes/evolution.ts:27', 'src/routes/ga-annotations.ts:38', 'src/routes/ga-calibration.ts:70',
   'src/routes/ga-corrections.ts:9', 'src/routes/knowledge-ask.ts:39', 'src/routes/ontology.ts:10',
   'src/routes/ontology-admin.ts:16', 'src/routes/overflow.ts:15', 'src/tui-v2/chat.tsx:57',
-  // §2.3a L1→L5 存储/调度导入（14 处——D595: :236 迁移至 tool-definitions.ts:425；
+  // §2.3a L1→L5 存储/调度导入（15 处——D595: :236 迁移至 tool-definitions.ts:426；
   // diagnosis.ts :215/:505 因 D599 合并漂移至 :261/:561，随本单同步）
-  'src/cli.ts:14', 'src/cli.ts:21', 'src/l1/im-inbound.ts:171', 'src/mcp/tool-definitions.ts:425',
+  'src/cli.ts:14', 'src/cli.ts:21', 'src/l1/im-inbound.ts:171', 'src/mcp/tool-definitions.ts:426',
   'src/routes/conversations.ts:98', 'src/routes/diagnosis.ts:261', 'src/routes/diagnosis.ts:561',
   'src/routes/im.ts:42', 'src/routes/sessions.ts:11', 'src/server.ts:25', 'src/server.ts:405',
   'src/tui-v2/chat.tsx:15', 'src/tui-v2/lib/bootstrap.ts:13', 'src/tui-v2/lib/bootstrap.ts:17',
-  // §2.3b L1→L5 getDatabase/init-engine-context（20 处——D595: :140 修复移出；
-  // :193/:231 迁移至 tool-definitions.ts:380/:420）
-  'src/index.ts:14', 'src/l1/qa-router.ts:13', 'src/mcp/tool-definitions.ts:380',
-  'src/mcp/tool-definitions.ts:420', 'src/mcp/tool-registration.ts:105', 'src/routes/admin-knowledge.ts:19',
+  'src/tui-v2/lib/commands.ts:14',
+  // §2.3b L1→L5 getDatabase/init-engine-context（21 处——D595: :140 修复移出；
+  // :193/:231 迁移至 tool-definitions.ts:381/:421）
+  'src/index.ts:14', 'src/l1/qa-router.ts:13', 'src/mcp/tool-definitions.ts:381',
+  'src/mcp/tool-definitions.ts:421', 'src/mcp/tool-registration.ts:105', 'src/routes/admin-knowledge.ts:19',
   'src/routes/agent-observer.ts:12', 'src/routes/auth.ts:17', 'src/routes/chat.ts:39',
   'src/routes/documents.ts:10', 'src/routes/evolution.ts:28', 'src/routes/expert.ts:13',
   'src/routes/ga-annotations.ts:39', 'src/routes/ga-calibration.ts:71', 'src/routes/ga-corrections.ts:10',
