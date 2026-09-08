@@ -4,7 +4,7 @@
   "status": "spec_done",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D593-report-persistence-20260908.md",
-    "commit": null,
+    "commit": "60e4e552",
     "by": "DeepSeek Harness (dev-doc)",
     "at": "2026-09-08"
   },
@@ -13,5 +13,5 @@
   "fix_task_id": null,
   "updated_at": "2026-09-08",
   "updated_by": "DeepSeek Harness (dev-doc)",
-  "note": "spec 交付（dev-doc 线，2026-09-08）：报告落盘=复用 diagnosis_checkpoints 表（零 schema 变更，键=reportId）+ GET report 内存 miss→checkpoint 冷读（DSH 冷读激活范式）+ 新列表端点 GET /api/diagnosis/reports + 白名单五前缀（diagnosis/reports、notifications、solutions、ga/clients、ga/switch）+ 桌面报告 tab 刷新恢复/哨兵 tab 真数据/会话列表接入。写集 8 修改 + 2 新建（目录级声明，实现后精确化）。决策九项记录 §5.4（S-12）。编码线 Claude Code。依赖 D590/D591/D592 已合 main。与 D594 文件边界：RightPanel.tsx 归本任务。编号注意：旧 14e54722 D593（LLM 韧性层）已关闭，本任务为编号复用——审计产物命名带任务名区分。commit 字段待 spec 推送提交后回填（gatekeeper exit 0 + check-dev-doc-write-set SKIP-无暂存）。"
+  "note": "spec 交付（dev-doc 线，2026-09-08）：报告落盘=复用 diagnosis_checkpoints 表（零 schema 变更，键=reportId）+ GET report 内存 miss→checkpoint 冷读（DSH 冷读激活范式）+ 新列表端点 GET /api/diagnosis/reports + 白名单五前缀（diagnosis/reports、notifications、solutions、ga/clients、ga/switch）+ 桌面报告 tab 刷新恢复/哨兵 tab 真数据/会话列表接入。写集 8 修改 + 2 新建（目录级声明，实现后精确化）。决策九项记录 §5.4（S-12）。编码线 Claude Code。依赖 D590/D591/D592 已合 main。与 D594 文件边界：RightPanel.tsx 归本任务。编号注意：旧 14e54722 D593（LLM 韧性层）已关闭，本任务为编号复用——审计产物命名带任务名区分。spec 已提交 60e4e552（gatekeeper exit 0；check-dev-doc-write-set 交付期预期漂移=写集契约面向实现提交，由编码线程实现提交时闭合，D592 DS5 先例）。"
 }
