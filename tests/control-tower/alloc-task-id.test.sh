@@ -89,6 +89,32 @@ else
 fi
 echo ""
 
+echo "── 7. CT-63: 远端分支名 D# 扫描 ──"
+CT63_DIR=$(mktemp -d)
+mkdir -p "$CT63_DIR/task-state"
+echo '{"task_id":"D499","status":"claimed"}' > "$CT63_DIR/task-state/D499.json"
+cd "$CT63_DIR" && git init -q && git add -A && git commit -q -m init
+git update-ref refs/remotes/origin/feat/d605-test HEAD
+cd "$REPO_DIR"
+OUT=$(SYNO_TASK_STATE_DIR="$CT63_DIR/task-state" SYNO_BRIEF_DIR="$CT63_DIR/briefs" SYNO_ALLOC_NO_REMOTE=1 bash "$TOOL" "CT63" 2>&1)
+GOT=$(echo "$OUT" | grep -oE 'D[0-9]+' | head -1 | sed 's/D//')
+if [ -n "$GOT" ] && [ "$GOT" -gt 605 ]; then pass "CT-63: 分支 d605 → 发 D$GOT > 605"; else fail "CT-63: 发 D$GOT 应 > 605"; fi
+rm -rf "$CT63_DIR"
+echo ""
+
+echo "── 8. CT-63 注入缝 NO_BRANCH=1 ──"
+CT63B_DIR=$(mktemp -d)
+mkdir -p "$CT63B_DIR/task-state"
+echo '{"task_id":"D499","status":"claimed"}' > "$CT63B_DIR/task-state/D499.json"
+cd "$CT63B_DIR" && git init -q && git add -A && git commit -q -m init
+git update-ref refs/remotes/origin/feat/d605-test HEAD
+cd "$REPO_DIR"
+OUT=$(SYNO_TASK_STATE_DIR="$CT63B_DIR/task-state" SYNO_BRIEF_DIR="$CT63B_DIR/briefs" SYNO_ALLOC_NO_REMOTE=1 SYNO_ALLOC_NO_BRANCH=1 bash "$TOOL" "CT63B" 2>&1)
+GOT=$(echo "$OUT" | grep -oE 'D[0-9]+' | head -1 | sed 's/D//')
+if [ -n "$GOT" ] && [ "$GOT" -eq 500 ]; then pass "CT-63 NO_BRANCH: 发 D$GOT = 500"; else fail "CT-63 NO_BRANCH: 发 D$GOT 应 = 500"; fi
+rm -rf "$CT63B_DIR"
+echo ""
+
 echo "═══════════════════════════════════════════════════════════"
 echo "  结果: PASS=$PASS FAIL=$FAIL"
 echo "═══════════════════════════════════════════════════════════"
