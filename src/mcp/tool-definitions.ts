@@ -51,7 +51,8 @@ const log = createLogger('mcp/tool-definitions');
 
 /** MCP 工具契约版本串——initialize instructions 机器可 grep，变更即 breaking */
 export const MCP_CONTRACT = 'SYNOVA-MCP-CONTRACT: 1';
-export const MCP_SERVER_NAME = 'synova-agent';
+/** server 名称（模块内常量——buildServerInfo 单一消费点，不导出） */
+const MCP_SERVER_NAME = 'synova-agent';
 
 // ═══ Types ═══
 
