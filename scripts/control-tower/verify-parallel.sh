@@ -208,7 +208,9 @@ _is_closed_doc() {
   if ls "$REPO_DIR"/docs/synova/audit-reports/*-"$did"-*.md >/dev/null 2>&1; then return 0; fi  # swallow-ok: 无匹配=不豁免，glob 失败非错误
   if ls "$REPO_DIR"/docs/synova/audit-reports/*-"$did".md >/dev/null 2>&1; then return 0; fi    # swallow-ok: 同上
   # 注意: git log 无匹配也 exit 0（空输出）——必须判输出非空，否则恒豁免
-  _mc="$(git -C "$REPO_DIR" log --format=%H --grep="($did)" --max-count=1 "$CI_PR_BASE" 2>/dev/null || true)"  # swallow-ok: log 失败=不豁免
+  # D599: -i 大小写不敏感 — 仓库提交惯例为小写 scope（feat(d598): ...），豁免键为大写 D#，
+  # 大小写敏感使信号 3 对全部小写提交漏配（D598 实证：4 个关闭信号全缺 → 串行复用被误判并行）
+  _mc="$(git -C "$REPO_DIR" log --format=%H -i --grep="($did)" --max-count=1 "$CI_PR_BASE" 2>/dev/null || true)"  # swallow-ok: log 失败=不豁免
   [ -n "$_mc" ] && return 0
   # 信号 4（D557）: 无 task-state 记录 → 写集文件全部已合 base = 合并未登记历史任务
   if [ ! -f "$REPO_DIR/task-state/$did.json" ]; then
@@ -224,7 +226,9 @@ except Exception:
 if not entries:
     sys.exit(1)
 for f in entries:
-    if subprocess.run(['git', '-C', repo, 'cat-file', '-e', base + ':' + f]).returncode != 0:
+    # D599: 写集表路径常带 markdown 反引号（`src/x.ts`）——cat-file 用原串恒败，
+    # 信号 4 对反引号表全漏配（D598 实证）。剥壳后再比对；无反引号表不受影响（T8c 兼容）。
+    if subprocess.run(['git', '-C', repo, 'cat-file', '-e', base + ':' + f.strip('`')]).returncode != 0:
         sys.exit(1)
 print('closed4')
 PYEOF

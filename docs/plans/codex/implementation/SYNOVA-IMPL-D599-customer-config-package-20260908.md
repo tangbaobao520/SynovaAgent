@@ -59,6 +59,14 @@
 
 > 实现时若偏离本 doc（diagnosis 消费点/四层默认值/leak 审计判定口径），必须在此节同 commit 回填最终形态，不留「方案 vs 代码」漂移。
 
+2026-09-08 交付回填（与实现 commit 同 commit）：
+
+- **四层来源落定**：default 层 = `MountOptions.defaultLayer`（调用方传入，缺省 `{}`）；industry 层 = 包目录 `industry.yml`（可选）；customer 层 = 包目录 `config.yml`（composition，必需，缺失/坏 → broken 上报 + degraded 兜底）；workspace 层 = 包目录 `workspace.yml`（可选）。可选层缺文件（ENOENT）= 正常缺省不降级；解析/读失败 = 该层跳过 + degraded（铁律 24 ENOENT 区分）。
+- **diagnosis 消费点落定**：consult 内 `loadConfig()` 后调用 `discoverCustomerConfigPackages(configRoots)`（roster 观测：包数/broken 名单）+ `resolveCustomerConfig(teamId, { roots })`；结果两路可观测——① SSE `config_resolved` 事件（phase 0，逐层 provenance findings + degraded）；② 完成报告挂 `report.customerConfig`（orgId/degraded/reason/audit/provenance，GET /consult/:id/report 可回查）。零管线消费（阈值/专家集/报告样式/凭证均未读入诊断行为，S1-6 后续）。解析整体 try/catch log.warn 降级，不阻断诊断。
+- **leak 审计判定口径落定**：顶层保留全局键 `{process, global, globalThis, env, require, module, exports, __dirname, __filename, Buffer}` → kind=`reserved-global`（仅顶层判定）；任意深度原型键 `{__proto__, prototype, constructor}` → kind=`prototype-key`。审计（`leakedGlobalConfig`）与剥离（mount 内 `stripLeaks`）共用同一套键集合常量；剥离后 config deep frozen + `audit` 字段带剥离路径，degraded 传播。
+- **api 形态落定**：`resolveCustomerConfig` = `mountCustomerConfig` 同实现的接线入口别名（非独立逻辑）；`discoverCustomerConfigPackages` 返回 `CustomerConfigPackage[]`（orgId=目录名，`/^[A-Za-z0-9][A-Za-z0-9._-]*$/` 防路径逃逸，非法目录名跳过不报 broken）；roster 按 orgId 升序稳定输出。
+- **测试实绩**：config-layers.test.ts 15 用例 + customer-config-package.test.ts 8 用例 = 23（≥14 达标），RED（模块不存在 import fail）→ GREEN 实录。
+
 ### 3.3 不做的事
 | 项 | 理由 |
 |---|---|

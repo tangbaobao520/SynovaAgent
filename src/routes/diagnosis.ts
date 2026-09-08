@@ -12,9 +12,17 @@
  * D489: consult 改经 DiagnosisLauncher — 诊断阶段/模块/报告事件落 session_events（D394 片2-B 可回放）。
  */
 import { Router, type Request, type Response } from 'express';
+import { join } from 'node:path';
 import { createProvider } from '../providers';
 import { detectProvider } from '../providers/detect';
 import { loadConfig } from '../config';
+// D599: 客户配置包四层解析（DSH 借鉴卡 B-09+B-10 机制蓝本）— L1 消费支撑机制（loadConfig 同型方向）
+import {
+  discoverCustomerConfigPackages,
+  resolveCustomerConfig,
+  DEFAULT_ROOT_NAME,
+  type MountedCustomerConfig,
+} from '../config/customer-config-package';
 import { createLogger } from '@synova/logger';
 import type { DiagnosisEngine, DiagnosisEvent, ConsultationResult } from '../l2-interfaces/diagnosis-engine';
 import { ToolRegistry } from '../agent/tools';
@@ -55,46 +63,12 @@ interface ActiveConsultation {
 
 const activeConsultations = new Map<string, ActiveConsultation>();
 
-// ═══ D480/D593: 已完成诊断报告缓存 — GET /consult/:id/report 一级缓存 ═══
-// D593 起持久层为事实源（diagnosis_checkpoints 表 phase=5 行，键=reportId，写点见 POST /consult
-// 完成处）；本内存 Map 退役为一级加速缓存（进程内 GET 快路径），上限 50 条 FIFO 淘汰防 OOM
-// 初衷保留。进程重启即清空——重启后 GET 经 checkpoint 冷读 fallback 读回（不触碰引擎、
-// 不重新诊断；DSH dsh-api-session-controller lib/index.js:142-170 冷读激活范式）。
+// ═══ D480: 已完成诊断报告缓存 — GET /consult/:id/report 数据源 ═══
+// activeConsultations 在 finally 删除且无报告持久化设施（grep 零 saveDiagnosisReport 类），
+// 故用有界内存缓存（routes/ 内存 Map 为仓库既有模式，diagnosis-upload-v2 jobStore 同型但无界——
+// 本缓存上限 50 条 FIFO 淘汰防 OOM）。进程重启即清空——重启后 GET 返回 404（可接受：SSE 已送达）。
 
 type DiagnosisReportLike = import('../l3/synova-diagnosis-engine').DiagnosisReport;
-
-/**
- * D593: checkpoint 冷读归档行类型（与 L5 DiagnosisReportArchive 结构同步的 L1 内联声明——
- * 零静态 L5 import，D563 铁律；字段经动态 import 通道的 isDiagnosisReportArchive 谓词窄化）。
- */
-interface ColdReadArchive {
-  reportId: string;
-  teamId: string;
-  completedAt: string;
-  consultId?: string;
-  source?: string;
-  onePager?: string | null;
-  report: { summary: string } & Record<string, unknown>;
-}
-
-/**
- * D593: 完整 L3 DiagnosisReport 形状守卫（渲染边界自查）——checkpoint 归档的 report
- * 透传给一页纸渲染前验证全字段（L5 归档守卫只验读侧消费子集；渲染层消费面在此把关，
- * 不盲信 JSON，铁律 38）。数组项内部字段交由 renderOnePager 自身 whole-body catch 兜底。
- */
-function isFullDiagnosisReportLike(v: object): v is DiagnosisReportLike {
-  const o = v as Record<string, unknown>;
-  return (
-    typeof o.reportId === 'string' &&
-    typeof o.teamId === 'string' &&
-    typeof o.generatedAt === 'string' &&
-    typeof o.summary === 'string' &&
-    Array.isArray(o.expertReports) &&
-    Array.isArray(o.rootCauses) &&
-    Array.isArray(o.recommendations) &&
-    typeof o.raw === 'object' && o.raw !== null
-  );
-}
 
 interface CompletedConsultation {
   consultId: string;
@@ -108,8 +82,7 @@ interface CompletedConsultation {
 const completedReports = new Map<string, CompletedConsultation>();
 const COMPLETED_REPORTS_MAX = 50;
 
-/** D480/D593: 有界缓存写入（Map 插入序 FIFO 淘汰最旧）——存值快照，不存 active 引用；
- * D593 起为一级缓存（事实源 = checkpoint 持久层，miss ≠ 报告丢失） */
+/** D480: 有界缓存写入（Map 插入序 FIFO 淘汰最旧）——存值快照，不存 active 引用 */
 function cacheCompletedReport(entry: CompletedConsultation): void {
   if (completedReports.size >= COMPLETED_REPORTS_MAX) {
     const oldest = completedReports.keys().next().value;
@@ -170,6 +143,44 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
 
   try {
     const config = loadConfig();
+
+    // ═══ D599: 客户配置包四层解析（DSH 借鉴卡 B-09+B-10 机制蓝本） ═══
+    // consult 第一命令：per-org 解析 default→industry→customer→workspace 四层叠加，
+    // 经 SSE config_resolved 事件可观测（逐层来源 provenance + degraded + 泄漏审计）。
+    // 机制蓝本不消费阈值/启用专家集/报告样式/凭证到诊断管线（S1-6 后续）；
+    // 解析失败降级不阻断诊断（铁律 24/31：log.warn + 诊断继续）。
+    let customerConfig: MountedCustomerConfig | null = null;
+    try {
+      const configRoots = [{ path: join(process.cwd(), DEFAULT_ROOT_NAME), trust: 'customer' as const }];
+      const roster = await discoverCustomerConfigPackages(configRoots);
+      const brokenPackages = roster.filter((p) => p.broken !== undefined);
+      customerConfig = await resolveCustomerConfig(teamId, { roots: configRoots });
+      log.info(
+        {
+          consultId, orgId: teamId, degraded: customerConfig.degraded,
+          packages: roster.length, brokenPackages: brokenPackages.map((p) => p.orgId),
+          auditKeys: customerConfig.audit.map((e) => e.path),
+        },
+        '客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）',
+      );
+      sseWrite(res, {
+        type: 'config_resolved',
+        phase: 0,
+        message: `客户配置解析完成（orgId=${teamId}${customerConfig.degraded ? '，degraded' : ''}）`,
+        degraded: customerConfig.degraded,
+        findings: customerConfig.provenance
+          .filter((l) => l.present)
+          .map((l) => ({
+            moduleId: `config:${l.layer}`,
+            summary: `配置层 ${l.layer} 贡献键: ${l.contributedKeys.join(', ') || '（无顶层键）'}`,
+            confidence: 1,
+          })),
+        confidence: 1,
+      });
+    } catch (cfgErr: unknown) {
+      log.warn({ err: cfgErr, consultId, orgId: teamId }, '客户配置包解析失败 — degraded（诊断继续，default 行为）');
+    }
+
     const provider = createProvider(detectProvider(), {
       apiKey: config.llmApiKey,
       baseUrl: config.llmBaseUrl,
@@ -473,43 +484,23 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
       }
       // D480: 完成报告入有界缓存（GET /report 数据源；raw 咨询也入缓存，GET 时按需渲染）。
       // 须在 sseClose 前执行——sseClose 序列化 result.report（onePager 已挂在其上）。
-      const completedAtIso = new Date().toISOString();
+      // D599: 报告挂客户配置来源（逐层 provenance + 审计 + degraded），GET /report 可回查。
+      if (customerConfig !== null) {
+        (result.report as Record<string, unknown>).customerConfig = {
+          orgId: customerConfig.orgId,
+          degraded: customerConfig.degraded,
+          ...(customerConfig.reason === undefined ? {} : { reason: customerConfig.reason }),
+          audit: customerConfig.audit,
+          provenance: customerConfig.provenance,
+        };
+      }
       cacheCompletedReport({
         consultId,
         teamId,
         report: result.report as DiagnosisReportLike,
         onePager,
-        completedAt: completedAtIso,
+        completedAt: new Date().toISOString(),
       });
-      // D593: 报告落盘（写路径，spec §5.2-A）——checkpoint 表 phase=5 行，键=reportId
-      // （桌面 currentReportId 已用它；rpt_ 两路线统一存在，partialReport 附 consultId 供追溯）。
-      // reportId 缺失 → log.warn 跳过（防御，诊断 SSE 不受影响）；写失败 → log.warn + 降级
-      // （报告已随 SSE 送达客户端，落盘失败不阻断诊断，铁律 24/31）。
-      const reportIdCandidate: unknown = (result.report as { reportId?: unknown }).reportId;
-      const reportIdForArchive = typeof reportIdCandidate === 'string' ? reportIdCandidate : '';
-      if (reportIdForArchive === '') {
-        log.warn({ consultId }, '报告 reportId 缺失 — 跳过落盘（degraded，诊断结果不受影响）');
-      } else if (sessionStore) {
-        try {
-          sessionStore.saveDiagnosisCheckpoint?.({
-            sessionId: reportIdForArchive,
-            phase: 5,
-            completedModules: [],
-            partialReport: {
-              reportId: reportIdForArchive,
-              report: result.report,
-              onePager,
-              teamId,
-              completedAt: completedAtIso,
-              consultId,
-              source: 'consult',
-            },
-            savedAt: completedAtIso,
-          });
-        } catch (persistErr: unknown) {
-          log.warn({ err: persistErr, consultId, reportId: reportIdForArchive }, '诊断报告落盘失败 — degraded（报告已随 SSE 送达）');
-        }
-      }
       sseClose(res, result);
     }
   } catch (err: any) {
@@ -603,123 +594,24 @@ async function renderOnePagerOnDemand(report: DiagnosisReportLike): Promise<stri
   }
 }
 
-/**
- * D593: 从 req.app.locals.orchestration.db 解析会话存储（D563 既有动态 import 通道，
- * conversations.ts resolveStore 同款）。@returns SessionStore 实例；db 缺失/谓词窄化失败/
- * 构造抛错 → null（调用方按无持久层处理：GET report 404 / 列表 503 fail-closed）。
- */
-// 返回类型由动态 import 推断（完整 SessionStore 类），零静态 L5 类型引用
-async function resolveStoreFromRequest(req: Request) {
-  const orchestrationDb = (req.app.locals.orchestration as { db?: unknown } | undefined)?.db;
-  if (!orchestrationDb) return null;
-  try {
-    const { SessionStore, isSqliteDatabase } = await import('../store/session-store');
-    if (!isSqliteDatabase(orchestrationDb)) {
-      log.warn('orchestration.db 非 SQLite 句柄（D563 谓词窄化失败）— 报告读路径降级');
-      return null;
-    }
-    return new SessionStore(orchestrationDb);
-  } catch (err: unknown) {
-    log.warn({ err }, 'SessionStore 装配失败 — 报告读路径降级（degraded）');
-    return null;
-  }
-}
-
-/**
- * D593: checkpoint 冷读（内存 miss 后的持久层回退，spec §5.2-B）。
- * 键 = reportId（phase=5 归档行）；consultId 的 resume 检查点行（phase<5）不冒充报告。
- * 冷读不构造引擎、不重新诊断（DSH dsh-api-session-controller lib/index.js:142-170
- * 只读快照语义）；partialReport 形状经 isDiagnosisReportArchive 谓词窄化（不盲信 JSON）。
- * @returns 归档对象 | null（持久层不可用/无此报告/形状非法 → null，调用方诚实 404，铁律 24）
- */
-async function readReportFromCheckpoint(req: Request, reportId: string): Promise<ColdReadArchive | null> {
-  const store = await resolveStoreFromRequest(req);
-  if (!store) return null;
-  try {
-    const checkpoint = store.getDiagnosisCheckpoint ? store.getDiagnosisCheckpoint(reportId) : null;
-    if (!checkpoint || checkpoint.phase !== 5) return null;
-    const { isDiagnosisReportArchive } = await import('../store/session-store');
-    if (!isDiagnosisReportArchive(checkpoint.partialReport)) {
-      log.warn({ reportId }, 'checkpoint partial_report 形状非法 — 诚实 404（不静默，铁律 24）');
-      return null;
-    }
-    return checkpoint.partialReport;
-  } catch (err: unknown) {
-    log.warn({ err, reportId }, 'checkpoint 冷读失败 — 404（degraded，铁律 24）');
-    return null;
-  }
-}
-
-/** D593: report 响应组装（json/markdown 双格式；markdown 按需补渲染 onePager，D480 语义不变） */
-async function respondReport(
-  res: Response,
-  consultId: string,
-  format: string,
-  teamId: string,
-  completedAt: string,
-  report: DiagnosisReportLike | ColdReadArchive['report'],
-  onePager: string | null,
-): Promise<void> {
-  if (format === 'markdown') {
-    if (onePager) {
-      res.type('text/markdown; charset=utf-8').send(onePager);
-      return;
-    }
-    if (isFullDiagnosisReportLike(report)) {
-      res.type('text/markdown; charset=utf-8').send(await renderOnePagerOnDemand(report));
-      return;
-    }
-    // 归档 report 非完整引擎形状（如 fake/历史数据）→ 摘要文本诚实降级（不伪造一页纸，铁律 24）
-    res.type('text/markdown; charset=utf-8').send(
-      `诊断摘要: ${report.summary || '诊断完成'}（报告结构不完整，无法渲染一页纸；请使用 JSON 格式查看完整报告）`,
-    );
-    return;
-  }
-  res.json({ ok: true, consultId, teamId, completedAt, report });
-}
-
 router.get('/api/diagnosis/consult/:consultId/report', async (req: Request, res: Response) => {
   const { consultId } = req.params as { consultId: string };
-  const format = typeof req.query.format === 'string' ? req.query.format : 'json';
-
-  // ① 一级缓存（进程内快路径；键=consultId——resume 等既有调用方语义不变）
   const completed = completedReports.get(consultId);
-  if (completed) {
-    await respondReport(res, consultId, format, completed.teamId, completed.completedAt, completed.report, completed.onePager);
-    return;
+  if (!completed) {
+    return res.status(404).json({ ok: false, error: '诊断报告不存在（可能尚未完成或已过期）', code: 'NOT_FOUND' });
   }
-
-  // ② D593: 内存 miss → checkpoint 冷读（持久层事实源；键=reportId；双 ID 兼容——
-  //    consultId 调用方由内存层服务，重启后 reportId 可读回，spec §5.4 决策 3）
-  const archive = await readReportFromCheckpoint(req, consultId);
-  if (archive) {
-    await respondReport(res, consultId, format, archive.teamId, archive.completedAt, archive.report, archive.onePager ?? null);
-    return;
+  const format = typeof req.query.format === 'string' ? req.query.format : 'json';
+  if (format === 'markdown') {
+    const markdown = completed.onePager ?? (await renderOnePagerOnDemand(completed.report));
+    return res.type('text/markdown; charset=utf-8').send(markdown);
   }
-
-  // ③ 均 miss → 404（现状语义不变，诚实不静默）
-  return res.status(404).json({ ok: false, error: '诊断报告不存在（可能尚未完成或已过期）', code: 'NOT_FOUND' });
-});
-
-// ═══ D593: GET /api/diagnosis/reports — 报告列表（桌面刷新恢复入口，spec §5.2-C） ═══
-
-router.get('/api/diagnosis/reports', async (req: Request, res: Response) => {
-  // limit 夹取 1..200 / offset >= 0（sentinel findings 同款 idiom；缺省 limit=50）
-  const limitRaw = Number(req.query.limit);
-  const offsetRaw = Number(req.query.offset);
-  const limit = Number.isFinite(limitRaw) ? limitRaw : 50;
-  const offset = Number.isFinite(offsetRaw) ? offsetRaw : 0;
-
-  const store = await resolveStoreFromRequest(req);
-  if (!store || !store.listDiagnosisReports) {
-    // db 缺失/非 SQLite → 503 fail-closed（列表是桌面恢复链的必要入口，静默空列表 = 假绿）
-    return res.status(503).json({ ok: false, code: 'STORE_UNAVAILABLE', degraded: true, error: '报告存储不可用' });
-  }
-  const result = store.listDiagnosisReports({ limit, offset });
-  if (!result.ok) {
-    return res.status(503).json({ ok: false, code: 'STORE_UNAVAILABLE', degraded: true, error: result.error });
-  }
-  res.json({ ok: true, total: result.total, degraded: result.degraded, reports: result.reports });
+  res.json({
+    ok: true,
+    consultId,
+    teamId: completed.teamId,
+    completedAt: completed.completedAt,
+    report: completed.report,
+  });
 });
 
 export default router;
