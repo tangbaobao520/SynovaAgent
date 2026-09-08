@@ -1174,3 +1174,5 @@ Binary file .claude/bypass.log matches
 2026-09-08T23:25:00+08:00 | COMMITTED | pre-commit PASS (D331 一次性补记: dev-doc 线 D593 提交经本分支合入, 原登记缺失—M8 共享主树) | TASK_ID=D593 | AGENT=dsh-devdoc | HASH=ed38508d94f1b8f714ca6e2776669d1cb63bcc42
 2026-09-08T23:28:51+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=083388ea37ed97cb2a966db1e355de735eb937b4
 2026-09-08T23:33:23+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=f447561c951882d36abf060738d49fa505ec4104
+2026-09-08T23:46:21+08:00 | GATE_FAIL_SOFT | exit=1 | branch=fix/d590-d591-taskstate
+2026-09-08T23:46:22+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=9fa46e1100149f187f79851ff259f3d1f8b0e9c2
