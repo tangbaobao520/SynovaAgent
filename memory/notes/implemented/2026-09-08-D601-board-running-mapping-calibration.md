@@ -1,5 +1,5 @@
 ---
-状态: proposed
+状态: implemented
 日期: 2026-09-08
 决策: 任务看板 running 列口径校准——running 仅 = claimed + spec_done；impl_done → todo（待 K3 审计）；closed → done；cancelled → failed；Win git 派生 committed 与 impl_done 同口径 → todo（2026-09-08 创始人派单指示，修订 2026-08-23「impl_done→running」旧口径）
 理由: 看板「进行中 94」vs task-state 权威活跃 ~13（claimed 11 + spec_done 3）严重虚高——impl_done→running（52 张）+ Win committed→running（25 张）把"代码写完等审计"算成了活跃工作。创始人裁决 running 语义 = 活跃推进中，仅 claimed + spec_done。防假完成原则保留（impl_done ≠ done，K3 审计才算 done，2026-08-23 创始人决策），故 impl_done 落 todo（待审计队列），done 列仅 audited + closed。
