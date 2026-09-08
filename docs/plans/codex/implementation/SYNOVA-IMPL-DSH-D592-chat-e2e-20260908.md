@@ -144,12 +144,17 @@ c) **memory/ 历史教训**:
 ## 5. What We Build
 
 ### 5.1 写集 (0 修改 + 7 新建)
-| 文件（目录级声明） | 操作 | 说明（实现时精确化的确切文件） |
+| 文件 | 操作 | 说明 |
 |------|:---:|------|
-| tests/e2e/ | 新建 | conversation-flow.e2e.test.ts（9 用例两段式 E2E，契约见 §5.2-A/§7） |
-| docs/synova/product-lines/evidence/ | 新建 | ① D592-run-e2e.sh（一键 runner，契约见 §5.2-B）② d592-e2e-2-1.json ③ d592-e2e-2-2.json ④ d592-e2e-2-5.json（evidence 契约见 §3 Q4；runner 模板生成）⑤ D592-e2e-create.log.txt ⑥ D592-e2e-resume.log.txt（两段 vitest 全量输出，runner 落盘） |
+| tests/e2e/conversation-flow.e2e.test.ts | 新建 | 9 用例两段式 E2E（契约见 §5.2-A/§7） |
+| docs/synova/product-lines/evidence/D592-run-e2e.sh | 新建 | 一键 runner（契约见 §5.2-B） |
+| docs/synova/product-lines/evidence/d592-e2e-2-1.json | 新建 | 2-1 evidence（§3 Q4 契约，runner 模板生成） |
+| docs/synova/product-lines/evidence/d592-e2e-2-2.json | 新建 | 2-2 evidence（同上） |
+| docs/synova/product-lines/evidence/d592-e2e-2-5.json | 新建 | 2-5 evidence（同上） |
+| docs/synova/product-lines/evidence/D592-e2e-create.log.txt | 新建 | 段1 vitest 全量输出（runner 落盘） |
+| docs/synova/product-lines/evidence/D592-e2e-resume.log.txt | 新建 | 段2 vitest 全量输出（runner 落盘） |
 
-> 新建文件按 D580/D590 先例以**目录级条目**声明（未存在文件报"文件不存在"假阳）；实现提交时**必须精确化**为上表说明列的 7 个确切文件名（check-dev-doc-write-set U2a 反向对账 + 计数对账）。零修改条目——src/ 零触碰是本任务红线也是 evidence 保鲜前提（§3 Q0b）。
+> 新建文件 dev doc 交付时以**目录级条目**声明（未存在文件报"文件不存在"假阳，D580/D590 先例）；实现提交（33705431）后已精确化为上表 7 个确切文件名（check-dev-doc-write-set U2a 反向对账 + 计数对账，D590 61aa839d 同款）。零修改条目——src/ 零触碰是本任务红线也是 evidence 保鲜前提（§3 Q0b）。
 
 ### 5.2 关键实现契约
 
