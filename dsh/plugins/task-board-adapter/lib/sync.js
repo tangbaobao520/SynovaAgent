@@ -23,12 +23,18 @@ import { randomUUID } from "node:crypto";
 /** Synova task-state 的字段子集（task-state/D###.json）。 */
 export const TASK_STATE_FILE_RE = /^D\d+\.json$/;
 
-/** 默认状态映射：Synova 状态 → 看板 5 列（backlog/todo/running/done/failed）。 */
+/**
+ * 默认状态映射：Synova 状态 → 看板 5 列（backlog/todo/running/done/failed）。
+ * 2026-09-08 创始人校准：running 仅 = claimed + spec_done（活跃工作），
+ * impl_done → todo（实现完成待 K3 审计，防假完成且不进 running 虚高——原口径 2026-08-23 已修订）。
+ */
 export const DEFAULT_STATUS_MAPPING = Object.freeze({
-  spec_done: "todo",
+  spec_done: "running",
   claimed: "running",
-  impl_done: "running",
+  impl_done: "todo",
   audited: "done",
+  closed: "done",
+  cancelled: "failed",
   failed: "failed",
 });
 
@@ -92,6 +98,7 @@ export function buildDescription(raw, unknown = false) {
   const impl = raw?.impl && typeof raw.impl === "object" ? raw.impl : {};
   const lines = [];
   lines.push(`Synova 状态: ${raw?.status ?? "—"}${unknown ? `（未映射，落入 ${FALLBACK_STATUS}）` : ""}`);
+  if (raw?.status === "impl_done") lines.push("状态说明: 实现完成，待 K3 审计（不占 running 列）");
   lines.push(`规格: ${spec.path ?? "—"}${spec.commit ? ` (commit ${spec.commit})` : ""}`);
   lines.push(`实现: ${impl.commit ? `commit ${impl.commit}` : "—"}`);
   lines.push(`审计: ${raw?.audit ?? "未审计"}`);
@@ -212,7 +219,8 @@ export function readSnapshot(snapshotPath) {
 
 /**
  * 映射一条 git 派生 Win 任务为看板 TaskRecord（D502 源②）。
- * 状态: audited→done / committed→running（合并≠完成，K3 审计才算 done——与 Mac 侧 impl_done→running 口径一致）。
+ * 状态: audited→done / committed→todo（合并≠完成，K3 审计才算 done——
+ * 与 Mac 侧 impl_done→todo 口径一致；2026-09-08 创始人校准：running 仅 = claimed + spec_done）。
  */
 export function mapWinTaskToBoardTask(raw, opts = {}) {
   const now = opts.now ?? Date.now();
@@ -222,11 +230,11 @@ export function mapWinTaskToBoardTask(raw, opts = {}) {
   if (!id || !title) {
     return { error: `win 任务缺 task_id/title: ${JSON.stringify(raw).slice(0, 100)}` };
   }
-  const status = raw?.status === "audited" ? "done" : "running";
+  const status = raw?.status === "audited" ? "done" : "todo";
   const desc = [
     `来源: git 派生（origin/main，作者 ${raw?.author ?? "—"}）`,
     `git 提交数: ${raw?.commits ?? "—"}`,
-    `K3 审计: ${raw?.status === "audited" ? "有审计报告" : "未审计（合并≠完成）"}`,
+    `K3 审计: ${raw?.status === "audited" ? "有审计报告" : "未审计（合并≠完成，待 K3 审计）"}`,
     `最近活动: ${raw?.date ?? "—"}`,
   ].join("\n");
   return {

@@ -18,16 +18,22 @@ bash dsh/plugins/task-board-adapter/scripts/install.sh
 
 ## 状态映射
 
+> 2026-09-08 创始人校准：**running 仅 = claimed + spec_done**（活跃工作）。原口径 impl_done→running
+> 导致看板「进行中」虚高（94 张 vs 权威活跃 ~13），已修订。
+
 | Synova 状态 | 看板列 | 说明 |
 |---|---|---|
-| spec_done | todo | 规格定，待开工 |
+| spec_done | running | 规格定，进入实现活跃期 |
 | claimed | running | 已认领 |
-| impl_done | running | 代码写完未过 K3 审计（防假完成，创始人已确认） |
+| impl_done | todo | 代码写完待 K3 审计（防假完成；不占 running 列） |
 | audited | done | K3 审完 |
-| failed | failed | — |
+| closed | done | 已关闭 |
+| cancelled | failed | 已取消 |
+| failed | failed | 失败 |
 | 其他 | todo | 未知状态落入待办并告警 |
 
-映射可在 profile patch 层通过 `config.statusMapping` 覆盖。
+映射可在 profile patch 层通过 `config.statusMapping` 覆盖。Win git 派生任务同口径：
+audited→done / committed→todo（合并≠完成，待 K3 审计）。
 
 ## 配置（cordis.patch.yml 的 config）
 
