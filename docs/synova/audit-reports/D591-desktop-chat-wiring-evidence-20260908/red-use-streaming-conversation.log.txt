@@ -1,0 +1,298 @@
+
+ RUN  v4.1.8 /Users/wane/SynovaAgent
+
+ ❯ tests/electron/use-streaming-conversation.test.ts (21 tests | 21 failed) 22ms
+     × sendMessage('你好') 缺省 mode → POST {api}/api/conversations，body 恰为 {message:'你好'} 5ms
+     × 3 个 token 帧 → streamingText 中间态逐字累积: 你 → 你好呀 2ms
+     × open 帧 → currentSessionId + localStorage 落键；第二条消息 body 带 sessionId 1ms
+     × 全文落 messages；streamingText 清空；isStreaming=false、phase=done 1ms
+     × conversation 流内诊断事件 → 进度落 store、降级系统消息、reportId 落 app-store 1ms
+     × user/assistant 保序投影；system/tool 跳过 0ms
+     × 畸形项（null/数字/缺 content/非 string content/空 content）逐项跳过不抛 0ms
+     × 非 {messages:[]} 形状（null/字符串/缺 messages）→ 空数组诚实空态 0ms
+     × 有锚 + 200 → 投影落库 + sessionId 锚定（restored） 1ms
+     × 404 → console.warn + localStorage 键清除 + messages 保持空（degraded，不抛不阻断） 1ms
+     × 网络失败（fetch reject）→ 同样 degraded：warn + 清锚 + 空态 0ms
+     × 无本地锚 → empty：零 fetch、零副作用 0ms
+     × sendMessage(text, {mode:'diagnosis'}) → POST consult，body {teamId, initiator} 0ms
+     × abort 中断 → AbortError 静默返回（无 error 落库、无异常抛出） 0ms
+     × SSE data JSON 解析失败 → console.warn 跳帧，后续合法帧继续消费（不断流） 0ms
+     × error 帧 → setError + phase=error（CenterPanel 错误条数据源，铁律 31） 0ms
+     × setCurrentSessionId(null) → 清 store + 清 localStorage 键 0ms
+     × readLastSessionId: 有键读键，无键 null 0ms
+     × 无 window 环境（node/SSR 守卫）→ setCurrentSessionId 不抛、readLastSessionId null 3ms
+     × clearSession（§8 登记的预留 API）→ messages/sessionId/预填/意图全清 + 键删除 0ms
+     × store.restoreMessages 批量替换（恢复路径专用）并注入 _id 供渲染 key 0ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 21 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/electron/use-streaming-conversation.test.ts > D591-① conversation 模式 URL 与 body（接线: CenterPanel→useStreaming→/api/conversations） > sendMessage('你好') 缺省 mode → POST {api}/api/conversations，body 恰为 {message:'你好'}
+TypeError: createStreamingController is not a function
+ ❯ tests/electron/use-streaming-conversation.test.ts:134:18
+    132|   it("sendMessage('你好') 缺省 mode → POST {api}/api/conversations，body 恰为…
+    133|     const { host } = createHostStub();
+    134|     const ctrl = createStreamingController(host);
+       |                  ^
+    135|     await runTurn(ctrl, { state: host['state' as never] } as never, '你…
+    136|       (s) => s.push({ type: 'open', sessionId: 'sess_c1' }),
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/21]⎯
+
+ FAIL  tests/electron/use-streaming-conversation.test.ts > D591-② 真流式（bufferRef += text + scheduleFlush，逐字累积非整块） > 3 个 token 帧 → streamingText 中间态逐字累积: 你 → 你好呀
+TypeError: createStreamingController is not a function
+ ❯ tests/electron/use-streaming-conversation.test.ts:154:18
+    152|   it('3 个 token 帧 → streamingText 中间态逐字累积: 你 → 你好呀', async () => {
+    153|     const { state, host } = createHostStub();
+    154|     const ctrl = createStreamingController(host);
+       |                  ^
+    155|     const s = manualSSE();
+    156|     fetchMock.mockResolvedValue(sseResponse(s.body));
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/21]⎯
+
+ FAIL  tests/electron/use-streaming-conversation.test.ts > D591-③ 提交回声对账（open 帧 sessionId 落 store + localStorage；续轮 body 携带） > open 帧 → currentSessionId + localStorage 落键；第二条消息 body 带 sessionId
+TypeError: createStreamingController is not a function
+ ❯ tests/electron/use-streaming-conversation.test.ts:182:18
+    180|   it('open 帧 → currentSessionId + localStorage 落键；第二条消息 body 带 session…
+    181|     const { host } = createHostStub();
+    182|     const ctrl = createStreamingController(host);
+       |                  ^
+    183|
+    184|     // 第一轮: 新建会话
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/21]⎯
+
+ FAIL  tests/electron/use-streaming-conversation.test.ts > D591-④ agent_message 帧 → assistant 全文落库 + streamingText 清空 + 终态 > 全文落 messages；streamingText 清空；isStreaming=false、phase=done
+TypeError: createStreamingController is not a function
+ ❯ tests/electron/use-streaming-conversation.test.ts:210:18
+    208|   it('全文落 messages；streamingText 清空；isStreaming=false、phase=done', asy…
+    209|     const { state, host } = createHostStub();
+    210|     const ctrl = createStreamingController(host);
+       |                  ^
+    211|     await runTurn(ctrl, { state }, '介绍你自己', [
+    212|       (s) => s.push({ type: 'open', sessionId: 'sess_c4' }),
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/21]⎯
+
+ FAIL  tests/electron/use-streaming-conversation.test.ts > D591-⑤ 诊断事件 flat 透传（phase_started/degraded/complete 既有管道零改动） > conversation 流内诊断事件 → 进度落 store、降级系统消息、reportId 落 app-store
+TypeError: createStreamingController is not a function
+ ❯ tests/electron/use-streaming-conversation.test.ts:233:18
+    231|   it('conversation 流内诊断事件 → 进度落 store、降级系统消息、reportId 落 app-store', as…
+    232|     const { host } = createHostStub();
+    233|     const ctrl = createStreamingController(host);
+       |                  ^
+    234|     await runTurn(ctrl, { state: host['state' as never] } as never, '你…
+    235|       (s) => s.push({ type: 'open', sessionId: 'sess_c5' }),
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/21]⎯
+
+ FAIL  tests/electron/use-streaming-conversation.test.ts > D591-⑥ restoreMessages 纯函数（user/assistant 投影保序；非对话角色与畸形项跳过） > user/assistant 保序投影；system/tool 跳过
+TypeError: restoreMessages is not a function
+ ❯ tests/electron/use-streaming-conversation.test.ts:256:17
+    254| describe('D591-⑥ restoreMessages 纯函数（user/assistant 投影保序；非对话角色与畸形项跳过）'…
+    255|   it('user/assistant 保序投影；system/tool 跳过', () => {
+    256|     const out = restoreMessages({
+       |                 ^
+    257|       ok: true,
+    258|       session: { id: 'sess_p' },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/21]⎯
+
+ FAIL  tests/electron/use-streaming-conversation.test.ts > D591-⑥ restoreMessages 纯函数（user/assistant 投影保序；非对话角色与畸形项跳过） > 畸形项（null/数字/缺 content/非 string content/空 content）逐项跳过不抛
+TypeError: restoreMessages is not a function
+ ❯ tests/electron/use-streaming-conversation.test.ts:272:17
+    270|
+    271|   it('畸形项（null/数字/缺 content/非 string content/空 content）逐项跳过不抛', () => {
+    272|     const out = restoreMessages({
+       |                 ^
+    273|       messages: [
+    274|         null,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/21]⎯
+
+ FAIL  tests/electron/use-streaming-conversation.test.ts > D591-⑥ restoreMessages 纯函数（user/assistant 投影保序；非对话角色与畸形项跳过） > 非 {messages:[]} 形状（null/字符串/缺 messages）→ 空数组诚实空态
+TypeError: restoreMessages is not a function
+ ❯ tests/electron/use-streaming-conversation.test.ts:288:12
+    286|
+    287|   it('非 {messages:[]} 形状（null/字符串/缺 messages）→ 空数组诚实空态', () => {
+    288|     expect(restoreMessages(null)).toEqual([]);
+       |            ^
+    289|     expect(restoreMessages('unexpected')).toEqual([]);
+    290|     expect(restoreMessages({ foo: 1 })).toEqual([]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/21]⎯
+
+ FAIL  tests/electron/use-streaming-conversation.test.ts > D591-⑦ restoreLastSession（恢复投影 / 404+网络降级 / 无锚空态） > 有锚 + 200 → 投影落库 + sessionId 锚定（restored）
+TypeError: restoreLastSession is not a function
+ ❯ tests/electron/use-streaming-conversation.test.ts:311:21
+    309|       }),
+    310|     });
+    311|     const r = await restoreLastSession();
+       |                     ^
+    312|     expect(r).toBe('restored');
+    313|     expect(fetchMock).toHaveBeenCalledWith(`${API_BASE}/api/sessions/$…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/21]⎯
+
+ FAIL  tests/electron/use-streaming-conversation.test.ts > D591-⑦ restoreLastSession（恢复投影 / 404+网络降级 / 无锚空态） > 404 → console.warn + localStorage 键清除 + messages 保持空（degraded，不抛不阻断）
+TypeError: restoreLastSession is not a function
+ ❯ tests/electron/use-streaming-conversation.test.ts:325:21
+    323|     storage.map.set(LAST_SESSION_ID_STORAGE_KEY, 'sess_gone');
+    324|     fetchMock.mockResolvedValueOnce({ ok: false, status: 404, json: as…
+    325|     const r = await restoreLastSession();
+       |                     ^
+    326|     expect(r).toBe('degraded');
+    327|     expect(warn).toHaveBeenCalled();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/21]⎯
+
+ FAIL  tests/electron/use-streaming-conversation.test.ts > D591-⑦ restoreLastSession（恢复投影 / 404+网络降级 / 无锚空态） > 网络失败（fetch reject）→ 同样 degraded：warn + 清锚 + 空态
+TypeError: restoreLastSession is not a function
+ ❯ tests/electron/use-streaming-conversation.test.ts:338:21
+    336|     storage.map.set(LAST_SESSION_ID_STORAGE_KEY, 'sess_net');
+    337|     fetchMock.mockRejectedValueOnce(new TypeError('fetch failed'));
+    338|     const r = await restoreLastSession();
+       |                     ^
+    339|     expect(r).toBe('degraded');
+    340|     expect(warn).toHaveBeenCalled();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/21]⎯
+
+ FAIL  tests/electron/use-streaming-conversation.test.ts > D591-⑦ restoreLastSession（恢复投影 / 404+网络降级 / 无锚空态） > 无本地锚 → empty：零 fetch、零副作用
+TypeError: restoreLastSession is not a function
+ ❯ tests/electron/use-streaming-conversation.test.ts:347:21
+    345|
+    346|   it('无本地锚 → empty：零 fetch、零副作用', async () => {
+    347|     const r = await restoreLastSession();
+       |                     ^
+    348|     expect(r).toBe('empty');
+    349|     expect(fetchMock).not.toHaveBeenCalled();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/21]⎯
+
+ FAIL  tests/electron/use-streaming-conversation.test.ts > D591-⑧ diagnosis 模式回归（consult URL + 诊断 payload 形状不变） > sendMessage(text, {mode:'diagnosis'}) → POST consult，body {teamId, initiator}
+TypeError: createStreamingController is not a function
+ ❯ tests/electron/use-streaming-conversation.test.ts:359:18
+    357|   it("sendMessage(text, {mode:'diagnosis'}) → POST consult，body {teamI…
+    358|     const { host } = createHostStub();
+    359|     const ctrl = createStreamingController(host);
+       |                  ^
+    360|     await runTurn(ctrl, { state: host['state' as never] } as never, '现…
+    361|       (s) => s.push({ type: 'complete', report: { reportId: 'rpt_dx', …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/21]⎯
+
+ FAIL  tests/electron/use-streaming-conversation.test.ts > D591-⑨ 边界与降级（abort 静默 / JSON 解析失败 warn 跳帧 / error 帧落错误条数据） > abort 中断 → AbortError 静默返回（无 error 落库、无异常抛出）
+TypeError: createStreamingController is not a function
+ ❯ tests/electron/use-streaming-conversation.test.ts:392:18
+    390|     );
+    391|     const { state, host } = createHostStub();
+    392|     const ctrl = createStreamingController(host);
+       |                  ^
+    393|     const p = ctrl.sendMessage('你好');
+    394|     await vi.advanceTimersByTimeAsync(0);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/21]⎯
+
+ FAIL  tests/electron/use-streaming-conversation.test.ts > D591-⑨ 边界与降级（abort 静默 / JSON 解析失败 warn 跳帧 / error 帧落错误条数据） > SSE data JSON 解析失败 → console.warn 跳帧，后续合法帧继续消费（不断流）
+TypeError: createStreamingController is not a function
+ ❯ tests/electron/use-streaming-conversation.test.ts:405:18
+    403|     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {}…
+    404|     const { host } = createHostStub();
+    405|     const ctrl = createStreamingController(host);
+       |                  ^
+    406|     await runTurn(ctrl, { state: host['state' as never] } as never, '你…
+    407|       (s) => s.raw('data: {broken-json-frame\n\n'),
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/21]⎯
+
+ FAIL  tests/electron/use-streaming-conversation.test.ts > D591-⑨ 边界与降级（abort 静默 / JSON 解析失败 warn 跳帧 / error 帧落错误条数据） > error 帧 → setError + phase=error（CenterPanel 错误条数据源，铁律 31）
+TypeError: createStreamingController is not a function
+ ❯ tests/electron/use-streaming-conversation.test.ts:419:18
+    417|   it('error 帧 → setError + phase=error（CenterPanel 错误条数据源，铁律 31）', asy…
+    418|     const { host } = createHostStub();
+    419|     const ctrl = createStreamingController(host);
+       |                  ^
+    420|     await runTurn(ctrl, { state: host['state' as never] } as never, '你…
+    421|       (s) => s.push({ type: 'error', code: 'CONVERSATION_ERROR', messa…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/21]⎯
+
+ FAIL  tests/electron/use-streaming-conversation.test.ts > D591-⑩ conversation-store 锚持久化与预留 API > setCurrentSessionId(null) → 清 store + 清 localStorage 键
+TypeError: useConversationStore.getState(...).setCurrentSessionId is not a function
+ ❯ tests/electron/use-streaming-conversation.test.ts:433:37
+    431| describe('D591-⑩ conversation-store 锚持久化与预留 API', () => {
+    432|   it('setCurrentSessionId(null) → 清 store + 清 localStorage 键', () => {
+    433|     useConversationStore.getState().setCurrentSessionId('sess_a');
+       |                                     ^
+    434|     expect(storage.map.get(LAST_SESSION_ID_STORAGE_KEY)).toBe('sess_a'…
+    435|     useConversationStore.getState().setCurrentSessionId(null);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/21]⎯
+
+ FAIL  tests/electron/use-streaming-conversation.test.ts > D591-⑩ conversation-store 锚持久化与预留 API > readLastSessionId: 有键读键，无键 null
+TypeError: readLastSessionId is not a function
+ ❯ tests/electron/use-streaming-conversation.test.ts:441:12
+    439|
+    440|   it('readLastSessionId: 有键读键，无键 null', () => {
+    441|     expect(readLastSessionId()).toBe(null);
+       |            ^
+    442|     storage.map.set(LAST_SESSION_ID_STORAGE_KEY, 'sess_b');
+    443|     expect(readLastSessionId()).toBe('sess_b');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/21]⎯
+
+ FAIL  tests/electron/use-streaming-conversation.test.ts > D591-⑩ conversation-store 锚持久化与预留 API > 无 window 环境（node/SSR 守卫）→ setCurrentSessionId 不抛、readLastSessionId null
+AssertionError: expected [Function] to not throw an error but 'TypeError: __vite_ssr_import_2__.useC…' was thrown
+
+- Expected:
+undefined
+
++ Received:
+"TypeError: __vite_ssr_import_2__.useConversationStore.getState(...).setCurrentSessionId is not a function"
+
+ ❯ tests/electron/use-streaming-conversation.test.ts:448:85
+    446|   it('无 window 环境（node/SSR 守卫）→ setCurrentSessionId 不抛、readLastSession…
+    447|     vi.unstubAllGlobals();
+    448|     expect(() => useConversationStore.getState().setCurrentSessionId('…
+       |                                                                                     ^
+    449|     expect(readLastSessionId()).toBe(null);
+    450|     stubWindow(); // 恢复桩，避免影响后续断言
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/21]⎯
+
+ FAIL  tests/electron/use-streaming-conversation.test.ts > D591-⑩ conversation-store 锚持久化与预留 API > clearSession（§8 登记的预留 API）→ messages/sessionId/预填/意图全清 + 键删除
+TypeError: useConversationStore.getState(...).setCurrentSessionId is not a function
+ ❯ tests/electron/use-streaming-conversation.test.ts:454:37
+    452|
+    453|   it('clearSession（§8 登记的预留 API）→ messages/sessionId/预填/意图全清 + 键删除', (…
+    454|     useConversationStore.getState().setCurrentSessionId('sess_d');
+       |                                     ^
+    455|     useConversationStore.getState().addMessage({ type: 'user', content…
+    456|     useConversationStore.getState().setDraftPrefill('预填');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/21]⎯
+
+ FAIL  tests/electron/use-streaming-conversation.test.ts > D591-⑩ conversation-store 锚持久化与预留 API > store.restoreMessages 批量替换（恢复路径专用）并注入 _id 供渲染 key
+TypeError: useConversationStore.getState(...).restoreMessages is not a function
+ ❯ tests/electron/use-streaming-conversation.test.ts:468:37
+    466|
+    467|   it('store.restoreMessages 批量替换（恢复路径专用）并注入 _id 供渲染 key', () => {
+    468|     useConversationStore.getState().restoreMessages([
+       |                                     ^
+    469|       { type: 'user', content: 'r1', timestamp: 't' },
+    470|       { type: 'assistant', content: 'r2', timestamp: 't' },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/21]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  21 failed (21)
+   Start at  15:45:09
+   Duration  1.01s (transform 394ms, setup 0ms, import 676ms, tests 22ms, environment 0ms)
+
+npm notice
+npm notice New major version of npm available! 10.9.8 -> 12.0.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.0.2
+npm notice To update run: npm install -g npm@12.0.2
+npm notice

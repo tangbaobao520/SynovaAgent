@@ -1,0 +1,9 @@
+
+ RUN  v4.1.8 /Users/wane/SynovaAgent
+
+
+ Test Files  2 passed (2)
+      Tests  38 passed (38)
+   Start at  15:53:22
+   Duration  389ms (transform 174ms, setup 0ms, import 321ms, tests 30ms, environment 0ms)
+

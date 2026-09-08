@@ -39,6 +39,36 @@ interface WelcomeScreenProps {
   onEnterDemo: () => void;
 }
 
+/** D591: 快速行动种类——diagnosis 走 consult 显式诊断；其余预填文本进对话（conversation） */
+export type QuickActionKind = 'diagnosis' | 'team-collab' | 'key-person-risk';
+
+/** D591: 快速行动按钮单源（欢迎页 WelcomePanel 与 CenterPanel 空态共用，零重复） */
+export const WELCOME_QUICK_ACTIONS: ReadonlyArray<{ kind: QuickActionKind; label: string }> = [
+  { kind: 'diagnosis', label: '🔍 诊断我的公司' },
+  { kind: 'team-collab', label: '👥 团队协作分析' },
+  { kind: 'key-person-risk', label: '⚠️ 关键人风险' },
+];
+
+/** D591: 预填文案表（diagnosis 无预填——用户首条消息即诊断关注点） */
+export const QUICK_ACTION_PREFILL: Record<Exclude<QuickActionKind, 'diagnosis'>, string> = {
+  'team-collab': '请帮我分析团队协作现状，找出协作卡点',
+  'key-person-risk': '请帮我评估关键岗位与关键人的风险',
+};
+
+/**
+ * applyQuickAction — D591 快速行动意图写入（spec §5.1：经 store 传递预填文本/诊断意图）。
+ * 「诊断我的公司」→ pendingIntent='diagnosis'（首条消息走 consult 显式诊断，CenterPanel 消费）；
+ * 其余 → draftPrefill 预填文本（CenterPanel 待发送条一键发送，conversation 模式）。
+ */
+export function applyQuickAction(kind: QuickActionKind): void {
+  const store = useConversationStore.getState();
+  if (kind === 'diagnosis') {
+    store.setPendingIntent('diagnosis');
+    return;
+  }
+  store.setDraftPrefill(QUICK_ACTION_PREFILL[kind]);
+}
+
 /** 非向导两态的文案表（firstLaunch 键已删除——铁律 37；类型 Exclude 收窄） */
 export const WELCOME_COPY: Record<Exclude<WelcomeState, 'firstLaunch'>, {
   title: string;
@@ -67,10 +97,12 @@ interface WelcomePanelProps {
   welcomeState: Exclude<WelcomeState, 'firstLaunch'>;
   onStartDiagnosis: () => void;
   onEnterDemo: () => void;
+  /** D591: 快速行动意图写入（applyQuickAction；缺省兼容既有纯展示测试） */
+  onQuickAction?: (kind: QuickActionKind) => void;
 }
 
 /** 纯展示面板（零 hook——renderToStaticMarkup 可测）: hasConfigNoData / ready 两态 */
-export const WelcomePanel: React.FC<WelcomePanelProps> = ({ welcomeState, onStartDiagnosis, onEnterDemo }) => {
+export const WelcomePanel: React.FC<WelcomePanelProps> = ({ welcomeState, onStartDiagnosis, onEnterDemo, onQuickAction }) => {
   const copy = WELCOME_COPY[welcomeState];
 
   const handleAction = () => {
@@ -96,19 +128,19 @@ export const WelcomePanel: React.FC<WelcomePanelProps> = ({ welcomeState, onStar
         )}
       </div>
 
-      {/* 快速行动（仅 ready） */}
+      {/* 快速行动（仅 ready）——D591: 意图写入（预填/诊断）后进入主界面 */}
       {welcomeState === 'ready' && (
         <div className="welcome-quick-actions">
           <span className="welcome-qa-label">快速诊断:</span>
-          <button className="welcome-qa-btn" onClick={() => { onStartDiagnosis(); }}>
-            🔍 诊断我的公司
-          </button>
-          <button className="welcome-qa-btn" onClick={() => { onStartDiagnosis(); }}>
-            👥 团队协作分析
-          </button>
-          <button className="welcome-qa-btn" onClick={() => { onStartDiagnosis(); }}>
-            ⚠️ 关键人风险
-          </button>
+          {WELCOME_QUICK_ACTIONS.map((qa) => (
+            <button
+              key={qa.kind}
+              className="welcome-qa-btn"
+              onClick={() => { onQuickAction?.(qa.kind); onStartDiagnosis(); }}
+            >
+              {qa.label}
+            </button>
+          ))}
         </div>
       )}
 
@@ -200,6 +232,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = (props) => {
       welcomeState={welcomeState}
       onStartDiagnosis={props.onStartDiagnosis}
       onEnterDemo={props.onEnterDemo}
+      onQuickAction={applyQuickAction}
     />
   );
 };
