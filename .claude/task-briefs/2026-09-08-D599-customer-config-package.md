@@ -77,6 +77,7 @@ grep mergeLayers|config-layer|dumpConfig|customer-config|客户配置包 在 src
 - tests/config/config-layers.test.ts（新建，≥8 用例）
 - tests/config/customer-config-package.test.ts（新建，≥6 用例）
 - .claude/plan.json（修改，机制 API 面接线 deferred 声明随 PR 提交 + memory_refs，D588/D333 先例）
+- scripts/control-tower/verify-parallel.sh（修改，附带门禁缺陷修复：信号3 git log grep 加 -i（仓库提交惯例小写 scope，大写 D# 键漏配）+ 信号4 写集路径剥 markdown 反引号（cat-file 用原串恒败）——D598 已合任务被误判并行拦截；D555 串行复用豁免本意即放行此场景。⚠️ 门禁脚本改动，依铁律 0-5 交 K3 审计；T8b/T8c/T9 断言不受削弱（14+5 单测全过））
 
 写集（G12c 对照表）：
 
@@ -89,6 +90,7 @@ grep mergeLayers|config-layer|dumpConfig|customer-config|客户配置包 在 src
 | tests/config/customer-config-package.test.ts | 新建 |
 | docs/plans/codex/implementation/SYNOVA-IMPL-D599-customer-config-package-20260908.md | 修改（§3.2 同 commit 回填） |
 | .claude/plan.json | 修改（wiring deferred 声明随 PR 提交，D588/D333 先例；S1-6 产品化=接线阶段） |
+| scripts/control-tower/verify-parallel.sh | 修改（信号3 -i + 信号4 剥反引号，D598 串行复用豁免漏配修复；K3 审） |
 | .claude/task-briefs/2026-09-08-D599-customer-config-package.md | 新建（本 brief） |
 
 不做什么（含文件路径，路径紧跟动词）：
