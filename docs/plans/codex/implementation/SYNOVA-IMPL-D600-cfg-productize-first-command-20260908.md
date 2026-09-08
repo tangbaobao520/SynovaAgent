@@ -47,7 +47,7 @@
 ### 3.1 写集 (1 修改 + 1 新建 + 2 测试)
 | 文件 | 操作 | 说明 |
 |---|---|---|
-| `src/routes/diagnosis.ts` | 修改 | 消费 `customerConfig.config`：`reportDepth`/报告模板由客户配置命名空间 `diagnosis.reportDepth`/`diagnosis.template` 驱动（优先客户配置 > scope > 硬编码 `'raw'` fallback），完成「诊断第一命令」真实接线 |
+| `src/routes/diagnosis.ts` | 修改 | 消费 `customerConfig.config`：`reportDepth`/报告模板由客户配置命名空间 `diagnosis.reportDepth`/`diagnosis.template` 驱动（优先级 `scope.reportDepth > scope.depth > 客户配置 > 'raw'`），完成「诊断第一命令」真实接线 |
 | `src/routes/config.ts` | 新建 | `GET /api/config/dump?orgId=...` → `resolveCustomerConfig(orgId)` + `dumpLayers` → 返回 `{ orgId, config, provenance, degraded, audit }`（逐层带来源，`--dump-config` 检查表面） |
 | `tests/routes/diagnosis-customer-config.test.ts` | 新建 | 集成：客户配置 `diagnosis.reportDepth` 覆盖硬编码 fallback、无配置回退 `'raw'`、broken 包 degraded 回退 |
 | `tests/routes/config-dump.test.ts` | 新建 | 集成：dump 端点返回逐层 provenance、`orgId` 缺省/非法降级、leak 剥离后的 config 不含泄漏键 |
@@ -86,12 +86,12 @@ RED 必须覆盖失败模式（S-5）：客户配置 `diagnosis.reportDepth` 应
 | 新 export/函数 | 调用方 | 确认方式 |
 |---|---|---|
 | 客户配置驱动 reportDepth | `src/routes/diagnosis.ts` consult 生产路径 | `grep -rn "customerConfig.config\|config.diagnosis" src/routes/diagnosis.ts` 命中 ≥1 生产消费点（非仅挂报告） |
-| `GET /api/config/dump` 端点 | `src/routes/config.ts` + 路由挂载（server.ts/index.ts） | `grep -rn "config/dump\|/api/config" src/routes/config.ts src/server.ts` 命中 |
+| `GET /api/config/dump` 端点 | `src/routes/config.ts`（default export router）+ `src/server.ts`（`app.use` 挂载，对齐 diagnosisRoutes 先例 src/server.ts:41/354） | `grep -rn "config/dump\|/api/config" src/routes/config.ts src/server.ts` 命中 |
 
 ## 6. 完成标准（DS1-DS8，机器可验证）
 
 - **DS1 接线**：`grep -rn "customerConfig.config\|config.diagnosis" src/routes/diagnosis.ts` 命中（config 真实驱动 reportDepth，非仅挂 provenance）。
-- **DS2 dump 表面**：`grep -rn "config/dump" src/routes/config.ts` 命中 + 路由挂载命中。
+- **DS2 dump 表面**：`grep -rn "config/dump" src/routes/config.ts src/server.ts` 命中（端点定义 + `app.use` 挂载）。
 - **DS3 零依赖**：`grep -rn "@deepseek-ai" src/` 零结果。
 - **DS4 测试 red→green**：`npx vitest run tests/routes/diagnosis-customer-config.test.ts tests/routes/config-dump.test.ts` 先 red → green（≥8 用例全 pass，非空壳）。
 - **DS5 零回归**：`npx vitest run tests/routes/diagnosis* tests/routes/config*` 全绿；`npx tsc --noEmit` 报错集 = 基线 28（零新增，逐条 diff）。
@@ -114,7 +114,7 @@ RED 必须覆盖失败模式（S-5）：客户配置 `diagnosis.reportDepth` 应
 | 声称 | 证据命令 | 预期 |
 |---|---|---|
 | 客户配置驱动 reportDepth | `grep -rn "customerConfig.config\|config.diagnosis" src/routes/diagnosis.ts` | 命中 ≥1 生产消费点 |
-| dump 表面存在 | `grep -rn "config/dump" src/routes/config.ts` | 命中 |
+| dump 表面存在 | `grep -rn "config/dump" src/routes/config.ts src/server.ts` | 命中 |
 | 零 DSH 依赖 | `grep -rn "@deepseek-ai" src/` | 0 命中 |
 | 测试 red→green 全绿 | `npx vitest run tests/routes/diagnosis-customer-config.test.ts tests/routes/config-dump.test.ts` | 全 pass（≥8 用例） |
 | 零回归 | `npx tsc --noEmit` | 28 = 基线零新增 |
