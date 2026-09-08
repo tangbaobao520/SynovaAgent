@@ -1,11 +1,34 @@
 {
   "task_id": "D592",
-  "title": "L1-P1对话E2E场景",
-  "status": "claimed",
-  "spec": null,
-  "impl": null,
+  "title": "L1-P1对话E2E场景+产线2-1/2-2/2-5证据",
+  "status": "impl_done",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D592-chat-e2e-20260908.md",
+    "commit": "d033cac8",
+    "by": "DeepSeek Harness",
+    "at": "2026-09-08"
+  },
+  "impl": {
+    "commit": "33705431",
+    "commits": [
+      "33705431 feat(D592): 对话闭环 E2E——两段 runner 全绿零 skip + 产线 2-1/2-2/2-5 证据批 (D592)"
+    ],
+    "by": "DeepSeek Harness",
+    "at": "2026-09-08",
+    "files": [
+      "tests/e2e/conversation-flow.e2e.test.ts",
+      "docs/synova/product-lines/evidence/D592-run-e2e.sh",
+      "docs/synova/product-lines/evidence/d592-e2e-2-1.json",
+      "docs/synova/product-lines/evidence/d592-e2e-2-2.json",
+      "docs/synova/product-lines/evidence/d592-e2e-2-5.json",
+      "docs/synova/product-lines/evidence/D592-e2e-create.log.txt",
+      "docs/synova/product-lines/evidence/D592-e2e-resume.log.txt"
+    ],
+    "evidence": "spec §10 DS1-DS6: DS1 测试落位 9 用例黑盒（零 src/ import、grep @deepseek-ai 零结果）；DS2 runner 一键复现 exit 0（4 次实跑幂等）+ 创建段 8/8 + 恢复段 1/1 全绿零 skip（两份日志落 evidence/）；DS3 3 份 evidence JSON（schema=1/record_type=test/at=2026-09-08T20:58:04+08:00 由 date -Iseconds 生成）quote 物理数字：T1 token 42 帧（≡D590 实流）、T3 替身历史计数 2→5、T6 诊断桥 15 flat 事件+complete 终帧、T9 读回 4→6 条；DS4 calc 重算 2-1/2-2/2-5 → pending_k3（K3 复核 pass 才 verified——机制上限如实，禁虚报）；DS5 git diff 与写集一致（src/、scripts/audit/、product-lines.yaml、VERSION.md、golden-scenarios、calc-progress.py 零触碰）+ 断言式宽化=0；DS6 完成报告含 §5.3 六决策+北星三句+已知边界（T6 替身模式不断言报告质量；T9 modelCtxRestored=false——fromState 重赋值脱钩 toolLoop 系 conversations.ts:58-63 决策记录自认的 L2 已知缺陷，归属 Stage 3；evidence 保鲜依赖后续零线 2 modules 提交）。本地验收：SYNO_CI=1 pre-commit 13 组 exit 0；simulate-ci 唯一红点=tests/control-tower/fastlane-bypass-only.test.sh 性能断言（10-12s ≥ 10s 阈值，本机 load~3 环境性 flake，涉事 3 文件与 origin/main 零 diff 物理证明与本任务无关）"
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-08",
-  "updated_by": "alloc-task-id"
+  "updated_by": "DeepSeek Harness",
+  "note": "impl 交付（33705431，写集 7 文件+brief）。测试=T1-T9 两段式（条件注册 describe 保两段日志各自零 skip）；runner=Node22 ABI 锁+端口幂等预清理+替身计数探针+双段物理重启（重启前探活必须先失败防假重启）+evidence 模板生成。K3 审计动作：一次提审覆盖 DS1-DS6 + 独立重跑 runner + 2-1/2-2/2-5 复核 pass 翻 verified（顺带 2-7 k3_only 复核点）。"
 }
