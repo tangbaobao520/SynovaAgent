@@ -1,0 +1,22 @@
+{
+  "task_id": "D601",
+  "title": "任务看板映射校准 + L1 跨层违规扫描（改号自 D600）",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "commit": "95e1c9fa",
+    "by": "dsh-cto",
+    "at": "2026-09-08",
+    "files": [
+      "dsh/plugins/task-board-adapter/lib/sync.js",
+      "dsh/plugins/task-board-adapter/test/sync.test.js",
+      "dsh/plugins/task-board-adapter/README.md",
+      "docs/synova/research/L1跨层违规扫描-20260908.md"
+    ]
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-08",
+  "updated_by": "dsh-cto",
+  "note": "手工登记：alloc 盲区——D598（Claude 线 PR #427 已合并，无 task-state 登记）与 D599（docs/feat 分支在途 + proposed note，无 task-state 登记）均占用编号，alloc 会重发 D598/D599；按 D551/D559 改号先例跳到 D600；后经远程全量核查发现 D600 已被 Codex 线占用（docs/d600-cfg-productize-first-command，PR #434 已合并），二次改号 D601。编号体系盲区待登记台账。 部署待办：重启 dsh web 后新映射生效（会中断会话，待创始人点头，D502 同款）。"
+}
