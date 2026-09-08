@@ -14,9 +14,9 @@
  */
 import { Router } from 'express';
 import { createLogger } from '@synova/logger';
-// 铁律 39: L1 不直接触 L4 — KnowledgeStore 经 L2 桥接 re-export（knowledge.ts 同款先例）
-import { KnowledgeStore } from '../agent/knowledge-bridge-service';
-import { getDatabase } from '../init/engine-context';
+// 铁律 39: L1 不直接触 L4/L5 — KnowledgeStore 类型与构造均经 L2 桥接服务（knowledge.ts 同款先例）
+// D603 跨层修复（簇3）: 构造下沉 createSystemKnowledgeStore，getDatabase 从 L1 清零
+import { createSystemKnowledgeStore, type KnowledgeStore } from '../agent/knowledge-bridge-service';
 import { FederatedPipeline } from '../services/federated-pipeline';
 
 const log = createLogger('routes/admin-knowledge');
@@ -37,13 +37,13 @@ export function setFederatedPipeline(pipeline: FederatedPipeline): void {
  * getStore — D391 M3 兜底 + D402 惰性单例：注入优先，未注入时首次构造后缓存复用
  * 契约:
  *   @input  — 无（读模块级注入状态）
- *   @output — KnowledgeStore 实例（注入的 mock/实例优先；否则 knowledgeStore ??= new KnowledgeStore(getDatabase())
+ *   @output — KnowledgeStore 实例（注入的 mock/实例优先；否则 knowledgeStore ??= createSystemKnowledgeStore()
  *             惰性单例——首次构造成功后缓存，后续请求复用同一实例，避免每请求重跑 initSchema DDL）
- *   @degraded — DB 未初始化 → getDatabase() throw → ??= 不完成赋值 → knowledgeStore 保持 null → 下次请求重试
+ *   @degraded — DB 未初始化 → L2 工厂内 getDatabase() throw → ??= 不完成赋值 → knowledgeStore 保持 null → 下次请求重试
  *              （不缓存失败）；由调用方 handler catch → 500 + degraded:true（铁律 24/31）
  */
 function getStore(): KnowledgeStore {
-  return knowledgeStore ??= new KnowledgeStore(getDatabase());
+  return knowledgeStore ??= createSystemKnowledgeStore();
 }
 
 /**

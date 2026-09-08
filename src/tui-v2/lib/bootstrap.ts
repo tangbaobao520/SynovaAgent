@@ -10,11 +10,12 @@
 
 import * as path from 'path';
 import * as fs from 'fs';
-import Database from 'better-sqlite3';
 import { createProvider } from '../../providers';
 import { detectProvider } from '../../providers/detect';
 import { isLLMConfigured } from '../../setup';
-import { SessionStore } from '../../store/session-store';
+// D603 跨层修复（簇6）: 存储/SQLite 装配下沉 L2 session-storage-service——
+// TUI 不再静态依赖 better-sqlite3 / store/session-store（铁律 39）。
+import { createSessionStorage, type SessionStore } from '../../agent/session-storage-service';
 import { EventBus } from '../../orchestrator/event-bus';
 import { EventStore } from '../../orchestrator/event-store';
 import { HookRunner } from '../../orchestrator/hook-runner';
@@ -22,6 +23,7 @@ import { SessionManager } from '../../orchestrator/session-manager';
 import { PhaseStateMachine } from '../../orchestrator/phase-state-machine';
 import { createOrchestrationWiring } from '../../orchestrator/wiring';
 import { createLogger } from '@synova/logger';
+import type Database from 'better-sqlite3';
 
 const log = createLogger('tui-v2:bootstrap');
 
@@ -116,12 +118,9 @@ export async function bootstrap(): Promise<BootstrapResult> {
     console.log(`⚠️ LLM 检测失败: ${err instanceof Error ? err.message : String(err)}\n`);
   }
 
-  // 数据库
+  // 数据库（装配下沉 L2 session-storage-service — mkdir + WAL + SessionStore 同序等价）
   const dbPath = path.resolve(process.cwd(), 'data', 'synova.db');
-  fs.mkdirSync(path.dirname(dbPath), { recursive: true });
-  const db = new Database(dbPath);
-  db.pragma('journal_mode = WAL');
-  const store = new SessionStore(db);
+  const { db, store } = createSessionStorage(dbPath);
 
   // 编排层
   const eventStore = new EventStore(db);

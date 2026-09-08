@@ -7,8 +7,9 @@
  */
 import { Router, type Request, type Response } from 'express';
 import { createLogger } from '@synova/logger';
-import { SqliteGraphStore } from '../adapters/sqlite-graph-store';
-import { getDatabase } from '../init/engine-context';
+// D603 跨层修复（簇3）: 本文件仅类型位置引用 SqliteGraphStore（实例消费 app.locals.graphStore
+// 注入，getStoreFromLocals 同前）；getDatabase 直取已删除——铁律 39
+import type { SqliteGraphStore } from '../agent/graph-store-service';
 import { ALL_NODE_TYPES } from '@synova/ontology';
 
 const router = Router();
