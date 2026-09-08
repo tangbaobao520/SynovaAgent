@@ -1,11 +1,36 @@
 {
   "task_id": "D591",
   "title": "L1-P1桌面端对话接线",
-  "status": "claimed",
-  "spec": null,
-  "impl": null,
+  "status": "impl_done",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D591-desktop-chat-wiring-20260908.md",
+    "commit": "4a89bfe5",
+    "by": "DeepSeek Harness",
+    "at": "2026-09-08"
+  },
+  "impl": {
+    "commit": "d4108afb",
+    "commits": [
+      "4a89bfe5 docs(D591): spec/brief/编码指令 落库",
+      "d64988ab test(D591): conversation 模式集成测试先行（21 用例，red 21/21 全红）",
+      "95630f46 feat(D591): useStreaming 双模式 + conversation-store 会话锚/恢复投影",
+      "d4108afb feat(D591): 桌面接线——恢复时序/快速行动/诚实空态/死代码删除",
+      "a1a119e8 docs(D591): 物理证据落盘（e2e/red/green/接线 grep/全量 A/B）"
+    ],
+    "by": "DeepSeek Harness",
+    "at": "2026-09-08",
+    "files": [
+      "electron-renderer/src/hooks/useStreaming.ts",
+      "electron-renderer/src/stores/conversation-store.ts",
+      "electron-renderer/src/components/CenterPanel.tsx",
+      "electron-renderer/src/components/WelcomeScreen.tsx",
+      "electron-renderer/src/stores/app-store.ts",
+      "tests/electron/use-streaming-conversation.test.ts",
+      "electron-renderer/src/hooks/useConversation.ts (deleted)"
+    ]
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-08",
-  "updated_by": "alloc-task-id"
+  "updated_by": "DeepSeek Harness"
 }

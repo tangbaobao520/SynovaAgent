@@ -85,21 +85,13 @@ export interface AppState {
   setActiveOrgId: (orgId: string | null) => void;
 }
 
-const MOCK_WORKSPACES: WorkspaceInfo[] = [
-  { id: 'ws-1', title: '默认工作区', type: 'manual', updatedAt: new Date().toISOString() },
-  { id: 'ws-2', title: '财务诊断', type: 'diagnostic', updatedAt: new Date().toISOString() },
-  { id: 'ws-3', title: '团队协作分析', type: 'diagnostic', updatedAt: new Date().toISOString() },
-];
-const MOCK_CONVERSATIONS: ConversationInfo[] = [
-  { id: 'conv-1', title: '为什么现金流在恶化？', preview: '分析了现金流趋势', updatedAt: new Date().toISOString() },
-  { id: 'conv-2', title: '团队协作分析', preview: '识别了跨部门协作障碍', updatedAt: new Date().toISOString() },
-  { id: 'conv-3', title: '关键人风险评估', preview: '评估了核心岗位风险', updatedAt: new Date().toISOString() },
-];
-
 /**
  * bootUserRole — D556 boot seed（spec §7.2）: localStorage 'synova.dev-identity' 存在且
  * role==='ga' 时初始化 userRole='ga'；无 seed / 非 ga → 'admin'（L98 原语义不变——
  * DS4: 无 seed 行为与现状完全一致）。seed 仅 dev 语义，D483-D486 落地后由真实 JWT 替代。
+ *
+ * D591（审计范围⑤）: 初始 workspaces/conversations 假数据删除，为空数组
+ * （诚实空态优于假绿数据）；真会话列表接 GET /api/sessions 归 D593。
  */
 function bootUserRole(): UserRole {
   return getSeedIdentity() ? 'ga' : 'admin';
@@ -115,7 +107,7 @@ export const useAppStore = create<AppState>((set) => ({
   activeOrgId: null,
   gaClients: [],
 
-  workspaces: MOCK_WORKSPACES, conversations: MOCK_CONVERSATIONS,
+  workspaces: [], conversations: [],
   lastDiagnosisTime: null, currentReportId: null, dimensionCovered: 0, dimensionTotal: 8,
   llmUnconfigured: false,
 
