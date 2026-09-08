@@ -1,7 +1,7 @@
 {
   "task_id": "D591",
   "title": "L1-P1桌面端对话接线",
-  "status": "impl_done",
+  "status": "audited",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D591-desktop-chat-wiring-20260908.md",
     "commit": "4a89bfe5",
@@ -29,8 +29,26 @@
       "electron-renderer/src/hooks/useConversation.ts (deleted)"
     ]
   },
-  "audit": null,
+  "audit": {
+    "verdict": "CONDITIONAL PASS",
+    "report": "docs/synova/audit-reports/2026-09-09-K3-D590-D591-closeout.md",
+    "by": "K3 independent session",
+    "at": "2026-09-09",
+    "baseline": "origin/main@1171b07c",
+    "rerun": "npx vitest run tests/electron/use-streaming-conversation.test.ts → 21/21 全绿零 skip；tests/electron/use-streaming-contract.test.ts → 17/17 零回归；接线 grep 全命中；useConversation/MOCK_* 删除复核零结果；src/ 后端零触碰",
+    "p1": [
+      "P1-1 共享（与 D590 同批）: D590 squash 夹带 7 份骨架 brief 入库，本机 CI-strict 模拟 group 6 硬阻断实证毒化（D547 门禁第三次复发）——需主树清理 + D547 类强化（主树骨架扫描兜底）",
+      "P1-2 交叉引用: L2 fromState 缺陷存续（D592 K3 已确认，不重复审）",
+      "P1-3 共享: K3审计清单未收录 D590-D592，CTO 台账需更新"
+    ],
+    "p2": [
+      "evidence README「25 次 flush」实际 24 次（log 末帧 flush #24）",
+      "ds2-driver.ts host.resetStreaming 桩不清空累加器 → e2e 日志 streamingText 跨轮拼接（生产实现正确，纯证据桩瑕疵）",
+      "派单文案数字漂移（conversations.ts 实际 333 行非 631；「30 用例」= 13+17 组合）",
+      "两任务均无独立完成报告文件，决策记录以 spec §5.4 + evidence README + 代码注释承载（D333 判定成立）"
+    ]
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-08",
-  "updated_by": "DeepSeek Harness"
+  "updated_at": "2026-09-09",
+  "updated_by": "K3 independent session"
 }
