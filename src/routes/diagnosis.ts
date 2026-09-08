@@ -25,6 +25,16 @@ import type { EngineContext } from '../agent/engine-context';
 import type { GraphStoreLike, CommunityReportLike, PostProcessEvents } from '../agent/post-diagnosis-processor';
 // Slice 3: 判断卡片生成器
 import { generateJudgmentCard, formatForSSE } from '../pipeline/judgment-card';
+// D598: token 四桶计量 + 成本护栏（DSH 借鉴卡 B-03）— llm 支撑设施 + L2 告警 seam（ga-calibration 先例，铁律 39 合法方向）
+import {
+  TokenMeter,
+  bucketsFrom,
+  checkBudget,
+  buildCostFinding,
+  estimateMessageTokens,
+  type ProviderUsageLike,
+} from '../llm/token-meter';
+import { injectManualSignal } from '../agent/sentinel-service';
 
 const log = createLogger('routes/diagnosis');
 const router = Router();
@@ -133,16 +143,39 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
     });
     const toolRegistry = new ToolRegistry();
 
+    // ═══ D598: token 四桶计量（DSH 借鉴卡 B-03） ═══
+    // consult 生命周期内聚合每次 provider.chat 的 usage（四桶 disjoint：DeepSeek cache 命中
+    // 从 promptTokens 减出）；lastUsage/lastMessages 留存末次请求供报表外推字段。
+    // meter 构造失败 → 计量降级（degraded），诊断继续（铁律 24/31）。
+    let meter: TokenMeter | null = null;
+    try {
+      meter = new TokenMeter();
+    } catch (meterErr: unknown) {
+      log.warn({ err: meterErr, consultId }, 'TokenMeter 构造失败 — 计量降级（degraded，诊断继续）');
+    }
+    let lastUsage: ProviderUsageLike | undefined;
+    let lastMessages: Array<{ role: 'system' | 'user' | 'assistant' | 'tool'; content: string }> = [];
+
     // D10: engine-core 退役 — 始终使用 Synova 自研引擎
     log.info({ consultId }, '使用 Synova 自研引擎');
     const { createSynovaDiagnosisEngine } = await import('../l3/synova-diagnosis-engine-impl');
     const newEngine = createSynovaDiagnosisEngine(
       {
         async chat(messages, opts) {
+          const typedMessages = messages as Array<{ role: 'system' | 'user' | 'assistant' | 'tool'; content: string }>;
           const result = await provider.chat(
-            messages as Array<{ role: 'system' | 'user' | 'assistant' | 'tool'; content: string }>,
+            typedMessages,
             opts as Record<string, unknown> | undefined,
           );
+          // D598: 逐次请求计量（usage 缺失 → missingUsageCount 降级计数，不阻断诊断）；
+          // record 失败仅计量降级，LLM 调用结果不受影响（铁律 24/31）。
+          try {
+            meter?.record(result.usage, result.model);
+            lastUsage = result.usage;
+            lastMessages = typedMessages;
+          } catch (meterErr: unknown) {
+            log.warn({ err: meterErr, consultId }, 'token 计量记录失败 — 计量降级（degraded，诊断继续）');
+          }
           return {
             content: result.content || '',
             toolCalls: result.toolCalls?.map(tc => ({
@@ -287,6 +320,59 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
       const failed = active.events.find(e => e.type === 'error');
       sseError(res, 'DIAGNOSIS_FAILED', failed?.message || '诊断引擎不可用');
       return;
+    }
+
+    // ═══ D598: token 四桶报表 + 预算护栏（DSH 借鉴卡 B-03） ═══
+    // usage 已在 chat adapter 经 meter.record 聚合；此处出报表挂 report.tokenUsage
+    // （sseClose 与 GET /consult/:id/report 缓存均可见），并做预算判定:
+    // warn（≥0.8）log.warn；exceeded（≥1.0）→ buildCostFinding → L2 injectManualSignal
+    // 注入成本告警（signalType='成本预算超限'，GET /api/sentinel/findings 可见）。
+    // 全程 try/catch log.warn — 计量/护栏失败降级，不阻断诊断结果（铁律 24/31）。
+    try {
+      if (meter === null) throw new Error('TokenMeter 构造失败，计量不可用');
+      const snapshot = meter.snapshot();
+      const lastBuckets = bucketsFrom(lastUsage);
+      // 末次请求上下文压力（输入侧三桶）+ 表面 token 启发式估算（供 GA 判断下一请求预算水位）
+      const pressureTokens = lastBuckets.uncachedInputTokens + lastBuckets.cacheReadTokens + lastBuckets.cacheWriteTokens;
+      const surfaceTokensEstimate = lastMessages.reduce((sum, m) => sum + estimateMessageTokens(m), 0);
+      (result.report as Record<string, unknown>).tokenUsage = {
+        ...snapshot,
+        lastRequestBuckets: lastBuckets,
+        pressureTokens,
+        surfaceTokensEstimate,
+      };
+      const budget = checkBudget({
+        totals: snapshot.totals,
+        budgetTokens: meter.budgetTokens,
+        warnRatio: meter.warnRatio,
+        exceedRatio: meter.exceedRatio,
+      });
+      if (budget.warn) {
+        log.warn({
+          consultId, projectedTokens: budget.projectedTokens,
+          budgetTokens: budget.budgetTokens, usageRatio: budget.usageRatio,
+        }, 'token 预算告警（warn ≥0.8）— 诊断继续，建议关注成本水位');
+      }
+      if (budget.exceeded) {
+        const finding = buildCostFinding({
+          teamId,
+          totals: snapshot.totals,
+          totalTokens: snapshot.totalTokens,
+          budgetTokens: budget.budgetTokens,
+          consultId,
+        });
+        const injection = injectManualSignal(finding);
+        if (!injection.ok) {
+          log.warn({ consultId, error: injection.error, degraded: injection.degraded === true }, '成本预算告警注入失败 — 护栏降级（degraded）');
+        } else {
+          log.info({
+            consultId, findingId: injection.findingId,
+            totalTokens: snapshot.totalTokens, budgetTokens: budget.budgetTokens,
+          }, 'token 预算超限 — 已注入成本告警（signalType=成本预算超限）');
+        }
+      }
+    } catch (meterErr: unknown) {
+      log.warn({ err: meterErr, consultId }, 'token 计量报表/护栏失败 — 计量降级（degraded，诊断结果不受影响）');
     }
 
     // ═══ P0-1: 诊断后处理 — GraphBridge 同步 + 社区报告 + 实体解析 ═══

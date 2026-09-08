@@ -57,7 +57,25 @@
 | `tests/llm/token-meter.test.ts` | 新建 | 单测：四桶归一/disjoint 求和/启发式估算/预算 warn-exceed/投影外推/finding 构造 |
 | `tests/routes/diagnosis-token-meter.integration.test.ts` | 新建 | 集成：诊断报告带四桶报表 + 注入超预算触发告警 |
 
-### 3.2 最终实现同 commit 回填
+### 3.2 最终实现同 commit 回填（2026-09-08 实现者回填）
+
+> 实现时若偏离本 doc（预算默认值、告警 severity 映射、diagnosis 聚合点、DeepSeek 字段名），必须在此节同 commit 回填最终形态，不留「方案 vs 代码」漂移。
+
+**回填（与 §3.1 的最终形态偏差，全部经组 4 接线门禁 + 15/15 测试 + tsc 基线 28=28 恒等验证）**：
+
+1. **导出面收窄（组 4 接线门禁，D587/D594 先例）**：token-meter 值导出仅保留生产消费入口
+   `estimateMessageTokens` / `bucketsFrom` / `TokenMeter` / `checkBudget` / `buildCostFinding`
+   （src/routes/diagnosis.ts 逐个真实调用，DS1 ≥1 生产调用点）；§3.1 所列 `estimateTextTokens` /
+   `sumBuckets` / `usageTokens` 与 `CHARS_PER_TOKEN=4`/`BLOCK_OVERHEAD=4`/`ROLE_OVERHEAD=4`
+   密度常量为模块内部函数/常量，取值经导出函数的精确算术断言锁定，不设测试专用导出。
+2. **报告 tokenUsage 字段形态**：`...TokenMeterSnapshot` 全量展开（totals/totalTokens/requestCount/
+   missingUsageCount/degraded/byModel）+ 末次请求外推上下文三个扩展字段：`lastRequestBuckets`
+   （末次请求四桶）/ `pressureTokens`（末次请求输入侧三桶和）/ `surfaceTokensEstimate`
+   （末次消息表面 token 启发式估算，DSH contextPressure 同源口径）。
+3. **severity 映射公式**（§4.5 决策点 2 的具体化）：`min(10, max(4, ceil((totalTokens/budgetTokens) × 5)))`，
+   label 映射 ≥9 emergency / ≥7 critical / 其余 warning；confidence 100（实报超限）/ 90（projected=true 含外推成分）。
+4. **DS6 存量豁免**：src/providers/deepseek.ts:28 `sanitizeMessages(...) as unknown as LLMMessage[]`
+   为存量行（不在本卡 diff），DS6 只查新增行——新增行零命中。
 
 > 实现时若偏离本 doc（预算默认值、告警 severity 映射、diagnosis 聚合点、DeepSeek 字段名），必须在此节同 commit 回填最终形态，不留「方案 vs 代码」漂移。
 

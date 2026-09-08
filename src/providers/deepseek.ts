@@ -41,13 +41,23 @@ export function createDeepSeekProvider(config: ProviderConfig): LLMProvider {
       });
     },
 
-    /** 丰富返回: usage 信息 */
-    afterResponse: (data: ChatCompletionResponse, _opts?: ChatOptions): Partial<ChatResult> => ({
-      usage: data.usage ? {
-        promptTokens: data.usage.prompt_tokens,
-        completionTokens: data.usage.completion_tokens,
-      } : undefined,
-    }),
+    /**
+     * 丰富返回: usage 信息。D598 四桶 seam — DeepSeek prompt_tokens 含 cache 命中
+     * （prompt_tokens = prompt_cache_hit_tokens + miss，DSH translate.js mapUsage 同源口径），
+     * 拆出 cacheReadTokens 供 disjoint 计量（cacheWriteTokens DeepSeek 不上报，保持 undefined）。
+     */
+    afterResponse: (data: ChatCompletionResponse, _opts?: ChatOptions): Partial<ChatResult> => {
+      const usage = data.usage;
+      if (!usage) return { usage: undefined };
+      const cacheRead = usage.prompt_tokens_details?.cached_tokens ?? usage.prompt_cache_hit_tokens;
+      return {
+        usage: {
+          promptTokens: usage.prompt_tokens,
+          completionTokens: usage.completion_tokens,
+          ...(cacheRead !== undefined ? { cacheReadTokens: cacheRead } : {}),
+        },
+      };
+    },
   });
 
   // ── DeepSeek 独有特性 ──
