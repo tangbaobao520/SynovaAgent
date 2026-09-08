@@ -160,8 +160,8 @@ c) **memory/ 历史教训**：D316（声称必须物理证明——本 doc 全�
 | electron-renderer/src/components/LeftPanel.tsx | 修改 | ①挂载时 `GET /api/sessions` → setConversations（会话列表真数据，D591 遗留）；②gaClients/switch fetch 逻辑不变（401 修复后自通，零代码变更——仅回归验证） |
 | electron-renderer/src/stores/app-store.ts | 修改 | ①新增 `setConversations(list)` action；②currentReportId 落 localStorage（`synova:last-report-id`，boot 时读回——对齐 D591 `synova:last-session-id` 模式，SSR/无 window 守卫同款） |
 | README.md | 修改 | 安全模型节白名单清单追加 D593 五端点族（对齐 D590 的声明做法） |
-| tests/routes/（新建 diagnosis-report-persistence.test.ts） | 新建 | 报告落盘/读回/列表/白名单/降级集成测试（§7 用例表；沿 diagnosis-consult-events.test.ts + conversations.test.ts 模式）。交付期目录级条目（未存在文件报假阳规避，D580 先例）；实现提交后精确化为确切文件名（verify-parallel 重叠对账，D590 注同款） |
-| tests/electron/（新建 right-panel-report-sentinel.test.tsx） | 新建 | 报告 tab 列表恢复 + 哨兵 tab 渲染/降级测试（§7 用例表；沿 use-streaming-conversation.test.ts 模式）。目录级条目同上 |
+| tests/routes/diagnosis-report-persistence.test.ts | 新建 | 报告落盘/读回/列表/白名单/降级集成测试（§7 用例表；沿 diagnosis-consult-events.test.ts + conversations.test.ts 模式）。实现提交精确化：12 用例（§7 十用例 + 7a/7b 拆分），含增量用例 13（FIFO 满后持久层仍可读，§7 L2c 行） |
+| tests/electron/right-panel-report-sentinel.test.ts | 新建 | 报告 tab 列表恢复 + 哨兵 tab 渲染/降级测试（§7 用例表；沿 use-streaming-conversation.test.ts 模式）。实现提交精确化：**.ts 非 .tsx**（vitest.config.ts include 仅 `*.test.ts`/`*.integration.test.ts`，写集无 vitest.config.ts——组件函数直调 + test-support/render 序列化，ga-collab-ui.test.ts 先例，无需 JSX） |
 
 > 注：新建文件以**目录级条目**声明（check-dev-doc-write-set 存在性核验对未存在文件报假阳，D580/D590 先例）；实现提交后精确化。文件边界声明：RightPanel.tsx 归本任务（报告 tab + 哨兵 tab）；D594（交互卡片+通知+IPC）桌面写集应避开 RightPanel.tsx，若必须动 → verify-parallel 重叠报错后停手问 CTO 仲裁（TASK-ROUTING §一 撞车协议）。
 
@@ -293,7 +293,7 @@ path.startsWith('/api/ga/switch')             // D593 — GA 客户切换
 
 ## 7. Test Requirements（测试先行——铁律 0-2/48；第一步 red，第二步 green）
 
-**测试文件**：tests/routes/diagnosis-report-persistence.test.ts（新建，集成）+ tests/electron/right-panel-report-sentinel.test.tsx（新建）。
+**测试文件**：tests/routes/diagnosis-report-persistence.test.ts（新建，集成）+ tests/electron/right-panel-report-sentinel.test.ts（新建；实现提交精确化 .ts——vitest include 限定，D593 实现注）。
 **模式**（沿 tests/routes/diagnosis-consult-events.test.ts 与 tests/routes/conversations.test.ts 先例，铁律 12 真实路由不 mock 管线）：express app + listen(0) + fetch；`vi.mock` 仅 providers/config/诊断引擎工厂（fake 引擎返回带 reportId 的 report）；SessionStore 用真实 better-sqlite3 `':memory:'` 经 `app.locals.orchestration = { db }` 注入；鉴权用例真实挂载 jwtAuthMiddleware；"重启"模拟 = 同一 db 句柄构造**新的 express app 实例**（内存 Map 清空，持久层保留——D592 T9 双段物理重启的测试内等价形态）。
 
 | # | 用例 | red（现状） | green（实现后） |
@@ -346,7 +346,7 @@ path.startsWith('/api/ga/switch')             // D593 — GA 客户切换
 
 ## 10. Completion Standard（DS 与本 doc 一一对应，禁重编号/跳号/静默缺项——S-10）
 
-1. **DS1**: tests/routes/diagnosis-report-persistence.test.ts + tests/electron/right-panel-report-sentinel.test.tsx 全绿（≥12 用例；red 已先证——实现前该两文件必须先存在且失败）
+1. **DS1**: tests/routes/diagnosis-report-persistence.test.ts + tests/electron/right-panel-report-sentinel.test.ts 全绿（≥12 用例；red 已先证——实现前该两文件必须先存在且失败）
 2. **DS2**: 报告落盘——跑一次真实 consult（或 fake 引擎集成路径）→ SQL 断言 diagnosis_checkpoints phase=5 行存在；**物理证据：跑诊断 → 杀后端进程 → 重启 → `curl GET /api/diagnosis/consult/{reportId}/report` 200**（贴完成报告）
 3. **DS3**: 双路线落盘——consult 路线（用例 1/2）+ 对话桥路线（用例 8）均落盘且重启后可读
 4. **DS4**: 桌面报告 tab 刷新恢复——currentReportId 经 localStorage / 列表兜底恢复 → markdown 渲染成功（用例 11）

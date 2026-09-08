@@ -47,6 +47,7 @@ const LeftPanel: React.FC = () => {
   const setGaClients = useAppStore((s) => s.setGaClients);
   const selectedCap = useAppStore((s) => s.selectedCap);
   const setSelectedCap = useAppStore((s) => s.setSelectedCap);
+  const setConversations = useAppStore((s) => s.setConversations);
 
   const [activeSection, setActiveSection] = React.useState('conversations');
   const [clientLoadError, setClientLoadError] = useState<string | null>(null);
@@ -65,6 +66,32 @@ const LeftPanel: React.FC = () => {
         .catch((err) => { console.warn('[LeftPanel] 加载客户列表失败', err); setClientLoadError('加载客户列表失败，请重试'); });
     }
   }, [userRole, gaClients.length, setGaClients]);
+
+  // D593: 会话列表真数据（D591 §5.4 决策 5 遗留）——挂载时 GET /api/sessions → setConversations；
+  // 失败 console.warn + 保持空态（铁律 24 不静默）。响应形状不盲信（数组守卫）。
+  useEffect(() => {
+    let alive = true;
+    fetch(`${getApiBase()}/api/sessions?limit=20`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!alive) return;
+        const sessions = (d && typeof d === 'object' && Array.isArray((d as { sessions?: unknown }).sessions))
+          ? (d as { sessions: Array<{ id?: unknown; title?: unknown; phase?: unknown; updatedAt?: unknown }> }).sessions
+          : null;
+        if (sessions === null) {
+          console.warn('[LeftPanel] 会话列表响应形状非法 — 保持空态');
+          return;
+        }
+        setConversations(sessions.map((s) => ({
+          id: typeof s.id === 'string' ? s.id : '',
+          title: typeof s.title === 'string' && s.title.length > 0 ? s.title : `会话 ${typeof s.id === 'string' ? s.id.slice(-6) : ''}`,
+          preview: typeof s.phase === 'number' ? `阶段 ${s.phase}` : '',
+          updatedAt: typeof s.updatedAt === 'string' ? s.updatedAt : '',
+        })).filter((c) => c.id !== ''));
+      })
+      .catch((err) => { if (alive) console.warn('[LeftPanel] 会话列表拉取失败', err); });
+    return () => { alive = false; };
+  }, [setConversations]);
 
   // D538: 挂载时拉 3 个接口做角标计数；任一失败 → 该角标隐藏 + console.warn（铁律 24/31）
   useEffect(() => {

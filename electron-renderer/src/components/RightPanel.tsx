@@ -173,6 +173,133 @@ async function apiFetch<T>(path: string, opts?: RequestInit, capture?: { status?
 
 // ═══ 类型 ═══
 
+// ═══ D593: 报告恢复链 + 哨兵数据装载（纯逻辑导出，容器/展示拆分——ga-collab 先例） ═══
+
+/**
+ * D593: 报告恢复链兜底——GET /api/diagnosis/reports?limit=1 取最近 reportId（spec §5.2-E①）。
+ * @input  无（全局 fetch + getApiBase；测试经 vi.stubGlobal 注入桩）
+ * @output 最近报告 id | null（!ok / 空列表 / 响应形状非法 / 网络异常 → null，不抛）
+ * @degraded 接口失败 → console.warn + null（调用方保持"请先进行一次诊断"空态，铁律 24）
+ */
+export async function fetchLatestReportId(): Promise<string | null> {
+  try {
+    const res = await fetch(`${getApiBase()}/api/diagnosis/reports?limit=1`);
+    if (!res.ok) {
+      console.warn('[DiagnosisReportTab] 报告列表获取失败', res.status);
+      return null;
+    }
+    const body: unknown = await res.json();
+    const reports = (typeof body === 'object' && body !== null && Array.isArray((body as { reports?: unknown }).reports))
+      ? (body as { reports: unknown[] }).reports
+      : null;
+    if (reports === null || reports.length === 0) return null;
+    const first = reports[0] as { reportId?: unknown };
+    return typeof first.reportId === 'string' && first.reportId.length > 0 ? first.reportId : null;
+  } catch (err: unknown) {
+    console.warn('[DiagnosisReportTab] 报告列表请求异常', err instanceof Error ? err.message : String(err));
+    return null;
+  }
+}
+
+/**
+ * D593: 报告 tab 恢复链（spec §5.2-E①）——currentReportId 在场直接复用（零请求）；
+ * 缺席 → 列表兜底取最近 reportId（localStorage 锚 synova:last-report-id 已由 app-store
+ * boot 先行读回；清缓存/新装机场景由本兜底覆盖）。
+ */
+export async function ensureReportTabId(currentReportId: string | null): Promise<string | null> {
+  if (currentReportId) return currentReportId;
+  return fetchLatestReportId();
+}
+
+export interface SentinelReportView {
+  sentinelId: string;
+  expert: string;
+  summary: string;
+  confidence: number;
+  checkedAt: string;
+}
+export interface SentinelTicketView {
+  id: string;
+  title: string;
+  severity: 'critical' | 'warning' | 'info';
+  createdAt: string;
+  status: string;
+  resolvedAt?: string;
+}
+export interface SentinelViewData {
+  reports: SentinelReportView[];
+  tickets: SentinelTicketView[];
+  degraded: boolean;
+}
+
+/** D593: 哨兵 reports 响应形状守卫——畸形项跳过，整体非数组 → null（不盲信 JSON，铁律 38） */
+function asSentinelReports(v: unknown): SentinelReportView[] | null {
+  if (typeof v !== 'object' || v === null) return null;
+  const arr = (v as { reports?: unknown }).reports;
+  if (!Array.isArray(arr)) return null;
+  const out: SentinelReportView[] = [];
+  for (const item of arr) {
+    if (typeof item !== 'object' || item === null) continue;
+    const r = item as Record<string, unknown>;
+    if (typeof r.sentinelId !== 'string' || typeof r.expert !== 'string' || typeof r.summary !== 'string' || typeof r.checkedAt !== 'string') continue;
+    out.push({
+      sentinelId: r.sentinelId,
+      expert: r.expert,
+      summary: r.summary,
+      confidence: typeof r.confidence === 'number' ? r.confidence : 0,
+      checkedAt: r.checkedAt,
+    });
+  }
+  return out;
+}
+
+/** D593: 哨兵 tickets 响应形状守卫——severity 非法值回落 info，畸形项跳过（铁律 38） */
+function asSentinelTickets(v: unknown): SentinelTicketView[] | null {
+  if (typeof v !== 'object' || v === null) return null;
+  const arr = (v as { tickets?: unknown }).tickets;
+  if (!Array.isArray(arr)) return null;
+  const out: SentinelTicketView[] = [];
+  for (const item of arr) {
+    if (typeof item !== 'object' || item === null) continue;
+    const t = item as Record<string, unknown>;
+    if (typeof t.id !== 'string' || typeof t.title !== 'string' || typeof t.createdAt !== 'string') continue;
+    const severity = t.severity === 'critical' || t.severity === 'warning' || t.severity === 'info' ? t.severity : 'info';
+    out.push({
+      id: t.id,
+      title: t.title,
+      severity,
+      createdAt: t.createdAt,
+      status: typeof t.status === 'string' ? t.status : 'open',
+      resolvedAt: typeof t.resolvedAt === 'string' ? t.resolvedAt : undefined,
+    });
+  }
+  return out;
+}
+
+/**
+ * D593: 哨兵 tab 数据装载——并行 GET /api/sentinel/reports + /api/sentinel/tickets（spec §5.2-E②）。
+ * @output { reports, tickets, degraded }——任一侧失败/形状非法即 degraded:true（分侧诚实降级，
+ * 成功侧数据保留）；apiFetch 已自带 log + null-collapse（铁律 24/31）
+ */
+export async function loadSentinelData(): Promise<SentinelViewData> {
+  const reportsCapture: { status?: number } = {};
+  const ticketsCapture: { status?: number } = {};
+  const [reportsRaw, ticketsRaw] = await Promise.all([
+    apiFetch<unknown>('/api/sentinel/reports', undefined, reportsCapture),
+    apiFetch<unknown>('/api/sentinel/tickets', undefined, ticketsCapture),
+  ]);
+  const reports = reportsRaw !== null ? asSentinelReports(reportsRaw) : null;
+  const tickets = ticketsRaw !== null ? asSentinelTickets(ticketsRaw) : null;
+  const degraded = reports === null || tickets === null;
+  if (degraded) {
+    console.warn('[SentinelDetail] 哨兵数据装载降级', {
+      reportsStatus: reportsCapture.status ?? null,
+      ticketsStatus: ticketsCapture.status ?? null,
+    });
+  }
+  return { reports: reports ?? [], tickets: tickets ?? [], degraded };
+}
+
 interface SolutionData {
   id: string;
   title: string;
@@ -195,12 +322,25 @@ interface SolutionsResponse {
   degraded?: boolean;
 }
 
-/** D527: 诊断报告 tab — GET /consult/:id/report?format=markdown 渲染 onePager（ReactMarkdown） */
+/** D527/D593: 诊断报告 tab — 刷新恢复链（localStorage 锚 → 列表兜底）+ GET /consult/:id/report?format=markdown 渲染 */
 const DiagnosisReportTab: React.FC = () => {
   const currentReportId = useAppStore((s) => s.currentReportId);
+  const setCurrentReportId = useAppStore((s) => s.setCurrentReportId);
   const [markdown, setMarkdown] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [degradedReason, setDegradedReason] = useState<string | null>(null);
+
+  // D593: 恢复链——挂载时 currentReportId 为 null → 列表兜底取最近 reportId → setCurrentReportId
+  // （localStorage 锚 synova:last-report-id 已由 app-store boot 读回；spec §5.2-E①）
+  useEffect(() => {
+    if (currentReportId) return;
+    let alive = true;
+    (async () => {
+      const restored = await ensureReportTabId(currentReportId);
+      if (alive && restored) setCurrentReportId(restored);
+    })();
+    return () => { alive = false; };
+  }, [currentReportId, setCurrentReportId]);
 
   useEffect(() => {
     if (!currentReportId) return;
@@ -213,9 +353,9 @@ const DiagnosisReportTab: React.FC = () => {
           `${getApiBase()}/api/diagnosis/consult/${currentReportId}/report?format=markdown`,
         );
         if (!res.ok) {
-          // 404 = 报告不在内存缓存（服务重启后清空）——降级提示，不静默（铁律 24/31）
+          // D593: 404 文案诚实化——删除对服务重启的错误归因（持久层冷读后 404 = 该报告真不存在）
           if (!alive) return;
-          setDegradedReason(`报告不可用（HTTP ${res.status}；服务重启后内存缓存已清，请重新诊断）`);
+          setDegradedReason(`报告不可用（HTTP ${res.status}）`);
           console.warn('[DiagnosisReportTab] 报告获取失败', res.status);
           return;
         }
@@ -342,9 +482,7 @@ const GAWorkspaceTabs: React.FC = () => {
         </Section>
       )}
 
-      {tab === 'sentinel' && (
-        <Section title="📊 哨兵数据"><Empty /></Section>
-      )}
+      {tab === 'sentinel' && <SentinelDetail />}
 
       {tab === 'pattern' && (
         <>
@@ -475,6 +613,74 @@ interface SignalsResponse {
 }
 
 const SEVERITY_COLOR: Record<string, string> = { critical: 'var(--red)', warning: 'var(--orange)', info: 'var(--cyan)' };
+
+// ═══ D593: 哨兵 tab 真数据（spec §5.2-E②；呈现 only——数据源治理归哨兵线，§5.4 决策 6） ═══
+
+/**
+ * D593: 哨兵两段纯展示组件（props 驱动，renderToStaticMarkup 可断言——D556 ga-collab-ui 先例）。
+ * 两段 = 专家报告列表（sentinelId/expert/summary/checkedAt）+ 工单列表（severity 色点对齐
+ * SEVERITY_COLOR 既有映射 + status/createdAt）。空 → Empty 文案；degraded → 提示条（铁律 24/31）。
+ */
+export const SentinelDetailSections: React.FC<{
+  reports: SentinelReportView[];
+  tickets: SentinelTicketView[];
+  degraded: boolean;
+}> = ({ reports, tickets, degraded }) => (
+  <>
+    {degraded && <div className="cap-degraded-banner">⚠ 哨兵数据降级，部分数据可能不可用</div>}
+    <Section title="🧾 专家报告">
+      {reports.length === 0 ? <Empty text="暂无哨兵报告" /> : reports.map((r) => (
+        <div key={`${r.sentinelId}-${r.checkedAt}`} className="cap-detail-card" data-sentinel-report-item="item">
+          <div className="cap-detail-title">
+            {r.sentinelId}
+            <span style={{ color: 'var(--dim)', fontSize: 10, marginLeft: 6 }}>· {r.expert}</span>
+          </div>
+          <div style={{ fontSize: 10, color: 'var(--dim)', margin: '2px 0' }}>{r.summary}</div>
+          <div style={{ fontSize: 9, color: 'var(--dim)' }}>检查: {r.checkedAt?.slice(0, 16).replace('T', ' ')}</div>
+        </div>
+      ))}
+    </Section>
+    <Section title="🎫 工单">
+      {tickets.length === 0 ? <Empty text="暂无工单" /> : tickets.map((t) => (
+        <div key={t.id} className="cap-detail-card" data-sentinel-ticket-item="item">
+          <div className="cap-detail-title" style={{ color: SEVERITY_COLOR[t.severity] || 'var(--text)' }}>
+            <span className={`cap-detail-dot cap-dot-${t.severity}`} />{t.title}
+          </div>
+          <div style={{ fontSize: 10, color: 'var(--dim)' }}>
+            <span className={`cap-status cap-status-${t.status}`}>{t.status}</span>
+            {' · '}{t.createdAt?.slice(0, 16).replace('T', ' ')}
+          </div>
+        </div>
+      ))}
+    </Section>
+  </>
+);
+
+/** D593: 哨兵 tab 容器——挂载并行装载 reports+tickets，降级/空态透传纯展示组件 */
+const SentinelDetail: React.FC = () => {
+  const [data, setData] = useState<SentinelViewData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const d = await loadSentinelData();
+      if (!alive) return;
+      setData(d);
+      setLoading(false);
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  return (
+    <Section title="📊 哨兵数据">
+      {loading && <div style={{ padding: 8, fontSize: 11, color: 'var(--dim)' }}>加载哨兵数据...</div>}
+      {!loading && data && (
+        <SentinelDetailSections reports={data.reports} tickets={data.tickets} degraded={data.degraded} />
+      )}
+    </Section>
+  );
+};
 
 /** 主动触达 — GET /api/sentinel/signals 真实数据渲染 */
 const ReachDetail: React.FC = () => {
