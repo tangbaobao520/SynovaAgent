@@ -1,0 +1,102 @@
+data: {"type":"phase_started","phase":1,"label":"数据采集","confidence":0.9}
+
+data: {"type":"phase_started","phase":0,"label":"组织访谈"}
+
+data: {"type":"phase_completed","phase":0}
+
+data: {"type":"phase_started","phase":1,"label":"数据采集"}
+
+data: {"type":"phase_completed","phase":1}
+
+data: {"type":"phase_started","phase":2,"label":"假设生成"}
+
+data: {"type":"expert_hypothesis","phase":2,"message":"价值主张-收入-成本结构存在明显不一致。","findings":[{"moduleId":"D3","summary":"商业模式一致性低 (0%)","confidence":0.85}],"confidence":0.85}
+
+data: {"type":"judgment_card","cardId":"jc_mtsvev7w_0","root_cause":"价值主张-收入-成本结构存在明显不一致。","suggestion":"建议进一步分析以确定具体行动方案。","confidence":0.85,"confidenceLevel":"high","experts":["诊断专家"],"actions":[{"label":"采纳此方案","action":"confirm"},{"label":"继续讨论","action":"discuss"}],"dimension":"D3","phase":2}
+
+data: {"type":"expert_hypothesis","phase":2,"message":"现金跑道计算降级：无财务数据 — 无法计算现金跑道","findings":[{"moduleId":"D3","summary":"现金流数据不完整","confidence":0.85}],"confidence":0.85}
+
+data: {"type":"judgment_card","cardId":"jc_mtsvev7w_1","root_cause":"现金跑道计算降级：无财务数据 — 无法计算现金跑道","suggestion":"建议进一步分析以确定具体行动方案。","confidence":0.85,"confidenceLevel":"high","experts":["诊断专家"],"actions":[{"label":"采纳此方案","action":"confirm"},{"label":"继续讨论","action":"discuss"}],"dimension":"D3","phase":2}
+
+data: {"type":"expert_hypothesis","phase":2,"message":"应收逾期率计算降级：无财务数据 — 无法计算应收逾期率","findings":[{"moduleId":"D3","summary":"应收数据不完整","confidence":0.85}],"confidence":0.85}
+
+data: {"type":"judgment_card","cardId":"jc_mtsvev7w_2","root_cause":"应收逾期率计算降级：无财务数据 — 无法计算应收逾期率","suggestion":"建议进一步分析以确定具体行动方案。","confidence":0.85,"confidenceLevel":"high","experts":["诊断专家"],"actions":[{"label":"采纳此方案","action":"confirm"},{"label":"继续讨论","action":"discuss"}],"dimension":"D3","phase":2}
+
+data: {"type":"expert_hypothesis","phase":2,"message":"未检测到人员、团队或事件数据。","findings":[{"moduleId":"D3","summary":"数据不足","confidence":0.85}],"confidence":0.85}
+
+data: {"type":"judgment_card","cardId":"jc_mtsvev7x_3","root_cause":"未检测到人员、团队或事件数据。","suggestion":"建议进一步分析以确定具体行动方案。","confidence":0.85,"confidenceLevel":"high","experts":["诊断专家"],"actions":[{"label":"采纳此方案","action":"confirm"},{"label":"继续讨论","action":"discuss"}],"dimension":"D3","phase":2}
+
+data: {"type":"expert_hypothesis","phase":2,"message":"缺少市场价格或财务数据，无法计算结构性壁垒。","findings":[{"moduleId":"D3","summary":"护城河数据不足","confidence":0.85}],"confidence":0.85}
+
+data: {"type":"judgment_card","cardId":"jc_mtsvev7x_4","root_cause":"缺少市场价格或财务数据，无法计算结构性壁垒。","suggestion":"建议进一步分析以确定具体行动方案。","confidence":0.85,"confidenceLevel":"high","experts":["诊断专家"],"actions":[{"label":"采纳此方案","action":"confirm"},{"label":"继续讨论","action":"discuss"}],"dimension":"D3","phase":2}
+
+data: {"type":"expert_hypothesis","phase":2,"message":"缺少 Market 或 FINANCIAL 节点，无法判定生命周期。","findings":[{"moduleId":"D3","summary":"市场数据不足","confidence":0.85}],"confidence":0.85}
+
+data: {"type":"judgment_card","cardId":"jc_mtsvev7x_5","root_cause":"缺少 Market 或 FINANCIAL 节点，无法判定生命周期。","suggestion":"建议进一步分析以确定具体行动方案。","confidence":0.85,"confidenceLevel":"high","experts":["诊断专家"],"actions":[{"label":"采纳此方案","action":"confirm"},{"label":"继续讨论","action":"discuss"}],"dimension":"D3","phase":2}
+
+data: {"type":"expert_hypothesis","phase":2,"message":"部分营收依赖外部红利。","findings":[{"moduleId":"D3","summary":"环境红利依赖中等 (50%)","confidence":0.85}],"confidence":0.85}
+
+data: {"type":"judgment_card","cardId":"jc_mtsvev7x_6","root_cause":"部分营收依赖外部红利。","suggestion":"建议进一步分析以确定具体行动方案。","confidence":0.85,"confidenceLevel":"high","experts":["诊断专家"],"actions":[{"label":"采纳此方案","action":"confirm"},{"label":"继续讨论","action":"discuss"}],"dimension":"D3","phase":2}
+
+data: {"type":"expert_hypothesis","phase":2,"message":"未检测到 Person 或 Event 节点。","findings":[{"moduleId":"D3","summary":"激励与目标数据不足","confidence":0.85}],"confidence":0.85}
+
+data: {"type":"judgment_card","cardId":"jc_mtsvev7x_7","root_cause":"未检测到 Person 或 Event 节点。","suggestion":"建议进一步分析以确定具体行动方案。","confidence":0.85,"confidenceLevel":"high","experts":["诊断专家"],"actions":[{"label":"采纳此方案","action":"confirm"},{"label":"继续讨论","action":"discuss"}],"dimension":"D3","phase":2}
+
+data: {"type":"expert_hypothesis","phase":2,"message":"未检测到人员和事件数据。","findings":[{"moduleId":"D3","summary":"数据不足","confidence":0.85}],"confidence":0.85}
+
+data: {"type":"judgment_card","cardId":"jc_mtsvev7y_8","root_cause":"未检测到人员和事件数据。","suggestion":"建议进一步分析以确定具体行动方案。","confidence":0.85,"confidenceLevel":"high","experts":["诊断专家"],"actions":[{"label":"采纳此方案","action":"confirm"},{"label":"继续讨论","action":"discuss"}],"dimension":"D3","phase":2}
+
+data: {"type":"expert_hypothesis","phase":2,"message":"未检测到知识节点和人员节点。","findings":[{"moduleId":"D3","summary":"知识数据不足","confidence":0.85}],"confidence":0.85}
+
+data: {"type":"judgment_card","cardId":"jc_mtsvev7y_9","root_cause":"未检测到知识节点和人员节点。","suggestion":"建议进一步分析以确定具体行动方案。","confidence":0.85,"confidenceLevel":"high","experts":["诊断专家"],"actions":[{"label":"采纳此方案","action":"confirm"},{"label":"继续讨论","action":"discuss"}],"dimension":"D3","phase":2}
+
+data: {"type":"expert_hypothesis","phase":2,"message":"未检测到问题或故障事件。","findings":[{"moduleId":"D3","summary":"无问题事件数据","confidence":0.85}],"confidence":0.85}
+
+data: {"type":"judgment_card","cardId":"jc_mtsvev7y_a","root_cause":"未检测到问题或故障事件。","suggestion":"建议进一步分析以确定具体行动方案。","confidence":0.85,"confidenceLevel":"high","experts":["诊断专家"],"actions":[{"label":"采纳此方案","action":"confirm"},{"label":"继续讨论","action":"discuss"}],"dimension":"D3","phase":2}
+
+data: {"type":"expert_hypothesis","phase":2,"message":"未检测到 Person 节点。","findings":[{"moduleId":"D3","summary":"人员数据不足","confidence":0.85}],"confidence":0.85}
+
+data: {"type":"judgment_card","cardId":"jc_mtsvev7y_b","root_cause":"未检测到 Person 节点。","suggestion":"建议进一步分析以确定具体行动方案。","confidence":0.85,"confidenceLevel":"high","experts":["诊断专家"],"actions":[{"label":"采纳此方案","action":"confirm"},{"label":"继续讨论","action":"discuss"}],"dimension":"D3","phase":2}
+
+data: {"type":"expert_hypothesis","phase":2,"message":"未检测到 Process 或 Team 节点。","findings":[{"moduleId":"D3","summary":"扩散数据不足","confidence":0.85}],"confidence":0.85}
+
+data: {"type":"judgment_card","cardId":"jc_mtsvev7y_c","root_cause":"未检测到 Process 或 Team 节点。","suggestion":"建议进一步分析以确定具体行动方案。","confidence":0.85,"confidenceLevel":"high","experts":["诊断专家"],"actions":[{"label":"采纳此方案","action":"confirm"},{"label":"继续讨论","action":"discuss"}],"dimension":"D3","phase":2}
+
+data: {"type":"expert_hypothesis","phase":2,"message":"MAPE=25% (>20%警告阈值)","findings":[{"moduleId":"D3","summary":"预测误差率25%超过阈值","confidence":0.85}],"confidence":0.85}
+
+data: {"type":"judgment_card","cardId":"jc_mtsvev7y_d","root_cause":"MAPE=25% (>20%警告阈值)","suggestion":"建议进一步分析以确定具体行动方案。","confidence":0.85,"confidenceLevel":"high","experts":["诊断专家"],"actions":[{"label":"采纳此方案","action":"confirm"},{"label":"继续讨论","action":"discuss"}],"dimension":"D3","phase":2}
+
+data: {"type":"expert_hypothesis","phase":2,"message":"当前样本12个","findings":[{"moduleId":"D3","summary":"样本量不足(12<15)","confidence":0.85}],"confidence":0.85}
+
+data: {"type":"judgment_card","cardId":"jc_mtsvev7z_e","root_cause":"当前样本12个","suggestion":"建议进一步分析以确定具体行动方案。","confidence":0.85,"confidenceLevel":"high","experts":["诊断专家"],"actions":[{"label":"采纳此方案","action":"confirm"},{"label":"继续讨论","action":"discuss"}],"dimension":"D3","phase":2}
+
+data: {"type":"expert_hypothesis","phase":2,"message":"仅3个月","findings":[{"moduleId":"D3","summary":"时间序列不足4个月","confidence":0.85}],"confidence":0.85}
+
+data: {"type":"expert_hypothesis","phase":2,"message":"价格歧视可提升利润 20% (>15%阈值)","findings":[{"moduleId":"D3","summary":"统一定价可能错失价格歧视收益","confidence":0.85}],"confidence":0.85}
+
+data: {"type":"judgment_card","cardId":"jc_mtsvev7z_f","root_cause":"价格歧视可提升利润 20% (>15%阈值)","suggestion":"建议进一步分析以确定具体行动方案。","confidence":0.85,"confidenceLevel":"high","experts":["诊断专家"],"actions":[{"label":"采纳此方案","action":"confirm"},{"label":"继续讨论","action":"discuss"}],"dimension":"D3","phase":2}
+
+data: {"type":"expert_hypothesis","phase":2,"message":"未检测到 Person 节点。","findings":[{"moduleId":"D3","summary":"人员数据不足","confidence":0.85}],"confidence":0.85}
+
+data: {"type":"judgment_card","cardId":"jc_mtsvev7z_g","root_cause":"未检测到 Person 节点。","suggestion":"建议进一步分析以确定具体行动方案。","confidence":0.85,"confidenceLevel":"high","experts":["诊断专家"],"actions":[{"label":"采纳此方案","action":"confirm"},{"label":"继续讨论","action":"discuss"}],"dimension":"D3","phase":2}
+
+data: {"type":"phase_completed","phase":2}
+
+data: {"type":"phase_started","phase":3,"label":"根因分析"}
+
+data: {"type":"phase_completed","phase":3}
+
+data: {"type":"phase_started","phase":4,"label":"报告生成"}
+
+data: {"type":"report_ready"}
+
+data: {"type":"phase_completed","phase":4}
+
+data: {"type":"phase_started","phase":5,"label":"交付"}
+
+data: {"type":"right_column_update"}
+
+data: {"type":"phase_completed","phase":5}
+
+data: {"type":"complete","teamId":"org-d593-ds2","totalDurationMs":169,"degradedModules":[],"report":{"reportId":"rpt_org-d593-ds2_mtsveva9","teamId":"org-d593-ds2","generatedAt":"2026-09-08T16:15:12.609Z","summary":"诊断完成，详见报告。","expertReports":[],"rootCauses":[],"recommendations":[],"raw":{},"tokenUsage":{"totals":{"uncachedInputTokens":0,"outputTokens":0,"cacheReadTokens":0,"cacheWriteTokens":0},"totalTokens":0,"requestCount":1,"missingUsageCount":1,"degraded":true,"byModel":{},"lastRequestBuckets":{"uncachedInputTokens":0,"outputTokens":0,"cacheReadTokens":0,"cacheWriteTokens":0},"pressureTokens":0,"surfaceTokensEstimate":290}}}
+

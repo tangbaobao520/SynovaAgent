@@ -1,0 +1,19 @@
+DS2 物理重启读回证据 @ 2026-09-09T00:15:22+08:00
+reportId=rpt_org-d593-ds2_mtsveva9 consultId=diag-org-d593-ds2-mtsvev5g
+--- GET /api/diagnosis/consult/rpt_org-d593-ds2_mtsveva9/report （重启后） ---
+{"ok":true,"consultId":"rpt_org-d593-ds2_mtsveva9","teamId":"org-d593-ds2","completedAt":"2026-09-08T16:15:12.650Z","report":{"reportId":"rpt_org-d593-ds2_mtsveva9","teamId":"org-d593-ds2","generatedAt":"2026-09-08T16:15:12.609Z","summary":"诊断完成，详见报告。","expertReports":[],"rootCauses":[],"recommendations":[],"raw":{},"tokenUsage":{"totals":{"uncachedInputTokens":0,"outputTokens":0,"cacheReadTokens":0,"cacheWriteTokens":0},"totalTokens":0,"requestCount":1,"missingUsageCount":1,"degraded":true,"byModel":{},"lastRequestBuckets":{"uncachedInputTokens":0,"outputTokens":0,"cacheReadTokens":0,"cacheWriteTokens":0},"pressureTokens":0,"surfaceTokensEstimate":290}}}
+HTTP_STATUS=200
+--- GET 同路径 ?format=markdown ---
+## ✅ org-d593-ds2: 运行平稳
+
+**Top 3:**
+- 💡 诊断完成，未发现显著瓶颈。
+
+📎 完整报告: 0 目标 · 0 告警
+HTTP_STATUS=200
+--- GET /api/diagnosis/reports?limit=5 （列表含该 reportId） ---
+{"ok":true,"total":1,"degraded":false,"reports":[{"reportId":"rpt_org-d593-ds2_mtsveva9","teamId":"org-d593-ds2","completedAt":"2026-09-08T16:15:12.650Z","summary":"诊断完成，详见报告。","onePagerAvailable":false}]}
+HTTP_STATUS=200
+--- 对照: 未知 id 应 404 ---
+{"ok":false,"error":"诊断报告不存在（可能尚未完成或已过期）","code":"NOT_FOUND"}
+HTTP_STATUS=404
