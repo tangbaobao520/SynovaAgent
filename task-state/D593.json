@@ -1,17 +1,40 @@
 {
   "task_id": "D593",
   "title": "L1-P2桌面报告工单",
-  "status": "spec_done",
+  "status": "impl_done",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D593-report-persistence-20260908.md",
-    "commit": null,
+    "commit": "0224843b",
     "by": "DeepSeek Harness (dev-doc)",
     "at": "2026-09-08"
   },
-  "impl": null,
+  "impl": {
+    "commit": "f81378a8",
+    "commits": [
+      "0224843b docs(D593): L1-P2 报告落盘 dev doc——spec + task-state spec_done + 编码指令（cherry-pick 自 dev-doc 线 60e4e552）",
+      "f81378a8 feat(D593): 报告落盘 + 桌面报告/哨兵呈现 + 401 对齐——checkpoint 冷读 + 列表端点 + 五前缀白名单 (D593)"
+    ],
+    "by": "DeepSeek Harness (编码线)",
+    "at": "2026-09-09",
+    "files": [
+      "src/routes/diagnosis.ts",
+      "src/routes/conversations.ts",
+      "src/store/session-store.ts",
+      "src/middleware/auth.ts",
+      "electron-renderer/src/components/RightPanel.tsx",
+      "electron-renderer/src/components/LeftPanel.tsx",
+      "electron-renderer/src/stores/app-store.ts",
+      "README.md",
+      "tests/routes/diagnosis-report-persistence.test.ts",
+      "tests/electron/right-panel-report-sentinel.test.ts",
+      "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D593-report-persistence-20260908.md",
+      "docs/synova/audit-reports/D593-report-persistence-evidence-20260908/"
+    ],
+    "evidence": "spec §10 DS1-DS9: DS1 两新测试文件 21 用例全绿（12 routes + 9 electron），red 先证 20 failed/1 passed 落 evidence/red-vitest.log.txt（唯一 passed=用例4 未知id 404 现状语义）；测试文件名精确化 .ts 非 .tsx（vitest include 限定，spec §5.1 已回改）；DS2 物理证据 D593-run-ds2.sh exit 0（真实六阶段引擎+OpenAI 兼容替身，consult→kill -9→探活先失败→同 scratch db 重启→GET /consult/{reportId}/report 200 body 含 reportId/teamId + markdown 200 + 列表 total=1 + ghost 对照 404，4 文件落 evidence/）；DS3 双路线落盘（用例1/2 consult source=consult + 用例8 对话桥 source=conversation，重启后均可读）；DS4 桌面恢复链（用例11：localStorage synova:last-report-id boot 读回+setCurrentReportId 回写+fetchLatestReportId 列表兜底+ensureReportTabId 在场零请求）；DS5 哨兵真数据（用例12：两段列表条数/标题断言+降级提示条+Empty 文案，Empty 占位零残留）；DS6 白名单五前缀（用例6 全非 401+对照探针 401；solutions 走桌面 GA 实形态 x-synova-token seed 通道——路由内 requireAuth 归 solutions.ts 自身，白名单只修 middleware 层，写集不扩）；DS7 分页边界（用例5/9：total 恒准/DESC/limit 夹取/offset 负数）；DS8 接线 §8 表逐条 grep 命中（listDiagnosisReports≥2/saveDiagnosisCheckpoint routes≥2/五前缀各≥1/SentinelDetail≥2/setConversations≥2/getDiagnosisCheckpoint 新增冷读调用）+ tsc 错误集与基线 95e1c9fa 逐字节一致（root 36 行 + electron-renderer 4 行，零新增）+ as never/as unknown as=0 + 全量 vitest 失败集=基线存量（19 项逐条同；1 项 zero-code-industry 零.ts 为脏树假象，staging 后转绿并单跑复核）+ 残留文案 grep '内存缓存已清' electron-renderer/ 零结果；DS9 完成报告含 §5.4 九决策复述+北星三句。本地验收：SYNO_CI=1 pre-commit 13 组 exit 0（1 警告不阻断=硬编码联合类型启发式）+ simulate-ci exit 0 + check-dev-doc-write-set exit 0（声明 10 条 0 漂移）。已知边界如实声明：哨兵 reports 数据源仍内存派生（呈现 only，spec §5.4 决策 6，归哨兵线）；launcher saveCheckpoint 死代码未动（spec §5.4 决策 8，归 Stage 3）；solutions 零凭证场景仍 401（solutions.ts 路由内 requireAuth 所致，桌面 GA 实形态带 seed 头可达，写集外未扩）。事故披露：开工时主 checkout 被 d601 session 并发切换 HEAD，本任务改用 git worktree .synova-wt-d593 隔离施工；cherry-pick 的 dev-doc 提交一度落在 d601 分支顶部（ed38508d，docs-only 无害，d601 推送时会携带，已在完成报告声明）"
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-09-08",
-  "updated_by": "DeepSeek Harness (dev-doc)",
-  "note": "spec 交付（dev-doc 线，2026-09-08）：报告落盘=复用 diagnosis_checkpoints 表（零 schema 变更，键=reportId）+ GET report 内存 miss→checkpoint 冷读（DSH 冷读激活范式）+ 新列表端点 GET /api/diagnosis/reports + 白名单五前缀（diagnosis/reports、notifications、solutions、ga/clients、ga/switch）+ 桌面报告 tab 刷新恢复/哨兵 tab 真数据/会话列表接入。写集 8 修改 + 2 新建（目录级声明，实现后精确化）。决策九项记录 §5.4（S-12）。编码线 Claude Code。依赖 D590/D591/D592 已合 main。与 D594 文件边界：RightPanel.tsx 归本任务。编号注意：旧 14e54722 D593（LLM 韧性层）已关闭，本任务为编号复用——审计产物命名带任务名区分。commit 字段待 spec 推送提交后回填（gatekeeper exit 0 + check-dev-doc-write-set SKIP-无暂存）。"
+  "updated_at": "2026-09-09",
+  "updated_by": "DeepSeek Harness (编码线)",
+  "note": "spec 交付（dev-doc 线，2026-09-08）：报告落盘=复用 diagnosis_checkpoints 表（零 schema 变更，键=reportId）+ GET report 内存 miss→checkpoint 冷读（DSH 冷读激活范式）+ 新列表端点 GET /api/diagnosis/reports + 白名单五前缀（diagnosis/reports、notifications、solutions、ga/clients、ga/switch）+ 桌面报告 tab 刷新恢复/哨兵 tab 真数据/会话列表接入。写集 8 修改 + 2 新建（目录级声明，实现后精确化）。决策九项记录 §5.4（S-12）。编码线 Claude Code。依赖 D590/D591/D592 已合 main。与 D594 文件边界：RightPanel.tsx 归本任务。编号注意：旧 14e54722 D593（LLM 韧性层）已关闭，本任务为编号复用——审计产物命名带任务名区分。commit 字段待 spec 推送提交后回填（gatekeeper exit 0 + check-dev-doc-write-set SKIP-无暂存）。impl 交付（编码线 2026-09-09，f81378a8，写集 10 文件+spec 精确化+evidence 包+brief）：spec.commit 回填为 cherry-pick 后的 0224843b（本分支 spec 载体提交）。"
 }
