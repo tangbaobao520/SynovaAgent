@@ -43,6 +43,60 @@ export function isSqliteDatabase(v: unknown): v is Database.Database {
   return typeof o.prepare === 'function' && typeof o.exec === 'function' && typeof o.pragma === 'function';
 }
 
+// ═══ D593: 报告归档行（diagnosis_checkpoints phase=5）类型与结构守卫 ═══
+
+/**
+ * D593: 报告归档行 partial_report 的窄化结果类型——consult/对话桥两路线写侧的同一形状
+ * （spec §5.2-A）。report 为**消费面子集内联类型**（本仓库读侧只消费 summary + 透传 +
+ * onePager 渲染入口；完整 L3 DiagnosisReport 形状守卫归 L1 渲染边界——铁律 39 层内自洽，
+ * 对齐 conversations.ts isEngineStateLike 只验消费字段的哲学）。
+ */
+export interface DiagnosisReportArchive {
+  /** 归档键 = reportId（rpt_xxx，与 checkpoint session_id 同值） */
+  reportId: string;
+  teamId: string;
+  /** 诊断完成时刻（ISO，读侧展示用；SQL 排序键为 saved_at） */
+  completedAt: string;
+  /** consult 路线附带（对话桥路线无该概念，spec §5.2-A） */
+  consultId?: string;
+  /** 落盘来源路线（'consult' | 'conversation'） */
+  source?: string;
+  /** 完成时渲染的一页纸；raw 深度/渲染失败为 null/缺省 → GET 按需补渲染 */
+  onePager?: string | null;
+  /** 完整报告对象（读侧验证 summary 消费字段；其余字段透传渲染层自查） */
+  report: { summary: string } & Record<string, unknown>;
+}
+
+/**
+ * D593: checkpoint partial_report 报告归档行结构守卫——JSON.parse 结果不盲信
+ * （铁律 38：类型守卫替代断言，对齐 conversations.ts isEngineStateLike 形态）。
+ *
+ * 架构位（铁律 39 + D563 先例）: 本谓词属 L5 存储层——checkpoint 行内容归存储层解释；
+ * L1（routes/diagnosis.ts 列表端点 / GET report 冷读 fallback）经既有动态 import 通道
+ * 解构使用，不经行任何 L5 静态引用。
+ *
+ * 契约（铁律 47）:
+ *   @input    — v: unknown（JSON.parse(partial_report) 结果，形状不可信）
+ *   @output   — 类型谓词；true = 可安全作为 DiagnosisReportArchive 消费（读侧消费字段已验证）
+ *   @degraded — false（非对象/缺关键字段/字段类型不符）→ 调用方 log.warn + 跳过该行或 404
+ *              （诚实降级，不静默，铁律 24）
+ */
+export function isDiagnosisReportArchive(v: unknown): v is DiagnosisReportArchive {
+  if (typeof v !== 'object' || v === null) return false;
+  const o = v as Record<string, unknown>;
+  if (typeof o.reportId !== 'string' || o.reportId.length === 0) return false;
+  if (typeof o.teamId !== 'string') return false;
+  if (typeof o.completedAt !== 'string') return false;
+  if (o.consultId !== undefined && typeof o.consultId !== 'string') return false;
+  if (o.source !== undefined && typeof o.source !== 'string') return false;
+  if (o.onePager !== undefined && o.onePager !== null && typeof o.onePager !== 'string') return false;
+  // report 对象：读侧消费字段 = summary（列表/降级文案）；其余字段由渲染层完整形状守卫把关
+  const r = o.report;
+  if (typeof r !== 'object' || r === null) return false;
+  if (typeof (r as Record<string, unknown>).summary !== 'string') return false;
+  return true;
+}
+
 export interface SessionRow {
   id: string;
   orgId: string;
@@ -526,5 +580,61 @@ export class SessionStore {
   /** 删除会话的检查点 */
   deleteDiagnosisCheckpoints(sessionId: string): void {
     this.db.prepare('DELETE FROM diagnosis_checkpoints WHERE session_id = ?').run(sessionId);
+  }
+
+  /**
+   * D593: 诊断报告列表读（报告归档行 = diagnosis_checkpoints phase=5，键=reportId）。
+   *
+   * 契约（铁律 47 — 契约优先，spec §5.2-C）:
+   *   @input    — opts: { limit: number, offset: number }（路由层已夹取；本方法再防御性
+   *               夹取 limit 1..200、offset >= 0，sentinel findings 同款 idiom）
+   *   @output   — { ok: true, total, degraded, reports: Array<{ reportId, teamId, completedAt,
+   *               summary: string | null, onePagerAvailable: boolean }> }，按 saved_at DESC
+   *               （rowid DESC 决同刻稳定序：后写先出）
+   *   @degraded — 行级 partial_report JSON 损坏/形状非法 → log.warn + 跳过该行 + degraded: true
+   *               （不 500，铁律 24）；total 恒为 phase=5 行计数（不因跳过缩水）
+   *   @error    — 查询异常 → { ok: false, degraded: true, error }（调用方路由映射 503 fail-closed）
+   */
+  listDiagnosisReports(opts: { limit: number; offset: number }):
+    | { ok: true; total: number; degraded: boolean; reports: Array<{ reportId: string; teamId: string; completedAt: string; summary: string | null; onePagerAvailable: boolean }> }
+    | { ok: false; degraded: true; error: string } {
+    try {
+      const limit = Math.min(Math.max(Math.trunc(opts.limit) || 0, 1), 200);
+      const offset = Math.max(Math.trunc(opts.offset) || 0, 0);
+      const totalRow = this.db.prepare('SELECT COUNT(*) AS c FROM diagnosis_checkpoints WHERE phase = 5').get() as { c: number } | undefined;
+      const total = Number(totalRow?.c ?? 0);
+      const rows = this.db.prepare(
+        'SELECT session_id, partial_report FROM diagnosis_checkpoints WHERE phase = 5 ORDER BY saved_at DESC, rowid DESC LIMIT ? OFFSET ?',
+      ).all(limit, offset) as SqliteRow[];
+      const reports: Array<{ reportId: string; teamId: string; completedAt: string; summary: string | null; onePagerAvailable: boolean }> = [];
+      let degraded = false;
+      for (const row of rows) {
+        const sessionId = typeof row.session_id === 'string' ? row.session_id : '';
+        try {
+          const partial: unknown = JSON.parse(typeof row.partial_report === 'string' ? row.partial_report : 'null');
+          if (!isDiagnosisReportArchive(partial)) {
+            // 形状不合规（损坏/非归档行误标 phase=5）→ 诚实跳过，不 500、不静默（铁律 24）
+            log.warn({ sessionId }, 'listDiagnosisReports: partial_report 形状非法 — 跳过该行（degraded）');
+            degraded = true;
+            continue;
+          }
+          reports.push({
+            reportId: partial.reportId,
+            teamId: partial.teamId,
+            completedAt: partial.completedAt,
+            summary: partial.report.summary,
+            onePagerAvailable: typeof partial.onePager === 'string' && partial.onePager.length > 0,
+          });
+        } catch (err) {
+          log.warn({ err, sessionId }, 'listDiagnosisReports: partial_report JSON 损坏 — 跳过该行（degraded）');
+          degraded = true;
+        }
+      }
+      return { ok: true, total, degraded, reports };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.error({ err: msg }, 'listDiagnosisReports 查询失败 — fail-closed');
+      return { ok: false, degraded: true, error: msg };
+    }
   }
 }

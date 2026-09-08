@@ -83,6 +83,9 @@ export interface AppState {
   // GA Actions (Phase 3.1)
   setGaClients: (clients: ClientInfo[]) => void;
   setActiveOrgId: (orgId: string | null) => void;
+
+  // D593: 会话列表真数据（GET /api/sessions → LeftPanel 挂载时写入，D591 遗留接线）
+  setConversations: (list: ConversationInfo[]) => void;
 }
 
 /**
@@ -97,6 +100,43 @@ function bootUserRole(): UserRole {
   return getSeedIdentity() ? 'ga' : 'admin';
 }
 
+// ═══ D593: 报告锚持久化（currentReportId + localStorage['synova:last-report-id']） ═══
+// 对齐 D591 conversation-store 的 last-session-id 模式（提交回声/刷新恢复的单一锚点）。
+
+/** D593: 本地报告锚 localStorage 键（spec §5.1 固定值） */
+export const LAST_REPORT_ID_STORAGE_KEY = 'synova:last-report-id';
+
+/** localStorage 安全访问（无 window/node 测试/隐私模式 → null，不抛） */
+function safeLocalStorage(): Storage | null {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) return window.localStorage;
+  } catch (err) {
+    // 铁律 24: 不静默——localStorage 不可达属环境降级，warn 留痕后按无存储处理
+    console.warn('[app-store] localStorage 不可用，报告锚降级为内存态:',
+      err instanceof Error ? err.message : String(err));
+  }
+  return null;
+}
+
+/**
+ * readLastReportId — D593 读取本地报告锚（刷新恢复时序第 ① 步；列表端点为兜底）
+ * @input  无（读 localStorage[LAST_REPORT_ID_STORAGE_KEY]）
+ * @output 报告 id 字符串 | null（无键/空值/无 window → null，非异常）
+ * @degraded localStorage 访问异常 → console.warn + null（不抛）
+ */
+export function readLastReportId(): string | null {
+  const storage = safeLocalStorage();
+  if (!storage) return null;
+  try {
+    const id = storage.getItem(LAST_REPORT_ID_STORAGE_KEY);
+    return typeof id === 'string' && id.length > 0 ? id : null;
+  } catch (err) {
+    console.warn('[app-store] 报告锚读取失败:',
+      err instanceof Error ? err.message : String(err));
+    return null;
+  }
+}
+
 export const useAppStore = create<AppState>((set) => ({
   leftPanelOpen: true, rightPanelOpen: true,
   leftPanelWidth: 240, rightPanelWidth: 320,
@@ -108,7 +148,7 @@ export const useAppStore = create<AppState>((set) => ({
   gaClients: [],
 
   workspaces: [], conversations: [],
-  lastDiagnosisTime: null, currentReportId: null, dimensionCovered: 0, dimensionTotal: 8,
+  lastDiagnosisTime: null, currentReportId: readLastReportId(), dimensionCovered: 0, dimensionTotal: 8,
   llmUnconfigured: false,
 
   toggleLeftPanel: () => set((s) => ({ leftPanelOpen: !s.leftPanelOpen })),
@@ -126,10 +166,23 @@ export const useAppStore = create<AppState>((set) => ({
   setDiagnosisInfo: (time, covered, total) => set({
     lastDiagnosisTime: time, dimensionCovered: covered, dimensionTotal: total,
   }),
-  setCurrentReportId: (reportId) => set({ currentReportId: reportId }),
+  // D593: 报告锚落定（同步写 localStorage；写失败不静默——内存锚仍在，仅持久化降级，铁律 24）
+  setCurrentReportId: (reportId) => {
+    set({ currentReportId: reportId });
+    const storage = safeLocalStorage();
+    if (!storage) return;
+    try {
+      storage.setItem(LAST_REPORT_ID_STORAGE_KEY, reportId);
+    } catch (err) {
+      console.warn('[app-store] 报告锚写入失败:',
+        err instanceof Error ? err.message : String(err));
+    }
+  },
   setLlmUnconfigured: (llmUnconfigured) => set({ llmUnconfigured }),
 
   setGaClients: (gaClients) => set({ gaClients }),
+  // D593: 会话列表真数据写入（LeftPanel 挂载时 GET /api/sessions 映射后调用；D591 §5.4 决策 5 遗留闭环）
+  setConversations: (conversations) => set({ conversations }),
   setActiveOrgId: (orgId) => set((s) => ({
     activeOrgId: orgId,
     activeWorkspaceId: null,    // 切换客户时重置工作区

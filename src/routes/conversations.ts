@@ -292,6 +292,36 @@ async function handleConversationMessage(req: Request, res: Response, pathSessio
       (engineCtx as { sessionStore?: SessionStoreLike }).sessionStore = store;
       const launcher = new DiagnosisLauncher(engineCtx, diagnosisEngine);
       const diagnosisResult = await launcher.startDiagnosis(orgId, 'GA', (evt) => adapter.emitDiagnosisEvent(evt));
+      // D593: 对话桥报告落盘（写路径第二路线，spec §5.1/§5.2-A）——与 consult 路线同形
+      // （checkpoint 表 phase=5 行，键=reportId），source='conversation'（无 consultId——
+      // 对话会话无该概念）。写失败 log.warn 不阻断 SSE（报告已随 complete 帧送达，铁律 24/31）。
+      if (diagnosisResult) {
+        // 内联类型窄化读 reportId（铁律 38 替代形态——双段断言禁用）
+        const reportIdCandidate: unknown = (diagnosisResult.report as { reportId?: unknown }).reportId;
+        const conversationReportId = typeof reportIdCandidate === 'string' ? reportIdCandidate : '';
+        if (conversationReportId === '') {
+          log.warn({ sessionId }, '对话桥报告 reportId 缺失 — 跳过落盘（degraded，complete 帧不受影响）');
+        } else {
+          try {
+            const completedAtIso = new Date().toISOString();
+            store.saveDiagnosisCheckpoint({
+              sessionId: conversationReportId,
+              phase: 5,
+              completedModules: [],
+              partialReport: {
+                reportId: conversationReportId,
+                report: diagnosisResult.report,
+                teamId: diagnosisResult.teamId,
+                completedAt: completedAtIso,
+                source: 'conversation',
+              },
+              savedAt: completedAtIso,
+            });
+          } catch (persistErr: unknown) {
+            log.warn({ err: persistErr, sessionId, reportId: conversationReportId }, '对话桥报告落盘失败 — degraded（complete 帧已送达）');
+          }
+        }
+      }
       // complete 帧（对齐 diagnosis.ts:82-91 sseClose 形状 + sessionId 回声）
       adapter.sendFrame({
         type: 'complete',

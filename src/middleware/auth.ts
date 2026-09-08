@@ -88,6 +88,11 @@ function getExpiresIn(): number {
  * 安全模型 = 单机本地信任（对齐 /api/sentinel/* 先例）：本进程面向单 GA 的本地桌面/内网部署，
  * 信任边界是机器本身而非 HTTP 凭证——"配置完 LLM 即可对话"（D575 承诺）依赖免 JWT 直达。
  * 多用户/公网阶段按施工图 §5.5 重构为会话级鉴权（README「安全模型」节有显式声明）。
+ *
+ * D593（审计 §7 行②④ 对齐）: 新增五前缀——/api/diagnosis/reports（报告列表，桌面刷新恢复）、
+ * /api/notifications（通知）、/api/solutions（方案）、/api/ga/clients + /api/ga/switch（GA 客户
+ * 与切换）。同 D590 裁决①单机本地信任模型；精确前缀（/api/diagnosis/reports 不放宽
+ * /api/diagnosis/ 全前缀——避免误豁免 D590 已下线的 upload/status 410 路径族）。
  */
 function isWhitelisted(path: string): boolean {
   return (
@@ -108,8 +113,13 @@ function isWhitelisted(path: string): boolean {
     path.startsWith('/api/sentinel/') ||
     path.startsWith('/api/cockpit/') ||
     path.startsWith('/api/diagnosis/consult') || // D590 裁决① — 桌面端诊断链路（consult 五端点族）
+    path.startsWith('/api/diagnosis/reports') || // D593 — 报告列表（桌面刷新恢复，P0-1 收尾）
     path.startsWith('/api/conversations') ||     // D590 裁决① — 对话 SSE 端点
-    path.startsWith('/api/sessions')             // D590 裁决① — 会话读回（对话验收闭环）
+    path.startsWith('/api/sessions') ||          // D590 裁决① — 会话读回（对话验收闭环）
+    path.startsWith('/api/notifications') ||     // D593 — 通知（审计 §7 行④）
+    path.startsWith('/api/solutions') ||         // D593 — 方案（审计 §7 行②）
+    path.startsWith('/api/ga/clients') ||        // D593 — GA 客户（审计 §7 行②）
+    path.startsWith('/api/ga/switch')            // D593 — GA 客户切换
   );
 }
 
