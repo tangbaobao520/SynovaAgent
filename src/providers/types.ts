@@ -38,7 +38,17 @@ export interface ChatResult {
   content: string;
   model: string;
   toolCalls?: ToolCall[];
-  usage?: { promptTokens: number; completionTokens: number };
+  /**
+   * D598: usage 增可选 cache 桶（四桶 disjoint 计量 seam）。
+   * promptTokens 语义保持不变 = 总 prompt（含 cache 命中，DeepSeek 口径）；
+   * cacheReadTokens/cacheWriteTokens 缺省 = provider 未上报，消费方按 0 处理。
+   */
+  usage?: {
+    promptTokens: number;
+    completionTokens: number;
+    cacheReadTokens?: number;
+    cacheWriteTokens?: number;
+  };
 }
 
 export interface StreamCallback {
@@ -68,7 +78,17 @@ export interface ChatCompletionResponse {
     finish_reason?: string;
   }>;
   model: string;
-  usage?: { prompt_tokens: number; completion_tokens: number };
+  /**
+   * D598: 补充 DeepSeek cache 字段（DSH llm-deepseek translate.js mapUsage 同源口径）:
+   * prompt_tokens 含 cache 命中（prompt_tokens = prompt_cache_hit_tokens + miss），
+   * 四桶 disjoint 计量须拆出 cacheRead。
+   */
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    prompt_tokens_details?: { cached_tokens?: number };
+    prompt_cache_hit_tokens?: number;
+  };
 }
 
 export interface LLMProvider {
