@@ -1,0 +1,28 @@
+# D595 T1-T10 RED phase — 2026-09-09T01:26:00+0800 @ 373adf10
+# 预期 RED：tool-definitions.ts 未实现（铁律 0-2 测试先行）
+
+ RUN  v4.1.8 /Users/wane/SynovaAgent/.sessions/d595-mcp-auth/repo
+
+ ❯ tests/mcp/tool-permissions.test.ts (0 test)
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/mcp/tool-permissions.test.ts [ tests/mcp/tool-permissions.test.ts ]
+Error: Cannot find module '/src/mcp/tool-definitions' imported from /Users/wane/SynovaAgent/.sessions/d595-mcp-auth/repo/tests/mcp/tool-permissions.test.ts
+ ❯ tests/mcp/tool-permissions.test.ts:36:1
+     34| });
+     35|
+     36| import {
+       | ^
+     37|   TOOLS,
+     38|   filterToolsByMode,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  01:26:02
+   Duration  225ms (transform 54ms, setup 0ms, import 0ms, tests 0ms, environment 0ms)
+
+VITEST_EXIT:1

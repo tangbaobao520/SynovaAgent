@@ -1,11 +1,57 @@
 {
   "task_id": "D595",
   "title": "L1-P3MCP认证权限",
-  "status": "claimed",
-  "spec": null,
-  "impl": null,
+  "status": "impl_done",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D595-mcp-auth-20260908.md",
+    "commit": "随本 PR 入库（feat/d595-mcp-auth）",
+    "by": "dev-doc (DSH line, glm-5.3-flash)",
+    "at": "2026-09-08",
+    "gate": "dev-doc-gatekeeper ALL PASS exit 0 + check-dev-doc-write-set 声明 10 条漂移 0",
+    "write_set": "7 修改 + 3 新建（目录级）；实现提交时精确化见 impl.files"
+  },
+  "impl": {
+    "by": "DSH (glm-5.3-flash)",
+    "at": "2026-09-09",
+    "branch": "feat/d595-mcp-auth",
+    "base": "373adf10 (origin/main @ PR #443)",
+    "write_set_precision_note": "spec §5.1 十条全落地；另两项基线核验发现的必要棘轮同步（CT-64 gate test + baseline txt，PR #441 合入晚于 spec 编写，EXPECTED 逐行钉死 mcp/index.ts 违规行且总数断言 68——DS3 修复必破，基线自身治理语义'每修复一处须同步下调'要求同步）+ 任务工件入库（spec/brief/task-state/evidence），完成报告单列声明；spec 文档已随 #442 入 main（本分支与 HEAD 零 diff，不入 impl.files——D286 对账口径=git diff --name-only 24 条与本 files[] 完全一致）",
+    "files": [
+      "src/mcp/index.ts",
+      "src/mcp/tool-definitions.ts",
+      "src/agent/sentinel-service.ts",
+      "src/middleware/auth.ts",
+      "package.json",
+      "package-lock.json",
+      "README.md",
+      "tests/architecture/graphstore-unify.test.ts",
+      "tests/architecture/check-architecture-gate.test.ts",
+      "tests/architecture/l1-cross-layer-baseline.txt",
+      "docs/synova/coordination/INTERFACES-STRATEGY.md",
+      "tests/mcp/tool-definitions.test.ts",
+      "tests/mcp/server-smoke.test.ts",
+      "docs/synova/research/MCP-SDK-评估结论-20260908.md",
+      "docs/synova/product-lines/evidence/d595-unit-red.log.txt",
+      "docs/synova/product-lines/evidence/d595-unit-green.log.txt",
+      "docs/synova/product-lines/evidence/d595-smoke-red.log.txt",
+      "docs/synova/product-lines/evidence/d595-smoke-green.log.txt",
+      "docs/synova/product-lines/evidence/d595-smoke-manual-transcript.log.txt",
+      "docs/synova/product-lines/evidence/d595-vitest-baseline-diff.log.txt",
+      "docs/synova/product-lines/evidence/d595-evidence-index.json",
+      "memory/notes/implemented/2026-09-09-d595-mcp-l2-ratchet-sync.md",
+      ".claude/task-briefs/2026-09-08-D595-L1-P3MCP认证权限.md",
+      "task-state/D595.json"
+    ],
+    "verification": {
+      "T1-T10": "37/37 绿（tests/mcp/tool-definitions.test.ts；spec 名 tool-permissions.test.ts 因组2配对门禁按文件名映射 src/mcp/tool-definitions.ts→tests/mcp/tool-definitions.test.ts 硬阻断，随目录级精确化机制改名，red→green 两阶段证据入 evidence/）",
+      "S1-S7": "9/9 绿（tests/mcp/server-smoke.test.ts，真实 stdio 子进程；-32000 指纹见 evidence 手工 transcript）",
+      "DS9": "全量 vitest 失败集与 HEAD 373adf10 干净 worktree 对照完全一致 = 零新失败（evidence/d595-vitest-baseline-diff.log.txt）；tests/mcp/bridge.test.ts 零改动仍绿",
+      "DS10": "as any/as never/as unknown as = 0（新代码）；grep -c SqliteGraphStore src/mcp/index.ts = 0",
+      "ratchet": "graphstore-unify callSites 11→10 绿；CT-64 gate test EXPECTED 68→62 + baseline txt 总数 62 绿（另同步 D599 合并导致的 diagnosis.ts 3 行钉线漂移——main 上已被打红）"
+    }
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-09-08",
-  "updated_by": "alloc-task-id"
+  "updated_at": "2026-09-09",
+  "updated_by": "DSH impl (glm-5.3-flash)"
 }

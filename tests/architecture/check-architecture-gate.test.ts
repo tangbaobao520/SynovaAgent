@@ -11,7 +11,7 @@
  *   @degraded 无（本门禁不允许降级放行——环境失败必须 exit 2 可见）。
  *
  * 覆盖矩阵（铁律 48）：
- *   [正常]   真实仓库 68 处存量逐行命中（对照 L1跨层违规扫描-20260908.md §二）
+ *   [正常]   真实仓库 62 处存量逐行命中（对照 L1跨层违规扫描-20260908.md §二；D595 哨兵簇修复后 68→62）
  *   [正常]   存量在本地与 SYNO_CI=1 下均不阻断（棘轮——台账 CT-64：先修脚本→分批修 src/）
  *   [正常]   沙箱新增违规：本地 exit 0 软提示；SYNO_CI=1 exit 1 硬阻断
  *   [边界]   干净文件零误报：类型位置四形态 / URL 字符串 / 注释 / L2 合法引用
@@ -46,29 +46,33 @@ function runScript(env: Record<string, string>, cwd = REPO_ROOT): RunResult {
   return { status: res.status ?? -1, stdout: res.stdout ?? '' };
 }
 
-/** 扫描报告 §二 的 68 处 runtime 违规（file:line，权威清单——修补后必须逐行命中） */
-const EXPECTED_68: string[] = [
-  // §2.1 L1→L3（16 处）
-  'src/mcp/index.ts:123', 'src/mcp/index.ts:138', 'src/mcp/index.ts:156', 'src/mcp/index.ts:169',
-  'src/mcp/skill-installer.ts:126', 'src/routes/conversations.ts:120', 'src/routes/diagnosis.ts:161',
+/** 扫描报告 §二 的 runtime 违规（file:line，权威清单——修补后必须逐行命中）。
+ *  D595 (2026-09-09) 棘轮同步: 哨兵簇 6 处修复移出（mcp/index.ts :123/:138/:156/:169 L1→L3、
+ *  :141 L1→L4、:140 L1→L5）；D601 存量 4 处随处理器原样迁移至 tool-definitions.ts
+ *  （:203→:390、:236→:425、:193→:380、:231→:420，计数平移非新增）。68 → 62，
+ *  对照 l1-cross-layer-baseline.txt 总量（D524 教训：修复方必须同步钉线清单）。 */
+const EXPECTED_62: string[] = [
+  // §2.1 L1→L3（12 处——D595 修复 src/mcp/index.ts ×4 后余量）
+  'src/mcp/skill-installer.ts:126', 'src/routes/conversations.ts:120', 'src/routes/diagnosis.ts:207',
   'src/routes/evolution.ts:34', 'src/routes/expert.ts:11', 'src/routes/expert.ts:12',
   'src/routes/ga-annotations.ts:28', 'src/server.ts:180', 'src/server.ts:181',
   'src/server.ts:249', 'src/server.ts:251', 'src/tui-v2/chat.tsx:187',
-  // §2.2 L1→L4（15 处）
-  'src/mcp/index.ts:141', 'src/mcp/index.ts:203', 'src/mcp/tool-registration.ts:104',
+  // §2.2 L1→L4（14 处——D595: :141 修复移出；:203 迁移至 tool-definitions.ts:390）
+  'src/mcp/tool-definitions.ts:390', 'src/mcp/tool-registration.ts:104',
   'src/routes/agent-observer.ts:11', 'src/routes/auth.ts:16', 'src/routes/chat.ts:38',
   'src/routes/evolution.ts:27', 'src/routes/ga-annotations.ts:38', 'src/routes/ga-calibration.ts:70',
   'src/routes/ga-corrections.ts:9', 'src/routes/knowledge-ask.ts:39', 'src/routes/ontology.ts:10',
   'src/routes/ontology-admin.ts:16', 'src/routes/overflow.ts:15', 'src/tui-v2/chat.tsx:57',
-  // §2.3a L1→L5 存储/调度导入（15 处）
-  'src/cli.ts:14', 'src/cli.ts:21', 'src/l1/im-inbound.ts:171', 'src/mcp/index.ts:236',
-  'src/routes/conversations.ts:98', 'src/routes/diagnosis.ts:215', 'src/routes/diagnosis.ts:505',
+  // §2.3a L1→L5 存储/调度导入（14 处——D595: :236 迁移至 tool-definitions.ts:425；
+  // diagnosis.ts :215/:505 因 D599 合并漂移至 :261/:561，随本单同步）
+  'src/cli.ts:14', 'src/cli.ts:21', 'src/l1/im-inbound.ts:171', 'src/mcp/tool-definitions.ts:425',
+  'src/routes/conversations.ts:98', 'src/routes/diagnosis.ts:261', 'src/routes/diagnosis.ts:561',
   'src/routes/im.ts:42', 'src/routes/sessions.ts:11', 'src/server.ts:25', 'src/server.ts:405',
   'src/tui-v2/chat.tsx:15', 'src/tui-v2/lib/bootstrap.ts:13', 'src/tui-v2/lib/bootstrap.ts:17',
-  'src/tui-v2/lib/commands.ts:14',
-  // §2.3b L1→L5 getDatabase/init-engine-context（22 处）
-  'src/index.ts:14', 'src/l1/qa-router.ts:13', 'src/mcp/index.ts:140', 'src/mcp/index.ts:193',
-  'src/mcp/index.ts:231', 'src/mcp/tool-registration.ts:105', 'src/routes/admin-knowledge.ts:19',
+  // §2.3b L1→L5 getDatabase/init-engine-context（20 处——D595: :140 修复移出；
+  // :193/:231 迁移至 tool-definitions.ts:380/:420）
+  'src/index.ts:14', 'src/l1/qa-router.ts:13', 'src/mcp/tool-definitions.ts:380',
+  'src/mcp/tool-definitions.ts:420', 'src/mcp/tool-registration.ts:105', 'src/routes/admin-knowledge.ts:19',
   'src/routes/agent-observer.ts:12', 'src/routes/auth.ts:17', 'src/routes/chat.ts:39',
   'src/routes/documents.ts:10', 'src/routes/evolution.ts:28', 'src/routes/expert.ts:13',
   'src/routes/ga-annotations.ts:39', 'src/routes/ga-calibration.ts:71', 'src/routes/ga-corrections.ts:10',
@@ -89,27 +93,27 @@ function makeSandbox(files: Record<string, string>): { dir: string; cleanup: () 
 const EMPTY_BASELINE = path.join(tmpdir(), 'ct64-empty-baseline.txt');
 writeFileSync(EMPTY_BASELINE, '# empty baseline\n');
 
-describe('CT-64: check-architecture.sh 四类漏网修补 — 存量 68 处全命中', () => {
-  it('真实仓库：68 处存量违规逐行出现在输出（对照扫描报告 §二 file:line）', () => {
+describe('CT-64: check-architecture.sh 四类漏网修补 — 存量 62 处全命中（D595 棘轮同步后）', () => {
+  it('真实仓库：62 处存量违规逐行出现在输出（对照扫描报告 §二 file:line，D595 同步后）', () => {
     const { status, stdout } = runScript({ SYNO_CI: '0' });
-    const missing = EXPECTED_68.filter((loc) => !stdout.includes(loc));
-    expect(missing, `未命中的存量违规 (${missing.length}/${EXPECTED_68.length}): ${missing.join(', ')}`).toEqual([]);
+    const missing = EXPECTED_62.filter((loc) => !stdout.includes(loc));
+    expect(missing, `未命中的存量违规 (${missing.length}/${EXPECTED_62.length}): ${missing.join(', ')}`).toEqual([]);
     expect(status).toBe(0); // 棘轮：存量不阻断
   });
 
-  it('真实仓库：SYNO_CI=1 下存量仍 exit 0（基线棘轮——避免一次性 68 处全红压垮编码线）', () => {
+  it('真实仓库：SYNO_CI=1 下存量仍 exit 0（基线棘轮——避免一次性全红压垮编码线）', () => {
     const { status, stdout } = runScript({ SYNO_CI: '1' });
     expect(stdout).toContain('存量');
     expect(status).toBe(0);
   });
 
-  it('基线文件总数 = 68（与扫描报告权威计数对齐）', () => {
+  it('基线文件总数 = 62（D595 修复 6 处 + 迁移 4 处后，与扫描报告权威计数只减不增对齐）', () => {
     const content = spawnSync('cat', [BASELINE], { encoding: 'utf-8' });
     const total = (content.stdout ?? '')
       .split('\n')
       .filter((l) => /=\d+\s*$/.test(l))
       .reduce((sum, l) => sum + Number(l.split('=')[1]), 0);
-    expect(total).toBe(68);
+    expect(total).toBe(62);
   });
 });
 

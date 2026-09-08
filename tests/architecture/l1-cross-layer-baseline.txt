@@ -4,18 +4,21 @@
 # 来源: docs/synova/research/L1跨层违规扫描-20260908.md §二（68 处 runtime 违规，
 #       L1→L3 16 / L1→L4 15 / L1→L5 37）。
 #
+# D595 (2026-09-09) 棘轮下调: 哨兵簇 6 处修复（mcp/index.ts L1→L3 ×4 + L1→L4/L5 ×2）+
+# D601 存量 4 处随处理器迁移至 tool-definitions.ts（L1→L4 ×1 + L1→L5 ×3，计数平移非新增）。
+# 68 → 62（L1→L3 12 / L1→L4 14 / L1→L5 36）。
+#
 # 语义（check-architecture.sh 消费）:
 #   同文件同方向 实际命中数 > 基线 = 基线外新增违规 → 本地 ⚠ 软提示 / SYNO_CI=1 ❌ exit 1
 #   同文件同方向 实际命中数 < 基线 = 已修复 → 提示收紧基线（不阻断）
-#   粒度 file=count（行号漂移免疫；K3 可审计——总量必须 = 68，只许减少）
+#   粒度 file=count（行号漂移免疫；K3 可审计——总量只许减少）
 #
-# 治理顺序（台账 CT-64）: 先修脚本可见性（本任务）→ 分批修 src/（§三 六簇另案派单），
+# 治理顺序（台账 CT-64）: 先修脚本可见性 → 分批修 src/（§三 六簇另案派单），
 # 每修复一处须同步下调本文件对应计数；全部清零后本文件删除。
 #
 # 格式: [方向段] 下每行 <file>=<count>；# 开头为注释。
 
 [L1→L3]
-src/mcp/index.ts=4
 src/mcp/skill-installer.ts=1
 src/routes/conversations.ts=1
 src/routes/diagnosis.ts=1
@@ -26,7 +29,7 @@ src/server.ts=4
 src/tui-v2/chat.tsx=1
 
 [L1→L4]
-src/mcp/index.ts=2
+src/mcp/tool-definitions.ts=1
 src/mcp/tool-registration.ts=1
 src/routes/agent-observer.ts=1
 src/routes/auth.ts=1
@@ -46,7 +49,7 @@ src/cli.ts=2
 src/index.ts=1
 src/l1/im-inbound.ts=1
 src/l1/qa-router.ts=1
-src/mcp/index.ts=4
+src/mcp/tool-definitions.ts=3
 src/mcp/tool-registration.ts=1
 src/routes/admin-knowledge.ts=1
 src/routes/agent-observer.ts=1

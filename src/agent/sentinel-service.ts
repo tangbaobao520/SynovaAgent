@@ -58,6 +58,22 @@ export interface RunOnceResponse {
   error?: string;
 }
 
+/** 哨兵清单项（D595 MCP sentinel_list 消费形状） */
+export interface SentinelListItem {
+  id: string;
+  name: string;
+  layer: string;
+  priority: string;
+  mode: string;
+}
+
+/** 哨兵清单响应（D595 L2 出口 listSentinels 契约形状） */
+export interface SentinelListResponse {
+  ok: boolean;
+  total: number;
+  sentinels: SentinelListItem[];
+}
+
 export interface ExpertReportsResponse {
   ok: boolean;
   reports: Array<{
@@ -203,6 +219,34 @@ export function getAggregatedSignals(): SignalsResponse {
   } catch (err: unknown) {
     log.warn({ err }, 'getAggregatedSignals 失败 — degraded');
     return { ok: false, total: 0, criticalCount: 0, warningCount: 0, signals: [] };
+  }
+}
+
+/**
+ * listSentinels — 哨兵清单查询（D595 新增 L2 出口，供 MCP sentinel_list 消费）
+ * 契约:
+ *   @input  — 无参
+ *   @output — { ok: true, total, sentinels: Array<{id,name,layer,priority,mode}> }
+ *             （layer 直读 config.layer——SentinelConfig 已含该字段（sentinel-loader.ts:247
+ *              字面量赋值证据），缺失时回退 category；禁断言直读，CT-46）
+ *   @degraded — registry 访问失败 → log.warn + { ok: false, total: 0, sentinels: [] }
+ *               （铁律 24 不静默）
+ *   @error  — 不抛（分类返回，模式对齐 getSentinelFindings 降级路径）
+ */
+export async function listSentinels(): Promise<SentinelListResponse> {
+  try {
+    const { getSentinelRegistry } = await import('../sentinel/registry');
+    const sentinels = getSentinelRegistry().list().map(s => ({
+      id: s.config.id,
+      name: s.config.name,
+      layer: s.config.layer || s.config.category,
+      priority: s.config.priority,
+      mode: s.config.mode,
+    }));
+    return { ok: true, total: sentinels.length, sentinels };
+  } catch (err: unknown) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, '[listSentinels] registry 访问失败 — degraded 空清单');
+    return { ok: false, total: 0, sentinels: [] };
   }
 }
 
