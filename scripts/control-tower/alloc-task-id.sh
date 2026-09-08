@@ -128,6 +128,22 @@ else
 fi
 USED="$(printf '%s\n%s\n' "$USED" "$WORKTREE_USED" | grep -E '^[0-9]+$' || true)"
 
+# CT-63: 远端分支名 D# 扫描——Win/Claude 线自编号不走 alloc，分支名是唯一在途信号
+#   （D593/D594 撞号实证：Win 用 D593 做 B-02/B-06，Mac 同时用 D593 做报告落盘）
+#   扫描: git branch -r 全远端分支名中的 D[0-9]+（大小写不敏感）→ 合入占用表
+#   注入缝: SYNO_ALLOC_NO_BRANCH=1（测试隔离）
+BRANCH_USED=""
+if [ "${SYNO_ALLOC_NO_BRANCH:-0}" = "1" ]; then
+  :  # 测试注入缝
+else
+  TS_TOP="$(git -C "$TASK_STATE_DIR" rev-parse --show-toplevel 2>/dev/null || echo "")"
+  if [ -n "$TS_TOP" ]; then
+    BRANCH_IDS=$(git -C "$TS_TOP" branch -r --format='%(refname:short)' 2>/dev/null | grep -ioE 'D[0-9]+' | tr '[:lower:]' '[:upper:]' | sed 's/D//' | grep -E '^[0-9]+$' || true)
+    [ -n "$BRANCH_IDS" ] && BRANCH_USED="$BRANCH_IDS"
+  fi
+fi
+USED="$(printf '%s\n%s\n' "$USED" "$BRANCH_USED" | grep -E '^[0-9]+$' || true)"
+
 ALL_USED=$(printf "%s\n" "$USED" | grep -E '^[0-9]+$' | sort -n | uniq || true)
 MAX=$(printf "%s\n" "$ALL_USED" | tail -1 | grep -E '^[0-9]+$' || echo "0")
 # D456: pipefail 下空 task-state 时 tail/grep 非零导致静默退出，显式兜底
