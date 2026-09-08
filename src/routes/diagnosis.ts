@@ -12,9 +12,17 @@
  * D489: consult 改经 DiagnosisLauncher — 诊断阶段/模块/报告事件落 session_events（D394 片2-B 可回放）。
  */
 import { Router, type Request, type Response } from 'express';
+import { join } from 'node:path';
 import { createProvider } from '../providers';
 import { detectProvider } from '../providers/detect';
 import { loadConfig } from '../config';
+// D599: 客户配置包四层解析（DSH 借鉴卡 B-09+B-10 机制蓝本）— L1 消费支撑机制（loadConfig 同型方向）
+import {
+  discoverCustomerConfigPackages,
+  resolveCustomerConfig,
+  DEFAULT_ROOT_NAME,
+  type MountedCustomerConfig,
+} from '../config/customer-config-package';
 import { createLogger } from '@synova/logger';
 import type { DiagnosisEngine, DiagnosisEvent, ConsultationResult } from '../l2-interfaces/diagnosis-engine';
 import { ToolRegistry } from '../agent/tools';
@@ -135,6 +143,44 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
 
   try {
     const config = loadConfig();
+
+    // ═══ D599: 客户配置包四层解析（DSH 借鉴卡 B-09+B-10 机制蓝本） ═══
+    // consult 第一命令：per-org 解析 default→industry→customer→workspace 四层叠加，
+    // 经 SSE config_resolved 事件可观测（逐层来源 provenance + degraded + 泄漏审计）。
+    // 机制蓝本不消费阈值/启用专家集/报告样式/凭证到诊断管线（S1-6 后续）；
+    // 解析失败降级不阻断诊断（铁律 24/31：log.warn + 诊断继续）。
+    let customerConfig: MountedCustomerConfig | null = null;
+    try {
+      const configRoots = [{ path: join(process.cwd(), DEFAULT_ROOT_NAME), trust: 'customer' as const }];
+      const roster = await discoverCustomerConfigPackages(configRoots);
+      const brokenPackages = roster.filter((p) => p.broken !== undefined);
+      customerConfig = await resolveCustomerConfig(teamId, { roots: configRoots });
+      log.info(
+        {
+          consultId, orgId: teamId, degraded: customerConfig.degraded,
+          packages: roster.length, brokenPackages: brokenPackages.map((p) => p.orgId),
+          auditKeys: customerConfig.audit.map((e) => e.path),
+        },
+        '客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）',
+      );
+      sseWrite(res, {
+        type: 'config_resolved',
+        phase: 0,
+        message: `客户配置解析完成（orgId=${teamId}${customerConfig.degraded ? '，degraded' : ''}）`,
+        degraded: customerConfig.degraded,
+        findings: customerConfig.provenance
+          .filter((l) => l.present)
+          .map((l) => ({
+            moduleId: `config:${l.layer}`,
+            summary: `配置层 ${l.layer} 贡献键: ${l.contributedKeys.join(', ') || '（无顶层键）'}`,
+            confidence: 1,
+          })),
+        confidence: 1,
+      });
+    } catch (cfgErr: unknown) {
+      log.warn({ err: cfgErr, consultId, orgId: teamId }, '客户配置包解析失败 — degraded（诊断继续，default 行为）');
+    }
+
     const provider = createProvider(detectProvider(), {
       apiKey: config.llmApiKey,
       baseUrl: config.llmBaseUrl,
@@ -438,6 +484,16 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
       }
       // D480: 完成报告入有界缓存（GET /report 数据源；raw 咨询也入缓存，GET 时按需渲染）。
       // 须在 sseClose 前执行——sseClose 序列化 result.report（onePager 已挂在其上）。
+      // D599: 报告挂客户配置来源（逐层 provenance + 审计 + degraded），GET /report 可回查。
+      if (customerConfig !== null) {
+        (result.report as Record<string, unknown>).customerConfig = {
+          orgId: customerConfig.orgId,
+          degraded: customerConfig.degraded,
+          ...(customerConfig.reason === undefined ? {} : { reason: customerConfig.reason }),
+          audit: customerConfig.audit,
+          provenance: customerConfig.provenance,
+        };
+      }
       cacheCompletedReport({
         consultId,
         teamId,
