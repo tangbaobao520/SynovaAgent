@@ -1167,3 +1167,9 @@ Binary file .claude/bypass.log matches
 2026-09-08T23:15:05+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D601 | AGENT=dsh-cto
 2026-09-08T23:17:34+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=9744ffc174682fc254b1c19fc1b6447ecb1e67e8
 2026-09-08T23:30:52+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=010eec20c93e05e5413ee3abedc83f6cfc73abfb
+2026-09-08T15:20:28Z detected-bypass head-mismatch marker=a1604eee99a810486c2a521f10b253c5c60bc504 parent=95e1c9fa5b192cb2bae1c35cf505dc8cc353eb2f
+2026-09-08T23:20:49+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D601 | AGENT=dsh-cto
+2026-09-08T23:21:55+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=95c9c187e1218ff9378341f4f600f03738272198
+2026-09-08T23:23:32+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=c9ab3962d8f1aec577f78436b717d15bc8a45221
+2026-09-08T23:25:00+08:00 | COMMITTED | pre-commit PASS (D331 一次性补记: dev-doc 线 D593 提交经本分支合入, 原登记缺失—M8 共享主树) | TASK_ID=D593 | AGENT=dsh-devdoc | HASH=ed38508d94f1b8f714ca6e2776669d1cb63bcc42
+2026-09-08T23:28:51+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=083388ea37ed97cb2a966db1e355de735eb937b4
