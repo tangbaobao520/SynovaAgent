@@ -1,0 +1,27 @@
+{
+  "task_id": "CT-64",
+  "title": "check-architecture.sh 四类漏网形态修补——68 处存量假绿转明账",
+  "status": "impl_done",
+  "spec": {
+    "doc": "docs/synova/research/L1跨层违规扫描-20260908.md §一/§二/§四",
+    "by": "dsh-cto",
+    "at": "2026-09-08"
+  },
+  "impl": {
+    "commit": "310bf933",
+    "by": "dsh-cto",
+    "at": "2026-09-09",
+    "branch": "fix/ct64-arch-gate-patches",
+    "files": [
+      "scripts/check-architecture.sh",
+      "tests/architecture/l1-cross-layer-baseline.txt",
+      "tests/architecture/check-architecture-gate.test.ts",
+      "memory/notes/proposed/2026-09-08-ct64-arch-gate-ratchet-baseline.md"
+    ]
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-09",
+  "updated_by": "dsh-cto",
+  "note": "四类漏网修补(①动态 import 入网 ②名字豁免删除→arch-allow 行内标注 ③路径形态/扫描范围补全 ④SYNO_CI 转硬+exit 2 fail-closed)。存量治理: 68 处棘轮基线(只减不增), 台账 CT-64 治理顺序(先修脚本→分批修 src/ 六簇)。验收: 68 处逐行命中零差 | vitest tests/architecture/ 24/24 | tsc 28=28 | pre-commit 13 组 SYNO_CI=1 全过 | simulate-ci exit 0。后续接线项(写集外): ci.yml architecture job 注入 SYNO_CI=1 一行 diff; src/ 68 处存量按扫描报告 §三 分簇另案派单。"
+}
