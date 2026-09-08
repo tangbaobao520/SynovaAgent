@@ -39,6 +39,7 @@ import gaEvolutionRoutes from './routes/ga-evolution';
 import ontologyRoutes from './routes/ontology';
 import ontologyAdminRoutes from './routes/ontology-admin';
 import diagnosisRoutes from './routes/diagnosis';
+import configRoutes from './routes/config'; // D600 — GET /api/config/dump 客户配置检查表面（--dump-config）
 import sessionsRoutes from './routes/sessions';
 import conversationsRoutes from './routes/conversations'; // D590 — 对话 SSE 端点（ConversationEngine × HTTP 接线）
 import metricsRoutes from './monitoring/routes';
@@ -352,6 +353,7 @@ export async function createServer(): Promise<Server> {
   app.use(ontologyRoutes);
   app.use(ontologyAdminRoutes);
   app.use(diagnosisRoutes);
+  app.use(configRoutes); // D600 — config/dump 挂载（逐层 provenance 检查表面）
   app.use(sessionsRoutes);
   app.use(conversationsRoutes); // D590 — 对话 SSE 端点（sessionsRoutes 旁，spec §5.1）
   app.use(metricsRoutes);

@@ -56,6 +56,16 @@
 
 > 实现时若偏离本 doc（config 命名空间键名、dump 端点路径/挂载、reportDepth 优先级顺序），必须在此节同 commit 回填最终形态。
 
+**D600 实现回填（2026-09-09，与实现同 commit）：**
+
+- **写集扩展 1 文件**：`src/server.ts`（修改）——§3.1 表未列但 §5 接线表 + DS2 要求 `app.use` 挂载；import configRoutes + `app.use(configRoutes)` 两行（对齐 diagnosisRoutes 先例 src/server.ts:41/354），mount 行注释含 `config/dump` 供 DS2 grep 物理命中。
+- **测试文件名偏差**：`tests/routes/config-dump.test.ts` → **`tests/routes/config.test.ts`**——组2b 配对映射硬规则 `src/routes/config.ts → tests/routes/config.test.ts`（同 commit 缺配对即硬阻断），D575 登记偏差先例；用例内容不变（≥4 用例 × ≥3 expect，实际 5 用例）。
+- **config 命名空间键名**：与 §4.5 决策点 2 一致 `diagnosis.reportDepth`/`diagnosis.template`（无偏差）。
+- **reportDepth 优先级**：与 §4.5 决策点 1 一致 `scope.reportDepth > scope.depth > 客户配置 > 'raw'`；实现细节：非法值（非四枚举之一）经类型守卫跳过回退下一优先级，不炸诊断（铁律 24/31）。
+- **template 消费形态**：`diagnosis.template`（'ceo'|'flywheel'）驱动 renderOnePager 模板选择，优先级 = 客户配置显式声明 > 既有深度推导（reportDepth==='ceo'?'ceo':'flywheel'）；另增 `report.customerConfig.applied = { reportDepth, template? }` 可观测字段（消费证据，GET /consult/:id/report 可回查）。
+- **dump 端点路径/挂载**：与 §3.1 一致 `GET /api/config/dump?orgId=`（default export router + src/server.ts 挂载）；响应体增加 `ok: true` 字段（仓库路由惯例，healthz/llm-config 先例）。
+- **测试实绩**：tests/routes/diagnosis-customer-config.test.ts 5 用例 + tests/routes/config.test.ts 5 用例 = 10 用例（≥8 达标），red→green 实证（red：config 模块不存在全红 + reportDepth 恒 raw 断言红；实现后全绿）。
+
 ### 3.3 不做的事
 | 项 | 理由 |
 |---|---|
