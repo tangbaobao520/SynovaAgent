@@ -155,6 +155,7 @@ async function readMetadata(directory: string): Promise<CustomerConfigMetadata |
   try {
     parsed = parseYaml(await readFile(join(directory, METADATA_FILE), 'utf8'));
   } catch {
+    // 元数据缺省/坏 YAML/不可读 → 空元数据：display-only 永不阻断挂载（铁律 24 ENOENT 正常默认 + DSH metadata 同口径）
     return undefined;
   }
   if (!isPlainObject(parsed)) return undefined;
@@ -177,6 +178,7 @@ async function compositionProblem(path: string): Promise<string | undefined> {
   try {
     await stat(path);
   } catch {
+    // ENOENT = composition 缺失 → 不静默：原因上报 roster broken（目录仍占 id），非吞错
     return `${COMPOSITION_FILE} 缺失——目录仍占用其 id；删除该目录或恢复文件`;
   }
   try {
