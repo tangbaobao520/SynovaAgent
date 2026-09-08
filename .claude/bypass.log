@@ -1156,3 +1156,4 @@ Binary file .claude/bypass.log matches
 2026-09-08T16:02:16+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=16166bd4040283e8f05a2652c97f28e26ec6227c
 2026-09-08T16:21:18+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=07e81a76e15a3e76d1619e42bd66c41f1caa2609
 2026-09-08T20:42:53+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=95a71a8f269d62d81342b9f1bd83faf02eb12316
+2026-09-08T20:59:39+08:00 | COMMITTED | pre-commit PASS (merge 引入补记: 平基 merge github/main 带入 D591 他人提交 bdfad5c0, D470/D307 先例, D331 对账) | TASK_ID=D599 | AGENT=Synova-Win | HASH=bdfad5c0b59baa96c5432161b20355e6424c9bb4
