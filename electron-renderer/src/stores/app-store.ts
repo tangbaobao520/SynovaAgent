@@ -25,6 +25,27 @@ export interface ConversationInfo {
   id: string; title: string; preview: string; updatedAt: string;
 }
 
+/** D602: 本地通知（SSE error 帧 / main P0 push 的落点——通知中心"错误通知"段渲染源） */
+export interface LocalNotification {
+  id: string;
+  title: string;
+  body: string;
+  severity: 'critical' | 'warning' | 'info';
+  createdAt: string;
+}
+
+/** D602: 本地通知 FIFO 上限（第 21 条推入淘汰最旧，spec §7 用例 6） */
+export const MAX_LOCAL_NOTIFICATIONS = 20;
+
+/** D602: pushLocalNotification 入参（id/createdAt/severity 缺省时自动补全） */
+export interface PushLocalNotificationInput {
+  title: string;
+  body: string;
+  severity?: 'critical' | 'warning' | 'info';
+  id?: string;
+  createdAt?: string;
+}
+
 export interface AppState {
   // 面板
   leftPanelOpen: boolean;
@@ -63,6 +84,9 @@ export interface AppState {
   // D575: LLM 未配置黄条（boot 判定 / 「暂不配置」置 true；保存配置置 false）
   llmUnconfigured: boolean;
 
+  // D602: 本地通知（错误通知段；上限 MAX_LOCAL_NOTIFICATIONS FIFO）
+  localNotifications: LocalNotification[];
+
   // Actions
   toggleLeftPanel: () => void;
   toggleRightPanel: () => void;
@@ -79,6 +103,10 @@ export interface AppState {
   setDiagnosisInfo: (t: string, c: number, tot: number) => void;
   setCurrentReportId: (id: string) => void;
   setLlmUnconfigured: (v: boolean) => void;
+
+  // D602: 本地通知
+  pushLocalNotification: (n: PushLocalNotificationInput) => void;
+  dismissLocalNotification: (id: string) => void;
 
   // GA Actions (Phase 3.1)
   setGaClients: (clients: ClientInfo[]) => void;
@@ -150,6 +178,7 @@ export const useAppStore = create<AppState>((set) => ({
   workspaces: [], conversations: [],
   lastDiagnosisTime: null, currentReportId: readLastReportId(), dimensionCovered: 0, dimensionTotal: 8,
   llmUnconfigured: false,
+  localNotifications: [],
 
   toggleLeftPanel: () => set((s) => ({ leftPanelOpen: !s.leftPanelOpen })),
   toggleRightPanel: () => set((s) => ({ rightPanelOpen: !s.rightPanelOpen })),
@@ -179,6 +208,39 @@ export const useAppStore = create<AppState>((set) => ({
     }
   },
   setLlmUnconfigured: (llmUnconfigured) => set({ llmUnconfigured }),
+
+  /**
+   * pushLocalNotification — D602 本地通知入栈（铁律 47 契约）
+   * @input  { title, body, severity?, id?, createdAt? }——缺省补全（id=`local-<ts>-<rand>`、
+   *         createdAt=now、severity='info'）
+   * @output 无（store 更新: newest-first，上限 MAX_LOCAL_NOTIFICATIONS=20 FIFO 淘汰最旧）
+   * @side-effect window.electronAPI.showNotification 在场时旁路系统通知（title/body/id 透传）
+   * @degraded 系统通知缺失（非 Electron）→ 跳过不抛；系统通知抛异常 → console.warn + 本地通知
+   *           仍入栈（通知中心可见，铁律 24/31 不静默）
+   */
+  pushLocalNotification: (n) => {
+    const item: LocalNotification = {
+      id: n.id ?? `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      title: n.title,
+      body: n.body,
+      severity: n.severity ?? 'info',
+      createdAt: n.createdAt ?? new Date().toISOString(),
+    };
+    set((s) => ({
+      localNotifications: [item, ...s.localNotifications].slice(0, MAX_LOCAL_NOTIFICATIONS),
+    }));
+    try {
+      const api = typeof window !== 'undefined' ? window.electronAPI : undefined;
+      if (api?.showNotification) api.showNotification(item.title, item.body, item.id);
+    } catch (err) {
+      console.warn('[app-store] 系统通知旁路失败（本地通知仍可见）:',
+        err instanceof Error ? err.message : String(err));
+    }
+  },
+
+  /** dismissLocalNotification — 按 id 移除本地通知（NotificationCenter ✕ 关闭交互消费） */
+  dismissLocalNotification: (id) =>
+    set((s) => ({ localNotifications: s.localNotifications.filter((n) => n.id !== id) })),
 
   setGaClients: (gaClients) => set({ gaClients }),
   // D593: 会话列表真数据写入（LeftPanel 挂载时 GET /api/sessions 映射后调用；D591 §5.4 决策 5 遗留闭环）
