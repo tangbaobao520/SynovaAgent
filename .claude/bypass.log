@@ -1169,3 +1169,4 @@ Binary file .claude/bypass.log matches
 2026-09-08T23:20:49+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D601 | AGENT=dsh-cto
 2026-09-08T23:21:55+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=95c9c187e1218ff9378341f4f600f03738272198
 2026-09-08T23:23:32+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=c9ab3962d8f1aec577f78436b717d15bc8a45221
+2026-09-08T23:25:00+08:00 | COMMITTED | pre-commit PASS (D331 一次性补记: dev-doc 线 D593 提交经本分支合入, 原登记缺失—M8 共享主树) | TASK_ID=D593 | AGENT=dsh-devdoc | HASH=ed38508d94f1b8f714ca6e2776669d1cb63bcc42
