@@ -1,0 +1,12 @@
+{
+  "task_id": "D600",
+  "title": "S1-6 CFG 产品化诊断第一命令",
+  "status": "impl_done",
+  "spec": "docs/plans/codex/implementation/SYNOVA-IMPL-D600-cfg-productize-first-command-20260908.md",
+  "impl": {"by": "win-session", "at": "2026-09-08", "evidence": "PR #446 merge e8db4647"},
+  "audit": {"verdict": "PASS", "report": "docs/synova/audit-reports/2026-09-09-K3-L1收工批-closeout.md", "by": "K3", "at": "2026-09-09"},
+  "fix_task_id": null,
+  "updated_at": "2026-09-09",
+  "updated_by": "dsh-cto",
+  "note": "K3 L1 收工批 P1-3 回填。改号自 D601 的 D600 原始号。"
+}
