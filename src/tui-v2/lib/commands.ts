@@ -11,7 +11,8 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import { createProvider } from '../../providers';
-import { SessionStore } from '../../store/session-store';
+// D603 跨层修复（簇4）: SessionStore 仅类型位置使用 → type-position import（运行时零依赖 store/，铁律 39）
+import type { SessionStore } from '../../agent/session-storage-service';
 import { getCostTracker, formatCost } from '../../services/llm-cost';
 import { checkForUpdates, formatUpdateMessage, getCurrentVersion, type UpdateCheckResult } from '../../services/update-checker';
 import type Database from 'better-sqlite3';

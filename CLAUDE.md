@@ -133,7 +133,7 @@ pre-commit `check-architecture.sh` 检测 L2→L4 / L3→L5 跨层违规。
 [ ] 没有引入全量重渲染（forceUpdate / 逐 token 的 setState）
 [ ] 没有 fallback 到旧的 useStreaming 实现
 ```
-pre-commit 硬阻断：patch 文件缺失、postinstall 缺失、React.memo 被移除。
+执法现状（2026-09-09 D603 拉平）：本条**无 pre-commit 自动执法**——`patch 文件缺失/postinstall 缺失/React.memo 被移除`全靠人工按上方清单核查（L1 审计 §3.3 实证：scripts/ 全目录 grep 零执法逻辑）。补真实 check 属 scripts/control-tower 域，CTO 另行派工。
 
 **铁律 41. 流式 Pipeline 简单直接 — 禁止过度工程化。**
 
@@ -142,7 +142,7 @@ pre-commit 硬阻断：patch 文件缺失、postinstall 缺失、React.memo 被�
 ink 补丁层已解决闪烁，React 层只需简单的 buffer + 60fps flush。
 
 **Why**：LineBuffer 要求换行才提交→无换行文本永远不可见。三层嵌套→buffer 永远来不及 flush。
-pre-commit 硬阻断：`use-streaming.ts` 中出现 `LineBuffer`/`FrameRateLimiter`/`StreamChunker` 类名。
+执法现状（2026-09-09 D603 拉平）：本条**无 pre-commit 自动执法**——`use-streaming.ts` 中出现 `LineBuffer`/`FrameRateLimiter`/`StreamChunker` 类名不会触发任何门禁，靠 code review 把关（同上，scripts/ 零执法逻辑）。
 
 **铁律 42. 逐字流必须有延迟。**
 
@@ -168,7 +168,7 @@ pre-commit 警告：检测 `setState({ ... isStreaming: false })` 在 `addAgentM
 ink 不支持真正的滚动。flex-end 会把旧消息推出可见区域。
 正确做法：消息截断算法 + `⋯ 上方还有 N 条消息`。
 
-pre-commit 硬阻断：`chat-panel.tsx` 中出现 `justifyContent.*flex-end`。
+执法现状（2026-09-09 D603 拉平）：本条**无 pre-commit 自动执法**——`chat-panel.tsx` 中出现 `justifyContent.*flex-end` 不会触发任何门禁，靠 code review 把关（同上，scripts/ 零执法逻辑）。
 
 **铁律 45. 注释中 `*/` 必须加空格。**
 

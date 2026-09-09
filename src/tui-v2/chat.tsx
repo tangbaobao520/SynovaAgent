@@ -12,7 +12,8 @@ import { bootstrap, type BootstrapResult } from './lib/bootstrap';
 import { handleCommand, tryConfigureKey, type CommandContext } from './lib/commands';
 import { createLogger } from '@synova/logger';
 import type Database from 'better-sqlite3';
-import { getGlobalScheduler } from '../cron/scheduler';
+// D603 跨层修复（簇6）: 全局调度器经 L2 scheduler-service 访问，不直触 cron/scheduler（铁律 39）
+import { getGlobalScheduler } from '../agent/scheduler-service';
 import { checkForUpdates, formatUpdateMessage, type UpdateCheckResult } from '../services/update-checker';
 import { getCostTracker, formatCost } from '../services/llm-cost';
 import { fetchDeepseekBalance, formatBalance, type BalanceResult } from '../services/deepseek-balance';

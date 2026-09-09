@@ -11,14 +11,13 @@
  *   4. Ctrl+C 中断生成但保留对话
  */
 import * as readline from 'readline';
-import Database from 'better-sqlite3';
-import * as path from 'path';
-import * as fs from 'fs';
 import { createProvider } from './providers';
 import { detectProvider } from './providers/detect';
 import { isLLMConfigured, runSetup } from './setup';
 import { ConversationEngine } from './agent/conversation-engine';
-import { SessionStore } from './store/session-store';
+// D603 跨层修复（簇4）: 存储/SQLite 装配下沉 L2——CLI 不再静态依赖
+// better-sqlite3 / store/session-store（铁律 39）。
+import { createSessionStorage, type SessionStore } from './agent/session-storage-service';
 import { SessionManager } from './orchestrator/session-manager';
 import { registerBuiltinTools } from './agent/builtin-tools';
 import type { LLMProvider } from './providers/types';
@@ -64,13 +63,9 @@ async function main() {
     console.log(`${GREEN}✅ ${provider.name} 连接成功${RESET} (${health.latencyMs}ms)\n`);
   }
 
-  // 2. 初始化数据库 + 会话存储
+  // 2. 初始化数据库 + 会话存储（装配下沉 L2 session-storage-service）
   const config = loadConfig();
-  const dbDir = path.dirname(config.dbPath);
-  if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
-  const db = new Database(config.dbPath);
-  db.pragma('journal_mode = WAL');
-  const store = new SessionStore(db);
+  const { store } = createSessionStorage(config.dbPath);
 
   // 3. 显示历史会话
   const sessions = store.listSessions(5);

@@ -8,9 +8,9 @@
  * 权限: 根据用户角色过滤知识 (L1→request-context)
  */
 import { createLogger } from '@synova/logger';
-import { KnowledgeStore } from '../agent/knowledge-bridge-service';
+// D603 跨层修复（簇3）: KnowledgeStore 构造下沉 L2 桥接服务——不直触 init/engine-context（铁律 39）
+import { createSystemKnowledgeStore, type KnowledgeStore } from '../agent/knowledge-bridge-service';
 import type { FilterClause } from '../agent/knowledge-bridge-service';
-import { getDatabase } from '../init/engine-context';
 import { getCurrentFilterClause } from '../services/request-context';
 
 const log = createLogger('l1/qa-router');
@@ -80,7 +80,7 @@ export interface QAResponse {
  */
 export async function answerQuestion(req: QARequest): Promise<QAResponse> {
   try {
-    const store = new KnowledgeStore(getDatabase());
+    const store: KnowledgeStore = createSystemKnowledgeStore();
     const filter = await getCurrentFilterClause('KnowledgeChunk') as FilterClause;
 
     // Step 1: 领域识别

@@ -1,0 +1,53 @@
+{
+  "task_id": "D602",
+  "title": "D602 L1-P2 交互卡片呈现+preload/IPC收敛+通知error消费（原审计编号 D594）",
+  "status": "impl_done",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D602-interactive-cards-preload-20260908.md",
+    "commit": null,
+    "by": "DeepSeek Harness (dev-doc)",
+    "at": "2026-09-09"
+  },
+  "impl": {
+    "branch": "feat/d602-interactive-cards-preload",
+    "baseline": "origin/main 92b094de（含 CT-63 合并 #445，与写集零重叠；派单时 HEAD=dff18196，开工前 fetch 已含 #445）",
+    "worktree": ".synova-wt-d602（独立 worktree，主工作区 CT-63 session 零接触）",
+    "by": "DeepSeek Harness (DSH 编码 session, glm-5.3-flash)",
+    "at": "2026-09-09",
+    "write_set": {
+      "modified_8": [
+        "electron/preload.cjs（2→8 方法，on* 返回退订函数，逐方法 JSDoc 契约）",
+        "electron/main.cjs（ipcMain 3 通道 + Tray 菜单三项修复 + P0 push 通道 + handler 全校验/warn）",
+        "electron-renderer/src/ipc/bridge.ts（接口收敛 10→8，删 3 死接口+wrapper，on* 退订，增 onPushNotification）",
+        "electron-renderer/src/stores/app-store.ts（localNotifications + pushLocalNotification FIFO20 + dismiss）",
+        "electron-renderer/src/hooks/useNotifications.ts（数据源切 /api/sentinel/tickets + actOnTicket + alertCount=open 工单数 + 本地已读集合）",
+        "electron-renderer/src/components/NotificationCenter.tsx（error banner + 本地通知段 + 工单动作按钮，纯组件导出）",
+        "electron-renderer/src/App.tsx（3 推送订阅 effect，cleanup 退订）",
+        "electron-renderer/src/hooks/useStreaming.ts（case error 增 pushLocalNotification 一行）"
+      ],
+      "new_2": [
+        "tests/electron/ipc-contract.test.ts（用例 1-5，IPC 三方物理契约）",
+        "tests/electron/notification-center.test.ts（用例 6-11，通知链路 18 用例）"
+      ],
+      "deleted_1": ["electron-renderer/preload.js（孤儿死文件，删除前后 grep 零引用双证）"],
+      "extra": [
+        ".claude/task-briefs/2026-09-09-D602-interactive-cards-preload.md",
+        "docs/synova/audit-reports/D602-ipc-notification-evidence-20260909/（README+red-green+DS4+DS5+logs）",
+        "task-state/D602.json（本回填）"
+      ]
+    },
+    "tests": {
+      "new": "ipc-contract 5/5 + notification-center 18/18 = 23/23（red 先证 23/23 全红，原文见 evidence red-green-evidence.md）",
+      "regression": "use-streaming-conversation 21/21 零改动 + tests/electron 12 文件 164 passed + 全量 vitest 失败文件集与基线 diff=空（9 个既有失败文件恒等，L2/L3 域与写集零交集）",
+      "tsc": "根 28=28 基线 + electron-renderer 0 错误"
+    },
+    "evidence": "docs/synova/audit-reports/D602-ipc-notification-evidence-20260909/（DS4 真实后端 curl 前后对照+重启持久；DS5 真实 SSE error 帧捕获）",
+    "gates": "SYNO_CI=1 SYNO_DIFF_BASE=origin/main pre-commit-check 13 组全过 + simulate-ci 通过",
+    "note": "DS4/DS5 证据产生于 Mac 隔离真实后端（PORT=18991 + /tmp 临时库，零 data/synova.db 接触）；OS 级系统通知弹窗 headless 不可物理截图（用例 7a stub + main.cjs handler 静态锁定，留桌面人工验收）。alerts action 空洞端点与 notifications.ts 死数据源登记台账归哨兵线（spec §6）。StatusBar/TitleBar 残项 descope 归后续派单。"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-09",
+  "updated_by": "DeepSeek Harness (coding)",
+  "note": "impl 交付（编码线 2026-09-09）：IPC 三方一致（preload 8 ≡ bridge 8 ≡ main 通道 3+3 推送，静态契约测试物理锁定）+ 通知数据源切 D580 工单状态机真源（decision 3-B）+ 卡片动作接 POST /tickets/:id/transition（decision 4-B，alerts/:id/action 空洞端点不接）+ SSE error 帧消费（decision 5-B）+ Tray 保留修复（decision 2-B，founder 裁决）+ P0 轮询保留补 push（decision 6-B）+ preload 方法集 B=8（decision 1）。spec 提交 commit 字段待本 impl PR 合并后由合并提交统一覆盖。审计产物命名带 D602（原 D594 编号沿革已在本文件与 spec 头注记，防混）。"
+}

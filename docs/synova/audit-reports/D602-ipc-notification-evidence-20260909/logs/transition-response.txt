@@ -1,0 +1,2 @@
+{"ok":true,"ticket":{"id":"ticket-sig_核心高管离职风险-auto","signal_id":"sig_核心高管离职风险","severity":"critical","expert_type":"auto","diagnosis":"{\"title\":\"1 个哨兵同时指向: 核心高管离职风险\",\"summary\":\"[critical] 核心高管离职风险: [GA 手动信号|人员变动|置信度 90%] D602 DS4 证据注入：关键岗位人员流失\",\"evidence\":[\"source=GA_MANUAL\",\"signalType=人员变动\",\"confidence=90\",\"gaId=dev-admin\",\"orgId=default\"],\"auto\":true}","suggested_actions":"GA 手动注入信号 — 请人工研判并跟踪","status":"acknowledged","created_at":"2026-09-08 19:19:19","resolved_at":null}}
+HTTP 200

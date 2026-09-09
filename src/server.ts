@@ -22,7 +22,8 @@ import authRoutes from './routes/auth';
 import { buildInheritedContext, detectConflicts } from './agent/workspace-service';
 // Code Review A1+A3: 凭证加密 + L5 事件总线初始化
 import { CredentialVault } from './security/credential-vault';
-import { getOntologyEventBus } from './l5/ontology-event-bus';
+// D603 跨层修复（簇5）: OntologyEventBus 初始化已集中 Bootstrap Phase 1c（deploy/bootstrap.ts:759-760
+// 动态装配）；server.ts 的静态 import 为死引用，直接移除（铁律 39: L1 不直触 l5/）。
 import homeRoutes from './routes/home';
 import chatRoutes from './routes/chat';
 import workspaceRoutes from './routes/workspace';
@@ -258,6 +259,9 @@ export async function createServer(): Promise<Server> {
   if (connectorToolRegistry) container.connectorToolRegistry = connectorToolRegistry;
   app.locals.container = container;
   if (graphStore) app.locals.graphStore = graphStore;
+  // D603 跨层修复（簇4）: 注入 Bootstrap Phase 0 单例 SessionStore — routes/sessions
+  // 消费注入实例（未注入环境回退 L2 兜底装配），L1 不再自建 SessionStore(getDatabase())。
+  app.locals.sessionStore = services.sessionStore;
   app.locals.orchestration = { eventBus, hookRunner, sessionManager, stateMachine, wiring, db, eventStore: services.eventStore };
   app.locals.federalAdapter = federalAdapter;
   if (connectorToolRegistry) app.locals.connectorToolRegistry = connectorToolRegistry;

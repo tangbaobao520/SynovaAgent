@@ -8,8 +8,8 @@
  * 铁律 39: L1 交互层，委托 L4 KnowledgeStore 执行查询
  */
 import { Router, type Request, type Response } from 'express';
-import { KnowledgeStore } from '../agent/knowledge-bridge-service';
-import { getDatabase } from '../init/engine-context';
+// D603 跨层修复（簇3）: KnowledgeStore 构造下沉 L2 桥接服务——不直触 init/engine-context（铁律 39）
+import { createSystemKnowledgeStore, type KnowledgeStore } from '../agent/knowledge-bridge-service';
 import { getCurrentFilterClause } from '../services/request-context';
 import { createLogger } from '@synova/logger';
 import { getPreUploadValidator } from '../security/pre-upload-validator';
@@ -19,7 +19,7 @@ const log = createLogger('routes/knowledge');
 const router = Router();
 
 function getStore(): KnowledgeStore {
-  return new KnowledgeStore(getDatabase());
+  return createSystemKnowledgeStore();
 }
 
 // ═══ 搜索 ═══

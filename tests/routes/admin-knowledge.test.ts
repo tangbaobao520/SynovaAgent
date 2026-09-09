@@ -42,16 +42,23 @@ vi.mock('../../src/services/federated-pipeline', async (importOriginal) => {
 });
 
 // D402: KnowledgeStore 构造计数（getStore 惰性单例证明）——子类保持全部真实行为
+// D603 适配: 路由构造点已下沉 L2 createSystemKnowledgeStore()（源内不再 new）——
+// 计数 mock 同步包住 L2 工厂，T5b「构造仅 1 次」断言语义不变。
 vi.mock('../../src/agent/knowledge-bridge-service', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../src/agent/knowledge-bridge-service')>();
   const Orig = actual.KnowledgeStore;
+  const { getDatabase: getDb } = await import('../../src/init/engine-context');
   class CountingKnowledgeStore extends Orig {
     constructor(...args: ConstructorParameters<typeof Orig>) {
       super(...args);
       ctorCount.store += 1;
     }
   }
-  return { ...actual, KnowledgeStore: CountingKnowledgeStore };
+  return {
+    ...actual,
+    KnowledgeStore: CountingKnowledgeStore,
+    createSystemKnowledgeStore: () => new CountingKnowledgeStore(getDb()),
+  };
 });
 
 /** express Router stack 最小类型（避免 as any，铁律 38） */

@@ -8,20 +8,13 @@
  */
 import { Router, type Request, type Response } from 'express';
 import { createLogger } from '@synova/logger';
-import { TemplateValidator } from '../expert-platform/validator';
-import { ExpertStore } from '../expert-platform/store';
-import { getDatabase } from '../init/engine-context';
+// D603 跨层修复（簇3）: TemplateValidator/ExpertStore 装配下沉 L2 专家贡献服务——铁律 39（L1→L2→L3）
+import { getExpertStore as getStore, createTemplateValidator, type ExpertStore } from '../agent/expert-contribution-service';
 
 const router = Router();
 const log = createLogger('routes/expert');
 
-// SA-01: SQLite持久化 — 进程重启不丢数据
-let _store: ExpertStore | null = null;
-function getStore(): ExpertStore {
-  if (!_store) _store = new ExpertStore(getDatabase());
-  return _store;
-}
-const validator = new TemplateValidator();
+const validator = createTemplateValidator();
 
 // ═══ Routes ═══
 

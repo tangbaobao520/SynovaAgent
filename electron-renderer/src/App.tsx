@@ -16,7 +16,7 @@ import { useAppStore } from './stores/app-store';
 import { useConversationStore } from './stores/conversation-store';
 import { fetchLlmConfigStatus } from './stores/llm-config';
 import { useKeyboard } from './hooks/useKeyboard';
-import { isElectron, getAppVersion, updateTrayState } from './ipc/bridge';
+import { isElectron, getAppVersion, updateTrayState, onPushNotification, onNotificationClick, onNavigate } from './ipc/bridge';
 import { getApiBase } from './lib/api';
 
 const App: React.FC = () => {
@@ -83,6 +83,37 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (isElectron()) getAppVersion().then((v) => console.log(`[Synova] v${v}`));
+  }, []);
+
+  // ── D602: main → renderer 推送订阅（挂载一次 + cleanup 退订——preload on* 返回退订函数，
+  //    防 effect 重挂载双订阅双通知；spec §5.1 App.tsx 行） ──
+
+  // main P0 轮询推送 → 本地通知（通知中心"错误通知"段 + 系统通知旁路）
+  useEffect(() => {
+    if (!isElectron()) return;
+    return onPushNotification((n) => {
+      useAppStore.getState().pushLocalNotification({
+        title: n.title,
+        body: n.body,
+        severity: 'critical',
+        id: n.id,
+      });
+    });
+  }, []);
+
+  // 系统通知被点击 → main 已 show+focus 窗口，renderer 打开通知面板
+  useEffect(() => {
+    if (!isElectron()) return;
+    return onNotificationClick(() => setNotifOpen(true));
+  }, []);
+
+  // 托盘菜单导航 → chat 视图 / 通知面板
+  useEffect(() => {
+    if (!isElectron()) return;
+    return onNavigate((view) => {
+      if (view === 'chat') useAppStore.getState().setActiveView('chat');
+      else if (view === 'notifications') setNotifOpen(true);
+    });
   }, []);
 
   const leftW = leftPanelOpen ? leftPanelWidth : 44;

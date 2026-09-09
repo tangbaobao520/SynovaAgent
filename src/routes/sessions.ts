@@ -8,22 +8,25 @@
  * DELETE /api/sessions/:id          → 删除
  */
 import { Router, type Request, type Response } from 'express';
-import { SessionStore } from '../store/session-store';
 import { createLogger } from '@synova/logger';
-import { getDatabase } from '../init/engine-context';
+// D603 跨层修复（簇4）: SessionStore 构造/句柄直取下沉 L2——注入优先（server.ts
+// app.locals.sessionStore ← Bootstrap Phase 0 单例），未注入环境兜底装配（行为同前）。
+import { createSystemSessionStore, type SessionStore } from '../agent/session-storage-service';
 
 const router = Router();
 const log = createLogger('routes/sessions');
 
-function getStore(): SessionStore {
-  return new SessionStore(getDatabase());
+function getStore(req: Request): SessionStore {
+  const injected = (req.app.locals as Record<string, unknown>).sessionStore as SessionStore | undefined;
+  if (injected) return injected;
+  return createSystemSessionStore();
 }
 
 // ═══ List ═══
 router.get('/api/sessions', (req: Request, res: Response) => {
   try {
     const limit = parseInt(req.query.limit as string) || 20;
-    const store = getStore();
+    const store = getStore(req);
     const sessions = store.listSessions(limit);
     res.json({ ok: true, sessions, count: sessions.length });
   } catch (err: any) {
@@ -39,7 +42,7 @@ router.post('/api/sessions', (req: Request, res: Response) => {
     if (!orgId) {
       return res.status(400).json({ ok: false, error: 'orgId 必填', code: 'VALIDATION_ERROR' });
     }
-    const store = getStore();
+    const store = getStore(req);
     const session = store.createSession(orgId);
     res.status(201).json({ ok: true, session });
   } catch (err: any) {
@@ -55,7 +58,7 @@ router.get('/api/sessions/search', (req: Request, res: Response) => {
     if (!q) {
       return res.status(400).json({ ok: false, error: 'q 参数必填', code: 'VALIDATION_ERROR' });
     }
-    const store = getStore();
+    const store = getStore(req);
     const results = store.search(q, 10);
     res.json({ ok: true, results, count: results.length });
   } catch (err: any) {
@@ -67,7 +70,7 @@ router.get('/api/sessions/search', (req: Request, res: Response) => {
 // ═══ Get ═══
 router.get('/api/sessions/:id', (req: Request, res: Response) => {
   try {
-    const store = getStore();
+    const store = getStore(req);
     const session = store.getSession(req.params.id as string);
     if (!session) {
       return res.status(404).json({ ok: false, error: '会话不存在', code: 'NOT_FOUND' });
@@ -87,7 +90,7 @@ router.patch('/api/sessions/:id/title', (req: Request, res: Response) => {
     if (!title || !title.trim()) {
       return res.status(400).json({ ok: false, error: 'title 必填', code: 'VALIDATION_ERROR' });
     }
-    const store = getStore();
+    const store = getStore(req);
     const session = store.getSession(req.params.id as string);
     if (!session) {
       return res.status(404).json({ ok: false, error: '会话不存在', code: 'NOT_FOUND' });
@@ -106,7 +109,7 @@ router.patch('/api/sessions/:id/title', (req: Request, res: Response) => {
 // ═══ Delete ═══
 router.delete('/api/sessions/:id', (req: Request, res: Response) => {
   try {
-    const store = getStore();
+    const store = getStore(req);
     const session = store.getSession(req.params.id as string);
     if (!session) {
       return res.status(404).json({ ok: false, error: '会话不存在', code: 'NOT_FOUND' });

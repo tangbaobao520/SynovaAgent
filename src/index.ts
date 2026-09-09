@@ -10,20 +10,17 @@
  * 生命周期: initEngineContext → SynovaAgent(db).start()
  *   → createServer() (HTTP) + SentinelRunner (Cron 哨兵)
  */
-import { SynovaAgent } from './agent/synova-agent';
-import { initEngineContext, getDatabase, closeEngineContext } from './init/engine-context';
+import { startSynovaAgentProcess, stopSynovaAgentProcess } from './init/agent-entry';
 import { logger } from '@synova/logger';
 
+// D603 跨层修复（簇5）: initEngineContext/getDatabase 直取移入 init/agent-entry
+// （组合根层，engine-context 同层）——进程入口只调 start/stop（铁律 39）。
 async function main() {
   try {
-    initEngineContext();
-    const db = getDatabase();
-    const agent = new SynovaAgent(db);
-    await agent.start();
-    logger.info('SynovaAgent 就绪');
+    await startSynovaAgentProcess();
   } catch (err) {
     logger.error({ err }, 'SynovaAgent 启动失败');
-    try { closeEngineContext(); } catch { console.debug('closeEngineContext 失败 — 进程即将退出, 忽略'); }
+    try { stopSynovaAgentProcess(); } catch { console.debug('stopSynovaAgentProcess 失败 — 进程即将退出, 忽略'); }
     process.exit(1);
   }
 }
