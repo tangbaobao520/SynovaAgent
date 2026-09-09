@@ -1,0 +1,1 @@
+data: {"type":"error","message":"LLM 调用失败: deepseek API Key 未配置（INVALID_CREDENTIAL 语义 — 修正存储值而非补供）"}
