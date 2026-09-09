@@ -1,11 +1,18 @@
 {
   "task_id": "D651",
   "title": "K3双线编码管线代码质量对比评估",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": null,
-  "impl": null,
+  "impl": {
+    "by": "k3-d651",
+    "at": "2026-09-09",
+    "files": [
+      "docs/synova/audit-reports/2026-09-09-D651-dual-pipeline-quality-eval.md"
+    ],
+    "note": "独立 clone .audit-clone-d651 @ main 742a3416 零上下文评估。8 样本（W1/W2/W3/W4/M1/M2/M3/M4）全部五步物理执行：spec 摘录 + git diff 写集对账 + 独立复跑测试（W1 20/20+40/40；W2 5/5+17/17+11/11；W3 4/4+5/5；W4 12/12+18/18；M1 40/40；M2 64/64；M3 10/10+1/1+214；M4 21/21+18/18，退出码全 0）+ 自定维度评分（§1 七维加权）+ 跨侧对比（§4）。基线：tsc 28 errors；全量套件 4245 pass/29 fail/24 skip（失败三桶归因见报告 §2.3，与 8 样本写集无关）。待 CTO merge + 创始人裁断。"
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-09",
-  "updated_by": "alloc-task-id"
+  "updated_by": "k3-d651"
 }
