@@ -1,0 +1,12 @@
+{
+  "task_id": "D660",
+  "title": "任务看板活动判定重排——running=48h 分支活动 + 待规划 backlog 列三源落位",
+  "status": "claimed",
+  "risk": "medium",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-10",
+  "updated_by": "CTO"
+}
