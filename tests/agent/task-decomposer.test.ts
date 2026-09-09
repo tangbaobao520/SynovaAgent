@@ -1,5 +1,6 @@
 /**
  * tests/agent/task-decomposer.test.ts — D8b 任务分解协议测试
+ * D650: 断言对齐 expert-registry.yaml v3.0 的 6 位问题域专家（cycle 命名 → 问题域命名）
  */
 import { describe, it, expect, vi } from 'vitest';
 
@@ -14,7 +15,7 @@ describe('TaskDecomposer — 分解策略', () => {
     });
     expect(result.subTasks).toHaveLength(1);
     expect(result.subTasks[0].priority).toBe(0);
-    expect(result.subTasks[0].expertType).toBe('finance-structure');
+    expect(result.subTasks[0].expertType).toBe('fundamental-efficiency');
     expect(result.degraded).toBe(false);
   });
 
@@ -59,7 +60,7 @@ describe('TaskDecomposer — 子任务执行', () => {
     const { TaskDecomposer } = await import('../../src/agent/task-decomposer');
     const td = new TaskDecomposer();
     const result = await td.executeSubTask({
-      id: 'st-1', dimension: 'financial', priority: 0, expertType: 'finance-structure',
+      id: 'st-1', dimension: 'financial', priority: 0, expertType: 'fundamental-efficiency',
       inputFindings: [{ id: 'F1', severity: 'critical', title: '利润偏低', description: '' }],
       status: 'pending',
     });
@@ -72,7 +73,7 @@ describe('TaskDecomposer — 子任务执行', () => {
     const { TaskDecomposer } = await import('../../src/agent/task-decomposer');
     const td = new TaskDecomposer();
     const result = await td.executeSubTask({
-      id: 'st-2', dimension: 'market', priority: 1, expertType: 'customer-cycle',
+      id: 'st-2', dimension: 'market', priority: 1, expertType: 'customer-growth',
       inputFindings: [],
       status: 'pending',
     });
@@ -107,7 +108,7 @@ describe('TaskDecomposer — 结果聚合', () => {
 });
 
 describe('TaskDecomposer — 专家映射', () => {
-  it('financial sentinel → finance-structure expert', async () => {
+  it('financial sentinel → fundamental-efficiency expert', async () => {
     const { TaskDecomposer } = await import('../../src/agent/task-decomposer');
     const td = new TaskDecomposer();
     const result = td.decompose({
@@ -115,10 +116,10 @@ describe('TaskDecomposer — 专家映射', () => {
       sentinelFindings: [{ id: 'F1', severity: 'critical', title: '利润', description: '', sentinel: 'margin-health' }],
       triggeredBy: 'manual',
     });
-    expect(result.subTasks[0].expertType).toBe('finance-structure');
+    expect(result.subTasks[0].expertType).toBe('fundamental-efficiency');
   });
 
-  it('talent sentinel → talent-cycle expert', async () => {
+  it('talent sentinel → organizational-capability expert', async () => {
     const { TaskDecomposer } = await import('../../src/agent/task-decomposer');
     const td = new TaskDecomposer();
     const result = td.decompose({
@@ -126,7 +127,19 @@ describe('TaskDecomposer — 专家映射', () => {
       sentinelFindings: [{ id: 'F1', severity: 'warning', title: '人才流失', description: '', sentinel: 'talent-density' }],
       triggeredBy: 'manual',
     });
-    expect(result.subTasks[0].expertType).toBe('talent-cycle');
+    expect(result.subTasks[0].expertType).toBe('organizational-capability');
+  });
+
+  it('market sentinel → customer-growth expert（D650 问题域命名）', async () => {
+    const { TaskDecomposer } = await import('../../src/agent/task-decomposer');
+    const td = new TaskDecomposer();
+    const result = td.decompose({
+      enterpriseId: 'test',
+      sentinelFindings: [{ id: 'F1', severity: 'warning', title: '渠道不足', description: '', sentinel: 'market-share' }],
+      triggeredBy: 'manual',
+    });
+    expect(result.subTasks[0].expertType).toBe('customer-growth');
+    expect(result.subTasks[0].expertType).not.toContain('cycle');
   });
 
   it('operational dimension → host 兜底（无对应在册专家回退）', async () => {

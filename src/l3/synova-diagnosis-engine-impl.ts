@@ -526,27 +526,28 @@ export class SynovaDiagnosisEngineImpl implements SynovaDiagnosisEngine {
   /**
    * 维度/专家名 → 专家类型映射 (ID lookup, not business data)
    *
-   * D567: 目标专家 ID 全部对齐 expert-registry.yaml v2.0 的 7 位（host/capital-cycle/
-   * customer-cycle/talent-cycle/tech/finance-structure/competitive-strategy），旧 6/8 位
-   * ID 已随 D282 迁移失效；映射结果经 getAllExpertIds() 运行时校验——registry 再变更时
+   * D650: 目标专家 ID 全部对齐 expert-registry.yaml v3.0 的 6 位问题域专家（host/
+   * fundamental-efficiency/customer-growth/organizational-capability/technology-foundation/
+   * competitive-strategy，权威第六章 §6.6 专家名禁含 cycle）；旧 9 位与 cycle 命名
+   * ID 已随 D282/D650 迁移失效；映射结果经 getAllExpertIds() 运行时校验——registry 再变更时
    * 失效值自动降级为链头默认专家 host，不再泄漏死 ID。
    *
    * @degraded — 映射值或透传 dimension 不在注册表 → 返回 'host'（默认路由专家）
    */
   private mapDimensionToExpert(dimension: string): string {
     const map: Record<string, string> = {
-      D1: 'competitive-strategy', D2: 'talent-cycle', D3: 'talent-cycle',
-      D4: 'tech', D5: 'tech', D6: 'competitive-strategy',
-      D7: 'finance-structure', // dept=D7 expert mapping
-      strategy: 'competitive-strategy', org: 'talent-cycle',
-      finance: 'finance-structure', // dept=finance expert
-      tech: 'tech',
-      marketing: 'customer-cycle', // dept=marketing expert
+      D1: 'competitive-strategy', D2: 'organizational-capability', D3: 'organizational-capability',
+      D4: 'technology-foundation', D5: 'technology-foundation', D6: 'competitive-strategy',
+      D7: 'fundamental-efficiency', // dept=D7 expert mapping
+      strategy: 'competitive-strategy', org: 'organizational-capability',
+      finance: 'fundamental-efficiency', // dept=finance expert
+      tech: 'technology-foundation',
+      marketing: 'customer-growth', // dept=marketing expert
       action: 'host',
       business_model: 'competitive-strategy', knowledge: 'host',
       host: 'host',
-      'capital-cycle': 'capital-cycle', 'customer-cycle': 'customer-cycle',
-      'talent-cycle': 'talent-cycle', 'finance-structure': 'finance-structure',
+      'fundamental-efficiency': 'fundamental-efficiency', 'customer-growth': 'customer-growth',
+      'organizational-capability': 'organizational-capability', 'technology-foundation': 'technology-foundation',
       'competitive-strategy': 'competitive-strategy',
     };
     const mapped = map[dimension] || dimension;

@@ -11,7 +11,8 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 
-const EXPERTS = ['finance', 'strategy', 'org', 'marketing', 'tech', 'action', 'business_model', 'knowledge', 'host'];
+// D650: 'tech' 目录已改名 technology-foundation（问题域命名）；其余为 v2.0 前旧 9 位遗留条目（基线欠账，非本卡范围）
+const EXPERTS = ['finance', 'strategy', 'org', 'marketing', 'technology-foundation', 'action', 'business_model', 'knowledge', 'host'];
 const EXPECTED_FIELDS = ['default_dimension', 'primary_edges', 'blind_spots'];
 
 describe('analytical_lens 完整性', () => {

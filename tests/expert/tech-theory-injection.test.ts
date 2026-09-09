@@ -1,16 +1,16 @@
 /**
  * tech-theory-injection.test.ts — 信息不对称注入验证测试
  *
- * T9 Part B3: tech/THEORY.md 注入内容验证
+ * T9 Part B3: technology-foundation/THEORY.md 注入内容验证（D650: 目录随问题域改名）
  */
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
-const theory = readFileSync(resolve(__dirname, '../../expert/tech/THEORY.md'), 'utf-8');
+const theory = readFileSync(resolve(__dirname, '../../expert/technology-foundation/THEORY.md'), 'utf-8');
 
-describe('tech/THEORY.md 注入验证', () => {
+describe('technology-foundation/THEORY.md 注入验证', () => {
   it('包含"信息不对称分析框架"章节', () => {
     expect(theory).toContain('信息不对称分析框架');
   });

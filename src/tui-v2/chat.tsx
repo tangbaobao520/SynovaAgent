@@ -38,15 +38,14 @@ const STATUS_HINTS = '↑↓ 滚动 │ PgUp/PgDn 翻页 │ /setup │ /balance
 /**
  * 专家展示标签（仅供展示，非集合来源）— D567: 专家集合以 expert/expert-registry.yaml
  * 为唯一事实源（getAllExpertIds 动态读取）；新增专家未配标签时降级显示 ID 本身。
- * 标签内容与 expert/<id>/manifest.json 的 displayName 对齐（2026-09-02）。
+ * 标签内容与 expert/<id>/manifest.json 的 displayName 对齐（D650 问题域命名同步）。
  */
 const EXPERT_DISPLAY_NAMES: Record<string, string> = {
   host: '主持人',
-  'capital-cycle': '资本循环专家',
-  'customer-cycle': '客户循环专家',
-  'talent-cycle': '人才循环专家',
-  tech: '技术专家',
-  'finance-structure': '财务结构专家',
+  'fundamental-efficiency': '资金效率专家',
+  'customer-growth': '客户增长专家',
+  'organizational-capability': '组织能力专家',
+  'technology-foundation': '技术底座专家',
   'competitive-strategy': '竞争与战略专家',
 };
 

@@ -190,8 +190,8 @@ describe('D593: 桌面右栏——报告 tab 恢复 + 哨兵 tab 真数据（spe
         respond: () => jsonResponse({
           ok: true,
           reports: [
-            { sentinelId: 'cash-flow', expert: 'finance-structure', summary: '现金流承压', confidence: 0.8, checkedAt: '2026-09-08T01:00:00Z' },
-            { sentinelId: 'revenue', expert: 'customer-cycle', summary: '收入集中度上升', confidence: 0.7, checkedAt: '2026-09-08T02:00:00Z' },
+            { sentinelId: 'cash-flow', expert: 'fundamental-efficiency', summary: '现金流承压', confidence: 0.8, checkedAt: '2026-09-08T01:00:00Z' },
+            { sentinelId: 'revenue', expert: 'customer-growth', summary: '收入集中度上升', confidence: 0.7, checkedAt: '2026-09-08T02:00:00Z' },
           ],
         }),
       },
@@ -235,8 +235,8 @@ describe('D593: 桌面右栏——报告 tab 恢复 + 哨兵 tab 真数据（spe
     stubWindow();
     const { rightPanel } = await importTargets();
     const reports: SentinelReportView[] = [
-      { sentinelId: 'cash-flow', expert: 'finance-structure', summary: '现金流承压', confidence: 0.8, checkedAt: '2026-09-08T01:00:00Z' },
-      { sentinelId: 'revenue', expert: 'customer-cycle', summary: '收入集中度上升', confidence: 0.7, checkedAt: '2026-09-08T02:00:00Z' },
+      { sentinelId: 'cash-flow', expert: 'fundamental-efficiency', summary: '现金流承压', confidence: 0.8, checkedAt: '2026-09-08T01:00:00Z' },
+      { sentinelId: 'revenue', expert: 'customer-growth', summary: '收入集中度上升', confidence: 0.7, checkedAt: '2026-09-08T02:00:00Z' },
     ];
     const tickets: SentinelTicketView[] = [
       { id: 't1', title: '现金流预警工单', severity: 'critical', createdAt: '2026-09-08T01:05:00Z', status: 'open' },
@@ -251,7 +251,7 @@ describe('D593: 桌面右栏——报告 tab 恢复 + 哨兵 tab 真数据（spe
     expect(html).toContain('工单');
     // 报告条目内容透传
     expect(html).toContain('cash-flow');
-    expect(html).toContain('finance-structure');
+    expect(html).toContain('fundamental-efficiency');
     expect(html).toContain('现金流承压');
     expect(html).toContain('收入集中度上升');
     // 工单条目内容透传 + severity 色点

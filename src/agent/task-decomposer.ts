@@ -78,17 +78,17 @@ export interface AggregatedResult {
 
 // ═══ 维度→专家映射 ═══
 
-/** sentinel 维度到专家类型的映射表 */
+/** sentinel 维度到专家类型的映射表（D650: 值对齐 registry v3.0 六位问题域专家） */
 const DIMENSION_EXPERT_MAP: Record<string, string> = {
-  financial: 'finance-structure',
-  market: 'customer-cycle',
-  organizational: 'talent-cycle',
-  technology: 'tech',
+  financial: 'fundamental-efficiency',
+  market: 'customer-growth',
+  organizational: 'organizational-capability',
+  technology: 'technology-foundation',
   strategic: 'competitive-strategy',
   operational: 'host',
-  talent: 'talent-cycle',
-  customer: 'customer-cycle',
-  product: 'tech',
+  talent: 'organizational-capability',
+  customer: 'customer-growth',
+  product: 'technology-foundation',
   risk: 'competitive-strategy',
 };
 
