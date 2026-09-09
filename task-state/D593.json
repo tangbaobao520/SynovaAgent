@@ -1,17 +1,33 @@
 {
   "task_id": "D593",
   "title": "L1-P2桌面报告工单",
-  "status": "spec_done",
+  "status": "audited",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D593-report-persistence-20260908.md",
-    "commit": null,
+    "commit": "0224843b（docs 提交，经 #442 squash 入 main）",
     "by": "DeepSeek Harness (dev-doc)",
     "at": "2026-09-08"
   },
-  "impl": null,
-  "audit": null,
+  "impl": {
+    "branch": "feat/d593-report-persistence-p2",
+    "commit": "f81378a8（实现主体，20 文件 +3593）→ bdf62c0e（impl 段回填）→ fcd22c84（merge main 冲突消解）",
+    "merge": "c7eb8e0d（PR #442 squash）",
+    "by": "DeepSeek Harness (coding)",
+    "at": "2026-09-08/09",
+    "merge_loss": "fcd22c84 冲突消解取 main 侧 → src/routes/diagnosis.ts 全部 D593 变更（consult 落盘+GET 冷读+列表端点+注释诚实化，分支态 +202 行）与 task-state impl 段回填未进入 main。main 上：列表端点不存在、GET report 无冷读、persistence 测试 25 用例 10 failed（K3 独立复跑）、DS2 runner 独立重跑 FAIL（进程内 reportId→404）",
+    "landed_on_main": "conversations.ts 对话桥落盘（:295-323）+ session-store.listDiagnosisReports（:598-639，main 上零生产调用方）+ auth.ts 五前缀（:116-122）+ 桌面呈现（RightPanel/LeftPanel/app-store）+ 2 测试文件 + evidence 包",
+    "contraband_in_merge": ".codex/heartbeat.json、.synova-wt-ct64（新）、.synova-wt-d593（新）、.synova-wt-d590（改）、D595 dev doc + 编码指令、D599 note（6 项写集外文件随 #442 入 main）"
+  },
+  "audit": {
+    "verdict": "FAIL",
+    "report": "docs/synova/audit-reports/2026-09-09-K3-D593-D602-closeout.md",
+    "by": "K3 independent session",
+    "at": "2026-09-09",
+    "findings": "P0-1 合并冲突消解吞实现（DS 成立 4/9）；P0-2 夹带 6 文件（前批 #449 同族二次）；P1-1 合并消息 overclaim（M2）；P1-2 CI vitest 豁免盲区（ci.yml:79-95 新测试失败被当 pre-existing）；P1-3 task-state 断裂（第三次实证）；P1-4 DS2 证据未标注分支态；P2×2",
+    "fix_route": "建议 CTO 立项 FIX：从 feat/d593-report-persistence-p2 恢复 diagnosis.ts D593 变更（对齐 d600 演进重新消解）+ task-state 回填 + 25/25 绿 + DS2 重跑 + 清理夹带"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-08",
-  "updated_by": "DeepSeek Harness (dev-doc)",
-  "note": "spec 交付（dev-doc 线，2026-09-08）：报告落盘=复用 diagnosis_checkpoints 表（零 schema 变更，键=reportId）+ GET report 内存 miss→checkpoint 冷读（DSH 冷读激活范式）+ 新列表端点 GET /api/diagnosis/reports + 白名单五前缀（diagnosis/reports、notifications、solutions、ga/clients、ga/switch）+ 桌面报告 tab 刷新恢复/哨兵 tab 真数据/会话列表接入。写集 8 修改 + 2 新建（目录级声明，实现后精确化）。决策九项记录 §5.4（S-12）。编码线 Claude Code。依赖 D590/D591/D592 已合 main。与 D594 文件边界：RightPanel.tsx 归本任务。编号注意：旧 14e54722 D593（LLM 韧性层）已关闭，本任务为编号复用——审计产物命名带任务名区分。commit 字段待 spec 推送提交后回填（gatekeeper exit 0 + check-dev-doc-write-set SKIP-无暂存）。"
+  "updated_at": "2026-09-09",
+  "updated_by": "K3 (independent audit)",
+  "note": "审计结论 FAIL（P0×2/P1×4/P2×2）。分支态实现完整（DS2 物理证据真实），合并通道丢失核心一半——main 上的 D593 是半成品。修复路线见 audit.fix_route。编号注意：旧 14e54722 D593（LLM 韧性层）已关闭，本任务为编号复用。"
 }
