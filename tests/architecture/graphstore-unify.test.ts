@@ -85,13 +85,12 @@ describe("D286 GraphStore 统一 — 配置零映射 (DS1)", () => {
 });
 
 describe("D286 GraphStore 统一 — 调用点迁移 (DS3)", () => {
-  it("11 个 src 调用点全部改用 SqliteGraphStore（D590: 已下线的 upload-v2 路由文件随之删除）", () => {
+  it("10 个 src 调用点全部改用 SqliteGraphStore（D590: upload-v2 已删除；D595: mcp/index.ts 哨兵族 L2 化后不再构造 store，11→10）", () => {
     const callSites = [
       "src/agent/conversation-engine.ts",
       "src/deploy/bootstrap.ts",
       "src/ingest/index.ts",
       "src/l3/knowledge-agent.ts",
-      "src/mcp/index.ts",
       "src/mcp/tool-registration.ts",
       "src/routes/agent-observer.ts",
       "src/routes/chat.ts",
@@ -109,8 +108,9 @@ describe("D286 GraphStore 统一 — 调用点迁移 (DS3)", () => {
         expect(content.includes(PACKAGE_REF)).toBe(false);
       }
     }
-    // 断言数量：11 个调用点 + 每个不含旧包引用（D590: upload-v2 路由文件已下线删除，12→11）
-    expect(callSites.length).toBeGreaterThanOrEqual(11);
+    // 断言数量：10 个调用点 + 每个不含旧包引用（D590: upload-v2 删除 12→11；D595: mcp/index.ts 哨兵族
+    // 改调 L2 runSentinelOnce，store 构造移入 L2 内部，11→10）
+    expect(callSites.length).toBeGreaterThanOrEqual(10);
   });
 
   it("2 个 l4 测试改用原生 SqliteGraphStore", () => {

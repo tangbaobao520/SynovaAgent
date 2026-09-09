@@ -1,0 +1,820 @@
+
+ RUN  v4.1.8 /Users/wane/SynovaAgent/.synova-wt-d593
+
+{"level":40,"time":1788956093673,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-a","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956093674,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-a-mtu29o88","orgId":"org-d593-a","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956093674,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-a-mtu29o88","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956093686,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956093686,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-a","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956093686,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956093687,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29o8n_0","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956093687,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-a","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956093695,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956093695,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956093696,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-b","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956093697,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-b-mtu29o8w","orgId":"org-d593-b","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956093697,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-b-mtu29o8w","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956093697,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956093697,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-b","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956093697,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956093697,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29o8x_1","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956093697,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-b","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956093698,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956093698,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956093706,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-c","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956093707,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-c-mtu29o96","orgId":"org-d593-c","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956093707,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-c-mtu29o96","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956093707,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956093707,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-c","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956093707,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956093707,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29o97_2","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956093707,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-c","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956093708,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956093708,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956093713,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-e1","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956093713,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-e1-mtu29o9d","orgId":"org-d593-e1","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956093713,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-e1-mtu29o9d","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956093713,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956093713,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-e1","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956093713,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956093713,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29o9d_3","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956093713,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-e1","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956093714,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956093714,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956093716,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-e2","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956093716,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-e2-mtu29o9f","orgId":"org-d593-e2","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956093716,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-e2-mtu29o9f","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956093716,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956093716,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-e2","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956093716,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956093716,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29o9g_4","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956093716,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-e2","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956093716,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956093716,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956093722,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/memory-access","err":"数据库未初始化，请先调用 initEngineContext()","type":"sentinel_finding","msg":"记忆按类型查询失败 — degraded"}
+{"level":40,"time":1788956093726,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-g","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956093726,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-g-mtu29o9q","orgId":"org-d593-g","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956093726,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-g-mtu29o9q","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956093727,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956093727,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-g","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956093727,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956093727,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29o9r_5","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956093727,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-g","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956093727,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956093727,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":30,"time":1788956093732,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/conversation-engine","msg":"无 DeepSeek 备用凭据 — failover 未启用（保持单 provider）"}
+{"level":30,"time":1788956093733,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"orchestrator/context-engine","strategyCount":1,"activeStrategy":"context-strategy/default","msg":"ContextEngine 初始化完成"}
+{"level":30,"time":1788956093733,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/builtin-tools","total":26,"msg":"全部工具已注册"}
+{"level":30,"time":1788956093733,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/builtin-tools","msg":"Pandoc 文档转换工具已注册"}
+{"level":30,"time":1788956093760,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/builtin-tools","total":26,"msg":"全部工具已注册"}
+{"level":30,"time":1788956093760,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/builtin-tools","msg":"Pandoc 文档转换工具已注册"}
+{"level":30,"time":1788956093779,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/builtin-tools","total":26,"msg":"全部工具已注册"}
+{"level":30,"time":1788956093779,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/builtin-tools","msg":"Pandoc 文档转换工具已注册"}
+{"level":30,"time":1788956093954,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956093954,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"default","initiatorRole":"default","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956093954,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956093954,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"default","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956093954,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956093954,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956093965,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-i","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956093965,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-i-mtu29ogc","orgId":"org-d593-i","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956093965,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-i-mtu29ogc","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956093965,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956093965,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-i","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956093965,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956093965,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ogd_6","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956093966,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-i","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956093966,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956093966,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956093968,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-j","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956093968,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-j-mtu29ogg","orgId":"org-d593-j","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956093968,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-j-mtu29ogg","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956093968,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956093969,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-j","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956093969,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956093969,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ogh_7","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956093969,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-j","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956093969,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956093969,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956093971,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956093971,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-mtu29ogj","orgId":"org-d593-fifo","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956093971,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-mtu29ogj","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956093971,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956093971,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956093971,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956093972,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ogj_8","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956093972,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956093972,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956093972,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956093973,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-0","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956093973,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-0-mtu29ogl","orgId":"org-d593-fifo-0","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956093973,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-0-mtu29ogl","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956093973,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956093973,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-0","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956093973,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956093973,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ogl_9","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956093973,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-0","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956093974,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956093974,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956093974,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-1","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956093974,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-1-mtu29ogm","orgId":"org-d593-fifo-1","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956093974,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-1-mtu29ogm","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956093975,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956093975,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-1","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956093975,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956093975,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ogn_a","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956093975,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-1","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956093975,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956093975,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956093975,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-2","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956093975,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-2-mtu29ogn","orgId":"org-d593-fifo-2","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956093976,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-2-mtu29ogn","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956093976,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956093976,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-2","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956093976,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956093976,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ogo_b","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956093976,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-2","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956093976,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956093976,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956093977,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-3","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956093977,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-3-mtu29ogp","orgId":"org-d593-fifo-3","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956093977,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-3-mtu29ogp","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956093977,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956093977,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-3","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956093977,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956093977,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ogp_c","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956093977,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-3","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956093977,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956093977,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956093978,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-4","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956093978,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-4-mtu29ogq","orgId":"org-d593-fifo-4","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956093978,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-4-mtu29ogq","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956093978,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956093978,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-4","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956093978,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956093978,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ogq_d","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956093978,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-4","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956093978,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956093978,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956093979,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-5","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956093979,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-5-mtu29ogr","orgId":"org-d593-fifo-5","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956093979,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-5-mtu29ogr","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956093979,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956093979,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-5","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956093979,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956093979,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ogr_e","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956093979,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-5","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956093980,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956093980,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956093980,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-6","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956093980,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-6-mtu29ogs","orgId":"org-d593-fifo-6","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956093980,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-6-mtu29ogs","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956093981,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956093981,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-6","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956093981,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956093981,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ogt_f","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956093981,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-6","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956093981,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956093981,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956093981,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-7","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956093981,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-7-mtu29ogt","orgId":"org-d593-fifo-7","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956093981,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-7-mtu29ogt","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956093982,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956093982,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-7","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956093982,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956093982,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ogu_g","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956093982,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-7","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956093982,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956093982,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956093983,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-8","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956093983,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-8-mtu29ogu","orgId":"org-d593-fifo-8","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956093983,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-8-mtu29ogu","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956093983,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956093983,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-8","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956093983,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956093983,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ogv_h","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956093983,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-8","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956093983,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956093983,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956093984,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-9","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956093984,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-9-mtu29ogw","orgId":"org-d593-fifo-9","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956093984,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-9-mtu29ogw","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956093984,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956093984,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-9","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956093984,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956093984,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ogw_i","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956093984,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-9","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956093984,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956093984,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956093985,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-10","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956093985,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-10-mtu29ogx","orgId":"org-d593-fifo-10","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956093985,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-10-mtu29ogx","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956093985,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956093985,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-10","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956093985,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956093985,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ogx_j","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956093985,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-10","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956093985,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956093985,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956093986,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-11","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956093986,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-11-mtu29ogy","orgId":"org-d593-fifo-11","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956093986,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-11-mtu29ogy","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956093986,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956093986,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-11","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956093986,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956093986,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ogy_k","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956093986,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-11","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956093986,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956093986,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956093987,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-12","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956093987,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-12-mtu29ogz","orgId":"org-d593-fifo-12","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956093987,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-12-mtu29ogz","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956093987,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956093987,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-12","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956093987,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956093987,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ogz_l","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956093987,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-12","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956093987,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956093988,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956093988,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-13","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956093988,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-13-mtu29oh0","orgId":"org-d593-fifo-13","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956093988,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-13-mtu29oh0","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956093988,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956093988,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-13","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956093988,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956093988,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29oh0_m","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956093989,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-13","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956093989,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956093989,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956093989,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-14","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956093989,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-14-mtu29oh1","orgId":"org-d593-fifo-14","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956093989,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-14-mtu29oh1","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956093990,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956093990,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-14","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956093990,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956093990,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29oh2_n","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956093990,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-14","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956093990,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956093990,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956093990,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-15","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956093990,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-15-mtu29oh2","orgId":"org-d593-fifo-15","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956093990,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-15-mtu29oh2","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956093991,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956093991,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-15","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956093991,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956093991,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29oh3_o","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956093991,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-15","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956093991,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956093991,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956093991,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-16","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956093991,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-16-mtu29oh3","orgId":"org-d593-fifo-16","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956093992,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-16-mtu29oh3","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956093992,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956093992,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-16","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956093992,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956093992,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29oh4_p","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956093992,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-16","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956093992,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956093992,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956093993,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-17","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956093993,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-17-mtu29oh4","orgId":"org-d593-fifo-17","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956093993,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-17-mtu29oh4","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956093993,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956093993,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-17","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956093993,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956093993,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29oh5_q","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956093993,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-17","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956093993,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956093993,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956093994,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-18","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956093994,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-18-mtu29oh6","orgId":"org-d593-fifo-18","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956093994,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-18-mtu29oh6","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956093994,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956093994,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-18","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956093994,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956093994,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29oh6_r","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956093994,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-18","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956093994,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956093994,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956093995,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-19","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956093995,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-19-mtu29oh7","orgId":"org-d593-fifo-19","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956093995,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-19-mtu29oh7","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956093995,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956093995,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-19","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956093995,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956093995,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29oh7_s","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956093995,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-19","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956093995,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956093995,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956093996,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-20","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956093996,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-20-mtu29oh8","orgId":"org-d593-fifo-20","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956093996,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-20-mtu29oh8","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956093996,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956093996,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-20","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956093996,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956093996,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29oh8_t","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956093996,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-20","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956093996,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956093996,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956093997,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-21","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956093997,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-21-mtu29oh9","orgId":"org-d593-fifo-21","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956093997,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-21-mtu29oh9","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956093997,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956093997,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-21","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956093997,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956093997,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29oh9_u","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956093997,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-21","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956093997,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956093997,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956093998,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-22","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956093998,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-22-mtu29oha","orgId":"org-d593-fifo-22","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956093998,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-22-mtu29oha","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956093998,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956093998,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-22","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956093998,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956093998,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29oha_v","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956093998,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-22","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956093998,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956093998,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956093999,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-23","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956093999,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-23-mtu29ohb","orgId":"org-d593-fifo-23","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956093999,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-23-mtu29ohb","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956093999,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956093999,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-23","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956093999,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956093999,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ohb_w","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956093999,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-23","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956094000,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956094000,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956094000,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-24","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956094000,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-24-mtu29ohc","orgId":"org-d593-fifo-24","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956094000,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-24-mtu29ohc","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956094000,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956094000,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-24","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956094000,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956094001,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ohd_x","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956094001,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-24","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956094001,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956094001,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956094001,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-25","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956094001,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-25-mtu29ohd","orgId":"org-d593-fifo-25","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956094001,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-25-mtu29ohd","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956094001,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956094001,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-25","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956094001,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956094002,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ohe_y","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956094002,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-25","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956094002,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956094002,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956094002,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-26","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956094002,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-26-mtu29ohe","orgId":"org-d593-fifo-26","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956094002,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-26-mtu29ohe","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956094002,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956094003,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-26","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956094003,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956094003,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ohf_z","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956094003,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-26","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956094003,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956094003,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956094003,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-27","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956094003,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-27-mtu29ohf","orgId":"org-d593-fifo-27","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956094003,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-27-mtu29ohf","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956094004,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956094004,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-27","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956094004,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956094004,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ohg_10","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956094004,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-27","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956094004,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956094004,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956094004,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-28","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956094004,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-28-mtu29ohg","orgId":"org-d593-fifo-28","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956094005,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-28-mtu29ohg","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956094005,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956094005,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-28","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956094005,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956094005,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ohh_11","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956094005,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-28","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956094005,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956094005,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956094006,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-29","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956094006,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-29-mtu29ohi","orgId":"org-d593-fifo-29","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956094006,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-29-mtu29ohi","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956094006,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956094006,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-29","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956094006,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956094006,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ohi_12","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956094006,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-29","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956094006,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956094006,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956094007,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-30","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956094007,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-30-mtu29ohj","orgId":"org-d593-fifo-30","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956094007,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-30-mtu29ohj","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956094007,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956094007,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-30","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956094007,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956094007,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ohj_13","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956094007,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-30","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956094007,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956094007,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956094008,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-31","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956094008,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-31-mtu29ohk","orgId":"org-d593-fifo-31","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956094008,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-31-mtu29ohk","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956094008,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956094008,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-31","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956094008,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956094008,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ohk_14","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956094008,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-31","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956094008,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956094008,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956094009,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-32","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956094009,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-32-mtu29ohl","orgId":"org-d593-fifo-32","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956094009,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-32-mtu29ohl","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956094009,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956094009,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-32","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956094009,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956094009,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ohl_15","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956094009,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-32","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956094009,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956094009,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956094010,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-33","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956094010,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-33-mtu29ohm","orgId":"org-d593-fifo-33","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956094010,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-33-mtu29ohm","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956094010,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956094010,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-33","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956094010,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956094010,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ohm_16","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956094010,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-33","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956094010,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956094010,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956094011,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-34","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956094011,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-34-mtu29ohn","orgId":"org-d593-fifo-34","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956094011,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-34-mtu29ohn","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956094011,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956094011,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-34","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956094011,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956094011,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ohn_17","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956094011,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-34","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956094011,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956094011,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956094012,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-35","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956094012,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-35-mtu29oho","orgId":"org-d593-fifo-35","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956094012,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-35-mtu29oho","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956094012,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956094012,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-35","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956094012,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956094012,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29oho_18","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956094012,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-35","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956094012,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956094012,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956094013,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-36","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956094013,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-36-mtu29ohp","orgId":"org-d593-fifo-36","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956094013,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-36-mtu29ohp","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956094013,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956094013,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-36","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956094013,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956094013,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ohp_19","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956094013,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-36","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956094014,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956094014,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956094014,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-37","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956094014,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-37-mtu29ohq","orgId":"org-d593-fifo-37","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956094014,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-37-mtu29ohq","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956094014,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956094014,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-37","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956094014,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956094014,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ohq_1a","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956094014,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-37","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956094015,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956094015,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956094015,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-38","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956094015,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-38-mtu29ohr","orgId":"org-d593-fifo-38","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956094015,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-38-mtu29ohr","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956094015,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956094015,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-38","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956094015,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956094015,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ohr_1b","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956094015,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-38","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956094016,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956094016,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956094018,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-39","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956094018,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-39-mtu29ohu","orgId":"org-d593-fifo-39","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956094018,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-39-mtu29ohu","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956094018,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956094018,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-39","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956094018,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956094018,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ohu_1c","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956094018,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-39","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956094018,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956094018,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956094019,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-40","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956094019,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-40-mtu29ohv","orgId":"org-d593-fifo-40","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956094019,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-40-mtu29ohv","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956094019,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956094019,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-40","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956094019,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956094020,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ohv_1d","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956094020,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-40","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956094020,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956094020,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956094020,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-41","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956094020,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-41-mtu29ohw","orgId":"org-d593-fifo-41","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956094020,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-41-mtu29ohw","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956094021,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956094021,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-41","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956094021,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956094021,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ohx_1e","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956094021,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-41","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956094021,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956094021,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956094021,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-42","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956094021,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-42-mtu29ohx","orgId":"org-d593-fifo-42","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956094021,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-42-mtu29ohx","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956094022,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956094022,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-42","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956094022,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956094022,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ohy_1f","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956094022,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-42","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956094022,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956094022,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956094022,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-43","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956094022,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-43-mtu29ohy","orgId":"org-d593-fifo-43","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956094022,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-43-mtu29ohy","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956094023,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956094023,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-43","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956094023,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956094023,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29ohz_1g","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956094023,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-43","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956094023,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956094023,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956094023,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-44","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956094023,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-44-mtu29ohz","orgId":"org-d593-fifo-44","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956094023,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-44-mtu29ohz","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956094024,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956094024,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-44","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956094024,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956094024,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29oi0_1h","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956094024,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-44","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956094024,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956094024,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956094024,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-45","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956094024,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-45-mtu29oi0","orgId":"org-d593-fifo-45","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956094024,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-45-mtu29oi0","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956094025,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956094025,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-45","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956094025,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956094025,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29oi1_1i","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956094025,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-45","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956094025,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956094025,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956094025,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-46","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956094026,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-46-mtu29oi1","orgId":"org-d593-fifo-46","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956094026,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-46-mtu29oi1","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956094026,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956094026,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-46","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956094026,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956094026,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29oi2_1j","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956094026,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-46","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956094026,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956094026,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956094026,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-47","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956094027,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-47-mtu29oi2","orgId":"org-d593-fifo-47","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956094027,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-47-mtu29oi2","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956094027,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956094027,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-47","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956094027,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956094027,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29oi3_1k","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956094027,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-47","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956094027,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956094027,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956094028,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-48","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956094028,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-48-mtu29oi3","orgId":"org-d593-fifo-48","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956094028,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-48-mtu29oi3","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956094028,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956094028,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-48","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956094028,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956094028,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29oi4_1l","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956094028,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-48","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956094028,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956094028,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+{"level":40,"time":1788956094029,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config/customer-config-package","orgId":"org-d593-fifo-49","roots":["/Users/wane/SynovaAgent/.synova-wt-d593/customer-config"],"msg":"customer-config: 无客户配置包 — default 层兜底（degraded）"}
+{"level":30,"time":1788956094029,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-49-mtu29oi4","orgId":"org-d593-fifo-49","degraded":true,"packages":0,"brokenPackages":[],"auditKeys":[],"msg":"客户配置包四层解析完成（机制蓝本，不消费阈值/专家集/凭证）"}
+{"level":30,"time":1788956094029,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/diagnosis","consultId":"diag-org-d593-fifo-49-mtu29oi4","msg":"使用 Synova 自研引擎"}
+{"level":30,"time":1788956094029,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"contract/gate","total":0,"failures":0,"degraded":false,"msg":"契约门禁检查完成"}
+{"level":30,"time":1788956094029,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-49","initiatorRole":"GA","msg":"启动六阶段诊断"}
+{"level":40,"time":1788956094029,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"security/safety-guardrails","missing":[1,2,3,4,5],"msg":"NRA-02: 诊断阶段未完全覆盖"}
+{"level":30,"time":1788956094029,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"pipeline/judgment-card","cardId":"jc_mtu29oi5_1m","experts":["诊断专家"],"confidence":0.7,"msg":"判断卡片已生成"}
+{"level":30,"time":1788956094029,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/diagnosis-launcher","teamId":"org-d593-fifo-49","durationMs":7,"degraded":0,"msg":"诊断完成"}
+{"level":40,"time":1788956094029,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"质量审查失败 — degraded"}
+{"level":40,"time":1788956094029,"pid":96048,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/background-review","err":"Unexpected token '收', \"收到。\" is not valid JSON","msg":"模式提取失败 — degraded"}
+ ❯ tests/routes/diagnosis-report-persistence.test.ts (12 tests | 10 failed) 865ms
+     × 用例 1: 落盘——consult 完成 → diagnosis_checkpoints phase=5 行存在（partial_report 含 reportId/report/teamId） 55ms
+     × 用例 2: 读回（重启）——同 db 新 app 实例（内存 Map 清空）→ GET /consult/{reportId}/report → 200 12ms
+     × 用例 3: 双 ID 兼容——进程内 consultId（内存命中）→ 200；reportId（内存 miss → checkpoint 冷读）→ 200 6ms
+     ✓ 用例 4: 未知 id → 404（形状 {ok:false, code:"NOT_FOUND"}，语义保持） 1ms
+     × 用例 5: 列表——两次落盘 → total=2、saved_at DESC、limit=1&offset=1 取第二条 7ms
+     ✓ 用例 6: 白名单（P0-1 收尾）——无 Authorization：五前缀非 401 + 对照探针 401 6ms
+     × 用例 7a: 降级——partial_report 损坏行跳过 + degraded:true + total 恒准（不 500） 3ms
+     × 用例 7b: 降级——db 缺失 → 列表 503 STORE_UNAVAILABLE（fail-closed） 2ms
+     × 用例 8: 对话桥落盘——phaseComplete 诊断 → checkpoint source=conversation；同 db 重启后 GET 200 231ms
+     × 用例 9: 边界——limit=0 夹取 1；limit=1000 夹取 200；offset 负数 → 0 6ms
+     × 用例 10: markdown——checkpoint fallback 路径 ?format=markdown → text/markdown 200 3ms
+     × 用例 13（增量 §7 L2c）: FIFO 满后持久层仍可读——51 次 consult 淘汰最旧内存条目 → GET 200 60ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 10 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/routes/diagnosis-report-persistence.test.ts > D593: 报告落盘 + 读回 + 列表 + 白名单（spec §7 用例表） > 用例 1: 落盘——consult 完成 → diagnosis_checkpoints phase=5 行存在（partial_report 含 reportId/report/teamId）
+AssertionError: expected +0 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ tests/routes/diagnosis-report-persistence.test.ts:240:25
+    238|       'SELECT session_id, phase, partial_report, saved_at FROM diagnos…
+    239|     ).all() as CheckpointRow[];
+    240|     expect(rows.length).toBe(1);
+       |                         ^
+    241|     expect(rows[0].session_id).toBe(reportId);
+    242|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/10]⎯
+
+ FAIL  tests/routes/diagnosis-report-persistence.test.ts > D593: 报告落盘 + 读回 + 列表 + 白名单（spec §7 用例表） > 用例 2: 读回（重启）——同 db 新 app 实例（内存 Map 清空）→ GET /consult/{reportId}/report → 200
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ tests/routes/diagnosis-report-persistence.test.ts:266:24
+    264|
+    265|     const rep = await fetch(`${replayUrl}/api/diagnosis/consult/${repo…
+    266|     expect(rep.status).toBe(200);
+       |                        ^
+    267|     const body = (await rep.json()) as { ok: boolean; teamId: string; …
+    268|     expect(body.ok).toBe(true);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/10]⎯
+
+ FAIL  tests/routes/diagnosis-report-persistence.test.ts > D593: 报告落盘 + 读回 + 列表 + 白名单（spec §7 用例表） > 用例 3: 双 ID 兼容——进程内 consultId（内存命中）→ 200；reportId（内存 miss → checkpoint 冷读）→ 200
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ tests/routes/diagnosis-report-persistence.test.ts:283:29
+    281|
+    282|     const byReport = await fetch(`${baseUrl}/api/diagnosis/consult/${r…
+    283|     expect(byReport.status).toBe(200);
+       |                             ^
+    284|     const bodyReport = (await byReport.json()) as { ok: boolean; repor…
+    285|     expect(bodyReport.ok).toBe(true);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/10]⎯
+
+ FAIL  tests/routes/diagnosis-report-persistence.test.ts > D593: 报告落盘 + 读回 + 列表 + 白名单（spec §7 用例表） > 用例 5: 列表——两次落盘 → total=2、saved_at DESC、limit=1&offset=1 取第二条
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ tests/routes/diagnosis-report-persistence.test.ts:303:24
+    301|
+    302|     const all = await fetch(`${baseUrl}/api/diagnosis/reports`);
+    303|     expect(all.status).toBe(200);
+       |                        ^
+    304|     const bodyAll = (await all.json()) as ReportListResponse;
+    305|     expect(bodyAll.ok).toBe(true);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/10]⎯
+
+ FAIL  tests/routes/diagnosis-report-persistence.test.ts > D593: 报告落盘 + 读回 + 列表 + 白名单（spec §7 用例表） > 用例 7a: 降级——partial_report 损坏行跳过 + degraded:true + total 恒准（不 500）
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ tests/routes/diagnosis-report-persistence.test.ts:357:24
+    355|
+    356|     const res = await fetch(`${baseUrl}/api/diagnosis/reports`);
+    357|     expect(res.status).toBe(200);
+       |                        ^
+    358|     const body = (await res.json()) as ReportListResponse;
+    359|     expect(body.ok).toBe(true);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/10]⎯
+
+ FAIL  tests/routes/diagnosis-report-persistence.test.ts > D593: 报告落盘 + 读回 + 列表 + 白名单（spec §7 用例表） > 用例 7b: 降级——db 缺失 → 列表 503 STORE_UNAVAILABLE（fail-closed）
+AssertionError: expected 404 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 404
+
+ ❯ tests/routes/diagnosis-report-persistence.test.ts:374:24
+    372|   it('用例 7b: 降级——db 缺失 → 列表 503 STORE_UNAVAILABLE（fail-closed）', async…
+    373|     const res = await fetch(`${noDbUrl}/api/diagnosis/reports`);
+    374|     expect(res.status).toBe(503);
+       |                        ^
+    375|     const body = (await res.json()) as { ok: boolean; code?: string; d…
+    376|     expect(body.ok).toBe(false);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/10]⎯
+
+ FAIL  tests/routes/diagnosis-report-persistence.test.ts > D593: 报告落盘 + 读回 + 列表 + 白名单（spec §7 用例表） > 用例 8: 对话桥落盘——phaseComplete 诊断 → checkpoint source=conversation；同 db 重启后 GET 200
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ tests/routes/diagnosis-report-persistence.test.ts:427:26
+    425|       const url = await waitListening(srv);
+    426|       const rep = await fetch(`${url}/api/diagnosis/consult/${reportId…
+    427|       expect(rep.status).toBe(200);
+       |                          ^
+    428|       const body = (await rep.json()) as { ok: boolean; report: { repo…
+    429|       expect(body.ok).toBe(true);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/10]⎯
+
+ FAIL  tests/routes/diagnosis-report-persistence.test.ts > D593: 报告落盘 + 读回 + 列表 + 白名单（spec §7 用例表） > 用例 9: 边界——limit=0 夹取 1；limit=1000 夹取 200；offset 负数 → 0
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ tests/routes/diagnosis-report-persistence.test.ts:440:23
+    438|
+    439|     const r0 = await fetch(`${baseUrl}/api/diagnosis/reports?limit=0`);
+    440|     expect(r0.status).toBe(200);
+       |                       ^
+    441|     const b0 = (await r0.json()) as ReportListResponse;
+    442|     expect(b0.ok).toBe(true);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/10]⎯
+
+ FAIL  tests/routes/diagnosis-report-persistence.test.ts > D593: 报告落盘 + 读回 + 列表 + 白名单（spec §7 用例表） > 用例 10: markdown——checkpoint fallback 路径 ?format=markdown → text/markdown 200
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ tests/routes/diagnosis-report-persistence.test.ts:461:24
+    459|     const { reportId } = await runConsult(baseUrl, 'org-d593-j');
+    460|     const rep = await fetch(`${baseUrl}/api/diagnosis/consult/${report…
+    461|     expect(rep.status).toBe(200);
+       |                        ^
+    462|     expect(rep.headers.get('content-type')).toContain('text/markdown');
+    463|     const text = await rep.text();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/10]⎯
+
+ FAIL  tests/routes/diagnosis-report-persistence.test.ts > D593: 报告落盘 + 读回 + 列表 + 白名单（spec §7 用例表） > 用例 13（增量 §7 L2c）: FIFO 满后持久层仍可读——51 次 consult 淘汰最旧内存条目 → GET 200
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ tests/routes/diagnosis-report-persistence.test.ts:476:24
+    474|     // 但持久层仍在：GET 200 = 冷读 fallback 生效（防线语义：FIFO 上限不再等于报告丢失）
+    475|     const rep = await fetch(`${baseUrl}/api/diagnosis/consult/${oldest…
+    476|     expect(rep.status).toBe(200);
+       |                        ^
+    477|     const body = (await rep.json()) as { ok: boolean; report: { report…
+    478|     expect(body.ok).toBe(true);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/10]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  10 failed | 2 passed (12)
+   Start at  20:14:52
+   Duration  1.15s (transform 439ms, setup 0ms, import 185ms, tests 865ms, environment 0ms)
+
