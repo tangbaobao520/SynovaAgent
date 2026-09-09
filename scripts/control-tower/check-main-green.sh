@@ -91,7 +91,7 @@ if [ ! -r "$BASELINE" ]; then
   exit 2
 fi
 grep -vE '^\s*#|^\s*$' "$BASELINE" | sort -u > /dev/null 2>&1 || true
-BASELINE_SET=$(grep -vE '^\s*#|^\s*$' "$BASELINE" 2>/dev/null | sort -u)
+BASELINE_SET=$(grep -vE '^\s*#|^\s*$' "$BASELINE" 2>/dev/null | sort -u)  # swallow-ok: 可读性已上游校验(exit 2); 空集 → comm 全判新增(fail-closed 方向, 不产生 fail-open)
 [ -n "${EXEMPTIONS:-}" ] && [ -f "$EXEMPTIONS" ] && \
   EXEMPT_SET=$(grep -vE '^\s*#|^\s*$' "$EXEMPTIONS" 2>/dev/null | awk -F' #' '{print $1}' | sort -u) || EXEMPT_SET=""
 

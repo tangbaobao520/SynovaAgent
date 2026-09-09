@@ -1,0 +1,14 @@
+task-state/D416.json: 引用 docs/synova/audit-reports/2026-08-17-K3-final-control-tower-console.md 未被 git 跟踪
+task-state/D417.json: 引用 docs/synova/audit-reports/2026-08-17-K3-final-control-tower-console.md 未被 git 跟踪
+task-state/D510.json: 引用 docs/synova/audit-reports/2026-08-24-D510.md 未被 git 跟踪
+task-state/D514.json: 引用 docs/synova/audit-reports/2026-08-24-D510.md 未被 git 跟踪
+task-state/D519.json: 引用 evidence/D519-mac-20260825-020611 未被 git 跟踪
+task-state/D539.json: 引用 docs/synova/audit-reports/2026-08-27-D539.md 未被 git 跟踪
+task-state/D556.json: 引用 evidence/D556 未被 git 跟踪
+task-state/D575.json: 引用 evidence/D575 未被 git 跟踪
+task-state/D577.json: 引用 docs/synova/audit-reports/evidence 未被 git 跟踪
+task-state/D577.json: 引用 .codex/control-tower/evidence 未被 git 跟踪
+task-state/D581.json: 引用 docs/synova/product-lines/evidence/D578-win-real-machine 未被 git 跟踪
+task-state/D581.json: 引用 evidence/D523 未被 git 跟踪
+task-state/D600.json: 引用 docs/synova/audit-reports/2026-09-09-K3-L1 未被 git 跟踪
+task-state/D603.json: 引用 docs/synova/audit-reports/2026-09-09-K3-L1 未被 git 跟踪

@@ -9,9 +9,22 @@
     "by": "CTO 派工(D651 K3 评估 C7/C2 修复)",
     "at": "2026-09-09T23:30:00+08:00"
   },
-  "impl": null,
+  "impl": {
+    "commit": "ee8f47ed",
+    "by": "coding",
+    "at": "2026-09-09T23:54:48",
+    "files": [
+      "scripts/control-tower/check-main-green.sh",
+      "tests/control-tower/check-main-green.test.sh",
+      "tests/control-tower/main-red-baseline.txt",
+      "tests/control-tower/main-red-exemptions.txt",
+      "scripts/pre-commit-check.sh",
+      ".github/workflows/ci.yml"
+    ],
+    "evidence": "docs/synova/audit-reports/D652-evidence-cited-batch-20260909/（README 实测三节 + legacy-bad-citations.txt 14 条存量清单）"
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-09-09T23:30:00+08:00",
+  "updated_at": "2026-09-09T23:54:48",
   "updated_by": "coding"
 }

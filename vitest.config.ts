@@ -1,7 +1,14 @@
 import { defineConfig } from 'vitest/config';
 import path from 'path';
+import fs from 'fs';
+import os from 'os';
 
 const packagesRoot = path.resolve(__dirname, 'packages');
+
+// D657 测试零副作用: 数据目录重定向到临时目录（消费方 src/config.ts 读
+// SYNOVA_DATA_DIR; 写入方向 cwd 相对路径的运行时文件由 tests/global-setup.ts
+// 在 teardown 恢复现场——见该文件头注释的根因实测）。
+const testDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'synova-vitest-data-'));
 
 export default defineConfig({
   resolve: {
@@ -21,6 +28,8 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     testTimeout: 30_000,
+    // D657: 全局 setup——测试前快照 git status, teardown 恢复白名单运行时污染
+    globalSetup: ['./tests/global-setup.ts'],
     // 铁律 33: 测试按类型命名
     //   *.test.ts → 单元测试 (纯函数, 无 I/O)
     //   *.integration.test.ts → 集成测试 (API + DB, 真实 SQLite)
@@ -60,6 +69,7 @@ export default defineConfig({
       PORT: '3099',
       SYNOVA_DB_PATH: ':memory:',
       SYNOVA_SKIP_MCP: '1',
+      SYNOVA_DATA_DIR: testDataDir, // D657: 测试数据目录 → 临时目录（git 工作树零写入）
     },
   },
 });

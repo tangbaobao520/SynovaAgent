@@ -1,0 +1,17 @@
+{
+  "task_id": "D657",
+  "title": "测试零副作用——vitest 运行时写入恢复现场 + 数据目录重定向",
+  "status": "claimed",
+  "risk": "medium",
+  "spec": {
+    "path": ".claude/task-briefs/2026-09-09-auto.md",
+    "commit": null,
+    "by": "CTO 派工(D651 K3 评估 C7/C2 修复)",
+    "at": "2026-09-09T23:30:00+08:00"
+  },
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-09T23:30:00+08:00",
+  "updated_by": "coding"
+}
