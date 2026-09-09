@@ -101,6 +101,8 @@ jobs:
   architecture:
     name: Architecture Check
     runs-on: ubuntu-latest
+    env:
+      SYNO_CI: "1"  # CT-64: 与 TypeScript job 对齐——check-architecture.sh 在 CI 也走严格模式（棘轮基线内不阻断，新增才阻断）
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
