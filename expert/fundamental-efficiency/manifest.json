@@ -1,9 +1,9 @@
 {
-  "name": "capital-cycle",
+  "name": "fundamental-efficiency",
   "version": "1.0.0",
   "type": "expert",
-  "displayName": "资本循环专家",
-  "description": "合并原财务专家和商业模式专家，覆盖资本结构、现金流、价值捕获",
+  "displayName": "资金效率专家",
+  "description": "覆盖资本结构、现金流、价值捕获与偿债结构、流动性（资金结构视角已并入本问题域）",
   "tier": "L3",
   "complexity": "expert",
   "edges": [

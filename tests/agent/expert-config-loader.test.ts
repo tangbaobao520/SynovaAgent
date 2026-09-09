@@ -2,7 +2,7 @@
  * tests/agent/expert-config-loader.test.ts — D490 parseSimpleYaml 契约测试
  *
  * 契约（铁律 47）：
- *   @input   expert/expert-registry.yaml v2.0（嵌套结构，专家键含连字符）
+ *   @input   expert/expert-registry.yaml v3.0（嵌套结构，专家键含连字符；D650 六位问题域专家）
  *   @output  loadExpertConfig() → { version, experts: Record<key, {enabled, background, model, tools}> }
  *   @degraded yaml 缺失/解析失败 → fail-open 返回 { version: 1, experts: {} }（log.warn/error，
  *            消费方 expert-dispatcher.ts:527-529 回退 Registry 文件扫描全专家）
@@ -23,25 +23,29 @@ import {
   getBackgroundExperts,
 } from '../../src/agent/expert-config-loader';
 
-/** yaml v2.0（D282 定稿）声明的专家集合 */
-const DIAGNOSTIC_EXPERTS = ['competitive-strategy', 'finance-structure', 'host'].sort();
-const BACKGROUND_EXPERTS = ['capital-cycle', 'customer-cycle', 'talent-cycle', 'tech'].sort();
+/** yaml v3.0（D650 问题域命名定稿）声明的专家集合 */
+const DIAGNOSTIC_EXPERTS = ['competitive-strategy', 'host'].sort();
+const BACKGROUND_EXPERTS = ['fundamental-efficiency', 'customer-growth', 'organizational-capability', 'technology-foundation'].sort();
 
 beforeEach(() => clearExpertConfigCache());
 afterEach(() => clearExpertConfigCache());
 
 describe('expert-config-loader — parseSimpleYaml 契约（D490）', () => {
-  it('① 真实 expert-registry.yaml v2.0：7 专家全解析（含 5 个连字符键）', () => {
+  it('① 真实 expert-registry.yaml v3.0：6 问题域专家全解析（含 5 个连字符键）', () => {
     const config = loadExpertConfig();
     expect(Object.keys(config.experts).sort()).toEqual([...DIAGNOSTIC_EXPERTS, ...BACKGROUND_EXPERTS].sort());
-    expect(config.version).toBe(2);
-    // 连字符键缺陷 B 专项：修复前 [a-z_]+ 不匹配，5 键必漏
-    for (const key of ['capital-cycle', 'finance-structure', 'competitive-strategy']) {
+    expect(config.version).toBe(3);
+    // 连字符键缺陷 B 专项：修复前 [a-z_]+ 不匹配，5 键必漏（D650 后连字符键换新名）
+    for (const key of ['fundamental-efficiency', 'customer-growth', 'competitive-strategy']) {
       expect(config.experts[key]).toBeDefined();
+    }
+    // D650 语义锁：旧 cycle 命名专家与并入专家退出 registry
+    for (const legacy of ['capital-cycle', 'customer-cycle', 'talent-cycle', 'finance-structure']) {
+      expect(config.experts[legacy], `旧专家 "${legacy}" 不应再出现在 registry v3.0`).toBeUndefined();
     }
   });
 
-  it('② enabled/background 声明正确：3 诊断 + 4 后台（yaml 过滤真实生效）', () => {
+  it('② enabled/background 声明正确：2 诊断 + 4 后台（yaml 过滤真实生效）', () => {
     const config = loadExpertConfig();
     expect(getEnabledDiagnosticExperts(config).sort()).toEqual(DIAGNOSTIC_EXPERTS);
     expect([...getBackgroundExperts(config)].sort()).toEqual(BACKGROUND_EXPERTS);

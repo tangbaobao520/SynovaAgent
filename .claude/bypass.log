@@ -1199,6 +1199,8 @@ Binary file .claude/bypass.log matches
 2026-09-09T02:53:51+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=80c2ec1e8825acfea752937e5d37540af06241ff
 2026-09-08T18:28:07Z possible-bypass diff=354s
 2026-09-09T02:28:07+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=4fb65dc17b2c677b9498ab737f0ed019ba7125a9
+2026-09-09T17:19:07+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=822079b67f997df5c813500affcbb3b3082c3a0d
+2026-09-09T17:31:55+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=3d0f9682073cfb3ea80c419e2916475d4a15996e
 2026-09-09T17:02:59+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=a8847faf22ed5da5bed04830c2eeb27873fc01d2
 2026-09-09T03:55:44+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/d603-tui-cleanup-crosslayer
 2026-09-09T04:10:02+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/d603-tui-cleanup-crosslayer
@@ -1210,4 +1212,5 @@ Binary file .claude/bypass.log matches
 2026-09-09T08:42:57Z possible-bypass diff=27587s
 2026-09-09T16:42:57+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=bf517ecf28ba5f1dd49d6918d273f5fb4ddaf673
 2026-09-09T17:27:26+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=9d1dc4ef2b89cec367eabf091337378ba2a7aece
+2026-09-09T19:24:14+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=3cd81fad3cc05596d078d796a027fe7f86a28ae2
 2026-09-09T19:15:04+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=db60ea9a18de4a6d6399192383e3a1187564a783
