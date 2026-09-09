@@ -6,7 +6,7 @@
   "displayName": "O5",
   "description": "O5:",
   "schedule": "0 0 1 * *",
-  "expert": "org",
+  "expert": "organizational-capability",
   "priority": "P1",
   "layer": "internal",
   "computeKind": "deterministic",
@@ -34,7 +34,7 @@
   "entryPoint": "./aggregate.ts",
   "exportKey": "routineDiffusionSentinel",
   "auxiliaryExperts": [
-    "knowledge"
+    "host"
   ],
   "id": "sentinel-routine-diffusion"
 }

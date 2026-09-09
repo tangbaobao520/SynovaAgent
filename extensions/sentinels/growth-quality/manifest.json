@@ -6,7 +6,7 @@
   "displayName": "增长质量指数",
   "description": "F4: 评估增长质量——现金流转化率、有机增长比例、应收账款健康度。数据源: FINANCIAL, Client节点。",
   "schedule": "0 0 1 * *",
-  "expert": "finance",
+  "expert": "fundamental-efficiency",
   "priority": "P1",
   "layer": "capital",
   "computeKind": "deterministic",
@@ -39,7 +39,7 @@
   "entryPoint": "./aggregate.ts",
   "exportKey": "growthQualitySentinel",
   "auxiliaryExperts": [
-    "strategy"
+    "competitive-strategy"
   ],
   "id": "sentinel-growth-quality"
 }

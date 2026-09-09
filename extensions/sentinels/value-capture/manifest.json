@@ -6,9 +6,9 @@
   "displayName": "价值捕获效率",
   "description": "I6: 评估利润留存率、定价权、毛利率趋势。数据源: FINANCIAL节点。",
   "schedule": "0 0 1 * *",
-  "expert": "strategy",
+  "expert": "competitive-strategy",
   "auxiliaryExperts": [
-    "strategy"
+    "competitive-strategy"
   ],
   "priority": "P1",
   "layer": "interface",

@@ -6,7 +6,7 @@
   "displayName": "数据健康度",
   "description": "T3: 评估本体层数据质量与系统间数据连通性。数据源: SOG 节点+边。",
   "schedule": "0 9 * * 1",
-  "expert": "tech",
+  "expert": "technology-foundation",
   "priority": "P1",
   "layer": "technology",
   "computeKind": "deterministic",
@@ -39,7 +39,7 @@
   "entryPoint": "./aggregate.ts",
   "exportKey": "dataHealthSentinel",
   "auxiliaryExperts": [
-    "strategy"
+    "competitive-strategy"
   ],
   "id": "sentinel-data-health"
 }

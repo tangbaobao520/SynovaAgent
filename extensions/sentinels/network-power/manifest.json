@@ -6,9 +6,9 @@
   "displayName": "网络权力指数",
   "description": "I5: 基于网络科学计算介数中心性和结构洞。数据源: Person, Agent, Client, Supplier节点。",
   "schedule": "0 0 1 * *",
-  "expert": "strategy",
+  "expert": "competitive-strategy",
   "auxiliaryExperts": [
-    "strategy"
+    "competitive-strategy"
   ],
   "priority": "P1",
   "layer": "interface",

@@ -6,9 +6,9 @@
   "displayName": "环境红利依赖性",
   "description": "E5: 评估企业对不可控外部环境红利的依赖程度——政策补贴、资源禀赋、市场准入壁垒。",
   "schedule": "0 0 1 * *",
-  "expert": "strategy",
+  "expert": "competitive-strategy",
   "auxiliaryExperts": [
-    "finance"
+    "fundamental-efficiency"
   ],
   "priority": "P1",
   "layer": "environment",

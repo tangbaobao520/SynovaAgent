@@ -6,7 +6,7 @@
   "displayName": "O7",
   "description": "O7:",
   "schedule": "0 0 1 * *",
-  "expert": "org",
+  "expert": "organizational-capability",
   "priority": "P1",
   "layer": "internal",
   "computeKind": "heuristic",
@@ -34,7 +34,7 @@
   "entryPoint": "./aggregate.ts",
   "exportKey": "infoDistortionSentinel",
   "auxiliaryExperts": [
-    "knowledge"
+    "host"
   ],
   "id": "sentinel-info-distortion"
 }
