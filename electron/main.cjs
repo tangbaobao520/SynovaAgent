@@ -13,7 +13,7 @@
  *   - 桌面通知推送
  *   - 不运行诊断逻辑
  */
-const { app, BrowserWindow, Tray, Menu, Notification } = require('electron');
+const { app, BrowserWindow, Tray, Menu, Notification, ipcMain } = require('electron');
 const path = require('path');
 const http = require('http');
 const { ensureBackend } = require('./backend-spawn.cjs');
@@ -139,6 +139,79 @@ if (!gotSingleInstanceLock) {
   });
 }
 
+// ═══ D602: IPC 通道（preload.cjs 8 方法契约的 main 侧，spec §5.2-A）═══
+// 安全边界（Anthropic 基线）: renderer 半可信——每个 handler 对入参做类型/枚举/长度校验，
+// 非法 → console.warn 留痕 + 忽略（不抛回 renderer、不静默，铁律 24）；
+// tray 未初始化（icon 降级路径）→ warn + 忽略（不抛）。
+// 通道名与 electron/preload.cjs CHANNELS 一一对应（ipc-contract.test.ts 用例 3 物理锁定）。
+
+const TRAY_STATES = ['normal', 'unread', 'critical'];
+const NOTIFY_TEXT_MAX = 200;
+
+/** 文本安全化: 任意入参字符串化 + 截断（通知 title/body 上限 200） */
+function clampText(v, max) {
+  const s = typeof v === 'string' ? v : String(v ?? '');
+  return s.length > max ? `${s.slice(0, max)}…` : s;
+}
+
+// invoke 'app:get-version' → 应用版本（renderer bridge.getAppVersion 消费）
+ipcMain.handle('app:get-version', () => {
+  try {
+    return app.getVersion();
+  } catch (err) {
+    console.warn('[electron] app:get-version 失败 — 降级空串:', err && err.message);
+    return '';
+  }
+});
+
+// send 'tray:update-state' — 托盘角标（alertCount = open 工单数，App.tsx effect 消费）
+ipcMain.on('tray:update-state', (_event, state, count) => {
+  try {
+    if (typeof state !== 'string' || !TRAY_STATES.includes(state)) {
+      console.warn('[electron] tray:update-state 非法 state — 忽略:', state);
+      return;
+    }
+    if (count !== undefined && (!Number.isInteger(count) || count < 1)) {
+      console.warn('[electron] tray:update-state 非法 count（须正整数）— 忽略:', count);
+      return;
+    }
+    if (!tray) {
+      console.warn('[electron] tray:update-state — tray 未初始化（degraded），忽略');
+      return;
+    }
+    if (process.platform === 'darwin' && state !== 'normal' && typeof count === 'number') {
+      tray.setTitle(`(${count})`); // macOS 菜单栏角标数字
+    }
+    tray.setToolTip(state === 'normal' ? 'SynovaAgent' : `SynovaAgent — ${count} 条未处理告警`);
+  } catch (err) {
+    console.warn('[electron] tray:update-state 失败 — 忽略（degraded）:', err && err.message);
+  }
+});
+
+// send 'notify:show' — 系统通知；被点击 → 聚焦窗口 + 'notification:click' 回传 renderer 面板
+ipcMain.on('notify:show', (_event, title, body, id) => {
+  try {
+    const notification = new Notification({
+      title: clampText(title, NOTIFY_TEXT_MAX) || 'Synova',
+      body: clampText(body, NOTIFY_TEXT_MAX),
+    });
+    notification.on('click', () => {
+      try {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.show();
+          mainWindow.focus();
+          mainWindow.webContents.send('notification:click', id);
+        }
+      } catch (err) {
+        console.warn('[electron] 通知点击处理失败 —', err && err.message);
+      }
+    });
+    notification.show();
+  } catch (err) {
+    console.warn('[electron] notify:show 失败 — 忽略（degraded）:', err && err.message);
+  }
+});
+
 app.whenReady().then(async () => {
   // D518: 模式显式化——启动第一行日志即证据（dev/prod 判定唯一事实源 app.isPackaged）
   const isProdBoot = app.isPackaged;
@@ -172,9 +245,11 @@ app.whenReady().then(async () => {
     } else {
       tray = new Tray(iconPath);
       tray.setToolTip('SynovaAgent');
+      // D602: 菜单三项全指向现役 UI（审计 §3.5.2 :176-177 旧页菜单缺陷修复——旧页 URL 引用物理清零，
+      // ipc-contract.test.ts 用例 4 锁定）；导航语义经 'navigate' 通道交 renderer 处理，main 不再 loadURL 页面
       tray.setContextMenu(Menu.buildFromTemplate([
-        { label: 'Open Dashboard', click: () => { mainWindow.show(); mainWindow.loadURL(`${SERVER_URL}/cockpit`); } },
-        { label: 'Admin Workbench', click: () => { mainWindow.show(); mainWindow.loadURL(`${SERVER_URL}/app/admin.html`); } },
+        { label: '打开 Synova', click: () => { if (mainWindow && !mainWindow.isDestroyed()) { mainWindow.show(); mainWindow.focus(); mainWindow.webContents.send('navigate', 'chat'); } } },
+        { label: '打开通知中心', click: () => { if (mainWindow && !mainWindow.isDestroyed()) { mainWindow.show(); mainWindow.webContents.send('navigate', 'notifications'); } } },
         { type: 'separator' },
         { label: 'Quit', click: () => { isQuitting = true; app.quit(); } },
       ]));
@@ -196,10 +271,14 @@ async function checkP0Alerts() {
     const signals = data.signals || {};
     const redCount = Object.values(signals).filter(s => s.status === 'red').length;
     if (redCount > 0) {
-      new Notification({
-        title: 'Synova P0 Alert',
-        body: `${redCount} critical ${redCount > 1 ? 'issues' : 'issue'} detected — check dashboard.`,
-      }).show();
+      const title = 'Synova P0 Alert';
+      const body = `${redCount} critical ${redCount > 1 ? 'issues' : 'issue'} detected — check dashboard.`;
+      new Notification({ title, body }).show();
+      // D602: OS 通知旁路推 renderer 通知面板（'push-notification' 通道，App.tsx 订阅 → 本地通知段；
+      // spec §5.2-B P0 轮询路径——只到 OS 层 renderer 无感知的缺陷修复）
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('push-notification', { title, body, id: `p0-${Date.now()}` });
+      }
     }
   } catch (err) {
     console.warn('[electron] P0 check failed:', err.message);

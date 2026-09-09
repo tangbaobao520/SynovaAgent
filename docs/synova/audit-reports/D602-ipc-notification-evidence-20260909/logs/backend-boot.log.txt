@@ -1,0 +1,538 @@
+{"level":30,"time":1788894934997,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/workspace-service","msg":"WorkspaceService 已初始化"}
+{"level":30,"time":1788894935003,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/config-file","path":"/Users/wane/SynovaAgent/.synova-wt-d602/synova.json","msg":"配置文件加载成功"}
+{"level":30,"time":1788894935003,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config","port":18790,"source":"synova.json","msg":"使用文件配置"}
+{"level":30,"time":1788894935004,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/config-recovery","path":"/Users/wane/SynovaAgent/.synova-wt-d602/synova.json","size":693,"msg":"配置校验通过"}
+{"level":40,"time":1788894935004,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config","msg":"⚠️  未设置 LLM_API_KEY 且未设置 OPENCLAW_GATEWAY_HOST"}
+{"level":40,"time":1788894935004,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config","msg":"   诊断功能将不可用。设置 LLM_API_KEY 或 OPENCLAW_GATEWAY_HOST 后重启。"}
+{"level":30,"time":1788894935004,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config","port":18991,"devMode":false,"dbPath":"/tmp/d602-ds4-evidence/synova.db","model":"deepseek-v4-flash","llmConfigured":false,"msg":"配置加载完成"}
+{"level":30,"time":1788894935004,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/config-file","path":"/Users/wane/SynovaAgent/.synova-wt-d602/synova.json","msg":"配置文件加载成功"}
+{"level":30,"time":1788894935004,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config","port":18790,"source":"synova.json","msg":"使用文件配置"}
+{"level":30,"time":1788894935004,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/config-recovery","path":"/Users/wane/SynovaAgent/.synova-wt-d602/synova.json","size":693,"msg":"配置校验通过"}
+{"level":40,"time":1788894935004,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config","msg":"⚠️  未设置 LLM_API_KEY 且未设置 OPENCLAW_GATEWAY_HOST"}
+{"level":40,"time":1788894935004,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config","msg":"   诊断功能将不可用。设置 LLM_API_KEY 或 OPENCLAW_GATEWAY_HOST 后重启。"}
+{"level":30,"time":1788894935004,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config","port":18991,"devMode":false,"dbPath":"/tmp/d602-ds4-evidence/synova.db","model":"deepseek-v4-flash","llmConfigured":false,"msg":"配置加载完成"}
+{"level":30,"time":1788894935012,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"store/schema-migration","version":2,"name":"graph-nodes-props","msg":"执行迁移 2: graph-nodes-props"}
+{"level":30,"time":1788894935012,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"store/schema-migration","version":2,"msg":"迁移 2 完成"}
+{"level":30,"time":1788894935012,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"init/engine-context","path":"/tmp/d602-ds4-evidence/synova.db","msg":"SQLite 数据库已打开"}
+{"level":30,"time":1788894935012,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"init/engine-context","msg":"EngineContext 注入完成 (SQLite 持久化存储模式)"}
+{"level":30,"time":1788894935013,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/config-file","path":"/Users/wane/SynovaAgent/.synova-wt-d602/synova.json","msg":"配置文件加载成功"}
+{"level":30,"time":1788894935013,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config","port":18790,"source":"synova.json","msg":"使用文件配置"}
+{"level":30,"time":1788894935013,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/config-recovery","path":"/Users/wane/SynovaAgent/.synova-wt-d602/synova.json","size":693,"msg":"配置校验通过"}
+{"level":40,"time":1788894935013,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config","msg":"⚠️  未设置 LLM_API_KEY 且未设置 OPENCLAW_GATEWAY_HOST"}
+{"level":40,"time":1788894935013,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config","msg":"   诊断功能将不可用。设置 LLM_API_KEY 或 OPENCLAW_GATEWAY_HOST 后重启。"}
+{"level":30,"time":1788894935013,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config","port":18991,"devMode":false,"dbPath":"/tmp/d602-ds4-evidence/synova.db","model":"deepseek-v4-flash","llmConfigured":false,"msg":"配置加载完成"}
+{"level":30,"time":1788894935014,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/config-file","path":"/Users/wane/SynovaAgent/.synova-wt-d602/synova.json","msg":"配置文件加载成功"}
+{"level":30,"time":1788894935014,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config","port":18790,"source":"synova.json","msg":"使用文件配置"}
+{"level":30,"time":1788894935014,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/config-recovery","path":"/Users/wane/SynovaAgent/.synova-wt-d602/synova.json","size":693,"msg":"配置校验通过"}
+{"level":40,"time":1788894935014,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config","msg":"⚠️  未设置 LLM_API_KEY 且未设置 OPENCLAW_GATEWAY_HOST"}
+{"level":40,"time":1788894935014,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config","msg":"   诊断功能将不可用。设置 LLM_API_KEY 或 OPENCLAW_GATEWAY_HOST 后重启。"}
+{"level":30,"time":1788894935014,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"config","port":18991,"devMode":false,"dbPath":"/tmp/d602-ds4-evidence/synova.db","model":"deepseek-v4-flash","llmConfigured":false,"msg":"配置加载完成"}
+{"level":30,"time":1788894935014,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","port":18991,"devMode":false,"msg":"配置已加载"}
+{"level":30,"time":1788894935014,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","msg":"数据库已初始化 (SQLite WAL)"}
+{"level":30,"time":1788894935014,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/audit-service","msg":"审计服务已初始化"}
+{"level":30,"time":1788894935014,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","msg":"审计服务已初始化"}
+{"level":30,"time":1788894935016,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","msg":"编排层已初始化 (EventBus + PhaseStateMachine + SessionManager)"}
+{"level":30,"time":1788894935016,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","phase":"infrastructure","durationMs":2,"msg":"Phase 0 完成"}
+{"level":40,"time":1788894935019,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/rollback","path":"/Users/wane/Library/Application Support/Synova/data/_snapshots/pre-schema-migration","msg":"快照已存在，跳过创建"}
+{"level":30,"time":1788894935025,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","msg":"GraphStore + OntologyEventBus 已初始化"}
+{"level":30,"time":1788894935026,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l4/agent-memory-store","msg":"agent_memory.status 列已添加（D240）"}
+{"level":30,"time":1788894935027,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l4/agent-memory-store","msg":"AgentMemoryStore 已初始化"}
+{"level":30,"time":1788894935027,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","msg":"AgentMemoryStore 已初始化"}
+{"level":30,"time":1788894935027,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","phase":"storage","durationMs":11,"msg":"Phase 1 完成"}
+{"level":30,"time":1788894935027,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","msg":"Phase 2d: CausalChainLoader — 预留接口，未实现 (D83 范围)"}
+{"level":30,"time":1788894935037,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/loader","count":45,"errors":0,"msg":"哨兵加载完成"}
+{"level":30,"time":1788894935040,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-agent-deployment-maturity","name":"T7 Agent部署成熟度","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935043,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-ai-ecosystem-fit","name":"T6 AI软件生态匹配度","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935046,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-ai-investment-return","name":"T8 AI投入产出比","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935050,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-api-coverage","name":"API可达性与协议覆盖","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935053,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-business-model-coherence","name":"商业模式一致性","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935062,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-capital-health","name":"资本健康","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935077,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l4/ontology-loader","nodes":29,"edges":55,"msg":"本体类型加载完成"}
+{"level":40,"time":1788894935077,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/loader","sentinel":"cash-runway","nodeType":"Financial","msg":"哨兵依赖的节点类型在本体中不存在 — degraded"}
+{"level":30,"time":1788894935077,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-cash-runway","name":"现金流哨兵","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935081,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-channel-capacity","name":"O6","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935083,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-competitive-moat","name":"竞争护城河","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935086,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-competitive-position","name":"竞争定位","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935090,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-customer-demand-shift","name":"客户需求迁移","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935094,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-data-health","name":"数据健康度","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935097,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-environment-rent-dependency","name":"环境红利依赖性","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935101,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-explore-exploit-balance","name":"O1","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935104,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-financing-constraint","name":"融资约束指数","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935108,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-growth-quality","name":"增长质量指数","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935110,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-human-agent-boundary","name":"T9 人Agent混合边界效率","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935113,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-incentive-alignment","name":"O3","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935116,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-info-distortion","name":"O7","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935119,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-internal-transaction-cost","name":"内部交易成本增长率","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894935123,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/loader","sentinel":"key-person-risk","nodeType":"Financial","msg":"哨兵依赖的节点类型在本体中不存在 — degraded"}
+{"level":30,"time":1788894935123,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-key-person-risk","name":"关键人风险哨兵","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935125,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-knowledge-accessibility","name":"O4","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935128,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-make-or-buy","name":"自制外购决策健康度","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894935136,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/loader","sentinel":"margin-health","nodeType":"Financial","msg":"哨兵依赖的节点类型在本体中不存在 — degraded"}
+{"level":30,"time":1788894935136,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-margin-health","name":"利润健康","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935139,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-moat-dependency","name":"护城河依赖度","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935143,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-network-power","name":"网络权力指数","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935146,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-niche-breadth","name":"生态位宽度与深度","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935149,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-niche-squeeze","name":"生态位挤压指数","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935152,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-opportunity-window","name":"结构性机会窗口","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935156,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-org-repairability","name":"O8","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935158,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-path-dependency","name":"路径依赖 (Path Dependency)","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935162,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-power-rigidity","name":"O9","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935166,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-process-ai-readiness","name":"T5 流程AI化就绪度","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935169,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-resource-misallocation","name":"S3","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894935173,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/loader","sentinel":"revenue-health","nodeType":"Financial","msg":"哨兵依赖的节点类型在本体中不存在 — degraded"}
+{"level":30,"time":1788894935173,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-revenue-health","name":"收入健康哨兵","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935176,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-routine-diffusion","name":"O5","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935180,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-routine-mutation","name":"O2","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935181,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-sentinel-forecast-accuracy","name":"预测精度哨兵","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935183,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-sentinel-pricing-strategy","name":"定价策略哨兵","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935188,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-software-health","name":"软件资产健康度","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935191,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-strategy-capability-fit","name":"S1","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935195,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-talent-density","name":"O10","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935198,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-time-penetration","name":"时间穿透力","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935206,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-unit-economics","name":"单位经济可持续性","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935209,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-value-capture","name":"价值捕获效率","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894935209,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/loader","registered":45,"errors":0,"msg":"文件驱动哨兵已注册"}
+{"level":30,"time":1788894935209,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","sentinels":45,"registered":45,"msg":"Phase 2a: SentinelLoader 完成"}
+{"level":30,"time":1788894935217,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"skill/loader","count":41,"errors":0,"msg":"Skill 加载完成"}
+{"level":30,"time":1788894935222,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"skill/loader","registered":41,"errors":0,"msg":"文件驱动 Skill 已注册"}
+{"level":30,"time":1788894935222,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","skills":41,"registered":41,"msg":"Phase 2b: SkillLoader 完成"}
+{"level":30,"time":1788894935234,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"playbook/loader","count":21,"errors":0,"msg":"Playbook 加载完成"}
+{"level":30,"time":1788894935238,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"playbook/loader","registered":21,"errors":0,"msg":"Playbook 已注册"}
+{"level":30,"time":1788894935238,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","playbooks":21,"registered":21,"msg":"Phase 2c: PlaybookLoader 完成"}
+{"level":40,"time":1788894935243,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","msg":"ALTER TABLE trigger_type 已存在或失败 — 跳过"}
+{"level":40,"time":1788894935243,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","msg":"ALTER TABLE event_types 已存在或失败 — 跳过"}
+{"level":40,"time":1788894935243,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","msg":"ALTER TABLE last_event_at 已存在或失败 — 跳过"}
+{"level":30,"time":1788894935245,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/loop-scheduler","msg":"[D9] loop-4-self-check 已注册 (0 0 * * *)"}
+{"level":30,"time":1788894935247,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/loop-scheduler","msg":"[D9] loop-5-knowledge 已注册 (0 0 * * 0)"}
+{"level":30,"time":1788894935408,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/loop-scheduler","msg":"[D9] loop-1-diagnosis 已注册 (0 9 1 */3 *)"}
+{"level":30,"time":1788894935410,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/loop-scheduler","msg":"[D9] loop-2-navigation 已注册 (0 9 * * 1)"}
+{"level":30,"time":1788894935574,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/loop-scheduler","msg":"[D237] loop-3-ga-evolution 已注册 (0 9 1 */3 *)"}
+{"level":30,"time":1788894935579,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/loop-scheduler","msg":"[D238] loop-6-overflow 已注册 (0 9 1 * *)"}
+{"level":30,"time":1788894935579,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/trigger-config","count":1,"msg":"循环触发矩阵验证通过"}
+{"level":30,"time":1788894935749,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/loop-scheduler","loopId":"loop-1","loopName":"Enterprise Diagnosis","msg":"循环已注册"}
+{"level":30,"time":1788894935749,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/trigger-config","count":1,"msg":"循环触发矩阵验证通过"}
+{"level":30,"time":1788894935756,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/loop-scheduler","loopId":"loop-2","loopName":"Department Navigation","msg":"循环已注册"}
+{"level":30,"time":1788894935756,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/trigger-config","count":1,"msg":"循环触发矩阵验证通过"}
+{"level":30,"time":1788894936098,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/loop-scheduler","loopId":"loop-3","loopName":"GA Evolution","msg":"循环已注册"}
+{"level":30,"time":1788894936098,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/trigger-config","count":1,"msg":"循环触发矩阵验证通过"}
+{"level":30,"time":1788894936462,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/loop-scheduler","loopId":"loop-4","loopName":"System Self-Check","msg":"循环已注册"}
+{"level":30,"time":1788894936462,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/trigger-config","count":1,"msg":"循环触发矩阵验证通过"}
+{"level":30,"time":1788894936626,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/loop-scheduler","loopId":"loop-5","loopName":"Knowledge Accumulation","msg":"循环已注册"}
+{"level":30,"time":1788894936626,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/trigger-config","count":1,"msg":"循环触发矩阵验证通过"}
+{"level":30,"time":1788894936791,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/loop-scheduler","loopId":"loop-6","loopName":"Overflow Monitor","msg":"循环已注册"}
+{"level":30,"time":1788894936792,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/loop-scheduler","count":6,"total":6,"msg":"默认循环已注册"}
+{"level":30,"time":1788894936792,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","loops":6,"msg":"Phase 2e: 循环调度器注册完成"}
+{"level":30,"time":1788894936793,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/main-agent","loopId":"loop-1","scales":3,"msg":"循环已注册到 MainAgent"}
+{"level":30,"time":1788894936793,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/main-agent","loopId":"loop-2","scales":3,"msg":"循环已注册到 MainAgent"}
+{"level":30,"time":1788894936793,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/main-agent","loopId":"loop-3","scales":3,"msg":"循环已注册到 MainAgent"}
+{"level":30,"time":1788894936793,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/main-agent","loopId":"loop-4","scales":3,"msg":"循环已注册到 MainAgent"}
+{"level":30,"time":1788894936793,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/main-agent","loopId":"loop-5","scales":3,"msg":"循环已注册到 MainAgent"}
+{"level":30,"time":1788894936793,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/main-agent","loopId":"loop-6","scales":3,"msg":"循环已注册到 MainAgent"}
+{"level":30,"time":1788894936793,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","loops":6,"msg":"Phase 2f: MainAgent 注册完成"}
+{"level":30,"time":1788894936793,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","subPhases":[{"name":"causal-chain-loader","status":"success","durationMs":0},{"name":"sentinel-loader","status":"success","durationMs":182},{"name":"skill-loader","status":"success","durationMs":13},{"name":"playbook-loader","status":"success","durationMs":16},{"name":"loop-scheduler","status":"success","durationMs":1554},{"name":"main-agent","status":"success","durationMs":1}],"msg":"Phase 2 子 Phase 完成"}
+{"level":30,"time":1788894936793,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","phase":"core-engine","durationMs":1766,"msg":"Phase 2 完成"}
+{"level":30,"time":1788894936804,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","msg":"Phase 3a: Connector 工具绑定完成"}
+{"level":30,"time":1788894936811,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"locale/loader","lang":"zh-CN","cacheSize":1,"msg":"locale 加载完成"}
+{"level":30,"time":1788894936811,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"init/file-driven-loaders","msg":"locale loader 已初始化"}
+{"level":30,"time":1788894936813,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"init/file-driven-loaders","msg":"report template loader 已初始化"}
+{"level":30,"time":1788894936822,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l3/framework-loader","count":85,"categories":["psychology","economics","math-engineering","medicine","biology-physics","law-governance"],"msg":"认知框架加载完成"}
+{"level":30,"time":1788894936822,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"init/file-driven-loaders","msg":"framework loader 已初始化"}
+{"level":30,"time":1788894936826,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"notifications/registry","channel":"email","msg":"通知适配器已注册"}
+{"level":30,"time":1788894936828,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"notifications/registry","channel":"feishu-approval","msg":"通知适配器已注册"}
+{"level":30,"time":1788894936830,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"notifications/registry","channel":"jira","msg":"通知适配器已注册"}
+{"level":30,"time":1788894936832,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"notifications/registry","channel":"linear","msg":"通知适配器已注册"}
+{"level":30,"time":1788894936832,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"notifications/loader","registered":4,"msg":"通知适配器已从文件加载"}
+{"level":30,"time":1788894936832,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"init/file-driven-loaders","registered":4,"msg":"notification adapters 已初始化"}
+{"level":40,"time":1788894936833,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-agent-deployment-maturity","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936833,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-agent-deployment-maturity","name":"T7 Agent部署成熟度","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936833,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-ai-ecosystem-fit","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936833,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-ai-ecosystem-fit","name":"T6 AI软件生态匹配度","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936833,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-ai-investment-return","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936833,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-ai-investment-return","name":"T8 AI投入产出比","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936834,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-api-coverage","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936834,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-api-coverage","name":"API可达性与协议覆盖","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936834,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-business-model-coherence","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936834,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-business-model-coherence","name":"商业模式一致性","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936835,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-capital-health","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936835,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-capital-health","name":"资本健康","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936835,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/loader","sentinel":"cash-runway","nodeType":"Financial","msg":"哨兵依赖的节点类型在本体中不存在 — degraded"}
+{"level":40,"time":1788894936835,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-cash-runway","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936835,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-cash-runway","name":"现金流哨兵","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936835,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-channel-capacity","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936835,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-channel-capacity","name":"O6","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936836,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-competitive-moat","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936836,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-competitive-moat","name":"竞争护城河","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936836,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-competitive-position","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936836,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-competitive-position","name":"竞争定位","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936836,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-customer-demand-shift","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936836,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-customer-demand-shift","name":"客户需求迁移","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936837,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-data-health","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936837,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-data-health","name":"数据健康度","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936837,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-environment-rent-dependency","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936837,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-environment-rent-dependency","name":"环境红利依赖性","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936838,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-explore-exploit-balance","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936838,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-explore-exploit-balance","name":"O1","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936838,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-financing-constraint","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936838,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-financing-constraint","name":"融资约束指数","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936838,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-growth-quality","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936838,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-growth-quality","name":"增长质量指数","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936839,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-human-agent-boundary","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936839,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-human-agent-boundary","name":"T9 人Agent混合边界效率","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936839,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-incentive-alignment","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936839,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-incentive-alignment","name":"O3","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936839,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-info-distortion","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936839,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-info-distortion","name":"O7","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936840,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-internal-transaction-cost","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936840,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-internal-transaction-cost","name":"内部交易成本增长率","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936840,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/loader","sentinel":"key-person-risk","nodeType":"Financial","msg":"哨兵依赖的节点类型在本体中不存在 — degraded"}
+{"level":40,"time":1788894936840,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-key-person-risk","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936840,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-key-person-risk","name":"关键人风险哨兵","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936841,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-knowledge-accessibility","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936841,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-knowledge-accessibility","name":"O4","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936841,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-make-or-buy","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936841,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-make-or-buy","name":"自制外购决策健康度","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936841,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/loader","sentinel":"margin-health","nodeType":"Financial","msg":"哨兵依赖的节点类型在本体中不存在 — degraded"}
+{"level":40,"time":1788894936841,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-margin-health","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936841,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-margin-health","name":"利润健康","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936842,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-moat-dependency","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936842,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-moat-dependency","name":"护城河依赖度","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936842,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-network-power","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936842,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-network-power","name":"网络权力指数","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936843,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-niche-breadth","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936843,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-niche-breadth","name":"生态位宽度与深度","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936843,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-niche-squeeze","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936843,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-niche-squeeze","name":"生态位挤压指数","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936843,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-opportunity-window","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936843,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-opportunity-window","name":"结构性机会窗口","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936844,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-org-repairability","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936844,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-org-repairability","name":"O8","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936844,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-path-dependency","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936844,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-path-dependency","name":"路径依赖 (Path Dependency)","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936844,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-power-rigidity","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936844,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-power-rigidity","name":"O9","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936845,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-process-ai-readiness","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936845,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-process-ai-readiness","name":"T5 流程AI化就绪度","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936845,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-resource-misallocation","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936845,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-resource-misallocation","name":"S3","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936845,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/loader","sentinel":"revenue-health","nodeType":"Financial","msg":"哨兵依赖的节点类型在本体中不存在 — degraded"}
+{"level":40,"time":1788894936845,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-revenue-health","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936845,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-revenue-health","name":"收入健康哨兵","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936846,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-routine-diffusion","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936846,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-routine-diffusion","name":"O5","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936846,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-routine-mutation","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936846,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-routine-mutation","name":"O2","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936846,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-sentinel-forecast-accuracy","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936846,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-sentinel-forecast-accuracy","name":"预测精度哨兵","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936847,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-sentinel-pricing-strategy","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936847,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-sentinel-pricing-strategy","name":"定价策略哨兵","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936847,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-software-health","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936847,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-software-health","name":"软件资产健康度","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936848,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-strategy-capability-fit","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936848,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-strategy-capability-fit","name":"S1","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936848,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-talent-density","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936848,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-talent-density","name":"O10","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936848,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-time-penetration","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936848,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-time-penetration","name":"时间穿透力","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936849,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-unit-economics","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936849,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-unit-economics","name":"单位经济可持续性","category":"growth","msg":"哨兵已注册"}
+{"level":40,"time":1788894936849,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-value-capture","msg":"哨兵已注册 — 覆盖旧实例"}
+{"level":30,"time":1788894936849,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/registry","sentinelId":"sentinel-value-capture","name":"价值捕获效率","category":"growth","msg":"哨兵已注册"}
+{"level":30,"time":1788894936849,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/loader","registered":45,"errors":0,"msg":"文件驱动哨兵已注册"}
+{"level":30,"time":1788894936849,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"init/file-driven-loaders","count":45,"registered":45,"msg":"sentinel loader 已初始化"}
+{"level":30,"time":1788894936853,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l3/rule-loader","diagnostic":6,"strategies":4,"msg":"规则加载完成"}
+{"level":30,"time":1788894936853,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"init/file-driven-loaders","diag":6,"sens":0,"strategies":4,"msg":"rule loader 已初始化"}
+{"level":30,"time":1788894936853,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"init/file-driven-loaders","nodes":29,"edges":55,"msg":"ontology loader 已初始化"}
+{"level":30,"time":1788894936856,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l4/adapter-loader","count":2,"msg":"适配器加载完成"}
+{"level":30,"time":1788894936857,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"init/file-driven-loaders","count":2,"msg":"adapter loader 已初始化"}
+{"level":30,"time":1788894936858,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/adapter-scanner","count":8,"errors":0,"msg":"field-mappings 扫描完成"}
+{"level":30,"time":1788894936858,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/adapter-registry","registered":8,"errors":0,"msg":"批量适配器注册完成"}
+{"level":30,"time":1788894936858,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"init/file-driven-loaders","registered":8,"total":8,"msg":"field-mappings 适配器已自动发现并注册"}
+{"level":30,"time":1788894936858,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","msg":"Phase 3b: 文件驱动加载器初始化完成"}
+{"level":30,"time":1788894936866,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","count":16,"msg":"Phase 3c: ExtensionRegistry discover 完成"}
+{"level":30,"time":1788894936868,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"adapters/federal","msg":"FederalReporter 已初始化 (联邦进化已启用)"}
+{"level":30,"time":1788894936869,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","msg":"Phase 3d: 联邦进化上报已启用"}
+{"level":30,"time":1788894936869,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","phase":"ontology-compute","durationMs":76,"msg":"Phase 3 完成"}
+{"level":30,"time":1788894936902,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","msg":"Phase 4a: CredentialVault 已初始化 (AES-256-GCM)"}
+{"level":30,"time":1788894936903,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","msg":"Phase 4b: CredentialPool 已初始化 (多凭据轮换)"}
+{"level":30,"time":1788894936904,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","msg":"Phase 4c: PIIScrubber 已初始化 (S1-S4 敏感度脱敏)"}
+{"level":40,"time":1788894936904,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/config-recovery","path":"/tmp/d602-ds4-evidence/synova.db.config.json","msg":"配置文件不存在"}
+{"level":30,"time":1788894936906,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","msg":"Phase 4e: Knowledge 服务已初始化"}
+{"level":30,"time":1788894936906,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","msg":"Phase 4f: BehaviorMonitor 已加载 — 4 rules active"}
+{"level":30,"time":1788894936907,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/expert-config-loader","expertCount":7,"path":"/Users/wane/SynovaAgent/.synova-wt-d602/expert/expert-registry.yaml","msg":"专家配置已从 yaml 加载"}
+{"level":30,"time":1788894936907,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","experts":7,"msg":"Phase 4g: 专家配置已加载"}
+{"level":30,"time":1788894936907,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","msg":"Phase 4h: PolicyEngine 已验证"}
+{"level":30,"time":1788894936918,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/file-scanner","msg":"measurers/ 目录不存在 — 跳过测量器配置扫描"}
+{"level":30,"time":1788894936919,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/file-scanner","experts":7,"measurers":0,"knowledge":2,"totalFiles":45,"errors":0,"msg":"文件扫描完成"}
+{"level":30,"time":1788894936920,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l3/expert-registry","type":"capital-cycle","msg":"专家类型已注册"}
+{"level":30,"time":1788894936920,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/expert-file-loader","expert":"capital-cycle","sources":["expert/capital-cycle/IDENTITY.md","expert/capital-cycle/IDENTITY.md (analytical_lens)","expert/capital-cycle/THEORY.md","expert/capital-cycle/RULES.md","expert/capital-cycle/TOOLS.md","expert/capital-cycle/KNOWLEDGE.md","expert/capital-cycle/CROSS_EXPERT.md"],"missing":["SOUL","STAGE_LOGIC"],"msg":"专家已从文件加载"}
+{"level":30,"time":1788894936920,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l3/expert-registry","type":"competitive-strategy","msg":"专家类型已注册"}
+{"level":30,"time":1788894936921,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/expert-file-loader","expert":"competitive-strategy","sources":["expert/competitive-strategy/IDENTITY.md","expert/competitive-strategy/IDENTITY.md (analytical_lens)","expert/competitive-strategy/THEORY.md","expert/competitive-strategy/RULES.md","expert/competitive-strategy/TOOLS.md","expert/competitive-strategy/CROSS_EXPERT.md"],"missing":["SOUL","STAGE_LOGIC","KNOWLEDGE"],"msg":"专家已从文件加载"}
+{"level":30,"time":1788894936921,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l3/expert-registry","type":"customer-cycle","msg":"专家类型已注册"}
+{"level":30,"time":1788894936921,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/expert-file-loader","expert":"customer-cycle","sources":["expert/customer-cycle/IDENTITY.md","expert/customer-cycle/IDENTITY.md (analytical_lens)","expert/customer-cycle/THEORY.md","expert/customer-cycle/RULES.md","expert/customer-cycle/TOOLS.md","expert/customer-cycle/KNOWLEDGE.md","expert/customer-cycle/CROSS_EXPERT.md"],"missing":["SOUL","STAGE_LOGIC"],"msg":"专家已从文件加载"}
+{"level":30,"time":1788894936921,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l3/expert-registry","type":"finance-structure","msg":"专家类型已注册"}
+{"level":30,"time":1788894936921,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/expert-file-loader","expert":"finance-structure","sources":["expert/finance-structure/IDENTITY.md","expert/finance-structure/IDENTITY.md (analytical_lens)","expert/finance-structure/THEORY.md","expert/finance-structure/RULES.md","expert/finance-structure/TOOLS.md","expert/finance-structure/CROSS_EXPERT.md"],"missing":["SOUL","STAGE_LOGIC","KNOWLEDGE"],"msg":"专家已从文件加载"}
+{"level":30,"time":1788894936921,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l3/expert-registry","type":"host","msg":"专家类型已注册"}
+{"level":30,"time":1788894936921,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/expert-file-loader","expert":"host","sources":["expert/host/IDENTITY.md","expert/host/IDENTITY.md (analytical_lens)","expert/host/THEORY.md","expert/host/RULES.md","expert/host/TOOLS.md","expert/host/CROSS_EXPERT.md"],"missing":["SOUL","STAGE_LOGIC","KNOWLEDGE"],"msg":"专家已从文件加载"}
+{"level":30,"time":1788894936921,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l3/expert-registry","type":"talent-cycle","msg":"专家类型已注册"}
+{"level":30,"time":1788894936921,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/expert-file-loader","expert":"talent-cycle","sources":["expert/talent-cycle/IDENTITY.md","expert/talent-cycle/IDENTITY.md (analytical_lens)","expert/talent-cycle/THEORY.md","expert/talent-cycle/RULES.md","expert/talent-cycle/TOOLS.md","expert/talent-cycle/KNOWLEDGE.md","expert/talent-cycle/CROSS_EXPERT.md"],"missing":["SOUL","STAGE_LOGIC"],"msg":"专家已从文件加载"}
+{"level":30,"time":1788894936921,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l3/expert-registry","type":"tech","msg":"专家类型已注册"}
+{"level":30,"time":1788894936921,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/expert-file-loader","expert":"tech","sources":["expert/tech/IDENTITY.md","expert/tech/IDENTITY.md (analytical_lens)","expert/tech/THEORY.md","expert/tech/RULES.md","expert/tech/TOOLS.md","expert/tech/CROSS_EXPERT.md"],"missing":["SOUL","STAGE_LOGIC","KNOWLEDGE"],"msg":"专家已从文件加载"}
+{"level":30,"time":1788894936921,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/expert-file-loader","fromFiles":7,"fromDefaults":0,"totalLoaded":7,"errors":0,"msg":"专家文件加载完成"}
+{"level":30,"time":1788894936921,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","fromFiles":7,"total":7,"msg":"Phase 4i: 专家文件加载完成"}
+{"level":30,"time":1788894936922,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","msg":"Phase 4j: Workspace 服务已就绪"}
+{"level":30,"time":1788894936922,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","phase":"expert-security","durationMs":53,"msg":"Phase 4 完成"}
+{"level":30,"time":1788894936924,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/context-budget","msg":"ContextBudgetTracker 已初始化"}
+{"level":30,"time":1788894936924,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","msg":"Phase 5a: 上下文预算追踪器已初始化"}
+{"level":30,"time":1788894936925,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","msg":"Phase 5b: BossMailbox 已就绪"}
+{"level":30,"time":1788894936925,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","msg":"Phase 5c: Cron 调度器已启动"}
+{"level":30,"time":1788894937103,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","msg":"Connector 同步调度已启动 (cron: */30 * * * *)"}
+{"level":30,"time":1788894937103,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","msg":"企业事实冲突扫描调度已启动 (cron: 0 4 * * *)"}
+{"level":30,"time":1788894937103,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","msg":"每日简报调度已启动 (cron: 0 19 * * *)"}
+{"level":30,"time":1788894937103,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","msg":"数据库备份调度已启动 (cron: 0 3 * * *, 保留 7 天)"}
+{"level":30,"time":1788894937112,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l4/knowledge-store","msg":"KnowledgeStore schema initialized"}
+{"level":30,"time":1788894937113,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l3/knowledge-agent","extracted":0,"errors":0,"msg":"齿轮6 知识提取完成"}
+{"level":30,"time":1788894937113,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l3/gear6-scheduler","intervalMs":21600000,"msg":"齿轮6 调度器已启动 (每6h)"}
+{"level":30,"time":1788894937113,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","msg":"Phase 5d: 齿轮6 知识提取调度已启动 (每6h)"}
+{"level":30,"time":1788894937113,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l3/gear6-scheduler","extracted":0,"errors":0,"msg":"齿轮6 首次运行完成"}
+{"level":30,"time":1788894937119,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l4/knowledge-store","msg":"KnowledgeStore schema initialized"}
+{"level":30,"time":1788894937151,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l3/pkb-seed","inserted":178,"total":178,"msg":"PKB 种子知识写入完成"}
+{"level":30,"time":1788894937151,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","inserted":178,"msg":"PKB 种子知识已初始化"}
+{"level":30,"time":1788894937152,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","msg":"Phase 5e: KnowledgeAgent 已注册 — 第7个专家就绪"}
+{"level":30,"time":1788894937154,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","msg":"Phase 5f: 文件安全守卫已启动"}
+{"level":30,"time":1788894937159,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l5/alert-rules","count":0,"msg":"冷却期已从 SQLite 恢复"}
+{"level":30,"time":1788894937159,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","msg":"Phase 5f: 告警规则引擎已初始化"}
+{"level":30,"time":1788894937162,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","msg":"Phase 5f: IM 通道 — 未配置飞书 Webhook"}
+{"level":30,"time":1788894937169,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"mcp/bridge","server":"brave-search","msg":"启动 MCP Server"}
+{"level":30,"time":1788894937171,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"mcp/bridge","server":"github","msg":"启动 MCP Server"}
+{"level":30,"time":1788894937172,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"deploy/bootstrap","phase":"interaction","durationMs":250,"msg":"Phase 5 完成"}
+{"level":30,"time":1788894937172,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","msg":"Bootstrap 服务已就绪，开始 Express 设置"}
+{"level":30,"time":1788894937172,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"notifications/registry","channel":"electron","msg":"通知适配器已注册"}
+{"level":30,"time":1788894937172,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","msg":"Electron 通知适配器已注册"}
+{"level":30,"time":1788894937175,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"orchestrator/phase-gate-check","phaseGates":["1→2: dataCompleteness","2→3: hypothesisConfidence","4→5: reportCompleteness"],"thresholds":{"minEvidenceCount":3,"minHypothesisConfidence":0.5,"minExpertsPassed":4},"msg":"Phase Gate Check 已注册"}
+{"level":30,"time":1788894937182,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/file-scanner","msg":"measurers/ 目录不存在 — 跳过测量器配置扫描"}
+{"level":30,"time":1788894937183,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/file-scanner","experts":7,"measurers":0,"knowledge":2,"totalFiles":45,"errors":0,"msg":"文件扫描完成"}
+{"level":30,"time":1788894937183,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l3/expert-registry","type":"capital-cycle","msg":"专家类型已注册"}
+{"level":30,"time":1788894937183,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/expert-file-loader","expert":"capital-cycle","sources":["expert/capital-cycle/IDENTITY.md","expert/capital-cycle/IDENTITY.md (analytical_lens)","expert/capital-cycle/THEORY.md","expert/capital-cycle/RULES.md","expert/capital-cycle/TOOLS.md","expert/capital-cycle/KNOWLEDGE.md","expert/capital-cycle/CROSS_EXPERT.md"],"missing":["SOUL","STAGE_LOGIC"],"msg":"专家已从文件加载"}
+{"level":30,"time":1788894937183,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l3/expert-registry","type":"competitive-strategy","msg":"专家类型已注册"}
+{"level":30,"time":1788894937183,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/expert-file-loader","expert":"competitive-strategy","sources":["expert/competitive-strategy/IDENTITY.md","expert/competitive-strategy/IDENTITY.md (analytical_lens)","expert/competitive-strategy/THEORY.md","expert/competitive-strategy/RULES.md","expert/competitive-strategy/TOOLS.md","expert/competitive-strategy/CROSS_EXPERT.md"],"missing":["SOUL","STAGE_LOGIC","KNOWLEDGE"],"msg":"专家已从文件加载"}
+{"level":30,"time":1788894937183,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l3/expert-registry","type":"customer-cycle","msg":"专家类型已注册"}
+{"level":30,"time":1788894937183,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/expert-file-loader","expert":"customer-cycle","sources":["expert/customer-cycle/IDENTITY.md","expert/customer-cycle/IDENTITY.md (analytical_lens)","expert/customer-cycle/THEORY.md","expert/customer-cycle/RULES.md","expert/customer-cycle/TOOLS.md","expert/customer-cycle/KNOWLEDGE.md","expert/customer-cycle/CROSS_EXPERT.md"],"missing":["SOUL","STAGE_LOGIC"],"msg":"专家已从文件加载"}
+{"level":30,"time":1788894937183,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l3/expert-registry","type":"finance-structure","msg":"专家类型已注册"}
+{"level":30,"time":1788894937184,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/expert-file-loader","expert":"finance-structure","sources":["expert/finance-structure/IDENTITY.md","expert/finance-structure/IDENTITY.md (analytical_lens)","expert/finance-structure/THEORY.md","expert/finance-structure/RULES.md","expert/finance-structure/TOOLS.md","expert/finance-structure/CROSS_EXPERT.md"],"missing":["SOUL","STAGE_LOGIC","KNOWLEDGE"],"msg":"专家已从文件加载"}
+{"level":30,"time":1788894937184,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l3/expert-registry","type":"host","msg":"专家类型已注册"}
+{"level":30,"time":1788894937184,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/expert-file-loader","expert":"host","sources":["expert/host/IDENTITY.md","expert/host/IDENTITY.md (analytical_lens)","expert/host/THEORY.md","expert/host/RULES.md","expert/host/TOOLS.md","expert/host/CROSS_EXPERT.md"],"missing":["SOUL","STAGE_LOGIC","KNOWLEDGE"],"msg":"专家已从文件加载"}
+{"level":30,"time":1788894937184,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l3/expert-registry","type":"talent-cycle","msg":"专家类型已注册"}
+{"level":30,"time":1788894937184,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/expert-file-loader","expert":"talent-cycle","sources":["expert/talent-cycle/IDENTITY.md","expert/talent-cycle/IDENTITY.md (analytical_lens)","expert/talent-cycle/THEORY.md","expert/talent-cycle/RULES.md","expert/talent-cycle/TOOLS.md","expert/talent-cycle/KNOWLEDGE.md","expert/talent-cycle/CROSS_EXPERT.md"],"missing":["SOUL","STAGE_LOGIC"],"msg":"专家已从文件加载"}
+{"level":30,"time":1788894937184,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l3/expert-registry","type":"tech","msg":"专家类型已注册"}
+{"level":30,"time":1788894937184,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/expert-file-loader","expert":"tech","sources":["expert/tech/IDENTITY.md","expert/tech/IDENTITY.md (analytical_lens)","expert/tech/THEORY.md","expert/tech/RULES.md","expert/tech/TOOLS.md","expert/tech/CROSS_EXPERT.md"],"missing":["SOUL","STAGE_LOGIC","KNOWLEDGE"],"msg":"专家已从文件加载"}
+{"level":30,"time":1788894937184,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/expert-file-loader","fromFiles":7,"fromDefaults":0,"totalLoaded":7,"errors":0,"msg":"专家文件加载完成"}
+{"level":30,"time":1788894937184,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","fromFiles":7,"total":7,"msg":"Phase 0 专家文件加载完成"}
+{"level":30,"time":1788894937193,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/main-agent","loopId":"loop-1","scales":3,"msg":"循环已注册到 MainAgent"}
+{"level":30,"time":1788894937193,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/main-agent","loopId":"loop-2","scales":3,"msg":"循环已注册到 MainAgent"}
+{"level":30,"time":1788894937193,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/main-agent","loopId":"loop-3","scales":3,"msg":"循环已注册到 MainAgent"}
+{"level":30,"time":1788894937193,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/main-agent","loopId":"loop-4","scales":3,"msg":"循环已注册到 MainAgent"}
+{"level":30,"time":1788894937193,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/main-agent","loopId":"loop-5","scales":3,"msg":"循环已注册到 MainAgent"}
+{"level":30,"time":1788894937193,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/main-agent","loopId":"loop-6","scales":3,"msg":"循环已注册到 MainAgent"}
+{"level":30,"time":1788894937193,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"routes/overflow","msg":"Overflow GraphStore 已注入"}
+{"level":30,"time":1788894937194,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/memory-monitor","rss":186122240,"heapUsed":30162792,"msg":"[MEMORY] 基线"}
+{"level":30,"time":1788894937194,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","msg":"全局错误处理器已注册 (uncaughtException + unhandledRejection)"}
+{"level":30,"time":1788894937194,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","port":18991,"msg":"Synova-Agent → http://localhost:18991"}
+{"level":30,"time":1788894937390,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"growth/feedback-collector","msg":"feedback_log 表就绪"}
+{"level":30,"time":1788894937390,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/baseline-store","baselineMinRuns":3,"findingCountRatioWarning":2,"findingCountRatioCritical":3,"perSentinel":{},"msg":"[baseline] 阈值配置已更新"}
+{"level":30,"time":1788894937390,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/synova-agent","baselineMinRuns":3,"msg":"[baseline] 哨兵阈值配置已加载"}
+{"level":50,"time":1788894937396,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/builtins","filename":"cash-flow-sentinel.ts","key":"cashFlow","msg":"[builtins] cash-flow-sentinel.ts 未导出哨兵对象 (key=cashFlow)"}
+{"level":50,"time":1788894937398,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/builtins","filename":"cpc-sentinel.ts","key":"cpc","msg":"[builtins] cpc-sentinel.ts 未导出哨兵对象 (key=cpc)"}
+{"level":50,"time":1788894937405,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/builtins","filename":"goal-alignment-sentinel.ts","key":"goalAlignment","msg":"[builtins] goal-alignment-sentinel.ts 未导出哨兵对象 (key=goalAlignment)"}
+{"level":50,"time":1788894937408,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/builtins","filename":"integration-health-sentinel.ts","key":"integrationHealth","msg":"[builtins] integration-health-sentinel.ts 未导出哨兵对象 (key=integrationHealth)"}
+{"level":30,"time":1788894937408,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/builtins","registered":0,"total":45,"cronCount":45,"scanned":4,"msg":"[builtins] 哨兵自动注册完成"}
+{"level":30,"time":1788894937408,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/restart-recovery","msg":"无可恢复的中断会话"}
+{"level":30,"time":1788894937408,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/escalation-engine","ruleCount":0,"msg":"EscalationEngine 初始化完成"}
+{"level":30,"time":1788894937415,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-agent-deployment-maturity","cron":"0 0 1 * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937421,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-ai-ecosystem-fit","cron":"0 0 1 * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937426,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-ai-investment-return","cron":"0 0 1 * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937426,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-api-coverage","cron":"0 9 * * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937433,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-business-model-coherence","cron":"0 0 1 * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937439,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-capital-health","cron":"0 0 1 * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937439,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-cash-runway","cron":"0 9 * * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937445,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-channel-capacity","cron":"0 0 1 * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937450,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-competitive-moat","cron":"0 0 1 * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937456,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-competitive-position","cron":"0 0 1 * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937457,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-customer-demand-shift","cron":"0 9 * * 1","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937458,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-data-health","cron":"0 9 * * 1","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937464,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-environment-rent-dependency","cron":"0 0 1 * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937469,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-explore-exploit-balance","cron":"0 0 1 * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937474,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-financing-constraint","cron":"0 0 1 * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937480,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-growth-quality","cron":"0 0 1 * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937485,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-human-agent-boundary","cron":"0 0 1 * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937490,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-incentive-alignment","cron":"0 0 1 * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937495,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-info-distortion","cron":"0 0 1 * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937500,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-internal-transaction-cost","cron":"0 0 1 * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937501,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-key-person-risk","cron":"0 3 * * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937506,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-knowledge-accessibility","cron":"0 0 1 * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937512,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-make-or-buy","cron":"0 0 1 * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937690,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-margin-health","cron":"0 */6 * * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937695,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-moat-dependency","cron":"0 0 1 * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937700,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-network-power","cron":"0 0 1 * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937705,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-niche-breadth","cron":"0 0 1 * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937710,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-niche-squeeze","cron":"0 0 1 * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937716,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-opportunity-window","cron":"0 0 1 * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937721,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-org-repairability","cron":"0 0 1 * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937723,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-path-dependency","cron":"0 9 * * 1","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937728,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-power-rigidity","cron":"0 0 1 * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937733,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-process-ai-readiness","cron":"0 0 1 * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937737,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-resource-misallocation","cron":"0 0 1 * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937909,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-revenue-health","cron":"0 */6 * * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937914,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-routine-diffusion","cron":"0 0 1 * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937918,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-routine-mutation","cron":"0 0 1 * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937920,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-sentinel-forecast-accuracy","cron":"0 0 * * 1","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937921,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-sentinel-pricing-strategy","cron":"0 0 * * 1","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937922,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-software-health","cron":"0 10 * * 1","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937927,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-strategy-capability-fit","cron":"0 0 1 * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937932,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-talent-density","cron":"0 0 1 * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937938,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-time-penetration","cron":"0 0 1 * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937943,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-unit-economics","cron":"0 0 1 * *","msg":"[runner] 哨兵已调度"}
+{"level":30,"time":1788894937948,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-value-capture","cron":"0 0 1 * *","msg":"[runner] 哨兵已调度"}
+{"level":40,"time":1788894937948,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"notifications/registry","channel":"electron","msg":"通知适配器重复注册 — 覆盖旧适配器"}
+{"level":30,"time":1788894937948,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"notifications/registry","channel":"electron","msg":"通知适配器已注册"}
+{"level":30,"time":1788894937948,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","msg":"[runner] Electron 桌面推送适配器已注册"}
+{"level":30,"time":1788894937948,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","count":45,"msg":"[runner] 所有 cron 哨兵 + 信号聚合已启动"}
+{"level":30,"time":1788894937949,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"store/schema-migration","schemaVersion":2,"msg":"Schema 版本已初始化"}
+{"level":30,"time":1788894937950,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/synova-agent","msg":"[wiring] UserStore 已注入 enterprise 路由"}
+{"level":30,"time":1788894937951,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/loop-scheduler","msg":"[D9] loop-4-self-check 已注册 (0 0 * * *)"}
+{"level":30,"time":1788894937952,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/loop-scheduler","msg":"[D9] loop-5-knowledge 已注册 (0 0 * * 0)"}
+{"level":30,"time":1788894938119,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/loop-scheduler","msg":"[D9] loop-1-diagnosis 已注册 (0 9 1 */3 *)"}
+{"level":30,"time":1788894938120,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/loop-scheduler","msg":"[D9] loop-2-navigation 已注册 (0 9 * * 1)"}
+{"level":30,"time":1788894938282,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/loop-scheduler","msg":"[D237] loop-3-ga-evolution 已注册 (0 9 1 */3 *)"}
+{"level":30,"time":1788894938287,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/loop-scheduler","msg":"[D238] loop-6-overflow 已注册 (0 9 1 * *)"}
+{"level":30,"time":1788894938287,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/trigger-config","count":1,"msg":"循环触发矩阵验证通过"}
+{"level":30,"time":1788894938462,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/loop-scheduler","loopId":"loop-1","loopName":"Enterprise Diagnosis","msg":"循环已注册"}
+{"level":30,"time":1788894938462,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/trigger-config","count":1,"msg":"循环触发矩阵验证通过"}
+{"level":30,"time":1788894938469,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/loop-scheduler","loopId":"loop-2","loopName":"Department Navigation","msg":"循环已注册"}
+{"level":30,"time":1788894938469,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/trigger-config","count":1,"msg":"循环触发矩阵验证通过"}
+{"level":30,"time":1788894938801,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/loop-scheduler","loopId":"loop-3","loopName":"GA Evolution","msg":"循环已注册"}
+{"level":30,"time":1788894938801,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/trigger-config","count":1,"msg":"循环触发矩阵验证通过"}
+{"level":30,"time":1788894939158,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/loop-scheduler","loopId":"loop-4","loopName":"System Self-Check","msg":"循环已注册"}
+{"level":30,"time":1788894939158,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/trigger-config","count":1,"msg":"循环触发矩阵验证通过"}
+{"level":30,"time":1788894939337,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/loop-scheduler","loopId":"loop-5","loopName":"Knowledge Accumulation","msg":"循环已注册"}
+{"level":30,"time":1788894939337,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/trigger-config","count":1,"msg":"循环触发矩阵验证通过"}
+{"level":30,"time":1788894939500,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/loop-scheduler","loopId":"loop-6","loopName":"Overflow Monitor","msg":"循环已注册"}
+{"level":30,"time":1788894939500,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"loops/loop-scheduler","count":6,"total":6,"msg":"默认循环已注册"}
+{"level":30,"time":1788894939500,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/synova-agent","registered":6,"msg":"[wiring] 核心循环已注册"}
+{"level":40,"time":1788894939502,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"mcp/bridge","server":"brave-search","code":1,"msg":"MCP Server 退出"}
+{"level":40,"time":1788894939502,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"mcp/bridge","server":"github","code":1,"msg":"MCP Server 退出"}
+{"level":30,"time":1788894939506,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"services/delivery-queue","msg":"无待投递消息 — 跳过排干"}
+{"level":30,"time":1788894939506,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/synova-agent","msg":"[cron] stuck-session-detector 已注册 (每 60 秒)"}
+{"level":30,"time":1788894939680,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/synova-agent","msg":"[cron] ima-sync 已注册 (每 6 小时)"}
+{"level":30,"time":1788894939680,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/synova-agent","port":18991,"msg":"SynovaAgent 已启动"}
+{"level":30,"time":1788894939680,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/synova-agent","msg":"CommandLanes 已初始化（高风险工具隔离）"}
+{"level":30,"time":1788894939680,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","msg":"SynovaAgent 就绪"}
+{"level":30,"time":1788894944006,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/sentinel-service","status":"all","msg":"[getSentinelTickets] 工单表空 — 内存派生兜底（degraded）"}
+{"level":30,"time":1788894955354,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"store/schema-migration","schemaVersion":2,"msg":"Schema 版本已初始化"}
+{"level":30,"time":1788894955355,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l4/agent-memory-store","msg":"AgentMemoryStore 已初始化"}
+{"level":30,"time":1788894955356,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/cash-runway","teamId":"default","count":2,"msg":"现金流检查完成"}
+{"level":40,"time":1788894955356,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-cash-runway","total":2,"critical":0,"warning":2,"durationMs":2,"msg":"[runner] 哨兵发现: 2 条 (0 critical, 2 warning)"}
+{"level":30,"time":1788894955357,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/signal-aggregator","totalFindings":2,"signals":2,"critical":0,"msg":"[aggregator] 信号聚合完成"}
+{"level":30,"time":1788894955357,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","signals":2,"critical":0,"msg":"[runner] 聚合完成 — 无 critical 信号"}
+{"level":40,"time":1788894955408,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","autoTickets":0,"msg":"[runner] ExpertDispatcher 未初始化 — 自动工单已建，专家增强跳过（非阻断）"}
+{"level":40,"time":1788894955408,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"notifications/registry","notificationId":"notif-sig_现金流数据不完整","targetSystem":"electron","msg":"无匹配的通知适配器 — degraded"}
+{"level":40,"time":1788894967174,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"mcp/tool-registration","err":"MCP 调用超时: brave-search.initialize","msg":"Brave Search 注册失败 — degraded (BRAVE_API_KEY 未配置)"}
+{"level":30,"time":1788894977871,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l4/agent-memory-store","msg":"AgentMemoryStore 已初始化"}
+{"level":30,"time":1788894977873,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/revenue-health","teamId":"default","msg":"无收入数据"}
+{"level":30,"time":1788894977874,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/signal-aggregator","totalFindings":2,"signals":2,"critical":0,"msg":"[aggregator] 信号聚合完成"}
+{"level":30,"time":1788894977874,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","signals":2,"critical":0,"msg":"[runner] 聚合完成 — 无 critical 信号"}
+{"level":40,"time":1788894977875,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","autoTickets":0,"msg":"[runner] ExpertDispatcher 未初始化 — 自动工单已建，专家增强跳过（非阻断）"}
+{"level":30,"time":1788894977894,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l4/agent-memory-store","msg":"AgentMemoryStore 已初始化"}
+{"level":30,"time":1788894977895,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/capital-health","teamId":"default","msg":"无 Financial 节点 — 空库基线"}
+{"level":30,"time":1788894977895,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/signal-aggregator","totalFindings":2,"signals":2,"critical":0,"msg":"[aggregator] 信号聚合完成"}
+{"level":30,"time":1788894977896,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","signals":2,"critical":0,"msg":"[runner] 聚合完成 — 无 critical 信号"}
+{"level":40,"time":1788894977896,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","autoTickets":0,"msg":"[runner] ExpertDispatcher 未初始化 — 自动工单已建，专家增强跳过（非阻断）"}
+{"level":30,"time":1788894977908,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l4/agent-memory-store","msg":"AgentMemoryStore 已初始化"}
+{"level":30,"time":1788894977909,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/signal-aggregator","totalFindings":2,"signals":2,"critical":0,"msg":"[aggregator] 信号聚合完成"}
+{"level":30,"time":1788894977909,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","signals":2,"critical":0,"msg":"[runner] 聚合完成 — 无 critical 信号"}
+{"level":40,"time":1788894977909,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","autoTickets":0,"msg":"[runner] ExpertDispatcher 未初始化 — 自动工单已建，专家增强跳过（非阻断）"}
+{"level":30,"time":1788894977922,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l4/agent-memory-store","msg":"AgentMemoryStore 已初始化"}
+{"level":30,"time":1788894977923,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/signal-aggregator","totalFindings":2,"signals":2,"critical":0,"msg":"[aggregator] 信号聚合完成"}
+{"level":30,"time":1788894977923,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","signals":2,"critical":0,"msg":"[runner] 聚合完成 — 无 critical 信号"}
+{"level":40,"time":1788894977923,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","autoTickets":0,"msg":"[runner] ExpertDispatcher 未初始化 — 自动工单已建，专家增强跳过（非阻断）"}
+{"level":30,"time":1788894977936,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l4/agent-memory-store","msg":"AgentMemoryStore 已初始化"}
+{"level":30,"time":1788894977937,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/signal-aggregator","totalFindings":2,"signals":2,"critical":0,"msg":"[aggregator] 信号聚合完成"}
+{"level":30,"time":1788894977937,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","signals":2,"critical":0,"msg":"[runner] 聚合完成 — 无 critical 信号"}
+{"level":40,"time":1788894977937,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","autoTickets":0,"msg":"[runner] ExpertDispatcher 未初始化 — 自动工单已建，专家增强跳过（非阻断）"}
+{"level":30,"time":1788894977950,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l4/agent-memory-store","msg":"AgentMemoryStore 已初始化"}
+{"level":30,"time":1788894977951,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/signal-aggregator","totalFindings":2,"signals":2,"critical":0,"msg":"[aggregator] 信号聚合完成"}
+{"level":30,"time":1788894977951,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","signals":2,"critical":0,"msg":"[runner] 聚合完成 — 无 critical 信号"}
+{"level":40,"time":1788894977951,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","autoTickets":0,"msg":"[runner] ExpertDispatcher 未初始化 — 自动工单已建，专家增强跳过（非阻断）"}
+{"level":30,"time":1788894977964,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l4/agent-memory-store","msg":"AgentMemoryStore 已初始化"}
+{"level":30,"time":1788894977965,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/margin-health","teamId":"default","msg":"无 Financial 节点 — 空库基线"}
+{"level":30,"time":1788894977965,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/signal-aggregator","totalFindings":2,"signals":2,"critical":0,"msg":"[aggregator] 信号聚合完成"}
+{"level":30,"time":1788894977965,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","signals":2,"critical":0,"msg":"[runner] 聚合完成 — 无 critical 信号"}
+{"level":40,"time":1788894977965,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","autoTickets":0,"msg":"[runner] ExpertDispatcher 未初始化 — 自动工单已建，专家增强跳过（非阻断）"}
+{"level":30,"time":1788894977977,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l4/agent-memory-store","msg":"AgentMemoryStore 已初始化"}
+{"level":30,"time":1788894977979,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/signal-aggregator","totalFindings":2,"signals":2,"critical":0,"msg":"[aggregator] 信号聚合完成"}
+{"level":30,"time":1788894977979,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","signals":2,"critical":0,"msg":"[runner] 聚合完成 — 无 critical 信号"}
+{"level":40,"time":1788894977979,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","autoTickets":0,"msg":"[runner] ExpertDispatcher 未初始化 — 自动工单已建，专家增强跳过（非阻断）"}
+{"level":30,"time":1788894977990,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/sentinel-service","status":"all","msg":"[getSentinelTickets] 工单表空 — 内存派生兜底（degraded）"}
+{"level":30,"time":1788894995266,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l4/agent-memory-store","msg":"AgentMemoryStore 已初始化"}
+{"level":30,"time":1788895020021,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l4/agent-memory-store","msg":"AgentMemoryStore 已初始化"}
+{"level":30,"time":1788895080033,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l4/agent-memory-store","msg":"AgentMemoryStore 已初始化"}
+{"level":30,"time":1788895128517,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l4/agent-memory-store","msg":"AgentMemoryStore 已初始化"}
+{"level":30,"time":1788895128520,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/cash-runway","teamId":"default","count":2,"msg":"现金流检查完成"}
+{"level":40,"time":1788895128522,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","sentinelId":"sentinel-cash-runway","total":2,"critical":0,"warning":2,"durationMs":10,"msg":"[runner] 哨兵发现: 2 条 (0 critical, 2 warning)"}
+{"level":30,"time":1788895128523,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/signal-aggregator","totalFindings":2,"signals":2,"critical":0,"msg":"[aggregator] 信号聚合完成"}
+{"level":30,"time":1788895128524,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","signals":2,"critical":0,"msg":"[runner] 聚合完成 — 无 critical 信号"}
+{"level":40,"time":1788895128524,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","autoTickets":0,"msg":"[runner] ExpertDispatcher 未初始化 — 自动工单已建，专家增强跳过（非阻断）"}
+{"level":30,"time":1788895128533,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/sentinel-service","status":"all","msg":"[getSentinelTickets] 工单表空 — 内存派生兜底（degraded）"}
+{"level":30,"time":1788895140009,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"l4/agent-memory-store","msg":"AgentMemoryStore 已初始化"}
+{"level":30,"time":1788895144411,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","forensics":{"signal":"SIGTERM","pid":80964,"uptime":209.989636,"memory":{"rss":52887552,"heapTotal":34865152,"heapUsed":30881072,"external":4354897,"arrayBuffers":92814},"timestamp":"2026-09-08T19:19:04.411Z"},"msg":"shutdown forensics"}
+{"level":30,"time":1788895144412,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"agent/synova-agent","msg":"正在关闭..."}
+{"level":30,"time":1788895144413,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uvr6_ar3n","msg":"任务已删除"}
+{"level":30,"time":1788895144413,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uvrb_ghg5","msg":"任务已删除"}
+{"level":30,"time":1788895144413,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uvrh_ud5m","msg":"任务已删除"}
+{"level":30,"time":1788895144413,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uvrm_zc51","msg":"任务已删除"}
+{"level":30,"time":1788895144413,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uvrm_4tdw","msg":"任务已删除"}
+{"level":30,"time":1788895144413,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uvrt_8p20","msg":"任务已删除"}
+{"level":30,"time":1788895144414,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uvrz_0m9e","msg":"任务已删除"}
+{"level":30,"time":1788895144414,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uvrz_pfgw","msg":"任务已删除"}
+{"level":30,"time":1788895144414,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uvs5_1n3q","msg":"任务已删除"}
+{"level":30,"time":1788895144414,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uvsa_bviw","msg":"任务已删除"}
+{"level":30,"time":1788895144414,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uvsg_9cub","msg":"任务已删除"}
+{"level":30,"time":1788895144414,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uvsh_9al4","msg":"任务已删除"}
+{"level":30,"time":1788895144415,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uvsi_u09l","msg":"任务已删除"}
+{"level":30,"time":1788895144415,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uvso_vgph","msg":"任务已删除"}
+{"level":30,"time":1788895144415,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uvst_3e7s","msg":"任务已删除"}
+{"level":30,"time":1788895144415,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uvsy_333p","msg":"任务已删除"}
+{"level":30,"time":1788895144415,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uvt4_4vr7","msg":"任务已删除"}
+{"level":30,"time":1788895144415,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uvt9_e40i","msg":"任务已删除"}
+{"level":30,"time":1788895144415,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uvte_xxmk","msg":"任务已删除"}
+{"level":30,"time":1788895144415,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uvtj_3e4l","msg":"任务已删除"}
+{"level":30,"time":1788895144415,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uvto_8hlt","msg":"任务已删除"}
+{"level":30,"time":1788895144415,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uvtp_mgil","msg":"任务已删除"}
+{"level":30,"time":1788895144416,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uvtu_f4cm","msg":"任务已删除"}
+{"level":30,"time":1788895144416,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uvu0_cztm","msg":"任务已删除"}
+{"level":30,"time":1788895144416,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uvyy_6p2t","msg":"任务已删除"}
+{"level":30,"time":1788895144416,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uvz3_4efj","msg":"任务已删除"}
+{"level":30,"time":1788895144416,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uvz8_xl5b","msg":"任务已删除"}
+{"level":30,"time":1788895144416,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uvzd_d6cy","msg":"任务已删除"}
+{"level":30,"time":1788895144416,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uvzi_eyu2","msg":"任务已删除"}
+{"level":30,"time":1788895144416,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uvzo_fpwl","msg":"任务已删除"}
+{"level":30,"time":1788895144416,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uvzt_nyzp","msg":"任务已删除"}
+{"level":30,"time":1788895144416,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uvzv_u3cz","msg":"任务已删除"}
+{"level":30,"time":1788895144416,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uw00_exxe","msg":"任务已删除"}
+{"level":30,"time":1788895144416,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uw05_ag6n","msg":"任务已删除"}
+{"level":30,"time":1788895144417,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uw0a_3kba","msg":"任务已删除"}
+{"level":30,"time":1788895144417,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uw51_udog","msg":"任务已删除"}
+{"level":30,"time":1788895144417,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uw56_g14s","msg":"任务已删除"}
+{"level":30,"time":1788895144417,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uw5b_c5et","msg":"任务已删除"}
+{"level":30,"time":1788895144417,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uw5c_phff","msg":"任务已删除"}
+{"level":30,"time":1788895144417,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uw5d_y17d","msg":"任务已删除"}
+{"level":30,"time":1788895144417,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uw5e_bb94","msg":"任务已删除"}
+{"level":30,"time":1788895144417,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uw5j_po38","msg":"任务已删除"}
+{"level":30,"time":1788895144417,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uw5p_pwxl","msg":"任务已删除"}
+{"level":30,"time":1788895144417,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uw5u_3q0c","msg":"任务已删除"}
+{"level":30,"time":1788895144417,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"cron/scheduler","id":"cron_mtt1uw5z_g8u1","msg":"任务已删除"}
+{"level":30,"time":1788895144417,"pid":80964,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"sentinel/runner","msg":"[runner] 所有哨兵已停止"}
+npm notice
+npm notice New major version of npm available! 10.9.4 -> 12.0.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.0.2
+npm notice To update run: npm install -g npm@12.0.2
+npm notice
