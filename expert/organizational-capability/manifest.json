@@ -1,0 +1,32 @@
+{
+  "name": "organizational-capability",
+  "version": "1.0.0",
+  "type": "expert",
+  "displayName": "组织能力专家",
+  "description": "覆盖组织健康、知识资产、关键人风险——回答「组织能力撑不撑得起增长」",
+  "tier": "L3",
+  "complexity": "expert",
+  "edges": [
+    "E-07",
+    "E-14",
+    "E-15",
+    "E-17",
+    "E-09",
+    "E-19",
+    "E-20"
+  ],
+  "computes": [
+    "COMPUTE-INFORMATION-FLOW-v1",
+    "COMPUTE-INCENTIVE-ALIGNMENT-v1",
+    "COMPUTE-TRUST-FRICTION-v1",
+    "COMPUTE-KNOWLEDGE-SHARING-v1",
+    "COMPUTE-ORGANIZATIONAL-LEARNING-v1"
+  ],
+  "tools": [
+    "compute-information-flow",
+    "compute-incentive-alignment",
+    "compute-trust-friction",
+    "compute-knowledge-sharing",
+    "compute-organizational-learning"
+  ]
+}

@@ -1,13 +1,20 @@
-# Synova Expert Registry v2.0 — D282: 9→7 迁移
+# Synova Expert Registry v3.0 — D650: 专家名 cycle 命名 → 问题域命名
 # 声明式专家配置。加新专家 = 加一个条目 + 创建目录 → 自动注册。
 # 不需要改任何 TypeScript 文件。
 #
+# 权威口径（第六章 §6.6）: 专家名禁含 cycle；capital/customer/talent 只作资源维度/资源循环，
+# 不作专家名。问题域五专家: 资金效率/客户增长/组织能力/技术底座/竞争战略（第七章 §7.4 英文名）。
+#
+# v3.0 变更 (2026-09-09, 权威 §6.9.1 迁移映射):
+#   改名: 4 位循环命名专家 → 问题域命名（目录 git mv + manifest name 同步）
+#   并入: 资金结构专家 tools 并入 fundamental-efficiency，目录归档 expert/_deprecated/
+#   保留: host（主持）、competitive-strategy（竞争战略，命名本就合规）
+#
 # v2.0 变更 (2026-07-30):
-#   移除: strategy, org, finance, marketing, action, business_model, knowledge
-#   新增: capital-cycle, customer-cycle, talent-cycle, finance-structure, competitive-strategy
-#   旧目录归档至 expert/_deprecated/
+#   9 位旧专家（strategy/org/finance/marketing/action/business_model/knowledge 等）
+#   迁移为 7 位；旧目录归档至 expert/_deprecated/
 
-version: 2
+version: 3
 
 experts:
   host:
@@ -16,35 +23,30 @@ experts:
     model: default
     tools: [route_to_expert, summarize_findings, escalate, query_memory, query_knowledge, get_sentinel_status]
 
-  capital-cycle:
+  fundamental-efficiency:
     enabled: true
     background: true
     model: default
-    tools: [compute-break-even, compute-dol, compute-capital-allocation, compute-npv, compute-irr]
+    # D650: 资金结构专家 3 个 tools 并入本问题域（权威 §6.9.1「并入资金效率」）
+    tools: [compute-break-even, compute-dol, compute-capital-allocation, compute-npv, compute-irr, compute-interest-coverage, compute-debt-maturity, compute-liquidity-ratio]
 
-  customer-cycle:
+  customer-growth:
     enabled: true
     background: true
     model: default
     tools: [compute-competitive-positioning, compute-hhi, compute-customer-value-score, compute-price-elasticity, compute-optimal-price]
 
-  talent-cycle:
+  organizational-capability:
     enabled: true
     background: true
     model: default
     tools: [compute-information-flow, compute-incentive-alignment, compute-trust-friction, compute-knowledge-sharing, compute-organizational-learning]
 
-  tech:
+  technology-foundation:
     enabled: true
     background: true
     model: default
     tools: [software_ecosystem_scan, connector_blueprint]
-
-  finance-structure:
-    enabled: true
-    background: false
-    model: default
-    tools: [compute-interest-coverage, compute-debt-maturity, compute-liquidity-ratio]
 
   competitive-strategy:
     enabled: true
