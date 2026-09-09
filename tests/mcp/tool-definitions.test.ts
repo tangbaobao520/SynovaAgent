@@ -1,5 +1,5 @@
 /**
- * tests/mcp/tool-permissions.test.ts — D595 MCP 工具权限模型单元测试（L1，直接 import tool-definitions.ts，不 spawn）
+ * tests/mcp/tool-definitions.test.ts — D595 MCP 工具权限模型单元测试（L1，直接 import tool-definitions.ts，不 spawn）
  *
  * 铁律 0-2/48: 测试先行（spec §7 T1-T10 red→green）+ 三路径覆盖（正常/降级/边界）
  * 铁律 33: *.test.ts 单元测试
@@ -219,6 +219,18 @@ describe('T5: sentinel_run 单哨兵语义（DS3，缺陷 A）', () => {
     expect(parsed.ok).toBe(false);
     expect(parsed.findings).toBe(0);
     expect(parsed.error).toContain('不存在');
+  });
+
+  it('L2 result.degraded（loader check wrapper 降级标记）→ 输出 degraded:true（铁律 31 上浮，spec §5.4）', async () => {
+    vi.mocked(runSentinelOnce).mockResolvedValue({
+      ok: true,
+      sentinelId: 'F1',
+      result: { ...checkResultStub('F1', ['warning']), degraded: true },
+    });
+    const text = await handleToolCall('sentinel_run', { sentinelId: 'F1' });
+    const parsed = JSON.parse(text) as { ok: boolean; degraded?: boolean };
+    expect(parsed.ok).toBe(true);
+    expect(parsed.degraded).toBe(true);
   });
 
   it('缺 sentinelId 参数 → 不打 L2、返回 ok:false + 参数错误', async () => {

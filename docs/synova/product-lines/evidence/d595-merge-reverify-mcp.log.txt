@@ -1,0 +1,27 @@
+=== D595 续接 session 独立复验 — 2026-09-09 19:43:12 +0800 ===
+=== 分支: feat/d595-mcp-auth @ 6357939a（含 origin/main #453 合并）===
+
+ RUN  v4.1.8 /Users/wane/SynovaAgent
+
+ ✓ tests/mcp/bridge.test.ts (4 tests | 3 skipped) 4ms
+{"level":40,"time":1788954194308,"pid":12008,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"mcp/tool-definitions","value":"bogus","msg":"SYNOVA_MCP_MODE 非法 → fail-closed 降为 read-only（合法值: full / read-only）"}
+{"level":40,"time":1788954194308,"pid":12008,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"mcp/tool-definitions","value":"FULL","msg":"SYNOVA_MCP_MODE 非法 → fail-closed 降为 read-only（合法值: full / read-only）"}
+{"level":40,"time":1788954194309,"pid":12008,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"mcp/tool-definitions","value":"write","msg":"SYNOVA_MCP_MODE 非法 → fail-closed 降为 read-only（合法值: full / read-only）"}
+{"level":40,"time":1788954194309,"pid":12008,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"mcp/tool-definitions","value":"0","msg":"SYNOVA_MCP_MODE 非法 → fail-closed 降为 read-only（合法值: full / read-only）"}
+{"level":40,"time":1788954194309,"pid":12008,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"mcp/tool-definitions","value":"read_only","msg":"SYNOVA_MCP_MODE 非法 → fail-closed 降为 read-only（合法值: full / read-only）"}
+{"level":40,"time":1788954194327,"pid":12008,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"mcp/tool-definitions","err":"fetch failed","url":"http://localhost:1/api/knowledge/ask?q=%E7%8E%B0%E9%87%91%E6%B5%81%E5%88%86%E6%9E%90%E6%80%8E%E4%B9%88%E5%81%9A","msg":"HTTP 桥请求失败 — API 不可达降级"}
+ ✓ tests/mcp/tool-definitions.test.ts (37 tests) 27ms
+ ✓ tests/mcp/server-smoke.test.ts (9 tests) 1055ms
+     ✓ S1: initialize → serverInfo.name=synova-agent + instructions 含 SYNOVA-MCP-CONTRACT: 1（DS2/DS6）  725ms
+     ✓ S6c: 非法 JSON 行 → 不产生响应、不崩进程；后续合法请求照常应答；stdout 纯度保持  303ms
+
+ Test Files  3 passed (3)
+      Tests  47 passed | 3 skipped (50)
+   Start at  19:43:13
+   Duration  1.25s (transform 736ms, setup 0ms, import 990ms, tests 1.09s, environment 0ms)
+
+npm notice
+npm notice New major version of npm available! 10.9.4 -> 12.0.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.0.2
+npm notice To update run: npm install -g npm@12.0.2
+npm notice

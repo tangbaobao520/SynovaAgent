@@ -43,11 +43,30 @@
       "task-state/D595.json"
     ],
     "verification": {
-      "T1-T10": "37/37 绿（tests/mcp/tool-definitions.test.ts；spec 名 tool-permissions.test.ts 因组2配对门禁按文件名映射 src/mcp/tool-definitions.ts→tests/mcp/tool-definitions.test.ts 硬阻断，随目录级精确化机制改名，red→green 两阶段证据入 evidence/）",
+      "T1-T10": "38/38 绿（tests/mcp/tool-definitions.test.ts；spec 名 tool-permissions.test.ts 因组2配对门禁按文件名映射 src/mcp/tool-definitions.ts→tests/mcp/tool-definitions.test.ts 硬阻断，随目录级精确化机制改名，red→green 两阶段证据入 evidence/；续接 +1：T5 sentinel_run result.degraded 上浮断言，spec §5.4 degraded? 位补全）",
       "S1-S7": "9/9 绿（tests/mcp/server-smoke.test.ts，真实 stdio 子进程；-32000 指纹见 evidence 手工 transcript）",
-      "DS9": "全量 vitest 失败集与 HEAD 373adf10 干净 worktree 对照完全一致 = 零新失败（evidence/d595-vitest-baseline-diff.log.txt）；tests/mcp/bridge.test.ts 零改动仍绿",
-      "DS10": "as any/as never/as unknown as = 0（新代码）；grep -c SqliteGraphStore src/mcp/index.ts = 0",
-      "ratchet": "graphstore-unify callSites 11→10 绿；CT-64 gate test EXPECTED 68→62 + baseline txt 总数 62 绿（另同步 D599 合并导致的 diagnosis.ts 3 行钉线漂移——main 上已被打红）"
+      "DS9": "全量 vitest 失败集与 HEAD 373adf10 干净 worktree 对照完全一致 = 零新失败（evidence/d595-vitest-baseline-diff.log.txt）；tests/mcp/bridge.test.ts 零改动仍绿；续接 session 复验：#454 合并后分支 63 失败 vs main 基线同环境 26 失败，差异项逐一定性为 LLM/.env 依赖环境性存量（layer2-judge 在 main worktree 加同款 .env 复跑 = 36|5 与分支完全一致），与 D595 写集零交集",
+      "DS10": "as any/as never/as unknown as = 0（新代码；tool-registration.ts:108 断言为 D601 存量、写集外）；grep -c SqliteGraphStore src/mcp/index.ts = 0",
+      "ratchet": "graphstore-unify callSites 11→10 绿；CT-64 棘轮续接重做——main #451 已将 gate test 升级为 file=count 双向对账（行号免疫，唯一事实源=baseline txt），续接 merge #453/#454 时按该机制合并真值 42−D595 六处真修复 = 36（D601 四处平移 tool-definitions.ts 计数），gate test 12/12 绿（原 EXPECTED_62 逐行钉线方案作废，头部注释残留已修正）"
+    },
+    "continuation": {
+      "by": "DSH 续接 session（glm-5.3-flash，创始人仲裁『续接既有分支』2026-09-09）",
+      "at": "2026-09-09",
+      "actions": [
+        "merge origin/main ×3（#453 K3-L1 fix + #454 D650 专家域改名 + #455 K3 审计报告；与 D595 写集交集仅 .claude/bypass.log 噪声文件）",
+        "CT-64 棘轮冲突按 main 新 file=count 机制重解（42→36，见 verification.ratchet）",
+        "sentinel_run 输出补 result.degraded 透传（spec §5.4 degraded? 位）+ 对应单测",
+        "骨架 brief 占位符补实（组6/G12 门禁修复）+ 独立复验全绿，新鲜证据 evidence/d595-merge-reverify-mcp.log.txt"
+      ],
+      "files": [
+        "src/mcp/tool-definitions.ts",
+        "tests/mcp/tool-definitions.test.ts",
+        "tests/architecture/check-architecture-gate.test.ts",
+        "tests/architecture/l1-cross-layer-baseline.txt",
+        ".claude/task-briefs/2026-09-08-D595-L1-P3MCP认证权限.md",
+        "docs/synova/product-lines/evidence/d595-merge-reverify-mcp.log.txt",
+        "task-state/D595.json"
+      ]
     }
   },
   "audit": null,

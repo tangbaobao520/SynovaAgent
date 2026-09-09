@@ -323,6 +323,8 @@ export async function handleToolCall(name: string, args: Record<string, unknown>
         ok: resp.ok,
         sentinelId: resp.sentinelId,
         findings: resp.result?.findings?.length ?? 0,
+        // 铁律 31: loader check wrapper 的 degraded（SentinelCheckResult.degraded）随链上浮（spec §5.4 degraded? 位）
+        ...(resp.result?.degraded ? { degraded: true } : {}),
         ...(resp.error !== undefined ? { error: resp.error } : {}),
       });
     }
