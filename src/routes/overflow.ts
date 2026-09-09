@@ -12,7 +12,8 @@ import { extractAuthFromRequest } from '../middleware/auth';
 import { cycleRegistry } from '../cycles/cycle-registry';
 import { generateOverflowDashboard } from '../cycles/overflow-dashboard';
 import { simulateInvestment } from '../cycles/investment-advisor';
-import { getCycleSnapshots, getLatestSnapshot } from '../cycles/overflow-graph-bridge';
+// D603 跨层修复（簇3）: 循环快照查询经 L2 cycle-snapshot-service 转发——铁律 39
+import { getCycleSnapshots, getLatestSnapshot } from '../agent/cycle-snapshot-service';
 
 const log = createLogger('routes/overflow');
 const router = Router();

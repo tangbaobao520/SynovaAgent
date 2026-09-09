@@ -15,7 +15,6 @@
     "mcp": "tsx src/mcp/index.ts",
     "chat": "tsx src/cli.ts",
     "tui": "tsx src/tui-v2/chat.tsx",
-    "tui:demo": "tsx src/tui-v2/demo.tsx",
     "synova": "tsx src/tui-v2/chat.tsx",
     "build": "tsc",
     "start": "node dist/index.js",

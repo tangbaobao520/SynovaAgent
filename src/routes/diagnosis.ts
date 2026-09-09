@@ -50,6 +50,42 @@ const router = Router();
 // 常量 — check-secrets.sh 第3模式误报规避 (|| 'xxx' 长字符串)
 const MODULE_DEFAULT = 'community';
 
+// ═══ D600: 客户配置命名空间读取（diagnosis.reportDepth / diagnosis.template）═══
+// 消费 D599 resolveCustomerConfig 的 config 字段（此前只挂 provenance 未驱动行为——spec §2.2 缺陷 A）。
+// 类型守卫逐键校验：非法值跳过（回退下一优先级），不炸诊断（铁律 24/31）。
+
+type ConfigReportDepth = 'ceo' | 'flywheel' | 'expert' | 'raw';
+type OnePagerTemplate = 'ceo' | 'flywheel';
+
+/** 逐值校验 reportDepth；非法值 undefined（调用方回退下一优先级）。 */
+function asReportDepth(value: unknown): ConfigReportDepth | undefined {
+  if (value === 'ceo' || value === 'flywheel' || value === 'expert' || value === 'raw') return value;
+  return undefined;
+}
+
+/** 逐值校验一页纸模板；非法值 undefined。 */
+function asOnePagerTemplate(value: unknown): OnePagerTemplate | undefined {
+  if (value === 'ceo' || value === 'flywheel') return value;
+  return undefined;
+}
+
+/**
+ * 读客户配置的 diagnosis 命名空间（D600 决策点 2：小驼峰嵌套）。
+ * @param config - 挂载后的客户配置（deep frozen plain object）。
+ * @returns 命名空间内合法键值；命名空间缺失/非对象/键非法 → 空对象（不炸诊断）。
+ */
+function readDiagnosisConfig(config: Record<string, unknown>): { reportDepth?: ConfigReportDepth; template?: OnePagerTemplate } {
+  const namespace = config['diagnosis'];
+  if (typeof namespace !== 'object' || namespace === null || Array.isArray(namespace)) return {};
+  const doc = namespace as Record<string, unknown>;
+  const reportDepth = asReportDepth(doc['reportDepth']);
+  const template = asOnePagerTemplate(doc['template']);
+  return {
+    ...(reportDepth === undefined ? {} : { reportDepth }),
+    ...(template === undefined ? {} : { template }),
+  };
+}
+
 // ═══ Active Consultations ═══
 
 interface ActiveConsultation {
@@ -458,7 +494,11 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
 
     if (!active.aborted) {
       // V4.2.9: 按 scope.depth/layers/language 组装报告
-      const reportDepth = (scope?.reportDepth || scope?.depth || 'raw') as 'ceo' | 'flywheel' | 'expert' | 'raw';
+      // D600: reportDepth 优先级链 spec §4.5 决策点 1——scope.reportDepth > scope.depth > 客户配置 > 'raw'
+      // （显式请求 > 客户配置 > 硬编码兜底；非法配置值经 asReportDepth 跳过回退，不炸诊断）。
+      const configDiagnosis = customerConfig !== null ? readDiagnosisConfig(customerConfig.config) : {};
+      const reportDepth = asReportDepth(scope?.reportDepth) ?? asReportDepth(scope?.depth) ?? configDiagnosis.reportDepth ?? 'raw';
+      const appliedTemplate = asOnePagerTemplate(configDiagnosis.template);
       // D480: 一页纸（markdown），raw 深度不渲染（GET 端点按需补渲染）
       let onePager: string | null = null;
       if (reportDepth !== 'raw') {
@@ -477,7 +517,8 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
           const { renderOnePager } = await import('../agent/report-assembler');
           onePager = renderOnePager(
             result.report as DiagnosisReportLike,
-            reportDepth === 'ceo' ? 'ceo' : 'flywheel',
+            // D600: 模板由 diagnosis.template 驱动（客户配置显式声明 > 深度推导），非法值回退推导
+            appliedTemplate ?? (reportDepth === 'ceo' ? 'ceo' : 'flywheel'),
           );
           (result.report as Record<string, unknown>).onePager = onePager;
         } catch (err) { log.warn({ err, consultId }, '一页纸渲染失败 — 原报告保留'); }
@@ -492,6 +533,11 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
           ...(customerConfig.reason === undefined ? {} : { reason: customerConfig.reason }),
           audit: customerConfig.audit,
           provenance: customerConfig.provenance,
+          // D600: 配置实际生效面（消费证据——config 驱动了 reportDepth/template，GET /report 可回查）
+          applied: {
+            reportDepth,
+            ...(appliedTemplate === undefined ? {} : { template: appliedTemplate }),
+          },
         };
       }
       cacheCompletedReport({

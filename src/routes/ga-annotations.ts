@@ -25,8 +25,8 @@ import type {
   SentinelAnnotationStats,
   SentinelStatsWithAccuracy,
 } from './ga-annotations-types';
-import { computeSentinelAccuracy } from '../sentinel/sentinel-accuracy';
-import type { AnnotationRecord as AccuracyAnnotation } from '../sentinel/sentinel-accuracy';
+// D603 跨层修复（簇2 哨兵簇）: 准确率计算经 L2 sentinel-service 消费——不直触 sentinel/（铁律 39）
+import { computeSentinelAccuracy, type SentinelAccuracyAnnotation as AccuracyAnnotation } from '../agent/sentinel-service';
 
 const log = createLogger('routes/ga-annotations');
 const router = Router();

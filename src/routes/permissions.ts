@@ -10,8 +10,8 @@
  * 铁律 31: 降级信号传播 — 所有错误返回 degraded 标记。
  */
 import { Router, type Request, type Response } from 'express';
-import { KnowledgeStore } from '../agent/knowledge-bridge-service';
-import { getDatabase } from '../init/engine-context';
+// D603 跨层修复（簇3）: KnowledgeStore 构造下沉 L2 桥接服务——不直触 init/engine-context（铁律 39）
+import { createSystemKnowledgeStore, type KnowledgeStore } from '../agent/knowledge-bridge-service';
 import { getCurrentUser } from '../services/request-context';
 import { createLogger } from '@synova/logger';
 
@@ -19,7 +19,7 @@ const log = createLogger('routes/permissions');
 const router = Router();
 
 function getStore(): KnowledgeStore {
-  return new KnowledgeStore(getDatabase());
+  return createSystemKnowledgeStore();
 }
 
 /** 检查当前用户是否为 admin */

@@ -13,8 +13,8 @@ import { Router, type Request, type Response } from 'express';
 import { createLogger } from '@synova/logger';
 import { signJwtToken, verifyJwtToken, revokeToken, extractAuthFromRequest } from '../middleware/auth';
 import { UserStore, type UserProps } from '../growth/user-store';
-import { SqliteGraphStore } from '../adapters/sqlite-graph-store';
-import { getDatabase } from '../init/engine-context';
+// D603 跨层修复（簇3）: SqliteGraphStore 构造 + getDatabase 句柄直取下沉 L2——铁律 39
+import { createSystemGraphStore } from '../agent/graph-store-service';
 import bcrypt from 'bcrypt';
 
 const log = createLogger('auth-routes');
@@ -39,10 +39,9 @@ let _userStore: UserStore | null = null;
  */
 function getUserStore(): UserStore | null {
   if (_userStore) return _userStore;
-  // 尝试从全局数据库自初始化（使 auth.ts 不依赖外部注入）
+  // 尝试从全局数据库自初始化（使 auth.ts 不依赖外部注入；构造下沉 L2 graph-store-service）
   try {
-    const db = getDatabase();
-    const graphStore = new SqliteGraphStore(db);
+    const graphStore = createSystemGraphStore();
     _userStore = new UserStore(graphStore);
     log.info('UserStore 自初始化成功 (SqliteGraphStore)');
   } catch {

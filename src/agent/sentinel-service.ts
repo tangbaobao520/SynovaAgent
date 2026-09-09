@@ -119,6 +119,11 @@ export const TRANSITION_TARGETS = ['acknowledged', 'resolved', 'dismissed'] as c
  */
 export type { TicketStatus };
 
+// ═══ D603 L1 出口扩展（扫描报告 §三 簇2 哨兵簇）: GA 标注准确率经 L2 消费 ═══
+// routes/ga-annotations 不再直触 '../sentinel/sentinel-accuracy'（L1→L3，基线存量已清）。
+export { computeSentinelAccuracy } from '../sentinel/sentinel-accuracy';
+export type { AnnotationRecord as SentinelAccuracyAnnotation } from '../sentinel/sentinel-accuracy';
+
 /**
  * transitionSentinelTicket 返回（D580 8-4）: runner TransitionResult 原样传播 + L2 专属分类:
  *   INVALID_TARGET（to 非法枚举 → 路由 400）/ SENTINEL_RUNNER_UNAVAILABLE（runner 未初始化 → 503）。

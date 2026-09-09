@@ -244,6 +244,13 @@ export function createStreamingController(host: StreamingHost): StreamingControl
       case 'error':
         storeNow.setError(evt.message || '诊断过程中发生错误');
         storeNow.setPhase('error');
+        // D602: SSE error 帧 → 通知中心本地通知 + electronAPI 在场时系统通知双可见
+        // （铁律 31 降级信号传播；spec §5.1 useStreaming 行——diagnosis/conversation 两模式共用本 case，零分支差异）
+        useAppStore.getState().pushLocalNotification({
+          title: '对话流错误',
+          body: evt.message || '诊断过程中发生错误',
+          severity: 'warning',
+        });
         break;
     }
   };
