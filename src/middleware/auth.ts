@@ -7,7 +7,8 @@
  * 设计原则:
  * - JWT_SECRET 缺失时降级到 devMode（不自爆），但 log.warn 警告
  * - 撤销 token 通过 in-memory Set 追踪（v2 迁移到 SQLite 持久化）
- * - whitelist 路径跳过认证（同 server.ts 白名单）
+ * - whitelist 路径跳过认证（本文件 isWhitelisted() 是唯一白名单源——server.ts 无第二份，
+ *   D595 修正此注释：原文"同 server.ts 白名单"已过期失真）
  * - 所有错误路径返回统一 JSON 格式 { ok: false, code, message }
  */
 import { createHmac, randomUUID, timingSafeEqual } from 'crypto';
@@ -78,7 +79,7 @@ function getExpiresIn(): number {
 
 /**
  * 白名单路径——跳过认证。
- * 与 server.ts 的白名单同步。
+ * 唯一源 = 本文件 isWhitelisted()（server.ts 无第二份白名单，jwtAuthMiddleware 全局挂载于 server.ts:315）。
  * 白名单含 login/register（D483: 匿名注册可达，多租户 onboarding 底座）。
  * D484: enterprise 匿名端点——企业注册 + 邀请查询/接受（邀请链接直达语义，token 即凭证；
  * 复数 /api/enterprise/invitations 管理端点不匹配 invitation/ 前缀，保持认证 + requireAdmin）。
@@ -93,6 +94,11 @@ function getExpiresIn(): number {
  * /api/notifications（通知）、/api/solutions（方案）、/api/ga/clients + /api/ga/switch（GA 客户
  * 与切换）。同 D590 裁决①单机本地信任模型；精确前缀（/api/diagnosis/reports 不放宽
  * /api/diagnosis/ 全前缀——避免误豁免 D590 已下线的 upload/status 410 路径族）。
+ *
+ * D595（MCP HTTP 桥）: 新增三前缀——/api/ontology/graph/（query_ontology）、/api/ontology/ingest
+ * （ingest_document）、/api/knowledge/ask（knowledge_ask）。MCP server 的 HTTP 桥接工具以
+ * localhost fetch 调用这些端点，缺白名单时生产态（DEV_MODE=false）必 401。信任模型同 D590
+ * 裁决①（单机本地信任；MCP stdio 侧另有显式信任声明 + 读写两级权限，见 README「安全模型」节）。
  */
 function isWhitelisted(path: string): boolean {
   return (
@@ -119,7 +125,10 @@ function isWhitelisted(path: string): boolean {
     path.startsWith('/api/notifications') ||     // D593 — 通知（审计 §7 行④）
     path.startsWith('/api/solutions') ||         // D593 — 方案（审计 §7 行②）
     path.startsWith('/api/ga/clients') ||        // D593 — GA 客户（审计 §7 行②）
-    path.startsWith('/api/ga/switch')            // D593 — GA 客户切换
+    path.startsWith('/api/ga/switch') ||         // D593 — GA 客户切换
+    path.startsWith('/api/ontology/graph/') ||   // D595 — MCP query_ontology HTTP 桥（单机信任模型）
+    path === '/api/ontology/ingest' ||           // D595 — MCP ingest_document HTTP 桥（单机信任模型）
+    path.startsWith('/api/knowledge/ask')        // D595 — MCP knowledge_ask HTTP 桥（单机信任模型）
   );
 }
 
