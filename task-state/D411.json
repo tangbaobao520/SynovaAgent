@@ -1,12 +1,12 @@
 {
   "task_id": "D411",
   "title": "control-system-design-docs",
-  "status": "claimed",
+  "status": "closed",
   "spec": null,
   "impl": null,
   "audit": null,
   "fix_task_id": "zombie-cancelled",
-  "updated_at": "2026-08-28",
-  "updated_by": "CTO",
-  "note": "看板大扫除（2026-08-28）：僵尸关闭——control-system-design-docs：08-17 取号从未开工（无 spec/impl）"
+  "updated_at": "2026-09-10",
+  "updated_by": "dsh-cto",
+  "note": "2026-09-10 看板校准: control-system-design-docs——退回待规划（无分支零活动）"
 }
