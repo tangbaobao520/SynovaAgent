@@ -1,0 +1,18 @@
+# D595 T1-T10 GREEN phase (run2) — 2026-09-09T01:35:00+0800 @ 373adf10
+
+ RUN  v4.1.8 /Users/wane/SynovaAgent/.sessions/d595-mcp-auth/repo
+
+{"level":40,"time":1788888901471,"pid":58268,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"mcp/tool-definitions","value":"bogus","msg":"SYNOVA_MCP_MODE 非法 → fail-closed 降为 read-only（合法值: full / read-only）"}
+{"level":40,"time":1788888901471,"pid":58268,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"mcp/tool-definitions","value":"FULL","msg":"SYNOVA_MCP_MODE 非法 → fail-closed 降为 read-only（合法值: full / read-only）"}
+{"level":40,"time":1788888901472,"pid":58268,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"mcp/tool-definitions","value":"write","msg":"SYNOVA_MCP_MODE 非法 → fail-closed 降为 read-only（合法值: full / read-only）"}
+{"level":40,"time":1788888901472,"pid":58268,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"mcp/tool-definitions","value":"0","msg":"SYNOVA_MCP_MODE 非法 → fail-closed 降为 read-only（合法值: full / read-only）"}
+{"level":40,"time":1788888901472,"pid":58268,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"mcp/tool-definitions","value":"read_only","msg":"SYNOVA_MCP_MODE 非法 → fail-closed 降为 read-only（合法值: full / read-only）"}
+{"level":40,"time":1788888901483,"pid":58268,"hostname":"MacBook-Pro.local","name":"synova-agent","service":"mcp/tool-definitions","err":"fetch failed","url":"http://localhost:1/api/knowledge/ask?q=%E7%8E%B0%E9%87%91%E6%B5%81%E5%88%86%E6%9E%90%E6%80%8E%E4%B9%88%E5%81%9A","msg":"HTTP 桥请求失败 — API 不可达降级"}
+ ✓ tests/mcp/tool-permissions.test.ts (37 tests) 19ms
+
+ Test Files  1 passed (1)
+      Tests  37 passed (37)
+   Start at  01:35:01
+   Duration  440ms (transform 232ms, setup 0ms, import 336ms, tests 19ms, environment 0ms)
+
+VITEST_EXIT:0

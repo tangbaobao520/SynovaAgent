@@ -11,7 +11,7 @@
  *   @degraded 无（本门禁不允许降级放行——环境失败必须 exit 2 可见）。
  *
  * 覆盖矩阵（铁律 48）：
- *   [正常]   真实仓库存量命中与基线 file=count 双向一致（经 D603 静态清零后余 42 处动态）
+ *   [正常]   真实仓库存量命中与基线 file=count 双向一致（D603 静态清零 68→42 + D595 哨兵簇 42→36）
  *   [正常]   存量在本地与 SYNO_CI=1 下均不阻断（棘轮——台账 CT-64：先修脚本→分批修 src/）
  *   [正常]   沙箱新增违规：本地 exit 0 软提示；SYNO_CI=1 exit 1 硬阻断
  *   [边界]   干净文件零误报：类型位置四形态 / URL 字符串 / 注释 / L2 合法引用
@@ -83,7 +83,7 @@ function runScript(env: Record<string, string>, cwd = REPO_ROOT): RunResult {
   return { status: res.status ?? -1, stdout: res.stdout ?? '' };
 }
 
-/** D603 后剩余 42 处动态 runtime 违规的权威计数 = tests/architecture/l1-cross-layer-baseline.txt（file=count，唯一事实源） */
+/** D603+D595 后剩余 36 处动态 runtime 违规的权威计数 = tests/architecture/l1-cross-layer-baseline.txt（file=count，唯一事实源） */
 
 function makeSandbox(files: Record<string, string>): { dir: string; cleanup: () => void } {
   const dir = mkdtempSync(path.join(tmpdir(), 'ct64-arch-'));
@@ -98,7 +98,7 @@ function makeSandbox(files: Record<string, string>): { dir: string; cleanup: () 
 const EMPTY_BASELINE = path.join(tmpdir(), 'ct64-empty-baseline.txt');
 writeFileSync(EMPTY_BASELINE, '# empty baseline\n');
 
-describe('CT-64: check-architecture.sh 四类漏网修补 — 存量 42 处全命中（D603 静态清零后）', () => {
+describe('CT-64: check-architecture.sh 四类漏网修补 — 存量 36 处全命中（D603 静态清零 + D595 哨兵簇下调后）', () => {
   it('真实仓库：脚本命中按 file=count 聚合后与基线双向一致（行号漂移免疫）', () => {
     const { status, stdout } = runScript({ SYNO_CI: '0' });
     const expected = parseBaselineCounts();
@@ -119,13 +119,13 @@ describe('CT-64: check-architecture.sh 四类漏网修补 — 存量 42 处全�
     expect(status).toBe(0);
   });
 
-  it('基线文件总数 = 42（D603 静态清零后，与剩余动态存量对齐——只许继续减少）', () => {
+  it('基线文件总数 = 36（D603 静态清零 68→42 + D595 哨兵簇 42→36，与剩余动态存量对齐——只许继续减少）', () => {
     const content = spawnSync('cat', [BASELINE], { encoding: 'utf-8' });
     const total = (content.stdout ?? '')
       .split('\n')
       .filter((l) => /=\d+\s*$/.test(l))
       .reduce((sum, l) => sum + Number(l.split('=')[1]), 0);
-    expect(total).toBe(42);
+    expect(total).toBe(36);
   });
 });
 

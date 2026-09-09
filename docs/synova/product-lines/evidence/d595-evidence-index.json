@@ -1,0 +1,35 @@
+{
+  "task": "D595",
+  "title": "MCP 认证/权限 + 工具补齐（L1-P3）",
+  "record_type": "test",
+  "at": "2026-09-09T01:42:00+08:00",
+  "branch": "feat/d595-mcp-auth",
+  "base_commit": "373adf10 (origin/main, PR #443 后)",
+  "environment": {
+    "node": "v22.22.0",
+    "os": "darwin (MacBook-Pro.local)",
+    "sdk": "@modelcontextprotocol/sdk 1.30.0",
+    "zod": "4.4.3（peer ^3.25||^4.0 兼容实证）",
+    "npm_cache_note": "~/.npm/_cacache root 属主 EPERM → npm 全程 --cache /tmp/npmcache-d595"
+  },
+  "commands": {
+    "unit_red": "npx vitest run tests/mcp/tool-permissions.test.ts → 模块不存在 RED（d595-unit-red.log.txt）",
+    "unit_green": "npx vitest run tests/mcp/tool-permissions.test.ts → 37/37 绿（d595-unit-green.log.txt，T1-T10 + DS4 白名单）",
+    "smoke_red": "npx vitest run tests/mcp/server-smoke.test.ts → 7 红 / 2 诚实绿（d595-smoke-red.log.txt）",
+    "smoke_green": "npx vitest run tests/mcp/server-smoke.test.ts → 9/9 绿（d595-smoke-green.log.txt，S1-S7 真实 stdio 子进程）",
+    "manual_smoke": "手工管道帧序列 spawn 真实 server（d595-smoke-manual-transcript.log.txt）——-32000 拒绝指纹：{\"jsonrpc\":\"2.0\",\"id\":3,\"error\":{\"code\":-32000,\"message\":\"MCP error -32000: PERMISSION_DENIED: 工具 sentinel_run 为写操作，当前模式 read-only 禁止调用\"}}",
+    "vitest_baseline_diff": "全量 vitest 失败集 vs HEAD 373adf10 干净 worktree 同批跑 → 集合完全一致 = 零新失败（d595-vitest-baseline-diff.log.txt）",
+    "arch_gate": "bash scripts/check-architecture.sh → 存量 62 处（基线棘轮内）；棘轮同步: graphstore-unify 11→10 + CT-64 gate test/baseeline 68→62"
+  },
+  "k3_rerun_recipe": [
+    "git clone 仓库后 npm install（含 @modelcontextprotocol/sdk；缓存 EPERM 则加 --cache /tmp/npmcache-k3）",
+    "npx vitest run tests/mcp/ tests/architecture/  → 期望全绿",
+    "SYNOVA_MCP_MODE=read-only npx tsx src/mcp/index.ts 后按 d595-smoke-manual-transcript.log.txt 帧序列手管道 → 期望同指纹",
+    "SYNO_CI=1 SYNO_DIFF_BASE=origin/main bash scripts/pre-commit-check.sh → exit 0"
+  ],
+  "honesty_notes": [
+    "S4 sentinel_list 在独立 MCP 进程返回 total:0——registry 单例未触发 loader，与迁移前行为一致（同 getSentinelRegistry() 空单例），诚实返回真实注册清单",
+    "sentinel_summary 单测环境 runner 未初始化 → ok:false 诚实透传（不伪造 ok:true）",
+    "全量 vitest 存量失败 33+2 文件级：归属 D589 台账 26 基线 + D593 #443 新增 diagnosis-report-persistence 10（main 上已红，非本单引入，HEAD 对照物理证明）"
+  ]
+}

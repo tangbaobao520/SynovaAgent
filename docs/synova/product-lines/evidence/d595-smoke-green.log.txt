@@ -1,0 +1,14 @@
+# D595 S1-S7 GREEN phase — 2026-09-09T01:35:07+0800 @ 373adf10
+
+ RUN  v4.1.8 /Users/wane/SynovaAgent/.sessions/d595-mcp-auth/repo
+
+ ✓ tests/mcp/server-smoke.test.ts (9 tests) 881ms
+     ✓ S1: initialize → serverInfo.name=synova-agent + instructions 含 SYNOVA-MCP-CONTRACT: 1（DS2/DS6）  560ms
+     ✓ S6c: 非法 JSON 行 → 不产生响应、不崩进程；后续合法请求照常应答；stdout 纯度保持  303ms
+
+ Test Files  1 passed (1)
+      Tests  9 passed (9)
+   Start at  01:35:07
+   Duration  998ms (transform 20ms, setup 0ms, import 30ms, tests 881ms, environment 0ms)
+
+VITEST_EXIT:0

@@ -1,0 +1,134 @@
+# D595 S1-S7 RED phase — 2026-09-09T01:28:42+0800 @ 373adf10
+# 预期 RED：旧手写 server 无 instructions/权限过滤/契约广告（S4 为既有能力属诚实绿）
+
+ RUN  v4.1.8 /Users/wane/SynovaAgent/.sessions/d595-mcp-auth/repo
+
+ ❯ tests/mcp/server-smoke.test.ts (9 tests | 7 failed) 1345ms
+     × S1: initialize → serverInfo.name=synova-agent + instructions 含 SYNOVA-MCP-CONTRACT: 1（DS2/DS6） 1002ms
+     × S2: tools/list → 全部为 read 工具（8 个，零 write 工具广告——诚实能力广告） 3ms
+     × S3: tools/call sentinel_run（write）→ JSON-RPC error -32000（DS1 权限拒绝指纹） 31ms
+     ✓ S4: tools/call sentinel_list → content[0].text 解析 ok:true 且 total≥0（L2 全链路诚实绿） 1ms
+     × S5: tools/list → 12 工具全广告（含 4 个 write 工具） 1ms
+     × S6a: 未知工具 → SDK 标准错误码 -32601（MethodNotFound） 1ms
+     × S6b: 缺参调用（无 name）→ JSON-RPC 标准错误码（-32602/-32603 区间），进程不崩 0ms
+     ✓ S6c: 非法 JSON 行 → 不产生响应、不崩进程；后续合法请求照常应答；stdout 纯度保持  302ms
+     × 启动 stderr 含 fail-closed warn；行为=read-only（tools/list 无 write 工具） 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/mcp/server-smoke.test.ts > S1-S4: SYNOVA_MCP_MODE=read-only（stdio 全链路） > S1: initialize → serverInfo.name=synova-agent + instructions 含 SYNOVA-MCP-CONTRACT: 1（DS2/DS6）
+AssertionError: expected '' to contain 'SYNOVA-MCP-CONTRACT: 1'
+
+- Expected
++ Received
+
+- SYNOVA-MCP-CONTRACT: 1
+
+ ❯ tests/mcp/server-smoke.test.ts:164:26
+    162|     expect((serverInfo.version ?? '').length).toBeGreaterThan(0);
+    163|     const instructions = String(resp.result?.instructions ?? '');
+    164|     expect(instructions).toContain('SYNOVA-MCP-CONTRACT: 1');
+       |                          ^
+    165|     expect(instructions).toContain('stdio 本机信任');
+    166|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+ FAIL  tests/mcp/server-smoke.test.ts > S1-S4: SYNOVA_MCP_MODE=read-only（stdio 全链路） > S2: tools/list → 全部为 read 工具（8 个，零 write 工具广告——诚实能力广告）
+AssertionError: expected [ …(9) ] to have a length of 8 but got 9
+
+- Expected
++ Received
+
+- 8
++ 9
+
+ ❯ tests/mcp/server-smoke.test.ts:170:19
+    168|   it('S2: tools/list → 全部为 read 工具（8 个，零 write 工具广告——诚实能力广告）', async (…
+    169|     const tools = await client.listTools();
+    170|     expect(tools).toHaveLength(READ_ONLY_TOOL_COUNT);
+       |                   ^
+    171|     const names = tools.map(t => t.name);
+    172|     for (const w of WRITE_TOOLS) expect(names).not.toContain(w);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
+
+ FAIL  tests/mcp/server-smoke.test.ts > S1-S4: SYNOVA_MCP_MODE=read-only（stdio 全链路） > S3: tools/call sentinel_run（write）→ JSON-RPC error -32000（DS1 权限拒绝指纹）
+AssertionError: expected undefined to be defined
+ ❯ tests/mcp/server-smoke.test.ts:181:24
+    179|   it('S3: tools/call sentinel_run（write）→ JSON-RPC error -32000（DS1 权限…
+    180|     const resp = await client.request('tools/call', { name: 'sentinel_…
+    181|     expect(resp.error).toBeDefined();
+       |                        ^
+    182|     expect(resp.error?.code).toBe(-32000);
+    183|     expect(resp.error?.message).toContain('PERMISSION_DENIED');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯
+
+ FAIL  tests/mcp/server-smoke.test.ts > S5-S6: SYNOVA_MCP_MODE=full（12 工具 + 边界） > S5: tools/list → 12 工具全广告（含 4 个 write 工具）
+AssertionError: expected [ …(9) ] to have a length of 12 but got 9
+
+- Expected
++ Received
+
+- 12
++ 9
+
+ ❯ tests/mcp/server-smoke.test.ts:208:19
+    206|     await client.initialize();
+    207|     const tools = await client.listTools();
+    208|     expect(tools).toHaveLength(FULL_TOOL_COUNT);
+       |                   ^
+    209|     const names = tools.map(t => t.name);
+    210|     for (const w of WRITE_TOOLS) expect(names).toContain(w);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/7]⎯
+
+ FAIL  tests/mcp/server-smoke.test.ts > S5-S6: SYNOVA_MCP_MODE=full（12 工具 + 边界） > S6a: 未知工具 → SDK 标准错误码 -32601（MethodNotFound）
+AssertionError: expected undefined to be defined
+ ❯ tests/mcp/server-smoke.test.ts:219:24
+    217|   it('S6a: 未知工具 → SDK 标准错误码 -32601（MethodNotFound）', async () => {
+    218|     const resp = await client.request('tools/call', { name: 'no_such_t…
+    219|     expect(resp.error).toBeDefined();
+       |                        ^
+    220|     expect(resp.error?.code).toBe(-32601);
+    221|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/7]⎯
+
+ FAIL  tests/mcp/server-smoke.test.ts > S5-S6: SYNOVA_MCP_MODE=full（12 工具 + 边界） > S6b: 缺参调用（无 name）→ JSON-RPC 标准错误码（-32602/-32603 区间），进程不崩
+AssertionError: expected undefined to be defined
+ ❯ tests/mcp/server-smoke.test.ts:225:24
+    223|   it('S6b: 缺参调用（无 name）→ JSON-RPC 标准错误码（-32602/-32603 区间），进程不崩', async…
+    224|     const resp = await client.request('tools/call', {});
+    225|     expect(resp.error).toBeDefined();
+       |                        ^
+    226|     expect([-32600, -32602, -32603]).toContain(resp.error?.code);
+    227|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/7]⎯
+
+ FAIL  tests/mcp/server-smoke.test.ts > S7: SYNOVA_MCP_MODE=bogus（DS11 fail-closed） > 启动 stderr 含 fail-closed warn；行为=read-only（tools/list 无 write 工具）
+AssertionError: expected [ 'sentinel_list', …(8) ] to not include 'sentinel_run'
+ ❯ tests/mcp/server-smoke.test.ts:256:52
+    254|     const tools = await client.listTools();
+    255|     const names = tools.map(t => t.name);
+    256|     for (const w of WRITE_TOOLS) expect(names).not.toContain(w);
+       |                                                    ^
+    257|     expect(tools).toHaveLength(READ_ONLY_TOOL_COUNT);
+    258|     // stderr 有 fail-closed 警告（resolveMcpMode log.warn 经 pino → fd2）
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/7]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  7 failed | 2 passed (9)
+   Start at  01:28:43
+   Duration  1.49s (transform 29ms, setup 0ms, import 42ms, tests 1.34s, environment 0ms)
+
+npm notice
+npm notice New major version of npm available! 10.9.4 -> 12.0.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.0.2
+npm notice To update run: npm install -g npm@12.0.2
+npm notice
+VITEST_EXIT:1

@@ -1,0 +1,35 @@
+{
+  "title": "D595 PR #456 CI 红项与 main 存量红对照（续接 session 落盘，2026-09-09）",
+  "branch_head": "58314e8a",
+  "main_tip_tested": "f3df0284 (#455)",
+  "verdict": "PR 相对 main 零新增 CI 红——两处红在 main 同 commit 上以完全相同签名存在",
+  "architecture_check": {
+    "main_f3df0284": "failure",
+    "branch_58314e8a": "failure",
+    "failed_tests_identical": [
+      "CT-64 新增违规 > 沙箱新增违规：本地 exit 0 + 逐行点名；SYNO_CI=1 exit 1",
+      "CT-64 新增违规 > 基线棘轮：低于基线 = 已修复，提示收紧但不阻断",
+      "CT-64 零误报 > 修补1 回归：动态形态 await import( / import( / require( 必须命中",
+      "CT-64 零误报 > 修补2 回归：agent-observer / ga-annotations 文内违规必须命中",
+      "CT-64 零误报 > 行内豁免：// arch-allow(L1→L3) 行豁免且透明可见"
+    ],
+    "root_cause": "ci.yml architecture job 将 SYNO_CI=1 声明在 job 级 env（.github/workflows/ci.yml:105），同 job 的 vitest 步骤继承之；check-architecture-gate.test.ts runScript 以 {...process.env,...env} 透传，沙箱用例的『local（无 SYNO_CI）』子运行在 CI 上被 strict 化 → exit 1。属 #451 引入的 main 存量（job env 应为 step 级或 runScript 应 strip SYNO_CI）",
+    "real_repo_assertions_green_on_branch": [
+      "真实仓库：file=count 双向一致 ✓",
+      "真实仓库：SYNO_CI=1 存量 exit 0 ✓",
+      "基线文件总数 = 36 ✓（D595 棘轮数字在 CI 上亦验证通过）"
+    ],
+    "fix_ownership": "控制塔/CI 基建域（.github/workflows/ci.yml + tests/architecture 沙箱 env 隔离），D595 写集外，建议 CT 另立 FIX 任务"
+  },
+  "control_tower_gate_tests_ubuntu": {
+    "main_f3df0284": "failure",
+    "branch_58314e8a": "failure",
+    "note": "同属 main 存量（fastlane-bypass-only 家族 known-red，simulate-ci 本地亦报『模拟红（与 CI 一致）』）"
+  },
+  "branch_green_jobs": ["Vitest 1/2", "Vitest 2/2", "TypeScript + Lint + Iron Laws", "Golden Case F1", "Checker Review", "Integration Contract Check", "Test-Kit Architecture (ubuntu/win)", "npm audit"],
+  "local_gates": {
+    "SYNO_CI=1 pre-commit 13组": "exit 0（worktree 实测 /tmp/pc-wt.log）",
+    "simulate-ci": "exit 0『CI 等价模拟通过 — 可以 push』（/tmp/simci-wt.log）",
+    "pre-push 门禁 0-5": "全过（推送 58314e8a 时实测）"
+  }
+}
