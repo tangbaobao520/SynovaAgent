@@ -1383,6 +1383,25 @@ else
   soft_pass "D652: 无 task-state 变更(跳过)"
 fi
 
+# ═══════════════════════════════════════════════════════════════════
+# 组 15: 合入即绿基线自检 (D653) — 基线/豁免文件被触碰时校验格式
+#   main 红基线（main-red-baseline.txt）是"新增红"判定的唯一依据, 格式坏 = 门禁失效。
+#   真正的红对比在 ci.yml test job 失败分支（--from-log）; 此处守文件格式。
+#   三态: 0 格式合法/跳过 ✅; 1 非法行 / 2 降级 → soft_check (SYNO_CI=1 硬阻断)
+# ═══════════════════════════════════════════════════════════════════
+echo -e "${CYAN}── 组 15: 合入即绿基线自检 (D653) ──${RESET}"
+if echo "$GIT_CACHED_NAMES" | grep -q '^tests/control-tower/main-red-'; then
+  MG_OUT=$(bash "$ROOT/scripts/control-tower/check-main-green.sh" --self-check 2>&1)
+  MG_EXIT=$?
+  if [ "$MG_EXIT" -eq 0 ]; then
+    soft_pass "D653 基线/豁免格式自检通过"
+  else
+    soft_check "D653: 基线/豁免格式非法或检查降级 (exit=$MG_EXIT)" "$MG_OUT"
+  fi
+else
+  soft_pass "D653: 无基线文件变更(跳过)"
+fi
+
 # ── D520/任务3: 平台敏感命令软检查（V5 软提示——新增脚本须对照 PLATFORM-CHECKLIST.md）──
 # 只查本次新增（A）的 scripts/control-tower|workflow 下的 .sh/.py 文件：
 #   裸 python3（非 PYBIN 模式）/ date +%s / date -v / grep -P → 提示见 checklist。

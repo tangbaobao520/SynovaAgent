@@ -92,8 +92,12 @@ jobs:
               fi
             done <<< "$FAILED_TESTS"
             if [ -z "$NEW_FAILURES" ]; then
-              echo "Pre-existing test failures from unchanged files �� not blocking"
-              exit 0
+              # D653: pre-existing 红必须已在基线(main-red-baseline.txt)/豁免登记;
+              # 匿名新增红 = 新红悄悄进入 main → 阻断（合入即绿门禁, 退出码透传）
+              echo "Pre-existing test failures from unchanged files — D653 baseline check:"
+              printf '%s\n' "$CLEAN_OUTPUT" > /tmp/vitest-run.log
+              bash scripts/control-tower/check-main-green.sh --from-log /tmp/vitest-run.log
+              exit $?
             fi
           fi
           exit 1
@@ -188,7 +192,9 @@ jobs:
             tests/control-tower/clone-shadow-commit.test.sh \
             tests/control-tower/verify-parallel-ci.test.sh \
             tests/control-tower/alloc-task-id.test.sh \
-            tests/control-tower/alloc-task-id-lock.test.sh; do
+            tests/control-tower/alloc-task-id-lock.test.sh \
+            tests/control-tower/check-evidence-cited.test.sh \
+            tests/control-tower/check-main-green.test.sh; do
             echo "── $t"
             # D526: 测试失败输出进 ::error 注解——无 token 也能经 annotations 定位（D521 工具1 语义）
             if ! bash "$t" > /tmp/ct-out.log 2>&1; then
