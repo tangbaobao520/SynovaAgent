@@ -1,0 +1,12 @@
+{
+  "task_id": "D603",
+  "title": "L1-P3 TUI 清理 + 跨层修复 + 文档拉平",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {"by": "dsh-coding", "at": "2026-09-09", "evidence": "PR #451 merge 01e39a7e（实际代码经 #449 夹带入 main——K3 P0-1）"},
+  "audit": {"verdict": "PASS", "report": "docs/synova/audit-reports/2026-09-09-K3-L1收工批-closeout.md", "by": "K3", "at": "2026-09-09"},
+  "fix_task_id": null,
+  "updated_at": "2026-09-09",
+  "updated_by": "dsh-cto",
+  "note": "K3 L1 收工批 P1-3 回填。TUI 方案 A + 跨层静态 import 26 清零 + 文档拉平。棘轮 68→42。"
+}
