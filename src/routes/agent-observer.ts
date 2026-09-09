@@ -8,8 +8,9 @@
  */
 
 import { Router, type Request, type Response } from 'express';
-import { SqliteGraphStore } from '../adapters/sqlite-graph-store';
-import { getDatabase } from '../init/engine-context';
+// D603 跨层修复（簇3）: SqliteGraphStore 构造 + getDatabase 句柄直取下沉 L2——铁律 39
+// （类型经 L2 graph-store-service 重导出；graphstore-unify DS3 调用点锚保持）
+import { createSystemGraphStore, type SqliteGraphStore } from '../agent/graph-store-service';
 import { createLogger } from '@synova/logger';
 import { collectActivity, collectActivities } from '../agent-observer/collector';
 import type { AgentActivity, BatchReportResponse, ReportResponse } from '../agent-observer/types';
@@ -91,8 +92,10 @@ router.post('/api/agent-observer/report', (req: Request, res: Response) => {
       activities.push(validation.activity);
     }
 
-    // 创建 GraphStore 并收集活动
-    const store = new SqliteGraphStore(getDatabase());
+    // 注入优先（server.ts app.locals.graphStore ← Bootstrap Phase 1c 单例），
+    // 未注入环境回退 L2 兜底装配（D603 簇3 — L1 不再直构 SqliteGraphStore/getDatabase）
+    const locals = req.app.locals as { graphStore?: SqliteGraphStore };
+    const store = locals.graphStore ?? createSystemGraphStore();
 
     if (activities.length === 1) {
       const result = collectActivity(store, activities[0]);
