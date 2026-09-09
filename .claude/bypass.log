@@ -1222,3 +1222,8 @@ Binary file .claude/bypass.log matches
 2026-09-09T23:48:51+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=ee8f47edd30f3914060ee712cb68fbc1b696f7e1
 2026-09-09T23:55:09+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=ae25b04617cd62e792ff89cf624ccfe6e972c4f4
 2026-09-10T00:03:27+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=c699a4b22a31df85c9a552a2f87b2a2a045a9a14
+2026-09-09T16:05:37Z detected-bypass head-mismatch marker=4208a0ee715bf4033bfdb99045e89a494f8a7c05 parent=a03f9b09b1b1fb5d80ad18c91925ae7550c9462f
+2026-09-09T16:08:26Z | COMMITTED | pre-commit PASS (D451 rebase 补记, 原 D652 commit hash 改变, 门禁 13 组本次已在 SYNO_CI=1 复验通过) | HASH=11e0d57c91ce4c5fd1c2de6cb5dc194d1792ebac
+2026-09-09T16:08:26Z | COMMITTED | pre-commit PASS (D451 rebase 补记, 原 D653 commit hash 改变, 门禁 13 组本次已在 SYNO_CI=1 复验通过) | HASH=cb06542b10e3ff7dcda6d7700c8a0e1bb2382d08
+2026-09-09T16:08:26Z | COMMITTED | pre-commit PASS (D451 rebase 补记, 原 D657 commit hash 改变, 门禁 13 组本次已在 SYNO_CI=1 复验通过) | HASH=553e170bce99bc584d352316f6d4290211998dd2
+2026-09-10T00:10:00+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=75be51a23f69946dde34a50914f5d40530d45a2f
