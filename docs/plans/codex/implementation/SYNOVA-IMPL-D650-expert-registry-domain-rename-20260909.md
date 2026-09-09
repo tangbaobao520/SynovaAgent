@@ -73,6 +73,17 @@
 
 > 实现时若偏离本 doc（finance-structure 的 tools 合并细则、manifest 内部 name 字段、测试断言改动点），必须在此节同 commit 回填最终形态。
 
+**实现回填（2026-09-09，Claude 线交付）：**
+
+1. **manifest.json 内部同步细则**：4 个改名目录的 manifest 除 `name` 外，`displayName`（资金效率专家/客户增长专家/组织能力专家/技术底座专家）与 `description` 一并同步；technology-foundation 的 `entryPoint: "./tech/IDENTITY.md"` 路径同步为 `"./technology-foundation/IDENTITY.md"`。manifest `version` 保持 1.0.0（无契约锁定，不扩大变更面）。dependencies.peers 中 strategy/org 为 v2.0 前遗留死引用（D282 前即失效），非本卡语义，留给 P1 第二件「tools 对齐 compute seam」。
+2. **fundamental-efficiency 的 background 标志**：取 `background: true`（身份继承 capital-cycle，非 finance-structure 复活；finance-structure 只贡献 3 个 tools，合计 8 tools）。诊断面（background:false）= host + competitive-strategy。registry `version: 3`（整数，loader 解析语义不变）。
+3. **写集外偏离项（铁律 9 全仓库传播发现，同 commit 修复 broken 引用）**：
+   - `src/tui-v2/chat.tsx:43-51` — EXPERT_DISPLAY_NAMES 展示键旧专家名 → 新问题域名 + 中文标签对齐 manifest displayName（spec §2.2 未扫 tui-v2）。
+   - `expert/host/CROSS_EXPERT.md:23` — 「激活 finance-structure 专家」→ fundamental-efficiency（capital_cycle_deviation 信号名是资源循环语境，保留）。
+   - `tests/expert/tech-theory-injection.test.ts:11` — 读 `expert/tech/THEORY.md` 路径 → technology-foundation（§2.2 grep 模式未含短名 `tech` 波及）。
+   - `tests/expert/analytical-lens.test.ts:14` — EXPERTS 清单 `'tech'` → `'technology-foundation'`（同上；其余旧 9 位条目为 v2.0 前基线欠账，非本卡范围，保持基线状态）。
+4. **测试断言改动点**：expert-router.test 补 tech→technology-foundation 用例（§4 覆盖表要求）+ market/talent/capital/financial 断言换新名；task-decomposer.test 补 market→customer-growth 用例；manifest-consistency.test 新增「专家名零 cycle 残留」+「六位问题域清单一致」两断言；expert-enum-propagation.test REGISTRY_SEVEN→REGISTRY_SIX + LEGACY_IDS 扩充 5 个 D650 退役名；expert-config-loader.test 清单换新 + version 断言 2→3 + 旧名 toBeUndefined 语义锁。
+
 ### 3.3 不做的事
 | 项 | 理由 |
 |---|---|

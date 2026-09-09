@@ -1,9 +1,9 @@
 {
-  "name": "customer-cycle",
+  "name": "customer-growth",
   "version": "1.0.0",
   "type": "expert",
-  "displayName": "客户循环专家",
-  "description": "合并原营销专家和战略专家，覆盖竞争位势、客户价值、定价、市场进入",
+  "displayName": "客户增长专家",
+  "description": "覆盖竞争位势、客户价值、定价、市场进入——回答「客户增长卡在哪里」",
   "tier": "L3",
   "complexity": "expert",
   "edges": [

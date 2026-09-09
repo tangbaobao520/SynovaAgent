@@ -2,15 +2,19 @@
  * tests/expert/manifest-consistency.test.ts — D53: 专家manifest.json 一致性验证
  *
  * D567 适配（K3 15-1）: 专家清单不再硬编码 9 位旧枚举，改为从 expert/expert-registry.yaml
- * 动态读取（getAllExpertIds，当前 7 位）。v2 精简 manifest（finance-structure/competitive-strategy
- * 等）不含 boundaries/edges/computes/crossDomainRule，旧"全员必有"断言改为
- * "可选结构字段出现时格式合法"——schema 演进后仍锁定 manifest 可解析性与字段合法性。
+ * 动态读取（getAllExpertIds）。v2 精简 manifest 不含 boundaries/edges/computes/crossDomainRule，
+ * 旧"全员必有"断言改为"可选结构字段出现时格式合法"——schema 演进后仍锁定 manifest 可解析性
+ * 与字段合法性。
+ *
+ * D650 适配: registry v3.0 六位问题域专家（cycle 命名改名问题域——权威第六章 §6.6
+ * 「专家名禁含 cycle」），新增断言 ① 专家名零 cycle 残留 ② 与问题域英文名清单一致（§7.4）。
  *
  * 测试覆盖(>=7):
- * - registry 全部专家的 manifest.json 存在（动态 7 位）
+ * - registry 全部专家的 manifest.json 存在（动态 6 位）
  * - 每个 JSON.parse() 不抛异常
  * - 每个含必填字段 name/version/type/displayName/description
  * - 可选结构字段（boundaries/edges/computes/crossDomainRule）出现时格式合法
+ * - D650: 专家名零 cycle 残留 + 问题域清单一致
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync, existsSync } from 'fs';
@@ -56,6 +60,19 @@ function loadManifest(name: string): ExpertManifest {
 describe('D53: 专家manifest.json 一致性', () => {
   it('registry 专家清单非空（yaml 事实源可读，防降级静默）', () => {
     expect(EXPERT_NAMES.length, 'expert-registry.yaml 应声明至少 1 位专家').toBeGreaterThan(0);
+  });
+
+  it('D650: registry 专家名零 cycle 残留（权威 §6.6 专家名禁含 cycle）', () => {
+    for (const name of EXPERT_NAMES) {
+      expect(name.includes('cycle'), `专家名 "${name}" 含 cycle，违反权威第六章 §6.6 命名规则`).toBe(false);
+    }
+  });
+
+  it('D650: registry 与六位问题域专家清单一致（权威第七章 §7.4 英文名）', () => {
+    expect(EXPERT_NAMES.sort()).toEqual([
+      'competitive-strategy', 'customer-growth', 'fundamental-efficiency', 'host',
+      'organizational-capability', 'technology-foundation',
+    ].sort());
   });
 
   it('registry 全部专家的 manifest.json 存在', () => {

@@ -3,8 +3,8 @@
  *
  * 契约:
  *   @input  — expert/expert-registry.yaml（唯一事实源）+ K3 15-1 点名的 5 处曾硬编码旧专家枚举的源文件
- *   @output — 断言 ① 加载器返回 registry 全量专家（yaml 声明序，当前 7 位）
- *             ② 旧 6/8/9 位成员已全部退出注册表（D282 迁移语义锁定）
+ *   @output — 断言 ① 加载器返回 registry 全量专家（yaml 声明序，D650 起六位问题域专家）
+ *             ② 旧 6/8/9 位成员 + cycle 命名成员已全部退出注册表（D282/D650 迁移语义锁定）
  *             ③ 5 处源文件零封闭枚举残留（EXPERT_NAMES / BUILTIN_EXPERTS / ALL_EXPERTS / 维度映射 / 类型 union）
  *   @degraded — yaml 缺失/解析失败时 getAllExpertIds() 返回 []（加载器 log.warn，调用方自行降级）；
  *               本测试在 yaml 缺失时直接失败暴露（测试环境必须能读到事实源）
@@ -18,13 +18,16 @@ import { getAllExpertIds } from '../../src/agent/expert-config-loader';
 
 const ROOT = join(import.meta.dirname, '..', '..');
 
-/** registry 7 位（D282 v2.0）— 与 expert/expert-registry.yaml 声明序一致 */
-const REGISTRY_SEVEN = [
-  'host', 'capital-cycle', 'customer-cycle', 'talent-cycle', 'tech', 'finance-structure', 'competitive-strategy',
+/** registry 6 位（D650 v3.0 问题域命名）— 与 expert/expert-registry.yaml 声明序一致（权威第七章 §7.4 英文名） */
+const REGISTRY_SIX = [
+  'host', 'fundamental-efficiency', 'customer-growth', 'organizational-capability', 'technology-foundation', 'competitive-strategy',
 ];
 
-/** D282 迁移前的旧枚举成员（旧 6 位 + business_model/knowledge） */
-const LEGACY_IDS = ['strategy', 'org', 'finance', 'marketing', 'action', 'business_model', 'knowledge'];
+/** D282/D650 迁移前的旧枚举成员（旧 9 位 + D650 改名的 4 位 cycle/短名 + 并入的资金结构专家） */
+const LEGACY_IDS = [
+  'strategy', 'org', 'finance', 'marketing', 'action', 'business_model', 'knowledge',
+  'capital-cycle', 'customer-cycle', 'talent-cycle', 'tech', 'finance-structure',
+];
 
 /** K3 15-1 点名的 5 处硬编码现场 — 各自的封闭枚举特征模式（修复后不得再命中） */
 const SITES: Array<{ file: string; patterns: RegExp[] }> = [
@@ -42,11 +45,11 @@ const SITES: Array<{ file: string; patterns: RegExp[] }> = [
 ];
 
 describe('D567: 专家枚举唯一事实源（expert-registry.yaml）', () => {
-  it('加载器返回 registry 全量专家（yaml 声明序，当前 7 位）', () => {
-    expect(getAllExpertIds()).toEqual(REGISTRY_SEVEN);
+  it('加载器返回 registry 全量专家（yaml 声明序，D650 起六位问题域专家）', () => {
+    expect(getAllExpertIds()).toEqual(REGISTRY_SIX);
   });
 
-  it('旧 6/8/9 位成员已全部退出注册表', () => {
+  it('旧 9 位 + D650 cycle 命名成员已全部退出注册表', () => {
     const ids = new Set(getAllExpertIds());
     for (const legacy of LEGACY_IDS) {
       expect(ids.has(legacy), `旧专家 "${legacy}" 不应出现在 expert-registry.yaml`).toBe(false);

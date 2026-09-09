@@ -1,9 +1,9 @@
 {
-  "name": "talent-cycle",
+  "name": "organizational-capability",
   "version": "1.0.0",
   "type": "expert",
-  "displayName": "人才循环专家",
-  "description": "合并原组织专家和知识管理专家，覆盖组织健康、知识资产、关键人风险",
+  "displayName": "组织能力专家",
+  "description": "覆盖组织健康、知识资产、关键人风险——回答「组织能力撑不撑得起增长」",
   "tier": "L3",
   "complexity": "expert",
   "edges": [

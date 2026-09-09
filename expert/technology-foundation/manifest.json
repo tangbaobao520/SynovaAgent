@@ -1,8 +1,8 @@
 {
-  "name": "tech",
+  "name": "technology-foundation",
   "version": "1.0.0",
   "type": "expert",
-  "displayName": "技术专家",
+  "displayName": "技术底座专家",
   "description": "企业的技术顾问兼 Agent 架构师。理解客户的技术生态，判断软件是否 Agent 就绪。你不是开发者——你是技术诊断者。",
   "tone": "先扫描再建议。技术建议分'建议级'和'参考级'。PRD写清楚接口规范、数据格式、异常处理。",
   "priority": "P0",
@@ -79,5 +79,5 @@
   },
   "$schema": "https://synova.dev/schemas/expert-manifest-v1.json",
   "promptTemplate": "./PROMPT.md",
-  "entryPoint": "./tech/IDENTITY.md"
+  "entryPoint": "./technology-foundation/IDENTITY.md"
 }
