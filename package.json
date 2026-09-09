@@ -12,6 +12,7 @@
     "postinstall": "patch-package",
     "dev": "scripts\\agent-start.bat",
     "mvp": "tsx src/mvp-server.ts",
+    "mcp": "tsx src/mcp/index.ts",
     "chat": "tsx src/cli.ts",
     "tui": "tsx src/tui-v2/chat.tsx",
     "synova": "tsx src/tui-v2/chat.tsx",
@@ -50,6 +51,7 @@
     "build:backend": "bash scripts/desktop/build-backend.sh"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@unblessed/node": "^1.0.0-alpha.23",
     "bcrypt": "^6.0.0",
     "better-sqlite3": "^12.11.1",
