@@ -10,10 +10,11 @@
   },
   "impl": {
     "branch": "feat/d602-interactive-cards-preload",
-    "baseline": "origin/main 92b094de（含 CT-63 合并 #445，与写集零重叠；派单时 HEAD=dff18196，开工前 fetch 已含 #445）",
+    "baseline": "origin/main 92b094de（含 D593 合并 #442）",
     "worktree": ".synova-wt-d602（独立 worktree，主工作区 CT-63 session 零接触）",
     "by": "DeepSeek Harness (DSH 编码 session, glm-5.3-flash)",
     "at": "2026-09-09",
+    "merge": "749c3b51（PR #448 squash）——写集合并零漂移（仅 +bypass.log 惯例）",
     "write_set": {
       "modified_8": [
         "electron/preload.cjs（2→8 方法，on* 返回退订函数，逐方法 JSDoc 契约）",
@@ -37,17 +38,23 @@
       ]
     },
     "tests": {
-      "new": "ipc-contract 5/5 + notification-center 18/18 = 23/23（red 先证 23/23 全红，原文见 evidence red-green-evidence.md）",
-      "regression": "use-streaming-conversation 21/21 零改动 + tests/electron 12 文件 164 passed + 全量 vitest 失败文件集与基线 diff=空（9 个既有失败文件恒等，L2/L3 域与写集零交集）",
-      "tsc": "根 28=28 基线 + electron-renderer 0 错误"
+      "new": "ipc-contract 5/5 + notification-center 18/18 = 23/23（K3 独立复跑全绿；red 先证 23/23 全红，原文见 evidence red-green-evidence.md）",
+      "regression": "use-streaming-conversation 21/21 零改动（K3 独立复跑全绿）",
+      "tsc": "根 28=28 基线口径（前批已核）"
     },
-    "evidence": "docs/synova/audit-reports/D602-ipc-notification-evidence-20260909/（DS4 真实后端 curl 前后对照+重启持久；DS5 真实 SSE error 帧捕获）",
-    "gates": "SYNO_CI=1 SYNO_DIFF_BASE=origin/main pre-commit-check 13 组全过 + simulate-ci 通过",
+    "evidence": "docs/synova/audit-reports/D602-ipc-notification-evidence-20260909/（DS4 真实后端 curl 前后对照+重启持久；DS5 真实 SSE error 帧捕获；headless 边界如实声明）",
+    "gates": "SYNO_CI=1 pre-commit 13 组全过 + simulate-ci 通过（分支态声称）",
     "note": "DS4/DS5 证据产生于 Mac 隔离真实后端（PORT=18991 + /tmp 临时库，零 data/synova.db 接触）；OS 级系统通知弹窗 headless 不可物理截图（用例 7a stub + main.cjs handler 静态锁定，留桌面人工验收）。alerts action 空洞端点与 notifications.ts 死数据源登记台账归哨兵线（spec §6）。StatusBar/TitleBar 残项 descope 归后续派单。"
   },
-  "audit": null,
+  "audit": {
+    "verdict": "CONDITIONAL PASS",
+    "report": "docs/synova/audit-reports/2026-09-09-K3-D593-D602-closeout.md",
+    "by": "K3 independent session",
+    "at": "2026-09-09",
+    "findings": "零 P0/P1 新增。结转前批 P1-1（spec 未入库，#453 已登记 'task-brief 即 spec 载体'，未关闭）；本批 P2×4：P2-1 brief Done 5 verify 与交付态口径漂移（evidence 已披露 cockpit 1 命中合法保留）；P2-2 evidence DS 表引用不存在 spec 路径；P2-3 DS9 '全量 vitest exit 0' 与 '9 既有失败文件' 措辞矛盾；P2-4 派单材料口径失准（preload 2→14 实为 2→8；D593 测试文件名误标）"
+  },
   "fix_task_id": null,
   "updated_at": "2026-09-09",
-  "updated_by": "DeepSeek Harness (coding)",
-  "note": "impl 交付（编码线 2026-09-09）：IPC 三方一致（preload 8 ≡ bridge 8 ≡ main 通道 3+3 推送，静态契约测试物理锁定）+ 通知数据源切 D580 工单状态机真源（decision 3-B）+ 卡片动作接 POST /tickets/:id/transition（decision 4-B，alerts/:id/action 空洞端点不接）+ SSE error 帧消费（decision 5-B）+ Tray 保留修复（decision 2-B，founder 裁决）+ P0 轮询保留补 push（decision 6-B）+ preload 方法集 B=8（decision 1）。spec 提交 commit 字段待本 impl PR 合并后由合并提交统一覆盖。审计产物命名带 D602（原 D594 编号沿革已在本文件与 spec 头注记，防混）。"
+  "updated_by": "K3 (independent audit)",
+  "note": "审计结论 CONDITIONAL PASS（维持前批）。实现质量高：23/23 独立复跑全绿、IPC 三方源码级物理断言、DS4/DS5 真实后端证据、写集合并零漂移、披露全诚实。深查 5 项全过（preload 校验在 main 侧/main.cjs:170-196、角标=open 工单数、actOnTicket≡D580 契约、SSE error 不误触发、notifications 死数据源运行时影响零）。"
 }
