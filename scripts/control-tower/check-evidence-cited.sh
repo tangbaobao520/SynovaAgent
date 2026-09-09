@@ -99,7 +99,16 @@ TOP_DIRS="$(git -C "$ROOT" ls-tree -d --name-only HEAD 2>/dev/null | tr '\n' ','
 if [ "$TOP_DIRS" = "evidence," ]; then
   TOP_DIRS="docs,scripts,tests,src,packages,task-state,extensions,expert,knowledge,theory,skills,memory,config,data,patches,.github,security,providers,store,cron,evidence,"
 fi
-RESULT=$(python3 - "$ROOT" "$TOP_DIRS" $TOUCHED <<'PYEOF'
+# PYBIN 三级探测（D520 checklist #1: Windows 部分机器无 python3.exe, 损坏 shim 探存在性不探可用性）
+PYBIN=""
+for _c in python3 python py; do  # PYBIN 候选链（D520 checklist #1）
+  command -v "$_c" >/dev/null 2>&1 && "$_c" -c "import sys" >/dev/null 2>&1 && PYBIN="$_c" && break
+done
+if [ -z "$PYBIN" ]; then
+  echo "degraded: python 不可用（PYBIN 三级探测失败, D520 checklist #1——fail-closed）" >&2
+  exit 2
+fi
+RESULT=$("$PYBIN" - "$ROOT" "$TOP_DIRS" $TOUCHED <<'PYEOF'
 import json, re, sys, os
 
 root = sys.argv[1]
@@ -162,7 +171,7 @@ print("__DEGRADED__")
 for f, r in degraded:
     print(f"{f}\t{r}")
 PYEOF
-) || { echo "degraded: python3 解析器执行失败" >&2; exit 2; }
+) || { echo "degraded: PY 解析器执行失败（$PYBIN, D520 checklist #1）" >&2; exit 2; }
 
 META=$(echo "$RESULT" | sed -n '/^__META__$/,/^__BAD__$/p' | sed '1d;$d' | head -1)
 BAD=$(echo "$RESULT" | sed -n '/^__BAD__$/,/^__DEGRADED__$/p' | sed '1d;$d')

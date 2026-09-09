@@ -127,7 +127,8 @@ fi
 # ── 匿名红: 点名 + 写 CTO 待办（仿 CT-39 CI-STALE-RED 模式, 带 FIRST_SEEN 24h 升级）──
 echo -e "${RED}❌ D653: 新增匿名红进入 main（无豁免登记 = 无归属）${NC}"
 echo "$NEW_ANON" | sed 's/^/  - /'
-NOW_EPOCH=$(date +%s)
+NOW_EPOCH=$(date +%s)  # D520: date +%s 为 POSIX 纪元秒, BSD/GNU 双平台等价
+# stat mtime: BSD(macOS) -f %m 与 GNU -c %Y 双分支探测, 失败回退 NOW_EPOCH（仅影响升级时长的精度）
 FIRST_SEEN="首次发现 $(date '+%Y-%m-%d %H:%M')"
 if [ -f "$TODO_FILE" ]; then
   FS_EPOCH=$(stat -f %m "$TODO_FILE" 2>/dev/null || stat -c %Y "$TODO_FILE" 2>/dev/null || echo "$NOW_EPOCH")
