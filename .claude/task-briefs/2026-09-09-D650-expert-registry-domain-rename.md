@@ -61,11 +61,11 @@ grep capital-cycle|customer-cycle|talent-cycle|finance-structure 全仓 19 文�
 
 做什么：
 - expert/expert-registry.yaml（修改，v3.0：7→6 专家；finance-structure 条目删除其 3 tools 并入 fundamental-efficiency；注释同步；避免旧名字面量残留）
-- expert/capital-cycle/ 改名 expert/fundamental-efficiency/（git mv；manifest.json name/displayName「资金效率专家」/description 同步）
-- expert/customer-cycle/ 改名 expert/customer-growth/（git mv；manifest 同步「客户增长专家」）
-- expert/talent-cycle/ 改名 expert/organizational-capability/（git mv；manifest 同步「组织能力专家」）
-- expert/tech/ 改名 expert/technology-foundation/（git mv；manifest name/displayName「技术底座专家」同步）
-- expert/finance-structure/ 归档 expert/_deprecated/finance-structure/（git mv，内容不动）
+- expert/fundamental-efficiency/manifest.json（capital-cycle/ 整目录 git mv 改名 fundamental-efficiency/，manifest name/displayName「资金效率专家」/description 同步）
+- expert/customer-growth/manifest.json（customer-cycle/ 整目录 git mv 改名 customer-growth/，manifest 同步「客户增长专家」）
+- expert/organizational-capability/manifest.json（talent-cycle/ 整目录 git mv 改名 organizational-capability/，manifest 同步「组织能力专家」）
+- expert/technology-foundation/manifest.json（tech/ 整目录 git mv 改名 technology-foundation/，manifest name/displayName「技术底座专家」同步）
+- expert/_deprecated/finance-structure/manifest.json（finance-structure/ 整目录 git mv 归档 _deprecated/，内容不动）
 - src/agent/expert-router.ts（修改，selectExpert 六处 return 值改名 + 注释 D491→D650 对齐说明）
 - src/agent/task-decomposer.ts（修改，DIMENSION_EXPERT_MAP 十值改名）
 - src/l3/synova-diagnosis-engine-impl.ts（修改，mapDimensionToExpert 映射值 + 恒等映射 + 注释 7 位→6 位）
