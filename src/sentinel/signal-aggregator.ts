@@ -44,18 +44,23 @@ export interface AggregatedSignal {
   degraded: boolean;
 }
 
-/** 信号→专家路由表 (规则驱动，不是 LLM) */
+/**
+ * 信号→专家路由表 (规则驱动，不是 LLM)
+ * D651: 专家 ID 对齐 expert-registry.yaml v3.0 问题域命名（权威 §6.6/§6.9.1/§7.4）。
+ * 旧 D282 前死名与 cycle 时代命名在注册表任何版本均不存在，
+ * 会被下游 VALID_EXPERTS 过滤成空路由，故统一映射到 5 问题域专家。
+ */
 const SIGNAL_TO_EXPERT: Record<string, string[]> = {
-  collaboration: ['org'],                          // 协作信号 → 组织专家
-  capability: ['org', 'tech'],                     // 能力信号 → 组织+技术
-  strategy: ['strategic', 'business_model'],       // 战略信号 → 战略+商业模式
-  risk: ['strategic', 'finance', 'business_model'], // 风险信号 → 战略+财务+商业模式
-  health: ['tech'],                                // 健康信号 → 技术
-  'data-quality': ['tech'],                        // 数据质量 → 技术
-  evolution: ['org'],                              // 进化 → 组织
-  compliance: ['strategic'],                       // 合规 → 战略
-  revenue: ['finance', 'business_model'],          // 收入信号 → 财务+商业模式
-  financial: ['finance', 'business_model'],         // 财务信号 → 财务+商业模式
+  collaboration: ['organizational-capability'],                    // 协作信号 → 组织能力
+  capability: ['organizational-capability', 'technology-foundation'], // 能力信号 → 组织能力+技术底座
+  strategy: ['competitive-strategy'],                              // 战略信号 → 竞争战略
+  risk: ['competitive-strategy', 'fundamental-efficiency'],        // 风险信号 → 竞争战略+资金效率
+  health: ['technology-foundation'],                               // 健康信号 → 技术底座
+  'data-quality': ['technology-foundation'],                       // 数据质量 → 技术底座
+  evolution: ['organizational-capability'],                        // 进化 → 组织能力
+  compliance: ['competitive-strategy'],                            // 合规 → 竞争战略
+  revenue: ['fundamental-efficiency', 'competitive-strategy'],     // 收入信号 → 资金效率+竞争战略
+  financial: ['fundamental-efficiency', 'competitive-strategy'],   // 财务信号 → 资金效率+竞争战略
 };
 
 /** 严重度升级规则: 同一实体被 N 个哨兵标记 */
