@@ -26,8 +26,8 @@
     "findings": "P0-1 合并冲突消解吞实现（DS 成立 4/9）；P0-2 夹带 6 文件（前批 #449 同族二次）；P1-1 合并消息 overclaim（M2）；P1-2 CI vitest 豁免盲区（ci.yml:79-95 新测试失败被当 pre-existing）；P1-3 task-state 断裂（第三次实证）；P1-4 DS2 证据未标注分支态；P2×2",
     "fix_route": "建议 CTO 立项 FIX：从 feat/d593-report-persistence-p2 恢复 diagnosis.ts D593 变更（对齐 d600 演进重新消解）+ task-state 回填 + 25/25 绿 + DS2 重跑 + 清理夹带"
   },
-  "fix_task_id": null,
+  "fix_task_id": "fix/d593-restore",
   "updated_at": "2026-09-09",
   "updated_by": "K3 (independent audit)",
-  "note": "审计结论 FAIL（P0×2/P1×4/P2×2）。分支态实现完整（DS2 物理证据真实），合并通道丢失核心一半——main 上的 D593 是半成品。修复路线见 audit.fix_route。编号注意：旧 14e54722 D593（LLM 韧性层）已关闭，本任务为编号复用。"
+  "note": "审计结论 FAIL（P0×2/P1×4/P2×2）。分支态实现完整（DS2 物理证据真实），合并通道丢失核心一半——main 上的 D593 是半成品。修复路线见 audit.fix_route。编号注意：旧 14e54722 D593（LLM 韧性层）已关闭，本任务为编号复用。 FIX（2026-09-09，fix/d593-restore）：K3 FAIL P0-1 合并冲突吞实现——diagnosis.ts 的 D593 服务端面（落盘写点/checkpoint 冷读/GET report fallback/列表端点/FIFO 注释诚实化）经外科手术恢复（保留 D599/D600 客户配置工作，customerConfig 15=15 零误伤）；P0-2 夹带清理（heartbeat.json/.synova-wt-ct64/.synova-wt-d593 gitlink/.synova-wt-d590 回退/D595 两文档/D599 note，d577 等 D590 时代遗留 gitlink 归独立治理）。恢复前 red 10 failed/2 passed → 恢复后 21/21 全绿 + conversations.test.ts 13/13 + tsc 与 main 基线 36=36 一致。"
 }
