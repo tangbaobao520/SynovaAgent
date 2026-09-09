@@ -1227,3 +1227,4 @@ Binary file .claude/bypass.log matches
 2026-09-09T16:08:26Z | COMMITTED | pre-commit PASS (D451 rebase 补记, 原 D653 commit hash 改变, 门禁 13 组本次已在 SYNO_CI=1 复验通过) | HASH=cb06542b10e3ff7dcda6d7700c8a0e1bb2382d08
 2026-09-09T16:08:26Z | COMMITTED | pre-commit PASS (D451 rebase 补记, 原 D657 commit hash 改变, 门禁 13 组本次已在 SYNO_CI=1 复验通过) | HASH=553e170bce99bc584d352316f6d4290211998dd2
 2026-09-10T00:10:00+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=75be51a23f69946dde34a50914f5d40530d45a2f
+2026-09-10T00:34:07+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=6c08a670ef5f11f934352ddbd6c8baa40f63bcae
