@@ -40,6 +40,7 @@ backlog 待规划 / todo 待办 / running 进行中 / done 已完成 / failed �
 - 修改 dsh/plugins/task-board-adapter/test/derive.test.sh — 活动扫描三态用例
 - 修改 dsh/plugins/task-board-adapter/README.md — 映射表更新
 - 修改 task-state/D660.json — 本任务登记
+- 修改 docs/synova/coordination/审计发现台账-DSH-CTO.md — D660 交付 + 控制塔缺陷登记（发现即登记）
 不做什么：
 - 不改 task-state/D397.json（僵尸关闭为上轮 #469，本任务零触碰其他 task-state）
 - 不改 scripts/audit/（K3 红线）、不写审计标准
