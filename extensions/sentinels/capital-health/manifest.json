@@ -6,9 +6,9 @@
   "displayName": "资本健康",
   "description": "合并自 capital-efficiency + capital-structure + capital-turnover。诊断资本配置效率(ROIC/WACC)、融资结构(负债权益比)和周转速度(资产周转率)。",
   "schedule": "0 0 1 * *",
-  "expert": "finance",
+  "expert": "fundamental-efficiency",
   "auxiliaryExperts": [
-    "strategy"
+    "competitive-strategy"
   ],
   "priority": "P1",
   "layer": "capital",

@@ -6,7 +6,7 @@
   "displayName": "S1",
   "description": "S1:",
   "schedule": "0 0 1 * *",
-  "expert": "org",
+  "expert": "organizational-capability",
   "priority": "P1",
   "layer": "alignment",
   "computeKind": "heuristic",
@@ -34,7 +34,7 @@
   "entryPoint": "./aggregate.ts",
   "exportKey": "strategyCapabilityFitSentinel",
   "auxiliaryExperts": [
-    "strategy"
+    "competitive-strategy"
   ],
   "id": "sentinel-strategy-capability-fit"
 }

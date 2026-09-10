@@ -6,7 +6,7 @@
   "displayName": "护城河依赖度",
   "description": "I8: 聚合哨兵，引用I3+I4结果评估护城河依赖度。",
   "schedule": "0 0 1 * *",
-  "expert": "strategy",
+  "expert": "competitive-strategy",
   "priority": "P1",
   "layer": "interface",
   "computeKind": "heuristic",
@@ -34,7 +34,7 @@
   "entryPoint": "./aggregate.ts",
   "exportKey": "moatDependencySentinel",
   "auxiliaryExperts": [
-    "strategy"
+    "competitive-strategy"
   ],
   "id": "sentinel-moat-dependency"
 }

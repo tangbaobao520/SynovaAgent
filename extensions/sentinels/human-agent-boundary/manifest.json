@@ -6,7 +6,7 @@
   "displayName": "T9 人Agent混合边界效率",
   "description": "T9: T9 人Agent混合边界效率",
   "schedule": "0 0 1 * *",
-  "expert": "tech",
+  "expert": "technology-foundation",
   "priority": "P1",
   "layer": "technology",
   "computeKind": "inferred",
@@ -34,7 +34,7 @@
   "entryPoint": "./aggregate.ts",
   "exportKey": "HumanAgentBoundarySentinel",
   "auxiliaryExperts": [
-    "org"
+    "organizational-capability"
   ],
   "id": "sentinel-human-agent-boundary"
 }

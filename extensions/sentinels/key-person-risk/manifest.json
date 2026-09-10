@@ -6,7 +6,7 @@
   "displayName": "关键人风险哨兵",
   "description": "检测组织中独占知识域的关键人员。Bus Factor < 2 → 高风险。",
   "schedule": "0 3 * * *",
-  "expert": "org",
+  "expert": "organizational-capability",
   "priority": "P0",
   "computes": [
     "bus-factor"
@@ -36,7 +36,7 @@
   "entryPoint": "./aggregate.ts",
   "exportKey": "keyPersonRiskSentinel",
   "auxiliaryExperts": [
-    "knowledge"
+    "host"
   ],
   "layer": "internal",
   "computeKind": "heuristic",

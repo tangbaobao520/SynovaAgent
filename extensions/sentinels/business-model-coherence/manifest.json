@@ -6,9 +6,9 @@
   "displayName": "商业模式一致性",
   "description": "I7: 评估价值主张-收入结构-成本结构的三角一致性。数据源: BusinessModel, Goal, FINANCIAL, Channel, Capability节点。",
   "schedule": "0 0 1 * *",
-  "expert": "business_model",
+  "expert": "competitive-strategy",
   "auxiliaryExperts": [
-    "strategy"
+    "competitive-strategy"
   ],
   "priority": "P1",
   "layer": "interface",
