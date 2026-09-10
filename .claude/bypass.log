@@ -1242,3 +1242,20 @@ Binary file .claude/bypass.log matches
 2026-09-10T12:19:55+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=84c357e740af4f3fa0d6d0fbcd1597dbff9b4a5e
 2026-09-10T12:23:00+08:00 | GATE_FAIL_SOFT | exit=1 | branch=fix/d661-grep-op-portable
 2026-09-10T12:23:01+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=d939d44144fc3588cecee9e81eb6a0bc750dbda0
+2026-09-10T12:36:24+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D663 | AGENT=deepseek-harness
+2026-09-10T12:37:00+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D663 | AGENT=deepseek-harness
+2026-09-10T12:37:15+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D663 | AGENT=deepseek-harness
+2026-09-10T12:42:33+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=1511cf826f808d03ee372767a551e241ca8909c6
+2026-09-10T12:45:18+08:00 | GATE_FAIL_SOFT | exit=1 | branch=fix/d663-ci-hermetic-arch-ratchet
+2026-09-10T12:45:18+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=b50d2d047961666af5b1d8a00e2d138f02e3c2d2
+2026-09-10T12:46:11+08:00 | GATE_FAIL_SOFT | exit=1 | branch=fix/d663-ci-hermetic-arch-ratchet
+2026-09-10T12:47:53+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=1f7a36e1e5db1b910672912ae35fe16dd18457b1
+2026-09-10T12:18:11+08:00 | GATE_FAIL_SOFT | exit=1 | branch=
+2026-09-10T12:20:19+08:00 | GATE_FAIL_SOFT | exit=1 | branch=
+2026-09-10T12:20:20+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=9e85782448df963ffad501f543c2cefdf7c882b4
+2026-09-10T12:33:31+08:00 | GATE_FAIL_SOFT | exit=1 | branch=
+2026-09-10T12:34:07+08:00 | GATE_FAIL_SOFT | exit=1 | branch=
+2026-09-10T12:34:07+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=7feb41bb151848219cde04e2acc9232c61e469bb
+2026-09-10T12:58:46+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=0b32eee961c8a34c359109791def1ebe1f6975aa
+2026-09-10T13:04:43+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=8fa67b294736cf3fd6ba0b8b51d8efb03287cbf2
+2026-09-10T13:11:53+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=38687cf73613eba292e6b7e5080536367d4a60fa
