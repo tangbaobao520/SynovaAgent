@@ -36,6 +36,8 @@ gitlink(160000) 形式入树，且无 .gitmodules 条目、无 .gitignore 覆盖
 - .github/workflows/ci.yml — 测试入 Control Tower Gate Tests 密封列表
 - docs/_config.yml — Pages 全站关闭 Liquid 渲染（build job 第二层根因：docs/ 33 个 md
   含字面 {{，Jekyll Liquid::SyntaxError 常红；一类一机制，禁逐文件打地鼠）
+- docs/.nojekyll — 终解：GitHub pages gem 实测忽略 render_with_liquid 默认值（#496 合并后
+  同错误复现），改静态服务绕过 Jekyll/Liquid/YAML 全链；仪表盘为预构建 HTML 不受影响
 - .claude/task-briefs/2026-09-10-D665-main-build-job-failure-fix.md — 本 brief 随分支入库
 - memory/notes/implemented/2026-09-10-D665-gitlink-guard.md — 四态 Note（铁律 49）
 - task-state/D665.json — impl_done 登记（第二个 commit）
