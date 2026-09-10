@@ -6,7 +6,7 @@
   "description": "评估企业资本配置效率，计算资本周转率、NPV状态和利润再投资率。",
   "tier": "L2",
   "complexity": "composite",
-  "expert": "finance",
+  "expert": "fundamental-efficiency",
   "tools": [
     "compute-capital-allocation",
     "compute-npv",

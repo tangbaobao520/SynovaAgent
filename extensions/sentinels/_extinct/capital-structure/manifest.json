@@ -6,7 +6,7 @@
   "displayName": "资本结构健康度",
   "description": "F2: 评估资本结构健康度——负债权益比、利息覆盖倍数、长期负债占比。数据源: FINANCIAL节点。",
   "schedule": "0 0 1 * *",
-  "expert": "finance",
+  "expert": "fundamental-efficiency",
   "priority": "P1",
   "layer": "capital",
   "computeKind": "deterministic",

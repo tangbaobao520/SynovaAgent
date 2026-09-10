@@ -6,7 +6,7 @@
   "displayName": "护城河感知强度",
   "description": "I4: 评估品牌溢价、客户忠诚度、认知份额等感知壁垒。数据源: Product, Market节点。",
   "schedule": "0 0 1 * *",
-  "expert": "strategy",
+  "expert": "competitive-strategy",
   "auxiliaryExperts": [
     "marketing"
   ],
