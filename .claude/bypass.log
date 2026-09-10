@@ -1236,6 +1236,12 @@ Binary file .claude/bypass.log matches
 2026-09-10T11:02:00+08:00 | GATE_FAIL_SOFT | exit=1 | branch=fix/d593-restore-clean
 2026-09-10T11:02:41+08:00 | GATE_FAIL_SOFT | exit=1 | branch=fix/d593-restore-clean
 2026-09-10T11:02:42+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=b026f933e588bdc8d63440a24c18ad4f5e33a8e2
+2026-09-10T12:02:50+08:00 | GATE_FAIL_SOFT | exit=1 | branch=fix/d593fix2-cond1-ratchet
+2026-09-10T12:09:39+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D661 | AGENT=deepseek-harness
+2026-09-10T12:10:32+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D661 | AGENT=deepseek-harness
+2026-09-10T12:19:55+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=84c357e740af4f3fa0d6d0fbcd1597dbff9b4a5e
+2026-09-10T12:23:00+08:00 | GATE_FAIL_SOFT | exit=1 | branch=fix/d661-grep-op-portable
+2026-09-10T12:23:01+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=d939d44144fc3588cecee9e81eb6a0bc750dbda0
 2026-09-10T13:45:32+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D662 | AGENT=claude
 2026-09-10T13:51:40+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=4a363e544587aab4fdeaaa781e43729a8f2cc4f5
 2026-09-10T12:36:24+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D663 | AGENT=deepseek-harness
