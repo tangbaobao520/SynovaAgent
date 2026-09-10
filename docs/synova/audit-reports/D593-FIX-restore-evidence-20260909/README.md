@@ -14,3 +14,12 @@ npx vitest run tests/routes/conversations.test.ts                               
 grep -c customerConfig src/routes/diagnosis.ts   # 15（D599/D600 零误伤，与 #442 前一致）
 git ls-files --cached | grep -cE "heartbeat.json|synova-wt-ct64|synova-wt-d593$|D595-mcp-auth|编码指令-D595|D599-dev-doc"   # 0
 ```
+
+## FIX2 附录（2026-09-09，K3 复审 P0-1 闭环）
+
+D593-FIX 的 9c3f1672 **不含 diagnosis.ts**（手术漏 staged，worktree 态假绿）——K3 属实，编码线自认 D316 教训复犯。
+FIX2 = 同一手术入提交，三物证：
+1. staged: `git diff --cached --name-only` 含 src/routes/diagnosis.ts
+2. commit: `git show <sha> --stat` 显示该文件
+3. 远端: `git show origin/fix/d593-restore:src/routes/diagnosis.ts | grep -c saveDiagnosisCheckpoint` ≥1
++ 提交态绿：临时 worktree checkout 新提交实跑（非工作树态）。
