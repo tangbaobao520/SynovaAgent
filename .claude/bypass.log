@@ -1242,6 +1242,8 @@ Binary file .claude/bypass.log matches
 2026-09-10T12:19:55+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=84c357e740af4f3fa0d6d0fbcd1597dbff9b4a5e
 2026-09-10T12:23:00+08:00 | GATE_FAIL_SOFT | exit=1 | branch=fix/d661-grep-op-portable
 2026-09-10T12:23:01+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=d939d44144fc3588cecee9e81eb6a0bc750dbda0
+2026-09-10T13:45:32+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D662 | AGENT=claude
+2026-09-10T13:51:40+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=4a363e544587aab4fdeaaa781e43729a8f2cc4f5
 2026-09-10T12:36:24+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D663 | AGENT=deepseek-harness
 2026-09-10T12:37:00+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D663 | AGENT=deepseek-harness
 2026-09-10T12:37:15+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D663 | AGENT=deepseek-harness
@@ -1259,3 +1261,23 @@ Binary file .claude/bypass.log matches
 2026-09-10T12:58:46+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=0b32eee961c8a34c359109791def1ebe1f6975aa
 2026-09-10T13:04:43+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=8fa67b294736cf3fd6ba0b8b51d8efb03287cbf2
 2026-09-10T13:11:53+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=38687cf73613eba292e6b7e5080536367d4a60fa
+2026-09-10T14:20:34+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=02fbb4cb9e6182a7f9d4123393a0ed6e2cce79cb
+2026-09-10T21:07:00+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D663 | AGENT=claude
+2026-09-10T21:46:45+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D663 | AGENT=claude
+2026-09-10T21:54:22+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=28873bb4f5629c178264bdd7055035f88fb6e2c9
+2026-09-10T21:52:09+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=019d8035a5d098e965373cf1bf5dee03914b3750
+2026-09-10T21:59:01+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=6c2f8bb28e185971629ebcce2a85381adafea3fd
+2026-09-10T22:35:28+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=2865dc1d2ace1f606d60e4d2ea9f834cfb81ce00
+2026-09-10T22:48:00+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=88829518c22f411ffa5c286725be090118d3150f
+2026-09-10T22:59:48+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=cf7a2cb82704139601f304c4f568433a0228f5c0
+2026-09-10T23:06:28+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=c6ddc84640834dceca0a9974da1fffc2020aec0b
+2026-09-10T23:14:24+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=2b4c50358a806f6e520e31fb3fdeb86b108761b3
+2026-09-10T23:32:19+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=48a7ac01980cc3af263f4acdbc57324208ebcf50
+2026-09-11T00:13:55+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=9aabd5818d387a89adecb1693ee20d410fd61005
+2026-09-11T00:22:03+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=638bfb5b64ee453fbe2e91b43abf79ad189d9b14
+2026-09-11T00:22:53+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=e69997949016975a113ba7a1c5209beba7ce2ed0
+2026-09-10T23:43:13+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=c5bfd19d47991109d4da6cf9ad503fa8e304d031
+2026-09-10T23:58:40+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=9caf39fece1ac28045576f2fc7ae583197a86164
+2026-09-11T00:08:13+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=6293ac59ce6bef180f992abb722c713ba348c3e3
+2026-09-11T00:55:58+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=3b34fb16794e162d065518cbba9ffed0a06db914
+2026-09-11T00:48:12+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=7098827f496619be6a8b8bce58b8d6cd39878452

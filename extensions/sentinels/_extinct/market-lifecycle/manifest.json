@@ -6,7 +6,7 @@
   "displayName": "市场天花板与生命周期",
   "description": "E1: 基于Klepper(1996)规则判定产业生命周期阶段。数据源: Market节点 + COMPETES_WITH边。",
   "schedule": "0 0 1 * *",
-  "expert": "strategy",
+  "expert": "competitive-strategy",
   "priority": "P1",
   "layer": "environment",
   "computeKind": "deterministic",

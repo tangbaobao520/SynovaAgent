@@ -1,0 +1,7 @@
+# compute-map.yaml — 问题域专家 → compute 的 seam 映射（第六章 §6.9.4）
+# fundamental-efficiency（资金效率专家）
+# computes/edges 自 manifest.json 全量复制（真实 ID，一致性由 tests/expert/compute-map-consistency.test.ts 锁定）
+# 边 ID = 42 边因果骨架口径（E-01..E-42）；消费接线（expert-dispatcher）descope 后续卡
+fundamental-efficiency:
+  computes: [COMPUTE-BREAK-EVEN-v1, COMPUTE-DOL-v2, COMPUTE-CAPITAL-ALLOCATION-v1, COMPUTE-NPV-v1, COMPUTE-IRR-v1, COMPUTE-PROFIT-REINVESTMENT-v1]
+  edges: [E-23, E-13, E-34, E-37, E-36, E-25, E-30]

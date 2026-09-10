@@ -20,7 +20,8 @@ const BUILTIN_ROOT = join(process.cwd(), 'extensions', 'skills', 'builtin');
 const CUSTOM_ROOT = join(process.cwd(), 'extensions', 'skills', 'custom');
 
 const VALID_TIERS = ['L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'L7'] as const;
-const VALID_EXPERTS = ['finance', 'strategy', 'org', 'marketing', 'tech', 'action', 'business_model', 'knowledge', 'host', 'multi'] as const;
+// D662: 对齐第七章 §7.4 权威英文名（新 5 问题域 + host + multi），旧 8 名随 D650/D651/D658/D662 全量退役
+const VALID_EXPERTS = ['fundamental-efficiency', 'competitive-strategy', 'organizational-capability', 'technology-foundation', 'customer-growth', 'host', 'multi'] as const;
 const VALID_COMPLEXITIES = ['atomic', 'composite', 'expert'] as const;
 
 // ═══ Test helpers ═══
@@ -62,7 +63,7 @@ function writeManifest(dir: string, overrides: Partial<SkillManifest> = {}): voi
     description: overrides.description || 'Test description',
     tier: overrides.tier || 'L1',
     complexity: overrides.complexity || 'atomic',
-    expert: overrides.expert || 'finance',
+    expert: overrides.expert || 'host',
     tools: overrides.tools || [],
     entryPoint: overrides.entryPoint || './SKILL.md',
     exportKey: overrides.exportKey || 'default',

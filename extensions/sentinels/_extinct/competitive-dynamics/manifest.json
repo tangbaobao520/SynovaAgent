@@ -6,7 +6,7 @@
   "displayName": "竞争格局变化",
   "description": "E3: 检测竞争格局变化——HHI指数、竞争强度、市场份额变动。数据源: Market, FINANCIAL节点。",
   "schedule": "0 0 1 * *",
-  "expert": "strategy",
+  "expert": "competitive-strategy",
   "auxiliaryExperts": [
     "marketing"
   ],
