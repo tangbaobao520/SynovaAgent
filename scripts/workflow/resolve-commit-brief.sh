@@ -57,7 +57,7 @@ if [ -n "$SESSION_ID" ] && [ -f "$ROOT/.claude/current-brief.$SESSION_ID" ]; the
 fi
 if [ -f "$CUR_SRC" ]; then
   BN=$(cat "$CUR_SRC" 2>/dev/null | tr -d '[:space:]') # swallow-ok: current-brief 缺失/读失败 → BN 空 → 走认领回退（fail-open 不阻断）
-  BD=$(echo "$BN" | grep -oP '\d{4}-\d{2}-\d{2}' | head -1 || true)
+  BD=$(echo "$BN" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' | head -1 || true)
   if [ -n "$BD" ] && [ "$BD" != "$TODAY" ]; then
     :  # 陈旧的 current-brief，忽略
   elif [ -n "$BN" ] && [ -f "$ROOT/.claude/task-briefs/$BN" ]; then

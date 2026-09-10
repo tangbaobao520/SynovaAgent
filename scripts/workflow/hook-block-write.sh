@@ -258,7 +258,7 @@ fi
 # ═══ 7. 接口真实性反向验证 (增强正则) ═══
 # 解析"接口审计"区域中的 文件名:函数名 行，grep 确认函数真实存在
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-IFACE_SECTION=$(grep -A30 "接口审计" "$BRIEF" 2>/dev/null | grep -oP '\S+\.(ts|tsx):\s*\w+(\.\w+)?' || true)
+IFACE_SECTION=$(grep -A30 "接口审计" "$BRIEF" 2>/dev/null | grep -oE '[^[:space:]]+\.(ts|tsx):[[:space:]]*[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+)?' || true)
 
 if [ -n "$IFACE_SECTION" ]; then
   while IFS= read -r line; do
@@ -299,7 +299,7 @@ if [ -n "$IFACE_SECTION" ]; then
 fi
 
 # ═══ 8. 层级确认 (文件路径 vs task brief 声明的层级) ═══
-TASK_LAYER=$(grep -A5 "本任务在哪一层" "$BRIEF" 2>/dev/null | sed 's/<!--.*-->//g' | grep -oP 'L[1-5]' | head -1 || true)
+TASK_LAYER=$(grep -A5 "本任务在哪一层" "$BRIEF" 2>/dev/null | sed 's/<!--.*-->//g' | grep -oE 'L[1-5]' | head -1 || true)
 if [ -n "$TASK_LAYER" ] && ! echo "$FILE" | grep -qE '\.claude/|scripts/workflow/'; then
   case "$FILE" in
     src/routes/*|src/tui/*|src/l1*/*) ACTUAL_LAYER="L1" ;;
@@ -323,7 +323,7 @@ if [ -n "$TASK_LAYER" ] && ! echo "$FILE" | grep -qE '\.claude/|scripts/workflow
 fi
 
 # ═══ V3 CP1: 条件归属验证 (#CRITERIA) ═══
-CRITERIA=$(grep -oP '#CRITERIA\s*[:=]\s*\K[A-D]' "$BRIEF" 2>/dev/null || true)
+CRITERIA=$(sed -nE 's/.*#CRITERIA[[:space:]]*[:=][[:space:]]*([A-D]).*/\1/p' "$BRIEF" 2>/dev/null | head -1 || true)
 if [ -z "$CRITERIA" ]; then
   echo "[V3-CP1] 缺少 #CRITERIA 条件归属(A/B/C/D) — 标记为 pending（不阻断）"
 else
