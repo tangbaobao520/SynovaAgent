@@ -1,5 +1,5 @@
 <!--
-  SYNOVA-IMPL-D663: 专家 tools 对齐 compute seam——删死 tools 字段 + compute-map.yaml（P1 第二件）
+  SYNOVA-IMPL-D700: 专家 tools 对齐 compute seam——删死 tools 字段 + compute-map.yaml（P1 第二件）
   状态: dev doc | 2026-09-10 | 优先级 P1（专家架构 P1 第二件）
   权威文档: docs/synova/research/专家架构重定义与权威口径审计-20260905/第六章 §6.7/§6.9.4
   借鉴: 无（seam 映射对齐权威，非 DSH 借鉴卡）
@@ -7,7 +7,7 @@
   并行: 无（写集 expert/ 5 个 manifest + 5 个 compute-map.yaml + 测试）
 -->
 
-# SYNOVA-IMPL-D663：专家 tools 对齐 compute seam（删死 tools + compute-map.yaml）
+# SYNOVA-IMPL-D700：专家 tools 对齐 compute seam（删死 tools + compute-map.yaml）
 
 > 状态：dev doc | 2026-09-10 | 优先级 P1（专家架构 P1 第二件）
 > 归属：Win 线（expert/ + 测试）
