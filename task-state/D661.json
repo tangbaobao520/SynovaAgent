@@ -1,0 +1,35 @@
+{
+  "task_id": "D661",
+  "title": "grep-oP-portable-family-fix",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "commit": "84c357e7",
+    "branch": "fix/d661-grep-op-portable",
+    "by": "deepseek-harness",
+    "at": "2026-09-10",
+    "files": [
+      "scripts/workflow/resolve-commit-brief.sh",
+      "scripts/workflow/check-dataflow-alignment.sh",
+      "scripts/workflow/check-test-first.sh",
+      "scripts/workflow/verify-incremental.sh",
+      "scripts/workflow/hook-check-task-scope.sh",
+      "scripts/workflow/hook-block-write.sh",
+      "scripts/control-tower/dev-doc-gatekeeper.sh",
+      "scripts/control-tower/external-auditor.sh",
+      "tests/control-tower/resolve-commit-brief.test.sh",
+      "tests/control-tower/external-auditor.test.sh",
+      "tests/control-tower/grep-oP-regression.test.sh",
+      "tests/control-tower/dev-doc-gatekeeper.test.sh",
+      "tests/control-tower/check-dataflow-alignment.test.sh",
+      "tests/control-tower/check-test-first.test.sh",
+      "tests/control-tower/hook-check-task-scope.test.sh",
+      "tests/control-tower/verify-incremental.test.sh",
+      "memory/notes/implemented/2026-09-10-D661-grep-oP-portable-family-fix.md"
+    ]
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-10",
+  "updated_by": "deepseek-harness"
+}
