@@ -85,7 +85,6 @@ const DECISION_RECORD_GRAPH = 'growth';
  */
 function toProps(record: DecisionRecord): Record<string, unknown> {
   const props: Record<string, unknown> = {
-    id: record.id,
     decidedBy: record.decidedBy,
     decidedAt: record.decidedAt,
     direction: record.direction,
@@ -105,8 +104,11 @@ function toProps(record: DecisionRecord): Record<string, unknown> {
 /**
  * 从 GraphStore props 重建 DecisionRecord（逐字段读取 + 运行时收窄，
  * 不用类型逃逸断言；缺失/非法字段回退保守默认值）。
+ *
+ * `id` 取自节点 id（SqliteGraphStore.createNode 恒生成 `node-${uuid}` 并忽略
+ * props.id，故 record.id 必须与节点 id 对齐，否则 get/update 取不回）。
  */
-function fromProps(props: Record<string, unknown>): DecisionRecord {
+function fromProps(id: string, props: Record<string, unknown>): DecisionRecord {
   const decidedByRaw = props.decidedBy;
   const decidedBy: { role: 'founder' | 'ga'; name: string } =
     typeof decidedByRaw === 'object' && decidedByRaw !== null
@@ -130,7 +132,7 @@ function fromProps(props: Record<string, unknown>): DecisionRecord {
     : [];
 
   const record: DecisionRecord = {
-    id: typeof props.id === 'string' ? props.id : '',
+    id,
     decidedBy,
     decidedAt: typeof props.decidedAt === 'string' ? props.decidedAt : '',
     direction: typeof props.direction === 'string' ? props.direction : '',
@@ -196,9 +198,12 @@ export class DecisionRecordStore {
     }
 
     try {
-      this.store.createNode(DECISION_RECORD_NODE_TYPE, toProps(record), this.graph);
-      log.info({ id: record.id, relation: record.relationToDiagnosis }, 'DecisionRecord 已创建');
-      return { ok: true, record };
+      // 节点 id 由 store 生成（SqliteGraphStore.createNode 忽略 props.id）——
+      // 用返回值覆盖 record.id，保证后续 get/update 能按同一 id 取回。
+      const storeId = this.store.createNode(DECISION_RECORD_NODE_TYPE, toProps(record), this.graph);
+      const persisted: DecisionRecord = { ...record, id: storeId };
+      log.info({ id: persisted.id, relation: persisted.relationToDiagnosis }, 'DecisionRecord 已创建');
+      return { ok: true, record: persisted };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       log.warn({ err: msg, id: record.id }, 'DecisionRecord 创建失败 — degraded');
@@ -211,7 +216,7 @@ export class DecisionRecordStore {
     try {
       const node = this.store.getNode(id, this.graph) as { props?: Record<string, unknown> } | null;
       if (node?.props === undefined) return null;
-      return fromProps(node.props);
+      return fromProps(id, node.props);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       log.warn({ err: msg, id }, 'DecisionRecord 读取失败 — 返回 null');
@@ -223,7 +228,7 @@ export class DecisionRecordStore {
   list(): DecisionRecord[] {
     try {
       return this.store.queryNodes(DECISION_RECORD_NODE_TYPE, {}, this.graph)
-        .map((node) => fromProps(node.props));
+        .map((node) => fromProps(node.id, node.props));
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       log.warn({ err: msg }, 'DecisionRecord 列表读取失败 — 返回空数组');

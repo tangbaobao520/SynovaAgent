@@ -16,9 +16,8 @@ function makeFakeStore(): { store: GraphBridgeLike; nodes: Map<string, FakeNode>
   const nodes = new Map<string, FakeNode>();
   const store: GraphBridgeLike = {
     createNode(type: string, props: Record<string, unknown>): string {
-      const id = typeof props.goalId === 'string'
-        ? props.goalId
-        : typeof props.id === 'string' ? props.id : `node-${nodes.size}`;
+      // 对齐真实 SqliteGraphStore.createNode：恒生成 node-<n>，忽略 props.id/props.goalId
+      const id = `node-${nodes.size}`;
       nodes.set(id, { id, type, props });
       return id;
     },
@@ -141,13 +140,15 @@ describe('DecisionRecordStore', () => {
       reDiagnosisCount: 0, createdBy: { role: 'founder' }, lastModifiedAt: '',
       plannedDurationDays: 90,
     };
-    const withDecision = createGoal({ ...baseGoal, decisionRecordId: drId } as Goal, store, fakeAudit);
-    const withoutDecision = createGoal({ ...baseGoal } as Goal, store, fakeAudit);
-    const node1 = store.getNode(withDecision) as { props: Record<string, unknown> } | null;
-    const node2 = store.getNode(withoutDecision) as { props: Record<string, unknown> } | null;
-    expect(node1?.props.decisionRecordId).toBe(drId);
-    expect(drs.get(drId)?.derivedGoals).toContain(withDecision);
-    expect(node2?.props.decisionRecordId).toBeUndefined();
+    const goalIdWithDecision = createGoal({ ...baseGoal, decisionRecordId: drId } as Goal, store, fakeAudit);
+    createGoal({ ...baseGoal } as Goal, store, fakeAudit);
+    // Goal 节点 id 由 store 生成（createGoal 用自己的 goalId）——按 props 找
+    const goals = store.queryNodes('GOAL');
+    const withDecision = goals.find((g) => g.props.decisionRecordId === drId);
+    const withoutDecision = goals.find((g) => g.props.decisionRecordId === undefined);
+    expect(withDecision?.props.decisionRecordId).toBe(drId);
+    expect(drs.get(drId)?.derivedGoals).toContain(goalIdWithDecision);
+    expect(withoutDecision?.props.decisionRecordId).toBeUndefined();
   });
 
   it('linkGoal 幂等 + 决策记录不存在 fail-closed', () => {

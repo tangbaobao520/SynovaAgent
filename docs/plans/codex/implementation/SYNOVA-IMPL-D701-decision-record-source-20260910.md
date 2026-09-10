@@ -56,6 +56,8 @@
 3. **测试 9 用例**（spec 要求 ≥5）：create/三 relation/get/updateRationale/constraints+derivedGoals/校验 fail-closed/store 降级/list/linkGoal 幂等+fail-closed/Goal.decisionRecordId 透传+决策→Goal 关联。
 4. **`DecisionRecordStore` 真实接线（CI 组4 修复）**：`createGoal` 内用 DecisionRecordStore.linkGoal 把 Goal 关联回决策记录（决策→分解闭环）；同时把 `VALID_DECISION_RELATIONS`/`DECISION_RECORD_NODE_TYPE`/`DECISION_RECORD_GRAPH` 收回模块内部（不导出），避免「新 export 无生产调用方」拦截。
 
+5. **🚨 自审发现的真 bug（合并后修复，本 commit）**：`create` 原把 `randomUUID()` 当 record.id，但真实 `SqliteGraphStore.createNode` **恒生成 `node-${uuid}` 并忽略 props.id** → `get(id)`/`updateNode(id)` 在真实 store 下取不回来（测试用「按 props.id 建档」的假 store 才蒙混过关）。修法：`create` 用 `createNode` 返回值作为 `record.id`；`toProps` 不再写 id；`fromProps(id, props)` 从节点 id 取；测试假 store 改为**对齐真实 store**（恒生成 `node-<n>`、忽略 props.id/goalId），使该缺陷可被测试复现。关联观察：`goal-store.createGoal` 自身也忽略 store 返回 id（用自造 goalId），故 `getGoal(goalId)` 在真实 store 下同样取不回——pre-existing 模式问题，非本卡引入，已在台账登记。
+
 **tsc 基线口径**：分支点 `tsc --noEmit` = 33（非 spec 写的历史 28——`_extinct`/mcp 既有错），新增 3 文件零错误，33=基线恒等。
 
 ### 3.3 不做的事
