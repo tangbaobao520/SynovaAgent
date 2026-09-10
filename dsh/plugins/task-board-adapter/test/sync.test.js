@@ -16,6 +16,9 @@ import {
   fetchBoardState,
   DEFAULT_STATUS_MAPPING,
   FALLBACK_STATUS,
+  ACTIVITY_WINDOW_MS,
+  ACTIVITY_UPGRADE_STATUSES,
+  resolveBoardStatus,
   readSnapshot,
   mapWinTaskToBoardTask,
   mapLineToBoardTask,
@@ -102,13 +105,13 @@ test("readTaskState: 边界——非对象 JSON（数组/字符串）记入 erro
   }
 });
 
-test("mapToBoardTask: 正常路径——七态映射（running 仅 claimed+spec_done；impl_done→todo 待审计；done=audited+closed）", () => {
+test("mapToBoardTask: 正常路径——基础映射（2026-09-10 语义）：claimed/spec_done/impl_done 均→todo 待办；done=audited+closed；failed=cancelled+failed", () => {
   const now = 1_000_000;
   const cases = [
     ["audited", "done"],
     ["impl_done", "todo"],
-    ["claimed", "running"],
-    ["spec_done", "running"],
+    ["claimed", "todo"],
+    ["spec_done", "todo"],
     ["closed", "done"],
     ["cancelled", "failed"],
     ["failed", "failed"],
@@ -118,6 +121,48 @@ test("mapToBoardTask: 正常路径——七态映射（running 仅 claimed+spec_
     assert.ok("task" in r, `${syn} 应映射成功`);
     assert.equal(r.task.status, board, `${syn} → ${board}`);
   }
+});
+
+test("mapToBoardTask: 活动判定三态（2026-09-10）——有分支 48h 内提交→running / 无分支→todo / 分支 48h 前最后提交→todo", () => {
+  const now = 1_000_000;
+  const active = { branch_activity: { active: true, last_commit_at: now - 3600_000, branches: ["feat/D559-impl"] } };
+  const stale = { branch_activity: { active: false, last_commit_at: now - 3 * 24 * 3600_000, branches: ["chore/D488-spec"] } };
+  // 三态①: 有远端分支且 48h 内有提交 → running
+  const r1 = mapToBoardTask(sampleTask({ status: "claimed", ...active }), { now });
+  assert.equal(r1.task.status, "running");
+  assert.ok(r1.task.description.includes("分支活动: 活跃"));
+  // 三态②: 无分支（无活动字段）→ todo
+  const r2 = mapToBoardTask(sampleTask({ status: "claimed" }), { now });
+  assert.equal(r2.task.status, "todo");
+  assert.ok(r2.task.description.includes("分支活动: 无"));
+  // 三态③: 有分支但 48h 前最后提交 → todo
+  const r3 = mapToBoardTask(sampleTask({ status: "claimed", ...stale }), { now });
+  assert.equal(r3.task.status, "todo");
+  assert.ok(r3.task.description.includes("分支活动: 无"));
+  // spec_done 同规则
+  assert.equal(mapToBoardTask(sampleTask({ status: "spec_done", ...active }), { now }).task.status, "running");
+  assert.equal(mapToBoardTask(sampleTask({ status: "spec_done", ...stale }), { now }).task.status, "todo");
+  // 非 claimed/spec_done 不受活动信号影响（impl_done 待审计 / audited 已完成）
+  assert.equal(mapToBoardTask(sampleTask({ status: "impl_done", ...active }), { now }).task.status, "todo");
+  assert.equal(mapToBoardTask(sampleTask({ status: "audited", ...active }), { now }).task.status, "done");
+});
+
+test("resolveBoardStatus: 契约——custom mapping 下活动升级只作用于基础 todo 的 claimed/spec_done", () => {
+  const now = 1_000_000;
+  const activeRaw = { task_id: "D1", branch_activity: { active: true, last_commit_at: now, branches: ["feat/D1-x"] } };
+  assert.equal(resolveBoardStatus("claimed", activeRaw), "running");
+  assert.equal(resolveBoardStatus("claimed", { task_id: "D1" }), "todo");
+  // custom mapping 覆盖 claimed → running 基线时保持基线（不降级）
+  assert.equal(resolveBoardStatus("claimed", { task_id: "D1" }, { mapping: { claimed: "running" } }), "running");
+  // custom mapping 覆盖 spec_done → done 时活动信号不生效
+  assert.equal(resolveBoardStatus("spec_done", activeRaw, { mapping: { spec_done: "done" } }), "done");
+  // 未知状态 → fallback todo，且活动信号不升级
+  assert.equal(resolveBoardStatus("mystery", activeRaw), FALLBACK_STATUS);
+});
+
+test("活动判定常量: ACTIVITY_WINDOW_MS=48h 且升级状态仅 claimed/spec_done", () => {
+  assert.equal(ACTIVITY_WINDOW_MS, 48 * 60 * 60 * 1000);
+  assert.deepEqual([...ACTIVITY_UPGRADE_STATUSES].sort(), ["claimed", "spec_done"]);
 });
 
 test("mapToBoardTask: 边界——impl_done 描述含待审计说明（2026-09-08 校准）", () => {
@@ -295,12 +340,16 @@ test("syncOnce: 降级路径——API 非 2xx → 抛错（由插件壳捕获）
   rmSync(root, { recursive: true, force: true });
 });
 
-test("DEFAULT_STATUS_MAPPING 覆盖七种 Synova 状态且取值合法", () => {
+test("DEFAULT_STATUS_MAPPING 覆盖七种 Synova 状态且取值合法（2026-09-10: claimed/spec_done 基础落 todo）", () => {
   const valid = new Set(["backlog", "todo", "running", "done", "failed"]);
   assert.equal(Object.keys(DEFAULT_STATUS_MAPPING).length, 7);
   for (const board of Object.values(DEFAULT_STATUS_MAPPING)) {
     assert.ok(valid.has(board), `非法看板状态: ${board}`);
   }
+  // 活动判定语义: 状态字段不再直接产 running（由 resolveBoardStatus 升级）
+  assert.equal(DEFAULT_STATUS_MAPPING.claimed, "todo");
+  assert.equal(DEFAULT_STATUS_MAPPING.spec_done, "todo");
+  assert.ok(!Object.values(DEFAULT_STATUS_MAPPING).includes("running"), "基础映射不应含 running（活动信号专属）");
 });
 
 test("readBacklog: 正常路径——读 board-backlog.json 返回 items", () => {
@@ -331,11 +380,11 @@ test("readBacklog: 降级路径——文件缺失 → 空 items 不算 degraded"
   }
 });
 
-test("mapBacklogToBoardTask: 映射 backlog 项 → todo 列 + 描述含说明", () => {
+test("mapBacklogToBoardTask: 映射 backlog 项 → backlog（待规划）列 + 描述含说明", () => {
   const mapped = mapBacklogToBoardTask({ id: "PLAN-x", title: "待规划项", note: "说明文字" }, 123456);
   assert.ok("task" in mapped);
   assert.equal(mapped.task.id, "PLAN-x");
-  assert.equal(mapped.task.status, "todo");
+  assert.equal(mapped.task.status, "backlog");
   assert.ok(mapped.task.description.includes("说明文字"));
   assert.ok(mapped.task.title.includes("PLAN-x"));
 });
@@ -494,8 +543,8 @@ test("mapWinTaskToBoardTask: audited→done / committed→todo（合并≠完成
   assert.ok("error" in c);
 });
 
-test("mapLineToBoardTask: 0 verified→todo / 部分→running / 全绿→done + id 补零", () => {
-  assert.equal(mapLineToBoardTask({ id: 1, name: "桌面端", total: 8, verified: 0 }).task.status, "todo");
+test("mapLineToBoardTask: 0 verified→backlog（未启动待规划）/ 部分→running / 全绿→done + id 补零", () => {
+  assert.equal(mapLineToBoardTask({ id: 1, name: "桌面端", total: 8, verified: 0 }).task.status, "backlog");
   const mid = mapLineToBoardTask({ id: 7, name: "持续监测", total: 8, verified: 2, progress_pct: 25 });
   assert.equal(mid.task.status, "running");
   assert.equal(mid.task.id, "L07");
@@ -513,9 +562,9 @@ test("mapOverallLineCard: L00 总览卡标题含总百分比与线数", () => {
   assert.ok("error" in mapOverallLineCard({ overall_pct: null, lines: [] }));
 });
 
-test("mapTodoToBoardTask: 恒 todo 列 + 标题带优先级与线号", () => {
+test("mapTodoToBoardTask: 恒 backlog（待规划）列 + 标题带优先级与线号", () => {
   const t = mapTodoToBoardTask({ id: "T-1-01", line: 1, title: "部署门槛", priority: "P0", owner: "DSH", acceptance: "GS-01" });
-  assert.equal(t.task.status, "todo");
+  assert.equal(t.task.status, "backlog");
   assert.equal(t.task.id, "T-1-01");
   assert.ok(t.task.title.includes("[P0][L01]"));
   assert.ok("error" in mapTodoToBoardTask({ id: "T-9-99" }));
@@ -546,8 +595,49 @@ test("syncOnce(snapshot): 四源聚合 import——D#+Win+L00/L线+T-*+PLAN 全�
     // createdAt 保真：D500 沿用看板旧值 111
     const d500 = posted.tasks.find((t) => t.id === "D500");
     assert.equal(d500.createdAt, 111);
+    // 2026-09-10 三列语义：待规划(backlog) / 待办(todo) / 进行中(running) 逐列断言
+    const byId = Object.fromEntries(posted.tasks.map((t) => [t.id, t.status]));
+    assert.equal(byId["D500"], "todo", "impl_done → 待办（待 K3）");
+    assert.equal(byId["D338"], "done", "Win audited → 完成");
+    assert.equal(byId["D357"], "todo", "Win committed → 待办");
+    assert.equal(byId["L01"], "backlog", "0 verified 产品线 → 待规划");
+    assert.equal(byId["L07"], "running", "部分 verified 产品线 → 进行中");
+    assert.equal(byId["L09"], "done", "全 verified 产品线 → 完成");
+    assert.equal(byId["T-1-01"], "backlog", "T-* 聚合待办 → 待规划");
+    assert.equal(byId["PLAN-x"], "backlog", "board-backlog 人工薄层 → 待规划");
     // 僵尸：STALE 不在四源 → delete
     assert.equal(result.deleted, 1);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("syncOnce(snapshot): 活动信号透传——claimed 有 48h 活动→running / 无活动→todo（2026-09-10）", async () => {
+  const root = mkdtempSync(join(tmpdir(), "synova-snap-"));
+  let posted = null;
+  const snap = JSON.parse(JSON.stringify(baseSnapshot));
+  snap.task_state.tasks = [
+    { task_id: "D600", title: "真在途", status: "claimed", branch_activity: { active: true, last_commit_at: 123, branches: ["feat/D600-x"] } },
+    { task_id: "D601", title: "认领僵尸", status: "claimed", branch_activity: { active: false, last_commit_at: 1, branches: ["chore/D601-x"] } },
+    { task_id: "D602", title: "无分支", status: "spec_done", branch_activity: null },
+  ];
+  try {
+    const snapPath = makeSnapshotFile(root, snap);
+    const result = await syncOnce({
+      repoRoot: root,
+      snapshotPath: snapPath,
+      fetchImpl: async (url, opts) => {
+        if (url.includes("/state")) return { ok: true, json: async () => ({ tasks: [] }) };
+        const action = JSON.parse(opts.body).action;
+        if (action.kind === "import") posted = action;
+        return { ok: true, json: async () => ({}) };
+      },
+    });
+    assert.equal(result.usingSnapshot, true);
+    const byId = Object.fromEntries(posted.tasks.map((t) => [t.id, t.status]));
+    assert.equal(byId["D600"], "running", "有分支 48h 内提交 → 进行中");
+    assert.equal(byId["D601"], "todo", "分支 48h 前最后提交 → 待办");
+    assert.equal(byId["D602"], "todo", "无分支 → 待办");
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

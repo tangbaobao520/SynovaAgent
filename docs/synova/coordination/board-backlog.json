@@ -20,6 +20,71 @@
       "id": "PLAN-d1-src-store-coord",
       "title": "D500 事件溯源编码前：与 Win 核对 src/store 写集归属",
       "note": "src/store 归 Win（🔵 借 DSH 层），D500 编码前须 grep 确认写集避免撞车"
+    },
+    {
+      "id": "PLAN-d660-data-lifecycle",
+      "title": "数据生命周期与蒸馏阶梯设计（五层阶梯 + 三问分类 + 蒸馏触发规则）",
+      "note": "创始人 2026-09-10 提出：按时间清理是错误模型。五层=事件日志(归档不删)/Evidence(过期=蒸馏完成)/Findings(关闭归档)/Facts(版本链 superseded_by)/Knowledge(git永久)。dev-doc spec 任务。"
+    },
+    {
+      "id": "PLAN-vector-direction",
+      "title": "向量层方向备忘：图为主存储，向量是检索加速器",
+      "note": "CTO 判定：本体层 SQLite 图存储正确，不为向量而向量。未来场景=非结构化文档语义检索 + 专家 RAG 时加 sqlite-vec 层。不做现在，方向记录。"
+    },
+    {
+      "id": "PLAN-expireold-wiring",
+      "title": "evidence expireOld 零调用接线 + 哨兵数据保留分级策略",
+      "note": "M3 家族：expireOld() 存在但全仓零生产调用方；sentinel_baselines/events 无清理逻辑。需统一保留分级（永久/定期/临时）+ cron 清理任务。"
+    },
+    {
+      "id": "PLAN-d593-fix2",
+      "title": "D593 二次修复（K3 复审 P0-1：修复声称提交实未提交）",
+      "note": "D315 第二次复刻。强制三物理验收：commit diff 含 diagnosis.ts + main grep 命中 + 提交态 21/21 绿。从 .synova-wt-d593 worktree 找回手术。"
+    },
+    {
+      "id": "PLAN-m9-writeset-gate",
+      "title": "M9 免疫细胞：合并级写集对账 gate（声称 vs diff 差集）",
+      "note": "M2 族第三次（#449 夹带 D603 51 文件 + #442 夹带 6 文件 + D593-FIX 声称提交实未提交）。合并前 diff 范围必须与任务写集/合并消息一致，不一致即拦。"
+    },
+    {
+      "id": "PLAN-ci-syno-leak",
+      "title": "ci.yml SYNO_CI env 泄漏进 gate 测试修复（D595 K3 审计控制塔域）",
+      "note": "ci.yml:105 job 级 SYNO_CI 泄漏进 gate 测试的 local 子运行，导致 Architecture/ControlTower 假红。与 M9 同批做。"
+    },
+    {
+      "id": "PLAN-react-markdown-dep",
+      "title": "react-markdown 未声明依赖修复（K3 D595 审计发现）",
+      "note": "use-streaming-conversation 在干净安装下因 react-markdown 未声明依赖必失败。前审 21/21 绿为污染安装态。package.json 补依赖。"
+    },
+    {
+      "id": "PLAN-mac-quality-batch2",
+      "title": "Mac 质量第二批：D654 安全面收口 + D655 专家测试债 19 条 + D656 brief 生成器",
+      "note": "K3 D651 评估派生。D654=llm-config SSRF 面 + spec 威胁模型必答题；D655=D282/D583 测试债清偿；D656=CLI 自动格式化消灭格式类返工。"
+    },
+    {
+      "id": "PLAN-expert-rename-d583",
+      "title": "D583 专家命名测试债（挂起：等研究系统提示词补充）",
+      "note": "命名悬案（cycle vs 问题域）等创始人补充研究系统提示词后裁定。D597 之后解挂。"
+    },
+    {
+      "id": "PLAN-evidence-refresh",
+      "title": "产品线 evidence 重验批（freshness gate 执法后 36 stale）",
+      "note": "L1 大批合并触碰各线模块 → 11 verified 过期到 1。代码稳定后跑 evidence 重验恢复（D589 同款机制，evidence 带 at 时间戳）。"
+    },
+    {
+      "id": "PLAN-k3-cond-clear",
+      "title": "K3 CONDITIONAL 条件清零：D590/D591/D602 条件逐条核对收口",
+      "note": "D590/D591=D547 骨架 brief 已清+审计清单已补；D602=spec 记录级。复审时一并升 PASS。"
+    },
+    {
+      "id": "PLAN-ironlaw-enforcement",
+      "title": "铁律 40/41/44 真实执法接线（D603 拉平后无执法）",
+      "note": "D603 把声称拉平为如实描述（无 pre-commit 自动执法），补真实 check 属控制塔域。patch 缺失/memo 移除/LineBuffer 类名检测。"
+    },
+    {
+      "id": "PLAN-resolve-commit-brief-bsd",
+      "title": "resolve-commit-brief.sh L60 grep -oP 跨平台修复（D660 派生缺陷①）",
+      "note": "BSD grep 无 -P，macOS 上陈旧 brief 检查静默失效 → D328 认领解析可回退到过期全局 brief 造成劫持误拦（D660 提交实测被拦一次）。修法=grep -oE 或 sed（一行），配 tests/control-tower 用例（当前无覆盖）。另两项观察项（dsh plugin add file: 不刷新手动安装副本 / launchd 监管缺口降级观察）已登记审计台账 2026-09-10 条，不需派单。"
     }
   ]
 }
