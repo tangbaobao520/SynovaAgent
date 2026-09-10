@@ -49,7 +49,13 @@
 
 ### 3.2 最终实现同 commit 回填
 
-> 实现时若偏离本 doc（DecisionRecord 字段名、Store 接口、Goal 透传点），必须在此节同 commit 回填最终形态。
+最终实现（本卡同一 commit）三处偏离已回填：
+
+1. **`goal-store.ts` 仅注记、无逻辑改动**：`createGoal` 用 `...goal` spread 持久化，`decisionRecordId` 本就自动透传（无需白名单）——依 spec §3.1「透传」意图在 createGoal 加注释说明三来源（diagnosisId/decisionRecordId/externalEventId），未加冗余代码。
+2. **DecisionRecordStore 读路径去类型逃逸**：`fromProps(props)` 逐字段运行时收窄（不用 `as unknown as`），替代 spec 隐含的直接断言；写路径 `toProps(record)` 显式构造。
+3. **测试 8 用例**（spec 要求 ≥5）：create/三 relation/get/updateRationale/constraints+derivedGoals/校验 fail-closed/store 降级/list/Goal.decisionRecordId 透传。
+
+**tsc 基线口径**：分支点 `tsc --noEmit` = 33（非 spec 写的历史 28——`_extinct`/mcp 既有错），新增 3 文件零错误，33=基线恒等。
 
 ### 3.3 不做的事
 | 项 | 理由 |

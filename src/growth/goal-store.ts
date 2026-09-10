@@ -94,6 +94,8 @@ export function checkCompletionPreconditions(goal: Goal): { valid: boolean; reas
 export function createGoal(goal: Goal, store: GraphBridgeLike, audit: AuditStoreLike, graph: string = 'growth'): string {
   const goalId = randomUUID();
 
+  // 来源三类由下面的 `...goal` 原样透传（无需白名单）：
+  //   diagnosisId（诊断驱动，已有）/ decisionRecordId（决策驱动，导航 §2.2 新增）/ externalEventId（外部驱动）
   const goalNode: Goal = {
     ...goal,
     goalId,
