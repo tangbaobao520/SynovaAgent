@@ -57,7 +57,7 @@ V3.9 教训（永久红门禁=没有门禁）；K3 D593FIX2 附记（棘轮逆�
 ## 架构层: 控制塔（tests/ + scripts/control-tower，非五层）
 
 ## Done 标准:
-- [ ] CI 三红 job 在 main 实绿（job 级结论，非本地推断）
-- [ ] 零配置模拟（GIT_CONFIG_NOSYSTEM=1 + GIT_CONFIG_GLOBAL=/dev/null）tests/control-tower 全绿
-- [ ] check-architecture.sh 基线外新增逐条列 file:line
-- [ ] simulate-ci.test.sh 零断言削弱前提下转绿
+1. CI 三红 job 在 main 实绿（job 级结论，非本地推断）
+2. 零配置模拟（GIT_CONFIG_NOSYSTEM=1 + GIT_CONFIG_GLOBAL=/dev/null）tests/control-tower 全绿
+3. check-architecture.sh 基线外新增逐条列 file:line
+4. simulate-ci.test.sh 零断言削弱前提下转绿
