@@ -38,8 +38,8 @@
     },
     {
       "id": "PLAN-d593-fix2",
-      "title": "D593 二次修复（K3 复审 P0-1：修复声称提交实未提交）",
-      "note": "D315 第二次复刻。强制三物理验收：commit diff 含 diagnosis.ts + main grep 命中 + 提交态 21/21 绿。从 .synova-wt-d593 worktree 找回手术。"
+      "title": "【已闭环 2026-09-10】D593 二次修复——K3 CONDITIONAL PASS",
+      "note": "PR #476 合并（main e53b5984），三物证 K3 独立复跑全过，P0×2 闭环。遗留条件①（棘轮）已由 CTO 落地（基线 2→4 + 例外记账头），条件②（CI 结论确认）= CTO 答复：#476 Architecture job 红，红态合并 = CT-47 第三次实证，加严提案已上报创始人。升 PASS 待 K3 下批复确认。"
     },
     {
       "id": "PLAN-m9-writeset-gate",
@@ -48,8 +48,13 @@
     },
     {
       "id": "PLAN-ci-syno-leak",
-      "title": "ci.yml SYNO_CI env 泄漏进 gate 测试修复（D595 K3 审计控制塔域）",
-      "note": "ci.yml:105 job 级 SYNO_CI 泄漏进 gate 测试的 local 子运行，导致 Architecture/ControlTower 假红。与 M9 同批做。"
+      "title": "【已证伪关闭 2026-09-10】ci.yml SYNO_CI env 泄漏假说",
+      "note": "CI 实测诊断：Architecture 红真因 = D593-FIX2 棘轮 +2（已按 K3 条件①如实重置 2→4，见 l1-cross-layer-baseline.txt 头部逆向例外记录）；Control Tower 红真因 = 密封测试沙箱 git commit 依赖全局身份（CI runner 零配置）。假说不成立，工程修复归 D663。"
+    },
+    {
+      "id": "PLAN-diagnosis-l5-di",
+      "title": "diagnosis.ts L1→L5 DI 注入重构（棘轮逆向例外的收紧任务）",
+      "note": "owner=编码线；期限=下个 L1 质量批（随 D654/D655/D656）。resolveStoreFromRequest + readReportFromCheckpoint 的 SessionStore 直取改 L2 bootstrap 组装注入，落地后基线 4→2→0 收紧（K3 附记：消债而非记账，正解）。规则：新增跨层债须 CTO 逐例批准。"
     },
     {
       "id": "PLAN-react-markdown-dep",
