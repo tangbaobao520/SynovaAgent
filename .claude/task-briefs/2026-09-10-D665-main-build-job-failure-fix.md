@@ -59,6 +59,7 @@ gitlink(160000) 形式入树，且无 .gitmodules 条目、无 .gitignore 覆盖
 结果：build job 绿；密封测试绿；HEAD 树 gitlink 计数为 0
 
 ## 架构层: 基础设施（控制塔，非五层）
+控制塔 repo 卫生与树级守门任务，不属于五层产品架构（不触 src/ L1-L5）
 
 ## Done 标准:
 - [ ] bash tests/control-tower/check-gitlinks.test.sh → exit 0（三态 0/1/2 全覆盖）
