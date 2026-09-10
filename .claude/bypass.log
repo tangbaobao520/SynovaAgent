@@ -1255,3 +1255,7 @@ Binary file .claude/bypass.log matches
 2026-09-10T13:11:53+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=38687cf73613eba292e6b7e5080536367d4a60fa
 2026-09-10T13:45:36+08:00 | GATE_FAIL_SOFT | exit=1 | branch=
 2026-09-10T13:45:36+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=fea923ba1537d8486a48a119cb33adbd92d185f9
+2026-09-10T13:45:58+08:00 | GATE_FAIL_SOFT | exit=1 | branch=
+2026-09-10T13:50:05+08:00 | GATE_FAIL_SOFT | exit=1 | branch=
+2026-09-10T13:50:45+08:00 | GATE_FAIL_SOFT | exit=1 | branch=
+2026-09-10T13:50:46+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=550e472d9267efc0f9fde25082a18b73261f4452
