@@ -1240,3 +1240,5 @@ Binary file .claude/bypass.log matches
 2026-09-10T12:09:39+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D661 | AGENT=deepseek-harness
 2026-09-10T12:10:32+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D661 | AGENT=deepseek-harness
 2026-09-10T12:19:55+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=84c357e740af4f3fa0d6d0fbcd1597dbff9b4a5e
+2026-09-10T12:23:00+08:00 | GATE_FAIL_SOFT | exit=1 | branch=fix/d661-grep-op-portable
+2026-09-10T12:23:01+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=d939d44144fc3588cecee9e81eb6a0bc750dbda0
