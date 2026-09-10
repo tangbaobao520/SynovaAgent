@@ -35,8 +35,14 @@ V3.9 教训（永久红门禁=没有门禁）；K3 D593FIX2 附记（棘轮逆�
 - .claude/task-briefs/2026-09-10-D663-ct-ci-hermetic-arch-ratchet.md — 本 brief
 - tests/architecture/check-architecture-gate.test.ts — 棘轮总数断言升级为例外记账语义
   （36→38 + >36 必须带例外记录校验，已随条件①落地，本地 12/12）
-- tests/control-tower/*.test.sh（7 文件）— 沙箱 git commit 身份自持（env GIT_AUTHOR/COMMITTER
-  或 git -c 注入），零配置模拟（GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null）全绿【并行CTO 工程批】
+- tests/control-tower/alloc-task-id.test.sh — 96/109 行沙箱 git commit 显式 -c 身份注入
+- tests/control-tower/hooks-install.test.sh — 场景5清空继承 bypass.log + 断言正则解锚
+- scripts/check-secrets.sh — 全工作区扫描 --exclude-dir 跳过 .sessions/.synova-wt-*（17.9s→0.72s）
+- scripts/workflow/decide-next.sh — 架构探测 -x→-f + stale-briefs 0\n0 复发修复
+- tests/control-tower/decide-next.test.sh — decide-next 配对测试（新）
+- tests/architecture/check-architecture-gate.test.ts — runScript 剥除继承 SYNO_CI（密封化）
+- 其余 tests/control-tower 同族测试实测已密封（local config/-c 注入），零配置模拟绿，不改
+- 零配置模拟（GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null）全绿【并行CTO 工程批】
 - tests/control-tower/ct-test-gate.test.sh — CI 红根因修复（先按身份同根排查）【并行CTO 工程批】
 - Architecture job 潜在测试债 ×5（ubuntu 沙箱用例 expected 1 to be +0，脚本步骤首次变绿后
   首次暴露）——逐个诊断修复【并行CTO 工程批】
@@ -54,7 +60,8 @@ V3.9 教训（永久红门禁=没有门禁）；K3 D593FIX2 附记（棘轮逆�
 结果：三 job 在 main 实绿；本机 SYNO_CI=1 bash scripts/check-architecture.sh exit 0（已预验）；
       零配置模拟下 tests/control-tower 全绿；simulate-ci.test.sh 绿（级联消除）
 
-## 架构层: 控制塔（tests/ + scripts/control-tower，非五层）
+## 架构层:
+控制塔（tests/ + scripts/control-tower，非五层；不含 src/ 产品代码）
 
 ## Done 标准:
 - [ ] CI 三红 job 在 main 实绿（job 级结论，非本地推断）
