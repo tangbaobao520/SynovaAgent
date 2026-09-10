@@ -1,0 +1,7 @@
+# compute-map.yaml — 问题域专家 → compute 的 seam 映射（第六章 §6.9.4）
+# competitive-strategy（竞争与战略专家）
+# manifest.json 为极简形态（无 computes/edges 声明，D236 起）——如实空映射，占位 seam 载体
+# 待该专家声明 computes/edges 时在此补齐（一致性由 tests/expert/compute-map-consistency.test.ts 锁定）
+competitive-strategy:
+  computes: []
+  edges: []

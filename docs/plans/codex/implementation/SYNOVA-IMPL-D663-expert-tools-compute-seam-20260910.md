@@ -37,16 +37,31 @@
 
 ## 3. 实现方案
 
-### 3.1 写集 (5 修改 + 5 新建 + 1 测试)
+### 3.1 写集 (3 修改 + 6 新建)
 | 文件 | 操作 | 说明 |
 |---|---|---|
-| `expert/fundamental-efficiency/manifest.json` 等 5 个 | 修改 | **删除 `tools` 字段**（死代码，零消费）；保留 `computes`（真实 seam） |
-| `expert/{问题域}/compute-map.yaml` ×5 | 新建 | 问题域 → `computes`（从 manifest.computes 复制）+ `edges`（按权威 42 边映射，实现时读 edge-types 对齐） |
-| `tests/expert/compute-map-consistency.test.ts` | 新建 | 5 个 compute-map.yaml 的 computes ⊆ manifest.computes、格式合法、问题域名 ∈ 新 6 名 |
+| `expert/fundamental-efficiency/manifest.json` | 修改 | 删除死 `tools` 字段（零消费）；保留 `computes`（真实 seam，expert-router.ts 消费） |
+| `expert/customer-growth/manifest.json` | 修改 | 同上 |
+| `expert/organizational-capability/manifest.json` | 修改 | 同上 |
+| `expert/fundamental-efficiency/compute-map.yaml` | 新建 | 问题域 → computes + edges seam 映射（§6.9.4 规格） |
+| `expert/customer-growth/compute-map.yaml` | 新建 | 同上 |
+| `expert/organizational-capability/compute-map.yaml` | 新建 | 同上 |
+| `expert/technology-foundation/compute-map.yaml` | 新建 | 同上（computes/edges 自 manifest 全量复制） |
+| `expert/competitive-strategy/compute-map.yaml` | 新建 | 同上（manifest 无声明，如实空数组） |
+| `tests/expert/compute-map-consistency.test.ts` | 新建 | 5 map 存在 + computes ⊆ manifest.computes + 格式合法 + 问题域名 ∈ 新 6 名 |
+
+> 勘误（实现实测，详见 §3.2 回填 1）：原名义「5 修改」中 technology-foundation / competitive-strategy 的 manifest.json 实读无顶层 `tools` 数组，仅做 DS1 零残留核实、无实际变更，故不入写集表。
 
 ### 3.2 最终实现同 commit 回填
 
 > 实现时若偏离本 doc（edges 映射表、compute-map.yaml 字段名、是否接线到 expert-dispatcher），必须在此节同 commit 回填最终形态。
+
+**回填（2026-09-10，Win D663 实现同 commit）：**
+
+1. **manifest 实际修改 = 3 个，非 5 个**。实读核实：仅 fundamental-efficiency / customer-growth / organizational-capability 的 manifest.json 有顶层死 `tools` 数组；technology-foundation **从未有**顶层 tools（仅 `entryPoints.tools` 路径引用 + `dependencies.computes` 嵌套依赖，均保留）；competitive-strategy 极简 manifest（D236 起）无 tools/computes/edges。DS1 的 rg 仍覆盖 5 文件零命中（对后者为恒真核实）。
+2. **compute-map.yaml 最终形态**（§6.9.4 示例原样）：顶层键 = 问题域名（与目录一致）+ `computes`（flow 列表，自 manifest.computes 全量复制、保序）+ `edges`（flow 列表，自 manifest.edges 全量复制、保序）。competitive-strategy 如实空数组（`computes: []` / `edges: []`，占位 seam 载体，待其 manifest 声明后补齐）。一致性（含数量全等）由 tests/expert/compute-map-consistency.test.ts 锁定。
+3. **edges 权威对齐**（实现时实读，非凭记忆）：42 边骨架存在两个口径层——`extensions/ontology/edge-types/*.json` + `edge-consumption-map.json` 用**边类型名**（PRODUCES 等 42 条池-阀边）；expert manifests / 测试夹具 / 权威文档15 附录A 速查表用 **E-xx ID**（E-01..E-42）。compute-map.yaml 取 E-xx ID 层（与 manifest 同口径）；测试校验格式 `^E-\d{2}$` + 范围 1..42，不硬编码速查表子集。
+4. **seam 消费接线未做**（§3.3 descope 维持）：全仓 grep `compute-map` 在 src/ 零命中，本卡后仍零命中——生产消费（expert-dispatcher 读 compute-map）留后续卡。
 
 ### 3.3 不做的事
 | 项 | 理由 |
