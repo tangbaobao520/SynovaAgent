@@ -48,8 +48,8 @@
     },
     {
       "id": "PLAN-ci-syno-leak",
-      "title": "【已证伪关闭 2026-09-10】ci.yml SYNO_CI env 泄漏假说",
-      "note": "CI 实测诊断：Architecture 红真因 = D593-FIX2 棘轮 +2（已按 K3 条件①如实重置 2→4，见 l1-cross-layer-baseline.txt 头部逆向例外记录）；Control Tower 红真因 = 密封测试沙箱 git commit 依赖全局身份（CI runner 零配置）。假说不成立，工程修复归 D663。"
+      "title": "【已证实并修复关闭 2026-09-10】ci.yml SYNO_CI env 泄漏假说（D663 翻案）",
+      "note": "D663 实证泄漏路径：ci.yml:105 job 级 SYNO_CI=1 经 process.env 被 vitest spawnSync 继承 → check-architecture-gate.test.ts 的 local 子运行被误判 CI strict → 沙箱场景 exit 1 ≠ 0 → Architecture job 假红 5 断言（CI 与 SYNO_CI=1 本机复现 1:1）。#479 的『假说不成立』判定有误——泄漏真实存在，只是路径不在 ci.yml 直接调用而在测试子进程继承。修复 = gate.test.ts runScript 默认剥除继承 SYNO_CI（local 语义=未设；CI 场景显式传参不受影响），测试密封化不弱化门禁语义。其余真因判定（棘轮 +2 / 密封身份）维持有效。"
     },
     {
       "id": "PLAN-diagnosis-l5-di",
