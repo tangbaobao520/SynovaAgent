@@ -1232,6 +1232,7 @@ Binary file .claude/bypass.log matches
 2026-09-10T10:25:44+08:00 | GATE_FAIL_SOFT | exit=1 | branch=fix/board-backlog-d660-followup2
 2026-09-10T10:25:44+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=4ac0c072fd36704f56d27d8106e192a700c2f6b5
 2026-09-10T10:52:13+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=9bb81a4049c0093f65717f116de19f5564dc9e5b
+2026-09-10T11:21:12+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=942f15bbc5895ab4e4b1f8c570e0e9f9f96439d3
 2026-09-10T11:02:00+08:00 | GATE_FAIL_SOFT | exit=1 | branch=fix/d593-restore-clean
 2026-09-10T11:02:41+08:00 | GATE_FAIL_SOFT | exit=1 | branch=fix/d593-restore-clean
 2026-09-10T11:02:42+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=b026f933e588bdc8d63440a24c18ad4f5e33a8e2
