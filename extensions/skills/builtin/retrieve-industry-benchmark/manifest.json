@@ -6,7 +6,7 @@
   "description": "从外部数据源检索行业基准数据，评估数据新鲜度和来源可靠性。",
   "tier": "L6",
   "complexity": "composite",
-  "expert": "knowledge",
+  "expert": "host",
   "tools": [
     "query-knowledge",
     "acquire-edge-data"

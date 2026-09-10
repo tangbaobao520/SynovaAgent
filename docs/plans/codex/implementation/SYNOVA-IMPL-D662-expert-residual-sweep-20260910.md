@@ -65,6 +65,15 @@
 
 > 实现时若偏离本 doc（skills `expert` 字段确数、multi 语义、_extinct 处理），必须在此节同 commit 回填最终形态。
 
+**2026-09-10 交付回填（Win 线，clone @ 478dae53）：**
+
+- **迁移确数**：builtin 41 = 迁移 30 + host 保留 9 + multi 保留 2；_extinct 12 全迁（归档目录未删）。终局分布——builtin：fundamental-efficiency 8 / customer-growth 5 / organizational-capability 4 / competitive-strategy 5 / technology-foundation 1 / host 16（原 9 + action 3 + knowledge 4）/ multi 2；_extinct：fundamental-efficiency 5 / competitive-strategy 5 / organizational-capability 1 / technology-foundation 1。
+- **DS2 确数偏离**：DS2「builtin ≥35」不可满足——action(3)+knowledge(4) 映射 host，不在五新域名模式内，builtin 新 5 名实为 **23** 命中；加 _extinct 12 = **35**，即 ≥35 的真实口径为 builtin+_extinct 合计。DS2/§8 对应行的证据命令已按 23+12 执行通过。
+- **DS1 第二条命令字面自命中**：`EXPERTS = \[.*(finance|strategy|org|...)` 未锚定引号/词界，而新名 `organizational-capability` 含子串 `org`、`competitive-strategy` 含子串 `strategy`——该命令对任何正确实现恒报 1 命中。意图口径（引号锚定 `'finance'…'knowledge'` 精确值）实测 **0** 残留；DS1 第一条（JSON `"expert": "old"` 模式）实测 **0** 残留。
+- **DS4 基线漂移**：`tsc --noEmit` 在分支点 478dae53 实测 **33** 条（doc 写 28 为写卡时点前的旧基线）；基线 worktree 全量对照错误集 **IDENTICAL_ZERO_DELTA**（33=33 逐条恒等，零新增，且错误均不在本卡写集——25 条位于 _extinct `aggregate.ts`，本卡未触碰）。
+- **d66 fixture 默认值**：`writeManifest` 默认 `expert` 由旧名改为 `host`（同文件 expert 字段值迁移，防测试 fixture 残留旧名误触 VALID 校验）。
+- **analytical-lens RED 佐证**：旧 EXPERTS 含 7 个旧名，`expert/` 目录实测仅存在新 5+host 的 IDENTITY.md（旧 7 名目录不存在）→ 修复前 7 failed 成立；新 6 名 IDENTITY.md 全部存在。
+
 ### 3.3 不做的事
 | 项 | 理由 |
 |---|---|

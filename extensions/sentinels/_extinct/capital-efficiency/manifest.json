@@ -6,7 +6,7 @@
   "displayName": "资本配置效率",
   "description": "F3: 评估企业资本配置效率——ROIC/WACC差、资本周转率、营收集中度。数据源: SOG FINANCIAL节点。",
   "schedule": "0 9 1 * *",
-  "expert": "finance",
+  "expert": "fundamental-efficiency",
   "auxiliaryExperts": [
     "strategy"
   ],

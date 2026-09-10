@@ -6,7 +6,7 @@
   "description": "基于资本配置效率、净现值和内部收益率给出最优预算分配方案，包含情景分析和风险调整回报。",
   "tier": "L4",
   "complexity": "expert",
-  "expert": "finance",
+  "expert": "fundamental-efficiency",
   "tools": [
     "compute-capital-allocation",
     "compute-npv",

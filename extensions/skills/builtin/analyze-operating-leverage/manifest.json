@@ -6,7 +6,7 @@
   "description": "计算经营杠杆系数(DOL)，评估固定成本占比对利润波动的影响方向和放大倍数。",
   "tier": "L2",
   "complexity": "atomic",
-  "expert": "finance",
+  "expert": "fundamental-efficiency",
   "tools": [
     "compute-dol",
     "acquire-edge-data"
