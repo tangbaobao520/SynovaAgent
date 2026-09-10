@@ -1244,3 +1244,9 @@ Binary file .claude/bypass.log matches
 2026-09-10T12:45:18+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=b50d2d047961666af5b1d8a00e2d138f02e3c2d2
 2026-09-10T12:46:11+08:00 | GATE_FAIL_SOFT | exit=1 | branch=fix/d663-ci-hermetic-arch-ratchet
 2026-09-10T12:47:53+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=1f7a36e1e5db1b910672912ae35fe16dd18457b1
+2026-09-10T12:18:11+08:00 | GATE_FAIL_SOFT | exit=1 | branch=
+2026-09-10T12:20:19+08:00 | GATE_FAIL_SOFT | exit=1 | branch=
+2026-09-10T12:20:20+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=9e85782448df963ffad501f543c2cefdf7c882b4
+2026-09-10T12:33:31+08:00 | GATE_FAIL_SOFT | exit=1 | branch=
+2026-09-10T12:34:07+08:00 | GATE_FAIL_SOFT | exit=1 | branch=
+2026-09-10T12:34:07+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=7feb41bb151848219cde04e2acc9232c61e469bb
