@@ -47,6 +47,8 @@
 
 ## 架构层: L2
 
+L2 编排（src/growth/ 目标与决策编排层；DecisionRecordStore/Goal 经 GraphBridgeLike 接口访问 L4 本体，不跨层直触 L5，符合铁律 39 五层边界）。
+
 ## Done 标准:
 
 - DS1 `interface DecisionRecord` 在 `src/growth/decision-record.ts` 存在
