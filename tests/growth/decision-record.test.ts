@@ -5,7 +5,7 @@
  *       + store 降级不抛 + Goal.decisionRecordId 三来源透传（向后兼容）。
  */
 import { describe, it, expect } from 'vitest';
-import { DecisionRecordStore, VALID_DECISION_RELATIONS } from '../../src/growth/decision-record';
+import { DecisionRecordStore } from '../../src/growth/decision-record';
 import type { DecisionRecordInput } from '../../src/growth/decision-record';
 import { createGoal } from '../../src/growth/goal-store';
 import type { Goal, GraphBridgeLike, AuditStoreLike } from '../../src/growth/goal-types';
@@ -59,7 +59,7 @@ describe('DecisionRecordStore', () => {
   it('relationToDiagnosis 三值均可创建并读回', () => {
     const { store } = makeFakeStore();
     const drs = new DecisionRecordStore(store);
-    for (const relation of VALID_DECISION_RELATIONS) {
+    for (const relation of ['aligned', 'overriding', 'unrelated'] as const) {
       const created = drs.create({ ...BASE_INPUT, relationToDiagnosis: relation });
       expect(created.ok).toBe(true);
       const id = created.record?.id ?? '';
@@ -128,8 +128,11 @@ describe('DecisionRecordStore', () => {
     expect(list.map((r) => r.direction).sort()).toEqual(['A', 'B']);
   });
 
-  it('Goal.decisionRecordId 三来源透传 + 向后兼容（缺省 undefined）', () => {
+  it('Goal.decisionRecordId 透传 + 决策→Goal 关联 + 向后兼容', () => {
     const { store } = makeFakeStore();
+    const drs = new DecisionRecordStore(store);
+    const dr = drs.create({ ...BASE_INPUT });
+    const drId = dr.record?.id ?? '';
     const baseGoal = {
       orgId: 'org-1', proposalId: '', diagnosisId: 'diag-1',
       title: '进军东南亚', description: 'd', priority: 'P0' as const, status: 'draft' as const,
@@ -138,11 +141,23 @@ describe('DecisionRecordStore', () => {
       reDiagnosisCount: 0, createdBy: { role: 'founder' }, lastModifiedAt: '',
       plannedDurationDays: 90,
     };
-    const withDecision = createGoal({ ...baseGoal, decisionRecordId: 'dr-1' } as Goal, store, fakeAudit);
+    const withDecision = createGoal({ ...baseGoal, decisionRecordId: drId } as Goal, store, fakeAudit);
     const withoutDecision = createGoal({ ...baseGoal } as Goal, store, fakeAudit);
     const node1 = store.getNode(withDecision) as { props: Record<string, unknown> } | null;
     const node2 = store.getNode(withoutDecision) as { props: Record<string, unknown> } | null;
-    expect(node1?.props.decisionRecordId).toBe('dr-1');
+    expect(node1?.props.decisionRecordId).toBe(drId);
+    expect(drs.get(drId)?.derivedGoals).toContain(withDecision);
     expect(node2?.props.decisionRecordId).toBeUndefined();
+  });
+
+  it('linkGoal 幂等 + 决策记录不存在 fail-closed', () => {
+    const { store } = makeFakeStore();
+    const drs = new DecisionRecordStore(store);
+    const dr = drs.create(BASE_INPUT);
+    const drId = dr.record?.id ?? '';
+    expect(drs.linkGoal(drId, 'g-1').ok).toBe(true);
+    expect(drs.linkGoal(drId, 'g-1').ok).toBe(true);
+    expect(drs.get(drId)?.derivedGoals).toEqual(['g-1']);
+    expect(drs.linkGoal('missing', 'g-2').ok).toBe(false);
   });
 });

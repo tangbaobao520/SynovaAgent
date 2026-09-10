@@ -23,8 +23,8 @@ const log = createLogger('growth/decision-record');
 /** 决策与诊断的关系：对齐 / 覆盖 / 无关 */
 export type DecisionRelationToDiagnosis = 'aligned' | 'overriding' | 'unrelated';
 
-/** 全部 3 个有效 relationToDiagnosis 值 */
-export const VALID_DECISION_RELATIONS: readonly DecisionRelationToDiagnosis[] = [
+/** 全部 3 个有效 relationToDiagnosis 值（模块内部校验用） */
+const VALID_DECISION_RELATIONS: readonly DecisionRelationToDiagnosis[] = [
   'aligned', 'overriding', 'unrelated',
 ];
 
@@ -75,10 +75,10 @@ export interface DecisionRecordResult {
 
 // ═══ 持久化常量 ═══
 
-/** DecisionRecord 的节点类型（GraphStore 持久化键） */
-export const DECISION_RECORD_NODE_TYPE = 'DECISION_RECORD';
-/** 默认图名称（与 goal-store 一致） */
-export const DECISION_RECORD_GRAPH = 'growth';
+/** DecisionRecord 的节点类型（GraphStore 持久化键，模块内部） */
+const DECISION_RECORD_NODE_TYPE = 'DECISION_RECORD';
+/** 默认图名称（与 goal-store 一致，模块内部） */
+const DECISION_RECORD_GRAPH = 'growth';
 
 /**
  * 把 DecisionRecord 转成 GraphStore props（显式构造，避免类型逃逸断言）。
@@ -245,6 +245,29 @@ export class DecisionRecordStore {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       log.warn({ err: msg, id }, 'DecisionRecord rationale 修正失败 — degraded');
+      return { ok: false, error: msg };
+    }
+  }
+
+  /**
+   * 把分解出的 Goal 关联回决策记录（§2.3 决策 → 分解为 Goal 的闭环）。
+   * 幂等：已含该 goalId 时直接返回 ok。失败降级 `{ ok:false, error }`。
+   */
+  linkGoal(id: string, goalId: string): DecisionRecordResult {
+    const existing = this.get(id);
+    if (existing === null) return { ok: false, error: `DecisionRecord ${id} 不存在` };
+    if (existing.derivedGoals.includes(goalId)) return { ok: true, record: existing };
+    const updated: DecisionRecord = {
+      ...existing,
+      derivedGoals: [...existing.derivedGoals, goalId],
+    };
+    try {
+      this.store.updateNode(id, toProps(updated), this.graph);
+      log.info({ id, goalId }, 'DecisionRecord 已关联分解 Goal');
+      return { ok: true, record: updated };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg, id, goalId }, 'DecisionRecord 关联 Goal 失败 — degraded');
       return { ok: false, error: msg };
     }
   }

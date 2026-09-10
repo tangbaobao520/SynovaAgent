@@ -12,6 +12,7 @@
 import { randomUUID } from 'crypto';
 import { createLogger } from '@synova/logger';
 import type { Goal, GoalStatus, GraphBridgeLike, AuditStoreLike, TransitionRule } from './goal-types';
+import { DecisionRecordStore } from './decision-record';
 
 const log = createLogger('growth/goal-store');
 
@@ -108,6 +109,18 @@ export function createGoal(goal: Goal, store: GraphBridgeLike, audit: AuditStore
   try {
     store.createNode('GOAL', goalNode as unknown as Record<string, unknown>, graph);
     log.info({ goalId, title: goal.title }, 'Goal 已创建');
+
+    // 决策驱动：把 Goal 关联回 DecisionRecord（导航 §2.3 决策→分解为 Goal 的闭环）。
+    // 失败不阻断 Goal 创建（degraded：Goal 已落地，仅关联缺失）。
+    if (goal.decisionRecordId !== undefined) {
+      const linked = new DecisionRecordStore(store, graph).linkGoal(goal.decisionRecordId, goalId);
+      if (!linked.ok) {
+        log.warn(
+          { decisionRecordId: goal.decisionRecordId, goalId, err: linked.error },
+          'Goal 已创建，但决策记录关联失败 — degraded',
+        );
+      }
+    }
 
     // 写入创建审计日志（fire-and-forget，失败不阻断）
     audit.write({
