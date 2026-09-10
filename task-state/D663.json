@@ -1,11 +1,14 @@
 {
   "task_id": "D663",
   "title": "ct-ci-hermetic-arch-ratchet",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": null,
-  "impl": null,
+  "impl": {
+    "commit": "2a658d41（PR #480 squash，main 实证 19/19 check、三红 job 全 success）"
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-10",
-  "updated_by": "alloc-task-id"
+  "updated_by": "alloc-task-id",
+  "note": " CTO 验收（2026-09-10）：main 2a658d41 CI run 34440926197 全 job success（含 Architecture/ControlTower×2 首次同绿），API 级独立查证。待 K3。"
 }

@@ -1255,6 +1255,12 @@ Binary file .claude/bypass.log matches
 2026-09-10T12:58:46+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=0b32eee961c8a34c359109791def1ebe1f6975aa
 2026-09-10T13:04:43+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=8fa67b294736cf3fd6ba0b8b51d8efb03287cbf2
 2026-09-10T13:11:53+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=38687cf73613eba292e6b7e5080536367d4a60fa
+2026-09-10T13:45:36+08:00 | GATE_FAIL_SOFT | exit=1 | branch=
+2026-09-10T13:45:36+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=fea923ba1537d8486a48a119cb33adbd92d185f9
+2026-09-10T13:45:58+08:00 | GATE_FAIL_SOFT | exit=1 | branch=
+2026-09-10T13:50:05+08:00 | GATE_FAIL_SOFT | exit=1 | branch=
+2026-09-10T13:50:45+08:00 | GATE_FAIL_SOFT | exit=1 | branch=
+2026-09-10T13:50:46+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=550e472d9267efc0f9fde25082a18b73261f4452
 2026-09-10T14:20:34+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=02fbb4cb9e6182a7f9d4123393a0ed6e2cce79cb
 2026-09-10T21:07:00+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D663 | AGENT=claude
 2026-09-10T21:46:45+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D663 | AGENT=claude
