@@ -6,7 +6,7 @@
   "displayName": "S2",
   "description": "S2:",
   "schedule": "0 0 1 * *",
-  "expert": "org",
+  "expert": "organizational-capability",
   "priority": "P1",
   "layer": "alignment",
   "computeKind": "deterministic",

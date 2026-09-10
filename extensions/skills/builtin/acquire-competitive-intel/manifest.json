@@ -6,7 +6,7 @@
   "description": "获取市场竞争力相关情报，包括市场份额、竞争价格和七力评估数据。",
   "tier": "L1",
   "complexity": "atomic",
-  "expert": "strategy",
+  "expert": "competitive-strategy",
   "tools": [
     "acquire-edge-data"
   ],

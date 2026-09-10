@@ -6,7 +6,7 @@
   "description": "诊断组织中的委托-代理问题，评估代理成本水平、道德风险信号和KPI扭曲程度。",
   "tier": "L3",
   "complexity": "expert",
-  "expert": "org",
+  "expert": "organizational-capability",
   "tools": [
     "compute-incentive-alignment",
     "compute-decision-authority",

@@ -6,7 +6,7 @@
   "displayName": "护城河结构性强度",
   "description": "I3: 聚合六种可量化的竞争壁垒力量——规模经济、网络效应、切换成本、流程威力、SLM公式、独占资源。",
   "schedule": "0 0 1 * *",
-  "expert": "strategy",
+  "expert": "competitive-strategy",
   "auxiliaryExperts": [
     "tech"
   ],
