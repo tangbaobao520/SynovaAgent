@@ -77,3 +77,7 @@ evidence/
 # D581: 桌面端 Win 真机 evidence 走 git 跟踪路径（CT-57 口径: 断言摘要/md5 入 git）。
 # 根级 evidence/ 仍忽略；仅豁免 product-lines evidence 目录（新证据文件 git add 无需 -f）。
 !docs/synova/product-lines/evidence/
+# D665: 运行时隔离 worktree 与 session 仓库不入版本库（gitlink 入树曾致 main build 常红）。
+# 树级守门: scripts/control-tower/check-gitlinks.sh（三态退出）+ 密封测试入 ci.yml。
+.synova-wt-*
+.sessions/
