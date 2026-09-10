@@ -55,7 +55,9 @@ describe('Sentinel → Signal → Expert 集成链路', () => {
     expect(stats.totalFindings).toBe(3);
     expect(stats.aggregatedSignals).toBe(1);
     expect(signals[0].severity).toBe('critical'); // 3 sentinel → 交叉升级
-    expect(signals[0].recommendedExperts).toContain('org');
+    // D651: 专家名对齐 expert-registry v3.0 问题域命名（capability → 组织能力 + 技术底座）
+    expect(signals[0].recommendedExperts).toContain('organizational-capability');
+    expect(signals[0].recommendedExperts).toContain('technology-foundation');
     expect(stats.criticalSignals).toBe(1);
   });
 
@@ -129,9 +131,9 @@ describe('Sentinel → Signal → Expert 集成链路', () => {
     expect(signals.length).toBe(1); // 同一实体合并
     expect(signals[0].severity).toBe('critical'); // 2 哨兵 → 交叉升级
 
-    // Step 5: 专家路由
-    expect(signals[0].recommendedExperts).toContain('org');
-    expect(signals[0].recommendedExperts).toContain('tech');
+    // Step 5: 专家路由（D651: collaboration/capability → 组织能力 + 技术底座）
+    expect(signals[0].recommendedExperts).toContain('organizational-capability');
+    expect(signals[0].recommendedExperts).toContain('technology-foundation');
   });
 
   it('Given 空 registry → listCronSentinels 返回 0', () => {

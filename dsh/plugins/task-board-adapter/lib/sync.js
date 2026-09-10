@@ -10,6 +10,11 @@
 //   降级（铁律 24/31）:
 //     task-state 目录缺失 / 单个文件坏 JSON → degraded: true + errors[]（不 throw，调用方可继续）
 //     task-board API 不可达 / 非 2xx → syncOnce 抛错（由插件壳捕获记录，不崩溃进程）
+//   2026-09-10 创始人三列语义校准（D660）:
+//     - 待规划(backlog) = 未进入实施：board-backlog PLAN-* / todos.yaml T-* / 产品线 0 verified
+//     - 待办(todo)     = 已规划未实施：impl_done（待 K3）+ 无 48h 分支活动的 claimed/spec_done
+//     - 进行中(running) = 真在途：claimed/spec_done 且远端分支 48h 内有提交（活动判定，非状态判定）
+//     - 已完成(done) = audited/closed；失败(failed) = cancelled/failed
 //   设计依据（见 docs/p2-task-board-adapter-design-20260821.md）:
 //     - 写入走官方 loopback API 的 import 动作：唯一能设置任意状态（含 done）的通道；
 //     - import 按 sourceId 一次性、mergeTask 为 updatedAt 新者胜 → 每次同步用新 sourceId，
@@ -24,13 +29,17 @@ import { randomUUID } from "node:crypto";
 export const TASK_STATE_FILE_RE = /^D\d+\.json$/;
 
 /**
- * 默认状态映射：Synova 状态 → 看板 5 列（backlog/todo/running/done/failed）。
- * 2026-09-08 创始人校准：running 仅 = claimed + spec_done（活跃工作），
- * impl_done → todo（实现完成待 K3 审计，防假完成且不进 running 虚高——原口径 2026-08-23 已修订）。
+ * 默认状态映射：Synova 状态 → 看板基础列（backlog/todo/running/done/failed）。
+ * 2026-09-10 创始人校准（D660）：
+ *   - claimed/spec_done 基础落 todo（待办）——running 不再由状态字段决定，
+ *     而由「远端分支 48h 活动」信号决定（见 resolveBoardStatus / ACTIVITY_WINDOW_MS）；
+ *   - impl_done → todo（实现完成待 K3 审计，防假完成且不占 running 列）；
+ *   - 待规划（board-backlog PLAN-* / todos.yaml T-* / 产品线 0 verified）→ backlog 列，
+ *     由各自的 mapXxx 函数直接产出（不经过本状态表）。
  */
 export const DEFAULT_STATUS_MAPPING = Object.freeze({
-  spec_done: "running",
-  claimed: "running",
+  spec_done: "todo",
+  claimed: "todo",
   impl_done: "todo",
   audited: "done",
   closed: "done",
@@ -40,6 +49,15 @@ export const DEFAULT_STATUS_MAPPING = Object.freeze({
 
 /** 未知 Synova 状态的落点。 */
 export const FALLBACK_STATUS = "todo";
+
+/**
+ * 活动判定窗口：48h（创始人 2026-09-10 定）。
+ * 远端分支最近提交距今 > 48h → 认领僵尸，落 todo；≤ 48h → running（真在途）。
+ */
+export const ACTIVITY_WINDOW_MS = 48 * 60 * 60 * 1000;
+
+/** 允许被「分支活动」信号从 todo 升级为 running 的 Synova 状态。 */
+export const ACTIVITY_UPGRADE_STATUSES = Object.freeze(["claimed", "spec_done"]);
 
 /**
  * 读取并解析 repoRoot/task-state/*.json。
@@ -99,6 +117,16 @@ export function buildDescription(raw, unknown = false) {
   const lines = [];
   lines.push(`Synova 状态: ${raw?.status ?? "—"}${unknown ? `（未映射，落入 ${FALLBACK_STATUS}）` : ""}`);
   if (raw?.status === "impl_done") lines.push("状态说明: 实现完成，待 K3 审计（不占 running 列）");
+  if (ACTIVITY_UPGRADE_STATUSES.includes(raw?.status)) {
+    const act = raw?.branch_activity;
+    if (act && typeof act === "object" && act.active === true) {
+      lines.push(
+        `分支活动: 活跃（${(Array.isArray(act.branches) ? act.branches : []).join(", ") || "远端分支"} 48h 内有提交）→ 进行中`
+      );
+    } else {
+      lines.push("分支活动: 无（无远端分支或 48h 内无提交）→ 待办（认领但没在干）");
+    }
+  }
   lines.push(`规格: ${spec.path ?? "—"}${spec.commit ? ` (commit ${spec.commit})` : ""}`);
   lines.push(`实现: ${impl.commit ? `commit ${impl.commit}` : "—"}`);
   lines.push(`审计: ${raw?.audit ?? "未审计"}`);
@@ -119,6 +147,31 @@ export function buildPrompt(id) {
 }
 
 /**
+ * 看板列判定（2026-09-10 创始人活动判定语义，D660）。
+ * 契约:
+ *   @input  — synStatus: Synova 状态字符串；raw: task-state 条目（可带 branch_activity）；
+ *             opts.mapping: 状态映射覆盖（可选）
+ *   @output — 看板列: "backlog" | "todo" | "running" | "done" | "failed"
+ *   @规则   — claimed/spec_done 基础落 todo；仅当 raw.branch_activity.active === true
+ *             （该 D# 有远端分支且 48h 内有提交，derive 侧 git 物理事实）→ 升 running。
+ *   @degraded — 无活动证据（snapshot 缺失 / git 扫描失败 / 无分支）→ 保持 todo：
+ *               僵尸认领绝不进 running（宁可少报不虚高——M1 fail-open 反方向）。
+ * @param {string} synStatus - Synova 状态。
+ * @param {Record<string, unknown>} raw - 原始 task-state 条目。
+ * @param {{ mapping?: Record<string, string> }} [opts]
+ * @returns {string} 看板列。
+ */
+export function resolveBoardStatus(synStatus, raw, opts = {}) {
+  const mapping = opts.mapping ?? DEFAULT_STATUS_MAPPING;
+  const status = mapping[synStatus] ?? FALLBACK_STATUS;
+  if (status === "todo" && ACTIVITY_UPGRADE_STATUSES.includes(synStatus)) {
+    const act = raw?.branch_activity;
+    if (act && typeof act === "object" && act.active === true) return "running";
+  }
+  return status;
+}
+
+/**
  * 将一条 Synova task-state 条目映射为看板 TaskRecord。
  * @param {Record<string, unknown>} raw - 原始条目。
  * @param {{ mapping?: Record<string, string>, now?: number, createdAt?: number }} [opts]
@@ -135,8 +188,8 @@ export function mapToBoardTask(raw, opts = {}) {
     return { error: `task-state 条目缺 task_id/title: ${JSON.stringify(raw).slice(0, 100)}` };
   }
   const synStatus = String(raw?.status ?? "");
-  const status = mapping[synStatus] ?? FALLBACK_STATUS;
   const unknown = !(synStatus in mapping);
+  const status = resolveBoardStatus(synStatus, raw, { mapping });
   const task = {
     id,
     title: `${id} · ${title}`,
@@ -172,7 +225,7 @@ export function readBacklog(repoRoot) {
 }
 
 /**
- * 映射一条 backlog 项为看板任务（待规划事项恒落 todo 列）。
+ * 映射一条 backlog 项为看板任务（待规划事项恒落 backlog 列，2026-09-10）。
  * @param {Record<string, unknown>} item - backlog 项（id/title/note）。
  * @param {number} now - 时间戳。
  * @returns {{ task: import("types").BoardTask } | { error: string }}
@@ -190,7 +243,7 @@ export function mapBacklogToBoardTask(item, now) {
       title: `${id} · ${title}`,
       description: `待规划（无 D#，人工薄层）\n说明: ${note}`,
       prompt: `这是 Synova 待规划事项 ${id} 的只读镜像，不要修改任何代码、文件或任务状态。`,
-      status: "todo",
+      status: "backlog",
       createdAt: now,
       updatedAt: now,
       executions: [],
@@ -253,7 +306,7 @@ export function mapWinTaskToBoardTask(raw, opts = {}) {
 
 /**
  * 映射一条产品线为看板 TaskRecord（D502 源③）。每线一卡（非每验证点，防 200+ 噪音卡）。
- * 状态: verified==0→todo / 部分→running / 全 verified→done。
+ * 状态（2026-09-10）: verified==0→backlog（未启动，待规划）/ 部分→running / 全 verified→done。
  */
 export function mapLineToBoardTask(raw, opts = {}) {
   const now = opts.now ?? Date.now();
@@ -265,7 +318,7 @@ export function mapLineToBoardTask(raw, opts = {}) {
   const total = Number(raw?.total ?? 0);
   const verified = Number(raw?.verified ?? 0);
   let status = "running";
-  if (verified <= 0) status = "todo";
+  if (verified <= 0) status = "backlog";
   else if (total > 0 && verified >= total) status = "done";
   return {
     task: {
@@ -306,7 +359,8 @@ export function mapOverallLineCard(productLines, opts = {}) {
 }
 
 /**
- * 映射一条待规划 todo（todos.yaml T-*）为看板 TaskRecord（D502 源④）。恒 todo 列。
+ * 映射一条待规划 todo（todos.yaml T-*）为看板 TaskRecord（D502 源④）。
+ * 恒 backlog（待规划）列（2026-09-10：未进入实施的事项不进 todo）。
  */
 export function mapTodoToBoardTask(raw, opts = {}) {
   const now = opts.now ?? Date.now();
@@ -324,7 +378,7 @@ export function mapTodoToBoardTask(raw, opts = {}) {
       title: `${id} · [${priority}][${line}] ${title.slice(0, 60)}`,
       description: `待规划（todos.yaml 机器聚合）\n优先级: ${priority} | 线: ${line} | 建议归属: ${raw?.owner ?? "—"}\n验收: ${raw?.acceptance ?? "—"}`,
       prompt: `这是 Synova 待规划事项 ${id} 的只读镜像。请总结该欠账内容，不要修改任何代码、文件或任务状态。`,
-      status: "todo",
+      status: "backlog",
       createdAt,
       updatedAt: now,
       executions: [],

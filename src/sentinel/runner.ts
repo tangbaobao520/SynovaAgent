@@ -70,37 +70,37 @@ function findSignalRoute(sentinelId: string): SignalRouteResult | undefined {
   // 优先使用 manifest 中的 layer 字段，fallback 到旧 category
   const layer: string = sentinel.config.layer || sentinel.config.category;
 
-  // D567: 路由目标专家 ID 全部对齐 expert-registry.yaml v2.0 的 7 位
-  // （旧 strategy/org/finance 值在注册表中已失效，会被下游 VALID_EXPERTS 过滤成空路由）；
-  // 层→专家为路由语义映射（非封闭枚举），最终派发仍经注册表校验（:636 VALID_EXPERTS）
+  // D567/D651: 路由目标专家 ID 全部对齐 expert-registry.yaml v3.0 的 6 位问题域专家
+  // （旧 strategy/org/finance 与 cycle 命名值在注册表中已失效，会被下游 VALID_EXPERTS 过滤成空路由）；
+  // 层→专家为路由语义映射（非封闭枚举），最终派发仍经注册表校验（VALID_EXPERTS）
   const LAYER_EXPERTS: Record<string, string[]> = {
     environment: ['competitive-strategy'],
-    capital: ['finance-structure'],
+    capital: ['fundamental-efficiency'],
     interface: ['competitive-strategy'],
-    technology: ['tech'],
-    alignment: ['talent-cycle'],
-    internal: ['talent-cycle'],
+    technology: ['technology-foundation'],
+    alignment: ['organizational-capability'],
+    internal: ['organizational-capability'],
     // layer fallback: 旧 category 兼容
-    risk: ['talent-cycle', 'finance-structure'],
-    capability: ['talent-cycle'],
-    collaboration: ['talent-cycle', 'tech'],
-    health: ['tech'],
-    'data-quality': ['tech'],
+    risk: ['organizational-capability', 'fundamental-efficiency'],
+    capability: ['organizational-capability'],
+    collaboration: ['organizational-capability', 'technology-foundation'],
+    health: ['technology-foundation'],
+    'data-quality': ['technology-foundation'],
     strategy: ['competitive-strategy'],
   };
   const experts = LAYER_EXPERTS[layer] || ['host'];
 
   // 根据哨兵 ID 细化 interface 层路由
-  if (layer === 'interface' || layer === 'interface') {
+  if (layer === 'interface') {
     const sid = sentinel.config.id.toLowerCase();
     if (sid.includes('value-capture') || sid.includes('unit-economics') || sid.includes('ltv')) {
-      return { experts: ['finance-structure'], crossValidateAt: 'high' };
+      return { experts: ['fundamental-efficiency'], crossValidateAt: 'high' };
     }
     if (sid.includes('niche') || sid.includes('moat') || sid.includes('competitive')) {
       return { experts: ['competitive-strategy'], crossValidateAt: 'high' };
     }
     if (sid.includes('network') || sid.includes('transaction-cost') || sid.includes('power')) {
-      return { experts: ['talent-cycle', 'finance-structure'], crossValidateAt: 'high' };
+      return { experts: ['organizational-capability', 'fundamental-efficiency'], crossValidateAt: 'high' };
     }
     if (sid.includes('business') || sid.includes('make-or-buy') || sid.includes('time')) {
       return { experts: ['competitive-strategy'], crossValidateAt: 'high' };

@@ -1,5 +1,5 @@
 # ═══════════════════════════════════════════════════════════════════════════════
-# L1 跨层违规存量基线（棘轮——只减不增） | CT-64, 2026-09-08 | D603 下调 2026-09-09
+# L1 跨层违规存量基线（棘轮——只减不增） | CT-64, 2026-09-08 | D603 下调 2026-09-09 | D595 下调 2026-09-09
 # ═══════════════════════════════════════════════════════════════════════════════
 # 来源: docs/synova/research/L1跨层违规扫描-20260908.md §二（68 处 runtime 违规，
 #       L1→L3 16 / L1→L4 15 / L1→L5 37）。
@@ -9,18 +9,22 @@
 #       总量 68 → 42。剩余 42 处全部为动态 import() 形态（运行时才暴露，
 #       修复路径见扫描报告 §三 六簇，另批派单）。
 #
+# D595 下调（2026-09-09）: 42 → 36。哨兵簇 6 处真修复（mcp/index.ts L1→L3 ×4 +
+#       L1→L4 ×1 + L1→L5 ×1——MCP 哨兵族 4 工具改走 L2 sentinel-service）+
+#       D601 存量 4 处随处理器原样迁移至 src/mcp/tool-definitions.ts
+#       （L1→L4 ×1 + L1→L5 ×3，计数平移非新增，归属 D601 簇 FIX 任务）。
+#
 # 语义（check-architecture.sh 消费）:
 #   同文件同方向 实际命中数 > 基线 = 基线外新增违规 → 本地 ⚠ 软提示 / SYNO_CI=1 ❌ exit 1
 #   同文件同方向 实际命中数 < 基线 = 已修复 → 提示收紧基线（不阻断）
-#   粒度 file=count（行号漂移免疫；K3 可审计——总量只许减少，当前 = 42）
+#   粒度 file=count（行号漂移免疫；K3 可审计——总量只许减少，当前 = 36）
 #
 # 治理顺序（台账 CT-64）: 先修脚本可见性 → 静态 import 清零（D603）→ 动态 import
-#   42 处分批修 src/，每修复一处须同步下调本文件对应计数；全部清零后本文件删除。
+#   36 处分批修 src/，每修复一处须同步下调本文件对应计数；全部清零后本文件删除。
 #
 # 格式: [方向段] 下每行 <file>=<count>；# 开头为注释。
 
 [L1→L3]
-src/mcp/index.ts=4
 src/mcp/skill-installer.ts=1
 src/routes/conversations.ts=1
 src/routes/diagnosis.ts=1
@@ -29,7 +33,7 @@ src/server.ts=4
 src/tui-v2/chat.tsx=1
 
 [L1→L4]
-src/mcp/index.ts=2
+src/mcp/tool-definitions.ts=1
 src/mcp/tool-registration.ts=1
 src/routes/chat.ts=1
 src/routes/evolution.ts=1
@@ -42,7 +46,7 @@ src/tui-v2/chat.tsx=1
 
 [L1→L5]
 src/l1/im-inbound.ts=1
-src/mcp/index.ts=4
+src/mcp/tool-definitions.ts=3
 src/mcp/tool-registration.ts=1
 src/routes/chat.ts=1
 src/routes/conversations.ts=1

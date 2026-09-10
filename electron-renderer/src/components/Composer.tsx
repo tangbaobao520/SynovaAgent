@@ -10,15 +10,15 @@
  */
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 
+// D651: 对齐 expert-registry.yaml v3.0 问题域六专家（host + 5 问题域，权威 §6.6/§7.4）；
+// name 与 expert/<id>/manifest.json 的 displayName 一致。
 const EXPERT_LIST = [
-  { id: 'strategy', name: '战略顾问', emoji: '🎯' },
-  { id: 'finance', name: '财务专家', emoji: '💰' },
-  { id: 'org', name: '组织专家', emoji: '🏢' },
-  { id: 'tech', name: '技术专家', emoji: '⚙️' },
-  { id: 'marketing', name: '营销专家', emoji: '📈' },
-  { id: 'action', name: '行动顾问', emoji: '✅' },
-  { id: 'business_model', name: '商业模式专家', emoji: '📊' },
-  { id: 'knowledge', name: '知识专家', emoji: '📚' },
+  { id: 'host', name: '主持人', emoji: '🧭' },
+  { id: 'fundamental-efficiency', name: '资金效率专家', emoji: '💰' },
+  { id: 'customer-growth', name: '客户增长专家', emoji: '📈' },
+  { id: 'organizational-capability', name: '组织能力专家', emoji: '🏢' },
+  { id: 'technology-foundation', name: '技术底座专家', emoji: '⚙️' },
+  { id: 'competitive-strategy', name: '竞争与战略专家', emoji: '🎯' },
 ];
 
 const COMMAND_LIST = [

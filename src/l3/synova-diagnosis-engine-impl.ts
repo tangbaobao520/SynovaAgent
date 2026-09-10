@@ -268,7 +268,7 @@ export class SynovaDiagnosisEngineImpl implements SynovaDiagnosisEngine {
                     confidence = Math.max(0.1, Math.min(1.0, 0.85 + weight * 0.3));
                   }
                 }
-                emit({ type: 'expert_hypothesis', phase: 2, timestamp: now(), expert: 'org', message: f.description, findings: [{ moduleId: 'D3', summary: f.title, confidence }], confidence });
+                emit({ type: 'expert_hypothesis', phase: 2, timestamp: now(), expert: 'organizational-capability', message: f.description, findings: [{ moduleId: 'D3', summary: f.title, confidence }], confidence });
               }
             }
             sentinelContext = '\n' + formatFindingsForLLM(findings);

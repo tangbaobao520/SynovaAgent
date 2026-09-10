@@ -12,7 +12,8 @@ describe('aggregateSignals', () => {
     const r = aggregateSignals([makeResult('sentinel-gap-dynamics', [{ severity: 'warning', title: '能力差距: 偏低' }])]);
     expect(r.signals.length).toBe(1);
     expect(r.signals[0].severity).toBe('warning');
-    expect(r.signals[0].recommendedExperts).toContain('org');
+    // D651: 专家名对齐 expert-registry v3.0 问题域命名
+    expect(r.signals[0].recommendedExperts).toContain('organizational-capability');
   });
 
   it('Given 3 个不同哨兵指向同一实体 → critical (交叉升级)', () => {
@@ -42,9 +43,10 @@ describe('aggregateSignals', () => {
     expect(r.stats.totalFindings).toBe(0);
   });
 
-  it('Given risk 类别哨兵 → 推荐 strategic + finance 专家', () => {
+  it('Given risk 类别哨兵 → 推荐竞争战略 + 资金效率专家', () => {
     const r = aggregateSignals([makeResult('sentinel-key-person-risk', [{ severity: 'critical', title: '关键人: 张三' }])]);
-    expect(r.signals[0].recommendedExperts).toContain('strategic');
-    expect(r.signals[0].recommendedExperts).toContain('finance');
+    // D651: risk → 竞争战略 + 资金效率（旧 strategic/finance 为 D282 前死名）
+    expect(r.signals[0].recommendedExperts).toContain('competitive-strategy');
+    expect(r.signals[0].recommendedExperts).toContain('fundamental-efficiency');
   });
 });
