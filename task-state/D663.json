@@ -1,0 +1,11 @@
+{
+  "task_id": "D663",
+  "title": "ct-ci-hermetic-arch-ratchet",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-10",
+  "updated_by": "alloc-task-id"
+}
