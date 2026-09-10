@@ -30,10 +30,10 @@
 ## Q2: 范围 — 正确的最简方案
 
 做什么：
-- 新建 `src/growth/decision-record.ts` — DecisionRecord 接口（§2.3 原样字段）+ DecisionRecordStore（create/get/list/updateRationale）
-- 修改 `src/growth/goal-types.ts` — Goal 加 `decisionRecordId?: string`
-- 修改 `src/growth/goal-store.ts` — createGoal 三来源透传注释（`...goal` 已自动透传，仅注记）
-- 新建 `tests/growth/decision-record.test.ts` — 8 用例
+- 新建 src/growth/decision-record.ts — DecisionRecord 接口（§2.3 原样字段）+ DecisionRecordStore（create/get/list/updateRationale/linkGoal）
+- 修改 src/growth/goal-types.ts — Goal 加 decisionRecordId 可选字段（三来源）
+- 修改 src/growth/goal-store.ts — createGoal 决策→Goal 关联（DecisionRecordStore 真实接线）
+- 新建 tests/growth/decision-record.test.ts — 9 用例
 
 不做什么：
 - 对话式 LLM 捕获（§2.8 路径①）/ 约束注入（第三章）/ 决策→Goal 分解（第三章）/ externalEventId（外部驱动）→ 后续卡

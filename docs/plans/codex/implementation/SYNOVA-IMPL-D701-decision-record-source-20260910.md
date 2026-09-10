@@ -53,7 +53,8 @@
 
 1. **`goal-store.ts` 仅注记、无逻辑改动**：`createGoal` 用 `...goal` spread 持久化，`decisionRecordId` 本就自动透传（无需白名单）——依 spec §3.1「透传」意图在 createGoal 加注释说明三来源（diagnosisId/decisionRecordId/externalEventId），未加冗余代码。
 2. **DecisionRecordStore 读路径去类型逃逸**：`fromProps(props)` 逐字段运行时收窄（不用 `as unknown as`），替代 spec 隐含的直接断言；写路径 `toProps(record)` 显式构造。
-3. **测试 8 用例**（spec 要求 ≥5）：create/三 relation/get/updateRationale/constraints+derivedGoals/校验 fail-closed/store 降级/list/Goal.decisionRecordId 透传。
+3. **测试 9 用例**（spec 要求 ≥5）：create/三 relation/get/updateRationale/constraints+derivedGoals/校验 fail-closed/store 降级/list/linkGoal 幂等+fail-closed/Goal.decisionRecordId 透传+决策→Goal 关联。
+4. **`DecisionRecordStore` 真实接线（CI 组4 修复）**：`createGoal` 内用 DecisionRecordStore.linkGoal 把 Goal 关联回决策记录（决策→分解闭环）；同时把 `VALID_DECISION_RELATIONS`/`DECISION_RECORD_NODE_TYPE`/`DECISION_RECORD_GRAPH` 收回模块内部（不导出），避免「新 export 无生产调用方」拦截。
 
 **tsc 基线口径**：分支点 `tsc --noEmit` = 33（非 spec 写的历史 28——`_extinct`/mcp 既有错），新增 3 文件零错误，33=基线恒等。
 
