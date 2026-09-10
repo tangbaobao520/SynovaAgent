@@ -34,6 +34,8 @@ gitlink(160000) 形式入树，且无 .gitmodules 条目、无 .gitignore 覆盖
 - scripts/control-tower/check-gitlinks.sh — 新建树级 gitlink 守门，三态退出 0/1/2
 - tests/control-tower/check-gitlinks.test.sh — 新建密封测试：正常/注入 gitlink/降级/接线四覆盖
 - .github/workflows/ci.yml — 测试入 Control Tower Gate Tests 密封列表
+- docs/_config.yml — Pages 全站关闭 Liquid 渲染（build job 第二层根因：docs/ 33 个 md
+  含字面 {{，Jekyll Liquid::SyntaxError 常红；一类一机制，禁逐文件打地鼠）
 - .claude/task-briefs/2026-09-10-D665-main-build-job-failure-fix.md — 本 brief 随分支入库
 - memory/notes/implemented/2026-09-10-D665-gitlink-guard.md — 四态 Note（铁律 49）
 - task-state/D665.json — impl_done 登记（第二个 commit）
