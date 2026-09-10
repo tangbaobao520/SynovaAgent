@@ -74,9 +74,13 @@ interface RunResult {
 }
 
 function runScript(env: Record<string, string>, cwd = REPO_ROOT): RunResult {
+  // D663 密封化: 剥除继承的 SYNO_CI——CI job 级 env 会经 process.env 泄漏进 local 子运行
+  // （PLAN-ci-syno-leak 泄漏路径实证: vitest spawnSync 继承 → 沙箱 local 场景被误判 CI strict
+  //  → exit 1 ≠ 0）。local 语义 = 未设 SYNO_CI；CI 场景由调用方显式传 SYNO_CI:'1'，不受影响。
+  const { SYNO_CI: _strippedSynoCi, ...hostEnv } = process.env;
   const res = spawnSync('bash', [SCRIPT], {
     cwd,
-    env: { ...process.env, ...env },
+    env: { ...hostEnv, ...env },
     encoding: 'utf-8',
     timeout: 60_000,
   });
