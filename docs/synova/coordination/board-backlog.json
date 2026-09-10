@@ -80,6 +80,11 @@
       "id": "PLAN-ironlaw-enforcement",
       "title": "铁律 40/41/44 真实执法接线（D603 拉平后无执法）",
       "note": "D603 把声称拉平为如实描述（无 pre-commit 自动执法），补真实 check 属控制塔域。patch 缺失/memo 移除/LineBuffer 类名检测。"
+    },
+    {
+      "id": "PLAN-resolve-commit-brief-bsd",
+      "title": "resolve-commit-brief.sh L60 grep -oP 跨平台修复（D660 派生缺陷①）",
+      "note": "BSD grep 无 -P，macOS 上陈旧 brief 检查静默失效 → D328 认领解析可回退到过期全局 brief 造成劫持误拦（D660 提交实测被拦一次）。修法=grep -oE 或 sed（一行），配 tests/control-tower 用例（当前无覆盖）。另两项观察项（dsh plugin add file: 不刷新手动安装副本 / launchd 监管缺口降级观察）已登记审计台账 2026-09-10 条，不需派单。"
     }
   ]
 }
