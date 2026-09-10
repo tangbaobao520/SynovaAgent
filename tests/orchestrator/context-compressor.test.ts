@@ -232,7 +232,7 @@ describe('subModelSummary', () => {
   it('应返回摘要结果', async () => {
     const msgs = makeMessages(20);
     const provider = {
-      consult: vi.fn().mockResolvedValue({ content: '摘要文本', model: 'deepseek-chat' }),
+      consult: vi.fn().mockResolvedValue({ content: '摘要文本', model: 'deepseek-v4-flash' }),
     };
     const result = await compressor.subModelSummary(msgs, provider as any);
     expect(result.length).toBeGreaterThan(0);

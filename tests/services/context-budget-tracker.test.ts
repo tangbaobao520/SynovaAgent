@@ -16,14 +16,14 @@ describe('ContextBudgetTracker', () => {
   describe('record()', () => {
     it('Given usage with prompt and completion tokens, When recorded, Then snapshot shows totals', () => {
       const usage: TokenUsage = { promptTokens: 100, completionTokens: 50, totalTokens: 150 };
-      tracker.record(usage, 'deepseek-chat');
+      tracker.record(usage, 'deepseek-v4-flash');
 
       const snap = tracker.snapshot();
       expect(snap.totalSpent).toBe(150);
       expect(snap.callCount).toBe(1);
-      expect(snap.byModel['deepseek-chat']).toBeDefined();
-      expect(snap.byModel['deepseek-chat'].spent).toBe(150);
-      expect(snap.byModel['deepseek-chat'].calls).toBe(1);
+      expect(snap.byModel['deepseek-v4-flash']).toBeDefined();
+      expect(snap.byModel['deepseek-v4-flash'].spent).toBe(150);
+      expect(snap.byModel['deepseek-v4-flash'].calls).toBe(1);
     });
 
     it('Given multiple records, When accumulated, Then totals sum correctly', () => {

@@ -36,7 +36,7 @@ export function createConfigCommand(): CLICommand {
 示例:
   synova config show
   synova config set server.port 8080
-  synova config set llm.model deepseek-chat
+  synova config set llm.model deepseek-v4-flash
   synova config rollback
 `);
         return;

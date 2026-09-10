@@ -81,7 +81,7 @@ async function runPipeline(
 
   const API_KEY = env.LLM_API_KEY || '';
   const API_BASE = env.LLM_BASE_URL || 'https://api.deepseek.com';
-  const MODEL = env.LLM_MODEL || 'deepseek-chat';
+  const MODEL = env.LLM_MODEL || 'deepseek-v4-flash';
 
   // Step 1: 八维度提取 (调真实API)
   job.status = 'extracting';

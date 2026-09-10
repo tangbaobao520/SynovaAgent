@@ -70,7 +70,7 @@ afterEach(() => {
 
 describe('llm-credential-store 正常路径', () => {
   it('set → 文件落盘 0600 → resolve 返回 {value, source:"stored"}', () => {
-    setLlmCredential({ provider: 'deepseek', apiKey: KEY_A, model: 'deepseek-chat' });
+    setLlmCredential({ provider: 'deepseek', apiKey: KEY_A, model: 'deepseek-v4-flash' });
 
     const filePath = getLlmCredentialFilePath();
     expect(filePath.startsWith(tmpDir)).toBe(true);

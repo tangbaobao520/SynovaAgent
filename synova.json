@@ -5,7 +5,7 @@
   },
   "llm": {
     "provider": "deepseek",
-    "model": "deepseek-chat",
+    "model": "deepseek-v4-flash",
     "baseUrl": "https://api.deepseek.com/v1"
   },
   "database": {

@@ -137,7 +137,7 @@ app.get('/api/diagnosis/report/:jobId', function(req, res) {
 async function runPipeline(jobId, content, orgName) {
   var job = loadJob(jobId) || { jobId: jobId, orgName: orgName, status: 'extracting', report: null, error: null, createdAt: new Date().toISOString(), completedAt: null };
   var env = loadEnv();
-  var KEY = env.LLM_API_KEY, BASE = env.LLM_BASE_URL || 'https://api.deepseek.com', MODEL = env.LLM_MODEL || 'deepseek-chat';
+  var KEY = env.LLM_API_KEY, BASE = env.LLM_BASE_URL || 'https://api.deepseek.com', MODEL = env.LLM_MODEL || 'deepseek-v4-flash';
   if (!KEY) { job.status = 'failed'; job.error = 'No API key'; saveJob(job); return; }
 
   async function llmCall(prompt, sysPrompt) {

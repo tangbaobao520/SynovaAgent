@@ -123,12 +123,12 @@ describe('GET /api/llm/config — 空值语义与预填（L2a）', () => {
     expect(body['maskedKey']).toBeNull();
   });
 
-  it('未配置时 provider/model/baseUrl 预填自 synova.json llm 段（决策 4: 预填 deepseek-chat）', async () => {
+  it('未配置时 provider/model/baseUrl 预填自 synova.json llm 段（决策 4: 预填 deepseek-v4-flash）', async () => {
     resetStore();
     const res = await fetch(`${BASE}/api/llm/config`);
     const body = (await res.json()) as Record<string, unknown>;
     expect(body['provider']).toBe('deepseek');
-    expect(body['model']).toBe('deepseek-chat');
+    expect(body['model']).toBe('deepseek-v4-flash');
     expect(typeof body['baseUrl']).toBe('string');
   });
 });
@@ -139,7 +139,7 @@ describe('POST /api/llm/config — 保存序列（L2a）', () => {
     const res = await fetch(`${BASE}/api/llm/config`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ provider: 'deepseek', model: 'deepseek-chat', apiKey: KEY_GOOD }),
+      body: JSON.stringify({ provider: 'deepseek', model: 'deepseek-v4-flash', apiKey: KEY_GOOD }),
     });
     expect(res.status).toBe(200);
     const body = (await res.json()) as Record<string, unknown>;
@@ -167,7 +167,7 @@ describe('POST /api/llm/config — 保存序列（L2a）', () => {
     const res = await fetch(`${BASE}/api/llm/config`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ provider: 'deepseek', model: 'deepseek-chat', apiKey: KEY_NEW }),
+      body: JSON.stringify({ provider: 'deepseek', model: 'deepseek-v4-flash', apiKey: KEY_NEW }),
     });
     expect(res.status).toBe(200);
     expect(process.pid).toBe(pidBefore); // 进程未重启（PID 不变）
@@ -184,7 +184,7 @@ describe('POST /api/llm/test — 上游错误码分类（L2b）', () => {
     const res = await fetch(`${BASE}/api/llm/test`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ provider: 'deepseek', model: 'deepseek-chat', baseUrl, apiKey: key }),
+      body: JSON.stringify({ provider: 'deepseek', model: 'deepseek-v4-flash', baseUrl, apiKey: key }),
     });
     expect(res.status).toBe(200); // 测试结果是数据非服务端错误（契约 B degraded）
     return (await res.json()) as Record<string, unknown>;
@@ -253,7 +253,7 @@ describe('POST /api/llm/config — 校验边界（L2c）', () => {
   }
 
   it('空 key → 400 INVALID_API_KEY，错误消息零 key 原文', async () => {
-    const { status, body } = await postConfig({ provider: 'deepseek', model: 'deepseek-chat', apiKey: '  ' });
+    const { status, body } = await postConfig({ provider: 'deepseek', model: 'deepseek-v4-flash', apiKey: '  ' });
     expect(status).toBe(400);
     expect(body['ok']).toBe(false);
     expect(body['code']).toBe('INVALID_API_KEY');
@@ -261,7 +261,7 @@ describe('POST /api/llm/config — 校验边界（L2c）', () => {
   });
 
   it('含空白字符的 key → 400 INVALID_API_KEY（A2 词汇，不回显）', async () => {
-    const { status, body } = await postConfig({ provider: 'deepseek', model: 'deepseek-chat', apiKey: 'sk has space' });
+    const { status, body } = await postConfig({ provider: 'deepseek', model: 'deepseek-v4-flash', apiKey: 'sk has space' });
     expect(status).toBe(400);
     expect(body['code']).toBe('INVALID_API_KEY');
     expect(JSON.stringify(body)).not.toContain('sk has space');
@@ -269,7 +269,7 @@ describe('POST /api/llm/config — 校验边界（L2c）', () => {
 
   it('白名单外未知字段 → 400 VALIDATION_ERROR', async () => {
     const { status, body } = await postConfig({
-      provider: 'deepseek', model: 'deepseek-chat', apiKey: KEY_GOOD, evilField: 'x',
+      provider: 'deepseek', model: 'deepseek-v4-flash', apiKey: KEY_GOOD, evilField: 'x',
     });
     expect(status).toBe(400);
     expect(body['code']).toBe('VALIDATION_ERROR');
@@ -289,7 +289,7 @@ describe('POST /api/llm/config — 校验边界（L2c）', () => {
 
   it('baseUrl 非 http(s) → 400 VALIDATION_ERROR', async () => {
     const { status, body } = await postConfig({
-      provider: 'deepseek', model: 'deepseek-chat', apiKey: KEY_GOOD, baseUrl: 'ftp://x.example.com',
+      provider: 'deepseek', model: 'deepseek-v4-flash', apiKey: KEY_GOOD, baseUrl: 'ftp://x.example.com',
     });
     expect(status).toBe(400);
     expect(body['code']).toBe('VALIDATION_ERROR');
@@ -298,7 +298,7 @@ describe('POST /api/llm/config — 校验边界（L2c）', () => {
   it('retryPolicy 字段收下不炸（A5/B-02 预留词汇，不消费）', async () => {
     resetStore();
     const { status, body } = await postConfig({
-      provider: 'deepseek', model: 'deepseek-chat', apiKey: KEY_GOOD,
+      provider: 'deepseek', model: 'deepseek-v4-flash', apiKey: KEY_GOOD,
       retryPolicy: { maxRetries: 5, retryableCodes: ['RATE_LIMIT', 'SERVER'] },
     });
     expect(status).toBe(200);
@@ -307,7 +307,7 @@ describe('POST /api/llm/config — 校验边界（L2c）', () => {
 
   it('短 key（<8）GET 返回全掩 ********（不泄露长度信息以上内容）', async () => {
     resetStore();
-    const { status } = await postConfig({ provider: 'deepseek', model: 'deepseek-chat', apiKey: 'sk1' });
+    const { status } = await postConfig({ provider: 'deepseek', model: 'deepseek-v4-flash', apiKey: 'sk1' });
     expect(status).toBe(200);
     const getRes = await fetch(`${BASE}/api/llm/config`);
     const body = (await getRes.json()) as Record<string, unknown>;

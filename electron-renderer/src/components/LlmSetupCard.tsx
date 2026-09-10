@@ -82,7 +82,7 @@ const LlmSetupCard: React.FC<LlmSetupCardProps> = ({
               name="model"
               type="text"
               value={model}
-              placeholder="deepseek-chat"
+              placeholder="deepseek-v4-flash"
               onChange={(e) => onModelChange(e.target.value)}
               disabled={busy}
             />

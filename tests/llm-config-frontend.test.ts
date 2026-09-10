@@ -27,7 +27,7 @@ import { LlmSetupCard } from '../electron-renderer/src/components/LlmSetupCard';
 import { WelcomePanel } from '../electron-renderer/src/components/WelcomeScreen';
 import { renderToStaticMarkup } from '../electron-renderer/src/test-support/render';
 
-const FORM: LlmSetupForm = { provider: 'deepseek', model: 'deepseek-chat', baseUrl: '', apiKey: 'sk-test-1234567890' };
+const FORM: LlmSetupForm = { provider: 'deepseek', model: 'deepseek-v4-flash', baseUrl: '', apiKey: 'sk-test-1234567890' };
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -70,7 +70,7 @@ describe('buildConfigPayload — 客户端预校验', () => {
     expect('payload' in result).toBe(true);
     if ('payload' in result) {
       expect(result.payload.provider).toBe('deepseek');
-      expect(result.payload.model).toBe('deepseek-chat');
+      expect(result.payload.model).toBe('deepseek-v4-flash');
       expect(result.payload.apiKey).toBe('sk-test-1234567890');
     }
   });
@@ -236,7 +236,7 @@ describe('submitLlmConfig', () => {
 function cardProps(overrides?: Partial<Parameters<typeof LlmSetupCard>[0]>): Parameters<typeof LlmSetupCard>[0] {
   return {
     provider: 'deepseek',
-    model: 'deepseek-chat',
+    model: 'deepseek-v4-flash',
     baseUrl: '',
     apiKey: '',
     phase: 'idle',

@@ -131,7 +131,7 @@ export class ContextCompressor {
   /**
    * 使用副模型（更便宜的 LLM）生成对话摘要。
    * @param messages - 需要摘要的消息列表
-   * @param provider - LLM provider (如 deepseek-chat)
+   * @param provider - LLM provider (如 deepseek-v4-flash)
    * @returns 摘要文本
    */
   async subModelSummary(messages: LLMMessage[], provider: SummaryProvider): Promise<string> {

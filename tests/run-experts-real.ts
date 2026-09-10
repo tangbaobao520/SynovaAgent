@@ -25,7 +25,7 @@ async function main() {
     } catch {}
   }
   const API_BASE = process.env.LLM_BASE_URL || 'https://api.deepseek.com';
-  const MODEL = process.env.LLM_MODEL || 'deepseek-chat';
+  const MODEL = process.env.LLM_MODEL || 'deepseek-v4-flash';
 
   if (!API_KEY) {
     console.error('❌ LLM_API_KEY 未设置');

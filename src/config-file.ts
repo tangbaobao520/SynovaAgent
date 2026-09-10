@@ -51,7 +51,7 @@ export const DEFAULT_CONFIG: SynovaFileConfig = {
   server: { port: 18790 },
   llm: {
     provider: 'deepseek',
-    model: 'deepseek-chat',
+    model: 'deepseek-v4-flash',
     baseUrl: 'https://api.deepseek.com/v1',
   },
   database: { path: './data/synova.db' },

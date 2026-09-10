@@ -34,7 +34,7 @@ function loadConfig() {
   return {
     apiKey,
     apiBase: process.env.LLM_BASE_URL || 'https://api.deepseek.com',
-    model: process.env.LLM_MODEL || 'deepseek-chat',
+    model: process.env.LLM_MODEL || 'deepseek-v4-flash',
   };
 }
 

@@ -152,7 +152,7 @@ export const WelcomePanel: React.FC<WelcomePanelProps> = ({ welcomeState, onStar
 
 const INITIAL_FORM: LlmSetupForm = {
   provider: 'deepseek',
-  model: 'deepseek-chat', // 决策 4: UI 预填 = synova.json llm.model 现值（GET /api/llm/config 未配置回退链一致）
+  model: 'deepseek-v4-flash', // 决策 4: UI 预填 = synova.json llm.model 现值（GET /api/llm/config 未配置回退链一致）
   baseUrl: '',
   apiKey: '',
 };
