@@ -48,8 +48,8 @@
     },
     {
       "id": "PLAN-ci-syno-leak",
-      "title": "【已证实并修复关闭 2026-09-10】ci.yml SYNO_CI env 泄漏假说（D663 翻案）",
-      "note": "D663 实证泄漏路径：ci.yml:105 job 级 SYNO_CI=1 经 process.env 被 vitest spawnSync 继承 → check-architecture-gate.test.ts 的 local 子运行被误判 CI strict → 沙箱场景 exit 1 ≠ 0 → Architecture job 假红 5 断言（CI 与 SYNO_CI=1 本机复现 1:1）。#479 的『假说不成立』判定有误——泄漏真实存在，只是路径不在 ci.yml 直接调用而在测试子进程继承。修复 = gate.test.ts runScript 默认剥除继承 SYNO_CI（local 语义=未设；CI 场景显式传参不受影响），测试密封化不弱化门禁语义。其余真因判定（棘轮 +2 / 密封身份）维持有效。"
+      "title": "【假说成立·已修复关闭 2026-09-10 D663】ci.yml SYNO_CI 泄漏",
+      "note": "D663 实证翻案：ci.yml:105 job 级 SYNO_CI=1 经 process.env 被 vitest spawnSync 继承 → gate 测试 local 子运行误判 CI strict → 5 断言假红。修复 = runScript 剥除继承 SYNO_CI（CI 场景显式传参不受影响，语义零弱化），PR #480 入 main。CTO 勘误：本条在 #479 曾被误判「假说不成立」，以 D663 实证为准。"
     },
     {
       "id": "PLAN-diagnosis-l5-di",
@@ -88,8 +88,8 @@
     },
     {
       "id": "PLAN-resolve-commit-brief-bsd",
-      "title": "resolve-commit-brief.sh L60 grep -oP 跨平台修复（D660 派生缺陷①）",
-      "note": "BSD grep 无 -P，macOS 上陈旧 brief 检查静默失效 → D328 认领解析可回退到过期全局 brief 造成劫持误拦（D660 提交实测被拦一次）。修法=grep -oE 或 sed（一行），配 tests/control-tower 用例（当前无覆盖）。另两项观察项（dsh plugin add file: 不刷新手动安装副本 / launchd 监管缺口降级观察）已登记审计台账 2026-09-10 条，不需派单。"
+      "title": "【已并入 D661 交付 2026-09-10】resolve-commit-brief.sh grep -oP 跨平台修复",
+      "note": "D661 全清两目录 20 处（PR #481）+ external-auditor 空数组崩溃修复。剩余 pre-commit-check.sh 自身 6 处 + scripts/hooks/ + scripts/checks/ + check-*.sh → D664 另派。"
     }
   ]
 }
