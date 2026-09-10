@@ -33,9 +33,13 @@ V3.9 教训（永久红门禁=没有门禁）；K3 D593FIX2 附记（棘轮逆�
   证伪关闭 + PLAN-diagnosis-l5-di 立项（owner=编码线，期限=下个 L1 质量批）
 - task-state/D663.json — 本任务立项登记（claimed）
 - .claude/task-briefs/2026-09-10-D663-ct-ci-hermetic-arch-ratchet.md — 本 brief
+- tests/architecture/check-architecture-gate.test.ts — 棘轮总数断言升级为例外记账语义
+  （36→38 + >36 必须带例外记录校验，已随条件①落地，本地 12/12）
 - tests/control-tower/*.test.sh（7 文件）— 沙箱 git commit 身份自持（env GIT_AUTHOR/COMMITTER
   或 git -c 注入），零配置模拟（GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null）全绿【并行CTO 工程批】
 - tests/control-tower/ct-test-gate.test.sh — CI 红根因修复（先按身份同根排查）【并行CTO 工程批】
+- Architecture job 潜在测试债 ×5（ubuntu 沙箱用例 expected 1 to be +0，脚本步骤首次变绿后
+  首次暴露）——逐个诊断修复【并行CTO 工程批】
 - scripts/check-architecture.sh — 「基线外新增」逐条输出违规 file:line【并行CTO 工程批】
 不做什么：
 - 不改 scripts/audit/（K3 红线）
