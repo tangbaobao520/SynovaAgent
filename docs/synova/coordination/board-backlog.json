@@ -90,6 +90,11 @@
       "id": "PLAN-resolve-commit-brief-bsd",
       "title": "【已并入 D661 交付 2026-09-10】resolve-commit-brief.sh grep -oP 跨平台修复",
       "note": "D661 全清两目录 20 处（PR #481）+ external-auditor 空数组崩溃修复。剩余 pre-commit-check.sh 自身 6 处 + scripts/hooks/ + scripts/checks/ + check-*.sh → D664 另派。"
+    },
+    {
+      "id": "PLAN-m8-session-worktree-isolation",
+      "title": "M8 防线缺口：并行 session 共享主工作区互踩——强制 worktree 隔离",
+      "note": "D663 session 升级（2026-09-10 实证）：三 session 共享一树，current-brief 互踩/暂存区混装/staging_guard 误拦/未暂存修改被批量 checkout 冲掉（同秒批量特征，因隔离 worktree 幸存）。方向=每 session 强制 .synova-wt-<sid> 隔离，主工作区只留 CTO/合并。机制设计后派工；session 启动策略归创始人裁决。"
     }
   ]
 }
