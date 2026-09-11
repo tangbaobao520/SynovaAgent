@@ -78,14 +78,14 @@ grep 实测（clone @ 358ac6eb，2026-09-11）：
 本任务不做的（排除项清单在本节末尾；先列做什么，排除项随后逐条）：
 
 做什么：
-- src/growth/user-store.ts updateUser/deleteUser 返回 { ok: boolean; error?: string }，catch 内 log.warn + return { ok:false, error }，成功 return { ok:true }
-- src/services/anomaly-detector.ts :86 UserStoreLike.updateUser 签名同步 + :100/:110 调用点消费 .ok（失败 log.warn，冻结失败不记入 alerts）
-- src/routes/enterprise.ts :239/:297/:314/:331/:347/:609 六处消费结果；:239 绑定失败返 500 degraded 且邀请保持 pending 不消耗
-- tests/growth/user-store.test.ts 扩展 ≥4 用例（成功 {ok:true} / updateNode 抛错 {ok:false,error} / deleteUser 同型 / S-15 真实 SQLite round-trip）+ MockGraphStore 失败注入开关
-- tests/routes/enterprise.test.ts 扩展 D702 describe ≥2 用例（accept 绑定 updateUser 失败不返 linked:true + 正常路径仍 linked:true），复用 D484/D485 真实 HTTP 基建
-- tests/services/anomaly-detector.test.ts 既有 fake store 返 void 同步为返 {ok:true}（接口签名变更强制连带，不改则 D243 既有用例崩溃——非越界扩展，§3.2 回填）
-- docs/plans/codex/implementation/SYNOVA-IMPL-D702-write-op-no-swallow-20260911.md §3.2 最终实现同 commit 回填
-- .claude/task-briefs/2026-09-11-D702-write-op-no-swallow.md brief 簿记
+- src/growth/user-store.ts: updateUser/deleteUser 返回 { ok: boolean; error?: string }，catch 内 log.warn + return { ok:false, error }，成功 return { ok:true }
+- src/services/anomaly-detector.ts: :86 UserStoreLike.updateUser 签名同步 + :100/:110 调用点消费 .ok（失败 log.warn，冻结失败不记入 alerts）
+- src/routes/enterprise.ts: :239/:297/:314/:331/:347/:609 六处消费结果；:239 绑定失败返 500 degraded 且邀请保持 pending 不消耗
+- tests/growth/user-store.test.ts: 扩展 ≥4 用例（成功 {ok:true} / updateNode 抛错 {ok:false,error} / deleteUser 同型 / S-15 真实 SQLite round-trip）+ MockGraphStore 失败注入开关
+- tests/routes/enterprise.test.ts: 扩展 D702 describe ≥2 用例（accept 绑定 updateUser 失败不返 linked:true + 正常路径仍 linked:true），复用 D484/D485 真实 HTTP 基建
+- tests/services/anomaly-detector.test.ts: 既有 fake store 返 void 同步为返 {ok:true}（接口签名变更强制连带，不改则 D243 既有用例崩溃——非越界扩展，§3.2 回填）
+- docs/plans/codex/implementation/SYNOVA-IMPL-D702-write-op-no-swallow-20260911.md: §3.2 最终实现同 commit 回填
+- .claude/task-briefs/2026-09-11-D702-write-op-no-swallow.md: brief 簿记
 
 不做什么（排除项）：
 - 不改 src/adapters/sqlite-graph-store.ts 底层 updateNode/createNode（通用 props merge，本卡只在 user-store 层包 {ok,error}）
