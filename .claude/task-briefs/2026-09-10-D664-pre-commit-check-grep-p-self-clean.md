@@ -10,13 +10,13 @@
 ### a) 项目拼图
 控制塔门禁脚本跨平台兼容任务（非五层）。BSD grep（macOS）无 -P，含 `grep -P/-oP` 的门禁
 脚本在 macOS 上静默失效或报错。D661 已清 scripts/workflow + scripts/control-tower 两目录；
-本任务清剩余 9 文件（基线实测于 D661 分支 tip，开工时以合并 #481 后的 main 重查为准）：
-scripts/check-brief-vs-code.sh、scripts/check-file-driven.sh、scripts/check-integrity-startup.sh、
-scripts/check-tech-debt.sh、scripts/checker-review.sh、scripts/checks/check-test-quality.sh、
-scripts/hooks/hook-check-memory.sh、scripts/hooks/post-commit.sh、scripts/pre-commit-check.sh。
+本任务清剩余家族（基线于 2026-09-11 在 main `4d9776de` 实测修正，**以本节为准**）：
+10 文件 28 处 = pre-commit-check.sh 8 / check-brief-vs-code.sh 8 / pre-doc-audit.sh 3（前单漏算）/
+check-file-driven.sh 3 / check-integrity-startup.sh 1 / check-tech-debt.sh 1 / checker-review.sh 1 /
+checks/check-test-quality.sh 1 / hooks/hook-check-memory.sh 1 / hooks/post-commit.sh 1。
 ### b) 文件审计
-- `git grep -lE "grep -[a-z]*P" -- scripts/` → 上列 9 文件（PLATFORM-CHECKLIST.md 为文档不算）
-- pre-commit-check.sh 自身 6 处（PR #481 描述声明，开工时逐处列 file:line 复核）
+- `git grep -nE "grep +-[a-zA-Z]*P" -- scripts/` → 上列 10 文件 28 处（control-tower/PLATFORM-CHECKLIST.md 2 处为文档，不改）
+- 前单声明"pre-commit-check.sh 自身 6 处"与实测不符（实为 8 处）——修正见派单文档基线复核表
 - D661 先例：改法 = `grep -oP` → `grep -oE`（或 sed），每脚本配对 tests/control-tower/*.test.sh
 ### c) 决策
 复用 D661 模式（-oE 替换 + 回归测试），不新造机制。语义等价性逐处人工核对
@@ -33,16 +33,17 @@ scripts/hooks/hook-check-memory.sh、scripts/hooks/post-commit.sh、scripts/pre-
 
 ## Q2: 范围 — 正确的最简方案
 做什么：
-- scripts/pre-commit-check.sh — grep -P 家族清零（6 处，语义逐处核对）
-- scripts/check-brief-vs-code.sh — grep -P 家族清零
-- scripts/check-file-driven.sh — grep -P 家族清零
+- scripts/pre-commit-check.sh — grep -P 家族清零（实测 8 处，语义逐处核对）
+- scripts/check-brief-vs-code.sh — grep -P 家族清零（实测 8 处）
+- scripts/pre-doc-audit.sh — grep -P 家族清零（实测 3 处，前单漏算）
+- scripts/check-file-driven.sh — grep -P 家族清零（实测 3 处）
 - scripts/check-integrity-startup.sh — grep -P 家族清零
 - scripts/check-tech-debt.sh — grep -P 家族清零
 - scripts/checker-review.sh — grep -P 家族清零
 - scripts/checks/check-test-quality.sh — grep -P 家族清零
 - scripts/hooks/hook-check-memory.sh — grep -P 家族清零
 - scripts/hooks/post-commit.sh — grep -P 家族清零
-- tests/control-tower/grep-oP-regression.test.sh — 扩展覆盖至上述 9 文件（D661 已建，扩断言）
+- tests/control-tower/grep-oP-regression.test.sh — 扩展覆盖至上述 10 文件 28 处（D661 已建，扩断言）
 - .claude/task-briefs/2026-09-10-D664-pre-commit-check-grep-p-self-clean.md — 本 brief
 - memory/notes/implemented/ — 四态 Note（铁律 49）
 不做什么：
@@ -54,7 +55,7 @@ scripts/hooks/hook-check-memory.sh、scripts/hooks/post-commit.sh、scripts/pre-
 
 ## Q3: 验收 — 入口 → 交互 → 结果
 入口：PR CI（Control Tower Gate Tests ubuntu+windows 双跑）
-处理：9 文件 -P→-E 逐处替换 + PCRE→ERE 转译 + 回归测试扩展
+处理：10 文件 28 处 -P→-E 逐处替换 + PCRE→ERE 转译 + 回归测试扩展
 结果：`git grep -E "grep -[a-z]*P" -- scripts/` 仅剩 PLATFORM-CHECKLIST.md（文档）；
       双平台 CI 绿；macOS 本机 `bash scripts/pre-commit-check.sh` 全过
 
@@ -63,5 +64,6 @@ scripts/hooks/hook-check-memory.sh、scripts/hooks/post-commit.sh、scripts/pre-
 
 ## Done 标准:
 - [ ] git grep -E "grep -[a-z]*P" -- scripts/ | grep -v PLATFORM-CHECKLIST → 零输出
-- [ ] bash tests/control-tower/grep-oP-regression.test.sh → exit 0（含 9 文件新断言）
+- [ ] bash tests/control-tower/grep-oP-regression.test.sh → exit 0（含 10 文件 28 处新断言）
+- [ ] 反向验证：故意塞回一处 -oP → 回归测试必红（防假绿）
 - [ ] PR CI Control Tower Gate Tests（ubuntu-latest 与 windows-latest）conclusion=success
