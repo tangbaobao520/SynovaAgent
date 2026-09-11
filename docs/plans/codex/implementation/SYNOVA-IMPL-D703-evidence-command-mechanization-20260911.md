@@ -58,9 +58,21 @@
 | .dsh/skills/dev-doc-delivery/template/编码指令模板.md | 修改 | 与 .claude 侧逐字同步（组 13 技能同步一致性硬阻断） |
 | tests/control-tower/verify-doc.test.sh | 新建 | ≥4 断言：合法 grep 回放 exit 0 / 引用不存在测试文件 exit 1（W2 缺陷场景）/ 非白名单命令拒绝 exit 1 / 无 DS 命令的 doc 显式 skip |
 
-### 3.2 最终实现同 commit 回填
+### 3.2 最终实现同 commit 回填（2026-09-11 实现时回填，与本卡交付同 commit）
 
 > 实现时若偏离本 doc（命令提取正则、白名单范围、CI job 触发条件、模板改点），必须在此节同 commit 回填最终形态。
+
+| # | 偏离点 | 任务行原文 | 最终形态（实测落地） | 理由 |
+|---|---|---|---|---|
+| 1 | 提取范围 | §6/§8 的 DS 命令 | `sed -n '/^## 6\./,/^## 7\./p; /^## 8\./,/^## 9\./p'` 两节 + 反引号行内代码 `grep -oE` + `awk !seen[]++` 去重（同一命令在两节重复只回放一次） | 区间未闭合时自然到 EOF，正则最简 |
+| 2 | 白名单范围 | grep/git/vitest/npx tsc | 首二级 token 白名单：grep / ls / rg / sed（命中 `-i`/`--in-place` 拒绝）/ git（只读子命令 diff\|log\|show\|status\|rev-parse\|ls-files）/ npx vitest\|tsc / bash（仅限 scripts/ci/verify-*.sh 与 tests/control-tower/*.test.sh） | 实测三份 spec 的 DS 命令含 ls（D703 DS1、D704 DS1）与 bash 密封测试（DS4）——按任务行 4 token 白名单会把这些合法证据命令全拒绝 |
+| 3 | `<占位符>` 处理 | 含 `<` `>` 一律拒绝 | 含 `<...>` 占位符的参数化命令（如 `bash scripts/ci/verify-doc.sh <坏 doc>`）→ **显式 skip**；不含占位符但含 `;` `&` 反引号 `$` 重定向 → 拒绝 exit 1 | 参数化命令不可实例化 ≠ 恶意注入；两者必须区分，否则合法证据命令被误拒 |
+| 4 | vitest 路径预检（新增） | 未提 | npx vitest 的路径参数先做存在性检查，引用不存在 → exit 1 快速失败（W2 形态），不进入 vitest | 密封 CI job 无 npm ci（跑不了真 vitest）；预检使 W2 形态在无 node_modules 下也可判红，测试保持密封 |
+| 5 | grep 语义 | 未提 | grep exit 1 = 零命中 = 命令成功（缺失类断言合法结果）；exit ≥2 = 引用错误 → FAIL | 缺失类断言（「残留 grep 零命中」）合法依赖 exit 1；预期数值判读归各 verify-dXXX.sh curation |
+| 6 | CI job 触发条件 | 非 docs-only 路径 | quality job 新步骤 `Replay changed dev-doc evidence commands (D703)`，`if: steps.docsonly.outputs.docs_only != 'true'`（复用 D515 既有 id: docsonly）；changed 集限定 `docs/plans/codex/implementation/SYNOVA-IMPL-*.md`；D 号 = basename 过 `grep -oE 'D[0-9]+'` 首个；`scripts/ci/verify-${DNUM}.sh` 存在则跑（失败 `::error` + job 红），不存在 → `::warning` 显式 skip；步骤置于 npm ci 后（未来 verify 脚本可用 node）、TypeScript check 前（tsc 红也能先出证据） | 与决策点 2 一致；warning 不静默（倒逼各卡交付自证脚本） |
+| 7 | verify-d703.sh 形态 | 「三份 spec 可机器化 DS 命令逐条回放」 | **curation 回放**而非全量委托 verify-doc.sh：D703 DS5a（tsc 基线逐条恒等需基线 worktree，CI 无）/ DS8b（推送后 CI job 级）不可机器化 → 显式 skip + 理由；D702/D704 两 spec 的 DS 全部断言各自实现后未来态 → 全部显式 skip + 理由（两卡实现时自建 verify-d702.sh / verify-d704.sh，CI 触发器按 D 号自动发现） | 全量委托会在 D703 spec 自身 DS5 `npx tsc --noEmit` 上红（存量 33 错误，exit 2）——curation 判定归 verify-dXXX.sh，通用引擎只判命令成败 |
+| 8 | 模板改点 | §四 追加机器可查项 | 落点 = §四 新 6「证据机器可查（D703 起）」，原兜底项 6 顺延为 7；.claude/.dsh 两侧 cp 同步，md5 恒等（72f3b710b8ac838f0346f62e1efe0d8a） | 落点与顺延保持编号连续 |
+| 9 | 回放 cwd | 未提 | doc 参数先解析绝对路径，回放统一 cd 仓库根（spec 内命令均为仓库根相对） | doc 可能以相对路径传入，cd 后相对 doc 路径失效 |
 
 ### 3.3 不做的事
 
