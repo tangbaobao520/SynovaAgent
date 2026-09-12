@@ -116,18 +116,61 @@ $SPEC_D703"
 fi
 
 echo ""
-echo "═══ D702 spec（未合入 main，DS 断言实现后未来态 → 显式 skip）═══"
+echo "═══ D702 spec（已合入 main #497，实现态断言 → 可机器化部分逐条回放）═══"
 if [ ! -f "$SPEC_D702" ]; then
   fail "D702 spec 缺失: $SPEC_D702"
 else
-  skip "D702 DS1 无 void 写方法（grep updateUser/deleteUser: void 零命中）" "D702 未合入：缺陷仍在（updateUser: void 现存），回放必失败；D702 实现时自建 verify-d702.sh"
-  skip "D702 DS2 返回 {ok,error}（grep 命中 ≥2）" "D702 未合入：实现后状态断言"
-  skip "D702 DS3 accept 绑定不吞错（enterprise.ts .ok 判定）" "D702 未合入：实现后状态断言"
-  skip "D702 DS4 vitest tests/growth/user-store.test.ts tests/routes/enterprise.test.ts" "tests/routes/enterprise.test.ts 是 D702 新建文件，尚不存在"
-  skip "D702 DS5 零回归（vitest 三目录 + tsc 基线恒等）" "依赖 D702 实现物；tsc 基线对照需 worktree"
-  skip "D702 DS6 as any=0（写集三文件）" "实现后状态断言（当前本就 0 命中，无判别力）"
-  skip "D702 DS7 git diff HEAD^ 范围一致" "HEAD^ 语义属 D702 分支提交历史，本卡不代跑"
-  skip "D702 DS8 无绕过 + 推送 CI" "D702 push 后自证"
+  # DS1 无 void 写方法 — grep 计数 = 0（三文件合计）
+  D702_DS1=$(grep -E "updateUser.*: void|deleteUser.*: void" src/growth/user-store.ts src/services/anomaly-detector.ts 2>/dev/null | wc -l | tr -d ' ')
+  if [ "${D702_DS1:-1}" = "0" ]; then
+    pass "D702 DS1 无 void 写方法: grep 计 0 命中（user-store.ts + anomaly-detector.ts）"
+  else
+    fail "D702 DS1: void 写方法命中 $D702_DS1（须 0）"
+  fi
+
+  # DS2 返回 {ok,error} — grep 计数 ≥ 2
+  D702_DS2=$(grep -c "{ ok: boolean; error?: string }" src/growth/user-store.ts src/services/anomaly-detector.ts 2>/dev/null | awk -F: '{s+=$NF} END{print s+0}')
+  if [ -n "$D702_DS2" ] && [ "$D702_DS2" -ge 2 ]; then
+    pass "D702 DS2 返回 {ok,error}: grep 计 $D702_DS2 命中（≥2）"
+  else
+    fail "D702 DS2: {ok,error} 签名命中 ${D702_DS2:-0}（须 ≥2）"
+  fi
+
+  # DS3 accept 绑定不吞错 — linked: true 所在分支前有 .ok 判定
+  # （机器代理：前 10 行窗口含 .ok——D662 惯例 10 行窗口；实测 .ok 在 :240、linked:true 在 :248）
+  if grep -B10 "linked: true" src/routes/enterprise.ts 2>/dev/null | grep -q '\.ok'; then
+    pass "D702 DS3 accept 不吞错: linked: true 前 10 行窗口存在 .ok 判定"
+  else
+    fail "D702 DS3: linked: true 邻域无 .ok 判定（吞错回归？）"
+  fi
+
+  # DS4 测试 red→green — vitest 二文件（red 基准 = D702 交付前实现物缺失；此处回放 green 侧）
+  if [ -d node_modules/vitest ] || [ -x node_modules/.bin/vitest ]; then
+    if npx vitest run tests/growth/user-store.test.ts tests/routes/enterprise.test.ts >/dev/null 2>&1; then
+      pass "D702 DS4 测试: vitest user-store + enterprise 全绿"
+    else
+      fail "D702 DS4: vitest 二文件红"
+    fi
+  else
+    skip "D702 DS4 vitest 二文件" "本 checkout 无 node_modules（CI 回放步骤在 npm ci 之后会实跑；本地不重装省时）"
+  fi
+
+  # DS5 零回归 — vitest 全量由本 CI run 的 Vitest job 物理执行（等价更严）；tsc 基线 CI 不可得
+  skip "D702 DS5 vitest 三目录全绿" "同 run 的 Vitest matrix job 已全量执行（超集），replay 不双跑防时长失控"
+  skip "D702 DS5b tsc 报错集逐条恒等" "需基线 worktree 逐条 diff，CI 无基线（同 DS5a 判据）"
+
+  # DS6 as any/as never/as unknown as 零命中（三文件）
+  # 跳过注释行（pre-commit 组 1 同口径）——「铁律 38: 零 as any」类注释行不算命中（实测 2 行误报）
+  D702_DS6=$(grep -rEn "as any|as never|as unknown as" src/growth/user-store.ts src/services/anomaly-detector.ts src/routes/enterprise.ts 2>/dev/null | grep -vE ':[0-9]+:\s*(\*|//|/\*)' | wc -l | tr -d ' ')
+  if [ "${D702_DS6:-1}" = "0" ]; then
+    pass "D702 DS6 类型安全: 三文件 as any/never/unknown as 计 0 命中"
+  else
+    fail "D702 DS6: 类型逃逸命中 $D702_DS6（须 0）"
+  fi
+
+  # DS7 范围一致 / DS8 推送 CI — 已由 D702 交付链闭合（#497 已合入 main）
+  skip "D702 DS7 git diff HEAD^ 范围一致" "已由 D702 交付 PR 的 G12c + CI verify-parallel 实证（#497 已合入）"
+  skip "D702 DS8 无绕过 + 推送 CI" "已由 #497 合并事实满足（其 PR CI job 级绿 + 无 bypass 记录进 main）"
 fi
 
 echo ""

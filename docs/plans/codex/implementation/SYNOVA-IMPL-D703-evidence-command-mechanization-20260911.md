@@ -76,6 +76,7 @@
 | 10 | 密封测试接线断言 | 未提 | 引擎存在性断言用 `-f` 而非 `-x` | 仓库惯例 scripts/ 与 tests/ 全部 100644（CI 以 bash 调用）；`-x` 在 ubuntu 必挂、Win MSYS 宽松判真造成本地假绿（CI ubuntu 实证 7/8 后修正） |
 | 11 | D 号→脚本名映射 | 未提 | spec 文件名大写 D 号转小写再拼 `verify-<d#>.sh`（仓库惯例小写） | spec 名 `SYNOVA-IMPL-D703-…` 提取出 `D703`，直拼 `verify-D703.sh` 在 ubuntu 大小写敏感恒 warning skip（CI 首轮实证） |
 | 12 | git 输出引号归一 | 未提 | DS6/DS7 的 git diff 统一加 `-c core.quotepath=off` | CI ubuntu 默认 quotepath=true 会把非 ASCII 路径输出为带引号八进制转义，与写集字面量恒不匹配 → DS7 误判越界；本地绿是 install-hooks 设了 quotepath false（D319 老坑变体，CI 三轮实证定位） |
+| 13 | D702 时移 re-curation + proxy 校准 | 「D702 未合入 → 全部显式 skip」 | D702 于本卡交付中途合入 main（#497）→ D702 段改写为「已合入态，可机器化部分逐条回放」：DS1/DS2/DS3/DS6 实跑 PASS，DS4 vitest 以 node_modules 存在性门控（本地无 node_modules 显式 skip，CI 回放步骤在 npm ci 后实跑），DS5/DS5b/DS7/DS8 显式 skip + 理由。两处 proxy 校准：DS3 `grep -B3` → `-B10`（.ok 与 linked:true 实距 8 行，3 行窗口恒假 FAIL；D662 惯例 10 行窗口）；DS6 追加注释行过滤 `grep -vE ':[0-9]+:\s*(\*|//|/\*)'`（pre-commit 组 1 同口径——user-store.ts:8「铁律 38: 零 as any」类注释行实测 2 行误报） | spec 写于 D702 未合时；机器化回放的价值恰在状态漂移时自校准——re-curation 后本地 PASS=11 FAIL=0 SKIP=16 |
 
 ### 3.3 不做的事
 
