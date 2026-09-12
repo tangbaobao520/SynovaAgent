@@ -87,7 +87,7 @@ while IFS= read -r memfile; do
     echo "║     How: ${how:0:120}"
   fi
   # 提取关联记忆链接
-  links=$(grep -oP '\[\[([^]]+)\]\]' "$memfile" 2>/dev/null | head -5 | tr '\n' ' ' || true)
+  links=$(grep -oE '\[\[[^]]+\]\]' "$memfile" 2>/dev/null | head -5 | tr '\n' ' ' || true)
   if [ -n "$links" ]; then
     echo "║     See also: ${links:0:120}"
   fi

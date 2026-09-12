@@ -180,7 +180,7 @@ plan_aware_check() {
   local non_deferred=""
   while IFS= read -r match_line; do
     [ -z "$match_line" ] && continue
-    local match_file=$(echo "$match_line" | grep -oP '^[^:]+' | head -1)
+    local match_file=$(echo "$match_line" | grep -oE '^[^:]+' | head -1)
     if [ -n "$deferred_list" ] && echo "$deferred_list" | grep -qF "$match_file" 2>/dev/null; then
       continue  # 在 defer 列表中 → 跳过
     fi
@@ -640,7 +640,7 @@ UNWIRED=""
 if [ -n "$NEW_IMPL" ]; then
   while IFS= read -r file; do
     [ -z "$file" ] && continue; [ ! -f "$file" ] && continue
-    EXPORTS=$(grep -oP 'export (function|class|const) \K\w+' "$file" 2>/dev/null || true)
+    EXPORTS=$(grep -oE 'export (function|class|const) [A-Za-z_][A-Za-z0-9_]*' "$file" 2>/dev/null | sed -E 's/^export (function|class|const) //' || true)
     for name in $EXPORTS; do
       [ -z "$name" ] && continue
       echo "$name" | grep -qi 'mock\|fake\|_internal\|_deprecated' && continue
@@ -663,7 +663,7 @@ DEEP_FAIL=""
 if [ -n "$NEW_IMPL" ]; then
   for file in $NEW_IMPL; do
     [ -z "$file" ] && continue; [ ! -f "$file" ] && continue
-    EXPORTS=$(grep -oP 'export (function|class|const) \K\w+' "$file" 2>/dev/null || true)
+    EXPORTS=$(grep -oE 'export (function|class|const) [A-Za-z_][A-Za-z0-9_]*' "$file" 2>/dev/null | sed -E 's/^export (function|class|const) //' || true)
     for name in $EXPORTS; do
       [ -z "$name" ] && continue
       echo "$name" | grep -qi 'mock\|fake\|_internal\|_deprecated' && continue
@@ -1107,7 +1107,7 @@ if [ -f "$CRITERIA_MAP" ]; then
   BRIEF_FILE=$(echo "$CHANGED_FILES" | grep -m1 "\.claude/task-briefs/" || true)
   if [ -n "$BRIEF_FILE" ]; then
     BRIEF_PATH="$ROOT/$BRIEF_FILE"
-    CRITERIA=$(grep -oP '#CRITERIA\s*[:=]\s*\K[A-D]' "$BRIEF_PATH" 2>/dev/null || true)
+    CRITERIA=$(grep -oE '#CRITERIA[[:space:]]*[:=][[:space:]]*[A-D]' "$BRIEF_PATH" 2>/dev/null | sed -E 's/.*[=:][[:space:]]*//' || true)
     if [ -n "$CRITERIA" ]; then
       # 读取条件代码映射
       CRITERIA_GLOBS=$(python -c "
@@ -1150,7 +1150,7 @@ for gx in g:
 
   # V3 CP3-2: G11 测试覆盖检查
   HAS_E2E=0; HAS_TESTS=0
-  BRIEF_ID=$(echo "$STAGED_FILES" | grep -oP '\.claude/task-briefs/\K[^.]+' | head -1 || true)
+  BRIEF_ID=$(echo "$STAGED_FILES" | grep -oE '\.claude/task-briefs/[^.]+' | sed -E 's|^\.claude/task-briefs/||' | head -1 || true)
   if [ -n "$BRIEF_ID" ]; then
     BRIEF_PATH="$ROOT/.claude/task-briefs/${BRIEF_ID}.md"
     if [ -f "$BRIEF_PATH" ]; then
@@ -1191,7 +1191,7 @@ if [ -n "${DSH_SESSION_ID:-}" ] && [ -f "$ROOT/.claude/current-brief.$DSH_SESSIO
 fi
 if [ -f "$_CB_SRC" ]; then
   _bname=$(cat "$_CB_SRC" 2>/dev/null | tr -d '[:space:]')  # swallow-ok: current-brief 缺失/读失败 → _bname 空 → 回退认领，非错误吞掉
-  _cb_date=$(echo "$_bname" | grep -oP '\d{4}-\d{2}-\d{2}' | head -1 || true)
+  _cb_date=$(echo "$_bname" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' | head -1 || true)
   if [ -n "$_cb_date" ] && [ "$_cb_date" != "$TODAY" ]; then
     :  # 陈旧的 current-brief，忽略它
   elif [ -n "$_bname" ] && [ -f "$ROOT/.claude/task-briefs/$_bname" ]; then
@@ -1389,7 +1389,7 @@ if [ -f "$ROOT/scripts/control-tower/PLATFORM-CHECKLIST.md" ]; then
   if [ -n "$_PLAT_NEW" ]; then
     while IFS= read -r _pf; do
       [ -z "$_pf" ] && continue; [ ! -f "$ROOT/$_pf" ] && continue
-      _pf_hits=$(grep -nE '\bpython3\b|date \+%s|date -v|grep -P' "$ROOT/$_pf" 2>/dev/null | grep -v 'PYBIN\|swallow-ok\|D520\|#' | head -3 || true)
+      _pf_hits=$(grep -nE '\bpython3\b|date \+%s|date -v|grep -P' "$ROOT/$_pf" 2>/dev/null | grep -v 'PYBIN\|swallow-ok\|D520\|#' | head -3 || true)  # grep-P-scan-ok: 本行是 -P 检测器自身（模式字面量，非调用）
       [ -n "$_pf_hits" ] && _PLAT_HITS="${_PLAT_HITS}  ${_pf}: 平台敏感命令（见 PLATFORM-CHECKLIST.md）\n"
     done <<< "$_PLAT_NEW"
   fi

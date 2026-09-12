@@ -37,7 +37,7 @@ while IFS= read -r impl; do
   [ ! -f "$impl" ] && continue
 
   # 提取 export 的函数/类/常量名
-  EXPORTS=$(grep -oP 'export (function|class|const) \K\w+' "$impl" 2>/dev/null || true)
+  EXPORTS=$(grep -oE 'export (function|class|const) [A-Za-z_][A-Za-z0-9_]*' "$impl" 2>/dev/null | sed -E 's/^export (function|class|const) //' || true)
   if [ -z "$EXPORTS" ]; then
     # 只有 type export — 不需要测试
     continue
