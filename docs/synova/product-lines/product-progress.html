@@ -57,19 +57,7 @@ table.points td, table.points th { border: 1px solid #eee; padding: 4px 6px; tex
   产品总进度 <span class="big">1%</span>　·　26 条产品线　·　已通过审计员或创始人核验的验收点 1 个<br>
   <span class="sub">每个"绿"都有证据可查：审计员结论 / 创始人核验 / 场景实测 / 自动测试。没有证据 = 不算数。</span>
 </div>
-<div class='decisions'><h2>需要创始人拍板（今天只做这些，每项 30 秒）</h2>
-<div class="decision">
-  <div class="d-title">⚖️ 告警去重窗口用多久？（同一件事多久内只提醒一次）</div>
-  <div class='d-ctx'>审计员发现告警去重键不稳定（先修键是技术活，已排任务）。窗口大小是产品决策：太长会漏掉重要变化，太短会反复打扰老板。</div>
-  <ul class="d-options"><li>○ 5 分钟 — 同一异常 5 分钟内只提醒一次；周级监测节奏下足够 <b class='sug'>建议</b></li><li>○ 30 分钟 — 更安静，但半小时内的两次独立异常会合并</li></ul>
-  <div class='suggestion'>建议：<b>5 分钟</b>。理由：监测最细是周级，重复告警都发生在同一轮；5 分钟足够去重，且不吞掉真实变化</div>
-</div>
-<div class="decision">
-  <div class="d-title">⚖️ 第一条做到 100% 的线选哪条？</div>
-  <div class='d-ctx'>每条线到 100% 都要审计员全量复核（防烂尾）。第一条 100% 线是样板，建议选演示刚需、修复路径最清晰的。</div>
-  <ul class="d-options"><li>○ 资本循环（线 10） — 演示刚需（持续监测叙事）；审计员已给出转绿路径，第一步只需修一行配置 <b class='sug'>建议</b></li><li>○ 首次诊断（线 06） — 演示刚需（首诊叙事）；但从未端到端实测，路径最长</li></ul>
-  <div class='suggestion'>建议：<b>资本循环（线 10）</b>。理由：修复路径最短、每步都有审计员给的断点清单，最快立信</div>
-</div></div>
+
 <div class='degraded'><b>⚠️ 数据源降级（页面据此标注，不静默）：</b><ul><li>证据记录损坏: D524-verify-20260825-2121.json (缺 record_type/date/verdicts 字段)</li><li>task-D394.json: 存量自动兑换证据降级 k3→task_redeem（假 k3 冒充修正，CT-53）</li><li>task-D396.json: 存量自动兑换证据降级 k3→task_redeem（假 k3 冒充修正，CT-53）</li><li>task-D517.json: 存量自动兑换证据降级 k3→task_redeem（假 k3 冒充修正，CT-53）</li><li>task-D518.json: 存量自动兑换证据降级 k3→task_redeem（假 k3 冒充修正，CT-53）</li><li>状态判定异常 3 处（详见 product-progress.json）</li></ul></div>
 <div class="lines">
 <div class="line" id="line-1">
@@ -320,7 +308,7 @@ table.points td, table.points th { border: 1px solid #eee; padding: 4px 6px; tex
   <div class="meta">已验证 0/6 个验收点 · 此前粗估 ~50%（记忆库 9 类+SessionStore+重启恢复存在（代码实证）；消费端接线未全验证）</div>
   
   <details><summary>验收点清单（点击展开）</summary>
-    <table class="points"><tr><th>#</th><th>什么叫做完</th><th>状态</th></tr><tr><td>18-1</td><td>记忆库 9 类记忆存储（fact/preference/decision/pattern/entity/enterprise_fact/ga_correction/implementation_plan/监测项_annotation）</td><td><b style='color:#f9a825'>🟡 待重跑</b> <span class='ev'>证据：审计员结论、证据记录</span><span class='note'>代码实证存在（创始人 13 问第 3 问：Agent 记忆 + 组织记忆合并为记忆体系）</span></td></tr><tr><td>18-2</td><td>SessionStore + 重启恢复（重启后记忆还在）</td><td><b style='color:#f9a825'>🟡 待重跑</b> <span class='ev'>证据：证据记录</span><span class='note'>代码实证存在；重启恢复测试未作为证据登记</span></td></tr><tr><td>18-3</td><td>消费端接线（诊断真的读记忆，不是存而不用）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>消费端接线未全验证</span></td></tr><tr><td>18-4</td><td>组织记忆自动生成（&lt;30% 人工，S5-4）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>S5-4：未排期（缺失）</span></td></tr><tr><td>18-5</td><td>版本化 + superseded_by 链（事实更新可追溯）</td><td><b style='color:#f9a825'>🟡 待重跑</b> <span class='ev'>证据：证据记录</span><span class='note'>企业事实层设计存在</span></td></tr><tr><td>18-6</td><td>审计员复核记忆体系</td><td><b style='color:#f9a825'>🟡 待审计员确认</b> </td></tr></table>
+    <table class="points"><tr><th>#</th><th>什么叫做完</th><th>状态</th></tr><tr><td>18-1</td><td>记忆库 9 类记忆存储（fact/preference/decision/pattern/entity/enterprise_fact/ga_correction/implementation_plan/监测项_annotation）</td><td><b style='color:#f9a825'>🟡 待重跑</b> <span class='ev'>证据：审计员结论、证据记录</span><span class='note'>代码实证存在（创始人 13 问第 3 问：Agent 记忆 + 组织记忆合并为记忆体系）</span></td></tr><tr><td>18-2</td><td>SessionStore + 重启恢复（重启后记忆还在）</td><td><b style='color:#f9a825'>🟡 待审计员确认</b> <span class='ev'>证据：证据记录</span><span class='note'>代码实证存在；重启恢复测试未作为证据登记</span></td></tr><tr><td>18-3</td><td>消费端接线（诊断真的读记忆，不是存而不用）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>消费端接线未全验证</span></td></tr><tr><td>18-4</td><td>组织记忆自动生成（&lt;30% 人工，S5-4）</td><td><b style='color:#9e9e9e'>⚪ 未开始</b> <span class='note'>S5-4：未排期（缺失）</span></td></tr><tr><td>18-5</td><td>版本化 + superseded_by 链（事实更新可追溯）</td><td><b style='color:#f9a825'>🟡 待审计员确认</b> <span class='ev'>证据：证据记录</span><span class='note'>企业事实层设计存在</span></td></tr><tr><td>18-6</td><td>审计员复核记忆体系</td><td><b style='color:#f9a825'>🟡 待审计员确认</b> </td></tr></table>
   </details>
   <div class='todos'><b>还差 1 件事：</b><ul><li><b style='color:#ef6c00'>优先改进</b> · 组织记忆自动生成（S5-4）: 缺失 <span class='who'>（Claude Code · 来自C线差距清单（第五章））</span><div class='accept'>做完标准：场景 实测场景 01、实测场景 06 转绿（exit 0 + 证据入库）</div></li></ul></div>
 </div>
@@ -437,7 +425,7 @@ table.points td, table.points th { border: 1px solid #eee; padding: 4px 6px; tex
   <div class='todos none'>暂无待办（好事）</div>
 </div></div>
 <div class="footer">
-  生成时间：2026-09-12 23:41:24（北京时间）<br>
+  生成时间：2026-09-13 00:08:36（北京时间）<br>
   进度怎么算：每条线写死了"到 100% 的定义"（验收点清单），进度 = 被证据验证的验收点比例。
   代码一变，相关证据自动变黄要求重跑；任何线要到 100%，必须审计员全量复核。<br>
   待办从哪来：审计发现台账、权威偏差登记、C线差距清单、任务看板、场景实测，五个现成来源自动聚合，零新增维护。<br>

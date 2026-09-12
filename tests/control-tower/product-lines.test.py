@@ -522,5 +522,37 @@ class TestRefreshAll(unittest.TestCase):
             self.assertTrue((DOC_DIR / f).is_file(), f)
 
 
+class TestRenderDecisionsFilter(unittest.TestCase):
+    """9. 置顶区只渲染待裁决项（2026-09-12 CTO 交付复核抓出的缺陷回归）
+
+    缺陷: D-1/D-2 标 resolved 后，页面「需要创始人拍板」区仍渲染它们
+          （render_decisions 不按 status 过滤）→ 创始人看到已拍过板的问题。
+    契约: status == 'open'（缺省视为 open）才渲染；全为已裁决 → 整区不渲染（返回空串）。
+    """
+
+    OPEN_D = {"id": "D-1", "title": "待裁决项X", "status": "open",
+              "options": [{"label": "A", "note": "n"}], "suggestion": {"label": "A", "reason": "r"}}
+    RESOLVED_D = {"id": "D-2", "title": "已裁决项Y", "status": "resolved", "resolved_date": "2026-09-12",
+                  "options": [{"label": "B", "note": "n"}], "suggestion": {"label": "B", "reason": "r"}}
+
+    def test_resolved_not_rendered(self):
+        html = genpage.render_decisions([self.OPEN_D, self.RESOLVED_D])
+        self.assertIn("待裁决项X", html, "待裁决项必须渲染")
+        self.assertNotIn("已裁决项Y", html, "已裁决项不得出现在置顶区（本次修复的断言）")
+
+    def test_all_resolved_renders_empty(self):
+        self.assertEqual(genpage.render_decisions([self.RESOLVED_D]), "",
+                         "全为已裁决 → 整区不渲染")
+
+    def test_default_status_treated_as_open(self):
+        no_status = {"id": "D-3", "title": "无状态项Z", "options": [], "suggestion": {}}
+        self.assertIn("无状态项Z", genpage.render_decisions([no_status]),
+                      "缺 status 字段按 open 处理（向后兼容既有 yaml）")
+
+    def test_empty_input(self):
+        self.assertEqual(genpage.render_decisions([]), "")
+        self.assertEqual(genpage.render_decisions(None), "")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

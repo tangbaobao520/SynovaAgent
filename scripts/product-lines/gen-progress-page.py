@@ -169,6 +169,10 @@ def render_line_card(line, todos_by_line):
 
 
 def render_decisions(decisions):
+    # 只渲染仍待裁决的项（status == open）。已裁决项保留在 cockpit-override.yaml 作历史，
+    # 但不得再出现在「需要创始人拍板」置顶区——否则创始人会看到已经拍过板的问题（2026-09-12
+    # 实证：D-1/D-2 标 resolved 后页面仍显示，CTO 交付复核抓出）。
+    decisions = [d for d in (decisions or []) if (d.get("status") or "open") == "open"]
     if not decisions:
         return ""
     cards = []

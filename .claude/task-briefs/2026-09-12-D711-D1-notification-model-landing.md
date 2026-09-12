@@ -37,6 +37,9 @@
 - docs/synova/coordination/board-backlog.json — 增 PLAN-d1-notification-wiring(P0) + PLAN-evidence-invalidation-granularity(P1)
 - docs/synova/product-lines/product-progress.json — refresh-all 重算（生成物）
 - docs/synova/product-lines/product-progress.html — refresh-all 重生成（生成物）
+- scripts/product-lines/gen-progress-page.py — 修复 render_decisions 不按 status 过滤（已裁决项误入置顶区，CTO 复核抓出）
+- tests/control-tower/product-lines.test.py — 新增 TestRenderDecisionsFilter（4 断言：已裁决不渲染/全裁决空/缺状态按 open/空输入）
+- docs/synova/coordination/board-backlog.json — 增 PLAN-product-lines-suite-red-unwired（存量红+未接线，含基线对照证据）
 - memory/notes/implemented/2026-09-12-D1-state-driven-notification.md — 四态 Note（铁律 49）
 - .claude/task-briefs/2026-09-12-D711-D1-notification-model-landing.md — 本 brief
 - task-state/D711.json — 状态登记

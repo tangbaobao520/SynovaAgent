@@ -137,6 +137,13 @@
       "severity": "P0（创始人裁定）",
       "source": "创始人 2026-09-12 裁定 D-1 改写",
       "note": "步1 Mac 接线（src/sentinel/runner.ts:1321 通知决策改读工单状态 + 实质变化判定）→ 步2 Win 交互入口（首次告警的沟通请求：节奏/格式）→ 步3 契约 schema(dev-doc) + Mac loader + Win 周期报告 → 步4 Win 复盘沉淀/复发识别。决策全文 docs/synova/product-lines/DECISION-D1-状态驱动通知模型-20260912.md；跨线边界 docs/synova/coordination/跨线同步-D1状态驱动通知模型-Mac-Win-20260912.md。验收点＝线8 的 8-6。"
+    },
+    {
+      "id": "PLAN-product-lines-suite-red-unwired",
+      "title": "product-lines 测试套件存量红且未接线 CI（3 失败；测试侧期望漂移，管线本身正常）",
+      "severity": "P1",
+      "source": "CTO 交付复核（2026-09-12，含基线对照实验）",
+      "note": "证据：tests/control-tower/product-lines.test.py 在 origin/main 基线（独立 worktree）跑出同样 3 个失败 → 存量红，非本次改动引入。三条：① test_real_page_and_no_jargon（页面裁决区断言，2026-09-12 D-1/D-2 转 resolved 后『常存在』假设失效，应改为数据驱动：有 open 才渲染）② test_real_repo_capital_line_zero_of_eight（硬编码 sum(verified)==5 快照，与实际重算值已漂移）③ test_range_expansion_and_mapping（待办→线映射断言 assertIn(10,lines) 失败）。另：该套件从未接入 CI（grep ci.yml/pre-commit 零命中）→ 红了无人知，属 M3『机制建成未接线』家族（与 grep-oP 回归网同型）。CTO 已独立验证管线本身正常：注入 open 裁决 → 页面渲染『需要创始人拍板』且标注项可见；已裁决项不泄漏。"
     }
   ]
 }
