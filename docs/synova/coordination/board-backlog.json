@@ -144,6 +144,13 @@
       "severity": "P1",
       "source": "CTO 交付复核（2026-09-12，含基线对照实验）",
       "note": "证据：tests/control-tower/product-lines.test.py 在 origin/main 基线（独立 worktree）跑出同样 3 个失败 → 存量红，非本次改动引入。三条：① test_real_page_and_no_jargon（页面裁决区断言，2026-09-12 D-1/D-2 转 resolved 后『常存在』假设失效，应改为数据驱动：有 open 才渲染）② test_real_repo_capital_line_zero_of_eight（硬编码 sum(verified)==5 快照，与实际重算值已漂移）③ test_range_expansion_and_mapping（待办→线映射断言 assertIn(10,lines) 失败）。另：该套件从未接入 CI（grep ci.yml/pre-commit 零命中）→ 红了无人知，属 M3『机制建成未接线』家族（与 grep-oP 回归网同型）。CTO 已独立验证管线本身正常：注入 open 裁决 → 页面渲染『需要创始人拍板』且标注项可见；已裁决项不泄漏。"
+    },
+    {
+      "id": "PLAN-product-lines-test-side-effect",
+      "title": "product-lines 测试套件有副作用：TestRefreshAll 真跑 refresh-all.sh → 写回 tracked 生成物",
+      "severity": "P2",
+      "source": "CTO 亲历（2026-09-13 跑套件时仓库变脏）",
+      "note": "证据: 跑 tests/control-tower/product-lines.test.py 后 git status 出现 M docs/synova/product-lines/product-progress.json（差异仅 generated_at + 线18 的 stale 3→1）。TestRefreshAll.test_end_to_end 直接 subprocess 跑 refresh-all.sh，而该脚本写 docs/synova/product-lines/{todos.yaml,product-progress.json,product-progress.html} —— 测试污染工作区，导致切分支被拦（checkout 报 untracked/changed 冲突）。这正是 #464（D657「测试零副作用」）要治的病 → 侧面印证其价值。修法方向: 测试内用 SYNO_PL_OUT_DIR 类注入缝重定向输出目录（若无此缝则先加缝），或断言后还原生成物。"
     }
   ]
 }
