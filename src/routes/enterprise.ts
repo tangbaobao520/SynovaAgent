@@ -236,7 +236,12 @@ router.post('/api/enterprise/invitation/accept', async (req: Request, res: Respo
         log.warn({ email: inv.email }, '绑定已有账号密码验证失败 — 邀请保持 pending');
         return res.status(401).json({ ok: false, code: 'AUTH_FAILED', message: '密码错误 — 绑定已有账号需验证账号密码' });
       }
-      store.updateUser(existing.userId, { orgId: inv.orgId, role: inv.role });
+      const bindResult = store.updateUser(existing.userId, { orgId: inv.orgId, role: inv.role });
+      if (!bindResult.ok) {
+        // D702 (K3 W-2): 绑定持久化失败不得假报 linked:true——500 降级，邀请保持 pending 可重试
+        log.error({ userId: existing.userId, email: inv.email, error: bindResult.error }, '账号绑定持久化失败 — 邀请保持 pending');
+        return res.status(500).json({ ok: false, code: 'PERSIST_FAILED', message: '账号绑定持久化失败，请稍后重试', degraded: true });
+      }
       inv.status = 'accepted';
 
       log.info({ userId: existing.userId, email: inv.email, orgId: inv.orgId }, '邀请已接受(绑定已有账号)');
@@ -294,7 +299,13 @@ router.put('/api/enterprise/members/:id', (req: Request, res: Response) => {
     const user = getUserStore().getById(userId);
     if (!user) return res.status(404).json({ ok: false, code: 'NOT_FOUND', message: '成员不存在' });
     const { role } = req.body as { role?: string };
-    if (role) getUserStore().updateUser(userId, { role: role as 'admin' | 'manager' | 'staff' });
+    if (role) {
+      const roleResult = getUserStore().updateUser(userId, { role: role as 'admin' | 'manager' | 'staff' });
+      if (!roleResult.ok) {
+        log.warn({ userId, error: roleResult.error }, '成员角色更新持久化失败 — 降级');
+        return res.status(500).json({ ok: false, code: 'PERSIST_FAILED', message: '成员更新持久化失败', degraded: true });
+      }
+    }
     const updated = getUserStore().getById(userId);
     if (!updated) return res.status(500).json({ ok: false, code: 'INTERNAL_ERROR', message: '更新后读取失败', degraded: true });
     return res.json({ ok: true, data: { userId: updated.userId, email: updated.email, role: updated.role, status: updated.status } });
@@ -311,7 +322,11 @@ router.delete('/api/enterprise/members/:id', (req: Request, res: Response) => {
     const userId = req.params.id as string;
     const user = getUserStore().getById(userId);
     if (!user) return res.status(404).json({ ok: false, code: 'NOT_FOUND', message: '成员不存在' });
-    getUserStore().deleteUser(userId); // soft-delete
+    const deleteResult = getUserStore().deleteUser(userId); // soft-delete
+    if (!deleteResult.ok) {
+      log.warn({ userId, error: deleteResult.error }, '成员停用持久化失败 — 降级');
+      return res.status(500).json({ ok: false, code: 'PERSIST_FAILED', message: '成员停用持久化失败', degraded: true });
+    }
     return res.json({ ok: true, message: '成员已停用' });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -328,7 +343,11 @@ router.post('/api/enterprise/members/:userId/freeze', async (req: Request, res: 
   try {
     if (!requireAdmin(req, res)) return;
     const { userId } = req.params as { userId: string };
-    getUserStore().deleteUser(userId);
+    const freezeResult = getUserStore().deleteUser(userId);
+    if (!freezeResult.ok) {
+      log.warn({ userId, error: freezeResult.error }, 'GA 账户冻结持久化失败 — 降级');
+      return res.status(500).json({ ok: false, code: 'PERSIST_FAILED', message: '冻结持久化失败', degraded: true });
+    }
     log.warn({ userId, frozenBy: extractAuthFromRequest(req)?.userId }, 'GA 账户已冻结');
     return res.json({ ok: true, message: 'GA 账户已冻结 — 所有权限立即收回' });
   } catch (err: unknown) {
@@ -344,7 +363,11 @@ router.post('/api/enterprise/members/:userId/unfreeze', async (req: Request, res
     const { userId } = req.params as { userId: string };
     const user = getUserStore().getById(userId);
     if (!user) return res.status(404).json({ ok: false, code: 'NOT_FOUND', message: '成员不存在' });
-    getUserStore().updateUser(userId, { status: 'active' });
+    const unfreezeResult = getUserStore().updateUser(userId, { status: 'active' });
+    if (!unfreezeResult.ok) {
+      log.warn({ userId, error: unfreezeResult.error }, 'GA 账户解冻持久化失败 — 降级');
+      return res.status(500).json({ ok: false, code: 'PERSIST_FAILED', message: '解冻持久化失败', degraded: true });
+    }
     log.info({ userId, unfrozenBy: extractAuthFromRequest(req)?.userId }, 'GA 账户已解冻');
     return res.json({ ok: true, message: 'GA 账户已解冻' });
   } catch (err: unknown) {
@@ -606,7 +629,11 @@ router.post('/api/enterprise/members/:userId/role', (req: Request, res: Response
     }
     const user = getUserStore().getById(userId);
     if (!user) return res.status(404).json({ ok: false, code: 'NOT_FOUND', message: '成员不存在' });
-    getUserStore().updateUser(userId, { role: template.id as 'admin' | 'manager' | 'staff' });
+    const assignResult = getUserStore().updateUser(userId, { role: template.id as 'admin' | 'manager' | 'staff' });
+    if (!assignResult.ok) {
+      log.warn({ userId, templateId, error: assignResult.error }, '角色分配持久化失败 — 降级');
+      return res.status(500).json({ ok: false, code: 'PERSIST_FAILED', message: '角色分配持久化失败', degraded: true });
+    }
     log.info({ userId, templateId, secondApprover: req.headers['x-second-approver'] }, '角色已分配(双签)');
     return res.json({ ok: true, message: '角色已分配', data: { userId, role: template.id } });
   } catch (err: unknown) {
