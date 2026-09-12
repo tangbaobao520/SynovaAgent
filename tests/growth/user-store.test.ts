@@ -7,6 +7,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { UserStore, type GraphStoreLike } from '../../src/growth/user-store';
 import bcrypt from 'bcrypt';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import Database from 'better-sqlite3';
+import { SqliteGraphStore } from '../../src/adapters/sqlite-graph-store';
 
 // ═══ Mock GraphStore ═══
 
@@ -14,8 +19,12 @@ class MockGraphStore implements GraphStoreLike {
   private nodes = new Map<string, Record<string, unknown>>();
   private counter = 0;
 
+  /** D702: 失败注入开关——置位时 updateNode 抛错（镜像 SqliteGraphStore.updateNode 失败即 throw，src/adapters/sqlite-graph-store.ts:329-333） */
+  failUpdates = false;
+
   createNode(type: string, props: Record<string, unknown>, _graph: string): string {
-    const id = `usr-${++this.counter}`;
+    // S-15: 镜像真实 createNode（sqlite-graph-store.ts:144）——恒生成 node-<id>，忽略 props.id
+    const id = `node-${++this.counter}`;
     this.nodes.set(id, { ...props, _type: type });
     return id;
   }
@@ -43,6 +52,9 @@ class MockGraphStore implements GraphStoreLike {
   }
 
   updateNode(id: string, props: Record<string, unknown>, _graph: string): void {
+    if (this.failUpdates) {
+      throw new Error('injected update failure (D702)');
+    }
     const existing = this.nodes.get(id);
     if (existing) {
       this.nodes.set(id, { ...existing, ...props });
@@ -147,5 +159,110 @@ describe('D107 — ontology USER mapping', () => {
     const results = mock.queryNodes('USER');
     expect(results).toHaveLength(1);
     expect(results[0].props.email).toBe('test@co.com');
+  });
+});
+
+// ════════════════════════════════════════════════════════════════
+// D702 — 写操作吞错修复（K3 W-2）：updateUser/deleteUser 返 {ok,error}
+// RED 契约: 修复前 updateUser 返 void——result.ok 为 undefined → 断言失败（red 留痕）
+// ════════════════════════════════════════════════════════════════
+
+describe('D702 — updateUser 返回 {ok,error}', () => {
+  let store: UserStore;
+  let mock: MockGraphStore;
+  let userId: string;
+  beforeEach(async () => {
+    mock = new MockGraphStore();
+    store = new UserStore(mock);
+    const result = await store.createUser('d702@co.com', 'pass123', 'staff', 'org-1');
+    userId = result.userId;
+  });
+
+  it('updateUser 成功 → { ok: true } 且更新读回生效', () => {
+    const result = store.updateUser(userId, { role: 'manager' });
+    expect(result.ok).toBe(true);
+    expect(result.error).toBeUndefined();
+    expect(store.getById(userId)?.role).toBe('manager');
+  });
+
+  it('updateNode 抛错（失败注入）→ { ok: false, error } 且原值不被覆盖', () => {
+    mock.failUpdates = true;
+    const result = store.updateUser(userId, { role: 'manager' });
+    expect(result.ok).toBe(false);
+    expect(result.error).toBeTruthy();
+    expect(store.getById(userId)?.role).toBe('staff');
+  });
+});
+
+describe('D702 — deleteUser 返回 {ok,error}', () => {
+  let store: UserStore;
+  let mock: MockGraphStore;
+  let userId: string;
+  beforeEach(async () => {
+    mock = new MockGraphStore();
+    store = new UserStore(mock);
+    const result = await store.createUser('d702-del@co.com', 'pass123', 'staff', 'org-1');
+    userId = result.userId;
+  });
+
+  it('deleteUser 成功 → { ok: true } 且 status=disabled 读回', () => {
+    const result = store.deleteUser(userId);
+    expect(result.ok).toBe(true);
+    expect(result.error).toBeUndefined();
+    expect(store.getById(userId)?.status).toBe('disabled');
+  });
+
+  it('deleteUser updateNode 抛错 → { ok: false, error } 且 status 仍 active', () => {
+    mock.failUpdates = true;
+    const result = store.deleteUser(userId);
+    expect(result.ok).toBe(false);
+    expect(result.error).toBeTruthy();
+    expect(store.getById(userId)?.status).toBe('active');
+  });
+});
+
+// ════════════════════════════════════════════════════════════════
+// D702 S-15 — 真实依赖 round-trip（SqliteGraphStore 真库，非 mock）
+// 真实失败源: 连接 B 持有 EXCLUSIVE 写锁 → 连接 A 的 UPDATE SQLITE_BUSY →
+// SqliteGraphStore.updateNode 按生产语义 throw（sqlite-graph-store.ts:329-333）
+// → UserStore 必须 { ok:false, error }；成功路径必须真库读回可见。
+// ════════════════════════════════════════════════════════════════
+
+describe('D702 S-15 — 真实 SQLite round-trip', () => {
+  it('updateUser orgId 真库读回可见；真实写锁冲突 → { ok:false, error } 且读回不可见', async () => {
+    const dbPath = path.join(os.tmpdir(), `d702-s15-${process.pid}-${Date.now()}.db`);
+    const db = new Database(dbPath, { timeout: 50 });
+    const blocker = new Database(dbPath, { timeout: 50 });
+    const realStore = new SqliteGraphStore(db);
+    const store = new UserStore(realStore);
+    try {
+      const created = await store.createUser('s15@co.com', 'pass123', 'staff', 'org-default');
+      // S-15: 真实 createNode id 语义——恒生成 node-<uuid>，忽略 props.id
+      expect(created.userId.startsWith('node-')).toBe(true);
+
+      // 写入成功 → 读回可见（orgId 真库可见 + listByOrg 归属新组织）
+      const okResult = store.updateUser(created.userId, { orgId: 'org-s15' });
+      expect(okResult.ok).toBe(true);
+      expect(store.queryByEmail('s15@co.com')?.orgId).toBe('org-s15');
+      expect(store.listByOrg('org-s15').some(u => u.userId === created.userId)).toBe(true);
+
+      // 注入真实失败: 连接 B 持 EXCLUSIVE 写锁 → A 的 UPDATE SQLITE_BUSY → throw → {ok:false}
+      blocker.exec('BEGIN EXCLUSIVE');
+      blocker.exec('CREATE TABLE d702_lock (x INTEGER)');
+      const failResult = store.updateUser(created.userId, { orgId: 'org-never' });
+      expect(failResult.ok).toBe(false);
+      expect(failResult.error).toBeTruthy();
+
+      // 读回不可见: 失败的 orgId 未落库（旧值 org-s15 仍在，org-never 查不到）
+      expect(store.queryByEmail('s15@co.com')?.orgId).toBe('org-s15');
+      expect(store.listByOrg('org-never')).toHaveLength(0);
+    } finally {
+      try { blocker.exec('ROLLBACK'); } catch { /* 事务可能已回滚 */ }
+      blocker.close();
+      db.close();
+      fs.rmSync(dbPath, { force: true });
+      fs.rmSync(`${dbPath}-wal`, { force: true });
+      fs.rmSync(`${dbPath}-shm`, { force: true });
+    }
   });
 });
