@@ -75,7 +75,10 @@ else
   skip "DS5b bash scripts/pre-commit-check.sh" "CI quality job Iron laws 步骤已以 SYNO_CI=1 覆盖同一检查"
 
   # DS6 类型安全（bash+yml 卡）— 可机器化：src/ 零改动
-  SRC_N=$(git diff --name-only origin/main...HEAD -- src/ 2>/dev/null | wc -l | tr -d ' ') # swallow-ok: 非 git 仓时数值比较按 FAIL 处理，不静默
+  # -c core.quotepath=off: CI ubuntu 默认 true 会把非 ASCII 路径输出成带引号八进制转义
+  # （"\347\274\226…"），与写集字面量恒不匹配 → DS7 误判越界（本地绿是 install-hooks
+  # 设了 quotepath false——D319 老坑变体，CI 三轮实证）
+  SRC_N=$(git -c core.quotepath=off diff --name-only origin/main...HEAD -- src/ 2>/dev/null | wc -l | tr -d ' ') # swallow-ok: 非 git 仓时数值比较按 FAIL 处理，不静默
   if [ "$SRC_N" = "0" ]; then
     pass "DS6 类型安全: git diff origin/main...HEAD -- src/ 零文件（无 TS 变更，descope 成立）"
   else
@@ -90,7 +93,7 @@ tests/control-tower/verify-doc.test.sh
 .claude/skills/dev-doc-delivery/template/编码指令模板.md
 .dsh/skills/dev-doc-delivery/template/编码指令模板.md
 $SPEC_D703"
-  EXTRA=$(git diff --name-only origin/main...HEAD 2>/dev/null | grep -v '^\.claude/' | grep -Fvx -f <(printf '%s\n' "$WSET") || true) # swallow-ok: 非 git 仓时 EXTRA 非空 → FAIL，不静默
+  EXTRA=$(git -c core.quotepath=off diff --name-only origin/main...HEAD 2>/dev/null | grep -v '^\.claude/' | grep -Fvx -f <(printf '%s\n' "$WSET") || true) # swallow-ok: 非 git 仓时 EXTRA 非空 → FAIL，不静默
   if [ -z "$EXTRA" ]; then
     pass "DS7 范围一致: 分支改动 ⊆ 写集 7 文件（+ .claude/ 簿记豁免）"
   else

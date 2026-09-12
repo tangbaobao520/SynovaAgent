@@ -75,6 +75,7 @@
 | 9 | 回放 cwd | 未提 | doc 参数先解析绝对路径，回放统一 cd 仓库根（spec 内命令均为仓库根相对） | doc 可能以相对路径传入，cd 后相对 doc 路径失效 |
 | 10 | 密封测试接线断言 | 未提 | 引擎存在性断言用 `-f` 而非 `-x` | 仓库惯例 scripts/ 与 tests/ 全部 100644（CI 以 bash 调用）；`-x` 在 ubuntu 必挂、Win MSYS 宽松判真造成本地假绿（CI ubuntu 实证 7/8 后修正） |
 | 11 | D 号→脚本名映射 | 未提 | spec 文件名大写 D 号转小写再拼 `verify-<d#>.sh`（仓库惯例小写） | spec 名 `SYNOVA-IMPL-D703-…` 提取出 `D703`，直拼 `verify-D703.sh` 在 ubuntu 大小写敏感恒 warning skip（CI 首轮实证） |
+| 12 | git 输出引号归一 | 未提 | DS6/DS7 的 git diff 统一加 `-c core.quotepath=off` | CI ubuntu 默认 quotepath=true 会把非 ASCII 路径输出为带引号八进制转义，与写集字面量恒不匹配 → DS7 误判越界；本地绿是 install-hooks 设了 quotepath false（D319 老坑变体，CI 三轮实证定位） |
 
 ### 3.3 不做的事
 
