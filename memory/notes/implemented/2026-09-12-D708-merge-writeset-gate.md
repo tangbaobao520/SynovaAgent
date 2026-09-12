@@ -45,3 +45,17 @@ DSH `dsh-hook-protocol/lib/index.js` 的 `matcherDiagnostic(matcher, mode)`（ma
 - 测试: `tests/control-tower/merge_writeset_gate.test.sh` 21/21 绿（密封沙箱，零网络）
 - 接线: ci.yml `quality` job 新增 step + 密封清单末尾 +1 行
 - T3 实证: 人为夹带 PR → CI job 红并点名；撤回 → 绿（job 级结论）
+
+## 复核后修复（2026-09-12，主 CTO 有条件通过）
+
+**阻塞项**：`parse_did` 大小写敏感（`feat/win-d702-…` / `docs(d702): …` 均推不出 D#）+ 回退链直接读
+`git log -1` → 抓到 post-commit hook 的「登记影子提交」（其 subject 带历史 D#，实测解析为 D521）
+→ 写集错配。现场核验：分支 HEAD 的 subject 正是该登记提交。
+
+**修法**：① `[Dd]\d+` 大小写不敏感 + 归一化大写；② 新增 `infer_did()`，回退时向前遍历跳过
+登记提交，取第一个非登记提交的 D#，并回传来源（`branch` / `commit-subject`）供审计；
+③ 真实输入回归断言 + 红灯验证（修复前 4 红 / 修复后 26 绿）。
+
+**教训（可复用）**：任何「从 HEAD 提交推断上下文」的逻辑都必须先排除 **hook 生成的影子提交**——
+本仓的 post-commit hook 会给每个提交追加一个仅含 bypass.log 的登记提交，且它的 subject 携带
+**另一个任务的历史 D#**。直接读 `git log -1` 等于随机命中历史任务。

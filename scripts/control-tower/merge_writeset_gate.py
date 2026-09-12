@@ -116,9 +116,44 @@ def changed_files(repo: str, base: str, head: str) -> Tuple[str, List[str]]:
     return mb, files
 
 
+# D708 复核修复①: 大小写不敏感。分支名/提交 scope 常见小写（feat/win-d702-…、docs(d702): …），
+#   旧实现只认大写 D → 推断为空 → 回退链失守（复核实测 parse_did('feat/win-d702-…') → None）。
+#   统一归一化为大写，保证与 task-state / brief 文件名里的 D# 口径一致。
+DID_RE = re.compile(r"[Dd]\d+")
+
+# D708 复核修复②: post-commit hook 生成「登记影子提交」，其 subject 含 `bypass COMMITTED 登记`
+#   且**带一个历史 D#**（如 `(auto hook, D521)`）。HEAD 经常就是这个影子提交 →
+#   旧回退链直接读 `git log -1` 会把写集错配到 D521（复核实测确认）。
+#   故回退时向前遍历，跳过登记提交，取第一个带 D# 的非登记提交。
+REGISTRATION_SUBJECT_RE = re.compile(r"bypass COMMITTED 登记")
+FALLBACK_SCAN_DEPTH = 20
+
+
 def parse_did(text: str) -> Optional[str]:
-    m = re.search(r"D\d+", text or "")
-    return m.group(0) if m else None
+    m = DID_RE.search(text or "")
+    return m.group(0).upper() if m else None
+
+
+def infer_did(repo: str, branch: str, head: str) -> Tuple[Optional[str], str]:
+    """推断任务 D#。返回 (D#|None, 来源)。来源用于诊断输出（可审计）。
+
+    顺序: ① 分支名 → ② 向前遍历提交 subject（跳过自动登记影子提交）。
+    """
+    d = parse_did(branch or "")
+    if d:
+        return d, "branch"
+    try:
+        out = run_git(["log", f"--max-count={FALLBACK_SCAN_DEPTH}", "--format=%s", head], repo)
+    except GateError:
+        return None, "none"
+    for subj in out.splitlines():
+        subj = subj.strip()
+        if not subj or REGISTRATION_SUBJECT_RE.search(subj):
+            continue
+        d = parse_did(subj)
+        if d:
+            return d, "commit-subject"
+    return None, "none"
 
 
 def find_declaration_files(repo: str, did: Optional[str]) -> Tuple[Optional[str], Optional[str], Optional[str]]:
@@ -208,29 +243,59 @@ def collect_declared(repo: str, ts: Optional[str], dd: Optional[str], bf: Option
     return uniq, warns
 
 
+EXEMPT_HEADING_RE = re.compile(r"^#{2,4}\s*写集豁免")
+
+
+def scan_exempt_section(text: str, source: str) -> List[Tuple[str, str]]:
+    """从任意文本里扫 `## 写集豁免` 段落: 每行 `- <路径> — <理由>`。无理由不生效。"""
+    out: List[Tuple[str, str]] = []
+    in_sec = False
+    for line in (text or "").splitlines():
+        if EXEMPT_HEADING_RE.match(line):
+            in_sec = True
+            continue
+        if in_sec and re.match(r"^#{1,4}\s", line):
+            break
+        if in_sec and line.strip().startswith("- "):
+            parts = re.split(r"\s+[—–-]{1,2}\s+", line.strip()[2:], 1)
+            if len(parts) == 2 and parts[1].strip():
+                reason = parts[1].strip() + ("（PR 正文声明）" if source == "pr-body" else "")
+                out.append((_clean_entry(parts[0]), reason))
+    return out
+
+
 def collect_explicit_exempt(repo: str, ts: Optional[str], dd: Optional[str], bf: Optional[str]) -> List[Tuple[str, str]]:
-    """声明文件里的 `## 写集豁免` 段落: 每行 `- <路径> — <理由>`；无理由不生效。"""
+    """声明文件里的 `## 写集豁免` 段落（多源取并）。"""
     out: List[Tuple[str, str]] = []
     for f in (ts, dd, bf):
         if not f:
             continue
         try:
-            text = Path(f).read_text(encoding="utf-8", errors="replace")
+            out.extend(scan_exempt_section(Path(f).read_text(encoding="utf-8", errors="replace"), "file"))
         except OSError:
             continue
-        in_sec = False
-        for line in text.splitlines():
-            if re.match(r"^#{2,4}\s*写集豁免", line):
-                in_sec = True
-                continue
-            if in_sec and re.match(r"^#{1,4}\s", line):
-                break
-            if in_sec and line.strip().startswith("- "):
-                body = line.strip()[2:]
-                parts = re.split(r"\s+[—–-]{1,2}\s+", body, 1)
-                if len(parts) == 2 and parts[1].strip():
-                    out.append((_clean_entry(parts[0]), parts[1].strip()))
     return out
+
+
+def resolve_pr_body_text(arg_path: str) -> str:
+    """PR 正文来源: ① 显式 --pr-body <file> ② CI 的 GITHUB_EVENT_PATH（pull_request 事件体）。
+
+    D708 复核建议（非阻塞）: ci.yml 此前只传了 --branch，未接 --pr-body → PR 正文里的
+    `## 写集豁免` 声明形同虚设。此处自取事件体，**无需改 ci.yml**，也让本地可注入测试。
+    """
+    if arg_path:
+        try:
+            return Path(arg_path).read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            return ""
+    ev = os.environ.get("GITHUB_EVENT_PATH", "")
+    if not ev or not os.path.exists(ev):
+        return ""
+    try:
+        data = json.loads(Path(ev).read_text(encoding="utf-8", errors="replace"))
+    except (OSError, ValueError):
+        return ""
+    return ((data.get("pull_request") or {}).get("body") or "")
 
 
 def matches(path: str, entry: str) -> bool:
@@ -294,13 +359,9 @@ def main() -> int:
         return 0
 
     # ── D# 推断: 分支名优先，回退最近提交 scope ──
-    did = parse_did(branch)
-    if not did:
-        try:
-            did = parse_did(run_git(["log", "-1", "--format=%s", args.head], repo))
-        except GateError:
-            did = None
+    did, did_src = infer_did(repo, branch, args.head)
     result["task_id"] = did
+    result["task_id_source"] = did_src
 
     ts, dd, bf = find_declaration_files(repo, did)
     declared, warns = collect_declared(repo, ts, dd, bf)
@@ -308,22 +369,11 @@ def main() -> int:
     result["sources"] = {"task_state": ts, "dev_doc": dd, "brief": bf}
 
     explicit = collect_explicit_exempt(repo, ts, dd, bf)
-    if args.pr_body and Path(args.pr_body).exists():
-        try:
-            text = Path(args.pr_body).read_text(encoding="utf-8", errors="replace")
-            in_sec = False
-            for line in text.splitlines():
-                if re.match(r"^#{1,4}\s*写集豁免", line):
-                    in_sec = True
-                    continue
-                if in_sec and re.match(r"^#{1,4}\s", line):
-                    break
-                if in_sec and line.strip().startswith("- "):
-                    parts = re.split(r"\s+[—–-]{1,2}\s+", line.strip()[2:], 1)
-                    if len(parts) == 2 and parts[1].strip():
-                        explicit.append((_clean_entry(parts[0]), parts[1].strip() + "（PR 正文声明）"))
-        except OSError as exc:
-            result["warns"].append(f"pr-body 读取失败: {exc}")
+    pr_text = resolve_pr_body_text(args.pr_body)
+    if pr_text:
+        explicit.extend(scan_exempt_section(pr_text, "pr-body"))
+    else:
+        result["warns"].append("PR 正文不可用（--pr-body 未给且无 GITHUB_EVENT_PATH）—— 仅文件声明源生效")
 
     result["declared"] = [{"entry": e, "source": s} for e, s in declared]
 

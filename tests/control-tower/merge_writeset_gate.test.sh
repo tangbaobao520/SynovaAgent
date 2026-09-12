@@ -178,6 +178,65 @@ assert d['component']=='merge-writeset-gate', d
 assert 'status' in d and 'smuggled' in d and 'declared' in d, d
 " 2>/dev/null && ok "⑨ --json 输出契约（component/status/smuggled/declared）" || no "⑨ JSON 契约不符"
 
+# ═══ D708 复核修复回归（主 CTO 阻塞项：D# 推断大小写敏感 + 回退链误抓登记提交）═══
+echo ""
+echo "=== D708 复核修复: D# 推断 ==="
+
+# ⑩ parse_did 大小写不敏感 + 归一化大写（真实输入，主 CTO 复现命令同款）
+DID_OUT=$(python3 - "$REPO" <<'PYEOF'
+import importlib.util as u, sys
+sp = u.spec_from_file_location("g", sys.argv[1] + "/scripts/control-tower/merge_writeset_gate.py")
+m = u.module_from_spec(sp); sp.loader.exec_module(m)
+cases = [("feat/win-d702-write-op-no-swallow", "D702"),
+         ("docs(d702): 补文档", "D702"),
+         ("fix/D708-merge-writeset-gate", "D708"),
+         ("no-digit-here", None)]
+bad = [f"{t}->{m.parse_did(t)!r}" for t, exp in cases if m.parse_did(t) != exp]
+print("OK" if not bad else "BAD:" + ",".join(bad))
+PYEOF
+)
+[ "$DID_OUT" = "OK" ] && ok "⑩ parse_did 大小写不敏感且归一化大写（d702→D702）" || no "⑩ $DID_OUT"
+
+# ⑪ 回退链跳过自动登记影子提交（HEAD 常为登记提交，其 subject 带历史 D#）
+#    地形: 分支名小写无大写 D 期 → 提交 feat(d712) → 再叠一个登记影子提交(含 D521)
+SB2="$TMPD/d712"; mkdir -p "$SB2/scripts/control-tower" "$SB2/.claude/task-briefs" "$SB2/src"
+cp "$REPO/scripts/control-tower/merge_writeset_gate.py" "$SB2/scripts/control-tower/"
+cp "$REPO/scripts/control-tower/brief_parser.py" "$SB2/scripts/control-tower/"
+cp "$REPO/scripts/control-tower/devdoc_writeset.py" "$SB2/scripts/control-tower/"
+git -C "$SB2" init -q; git -C "$SB2" config user.email t@t.local; git -C "$SB2" config user.name t
+printf '#CRITERIA: A\n\n# Task Brief: D712\n> 认领: 🛠 编码 session\n\n## Q0: 定位\n### a) 拼图\nx\n\n## Q1: 调研\ny\n\n## Q2: 范围 — 最简方案\n做什么:\n- src/a.ts\n不做什么:\n- 不改 scripts/audit/audit-rules.sh\n\n## Q3: 验收\n入口: CI\n\n## 架构层:\nscripts（控制塔域）\n\n## Done 标准\n- [x] verify: x\n' > "$SB2/.claude/task-briefs/2026-09-12-D712-sandbox.md"
+printf 'seed\n' > "$SB2/seed.txt"; git -C "$SB2" add -A >/dev/null 2>&1
+git -C "$SB2" commit -q -m "chore: base"; B2=$(git -C "$SB2" rev-parse HEAD)
+printf 'a\n' > "$SB2/src/a.ts"; git -C "$SB2" add -A >/dev/null 2>&1
+git -C "$SB2" commit -q -m "feat(win-d712): declared file"
+git -C "$SB2" commit -q --allow-empty -m "chore: bypass COMMITTED 登记 (auto hook, D521)"
+OUT=$(cd "$SB2" && python3 "$SB2/scripts/control-tower/merge_writeset_gate.py" \
+        --repo-root "$SB2" --base "$B2" --head HEAD \
+        --branch feat/win-write-op-no-swallow --json 2>&1 | tail -1)
+TID=$(echo "$OUT" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('task_id') or 'NONE', d.get('task_id_source'), d['status'])" 2>/dev/null || echo "PARSE-FAIL")
+case "$TID" in
+  "D712 commit-subject pass") ok "⑪ 回退链跳过登记提交 → D712（非 D521）且判定 pass" ;;
+  *) no "⑪ 回退链错配: '$TID'（期望 'D712 commit-subject pass'）" ;;
+esac
+
+# ⑫ PR 正文声明源（复核建议项）: GITHUB_EVENT_PATH 里的 ## 写集豁免 生效
+SB3="$TMPD/prbody"; mkdir -p "$SB3/scripts/control-tower" "$SB3/.claude/task-briefs" "$SB3/src"
+cp "$REPO/scripts/control-tower/"*.py "$SB3/scripts/control-tower/"
+git -C "$SB3" init -q; git -C "$SB3" config user.email t@t.local; git -C "$SB3" config user.name t
+printf '#CRITERIA: A\n\n# Task Brief\n> 认领: 🛠\n\n## Q0\n### a) x\n\n## Q1\ny\n\n## Q2:\n做什么:\n- src/a.ts\n不做什么:\n- 不改 scripts/audit/audit-rules.sh\n\n## Q3\nz\n\n## 架构层:\nscripts\n\n## Done 标准\n- [x] v\n' > "$SB3/.claude/task-briefs/2026-09-12-D708-pb.md"
+printf 'seed\n' > "$SB3/seed.txt"; git -C "$SB3" add -A >/dev/null 2>&1
+git -C "$SB3" commit -q -m "chore: base"; B3=$(git -C "$SB3" rev-parse HEAD)
+printf 'a\n' > "$SB3/src/a.ts"; printf 'b\n' > "$SB3/src/outside.ts"
+git -C "$SB3" add -A >/dev/null 2>&1; git -C "$SB3" commit -q -m "feat(D708): outside"
+cat > "$TMPD/event.json" <<'JSONEOF'
+{"pull_request": {"body": "## 写集豁免\n- src/outside.ts — 并行线只读引用（PR 正文声明演示）"}}
+JSONEOF
+OUT=$(cd "$SB3" && GITHUB_EVENT_PATH="$TMPD/event.json" python3 "$SB3/scripts/control-tower/merge_writeset_gate.py" \
+        --repo-root "$SB3" --base "$B3" --head HEAD --branch fix/D708-pb 2>&1); rc=$?
+{ [ "$rc" -eq 0 ] && echo "$OUT" | grep -q 'PR 正文声明演示'; } \
+  && ok "⑫ PR 正文（GITHUB_EVENT_PATH）声明源生效 → exit 0 且打印理由" \
+  || no "⑫ PR 正文声明源未生效: rc=$rc"
+
 echo ""
 echo "  结果: $PASS 通过, $FAIL 失败"
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1
