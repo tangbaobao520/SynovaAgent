@@ -33,7 +33,7 @@
 ## Q2: 范围 — 正确的最简方案
 做什么:
 - scripts/control-tower/merge_writeset_gate.py — 新建 gate（含 `--json`）
-- tests/control-tower/merge-writeset-gate.test.sh — 新建密封测试（21 断言）
+- tests/control-tower/merge_writeset_gate.test.sh — 新建密封测试（21 断言）
 - .github/workflows/ci.yml — 在 verify-parallel 步骤后新增 1 个 step（+ 密封清单末尾 1 行）
 - docs/synova/coordination/D708-合并级写集对账gate-设计稿-20260912.md — 设计稿（送主 CTO 复核）
 - memory/notes/implemented/2026-09-12-D708-merge-writeset-gate.md — 四态 Note（铁律 49）
@@ -56,7 +56,7 @@
 ## 架构层: scripts（控制塔域，非 L1-L5 产品架构）
 
 ## Done 标准
-- [x] verify: bash tests/control-tower/merge-writeset-gate.test.sh → exit 0（21 断言）
+- [x] verify: bash tests/control-tower/merge_writeset_gate.test.sh → exit 0（21 断言）
 - [x] verify: 人为夹带 PR → CI job 红并点名该文件；撤回 → 绿（贴 CI job 级结论）
 - [x] verify: gate 无声明 + 源码变更 → exit 2（fail-closed，非放行）
 - [x] verify: 三个历史实证（#449/#442/D593-FIX）在设计稿逐条说明能否抓到

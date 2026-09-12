@@ -151,6 +151,24 @@ OUT=$(run_gate); rc=$?
 { [ "$rc" -eq 0 ] && echo "$OUT" | grep -q '降级放行'; } \
   && ok "⑧ 纯文档无声明 → skip + 降级放行" || no "⑧ 纯文档被误阻断: rc=$rc"
 
+# ── ⑨b CJK 文件名（本仓大量中文文档名 → core.quotepath 必须关，否则被误判夹带）──
+reset_sandbox ""
+mkdir -p "$SB/docs/synova/coordination"
+printf 'z\n' > "$SB/docs/synova/coordination/D708-中文设计稿-20260912.md"
+mkbrief ""
+commit_it "docs(D708): cjk filename"
+OUT=$(run_gate); rc=$?
+if [ "$rc" -eq 1 ] && echo "$OUT" | grep -q 'D708-中文设计稿-20260912.md'; then
+  ok "⑨b CJK 文件名被正确判为夹带并原样点名（quotepath 已关）"
+else
+  no "⑨b CJK 文件名处理异常: rc=$rc :: $(echo "$OUT" | grep -a 夹带 | head -2)"
+fi
+# 声明里加入该中文路径 → 必须转绿（证明匹配而非转义串比较）
+reset_sandbox $'## 写集豁免\n- docs/synova/coordination/D708-中文设计稿-20260912.md — CJK 路径匹配演示'
+printf 'z\n' > "$SB/docs/synova/coordination/D708-中文设计稿-20260912.md"; commit_it "docs(D708): cjk declared"
+OUT=$(run_gate); rc=$?
+[ "$rc" -eq 0 ] && ok "⑨b CJK 路径加入声明后转绿（匹配语义正确）" || no "⑨b CJK 路径声明未生效: rc=$rc"
+
 # ── ⑨ JSON 输出契约（CI 消费）──
 OUT=$(run_gate --json | tail -1)
 echo "$OUT" | python3 -c "

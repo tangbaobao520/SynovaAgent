@@ -91,7 +91,10 @@ def changed_files(repo: str, base: str, head: str) -> Tuple[str, List[str]]:
     mb = run_git(["merge-base", base, head], repo).strip()
     if not mb:
         raise GateError(f"merge-base({base}, {head}) 为空 — 无法计算变更集")
-    out = run_git(["diff", "--name-only", "--no-renames", f"{mb}..{head}"], repo)
+    # D339 同款: 必须关掉 core.quotepath，否则 CJK 文件名被转义成 "...\345\220..." 引号串
+    # → 与声明条目永不匹配 → 中文名文件一律被误判夹带（本仓大量中文文档名）
+    out = run_git(["-c", "core.quotepath=false", "diff", "--name-only", "--no-renames",
+                   f"{mb}..{head}"], repo)
     files = [ln.strip() for ln in out.splitlines() if ln.strip()]
     return mb, files
 
