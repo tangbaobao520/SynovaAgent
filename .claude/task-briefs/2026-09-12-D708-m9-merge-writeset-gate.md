@@ -38,6 +38,7 @@
 - docs/synova/coordination/D708-合并级写集对账gate-设计稿-20260912.md — 设计稿（送主 CTO 复核）
 - memory/notes/implemented/2026-09-12-D708-merge-writeset-gate.md — 四态 Note（铁律 49）
 - .claude/task-briefs/2026-09-12-D708-m9-merge-writeset-gate.md — 本 brief
+- docs/synova/coordination/回执-并行CTO-控制塔收口批次-20260912.md — 本批回执/K3 提审申请
 - docs/synova/coordination/审计发现台账-DSH-CTO.md — 本批实测 6 条发现登记
 - task-state/D706.json — slice 级簿记（四任务一次收口）
 - task-state/D707.json — slice 级簿记
