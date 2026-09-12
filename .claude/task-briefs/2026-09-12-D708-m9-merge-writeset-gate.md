@@ -38,6 +38,11 @@
 - docs/synova/coordination/D708-合并级写集对账gate-设计稿-20260912.md — 设计稿（送主 CTO 复核）
 - memory/notes/implemented/2026-09-12-D708-merge-writeset-gate.md — 四态 Note（铁律 49）
 - .claude/task-briefs/2026-09-12-D708-m9-merge-writeset-gate.md — 本 brief
+- docs/synova/coordination/审计发现台账-DSH-CTO.md — 本批实测 6 条发现登记
+- task-state/D706.json — slice 级簿记（四任务一次收口）
+- task-state/D707.json — slice 级簿记
+- task-state/D664.json — slice 级簿记
+- task-state/D708.json — slice 级簿记
 不做什么:
 - 不重复造 verify-parallel 的 inter-PR 能力（本 gate 只做 intra-PR，边界见设计稿 §二）
 - 不做「声明多、实际少」的反向校验（D593-FIX 型）——本 gate 能力边界已显式声明，另行登记
@@ -55,6 +60,9 @@
 
 ## 架构层:
 scripts（控制塔域，非 L1-L5 产品架构）
+
+## 写集豁免
+- scripts/control-tower/d708_smuggle_probe.txt — D708 T3 夹带实证用文件（人为制造的写集外文件，用于产出「夹带 PR → CI 红并点名」的 job 级证据；本 PR 内已撤回删除，保留此条以记录用途）
 
 
 ## Done 标准
