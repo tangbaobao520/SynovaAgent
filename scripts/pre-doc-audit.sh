@@ -51,7 +51,7 @@ case "$TASK_ID" in
     grep -c ":'" packages/ontology/src/edge-types.ts 2>/dev/null | head -1 || echo "文件不存在"
     echo ""
     echo "全部边名:"
-    grep -oP "\s+(\w+):\s*'" packages/ontology/src/edge-types.ts 2>/dev/null | sed "s/.*\(\w\+\):.*/\1/" | sort || echo "解析失败"
+    grep -oE "[[:space:]]+([A-Za-z_][A-Za-z0-9_]*):[[:space:]]*'" packages/ontology/src/edge-types.ts 2>/dev/null | sed "s/.*\(\w\+\):.*/\1/" | sort || echo "解析失败"
     echo ""
     echo "ALL_EDGE_TYPES数组中的边数:"
     grep -c "EdgeType\." packages/ontology/src/edge-types.ts 2>/dev/null | tail -1 || echo "0"
@@ -174,7 +174,7 @@ echo ""
 BRIEF="$ROOT/.claude/task-briefs/$TASK_ID"
 if [ -f "$BRIEF" ]; then
   # 1. 条件归属
-  CRITERIA=$(grep -oP '#CRITERIA\s*[:=]\s*\K[A-D]' "$BRIEF" 2>/dev/null || true)
+  CRITERIA=$(grep -oE '#CRITERIA[[:space:]]*[:=][[:space:]]*[A-D]' | sed -E 's/.*[=:][[:space:]]*//' "$BRIEF" 2>/dev/null || true)
   if [ -n "$CRITERIA" ]; then
     echo "  ✅ CP2-1 条件归属: $CRITERIA"
   else
@@ -195,7 +195,7 @@ if [ -f "$BRIEF" ]; then
   fi
 
   # 3. 引用有效性
-  DOC_REFS=$(grep -oP 'docs/synova/research/[^\s\)\]"'"'"'》；,;]+' "$BRIEF" 2>/dev/null || true)
+  DOC_REFS=$(grep -oE 'docs/synova/research/[^][:space:])'"'"'；,;]+' "$BRIEF" 2>/dev/null || true)
   if [ -n "$DOC_REFS" ]; then
     echo "  📄 CP2-3 文档引用:"
     while IFS= read -r ref; do
