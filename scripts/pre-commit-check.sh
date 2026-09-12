@@ -31,6 +31,7 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 #   8. 文件驱动架构完整性       (manifest/tags/回归/目录/feature-flag)
 #   9. 契约门禁 NEW (D257)       (.codex/contracts/*.json 声明 vs staged 比对)
 #  13. 技能同步一致性            (.claude/skills ↔ .dsh/skills 漂移, 调用 sync-dsh-skills.sh --check)
+#  14. evidence 引用入库 (D652)  (task-state 引用路径必须 git 跟踪, SYNO_CI 硬阻断)
 #
 # 设计哲学:
 #   bash 只回答"物理事实" — 符号被引用过吗？文件存在吗？
@@ -1378,6 +1379,45 @@ if [ -n "$SKILL_FILES_STAGED" ]; then
   fi
 else
   soft_pass "G13: 无技能文件变更(跳过)"
+fi
+
+# ═══════════════════════════════════════════════════════════════════
+# 组 14: evidence 引用入库铁律 (D652) — 引用不可见证据 = 声明降级
+#   task-state/*.json 中 *evidence* 键值 + audit.report 引用的路径必须 git 跟踪。
+#   条件跳过（<1s, 模式 3）: 触碰 task-state/*.json 时才跑（GIT_CACHED_NAMES 已含 CI diff 口径）。
+#   不溯及既往: 只校验本次触碰条目; 存量清单用 --all（审计口径, 实测 14 条坏引用 @93209c57）。
+#   三态: 0 过/跳过 ✅; 1 坏引用 / 2 降级 → soft_check（SYNO_CI=1 硬阻断, D516 权威）
+# ═══════════════════════════════════════════════════════════════════
+echo -e "${CYAN}── 组 14: evidence 引用入库 (D652) ──${RESET}"
+if echo "$GIT_CACHED_NAMES" | grep -q '^task-state/[^/]*\.json$'; then
+  EV_OUT=$(echo "$GIT_CACHED_NAMES" | bash "$ROOT/scripts/control-tower/check-evidence-cited.sh" --stdin 2>&1)
+  EV_EXIT=$?
+  if [ "$EV_EXIT" -eq 0 ]; then
+    soft_pass "D652 evidence 引用入库 ($(echo "$EV_OUT" | head -1 | cut -c1-70))"
+  else
+    soft_check "D652: evidence 引用未入库或检查降级 (exit=$EV_EXIT)" "$EV_OUT"
+  fi
+else
+  soft_pass "D652: 无 task-state 变更(跳过)"
+fi
+
+# ═══════════════════════════════════════════════════════════════════
+# 组 15: 合入即绿基线自检 (D653) — 基线/豁免文件被触碰时校验格式
+#   main 红基线（main-red-baseline.txt）是"新增红"判定的唯一依据, 格式坏 = 门禁失效。
+#   真正的红对比在 ci.yml test job 失败分支（--from-log）; 此处守文件格式。
+#   三态: 0 格式合法/跳过 ✅; 1 非法行 / 2 降级 → soft_check (SYNO_CI=1 硬阻断)
+# ═══════════════════════════════════════════════════════════════════
+echo -e "${CYAN}── 组 15: 合入即绿基线自检 (D653) ──${RESET}"
+if echo "$GIT_CACHED_NAMES" | grep -q '^tests/control-tower/main-red-'; then
+  MG_OUT=$(bash "$ROOT/scripts/control-tower/check-main-green.sh" --self-check 2>&1)
+  MG_EXIT=$?
+  if [ "$MG_EXIT" -eq 0 ]; then
+    soft_pass "D653 基线/豁免格式自检通过"
+  else
+    soft_check "D653: 基线/豁免格式非法或检查降级 (exit=$MG_EXIT)" "$MG_OUT"
+  fi
+else
+  soft_pass "D653: 无基线文件变更(跳过)"
 fi
 
 # ── D520/任务3: 平台敏感命令软检查（V5 软提示——新增脚本须对照 PLATFORM-CHECKLIST.md）──

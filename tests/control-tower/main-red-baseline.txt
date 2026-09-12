@@ -1,0 +1,11 @@
+# main 红列表基线 — D653 合入即绿门禁
+# 快照: 2026-09-09 @ main 93209c57 | 口径: CI=true npx vitest run --reporter=verbose
+# 生成命令: CI=true npx vitest run --reporter=verbose 2>&1 | grep " FAIL " | grep -oE 'tests/\S+\.test\.ts' | sort -u
+# 语义: 本文件 = main 已知的存量红（D593 遗留 + 专家债）。check-main-green.sh 以
+#       「当前红 − 本基线 − 豁免(main-red-exemptions.txt)」判定新增匿名红并阻断。
+# 刷新: 修复红后重跑生成命令并更新本文件（commit 带任务号）; 存量红只减不增。
+tests/agent/expert-file-loader.integration.test.ts
+tests/electron/use-streaming-conversation.test.ts
+tests/expert/analytical-lens.test.ts
+tests/l3/graphbridge-wiring.test.ts
+tests/routes/diagnosis-report-persistence.test.ts

@@ -1,0 +1,28 @@
+{
+  "task_id": "D657",
+  "title": "测试零副作用——vitest 运行时写入恢复现场 + 数据目录重定向",
+  "status": "claimed",
+  "risk": "medium",
+  "spec": {
+    "path": ".claude/task-briefs/2026-09-09-auto.md",
+    "commit": null,
+    "by": "CTO 派工(D651 K3 评估 C7/C2 修复)",
+    "at": "2026-09-09T23:30:00+08:00"
+  },
+  "impl": {
+    "commit": "553e170b",
+    "by": "coding",
+    "at": "2026-09-10T00:09:59",
+    "files": [
+      "vitest.config.ts",
+      "tests/global-setup.ts",
+      "tests/zero-side-effect.test.ts"
+    ],
+    "evidence": "docs/synova/audit-reports/D652-evidence-cited-batch-20260909/README.md §3",
+    "note": "hash 为 rebase onto 5494e6f6 后值 (D451); 全量 vitest 后 git status 零污染实测"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-10T00:09:59",
+  "updated_by": "coding"
+}

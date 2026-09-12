@@ -1,0 +1,31 @@
+{
+  "task_id": "D653",
+  "title": "合入即绿门禁——main 红列表基线快照 + 新增匿名红检测",
+  "status": "claimed",
+  "risk": "medium",
+  "spec": {
+    "path": ".claude/task-briefs/2026-09-09-auto.md",
+    "commit": null,
+    "by": "CTO 派工(D651 K3 评估 C7/C2 修复)",
+    "at": "2026-09-09T23:30:00+08:00"
+  },
+  "impl": {
+    "commit": "cb06542b",
+    "by": "coding",
+    "at": "2026-09-09T23:54:48",
+    "files": [
+      "scripts/control-tower/check-main-green.sh",
+      "tests/control-tower/check-main-green.test.sh",
+      "tests/control-tower/main-red-baseline.txt",
+      "tests/control-tower/main-red-exemptions.txt",
+      "scripts/pre-commit-check.sh",
+      ".github/workflows/ci.yml"
+    ],
+    "evidence": "docs/synova/audit-reports/D652-evidence-cited-batch-20260909/（README 实测三节 + legacy-bad-citations.txt 14 条存量清单）",
+    "note": "hash 为 rebase onto 5494e6f6 后值 (D451); 原始 commit 36dda518/ee8f47ed/ae25b046 + fix c699a4b2 于 pre-push D334 分叉集成时重放"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-10T00:09:59",
+  "updated_by": "coding"
+}
