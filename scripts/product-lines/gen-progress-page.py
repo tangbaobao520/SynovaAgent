@@ -203,7 +203,9 @@ def render_decisions(decisions):
 def render_degraded(degraded):
     warnings = []
     for s in degraded.get("sources", [])[:5]:
-        warnings.append("<li>%s</li>" % html.escape(s))
+        # 术语零泄漏（创始人驾驶舱红线）：降级来源会带 task-D396.json 这类文件名 →
+        # 必须与其它区块同样过 scrub（2026-09-12 复核发现本区漏 scrub，页面泄漏 5 处内部编号）
+        warnings.append("<li>%s</li>" % html.escape(scrub(s)))
     if degraded.get("problems"):
         warnings.append("<li>状态判定异常 %d 处（详见 product-progress.json）</li>" % len(degraded["problems"]))
     if not warnings:

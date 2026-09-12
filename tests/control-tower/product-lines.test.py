@@ -405,7 +405,18 @@ class TestGenPage(unittest.TestCase):
         genpage.generate(progress, todos, DOC_DIR / "todo-line-map.yaml", out)
         html_text = out.read_text(encoding="utf-8")
         self.assertEqual(html_text.count('class="line"'), 26)
-        self.assertIn("需要创始人拍板", html_text)
+        # 2026-09-12 契约变更：置顶区只渲染仍待裁决的项（已裁决项不得出现）
+        _ov = pl_yaml.parse((DOC_DIR / "cockpit-override.yaml").read_text(encoding="utf-8"))
+        _all_dec = _ov.get("pending_decisions") or []
+        _open_dec = [d for d in _all_dec if (d.get("status") or "open") == "open"]
+        if _open_dec:
+            self.assertIn("需要创始人拍板", html_text)
+            self.assertIn(_open_dec[0]["title"], html_text)
+        else:
+            self.assertNotIn("需要创始人拍板", html_text, "无待裁决项时不得渲染置顶区")
+        for _d in _all_dec:
+            if _d.get("status") == "resolved":
+                self.assertNotIn(_d["title"], html_text, "已裁决项不得出现在驾驶舱")
         self.assertIn("资本循环", html_text)
         # 术语零泄漏（创始人驾驶舱红线）
         self.assertEqual(len(re.findall(r"\bD\d{3}\b", html_text)), 0, "无任务编号术语")
