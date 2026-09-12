@@ -378,9 +378,9 @@ lines:
     value: "阈值触发 → 工单 → 推送老板，同一件事不反复轰炸"
     weight: 1.0
     baseline_pct: 15
-    baseline_note: "工单表路径有；manifest 死代码+去重键不稳定"
+    baseline_note: "工单表路径有；manifest 死代码（已修）；去重键稳定化已 K3 D580 验证（2026-09-12 订正原『键不稳定』表述）"
     modules: ["src/sentinel/", "src/l3/", "extensions/notifications/"]
-    done_definition: "异常发生时老板收到一条提醒；同一异常只提醒一次；处理完自动销单"
+    done_definition: "异常发生时老板立刻收到一条提醒（含影响/证据/建议），并同时确认跟踪节奏与格式；已认领的问题不再重复打扰（转约定节奏）；有实质变化或长期停滞按契约升级；处理完复验销单并复盘沉淀（2026-09-12 创始人裁 D-1 改写为状态驱动）"
     acceptance_points:
       - id: "8-1"
         desc: "阈值真实触发（读 manifest 配置，不硬编码）"
@@ -393,10 +393,10 @@ lines:
         status: uncommitted
         note: "工单表路径存在，未场景断言"
       - id: "8-3"
-        desc: "推送去重（同一异常只推一次，去重键稳定）"
-        evidence: ["scenario:GS-05"]
-        status: failed
-        note: "N14 去重键不稳定；窗口大小待创始人裁决（见待裁决区）"
+        desc: "推送去重键稳定（同一事件只推一次；键不含时间戳）"
+        evidence: ["scenario:GS-05", "k3:k3-D580-ticket-slice"]
+        status: uncommitted
+        note: "D580 K3 已验证『去重键稳定化』（finding-id 去时间戳，45+4 aggregate id）。原 note『N14 去重键不稳定』系陈旧残留，2026-09-12 订正。"
       - id: "8-4"
         desc: "工单状态机（新建 → 处理 → 销单闭环）"
         evidence: ["scenario:GS-05"]
@@ -408,6 +408,11 @@ lines:
         evidence: ["k3:告警闭环复核"]
         status: uncommitted
         note: ""
+      - id: "8-6"
+        desc: "通知按状态驱动 + 监测契约（新发现/实质变化立刻推；已认领停止重复、转约定节奏；未回应或停滞按契约升级；节奏与格式在首次告警时由老板确认）"
+        evidence: []
+        status: uncommitted
+        note: "创始人 2026-09-12 裁 D-1 改写（原『5 分钟 vs 30 分钟』时间窗框架作废；5 分钟降级为抖动合并器）。实现缺口：runner.ts:1321 通知决策仅查 sentinelId+last_sent_ms，不读工单状态（TicketStatus 已在 runner.ts:178，机制有而未接线＝M3）。监测契约文件/升级规则/首次沟通请求待建。"
 
   # ────────────────────────── 09 客户循环 ──────────────────────────
   - id: 9

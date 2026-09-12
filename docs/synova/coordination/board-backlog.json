@@ -123,6 +123,20 @@
       "severity": "P1（风险已接受）",
       "source": "创始人决定（CTO 已于 2026-09-11 完成仓库侧取证）",
       "note": "取证结论：5 把钥匙的真实值在全部 git 历史与 HEAD 树零命中（逐值搜索）；本机非仓库位置零命中（.claude/settings.local.json 含 2 把智谱钥匙但被 .gitignore:52 挡住、从未入库）。唯一险情=前任《履职总账》含 2 枚明文 ghp_ token，Push Protection 拦截、token 从未入历史，本地副本已脱敏、明文原版已删除。创始人 2026-09-11 决定「先不换」。后续注意：① 仓库为公开仓库（泄露即全网可见）② Secret Scanning+Push Protection 已于同日开启（平台自动拦）③ 若任一会话/文档再现明文，立即升级为必换。"
+    },
+    {
+      "id": "PLAN-evidence-invalidation-granularity",
+      "title": "证据失效粒度太粗：一行内任一文件变更 → 该行全部验收点转 stale",
+      "severity": "P1",
+      "source": "CTO 亲历（2026-09-12 refresh-all 实证）",
+      "note": "product-lines.yaml 的 modules 是**行级**绑定；A1 机制按行判 stale。实证：4 天开发（D593→D710）后重算，verified 11→1、stale 18→29、总体 7%→1%。后果=仪表盘长期显示『没进度』，读者无法区分『真没做』与『做了待重验』——M1 类信号失效风险。改进方向：验收点级失效绑定（每点声明自己的关键文件/测试），或对 stale 再做二级区分（代码已变 vs 仅时效到期）。"
+    },
+    {
+      "id": "PLAN-d1-notification-wiring",
+      "title": "D-1 状态驱动通知模型落地四步（跨线）",
+      "severity": "P0（创始人裁定）",
+      "source": "创始人 2026-09-12 裁定 D-1 改写",
+      "note": "步1 Mac 接线（src/sentinel/runner.ts:1321 通知决策改读工单状态 + 实质变化判定）→ 步2 Win 交互入口（首次告警的沟通请求：节奏/格式）→ 步3 契约 schema(dev-doc) + Mac loader + Win 周期报告 → 步4 Win 复盘沉淀/复发识别。决策全文 docs/synova/product-lines/DECISION-D1-状态驱动通知模型-20260912.md；跨线边界 docs/synova/coordination/跨线同步-D1状态驱动通知模型-Mac-Win-20260912.md。验收点＝线8 的 8-6。"
     }
   ]
 }
