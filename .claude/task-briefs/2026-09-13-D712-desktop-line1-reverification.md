@@ -30,6 +30,7 @@
 - docs/synova/coordination/派单-桌面端线1重验批-D712-20260912.md — 派单文档（8 点/分工/时序/验收/写集/创始人复制段）
 - task-state/D712.json — 任务登记（status=claimed，待执行方推进）
 - .claude/task-briefs/2026-09-13-D712-desktop-line1-reverification.md — 本 brief（派单登记视角；执行方开工时改写为实测视角）
+- docs/synova/coordination/派单模板.md — 固化「路由判定」表（本次创始人提问暴露歧义：默认给 dev-doc，但控制塔类/验证类直派执行方；含多执行方发送规则与代码归属≠机器归属）
 不做什么：
 - 不改 electron/main.ts（重验优先不改代码；改则整线证据再失效）
 - 不改 scripts/product-lines/calc-progress.py（进度算法非本任务范围）
