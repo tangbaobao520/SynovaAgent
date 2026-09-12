@@ -101,8 +101,7 @@ grep 实测（clone @ 358ac6eb，2026-09-11）：
 处理（中间经过哪些步骤）：写操作 → UserStore.updateUser/deleteUser → GraphStore.updateNode 持久化 → 失败时 catch 打 log.warn 并返 {ok:false,error} → 调用点检查 .ok → 失败返 5xx degraded 响应且不宣布成功。
 结果（最终展示在哪）：HTTP 响应如实反映持久化结果（绑定失败 = 500 {ok:false,degraded:true}，邀请保持 pending）；DS1-DS8 逐条命令输出 + vitest red→green 留痕 → PR CI task-relevant jobs 绿。
 
-## 架构层: L1
-L1 交互层（src/routes/enterprise.ts 六端点消费）+ L5 服务/存储（src/services/anomaly-detector.ts、src/growth/user-store.ts）——失败信号沿 L5→L1 传播，不改层边界。
+## 架构层: L1 交互层（src/routes/enterprise.ts 六端点消费）+ L5 服务/存储（src/services/anomaly-detector.ts、src/growth/user-store.ts）——失败信号沿 L5→L1 传播，不改层边界。
 #CRITERIA: A
 
 ## Done 标准
