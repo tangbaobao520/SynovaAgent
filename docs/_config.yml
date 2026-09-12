@@ -1,0 +1,11 @@
+# D665: GitHub Pages (pages-build-deployment) 全站关闭 Liquid 模板渲染。
+# 根因: docs/ 下 33 个 md 含字面 `{{`（task brief 代码片段/示例），Jekyll Liquid
+# 误解析为模板变量 → Liquid::SyntaxError → pages build 常红（2026-09-10 实证：
+# D575 spec L213 首爆）。render_with_liquid: false 仅跳过模板引擎，Markdown 渲染不变。
+# 一类一机制（M 防臃肿）：全局默认关闭，禁止逐文件打地鼠。
+defaults:
+  -
+    scope:
+      path: ""
+    values:
+      render_with_liquid: false

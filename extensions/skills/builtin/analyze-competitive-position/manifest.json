@@ -6,7 +6,7 @@
   "description": "基于七力框架和HHI指数评估企业竞争位势，识别市场结构类型和竞争威胁。",
   "tier": "L2",
   "complexity": "composite",
-  "expert": "strategy",
+  "expert": "competitive-strategy",
   "tools": [
     "compute-competitive-positioning",
     "compute-hhi"

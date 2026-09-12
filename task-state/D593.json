@@ -19,15 +19,23 @@
     "contraband_in_merge": ".codex/heartbeat.json、.synova-wt-ct64（新）、.synova-wt-d593（新）、.synova-wt-d590（改）、D595 dev doc + 编码指令、D599 note（6 项写集外文件随 #442 入 main）"
   },
   "audit": {
-    "verdict": "FAIL",
-    "report": "docs/synova/audit-reports/2026-09-09-K3-D593-D602-closeout.md",
+    "verdict": "CONDITIONAL PASS",
+    "report": "docs/synova/audit-reports/2026-09-10-K3-D593FIX2-closeout.md",
     "by": "K3 independent session",
-    "at": "2026-09-09",
-    "findings": "P0-1 合并冲突消解吞实现（DS 成立 4/9）；P0-2 夹带 6 文件（前批 #449 同族二次）；P1-1 合并消息 overclaim（M2）；P1-2 CI vitest 豁免盲区（ci.yml:79-95 新测试失败被当 pre-existing）；P1-3 task-state 断裂（第三次实证）；P1-4 DS2 证据未标注分支态；P2×2",
-    "fix_route": "建议 CTO 立项 FIX：从 feat/d593-report-persistence-p2 恢复 diagnosis.ts D593 变更（对齐 d600 演进重新消解）+ task-state 回填 + 25/25 绿 + DS2 重跑 + 清理夹带"
+    "at": "2026-09-10",
+    "findings": "FIX2 复审（三物证闭环）：P0-1 已修复（diagnosis.ts 入 main e53b5984，四恢复面 grep 命中，独立 worktree 34/34 绿）；P0-2 已修复（ct64/d590/d593 三 gitlink 清除）；customerConfig=15 零误伤；D595 零触碰。新增 P1×1：铁律 39 棘轮回归——2 处基线外 L1→L5 跨层引用（diagnosis.ts 2→4：resolveStoreFromRequest:718 + readReportFromCheckpoint:743），基线文件 l1-cross-layer-baseline.txt 未同步收紧，check-architecture.sh SYNO_CI=1 实测 exit 1（基线外新增 2 处）；spec §9 架构自检与 CT-64 语义漂移（devdoc）。P2：需 CTO 确认 PR #476 Architecture job 结论（本机无 gh）",
+    "fix_route": "P1 闭合（CTO 决策二选一）：①基线文件 diagnosis.ts=2→4 收紧；或 ②（正解，铁律 39）resolveStoreFromRequest/readReportFromCheckpoint 改 bootstrap DI 注入消 L1→L5 跨层。另：CTO 确认 CI Architecture job 结论（红灯 override 则升级 P0）；devdoc 注入 post-CT-64 架构检查语义"
   },
   "fix_task_id": "fix/d593-restore",
-  "updated_at": "2026-09-09",
-  "updated_by": "K3 (independent audit)",
-  "note": "审计结论 FAIL（P0×2/P1×4/P2×2）。分支态实现完整（DS2 物理证据真实），合并通道丢失核心一半——main 上的 D593 是半成品。修复路线见 audit.fix_route。编号注意：旧 14e54722 D593（LLM 韧性层）已关闭，本任务为编号复用。 FIX（2026-09-09，fix/d593-restore）：K3 FAIL P0-1 合并冲突吞实现——diagnosis.ts 的 D593 服务端面（落盘写点/checkpoint 冷读/GET report fallback/列表端点/FIFO 注释诚实化）经外科手术恢复（保留 D599/D600 客户配置工作，customerConfig 15=15 零误伤）；P0-2 夹带清理（heartbeat.json/.synova-wt-ct64/.synova-wt-d593 gitlink/.synova-wt-d590 回退/D595 两文档/D599 note，d577 等 D590 时代遗留 gitlink 归独立治理）。恢复前 red 10 failed/2 passed → 恢复后 21/21 全绿 + conversations.test.ts 13/13 + tsc 与 main 基线 36=36 一致。"
+  "updated_at": "2026-09-11",
+  "updated_by": "synova-cto",
+  "note": "审计结论 FAIL（P0×2/P1×4/P2×2）。分支态实现完整（DS2 物理证据真实），合并通道丢失核心一半——main 上的 D593 是半成品。修复路线见 audit.fix_route。编号注意：旧 14e54722 D593（LLM 韧性层）已关闭，本任务为编号复用。 FIX（2026-09-09，fix/d593-restore，K3 复审 2026-09-10：维持 FAIL）——复审发现修复未进入 main：修复提交 9c3f1672 与 #457 合并 diff 均不含 src/routes/diagnosis.ts（声称恢复的核心文件未提交，D315 教训复刻）。main 上四块恢复面全部缺席（saveDiagnosisCheckpoint 0 命中/列表端点无路由/冷读 fallback 无/FIFO 注释未诚实化）；独立实跑 persistence+right-panel = 10 failed/11 passed（与修复前 red 同签名）；evidence green 21/21 为 worktree 态产物（/Users/wane/SynovaAgent/.synova-wt-d593），改动从未 add/commit。P0-2 部分修复：heartbeat/D595 两文档/D599 note 4 项消失；.synova-wt-ct64/d590/d593 三 gitlink 被 #459（D595，晚 2 分钟合并）复活。customerConfig 15=14(#442前)+1(D600:499 合法演进)——零误伤成立但修复消息口径失实。复审报告: docs/synova/audit-reports/2026-09-10-K3-D593FIX-D595-closeout.md。第二次 FIX 验收第一行 = git show <fix> --name-only 必须含 src/routes/diagnosis.ts。 FIX2（2026-09-09）：FIX 提交 9c3f1672 漏 staged diagnosis.ts（worktree 态假绿，D316 复犯自认）——同一手术重新入提交，三物证（staged diff/commit stat/远端 grep saveDiagnosisCheckpoint）+ 提交态 worktree 实跑 21/21 + conversations 13/13。CTO 复核（2026-09-10）：三物证独立复现（e64bebd2 stat 含 diagnosis.ts 202 行/远端 grep 四标记逐字吻合/customerConfig=15 零误伤），提交态临时 worktree 实跑 34/34 绿；.synova-wt-d593 gitlink 随合并彻底清除。 FIX2 复审（K3，2026-09-10）：CONDITIONAL PASS。三物证独立复跑全过（origin/main saveDiagnosisCheckpoint=1 / e53b5984 --stat 含 diagnosis.ts 202 行 / /tmp/k3chk worktree 34/34 绿）。P0-1（吞实现）+ P0-2（gitlink 复活）物理闭环。新增 P1：铁律 39 棘轮回归——2 处基线外 L1→L5（diagnosis.ts 2→4，resolveStoreFromRequest:718 + readReportFromCheckpoint:743），基线文件未收紧，SYNO_CI=1 实测 exit 1；spec §9 自检与 CT-64 语义漂移。报告: docs/synova/audit-reports/2026-09-10-K3-D593FIX2-closeout.md",
+  "cto_confirmation": {
+    "condition": "K3 FIX2 复审条件②：CTO 确认 PR #476 的 CI Architecture job 结论（K3 本机无 gh）",
+    "confirmed_at": "2026-09-11",
+    "confirmed_by": "synova-cto (DSH line, glm-5.3-flash)",
+    "physical_evidence": "GitHub API check-runs @ e53b5984（#476 squash 合并点，2026-09-11 实抓）：Architecture Check=failure；Control Tower Gate Tests (ubuntu/windows)=failure；build=failure；Vitest 1/2,2/2 与 TypeScript+Lint+Iron Laws=success。K3『合并时架构门禁实测红』在 job 级成立，非本地推断。",
+    "disposition": "① 红因双修已落地：棘轮 2→4 如实记账+DI 立项（#479）+ SYNO_CI spawnSync 继承假红根治（#480，D663 翻案，#482 勘误入库）→ 当前 main 架构类 job 全绿。② 根因 CT-47（红态合并可入 main）第三次实证，branch protection 加严提案已上报创始人待裁；本次红态非 override，系合并通道缺口。③ D663 处置已 K3 复审条件①闭环（#478/#479 链）。",
+    "request": "请 K3 基于本物证批复 D593-FIX2 条件②，CONDITIONAL PASS → PASS 升级"
+  }
 }

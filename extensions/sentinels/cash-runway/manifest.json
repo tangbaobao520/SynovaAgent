@@ -6,7 +6,7 @@
   "displayName": "现金流哨兵",
   "description": "监控现金跑道与应收逾期风险。输出 Finding: '现金跑道不足（X个月），低于安全阈值 Y 个月。'",
   "schedule": "0 9 * * *",
-  "expert": "finance",
+  "expert": "fundamental-efficiency",
   "priority": "P0",
   "computes": [
     "cash-runway-months",
@@ -38,7 +38,7 @@
   "entryPoint": "./aggregate.ts",
   "exportKey": "cashRunwaySentinel",
   "auxiliaryExperts": [
-    "strategy"
+    "competitive-strategy"
   ],
   "layer": "capital",
   "computeKind": "deterministic",

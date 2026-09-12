@@ -6,7 +6,7 @@
   "description": "从本体层获取客户相关数据，包括客户列表、留存率、流失率和LTV。",
   "tier": "L1",
   "complexity": "atomic",
-  "expert": "marketing",
+  "expert": "customer-growth",
   "tools": [
     "acquire-edge-data"
   ],

@@ -74,9 +74,13 @@ interface RunResult {
 }
 
 function runScript(env: Record<string, string>, cwd = REPO_ROOT): RunResult {
+  // D663 密封化: 剥除继承的 SYNO_CI——CI job 级 env 会经 process.env 泄漏进 local 子运行
+  // （PLAN-ci-syno-leak 泄漏路径实证: vitest spawnSync 继承 → 沙箱 local 场景被误判 CI strict
+  //  → exit 1 ≠ 0）。local 语义 = 未设 SYNO_CI；CI 场景由调用方显式传 SYNO_CI:'1'，不受影响。
+  const { SYNO_CI: _strippedSynoCi, ...hostEnv } = process.env;
   const res = spawnSync('bash', [SCRIPT], {
     cwd,
-    env: { ...process.env, ...env },
+    env: { ...hostEnv, ...env },
     encoding: 'utf-8',
     timeout: 60_000,
   });
@@ -119,13 +123,20 @@ describe('CT-64: check-architecture.sh 四类漏网修补 — 存量 36 处全�
     expect(status).toBe(0);
   });
 
-  it('基线文件总数 = 36（D603 静态清零 68→42 + D595 哨兵簇 42→36，与剩余动态存量对齐——只许继续减少）', () => {
+  it('基线文件总数 = 38（36 + D593-FIX2 逆向例外 2；>36 必须在头部有例外记录——理由+收紧任务，缺一即红）', () => {
     const content = spawnSync('cat', [BASELINE], { encoding: 'utf-8' });
-    const total = (content.stdout ?? '')
+    const text = content.stdout ?? '';
+    const total = text
       .split('\n')
       .filter((l) => /=\d+\s*$/.test(l))
       .reduce((sum, l) => sum + Number(l.split('=')[1]), 0);
-    expect(total).toBe(36);
+    // K3 D593FIX2 附记补强：棘轮只许减少；逆向上调必须携带例外记账（理由 + 收紧任务 owner/期限）
+    if (total > 36) {
+      expect(text).toMatch(/逆向例外/);
+      expect(text).toMatch(/收紧路径|收紧任务/);
+      expect(text).toMatch(/PLAN-diagnosis-l5-di/);
+    }
+    expect(total).toBe(38);
   });
 });
 

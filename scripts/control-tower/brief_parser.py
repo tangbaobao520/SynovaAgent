@@ -95,10 +95,57 @@ def parse_criteria(text: str) -> Optional[str]:
     return m.group(1) if m else None
 
 
+# 架构层字段标题（新写法优先，兼容旧写法）
+LAYER_FIELD_NAMES = ("架构层", "本任务在哪一层")
+
+
+def _is_blank_or_placeholder(value: str) -> bool:
+    """空值 / 模板占位判定 —— 占位**不算**填写（否则门禁变软 = M2 假绿族）。
+
+    占位形态: HTML 注释占位（模板 `<!-- ... -->`）。
+    """
+    v = value.strip()
+    if not v:
+        return True
+    if v.startswith("<!--"):
+        return True
+    return False
+
+
+def parse_field_value(text: str, names) -> Optional[str]:
+    """单一事实源的「## <字段>[:] <值>」解析 —— 内联值与 body 行两种写法**等价**。
+
+    D707 统一口径（pre-commit 组 6 与 check-brief-parseable.sh 共用本函数）:
+      1. 定位首个 `## <name>` 标题行（半角/全角冒号可选，也接受 `## 架构层 L3` 空格写法）
+      2. 标题行**内联**部分非空且非占位 → 取内联值
+         （**禁止跨行**——旧正则 `\\s*(.+)` 中 `\\s` 会吃掉换行，把下一个 `## 标题`
+          当成字段值 → 真空值被判「已填写」= 假绿）
+      3. 否则向下扫 body 直到下一个 `^## ` 标题，取首个非空且非占位的行
+      4. 都没有 → None（未填写）
+    """
+    pat = re.compile(
+        r"^##\s*(?:" + "|".join(re.escape(n) for n in names) + r")\s*(?:[:：]\s*(.*)|\s+(.*))?$"
+    )
+    lines = text.splitlines()
+    for i, line in enumerate(lines):
+        m = pat.match(line.rstrip("\r"))
+        if not m:
+            continue
+        inline = (m.group(1) or m.group(2) or "").strip()
+        if not _is_blank_or_placeholder(inline):
+            return inline
+        for nxt in lines[i + 1:]:
+            if re.match(r"^##\s", nxt):
+                break
+            if not _is_blank_or_placeholder(nxt):
+                return nxt.strip()
+        return None
+    return None
+
+
 def parse_layer(text: str) -> Optional[str]:
-    """架构层标注（`## 架构层:` 优先，兼容旧 `## 本任务在哪一层`）。"""
-    m = re.search(r"^## (架构层|本任务在哪一层)\s*[:：]?\s*(.+)$", text, re.MULTILINE)
-    return m.group(2).strip() if m else None
+    """架构层标注（`## 架构层:` 与旧 `## 本任务在哪一层` 等价；内联/body 两种写法等价）。"""
+    return parse_field_value(text, LAYER_FIELD_NAMES)
 
 
 def parse_done(text: str) -> List[str]:

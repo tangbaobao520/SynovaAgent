@@ -6,7 +6,7 @@
   "displayName": "API可达性与协议覆盖",
   "description": "T2: 检测企业TOOL节点的API可达率与标准协议覆盖率。数据源: SOG TOOL节点。",
   "schedule": "0 9 * * *",
-  "expert": "tech",
+  "expert": "technology-foundation",
   "priority": "P1",
   "layer": "technology",
   "computeKind": "deterministic",
@@ -39,7 +39,7 @@
   "entryPoint": "./aggregate.ts",
   "exportKey": "apiCoverageSentinel",
   "auxiliaryExperts": [
-    "strategy"
+    "competitive-strategy"
   ],
   "id": "sentinel-api-coverage"
 }

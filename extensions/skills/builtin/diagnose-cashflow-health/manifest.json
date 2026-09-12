@@ -6,7 +6,7 @@
   "description": "四层追溯协议的现金流健康诊断：表层症状→中层传导→底层结构→根因定位。",
   "tier": "L3",
   "complexity": "expert",
-  "expert": "finance",
+  "expert": "fundamental-efficiency",
   "tools": [
     "acquire-edge-data",
     "compute-break-even",

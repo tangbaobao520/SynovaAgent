@@ -21,12 +21,5 @@
     "COMPUTE-CUSTOMER-VALUE-SCORE-v1",
     "COMPUTE-PRICE-ELASTICITY-v2",
     "COMPUTE-OPTIMAL-PRICE-v1"
-  ],
-  "tools": [
-    "compute-competitive-positioning",
-    "compute-hhi",
-    "compute-customer-value-score",
-    "compute-price-elasticity",
-    "compute-optimal-price"
   ]
 }

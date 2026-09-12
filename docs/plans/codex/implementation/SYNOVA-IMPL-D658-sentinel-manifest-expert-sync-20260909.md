@@ -63,6 +63,14 @@
 
 > 实现时若偏离本 doc（45 个文件精确清单、测试落点、有无 `expert` 缺省但有 auxiliaryExperts 的文件），必须在此节同 commit 回填最终形态。
 
+> **D658 实测回填（2026-09-09/10 交付，Win clone @origin/main 5494e6f6）：**
+> 1. **写集偏差 +1**：`tests/sentinel/sentinel-loader.test.ts` 新增——其 `按专家筛选返回 finance 哨兵` 用例（:27-30）断言 `getSentinelsByExpert('finance')` 且 `manifest.expert === 'finance'`，本卡改名后必然失效；§6 DS5 要求 `tests/sentinel/` 全绿，故随映射同步为 `fundamental-efficiency`（与 manifest 改名后的真实分布一致：6 哨兵 ≥ 原断言阈值 4）。§3.1 写集遗漏，本节回填（D651 §3.2 先例）。
+> 2. **分布计数口径修正（§2.2）**：`"expert"` 字段实测分布 org 13 / strategy 11 / tech 8 / finance 6 / business_model 5 / marketing 2 = 45（§2.2 的 16/14/11/9 为字段行窗口口径，非字段值口径）；`"auxiliaryExperts"` 数组项 JSON 项级实测 49 项，全部按 §2.1 映射改新名（§2.2 的 strategy 26/knowledge 13… 为 grep -A3 窗口口径含子串误报）。
+> 3. **测试落点（§3.1 第 2 行落定）**：`tests/expert/manifest-consistency.test.ts` 原本只扫 `expert/` 六位专家清单（D567/D650 适配后形态），未扫哨兵 manifest → 按 §4 新增 `D658: 哨兵 manifest expert 字段一致性` describe 块（3 用例：可枚举防缩水 / expert ∈ registry v3.0 零旧 8 名 / auxiliaryExperts ∈ registry v3.0 零旧 8 名），合法值集合复用 `getAllExpertIds()` 同源。
+> 4. **DS5 口径**：tsc 基线为**环境相关绝对值**（clone 环境实测 33 条 = TS2307×24 + TS7006×6 + TS2345×3；本 doc 记 28 为主工作区口径）——判据按"零新增逐条 diff"执行：revert→run→restore 实证 33=33 IDENTICAL_ZERO_DELTA。vitest FAIL 集与基线恒等：唯一既有红 = `tests/expert/analytical-lens.test.ts` 7 例（断言旧 8 名 IDENTITY.md 存在，D650 改名 expert/ 目录后基线即红，属 D650 期既有测试债，本卡写集外不修，转台账）。
+> 5. **观察登记（本卡不修）**：`tests/skill/d66-manifests.test.ts:23` 本地 `VALID_EXPERTS` 含旧 8 名 + skills 内置 manifest `expert` 字段旧名——skills 域自洽闭环（manifest 值 ⊆ 本地枚举），不受本卡影响，属专家体系另一处残留，另卡收口。
+> 6. **DS8 CI job 级基线对照（2026-09-10 补记）**：PR#468 run 34376372668 中 Architecture Check + Control Tower Gate Tests (ubuntu/windows) 三 job 红——**main 基线既有，非本卡引入**：main @5494e6f6（本卡 base，#463 push）run 34368678861、@0c6e52b2 run 34376561252、@30011654 run 34377559486 同三红（job 级对照，D651 豁免先例）；失败用例属 `scripts/control-tower` 域（ct-test-gate「有配对且绿应 exit 0 实际 1」+ alloc-task-id + simulate-ci 内层连带），本卡写集外且开发者不改控制塔门禁（铁律 0-5），本地同测试 PASS（alloc-task-id 15/15、ct-test-gate 6/6）→ CI 环境日期敏感问题转台账 CTO 派工。本卡 task-relevant jobs 全绿：Vitest 1/2+2/2、TypeScript+Lint+Iron Laws、Integration Contract、Golden Case F1、Checker Review、Test-Kit Architecture×2、npm audit。
+
 ### 3.3 不做的事
 | 项 | 理由 |
 |---|---|

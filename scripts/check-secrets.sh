@@ -32,10 +32,18 @@ FULL_SCAN=$(grep -rn \
   --include='*.json' --include='*.ts' --include='*.js' \
   --include='*.yaml' --include='*.yml' --include='*.sh' \
   --include='*.bat' --include='*.ps1' \
+  --exclude-dir='node_modules' \
+  --exclude-dir='.git' \
+  --exclude-dir='.claude' \
+  --exclude-dir='.sessions' \
+  --exclude-dir='.synova-wt-*' \
+  --exclude-dir='dist' --exclude-dir='build' --exclude-dir='release' --exclude-dir='vendor' \
   2>/dev/null \
   | grep -v 'node_modules' \
   | grep -v '\.git/' \
   | grep -v '\.claude/' \
+  | grep -v '\.sessions/' \
+  | grep -v '\.synova-wt-' \
   | grep -v '/dist/\|/build/\|/release/\|/vendor/\|/tests/' \
   | grep -v 'package-lock\.json' \
   | grep -v 'your-\|example\|placeholder\|demo\|test-\|xxx\|TODO\|CHANGE\|CHANGE_ME' \

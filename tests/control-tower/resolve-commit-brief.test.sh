@@ -230,6 +230,19 @@ assert_contains "$OUT" "today-claims1b" "窗口外（today-2）brief 不参与�
 assert_not_contains "$OUT" "stale-claims2" "前日 brief 被窗口排除（±1 天边界）"
 echo ""
 
+echo "── 7. 陈旧 current-brief 文件存在（D660/D661 macOS grep -oP 失效根因）→ 忽略 → 走回退 ──"
+R7=$(new_repo)
+# 陈旧 brief 文件真实存在（D660: macOS grep -oP 失效 → BD 空 → 陈旧 brief 被误用为回退）
+make_parseable "$R7" "2026-07-14-D83-stale-existing.md"
+echo "2026-07-14-D83-stale-existing.md" > "$R7/.claude/current-brief"
+# 今日 brief 认领 scripts/test.sh（与暂存 scripts/a.sh 不匹配 → 认领数 0 → 触发回退路径）
+make_parseable "$R7" "${TODAY}-today-noclaim.md"
+run_resolver "$R7" "scripts/a.sh"
+assert_exit "$EC" 0 "陈旧 current-brief 忽略后回退成功"
+assert_contains "$OUT" "today-noclaim" "回退返回今日可解析 brief"
+assert_not_contains "$OUT" "D83" "不返回陈旧 current-brief（即使其文件存在）"
+echo ""
+
 echo "═══════════════════════════════════════════════════════════"
 echo "  结果: $PASS 通过, $FAIL 失败"
 if [ "$FAIL" -gt 0 ]; then

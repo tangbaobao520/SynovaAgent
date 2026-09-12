@@ -1,0 +1,11 @@
+{
+  "task_id": "D708",
+  "title": "m9-merge-writeset-gate",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-12",
+  "updated_by": "alloc-task-id"
+}

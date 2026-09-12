@@ -6,9 +6,9 @@
   "displayName": "内部交易成本增长率",
   "description": "I11: 评估管理成本率、协调成本趋势、组织复杂度。数据源: FINANCIAL, Person, Team, Event节点。",
   "schedule": "0 0 1 * *",
-  "expert": "business_model",
+  "expert": "competitive-strategy",
   "auxiliaryExperts": [
-    "finance"
+    "fundamental-efficiency"
   ],
   "priority": "P1",
   "layer": "interface",

@@ -1,9 +1,9 @@
 {
   "task_id": "D595",
   "title": "L1-P3MCP认证权限",
-  "status": "impl_done",
+  "status": "audited",
   "spec": {
-    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D595-mcp-auth-20260908.md",
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D595-mcp-auth-20260908.md（注意：此文件 2026-09-09 被 D593-FIX #457 删除且未恢复——main 上 spec 缺失；契约载体 = task brief（main 上为骨架模板）+ 本 json）",
     "commit": "随本 PR 入库（feat/d595-mcp-auth）",
     "by": "dev-doc (DSH line, glm-5.3-flash)",
     "at": "2026-09-08",
@@ -69,8 +69,16 @@
       ]
     }
   },
-  "audit": null,
+  "audit": {
+    "verdict": "CONDITIONAL PASS",
+    "report": "docs/synova/audit-reports/2026-09-10-K3-D593FIX-D595-closeout.md",
+    "by": "K3 independent session",
+    "at": "2026-09-10",
+    "findings": "实现质量高（正面样本）：12 工具 permission 分级/-32000 PERMISSION_DENIED/fail-closed 模式/白名单 3 前缀行为收口/SDK 1.30 迁移/哨兵族 L2 化（棘轮 42→36 物理成立）；独立实跑 tool-definitions 38/38 + server-smoke 9/9 = 47/47 全绿；index.ts:54/:61 生产接线属实；仲裁续接事实成立（首 session 01:53 → 续接 20:47，仲裁原文仅 task-state 自述）。P1-1 写集漂移：impl.files 8 项未随 #459 入库（evidence 7 件 + 补实 brief），files[] 与 diff 完全一致声称不实；P1-2 spec 载体双缺失（spec 被 D593-FIX 删除未恢复 + main 上 brief 为骨架模板）；P1-3 gitlink 夹带 6 个写集外文件（含复活 ct64/d590/d593——#449/#442/#459 三连，P0-2 同族）。P2×4：派单口径（conversations 13 非 21；getDiagnosisCheckpoint 1 命中为 6/15 老代码；36 为棘轮数非 tsc）、SDK 评估体积 <1MB 失准、ci-parity 证据未入库、ontology/ingest 写端点白名单（单机信任延续）。条件关闭 = P1-1/P1-2/P1-3 处置（evidence/brief 补入库或 CTO 豁免 + spec 载体恢复 + gitlink 随合并级 gate 治理）",
+    "north_star": "对齐（三问全过：RBAC 前置 + 哨兵工单服务面；SDK/L2 化纵向推进；产品本质不变）",
+    "recheck_note": "D593-FIX 复审在同报告（维持 FAIL，P0-1 未修复）。独立实跑注意：干净 npm ci 下 use-streaming-conversation 因 react-markdown 未声明依赖 import 失败（存量缺口，非本批）"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-09",
-  "updated_by": "DSH impl (glm-5.3-flash)"
+  "updated_at": "2026-09-10",
+  "updated_by": "K3 (independent audit)"
 }

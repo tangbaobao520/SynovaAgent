@@ -1,7 +1,7 @@
 {
   "task_id": "D398",
   "title": "组织记忆策略调整（排最后，先看数据——K3 定序）",
-  "status": "claimed",
+  "status": "closed",
   "spec": null,
   "impl": null,
   "audit": {
@@ -12,8 +12,8 @@
     "note": "NOT-AUDITABLE: claimed 未交付（consult 定序排最后未启动）"
   },
   "fix_task_id": null,
-  "updated_at": "2026-08-28",
-  "updated_by": "CTO",
-  "note": "等待条件（K3 战略咨询定序）：K3 定序：组织记忆排最后，哇呢宝贝数据回流后，成功标准=GA 确认率",
+  "updated_at": "2026-09-10",
+  "updated_by": "dsh-cto",
+  "note": "2026-09-10 看板校准: 组织记忆策略调整（排最后看数据）——退回待规划（K3 定序）",
   "priority": "P2-数据回流后"
 }

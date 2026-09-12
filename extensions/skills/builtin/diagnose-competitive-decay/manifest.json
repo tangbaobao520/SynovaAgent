@@ -6,7 +6,7 @@
   "description": "诊断竞争位势随时间衰减的方向和速度，识别护城河侵蚀信号，生成战略响应选项。",
   "tier": "L3",
   "complexity": "expert",
-  "expert": "strategy",
+  "expert": "competitive-strategy",
   "tools": [
     "compute-competitive-positioning",
     "compute-competitor-feature-threat",
