@@ -15,9 +15,9 @@
 
 ### b) 文件审计
 - `scripts/pre-commit-check.sh` 组 6 架构层段（旧 L842-847）—— awk 第二实现（缺陷 A）
-- `scripts/control-tower/brief_parser.py` L98-101 `parse_layer` —— 正则 `\s*(.+)$`
+- `scripts/control-tower/brief_parser.py` L98-101 `parse_layer` — 正则 `\s*(.+)$`
   中 `\s` 吞换行 → 空值被当成下一标题（缺陷 B，假绿）
-- `scripts/workflow/check-brief-parseable.sh` L73-76 —— 消费 `parse_layer`（无独立实现）
+- `scripts/workflow/check-brief-parseable.sh` L73-76 — 消费 `parse_layer`（无独立实现）
 - 存量实测: 629 份 brief 中 **232 份用内联写法**（37%）→ 组 6 全部误报「架构层: 未填写」
 - 实证: D665 brief 内联写法 → PR #494 首轮 `TypeScript + Lint + Iron Laws` 红
 
@@ -36,11 +36,11 @@
 
 ## Q2: 范围 — 正确的最简方案
 做什么：
-- scripts/control-tower/brief_parser.py —— `parse_layer` 改精确规则 + 新增 `parse_field_value` / `_is_blank_or_placeholder`
-- scripts/pre-commit-check.sh —— 组 6 架构层段改调同源解析器（删 awk 第二实现）
-- tests/control-tower/brief-parser-strip.test.sh —— 扩展 D707 形状矩阵（①-④ 共 22 断言）
-- memory/notes/implemented/2026-09-12-D707-brief-layer-single-parser.md —— 四态 Note（铁律 49）
-- .claude/task-briefs/2026-09-12-D707-brief-archlayer-parser-unify.md —— 本 brief
+- scripts/control-tower/brief_parser.py — `parse_layer` 改精确规则 + 新增 `parse_field_value` / `_is_blank_or_placeholder`
+- scripts/pre-commit-check.sh — 组 6 架构层段改调同源解析器（删 awk 第二实现）
+- tests/control-tower/brief-parser-strip.test.sh — 扩展 D707 形状矩阵（①-④ 共 22 断言）
+- memory/notes/implemented/2026-09-12-D707-brief-layer-single-parser.md — 四态 Note（铁律 49）
+- .claude/task-briefs/2026-09-12-D707-brief-archlayer-parser-unify.md — 本 brief
 不做什么：
 - 不改 scripts/audit/audit-rules.sh（K3 红线，审计域禁碰）
 - 不改 src/server.ts（产品代码属编码/Win 线）
@@ -57,7 +57,9 @@
 处理：组 6 调 brief_parser.py --layer → 内联/body 两种写法等价 → 空值判未填写
 结果：内联写法不再报「架构层: 未填写」；空值仍被拒；两校验器结论一致
 
-## 架构层: scripts（控制塔域，非 L1-L5 产品架构）
+## 架构层:
+scripts（控制塔域，非 L1-L5 产品架构）
+
 
 ## Done 标准
 - [x] verify: 内联写法 → 组 6「架构层: 未填写」计数 1→0（原版 vs 本分支对比）
