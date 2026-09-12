@@ -640,7 +640,7 @@ UNWIRED=""
 if [ -n "$NEW_IMPL" ]; then
   while IFS= read -r file; do
     [ -z "$file" ] && continue; [ ! -f "$file" ] && continue
-    EXPORTS=$(grep -oE 'export (function|class|const) [A-Za-z_][A-Za-z0-9_]*' | sed -E 's/^export (function|class|const) //' "$file" 2>/dev/null || true)
+    EXPORTS=$(grep -oE 'export (function|class|const) [A-Za-z_][A-Za-z0-9_]*' "$file" 2>/dev/null | sed -E 's/^export (function|class|const) //' || true)
     for name in $EXPORTS; do
       [ -z "$name" ] && continue
       echo "$name" | grep -qi 'mock\|fake\|_internal\|_deprecated' && continue
@@ -663,7 +663,7 @@ DEEP_FAIL=""
 if [ -n "$NEW_IMPL" ]; then
   for file in $NEW_IMPL; do
     [ -z "$file" ] && continue; [ ! -f "$file" ] && continue
-    EXPORTS=$(grep -oE 'export (function|class|const) [A-Za-z_][A-Za-z0-9_]*' | sed -E 's/^export (function|class|const) //' "$file" 2>/dev/null || true)
+    EXPORTS=$(grep -oE 'export (function|class|const) [A-Za-z_][A-Za-z0-9_]*' "$file" 2>/dev/null | sed -E 's/^export (function|class|const) //' || true)
     for name in $EXPORTS; do
       [ -z "$name" ] && continue
       echo "$name" | grep -qi 'mock\|fake\|_internal\|_deprecated' && continue
@@ -1089,7 +1089,7 @@ if [ -f "$CRITERIA_MAP" ]; then
   BRIEF_FILE=$(echo "$CHANGED_FILES" | grep -m1 "\.claude/task-briefs/" || true)
   if [ -n "$BRIEF_FILE" ]; then
     BRIEF_PATH="$ROOT/$BRIEF_FILE"
-    CRITERIA=$(grep -oE '#CRITERIA[[:space:]]*[:=][[:space:]]*[A-D]' | sed -E 's/.*[=:][[:space:]]*//' "$BRIEF_PATH" 2>/dev/null || true)
+    CRITERIA=$(grep -oE '#CRITERIA[[:space:]]*[:=][[:space:]]*[A-D]' "$BRIEF_PATH" 2>/dev/null | sed -E 's/.*[=:][[:space:]]*//' || true)
     if [ -n "$CRITERIA" ]; then
       # 读取条件代码映射
       CRITERIA_GLOBS=$(python -c "

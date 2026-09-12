@@ -165,6 +165,32 @@ eq 'exports 提取（check-test-quality 同模式）' "scripts/checks/check-test
    'export class QualityGate {}' 'export class QualityGate'
 
 echo ""
+echo "=== D664: 转译形态静态守卫（防 sed 参数错位类）==="
+
+# 转译的典型手误: 原命令 grep -oP 'PAT' "$FILE" 改成 "grep -oE 'PAT' | sed -E 'S'" 时
+# 把 "$FILE" 留在 sed 之后 → grep 改读 stdin（空）→ 提取恒空、且 sed 把文件当输入。
+# 该 bug 不会被"金值断言"抓到（金值只测模式），也不会被"-P 零命中"抓到 →
+# 必须有一条针对**命令形态**的静态守卫。实测本次转换中真的踩到（5 处）。
+BADSED=$(grep -rnE "\| sed -E '[^']*' \"\$" "$REPO/scripts" --include='*.sh' 2>/dev/null || true)
+if [ -z "$BADSED" ]; then
+  ok "无「sed 吃掉文件参数」形态（\$FILE 必须在管道左侧）"
+else
+  no "发现 sed 参数错位（grep 会改读 stdin → 提取恒空）："
+  echo "$BADSED" | sed 's/^/      /' >&2
+fi
+
+# 可执行断言: 真实生产形态跑一遍（文件参数在 grep 侧才拿得到内容）
+printf 'export function foo(a) {\n}\nexport const BAR = 1;\n' > "$TMP/mod.ts"
+GOT_EXPORTS=$(grep -oE 'export (function|class|const) [A-Za-z_][A-Za-z0-9_]*' "$TMP/mod.ts" 2>/dev/null | sed -E 's/^export (function|class|const) //' | tr '\n' ',')
+[ "$GOT_EXPORTS" = "foo,BAR," ] \
+  && ok "可执行: export 提取（真实形态 foo,BAR）" \
+  || no "可执行: export 提取异常 → '$GOT_EXPORTS'"
+
+printf '#CRITERIA: A\n' > "$TMP/b.md"
+GOT_CRIT=$(grep -oE '#CRITERIA[[:space:]]*[:=][[:space:]]*[A-D]' "$TMP/b.md" 2>/dev/null | sed -E 's/.*[=:][[:space:]]*//')
+[ "$GOT_CRIT" = "A" ] && ok "可执行: #CRITERIA 提取（真实形态 A）" || no "可执行: #CRITERIA 提取异常 → '$GOT_CRIT'"
+
+echo ""
 echo "  结果: $PASS 通过, $FAIL 失败"
 if [ "$FAIL" -gt 0 ]; then
   echo "  Status: ❌ grep -P 回归网未通过"

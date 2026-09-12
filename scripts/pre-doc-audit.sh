@@ -174,7 +174,7 @@ echo ""
 BRIEF="$ROOT/.claude/task-briefs/$TASK_ID"
 if [ -f "$BRIEF" ]; then
   # 1. 条件归属
-  CRITERIA=$(grep -oE '#CRITERIA[[:space:]]*[:=][[:space:]]*[A-D]' | sed -E 's/.*[=:][[:space:]]*//' "$BRIEF" 2>/dev/null || true)
+  CRITERIA=$(grep -oE '#CRITERIA[[:space:]]*[:=][[:space:]]*[A-D]' "$BRIEF" 2>/dev/null | sed -E 's/.*[=:][[:space:]]*//' || true)
   if [ -n "$CRITERIA" ]; then
     echo "  ✅ CP2-1 条件归属: $CRITERIA"
   else
