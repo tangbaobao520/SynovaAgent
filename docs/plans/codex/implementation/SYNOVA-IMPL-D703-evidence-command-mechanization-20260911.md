@@ -73,6 +73,8 @@
 | 7 | verify-d703.sh 形态 | 「三份 spec 可机器化 DS 命令逐条回放」 | **curation 回放**而非全量委托 verify-doc.sh：D703 DS5a（tsc 基线逐条恒等需基线 worktree，CI 无）/ DS8b（推送后 CI job 级）不可机器化 → 显式 skip + 理由；D702/D704 两 spec 的 DS 全部断言各自实现后未来态 → 全部显式 skip + 理由（两卡实现时自建 verify-d702.sh / verify-d704.sh，CI 触发器按 D 号自动发现） | 全量委托会在 D703 spec 自身 DS5 `npx tsc --noEmit` 上红（存量 33 错误，exit 2）——curation 判定归 verify-dXXX.sh，通用引擎只判命令成败 |
 | 8 | 模板改点 | §四 追加机器可查项 | 落点 = §四 新 6「证据机器可查（D703 起）」，原兜底项 6 顺延为 7；.claude/.dsh 两侧 cp 同步，md5 恒等（72f3b710b8ac838f0346f62e1efe0d8a） | 落点与顺延保持编号连续 |
 | 9 | 回放 cwd | 未提 | doc 参数先解析绝对路径，回放统一 cd 仓库根（spec 内命令均为仓库根相对） | doc 可能以相对路径传入，cd 后相对 doc 路径失效 |
+| 10 | 密封测试接线断言 | 未提 | 引擎存在性断言用 `-f` 而非 `-x` | 仓库惯例 scripts/ 与 tests/ 全部 100644（CI 以 bash 调用）；`-x` 在 ubuntu 必挂、Win MSYS 宽松判真造成本地假绿（CI ubuntu 实证 7/8 后修正） |
+| 11 | D 号→脚本名映射 | 未提 | spec 文件名大写 D 号转小写再拼 `verify-<d#>.sh`（仓库惯例小写） | spec 名 `SYNOVA-IMPL-D703-…` 提取出 `D703`，直拼 `verify-D703.sh` 在 ubuntu 大小写敏感恒 warning skip（CI 首轮实证） |
 
 ### 3.3 不做的事
 

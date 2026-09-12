@@ -29,11 +29,13 @@ echo "=== D703 verify-doc.sh 密封测试 ==="
 
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 
-# ── 接线: 引擎脚本存在且可执行（脚本缺失 = RED）──
-if [ -x "$ENGINE" ]; then
-  ok "接线: scripts/ci/verify-doc.sh 存在且可执行"
+# ── 接线: 引擎脚本存在（脚本缺失 = RED）──
+# 注意: 仓库惯例 scripts/ 与 tests/ 全部 100644（CI 以 bash 调用，不依赖可执行位）——
+# 断言 -x 在 ubuntu 必挂（Win 本地 MSYS -x 宽松造成假绿），判存在性 -f 才是 RED 基准本意。
+if [ -f "$ENGINE" ]; then
+  ok "接线: scripts/ci/verify-doc.sh 存在"
 else
-  no "接线: scripts/ci/verify-doc.sh 缺失或不可执行（RED：机制未落地）"
+  no "接线: scripts/ci/verify-doc.sh 缺失（RED：机制未落地）"
 fi
 
 # ── 断言 1: 合法 grep 命令回放 → exit 0 ──

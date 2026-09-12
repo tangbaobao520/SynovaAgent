@@ -49,7 +49,10 @@ jobs:
               echo "::warning title=verify-doc skip::$(basename "$doc") 文件名无 D 号，无法定位 verify-dXXX.sh（跳过）"
               continue
             fi
-            SCRIPT="scripts/ci/verify-${DNUM}.sh"
+            # spec 文件名 D 号为大写（D703），自证脚本仓库惯例为小写（verify-d703.sh）——
+            # 不转小写则 ubuntu 大小写敏感恒 warning skip（CI 首轮实证）
+            DLOW=$(printf '%s' "$DNUM" | tr 'A-Z' 'a-z')
+            SCRIPT="scripts/ci/verify-${DLOW}.sh"
             if [ ! -f "$SCRIPT" ]; then
               echo "::warning title=verify-doc skip::${SCRIPT} 不存在——$(basename "$doc") 的 DS 命令未接入 CI 回放（该卡应交付自证脚本）"
               continue
