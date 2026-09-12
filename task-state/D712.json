@@ -1,0 +1,11 @@
+{
+  "task_id": "D712",
+  "title": "desktop-line1-reverification",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-13",
+  "updated_by": "alloc-task-id"
+}
