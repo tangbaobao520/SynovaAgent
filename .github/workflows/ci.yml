@@ -60,7 +60,9 @@ jobs:
             echo "── $SCRIPT ← $doc"
             if ! bash "$SCRIPT" > /tmp/verify-doc-replay.log 2>&1; then
               echo "FAIL: $SCRIPT"
-              tail -20 /tmp/verify-doc-replay.log
+              # tail -60 而非 -20: 回放输出约 45 行（19×3 spec skip + D# 段 + 汇总），
+              # -20 会把 [FAIL] 行截掉只剩 skip 尾巴（首轮实证无法定位失败 DS）
+              cat /tmp/verify-doc-replay.log
               echo "::error title=verify-doc replay::${SCRIPT} 回放失败（$doc）"
               FAIL=1
             fi
