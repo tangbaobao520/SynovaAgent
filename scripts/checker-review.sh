@@ -131,7 +131,7 @@ if [ -z "$TS_TEST_FILES" ]; then
 else
   OUTPUT=$(cd "$ROOT" && npx vitest run --reporter=verbose --color=false 2>&1; echo "EXIT:$?")
   # 提取失败文件列表 (--color=false 确保无 ANSI 码)
-  FAILED_FILES=$(echo "$OUTPUT" | grep " FAIL " | grep -oP 'tests/\S+\.test\.ts' || true)
+  FAILED_FILES=$(echo "$OUTPUT" | grep " FAIL " | grep -oE 'tests/[^[:space:]]+\.test\.ts' || true)
   if [ -z "$FAILED_FILES" ]; then
     # 无失败 — 通过
     echo "$OUTPUT" | tail -5
