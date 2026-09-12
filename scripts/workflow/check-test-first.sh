@@ -26,7 +26,7 @@ while IFS= read -r file; do
   [ ! -f "$full" ] && continue
 
   # 查找文件中的 export function/class
-  EXPORTS=$(grep -oP 'export (function|class) \K\w+' "$full" 2>/dev/null || true)
+  EXPORTS=$(grep -oE 'export (function|class) [a-zA-Z0-9_]+' "$full" 2>/dev/null | awk '{print $NF}' || true)
   for name in $EXPORTS; do
     [ -z "$name" ] && continue
     if echo "$name" | grep -qi 'mock\|fake\|_deprecated\|_internal'; then continue; fi

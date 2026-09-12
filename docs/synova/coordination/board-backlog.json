@@ -48,8 +48,8 @@
     },
     {
       "id": "PLAN-ci-syno-leak",
-      "title": "【已证实并修复关闭 2026-09-10】ci.yml SYNO_CI env 泄漏假说（D663 翻案）",
-      "note": "D663 实证泄漏路径：ci.yml:105 job 级 SYNO_CI=1 经 process.env 被 vitest spawnSync 继承 → check-architecture-gate.test.ts 的 local 子运行被误判 CI strict → 沙箱场景 exit 1 ≠ 0 → Architecture job 假红 5 断言（CI 与 SYNO_CI=1 本机复现 1:1）。#479 的『假说不成立』判定有误——泄漏真实存在，只是路径不在 ci.yml 直接调用而在测试子进程继承。修复 = gate.test.ts runScript 默认剥除继承 SYNO_CI（local 语义=未设；CI 场景显式传参不受影响），测试密封化不弱化门禁语义。其余真因判定（棘轮 +2 / 密封身份）维持有效。"
+      "title": "【假说成立·已修复关闭 2026-09-10 D663】ci.yml SYNO_CI 泄漏",
+      "note": "D663 实证翻案：ci.yml:105 job 级 SYNO_CI=1 经 process.env 被 vitest spawnSync 继承 → gate 测试 local 子运行误判 CI strict → 5 断言假红。修复 = runScript 剥除继承 SYNO_CI（CI 场景显式传参不受影响，语义零弱化），PR #480 入 main。CTO 勘误：本条在 #479 曾被误判「假说不成立」，以 D663 实证为准。"
     },
     {
       "id": "PLAN-diagnosis-l5-di",
@@ -88,8 +88,34 @@
     },
     {
       "id": "PLAN-resolve-commit-brief-bsd",
-      "title": "resolve-commit-brief.sh L60 grep -oP 跨平台修复（D660 派生缺陷①）",
-      "note": "BSD grep 无 -P，macOS 上陈旧 brief 检查静默失效 → D328 认领解析可回退到过期全局 brief 造成劫持误拦（D660 提交实测被拦一次）。修法=grep -oE 或 sed（一行），配 tests/control-tower 用例（当前无覆盖）。另两项观察项（dsh plugin add file: 不刷新手动安装副本 / launchd 监管缺口降级观察）已登记审计台账 2026-09-10 条，不需派单。"
+      "title": "【已并入 D661 交付 2026-09-10】resolve-commit-brief.sh grep -oP 跨平台修复",
+      "note": "D661 全清两目录 20 处（PR #481）+ external-auditor 空数组崩溃修复。剩余 pre-commit-check.sh 自身 6 处 + scripts/hooks/ + scripts/checks/ + check-*.sh → D664 另派。"
+    },
+    {
+      "id": "PLAN-m8-session-worktree-isolation",
+      "title": "M8 防线缺口：并行 session 共享主工作区互踩——强制 worktree 隔离",
+      "note": "D663 session 升级（2026-09-10 实证）：三 session 共享一树，current-brief 互踩/暂存区混装/staging_guard 误拦/未暂存修改被批量 checkout 冲掉（同秒批量特征，因隔离 worktree 幸存）。方向=每 session 强制 .synova-wt-<sid> 隔离，主工作区只留 CTO/合并。机制设计后派工；session 启动策略归创始人裁决。"
+    },
+    {
+      "id": "PLAN-synova-commit-deletion-loss",
+      "title": "synova-commit pathspec 部分提交回滚吞已暂存删除项",
+      "severity": "P1",
+      "source": "CTO 亲历（非 K3，2026-09-10/11）",
+      "note": "D665 实证：synova-commit 无 --files 时走 git commit -- <staged paths> 部分提交；hook/门禁失败路径会把已暂存删除项静默移出索引，下一次尝试即以不完整树提交（9aabd581 声称摘除 10 gitlink 实际树未变，ls-tree 复核抓到，638bfb5b 补齐）。修法方向：部分提交前后校验 staged 集合一致性，或删除类路径改全索引提交；补 tests/control-tower/synova-commit.test.sh 回归用例。"
+    },
+    {
+      "id": "PLAN-brief-archlayer-dual-parser",
+      "title": "brief 架构层字段双解析器口径不一致（check-brief-parseable 接受内联 vs 组6 awk 要求 body 行）",
+      "severity": "P1",
+      "source": "CTO 亲历（非 K3，2026-09-11）",
+      "note": "D665 CI 实证：组6 awk 提取 ## 架构层: 标题行之后的 body 判定填写；check-brief-parseable.sh 读标题行内联值——内联写法本地自检绿、CI strict 红（PR #494 首轮 TypeScript job 失败真因）。修法：组6 awk 升级为『标题行内联值或 body 行皆可』，补双向回归用例。"
+    },
+    {
+      "id": "PLAN-d660-brief-latent-mine",
+      "title": "task-briefs/2026-09-10-D660-task-board-activity-semantics.md 架构层内联写法踩组6 口径（潜伏地雷）",
+      "severity": "P2",
+      "source": "CTO 亲历（非 K3，2026-09-11）",
+      "note": "D665 双解析器扫描发现：D660 brief（已在 main）架构层为内联写法，未来任何触碰该文件的 PR 会 CI strict 红组6。修法：架构层标题下补一行 body（1 行改动），随 PLAN-brief-archlayer-dual-parser 一并处理。"
     }
   ]
 }

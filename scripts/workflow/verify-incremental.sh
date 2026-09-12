@@ -170,7 +170,7 @@ if [ -n "$NEW_FILES" ]; then
   UNWIRED=""
   while IFS= read -r file; do
     [ -z "$file" ] && continue
-    EXPORTS=$(grep -oP 'export (function|class|const) \K\w+' "$file" 2>/dev/null || true)
+    EXPORTS=$(grep -oE 'export (function|class|const) [a-zA-Z0-9_]+' "$file" 2>/dev/null | awk '{print $NF}' || true)
     for name in $EXPORTS; do
       [ -z "$name" ] && continue
       if echo "$name" | grep -qi 'mock\|fake\|_internal\|_deprecated'; then continue; fi
@@ -227,7 +227,7 @@ NEW_EXPORTS_ALL=$(git diff --name-only 2>/dev/null | grep '^src/.*\.ts$' | grep 
 ROUTE_CHANGED=$(git diff --name-only 2>/dev/null | grep '^src/routes/' || true)
 if [ -n "$NEW_EXPORTS_ALL" ] && [ -z "$ROUTE_CHANGED" ]; then
   # 有 src 文件改动但没有 route 文件改动 → 可能遗漏用户入口
-  NEW_FUNCS=$(git diff 2>/dev/null | grep "^\+export \(function\|class\|const\)" | grep -oP 'export (function|class|const) \K\w+' || true)
+  NEW_FUNCS=$(git diff 2>/dev/null | grep "^\+export \(function\|class\|const\)" | grep -oE 'export (function|class|const) [a-zA-Z0-9_]+' | awk '{print $NF}' || true)
   if [ -n "$NEW_FUNCS" ]; then
     echo -e "${CYAN}[VERIFY $ITER/$MAX] 用户可见缺口...${RESET}"
     # 检查这些新函数是否被现有路由引用
