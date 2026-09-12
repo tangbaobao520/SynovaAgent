@@ -80,6 +80,20 @@
 
 > 实现时若偏离本 doc（返回类型命名、accept 失败响应的具体 HTTP 状态/code、假 store 改造方式、round-trip 断言落点），必须在此节同 commit 回填最终形态。
 
+### 3.2.1 最终形态回填（2026-09-11 实现侧，同 commit）
+
+**① accept 失败响应（§4.5 决策点 2 定稿）**：`500 { ok:false, code:'PERSIST_FAILED', message:'账号绑定持久化失败，请稍后重试', degraded:true }`。降级语义：邀请保持 pending 不消耗 token（可重试）；`inv.status='accepted'` 仅在 `.ok` 通过后赋值。enterprise.ts 其余 5 处失败响应同为 500 `PERSIST_FAILED` + `degraded:true`（成员端点既有 catch 兜底 `INTERNAL_ERROR` 保持不变；PERSIST_FAILED 专指写方法返回 `ok:false` 的持久化失败路径）。
+
+**② tests/routes/enterprise.test.ts 实为扩展非新建**：§3.1 表写"新建"，实际该文件在 base 358ac6eb 已存在 529 行（D484 邀请全链路 + D485 双轨绑定，真实 HTTP 基建）。本卡追加 `D702 — accept 绑定写失败不吞错` describe（2 用例，独立 express app + 失败注入 store `D702FailInjectGraphStore extends InMemoryGraphStore`），复用既有基建，不重搭脚手架。
+
+**③ tests/services/anomaly-detector.test.ts 强制连带（§3.1 写集外）**：`UserStoreLike.updateUser` 签名 void → `{ ok, error? }` 使既有 fake store（`updateUser: () => { updated = true; }` 返 void）编译与运行时双破（D243 freezeUser 用例崩）。同步为 `return { ok: true }`。这是接口签名变更的必然后果，非越界扩展；brief Q2 已声明。
+
+**④ 假 store 改造方式**：tests/growth/user-store.test.ts 的 `MockGraphStore` 增加 `failUpdates` 标志（置位时 updateNode throw，镜像 SqliteGraphStore.updateNode 失败即 throw 语义）；`createNode` id 生成改为 `node-<n>` 前缀并注释声明"恒生成 id 忽略 props.id"，镜像真实 createNode（sqlite-graph-store.ts:144）。
+
+**⑤ S-15 round-trip 落点与失败源（未判定成本过高，未使用替代证据）**：断言落在 tests/growth/user-store.test.ts `D702 S-15 — 真实 SQLite round-trip` describe，依赖用**真实** SqliteGraphStore（better-sqlite3 临时文件库，非 mock）：连接 B `BEGIN EXCLUSIVE` 持 WAL 写锁 → 连接 A 的 UPDATE 产生真实 SQLITE_BUSY → updateNode 按生产语义 throw。断言链：createNode id 以 `node-` 开头 → updateUser orgId 成功 `{ok:true}` 且 queryByEmail/listByOrg 读回可见 → 锁注入失败 `{ok:false,error}` 且读回不可见（orgId 保持旧值、新组织查无此人）。
+
+**⑥ 实现流程记录**：本机 VSCode harness 下 PreToolUse hook 对大 payload Write 调用崩溃（D600 同款 stdin 问题，"hook error: No stderr output"），全部代码文件改动改经 Bash + python 精准替换完成（保留 CRLF）；task brief 经分块 heredoc 落盘主区 .claude/task-briefs/ 并同步 clone。
+
 ### 3.3 不做的事
 
 | 项 | 理由 |

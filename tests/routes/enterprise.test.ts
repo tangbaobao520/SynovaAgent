@@ -527,3 +527,134 @@ describe('D485 — 双轨账号关联（个人账号绑定企业）', () => {
     expect(membersBody.code).toBe('FORBIDDEN');
   });
 });
+
+// ════════════════════════════════════════════════════════════════
+// D702 — accept 绑定写失败不吞错（K3 W-2）
+// 独立 app + 失败注入 store（updateNode 可抛错，镜像真实 SqliteGraphStore 语义）。
+// 本 describe 声明在文件末尾——重注入 setUserStore 不影响上方 D484/D485 用例。
+// RED 契约: 修复前 accept 绑定持久化失败仍 200 linked:true → 断言失败（red 留痕）。
+// ════════════════════════════════════════════════════════════════
+
+class D702FailInjectGraphStore extends InMemoryGraphStore {
+  failNextUpdate = false;
+  updateNode(id: string, props: Record<string, unknown>, graph: string): void {
+    if (this.failNextUpdate) throw new Error('injected persistence failure (D702)');
+    super.updateNode(id, props, graph);
+  }
+}
+
+describe('D702 — accept 绑定写失败不吞错（K3 W-2）', () => {
+  const P_OK_EMAIL = 'd702-bind-ok@synova.test';
+  const P_OK_PASSWORD = 'd702-bind-ok-pass';
+  const P_FAIL_EMAIL = 'd702-bind-fail@synova.test';
+  const P_FAIL_PASSWORD = 'd702-bind-fail-pass';
+
+  let d702Server: Server;
+  let d702Base: string;
+  let d702Store: UserStore;
+  let d702Graph: D702FailInjectGraphStore;
+
+  beforeAll(async () => {
+    d702Graph = new D702FailInjectGraphStore();
+    d702Store = new UserStore(d702Graph);
+    authSetUserStore(d702Store);
+    entSetUserStore(d702Store);
+
+    const app = express();
+    app.use(express.json());
+    app.use(jwtAuthMiddleware);
+    app.use(authRoutes);
+    app.use(enterpriseRoutes);
+
+    await new Promise<void>((resolve) => {
+      d702Server = app.listen(0, () => {
+        const addr = d702Server.address();
+        d702Base = `http://localhost:${typeof addr === 'object' && addr ? addr.port : 3098}`;
+        resolve();
+      });
+    });
+  });
+
+  afterAll(async () => {
+    await new Promise<void>((resolve) => d702Server.close(() => resolve()));
+  });
+
+  it('正常绑定路径 → 200 linked:true + orgId/role 真实更新（写成功必须可见）', async () => {
+    const register = await fetch(`${d702Base}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: P_OK_EMAIL, password: P_OK_PASSWORD }),
+    });
+    expect(register.status).toBe(201);
+
+    const invite = await fetch(`${d702Base}/api/enterprise/invite`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
+      body: JSON.stringify({ email: P_OK_EMAIL, role: 'manager' }),
+    });
+    expect(invite.status).toBe(200);
+    const inviteBody = await invite.json() as { data: { token: string } };
+
+    const accept = await fetch(`${d702Base}/api/enterprise/invitation/accept`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: inviteBody.data.token, password: P_OK_PASSWORD }),
+    });
+    expect(accept.status).toBe(200);
+    const acceptBody = await accept.json() as { ok: boolean; data: { linked: boolean; orgId: string; role: string } };
+    expect(acceptBody.ok).toBe(true);
+    expect(acceptBody.data.linked).toBe(true);
+    expect(acceptBody.data.orgId).toBe(orgId);
+    expect(acceptBody.data.role).toBe('manager');
+
+    // 持久化实证: 绑定写操作真实落库（orgId 从 default → 企业 orgId）
+    const bound = d702Store.queryByEmail(P_OK_EMAIL);
+    expect(bound?.orgId).toBe(orgId);
+    expect(bound?.role).toBe('manager');
+  });
+
+  it('绑定 updateUser 持久化失败 → 500 {ok:false,degraded:true}，不返 linked:true，邀请不消耗，orgId 不变', async () => {
+    const register = await fetch(`${d702Base}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: P_FAIL_EMAIL, password: P_FAIL_PASSWORD }),
+    });
+    expect(register.status).toBe(201);
+
+    const invite = await fetch(`${d702Base}/api/enterprise/invite`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
+      body: JSON.stringify({ email: P_FAIL_EMAIL, role: 'staff' }),
+    });
+    expect(invite.status).toBe(200);
+    const inviteBody = await invite.json() as { data: { token: string } };
+    const failToken = inviteBody.data.token;
+
+    // 注入持久化失败（updateNode 抛错——与真实 SqliteGraphStore 失败语义同型）
+    d702Graph.failNextUpdate = true;
+    let acceptRes: Response;
+    try {
+      acceptRes = await fetch(`${d702Base}/api/enterprise/invitation/accept`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: failToken, password: P_FAIL_PASSWORD }),
+      });
+    } finally {
+      d702Graph.failNextUpdate = false;
+    }
+
+    // 核心断言（K3 W-2）: 失败不得假报成功
+    expect(acceptRes.status).toBe(500);
+    const acceptBody = await acceptRes.json() as { ok: boolean; degraded?: boolean; code?: string; data?: { linked?: boolean } };
+    expect(acceptBody.ok).toBe(false);
+    expect(acceptBody.degraded).toBe(true);
+    expect(acceptBody.data?.linked).toBeUndefined();
+
+    // 降级语义: 邀请保持 pending（可重试），orgId 绑定未发生
+    const pendingQuery = await fetch(`${d702Base}/api/enterprise/invitation/${failToken}`);
+    expect(pendingQuery.status).toBe(200);
+    const bound = d702Store.queryByEmail(P_FAIL_EMAIL);
+    expect(bound?.orgId).toBe('default');
+    expect(bound?.role).toBe('staff');
+  });
+});
