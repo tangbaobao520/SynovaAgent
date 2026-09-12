@@ -79,7 +79,7 @@ echo "=== D707: 架构层字段解析口径 ==="
 PRECOMMIT="$REPO/scripts/pre-commit-check.sh"
 PARSEABLE="$REPO/scripts/workflow/check-brief-parseable.sh"
 
-layer_of() { python3 "$PARSER" --layer "$1" 2>/dev/null | head -1 | tr -d '[:space:]'; }
+layer_of() { python3 "$PARSER" --layer "$1" 2>/dev/null | head -1 | tr -d '[:space:]'; }  # swallow-ok: 解析器异常即视为空值，由后续断言判空（断言才是判定者）
 
 # ── ① 形状矩阵: 合法写法两种必须等价（非空）──
 printf '# b\n\n## 架构层: scripts（控制塔域）\n'            > "$TMP/l-inline.md"
