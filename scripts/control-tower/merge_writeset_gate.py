@@ -42,6 +42,7 @@ scripts/control-tower/merge_writeset_gate.py — D708 合并级写集对账 gate
   ③ 声明级: 声明文件里的 `## 写集豁免` 段落（每行 `- <路径> — <理由>`），无理由不生效
 """
 import argparse
+import shutil
 import fnmatch
 import json
 import os
@@ -69,6 +70,22 @@ SKIP_BRANCH_RE = re.compile(r"^(auto/|main$|master$)")
 DOC_SCOPE_RE = re.compile(
     r"^(docs/|\.claude/|memory/|task-state/|\.github/)|\.md$"
 )
+
+
+def python_bin() -> str:
+    """跨平台 python 解释器解析（D520 / PLATFORM-CHECKLIST.md 的 PYBIN 惯例）。
+
+    本脚本自身由 python 运行，此函数只用于**派生**子进程去调用同目录的解析器
+    （devdoc_writeset.py / brief_parser.py）。Windows 上可能只有 `python` 或 `py -3`，
+    故按 PYBIN 惯例逐级探测（见 PLATFORM-CHECKLIST.md / D520）；全不可用 → 回退 sys.executable。
+    """
+    if sys.executable:
+        return sys.executable
+    for cand in ("python3", "python", "py"):  # PYBIN 惯例（D520）
+        p = shutil.which(cand)
+        if p:
+            return p
+    return "python3"  # 兜底：交由 subprocess 抛错（GateError 包装，不静默）
 
 
 class GateError(Exception):
@@ -157,7 +174,7 @@ def collect_declared(repo: str, ts: Optional[str], dd: Optional[str], bf: Option
             warns.append(f"S1 解析失败({ts}): {exc}")
 
     if dd:
-        py = sys.executable or "python3"
+        py = python_bin()
         helper = Path(repo) / "scripts" / "control-tower" / "devdoc_writeset.py"
         try:
             p = subprocess.run([py, str(helper), "--extract", dd], capture_output=True,
@@ -170,7 +187,7 @@ def collect_declared(repo: str, ts: Optional[str], dd: Optional[str], bf: Option
             warns.append(f"S2 解析失败({dd}): {exc}")
 
     if bf:
-        py = sys.executable or "python3"
+        py = python_bin()
         bp = Path(repo) / "scripts" / "control-tower" / "brief_parser.py"
         try:
             p = subprocess.run([py, str(bp), "--q2-include", bf], capture_output=True,

@@ -14,9 +14,9 @@
 缺的是 **intra-PR**：本 PR 变更集 × **本 PR 自己的声明**。本任务补这一格（M9）。
 
 ### b) 文件审计
-- `.github/workflows/ci.yml` L51-57 —— 已有 PR 级 verify-parallel（**边界基准，不重复造**）
-- `scripts/control-tower/verify-parallel.sh` / `devdoc_writeset.py` —— 已有写集表解析（**复用**）
-- `scripts/control-tower/brief_parser.py --q2-include` —— 已有 brief Q2 解析（**复用**）
+- `.github/workflows/ci.yml` L51-57 — 已有 PR 级 verify-parallel（**边界基准，不重复造**）
+- `scripts/control-tower/verify-parallel.sh` / `devdoc_writeset.py` — 已有写集表解析（**复用**）
+- `scripts/control-tower/brief_parser.py --q2-include` — 已有 brief Q2 解析（**复用**）
 - M2 族三次实证: PR #449（夹带 D603 共 51 文件）/ #442（夹带 6 文件）/ D593-FIX（声称提交实未提交）
 - 验收基线：无同名脚本（`ls scripts/control-tower/ | grep merge` 零命中）→ 新建
 
@@ -53,7 +53,9 @@
 处理：merge-base..HEAD 变更集 × 声明写集（S1 task-state / S2 dev doc / S3 brief 并集）
 结果：夹带 → job 红 + 逐文件点名 + 修复指引；无夹带 → 绿；无法判定 → fail-closed
 
-## 架构层: scripts（控制塔域，非 L1-L5 产品架构）
+## 架构层:
+scripts（控制塔域，非 L1-L5 产品架构）
+
 
 ## Done 标准
 - [x] verify: bash tests/control-tower/merge_writeset_gate.test.sh → exit 0（21 断言）
