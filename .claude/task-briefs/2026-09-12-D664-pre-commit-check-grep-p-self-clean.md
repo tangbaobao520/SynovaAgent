@@ -62,7 +62,9 @@ control-tower/PLATFORM-CHECKLIST.md 2（文档，不改）。
 处理：27 处 `-P` → `-E` 逐处转译（`\d`/`\s`/`\S`/`\K` 分类转译）+ 回归网扩容并接入 CI
 结果：`git grep -E "grep -[a-z]*P" -- scripts/` 仅剩注释与检测器哨兵；双平台 CI 绿；13 组门禁过
 
-## 架构层: scripts（控制塔域，非 L1-L5 产品架构）
+## 架构层:
+scripts（控制塔域，非 L1-L5 产品架构）
+
 
 ## Done 标准
 - [x] verify: git grep -nE "grep +-[a-zA-Z]*P" -- scripts/ 排除注释与哨兵后零真实调用
