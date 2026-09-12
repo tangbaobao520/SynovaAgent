@@ -839,11 +839,29 @@ if [ -n "$STAGED_SRC" ]; then
         TASK_BRIEF_EMPTY="${TASK_BRIEF_EMPTY}  ${q}: 未填写\n"
       fi
     done
-    # 架构层: 兼容 ## 本任务在哪一层 和 ## 架构层 两种写法
-    LAYER_SECTION=$(awk '/^## (本任务在哪一层|架构层)(:| )/{found=1; next} /^## /{if(found) exit} found' "$BRIEF" 2>/dev/null)
-    LAYER_FILLED=$(echo "$LAYER_SECTION" | grep -v "^<!--\|^$" | tr -d "[:space:]" | head -1)
-    if [ -z "$LAYER_FILLED" ] || [ ${#LAYER_FILLED} -lt 3 ]; then
-      TASK_BRIEF_EMPTY="${TASK_BRIEF_EMPTY}  架构层: 未填写\n"
+    # 架构层 (D707 统一口径): 与 check-brief-parseable.sh **共用同源解析器**
+    #   brief_parser.py（单一事实源）。旧实现是第二套 awk，在内联写法
+    #   `## 架构层: <值>` 上与解析器结论相反——实测存量 232/629 份 brief 命中
+    #   （解析器绿 / 本处报「未填写」），D665 即因此白烧一轮 CI（PR #494 首轮红）。
+    #   顺带修掉旧正则 `\s*(.+)` 跨行吞标题 → 真空值被当成「已填写」的假绿。
+    #   不再保留第二套 awk 回退：回退实现自身就会漂移（实测全角冒号 `## 架构层：X`
+    #   在 awk 下解析失败而解析器正常）——「一类一机制」，字段口径只允许一个实现。
+    LAYER_FILLED=""
+    if command -v python3 >/dev/null 2>&1; then
+      LAYER_FILLED=$(python3 "$ROOT/scripts/control-tower/brief_parser.py" --layer "$BRIEF" 2>/dev/null | head -1 || true)
+    else
+      # 无 python3 → 本项无法判定。显式降级跳过（不静默判「未填写」= 假红；
+      # 也不静默放行 = 假绿）。语义对齐 check-brief-parseable.sh 的既有约定。
+      echo -e "  ${YELLOW}⚠️  D707: python3 不可用 — 架构层字段无法判定，跳过本项（降级登记）${RESET}"
+      mkdir -p "$ROOT/.codex/control-tower/logs" 2>/dev/null || true
+      echo "{\"time\": \"$(date -u +%Y-%m-%dT%H:%M:%S+00:00)\", \"component\": \"pre-commit-group6-layer\", \"reason\": \"python3 不可用 — 架构层字段跳过 (fail-open + degraded)\"}" >> "$ROOT/.codex/control-tower/logs/degraded-events.log" 2>/dev/null || true
+      LAYER_FILLED="__D707_UNJUDGED__"
+    fi
+    if [ "$LAYER_FILLED" != "__D707_UNJUDGED__" ]; then
+      LAYER_FILLED=$(printf '%s' "$LAYER_FILLED" | tr -d "[:space:]")
+      if [ -z "$LAYER_FILLED" ] || [ ${#LAYER_FILLED} -lt 3 ]; then
+        TASK_BRIEF_EMPTY="${TASK_BRIEF_EMPTY}  架构层: 未填写\n"
+      fi
     fi
     # Done 标准专项: 至少一条完成标准
     DONE_SECTION=$(awk "/^## Done 标准/{found=1; next} /^## /{if(found) exit} found" "$BRIEF" 2>/dev/null)

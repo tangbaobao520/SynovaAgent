@@ -59,7 +59,7 @@ CURRENT_BRIEF="$ROOT/.claude/current-brief"
 if [ -f "$CURRENT_BRIEF" ]; then
   CB=$(cat "$CURRENT_BRIEF" 2>/dev/null | tr -d '[:space:]')
   # 检查 current-brief 是否陈旧（文件名含日期且不是今天）
-  CB_DATE=$(echo "$CB" | grep -oP '\d{4}-\d{2}-\d{2}' | head -1 || true)
+  CB_DATE=$(echo "$CB" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' | head -1 || true)
   if [ -n "$CB_DATE" ] && [ "$CB_DATE" != "$TODAY" ]; then
     :  # 陈旧的 current-brief，忽略它
   elif [ -f "$ROOT/.claude/task-briefs/$CB" ]; then
