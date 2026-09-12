@@ -116,6 +116,13 @@
       "severity": "P2",
       "source": "CTO 亲历（非 K3，2026-09-11）",
       "note": "D665 双解析器扫描发现：D660 brief（已在 main）架构层为内联写法，未来任何触碰该文件的 PR 会 CI strict 红组6。修法：架构层标题下补一行 body（1 行改动），随 PLAN-brief-archlayer-dual-parser 一并处理。"
+    },
+    {
+      "id": "PLAN-credential-rotation-deferred",
+      "title": "5 组密钥轮换——创始人 2026-09-11 决定暂缓（风险已知保留）",
+      "severity": "P1（风险已接受）",
+      "source": "创始人决定（CTO 已于 2026-09-11 完成仓库侧取证）",
+      "note": "取证结论：5 把钥匙的真实值在全部 git 历史与 HEAD 树零命中（逐值搜索）；本机非仓库位置零命中（.claude/settings.local.json 含 2 把智谱钥匙但被 .gitignore:52 挡住、从未入库）。唯一险情=前任《履职总账》含 2 枚明文 ghp_ token，Push Protection 拦截、token 从未入历史，本地副本已脱敏、明文原版已删除。创始人 2026-09-11 决定「先不换」。后续注意：① 仓库为公开仓库（泄露即全网可见）② Secret Scanning+Push Protection 已于同日开启（平台自动拦）③ 若任一会话/文档再现明文，立即升级为必换。"
     }
   ]
 }
