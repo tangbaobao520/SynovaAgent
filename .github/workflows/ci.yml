@@ -56,6 +56,14 @@ jobs:
         run: |
           # base..head 写集 × 已合 PR 写集 —— CI 权威物理拦截写集重叠
           bash scripts/control-tower/verify-parallel.sh --ci-pr origin/main
+      # D708: 合并级写集对账 gate —— 本 PR 变更集 × **本 PR 自己的声明**（intra-PR 夹带）。
+      #   与上一 step（verify-parallel: 本 PR × 已合 PR 写集，inter-PR 重叠）**正交**，不重复造。
+      #   触发点 = 合并前（PR job）：出现夹带即红并逐文件点名；main/master push 自动跳过。
+      - name: Merge write-set reconciliation (D708)
+        if: steps.docsonly.outputs.docs_only != 'true'
+        run: |
+          python3 scripts/control-tower/merge_writeset_gate.py \
+            --base origin/main --head HEAD --branch "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
 
   test:
     name: Vitest (${{ matrix.shard }})
@@ -189,7 +197,8 @@ jobs:
             tests/control-tower/verify-parallel-ci.test.sh \
             tests/control-tower/alloc-task-id.test.sh \
             tests/control-tower/alloc-task-id-lock.test.sh \
-            tests/control-tower/check-gitlinks.test.sh; do
+            tests/control-tower/check-gitlinks.test.sh \
+            tests/control-tower/merge_writeset_gate.test.sh; do
             echo "── $t"
             # D526: 测试失败输出进 ::error 注解——无 token 也能经 annotations 定位（D521 工具1 语义）
             if ! bash "$t" > /tmp/ct-out.log 2>&1; then
