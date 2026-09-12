@@ -31,6 +31,43 @@ jobs:
         if: steps.docsonly.outputs.docs_only != 'true'
       - run: npm ci
         if: steps.docsonly.outputs.docs_only != 'true'
+      # D703 (K3 W-1) 证据命令机器化: 非 docs-only PR 改动 dev-doc → 按文件名 D 号
+      # 回放对应 scripts/ci/verify-dXXX.sh 自证脚本（DS 命令从文档字符串升级为 CI 实跑）。
+      # 缺对应脚本 → ::warning 显式 skip（不静默，倒逼各卡交付自证脚本）。
+      - name: Replay changed dev-doc evidence commands (D703)
+        if: steps.docsonly.outputs.docs_only != 'true'
+        run: |
+          CHANGED_DOCS=$(git diff --name-only origin/main...HEAD -- 'docs/plans/codex/implementation/SYNOVA-IMPL-*.md' || true)
+          if [ -z "$CHANGED_DOCS" ]; then
+            echo "skip: 本次未改动 dev-doc（docs/plans/codex/implementation/）"
+            exit 0
+          fi
+          FAIL=0
+          for doc in $CHANGED_DOCS; do
+            DNUM=$(basename "$doc" | grep -oE 'D[0-9]+' | head -1 || true)
+            if [ -z "$DNUM" ]; then
+              echo "::warning title=verify-doc skip::$(basename "$doc") 文件名无 D 号，无法定位 verify-dXXX.sh（跳过）"
+              continue
+            fi
+            # spec 文件名 D 号为大写（D703），自证脚本仓库惯例为小写（verify-d703.sh）——
+            # 不转小写则 ubuntu 大小写敏感恒 warning skip（CI 首轮实证）
+            DLOW=$(printf '%s' "$DNUM" | tr 'A-Z' 'a-z')
+            SCRIPT="scripts/ci/verify-${DLOW}.sh"
+            if [ ! -f "$SCRIPT" ]; then
+              echo "::warning title=verify-doc skip::${SCRIPT} 不存在——$(basename "$doc") 的 DS 命令未接入 CI 回放（该卡应交付自证脚本）"
+              continue
+            fi
+            echo "── $SCRIPT ← $doc"
+            if ! bash "$SCRIPT" > /tmp/verify-doc-replay.log 2>&1; then
+              echo "FAIL: $SCRIPT"
+              # tail -60 而非 -20: 回放输出约 45 行（19×3 spec skip + D# 段 + 汇总），
+              # -20 会把 [FAIL] 行截掉只剩 skip 尾巴（首轮实证无法定位失败 DS）
+              cat /tmp/verify-doc-replay.log
+              echo "::error title=verify-doc replay::${SCRIPT} 回放失败（$doc）"
+              FAIL=1
+            fi
+          done
+          exit $FAIL
       - name: TypeScript check
         if: steps.docsonly.outputs.docs_only != 'true'
         # K3 审计 P1-1 修复：去掉 `|| true` fail-open（CI 类型检查永不红 → 挪 CI 后类型防线真空）。
@@ -190,7 +227,8 @@ jobs:
             tests/control-tower/alloc-task-id.test.sh \
             tests/control-tower/alloc-task-id-lock.test.sh \
             tests/control-tower/check-gitlinks.test.sh \
-            tests/control-tower/grep-oP-regression.test.sh; do
+            tests/control-tower/grep-oP-regression.test.sh \
+            tests/control-tower/verify-doc.test.sh; do
             echo "── $t"
             # D526: 测试失败输出进 ::error 注解——无 token 也能经 annotations 定位（D521 工具1 语义）
             if ! bash "$t" > /tmp/ct-out.log 2>&1; then
