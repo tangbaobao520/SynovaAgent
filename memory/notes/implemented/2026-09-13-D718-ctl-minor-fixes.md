@@ -40,6 +40,14 @@ D664 brief 生成 2026-09-10、提交 2026-09-12 → 09-10 不在窗口 {09-11,0
 强锚点另可在认领计数为空时参与最终回退（纯日期回退对跨日任务会落到无关 brief）。
 语义：**日期只是兜底，身份才是归属依据**。
 
+**决策 2b（执行期实测追加）：同数认领 tie-break 也必须身份优先。**
+本单修 `scripts/pre-doc-audit.sh` 时被 `staging_guard.py` 硬阻断一次——根因不是窗口，而是
+**共享文件被多个 brief 同时认领**（D664 brief 历史也改过 `pre-doc-audit.sh` 与
+`grep-oP-regression.test.sh`）：D664 brief 与本任务 brief 认领数相同 → 旧实现 `claims.sort(key=-n)`
+是**稳定排序 = 字典序** → `2026-09-12-D664-*` 恒胜 `2026-09-13-D718-*` → guard 判
+「认领 brief D# ≠ 本 session 任务 D#」block。修法：同数时按 强锚点 → 弱锚点 → 原字典序 排序；
+无锚点时行为与修复前完全一致。用例 11 钉住（修复前 2 条红）。
+
 ## 决策 3：BOM 清除 + 同族全仓扫描
 
 `scripts/pre-doc-audit.sh` 首行 `EF BB BF` → `bash scripts/pre-doc-audit.sh` 报
@@ -50,13 +58,26 @@ D664 brief 生成 2026-09-10、提交 2026-09-12 → 09-10 不在窗口 {09-11,0
 
 **扫描方法陷阱（实测）**：`od -An -tx1 | grep 'ef bb bf'` 因 od 十六进制对之间是**两个空格**而永不命中
 → 首轮扫描为**假阴性**（"全仓只有 1 个 BOM"的错误结论）。改用 `tr -d ' \n'` 后比对 `efbbbf` 才正确。
-凡「零命中」类结论，必须先验证扫描器本身能命中已知阳性样本。
+凡「零命中」类结论，必须先验证扫描器本身能命中已知阳性样本（守卫已加空转哨兵断言）。
 
-## 补记：本批另发现的两项控制塔存量债（未修，已登记台账）
+## 补记：本批另发现的控制塔存量债（未修，已登记台账）
 
 1. `scripts/` 下 11 个 .sh 缺 UTF-8 头块（`check-silent-swallow.sh --utf8` ❌，含本批改动的
    `alloc-task-id.sh`）——`origin/main` 同样存在，属存量；CI strict 下是否会红需单独核实。
 2. 同族 BOM 14 个待清（除去本批 1 个），按域分：K3 域 1 / doc-system 7+1 / CTO 域 4。
+3. **pre-push golden-case F1 门禁在"环境失败"时报错误结论**：新 clone 无 `node_modules` →
+   `npx tsx` 需写 `~/.npm` 缓存在沙箱外（EPERM）→ 门禁输出「诊断质量退化解冻，见上方 diff」
+   并阻断推送。实测 `npx tsx scripts/ci/golden-case-checker.ts` 经主树 tsx CLI 直连后
+   **11/11 全绿**——是环境依赖（M5）+ 错误归因（M2 族）双重问题，应让门禁区分「检查未能执行」
+   与「检查发现回退」（三态退出码，ctrl-tower-change 模式 1）。
+4. **D718 brief 自身缺 `#CRITERIA:`**（派单骨架填实后丢失）→ `brief_parser.parse_criteria` 返回 None
+   → 该 brief 无法被 resolver 的最终回退选中（D317 机制对它失效）。本批未改（避免动 brief 语义），
+   建议后续在 brief 门禁里补「#CRITERIA 存在性」断言。
+5. **同一份声明（brief Q2）被两套匹配器解释，语义不一致**：pre-commit G12 用
+   `brief_parser.match_path`（`(^|/)pat$`，**不展开 glob**），`merge_writeset_gate.py` 用
+   `fnmatch`（**展开 glob**）。实测：Q2 写 `tests/control-tower/**` → writeset gate 认为已声明、
+   G12 判「不在 Q2 范围内」→ CI strict 红（D718 §2 真实被拦一次）。修法二选一（待派）：
+   统一匹配器，或在 Q2 契约里明确**禁止 glob、必须逐文件列举**并在两边都校验。
 
 ## 反向验证（两层防线各自独立证明，缺一不可）
 
