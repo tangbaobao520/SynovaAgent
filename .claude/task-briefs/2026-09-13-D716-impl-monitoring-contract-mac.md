@@ -25,6 +25,7 @@ Synova = 组织数字孪生诊断 Agent。本任务在 L3 洞察层哨兵切片�
 
 ## Q2: 范围 — 正确的最简方案
 做什么：
+- .claude/task-briefs/2026-09-13-D716-impl-monitoring-contract-mac.md — 本 brief 自身（编码阶段任务声明，随实现提交进 PR——D708 写集对账声明）
 - src/sentinel/monitoring-contract.ts — 新建: schema 类型单源 + 字段校验 + 三层合并 loader loadMonitoringContract + contractForSentinel + clearMonitoringContractCache + mtime 记忆化（spec §5.2-A/B/C）
 - src/sentinel/notification-policy.ts — 新建: 通知状态表三件套 createNotificationStateTable/readNotificationState/upsertNotificationState + 纯函数 decideNotification（六态映射 spec §5.2-H）+ listEscalationQueue 读接口（spec §5.2-D/E/F）
 - src/sentinel/runner.ts — 修改: start() 建通知状态表；自诊断 L517 与聚合 L588 两个派发点改走 decideNotification（读工单状态 + 契约 + 状态表）；提醒/首页幂等落账；新增 listEscalationQueue 公开方法；保留抖动合并器语义（去重表不动，spec §5.1-⑤）
