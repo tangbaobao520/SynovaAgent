@@ -10,6 +10,8 @@
     "baseline": "origin/main @ 3f0a43b5",
     "files": [
       "docs/synova/coordination/真相源写入链路缺口-20260913.md",
+      "docs/synova/coordination/审计发现台账-DSH-CTO.md",
+      "docs/synova/coordination/board-backlog.json",
       "task-state/D741.json",
       ".claude/task-briefs/2026-09-14-D741-真相源写入链路定位.md"
     ],
