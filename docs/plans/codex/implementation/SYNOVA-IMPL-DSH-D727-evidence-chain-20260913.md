@@ -285,7 +285,7 @@ sqlite3 data/synova.db "SELECT count(*) FROM agent_memory;"                     
 
 #### C. 死变量 `evidenceSummary`——即使证据存在也进不了诊断（P0，假接线的典型形态）
 
-src/agent/diagnosis-launcher.ts 行 129-141：
+src/agent/diagnosis-launcher.ts 行 129-148（声明 + 赋值，全仓零读取；`if` 块 130-148）：
 
 ```ts
 let evidenceSummary = '';                                   // 行 129
@@ -296,7 +296,7 @@ if (this.ctx.evidenceCollector && this.ctx.corroborationEngine) {
     // 矛盾检测…
   }
 }
-// 行 141 之后：evidenceSummary 再无任何引用 → 死变量
+// 本块结束（行 148）之后：evidenceSummary 再无任何引用 → 死变量
 ```
 
 全仓 grep `evidenceSummary` = **4 处**：`expert-dispatcher.ts:328/333`（另一条链路的同名局部变量）与 `diagnosis-launcher.ts:129/134`（**只写不读**）。→ 修好注入后若不同时修这里，仍会得到"证据进了内存、没进诊断"的假绿。
