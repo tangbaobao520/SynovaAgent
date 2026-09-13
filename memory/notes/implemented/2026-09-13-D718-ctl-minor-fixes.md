@@ -73,6 +73,11 @@ D664 brief 生成 2026-09-10、提交 2026-09-12 → 09-10 不在窗口 {09-11,0
 4. **D718 brief 自身缺 `#CRITERIA:`**（派单骨架填实后丢失）→ `brief_parser.parse_criteria` 返回 None
    → 该 brief 无法被 resolver 的最终回退选中（D317 机制对它失效）。本批未改（避免动 brief 语义），
    建议后续在 brief 门禁里补「#CRITERIA 存在性」断言。
+5. **同一份声明（brief Q2）被两套匹配器解释，语义不一致**：pre-commit G12 用
+   `brief_parser.match_path`（`(^|/)pat$`，**不展开 glob**），`merge_writeset_gate.py` 用
+   `fnmatch`（**展开 glob**）。实测：Q2 写 `tests/control-tower/**` → writeset gate 认为已声明、
+   G12 判「不在 Q2 范围内」→ CI strict 红（D718 §2 真实被拦一次）。修法二选一（待派）：
+   统一匹配器，或在 Q2 契约里明确**禁止 glob、必须逐文件列举**并在两边都校验。
 
 ## 反向验证（两层防线各自独立证明，缺一不可）
 

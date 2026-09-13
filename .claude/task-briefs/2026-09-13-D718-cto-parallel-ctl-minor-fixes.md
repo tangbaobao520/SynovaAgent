@@ -30,7 +30,8 @@
 - scripts/workflow/resolve-commit-brief.sh — 认领窗口改为「任务身份（D#）锚点 ∪ 日期窗口」而非纯 ±1 天
 - scripts/pre-doc-audit.sh — 去首行 BOM（+ 同族 BOM 全仓扫描结论入台账）
 - tests/control-tower/grep-oP-regression.test.sh — 并入首行 BOM 扫描（sealed，无需改 ci.yml；含存量待清清单 ratchet）
-- tests/control-tower/** — 各项对应断言
+- tests/control-tower/resolve-commit-brief.test.sh — 跨日/tie-break 用例（G12 需显式路径：不展开 glob）
+- docs/synova/coordination/审计发现台账-DSH-CTO.md — 本批发现登记（BOM 存量 14 个按域 / golden-case 环境误报 / G12-G22 匹配器不一致）
 - memory/notes/implemented/2026-09-13-D718-ctl-minor-fixes.md — 本单决策 Note（D534 note 门禁）
 - .claude/task-briefs/2026-09-13-D718-cto-parallel-ctl-minor-fixes.md — 本 brief
 - task-state/D718.json — 本单登记
