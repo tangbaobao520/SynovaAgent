@@ -1,11 +1,17 @@
 {
   "task_id": "D717",
   "title": "coding-product-debt-batch",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": null,
-  "impl": null,
+  "impl": {
+    "path": "package.json + package-lock.json + src/l3/evidence-retention.ts + src/deploy/bootstrap.ts + tests/l3/evidence-retention.test.ts",
+    "commit": "随本 PR",
+    "by": "Mac 编码（synova-dsh）",
+    "at": "2026-09-13",
+    "note": "① react-markdown 声明为 root devDependency（root lockfile 原零该包；CI 仅 root npm ci → 干净安装必失败）。红证据：移开 electron-renderer/node_modules 后 tests/electron/use-streaming-conversation.test.ts 报 `Cannot find package 'react-markdown' imported from electron-renderer/src/components/MessageItem.tsx`（链 CenterPanel.tsx:16 → MessageItem.tsx:11）；绿证据：rm -rf node_modules && npm ci（exit 0，844 包）后同套件 21/21 绿。② expireOld 生产接线：新建 L3 保留分级服务（决策依据 board-backlog PLAN-expireold-wiring + 创始人 D660「按时间清理是错误模型」→ 默认 permanent 不按时间删，显式 env 开启），装配点 src/deploy/bootstrap.ts Phase 5c（启动即跑一次 + 每日 03:30 cron，与 db-backup 同区），失败走 degraded + 分类错误码（铁律 24/31/32）。测试 21/21 绿（含降级/边界/接线断言）。"
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-13",
-  "updated_by": "alloc-task-id"
+  "updated_by": "synova-dsh"
 }
