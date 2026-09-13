@@ -129,7 +129,7 @@ grep -q 'origin/main 不可用' "$G12" \
   && ok "⑨ G12 回退路径带可见提示" \
   || no "⑨ G12 回退路径静默"
 grep -q 'DIFF_ALL=$(git diff --name-only "$DIFF_BASE"\.\.HEAD' "$G12" \
-  && ok "⑨ G12 主路径已改为三点差（\"$DIFF_BASE\"..HEAD）" \
+  && ok "⑨ G12 主路径已改为三点差（基准变量..HEAD）" \
   || no "⑨ G12 主路径不是三点差（修复被回退）"
 
 echo ""
