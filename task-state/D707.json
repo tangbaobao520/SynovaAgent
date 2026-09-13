@@ -1,16 +1,28 @@
 {
   "task_id": "D707",
   "title": "brief-archlayer-parser-unify",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "pr": 502,
     "branch": null,
     "note": "并行 CTO 控制塔收口批次；合并权归主 CTO"
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-09-13-D715.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "findings": [
+      "旧解析器假绿逐字复现: 8d8404c2^ 版 parse_layer 对空值架构层返回 '## 文档引用'（\\s 跨行吞标题）",
+      "新解析器 inline/body/全角冒号四写法等价 + 空值/占位负例正确（K3 抽样复测 + 30/30）",
+      "单一事实源接线: pre-commit-check.sh:851 调 brief_parser.py --layer, 旧 awk 第二实现已删",
+      "P2-5 备查: 无 python3 降级 __D707_UNJUDGED__ 在 SYNO_CI=1 下 fail-open（实际不可达路径）"
+    ],
+    "by": "k3-audit (D715)",
+    "at": "2026-09-13"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-12",
-  "updated_by": "synova-cto",
+  "updated_at": "2026-09-13",
+  "updated_by": "k3-audit",
   "slice": "ctl-closeout-20260911"
 }
