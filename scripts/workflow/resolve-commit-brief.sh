@@ -201,6 +201,12 @@ except ImportError:
 staged = [s.strip() for s in '''$STAGED'''.split('\n') if s.strip()]
 briefs = [b for b in '''$ALL_TODAY'''.split('\n') if b.strip()]
 cur = '''$CUR'''
+# D718: 身份锚点文件集（强=分支名/暂存 task-state；弱=current-brief）——仅用于**同数**时的
+#   优先级，不改变认领计数语义。共享文件常被多个 brief 同时认领（都改过该文件），
+#   旧实现稳定排序 = 字典序 → 日期靠前的陈旧 brief 恒胜 → staging_guard 判「认领 brief D#
+#   与本 session 任务不一致」硬阻断（D718 修 pre-doc-audit.sh 时真实被拦一次）。
+anchored_strong = set(x.strip() for x in '''$ANCHORED_STRONG_FILES'''.split('\n') if x.strip())
+anchored_weak = set(x.strip() for x in '''$ANCHORED_WEAK_FILES'''.split('\n') if x.strip())
 
 claims = []
 for b in briefs:
@@ -217,10 +223,12 @@ if cur and any(b == cur and n > 0 for n, b in claims):
     print(cur)
     sys.exit(0)
 
-# 2. 认领数最多的 brief
-claims.sort(key=lambda x: -x[0])
-if claims and claims[0][0] > 0:
-    print(claims[0][1])
+# 2. 认领数最多的 brief；同数时身份锚点优先（强 → 弱 → 其余按原字典序，无锚点零行为变化）
+best = max(n for n, _b in claims) if claims else 0
+if best > 0:
+    top = [b for n, b in claims if n == best]
+    top.sort(key=lambda b: (0 if b in anchored_strong else (1 if b in anchored_weak else 2), b))
+    print(top[0])
     sys.exit(0)
 
 # 3. 回退: current-brief
