@@ -15,7 +15,19 @@
  *   - on* 订阅返回退订函数（ipcRenderer.off 移除同一 listener——防 React effect 重挂载双订阅）
  */
 const { contextBridge, ipcRenderer } = require('electron');
-const config = require('./config.json');
+// F3 修复（2026-09-13）: 沙箱化 preload 不允许 require 相对文件——原 `require('./config.json')`
+// 在打包态抛 "module not found: ./config.json"（source: node:electron/js2c/sandbox_bundle），
+// 导致 contextBridge 从未执行、window.electronAPI 为 undefined、渲染层 API 全线失败。
+// 配置改由主进程经 webPreferences.additionalArguments 透传（沙箱内 process.argv 可用）；
+// 取不到时回退默认值，保持 dev/测试环境行为不变。
+function readLaunchedArg(prefix) {
+  const argv = (typeof process !== 'undefined' && Array.isArray(process.argv)) ? process.argv : [];
+  const hit = argv.find((a) => typeof a === 'string' && a.startsWith(prefix));
+  return hit ? hit.slice(prefix.length) : '';
+}
+const config = {
+  serverUrl: readLaunchedArg('--synova-server-url=') || 'http://localhost:18790',
+};
 
 /** 通道名常量（ipc-contract 用例 3/5 解析锚点；禁止动态拼接通道名） */
 const CHANNELS = {
