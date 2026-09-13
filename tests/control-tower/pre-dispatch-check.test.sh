@@ -12,6 +12,9 @@ TMPD=$(mktemp -d); trap 'rm -rf "$TMPD"' EXIT
 cat > "$TMPD/good.md" <<'MD'
 派单：D732 测试
 - 写集: scripts/control-tower/pre-dispatch-check.sh
+
+## 派单内部一致性自检
+各单验收命令已逐条比对，无互斥要求。
 MD
 if bash "$S" "$TMPD/good.md" >/dev/null 2>&1; then ok "① 正常文档 → exit 0"; else no "① 正常文档应 exit 0"; fi
 

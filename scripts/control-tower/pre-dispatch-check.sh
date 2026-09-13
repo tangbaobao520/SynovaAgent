@@ -48,6 +48,19 @@ grep -oE '[A-Za-z0-9_./-]+\.(ts|cjs|mjs|sh|py|json|yml):[0-9]+' "$DOC" | sort -u
 done > "$tmp.line"
 cat "$tmp.line"; grep -q '⚠️' "$tmp.line" && FIND=1
 
+echo "── ⑨ 派单内部一致性（语义为主；脚本做自检段存在性 + 互斥启发式）──"
+if grep -qE '内部一致性' "$DOC"; then echo "  ✅ 含「派单内部一致性」自检段（CTO 已逐条核对）"
+else echo "  ⚠️ 缺「派单内部一致性」自检段——D733 教训：同一单两条要求对同一路径互斥，是执行方替我发现的"; FIND=1; fi
+grep -oE '(src|scripts|tests|docs)/[A-Za-z0-9_./-]+' "$DOC" | sort -u > "$tmp.paths"
+while read -r pp; do
+  [ -z "$pp" ] && continue
+  ctx=$(grep -- "$pp" "$DOC" 2>/dev/null | tr '\n' ' ')
+  if echo "$ctx" | grep -qE '必红|非零|exit 1' && echo "$ctx" | grep -qE '变绿|exit 0'; then
+    echo "  ⚠️ 疑似互斥: $pp 同时出现「必红/非零」与「变绿/exit 0」——请人核"
+    FIND=1
+  fi
+done < "$tmp.paths"
+
 echo "── ② 前置 PR 合并状态（需 GITHUB_TOKEN；无则跳过，不静默）──"
 TOKEN="${GITHUB_TOKEN:-}"
 if [ -z "$TOKEN" ] && [ -f "$HOME/.dsh/.credentials.yaml" ]; then
