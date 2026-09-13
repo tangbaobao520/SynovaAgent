@@ -82,6 +82,8 @@ Agent，不是 ChatBot。驻扎企业，持续观测，主动发现，自动诊�
 - task-state/D712.json
 - docs/synova/coordination/审计发现台账-DSH-CTO.md
 - .claude/task-briefs/2026-09-13-D712-win-desktop-reverify-evidence.md
+- .gitignore（首提交后追加：证据目录内 .log 的定向豁免行——实测 12 个 .log 证据被 `*.log` 静默忽略，
+  其中 app-stderr.log 是 F3 唯一现场，缺它则 K3 无法复核；D581 已为同目录加过豁免行，本次补文件级）
 
 ## Q3: 验收 — 入口 → 交互 → 结果
 
