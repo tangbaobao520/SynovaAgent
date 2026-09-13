@@ -1,0 +1,53 @@
+{
+  "task_id": "D712",
+  "title": "桌面端线 1 证据重验批（Mac 侧 1-1/1-3/1-4/1-5/1-6/1-7）",
+  "status": "impl_done",
+  "spec": null,
+  "spec_note": "派单文档 docs/synova/coordination/派单-桌面端线1重验批-D712-20260912.md 在 fix/d712-desktop-reverify-dispatch 分支，未在 main（本单不搬文档，只落证据）",
+  "impl": {
+    "by": "dsh-harness-mac",
+    "at": "2026-09-13",
+    "write_set": [
+      "docs/synova/product-lines/evidence/D712-mac-20260913/ — 六点实测原始佐证（产物清单/四断言/旧引导探测/计时/升级断言）",
+      "docs/synova/product-lines/evidence/scenario-2026-09-13*.json — 5 条 scenario 证据记录（evidence-writer.py 写入，非手搓）",
+      "task-state/D712.json — 本文件",
+      "零代码改动：electron/ electron-renderer/ scripts/install* scripts/deploy/ scripts/setup/ 全未触碰（防 A1 证据失效）"
+    ],
+    "points": {
+      "1-1": "pass（机器绿→pending_k3）：arm64 dmg 356M md5=55b599854e4343e8897b3866697c2f70 + arm64-mac.zip + mac.zip 产出；Info.plist 0.1.0 == package.json 0.1.0",
+      "1-3": "pass（机器绿→pending_k3）：mac-install-verify.sh 四断言全过（A1 进程 / A2 窗口 / A3 healthz 200 / A4 backend.log 非空）",
+      "1-4": "pass（机器绿→pending_k3）：同上四断言（安装包自启后端 + 开窗，实测无人碰命令行）",
+      "1-5": "FAIL（机器红）：旧 Web 引导仍可达——curl /app/setup.html → HTTP 200 <title>Synova — Setup</title>；src/server.ts:300 仍挂载 app/ 静态目录；app/setup.html + app/js/setup.js + app/js/admin.js 仍在仓库。runbook desktop-dev-prod.md 只做了文档侧收敛声明，代码事实未收敛（双引导并存=原 A-G2/S3-6 缺口未消）",
+      "1-6": "pass（机器绿→pending_k3）：first-diagnosis-timing.sh total_sec=8.7 / target 1800 → WITHIN_TARGET（安装→healthz 200→consult 入口 HTTP 400 可提交）",
+      "1-7": "pass（机器绿→pending_k3）：upgrade-data-verify.sh verdict=DATA_RETAINED；md5 v1=v2=d0c3f9a702136a8d06ea32376720b350；integrity_v2=ok；tables 54 一致"
+    },
+    "evidence": {
+      "1-1_artifacts": "docs/synova/product-lines/evidence/D712-mac-20260913/1-1-artifacts.txt",
+      "1-3_1-4_assertions": "docs/synova/product-lines/evidence/D712-mac-20260913/1-3-1-4-mac-install-assertions.txt",
+      "1-5_dual_guide": "docs/synova/product-lines/evidence/D712-mac-20260913/1-5-dual-guide-check.txt",
+      "1-6_timing": "docs/synova/product-lines/evidence/D712-mac-20260913/1-6-timing.json",
+      "1-7_upgrade": "docs/synova/product-lines/evidence/D712-mac-20260913/1-7-upgrade-assertions.txt",
+      "records": [
+        "docs/synova/product-lines/evidence/scenario-2026-09-13.json (1-1 pass)",
+        "docs/synova/product-lines/evidence/scenario-2026-09-13-1.json (1-3,1-4 pass)",
+        "docs/synova/product-lines/evidence/scenario-2026-09-13-2.json (1-6 pass)",
+        "docs/synova/product-lines/evidence/scenario-2026-09-13-3.json (1-7 pass)",
+        "docs/synova/product-lines/evidence/scenario-2026-09-13-4.json (1-5 fail)"
+      ],
+      "refresh_all": "bash scripts/product-lines/refresh-all.sh（主工作区实测）：线 1 counts = failed 1 / pending_k3 6 / stale 1（仅剩 Win 侧 1-2）；1-1/1-3/1-4/1-6/1-7 stale 清零转 pending_k3；verified 仍 0/8——场景证据按状态机只能到 pending_k3，verified 需 K3 裁决或创始人演示"
+    },
+    "findings": [
+      "构建链缺口（非本单引入）：build-synova.cjs 头注释'三步链'未含 native 依赖准备步；CI .github/workflows/desktop-build.yml:75 才做 prebuild-install -r electron。只跑三步链 → 包内 better-sqlite3 为 node ABI(127)，Electron 33 需 130 → 装完后端 ERR_DLOPEN_FAILED（本次实测复现）。建议：runbook/脚本头注释补第 3.5 步或纳入 mac-install-verify.sh 的构建段",
+      "release/SynovaAgent-0.1.0.dmg（x64, 00:45 构建产物）内含 node ABI 二进制，实测装后不可用 → 已从 release/ 删除；x64 未重打未验证，本批结论只覆盖 arm64",
+      "upgrade-data-verify.sh 的 rows 探针引用不存在的表 'sessions'（rows-v2: no such table）——不影响 md5/表清单/integrity 断言，但探针本身是坏断言，建议单独 FIX",
+      "本机 electron-builder 的 dmg 阶段 hdiutil 在受限沙箱被拒（'操作不被允许'）；dmg 由 hdiutil create 在同一 srcfolder 补出（app 内容与 electron-builder 产物同源）",
+      "工作区并发事故：本 session 在主工作区作业期间分支被其他 session 从 fix/d712-desktop-reverify-dispatch 切到 fix/d711-d1-notification-landing（派单文档随之消失）→ 证据提交改走 .sessions/d712-mac/repo 独立 clone（git-sync-pr V5.2.0 规范）"
+    ],
+    "red_lines": "scripts/audit/ 零触碰；scripts/product-lines/* 零改动；线 1 modules（electron/ electron-renderer/ scripts/install* scripts/deploy/ scripts/setup/）零改动"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-13",
+  "updated_by": "dsh-harness-mac",
+  "note": "CTO 派单（Mac 侧 6 点重验）→ DSH 执行。1-5 判 failed（双引导未物理收敛，附 curl 200 证据）；其余 5 点机器绿待 K3/创始人裁决转 verified；1-8 由 K3 独立复核，本单不自证。"
+}
