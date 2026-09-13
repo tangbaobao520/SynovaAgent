@@ -12,8 +12,8 @@
 #
 # 契约:
 #   @input  — 无参 | --skip-vitest（跳过测试，仅补写已有结果证据）
-#   @output — docs/synova/product-lines/evidence/test-YYYY-MM-DD*.json
-#             （record_type=test, verdict=pass, points=test 绑定验收点）
+#   @output — docs/synova/product-lines/evidence/test-YYYY-MM-DD-<machine>*.json
+#             （record_type=test, verdict=pass, points=test 绑定验收点；D726 起含机器维度）
 #   @exit   — 0 成功；2 降级（yaml/脚本缺失）
 #   @degraded — 测试套件不存在/超时 → 显式 log + 不写 pass 证据（fail-closed 铁律 11）
 #

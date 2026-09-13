@@ -34,6 +34,9 @@ calc-progress.py — 产品进度计算器（设计 v1.4 §三/§五；A1 证据
   3. 线 100% 门槛: verified==total 且无 k3 线级复核（record_type=k3, acceptance_point="line:<id>", pass）
      → 进度封顶 99 + k3_gate="待审计员全量复核"（防最后 10% 烂尾）
   4. 百分比只显整数
+  5. machine 类证据（scenario/test/ci/task_redeem）选取规则（D726，与 k3 段同构）:
+     fail 优先（任一未取代的 fail → failed）+ 最新 (date, at) 决胜；
+     **结论只由证据内容决定，与文件名/目录内排列顺序无关**（superseded_by 的裁决不参与）。
 """
 from __future__ import annotations
 
@@ -175,7 +178,11 @@ def status_for_point(point, verdicts_by_point, line_modules, git_cmd, today, pro
 
     k3 = [v for v in verdicts if v["record_type"] == "k3" and not v.get("superseded_by")]
     demo = [v for v in verdicts if v["record_type"] == "founder_demo"]
-    machine = [v for v in verdicts if v["record_type"] in ("scenario", "test", "ci", "task_redeem")]
+    # D726: machine 分桶补 superseded_by 过滤 —— 对齐 k3 分桶（第 176 行）的选取语义。
+    #   没有它，fail 优先规则会把一条**已被取代**的旧 fail 永久钉死在该点（无法翻案）。
+    machine = [v for v in verdicts
+               if v["record_type"] in ("scenario", "test", "ci", "task_redeem")
+               and not v.get("superseded_by")]
 
     # D576（CT-53）: k3_only 点（desc 含「审计员复核」的每线收尾点）只有 k3 裁决能 verified——
     # 任务兑换/演示核验最高到 pending_k3（自我指认禁止，1-8 型，K3 D572 实证）。
@@ -213,9 +220,17 @@ def status_for_point(point, verdicts_by_point, line_modules, git_cmd, today, pro
         return "verified"
 
     if machine:
-        latest = max(machine, key=lambda v: v["date"])
-        if latest["verdict"] == "fail":
+        # D726: machine 段对齐 k3 段语义 —— ① fail 优先 ② (date, at) tiebreaker。
+        #   旧实现 `max(machine, key=lambda v: v["date"])` 在同日多证据时由**列表顺序**决胜；
+        #   而列表顺序来自 load_evidence_records 的 `sorted(evidence_dir.glob("*.json"))`（:83）
+        #   = 文件名字典序 → 结论由文件名决定，纯属巧合。
+        #   实测（2026-09-13 真实数据）: 验收点 1-4 同日两条结论冲突 ——
+        #   D713-published-artifact-20260913.json(fail) 恒压 scenario-2026-09-13-1.json(pass)，
+        #   只因 'D' < 's'。语义必须由证据内容决定，不能由文件名决定。
+        if any(v["verdict"] == "fail" for v in machine):
             return "failed"
+        # 无 fail：取最新 (date, at) 的绿证据 governs 新鲜度（tiebreaker 显式化，不再靠排列顺序）
+        latest = max(machine, key=lambda v: (v["date"], v.get("at") or ""))
         # 机器验证绿 → 待裁判；但先查失效（A1 + 14 天 TTL）
         try:
             date_dt = datetime.strptime(latest["date"], "%Y-%m-%d")
