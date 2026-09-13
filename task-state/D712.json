@@ -43,6 +43,14 @@
   },
   "audit": null,
   "fix_task_id": null,
+  "pr": {
+    "number": 511,
+    "url": "https://github.com/tangbaobao520/SynovaAgent/pull/511",
+    "branch": "feat/win-d712-reverify-evidence",
+    "base": "main",
+    "opened_at": "2026-09-13",
+    "opened_by": "win-session (gh pr create，非创始人代点)"
+  },
   "redeem_note": "本任务不兑换任何验收点——1-8 k3_only（禁任务兑换自我指认）。4 条 scenario 机器记录供 K3 独立复核裁决；1-7 的 pass 为机器证据结论，最终 verified 仍由 K3 出。",
   "updated_at": "2026-09-13",
   "updated_by": "win-session"
