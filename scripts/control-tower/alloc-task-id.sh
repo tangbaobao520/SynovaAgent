@@ -188,6 +188,16 @@ echo "已登记: $STATE_FILE (status=claimed)"
 #   修测试污染: alloc-task-id.test.sh 曾在真实 brief 目录生成占位 brief（含模板排除项
 #   占位文本，CI strict 下 plan-integrity 硬炸）
 BRIEF_DIR="${SYNO_BRIEF_DIR:-$ROOT/.claude/task-briefs}"
+# D718 机制级防线（同类第二次复发）: D521 已给 alloc-task-id.test.sh 补 SYNO_BRIEF_DIR 注入缝，
+#   但 alloc-task-id-lock.test.sh 漏设 → 每次运行把 20 份骨架 brief 写进**真实仓库**
+#   （实测泄漏 56 份）。逐测试打补丁无效（同类第 2 次）→ 在源头 fail-closed：
+#   task-state 被注入（= 测试沙箱）而 brief 目录未注入时，拒绝生成骨架，显式告警不静默。
+#   生产路径不受影响（不设 SYNO_TASK_STATE_DIR 时该分支不触发）。
+if [ -n "${SYNO_TASK_STATE_DIR:-}" ] && [ -z "${SYNO_BRIEF_DIR:-}" ]; then
+  echo "⚠ alloc-task-id: task-state 已注入（${TASK_STATE_DIR}）但未注入 SYNO_BRIEF_DIR" >&2
+  echo "  → 跳过 brief 骨架生成，防污染真实仓库（测试请同时设 SYNO_BRIEF_DIR）" >&2
+  exit 0
+fi
 BRIEF_FILE="$BRIEF_DIR/$(date +%Y-%m-%d)-${NEW_ID}-$(echo "$TITLE" | tr " " "-").md"
 if [ -n "${NEW_ID:-}" ] && [ ! -f "$BRIEF_FILE" ]; then
   mkdir -p "$BRIEF_DIR"

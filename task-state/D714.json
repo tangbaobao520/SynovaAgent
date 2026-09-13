@@ -1,0 +1,17 @@
+{
+  "task_id": "D714",
+  "title": "f3-preload-sandbox-renderer-api-fix",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "path": "electron/main.cjs（additionalArguments 透传 + 启动自检 preload-check）+ electron/preload.cjs（去掉 require('./config.json')，改读 argv）",
+    "commit": "随本 PR",
+    "by": "主 CTO（synova-cto）",
+    "at": "2026-09-13",
+    "note": "修 F3（跨平台 P0）：打包态沙箱 preload 不允许 require 相对文件 → electronAPI undefined → UI 全线失效。保持 renderer 沙箱，改 additionalArguments 传配置 + 加启动自检哨兵。功能级验证：应用自检输出 preload-check OK（serverUrl=http://localhost:18790）"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-13",
+  "updated_by": "synova-cto"
+}

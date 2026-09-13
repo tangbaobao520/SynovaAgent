@@ -405,7 +405,18 @@ class TestGenPage(unittest.TestCase):
         genpage.generate(progress, todos, DOC_DIR / "todo-line-map.yaml", out)
         html_text = out.read_text(encoding="utf-8")
         self.assertEqual(html_text.count('class="line"'), 26)
-        self.assertIn("需要创始人拍板", html_text)
+        # 2026-09-12 契约变更：置顶区只渲染仍待裁决的项（已裁决项不得出现）
+        _ov = pl_yaml.parse((DOC_DIR / "cockpit-override.yaml").read_text(encoding="utf-8"))
+        _all_dec = _ov.get("pending_decisions") or []
+        _open_dec = [d for d in _all_dec if (d.get("status") or "open") == "open"]
+        if _open_dec:
+            self.assertIn("需要创始人拍板", html_text)
+            self.assertIn(_open_dec[0]["title"], html_text)
+        else:
+            self.assertNotIn("需要创始人拍板", html_text, "无待裁决项时不得渲染置顶区")
+        for _d in _all_dec:
+            if _d.get("status") == "resolved":
+                self.assertNotIn(_d["title"], html_text, "已裁决项不得出现在驾驶舱")
         self.assertIn("资本循环", html_text)
         # 术语零泄漏（创始人驾驶舱红线）
         self.assertEqual(len(re.findall(r"\bD\d{3}\b", html_text)), 0, "无任务编号术语")
@@ -520,6 +531,38 @@ class TestRefreshAll(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, "refresh-all exit 0: %s" % proc.stderr[-400:])
         for f in ("todos.yaml", "product-progress.json", "product-progress.html"):
             self.assertTrue((DOC_DIR / f).is_file(), f)
+
+
+class TestRenderDecisionsFilter(unittest.TestCase):
+    """9. 置顶区只渲染待裁决项（2026-09-12 CTO 交付复核抓出的缺陷回归）
+
+    缺陷: D-1/D-2 标 resolved 后，页面「需要创始人拍板」区仍渲染它们
+          （render_decisions 不按 status 过滤）→ 创始人看到已拍过板的问题。
+    契约: status == 'open'（缺省视为 open）才渲染；全为已裁决 → 整区不渲染（返回空串）。
+    """
+
+    OPEN_D = {"id": "D-1", "title": "待裁决项X", "status": "open",
+              "options": [{"label": "A", "note": "n"}], "suggestion": {"label": "A", "reason": "r"}}
+    RESOLVED_D = {"id": "D-2", "title": "已裁决项Y", "status": "resolved", "resolved_date": "2026-09-12",
+                  "options": [{"label": "B", "note": "n"}], "suggestion": {"label": "B", "reason": "r"}}
+
+    def test_resolved_not_rendered(self):
+        html = genpage.render_decisions([self.OPEN_D, self.RESOLVED_D])
+        self.assertIn("待裁决项X", html, "待裁决项必须渲染")
+        self.assertNotIn("已裁决项Y", html, "已裁决项不得出现在置顶区（本次修复的断言）")
+
+    def test_all_resolved_renders_empty(self):
+        self.assertEqual(genpage.render_decisions([self.RESOLVED_D]), "",
+                         "全为已裁决 → 整区不渲染")
+
+    def test_default_status_treated_as_open(self):
+        no_status = {"id": "D-3", "title": "无状态项Z", "options": [], "suggestion": {}}
+        self.assertIn("无状态项Z", genpage.render_decisions([no_status]),
+                      "缺 status 字段按 open 处理（向后兼容既有 yaml）")
+
+    def test_empty_input(self):
+        self.assertEqual(genpage.render_decisions([]), "")
+        self.assertEqual(genpage.render_decisions(None), "")
 
 
 if __name__ == "__main__":

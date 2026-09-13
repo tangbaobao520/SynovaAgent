@@ -42,6 +42,7 @@
     "electron:build": "electron-builder --config build-synova.cjs",
     "electron:build:win": "electron-builder --config build-synova.cjs --win",
     "electron:build:mac": "electron-builder --config build-synova.cjs --mac",
+    "electron:verify:mac": "bash scripts/desktop/verify-package-signature.sh --all --dir release",
     "docker:build": "docker build -t synova-agent .",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
