@@ -109,6 +109,19 @@ jobs:
             compgen -G "release/*.exe" > /dev/null || { echo "::error::no exe produced"; exit 1; }
           fi
 
+      # D713: 签名门禁（2026-09-13 创始人报告"打都打不开"）——产物"存在"≠"可用":
+      #   dmg/zip 内 app 无 _CodeSignature 封印 → macOS 拒启。此处对**产物本身**做校验，
+      #   未签名/封印破损 → 红（坏包不得随 artifact 出货）。先跑门禁自测，再校验产物。
+      - name: Signature gate self-test (D713)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: bash tests/desktop/verify-package-signature.test.sh
+
+      - name: Verify package signatures (D713)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: bash scripts/desktop/verify-package-signature.sh --all --dir release
+
       - uses: actions/upload-artifact@v4
         with:
           name: synova-desktop-${{ runner.os }}-${{ github.run_number }}
