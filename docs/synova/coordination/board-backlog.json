@@ -79,7 +79,7 @@
     {
       "id": "PLAN-k3-cond-clear",
       "title": "K3 CONDITIONAL 条件清零：D590/D591/D602 条件逐条核对收口",
-      "note": "D590/D591=D547 骨架 brief 已清+审计清单已补；D602=spec 记录级。复审时一并升 PASS。"
+      "note": "【2026-09-14 D740 订正】原 note 称「D590/D591=D547 骨架 brief 已清+审计清单已补」——**与实测不符（M2 型失真声明）**：7 份骨架 brief（D587/D591/D593/D594/D595/D596/D597）至今仍在 origin/main 的 `.claude/task-briefs/`，占位符 `认领: <agent>` / `<本任务在哪一层` 各 2 命中；两份台账（审计发现台账-DSH-CTO.md / AUDIT-FINDINGS-LEDGER.md）对 D590/D591/D592 命中数均为 0。D602=spec 记录级条件亦未关闭。真实现状见 `docs/synova/coordination/L1交互层未闭合项-20260913.md` §3-§7。"
     },
     {
       "id": "PLAN-ironlaw-enforcement",
@@ -242,6 +242,27 @@
       "severity": "P2",
       "source": "D721 复盘（本地 vitest 实测 + CI 日志双向确认）",
       "note": "用例 `GraphBridge → ModuleRunner.afterRun → Phase 1 > Given a failing module ... Then only successful modules create nodes`：`tests/l3/graphbridge-wiring.test.ts:79` `expect(graphNodes.length).toBe(1)` 收到 0。含义二选一，需编码线判：① 产品缺陷 —— 成功模块 hona 也未被建节点（GraphBridge.afterRun 接线断了）② 测试期望漂移 —— afterRun 语义已变。判据：在真实调用链上打点确认 `ModuleRunner.afterRun` 是否仍被调用（铁律 4/5：入口→交互→结果）。此前未被登记（D721 首次捕获）。"
+    },
+    {
+      "id": "PLAN-gen-cto-health-spec-crash",
+      "title": "【P0】gen-cto-health.py:305 崩溃 → 第③面 CTO 健康看板自 D600 起无法生成",
+      "severity": "P0",
+      "source": "D741 定位（只读复现，2026-09-14）",
+      "note": "`scripts/control-tower/gen-cto-health.py:305` 对 `d.get('spec').get('path')` 直接取键，而 `task-state/D600.json` 的 `spec` 是**字符串**（非对象）→ `AttributeError: str object has no attribute get`，`--dry-run` 与写盘路径同崩（实测 exit 1）。后果：`docs/synova/CTO-HEALTH.md` 内容停留 2026-08-29 23:24，第③面健康看板（门禁绕过 / M 模式复发 / 任务状态汇总）自 D600 入库起**完全无法刷新**——5 个 FAIL 里只有 D515 可见。修法二选一：① `:305` 兼容 `spec` 为字符串（取值前判类型）；② 统一 task-state schema 并在提交侧加校验（D600 型畸形字段无门禁）。附：`:326-331` verdict 子串判定 `PASS` 先于 `FAIL` → 现产物把 D393 的 FAIL 显示为 PASS，建议一并改直读 `audit.verdict`。证据：`docs/synova/coordination/真相源写入链路缺口-20260913.md` §2.4(a)。"
+    },
+    {
+      "id": "PLAN-board-verdict-dimension",
+      "title": "任务看板补 audit.verdict 维度：5 个 FAIL 落 done/todo 列，failed 列结构不可达",
+      "severity": "P1",
+      "source": "D741 定位（Host 账本实测，2026-09-14）",
+      "note": "`dsh/plugins/task-board-adapter/lib/sync.js:40-48` 列映射表只认 `task-state.status`（`audited→done`），`:190-198` / `:286-290` **从不读** `raw.audit.verdict` → Host 账本 `~/.dsh/task-board/ledger-v2.json` 实测 `D393→done / D503→todo / D515→todo / D549→todo / D572→done`（5 个 FAIL 无一进 failed 列）；且 `:46-47` 的 failed 列唯一入口是 `cancelled/failed` 状态，而全仓 task-state 无该状态产出方（audited 107 / impl_done 70 / closed 14 / claimed 11 / spec_done 3）→ **failed 列结构性恒空**。含义：创始人/CTO 在任务看板上看不到任何审计否决，M2 型假绿在看板侧无防线。修复需在插件侧（跨仓维护方）引入 verdict 维度。证据：同报告 §2.2-2.3。"
+    },
+    {
+      "id": "PLAN-dashboard-line-status",
+      "title": "产品线级状态三层补全（契约 yaml + calc-progress 写入 + 三消费端呈现）",
+      "severity": "P2",
+      "source": "D741 定位（2026-09-14）",
+      "note": "`product-progress.json` 实测 **26/26 条线均无 `status` 键**（派单点名桌面端/对话交互/MCP 集成三条＝L1 交互层三条）。写入端 `scripts/product-lines/calc-progress.py:316-330` 只写 `status_counts` 不写线级 `status`；契约 `product-lines.yaml` 亦无线级 status（仅点级种子）；三个消费端也都不读：`dsh/plugins/synova-dashboards/lib/collect.js:107-115`、`dsh/plugins/task-board-adapter/scripts/derive-board-sources.py:283-291`、`scripts/product-lines/gen-progress-page.py:114-122` → 补一处无效。前置：线级状态语义（建议由 status_counts + k3_gate 派生）属产品口径，待创始人拍板后派工。证据：同报告 §1。"
     }
   ]
 }
