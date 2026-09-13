@@ -1,0 +1,46 @@
+{
+  "task_id": "D727",
+  "title": "证据层数据流 spec（evidence-chain-dataspec）",
+  "status": "spec_done",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D727-evidence-chain-20260913.md",
+    "commit": "<本提交>",
+    "by": "dev-doc",
+    "at": "2026-09-13",
+    "note": "证据层数据流 spec（P0）。核心交付：① 必答①表不存在的根因 = 三层叠加（DDL 寄生于 EvidenceStore 构造函数 + 生产构造点为零且唯一候选点条件性早退 + 两处装配点硬编码 evidenceCollector:null）；② 必答②写入最小闭环 = GA 访谈 POST /api/conversations → ConversationEngine Phase 0（调用点 conversation-engine.ts:625-629 已存在）→ collectFromInterview → INSERT INTO evidence；③ 必答③ expires_at = 写入时刻的策略快照（唯一写入方=采集路径；默认 NULL=永久；写失败 fail-closed 于删除 + fail-soft 于采集，证据照常入库）；④ 必答④ 物理证明 = 报告 provenance.evidenceRefs + evidence_ref 引用表 + sqlite3 三段查询 + R1/R2 两条必红反向验证。另交付：五路证据概念台账（诊断证据 4 路全死 + 1 路同名异物）、与 D725 的 4 个接口点（含时间谓词单口径裁决）、D728 写集缺口 6 文件上报（方案 A 建议扩写集）。过 dev-doc-gatekeeper exit 0（C1-C6 全过，C6 提取 4 条）。基线 = origin/main @cff43d6f（D717 保留模块与 bootstrap 改动在未合并的 #527 上）。"
+  },
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-13",
+  "updated_by": "dev-doc",
+  "baseline": {
+    "main": "cff43d6f",
+    "d717_branch": "feat/mac-d717-product-debt（PR #527，evidence-retention.ts 在此，未合 main）",
+    "d717_merged": false,
+    "delivery_branch": "docs/d727-evidence-chain-spec"
+  },
+  "gatekeeper": {
+    "command": "bash scripts/control-tower/dev-doc-gatekeeper.sh docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D727-evidence-chain-20260913.md",
+    "exit": 0,
+    "detail": "C1 跳过（无 Edge ID）/ C2 33 路径全过 / C3-C5 过 / C6 提取 4 条"
+  },
+  "writeset_check": {
+    "command": "SYNO_DEV_DOC=<doc> bash scripts/workflow/check-dev-doc-write-set.sh <doc>",
+    "declared": 4,
+    "drift": 0,
+    "drift_detail": "4 条「新建」文件在交付提交内全部落盘 → 0 漂移（spec 期口径；本任务写集全部在 docs/ + task-state/ + .claude/ SKIP 前缀内，无实现文件）"
+  },
+  "handoff": {
+    "target": "Mac 线（D728 编码，派单 §二）",
+    "reason": "派单 §二 已定「D728｜Mac 编码：证据层接线实现（P0，依赖 D727）」；§一 交付项 2 的「归 Win 出指令 / 归 Mac 写明」按此裁决为 Mac",
+    "entry": "docs/synova/coordination/编码指令-D728-证据链接线-Mac-20260913.md"
+  },
+  "findings_registered": [
+    "写集缺口（需 CTO 裁决）：派单 §二 给 D728 的写集（src/evidence/ + evidence-retention.ts + bootstrap.ts + tests/evidence/）不足以达成派单自己的验收 ②「一条诊断报告能溯源到 ≥1 条原始证据」——实测缺 6 个接线文件（src/server.ts / src/routes/diagnosis.ts / src/routes/conversations.ts / src/agent/conversation-engine.ts / src/agent/diagnosis-launcher.ts / src/agent/engine-context.ts）。spec §5.3 给方案 A（一次扩写集，推荐）/ B（拆两 PR，不推荐，会产生「表存在零写入」中间态）。",
+    "跨线待办（第 2 路分裂）：src/l3/expert-dispatcher.ts:142/162 的 graphStoreForFirewall 生产恒 null（唯一赋值方 enableAutonomyWithGraph 只被 src/orchestrator/subagent-coordinator.ts:73 调用，而该类生产零实例化）→ QualityFirewall 的 evidenceRefs 校验从未执行；且其查的是本体图 Evidence 节点（0 行，与 SQLite evidence 表 = 双源）。建议另起任务。",
+    "跨线待办（第 3 路分裂）：src/sentinel/runner.ts:685-695 从 signal.sources 合成内存 Evidence（id=sentinel-<signalId>-<i>，从不落库），:725 以 `as unknown as Evidence[]` 传入 runExpert（铁律 38 / CT-46 违规形态）。建议另起任务。",
+    "跨线待办（第 4 路分裂）：本体 Evidence 节点零写入（graph_nodes WHERE type='Evidence' → 0 行），但 QualityFirewall 把它当作「证据是否存在」的唯一判据 → 需先裁决「证据唯一事实源 = SQLite evidence 表（本 spec 立场）还是本体节点」。",
+    "D725 已登记同一空洞：task-state/D725.json 的 findings_registered 第 3 条「evidence 层事实空心……建议另起『证据采集链路接线』任务」= 本任务（D727 spec + D728 实现）。本 spec 是其闭环的契约面。"
+  ]
+}
