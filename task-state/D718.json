@@ -1,11 +1,32 @@
 {
   "task_id": "D718",
   "title": "cto-parallel-ctl-minor-fixes",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": null,
-  "impl": null,
+  "impl": {
+    "pr": [518, 522, 523],
+    "branch": null,
+    "note": "三项独立 PR（每项：先复现→最小修→反向验证必红）：①alloc 测试泄漏真仓（#518 已合并）②resolver 跨日认领 + 同数 tie-break（#522 已合并）③pre-doc-audit.sh 去 BOM + 行首 BOM 回归网（#523）。派单「附带」第 4 项（.gitignore 证据日志白名单）按创始人本批指令（三项）未做，登记台账待派。"
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-13",
-  "updated_by": "alloc-task-id"
+  "updated_by": "synova-cto",
+  "write_set": [
+    "scripts/control-tower/alloc-task-id.sh",
+    "scripts/workflow/resolve-commit-brief.sh",
+    "scripts/pre-doc-audit.sh",
+    "tests/control-tower/",
+    "memory/notes/implemented/2026-09-13-D718-ctl-minor-fixes.md",
+    ".claude/task-briefs/2026-09-13-D718-cto-parallel-ctl-minor-fixes.md",
+    "docs/synova/coordination/审计发现台账-DSH-CTO.md",
+    "task-state/D718.json"
+  ],
+  "deferred": [
+    "PLAN-evidence-log-gitignored（.gitignore 证据日志白名单，派单附带项，本批未做）",
+    "存量 BOM 14 个按域派工（K3 域 1 / doc-system 7+1 / CTO 域 4+archive）",
+    "scripts/ 下 11 个 .sh 缺 UTF-8 头块（存量）",
+    "pre-push golden-case F1 环境失败误报（三态退出码）",
+    "G12 与 merge_writeset_gate 匹配器口径不一致（glob）"
+  ]
 }
