@@ -65,6 +65,44 @@ if [ -f "$CUR_SRC" ]; then
   fi
 fi
 
+# ── D718: 任务身份锚点（D#）——跨日任务认领的物理依据 ──
+# 背景: 候选集原为「文件名日期 today±1」→ brief 生成 2026-09-10、提交 2026-09-12 时该 brief
+#   永不入池 → 认领恒空 → 回退落到无关 brief → D328 认领校验判「他人文件」硬阻断
+#   （D664 实测被拦 2 次，处置=把 brief 改名到执行日；跨日任务是常态，日期不是任务身份）。
+# 语义: 候选集 = 日期窗口 ∪ {本提交所属任务 D# 的 brief}。身份证据按可靠性分两级：
+#   强锚点（分支名 / 暂存 task-state/D#.json = 本提交自身）→ 可参与最终回退；
+#   弱锚点（current-brief 文件名 = 本 session 声明）→ 只入候选池，仍由认领计数裁决。
+# 不做窗口整体放宽: 那会把**他人**的陈旧 brief 拉回候选池（D291/D296 跨 session 误伤复发）。
+# 降级: 提不到锚点 → 行为与修复前完全一致（纯日期窗口，零回归）。
+ANCHOR_STRONG_RAW=""
+ANCHOR_WEAK_RAW=""
+BR_CUR="$(git -C "$ROOT" branch --show-current 2>/dev/null || true)"
+[ -n "$BR_CUR" ] && ANCHOR_STRONG_RAW="$BR_CUR"
+ANCHOR_STRONG_RAW="$ANCHOR_STRONG_RAW $(printf '%s\n' "$STAGED" | grep -oE 'task-state/D[0-9]+\.json' || true)"
+if [ -f "$CUR_SRC" ]; then
+  ANCHOR_WEAK_RAW="$(cat "$CUR_SRC" 2>/dev/null || true)"  # swallow-ok: current-brief 读失败→无弱锚点，非错误
+fi
+# 归一化为纯数字 D# 列表（大小写无关，去重）
+_ids_of() {
+  printf '%s\n' "$1" | grep -ioE 'D[0-9]+' | tr 'A-Z' 'a-z' | sed 's/^d//' | grep -E '^[0-9]+$' | sort -u | tr '\n' ' ' || true
+}
+ANCHOR_IDS_STRONG="$(_ids_of "$ANCHOR_STRONG_RAW")"
+ANCHOR_IDS_WEAK="$(_ids_of "$ANCHOR_WEAK_RAW")"
+# 按 D# 找 brief（文件名含 -D<id>-）
+briefs_by_id() {
+  local ids="$1" id f
+  [ -z "$ids" ] && return 0
+  for id in $ids; do
+    for f in "$ROOT/.claude/task-briefs/"*"-D${id}-"*.md; do
+      [ -e "$f" ] || continue
+      echo "$f"
+    done
+  done
+  return 0
+}
+ANCHORED_STRONG_FILES="$(briefs_by_id "$ANCHOR_IDS_STRONG" | sort -u || true)"
+ANCHORED_WEAK_FILES="$(briefs_by_id "$ANCHOR_IDS_WEAK" | sort -u || true)"
+
 # 今日全部 brief (认领候选) — D366: 文件名日期前缀 (mtime 会被 git pull 刷, 不可靠)
 # D366: 按文件名日期判断"今日" — 替代 find 按 mtime 的今日判定
 # D559 (CT-46 连带): 窗口扩 ±1 天 — CI runner UTC vs brief 日期 UTC+8：北京时间 08-29 写的
@@ -107,6 +145,10 @@ today_files_by_suffix() {
   return 0
 }
 ALL_TODAY=$(today_files_by_prefix "$ROOT/.claude/task-briefs/" | sort || true)
+# D718: 并入身份锚点 brief（强+弱）——跨日任务即使文件名日期在窗口外也能被认领
+if [ -n "$ANCHORED_STRONG_FILES$ANCHORED_WEAK_FILES" ]; then
+  ALL_TODAY="$(printf '%s\n%s\n%s\n' "$ALL_TODAY" "$ANCHORED_STRONG_FILES" "$ANCHORED_WEAK_FILES" | grep -v '^$' | sort -u || true)"
+fi
 [ -z "$ALL_TODAY" ] && [ -n "$CUR" ] && ALL_TODAY="$CUR"
 
 if [ -z "$ALL_TODAY" ] && [ -z "$CUR" ]; then
@@ -191,6 +233,34 @@ fi
 if [ -n "$RESULT" ] && [ -f "$RESULT" ]; then
   echo "$RESULT"
   exit 0
+fi
+
+# D718: 强锚点回退——认领计数为空时，本提交自身身份（分支名 / 暂存 task-state/D#.json）
+# 指向的 brief 优先于「日期最新可解析」。跨日任务若落到下面的纯日期回退，会拿到无关 brief
+# （= D328 判「他人文件」硬阻断，D664 实测）。只认可解析的强锚点 brief，缺失则原样下探。
+if [ -n "$ANCHORED_STRONG_FILES" ] && [ -n "$PYBIN" ]; then
+  RESULT=$("$PYBIN" -c "
+import sys
+sys.path.insert(0, r'$PARSER_DIR_W')
+from brief_parser import parse_criteria
+
+for b in '''$ANCHORED_STRONG_FILES'''.split('\n'):
+    b = b.strip()
+    if not b:
+        continue
+    try:
+        text = open(b, encoding='utf-8', errors='replace').read()
+    except OSError:
+        continue
+    if parse_criteria(text):
+        print(b)
+        sys.exit(0)
+sys.exit(1)
+" 2>/dev/null || true)
+  if [ -n "$RESULT" ] && [ -f "$RESULT" ]; then
+    echo "$RESULT"
+    exit 0
+  fi
 fi
 
 # D317 最终回退: 最新日期 → 最早, 用 brief_parser 验证可解析性 (criteria A-D),
