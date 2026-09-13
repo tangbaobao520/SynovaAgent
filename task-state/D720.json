@@ -1,0 +1,12 @@
+{
+  "task_id": "D720",
+  "title": "四线派单 brief 落 main（D715-D718 由骨架填实）+ 主树残留判定",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-13",
+  "updated_by": "synova-cto",
+  "note": "派单 #515 已入 main，但 D715-D718 的 brief 未落 main（主树仅存 alloc 骨架，未填字段）。本单按派单内容填实四份 brief 并落 main，使派单自包含；零代码、零门禁语义改动。"
+}
