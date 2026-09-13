@@ -123,6 +123,55 @@
       "severity": "P1（风险已接受）",
       "source": "创始人决定（CTO 已于 2026-09-11 完成仓库侧取证）",
       "note": "取证结论：5 把钥匙的真实值在全部 git 历史与 HEAD 树零命中（逐值搜索）；本机非仓库位置零命中（.claude/settings.local.json 含 2 把智谱钥匙但被 .gitignore:52 挡住、从未入库）。唯一险情=前任《履职总账》含 2 枚明文 ghp_ token，Push Protection 拦截、token 从未入历史，本地副本已脱敏、明文原版已删除。创始人 2026-09-11 决定「先不换」。后续注意：① 仓库为公开仓库（泄露即全网可见）② Secret Scanning+Push Protection 已于同日开启（平台自动拦）③ 若任一会话/文档再现明文，立即升级为必换。"
+    },
+    {
+      "id": "PLAN-packaging-signature-broken",
+      "title": "【P0】打包产物签名封印缺失 → 装完打不开（dmg 内 app 无 _CodeSignature，macOS 拒绝启动）",
+      "severity": "P0（阻塞创始人演示：产品第一承诺『能打开』）",
+      "source": "创始人 2026-09-13 报告『打都打不开』+ 主 CTO 实测定位",
+      "note": "实测证据链：① dmg 内 app（/Volumes/SynovaAgent-0.1.0-arm64/SynovaAgent.app）无 Contents/_CodeSignature → codesign --verify 报 'code has no resources but signature indicates they must be present' → macOS 拒启（典型弹窗『已损坏』）；② release/mac-arm64/SynovaAgent.app 同样无封印；③ 主 CTO 用 codesign --force --deep --sign - 重签后实测启动成功（进程存活 14s + [electron] boot mode=prod server=http://localhost:18790），且不再往自身 bundle 写运行时目录；④ 旁证：release/mac（x64）包内 native 模块为 arm64（架构错配）。根因：build-synova.cjs / package.json 均无签名配置（grep identity/codesign/notarize 零命中）→ 打包只留 binary 的 linker-signed adhoc → 经 dmg/zip 分发后必坏。修法：构建配置补 bundle 级签名（或打包后 codesign --force --deep --sign - 并重新生成 dmg/zip）+ 构建后校验（codesign --verify 失败即 fail，防坏包出货）+ x64 架构错配修复。影响：D712 的 1-3/1-4『机器绿』不成立为『Mac 安装包可用』——机器断言跑的是本地 build 未经发布物安装；验收口径须改为『从 dmg/zip 安装后双击能开』。"
+    },
+    {
+      "id": "PLAN-expert-count-drift",
+      "title": "文档-实现漂移（M7）：AGENTS.md 声称专家数与 expert/ 实测不符",
+      "severity": "P2",
+      "source": "CTO-HEALTH 周自检 2026-09-13 报 [DRIFT] + 主 CTO 复核",
+      "note": "周自检报：AGENTS.md 声称 7 位专家，expert/ 实测 6 个。CTO 复核：expert/ 下有 8 个目录，其中 _deprecated/_template 非专家 → 真专家 6 个（competitive-strategy / customer-growth / fundamental-efficiency / host / organizational-capability / technology-foundation）✓ 漂移成立。同类表述还散见 CLAUDE.md 数据流图（『8 位文件驱动专家』『7位专家』两处并存）。修法：以 expert/ 实测为唯一事实源，统一 AGENTS.md/CLAUDE.md/PRODUCT-BRIEF 的专家数与名单，并考虑在 check-file-driven 门禁加『文档声称数 = 目录实测数』断言（防再漂移；铁律 35 能自动化的不靠人）。"
+    },
+    {
+      "id": "PLAN-f3-preload-sandbox-broken",
+      "title": "【P0·跨平台】打包态 preload 沙箱化断链 → 窗口能开但 UI 用不了（electronAPI undefined）",
+      "severity": "P0（产品实质不可用；Mac/Win 同源）",
+      "source": "Win 侧 D712 重验发现 F3 + 主 CTO Mac 侧交叉确认（backend.log 零 API 请求）",
+      "note": "链路（源码已核）：electron/main.cjs:76-80 webPreferences 未设 sandbox → Electron≥20 默认 sandbox:true → 沙箱 preload 不允许 require 相对文件 → electron/preload.cjs:18 require('./config.json') 抛 module not found（source: node:electron/js2c/sandbox_bundle）→ contextBridge.exposeInMainWorld 从未执行 → window.electronAPI===undefined → electron-renderer/src/lib/api.ts getApiBase() 退化 '' → 请求打到 file:// → CSP(connect-src localhost) 全拦。判据：应用 backend.log 中渲染层 API 请求 0 条（Mac 实测）；Win 侧 app-stderr.log 有 [useNotifications] fetch failed。修法（已实现待验证）：保持 renderer 沙箱，改由 webPreferences.additionalArguments 透传 serverUrl（沙箱 preload 可读 process.argv），preload 不再 require 相对 json。\"避开既有验收\"：D523/win-install-verify 四断言（进程/窗口/healthz/日志）在断链时全绿 → 验收口径须加『渲染层 API 可达』。"
+    },
+    {
+      "id": "PLAN-cockpit-script-not-packaged",
+      "title": "打包态 cockpit 路由依赖未打包脚本 → 驾驶舱页报 FileNotFoundError",
+      "severity": "P1",
+      "source": "主 CTO Mac 实测（backend.log 捕获）",
+      "note": "证据：应用后端日志 routes/cockpit 报 FileNotFoundError: /Applications/SynovaAgent.app/Contents/Resources/scripts/control-tower/generate-dashboard.py（打包未含该脚本）。修法二选一：① extraResources 补入所需脚本（注意依赖面，避免把整棵控制塔拖进包）② 该路由在打包态显式降级（log.warn + degraded 标记 + UI 明示不可用），符合铁律 11/31 不静默。"
+    },
+    {
+      "id": "PLAN-win-verify-script-hangs",
+      "title": "scripts/desktop/win-install-verify.ps1 无限挂起（无超时，违反自身 exit 契约）",
+      "severity": "P1（运维风险）",
+      "source": "Win 侧 D712 发现 F1",
+      "note": "步骤② Start-Process $exe /S -Wait 无超时；机器需提权时永久挂起，既不 exit 0 也不 exit 1/2（违背脚本自身契约）。证据 run-E-official-script/b-staged-out.txt。修法：加 -TimeoutSec/Job 超时 → 超时按 exit 2（检查未执行）语义返回。"
+    },
+    {
+      "id": "PLAN-evidence-log-gitignored",
+      "title": "证据 .log 被 .gitignore 静默忽略（Win 侧 12 个证据文件差点丢失）",
+      "severity": "P1",
+      "source": "Win 侧 D712 发现 F2 + 其修复提交 cb688c17",
+      "note": "release/ 与部分 .log 规则导致证据文件未被跟踪 → 『证据不在 git = 温床』（D572 同型）。Win 侧已 force-add 12 个文件修复。修法：为 docs/synova/product-lines/evidence/** 增加白名单（! 规则）+ 在证据写入脚本后加『git check-ignore』自检，防再次静默丢失。"
+    },
+    {
+      "id": "PLAN-dispatch-doc-not-in-main",
+      "title": "派单文档未先入 main → 执行方在净仓库态读不到（Win 侧 G0 实测）",
+      "severity": "P2（流程缺口，CTO 责任）",
+      "source": "Win 侧 D712 发现 G0",
+      "note": "Win 机器 main 上不存在 docs/synova/coordination/派单-桌面端线1重验批-D712-20260912.md（当时 #509 未合并）→ 执行方只能按用户消息里的摘要执行。修法：派单流程规定『派单文档必须先合并入 main，再向执行方发说明』；已写入派单模板路由节（可加一条检查）。"
     }
   ]
 }

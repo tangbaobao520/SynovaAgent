@@ -71,12 +71,22 @@ code { background:#0f172a; padding:2px 8px; border-radius:4px; font-size:13px; c
 }
 
 async function createWindow() {
+  // F3 修复（2026-09-13，Win 侧重验发现 + Mac 侧交叉确认）：
+  //   打包态 Electron 默认 sandbox:true，沙箱化 preload **不允许 require 相对文件** →
+  //   preload.cjs 的 require('./config.json') 抛 "module not found" → contextBridge 从未执行 →
+  //   window.electronAPI === undefined → 渲染层 getApiBase() 退化为 '' → API 请求打到 file://
+  //   被 CSP 拦截 → **窗口能开但 UI 用不了**（Mac/Win 同源，非平台差异）。
+  //   修法＝不关 renderer 沙箱（保持安全姿态），改用 Electron 官方推荐的
+  //   webPreferences.additionalArguments 把配置透传给沙箱 preload（process.argv 在沙箱内可用）。
+  const electronConfig = require('./config.json');
+  const serverUrl = electronConfig.serverUrl || 'http://localhost:18790';
   mainWindow = new BrowserWindow({
     width: 1280, height: 800,
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
+      additionalArguments: [`--synova-server-url=${serverUrl}`],
     },
   });
 
@@ -95,6 +105,26 @@ async function createWindow() {
   //   dev → 优先 vite dev server（renderer 热更新），不可达则回退服务器登录页
   const isProd = app.isPackaged;
   const backendDegraded = backendHandle && backendHandle.degraded;
+
+  // F3 启动自检（2026-09-13）：让应用自己报告 preload 契约是否成立——
+  //   窗口/进程/healthz 三项全绿也可能掩盖「渲染层连不上后端」（D523 四断言曾全绿而 UI 全废）。
+  //   这一行输出是回归哨兵：出现 FAIL 即代表 electronAPI 未暴露、UI 将全线失效。
+  mainWindow.webContents.once('did-finish-load', async () => {
+    try {
+      const probe = await mainWindow.webContents.executeJavaScript(
+        '({ hasApi: typeof window.electronAPI !== "undefined",'
+        + ' serverUrl: (window.electronAPI && window.electronAPI.getServerUrl) ? window.electronAPI.getServerUrl() : null })',
+      );
+      if (probe && probe.hasApi) {
+        console.log(`[preload-check] OK: electronAPI 已暴露, serverUrl=${probe.serverUrl}`);
+      } else {
+        console.error('[preload-check] FAIL: window.electronAPI 未暴露 — 渲染层无法访问后端（F3 回归？）');
+      }
+    } catch (err) {
+      console.error(`[preload-check] 探针执行失败: ${err && err.message ? err.message : String(err)}`);
+    }
+  });
+
   if (isProd) {
     mainWindow.loadFile(path.join(process.resourcesPath, 'renderer', 'index.html'));
   } else if (await checkServer('http://localhost:5173', '/')) {
