@@ -302,7 +302,15 @@ def analyze_task_state() -> Tuple[list, dict]:
 # 派生判定 (工件优先; json 字段兜底展示但不算真)
         # D399 (P1-2)/D400: spec = glob 扫描 OR json spec.path 兜底（文件必须真实存在——存在即算真, 消除幻影）
         # D412/U3: json spec.path 分支同样过仓库态校验（工作区存在 且 已提交 HEAD）
-        spec_path = (d.get("spec") or {}).get("path")
+        # ① spec 两态兼容: dict（{path: ...}，现行）或 str（历史任务直接写路径，如 D600）。
+        #    只取路径字符串，后续仍走同一套「工作区存在 + 已提交 HEAD」仓库态校验（不因兼容而放松）。
+        _spec = d.get("spec")
+        if isinstance(_spec, dict):
+            spec_path = _spec.get("path")
+        elif isinstance(_spec, str):
+            spec_path = _spec or None
+        else:
+            spec_path = None
         spec_path_ok = bool(
             spec_path
             and (REPO / spec_path).exists()
@@ -322,13 +330,31 @@ def analyze_task_state() -> Tuple[list, dict]:
         if rep_path is not None:
             try:
                 txt = rep_path.read_text(encoding="utf-8", errors="replace")
-                # D395a verdict 优先序不变: CONDITIONAL PASS > PASS > FAIL > ?
-                if "CONDITIONAL PASS" in txt:
+                # D395a verdict 优先序 + D744 修正: **FAIL 不再被 PASS 子串吞掉**。
+                # 病根（实测 D393/D503/D515/D572）: 报告正文的证据行普遍同时含 PASS 与 FAIL
+                #   （如 "PASS:3 WARN:883 FAIL:435"、"CONDITIONAL PASS" 是**别的任务**的判定），
+                #   原顺序 `"PASS" in txt` 先命中 → 真判定 FAIL 被吞 → 看板把 P0 阻断显示为通过。
+                # 修法（两层）:
+                #   ① **结论行优先**：先在「结论/总结论/判定/verdict」行内取判定词；
+                #      没有结论行才回退全文（不放松——只是不再被证据行的 PASS 带偏）。
+                #   ② 同一作用域内 **FAIL 先于 PASS**（CONDITIONAL PASS 仍最高，它自带 PASS 子串需先行判定）。
+                # 取「同时含判定词 + 判定值」的**第一行** —— 只含关键词不含值的行（目录/表头）不算，
+                # 否则会落到一个没有 PASS/FAIL 的行上、判定退化成 "?"（D503/D515 实测踩到）。
+                _scope = None
+                for _ln in txt.splitlines():
+                    _kw = ("结论" in _ln) or ("判定" in _ln) or ("verdict" in _ln.lower())
+                    _val = ("PASS" in _ln) or ("FAIL" in _ln)
+                    if _kw and _val:
+                        _scope = _ln
+                        break
+                if _scope is None:
+                    _scope = txt   # 无结论行 → 全文兜底（不放松，只是不再被证据行带偏）
+                if "CONDITIONAL PASS" in _scope:
                     audit_txt = "CONDITIONAL_PASS"
-                elif "PASS" in txt:
-                    audit_txt = "PASS"
-                elif "FAIL" in txt:
+                elif "FAIL" in _scope:
                     audit_txt = "FAIL"
+                elif "PASS" in _scope:
+                    audit_txt = "PASS"
                 else:
                     audit_txt = "?"
             except OSError:
