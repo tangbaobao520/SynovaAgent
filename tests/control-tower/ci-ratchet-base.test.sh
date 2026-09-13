@@ -120,6 +120,18 @@ grep -q 'BASE=$(git merge-base refs/remotes/origin/main HEAD' "$CI" \
   && ok "⑧ 基准取自 refs/remotes/origin/main（与 D708 gate 同源）" \
   || no "⑧ 基准未取自 origin/main"
 
+# ⑨ 同族第二处：G12（check-brief-vs-code.sh）的 diff 基准也必须是 merge-base
+G12="$REPO/scripts/check-brief-vs-code.sh"
+grep -q 'merge-base refs/remotes/origin/main HEAD' "$G12" \
+  && ok "⑨ G12 基准取自 merge-base（合并提交不再误判越界）" \
+  || no "⑨ G12 仍用裸 HEAD~1 基准（合并提交下会误报越界）"
+grep -q 'origin/main 不可用' "$G12" \
+  && ok "⑨ G12 回退路径带可见提示" \
+  || no "⑨ G12 回退路径静默"
+grep -q 'DIFF_ALL=$(git diff --name-only "$DIFF_BASE"\.\.HEAD' "$G12" \
+  && ok "⑨ G12 主路径已改为三点差（\"$DIFF_BASE\"..HEAD）" \
+  || no "⑨ G12 主路径不是三点差（修复被回退）"
+
 echo ""
 echo "  结果: $PASS 通过, $FAIL 失败"
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1

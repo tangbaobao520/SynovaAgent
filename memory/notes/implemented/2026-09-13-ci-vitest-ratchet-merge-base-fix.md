@@ -45,6 +45,16 @@ Pre-existing test failures from unchanged files — not blocking
      取消棘轮会让 main 立刻全红并压垮编码线——正是 V4.5.1 教训（门禁误拦 → `--no-verify` → 全线失效）。
    - **红本身**：另行处理（react-markdown → D717 在途；expert 数漂移需先裁意图；graphbridge → 新登记）。
 
+## 二补、同族第二处：G12 brief-范围一致性（合并提交下同样误判）
+
+同一根因（`HEAD~1..HEAD` 在合并提交上 = 被并入的 main 全部改动）命中第二个门禁：
+`scripts/check-brief-vs-code.sh`（G12，CI strict 下硬阻断）。**实证**：#520（本单 PR）刷新分支后
+CI 报 `G12: task brief Q2 范围一致性: 1 处` —— 该 PR 自身只改了 ci.yml / 新测试 / 登记 / Note，
+但合并提交让 main 的改动进入 diff，与 brief 的 Q2 写集比对后全判越界。
+修法同 F2：基准改 `merge-base(refs/remotes/origin/main, HEAD)..HEAD`，无 origin/main 时回退并显式提示。
+教训：**「基于 diff 的门禁」必须共用同一个基准定义**；分散各处各写一份 `HEAD~1..HEAD` 就会同一病复发 N 次。
+（同族未改：`scripts/control-tower/synova-commit`、`scripts/hooks/post-commit.sh` 的 HEAD~1 属「刚提交完」单提交语境，正确——已在本单边界里显式声明。）
+
 ## 三、验证（可复核）
 
 - `tests/control-tower/ci-ratchet-base.test.sh`（新增，12 断言，已接线进 ci.yml 白名单）：

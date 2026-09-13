@@ -35,6 +35,7 @@ F2 修判据（三点差 `merge-base(origin/main, HEAD)..HEAD`）；F1 **不取�
 
 ## Q2: 范围 — 正确的最简方案
 做什么：
+- scripts/check-brief-vs-code.sh — 同族同因第二处：G12 的 diff 基准改 merge-base 三点差（合并提交不再把 main 并入的改动判为越界）；origin/main 不可用 → 回退 + 显式提示
 - .github/workflows/ci.yml — ① `CHANGED` 改用 `merge-base(refs/remotes/origin/main, HEAD)..HEAD`（三点差），origin/main 不可用时回退旧判据并打 `::warning::`
   ② 放行分支补 `::warning::` + 放行文件名清单 + 指向 board-backlog 登记项；阻断分支补「本 PR 引进的失败」清单
 - docs/synova/coordination/board-backlog.json — 登记 F1（main Vitest 三个真红，须烧掉）+ `graphbridge-wiring` 红（此前未登记）
@@ -60,4 +61,5 @@ F2 修判据（三点差 `merge-base(origin/main, HEAD)..HEAD`）；F1 **不取�
 - [ ] 三点差判据在位：`grep -c 'merge-base' .github/workflows/ci.yml` → ≥1
 - [ ] 放行可见：`grep -c '::warning::' .github/workflows/ci.yml` → ≥2
 - [ ] 反向验证（沙箱模拟「合并提交 + 存量红」）：旧判据把 main 并入的文件算进改动集、新判据不算 → 两条命令输出贴进 PR
+- [ ] G12 基准可证：grep -c 'merge-base refs/remotes/origin/main HEAD' scripts/check-brief-vs-code.sh → ≥1
 - [ ] 登记在案：`python3 -c "import json;b=json.load(open('docs/synova/coordination/board-backlog.json'))['backlog'];print([e['id'] for e in b if 'vitest' in e['id'].lower() or 'graphbridge' in e['id'].lower()])"` → 含本单两项
