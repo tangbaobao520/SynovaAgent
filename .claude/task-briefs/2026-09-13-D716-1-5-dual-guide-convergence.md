@@ -76,7 +76,7 @@ grep/read 实测（clone @ 335eb5bd，2026-09-13，行号逐条重核与 spec §
 ## Q2: 范围 — 正确的最简方案是什么？
 
 做什么：
-- src/server.ts: 新增 setupGuideGoneRouter（Router().all('/app/setup.html') → 410 + text/html 人话三段），形态对齐 :92 D590 先例；app.use(setupGuideGoneRouter) 挂载在 :300 静态挂载之前（不动 :301-302 重定向与静态挂载本体）
+- src/server.ts: 新增 setupGuideGoneRouter（Router().all('/app/setup.html') → 410 + text/html 人话三段），形态对齐 :92 D590 先例；app.use(setupGuideGoneRouter) 挂载在 :300 静态挂载之前（不动 src/server.ts:301-302 重定向与静态挂载本体）
 - docs/synova/runbooks/desktop-dev-prod.md: §一 收敛声明补退场机制（410 路由名 + 挂载顺序）+ 旧 URL 锚 + 守卫测试名，措辞与代码事实一致
 - app/setup.html: 删除（D283 旧安装引导页，四步向导）
 - app/js/setup.js: 删除（仅被 setup.html 引用，实测）
@@ -89,7 +89,7 @@ grep/read 实测（clone @ 335eb5bd，2026-09-13，行号逐条重核与 spec §
 
 不做什么（排除项）：
 - 不改 electron/main.cjs（Mac DSH 域；本卡只读断言 G-5，需动即停手报 CTO）
-- 不改 build-synova.cjs（打包配置已正确不含 app/；本卡只读断言 G-4）
+- 不改 ./build-synova.cjs（打包配置已正确不含 app/；本卡只读断言 G-4）
 - 不改 electron-renderer/ 任何文件（D575 首诊页已成立，目标入口不动）
 - 不改 app/index.html 与 app/ 其余 14 页、不改 app/js/admin.js（线 2 交互域；D246 管理台 onboarding 非安装引导，spec §5.4 决策 4）
 - 不改 docs/synova/product-lines/product-lines.yaml（1-5 状态推进归 Mac/CTO）
