@@ -1,16 +1,27 @@
 {
   "task_id": "D706",
   "title": "synova-commit-deletion-loss-fix",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "pr": 501,
     "branch": null,
     "note": "并行 CTO 控制塔收口批次；合并权归主 CTO"
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-09-13-D715.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "findings": [
+      "三验证点 K3 独立沙箱复现成立: 根因（旧 pathspec 原语丢删除, ls-tree 1→1 假提交 exit 0）/ 修复（索引精确提交, 1→0 + D 记录）/ 回滚（hook 篡改暂存区→阻断+HEAD 未前移+暂存区还原）",
+      "tests/control-tower/synova-commit.test.sh 17/17 K3 本地复跑绿",
+      "staged⊆FILES 断言 (synova-commit:515-521) 防 D329 洗白——测试⑦覆盖"
+    ],
+    "by": "k3-audit (D715)",
+    "at": "2026-09-13"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-12",
-  "updated_by": "synova-cto",
+  "updated_at": "2026-09-13",
+  "updated_by": "k3-audit",
   "slice": "ctl-closeout-20260911"
 }
