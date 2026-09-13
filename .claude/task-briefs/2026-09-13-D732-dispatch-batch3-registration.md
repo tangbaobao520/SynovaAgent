@@ -21,6 +21,11 @@
 
 ## Q2: 范围 — 正确的最简方案
 做什么：
+- docs/synova/coordination/派单-第四批-D733-D736-20260913.md — 第四批派单（五条机制补强，分三批）
+- task-state/D733.json — ownership 机器化登记
+- task-state/D734.json — PR 预算门禁登记
+- task-state/D735.json — bypass.log 出库登记
+- task-state/D736.json — 测试 hermetic 化登记
 - docs/synova/coordination/派单-第三批-D727-D731-20260913.md — 第三批派单（五项 + 依赖图 + 四段复制块）
 - task-state/D727.json — 证据层数据流 spec（dev-doc）
 - task-state/D728.json — 证据层接线实现（Mac 编码）
