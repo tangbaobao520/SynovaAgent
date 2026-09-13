@@ -1,0 +1,26 @@
+{
+  "task_id": "D732",
+  "title": "第三批派单登记（D727-D731）",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "by": "synova-cto",
+    "at": "2026-09-13",
+    "write_set": [
+      "docs/synova/coordination/派单-第三批-D727-D731-20260913.md — 第三批派单（五项 + 依赖图 + 复制块）",
+      "task-state/D727-D732.json — 六项任务号登记（全部经 alloc-task-id.sh 实分配）",
+      ".claude/task-briefs/2026-09-13-D732-dispatch-batch3-registration.md — 本 brief"
+    ],
+    "evidence": {
+      "前序回报": "D715/D716/D717/D718/D725/D726 全部回报且经 CTO 物理核验",
+      "排序依据": "产品空洞（证据链空心）> 体系缺陷（门禁口径/隔离）> 小修 > 审计",
+      "取号": "D727-D732 实分配输出"
+    },
+    "red_lines": "scripts/audit/ 零触碰；未改在途 PR 持有文件"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-13",
+  "updated_by": "synova-cto",
+  "note": "创始人指令：所有派出任务已回报，现按 CTO 判断重排第三批。核心判断 = 证据层空心是产品级空洞（报告可溯源的物理前提），优先级最高。"
+}
