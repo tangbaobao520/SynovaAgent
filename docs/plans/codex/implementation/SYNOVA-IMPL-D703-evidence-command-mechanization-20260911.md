@@ -62,6 +62,12 @@
 
 > 实现时若偏离本 doc（命令提取正则、白名单范围、CI job 触发条件、模板改点），必须在此节同 commit 回填最终形态。
 
+#### 3.2.1 CTO 验收追加回填（2026-09-13，同 PR）
+
+**⑦ VERSION bump（spec §3.1 写集遗漏 → CTO 补，写集因此 +1 文件）**：本卡新增 CI Replay 步骤 + canary 清单条目 = **门禁/工具行为变化** → 按 `.codex/control-tower/VERSION.md` 首部规则「任何门禁/工具行为变化必须 bump（PATCH 起步）」bump **V5.2.8**（同 PR，提交 `chore(d703)`）。tag 按 submit §6 纪律**在 PR 合入 main 后**打：`git tag -a V5.2.8 <merge-commit> && git push origin V5.2.8`（feature 分支推送时无 tag 属合法中间态，D319/D331 已显式放行）。
+
+**公平注记**：这是 **spec 缺陷而非实现方违规**——§3.1 写集未列 `.codex/control-tower/VERSION.md`，实现方严格守写集，行为正确。
+
 | # | 偏离点 | 任务行原文 | 最终形态（实测落地） | 理由 |
 |---|---|---|---|---|
 | 1 | 提取范围 | §6/§8 的 DS 命令 | `sed -n '/^## 6\./,/^## 7\./p; /^## 8\./,/^## 9\./p'` 两节 + 反引号行内代码 `grep -oE` + `awk !seen[]++` 去重（同一命令在两节重复只回放一次） | 区间未闭合时自然到 EOF，正则最简 |
