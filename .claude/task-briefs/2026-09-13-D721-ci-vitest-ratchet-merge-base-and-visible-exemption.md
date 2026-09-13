@@ -35,6 +35,7 @@ F2 修判据（三点差 `merge-base(origin/main, HEAD)..HEAD`）；F1 **不取�
 
 ## Q2: 范围 — 正确的最简方案
 做什么：
+- tests/control-tower/ci-ratchet-base.test.sh — 新增 15 断言密封测试（沙箱复现「合并提交 + 存量红」误判、新判据正确性、G12 基准、接线）
 - scripts/check-brief-vs-code.sh — 同族同因第二处：G12 的 diff 基准改 merge-base 三点差（合并提交不再把 main 并入的改动判为越界）；origin/main 不可用 → 回退 + 显式提示
 - .github/workflows/ci.yml — ① `CHANGED` 改用 `merge-base(refs/remotes/origin/main, HEAD)..HEAD`（三点差），origin/main 不可用时回退旧判据并打 `::warning::`
   ② 放行分支补 `::warning::` + 放行文件名清单 + 指向 board-backlog 登记项；阻断分支补「本 PR 引进的失败」清单
