@@ -33,7 +33,12 @@ CTO 当场核归属后出裁决书（commit `9aaf0c68`）并自认「pre-dispatc
 5. **解析复用不重写**：本机实测 `python3 -c "import yaml"` → `ModuleNotFoundError`（PyYAML 不可用）。
    复用仓内既有 `scripts/product-lines/productline_yaml.py`（严格 YAML 子集解析器，零三方依赖，
    自带 D333 决策记录与契约头），不重写第二个解析器。
-6. **owner 三值不落 GitHub 账号**：`github:` 段集中映射 mac/win/k3 → `@tangbaobao520`（三团队未建，
+6. **域判定豁免 `domain_neutral`**（D734 前置）：`.claude/bypass.log` / `.claude/task-briefs/**` /
+   `task-state/**` / `memory/notes/**` / `.claude/gate-hits.log` / `.codex/**` 在两种模式下都不判域。
+   实测依据：抽样 origin 上 3 个真实分支（`feat/win-d704-*`、`fix/d726-*`、`feat/mac-d716-*`），
+   `.claude/bypass.log` 出现在**每一个**分支（post-commit hook 自动登记，D521），且各线的 task brief 都解析为 mac ——
+   不做豁免则 D734 的单域判定对每个 PR 都误报跨域，门禁当场失效。
+7. **owner 三值不落 GitHub 账号**：`github:` 段集中映射 mac/win/k3 → `@tangbaobao520`（三团队未建，
    保持现状零行为变化）。
 
 ## 派单与仓内硬门禁的两处冲突（本 Note 记录处置，供 CTO/K3 复核）

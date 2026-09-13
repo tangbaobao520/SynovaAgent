@@ -92,6 +92,16 @@ OUT="$("$PYBIN" "$TOOL" src/sentinel/runner.ts src/l3/expert-registry.ts 2>&1)";
 if echo "$OUT" | grep -q "跨域"; then pass "跨域输出点名「跨域」"; else fail "跨域输出未点名"; fi
 
 echo ""
+echo "── 4b. 域判定豁免 domain_neutral（D734 前置：各线都写的簿记不构成域信号）──"
+OUT="$("$PYBIN" "$TOOL" .claude/bypass.log tests/control-tower/check-ownership.test.sh 2>&1)"; _e=$?
+[ "$_e" = 0 ] && pass "bypass.log 豁免: 只剩 mac → exit 0" || fail "bypass.log 豁免失败 — 期望 0 实际 $_e"
+if echo "$OUT" | grep -q "domain-neutral"; then pass "豁免路径明示 domain-neutral（不静默）"; else fail "豁免路径未明示"; fi
+OUT="$("$PYBIN" "$TOOL" .claude/bypass.log src/l3/expert-registry.ts src/sentinel/runner.ts 2>&1)"; _e=$?
+[ "$_e" = 1 ] && pass "豁免不掩盖真跨域（Mac+Win 仍 exit 1）" || fail "豁免掩盖了跨域 — 期望 1 实际 $_e"
+run_expect 0 "豁免路径不参与 --owner 断言" .claude/bypass.log task-state/D733.json --owner mac
+run_expect 1 "非豁免路径仍受 --owner 断言（回归）" src/sentinel/runner.ts --owner win
+
+echo ""
 echo "── 5. 反向验证: 删掉兜底规则 → 验收两条必须变绿（证明真在读 yaml）──"
 NO_DEFAULT="$TMPD/ownership-no-default.yaml"
 cp "$YAML" "$NO_DEFAULT"

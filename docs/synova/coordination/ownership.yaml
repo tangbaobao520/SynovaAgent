@@ -138,3 +138,12 @@ rules:
   - glob: "docs/synova/audit-reports/**"
     owner: "k3"
     source: "TASK-ROUTING.md L49 两轨产物都进 docs/synova/audit-reports/"
+
+# ═══ 域判定豁免（D734 单域判定用；不影响 --owner 断言，也不影响 CODEOWNERS 落 owner）═══
+# 这些路径**每条线都会写自己的那一份**，不构成「这条 PR 属于哪条线」的信号。
+# 实测依据（D734 开工前抽样 origin 上 3 个真实分支）: .claude/bypass.log 出现在
+# **每一个** 分支（post-commit hook 自动登记，D521）；Win 线分支同样带
+# .claude/task-briefs/<自己的 brief>.md（解析为 mac）→ 不豁免则每个 Win PR 都被判跨域。
+# 兜底不适用: 这些路径在 rules 里本就有 owner（供 CODEOWNERS 用），只是不计入单域判定。
+domain_neutral: [".claude/bypass.log", ".claude/gate-hits.log", ".claude/task-briefs/**", "task-state/**", "memory/notes/**", ".codex/**"]
+

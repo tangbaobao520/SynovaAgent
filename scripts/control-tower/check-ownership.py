@@ -23,6 +23,9 @@ CTO 2026-09-13 两次派错线（D728/D729 写集 100% 落 Win 域却派给 Mac 
             2 = 检查执行失败（yaml 缺失/解析失败/未知 owner/无输入/解析器不可用）—— fail-closed
   @degraded — 无规则匹配的文件 → stdout 「⚠️ 无归属规则」明示 + 不计阻断（不静默）；
               其余失败一律 exit 2，绝不与「通过」混同（D328 三态）
+  域判定豁免（D734）: ownership.yaml 的 domain_neutral 列出的路径（各线都写自己那一份的
+              簿记/过程产物）在**两种模式下都不判域**，只明示 `domain-neutral`；
+              它们仍留在 rules 里供 CODEOWNERS 生成使用。
   @error  — 不抛异常给调用方；全部经退出码表达（Ctrl-tower 模式 1）
 """
 from __future__ import annotations
@@ -74,10 +77,11 @@ def _load_parser():
 
 
 def load_ownership(yaml_path: Path):
-    """读 ownership.yaml → (rules, github_owner_map)。
+    """读 ownership.yaml → (rules, github_owner_map, domain_neutral)。
 
     @input  — yaml_path: ownership.yaml 路径
-    @output — (rules: list[dict], github: dict)；rules 保持文件顺序（最后匹配者胜出）
+    @output — (rules: list[dict], github: dict, neutral: list[str])；
+              rules 保持文件顺序（最后匹配者胜出）；neutral 缺省为空列表
     @degraded — 文件缺失 / 解析失败 / 结构非法 → exit 2（fail-closed）
     """
     parser = _load_parser()
@@ -98,7 +102,10 @@ def load_ownership(yaml_path: Path):
     github = data.get("github") or {}
     if not isinstance(github, dict):
         _die("ownership.yaml 的 github 段必须是映射")
-    return rules, github
+    neutral = data.get("domain_neutral") or []
+    if not isinstance(neutral, list):
+        _die("ownership.yaml 的 domain_neutral 必须是列表")
+    return rules, github, [str(g) for g in neutral]
 
 
 def glob_match(glob: str, path: str) -> bool:
@@ -184,7 +191,7 @@ def main(argv) -> int:
     ap.add_argument("--quiet", action="store_true", help="只输出结论行")
     args = ap.parse_args(argv)
 
-    rules, github = load_ownership(Path(args.yaml))
+    rules, github, neutral = load_ownership(Path(args.yaml))
 
     if args.emit_codeowners:
         sys.stdout.write(emit_codeowners(rules, github))
@@ -196,9 +203,13 @@ def main(argv) -> int:
     rows = []          # (path, owner|None)
     violations = []    # (path, expected, actual)
     unmatched = []
+    neutral_rows = []
     for raw in args.files:
         path = normalize(raw)
         if not path:
+            continue
+        if any(glob_match(g, path) for g in neutral):
+            neutral_rows.append(path)   # 域判定豁免：两种模式都不判域，只明示（各线都写的那一份）
             continue
         owner = resolve_owner(rules, path)
         rows.append((path, owner))
@@ -207,7 +218,9 @@ def main(argv) -> int:
         elif args.owner is not None and owner != args.owner:
             violations.append((path, args.owner, owner))
 
-    if not rows:
+    for path in neutral_rows:
+        print("·   domain-neutral  %s" % path)
+    if not rows and not neutral_rows:
         _die("待校验文件列表为空（全为空白路径）")
 
     if not args.quiet:
@@ -231,11 +244,12 @@ def main(argv) -> int:
         return EXIT_OK
 
     domains = sorted({owner for _, owner in rows if owner is not None})
+    _suffix = "（无归属 %d，域判定豁免 %d）" % (len(unmatched), len(neutral_rows))
     if len(domains) > 1:
-        print("❌ FAIL 跨域: 变更落在 %d 个域 %s —— 单个 PR 只许一个域" % (len(domains), domains))
+        print("❌ FAIL 跨域: 变更落在 %d 个域 %s —— 单个 PR 只许一个域%s" % (len(domains), domains, _suffix))
         return EXIT_VIOLATION
     shown = domains[0] if domains else "无归属"
-    print("✅ PASS %d 个文件同域: %s（无归属 %d）" % (len(rows) - len(unmatched), shown, len(unmatched)))
+    print("✅ PASS %d 个文件同域: %s%s" % (len(rows) - len(unmatched), shown, _suffix))
     return EXIT_OK
 
 

@@ -21,6 +21,10 @@ Q1c 决策参考系: 参考 Anthropic（fail-closed 三态 + 机器可验契约 
 ## Q2: 范围 — 正确的最简方案
 做什么：
 - docs/synova/coordination/ownership.yaml（新建，唯一机器权威源；每条规则带 source 字段回溯 TASK-ROUTING.md 行号）
+  · 含 `domain_neutral` 段（D734 前置）：`.claude/bypass.log` / `.claude/task-briefs/**` / `task-state/**` /
+    `memory/notes/**` / `.claude/gate-hits.log` / `.codex/**` —— 这些路径**每条线都写自己那一份**，不构成域信号。
+    实测依据：抽样 origin 上 3 个真实分支，`.claude/bypass.log` 出现在**每一个**分支（D521 hook 自动登记）；
+    Win 线分支同样带 `.claude/task-briefs/<自己的 brief>.md`。不豁免则每个 PR 都被判跨域（含本 PR）。
 - scripts/control-tower/check-ownership.py（新建，三态；`--owner` 断言模式 + 无 `--owner` 的单域模式 + `--emit-codeowners` 生成模式）
 - .github/CODEOWNERS（由 ownership.yaml 生成，修复 last-match-wins 顺序——宽规则在前、Mac 例外在后）
 - tests/control-tower/check-ownership.test.sh（新建，正常/降级/边界 + D728/D729 两次真实派错线回归）
