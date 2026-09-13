@@ -1380,6 +1380,34 @@ else
   soft_pass "G13: 无技能文件变更(跳过)"
 fi
 
+# ═══ D734: PR 预算门禁（附加检查；不并入传统 13 组编号）═══
+# 背景: 冲突概率 ∝ 改动大小 × 分支存活时间 —— D721 一个 PR 背三类门禁问题挂半天；
+#   K3 审计分支落后 main 差点回退他人成果。
+# 接线取舍（派单 §二.2 要求执行方给理由）: 派单给的是「pre-commit 新增一组 或 CI quality job
+#   一步」二选一 —— 派单红区已明列 .github/workflows/ci.yml（#520 刚改过，避免撞车）→
+#   CI 侧不可用，故选 pre-commit。
+# 为何不并入 13 组编号: 改总组数会打破 tests/control-tower/fastlane-bypass-only.test.sh 对
+#   「跳过 12 组」的断言（pre-commit-check.sh:343 的快速通道横幅），而那个测试文件不在
+#   D734 写集白名单内（创始人硬要求「写集白名单外一律不动」）→ 以额外命名的检查块接入，
+#   组数与横幅语义均不变。
+# 判定用 soft_check: 对齐 V5.0.0「本地软提示 + CI 权威」（CI Iron Laws job 注入 SYNO_CI=1 → 转硬）。
+# 性能: 只在有暂存变更时跑；纯文档提交走 CT-34 早退分支，天然不触发。实测 <0.5s。
+echo ""
+echo -e "${CYAN}── PR 预算门禁 (D734) ──${RESET}"
+if [ -x "$ROOT/scripts/control-tower/check-pr-budget.sh" ] || [ -f "$ROOT/scripts/control-tower/check-pr-budget.sh" ]; then
+  PRB_OUT=$(bash "$ROOT/scripts/control-tower/check-pr-budget.sh" --quiet 2>&1)
+  PRB_EXIT=$?
+  if [ "$PRB_EXIT" -eq 0 ]; then
+    soft_pass "D734 PR 预算: 文件数 / 单域 / 落后基线 均在预算内"
+  elif [ "$PRB_EXIT" -eq 1 ]; then
+    soft_check "D734 PR 预算超限 (拆 PR，禁调高上限——见 scripts/control-tower/check-pr-budget.sh)" "$PRB_OUT"
+  else
+    soft_check "D734 PR 预算检查执行失败 (exit=$PRB_EXIT, D328 三态)" "$PRB_OUT"
+  fi
+else
+  soft_check "D734 PR 预算: 检查脚本缺失 scripts/control-tower/check-pr-budget.sh" "1"
+fi
+
 # ── D520/任务3: 平台敏感命令软检查（V5 软提示——新增脚本须对照 PLATFORM-CHECKLIST.md）──
 # 只查本次新增（A）的 scripts/control-tower|workflow 下的 .sh/.py 文件：
 #   裸 python3（非 PYBIN 模式）/ date +%s / date -v / grep -P → 提示见 checklist。
