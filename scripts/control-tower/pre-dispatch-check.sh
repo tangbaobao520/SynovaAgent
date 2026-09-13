@@ -48,6 +48,21 @@ grep -oE '[A-Za-z0-9_./-]+\.(ts|cjs|mjs|sh|py|json|yml):[0-9]+' "$DOC" | sort -u
 done > "$tmp.line"
 cat "$tmp.line"; grep -q '⚠️' "$tmp.line" && FIND=1
 
+echo "── ⑩ 主线计划锚定（CTO 必读：整体推进计划）──"
+PLAN=$(ls "$ROOT"/docs/synova/coordination/整体推进计划-主线-*.md 2>/dev/null | head -1)
+if [ -z "$PLAN" ]; then
+  echo "  ⚠️ degraded: 未找到整体推进计划文档 → 跳过锚定（须人工确认计划存在）"
+else
+  PH=$(shasum -a 256 "$PLAN" 2>/dev/null | cut -c1-8)
+  PV=$(grep -m1 -oE '版本: *v[0-9]+\.[0-9]+' "$PLAN" | grep -oE 'v[0-9]+\.[0-9]+')
+  if grep -q '依据计划:' "$DOC"; then
+    if grep -q "$PH" "$DOC"; then echo "  ✅ 派单已锚定计划 ${PV}@${PH}"
+    else echo "  ⚠️ 派单引用的计划哈希与当前不符（当前 ${PV}@${PH}）——计划已更新，重读后再派"; FIND=1; fi
+  else
+    echo "  ⚠️ 派单未引用「依据计划: ${PV}@${PH}」——未证明读过主线计划"; FIND=1
+  fi
+fi
+
 echo "── ⑨ 派单内部一致性（语义为主；脚本做自检段存在性 + 互斥启发式）──"
 if grep -qE '内部一致性' "$DOC"; then echo "  ✅ 含「派单内部一致性」自检段（CTO 已逐条核对）"
 else echo "  ⚠️ 缺「派单内部一致性」自检段——D733 教训：同一单两条要求对同一路径互斥，是执行方替我发现的"; FIND=1; fi

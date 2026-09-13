@@ -9,8 +9,10 @@ ok(){ echo "  ✅ $1"; PASS=$((PASS+1)); }; no(){ echo "  ❌ $1"; FAIL=$((FAIL+
 TMPD=$(mktemp -d); trap 'rm -rf "$TMPD"' EXIT
 
 # ① 正常：文档提到的 D# 均有 task-state，路径均存在
-cat > "$TMPD/good.md" <<'MD'
+PH=$(shasum -a 256 "$REPO"/docs/synova/coordination/整体推进计划-主线-*.md 2>/dev/null | cut -c1-8)
+cat > "$TMPD/good.md" <<MD
 派单：D732 测试
+依据计划: v1.0@$PH
 - 写集: scripts/control-tower/pre-dispatch-check.sh
 
 ## 派单内部一致性自检
@@ -35,4 +37,8 @@ if bash "$S" "$TMPD/nope.md" >/dev/null 2>&1; then no "④ 文档缺失却未报
   && ok "接线: skill 双写齐备" || no "接线: skill 未双写"
 grep -q 'pre-dispatch-check' "$REPO/.dsh/skills/cto-handover/SKILL.md" 2>/dev/null \
   && ok "接线: cto-handover 引用本流程" || echo "  ℹ cto-handover 未引用（建议补）"
+# ⑥ 第⑩项：未锚定主线计划必红（创始人指令：派单前必读计划）
+printf '派单：D732\n- 写集: scripts/control-tower/pre-dispatch-check.sh\n\n## 派单内部一致性自检\n无互斥。\n' > "$TMPD/bad4.md"
+if bash "$S" "$TMPD/bad4.md" >/dev/null 2>&1; then no "⑥ 未引用主线计划却放行"; else ok "⑥ 未锚定主线计划 → exit 1"; fi
+
 echo ""; echo "  结果: $PASS 通过, $FAIL 失败"; [ "$FAIL" -eq 0 ] && exit 0 || exit 1
