@@ -62,6 +62,15 @@
 
 > 实现时若偏离本 doc（阈值默认值、覆盖率运行范围、改动文件获取方式、豁免语法、CI 触发条件），必须在此节同 commit 回填最终形态。
 
+已回填（D704 实现，2026-09-13，分支 feat/win-d704-branch-coverage-gate）：
+
+1. **覆盖率运行范围 × 全局阈值**：CI coverage 步骤跑全量 `npx vitest run --coverage --coverage.reporter=json-summary`（§3.1 字面），但**该次调用以 CLI 参数禁用全局阈值**：`--coverage.thresholds.lines=false --coverage.thresholds.functions=false --coverage.thresholds.branches=false --coverage.thresholds.statements=false`。理由（本地实证）：subset 跑 --coverage 时 `all=true` 使未加载文件以 0% 计入聚合，全局阈值（lines 40）必红；而全局阈值在改动前从未于 CI 执行（grep "coverage" ci.yml 改前零命中），不存在被本卡关掉的回归。vitest.config.ts 配置不动，由 branch-coverage-gate.sh 做该步骤唯一权威判定。
+2. **改动文件获取方式**：默认清单改为 `git diff --name-only --diff-filter=d origin/main...HEAD`（较 §3.1 补 `--diff-filter=d`——已删除文件无需覆盖，留在清单会误判 0%）；支持显式第二入参覆盖（测试注入）。CI checkout 已有 `fetch-depth: 0`，`origin/main` ref 可用。
+3. **json-summary key 匹配**：实跑实证 key 为**平台相关绝对路径**（Win 反斜杠 / CI POSIX）→ 门禁归一化（反斜杠→斜杠、大小写折叠）后按「仓库相对路径后缀」匹配；零分支文件 branches.pct=100 放行。
+4. **coverage.exclude 镜像**：vitest coverage.exclude 六组（src/tui/**、src/tools/**、src/skills/**、src/monitoring/**、src/cli.ts、src/setup.ts）命中文件**缺席报告属预期**，门禁镜像同组跳过不判 0%（脚本头注释注明同步源，改彼处必须同步此处）。
+5. **阈值 env 合法性**：`BRANCH_COVERAGE_MIN` 仅 `^[0-9]+([.][0-9]+)?$` 合法，非法值 fail-closed exit 1（不静默回退默认——门禁口径不可被注入方偷换）。
+6. **CI 触发条件**：coverage-gate 为独立 job（`if: github.event_name == 'pull_request'`），先 `git diff --name-only --diff-filter=d origin/main...HEAD | grep -qE '^src/.*\.ts$'` 检测 src/ 改动，无 src 改动则跳过 vitest+闸门两步（纯文档 PR 零开销）。
+
 ### 3.3 不做的事
 
 | 项 | 理由 |
