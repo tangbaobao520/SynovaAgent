@@ -25,12 +25,16 @@
 
 ## Q2: 范围 — 正确的最简方案
 做什么：
-- `tests/control-tower/alloc-task-id-lock.test.sh` — 补 `SYNO_BRIEF_DIR` 注入缝，测试不再写真实仓库
-- `scripts/workflow/resolve-commit-brief.sh` — 认领窗口改为「任务状态驱动」而非固定 ±1 天
-- `scripts/**/pre-doc-audit.sh` — 去首行 BOM
-- `.gitignore` — 证据日志白名单 + 写入后 `git check-ignore` 自检（`PLAN-evidence-log-gitignored`）
-- `tests/control-tower/**` — 各项对应断言
-- `task-state/D718.json` — 本单登记
+- tests/control-tower/alloc-task-id-lock.test.sh — 补 SYNO_BRIEF_DIR 注入缝，测试不再写真实仓库
+- scripts/control-tower/alloc-task-id.sh — 机制级防线：task-state 注入态禁止写真实 brief 目录（同类第 2 次复发 → 源头 fail-closed，非逐测试打补丁）
+- scripts/workflow/resolve-commit-brief.sh — 认领窗口改为「任务身份（D#）锚点 ∪ 日期窗口」而非纯 ±1 天
+- scripts/pre-doc-audit.sh — 去首行 BOM（+ 同族 BOM 全仓扫描结论入台账）
+- tests/control-tower/grep-oP-regression.test.sh — 并入首行 BOM 扫描（sealed，无需改 ci.yml；含存量待清清单 ratchet）
+- tests/control-tower/** — 各项对应断言
+- memory/notes/implemented/2026-09-13-D718-ctl-minor-fixes.md — 本单决策 Note（D534 note 门禁）
+- .claude/task-briefs/2026-09-13-D718-cto-parallel-ctl-minor-fixes.md — 本 brief
+- task-state/D718.json — 本单登记
+（第 4 项 .gitignore 证据日志白名单 = 派单"附带"项，创始人本批指令为三项 → 不并入，登记台账待派）
 不做什么：
 - 不改 `scripts/audit/` 任何文件（审计红线：CTO 亦不得碰）
 - 不改 `scripts/pre-commit-check.sh` 的组数与判据（本批只修存量小缺陷，不动门禁语义）
