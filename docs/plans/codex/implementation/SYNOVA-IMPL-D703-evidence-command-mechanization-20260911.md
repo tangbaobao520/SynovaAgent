@@ -151,3 +151,8 @@
 | 范围一致 | `git diff --name-only HEAD^` | 与 §3.1 一致 |
 | 无绕过 | `grep -n "no-verify" .claude/bypass.log` | 本次 0 命中 |
 | 推送+CI | `git log origin/main..HEAD --oneline` | 合并后空 + CI task-relevant jobs 绿 |
+
+## 写集豁免（D708 合并级对账，CTO 验收补 2026-09-13）
+
+- .claude/task-briefs/2026-09-11-D703-evidence-command-mechanization.md — 本卡 task brief：D296 认领制的门禁输入文件（brief 不是交付物，D708 gate 内置豁免只覆盖 bypass.log），原为 09-11 版
+- .claude/task-briefs/2026-09-13-D703-evidence-command-mechanization.md — 跨日镜像 brief（D594 先例：CI 认领窗口按当天 ±1 天，原 09-11 brief 掉出窗口致 G12 无认领者 → CI run 34743448731 实测）
