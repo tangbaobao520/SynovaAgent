@@ -21,6 +21,14 @@ set -uo pipefail
 
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 LOG="$ROOT/.claude/bypass.log"
+# D735 Stage 1: 对账来源 = 旧路径 + per-session 新落点（union）。
+# Stage 1 旧路径仍权威；union 读保证「登记写在新落点、对账只读旧路径」不会误判缺记录。
+LEDGER_SH="$ROOT/scripts/control-tower/bypass-ledger.sh"
+LEDGER_SOURCES="$LOG"
+if [ -f "$LEDGER_SH" ]; then
+  _SRC_OUT="$(bash "$LEDGER_SH" sources 2>/dev/null)" || _SRC_OUT="$LOG"  # swallow-ok: 解析器失败即回退旧路径（显式赋值，非静默跳过对账）
+  [ -n "$_SRC_OUT" ] && LEDGER_SOURCES="$_SRC_OUT"
+fi
 BASE="${SYNO_BASE_REF:-${1:-origin/feat/prompt-architecture}}"
 
 # D513/③(Win 37dc1cae 根因): 防御性刷新 base —— `git push <URL>` 不更新本地
@@ -89,7 +97,9 @@ for h in $GIT_LOG_OUT; do
   if [ -z "$_OTHER" ]; then
     continue
   fi
-  if ! grep -q "$h" "$LOG" 2>/dev/null; then
+  # D735 Stage 1: 在全部来源里找（旧路径 + per-session）；多文件 grep 任一命中即通过
+  # shellcheck disable=SC2086  # 有意分词: LEDGER_SOURCES 是换行分隔的多文件列表
+  if ! grep -q "$h" $LEDGER_SOURCES 2>/dev/null; then
     SUBJ=$(git log -1 --format=%s "$h" 2>/dev/null || echo "$h")
     MISSING="${MISSING}  $SUBJ [${h:0:8}]\n"
   fi
