@@ -1337,3 +1337,4 @@ Binary file .claude/bypass.log matches
 2026-09-13T14:58:31+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=f423f0aa0e261a06cf4ed7e4ca00bdd45927b046
 2026-09-13T15:03:13+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=90dd79c77f7aefa8b2377cafae91c46c187f87e4
 2026-09-13T14:51:04+08:00 | COMMITTED | pre-commit PASS (CTO 一次性补记 — K3 审计提交的 auto-hook 记录未随分支推送) | HASH=ce8a974049f36c0da02081ebf540b751ef7f4cee
+2026-09-13T15:23:49+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=bb869446a930d989a1eca4968907ed33d9a7cbce
