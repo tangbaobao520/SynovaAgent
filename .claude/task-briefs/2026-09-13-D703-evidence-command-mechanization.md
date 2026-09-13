@@ -121,6 +121,7 @@ scripts/ci/verify-dXXX.sh，存在则跑，缺省 warning skip（不跑全量历
 - .dsh/skills/dev-doc-delivery/template/编码指令模板.md
 - docs/plans/codex/implementation/SYNOVA-IMPL-D703-evidence-command-mechanization-20260911.md
 - .codex/control-tower/VERSION.md: CTO 验收补 bump V5.2.8（门禁/工具行为变化；spec §3.1 原遗漏，§3.2.1 ⑦ 回填）
+- docs/synova/coordination/审计发现台账-DSH-CTO.md: D703 收尾台账行（验收 + 解阻三机制 + 4 条发现 + 3 项待派卡）
 ## Q3: 验收 — 入口 → 交互 → 结果
 
 入口（从哪触发）：
@@ -157,3 +158,7 @@ L1/L2/L3/L4/L5 均不涉及（无 TS 变更，DS6 descope）
 - [ ] verify: bash scripts/ci/verify-d703.sh exit 0（D703 DS 回放全过 + D702/D704 显式 skip 带理由）且坏 doc 用例 exit 1（W2 形态）
 - [ ] verify: npx tsc --noEmit 报错集与基线逐条恒等（零新增）+ pre-commit 本地干跑无新增硬阻断
 - [ ] verify: git push 后 CI task-relevant jobs job 级绿
+
+## 写集豁免（D708 合并级对账，2026-09-13 CTO 收尾追加）
+
+- .claude/task-briefs/2026-09-13-D703-evidence-command-mechanization.md — 本 brief 自身：D296 认领制的门禁输入文件（非交付物）；D708 内置豁免只覆盖 .claude/bypass.log，故显式豁免
