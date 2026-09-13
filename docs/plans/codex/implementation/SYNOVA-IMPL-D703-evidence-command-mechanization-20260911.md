@@ -156,3 +156,4 @@
 
 - .claude/task-briefs/2026-09-11-D703-evidence-command-mechanization.md — 本卡 task brief：D296 认领制的门禁输入文件（brief 不是交付物，D708 gate 内置豁免只覆盖 bypass.log），原为 09-11 版
 - .claude/task-briefs/2026-09-13-D703-evidence-command-mechanization.md — 跨日镜像 brief（D594 先例：CI 认领窗口按当天 ±1 天，原 09-11 brief 掉出窗口致 G12 无认领者 → CI run 34743448731 实测）
+- docs/synova/coordination/审计发现台账-DSH-CTO.md — 本卡收尾台账行（验收/解阻/合并登记）：台账是 CTO 验收簿记通道，非本卡交付物；D708 gate 声明源无 CTO 簿记豁免项，故按指引③显式豁免（建议后续把 `docs/synova/coordination/**` 纳入内置豁免）
