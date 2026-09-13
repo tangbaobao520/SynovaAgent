@@ -163,9 +163,32 @@ def parse_done(text: str) -> List[str]:
     return done
 
 
+# D722: 认领路径的 markdown 包裹符 —— brief 写集常写 `path` / **path** / "path"
+_MD_WRAP = re.compile(r"^[\s`*_'\"\[\]]+|[\s`*_'\"\[\]]+$")
+
+
+def _strip_markup(s: str) -> str:
+    """剥路径两侧的 markdown 包裹符（反引号/加粗/引号/方括号）与空白。
+
+    D722: parse_q2 只剥动词前缀与括号描述，反引号会残留 → match_path 恒不命中
+    → 认领集合静默为空 → D328 暂存区归属校验被削弱（实测：一次「陈旧 brief 抢认领」
+    误拦 #D721 的提交，根因即此）。
+    """
+    return _MD_WRAP.sub("", s or "")
+
+
 def match_path(path: str, pattern: str) -> bool:
-    """路径匹配（语义 = resolve-commit-brief.sh matches(): (^|/)pat$）。"""
-    return re.search(r"(^|/)" + re.escape(pattern) + r"$", path) is not None
+    """路径匹配（语义 = resolve-commit-brief.sh matches(): (^|/)pat$）。
+
+    D722: 两侧先剥 markdown 包裹符再匹配（历史实现对 `src/x.ts` 形式的模式恒不命中）。
+    契约: 输入 path/pattern 为 str（可为 None → 视为空，返回 False）；
+          剥壳后 pattern 为空 → False（绝不退化为「匹配一切」）；
+          仍以 (^|/)pat$ 结尾锚定，故 `x.ts` 不匹配 `x.tsx`。
+    """
+    pat = _strip_markup(pattern)
+    if not pat:
+        return False
+    return re.search(r"(^|/)" + re.escape(pat) + r"$", _strip_markup(path)) is not None
 
 
 def parse_all(text: str) -> dict:

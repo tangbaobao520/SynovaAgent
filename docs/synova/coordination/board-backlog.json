@@ -228,6 +228,20 @@
       "severity": "P1 (M8 家族)",
       "source": "D712 Mac 侧报告 + 主 CTO 认领",
       "note": "Mac 侧报告：作业期间分支被其他 session 从 fix/d712-… 切到 fix/d711-…，派单文档随之消失。主 CTO 认领责任：本人同一时段在主工作区执行了多次分支切换（fix/d711 → tmp-464-refresh → 回归）。Mac 侧应对正确（改走 .sessions/d712-mac/repo 独立 clone，符合 git-sync-pr V5.2.0）。系统级修法＝强制隔离（主工作区只允许 CTO/合并动作，执行方一律独立 clone/worktree），与既有 PLAN-m8-session-worktree-isolation 同族，本条提供第二例实证。"
+    },
+    {
+      "id": "PLAN-brief-parser-inline-fallback-divergence",
+      "title": "resolve-commit-brief.sh 内联回退解析器与 brief_parser 分叉（双解析器同型 M 病）",
+      "severity": "P2",
+      "source": "D722 修复过程中发现",
+      "note": "resolve-commit-brief.sh:121-188 在 import brief_parser 失败时会走内联 python 的 parse_q2/match_path 副本（注释自称「fail-open 降级」）。D722 只修了 brief_parser.match_path（剥 markdown 包裹符），内联副本仍是旧实现 → 两者行为分叉：一旦 brief_parser 不可导入（Windows 精简环境/路径异常），认领会静默退化为「反引号路径永不命中」，而主路径正常 → 症状只在该降级分支出现，极难现场定位。同族先例：D707 brief 双解析器（已收敛）。建议：删除内联副本改为「brief_parser 不可用 → 显式 degraded + 认领置空」单一路径，并补测试。"
+    },
+    {
+      "id": "PLAN-stale-brief-steals-claim",
+      "title": "±1 天窗口内他 session 的陈旧 brief 抢走热文件认领 → staging-guard 误判「并行劫持」阻断提交",
+      "severity": "P2",
+      "source": "D721 亲历（CTO 提交被误拦，实测复现）",
+      "note": "CME 机制：resolve-commit-brief.sh 的候选 brief 集按文件名日期 ±1 天（D559 时区容差）展开；本 session 的 brief 若认领为空（如写集路径带反引号，见 D722），规则 1（current-brief 认领 ≥1）不成立 → 落到规则 2「认领暂存文件最多的 brief」→ 可能选中**昨天那份也认领同一热文件的 brief**（实测：D711 brief 认领 docs/synova/coordination/board-backlog.json，把 D721 的提交判为 D711 的文件）→ staging_guard / commit-msg 的 D328 校验报「提交声明(D721)与暂存文件归属(D711)不一致 — 疑似并行劫持」。热文件（board-backlog.json / product-lines.yaml / ci.yml）由 CTO 各任务反复修改，命中率高。缓解：D722 修了根因之一（认领为空）；本条是残余风险，建议规则 2 增加「仅选与本 session task_id 同源或今日新建的 brief」约束。"
     }
   ]
 }

@@ -1,0 +1,30 @@
+{
+  "task_id": "D722",
+  "title": "brief 写集 markdown 包裹符导致认领恒为空的修复（match_path 剥壳）",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "by": "synova-cto",
+    "at": "2026-09-13",
+    "write_set": [
+      "scripts/control-tower/brief_parser.py — match_path 两侧剥 markdown 包裹符；空 pattern → False",
+      "tests/control-tower/brief-parser-markup.test.sh — 新增 16 断言密封测试",
+      ".github/workflows/ci.yml — 测试入控制塔白名单",
+      "docs/synova/coordination/board-backlog.json — 登记 PLAN-brief-parser-inline-fallback-divergence / PLAN-stale-brief-steals-claim",
+      "memory/notes/implemented/2026-09-13-brief-parser-markup-claim-hole.md",
+      ".claude/task-briefs/2026-09-13-D722-*.md、task-state/D722.json"
+    ],
+    "evidence": {
+      "新测试": "bash tests/control-tower/brief-parser-markup.test.sh → 16 通过 0 失败",
+      "反向验证": "还原旧 match_path 后同一测试 → 4 失败",
+      "回归": "brief-parser-strip / alloc-task-id / merge_writeset_gate 三测试 PASS",
+      "根因实测": "2026-09-13-D720 brief 的 Q2 include 首项含反引号 → 旧 match_path 恒不命中"
+    },
+    "red_lines": "scripts/audit/ 零触碰；未改 parse_q2 返回形态、未改 staging_guard 阻断语义"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-13",
+  "updated_by": "synova-cto",
+  "note": "触发=D721 提交被 staging-guard 误判「并行劫持」。根因：brief 写集习惯用反引号包路径，parse_q2 不剥、match_path 不剥 → 认领恒空 → resolver 回退猜 brief，被 ±1 天窗口内陈旧 brief 抢认领。本单在比对端统一剥壳（一处修、三消费者受益）。"
+}
