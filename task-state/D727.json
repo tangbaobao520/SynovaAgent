@@ -4,7 +4,7 @@
   "status": "spec_done",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D727-evidence-chain-20260913.md",
-    "commit": "<本提交>",
+    "commit": "b09c9a9b",
     "by": "dev-doc",
     "at": "2026-09-13",
     "note": "证据层数据流 spec（P0）。核心交付：① 必答①表不存在的根因 = 三层叠加（DDL 寄生于 EvidenceStore 构造函数 + 生产构造点为零且唯一候选点条件性早退 + 两处装配点硬编码 evidenceCollector:null）；② 必答②写入最小闭环 = GA 访谈 POST /api/conversations → ConversationEngine Phase 0（调用点 conversation-engine.ts:625-629 已存在）→ collectFromInterview → INSERT INTO evidence；③ 必答③ expires_at = 写入时刻的策略快照（唯一写入方=采集路径；默认 NULL=永久；写失败 fail-closed 于删除 + fail-soft 于采集，证据照常入库）；④ 必答④ 物理证明 = 报告 provenance.evidenceRefs + evidence_ref 引用表 + sqlite3 三段查询 + R1/R2 两条必红反向验证。另交付：五路证据概念台账（诊断证据 4 路全死 + 1 路同名异物）、与 D725 的 4 个接口点（含时间谓词单口径裁决）、D728 写集缺口 6 文件上报（方案 A 建议扩写集）。过 dev-doc-gatekeeper exit 0（C1-C6 全过，C6 提取 4 条）。基线 = origin/main @cff43d6f（D717 保留模块与 bootstrap 改动在未合并的 #527 上）。"
