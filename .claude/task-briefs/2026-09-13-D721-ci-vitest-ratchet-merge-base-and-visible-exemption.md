@@ -41,7 +41,8 @@ F2 修判据（三点差 `merge-base(origin/main, HEAD)..HEAD`）；F1 **不取�
   ② 放行分支补 `::warning::` + 放行文件名清单 + 指向 board-backlog 登记项；阻断分支补「本 PR 引进的失败」清单
 - docs/synova/coordination/board-backlog.json — 登记 F1（main Vitest 三个真红，须烧掉）+ `graphbridge-wiring` 红（此前未登记）
 - memory/notes/implemented/2026-09-13-ci-vitest-ratchet-merge-base-fix.md — 决策沉淀（铁律 49）
-- .claude/task-briefs/2026-09-13-D721-ci-vitest-ratchet-merge-base-and-visible-exemption.md、task-state/D721.json — 本单
+- .claude/task-briefs/2026-09-13-D721-ci-vitest-ratchet-merge-base-and-visible-exemption.md — 本 brief
+- task-state/D721.json — 本单登记
 不做什么：
 - 不改 `scripts/audit/`（审计红线）
 - 不取消棘轮、不放宽/收紧通过阈值（本单只修**判据正确性**与**放行可见性**）
