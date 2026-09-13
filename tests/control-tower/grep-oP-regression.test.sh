@@ -3,7 +3,7 @@
 export PYTHONIOENCODING=utf-8
 export LC_ALL=C.UTF-8 2>/dev/null || true
 # ═══════════════════════════════════════════════════════════════════════════════
-# grep-oP-regression.test.sh — grep -P 家族回归网（D661 建 / D664 扩容）
+# grep-oP-regression.test.sh — scripts/ 可移植性回归网（D661 建 / D664 扩容 / D718 并入 BOM）
 #
 # 覆盖矩阵（铁律 48 三路径 + 接线）:
 #   正常 — scripts/ 全目录（.sh）内 grep -P 变体零命中
@@ -11,9 +11,12 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 #   反向 — 哨兵: 塞入一处 -oP 必须被网抓到（防"永远绿"的空转网）
 #   D664 — 27 处转译的**语义等价**金值断言（PCRE → ERE 逐模式钉死，含 \K / \s / \S 三类不可直译）
 #   接线 — 每个转译后的 ERE 模式必须真实存在于目标脚本（防测试与源码漂移）
+#   D718 — 首行 BOM 扫描（同族可移植性缺陷：BOM 顶掉 shebang → `env: No such file or directory`）:
+#          全仓库 git 跟踪文件单进程扫描 + **存量待清清单 ratchet**（清单必须与实际完全一致）
 #
 # 防家族复发: D421(post-commit.sh)/D660(resolve-commit-brief.sh)/D661/D664 四次同型
 # （BSD grep 无 -P → 检查静默失效）。本测试是物理回归网——任何新增 grep -P 立即红。
+# D718 同族第二条: BOM 使 shebang 失效（脚本"存在但跑不起来"）——同属静默失效家族。
 #
 # D664 扩容说明（旧版是纸老虎）:
 #   ① 旧版只扫 scripts/workflow/ + scripts/control-tower/ 两目录 → hooks/、checks/、
@@ -189,6 +192,49 @@ GOT_EXPORTS=$(grep -oE 'export (function|class|const) [A-Za-z_][A-Za-z0-9_]*' "$
 printf '#CRITERIA: A\n' > "$TMP/b.md"
 GOT_CRIT=$(grep -oE '#CRITERIA[[:space:]]*[:=][[:space:]]*[A-D]' "$TMP/b.md" 2>/dev/null | sed -E 's/.*[=:][[:space:]]*//')
 [ "$GOT_CRIT" = "A" ] && ok "可执行: #CRITERIA 提取（真实形态 A）" || no "可执行: #CRITERIA 提取异常 → '$GOT_CRIT'"
+
+# ── D718: 首行 BOM 扫描（ratchet）──
+# 语义: 全仓库 git 跟踪文件行首 BOM 集合 必须与下方待清清单**完全一致**——
+#   新增 BOM → 红（防新脚本再落坑）；清单里的文件被清掉却没删条目 → 也红（防僵尸条目）。
+# 扫描用单进程 git grep（BSD grep 无 -P，用 $'...' 文字字节 + ^ 锚点）：逐文件 head/od
+#   在 Windows CI 是分钟级（D664 性能教训），故不做 per-file spawn。
+# 待清清单（本批 D718 只清了 scripts/pre-doc-audit.sh，其余按域派工，CTO 不越域）:
+#   scripts/audit/check-gates-v2.py            — K3 审计域（CTO 红线禁碰）
+#   scripts/doc-system/*.sh (7)                — 文档系统域
+#   tests/doc-system/doc-registry-gate.test.sh  — 文档系统域（.sh，BOM 使 shebang 失效 → 有害）
+#   scripts/archive/ scripts/*.py (6)          — .py 的 BOM 属 PEP 263 可容忍，但仍应清
+BOM_PENDING="scripts/archive/gen-survey.py
+scripts/audit/check-gates-v2.py
+scripts/control-tower/generate-dashboard.py
+scripts/control-tower/product-health.py
+scripts/doc-system/check-doc-truth.sh
+scripts/doc-system/doc-categories.sh
+scripts/doc-system/doc-registry-gate.sh
+scripts/doc-system/doc-staleness.sh
+scripts/doc-system/doc-triage.sh
+scripts/doc-system/generate-chronicle-monthly.sh
+scripts/doc-system/install-chronicle-schedule.sh
+scripts/jtbd-dedup-v2.py
+scripts/jtbd-dedup.py
+tests/doc-system/doc-registry-gate.test.sh"
+BOM_BYTES="$(printf '\xef\xbb\xbf')"
+BOM_ACTUAL=$(cd "$REPO" && git grep -lI -e "^${BOM_BYTES}" -- \
+  '*.sh' '*.py' '*.json' '*.ts' '*.tsx' '*.js' '*.mjs' '*.cjs' '*.yml' '*.yaml' 2>/dev/null | sort || true)  # swallow-ok: git grep 无命中=exit 1，属正常
+BOM_EXPECT=$(printf '%s\n' "$BOM_PENDING" | grep -v '^$' | sort)
+if [ "$BOM_ACTUAL" = "$BOM_EXPECT" ]; then
+  ok "行首 BOM 与存量待清清单一致（$(printf '%s\n' "$BOM_EXPECT" | grep -c .) 个待清，无新增；本批已清 scripts/pre-doc-audit.sh）"
+else
+  no "行首 BOM 清单漂移（新增 BOM 或待清清单未同步清理）:"
+  diff <(printf '%s\n' "$BOM_EXPECT") <(printf '%s\n' "$BOM_ACTUAL") | sed 's/^/      /' >&2
+fi
+
+# 反向哨兵: 扫描器本身必须真能命中 BOM（防"永远绿"的空转网 —— 实测踩过假阴性：
+# `od -An -tx1 | grep 'ef bb bf'` 因 od 十六进制对之间是两个空格而永不命中）
+printf '\xef\xbb\xbf#!/bin/bash\necho hi\n' > "$TMP/bom-probe.sh"
+BOM_PROBE=$(cd "$TMP" && git init -q . 2>/dev/null; cd "$TMP" && git add -f bom-probe.sh 2>/dev/null; cd "$TMP" && git grep -lI -e "^${BOM_BYTES}" -- '*.sh' 2>/dev/null || true)  # swallow-ok: 无命中=exit 1，非错误
+[ "$BOM_PROBE" = "bom-probe.sh" ] \
+  && ok "哨兵: 塞入 BOM 文件必被扫到（扫描器非空转）" \
+  || no "哨兵: 扫描器未命中已知 BOM 样本 → 本检查不可信（假阴性）: '$BOM_PROBE'"
 
 echo ""
 echo "  结果: $PASS 通过, $FAIL 失败"
