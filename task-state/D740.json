@@ -1,0 +1,33 @@
+{
+  "task_id": "D740",
+  "title": "L1交互层未闭合项取证（D518/D519/D590/D591/D593/D595/D602 + D594 + D572）",
+  "status": "impl_done",
+  "risk": "low",
+  "spec": null,
+  "impl": {
+    "by": "dsh-cto",
+    "at": "2026-09-14",
+    "baseline": "origin/main @ 3f0a43b5",
+    "files": [
+      "docs/synova/coordination/L1交互层未闭合项-20260913.md",
+      "task-state/D740.json",
+      ".claude/task-briefs/2026-09-14-D740-L1未闭合项取证.md"
+    ],
+    "evidence": [
+      "逐单条件原文摘录自 K3 报告（file:line 锚定）：2026-08-25-D517-D519.md:12-14 / 2026-09-09-K3-D590-D591-closeout.md:16-18 / 2026-09-10-K3-D593FIX2-closeout.md:23 / 2026-09-10-K3-D593FIX-D595-closeout.md:213 / 2026-09-09-K3-D593-D602-closeout.md:167",
+      "D518 C1 物理核验：CI run 32870900391（desktop-build, conclusion=success, 2026-08-25T16:15:49Z）经 GitHub API 实抓 + task-state D517/D519 artifact URL 回填命中",
+      "D518 C2 物理核验：dev doc dist/backend.mjs 命中 9 处 / dist/src/index.js 仅 1 处历史叙述（提交 532aaa41）",
+      "D590 P1-1 物理核验：7 份骨架 brief 仍在 origin/main，占位符 7/7 各命中 2 处；台账 D590/D591/D592 命中 0",
+      "D593 条件①：baseline txt diagnosis.ts=4（:62）+ PLAN-diagnosis-l5-di 仍挂 backlog；条件②：task-state cto_confirmation 2026-09-11 + D705 提交 1036e9a9",
+      "D595：evidence 7 件 0 命中 / spec 0 命中 / gitlink 已清（main 全树 0）",
+      "D602：spec 0 命中（#453 仅登记未关闭）",
+      "D594：关闭提交 30011654 报文『僵尸: … D594/D596（被 D602/D603 取代）』+ D602 task-state title 含『原审计编号 D594』+ CT-63 撞号根因（4fb65dc1）",
+      "D572：D578 PASS（带条件：Win 四断言 evidence 待入 git）/ D579 PASS / D576 PASS；yaml 1-2 note 仍『从未实测』；D517-519 verdict 仍 CONDITIONAL PASS"
+    ],
+    "notes": "只取证不改：全程 git show / git ls-tree / grep / 只读 API。未触碰 scripts/audit/、generate-dashboard.py、pre-commit-check.sh。未复跑项（骨架 brief 门禁毒化、Mac/Win 实测本体）已在报告 §10 显式标注。附加发现：board-backlog PLAN-k3-cond-clear note 称『骨架 brief 已清+审计清单已补』与实测不符（M2 型失真声明）。"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-14",
+  "updated_by": "dsh-cto"
+}
