@@ -1,0 +1,34 @@
+{
+  "schema": 1,
+  "record_type": "scenario",
+  "source": "CTO 实测（发布物路径：dmg → 安装 → 双击启动）D713 配套证据",
+  "date": "2026-09-13",
+  "written_by": "主 CTO（synova-cto）；artifact 校验用 scripts/desktop/verify-package-signature.sh",
+  "artifact": {
+    "dmg": "release/SynovaAgent-0.1.0-arm64.dmg",
+    "dmg_md5": "00cdeac3ba59dfe6632fbeff65372dc2",
+    "dmg_bytes": 114195341,
+    "app_signature": "adhoc（Identifier=com.synova.agent，hashes=4+3，CodeResources 存在）",
+    "built_at": "2026-09-13T10:32+08:00",
+    "note": "本包由 D713 修复后的构建链产出（beforePack 按 arch 备 native → afterPack ad-hoc 签名 + 自检）"
+  },
+  "verdicts": [
+    {
+      "acceptance_point": "1-3",
+      "verdict": "pass",
+      "quote": "发布物路径实测：hdiutil 挂载 dmg（卷名含空格『SynovaAgent 0.1.0-arm64』）→ 内部 app 封印有效（Contents/_CodeSignature/CodeResources 存在，codesign --verify --deep --strict 通过）→ 复制到 /Applications 后签名仍有效。复现：bash scripts/desktop/verify-package-signature.sh --dmg release/SynovaAgent-0.1.0-arm64.dmg（exit 0）",
+      "quote_ref": "CTO 实测 2026-09-13，dmg md5=00cdeac3ba59dfe6632fbeff65372dc2"
+    },
+    {
+      "acceptance_point": "1-4",
+      "verdict": "pass",
+      "quote": "open -a /Applications/SynovaAgent.app（等价双击）→ 主进程 PID 96036 + GPU helper + network service helper 同时存活；产品自带后端 /healthz 返回 {\"ok\":false,\"code\":\"UNAUTHORIZED\"}（服务在线且鉴权生效——非 500、非连接拒绝）。诚实边界：窗口的视觉确认受本机辅助功能权限限制未能由 CTO 目视截图，最终目视确认待创始人双击完成（进程/服务级证据已具备）。",
+      "quote_ref": "CTO 实测 2026-09-13 10:4x"
+    }
+  ],
+  "context": {
+    "why": "D712 Mac 侧 1-3/1-4 的『机器绿』跑的是本地 build 产物，未经发布物安装路径；本次由 CTO 补走真实路径并暴露 P0（原 dmg 内 app 无签名封印 → 装完打不开），修复后复验通过。",
+    "gate": "verify-package-signature.sh --all → exit 0（app 与 dmg 封印均有效）",
+    "tests": "tests/desktop/verify-package-signature.test.sh → 9 断言全过；tests/electron/desktop-build.test.ts → 26/26"
+  }
+}

@@ -27,6 +27,79 @@
 const pkg = require('./package.json');
 const fs = require('fs');
 const path = require('path');
+const { spawnSync } = require('child_process');
+
+/**
+ * D713 打包链签名/原生依赖钩子（2026-09-13，创始人报告"打都打不开"）
+ *
+ * 背景（实测）:
+ *   dmg/zip 内 app 无 Contents/_CodeSignature 封印 → macOS 拒绝启动（提示『已损坏』）。
+ *   根因: app-builder-lib@25.1.8 在无 Developer ID 证书时只 log skip（out/macPackager.js:202-211），
+ *         配置里也没有 identity → 产物从未被签名，而 CI 只断言产物"存在"不断言"可用"。
+ * 修法（无付费证书时的正解）:
+ *   ① beforePack: 按**目标架构**准备 better-sqlite3 的 electron 预编译（修 x64 包内含 arm64 模块的错配；
+ *      CI 原命令不带 --arch，在 arm64 runner 上打 x64 包必然错配）。
+ *   ② afterPack: 对 .app 做 ad-hoc 签名（codesign --sign -）并**立即自检**——自检失败即 throw 中止构建，
+ *      坏包根本到不了 dmg/zip 与分发环节（铁律 35：能自动化的不靠人）。
+ */
+function d713Run(cmd, args, opts) {
+  return spawnSync(cmd, args, Object.assign({ encoding: 'utf8' }, opts || {}));
+}
+
+function d713ArchName(arch) {
+  // electron-builder Arch 枚举: 0=x64 1=ia32 2=armv7l 3=arm64 4=universal
+  return { 0: 'x64', 1: 'ia32', 2: 'armv7l', 3: 'arm64' }[arch] || null;
+}
+
+const D713_SHIPPED_ARCHES = ['x64', 'arm64'];  // 我们实际出货的 mac 架构（build-synova.cjs mac.target）
+
+function d713PrepNative(context) {
+  const arch = d713ArchName(context.arch);
+  if (!arch) {
+    console.log(`[D713] 跳过 native 准备: 未映射 arch=${context.arch}`);
+    return;
+  }
+  if (!D713_SHIPPED_ARCHES.includes(arch)) {
+    // ia32 等未出货架构：better-sqlite3 无对应 electron 预编译（实测 "No prebuilt binaries found"）→
+    // 显式跳过并说明，避免"未出货架构"把整次构建 fail 掉（fail-closed 只应作用于出货架构）
+    console.log(`[D713] 跳过 native 准备: arch=${arch} 不在出货架构 ${D713_SHIPPED_ARCHES.join('/')} 内`);
+    return;
+  }
+  const electronVersion = String((pkg.devDependencies || {}).electron || '').replace(/^[^0-9]*/, '');
+  const cwd = path.join(__dirname, 'node_modules', 'better-sqlite3');
+  if (!fs.existsSync(cwd)) {
+    throw new Error(`[D713] better-sqlite3 目录不存在: ${cwd}（先跑 npm ci）`);
+  }
+  const r = d713Run('npx', ['prebuild-install', '-r', 'electron', '-t', electronVersion, '--arch', arch], { cwd, stdio: 'inherit' });
+  if (r.status !== 0) {
+    throw new Error(`[D713] native 依赖准备失败（arch=${arch}, electron=${electronVersion}）exit=${r.status}——fail-closed，不产出错配包`);
+  }
+  console.log(`[D713] native 依赖就绪: better-sqlite3 arch=${arch} electron=${electronVersion}`);
+}
+
+function d713SignApp(context) {
+  if (context.electronPlatformName !== 'darwin') {
+    console.log(`[D713] 非 darwin（${context.electronPlatformName}）→ 跳过 ad-hoc 签名`);
+    return;
+  }
+  const appPath = path.join(context.appOutDir, `${context.packager.appInfo.productFilename}.app`);
+  if (!fs.existsSync(appPath)) {
+    throw new Error(`[D713] app 产物不存在: ${appPath}`);
+  }
+  const sign = d713Run('codesign', ['--force', '--deep', '--sign', '-', appPath]);
+  if (sign.status !== 0) {
+    throw new Error(`[D713] ad-hoc 签名失败: ${sign.stderr || sign.stdout}`);
+  }
+  const verify = d713Run('codesign', ['--verify', '--deep', '--strict', appPath]);
+  if (verify.status !== 0) {
+    throw new Error(`[D713] 签名自检失败（构建阻断，防坏包出货）: ${verify.stderr || verify.stdout}`);
+  }
+  const seal = path.join(appPath, 'Contents', '_CodeSignature', 'CodeResources');
+  if (!fs.existsSync(seal)) {
+    throw new Error(`[D713] 签名封印缺失: ${seal}`);
+  }
+  console.log(`[D713] ad-hoc 签名 + 自检通过: ${appPath}`);
+}
 
 /**
  * D581 构建守卫契约（铁律 47）:
@@ -122,7 +195,21 @@ module.exports = {
       { target: 'zip', arch: ['x64', 'arm64'] },   // D517 新增: CI artifact + 解包验证
     ],
     category: 'public.app-category.business',
+    // D713: 无 Developer ID 证书 → 显式声明不追证书（避免自动发现造成的非确定性），
+    //       真正签名由下方 afterPack 的 ad-hoc 签名承担（arm64 可执行文件必须有签名才能启动）。
+    identity: null,
   },
+
+  // D713: 打包链钩子（顺序：beforePack 守卫+native 准备 → 打包 → afterPack 签名+自检 → dmg/zip）
+  // ⚠ 必须与 D581 构建守卫共存：D713 首版误覆盖了 `beforePack: assertBackendArtifact`，
+  //   导致 tests/electron/desktop-build.test.ts「缺失路径 fail-fast」红（2026-09-13 实测抓到，已修）。
+  //   成功路径必须返回 undefined（D581 注释：返回 false 会被 electron-builder 解读为「node_modules 由外部处理」）。
+  beforePack: (context) => {
+    const guard = assertBackendArtifact((context && context.appDir) || __dirname);
+    d713PrepNative(context);
+    return guard;
+  },
+  afterPack: async (context) => { d713SignApp(context); },
 
   linux: {
     target: [{ target: 'AppImage', arch: ['x64'] }],

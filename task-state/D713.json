@@ -1,0 +1,17 @@
+{
+  "task_id": "D713",
+  "title": "desktop-package-signature-and-verify-gate",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "path": "build-synova.cjs + scripts/desktop/verify-package-signature.sh + tests/desktop/verify-package-signature.test.sh + .github/workflows/desktop-build.yml + package.json",
+    "commit": "随本 PR",
+    "by": "主 CTO（synova-cto）",
+    "at": "2026-09-13",
+    "note": "ad-hoc 签名 + 构建期自检 + 按 arch 备 native + 出货前签名门禁；配套证据 docs/synova/product-lines/evidence/D713-published-artifact-20260913.json"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-13",
+  "updated_by": "synova-cto"
+}

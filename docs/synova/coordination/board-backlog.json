@@ -151,6 +151,48 @@
       "severity": "P2",
       "source": "CTO 亲历（2026-09-13 跑套件时仓库变脏）",
       "note": "证据: 跑 tests/control-tower/product-lines.test.py 后 git status 出现 M docs/synova/product-lines/product-progress.json（差异仅 generated_at + 线18 的 stale 3→1）。TestRefreshAll.test_end_to_end 直接 subprocess 跑 refresh-all.sh，而该脚本写 docs/synova/product-lines/{todos.yaml,product-progress.json,product-progress.html} —— 测试污染工作区，导致切分支被拦（checkout 报 untracked/changed 冲突）。这正是 #464（D657「测试零副作用」）要治的病 → 侧面印证其价值。修法方向: 测试内用 SYNO_PL_OUT_DIR 类注入缝重定向输出目录（若无此缝则先加缝），或断言后还原生成物。"
+    },
+    {
+      "id": "PLAN-build-chain-native-deps-gap",
+      "title": "构建链缺口：build-synova.cjs 文档三步链不含 native 依赖准备 → 本地打包出不可用包",
+      "severity": "P1 (实测复现)",
+      "source": "D712 Mac 侧重验发现（CTO 验收核实）",
+      "note": "实证：只按 build-synova.cjs 头注释的三步链打包 → 包内 better-sqlite3 为 node ABI(127)，Electron 33 需 130 → 安装后 ERR_DLOPEN_FAILED（Mac 侧实测复现空壳包，补 prebuild-install -r electron -t 33.4.11 后通过）。CI 有该步（.github/workflows/desktop-build.yml:75 'Prep native deps'）→ 缺口在**本地/文档链**。影响：任何按文档本地构建的人都会拿到坏包，而 CI 绿掩盖了它。修法：把 native prep 写进 build-synova.cjs 的三步链或加构建守卫硬校验（脚本已有 dist/backend.mjs 守卫先例）。"
+    },
+    {
+      "id": "PLAN-desktop-x64-dmg-stale-abi",
+      "title": "x64 dmg 内含 node ABI 二进制，装后不可用（本批只覆盖 arm64）",
+      "severity": "P2",
+      "source": "D712 Mac 侧重验发现（CTO 验收核实）",
+      "note": "Mac 侧已把 00:45 构建的 x64 dmg 从 release/ 删除；x64 未重打未验证。线 1 的 1-3 结论本批只覆盖 arm64 → 若产品承诺双架构（x64 客户），需补一轮 x64 重打+实测，否则 1-3 的 verified 有隐含范围限制，应在证据里显式标注。"
+    },
+    {
+      "id": "PLAN-upgrade-verify-bad-assertion",
+      "title": "scripts/desktop/upgrade-data-verify.sh:71 rows 探针引用不存在的表 sessions（坏断言）",
+      "severity": "P2",
+      "source": "D712 Mac 侧重验发现（CTO 验收核实）",
+      "note": "该行 UNION ALL SELECT 'sessions', COUNT(*) FROM sessions；全仓 grep 无 CREATE TABLE ... sessions → 探针永真/永假（SQL 报错被吞或恒 0），不影响 md5/表清单/integrity 三项真断言，但属静默失真。修法：改为真实表名或删除该探针 + 补断言存在性校验。"
+    },
+    {
+      "id": "PLAN-concurrent-main-worktree-switch",
+      "title": "主工作区被并发切换分支（M8 实证）：D712 Mac 侧作业期间主树 HEAD 被切走",
+      "severity": "P1 (M8 家族)",
+      "source": "D712 Mac 侧报告 + 主 CTO 认领",
+      "note": "Mac 侧报告：作业期间分支被其他 session 从 fix/d712-… 切到 fix/d711-…，派单文档随之消失。主 CTO 认领责任：本人同一时段在主工作区执行了多次分支切换（fix/d711 → tmp-464-refresh → 回归）。Mac 侧应对正确（改走 .sessions/d712-mac/repo 独立 clone，符合 git-sync-pr V5.2.0）。系统级修法＝强制隔离（主工作区只允许 CTO/合并动作，执行方一律独立 clone/worktree），与既有 PLAN-m8-session-worktree-isolation 同族，本条提供第二例实证。"
+    },
+    {
+      "id": "PLAN-packaging-signature-broken",
+      "title": "【P0】打包产物签名封印缺失 → 装完打不开（dmg 内 app 无 _CodeSignature，macOS 拒绝启动）",
+      "severity": "P0（阻塞创始人演示：产品第一承诺『能打开』）",
+      "source": "创始人 2026-09-13 报告『打都打不开』+ 主 CTO 实测定位",
+      "note": "实测证据链：① dmg 内 app（/Volumes/SynovaAgent-0.1.0-arm64/SynovaAgent.app）无 Contents/_CodeSignature → codesign --verify 报 'code has no resources but signature indicates they must be present' → macOS 拒启（典型弹窗『已损坏』）；② release/mac-arm64/SynovaAgent.app 同样无封印；③ 主 CTO 用 codesign --force --deep --sign - 重签后实测启动成功（进程存活 14s + [electron] boot mode=prod server=http://localhost:18790），且不再往自身 bundle 写运行时目录；④ 旁证：release/mac（x64）包内 native 模块为 arm64（架构错配）。根因：build-synova.cjs / package.json 均无签名配置（grep identity/codesign/notarize 零命中）→ 打包只留 binary 的 linker-signed adhoc → 经 dmg/zip 分发后必坏。修法：构建配置补 bundle 级签名（或打包后 codesign --force --deep --sign - 并重新生成 dmg/zip）+ 构建后校验（codesign --verify 失败即 fail，防坏包出货）+ x64 架构错配修复。影响：D712 的 1-3/1-4『机器绿』不成立为『Mac 安装包可用』——机器断言跑的是本地 build 未经发布物安装；验收口径须改为『从 dmg/zip 安装后双击能开』。"
+    },
+    {
+      "id": "PLAN-expert-count-drift",
+      "title": "文档-实现漂移（M7）：AGENTS.md 声称专家数与 expert/ 实测不符",
+      "severity": "P2",
+      "source": "CTO-HEALTH 周自检 2026-09-13 报 [DRIFT] + 主 CTO 复核",
+      "note": "周自检报：AGENTS.md 声称 7 位专家，expert/ 实测 6 个。CTO 复核：expert/ 下有 8 个目录，其中 _deprecated/_template 非专家 → 真专家 6 个（competitive-strategy / customer-growth / fundamental-efficiency / host / organizational-capability / technology-foundation）✓ 漂移成立。同类表述还散见 CLAUDE.md 数据流图（『8 位文件驱动专家』『7位专家』两处并存）。修法：以 expert/ 实测为唯一事实源，统一 AGENTS.md/CLAUDE.md/PRODUCT-BRIEF 的专家数与名单，并考虑在 check-file-driven 门禁加『文档声称数 = 目录实测数』断言（防再漂移；铁律 35 能自动化的不靠人）。"
     }
   ]
 }
