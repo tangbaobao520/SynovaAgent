@@ -92,10 +92,11 @@ tests/control-tower/verify-doc.test.sh
 .github/workflows/ci.yml
 .claude/skills/dev-doc-delivery/template/编码指令模板.md
 .dsh/skills/dev-doc-delivery/template/编码指令模板.md
+.codex/control-tower/VERSION.md
 $SPEC_D703"
   EXTRA=$(git -c core.quotepath=off diff --name-only origin/main...HEAD 2>/dev/null | grep -v '^\.claude/' | grep -Fvx -f <(printf '%s\n' "$WSET") || true) # swallow-ok: 非 git 仓时 EXTRA 非空 → FAIL，不静默
   if [ -z "$EXTRA" ]; then
-    pass "DS7 范围一致: 分支改动 ⊆ 写集 7 文件（+ .claude/ 簿记豁免）"
+    pass "DS7 范围一致: 分支改动 ⊆ 写集 8 文件（+ .claude/ 簿记豁免）"
   else
     fail "DS7 范围一致: 越界文件 — $(printf '%s' "$EXTRA" | tr '\n' ' ')"
   fi

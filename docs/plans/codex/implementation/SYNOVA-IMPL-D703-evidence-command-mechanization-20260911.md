@@ -47,7 +47,7 @@
 
 ## 3. 实现方案
 
-### 3.1 写集 (3 修改 + 3 新建)
+### 3.1 写集 (4 修改 + 3 新建)
 
 | 文件 | 操作 | 说明 |
 |---|---|---|
@@ -57,6 +57,7 @@
 | .claude/skills/dev-doc-delivery/template/编码指令模板.md | 修改 | §四 复核清单追加机器可查项：「每条 verify/DS 证据命令已在本分支 CI 实跑过（看 job 日志，非自述）」 |
 | .dsh/skills/dev-doc-delivery/template/编码指令模板.md | 修改 | 与 .claude 侧逐字同步（组 13 技能同步一致性硬阻断） |
 | tests/control-tower/verify-doc.test.sh | 新建 | ≥4 断言：合法 grep 回放 exit 0 / 引用不存在测试文件 exit 1（W2 缺陷场景）/ 非白名单命令拒绝 exit 1 / 无 DS 命令的 doc 显式 skip |
+| .codex/control-tower/VERSION.md | 修改 | **CTO 验收追加（§3.2.1 ⑦）**：本卡含门禁/工具行为变化（CI Replay 步骤 + canary 清单）→ 按 VERSION.md 首部规则 bump **V5.2.8**（PATCH）。spec 原写集遗漏此文件（实现方严格守写集，非违规）；tag 按 submit §6 在合入 main 后打 |
 
 ### 3.2 最终实现同 commit 回填（2026-09-11 实现时回填，与本卡交付同 commit）
 
