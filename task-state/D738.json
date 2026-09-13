@@ -1,0 +1,11 @@
+{
+  "task_id": "D738",
+  "title": "VAR 全角标点常驻扫描 check",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-14",
+  "updated_by": "alloc-task-id"
+}

@@ -1408,6 +1408,33 @@ else
   soft_check "D734 PR 预算: 检查脚本缺失 scripts/control-tower/check-pr-budget.sh" "1"
 fi
 
+# ═══ D738: `$VAR` 紧贴非 ASCII 扫描（条件跳过，保持 <1s）═══
+# 背景: 红线条目「同类第二次」——D370 记载 bash 在 LC_ALL=C.UTF-8 下把紧跟 $VAR 的全角标点
+#   并入**变量名**（变量即使已赋值也 unbound）；批 A 修 4 处，D735 又 1 处，且**只在失败路径触发**
+#   （门禁最需说话时哑掉）。机器化防第三次（铁律 35）。
+# 条件: 仅当暂存区含 .sh 时跑；命中文件数即为输入，保持 <1s。
+# 判定 soft_check: 对齐 V5.0.0「本地软提示 + CI 权威」（SYNO_CI=1 转硬）。
+echo ""
+echo -e "${CYAN}── \$VAR 全角边界扫描 (D738) ──${RESET}"
+LV_FILES=""
+while IFS= read -r _f; do
+  case "$_f" in *.sh) [ -f "$ROOT/$_f" ] && LV_FILES="${LV_FILES}${ROOT}/${_f}"$'\n' ;; esac
+done <<< "$GIT_CACHED_ALL_NAMES"
+if [ -n "$LV_FILES" ]; then
+  LV_OUT=""
+  while IFS= read -r _f; do
+    [ -z "$_f" ] && continue
+    _o="$(bash "$ROOT/scripts/control-tower/check-locale-var.sh" "$_f" 2>&1)" || LV_OUT="${LV_OUT}${_o}"$'\n'
+  done <<< "$LV_FILES"
+  if [ -z "$LV_OUT" ]; then
+    soft_pass "D738 locale-var: 变更的 .sh 无 \$VAR 紧贴非 ASCII"
+  else
+    soft_check "D738 locale-var: \$VAR 紧贴非 ASCII 未加花括号（改成 \${VAR}）" "$LV_OUT"
+  fi
+else
+  soft_pass "D738 locale-var: 无 .sh 变更(跳过)"
+fi
+
 # ── D520/任务3: 平台敏感命令软检查（V5 软提示——新增脚本须对照 PLATFORM-CHECKLIST.md）──
 # 只查本次新增（A）的 scripts/control-tower|workflow 下的 .sh/.py 文件：
 #   裸 python3（非 PYBIN 模式）/ date +%s / date -v / grep -P → 提示见 checklist。
