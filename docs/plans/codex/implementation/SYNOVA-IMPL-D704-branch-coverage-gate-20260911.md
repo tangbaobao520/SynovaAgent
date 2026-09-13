@@ -71,6 +71,10 @@
 5. **阈值 env 合法性**：`BRANCH_COVERAGE_MIN` 仅 `^[0-9]+([.][0-9]+)?$` 合法，非法值 fail-closed exit 1（不静默回退默认——门禁口径不可被注入方偷换）。
 6. **CI 触发条件**：coverage-gate 为独立 job（`if: github.event_name == 'pull_request'`），先 `git diff --name-only --diff-filter=d origin/main...HEAD | grep -qE '^src/.*\.ts$'` 检测 src/ 改动，无 src 改动则跳过 vitest+闸门两步（纯文档 PR 零开销）。
 
+7. **VERSION bump（CTO 验收补，2026-09-14）**：本卡新增 CI job（coverage-gate）+ canary 清单条目 = **门禁/工具行为变化** → 按 `.codex/control-tower/VERSION.md` 首部规则 bump **V5.2.9**（PATCH）；tag 按 submit §6 在合入 main 后打。§3.1 写集遗漏此文件（写集 +1），实现方严格守写集无违规。
+
+8. **CI 执行证据缺口与补救（CTO 验收，2026-09-14）**：本卡 head 的三次 push 落在 **13:38Z–16:32Z 的 pull_request 事件静默窗口**（实测该窗口 repo 全局零 PR run，16:32Z 起恢复）→ coverage-gate（PR-only job）**从未在 CI 执行过**。补救：本 commit 触发新的 PR run 后核该 job 真实执行（成功或按设计 skip 均可，但必须有 run 证据）。
+
 ### 3.3 不做的事
 
 | 项 | 理由 |

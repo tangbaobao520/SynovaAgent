@@ -197,6 +197,7 @@ coverage 基建已有 → 复用（provider/reporter 机制/依赖全不动）�
 - vitest.config.ts
 - .claude/task-briefs/2026-09-13-D704-branch-coverage-gate.md
 - docs/plans/codex/implementation/SYNOVA-IMPL-D704-branch-coverage-gate-20260911.md
+- .codex/control-tower/VERSION.md: CTO 验收补 bump V5.2.9（门禁/工具行为变化；spec §3.1 写集遗漏，§3.2 第 7 条回填）
 
 不做什么（排除项）：
 - 不改 package.json （@vitest/coverage-v8 4.1.8 已装，spec §0 禁止重装）

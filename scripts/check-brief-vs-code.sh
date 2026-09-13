@@ -36,10 +36,28 @@ fi
 echo -e "  Brief: $(basename "$BRIEF")"
 
 # ═══ Git diff 数据 ═══
-DIFF_ALL=$(git diff --name-only HEAD~1..HEAD 2>/dev/null || git diff --name-only 2>/dev/null || true)
-NEW_FILES=$(git diff --name-only --diff-filter=A HEAD~1..HEAD 2>/dev/null || true)
-MOD_FILES=$(git diff --name-only --diff-filter=M HEAD~1..HEAD 2>/dev/null || true)
-DEL_FILES=$(git diff --name-only --diff-filter=D HEAD~1..HEAD 2>/dev/null || true)
+# D721: 基准必须相对**与 main 的合并基点**（三点差）。旧基准 HEAD~1..HEAD 在合并提交
+#   （刷新分支时 git merge origin/main）上 = 「被并入的 main 全部改动」→ G12 把这些文件
+#   与当前 brief 的 Q2 写集比对 → 全部判为越界（CI strict 下硬阻断）。
+#   实证: #520（D721）刷新后 G12 报「Q2 范围一致性: 1 处」，而该 PR 自身只改了 ci.yml/测试/登记。
+#   无 origin/main（本地/首次 clone）→ 回退旧基准并显式提示（降级可见）。
+DIFF_BASE=""
+if MB=$(git merge-base refs/remotes/origin/main HEAD 2>/dev/null) && [ -n "$MB" ]; then
+  DIFF_BASE="$MB"
+else
+  echo -e "  ${YELLOW}origin/main 不可用 — diff 基准回退 HEAD~1（合并提交下会误判越界）${RESET}"
+fi
+if [ -n "$DIFF_BASE" ]; then
+  DIFF_ALL=$(git diff --name-only "$DIFF_BASE"..HEAD 2>/dev/null || true)
+  NEW_FILES=$(git diff --name-only --diff-filter=A "$DIFF_BASE"..HEAD 2>/dev/null || true)
+  MOD_FILES=$(git diff --name-only --diff-filter=M "$DIFF_BASE"..HEAD 2>/dev/null || true)
+  DEL_FILES=$(git diff --name-only --diff-filter=D "$DIFF_BASE"..HEAD 2>/dev/null || true)
+else
+  DIFF_ALL=$(git diff --name-only HEAD~1..HEAD 2>/dev/null || git diff --name-only 2>/dev/null || true)
+  NEW_FILES=$(git diff --name-only --diff-filter=A HEAD~1..HEAD 2>/dev/null || true)
+  MOD_FILES=$(git diff --name-only --diff-filter=M HEAD~1..HEAD 2>/dev/null || true)
+  DEL_FILES=$(git diff --name-only --diff-filter=D HEAD~1..HEAD 2>/dev/null || true)
+fi
 NEW_TS=$(echo "$NEW_FILES" | grep '\.ts$' | grep -v '\.test\.' | grep -v '\.d\.ts' || true)
 NEW_JSON=$(echo "$NEW_FILES" | grep '\.json$' || true)
 NEW_MANIFEST=$(echo "$NEW_FILES" | grep 'manifest\.json$' || true)
