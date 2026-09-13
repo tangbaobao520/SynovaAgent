@@ -77,6 +77,11 @@ evidence/
 # D581: 桌面端 Win 真机 evidence 走 git 跟踪路径（CT-57 口径: 断言摘要/md5 入 git）。
 # 根级 evidence/ 仍忽略；仅豁免 product-lines evidence 目录（新证据文件 git add 无需 -f）。
 !docs/synova/product-lines/evidence/
+# D712: 证据目录内的 .log 证据（transcript / app-stderr / backend）必须可复核入库。
+# 上文 :8 的 `*.log` 是**文件级**规则，仅靠 :79 的目录级豁免 `!docs/.../evidence/` 不足以
+# 放开目录内的 .log —— 实测 D712 12 个 .log 证据被静默忽略（含 F3 现场 app-stderr.log，
+# 即「证据不在 git = 不可复核」D572 同型温床，M4 类）。定向豁免（D581 先例同源处置）：
+!docs/synova/product-lines/evidence/**/*.log
 # D665: 运行时隔离 worktree 与 session 仓库不入版本库（gitlink 入树曾致 main build 常红）。
 # 树级守门: scripts/control-tower/check-gitlinks.sh（三态退出）+ 密封测试入 ci.yml。
 .synova-wt-*

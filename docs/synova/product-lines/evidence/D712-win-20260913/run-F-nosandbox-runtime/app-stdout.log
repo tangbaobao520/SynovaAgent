@@ -1,0 +1,2 @@
+
+[electron] boot mode=prod server=http://localhost:18790

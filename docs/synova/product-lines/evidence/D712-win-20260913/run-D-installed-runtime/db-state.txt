@@ -1,0 +1,1 @@
+db_exists=False path=C:\Users\ADMINI~1\AppData\Local\Temp\d712\userdata\data\synova.db

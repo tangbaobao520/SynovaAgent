@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "record_type": "scenario",
+  "source": "D712-win-20260913/run-F-nosandbox-runtime/timing.json + run-B/run-C 安装段阻塞记录",
+  "date": "2026-09-13",
+  "written_by": "evidence-writer.py",
+  "verdicts": [
+    {
+      "acceptance_point": "1-6",
+      "verdict": "fail",
+      "quote": "安装段被提权框阻塞 → 安装→可诊断总时长不可测（不伪造）；仅测得 app_launch→first_diagnosis_ready=12.4s WITHIN_TARGET（目标 1800s），只是旅程后半段。官方 first-diagnosis-timing.sh prod 模式绑死 macOS hdiutil → Win 无官方计时脚本"
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+[win-install-verify] ¢Ù Ç°ÖÃ OK: SynovaAgent-0.1.0-win32-x64.exe md5=D841D092088F0897F8AE780D462B46B5
+[win-install-verify] ¢Ú °²×°: D:\novis-backup-20260526\Novis\synova-agent\release\SynovaAgent-0.1.0-win32-x64.exe /S

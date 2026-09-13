@@ -1,0 +1,6 @@
+[00:34:10.175] ① 前置 OK: SynovaAgent-0.1.0-win32-x64.exe size=93112012 md5=D841D092088F0897F8AE780D462B46B5
+[00:34:10.190]    nsis.oneClick=false → 双击打开安装向导（本跑: /S 静默)
+[00:34:10.219] ② install_start (T0) launch=D:\synova-desktop-Windows-200\SynovaAgent-0.1.0-win32-x64.exe /S
+[00:34:10.352]    installer pid=5372 proc=SynovaAgent-0.1.0-win32-x64
+[00:37:10.532] ② 失败: install_done —— C:\Users\Administrator\AppData\Local\Programs\SynovaAgent\SynovaAgent.exe 未出现
+
