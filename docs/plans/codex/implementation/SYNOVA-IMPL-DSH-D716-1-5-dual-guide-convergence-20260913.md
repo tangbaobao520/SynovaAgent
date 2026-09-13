@@ -186,8 +186,8 @@ D712 的 1-5 证据（`docs/synova/product-lines/evidence/D712-mac-20260913/1-5-
 | app/setup.html | 删除 | D283 旧安装引导页面（4 步向导骨架）——退场（URL 由 410 承接） |
 | app/js/setup.js | 删除 | D283 向导逻辑（仅被 setup.html 引用，实测） |
 | app/css/setup.css | 删除 | 向导样式（仅被 setup.html 引用，实测） |
-| tests/routes/ | 新建 | setup-guide-retired.test.ts：410 行为 + 挂载顺序 + 引导唯一性守卫（真实 express app + `listen(0)` + fetch，铁律 12）。目录级声明（新文件尚不存在，D580/D590/D593 先例） |
-| tests/electron/ | 新建 | dual-guide-packaging-guard.test.ts：**只读**断言 `build-synova.cjs` 的 `files`/`extraResources` 不含 app/ （防把旧 Web UI 打进包 → 打包态重造双引导）。目录级声明同上 |
+| tests/routes/setup-guide-retired.test.ts | 新建 | 410 行为 + 挂载顺序 + 引导唯一性守卫（真实 express app + `listen(0)` + fetch，铁律 12）。精确文件名声明（**不**用目录级：目录级会与已合 spec 的同目录文件误判重叠 → CI verify-parallel 假阳，本次实测 D309 先例） |
+| tests/electron/dual-guide-packaging-guard.test.ts | 新建 | **只读**断言 `build-synova.cjs` 的 `files`/`extraResources` 不含 app/ （防把旧 Web UI 打进包 → 打包态重造双引导）。精确文件名声明同上 |
 | docs/synova/runbooks/desktop-dev-prod.md | 修改 | §一 收敛声明补三行：退场机制（410 路由名 + 挂载顺序）、旧 URL 锚、守卫测试文件名（消 M7 漂移；表述与代码事实一致） |
 
 > **证据落盘不在本写集（跨线交付物）**：evidence 由 Mac/CTO 写入 docs/synova/product-lines/evidence/ 目录（Win 侧原始输出贴 PR 描述，见 §5.5 / §10 DS9）——本写集表只列 Win 将实际改动的文件，避免与 spec 1 的写集表重叠（verify-parallel 口径）。
