@@ -38,7 +38,7 @@ PASS=0; FAIL=0
 pass() { PASS=$((PASS + 1)); echo "  ✅ $1"; }
 fail() { FAIL=$((FAIL + 1)); echo "  ❌ $1" >&2; }
 
-# run <期望exit> <说明> <args...>  → 捕获 stdout/stderr 到 $OUT，比对退出码
+# run <期望exit> <说明> <args...>  → 捕获 stdout/stderr 到 ${OUT}，比对退出码
 OUT=""
 run_expect() {
   local want="$1"; shift
@@ -157,7 +157,7 @@ SENT_LINE=$(grep -n '^src/sentinel/' "$CODEOWNERS" | head -1 | cut -d: -f1)
 if [ -n "$SRC_LINE" ] && [ -n "$SENT_LINE" ] && [ "$SRC_LINE" -lt "$SENT_LINE" ]; then
   pass "CODEOWNERS 顺序: 兜底($SRC_LINE) 在 Mac 例外($SENT_LINE) 之前"
 else
-  fail "CODEOWNERS 顺序错: 兜底行=$SRC_LINE 例外行=$SENT_LINE（例外会被吞）"
+  fail "CODEOWNERS 顺序错: 兜底行=${SRC_LINE} 例外行=${SENT_LINE}（例外会被吞）"
 fi
 
 echo ""
