@@ -1,7 +1,7 @@
 {
   "task_id": "D714",
   "title": "f3-preload-sandbox-renderer-api-fix",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "path": "electron/main.cjs（additionalArguments 透传 + 启动自检 preload-check）+ electron/preload.cjs（去掉 require('./config.json')，改读 argv）",
@@ -10,8 +10,17 @@
     "at": "2026-09-13",
     "note": "修 F3（跨平台 P0）：打包态沙箱 preload 不允许 require 相对文件 → electronAPI undefined → UI 全线失效。保持 renderer 沙箱，改 additionalArguments 传配置 + 加启动自检哨兵。功能级验证：应用自检输出 preload-check OK（serverUrl=http://localhost:18790）"
   },
-  "audit": null,
+  "audit": {
+    "by": "K3 (kimi-k3, independent session)",
+    "at": "2026-09-13",
+    "verdict": "PASS",
+    "summary": "F3 修复绑新产物（main 2bc0f724 重建 dmg md5=9326757d…）物理复验：官方脚本四断言 42s 全过 + 打包态直启 stdout「[preload-check] OK: electronAPI 已暴露, serverUrl=http://localhost:18790」+ /api/healthz 200。P1-4 证据缺口由 K3 闭合且证据入 git（docs/synova/product-lines/evidence/k3-D725-*）。",
+    "report": "docs/synova/audit-reports/2026-09-13-D725.md",
+    "findings": [
+      "P1: 启动哨兵 FAIL 路径仅 console.error（electron/main.cjs:121），无 degraded/退出码/证据落盘；叠加 *.log 全局 gitignore——P1-4 复发结构仍在，随 PLAN-evidence-log-gitignored 落地即闭"
+    ]
+  },
   "fix_task_id": null,
   "updated_at": "2026-09-13",
-  "updated_by": "synova-cto"
+  "updated_by": "k3-audit"
 }

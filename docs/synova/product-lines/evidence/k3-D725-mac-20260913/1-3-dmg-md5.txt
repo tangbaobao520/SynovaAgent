@@ -1,0 +1,1 @@
+MD5 (release/SynovaAgent-0.1.0-arm64.dmg) = 9326757d81da730b977ec20e14de6b3e

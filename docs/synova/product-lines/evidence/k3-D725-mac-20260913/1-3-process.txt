@@ -1,0 +1,43 @@
+3740 bash -c cd /Users/wane/SynovaAgent && TOKEN=$(grep -E '^\s*GITHUB_TOKEN:' ~/.dsh/.credentials.yaml | sed 's/.*GITHUB_TOKEN:[[:space:]]*//' | tr -d '\r\n'); REPO=tangbaobao520/SynovaAgent
+for r in $(seq 1 20); do sleep 60; OUT=""
+ for pr in 519 520 521 523 524 525 526 527 528; do S=$(curl -s -H "Authorization: token $TOKEN" "https://api.github.com/repos/$REPO/pulls/$pr" | python3 -c "import json,sys;print(json.load(sys.stdin).get('mergeable_state'))" 2>/dev/null)
+  if [ "$S" = "clean" ]; then R=$(curl -s -X PUT -H "Authorization: token $TOKEN" "https://api.github.com/repos/$REPO/pulls/$pr/merge" -d '{"merge_method":"squash"}' | python3 -c "import json,sys;d=json.load(sys.stdin);print('MERGED' if d.get('merged') else 'retry')"); OUT="$OUT #$pr→$R"; fi; done
+ [ -n "$OUT" ] && echo "轮$r:$OUT"; done; echo "守候结束"
+22105 bash -c cd /Users/wane/SynovaAgent && cat > /dev/null <<'X'
+X
+TOKEN=$(grep -E '^\s*GITHUB_TOKEN:' ~/.dsh/.credentials.yaml | sed 's/.*GITHUB_TOKEN:[[:space:]]*//' | tr -d '\r\n'); REPO=tangbaobao520/SynovaAgent
+refresh() { pr=$1; br=$2; wt=/Users/wane/SynovaAgent/.synova-wt-rfq
+  git worktree remove $wt --force >/dev/null 2>&1; rm -rf $wt
+  git fetch origin "$br" -q >/dev/null 2>&1
+  git worktree add --detach $wt "origin/$br" -q >/dev/null 2>&1 || return 1
+  git -C $wt merge origin/main -m "chore: merge main into $br (refresh)" -q >/dev/null 2>&1
+  OUT=$(git -C $wt push origin HEAD:refs/heads/"$br" 2>&1 | tail -2)
+  git worktree remove $wt --force >/dev/null 2>&1; rm -rf $wt
+  echo "$OUT" | grep -q "rejected\|error" && { echo "  刷新失败 #$pr: $(echo "$OUT" | tail -1 | cut -c1-60)"; return 1; }
+  echo "  刷新OK #$pr"; }
+for round in $(seq 1 22); do
+  MOVED=0
+  for pr in 525 519 527 528 520 521 526 523 524; do
+    S=$(curl -s -H "Authorization: token $TOKEN" "https://api.github.com/repos/$REPO/pulls/$pr" | python3 -c "import json,sys;print(json.load(sys.stdin).get('mergeable_state'))" 2>/dev/null)
+    BR=$(curl -s -H "Authorization: token $TOKEN" "https://api.github.com/repos/$REPO/pulls/$pr" | python3 -c "import json,sys;print(json.load(sys.stdin).get('head',{}).get('ref',''))" 2>/dev/null)
+    if [ "$S" = "clean" ]; then
+      R=$(curl -s -X PUT -H "Authorization: token $TOKEN" "https://api.github.com/repos/$REPO/pulls/$pr/merge" -d '{"merge_method":"squash"}' | python3 -c "import json,sys;d=json.load(sys.stdin);print('MERGED' if d.get('merged') else 'retry')" 2>/dev/null)
+      echo "轮$round #$pr $R"; [ "$R" = "MERGED" ] && MOVED=1
+    elif [ "$S" = "dirty" ]; then
+      refresh $pr "$BR" && MOVED=1
+    fi
+  done
+  echo "── 轮$round 结束 (moved=$MOVED) main=$(git fetch origin main -q && git rev-parse --short origin/main)"
+  [ $MOVED -eq 0 ] && sleep 90
+done
+echo "队列循环结束"
+75022 /Applications/SynovaAgent.app/Contents/MacOS/SynovaAgent
+75598 /Applications/SynovaAgent.app/Contents/Frameworks/SynovaAgent Helper (GPU).app/Contents/MacOS/SynovaAgent Helper (GPU) --type=gpu-process --user-data-dir=/Users/wane/Library/Application Support/synova-agent --gpu-preferences=UAAAAAAAAAAgAAAEAAAAAAAAAAAAAAAAAABgAAEAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAA --shared-files --field-trial-handle=1718379636,r,12936461998023631067,8986043147170323288,262144 --enable-features=ScreenCaptureKitPickerScreen,ScreenCaptureKitStreamPickerSonoma --disable-features=MacWebContentsOcclusion,SpareRendererForSitePerProcess,TimeoutHangingVideoCaptureStarts --variations-seed-version --seatbelt-client=33
+75599 /Applications/SynovaAgent.app/Contents/Frameworks/SynovaAgent Helper.app/Contents/MacOS/SynovaAgent Helper --type=utility --utility-sub-type=network.mojom.NetworkService --lang=zh-CN --service-sandbox-type=network --user-data-dir=/Users/wane/Library/Application Support/synova-agent --shared-files --field-trial-handle=1718379636,r,12936461998023631067,8986043147170323288,262144 --enable-features=ScreenCaptureKitPickerScreen,ScreenCaptureKitStreamPickerSonoma --disable-features=MacWebContentsOcclusion,SpareRendererForSitePerProcess,TimeoutHangingVideoCaptureStarts --variations-seed-version --seatbelt-client=33
+75603 /Applications/SynovaAgent.app/Contents/MacOS/SynovaAgent dist/backend.mjs
+76381 /Applications/SynovaAgent.app/Contents/Frameworks/SynovaAgent Helper (Renderer).app/Contents/MacOS/SynovaAgent Helper (Renderer) --type=renderer --user-data-dir=/Users/wane/Library/Application Support/synova-agent --app-path=/Applications/SynovaAgent.app/Contents/Resources/app.asar --enable-sandbox --lang=zh-CN --num-raster-threads=4 --enable-zero-copy --enable-gpu-memory-buffer-compositor-resources --enable-main-frame-before-activation --renderer-client-id=4 --time-ticks-at-unix-epoch=-1788583825173755 --launch-time-ticks=702124247114 --shared-files --field-trial-handle=1718379636,r,12936461998023631067,8986043147170323288,262144 --enable-features=ScreenCaptureKitPickerScreen,ScreenCaptureKitStreamPickerSonoma --disable-features=MacWebContentsOcclusion,SpareRendererForSitePerProcess,TimeoutHangingVideoCaptureStarts --variations-seed-version --synova-server-url=http://localhost:18790 --seatbelt-client=60
+85572 bash -c cd /Users/wane/SynovaAgent && TOKEN=$(grep -E '^\s*GITHUB_TOKEN:' ~/.dsh/.credentials.yaml | sed 's/.*GITHUB_TOKEN:[[:space:]]*//' | tr -d '\r\n'); REPO=tangbaobao520/SynovaAgent
+for r in $(seq 1 25); do sleep 60; OUT=""
+ for pr in 525 520 521 526; do S=$(curl -s -H "Authorization: token $TOKEN" "https://api.github.com/repos/$REPO/pulls/$pr" | python3 -c "import json,sys;print(json.load(sys.stdin).get('mergeable_state'))" 2>/dev/null)
+  if [ "$S" = "clean" ]; then R=$(curl -s -X PUT -H "Authorization: token $TOKEN" "https://api.github.com/repos/$REPO/pulls/$pr/merge" -d '{"merge_method":"squash"}' | python3 -c "import json,sys;d=json.load(sys.stdin);print('MERGED '+ (d.get('sha') or '')[:8] if d.get('merged') else 'RETRY:'+str(d.get('message'))[:30])"); OUT="$OUT #$pr→$R"; else OUT="$OUT #$pr=$S"; fi; done
+ echo "轮$r:$OUT"; done; echo "守候结束"

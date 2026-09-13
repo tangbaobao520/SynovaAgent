@@ -1,7 +1,7 @@
 {
   "task_id": "D713",
   "title": "desktop-package-signature-and-verify-gate",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "path": "build-synova.cjs + scripts/desktop/verify-package-signature.sh + tests/desktop/verify-package-signature.test.sh + .github/workflows/desktop-build.yml + package.json",
@@ -10,8 +10,19 @@
     "at": "2026-09-13",
     "note": "ad-hoc 签名 + 构建期自检 + 按 arch 备 native + 出货前签名门禁；配套证据 docs/synova/product-lines/evidence/D713-published-artifact-20260913.json"
   },
-  "audit": null,
+  "audit": {
+    "by": "K3 (kimi-k3, independent session)",
+    "at": "2026-09-13",
+    "verdict": "PASS",
+    "summary": "签名链+门禁物理复验全过：新产物双架构封印有效、--all/--dmg exit 0、安装后封印存活、fail-closed 两次实证（native 备失败 throw 阻断；dmg 缺失 exit 2）；CI macos job 绿。1-1/1-3 物理闭合。",
+    "report": "docs/synova/audit-reports/2026-09-13-D725.md",
+    "findings": [
+      "P1: build-synova.cjs:141 与 :207 重复 beforePack 键（后者生效、行为正确，L141 死键须删；oxlint no-dupe-keys 实测可抓但 warning 级）",
+      "P1(历史M9): #512 夹带 D711 文件 ~500 行未声明——时序上早于 D708 gate 进 main；今日忠实复放 gate exit 1 拦 12 文件，已被免疫细胞覆盖",
+      "P2: d713PrepNative 换 ABI 后本地 vitest 全红（本审计亲历 21/21→恢复后全绿）；建议构建后恢复 node ABI"
+    ]
+  },
   "fix_task_id": null,
   "updated_at": "2026-09-13",
-  "updated_by": "synova-cto"
+  "updated_by": "k3-audit"
 }

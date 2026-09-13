@@ -1,17 +1,31 @@
 {
   "task_id": "D718",
   "title": "cto-parallel-ctl-minor-fixes",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
-    "pr": [518, 522, 523],
+    "pr": [
+      518,
+      522,
+      523
+    ],
     "branch": null,
     "note": "三项独立 PR（每项：先复现→最小修→反向验证必红）：①alloc 测试泄漏真仓（#518 已合并）②resolver 跨日认领 + 同数 tie-break（#522 已合并）③pre-doc-audit.sh 去 BOM + 行首 BOM 回归网（#523）。派单「附带」第 4 项（.gitignore 证据日志白名单）按创始人本批指令（三项）未做，登记台账待派。"
   },
-  "audit": null,
+  "audit": {
+    "by": "K3 (kimi-k3, independent session)",
+    "at": "2026-09-13",
+    "verdict": "PASS",
+    "summary": "四项全审：#518 源头 fail-closed + 反假绿断言（实测 5/5，真仓 606→606 零污染）；#522 身份锚点 + 同数 tie-break（实测 32/32 含陈旧 brief 不劫持）；#523 BOM ratchet（实测 38/38，存量 14 个清单一致 + 扫描器哨兵）；#524 台账 6 发现登记属实、未做项诚实标注。",
+    "report": "docs/synova/audit-reports/2026-09-13-D725.md",
+    "findings": [
+      "P2: G12 match_path(^|/pat$) 与 merge_writeset_gate(fnmatch) glob 语义分叉——已登记未修，建议随 D728 解析器收敛一并",
+      "P2: task-state write_set 与最终 diff 轻微出入（不影响判定）"
+    ]
+  },
   "fix_task_id": null,
   "updated_at": "2026-09-13",
-  "updated_by": "synova-cto",
+  "updated_by": "k3-audit",
   "write_set": [
     "scripts/control-tower/alloc-task-id.sh",
     "scripts/workflow/resolve-commit-brief.sh",

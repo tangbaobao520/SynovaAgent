@@ -1,0 +1,50 @@
+{"level":30,"time":1789285946522,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","fromFiles":0,"total":0,"msg":"Phase 0 专家文件加载完成"}
+{"level":30,"time":1789285946523,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"agent/main-agent","loopId":"loop-1","scales":3,"msg":"循环已注册到 MainAgent"}
+{"level":30,"time":1789285946523,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"agent/main-agent","loopId":"loop-2","scales":3,"msg":"循环已注册到 MainAgent"}
+{"level":30,"time":1789285946523,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"agent/main-agent","loopId":"loop-3","scales":3,"msg":"循环已注册到 MainAgent"}
+{"level":30,"time":1789285946523,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"agent/main-agent","loopId":"loop-4","scales":3,"msg":"循环已注册到 MainAgent"}
+{"level":30,"time":1789285946523,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"agent/main-agent","loopId":"loop-5","scales":3,"msg":"循环已注册到 MainAgent"}
+{"level":30,"time":1789285946523,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"agent/main-agent","loopId":"loop-6","scales":3,"msg":"循环已注册到 MainAgent"}
+{"level":30,"time":1789285946523,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"routes/overflow","msg":"Overflow GraphStore 已注入"}
+{"level":30,"time":1789285946524,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"services/memory-monitor","rss":77824000,"heapUsed":20451060,"msg":"[MEMORY] 基线"}
+{"level":30,"time":1789285946524,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","msg":"全局错误处理器已注册 (uncaughtException + unhandledRejection)"}
+{"level":40,"time":1789285946524,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"mcp/bridge","server":"brave-search","err":"spawn npx ENOENT","msg":"MCP Server 启动失败（非阻断）"}
+{"level":40,"time":1789285946524,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"mcp/bridge","server":"github","err":"spawn npx ENOENT","msg":"MCP Server 启动失败（非阻断）"}
+{"level":30,"time":1789285946525,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","port":18790,"msg":"Synova-Agent → http://localhost:18790"}
+{"level":30,"time":1789285946857,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"growth/feedback-collector","msg":"feedback_log 表就绪"}
+{"level":30,"time":1789285946858,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"sentinel/baseline-store","baselineMinRuns":3,"findingCountRatioWarning":2,"findingCountRatioCritical":3,"perSentinel":{},"msg":"[baseline] 阈值配置已更新"}
+{"level":30,"time":1789285946858,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"agent/synova-agent","baselineMinRuns":3,"msg":"[baseline] 哨兵阈值配置已加载"}
+{"level":50,"time":1789285946858,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"sentinel/builtins","msg":"[builtins] adapters/ 目录不可读 — 哨兵注册失败"}
+{"level":30,"time":1789285946859,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"services/restart-recovery","msg":"无可恢复的中断会话"}
+{"level":30,"time":1789285946859,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"services/escalation-engine","ruleCount":0,"msg":"EscalationEngine 初始化完成"}
+{"level":30,"time":1789285946860,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"sentinel/runner","msg":"[runner] 无 cron-mode 哨兵 — 跳过启动"}
+{"level":30,"time":1789285946861,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"store/schema-migration","schemaVersion":2,"msg":"Schema 版本已初始化"}
+{"level":30,"time":1789285946861,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"agent/synova-agent","msg":"[wiring] UserStore 已注入 enterprise 路由"}
+{"level":30,"time":1789285946862,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"loops/loop-scheduler","msg":"[D9] loop-4-self-check 已注册 (0 0 * * *)"}
+{"level":30,"time":1789285946865,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"loops/loop-scheduler","msg":"[D9] loop-5-knowledge 已注册 (0 0 * * 0)"}
+{"level":30,"time":1789285947165,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"loops/loop-scheduler","msg":"[D9] loop-1-diagnosis 已注册 (0 9 1 */3 *)"}
+{"level":30,"time":1789285947166,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"loops/loop-scheduler","msg":"[D9] loop-2-navigation 已注册 (0 9 * * 1)"}
+{"level":30,"time":1789285947370,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"loops/loop-scheduler","msg":"[D237] loop-3-ga-evolution 已注册 (0 9 1 */3 *)"}
+{"level":30,"time":1789285947374,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"loops/loop-scheduler","msg":"[D238] loop-6-overflow 已注册 (0 9 1 * *)"}
+{"level":30,"time":1789285947374,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"loops/trigger-config","count":1,"msg":"循环触发矩阵验证通过"}
+{"level":30,"time":1789285947620,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"loops/loop-scheduler","loopId":"loop-1","loopName":"Enterprise Diagnosis","msg":"循环已注册"}
+{"level":30,"time":1789285947621,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"loops/trigger-config","count":1,"msg":"循环触发矩阵验证通过"}
+{"level":30,"time":1789285947629,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"loops/loop-scheduler","loopId":"loop-2","loopName":"Department Navigation","msg":"循环已注册"}
+{"level":30,"time":1789285947629,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"loops/trigger-config","count":1,"msg":"循环触发矩阵验证通过"}
+{"level":30,"time":1789285947999,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"loops/loop-scheduler","loopId":"loop-3","loopName":"GA Evolution","msg":"循环已注册"}
+{"level":30,"time":1789285947999,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"loops/trigger-config","count":1,"msg":"循环触发矩阵验证通过"}
+{"level":30,"time":1789285948507,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"loops/loop-scheduler","loopId":"loop-4","loopName":"System Self-Check","msg":"循环已注册"}
+{"level":30,"time":1789285948507,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"loops/trigger-config","count":1,"msg":"循环触发矩阵验证通过"}
+{"level":30,"time":1789285948798,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"loops/loop-scheduler","loopId":"loop-5","loopName":"Knowledge Accumulation","msg":"循环已注册"}
+{"level":30,"time":1789285948798,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"loops/trigger-config","count":1,"msg":"循环触发矩阵验证通过"}
+{"level":30,"time":1789285948990,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"loops/loop-scheduler","loopId":"loop-6","loopName":"Overflow Monitor","msg":"循环已注册"}
+{"level":30,"time":1789285948990,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"loops/loop-scheduler","count":6,"total":6,"msg":"默认循环已注册"}
+{"level":30,"time":1789285948990,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"agent/synova-agent","registered":6,"msg":"[wiring] 核心循环已注册"}
+{"level":30,"time":1789285948990,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"services/delivery-queue","msg":"无待投递消息 — 跳过排干"}
+{"level":30,"time":1789285948990,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"agent/synova-agent","msg":"[cron] stuck-session-detector 已注册 (每 60 秒)"}
+{"level":30,"time":1789285949231,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"agent/synova-agent","msg":"[cron] ima-sync 已注册 (每 6 小时)"}
+{"level":30,"time":1789285949231,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"agent/synova-agent","port":18790,"msg":"SynovaAgent 已启动"}
+{"level":30,"time":1789285949231,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"agent/synova-agent","msg":"CommandLanes 已初始化（高风险工具隔离）"}
+{"level":30,"time":1789285949231,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","msg":"SynovaAgent 就绪"}
+{"level":30,"time":1789285949833,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"sentinel/signal-aggregator","totalFindings":5,"signals":1,"critical":1,"msg":"[aggregator] 信号聚合完成"}
+{"level":40,"time":1789285949839,"pid":75603,"hostname":"192.168.1.5","name":"synova-agent","service":"services/config-file","msg":"所有配置文件不可用, 使用默认配置 + 环境变量"}
