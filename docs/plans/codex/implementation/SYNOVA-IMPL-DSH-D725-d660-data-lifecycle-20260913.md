@@ -306,7 +306,7 @@ DELETE FROM agent_memory WHERE expires_at IS NOT NULL AND expires_at <= datetime
 >
 > **写集核验口径（诚实声明，防 overclaim）**：本表声明的是**实施期**的改动集。在 **spec 期**跑 check-dev-doc-write-set.sh 会有两类**预期内**命中——① 4 个"新建"文件尚不存在（存在性检查命中）；② 5 个"修改"文件零 diff（该脚本的 diff 命中检查）。原因是该脚本按其自身设计目标是**实现期门禁**（脚本头注原文：「dev doc 写集表声明的文件 vs 代码实际」）。因此：**本 spec 交付时以 spec 期口径（SYNO_DEV_DOC 注入，跳过 diff 命中）为验收口径**，存在性 6/10 通过、4 条为上述预期命中；**实现期必须跑全量口径并全绿**（§12 硬约束）。精确文件名声明（而非目录级）是本 spec 的有意选择：目录级会让实现期反查（声明 10 / 实际 12）失效。
 >
-> **本 spec 自身的交付物（dev doc 交付面，非上表内容）**：docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D725-d660-data-lifecycle-20260913.md（本文件，新建）、task-state/D725.json（修改：spec 段回填 + status=spec_done）、.claude/task-briefs/ 下本单的 brief（修改）。三者均在写集核验的 SKIP 前缀内（docs/ / task-state/ / .claude/），不入反向漂移对账。
+> **本 spec 自身的交付物（dev doc 交付面，非上表内容）**：docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D725-d660-data-lifecycle-20260913.md（本文件，新建）、task-state/D725.json（修改：spec 段回填 + status=spec_done）、.claude/task-briefs/ 下本单的 brief（修改）、docs/synova/coordination/编码指令-D725-数据生命周期五层阶梯-Win-20260913.md（新建：随 spec 交付的 Win 线编码 session 启动指令，dev-doc-delivery 规范三件套之一）。四者均在写集核验的 SKIP 前缀内（docs/ / task-state/ / .claude/），不入反向漂移对账。
 
 ### 5.2 五层阶梯规格（本 spec 的核心交付物）
 
