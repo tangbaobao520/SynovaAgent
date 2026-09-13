@@ -54,6 +54,8 @@
 
 ## 架构层: L2（编排）+ L4（证据/本体）
 依赖声明属工程配置；`expireOld` 接线落在证据生命周期调用点（L4/存储清理侧）
+#CRITERIA: A
+<!-- #CRITERIA: A/B/C/D 条件归属（v3-FINAL），必填；pre-commit G12b + hook-block-write CP1 + pre-doc-audit CP2 消费 -->
 
 ## Done 标准:
 - [ ] 干净安装下相关套件绿（**必须贴 `rm -rf node_modules && npm ci` 的原始输出**，不接受污染态结果）：`npm ci && npx vitest run tests/electron/use-streaming-conversation.test.ts` → 0 failed
