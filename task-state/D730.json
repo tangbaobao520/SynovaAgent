@@ -1,0 +1,11 @@
+{
+  "task_id": "D730",
+  "title": "declaration-single-source-and-gate-coverage",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-13",
+  "updated_by": "alloc-task-id"
+}
