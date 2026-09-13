@@ -1,11 +1,45 @@
 {
   "task_id": "D716",
   "title": "devdoc-monitoring-contract-and-dual-guide",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": null,
-  "impl": null,
+  "impl": {
+    "commit": "b152067f",
+    "by": "mac-coding-synova-dsh",
+    "at": "2026-09-13",
+    "branch": "feat/mac-d716-monitoring-contract",
+    "spec_path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D716-D1-monitoring-contract-20260913.md",
+    "files": [
+      "src/sentinel/monitoring-contract.ts",
+      "src/sentinel/notification-policy.ts",
+      "src/sentinel/runner.ts",
+      "src/sentinel/sentinel-loader.ts",
+      "tests/sentinel/monitoring-contract.test.ts",
+      "tests/sentinel/notification-policy.test.ts",
+      "tests/sentinel/notification-wiring.test.ts",
+      "docs/synova/product-lines/evidence/D716-mac-20260913/red-baseline.txt",
+      "docs/synova/product-lines/evidence/D716-mac-20260913/vitest-green.txt",
+      "docs/synova/product-lines/evidence/D716-mac-20260913/grep-wiring.txt",
+      "docs/synova/product-lines/evidence/D716-mac-20260913/verify-commands.txt",
+      "docs/synova/product-lines/evidence/D716-mac-20260913/pre-commit-check.txt",
+      "docs/synova/product-lines/evidence/D716-mac-20260913/simulate-ci.txt",
+      ".claude/task-briefs/2026-09-13-D716-impl-monitoring-contract-mac.md"
+    ],
+    "ds_evidence": {
+      "DS2_loader生产调用": "evidence/grep-wiring.txt — loadMonitoringContract 生产调用 3 处: runner.ts L1401(决策) + sentinel-loader.ts L156(契约层) + notification-policy.ts L273(升级队列)",
+      "DS3_无契约全默认": "evidence/vitest-green.txt — T1 绿(ENOENT → defaults + degraded=false + D-1 政策值 24h/7d/weekly/one_pager)",
+      "DS4_非法契约显式degraded": "evidence/vitest-green.txt — T3(org_id_mismatch 整文件忽略)/T4(parse失败+schema_version=2)/T5(单字段丢弃+degradedReasons 列名) 绿",
+      "DS5_六态映射八断言": "evidence/vitest-green.txt — T16 八断言绿(notification-policy.test.ts: 新发现/待回应/未回应超时/已认领/档位上升/实体新增/停滞超期/已解决/明确不处理)",
+      "DS6_阈值契约层零回归": "evidence/vitest-green.txt — T8 绿(契约>memStore>manifest 三段断言) + tests/sentinel/ 全目录 260 passed 零回归(threshold-injection/dedup-key-stability 全绿)",
+      "DS7_幂等提醒与首页": "evidence/vitest-green.txt — T14(24h 恰等触发/-1ms 不触发) + T15(reminded_at_ms/front_page_at_ms 落账后不再触发) 绿",
+      "DS8_升级队列接口": "evidence/grep-wiring.txt — listEscalationQueue Mac 侧生产调用 runner.ts L1117(SentinelRunner 公开方法, 供 Win 路由消费); Win 端点/周报呈现归 Win 任务(跨线依赖已在 brief Q2 声明)",
+      "DS9_派发点真实传递": "evidence/vitest-green.txt — T7(契约 channels ['electron','email'] → dispatchNotification targetSystem 逐渠道真实传递) + T11(状态表写失败派发不被阻断+warn) 绿",
+      "DS10_evidence与门禁": "evidence/ 全目录 6 文件(vitest 原始输出+grep+verify 命令+时间戳, .txt 不用 .log) + npx vitest run tests/sentinel/ 260 passed 零失败 + pre-commit 13 组全过(evidence/pre-commit-check.txt exit=0) + simulate-ci exit=0 + git synova-commit 提交(无 --no-verify)"
+    },
+    "note": "实现遵循 spec §5.2-H 行为等价性声明: 无契约/无工单/无状态行 → notify/first(与今天首次推送等价); 显式差异仅四条(①已认领不即时推 ②24h 提醒一次 ③7天进首页 ④渠道/节奏/格式按契约)。既有测试零回归机制: 既有测试不建 sentinel_notification_state 表 → readNotificationState 降级返回 null → 决策按首次处理 = 旧行为(spec T10 宁可多发不吞真告警的自然推论)。类型单源选择: 契约类型全部放 monitoring-contract.ts(types.ts 未动, spec §5.1 条件项条件不满足); 值域用 as const+typeof 派生(类型与校验集单一事实源)。D537 主树占用检测曾拦一次提交(另一并发 session D726 活跃窗口), 等其过期后重提交通过——非门禁绕过, 是 D537 设计的物理等待。升级链双重死(§4.2-C)与周报三降级口(§4.2-E)已由 dev-doc 登记 findings_registered, 本切片未触碰(§6)。"
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-13",
-  "updated_by": "alloc-task-id"
+  "updated_by": "mac-coding-synova-dsh"
 }
