@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "record_type": "scenario",
+  "source": "D712-win-20260913/run-H-upgrade-data-seeded (before.json/after.json/verdict.json)",
+  "date": "2026-09-13",
+  "written_by": "evidence-writer.py",
+  "verdicts": [
+    {
+      "acceptance_point": "1-7",
+      "verdict": "pass",
+      "quote": "真实哨兵数据 agent_memory=5 agent_sessions=3 sentinel_baselines=4 storage_kv=1；覆盖重装（同路径替换安装文件，userData 零触碰，exe md5 前后一致）后 51 表一致 + 关键表行数一致 + integrity_check=ok → verdict=DATA_RETAINED；残留：真 NSIS 升级路径被提权框阻塞未测"
+    }
+  ]
+}

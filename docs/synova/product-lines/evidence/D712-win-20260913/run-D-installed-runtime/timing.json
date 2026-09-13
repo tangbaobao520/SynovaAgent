@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "record_type": "first-diagnosis-timing",
+  "task": "D712",
+  "generated_at": "2026-09-13T00:58:05.1688768+08:00",
+  "segment": "app_launch_to_first_diagnosis_ready（安装段被提权框阻塞，本段不含安装耗时）",
+  "app_exe": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\d712\\app-v1\\SynovaAgent.exe",
+  "app_md5": "612DBADC4BEEEC99639051D846A6D6F8",
+  "user_data_dir": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\d712\\userdata",
+  "machine": {
+    "host": "PC-202605261327",
+    "user": "PC-202605261327\\Administrator",
+    "session": 1
+  },
+  "milestones_ms": {
+    "healthz_200": null,
+    "app_launch": 1789202994106,
+    "window_ready": null,
+    "first_diagnosis_ready": null
+  },
+  "total_sec": null,
+  "target_sec": 1800,
+  "verdict": "FAILED",
+  "failures": [
+    "window_ready: 180s 内无可见主窗口",
+    "healthz_200: 300s 内未达 200（服务未自启）",
+    "first_diagnosis_ready: consult HTTP 0（预期 400/401）"
+  ],
+  "self_start": {
+    "pre_node_pids": "3100,6320,6388,16176,19296,19564,19656,21272,21808",
+    "post_node_pids": "3100,6320,6388,16176,19296,19564,19656,21272,21808",
+    "new_node_pids": "",
+    "new_count": 0
+  },
+  "note": "启动动作只有 Start-Process <app exe>；未执行任何后端命令 → 新增 node = Electron 自启（D504 ensureBackend）"
+}

@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "record_type": "scenario",
+  "source": "D712-win-20260913/run-F-nosandbox-runtime (window/process/healthz/backend.log/app-stderr.log)",
+  "date": "2026-09-13",
+  "written_by": "evidence-writer.py",
+  "verdicts": [
+    {
+      "acceptance_point": "1-4",
+      "verdict": "fail",
+      "quote": "出窗 OK（pid=21992 title=[SynovaAgent] handle=1181378）+ 后端自启 OK（backend.log 首行 backend spawn pid=20504，零后端命令）+ healthz 200 + consult 401；但预加载脚本未加载（Unable to load preload script ... Error: module not found: ./config.json）→ electronAPI undefined → 渲染层相对路径解析为 file:///D:/api/... 被 CSP 全量拦截（[llm-config] 请求失败 Failed to fetch）→ 开窗即用不成立"
+    }
+  ]
+}

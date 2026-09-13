@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "record_type": "first-diagnosis-timing",
+  "task": "D712",
+  "generated_at": "2026-09-13T00:53:01.2727156+08:00",
+  "mode": "prod-silent",
+  "installer": {
+    "path": "D:\\synova-desktop-Windows-200\\SynovaAgent-0.1.0-win32-x64.exe",
+    "md5": "D841D092088F0897F8AE780D462B46B5",
+    "size": 93112012,
+    "version": "0.1.0"
+  },
+  "machine": {
+    "host": "PC-202605261327",
+    "user": "PC-202605261327\\Administrator",
+    "session": 1
+  },
+  "accommodations": {
+    "install_dir_override": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\d712-install",
+    "user_data_dir": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\d712-userdata",
+    "reason": "本会话受限标准用户，%LOCALAPPDATA%/%APPDATA% 不可写（探针 Access denied）→ 默认 per-user 安装位触发 NSIS 提权框挂起"
+  },
+  "milestones_ms": {
+    "first_diagnosis_ready": null,
+    "app_launch": null,
+    "healthz_200": null,
+    "installer_window": null,
+    "install_start": 1789202447465,
+    "install_done": null,
+    "window_ready": null
+  },
+  "total_sec": null,
+  "target_sec": 1800,
+  "verdict": "FAILED",
+  "failures": [
+    "install_done: 180s 内未出现 C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\d712-install\\SynovaAgent.exe",
+    "app_launch: 未出现 SynovaAgent 进程",
+    "window_ready: MainWindowTitle/MainWindowHandle 为空",
+    "healthz_200: 300s 内未达 200",
+    "first_diagnosis_ready: consult HTTP 0（预期 400/401）"
+  ],
+  "note": "双击 = 无 /S 启动安装器（nsis.oneClick=false）；向导翻页用 SendKeys（本机 CUA 原生控制不可用）"
+}

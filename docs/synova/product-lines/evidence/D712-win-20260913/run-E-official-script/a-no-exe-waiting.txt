@@ -1,0 +1,3 @@
+[win-install-verify] waiting: 切片 A D517 .exe 缺失（D:\novis-backup-20260526\Novis\synova-agent\release 无产物）——D523 物理实测进 waiting，不伪造（DS4）
+
+EXIT=2

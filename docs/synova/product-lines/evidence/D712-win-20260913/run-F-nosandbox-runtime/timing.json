@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "record_type": "first-diagnosis-timing",
+  "task": "D712",
+  "generated_at": "2026-09-13T09:37:22.0991472+08:00",
+  "segment": "app_launch_to_first_diagnosis_ready（安装段被提权框阻塞，本段不含安装耗时）",
+  "app_exe": "D:\\codex\\.codex\\visualizations\\2026\\09\\12\\01a09670-a8aa-7122-ab68-73423cab5ee8\\d712\\app-v1\\SynovaAgent.exe",
+  "app_md5": "612DBADC4BEEEC99639051D846A6D6F8",
+  "user_data_dir": "D:\\codex\\.codex\\visualizations\\2026\\09\\12\\01a09670-a8aa-7122-ab68-73423cab5ee8\\d712\\ud-F",
+  "app_args": "--no-sandbox --user-data-dir=D:\\codex\\.codex\\visualizations\\2026\\09\\12\\01a09670-a8aa-7122-ab68-73423cab5ee8\\d712\\ud-F",
+  "app_exit_code": "running",
+  "machine": {
+    "host": "PC-202605261327",
+    "user": "PC-202605261327\\Administrator",
+    "session": 1
+  },
+  "accommodations": {
+    "extra_app_args": "--no-sandbox",
+    "app_path": "D:\\codex\\.codex\\visualizations\\2026\\09\\12\\01a09670-a8aa-7122-ab68-73423cab5ee8\\d712\\app-v1\\SynovaAgent.exe",
+    "reason": "会话桌面为私有沙箱桌面（CodexSandboxDesktop-*）：Chromium 沙箱初始化失败（exit 0x80000003 且无窗）；--no-sandbox + 非 8.3 短路径 才可出窗"
+  },
+  "milestones_ms": {
+    "app_launch": 1789234628743,
+    "window_ready": 1789234640266,
+    "first_diagnosis_ready": 1789234641119,
+    "healthz_200": 1789234641051
+  },
+  "total_sec": 12.4,
+  "target_sec": 1800,
+  "verdict": "WITHIN_TARGET",
+  "failures": [],
+  "self_start": {
+    "pre_node_pids": "3100,6320,6388,19564,21272,21808",
+    "post_node_pids": "3100,6320,6388,19564,21272,21808",
+    "new_node_pids": "",
+    "new_count": 0
+  },
+  "note": "启动动作只有 Start-Process <app exe>；未执行任何后端命令 → 新增 node = Electron 自启（D504 ensureBackend）"
+}
