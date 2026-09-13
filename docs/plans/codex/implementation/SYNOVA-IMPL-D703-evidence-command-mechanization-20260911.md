@@ -69,6 +69,8 @@
 
 **公平注记**：这是 **spec 缺陷而非实现方违规**——§3.1 写集未列 `.codex/control-tower/VERSION.md`，实现方严格守写集，行为正确。
 
+**⑧ verify-parallel 在途串行对阻塞 → 分支覆盖卡 spec 暂移（CTO 处置）**：`verify-parallel --ci-pr` 将本 PR 的 dev doc 写集与 origin/main **全部** dev doc 写集两两比对，只豁免「已关闭任务」（关闭信号 1-4）。分区覆盖卡 spec 与本报在 `.github/workflows/ci.yml` 上重叠、且该卡**尚未开工**（无 task-state / 无审计报告 / 无括号式合入提交）→ fail-closed 拦截（D540 类已合任务由关闭信号 3 正常豁免，实测 CI 日志两行对照）。处置：该 spec 暂移 `docs/synova/coordination/parked/`（同内容，比对集只扫 `implementation/`），本卡合入 main 后回落（回落 PR 比对时本卡已具 `(D703)` 关闭信号 → 不再拦）。本脚本对 D704 spec 的存在性断言同步容忍 parked 位置（两处皆无仍 fail-closed）。**门禁判定逻辑未改**（铁律 0-5）。
+
 | # | 偏离点 | 任务行原文 | 最终形态（实测落地） | 理由 |
 |---|---|---|---|---|
 | 1 | 提取范围 | §6/§8 的 DS 命令 | `sed -n '/^## 6\./,/^## 7\./p; /^## 8\./,/^## 9\./p'` 两节 + 反引号行内代码 `grep -oE` + `awk !seen[]++` 去重（同一命令在两节重复只回放一次） | 区间未闭合时自然到 EOF，正则最简 |

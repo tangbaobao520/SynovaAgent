@@ -176,8 +176,13 @@ fi
 
 echo ""
 echo "═══ D704 spec（未合入 main，DS 断言实现后未来态 → 显式 skip）═══"
-if [ ! -f "$SPEC_D704" ]; then
-  fail "D704 spec 缺失: $SPEC_D704"
+# 2026-09-13 CTO 验收追加：D704 spec 可能在 parked/（解本卡 verify-parallel 在途串行对阻塞而暂移，
+#   见 VERSION V5.2.8 条目 + spec §3.2.1 ⑧）。两处都没有才 fail-closed。
+SPEC_D704_PARKED="docs/synova/coordination/parked/$(basename "$SPEC_D704")"
+if [ ! -f "$SPEC_D704" ] && [ -f "$SPEC_D704_PARKED" ]; then
+  skip "D704 DS1-DS8（spec 暂移 parked/，内容未变）" "解 D703 在途串行对阻塞：spec 暂移出 implementation/（verify-parallel 比对集），D703 合入后回落；见 VERSION V5.2.8"
+elif [ ! -f "$SPEC_D704" ]; then
+  fail "D704 spec 缺失（implementation/ 与 parked/ 均无）: $SPEC_D704"
 else
   skip "D704 DS1 门禁落地（ls scripts/ci/branch-coverage-gate.sh）" "D704 未合入：文件由 D704 创建"
   skip "D704 DS2 CI 接线（grep coverage ci.yml ≥2，改前 0）" "D704 未合入：实现后状态断言"
