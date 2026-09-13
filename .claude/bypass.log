@@ -1361,3 +1361,4 @@ Binary file .claude/bypass.log matches
 2026-09-13T16:39:47+08:00 | COMMITTED | pre-commit PASS (cherry-pick 重建补记: 原提交 b152067f 经门禁, 因主树多 session 互踩事故基于 main ea7dfdd1 重建为同内容新 hash; D526 事故记录见 task-state/D716.json impl.note) | HASH=d56ea374fa0e48a1049cee6da4251c635a51a2d7
 2026-09-13T16:39:55+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D716 | AGENT=Mac编码-synova-dsh
 2026-09-13T16:40:19+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D716 | AGENT=Mac编码-synova-dsh
+2026-09-13T16:40:46+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=4934fa254b591d27dd407c103ffb0de4eb4a84b0
