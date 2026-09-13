@@ -1,0 +1,38 @@
+=== D716 spec §7 verify 命令逐条（K3 独立重跑可复现）===
+
+$ npx vitest run tests/sentinel/monitoring-contract.test.ts tests/sentinel/notification-policy.test.ts tests/sentinel/notification-wiring.test.ts
+ ✓ tests/sentinel/notification-policy.test.ts (17 tests) 12ms
+ ✓ tests/sentinel/monitoring-contract.test.ts (14 tests) 18ms
+ ✓ tests/sentinel/notification-wiring.test.ts (15 tests) 171ms
+ Test Files  3 passed (3)
+      Tests  46 passed (46)
+
+$ npx vitest run tests/sentinel/  # 全目录零回归
+ Test Files  32 passed | 1 skipped (33)
+      Tests  260 passed | 1 skipped (261)
+
+$ grep -rn "loadMonitoringContract" src/sentinel/ --include=*.ts | grep -v monitoring-contract.ts
+生产调用命中（runner+loader+policy）: 8
+
+$ grep -rn "decideNotification" src/sentinel/ --include=*.ts
+生产调用命中（runner）: 2
+
+$ grep -rn "sentinel_notification_state" src/sentinel/ --include=*.ts
+DDL+读写命中: 7
+
+$ grep -rn "listEscalationQueue" src/ --include=*.ts
+src/sentinel/runner.ts:43:  listEscalationQueue as listEscalationQueueRows,
+src/sentinel/runner.ts:1109:   * listEscalationQueue — 未回应/停滞问题清单（D716 spec §5.2-F）
+src/sentinel/runner.ts:1117:  listEscalationQueue(opts?: { nowMs?: number; minStalledDays?: number }): EscalationQueueItem[] {
+src/sentinel/runner.ts:1118:    return listEscalationQueueRows(this.db as Database.Database, opts);
+src/sentinel/runner.ts:1446:   *             front_page → 幂等落账（不即时推送, 供 listEscalationQueue 消费）
+src/sentinel/runner.ts:1523:  /** front_page 幂等落账（进周报首页队列 — 不即时推送; 供 listEscalationQueue 消费） */
+src/sentinel/notification-policy.ts:259: * listEscalationQueue — 未回应 / 停滞问题清单（供 Win 周报"需要你关注的事"消费）
+src/sentinel/notification-policy.ts:266:export function listEscalationQueue(
+
+$ npx tsc --noEmit （本写集四文件零错误; _extinct/server.ts 为存量基线非本切片）
+本写集 tsc 错误数: 0
+
+$ grep -rn "as any\|as never\|as unknown as" src/sentinel/monitoring-contract.ts src/sentinel/notification-policy.ts | wc -l
+as any 系计数: 0
+2026-09-13 16:04:37 +0800
