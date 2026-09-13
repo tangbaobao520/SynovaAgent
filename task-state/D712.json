@@ -4,7 +4,8 @@
   "status": "impl_done",
   "spec": null,
   "impl": {
-    "commit": "PENDING（本 PR 首提交后回填真实 hash，遵 D553 M7 纪律）",
+    "commit": "77cd6a73",
+    "commit_note": "77cd6a73 = 本任务证据提交（47 文件 / 1804 insertions，13 组 pre-commit 全绿）；其后 129d891f 为 D521 auto-hook 的 bypass.log 登记提交（非本任务内容）。原值 PENDING，遵 D553 M7 纪律于同 PR 内回填。",
     "branch": "feat/win-d712-reverify-evidence",
     "by": "win-session (Codex, PC-202605261327)",
     "at": "2026-09-13",
