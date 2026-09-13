@@ -228,6 +228,20 @@
       "severity": "P1 (M8 家族)",
       "source": "D712 Mac 侧报告 + 主 CTO 认领",
       "note": "Mac 侧报告：作业期间分支被其他 session 从 fix/d712-… 切到 fix/d711-…，派单文档随之消失。主 CTO 认领责任：本人同一时段在主工作区执行了多次分支切换（fix/d711 → tmp-464-refresh → 回归）。Mac 侧应对正确（改走 .sessions/d712-mac/repo 独立 clone，符合 git-sync-pr V5.2.0）。系统级修法＝强制隔离（主工作区只允许 CTO/合并动作，执行方一律独立 clone/worktree），与既有 PLAN-m8-session-worktree-isolation 同族，本条提供第二例实证。"
+    },
+    {
+      "id": "PLAN-main-vitest-preexisting-red",
+      "title": "main 的 Vitest 一直有 3 个真红文件，被 CI 棘轮当「存量失败」静默放行（仓库级假绿）",
+      "severity": "P1",
+      "source": "D721 复盘（CTO 亲历 + CI 日志实证）",
+      "note": "实证：main 提交 021897a0 的 Vitest(2/2) 日志为 `Test Files 3 failed | 286 passed | 1 skipped (290)`，紧跟 `Pre-existing test failures from unchanged files — not blocking` → 作业结论 success。即「main 全绿」是假象。三个真红（本地 vitest 实测复现，与 CI 一致）：① tests/agent/expert-file-loader.integration.test.ts — 断言 8 位专家，仓库实为 6（PLAN-expert-count-drift 同源）② tests/l3/graphbridge-wiring.test.ts — `expected +0 to be 1`（graphbridge 只让成功模块建节点）③ tests/electron/use-streaming-conversation.test.ts — `Cannot find package 'react-markdown'`（= PLAN-react-markdown-dep，D717 在途）。D721 已把「放行」改为可见（::warning:: + 文件名清单），但红本身仍需烧掉：②③ 归编码线，① 需先裁「8 位专家是意图还是文档漂移」。"
+    },
+    {
+      "id": "PLAN-graphbridge-wiring-red",
+      "title": "tests/l3/graphbridge-wiring.test.ts 断言红：failing module 场景下 graphNodes.length 期望 1 实为 0",
+      "severity": "P2",
+      "source": "D721 复盘（本地 vitest 实测 + CI 日志双向确认）",
+      "note": "用例 `GraphBridge → ModuleRunner.afterRun → Phase 1 > Given a failing module ... Then only successful modules create nodes`：`tests/l3/graphbridge-wiring.test.ts:79` `expect(graphNodes.length).toBe(1)` 收到 0。含义二选一，需编码线判：① 产品缺陷 —— 成功模块 hona 也未被建节点（GraphBridge.afterRun 接线断了）② 测试期望漂移 —— afterRun 语义已变。判据：在真实调用链上打点确认 `ModuleRunner.afterRun` 是否仍被调用（铁律 4/5：入口→交互→结果）。此前未被登记（D721 首次捕获）。"
     }
   ]
 }
