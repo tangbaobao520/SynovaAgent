@@ -11,6 +11,8 @@ import { join } from 'path';
 import { pathToFileURL } from 'url';
 import { createLogger } from '@synova/logger';
 import type { SentinelFinding, SentinelCheckResult, SentinelThresholdPair } from './types';
+// D716: 监测契约层（契约阈值 > memStore > manifest, spec §5.2-G）
+import { loadMonitoringContract, type EffectiveContract } from './monitoring-contract';
 
 const log = createLogger('sentinel/loader');
 
@@ -114,23 +116,29 @@ export function clearSentinelCache(): void {
 }
 
 /**
- * resolveThresholds — 哨兵阈值解析（manifest 基线 + L0 memStore 覆写合并，单一解析点）
+ * resolveThresholds — 哨兵阈值解析（D716 契约 > memStore 覆写 > manifest 基线, 单一解析点）
  * 契约:
  *   @input  — sentinelName: manifest.name（memStore 键兼容双形态: threshold_${name} 与 threshold_sentinel-${name}，
  *             后者兼容 org-adapter 传 config.id 的存量写入）；orgKey: 检查时 teamId || 'default'；
- *             deps?: 测试注入缝 { memoryStore?: { recall(orgId, key): { value: string } | null } }——缺省动态 import
- *             AgentMemoryStore + getDatabase（生产路径）。
+ *             deps?: 测试注入缝 { memoryStore?: { recall(orgId, key): { value: string } | null };
+ *             contractLoader?: () => EffectiveContract }——缺省动态 import AgentMemoryStore + getDatabase（生产路径）
+ *             与 loadMonitoringContract()（D716 契约层）。
  *   @output — { thresholds: Record<string, SentinelThresholdPair>, overrideApplied: boolean, overrideMetric?: string }
- *             基线 = loadSentinels() 中该哨兵 manifest.thresholds 全量；覆写 = memStore recall 命中的
+ *             基线 = loadSentinels() 中该哨兵 manifest.thresholds 全量；契约命中 = metrics[].thresholds 应用于
+ *             entry.metric ?? 首个 key（主指标, spec §5.2-G 优先级最高层）；覆写 = memStore recall 命中的
  *             newThreshold，应用于 manifest.thresholds 的首个 key（主指标）。
- *   @degraded — memStore 值 JSON.parse 失败或数值非法 → log.warn + 忽略覆写（基线可用，不 throw，铁律 24）；
+ *   @degraded — 契约层异常 → log.warn + 跳过契约（回落 memStore/manifest 旧链, 零回归）；
+ *             memStore 值 JSON.parse 失败或数值非法 → log.warn + 忽略覆写（基线可用，不 throw，铁律 24）；
  *             loadSentinels 失败/找不到哨兵 → { thresholds: {}, overrideApplied: false }（空表，aggregate 走自有 fallback）。
  *   @error  — 不抛异常（所有失败路径降级返回，铁律 24/31）。
  */
 export async function resolveThresholds(
   sentinelName: string,
   orgKey: string,
-  deps?: { memoryStore?: { recall(orgId: string, key: string): { value: string } | null } },
+  deps?: {
+    memoryStore?: { recall(orgId: string, key: string): { value: string } | null };
+    contractLoader?: () => EffectiveContract;
+  },
 ): Promise<{ thresholds: Record<string, SentinelThresholdPair>; overrideApplied: boolean; overrideMetric?: string }> {
   const { sentinels } = loadSentinels();
   const found = sentinels.find(s => s.manifest.name === sentinelName);
@@ -141,13 +149,33 @@ export async function resolveThresholds(
   if (Object.keys(thresholds).length === 0) {
     return { thresholds, overrideApplied: false };
   }
+  const primary = Object.keys(thresholds)[0];
+
+  // D716 契约层（spec §5.2-G）: 契约 metrics[].thresholds > memStore > manifest — 声明式客户契约优先于运行期微调
+  try {
+    const loadContract = deps?.contractLoader ?? loadMonitoringContract;
+    const contract = loadContract();
+    const entry = contract.bySentinel.get(sentinelName);
+    const th = entry?.thresholds;
+    if (th && Number.isFinite(th.warning) && Number.isFinite(th.critical)) {
+      const metric = entry?.metric && thresholds[entry.metric] !== undefined ? entry.metric : primary;
+      thresholds[metric] = { warning: th.warning, critical: th.critical };
+      log.info({ sentinel: sentinelName, orgKey, metric, source: 'monitoring-contract' }, 'D716 契约阈值生效（契约 > memStore > manifest）');
+      return { thresholds, overrideApplied: true, overrideMetric: metric };
+    }
+  } catch (err: unknown) {
+    log.warn({
+      err: err instanceof Error ? err.message : String(err),
+      sentinel: sentinelName,
+    }, 'D716 契约层读取失败 — 回落 memStore/manifest 旧链（degraded）');
+  }
+
   try {
     const memoryStore = deps?.memoryStore ?? await (async () => {
       const { getAgentMemoryStore } = await import('../l4/agent-memory-store');
       const { getDatabase } = await import('../init/engine-context');
       return getAgentMemoryStore(getDatabase());
     })();
-    const primary = Object.keys(thresholds)[0];
     const stored = memoryStore.recall(orgKey, `threshold_${sentinelName}`)
       ?? memoryStore.recall(orgKey, `threshold_sentinel-${sentinelName}`);
     if (stored) {
