@@ -39,6 +39,7 @@
 - src/deploy/bootstrap.ts — Phase 5c 装配：启动即跑一次 + 注册每日 cron（降级记 degradedModules）
 - tests/l3/evidence-retention.test.ts — 新建：策略/清理/边界/降级 + 接线断言
 - task-state/D717.json — 本单登记（impl 段 + status）
+- .claude/task-briefs/2026-09-13-D717-coding-product-debt-batch.md — 本单 brief 自身（Gate 0 交付物；D708 写集对账需显式声明）
 不做什么：
 - 不改 `scripts/`（控制塔 = CTO 域）
 - 不改 `src/sentinel/`、`src/cron/`、`src/mcp/`（哨兵切片属他人域，避免撞车）
