@@ -228,6 +228,27 @@
       "severity": "P1 (M8 家族)",
       "source": "D712 Mac 侧报告 + 主 CTO 认领",
       "note": "Mac 侧报告：作业期间分支被其他 session 从 fix/d712-… 切到 fix/d711-…，派单文档随之消失。主 CTO 认领责任：本人同一时段在主工作区执行了多次分支切换（fix/d711 → tmp-464-refresh → 回归）。Mac 侧应对正确（改走 .sessions/d712-mac/repo 独立 clone，符合 git-sync-pr V5.2.0）。系统级修法＝强制隔离（主工作区只允许 CTO/合并动作，执行方一律独立 clone/worktree），与既有 PLAN-m8-session-worktree-isolation 同族，本条提供第二例实证。"
+    },
+    {
+      "id": "PLAN-evidence-writer-cross-host-collision",
+      "title": "双机并行产证同名撞车：evidence-writer 命名无机器维度 → add/add 冲突，合并即丢一侧判定",
+      "severity": "P1",
+      "source": "K3 D715 审计 P1-1（CTO 独立复核 merge-tree）",
+      "note": "命名仅 scenario-<date>[-N]，target.exists() 只看本地磁盘 → Mac/Win 并行必撞。实证: git merge-tree --write-tree --name-only origin/main origin/feat/win-d712-reverify-evidence → 4 个 scenario-2026-09-13*.json add/add 冲突（main=Mac 1-4 pass vs 分支=Win 1-4 fail）→ 取任一侧即丢另一侧判定；亦是 PR #511 长期 dirty 的直接原因。修法: 文件名加平台/任务维度。"
+    },
+    {
+      "id": "PLAN-calc-progress-machine-tiebreak",
+      "title": "calc-progress machine 段同日矛盾证据由文件名字典序定胜负（无 fail 优先、无 at tiebreaker）",
+      "severity": "P1",
+      "source": "K3 D715 审计 P1-3（CTO 复核代码路径）",
+      "note": "calc-progress.py:83 sorted(glob('*.json')) 读证据、:213 max(machine,key=date) → max 返回首个最大值，同日并列由文件名顺序决胜。1-4 现为 failed 只因 'D713-…' < 'scenario-…' 的巧合，改名或时间戳更晚即翻绿。对照组 k3 段（:188 双 key + :198 fail 一票否决）语义正确。修法: machine 段对齐。"
+    },
+    {
+      "id": "PLAN-d714-evidence-not-in-git",
+      "title": "D714 F3 修复复验证据（[preload-check] OK 日志）未落 git，仅存 memory note 自述",
+      "severity": "P1",
+      "source": "K3 D715 审计 P1-4（CTO 复核：代码在 main，缺原始日志证据）",
+      "note": "代码在位（electron/main.cjs 3 处 preload-check），但打包态启动日志未作为证据文件提交 → 1-4 无法由 failed 转绿。D572/F2「证据不在 git = 温床」在修复任务自身复现。转绿前置 = D714 后重打包 → 安装 → 日志 + 渲染层 API 实测双双落盘。"
     }
   ]
 }

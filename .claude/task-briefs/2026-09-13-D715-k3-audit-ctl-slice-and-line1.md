@@ -10,7 +10,7 @@
 转 `verified` 必须经 K3 裁决或创始人演示，审计是体系吞吐瓶颈。本单清两个切片。
 ### b) 文件审计（材料清单，已实测存在）
 - 切片 1 控制塔收口：`task-state/D706.json` / `D707.json` / `D664.json` / `D708.json`；对应 PR #501/#502/#504/#505 与 main 上 squash 提交
-- 切片 2 线 1 证据：`docs/synova/product-lines/evidence/D712-mac-20260913/`（9 文件）+ `D712-win-20260913/` + `scenario-2026-09-13*.json`（5 条）
+- 切片 2 线 1 证据：【订正 2026-09-13：Win 侧 `D712-win-20260913/` **不在 main**（PR #511 open+dirty），须从分支 `origin/feat/win-d712-reverify-evidence` 读证 —— K3 D715 审计 P1-2/P1-1】`docs/synova/product-lines/evidence/D712-mac-20260913/`（9 文件）+ `D712-win-20260913/` + `scenario-2026-09-13*.json`（5 条）
 - 状态机参考：`scripts/product-lines/calc-progress.py`（机器证据封顶 `pending_k3`；`k3_only` 点需 K3 pass）
 ### c) 决策
 只读审计 + 出报告；不改被审对象（否则失独立性）。
