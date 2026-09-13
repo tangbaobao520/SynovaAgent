@@ -46,6 +46,7 @@
 | M6 | **版本锚点断裂**（tag 孤儿） | D329 P1-1 | — | tag-祖先校验（pre-push/CI） |
 | M7 | **文档-实现漂移**（dev doc 未回填/声称未实现） | D329 P2-1 | — | dev doc 与最终实现同 commit 回填 |
 | M8 | **共享暂存区竞争**（并行 session 共用 worktree index） | D330/D331（08-12） | — | worktree 隔离（D307）+ staging-guard 指引/事件记录（D332） |
+| M9 | **intra-PR 夹带**（单 PR 变更集超出自身声明写集） | D708 立项自称（设计稿待复核） | K3 D715 审计 2026-09-13 确认并补录：该模式此前未入账；判定实证在 PR #505 step 级（run 34665279867 failure → 补声明后 run 34666080472 success） | merge_writeset_gate.py（D708，已入 main）+ 声明源兜底（回执 / PR 正文） |
 
 ## 三、控制塔改进队列（CT）
 

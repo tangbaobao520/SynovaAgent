@@ -1,0 +1,29 @@
+{
+  "task_id": "D723",
+  "title": "K3 D715 审计回流：失实订正 + 台账 M9 + K3 待审清单更新",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "by": "synova-cto",
+    "at": "2026-09-13",
+    "write_set": [
+      "docs/synova/coordination/派单-下一批四线并行-20260913.md — 订正失实前置声明（K3 P1-2）",
+      "docs/synova/coordination/AUDIT-FINDINGS-LEDGER.md — 补 M9（K3 P2-7）",
+      "docs/synova/coordination/K3审计清单-20260822.md — 新增 2026-09-13 一节（本批 verdict + 下批派审）",
+      "docs/synova/coordination/board-backlog.json — 登记 P1-1/P1-3/P1-4",
+      ".claude/task-briefs/2026-09-13-D715-*.md — 材料清单标注 Win 证据在分支",
+      ".claude/task-briefs/2026-09-13-D723-*.md、task-state/D723.json"
+    ],
+    "evidence": {
+      "P1-2 失实成立": "#511 state=open / main 上 D712-win 目录数 0",
+      "M9 未入账": "grep -c \"| M9 |\" = 0 → 补录后 = 1",
+      "K3 台账过期": "末次更新 2026-08-29，不含 D715 批"
+    },
+    "red_lines": "scripts/audit/ 零触碰；未改 K3 报告本体；未写审计标准（仅维护待审台账/模式台账/派单文档）"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-13",
+  "updated_by": "synova-cto",
+  "note": "K3 D715 四项 P1 中 P1-2 指 CTO 派单文档失实（#511 未合并却称双侧齐）→ 本单订正并留依据。"
+}
