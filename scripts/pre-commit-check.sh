@@ -83,6 +83,25 @@ log_gate() {
 
 # D515 项3 / V5.0.0: 软提示检查 — 输出格式与 hard_check 一致（报告完整，--check/K3 可见），
 # 但只计 SOFT_COUNT 不计 HARD_FAIL：本地不阻断，CI Iron Laws job 为权威。
+
+# D749: 声明类检查级别 = 沙箱感知
+#   真实提交（无注入缝）→ hard（错误不进 CI）
+#   测试沙箱（SYNO_TASK_STATE_DIR / SYNO_BRIEF_DIR 被注入）→ soft
+#   理由: 夹具 brief 由测试构造，不应强制 6 字段/#CRITERIA（那是真实提交的要求）；
+#        但绝不对真实提交放水（注入缝只在测试里出现）。
+_SANDBOX=0
+[ -n "${SYNO_TASK_STATE_DIR:-}" ] && _SANDBOX=1
+[ -n "${SYNO_BRIEF_DIR:-}" ] && _SANDBOX=1
+[ -n "${SYNO_TEST_ARM:-}" ] && _SANDBOX=1
+[ -n "${SYNO_GIT_CACHED_ADDED_NAMES:-}" ] && _SANDBOX=1
+decl_check() {
+  if [ "$_SANDBOX" = "1" ]; then
+    soft_check "$1（沙箱夹具，降级）" "$2"
+  else
+    hard_check "$1" "$2"
+  fi
+}
+
 soft_check() {
   local name="$1" matches="$2"
   local count=0
@@ -872,8 +891,8 @@ if [ -n "$STAGED_SRC" ]; then
     fi
   fi
 fi
-soft_check "Task Brief: 编码变更须有今日 task brief" "${TASK_BRIEF_MISSING:-}"
-soft_check "Task Brief: 6 核心字段必须填写 (Q0/Q1/Q2/Q3/架构层/Done)" "${TASK_BRIEF_EMPTY:-}"
+decl_check "Task Brief: 编码变更须有今日 task brief" "${TASK_BRIEF_MISSING:-}"
+decl_check "Task Brief: 6 核心字段必须填写 (Q0/Q1/Q2/Q3/架构层/Done)" "${TASK_BRIEF_EMPTY:-}"
 
 # D547 教训固化（物理门禁，非台账）：alloc-task-id 生成的骨架 brief 含 <agent>/<本任务在哪一层>
 #   占位符，不得随派单提交进 main——曾致 check-plan-integrity 在 CI 回退命中占位符，
@@ -1301,7 +1320,7 @@ fi
 
 if [ -n "$SCOPE_VIOLATION" ]; then
   # D515 项10: 修复指引文案 — 改 scripts/ 需先认领 brief（Codex P5 曾被拦无文档说明）
-  soft_check "G12: task brief Q2 范围一致性" "$SCOPE_VIOLATION"
+  decl_check "G12: task brief Q2 范围一致性（写集单一事实源，D749）" "$SCOPE_VIOLATION"
   echo "     💡 改 scripts/ 需先认领 brief（Q2 写集声明）——见 docs/synova/coordination/版本管理规范-控制塔.md"
 else
   soft_pass "G12: 所有文件均在 Q2 范围内"
@@ -1331,7 +1350,7 @@ fi
 # D313 M3: 附挂 brief 契约检查（同源解析器 + #CRITERIA + 架构层 + Done）
 BRIEF_PARSEABLE_OUT=$(bash "$ROOT/scripts/workflow/check-brief-parseable.sh" "$BRIEF" 2>&1 || true)
 if echo "$BRIEF_PARSEABLE_OUT" | grep -q "❌"; then
-  soft_check "G12b: brief 可解析性 (D313 M3)" "$BRIEF_PARSEABLE_OUT"
+  decl_check "G12b: brief 可解析性 (D313 M3)" "$BRIEF_PARSEABLE_OUT"
 else
   soft_pass "G12b: brief 可解析 (D313 M3)"
 fi
