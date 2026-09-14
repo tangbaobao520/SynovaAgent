@@ -50,3 +50,18 @@
 - [ ] 五项登记在位：`for d in 750 751 752 753 754; do python3 -c "import json;d=json.load(open('task-state/D$d.json'));assert d.get('note'),'$d 无 note'"; done` → 零断言失败
 - [ ] 计划表含五项：grep -cE 'D75[0-4]' docs/synova/coordination/整体推进计划-主线-20260913.md → ≥5
 - [ ] P0 标注在位：grep -c '活缺陷' task-state/D750.json → ≥1
+
+## 写集（机器生成，禁手改）
+
+| 文件 | 类型 |
+|---|---|
+| .claude/bypass.log | builtin（hook 运行期产物，自动豁免） |
+| .claude/task-briefs/2026-09-14-D755-inquiry-pluginability-debt-registration.md | task |
+| docs/synova/coordination/整体推进计划-主线-20260913.md | task |
+| docs/synova/coordination/质询-可插件化-欠账登记-20260914.md | task |
+| task-state/D750.json | task |
+| task-state/D751.json | task |
+| task-state/D752.json | task |
+| task-state/D753.json | task |
+| task-state/D754.json | task |
+| task-state/D755.json | task |
