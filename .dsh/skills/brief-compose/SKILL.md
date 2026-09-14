@@ -59,3 +59,30 @@ bash scripts/pre-commit-check.sh
 - D315: current-brief 无扩展名进 exclude → 拦
 - D316: "不改 src/ 任何文件"第一 token 无扩展名 → 拦
 - D317: 同上坑第二次踩（skill 有反例但完成验证缺 ①）→ 补全验证链
+
+---
+
+## ⛔ 写集必须由工具生成（禁止手写路径）— 2026-09-14 创始人指令
+
+**规则**：任何任务在提交前，写集**不得手写**，必须用生成器从真实变更集产出：
+
+```bash
+bash scripts/control-tower/declare-write-set.sh --staged        # 提交前（推荐）
+bash scripts/control-tower/declare-write-set.sh --base origin/main
+```
+
+生成器会把 `<!-- WRITE-SET:BEGIN --> ... END` 机器块写进你的 brief（不存在则创建「## 写集（机器生成，禁手改）」段），
+并**自动登记 builtin 文件**（如 `.claude/bypass.log` —— hook 运行期产物，此前反复被误判为"夹带"）。
+
+**为什么**：手写散文必然漏写/格式错（`、`连接多路径 / 反引号 / 全角标点 / 漏 brief 自身与 task-state），
+而四道门禁各有各的解析口径 → 错误只能在 CI 被抓（**15~30 分钟/轮**）。
+2026-09-14 CTO 在单条 PR 上因此被连拦三次（约 1 小时）。
+
+**标准五步（所有角色统一）**：
+1. `alloc-task-id.sh "<标题>"` → 拿 D#
+2. 写 brief（只写 Q0-Q3 语义字段，**写集留空**）
+3. 干活（改文件）
+4. `declare-write-set.sh --staged` → 机器生成写集块；人工只审一遍文件清单
+5. `synova-commit` 提交
+
+**红线**：手写写集被门禁判不一致时，**不许删文件去迁就声明**，也不许调高门禁阈值——**用生成器重新生成**。

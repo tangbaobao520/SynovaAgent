@@ -283,3 +283,30 @@ M1 fail-open 静默失效 / M2 声称vs事实 / M3 机制建成未接线 / M4 �
 机械项跑：`bash scripts/control-tower/pre-dispatch-check.sh <派单文档>`（三态退出码；exit 1 = 修正后再派单）。
 
 **为什么固定**：D732 前 CTO 派单时**未复核技术声称**（把员工报告当结论）且**写错写集路径**（`src/l4/evidence/**`，实际代码在 `src/evidence/`）→ 执行方拿到的派单本身有错。派单错误比代码错误更贵：它会同时污染所有执行方。
+
+---
+
+## ⛔ 写集必须由工具生成（禁止手写路径）— 2026-09-14 创始人指令
+
+**规则**：任何任务在提交前，写集**不得手写**，必须用生成器从真实变更集产出：
+
+```bash
+bash scripts/control-tower/declare-write-set.sh --staged        # 提交前（推荐）
+bash scripts/control-tower/declare-write-set.sh --base origin/main
+```
+
+生成器会把 `<!-- WRITE-SET:BEGIN --> ... END` 机器块写进你的 brief（不存在则创建「## 写集（机器生成，禁手改）」段），
+并**自动登记 builtin 文件**（如 `.claude/bypass.log` —— hook 运行期产物，此前反复被误判为"夹带"）。
+
+**为什么**：手写散文必然漏写/格式错（`、`连接多路径 / 反引号 / 全角标点 / 漏 brief 自身与 task-state），
+而四道门禁各有各的解析口径 → 错误只能在 CI 被抓（**15~30 分钟/轮**）。
+2026-09-14 CTO 在单条 PR 上因此被连拦三次（约 1 小时）。
+
+**标准五步（所有角色统一）**：
+1. `alloc-task-id.sh "<标题>"` → 拿 D#
+2. 写 brief（只写 Q0-Q3 语义字段，**写集留空**）
+3. 干活（改文件）
+4. `declare-write-set.sh --staged` → 机器生成写集块；人工只审一遍文件清单
+5. `synova-commit` 提交
+
+**红线**：手写写集被门禁判不一致时，**不许删文件去迁就声明**，也不许调高门禁阈值——**用生成器重新生成**。

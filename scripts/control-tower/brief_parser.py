@@ -39,6 +39,38 @@ except (AttributeError, ValueError):
     pass
 
 
+
+# D749（口径收敛）: WRITE-SET 机器块 = 写集**单一事实源**。
+#   背景: 写集此前手写在 Q2 散文里 → 四道门禁各自解析、口径不一（2026-09-14 CTO 单 PR 被拦 3 次，
+#   且 staging-guard 用旧口径把生成器产出的块判成"他人文件"）。现在：机器块优先，散文仅作说明。
+WRITE_SET_BEGIN = "<!-- WRITE-SET:BEGIN -->"
+WRITE_SET_END = "<!-- WRITE-SET:END -->"
+
+
+def parse_write_set(text: str) -> dict:
+    """解析 WRITE-SET 机器块 → {"present": bool, "include": [paths], "builtin": [paths]}。
+
+    约定: 块内为 Markdown 表格，每行 `| <path> | task|builtin（理由） |`。
+    只取被反引号或裸路径包裹的第一列；`builtin` 类**不计入 include**（运行期产物，各门禁另有豁免）。
+    """
+    if WRITE_SET_BEGIN not in text or WRITE_SET_END not in text:
+        return {"present": False, "include": [], "builtin": []}
+    block = text[text.index(WRITE_SET_BEGIN) + len(WRITE_SET_BEGIN):text.index(WRITE_SET_END)]
+    include, builtin = [], []
+    for line in block.splitlines():
+        line = line.strip()
+        if not line.startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip("|").split("|")]
+        if len(cells) < 2 or cells[0] in ("文件", "---") or set(cells[0]) <= {"-"}:
+            continue
+        path = cells[0].strip("`").strip()
+        if not path or path.startswith("--"):
+            continue
+        (builtin if "builtin" in cells[1] else include).append(path)
+    return {"present": True, "include": include, "builtin": builtin}
+
+
 def parse_q2(text: str) -> dict:
     """Q2 做什么/不做什么 路径提取（语义 = G12 awk 精确对齐）。"""
     include: List[str] = []
@@ -86,6 +118,11 @@ def parse_q2(text: str) -> dict:
             path = re.sub(r"\s+L\d+$", "", path)
             if path:
                 (exclude if in_exclude else include).append(path)
+    ws = parse_write_set(text)
+    if ws["present"] and ws["include"]:
+        # D749: 机器块优先（单一事实源）；散文 Q2 仅说明用途。
+        # 返回契约保持 {"include","exclude"} 不变（新增键会破坏既有测试与消费者）。
+        return {"include": ws["include"], "exclude": exclude}
     return {"include": include, "exclude": exclude}
 
 
