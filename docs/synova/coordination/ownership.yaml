@@ -55,6 +55,9 @@ rules:
   - glob: "src/sentinel/**"
     owner: "mac"
     source: "TASK-ROUTING.md L31 哨兵体系核心"
+  - glob: "tests/sentinel/**"
+    owner: mac
+    source: "TASK-ROUTING.md §31（哨兵体系核心=Mac，其测试随域）"
   - glob: "src/cron/**"
     owner: "mac"
     source: "TASK-ROUTING.md L31"

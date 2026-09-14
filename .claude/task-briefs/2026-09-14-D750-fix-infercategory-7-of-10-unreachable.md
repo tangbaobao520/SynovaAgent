@@ -25,6 +25,8 @@ L3 洞察层缺陷修复（哨兵→信号聚合→专家路由）。**活缺陷
 做什么：
 - src/sentinel/signal-aggregator.ts — 新增 `expertOf()`（manifest 权威）+ 聚合循环改为 manifest 优先、回落记账；类目标签与路由解耦
 - tests/sentinel/d750-expert-routing.test.ts — 4 断言（cash-runway 不再只落技术底座 / 多哨兵并集 / 未命中回落非空且 warn）
+- docs/synova/coordination/ownership.yaml — 补 tests/sentinel/** → mac（域规则粒度缺口，D733 表）
+- .github/CODEOWNERS — 由 ownership.yaml 重生成（防漂移）
 不做什么：
 - 不改 `SIGNAL_TO_EXPERT` 表本身（保留业务语义表；本单只改"谁来决定用哪一类"）
 - 不改 `runner.ts`（`findSignalRoute` 已是权威路由，本单不改它）
@@ -51,7 +53,6 @@ L3 洞察层缺陷修复（哨兵→信号聚合→专家路由）。**活缺陷
 | 文件 | 类型 |
 |---|---|
 | .claude/task-briefs/2026-09-14-D750-fix-infercategory-7-of-10-unreachable.md | task |
-| src/sentinel/signal-aggregator.ts | task |
-| tests/sentinel/d750-expert-routing.test.ts | task |
-| tests/sentinel/signal-aggregator.test.ts | task |
+| .github/CODEOWNERS | task |
+| docs/synova/coordination/ownership.yaml | task |
 
