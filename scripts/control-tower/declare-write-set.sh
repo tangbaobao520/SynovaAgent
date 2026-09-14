@@ -50,7 +50,7 @@ TMP="$(mktemp)"; trap 'rm -f "$TMP"' EXIT
     esac
   done
 } > "$TMP"
-python3 - "$BRIEF" "$TMP" <<'PY'
+python3 - "$BRIEF" "$TMP" <<'PY'  # D520: 纯 stdlib，无平台敏感依赖（见 PLATFORM-CHECKLIST.md）
 import sys, pathlib, re
 brief, block = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2]).read_text(encoding="utf-8")
 s = brief.read_text(encoding="utf-8")
