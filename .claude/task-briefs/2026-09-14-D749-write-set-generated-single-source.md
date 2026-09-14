@@ -57,6 +57,7 @@
 | .dsh/skills/brief-compose/SKILL.md | task |
 | .dsh/skills/cto-handover/SKILL.md | task |
 | .dsh/skills/dev-doc-delivery/SKILL.md | task |
+| scripts/ci/verify-doc.sh | task |
 | scripts/control-tower/brief_parser.py | task |
 | scripts/control-tower/declare-write-set.sh | task |
 | scripts/pre-commit-check.sh | task |
