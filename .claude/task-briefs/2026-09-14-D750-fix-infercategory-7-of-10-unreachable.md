@@ -52,7 +52,11 @@ L3 洞察层缺陷修复（哨兵→信号聚合→专家路由）。**活缺陷
 
 | 文件 | 类型 |
 |---|---|
+| .claude/bypass.log | builtin（hook 运行期产物，自动豁免） |
 | .claude/task-briefs/2026-09-14-D750-fix-infercategory-7-of-10-unreachable.md | task |
 | .github/CODEOWNERS | task |
 | docs/synova/coordination/ownership.yaml | task |
+| src/sentinel/signal-aggregator.ts | task |
+| tests/sentinel/d750-expert-routing.test.ts | task |
+| tests/sentinel/signal-aggregator.test.ts | task |
 
