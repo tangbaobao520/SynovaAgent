@@ -1,53 +1,54 @@
-# Task Brief: D732 dispatch-batch3-registration
+# Task Brief: D732 plan-and-gates（主线计划 + 派单必读门禁）
 
 > 生成: 2026-09-13 | 任务: D732 | 认领: 主 CTO（synova-cto）
-> 参考: cto-handover §〇b/§〇c（派单 SOP）+ 创始人指令「所有派出的任务都回来了，像真正的 CTO 一样安排接下来的工作」
+> 参考: 创始人指令「写一个文档把整个计划落盘；每次派单前必读；必须落地之后再回归主线」
 
 ## Q0: 定位 — 项目拼图 + 文件审计
 ### a) 项目拼图
-派单与任务号登记（非五层）。前批（D715-D718/D725/D726/D716-impl）全部回报完毕，本单按 CTO 判断重排下一批并登记任务号。
-### b) 文件审计
-- 前序回报实测：D715 K3 审计（七任务 PASS）/ D717 真债（CI 12-12）/ D718 四项 / D725 spec（gatekeeper exit 0）/ D726（状态机 machine 段已重写）/ D716 spec1 实现（501+303 行）
-- 新暴露的产品级空洞：evidence 表在生产库**不存在** + EvidenceStore 零实例化 + expires_at 零写入方（D725 spec 实测）
-- 编号纪律：D727-D732 全部经 alloc-task-id.sh 实分配（此前曾凭计划号臆写 D727 vs 实为 D725）
+治理机制落地（非五层）。把「主线计划」与「派单前必读」落成**机器可执行**的两件：计划文档为单一事实源；派单文档必须锚定计划版本+哈希。
+### b) 文件审计（实测）
+- 原 #536 有 24 文件 → 被 D734 PR 预算门禁判超限 → 两个机制卡在分支上未进 main（实测 main 无计划文档、第⑩项命中 0）
+- 本 PR 从 #536 抽出**机制生效所需的 11 文件**（≤12 上限）
 ### c) 决策
-出第三批派单文档 + 五个任务号登记；零代码改动。
+拆小 PR 直插 main；后续文档/登记类内容另开 PR。
 
 ## Q1: 调研 — 业界最佳实践 / Anthropic 决策链 / memory 历史教训
-- 铁律 0-2：spec → test → impl → wire → review → merge → 证据链必须先有契约再动数据模型
-- 铁律 47：声明必须由物理证据支撑（本批每项均附实测证据）
-- 历史教训：① 派单文档写错 D# 导致执行方核对成本（本批起核 task-state）② 声明解析四套口径（G12/D708/棘轮/staging-guard）堵死钥匙 PR
-### 参考：第一性原理（产品可溯源是卖点物理前提）+ 铁律 0-2/47 → 产品空洞优先于体系缺陷优先于小修
+- 铁律 47：声明必须由物理证据支撑 → 「读没读计划」用哈希校验而不是自觉
+- 历史教训：D732 前 CTO 派单未复核（越域/内部矛盾/写错路径三次）；本次把复核脚本化
+### 参考：铁律 47 + 本日三次派单缺陷 → 用哈希锚定 + 生成器消除声明层漂移
 
 ## Q2: 范围 — 正确的最简方案
 做什么：
-- docs/synova/coordination/派单-第四批-D733-D736-20260913.md — 第四批派单（五条机制补强，分三批）
-- task-state/D733.json — ownership 机器化登记
-- task-state/D734.json — PR 预算门禁登记
-- task-state/D735.json — bypass.log 出库登记
-- task-state/D736.json — 测试 hermetic 化登记
-- docs/synova/coordination/派单-第三批-D727-D731-20260913.md — 第三批派单（五项 + 依赖图 + 四段复制块）
-- task-state/D727.json — 证据层数据流 spec（dev-doc）
-- task-state/D728.json — 证据层接线实现（Mac 编码）
-- task-state/D729.json — 死码/死键清理小批（Mac 编码）
-- task-state/D730.json — 声明单一事实源 + 门禁覆盖后来者（并行 CTO）
-- task-state/D731.json — 第三批审计（K3）
-- task-state/D732.json — 本派单登记
+- docs/synova/coordination/整体推进计划-主线-20260913.md — 主线单一事实源（三支柱/三阶段/11 条机制/资源上限）
+- scripts/control-tower/pre-dispatch-check.sh — 第⑩项：派单必须锚定计划版本+哈希（附第⑨项内部一致性）
+- tests/control-tower/pre-dispatch-check.test.sh — 其密封测试（7 断言）
+- scripts/control-tower/gen-plan-status.py — 计划任务区块从 task-state 真相源重生成
+- tests/control-tower/gen-plan-status.test.sh — 其密封测试（5 断言）
+- .claude/skills/pre-dispatch-check/SKILL.md — 复核技能（八项+⑨⑩）
+- .dsh/skills/pre-dispatch-check/SKILL.md — 同上（双写，D370 同步）
+- .claude/skills/cto-handover/SKILL.md — 硬接入「派单前必读计划」
+- .dsh/skills/cto-handover/SKILL.md — 同上（双写）
+- .claude/task-briefs/2026-09-13-D732-dispatch-batch3-registration.md — 本 brief
+- memory/notes/implemented/2026-09-13-pre-dispatch-check-process.md — 决策 Note（铁律 49）
 不做什么：
-- 不改 src/**（各任务由执行方实现）
-- 不改 scripts/audit/**（审计红线）
-- 不改 .github/workflows/ci.yml（#520 在途持有）
-- 不改 scripts/control-tower/**（D730 将由并行 CTO 认领）
+- 不改 scripts/audit/（审计红线）
+- 不改 .github/workflows/ci.yml（批 C merge queue 集中改）
+- 不带入 #536 的派单文档与 task-state（另开文档 PR）
+- 不改 dsh/plugins/task-board-adapter/（看板修复归并行 CTO 在途任务）
 
 ## Q3: 验收 — 入口 → 交互 → 结果
-入口：创始人从派单文档复制四段说明转给对应 session
-处理：四线并行执行（D727 spec 先行 → D728 依赖它）
-结果：证据链可溯源 + 门禁口径统一 + 死码清零 + K3 第三批报告
+入口：CTO 每次派单前 / 任何人读计划文档
+处理：跑 pre-dispatch-check（十项，含计划哈希锚定）；计划区块由生成器重生成
+结果：派单必须引用 `依据计划: v<版本>@<哈希>`，哈希不符即拒；计划任务表与真相源一致
 
-## 架构层: 基础设施（派单与任务登记，非五层）
-本批次为派单登记；各任务实施层按其自身 spec 声明
+## 架构层: 基础设施（治理机制，非五层）
+变更面限 docs/synova/coordination/ + scripts/control-tower/ + tests/control-tower/ + skills 双写 + 一份 Note
+
+## 主线贡献: infra:派单前复核与计划锚定（治本日三次派单缺陷，属支撑但为并行前提）
+## 域: mac
 
 ## Done 标准:
-- [ ] 派单文档含五项：for s in D727 D728 D729 D730 D731; do grep -q "$s" docs/synova/coordination/派单-第三批-D727-D731-20260913.md || echo "MISSING $s"; done → 零输出
-- [ ] 六个 task-state 合法：python3 -c "import json;[json.load(open(f'task-state/D{d}.json')) for d in (727,728,729,730,731,732)];print('ok')" → ok
-- [ ] 复制块齐备：grep -c "【D7" docs/synova/coordination/派单-第三批-D727-D731-20260913.md → ≥4
+- [ ] 两个测试全绿：bash tests/control-tower/pre-dispatch-check.test.sh → 7 通过 0 失败；bash tests/control-tower/gen-plan-status.test.sh → 5 通过 0 失败
+- [ ] 计划文档含版本与哈希锚定节：grep -c '依据计划' docs/synova/coordination/整体推进计划-主线-20260913.md → ≥1
+- [ ] 第⑩项在位：grep -c '主线计划锚定' scripts/control-tower/pre-dispatch-check.sh → ≥1
+- [ ] 生成器幂等：连跑两次 gen-plan-status.py → 第二次输出「无变化」
