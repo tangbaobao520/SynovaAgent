@@ -42,4 +42,12 @@ grep -q 'pre-dispatch-check' "$REPO/.dsh/skills/cto-handover/SKILL.md" 2>/dev/nu
 printf "派单：${EXIST:-D001}\n- 写集: scripts/control-tower/pre-dispatch-check.sh\n\n## 派单内部一致性自检\n无互斥。\n" > "$TMPD/bad4.md"
 if bash "$S" "$TMPD/bad4.md" >/dev/null 2>&1; then no "⑥ 未引用主线计划却放行"; else ok "⑥ 未锚定主线计划 → exit 1"; fi
 
+# ⑦ 路径边界：packages/ontology/src/x.ts 不得被误报为 src/x.ts（D756 修正）
+printf '派单：${EXIST:-D001}\n依据计划: v1.0@$PH\n- 写集: packages/ontology/src/edge-types.ts\n\n## 派单内部一致性自检\n无互斥。\n' > "$TMPD/ok2.md"
+if OUT2=$(bash "$S" "$TMPD/ok2.md" 2>&1); then
+  ok "⑦ packages/ 路径不再误报内层 src/"
+else
+  echo "$OUT2" | grep -q "不存在: src/" && no "⑦ 仍误报内层 src/（边界锚定失效）" || ok "⑦ exit 1（其他原因，非误报）"
+fi
+
 echo ""; echo "  结果: $PASS 通过, $FAIL 失败"; [ "$FAIL" -eq 0 ] && exit 0 || exit 1
