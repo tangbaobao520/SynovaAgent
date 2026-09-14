@@ -6,25 +6,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, writeFileSync, rmSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import {
-  readTaskState,
-  mapToBoardTask,
-  readBacklog,
-  mapBacklogToBoardTask,
-  buildImportAction,
-  syncOnce,
-  fetchBoardState,
-  DEFAULT_STATUS_MAPPING,
-  FALLBACK_STATUS,
-  ACTIVITY_WINDOW_MS,
-  ACTIVITY_UPGRADE_STATUSES,
-  resolveBoardStatus,
-  readSnapshot,
-  mapWinTaskToBoardTask,
-  mapLineToBoardTask,
-  mapOverallLineCard,
-  mapTodoToBoardTask,
-} from "../lib/sync.js";
+import { ACTIVITY_UPGRADE_STATUSES, ACTIVITY_WINDOW_MS, DEFAULT_STATUS_MAPPING, FALLBACK_STATUS, buildImportAction, fetchBoardState, mapBacklogToBoardTask, mapLineToBoardTask, mapOverallLineCard, mapToBoardTask, mapTodoToBoardTask, mapWinTaskToBoardTask, readBacklog, readSnapshot, readTaskState, resolveBoardStatus, syncOnce, verdictBoardStatus } from "../lib/sync.js";
 
 function makeRepo(files) {
   const root = mkdtempSync(join(tmpdir(), "synova-adapter-"));
