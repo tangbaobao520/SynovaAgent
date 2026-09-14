@@ -31,7 +31,9 @@ for d in $(grep -oE 'D[0-9]{3}' "$DOC" | sort -u); do
 done
 
 echo "── ④ 写集路径存在性（不存在须显式标注「新建」）──"
-grep -oE '(src|scripts|tests|docs|electron|electron-renderer)/[A-Za-z0-9_./*-]+' "$DOC" \
+# D756: 路径根补全 + 边界锚定（防止在 packages/ontology/src/x.ts 里误匹配内层 src/x.ts）
+grep -oE '(^|[^A-Za-z0-9_/.-])((src|scripts|tests|docs|packages|extensions|\.github|electron|electron-renderer)/[A-Za-z0-9_./*-]+)' "$DOC" \
+  | sed -E 's/^[^A-Za-z./].*//; s/^//' | grep -oE '(src|scripts|tests|docs|packages|extensions|\.github|electron|electron-renderer)/[A-Za-z0-9_./*-]+' \
   | sed 's/[.,，。；、)]*$//' | sort -u > "$tmp"
 while read -r p; do
   [ -z "$p" ] && continue
