@@ -872,8 +872,8 @@ if [ -n "$STAGED_SRC" ]; then
     fi
   fi
 fi
-soft_check "Task Brief: 编码变更须有今日 task brief" "${TASK_BRIEF_MISSING:-}"
-soft_check "Task Brief: 6 核心字段必须填写 (Q0/Q1/Q2/Q3/架构层/Done)" "${TASK_BRIEF_EMPTY:-}"
+hard_check "Task Brief: 编码变更须有今日 task brief" "${TASK_BRIEF_MISSING:-}"
+hard_check "Task Brief: 6 核心字段必须填写 (Q0/Q1/Q2/Q3/架构层/Done)" "${TASK_BRIEF_EMPTY:-}"
 
 # D547 教训固化（物理门禁，非台账）：alloc-task-id 生成的骨架 brief 含 <agent>/<本任务在哪一层>
 #   占位符，不得随派单提交进 main——曾致 check-plan-integrity 在 CI 回退命中占位符，
@@ -1301,7 +1301,7 @@ fi
 
 if [ -n "$SCOPE_VIOLATION" ]; then
   # D515 项10: 修复指引文案 — 改 scripts/ 需先认领 brief（Codex P5 曾被拦无文档说明）
-  soft_check "G12: task brief Q2 范围一致性" "$SCOPE_VIOLATION"
+  hard_check "G12: task brief Q2 范围一致性（写集单一事实源，D749）" "$SCOPE_VIOLATION"
   echo "     💡 改 scripts/ 需先认领 brief（Q2 写集声明）——见 docs/synova/coordination/版本管理规范-控制塔.md"
 else
   soft_pass "G12: 所有文件均在 Q2 范围内"
@@ -1331,7 +1331,7 @@ fi
 # D313 M3: 附挂 brief 契约检查（同源解析器 + #CRITERIA + 架构层 + Done）
 BRIEF_PARSEABLE_OUT=$(bash "$ROOT/scripts/workflow/check-brief-parseable.sh" "$BRIEF" 2>&1 || true)
 if echo "$BRIEF_PARSEABLE_OUT" | grep -q "❌"; then
-  soft_check "G12b: brief 可解析性 (D313 M3)" "$BRIEF_PARSEABLE_OUT"
+  hard_check "G12b: brief 可解析性 (D313 M3)" "$BRIEF_PARSEABLE_OUT"
 else
   soft_pass "G12b: brief 可解析 (D313 M3)"
 fi

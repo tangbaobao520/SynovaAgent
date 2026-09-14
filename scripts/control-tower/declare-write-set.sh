@@ -38,7 +38,8 @@ FILES="$(printf '%s\n%s\n' "$_C1" "$_C2" | sed '/^$/d' | sort -u)"
 [ -n "$FILES" ] || { echo "❌ 变更集为空（基准 '$BASE' 是否正确？）"; exit 2; }
 TMP="$(mktemp)"; trap 'rm -f "$TMP"' EXIT
 {
-  echo "<!-- WRITE-SET:BEGIN -->"
+  echo "## 写集（机器生成，禁手改）"
+  echo ""
   echo "| 文件 | 类型 |"
   echo "|---|---|"
   printf '%s\n' "$FILES" | while IFS= read -r f; do
@@ -48,19 +49,21 @@ TMP="$(mktemp)"; trap 'rm -f "$TMP"' EXIT
       *)                  echo "| $f | task |" ;;
     esac
   done
-  echo "<!-- WRITE-SET:END -->"
 } > "$TMP"
 python3 - "$BRIEF" "$TMP" <<'PY'
-import sys, pathlib
+import sys, pathlib, re
 brief, block = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2]).read_text(encoding="utf-8")
 s = brief.read_text(encoding="utf-8")
-b, e = "<!-- WRITE-SET:BEGIN -->", "<!-- WRITE-SET:END -->"
-if b in s and e in s:
-    s = s[:s.index(b)] + block.rstrip("\n") + "\n" + s[s.index(e) + len(e):]
+head = "## 写集（机器生成，禁手改）"
+if head in s:
+    i = s.index(head)
+    m = re.search(r"\n## (?!写集)", s[i + len(head):])
+    j = i + len(head) + (m.start() + 1 if m else len(s) - i - len(head))
+    s = s[:i] + block.rstrip("\n") + "\n\n" + s[j:].lstrip("\n")
 else:
-    s = s.rstrip() + "\n\n## 写集（机器生成，禁手改）\n\n" + block.rstrip("\n") + "\n"
+    s = s.rstrip() + "\n\n" + block.rstrip("\n") + "\n"
 brief.write_text(s, encoding="utf-8")
-print(f"✅ 写集块已生成: {brief}")
+print(f"✅ 写集段已生成: {brief}")
 PY
 rc=$?; [ "$rc" -eq 0 ] || { echo "❌ 写入 brief 失败"; exit 1; }
 echo "   条目数: $(printf '%s\n' "$FILES" | wc -l | tr -d ' ')（含 builtin 自动豁免）"

@@ -43,8 +43,7 @@ except (AttributeError, ValueError):
 # D749（口径收敛）: WRITE-SET 机器块 = 写集**单一事实源**。
 #   背景: 写集此前手写在 Q2 散文里 → 四道门禁各自解析、口径不一（2026-09-14 CTO 单 PR 被拦 3 次，
 #   且 staging-guard 用旧口径把生成器产出的块判成"他人文件"）。现在：机器块优先，散文仅作说明。
-WRITE_SET_BEGIN = "<!-- WRITE-SET:BEGIN -->"
-WRITE_SET_END = "<!-- WRITE-SET:END -->"
+WRITE_SET_HEADING = "## 写集"
 
 
 def parse_write_set(text: str) -> dict:
@@ -53,9 +52,10 @@ def parse_write_set(text: str) -> dict:
     约定: 块内为 Markdown 表格，每行 `| <path> | task|builtin（理由） |`。
     只取被反引号或裸路径包裹的第一列；`builtin` 类**不计入 include**（运行期产物，各门禁另有豁免）。
     """
-    if WRITE_SET_BEGIN not in text or WRITE_SET_END not in text:
+    m = re.search(r"^##\s*写集[^\n]*\n(.*?)(?=^## |\Z)", text, re.M | re.S)
+    if not m:
         return {"present": False, "include": [], "builtin": []}
-    block = text[text.index(WRITE_SET_BEGIN) + len(WRITE_SET_BEGIN):text.index(WRITE_SET_END)]
+    block = m.group(1)
     include, builtin = [], []
     for line in block.splitlines():
         line = line.strip()

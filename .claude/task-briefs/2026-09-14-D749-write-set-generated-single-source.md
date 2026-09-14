@@ -3,6 +3,8 @@
 > 生成: 2026-09-14 | 任务: D749 | 认领: 主 CTO（synova-cto）
 > 参考: 创始人指令「固定一个格式/流程，保证开始时就一次做对」
 
+#CRITERIA: A
+
 ## Q0: 定位 — 项目拼图 + 文件审计
 ### a) 项目拼图
 控制塔「声明层」根治（非五层）。CTO 本日在单条 PR 上被 G12 → V5 → D708 连拦三次（~1 小时），**根因全部是"改的文件 vs 声明的写集"不一致**。
@@ -45,7 +47,6 @@
 
 ## 写集（机器生成，禁手改）
 
-<!-- WRITE-SET:BEGIN -->
 | 文件 | 类型 |
 |---|---|
 | .claude/bypass.log | builtin（hook 运行期产物，自动豁免） |
@@ -58,9 +59,7 @@
 | .dsh/skills/dev-doc-delivery/SKILL.md | task |
 | scripts/control-tower/brief_parser.py | task |
 | scripts/control-tower/declare-write-set.sh | task |
+| scripts/pre-commit-check.sh | task |
 | task-state/D749.json | task |
 | tests/control-tower/declare-write-set.test.sh | task |
-<!-- WRITE-SET:END -->
-
-
 
