@@ -22,6 +22,8 @@
 做什么：
 - dsh/plugins/task-board-adapter/lib/sync.js — 新增 verdictBoardStatus()；resolveBoardStatus 首行优先判定；卡片正文化暴露裁决
 - dsh/plugins/task-board-adapter/test/sync.test.js — 新增 D748 用例（FAIL/NOT-AUDITABLE → failed；PASS/CONDITIONAL/无 → 交回映射）
+- .claude/task-briefs/2026-09-14-D748-board-verdict-dimension.md — 本 brief
+- task-state/D748.json — 本单登记
 不做什么：
 - 不改 scripts/audit/（审计红线）
 - 不改 calc-progress.py / 三个消费端（线级状态派生归另一单，避免撞车）
