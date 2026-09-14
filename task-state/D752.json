@@ -1,0 +1,13 @@
+{
+  "task_id": "D752",
+  "title": "哨兵类型网登记从软约束改硬门禁（8/45 未登记，P1）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-14",
+  "updated_by": "synova-cto",
+  "note": "实测：src/sentinel/types.ts 引用 38 个目录（含已归档 _extinct）；45 个哨兵中 8 个未进类型网：cash-runway / competitive-moat / competitive-position / key-person-risk / path-dependency / revenue-health / sentinel-forecast-accuracy / sentinel-pricing-strategy。后果：不加静态 import also跑得起来（运行时不依赖），所以这条软约束事实上没执行——而系统自己的治理原则写着「软机制 0% 有效」。修法：类型登记缺失 → 硬门禁红（含 _extinct 归档目录的豁免规则）。",
+  "source": "~/山河研究院/99-综合/质询-可插件化是否物理事实.md（终版 2026-09-14，院长质询）"
+}
