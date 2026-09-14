@@ -50,13 +50,7 @@
 | 文件 | 类型 |
 |---|---|
 | .claude/bypass.log | builtin（hook 运行期产物，自动豁免） |
-| .claude/skills/brief-compose/SKILL.md | task |
-| .claude/skills/cto-handover/SKILL.md | task |
-| .claude/skills/dev-doc-delivery/SKILL.md | task |
 | .claude/task-briefs/2026-09-14-D749-write-set-generated-single-source.md | task |
-| .dsh/skills/brief-compose/SKILL.md | task |
-| .dsh/skills/cto-handover/SKILL.md | task |
-| .dsh/skills/dev-doc-delivery/SKILL.md | task |
 | scripts/ci/verify-doc.sh | task |
 | scripts/control-tower/brief_parser.py | task |
 | scripts/control-tower/declare-write-set.sh | task |

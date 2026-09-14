@@ -25,13 +25,13 @@ while [ $# -gt 0 ]; do
     *) echo "❌ 未知参数: $1" >&2; exit 2 ;;
   esac
 done
-ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || { echo "❌ 非 git 仓库"; exit 2; }
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || { echo "❌ 非 git 仓库"; exit 2; }  # swallow-ok: 失败在下方显式判定（空变更集 → exit 2）
 if [ -z "$BRIEF" ] && [ -f "$ROOT/.claude/current-brief" ]; then
   BRIEF="$ROOT/.claude/task-briefs/$(tr -d '[:space:]' < "$ROOT/.claude/current-brief")"
 fi
 [ -n "$BRIEF" ] && [ -f "$BRIEF" ] || { echo "❌ 找不到 brief（--brief 指定，或写 .claude/current-brief）"; exit 2; }
 # D749: PR 级写集 = base..HEAD ∪ 暂存区（两次提交的 PR 也要一次声明全）
-_C1="$(git -C "$ROOT" -c core.quotepath=false diff --name-only --diff-filter=ACMR "${BASE}...HEAD" 2>/dev/null | sed '/^$/d')"
+_C1="$(git -C "$ROOT" -c core.quotepath=false diff --name-only --diff-filter=ACMR "${BASE}...HEAD" 2>/dev/null | sed '/^$/d')"  # swallow-ok: 失败在下方显式判定（空变更集 → exit 2）
 _C2="$(git -C "$ROOT" -c core.quotepath=false diff --cached --name-only --diff-filter=ACMR | sed '/^$/d')"
 if [ "$STAGED" = "1" ]; then _C1=""; fi
 FILES="$(printf '%s\n%s\n' "$_C1" "$_C2" | sed '/^$/d' | sort -u)"
