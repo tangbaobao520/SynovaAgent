@@ -1,0 +1,13 @@
+{
+  "task_id": "D734",
+  "title": "PR 预算门禁（pr-budget-gate）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "note": " | D779 补登记：原 task-state 只存在于未合分支（c7431e24）；登记补齐使看板可见、派单复核 ① 项可过。check-pr-budget.sh：文件数 ≤12 / 单域 / 落后基线（已交付；D758 修证据目录假阳性）"
+}

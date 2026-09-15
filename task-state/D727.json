@@ -1,0 +1,13 @@
+{
+  "task_id": "D727",
+  "title": "证据链数据规格（evidence chain dataspec）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "note": " | D779 补登记：原 task-state 只存在于未合分支（5732b5ab）；登记补齐使看板可见、派单复核 ① 项可过。线 2/3 的证据链数据契约（证据从哪来、存到哪、报告怎么引用）"
+}

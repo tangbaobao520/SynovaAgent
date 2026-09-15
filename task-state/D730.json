@@ -1,0 +1,13 @@
+{
+  "task_id": "D730",
+  "title": "声明单一事实源 + 门禁覆盖（declaration single source）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "note": " | D779 补登记：原 task-state 只存在于未合分支（5732b5ab）；登记补齐使看板可见、派单复核 ① 项可过。写集/声明层单一事实源（后被 D749 的机器写集与 D708 对账覆盖）"
+}

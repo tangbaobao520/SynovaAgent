@@ -1,0 +1,13 @@
+{
+  "task_id": "D733",
+  "title": "模块所有权机器可读 + CODEOWNERS 生成（ownership machine-readable）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "note": " | D779 补登记：原 task-state 只存在于未合分支（c7431e24）；登记补齐使看板可见、派单复核 ① 项可过。ownership.yaml + check-ownership.py + CODEOWNERS 派生（已交付并合入 main）"
+}

@@ -1,0 +1,13 @@
+{
+  "task_id": "D729",
+  "title": "死代码/死键清理批（deadcode-deadkey cleanup）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "synova-cto",
+  "domain": "win",
+  "note": " | D779 补登记：原 task-state 只存在于未合分支（5732b5ab）；登记补齐使看板可见、派单复核 ① 项可过。D733 门禁与 08-21 分工文档实证的死键/死路径批次清理（含 build-synova.cjs:141 等）"
+}

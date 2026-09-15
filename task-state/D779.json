@@ -1,0 +1,13 @@
+{
+  "task_id": "D779",
+  "title": "登记补齐：D727-D736 task-state 从 #536 分支抽出入 main（复核 ① 项 + 看板可见）",
+  "status": "claimed",
+  "spec": "docs/synova/coordination/派单-第五批-产品推进-20260915.md",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "note": "实证: pre-dispatch-check ① 对批五派单点名 D734 无 task-state（D727-D736 的登记只在 #536 分支 5732b5ab/c7431e24）。补登记后看板可见、复核可过。内容为字节复制（#536 合并时不会冲突）。"
+}
