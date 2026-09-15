@@ -1,28 +1,53 @@
 {
   "task_id": "D716",
   "title": "devdoc-monitoring-contract-and-dual-guide",
-  "status": "spec_done",
-  "spec": {
-    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D716-D1-monitoring-contract-20260913.md",
-    "paths": [
-      "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D716-D1-monitoring-contract-20260913.md",
-      "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D716-1-5-dual-guide-convergence-20260913.md"
-    ],
-    "commit": "e99bafe426b29936411011ade4355e3b449fa8ec",
-    "by": "dev-doc",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "commit": "b152067f",
+    "by": "mac-coding-synova-dsh",
     "at": "2026-09-13",
-    "note": "两份 spec：① spec 1 = 监测契约 schema + loader + 状态驱动决策（验收点 8-6，实施归 Mac DSH 编码线 src/sentinel/）；② spec 2 = 1-5 双引导收敛（验收点 1-5，实施归 Win 线 src/server.ts + app/）。两 spec 均过 dev-doc-gatekeeper（exit 0）。配套编码指令：docs/synova/coordination/编码指令-D716-监测契约-Mac-20260913.md 与 docs/synova/coordination/编码指令-D716-1-5双引导收敛-Win-20260913.md。命名偏差登记：task brief Q2 声明的 spec 文件名（SYNOVA-IMPL-DSH-D1-monitoring-contract.md / SYNOVA-IMPL-DSH-1-5-dual-guide-convergence.md）不含 D# 与日期，与 D384（dev doc 文件名须含 task-state 登记的 D#）冲突——按 D384 与 brief Done 标准（grep 子串 D1-monitoring-contract / 1-5-dual-guide）取折中名（含 D716 + 日期 + 两子串），不属改写集。"
+    "branch": "feat/mac-d716-monitoring-contract",
+    "spec_path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D716-D1-monitoring-contract-20260913.md",
+    "files": [
+      "src/sentinel/monitoring-contract.ts",
+      "src/sentinel/notification-policy.ts",
+      "src/sentinel/runner.ts",
+      "src/sentinel/sentinel-loader.ts",
+      "tests/sentinel/monitoring-contract.test.ts",
+      "tests/sentinel/notification-policy.test.ts",
+      "tests/sentinel/notification-wiring.test.ts",
+      "docs/synova/product-lines/evidence/D716-mac-20260913/red-baseline.txt",
+      "docs/synova/product-lines/evidence/D716-mac-20260913/vitest-green.txt",
+      "docs/synova/product-lines/evidence/D716-mac-20260913/grep-wiring.txt",
+      "docs/synova/product-lines/evidence/D716-mac-20260913/verify-commands.txt",
+      "docs/synova/product-lines/evidence/D716-mac-20260913/pre-commit-check.txt",
+      "docs/synova/product-lines/evidence/D716-mac-20260913/simulate-ci.txt",
+      ".claude/task-briefs/2026-09-13-D716-impl-monitoring-contract-mac.md"
+    ],
+    "ds_evidence": {
+      "DS2_loader生产调用": "evidence/grep-wiring.txt — loadMonitoringContract 生产调用 3 处: runner.ts L1401(决策) + sentinel-loader.ts L156(契约层) + notification-policy.ts L273(升级队列)",
+      "DS3_无契约全默认": "evidence/vitest-green.txt — T1 绿(ENOENT → defaults + degraded=false + D-1 政策值 24h/7d/weekly/one_pager)",
+      "DS4_非法契约显式degraded": "evidence/vitest-green.txt — T3(org_id_mismatch 整文件忽略)/T4(parse失败+schema_version=2)/T5(单字段丢弃+degradedReasons 列名) 绿",
+      "DS5_六态映射八断言": "evidence/vitest-green.txt — T16 八断言绿(notification-policy.test.ts: 新发现/待回应/未回应超时/已认领/档位上升/实体新增/停滞超期/已解决/明确不处理)",
+      "DS6_阈值契约层零回归": "evidence/vitest-green.txt — T8 绿(契约>memStore>manifest 三段断言) + tests/sentinel/ 全目录 260 passed 零回归(threshold-injection/dedup-key-stability 全绿)",
+      "DS7_幂等提醒与首页": "evidence/vitest-green.txt — T14(24h 恰等触发/-1ms 不触发) + T15(reminded_at_ms/front_page_at_ms 落账后不再触发) 绿",
+      "DS8_升级队列接口": "evidence/grep-wiring.txt — listEscalationQueue Mac 侧生产调用 runner.ts L1117(SentinelRunner 公开方法, 供 Win 路由消费); Win 端点/周报呈现归 Win 任务(跨线依赖已在 brief Q2 声明)",
+      "DS9_派发点真实传递": "evidence/vitest-green.txt — T7(契约 channels ['electron','email'] → dispatchNotification targetSystem 逐渠道真实传递) + T11(状态表写失败派发不被阻断+warn) 绿",
+      "DS10_evidence与门禁": "evidence/ 全目录 6 文件(vitest 原始输出+grep+verify 命令+时间戳, .txt 不用 .log) + npx vitest run tests/sentinel/ 260 passed 零失败 + pre-commit 13 组全过(evidence/pre-commit-check.txt exit=0) + simulate-ci exit=0 + git synova-commit 提交(无 --no-verify)"
+    },
+    "note": "实现遵循 spec §5.2-H 行为等价性声明: 无契约/无工单/无状态行 → notify/first(与今天首次推送等价); 显式差异仅四条(①已认领不即时推 ②24h 提醒一次 ③7天进首页 ④渠道/节奏/格式按契约)。既有测试零回归机制: 既有测试不建 sentinel_notification_state 表 → readNotificationState 降级返回 null → 决策按首次处理 = 旧行为(spec T10 宁可多发不吞真告警的自然推论)。类型单源选择: 契约类型全部放 monitoring-contract.ts(types.ts 未动, spec §5.1 条件项条件不满足); 值域用 as const+typeof 派生(类型与校验集单一事实源)。D537 主树占用检测曾拦一次提交(另一并发 session D726 活跃窗口), 等其过期后重提交通过——非门禁绕过, 是 D537 设计的物理等待。升级链双重死(§4.2-C)与周报三降级口(§4.2-E)已由 dev-doc 登记 findings_registered, 本切片未触碰(§6)。"
   },
-  "impl": null,
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-13",
-  "updated_by": "dev-doc",
+  "updated_by": "mac-coding-synova-dsh",
   "findings_registered": [
     "src/sentinel/runner.ts L212 构造 EscalationEngine 零 rules + L630 恒传 firstIgnoredAt=null → 升级链双重死（机制在、永不触发）→ 建议 CTO 入台账另起任务",
     "src/server.ts L177 周报推送依赖 FEISHU_WEBHOOK_URL，缺失时静默 return（无 log，违反铁律 11）；L186-196 actions 源恒空 → 周报『正在执行的方案进展』恒空（Win 域，登记）",
     "src/server.ts L301-302 `/` 与 `/login` 恒重定向到 /app/*.html；打包态下游 404（悬挂重定向，spec 2 §4.4-C 登记）",
     "electron/main.cjs L140 dev 回退加载 /app/login.html（Mac 域另起任务；spec 2 §4.4-D 登记）",
     "docs/synova/product-lines/evidence/D712-win-20260913/ 目录在 main 不存在（git ls-files 零命中），与派单『D712 证据双侧齐』表述不一致 → 供 D715 K3 审计核对"
-  ]
+  ],
+  "merge_note": "D758 清积压：同任务两版 task-state 合并（分支优先，main 补齐缺失键 ['findings_registered']）"
 }

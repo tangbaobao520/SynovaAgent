@@ -201,6 +201,11 @@ fi
 BRIEF_FILE="$BRIEF_DIR/$(date +%Y-%m-%d)-${NEW_ID}-$(echo "$TITLE" | tr " " "-").md"
 if [ -n "${NEW_ID:-}" ] && [ ! -f "$BRIEF_FILE" ]; then
   mkdir -p "$BRIEF_DIR"
+  # D726: 骨架下列字段是**门禁消费的硬字段**，改写本 heredoc 时不得删改：
+  #   `#CRITERIA: <A-D>` — pre-commit G10 条件区域 + hook-block-write CP1 + pre-doc-audit CP2 消费；
+  #     缺失 → brief_parser.parse_criteria 返回 None → check-brief-parseable 硬拒
+  #     （D718 实证：骨架填实后丢失该字段，brief 无法被 resolver 最终回退选中）。
+  #   回归网: tests/control-tower/alloc-task-id.test.sh §9（含反向验证：剥掉该字段必须红）。
   cat > "$BRIEF_FILE" <<SKEL
 # Task Brief: ${NEW_ID} ${TITLE}
 
@@ -239,6 +244,8 @@ if [ -n "${NEW_ID:-}" ] && [ ! -f "$BRIEF_FILE" ]; then
 ## Done 标准
 - [ ] verify: <可执行命令> <预期>
 SKEL
-  echo "brief 骨架已生成: $BRIEF_FILE（填写后开工）"
+  # D726: `${BRIEF_FILE}` 必须加花括号——`$BRIEF_FILE（` 在 LC_ALL=C.UTF-8（ct-test-gate 导出的
+  #   locale）下被 bash 3.2 解析为变量名 `BRIEF_FILE（…` → "unbound variable" 报错污染 stderr。
+  echo "brief 骨架已生成: ${BRIEF_FILE}（填写后开工）"
 fi
 exit 0

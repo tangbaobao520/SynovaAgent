@@ -1,0 +1,25 @@
+{
+  "task_id": "D726",
+  "title": "产品真红-状态机健壮性-产证命名",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "commit": "self-referential（本文件随 impl commit 入库，hash 见 fix/d726-product-red-state-machine-evidence-naming 分支 git log）",
+    "by": "dsh",
+    "at": "2026-09-13",
+    "files": [
+      "scripts/product-lines/calc-progress.py",
+      "scripts/product-lines/evidence-writer.py",
+      "scripts/product-lines/run-machine-evidence.sh",
+      "scripts/control-tower/alloc-task-id.sh",
+      "tests/l3/graphbridge-wiring.test.ts",
+      "tests/control-tower/product-lines.test.py",
+      "tests/control-tower/alloc-task-id.test.sh",
+      "memory/notes/implemented/2026-09-13-D726-product-red-and-state-machine.md"
+    ]
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-13",
+  "updated_by": "dsh"
+}

@@ -196,6 +196,95 @@ class TestCalcStateMachine(unittest.TestCase):
         self.assertEqual(statuses["1-6"], "uncommitted")
         self.assertTrue(any("1-6" in p for p in data["degraded"]["problems"]))
 
+    # ═══ D726: machine 段语义 —— fail 优先 + (date, at) tiebreaker，与文件名字典序解耦 ═══
+
+    def _machine_status(self, tmp, evidence_files):
+        """单点（1-3 场景绿点）的最终状态，便于逐个语义断言。"""
+        _, data = self._run(tmp, evidence_files)
+        return {p["id"]: p["status"] for p in data["lines"][0]["points"]}["1-3"]
+
+    @staticmethod
+    def _machine_rec(name, date, verdict, at=None):
+        rec = {"schema": 1, "record_type": "scenario", "source": "s", "date": date,
+               "verdicts": [{"acceptance_point": "1-3", "verdict": verdict}]}
+        if at is not None:
+            rec["at"] = at
+        return name, json.dumps(rec, ensure_ascii=False)
+
+    def test_machine_same_date_conflict_is_deterministic(self):
+        """D726 核心: 同日结论冲突时，结果必须由**语义**(fail 优先)决定，不由文件名字典序决定。
+
+        真实场景（2026-09-13 实测于验收点 1-4）: D713-published-artifact-*.json(fail) 与
+        scenario-2026-09-13-1.json(pass) 同日 → 旧实现 max(key=date) 取列表中首个，
+        列表来自 sorted(glob) = 字典序 → 'D' < 's' → fail 恒胜，纯属巧合。
+        """
+        from datetime import datetime
+        fresh = datetime.now().strftime("%Y-%m-%d")
+        fail_rec = self._machine_rec("D713-artifact.json", fresh, "fail")
+        pass_rec = self._machine_rec("scenario-1.json", fresh, "pass")
+        # 两种文件名排列都必须得到同一结论（fail 优先）
+        st_a = self._machine_status(tempfile.mkdtemp(), dict([fail_rec, pass_rec]))
+        st_b = self._machine_status(tempfile.mkdtemp(), dict([pass_rec, fail_rec]))
+        self.assertEqual(st_a, "failed")
+        self.assertEqual(st_b, "failed")
+
+    def test_machine_same_date_conflict_is_filename_permutation_invariant(self):
+        """反假绿: 把「字典序大」的那条换成 fail，结果必须仍由 fail 优先决定。
+
+        若实现退化为「取字典序首个」（旧行为），本用例会红——因为字典序首个变成了 pass。
+        """
+        from datetime import datetime
+        fresh = datetime.now().strftime("%Y-%m-%d")
+        # 字典序: 'A-pass.json' < 'Z-fail.json'，旧的字典序决胜会取 pass
+        pair = [self._machine_rec("A-pass.json", fresh, "pass"),
+                self._machine_rec("Z-fail.json", fresh, "fail")]
+        self.assertEqual(self._machine_status(tempfile.mkdtemp(), dict(pair)), "failed")
+
+    def test_machine_tiebreaker_by_at_within_same_date(self):
+        """(date, at) tiebreaker: 同日多绿证据时，取 at 更晚的那条做新鲜度判定。
+
+        00:00 的绿证据 + 15 天前的日期 → 若按 at 更晚（今天）那条，则新鲜；
+        用 at 更晚的今天那条覆盖，断言不是 stale（证明 at 参与了选取）。
+        """
+        from datetime import datetime, timedelta
+        today = datetime.now()
+        old = (today - timedelta(days=15)).strftime("%Y-%m-%d")
+        new = today.strftime("%Y-%m-%d")
+        ev = dict([
+            self._machine_rec("a-old.json", old, "pass", at="2026-01-01T00:00:00+08:00"),
+            self._machine_rec("b-new.json", new, "pass", at="2026-01-01T00:00:01+08:00"),
+        ])
+        # 两条都 pass → 无 fail；最新 (date,at) = 今天的 → 不 stale
+        self.assertEqual(self._machine_status(tempfile.mkdtemp(), ev), "pending_k3")
+
+    def test_machine_superseded_fail_does_not_pin_point(self):
+        """superseded_by 的旧 fail 不参与（对齐 k3 分桶）——否则 fail 优先会把点永久钉死。"""
+        from datetime import datetime
+        fresh = datetime.now().strftime("%Y-%m-%d")
+        superseded = json.dumps({
+            "schema": 1, "record_type": "scenario", "source": "s", "date": fresh,
+            "verdicts": [{"acceptance_point": "1-3", "verdict": "fail",
+                          "superseded_by": "scenario-new.json"}],
+        }, ensure_ascii=False)
+        good = self._machine_rec("scenario-new.json", fresh, "pass")
+        st = self._machine_status(tempfile.mkdtemp(), {"old-fail.json": superseded,
+                                                       good[0]: good[1]})
+        self.assertEqual(st, "pending_k3")
+
+    def test_machine_older_fail_wins_over_newer_pass(self):
+        """fail 优先是**全局**语义（与 k3 段同构）——旧 fail 不被后来的 pass 自动翻案。
+
+        要翻案必须显式 superseded_by（见上一用例）。本用例把该语义钉死，防未来
+        有人"顺手"改成 latest-wins 而无人察觉（那是语义变更，须走决策流程）。
+        """
+        from datetime import datetime, timedelta
+        today = datetime.now()
+        old = (today - timedelta(days=3)).strftime("%Y-%m-%d")
+        new = today.strftime("%Y-%m-%d")
+        ev = dict([self._machine_rec("a.json", old, "fail"),
+                   self._machine_rec("b.json", new, "pass")])
+        self.assertEqual(self._machine_status(tempfile.mkdtemp(), ev), "failed")
+
     def test_stale_by_ttl(self):
         from datetime import datetime, timedelta
         old = (datetime.now() - timedelta(days=15)).strftime("%Y-%m-%d")
@@ -462,22 +551,76 @@ class TestAScripts(unittest.TestCase):
 
     def test_evidence_writer_normal(self):
         tmp = Path(tempfile.mkdtemp())
-        evw.write_evidence("ci", "2026-08-16", "pass", "7-1,9-2", "test-job", "log:42", tmp)
-        rec = json.loads((tmp / "ci-2026-08-16.json").read_text(encoding="utf-8"))
+        # D726: 显式传 machine —— 断言不得依赖运行平台（CI 跑 ubuntu/windows）
+        evw.write_evidence("ci", "2026-08-16", "pass", "7-1,9-2", "test-job", "log:42", tmp,
+                           machine="mac")
+        rec = json.loads((tmp / "ci-2026-08-16-mac.json").read_text(encoding="utf-8"))
         self.assertEqual(rec["record_type"], "ci")
+        self.assertEqual(rec["machine"], "mac")
         self.assertEqual(len(rec["verdicts"]), 2)
-        # 同日同类第二次 → 递增序号防覆盖
-        evw.write_evidence("ci", "2026-08-16", "fail", "7-1", "test-job", "", tmp)
-        self.assertTrue((tmp / "ci-2026-08-16-1.json").exists())
+        # 同日/同类/同机第二次 → 递增序号防覆盖
+        evw.write_evidence("ci", "2026-08-16", "fail", "7-1", "test-job", "", tmp,
+                           machine="mac")
+        self.assertTrue((tmp / "ci-2026-08-16-mac-1.json").exists())
+
+    def test_evidence_writer_machine_isolation_two_machines(self):
+        """D726 核心: 同一台机器上模拟 Mac + Win 同日跑同类型 → 文件名必须不同（双机撞车修复）。
+
+        旧行为: 两机各自写 ci-2026-08-16.json → 合并（PR/pull）时同名相撞、一方被覆盖。
+        """
+        tmp = Path(tempfile.mkdtemp())
+        evw.write_evidence("ci", "2026-08-16", "pass", "7-1", "job-mac", "", tmp, machine="mac")
+        evw.write_evidence("ci", "2026-08-16", "pass", "7-1", "job-win", "", tmp, machine="win")
+        files = sorted(p.name for p in tmp.glob("*.json"))
+        self.assertEqual(files, ["ci-2026-08-16-mac.json", "ci-2026-08-16-win.json"])
+        # 两机内容各自独立（source 不串）
+        self.assertEqual(json.loads((tmp / "ci-2026-08-16-mac.json").read_text(encoding="utf-8"))["source"],
+                         "job-mac")
+        self.assertEqual(json.loads((tmp / "ci-2026-08-16-win.json").read_text(encoding="utf-8"))["source"],
+                         "job-win")
+
+    def test_evidence_writer_machine_default_and_override(self):
+        """机器标识三级回退: --machine > SYNO_MACHINE > 平台推断；未知平台 → unknown。"""
+        import platform as _platform
+        tmp = Path(tempfile.mkdtemp())
+        saved = os.environ.get("SYNO_MACHINE")
+        try:
+            os.environ["SYNO_MACHINE"] = "ci-runner-2"
+            self.assertEqual(evw.detect_machine(), "ci-runner-2")
+            evw.write_evidence("test", "2026-08-16", "pass", "7-1", "s", "", tmp)
+            self.assertTrue((tmp / "test-2026-08-16-ci-runner-2.json").exists())
+            del os.environ["SYNO_MACHINE"]
+            # 无环境变量 → 平台推断（当前平台映射值；断言与映射表一致，不硬编码平台）
+            expected = {"darwin": "mac", "windows": "win", "linux": "linux"}.get(
+                _platform.system().lower(), "unknown")
+            self.assertEqual(evw.detect_machine(), expected)
+        finally:
+            if saved is None:
+                os.environ.pop("SYNO_MACHINE", None)
+            else:
+                os.environ["SYNO_MACHINE"] = saved
+
+    def test_evidence_writer_machine_normalization(self):
+        """归一化: 大小写/空白/符号 → 稳定记号；非法（归一后空）→ None。"""
+        self.assertEqual(evw.normalize_machine("  MAC  "), "mac")
+        self.assertEqual(evw.normalize_machine("Mac-Mini-2"), "mac-mini-2")
+        self.assertIsNone(evw.normalize_machine("   "))
+        self.assertIsNone(evw.normalize_machine("///"))
+        self.assertIsNone(evw.normalize_machine("机器"))
 
     def test_evidence_writer_boundary(self):
         tmp = Path(tempfile.mkdtemp())
         with self.assertRaises(SystemExit) as cm:
-            evw.write_evidence("founder_demo", "2026-08-16", "pass", "1-6", "x", "", tmp)
+            evw.write_evidence("founder_demo", "2026-08-16", "pass", "1-6", "x", "", tmp,
+                               machine="mac")
         self.assertEqual(cm.exception.code, 2, "创始人核验缺演示记录 → 拒绝")
         with self.assertRaises(SystemExit) as cm2:
-            evw.write_evidence("ci", "bad-date", "pass", "1-6", "x", "", tmp)
+            evw.write_evidence("ci", "bad-date", "pass", "1-6", "x", "", tmp, machine="mac")
         self.assertEqual(cm2.exception.code, 2)
+        # D726 边界: 显式非法机器标识 → fail-closed（不静默回退平台值）
+        with self.assertRaises(SystemExit) as cm3:
+            evw.write_evidence("ci", "2026-08-16", "pass", "1-6", "x", "", tmp, machine="///")
+        self.assertEqual(cm3.exception.code, 2, "非法机器标识 → exit 2")
 
     def test_parse_k3_normal(self):
         tmp = Path(tempfile.mkdtemp())

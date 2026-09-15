@@ -1,0 +1,9 @@
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  3 failed (3)
+      Tests  no tests
+   Start at  15:49:36
+   Duration  343ms (transform 293ms, setup 0ms, import 0ms, tests 0ms, environment 0ms)
+
+2026-09-13 15:49:37 +0800
