@@ -1,0 +1,13 @@
+{
+  "task_id": "D746",
+  "title": "（作废）计划表占位号（『逐卡实现』）——实现已拆为 D760~D769 十张卡，本号作废",
+  "status": "rejected",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "note": "作废理由: 计划表占位号（『逐卡实现』）——实现已拆为 D760~D769 十张卡，本号作废。保留本文件是为了消灭『计划表引用但无 task-state』的幻号（D384 同类）。"
+}

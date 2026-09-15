@@ -1,0 +1,13 @@
+{
+  "task_id": "D775",
+  "title": "N13 进化闭环真实化：loop-3/5 非 placeholder + feedback 消费方接线",
+  "status": "claimed",
+  "spec": "docs/synova/coordination/派单-第五批-产品推进-20260915.md",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "synova-cto",
+  "domain": "win",
+  "note": "产品线 17 的第 2 点实测为 failed（『规则更新真实执行（loop-3/5 非 placeholder）』），第 1 点为 rejected（feedback-collector 无真实消费方）。对照 08-21 分工文档与 todos.yaml 的 T-17-01/04/07/12（P0，owner 原 Claude Code → 代行期 Mac 侧）。交付物: feedback → 规则/权重更新真实链路 + 可验证的下一轮诊断变化；测试与证据落 git。"
+}
