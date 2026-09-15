@@ -63,9 +63,12 @@ bash scripts/product-lines/rerun-evidence.sh --no-refresh  # 只跑不刷新（�
   GS 证据——重跑保 GS 场景自身证据新鲜，产品点兑换走线1 vitest + A2 套件（详见 D774 Note）
 
 **7 天定时任务**（TTL 14 天的一半，留审计窗口）：
-- 通道：DSH 任务看板定时任务，任务名 `D774 证据保鲜：一键重跑`，每 7 天一次，
-  工作区 `SynovaAgent`、权限 `workspace-write`
-- 手动触发：看板任务卡「立即运行」；或命令行直接 `bash scripts/product-lines/rerun-evidence.sh`
+- 通道：DSH 任务看板定时任务，任务名 `D774 证据保鲜：一键重跑`，每 7 天一次（周三 10:00），
+  权限 `workspace-write`
+- ⚠ 已知限制（2026-09-16 实测）：经 API/CLI 创建的任务在触发时报「目标工作区已不存在 /
+  agent without inject」——workspaceRegistry 只认 GUI 注册的工作区 id，API 侧无法绑定——
+  **需在任务看板 GUI 里以同名参数重建一次**（GUI 创建自带工作区+预设绑定）。重建后本节无需再改。
+- 手动触发：看板任务卡「立即运行」；或命令行直接 `bash scripts/product-lines/rerun-evidence.sh`（等效）
 - 定时任务只产出证据与汇总 + 刷新本地进度文件；提交进 git 仍走 PR（bot 通道 = CI product-progress）
 
 **过期预警**（A9，每次 refresh 末步自动生成）：
