@@ -33,6 +33,18 @@ import { createLogger } from '@synova/logger';
 import { ProactivePush } from "../agent/proactive-push";
 import { dispatchNotification, registerNotificationAdapter } from '../notifications/registry';
 import { ElectronNotificationAdapter } from '../notifications/electron-adapter';
+// D716: 监测契约（状态驱动通知的配置面）+ 状态驱动决策 + 通知状态表
+import { loadMonitoringContract, contractForSentinel, clearMonitoringContractCache, type ResolvedContract } from './monitoring-contract';
+import {
+  createNotificationStateTable,
+  readNotificationState,
+  upsertNotificationState,
+  decideNotification,
+  listEscalationQueue as listEscalationQueueRows,
+  type NotificationStateRow,
+  type NotifyAction,
+  type EscalationQueueItem,
+} from './notification-policy';
 
 const log = createLogger('sentinel/runner');
 
@@ -304,6 +316,16 @@ export class SentinelRunner {
       log.warn({ err: msg }, '[runner] 哨兵事件表初始化/重放失败 — degraded, 内存态从空开始');
     }
 
+    // D716: 通知状态表（remind/front_page 幂等锚 — 决策读写同址; 读失败按首次处理不吞告警）
+    try {
+      createNotificationStateTable(this.db as Database.Database);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg }, '[runner] 通知状态表初始化失败 — degraded, 提醒/首页幂等退化为每次判定');
+    }
+    // D716: 启动时清契约缓存 — 热重启场景强制新鲜读（mtime 记忆化之外的正确性兜底）
+    clearMonitoringContractCache();
+
     const registry = getSentinelRegistry();
     const cronSentinels = registry.listCronSentinels();
 
@@ -512,24 +534,28 @@ export class SentinelRunner {
       });
     }
 
-    // D6 桌面通知: warning/critical → dispatchNotification（10min 去重窗口）
+    // D6 桌面通知: warning/critical → 状态驱动决策（D716: 抖动合并器 + 六态; 行为等价性见 spec §5.2-H）
     const notifSignal = { sources: [{ sentinelId: SELF_CHECK_SENTINEL_ID }] };
     if (!this.isNotificationDuplicate(notifSignal)) {
-      try {
-        await dispatchNotification({
-          id: `notif-self-check-${checkedAt.slice(0, 13)}`,
-          orgId: 'default',
-          title: `[${worst.toUpperCase()}] 哨兵体系自诊断`,
-          description: findings.map((f) => f.title).join('；'),
-          priority: worst === 'critical' ? 'P0' : 'P1',
-          targetSystem: 'electron',
-          metadata: { severity: worst, sentinelId: SELF_CHECK_SENTINEL_ID },
-          createdAt: checkedAt,
-        });
-        this.markNotificationSent(notifSignal);
-      } catch (err: unknown) {
-        log.warn({ err: err instanceof Error ? err.message : String(err) }, '[self-check] 桌面通知派发失败 — 非阻断');
-      }
+      const selfCheckSignalId = `self-check-${checkedAt.slice(0, 13)}`; // 小时窗口稳定 id（同工单/通知 id 口径）
+      const decision = this.decideForSignal({
+        sentinelId: SELF_CHECK_SENTINEL_ID,
+        signalId: selfCheckSignalId,
+        severity: worst,
+        entities: [],
+      });
+      await this.executeNotificationDecision({
+        decision,
+        sentinelId: SELF_CHECK_SENTINEL_ID,
+        signalId: selfCheckSignalId,
+        severity: worst,
+        entities: [],
+        title: `[${worst.toUpperCase()}] 哨兵体系自诊断`,
+        description: findings.map((f) => f.title).join('；'),
+        priority: worst === 'critical' ? 'P0' : 'P1',
+        orgId: 'default',
+        dedupKeySignal: notifSignal,
+      });
     }
   }
 
@@ -583,21 +609,29 @@ export class SentinelRunner {
         await this.dispatchSignalsToExperts(criticalOrWarning);
       }
 
-      // ═══ D6: 信号 → 桌面推送通知 (critical/warning 推送到 Electron) ═══
+      // ═══ D6/D716: 信号 → 通知（状态驱动决策: 工单状态 + 实质变化 + 客户契约; 六态映射 spec §5.2-H） ═══
       for (const signal of criticalOrWarning) {
+        // 抖动合并器保留（D-1 裁定 1: 5min 窗口只合并同 checker 短时重复; 去重表/键不动 — D580 8-3 credit）
         if (this.isNotificationDuplicate(signal)) continue;
         const sentinelId = signal.sources[0]?.sentinelId || signal.id;
-        await dispatchNotification({
-          id: `notif-${signal.id}`, // D354: 稳定 id — 同 signal 跨轮同 id (N14 去重键)
-          orgId: signal.entities[0] || 'default',
+        const decision = this.decideForSignal({
+          sentinelId,
+          signalId: signal.id,
+          severity: signal.severity,
+          entities: signal.entities,
+        });
+        await this.executeNotificationDecision({
+          decision,
+          sentinelId,
+          signalId: signal.id,
+          severity: signal.severity,
+          entities: signal.entities,
           title: `[${signal.severity.toUpperCase()}] ${sentinelId}`,
           description: signal.title || signal.sources[0]?.finding?.description || '',
           priority: signal.severity === 'critical' ? 'P0' : 'P1',
-          targetSystem: 'electron',
-          metadata: { severity: signal.severity, sentinelId, signalId: signal.id },
-          createdAt: new Date().toISOString(),
+          orgId: signal.entities[0] || 'default',
+          dedupKeySignal: signal,
         });
-        this.markNotificationSent(signal);
       }
 
       // ═══ D17: P0 主动推送 (critical → Feishu/email/webhook, 含3次重试)
@@ -1072,6 +1106,19 @@ export class SentinelRunner {
   }
 
   /**
+   * listEscalationQueue — 未回应/停滞问题清单（D716 spec §5.2-F）
+   * Mac → Win 的唯一接口面: 供 Win 周报"需要你关注的事"消费（含停滞天数/原因/渠道/格式）。
+   * 契约:
+   *   @input  — opts?: { nowMs?: number; minStalledDays?: number }
+   *   @output — EscalationQueueItem[]（reason: no_response 优先 | stalled; 空集 → []）
+   *   @degraded — 表不存在（start() 未调用）/ db 失败 → 抛出（L3 不吞错, 由 L2 调用方统一降级 — 与 listSentinelTickets 同口径）
+   *   @error  — 同上
+   */
+  listEscalationQueue(opts?: { nowMs?: number; minStalledDays?: number }): EscalationQueueItem[] {
+    return listEscalationQueueRows(this.db as Database.Database, opts);
+  }
+
+  /**
    * transitionTicket — 工单状态机迁移（D580 8-4）
    * 契约:
    *   @input  — ticketId: string; to: 'acknowledged' | 'resolved' | 'dismissed'
@@ -1346,6 +1393,161 @@ export class SentinelRunner {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       log.warn({ err: msg, sentinelId }, '[runner] 去重表写入失败 — 内存兜底（degraded）');
+    }
+  }
+
+  // ═══ D716: 状态驱动通知决策（spec §5.2-D/H — 六态映射; 决策纯函数在 notification-policy.ts） ═══
+
+  /** 取哨兵有效契约（loader degraded → log.warn + 默认值, 不阻断通知 — 铁律 31 传播） */
+  private resolveContractFor(sentinelId: string): ResolvedContract {
+    const contract = loadMonitoringContract();
+    if (contract.degraded) {
+      log.warn({ reasons: contract.degradedReasons, source: contract.source, sentinelId }, '[runner] 监测契约 degraded — 回退默认值（不阻断通知）');
+    }
+    return contractForSentinel(contract, sentinelId);
+  }
+
+  /** 查 signal 最新工单（决策输入; 查询失败 → undefined 按无工单处理, 不吞告警路径） */
+  private lookupTicketBySignalId(signalId: string): { status: 'open' | 'acknowledged' | 'resolved' | 'dismissed'; created_at: string; resolved_at: string | null } | undefined {
+    try {
+      const row = (this.db as {
+        prepare(sql: string): { get(...args: unknown[]): unknown };
+      }).prepare('SELECT status, created_at, resolved_at FROM sentinel_tickets WHERE signal_id = ? ORDER BY created_at DESC LIMIT 1')
+        .get(signalId) as { status: 'open' | 'acknowledged' | 'resolved' | 'dismissed'; created_at: string; resolved_at: string | null } | undefined;
+      return row ?? undefined;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg, signalId }, '[runner] 工单查询失败 — 决策按无工单处理（degraded）');
+      return undefined;
+    }
+  }
+
+  /** 单 signal 决策：契约 + 工单状态 + 通知状态表 → NotifyAction（纯函数调用点, spec §8 接线） */
+  private decideForSignal(input: {
+    sentinelId: string;
+    signalId: string;
+    severity: 'emergency' | 'critical' | 'warning' | 'info';
+    entities: string[];
+  }): NotifyAction {
+    const contract = this.resolveContractFor(input.sentinelId);
+    const ticket = this.lookupTicketBySignalId(input.signalId);
+    const state = readNotificationState(this.db as Database.Database, input.signalId);
+    return decideNotification(
+      { ...input, nowMs: Date.now(), ticket, state: state ?? undefined, jitterWindowMs: this.NOTIFICATION_DEDUP_MS },
+      contract,
+    );
+  }
+
+  /**
+   * executeNotificationDecision — 按决策动作执行派发（notify/remind 多渠道 / front_page 入队 / silent 跳过）
+   * 契约:
+   *   @input  — decision + 信号上下文（标题/描述/优先级/orgId/去重键信号）
+   *   @output — 无; notify/remind → 按契约 channels 逐渠道 dispatchNotification + 抖动合并器落账 + 状态表落账;
+   *             front_page → 幂等落账（不即时推送, 供 listEscalationQueue 消费）
+   *   @degraded — 单渠道派发失败 → log.warn 继续（不阻断其他渠道）; 状态表写失败 → log.warn 不阻断派发（T11）
+   *   @error  — 不抛
+   */
+  private async executeNotificationDecision(params: {
+    decision: NotifyAction;
+    sentinelId: string;
+    signalId: string;
+    severity: 'emergency' | 'critical' | 'warning' | 'info';
+    entities: string[];
+    title: string;
+    description: string;
+    priority: 'P0' | 'P1';
+    orgId: string;
+    dedupKeySignal: { sources: Array<{ sentinelId: string }> };
+  }): Promise<void> {
+    const decision = params.decision;
+    if (decision.action === 'silent') {
+      log.info({ signalId: params.signalId, reason: decision.reason, sentinelId: params.sentinelId }, '[runner] 通知决策 silent（D716 状态驱动 — 不重复打扰）');
+      return;
+    }
+    if (decision.action === 'front_page') {
+      this.recordFrontPageState(params.sentinelId, params.signalId, params.severity, params.entities, decision.stalledDays);
+      return;
+    }
+    // notify / remind → 按契约渠道真实派发（契约 channels 决定派发目标 — T7 接线）
+    for (const channel of decision.channels) {
+      try {
+        await dispatchNotification({
+          id: `notif-${params.signalId}`, // D354: 稳定 id — 同 signal 跨轮同 id (N14 去重键)
+          orgId: params.orgId,
+          title: params.title,
+          description: params.description,
+          priority: params.priority,
+          targetSystem: channel,
+          metadata: {
+            severity: params.severity, sentinelId: params.sentinelId, signalId: params.signalId,
+            action: decision.action, kind: decision.kind,
+          },
+          createdAt: new Date().toISOString(),
+        });
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        log.warn({ err: msg, signalId: params.signalId, channel }, '[runner] 通知派发失败 — 非阻断（单渠道失败不影响其他渠道）');
+      }
+    }
+    this.markNotificationSent(params.dedupKeySignal); // 抖动合并器落账（保留 — D-1 裁定 1）
+    this.recordNotificationState(params, decision); // 通知状态表落账（remind 幂等锚）
+  }
+
+  /** 通知状态表落账（notify/remind 后; 写失败 → warn 不阻断 — 下次决策按首次处理宁可多发） */
+  private recordNotificationState(
+    params: { sentinelId: string; signalId: string; severity: 'emergency' | 'critical' | 'warning' | 'info'; entities: string[] },
+    decision: { action: 'notify' | 'remind' },
+  ): void {
+    try {
+      const now = Date.now();
+      const prev = readNotificationState(this.db as Database.Database, params.signalId);
+      const row: NotificationStateRow = {
+        signal_id: params.signalId,
+        sentinel_id: params.sentinelId,
+        first_notified_ms: prev?.first_notified_ms ?? now,
+        last_notified_ms: now,
+        last_notified_severity: params.severity,
+        entities: JSON.stringify(params.entities),
+        notified_count: (prev?.notified_count ?? 0) + 1,
+        reminded_at_ms: decision.action === 'remind' ? now : (prev?.reminded_at_ms ?? null),
+        front_page_at_ms: prev?.front_page_at_ms ?? null,
+        resolved_at_ms: prev?.resolved_at_ms ?? null,
+      };
+      upsertNotificationState(this.db as Database.Database, row);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg, signalId: params.signalId, table: 'sentinel_notification_state' }, '[runner] 通知状态表写入失败 — 派发不受影响（degraded）');
+    }
+  }
+
+  /** front_page 幂等落账（进周报首页队列 — 不即时推送; 供 listEscalationQueue 消费） */
+  private recordFrontPageState(
+    sentinelId: string,
+    signalId: string,
+    severity: 'emergency' | 'critical' | 'warning' | 'info',
+    entities: string[],
+    stalledDays: number,
+  ): void {
+    try {
+      const now = Date.now();
+      const prev = readNotificationState(this.db as Database.Database, signalId);
+      const row: NotificationStateRow = {
+        signal_id: signalId,
+        sentinel_id: sentinelId,
+        first_notified_ms: prev?.first_notified_ms ?? now,
+        last_notified_ms: prev?.last_notified_ms ?? now,
+        last_notified_severity: prev?.last_notified_severity ?? severity,
+        entities: prev?.entities ?? JSON.stringify(entities),
+        notified_count: prev?.notified_count ?? 0,
+        reminded_at_ms: prev?.reminded_at_ms ?? null,
+        front_page_at_ms: now,
+        resolved_at_ms: prev?.resolved_at_ms ?? null,
+      };
+      upsertNotificationState(this.db as Database.Database, row);
+      log.info({ signalId, stalledDays }, '[runner] 信号进周报首页队列（D716 front_page 幂等落账）');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg, signalId, table: 'sentinel_notification_state' }, '[runner] front_page 落账失败 — degraded（下次决策可能重复入队, 不即时打扰）');
     }
   }
 

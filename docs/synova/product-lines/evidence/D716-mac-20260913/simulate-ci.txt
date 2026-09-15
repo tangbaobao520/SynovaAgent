@@ -1,0 +1,166 @@
+═══════════════════════════════════════════════════════════
+  simulate-ci — push 前 CI 等价模拟 (D521)
+═══════════════════════════════════════════════════════════
+
+[0;36m── 1/2: Iron Laws（CI strict: SYNO_CI=1, SYNO_DIFF_BASE=origin/main）──[0m
+
+═══════════════════════════════════════════════════════════
+  Loop Engineering V4.5.1 — pre-commit (13 组 + 免疫 + plan-integrity)
+═══════════════════════════════════════════════════════════
+
+[0;36m── 组 1/13: 类型安全 + 硬编码数据 ──[0m
+  [0;32m✅ as any / as never / as unknown as 零容忍（新增，铁律 38；存量独立清理）[0m
+  [0;32m✅ from ????: from??????? (D93/D95??)[0m
+
+⚠️  检测到可能的硬编码联合类型:
+++  if (typeof w !== 'number' || !Number.isFinite(w) || typeof c !== 'number' || !Number.isFinite(c)) return null;
+++        if (typeof mo.sentinel_id !== 'string' || mo.sentinel_id === '') {
++++  if (typeof w !== 'number' || !Number.isFinite(w) || typeof c !== 'number' || !Number.isFinite(c)) return null;
++++        if (typeof mo.sentinel_id !== 'string' || mo.sentinel_id === '') {
+++  if (typeof w !== 'number' || !Number.isFinite(w) || typeof c !== 'number' || !Number.isFinite(c)) return null;
+  → 如果这些值是专家/哨兵/工具名，应改为 string + 运行时校验
+  → 参考: ExpertType 已从联合类型改为 string (F1)
+
+⚠️  检测到可能的硬编码数组:
+++const CADENCE_VALUES = ['daily', 'weekly', 'monthly'] as const;
+++const FORMAT_VALUES = ['one_pager', 'short_text', 'full_report'] as const;
+++const OWNER_ROLE_VALUES = ['owner', 'ga', 'department_head', 'liaison'] as const;
+++const ESCALATE_TARGET_VALUES = ['owner', 'department_head', 'liaison'] as const;
+++const TICKET_STATUS_VALUES = ['open', 'acknowledged', 'resolved', 'dismissed'] as const;
+  → 如果这些值代表可扩展的实体(专家/哨兵/工具)，应从配置或目录扫描获取
+
+⚠️  检测到可能的硬编码 Set:
+++const UPDATED_BY_VALUES: ReadonlySet<string> = new Set(['boss', 'ga', 'system']);
+++  return new Set([...listed, 'electron', 'weekly_report']);
++++const UPDATED_BY_VALUES: ReadonlySet<string> = new Set(['boss', 'ga', 'system']);
++++  return new Set([...listed, 'electron', 'weekly_report']);
+++const UPDATED_BY_VALUES: ReadonlySet<string> = new Set(['boss', 'ga', 'system']);
+  → 排除/后台列表应从配置文件读取，不硬编码
+
+═══════════════════════════════════════════════════════════
+  以上为警告——不阻断 commit，但请人工审核是否合理。
+  如果是合法的有限枚举(如severity/category)，请忽略。
+  如果是应可扩展的实体列表(如expert类型)，请修复。
+═══════════════════════════════════════════════════════════
+  [0;32m✅ 硬编码业务数据/类型 (禁止硬编码部门名/可扩展实体列表)[0m
+  [0;32m✅ 旧适配器映射: 全部已标注 @deprecated[0m
+
+[0;36m── 组 2/13: 测试质量 ──[0m
+  [0;32m✅ empty catch 无 log (铁律 24+31)[0m
+  [0;32m✅ 静默吞错扫描 (D313 M5b)[0m
+  [0;32m✅ 新文件配对: impl 须同 commit 有 test[0m
+  [0;32m✅ 桩测试: 新测试需 ≥3 expect()[0m
+  [0;32m✅ 跨模块集成: bridge/context 类需 .integration.test.ts[0m
+  [0;32m✅ 控制塔脚本测试门禁 (U7/CT-40)[0m
+
+[0;36m── 组 3/13: Secrets ──[0m
+
+═══ Secrets 扫描 ═══
+
+── 全工作区扫描 ──
+  [0;32m✅ 工作区无真实凭证[0m
+
+── .claude/ 目录扫描 ──
+  [0;32m✅ .claude/ 目录无凭证[0m
+
+  [0;32m✅ .env 未被暂存[0m
+  [0;32m✅ .gitignore 包含 .env[0m
+  [0;32m✅ 暂存文件无硬编码凭证[0m
+  [0;32m✅ .env 未跟踪（本地密钥库, D370 豁免 — 暂存仍阻断）[0m
+
+  [0;32mSecrets 扫描: 全部通过 ✅[0m
+
+[0;36m── 组 4/13: 接线完整性 ──[0m
+  [0;32m✅ 接线审计: 新 export 必须被引用[0m
+  [0;32m✅ 接线深度: 新 export 必须被调用(非仅 import)[0m
+
+[0;36m── 组 5/13: 架构边界 + 桥接文件 ──[0m
+  [0;32m✅ 架构边界: 禁止跨层引用 (铁律 39)[0m
+  [0;32m✅ 铁律 46: 桥接文件欺诈 + 包级 engine-core + 壳包检测[0m
+
+[0;36m── 组 6/13: Task Brief (6 核心字段) ──[0m
+  [0;32m✅ 主树占用检测 (D537 #2): 主树脏 + 多活跃 session[0m
+  [0;32m✅ Task Brief: 编码变更须有今日 task brief[0m
+  [0;32m✅ Task Brief: 6 核心字段必须填写 (Q0/Q1/Q2/Q3/架构层/Done)[0m
+  [0;32m✅ 骨架 brief 占位符检测（认领 agent 填写后提交，禁提交骨架）[0m
+  [0;32m✅ 时间戳顺序: brief 必须早于代码写入[0m
+  [0;32m✅ Notes 迁移门禁: 无 proposed/ 变更（跳过）[0m
+  [0;32m✅ plan.principles (3 条, Done verify: 5)[0m
+  [0;32m✅ plan.approach = extend[0m
+  [0;32m✅ plan.memory_refs (2 文件, 全部存在)[0m
+  [0;32m✅ brief 模板已清理 (无 <!-- 残留)[0m
+  [0;32m✅ Q2 排除项均含文件路径[0m
+  [0;32m✅ Q2 排除项: 声明不改的文件未在本次提交中出现[0m
+  [0;32m✅ Done verify 格式: 5 条已列出[0m
+  [0;32m✅ Done 可证伪性 (无 checked 项)[0m
+  [0;32m✅ Q0c 跟踪[0m
+  [1;33m⚠️  PRD 对照: Done 标准引用 PRD 章节(可选): 1 处  [可选提示——永不阻断][0m
+     Done 标准未引用 PRD 章节 - 重大 feature 建议标注 secX.Y
+
+[0;36m── 组 7/13: 架构合规 ──[0m
+grep: repetition-operator operand invalid
+  [0;32m✅ 禁止 DiagnosticModule: 新模块须实现 Sentinel 接口[0m
+  [0;32m✅ 专家配置校验[0m
+  [0;32m✅ 门禁故障审计[0m
+  [0;32m✅ 绕过审计[0m
+  [0;32m✅ 数据流: 路由文件须含 API 调用证据[0m
+
+[0;36m── 组 8/13: 文件驱动架构完整性 (V3.9) ──[0m
+  [0;32m✅ 能力验收 CI (       1 测试, 全部通过)[0m
+  [0;32m✅ manifest.json 必填字段 ($schema/name/version/type/entryPoint)[0m
+  [0;32m✅ tags 引用完整性 (所有标签值必须在 tags.json 中存在)[0m
+  [0;32m✅ 硬编码类型回归 (禁止在 src/ 新增本体类型定义)[0m
+  [0;32m✅ extensions/ 目录结构 (新子目录须有 manifest.json)[0m
+  [0;32m✅ pizza-chain 验收测试存在[0m
+  [0;32m✅ Feature Flag 审计 (新增文件驱动路径须有回退 flag)[0m
+[0;36m── 组 9/13: 契约门禁 ──[0m
+  [0;32m✅ 契约门禁: 声明产出须在暂存区[0m
+
+[0;36m── 组 10/13: V3 流水线健康度 ──[0m
+  [0;32m✅ G10: 无 task brief 变更(跳过)[0m
+  [0;32m✅ G11: 无 task brief 变更(跳过)[0m
+
+[0;36m── 组 12/13: Task Scope 一致性 ──[0m
+  [0;32m✅ G12: 所有文件均在 Q2 范围内[0m
+  [0;32m✅ G12d: 无 session 提交生成物 (CI 单点)[0m
+  [0;32m✅ G12b: brief 可解析 (D313 M3)[0m
+
+[0;36m── 组 13/13: 技能同步一致性 ──[0m
+  [0;32m✅ G13: 无技能文件变更(跳过)[0m
+  [0;32m✅ V5 平台敏感命令: 新控制塔脚本对照 PLATFORM-CHECKLIST.md (D520)[0m
+
+═══════════════════════════════════════════════════════════
+  [0;32m✅ 全部 13 组通过[0m
+  [1;33m⚠️  1 项警告 (不阻断)[0m
+═══════════════════════════════════════════════════════════
+
+
+[0;36m── 2/2: 密封 gate 测试（ci.yml CT job 同款清单）──[0m
+  [0;32m✅ tests/control-tower/alloc-task-id-lock.test.sh[0m
+  [0;32m✅ tests/control-tower/alloc-task-id.test.sh[0m
+  [0;32m✅ tests/control-tower/brief-parser-strip.test.sh[0m
+  [0;32m✅ tests/control-tower/check-canary-drift.test.sh[0m
+  [0;32m✅ tests/control-tower/check-gitlinks.test.sh[0m
+  [0;32m✅ tests/control-tower/ci-strict-visible.test.sh[0m
+  [0;32m✅ tests/control-tower/claim-regex-narrow.test.sh[0m
+  [0;32m✅ tests/control-tower/clone-config-init.test.sh[0m
+  [0;32m✅ tests/control-tower/clone-shadow-commit.test.sh[0m
+  [0;32m✅ tests/control-tower/ct-test-gate.test.sh[0m
+  [0;32m✅ tests/control-tower/fastlane-bypass-only.test.sh[0m
+  [0;32m✅ tests/control-tower/fastlane-extended.test.sh[0m
+  [0;32m✅ tests/control-tower/g12-day-window.test.sh[0m
+  [0;32m✅ tests/control-tower/gate-stats.test.sh[0m
+  [0;32m✅ tests/control-tower/incident-loop.test.sh[0m
+  [0;32m✅ tests/control-tower/parallel-main-tree-occupancy.test.sh[0m
+  [0;32m✅ tests/control-tower/platform-checklist.test.sh[0m
+  [0;32m✅ tests/control-tower/post-commit-marker.test.sh[0m
+  [0;32m✅ tests/control-tower/post-commit.test.sh[0m
+  [0;32m✅ tests/control-tower/q2-error-locating.test.sh[0m
+  [0;32m✅ tests/control-tower/skeleton-brief-gate.test.sh[0m
+  [0;32m✅ tests/control-tower/synova-commit.test.sh[0m
+  [0;32m✅ tests/control-tower/synova-submit.test.sh[0m
+  [0;32m✅ tests/control-tower/tag-ancestry.test.sh[0m
+
+[0;32m✅ CI 等价模拟通过 — 可以 push[0m
+exit=0
+2026-09-13 16:27:06 +0800

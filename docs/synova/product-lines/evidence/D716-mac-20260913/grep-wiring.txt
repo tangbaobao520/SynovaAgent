@@ -1,0 +1,77 @@
+=== grep loadMonitoringContract (spec §7 verify) ===
+src/sentinel/sentinel-loader.ts:15:import { loadMonitoringContract, type EffectiveContract } from './monitoring-contract';
+src/sentinel/sentinel-loader.ts:125: *             与 loadMonitoringContract()（D716 契约层）。
+src/sentinel/sentinel-loader.ts:156:    const loadContract = deps?.contractLoader ?? loadMonitoringContract;
+src/sentinel/monitoring-contract.ts:411: * loadMonitoringContract — 监测契约读取 + 校验 + 三层合并（内置默认 > 契约文件）
+src/sentinel/monitoring-contract.ts:424:export function loadMonitoringContract(deps?: LoadMonitoringContractDeps): EffectiveContract {
+src/sentinel/monitoring-contract.ts:473: *   @input  — c: loadMonitoringContract 输出; sentinelId: 哨兵 id（'sentinel-' 前缀自动剥离, 口径同 resolveThresholds）
+src/sentinel/runner.ts:37:import { loadMonitoringContract, contractForSentinel, type ResolvedContract } from './monitoring-contract';
+src/sentinel/runner.ts:1401:    const contract = loadMonitoringContract();
+src/sentinel/notification-policy.ts:15:import { loadMonitoringContract, contractForSentinel } from './monitoring-contract';
+src/sentinel/notification-policy.ts:186: *             contract: ResolvedContract（loadMonitoringContract + contractForSentinel 输出）
+src/sentinel/notification-policy.ts:273:  const contract = loadMonitoringContract(); // mtime 记忆化 — 低开销; 内部自降级不抛
+
+=== grep contractForSentinel ===
+src/sentinel/monitoring-contract.ts:50:/** metrics[] 单条目（原始可选形态; 合并在 contractForSentinel 完成） */
+src/sentinel/monitoring-contract.ts:471: * contractForSentinel — 取某哨兵的有效契约（三层合并终点）
+src/sentinel/monitoring-contract.ts:478:export function contractForSentinel(c: EffectiveContract, sentinelId: string): ResolvedContract {
+src/sentinel/runner.ts:37:import { loadMonitoringContract, contractForSentinel, type ResolvedContract } from './monitoring-contract';
+src/sentinel/runner.ts:1405:    return contractForSentinel(contract, sentinelId);
+src/sentinel/notification-policy.ts:15:import { loadMonitoringContract, contractForSentinel } from './monitoring-contract';
+src/sentinel/notification-policy.ts:186: *             contract: ResolvedContract（loadMonitoringContract + contractForSentinel 输出）
+src/sentinel/notification-policy.ts:278:    const rc = contractForSentinel(contract, row.sentinel_id);
+
+=== grep decideNotification ===
+src/sentinel/runner.ts:42:  decideNotification,
+src/sentinel/runner.ts:1433:    return decideNotification(
+src/sentinel/notification-policy.ts:54:/** decideNotification 输入 */
+src/sentinel/notification-policy.ts:183: * decideNotification — 状态驱动的通知决策（D-1 六态映射, §5.2-H）
+src/sentinel/notification-policy.ts:195:export function decideNotification(input: DecideNotificationInput, contract: ResolvedContract): NotifyAction {
+
+=== grep sentinel_notification_state (DDL + 读写) ===
+src/sentinel/runner.ts:1517:      log.warn({ err: msg, signalId: params.signalId, table: 'sentinel_notification_state' }, '[runner] 通知状态表写入失败 — 派发不受影响（degraded）');
+src/sentinel/runner.ts:1548:      log.warn({ err: msg, signalId, table: 'sentinel_notification_state' }, '[runner] front_page 落账失败 — degraded（下次决策可能重复入队, 不即时打扰）');
+src/sentinel/notification-policy.ts:93:  CREATE TABLE IF NOT EXISTS sentinel_notification_state (
+src/sentinel/notification-policy.ts:135:    const row = db.prepare('SELECT * FROM sentinel_notification_state WHERE signal_id = ?').get(signalId);
+src/sentinel/notification-policy.ts:140:    log.warn({ err: msg, signalId, table: 'sentinel_notification_state' }, '[notification-state] 读取失败 — 按未通知处理（宁可多发, 不吞真告警）');
+src/sentinel/notification-policy.ts:155:    `INSERT OR REPLACE INTO sentinel_notification_state
+src/sentinel/notification-policy.ts:268:  const rows = db.prepare('SELECT * FROM sentinel_notification_state ORDER BY last_notified_ms DESC LIMIT 500').all() as NotificationStateRow[];
+
+=== grep listEscalationQueue ===
+src/sentinel/runner.ts:43:  listEscalationQueue as listEscalationQueueRows,
+src/sentinel/runner.ts:1107:   * listEscalationQueue — 未回应/停滞问题清单（D716 spec §5.2-F）
+src/sentinel/runner.ts:1115:  listEscalationQueue(opts?: { nowMs?: number; minStalledDays?: number }): EscalationQueueItem[] {
+src/sentinel/runner.ts:1116:    return listEscalationQueueRows(this.db as Database.Database, opts);
+src/sentinel/runner.ts:1444:   *             front_page → 幂等落账（不即时推送, 供 listEscalationQueue 消费）
+src/sentinel/runner.ts:1521:  /** front_page 幂等落账（进周报首页队列 — 不即时推送; 供 listEscalationQueue 消费） */
+src/sentinel/notification-policy.ts:255: * listEscalationQueue — 未回应 / 停滞问题清单（供 Win 周报"需要你关注的事"消费）
+src/sentinel/notification-policy.ts:262:export function listEscalationQueue(
+
+=== grep NotificationState (三件套调用) ===
+src/sentinel/runner.ts:39:  createNotificationStateTable,
+src/sentinel/runner.ts:40:  readNotificationState,
+src/sentinel/runner.ts:41:  upsertNotificationState,
+src/sentinel/runner.ts:44:  type NotificationStateRow,
+src/sentinel/runner.ts:321:      createNotificationStateTable(this.db as Database.Database);
+src/sentinel/runner.ts:1432:    const state = readNotificationState(this.db as Database.Database, input.signalId);
+src/sentinel/runner.ts:1491:    this.recordNotificationState(params, decision); // 通知状态表落账（remind 幂等锚）
+src/sentinel/runner.ts:1495:  private recordNotificationState(
+
+=== grep resolveThresholds 生产调用（既有零回归） ===
+src/sentinel/sentinel-loader.ts:119: * resolveThresholds — 哨兵阈值解析（D716 契约 > memStore 覆写 > manifest 基线, 单一解析点）
+src/sentinel/sentinel-loader.ts:135:export async function resolveThresholds(
+src/sentinel/sentinel-loader.ts:287:          const { thresholds } = await resolveThresholds(manifest.name, teamId);
+src/sentinel/monitoring-contract.ts:55:  /** 客户级阈值覆盖（resolveThresholds 优先级最高层） */
+src/sentinel/monitoring-contract.ts:73:  /** 键 = 哨兵 bareId（sentinel- 前缀已剥离, 口径同 resolveThresholds） */
+src/sentinel/monitoring-contract.ts:87:/** deps 注入缝（测试确定性 + 不碰真实 data/; 先例: resolveThresholds memoryStore 缝） */
+src/sentinel/monitoring-contract.ts:147:/** bareId: sentinel- 前缀剥离（口径同 resolveThresholds 调用方 L1209） */
+src/sentinel/monitoring-contract.ts:473: *   @input  — c: loadMonitoringContract 输出; sentinelId: 哨兵 id（'sentinel-' 前缀自动剥离, 口径同 resolveThresholds）
+src/sentinel/runner.ts:1249:        // D577 DS7: 委托 resolveThresholds（manifest 基线 + memStore 覆写合并，单一解析点）。
+src/sentinel/runner.ts:1253:          const { resolveThresholds } = await import('./sentinel-loader');
+src/sentinel/runner.ts:1255:          const { thresholds, overrideMetric } = await resolveThresholds(bareId, orgId);
+
+=== grep listNotificationChannels (契约渠道校验复用) ===
+src/sentinel/monitoring-contract.ts:16:import { listNotificationChannels } from '../notifications/registry';
+src/sentinel/monitoring-contract.ts:95:  /** 合法渠道集（缺省 = listNotificationChannels() ∪ 内置 {'electron','weekly_report'}） */
+src/sentinel/monitoring-contract.ts:159:      listed = listNotificationChannels();
+2026-09-13 15:56:23 +0800

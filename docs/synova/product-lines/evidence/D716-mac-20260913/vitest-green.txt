@@ -1,0 +1,12 @@
+=== D716 vitest 新测试（3 文件 46 用例） 2026-09-13 15:56:17 +0800 ===
+ ✓ tests/sentinel/notification-policy.test.ts (17 tests) 11ms
+ ✓ tests/sentinel/monitoring-contract.test.ts (14 tests) 24ms
+ ✓ tests/sentinel/notification-wiring.test.ts (15 tests) 227ms
+ Test Files  3 passed (3)
+      Tests  46 passed (46)
+   Duration  675ms (transform 643ms, setup 0ms, import 792ms, tests 262ms, environment 0ms)
+
+=== D716 vitest 全目录回归（33 文件, 既有零回归） 2026-09-13 15:56:19 +0800 ===
+ Test Files  32 passed | 1 skipped (33)
+      Tests  260 passed | 1 skipped (261)
+   Duration  3.45s (transform 9.72s, setup 0ms, import 6.81s, tests 10.27s, environment 4ms)
