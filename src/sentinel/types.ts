@@ -287,3 +287,12 @@ import type { orgRepairabilitySentinel as _orCheck } from "../../extensions/sent
 import type { powerRigiditySentinel as _prCheck } from "../../extensions/sentinels/power-rigidity/aggregate";
 import type { talentDensitySentinel as _tdCheck } from "../../extensions/sentinels/talent-density/aggregate";
 import type { computeFlywheelSpeeds as _fwCheck } from "../../src/sentinel/flywheel-aggregator";
+// D752 补登记（欠账 8/45: 曾长期未登记而无人发现——软约束改硬门禁，见 scripts/control-tower/check-sentinel-type-net.sh）
+import type { cashRunwaySentinel as _cashRunwaySentinelCheck } from "../../extensions/sentinels/cash-runway/aggregate";
+import type { competitiveMoatSentinel as _competitiveMoatCheck } from "../../extensions/sentinels/competitive-moat/aggregate";
+import type { competitivePositionSentinel as _competitivePositionCheck } from "../../extensions/sentinels/competitive-position/aggregate";
+import type { keyPersonRiskSentinel as _keyPersonRiskCheck } from "../../extensions/sentinels/key-person-risk/aggregate";
+import type { pathDependencySentinel as _pathDependencyCheck } from "../../extensions/sentinels/path-dependency/computes/detect";
+import type { revenueHealthSentinel as _revenueHealthCheck } from "../../extensions/sentinels/revenue-health/aggregate";
+import type { forecastAccuracySentinel as _forecastAccuracyCheck } from "../../extensions/sentinels/sentinel-forecast-accuracy/aggregate";
+import type { pricingStrategySentinel as _pricingStrategyCheck } from "../../extensions/sentinels/sentinel-pricing-strategy/aggregate";
