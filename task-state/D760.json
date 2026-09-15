@@ -1,0 +1,14 @@
+{
+  "task_id": "D760",
+  "title": "DSH 借鉴卡 B-11：MCP client 双 transport（stdio/StreamableHTTP + 工具表变更通知重载 + scrubbedParentEnv）",
+  "status": "claimed",
+  "spec": "docs/synova/research/DSH迁移施工图-20260820/DSH借鉴指引-v2-20260904.md §4（B 组简卡）+ 附录B-DSH运行时机制深潜-20260904.md",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "note": "卡 B-11（DSH 借鉴指引 v2 §4 B 组）。DSH 锚点: dsh-mcp-client lib/index.js。Synova 落点: src/mcp/**（Synova 作为 MCP client 连企业系统）。产品缺口: MCP 集成 0%。锚点详见指引附录 B。 借鉴=读 DSH 源码自研，不引 @deepseek-ai 包。硬守卫（指引 §6）: G1 零 import（grep -rn \"@deepseek-ai\" src/ packages/ 零结果）· G2 独立 PR + 接线审计（grep 调用方 + 集成测试走真实路由）· G3 挂产品线缺口台账（禁为借鉴而借鉴）· G4 grep 物理证明 + enable/disable 开关 · G5 Stage 3 前零运行时依赖 登记说明: 本卡在计划表（整体推进计划-主线-20260913.md §B-11~B-20）长期只有卡号、无任务号 → 看板不可见；D770 补登记使看板可追踪。",
+  "source": "docs/synova/research/DSH迁移施工图-20260820/DSH借鉴指引-v2-20260904.md §3/§4 + DOC-0114 §6 Stage 2"
+}
