@@ -13,7 +13,33 @@
     "at": "2026-09-13",
     "note": "两份 spec：① spec 1 = 监测契约 schema + loader + 状态驱动决策（验收点 8-6，实施归 Mac DSH 编码线 src/sentinel/）；② spec 2 = 1-5 双引导收敛（验收点 1-5，实施归 Win 线 src/server.ts + app/）。两 spec 均过 dev-doc-gatekeeper（exit 0）。配套编码指令：docs/synova/coordination/编码指令-D716-监测契约-Mac-20260913.md 与 docs/synova/coordination/编码指令-D716-1-5双引导收敛-Win-20260913.md。命名偏差登记：task brief Q2 声明的 spec 文件名（SYNOVA-IMPL-DSH-D1-monitoring-contract.md / SYNOVA-IMPL-DSH-1-5-dual-guide-convergence.md）不含 D# 与日期，与 D384（dev doc 文件名须含 task-state 登记的 D#）冲突——按 D384 与 brief Done 标准（grep 子串 D1-monitoring-contract / 1-5-dual-guide）取折中名（含 D716 + 日期 + 两子串），不属改写集。"
   },
-  "impl": null,
+  "impl": {
+    "commit": "4d3455d3",
+    "by": "claude-code (Win)",
+    "at": "2026-09-14",
+    "branch": "feat/win-d716-dual-guide",
+    "files": [
+      "src/server.ts（修改：setupGuideGoneRouter 410 显式下线 + 挂载早于 /app 静态挂载）",
+      "docs/synova/runbooks/desktop-dev-prod.md（修改：退场机制 + 旧 URL 锚 + 守卫测试名）",
+      "app/setup.html（删除）",
+      "app/js/setup.js（删除）",
+      "app/css/setup.css（删除）",
+      "tests/routes/setup-guide-retired.test.ts（新建，14 用例）",
+      "tests/electron/dual-guide-packaging-guard.test.ts（新建，6 用例）",
+      "docs/synova/product-lines/evidence/D716-win-20260913/1-5-dual-guide-win-evidence.txt（新建，交付证据）"
+    ],
+    "ds_evidence": {
+      "DS1": "evidence [RED] 仓库根形态 curl /app/setup.html = HTTP 200（真实红留痕）→ [GREEN] HTTP/1.1 410 Gone + text/html + 人话 body（唯一入口/安装包/双击/runbook 路径）",
+      "DS2": "evidence [DS2] test ! -e 三件套 = GONE；grep setup.html src/ app/ 仅退场路由字面量 2 行（src/server.ts:108/:113）",
+      "DS3": "evidence [DS3/DS4] tests/routes/setup-guide-retired.test.ts 14 用例绿（T5 挂载顺序源码断言 + T6 文件存在仍 410 优先级证明）；基线 worktree @335eb5bd 上 13 failed | 7 passed 按设计红",
+      "DS4": "evidence [DS3/DS4] tests/electron/dual-guide-packaging-guard.test.ts 6 用例绿；release/ 不在 Win → G-4 走静态断言路径并如实标注「未跑真实包内清单」",
+      "DS5": "evidence [DS5-1] 真实仓库放回 app/setup.html → 1 failed 红 → 移除 → 14 passed 绿；[DS5-2] build-synova.cjs 注入 'app' 条目 → G-4+T12 双红 → git checkout 撤销（零 diff）→ 6 passed 绿",
+      "DS6": "evidence [DS6] electron/main.cjs:129 prod loadFile(renderer/index.html) + WelcomeScreen.tsx:27 import LlmSetupCard + :210 渲染点",
+      "DS7": "evidence [DS7] runbook grep '410|setupGuideGoneRouter' 命中 2 行（:17-18）",
+      "DS8": "tsc --noEmit 报错集与基线 @335eb5bd 恒等（33=33，diff 空）；全量 vitest FAIL 文件集对照零新增（基线独有 = 本卡测试按设计红 + flaky backend-spawn 本分支通过）；提交走 synova-commit（无 --no-verify）"
+    },
+    "note": "spec 2（1-5 双引导收敛）Win 线实施。判绿口径遵守：不以打包态 404 冒充收敛（打包态证据归 Mac）；1-5 状态推进与证据归档归 Mac/CTO（本卡不改 product-lines.yaml）。DS9/DS10 归 Mac/CTO。"
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-13",
