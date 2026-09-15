@@ -1,0 +1,13 @@
+{
+  "task_id": "D745",
+  "title": "（作废）计划表占位号（『补定义 B-11~B-20』）——实测指引 §4+附录 B 已有简卡定义，本号无独立交付物",
+  "status": "rejected",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "note": "作废理由: 计划表占位号（『补定义 B-11~B-20』）——实测指引 §4+附录 B 已有简卡定义，本号无独立交付物。保留本文件是为了消灭『计划表引用但无 task-state』的幻号（D384 同类）。"
+}

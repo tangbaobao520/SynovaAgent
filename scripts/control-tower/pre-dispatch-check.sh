@@ -89,7 +89,7 @@ else
   for pr in $(grep -oE '#[0-9]{2,4}' "$DOC" | tr -d '#' | sort -u); do
     st=$(curl -s -H "Authorization: token $TOKEN" "https://api.github.com/repos/tangbaobao520/SynovaAgent/pulls/$pr" 2>/dev/null \
       | python3 -c "import json,sys;d=json.load(sys.stdin);print(d.get('state'),d.get('merged'))" 2>/dev/null || echo "? ?")  # D520: 平台敏感命令豁免声明（见 PLATFORM-CHECKLIST.md）
-    echo "  PR #$pr → $st（派单若声称"已合"须与此一致）"
+    echo "  PR #${pr} → ${st}（派单若声称「已合」须与此一致）"
   done
 fi
 

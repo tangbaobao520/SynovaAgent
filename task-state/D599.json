@@ -1,0 +1,18 @@
+{
+  "task_id": "D599",
+  "title": "DSH 借鉴卡 B-09+B-10：客户配置包机制蓝本（四层叠加 + dump 可检查）",
+  "status": "impl_done",
+  "spec": "docs/plans/codex/implementation/SYNOVA-IMPL-D599-customer-config-package-20260908.md",
+  "impl": {
+    "commit": "92e0e00f (#431)",
+    "by": "win-line",
+    "at": "2026-09-08",
+    "note": "交付合并事实（git log 实证）；本文件由 D770 补登记"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "synova-cto",
+  "domain": "win",
+  "note": "卡 B-09/B-10（指引 §4）。交付物已并入 main（PR #431），task-state 缺失 → 补登记。注意：本卡是 CFG（0116 S1-6）的机制蓝本，与 D600（CFG 产品化第一命令）同族。"
+}
