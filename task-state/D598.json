@@ -1,0 +1,18 @@
+{
+  "task_id": "D598",
+  "title": "DSH 借鉴卡 B-03：token 四桶计量 + 成本护栏",
+  "status": "impl_done",
+  "spec": "docs/plans/codex/implementation/SYNOVA-IMPL-D598-token-meter-cost-guardrail-20260908.md",
+  "impl": {
+    "commit": "4c74faf0 (#427)",
+    "by": "win-line",
+    "at": "2026-09-08",
+    "note": "交付合并事实（git log 实证）；本文件由 D770 补登记"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "synova-cto",
+  "domain": "win",
+  "note": "卡 B-03（指引 §3）。交付物已并入 main（PR #427），但 task-state 缺失 → 看板不可见（D384 登记债）。本文件为 D770 顺手补登记，状态与合并事实一致；审计裁决待 K3。"
+}
