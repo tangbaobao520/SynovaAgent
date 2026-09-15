@@ -1,0 +1,13 @@
+{
+  "task_id": "D750",
+  "title": "修 inferCategory 与 SIGNAL_TO_EXPERT 分类法错配——10 类中 7 类不可达（活缺陷，P0）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-14",
+  "updated_by": "synova-cto",
+  "note": "src/sentinel/signal-aggregator.ts:191 inferCategory() 只产出 capability/health/risk 3 类；SIGNAL_TO_EXPERT(:53) 定义 10 类 → collaboration/compliance/data-quality/evolution/financial/revenue/strategy 共 7 类不可达。后果（已发生）：revenue/financial/strategy 信号被默认判为 health → 查表得 ['technology-foundation'] → :154 写入 recommendedExperts → runner.ts:734 合并进最终派发列表 → 营收信号派给「技术底座」专家。根因：inferCategory 按哨兵 ID 子串猜类目，SIGNAL_TO_EXPERT 按业务语义分类，两套分类法被直接对接。修法（二选一，不得都留）：① inferCategory 产出表内 10 类 ② 废弃该表，统一走 findSignalRoute。反向验证：构造 revenue 类信号 → 断言目标专家不是 technology-foundation。",
+  "source": "~/山河研究院/99-综合/质询-可插件化是否物理事实.md（终版 2026-09-14，院长质询）"
+}

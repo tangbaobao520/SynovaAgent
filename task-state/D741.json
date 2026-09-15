@@ -1,0 +1,34 @@
+{
+  "task_id": "D741",
+  "title": "真相源状态写入链路定位（product-progress 线状态 + task-state FAIL 看板链路）",
+  "status": "impl_done",
+  "risk": "low",
+  "spec": null,
+  "impl": {
+    "by": "dsh-cto",
+    "at": "2026-09-14",
+    "baseline": "origin/main @ 3f0a43b5",
+    "files": [
+      "docs/synova/coordination/真相源写入链路缺口-20260913.md",
+      "docs/synova/coordination/审计发现台账-DSH-CTO.md",
+      "docs/synova/coordination/board-backlog.json",
+      "task-state/D741.json",
+      ".claude/task-briefs/2026-09-14-D741-真相源写入链路定位.md"
+    ],
+    "evidence": [
+      "线级 status 缺失：product-progress.json 26/26 线无 status 键（Counter({'None': 26})，有 status 键 0），写入端 scripts/product-lines/calc-progress.py:316-330 无 status 字段；契约 docs/synova/product-lines/product-lines.yaml 无线级 status（仅点级）",
+      "消费端三处均不读 line.status：dsh/plugins/synova-dashboards/lib/collect.js:107-115、dsh/plugins/task-board-adapter/scripts/derive-board-sources.py:283-291、scripts/product-lines/gen-progress-page.py:114-122",
+      "5 个 FAIL：D393/D503/D515/D549/D572（grep -l '\"verdict\": \"FAIL\"' task-state/*.json），origin/main 复核 status/verdict 一致",
+      "看板过滤点：dsh/plugins/task-board-adapter/lib/sync.js:40-48 映射表（audited→done；failed 列仅 cancelled/failed 可入）+ :190-198 / :286-290 不读 raw.audit.verdict",
+      "渲染侧物理实证：~/.dsh/task-board/ledger-v2.json 中 D393→done / D503→todo / D515→todo / D549→todo / D572→done，5/5 无一进 failed 列",
+      "旁证①：python3 scripts/control-tower/gen-cto-health.py --dry-run → exit 1，崩溃于 gen-cto-health.py:305（task-state/D600.json 的 spec 为字符串）——只打印不落盘，未改 CTO-HEALTH.md",
+      "旁证②：gen-cto-health.py:326-331 子串判定 PASS 先于 FAIL → 现产物 CTO-HEALTH.md:69 把 D393 的 FAIL 显示为 PASS",
+      "旁证③：gen-task-board.py:341-348/607-613/821 审计列唯一源 = .codex/audit/audit-result.json（代码扫描非任务裁决）；DASHBOARD-CN.md 末次生成 2026-08-28（表内最大 D# 553 vs task-state D725），.github/workflows/ 无任何 job 跑两个看板生成器"
+    ],
+    "notes": "只定位不修：未修改 generate-dashboard.py / pre-commit-check.sh（D735 爆炸半径）及任何文件。口径修正已在报告标注：派单『三条线 None』实测为 26/26 条线（点名三条 = L1 交互层三条）；页面『状态判定异常 3 处』为另一点级问题（4-4/4-5/4-6 非法种子 deferred），勿混淆。"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-14",
+  "updated_by": "dsh-cto"
+}
