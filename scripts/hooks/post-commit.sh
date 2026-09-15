@@ -11,6 +11,23 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 MARKER="$ROOT/.claude/last-precommit-success"
 
+# ═══ D735 Stage 1: bypass 账本双写（旧路径权威 + per-session 并存）═══
+# 契约(铁律 47):
+#   @input  — stdin 一行证据文本
+#   @output — 同一行追加到 ① $ROOT/.claude/bypass.log（旧路径；Stage 1 仍是权威，行为不变）
+#                           ② $ROOT/.sessions/<sid>/bypass.log（新落点；.gitignore:83 已忽略）
+#   @degraded — 新落点写入失败 → stderr 显式点名 + 不阻断（旧路径已登记，证据不丢；铁律 11 不静默）
+_bypass_append() {
+  local line out rc
+  line="$(cat)"
+  printf '%s\n' "$line" >> "$ROOT/.claude/bypass.log"
+  out="$(bash "$ROOT/scripts/control-tower/bypass-ledger.sh" append "$line" 2>&1)"; rc=$?
+  if [ "$rc" -ne 0 ]; then
+    echo "  ⚠️  post-commit: per-session 账本写入失败 (exit=$rc): $out" >&2
+    echo "      旧路径已登记（证据不丢）——新落点未写属 Stage 1 并存降级" >&2
+  fi
+}
+
 # ═══ --no-verify 绕过检测 (D366 head 对账 + D421 CT-29 分场景三判) ═══
 # marker 格式 (install-hooks.sh pre-commit 写): <pre-commit 时 HEAD>|<epoch 秒>
 # 判定 (三判, 消除 CT-29 并发/amend 误报):
@@ -61,7 +78,7 @@ if [ -f "$MARKER" ]; then
           ''|*[!0-9]*) : ;;   # 时间戳缺失/非数字 → 跳过新鲜度检查
           *) DIFF=$((HEAD_CT - MARKER_TS))
              if [ "$DIFF" -gt "$FRESHNESS_SEC" ]; then
-               echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) possible-bypass diff=${DIFF}s" >> "$ROOT/.claude/bypass.log"
+               echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) possible-bypass diff=${DIFF}s" | _bypass_append
              fi ;;
         esac
         # pass — D366: 不 rm, marker 只由 pre-commit 覆盖 (并发 session 互不误删)
@@ -80,7 +97,7 @@ if [ -f "$MARKER" ]; then
           *)
             HASH_NOW=$(git rev-parse HEAD 2>/dev/null || true)
             if [ -n "$HASH_NOW" ]; then
-              echo "$(date -Iseconds) | COMMITTED | pre-commit PASS (hook 层登记) | HASH=$HASH_NOW" >> "$ROOT/.claude/bypass.log"
+              echo "$(date -Iseconds) | COMMITTED | pre-commit PASS (hook 层登记) | HASH=$HASH_NOW" | _bypass_append
               # CT-43（D554）: `-o -m ... -- <path>` 限定登记提交只含 bypass.log——不卷走暂存区遗留文件
               # （D552 实证: D311 guard 阻断后遗留 staged 文件被本提交整体卷入 8b6deaf4，M8 变体；
               #   注意 -m 必须在 -- 之前，否则被当 pathspec）
@@ -93,7 +110,7 @@ if [ -f "$MARKER" ]; then
             ;;
         esac
       else
-        echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) detected-bypass head-mismatch marker=$MARKER_HEAD parent=$PARENT" >> "$ROOT/.claude/bypass.log"
+        echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) detected-bypass head-mismatch marker=$MARKER_HEAD parent=$PARENT" | _bypass_append
       fi
     fi
   else
@@ -104,12 +121,12 @@ if [ -f "$MARKER" ]; then
       ''|*[!0-9]*) : ;;
       *) DIFF=$((NOW - LAST))
          if [ "$DIFF" -gt "$FRESHNESS_SEC" ]; then
-           echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) possible-bypass diff=${DIFF}s" >> "$ROOT/.claude/bypass.log"
+           echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) possible-bypass diff=${DIFF}s" | _bypass_append
          fi ;;
     esac
   fi
 else
-  echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) detected-bypass no-precommit-marker" >> "$ROOT/.claude/bypass.log"
+  echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) detected-bypass no-precommit-marker" | _bypass_append
 fi
 fi
 

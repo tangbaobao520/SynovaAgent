@@ -126,3 +126,7 @@
 | 范围一致 | `git diff --name-only HEAD^` | 与 §3.1 一致 |
 | 无绕过 | `grep -n "no-verify" .claude/bypass.log` | 本次 0 命中 |
 | 推送+CI | `git log origin/main..HEAD --oneline` | 合并后空 + CI task-relevant jobs 绿 |
+
+## 写集豁免（D708 合并级对账，2026-09-13 CTO 回落记录）
+
+- docs/synova/coordination/parked/SYNOVA-IMPL-D704-branch-coverage-gate-20260911.md — 解 D703 在途串行对阻塞的暂移位置（PR #517 移入）；本次回落即删除该位置，同一内容回到 implementation/，无内容变更

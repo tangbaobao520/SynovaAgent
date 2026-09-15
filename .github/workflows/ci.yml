@@ -120,7 +120,17 @@ jobs:
         env:
           NO_COLOR: "1"
         run: |
-          CHANGED=$(git diff --name-only HEAD~1..HEAD 2>/dev/null || git diff --name-only origin/main..HEAD 2>/dev/null || echo "")
+          # D721: 变更集必须以 **与 main 的合并基点** 为基准（三点差）。
+          #   旧判据 HEAD~1..HEAD 在合并提交（刷新分支时 git merge origin/main）上会把「被并入的 main 全部改动」
+          #   算作本 PR 改动 → 存量红被误判为新增红 → PR 永红（#513 实证：head 与 main 内容 git diff 为 0 却判 3 个新增失败）。
+          BASE=$(git merge-base refs/remotes/origin/main HEAD 2>/dev/null || git merge-base origin/main HEAD 2>/dev/null || echo "")
+          if [ -n "$BASE" ]; then
+            CHANGED=$(git diff --name-only "$BASE"..HEAD 2>/dev/null || echo "")
+            echo "变更集基准: merge-base(origin/main, HEAD)=$BASE（三点差：仅本 PR 引入的改动）"
+          else
+            CHANGED=$(git diff --name-only HEAD~1..HEAD 2>/dev/null || git diff --name-only origin/main..HEAD 2>/dev/null || echo "")
+            echo "::warning::origin/main 不可用，回退 HEAD~1..HEAD 判据（合并提交下会误判存量失败为新增）"
+          fi
           OUTPUT=$(npx vitest run --shard=${{ matrix.shard }} --reporter=verbose 2>&1; echo "EXIT:$?")
           echo "$OUTPUT"
           EXIT_CODE=$(echo "$OUTPUT" | grep "EXIT:" | sed 's/.*EXIT://')
@@ -137,9 +147,16 @@ jobs:
               fi
             done <<< "$FAILED_TESTS"
             if [ -z "$NEW_FAILURES" ]; then
-              echo "Pre-existing test failures from unchanged files �� not blocking"
+              # D721: 放行必须可见（铁律 11 静默降级禁止）。存量红是**真红**，不是噪音——
+              #   实测 main 021897a0 的 Vitest 就是靠这条放行的（3 failed / 286 passed 而作业 success）。
+              echo "::warning::Vitest 存量红放行（非本 PR 改动文件引入，main 上同样红）: $(echo "$FAILED_TESTS" | tr '\n' ' ')"
+              echo "PREEXISTING_RED_FILES:"
+              echo "$FAILED_TESTS"
+              echo "→ 这些是真红，已登记 board-backlog: PLAN-main-vitest-preexisting-red（须烧掉，勿长期依赖放行）"
               exit 0
             fi
+            echo "本 PR 引进的测试失败（阻断）:"
+            echo -e "$NEW_FAILURES"
           fi
           exit 1
 
@@ -237,6 +254,7 @@ jobs:
             tests/control-tower/check-gitlinks.test.sh \
             tests/control-tower/grep-oP-regression.test.sh \
             tests/control-tower/merge_writeset_gate.test.sh \
+            tests/control-tower/ci-ratchet-base.test.sh \
             tests/control-tower/verify-doc.test.sh; do
             echo "── $t"
             # D526: 测试失败输出进 ::error 注解——无 token 也能经 annotations 定位（D521 工具1 语义）
