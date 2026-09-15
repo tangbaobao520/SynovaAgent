@@ -1,0 +1,13 @@
+{
+  "task_id": "D774",
+  "title": "证据保鲜流水线：一键重跑全部可自动化验收 + 兑换 + TTL 定时 + 过期预警",
+  "status": "claimed",
+  "spec": "docs/synova/coordination/派单-第五批-产品推进-20260915.md",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "note": "实证: scripts/product-lines/calc-progress.py:67 EVIDENCE_TTL_DAYS=14 —— 证据超 14 天作废；:33 证据日期后该线 modules 有 git 变更亦作废。09-15 实测 164 个验收点里 29 个 stale（含线 1 的 7 个）、34 个 pending_k3、96 个 uncommitted → 产品完成度主因是证据链无流水线。交付物: ① run-all 一键重跑（GS-01~08 + 线1 验收 + 其它可自动化点）② 兑换链路（refresh-all 后 stale↓/pending↑）③ 14 天 TTL 的定时重跑（每 7 天一次，看板定时任务）④ 过期预警清单进仪表盘。验收: 幂等 + refresh 前后数值对照。"
+}
