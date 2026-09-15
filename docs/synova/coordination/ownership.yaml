@@ -148,5 +148,11 @@ rules:
 # **每一个** 分支（post-commit hook 自动登记，D521）；Win 线分支同样带
 # .claude/task-briefs/<自己的 brief>.md（解析为 mac）→ 不豁免则每个 Win PR 都被判跨域。
 # 兜底不适用: 这些路径在 rules 里本就有 owner（供 CODEOWNERS 用），只是不计入单域判定。
-domain_neutral: [".claude/bypass.log", ".claude/gate-hits.log", ".claude/task-briefs/**", "task-state/**", "memory/notes/**", ".codex/**"]
+# D758 增补（2026-09-15 实测假阳性）: docs/synova/product-lines/evidence/** —— 验收证据
+# **跟着干活的那条线走**，目录名自带域（D716-win-* / D716-mac-*）。它在 rules 里归 mac，
+# 只因「产品线工具链是 Mac 的」（TASK-ROUTING L32），而证据不是工具链。
+# 实证: PR #538（Win 的 1-5 双引导）变更 9 文件，其中唯一被判 mac 的就是它自己的验收证据
+# docs/synova/product-lines/evidence/D716-win-20260913/1-5-dual-guide-win-evidence.txt
+# → 被判「变更跨域」卡死；#511/#534 同族。豁免后真跨域（Win 代码 + Mac 工具链）仍拦住。
+domain_neutral: [".claude/bypass.log", ".claude/gate-hits.log", ".claude/task-briefs/**", "task-state/**", "memory/notes/**", ".codex/**", "docs/synova/product-lines/evidence/**"]
 

@@ -1,0 +1,13 @@
+{
+  "task_id": "D758",
+  "title": "证据目录域判定豁免（D734 假阳性修复）",
+  "status": "claimed",
+  "spec": ".claude/task-briefs/2026-09-15-D758-evidence-domain-neutral.md",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "synova-cto",
+  "note": "PR #538（Win 的 1-5 双引导）9 文件里唯一被判 mac 的是它自己的验收证据 docs/synova/product-lines/evidence/D716-win-20260913/1-5-dual-guide-win-evidence.txt → D734 单域判定假阳性卡死 line-1。修法: 该路径加入 ownership.yaml domain_neutral。同族 PR #511/#534。",
+  "domain": "mac"
+}
