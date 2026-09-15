@@ -56,13 +56,27 @@ interface SignalRouteResult {
   auxiliaryExperts?: string[];
 }
 
-/** 根据哨兵 ID 查找路由规则：优先级 sentinel.config.route > 维度默认映射 */
+/**
+ * 根据哨兵 ID 查找路由规则。真实优先级链（D754 事实校准，2026-09-15 实测）:
+ *   1. sentinel.config.route.experts 非空 → 优先。但当前**恒未命中**——manifest.json 无 route
+ *      字段（0/45 声明），loader（sentinel-loader.ts registerLoadedSentinels 的 config 组装）
+ *      也不透传该字段。若要启用声明式路由需先接线 manifest→config，另有其单（Win 侧台账
+ *      D754-Win 半）；本函数保留该分支以兼容手动 register 的哨兵。
+ *   2. 实际生效路径 = layer 默认映射: manifest.layer（loader 透传）→ 下方 LAYER_EXPERTS；
+ *      layer 缺省时 fallback 旧 category；interface 层再按哨兵 ID 子串细化（value-capture/moat/…）。
+ *   3. 层未命中 → ['host'] 兜底。
+ *
+ * 真正的失效模式（D754 校准，取代旧注释「过滤成空路由」的不实描述）:
+ *   本函数**不做**专家合法性校验。失效专家 ID 会流到 dispatchSignalsToExperts，
+ *   在其 VALID_EXPERTS 过滤处被逐个 `continue` **静默跳过（无日志）**——若 targetExperts
+ *   全部失效，该信号零派发且无任何告警（静默失效点；加日志/修复属路由实现变更，另有其单）。
+ */
 function findSignalRoute(sentinelId: string): SignalRouteResult | undefined {
   const registry = getSentinelRegistry();
   const sentinel = registry.get(sentinelId);
   if (!sentinel) return undefined;
 
-  // 1. 哨兵自身配置了 route（无限扩展：加新哨兵时在 config 中声明路由）
+  // 1. config 显式 route（当前 0/45 哨兵走此路径——manifest 无此字段且 loader 不透传，见上 JSDoc）
   const route = (sentinel.config as { route?: { experts?: string[]; crossValidateAt?: string } }).route;
   if (route?.experts?.length) return { experts: route.experts, crossValidateAt: route.crossValidateAt || 'high' };
 
@@ -71,7 +85,9 @@ function findSignalRoute(sentinelId: string): SignalRouteResult | undefined {
   const layer: string = sentinel.config.layer || sentinel.config.category;
 
   // D567/D651: 路由目标专家 ID 全部对齐 expert-registry.yaml v3.0 的 6 位问题域专家
-  // （旧 strategy/org/finance 与 cycle 命名值在注册表中已失效，会被下游 VALID_EXPERTS 过滤成空路由）；
+  // （旧 strategy/org/finance 与 cycle 命名值在注册表中已失效——D754 校准: 实际行为不是
+  //   「过滤成空路由」，而是流到 dispatchSignalsToExperts 的 VALID_EXPERTS 处被逐个
+  //   continue 静默跳过、无日志；全部失效时该信号零派发且无告警，见 findSignalRoute JSDoc）；
   // 层→专家为路由语义映射（非封闭枚举），最终派发仍经注册表校验（VALID_EXPERTS）
   const LAYER_EXPERTS: Record<string, string[]> = {
     environment: ['competitive-strategy'],
