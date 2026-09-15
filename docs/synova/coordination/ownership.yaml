@@ -154,5 +154,6 @@ rules:
 # 实证: PR #538（Win 的 1-5 双引导）变更 9 文件，其中唯一被判 mac 的就是它自己的验收证据
 # docs/synova/product-lines/evidence/D716-win-20260913/1-5-dual-guide-win-evidence.txt
 # → 被判「变更跨域」卡死；#511/#534 同族。豁免后真跨域（Win 代码 + Mac 工具链）仍拦住。
-domain_neutral: [".claude/bypass.log", ".claude/gate-hits.log", ".claude/task-briefs/**", "task-state/**", "memory/notes/**", ".codex/**", "docs/synova/product-lines/evidence/**"]
+# D774: .gitignore 各线共写（D519 mac / D581 win / D665 / D718 历史多域提交）——同 D758 证据目录豁免同型，防单域判定把每个碰它的 PR 误判跨域
+domain_neutral: [".claude/bypass.log", ".claude/gate-hits.log", ".claude/task-briefs/**", "task-state/**", "memory/notes/**", ".codex/**", "docs/synova/product-lines/evidence/**", ".gitignore"]
 

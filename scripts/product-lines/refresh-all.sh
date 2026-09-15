@@ -61,4 +61,7 @@ fi
 # A7 审计复核任务书（线 100% / 每 2 周；无候选 = 正常空跑）
 run "A7 审计任务书" scripts/product-lines/gen-k3-task.py
 
+# A9 证据过期预警（D774：派生「已过期/将过期」清单供仪表盘读取；只预警不改判分）
+run "A9 过期预警" scripts/product-lines/gen-expiry-warnings.py
+
 echo "✓ 全部完成。打开 docs/synova/product-lines/product-progress.html"
