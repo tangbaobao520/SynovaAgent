@@ -22,7 +22,7 @@
                          ↓
                     交叉关联 + 严重度升级 + 专家路由
                          ↓
-7位专家(host/capital-cycle/customer-cycle/talent-cycle/tech/finance-structure/competitive-strategy)
+6位专家(host/fundamental-efficiency/customer-growth/organizational-capability/technology-foundation/competitive-strategy — registry v3.0 问题域口径)
                          ↓
                     ReAct推理 + 交叉验证
                          ↓
@@ -134,7 +134,7 @@ L4 本体    → l4/ (GraphBridge, EntityResolver, CommunityReports)
               evidence/ (Collector, Corroboration, EvidenceStore)
 L5 存储    → store/ (SessionStore, SQLite)
               cron/ (CronScheduler, 持久化作业)
-引擎       → packages/engine-core/ (543文件, 25测量器+本体层, 专家体系已迁出至 expert/ 7位)
+引擎       → packages/engine-core/ (543文件, 25测量器+本体层, 专家体系已迁出至 expert/ 6位)
 安全       → security/ (PIIScrubber, DataBoundary)
 LLM       → providers/ (DeepSeek, OpenAI, Gateway)
 ```
