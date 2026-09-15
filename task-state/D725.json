@@ -1,0 +1,49 @@
+{
+  "task_id": "D725",
+  "title": "D660 数据生命周期五层阶梯 spec",
+  "status": "spec_done",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D725-d660-data-lifecycle-20260913.md",
+    "commit": "90ed1d31",
+    "by": "dev-doc",
+    "at": "2026-09-13",
+    "note": "D660 五层阶梯 spec。核心交付：① 「蒸馏完成」首次权威确权——此前全仓零出处（唯一命中 board-backlog.json:27 的 CTO 转述），本 spec 拿到创始人 2026-09-13 三问逐字裁定（证据已被更高层引用过才算完成 / 默认 permanent + 删除需显式二次确认 / 「1-5 实施交接包」= 五层阶梯实施包交 Win 线）并更正 D717-N4 的「已裁定」失实表述；② 五层阶梯成文（保留分级 / 触发条件 / 降级契约 + 4 条不变量）；③ 双键门契约（单键不再可删证据）；④ 蒸馏判定契约（provenance 表 + fail-closed 判定）；⑤ Win 线实施交接包（§12，形态对齐 D716 spec2）。过 dev-doc-gatekeeper exit 0（C1-C6 全过，C6 提取 10 条）。基线 = origin/main @2bc0f724 + PR #527 @d04d03cb（D717 未合并）。",
+    "baseline": {
+      "main": "2bc0f724",
+      "d717_branch": "feat/mac-d717-product-debt @d04d03cb",
+      "d717_pr": 527,
+      "d717_merged": false,
+      "delivery_branch": "docs/d725-d660-data-lifecycle（stacked on #527）"
+    },
+    "gatekeeper": {
+      "command": "bash scripts/control-tower/dev-doc-gatekeeper.sh docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D725-d660-data-lifecycle-20260913.md",
+      "exit": 0,
+      "detail": "C1 跳过（无 Edge ID）/ C2 21 路径全过 / C3-C5 过 / C6 提取 10 条"
+    },
+    "writeset_check": {
+      "command_spec_time": "SYNO_DEV_DOC=<doc> bash scripts/workflow/check-dev-doc-write-set.sh <doc>",
+      "declared": 10,
+      "drift": 4,
+      "drift_detail": "4 条「新建」文件在 spec 期尚不存在 = 预期内（脚本按其自身设计是实现期门禁）；实施期须跑全量口径并全绿（spec §12 硬约束）"
+    },
+    "handoff": {
+      "target": "Win 线（Claude Code）",
+      "reason": "创始人 2026-09-13 裁定③：本 spec 的五层阶梯（层 1-5）实施交接包交 Win 线执行",
+      "entry": "spec §12"
+    }
+  },
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-13",
+  "updated_by": "dev-doc",
+  "numbering_note": "本任务在 CTO 台账（docs/synova/coordination/问题总账与下一批派单-20260913.md §四）中计划号为 D727；按 D384 取号纪律走 scripts/control-tower/alloc-task-id.sh，实际分配号为 D725（D725-D728 在台账中均为计划号、零登记）。本任务编号、task-state 登记、分支名、spec 文件名一律以 D725 为准。CTO 需据此更新台账 §四 的编号映射。",
+  "findings_registered": [
+    "D4/M3：src/l4/agent-memory-store.ts purgeExpired()（行 323-336）提供活的按时间物理删路径，且零生产调用方 —— 本 spec §5.1 已纳入实施写集（语义收敛 + 接线）。",
+    "D6/M3：src/l3/pkb-lifecycle.ts 的 autoSediment（行 75）/ runPKBLifecycle（行 44）零生产调用方；knowledge-store.expireOutdated 仅被 runPKBLifecycle 调用 → 传递性零接线（PKB 逻辑过期从未执行）—— 建议 CTO 入台账另起任务。",
+    "D3：evidence 层事实空心——evidence 表在生产库 data/synova.db 中不存在；main 上 EvidenceStore 零生产实例化；evidence.expires_at 列零写入方。D717 的清理作业跑在自建空表上。建议另起「证据采集链路接线」任务。",
+    "D5：L1 事件日志（sentinel_events / session_events）零归档机制——「归档不删」规则无物理对应物。本 spec 已把「L1/L3 归档导出管道」登记为显式 defer（spec §10 DS8）。",
+    "D4 补充：agent_memory 无 superseded_by 列，版本链未持久化（D240 status 治理与 ga-calibration 反向索引现算）。建议另起「企业事实版本链持久化」任务。",
+    "W2（M2 防再犯）：D717 交付报告写「创始人 2026-09-10 已裁定」，实为「提出」——本 spec §1 已更正并把创始人原始发言的证据等级（转述/一手）显式标注。"
+  ]
+}

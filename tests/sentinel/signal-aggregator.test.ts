@@ -43,10 +43,13 @@ describe('aggregateSignals', () => {
     expect(r.stats.totalFindings).toBe(0);
   });
 
-  it('Given risk 类别哨兵 → 推荐竞争战略 + 资金效率专家', () => {
+  it('Given key-person-risk 哨兵 → 路由到其 manifest 权威 expert（D750 更正）', () => {
     const r = aggregateSignals([makeResult('sentinel-key-person-risk', [{ severity: 'critical', title: '关键人: 张三' }])]);
-    // D651: risk → 竞争战略 + 资金效率（旧 strategic/finance 为 D282 前死名）
-    expect(r.signals[0].recommendedExperts).toContain('competitive-strategy');
-    expect(r.signals[0].recommendedExperts).toContain('fundamental-efficiency');
+    // D750: 旧期望（competitive-strategy + fundamental-efficiency）来自 inferCategory 的**子串猜测**
+    //   （sentinelId 含 'risk' → 类目 'risk' → SIGNAL_TO_EXPERT['risk']）——那正是质询 §3.4 的活缺陷：
+    //   按 ID 猜类目 vs 按业务语义分类，两套分类法硬对接，致 10 类中 7 类不可达。
+    //   现以 manifest.expert 为权威（extensions/sentinels/key-person-risk/manifest.json）。
+    expect(r.signals[0].recommendedExperts).toContain('organizational-capability');
+    expect(r.signals[0].recommendedExperts).not.toContain('technology-foundation');
   });
 });

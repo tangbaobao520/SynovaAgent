@@ -1,0 +1,28 @@
+{
+  "task_id": "D716",
+  "title": "devdoc-monitoring-contract-and-dual-guide",
+  "status": "spec_done",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D716-D1-monitoring-contract-20260913.md",
+    "paths": [
+      "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D716-D1-monitoring-contract-20260913.md",
+      "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D716-1-5-dual-guide-convergence-20260913.md"
+    ],
+    "commit": "e99bafe426b29936411011ade4355e3b449fa8ec",
+    "by": "dev-doc",
+    "at": "2026-09-13",
+    "note": "两份 spec：① spec 1 = 监测契约 schema + loader + 状态驱动决策（验收点 8-6，实施归 Mac DSH 编码线 src/sentinel/）；② spec 2 = 1-5 双引导收敛（验收点 1-5，实施归 Win 线 src/server.ts + app/）。两 spec 均过 dev-doc-gatekeeper（exit 0）。配套编码指令：docs/synova/coordination/编码指令-D716-监测契约-Mac-20260913.md 与 docs/synova/coordination/编码指令-D716-1-5双引导收敛-Win-20260913.md。命名偏差登记：task brief Q2 声明的 spec 文件名（SYNOVA-IMPL-DSH-D1-monitoring-contract.md / SYNOVA-IMPL-DSH-1-5-dual-guide-convergence.md）不含 D# 与日期，与 D384（dev doc 文件名须含 task-state 登记的 D#）冲突——按 D384 与 brief Done 标准（grep 子串 D1-monitoring-contract / 1-5-dual-guide）取折中名（含 D716 + 日期 + 两子串），不属改写集。"
+  },
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-13",
+  "updated_by": "dev-doc",
+  "findings_registered": [
+    "src/sentinel/runner.ts L212 构造 EscalationEngine 零 rules + L630 恒传 firstIgnoredAt=null → 升级链双重死（机制在、永不触发）→ 建议 CTO 入台账另起任务",
+    "src/server.ts L177 周报推送依赖 FEISHU_WEBHOOK_URL，缺失时静默 return（无 log，违反铁律 11）；L186-196 actions 源恒空 → 周报『正在执行的方案进展』恒空（Win 域，登记）",
+    "src/server.ts L301-302 `/` 与 `/login` 恒重定向到 /app/*.html；打包态下游 404（悬挂重定向，spec 2 §4.4-C 登记）",
+    "electron/main.cjs L140 dev 回退加载 /app/login.html（Mac 域另起任务；spec 2 §4.4-D 登记）",
+    "docs/synova/product-lines/evidence/D712-win-20260913/ 目录在 main 不存在（git ls-files 零命中），与派单『D712 证据双侧齐』表述不一致 → 供 D715 K3 审计核对"
+  ]
+}

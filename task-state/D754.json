@@ -1,0 +1,13 @@
+{
+  "task_id": "D754",
+  "title": "声明/注释漂移——哨兵 route 声明缺失 + runner 注释描述的失效模式与实际不符（P2）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-14",
+  "updated_by": "synova-cto",
+  "note": "① 45/45 哨兵 manifest 声明了 expert 与 layer，**0/45 声明 route**；而 runner.ts:74-78 注释原文「无限扩展：加新哨兵时在 config 中声明路由」→ 与实测不符（实际全走 layer 默认映射）。② runner.ts:77 注释称下游 VALID_EXPERTS 会把失效路由过滤成空——实测不成立（那是另一个机制）→ 注释描述的失效模式与实际发生的不同（M7 文档-实现漂移）。修法：要么补齐声明（route 显式化），要么改注释为事实；两者都要有断言防漂移。",
+  "source": "~/山河研究院/99-综合/质询-可插件化是否物理事实.md（终版 2026-09-14，院长质询）"
+}

@@ -1,0 +1,22 @@
+{
+  "task_id": "D715",
+  "title": "k3-audit-ctl-slice-and-line1",
+  "status": "audit_done",
+  "spec": null,
+  "impl": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-09-13-D715.md",
+    "verdict": "DONE",
+    "blockers": [],
+    "findings": [
+      "切片1 四任务 PASS; 线1 状态裁定见报告 §四（1-4 D714 后不可自动转绿, 待新产物实测落盘）",
+      "新发现 P1×4: evidence-writer 双机产证同名撞车(merge-tree 4×add/add) / 派单前置失实(#511 open+dirty 未合) / calc-progress machine 段字典序决胜(:213-216) / D714 修复后证据不在 git",
+      "P2×7 详见报告 §五; K3审计清单-20260822 已过期需 CTO 更新"
+    ],
+    "by": "k3-audit (D715)",
+    "at": "2026-09-13"
+  },
+  "fix_task_id": null,
+  "updated_at": "2026-09-13",
+  "updated_by": "k3-audit"
+}

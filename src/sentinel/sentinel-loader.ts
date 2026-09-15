@@ -45,7 +45,14 @@ export interface LoadedSentinel {
   dir: string;
 }
 
-const SENTINELS_DIR = join(process.cwd(), 'extensions', 'sentinels');
+/**
+ * 哨兵扫描根目录（D751 注入缝）: 测试可用 SENTINELS_FIXTURE_DIR 指向夹具根
+ * （目录结构同 extensions/sentinels），让「新增哨兵生效」断言跑在真实扫描管线上；
+ * 生产路径（未设 env）不变 = extensions/sentinels。惰性求值，env 后设即生效。
+ */
+function sentinelsDir(): string {
+  return process.env.SENTINELS_FIXTURE_DIR || join(process.cwd(), 'extensions', 'sentinels');
+}
 
 // ═══ Cache ═══
 let cache: LoadedSentinel[] | null = null;
@@ -61,18 +68,18 @@ export function loadSentinels(): { sentinels: LoadedSentinel[]; degraded: boolea
   const sentinels: LoadedSentinel[] = [];
 
   try {
-    if (!existsSync(SENTINELS_DIR)) {
-      errors.push(`哨兵目录不存在: ${SENTINELS_DIR}`);
+    if (!existsSync(sentinelsDir())) {
+      errors.push(`哨兵目录不存在: ${sentinelsDir()}`);
       return { sentinels: [], degraded: true, errors };
     }
 
-    const entries = readdirSync(SENTINELS_DIR, { withFileTypes: true });
+    const entries = readdirSync(sentinelsDir(), { withFileTypes: true });
     for (const entry of entries) {
       if (!entry.isDirectory()) continue;
       if (entry.name === 'shared') continue; // 工具库，不是哨兵
       if (entry.name.startsWith('_')) continue; // 模板目录
 
-      const manifestPath = join(SENTINELS_DIR, entry.name, 'manifest.json');
+      const manifestPath = join(sentinelsDir(), entry.name, 'manifest.json');
       if (!existsSync(manifestPath)) {
         errors.push(`哨兵 ${entry.name} 缺少 manifest.json`);
         continue;
@@ -80,7 +87,7 @@ export function loadSentinels(): { sentinels: LoadedSentinel[]; degraded: boolea
 
       try {
         const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8')) as SentinelManifest;
-        sentinels.push({ manifest, dir: join(SENTINELS_DIR, entry.name) });
+        sentinels.push({ manifest, dir: join(sentinelsDir(), entry.name) });
       } catch (err: any) {
         log.warn({ err: err instanceof Error ? err.message : String(err) }, "JSON 解析失败");
         errors.push(`哨兵 ${entry.name} manifest 解析失败: ${err.message}`);

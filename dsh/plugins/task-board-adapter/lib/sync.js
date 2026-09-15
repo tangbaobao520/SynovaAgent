@@ -161,7 +161,22 @@ export function buildPrompt(id) {
  * @param {{ mapping?: Record<string, string> }} [opts]
  * @returns {string} 看板列。
  */
+// D748（看板真话）: audit.verdict 是**独立维度** —— audited + FAIL ≠ done。
+//   背景: 本适配器此前只认 status（audited→done），5 个 FAIL 裁决任务在看板显示为「已完成」
+//   （实测 main 上 grep -c verdict = 0；线上账本 failed/FAIL 出现 0 次）。失败必须可见。
+//   规则: FAIL / NOT-AUDITABLE → failed；PASS / CONDITIONAL PASS → 交回 status 映射（不覆盖）。
+const VERDICT_FAIL_PATTERNS = Object.freeze(["FAIL", "NOT-AUDITABLE", "NOT_AUDITABLE"]);
+
+export function verdictBoardStatus(raw) {
+  const rawVerdict = raw?.audit?.verdict;
+  if (typeof rawVerdict !== "string" || rawVerdict.trim() === "") return null;
+  const v = rawVerdict.toUpperCase().replace(/_/g, "-");
+  return VERDICT_FAIL_PATTERNS.some((pat) => v.includes(pat)) ? "failed" : null;
+}
+
 export function resolveBoardStatus(synStatus, raw, opts = {}) {
+  const verdictStatus = verdictBoardStatus(raw);
+  if (verdictStatus) return verdictStatus;
   const mapping = opts.mapping ?? DEFAULT_STATUS_MAPPING;
   const status = mapping[synStatus] ?? FALLBACK_STATUS;
   if (status === "todo" && ACTIVITY_UPGRADE_STATUSES.includes(synStatus)) {
