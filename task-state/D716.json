@@ -41,5 +41,13 @@
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-13",
-  "updated_by": "mac-coding-synova-dsh"
+  "updated_by": "mac-coding-synova-dsh",
+  "findings_registered": [
+    "src/sentinel/runner.ts L212 构造 EscalationEngine 零 rules + L630 恒传 firstIgnoredAt=null → 升级链双重死（机制在、永不触发）→ 建议 CTO 入台账另起任务",
+    "src/server.ts L177 周报推送依赖 FEISHU_WEBHOOK_URL，缺失时静默 return（无 log，违反铁律 11）；L186-196 actions 源恒空 → 周报『正在执行的方案进展』恒空（Win 域，登记）",
+    "src/server.ts L301-302 `/` 与 `/login` 恒重定向到 /app/*.html；打包态下游 404（悬挂重定向，spec 2 §4.4-C 登记）",
+    "electron/main.cjs L140 dev 回退加载 /app/login.html（Mac 域另起任务；spec 2 §4.4-D 登记）",
+    "docs/synova/product-lines/evidence/D712-win-20260913/ 目录在 main 不存在（git ls-files 零命中），与派单『D712 证据双侧齐』表述不一致 → 供 D715 K3 审计核对"
+  ],
+  "merge_note": "D758 清积压：同任务两版 task-state 合并（分支优先，main 补齐缺失键 ['findings_registered']）"
 }

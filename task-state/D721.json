@@ -1,0 +1,29 @@
+{
+  "task_id": "D721",
+  "title": "CI 存量失败棘轮：变更集基准改 merge-base 三点差 + 放行可见化",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "by": "synova-cto",
+    "at": "2026-09-13",
+    "write_set": [
+      ".github/workflows/ci.yml — CHANGED 基准改 merge-base(refs/remotes/origin/main,HEAD)..HEAD；放行分支补 ::warning:: + 文件名清单；新测试入白名单",
+      "tests/control-tower/ci-ratchet-base.test.sh — 新增 12 断言密封测试（沙箱复现合并提交误判 + 新判据正确性 + 接线）",
+      "docs/synova/coordination/board-backlog.json — 登记 PLAN-main-vitest-preexisting-red / PLAN-graphbridge-wiring-red",
+      "memory/notes/implemented/2026-09-13-ci-vitest-ratchet-merge-base-fix.md — 决策沉淀（铁律 49）",
+      ".claude/task-briefs/2026-09-13-D721-*.md、task-state/D721.json — 本单"
+    ],
+    "evidence": {
+      "F2_实证": "#513 head bf6ac999 vs 5aae38fc git diff = 0 文件，却判 3 个新增失败；重跑 run 34741372885 attempt=2 复现",
+      "F1_实证": "main 021897a0 Vitest(2/2) 日志: Test Files 3 failed | 286 passed，末尾 \"Pre-existing test failures from unchanged files — not blocking\"，作业 success",
+      "测试": "bash tests/control-tower/ci-ratchet-base.test.sh → 12 通过 0 失败",
+      "YAML": "node js-yaml 解析 ok（9 jobs）"
+    },
+    "red_lines": "scripts/audit/ 零触碰；未动棘轮阈值/通过标准。"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-13",
+  "updated_by": "synova-cto",
+  "note": "触发=#513 永红复盘。修的是判据正确性 + 放行可见性，不改通过阈值（取消棘轮会让 main 立刻全红压垮编码线，V4.5.1 教训）。三个真红本身另行处理（react-markdown → D717 在途）。"
+}

@@ -11,6 +11,15 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V5.2.8 (2026-09-13) — D703 dev-doc 证据命令回放机制（verify-doc.sh + CI Replay 步骤 + canary 清单追加）（PATCH）
+
+- **① 新机制**: `scripts/ci/verify-doc.sh` —— 通用回放器，提取 dev doc §6/§8 的 DS 证据命令（grep/git/npx vitest/npx tsc 白名单；含 `; & $ < > 反引号` 的命令拒绝执行），逐条在干净工作树回放，任一失败 exit 1；`scripts/ci/verify-d703.sh` 为本卡自证脚本（对本批 D702/D703/D704 三份 spec 逐条回放，不可机器化项显式 SKIP + 理由）。
+- **② CI 接线**: `.github/workflows/ci.yml` 在非 docs-only 路径新增 Replay 步骤（按 changed dev-doc 匹配 `verify-dXXX.sh`，缺省 skip + 警告）；密封 canary 清单追加 `tests/control-tower/verify-doc.test.sh`（双平台矩阵）。
+- **③ 模板机器可查项**: `.claude/skills/dev-doc-delivery/template/编码指令模板.md` 与 `.dsh/` 镜像 §四 复核清单追加「每条 verify/DS 证据命令已在本分支 CI 实跑过（看 job 日志，非自述）」（组 13 双目录逐字同步）。
+- **验证**: 密封测试双平台绿；CI Replay 步骤 exit 0（D702 段 DS 在 CI 真跑）；`npx tsc --noEmit` 报错集与基线逐条恒等（33=33）。
+- **派生登记（不属本 PATCH 范围）**: ① 回放输出仅在失败时 `cat`，绿轮不进 CI 日志 → 可观测性缺口（一张主旨为「证据可复核」的卡，其证据在 CI 侧不可见），建议成功也输出汇总行；② `verify-parallel --ci-pr` 对「在途串行对」无逃生舱——本卡被**未开工**的分支覆盖卡 spec 阻塞（同一 `.github/workflows/ci.yml`，无关闭信号 → fail-closed），暂以 spec 移出比对集解阻，另立卡评估「串行对声明」机制。
+- **作者**: win-cto（CTO 代实现方补 bump——spec §3.1 写集遗漏 VERSION.md，实现方严格守写集故未 bump）
+
 ## V5.2.7 (2026-08-29) — 组 1 类型安全模式扩 as never / as unknown as（CT-46，K3 GA 线闭环批发现）（PATCH）
 
 - **① 盲区修复**: 组 1 原只匹配 `as any\b` 字面量——`getDatabase() as never`（src/mcp/index.ts L236，K3 审计实证）与 `as unknown as` 双断言链同属类型信任崩溃却全部逃逸。模式扩为 `as (any|never)\b|as unknown as`（仅拦新增行，存量独立清理惯例不变）。
