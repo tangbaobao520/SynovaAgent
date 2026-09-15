@@ -23,6 +23,7 @@ src/agent/sentinel-health-service.ts     @tangbaobao520
 scripts/control-tower/**                 @tangbaobao520
 scripts/workflow/**                      @tangbaobao520
 scripts/hooks/**                         @tangbaobao520
+scripts/doc-system/**                    @tangbaobao520
 scripts/pre-commit-check.sh              @tangbaobao520
 scripts/pre-push-check.sh                @tangbaobao520
 scripts/install-hooks.sh                 @tangbaobao520

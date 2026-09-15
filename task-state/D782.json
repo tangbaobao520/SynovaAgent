@@ -1,0 +1,12 @@
+{
+  "task_id": "D782",
+  "title": "机制批：18 份真相源文档接机器防线（check-doc-truth + doc-registry-gate 入 pre-commit + 唯一 runner + system-registry 规格）",
+  "status": "impl_in_progress",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-16",
+  "updated_by": "synova-cto",
+  "note": "四批推进: PR-0 ownership 增补（doc-system 显式归 mac + 4 导航文档 neutral）→ PR-1 D1/D2 接线+CI canary（W1/W2 9/0）→ PR-2 探针+DRIFT-LEDGER 机器生成+BSD 修复 → PR-3 BOM 尾批 → PR-4 system-registry I1/I2/I3 校验器。依据: K3 2026-09-14 §7.2 收割 + §10 规格。"
+}
