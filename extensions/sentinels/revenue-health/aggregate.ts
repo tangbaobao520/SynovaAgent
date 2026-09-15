@@ -1,7 +1,7 @@
 /** revenue-health aggregate — 收入健康哨兵。综合N个指标→1条Finding。V4.4.2 */
-import type { GraphStoreReader, SentinelManifest } from '../../../src/sentinel/sentinel-loader';
+import type { SentinelManifest } from '../../../src/sentinel/sentinel-loader';
 import type { SentinelFinding } from '../../../src/sentinel/types';
-import type { GraphTraversal } from '../../../src/l4/graph-traversal';
+import type { GraphStoreReader, GraphTraversal } from '../../../src/l4/graph-traversal';
 import { createLogger } from '@synova/logger';
 import { computeRevenueGrowth } from './computes/compute-revenue-growth';
 
@@ -53,7 +53,7 @@ export const revenueHealthSentinel = {
         if (cr5 >= t.customer_concentration.critical) {
           findings.push({ id: 'rev_conc_critical', severity: 'critical', title: '客户集中度过高', description: `CR5估算${(cr5 * 100).toFixed(0)}%，超出critical阈值。`, evidence: [`客户数: ${clientCount}`, `收入来源: ${revenueNodes.length}`], suggestion: '拓展客户基础，降低单客户依赖。', detectedAt: new Date().toISOString() });
         } else if (cr5 >= t.customer_concentration.warning) {
-          findings.push({ id: 'rev_conc_warning', severity: 'warning', title: '客户集中度偏高', description: `CR5估算${(cr5 * 100).toFixed(0)}%，超出warning阈值。`, detectedAt: new Date().toISOString() });
+          findings.push({ id: 'rev_conc_warning', severity: 'warning', title: '客户集中度偏高', description: `CR5估算${(cr5 * 100).toFixed(0)}%，超出warning阈值。`, evidence: [`客户数: ${clientCount}`, `收入来源: ${revenueNodes.length}`], suggestion: '建立第二增长客户群，降低单客户收入占比。', detectedAt: new Date().toISOString() });
         }
         // 收入增长率 — P1-1 (K3 20260813): degraded 短路改发可见 warning finding。
         // 此前 !degraded 静默跳过 → 降级不可见 = 静默降级（铁律 31）复发，
@@ -63,7 +63,7 @@ export const revenueHealthSentinel = {
         } else if (growthResult.value <= t.revenue_growth.critical) {
           findings.push({ id: 'rev_growth_critical', severity: 'critical', title: '收入增长停滞', description: `收入增长率${(growthResult.value * 100).toFixed(1)}%，低于critical阈值。`, evidence: [`当期: ${growthResult.totalRevenue}`, `上期: ${growthResult.previousRevenue}`], suggestion: '审查市场策略，寻找新增长点。', detectedAt: new Date().toISOString() });
         } else if (growthResult.value <= t.revenue_growth.warning) {
-          findings.push({ id: 'rev_growth_warning', severity: 'warning', title: '收入增长放缓', description: `收入增长率${(growthResult.value * 100).toFixed(1)}%，低于warning阈值。`, detectedAt: new Date().toISOString() });
+          findings.push({ id: 'rev_growth_warning', severity: 'warning', title: '收入增长放缓', description: `收入增长率${(growthResult.value * 100).toFixed(1)}%，低于warning阈值。`, evidence: [`当期: ${growthResult.totalRevenue}`, `上期: ${growthResult.previousRevenue}`], suggestion: '复盘获客渠道与续约情况，锁定增长放缓的具体环节。', detectedAt: new Date().toISOString() });
         }
       }
       if (findings.length) log.info({ teamId, count: findings.length }, '收入健康检查完成');

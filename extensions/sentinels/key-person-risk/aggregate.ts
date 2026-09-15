@@ -60,6 +60,8 @@ export const keyPersonRiskSentinel = {
                   severity: 'warning' as const,
                   title: '决策偏集中',
                   description: `决策集中度 ${(ci * 100).toFixed(0)}% > 60%，建议关注关键人依赖。`,
+                  evidence: [`concentration_index: ${ci}`, `reversal_cost: ${edge.props.reversal_cost || 'N/A'}`],
+                  suggestion: '逐步下放决策权，培养第二决策人，降低关键人依赖。',
                   detectedAt: new Date().toISOString(),
                 });
               }
