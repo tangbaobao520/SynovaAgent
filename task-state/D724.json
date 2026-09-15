@@ -1,0 +1,26 @@
+{
+  "task_id": "D724",
+  "title": "问题总账 + 本批验收 + 下一批派单（创始人指令批）",
+  "status": "impl_done",
+  "spec": null,
+  "impl": {
+    "by": "synova-cto",
+    "at": "2026-09-13",
+    "write_set": [
+      "docs/synova/coordination/问题总账与下一批派单-20260913.md — P1×14/P2×7 三类来源统一记账 + 四项验收 + 下批 5 条",
+      ".claude/task-briefs/2026-09-13-D724-*.md、task-state/D724.json"
+    ],
+    "evidence": {
+      "K3 P1 复核": "merge-tree 4 冲突亲自复现 / #511 state=open / calc-progress:83+:213 / main.cjs 有码无证",
+      "D716": "两份 spec 551+434 行，结构含 Authority/Q0-Q4/实测现状/Test Requirements/Wiring；1-5 裁定 410 退场",
+      "D717": "package.json:88 在位 / evidence-retention.ts 245 行 :184 调用 / bootstrap.ts:1189-1224 / 21 用例 51 expect / CI 12-12 零失败",
+      "D718": "#518+#522 已入 main，样本 #523/#524 在途"
+    },
+    "red_lines": "scripts/audit/ 零触碰；未写审计标准；未改在途 PR 持有的文件"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-13",
+  "updated_by": "synova-cto",
+  "note": "创始人指令：记下这一系列问题 + 验收两个已完成任务 + 一起安排下一批。账本含四段创始人复制块。"
+}
