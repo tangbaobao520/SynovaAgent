@@ -110,3 +110,15 @@ D752 的编译期类型网（`src/sentinel/types.ts` 静态 import type 登记�
 - [ ] 结果可见: verify: `grep -c "evidence:" extensions/sentinels/revenue-health/aggregate.ts` → ≥4（两条 warning finding 已带证据）
 
 ## 写集（机器生成，禁手改）
+
+| 文件 | 类型 |
+|---|---|
+| .claude/task-briefs/2026-09-15-D757-sentinel-type-debt.md | task |
+| extensions/sentinels/cash-runway/aggregate.ts | task |
+| extensions/sentinels/cash-runway/computes/compute-cash-runway-months.ts | task |
+| extensions/sentinels/cash-runway/computes/compute-receivable-overdue-rate.ts | task |
+| extensions/sentinels/key-person-risk/aggregate.ts | task |
+| extensions/sentinels/revenue-health/aggregate.ts | task |
+| extensions/sentinels/revenue-health/computes/compute-revenue-growth.ts | task |
+| task-state/D757.json | task |
+
