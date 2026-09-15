@@ -1,9 +1,24 @@
 {
   "task_id": "D759",
   "title": "回退 nodemailer 10 依赖升级（主树 tsc 变红）",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": ".claude/task-briefs/2026-09-15-D759-revert-nodemailer10.md",
-  "impl": null,
+  "impl": {
+    "commit": "3fef816f（#564）",
+    "branch": "fix/d759-revert-nodemailer10",
+    "by": "synova-cto",
+    "at": "2026-09-15",
+    "files": [
+      "package.json",
+      "package-lock.json"
+    ],
+    "evidence": [
+      "事故: 合入 #549（nodemailer 9.1.1→10.0.3）后主树 tsc 红 src/services/email-service.ts:35 TS2503（v10 不再提供 nodemailer 命名空间类型）；CI job 104280890721 / 104283996509",
+      "根因: #549 的 CI 绿是在旧基线上跑的，三连合后的组合态才暴露（PR 的绿 ≠ 合并后的绿）",
+      "修法: git revert 06b6584e → package.json ^9.1.1 + 锁文件 9.1.1",
+      "验证: npx tsc --noEmit → TS2503 归零；主树恢复绿"
+    ]
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-15",
