@@ -1,0 +1,4 @@
+C:\Users\ADMINI~1\AppData\Local\Temp\d712\app-v1\SynovaAgent.exe
+md5=612DBADC4BEEEC99639051D846A6D6F8
+size=188748800
+version=0.1.0

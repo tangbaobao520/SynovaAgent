@@ -1,0 +1,42 @@
+
+Id               : 13356
+ProcessName      : SynovaAgent
+SessionId        : 1
+MainWindowHandle : 0
+MainWindowTitle  : 
+StartTime        : 2026/9/13 9:37:09
+Path             : D:\codex\.codex\visualizations\2026\09\12\01a09670-a8aa-7122-ab68-73423cab5ee8\d712\app-v1\SynovaAgent.exe
+
+Id               : 16540
+ProcessName      : SynovaAgent
+SessionId        : 1
+MainWindowHandle : 0
+MainWindowTitle  : 
+StartTime        : 2026/9/13 9:37:20
+Path             : D:\codex\.codex\visualizations\2026\09\12\01a09670-a8aa-7122-ab68-73423cab5ee8\d712\app-v1\SynovaAgent.exe
+
+Id               : 17740
+ProcessName      : SynovaAgent
+SessionId        : 1
+MainWindowHandle : 0
+MainWindowTitle  : 
+StartTime        : 2026/9/13 9:37:09
+Path             : D:\codex\.codex\visualizations\2026\09\12\01a09670-a8aa-7122-ab68-73423cab5ee8\d712\app-v1\SynovaAgent.exe
+
+Id               : 20504
+ProcessName      : SynovaAgent
+SessionId        : 1
+MainWindowHandle : 0
+MainWindowTitle  : 
+StartTime        : 2026/9/13 9:37:09
+Path             : D:\codex\.codex\visualizations\2026\09\12\01a09670-a8aa-7122-ab68-73423cab5ee8\d712\app-v1\SynovaAgent.exe
+
+Id               : 21992
+ProcessName      : SynovaAgent
+SessionId        : 1
+MainWindowHandle : 1181378
+MainWindowTitle  : SynovaAgent
+StartTime        : 2026/9/13 9:37:08
+Path             : D:\codex\.codex\visualizations\2026\09\12\01a09670-a8aa-7122-ab68-73423cab5ee8\d712\app-v1\SynovaAgent.exe
+
+

@@ -1,0 +1,4 @@
+D:\codex\.codex\visualizations\2026\09\12\01a09670-a8aa-7122-ab68-73423cab5ee8\d712\app-v1\SynovaAgent.exe
+md5=612DBADC4BEEEC99639051D846A6D6F8
+size=188748800
+version=0.1.0

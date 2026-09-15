@@ -1,0 +1,11 @@
+[00:49:53.463] ① 前置 OK: app=C:\Users\ADMINI~1\AppData\Local\Temp\d712\app-v1\SynovaAgent.exe
+[00:49:53.475]    启动前 node pids=[3100,6320,6388,16176,19296,19564,19656,21272,21808] ; 18790 listeners=0
+[00:49:54.114] ② app_launch (T0): C:\Users\ADMINI~1\AppData\Local\Temp\d712\app-v1\SynovaAgent.exe --user-data-dir=C:\Users\ADMINI~1\AppData\Local\Temp\d712\userdata
+[00:49:54.117]    唯一动作 = 启动桌面应用；未执行任何后端/npm/node 命令（服务自启断言前提）
+[00:52:55.895] ③ 失败: window_ready
+[00:57:56.994] ④ 失败: healthz_200
+[00:58:01.053] ⑤ 失败: first_diagnosis_ready —— HTTP 0
+[00:58:01.067] ⑥ 启动后 node pids=[3100,6320,6388,16176,19296,19564,19656,21272,21808]；新增=[]（数量 0）
+[00:58:05.160]    backend.log 不可读: Cannot find path 'C:\Users\ADMINI~1\AppData\Local\Temp\d712\userdata\logs\backend.log' because it does not exist.
+[00:58:05.671] ⑦ evidence -> docs/synova/product-lines/evidence/D712-win-20260913/run-D-installed-runtime ；total_sec= verdict=FAILED failures=window_ready: 180s 内无可见主窗口; healthz_200: 300s 内未达 200（服务未自启）; first_diagnosis_ready: consult HTTP 0（预期 400/401）
+[00:58:05.679] ⑧ 清理: 只停本实例 pid（严禁 taskkill /IM node.exe——铁律 0-3）

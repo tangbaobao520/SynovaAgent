@@ -1,0 +1,6 @@
+
+   Id ProcessName MainWindowHandle MainWindowTitle
+   -- ----------- ---------------- ---------------
+21992 SynovaAgent          1181378 synova-agent
+
+

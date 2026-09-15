@@ -1,0 +1,15 @@
+[00:40:47.432] ① 前置 OK: SynovaAgent-0.1.0-win32-x64.exe size=93112012 md5=D841D092088F0897F8AE780D462B46B5
+[00:40:47.447]    nsis.oneClick=false → 双击打开安装向导（本跑: /S 静默)
+[00:40:47.449]    环境适配: 安装位覆盖 → C:\Users\ADMINI~1\AppData\Local\Temp\d712-install（默认 %LOCALAPPDATA%\Programs\SynovaAgent 本会话不可写）
+[00:40:47.452]    环境适配: userData 覆盖 → C:\Users\ADMINI~1\AppData\Local\Temp\d712-userdata（--user-data-dir）
+[00:40:47.476] ② install_start (T0) launch=D:\synova-desktop-Windows-200\SynovaAgent-0.1.0-win32-x64.exe /S
+[00:40:47.604]    installer pid=21756 proc=SynovaAgent-0.1.0-win32-x64
+[00:43:47.968] ② 失败: install_done —— C:\Users\ADMINI~1\AppData\Local\Temp\d712-install\SynovaAgent.exe 未出现
+
+[00:45:48.675] ③ 失败: app_launch —— 无 SynovaAgent 进程
+[00:47:48.757] ④ 失败: window_ready
+[00:47:51.824] screenshot 失败: Exception calling "CopyFromScreen" with "5" argument(s): "句柄无效。"
+[00:52:52.949] ⑤ 失败: healthz_200
+[00:52:57.040] ⑥ 失败: first_diagnosis_ready —— HTTP 0
+[00:53:01.309] ⑦ evidence -> docs/synova/product-lines/evidence/D712-win-20260913/run-C-silent-override ；total_sec= verdict=FAILED failures=install_done: 180s 内未出现 C:\Users\ADMINI~1\AppData\Local\Temp\d712-install\SynovaAgent.exe; app_launch: 未出现 SynovaAgent 进程; window_ready: MainWindowTitle/MainWindowHandle 为空; healthz_200: 300s 内未达 200; first_diagnosis_ready: consult HTTP 0（预期 400/401）
+[00:53:01.315] ⑧ 清理: Stop-Process 本实例（严禁 taskkill /IM node.exe——铁律 0-3）

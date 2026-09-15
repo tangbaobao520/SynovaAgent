@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "record_type": "scenario",
-  "source": "本机打包链实测: npm run build:backend → electron-renderer vite build → prebuild-install -r electron -t 33.4.11 → npx electron-builder --config build-synova.cjs --mac",
+  "source": "本机打包链实测: npm run build:backend → electron-renderer vite build → prebuild-install -r electron -t 33.4.11 → npx electron-builder --config build-synova.cjs --mac || D712-win-20260913/run-A-double-click-gui + run-B-silent-install + run-C-silent-override",
   "date": "2026-09-13",
   "written_by": "evidence-writer.py",
   "verdicts": [
@@ -9,6 +9,11 @@
       "acceptance_point": "1-1",
       "verdict": "pass",
       "quote": "docs/synova/product-lines/evidence/D712-mac-20260913/1-1-artifacts.txt（产物: SynovaAgent-0.1.0-arm64.dmg 356M md5=55b599854e4343e8897b3866697c2f70 + arm64-mac.zip 106M + mac.zip 111M；Info.plist 0.1.0 == package.json 0.1.0）"
+    },
+    {
+      "acceptance_point": "1-2",
+      "verdict": "fail",
+      "quote": "双击出向导窗 OK（pid=17444 title=[SynovaAgent 安装] handle=1967190）；向导点击不可自动化（会话无输入桌面，SendKeys 对记事本同样 Access denied）；/S 与 /S+/D 两条静默路径均挂起于 Windows Run as 提权框（class=#32770 title=[Run as]）180s 未完成 → 端到端未走完。根因=会话权限（标准用户 + %LOCALAPPDATA% 不可写），非已证产品缺陷"
     }
   ]
 }

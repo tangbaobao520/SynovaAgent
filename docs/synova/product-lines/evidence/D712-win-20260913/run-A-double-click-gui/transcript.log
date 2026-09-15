@@ -1,0 +1,17 @@
+﻿[00:33:19.474] ① 前置 OK: SynovaAgent-0.1.0-win32-x64.exe size=93112012 md5=D841D092088F0897F8AE780D462B46B5
+[00:33:19.486]    nsis.oneClick=false → 双击打开安装向导（本跑: GUI 向导)
+[00:33:19.521] ② install_start (T0) launch=D:\synova-desktop-Windows-200\SynovaAgent-0.1.0-win32-x64.exe 
+[00:33:20.530]    installer pid=13432 proc=SynovaAgent-0.1.0-win32-x64
+[00:33:21.314]    安装向导窗口: pid=13432 title=[SynovaAgent 安装 ]
+[00:33:21.847]    SendKeys 失败: Exception calling "SendWait" with "1" argument(s): "Access is denied"
+[00:33:23.039]    SendKeys 失败: Exception calling "SendWait" with "1" argument(s): "Access is denied"
+[00:33:24.220]    SendKeys 失败: Exception calling "SendWait" with "1" argument(s): "Access is denied"
+[00:33:25.399]    SendKeys 失败: Exception calling "SendWait" with "1" argument(s): "Access is denied"
+[00:33:26.566]    SendKeys 失败: Exception calling "SendWait" with "1" argument(s): "Access is denied"
+[00:33:27.744]    SendKeys 失败: Exception calling "SendWait" with "1" argument(s): "Access is denied"
+[00:33:28.917]    SendKeys 失败: Exception calling "SendWait" with "1" argument(s): "Access is denied"
+[00:33:30.096]    SendKeys 失败: Exception calling "SendWait" with "1" argument(s): "Access is denied"
+[00:33:31.273]    SendKeys 失败: Exception calling "SendWait" with "1" argument(s): "Access is denied"
+[00:33:32.454]    SendKeys 失败: Exception calling "SendWait" with "1" argument(s): "Access is denied"
+[00:33:33.628]    SendKeys 失败: Exception calling "SendWait" with "1" argument(s): "Access is denied"
+[00:33:34.805]    SendKeys 失败: Exception calling "SendWait" with "1" argument(s): "Access is denied"

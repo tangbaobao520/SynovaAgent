@@ -1,0 +1,11 @@
+[09:37:08.204] ① 前置 OK: app=D:\codex\.codex\visualizations\2026\09\12\01a09670-a8aa-7122-ab68-73423cab5ee8\d712\app-v1\SynovaAgent.exe
+[09:37:08.220]    启动前 node pids=[3100,6320,6388,19564,21272,21808] ; 18790 listeners=0
+[09:37:08.751] ② app_launch (T0): D:\codex\.codex\visualizations\2026\09\12\01a09670-a8aa-7122-ab68-73423cab5ee8\d712\app-v1\SynovaAgent.exe --no-sandbox --user-data-dir=D:\codex\.codex\visualizations\2026\09\12\01a09670-a8aa-7122-ab68-73423cab5ee8\d712\ud-F
+[09:37:08.754]    唯一动作 = 启动桌面应用；未执行任何后端/npm/node 命令（服务自启断言前提）
+[09:37:08.858]    主进程 pid=21992
+[09:37:20.268] ③ window_ready: pid=21992 title=[synova-agent] handle=1181378
+[09:37:21.052] ④ healthz_200: http://localhost:18790/api/healthz → 200
+[09:37:21.119] ⑤ first_diagnosis_ready: consult HTTP 401（可提交）
+[09:37:21.132] ⑥ 启动后 node pids=[3100,6320,6388,19564,21272,21808]；新增=[]（数量 0）
+[09:37:22.081]    backend.log 已复制（98560 bytes）
+[09:37:22.632] ⑦ evidence -> docs/synova/product-lines/evidence/D712-win-20260913/run-F-nosandbox-runtime ；total_sec=12.4 verdict=WITHIN_TARGET failures=无
