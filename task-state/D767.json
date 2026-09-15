@@ -1,0 +1,14 @@
+{
+  "task_id": "D767",
+  "title": "DSH 借鉴卡 B-18：运行时不变量注册表（InvariantRegistry，检查可选、违约必炸）",
+  "status": "claimed",
+  "spec": "docs/synova/research/DSH迁移施工图-20260820/DSH借鉴指引-v2-20260904.md §4（B 组简卡）+ 附录B-DSH运行时机制深潜-20260904.md",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "synova-cto",
+  "domain": "win",
+  "note": "卡 B-18（DSH 借鉴指引 v2 §4 B 组）。DSH 锚点: dsh-invariants（123 行）。Synova 落点: src/infra/**（铁律运行时执法层: pre-commit 静态之外的五层边界/降级信号在场性）。产品缺口: Agent 运行底座。与铁律 11/31/39 同族——落地后应能自动抓到『静默降级』与『跨层调用』的运行时实例。 借鉴=读 DSH 源码自研，不引 @deepseek-ai 包。硬守卫（指引 §6）: G1 零 import（grep -rn \"@deepseek-ai\" src/ packages/ 零结果）· G2 独立 PR + 接线审计（grep 调用方 + 集成测试走真实路由）· G3 挂产品线缺口台账（禁为借鉴而借鉴）· G4 grep 物理证明 + enable/disable 开关 · G5 Stage 3 前零运行时依赖 登记说明: 本卡在计划表（整体推进计划-主线-20260913.md §B-11~B-20）长期只有卡号、无任务号 → 看板不可见；D770 补登记使看板可追踪。",
+  "source": "docs/synova/research/DSH迁移施工图-20260820/DSH借鉴指引-v2-20260904.md §3/§4 + DOC-0114 §6 Stage 2"
+}
