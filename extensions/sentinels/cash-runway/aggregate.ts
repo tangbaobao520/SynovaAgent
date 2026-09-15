@@ -1,7 +1,7 @@
 /** cash-runway aggregate — 现金流哨兵。综合N个指标→1条Finding。V4.4.2 */
-import type { GraphStoreReader, SentinelManifest } from '../../../src/sentinel/sentinel-loader';
+import type { SentinelManifest } from '../../../src/sentinel/sentinel-loader';
 import type { SentinelFinding } from '../../../src/sentinel/types';
-import type { GraphTraversal } from '../../../src/l4/graph-traversal';
+import type { GraphStoreReader, GraphTraversal } from '../../../src/l4/graph-traversal';
 import { createLogger } from '@synova/logger';
 import { computeCashRunwayMonths } from './computes/compute-cash-runway-months';
 import { computeReceivableOverdueRate } from './computes/compute-receivable-overdue-rate';
@@ -51,6 +51,8 @@ export const cashRunwaySentinel = {
           findings.push({
             id: 'cash_warning', severity: 'warning', title: `现金流紧张—跑道${Number.isFinite(runwayMonths) ? runwayMonths.toFixed(1) : 0}个月`,
             description: `现金跑道${Number.isFinite(runwayMonths) ? runwayMonths.toFixed(1) : 0}个月，低于warning阈值。`,
+            evidence: runwayResult.evidence,
+            suggestion: '监控现金消耗节奏，提前准备融资或压缩非必要支出。',
             detectedAt: new Date().toISOString(),
           });
         }

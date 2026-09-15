@@ -13,8 +13,8 @@
  * 边界: 仅有当期无上期 → value=0, warnings=['仅有单期数据']
  * 超时: 5秒。不抛异常。
  */
-import type { GraphStoreReader } from '../../../src/l4/graph-traversal';
-import type { GraphTraversal } from '../../../src/l4/graph-traversal';
+import type { GraphStoreReader } from '../../../../src/l4/graph-traversal';
+import type { GraphTraversal } from '../../../../src/l4/graph-traversal';
 
 export interface RevenueInput {
   teamId: string;
