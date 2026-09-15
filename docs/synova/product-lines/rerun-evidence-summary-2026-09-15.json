@@ -1,0 +1,95 @@
+{
+  "schema": "rerun-summary/1",
+  "date": "2026-09-15",
+  "generated_at": "2026-09-15 22:22:42",
+  "source": "rerun-evidence.sh (D774)",
+  "items": [
+    {
+      "id": "GS-01",
+      "verdict": "fail",
+      "exit_code": 1,
+      "note": "exit=1; 证据=yes; 日志: /var/folders/bs/ltqkv_rd45z6b7p5wq90vv500000gn/T/d774-rerun/GS-01-2026-09-15.log"
+    },
+    {
+      "id": "GS-02",
+      "verdict": "fail",
+      "exit_code": 1,
+      "note": "exit=1; 证据=yes; 日志: /var/folders/bs/ltqkv_rd45z6b7p5wq90vv500000gn/T/d774-rerun/GS-02-2026-09-15.log"
+    },
+    {
+      "id": "GS-03",
+      "verdict": "fresh",
+      "exit_code": 0,
+      "note": "exit=0; 证据=GS-03-2026-09-15.json"
+    },
+    {
+      "id": "GS-04",
+      "verdict": "fail",
+      "exit_code": 1,
+      "note": "exit=1; 证据=yes; 日志: /var/folders/bs/ltqkv_rd45z6b7p5wq90vv500000gn/T/d774-rerun/GS-04-2026-09-15.log"
+    },
+    {
+      "id": "GS-05",
+      "verdict": "fresh",
+      "exit_code": 0,
+      "note": "exit=0; 证据=GS-05-2026-09-15.json"
+    },
+    {
+      "id": "GS-06",
+      "verdict": "fresh",
+      "exit_code": 0,
+      "note": "exit=0; 证据=GS-06-2026-09-15.json"
+    },
+    {
+      "id": "GS-07",
+      "verdict": "fresh",
+      "exit_code": 0,
+      "note": "exit=0; 证据=GS-07-2026-09-15.json"
+    },
+    {
+      "id": "GS-08",
+      "verdict": "fresh",
+      "exit_code": 0,
+      "note": "exit=0; 证据=GS-08-2026-09-15.json"
+    },
+    {
+      "id": "1-2",
+      "verdict": "skip",
+      "exit_code": 0,
+      "note": "Windows 真机安装实测（founder-demo 面，机器不可代验）"
+    },
+    {
+      "id": "1-8",
+      "verdict": "skip",
+      "exit_code": 0,
+      "note": "K3 审计员复核点（红线: 禁止自我审计）"
+    },
+    {
+      "id": "line1-vitest",
+      "verdict": "fresh",
+      "exit_code": 0,
+      "note": "dedupe: 同日同源证据已存在，跳过写入; tests/electron/ 全套件绿"
+    },
+    {
+      "id": "a2-suites",
+      "verdict": "fresh",
+      "exit_code": 0,
+      "note": "run-machine-evidence: test 绑定套件绿"
+    },
+    {
+      "id": "refresh-all",
+      "verdict": "fresh",
+      "exit_code": 0,
+      "note": "六态已重算"
+    }
+  ],
+  "counts": {
+    "fresh": 8,
+    "fail": 3,
+    "skip": 2,
+    "degraded": 0
+  },
+  "six_state_before": "uncommitted=96 failed=2 pending_k3=36 verified=1 rejected=2 stale=27",
+  "six_state_after": "uncommitted=96 failed=2 pending_k3=36 verified=1 rejected=2 stale=27",
+  "note": "fresh=重跑通过; fail=显式失败(证据如实入库); skip=机器不可代验(真机/founder/K3面); degraded=环境缺失(不写证据, fail-closed). 汇总不改判分——判分唯 calc-progress.py。"
+}
