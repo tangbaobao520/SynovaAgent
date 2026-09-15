@@ -12,6 +12,11 @@
 
 启动第一行日志即模式证据：`[electron] boot mode=dev|prod server=http://localhost:18790`。
 
+### 旧 Web 安装引导退场机制（D716/1-5，物理事实非声明）
+
+- 旧入口 `GET /app/setup.html`（D283 四步向导）已退场：页面/向导 JS/样式三件套已从仓库删除；URL 由 `setupGuideGoneRouter`（src/server.ts）承接，**恒返回 410 Gone + 人话指路**（唯一入口 = 双击安装包），与 cwd 无关——非静默 404。挂载点先于 `/app` 静态服务（顺序即优先级）与 JWT（D590 同纪律）。
+- 回归守卫（机器可重跑）：`tests/routes/setup-guide-retired.test.ts`（410 行为 + 挂载顺序 + 引导文件唯一性）与 `tests/electron/dual-guide-packaging-guard.test.ts`（打包形状不含 app/ + 渲染层唯一入口）。引导文件放回 / 打包条目注入 / 首诊页被拆 → 测试红。
+
 ## 二、prod 链路图（双击 → 首诊页）
 
 ```
