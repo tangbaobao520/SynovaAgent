@@ -35,7 +35,13 @@ verify-system-registry.sh、system-registry.test.sh）+ 2 个生成物。
 参考：K3 §7.2 五条收割 + §10.1/10.2 规格 + Anthropic 基线（canary 测试必须进 runner 才算数）+ 第一性原理（零调用的检查 = 不存在的检查）→ 收敛：接线优先于新机制，Anti-bloat（§10.3：零新增 M 类）。
 
 ## Q2: 范围 — 正确的最简方案
-做什么（PR-1 接线批，12 文件）：
+做什么（PR-0 先行治理批，5 文件，D708 写集声明）：
+- docs/synova/coordination/ownership.yaml：scripts/doc-system/** 显式归 mac + 4 导航文档入 domain_neutral（D734 单域假阳性修复，D782 PR-1 前置）
+- .github/CODEOWNERS：--emit-codeowners 重跑（doc-system 规则落地 +1 行）
+- memory/notes/proposed/2026-09-15-D782-doc-truth-wiring.md：D534 决策 Note（§四b PR-0 段）
+- task-state/D782.json：状态 claimed → impl_in_progress
+- .claude/task-briefs/**：本 brief（D782 唯一 brief，四批共用；文件名含全角冒号会被 Q2 parser 按冒号截断，故以 glob 声明）
+做什么（PR-1 接线批，原 12 文件现 9 文件——Note/brief/task-state 已随 PR-0 先行）：
 - .github/workflows/ci.yml：control-tower-tests job 的 for 列表追加 tests/doc-system/ 6 个测试（控制塔红区显式声明；理由：K3 §7.2 收割 2 实证"红灯 ≥25 天零 runner"；该 job 自称『门禁坏了能抓到』的 canary 却缺 doc-system 域全部测试；列表级追加是最小改动，不碰 quality/integration/checker 等其他 job，不影响 docs-only 瘦身逻辑。
 - scripts/pre-commit-check.sh：门禁红区显式声明。组 13 后追加「D782 文档真相防线」附加命名块（同 D734 模式，组号保持 13 不变——组数是 check-doc-truth.sh C2 的真值来源，改组数=连锁打破 AGENTS.md '13 组'声明）。调用 D1/D2：本地 soft_check（V5 分工）+ SYNO_CI=1 自动转硬。
 - scripts/doc-system/check-doc-truth.sh：仅清首行 BOM（接线后输出直进 pre-commit 流，噪音行不可留）
