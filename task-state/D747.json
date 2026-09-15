@@ -1,0 +1,13 @@
+{
+  "task_id": "D747",
+  "title": "桌面端 1-4 重打新产物 + 证据落盘（line-1 关键一件）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "note": "依据: 整体推进计划 阶段 2。重打包 → 安装实测 → [preload-check] OK 原始日志 + 渲染层 API 实测请求双双落 git 证据文件（贴命令与输出）；随后 D731 批内 1-8 复验由 K3 绑新产物做。"
+}
