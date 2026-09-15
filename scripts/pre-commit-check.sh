@@ -1399,6 +1399,52 @@ else
   soft_pass "G13: 无技能文件变更(跳过)"
 fi
 
+# ═══ D782: 文档真相防线 D1/D2（附加检查；不并入 13 组编号——同 D734 接入模式）═══
+# 背景: K3 2026-09-14 权威文档一致性专项审计 §7.2 收割 2/3——D1 check-doc-truth.sh
+#   与 D2 doc-registry-gate.sh 2026-08 建成即零调用（M3「机制建成未接线」第 3 次复发：
+#   D329 P2-2 首次），W1/W2 接线断言（tests/doc-system/doc-registry-gate.test.sh L64-65）
+#   红 ≥25 天无 runner 可见。本块补调用点；本地软提示 + CI 权威（D515/D516: SYNO_CI=1
+#   时 soft_check 自动转硬）——该分工经 K3 §7.2 收割 3 判定成立，缺的只是调用点。
+# 为何不动 13 组编号: 「✅ 全部 13 组通过」自声明行是 check-doc-truth.sh C2 的真值
+#   来源，改组数 = 连锁打破 AGENTS/CLAUDE/LOOP 的「13 组」声明（审计 T1 实证该链）。
+# fastlane 通道（bypass.log 单文件提交）不经过本块——该通道语义即最小化，CI 为权威。
+# 性能: D1 grep 4 个导航文件 + D2 ls-files/diff-cached，实测 <1s（D782 验收 ≤+5s）。
+echo ""
+echo -e "${CYAN}── D782: 文档真相防线（D1 真相验证 + D2 登记门禁）──${RESET}"
+
+# D1: 导航层文档 vs 代码事实（C1 专家数 / C2 门禁组数 / C3 版本轴 / C4 路径存在）
+if [ -f "$ROOT/scripts/doc-system/check-doc-truth.sh" ]; then
+  DOC_TRUTH_OUT=$(bash "$ROOT/scripts/doc-system/check-doc-truth.sh" 2>&1)
+  DOC_TRUTH_EXIT=$?
+  _ANSI=$'\033'
+  if [ "$DOC_TRUTH_EXIT" -eq 0 ]; then
+    soft_pass "D1 文档真相: 全部硬检查通过 ($(echo "$DOC_TRUTH_OUT" | grep -c '✅' || true) ✅)"
+  elif [ "$DOC_TRUTH_EXIT" -eq 1 ]; then
+    DOC_TRUTH_FAILS=$(echo "$DOC_TRUTH_OUT" | grep '❌' | sed "s/${_ANSI}\\[[0-9;]*m//g" | sed 's/^ *//' || true)
+    soft_check "D1 文档真相: 导航层文档与代码事实不一致 — 修正后重试（bash scripts/doc-system/check-doc-truth.sh）" "$DOC_TRUTH_FAILS"
+  else
+    soft_check "D1 文档真相: 检查执行失败 (exit=$DOC_TRUTH_EXIT, D328 三态)" "exit=$DOC_TRUTH_EXIT"
+  fi
+else
+  soft_check "D1 文档真相: 脚本缺失 scripts/doc-system/check-doc-truth.sh" "1"
+fi
+
+# D2: 新增 .md/.yaml 必须登记 docs/authority/DOCS-REGISTRY.yaml（只拦新不拦旧）
+if [ -f "$ROOT/scripts/doc-system/doc-registry-gate.sh" ]; then
+  DOC_REG_OUT=$(bash "$ROOT/scripts/doc-system/doc-registry-gate.sh" 2>&1)
+  DOC_REG_EXIT=$?
+  if [ "$DOC_REG_EXIT" -eq 0 ]; then
+    soft_pass "D2 登记门禁: $(echo "$DOC_REG_OUT" | grep '汇总' | sed 's/^ *//' || true)"
+  elif [ "$DOC_REG_EXIT" -eq 1 ]; then
+    DOC_REG_FAILS=$(echo "$DOC_REG_OUT" | grep '未登记' | sed 's/^ *//' || true)
+    soft_check "D2 登记门禁: 有未登记文档 — 登记 docs/authority/DOCS-REGISTRY.yaml 或核对排除规则" "$DOC_REG_FAILS"
+  else
+    soft_check "D2 登记门禁: 检查执行失败 (exit=$DOC_REG_EXIT, D328 三态)" "exit=$DOC_REG_EXIT"
+  fi
+else
+  soft_check "D2 登记门禁: 脚本缺失 scripts/doc-system/doc-registry-gate.sh" "1"
+fi
+
 # ═══ D734: PR 预算门禁（附加检查；不并入传统 13 组编号）═══
 # 背景: 冲突概率 ∝ 改动大小 × 分支存活时间 —— D721 一个 PR 背三类门禁问题挂半天；
 #   K3 审计分支落后 main 差点回退他人成果。
