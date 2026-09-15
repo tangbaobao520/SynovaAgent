@@ -1,13 +1,27 @@
 {
   "task_id": "D752",
   "title": "哨兵类型网登记从软约束改硬门禁（8/45 未登记，P1）",
-  "status": "claimed",
-  "spec": null,
-  "impl": null,
+  "status": "impl_done",
+  "spec": "docs/synova/coordination/派单-哨兵欠账-D751-D752-D754-20260914.md §二",
+  "impl": {
+    "branch": "session/d752-type-net-gate",
+    "files": [
+      "scripts/control-tower/check-sentinel-type-net.sh（新增硬门禁：活跃哨兵逐一比对 types.ts 登记，缺失 exit 1 点名；豁免口径与 sentinel-loader L71-73 同源并显式化；降级 exit 2 fail-closed；SYNO_TYPE_NET_ROOT 沙箱注入缝；macOS bash 3.2 括号 case 模式兼容）",
+      "tests/control-tower/check-sentinel-type-net.test.sh（配对测试 9 断言：正常/红/豁免边界/降级——ct-test-gate 强制配对，pre-commit 自动跑）",
+      "tests/sentinel/d752-type-net-gate.integration.test.ts（vitest 集成 4 断言——CI 接线：ci.yml 属红区不可改，CI 侧拦截经 vitest 全量步骤实现）",
+      "src/sentinel/types.ts（仅补登记 8 行 import type + 1 行 D752 注释；_extinct 存量 12 处引用未动——清理另单）"
+    ],
+    "evidence": [
+      "复现（门禁点名现状）: exit 1 + 逐个点名 8 个未登记哨兵（cash-runway/competitive-moat/competitive-position/key-person-risk/path-dependency/revenue-health/sentinel-forecast-accuracy/sentinel-pricing-strategy）",
+      "补登记后: exit 0 + 45 个活跃哨兵全部已登记",
+      "反向验证第 1 次（删 cash-runway 登记行）: exit 1 仅点名 cash-runway",
+      "反向验证第 2 次（恢复）: exit 0 + 45 全登记；bash 测试 9 ✅/0 ❌；vitest 集成 4 passed；全量 tests/sentinel 918 passed | 1 skipped；tsc types.ts 相关错误 0"
+    ]
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-09-14",
-  "updated_by": "synova-cto",
+  "updated_at": "2026-09-15",
+  "updated_by": "mac-coding-dsh",
   "note": "实测：src/sentinel/types.ts 引用 38 个目录（含已归档 _extinct）；45 个哨兵中 8 个未进类型网：cash-runway / competitive-moat / competitive-position / key-person-risk / path-dependency / revenue-health / sentinel-forecast-accuracy / sentinel-pricing-strategy。后果：不加静态 import also跑得起来（运行时不依赖），所以这条软约束事实上没执行——而系统自己的治理原则写着「软机制 0% 有效」。修法：类型登记缺失 → 硬门禁红（含 _extinct 归档目录的豁免规则）。",
   "source": "~/山河研究院/99-综合/质询-可插件化是否物理事实.md（终版 2026-09-14，院长质询）"
 }
