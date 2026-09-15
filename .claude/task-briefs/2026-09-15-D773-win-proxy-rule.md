@@ -81,8 +81,10 @@ Agent，不是 ChatBot。驻扎企业，持续观测，主动发现，自动诊�
 
 | 文件 | 类型 |
 |---|---|
+| .claude/bypass.log | builtin（hook 运行期产物，自动豁免） |
 | .claude/task-briefs/2026-09-15-D773-win-proxy-rule.md | task |
 | docs/synova/coordination/Win域代行规约-20260915.md | task |
 | docs/synova/coordination/整体推进计划-主线-20260913.md | task |
+| docs/synova/coordination/编码指令-D767-B18运行时不变量注册表-20260915.md | task |
 | task-state/D773.json | task |
 
