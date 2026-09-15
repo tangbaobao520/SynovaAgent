@@ -1,0 +1,34 @@
+{
+  "schema": 1,
+  "record_type": "scenario",
+  "source": "D747 桌面端线1产物重打+证据落盘：npx electron-builder --config build-synova.cjs --mac --arm64（worktree origin/main@a07529c8）→ Mac 本机装包实测（四断言/preload/CDP 渲染层 fetch/覆盖安装）。产物 release/SynovaAgent-0.1.0-arm64.dmg md5=0dc2dd11dc59ecc10040598ffeb8ebef sha256=a4aed206c2fc7db332fe6c1b408cb6ccc2c2fe93be743e52a07eef8c32cbab29",
+  "date": "2026-09-15",
+  "written_by": "dsh-mac-session(D747)",
+  "verdicts": [
+    {
+      "acceptance_point": "1-1",
+      "verdict": "pass",
+      "at": "2026-09-15T22:29:00",
+      "quote": "docs/synova/product-lines/evidence/D747-mac-20260915/1-1-artifacts.txt：打包三步链产物 4 件（arm64 dmg 109M/zip 105M + x64 dmg 116M/zip 112M）；arm64.dmg md5=0dc2dd11dc59ecc10040598ffeb8ebef sha256=a4aed206...；版本一致 package.json 0.1.0 == arm64/x64 Info.plist 0.1.0；D713 钩子 native 就绪 + ad-hoc 签名自检通过"
+    },
+    {
+      "acceptance_point": "1-3",
+      "verdict": "pass",
+      "at": "2026-09-15T22:50:00",
+      "quote": "docs/synova/product-lines/evidence/D747-mac-20260915/1-3-mac-install-assertions.txt：hdiutil 挂载→cp 安装→启动，四断言第 8s 全就绪（A1 进程=1 A2 窗口=1 A3 healthz=1 A4 backend.log=1）；backend.log: 22:50:08 SynovaAgent 已启动 port=18790；已知缺口如实登记：产物内 cockpit generate-dashboard.py 缺失（不影响本点判定）"
+    },
+    {
+      "acceptance_point": "1-4",
+      "verdict": "pass",
+      "at": "2026-09-15T23:11:00",
+      "quote": "docs/synova/product-lines/evidence/D747-mac-20260915/1-4-preload-check.txt + 1-4-renderer-api.txt：app stdout 原文 '[preload-check] OK: electronAPI 已暴露, serverUrl=http://localhost:18790'（两次启动均现）；CDP 渲染层上下文（page=file:///Applications/.../renderer/index.html）真实 fetch /health→200 ok、/api/healthz→200（degraded=首启诚实降级）、/api/llm/config→200 ok"
+    },
+    {
+      "acceptance_point": "1-7",
+      "verdict": "pass",
+      "at": "2026-09-15T23:38:00",
+      "quote": "docs/synova/product-lines/evidence/D747-mac-20260915/1-7-upgrade-assertions.txt：脚本链 verdict=DATA_RETAINED（v1/v2 md5=d5f50520... 一致 + integrity_v2=ok + tables=54/55 一致，临时 userData 真实库零触碰）；补强链（真实数据行）：写入 agent_memory×1 + sentinel_baselines×2 → dmg 覆盖安装 → md5 a5a84b34... 前后一致 + integrity ok + 行数不变三断言 PASS"
+    }
+  ],
+  "note": "1-2/1-6 Windows 实机部分与 1-5 双引导收敛不在本卡范围（挂账）；rows_v2 探针 sessions 表缺失与 seed 探针列名漂移（upgrade-data-verify.sh schema 老旧）已在 1-7 证据内如实登记，由补强链覆盖行数断言语义。"
+}

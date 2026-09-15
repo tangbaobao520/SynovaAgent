@@ -1,0 +1,33 @@
+# 1-4 渲染层真实 API 请求 — CDP 渲染层上下文 fetch 原始输出 (2026-09-15, D747)
+## 方法：Electron 以 --remote-debugging-port=9222 启动 → CDP attach 到渲染页 →
+##       Runtime.evaluate 在页面上下文执行 fetch（electronAPI.getServerUrl() 取真实 serverUrl）
+## page target = file:///Applications/SynovaAgent.app/Contents/Resources/renderer/index.html（打包产物内页面，非 dev server）
+
+## 探针输出原文（node + ws，Runtime.evaluate awaitPromise）
+[probe] page target: file:///Applications/SynovaAgent.app/Contents/Resources/renderer/index.html
+[probe] 渲染层上下文真实 fetch 结果:
+{
+  "serverUrl": "http://localhost:18790",
+  "requests": [
+    {
+      "path": "/health",
+      "status": 200,
+      "body": "{\"status\":\"ok\",\"name\":\"Synova-Agent\",\"version\":\"0.0.0\",\"uptimeSeconds\":985,\"timestamp\":\"2026-09-15T15:11:28.686Z\"}"
+    },
+    {
+      "path": "/api/healthz",
+      "status": 200,
+      "body": "{\"status\":\"degraded\",\"checks\":{\"database\":{\"status\":\"degraded\",\"detail\":\"数据库文件不存在(首次启动尚未初始化)\"},\"llm_connectivity\":{\"status\":\"degraded\",\"detail\":\"未配置 LLM API key (诊断功能受限)\"},\"last_sentinel_run\":{\"status\":\"degraded\",\"detail\":\"哨兵日志目录不存在(可能尚未执行)\"},\"disk_free_gb\":{\"status\":\"ok\",\"detail\":\"剩余 344.1GB\"},\"dat"
+    },
+    {
+      "path": "/api/llm/config",
+      "status": 200,
+      "body": "{\"ok\":true,\"configured\":false,\"provider\":\"deepseek\",\"model\":\"deepseek-chat\",\"baseUrl\":\"https://api.deepseek.com/v1\",\"maskedKey\":null,\"source\":null}"
+    }
+  ]
+}
+
+## 判读
+  /health         → 200 status ok（渲染层 App.tsx:52 启动即调的端点，从渲染层上下文复现真实请求）
+  /api/healthz    → 200（degraded = 首次启动诚实降级：未配 LLM key/未建库，符合铁律 11/24）
+  /api/llm/config → 200 ok（llm-config store 的状态拉取端点）

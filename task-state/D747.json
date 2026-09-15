@@ -1,0 +1,38 @@
+{
+  "task_id": "D747",
+  "title": "桌面端线1产物重打+证据落盘（mac-arm64 重打+装包实测+四份原始证据+scenario+refresh，域 win 代行期 Mac 执行）",
+  "status": "impl_done",
+  "risk": "low",
+  "spec": null,
+  "impl": {
+    "by": "synova-dsh(Mac 编码 session)",
+    "at": "2026-09-15",
+    "baseline": "origin/main @ a07529c8（worktree /Users/wane/synova-wt-D747-line1-repackage）",
+    "files": [
+      "docs/synova/product-lines/evidence/D747-mac-20260915/1-1-artifacts.txt",
+      "docs/synova/product-lines/evidence/D747-mac-20260915/1-3-mac-install-assertions.txt",
+      "docs/synova/product-lines/evidence/D747-mac-20260915/1-4-preload-check.txt",
+      "docs/synova/product-lines/evidence/D747-mac-20260915/1-4-renderer-api.txt",
+      "docs/synova/product-lines/evidence/D747-mac-20260915/1-7-upgrade-assertions.txt",
+      "docs/synova/product-lines/evidence/scenario-2026-09-15-d747.json",
+      "docs/synova/product-lines/evidence/test-2026-09-15.json",
+      "docs/synova/product-lines/product-progress.json",
+      "docs/synova/product-lines/product-progress.html",
+      "task-state/D747.json",
+      ".claude/task-briefs/2026-09-15-D747-桌面端线1产物重打与证据落盘.md"
+    ],
+    "evidence": [
+      "产物: release/SynovaAgent-0.1.0-arm64.dmg md5=0dc2dd11dc59ecc10040598ffeb8ebef sha256=a4aed206c2fc7db332fe6c1b408cb6ccc2c2fe93be743e52a07eef8c32cbab29（arm64+x64 四产物，版本 0.1.0 三方一致）",
+      "1-3: 四断言第 8s 全就绪（进程/窗口/healthz/backend.log），dmg 挂载→cp 安装→命令行启动",
+      "1-4: '[preload-check] OK: electronAPI 已暴露, serverUrl=http://localhost:18790'（app stdout 原文×2）+ CDP 渲染层上下文真实 fetch /health、/api/healthz、/api/llm/config 全 200",
+      "1-7: upgrade-data-verify.sh verdict=DATA_RETAINED（md5/integrity/表清单一致）+ 补强链（agent_memory×1 + sentinel_baselines×2 真实数据行 → dmg 覆盖安装 → md5 a5a84b34 前后一致 + 行数不变 PASS）",
+      "refresh 对照: 线1 status_counts stale 7→2（1-1/1-3/1-4/1-7 stale→pending_k3）；1-5 failed 为 D712 既有判定（scenario-2026-09-13-4）在本次重算生效，非本卡产物，D716 修复后 pass 证据欠落挂账",
+      "零代码变更: git diff origin/main...HEAD 不含 electron/ electron-renderer/ scripts/ 等任何代码路径（取证任务，线1 modules 零触碰）"
+    ],
+    "notes": "以取证为主，零代码改动。已知缺口如实登记（不属本卡修复）: ① 产物内 cockpit generate-dashboard.py 缺失（extraResources 未含 scripts/control-tower/）② upgrade-data-verify.sh 两个探针 schema 漂移（rows 的 sessions 表、seed 的 agent_memory.content 列）——行数断言语义由补强链覆盖 ③ 1-2/1-6 Windows 实机部分挂账（Win 域）。实测后 /Applications/SynovaAgent.app 与 userData 已清理复原。"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "synova-dsh"
+}

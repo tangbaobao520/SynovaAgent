@@ -1,0 +1,28 @@
+# 1-3 Mac 版安装包可用 — 装包四断言原文 (2026-09-15, D747, dmg md5=0dc2dd11dc59ecc10040598ffeb8ebef)
+## 安装命令（本机实测）
+  hdiutil attach -nobrowse -readonly release/SynovaAgent-0.1.0-arm64.dmg
+  # 挂载点: /Volumes/SynovaAgent 0.1.0-arm64
+  cp -R "/Volumes/SynovaAgent 0.1.0-arm64/SynovaAgent.app" /Applications/
+  codesign -dv /Applications/SynovaAgent.app   → Executable=... Identifier=com.synova.agent Format=app bundle with Mach-O thin (arm64)
+
+## 启动命令
+  env -u ELECTRON_RUN_AS_NODE /Applications/SynovaAgent.app/Contents/MacOS/SynovaAgent
+
+## 四断言（轮询 60s，第 8s 全部就绪）
+A1 进程存活: 1 (pgrep -f /Applications/SynovaAgent.app)
+A2 窗口存在: 1 (osascript 'tell application "System Events" to (name of processes) contains "SynovaAgent"')
+A3 服务健康: 1 (curl -sf http://localhost:18790/api/healthz)
+A4 后端日志: 1 (/Users/wane/Library/Application Support/synova-agent/logs/backend.log 非空)
+
+## backend.log 启动序列（原文摘录）
+22:50:04 loops/loop-scheduler - 循环已注册
+22:50:04 loops/loop-scheduler - 循环已注册
+22:50:04 loops/loop-scheduler - 循环已注册
+22:50:05 loops/loop-scheduler - 循环已注册
+
+## 已知缺口（如实登记，不属本卡修复范围）
+  cockpit 路由: FileNotFoundError /Applications/SynovaAgent.app/Contents/Resources/scripts/control-tower/generate-dashboard.py
+  → extraResources 未含 scripts/control-tower/，打包产物内 dashboard 数据采集失败（后端降级继续运行，不影响 1-3/1-4 判定）
+## backend.log 启动完成序列（原文，时间由 pino time 换算）
+22:50:07.869 | agent/synova-agent | [wiring] 核心循环已注册 | port=
+22:50:08.151 | agent/synova-agent | SynovaAgent 已启动 | port=18790

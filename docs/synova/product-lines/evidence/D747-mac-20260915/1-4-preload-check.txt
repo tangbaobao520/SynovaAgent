@@ -1,0 +1,20 @@
+# 1-4 服务自启、开窗即用 — [preload-check] 原始日志 (2026-09-15, D747)
+## 启动命令 + stdout 全文（第一次启动，普通模式）
+  env -u ELECTRON_RUN_AS_NODE /Applications/SynovaAgent.app/Contents/MacOS/SynovaAgent > /tmp/d747-app-stdout.log 2>&1
+  ---- stdout 原文 ----
+[electron] boot mode=prod server=http://localhost:18790
+[preload-check] OK: electronAPI 已暴露, serverUrl=http://localhost:18790
+[38965:0915/225450.463451:ERROR:network_service_instance_impl.cc(613)] Network service crashed, restarting service.
+[38965:0915/225450.475054:ERROR:gpu_process_host.cc(982)] GPU process exited unexpectedly: exit_code=15
+
+## 第二次启动（--remote-debugging-port=9222，用于渲染层探针），stdout 原文
+  ---- /tmp/d747-app-cdp.log 原文 ----
+
+DevTools listening on ws://127.0.0.1:9222/devtools/browser/e8a7119d-576b-48a9-8a3b-cb58b18e64c9
+[electron] boot mode=prod server=http://localhost:18790
+[preload-check] OK: electronAPI 已暴露, serverUrl=http://localhost:18790
+[43600:0915/231252.649200:ERROR:gpu_process_host.cc(982)] GPU process exited unexpectedly: exit_code=15
+[43600:0915/231252.698192:ERROR:network_service_instance_impl.cc(613)] Network service crashed, restarting service.
+
+## 日志源码锚点: electron/main.cjs:119（F3 启动自检回归哨兵）
+  console.log(`[preload-check] OK: electronAPI 已暴露, serverUrl=\${probe.serverUrl}`);

@@ -1,0 +1,50 @@
+# 1-7 升级/重装不丢数据 — 覆盖安装断言原文 (2026-09-15, D747, dmg md5=0dc2dd11dc59ecc10040598ffeb8ebef)
+## 命令（本机实测，worktree 内）
+  bash scripts/desktop/upgrade-data-verify.sh --installer release/SynovaAgent-0.1.0-arm64.dmg
+## 脚本契约: v1 装（临时位）→ 造数据（SYNOVA_DB_PATH → 临时库，真实 userData 零触碰）→ v2 覆盖装 → 指纹比对
+
+## stdout 原文
+  [upgrade-verify] ② v1 已安装（临时位 /tmp/upgrade-verify-SynovaAgent.app）
+  [upgrade-verify] ③ 造数据（起服务写临时库）
+  [upgrade-verify] ③ v1 指纹: tables=54 md5=d5f50520161b2c3e7ac335b08992befa
+  [upgrade-verify] ④ v2 覆盖安装完成（.app 已替换，userData 未触碰）
+  verdict: DATA_RETAINED
+  installer: release/SynovaAgent-0.1.0-arm64.dmg
+  md5_v1: d5f50520161b2c3e7ac335b08992befa
+  md5_v2: d5f50520161b2c3e7ac335b08992befa
+  integrity_v2: ok
+  rows_v2: Error: in prepare, no such table: sessions|
+  [upgrade-verify] ⑤ 数据断言全过: 表清单/行数/md5/integrity 前后一致 — 升级不丢数据 ✅
+
+## 关键表行数（evidence/rows-v1.txt 与 rows-v2.txt 原文——哨兵基线/企业事实表）
+--- rows-v1.txt ---
+Error: in prepare, no such table: sessions
+
+## 补强链：带真实数据行的覆盖安装实测（2026-09-15 23:3x，脚本 seed 探针 schema 漂移 → 手动用真实 schema 造数据）
+### 环境说明
+  库 = 脚本 ③ 阶段临时库（服务已停）；覆盖安装对象 = /Applications/SynovaAgent.app（从本次 dmg 重新覆盖）
+
+### ① 写入真实数据行（命令 + 输出原文）
+  sqlite3 "$DB" "INSERT INTO agent_memory(id,org_id,key,value,type,source) VALUES('d747-ev-1','org-main','enterprise_fact.d747','D747 覆盖安装实测数据行 2026-09-15','enterprise_fact','manual');"
+  sqlite3 "$DB" "INSERT INTO sentinel_baselines(sentinel_id,finding_count,critical_count,warning_count,checked_at) VALUES('cash-runway',3,1,2,datetime('now')),('revenue-health',5,0,2,datetime('now'));"
+  （写入成功，exit=0）
+
+### ② v1 指纹（命令: md5 + integrity + 行数 + 表数）
+  md5_v1: a5a84b344bb2fdb3a0636fbbdb4f4b04
+  integrity_v1: ok
+  agent_memory=1
+  sentinel_baselines=2
+  tables=55
+
+### ④ v2 指纹（同一命令组，覆盖安装后）
+  md5_v2: a5a84b344bb2fdb3a0636fbbdb4f4b04
+  integrity_v2: ok
+  agent_memory=1
+  sentinel_baselines=2
+  tables=55
+  数据行原文: d747-ev-1|enterprise_fact.d747|D747 覆盖安装实测数据行 2026-09-15
+
+### ⑤ 断言
+  md5 前后一致: PASS（库文件逐字节未变）
+  integrity_check=ok: PASS
+  关键表行数不变(agent_memory=1, sentinel_baselines=2): PASS
