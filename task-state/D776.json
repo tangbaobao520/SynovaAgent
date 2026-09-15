@@ -1,0 +1,13 @@
+{
+  "task_id": "D776",
+  "title": "线4 数据接入：L5 连接器（CRM/财务/HR）+ L4 类型契约收敛 → GS-01~04 转绿",
+  "status": "claimed",
+  "spec": "docs/synova/coordination/派单-第五批-产品推进-20260915.md",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "synova-cto",
+  "domain": "win",
+  "note": "todos.yaml T-4-01（P0）: 『Agent 核心能力全链路 FAIL（0/3 贯通）：L5 无 CRM/财务/HR 连接器；L4 类型契约断裂（Market≠Client、People≠Person）』，acceptance = GS-01/02/03/04 转绿 + 证据入库。前置口径需创始人确认三套标准表（crm/hr/erp）字段契约。"
+}
