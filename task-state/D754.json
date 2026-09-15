@@ -2,12 +2,29 @@
   "task_id": "D754",
   "title": "声明/注释漂移——哨兵 route 声明缺失 + runner 注释描述的失效模式与实际不符（P2）",
   "status": "claimed",
-  "spec": null,
-  "impl": null,
+  "spec": "docs/synova/coordination/派单-哨兵欠账-D751-D752-D754-20260914.md §三（Mac 半）+ §四（Win 半台账）",
+  "impl": {
+    "mac_half": {
+      "branch": "session/d754-runner-comment",
+      "status": "impl_done",
+      "files": [
+        "src/sentinel/runner.ts（仅注释三处: findSignalRoute JSDoc 重写为真实优先级链[config.route 恒未命中→layer 默认映射→host 兜底] + 失效模式[VALID_EXPERTS continue 静默跳过无日志]; config route 行注释改事实; D567 块注释「过滤成空路由」改准确描述）"
+      ],
+      "evidence": [
+        "改前: grep -c '声明路由' → 1；改后 → 0",
+        "零实现改动: git diff 增删行过滤注释符后为空（已验证）",
+        "注释可指代码: if (!expertType) continue 在 runner.ts（VALID_EXPERTS 静默跳过实文）; loader 零 route 透传（grep 无命中）",
+        "无回归: runner 相关 3 测试文件 12 passed"
+      ]
+    },
+    "win_half": {
+      "status": "claimed_待派（创始人近期无 Win 机器——派单 §四: manifest 是否显式声明 route 只记台账，CTO 在 Win 侧恢复时转派）"
+    }
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-09-14",
-  "updated_by": "synova-cto",
-  "note": "① 45/45 哨兵 manifest 声明了 expert 与 layer，**0/45 声明 route**；而 runner.ts:74-78 注释原文「无限扩展：加新哨兵时在 config 中声明路由」→ 与实测不符（实际全走 layer 默认映射）。② runner.ts:77 注释称下游 VALID_EXPERTS 会把失效路由过滤成空——实测不成立（那是另一个机制）→ 注释描述的失效模式与实际发生的不同（M7 文档-实现漂移）。修法：要么补齐声明（route 显式化），要么改注释为事实；两者都要有断言防漂移。",
+  "updated_at": "2026-09-15",
+  "updated_by": "mac-coding-dsh",
+  "note": "① 45/45 哨兵 manifest 声明了 expert 与 layer，**0/45 声明 route**；而 runner.ts:74-78 注释原文「无限扩展：加新哨兵时在 config 中声明路由」→ 与实测不符（实际全走 layer 默认映射）。② runner.ts:77 注释称下游 VALID_EXPERTS 会把失效路由过滤成空——实测不成立（那是另一个机制）→ 注释描述的失效模式与实际发生的不同（M7 文档-实现漂移）。修法：要么补齐声明（route 显式化），要么改注释为事实；两者都要有断言防漂移。Mac 半已改注释为事实（2026-09-15）；Win 半（route 显式化决策）待派。顶层 status 保持 claimed = Win 半未派（派单 §四: 不因未派单而关闭）。",
   "source": "~/山河研究院/99-综合/质询-可插件化是否物理事实.md（终版 2026-09-14，院长质询）"
 }
