@@ -101,6 +101,16 @@ OUT="$("$PYBIN" "$TOOL" .claude/bypass.log src/l3/expert-registry.ts src/sentine
 run_expect 0 "豁免路径不参与 --owner 断言" .claude/bypass.log task-state/D733.json --owner mac
 run_expect 1 "非豁免路径仍受 --owner 断言（回归）" src/sentinel/runner.ts --owner win
 
+# D758: 验收证据目录（docs/synova/product-lines/evidence/**）——证据跟干活那条线走，不构成域信号
+OUT="$("$PYBIN" "$TOOL" docs/synova/product-lines/evidence/D716-win-20260913/1-5-dual-guide-win-evidence.txt src/server.ts 2>&1)"; _e=$?
+[ "$_e" = 0 ] && pass "D758 证据目录豁免: Win 代码 + 自己的验收证据 → exit 0" || fail "D758 证据豁免失败 — 期望 0 实际 $_e"
+if echo "$OUT" | grep -q "domain-neutral"; then pass "D758 证据路径明示 domain-neutral（不静默）"; else fail "D758 证据路径未明示"; fi
+OUT="$("$PYBIN" "$TOOL" docs/synova/product-lines/evidence/D716-win-20260913/x.txt scripts/control-tower/check-ownership.py 2>&1)"; _e=$?
+[ "$_e" = 0 ] && pass "D758 Win 证据 + Mac 控制塔脚本 → 仍单域（证据不掺域）" || fail "D758 单域判定失败 — 期望 0 实际 $_e"
+OUT="$("$PYBIN" "$TOOL" docs/synova/product-lines/evidence/D716-win-20260913/x.txt src/server.ts scripts/control-tower/check-ownership.py 2>&1)"; _e=$?
+[ "$_e" = 1 ] && pass "D758 豁免不掩盖真跨域（Win 代码 + Mac 脚本仍 exit 1）" || fail "D758 豁免掩盖了跨域 — 期望 1 实际 $_e"
+run_expect 0 "D758 豁免路径不参与 --owner 断言" docs/synova/product-lines/evidence/D716-win-20260913/x.txt --owner win
+
 echo ""
 echo "── 5. 反向验证: 删掉兜底规则 → 验收两条必须变绿（证明真在读 yaml）──"
 NO_DEFAULT="$TMPD/ownership-no-default.yaml"
