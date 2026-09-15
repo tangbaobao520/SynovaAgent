@@ -1,0 +1,37 @@
+{
+  "$schema": "https://synova.dev/schemas/sentinel-manifest-v1.json",
+  "name": "e2e-fixture-01",
+  "id": "sentinel-e2e-fixture-01",
+  "version": "1.0.0",
+  "type": "sentinel",
+  "displayName": "E2E 夹具哨兵（D751 新增生效断言）",
+  "description": "D751 专用夹具：验证「新增一个哨兵 → 被发现 → 被路由 → 进派发」端到端生效。expert 与 layer 分属不同问题域（fundamental-efficiency vs technology），消解 layer 默认映射巧合命中的假绿。",
+  "schedule": "0 9 * * *",
+  "priority": "P1",
+  "expert": "fundamental-efficiency",
+  "computes": [
+    "fixture-signal-strength"
+  ],
+  "thresholds": {
+    "fixture_signal_strength": {
+      "warning": 0.5,
+      "critical": 0.8
+    }
+  },
+  "aggregation": "worst_first",
+  "context": {
+    "requiredDataSources": [
+      "sog_graph"
+    ],
+    "dataAccess": {
+      "allowedDimensions": [
+        "finance"
+      ],
+      "sensitiveAccess": "none"
+    }
+  },
+  "entryPoint": "./aggregate.ts",
+  "exportKey": "e2eFixtureSentinel",
+  "layer": "technology",
+  "computeKind": "deterministic"
+}
