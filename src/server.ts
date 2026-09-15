@@ -100,6 +100,27 @@ export const uploadV2GoneRouter: Router = Router().all(
   },
 );
 
+// ═══ D716/1-5: D283 旧 Web 安装引导下线 — 410 Gone 显式（非静默 404），指路唯一入口 ═══
+// 形态对齐 D590 先例（uploadV2GoneRouter）。挂载点必须早于 /app 静态挂载（createServer 内
+// 顺序即优先级；否则 cwd=仓库根时 static 命中胜出，退场退化为 cwd 巧合）——挂载顺序由
+// tests/routes/setup-guide-retired.test.ts 源码断言 + 行为断言锁定，不靠注释约定。
+// 契约（铁律 47）：
+// @input — 任意方法/任意查询串的 /app/setup.html（all 覆盖 GET/POST/HEAD）
+// @output — HTTP 410 + Content-Type: text/html + body 人话三段：
+//           ① 此页已下线 ② 唯一入口 = 双击安装包（桌面端首诊页） ③ 开发者路径见 runbook
+// @degraded — 无（纯静态响应，无 IO，不抛）
+export const setupGuideGoneRouter: Router = Router().all(
+  '/app/setup.html',
+  (_req, res) => {
+    res.status(410).type('html').send(
+      '<h1>此安装引导已下线</h1>'
+      + '<p>旧 Web 安装引导（四步向导）已随桌面端单一入口收敛下线（D716 验收点 1-5）。</p>'
+      + '<p>唯一入口：双击安装包启动 SynovaAgent 桌面端——首次启动将在窗口内直接进入配置引导（首诊页）。</p>'
+      + '<p>开发者路径见 docs/synova/runbooks/desktop-dev-prod.md（用户唯一路径 = 安装包双击；命令行路径仅开发）。</p>',
+    );
+  },
+);
+
 export async function createServer(): Promise<Server> {
   // ═══ D83: Bootstrap 启动序列 — 6 Phase 统一初始化 ═══
   // 替代原有的 ~300 行内联初始化代码
@@ -296,6 +317,10 @@ export async function createServer(): Promise<Server> {
   }
 
   // 基础中间件
+  // D716/1-5: 旧安装引导 410 显式下线——挂载必须早于下方 /app 静态挂载（顺序即优先级），
+  // 且先于 JWT（D590 同纪律：下线信号对未认证客户端也显式）。顺序由
+  // tests/routes/setup-guide-retired.test.ts 锁定。
+  app.use(setupGuideGoneRouter);
   // D96: 静态文件服务 — 前端 UI (login/dashboard/reports)
   app.use('/app', express.static(path.join(process.cwd(), 'app')));
   app.get('/', (_req, res) => res.redirect('/app/index.html'));
