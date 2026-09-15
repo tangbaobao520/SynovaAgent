@@ -14,8 +14,8 @@
  * 边界: 月消耗=0且总现金>0 → Infinity(充足); 两者=0 → 0
  * 超时: 5秒。不抛异常。
  */
-import type { GraphStoreReader } from '../../../src/l4/graph-traversal';
-import type { GraphTraversal } from '../../../src/l4/graph-traversal';
+import type { GraphStoreReader } from '../../../../src/l4/graph-traversal';
+import type { GraphTraversal } from '../../../../src/l4/graph-traversal';
 
 export interface ComputeInput {
   teamId: string;

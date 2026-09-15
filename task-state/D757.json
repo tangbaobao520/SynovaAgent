@@ -1,0 +1,13 @@
+{
+  "task_id": "D757",
+  "title": "哨兵类型欠账修复：3 个未登记哨兵的类型错（D752 门禁暴露）",
+  "status": "claimed",
+  "spec": "task-state/D752.json + .claude/task-briefs/2026-09-15-D757-sentinel-type-debt.md",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "synova-cto",
+  "note": "D752 类型网把 8 个未登记哨兵纳入编译图 → cash-runway/revenue-health/key-person-risk 暴露 31 处类型错（TS2305×2 / TS2307×6 / TS2345×4 / TS7006×19），PR #560 TS 门禁红。本单按真实语义修复，不把目录加进 CI 过滤名单（绿洗）。",
+  "domain": "win"
+}
