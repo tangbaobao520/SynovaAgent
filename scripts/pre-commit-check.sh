@@ -313,6 +313,39 @@ is_doc_only() {
 STAGED_ALL=$(echo "$GIT_CACHED_ALL_NAMES" | grep -v node_modules || true)
 DOC_ONLY=$(is_doc_only "$STAGED_ALL")
 
+# ═══ D778: 派单文档强制复核（创始人 2026-09-15「产出交付前必须复核，流程要固化下来」）═══
+# 背景: pre-dispatch-check.sh 只在人工想起时跑——没人跑也不拦（D778 实测）。
+# 接线取舍（编码指令 §二.1「新增一组或并入现有组——由执行方判断并写清理由」）:
+#   选独立脚本 + 两处调用，不占 13 组编号——理由①: 与 D734 同款，改总组数会打破
+#   fastlane-bypass-only.test.sh 对「跳过 12 组」横幅的断言; 理由②（更要命）: 派单
+#   文档命中 CT-34 纯文档白名单（docs/*.md）→ 纯派单提交在组 1 前早退，只放主流程
+#   一块 = 门禁对派单文档最常见的提交形态（纯文档提交）虚设——必须同时在 CT-34
+#   早退分支内调用（D472 Notes 门禁同款补法）。
+# 判定: soft_check 语义 = 本地软提示 + SYNO_CI=1 转硬（CI 权威, D516）; 降级(exit 2)
+#   同样点名显式留痕，绝不静默当绿（铁律 11）。
+# 契约 (铁律 47):
+#   @input  — staged docs/synova/coordination/派单-*.md; SYNO_PRE_DISPATCH_DOCS/BIN 注入缝（测试沙箱）
+#   @output — 每文档 ✅/❌/degraded 点名; 无命中 → 跳过 <1s（性能红线: 不把 pre-commit 拖过 60s）
+#   @exit   — 不直接 exit; soft_check 计数（HARD_FAIL 仅 SYNO_CI=1 时增; 主流程由结果块裁决,
+#             CT-34 早退分支由调用处显式裁决——早退分支不达结果块, 不裁决 = CI strict 漏拦）
+d778_dispatch_gate() {
+  local staged_docs out rc
+  staged_docs=$(echo "$STAGED_ALL" | grep -E '^docs/synova/coordination/派单-[^/]+\.md$' || true)
+  if [ -z "${SYNO_PRE_DISPATCH_DOCS:-}" ] && [ -z "$staged_docs" ]; then
+    soft_pass "D778 派单文档复核: 无派单文档变更(跳过)"
+    return 0
+  fi
+  out=$(SYNO_PRE_DISPATCH_DOCS="${SYNO_PRE_DISPATCH_DOCS:-$staged_docs}" \
+    bash "$ROOT/scripts/control-tower/check-dispatch-gate.sh" 2>&1); rc=$?
+  if [ "$rc" -eq 0 ]; then
+    soft_pass "D778 派单文档复核: $(echo "$out" | tail -1 | sed 's/^GATE-OK: //')"
+  elif [ "$rc" -eq 2 ]; then
+    soft_check "D778 派单文档复核: 降级(exit 2)——显式留痕，不静默当绿（CI strict 阻断）" "$out"
+  else
+    soft_check "D778 派单文档复核未过——修正派单文档后重试（依据计划锚定/自检段/写集路径/task-state）" "$out"
+  fi
+}
+
 # ── CT-34 纯文档提交: 仅 Secrets 扫描, 豁免其余 12 组 ──
 # 早退分支置于 par_start 之前: 纯文档提交零 par 启动、秒过 (V4.5.1 性能教训)。
 # GATEKEEPER bypass 阻断 (L99-111) 在早退之前 — 绕过审计先于豁免, 不放行 --no-verify 滥用。
@@ -342,6 +375,15 @@ if [ "$DOC_ONLY" -eq 1 ]; then
         echo "  修复: git mv 到 implemented/ 或 rejected/，或删除测试残留"
         exit 1
       fi
+    fi
+    # D778: 派单文档复核也须在纯文档早退分支内强制——派单文档是纯文档，不在此查
+    # = 门禁对纯派单提交虚设（见上方 d778_dispatch_gate 接线理由②）。
+    # 本地软提示放行; SYNO_CI=1 时 soft_check 已计 HARD_FAIL → 此处显式拦截
+    # （早退分支走不到末尾结果块，不裁决 = CI strict 对纯派单提交漏拦）。
+    d778_dispatch_gate
+    if [ "$HARD_FAIL" -gt 0 ]; then
+      echo -e "  ${RED}❌ D778 派单文档复核未过（CI strict）— 提交已拒绝${RESET}"
+      exit 1
     fi
     echo -e "  ${GREEN}✅ 纯文档提交豁免检查完成 (CT-34)${RESET}"
     exit 0
@@ -1426,6 +1468,12 @@ if [ -x "$ROOT/scripts/control-tower/check-pr-budget.sh" ] || [ -f "$ROOT/script
 else
   soft_check "D734 PR 预算: 检查脚本缺失 scripts/control-tower/check-pr-budget.sh" "1"
 fi
+
+# ── D778: 派单文档强制复核（staged 派单-*.md 必过 pre-dispatch-check; 纯派单
+#    提交由上方 CT-34 早退分支内的调用覆盖——两处都接，缺一即漏）──
+echo ""
+echo -e "${CYAN}── 派单文档复核 (D778) ──${RESET}"
+d778_dispatch_gate
 
 # ── D520/任务3: 平台敏感命令软检查（V5 软提示——新增脚本须对照 PLATFORM-CHECKLIST.md）──
 # 只查本次新增（A）的 scripts/control-tower|workflow 下的 .sh/.py 文件：
