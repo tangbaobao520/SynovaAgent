@@ -64,7 +64,7 @@ while IFS= read -r d; do
     DEGRADED=1
   else
     echo "  ❌ $d: 复核未过 (exit ${rc})——逐项点名:"
-    echo "$out" | grep '⚠️\|❌' | head -6 | sed 's/^/     /'
+    echo "$out" | grep '⚠️\|❌\|ℹ️' | head -8 | sed 's/^/     /'
     FAIL=1
   fi
 done <<< "$DOCS"

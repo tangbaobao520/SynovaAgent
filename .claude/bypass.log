@@ -1442,3 +1442,4 @@ Binary file .claude/bypass.log matches
 2026-09-15T22:13:57+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=55f1e6012a9e953aa71a0f0d2b45f1d9474a5fd8
 2026-09-15T21:46:54+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=27573c9517c88811737b47b24dd939180deb4d77
 2026-09-15T21:56:17+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=a20cd5ccf5bcb3a5da86c0f7dcacbb9055b725d8
+2026-09-15T23:53:15+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D778 | AGENT=synova-cto

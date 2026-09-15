@@ -16,6 +16,10 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 #   接线   — pre-commit-check.sh 真调用（CT-34 早退分支 + 主流程两处; 铁律 0-2 WIRE CHECK）
 #   集成   — SYNO_CI=1 全量 pre-commit: 坏派单 → exit 1 必红; 好派单 → exit 0（CT-34 路径）
 #   性能   — 无派单文档跳过 <2s（契约 <1s + 冷启动余量, D563 教训勿过脆）
+#   D778 验收补丁（规则引用豁免）:
+#   ⑫ 正例 — 裸 D#（任务号）无 task-state → 红 + 点名（旁路不许放走真任务号）
+#   ⑬ 反例 — 引用词（按/规则:/参见）后的 D# → 不拦 + 豁免 ℹ️ 留痕透传
+#   ⑭ 实弹 — 批五派单: D734 不再点名; 残余告警 ⊆ {D769, D773}（未合 PR 自消, 合后 rc=0）
 # 沙箱: mktemp + HOME 指空（无 GITHUB_TOKEN → §② 确定性跳过）; 夹具不含 #PRN/file:line（零网络）
 # ═══════════════════════════════════════════════════════════════
 set -uo pipefail
@@ -141,6 +145,45 @@ OUT=$( cd "$REPO" && env SYNO_TEST_ARM=1 SYNO_CI=1 \
   SYNO_GATE_HITS_LOG="$(mktemp)" SYNO_EXEMPT_LOG="$(mktemp)" \
   bash "$PC" 2>&1 ); RC=$?
 [ "$RC" -eq 0 ] && echo "$OUT" | grep -q 'D778 派单文档复核' && ok "⑪ 集成-绿: SYNO_CI=1 好派单 → exit 0 + D778 复核行" || no "⑪ 集成-绿: 期望 exit 0, 实得 $RC: $(echo "$OUT" | grep D778 | head -1)"
+
+# ⑫ D778 正例: 裸 D#（任务号）无 task-state → 门禁红 + 点名（引用词旁路不许放走真任务号）
+cat > "$TMPD/bare-tasknum.md" <<MD
+# 派单：${DREG} 沙箱
+依据计划: ${PV}@${PH}
+裸号挂账: D998 待办
+- 写集: scripts/control-tower/pre-dispatch-check.sh
+
+## 派单内部一致性自检
+无互斥。
+MD
+OUT=$(run_gate SYNO_PRE_DISPATCH_DOCS="$TMPD/bare-tasknum.md" 2>&1); RC=$?
+[ "$RC" -eq 1 ] && echo "$OUT" | grep -q 'D998 无 task-state' && ok "⑫ 正例: 裸任务号缺 task-state → 红 + 点名" || no "⑫ 正例: 期望红+点名 D998, 实得 rc=$RC"
+
+# ⑬ D778 反例: 引用词后的规则/决策引用 → 不拦（绿）+ 豁免留痕透传
+cat > "$TMPD/ruleref.md" <<MD
+# 派单：${DREG} 沙箱
+依据计划: ${PV}@${PH}
+超大 PR 按 D734 拆单; 规则:D336 审计红线; 参见 D570 先例。
+- 写集: scripts/control-tower/pre-dispatch-check.sh
+
+## 派单内部一致性自检
+无互斥。
+MD
+OUT=$(run_gate SYNO_PRE_DISPATCH_DOCS="$TMPD/ruleref.md" 2>&1); RC=$?
+[ "$RC" -eq 0 ] && ok "⑬ 反例: 规则引用（按/规则:/参见）→ 门禁不拦" || no "⑬ 反例: 期望绿, 实得 $RC: $(echo "$OUT" | grep -E 'D734|D336|D570' | head -1)"
+echo "$OUT" | grep -q '规则/决策引用豁免' && ok "⑬ 豁免 ℹ️ 行透传到门禁输出（显式留痕）" || echo "  ℹ 豁免行仅红路径透传（绿路径省略, 可接受）"
+
+# ⑭ D778 实弹回归: 批五派单（main 已合）——D734 规则引用不再点名; 残余告警只允许 D769/D773
+BATCH5="docs/synova/coordination/派单-第五批-产品推进-20260915.md"
+if [ -f "$REPO/$BATCH5" ]; then
+  OUT=$( cd "$REPO" && env HOME="$SANDBOX_HOME" GITHUB_TOKEN= SYNO_PRE_DISPATCH_DOCS="$BATCH5" bash "$GATE" 2>&1 )
+  echo "$OUT" | grep -q 'D734 无 task-state' && no "⑭ 实弹: D734 规则引用仍被点名（假阳性回归）" || ok "⑭ 实弹: D734 不再点名（ℹ️ 豁免行提及属显式留痕，非点名）"
+  FLAGS=$(echo "$OUT" | grep -oE 'D[0-9]{3} 无 task-state' | grep -oE 'D[0-9]{3}' | sort -u | tr '\n' ' ')
+  EXTRA=$(echo "$FLAGS" | tr ' ' '\n' | grep -E '^D[0-9]{3}$' | grep -vE '^(D769|D773)$' || true)
+  [ -z "$EXTRA" ] && ok "⑭ 实弹: 残余告警仅 D769/D773（未合 PR, 合并后自消）: ${FLAGS:-无}" || no "⑭ 实弹: 预期外点名: $EXTRA"
+else
+  echo "  ℹ ⑭ 跳过: 批五派单文档不在本树（基线未含 #569）"
+fi
 
 echo ""
 echo "  结果: $PASS 通过, $FAIL 失败"
