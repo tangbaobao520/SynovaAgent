@@ -11,6 +11,15 @@
 - MAJOR (第一位): 大改版 — 架构重构/产品化里程碑 → 4.6.0 → 5.0.0
 ```
 
+## V5.2.9 (2026-09-14) — D704 改动文件 branch 覆盖准出闸门（CI coverage-gate job + canary 清单追加）（PATCH）
+
+- **① 新门禁**: `scripts/ci/branch-coverage-gate.sh` —— 判定面 = 本次 PR 改动的 `src/**/*.ts`（准出闸门，非全仓清库存）：读 vitest `json-summary` 产物，逐文件比对 branches 百分比与阈值（默认 **80%**，`BRANCH_COVERAGE_MIN` 可覆盖但非法值 fail-closed）；报告缺失/损坏 → exit 1；改动文件不在报告中（未被任何测试加载）→ 视为 0% 红；工作区已删文件跳过（降级可见）；豁免走改动文件内注释 `branch-coverage-exempt: <理由>`（文件驱动形态）。
+- **② CI 接线**: `.github/workflows/ci.yml` 新增独立 job `Branch Coverage Gate (D704)`（`if: github.event_name == 'pull_request'`，先探测 src/ 改动，无 src 改动零开销跳过；该次 coverage 调用以 CLI 禁用全局阈值，由闸门脚本做唯一权威判定）+ canary 清单追加 `tests/control-tower/branch-coverage-gate.test.sh`（双平台）。
+- **③ 配置**: `vitest.config.ts` 仅追加 `reporters: ['text', 'json-summary']`；既有全局 thresholds（lines 40 / functions 45 / branches 30 / statements 40）逐字保留不动。
+- **验证**: 密封测试 21/21（CTO 独立复跑）；四态实测（60% → exit 1 点名文件 / 95% → 0 / 清单无 src 对象 → vacuous 0 / 报告缺失 → fail-closed 1）；`npx tsc --noEmit` 报错集与基线逐条恒等（33=33）。
+- **派生登记（不属本 PATCH）**: ① 本卡 head 的 push 落在 pull_request 事件静默窗口（13:38Z–16:32Z）→ job 零 CI 执行，已由补 bump commit 触发复跑取证；② `branch-coverage-gate.sh` 未按 D313 M5 强制 UTF-8（Windows GBK locale 直接调用会 UnicodeEncodeError）——CI/密封测试无碍，Win 本地复跑需注入 `PYTHONIOENCODING=utf-8`，建议后续补齐。
+- **作者**: win-cto（验收补 bump；spec §3.1 写集遗漏 VERSION.md）
+
 ## V5.2.8 (2026-09-13) — D703 dev-doc 证据命令回放机制（verify-doc.sh + CI Replay 步骤 + canary 清单追加）（PATCH）
 
 - **① 新机制**: `scripts/ci/verify-doc.sh` —— 通用回放器，提取 dev doc §6/§8 的 DS 证据命令（grep/git/npx vitest/npx tsc 白名单；含 `; & $ < > 反引号` 的命令拒绝执行），逐条在干净工作树回放，任一失败 exit 1；`scripts/ci/verify-d703.sh` 为本卡自证脚本（对本批 D702/D703/D704 三份 spec 逐条回放，不可机器化项显式 SKIP + 理由）。

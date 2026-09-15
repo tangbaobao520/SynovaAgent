@@ -38,6 +38,9 @@ export default defineConfig({
       : [],
     coverage: {
       provider: 'v8',
+      // D704 (K3 W-3): json-summary 产物供 scripts/ci/branch-coverage-gate.sh 消费
+      // （CI 改动文件 branch 准出闸门）。既有 thresholds 全局阈值逐字保留不动。
+      reporters: ['text', 'json-summary'],
       include: ['./src/**/*.ts'],
       exclude: [
         './src/tui/**',        // neo-blessed TUI — 需 headless e2e, 非单元测试范围

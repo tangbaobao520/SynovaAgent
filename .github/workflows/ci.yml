@@ -160,6 +160,39 @@ jobs:
           fi
           exit 1
 
+  coverage-gate:
+    name: Branch Coverage Gate (D704)
+    # K3 W-3: 改动文件 branch 覆盖准出——全局 thresholds 是全仓聚合平均，单文件
+    # 漏测分支可被平均掩盖（W1/W4 真实事故形态）。本 job 判定面 = 本次 PR 改动的
+    # src/**/*.ts（准出闸门，非全仓清库存）。
+    # 全量 vitest --coverage 该次调用以 CLI 禁用全局阈值（vitest.config.ts 配置不动；
+    # 本地实证: subset 跑 coverage 时 all=true 使未加载文件以 0% 计入聚合，全局阈值必红，
+    # 而全局阈值在改动前从未于 CI 执行——决策记录见 spec SYNOVA-IMPL-D704 §Q1c/§3.2），
+    # 由 branch-coverage-gate.sh 做本 job 唯一权威判定。
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 闸门默认改动清单依赖 origin/main...HEAD（depth=1 时 ref 缺失）
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: 'npm' }
+      - run: npm ci
+      - name: Detect src changes
+        id: srcchanged
+        run: |
+          if git diff --name-only --diff-filter=d origin/main...HEAD | grep -qE '^src/.*\.ts$'; then
+            echo "src_changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "src_changed=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Run vitest with coverage (global thresholds disabled for this run only)
+        if: steps.srcchanged.outputs.src_changed == 'true'
+        run: npx vitest run --coverage --coverage.reporter=json-summary --coverage.thresholds.lines=false --coverage.thresholds.functions=false --coverage.thresholds.branches=false --coverage.thresholds.statements=false
+      - name: Branch coverage exit gate
+        if: steps.srcchanged.outputs.src_changed == 'true'
+        run: bash scripts/ci/branch-coverage-gate.sh coverage/coverage-summary.json
+
   architecture:
     name: Architecture Check
     runs-on: ubuntu-latest
@@ -255,6 +288,7 @@ jobs:
             tests/control-tower/grep-oP-regression.test.sh \
             tests/control-tower/merge_writeset_gate.test.sh \
             tests/control-tower/ci-ratchet-base.test.sh \
+            tests/control-tower/branch-coverage-gate.test.sh \
             tests/control-tower/verify-doc.test.sh; do
             echo "── $t"
             # D526: 测试失败输出进 ::error 注解——无 token 也能经 annotations 定位（D521 工具1 语义）
