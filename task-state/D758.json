@@ -1,9 +1,26 @@
 {
   "task_id": "D758",
   "title": "证据目录域判定豁免（D734 假阳性修复）",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": ".claude/task-briefs/2026-09-15-D758-evidence-domain-neutral.md",
-  "impl": null,
+  "impl": {
+    "commit": "5bb6dbdb（#563）",
+    "branch": "fix/d758-evidence-domain-neutral",
+    "by": "synova-cto",
+    "at": "2026-09-15",
+    "files": [
+      "docs/synova/coordination/ownership.yaml",
+      "tests/control-tower/check-ownership.test.sh",
+      "tests/control-tower/check-pr-budget.test.sh"
+    ],
+    "evidence": [
+      "根因: PR #538 的 9 文件里唯一 mac 分类项是它自己的验收证据（D716-win-20260913/1-5-dual-guide-win-evidence.txt）→ D734 ② 变更跨域卡死（run 34937314664）",
+      "修法: domain_neutral 增加 docs/synova/product-lines/evidence/**（同族先例: task-briefs/task-state/memory-notes）",
+      "绿: check-pr-budget --files <#538 形态> → ② 变更单域 win（域判定豁免 1）",
+      "反向必红: 移除豁免项 → 同命令 exit 1（变更跨域）；恢复 → 绿",
+      "回归: check-ownership.test.sh 51 项 / check-pr-budget.test.sh 24 项全过"
+    ]
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-15",

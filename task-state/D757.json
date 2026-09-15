@@ -1,9 +1,28 @@
 {
   "task_id": "D757",
   "title": "哨兵类型欠账修复：3 个未登记哨兵的类型错（D752 门禁暴露）",
-  "status": "claimed",
+  "status": "impl_done",
   "spec": "task-state/D752.json + .claude/task-briefs/2026-09-15-D757-sentinel-type-debt.md",
-  "impl": null,
+  "impl": {
+    "commit": "c11fbb1b（#562）",
+    "branch": "fix/d757-sentinel-type-debt",
+    "by": "synova-cto",
+    "at": "2026-09-15",
+    "files": [
+      "extensions/sentinels/cash-runway/aggregate.ts",
+      "extensions/sentinels/cash-runway/computes/compute-cash-runway-months.ts",
+      "extensions/sentinels/cash-runway/computes/compute-receivable-overdue-rate.ts",
+      "extensions/sentinels/revenue-health/aggregate.ts",
+      "extensions/sentinels/revenue-health/computes/compute-revenue-growth.ts",
+      "extensions/sentinels/key-person-risk/aggregate.ts"
+    ],
+    "evidence": [
+      "红（复现，含 D752 登记的编译图）: 3 个目录 31 处 TS 错（TS2305×2 / TS2307×6 / TS2345×4 / TS7006×19），CI job 34935243948",
+      "绿（修复后，同编译图）: 3 个目录 0 处错（残余 28 处全在 CI 既有过滤名单内）",
+      "反向验证: 把 cash-runway/computes/compute-cash-runway-months.ts 导入改回 ../../../src/... → 该文件必再红（TS2307+TS7006）；恢复后 0",
+      "运行时未回归: npx tsx 加载 4 个哨兵入口 → 4/4 LOADED（错全在 import type，编译期擦除）"
+    ]
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-15",
