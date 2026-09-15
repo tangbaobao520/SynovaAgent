@@ -1,0 +1,13 @@
+{
+  "task_id": "D759",
+  "title": "回退 nodemailer 10 依赖升级（主树 tsc 变红）",
+  "status": "claimed",
+  "spec": ".claude/task-briefs/2026-09-15-D759-revert-nodemailer10.md",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "synova-cto",
+  "note": "CTO 合入 dependabot #549（nodemailer 9.1.1→10.0.3）后，主树 tsc 变红: src/services/email-service.ts(35,19) TS2503 Cannot find namespace 'nodemailer'（v10 不再提供该命名空间类型）。该 PR 的 CI 绿是在旧基线上跑的，三连合后组合态才暴露 → CTO 自误，回退并把依赖升级列入独立任务。",
+  "domain": "mac"
+}
