@@ -1,0 +1,13 @@
+{
+  "task_id": "D778",
+  "title": "交付物复核门禁：派单文档 pre-commit 强制 pre-dispatch-check + CTO 交付三件套固化",
+  "status": "impl-done",
+  "spec": "docs/synova/coordination/编码指令-D778-派单复核门禁-20260915.md",
+  "impl": "feat/d778-dispatch-review-gate（栈式于 PR #570）: ① scripts/control-tower/check-dispatch-gate.sh 三态门禁（探测 staged 派单-*.md → 逐个跑 pre-dispatch-check；SYNO_PRE_DISPATCH_DOCS/BIN 注入缝，注入只能加不能减 fail-closed）② pre-commit-check.sh 两处接线不占组号（主流程 D734 块后 + CT-34 纯文档早退分支内——纯派单提交在组 1 前早退，不补此处=门禁虚设；SYNO_CI=1 由调用处显式 exit 1 裁决）③ 配对测试 19 断言全绿（绿/红×2/降级×2/边界×2 沙箱 git 探测不误拦编码指令/接线 grep/CT-34 集成红绿/跳过 <1s）④ 反向验证: 删「依据计划」行 SYNO_CI=1 exit 1 必红、恢复 exit 0（三次原始输出入 PR）⑤ 性能 基线 3s → 改后 2s ⑥ sync-dsh-skills --check 通过（交付物 3 由 #570 落，本单验证） 验收补丁: ① 项规则引用假阳性修复——选 (b) 引用词旁路（按/参见/参考/依据/规则/规约/决策后的 D# 豁免；拒绝 (a) 位置判定: 批五 L108 真任务号在表格中段会被漏检），ℹ️ 豁免显式留痕，测试 19→23 与 8→11 断言（正例裸 D998 红/反例规则引用绿/批五实弹 D734 消失、残余 ⊆ {D769,D773}），性能 3s=基线，SYNC-OK。",
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "note": "实证（2026-09-15 创始人质询「你写的派单文档是否符合过/复核过」）: CTO 的派单文档复核是**习惯**不是**门禁**——pre-dispatch-check.sh 只在人工调用时跑；且它自身曾在第②项崩溃（D771 修复），导致批五派单（PR #569）第一遍复核结论不完整。交付物: ① pre-commit 组：staged 的 docs/synova/coordination/派单-*.md 必须过 pre-dispatch-check（本地软、CI 硬）② 测试（绿/红/降级三态 + 注入缝）③ CTO 交付三件套写入 cto-handover skill（.claude/.dsh 双写）④ 复核必须在与 main 同步的 worktree 上跑（工作树滞后会假红/假绿）。"
+}
