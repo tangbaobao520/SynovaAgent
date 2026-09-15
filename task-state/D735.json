@@ -1,0 +1,13 @@
+{
+  "task_id": "D735",
+  "title": "bypass.log 出合并树（stage 1）（bypass-log-out-of-merge-tree）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "note": " | D779 补登记：原 task-state 只存在于未合分支（c7431e24）；登记补齐使看板可见、派单复核 ① 项可过。把 bypass.log 从合并树移出（当前 union 驱动为本机方案，GitHub 侧仍冲突）"
+}

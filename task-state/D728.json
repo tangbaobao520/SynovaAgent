@@ -1,0 +1,13 @@
+{
+  "task_id": "D728",
+  "title": "证据链接线实现（evidence-chain wiring impl）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "note": " | D779 补登记：原 task-state 只存在于未合分支（5732b5ab）；登记补齐使看板可见、派单复核 ① 项可过。把 D727 的规格落到实现：证据采集 → 入库 → 报告引用链路接线"
+}

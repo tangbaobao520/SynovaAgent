@@ -1,0 +1,13 @@
+{
+  "task_id": "D731",
+  "title": "K3 审计批次三（k3-audit-batch-3）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "synova-cto",
+  "domain": "k3",
+  "note": " | D779 补登记：原 task-state 只存在于未合分支（5732b5ab）；登记补齐使看板可见、派单复核 ① 项可过。D713/D714/D717/D718/D721/D722/D723 等批次的独立审计"
+}
