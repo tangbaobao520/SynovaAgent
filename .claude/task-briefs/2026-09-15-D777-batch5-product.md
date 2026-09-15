@@ -86,8 +86,11 @@ Agent，不是 ChatBot。驻扎企业，持续观测，主动发现，自动诊�
 
 | 文件 | 类型 |
 |---|---|
+| .claude/bypass.log | builtin（hook 运行期产物，自动豁免） |
 | .claude/task-briefs/2026-09-15-D777-batch5-product.md | task |
 | docs/synova/coordination/派单-第五批-产品推进-20260915.md | task |
+| docs/synova/coordination/编码指令-D747-line1-repackage-evidence-20260915.md | task |
+| docs/synova/coordination/编码指令-D774-evidence-pipeline-20260915.md | task |
 | task-state/D774.json | task |
 | task-state/D775.json | task |
 | task-state/D776.json | task |
