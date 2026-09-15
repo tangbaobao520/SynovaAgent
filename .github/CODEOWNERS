@@ -15,6 +15,7 @@ packages/**                              @tangbaobao520
 synova_worker/**                         @tangbaobao520
 docs/plans/**                            @tangbaobao520
 src/sentinel/**                          @tangbaobao520
+tests/sentinel/**                        @tangbaobao520
 src/cron/**                              @tangbaobao520
 src/mcp/**                               @tangbaobao520
 src/agent/sentinel-service*              @tangbaobao520

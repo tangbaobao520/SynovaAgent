@@ -1,0 +1,13 @@
+{
+  "task_id": "D753",
+  "title": "计数一致性债——单一事实源缺失（P2，禁止在 D750 修好前调整本体规模）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-14",
+  "updated_by": "synova-cto",
+  "note": "① packages/ontology/src/edge-types.ts:4 写「42」、:6 写「55 JSON − 4 = 51」，实测 51 → 第 4 行错。② extensions/ontology/manifest.json 自相矛盾：description 称 sog-core-schema.ts 枚举「保留为 source of truth」，同文件 note 称其「deprecated reference」；manifest nodeTypes=29 vs 代码 NodeType=45 键（唯一值 40，'pool/activity' 重复 6 次）。③ 权威文档01 第六章 :16/:168 用 61 compute，:348/:428 用 45 compute（两处都称「0 缺口」）。④ 同一本体在材料中出现 17/22/29/33/40/45 六个数。修法：定单一事实源（JSON 为权威）+ 各文档引用而非复述数字；**不动本体规模**（质询 §六 不该做 1）。",
+  "source": "~/山河研究院/99-综合/质询-可插件化是否物理事实.md（终版 2026-09-14，院长质询）"
+}

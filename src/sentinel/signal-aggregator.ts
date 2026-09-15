@@ -15,6 +15,7 @@
  */
 
 import type { SentinelFinding, SentinelCheckResult } from './types';
+import { loadSentinels } from './sentinel-loader';
 import { createLogger } from '@synova/logger';
 
 const log = createLogger('sentinel/signal-aggregator');
@@ -120,13 +121,24 @@ export function aggregateSignals(
     const categories = new Set<string>();
     const experts = new Set<string>();
 
+    let fallbackCount = 0;
     for (const item of items) {
-      // 从 sentinelId 推断类别
-      const cat = inferCategory(item.sentinelId);
-      categories.add(cat);
-      for (const exp of (SIGNAL_TO_EXPERT[cat] || [])) {
+      // D750: 优先 manifest 权威 expert（数据驱动）；仅未命中时回落旧猜测路径并记账
+      const exp = expertOf(item.sentinelId);
+      if (exp) {
         experts.add(exp);
+        // 类目仅作标签（不再影响路由）：EXPERT_TO_CATEGORY 对多类目专家有歧义，故标签仍用启发式
+        categories.add(inferCategory(item.sentinelId));
+      } else {
+        fallbackCount++;
+        const cat = inferCategory(item.sentinelId);
+        categories.add(cat);
+        for (const e of (SIGNAL_TO_EXPERT[cat] || [])) experts.add(e);
       }
+    }
+    if (fallbackCount > 0) {
+      log.warn({ entity, fallbackCount, total: items.length },
+        'D750: 部分哨兵未在 manifest 命中 expert — 已回落 inferCategory（可能误路由，需补 manifest）');
     }
 
     // 3. 严重度升级
@@ -185,6 +197,46 @@ function extractEntityKey(finding: SentinelFinding): string {
   const sep = title.indexOf(':');
   if (sep > 0 && sep < 30) return title.slice(0, sep).trim();
   return title.slice(0, 30).trim();
+}
+
+/** D750: 类目 ← 专家 的反查表（由 SIGNAL_TO_EXPERT 反推，保持单一事实源） */
+const EXPERT_TO_CATEGORY: Record<string, string> = (() => {
+  const m: Record<string, string> = {};
+  for (const [cat, exps] of Object.entries(SIGNAL_TO_EXPERT)) {
+    for (const e of exps) if (!m[e]) m[e] = cat;
+  }
+  return m;
+})();
+
+/** D750: 哨兵 → 权威 expert 映射（来自 manifest，45/45 已声明）
+ *
+ * 背景（质询 §3.4，活缺陷）: 旧实现用 inferCategory 按 sentinelId 子串猜类目 → 只能产出
+ *   capability/health/risk 三类，SIGNAL_TO_EXPERT 十类中 7 类不可达 → revenue/financial/strategy
+ *   信号被默认判为 health → 派给 technology-foundation（营收信号派给"技术底座"专家）。
+ * 修法: 以 manifest.expert 为权威（数据驱动），类目由 EXPERT_TO_CATEGORY 反查。
+ * 契约: @input sentinelId（manifest.id 或 name）@output expert 字符串 | undefined（未命中，调用方回落）
+ *       降级: manifest 加载失败/未命中 → 返回 undefined 并 log.warn，**绝不静默**（铁律 11/24）
+ */
+let _expertById: Map<string, string> | null = null;
+function expertOf(sentinelId: string): string | undefined {
+  if (!_expertById) {
+    _expertById = new Map<string, string>();
+    try {
+      const { sentinels, degraded, errors } = loadSentinels();
+      for (const s of sentinels) {
+        const m = s.manifest as { id?: string; name?: string; expert?: string };
+        if (m.expert) {
+          if (m.id) _expertById.set(m.id, m.expert);
+          if (m.name) _expertById.set(m.name, m.expert);
+        }
+      }
+      if (degraded) log.warn({ errors }, 'D750: 哨兵 manifest 加载降级 — 专家解析可能不全');
+    } catch (err) {
+      log.warn({ err }, 'D750: 哨兵 manifest 加载失败 — 回落 inferCategory（该回落路径会误路由，D750 已知）');
+      return undefined;
+    }
+  }
+  return _expertById.get(sentinelId);
 }
 
 /** 从哨兵 ID 推断类别 */

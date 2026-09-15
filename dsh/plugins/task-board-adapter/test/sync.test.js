@@ -6,25 +6,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, writeFileSync, rmSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import {
-  readTaskState,
-  mapToBoardTask,
-  readBacklog,
-  mapBacklogToBoardTask,
-  buildImportAction,
-  syncOnce,
-  fetchBoardState,
-  DEFAULT_STATUS_MAPPING,
-  FALLBACK_STATUS,
-  ACTIVITY_WINDOW_MS,
-  ACTIVITY_UPGRADE_STATUSES,
-  resolveBoardStatus,
-  readSnapshot,
-  mapWinTaskToBoardTask,
-  mapLineToBoardTask,
-  mapOverallLineCard,
-  mapTodoToBoardTask,
-} from "../lib/sync.js";
+import { ACTIVITY_UPGRADE_STATUSES, ACTIVITY_WINDOW_MS, DEFAULT_STATUS_MAPPING, FALLBACK_STATUS, buildImportAction, fetchBoardState, mapBacklogToBoardTask, mapLineToBoardTask, mapOverallLineCard, mapToBoardTask, mapTodoToBoardTask, mapWinTaskToBoardTask, readBacklog, readSnapshot, readTaskState, resolveBoardStatus, syncOnce, verdictBoardStatus } from "../lib/sync.js";
 
 function makeRepo(files) {
   const root = mkdtempSync(join(tmpdir(), "synova-adapter-"));
@@ -725,4 +707,16 @@ test("D502复核: L00 总览卡——全绿时 done / 0% 时 todo", () => {
   assert.equal(all.task.status, "done");
   const zero = mapOverallLineCard({ overall_pct: 0, lines: [{ id: 1, total: 5, verified: 0 }] });
   assert.equal(zero.task.status, "todo");
+});
+
+// D748: verdict 维度 —— audited + FAIL ≠ done（失败必须可见）
+test("D748 resolveBoardStatus: FAIL / NOT-AUDITABLE → failed", () => {
+  assert.equal(resolveBoardStatus("audited", { status: "audited", audit: { verdict: "FAIL" } }), "failed");
+  assert.equal(resolveBoardStatus("audited", { status: "audited", audit: { verdict: "NOT-AUDITABLE" } }), "failed");
+  assert.equal(resolveBoardStatus("audited", { status: "audited", audit: { verdict: "NOT_AUDITABLE" } }), "failed");
+  // 不误伤：PASS / CONDITIONAL PASS / 无 verdict → 交回 status 映射
+  assert.equal(resolveBoardStatus("audited", { status: "audited", audit: { verdict: "PASS" } }), "done");
+  assert.equal(resolveBoardStatus("audited", { status: "audited", audit: { verdict: "CONDITIONAL PASS" } }), "done");
+  assert.equal(resolveBoardStatus("audited", { status: "audited" }), "done");
+  assert.equal(verdictBoardStatus({}), null);
 });
