@@ -1,0 +1,628 @@
+{
+  "schemaVersion": "1.0",
+  "generatedFrom": [
+    "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md"
+  ],
+  "generatedBy": "scripts/doc-system/gen-system-registry.sh",
+  "generatedAtCommit": "3622a3d1352482924de1df9093022c791120f201",
+  "generatedAt": "2026-09-16T20:02:14+08:00",
+  "edges": [
+    {
+      "id": "E-01",
+      "name": "ACTIVE_SCANNING",
+      "group": "横切感知层",
+      "hardness": "soft",
+      "coverage": "2/4",
+      "coveragePct": 50,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 58,
+        "heading": "E-01 ACTIVE_SCANNING（横切感知层 | soft | 2/4=50%）"
+      }
+    },
+    {
+      "id": "E-02",
+      "name": "PASSIVE_SIGNAL",
+      "group": "横切感知层",
+      "hardness": "soft",
+      "coverage": "3/5",
+      "coveragePct": 60,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 73,
+        "heading": "E-02 PASSIVE_SIGNAL（横切感知层 | soft | 3/5=60%）"
+      }
+    },
+    {
+      "id": "E-03",
+      "name": "EXTERNAL_ECHO",
+      "group": "横切感知层",
+      "hardness": "soft",
+      "coverage": "3/5",
+      "coveragePct": 60,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 86,
+        "heading": "E-03 EXTERNAL_ECHO（横切感知层 | soft | 3/5=60%）"
+      }
+    },
+    {
+      "id": "E-04",
+      "name": "PERCEPTION_LEARNING",
+      "group": "横切感知层",
+      "hardness": "heuristic",
+      "coverage": "1/4",
+      "coveragePct": 25,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 100,
+        "heading": "E-04 PERCEPTION_LEARNING（横切感知层 | heuristic | 1/4=25%）"
+      }
+    },
+    {
+      "id": "E-05",
+      "name": "CAPITAL_ACQUISITION",
+      "group": "获取",
+      "hardness": "hard",
+      "coverage": "4/5",
+      "coveragePct": 80,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 115,
+        "heading": "E-05 CAPITAL_ACQUISITION（获取 | hard | 4/5=80%）"
+      }
+    },
+    {
+      "id": "E-06",
+      "name": "FINANCING_MIX",
+      "group": "获取",
+      "hardness": "hard",
+      "coverage": "6/7",
+      "coveragePct": 86,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 126,
+        "heading": "E-06 FINANCING_MIX（获取 | hard | 6/7=86%）"
+      }
+    },
+    {
+      "id": "E-07",
+      "name": "TALENT_ACQUISITION",
+      "group": "获取",
+      "hardness": "soft",
+      "coverage": "3/5",
+      "coveragePct": 60,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 139,
+        "heading": "E-07 TALENT_ACQUISITION（获取 | soft | 3/5=60%）"
+      }
+    },
+    {
+      "id": "E-08",
+      "name": "TALENT_FILTER",
+      "group": "获取",
+      "hardness": "soft",
+      "coverage": "2/4",
+      "coveragePct": 50,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 154,
+        "heading": "E-08 TALENT_FILTER（获取 | soft | 2/4=50%）"
+      }
+    },
+    {
+      "id": "E-09",
+      "name": "DATA_ACQUISITION",
+      "group": "获取",
+      "hardness": "hard",
+      "coverage": "4/5",
+      "coveragePct": 80,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 169,
+        "heading": "E-09 DATA_ACQUISITION（获取 | hard | 4/5=80%）"
+      }
+    },
+    {
+      "id": "E-10",
+      "name": "EQUIPMENT_DEPLOYMENT",
+      "group": "获取",
+      "hardness": "soft",
+      "coverage": "2/4",
+      "coveragePct": 50,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 182,
+        "heading": "E-10 EQUIPMENT_DEPLOYMENT（获取 | soft | 2/4=50%）"
+      }
+    },
+    {
+      "id": "E-11",
+      "name": "REPUTATION_ATTRACTION",
+      "group": "获取/二阶",
+      "hardness": "soft",
+      "coverage": "2/4",
+      "coveragePct": 50,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 196,
+        "heading": "E-11 REPUTATION_ATTRACTION（获取/二阶 | soft | 2/4=50%）"
+      }
+    },
+    {
+      "id": "E-12",
+      "name": "EFFICIENCY_FINANCING",
+      "group": "获取/二阶/跨点传导",
+      "hardness": "soft",
+      "coverage": "2/4",
+      "coveragePct": 50,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 210,
+        "heading": "E-12 EFFICIENCY_FINANCING（获取/二阶/跨点传导 | soft | 2/4=50%）"
+      }
+    },
+    {
+      "id": "E-13",
+      "name": "CAPITAL_ALLOCATION",
+      "group": "配置",
+      "hardness": "hard",
+      "coverage": "4/5",
+      "coveragePct": 80,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 225,
+        "heading": "E-13 CAPITAL_ALLOCATION（配置 | hard | 4/5=80%）"
+      }
+    },
+    {
+      "id": "E-14",
+      "name": "DECISION_POWER",
+      "group": "配置",
+      "hardness": "soft",
+      "coverage": "3/4",
+      "coveragePct": 75,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 238,
+        "heading": "E-14 DECISION_POWER（配置 | soft | 3/4=75%）"
+      }
+    },
+    {
+      "id": "E-15",
+      "name": "HUMAN_DEPLOYMENT",
+      "group": "配置",
+      "hardness": "soft",
+      "coverage": "3/5",
+      "coveragePct": 60,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 251,
+        "heading": "E-15 HUMAN_DEPLOYMENT（配置 | soft | 3/5=60%）"
+      }
+    },
+    {
+      "id": "E-16",
+      "name": "INFO_TRANSMISSION",
+      "group": "配置",
+      "hardness": "soft",
+      "coverage": "2/4",
+      "coveragePct": 50,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 266,
+        "heading": "E-16 INFO_TRANSMISSION（配置 | soft | 2/4=50%）"
+      }
+    },
+    {
+      "id": "E-17",
+      "name": "INCENTIVE_ALIGNMENT",
+      "group": "配置",
+      "hardness": "soft",
+      "coverage": "2/4",
+      "coveragePct": 50,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 279,
+        "heading": "E-17 INCENTIVE_ALIGNMENT（配置 | soft | 2/4=50%）"
+      }
+    },
+    {
+      "id": "E-18",
+      "name": "RULE_CONSTRAINT",
+      "group": "配置",
+      "hardness": "soft",
+      "coverage": "2/4",
+      "coveragePct": 50,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 292,
+        "heading": "E-18 RULE_CONSTRAINT（配置 | soft | 2/4=50%）"
+      }
+    },
+    {
+      "id": "E-19",
+      "name": "ORG_LEARNING",
+      "group": "转化/二阶",
+      "hardness": "heuristic",
+      "coverage": "1/4",
+      "coveragePct": 25,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 307,
+        "heading": "E-19 ORG_LEARNING（转化/二阶 | heuristic | 1/4=25%）"
+      }
+    },
+    {
+      "id": "E-20",
+      "name": "KNOWLEDGE_SHARING",
+      "group": "转化/二阶",
+      "hardness": "soft",
+      "coverage": "2/4",
+      "coveragePct": 50,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 321,
+        "heading": "E-20 KNOWLEDGE_SHARING（转化/二阶 | soft | 2/4=50%）"
+      }
+    },
+    {
+      "id": "E-21",
+      "name": "ORG_TRUST",
+      "group": "转化/二阶",
+      "hardness": "heuristic",
+      "coverage": "2/3",
+      "coveragePct": 67,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 335,
+        "heading": "E-21 ORG_TRUST（转化/二阶 | heuristic | 2/3=67%）"
+      }
+    },
+    {
+      "id": "E-22",
+      "name": "ROUTINE_RIGIDITY",
+      "group": "转化/二阶/负向",
+      "hardness": "heuristic",
+      "coverage": "1/3",
+      "coveragePct": 33,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 349,
+        "heading": "E-22 ROUTINE_RIGIDITY（转化/二阶/负向 | heuristic | 1/3=33%）"
+      }
+    },
+    {
+      "id": "E-23",
+      "name": "OPERATIONAL_EXECUTION",
+      "group": "转化",
+      "hardness": "hard",
+      "coverage": "4/5",
+      "coveragePct": 80,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 363,
+        "heading": "E-23 OPERATIONAL_EXECUTION（转化 | hard | 4/5=80%）"
+      }
+    },
+    {
+      "id": "E-24",
+      "name": "INNOVATION",
+      "group": "转化",
+      "hardness": "soft",
+      "coverage": "2/4",
+      "coveragePct": 50,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 378,
+        "heading": "E-24 INNOVATION（转化 | soft | 2/4=50%）"
+      }
+    },
+    {
+      "id": "E-25",
+      "name": "BRAND_CONSTRUCTION",
+      "group": "转化",
+      "hardness": "soft",
+      "coverage": "2/5",
+      "coveragePct": 40,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 392,
+        "heading": "E-25 BRAND_CONSTRUCTION（转化 | soft | 2/5=40%）"
+      }
+    },
+    {
+      "id": "E-26",
+      "name": "PRODUCT_DEFINITION",
+      "group": "转化",
+      "hardness": "soft",
+      "coverage": "2/4",
+      "coveragePct": 50,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 406,
+        "heading": "E-26 PRODUCT_DEFINITION（转化 | soft | 2/4=50%）"
+      }
+    },
+    {
+      "id": "E-27",
+      "name": "SERVICE_DELIVERY",
+      "group": "转化",
+      "hardness": "soft",
+      "coverage": "2/4",
+      "coveragePct": 50,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 420,
+        "heading": "E-27 SERVICE_DELIVERY（转化 | soft | 2/4=50%）"
+      }
+    },
+    {
+      "id": "E-28",
+      "name": "CROSS_FUNCTIONAL_SYNERGY",
+      "group": "转化/二阶",
+      "hardness": "soft",
+      "coverage": "2/4",
+      "coveragePct": 50,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 434,
+        "heading": "E-28 CROSS_FUNCTIONAL_SYNERGY（转化/二阶 | soft | 2/4=50%）"
+      }
+    },
+    {
+      "id": "E-29",
+      "name": "TECH_INFRASTRUCTURE",
+      "group": "转化/二阶",
+      "hardness": "soft",
+      "coverage": "2/5",
+      "coveragePct": 40,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 448,
+        "heading": "E-29 TECH_INFRASTRUCTURE（转化/二阶 | soft | 2/5=40%）"
+      }
+    },
+    {
+      "id": "E-30",
+      "name": "PRICING",
+      "group": "交付",
+      "hardness": "hard",
+      "coverage": "4/5",
+      "coveragePct": 80,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 466,
+        "heading": "E-30 PRICING（交付 | hard | 4/5=80%）"
+      }
+    },
+    {
+      "id": "E-31",
+      "name": "CLIENT_RETENTION",
+      "group": "交付",
+      "hardness": "hard",
+      "coverage": "3/4",
+      "coveragePct": 75,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 480,
+        "heading": "E-31 CLIENT_RETENTION（交付 | hard | 3/4=75%）"
+      }
+    },
+    {
+      "id": "E-32",
+      "name": "CHANNEL_EFFICIENCY",
+      "group": "交付",
+      "hardness": "soft",
+      "coverage": "2/4",
+      "coveragePct": 50,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 494,
+        "heading": "E-32 CHANNEL_EFFICIENCY（交付 | soft | 2/4=50%）"
+      }
+    },
+    {
+      "id": "E-33",
+      "name": "MARKET_COMPETITION",
+      "group": "交付",
+      "hardness": "hard",
+      "coverage": "3/5",
+      "coveragePct": 60,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 508,
+        "heading": "E-33 MARKET_COMPETITION（交付 | hard | 3/5=60%）"
+      }
+    },
+    {
+      "id": "E-34",
+      "name": "PROCUREMENT_POWER",
+      "group": "交付",
+      "hardness": "soft",
+      "coverage": "2/4",
+      "coveragePct": 50,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 522,
+        "heading": "E-34 PROCUREMENT_POWER（交付 | soft | 2/4=50%）"
+      }
+    },
+    {
+      "id": "E-35",
+      "name": "CUSTOMER_DATA_FEEDBACK",
+      "group": "交付/跨点传导",
+      "hardness": "soft",
+      "coverage": "2/4",
+      "coveragePct": 50,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 536,
+        "heading": "E-35 CUSTOMER_DATA_FEEDBACK（交付/跨点传导 | soft | 2/4=50%）"
+      }
+    },
+    {
+      "id": "E-36",
+      "name": "COMPETITIVE_POSITION",
+      "group": "交付",
+      "hardness": "soft",
+      "coverage": "2/5",
+      "coveragePct": 40,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 550,
+        "heading": "E-36 COMPETITIVE_POSITION（交付 | soft | 2/5=40%）"
+      }
+    },
+    {
+      "id": "E-37",
+      "name": "PROFIT_REINVEST",
+      "group": "回流",
+      "hardness": "hard",
+      "coverage": "4/5",
+      "coveragePct": 80,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 568,
+        "heading": "E-37 PROFIT_REINVEST（回流 | hard | 4/5=80%）"
+      }
+    },
+    {
+      "id": "E-38",
+      "name": "TALENT_RETENTION",
+      "group": "回流",
+      "hardness": "hard",
+      "coverage": "3/5",
+      "coveragePct": 60,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 581,
+        "heading": "E-38 TALENT_RETENTION（回流 | hard | 3/5=60%）"
+      }
+    },
+    {
+      "id": "E-39",
+      "name": "KNOWLEDGE_REUSE",
+      "group": "回流",
+      "hardness": "soft",
+      "coverage": "2/4",
+      "coveragePct": 50,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 595,
+        "heading": "E-39 KNOWLEDGE_REUSE（回流 | soft | 2/4=50%）"
+      }
+    },
+    {
+      "id": "E-40",
+      "name": "REPUTATION_FLYWHEEL",
+      "group": "回流/跨点传导",
+      "hardness": "soft",
+      "coverage": "2/5",
+      "coveragePct": 40,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 609,
+        "heading": "E-40 REPUTATION_FLYWHEEL（回流/跨点传导 | soft | 2/5=40%）"
+      }
+    },
+    {
+      "id": "E-41",
+      "name": "TALENT_PROTECTION",
+      "group": "回流/跨点传导",
+      "hardness": "soft",
+      "coverage": "2/5",
+      "coveragePct": 40,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 624,
+        "heading": "E-41 TALENT_PROTECTION（回流/跨点传导 | soft | 2/5=40%）"
+      }
+    },
+    {
+      "id": "E-42",
+      "name": "ASSUMPTION_LINKAGE",
+      "group": "回流/跨点传导",
+      "hardness": "soft",
+      "coverage": "2/4",
+      "coveragePct": 50,
+      "authorityRef": {
+        "doc": "权威文档01",
+        "file": "docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/SYNOVA-RESEARCH-第四章-边节点映射矩阵-v1-0-20260714.md",
+        "line": 639,
+        "heading": "E-42 ASSUMPTION_LINKAGE（回流/跨点传导 | soft | 2/4=50%）"
+      }
+    }
+  ],
+  "nodePools": [],
+  "counters": {
+    "sentinelDirs": {
+      "value": 45,
+      "scope": "extensions/sentinels 一级目录（除 _extinct/shared）",
+      "derivedBy": "find extensions/sentinels -maxdepth 1 -type d | grep -v _extinct|shared"
+    },
+    "computeFiles": {
+      "value": 190,
+      "scope": "*computes* 下非 .test.ts 的 .ts 文件数",
+      "derivedBy": "find extensions/sentinels -path '*computes*' -name '*.ts' ! -name '*.test.ts'"
+    },
+    "skillDirs": {
+      "value": 41,
+      "scope": "extensions/skills/builtin 一级目录",
+      "derivedBy": "find extensions/skills/builtin -maxdepth 1 -type d"
+    },
+    "playbookYaml": {
+      "value": 21,
+      "scope": "extensions/playbooks 下 *.yaml",
+      "derivedBy": "find extensions/playbooks -name '*.yaml'"
+    },
+    "experts": {
+      "value": 6,
+      "scope": "expert-registry.yaml experts 键计数（v3.0）",
+      "derivedBy": "yaml experts 键计数"
+    }
+  },
+  "notes": "样板批（D782）: edges 从第四章抽取; coverageGraph/causalChains 待 K3 §8 裁定后补; 校验器 verify-system-registry.sh 消费本文件。"
+}
