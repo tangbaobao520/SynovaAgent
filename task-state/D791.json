@@ -1,0 +1,18 @@
+{
+  "task_id": "D791",
+  "title": "线3 报告体系 spec：一页纸结构（3-1）+ 各维度循环结论（3-7）",
+  "status": "spec_done",
+  "risk": "medium",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D791-line3-report-onepager-20260917.md",
+    "commit": "待本 PR 合并后由生成器读取（dev-doc 交付提交见 impl.files 同分支）",
+    "by": "synova-devdoc (DSH dev-doc session)",
+    "at": "2026-09-17"
+  },
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-17",
+  "updated_by": "synova-devdoc",
+  "note": "dev-doc 交付三件: spec（11 节 + 写集表 6 修改/3 目录级新建 = 12 文件上限 + DS1-DS14）+ 编码指令 docs/synova/coordination/编码指令-D791-线3报告体系-20260917.md + 本 state spec 段。spec 基线 origin/main@6a06e853，所有 file:line 声称在交付 worktree 内 grep/read 实测。关键实测发现（写入 spec §4）: ① GS-08 已产 3 份 verdict=pass 证据但落在 scripts/golden-scenarios/evidence/（calc-progress 只扫 docs/synova/product-lines/evidence/）② 验收点标签 S8-1/S8-2 与线 3 点 id 3-1/3-7 不匹配且全仓无映射层 → 三点循环「绿了不算分」（线 3 = 8 点全 0 证据的根因之一）⇒ spec §5.5 给出兑换链路修复。DSH 基线更正: 本机实装 0.1.5-rc.2 / 241 包，旧图纸 DSH 侧描述已过期，本 spec 零 DSH 依赖。"
+}

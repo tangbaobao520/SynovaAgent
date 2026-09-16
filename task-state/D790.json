@@ -1,0 +1,38 @@
+{
+  "task_id": "D790",
+  "title": "A1 度量口径修复：证据失效比时间戳（不比日期）+ 重跑刷新",
+  "status": "impl_done",
+  "spec": "docs/synova/coordination/派单-批六首批三卡-20260916.md",
+  "impl": {
+    "branch": "fix/d790-a1-freshness-timestamp",
+    "base": "origin/main@6a06e853",
+    "files": [
+      "scripts/product-lines/calc-progress.py",
+      "scripts/product-lines/evidence-writer.py",
+      "tests/control-tower/product-lines.test.py",
+      "tests/control-tower/calc-k3-stale.test.py",
+      "memory/notes/implemented/2026-09-17-d790-a1-freshness-timestamp.md"
+    ],
+    "verify": {
+      "product-lines.test.py": "41 tests / 2 failed（两红在 origin/main 同红，实测基线复跑一致；D790 新用例 9/9 绿）",
+      "calc-k3-stale.test.py": "16 tests / 1 failed（该红在 origin/main 同红；D790 新用例 1/1 绿）",
+      "事故回放_eb0fe7cb": "stale 27→24 / pending_k3 34→37；6 点 stale→pending_k3（7-7/18-2/18-5/25-1/25-2/25-3）",
+      "今日真实数据": "164 点 0 处状态变化；degraded.problems +2（入库时间代理显式登记）/ sources +5（拒绝代理登记）",
+      "靶心_同日两时点": "06:00 vs 22:00 六态逐点一致（test_same_day_two_run_times_identical + 注入时钟实跑）",
+      "refresh_all": "bash scripts/product-lines/refresh-all.sh exit 0；A4 幂等（进度无变化不重写）",
+      "逐行diff": "git diff 仅落在失效时间来源判定（TTL=14 / 权重 / 兑换 / 六态名零改动）"
+    },
+    "known_open": [
+      "存量 31/46 证据记录缺 at：入库时间代理仅在「入库日−记录日 ≤1 天」内生效；未入库窗口仍保守判 stale（producer 修复后新证据自带 at）",
+      "k3 裁决缺 at 时维持既有计分语义（verified 不变，仅显式登记 degraded）——是否收紧为 pending_k3 属计分口径变更，交创始人/K3 裁决",
+      "归因修正登记: 派单原文「#538（2026-09-15 21:41）吞掉线1 六点」实测不成立（b1618971 未触线 1 modules；09-15 线 1 modules 零提交）——缺陷本体与修法成立，归因以回放实测为准",
+      "版本锚点漂移（另案）: 施工图锚定 DSH v0.1.0-rc.5，本地现行 0.1.5-rc.2；被引用样例 signalTree() L757 已不存在"
+    ]
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-17",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "note": "口径修复: 失效比较基准 = 证据生成时间戳（记录自带 at/generated_at → 非计分 machine 路径用 git 入库时间代理（≤1 天）→ 日期回退 + 显式 degraded）；k3 计分路径不用代理（防假绿）；TTL 14 天与六态机/权重/兑换零改动。产出侧: evidence-writer.py 落 at（--at 可覆盖）。靶心实测: 同日两时点六态一致（改前改后皆一致——日历粒度对固定证据集时间无关，真正的判据缺陷是「同一份证据的判定依赖其日历日」，已修）；差异证据 = 事故回放 6 点恢复 pending_k3。落地后交 K3 审（改的是创始人看的那个数字）。"
+}

@@ -1,0 +1,25 @@
+{
+ "status": "claimed",
+ "spec": "docs/synova/coordination/派单-批七-20260917.md",
+ "impl": null,
+ "audit": null,
+ "fix_task_id": null,
+ "updated_at": "2026-09-17",
+ "updated_by": "synova-cto",
+ "domain": "mac",
+ "target": "2026-W38",
+ "task_id": "D798",
+ "title": "S3：账本日常化（每日刷新 + 周报生成器）",
+ "owner": "mac-coding",
+ "milestone": "M0 项目管理基建",
+ "depends_on": [
+  "D795"
+ ],
+ "blocked": null,
+ "acceptance_points": [
+  "连跑幂等",
+  "周报一页含需拍板清单",
+  "定时运行记录"
+ ],
+ "next": "接每日 cron（workflow 产分支 + CTO PAT 开 PR）+ 周报生成器"
+}

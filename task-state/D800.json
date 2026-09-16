@@ -1,0 +1,23 @@
+{
+ "status": "claimed",
+ "spec": "docs/synova/coordination/派单-批七-20260917.md",
+ "impl": null,
+ "audit": null,
+ "fix_task_id": null,
+ "updated_at": "2026-09-17",
+ "updated_by": "synova-cto",
+ "domain": "mac",
+ "target": "2026-W38",
+ "task_id": "D800",
+ "title": "证据完整性：未挣得证据洞（--skip-vitest 写假绿）",
+ "owner": "mac-coding",
+ "milestone": "M0 项目管理基建",
+ "depends_on": [],
+ "blocked": null,
+ "acceptance_points": [
+  "未真跑不得产生 pass 证据",
+  "真跑才写",
+  "有测试且不破 D774 链路"
+ ],
+ "next": "默认跳过即不写 + 显式 degraded；仅 SYNO_A2_SKIP_WRITE=0 才写并标 machine=skipped"
+}
