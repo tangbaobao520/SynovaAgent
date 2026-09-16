@@ -1,15 +1,26 @@
 {
   "task_id": "D554",
   "title": "post-commit-no-sweep-ct43",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "commit": "91f52fcb",
     "pr": "#280",
     "note": "CT-43 修复：影子提交 -o 路径限定；配对测试 12/12；V5.2.3"
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-09-15-K3-D组批次.md",
+    "verdict": "NOT-AUDITABLE",
+    "blockers": [],
+    "findings": [
+      "impl.commit=91f52fcb 有(post-commit 影子提交限定 bypass.log 路径防卷带 CT-43), 但 files/evidence 全空 -> 同上。注意本项改 post-commit 行为, 属门禁邻近变更, 建议补证据后重审",
+      "唯一旁证为 commit message 标题(若有) —— 但 commit message 说了什么 != 做成了且验证过(M2 模式), 不作为裁决依据",
+      "补证路径: 回填 impl.files 写集 + 至少一条可复跑验证命令(或显式声明本任务无代码交付、证据=commit+文件清单), 即可重审"
+    ],
+    "by": "k3-audit (批次四)",
+    "at": "2026-09-15"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-08-28",
-  "updated_by": "dsh-cto"
+  "updated_at": "2026-09-15",
+  "updated_by": "k3-audit"
 }

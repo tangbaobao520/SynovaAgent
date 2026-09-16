@@ -1,7 +1,7 @@
 {
   "task_id": "D570",
   "title": "AGENTS/CLAUDE 版本对齐 V5.2.7 + CTO 自检发现台账消化",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "by": "dsh-cto",
@@ -20,8 +20,17 @@
     ],
     "notes": "自检5问: ①接线=N/A（纯文档）②异常=N/A ③类型安全=N/A ④测试=N/A（治理文档无测试配套，D531 同型）⑤残留=无。边界: 不改 VERSION.md（已 V5.2.7）/scripts/audit/"
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-09-15-K3-D组批次.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "findings": [
+      "3 条 evidence 全部独立复验逐字相符: grep -c V5.2.7 AGENTS.md=2 CLAUDE.md=2(声称 =2/=2); grep -c 'as never' AGENTS.md=2 CLAUDE.md=2(声称 =2/=2); 台账含 CTO 接管批条目且该文件在 impl.files 内"
+    ],
+    "by": "k3-audit (批次四)",
+    "at": "2026-09-15"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-03",
-  "updated_by": "alloc-task-id"
+  "updated_at": "2026-09-15",
+  "updated_by": "k3-audit"
 }

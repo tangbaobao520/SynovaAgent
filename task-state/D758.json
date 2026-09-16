@@ -1,13 +1,42 @@
 {
   "task_id": "D758",
   "title": "证据目录域判定豁免（D734 假阳性修复）",
-  "status": "claimed",
+  "status": "audited",
   "spec": ".claude/task-briefs/2026-09-15-D758-evidence-domain-neutral.md",
-  "impl": null,
-  "audit": null,
+  "impl": {
+    "commit": "5bb6dbdb（#563）",
+    "branch": "fix/d758-evidence-domain-neutral",
+    "by": "synova-cto",
+    "at": "2026-09-15",
+    "files": [
+      "docs/synova/coordination/ownership.yaml",
+      "tests/control-tower/check-ownership.test.sh",
+      "tests/control-tower/check-pr-budget.test.sh"
+    ],
+    "evidence": [
+      "根因: PR #538 的 9 文件里唯一 mac 分类项是它自己的验收证据（D716-win-20260913/1-5-dual-guide-win-evidence.txt）→ D734 ② 变更跨域卡死（run 34937314664）",
+      "修法: domain_neutral 增加 docs/synova/product-lines/evidence/**（同族先例: task-briefs/task-state/memory-notes）",
+      "绿: check-pr-budget --files <#538 形态> → ② 变更单域 win（域判定豁免 1）",
+      "反向必红: 移除豁免项 → 同命令 exit 1（变更跨域）；恢复 → 绿",
+      "回归: check-ownership.test.sh 51 项 / check-pr-budget.test.sh 24 项全过"
+    ]
+  },
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-09-15-K3-D758.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "findings": [
+      "正向: #538 全 12 文件注入 check-pr-budget.sh → ② 变更单域 win(域判定豁免 5), exit 0",
+      "反向: ownership.yaml:157 移除 product-lines/evidence/** → 同命令 ② 变更跨域 exit 1, 唯一异域项=证据文件本身(mac) → D734 假阳性根因直接证实; 恢复后零残留",
+      "回归: check-ownership.test.sh 51 项全过 / check-pr-budget.test.sh 24 项全过",
+      "#563 写集=ownership.yaml+两测试, 与声称一致; 豁免口径与同族先例(task-briefs/task-state)同构"
+    ],
+    "by": "k3-audit (批次四)",
+    "at": "2026-09-15"
+  },
   "fix_task_id": null,
   "updated_at": "2026-09-15",
-  "updated_by": "synova-cto",
+  "updated_by": "k3-audit",
   "note": "PR #538（Win 的 1-5 双引导）9 文件里唯一被判 mac 的是它自己的验收证据 docs/synova/product-lines/evidence/D716-win-20260913/1-5-dual-guide-win-evidence.txt → D734 单域判定假阳性卡死 line-1。修法: 该路径加入 ownership.yaml domain_neutral。同族 PR #511/#534。",
   "domain": "mac"
 }

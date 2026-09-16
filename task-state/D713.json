@@ -1,7 +1,7 @@
 {
   "task_id": "D713",
   "title": "desktop-package-signature-and-verify-gate",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "path": "build-synova.cjs + scripts/desktop/verify-package-signature.sh + tests/desktop/verify-package-signature.test.sh + .github/workflows/desktop-build.yml + package.json",
@@ -10,8 +10,21 @@
     "at": "2026-09-13",
     "note": "ad-hoc 签名 + 构建期自检 + 按 arch 备 native + 出货前签名门禁；配套证据 docs/synova/product-lines/evidence/D713-published-artifact-20260913.json"
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-09-15-K3-D713.md",
+    "verdict": "CONDITIONAL PASS",
+    "blockers": [],
+    "findings": [
+      "机制本体成立: 签名门禁密封测试 ALL PASS(9 ok, 实跑 exit 0) + 三态退出 fail-closed(exit 2 执行失败 vs exit 1 不合格)+ build-synova.cjs 三条 throw 阻断路径(:89-91 签名失败/:93-95 自检失败/:141 封印守卫)",
+      "P1-1 证据口径失实: 证据 json context.tests 称 desktop-build.test.ts 26/26, 实测 23 passed | 3 skipped(3 个 it.skip 在 tests/electron/desktop-build.test.ts:168-170, release/ 缺失时跳过)",
+      "P1-2 M4 证据链断裂: desktop-build.test.ts 全文 grep -c 'D713|codesign|verify-package-signature' = 0, 23 个 it 全属 D504/D517/D581; D713 真实测试载体是 tests/desktop/verify-package-signature.test.sh(9 断言)",
+      "P2-1 主验收点 1-3 证据物(release/*.dmg md5=00cdeac3…)已不在场, 本轮不可物理重算; 机制侧在位+CI 每次构建重跑",
+      "验收点: 1-3 成立(不可复现注记); 1-4 pass->fail 的 CTO 自我修正确认采纳, 转 D714"
+    ],
+    "by": "k3-audit (批次四)",
+    "at": "2026-09-15"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-13",
-  "updated_by": "synova-cto"
+  "updated_at": "2026-09-15",
+  "updated_by": "k3-audit"
 }

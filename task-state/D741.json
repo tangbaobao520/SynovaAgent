@@ -1,7 +1,7 @@
 {
   "task_id": "D741",
   "title": "真相源状态写入链路定位（product-progress 线状态 + task-state FAIL 看板链路）",
-  "status": "impl_done",
+  "status": "audited",
   "risk": "low",
   "spec": null,
   "impl": {
@@ -27,8 +27,21 @@
     ],
     "notes": "只定位不修：未修改 generate-dashboard.py / pre-commit-check.sh（D735 爆炸半径）及任何文件。口径修正已在报告标注：派单『三条线 None』实测为 26/26 条线（点名三条 = L1 交互层三条）；页面『状态判定异常 3 处』为另一点级问题（4-4/4-5/4-6 非法种子 deferred），勿混淆。"
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-09-15-K3-D741.md",
+    "verdict": "CONDITIONAL PASS",
+    "blockers": [],
+    "findings": [
+      "8 条 evidence 逐条物理复验, 7 条成立: [0] product-progress.json 26 线无 line.status + calc-progress.py:316-330 写入无 status 字段; [1] 三处消费端(collect.js:107-115/derive-board-sources.py:283-291/gen-progress-page.py:114-122)确不读 line.status; [2] grep -l verdict FAIL 精确命中 D393/D503/D515/D549/D572; [3] sync.js:40-48 映射如述; [5] gen-cto-health.py:305 spec 字符串崩溃根因一致; [6] :326-331 PASS 先于 FAIL 子串判定顺序缺陷成立; [7] gen-task-board.py:341-348 审计列唯一源=.codex/audit/audit-result.json + CI workflows 零命中看板生成器",
+      "[4] 环境受限不可复验: 渲染侧 ledger-v2.json 在 Host ~/.dsh/task-board/, K3 独立工作区无此文件",
+      "P1 时点漂移(M2): evidence[4] 描述的『audited+FAIL 显示为已完成』已被同日 09d8754c(#553) D748 修复 —— sync.js:171-181 新增 verdictBoardStatus()/resolveBoardStatus(), VERDICT_FAIL_PATTERNS=[FAIL,NOT-AUDITABLE]; D741 定位正确且直接驱动 D748 立项, 但交付物未标时效, 审计方若直采会重复修已修缺陷",
+      "P2: task-state/D748.json 仍 status=claimed / audit=null —— 修复 D741 的机制本身未经独立审计, 建议排下一批",
+      "范围纪律: 只定位不改(brief 声明), 本审计确认未改任何生成器代码"
+    ],
+    "by": "k3-audit (批次四)",
+    "at": "2026-09-15"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-14",
-  "updated_by": "dsh-cto"
+  "updated_at": "2026-09-15",
+  "updated_by": "k3-audit"
 }

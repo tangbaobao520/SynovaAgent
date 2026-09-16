@@ -1,13 +1,44 @@
 {
   "task_id": "D757",
   "title": "哨兵类型欠账修复：3 个未登记哨兵的类型错（D752 门禁暴露）",
-  "status": "claimed",
+  "status": "audited",
   "spec": "task-state/D752.json + .claude/task-briefs/2026-09-15-D757-sentinel-type-debt.md",
-  "impl": null,
-  "audit": null,
+  "impl": {
+    "commit": "c11fbb1b（#562）",
+    "branch": "fix/d757-sentinel-type-debt",
+    "by": "synova-cto",
+    "at": "2026-09-15",
+    "files": [
+      "extensions/sentinels/cash-runway/aggregate.ts",
+      "extensions/sentinels/cash-runway/computes/compute-cash-runway-months.ts",
+      "extensions/sentinels/cash-runway/computes/compute-receivable-overdue-rate.ts",
+      "extensions/sentinels/revenue-health/aggregate.ts",
+      "extensions/sentinels/revenue-health/computes/compute-revenue-growth.ts",
+      "extensions/sentinels/key-person-risk/aggregate.ts"
+    ],
+    "evidence": [
+      "红（复现，含 D752 登记的编译图）: 3 个目录 31 处 TS 错（TS2305×2 / TS2307×6 / TS2345×4 / TS7006×19），CI job 34935243948",
+      "绿（修复后，同编译图）: 3 个目录 0 处错（残余 28 处全在 CI 既有过滤名单内）",
+      "反向验证: 把 cash-runway/computes/compute-cash-runway-months.ts 导入改回 ../../../src/... → 该文件必再红（TS2307+TS7006）；恢复后 0",
+      "运行时未回归: npx tsx 加载 4 个哨兵入口 → 4/4 LOADED（错全在 import type，编译期擦除）"
+    ]
+  },
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-09-15-K3-D757.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "findings": [
+      "独立重跑: 3 目录(cash-runway/revenue-health/key-person-risk) tsc 0 错; 残余 28 处全在 CI 过滤名单文件内, 与声称一致",
+      "反向: compute-cash-runway-months.ts 导入改回旧深度 → 该文件 TS2307×2+TS7006×8 直红 + receivable-overdue-rate 连带 TS7006×4(净增14, 全 CI 可见); 恢复后 git status 零残留",
+      "tsx 4 入口 4/4 LOADED(第4个=path-dependency, 按 manifest entryPoint ./computes/detect.ts)",
+      "evidence 计数: revenue-health=5(≥4)/cash-runway=8/key-person-risk=3; 修法=真实导入源修正, 未动 CI 过滤名单(非绿洗), #562 diff 逐行核对"
+    ],
+    "by": "k3-audit (批次四)",
+    "at": "2026-09-15"
+  },
   "fix_task_id": null,
   "updated_at": "2026-09-15",
-  "updated_by": "synova-cto",
+  "updated_by": "k3-audit",
   "note": "D752 类型网把 8 个未登记哨兵纳入编译图 → cash-runway/revenue-health/key-person-risk 暴露 31 处类型错（TS2305×2 / TS2307×6 / TS2345×4 / TS7006×19），PR #560 TS 门禁红。本单按真实语义修复，不把目录加进 CI 过滤名单（绿洗）。",
   "domain": "win"
 }

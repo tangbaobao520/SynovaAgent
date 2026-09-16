@@ -1,7 +1,7 @@
 {
   "task_id": "D712",
   "title": "桌面端线 1 证据重验批（Mac 侧 1-1/1-3/1-4/1-5/1-6/1-7）",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "spec_note": "派单文档 docs/synova/coordination/派单-桌面端线1重验批-D712-20260912.md 在 fix/d712-desktop-reverify-dispatch 分支，未在 main（本单不搬文档，只落证据）",
   "impl": {
@@ -45,9 +45,21 @@
     ],
     "red_lines": "scripts/audit/ 零触碰；scripts/product-lines/* 零改动；线 1 modules（electron/ electron-renderer/ scripts/install* scripts/deploy/ scripts/setup/）零改动"
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-09-15-K3-D712.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "findings": [
+      "六点 quote ↔ 证据文件逐条一致(1-1/1-3/1-4/1-5/1-6/1-7 + 5 条 scenario JSON 均 evidence-writer.py 写入)",
+      "1-5 判 fail 口径成立: 当时双引导物理并存(HTTP 200+:300 挂载+3 文件); 后续 D716/#538 的退场修复构成互证",
+      "轻微: tables 54 数字无原始输出佐证(tables.diff 空仅支撑'一致'); refresh 快照未入 git(d780 内是 09-12 旧版, 主 checkout 09-15 版 pending_k3 7/stale 1 与 #538 时间线自洽); 1-6 'consult 400' 细节未落盘",
+      "TTL: #538 合入已触发 A1 重验, pending_k3 7 点兑换 verified 窗口依赖 K3 批次四(派单硬约束实锤)"
+    ],
+    "by": "k3-audit (批次四)",
+    "at": "2026-09-15"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-13",
-  "updated_by": "dsh-harness-mac",
+  "updated_at": "2026-09-15",
+  "updated_by": "k3-audit",
   "note": "CTO 派单（Mac 侧 6 点重验）→ DSH 执行。1-5 判 failed（双引导未物理收敛，附 curl 200 证据）；其余 5 点机器绿待 K3/创始人裁决转 verified；1-8 由 K3 独立复核，本单不自证。"
 }

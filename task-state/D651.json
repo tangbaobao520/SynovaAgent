@@ -1,7 +1,7 @@
 {
   "task_id": "D651",
   "title": "K3双线编码管线代码质量对比评估",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "by": "k3-d651",
@@ -11,8 +11,23 @@
     ],
     "note": "独立 clone .audit-clone-d651 @ main 742a3416 零上下文评估。8 样本（W1/W2/W3/W4/M1/M2/M3/M4）全部五步物理执行：spec 摘录 + git diff 写集对账 + 独立复跑测试（W1 20/20+40/40；W2 5/5+17/17+11/11；W3 4/4+5/5；W4 12/12+18/18；M1 40/40；M2 64/64；M3 10/10+1/1+214；M4 21/21+18/18，退出码全 0）+ 自定维度评分（§1 七维加权）+ 跨侧对比（§4）。基线：tsc 28 errors；全量套件 4245 pass/29 fail/24 skip（失败三桶归因见报告 §2.3，与 8 样本写集无关）。待 CTO merge + 创始人裁断。"
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-09-15-K3-D651.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "findings": [
+      "完美复现: 在 K3 工作区新建 pinned worktree @742a3416(=报告自述评估时点 main) 重跑 8 样本 + 全局基线, 逐数字命中 —— W1 20/20 + 40/40; W2 33(=5+17+11); W3 4/4; W4 12/12; M1 40/40; M2 64/64; M3 10/10 + DS8 flip(需 D577_FLIP_TEST=1) 1/1; M4 21/21",
+      "全局基线逐数字一致: npx vitest run -> Test Files 10 failed|582 passed|3 skipped (595) / Tests 29 failed|4245 passed|24 skipped (4298); tsc 28 errors —— 与报告 §2.1/§2.2 完全一致(含失败数)",
+      "M3 的 D577_FLIP_TEST=1 门控为刻意设计非失效: threshold-manifest-flip.test.ts:19-20 RUN_FLIP 环境变量门控 + :11-16 明示理由(会物理改写 manifest.json, 防污染并行/全量)+ try/finally 还原; 带 flag 运行 1 passed 且运行后 git status extensions/ 为空",
+      "交付要求逐条落实: 报告 git 跟踪(c2819e08) + 每样本命令+退出码 + §6.1 环境受限项显式标注 + §1 七维权重/锚点/制定理由(刻意不采用仓库自定铁律以保独立性) + §6.2 不做胜负标签(n=4/侧, 不构成统计显著性) + §6.4 只读纪律",
+      "自审边界声明: 本报告为 K3 审 K3 —— 能确认证据基础与可复现性成立(已达成), 不能确认评分判断本身正确(0-10 含主观权重)与样本选择公允; 建议创始人将两侧均值(82.38 vs 84.00)视为评估人专业判断而非已验证事实",
+      "P2-1: 报告数字绑 742a3416 未显式声明 —— 在 current main(eb357405) 复跑会见到 W1 20->22 / W4 12->13 / M4 21->25 的自然增长, 第三方误判为失实(本审计首轮即经历); 建议该类报告头部固定加『数字口径: <sha>』(并入 CT-67)",
+      "P2-2: 样本 W1=D485 与 W4=D492 本身仍无 K3 验收裁决(impl_done/audit 空), 代码质量评估不可替代任务交付验收 —— 建议 CTO 排入后续批次"
+    ],
+    "by": "k3-audit (批次四)",
+    "at": "2026-09-15"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-09",
-  "updated_by": "k3-d651"
+  "updated_at": "2026-09-15",
+  "updated_by": "k3-audit"
 }

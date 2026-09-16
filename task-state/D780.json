@@ -1,0 +1,13 @@
+{
+  "task_id": "D780",
+  "title": "K3 审计批次四：33 个 impl 无 audit 任务 + 本批新交付（D751/D752/D754/D757/D758/D759）",
+  "status": "claimed",
+  "spec": "docs/synova/coordination/审计派单-批次四-K3-20260915.md",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "synova-cto",
+  "domain": "k3",
+  "note": "创始人 2026-09-15:「我看到待办有一批待 K3 审计的，你是不是可以安排一批审计单子？」实测: 33 个任务 impl 有 / audit 空 + 产品线 34 个验收点 pending_k3（证据在手只差复核）。分四组: A 本批新交付 6 项（D759/D757/D758/D751/D752/D754，今天合入 main）· B 线 1 与证据链 5 项 · C 工程门禁 7 项 · D 治理流程 11 项（低优先合并粗审）。交付: 审计报告进 docs/synova/audit-reports/ + audit 回填 task-state + FAIL 进台账；A 组必须独立重跑。"
+}

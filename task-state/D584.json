@@ -1,7 +1,7 @@
 {
   "task_id": "D584",
   "title": "P1 DSH线测试债-sentinels与契约批",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "commit": "(本 commit)",
@@ -41,8 +41,18 @@
       "windows 真机验证: backend-spawn 3 个 skipIf(win32) 用例与 data-directory win32 用例需 Win 线实机跑一次确认绿（本单 macOS 环境 skip 态）"
     ]
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-09-15-K3-C组批次.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "findings": [
+      "测试债清零物理成立: npx vitest run tests/sentinels/ -> 178 文件 passed | 696 用例 passed (696) [exit 0]; tests/sentinel/ -> 32 passed|1 skipped(33) | 227 passed|1 skipped [exit 0](1 skip 为 release/ 产物断言组, 环境依赖非恒失败)",
+      "提交 9afb1919(#417) 变更 50 文件 +326/-783; 删除型改动集中在已退役哨兵测试(structural-change*/token-economics/hona/seven-powers/self-awareness), 符合铁律 37 口径"
+    ],
+    "by": "k3-audit (批次四)",
+    "at": "2026-09-15"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-06",
-  "updated_by": "synova-dsh (claude-code coding session)"
+  "updated_at": "2026-09-15",
+  "updated_by": "k3-audit"
 }

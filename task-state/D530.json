@@ -1,7 +1,7 @@
 {
   "task_id": "D530",
   "title": "CT45-gatekeeper-merge-exempt",
-  "status": "impl_done",
+  "status": "audited",
   "spec": {
     "doc": ".claude/task-briefs/D530 原任务（2026-08-25 派单）",
     "note": "CT-45：post-commit 对 merge 提交跳过 bypass 判定（HEAD^2 豁免）"
@@ -11,8 +11,18 @@
     "pr": "#191",
     "note": "主工作区 rebase 后发现 task-state/D530.json 缺失于 main，回填补登记（D552）"
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-09-15-K3-D组批次.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "findings": [
+      "CT-45 merge 豁免实现成立: scripts/hooks/post-commit.sh:43-53 git rev-parse HEAD^2 判定 merge commit(第二 parent) -> 跳过 bypass 判定, 与 D328 commit-msg MERGE_HEAD 豁免同语义",
+      "bypass 有登记: .claude/bypass.log 含 1 条 D530 记录(commit 自述用 --no-verify), 绕过留痕符合可审计口径; post-commit.sh 仍为当前生效 hook 未回退"
+    ],
+    "by": "k3-audit (批次四)",
+    "at": "2026-09-15"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-08-28",
-  "updated_by": "cto-backfill-d552"
+  "updated_at": "2026-09-15",
+  "updated_by": "k3-audit"
 }

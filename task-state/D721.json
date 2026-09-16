@@ -1,7 +1,7 @@
 {
   "task_id": "D721",
   "title": "CI 存量失败棘轮：变更集基准改 merge-base 三点差 + 放行可见化",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "by": "synova-cto",
@@ -21,9 +21,20 @@
     },
     "red_lines": "scripts/audit/ 零触碰；未动棘轮阈值/通过标准。"
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-09-15-K3-C组批次.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "findings": [
+      "回归实跑: bash tests/control-tower/ci-ratchet-base.test.sh -> 15 通过 0 失败 [exit 0]",
+      "数字漂移注记: task-state evidence 称『12 通过 0 失败』, 实测 15 —— 测试后续增补(含 G12 三点差 3 条), 非虚报",
+      "修法语义正确: 三点差(merge-base(base,HEAD)..HEAD)是消除 merge 提交误判的正确基准(F2 实证: #513 head 与 5aae38fc git diff 为 0 文件却判 3 新增失败); 放行可见化(Pre-existing test failures from unchanged files — not blocking)避免静默放行"
+    ],
+    "by": "k3-audit (批次四)",
+    "at": "2026-09-15"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-13",
-  "updated_by": "synova-cto",
+  "updated_at": "2026-09-15",
+  "updated_by": "k3-audit",
   "note": "触发=#513 永红复盘。修的是判据正确性 + 放行可见性，不改通过阈值（取消棘轮会让 main 立刻全红压垮编码线，V4.5.1 教训）。三个真红本身另行处理（react-markdown → D717 在途）。"
 }

@@ -1,7 +1,7 @@
 {
   "task_id": "D589",
   "title": "stale 26 点重验批（D579 机制生效后首轮回绿工程）",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "by": "dsh-harness",
@@ -10,9 +10,21 @@
     "residuals": "留 stale 10 点三类清单落 evidence/README.md：k3 治理 8（TTL 过期 5 + 裁决后代码变更 3——恢复只能靠 K3 新裁决）；1-2 Win 目标机；2-5 机制缺口（CT-62 at 粒度只接 k3 路径，machine 分支 date-only 被当日 D587 提交误判——FIX 一行建议已登记，scripts/ 本单不碰）",
     "notes": "派单验收1 verified≥18 与状态机设计冲突（test 绿→pending_k3 不计分，CT-53/D576 反假绿语义；run-machine-evidence.sh docstring 自证）——verified≥18 的合法路径=K3 对 44 个 pending_k3 点出裁决；product-progress.{json,html} 属 G12d CI 单点生成物未入库（本地 calc 只出数），merge 后 CI bot 重生成"
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-09-15-K3-C组批次.md",
+    "verdict": "CONDITIONAL PASS",
+    "blockers": [],
+    "findings": [
+      "证据文件合格: 9 份 stale-reverify-D589-*.json 全部 record_type=test / date=2026-09-08 / at=2026-09-08T02:15:37+08:00(CT-62 时间戳纪律成立), 共 16 个 verdict 全 pass",
+      "P1 口径失实: task-state 称 calc 重算 stale 17->10 / pending_k3 36->44 / verified 8 —— 实测当前 stale 34 / pending_k3 27 / verified 1(uncommitted 96/failed 4/rejected 2)。该断言为 09-08 即时快照, 以现在时陈述不可复现(M2 口径)",
+      "P1 证据前向效力被推翻: 9 份证据对线 1 六点全判 pass, 其中 1-4/1-5 现均为 failed。1-4 判据=backend-spawn.test.ts+WIRE CHECK 全绿 —— 该断言组无法发现 F3 渲染层断链(正是 D715:159 指出的断链时全绿盲区组); 1-5 判据=代码分支互斥断言 —— 分支互斥≠旧引导已下线",
+      "L4: 以『跑既有测试出新证据』恢复 stale 时, 旧断言集不覆盖真缺陷则产出无信息量的绿 -> 建议 audit 侧增加『断言集覆盖度』判据"
+    ],
+    "by": "k3-audit (批次四)",
+    "at": "2026-09-15"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-08",
-  "updated_by": "dsh-harness",
+  "updated_at": "2026-09-15",
+  "updated_by": "k3-audit",
   "note": "CTO 派单 → 编码 session 执行。26 stale 点逐线重验（跑既有测试出新 evidence），可绿部分出 verified，红留 stale 转 FIX。evidence 带 at 时间戳（CT-62）。"
 }

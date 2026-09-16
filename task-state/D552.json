@@ -1,18 +1,34 @@
 {
   "task_id": "D552",
   "title": "cto-governance-backfill-workspace-sweep",
-  "status": "impl_done",
+  "status": "audited",
   "spec": {
     "doc": ".claude/task-briefs/2026-08-28-D552-cto-governance-backfill-workspace-sweep.md",
     "note": "54 个未跟踪文件分类处置：回填 main 缺失治理资产 + 删除骨架/垃圾"
   },
   "impl": {
-    "commits": ["83ce9fff", "6a01928c", "09ec65fe", "e84fe5b4"],
+    "commits": [
+      "83ce9fff",
+      "6a01928c",
+      "09ec65fe",
+      "e84fe5b4"
+    ],
     "pr": "#279",
     "note": "含 D544 brief 认领路径收窄修复 + 8b6deaf4 auto-hook 卷入插件（观察项已登记台账）"
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-09-15-K3-D组批次.md",
+    "verdict": "NOT-AUDITABLE",
+    "blockers": [],
+    "findings": [
+      "NOT-AUDITABLE: task-state 无 impl.evidence / 无 impl.files 清单, 无任何可复跑验证命令, 无法做写集对账 -> 按派单 §三.4 证据不足不判 PASS",
+      "唯一旁证为 commit message 标题(若有) —— 但 commit message 说了什么 != 做成了且验证过(M2 模式), 不作为裁决依据",
+      "补证路径: 回填 impl.files 写集 + 至少一条可复跑验证命令(或显式声明本任务无代码交付、证据=commit+文件清单), 即可重审"
+    ],
+    "by": "k3-audit (批次四)",
+    "at": "2026-09-15"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-08-28",
-  "updated_by": "dsh-cto"
+  "updated_at": "2026-09-15",
+  "updated_by": "k3-audit"
 }

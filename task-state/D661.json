@@ -1,7 +1,7 @@
 {
   "task_id": "D661",
   "title": "grep-oP-portable-family-fix",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "commit": "84c357e7",
@@ -28,8 +28,19 @@
       "memory/notes/implemented/2026-09-10-D661-grep-oP-portable-family-fix.md"
     ]
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-09-15-K3-C组批次.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "findings": [
+      "声明范围内已清零: grep -rn 'grep -oP|grep -P' scripts/ 仅剩 4 处非调用命中(pre-commit-check.sh:1432/:1439 检测器自身+grep-P-scan-ok 标记 / PLATFORM-CHECKLIST.md:48-49 文档 / post-commit.sh:139 注释)",
+      "ci.yml:140 的 grep -oP 判定非缺陷(三项依据): 该 job runs-on=ubuntu-latest(ci.yml:12)是 GNU grep; 缺陷家族真实场景是 macOS BSD grep; 回归网 header 明示覆盖范围为 scripts/ 全目录, .github/ 不在声明范围",
+      "回归网实跑: bash tests/control-tower/grep-oP-regression.test.sh -> 38 通过 0 失败 [exit 0], 含反向哨兵(塞入 -oP 必被网抓到, 防空转网)"
+    ],
+    "by": "k3-audit (批次四)",
+    "at": "2026-09-15"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-10",
-  "updated_by": "deepseek-harness"
+  "updated_at": "2026-09-15",
+  "updated_by": "k3-audit"
 }
