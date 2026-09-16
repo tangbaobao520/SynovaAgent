@@ -53,7 +53,15 @@ verify-system-registry.sh、system-registry.test.sh）+ 2 个生成物。
 - knowledge/shared/README.md：D1 六项硬失败根因修复之一。总述（K3 台账 P1-07/P1-08，§12.3 列为"可直接开工、无需裁定"）：专家数对齐 registry v3.0=6（host+5 问题域名单）、组数 8→13、LOOP.md 版本轴对齐 V5.2.7。先转绿再接线，防 M9 永久红。
 - memory/notes/proposed/2026-09-15-D782-doc-truth-wiring.md（D534 决策 Note）+ task-state/D782.json + 本 brief
 
-做什么（PR-2 探针批）：scripts/doc-system/doc-truth-probe.sh（新）+ docs/authority/DRIFT-LEDGER.md 机器生成重写 + tests/doc-system/doc-truth-probe.test.sh（新）+ BSD 兼容修复 4 文件（tests/doc-system/check-doc-truth.test.sh 的 sed -i、tests/doc-system/doc-staleness.test.sh 与 tests/doc-system/doc-triage.test.sh 的 touch -d、scripts/doc-system/doc-categories.sh 的 declare -A）+ grep-oP 清单同步
+做什么（PR-2 探针批，8 文件）：
+- scripts/doc-system/doc-truth-probe.sh：存活探针 + DRIFT-LEDGER 机器生成（三态: FRESH-GREEN/FRESH-RED/STALE/NEVER-RUN + degraded exit 2）
+- tests/doc-system/doc-truth-probe.test.sh：探针测试 18 用例（四态各测 + 红连续性 + 降级）
+- docs/authority/DRIFT-LEDGER.md：由探针生成机器段（保留人工修复历史段）
+- tests/doc-system/check-doc-truth.test.sh：BSD 兼容修复 sed -i → sed -i.bak（mac 2/5→5/0）
+- tests/doc-system/doc-staleness.test.sh：BSD 兼容修复 touch -d → python3 os.utime（mac 2/4→4/0）
+- tests/doc-system/doc-triage.test.sh：BSD 兼容修复 touch -d（mac 4/8→8/0）
+- scripts/doc-system/doc-categories.sh：bash 3.2 兼容重写 declare -A → eval 受控枚举（mac 3/14→14/0）
+- scripts/doc-system/doc-triage.sh：bash 3.2 兼容重写 declare -A → 换行定界集合（mac 4/8→8/0）
 做什么（PR-3 BOM 尾批）：doc-system 剩余 5 文件 BOM + grep-oP 清单收尾
 做什么（PR-4 registry 样板）：scripts/doc-system/gen-system-registry.sh + scripts/doc-system/verify-system-registry.sh（I1 一 ID 一义/I2 一义一 ID/I3 计数自洽）+ docs/authority/system-registry.json（生成物）+ tests/doc-system/system-registry.test.sh（断言对 AD01 报出 E-08/E-10/E-11/E-12 一码多义）
 
