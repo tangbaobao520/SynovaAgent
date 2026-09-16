@@ -1,0 +1,103 @@
+{
+  "schema": 1,
+  "record_type": "scenario",
+  "scenario_id": "GS-01",
+  "source": "scripts/golden-scenarios/GS-01-first-diagnosis/expect.runtime.json",
+  "date": "2026-09-16",
+  "verdict": "fail",
+  "verdicts": [
+    {
+      "acceptance_point": "S0-1",
+      "verdict": "fail",
+      "quote": "noauth-401 fail: 无 JWT 调 /api/diagnosis/consult → 401（auth fail-closed）（contains \"401\" 未命中）"
+    },
+    {
+      "acceptance_point": "S0-2",
+      "verdict": "pass",
+      "quote": "consult-entry-validated pass: 带 JWT 调 consult 缺 teamId → 400 + VALIDATION_ERROR（入口可达 + 参数契约）（符合预期） | reports-endpoint-ok pass: GET /api/sentinel/reports → HTTP 200（报告产物端点可达）（符合预期）"
+    },
+    {
+      "acceptance_point": "L1-1",
+      "verdict": "pass",
+      "quote": "electron-pack-config-valid pass: electron-builder 打包配置有效（backend-spawn + renderer 产物入包）（符合预期）"
+    },
+    {
+      "acceptance_point": "L1-4",
+      "verdict": "pass",
+      "quote": "electron-backend-spawn-contract pass: backend-spawn 契约无头验证（reused 路径 + buildCommand 双模式）（符合预期）"
+    },
+    {
+      "acceptance_point": "L1-5",
+      "verdict": "pass",
+      "quote": "electron-dual-bootstrap pass: main.cjs isPackaged 双引导收敛（prod loadFile renderer / dev 服务器页）（符合预期）"
+    },
+    {
+      "acceptance_point": "L1-7",
+      "verdict": "pass",
+      "quote": "electron-userdata-dbpath pass: prod spawn 注入 SYNOVA_DB_PATH=userData（升级/重装不丢数据基础）（符合预期）"
+    },
+    {
+      "acceptance_point": "L1-6",
+      "verdict": "pass",
+      "quote": "consult-llm-recorded pass: D527 LLM 门控 consult 组状态落盘（GREEN=phase_started 0-5 + complete + reportId + GET /report 200 / RED=LLM key 未提供，诚实标注）（符合预期）"
+    }
+  ],
+  "assertions": [
+    {
+      "id": "noauth-401",
+      "desc": "无 JWT 调 /api/diagnosis/consult → 401（auth fail-closed）",
+      "purpose": "证明首诊入口鉴权边界：无 token 拒绝（S0-1；D232/D233 Electron 一体化前置就绪）",
+      "verdict": "fail",
+      "detail": "contains \"401\" 未命中"
+    },
+    {
+      "id": "consult-entry-validated",
+      "desc": "带 JWT 调 consult 缺 teamId → 400 + VALIDATION_ERROR（入口可达 + 参数契约）",
+      "purpose": "证明首诊入口可达且参数契约正确（S0-2；问卷/诉求 → 六阶段诊断的入口）",
+      "verdict": "pass",
+      "detail": "符合预期"
+    },
+    {
+      "id": "reports-endpoint-ok",
+      "desc": "GET /api/sentinel/reports → HTTP 200（报告产物端点可达）",
+      "purpose": "证明首诊报告查询端点可用（S0-2；报告产物链路）",
+      "verdict": "pass",
+      "detail": "符合预期"
+    },
+    {
+      "id": "electron-pack-config-valid",
+      "desc": "electron-builder 打包配置有效（backend-spawn + renderer 产物入包）",
+      "purpose": "证明 Electron 安装包可携带服务自启模块与 renderer 对话 UI（L1-1 打包产物基础，D504）",
+      "verdict": "pass",
+      "detail": "符合预期"
+    },
+    {
+      "id": "electron-backend-spawn-contract",
+      "desc": "backend-spawn 契约无头验证（reused 路径 + buildCommand 双模式）",
+      "purpose": "证明服务自启探活/spawn 契约成立（L1-4 开窗即用，CI 无 GUI 可验，D504）",
+      "verdict": "pass",
+      "detail": "符合预期"
+    },
+    {
+      "id": "electron-dual-bootstrap",
+      "desc": "main.cjs isPackaged 双引导收敛（prod loadFile renderer / dev 服务器页）",
+      "purpose": "证明桌面端安装引导单一入口（L1-5，D504）",
+      "verdict": "pass",
+      "detail": "符合预期"
+    },
+    {
+      "id": "electron-userdata-dbpath",
+      "desc": "prod spawn 注入 SYNOVA_DB_PATH=userData（升级/重装不丢数据基础）",
+      "purpose": "证明数据目录重定向到 userData（L1-7 企业数据安全底线，D504）",
+      "verdict": "pass",
+      "detail": "符合预期"
+    },
+    {
+      "id": "consult-llm-recorded",
+      "desc": "D527 LLM 门控 consult 组状态落盘（GREEN=phase_started 0-5 + complete + reportId + GET /report 200 / RED=LLM key 未提供，诚实标注）",
+      "purpose": "证明首诊端到端全链路状态被物理记录且不伪造——GS01_LLM=1 时须 GREEN，无 key 时须如实 RED（L1-6，D527；断言引擎无条件分支，GREEN/RED 由 evidence quote 呈现 + README 诚实 RED 契约约束）",
+      "verdict": "pass",
+      "detail": "符合预期"
+    }
+  ]
+}
