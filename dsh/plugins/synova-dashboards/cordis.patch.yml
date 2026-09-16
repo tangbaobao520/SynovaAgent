@@ -1,0 +1,17 @@
+# @synova/dsh-dashboards bundle layer —— 全局挂载（D794：任意预设会话可见）
+#
+# 机制（见 @deepseek-ai/dsh-app-boot/profile 契约）：bundle 包在 package.json 声明
+#   "dsh": { "bundle": { "patch": "./cordis.patch.yml" } }
+# profile 的 dsh.profile.bundles 列出本包名，启动时把本 patch 叠加进 cordis 树；
+# 叠加顺序 = bundles 列表顺序，最后才是 profile 自己的 cordis.patch.yml。
+# 与 @synova/task-board-adapter 同一机制。
+#
+# repoRoot：默认取 dsh web 进程 cwd（restart-dsh-web.sh / launchd 均以仓库根启动）。
+# 安装脚本会把下面这行改写成实际检测到的仓库根，故非本机路径也能正确工作；
+# 也可在 profile 的 cordis.patch.yml 里覆盖 config.repoRoot。
+- insert:
+    - id: synova-dashboards
+      name: '@synova/dsh-dashboards'
+      inject: [webServer]
+      config:
+        repoRoot: /Users/wane/SynovaAgent
