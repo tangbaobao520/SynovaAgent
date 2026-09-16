@@ -1,0 +1,22 @@
+{
+ "task_id": "D793",
+ "title": "项目管理方案：26 线 V1 验收标准（断言版）+ 四视图派生器（S0a/S0b/S2）",
+ "status": "claimed",
+ "spec": "docs/synova/project/26线-V1验收标准-草案v0.1-20260917.md",
+ "impl": null,
+ "audit": null,
+ "fix_task_id": null,
+ "updated_at": "2026-09-17",
+ "updated_by": "synova-cto",
+ "domain": "mac",
+ "owner": "cto",
+ "milestone": "M0 项目管理基建",
+ "depends_on": [],
+ "blocked": null,
+ "target": "2026-W38",
+ "acceptance_points": [
+  "线1..线26 的 V1 断言（125 条，见 spec）"
+ ],
+ "next": "① 创始人签字冻结 26 线 V1 断言 → ② S0b 出 PROJECT-MANAGEMENT.md 规范 → ③ 派编码 session 做 S2 派生器（四视图）+ S1 字段回填 + S3 看板同步",
+ "note": "创始人 2026-09-17 决策：接受『交付度只增不减 + 保鲜单独算』口径；先出 26 线断言草案（本卡）；整体设计必须可视化。取号说明：alloc-task-id.sh 本机不可用（:242 全角 $VAR 崩溃 + 生产路径在 110+ worktree 下挂住 + 关闭 worktree 扫描即撞号 D792），本次按『全 refs + 全 worktree + K3 独立区』三重交叉核验取 D793；该脚本修复另列派单项。"
+}

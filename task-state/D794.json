@@ -1,0 +1,27 @@
+{
+ "status": "claimed",
+ "spec": "docs/synova/coordination/派单-D794-D795-项目总览可视化-20260917.md",
+ "impl": null,
+ "audit": null,
+ "fix_task_id": null,
+ "updated_at": "2026-09-17",
+ "updated_by": "synova-cto",
+ "domain": "mac",
+ "target": "2026-W38",
+ "task_id": "D794",
+ "title": "项目总览插件：左侧边栏入口 + 四视图（全局可见）",
+ "owner": "create-mode",
+ "milestone": "M0 项目管理基建",
+ "depends_on": [
+  "D795"
+ ],
+ "blocked": null,
+ "acceptance_points": [
+  "侧栏出现「项目总览」入口（全局）",
+  "页面显示 ledger.json 三数 + 26 线 + 阻塞 + 时间轴",
+  "无数据时显式 degraded 不崩",
+  "插件零写入工作区"
+ ],
+ "next": "① P0 验证 sidebar.panellist 插槽可注册（备选 sidebar.footer.action / 退路 shell.overlay 常驻）→ ② 实现面板 → ③ 安装脚本改全局挂载 → ④ 创始人重启 dsh web → ⑤ CTO 验收",
+ "note": "执行方=出厂「创造模式」(cordis) 预设会话（tool-cordis 独占；synova-cto 已让出，实测本预设未挂 tool-cordis）。现有资产 @synova/dsh-dashboards v0.1.0（右栏三仪表盘，shell.overlay，挂 CTO 预设）+ @synova/task-board-adapter。本卡把它升级为全局「项目总览」并改左栏入口。数据依赖 D795 的 ledger.json（未就绪时用 mock 先搭壳）。"
+}
