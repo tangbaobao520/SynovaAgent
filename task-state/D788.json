@@ -1,0 +1,13 @@
+{
+  "task_id": "D788",
+  "title": "预算门禁口径修正：只计审查面（治理/审计产物不计入计数与域判定）",
+  "status": "claimed",
+  "spec": "docs/synova/coordination/派单-D788-预算门禁口径修正-20260916.md",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-16",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "note": "K3 批次四审计交付（14 报告 + 33 task-state + 台账）落地被预算门禁拦: 实测 51 文件 > 12 且跨域（k3 audit-reports vs mac coordination）。判定为门禁口径问题: D734 自述保护对象是审查面/冲突概率，而审计批次是 append-only 治理产物。改法: 文件数只计审查面路径（src/scripts/tests/packages/extensions/electron*/app/.github/根配置），治理产物（docs/task-state/.claude/memory）不计入且不参与域判定；输出必须显性打印两类件数；上限 12 不变；含 4 个新测试 + 反向验证 + Note + 请 K3 审该门禁变更。"
+}
