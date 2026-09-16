@@ -21,7 +21,7 @@ Agent，不是 ChatBot。驻扎企业，持续观测，主动发现，自动诊�
 - #404（auto/product-progress）：实测 head `6395b014` → check-runs `total_count: 0` / statuses `total_count: 0`（永久 blocked；本单前置已关闭）
 - 分支保护（实测）：12 个必需检查（Architecture Check / Checker Review / Control Tower Gate ×2 / Golden Case F1 / Integration Contract / Test-Kit ×2 / TS+Lint+Iron Laws / Vitest ×2 / npm audit）
 - 根因落点：`.github/workflows/dashboard-auto.yml` 与 `product-progress.yml` 的「产物有变化则提交 bot 分支并开 PR」步骤用 `GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}` 执行 `gh pr create` → GITHUB_TOKEN 触发的事件不再触发任何 workflow → 必需检查永不报告
-- 通道文档缺口：`docs/synova/coordination/CI-诊断通道.md` 不存在（git ls-tree 实测）→ T2 新建
+- 通道文档现状：`docs/synova/coordination/CI-诊断通道.md` 已有 D521 版（无 token 读 CI 失败；初判「不存在」有误，实测更正）→ T2 追加 PART B（仪表盘自动更新链路）
 - 看门狗缺口：grep `generated_at` scripts/product-lines/ → 仅生成器写入，无任何消费者做过期告警（实测）
 
 ### c) 决策
@@ -63,7 +63,7 @@ Agent，不是 ChatBot。驻扎企业，持续观测，主动发现，自动诊�
 - .github/workflows/ci.yml — 【红区声明】改动理由：看门狗密封测试 `tests/control-tower/check-progress-freshness.test.sh` 加入 Control Tower Gate Tests canary 清单（铁律 35：测试入 CI 强制，否则建了不接线 M3）
 - scripts/product-lines/check-progress-freshness.py — 新增：看门狗脚本（契约头 + 三路径测试）
 - tests/control-tower/check-progress-freshness.test.sh — 新增：看门狗密封测试（入 ci.yml canary，双平台矩阵；三路径：正常/过期触发/降级 fail-closed）
-- docs/synova/coordination/CI-诊断通道.md — 通道链路文档（根因 + (b) 设计 + 诊断步骤 + 看门狗；下次断能查）
+- docs/synova/coordination/CI-诊断通道.md — 追加 PART B 通道链路文档（根因 + (b) 设计 + 诊断步骤 + 看门狗；下次断能查；保留 D521 原文不动）
 - memory/notes/implemented/2026-09-16-d786-dashboard-channel-watchdog.md — 决策 Note（Note 引用门禁）
 
 不做什么：
