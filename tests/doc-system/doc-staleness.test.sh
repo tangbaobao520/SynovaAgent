@@ -23,7 +23,7 @@ done
 DOC_STALENESS_DAYS=90 DOC_TRUTH_ROOT="$FIX" bash "$SCRIPT" >/dev/null 2>&1; t "A 全新鲜" 0 $?
 
 # B: 把 PRD 改成 200 天前 → exit 1
-touch -d '200 days ago' "$FIX/docs/authority/PRD.md"
+python3 -c "import os,sys,time; f=sys.argv[1]; t=time.time()-200*86400; os.utime(f,(t,t))" "$FIX/docs/authority/PRD.md"  # D782: BSD touch 无 -d 相对时间（GNU-only）
 OUT=$(DOC_STALENESS_DAYS=90 DOC_TRUTH_ROOT="$FIX" bash "$SCRIPT" 2>&1); RC=$?
 t "B 有过期" 1 $RC
 echo "$OUT" | grep -q '过期: docs/authority/PRD.md'; t "B1 点名过期文件" 0 $?

@@ -82,6 +82,9 @@ rules:
   - glob: "scripts/doc-system/**"
     owner: "mac"
     source: "派生: TASK-ROUTING.md L37+L63——文档真相防线（check-doc-truth/doc-registry-gate，DSH 2026-08 建）与门禁同族；此前落 ** 兜底误判 win（D782 实测）"
+  - glob: "tests/doc-system/**"
+    owner: "mac"
+    source: "派生: 同 scripts/doc-system/**（门禁的测试随门禁归属，同 tests/control-tower 先例）；D782 PR-2/PR-4 CI 实测落兜底误判 win"
   - glob: "scripts/pre-commit-check.sh"
     owner: "mac"
     source: "TASK-ROUTING.md L63 门禁脚本 DSH 专属"
@@ -163,5 +166,7 @@ rules:
 #   变化都可能要求它们同步（本次 registry v3.0 专家换代 7→6，mac 线防线启用要求文档对齐）。
 #   它们此前落 ** 兜底被判 win，但导航文档的同步需求跟着触发方走，不构成「这条 PR 属于
 #   哪条线」的信号。豁免后真跨域（win 代码 + mac 工具链）仍拦住。
-domain_neutral: [".claude/bypass.log", ".claude/gate-hits.log", ".claude/task-briefs/**", "task-state/**", "memory/notes/**", ".codex/**", "docs/synova/product-lines/evidence/**", ".gitignore", "AGENTS.md", "CLAUDE.md", "LOOP.md", "knowledge/shared/README.md"]
+# D782 增补二: 防线产物（DRIFT-LEDGER.md / system-registry.json）——doc-system 工具链（mac）
+#   的运行产物，路径恰在 docs/authority/（兜底判 win）——同 D758 证据目录逻辑: 产物跟工具链走。
+domain_neutral: [".claude/bypass.log", ".claude/gate-hits.log", ".claude/task-briefs/**", "task-state/**", "memory/notes/**", ".codex/**", "docs/synova/product-lines/evidence/**", ".gitignore", "AGENTS.md", "CLAUDE.md", "LOOP.md", "knowledge/shared/README.md", "docs/authority/DRIFT-LEDGER.md", "docs/authority/system-registry.json"]
 

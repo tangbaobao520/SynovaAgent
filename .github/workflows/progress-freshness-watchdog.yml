@@ -1,0 +1,32 @@
+# progress-freshness-watchdog.yml — D786 产物过期看门狗（fail-visible：通道断了 3 天内必红）
+#
+# 背景（D786 / 派单 F7）: bot PR 永久 blocked 期间 product-progress.json 停更 3 天+，
+#   无任何告警——「数字自动刷新」链断在没人看的地方（M4 证据链断裂 + M2 假设被推翻）。
+#
+# 触发: 每日 01:30 UTC（09:30 北京）+ 手动 workflow_dispatch
+# 逻辑: product-progress.json 的 generated_at 距今 > 3 天 → 脚本 exit 1 → job 红灯
+#       （Actions 失败对仓库所有者发邮件 = 告警可见；产物缺失/损坏 → exit 2 同样红灯）
+# 链路文档: docs/synova/coordination/CI-诊断通道.md（下次断能查）
+# 红线: 只读产物；不改判分（calc-progress.py 零依赖）；不碰 scripts/audit/。
+
+name: Progress Freshness Watchdog (D786)
+
+on:
+  schedule:
+    - cron: "30 1 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  freshness:
+    name: 产物新鲜度（generated_at > 3 天必红）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: 检查 product-progress.json generated_at
+        run: python3 scripts/product-lines/check-progress-freshness.py

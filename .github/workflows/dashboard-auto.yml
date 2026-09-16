@@ -5,8 +5,10 @@
 #
 # 触发: push 到 main（= 数据变化事件）+ 手动 workflow_dispatch
 # 产出: app/founder-dashboard.html + docs/synova/founder-console.html
-#       产物有变化 → 提交 bot 分支 auto/dashboard + 开 PR（合并走 PR，不直接推 main；
-#       对齐 MULTI-MACHINE-PR-WORKFLOW）。无变化 → 什么都不做（幂等）。
+# D786 通道设计 (b，2026-09-16): 产物有变化 → 只提交 bot 分支 auto/dashboard（force push），
+#       **不再开 PR**——GITHUB_TOKEN 创建的 PR 不触发任何 workflow，必需检查永不报告 =
+#       永久 blocked（#403 实证）。合并由 CTO session 用 PAT 显式开 PR + CI 全绿 + API 合并。
+#       链路文档: docs/synova/coordination/CI-诊断通道.md。无变化 → 什么都不做（幂等）。
 #
 # 红线: 只调用 scripts/control-tower/ 的生成器（Harness 代码，进审计范围）；
 #       不触碰 scripts/audit/、不写审计标准。
@@ -22,7 +24,6 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
   generate:
@@ -51,18 +52,10 @@ jobs:
           git add app/founder-dashboard.html docs/synova/founder-console.html
           git diff --cached --quiet || echo "有产物变化，准备提交"
 
-      - name: 产物有变化则提交 bot 分支并开 PR
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: 产物有变化则提交 bot 分支（D786 通道设计 b：不开 PR）
         run: |
           git config user.name "synova-bot"
           git config user.email "bot@synova.local"
-          # D373 自愈: 悬挂 bot 分支清理（有分支无 PR 的历史遗留）
-          if git ls-remote --exit-code origin auto/dashboard >/dev/null 2>&1 \
-             && ! (gh pr list --head auto/dashboard --state open --limit 1 --json number -q '.[0].number // empty' | grep -qE '^[0-9]+$'); then
-            echo "检测到悬挂 bot 分支，自动清理"
-            git push origin :auto/dashboard || true
-          fi
           # 基于 origin/main 开分支（不依赖 checkout 时的 HEAD，防 detached 问题）
           git fetch origin main
           if git diff --quiet origin/main -- app/founder-dashboard.html docs/synova/founder-console.html; then
@@ -73,11 +66,10 @@ jobs:
           git add app/founder-dashboard.html docs/synova/founder-console.html
           git commit -m "chore(D439): 控制台自动更新 $(date -u +%Y-%m-%d)"
           git push origin auto/dashboard --force
-          if gh pr list --head auto/dashboard --state open --limit 1 --json number -q '.[0].number // empty' | grep -qE '^[0-9]+$'; then
-            echo "✅ PR 已存在，无需新建"
-          else
-            # D373 fail-closed: PR 创建失败 = 本 step 失败 = workflow 红灯（绝不绿灯假装成功）
-            echo "创建 PR（失败即红灯，不静默）"
-            gh pr create --title "chore(D439): 控制台自动更新" \
-              --body "自动生成（founder-dashboard 六维核验 + founder-console 三问面板）。产物: app/founder-dashboard.html / docs/synova/founder-console.html。合并前可双击打开查看最新真相。CI 绿后点 Merge 即可。"
+          echo ""
+          echo "📌 D786 通道设计 (b)：bot 分支已推——GITHUB_TOKEN 创建的 PR 不触发任何 workflow，"
+          echo "   必需检查永不报告 = 永久 blocked（#403 实证，2026-09-07~16）。"
+          echo "   后续由 CTO session 显式完成（链路文档 docs/synova/coordination/CI-诊断通道.md）:"
+          echo "   1) 用 PAT 从 auto/dashboard 开 PR（真实凭据 → 必需检查正常报告）"
+          echo "   2) CI 全绿后 API squash 合并（合并是 CTO 的工作，D570）"
           fi
