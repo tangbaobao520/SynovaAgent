@@ -1479,3 +1479,10 @@ Binary file .claude/bypass.log matches
 2026-09-16T19:56:49+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=c266c4847ac54a6af84df2229d1016524f09d4eb
 2026-09-16T20:12:07+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=fb31962559770a1063e63708c1d98029b665055e
 2026-09-16T20:27:05+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=a4386462954d8de82f36e503708d256fc6060a49
+2026-09-16T20:47:32+0800 | COMMITTED | pre-commit PASS (rebase/merge 后 hash 链, 一次性补记 D331) | HASH=16b9f064673b8a46ac0fa429abc5190099abf320
+2026-09-16T20:47:32+0800 | COMMITTED | pre-commit PASS (rebase/merge 后 hash 链, 一次性补记 D331) | HASH=100ac4aac1a3fabaabcaaa4b47d2b8600e7d01de
+2026-09-16T20:47:32+0800 | COMMITTED | pre-commit PASS (rebase/merge 后 hash 链, 一次性补记 D331) | HASH=a654320d8a194e5cd1d41a8de8e5d9cea789f8b1
+2026-09-16T20:47:32+0800 | COMMITTED | pre-commit PASS (rebase/merge 后 hash 链, 一次性补记 D331) | HASH=f6846bbaa0be464053c060744137c47a854721c5
+2026-09-16T20:47:32+0800 | COMMITTED | pre-commit PASS (rebase/merge 后 hash 链, 一次性补记 D331) | HASH=61ec4184c1c22b528f999fd4ec4bb57cd7fd13e8
+2026-09-16T20:47:32+0800 | COMMITTED | pre-commit PASS (rebase/merge 后 hash 链, 一次性补记 D331) | HASH=a1153c09e010eb7b5299651650ccff942dbeb521
+2026-09-16T20:47:32+0800 | COMMITTED | pre-commit PASS (rebase/merge 后 hash 链, 一次性补记 D331) | HASH=14f17155c7ca749f52c18a5f15132705e0729cdb
