@@ -22,7 +22,7 @@ mkdir -p "$FIX/docs/authority"; : > "$FIX/docs/authority/DOCS-REGISTRY.yaml"
 : > "$FIX/docs/archive/old.md"  # archive 路径 → ARCH
 : > "$FIX/docs/_tmp-scratch.md" # 临时名 → DEL
 : > "$FIX/docs/new.md"          # 今天 → NEW
-: > "$FIX/docs/unk.md"; touch -d '60 days ago' "$FIX/docs/unk.md"  # 60 天 → UNK
+: > "$FIX/docs/unk.md"; python3 -c "import os,sys,time; f=sys.argv[1]; t=time.time()-60*86400; os.utime(f,(t,t))" "$FIX/docs/unk.md"  # D782: BSD touch 无 -d 相对时间; 60 天 → UNK
 
 OUT=$(DOC_TRUTH_ROOT="$FIX" bash "$SCRIPT" 2>&1); RC=$?
 t "A 盘点 exit0" 0 $RC
