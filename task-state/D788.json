@@ -1,9 +1,9 @@
 {
   "task_id": "D788",
   "title": "预算门禁口径修正：只计审查面（治理/审计产物不计入计数与域判定）",
-  "status": "claimed",
+  "status": "impl-done",
   "spec": "docs/synova/coordination/派单-D788-预算门禁口径修正-20260916.md",
-  "impl": null,
+  "impl": "feat/d788-budget-impl: ① check-pr-budget.sh 治理排除表 GOV_PREFIX_RE(docs/task-state/.claude/memory) + 未列路径默认计入(fail-closed F2) + 双计数显性输出「审查面 N 件（上限 12）／治理产物 M 件（不计入）」(F3) + ② 域判定只审审查面; 上限 12 不变; 适用范围显性化(保留 D515 docs-only 跳过, 头注释+MULTI-MACHINE 文档)。② 测试 24→39 项(+15: 12+30 放行/13 拦/跨域拦/未知目录计入/N_FILES 语义/字面/沙箱副本反向验证)。③ #572 双模式真跑均 PASS(审查面 0/治理 51); 改前旧脚本 FAIL 留证。④ F4 派单模板+pre-dispatch ⑩ 注释锚点语义(sha256 前 8 位非 commit); F5 复核在 behind=0 worktree 跑✅机械项全通过(修 3 处裸引用)。⑤ 性能 2s→3s(≤+5s)。⑥ 派单文档 3 处裸文件名补全路径(语义零改动, 透明披露)。K3 §5 十条待审。",
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-16",

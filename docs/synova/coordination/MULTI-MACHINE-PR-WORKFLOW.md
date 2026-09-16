@@ -74,6 +74,7 @@ git merge main          # 推荐（不改 hash，bypass.log 对账不裂）
 |------|------|------|
 | **门禁 0-1 push 前同步检查** | `scripts/pre-push-check.sh` | push 前强制 fetch 目标分支：落后（远端有新 commit）→ 🔴 硬阻断；分叉 → 🔴 硬阻断提示 merge（rebase 改 hash 会裂 bypass 对账） |
 | **门禁 0-2 main 分支保护** | `scripts/pre-push-check.sh` | 直接 push 到 `refs/heads/main` → 🔴 硬阻断（"main 只进 PR"）。紧急逃生舱 `SYNO_ALLOW_MAIN_PUSH=1`（会记 bypass.log） |
+| **PR 预算门禁（D734·D788 只计审查面）** | `scripts/control-tower/check-pr-budget.sh` | 审查面文件 ≤ 12 件且单域。审查面 = src/scripts/tests/packages/extensions/electron*/app/.github/synova_worker/根配置/**及一切未列路径（fail-closed 默认计入）**；治理产物（docs/task-state/.claude/memory）不计入计数与域判定，但**显性打印件数**（铁律 11）。**适用范围（D788 显性口径）**: 本门禁只在含审查面文件的 PR 上自动生效——纯治理/审计 PR（docs-only）在 CI 被 D515 docs-only 条件跳过、本地为软提示+CT-34 早退，即**无自动执行点**（K3 前置审 F1 实证，2026-09-16）。这是有意的性能设计，非漏洞；若需对 docs-only 强跑属 CI 口径变更，交 CTO 裁决 |
 | CI（GitHub Actions） | `.github/workflows/ci.yml` | PR 到 main 自动跑：tsc + 铁律 + vitest 双分片 + 架构 + golden-case + 集成 + checker-review |
 
 ---

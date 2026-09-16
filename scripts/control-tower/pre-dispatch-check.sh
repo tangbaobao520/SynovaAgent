@@ -51,6 +51,8 @@ done > "$tmp.line"
 cat "$tmp.line"; grep -q '⚠️' "$tmp.line" && FIND=1
 
 echo "── ⑩ 主线计划锚定（CTO 必读：整体推进计划）──"
+# 锚点语义（D788/F4 固化）: 派单「依据计划: vX.Y@HHHHHHHH」的 @后 8 位 = 计划文档
+#   sha256 前 8 位（本处 PH 同源算法），**不是 git commit 号**——勿用 git show 核验。
 PLAN=$(ls "$ROOT"/docs/synova/coordination/整体推进计划-主线-*.md 2>/dev/null | head -1)
 if [ -z "$PLAN" ]; then
   echo "  ⚠️ degraded: 未找到整体推进计划文档 → 跳过锚定（须人工确认计划存在）"
