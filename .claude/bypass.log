@@ -1472,3 +1472,4 @@ Binary file .claude/bypass.log matches
 2026-09-16T20:15:32+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=c800f208d3515b14cc73af53ad9bdd0907c39aeb
 2026-09-16T19:52:41+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D782 | AGENT=CTO-DSH
 2026-09-16T19:52:54+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D782 | AGENT=CTO-DSH
+2026-09-16T20:46:11+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=4d142cd416780f23e556d8588c4add0fd1a9564c
