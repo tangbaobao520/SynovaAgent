@@ -1,4 +1,7 @@
-﻿#!/bin/bash
+#!/bin/bash
+# D313 M5 UTF-8 强制: Windows 控制台/子进程统一 UTF-8
+export PYTHONIOENCODING=utf-8
+export LC_ALL=C.UTF-8 2>/dev/null || true
 # ═══════════════════════════════════════════════════════════════════════════════
 # doc-categories.sh — 九类沉淀索引生成器（INDEX.md §2 的机器版）
 #
@@ -21,6 +24,9 @@
 #   knowledge       knowledge/ 或 theory/
 #   unclassified    其余
 # 性能: find 一次 + 循环纯内建 + 进程替换（⚠️ 禁止 here-string 大内容，MSYS 会卡死）
+# D782 (2026-09-16): bash 3.2 兼容重写——原 declare -A 关联数组在 mac 自带 bash 3.2
+#        下崩溃（BUCKET/LISTS 恒空/恒全量，11 用例红），CI(Linux bash5) 绿 + mac 红分裂。
+#        改 eval 受控枚举（类别名是下方 case 的固定枚举值，非用户输入，无注入面）。
 # ═══════════════════════════════════════════════════════════════════════════════
 set +e
 ROOT="${DOC_TRUTH_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}" # swallow-ok:
@@ -37,10 +43,11 @@ COLLECT() {
   fi
 }
 
-declare -A BUCKET
-BUCKET=( [governance]=0 [archive]=0 [decision]=0 [research]=0 [retrospective]=0 [devdoc]=0 [draft]=0 [pitfall]=0 [diary]=0 [knowledge]=0 [unclassified]=0 )
-declare -A LISTS
-for k in "${!BUCKET[@]}"; do LISTS[$k]=""; done
+CATEGORIES="governance archive decision research retrospective devdoc draft pitfall diary knowledge unclassified"
+for k in $CATEGORIES; do
+  eval "BUCKET_${k}=0"
+  eval "LISTS_${k}="
+done
 
 TOTAL=0
 while IFS= read -r rel; do
@@ -68,18 +75,18 @@ while IFS= read -r rel; do
     WORKLOG-*)                              cat=diary ;;
     *)                                      cat=unclassified ;;
   esac
-  BUCKET[$cat]=$((BUCKET[$cat]+1))
-  LISTS[$cat]="${LISTS[$cat]}$rel
-"
+  # eval 受控: $cat 是上方 case 的固定枚举值（governance|archive|…），非用户输入
+  eval "BUCKET_${cat}=\$((BUCKET_${cat}+1)); LISTS_${cat}=\"\${LISTS_${cat}}\${rel}
+\""
 done < <(COLLECT | sort -u)
 
 echo "═══ doc-categories — 九类沉淀索引 (root: $ROOT, dir: $DIR) ═══"
 echo "总文件: $TOTAL"
-for k in governance archive decision research retrospective devdoc draft pitfall diary knowledge unclassified; do
-  n=${BUCKET[$k]}
+for k in $CATEGORIES; do
+  eval "n=\$BUCKET_${k}"
   [ "$n" -eq 0 ] && continue
   echo ""
   echo "── $k ($n) ──"
-  echo "${LISTS[$k]}" | sed '/^$/d' | head -10 | sed 's/^/  /'
+  eval "printf '%b' \"\$LISTS_${k}\"" | sed '/^$/d' | head -10 | sed 's/^/  /'
 done
 exit 0

@@ -37,19 +37,19 @@ printf '2位专家\n' > "$FIX/knowledge/shared/README.md"
 DOC_TRUTH_ROOT="$FIX" bash "$SCRIPT" >/dev/null 2>&1; t "A 全一致" 0 $?
 
 # B: 专家数不符
-sed -i 's/2位专家/3位专家/' "$FIX/CLAUDE.md"
+sed -i.bak 's/2位专家/3位专家/' "$FIX/CLAUDE.md"
 DOC_TRUTH_ROOT="$FIX" bash "$SCRIPT" >/dev/null 2>&1; t "B 专家数不符" 1 $?
-sed -i 's/3位专家/2位专家/' "$FIX/CLAUDE.md"
+sed -i.bak 's/3位专家/2位专家/' "$FIX/CLAUDE.md" && rm -f "$FIX/CLAUDE.md.bak"
 
 # C: 组数不符
-sed -i 's/pre-commit 5 组/pre-commit 13 组/' "$FIX/AGENTS.md"
+sed -i.bak 's/pre-commit 5 组/pre-commit 13 组/' "$FIX/AGENTS.md"
 DOC_TRUTH_ROOT="$FIX" bash "$SCRIPT" >/dev/null 2>&1; t "C 组数不符" 1 $?
-sed -i 's/pre-commit 13 组/pre-commit 5 组/' "$FIX/AGENTS.md"
+sed -i.bak 's/pre-commit 13 组/pre-commit 5 组/' "$FIX/AGENTS.md" && rm -f "$FIX/AGENTS.md.bak"
 
 # D: 版本不符
-sed -i 's/V1.0.0/V2.0.0/' "$FIX/LOOP.md"
+sed -i.bak 's/V1.0.0/V2.0.0/' "$FIX/LOOP.md"
 DOC_TRUTH_ROOT="$FIX" bash "$SCRIPT" >/dev/null 2>&1; t "D 版本不符" 1 $?
-sed -i 's/V2.0.0/V1.0.0/' "$FIX/LOOP.md"
+sed -i.bak 's/V2.0.0/V1.0.0/' "$FIX/LOOP.md" && rm -f "$FIX/LOOP.md.bak"
 
 # E: 权威层路径缺失
 rm "$FIX/docs/authority/PRD.md"

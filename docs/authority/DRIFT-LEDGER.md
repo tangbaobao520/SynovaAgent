@@ -1,3 +1,10 @@
+<!-- doc-truth-probe 机器段（勿手编——scripts/doc-system/doc-truth-probe.sh 生成; 探针解析 lastVerifiedAt/exitCode/firstRedAt）
+lastVerifiedAt: 2026-09-16T19:54:14+08:00
+exitCode: 0
+summary: ✅ C4 路径 (docs/authority/DOCS-REGISTRY.yaml) — 存在
+firstRedAt: 
+-->
+
 # DRIFT-LEDGER.md — 文档漂移台账
 
 > 用途：记录 `check-doc-truth.sh` 发现的文档-事实不一致，逐项跟踪修复（开发线认领，走 task brief）。
