@@ -3,7 +3,7 @@
   "spec": "docs/synova/coordination/派单-D794-D795-项目总览可视化-20260917.md",
   "impl": {
     "branch": "feat/d795-project-board",
-    "base": "docs/v1-dod-draft-20260917@f83f85c2（stacked on PR #608——V1 断言表尚未并入 main）",
+    "base": "origin/main@0f59e514（D793/PR #608 已并入 main；本分支已 merge main 对齐，无 stacked 依赖）",
     "files": [
       "scripts/project/gen-project-board.py",
       "tests/project/gen-project-board.test.sh",
@@ -19,7 +19,7 @@
       "红线": "calc-progress.py / product-lines.yaml / scripts/audit/ / product-progress.json 全部零改动（git status --porcelain 对应路径为空）"
     },
     "known_open": [
-      "上游依赖: V1 断言表仅存在于 docs/v1-dod-draft-20260917（PR #608），未并入 main；本分支 stacked 于其上。在缺该文件的树上运行 → degraded:true 且 v1_total=null。PR #608 合并后 rebase 至 main 即可",
+      "上游依赖（已解除）: V1 断言表曾只在 docs/v1-dod-draft-20260917（PR #608）、未并入 main，本分支一度 stacked 于其上。2026-09-17 #608 并入 main（0f59e514）后已 merge main 对齐；D793 四文件随 base 进 main，brief 的临时「写集豁免」段已删除。注: 曾尝试 rebase，但本机 pre-push 门禁 0-1 明文禁止 force push（分叉场景无逃生舱），rebase 结果推不出去 → 改用仓库文档推荐且规则允许的 merge 路径",
       "CI canary 未入列: tests/project/gen-project-board.test.sh 密封可入 canary，但派单 §B 限定文件集为 scripts/project/** + tests/project/** + docs/synova/project/ledger.json，ci.yml 不在其内（且 ci.yml 正被 D782 在途改动）→ check-canary-drift 会出 ::warning，入列另立派单",
       "timeline 区分度≈0: first_commit 取各线 modules 最早提交，25/26 线同为仓库初始导入日 2026-06-03（1 线 06-05）；milestone/planned_week/dispatched/merged/audited 无数据源（§B.2 输入清单不含计划/里程碑数据）→ 需后续派单补数据模型",
       "阻塞清单当前恒空: 261 张卡实测 0 张有 blocked{reason,since,needs} 三要素；lines[].blocked 依赖卡内可选 line 绑定字段，现无卡使用 → 字段存在但无数据",

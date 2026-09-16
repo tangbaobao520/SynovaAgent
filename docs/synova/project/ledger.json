@@ -1,8 +1,8 @@
 {
   "schema": "project-ledger/1",
   "generated_by": "gen-project-board.py",
-  "generated_at": "2026-09-17T01:26:34+08:00",
-  "git_head": "f83f85c20d184bab9c9cf68597f48e0dc1ba6375",
+  "generated_at": "2026-09-17T02:33:58+08:00",
+  "git_head": "662965f31927d2c7ca8a695ae54fb60bd2e20c46",
   "sources": {
     "yaml": "docs/synova/product-lines/product-lines.yaml",
     "v1_dod": "docs/synova/project/26线-V1验收标准-草案v0.1-20260917.md",
@@ -4684,6 +4684,17 @@
       "title": "项目管理方案：26 线 V1 验收标准（断言版）+ 四视图派生器（S0a/S0b/S2）",
       "status": "claimed",
       "owner": "cto",
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 0,
+      "updated_at": "2026-09-17"
+    },
+    {
+      "id": "D795",
+      "title": "项目账本派生器：gen-project-board.py → ledger.json（四视图数据源）",
+      "status": "impl_done",
+      "owner": "mac-coding",
       "domain": "mac",
       "depends_on": [],
       "blocked": null,
