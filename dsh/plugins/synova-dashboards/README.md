@@ -1,163 +1,68 @@
-# @synova/dsh-dashboards — 「项目总览」（DSH Web · **全局挂载 · 单一入口**）
+# @synova/dsh-dashboards — Synova 全局跟踪三仪表盘（DSH Web 右侧栏 · CTO 预设专属）
 
-左侧栏一个入口 → 中央只读面板。**入口唯一**：早期版本的右侧栏三仪表盘（`shell.overlay`）
-已并入本面板并**删除**，不再维护第二个入口。
+把 Synova 控制体系的**三仪表盘**实时可视化到 DSH Web GUI 的右侧栏（对话旁）。
+**按创始人指示：挂载在 synova-cto 预设之下**（CTO 模式），非全局——只有 CTO 会话
+激活时右侧栏才出现。
 
-| 面板区块 | 数据 | 数据源（Host 端按请求实时取数，无缓存） |
-|---|---|---|
-| ① 顶部四数 | 交付度 / 验证率 / 保鲜红灯 / 阻塞数 | `ledger.totals` |
-| ② 26 线总览 | 每线 V1 通过 x/y、保鲜色、阻塞标签、断言明细（点行展开） | `ledger.lines` |
-| ③ 阻塞清单 | 原因 + 起始 + 需要谁 + 已卡天数 | `ledger.blocked` |
-| ④ 执行看板 | D# / 状态 / owner / 停滞天数（降序取前 12 + 状态分布） | `ledger.tasks`（D795 由 `task-state/*.json` 派生） |
-| ⑤ 健康 | 真绕过 / 门禁拒绝 / 提交失败 + M 模式复发 + CTO 判定 | `GET /synova/dashboards/data` → `health`（`.claude/bypass.log`、`.claude/pre-commit-failures.log`、AUDIT-FINDINGS-LEDGER、CTO-HEALTH） |
-| ⑥ 时间轴 | 里程碑泳道 / 计划×实际 | `ledger.timeline` |
+| 页签 | 数据 | 数据源（Host 端按请求实时读取） |
+|------|------|------------------------------|
+| ① 完成度 | 26 条产品线进度（总体 % + 逐线 bar + 已验证点数） | `docs/synova/product-lines/product-progress.json` |
+| ② 任务 | 在途任务卡片（D#/状态/更新人/提交/审计）+ 最近任务 | `task-state/*.json` + `docs/synova/DASHBOARD-CN.md` |
+| ③ 健康 | 真绕过/门禁拒绝/提交失败计数 + M 模式复发 + CTO 判定 | `.claude/bypass.log`、`.claude/pre-commit-failures.log`、`docs/synova/coordination/AUDIT-FINDINGS-LEDGER.md`、`docs/synova/CTO-HEALTH.md` |
 
-> 原右栏「完成度」页签**已删重复**——其信息（26 线进度）由区块 ② 覆盖。
-> 原「任务」「健康」两页签分别并入区块 ④ / ⑤。
-
-**实时性**：60s 轮询 + 回到前台立即刷新 + 手动刷新；由 Host 半每次请求实时取数。
-
-### 面板交互（D794 收口）
-
-| 交互 | 做法 | 记忆 |
-|---|---|---|
-| 拖动 | 标题栏为拖拽区（Pointer Events + `setPointerCapture`），移动被夹在视口内 | `localStorage["synova.pm.panel.v1"]` |
-| 缩放 | 右下角 resize 手柄；min **720×480**，max **视口-32px** | 同上（与位置同一个键） |
-| 折叠 | 每个区块标题右侧 ▸/▾ 开关；「26 线总览 / 阻塞清单 / 执行看板 / 健康 / 时间轴」五块各自独立 | `localStorage["synova.pm.collapse.v1"]` |
-| 断言明细 | 默认**收起**，点行展开该线断言明细 | 不记忆（会话内状态） |
-
-- 面板为 `position:fixed` 浮动卡片（`z-index:40`），默认视口内居中，四周留 32px。
-- 偏好读写失败（隐私模式/配额）只记 `console.warn` 并降级为「不记忆」，**不抛错、不白屏**（铁律 24/31）。
-- 几何在写入与读取时都过 `normalizeGeo()`：无论记忆值多离谱，渲染前都被夹进 min/max 且不出视口。
-
-### 修裁切/重叠（根因）
-
-`.spo-body` 是 flex 列容器，子项默认 `flex-shrink:1` —— 26 线这类长列表会把每个区块**压扁并互相裁切**。
-修复三件套：
-
-```css
-.spo-body>*{flex:none}                     /* ① 区块不再被压缩 */
-.spo-sec{flex:none}                        /*    显式兜底 */
-.spo-list{max-height:40vh;overflow-y:auto} /* ② 列表类区块自带滚动（外层 .spo-body 仍保留滚动） */
-```
-
-区块是 `.spo-body` 的**直接子项**（测试断言 `parentClass === "spo-body"`），故 `flex:none` 必然命中。
+**实时性**：15s 自动轮询 + 页面回到前台立即刷新 + 手动刷新按钮；数据由 Host 半每次请求实时读盘，无缓存。
 
 ## 架构
 
-### 挂载（全局，任意预设会话可见）
-
-- **挂载点**：`~/.dsh/profiles/web/package.json` 的
-  `dependencies["@synova/dsh-dashboards"] = "file:…/dsh/plugins/synova-dashboards"`
-  \+ `dsh.profile.bundles` 追加 `"@synova/dsh-dashboards"`。
-  包内 `cordis.patch.yml` 是 bundle 层（`dsh.bundle.patch` 声明），把 Host 半插进 web profile 树。
-- **为什么是 bundle 而不是预设**：bundle 属于 **web profile 本身**，任何预设会话（synova-cto / cordis / 默认…）
-  共用同一棵树 → 入口全局可见（D794 派发 §A.2.1）。早期版本挂在 synova-cto 预设下，仅 CTO 会话可见，已废弃。
-- 包内另有进程级 `active` 护栏防并发重复挂载（`lib/index.js`）。
-
-### Host 半（`lib/index.js`，dsh web 进程内 Cordis 插件）
-
-两条**只读** GET 路由：
-
-| 路由 | 成功 | 降级 |
-|------|------|------|
-| `GET /synova/pm/ledger` | 200 + `{ ...ledger, ok:true, source:"worktree"\|"origin/main"[, source_detail] }` | 200 + `{ok:false, degraded:true, error, attempts}` |
-| `GET /synova/dashboards/data` | 健康区 payload（`health` 被面板区块 ⑤ 使用） | 200 + `{degraded:true, error}`（每个 section 独立降级） |
-
-**账本三级取数**（`lib/ledger.js`，D794 收口）：
-
-1. 工作区 `<repoRoot>/docs/synova/project/ledger.json` → `source="worktree"`
-2. 否则 `git -C <repoRoot> show origin/main:docs/synova/project/ledger.json` → `source="origin/main"`
-3. 两级都失败 → 显式 `degraded`，`error`/`attempts` 带上**每一级各自的原因**
-
-> **为什么**：只读工作区文件时，谁 checkout 了别的分支账本就随之消失 →「数据不通」（实测）。
-> 第 2 级以 `origin/main`（D334「main 是唯一真相」）为权威回退。
-> 工作区账本**坏 JSON 也不直接判死**，会继续尝试第 2 级（并在 `source_detail` 说明）。
-> 本模块**不执行 `git fetch`**：`origin/main` ref 的新鲜度依赖仓库既有 fetch 纪律（铁律 0-3 / pre-push）。
-
-- 账本读取器 `lib/ledger.js` 纯 Node（无 cordis 依赖，可独立测试）；三级**全部不抛异常**，
-  降级与回退都会 `logger.warn` 留痕（铁律 24/31：禁静默）。
-- 数据收集器 `lib/collect.js` 同上，逐 section 独立 try/catch。
-- **零写入**：Host 半只 `readFile` + 只读 `git show/ls-tree/log`，不写工作区/仓库/账本。
-
-### Client 半（`lib/client.js`，浏览器）
-
-以 `window.__ModuleLoader__.load` 工厂格式**手写，无需构建**；只 require 静态种子模块
-（react / react/jsx-runtime）。注册**两处**槽位（二者成对、id 相同）：
-
-| 槽位 | 签名 | 用途 |
-|------|------|------|
-| `main`（keyed） | `{key: "synova-project-overview"}` | 项目总览中央面板 |
-| `sidebar.panellist`（list） | `{id: "synova-project-overview", order: 50, label: "项目总览"}` | 左侧栏入口图标（收 owner props `{size, active}`） |
-
-样式注入会在每次 `apply` 前移除本插件此前注入的所有 `<style>` 再插当前一份 —— 保证 HMR 后
-不残留旧规则。旧版按固定 key 判重会拒绝重注入（改过 CSS 仍跑旧样式）。
-
-> **官方全局面板协议**（依据 `@deepseek-ai/dsh-client-ui-sidebar` README §全局面板入口）：
-> `sidebar.panellist` 的**同一个 id** 寻址 root 作用域 `main` keyed slot 的组件；
-> **选择未注册的 main key 会抛错并保留当前选中态** ⇒ 必须先注册 `main`，再注册入口行。
-> 该插槽已由官方 sidebar（非第三方替换侧栏）声明，故任意环境下都在场；无注册项时整块不渲染。
-
-面板六区块见文首表格；头部有**取数来源标记**（`源 worktree` / `源 origin/main`，验收用）。
-**四态降级均显式呈现、不白屏不抛错**（铁律 24/31）：
-
-1. 网络/HTTP 失败 → 硬降级横幅
-2. 路由级 `ok:false` → 降级横幅（工作区与 `origin/main` 都无账本时的正常态）
-3. 账本级 `degraded:true` → 部分降级警告 + `degraded_sources`
-4. 健康路由失败 / `health.ok===false` → **仅健康区**显示降级文案（其余区块照常）
-
-账本与健康是两条独立请求，任一失败不影响另一块（`Promise.allSettled`）。
-「返回会话」走 `ctx.layout.selectPanel(null)`。
+- **挂载点**：`~/.dsh/.agent-presets/synova-cto/agent.cordis.yml` 末尾追加一行
+  `- id: synova-dashboards / name: '@synova/dsh-dashboards' / inject: [webServer] / config.repoRoot`。
+  synova-cto 是 standing-scope 预设（每进程挂载一次，多会话共享）→ 数据路由只注册一次；
+  包内另有进程级 `active` 护栏防并发重复挂载（`lib/index.js`）。
+- **Host 半**（`lib/index.js`，dsh web 进程内 Cordis 插件）：注册 `GET /synova/dashboards/data`
+  路由。数据收集器 `lib/collect.js` 为纯 Node（无 cordis 依赖，可独立测试），每个 section
+  独立降级（`ok:false + degraded:true + error`，铁律 24/31）。
+- **Client 半**（`lib/client.js`，浏览器）：以 `window.__ModuleLoader__.load` 工厂格式**手写，
+  无需构建**；只 require 静态种子模块（react / react/jsx-runtime）；注册进 `shell.overlay`
+  插槽（layout 已声明为 list，**零核心补丁、顺序无关**）。
+- **右栏形态**：52px 📊 窄栏 ↔ 372px 面板双态（localStorage 记忆）；
+  工具详情列打开时自动收窄为窄栏（MutationObserver 监听 `data-details-collapsed`），互不遮挡。
 
 ## 安装
 
 ```bash
 bash dsh/plugins/synova-dashboards/scripts/install-dashboards.sh
-# 生效（两步）：
-#   1) 重启 dsh web：bash dsh/plugins/synova-dashboards/scripts/restart-dsh-web.sh
-#      （该脚本 kill 占用 3080 的进程 —— 若你在某个 session 里，请从会话外执行）
-#   2) 刷新浏览器 → 左侧栏出现「项目总览」入口
+# 生效（三步）：
+#   1) 重启 dsh web（停掉当前进程 → dsh web）
+#   2) 打开/恢复 CTO 会话（synova-cto 预设挂载后，插件行随预设进入 loader）
+#   3) 刷新浏览器 → 右侧出现 📊 窄栏
 ```
 
-安装脚本**幂等**（可重复执行，第二次为 no-op），只写 `$DSH_HOME`，仓库零写入。四步：
-① 复制包到 `~/.dsh/profiles/web/node_modules/@synova/dsh-dashboards`（bundle 名解析锚点）；
-② 把副本 `cordis.patch.yml` 的 `repoRoot` 改写成本机实际仓库根；
-③ profile `package.json`：`dependencies` + `dsh.profile.bundles`；
-④ 删除 synova-cto 预设里的旧 loader 块（避免与 bundle 层重复挂载）。脚本尾部打印回滚步骤，
-并已备份 profile `package.json` 到 `package.json.synova-bak`。
+安装脚本幂等：① 复制包到 `~/.dsh/profiles/web/node_modules/@synova/dsh-dashboards`
+（loader 解析基准）；② 在 synova-cto 预设追加 loader 行；③ 清理早期"全局 web profile"
+条目（若存在）。
 
-> 注：DSH 的 client 模块扫描在进程启动时缓存包元数据 → **必须重启 dsh web** 才生效
-> （HMR 只热更已知行，不新增包）。用 `dsh --profile web --dump-config` 可重启前先验证合成树。
+> 注：DSH 的 dsh.client 扫描在进程启动时缓存包元数据；预设行是**新 loader 条目**，
+> 必须重启 dsh web 才生效。刷新页面时 boot graph 才包含新 client 包（HMR 只热更已知行）。
 
 ## 验证
 
 ```bash
-cd dsh/plugins/synova-dashboards && npm test     # 31 条：三级取数 / Host 路由 / 面板渲染 / 拖动缩放记忆 / 折叠记忆 / 裁切修复
+# 数据收集器独立测试（不依赖 GUI）
+node -e "import('./lib/collect.js').then(m=>m.collectDashboards('<仓库根>')).then(p=>console.log(JSON.stringify(p,null,1).slice(0,400)))"
 
-# 合成树（不启动服务即可证明 bundle 层挂载）
-dsh --profile web --dump-config | grep -A5 "@synova/dsh-dashboards"
-
-# 运行中进程验证路由
-curl -s http://127.0.0.1:3080/synova/pm/ledger | head -c 200
+# CTO 会话挂载后验证路由
 curl -s http://127.0.0.1:3080/synova/dashboards/data | head -c 300
 ```
 
-## 卸载 / 回滚
+## 卸载
 
-```bash
-cp ~/.dsh/profiles/web/package.json.synova-bak ~/.dsh/profiles/web/package.json
-rm -rf ~/.dsh/profiles/web/node_modules/@synova/dsh-dashboards
-# 重启 dsh web
-```
+1. 编辑 `~/.dsh/.agent-presets/synova-cto/agent.cordis.yml`，删除 "Synova 全局跟踪三仪表盘" 行块
+2. `rm -rf ~/.dsh/profiles/web/node_modules/@synova/dsh-dashboards`
+3. 重启 dsh web
 
 ## 已知限制
 
-- 安装/升级后需**重启 dsh web**才生效（进程启动时缓存 client 包元数据）。
-- **`origin/main` 回退要真正生效，前提是 `docs/synova/project/ledger.json` 已提交进 main**。
-  该文件目前只存在于工作区（D795 尚未把产物提交进 main）→ 此时工作区文件一旦消失
-  （改名/切换分支）仍会走第 3 级显式降级。D795 提交后回退即自动可用（代码路径已由测试覆盖）。
-- 本模块不执行 `git fetch`：`origin/main` ref 若陈旧，回退到的就是陈旧账本。
-- 项目总览面板为**只读视图**：不写工作区/仓库/账本，也不写 localStorage（面板状态仅存在于内存）。
-- 数据为轮询快照（60s），非推送流。
-- 执行看板取 `ledger.tasks`（D795 由 `task-state/*.json` 派生），不再独立扫 task-state —— 单一真相源，避免两套口径。
+- 新 loader 条目需**重启 dsh web** 才生效；面板只在 **CTO 预设会话**激活时出现（by design）。
+- 面板为悬浮右栏（shell.overlay），不挤压对话区；宽度 372px。
+- 数据为轮询快照（15s），非推送流；对 git/文件变更足够实时。
 - 重新安装 DSH CLI（npm -g）不影响本插件（装在 profile 层）；profile 目录被删除重建时重跑安装脚本。
