@@ -97,9 +97,11 @@ run_sut --file "$FRESH_F" --now "$NOW" --bogus-flag
 [ "$RC" -eq 2 ] && ok "⑦ 未知参数 exit 2" || no "⑦ 未知参数应 exit 2，实际 $RC"
 
 # ── ⑧ 真实仓库冒烟（真实产物 + age=0 必绿）──
+# PLATFORM-CHECKLIST: 路径经 cat 由 shell 解析、Python 走 stdin——规避 Git Bash(/c/...)
+# 与原生 Windows Python(C:\...) 的路径翻译差异（D786 windows canary 实证）
 REAL="$REPO/docs/synova/product-lines/product-progress.json"
 if [ -f "$REAL" ]; then
-  REAL_GEN=$("$PYBIN" -c "import json;print(json.load(open('$REAL',encoding='utf-8'))['generated_at'])" 2>/dev/null || true)
+  REAL_GEN=$(cat "$REAL" | "$PYBIN" -c "import json,sys;print(json.load(sys.stdin)['generated_at'])" || true)
   if [ -n "${REAL_GEN:-}" ]; then
     run_sut --file "$REAL" --now "$REAL_GEN"
     [ "$RC" -eq 0 ] && ok "⑧ 真实产物 age=0 冒烟 exit 0（generated_at=${REAL_GEN}）" \
