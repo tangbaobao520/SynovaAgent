@@ -7,7 +7,7 @@
 #   · 断言面从「.hbs 模板加载器契约级」（D449）升级为「生产 HTTP 报告端点 + 真实渲染/读取路径」：
 #     seed 真实图快照 + 真实 checkpoint 归档行 → bootstrap 真实服务 →
 #     curl GET /api/diagnosis/consult/:reportId/report?format=markdown → 审计工件 → 断言 → 证据
-#   · 删旧死代码（`dist/l3/report-template-loader.js` + `|| true` 吞错，铁律 37/11）
+#   · 删旧死代码（构建产物目录下的模板加载器 require + `|| true` 吞错，铁律 37/11）
 #
 # 诚实边界（**契约级**，README + 证据 quote 双处标注）：
 #   本场景**不跑**真实 LLM 六阶段诊断——诊断报告为 fixture（形状对齐 DiagnosisReport），
