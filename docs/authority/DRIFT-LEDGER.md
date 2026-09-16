@@ -1,7 +1,7 @@
 <!-- doc-truth-probe 机器段（勿手编——scripts/doc-system/doc-truth-probe.sh 生成; 探针解析 lastVerifiedAt/exitCode/firstRedAt）
-lastVerifiedAt: 2026-09-16T19:54:14+08:00
+lastVerifiedAt: 2026-09-16T19:56:41+08:00
 exitCode: 0
-summary: ✅ C4 路径 (docs/authority/DOCS-REGISTRY.yaml) — 存在
+summary: ✅ 全部硬检查通过
 firstRedAt: 
 -->
 

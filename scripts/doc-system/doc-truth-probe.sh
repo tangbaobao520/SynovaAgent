@@ -138,7 +138,7 @@ fi
 D1_OUT=$(bash "$D1" 2>&1)
 D1_EXIT=$?
 ANSI_ESC=$'\033'
-D1_PLAIN=$(printf '%s\n' "$D1_OUT" | sed "s/${ANSI_ESC}\\[[0-9;]*m//g")
+D1_PLAIN=$(printf '%s\n' "$D1_OUT" | LC_ALL=C sed "s/${ANSI_ESC}\\[[0-9;]*m//g")  # LC_ALL=C: 按字节剥 ANSI 码（纯 ASCII），避免 mac sed 在 UTF-8 中文上报 illegal byte sequence
 SUMMARY=$(printf '%s\n' "$D1_PLAIN" | grep -E '汇总|✅ 全部硬检查通过|项硬失败' | tail -1 | sed 's/^ *//' || true)
 [ -z "$SUMMARY" ] && SUMMARY=$(printf '%s\n' "$D1_PLAIN" | tail -1 | sed 's/^ *//')
 FAILS=$(printf '%s\n' "$D1_PLAIN" | grep '❌' | sed 's/^ *//' || true)

@@ -201,16 +201,14 @@ GOT_CRIT=$(grep -oE '#CRITERIA[[:space:]]*[:=][[:space:]]*[A-D]' "$TMP/b.md" 2>/
 # 待清清单（D718 首批清 scripts/pre-doc-audit.sh；D782 清 check-doc-truth.sh/doc-registry-gate.sh
 #   ——二者接线进 pre-commit 后输出直进提交流，BOM 噪音行不可留；其余按域派工，CTO 不越域）:
 #   scripts/audit/check-gates-v2.py            — K3 审计域（CTO 红线禁碰）
-#   scripts/doc-system/*.sh (5)                — 文档系统域（D782 后续批）
+#   scripts/doc-system/*.sh (3)                — 文档系统域（D782 PR-2 批已清 doc-categories/doc-triage 的重写版; 余 3 待 PR-3）
 #   tests/doc-system/doc-registry-gate.test.sh  — 文档系统域（.sh，BOM 使 shebang 失效 → 有害）
 #   scripts/archive/ scripts/*.py (6)          — .py 的 BOM 属 PEP 263 可容忍，但仍应清
 BOM_PENDING="scripts/archive/gen-survey.py
 scripts/audit/check-gates-v2.py
 scripts/control-tower/generate-dashboard.py
 scripts/control-tower/product-health.py
-scripts/doc-system/doc-categories.sh
 scripts/doc-system/doc-staleness.sh
-scripts/doc-system/doc-triage.sh
 scripts/doc-system/generate-chronicle-monthly.sh
 scripts/doc-system/install-chronicle-schedule.sh
 scripts/jtbd-dedup-v2.py
