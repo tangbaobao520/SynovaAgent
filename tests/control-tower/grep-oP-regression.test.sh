@@ -198,18 +198,17 @@ GOT_CRIT=$(grep -oE '#CRITERIA[[:space:]]*[:=][[:space:]]*[A-D]' "$TMP/b.md" 2>/
 #   新增 BOM → 红（防新脚本再落坑）；清单里的文件被清掉却没删条目 → 也红（防僵尸条目）。
 # 扫描用单进程 git grep（BSD grep 无 -P，用 $'...' 文字字节 + ^ 锚点）：逐文件 head/od
 #   在 Windows CI 是分钟级（D664 性能教训），故不做 per-file spawn。
-# 待清清单（本批 D718 只清了 scripts/pre-doc-audit.sh，其余按域派工，CTO 不越域）:
+# 待清清单（D718 首批清 scripts/pre-doc-audit.sh；D782 清 check-doc-truth.sh/doc-registry-gate.sh
+#   ——二者接线进 pre-commit 后输出直进提交流，BOM 噪音行不可留；其余按域派工，CTO 不越域）:
 #   scripts/audit/check-gates-v2.py            — K3 审计域（CTO 红线禁碰）
-#   scripts/doc-system/*.sh (7)                — 文档系统域
+#   scripts/doc-system/*.sh (5)                — 文档系统域（D782 后续批）
 #   tests/doc-system/doc-registry-gate.test.sh  — 文档系统域（.sh，BOM 使 shebang 失效 → 有害）
 #   scripts/archive/ scripts/*.py (6)          — .py 的 BOM 属 PEP 263 可容忍，但仍应清
 BOM_PENDING="scripts/archive/gen-survey.py
 scripts/audit/check-gates-v2.py
 scripts/control-tower/generate-dashboard.py
 scripts/control-tower/product-health.py
-scripts/doc-system/check-doc-truth.sh
 scripts/doc-system/doc-categories.sh
-scripts/doc-system/doc-registry-gate.sh
 scripts/doc-system/doc-staleness.sh
 scripts/doc-system/doc-triage.sh
 scripts/doc-system/generate-chronicle-monthly.sh
