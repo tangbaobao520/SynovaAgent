@@ -1,6 +1,6 @@
 # 文档真相防线 D1/D2 接入 pre-commit + doc-system 测试入 CI canary（D782）
 
-> 状态: proposed | 日期: 2026-09-15 | 决策: 把零调用的 D1/D2 防线真正接进 pre-commit 附加块；tests/doc-system/ 6 测试入 CI control-tower-tests；接线前先清 D1 六项硬失败（导航层文档对齐 registry v3.0/13 组/V5.2.7） | 依据: K3 2026-09-14 权威文档一致性专项审计 §7.2 收割 2/3、§12.3「可直接开工、无需裁定」清单（P1-07/P1-08）
+> 状态: implemented | 日期: 2026-09-15 | 决策: 把零调用的 D1/D2 防线真正接进 pre-commit 附加块；tests/doc-system/ 6 测试入 CI control-tower-tests；接线前先清 D1 六项硬失败（导航层文档对齐 registry v3.0/13 组/V5.2.7） | 依据: K3 2026-09-14 权威文档一致性专项审计 §7.2 收割 2/3、§12.3「可直接开工、无需裁定」清单（P1-07/P1-08）
 
 ## 一、触发（审计实证，非推测）
 
@@ -41,6 +41,10 @@ D734 单域预检（SYNO_CI=1）实测假阳性，与 D758（PR #538）同型：
 - `scripts/doc-system/**`（D1/D2 防线本体，DSH 2026-08 建）落 `**` 兜底被判 win——它与 scripts/{control-tower,workflow,hooks} 同族（TASK-ROUTING L37+L63 派生），显式归 mac。
 - 根目录导航文档 AGENTS/CLAUDE/LOOP + knowledge/shared/README（check-doc-truth 被检导航层）落兜底被判 win——导航文档的同步需求跟着触发方走（本次 registry v3.0 专家换代 7→6 要求文档对齐），不构成 PR 域信号 → 加入 domain_neutral（豁免域判定，不影响 CODEOWNERS）。
 
-## 五、迁移计划
+## 五、迁移记录
+
+已实施（2026-09-16）: PR-0 #583 → PR-1 #593 → PR-3 #597 → PR-2 #598 → PR-4 #600 全部合并。task-state/D782.json 回填 impl_done。开口清单见 task-state known_open。
+
+## 六、原迁移计划（历史）
 
 本 PR 合并后：proposed → implemented（git mv）；task-state/D782.json 回填 impl。后续 PR-2/3/4 合并后更新本 Note 开口清单。
