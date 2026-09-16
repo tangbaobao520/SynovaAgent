@@ -1,0 +1,13 @@
+{
+  "task_id": "D789",
+  "title": "K3 审计批次五：门禁与度量变更 + D774/D786 流水线看门狗 + D782 part1 + D787 三机制",
+  "status": "claimed",
+  "spec": "docs/synova/coordination/审计派单-批次五-K3-20260916.md",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-16",
+  "updated_by": "synova-cto",
+  "domain": "k3",
+  "note": "批次五四组按影响面排: A 门禁与度量（D778 派单复核门禁 PR #574 / D788 预算门禁口径 / A1 时间戳口径）——改判据者优先审；B D774/D786 证据流水线与产物看门狗（含 F6 PAT-vs-bot check-runs 机理）；C D782 part1 防线接线（W1/W2 7/2→9/0）；D D787 三机制（若已落地）。交付: 报告带 file:line/原始输出 + audit 回填 task-state + FAIL 进台账 + 报告头固定『数字口径: <sha>（+环境）』。K3 当前空转（批次四已交、无在跑审计）→ 本批即派。"
+}
