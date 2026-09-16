@@ -1,0 +1,13 @@
+{
+  "task_id": "D790",
+  "title": "A1 度量口径修复：证据失效比时间戳（不比日期）+ 重跑刷新",
+  "status": "claimed",
+  "spec": "docs/synova/coordination/派单-批六首批三卡-20260916.md",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-16",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "note": "实证: 2026-09-15 深夜 #538（21:41）后，同日证据被判 stale → 线1 六点被吞；次日重跑又全吐回（CTO 两次实跑: 29→27 与 21/42 两套数）→ 完成度数字随运行时刻跳变。修法: calc-progress.py 的失效比较改时间戳（证据时间 > 该线模块最后提交时间）；TTL 14 天与『证据须晚于代码』意图不变；逐行 diff 自证未改其他判分。验收: 同日不同时点跑两次六态一致 + 点级 before/after + 测试三态。落地后交 K3 审（改的是创始人看的数字）。"
+}

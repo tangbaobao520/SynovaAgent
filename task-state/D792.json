@@ -1,0 +1,13 @@
+{
+  "task_id": "D792",
+  "title": "main 存量红定位：Vitest (2/2) shard2 失败集（只读诊断）",
+  "status": "claimed",
+  "spec": "docs/synova/coordination/派单-批六首批三卡-20260916.md",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-16",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "note": "main 的 Vitest (2/2) 长期 failure —— 非新红: 会话起点 main 63b0ad74 即红，1ce2235d/31506d16/3622a3d1 连续同症状。任务: 取失败日志提取用例清单 → 与本地在 main 的失败基线（@742a3416 实测 29 failed）对照 → 判定『存量』vs『CI 棘轮口径』（main push 时 CHANGED 为空 → 直接 exit 1）→ 出报告 + 建议。只读: 零产品代码改动、零 CI 改动。"
+}
