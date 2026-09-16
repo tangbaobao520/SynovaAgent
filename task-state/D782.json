@@ -1,9 +1,31 @@
 {
   "task_id": "D782",
   "title": "机制批：18 份真相源文档接机器防线（check-doc-truth + doc-registry-gate 入 pre-commit + 唯一 runner + system-registry 规格）",
-  "status": "impl_in_progress",
+  "status": "impl_done",
   "spec": null,
-  "impl": null,
+  "impl": {
+    "pr_merged": [
+      "#583 (PR-0 ownership: scripts/doc-system 归 mac + 4 导航文档 neutral)",
+      "#593 (PR-1 D1/D2 接入 pre-commit 附加块 + doc-system 6 测试入 CI canary; W1/W2 7/2→9/0; D1 六项硬失败清零; time +0.3s)",
+      "#597 (PR-3 ownership 增补二+三: 防线产物 neutral + tests/doc-system 归 mac)",
+      "#598 (PR-2 存活探针三态 + DRIFT-LEDGER 机器生成 + mac BSD/bash3.2 兼容批, 六测试全绿)",
+      "#600 (PR-4 system-registry 寄存器 + I1/I2/I3 校验器样板; I2 命中 E-08/E-10/E-11/E-12)"
+    ],
+    "verify": {
+      "doc-registry-gate.test.sh": "9 通过 / 0 失败（W1/W2 接线断言转绿）",
+      "反向验收": "摘线(git show HEAD~1 版)→W1/W2 红 7/2 复现审计前; 恢复→9/0",
+      "check-doc-truth.sh": "exit 0（六项硬失败清零: 专家数 7/7/8→6, 组数 8→13, LOOP V4.4.5→V5.2.7）",
+      "pre-commit_time": "HEAD 基线 3.019s → 接线 3.314s (+0.295s ≤ +5s)",
+      "存活探针": "NEVER-RUN/STALE/FRESH-GREEN/FRESH-RED 四态可区分（18/0 测试）",
+      "I2_验收": "对真实 AD01 命中 E-08/E-10/E-11/E-12 一码多义（K3 P0-01 吻合; 21/0 测试）"
+    },
+    "known_open": [
+      "docs-only PR 的 D1 CI 权威缺位（quality job D515 跳过; 另立项）",
+      "I3 子集声明噪音（如「资金域 2 个哨兵」误报; 粒度改进随扩展批）",
+      "doc-system 剩余 3+1 文件 BOM（ratchet 清单在案; K3 域的 check-gates-v2.py 不动）",
+      "compute 六口径 counter 待扩展（§12b.4）"
+    ]
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-16",
