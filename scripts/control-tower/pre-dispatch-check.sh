@@ -15,6 +15,9 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 #   1 = 发现问题（无 task-state / 路径不存在 / 行号越界）
 #   2 = 检查本身执行失败（文档不存在、非 git 仓库）
 # 契约: 输入=派单文档路径（可含中文）；输出=逐项 ✅/⚠️ 点名；不修改任何文件
+#   ① 豁免规则（D778）: 紧跟引用词（按/参见/参考/依据/规则/规约/决策[：:]?）的 D# 视为
+#      规则/决策引用（如「按 D734 拆单」「规则:D336」），不按任务号校验 task-state；
+#      其余 D#（含表格中段）一律校验（fail-closed）。派单正文引用历史决策号时请带引用词。
 # ═══════════════════════════════════════════════════════════════
 set -uo pipefail
 DOC="${1:-}"
@@ -24,8 +27,19 @@ ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || { echo "❌ 非 git 仓库"
 FIND=0
 tmp=$(mktemp); trap 'rm -f "$tmp"' EXIT
 
-echo "── ① 任务号真实性（禁臆写，需 task-state 存在）──"
-for d in $(grep -oE 'D[0-9]{3}' "$DOC" | sort -u); do
+echo "── ① 任务号真实性（禁臆写，需 task-state 存在；规则引用型 D# 豁免）──"
+# D778 验收补丁: 区分「任务引用」与「规则/决策引用」（创始人实测输入 55f1e601）。
+#   豁免 = D# 紧跟引用词（按/参见/参考/依据/规则/规约/决策，可带 ：: 或空白），
+#   如「按 D734 拆单」「规则:D336」——引用历史决策/门禁编号，不是本单任务号。
+#   方向 fail-closed: 不带引用词的 D# 一律照旧校验（含表格格中段的 D760/D769 等真任务号
+#   ——结构性「任务位置」判定会漏检它们，故选引用词旁路而非位置判定）。
+ALL_D=$(grep -oE 'D[0-9]{3}' "$DOC" | sort -u)
+RULE_D=$(grep -oE '(按|参见|参考|依据|规则|规约|决策)[：:]?[[:space:]]*D[0-9]{3}' "$DOC" | grep -oE 'D[0-9]{3}' | sort -u)
+if [ -n "$RULE_D" ]; then
+  echo "  ℹ️ 规则/决策引用豁免（非任务号，不校验）: $(echo "$RULE_D" | tr '\n' ' ')"
+fi
+for d in $(comm -23 <(printf '%s\n' "$ALL_D") <(printf '%s\n' "${RULE_D}")); do
+  [ -z "$d" ] && continue
   if [ -f "$ROOT/task-state/$d.json" ]; then echo "  ✅ $d 已登记"
   else echo "  ⚠️ $d 无 task-state（新建须走 alloc-task-id.sh）"; FIND=1; fi
 done
