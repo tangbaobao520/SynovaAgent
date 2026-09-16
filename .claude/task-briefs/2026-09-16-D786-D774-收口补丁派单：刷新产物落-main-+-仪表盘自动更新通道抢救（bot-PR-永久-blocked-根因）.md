@@ -117,3 +117,4 @@ Agent，不是 ChatBot。驻扎企业，持续观测，主动发现，自动诊�
 | .github/workflows/ci.yml | task（T2，红区已声明：canary 清单加看门狗测试） |
 | scripts/product-lines/check-progress-freshness.py | task（T2） |
 | tests/control-tower/check-progress-freshness.test.sh | task（T2） |
+| docs/synova/coordination/CI-诊断通道.md | task（T2：追加 PART B 通道链路文档，保留 D521 原文） |
