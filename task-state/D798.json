@@ -1,6 +1,6 @@
 {
  "status": "claimed",
- "spec": "docs/synova/coordination/派单-批七-20260917.md",
+ "spec": "待 CTO 一页轻量 spec（链路+契约+失败模式）",
  "impl": null,
  "audit": null,
  "fix_task_id": null,

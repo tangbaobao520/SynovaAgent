@@ -1,6 +1,6 @@
 {
  "status": "claimed",
- "spec": "docs/synova/coordination/派单-批七-20260917.md",
+ "spec": "派单 §B.1（判据可枚举，无需 dev doc）",
  "impl": null,
  "audit": null,
  "fix_task_id": null,
