@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "record_type": "scenario",
+  "source": "scripts/golden-scenarios/GS-08-report-readable/run.sh @ 23c262bc",
+  "date": "2026-09-17",
+  "written_by": "evidence-writer.py",
+  "verdicts": [
+    {
+      "acceptance_point": "3-1",
+      "verdict": "pass",
+      "quote": "契约级（生产渲染与读取路径真实、LLM 产物为 fixture）：生产 HTTP GET /api/diagnosis/consult/rpt-gs08-001/report?format=markdown → onepager.md 四槽位齐备；pointer-audit.json 见 scripts/golden-scenarios/evidence/GS-08-2026-09-17/pointer-audit.json（externalResolvableCount≥1）；dimension-audit.json（missingDimensionCount=0）；onepager-meta.json（budgetOk/maxLineOk/conclusionCharsOk/deterministic 全 true）；机器断言 scripts/golden-scenarios/evidence/GS-08-2026-09-17.json 全 pass；复跑: bash scripts/golden-scenarios/GS-08-report-readable/run.sh"
+    },
+    {
+      "acceptance_point": "3-7",
+      "verdict": "pass",
+      "quote": "契约级（生产渲染与读取路径真实、LLM 产物为 fixture）：生产 HTTP GET /api/diagnosis/consult/rpt-gs08-001/report?format=markdown → onepager.md 四槽位齐备；pointer-audit.json 见 scripts/golden-scenarios/evidence/GS-08-2026-09-17/pointer-audit.json（externalResolvableCount≥1）；dimension-audit.json（missingDimensionCount=0）；onepager-meta.json（budgetOk/maxLineOk/conclusionCharsOk/deterministic 全 true）；机器断言 scripts/golden-scenarios/evidence/GS-08-2026-09-17.json 全 pass；复跑: bash scripts/golden-scenarios/GS-08-report-readable/run.sh"
+    }
+  ],
+  "at": "2026-09-17T03:49:27+08:00"
+}

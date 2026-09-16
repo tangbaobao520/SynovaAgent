@@ -214,14 +214,22 @@ north-star:
 | src/l3/report-templates.ts | 修改 | `ReportData` 新增 3 个**可选**字段（`keyEvidence?: string[]` / `cycleConclusions?: string[]` / `actionItems?: string[]`）+ 结论槽加 `conclusionPointer?: string`；`EXECUTIVE_SUMMARY.render` 在既有头行/Top3/📎footer **之外**追加三段（`### 关键证据` / `### 各维度循环结论` / `### 行动建议`），空数组 → 渲染该槽 `[degraded]` 说明行；条数二次裁剪（≤3 / ≤6 / ≤3）。**D480 既有输出字符串（头行、Top3、`N 告警` footer）一字不改**（保既有 5 用例绿） |
 | src/agent/report-assembler.ts | 修改 | `renderOnePager(report, depth?, inputs?)` 第 3 参全可选（`OnePagerInputs{cycleConclusions?, evidenceHighlights?}`，向后兼容）；`toOnePagerData` 增槽位映射（指针由 `agent/report-onepager-trace.ts` 构造）；渲染后调覆盖审计（缺指针 → `log.warn`）；降级语义保持「本函数永不抛出」契约 |
 | src/routes/diagnosis.ts | 修改 | ① SSE 完成路径（:552-556）与 ② GET 按需渲染（:698-702）注入 inputs：`req.app.locals.graphStore` → `buildCycleConclusions(orgId, store)`（`type GraphStoreLike = import(...)` 形态，L1 类型位置豁免）、`getSentinelExpertReports()`（L2 只读）→ `renderOnePager(report, depth, inputs)`；③ JSON 格式响应附 `pointerAudit`（解析审计结果）；④ store/findings 缺席 → 传空 inputs（槽位走 `[degraded]`）+ `log.warn`（不静默） |
-| src/agent/ | 新建 | 新文件 2 个：**cycle-conclusion-service.ts**（L2 循环结论派生：`buildCycleConclusions` + 纯映射 `mapDashboardRows`；依赖用 `type GraphStoreLike = import('../l4/graph-bridge').GraphStore`（**禁写 `from '../l4/...'`**，见 §4 环境实测 + src/agent/loop-handlers.ts :670 先例））；**report-onepager-trace.ts**（纯函数：`buildReportPointer` / `parsePointers` / `auditConclusionCoverage` / `resolvePointers`）。目录级声明（新文件尚不存在，dev-doc 写集核验对未存在文件报假阳——D580/D590/D593/D716 先例）；实现同 commit 精确化为确切文件名 |
-| tests/agent/ | 新建 | 新文件 1 个（合并用例，控文件数）：**report-onepager.test.ts**——四槽位 / 指针覆盖 / 解析审计 / 降级三路径 / 篇幅与单行宽 / 确定性（同输入同输出）/ 裁剪上限。目录级声明 |
+| src/agent/cycle-conclusion-service.ts | 新建 | L2 循环结论派生：`buildCycleConclusions` + 纯映射 `mapDashboardRows` + `buildCyclePointerResolver`；依赖用 `type GraphStoreLike = import('../l4/graph-bridge').GraphStore`（不写 l4 相对路径的静态 import 语句，§4 环境实测 + src/agent/loop-handlers.ts :670 先例） |
+| src/agent/report-onepager-trace.ts | 新建 | 纯函数：`buildReportPointer` / `parsePointers` / `collectSlotLines` / `stripPointers` / `auditConclusionCoverage` / `resolvePointers`（指针文法 + 覆盖审计 + 三态解析审计） |
+| tests/agent/report-onepager-trace.test.ts | 新建 | 指针面 + 渲染结构面：四槽位 / 覆盖审计 / 三态解析审计（4 kind）/ 降级三路径 / 篇幅与单行宽 / 确定性与渲染时钟无关 / 槽位标题双源一致 / 指针文法边界（共 12 用例） |
+| tests/agent/cycle-conclusion-service.test.ts | 新建 | 派生链与 S3 内容面：真实快照映射（零新指标）/ store 缺席与非法 orgId 降级 / 无注册循环 / 裁剪 7→6 / 未注册维度不出现（共 6 用例） |
 | scripts/golden-scenarios/GS-08-report-readable/run.sh | 修改 | 改造为**生产路径**验收：fresh-db → 种子（真实 session-store 写 phase=5 checkpoint + 真实 GraphStore 写 2 条循环快照）→ bootstrap → `curl GET /api/diagnosis/consult/:reportId/report?format=markdown`（取生产 markdown）→ 产出审计工件 → `assert.ts` → 出点级证据（3-1/3-7）。删 `run.sh:54` 死代码（铁律 37） |
 | scripts/golden-scenarios/GS-08-report-readable/expect.json | 修改 | 断言 ≥8 条（正常/降级/负向三类齐全，每条 `purpose` 必填）；`evidence_map` 增 `3-1` / `3-7` 两个**产品线点 id**（与 data-view 消费口径同源）；保留原 .hbs 加载断言 1 条（回归） |
 | scripts/golden-scenarios/GS-08-report-readable/README.md | 修改 | 场景说明 + 诚实 RED 标注（LLM 不可用 → 用 checkpoint 归档行（fixture 报告）+ 真实渲染路径；标注哪些断言是契约级、哪些是全链路）+ 复跑命令 |
-| scripts/golden-scenarios/GS-08-report-readable/ | 新建 | 场景内新文件 2 个：**render-onepager.ts**（确定性驱动：开临时库 → 真实 `SqliteGraphStore` 写快照 → 真实 `SessionStore.saveDiagnosisCheckpoint` 写归档行 → 复用生产函数渲染降级变体 → 写工件 JSON）与 **fixtures/diagnosis-report.json**（诊断报告 fixture = LLM 产物替身，形状对齐 `DiagnosisReport`，含 reportId/teamId/generatedAt/summary/expertReports/rootCauses/recommendations/raw）。目录级声明；实现同 commit 精确化 |
+| scripts/golden-scenarios/GS-08-report-readable/render-onepager.ts | 新建 | 确定性驱动（seed/audit 双模式）：开临时库 → 真实 `SqliteGraphStore` 写快照（**写后复读校验**）→ 真实 `SessionStore.saveDiagnosisCheckpoint` 写 phase=5 归档行 → 复用生产函数渲染降级变体 → 写审计工件（直读 `graph_nodes` 验证物理记录） |
+| scripts/golden-scenarios/GS-08-report-readable/fixtures/diagnosis-report.json | 新建 | 诊断报告 fixture = LLM 产物替身，形状对齐 `DiagnosisReport`（reportId/teamId/generatedAt/summary/expertReports/rootCauses/recommendations/raw 全字段） |
+| scripts/golden-scenarios/evidence/ | 生成 | 场景机器产物目录（`GS-08-<date>/` 审计工件 + `GS-08-<date>.json` 断言证据）——机器生成、按日期幂等覆盖；目录级声明（内容随运行日期变化） |
 
-> **计数口径**：6 修改（report-templates / report-assembler / routes-diagnosis / run.sh / expect.json / README）+ 3 新建（`src/agent/ ` 2 文件、`tests/agent/` 1 文件、场景目录 2 文件，分别以 3 个目录级条目声明）= 表内 9 行。**实现落盘文件合计 12**（= D734 上限，不得再加；超限必须拆单）。
+> **计数口径（实现回填，更正 spec 算术笔误）**：6 修改（report-templates / report-assembler / routes-diagnosis / run.sh / expect.json / README）+ 6 新建（`src/agent/cycle-conclusion-service.ts `、`src/agent/report-onepager-trace.ts `、`tests/agent/report-onepager-trace.test.ts `、`tests/agent/cycle-conclusion-service.test.ts `、`render-onepager.ts `、`fixtures/diagnosis-report.json `）。
+> **测试文件由 1 拆为 2（实现回填）**：pre-commit 组 2「新文件配对」要求每个新增 `src/` 文件有同名 `tests/` 配对（`src/agent/report-onepager-trace.ts ` → `tests/agent/report-onepager-trace.test.ts `；`src/agent/cycle-conclusion-service.ts ` → `tests/agent/cycle-conclusion-service.test.ts `），硬阻断无法豁免（`.claude/plan.json ` 的 deferred 白名单属 D599 且 agent 禁改）⇒ 原声明的单一合并测试文件 `tests/agent/report-onepager.test.ts ` 按被测模块拆为两个同名配对文件，用例总数不变（18）。
+> 原 dev-doc 写「`src/agent/ ` 2 + `tests/agent/` 1 + 场景目录 2 = 3 目录级新建 = 合计 12」——6+2+1+2 = **11**，笔误多算 1。
+> **实现落盘文件合计 12**（= D734 上限 12，未超限未拆单）；另加 1 个**生成物目录** `scripts/golden-scenarios/evidence/ `（机器产物，内容随运行日期变化，故以目录级声明）。
+> 目录级条目已按本节 S-6 义务**精确化为确切文件名**（见上表）。
 >
 > **共享资源标注（S-8）**：`docs/synova/product-lines/evidence/`（点级证据落盘）与 D790（卡 1）同目录但**不同文件**（本任务 `scenario-<date>[-n].json`，由 evidence-writer 序号防覆盖；D790 不动 evidence 目录）→ 无写冲突。`scripts/product-lines/**` 本任务**只调用不修改**（D790 在飞）。
 >
@@ -247,8 +255,16 @@ north-star:
 | S1 结论槽 | ≤ 200 字符 | 沿用 D480 `assembleCeo` 既有上限（不新造阈值） |
 | S2 / S4 | ≤ 3 条 | 一页纸注意力预算，与 Top 3 对称 |
 | S3 | ≤ 6 条 | 本仓已注册循环上限（`cycles/` 实测 6 个 `.cycle.json`：4 builtin + 2 industry） |
-| 单行字符数 | ≤ **60** | 移动端窄屏（3-5 目标的工程前提）不折行 |
+| 单行字符数（S2/S3/S4 条目行） | ≤ **60** | 移动端窄屏（3-5 目标的工程前提）不折行；与上一行 S1 ≤200 为**互斥作用域**（见下注） |
 | 确定性 | 同输入 → 同输出（字节级） | 一页纸**禁含渲染时刻**（否则 GSS 重跑不可复现、幂等断言失效） |
+
+> **回填注（D791 实现，消解同表歧义——审计可核）**：原表把「S1 结论槽 ≤200 字符」与「单行 ≤60」并列。
+> 二者若同作用域，则 200 那行是死条文（200 > 60）。**实现口径**（`auditOnePagerReadability` JSDoc 同款声明）：
+> `conclusionChars/Ok` 只量 S1 结论行（≤200）；`maxLineChars/Ok` 只量 S2/S3/S4 条目行（≤60）。
+> 且两者均**剥离 `[src:…]` 指针后**计量——指针是审计元数据（单条 30–55 字符），非老板阅读面；
+> 计入则 ≤60 在本节 §5.4 自定的行文案格式下**数学上不可满足**（真实 `cycleId` 如 `customer-cycle`
+> 实测 67 字符含指针 / 33 字符人类可见，见场景 `onepager-meta.json` 与 `audit-extra.json`）。
+> 未放开任何阈值：60 与 200 两个数原样保留，只是划清了各自的作用域。
 
 **诚实规则（本轮新增，3 条）**：
 - **R1 指针必填**：S1–S4 的**每个条目行**必须带 ≥1 个 `[src:...]` 指针；槽位**空态行**（无条目可引）豁免，但必须带 `[degraded]` 标记。
@@ -305,12 +321,14 @@ mapDashboardRows(rows) → CycleConclusionLine[]              ← 纯映射：�
 
 **场景执行序（`run.sh`）**：
 1. `fresh-db.ts` → 临时数据目录 + `SYNOVA_DB_PATH`（既有 GSS 契约，铁律 0-4 数据隔离）。
-2. `npx tsx render-onepager.ts --data-dir <dir> --out <dir>`：真实 `SqliteGraphStore`（`src/adapters/sqlite-graph-store.ts `）写 2 条循环快照（`writeOverflowSnapshot`）→ 真实 `SessionStore.saveDiagnosisCheckpoint` 写 phase=5 归档行（fixture 报告）→ 复用**生产** `renderOnePager(report,'ceo')`（不传 inputs）渲染**降级变体** `onepager-degraded.md` + 工件。
+2. `npx tsx render-onepager.ts --mode seed --data-dir <dir> --out <OUT>`：真实 `SqliteGraphStore`（`src/adapters/sqlite-graph-store.ts `）写 2 条循环快照（`writeOverflowSnapshot`，**写后复读校验**——该函数静默吞写失败，不复读不可信）→ 真实 `SessionStore.saveDiagnosisCheckpoint` 写 phase=5 归档行（fixture 报告，`onePager:null` 强制 GET 走生产按需渲染）→ 渲染**降级变体** `onepager-degraded.md`（不传 inputs）与 `onepager-no-snapshot.md` + `cycle-slot-no-snapshot.md`（store 缺席 → S3 全量「未建立基线」）。
 3. `bootstrap.ts` 起临时服务（同库）。
 4. `curl -H "Authorization: Bearer $GS_TOKEN" "<BASE>/api/diagnosis/consult/<reportId>/report?format=markdown"` → 存 `onepager.md`（**生产路径产物，非 fixture 渲染**）+ `report-endpoint-status.txt`。
-5. `npx tsx render-onepager.ts --audit <dir>`（或同一驱动二次调用）：对 `onepager.md` 跑 `parsePointers` + `resolvePointers`（真实解析器：registry / 临时库快照 / findings 源）→ 写 `pointer-audit.json` / `dimension-audit.json` / `onepager-meta.json` / `cycle-slot.md`（从 markdown 抽 `### 各维度循环结论` 段）。
+5. `npx tsx render-onepager.ts --mode audit ...`：对 `onepager.md` 跑 `parsePointers` + `resolvePointers`（真实解析器：报告自身 + **直读 `graph_nodes` 物理记录**判 @month 存在性——不复用产品查询路径自证）→ 写 `pointer-audit.json` / `dimension-audit.json` / `onepager-meta.json` / `cycle-slot.md` / `audit-extra.json`。
 6. `assert.ts --expect expect.json --out scripts/golden-scenarios/evidence/GS-08-<date>.json`。
 7. **退出前**（`exit 0` 路径）：点级证据入库（见下）。
+
+> **实现回填（幂等 + 可独立重跑）**：`<OUT>` 落在 **git 跟踪**的 `scripts/golden-scenarios/evidence/GS-08-<date>/ `（非临时目录）——K3 重跑后可直接读原工件；同日重跑**逐字节幂等**（实测 14 个工件 sha 全等）。点级证据入库带**幂等保护**：当日 `docs/synova/product-lines/evidence/scenario-<date>.json ` 已存在则跳过（K3 独立重跑不产生 `-1/-2` 增量、不改写既有证据）；`GS08_PUBLISH_EVIDENCE=0` 可强制跳过。断言数 **24**（含 4 条负向 + 1 条端到端等价性 `http-equals-local-render`：生产 HTTP markdown 与本地同输入渲染逐字节相等）。
 
 **断言清单（≥8 条；负向 3 条标 🚫）**：
 
@@ -339,16 +357,27 @@ python3 scripts/product-lines/evidence-writer.py \
   --quote "<assert 摘要 + onepager.md 路径 + pointer-audit.json 路径>"
 ```
 - 输出落在 `docs/synova/product-lines/evidence/scenario-<date>.json`（calc-progress 唯一扫描面）。
-- **同日失效规避（CT-62）**：`evidence-writer.py` 写入的记录**不含 `at` 字段**（实测 :75-86），而 `calc-progress.py:118` 的 `--since` 对 date-only 取 `T00:00:00`（同日提交即判 touched → `stale`）。⇒ 实现提交**之后**才跑场景（自然顺序），并把 `at`（全量 ISO + 时区，> 线 3 模块最后一次提交时刻）补进该记录（**先例**：`docs/synova/product-lines/evidence/d592-e2e-2-1.json` 直接用带 `at` 的等价记录形状）。若 D790 落地后同日语义变化，以「3-1/3-7 状态 ∈ {pending_k3}」为唯一判定，**不得**改口径迁就。
+- **同日失效规避（CT-62）——实现实测更正（重要）**：`evidence-writer.py` 写入的记录**不含 `at` 字段**（实测 :75-86）。**但 `at` 在 main 的 `calc-progress.py` 里只被 `freshness_gate`（**k3 计分路径**，:150-162）消费；`status_for_point` 的 **machine 路径**（scenario/test/ci/task_redeem）调 `git_touched_after(line_modules, latest["date"])` 且**不传 `at`**（:216-232 实测逐行读）。⇒ 对本任务（scenario 证据）**补 `at` 不改变判定**：`--since` 仍取 `<date>T00:00:00`，与 `src/l3/` 提交同日即判 `stale`。
+  **正确解法 = 跨天重跑**（本仓既有先例：线 1 的 `test-2026-09-15.json` 因同日提交失效 → 次日 `test-2026-09-16.json` 重验 → `pending_k3`，实测读）。做法：实现提交落库后，在**下一个自然日**再跑一次 `bash scripts/golden-scenarios/GS-08-report-readable/run.sh` → 自动写 `docs/synova/product-lines/evidence/scenario-<新日期>.json `（幂等保护不覆盖旧记录）→ `3-1/3-7` 判 `pending_k3`。
+  **不得**改口径迁就：DS13 唯一判定仍是「`3-1`/`3-7` 状态 ∈ {`pending_k3`}」。D790（时间戳粒度）合入后该跨天步骤可省。
 - 线 3 `modules` 含 `src/l3/ `（本任务改了 `report-templates.ts`）⇒ 证据的 `at` 必须晚于该文件最后一次提交时刻。
 
 ### 5.6 场景工件目录（K3 可独立重跑）
 
+**落盘位置（实现回填）**：`<OUT>` = `scripts/golden-scenarios/evidence/GS-08-<date>/`（**git 跟踪的持久目录**，
+非临时数据目录——K3 可独立重跑后直接读原工件；同日重跑覆盖为同名同内容，不发散 `-1/-2` 增量）。
+
 | 工件 | 路径（`<OUT>` = 场景输出目录） | 用途 |
 |---|---|---|
 | 生产 markdown | `<OUT>/onepager.md` | 槽位/篇幅/指针审计对象（生产 HTTP 产物） |
-| 降级 markdown | `<OUT>/onepager-degraded.md` | 降级诚实性 + 负向断言 |
-| 循环槽片段 | `<OUT>/cycle-slot.md` | 负向断言 11/12 的精确作用域 |
+| 降级 markdown | `<OUT>/onepager-degraded.md` | 降级诚实性 + 负向断言 13 |
+| 无快照变体 markdown | `<OUT>/onepager-no-snapshot.md` | store 缺席路径（S3 全量「未建立基线」）留痕 |
+| 循环槽片段 | `<OUT>/cycle-slot.md` | 负向断言 11（`平稳`）的精确作用域（生产 S3 段） |
+| 无快照循环槽片段 | `<OUT>/cycle-slot-no-snapshot.md` | 负向断言 12（`▲`）的精确作用域（无快照变体 S3 段） |
+| 端点状态 | `<OUT>/report-endpoint-status.txt` | 生产端点 HTTP 状态码（断言 1） |
+| 种子元数据 | `<OUT>/seed-meta.json` | 快照写入 + 复读校验结果 |
+| 审计诊断面 | `<OUT>/audit-extra.json` | `httpMatchesLocal`（生产 HTTP 产物 ≡ 本地同输入渲染，断言 24）等 |
+| .hbs 轨回归面 | `<OUT>/load-result.json` / `render-meta.json` / `templates.json` | D449 覆盖保留（断言 21–23） |
 | 指针审计 | `<OUT>/pointer-audit.json` | 覆盖/解析/外部可溯源计数 |
 | 维度审计 | `<OUT>/dimension-audit.json` | 维度集合与 registry 等价 |
 | 篇幅工件 | `<OUT>/onepager-meta.json` | 篇幅/单行/槽位/确定性 |

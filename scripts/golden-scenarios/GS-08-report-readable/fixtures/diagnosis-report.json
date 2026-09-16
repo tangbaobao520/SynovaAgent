@@ -1,0 +1,19 @@
+{
+  "reportId": "rpt-gs08-001",
+  "teamId": "gs08-org",
+  "generatedAt": "2026-09-17T00:00:00.000Z",
+  "summary": "现金流缺口与人才密度双重制约增长。",
+  "expertReports": [
+    { "expert": "finance", "findings": ["经营现金流连续 3 季度为负"], "confidence": 0.82 },
+    { "expert": "org", "findings": ["关键岗位继任空白"], "confidence": 0.71 }
+  ],
+  "rootCauses": [
+    { "description": "现金流缺口扩大：经营现金流连续 3 季度为负", "dimension": "financial", "confidence": 0.82 },
+    { "description": "核心人才密度不足", "dimension": "talent", "confidence": 0.71 }
+  ],
+  "recommendations": [
+    { "action": "压缩非核心固定成本 20%", "priority": "critical", "expert": "finance" },
+    { "action": "启动关键岗位继任计划", "priority": "high", "expert": "org" }
+  ],
+  "raw": { "source": "gs-08-fixture", "note": "LLM 六阶段诊断产物替身——形状对齐 DiagnosisReport" }
+}

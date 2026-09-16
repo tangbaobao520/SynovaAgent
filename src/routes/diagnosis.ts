@@ -550,10 +550,14 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
         // expert 深度映射 flywheel（更全量）；渲染失败不阻断——log.warn + 原报告保留。
         try {
           const { renderOnePager } = await import('../agent/report-assembler');
+          // D791: 四槽位 inputs 装配（S2 关键证据 + S3 各维度循环结论）——装配失败/缺席不阻断，
+          // 槽位渲染 [degraded] 诚实空态行（spec §5.2 R2；铁律 24/31）
+          const onePagerInputs = await buildOnePagerInputs(req, teamId);
           onePager = renderOnePager(
             result.report as DiagnosisReportLike,
             // D600: 模板由 diagnosis.template 驱动（客户配置显式声明 > 深度推导），非法值回退推导
             appliedTemplate ?? (reportDepth === 'ceo' ? 'ceo' : 'flywheel'),
+            onePagerInputs,
           );
           (result.report as Record<string, unknown>).onePager = onePager;
         } catch (err) { log.warn({ err, consultId }, '一页纸渲染失败 — 原报告保留'); }
@@ -689,16 +693,129 @@ router.post('/api/diagnosis/consult/:consultId/resume', async (req: Request, res
   }
 });
 
+// ═══ D791: 一页纸四槽位 inputs 装配 + 指针解析审计 ═══
+
+type OnePagerInputsLike = import('../agent/report-assembler').OnePagerInputs;
+type PointerAuditLike = import('../agent/report-onepager-trace').PointerAudit;
+type PointerResolversLike = import('../agent/report-onepager-trace').PointerResolvers;
+
+/**
+ * D791: 取 app.locals.graphStore（src/server.ts:282 注入；缺席 = Bootstrap 降级，非异常）。
+ * 类型位置读取（L1 类型位置豁免，scripts/check-architecture.sh:92-95）——不直触 L4 实现。
+ */
+function readGraphStore(req: Request): unknown {
+  const locals = req.app.locals as { graphStore?: unknown };
+  return locals.graphStore;
+}
+
+/**
+ * D791: 一页纸 inputs 装配（S2 关键证据 + S3 各维度循环结论）。
+ *
+ * 契约:
+ *   @input  req（读 app.locals.graphStore）；orgId（= 报告 teamId）
+ *   @output OnePagerInputs（两个字段各自独立可选——缺席即模板侧 [degraded] 空态行）
+ *   @degraded 任一来源失败/为空 → 对应字段不设置 + log.warn（不静默、不阻断报告渲染，铁律 24/31）
+ *
+ * 分层: L1 只做装配与传递——S2 经 L2 只读面 `getSentinelExpertReports`（既有生产消费点
+ *       routes/sentinel.ts:84 不动）；S3 经 L2 派生服务 `buildCycleConclusions`
+ *       （L1 不直触 cycles/l4，铁律 39）。
+ */
+async function buildOnePagerInputs(req: Request, orgId: string): Promise<OnePagerInputsLike> {
+  const [sentinel, assembler, cycleService] = await Promise.all([
+    import('../agent/sentinel-service'),
+    import('../agent/report-assembler'),
+    import('../agent/cycle-conclusion-service'),
+  ]);
+
+  let findingReports: unknown = [];
+  try {
+    findingReports = sentinel.getSentinelExpertReports().reports;
+  } catch (err: unknown) {
+    log.warn({ err, orgId }, '关键证据来源读取失败 — S2 槽位降级（输入缺席 → [degraded] 空态行）');
+  }
+
+  let cycleLines: string[] = [];
+  try {
+    const conclusions = await cycleService.buildCycleConclusions(orgId, readGraphStore(req));
+    cycleLines = conclusions.lines.map(line => line.text);
+    if (cycleLines.length === 0) {
+      log.warn({ orgId, reason: conclusions.reason }, '循环结论为空 — S3 槽位走 [degraded] 空态行');
+    }
+  } catch (err: unknown) {
+    log.warn({ err, orgId }, '循环结论派生失败 — S3 槽位降级（输入缺席 → [degraded] 空态行）');
+  }
+
+  // 「空即缺席」规则单源在 L2 assembleOnePagerInputs（与 GS-08 场景驱动同一函数——
+  // 保证"生产 HTTP 产物 ≡ 本地同输入渲染"的端到端等价性可判）
+  const inputs = assembler.assembleOnePagerInputs(findingReports, cycleLines);
+  if (inputs.evidenceHighlights === undefined) {
+    log.warn({ orgId }, '哨兵无 finding 记录 — S2 槽位走 [degraded] 空态行（不静默省略）');
+  }
+  return inputs;
+}
+
+/**
+ * D791: 一页纸指针解析审计（JSON 响应附 `pointerAudit`——resolved/unresolved/unknown 三态）。
+ *
+ * 契约:
+ *   @input  req；report（完整引擎形状或归档形状）；onePager（已渲染 markdown，可 null）
+ *   @output PointerAudit | null（null = 报告形状不完整/审计失败——**不伪造审计结果**）
+ *   @degraded 渲染失败 / 解析器缺席 → 返回 null 或全 unknown 计数的审计对象 + log.warn
+ *             （绝不把"判不了"当 resolved，铁律 24/31）
+ */
+async function buildPointerAudit(
+  req: Request,
+  report: DiagnosisReportLike | ColdReadArchive['report'],
+  onePager: string | null,
+): Promise<PointerAuditLike | null> {
+  try {
+    let markdown: string | null = typeof onePager === 'string' && onePager !== '' ? onePager : null;
+    if (markdown === null) {
+      markdown = isFullDiagnosisReportLike(report) ? await renderOnePagerOnDemand(req, report) : null;
+    }
+    if (markdown === null) {
+      log.warn('报告形状不完整 — 跳过指针解析审计（pointerAudit 缺席，不伪造）');
+      return null;
+    }
+    const reportId = typeof report.reportId === 'string' ? report.reportId : '';
+    const orgId = typeof report.teamId === 'string' ? report.teamId : '';
+
+    const [trace, assembler, cycleService, sentinel] = await Promise.all([
+      import('../agent/report-onepager-trace'),
+      import('../agent/report-assembler'),
+      import('../agent/cycle-conclusion-service'),
+      import('../agent/sentinel-service'),
+    ]);
+
+    const resolvers: PointerResolversLike = {};
+    if (reportId !== '') {
+      resolvers.report = (_kind, ref) => ref.startsWith(`${reportId}#`);
+    }
+    const findingResolver = assembler.buildFindingPointerResolver(sentinel.getSentinelExpertReports().reports);
+    if (findingResolver !== null) resolvers.finding = findingResolver;
+    const cycleResolver = cycleService.buildCyclePointerResolver(orgId, readGraphStore(req));
+    if (cycleResolver !== null) resolvers.cycle = cycleResolver;
+
+    return trace.resolvePointers(markdown, resolvers);
+  } catch (err: unknown) {
+    log.warn({ err }, '指针解析审计失败 — pointerAudit 缺席（degraded，不阻断响应）');
+    return null;
+  }
+}
+
 // ═══ GET /consult/:id/report — D480 一页纸/报告读取（GS-08 报告可读） ═══
 
 /**
  * D480: GET 按需渲染一页纸（raw 深度咨询未在完成时渲染）。
  * renderOnePager 自身永不抛出（whole-body catch），此处只兜模块加载失败。
  */
-async function renderOnePagerOnDemand(report: DiagnosisReportLike): Promise<string> {
+async function renderOnePagerOnDemand(req: Request, report: DiagnosisReportLike): Promise<string> {
   try {
     const { renderOnePager } = await import('../agent/report-assembler');
-    return renderOnePager(report, 'ceo');
+    // D791: 按需渲染同样注入四槽位 inputs（DS10——本文件全部 renderOnePager 调用点一致）
+    const orgId = typeof report.teamId === 'string' ? report.teamId : '';
+    const inputs = await buildOnePagerInputs(req, orgId);
+    return renderOnePager(report, 'ceo', inputs);
   } catch (err: unknown) {
     log.warn({ err }, '一页纸按需渲染失败 — degraded（返回摘要提示文本）');
     return `诊断摘要: ${report.summary || '诊断完成'}（一页纸渲染不可用，请使用 JSON 格式查看完整报告）`;
@@ -754,6 +871,7 @@ async function readReportFromCheckpoint(req: Request, reportId: string): Promise
 
 /** D593: report 响应组装（json/markdown 双格式；markdown 按需补渲染 onePager，D480 语义不变） */
 async function respondReport(
+  req: Request,
   res: Response,
   consultId: string,
   format: string,
@@ -768,7 +886,7 @@ async function respondReport(
       return;
     }
     if (isFullDiagnosisReportLike(report)) {
-      res.type('text/markdown; charset=utf-8').send(await renderOnePagerOnDemand(report));
+      res.type('text/markdown; charset=utf-8').send(await renderOnePagerOnDemand(req, report));
       return;
     }
     // 归档 report 非完整引擎形状（如 fake/历史数据）→ 摘要文本诚实降级（不伪造一页纸，铁律 24）
@@ -777,7 +895,16 @@ async function respondReport(
     );
     return;
   }
-  res.json({ ok: true, consultId, teamId, completedAt, report });
+  // D791: JSON 分支附指针解析审计（结论 → 物理记录的可回查链；审计失败 → 字段缺席，不伪造）
+  const pointerAudit = await buildPointerAudit(req, report, onePager);
+  res.json({
+    ok: true,
+    consultId,
+    teamId,
+    completedAt,
+    report,
+    ...(pointerAudit === null ? {} : { pointerAudit }),
+  });
 }
 
 router.get('/api/diagnosis/consult/:consultId/report', async (req: Request, res: Response) => {
@@ -787,7 +914,7 @@ router.get('/api/diagnosis/consult/:consultId/report', async (req: Request, res:
   // ① 一级缓存（进程内快路径；键=consultId——resume 等既有调用方语义不变）
   const completed = completedReports.get(consultId);
   if (completed) {
-    await respondReport(res, consultId, format, completed.teamId, completed.completedAt, completed.report, completed.onePager);
+    await respondReport(req, res, consultId, format, completed.teamId, completed.completedAt, completed.report, completed.onePager);
     return;
   }
 
@@ -795,7 +922,7 @@ router.get('/api/diagnosis/consult/:consultId/report', async (req: Request, res:
   //    consultId 调用方由内存层服务，重启后 reportId 可读回，spec §5.4 决策 3）
   const archive = await readReportFromCheckpoint(req, consultId);
   if (archive) {
-    await respondReport(res, consultId, format, archive.teamId, archive.completedAt, archive.report, archive.onePager ?? null);
+    await respondReport(req, res, consultId, format, archive.teamId, archive.completedAt, archive.report, archive.onePager ?? null);
     return;
   }
 

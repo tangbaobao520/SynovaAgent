@@ -1,39 +1,20 @@
 {
+  "schema": 1,
+  "record_type": "scenario",
   "scenario_id": "GS-08",
-  "evidence_map": [
+  "source": "scripts/golden-scenarios/GS-08-report-readable/expect.runtime.json",
+  "date": "2026-09-16",
+  "verdict": "pass",
+  "verdicts": [
     {
       "acceptance_point": "3-1",
-      "assertion_ids": [
-        "report-endpoint-ok",
-        "slots-complete",
-        "slot-conclusion",
-        "slot-evidence",
-        "slot-actions",
-        "slots-ok",
-        "budget-ok",
-        "conclusion-length",
-        "line-width",
-        "deterministic",
-        "hbs-loader-regression",
-        "hbs-render-regression",
-        "hbs-template-registered",
-        "http-equals-local-render"
-      ]
+      "verdict": "pass",
+      "quote": "report-endpoint-ok pass: 生产报告端点 GET /api/diagnosis/consult/:reportId/report?format=markdown 返回 HTTP 200（符合预期） | slots-complete pass: 生产 markdown 含「各维度循环结论」槽位标题（3-7 的靶心槽位）（符合预期） | slot-conclusion pass: 生产 markdown 含「结论」槽位标题（结论先行第一槽）（符合预期） | slot-evidence pass: 生产 markdown 含「关键证据」槽位标题（符合预期） | slot-actions pass: 生产 markdown 含「行动建议」槽位标题（符合预期） | slots-ok pass: 篇幅工件 slotsOk=true（四槽位齐备的机器判定）（符合预期） | budget-ok pass: 篇幅工件 budgetOk=true（去空白字符数 ≤ 1200）（符合预期） | conclusion-length pass: 篇幅工件 conclusionCharsOk=true（S1 结论 ≤200 字符，沿用 D480 assembleCeo 上限）（符合预期） | line-width pass: 篇幅工件 maxLineOk=true（S2/S3/S4 条目行人类可见宽度 ≤60，剥离 [src:] 指针后计量）（符合预期） | deterministic pass: 篇幅工件 deterministic=true（同输入两次渲染字节相等——一页纸禁含渲染时刻）（符合预期） | hbs-loader-regression pass: 既有 .hbs 轨回归：loadTemplate('executive-summary') → degraded=false（符合预期） | hbs-render-regression pass: 既有 .hbs 轨回归：render 产物含一页纸结构 title（符合预期） | hbs-template-registered pass: 既有 .hbs 轨回归：listTemplates() 含 executive-summary（符合预期） | http-equals-local-render pass: 生产 HTTP markdown 与本地同输入渲染逐字节相等（端到端等价性）（符合预期）"
     },
     {
       "acceptance_point": "3-7",
-      "assertion_ids": [
-        "dimensions-complete",
-        "dimensions-registered-only",
-        "no-unregistered-dimension-fingerprint",
-        "pointer-coverage",
-        "pointer-resolved",
-        "pointer-no-unknown",
-        "external-traceable",
-        "no-false-calm",
-        "no-fabricated-trend",
-        "degraded-honest"
-      ]
+      "verdict": "pass",
+      "quote": "dimensions-complete pass: 维度审计 missingDimensionCount=0（S3 渲染维度集合覆盖 registry 全集，不缺）（符合预期） | dimensions-registered-only pass: 维度审计 unregisteredDimensionCount=0（S3 不渲染 registry 之外的维度，不多）（符合预期） | no-unregistered-dimension-fingerprint pass: 生产 markdown 不出现未注册维度名「供应链循环」（硬编码维度表指纹）（符合预期） | pointer-coverage pass: 指针覆盖审计 missingPointerLines=0（S1–S4 每个条目行都带至少 1 个溯源指针）（符合预期） | pointer-resolved pass: 指针解析审计 unresolvedCount=0（无编造/漂移指针）（符合预期） | pointer-no-unknown pass: 指针解析审计 unknownCount=0（无「判不了」态）（符合预期） | external-traceable pass: 指针审计不出现 externalResolvableCount:0（至少 1 条指针解析到报告之外的物理记录）（符合预期） | no-false-calm pass: S3 槽位片段不出现「平稳」（数据缺失不得报平稳——R2 不 fail-open）（符合预期） | no-fabricated-trend pass: 无快照变体 S3 槽位片段不出现趋势箭头（▲）（无快照不得造趋势——R3 不编造）（符合预期） | degraded-honest pass: 无 inputs 变体 markdown 含 [degraded] 显式降级标记（不静默省略槽位）（符合预期）"
     }
   ],
   "assertions": [
@@ -41,313 +22,169 @@
       "id": "report-endpoint-ok",
       "desc": "生产报告端点 GET /api/diagnosis/consult/:reportId/report?format=markdown 返回 HTTP 200",
       "purpose": "证明一页纸经生产 HTTP 端点产出（非 fixture 内联渲染；3-1 的入口可触达）",
-      "check": {
-        "type": "file",
-        "path": "__OUT_DIR__/report-endpoint-status.txt"
-      },
-      "expect": {
-        "exists": true,
-        "contains": "status=200"
-      }
+      "verdict": "pass",
+      "detail": "符合预期"
     },
     {
       "id": "slots-complete",
       "desc": "生产 markdown 含「各维度循环结论」槽位标题（3-7 的靶心槽位）",
       "purpose": "证明一页纸含各维度循环结论（客户/资本/人才等），非仅结论+Top3（3-1/3-7）",
-      "check": {
-        "type": "file",
-        "path": "__OUT_DIR__/onepager.md"
-      },
-      "expect": {
-        "exists": true,
-        "contains": "### 各维度循环结论"
-      }
+      "verdict": "pass",
+      "detail": "符合预期"
     },
     {
       "id": "slot-conclusion",
       "desc": "生产 markdown 含「结论」槽位标题（结论先行第一槽）",
       "purpose": "证明一页纸结论先行（BLUF 第一槽；3-1）",
-      "check": {
-        "type": "file",
-        "path": "__OUT_DIR__/onepager.md"
-      },
-      "expect": {
-        "exists": true,
-        "contains": "### 结论"
-      }
+      "verdict": "pass",
+      "detail": "符合预期"
     },
     {
       "id": "slot-evidence",
       "desc": "生产 markdown 含「关键证据」槽位标题",
       "purpose": "证明一页纸含关键证据槽（结论可回查的中间层；3-1/支柱②）",
-      "check": {
-        "type": "file",
-        "path": "__OUT_DIR__/onepager.md"
-      },
-      "expect": {
-        "exists": true,
-        "contains": "### 关键证据"
-      }
+      "verdict": "pass",
+      "detail": "符合预期"
     },
     {
       "id": "slot-actions",
       "desc": "生产 markdown 含「行动建议」槽位标题",
       "purpose": "证明一页纸含行动建议槽（结论→下一步可执行；3-1）",
-      "check": {
-        "type": "file",
-        "path": "__OUT_DIR__/onepager.md"
-      },
-      "expect": {
-        "exists": true,
-        "contains": "### 行动建议"
-      }
+      "verdict": "pass",
+      "detail": "符合预期"
     },
     {
       "id": "slots-ok",
       "desc": "篇幅工件 slotsOk=true（四槽位齐备的机器判定）",
       "purpose": "证明四槽位齐备可机器判定（非人工目测；3-1）",
-      "check": {
-        "type": "file",
-        "path": "__OUT_DIR__/onepager-meta.json"
-      },
-      "expect": {
-        "exists": true,
-        "contains": "\"slotsOk\":true"
-      }
+      "verdict": "pass",
+      "detail": "符合预期"
     },
     {
       "id": "budget-ok",
       "desc": "篇幅工件 budgetOk=true（去空白字符数 ≤ 1200）",
       "purpose": "证明「10 分钟看完」有可证伪上限（中文 300 字/分钟下限 → 约 4 分钟；3-1）",
-      "check": {
-        "type": "file",
-        "path": "__OUT_DIR__/onepager-meta.json"
-      },
-      "expect": {
-        "exists": true,
-        "contains": "\"budgetOk\":true"
-      }
+      "verdict": "pass",
+      "detail": "符合预期"
     },
     {
       "id": "conclusion-length",
       "desc": "篇幅工件 conclusionCharsOk=true（S1 结论 ≤200 字符，沿用 D480 assembleCeo 上限）",
       "purpose": "证明结论槽不膨胀（结论先行不等于结论越长越好；3-1）",
-      "check": {
-        "type": "file",
-        "path": "__OUT_DIR__/onepager-meta.json"
-      },
-      "expect": {
-        "exists": true,
-        "contains": "\"conclusionCharsOk\":true"
-      }
+      "verdict": "pass",
+      "detail": "符合预期"
     },
     {
       "id": "line-width",
       "desc": "篇幅工件 maxLineOk=true（S2/S3/S4 条目行人类可见宽度 ≤60，剥离 [src:] 指针后计量）",
       "purpose": "证明移动端窄屏不折行的工程前提成立（口径见场景 README；3-1）",
-      "check": {
-        "type": "file",
-        "path": "__OUT_DIR__/onepager-meta.json"
-      },
-      "expect": {
-        "exists": true,
-        "contains": "\"maxLineOk\":true"
-      }
+      "verdict": "pass",
+      "detail": "符合预期"
     },
     {
       "id": "deterministic",
       "desc": "篇幅工件 deterministic=true（同输入两次渲染字节相等——一页纸禁含渲染时刻）",
       "purpose": "证明一页纸幂等可复现（K3 独立重跑得到同一组工件的技术前提；3-1）",
-      "check": {
-        "type": "file",
-        "path": "__OUT_DIR__/onepager-meta.json"
-      },
-      "expect": {
-        "exists": true,
-        "contains": "\"deterministic\":true"
-      }
+      "verdict": "pass",
+      "detail": "符合预期"
     },
     {
       "id": "dimensions-complete",
       "desc": "维度审计 missingDimensionCount=0（S3 渲染维度集合覆盖 registry 全集，不缺）",
       "purpose": "证明「各维度循环结论」不缺维度（3-7）",
-      "check": {
-        "type": "file",
-        "path": "__OUT_DIR__/dimension-audit.json"
-      },
-      "expect": {
-        "exists": true,
-        "contains": "\"missingDimensionCount\":0"
-      }
+      "verdict": "pass",
+      "detail": "符合预期"
     },
     {
       "id": "dimensions-registered-only",
       "desc": "维度审计 unregisteredDimensionCount=0（S3 不渲染 registry 之外的维度，不多）",
       "purpose": "证明 S3 只由 cycles/ 注册表驱动，未编造维度（3-7）",
-      "check": {
-        "type": "file",
-        "path": "__OUT_DIR__/dimension-audit.json"
-      },
-      "expect": {
-        "exists": true,
-        "contains": "\"unregisteredDimensionCount\":0"
-      }
+      "verdict": "pass",
+      "detail": "符合预期"
     },
     {
       "id": "no-unregistered-dimension-fingerprint",
       "desc": "生产 markdown 不出现未注册维度名「供应链循环」（硬编码维度表指纹）",
       "purpose": "负向断言：防「客户/资本/人才」式硬编码三件套冒充 registry 驱动（3-7）",
-      "check": {
-        "type": "file",
-        "path": "__OUT_DIR__/onepager.md"
-      },
-      "expect": {
-        "exists": true,
-        "notContains": "供应链循环"
-      }
+      "verdict": "pass",
+      "detail": "符合预期"
     },
     {
       "id": "pointer-coverage",
       "desc": "指针覆盖审计 missingPointerLines=0（S1–S4 每个条目行都带至少 1 个溯源指针）",
       "purpose": "证明结论条条可回查（支柱② 的最低门槛；3-7）",
-      "check": {
-        "type": "file",
-        "path": "__OUT_DIR__/pointer-audit.json"
-      },
-      "expect": {
-        "exists": true,
-        "contains": "\"missingPointerLines\":0"
-      }
+      "verdict": "pass",
+      "detail": "符合预期"
     },
     {
       "id": "pointer-resolved",
       "desc": "指针解析审计 unresolvedCount=0（无编造/漂移指针）",
       "purpose": "证明每条指针都解析到真实存在的目标记录（不是装饰性字符串；支柱②）",
-      "check": {
-        "type": "file",
-        "path": "__OUT_DIR__/pointer-audit.json"
-      },
-      "expect": {
-        "exists": true,
-        "contains": "\"unresolvedCount\":0"
-      }
+      "verdict": "pass",
+      "detail": "符合预期"
     },
     {
       "id": "pointer-no-unknown",
       "desc": "指针解析审计 unknownCount=0（无「判不了」态）",
       "purpose": "证明审计面完整（解析器齐备；「判不了」不等于「判过了」，铁律 24/31）",
-      "check": {
-        "type": "file",
-        "path": "__OUT_DIR__/pointer-audit.json"
-      },
-      "expect": {
-        "exists": true,
-        "contains": "\"unknownCount\":0"
-      }
+      "verdict": "pass",
+      "detail": "符合预期"
     },
     {
       "id": "external-traceable",
       "desc": "指针审计不出现 externalResolvableCount:0（至少 1 条指针解析到报告之外的物理记录）",
       "purpose": "负向断言：支柱② 判据「一条诊断报告能溯源到至少 1 条原始证据」的机器判定（3-7）",
-      "check": {
-        "type": "file",
-        "path": "__OUT_DIR__/pointer-audit.json"
-      },
-      "expect": {
-        "exists": true,
-        "notContains": "\"externalResolvableCount\":0"
-      }
+      "verdict": "pass",
+      "detail": "符合预期"
     },
     {
       "id": "no-false-calm",
       "desc": "S3 槽位片段不出现「平稳」（数据缺失不得报平稳——R2 不 fail-open）",
       "purpose": "负向断言：防「无快照即装作好」的 fail-open 语义（D480 头行残留的同型风险；3-7）",
-      "check": {
-        "type": "file",
-        "path": "__OUT_DIR__/cycle-slot.md"
-      },
-      "expect": {
-        "exists": true,
-        "notContains": "平稳"
-      }
+      "verdict": "pass",
+      "detail": "符合预期"
     },
     {
       "id": "no-fabricated-trend",
       "desc": "无快照变体 S3 槽位片段不出现趋势箭头（▲）（无快照不得造趋势——R3 不编造）",
       "purpose": "负向断言：防「无数据也画趋势」的编造语义（3-7）",
-      "check": {
-        "type": "file",
-        "path": "__OUT_DIR__/cycle-slot-no-snapshot.md"
-      },
-      "expect": {
-        "exists": true,
-        "notContains": "▲"
-      }
+      "verdict": "pass",
+      "detail": "符合预期"
     },
     {
       "id": "degraded-honest",
       "desc": "无 inputs 变体 markdown 含 [degraded] 显式降级标记（不静默省略槽位）",
       "purpose": "证明降级诚实（缺数据即显式说明，铁律 24/31；3-1）",
-      "check": {
-        "type": "file",
-        "path": "__OUT_DIR__/onepager-degraded.md"
-      },
-      "expect": {
-        "exists": true,
-        "contains": "[degraded]"
-      }
+      "verdict": "pass",
+      "detail": "符合预期"
     },
     {
       "id": "hbs-loader-regression",
       "desc": "既有 .hbs 轨回归：loadTemplate('executive-summary') → degraded=false",
       "purpose": "证明 D449 的 HTML 模板加载面零回归（改造不回退既有覆盖；3-1）",
-      "check": {
-        "type": "file",
-        "path": "__OUT_DIR__/load-result.json"
-      },
-      "expect": {
-        "exists": true,
-        "contains": "\"degraded\":false"
-      }
+      "verdict": "pass",
+      "detail": "符合预期"
     },
     {
       "id": "hbs-render-regression",
       "desc": "既有 .hbs 轨回归：render 产物含一页纸结构 title",
       "purpose": "证明 D449 的 HTML 模板渲染面零回归（3-1）",
-      "check": {
-        "type": "file",
-        "path": "__OUT_DIR__/render-meta.json"
-      },
-      "expect": {
-        "exists": true,
-        "contains": "\"hasTitle\":true"
-      }
+      "verdict": "pass",
+      "detail": "符合预期"
     },
     {
       "id": "hbs-template-registered",
       "desc": "既有 .hbs 轨回归：listTemplates() 含 executive-summary",
       "purpose": "证明文件驱动模板注册面零回归（3-1）",
-      "check": {
-        "type": "file",
-        "path": "__OUT_DIR__/templates.json"
-      },
-      "expect": {
-        "exists": true,
-        "contains": "executive-summary"
-      }
+      "verdict": "pass",
+      "detail": "符合预期"
     },
     {
       "id": "http-equals-local-render",
       "desc": "生产 HTTP markdown 与本地同输入渲染逐字节相等（端到端等价性）",
       "purpose": "证明报告端点交付的 markdown 就是生产渲染器的真实产物（非 fixture 内联渲染、无旁路），3-1/3-7",
-      "check": {
-        "type": "file",
-        "path": "__OUT_DIR__/audit-extra.json"
-      },
-      "expect": {
-        "exists": true,
-        "contains": "\"httpMatchesLocal\":true"
-      }
+      "verdict": "pass",
+      "detail": "符合预期"
     }
   ]
 }
