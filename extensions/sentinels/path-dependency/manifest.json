@@ -6,7 +6,7 @@
   "displayName": "路径依赖 (Path Dependency)",
   "description": "D2: 检测组织对特定技术栈、流程或合作模式的依赖程度。高路径依赖 = 低切换灵活性 = 高锁定风险。",
   "schedule": "0 9 * * 1",
-  "expert": "strategy",
+  "expert": "competitive-strategy",
   "priority": "P2",
   "layer": "capability",
   "computeKind": "graph",
@@ -19,5 +19,5 @@
   },
   "entryPoint": "./computes/detect.ts",
   "exportKey": "pathDependencySentinel",
-  "auxiliaryExperts": ["knowledge"]
+  "auxiliaryExperts": ["host"]
 }

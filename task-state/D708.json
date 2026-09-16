@@ -1,0 +1,28 @@
+{
+  "task_id": "D708",
+  "title": "m9-merge-writeset-gate",
+  "status": "audited",
+  "spec": null,
+  "impl": {
+    "pr": 505,
+    "branch": null,
+    "note": "并行 CTO 控制塔收口批次；合并权归主 CTO"
+  },
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-09-13-D715.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "findings": [
+      "T3 job/step 级铁证（api.github.com 核实）: run 34665279867 (head d6ad19a8) job 'TypeScript + Lint + Iron Laws' 内 step 'Merge write-set reconciliation (D708)' = failure（gate 自身红, 其余 job 全绿）; run 34666080472 (3a90f83d, 76b7bd8d 补声明后) 同 step = success; 拦截对象=回执文档漏声明（真实遗漏非合成演示）",
+      "merge_writeset_gate.test.sh 26/26 K3 本地复跑绿（含 CJK quotepath + D# 大小写 + 回退链跳过登记提交）",
+      "设计稿主 CTO 复核闭环（有条件通过→阻塞项已修, 设计稿:3）; '只防多不防少'为已声明能力边界, 不构成缺陷",
+      "P2-6 备查: 纯文档 PR 双层放行（docsonly skip + DOC_SCOPE_RE）→ 文档夹带不在防面"
+    ],
+    "by": "k3-audit (D715)",
+    "at": "2026-09-13"
+  },
+  "fix_task_id": null,
+  "updated_at": "2026-09-13",
+  "updated_by": "k3-audit",
+  "slice": "ctl-closeout-20260911"
+}

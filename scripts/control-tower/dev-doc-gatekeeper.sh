@@ -67,7 +67,7 @@ echo ""
 echo "── [C1] Edge ID 存在性 ──"
 
 C1_FAIL=0; C1_TOTAL=0
-EDGE_IDS=$(grep -oP 'E-\d{2}' "$DOC_PATH" 2>/dev/null | sort -u || true)
+EDGE_IDS=$(grep -oE 'E-[0-9]{2}' "$DOC_PATH" 2>/dev/null | sort -u || true)
 
 if [[ -z "$EDGE_IDS" ]]; then
   check_pass "C1: 文档中未引用 Edge ID（跳过）"
@@ -76,8 +76,8 @@ else
   VALID_FILE=$(mktemp)
   # 从文件名提取（文件名本身包含 E-XX，如 assumption_triggered_reallocation.json 不含 E 编号）
   # 从文档目录提取
-  grep -rohP 'E-\d{2}' "$PROJECT_ROOT/extensions/ontology/edge-types/" --include="*.json" 2>/dev/null > "$VALID_FILE" || true
-  grep -rohP 'E-\d{2}' "$PROJECT_ROOT/docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/" --include="*.md" 2>/dev/null >> "$VALID_FILE" || true
+  grep -rohE 'E-[0-9]{2}' "$PROJECT_ROOT/extensions/ontology/edge-types/" --include="*.json" 2>/dev/null > "$VALID_FILE" || true
+  grep -rohE 'E-[0-9]{2}' "$PROJECT_ROOT/docs/synova/research/权威文档01-本体层因果体系权威规范-20260714/" --include="*.md" 2>/dev/null >> "$VALID_FILE" || true
   sort -u -o "$VALID_FILE" "$VALID_FILE"
 
   for edge_id in $EDGE_IDS; do
@@ -106,7 +106,7 @@ echo ""
 echo "── [C2] 文件路径存在性 ──"
 
 C2_FAIL=0; C2_TOTAL=0
-FILE_PATHS=$(grep -oP '\b(src|extensions|packages|app)/[^\s\)\]"'\'',;]+' "$DOC_PATH" 2>/dev/null | sort -u || true)
+FILE_PATHS=$(grep -oE '(^|[^a-zA-Z0-9_])(src|extensions|packages|app)/[^][:space:])\"'\'',;]+' "$DOC_PATH" 2>/dev/null | sed -E 's#^[^a-zA-Z0-9_](src|extensions|packages|app)/#\1/#' | sort -u || true)
 
 if [[ -z "$FILE_PATHS" ]]; then
   check_pass "C2: 文档中未引用文件路径（跳过）"

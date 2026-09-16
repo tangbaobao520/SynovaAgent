@@ -94,11 +94,20 @@ assert_contains "$EMAIL" "synova@users.noreply.github.com" "user.email 保持同
 echo ""
 
 # ── 5. commit 触发 pre-commit（不 --no-verify；DS7）──
-echo "── 5. 干净克隆 commit 触发 pre-commit 12 组 ──"
+echo "── 5. 干净克隆 commit 触发 pre-commit 全组 ──"
+# D662 密封化: bypass.log 是 tracked 文件, CLONE 会继承宿主当日绕过记录 →
+# GATEKEEPER(本地模式)在沙箱误判"今日有绕过"→ 拦截 pre-commit → 测试结果
+# 取决于宿主当日状态(非密封)。新机器模拟本应无绕过历史, 清空之(不弱化门禁语义)。
+if [ -f "$CLONE/.claude/bypass.log" ]; then : > "$CLONE/.claude/bypass.log"; fi
 EXIT=0
 COUT=$(cd "$CLONE" && git commit --allow-empty -m "chore(D318): hook-install-test" 2>&1) || EXIT=$?
 assert_exit 0 "$EXIT" "commit 成功"
-assert_contains "$COUT" "全部 12 组通过" "pre-commit 12 组真实执行且全过"
+# D662: 锚定「全部 N 组通过」信号而非具体组数（V5.1.1 12→13 组曾致断言永久红, M7 漂移根治）
+if echo "$COUT" | grep -qE "全部 [0-9]+ 组通过"; then
+  pass "pre-commit 全组真实执行且全过"
+else
+  fail "pre-commit 全组真实执行且全过 — 未找到「全部 N 组通过」"
+fi
 echo ""
 
 echo "═══════════════════════════════════════════════════════════"

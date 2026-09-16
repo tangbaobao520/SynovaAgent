@@ -1185,6 +1185,43 @@ export class Bootstrap {
             log.warn({ err: backupMsg }, 'DB 备份调度注册失败 — 降级');
             ctx.addDegraded(5, 'db-backup', backupMsg);
           }
+
+          // 证据保留分级维护 (D717) — evidence-store.expireOld() 的生产调用方（M3 机制接线）
+          // 分级策略见 l3/evidence-retention.ts：默认 permanent（不按时间删，D660「按时间清理是错误模型」）；
+          // 需要时间清理的部署设 SYNOVA_EVIDENCE_RETENTION_TIER / _DAYS 显式开启。
+          try {
+            const retention = await import('../l3/evidence-retention');
+            try {
+              const policy = retention.parseEvidenceRetentionPolicy(process.env);
+              // 启动即跑一次（桌面端/短生命周期进程常在 03:30 不在线）
+              const startupResult = retention.runEvidenceRetention(db, policy);
+              if (startupResult.degraded) {
+                ctx.addDegraded(5, 'evidence-retention', `${startupResult.errorCode ?? 'EVIDENCE_RETENTION_SWEEP_FAILED'}: 启动清理失败`);
+              }
+              scheduler.schedule(
+                retention.EVIDENCE_RETENTION_JOB_NAME,
+                retention.EVIDENCE_RETENTION_CRON,
+                retention.createEvidenceRetentionJob(db, (message) => ctx.addDegraded(5, 'evidence-retention', message)),
+              );
+              log.info(
+                { tier: policy.tier, windowMs: policy.windowMs, source: policy.source, cron: retention.EVIDENCE_RETENTION_CRON },
+                '证据保留分级维护已启动（启动清理 + 每日 cron）',
+              );
+            } catch (policyErr: unknown) {
+              // 配置非法 = fail-safe：不注册作业、不删证据（铁律 24/31）
+              const classified = policyErr instanceof retention.EvidenceRetentionError ? policyErr : null;
+              const msg = policyErr instanceof Error ? policyErr.message : String(policyErr);
+              log.warn(
+                { err: msg, code: classified?.code, retryable: classified?.retryable },
+                '证据保留配置非法 — 未注册清理作业（fail-safe：不删证据）',
+              );
+              ctx.addDegraded(5, 'evidence-retention', msg);
+            }
+          } catch (retentionErr: unknown) {
+            const msg = retentionErr instanceof Error ? retentionErr.message : String(retentionErr);
+            log.warn({ err: msg }, '证据保留维护模块加载失败 — 降级');
+            ctx.addDegraded(5, 'evidence-retention', msg);
+          }
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
           log.warn({ err: msg }, 'Phase 5c: Cron 调度器初始化失败 — 降级');

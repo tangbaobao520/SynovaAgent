@@ -6,7 +6,7 @@
   "description": "从本体层获取组织结构、信息流、激励一致性、信任摩擦和惯例刚性等数据。",
   "tier": "L1",
   "complexity": "atomic",
-  "expert": "org",
+  "expert": "organizational-capability",
   "tools": [
     "acquire-edge-data"
   ],

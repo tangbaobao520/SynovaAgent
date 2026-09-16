@@ -66,11 +66,11 @@ hard_check "manifest.json 必填字段 (\$schema/name/version/type/entryPoint)" 
 STAGED_ONTOLOGY_JSON=$(echo "$STAGED" | grep -E 'extensions/ontology/.*\.json$|extensions/industries/.*/node-types/.*\.json$|extensions/industries/.*/edge-types/.*\.json$' || true)
 TAGS_FAIL=""
 if [ -n "$STAGED_ONTOLOGY_JSON" ] && [ -f "$ROOT/extensions/ontology/tags.json" ]; then
-  VALID_TAGS=$(grep -oP '"[a-z_]+"' "$ROOT/extensions/ontology/tags.json" 2>/dev/null | tr -d '"' | sort -u || true)
+  VALID_TAGS=$(grep -oE '"[a-z_]+"' "$ROOT/extensions/ontology/tags.json" 2>/dev/null | tr -d '"' | sort -u || true)
   while IFS= read -r jf; do
     [ -z "$jf" ] && continue
     [ ! -f "$jf" ] && continue
-    FILE_TAGS=$(grep -oP '"tags"\s*:\s*\[([^\]]*)\]' "$jf" 2>/dev/null | grep -oP '"[a-z_]+"' | tr -d '"' | grep -v '^tags$' || true)
+    FILE_TAGS=$(grep -oE '"tags"[[:space:]]*:[[:space:]]*\[[^]]*\]' "$jf" 2>/dev/null | grep -oE '"[a-z_]+"' | tr -d '"' | grep -v '^tags$' || true)
     for ft in $FILE_TAGS; do
       if ! echo "$VALID_TAGS" | grep -qx "$ft"; then
         TAGS_FAIL="${TAGS_FAIL}${jf}: 标签 '${ft}' 不在 tags.json 合法值中\n"
@@ -99,7 +99,7 @@ hard_check "硬编码类型回归 (禁止在 src/ 新增本体类型定义)" "${
 # ═══ d. extensions/ 目录结构合规 ═══
 # Anthropic 决策: 原则 4 "安全边际" — 每个扩展目录必须有 manifest，否则 ExtensionLoader
 # 扫不到 → 静默忽略 → "加了文件但系统没反应" → 信任崩塌。
-NEW_EXT_DIRS=$(echo "$STAGED_ADDED" | grep -oP '^extensions/[^/]+' | sort -u || true)
+NEW_EXT_DIRS=$(echo "$STAGED_ADDED" | grep -oE '^extensions/[^/]+' | sort -u || true)
 STRUCT_FAIL=""
 if [ -n "$NEW_EXT_DIRS" ]; then
   for ed in $NEW_EXT_DIRS; do

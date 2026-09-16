@@ -6,9 +6,9 @@
   "displayName": "结构性机会窗口",
   "description": "E2: 检测技术变革/法规变化/竞争行动等结构性机会信号。数据源: Event, Market, Tool节点。",
   "schedule": "0 0 1 * *",
-  "expert": "strategy",
+  "expert": "competitive-strategy",
   "auxiliaryExperts": [
-    "knowledge"
+    "host"
   ],
   "priority": "P1",
   "layer": "environment",

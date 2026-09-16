@@ -6,7 +6,7 @@
   "description": "分析企业成本结构，计算固定成本比率、变动成本比率、边际成本和固定成本刚性。",
   "tier": "L2",
   "complexity": "composite",
-  "expert": "finance",
+  "expert": "fundamental-efficiency",
   "tools": [
     "compute-fixed-cost-rigidity",
     "compute-marginal-cost"

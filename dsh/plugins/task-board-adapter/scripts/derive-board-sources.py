@@ -13,6 +13,14 @@ derive-board-sources.py — 任务看板多源派生脚本（D502）
   ③ product-progress.json         26 条产品线完成度（CI product-progress.yml 产物）
   ④ todos.yaml                    待规划 T-*-##（AUTO 区机器聚合产物）
 
+附加信号（D660，2026-09-10 创始人活动判定）:
+  ⑥ 远端分支活动: 对 task-state 中 claimed/spec_done 的 D#，扫描 refs/remotes/origin/*
+     （CT-63 模式: 分支名匹配 \bD(\d+)\b 大小写不敏感）→ 每任务挂 branch_activity:
+       {"active": bool（48h 窗口内是否有提交）, "last_commit_at": unix_ms|null,
+        "branches": [分支名按提交新旧降序]}
+     消费方 sync.js 据此把 claimed/spec_done 判 running（真在途）或 todo（认领僵尸）。
+     扫描失败 → 该信号缺失 → 消费方落 todo（安全方向，绝不虚高 running）。
+
 契约（铁律 47）:
   @input  — git 仓库（--repo-root）+ 远端（--remote，默认 origin）
   @output --out 指定的 snapshot JSON:
@@ -55,6 +63,7 @@ import json
 import re
 import subprocess
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -75,6 +84,10 @@ BOOKKEEPING_RE = re.compile(r"^chore(\([D0-9]+\))?:\s*bypass", re.IGNORECASE)
 
 TASK_STATE_FILE_RE = re.compile(r"^D\d+\.json$")
 D_NUM_RE = re.compile(r"^D(\d+)$")
+
+# 活动判定窗口（小时，创始人 2026-09-10 定 48h）：claimed/spec_done 的远端分支
+# 最近提交距今 > 窗口 → 认领僵尸（todo）；≤ 窗口 → 真在途（running）。
+ACTIVITY_HOURS_DEFAULT = 48
 
 
 def git(repo_root, *args, timeout=120):
@@ -120,6 +133,58 @@ def read_source_1_task_state(repo_root, head, errors):
         except (RuntimeError, json.JSONDecodeError) as exc:
             out["degraded"] = True
             out["errors"].append(f"{rel}: 解析失败 {exc}")
+    return out
+
+
+def read_branch_activity(repo_root, target_ids, errors, activity_hours):
+    """⑥ 远端分支活动扫描（CT-63 模式，D660 活动判定信号源）。
+
+    一次 for-each-ref 取全部远端分支名（refs/remotes/*，含 ssh 推送远端）+ 最后提交
+    committerdate（unix 秒），按分支名中的 D#（\\bD(\\d+)\\b 大小写不敏感）匹配目标任务，
+    产出每任务的最近提交时间与分支清单（O(1) 次 git 调用，比逐分支 git log 便宜且等价）。
+    @param target_ids: 仅 claimed/spec_done 的 D# 集合（其余状态不参与活动判定）。
+    @returns {task_id: {"active": bool, "last_commit_at": unix_ms|None,
+                        "branches": [str]}}
+    降级（铁律 24/31）: git 失败 → 记 errors + 返回空 dict（无证据 → 消费方落 todo，
+    绝不冒充 running——安全方向，防僵尸卡虚高）。
+    """
+    out = {}
+    if not target_ids:
+        return out
+    try:
+        text = git(repo_root, "for-each-ref",
+                   "--format=%(refname:short)%00%(committerdate:unix)",
+                   "refs/remotes/", timeout=60)
+    except RuntimeError as exc:
+        errors.append(f"远端分支活动扫描失败（claimed/spec_done 将落 todo）: {exc}")
+        return out
+    deadline = time.time() - activity_hours * 3600
+    per_d = {}
+    for line in text.splitlines():
+        if "\x00" not in line:
+            continue
+        ref, _, ts_s = line.partition("\x00")
+        if ref.endswith("/HEAD") or "/" not in ref:
+            continue
+        branch = ref.split("/", 1)[1]
+        try:
+            ts = int((ts_s or "").strip() or 0)
+        except ValueError:
+            continue
+        for n in re.findall(r"\bD(\d+)\b", ref, re.IGNORECASE):
+            task_id = f"D{n}"
+            if task_id not in target_ids:
+                continue
+            entry = per_d.setdefault(task_id, {"last": 0, "branches": {}})
+            entry["branches"][branch] = ts
+            if ts > entry["last"]:
+                entry["last"] = ts
+    for task_id, entry in per_d.items():
+        out[task_id] = {
+            "active": entry["last"] >= deadline,
+            "last_commit_at": entry["last"] * 1000 if entry["last"] else None,
+            "branches": sorted(entry["branches"], key=lambda b: -entry["branches"][b]),
+        }
     return out
 
 
@@ -336,6 +401,8 @@ def main(argv=None):
     ap.add_argument("--remote", default="origin", help="远端名（默认 origin）")
     ap.add_argument("--since-d", type=int, default=328,
                     help="Win D# 上板窗口下界（默认 328 = 多机 PR 工作流起点）")
+    ap.add_argument("--activity-hours", type=int, default=ACTIVITY_HOURS_DEFAULT,
+                    help=f"claimed/spec_done 活动判定窗口（小时，默认 {ACTIVITY_HOURS_DEFAULT}）")
     ap.add_argument("--no-fetch", action="store_true", help="跳过 git fetch（测试用）")
     args = ap.parse_args(argv)
 
@@ -370,6 +437,18 @@ def main(argv=None):
     s4 = read_source_4_todos(repo_root, head, errors)
     s5 = read_source_5_backlog(repo_root, head, errors)
 
+    # ⑥ 分支活动信号（D660）: 仅 claimed/spec_done 参与判定；挂在 task_state 条目上
+    claim_ids = {
+        str(t.get("task_id", ""))
+        for t in s1["tasks"]
+        if str(t.get("status", "")) in ("claimed", "spec_done")
+    }
+    activity = read_branch_activity(repo_root, claim_ids, errors, args.activity_hours)
+    for t in s1["tasks"]:
+        tid = str(t.get("task_id", ""))
+        if tid in claim_ids:
+            t["branch_activity"] = activity.get(tid)
+
     snapshot = {
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "head": head,
@@ -395,7 +474,8 @@ def main(argv=None):
     print(
         f"[derive] OK head={head[:8]} task_state={len(s1['tasks'])} "
         f"win={len(s2['tasks'])} lines={len(s3['lines'])} todos={len(s4['items'])} "
-        f"backlog={len(s5['items'])} degraded={snapshot['degraded']}"
+        f"backlog={len(s5['items'])} active_claims={sum(1 for a in activity.values() if a.get('active'))} "
+        f"degraded={snapshot['degraded']}"
     )
     return 0
 

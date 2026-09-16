@@ -19,7 +19,7 @@ done
 EDGE_DIR="$ROOT/extensions/ontology/edge-types"
 NODE_DIR="$ROOT/extensions/ontology/node-types"
 if [ -d "$EDGE_DIR" ] && [ -d "$NODE_DIR" ]; then
-  NODE_LABELS=$(grep -h '"label"' "$NODE_DIR"/*.json 2>/dev/null | grep -oP '"[A-Z][a-zA-Z]+"' | tr -d '"' | sort -u)
+  NODE_LABELS=$(grep -h '"label"' "$NODE_DIR"/*.json 2>/dev/null | grep -oE '"[A-Z][a-zA-Z]+"' | tr -d '"' | sort -u)  # swallow-ok: 目录无 json 时 grep 报错属正常默认（ENOENT），空值由后续判定处理
   for ef in "$EDGE_DIR"/*.json; do
     [ ! -f "$ef" ] && continue
     for endpoint in $(python3 -c "import json; e=json.load(open('$ef',encoding='utf-8')); print(' '.join(e.get('allowedFrom',[])+e.get('allowedTo',[])))" 2>/dev/null); do

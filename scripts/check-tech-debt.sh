@@ -21,7 +21,7 @@ fi
 
 # 找最旧的未解决项
 OLDEST_LINE=$(grep '^\- \[ \]' "$DEBT_FILE" | head -1)
-OLDEST_DATE=$(echo "$OLDEST_LINE" | grep -oP '\d{4}-\d{2}-\d{2}' | head -1)
+OLDEST_DATE=$(echo "$OLDEST_LINE" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' | head -1)
 
 if [ -n "$OLDEST_DATE" ]; then
   # 计算天数 (跨平台)

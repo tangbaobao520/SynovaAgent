@@ -14,8 +14,8 @@
  * 边界: 总现金=0 → 0 (无应收)
  * 超时: 5秒。不抛异常。
  */
-import type { GraphStoreReader } from '../../../src/l4/graph-traversal';
-import type { GraphTraversal } from '../../../src/l4/graph-traversal';
+import type { GraphStoreReader } from '../../../../src/l4/graph-traversal';
+import type { GraphTraversal } from '../../../../src/l4/graph-traversal';
 import type { ComputeInput, ComputeOutput } from './compute-cash-runway-months';
 
 export async function computeReceivableOverdueRate(

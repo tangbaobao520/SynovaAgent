@@ -93,7 +93,8 @@ echo "── 7. CT-63: 远端分支名 D# 扫描 ──"
 CT63_DIR=$(mktemp -d)
 mkdir -p "$CT63_DIR/task-state"
 echo '{"task_id":"D499","status":"claimed"}' > "$CT63_DIR/task-state/D499.json"
-cd "$CT63_DIR" && git init -q && git add -A && git commit -q -m init
+# D662 密封身份隔离: 沙箱 commit 显式注入身份（CI 零配置无 gecos fallback → empty ident name）
+cd "$CT63_DIR" && git init -q && git add -A && git -c user.name=t -c user.email=t@t commit -q -m init
 git update-ref refs/remotes/origin/feat/d605-test HEAD
 cd "$REPO_DIR"
 OUT=$(SYNO_TASK_STATE_DIR="$CT63_DIR/task-state" SYNO_BRIEF_DIR="$CT63_DIR/briefs" SYNO_ALLOC_NO_REMOTE=1 bash "$TOOL" "CT63" 2>&1)
@@ -106,7 +107,8 @@ echo "── 8. CT-63 注入缝 NO_BRANCH=1 ──"
 CT63B_DIR=$(mktemp -d)
 mkdir -p "$CT63B_DIR/task-state"
 echo '{"task_id":"D499","status":"claimed"}' > "$CT63B_DIR/task-state/D499.json"
-cd "$CT63B_DIR" && git init -q && git add -A && git commit -q -m init
+# D662 密封身份隔离: 同上（CT-63 NO_BRANCH 场景）
+cd "$CT63B_DIR" && git init -q && git add -A && git -c user.name=t -c user.email=t@t commit -q -m init
 git update-ref refs/remotes/origin/feat/d605-test HEAD
 cd "$REPO_DIR"
 OUT=$(SYNO_TASK_STATE_DIR="$CT63B_DIR/task-state" SYNO_BRIEF_DIR="$CT63B_DIR/briefs" SYNO_ALLOC_NO_REMOTE=1 SYNO_ALLOC_NO_BRANCH=1 bash "$TOOL" "CT63B" 2>&1)

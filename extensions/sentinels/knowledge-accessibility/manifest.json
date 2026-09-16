@@ -6,7 +6,7 @@
   "displayName": "O4",
   "description": "O4:",
   "schedule": "0 0 1 * *",
-  "expert": "org",
+  "expert": "organizational-capability",
   "priority": "P1",
   "layer": "internal",
   "computeKind": "deterministic",
@@ -34,7 +34,7 @@
   "entryPoint": "./aggregate.ts",
   "exportKey": "knowledgeAccessibilitySentinel",
   "auxiliaryExperts": [
-    "knowledge"
+    "host"
   ],
   "id": "sentinel-knowledge-accessibility",
   "post-processors": [

@@ -6,7 +6,7 @@
   "description": "综合评估客户价值，包括客户价值评分、盈利能力分层、需求浓度和LTV分布。",
   "tier": "L2",
   "complexity": "composite",
-  "expert": "marketing",
+  "expert": "customer-growth",
   "tools": [
     "compute-customer-value-score",
     "compute-customer-profitability",

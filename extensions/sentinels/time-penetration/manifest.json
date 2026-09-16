@@ -6,9 +6,9 @@
   "displayName": "时间穿透力",
   "description": "I9: 聚合哨兵，引用E2/E4/E6/I3/I4结果评估。",
   "schedule": "0 0 1 * *",
-  "expert": "business_model",
+  "expert": "competitive-strategy",
   "auxiliaryExperts": [
-    "strategy"
+    "competitive-strategy"
   ],
   "priority": "P1",
   "layer": "interface",

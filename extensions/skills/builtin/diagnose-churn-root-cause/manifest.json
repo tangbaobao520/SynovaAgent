@@ -6,7 +6,7 @@
   "description": "通过多维度分析定位客户流失的根本原因，生成流失干预优先级排序。",
   "tier": "L3",
   "complexity": "expert",
-  "expert": "marketing",
+  "expert": "customer-growth",
   "tools": [
     "compute-customer-lockin",
     "compute-customer-value-score",

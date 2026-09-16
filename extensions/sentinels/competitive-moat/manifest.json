@@ -6,10 +6,10 @@
   "displayName": "竞争护城河",
   "description": "合并自 competitive-moat-perceptual + competitive-moat-structural。聚合品牌溢价/客户忠诚度(感知壁垒) + 规模经济/网络效应/切换成本/流程威力/SLM公式/独占资源(结构性壁垒)。",
   "schedule": "0 0 1 * *",
-  "expert": "strategy",
+  "expert": "competitive-strategy",
   "auxiliaryExperts": [
-    "marketing",
-    "tech"
+    "customer-growth",
+    "technology-foundation"
   ],
   "priority": "P1",
   "layer": "interface",

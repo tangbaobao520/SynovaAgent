@@ -6,7 +6,7 @@
   "description": "评估组织学习速率和知识复用效率，对比行业基准判断学习曲线位置。",
   "tier": "L2",
   "complexity": "composite",
-  "expert": "org",
+  "expert": "organizational-capability",
   "tools": [
     "compute-learning-rate",
     "compute-org-learning"

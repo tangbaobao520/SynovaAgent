@@ -24,10 +24,10 @@ describe('loadSentinels', () => {
     }
   });
 
-  it('按专家筛选返回 finance 哨兵', () => {
-    const sentinels = getSentinelsByExpert('finance');
+  it('按专家筛选返回 fundamental-efficiency 哨兵（D658: manifest expert 字段改问题域名）', () => {
+    const sentinels = getSentinelsByExpert('fundamental-efficiency');
     expect(sentinels.length).toBeGreaterThanOrEqual(4);
-    expect(sentinels.every(s => s.manifest.expert === 'finance')).toBe(true);
+    expect(sentinels.every(s => s.manifest.expert === 'fundamental-efficiency')).toBe(true);
   });
 
   it('第二次调用返回缓存', () => {

@@ -6,7 +6,7 @@
   "description": "评估企业内部跨部门协同价值，量化知识溢出效应和交叉功能协同，推荐整合方案。",
   "tier": "L4",
   "complexity": "expert",
-  "expert": "business_model",
+  "expert": "competitive-strategy",
   "tools": [
     "compute-synergy",
     "compute-cross-functional-synergy",

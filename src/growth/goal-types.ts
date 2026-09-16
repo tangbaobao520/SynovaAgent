@@ -95,6 +95,12 @@ export interface Goal {
   proposalId: string;
   /** 来源诊断报告 ID */
   diagnosisId: string;
+  /**
+   * 来源决策记录 ID（决策驱动目标来源，导航权威 2026-09-06 §2.2 三来源之一）。
+   * 与 proposalId/diagnosisId 并列：老板凭直觉定新方向 → 记 DecisionRecord →
+   * 分解为目标时带此 id。缺省 undefined = 非决策驱动（诊断/外部驱动），向后兼容。
+   */
+  decisionRecordId?: string;
   /** Goal 标题 */
   title: string;
   /** 详细描述 */

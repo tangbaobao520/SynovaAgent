@@ -1,8 +1,8 @@
 /**
- * tests/expert/analytical-lens.test.ts — D70 analytical_lens 完整性测试
+ * tests/expert/analytical-lens.test.ts — D70 analytical_lens 完整性测试（D662 对齐权威命名）
  *
  * 覆盖:
- * - 9个专家 IDENTITY.md 均含 analytical_lens 章节
+ * - 新 6 专家（host + 5 问题域）IDENTITY.md 均含 analytical_lens 章节
  * - 每个含 default_dimension + primary_edges + blind_spots
  * - primary_edges 格式正确（E-XX 逗号分隔）
  * - blind_spots 非空
@@ -11,8 +11,8 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 
-// D650: 'tech' 目录已改名 technology-foundation（问题域命名）；其余为 v2.0 前旧 9 位遗留条目（基线欠账，非本卡范围）
-const EXPERTS = ['finance', 'strategy', 'org', 'marketing', 'technology-foundation', 'action', 'business_model', 'knowledge', 'host'];
+// D662: 对齐第七章 §7.4 权威英文名（host + 5 问题域）；旧 8 名随 D650/D651/D658/D662 全量退役
+const EXPERTS = ['host', 'fundamental-efficiency', 'customer-growth', 'organizational-capability', 'technology-foundation', 'competitive-strategy'];
 const EXPECTED_FIELDS = ['default_dimension', 'primary_edges', 'blind_spots'];
 
 describe('analytical_lens 完整性', () => {

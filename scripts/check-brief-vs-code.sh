@@ -26,7 +26,7 @@ echo -e "${CYAN}[check-brief-vs-code] 查找今日 brief (${TODAY})${RESET}"
 BRIEF=$(find "$ROOT/.claude/task-briefs/" -type f -name "${TODAY}*" 2>/dev/null | xargs ls -t 2>/dev/null | head -1)
 
 # 也检查 CLAUDE.md 中是否引用 V4.5.1
-FLOW_CONSTRAINT=$(grep "流程约束" "$ROOT/CLAUDE.md" 2>/dev/null | grep -oP 'V[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)
+FLOW_CONSTRAINT=$(grep "流程约束" "$ROOT/CLAUDE.md" 2>/dev/null | grep -oE 'V[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)
 echo -e "  流程约束: ${FLOW_CONSTRAINT:-unknown}"
 
 if [ -z "$BRIEF" ]; then
@@ -36,10 +36,28 @@ fi
 echo -e "  Brief: $(basename "$BRIEF")"
 
 # ═══ Git diff 数据 ═══
-DIFF_ALL=$(git diff --name-only HEAD~1..HEAD 2>/dev/null || git diff --name-only 2>/dev/null || true)
-NEW_FILES=$(git diff --name-only --diff-filter=A HEAD~1..HEAD 2>/dev/null || true)
-MOD_FILES=$(git diff --name-only --diff-filter=M HEAD~1..HEAD 2>/dev/null || true)
-DEL_FILES=$(git diff --name-only --diff-filter=D HEAD~1..HEAD 2>/dev/null || true)
+# D721: 基准必须相对**与 main 的合并基点**（三点差）。旧基准 HEAD~1..HEAD 在合并提交
+#   （刷新分支时 git merge origin/main）上 = 「被并入的 main 全部改动」→ G12 把这些文件
+#   与当前 brief 的 Q2 写集比对 → 全部判为越界（CI strict 下硬阻断）。
+#   实证: #520（D721）刷新后 G12 报「Q2 范围一致性: 1 处」，而该 PR 自身只改了 ci.yml/测试/登记。
+#   无 origin/main（本地/首次 clone）→ 回退旧基准并显式提示（降级可见）。
+DIFF_BASE=""
+if MB=$(git merge-base refs/remotes/origin/main HEAD 2>/dev/null) && [ -n "$MB" ]; then
+  DIFF_BASE="$MB"
+else
+  echo -e "  ${YELLOW}origin/main 不可用 — diff 基准回退 HEAD~1（合并提交下会误判越界）${RESET}"
+fi
+if [ -n "$DIFF_BASE" ]; then
+  DIFF_ALL=$(git diff --name-only "$DIFF_BASE"..HEAD 2>/dev/null || true)
+  NEW_FILES=$(git diff --name-only --diff-filter=A "$DIFF_BASE"..HEAD 2>/dev/null || true)
+  MOD_FILES=$(git diff --name-only --diff-filter=M "$DIFF_BASE"..HEAD 2>/dev/null || true)
+  DEL_FILES=$(git diff --name-only --diff-filter=D "$DIFF_BASE"..HEAD 2>/dev/null || true)
+else
+  DIFF_ALL=$(git diff --name-only HEAD~1..HEAD 2>/dev/null || git diff --name-only 2>/dev/null || true)
+  NEW_FILES=$(git diff --name-only --diff-filter=A HEAD~1..HEAD 2>/dev/null || true)
+  MOD_FILES=$(git diff --name-only --diff-filter=M HEAD~1..HEAD 2>/dev/null || true)
+  DEL_FILES=$(git diff --name-only --diff-filter=D HEAD~1..HEAD 2>/dev/null || true)
+fi
 NEW_TS=$(echo "$NEW_FILES" | grep '\.ts$' | grep -v '\.test\.' | grep -v '\.d\.ts' || true)
 NEW_JSON=$(echo "$NEW_FILES" | grep '\.json$' || true)
 NEW_MANIFEST=$(echo "$NEW_FILES" | grep 'manifest\.json$' || true)
@@ -70,7 +88,7 @@ echo ""
 echo -e "${CYAN}── Q0a: 项目拼图 ──${RESET}"
 
 Q0A=$(extract_section "Q0")
-LAYER=$(echo "$Q0A" | grep -oP 'L[1-5]' | sort -u | tr '\n' '+' | sed 's/+$//' || true)
+LAYER=$(echo "$Q0A" | grep -oE 'L[1-5]' | sort -u | tr '\n' '+' | sed 's/+$//' || true)
 DECISION=$(echo "$Q0A" | grep -iE '新增|替换|扩展|复用' | head -1 || true)
 
 # 检查声明的层和实际改动文件是否匹配（支持多层: L1+L2+L3）
@@ -147,7 +165,7 @@ elif echo "$RELATION" | grep -qi "扩展"; then
 fi
 
 # 检查 brief 中列出的已有模块是否真实存在
-LISTED_MODULES=$(echo "$Q0B" | grep -oP 'src/(expert|sentinel|knowledge|theory|skills)/\S+|extensions/\S+' | tr -d '`' | head -5 || true)
+LISTED_MODULES=$(echo "$Q0B" | grep -oE 'src/(expert|sentinel|knowledge|theory|skills)/[^[:space:]]+|extensions/[^[:space:]]+' | tr -d '`' | head -5 || true)
 if [ -n "$LISTED_MODULES" ]; then
   MISSING=""
   while IFS= read -r mod; do
@@ -179,7 +197,7 @@ echo -e "${CYAN}── Q1: 调研 ──${RESET}"
 Q1=$(extract_section "Q1")
 
 # 检查是否引用 memory/ 文件
-MEMORY_REFS=$(echo "$Q1" | grep -oP 'memory/[a-zA-Z0-9_-]+\.md' | sed 's|^memory/||' | sort -u || true)
+MEMORY_REFS=$(echo "$Q1" | grep -oE 'memory/[a-zA-Z0-9_-]+\.md' | sed 's|^memory/||' | sort -u || true)
 if [ -n "$MEMORY_REFS" ]; then
   MISSING_MEM=""
   while IFS= read -r mem; do
@@ -211,7 +229,7 @@ echo -e "${CYAN}── Q2: 范围 ──${RESET}"
 Q2=$(extract_section "Q2")
 
 # 检查排除项 — 声明的"不做什么"中的路径是否被改动
-EXCLUDED=$(echo "$Q2" | grep -oiP '(不做|排除|不涉及|不修改)[^。]*' | grep -oP 'src/[a-zA-Z0-9_/.]+' || true)
+EXCLUDED=$(echo "$Q2" | grep -oiE '(不做|排除|不涉及|不修改)[^。]*' | grep -oE 'src/[a-zA-Z0-9_/.]+' || true)
 if [ -n "$EXCLUDED" ]; then
   VIOLATIONS=""
   while IFS= read -r excl; do
@@ -240,8 +258,8 @@ Q3=$(extract_section "Q3" 2>/dev/null || true)
 DONE=$(extract_section "Done 标准" 2>/dev/null || true)
 
 # 检查入口可触达 — 声明的入口文件/路由存在
-ENTRIES=$(echo "$Q3" | grep -oP 'GET|POST|PUT|DELETE' | head -1 || true)
-ENTRY_FILES=$(echo "$Q3" | grep -oP 'src/[a-zA-Z0-9_/.]+\.(ts|html)' | tr -d '`' || true)
+ENTRIES=$(echo "$Q3" | grep -oE 'GET|POST|PUT|DELETE' | head -1 || true)
+ENTRY_FILES=$(echo "$Q3" | grep -oE 'src/[a-zA-Z0-9_/.]+\.(ts|html)' | tr -d '`' || true)
 if [ -n "$ENTRY_FILES" ]; then
   MISSING_ENTRY=""
   while IFS= read -r ef; do
@@ -254,7 +272,7 @@ else
 fi
 
 # 检查 Done 标准中的 verify 命令
-VERIFY_CMDS=$(echo "$DONE" | grep -oP 'grep\s+.*\S+|bash\s+.*\S+|npx\s+.*\S+' || true)
+VERIFY_CMDS=$(echo "$DONE" | grep -oE 'grep[[:space:]]+.*[^[:space:]]+|bash[[:space:]]+.*[^[:space:]]+|npx[[:space:]]+.*[^[:space:]]+' || true)
 if [ -n "$VERIFY_CMDS" ]; then
   hard_check "Q3/Done: 有可验证的验收命令" ""
 else

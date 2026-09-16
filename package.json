@@ -42,6 +42,7 @@
     "electron:build": "electron-builder --config build-synova.cjs",
     "electron:build:win": "electron-builder --config build-synova.cjs --win",
     "electron:build:mac": "electron-builder --config build-synova.cjs --mac",
+    "electron:verify:mac": "bash scripts/desktop/verify-package-signature.sh --all --dir release",
     "docker:build": "docker build -t synova-agent .",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
@@ -55,7 +56,7 @@
     "@unblessed/node": "^1.0.0-alpha.23",
     "bcrypt": "^6.0.0",
     "better-sqlite3": "^12.11.1",
-    "chalk": "^5.6.2",
+    "chalk": "^6.0.0",
     "cors": "^2.8.6",
     "electron-updater": "^6.8.9",
     "express": "^4.22.2",
@@ -68,7 +69,7 @@
     "pino": "9.14.0",
     "pinyin-pro": "^3.29.3",
     "react": "^18.3.1",
-    "zod": "4.4.3"
+    "zod": "4.6.2"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
@@ -84,6 +85,7 @@
     "electron": "^33.4.11",
     "electron-builder": "^25.1.8",
     "patch-package": "^8.0.1",
+    "react-markdown": "^10.1.0",
     "tsx": "4.23.13",
     "typescript": "5.9.3",
     "vitest": "4.1.8",

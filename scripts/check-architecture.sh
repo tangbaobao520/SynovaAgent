@@ -149,6 +149,9 @@ check_l1_boundary() { # $1=方向段  $2=层模式  $3=标题  $4=修复提示
     NEW_TOTAL=$((NEW_TOTAL + new))
     echo "$cmp_out" | grep "^NEW" | while IFS=$'\t' read -r _ nf na nb; do
       echo -e "     ${RED}↳ ${nf}: 实际 ${na} > 基线 ${nb} (新增 $((na - nb)))${RESET}"
+      # D662/B8: 逐条列出该文件违规 file:line（基线只记 file=count 无行号,
+      # 超基线文件须人工核对全部命中行——不列明细则 CTO 排障被迫手挖）
+      echo "$viol" | grep -F "$nf:" | sed 's/^/         /'
     done || true
     if [ "$SYNO_CI" = "1" ]; then
       echo -e "  ${RED}❌ ${label}: 基线外新增 ${new} 处 [CI strict——软提示在 CI 上为硬阻断]${RESET}"

@@ -6,7 +6,7 @@
   "displayName": "T4 连接器覆盖率",
   "description": "T4: T4 连接器覆盖率",
   "schedule": "0 0 1 * *",
-  "expert": "tech",
+  "expert": "technology-foundation",
   "priority": "P1",
   "layer": "technology",
   "computeKind": "deterministic",

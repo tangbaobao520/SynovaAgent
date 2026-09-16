@@ -50,7 +50,8 @@ describe('D243 — AnomalyDetector', () => {
 describe('D243 — SabotageHandler', () => {
   it('freezeUser 更新状态 + 记录告警', () => {
     let updated = false;
-    const store = { updateUser: () => { updated = true; }, getById: () => null };
+    // D702: UserStoreLike.updateUser 契约变更为返 { ok, error? }——fake 同步（接口签名强制连带）
+    const store = { updateUser: () => { updated = true; return { ok: true }; }, getById: () => null };
     const handler = new SabotageHandler(store);
     handler.freezeUser('user-1', 'Action 3x threshold');
     expect(updated).toBe(true);

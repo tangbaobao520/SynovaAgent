@@ -8,6 +8,15 @@
 #   2. 可解析 + 不可解析混存 → 返回最新可解析者（修复前返回最新=不可解析者 = red）
 #   3. 仅可解析 brief → 返回该 brief（回归）
 #   4. 过期 current-brief（日期≠今日）忽略 → 走回退
+#   5. D559 日期窗口 +1 天（UTC 容差）
+#   6. 窗口边界：today-2 brief 不参与认领（防跨 session 误伤）
+#   7. 陈旧 current-brief 文件存在 → 忽略（D660/D661 根因）
+#   D718 跨日任务 + 共享文件归属（身份锚点，8/9/10/11）:
+#   8. brief 生成日 today-3 + 分支名含 D# → 认领自己的 brief（修复前落到无关今日 brief = red）
+#   9. brief 生成日 today-3 + 暂存 task-state/D#.json → 同上（分支无 D# 时的锚点）
+#  10. 负向：无身份锚点的跨日 brief 不得劫持（防「窗口放宽」式退化，D291/D296 保护不回归）
+#  11. 共享文件同数认领（tie）→ 身份锚点 brief 胜出（修复前字典序 → 陈旧 brief 恒胜，
+#      staging_guard 判「认领 brief D# ≠ 本 session 任务」硬阻断；D718 执行期真实被拦一次）
 #
 # 隔离: 临时 repo（mktemp -d + git init）— resolver 用 git rev-parse --show-toplevel
 # 定位 ROOT；brief 放临时 repo 的 .claude/task-briefs/（mtime 今日 → ALL_TODAY 候选）
@@ -228,6 +237,161 @@ scripts/b.sh"
 assert_exit "$EC" 0 "今日 brief 认领成功"
 assert_contains "$OUT" "today-claims1b" "窗口外（today-2）brief 不参与，今日 brief 胜出"
 assert_not_contains "$OUT" "stale-claims2" "前日 brief 被窗口排除（±1 天边界）"
+echo ""
+
+echo "── 7. 陈旧 current-brief 文件存在（D660/D661 macOS grep -oP 失效根因）→ 忽略 → 走回退 ──"
+R7=$(new_repo)
+# 陈旧 brief 文件真实存在（D660: macOS grep -oP 失效 → BD 空 → 陈旧 brief 被误用为回退）
+make_parseable "$R7" "2026-07-14-D83-stale-existing.md"
+echo "2026-07-14-D83-stale-existing.md" > "$R7/.claude/current-brief"
+# 今日 brief 认领 scripts/test.sh（与暂存 scripts/a.sh 不匹配 → 认领数 0 → 触发回退路径）
+make_parseable "$R7" "${TODAY}-today-noclaim.md"
+run_resolver "$R7" "scripts/a.sh"
+assert_exit "$EC" 0 "陈旧 current-brief 忽略后回退成功"
+assert_contains "$OUT" "today-noclaim" "回退返回今日可解析 brief"
+assert_not_contains "$OUT" "D83" "不返回陈旧 current-brief（即使其文件存在）"
+echo ""
+
+echo "── 8. D718 跨日任务（D664 型）：brief 生成日 >1 天前 + 分支带 D# → 必须认领自己的提交 ──"
+# 缺陷：候选集纯按文件名日期 today±1 → brief 生成 09-10、执行 09-12 时该 brief 永不入池 →
+#   认领恒空 → 回退落到无关 brief（= D328 判「他人文件」硬阻断，D664 实测被拦 2 次）。
+#   身份锚点（分支名 D#）必须把该 brief 拉回候选池。
+R8=$(new_repo)
+THREE_AGO=$(python3 -c "from datetime import date,timedelta; print((date.today()-timedelta(days=3)).isoformat())" 2>/dev/null || echo "")
+git -C "$R8" symbolic-ref HEAD refs/heads/fix/D664-crossday 2>/dev/null || true
+cat > "$R8/.claude/task-briefs/${THREE_AGO}-D664-crossday-task.md" <<EOF
+## Q0: 定位 — 跨日任务自身 brief
+
+## Q1: 调研 — 跨日任务自身 brief
+#CRITERIA: A
+
+## Q2: 范围 — 跨日任务自身 brief
+做什么：
+- scripts/a.sh
+
+不做什么：
+- 不改 docs/other.md
+
+## Q3: 验收 — 跨日任务自身 brief
+
+## 架构层: 基础设施
+## Done 标准
+- [ ] 可验证
+EOF
+make_parseable "$R8" "${TODAY}-today-unrelated.md"   # 今日无关 brief（认领数 0）——旧逻辑会回退到它
+run_resolver "$R8" "scripts/a.sh"
+assert_exit "$EC" 0 "跨日任务认领成功（修复前：回退到无关 brief = 认领失败）"
+assert_contains "$OUT" "D664-crossday-task" "返回本任务 brief（身份锚点：分支名 D#）"
+assert_not_contains "$OUT" "today-unrelated" "不落到无关的今日 brief"
+echo ""
+
+echo "── 9. D718 跨日 + 暂存 task-state/D#.json 锚点（分支无 D#）→ 同样必须认领 ──"
+R9=$(new_repo)
+cat > "$R9/.claude/task-briefs/${THREE_AGO}-D700-crossday-task.md" <<EOF
+## Q0: 定位 — 跨日任务（暂存锚点）
+
+## Q1: 调研 — 跨日任务（暂存锚点）
+#CRITERIA: A
+
+## Q2: 范围 — 跨日任务（暂存锚点）
+做什么：
+- task-state/D700.json
+
+不做什么：
+- 不改 docs/other.md
+
+## Q3: 验收 — 跨日任务（暂存锚点）
+
+## 架构层: 基础设施
+## Done 标准
+- [ ] 可验证
+EOF
+make_parseable "$R9" "${TODAY}-today-unrelated2.md"
+run_resolver "$R9" "task-state/D700.json"
+assert_exit "$EC" 0 "暂存 task-state 锚点认领成功"
+assert_contains "$OUT" "D700-crossday-task" "返回本任务 brief（身份锚点：暂存路径 D#）"
+assert_not_contains "$OUT" "today-unrelated2" "不落到无关的今日 brief"
+echo ""
+
+echo "── 10. D718 负向：无身份锚点的跨日 brief 仍不得劫持认领（D291/D296 保护不回归）──"
+# 修复不可退化为「窗口放宽」：没有身份证据的陈旧 brief 即使认领更多文件也不得入池。
+R10=$(new_repo)
+cat > "$R10/.claude/task-briefs/${THREE_AGO}-D664-stale-nohijack.md" <<EOF
+## Q0: 定位 — 无锚点陈旧 brief
+
+## Q1: 调研 — 无锚点陈旧 brief
+#CRITERIA: A
+
+## Q2: 范围 — 无锚点陈旧 brief
+做什么：
+- scripts/a.sh
+- scripts/b.sh
+
+不做什么：
+- 不改 docs/other.md
+
+## Q3: 验收 — 无锚点陈旧 brief
+
+## 架构层: 基础设施
+## Done 标准
+- [ ] 可验证
+EOF
+make_parseable "$R10" "${TODAY}-today-claims1c.md"   # 只认领 1 个文件
+run_resolver "$R10" "scripts/a.sh
+scripts/b.sh"
+assert_exit "$EC" 0 "无锚点场景认领成功"
+assert_contains "$OUT" "today-claims1c" "今日 brief 胜出（陈旧 brief 无身份证据 → 不入池）"
+assert_not_contains "$OUT" "stale-nohijack" "无锚点陈旧 brief 未劫持认领（防窗口放宽式退化）"
+echo ""
+
+echo "── 11. D718 共享文件同数认领（tie）→ 身份锚点 brief 必须胜出（旧逻辑字典序 = 陈旧 brief 恒胜）──"
+# 实测现场: 修 pre-doc-audit.sh 时，D664 brief（历史改过该文件）与本任务 brief 同数认领 →
+#   稳定排序按字典序 → 2026-09-12-D664-* 恒胜 2026-09-13-D718-* → staging_guard 判
+#   「认领 brief D# ≠ 本 session 任务」硬阻断（D718 本单真实被拦一次）。
+R11=$(new_repo)
+git -C "$R11" symbolic-ref HEAD refs/heads/fix/D900-tiebreak 2>/dev/null || true
+cat > "$R11/.claude/task-briefs/${TODAY}-D664-tiebreak-older.md" <<EOF
+## Q0: 定位 — 历史任务（同文件）
+
+## Q1: 调研 — 历史任务（同文件）
+#CRITERIA: A
+
+## Q2: 范围 — 历史任务（同文件）
+做什么：
+- scripts/a.sh
+
+不做什么：
+- 不改 docs/other.md
+
+## Q3: 验收 — 历史任务（同文件）
+
+## 架构层: 基础设施
+## Done 标准
+- [ ] 可验证
+EOF
+cat > "$R11/.claude/task-briefs/${TODAY}-D900-tiebreak-current.md" <<EOF
+## Q0: 定位 — 本任务（同文件）
+
+## Q1: 调研 — 本任务（同文件）
+#CRITERIA: A
+
+## Q2: 范围 — 本任务（同文件）
+做什么：
+- scripts/a.sh
+
+不做什么：
+- 不改 docs/other.md
+
+## Q3: 验收 — 本任务（同文件）
+
+## 架构层: 基础设施
+## Done 标准
+- [ ] 可验证
+EOF
+run_resolver "$R11" "scripts/a.sh"
+assert_exit "$EC" 0 "同数认领场景解析成功"
+assert_contains "$OUT" "D900-tiebreak-current" "身份锚点（分支 D900）brief 在同数认领中胜出"
+assert_not_contains "$OUT" "D664-tiebreak-older" "陈旧共享 brief 不因字典序靠前而胜出"
 echo ""
 
 echo "═══════════════════════════════════════════════════════════"

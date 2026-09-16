@@ -1,7 +1,7 @@
 {
   "task_id": "D558",
   "title": "D487 session_events 迁移回归测试补写（K3 P1）",
-  "status": "impl_done",
+  "status": "closed",
   "spec": null,
   "impl": {
     "commit": "81a5d2f5",
@@ -41,6 +41,7 @@
     "at": "2026-08-29"
   },
   "fix_task_id": null,
-  "updated_at": "2026-08-29",
-  "updated_by": "K3"
+  "updated_at": "2026-09-10",
+  "updated_by": "dsh-cto",
+  "note": "2026-09-10 看板校准: CT-46 类型安全模式扩——退回待规划（无分支零活动）"
 }

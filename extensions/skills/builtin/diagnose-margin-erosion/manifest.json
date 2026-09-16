@@ -6,7 +6,7 @@
   "description": "从成本端、收入端、竞争端、结构端四维度定位利润率下降的根本原因，提供干预路径。",
   "tier": "L3",
   "complexity": "expert",
-  "expert": "finance",
+  "expert": "fundamental-efficiency",
   "tools": [
     "compute-dol",
     "compute-break-even",

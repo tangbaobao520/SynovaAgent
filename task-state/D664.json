@@ -1,0 +1,28 @@
+{
+  "task_id": "D664",
+  "title": "pre-commit-check-grep-p-self-clean",
+  "status": "audited",
+  "spec": null,
+  "impl": {
+    "pr": 504,
+    "branch": null,
+    "note": "并行 CTO 控制塔收口批次；合并权归主 CTO"
+  },
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-09-13-D715.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "findings": [
+      "K3 独立复扫: scripts/ *.sh 非豁免 grep -P 命中 = 0; 残留 3 处实测均为注释/检测器字面量（pre-commit-check.sh:1385/:1392 + post-commit.sh:122），与声称一致",
+      "grep-oP-regression.test.sh 36/36 K3 本地复跑绿（含反向哨兵 + 27 处 PCRE→ERE 金值断言）",
+      "ci.yml:202 密封清单接线确认（D661 建网未接线的 M3 本批闭环）",
+      "P2-1 备查: ci.yml:93 自身 grep -oP（scope 外, GNU runner 无害）"
+    ],
+    "by": "k3-audit (D715)",
+    "at": "2026-09-13"
+  },
+  "fix_task_id": null,
+  "updated_at": "2026-09-13",
+  "updated_by": "k3-audit",
+  "slice": "ctl-closeout-20260911"
+}

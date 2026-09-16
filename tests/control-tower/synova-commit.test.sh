@@ -10,6 +10,12 @@
 #   ③ 行为(放): 自己登记的写集文件 → 不拦（提交继续，degraded pre-commit 下 commit 完成）
 #   ④ 降级: guard 执行异常路径有显式提示（非静默 fail-open 无痕）
 #   ⑤ 判定语义: guard status JSON 解析（block/ok/坏输入）
+#   ── D706（本节新增）── 部分提交丢弃删除项
+#   ⑥ 跨调用: 门禁拒绝后暂存态仍在 → 第二次提交必须真的把删除项写进树
+#      （原缺陷: git commit -- <pathspec> 对「索引已删除 + .gitignore 命中 + 磁盘仍存在」
+#        的路径做内部 add 时因 ignored 跳过 → 删除不进提交却 exit 0 → 暂存态被静默销毁）
+#   ⑦ 不变量: staged ⊄ --files 声明 → fail-closed 点名（D329 防洗白语义）
+#   ⑧ 负例: 真错配（git hook 篡改索引）→ 阻断 + 撤销提交 + 还原暂存区
 # 沙箱: mktemp 仓库 + 复制 scripts/ + SYNO_CT_DIR 隔离 registry + SYNO_PRE_COMMIT stub
 # M13/D521: unset GIT_DIR/GIT_WORK_TREE + git -c 一次性身份（禁 git config 持久写）
 set -uo pipefail
@@ -86,6 +92,68 @@ assert status('NOT JSON') == "degraded"
 assert status('{}') == "degraded"
 sys.exit(0)
 PY
+
+# ═══ D706: 部分提交丢弃删除项（⑥⑦⑧）═══
+# 独立沙箱（需要 .gitignore + git rm --cached 的特定地形，不复用上面的 SB）
+SB7="$TMPD/d706"; mkdir -p "$SB7/.claude" "$SB7/.codex/control-tower"
+cp -R "$HERE/../../scripts" "$SB7/scripts"
+git -C "$SB7" init -q
+git -C "$SB7" config user.email "test@test.local"; git -C "$SB7" config user.name "test"
+touch "$SB7/.claude/bypass.log"
+D706_RUN() { (cd "$SB7" && SYNO_PRE_COMMIT="$STUB" bash "$SB7/scripts/control-tower/synova-commit" "$@" 2>&1); }
+
+# 地形: vendor/ 被 .gitignore 命中，vendor/widget.txt 曾入库（模拟 D665 的 gitlink 摘除）
+printf 'vendor/\n' > "$SB7/.gitignore"; mkdir -p "$SB7/vendor"
+printf 'payload\n' > "$SB7/vendor/widget.txt"; printf 'v1\n' > "$SB7/normal.txt"
+git -C "$SB7" add -f .gitignore normal.txt vendor/widget.txt
+git -C "$SB7" commit -q -m "init: 基线"
+
+# ⑥ 跨调用: 先被门禁拒（pre-commit stub exit 1）→ 暂存态必须仍在 → 再提交必须真摘除
+git -C "$SB7" rm -q --cached vendor/widget.txt
+printf 'v2\n' > "$SB7/normal.txt"; git -C "$SB7" add normal.txt
+DENY="$TMPD/deny.sh"; printf '#!/bin/bash\nexit 1\n' > "$DENY"
+(cd "$SB7" && SYNO_PRE_COMMIT="$DENY" bash "$SB7/scripts/control-tower/synova-commit" \
+   --task-id T706 --agent test --message "chore(D706): 应被拒" >/dev/null 2>&1) || true
+git -C "$SB7" diff --cached --name-only HEAD 2>/dev/null | grep -qx 'vendor/widget.txt' \
+  && ok "⑥ 门禁拒绝后暂存态未丢失（跨调用前提）" || bad "⑥ 拒绝路径吞掉了暂存态"
+
+STILL_BEFORE=$(git -C "$SB7" ls-tree -r HEAD --name-only 2>/dev/null | grep -c 'vendor/widget.txt' || true)
+D706_RUN --task-id T706 --agent test --message "chore(D706): 摘除 vendor/widget.txt" >/dev/null 2>&1 || true
+STILL_AFTER=$(git -C "$SB7" ls-tree -r HEAD --name-only 2>/dev/null | grep -c 'vendor/widget.txt' || true)
+[ "$STILL_BEFORE" -eq 1 ] && [ "$STILL_AFTER" -eq 0 ] \
+  && ok "⑥ 删除项真的进了提交树（ls-tree 1→0；原缺陷为 1→1 静默丢删除）" \
+  || bad "⑥ D706 未修: 提交前=$STILL_BEFORE 提交后=$STILL_AFTER（期望 1→0）"
+# 精确断言: 目标提交必须以**删除态(D)**记录该路径
+# （弱断言「树里出现过该路径」会命中 init 提交 → 假绿，故限定 diff-filter=D + 指定提交）
+_D706C=$(git -C "$SB7" log --format=%H -1 --grep="摘除 vendor/widget.txt" 2>/dev/null)
+if [ -n "$_D706C" ] \
+   && git -C "$SB7" show --diff-filter=D --name-only --format="" "$_D706C" 2>/dev/null | grep -qx 'vendor/widget.txt'; then
+  ok "⑥ 目标提交以删除态(D)记录 vendor/widget.txt"
+else
+  bad "⑥ 目标提交未以 D 记录该路径（ref='${_D706C:-none}'）"
+fi
+# ⑦ 不变量: staged ⊄ --files 声明 → fail-closed 点名（防 D329「--files 洗白他人暂存」）
+printf 'extra\n' > "$SB7/extra.txt"; git -C "$SB7" add extra.txt
+OUT7=$(D706_RUN --task-id T706 --agent test --message "chore(D706): 越界" --files normal.txt); rc7=$?
+[ "$rc7" -eq 1 ] && ok "⑦ staged 越界 → exit 1（fail-closed）" || bad "⑦ 越界未拦 rc=$rc7"
+echo "$OUT7" | grep -q "extra.txt" && echo "$OUT7" | grep -q "声明之外的变更" \
+  && ok "⑦ 点名越界文件 + 专用文案" || bad "⑦ 未点名: $(echo "$OUT7" | grep -a '❌' | head -1)"
+git -C "$SB7" restore --staged extra.txt 2>/dev/null || true; rm -f "$SB7/extra.txt"
+
+# ⑧ 负例: 真错配（git pre-commit hook 在提交瞬间篡改索引）→ 阻断 + 撤销提交 + 还原暂存区
+printf 'v3\n' > "$SB7/normal.txt"; git -C "$SB7" add normal.txt
+mkdir -p "$SB7/.git/hooks"
+printf '#!/bin/bash\ngit restore --staged normal.txt 2>/dev/null\nexit 0\n' > "$SB7/.git/hooks/pre-commit"
+chmod +x "$SB7/.git/hooks/pre-commit"
+H8=$(git -C "$SB7" rev-parse HEAD 2>/dev/null)
+IDX8=$(git -C "$SB7" diff --cached --name-only HEAD 2>/dev/null | tr '\n' ' ')
+OUT8=$(D706_RUN --task-id T706 --agent test --message "chore(D706): 错配负例"); rc8=$?
+H8B=$(git -C "$SB7" rev-parse HEAD 2>/dev/null)
+IDX8B=$(git -C "$SB7" diff --cached --name-only HEAD 2>/dev/null | tr '\n' ' ')
+[ "$rc8" -eq 1 ] && ok "⑧ 真错配 → exit 1（不变量探测器生效）" || bad "⑧ 错配未拦 rc=$rc8"
+echo "$OUT8" | grep -q "提交树与暂存声明不一致" && ok "⑧ 点名不一致" || bad "⑧ 无错配文案"
+[ "$H8" = "$H8B" ] && ok "⑧ 假阻断防止: 提交已撤销（HEAD 未前移）" || bad "⑧ 提交仍留在历史"
+[ "$IDX8" = "$IDX8B" ] && ok "⑧ 暂存区已还原（暂存态未丢）" || bad "⑧ 索引未还原: '$IDX8' → '$IDX8B'"
 
 echo "pass=$PASS fail=$FAIL"
 [ "$FAIL" -eq 0 ]

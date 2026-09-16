@@ -83,7 +83,7 @@ export class AnomalyDetector {
 // ═══ SabotageHandler ═══
 
 export interface UserStoreLike {
-  updateUser(userId: string, props: Record<string, unknown>): void;
+  updateUser(userId: string, props: Record<string, unknown>): { ok: boolean; error?: string };
   getById(userId: string): Record<string, unknown> | null;
 }
 
@@ -97,7 +97,12 @@ export class SabotageHandler {
 
   freezeUser(userId: string, reason: string): void {
     try {
-      this.userStore.updateUser(userId, { status: 'disabled' });
+      const result = this.userStore.updateUser(userId, { status: 'disabled' });
+      if (!result.ok) {
+        // D702: 持久化失败不记入 alerts（未真实冻结，不假报成功）——铁律 31 降级信号传播
+        log.warn({ userId, reason, error: result.error }, '冻结用户持久化失败 — 降级（不记入告警）');
+        return;
+      }
       this.alerts.push({ userId, reason, frozenAt: new Date().toISOString() });
       log.warn({ userId, reason }, '用户已冻结 — 防破坏机制');
     } catch (err) {
@@ -107,7 +112,11 @@ export class SabotageHandler {
 
   unfreezeUser(userId: string): void {
     try {
-      this.userStore.updateUser(userId, { status: 'active' });
+      const result = this.userStore.updateUser(userId, { status: 'active' });
+      if (!result.ok) {
+        log.warn({ userId, error: result.error }, '解冻用户持久化失败 — 降级');
+        return;
+      }
       log.info({ userId }, '用户已解冻');
     } catch (err) {
       log.warn({ err, userId }, '解冻用户失败 — 降级');

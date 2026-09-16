@@ -2,6 +2,7 @@
 # test/derive.test.sh — derive-board-sources.py 集成测试（D502）
 # 覆盖矩阵（铁律 48）:
 #   正常路径: 临时 git 仓库（含 task-state/审计报告/product-progress/todos）→ --no-fetch 派生 → 四源齐全 + 状态映射正确
+#   正常路径⑥: 分支活动三态（活跃分支→active / 陈旧分支→inactive / 无分支→None，D660）
 #   降级路径: ① 无 origin/main ref → exit 2 且不写 snapshot ② todos.yaml 含转义引号 title 正确解析
 #   边界条件: ③ --since-d 窗口过滤 ④ task-state 已有的 D# 不重复出现在 win_tasks ⑤ 簿记提交不作标题
 # 环境: 需要 git + python3；缺失 → 显式 skip（计数，不静默）
@@ -26,14 +27,24 @@ if [ -z "$PYBIN" ]; then
   echo "pass=$PASS fail=$FAIL skip=$SKIP"; exit 0
 fi
 
-# ── 用例 1: 正常路径（四源齐全 + 窗口 + 去重 + 状态映射 + 转义引号）──
+# ── 用例 1: 正常路径（四源齐全 + 窗口 + 去重 + 状态映射 + 转义引号 + 分支活动三态）──
 T1="$(mktemp -d /tmp/synova-derive.XXXXXX)"
 git -C "$T1" init -q
 git -C "$T1" config user.email t@t; git -C "$T1" config user.name tester
+MAIN_BR="$(git -C "$T1" symbolic-ref --short HEAD)"
 mkdir -p "$T1/task-state" "$T1/docs/synova/audit-reports" "$T1/docs/synova/product-lines" "$T1/docs/synova/coordination"
-# ① task-state（含 D400 —— 应从 win_tasks 去重掉）
+# ① task-state（含 D400 —— 应从 win_tasks 去重掉；D601/D602/D603 供 ⑥ 活动判定）
 cat > "$T1/task-state/D400.json" <<'J'
 {"task_id":"D400","title":"Mac任务","status":"audited"}
+J
+cat > "$T1/task-state/D601.json" <<'J'
+{"task_id":"D601","title":"活动认领","status":"claimed"}
+J
+cat > "$T1/task-state/D602.json" <<'J'
+{"task_id":"D602","title":"陈旧认领","status":"claimed"}
+J
+cat > "$T1/task-state/D603.json" <<'J'
+{"task_id":"D603","title":"无分支认领","status":"spec_done"}
 J
 # ② Win 提交：D338（实质+审计）D340（实质无审计）D341（仅簿记）D100（窗口外）
 mkdir -p "$T1/src"
@@ -66,6 +77,16 @@ Y
 git -C "$T1" add -A; git -C "$T1" commit -qm "data"
 # 模拟已 fetch 状态：建立 remote-tracking ref（--no-fetch 时脚本从该 ref 读）
 git -C "$T1" update-ref refs/remotes/origin/main HEAD
+# ⑥ 分支活动（D660）: D601 活跃分支（新提交）/ D602 陈旧分支（48h 前提交）/ D603 无分支
+git -C "$T1" checkout -q -b feat/D601-active
+echo act >> "$T1/src/a.ts"
+git -C "$T1" add -A
+git -C "$T1" -c user.name="synova-dsh" commit -qm "feat(D601): 活动分支提交（48h 内）"
+git -C "$T1" update-ref refs/remotes/origin/feat/D601-active HEAD
+git -C "$T1" checkout -q -b feat/D602-stale
+GIT_COMMITTER_DATE="2026-01-02T03:04:05+0000" git -C "$T1" -c user.name="synova-dsh" commit --allow-empty -qm "feat(D602): 陈旧分支提交"
+git -C "$T1" update-ref refs/remotes/origin/feat/D602-stale HEAD
+git -C "$T1" checkout -q "$MAIN_BR"
 OUT1="$T1/snap.json"
 "$PYBIN" "$SCRIPT" --repo-root "$T1" --out "$OUT1" --no-fetch >/dev/null 2>&1
 if [ $? -eq 0 ] && [ -f "$OUT1" ]; then
@@ -75,12 +96,16 @@ else
 fi
 # 逐断言（python 输出 0/1 供 bash 判定）
 check() { "$PYBIN" -c "$1" "$OUT1" && ok "$2" || bad "$2"; }
-check "import json,sys; d=json.load(open(sys.argv[1])); sys.exit(0 if len(d['task_state']['tasks'])==1 else 1)" "① task_state 1 条"
+check "import json,sys; d=json.load(open(sys.argv[1])); sys.exit(0 if len(d['task_state']['tasks'])==4 else 1)" "① task_state 4 条（D400+D601+D602+D603）"
 check "import json,sys; d=json.load(open(sys.argv[1])); w={t['task_id']:t for t in d['win_tasks']['tasks']}; sys.exit(0 if set(w)=={'D338','D340','D341'} else 1)" "② win 窗口=3（D100 窗口外剔除、D400 被 task-state 去重）"
 check "import json,sys; d=json.load(open(sys.argv[1])); w={t['task_id']:t for t in d['win_tasks']['tasks']}; sys.exit(0 if w['D338']['status']=='audited' and w['D340']['status']=='committed' else 1)" "② D338→audited / D340→committed"
 check "import json,sys; d=json.load(open(sys.argv[1])); w={t['task_id']:t for t in d['win_tasks']['tasks']}; sys.exit(0 if 'orgId 隔离' in w['D338']['title'] and '修复X' in w['D340']['title'] else 1)" "② 标题取非簿记提交（D340 非 chore: bypass）"
 check "import json,sys; d=json.load(open(sys.argv[1])); sys.exit(0 if len(d['product_lines']['lines'])==2 and d['product_lines']['overall_pct']==5 else 1)" "③ product_lines 2 条 + overall 5%"
 check "import json,sys; d=json.load(open(sys.argv[1])); t=d['todos']['items']; sys.exit(0 if len(t)==1 and '一看就懂' in t[0]['title'] and t[0]['priority']=='P0' else 1)" "④ todos 转义引号 title 正确解析"
+check "import json,sys; d=json.load(open(sys.argv[1])); ts={t['task_id']:t for t in d['task_state']['tasks']}; sys.exit(0 if ts['D601'].get('branch_activity',{}).get('active') is True else 1)" "⑥ D601 活跃分支→active=True"
+check "import json,sys; d=json.load(open(sys.argv[1])); ts={t['task_id']:t for t in d['task_state']['tasks']}; ba=ts['D602'].get('branch_activity') or {}; sys.exit(0 if ba.get('active') is False and 'feat/D602-stale' in ba.get('branches',[]) else 1)" "⑥ D602 陈旧分支→active=False 且记录分支"
+check "import json,sys; d=json.load(open(sys.argv[1])); ts={t['task_id']:t for t in d['task_state']['tasks']}; sys.exit(0 if ts['D603'].get('branch_activity') is None else 1)" "⑥ D603 无分支→branch_activity=None"
+check "import json,sys; d=json.load(open(sys.argv[1])); ts={t['task_id']:t for t in d['task_state']['tasks']}; sys.exit(0 if 'branch_activity' not in ts['D400'] else 1)" "⑥ 非 claimed/spec_done（D400 audited）不挂活动信号"
 rm -rf "$T1"
 
 # ── 用例 2: 降级——无 origin/main → exit 2 不写 snapshot ──

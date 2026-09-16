@@ -6,7 +6,7 @@
   "description": "从本体层获取企业财务数据，包括资本、收入、成本和现金流信息。不涉及推理，仅数据查询。",
   "tier": "L1",
   "complexity": "atomic",
-  "expert": "finance",
+  "expert": "fundamental-efficiency",
   "tools": [
     "acquire-edge-data"
   ],

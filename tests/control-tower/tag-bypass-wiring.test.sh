@@ -88,8 +88,11 @@ set +e
 OUT1=$(cd "$R1" && SYNO_TAG_ONLY=1 bash "$PRE_PUSH" 2>&1)
 EC1=$?
 set -e
-assert_exit "$EC1" 1 "孤儿 tag V8.8.8 → exit 1"
-assert_contains "$OUT1" "孤儿 tag" "输出含孤儿 tag 提示"
+# D737 修订: D521/不变量1 起，孤儿 tag（非 HEAD 祖先）属「与本次推送无关」→ **有意豁免不拦**
+#   （判据: pre-push-check.sh:189-191 的 D521 注释 + D520 实证「V4.7.1 孤儿 tag 拦死无关分支推送×3」）
+#   本用例改为断言「豁免生效」，并在用例 2b 补上真正该拦的路径（防漂移再次无覆盖）
+assert_exit "$EC1" 0 "孤儿 tag V8.8.8 → 豁免放行 (D521 现语义)"
+assert_contains "$OUT1" "孤儿 tag 已豁免" "输出明示豁免（不静默放过）"
 assert_contains "$OUT1" "D331" "输出含 D331 校验标识"
 echo ""
 
@@ -105,7 +108,27 @@ OUT2=$(cd "$R2" && SYNO_TAG_ONLY=1 bash "$PRE_PUSH" 2>&1)
 EC2=$?
 set -e
 assert_exit "$EC2" 1 "最新版本 V9.9.9 非祖先 → exit 1"
-assert_contains "$OUT2" "缺失或非祖先" "输出含缺失/非祖先提示"
+# D737 修订: 现文案为「非 HEAD 祖先」（pre-push-check.sh 的 TAG_FAIL 分支），
+#   原断言写的是旧文案「缺失或非祖先」→ 测试漂移的第二处
+assert_contains "$OUT2" "非 HEAD 祖先" "输出含「非 HEAD 祖先」提示"
+echo ""
+
+# ── 用例 2b (D737 新增): HEAD 祖先 tag **但不在 origin/main 上** → 硬阻断 ──
+#   为什么补: 用例 1/2 都在测「孤儿 tag」（D521 起有意豁免）→ 门禁真正要拦的那条路径
+#   （未合并分支上打 tag）**此前零覆盖**，这正是漂移能潜伏至今的原因。
+echo "── 2b. HEAD 祖先 tag 但不在 origin/main → 硬阻断 (exit 1) ──"
+R2B=$(mktemp -d)
+new_repo "$R2B" "V7.7.7"
+commit_file "$R2B" "f0.md" "base"
+git -C "$R2B" update-ref refs/remotes/origin/main HEAD 2>/dev/null || true   # origin/main 停在 base
+commit_file "$R2B" "f1.md" "c1"           # HEAD 前进一格 —— base 仍是 HEAD 祖先
+git -C "$R2B" tag V7.7.7 2>/dev/null || true   # tag 指向 HEAD（是 HEAD 祖先，但不在 origin/main）
+set +e
+OUT2B=$(cd "$R2B" && SYNO_TAG_ONLY=1 bash "$PRE_PUSH" 2>&1)
+EC2B=$?
+set -e
+assert_exit "$EC2B" 1 "HEAD 祖先 tag 未上 main → exit 1"
+assert_contains "$OUT2B" "不在 origin/main 上" "输出点名「不在 origin/main 上」"
 echo ""
 
 # ── 用例 3: bypass 对账 — 新提交缺记录 → exit 1 + 列出 ──

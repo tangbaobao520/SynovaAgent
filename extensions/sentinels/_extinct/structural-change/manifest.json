@@ -6,7 +6,7 @@
   "displayName": "底层结构变化",
   "description": "E6: 检测技术-经济范式层面的底层结构变化信号。数据源: Event, Compliance, FINANCIAL节点。",
   "schedule": "0 0 1 * *",
-  "expert": "strategy",
+  "expert": "competitive-strategy",
   "auxiliaryExperts": [
     "knowledge"
   ],

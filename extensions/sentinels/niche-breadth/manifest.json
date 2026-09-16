@@ -6,9 +6,9 @@
   "displayName": "生态位宽度与深度",
   "description": "I1: 基于Levins公式计算生态位宽度(B)、深度(D)、体积(V)。数据源: Client, Location, Market节点。",
   "schedule": "0 0 1 * *",
-  "expert": "strategy",
+  "expert": "competitive-strategy",
   "auxiliaryExperts": [
-    "marketing"
+    "customer-growth"
   ],
   "priority": "P1",
   "layer": "interface",

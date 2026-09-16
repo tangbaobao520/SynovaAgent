@@ -6,7 +6,7 @@
   "displayName": "软件资产健康度",
   "description": "T1: 评估企业软件资产的利用率与授权合规性。数据源: SOG TOOL/APP 节点。",
   "schedule": "0 10 * * 1",
-  "expert": "tech",
+  "expert": "technology-foundation",
   "priority": "P1",
   "layer": "technology",
   "computeKind": "deterministic",
@@ -39,7 +39,7 @@
   "entryPoint": "./aggregate.ts",
   "exportKey": "softwareHealthSentinel",
   "auxiliaryExperts": [
-    "strategy"
+    "competitive-strategy"
   ],
   "id": "sentinel-software-health"
 }

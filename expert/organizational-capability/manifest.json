@@ -21,12 +21,5 @@
     "COMPUTE-TRUST-FRICTION-v1",
     "COMPUTE-KNOWLEDGE-SHARING-v1",
     "COMPUTE-ORGANIZATIONAL-LEARNING-v1"
-  ],
-  "tools": [
-    "compute-information-flow",
-    "compute-incentive-alignment",
-    "compute-trust-friction",
-    "compute-knowledge-sharing",
-    "compute-organizational-learning"
   ]
 }

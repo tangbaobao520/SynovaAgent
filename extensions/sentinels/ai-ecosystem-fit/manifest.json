@@ -6,7 +6,7 @@
   "displayName": "T6 AI软件生态匹配度",
   "description": "T6: T6 AI软件生态匹配度",
   "schedule": "0 0 1 * *",
-  "expert": "tech",
+  "expert": "technology-foundation",
   "priority": "P1",
   "layer": "technology",
   "computeKind": "heuristic",
@@ -34,7 +34,7 @@
   "entryPoint": "./aggregate.ts",
   "exportKey": "AiEcosystemFitSentinel",
   "auxiliaryExperts": [
-    "strategy"
+    "competitive-strategy"
   ],
   "id": "sentinel-ai-ecosystem-fit"
 }

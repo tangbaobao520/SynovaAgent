@@ -215,24 +215,30 @@ export class UserStore {
    * 更新 orgId 完成绑定（userId/密码保留，SqliteGraphStore.updateNode 为通用
    * props merge，orgId 可持久化）。
    */
-  updateUser(userId: string, props: Partial<Pick<UserRecord, 'role' | 'status' | 'displayName' | 'department' | 'orgId'>>): void {
+  updateUser(userId: string, props: Partial<Pick<UserRecord, 'role' | 'status' | 'displayName' | 'department' | 'orgId'>>): { ok: boolean; error?: string } {
     try {
       this.store.updateNode(userId, props as Record<string, unknown>, USER_GRAPH);
       log.info({ userId }, '用户已更新');
+      return { ok: true };
     } catch (err) {
-      log.warn({ err, userId }, '更新用户失败 — 降级');
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg, userId }, '更新用户失败 — 降级');
+      return { ok: false, error: msg };
     }
   }
 
   /**
    * 软删除用户（设置 status='disabled'）。
    */
-  deleteUser(userId: string): void {
+  deleteUser(userId: string): { ok: boolean; error?: string } {
     try {
       this.store.updateNode(userId, { status: 'disabled' } as Record<string, unknown>, USER_GRAPH);
       log.info({ userId }, '用户已停用(软删除)');
+      return { ok: true };
     } catch (err) {
-      log.warn({ err, userId }, '删除用户失败 — 降级');
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn({ err: msg, userId }, '删除用户失败 — 降级');
+      return { ok: false, error: msg };
     }
   }
 

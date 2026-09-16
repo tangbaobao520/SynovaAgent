@@ -6,9 +6,9 @@
   "displayName": "客户需求迁移",
   "description": "E4: 检测客户需求迁移信号——客户流失率、收入集中度、NPS健康度。数据源: SOG CLIENT/FINANCIAL/Goal节点。",
   "schedule": "0 9 * * 1",
-  "expert": "marketing",
+  "expert": "customer-growth",
   "auxiliaryExperts": [
-    "strategy"
+    "competitive-strategy"
   ],
   "priority": "P0",
   "layer": "environment",

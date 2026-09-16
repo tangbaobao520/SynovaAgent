@@ -1,0 +1,7 @@
+# compute-map.yaml — 问题域专家 → compute 的 seam 映射（第六章 §6.9.4）
+# customer-growth（客户增长专家）
+# computes/edges 自 manifest.json 全量复制（真实 ID，一致性由 tests/expert/compute-map-consistency.test.ts 锁定）
+# 边 ID = 42 边因果骨架口径（E-01..E-42）；消费接线（expert-dispatcher）descope 后续卡
+customer-growth:
+  computes: [COMPUTE-COMPETITIVE-POSITIONING-v1, COMPUTE-HHI-v1, COMPUTE-CUSTOMER-VALUE-SCORE-v1, COMPUTE-PRICE-ELASTICITY-v2, COMPUTE-OPTIMAL-PRICE-v1]
+  edges: [E-33, E-36, E-01, E-03, E-25, E-30, E-31]

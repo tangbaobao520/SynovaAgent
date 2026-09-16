@@ -1,7 +1,7 @@
 {
   "task_id": "D397",
   "title": "（原 guard 通用化已砍）产品 loop 卫生 D397'——K3 重定义",
-  "status": "claimed",
+  "status": "closed",
   "spec": null,
   "impl": null,
   "audit": {
@@ -12,8 +12,8 @@
     "note": "NOT-AUDITABLE: claimed 未交付（consult 裁决砍原案，重定义为产品 loop 卫生 P2）"
   },
   "fix_task_id": null,
-  "updated_at": "2026-08-28",
-  "updated_by": "CTO",
-  "note": "等待条件（K3 战略咨询定序）：K3 定序：产品 loop 卫生排 Q4，数据回流后启动",
+  "updated_at": "2026-09-10",
+  "updated_by": "dsh-cto",
+  "note": "2026-09-10 看板校准: 产品 loop 卫生（原 guard 通用化已砍）——退回待规划（无分支零活动，K3 重定义后重新立项）",
   "priority": "P2-Q4后"
 }

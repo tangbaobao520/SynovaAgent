@@ -83,6 +83,25 @@ log_gate() {
 
 # D515 项3 / V5.0.0: 软提示检查 — 输出格式与 hard_check 一致（报告完整，--check/K3 可见），
 # 但只计 SOFT_COUNT 不计 HARD_FAIL：本地不阻断，CI Iron Laws job 为权威。
+
+# D749: 声明类检查级别 = 沙箱感知
+#   真实提交（无注入缝）→ hard（错误不进 CI）
+#   测试沙箱（SYNO_TASK_STATE_DIR / SYNO_BRIEF_DIR 被注入）→ soft
+#   理由: 夹具 brief 由测试构造，不应强制 6 字段/#CRITERIA（那是真实提交的要求）；
+#        但绝不对真实提交放水（注入缝只在测试里出现）。
+_SANDBOX=0
+[ -n "${SYNO_TASK_STATE_DIR:-}" ] && _SANDBOX=1
+[ -n "${SYNO_BRIEF_DIR:-}" ] && _SANDBOX=1
+[ -n "${SYNO_TEST_ARM:-}" ] && _SANDBOX=1
+[ -n "${SYNO_GIT_CACHED_ADDED_NAMES:-}" ] && _SANDBOX=1
+decl_check() {
+  if [ "$_SANDBOX" = "1" ]; then
+    soft_check "$1（沙箱夹具，降级）" "$2"
+  else
+    hard_check "$1" "$2"
+  fi
+}
+
 soft_check() {
   local name="$1" matches="$2"
   local count=0
@@ -180,7 +199,7 @@ plan_aware_check() {
   local non_deferred=""
   while IFS= read -r match_line; do
     [ -z "$match_line" ] && continue
-    local match_file=$(echo "$match_line" | grep -oP '^[^:]+' | head -1)
+    local match_file=$(echo "$match_line" | grep -oE '^[^:]+' | head -1)
     if [ -n "$deferred_list" ] && echo "$deferred_list" | grep -qF "$match_file" 2>/dev/null; then
       continue  # 在 defer 列表中 → 跳过
     fi
@@ -640,7 +659,7 @@ UNWIRED=""
 if [ -n "$NEW_IMPL" ]; then
   while IFS= read -r file; do
     [ -z "$file" ] && continue; [ ! -f "$file" ] && continue
-    EXPORTS=$(grep -oP 'export (function|class|const) \K\w+' "$file" 2>/dev/null || true)
+    EXPORTS=$(grep -oE 'export (function|class|const) [A-Za-z_][A-Za-z0-9_]*' "$file" 2>/dev/null | sed -E 's/^export (function|class|const) //' || true)
     for name in $EXPORTS; do
       [ -z "$name" ] && continue
       echo "$name" | grep -qi 'mock\|fake\|_internal\|_deprecated' && continue
@@ -663,7 +682,7 @@ DEEP_FAIL=""
 if [ -n "$NEW_IMPL" ]; then
   for file in $NEW_IMPL; do
     [ -z "$file" ] && continue; [ ! -f "$file" ] && continue
-    EXPORTS=$(grep -oP 'export (function|class|const) \K\w+' "$file" 2>/dev/null || true)
+    EXPORTS=$(grep -oE 'export (function|class|const) [A-Za-z_][A-Za-z0-9_]*' "$file" 2>/dev/null | sed -E 's/^export (function|class|const) //' || true)
     for name in $EXPORTS; do
       [ -z "$name" ] && continue
       echo "$name" | grep -qi 'mock\|fake\|_internal\|_deprecated' && continue
@@ -839,11 +858,29 @@ if [ -n "$STAGED_SRC" ]; then
         TASK_BRIEF_EMPTY="${TASK_BRIEF_EMPTY}  ${q}: 未填写\n"
       fi
     done
-    # 架构层: 兼容 ## 本任务在哪一层 和 ## 架构层 两种写法
-    LAYER_SECTION=$(awk '/^## (本任务在哪一层|架构层)(:| )/{found=1; next} /^## /{if(found) exit} found' "$BRIEF" 2>/dev/null)
-    LAYER_FILLED=$(echo "$LAYER_SECTION" | grep -v "^<!--\|^$" | tr -d "[:space:]" | head -1)
-    if [ -z "$LAYER_FILLED" ] || [ ${#LAYER_FILLED} -lt 3 ]; then
-      TASK_BRIEF_EMPTY="${TASK_BRIEF_EMPTY}  架构层: 未填写\n"
+    # 架构层 (D707 统一口径): 与 check-brief-parseable.sh **共用同源解析器**
+    #   brief_parser.py（单一事实源）。旧实现是第二套 awk，在内联写法
+    #   `## 架构层: <值>` 上与解析器结论相反——实测存量 232/629 份 brief 命中
+    #   （解析器绿 / 本处报「未填写」），D665 即因此白烧一轮 CI（PR #494 首轮红）。
+    #   顺带修掉旧正则 `\s*(.+)` 跨行吞标题 → 真空值被当成「已填写」的假绿。
+    #   不再保留第二套 awk 回退：回退实现自身就会漂移（实测全角冒号 `## 架构层：X`
+    #   在 awk 下解析失败而解析器正常）——「一类一机制」，字段口径只允许一个实现。
+    LAYER_FILLED=""
+    if command -v python3 >/dev/null 2>&1; then
+      LAYER_FILLED=$(python3 "$ROOT/scripts/control-tower/brief_parser.py" --layer "$BRIEF" 2>/dev/null | head -1 || true)
+    else
+      # 无 python3 → 本项无法判定。显式降级跳过（不静默判「未填写」= 假红；
+      # 也不静默放行 = 假绿）。语义对齐 check-brief-parseable.sh 的既有约定。
+      echo -e "  ${YELLOW}⚠️  D707: python3 不可用 — 架构层字段无法判定，跳过本项（降级登记）${RESET}"
+      mkdir -p "$ROOT/.codex/control-tower/logs" 2>/dev/null || true
+      echo "{\"time\": \"$(date -u +%Y-%m-%dT%H:%M:%S+00:00)\", \"component\": \"pre-commit-group6-layer\", \"reason\": \"python3 不可用 — 架构层字段跳过 (fail-open + degraded)\"}" >> "$ROOT/.codex/control-tower/logs/degraded-events.log" 2>/dev/null || true
+      LAYER_FILLED="__D707_UNJUDGED__"
+    fi
+    if [ "$LAYER_FILLED" != "__D707_UNJUDGED__" ]; then
+      LAYER_FILLED=$(printf '%s' "$LAYER_FILLED" | tr -d "[:space:]")
+      if [ -z "$LAYER_FILLED" ] || [ ${#LAYER_FILLED} -lt 3 ]; then
+        TASK_BRIEF_EMPTY="${TASK_BRIEF_EMPTY}  架构层: 未填写\n"
+      fi
     fi
     # Done 标准专项: 至少一条完成标准
     DONE_SECTION=$(awk "/^## Done 标准/{found=1; next} /^## /{if(found) exit} found" "$BRIEF" 2>/dev/null)
@@ -854,8 +891,8 @@ if [ -n "$STAGED_SRC" ]; then
     fi
   fi
 fi
-soft_check "Task Brief: 编码变更须有今日 task brief" "${TASK_BRIEF_MISSING:-}"
-soft_check "Task Brief: 6 核心字段必须填写 (Q0/Q1/Q2/Q3/架构层/Done)" "${TASK_BRIEF_EMPTY:-}"
+decl_check "Task Brief: 编码变更须有今日 task brief" "${TASK_BRIEF_MISSING:-}"
+decl_check "Task Brief: 6 核心字段必须填写 (Q0/Q1/Q2/Q3/架构层/Done)" "${TASK_BRIEF_EMPTY:-}"
 
 # D547 教训固化（物理门禁，非台账）：alloc-task-id 生成的骨架 brief 含 <agent>/<本任务在哪一层>
 #   占位符，不得随派单提交进 main——曾致 check-plan-integrity 在 CI 回退命中占位符，
@@ -1089,7 +1126,7 @@ if [ -f "$CRITERIA_MAP" ]; then
   BRIEF_FILE=$(echo "$CHANGED_FILES" | grep -m1 "\.claude/task-briefs/" || true)
   if [ -n "$BRIEF_FILE" ]; then
     BRIEF_PATH="$ROOT/$BRIEF_FILE"
-    CRITERIA=$(grep -oP '#CRITERIA\s*[:=]\s*\K[A-D]' "$BRIEF_PATH" 2>/dev/null || true)
+    CRITERIA=$(grep -oE '#CRITERIA[[:space:]]*[:=][[:space:]]*[A-D]' "$BRIEF_PATH" 2>/dev/null | sed -E 's/.*[=:][[:space:]]*//' || true)
     if [ -n "$CRITERIA" ]; then
       # 读取条件代码映射
       CRITERIA_GLOBS=$(python -c "
@@ -1132,7 +1169,7 @@ for gx in g:
 
   # V3 CP3-2: G11 测试覆盖检查
   HAS_E2E=0; HAS_TESTS=0
-  BRIEF_ID=$(echo "$STAGED_FILES" | grep -oP '\.claude/task-briefs/\K[^.]+' | head -1 || true)
+  BRIEF_ID=$(echo "$STAGED_FILES" | grep -oE '\.claude/task-briefs/[^.]+' | sed -E 's|^\.claude/task-briefs/||' | head -1 || true)
   if [ -n "$BRIEF_ID" ]; then
     BRIEF_PATH="$ROOT/.claude/task-briefs/${BRIEF_ID}.md"
     if [ -f "$BRIEF_PATH" ]; then
@@ -1173,7 +1210,7 @@ if [ -n "${DSH_SESSION_ID:-}" ] && [ -f "$ROOT/.claude/current-brief.$DSH_SESSIO
 fi
 if [ -f "$_CB_SRC" ]; then
   _bname=$(cat "$_CB_SRC" 2>/dev/null | tr -d '[:space:]')  # swallow-ok: current-brief 缺失/读失败 → _bname 空 → 回退认领，非错误吞掉
-  _cb_date=$(echo "$_bname" | grep -oP '\d{4}-\d{2}-\d{2}' | head -1 || true)
+  _cb_date=$(echo "$_bname" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' | head -1 || true)
   if [ -n "$_cb_date" ] && [ "$_cb_date" != "$TODAY" ]; then
     :  # 陈旧的 current-brief，忽略它
   elif [ -n "$_bname" ] && [ -f "$ROOT/.claude/task-briefs/$_bname" ]; then
@@ -1283,7 +1320,7 @@ fi
 
 if [ -n "$SCOPE_VIOLATION" ]; then
   # D515 项10: 修复指引文案 — 改 scripts/ 需先认领 brief（Codex P5 曾被拦无文档说明）
-  soft_check "G12: task brief Q2 范围一致性" "$SCOPE_VIOLATION"
+  decl_check "G12: task brief Q2 范围一致性（写集单一事实源，D749）" "$SCOPE_VIOLATION"
   echo "     💡 改 scripts/ 需先认领 brief（Q2 写集声明）——见 docs/synova/coordination/版本管理规范-控制塔.md"
 else
   soft_pass "G12: 所有文件均在 Q2 范围内"
@@ -1313,7 +1350,7 @@ fi
 # D313 M3: 附挂 brief 契约检查（同源解析器 + #CRITERIA + 架构层 + Done）
 BRIEF_PARSEABLE_OUT=$(bash "$ROOT/scripts/workflow/check-brief-parseable.sh" "$BRIEF" 2>&1 || true)
 if echo "$BRIEF_PARSEABLE_OUT" | grep -q "❌"; then
-  soft_check "G12b: brief 可解析性 (D313 M3)" "$BRIEF_PARSEABLE_OUT"
+  decl_check "G12b: brief 可解析性 (D313 M3)" "$BRIEF_PARSEABLE_OUT"
 else
   soft_pass "G12b: brief 可解析 (D313 M3)"
 fi
@@ -1362,6 +1399,80 @@ else
   soft_pass "G13: 无技能文件变更(跳过)"
 fi
 
+# ═══ D782: 文档真相防线 D1/D2（附加检查；不并入 13 组编号——同 D734 接入模式）═══
+# 背景: K3 2026-09-14 权威文档一致性专项审计 §7.2 收割 2/3——D1 check-doc-truth.sh
+#   与 D2 doc-registry-gate.sh 2026-08 建成即零调用（M3「机制建成未接线」第 3 次复发：
+#   D329 P2-2 首次），W1/W2 接线断言（tests/doc-system/doc-registry-gate.test.sh L64-65）
+#   红 ≥25 天无 runner 可见。本块补调用点；本地软提示 + CI 权威（D515/D516: SYNO_CI=1
+#   时 soft_check 自动转硬）——该分工经 K3 §7.2 收割 3 判定成立，缺的只是调用点。
+# 为何不动 13 组编号: 「✅ 全部 13 组通过」自声明行是 check-doc-truth.sh C2 的真值
+#   来源，改组数 = 连锁打破 AGENTS/CLAUDE/LOOP 的「13 组」声明（审计 T1 实证该链）。
+# fastlane 通道（bypass.log 单文件提交）不经过本块——该通道语义即最小化，CI 为权威。
+# 性能: D1 grep 4 个导航文件 + D2 ls-files/diff-cached，实测 <1s（D782 验收 ≤+5s）。
+echo ""
+echo -e "${CYAN}── D782: 文档真相防线（D1 真相验证 + D2 登记门禁）──${RESET}"
+
+# D1: 导航层文档 vs 代码事实（C1 专家数 / C2 门禁组数 / C3 版本轴 / C4 路径存在）
+if [ -f "$ROOT/scripts/doc-system/check-doc-truth.sh" ]; then
+  DOC_TRUTH_OUT=$(bash "$ROOT/scripts/doc-system/check-doc-truth.sh" 2>&1)
+  DOC_TRUTH_EXIT=$?
+  _ANSI=$'\033'
+  if [ "$DOC_TRUTH_EXIT" -eq 0 ]; then
+    soft_pass "D1 文档真相: 全部硬检查通过 ($(echo "$DOC_TRUTH_OUT" | grep -c '✅' || true) ✅)"
+  elif [ "$DOC_TRUTH_EXIT" -eq 1 ]; then
+    DOC_TRUTH_FAILS=$(echo "$DOC_TRUTH_OUT" | grep '❌' | sed "s/${_ANSI}\\[[0-9;]*m//g" | sed 's/^ *//' || true)
+    soft_check "D1 文档真相: 导航层文档与代码事实不一致 — 修正后重试（bash scripts/doc-system/check-doc-truth.sh）" "$DOC_TRUTH_FAILS"
+  else
+    soft_check "D1 文档真相: 检查执行失败 (exit=$DOC_TRUTH_EXIT, D328 三态)" "exit=$DOC_TRUTH_EXIT"
+  fi
+else
+  soft_check "D1 文档真相: 脚本缺失 scripts/doc-system/check-doc-truth.sh" "1"
+fi
+
+# D2: 新增 .md/.yaml 必须登记 docs/authority/DOCS-REGISTRY.yaml（只拦新不拦旧）
+if [ -f "$ROOT/scripts/doc-system/doc-registry-gate.sh" ]; then
+  DOC_REG_OUT=$(bash "$ROOT/scripts/doc-system/doc-registry-gate.sh" 2>&1)
+  DOC_REG_EXIT=$?
+  if [ "$DOC_REG_EXIT" -eq 0 ]; then
+    soft_pass "D2 登记门禁: $(echo "$DOC_REG_OUT" | grep '汇总' | sed 's/^ *//' || true)"
+  elif [ "$DOC_REG_EXIT" -eq 1 ]; then
+    DOC_REG_FAILS=$(echo "$DOC_REG_OUT" | grep '未登记' | sed 's/^ *//' || true)
+    soft_check "D2 登记门禁: 有未登记文档 — 登记 docs/authority/DOCS-REGISTRY.yaml 或核对排除规则" "$DOC_REG_FAILS"
+  else
+    soft_check "D2 登记门禁: 检查执行失败 (exit=$DOC_REG_EXIT, D328 三态)" "exit=$DOC_REG_EXIT"
+  fi
+else
+  soft_check "D2 登记门禁: 脚本缺失 scripts/doc-system/doc-registry-gate.sh" "1"
+fi
+
+# ═══ D734: PR 预算门禁（附加检查；不并入传统 13 组编号）═══
+# 背景: 冲突概率 ∝ 改动大小 × 分支存活时间 —— D721 一个 PR 背三类门禁问题挂半天；
+#   K3 审计分支落后 main 差点回退他人成果。
+# 接线取舍（派单 §二.2 要求执行方给理由）: 派单给的是「pre-commit 新增一组 或 CI quality job
+#   一步」二选一 —— 派单红区已明列 .github/workflows/ci.yml（#520 刚改过，避免撞车）→
+#   CI 侧不可用，故选 pre-commit。
+# 为何不并入 13 组编号: 改总组数会打破 tests/control-tower/fastlane-bypass-only.test.sh 对
+#   「跳过 12 组」的断言（pre-commit-check.sh:343 的快速通道横幅），而那个测试文件不在
+#   D734 写集白名单内（创始人硬要求「写集白名单外一律不动」）→ 以额外命名的检查块接入，
+#   组数与横幅语义均不变。
+# 判定用 soft_check: 对齐 V5.0.0「本地软提示 + CI 权威」（CI Iron Laws job 注入 SYNO_CI=1 → 转硬）。
+# 性能: 只在有暂存变更时跑；纯文档提交走 CT-34 早退分支，天然不触发。实测 <0.5s。
+echo ""
+echo -e "${CYAN}── PR 预算门禁 (D734) ──${RESET}"
+if [ -x "$ROOT/scripts/control-tower/check-pr-budget.sh" ] || [ -f "$ROOT/scripts/control-tower/check-pr-budget.sh" ]; then
+  PRB_OUT=$(bash "$ROOT/scripts/control-tower/check-pr-budget.sh" --quiet 2>&1)
+  PRB_EXIT=$?
+  if [ "$PRB_EXIT" -eq 0 ]; then
+    soft_pass "D734 PR 预算: 文件数 / 单域 / 落后基线 均在预算内"
+  elif [ "$PRB_EXIT" -eq 1 ]; then
+    soft_check "D734 PR 预算超限 (拆 PR，禁调高上限——见 scripts/control-tower/check-pr-budget.sh)" "$PRB_OUT"
+  else
+    soft_check "D734 PR 预算检查执行失败 (exit=$PRB_EXIT, D328 三态)" "$PRB_OUT"
+  fi
+else
+  soft_check "D734 PR 预算: 检查脚本缺失 scripts/control-tower/check-pr-budget.sh" "1"
+fi
+
 # ── D520/任务3: 平台敏感命令软检查（V5 软提示——新增脚本须对照 PLATFORM-CHECKLIST.md）──
 # 只查本次新增（A）的 scripts/control-tower|workflow 下的 .sh/.py 文件：
 #   裸 python3（非 PYBIN 模式）/ date +%s / date -v / grep -P → 提示见 checklist。
@@ -1371,7 +1482,7 @@ if [ -f "$ROOT/scripts/control-tower/PLATFORM-CHECKLIST.md" ]; then
   if [ -n "$_PLAT_NEW" ]; then
     while IFS= read -r _pf; do
       [ -z "$_pf" ] && continue; [ ! -f "$ROOT/$_pf" ] && continue
-      _pf_hits=$(grep -nE '\bpython3\b|date \+%s|date -v|grep -P' "$ROOT/$_pf" 2>/dev/null | grep -v 'PYBIN\|swallow-ok\|D520\|#' | head -3 || true)
+      _pf_hits=$(grep -nE '\bpython3\b|date \+%s|date -v|grep -P' "$ROOT/$_pf" 2>/dev/null | grep -v 'PYBIN\|swallow-ok\|D520\|#' | head -3 || true)  # grep-P-scan-ok: 本行是 -P 检测器自身（模式字面量，非调用）
       [ -n "$_pf_hits" ] && _PLAT_HITS="${_PLAT_HITS}  ${_pf}: 平台敏感命令（见 PLATFORM-CHECKLIST.md）\n"
     done <<< "$_PLAT_NEW"
   fi

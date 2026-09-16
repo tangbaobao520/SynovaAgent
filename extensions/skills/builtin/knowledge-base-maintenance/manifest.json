@@ -6,7 +6,7 @@
   "description": "维护知识库健康，检测过时知识、冲突条目和校准状态。",
   "tier": "L6",
   "complexity": "expert",
-  "expert": "knowledge",
+  "expert": "host",
   "tools": [
     "query-knowledge",
     "query-graph"

@@ -1,0 +1,11 @@
+{
+  "task_id": "D705",
+  "title": "cto-docs-batch-d593-confirm-backlog",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-11",
+  "updated_by": "alloc-task-id"
+}

@@ -6,7 +6,7 @@
   "description": "从历史诊断和专家反馈中提取可复用的规则和模式，构建组织知识资产。",
   "tier": "L6",
   "complexity": "expert",
-  "expert": "knowledge",
+  "expert": "host",
   "tools": [
     "query-knowledge",
     "query-graph"

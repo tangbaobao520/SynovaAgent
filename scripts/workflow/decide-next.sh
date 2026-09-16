@@ -28,7 +28,8 @@ AS_ANY=$(grep -rn "as any\b" "$REPO_ROOT/src/" --include="*.ts" 2>/dev/null | gr
 echo "  as any: ${AS_ANY}"
 
 # 未跟踪的 task briefs (积压)
-STALE_BRIEFS=$(find "$REPO_ROOT/.claude/task-briefs/" -name "*.md" -mtime +7 2>/dev/null | wc -l | tr -d ' ' || echo 0)
+# D663: find 失败(pipefail)会让 || echo 0 追加成 "0\n0" → [ 报 integer expected（V4.5.1 模式4同型复发）; 先在管道内消化 find 失败
+STALE_BRIEFS=$({ find "$REPO_ROOT/.claude/task-briefs/" -name "*.md" -mtime +7 2>/dev/null || true; } | wc -l | tr -d ' ')
 if [ "$STALE_BRIEFS" -gt 3 ]; then
   echo -e "  ${YELLOW}⚠ 旧 task briefs: ${STALE_BRIEFS} 个 (>7天未清理)${NC}"
 fi
@@ -36,7 +37,9 @@ echo ""
 
 # ═══ 3. 架构健康 ═══
 echo -e "${CYAN}── 3. 架构健康 ──────────────────────────────────────${NC}"
-if [ -x "$REPO_ROOT/scripts/check-architecture.sh" ]; then
+# D662: 探测用 -f（文件存在即可, 后续 bash 调用不需要 x 位）——
+# -x 在 check-architecture.sh 无可执行位时永久误报「不存在」, 污染每次提交建议面板
+if [ -f "$REPO_ROOT/scripts/check-architecture.sh" ]; then
   ARCH_OUTPUT=$(bash "$REPO_ROOT/scripts/check-architecture.sh" 2>/dev/null || true)
   if echo "$ARCH_OUTPUT" | grep -q '❌'; then
     echo -e "  ${RED}🔴 存在跨层违规 — 请修复再继续${NC}"

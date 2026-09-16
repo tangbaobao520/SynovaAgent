@@ -6,10 +6,10 @@
   "displayName": "单位经济可持续性",
   "description": "I10: LTV/CAC比、单位毛利率。数据源: FINANCIAL, Client节点。",
   "schedule": "0 0 1 * *",
-  "expert": "business_model",
+  "expert": "competitive-strategy",
   "auxiliaryExperts": [
-    "marketing",
-    "finance"
+    "customer-growth",
+    "fundamental-efficiency"
   ],
   "priority": "P1",
   "layer": "interface",

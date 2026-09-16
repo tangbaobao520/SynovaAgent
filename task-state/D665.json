@@ -1,0 +1,22 @@
+{
+  "task_id": "D665",
+  "title": "main-build-job-failure-fix",
+  "status": "impl_done",
+  "spec": {
+    "path": ".claude/task-briefs/2026-09-10-D665-main-build-job-failure-fix.md",
+    "commit": "9aabd581",
+    "by": "synova-cto (DSH line, glm-5.3-flash)",
+    "at": "2026-09-10"
+  },
+  "impl": {
+    "path": "scripts/control-tower/check-gitlinks.sh + tests/control-tower/check-gitlinks.test.sh + .gitignore + .github/workflows/ci.yml",
+    "commit": "9aabd581 + 638bfb5b（补齐 gitlink 摘除）",
+    "by": "synova-cto (DSH line, glm-5.3-flash)",
+    "at": "2026-09-10",
+    "note": "根因=10 个运行时目录 gitlink 入树（D595 PR #459），CI checkout exit 128；守门=check-gitlinks.sh 三态+密封测试入 ci.yml；副产物登记：synova-commit pathspec 部分提交回滚吞删除项缺陷（台账待记）"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-10",
+  "updated_by": "synova-cto"
+}

@@ -14,10 +14,19 @@
 #       D601 存量 4 处随处理器原样迁移至 src/mcp/tool-definitions.ts
 #       （L1→L4 ×1 + L1→L5 ×3，计数平移非新增，归属 D601 簇 FIX 任务）。
 #
+# D593-FIX2 上调（2026-09-10, CTO 落地；K3 复审 CONDITIONAL PASS 条件①）: 36 → 38，
+#       diagnosis.ts(L1→L5) 2 → 4。⚠️ 棘轮唯一一次逆向例外，理由：本恢复是找回
+#       #442 合并冲突消解丢失的已审交付（报告落盘写点/冷读 fallback/列表端点），
+#       沿用该文件既有 dynamic-import 模式，非新开发主动新增（K3 附记判定「合理且必要」）。
+#       收紧路径 = PLAN-diagnosis-l5-di（DI 注入重构，owner=编码线，期限=下个 L1 质量批），
+#       落地后 4 → 2 → 0。
+#       规则（K3 附记补强）：基线总量只许减少；任何上调须 CTO 逐例批准，
+#       且必须在本头记录 例外理由 + 收紧任务(owner+期限)，缺一不批。
+#
 # 语义（check-architecture.sh 消费）:
 #   同文件同方向 实际命中数 > 基线 = 基线外新增违规 → 本地 ⚠ 软提示 / SYNO_CI=1 ❌ exit 1
 #   同文件同方向 实际命中数 < 基线 = 已修复 → 提示收紧基线（不阻断）
-#   粒度 file=count（行号漂移免疫；K3 可审计——总量只许减少，当前 = 36）
+#   粒度 file=count（行号漂移免疫；K3 可审计——总量只许减少，当前 = 38）
 #
 # 治理顺序（台账 CT-64）: 先修脚本可见性 → 静态 import 清零（D603）→ 动态 import
 #   36 处分批修 src/，每修复一处须同步下调本文件对应计数；全部清零后本文件删除。
@@ -50,7 +59,7 @@ src/mcp/tool-definitions.ts=3
 src/mcp/tool-registration.ts=1
 src/routes/chat.ts=1
 src/routes/conversations.ts=1
-src/routes/diagnosis.ts=2
+src/routes/diagnosis.ts=4
 src/routes/evolution.ts=1
 src/routes/ga-annotations.ts=1
 src/routes/ga-calibration.ts=1

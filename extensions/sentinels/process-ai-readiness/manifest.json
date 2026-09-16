@@ -6,7 +6,7 @@
   "displayName": "T5 流程AI化就绪度",
   "description": "T5: T5 流程AI化就绪度",
   "schedule": "0 0 1 * *",
-  "expert": "tech",
+  "expert": "technology-foundation",
   "priority": "P1",
   "layer": "technology",
   "computeKind": "heuristic",
@@ -34,7 +34,7 @@
   "entryPoint": "./aggregate.ts",
   "exportKey": "ProcessAiReadinessSentinel",
   "auxiliaryExperts": [
-    "org"
+    "organizational-capability"
   ],
   "id": "sentinel-process-ai-readiness"
 }

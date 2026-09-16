@@ -18,19 +18,23 @@ bash dsh/plugins/task-board-adapter/scripts/install.sh
 
 ## 状态映射
 
-> 2026-09-08 创始人校准：**running 仅 = claimed + spec_done**（活跃工作）。原口径 impl_done→running
-> 导致看板「进行中」虚高（94 张 vs 权威活跃 ~13），已修订。
+> 2026-09-10 创始人三列语义校准（D660）：**running 不再由状态字段决定，而是活动判定**
+> ——claimed/spec_done 认领后必须有远端分支且 48h 内有提交才算「进行中」，
+> 否则落「待办」（认领僵尸）。数据来源：git 远端分支扫描（derive 侧物理事实）。
 
 | Synova 状态 | 看板列 | 说明 |
 |---|---|---|
-| spec_done | running | 规格定，进入实现活跃期 |
-| claimed | running | 已认领 |
+| spec_done | todo → running* | 规格定；仅当远端分支 48h 内有提交 → running |
+| claimed | todo → running* | 已认领；仅当远端分支 48h 内有提交 → running |
 | impl_done | todo | 代码写完待 K3 审计（防假完成；不占 running 列） |
 | audited | done | K3 审完 |
 | closed | done | 已关闭 |
 | cancelled | failed | 已取消 |
 | failed | failed | 失败 |
 | 其他 | todo | 未知状态落入待办并告警 |
+
+\* 活动判定（48h 窗口）：无远端分支 / 分支 48h 无提交 / 扫描失败（降级）→ 一律 todo。
+待规划事项（board-backlog PLAN-* / todos.yaml T-* / 产品线 0 verified）恒落 **backlog（待规划）** 列。
 
 映射可在 profile patch 层通过 `config.statusMapping` 覆盖。Win git 派生任务同口径：
 audited→done / committed→todo（合并≠完成，待 K3 审计）。
@@ -54,7 +58,7 @@ audited→done / committed→todo（合并≠完成，待 K3 审计）。
 ## 验证
 
 ```bash
-npm test            # node --test（正常/降级/边界 14 例）
+npm test            # node --test（37+ 例，含活动判定三态）+ derive 集成（含分支活动扫描）
 # 集成：同步后读取 ~/.dsh/task-board/ledger-v2.json 与 task-state/ 对账
 ```
 

@@ -95,7 +95,7 @@ for pat in patterns:
 ")
 
   P0_COUNT=0; P1_COUNT=0; P2_COUNT=0
-  for f in "${FINDINGS[@]}"; do
+  for f in "${FINDINGS[@]:-}"; do
     sev=$(echo "$f" | cut -d'|' -f1)
     case "$sev" in P0) ((P0_COUNT++)) ;; P1) ((P1_COUNT++)) ;; P2) ((P2_COUNT++)) ;; esac
   done
@@ -113,7 +113,7 @@ for pat in patterns:
   "findings": [
 JSONEOF
   FIRST=true
-  for f in "${FINDINGS[@]}"; do
+  for f in "${FINDINGS[@]:-}"; do
     $FIRST || echo "," >> "$AUDIT_RESULT"
     FIRST=false
     sev=$(echo "$f" | cut -d'|' -f1)
@@ -192,16 +192,16 @@ for src_file in $SRC_FILES; do
     if [[ -z "$line" ]]; then continue; fi
     # 跳过注释行
     if echo "$line" | grep -qE '^\s*(//|\*|/\*)'; then continue; fi
-    file_line=$(echo "$line" | grep -oP '^[^:]+:\d+')
+    file_line=$(echo "$line" | grep -oE '^[^:]+:[0-9]+' || true)
     add_finding "P0" "TYPES" "$file_line" "as any 在生产代码中"
-  done < <(git diff "$DIFF_RANGE" -U0 -- "$src_file" 2>/dev/null | grep -oP '^\+.*\bas any\b' || true)
+  done < <(git diff "$DIFF_RANGE" -U0 -- "$src_file" 2>/dev/null | grep -oE '^\+.*(^|[^a-zA-Z0-9_])as any([^a-zA-Z0-9_]|$)' || true)
 done
 
 # ═══ engine-core 引用检查（T001-A） ═══
 WHITELIST="src/init/engine-context.ts|src/l4/graph-bridge.ts|src/l4/diagnosis-graph-query.ts"
 for src_file in $SRC_FILES; do
   if echo "$src_file" | grep -qE "$WHITELIST"; then continue; fi
-  if git diff "$DIFF_RANGE" -U0 -- "$src_file" 2>/dev/null | grep -qP 'packages/engine-core|../../engine-core/|\.\./engine-core/'; then
+  if git diff "$DIFF_RANGE" -U0 -- "$src_file" 2>/dev/null | grep -qE 'packages/engine-core|../../engine-core/|\.\./engine-core/'; then
     add_finding "P0" "TYPES" "$src_file" "engine-core 引用违规（铁律 46）"
   fi
 done
@@ -209,22 +209,22 @@ done
 # ═══ 空 catch 检查（E001） ═══
 for src_file in $SRC_FILES; do
   while IFS= read -r match; do
-    file_line=$(echo "$match" | grep -oP '^[^:]+:\d+')
+    file_line=$(echo "$match" | grep -oE '^[^:]+:[0-9]+' || true)
     add_finding "P0" "EXCEPTION" "$file_line" "空 catch 块 — 没有 log/error 也没有 degraded"
-  done < <(git diff "$DIFF_RANGE" -U0 -- "$src_file" 2>/dev/null | grep -oP '^\+.*catch\s*\([^)]*\)\s*\{\s*\}' || true)
+  done < <(git diff "$DIFF_RANGE" -U0 -- "$src_file" 2>/dev/null | grep -oE '^\+.*catch[[:space:]]*\([^)]*\)[[:space:]]*\{[[:space:]]*\}' || true)
 done
 
 # ═══ TODO 残留检查（C002） ═══
 for src_file in $SRC_FILES; do
   while IFS= read -r match; do
-    file_line=$(echo "$match" | grep -oP '^[^:]+:\d+')
+    file_line=$(echo "$match" | grep -oE '^[^:]+:[0-9]+' || true)
     add_finding "P2" "CONTRACT" "$file_line" "TODO/FIXME 残留"
-  done < <(git diff "$DIFF_RANGE" -U0 -- "$src_file" 2>/dev/null | grep -oP '^\+.*\b(TODO|FIXME|HACK|XXX)\b' | grep -v 'TODO.*D[0-9]' || true)
+  done < <(git diff "$DIFF_RANGE" -U0 -- "$src_file" 2>/dev/null | grep -oE '^\+.*(^|[^a-zA-Z0-9_])(TODO|FIXME|HACK|XXX)([^a-zA-Z0-9_]|$)' | grep -v 'TODO.*D[0-9]' || true)
 done
 
 # ═══ 统计 ═══
 P0_COUNT=0; P1_COUNT=0; P2_COUNT=0
-for f in "${FINDINGS[@]}"; do
+for f in "${FINDINGS[@]:-}"; do
   sev=$(echo "$f" | cut -d'|' -f1)
   case "$sev" in
     P0) ((P0_COUNT++)) ;;
@@ -252,7 +252,7 @@ if [[ -n "$AGENT_SELF_REPORT" ]]; then
   fi
   # testing: 声称测试通过但审计发现S001
   if echo "$AR_LOWER" | grep -qi "test.*pass\|测试.*通过"; then
-    TEST_P1=$(echo "${FINDINGS[@]}" | grep -c "TEST" || true)
+    TEST_P1=$(echo "${FINDINGS[@]:-}" | grep -c "TEST" || true)
     if [[ $TEST_P1 -gt 0 ]]; then
       CROSS_DIMS=$(echo "$CROSS_DIMS" | sed 's/testing:pass/testing:fail/')
       ((CROSS_CHECK_FAIL++))
@@ -262,7 +262,7 @@ if [[ -n "$AGENT_SELF_REPORT" ]]; then
   fi
   # as_any: 声称as any=0但审计发现T001
   if echo "$AR_LOWER" | grep -qi "as any.*0\|as any = 0"; then
-    ASANY_P0=$(echo "${FINDINGS[@]}" | grep -c "as any" || true)
+    ASANY_P0=$(echo "${FINDINGS[@]:-}" | grep -c "as any" || true)
     if [[ $ASANY_P0 -gt 0 ]]; then
       CROSS_DIMS=$(echo "$CROSS_DIMS" | sed 's/as_any:pass/as_any:fail/')
       ((CROSS_CHECK_FAIL++))
@@ -272,7 +272,7 @@ if [[ -n "$AGENT_SELF_REPORT" ]]; then
   fi
   # exception: 声称catch有log但审计发现E001
   if echo "$AR_LOWER" | grep -qi "catch.*log\|异常.*log"; then
-    EXC_P0=$(echo "${FINDINGS[@]}" | grep -c "空 catch" || true)
+    EXC_P0=$(echo "${FINDINGS[@]:-}" | grep -c "空 catch" || true)
     if [[ $EXC_P0 -gt 0 ]]; then
       CROSS_DIMS=$(echo "$CROSS_DIMS" | sed 's/exception:pass/exception:fail/')
       ((CROSS_CHECK_FAIL++))
@@ -312,7 +312,7 @@ mkdir -p "$REPORT_DIR"
   echo '  },'
   echo '  "findings": ['
   _FIRST=1
-  for f in "${FINDINGS[@]}"; do
+  for f in "${FINDINGS[@]:-}"; do
     sev=$(echo "$f" | cut -d'|' -f1)
     cat=$(echo "$f" | cut -d'|' -f2)
     loc=$(echo "$f" | cut -d'|' -f3)
@@ -352,7 +352,7 @@ if [[ $P0_COUNT -gt 0 ]]; then
     echo ""
     echo "| 类别 | 位置 | 问题 |"
     echo "|------|------|------|"
-    for f in "${FINDINGS[@]}"; do
+    for f in "${FINDINGS[@]:-}"; do
       sev=$(echo "$f" | cut -d'|' -f1)
       if [[ "$sev" == "P0" ]]; then
         cat=$(echo "$f" | cut -d'|' -f2)
@@ -372,7 +372,7 @@ if [[ $P1_COUNT -gt 0 ]]; then
     echo ""
     echo "| 类别 | 位置 | 问题 |"
     echo "|------|------|------|"
-    for f in "${FINDINGS[@]}"; do
+    for f in "${FINDINGS[@]:-}"; do
       sev=$(echo "$f" | cut -d'|' -f1)
       if [[ "$sev" == "P1" ]]; then
         cat=$(echo "$f" | cut -d'|' -f2)
@@ -390,7 +390,7 @@ if [[ $P2_COUNT -gt 0 ]]; then
   {
     echo "## P2 发现"
     echo ""
-    for f in "${FINDINGS[@]}"; do
+    for f in "${FINDINGS[@]:-}"; do
       sev=$(echo "$f" | cut -d'|' -f1)
       if [[ "$sev" == "P2" ]]; then
         cat=$(echo "$f" | cut -d'|' -f2)

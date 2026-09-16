@@ -6,7 +6,7 @@
   "description": "从信息流密度、激励一致性、信任摩擦、惯例刚性等多维扫描组织健康状况。",
   "tier": "L3",
   "complexity": "expert",
-  "expert": "org",
+  "expert": "organizational-capability",
   "tools": [
     "compute-information-flow",
     "compute-incentive-alignment",
