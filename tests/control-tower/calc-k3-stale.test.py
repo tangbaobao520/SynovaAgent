@@ -183,12 +183,23 @@ class TestCalcK3Stale(unittest.TestCase):
 
     def test_a3_k3_pass_fresh_untouched_verified(self):
         fresh = datetime.now().strftime("%Y-%m-%d")
-        ev = {"k3.json": k3_record(fresh, [{"acceptance_point": "1-1", "verdict": "pass"}])}
+        # D790: 完整记录 = 带生成时间戳（缺 at 会显式登记 degraded，见 test_a3b）
+        ev = {"k3.json": k3_record(fresh, [{"acceptance_point": "1-1", "verdict": "pass"}],
+                                   at=fresh + "T12:00:00")}
         _, data = self._run(ev, git_cmd=self._fake_git(FAKE_GIT_ZERO_TOUCH))
         self.assertEqual(statuses(data)["1-1"], "verified",
                          "新鲜 + modules 无变更 → verified 保持（不误伤）")
         self.assertFalse([p for p in problems(data) if "1-1" in p],
                          "正常路径不得产生降级 problem")
+
+    def test_a3b_missing_at_registers_explicit_degraded(self):
+        """D790: 缺 at 的裁决记录 → 计分不变（仍 verified），但必须显式登记降级（不静默）"""
+        fresh = datetime.now().strftime("%Y-%m-%d")
+        ev = {"k3.json": k3_record(fresh, [{"acceptance_point": "1-1", "verdict": "pass"}])}
+        _, data = self._run(ev, git_cmd=self._fake_git(FAKE_GIT_ZERO_TOUCH))
+        self.assertEqual(statuses(data)["1-1"], "verified", "缺 at 不改变计分（本次口径不变）")
+        self.assertTrue(any("1-1" in p and "缺生成时间戳" in p for p in problems(data)),
+                        "缺时间戳必须显式登记 problems（D790，铁律 24/31）: %r" % problems(data))
 
     # ── A4: k3 fail → rejected，且不受 TTL/git 影响（负向短路保持在前）──
 
