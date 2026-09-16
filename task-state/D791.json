@@ -1,18 +1,43 @@
 {
   "task_id": "D791",
-  "title": "线3 报告体系 spec：一页纸结构（3-1）+ 各维度循环结论（3-7）",
-  "status": "spec_done",
+  "title": "线3 报告体系——一页纸四槽位 + 各维度循环结论 + 结论可溯源（3-1/3-7）",
+  "status": "impl_done",
   "risk": "medium",
   "spec": {
     "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D791-line3-report-onepager-20260917.md",
-    "commit": "待本 PR 合并后由生成器读取（dev-doc 交付提交见 impl.files 同分支）",
+    "commit": "23c262bc",
     "by": "synova-devdoc (DSH dev-doc session)",
     "at": "2026-09-17"
   },
-  "impl": null,
+  "impl": {
+    "commit": "583e64b7",
+    "branch": "feat/d791-line3-onepager",
+    "by": "deepseek-harness (DSH 编码 session)",
+    "at": "2026-09-17",
+    "files": [
+      ".claude/task-briefs/2026-09-17-D791-line3-report-onepager-impl.md",
+      ".gitignore",
+      "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D791-line3-report-onepager-20260917.md",
+      "docs/synova/product-lines/evidence/scenario-2026-09-17.json",
+      "scripts/golden-scenarios/GS-08-report-readable/README.md",
+      "scripts/golden-scenarios/GS-08-report-readable/expect.json",
+      "scripts/golden-scenarios/GS-08-report-readable/fixtures/diagnosis-report.json",
+      "scripts/golden-scenarios/GS-08-report-readable/render-onepager.ts",
+      "scripts/golden-scenarios/GS-08-report-readable/run.sh",
+      "scripts/golden-scenarios/evidence/GS-08-2026-09-17.json",
+      "src/agent/cycle-conclusion-service.ts",
+      "src/agent/report-assembler.ts",
+      "src/agent/report-onepager-trace.ts",
+      "src/l3/report-templates.ts",
+      "src/routes/diagnosis.ts",
+      "tests/agent/cycle-conclusion-service.test.ts",
+      "tests/agent/report-onepager-trace.test.ts"
+    ],
+    "note": "实现写集 12 文件（6 修改 + 6 新建，= D734 上限）+ .gitignore（生成物目录忽略）+ spec §5.1/S5.2/S5.5/S5.6 回填 + 点级证据。实测: GS-08 24/24 断言 pass（含 4 条负向 + http-equals-local-render 端到端等价性）；新单测 18 用例 + D480 既有 5 用例全绿；架构门禁全部通过；pre-commit 13 组过；run.sh 同日重跑 14 工件 sha 全等（幂等）。spec 回填要点: ① 计数笔误 12→实测 11，且测试文件因 pre-commit 组 2 配对硬门禁由 1 拆 2 ⇒ 最终 12；② §5.2「S1≤200」与「单行≤60」作用域消解（前者 S1、后者 S2/S3/S4，均剥离 [src:] 指针后计量——spec 自定行文案含指针实测 67 字符，≤60 数学不可满足）；③ §5.5 同日失效机制更正: at 只被 k3 路径 freshness_gate 消费，machine 路径（scenario）不传 at（calc-progress.py:216-232）⇒ 与 src/l3/ 提交同日必判 stale，正确解法是**跨天重跑**（线 1 test-2026-09-15→09-16 同型先例），DS13 判定口径未改。④ 点级证据 docs/synova/product-lines/evidence/scenario-2026-09-17.json（含 at）+ 机器证据 scripts/golden-scenarios/evidence/GS-08-2026-09-17.json；审计工件目录 scripts/golden-scenarios/evidence/GS-08-<date>/（.gitignore 忽略——机器生成日期戳产物，同 DASHBOARD*.md 生成物语义；重跑即重建）。已知偏差: D734 PR 预算 ① 21 文件 > 12 ② 跨域（win src/ + mac scripts/golden-scenarios/）——结构性冲突，已报 CTO 裁决。"
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-17",
-  "updated_by": "synova-devdoc",
+  "updated_by": "deepseek-harness",
   "note": "dev-doc 交付三件: spec（11 节 + 写集表 6 修改/3 目录级新建 = 12 文件上限 + DS1-DS14）+ 编码指令 docs/synova/coordination/编码指令-D791-线3报告体系-20260917.md + 本 state spec 段。spec 基线 origin/main@6a06e853，所有 file:line 声称在交付 worktree 内 grep/read 实测。关键实测发现（写入 spec §4）: ① GS-08 已产 3 份 verdict=pass 证据但落在 scripts/golden-scenarios/evidence/（calc-progress 只扫 docs/synova/product-lines/evidence/）② 验收点标签 S8-1/S8-2 与线 3 点 id 3-1/3-7 不匹配且全仓无映射层 → 三点循环「绿了不算分」（线 3 = 8 点全 0 证据的根因之一）⇒ spec §5.5 给出兑换链路修复。DSH 基线更正: 本机实装 0.1.5-rc.2 / 241 包，旧图纸 DSH 侧描述已过期，本 spec 零 DSH 依赖。"
 }
