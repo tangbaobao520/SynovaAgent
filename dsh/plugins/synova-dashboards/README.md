@@ -1,21 +1,21 @@
-# @synova/dsh-dashboards — Synova 全局跟踪三仪表盘 + 项目总览（DSH Web · **全局挂载**）
+# @synova/dsh-dashboards — 「项目总览」（DSH Web · **全局挂载 · 单一入口**）
 
-两块能力，同一个包、同一个 Host 半：
+左侧栏一个入口 → 中央只读面板。**入口唯一**：早期版本的右侧栏三仪表盘（`shell.overlay`）
+已并入本面板并**删除**，不再维护第二个入口。
 
-| 区域 | 形态 | 数据源（Host 端按请求实时读盘，无缓存） |
-|------|------|----------------------------------------|
-| **项目总览**（D794，左侧栏入口 → 中央面板） | `sidebar.panellist` 图标行 + `main` keyed cell | `docs/synova/project/ledger.json`（D795 派生器产出，**只读**） |
-| **三仪表盘**（右侧栏 52px ↔ 372px） | `shell.overlay` | 见下表 |
+| 面板区块 | 数据 | 数据源（Host 端按请求实时取数，无缓存） |
+|---|---|---|
+| ① 顶部四数 | 交付度 / 验证率 / 保鲜红灯 / 阻塞数 | `ledger.totals` |
+| ② 26 线总览 | 每线 V1 通过 x/y、保鲜色、阻塞标签、断言明细（点行展开） | `ledger.lines` |
+| ③ 阻塞清单 | 原因 + 起始 + 需要谁 + 已卡天数 | `ledger.blocked` |
+| ④ 执行看板 | D# / 状态 / owner / 停滞天数（降序取前 12 + 状态分布） | `ledger.tasks`（D795 由 `task-state/*.json` 派生） |
+| ⑤ 健康 | 真绕过 / 门禁拒绝 / 提交失败 + M 模式复发 + CTO 判定 | `GET /synova/dashboards/data` → `health`（`.claude/bypass.log`、`.claude/pre-commit-failures.log`、AUDIT-FINDINGS-LEDGER、CTO-HEALTH） |
+| ⑥ 时间轴 | 里程碑泳道 / 计划×实际 | `ledger.timeline` |
 
-三仪表盘页签：
+> 原右栏「完成度」页签**已删重复**——其信息（26 线进度）由区块 ② 覆盖。
+> 原「任务」「健康」两页签分别并入区块 ④ / ⑤。
 
-| 页签 | 数据 | 数据源 |
-|------|------|--------|
-| ① 完成度 | 26 条产品线进度（总体 % + 逐线 bar + 已验证点数） | `docs/synova/product-lines/product-progress.json` |
-| ② 任务 | 在途任务卡片（D#/状态/更新人/提交/审计）+ 最近任务 | `task-state/*.json` + `docs/synova/DASHBOARD-CN.md` |
-| ③ 健康 | 真绕过/门禁拒绝/提交失败计数 + M 模式复发 + CTO 判定 | `.claude/bypass.log`、`.claude/pre-commit-failures.log`、`docs/synova/audit-reports/`、`docs/synova/CTO-HEALTH.md` |
-
-**实时性**：项目总览 60s 轮询 + 回到前台刷新 + 手动刷新；右栏三仪表盘 15s。两者均由 Host 半每次请求实时读盘。
+**实时性**：60s 轮询 + 回到前台立即刷新 + 手动刷新；由 Host 半每次请求实时取数。
 
 ## 架构
 
@@ -35,33 +35,52 @@
 
 | 路由 | 成功 | 降级 |
 |------|------|------|
-| `GET /synova/dashboards/data` | 三仪表盘 payload | 200 + `{degraded:true, error}`（每个 section 独立降级） |
-| `GET /synova/pm/ledger` | `docs/synova/project/ledger.json` **原文**（原样透传） | 200 + `{ok:false, degraded:true, error, path}` |
+| `GET /synova/pm/ledger` | 200 + `{ ...ledger, ok:true, source:"worktree"\|"origin/main"[, source_detail] }` | 200 + `{ok:false, degraded:true, error, attempts}` |
+| `GET /synova/dashboards/data` | 健康区 payload（`health` 被面板区块 ⑤ 使用） | 200 + `{degraded:true, error}`（每个 section 独立降级） |
 
-- 账本读取器 `lib/ledger.js` 纯 Node（无 cordis 依赖，可独立测试）；
-  三条降级路径（ENOENT / BAD_JSON / 其它 I/O）**全部不抛异常**，且都会 `logger.warn` 留痕（铁律 24/31）。
+**账本三级取数**（`lib/ledger.js`，D794 收口）：
+
+1. 工作区 `<repoRoot>/docs/synova/project/ledger.json` → `source="worktree"`
+2. 否则 `git -C <repoRoot> show origin/main:docs/synova/project/ledger.json` → `source="origin/main"`
+3. 两级都失败 → 显式 `degraded`，`error`/`attempts` 带上**每一级各自的原因**
+
+> **为什么**：只读工作区文件时，谁 checkout 了别的分支账本就随之消失 →「数据不通」（实测）。
+> 第 2 级以 `origin/main`（D334「main 是唯一真相」）为权威回退。
+> 工作区账本**坏 JSON 也不直接判死**，会继续尝试第 2 级（并在 `source_detail` 说明）。
+> 本模块**不执行 `git fetch`**：`origin/main` ref 的新鲜度依赖仓库既有 fetch 纪律（铁律 0-3 / pre-push）。
+
+- 账本读取器 `lib/ledger.js` 纯 Node（无 cordis 依赖，可独立测试）；三级**全部不抛异常**，
+  降级与回退都会 `logger.warn` 留痕（铁律 24/31：禁静默）。
 - 数据收集器 `lib/collect.js` 同上，逐 section 独立 try/catch。
 - **零写入**：Host 半只 `readFile` + 只读 `git show/ls-tree/log`，不写工作区/仓库/账本。
 
 ### Client 半（`lib/client.js`，浏览器）
 
 以 `window.__ModuleLoader__.load` 工厂格式**手写，无需构建**；只 require 静态种子模块
-（react / react/jsx-runtime）。注册三处槽位：
+（react / react/jsx-runtime）。注册**两处**槽位（二者成对、id 相同）：
 
 | 槽位 | 签名 | 用途 |
 |------|------|------|
 | `main`（keyed） | `{key: "synova-project-overview"}` | 项目总览中央面板 |
 | `sidebar.panellist`（list） | `{id: "synova-project-overview", order: 50, label: "项目总览"}` | 左侧栏入口图标（收 owner props `{size, active}`） |
-| `shell.overlay`（list） | `{id: "synova-dashboards", order: 200}` | 右侧栏三仪表盘 |
+
+样式注入会在每次 `apply` 前移除本插件此前注入的所有 `<style>` 再插当前一份 —— 保证 HMR 后
+不残留旧规则。旧版按固定 key 判重会拒绝重注入（改过 CSS 仍跑旧样式）。
 
 > **官方全局面板协议**（依据 `@deepseek-ai/dsh-client-ui-sidebar` README §全局面板入口）：
 > `sidebar.panellist` 的**同一个 id** 寻址 root 作用域 `main` keyed slot 的组件；
 > **选择未注册的 main key 会抛错并保留当前选中态** ⇒ 必须先注册 `main`，再注册入口行。
 > 该插槽已由官方 sidebar（非第三方替换侧栏）声明，故任意环境下都在场；无注册项时整块不渲染。
 
-项目总览面板四区块：① 顶部四数（交付度 / 验证率 / 保鲜红灯 / 阻塞数）② 26 线总览（点行展开断言明细）
-③ 阻塞清单（原因 + 起始 + 需要谁 + 已卡天数）④ 时间轴（`ledger.timeline` 缺失时显式显示「待数据（D795）」）。
-三态降级均显式呈现、不白屏不抛错：网络/HTTP 失败、路由级 `ok:false`、账本级 `degraded:true`（含 `degraded_sources`）。
+面板六区块见文首表格；头部有**取数来源标记**（`源 worktree` / `源 origin/main`，验收用）。
+**四态降级均显式呈现、不白屏不抛错**（铁律 24/31）：
+
+1. 网络/HTTP 失败 → 硬降级横幅
+2. 路由级 `ok:false` → 降级横幅（工作区与 `origin/main` 都无账本时的正常态）
+3. 账本级 `degraded:true` → 部分降级警告 + `degraded_sources`
+4. 健康路由失败 / `health.ok===false` → **仅健康区**显示降级文案（其余区块照常）
+
+账本与健康是两条独立请求，任一失败不影响另一块（`Promise.allSettled`）。
 「返回会话」走 `ctx.layout.selectPanel(null)`。
 
 ## 安装
@@ -87,7 +106,7 @@ bash dsh/plugins/synova-dashboards/scripts/install-dashboards.sh
 ## 验证
 
 ```bash
-cd dsh/plugins/synova-dashboards && npm test     # 21 条：ledger 读取 / Host 路由 / 面板渲染
+cd dsh/plugins/synova-dashboards && npm test     # 28 条：三级取数 / Host 路由 / 面板渲染（含降级与回退）
 
 # 合成树（不启动服务即可证明 bundle 层挂载）
 dsh --profile web --dump-config | grep -A5 "@synova/dsh-dashboards"
@@ -108,9 +127,11 @@ rm -rf ~/.dsh/profiles/web/node_modules/@synova/dsh-dashboards
 ## 已知限制
 
 - 安装/升级后需**重启 dsh web**才生效（进程启动时缓存 client 包元数据）。
-- 项目总览的数据依赖 D795 的 `docs/synova/project/ledger.json`；该文件未产出时面板显示
-  **显式降级文案**（不白屏、不崩、不静默填 0），这是预期态而非故障。
+- **`origin/main` 回退要真正生效，前提是 `docs/synova/project/ledger.json` 已提交进 main**。
+  该文件目前只存在于工作区（D795 尚未把产物提交进 main）→ 此时工作区文件一旦消失
+  （改名/切换分支）仍会走第 3 级显式降级。D795 提交后回退即自动可用（代码路径已由测试覆盖）。
+- 本模块不执行 `git fetch`：`origin/main` ref 若陈旧，回退到的就是陈旧账本。
 - 项目总览面板为**只读视图**：不写工作区/仓库/账本，也不写 localStorage（面板状态仅存在于内存）。
-- 右栏三仪表盘为悬浮层（`shell.overlay`），不挤压对话区；宽度 372px。
-- 数据为轮询快照，非推送流。
+- 数据为轮询快照（60s），非推送流。
+- 执行看板取 `ledger.tasks`（D795 由 `task-state/*.json` 派生），不再独立扫 task-state —— 单一真相源，避免两套口径。
 - 重新安装 DSH CLI（npm -g）不影响本插件（装在 profile 层）；profile 目录被删除重建时重跑安装脚本。

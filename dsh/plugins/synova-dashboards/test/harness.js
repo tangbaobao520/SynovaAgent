@@ -8,6 +8,25 @@ import { dirname, join } from "node:path";
 
 const SRC = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../lib/client.js"), "utf8");
 
+/** 健康区默认夹具（多数用例只关心账本，给一份可用 health 让健康区正常渲染）。 */
+export const DASH_OK = {
+  meta: { repoRoot: "/repo", generated_at: "2026-09-17T10:00:00+08:00" },
+  product: { ok: true, product_progress_pct: 0, total_lines: 26, lines: [] },
+  tasks: { ok: true, states: [], recent: [] },
+  health: {
+    ok: true,
+    bypass: {
+      present: true,
+      total_events: 340,
+      counts: { COMMITTED: 334, "detected-bypass": 0, BLOCKED: 0, DEGRADED: 0 },
+      recent: [],
+    },
+    precommit_failures: { present: true, count: 0, recent: [] },
+    m_patterns: [],
+    cto_verdict: "🟢 绿",
+  },
+};
+
 /** 装载插件脚本，返回 { apply, registrations, fetchCalls }。 */
 export function loadPlugin() {
   const registrations = [];
@@ -62,6 +81,7 @@ export function loadPlugin() {
   const documentStub = {
     visibilityState: "visible",
     querySelector: () => null,
+    querySelectorAll: () => [],
     createElement: () => ({ dataset: {}, textContent: "" }),
     head: { appendChild() {} },
     addEventListener() {},
@@ -137,8 +157,17 @@ export function loadPlugin() {
       g.effectQueue = [];
       globalThis.fetch = async (url, o) => {
         fetchCalls.push({ url, options: o });
+        const isDash = String(url).includes("/synova/dashboards/data");
         if (opts.fetchThrows) throw new Error(opts.fetchThrows);
         if (opts.httpStatus) return { ok: false, status: opts.httpStatus, json: async () => ({}) };
+        // 两条路由可分别注入失败，用于验证「各自独立降级」
+        if (isDash && opts.dashThrows) throw new Error(opts.dashThrows);
+        if (!isDash && opts.ledgerThrows) throw new Error(opts.ledgerThrows);
+        if (isDash && opts.dashStatus) return { ok: false, status: opts.dashStatus, json: async () => ({}) };
+        if (!isDash && opts.ledgerStatus) return { ok: false, status: opts.ledgerStatus, json: async () => ({}) };
+        if (isDash) {
+          return { ok: true, status: 200, json: async () => (opts.dash === undefined ? DASH_OK : opts.dash) };
+        }
         return { ok: true, status: 200, json: async () => payload };
       };
       const panelReg = registrations.find((r) => r.options && r.options.name === "main");

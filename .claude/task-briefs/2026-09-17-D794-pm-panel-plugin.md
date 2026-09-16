@@ -76,15 +76,12 @@ scripts（控制塔工具链）+ DSH Web GUI 插件层（非产品 L1-L5）
 
 | 文件 | 类型 |
 |---|---|
-| .claude/task-briefs/2026-09-17-D794-pm-panel-plugin.md | task |
 | dsh/plugins/synova-dashboards/README.md | task |
-| dsh/plugins/synova-dashboards/cordis.patch.yml | task |
 | dsh/plugins/synova-dashboards/lib/client.js | task |
 | dsh/plugins/synova-dashboards/lib/index.js | task |
 | dsh/plugins/synova-dashboards/lib/ledger.js | task |
-| dsh/plugins/synova-dashboards/package.json | task |
-| dsh/plugins/synova-dashboards/scripts/install-dashboards.sh | task |
 | dsh/plugins/synova-dashboards/test/client-panel.test.js | task |
 | dsh/plugins/synova-dashboards/test/harness.js | task |
 | dsh/plugins/synova-dashboards/test/host-route.test.js | task |
 | dsh/plugins/synova-dashboards/test/ledger.test.js | task |
+

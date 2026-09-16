@@ -17,6 +17,8 @@ import { loadPlugin } from "./harness.js";
 
 const LEDGER_OK = {
   schema: "project-ledger/1",
+  ok: true,
+  source: "worktree", // 路由成功时总会带上取数来源（lib/index.js 注入）
   generated_by: "gen-project-board.py",
   generated_at: "2026-09-17T10:00:00+08:00",
   git_head: "6a06e853abcdef",
@@ -60,11 +62,15 @@ test("注册契约：sidebar.panellist 入口行与 main keyed cell 成对，且
       p.registrations.indexOf(cell) < p.registrations.indexOf(entry),
       "main cell 必须先于入口行注册"
     );
-    // 右栏三仪表盘仍然注册（不得影响现有功能）
-    assert.ok(
-      p.registrations.some((r) => r.options && r.options.name === "shell.overlay"),
-      "原有 shell.overlay 右栏必须保留"
+    // 入口唯一（创始人要求）：右栏 shell.overlay 必须不再注册
+    assert.equal(
+      p.registrations.filter((r) => r.options && r.options.name === "shell.overlay").length,
+      0,
+      "右栏已并入中央面板，不得再注册 shell.overlay"
     );
+    // 除这两个槽位外不得注册任何其它槽位
+    const names = p.registrations.filter((r) => r.options).map((r) => r.options.name).sort();
+    assert.deepEqual(names, ["main", "sidebar.panellist"], "只允许注册 main + sidebar.panellist 两个槽位");
   } finally {
     p.restore();
   }
@@ -88,6 +94,15 @@ test("正常路径：账本数据 → 三数 / 26 线 / 阻塞 / 时间轴占位
     assert.match(text, /等 Win 真机/);
     assert.match(text, /已卡 2 天/);
     assert.match(text, /需要 Win 机器/);
+    // 取数来源标注（验收 b）
+    assert.match(text, /源 worktree/);
+    // 执行看板区（并入原右栏「任务」页签）—— 本夹具无 tasks，断言显式空态
+    assert.match(text, /执行看板/);
+    assert.match(text, /ledger 无 tasks 数据（待 D795）/);
+    // 健康区（并入原右栏「健康」页签）
+    assert.match(text, /健康/);
+    assert.match(text, /真绕过（detected-bypass）/);
+    assert.match(text, /门禁拒绝（BLOCKED）/);
     // 时间轴占位（ledger 无 timeline → 显式文案，不得空白）
     assert.match(text, /待数据（D795）/);
     // 无硬降级横幅（⚠ 降级：）
@@ -159,9 +174,10 @@ test("零写入：面板只发 GET /synova/pm/ledger，无任何写方法", asyn
   const p = loadPlugin();
   try {
     await p.render(LEDGER_OK);
-    assert.ok(p.fetchCalls.length > 0, "必须真的请求账本");
+    assert.ok(p.fetchCalls.length > 0, "必须真的请求数据");
+    const urls = p.fetchCalls.map((c) => c.url).sort();
+    assert.deepEqual(urls, ["/synova/dashboards/data", "/synova/pm/ledger"], "只允许这两条只读路由");
     for (const c of p.fetchCalls) {
-      assert.equal(c.url, "/synova/pm/ledger");
       const method = (c.options && c.options.method) || "GET";
       assert.equal(method, "GET");
       assert.equal(c.options && c.options.cache, "no-store");
@@ -184,6 +200,85 @@ test("返回会话：面板头部 onBack 走 layout.selectPanel(null)（恢复�
     el.props.onBack();
     // 官方契约：null = 显示 Conversation（不改变当前 Session）
     assert.deepEqual(p.panelSelections, [null]);
+  } finally {
+    p.restore();
+  }
+});
+
+test("取数来源：source=origin/main（git 权威回退）→ 面板显式标出，不伪装成工作区", async () => {
+  const p = loadPlugin();
+  try {
+    const text = await p.render(Object.assign({}, LEDGER_OK, {
+      source: "origin/main",
+      source_detail: "工作区无 docs/synova/project/ledger.json；已回退 git 权威 origin/main",
+    }));
+    assert.match(text, /源 origin\/main/);
+    assert.doesNotMatch(text, /源 worktree/);
+    // 回退仍须出数：三数照常渲染
+    assert.match(text, /交付度 · V1 断言 5\/125/);
+  } finally {
+    p.restore();
+  }
+});
+
+test("健康区降级可见：健康路由失败 → 该区显式降级文案，账本区不受影响", async () => {
+  const p = loadPlugin();
+  try {
+    const text = await p.render(LEDGER_OK, { dashThrows: "Failed to fetch health" });
+    assert.match(text, /健康区降级：/);
+    assert.match(text, /Failed to fetch health/);
+    // 账本区照常可用（各自独立降级，铁律 31）
+    assert.match(text, /交付度 · V1 断言 5\/125/);
+    assert.match(text, /26 线总览/);
+    assert.doesNotMatch(text, /⚠ 降级：/, "账本未降级，不应出现硬降级横幅");
+  } finally {
+    p.restore();
+  }
+});
+
+test("健康区降级可见：health.ok=false → 显示其 error，不白屏", async () => {
+  const p = loadPlugin();
+  try {
+    const text = await p.render(LEDGER_OK, {
+      dash: { meta: {}, health: { ok: false, degraded: true, error: "AUDIT-FINDINGS-LEDGER.md 缺失" } },
+    });
+    assert.match(text, /健康区降级：/);
+    assert.match(text, /AUDIT-FINDINGS-LEDGER\.md 缺失/);
+  } finally {
+    p.restore();
+  }
+});
+
+test("执行看板：ledger.tasks → D#/状态/owner/停滞天数 全渲染，按停滞降序", async () => {
+  const p = loadPlugin();
+  try {
+    const text = await p.render(Object.assign({}, LEDGER_OK, {
+      tasks: [
+        { id: "D1", title: "久拖未决", status: "claimed", owner: "mac-coding", stale_days: 30, updated_at: "2026-08-18" },
+        { id: "D2", title: "刚开工", status: "impl_done", owner: "create-mode", stale_days: 1, updated_at: "2026-09-16" },
+      ],
+    }));
+    assert.match(text, /执行看板/);
+    assert.match(text, /2 个任务/);
+    assert.match(text, /D1/);
+    assert.match(text, /mac-coding · 停滞 30 天/);
+    assert.match(text, /D2/);
+    assert.match(text, /create-mode · 停滞 1 天/);
+    // 状态分布标签（原右栏 statusText 复用）
+    assert.match(text, /已认领 1/);
+    assert.match(text, /实现完成 1/);
+    // 停滞降序：D1 先于 D2
+    assert.ok(text.indexOf("D1") < text.indexOf("D2"), "必须按停滞天数降序");
+  } finally {
+    p.restore();
+  }
+});
+
+test("执行看板空态：ledger 无 tasks → 显式文案，不空白", async () => {
+  const p = loadPlugin();
+  try {
+    const text = await p.render(LEDGER_OK);
+    assert.match(text, /ledger 无 tasks 数据（待 D795）/);
   } finally {
     p.restore();
   }

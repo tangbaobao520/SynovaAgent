@@ -2,10 +2,13 @@
 // 契约（铁律 47）：
 //   @input  ctx.webServer（webServer 服务）、config.repoRoot（默认 process.cwd()）
 //   @output 两条只读 GET 路由：
-//     ① GET /synova/dashboards/data → JSON DashboardPayload（右栏三仪表盘，原有）
-//     ② GET /synova/pm/ledger       → 200 application/json
-//          成功: docs/synova/project/ledger.json **原文**（原样透传，含 generated_at/git_head）
-//          降级: { ok:false, degraded:true, error:"..." }（D794 §A.4）
+//     ① GET /synova/dashboards/data → JSON DashboardPayload（三仪表盘数据源；健康区仍走它）
+//     ② GET /synova/pm/ledger       → 200 application/json，body = 账本对象 + 顶层元字段：
+//          { ...ledger, ok:true, source:"worktree"|"origin/main"[, source_detail] }
+//          · source      —— 三级取数的实际来源（见 lib/ledger.js 契约）
+//          · source_detail —— 发生了回退时的说明（工作区缺失原因）
+//          取数顺序：工作区文件 → git origin/main → 显式降级
+//          降级: { ok:false, degraded:true, error:"<两级原因>", attempts:[...] }
 //   @degraded 数据收集/读盘失败 → 200 + degraded JSON（不 500，避免前端误判为断网；
 //             不抛异常，避免拖垮宿主进程；铁律 24/31）
 //   @caching 两条路由均无缓存，每次请求读盘（沿用现有 data 路由语义）
@@ -59,12 +62,21 @@ export function apply(ctx, config = {}) {
             ok: false,
             degraded: true,
             error: result.error,
+            attempts: result.attempts,
             path: result.path
           }));
           return;
         }
+        // 命中回退时也留痕（可观测：说明为什么没走工作区）
+        if (result.fallback_note) ctx.logger.warn(`synova-dashboards/ledger: ${result.fallback_note}`);
+        // 账本字段保持在顶层（前端与既有 schema 不变），只追加元字段 ok / source / source_detail。
+        // 账本必须是对象才注入；非对象（null/数组）时用 ledger 字段包裹，避免丢数据。
+        const p = result.parsed;
+        const body = p !== null && typeof p === "object" && !Array.isArray(p)
+          ? Object.assign({}, p, { ok: true, source: result.source, ...(result.fallback_note ? { source_detail: result.fallback_note } : {}) })
+          : { ok: true, source: result.source, ledger: p };
         res.writeHead(200, HEADERS);
-        res.end(result.raw);
+        res.end(JSON.stringify(body));
       }
     });
     return () => {
