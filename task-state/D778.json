@@ -1,0 +1,13 @@
+{
+  "task_id": "D778",
+  "title": "交付物复核门禁：派单文档 pre-commit 强制 pre-dispatch-check + CTO 交付三件套固化",
+  "status": "claimed",
+  "spec": "docs/synova/coordination/编码指令-D778-派单复核门禁-20260915.md",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "note": "实证（2026-09-15 创始人质询「你写的派单文档是否符合过/复核过」）: CTO 的派单文档复核是**习惯**不是**门禁**——pre-dispatch-check.sh 只在人工调用时跑；且它自身曾在第②项崩溃（D771 修复），导致批五派单（PR #569）第一遍复核结论不完整。交付物: ① pre-commit 组：staged 的 docs/synova/coordination/派单-*.md 必须过 pre-dispatch-check（本地软、CI 硬）② 测试（绿/红/降级三态 + 注入缝）③ CTO 交付三件套写入 cto-handover skill（.claude/.dsh 双写）④ 复核必须在与 main 同步的 worktree 上跑（工作树滞后会假红/假绿）。"
+}
