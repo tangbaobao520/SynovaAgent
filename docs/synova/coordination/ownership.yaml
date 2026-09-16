@@ -163,5 +163,9 @@ rules:
 #   变化都可能要求它们同步（本次 registry v3.0 专家换代 7→6，mac 线防线启用要求文档对齐）。
 #   它们此前落 ** 兜底被判 win，但导航文档的同步需求跟着触发方走，不构成「这条 PR 属于
 #   哪条线」的信号。豁免后真跨域（win 代码 + mac 工具链）仍拦住。
-domain_neutral: [".claude/bypass.log", ".claude/gate-hits.log", ".claude/task-briefs/**", "task-state/**", "memory/notes/**", ".codex/**", "docs/synova/product-lines/evidence/**", ".gitignore", "AGENTS.md", "CLAUDE.md", "LOOP.md", "knowledge/shared/README.md"]
+# D782 增补二: 防线产物——DRIFT-LEDGER.md（doc-truth-probe 机器生成台账）与
+#   system-registry.json（gen-system-registry 生成物）。二者是 doc-system 工具链
+#   （mac）的运行产物，路径恰在 docs/authority/（兜底判 win）——同 D758 证据目录逻辑：
+#   产物跟工具链走，不构成 PR 域信号。
+domain_neutral: [".claude/bypass.log", ".claude/gate-hits.log", ".claude/task-briefs/**", "task-state/**", "memory/notes/**", ".codex/**", "docs/synova/product-lines/evidence/**", ".gitignore", "AGENTS.md", "CLAUDE.md", "LOOP.md", "knowledge/shared/README.md", "docs/authority/DRIFT-LEDGER.md", "docs/authority/system-registry.json"]
 
