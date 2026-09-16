@@ -28,6 +28,7 @@ import sys
 import tempfile
 import unittest
 from argparse import Namespace
+from datetime import datetime
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -296,6 +297,193 @@ class TestCalcStateMachine(unittest.TestCase):
         self.assertEqual(out.stat().st_mtime_ns, mtime1, "第二次运行不得重写（幂等）")
 
 
+class TestD790FreshnessTimestamp(unittest.TestCase):
+    """D790 A1: 失效比较改时间戳——证据生成时间 vs 线 modules 最后提交时间。
+
+    覆盖矩阵（卡 1 验收 + 铁律 48 正常/降级/边界）:
+      ① 同日先后: 证据在提交后 → fresh(pending_k3)；在提交前 → stale
+      ② 边界同秒: 提交时间 == 证据时间 → 不算"晚于" → touched（真 git 临时仓库验证 --since 语义）
+      ③ 降级: 缺时间戳字段 + 入库时间不可用 → 显式 degraded(problems)，保守判 stale（绝不静默当 fresh）
+      ④ 入库时间代理: 缺 at 但已入库（入库日−记录日 ≤1 天）→ 代理生效（事故夜跑场景不再误杀）
+      ⑤ 代理边界: 入库日−记录日 >1 天 → 拒绝代理（防 squash/延迟合并时间冒充生成时间）
+      ⑥ k3 计分路径不用代理: 裁决缺 at → 回退日期粒度（保守，不靠入库时间放宽 → 无假绿）
+      ⑦ 靶心: 同一天不同时点跑两次 → 逐点六态一致（真实 yaml/证据 + now 注入）
+      ⑧ 出产侧: evidence-writer 落 at（缺省写入时刻 / --at 覆盖 / 非法 fail-closed）
+    """
+
+    # 假 git: 同时实现 `-1 --format=%cI`（入库时间）与 `--since=`（含边界比较）
+    FAKE_GIT = """#!/usr/bin/env bash
+COMMIT="@@COMMIT@@"
+INGEST="@@INGEST@@"
+since=""; one=0; ingest_mode=0
+for a in "$@"; do
+  case "$a" in
+    --since=*) since="${a#--since=}";;
+    -1) one=1;;
+    --format=%cI) ingest_mode=1;;
+  esac
+done
+if [ "$one" = "1" ] && [ "$ingest_mode" = "1" ]; then
+  [ -n "$INGEST" ] && echo "$INGEST"
+  exit 0
+fi
+if [ -n "$since" ] && [ -n "$COMMIT" ]; then
+  if [[ ! "$COMMIT" < "$since" ]]; then echo "src/l4/mod.ts"; fi
+fi
+exit 0
+"""
+
+    def _fake_git(self, tmp, commit, ingest=""):
+        p = write(tmp, "fake-git.sh", self.FAKE_GIT.replace("@@COMMIT@@", commit).replace("@@INGEST@@", ingest))
+        os.chmod(p, 0o755)
+        return str(p)
+
+    def _machine_record(self, rec_type, date, at=None, points=("1-3",), verdict="pass"):
+        rec = {"schema": 1, "record_type": rec_type, "source": "s", "date": date,
+               "verdicts": [{"acceptance_point": p, "verdict": verdict} for p in points]}
+        if at:
+            rec["at"] = at
+        return json.dumps(rec, ensure_ascii=False)
+
+    def _run(self, tmp, evidence_files, git_cmd="git", now=None, mini_yaml=MINI_YAML):
+        tmp = Path(tmp)
+        ypath = write(tmp, "y.yaml", mini_yaml)
+        evdir = tmp / "evidence"
+        evdir.mkdir(exist_ok=True)
+        for name, content in evidence_files.items():
+            (evdir / name).write_text(content, encoding="utf-8")
+        ovr = write(tmp, "override.yaml", "version: 1.0\npending_decisions: []\n")
+        out = tmp / "out.json"
+        result = calc.compute(ypath, evdir, ovr, git_cmd, out, now=now)
+        return result, json.loads(out.read_text(encoding="utf-8"))
+
+    @staticmethod
+    def _statuses(data):
+        return {p["id"]: p["status"] for p in data["lines"][0]["points"]}
+
+    # ── ① 同日先后两情形 ──────────────────────────────────────────────
+    def test_same_day_evidence_after_commit_is_fresh(self):
+        """证据 23:40 晚于当日 21:41 提交 → fresh → pending_k3（修复前 date 粒度必 stale）"""
+        tmp = tempfile.mkdtemp()
+        fake = self._fake_git(tmp, commit="2026-09-15T21:41:57+08:00")
+        ev = {"s.json": self._machine_record("scenario", "2026-09-15", at="2026-09-15T23:40:00+08:00")}
+        now = datetime.strptime("2026-09-15T23:50:00", "%Y-%m-%dT%H:%M:%S")
+        _, data = self._run(tmp, ev, git_cmd=fake, now=now)
+        self.assertEqual(self._statuses(data)["1-3"], "pending_k3",
+                         "证据时间 > 提交时间 → fresh")
+
+    def test_same_day_evidence_before_commit_is_stale(self):
+        """证据 07:00 早于当日 21:41 提交 → stale（粒度增强不放松失效检测）"""
+        tmp = tempfile.mkdtemp()
+        fake = self._fake_git(tmp, commit="2026-09-15T21:41:57+08:00")
+        ev = {"s.json": self._machine_record("scenario", "2026-09-15", at="2026-09-15T07:00:00+08:00")}
+        now = datetime.strptime("2026-09-15T23:50:00", "%Y-%m-%dT%H:%M:%S")
+        _, data = self._run(tmp, ev, git_cmd=fake, now=now)
+        self.assertEqual(self._statuses(data)["1-3"], "stale",
+                         "证据时间 < 提交时间 → stale")
+
+    # ── ② 边界（同秒，真 git）────────────────────────────────────────
+    def test_real_git_same_second_boundary(self):
+        """真 git 临时仓库: --since 含边界 → 同秒算 touched；晚 1 秒才 fresh"""
+        repo = Path(tempfile.mkdtemp())
+        env = dict(os.environ, GIT_AUTHOR_DATE="2026-09-15T21:41:57+08:00",
+                   GIT_COMMITTER_DATE="2026-09-15T21:41:57+08:00")
+        for cmd in (["git", "init", "-q"], ["git", "config", "user.email", "t@example.com"],
+                    ["git", "config", "user.name", "t"]):
+            subprocess.run(cmd, cwd=repo, check=True, env=env)
+        (repo / "src").mkdir()
+        (repo / "src" / "mod.ts").write_text("x", encoding="utf-8")
+        subprocess.run(["git", "add", "-A"], cwd=repo, check=True, env=env)
+        subprocess.run(["git", "commit", "-q", "-m", "c"], cwd=repo, check=True, env=env)
+
+        same, err = calc.git_touched_after(["src/"], "2026-09-15T21:41:57+08:00", "git", cwd=repo)
+        self.assertTrue(same, "提交时间 == 证据时间 → touched（fresh 需严格 证据时间 > 提交时间）")
+        self.assertIsNone(err)
+        after, _ = calc.git_touched_after(["src/"], "2026-09-15T21:41:56+08:00", "git", cwd=repo)
+        self.assertTrue(after, "证据早 1 秒 → touched")
+        later, _ = calc.git_touched_after(["src/"], "2026-09-15T21:41:58+08:00", "git", cwd=repo)
+        self.assertFalse(later, "证据晚 1 秒 → 不 touched（fresh）")
+
+        ts, err = calc.git_last_commit_time(repo / "src" / "mod.ts", "git", cwd=repo)
+        self.assertEqual(ts, "2026-09-15T21:41:57+08:00", "入库时间 = committer 时间（ISO 8601 带偏移）")
+        self.assertIsNone(err)
+        (repo / "untracked.json").write_text("{}", encoding="utf-8")
+        ts2, err2 = calc.git_last_commit_time(repo / "untracked.json", "git", cwd=repo)
+        self.assertIsNone(ts2, "未入库 → 无入库时间")
+        self.assertIsNone(err2, "未入库不是错误（正常默认）")
+
+    # ── ③ 降级: 缺时间戳 + 无入库时间 ───────────────────────────────
+    def test_missing_timestamp_degrades_not_silently_fresh(self):
+        """缺 at 且入库时间不可用 → 显式 degraded + 日期粒度保守判 stale（当日提交算 touched）"""
+        tmp = tempfile.mkdtemp()
+        fake = self._fake_git(tmp, commit="2026-09-15T21:41:57+08:00", ingest="")
+        ev = {"s.json": self._machine_record("scenario", "2026-09-15")}
+        now = datetime.strptime("2026-09-15T23:50:00", "%Y-%m-%dT%H:%M:%S")
+        _, data = self._run(tmp, ev, git_cmd=fake, now=now)
+        self.assertEqual(self._statuses(data)["1-3"], "stale", "保守回退日期粒度（当日提交 → stale）")
+        probs = data["degraded"]["problems"]
+        self.assertTrue(any("缺生成时间戳" in p and "1-3" in p for p in probs),
+                        "缺时间戳必须显式登记 problems（不静默）: %r" % probs)
+
+    # ── ④ 入库时间代理（事故夜跑场景）───────────────────────────────
+    def test_ingest_time_proxy_rescues_night_run(self):
+        """09-15 夜跑证据（date=09-15，无 at）次日 00:47 入库 → 代理 00:47 > 21:41 提交 → fresh"""
+        tmp = tempfile.mkdtemp()
+        fake = self._fake_git(tmp, commit="2026-09-15T21:41:57+08:00",
+                              ingest="2026-09-16T00:47:09+08:00")
+        ev = {"s.json": self._machine_record("scenario", "2026-09-15")}
+        now = datetime.strptime("2026-09-15T23:50:00", "%Y-%m-%dT%H:%M:%S")
+        _, data = self._run(tmp, ev, git_cmd=fake, now=now)
+        self.assertEqual(self._statuses(data)["1-3"], "pending_k3", "入库时间代理 → 不误杀")
+        self.assertTrue(any("以 git 入库时间" in p for p in data["degraded"]["problems"]),
+                        "代理必须显式登记（不静默放宽）")
+
+    def test_ingest_time_proxy_rejected_when_too_late(self):
+        """入库日 − 记录日 > 1 天 → 拒绝代理（防 squash/延迟合并时间冒充生成时间）→ 保守 stale"""
+        tmp = tempfile.mkdtemp()
+        fake = self._fake_git(tmp, commit="2026-09-15T21:41:57+08:00",
+                              ingest="2026-09-20T10:00:00+08:00")
+        ev = {"s.json": self._machine_record("scenario", "2026-09-15")}
+        now = datetime.strptime("2026-09-20T11:00:00", "%Y-%m-%dT%H:%M:%S")
+        _, data = self._run(tmp, ev, git_cmd=fake, now=now)
+        self.assertEqual(self._statuses(data)["1-3"], "stale", "代理被拒 → 回退日期粒度")
+        self.assertTrue(any(">1 天" in s for s in data["degraded"]["sources"]),
+                        "拒绝理由必须显式登记 sources: %r" % data["degraded"]["sources"])
+
+    # ── ⑥ k3 计分路径不用代理（防假绿）───────────────────────────────
+    def test_k3_scoring_path_never_uses_ingest_proxy(self):
+        """k3 裁决缺 at → 回退日期粒度（保守）；不得用入库时间放宽成 verified"""
+        tmp = tempfile.mkdtemp()
+        fake = self._fake_git(tmp, commit="2026-09-15T21:41:57+08:00",
+                              ingest="2026-09-16T00:47:09+08:00")
+        ev = {"k3.json": k3_record("2026-09-15", [{"acceptance_point": "1-1", "verdict": "pass"}])}
+        now = datetime.strptime("2026-09-15T23:50:00", "%Y-%m-%dT%H:%M:%S")
+        _, data = self._run(tmp, ev, git_cmd=fake, now=now)
+        self.assertEqual(self._statuses(data)["1-1"], "stale",
+                         "计分路径缺 at → 保守判定（不靠入库时间放宽）")
+        self.assertTrue(any("裁决证据缺生成时间戳" in p for p in data["degraded"]["problems"]),
+                        "计分路径降级必须显式登记")
+
+    # ── ⑦ 靶心: 同一天不同时点跑两次 → 六态一致 ─────────────────────
+    def test_same_day_two_run_times_identical(self):
+        """真实 yaml + 真实证据 + 真实 git: 同日 06:00 与 22:00 两次重算 → 逐点六态一致"""
+        day = datetime.now().strftime("%Y-%m-%d")
+        t1 = datetime.strptime(day + " 06:00:00", "%Y-%m-%d %H:%M:%S")
+        t2 = datetime.strptime(day + " 22:00:00", "%Y-%m-%d %H:%M:%S")
+        tmp = Path(tempfile.mkdtemp())
+        r1 = calc.compute(DOC_DIR / "product-lines.yaml", DOC_DIR / "evidence",
+                          DOC_DIR / "cockpit-override.yaml", "git", tmp / "a.json", now=t1)
+        r2 = calc.compute(DOC_DIR / "product-lines.yaml", DOC_DIR / "evidence",
+                          DOC_DIR / "cockpit-override.yaml", "git", tmp / "b.json", now=t2)
+        s1 = {l["id"]: [(p["id"], p["status"]) for p in l["points"]] for l in r1["lines"]}
+        s2 = {l["id"]: [(p["id"], p["status"]) for p in l["points"]] for l in r2["lines"]}
+        self.assertEqual(s1, s2, "同一天不同时点 → 六态必须逐点一致（判据不得依赖运行时刻）")
+        c1 = {k: sum(l["status_counts"][k] for l in r1["lines"]) for k in calc.SIX_STATES}
+        c2 = {k: sum(l["status_counts"][k] for l in r2["lines"]) for k in calc.SIX_STATES}
+        self.assertEqual(c1, c2, "六态计数一致: %r vs %r" % (c1, c2))
+        self.assertEqual(r1["product_progress_pct"], r2["product_progress_pct"])
+
+
 class TestAggregateTodos(unittest.TestCase):
     """3. aggregate-todos.py: 真实源 + 区间展开 + 幂等 + MANUAL 保留 + fail-closed"""
 
@@ -469,6 +657,20 @@ class TestAScripts(unittest.TestCase):
         # 同日同类第二次 → 递增序号防覆盖
         evw.write_evidence("ci", "2026-08-16", "fail", "7-1", "test-job", "", tmp)
         self.assertTrue((tmp / "ci-2026-08-16-1.json").exists())
+
+    def test_evidence_writer_at_stamp(self):
+        """D790: 证据记录必须带生成时间戳 at（缺省=写入时刻；--at 覆盖；非法 fail-closed）"""
+        tmp = Path(tempfile.mkdtemp())
+        evw.write_evidence("ci", "2026-09-17", "pass", "7-1", "job", "log", tmp,
+                           at="2026-09-17T00:30:00+08:00")
+        rec = json.loads((tmp / "ci-2026-09-17.json").read_text(encoding="utf-8"))
+        self.assertEqual(rec["at"], "2026-09-17T00:30:00+08:00", "--at 覆盖生效")
+        evw.write_evidence("ci", "2026-09-17", "pass", "7-2", "job", "log", tmp)
+        rec2 = json.loads((tmp / "ci-2026-09-17-1.json").read_text(encoding="utf-8"))
+        self.assertIsNotNone(calc.parse_iso_ts(rec2["at"]), "缺省 at = 写入时刻（可解析 ISO 8601）")
+        with self.assertRaises(SystemExit) as cm:
+            evw.write_evidence("ci", "2026-09-17", "pass", "7-3", "job", "log", tmp, at="not-a-time")
+        self.assertEqual(cm.exception.code, 2, "非法 at → fail-closed exit 2")
 
     def test_evidence_writer_boundary(self):
         tmp = Path(tempfile.mkdtemp())

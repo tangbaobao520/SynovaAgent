@@ -9,7 +9,10 @@ evidence-writer.py — 机器验证入库（设计 v1.4 §5.3 A2）
   @input  — 命令行: --type ci|scenario|test|founder_demo
             --date YYYY-MM-DD --verdict pass|fail --points "7-1,9-2"
             --source 来源说明（CI job 名 / 场景脚本路径）[--quote 佐证] [--out-dir]
+            [--at ISO8601]（D790: 生成时间戳；缺省 = 写入时刻本地 ISO 8601 带偏移）
   @output — <out-dir>/<type>-<date>[-n].json（证据记录，schema=1；同日同类递增序号防覆盖）
+            记录含 at = 生成时间戳 —— calc-progress.py 失效比较的基准（D790；
+            缺 at 会让判据退化为日期粒度：同日提交误杀当日证据）
   @degraded — 参数非法 → log.error + exit 2；out-dir 不可写 → log.error + exit 2
               （fail-closed：证据写不进去绝不当成功——铁律 11/24）
   @exit   — 0 成功；2 参数/IO 失败
@@ -39,7 +42,24 @@ VALID_TYPES = ("ci", "scenario", "test", "founder_demo")
 VALID_VERDICTS = ("pass", "fail")
 
 
-def write_evidence(rec_type, date, verdict, points, source, quote, out_dir):
+def now_iso() -> str:
+    """写入时刻的本地 ISO 8601（带偏移量、秒粒度）——与既有证据记录 at 字段同格式。"""
+    return datetime.now().astimezone().isoformat(timespec="seconds")
+
+
+def valid_at(ts: str) -> bool:
+    """校验生成时间戳（ISO 8601；兼容 'Z'，Python 3.9 fromisoformat 不认）。"""
+    s = ts.strip()
+    if s.endswith("Z"):
+        s = s[:-1] + "+00:00"
+    try:
+        datetime.fromisoformat(s)
+        return True
+    except ValueError:
+        return False
+
+
+def write_evidence(rec_type, date, verdict, points, source, quote, out_dir, at: str = ""):
     if rec_type not in VALID_TYPES:
         log.error("非法证据类型: %r（可选 %s）", rec_type, "/".join(VALID_TYPES))
         sys.exit(2)
@@ -50,6 +70,9 @@ def write_evidence(rec_type, date, verdict, points, source, quote, out_dir):
         datetime.strptime(date, "%Y-%m-%d")
     except ValueError:
         log.error("日期格式非法: %r（需 YYYY-MM-DD）", date)
+        sys.exit(2)
+    if at and not valid_at(at):
+        log.error("生成时间戳非法: %r（需 ISO 8601，如 2026-09-17T00:30:00+08:00）", at)
         sys.exit(2)
     pts = [p.strip() for p in points.split(",") if p.strip()]
     if not pts:
@@ -78,6 +101,7 @@ def write_evidence(rec_type, date, verdict, points, source, quote, out_dir):
         "record_type": rec_type,
         "source": source,
         "date": date,
+        "at": at.strip() if at else now_iso(),
         "written_by": "evidence-writer.py",
         "verdicts": [
             {"acceptance_point": p, "verdict": verdict, "quote": quote} for p in pts
@@ -102,9 +126,10 @@ def main():
     ap.add_argument("--source", required=True, help="来源（CI job / 场景脚本路径）")
     ap.add_argument("--quote", default="", help="佐证（日志/断言输出/演示记录路径）")
     ap.add_argument("--out-dir", default=str(PROJECT_ROOT / "docs/synova/product-lines/evidence"))
+    ap.add_argument("--at", default="", help="生成时间戳 ISO 8601（缺省 = 写入时刻；D790 失效比较基准）")
     args = ap.parse_args()
     write_evidence(args.type, args.date, args.verdict, args.points, args.source,
-                   args.quote, args.out_dir)
+                   args.quote, args.out_dir, at=args.at)
     sys.exit(0)
 
 

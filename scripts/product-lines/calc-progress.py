@@ -9,7 +9,9 @@ calc-progress.py — 产品进度计算器（设计 v1.4 §三/§五；A1 证据
   @input  — docs/synova/product-lines/product-lines.yaml（单一事实源）
             docs/synova/product-lines/evidence/*.json（证据记录，schema=1）
             docs/synova/product-lines/cockpit-override.yaml（待裁决清单，A8 源；缺失→degraded）
-            git 事实: git log --since=<证据日期> --name-only -- <线 modules>（A1 惰性失效）
+            git 事实: git log --since=<证据时间戳> --name-only -- <线 modules>（A1 惰性失效）
+                      D790: 基准 = 证据生成时间（记录自带 at/generated_at →（非计分 machine 路径）
+                      git 入库时间代理 → 日期粒度回退 + 显式 degraded）；"证据时间 > 提交时间" 才算 fresh
   @output — docs/synova/product-lines/product-progress.json
             { generated_at, product_progress_pct, lines:[{id,name,progress_pct,verified,total,
               baseline_pct, status_counts:{...}, k3_gate, points:[{id,desc,status,evidence_files,
@@ -17,6 +19,8 @@ calc-progress.py — 产品进度计算器（设计 v1.4 §三/§五；A1 证据
   @degraded — yaml 解析失败 → log.error + exit 2（fail-closed，绝不静默猜）；
               单条证据记录损坏 → log.warn + 跳过该记录 + degraded.sources 登记（铁律 24/31）；
               git 不可用 → log.warn + 跳过失效检测 + degraded.git=true；
+              证据缺生成时间戳（at/generated_at）→ 失效基准显式登记 degraded.problems
+              （machine 路径可用 git 入库时间代理；k3 计分路径回退日期粒度）——绝不静默当 fresh（D790）；
               ENOENT（证据目录尚不存在）= 正常默认（铁律 24），不告警不 degraded。
   @exit   — 0 成功；2 降级/失败（calc 本身不可用）
 
@@ -26,11 +30,11 @@ calc-progress.py — 产品进度计算器（设计 v1.4 §三/§五；A1 证据
   pending_k3   🟡 待裁判（场景/测试绿但审计员未审——不计分）
   verified     🟢 已验证（审计员 pass 或创始人演示核验——计分）
   rejected     🔴 存疑/否决（审计员 fail——不计分，git 全绿也不算）
-  stale        🟡 待重跑（证据过期 >14 天，或证据日期后相关代码有变更，A1）
+  stale        🟡 待重跑（证据过期 >14 天，或证据生成时间后相关代码有变更，A1/D790）
 
 诚实规则（§3.3 硬逻辑）:
   1. 无证据 = 未验证 = 不计分（yaml 里 status: verified 若无对应证据记录 → 降为 uncommitted 并告警）
-  2. 场景/测试类证据: 日期后该线 modules 有 git 变更 → stale（自动失效，不继承旧绿）
+  2. 场景/测试类证据: 生成时间后该线 modules 有 git 变更 → stale（自动失效，不继承旧绿；D790 时间戳粒度）
   3. 线 100% 门槛: verified==total 且无 k3 线级复核（record_type=k3, acceptance_point="line:<id>", pass）
      → 进度封顶 99 + k3_gate="待审计员全量复核"（防最后 10% 烂尾）
   4. 百分比只显整数
@@ -103,22 +107,24 @@ def load_evidence_records(evidence_dir: Path):
     return records, degraded
 
 
-def git_touched_after(modules, since_date: str, git_cmd: str):
-    """证据日期之后，该线 modules 是否有提交（A1 惰性失效）。
+def git_touched_after(modules, since_date: str, git_cmd: str, cwd=None):
+    """证据时间之后，该线 modules 是否有提交（A1 惰性失效）。
 
-    @input  — modules: 路径列表; since_date: YYYY-MM-DD; git_cmd: git 可执行（测试可注入）
+    @input  — modules: 路径列表; since_date: YYYY-MM-DD 或 ISO 8601 时间戳（D790）;
+              git_cmd: git 可执行（测试可注入）; cwd: 仓库根（默认 PROJECT_ROOT，测试可注入）
     @output — (touched: bool, error: str|None)。git 失败 → touched=False + error 显式返回
               （绝不把"查不了"当"没变过"——fail-closed，调用方转 degraded）
+    @semantics — `--since` 含边界：提交时间 == since → touched（即"证据时间 > 提交时间"才算 fresh，D790）
     """
     if not modules:
         return False, None
-    # CT-62: 证据时间戳粒度——at 全量 ISO datetime 直接用（同日验证不被当日提交误杀）；
-    # date-only（YYYY-MM-DD）保持旧语义 T00:00:00（保守：当日提交算 touched）
+    # CT-62/D790: 时间戳粒度——ISO datetime（含偏移量）直接用（同日验证不被当日提交误杀）；
+    # date-only（YYYY-MM-DD）保持保守语义 T00:00:00（当日提交算 touched）
     since = since_date if "T" in since_date else since_date + "T00:00:00"
     cmd = [git_cmd, "log", "--since=%s" % since, "--name-only", "--format=", "--"] + list(modules)
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=30,
-                              cwd=str(PROJECT_ROOT))
+                              cwd=str(cwd or PROJECT_ROOT))
     except (OSError, subprocess.SubprocessError) as e:
         return False, "git 调用失败: %s" % e
     if proc.returncode != 0:
@@ -127,6 +133,88 @@ def git_touched_after(modules, since_date: str, git_cmd: str):
     if touched_files:
         return True, None
     return False, None
+
+
+def parse_iso_ts(ts):
+    """解析 ISO 8601 时间戳 → datetime；无法解析 → None（兼容 'Z'，Python 3.9 fromisoformat 不认）。"""
+    if not ts or not isinstance(ts, str):
+        return None
+    s = ts.strip()
+    if s.endswith("Z"):
+        s = s[:-1] + "+00:00"
+    try:
+        return datetime.fromisoformat(s)
+    except ValueError:
+        return None
+
+
+def git_last_commit_time(rec_path, git_cmd: str, cwd=None):
+    """证据记录的 git 入库时间（该路径最后一次提交的 committer 时间，ISO 8601）。
+
+    @input  — rec_path: 证据文件路径; git_cmd: git 可执行（测试可注入）; cwd: 仓库根（默认 PROJECT_ROOT）
+    @output — (iso_ts: str|None, error: str|None)
+              未入库（新文件 / 该路径无提交）→ (None, None)——"尚无入库时间"不是错误
+              输出非法（假 git / 异常输出）→ (None, err) 不采信（防脏数据冒充时间戳）
+    @degraded — git 不可用 / exit≠0 → (None, "git ...")（调用方显式登记，铁律 24/31）
+    """
+    root = Path(cwd) if cwd else PROJECT_ROOT
+    try:
+        rel = str(Path(rec_path).resolve().relative_to(root.resolve()))
+    except ValueError:
+        rel = str(rec_path)
+    cmd = [git_cmd, "log", "-1", "--format=%cI", "--", rel]
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=30, cwd=str(root))
+    except (OSError, subprocess.SubprocessError) as e:
+        return None, "git 调用失败: %s" % e
+    if proc.returncode != 0:
+        return None, "git exit=%s: %s" % (proc.returncode, proc.stderr.strip()[:120])
+    ts = proc.stdout.strip()
+    if not ts:
+        return None, None
+    if parse_iso_ts(ts) is None:
+        return None, "入库时间输出非法: %r" % ts[:80]
+    return ts, None
+
+
+def ingest_ts_plausible(rec_date: str, ingest_ts: str) -> bool:
+    """入库时间能否作为「生成时间」代理：入库日 − 记录日 ∈ {0, 1}。
+
+    理由: squash/延迟合并会把入库时间推到合并时刻（可晚数日）→ 越宽越会把"合并"当"生成"；
+    只认跨午夜的夜跑场景（D774 夜跑 → 次日 00:47 入库 = 1 天）。
+    """
+    d = parse_iso_ts(rec_date)
+    i = parse_iso_ts(ingest_ts)
+    if d is None or i is None:
+        return False
+    return 0 <= (i.date() - d.date()).days <= 1
+
+
+def evidence_freshness_ts(v, pid: str, problems, allow_ingest: bool):
+    """D790（A1）: 失效比较的基准时间——「证据生成时间」。
+
+    @input  — v: verdict dict（compute 注入 at/generated_at/ingest_ts/record_path）
+              pid: str; problems: list[str]（显式降级登记）
+              allow_ingest: 是否允许 git 入库时间代理——**仅 machine 路径 True**
+              （machine 绿最高 pending_k3，不产生计分）；k3 计分路径必须 False
+              （裁决过时=假绿，README §二 A「at 补齐=不诚实」先例）
+    @output — (ts: str|None, basis: str)  basis ∈ {"at","ingest","date"}
+              "at"     → 记录自带生成时间戳（精确）
+              "ingest" → 记录缺时间戳 → git 入库时间代理（已登记 problems）
+              "date"   → 无时间戳可用 → 调用方回退日期粒度 T00:00:00（保守；已登记 problems）
+    @degraded — 非 "at" 一律显式登记 problems（铁律 24/31：绝不静默当 fresh）
+    """
+    ts = v.get("at")
+    if ts:
+        return ts, "at"
+    if allow_ingest and v.get("ingest_ts"):
+        problems.append("证据 %s 缺生成时间戳（at/generated_at），以 git 入库时间 %s 代理失效比较（D790）"
+                        % (v.get("record_path"), v["ingest_ts"]))
+        return v["ingest_ts"], "ingest"
+    problems.append("点 %s 证据 %s 缺生成时间戳（at/generated_at）%s，失效比较回退日期粒度（保守，D790）"
+                    % (pid, v.get("record_path"),
+                       "且入库时间不可用" if allow_ingest else "（计分路径不用入库时间代理）"))
+    return None, "date"
 
 
 def freshness_gate(evidence_date, line_modules, git_cmd, today, pid, problems, evidence_at=None):
@@ -154,7 +242,10 @@ def freshness_gate(evidence_date, line_modules, git_cmd, today, pid, problems, e
     if not line_modules:
         problems.append("点 %s 线 modules 映射缺失，git 失效子检查未执行" % pid)
         return "unknown"
-    # CT-62: at 时间戳优先（同日验证语义），缺省回退 date-only
+    # CT-62/D790: at 时间戳优先（同日验证语义）；缺省回退 date-only（保守）+ 显式 degraded。
+    # 计分路径（k3 pass → verified）不用 git 入库时间代理——裁决时间必须来自裁决记录本身。
+    if not evidence_at:
+        problems.append("点 %s 裁决证据缺生成时间戳（at/generated_at），失效比较回退日期粒度（保守，D790）" % pid)
     touched, err = git_touched_after(line_modules, evidence_at or evidence_date, git_cmd)
     if err:
         problems.append("点 %s 失效检测降级: %s" % (pid, err))
@@ -224,7 +315,10 @@ def status_for_point(point, verdicts_by_point, line_modules, git_cmd, today, pro
         except ValueError:
             problems.append("点 %s 证据日期格式非法: %r" % (pid, latest["date"]))
             return "pending_k3"
-        touched, err = git_touched_after(line_modules, latest["date"], git_cmd)
+        # D790（A1）: machine 路径与 k3 路径对齐——失效基准用证据生成时间戳
+        # （记录自带 at/generated_at → 入库时间代理 → 日期回退 + 显式 degraded）
+        _ev_ts, _basis = evidence_freshness_ts(latest, pid, problems, allow_ingest=True)
+        touched, err = git_touched_after(line_modules, _ev_ts or latest["date"], git_cmd)
         if err:
             problems.append("点 %s 失效检测降级: %s" % (pid, err))
         if touched:
@@ -240,11 +334,16 @@ def status_for_point(point, verdicts_by_point, line_modules, git_cmd, today, pro
     return "uncommitted"
 
 
-def compute(yaml_path, evidence_dir, override_path, git_cmd, out_path):
+def compute(yaml_path, evidence_dir, override_path, git_cmd, out_path, now=None):
+    """A4 进度重算（契约见模块头）。
+
+    @param now — 墙钟注入缝（默认 datetime.now()）：仅供测试固定"运行时刻"，
+                 证明判据不依赖运行时刻（同一天不同时点 → 六态一致，D790 靶心）
+    """
     spec = load_yaml(yaml_path)
     records, degraded_sources = load_evidence_records(evidence_dir)
     problems = []
-    today = datetime.now()
+    today = now or datetime.now()
 
     # 证据索引: point id → verdict 列表
     verdicts_by_point = {}
@@ -257,6 +356,19 @@ def compute(yaml_path, evidence_dir, override_path, git_cmd, out_path):
             return str(f)
 
     for f, rec in records:
+        # D790（A1）: 记录自带生成时间戳；缺则取 git 入库时间代理
+        # （限「入库日 − 记录日 ≤ 1 天」——防 squash/延迟合并时间冒充生成时间）
+        rec_at = rec.get("at") or rec.get("generated_at")
+        rec_ingest = None
+        if not rec_at:
+            rec_ingest, ingest_err = git_last_commit_time(f, git_cmd)
+            if ingest_err:
+                degraded_sources.append("%s 入库时间不可用: %s（D790）" % (f.name, ingest_err))
+                rec_ingest = None
+            elif rec_ingest and not ingest_ts_plausible(str(rec.get("date", "")), rec_ingest):
+                degraded_sources.append("%s 入库时间 %s 距记录日期 %s >1 天，不作为生成时间代理（D790）"
+                                        % (f.name, rec_ingest, rec.get("date")))
+                rec_ingest = None
         for v in rec.get("verdicts", []):
             ap = v.get("acceptance_point", "")
             if ap.startswith("line:"):
@@ -269,7 +381,8 @@ def compute(yaml_path, evidence_dir, override_path, git_cmd, out_path):
                 "record_path": _rel(f),
                 "quote": v.get("quote", ""),
                 "superseded_by": v.get("superseded_by"),
-                "at": rec.get("at"),
+                "at": rec_at,
+                "ingest_ts": rec_ingest,
             })
 
     # 待裁决清单（A8）
@@ -332,6 +445,9 @@ def compute(yaml_path, evidence_dir, override_path, git_cmd, out_path):
     # 产品总进度 = Σ(线进度×权重)/Σ权重（§3.1，整数）
     total_weight = sum(l["weight"] for l in lines_out) or 1.0
     product_pct = round(sum(l["progress_pct"] * l["weight"] for l in lines_out) / total_weight)
+
+    # D790: 降级登记去重（同一证据文件在多点上触发同一 message）——保持首现顺序，不丢信息
+    problems = list(dict.fromkeys(problems))
 
     result = {
         "generated_at": today.strftime("%Y-%m-%d %H:%M:%S"),
