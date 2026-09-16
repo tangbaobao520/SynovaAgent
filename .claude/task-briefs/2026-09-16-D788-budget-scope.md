@@ -66,7 +66,7 @@ Agent，不是 ChatBot。驻扎企业，持续观测，主动发现，自动诊�
 #CRITERIA: A
 
 ## Done 标准
-- [ ] 入口可触达: verify: `bash scripts/control-tower/pre-dispatch-check.sh docs/synova/coordination/派单-D788-预算门禁口径修正-20260916.md` → 末行「✅ 机械项全通过」
+- [ ] 入口可触达: verify: **在与 origin/main 同步的 worktree 中**跑 `bash scripts/control-tower/pre-dispatch-check.sh docs/synova/coordination/派单-D788-预算门禁口径修正-20260916.md` → 末行「✅ 机械项全通过」（工作树滞后会假红——F5）
 - [ ] 链路走通: verify: `grep -c "只计审查面\|审查面路径" docs/synova/coordination/派单-D788-预算门禁口径修正-20260916.md` → ≥2
 - [ ] 结果可见: verify: `grep -c "51" docs/synova/coordination/派单-D788-预算门禁口径修正-20260916.md` → ≥1（实测值具名）
 - [ ] 红线未越: verify: `git -c core.quotepath=false diff --name-only origin/main...HEAD | grep -c "scripts/audit/"` → 0
@@ -75,7 +75,10 @@ Agent，不是 ChatBot。驻扎企业，持续观测，主动发现，自动诊�
 
 | 文件 | 类型 |
 |---|---|
+| .claude/bypass.log | builtin（hook 运行期产物，自动豁免） |
 | .claude/task-briefs/2026-09-16-D788-budget-scope.md | task |
+| docs/synova/coordination/AUDIT-FINDINGS-LEDGER.md | task |
+| docs/synova/coordination/批六-待派-20260916.md | task |
 | docs/synova/coordination/派单-D788-预算门禁口径修正-20260916.md | task |
 | task-state/D788.json | task |
 
