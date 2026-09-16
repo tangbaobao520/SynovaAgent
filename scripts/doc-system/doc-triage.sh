@@ -1,4 +1,7 @@
-﻿#!/bin/bash
+#!/bin/bash
+# D313 M5 UTF-8 强制: Windows 控制台/子进程统一 UTF-8
+export PYTHONIOENCODING=utf-8
+export LC_ALL=C.UTF-8 2>/dev/null || true
 # ═══════════════════════════════════════════════════════════════════════════════
 # doc-triage.sh — 文档一次性盘点（治理机制 #5，GOVERNANCE.md）
 #
@@ -15,6 +18,9 @@
 #   UNK  待人工:   其余
 # 性能: 批量预计算 + 循环全 bash 内建 + 进程替换（< <()）。
 #        ⚠️ 禁止用 here-string（<<<）传递大输出——MSYS bash 下会卡死。
+# D782 (2026-09-16): bash 3.2 兼容重写——原 declare -A 集合在 mac 自带 bash 3.2
+#        下崩溃（`declare: -A: invalid option`），CI(Linux bash5) 绿 + mac 红分裂。
+#        集合改「首尾换行定界的多行字符串 + [[ == *…* ]] 精确行匹配」（纯内建）。
 # 说明: 本次仅扫描 .md；.html 交付物另论。
 # ═══════════════════════════════════════════════════════════════════════════════
 set +e
@@ -31,22 +37,24 @@ done
 TOTAL=$(find "$TARGET" -type f -name '*.md' 2>/dev/null | sed '/^$/d' | wc -l | tr -d ' ') # swallow-ok:
 BYTES=$(find "$TARGET" -type f -name '*.md' -exec cat {} + 2>/dev/null | wc -c | tr -d ' ') # swallow-ok:
 
-declare -A REFSET OLDSET RECENTSET
+NL=$'\n'
+# ── 集合（bash3.2 兼容: 首尾换行定界; 成员查询 = [[ $STR == *$NL<item>$NL* ]]）──
+REFSTR="${NL}${NL}"
 if [ "${#REFS[@]}" -gt 0 ]; then
-  while IFS= read -r n; do [ -n "$n" ] && REFSET["$n"]=1; done < <(grep -hoE '[A-Za-z0-9._-]+\.md' "${REFS[@]}" 2>/dev/null | sort -u) # swallow-ok:
+  REFSTR="${NL}$(grep -hoE '[A-Za-z0-9._-]+\.md' "${REFS[@]}" 2>/dev/null | sort -u)${NL}" # swallow-ok:
 fi
-while IFS= read -r l; do [ -n "$l" ] && OLDSET["$l"]=1; done < <(find "$TARGET" -type f -name '*.md' -mtime +90 2>/dev/null) # swallow-ok:
-while IFS= read -r l; do [ -n "$l" ] && RECENTSET["$l"]=1; done < <(find "$TARGET" -type f -name '*.md' -mtime -30 2>/dev/null) # swallow-ok:
+OLDSTR="${NL}$(find "$TARGET" -type f -name '*.md' -mtime +90 2>/dev/null)${NL}" # swallow-ok:
+RECENTSTR="${NL}$(find "$TARGET" -type f -name '*.md' -mtime -30 2>/dev/null)${NL}" # swallow-ok:
 
 DEL=(); KEEP=(); ARCH=(); NEW=(); UNK=()
 while IFS= read -r f; do
   [ -z "$f" ] && continue
   base="${f##*/}"   # 纯内建取 basename（外部 basename 在 SYSTEM 会话下 75ms/次，537 文件=41s）
   if [[ "$base" =~ _tmp|_debug|_fix|\.bak$|\.orig$|副本 ]]; then DEL+=("$f"); continue; fi
-  if [[ -n "${REFSET[$base]+x}" ]]; then KEEP+=("$f"); continue; fi
+  if [[ "$REFSTR" == *"${NL}${base}${NL}"* ]]; then KEEP+=("$f"); continue; fi
   if [[ "$f" =~ /archive/|/Archive/ ]]; then ARCH+=("$f"); continue; fi
-  if [[ -n "${OLDSET[$f]+x}" ]]; then ARCH+=("$f"); continue; fi
-  if [[ -n "${RECENTSET[$f]+x}" ]]; then NEW+=("$f"); continue; fi
+  if [[ "$OLDSTR" == *"${NL}${f}${NL}"* ]]; then ARCH+=("$f"); continue; fi
+  if [[ "$RECENTSTR" == *"${NL}${f}${NL}"* ]]; then NEW+=("$f"); continue; fi
   UNK+=("$f")
 done < <(find "$TARGET" -type f -name '*.md' 2>/dev/null | sort) # swallow-ok:
 
