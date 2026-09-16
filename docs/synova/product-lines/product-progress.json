@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-16 19:00:59",
+  "generated_at": "2026-09-16 11:55:16",
   "version": "1.0",
   "product_progress_pct": 1,
   "total_lines": 26,
@@ -1358,10 +1358,10 @@
       "status_counts": {
         "uncommitted": 2,
         "failed": 0,
-        "pending_k3": 3,
+        "pending_k3": 1,
         "verified": 0,
         "rejected": 0,
-        "stale": 1
+        "stale": 3
       },
       "points": [
         {
@@ -1377,7 +1377,7 @@
         {
           "id": "18-2",
           "desc": "SessionStore + 重启恢复（重启后记忆还在）",
-          "status": "pending_k3",
+          "status": "stale",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
             "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
@@ -1410,7 +1410,7 @@
         {
           "id": "18-5",
           "desc": "版本化 + superseded_by 链（事实更新可追溯）",
-          "status": "pending_k3",
+          "status": "stale",
           "evidence_files": [
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
             "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
