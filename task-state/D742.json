@@ -1,0 +1,13 @@
+{
+  "task_id": "D742",
+  "title": "孤儿测试门禁——CI 未执行的测试文件清单（防『写了没人跑』）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "note": "证据: 多份测试文件存在但不在 .github/workflows/ci.yml 显式清单里 → 永不执行（D703/D704 卡内已实证该模式）。交付物: check-orphan-tests.sh + 测试 + CI 接线。"
+}

@@ -108,7 +108,39 @@ if [ "$SKIP_VITEST" = "0" ]; then
   fi
 fi
 
-# ── 4. 写证据 ──
+# ── 4. 写证据（D774 两道防线）──
+#  ① SYNO_A2_SKIP_WRITE=1: rerun-evidence.sh 编排模式下跳过写入——该场景证据已由
+#     rerun-evidence 亲自写过（真实 verdict），refresh-all 内嵌的本环节是 --skip-vitest
+#     形态（未真跑测试），再写恒 pass 证据 = 失真/重复（假绿防线，D774）
+#  ② 同日同源去重: 当日已有同 type+verdict+points+source 记录 → 跳过（幂等，
+#     连跑两次零新增文件）
+if [ "${SYNO_A2_SKIP_WRITE:-0}" = "1" ]; then
+  echo -e "${YELLOW}ℹ A2: SYNO_A2_SKIP_WRITE=1（rerun-evidence 编排模式）— 跳过写入，证据由编排器负责${NC}"
+  exit 0
+fi
+
+if python3 - "$EVIDENCE_DIR" "$TODAY" "$VERDICT" "$POINTS" <<'PYEOF'
+import json, sys, glob, os
+edir, today, verdict, points = sys.argv[1:5]
+want = [p.strip() for p in points.split(",") if p.strip()]
+for f in glob.glob(os.path.join(edir, "test-%s*.json" % today)):
+    try:
+        rec = json.load(open(f, encoding="utf-8"))
+    except (OSError, ValueError):
+        continue
+    if rec.get("record_type") != "test" or rec.get("date") != today:
+        continue
+    pts = [v.get("acceptance_point") for v in rec.get("verdicts", [])]
+    if sorted(pts) == sorted(want) and "run-machine-evidence.sh (A2)" in str(rec.get("source", "")):
+        if rec.get("verdicts", [{}])[0].get("verdict") == verdict:
+            raise SystemExit(0)  # 同日同源同结论已存在 → 去重
+raise SystemExit(1)
+PYEOF
+then
+  echo -e "${GREEN}✓ A2 幂等: 同日同源证据已存在（verdict=${VERDICT}），零新增文件${NC}"
+  exit 0
+fi
+
 python3 "$EVIDENCE_WRITER" \
   --type test \
   --date "$TODAY" \

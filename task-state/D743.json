@@ -1,0 +1,13 @@
+{
+  "task_id": "D743",
+  "title": "alloc-task-id 跨分支唯一性——两条线拿到同一个号（D712 实证撞号）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "note": "实证: task-state/D712.json 在 main 是 Mac 侧记录、在 #511 分支是 Win 侧记录（同一 D#两条线用）；本次 D770 登记时 D745/D746/D742/D743/D747 均为『计划表引用但全历史无 task-state』的幻号。交付物: 号段/锁机制 + 测试。"
+}
