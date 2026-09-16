@@ -79,6 +79,9 @@ rules:
   - glob: "scripts/hooks/**"
     owner: "mac"
     source: "TASK-ROUTING.md L63 门禁脚本 DSH 专属"
+  - glob: "scripts/doc-system/**"
+    owner: "mac"
+    source: "派生: TASK-ROUTING.md L37+L63——文档真相防线（check-doc-truth/doc-registry-gate，DSH 2026-08 建）与门禁同族；此前落 ** 兜底误判 win（D782 实测）"
   - glob: "scripts/pre-commit-check.sh"
     owner: "mac"
     source: "TASK-ROUTING.md L63 门禁脚本 DSH 专属"
@@ -155,5 +158,10 @@ rules:
 # docs/synova/product-lines/evidence/D716-win-20260913/1-5-dual-guide-win-evidence.txt
 # → 被判「变更跨域」卡死；#511/#534 同族。豁免后真跨域（Win 代码 + Mac 工具链）仍拦住。
 # D774: .gitignore 各线共写（D519 mac / D581 win / D665 / D718 历史多域提交）——同 D758 证据目录豁免同型，防单域判定把每个碰它的 PR 误判跨域
-domain_neutral: [".claude/bypass.log", ".claude/gate-hits.log", ".claude/task-briefs/**", "task-state/**", "memory/notes/**", ".codex/**", "docs/synova/product-lines/evidence/**", ".gitignore"]
+# D782 增补（2026-09-15 实测假阳性）: 根目录导航文档 AGENTS/CLAUDE/LOOP + knowledge/shared/README ——
+#   它们是 check-doc-truth.sh 的被检对象（导航层，K3 审计 §7.1 D1 口径），任何线的代码/口径
+#   变化都可能要求它们同步（本次 registry v3.0 专家换代 7→6，mac 线防线启用要求文档对齐）。
+#   它们此前落 ** 兜底被判 win，但导航文档的同步需求跟着触发方走，不构成「这条 PR 属于
+#   哪条线」的信号。豁免后真跨域（win 代码 + mac 工具链）仍拦住。
+domain_neutral: [".claude/bypass.log", ".claude/gate-hits.log", ".claude/task-briefs/**", "task-state/**", "memory/notes/**", ".codex/**", "docs/synova/product-lines/evidence/**", ".gitignore", "AGENTS.md", "CLAUDE.md", "LOOP.md", "knowledge/shared/README.md"]
 
