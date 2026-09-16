@@ -64,10 +64,10 @@ verify-system-registry.sh、system-registry.test.sh）+ 2 个生成物。
 - scripts/doc-system/doc-triage.sh：bash 3.2 兼容重写 declare -A → 换行定界集合（mac 4/8→8/0）
 做什么（PR-3 BOM 尾批）：doc-system 剩余 5 文件 BOM + grep-oP 清单收尾
 做什么（PR-4 registry 样板，4 文件）：
-- scripts/doc-system/gen-system-registry.sh：寄存器生成器（AD01 第四章 42 边 + 五 counter 实测派生; K3 §10.1 字段规格; 禁手编字段）
-- scripts/doc-system/verify-system-registry.sh：I1/I2/I3 校验器（只报冲突不裁定; 三态 exit; 样板=AD01+AD12+AD03）
+- scripts/doc-system/gen-system-registry.sh：寄存器生成器（AD01 第四章 42 边 + 五 counter; K3 §10.1; 禁手编字段）
+- scripts/doc-system/verify-system-registry.sh：I1/I2/I3 校验器（只报不裁定; 三态; 样板=AD01+AD12+AD03）
 - docs/authority/system-registry.json：生成物（generatedBy/generatedAtCommit 锚定）
-- tests/doc-system/system-registry.test.sh：21 用例（验收核心=I2 命中 E-08/E-10/E-11/E-12 一码多义; 正常/降级/边界三路径）
+- tests/doc-system/system-registry.test.sh：21 用例（I2 命中 E-08/E-10/E-11/E-12; 三路径）
 
 不做什么：
 - 不碰 scripts/audit/ 目录（K3 红线，check-gates-v2.py 的 BOM 保留原样——按 grep-oP ratchet 域派工原则归属 K3 域）
