@@ -1,0 +1,4983 @@
+{
+  "schema": "project-ledger/1",
+  "generated_by": "gen-project-board.py",
+  "generated_at": "2026-09-17T01:26:34+08:00",
+  "git_head": "f83f85c20d184bab9c9cf68597f48e0dc1ba6375",
+  "sources": {
+    "yaml": "docs/synova/product-lines/product-lines.yaml",
+    "v1_dod": "docs/synova/project/26线-V1验收标准-草案v0.1-20260917.md",
+    "evidence_dirs": [
+      "docs/synova/product-lines/evidence",
+      "scripts/golden-scenarios/evidence"
+    ]
+  },
+  "degraded": false,
+  "degraded_sources": [],
+  "skipped_sources": [
+    "非 verdicts 证据记录: D524-verify-20260825-2121.json (record_type=d524-verify)"
+  ],
+  "totals": {
+    "v1_total": 125,
+    "v1_passed": 21,
+    "v1_verified": 12,
+    "delivery_pct": 16.8,
+    "verify_pct": 57.1,
+    "freshness": {
+      "green": 14,
+      "yellow": 1,
+      "red": 6
+    },
+    "blocked_count": 0,
+    "backlog_points": 39
+  },
+  "lines": [
+    {
+      "id": 1,
+      "name": "桌面端",
+      "done_definition": "创始人双击安装包 → 装好 → 服务自启 → 开窗即用，Win 和 Mac 都实测过",
+      "v1_total": 5,
+      "v1_passed": 3,
+      "v1_verified": 3,
+      "points_total": 8,
+      "freshness": {
+        "green": 2,
+        "yellow": 0,
+        "red": 1
+      },
+      "blocked": [],
+      "assertions": [
+        {
+          "id": "1-1",
+          "text": "Mac 安装包能打出且可安装",
+          "verify": "GS-01 exit 0 + 产物存在",
+          "kind": "scenario",
+          "ok": true,
+          "evidence": [
+            "docs/synova/product-lines/evidence/scenario-2026-09-13.json"
+          ],
+          "age_days": 4,
+          "freshness": "green",
+          "fail_when": "产物缺失或场景红"
+        },
+        {
+          "id": "1-2",
+          "text": "Win：双击 → 装好 → 出窗（30 分钟旅程起点）",
+          "verify": "真机实测（含时间戳）",
+          "kind": "founder-demo",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "装不上/不弹窗"
+        },
+        {
+          "id": "1-3",
+          "text": "Mac：双击 → 装好 → 出窗",
+          "verify": "真机实测",
+          "kind": "founder-demo",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "同上"
+        },
+        {
+          "id": "1-4",
+          "text": "服务自启 + 开窗即用（用户不碰命令行）",
+          "verify": "GS-01 + 重启后 `/health` 200",
+          "kind": "scenario",
+          "ok": true,
+          "evidence": [
+            "docs/synova/product-lines/evidence/scenario-2026-09-13-1.json"
+          ],
+          "age_days": 4,
+          "freshness": "green",
+          "fail_when": "重启后服务不在"
+        },
+        {
+          "id": "1-8",
+          "text": "审计员复核安装实测记录（独立重跑）",
+          "verify": "K3 报告 PASS",
+          "kind": "k3",
+          "ok": true,
+          "evidence": [
+            "docs/synova/product-lines/evidence/task-D527.json"
+          ],
+          "age_days": 19,
+          "freshness": "red",
+          "fail_when": "复核 NOT-AUDITABLE/FAIL"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "对话交互",
+      "done_definition": "老板一句大白话 → 系统听懂意图 → 流式回答 → 关键选择给卡片 → 系统主动发起对话（该提醒时提醒）",
+      "v1_total": 4,
+      "v1_passed": 1,
+      "v1_verified": 1,
+      "points_total": 7,
+      "freshness": {
+        "green": 0,
+        "yellow": 1,
+        "red": 0
+      },
+      "blocked": [],
+      "assertions": [
+        {
+          "id": "2-1",
+          "text": "说人话就能触发一次诊断（端到端）",
+          "verify": "GS-01 exit 0",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "需命令/参数才能触发"
+        },
+        {
+          "id": "2-2",
+          "text": "回答逐字流式出来（不等整段）",
+          "verify": "GS-01 + 流式断言",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "整段返回"
+        },
+        {
+          "id": "2-3",
+          "text": "关键选择用交互卡片（不让老板打字选）",
+          "verify": "GS-01 卡片命中",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "退化为文本问答"
+        },
+        {
+          "id": "2-7",
+          "text": "审计员复核对话触发诊断链路",
+          "verify": "K3 PASS",
+          "kind": "k3",
+          "ok": true,
+          "evidence": [
+            "docs/synova/product-lines/evidence/k3-D592-closeout.json"
+          ],
+          "age_days": 9,
+          "freshness": "yellow",
+          "fail_when": "复核不通过"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "报告体系",
+      "done_definition": "老板拿到一页纸结论（看得懂），想深挖有详细报告，想调整深浅说句话就行；手机能看，能导出",
+      "v1_total": 4,
+      "v1_passed": 0,
+      "v1_verified": 0,
+      "points_total": 8,
+      "freshness": {
+        "green": 0,
+        "yellow": 0,
+        "red": 0
+      },
+      "blocked": [],
+      "assertions": [
+        {
+          "id": "3-1",
+          "text": "一页纸：结论先行、10 分钟看完",
+          "verify": "GS-08 exit 0",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "结构缺失/超时长"
+        },
+        {
+          "id": "3-2",
+          "text": "详细报告：完整诊断各章节",
+          "verify": "GS-08 章节齐备",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "章节缺"
+        },
+        {
+          "id": "3-4",
+          "text": "报告可导出（PDF/HTML 带走）",
+          "verify": "GS-08 导出产物存在",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "导不出/内容缺"
+        },
+        {
+          "id": "3-8",
+          "text": "审计员复核报告结构与真实性",
+          "verify": "K3 PASS",
+          "kind": "k3",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "复核不通过"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "数据接入",
+      "done_definition": "老板的企业数据（客户/财务/人事）能接进来；接不进来时系统说清楚为什么",
+      "v1_total": 5,
+      "v1_passed": 2,
+      "v1_verified": 0,
+      "points_total": 8,
+      "freshness": {
+        "green": 2,
+        "yellow": 0,
+        "red": 0
+      },
+      "blocked": [],
+      "assertions": [
+        {
+          "id": "4-1",
+          "text": "问卷路径（没数据也能起步）",
+          "verify": "GS-01 exit 0",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "问卷不可达"
+        },
+        {
+          "id": "4-2",
+          "text": "CSV 导入成功且字段识别正确",
+          "verify": "GS-02 exit 0",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "导入失败/字段错"
+        },
+        {
+          "id": "4-3",
+          "text": "飞书连接器（企业常用入口）",
+          "verify": "连接器测试绿",
+          "kind": "test",
+          "ok": true,
+          "evidence": [
+            "docs/synova/product-lines/evidence/test-2026-08-17.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-09-04.json",
+            "docs/synova/product-lines/evidence/test-2026-09-05.json",
+            "docs/synova/product-lines/evidence/test-2026-09-06-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-06.json",
+            "docs/synova/product-lines/evidence/test-2026-09-07.json",
+            "docs/synova/product-lines/evidence/test-2026-09-12.json",
+            "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+          ],
+          "age_days": 1,
+          "freshness": "green",
+          "fail_when": "连不上/映射错"
+        },
+        {
+          "id": "4-7",
+          "text": "坏数据明确报错、不静默丢（fail-closed）",
+          "verify": "GS-02/GS-03 负向用例",
+          "kind": "scenario",
+          "ok": true,
+          "evidence": [
+            "scripts/golden-scenarios/evidence/GS-03-2026-08-21.json",
+            "scripts/golden-scenarios/evidence/GS-03-2026-08-22.json",
+            "scripts/golden-scenarios/evidence/GS-03-2026-09-15.json",
+            "scripts/golden-scenarios/evidence/GS-03-2026-09-16.json"
+          ],
+          "age_days": 1,
+          "freshness": "green",
+          "fail_when": "静默丢/无报错"
+        },
+        {
+          "id": "4-8",
+          "text": "审计员复核连接器链路",
+          "verify": "K3 PASS",
+          "kind": "k3",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "复核不通过"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "本体层收敛",
+      "done_definition": "同一类企业数据在系统里只有一个名字，读写都走同一个契约；图里每类节点都有真实写入方",
+      "v1_total": 4,
+      "v1_passed": 0,
+      "v1_verified": 0,
+      "points_total": 6,
+      "freshness": {
+        "green": 0,
+        "yellow": 0,
+        "red": 0
+      },
+      "blocked": [],
+      "assertions": [
+        {
+          "id": "5-1",
+          "text": "类型契约对齐（Market→Client、People→Person）",
+          "verify": "GS-02/GS-04 + 契约检查",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "类型仍分裂"
+        },
+        {
+          "id": "5-2",
+          "text": "属性契约对齐（cashBalance↔cash 等）",
+          "verify": "contract-check:field-mappings",
+          "kind": "test",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "映射缺失"
+        },
+        {
+          "id": "5-4",
+          "text": "L4 查询层 fail-open 修复（漂移必须报错）",
+          "verify": "负向断言：schema 漂移 → 报错",
+          "kind": "test",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "静默返回空"
+        },
+        {
+          "id": "5-6",
+          "text": "审计员复核本体收敛结果",
+          "verify": "K3 PASS",
+          "kind": "k3",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "复核不通过"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "首次诊断",
+      "done_definition": "新装 → 问卷 → 3 天内出首份诊断报告 → 至少命中 1 个老板没想到的盲区",
+      "v1_total": 4,
+      "v1_passed": 0,
+      "v1_verified": 0,
+      "points_total": 7,
+      "freshness": {
+        "green": 0,
+        "yellow": 0,
+        "red": 0
+      },
+      "blocked": [],
+      "assertions": [
+        {
+          "id": "6-1",
+          "text": "首诊旅程端到端（新装→问卷→报告）",
+          "verify": "GS-01 exit 0",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "任一环断"
+        },
+        {
+          "id": "6-2",
+          "text": "≤3 天出首诊（TTFV 可测）",
+          "verify": "GS-01 计时字段",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "超 3 天/无计时"
+        },
+        {
+          "id": "6-3",
+          "text": "命中 ≥1 个老板盲区",
+          "verify": "创始人演示核验",
+          "kind": "founder-demo",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "无新信息"
+        },
+        {
+          "id": "6-7",
+          "text": "审计员复核首诊旅程",
+          "verify": "K3 PASS",
+          "kind": "k3",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "复核不通过"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "name": "持续监测",
+      "done_definition": "装好后系统自动按周/月/季监测，异常自动发现、自动进报告；重启/断电不丢监测结果",
+      "v1_total": 5,
+      "v1_passed": 1,
+      "v1_verified": 1,
+      "points_total": 8,
+      "freshness": {
+        "green": 0,
+        "yellow": 0,
+        "red": 1
+      },
+      "blocked": [],
+      "assertions": [
+        {
+          "id": "7-1",
+          "text": "哨兵调度真实运行（周/月/季 cron 注册生效）",
+          "verify": "K3 全链路报告 L2 PASS",
+          "kind": "k3",
+          "ok": true,
+          "evidence": [
+            "docs/synova/product-lines/evidence/k3-full-chain-20260813.json"
+          ],
+          "age_days": 35,
+          "freshness": "red",
+          "fail_when": "调度不生效"
+        },
+        {
+          "id": "7-2",
+          "text": "哨兵全量注册（manifest 挂载无死代码）",
+          "verify": "加载器测试 + 生产调用点",
+          "kind": "test",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "挂载缺失"
+        },
+        {
+          "id": "7-3",
+          "text": "监测结果持久化（重启不丢 findings）",
+          "verify": "GS-05 + 重启后查询",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "重启即丢（当前 failed）"
+        },
+        {
+          "id": "7-5",
+          "text": "信号聚合 → 专家解读 → 监测报告",
+          "verify": "GS-05 exit 0",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "链路断"
+        },
+        {
+          "id": "7-8",
+          "text": "审计员复核持续监测闭环",
+          "verify": "K3 PASS",
+          "kind": "k3",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "复核不通过"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "name": "告警推送",
+      "done_definition": "异常发生时老板立刻收到一条提醒（含影响/证据/建议），并同时确认跟踪节奏与格式；已认领的问题不再重复打扰（转约定节奏）；有实质变化或长期停滞按契约升级；处理完复验销单并复盘沉淀（2026-09-12 创始人裁 D-1 改写为状态驱动）",
+      "v1_total": 6,
+      "v1_passed": 0,
+      "v1_verified": 0,
+      "points_total": 6,
+      "freshness": {
+        "green": 0,
+        "yellow": 0,
+        "red": 0
+      },
+      "blocked": [],
+      "assertions": [
+        {
+          "id": "8-1",
+          "text": "阈值真实触发且**读 manifest 配置**",
+          "verify": "GS-05 + 配置改动即生效",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "硬编码不读配置"
+        },
+        {
+          "id": "8-2",
+          "text": "工单入库（sentinel_tickets 有行）",
+          "verify": "GS-05 查表",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "无行"
+        },
+        {
+          "id": "8-3",
+          "text": "去重键稳定（同一事件只推一次）",
+          "verify": "GS-05 重复触发计数",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "重复推送"
+        },
+        {
+          "id": "8-4",
+          "text": "工单状态机闭环（新建→处理→销单）",
+          "verify": "GS-05 状态流转",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "卡在中间态"
+        },
+        {
+          "id": "8-6",
+          "text": "状态驱动通知（新发现/实质变化才推；已认领转约定节奏）",
+          "verify": "GS-05（创始人 2026-09-12 裁定 D-1）",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "按固定时间窗轰炸"
+        },
+        {
+          "id": "8-5",
+          "text": "审计员复核告警闭环",
+          "verify": "K3 PASS",
+          "kind": "k3",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "复核不通过"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "name": "客户循环",
+      "done_definition": "客户数据进来 → 系统持续看客户集中度和流失风险 → 风险出现老板提前收到预警",
+      "v1_total": 6,
+      "v1_passed": 1,
+      "v1_verified": 1,
+      "points_total": 6,
+      "freshness": {
+        "green": 0,
+        "yellow": 0,
+        "red": 1
+      },
+      "blocked": [],
+      "assertions": [
+        {
+          "id": "9-1",
+          "text": "CRM 数据进 Client 节点（连接器→图）",
+          "verify": "GS-02 exit 0",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "断在数据进口"
+        },
+        {
+          "id": "9-2",
+          "text": "customer-demand-shift 哨兵计算真实",
+          "verify": "K3 T3 实验 PASS",
+          "kind": "k3",
+          "ok": true,
+          "evidence": [
+            "docs/synova/product-lines/evidence/k3-full-chain-20260813.json"
+          ],
+          "age_days": 35,
+          "freshness": "red",
+          "fail_when": "计算错"
+        },
+        {
+          "id": "9-3",
+          "text": "集中度高/流失率告警（阈值触发）",
+          "verify": "GS-02 告警产出",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "不告警"
+        },
+        {
+          "id": "9-4",
+          "text": "端到端（数据→哨兵→报告→行动建议）",
+          "verify": "GS-02 exit 0",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "链路断"
+        },
+        {
+          "id": "9-5",
+          "text": "无客户数据不误报（降级诚实）",
+          "verify": "GS-02 负向用例",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "无数据仍报 critical"
+        },
+        {
+          "id": "9-6",
+          "text": "审计员复核客户循环全链路",
+          "verify": "K3 PASS",
+          "kind": "k3",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "复核不通过"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "name": "资本循环",
+      "done_definition": "老板能接财务数据，系统自动产出现金流/成本/利润的持续监测与告警，每条结论可回溯证据",
+      "v1_total": 6,
+      "v1_passed": 1,
+      "v1_verified": 1,
+      "points_total": 8,
+      "freshness": {
+        "green": 1,
+        "yellow": 0,
+        "red": 0
+      },
+      "blocked": [],
+      "assertions": [
+        {
+          "id": "10-1",
+          "text": "ERP 财务数据上传 → Financial 节点",
+          "verify": "GS-03 exit 0",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "断在进口"
+        },
+        {
+          "id": "10-2",
+          "text": "属性契约对齐（cashBalance↔cash）",
+          "verify": "contract-check",
+          "kind": "test",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "映射缺失"
+        },
+        {
+          "id": "10-3",
+          "text": "哨兵 manifest 挂载、阈值真实触发",
+          "verify": "GS-03 + 配置生效",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "硬编码/未挂载"
+        },
+        {
+          "id": "10-4",
+          "text": "现金流跑道计算正确（filter bug 修复）",
+          "verify": "compute-cash-runway 测试 + GS-03",
+          "kind": "test",
+          "ok": true,
+          "evidence": [
+            "docs/synova/product-lines/evidence/stale-reverify-D589-line10.json",
+            "docs/synova/product-lines/evidence/test-2026-08-17.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-09-04.json",
+            "docs/synova/product-lines/evidence/test-2026-09-05.json",
+            "docs/synova/product-lines/evidence/test-2026-09-06-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-06.json",
+            "docs/synova/product-lines/evidence/test-2026-09-07.json",
+            "docs/synova/product-lines/evidence/test-2026-09-12.json",
+            "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+          ],
+          "age_days": 1,
+          "freshness": "green",
+          "fail_when": "计算错"
+        },
+        {
+          "id": "10-6",
+          "text": "无数据不误报 critical（降级诚实）",
+          "verify": "GS-03 负向用例",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "误报"
+        },
+        {
+          "id": "10-8",
+          "text": "审计员全链路复核（100% 门槛）",
+          "verify": "K3 PASS",
+          "kind": "k3",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "复核不通过"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "name": "人才循环",
+      "done_definition": "人事数据进来 → 系统持续看关键人风险和人才密度 → 风险出现老板提前知道",
+      "v1_total": 6,
+      "v1_passed": 2,
+      "v1_verified": 2,
+      "points_total": 7,
+      "freshness": {
+        "green": 0,
+        "yellow": 0,
+        "red": 2
+      },
+      "blocked": [],
+      "assertions": [
+        {
+          "id": "11-1",
+          "text": "key-person-risk 哨兵计算真实",
+          "verify": "K3 PASS",
+          "kind": "k3",
+          "ok": true,
+          "evidence": [
+            "docs/synova/product-lines/evidence/k3-full-chain-20260813.json"
+          ],
+          "age_days": 35,
+          "freshness": "red",
+          "fail_when": "计算错"
+        },
+        {
+          "id": "11-2",
+          "text": "talent-density 哨兵计算真实（降级诚实）",
+          "verify": "K3 PASS",
+          "kind": "k3",
+          "ok": true,
+          "evidence": [
+            "docs/synova/product-lines/evidence/k3-full-chain-20260813.json"
+          ],
+          "age_days": 35,
+          "freshness": "red",
+          "fail_when": "空数据误报"
+        },
+        {
+          "id": "11-3",
+          "text": "HR 数据进 Person 节点",
+          "verify": "GS-04 exit 0",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "断在进口"
+        },
+        {
+          "id": "11-5",
+          "text": "关键人风险/人才密度告警送达",
+          "verify": "GS-04 告警产出",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "不告警"
+        },
+        {
+          "id": "11-6",
+          "text": "端到端（数据→哨兵→报告→建议）",
+          "verify": "GS-04 exit 0",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "链路断"
+        },
+        {
+          "id": "11-7",
+          "text": "审计员复核人才循环全链路",
+          "verify": "K3 PASS",
+          "kind": "k3",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "复核不通过"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "name": "技术维度",
+      "done_definition": "系统的技术状态（债务、能力、演进方向）像财务一样被持续诊断并出结论",
+      "v1_total": 5,
+      "v1_passed": 0,
+      "v1_verified": 0,
+      "points_total": 5,
+      "freshness": {
+        "green": 0,
+        "yellow": 0,
+        "red": 0
+      },
+      "blocked": [],
+      "assertions": [
+        {
+          "id": "12-1",
+          "text": "技术哨兵注册运行（技术债务等监测项）",
+          "verify": "GS-05 哨兵产出",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "未注册/不执行"
+        },
+        {
+          "id": "12-2",
+          "text": "技术数据进图（Tech 节点有写入方）",
+          "verify": "GS-05 图查询",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "零写入方"
+        },
+        {
+          "id": "12-3",
+          "text": "端到端诊断（数据→哨兵→专家→结论）",
+          "verify": "GS-05 exit 0",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "链路断"
+        },
+        {
+          "id": "12-4",
+          "text": "报告含技术风险结论（老板看得懂）",
+          "verify": "GS-08 章节命中",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "无结论"
+        },
+        {
+          "id": "12-5",
+          "text": "审计员复核技术维度循环",
+          "verify": "K3 PASS",
+          "kind": "k3",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "复核不通过"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "name": "财务结构维度",
+      "done_definition": "融资结构、资本成本、财务健康像现金流一样被持续诊断并出结论",
+      "v1_total": 5,
+      "v1_passed": 0,
+      "v1_verified": 0,
+      "points_total": 5,
+      "freshness": {
+        "green": 0,
+        "yellow": 0,
+        "red": 0
+      },
+      "blocked": [],
+      "assertions": [
+        {
+          "id": "13-1",
+          "text": "财务结构哨兵注册运行",
+          "verify": "GS-03 哨兵产出",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "未注册"
+        },
+        {
+          "id": "13-2",
+          "text": "财务结构数据进图（CapitalStructure 等）",
+          "verify": "GS-03 图查询",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "零写入方"
+        },
+        {
+          "id": "13-3",
+          "text": "端到端诊断（融资结构/资本成本结论）",
+          "verify": "GS-03 exit 0",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "链路断"
+        },
+        {
+          "id": "13-4",
+          "text": "报告含融资风险结论",
+          "verify": "GS-08 章节命中",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "无结论"
+        },
+        {
+          "id": "13-5",
+          "text": "审计员复核财务结构循环",
+          "verify": "K3 PASS",
+          "kind": "k3",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "复核不通过"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "name": "竞争战略维度",
+      "done_definition": "竞争位置、护城河、战略有效性被持续诊断并出结论",
+      "v1_total": 5,
+      "v1_passed": 0,
+      "v1_verified": 0,
+      "points_total": 5,
+      "freshness": {
+        "green": 0,
+        "yellow": 0,
+        "red": 0
+      },
+      "blocked": [],
+      "assertions": [
+        {
+          "id": "14-1",
+          "text": "竞争战略哨兵注册运行",
+          "verify": "GS-05 哨兵产出",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "未注册"
+        },
+        {
+          "id": "14-2",
+          "text": "竞争数据进图（Market/Competitor 节点）",
+          "verify": "GS-02 图查询",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "零写入方"
+        },
+        {
+          "id": "14-3",
+          "text": "端到端诊断（竞争位置/护城河结论）",
+          "verify": "GS-05 exit 0",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "链路断"
+        },
+        {
+          "id": "14-4",
+          "text": "报告含竞争风险结论",
+          "verify": "GS-08 章节命中",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "无结论"
+        },
+        {
+          "id": "14-5",
+          "text": "审计员复核竞争战略循环",
+          "verify": "K3 PASS",
+          "kind": "k3",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "复核不通过"
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "name": "专家体系",
+      "done_definition": "诊断时专家真的在干活（老板看得见），交叉验证结论，专家提示词效果有数据证明",
+      "v1_total": 4,
+      "v1_passed": 1,
+      "v1_verified": 0,
+      "points_total": 7,
+      "freshness": {
+        "green": 1,
+        "yellow": 0,
+        "red": 0
+      },
+      "blocked": [],
+      "assertions": [
+        {
+          "id": "15-1",
+          "text": "专家注册表 + 文件驱动自动发现（全注册）",
+          "verify": "expert-registry 测试绿",
+          "kind": "test",
+          "ok": true,
+          "evidence": [
+            "docs/synova/product-lines/evidence/test-2026-08-17.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-09-04.json",
+            "docs/synova/product-lines/evidence/test-2026-09-05.json",
+            "docs/synova/product-lines/evidence/test-2026-09-06-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-06.json",
+            "docs/synova/product-lines/evidence/test-2026-09-07.json",
+            "docs/synova/product-lines/evidence/test-2026-09-12.json",
+            "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+          ],
+          "age_days": 1,
+          "freshness": "green",
+          "fail_when": "缺注册/硬编码"
+        },
+        {
+          "id": "15-2",
+          "text": "专家调度链端到端（Dispatcher 真实调用）",
+          "verify": "GS-01 exit 0",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "未调用"
+        },
+        {
+          "id": "15-6",
+          "text": "多专家交叉验证（结论经 corroboration）",
+          "verify": "GS-01 交叉验证命中",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "单专家拍板"
+        },
+        {
+          "id": "15-7",
+          "text": "审计员复核专家体系",
+          "verify": "K3 PASS",
+          "kind": "k3",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "复核不通过"
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "name": "目标导航与行动闭环",
+      "done_definition": "每次诊断都回答『现在该做什么』，建议绑定目标，老板能跟踪执行到闭环",
+      "v1_total": 4,
+      "v1_passed": 0,
+      "v1_verified": 0,
+      "points_total": 5,
+      "freshness": {
+        "green": 0,
+        "yellow": 0,
+        "red": 0
+      },
+      "blocked": [],
+      "assertions": [
+        {
+          "id": "16-1",
+          "text": "诊断产出行动建议，每条绑定 Goal",
+          "verify": "GS-01 建议含 Goal 引用",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "建议无 Goal"
+        },
+        {
+          "id": "16-2",
+          "text": "方案三选一（Proposal 机制）",
+          "verify": "GS-01 三选一产出",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "无选项"
+        },
+        {
+          "id": "16-4",
+          "text": "端到端闭环（诊断→行动→执行→反馈下次诊断）",
+          "verify": "GS-06 exit 0",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "闭环断"
+        },
+        {
+          "id": "16-5",
+          "text": "审计员复核行动闭环",
+          "verify": "K3 PASS",
+          "kind": "k3",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "复核不通过"
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "name": "进化闭环",
+      "done_definition": "老板说『你判错了』，系统真的改规则，下次同类诊断变准，且能证明变准了",
+      "v1_total": 5,
+      "v1_passed": 0,
+      "v1_verified": 0,
+      "points_total": 5,
+      "freshness": {
+        "green": 0,
+        "yellow": 0,
+        "red": 0
+      },
+      "blocked": [],
+      "assertions": [
+        {
+          "id": "17-1",
+          "text": "反馈有真实消费方（feedback-collector 被调用）",
+          "verify": "GS-06 + 生产调用点",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "零调用"
+        },
+        {
+          "id": "17-2",
+          "text": "规则更新真实执行（非 placeholder）",
+          "verify": "GS-06 + 处理器实测",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "假成功"
+        },
+        {
+          "id": "17-3",
+          "text": "GA 纠错回流且可撤销（可逆仲裁）",
+          "verify": "GS-06 撤销用例",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "不可逆"
+        },
+        {
+          "id": "17-4",
+          "text": "下次诊断变准可验证（校准闭环）",
+          "verify": "GS-06 前后对比",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "无校准数据"
+        },
+        {
+          "id": "17-5",
+          "text": "审计员复核进化闭环（N13 P0 修复验证）",
+          "verify": "K3 PASS",
+          "kind": "k3",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "复核不通过"
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "name": "记忆体系",
+      "done_definition": "系统记住企业的关键事实、老板的偏好、做过的决定；重启不丢；诊断真的在用它",
+      "v1_total": 4,
+      "v1_passed": 2,
+      "v1_verified": 1,
+      "points_total": 6,
+      "freshness": {
+        "green": 1,
+        "yellow": 0,
+        "red": 1
+      },
+      "blocked": [],
+      "assertions": [
+        {
+          "id": "18-1",
+          "text": "AgentMemoryStore 9 类存储可用",
+          "verify": "代码实证 + K3 复核",
+          "kind": "k3",
+          "ok": true,
+          "evidence": [
+            "docs/synova/product-lines/evidence/k3-full-chain-20260813.json"
+          ],
+          "age_days": 35,
+          "freshness": "red",
+          "fail_when": "类缺失"
+        },
+        {
+          "id": "18-2",
+          "text": "重启后记忆还在（SessionStore 恢复）",
+          "verify": "session-store 测试绿",
+          "kind": "test",
+          "ok": true,
+          "evidence": [
+            "docs/synova/product-lines/evidence/test-2026-08-17.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-09-04.json",
+            "docs/synova/product-lines/evidence/test-2026-09-05.json",
+            "docs/synova/product-lines/evidence/test-2026-09-06-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-06.json",
+            "docs/synova/product-lines/evidence/test-2026-09-07.json",
+            "docs/synova/product-lines/evidence/test-2026-09-12.json",
+            "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+          ],
+          "age_days": 1,
+          "freshness": "green",
+          "fail_when": "重启丢"
+        },
+        {
+          "id": "18-3",
+          "text": "消费端接线（诊断真的读记忆，不是存而不用）",
+          "verify": "GS-01 读记忆命中",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "只存不读"
+        },
+        {
+          "id": "18-6",
+          "text": "审计员复核记忆体系",
+          "verify": "K3 PASS",
+          "kind": "k3",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "复核不通过"
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "name": "方向监测",
+      "done_definition": "企业方向出现失效信号时，24 小时内系统自动跑一次诊断，不等老板想起来",
+      "v1_total": 4,
+      "v1_passed": 1,
+      "v1_verified": 1,
+      "points_total": 5,
+      "freshness": {
+        "green": 1,
+        "yellow": 0,
+        "red": 0
+      },
+      "blocked": [],
+      "assertions": [
+        {
+          "id": "19-1",
+          "text": "direction-monitor 有生产调用方（零调用修复）",
+          "verify": "GS-05 + 调用点",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "零调用"
+        },
+        {
+          "id": "19-2",
+          "text": "方向失效信号定义明确（什么算失效）",
+          "verify": "direction-monitor 测试绿",
+          "kind": "test",
+          "ok": true,
+          "evidence": [
+            "docs/synova/product-lines/evidence/test-2026-08-17.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-09-04.json",
+            "docs/synova/product-lines/evidence/test-2026-09-05.json",
+            "docs/synova/product-lines/evidence/test-2026-09-06-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-06.json",
+            "docs/synova/product-lines/evidence/test-2026-09-07.json",
+            "docs/synova/product-lines/evidence/test-2026-09-12.json",
+            "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+          ],
+          "age_days": 1,
+          "freshness": "green",
+          "fail_when": "规则含糊/无断言"
+        },
+        {
+          "id": "19-3",
+          "text": "信号 → 触发诊断 <24h",
+          "verify": "GS-05 计时断言",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "超 24h/不触发"
+        },
+        {
+          "id": "19-5",
+          "text": "审计员复核方向监测链路",
+          "verify": "K3 PASS",
+          "kind": "k3",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "复核不通过"
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "name": "Agent 运行底座",
+      "done_definition": "Agent 稳定跑得起来：会话状态对、工具循环真实执行、上下文窗口管理有策略、不会卡死",
+      "v1_total": 5,
+      "v1_passed": 0,
+      "v1_verified": 0,
+      "points_total": 6,
+      "freshness": {
+        "green": 0,
+        "yellow": 0,
+        "red": 0
+      },
+      "blocked": [],
+      "assertions": [
+        {
+          "id": "20-1",
+          "text": "会话状态机多轮状态正确",
+          "verify": "GS-01 exit 0",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "状态错乱"
+        },
+        {
+          "id": "20-2",
+          "text": "工具循环真实执行（非 placeholder）",
+          "verify": "GS-01 工具调用留痕",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "假执行"
+        },
+        {
+          "id": "20-3",
+          "text": "上下文窗口管理策略（长会话不爆窗不丢重点）",
+          "verify": "长会话实测",
+          "kind": "founder-demo",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "爆窗/丢上下文"
+        },
+        {
+          "id": "20-4",
+          "text": "流式输出稳定（不闪烁不卡死）",
+          "verify": "GS-01 稳定性断言",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "闪烁/卡死"
+        },
+        {
+          "id": "20-6",
+          "text": "审计员复核运行底座",
+          "verify": "K3 PASS",
+          "kind": "k3",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "复核不通过"
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "name": "模型底座与 DeepSeek 深度优化",
+      "done_definition": "基于 DeepSeek 的差异化优势：提示词效果、成本、长上下文都有优化策略且可测量",
+      "v1_total": 5,
+      "v1_passed": 2,
+      "v1_verified": 0,
+      "points_total": 5,
+      "freshness": {
+        "green": 2,
+        "yellow": 0,
+        "red": 0
+      },
+      "blocked": [],
+      "assertions": [
+        {
+          "id": "21-1",
+          "text": "DeepSeek 适配器可用（标准 API 接入）",
+          "verify": "provider 测试绿",
+          "kind": "test",
+          "ok": true,
+          "evidence": [
+            "docs/synova/product-lines/evidence/test-2026-08-17.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-09-04.json",
+            "docs/synova/product-lines/evidence/test-2026-09-05.json",
+            "docs/synova/product-lines/evidence/test-2026-09-06-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-06.json",
+            "docs/synova/product-lines/evidence/test-2026-09-07.json",
+            "docs/synova/product-lines/evidence/test-2026-09-12.json",
+            "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+          ],
+          "age_days": 1,
+          "freshness": "green",
+          "fail_when": "接不上"
+        },
+        {
+          "id": "21-2",
+          "text": "提示词优化效果可测量（黄金集命中率）",
+          "verify": "golden-case 指标",
+          "kind": "test",
+          "ok": true,
+          "evidence": [
+            "docs/synova/product-lines/evidence/test-2026-08-17.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-09-04.json",
+            "docs/synova/product-lines/evidence/test-2026-09-05.json",
+            "docs/synova/product-lines/evidence/test-2026-09-06-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-06.json",
+            "docs/synova/product-lines/evidence/test-2026-09-07.json",
+            "docs/synova/product-lines/evidence/test-2026-09-12.json",
+            "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+          ],
+          "age_days": 1,
+          "freshness": "green",
+          "fail_when": "无指标"
+        },
+        {
+          "id": "21-3",
+          "text": "成本可测量（token 预算/缓存）",
+          "verify": "成本报告",
+          "kind": "founder-demo",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "无数据"
+        },
+        {
+          "id": "21-4",
+          "text": "长上下文策略（与 20-3 联动）",
+          "verify": "长会话实测",
+          "kind": "founder-demo",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "无策略"
+        },
+        {
+          "id": "21-5",
+          "text": "审计员复核模型底座优化",
+          "verify": "K3 PASS",
+          "kind": "k3",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "复核不通过"
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "name": "自诊断与稳定性",
+      "done_definition": "系统能说出自己健不健康；出问题能自愈；断网时不装死；数据有备份且演练过恢复",
+      "v1_total": 5,
+      "v1_passed": 1,
+      "v1_verified": 1,
+      "points_total": 6,
+      "freshness": {
+        "green": 1,
+        "yellow": 0,
+        "red": 0
+      },
+      "blocked": [],
+      "assertions": [
+        {
+          "id": "22-1",
+          "text": "看门狗/熔断/健康检查真实可用",
+          "verify": "watchdog 测试 + `/health`",
+          "kind": "test",
+          "ok": true,
+          "evidence": [
+            "docs/synova/product-lines/evidence/test-2026-08-17.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-09-04.json",
+            "docs/synova/product-lines/evidence/test-2026-09-05.json",
+            "docs/synova/product-lines/evidence/test-2026-09-06-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-06.json",
+            "docs/synova/product-lines/evidence/test-2026-09-07.json",
+            "docs/synova/product-lines/evidence/test-2026-09-12.json",
+            "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+          ],
+          "age_days": 1,
+          "freshness": "green",
+          "fail_when": "组件不生效"
+        },
+        {
+          "id": "22-2",
+          "text": "重启自愈（崩溃自动拉起）",
+          "verify": "GS-07 exit 0",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "不自愈"
+        },
+        {
+          "id": "22-3",
+          "text": "断网降级（没网也能本地诊断，不装死）",
+          "verify": "GS-07 断网用例",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "卡死/报死"
+        },
+        {
+          "id": "22-4",
+          "text": "删库能恢复（容灾演练实测）",
+          "verify": "恢复演练记录",
+          "kind": "founder-demo",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "未演练"
+        },
+        {
+          "id": "22-6",
+          "text": "审计员复核稳定性",
+          "verify": "K3 PASS",
+          "kind": "k3",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "复核不通过"
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "name": "权限治理",
+      "done_definition": "谁看什么清清楚楚；GA 和企业意见冲突有仲裁流程；老板说『删掉这段数据』就能彻底删",
+      "v1_total": 4,
+      "v1_passed": 0,
+      "v1_verified": 0,
+      "points_total": 6,
+      "freshness": {
+        "green": 0,
+        "yellow": 0,
+        "red": 0
+      },
+      "blocked": [],
+      "assertions": [
+        {
+          "id": "23-1",
+          "text": "RBAC 角色权限分明",
+          "verify": "GS-07 exit 0",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "越权可读"
+        },
+        {
+          "id": "23-2",
+          "text": "GA 边界（L3 原始数据 GA 永久不可见）",
+          "verify": "GS-07 越权用例",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "GA 可见原始数据"
+        },
+        {
+          "id": "23-4",
+          "text": "被遗忘权（彻底删除可验证）",
+          "verify": "GS-07 删除后查询为空",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "残留"
+        },
+        {
+          "id": "23-6",
+          "text": "审计员复核权限治理",
+          "verify": "K3 PASS",
+          "kind": "k3",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "复核不通过"
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "name": "安全与信任",
+      "done_definition": "数据本地不出门、敏感信息脱敏、恶意提示词防得住、篡改可查，且对抗性测试过",
+      "v1_total": 4,
+      "v1_passed": 0,
+      "v1_verified": 0,
+      "points_total": 6,
+      "freshness": {
+        "green": 0,
+        "yellow": 0,
+        "red": 0
+      },
+      "blocked": [],
+      "assertions": [
+        {
+          "id": "24-1",
+          "text": "PII 脱敏（人名/金额不进报告明文）",
+          "verify": "GS-07 exit 0",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "明文泄漏"
+        },
+        {
+          "id": "24-2",
+          "text": "本地部署数据不出门（L3 原始数据不出企业）",
+          "verify": "GS-07 出网检测",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "外发"
+        },
+        {
+          "id": "24-3",
+          "text": "防注入：检测异常必须**拒绝**（修复 fail-open）",
+          "verify": "GS-07 恶意输入用例",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "降级放行"
+        },
+        {
+          "id": "24-6",
+          "text": "审计员复核安全与信任",
+          "verify": "K3 PASS",
+          "kind": "k3",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "复核不通过"
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "name": "插件化扩展体系",
+      "done_definition": "加新能力只加文件不改代码：新专家、新技能、新哨兵、新连接器、新模式都是插件",
+      "v1_total": 5,
+      "v1_passed": 3,
+      "v1_verified": 0,
+      "points_total": 7,
+      "freshness": {
+        "green": 3,
+        "yellow": 0,
+        "red": 0
+      },
+      "blocked": [],
+      "assertions": [
+        {
+          "id": "25-1",
+          "text": "专家插件（新专家=加文件自动注册）",
+          "verify": "file-driven 测试绿",
+          "kind": "test",
+          "ok": true,
+          "evidence": [
+            "docs/synova/product-lines/evidence/test-2026-08-17.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-09-04.json",
+            "docs/synova/product-lines/evidence/test-2026-09-05.json",
+            "docs/synova/product-lines/evidence/test-2026-09-06-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-06.json",
+            "docs/synova/product-lines/evidence/test-2026-09-07.json",
+            "docs/synova/product-lines/evidence/test-2026-09-12.json",
+            "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+          ],
+          "age_days": 1,
+          "freshness": "green",
+          "fail_when": "需改代码"
+        },
+        {
+          "id": "25-2",
+          "text": "技能插件（新技能=加目录自动发现）",
+          "verify": "file-driven 测试绿",
+          "kind": "test",
+          "ok": true,
+          "evidence": [
+            "docs/synova/product-lines/evidence/test-2026-08-17.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-09-04.json",
+            "docs/synova/product-lines/evidence/test-2026-09-05.json",
+            "docs/synova/product-lines/evidence/test-2026-09-06-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-06.json",
+            "docs/synova/product-lines/evidence/test-2026-09-07.json",
+            "docs/synova/product-lines/evidence/test-2026-09-12.json",
+            "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+          ],
+          "age_days": 1,
+          "freshness": "green",
+          "fail_when": "需改代码"
+        },
+        {
+          "id": "25-3",
+          "text": "哨兵插件（新哨兵=加文件自动加载）",
+          "verify": "file-driven 测试绿",
+          "kind": "test",
+          "ok": true,
+          "evidence": [
+            "docs/synova/product-lines/evidence/test-2026-08-17.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
+            "docs/synova/product-lines/evidence/test-2026-08-18.json",
+            "docs/synova/product-lines/evidence/test-2026-09-04.json",
+            "docs/synova/product-lines/evidence/test-2026-09-05.json",
+            "docs/synova/product-lines/evidence/test-2026-09-06-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-06.json",
+            "docs/synova/product-lines/evidence/test-2026-09-07.json",
+            "docs/synova/product-lines/evidence/test-2026-09-12.json",
+            "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+          ],
+          "age_days": 1,
+          "freshness": "green",
+          "fail_when": "需改代码"
+        },
+        {
+          "id": "25-4",
+          "text": "连接器插件（新数据源=加连接器文件）",
+          "verify": "GS-02 exit 0",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "需改代码"
+        },
+        {
+          "id": "25-7",
+          "text": "审计员复核插件化体系",
+          "verify": "K3 PASS",
+          "kind": "k3",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "复核不通过"
+        }
+      ]
+    },
+    {
+      "id": 26,
+      "name": "MCP 集成",
+      "done_definition": "企业里已有的 AI 助手能通过 MCP 安全地调用 Synova（有认证、有权限、装得上）",
+      "v1_total": 6,
+      "v1_passed": 0,
+      "v1_verified": 0,
+      "points_total": 6,
+      "freshness": {
+        "green": 0,
+        "yellow": 0,
+        "red": 0
+      },
+      "blocked": [],
+      "assertions": [
+        {
+          "id": "26-1",
+          "text": "MCP 工具暴露（诊断/监测工具可被调用）",
+          "verify": "GS-05 工具列举",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "工具不可见"
+        },
+        {
+          "id": "26-2",
+          "text": "MCP 认证（不是谁都能连）",
+          "verify": "GS-07 未认证拒绝",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "无认证可连"
+        },
+        {
+          "id": "26-3",
+          "text": "MCP 权限（调用方按角色受限）",
+          "verify": "GS-07 越权拒绝",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "越权可调"
+        },
+        {
+          "id": "26-4",
+          "text": "MCP 打包/分发（企业装得上）",
+          "verify": "打包产物 + 安装记录",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "装不上"
+        },
+        {
+          "id": "26-5",
+          "text": "企业已有 agent 端到端调用一次诊断",
+          "verify": "GS-05 exit 0",
+          "kind": "scenario",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "跑不通"
+        },
+        {
+          "id": "26-6",
+          "text": "审计员复核 MCP 集成",
+          "verify": "K3 PASS",
+          "kind": "k3",
+          "ok": false,
+          "evidence": [],
+          "age_days": null,
+          "freshness": null,
+          "fail_when": "复核不通过"
+        }
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "id": "D356",
+      "title": "P0 哨兵阈值告警接线 + 降级误报修复",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D379",
+      "title": "path-dependency 哨兵空壳补实现",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D383",
+      "title": "CTO 2026-08-16 统一批次（哨兵口径/派活/B1/C6 固化/状态机/台账拆分）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D384",
+      "title": "D383 审计 P1×4 修复批次（写集漂移/D382 撞车/CTO-HEALTH 无源/幂等+测试）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D385",
+      "title": "K3 审计产物合入仓库（D383 findings 镜像 + 审计报告落库）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D386",
+      "title": "修复 sentinel-loader.test.ts 断言容忍规范外哨兵 computes 空（CI Vitest 预存红）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D387",
+      "title": "CT-34 纯文档提交豁免门禁（pre-commit 白名单 + Secrets 保留）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D389",
+      "title": "D387 审计产物合入仓库",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D390",
+      "title": "P1-1 修复：注入缝武装守卫 + 豁免事件 exempt.log 落盘（K3 D387）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D391",
+      "title": "admin-knowledge.ts:17 L1→L4 跨层修复（CI Architecture 转绿，D309 落地，K3 P2-5 派单）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D392",
+      "title": "npm audit 豁免落地（CI 黄灯 + 台账/DASHBOARD 记录）+ D387 PASS 补核登记",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D393",
+      "title": "task-state 状态工件自动派生改造（D393）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D394",
+      "title": "事件溯源（哨兵 findings 事件化先做——K3 改切片）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D395",
+      "title": "Agent Notes 四态（D395-a 开发组织版，1天——K3 拆分）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D396",
+      "title": "snapshot 测试（黄金用例固化回归门禁——K3 提前 P0 同批）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D397",
+      "title": "（原 guard 通用化已砍）产品 loop 卫生 D397'——K3 重定义",
+      "status": "closed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 7,
+      "updated_at": "2026-09-10"
+    },
+    {
+      "id": "D398",
+      "title": "组织记忆策略调整（排最后，先看数据——K3 定序）",
+      "status": "closed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 7,
+      "updated_at": "2026-09-10"
+    },
+    {
+      "id": "D399",
+      "title": "D393 审计 FAIL 修复（自指悖论/spec 双向失真/CTO-HEALTH 可复现/门禁记录入库）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D400",
+      "title": "D399 复审 CONDITIONAL PASS 收尾（D394-D398/D391 入库 + 纯净重生成 + 注释同步）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D401",
+      "title": "K3 战略咨询终版 + 分工规划信息落库（台账/TASK-ROUTING/task-state）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D402",
+      "title": "D391 审计 P1 修复（federated 兜底写入即蒸发 + 补 dev doc/brief）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D403",
+      "title": "派活文件落库（4 brief + dev-doc 启动指引 + 认领表）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D404",
+      "title": "上下文完整性修复落库（K3 咨询入库 + CT-40/41 + 仪表盘更新）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D405",
+      "title": "CT-41① CI 状态入仪表盘",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D406",
+      "title": "D395-a 审计 P1 修复（P1-2 腐化通道优先：check-lessons-learned 改向 + P1-1 层1门禁落点）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D407",
+      "title": "cto-health-audit-glob-fix",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D408",
+      "title": "cto-closeout-registry-todos",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D409",
+      "title": "cto-taskstate-consistency",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D410",
+      "title": "task-to-progress-auto-redeem",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D411",
+      "title": "control-system-design-docs",
+      "status": "closed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 7,
+      "updated_at": "2026-09-10"
+    },
+    {
+      "id": "D412",
+      "title": "u3-artifact-gate",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D413",
+      "title": "u7-ct-test-gate",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D414",
+      "title": "u1-bypass-evidence-chain",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D415",
+      "title": "u2-writeset-reconcile",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D416",
+      "title": "u6-sop-gate",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D417",
+      "title": "u5-secrets-failopen",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D419",
+      "title": "u-founder-truth-mvp",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D428",
+      "title": "CTO 收尾：K3 U1-U8 控制塔升级 15 分支批量合并入 main",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D429",
+      "title": "founder-truth 控制台验证（U1-U8 合并后首跑）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D430",
+      "title": "A2 机器验证入库接线（测试→证据→完成度，补历史完成度）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D439",
+      "title": "控制台重新生成（右边栏数据刷新：D430/D438 后快照更新）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D440",
+      "title": "控制台自动生成接 CI（dashboard-auto.yml）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D441",
+      "title": "D339 quotepath 修复移植到 main（Mac 中文文件名门禁误报根治）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D442",
+      "title": "GS-03 资本循环场景脚本（erp-standard → cash 对齐 + 阈值触发）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D443",
+      "title": "GS-02 客户循环场景脚本（crm-standard → customer-demand-shift critical）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D444",
+      "title": "GS-04 人才循环场景脚本（hr-standard → key-person-risk）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D445",
+      "title": "GS-05 告警闭环场景脚本（越阈 fixture → sentinel_tickets + 去重键）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D446",
+      "title": "GS-01 首诊旅程场景脚本（问卷 → 首诊报告 ≤3 天路径）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D447",
+      "title": "GS-06 进化闭环场景脚本（反馈注入 → loop-3/5 真实执行）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D448",
+      "title": "GS-07 数据安全场景脚本（敏感数据 → PII 脱敏 + 越权拒绝）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D449",
+      "title": "GS-08 报告可读场景脚本（GS-01 产物 → 一页纸 + 移动端）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D450",
+      "title": "GS 场景派活落库（8 任务 D442-D449 + 派活文件）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D451",
+      "title": "CT-42 session 专属 brief 读侧接线 + D331 补记死循环豁免",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D452",
+      "title": "全项目视野修复（方案B）+ 状态对齐 D401/403/404/405",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D453",
+      "title": "CT-39 CI 红超 24h 自动入待办（信号失效 M1 同型根治）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D454",
+      "title": "GSS 服务启动原生崩溃修复 env+ESM",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D455",
+      "title": "修复 D355 残留 — cashBalance↔cash 对齐 + compute filter bug",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D456",
+      "title": "alloc-task-id 并发原子锁（撞号根治，D454/D455 冲突教训）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D457",
+      "title": "bypass.log 多 PR 合并冲突根治（merge=union）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D458",
+      "title": "多 session 并行冲突系统性根治（运行时状态去跟踪 + 版本管理固化）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D459",
+      "title": "生成物单点生成门禁（G12d，session 禁改 CI 生成物）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D460",
+      "title": "LLM-as-a-Verifier 部署 + synova-verify skill（A2 语义预筛）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D461",
+      "title": "worktree 收尾强制（孤儿检测 + CTO-HEALTH 显示）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D462",
+      "title": "better-sqlite3 v12 升级（Node 24 兼容，解锁 GS-03/GS-05 服务器启动）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D463",
+      "title": "GS-05 告警闭环修复：run-once 接 runner 管线 + critical/emergency 自动建工单（选项 A）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D464",
+      "title": "control-tower-gate-fix",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D465",
+      "title": "CI 门禁 diff 语义补齐（空暂存假绿消除）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D466",
+      "title": "check-bypass-log 注释同步 + tag-bypass-wiring 测试跨平台修复",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D467",
+      "title": "方案1 挪CI——本地软提示+CI权威",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D468",
+      "title": "方案3 同步降频（砍 D335 提交前同步）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D472",
+      "title": "Agent Notes 四态铁律结构化（Stage1-D2）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D473",
+      "title": "guard 循环卫生+超时（Stage1-D4）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D474",
+      "title": "snapshot keyless 回放门禁（Stage1-D3）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D483",
+      "title": "register 认证闭环 切片 A——匿名注册可达（D481 产品发现收尾）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 20,
+      "updated_at": "2026-08-28"
+    },
+    {
+      "id": "D484",
+      "title": "register 认证闭环 切片 B——企业邀请注册链路打通（D102 邀请令牌补全）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 20,
+      "updated_at": "2026-08-28"
+    },
+    {
+      "id": "D485",
+      "title": "register 认证闭环 切片 C——双轨账号关联（个人账号绑定企业，飞书/钉钉模式）",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 23,
+      "updated_at": "2026-08-25"
+    },
+    {
+      "id": "D486",
+      "title": "register 认证闭环 端到端测试切片（A/B 真实 server 全链路验证 + 缺口补充）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 20,
+      "updated_at": "2026-08-28"
+    },
+    {
+      "id": "D487",
+      "title": "D394 片2-A——GA 诊断会话事件化装配（D500 地基接线，交付物可自证）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 19,
+      "updated_at": "2026-08-29"
+    },
+    {
+      "id": "D488",
+      "title": "full-pipeline Stage 5b 专家数断言修复（D282 9→7 迁移后过时，动态读 yaml）（Stage 5b 断言修复已随 D567/7b576c89 落地 main，PR #259 同稿已关闭，CTO 对账 2026-09-05）",
+      "status": "spec_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 20,
+      "updated_at": "2026-08-28"
+    },
+    {
+      "id": "D489",
+      "title": "D394 片2-B——GA 诊断会话事件化·consult 路由接线（DiagnosisLauncher 完整替换）",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 15,
+      "updated_at": "2026-09-02"
+    },
+    {
+      "id": "D490",
+      "title": "expert-config-loader parseSimpleYaml 死分支修复（yaml 驱动专家路由）",
+      "status": "spec_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 16,
+      "updated_at": "2026-09-01"
+    },
+    {
+      "id": "D491",
+      "title": "expert-router 测试债修复（selectExpert 映射 + 测试对齐 7 位专家）",
+      "status": "spec_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 15,
+      "updated_at": "2026-09-02"
+    },
+    {
+      "id": "D492",
+      "title": "task-decomposer DIMENSION_EXPERT_MAP 对齐 7 位专家",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 13,
+      "updated_at": "2026-09-04"
+    },
+    {
+      "id": "D500",
+      "title": "事件溯源 session log（Stage1-D1，取代 Win D469 草稿）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 26,
+      "updated_at": "2026-08-22"
+    },
+    {
+      "id": "D501",
+      "title": "as-any 检查排除测试文件（修 CI 误报 19 处）",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 19,
+      "updated_at": "2026-08-29"
+    },
+    {
+      "id": "D502",
+      "title": "任务看板多源统一（Win git 派生 + 26 线 + 待规划全量上板）",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 25,
+      "updated_at": "2026-08-23"
+    },
+    {
+      "id": "D503",
+      "title": "G12 时区容差修复（brief 认领窗口 ±1 天）",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 25,
+      "updated_at": "2026-08-23"
+    },
+    {
+      "id": "D504",
+      "title": "electron-desktop-bootstrap",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 25,
+      "updated_at": "2026-08-23"
+    },
+    {
+      "id": "D505",
+      "title": "sentinel-self-diagnosis",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 25,
+      "updated_at": "2026-08-23"
+    },
+    {
+      "id": "D507",
+      "title": "worktree-isolation",
+      "status": "closed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 9,
+      "updated_at": "2026-09-08"
+    },
+    {
+      "id": "D508",
+      "title": "提交流程减负四项（对账 merge-base/--check 全量/brief 骨架/双清洁）",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 19,
+      "updated_at": "2026-08-29"
+    },
+    {
+      "id": "D509",
+      "title": "union driver + G12 修复回归 main（API 合并遗漏补救）",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 19,
+      "updated_at": "2026-08-29"
+    },
+    {
+      "id": "D510",
+      "title": "d504-audit-fix",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 24,
+      "updated_at": "2026-08-24"
+    },
+    {
+      "id": "D511",
+      "title": "version-guard-gate",
+      "status": "closed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 9,
+      "updated_at": "2026-09-08"
+    },
+    {
+      "id": "D512",
+      "title": "gs-refresh-evidence",
+      "status": "closed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 9,
+      "updated_at": "2026-09-08"
+    },
+    {
+      "id": "D513",
+      "title": "控制塔四项返修（Win反馈+D331残余）",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 19,
+      "updated_at": "2026-08-29"
+    },
+    {
+      "id": "D514",
+      "title": "D510 审计返修（3 P1 残留）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 24,
+      "updated_at": "2026-08-24"
+    },
+    {
+      "id": "D515",
+      "title": "控制塔 V5.0.0 减负重构（三批 13 项）",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 19,
+      "updated_at": "2026-08-29"
+    },
+    {
+      "id": "D516",
+      "title": "D515 审计返修 — CI strict 模式（P0 权威落地）+ 去重 + P2×4",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 19,
+      "updated_at": "2026-08-29"
+    },
+    {
+      "id": "D517",
+      "title": "L1-A 安装包可产出(1-1)",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 19,
+      "updated_at": "2026-08-29"
+    },
+    {
+      "id": "D518",
+      "title": "L1-A 安装引导单入口(1-5)",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 19,
+      "updated_at": "2026-08-29"
+    },
+    {
+      "id": "D519",
+      "title": "L1-A Mac 安装实测(1-3)",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 19,
+      "updated_at": "2026-08-29"
+    },
+    {
+      "id": "D520",
+      "title": "控制塔跨平台适配收口（CRLF/python3/fastlane/双平台CI/checklist）+ 版本纪律",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 19,
+      "updated_at": "2026-08-29"
+    },
+    {
+      "id": "D521",
+      "title": "控制塔提交链路收敛 — tag时机/bypass竞态/语义parser/CI诊断/push模拟（治本）",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 19,
+      "updated_at": "2026-08-29"
+    },
+    {
+      "id": "D522",
+      "title": "L1-B 服务自启开窗即用(1-4)",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 19,
+      "updated_at": "2026-08-29"
+    },
+    {
+      "id": "D523",
+      "title": "L1-B Windows 双击安装启动出窗(1-2)",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 19,
+      "updated_at": "2026-08-29"
+    },
+    {
+      "id": "D524",
+      "title": "D518 dev doc prod 契约返修（M7 漂移，K3 C2）",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 19,
+      "updated_at": "2026-08-29"
+    },
+    {
+      "id": "D525",
+      "title": "P1-1 synova-commit.test.sh 红态修复（D507 段配对测试，K3 D521 遗留）",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 19,
+      "updated_at": "2026-08-29"
+    },
+    {
+      "id": "D526",
+      "title": "CI canary 密封清单漂移告警（L4，K3 D521 遗留）",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 19,
+      "updated_at": "2026-08-29"
+    },
+    {
+      "id": "D527",
+      "title": "L1-C 首诊旅程端到端(1-6)",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 19,
+      "updated_at": "2026-08-29"
+    },
+    {
+      "id": "D528",
+      "title": "L1-C 升级/重装不丢数据(1-7)",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 19,
+      "updated_at": "2026-08-29"
+    },
+    {
+      "id": "D529",
+      "title": "C1 desktop-build CI 修复（macos electron-builder + windows backend 失败）",
+      "status": "closed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 9,
+      "updated_at": "2026-09-08"
+    },
+    {
+      "id": "D530",
+      "title": "CT45-gatekeeper-merge-exempt",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 20,
+      "updated_at": "2026-08-28"
+    },
+    {
+      "id": "D531",
+      "title": "AGENTS.md/CLAUDE.md 对齐 V5.1.1 + 每周自检机制",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 23,
+      "updated_at": "2026-08-25"
+    },
+    {
+      "id": "D532",
+      "title": "自检脚本 --report + launchd 每周日 8:00 自动自检落位",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 23,
+      "updated_at": "2026-08-25"
+    },
+    {
+      "id": "D533",
+      "title": "CI 调试可达性根治（凭证共享 / CRLF 治本 / debug 纪律——审计收敛版 3 项）",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 20,
+      "updated_at": "2026-08-28"
+    },
+    {
+      "id": "D534",
+      "title": "Agent Notes 四态（Stage1-D2，S5-3 知识沉淀）",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 19,
+      "updated_at": "2026-08-29"
+    },
+    {
+      "id": "D535",
+      "title": "guard 循环卫生+超时（Stage1-D4，控制塔防跑偏）",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 19,
+      "updated_at": "2026-08-29"
+    },
+    {
+      "id": "D536",
+      "title": "部署轨：桌面端实际部署验收（Track A，founder-demo checklist Mac+Win）",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 20,
+      "updated_at": "2026-08-28"
+    },
+    {
+      "id": "D537",
+      "title": "控制塔并行污染+提交链摩擦根治（Win 反馈 #1-#6，单源 6 项）",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 19,
+      "updated_at": "2026-08-29"
+    },
+    {
+      "id": "D538",
+      "title": "前端交互实现：左栏 Codex 风格（产品独有能力导航）",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 19,
+      "updated_at": "2026-08-29"
+    },
+    {
+      "id": "D539",
+      "title": "session-worktree-isolation",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 21,
+      "updated_at": "2026-08-27"
+    },
+    {
+      "id": "D540",
+      "title": "clone-pilot-shadow-commit",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 20,
+      "updated_at": "2026-08-28"
+    },
+    {
+      "id": "D541",
+      "title": "claim-regex-narrow",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 20,
+      "updated_at": "2026-08-28"
+    },
+    {
+      "id": "D542",
+      "title": "ci-strict-visible-fail",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 20,
+      "updated_at": "2026-08-28"
+    },
+    {
+      "id": "D543",
+      "title": "gate-tests-seal-and-parser-symmetry",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 20,
+      "updated_at": "2026-08-28"
+    },
+    {
+      "id": "D544",
+      "title": "leftbar-acceptance-merge",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 20,
+      "updated_at": "2026-08-28"
+    },
+    {
+      "id": "D545",
+      "title": "sentinel-findings-event（作废：D545 号与 Win 侧 feat/win-d545-v520-skill-sync 同号）",
+      "status": "closed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 9,
+      "updated_at": "2026-09-08"
+    },
+    {
+      "id": "D546",
+      "title": "sentinel-findings-event",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 20,
+      "updated_at": "2026-08-28"
+    },
+    {
+      "id": "D547",
+      "title": "skeleton-brief-gate",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 20,
+      "updated_at": "2026-08-28"
+    },
+    {
+      "id": "D548",
+      "title": "l01-verification-backfill",
+      "status": "closed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 9,
+      "updated_at": "2026-09-08"
+    },
+    {
+      "id": "D549",
+      "title": "sealed-tests-ci-canary",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 19,
+      "updated_at": "2026-08-29"
+    },
+    {
+      "id": "D550",
+      "title": "alloc-origin-merge（发号器占用合并 origin/main）",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 19,
+      "updated_at": "2026-08-29"
+    },
+    {
+      "id": "D551",
+      "title": "ga-calibration-backend-spec",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 19,
+      "updated_at": "2026-08-29"
+    },
+    {
+      "id": "D552",
+      "title": "cto-governance-backfill-workspace-sweep",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 20,
+      "updated_at": "2026-08-28"
+    },
+    {
+      "id": "D553",
+      "title": "impl-done-disposal-and-audit-dispatch",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 20,
+      "updated_at": "2026-08-28"
+    },
+    {
+      "id": "D554",
+      "title": "post-commit-no-sweep-ct43",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 20,
+      "updated_at": "2026-08-28"
+    },
+    {
+      "id": "D555",
+      "title": "verify-parallel-ci-closed-task-exempt",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 20,
+      "updated_at": "2026-08-28"
+    },
+    {
+      "id": "D556",
+      "title": "ga-calibration-frontend-wire-plus-return-loop-layer2",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 9,
+      "updated_at": "2026-09-08"
+    },
+    {
+      "id": "D557",
+      "title": "verify-parallel-signal4-no-taskstate-merged",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 19,
+      "updated_at": "2026-08-29"
+    },
+    {
+      "id": "D558",
+      "title": "D487 session_events 迁移回归测试补写（K3 P1）",
+      "status": "closed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 7,
+      "updated_at": "2026-09-10"
+    },
+    {
+      "id": "D558",
+      "title": "CT-46 pre-commit 组1 类型安全模式扩 as never / as unknown as",
+      "status": "claimed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 19,
+      "updated_at": "2026-08-29"
+    },
+    {
+      "id": "D560",
+      "title": "D549 重做 — claim-regex 动态化 + canary 密封补齐（K3 FAIL 闭合）",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 19,
+      "updated_at": "2026-08-29"
+    },
+    {
+      "id": "D561",
+      "title": "D509/D535/D508 三 P1 恢复批 — g12-day-window 恢复 + incident-loop 4b + 注释如实化",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 19,
+      "updated_at": "2026-08-29"
+    },
+    {
+      "id": "D562",
+      "title": "K3 复审批 D558-D561 派单 + 三连验收台账登记",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 19,
+      "updated_at": "2026-08-29"
+    },
+    {
+      "id": "D563",
+      "title": "D489 验收返修 diagnosis.ts as never 双处类型窄化",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 15,
+      "updated_at": "2026-09-02"
+    },
+    {
+      "id": "D564",
+      "title": "incident-loop.test.sh Windows 兼容修复 canary 首测双失败",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 15,
+      "updated_at": "2026-09-02"
+    },
+    {
+      "id": "D565",
+      "title": "test-kit CI 接线 — 棘轮基线测试入 CI 双平台（K3 P1）",
+      "status": "closed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 9,
+      "updated_at": "2026-09-08"
+    },
+    {
+      "id": "D566",
+      "title": "提示词优化策略不实修复（K3 21-2 不实转 FIX）",
+      "status": "closed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 9,
+      "updated_at": "2026-09-08"
+    },
+    {
+      "id": "D567",
+      "title": "专家枚举硬编码残留 ×4 传播修复（K3 15-1）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 9,
+      "updated_at": "2026-09-08"
+    },
+    {
+      "id": "D568",
+      "title": "enterprise-fact superseded_by 语义实现（K3 18-5）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 9,
+      "updated_at": "2026-09-08"
+    },
+    {
+      "id": "D569",
+      "title": "dsh 仪表盘 collector 改 git 权威读取（治数据陈旧）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 9,
+      "updated_at": "2026-09-08"
+    },
+    {
+      "id": "D570",
+      "title": "AGENTS/CLAUDE 版本对齐 V5.2.7 + CTO 自检发现台账消化",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 14,
+      "updated_at": "2026-09-03"
+    },
+    {
+      "id": "D571",
+      "title": "pre-push 逃生舱审计链修复 + CTO 合并通道纪律固化",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 13,
+      "updated_at": "2026-09-04"
+    },
+    {
+      "id": "D572",
+      "title": "线1桌面端K3全量复核派单",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 13,
+      "updated_at": "2026-09-04"
+    },
+    {
+      "id": "D575",
+      "title": "LLM 配置首启向导——借鉴 DSH credential seam（打开产品第一步即配置）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 9,
+      "updated_at": "2026-09-08"
+    },
+    {
+      "id": "D576",
+      "title": "产品线兑换机制修复 CT-53 + alloc 在途盲区 CT-54",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 9,
+      "updated_at": "2026-09-08"
+    },
+    {
+      "id": "D577",
+      "title": "哨兵阈值配置真实挂载——死代码转活（7-2/8-1/10-3）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 9,
+      "updated_at": "2026-09-08"
+    },
+    {
+      "id": "D578",
+      "title": "FIX-D572-Win真机实测1-2",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 9,
+      "updated_at": "2026-09-08"
+    },
+    {
+      "id": "D579",
+      "title": "FIX-D572-k3verdict-stale机制",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 11,
+      "updated_at": "2026-09-06"
+    },
+    {
+      "id": "D580",
+      "title": "08告警工单切片-8-2入库-8-3去重稳定化-8-4状态机API",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 11,
+      "updated_at": "2026-09-06"
+    },
+    {
+      "id": "D581",
+      "title": "D578收尾三残留-Win验证脚本BOM-证据路径-构建守卫",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 11,
+      "updated_at": "2026-09-06"
+    },
+    {
+      "id": "D582",
+      "title": "CT-60 D328 提取大小写兼容",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 11,
+      "updated_at": "2026-09-06"
+    },
+    {
+      "id": "D583",
+      "title": "P0专家名测试债-D282迁移余波",
+      "status": "claimed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 11,
+      "updated_at": "2026-09-06"
+    },
+    {
+      "id": "D584",
+      "title": "P1 DSH线测试债-sentinels与契约批",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 11,
+      "updated_at": "2026-09-06"
+    },
+    {
+      "id": "D586",
+      "title": "LLM 稳定错误码 taxonomy 收敛对齐（DSH 借鉴卡 B-01）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 9,
+      "updated_at": "2026-09-08"
+    },
+    {
+      "id": "D587",
+      "title": "工具结果修剪器（DSH 借鉴卡 B-04）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 9,
+      "updated_at": "2026-09-08"
+    },
+    {
+      "id": "D588",
+      "title": "会话投影注册表（DSH 借鉴卡 B-07）",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 9,
+      "updated_at": "2026-09-08"
+    },
+    {
+      "id": "D589",
+      "title": "stale 26 点重验批（D579 机制生效后首轮回绿工程）",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 9,
+      "updated_at": "2026-09-08"
+    },
+    {
+      "id": "D590",
+      "title": "L1-P1对话HTTP-SSE端点",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 8,
+      "updated_at": "2026-09-09"
+    },
+    {
+      "id": "D591",
+      "title": "L1-P1桌面端对话接线",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 8,
+      "updated_at": "2026-09-09"
+    },
+    {
+      "id": "D592",
+      "title": "L1-P1对话E2E场景+产线2-1/2-2/2-5证据",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 9,
+      "updated_at": "2026-09-08"
+    },
+    {
+      "id": "D593",
+      "title": "L1-P2桌面报告工单",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 1,
+      "updated_at": "2026-09-16"
+    },
+    {
+      "id": "D594",
+      "title": "L1-P2交互卡片链路",
+      "status": "closed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 7,
+      "updated_at": "2026-09-10"
+    },
+    {
+      "id": "D595",
+      "title": "L1-P3MCP认证权限",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 7,
+      "updated_at": "2026-09-10"
+    },
+    {
+      "id": "D596",
+      "title": "L1-P3TUI清理与文档拉平",
+      "status": "closed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 7,
+      "updated_at": "2026-09-10"
+    },
+    {
+      "id": "D597",
+      "title": "D588会话投影接线-M3第5次修复",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 9,
+      "updated_at": "2026-09-08"
+    },
+    {
+      "id": "D598",
+      "title": "DSH 借鉴卡 B-03：token 四桶计量 + 成本护栏",
+      "status": "impl_done",
+      "owner": null,
+      "domain": "win",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D599",
+      "title": "DSH 借鉴卡 B-09+B-10：客户配置包机制蓝本（四层叠加 + dump 可检查）",
+      "status": "impl_done",
+      "owner": null,
+      "domain": "win",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D600",
+      "title": "S1-6 CFG 产品化诊断第一命令",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 8,
+      "updated_at": "2026-09-09"
+    },
+    {
+      "id": "D601",
+      "title": "任务看板映射校准 + L1 跨层违规扫描（改号自 D600）",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 9,
+      "updated_at": "2026-09-08"
+    },
+    {
+      "id": "D602",
+      "title": "D602 L1-P2 交互卡片呈现+preload/IPC收敛+通知error消费（原审计编号 D594）",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 8,
+      "updated_at": "2026-09-09"
+    },
+    {
+      "id": "D603",
+      "title": "L1-P3 TUI 清理 + 跨层修复 + 文档拉平",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 8,
+      "updated_at": "2026-09-09"
+    },
+    {
+      "id": "D651",
+      "title": "K3双线编码管线代码质量对比评估",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 8,
+      "updated_at": "2026-09-09"
+    },
+    {
+      "id": "D660",
+      "title": "任务看板活动判定重排——running=48h 分支活动 + 待规划 backlog 列三源落位",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 7,
+      "updated_at": "2026-09-10"
+    },
+    {
+      "id": "D661",
+      "title": "grep-oP-portable-family-fix",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 7,
+      "updated_at": "2026-09-10"
+    },
+    {
+      "id": "D663",
+      "title": "ct-ci-hermetic-arch-ratchet",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 7,
+      "updated_at": "2026-09-10"
+    },
+    {
+      "id": "D664",
+      "title": "pre-commit-check-grep-p-self-clean",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 4,
+      "updated_at": "2026-09-13"
+    },
+    {
+      "id": "D665",
+      "title": "main-build-job-failure-fix",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 7,
+      "updated_at": "2026-09-10"
+    },
+    {
+      "id": "D705",
+      "title": "cto-docs-batch-d593-confirm-backlog",
+      "status": "claimed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 6,
+      "updated_at": "2026-09-11"
+    },
+    {
+      "id": "D706",
+      "title": "synova-commit-deletion-loss-fix",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 4,
+      "updated_at": "2026-09-13"
+    },
+    {
+      "id": "D707",
+      "title": "brief-archlayer-parser-unify",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 4,
+      "updated_at": "2026-09-13"
+    },
+    {
+      "id": "D708",
+      "title": "m9-merge-writeset-gate",
+      "status": "audited",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 4,
+      "updated_at": "2026-09-13"
+    },
+    {
+      "id": "D709",
+      "title": "dispatch-parallel-cto-batch",
+      "status": "claimed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 5,
+      "updated_at": "2026-09-12"
+    },
+    {
+      "id": "D710",
+      "title": "ct47-lock-landing-record",
+      "status": "claimed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 5,
+      "updated_at": "2026-09-12"
+    },
+    {
+      "id": "D711",
+      "title": "D1-notification-model-landing",
+      "status": "claimed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 5,
+      "updated_at": "2026-09-12"
+    },
+    {
+      "id": "D712",
+      "title": "桌面端线 1 证据重验批（Mac 侧 1-1/1-3/1-4/1-5/1-6/1-7）",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 4,
+      "updated_at": "2026-09-13"
+    },
+    {
+      "id": "D713",
+      "title": "desktop-package-signature-and-verify-gate",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 4,
+      "updated_at": "2026-09-13"
+    },
+    {
+      "id": "D714",
+      "title": "f3-preload-sandbox-renderer-api-fix",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 4,
+      "updated_at": "2026-09-13"
+    },
+    {
+      "id": "D715",
+      "title": "k3-audit-ctl-slice-and-line1",
+      "status": "audit_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 4,
+      "updated_at": "2026-09-13"
+    },
+    {
+      "id": "D716",
+      "title": "devdoc-monitoring-contract-and-dual-guide",
+      "status": "spec_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 4,
+      "updated_at": "2026-09-13"
+    },
+    {
+      "id": "D717",
+      "title": "coding-product-debt-batch",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 4,
+      "updated_at": "2026-09-13"
+    },
+    {
+      "id": "D718",
+      "title": "cto-parallel-ctl-minor-fixes",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 4,
+      "updated_at": "2026-09-13"
+    },
+    {
+      "id": "D719",
+      "title": "dispatch-batch2-registration",
+      "status": "claimed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 4,
+      "updated_at": "2026-09-13"
+    },
+    {
+      "id": "D720",
+      "title": "四线派单 brief 落 main（D715-D718 由骨架填实）+ 主树残留判定",
+      "status": "claimed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 4,
+      "updated_at": "2026-09-13"
+    },
+    {
+      "id": "D721",
+      "title": "CI 存量失败棘轮：变更集基准改 merge-base 三点差 + 放行可见化",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 4,
+      "updated_at": "2026-09-13"
+    },
+    {
+      "id": "D725",
+      "title": "D660 数据生命周期五层阶梯 spec",
+      "status": "spec_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 4,
+      "updated_at": "2026-09-13"
+    },
+    {
+      "id": "D737",
+      "title": "tag-bypass-wiring 真红定位与修复",
+      "status": "claimed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 3,
+      "updated_at": "2026-09-14"
+    },
+    {
+      "id": "D740",
+      "title": "L1交互层未闭合项取证（D518/D519/D590/D591/D593/D595/D602 + D594 + D572）",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 3,
+      "updated_at": "2026-09-14"
+    },
+    {
+      "id": "D741",
+      "title": "真相源状态写入链路定位（product-progress 线状态 + task-state FAIL 看板链路）",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 3,
+      "updated_at": "2026-09-14"
+    },
+    {
+      "id": "D742",
+      "title": "孤儿测试门禁——CI 未执行的测试文件清单（防『写了没人跑』）",
+      "status": "claimed",
+      "owner": null,
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D743",
+      "title": "alloc-task-id 跨分支唯一性——两条线拿到同一个号（D712 实证撞号）",
+      "status": "claimed",
+      "owner": null,
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D745",
+      "title": "（作废）计划表占位号（『补定义 B-11~B-20』）——实测指引 §4+附录 B 已有简卡定义，本号无独立交付物",
+      "status": "rejected",
+      "owner": null,
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D746",
+      "title": "（作废）计划表占位号（『逐卡实现』）——实现已拆为 D760~D769 十张卡，本号作废",
+      "status": "rejected",
+      "owner": null,
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D747",
+      "title": "桌面端 1-4 重打新产物 + 证据落盘（line-1 关键一件）",
+      "status": "claimed",
+      "owner": null,
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D748",
+      "title": "board-verdict-dimension-visible-failures",
+      "status": "claimed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 3,
+      "updated_at": "2026-09-14"
+    },
+    {
+      "id": "D749",
+      "title": "write-set-generated-single-source",
+      "status": "claimed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 3,
+      "updated_at": "2026-09-14"
+    },
+    {
+      "id": "D750",
+      "title": "修 inferCategory 与 SIGNAL_TO_EXPERT 分类法错配——10 类中 7 类不可达（活缺陷，P0）",
+      "status": "claimed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 3,
+      "updated_at": "2026-09-14"
+    },
+    {
+      "id": "D751",
+      "title": "「新增生效」硬断言——把文件驱动的宣称变成物理事实（P1）",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 3,
+      "updated_at": "2026-09-14"
+    },
+    {
+      "id": "D752",
+      "title": "哨兵类型网登记从软约束改硬门禁（8/45 未登记，P1）",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D753",
+      "title": "计数一致性债——单一事实源缺失（P2，禁止在 D750 修好前调整本体规模）",
+      "status": "claimed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 3,
+      "updated_at": "2026-09-14"
+    },
+    {
+      "id": "D754",
+      "title": "声明/注释漂移——哨兵 route 声明缺失 + runner 注释描述的失效模式与实际不符（P2）",
+      "status": "claimed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D755",
+      "title": "inquiry-pluginability-debt-registration",
+      "status": "claimed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 3,
+      "updated_at": "2026-09-14"
+    },
+    {
+      "id": "D756",
+      "title": "dispatch-sentinel-debts-d751-d752-d754",
+      "status": "claimed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 3,
+      "updated_at": "2026-09-14"
+    },
+    {
+      "id": "D757",
+      "title": "哨兵类型欠账修复：3 个未登记哨兵的类型错（D752 门禁暴露）",
+      "status": "claimed",
+      "owner": null,
+      "domain": "win",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D758",
+      "title": "证据目录域判定豁免（D734 假阳性修复）",
+      "status": "claimed",
+      "owner": null,
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D759",
+      "title": "回退 nodemailer 10 依赖升级（主树 tsc 变红）",
+      "status": "claimed",
+      "owner": null,
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D760",
+      "title": "DSH 借鉴卡 B-11：MCP client 双 transport（stdio/StreamableHTTP + 工具表变更通知重载 + scrubbedParentEnv）",
+      "status": "claimed",
+      "owner": null,
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D761",
+      "title": "DSH 借鉴卡 B-12：webhook 事件触发路（source/rule/delivery 三 id + delivery 校验与 deepFreeze + provenance 注入 + GitHub HMAC 验签）",
+      "status": "claimed",
+      "owner": null,
+      "domain": "win",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D762",
+      "title": "DSH 借鉴卡 B-13：goal 事件溯源状态机四件套（foldGoal/GOAL_CHANGE_VERSION 投影 + goal-round-driver 竞态围栏与续轮提示 + tool-goal 执行时 authority）",
+      "status": "claimed",
+      "owner": null,
+      "domain": "win",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D763",
+      "title": "DSH 借鉴卡 B-14：消息级反馈 sidecar（域 spec + schema 族 + 会话生命周期指纹围栏 createdAt+cwd）",
+      "status": "claimed",
+      "owner": null,
+      "domain": "win",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D764",
+      "title": "DSH 借鉴卡 B-15：权限预设写穿（预设=旋钮打包 sandbox-mode+approval-policy，写穿到会话事件，预设不成为第二真相源）",
+      "status": "claimed",
+      "owner": null,
+      "domain": "win",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D765",
+      "title": "DSH 借鉴卡 B-16：不可信上下文标注（跨会话引用 URI 编解码 + 大小上限 + 候选限流 + 不可信模型上下文标记）",
+      "status": "claimed",
+      "owner": null,
+      "domain": "win",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D766",
+      "title": "DSH 借鉴卡 B-17：skill provider 两阶段触发（dispatcher 主动发现 + 模型主动拉取）",
+      "status": "claimed",
+      "owner": null,
+      "domain": "win",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D767",
+      "title": "DSH 借鉴卡 B-18：运行时不变量注册表（InvariantRegistry，检查可选、违约必炸）",
+      "status": "claimed",
+      "owner": null,
+      "domain": "win",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D768",
+      "title": "DSH 借鉴卡 B-19：持久化分级哲学（提醒/会话走日志=冷恢复免费；伴随会话的长跑作业走内存）",
+      "status": "claimed",
+      "owner": null,
+      "domain": "win/mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D773",
+      "title": "Win 域代行规约（临时，至 Win 机回归）+ DSH 卡与 Win 工单执行方改派 Mac",
+      "status": "claimed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D774",
+      "title": "证据保鲜流水线：一键重跑全部可自动化验收 + 兑换 + TTL 定时 + 过期预警",
+      "status": "impl_done",
+      "owner": null,
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D775",
+      "title": "N13 进化闭环真实化：loop-3/5 非 placeholder + feedback 消费方接线",
+      "status": "claimed",
+      "owner": null,
+      "domain": "win",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D776",
+      "title": "线4 数据接入：L5 连接器（CRM/财务/HR）+ L4 类型契约收敛 → GS-01~04 转绿",
+      "status": "claimed",
+      "owner": null,
+      "domain": "win",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D777",
+      "title": "第五批派单：产品推进（线1 收口 + 证据保鲜 + 审计吞吐 + 产品缺口 + DSH 卡）",
+      "status": "claimed",
+      "owner": null,
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D778",
+      "title": "交付物复核门禁：派单文档 pre-commit 强制 pre-dispatch-check + CTO 交付三件套固化",
+      "status": "claimed",
+      "owner": null,
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D782",
+      "title": "机制批：18 份真相源文档接机器防线（check-doc-truth + doc-registry-gate 入 pre-commit + 唯一 runner + system-registry 规格）",
+      "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 1,
+      "updated_at": "2026-09-16"
+    },
+    {
+      "id": "D793",
+      "title": "项目管理方案：26 线 V1 验收标准（断言版）+ 四视图派生器（S0a/S0b/S2）",
+      "status": "claimed",
+      "owner": "cto",
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 0,
+      "updated_at": "2026-09-17"
+    }
+  ],
+  "blocked": [],
+  "timeline": [
+    {
+      "line": 1,
+      "milestone": null,
+      "planned_week": null,
+      "actual": {
+        "dispatched": null,
+        "first_commit": "2026-06-03",
+        "merged": null,
+        "audited": null
+      }
+    },
+    {
+      "line": 2,
+      "milestone": null,
+      "planned_week": null,
+      "actual": {
+        "dispatched": null,
+        "first_commit": "2026-06-03",
+        "merged": null,
+        "audited": null
+      }
+    },
+    {
+      "line": 3,
+      "milestone": null,
+      "planned_week": null,
+      "actual": {
+        "dispatched": null,
+        "first_commit": "2026-06-03",
+        "merged": null,
+        "audited": null
+      }
+    },
+    {
+      "line": 4,
+      "milestone": null,
+      "planned_week": null,
+      "actual": {
+        "dispatched": null,
+        "first_commit": "2026-06-03",
+        "merged": null,
+        "audited": null
+      }
+    },
+    {
+      "line": 5,
+      "milestone": null,
+      "planned_week": null,
+      "actual": {
+        "dispatched": null,
+        "first_commit": "2026-06-03",
+        "merged": null,
+        "audited": null
+      }
+    },
+    {
+      "line": 6,
+      "milestone": null,
+      "planned_week": null,
+      "actual": {
+        "dispatched": null,
+        "first_commit": "2026-06-03",
+        "merged": null,
+        "audited": null
+      }
+    },
+    {
+      "line": 7,
+      "milestone": null,
+      "planned_week": null,
+      "actual": {
+        "dispatched": null,
+        "first_commit": "2026-06-03",
+        "merged": null,
+        "audited": null
+      }
+    },
+    {
+      "line": 8,
+      "milestone": null,
+      "planned_week": null,
+      "actual": {
+        "dispatched": null,
+        "first_commit": "2026-06-03",
+        "merged": null,
+        "audited": null
+      }
+    },
+    {
+      "line": 9,
+      "milestone": null,
+      "planned_week": null,
+      "actual": {
+        "dispatched": null,
+        "first_commit": "2026-06-03",
+        "merged": null,
+        "audited": null
+      }
+    },
+    {
+      "line": 10,
+      "milestone": null,
+      "planned_week": null,
+      "actual": {
+        "dispatched": null,
+        "first_commit": "2026-06-03",
+        "merged": null,
+        "audited": null
+      }
+    },
+    {
+      "line": 11,
+      "milestone": null,
+      "planned_week": null,
+      "actual": {
+        "dispatched": null,
+        "first_commit": "2026-06-03",
+        "merged": null,
+        "audited": null
+      }
+    },
+    {
+      "line": 12,
+      "milestone": null,
+      "planned_week": null,
+      "actual": {
+        "dispatched": null,
+        "first_commit": "2026-06-03",
+        "merged": null,
+        "audited": null
+      }
+    },
+    {
+      "line": 13,
+      "milestone": null,
+      "planned_week": null,
+      "actual": {
+        "dispatched": null,
+        "first_commit": "2026-06-03",
+        "merged": null,
+        "audited": null
+      }
+    },
+    {
+      "line": 14,
+      "milestone": null,
+      "planned_week": null,
+      "actual": {
+        "dispatched": null,
+        "first_commit": "2026-06-03",
+        "merged": null,
+        "audited": null
+      }
+    },
+    {
+      "line": 15,
+      "milestone": null,
+      "planned_week": null,
+      "actual": {
+        "dispatched": null,
+        "first_commit": "2026-06-03",
+        "merged": null,
+        "audited": null
+      }
+    },
+    {
+      "line": 16,
+      "milestone": null,
+      "planned_week": null,
+      "actual": {
+        "dispatched": null,
+        "first_commit": "2026-06-03",
+        "merged": null,
+        "audited": null
+      }
+    },
+    {
+      "line": 17,
+      "milestone": null,
+      "planned_week": null,
+      "actual": {
+        "dispatched": null,
+        "first_commit": "2026-06-03",
+        "merged": null,
+        "audited": null
+      }
+    },
+    {
+      "line": 18,
+      "milestone": null,
+      "planned_week": null,
+      "actual": {
+        "dispatched": null,
+        "first_commit": "2026-06-03",
+        "merged": null,
+        "audited": null
+      }
+    },
+    {
+      "line": 19,
+      "milestone": null,
+      "planned_week": null,
+      "actual": {
+        "dispatched": null,
+        "first_commit": "2026-06-05",
+        "merged": null,
+        "audited": null
+      }
+    },
+    {
+      "line": 20,
+      "milestone": null,
+      "planned_week": null,
+      "actual": {
+        "dispatched": null,
+        "first_commit": "2026-06-03",
+        "merged": null,
+        "audited": null
+      }
+    },
+    {
+      "line": 21,
+      "milestone": null,
+      "planned_week": null,
+      "actual": {
+        "dispatched": null,
+        "first_commit": "2026-06-03",
+        "merged": null,
+        "audited": null
+      }
+    },
+    {
+      "line": 22,
+      "milestone": null,
+      "planned_week": null,
+      "actual": {
+        "dispatched": null,
+        "first_commit": "2026-06-03",
+        "merged": null,
+        "audited": null
+      }
+    },
+    {
+      "line": 23,
+      "milestone": null,
+      "planned_week": null,
+      "actual": {
+        "dispatched": null,
+        "first_commit": "2026-06-03",
+        "merged": null,
+        "audited": null
+      }
+    },
+    {
+      "line": 24,
+      "milestone": null,
+      "planned_week": null,
+      "actual": {
+        "dispatched": null,
+        "first_commit": "2026-06-03",
+        "merged": null,
+        "audited": null
+      }
+    },
+    {
+      "line": 25,
+      "milestone": null,
+      "planned_week": null,
+      "actual": {
+        "dispatched": null,
+        "first_commit": "2026-06-03",
+        "merged": null,
+        "audited": null
+      }
+    },
+    {
+      "line": 26,
+      "milestone": null,
+      "planned_week": null,
+      "actual": {
+        "dispatched": null,
+        "first_commit": "2026-06-03",
+        "merged": null,
+        "audited": null
+      }
+    }
+  ]
+}

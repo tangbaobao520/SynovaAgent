@@ -1,0 +1,51 @@
+{
+  "status": "impl_done",
+  "spec": "docs/synova/coordination/派单-D794-D795-项目总览可视化-20260917.md",
+  "impl": {
+    "branch": "feat/d795-project-board",
+    "base": "docs/v1-dod-draft-20260917@f83f85c2（stacked on PR #608——V1 断言表尚未并入 main）",
+    "files": [
+      "scripts/project/gen-project-board.py",
+      "tests/project/gen-project-board.test.sh",
+      "docs/synova/project/ledger.json",
+      ".claude/task-briefs/2026-09-17-D795-项目账本派生器.md"
+    ],
+    "verify": {
+      "五组测试": "bash tests/project/gen-project-board.test.sh → PASS=61 FAIL=0 exit 0（正常路径/反向/降级/保鲜边界/幂等 + 真实仓库冒烟）",
+      "真实仓库口径": "v1_total=125；lines=26；backlog_points=39（=164-125）；v1_passed=21；v1_verified=12；delivery_pct=16.8；verify_pct=57.1；freshness green14/yellow1/red6",
+      "降级契约": "缺 yaml → degraded:true + degraded_sources 非空（默认 exit 0 且文件仍写出；--strict exit 1）；坏 JSON → degraded:true 且不污染其余证据计数",
+      "保鲜边界": "7 天=🟢 / 8 天=🟡 / 14 天=🟡 / 15 天=🔴；龄 15 天仍计交付度（v1_passed=4、delivery_pct=100.0）",
+      "幂等": "连跑两次，除 generated_at/git_head 外逐键相等",
+      "红线": "calc-progress.py / product-lines.yaml / scripts/audit/ / product-progress.json 全部零改动（git status --porcelain 对应路径为空）"
+    },
+    "known_open": [
+      "上游依赖: V1 断言表仅存在于 docs/v1-dod-draft-20260917（PR #608），未并入 main；本分支 stacked 于其上。在缺该文件的树上运行 → degraded:true 且 v1_total=null。PR #608 合并后 rebase 至 main 即可",
+      "CI canary 未入列: tests/project/gen-project-board.test.sh 密封可入 canary，但派单 §B 限定文件集为 scripts/project/** + tests/project/** + docs/synova/project/ledger.json，ci.yml 不在其内（且 ci.yml 正被 D782 在途改动）→ check-canary-drift 会出 ::warning，入列另立派单",
+      "timeline 区分度≈0: first_commit 取各线 modules 最早提交，25/26 线同为仓库初始导入日 2026-06-03（1 线 06-05）；milestone/planned_week/dispatched/merged/audited 无数据源（§B.2 输入清单不含计划/里程碑数据）→ 需后续派单补数据模型",
+      "阻塞清单当前恒空: 261 张卡实测 0 张有 blocked{reason,since,needs} 三要素；lines[].blocked 依赖卡内可选 line 绑定字段，现无卡使用 → 字段存在但无数据",
+      "口径判读（明示以备复核）: 派单 §B.3「断言通过 = ① 有证据且未过期」与「保鲜…只计数，不扣交付度」字面冲突。按后者实现（09-17 创始人拍板口径变更 + D793 Note 根因「TTL 到期即扣完成度 → 完成度不单调」）= 证据龄不影响通过判定，保鲜单独分桶（测试组④固化该语义）",
+      "存量非证据记录: docs/synova/product-lines/evidence/D524-verify-20260825-2121.json（record_type=d524-verify，无 verdicts）登记 skipped_sources 而非 degraded_sources——避免真实仓库永久红灯；若口径要求计入降级，改一行即可",
+      "schema 增补字段: 输出含派单 §B.4 未列出的 skipped_sources[]（记录级非证据，显式不静默）；不改任何口径数字"
+    ]
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-17",
+  "updated_by": "dsh-deepseek-harness",
+  "domain": "mac",
+  "target": "2026-W38",
+  "task_id": "D795",
+  "title": "项目账本派生器：gen-project-board.py → ledger.json（四视图数据源）",
+  "owner": "mac-coding",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "acceptance_points": [
+    "ledger.json 数字与 git 事实一致",
+    "反向删证据 → 状态正确回退",
+    "缺文件/坏 JSON → degraded 显式",
+    "calc-progress.py 零改动"
+  ],
+  "next": "等待 PR 审查 + K3 审计；PR #608 并入 main 后 rebase",
+  "note": "口径：交付度=V1 断言通过数/V1 总数（单调，分母=125 冻结点）；保鲜单独计时（≤7 绿 / 8-14 黄 / >14 红，不扣交付度）；阻塞三要素（原因+起始+需要谁）。红线：不改判分（calc-progress.py 零提交）、不写回 product-lines.yaml。"
+}
