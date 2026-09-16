@@ -1,0 +1,25 @@
+{
+ "status": "claimed",
+ "spec": "docs/synova/coordination/派单-D794-D795-项目总览可视化-20260917.md",
+ "impl": null,
+ "audit": null,
+ "fix_task_id": null,
+ "updated_at": "2026-09-17",
+ "updated_by": "synova-cto",
+ "domain": "mac",
+ "target": "2026-W38",
+ "task_id": "D795",
+ "title": "项目账本派生器：gen-project-board.py → ledger.json（四视图数据源）",
+ "owner": "mac-coding",
+ "milestone": "M0 项目管理基建",
+ "depends_on": [],
+ "blocked": null,
+ "acceptance_points": [
+  "ledger.json 数字与 git 事实一致",
+  "反向删证据 → 状态正确回退",
+  "缺文件/坏 JSON → degraded 显式",
+  "calc-progress.py 零改动"
+ ],
+ "next": "按派单 §B 实现 scripts/project/gen-project-board.py + tests/project/gen-project-board.test.sh，产出 docs/synova/project/ledger.json",
+ "note": "口径：交付度=V1 断言通过数/V1 总数（单调，分母=125 冻结点）；保鲜单独计时（≤7 绿 / 8-14 黄 / >14 红，不扣交付度）；阻塞三要素（原因+起始+需要谁）。红线：不改判分（calc-progress.py 零提交）、不写回 product-lines.yaml。"
+}
