@@ -1,7 +1,7 @@
 {
   "task_id": "D759",
   "title": "回退 nodemailer 10 依赖升级（主树 tsc 变红）",
-  "status": "impl_done",
+  "status": "audited",
   "spec": ".claude/task-briefs/2026-09-15-D759-revert-nodemailer10.md",
   "impl": {
     "commit": "3fef816f（#564）",
@@ -19,10 +19,21 @@
       "验证: npx tsc --noEmit → TS2503 归零；主树恢复绿"
     ]
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-09-15-K3-D759.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "findings": [
+      "独立重跑: npx tsc --noEmit 全量 TS2503=0; 残余 28 处全在 CI 过滤名单(ci.yml:77)内(_extinct/ 25 + server.ts 2 + ima.ts 1), CI 同口径 0 error → 主树绿",
+      "package.json:68 = ^9.1.1; package-lock nodemailer 9.1.1 + @types/nodemailer 8.0.1(namespace 类型来源); email-service.ts:35 无报错",
+      "PR #564(3fef816f) 写集=package.json+package-lock(+brief/bypass/task-state 文档), 与 impl.files 一致"
+    ],
+    "by": "k3-audit (批次四)",
+    "at": "2026-09-15"
+  },
   "fix_task_id": null,
   "updated_at": "2026-09-15",
-  "updated_by": "synova-cto",
+  "updated_by": "k3-audit",
   "note": "CTO 合入 dependabot #549（nodemailer 9.1.1→10.0.3）后，主树 tsc 变红: src/services/email-service.ts(35,19) TS2503 Cannot find namespace 'nodemailer'（v10 不再提供该命名空间类型）。该 PR 的 CI 绿是在旧基线上跑的，三连合后组合态才暴露 → CTO 自误，回退并把依赖升级列入独立任务。",
   "domain": "mac"
 }

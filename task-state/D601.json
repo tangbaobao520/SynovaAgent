@@ -1,7 +1,7 @@
 {
   "task_id": "D601",
   "title": "任务看板映射校准 + L1 跨层违规扫描（改号自 D600）",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "commit": "95e1c9fa",
@@ -14,9 +14,20 @@
       "docs/synova/research/L1跨层违规扫描-20260908.md"
     ]
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-09-15-K3-C组批次.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "findings": [
+      "交付物: docs/synova/research/L1跨层违规扫描-20260908.md(178 行) + sync.js/sync.test.js 映射校准, 写集与 impl.files 一致",
+      "核心论断可确认为结构性事实: check-architecture.sh 输出『全部通过』与 68 处实违并存的假绿 —— 漏网形态1(动态 import 全逃逸: 只 grep from '...', await import()/require() 无 from 不可见)与该门禁实现方式一致; 全 L1 runtime 违规 42/68 处为动态(62% 在门禁视野外)",
+      "范围纪律: 只读扫描+报告, 未改 src/、未改 scripts/audit/、未改门禁"
+    ],
+    "by": "k3-audit (批次四)",
+    "at": "2026-09-15"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-08",
-  "updated_by": "dsh-cto",
+  "updated_at": "2026-09-15",
+  "updated_by": "k3-audit",
   "note": "手工登记：alloc 盲区——D598（Claude 线 PR #427 已合并，无 task-state 登记）与 D599（docs/feat 分支在途 + proposed note，无 task-state 登记）均占用编号，alloc 会重发 D598/D599；按 D551/D559 改号先例跳到 D600；后经远程全量核查发现 D600 已被 Codex 线占用（docs/d600-cfg-productize-first-command，PR #434 已合并），二次改号 D601。编号体系盲区待登记台账。 部署待办：重启 dsh web 后新映射生效（会中断会话，待创始人点头，D502 同款）。"
 }

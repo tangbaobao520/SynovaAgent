@@ -1,7 +1,7 @@
 {
   "task_id": "D665",
   "title": "main-build-job-failure-fix",
-  "status": "impl_done",
+  "status": "audited",
   "spec": {
     "path": ".claude/task-briefs/2026-09-10-D665-main-build-job-failure-fix.md",
     "commit": "9aabd581",
@@ -15,8 +15,19 @@
     "at": "2026-09-10",
     "note": "根因=10 个运行时目录 gitlink 入树（D595 PR #459），CI checkout exit 128；守门=check-gitlinks.sh 三态+密封测试入 ci.yml；副产物登记：synova-commit pathspec 部分提交回滚吞删除项缺陷（台账待记）"
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-09-15-K3-C组批次.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "findings": [
+      "修法为准根因修法: 摘除 10 个运行时目录 gitlink + .gitignore 防再入 + check-gitlinks 三态守门(治再入路径, 非只清存量)",
+      "638bfb5b 补提交自我披露根因链(synova-commit 部分提交回滚吞删除项 -> 摘除未生效), 诚实",
+      "审计边界同 D663: CI job 结局环境受限不可复验"
+    ],
+    "by": "k3-audit (批次四)",
+    "at": "2026-09-15"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-10",
-  "updated_by": "synova-cto"
+  "updated_at": "2026-09-15",
+  "updated_by": "k3-audit"
 }

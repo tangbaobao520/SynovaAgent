@@ -1,7 +1,7 @@
 {
   "task_id": "D751",
   "title": "「新增生效」硬断言——把文件驱动的宣称变成物理事实（P1）",
-  "status": "impl_done",
+  "status": "audited",
   "spec": "docs/synova/coordination/派单-哨兵欠账-D751-D752-D754-20260914.md §一",
   "impl": {
     "branch": "session/d751-new-sentinel-e2e",
@@ -18,10 +18,22 @@
       "恢复后: 5 passed；全量 tests/sentinel 919 passed | 1 skipped"
     ]
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-09-15-K3-D751.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "findings": [
+      "正向: d751-new-sentinel-e2e 5/5 passed, 日志真实穿过三环(工单创建/loader/降级显式), 非 mock 自证",
+      "反向: 删夹具 manifest.expert → 环1/2/3 精确 3 failed(与声称逐环一致), 降级路径保持绿; 恢复零残留",
+      "evidence 失实注记: '全量 tests/sentinel 919 passed|1 skipped' 的 919 在 4 个口径均不可复现(实测 sentinel 227/全仓 4422/D751 时点全仓 4413/分支声明 217); '1 skipped'吻合; 无回归的方向性结论成立",
+      "注入缝 SENTINELS_FIXTURE_DIR 生产路径不变, 夹具不污染真实注册表"
+    ],
+    "by": "k3-audit (批次四)",
+    "at": "2026-09-15"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-14",
-  "updated_by": "mac-coding-dsh",
+  "updated_at": "2026-09-15",
+  "updated_by": "k3-audit",
   "note": "质询 §六 该做 2：加一个专家/哨兵 → 断言①被路由到 ②被调用 ③结果进报告。现状：文件驱动被宣称，但没有断言「新增确实生效」→ 漏声明的部分不报错（静默失效）。验收：新增一个 fixture 专家/哨兵 → 端到端断言三环；去掉声明 → 必红。",
   "source": "~/山河研究院/99-综合/质询-可插件化是否物理事实.md（终版 2026-09-14，院长质询）"
 }

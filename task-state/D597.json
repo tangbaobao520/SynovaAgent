@@ -1,16 +1,27 @@
 {
   "task_id": "D597",
   "title": "D588会话投影接线-M3第5次修复",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "commit": "0a192e6f",
     "by": "dsh",
     "at": "2026-09-08"
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-09-15-K3-C组批次.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "findings": [
+      "接线链完整可复验: src/server.ts:86 import { Bootstrap } from './deploy/bootstrap' -> src/deploy/bootstrap.ts:27 副作用 import '../store/session-projection'(:24 注释记录 M3 修复理由, 加载即 wrap SessionStore.prototype.appendEvent)",
+      "回归: npx vitest run tests/store/session-projection.test.ts -> 7 passed (7) [exit 0]; bash scripts/check-architecture.sh -> 架构检查 全部通过",
+      "M3 第 5 次修复有效且未被后续批次回退"
+    ],
+    "by": "k3-audit (批次四)",
+    "at": "2026-09-15"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-08",
-  "updated_by": "dsh",
+  "updated_at": "2026-09-15",
+  "updated_by": "k3-audit",
   "note": "D588 CONDITIONAL 三条件之① 接线落地：bootstrap.ts +1 行副作用 import（0a192e6f）。验收 4/4：grep 命中 :27、vitest 7/7、check-architecture 零违规、tsc 28=28。待 PR CI + CTO merge + K3 复审升 PASS。"
 }

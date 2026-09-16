@@ -1,7 +1,7 @@
 {
   "task_id": "D714",
   "title": "f3-preload-sandbox-renderer-api-fix",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "path": "electron/main.cjs（additionalArguments 透传 + 启动自检 preload-check）+ electron/preload.cjs（去掉 require('./config.json')，改读 argv）",
@@ -10,8 +10,21 @@
     "at": "2026-09-13",
     "note": "修 F3（跨平台 P0）：打包态沙箱 preload 不允许 require 相对文件 → electronAPI undefined → UI 全线失效。保持 renderer 沙箱，改 additionalArguments 传配置 + 加启动自检哨兵。功能级验证：应用自检输出 preload-check OK（serverUrl=http://localhost:18790）"
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-09-15-K3-D714.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "findings": [
+      "去重: D714 已在 docs/synova/audit-reports/2026-09-13-D715.md:183-187 审过; 本报告为现状复验, 补跑 D715:187 自认未跑的 electron 回归",
+      "preload 收敛真实性成立: electron/preload.cjs:17 仅 require('electron'), :23-30 改 argv 读取 + 缺省兜底; 全 electron/ grep nodeIntegration 仅 main.cjs:88 = false(无泄漏); contextIsolation:true(:87)",
+      "回归补跑: npx vitest run tests/electron/ -> 13 passed (13) | Tests 170 passed | 3 skipped (173) [exit 0]; 首跑 1 红的 react-markdown 缺失为环境依赖(K3 工作区 node_modules 早于 package.json:88 新增), 补依赖后全绿, 非产品缺陷",
+      "1-4 未转绿(继承 D715:201 P1-4): 无 D714 证据文件落 docs/synova/product-lines/evidence/(grep 零命中); 启动探针输出只进 stdout 不落盘 -> M3 机制建成出口未接",
+      "修复设计正确: 走 Electron 官方 additionalArguments(沙箱内 process.argv 可用) 而非关沙箱, 安全姿态未降级"
+    ],
+    "by": "k3-audit (批次四)",
+    "at": "2026-09-15"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-13",
-  "updated_by": "synova-cto"
+  "updated_at": "2026-09-15",
+  "updated_by": "k3-audit"
 }

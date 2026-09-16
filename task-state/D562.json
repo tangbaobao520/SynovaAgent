@@ -1,14 +1,25 @@
 {
   "task_id": "D562",
   "title": "K3 复审批 D558-D561 派单 + 三连验收台账登记",
-  "status": "impl_done",
+  "status": "audited",
   "spec": null,
   "impl": {
     "commit": "8cdac2b2",
     "note": "K3 复审批执行完毕并经 PR #304 回流（4f4dcb9a），三任务 PASS 全闭合"
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-09-15-K3-D组批次.md",
+    "verdict": "NOT-AUDITABLE",
+    "blockers": [],
+    "findings": [
+      "impl.commit=8cdac2b2 有(D562 K3 复审批派单 + 三连验收台账登记), 但 files/evidence 全空 -> 同上",
+      "唯一旁证为 commit message 标题(若有) —— 但 commit message 说了什么 != 做成了且验证过(M2 模式), 不作为裁决依据",
+      "补证路径: 回填 impl.files 写集 + 至少一条可复跑验证命令(或显式声明本任务无代码交付、证据=commit+文件清单), 即可重审"
+    ],
+    "by": "k3-audit (批次四)",
+    "at": "2026-09-15"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-08-29",
-  "updated_by": "alloc-task-id"
+  "updated_at": "2026-09-15",
+  "updated_by": "k3-audit"
 }

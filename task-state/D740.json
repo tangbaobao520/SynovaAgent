@@ -1,7 +1,7 @@
 {
   "task_id": "D740",
   "title": "L1交互层未闭合项取证（D518/D519/D590/D591/D593/D595/D602 + D594 + D572）",
-  "status": "impl_done",
+  "status": "audited",
   "risk": "low",
   "spec": null,
   "impl": {
@@ -26,8 +26,22 @@
     ],
     "notes": "只取证不改：全程 git show / git ls-tree / grep / 只读 API。未触碰 scripts/audit/、generate-dashboard.py、pre-commit-check.sh。未复跑项（骨架 brief 门禁毒化、Mac/Win 实测本体）已在报告 §10 显式标注。附加发现：board-backlog PLAN-k3-cond-clear note 称『骨架 brief 已清+审计清单已补』与实测不符（M2 型失真声明）。"
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-09-15-K3-D740.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "findings": [
+      "交付物结构完整: L1交互层未闭合项-20260913.md 425 行, 9 对象逐节(§1-§9)固定三段式(条件原文摘录/未闭合项/现状核实), 9/9 无缺项",
+      "抽点复验成立: evidence[0] 的 5 处 file:line 锚点中 2026-08-25-D517-D519.md:12-14 原文逐字命中(C1/C2 条件 + 转正判据)",
+      "方法学正确: 头部声明只读不改+未碰 scripts/audit/, 且『无证据的判断不写』每节附可复跑命令 —— 取证类任务的正确姿态",
+      "诚实统计: 自报『9 对象中 0 个已完全闭合, 7 个 CP 仍有 8 条条件开着(含 D518/D519 条件满足但未转正)』, 与 task-state 现状一致",
+      "P2-1: D518 C1 的 CI run 断言需 GitHub API, K3 无凭据 -> 本轮不可独立复验(环境受限非恒失败); 建议 CI 结论类取证落盘 API 响应原文",
+      "P2-2: 7 节结论为『条件已闭但 verdict 未转正』却无归属人与触发条件 -> control-tower 缺 CP 转正触发器(记 L4)"
+    ],
+    "by": "k3-audit (批次四)",
+    "at": "2026-09-15"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-14",
-  "updated_by": "dsh-cto"
+  "updated_at": "2026-09-15",
+  "updated_by": "k3-audit"
 }

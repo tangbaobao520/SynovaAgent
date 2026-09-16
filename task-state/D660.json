@@ -1,14 +1,25 @@
 {
   "task_id": "D660",
   "title": "任务看板活动判定重排——running=48h 分支活动 + 待规划 backlog 列三源落位",
-  "status": "impl_done",
+  "status": "audited",
   "risk": "medium",
   "spec": null,
   "impl": {
     "commit": "1730c9a3"
   },
-  "audit": null,
+  "audit": {
+    "report": "docs/synova/audit-reports/2026-09-15-K3-C组批次.md",
+    "verdict": "PASS",
+    "blockers": [],
+    "findings": [
+      "语义落位与声称一致: sync.js:54-57 ACTIVITY_WINDOW_MS = 48h(创始人 2026-09-10 定), :14-15 注释明示 running=claimed/spec_done 且远端分支 48h 内有提交(活动判定非状态判定), impl_done->todo, backlog 三源(board-backlog PLAN-*/todos.yaml T-*/产品线 0 verified)",
+      "回归实跑: node --test dsh/plugins/task-board-adapter/test/sync.test.js -> 42 tests / 42 pass / 0 fail",
+      "提交 1730c9a3 写集 7 文件与任务声称一致"
+    ],
+    "by": "k3-audit (批次四)",
+    "at": "2026-09-15"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-10",
-  "updated_by": "CTO"
+  "updated_at": "2026-09-15",
+  "updated_by": "k3-audit"
 }
