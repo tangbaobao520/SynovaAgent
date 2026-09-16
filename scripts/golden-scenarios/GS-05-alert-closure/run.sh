@@ -107,12 +107,12 @@ if [[ "$CNT1" =~ ^[0-9]+$ && "$CNT2" =~ ^[0-9]+$ ]]; then
   if [ "$CNT1" -eq 0 ]; then
     echo "DEDUP_VACUOUS count=0（触发未产生工单 — 去重键无法验证，依赖 D356 告警闭环，诚实 RED）" > "$DATA_DIR/dedup-check.txt"
   elif [ "$CNT1" -eq "$CNT2" ]; then
-    echo "DEDUP_STABLE count=$CNT1（触发#1=$CNT1 触发#2=$CNT2，同窗口内工单不新增）" > "$DATA_DIR/dedup-check.txt"
+    echo "DEDUP_STABLE count=${CNT1}（触发#1=$CNT1 触发#2=${CNT2}，同窗口内工单不新增）" > "$DATA_DIR/dedup-check.txt"
   else
-    echo "DEDUP_UNSTABLE count1=$CNT1 count2=$CNT2（二次触发工单数变化）" > "$DATA_DIR/dedup-check.txt"
+    echo "DEDUP_UNSTABLE count1=$CNT1 count2=${CNT2}（二次触发工单数变化）" > "$DATA_DIR/dedup-check.txt"
   fi
 else
-  echo "DEDUP_UNSTABLE count1=$CNT1 count2=$CNT2（tickets 响应解析失败）" > "$DATA_DIR/dedup-check.txt"
+  echo "DEDUP_UNSTABLE count1=$CNT1 count2=${CNT2}（tickets 响应解析失败）" > "$DATA_DIR/dedup-check.txt"
 fi
 echo "[GS-05] 去重检查: $(cat "$DATA_DIR/dedup-check.txt")"
 

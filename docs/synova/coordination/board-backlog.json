@@ -263,6 +263,20 @@
       "severity": "P2",
       "source": "D741 定位（2026-09-14）",
       "note": "`product-progress.json` 实测 **26/26 条线均无 `status` 键**（派单点名桌面端/对话交互/MCP 集成三条＝L1 交互层三条）。写入端 `scripts/product-lines/calc-progress.py:316-330` 只写 `status_counts` 不写线级 `status`；契约 `product-lines.yaml` 亦无线级 status（仅点级种子）；三个消费端也都不读：`dsh/plugins/synova-dashboards/lib/collect.js:107-115`、`dsh/plugins/task-board-adapter/scripts/derive-board-sources.py:283-291`、`scripts/product-lines/gen-progress-page.py:114-122` → 补一处无效。前置：线级状态语义（建议由 status_counts + k3_gate 派生）属产品口径，待创始人拍板后派工。证据：同报告 §1。"
+    },
+    {
+      "id": "PLAN-g12-writeset-glob-unify",
+      "title": "G12 与 D708 写集匹配器统一（G12 match_path 字面匹配不展开 glob）",
+      "severity": "P1",
+      "source": "D774 执行期实测（2026-09-15，第三次复发）",
+      "note": "同一份 brief Q2 glob 声明，CI 端 merge_writeset_gate.py 用 fnmatch 认、本地 pre-commit G12 用 brief_parser.match_path（re.escape 字面）拒 → glob 声明在 G12 永不匹配（D718 §⑥ 首记、D703 期再发、D774 两拦后以 8 行精确文件名绕过）。修法方向：G12 的 matches 收敛到 fnmatch（或两端口径统一为显式 glob 语法），配对测试断言双端同判。涉门禁脚本变更（ctrl-tower-change 域）。"
+    },
+    {
+      "id": "PLAN-gs-evidence-id-mapping",
+      "title": "GS 场景证据验收点 id 体系断裂（L1-x/S0-x vs yaml 1-x，calc 零兑换）+ GS-01/02/04 持续失败修复",
+      "severity": "P1",
+      "source": "D774 执行期实测（2026-09-15）",
+      "note": "GS 场景证据 acceptance_point 用 L1-1/S0-1 等场景侧 id，product-lines.yaml 点 id 为 1-1/7-1 → calc-progress verdicts_by_point 索引永不命中，GS 证据对产品进度零兑换（保鲜流水线兑换全靠线1 vitest+A2 写对 id）。需建「场景点→产品点」机器可读映射（GS expect.json 或 yaml evidence 绑定侧）或统一 id。附带：GS-01（noauth-401）/GS-02/04（severity-critical）断言 08-21 起持续失败（三轮同型），待场景归属线修复——修复前每轮重跑汇总显式 fail（诚实红）。属场景归属域（scripts/golden-scenarios 场景本体 + 对应产品代码）。"
     }
   ]
 }
