@@ -1460,6 +1460,8 @@ Binary file .claude/bypass.log matches
 2026-09-16T01:49:59+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=5ab4ccabb3ac77646cf89d26131df886e2eb21d7
 2026-09-16T18:33:52+0800 | COMMITTED | pre-commit PASS (rebase 重放后 HASH 变更, 一次性补记 D331 对账) | HASH=acb4d6cea862c8a0ae761d5a6b3d126651066471
 2026-09-16T01:41:22+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=fa04175d438aa2ae380b2e11d0f350f263c33641
+2026-09-16T19:09:04+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=980c0db174c4204fa736db72a4a68675cb9c6296
+2026-09-16T19:10:29+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=0e57582c3d66eeec8ba78d2d128e7033d4db3dc1
 2026-09-16T01:40:55+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D782 | AGENT=CTO-DSH
 2026-09-16T01:43:13+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D782 | AGENT=CTO-DSH
 2026-09-16T01:43:39+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D782 | AGENT=CTO-DSH
@@ -1475,3 +1477,4 @@ Binary file .claude/bypass.log matches
 2026-09-16T19:52:54+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D782 | AGENT=CTO-DSH
 2026-09-16T21:25:27+0800 | COMMITTED | pre-commit PASS (rebase 补记) | HASH=c5ccbe73fca678517053af2b55ccda6aa5441cd7
 2026-09-16T21:38:09+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=551b4bca3f3fb94dd4a26be378958dcabe742749
+2026-09-16T21:56:43+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=9db4fe928892fabbd21ad9a5fa4918d114e59840
