@@ -1,0 +1,13 @@
+{
+  "task_id": "D791",
+  "title": "线3 报告体系 spec：一页纸结构（3-1）+ 各维度循环结论（3-7）",
+  "status": "claimed",
+  "spec": "docs/synova/coordination/派单-批六首批三卡-20260916.md",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-16",
+  "updated_by": "synova-cto",
+  "domain": "win",
+  "note": "线 3 八个验收点 0 证据（product-progress 实读: 7 uncommitted + 1 pending_k3）；3-1/3-7 无 spec 载体。dev-doc 交付物: spec（docs/plans/codex/implementation/）+ 编码指令（dev-doc-delivery 技能）+ task-state 回填；brief 不许留骨架（K3 刚实证 D595 骨架 brief 属交付缺陷）。服务支柱②（报告可溯源到证据）。"
+}
