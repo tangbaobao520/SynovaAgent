@@ -1,0 +1,13 @@
+{
+  "task_id": "D787",
+  "title": "CT 三机制（提交级写集对账 / 合并 diff 白名单核验 / task-state 载体存在性）+ D595 载体修复 + D593 裁定订正",
+  "status": "claimed",
+  "spec": "docs/synova/coordination/派单-D787-CT三机制与D595载体修复-20260916.md",
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-16",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "note": "K3「D593-FIX 复审 + D595 首审」验收时 CTO 独立复核: ① 证实 K3 对 9c3f1672 的取证（12 文件无 diagnosis.ts）与 D595 spec/brief 双缺失（spec 由 #457 删除）；② **证伪其终局判定**——main 上四块恢复面全部在场（saveDiagnosisCheckpoint L596 / 冷读 678·741·794 / FIFO 104-106·155 / 列表端点 L808），FIX2 e53b5984（#476, 2026-09-10）已修复，CTO 独立实跑 21/21 绿 → FAIL 裁定已过时；③ gitlink 当前 main 已清零。派单: 任务1 K3 复验 FIX2 并订正裁定；任务2 D595 载体修复（恢复 spec + 补实 brief + 写集补入库）；任务3 三机制（A 提交级写集对账 / B 合并 diff 白名单核验 / C task-state 载体存在性），CT 最高优先。"
+}
