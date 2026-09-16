@@ -1,0 +1,26 @@
+{
+ "task_id": "D796",
+ "title": "交付纪律三闸（物理固化）：工作区归属 / 完工落库 / 派单四件套",
+ "status": "claimed",
+ "spec": ".claude/task-briefs/2026-09-17-D796-delivery-discipline.md",
+ "impl": null,
+ "audit": null,
+ "fix_task_id": null,
+ "updated_at": "2026-09-17",
+ "updated_by": "synova-cto",
+ "domain": "mac",
+ "owner": "cto",
+ "milestone": "M0 项目管理基建",
+ "depends_on": [],
+ "blocked": null,
+ "target": "2026-W38",
+ "acceptance_points": [
+  "C1 跨任务分支必红（含小写 d782 真实形态）",
+  "C2 完工无 impl/写集未落库必红",
+  "C3 派单缺四件套必红",
+  "本地软提示 + CI 硬阻断（SYNO_CI）",
+  "14/14 测试含反向验证"
+ ],
+ "next": "合入后：① 观察下一轮 K3/CI 是否再出现「未提交当完工」 ② 视需要把 --scan 接进每日体检",
+ "note": "创始人 2026-09-17 三次点名同类问题复发（交付未进 git / 改在别人分支 / 派单缺件）→ 要求「固化，不能自律解决」。本仓 V3.9 教训（软机制 0% 有效）→ 三条改物理检查。实现中反向测试抓出我自己两个真 bug（分支号提取大小写敏感、写集块解析在空行截断导致永不生效），已修。"
+}
