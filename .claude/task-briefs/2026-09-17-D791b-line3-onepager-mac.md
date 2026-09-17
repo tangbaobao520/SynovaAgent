@@ -62,3 +62,6 @@ GSS 场景与断言引擎域——驱动脚本可直连真实类（`SqliteGraphS
 - [ ] DS-B4: `bash scripts/pre-commit-check.sh` 13 组过（禁 --no-verify）
 - [ ] DS-B5: 点级证据含 `at` 全量 ISO（`python3 -c` 读 `scenario-<date>.json` 断言 `at` 存在）→ exit 0
 - [ ] DS-B6: 死代码零命中 `grep -rn "dist/l3/report-template-loader" scripts/golden-scenarios/` → 零结果
+
+## 写集豁免
+- .claude/task-briefs/2026-09-17-D791b-line3-onepager-mac.md — 本任务 brief 自身：pre-commit 组 6 要求的流程工件（Q0-Q3/架构层/Done 6 核心字段），非产品写集；D708 声明级豁免
