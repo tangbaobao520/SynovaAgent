@@ -27,7 +27,7 @@
   }
  },
  "impl": {
-  "commit": "ad1ae4dc",
+  "commit": "e54ab79a",
   "by": "mac-coding (DSH synova-dsh)",
   "at": "2026-09-17",
   "scope": "切片 0（GS-01 断言契约校准 + V1 绑定）——切片 1-2 已授权未做，切片 3-5 未授权",
@@ -59,7 +59,8 @@
   ],
   "commit_patch": "94be510c",
   "rebase_note": "原提交 036d9e34/c8ef8134 在 rebase onto b396bafc（当轮 main）后换哈希为 ad1ae4dc/94be510c；bypass.log 记录按 D331 一次性补记。内容等价，无行为变更。",
-  "record_correction": "CTO 2026-09-17 指令订正（执行方 dev-doc session）：① 测试口径改为相对 main 的增量口径（13→17：+3 切片 0 / +1 补丁），绝对套件数作佐证保留；② impl.commit 归属改为「当前内容提交」——该提交语义涵盖 ad1ae4dc（切片 0）+ 94be510c（切片 0 补丁）；订正理由：原 impl.commit 仅指切片 0，漏补丁，配合 d804 补丁提交后 read 出的实现落地提交不完整。"
+  "record_correction": "CTO 2026-09-17 指令订正（执行方 dev-doc session）：① 测试口径改为相对 main 的增量口径（13→17：+3 切片 0 / +1 补丁），绝对套件数为佐证；② impl.commit 由 ad1ae4dc（仅切片 0，漏补丁）改为 e54ab79a（当前内容提交，语义含 94be510c）；③ 必跑复验：bash scripts/golden-scenarios/GS-01-first-diagnosis/run.sh → 9/9 断言 pass / exit 0（证据 scripts/golden-scenarios/evidence/GS-01-2026-09-17.json，重跑后与已入库内容逐字一致=幂等）。",
+  "commit_semantics": "e54ab79a = 当前内容提交（impl 段口径订正的承载提交），其祖先链语义涵盖 ad1ae4dc（切片 0 实现） + 94be510c（切片 0 补丁）+ 1a9c672d（merge origin/main）。读实现落地以本字段为准；commit_patch 仅作历史留痕。"
  },
  "audit": null,
  "fix_task_id": null,
