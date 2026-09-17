@@ -3,6 +3,12 @@
   "title": "DSH 借鉴标准更新（治理文档）：合规口径 + G3 守卫物理化 + 落点归属 + V1 元断言一致性核对表",
   "status": "impl_done",
   "spec": "docs/synova/research/DSH迁移施工图-20260820/DSH借鉴指引-v2-20260904.md（原文件处更新：§10/§11/§12 + 附录 C）",
+  "write_set": [
+    "docs/synova/research/DSH迁移施工图-20260820/DSH借鉴指引-v2-20260904.md",
+    ".claude/task-briefs/D808.md",
+    "memory/notes/implemented/2026-09-17-D808-dsh-borrow-standard.md",
+    "task-state/D808.json"
+  ],
   "impl": {
     "branch": "docs/d808-dsh-borrow-standard",
     "base": "origin/main@50d8a3d9",
