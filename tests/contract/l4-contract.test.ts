@@ -22,6 +22,7 @@ import { createLogger } from '@synova/logger';
 import { SqliteGraphStore } from '../../src/adapters/sqlite-graph-store';
 import type { GraphStoreReader } from '../../src/l4/graph-traversal';
 import { revenueHealthSentinel } from '../../extensions/sentinels/revenue-health/aggregate';
+import { computeCashRunwayMonths } from '../../extensions/sentinels/cash-runway/computes/compute-cash-runway-months';
 
 // D355: mock logger 单例 — 被测模块与测试共享同一 mock 实例, 可断言 log.error/log.warn 调用
 vi.mock('@synova/logger', () => {
@@ -222,12 +223,20 @@ function collectSources(dir: string): string[] {
   return out;
 }
 
-/** 抽源码里全部 `props.X` 读名（节点属性与边属性一并抽——保守过近似，不产生假阴性） */
+/** 抽源码里全部「读名」——`props.X` 字面读 + `*_PROP_CHAIN` 字段链字面量（保守过近似，不产生假阴性） */
 function readPropNames(files: string[]): string[] {
   const names = new Set<string>();
   for (const f of files) {
     const src = stripComments(readFileSync(f, 'utf-8'));
     for (const m of src.matchAll(/\bprops\.([A-Za-z_][A-Za-z0-9_]*)/g)) names.add(m[1]);
+    // D803 切片③: 字段链常量（`const X_PROP_CHAIN = ['a','b'] as const`）经动态键 `props[k]` 读取，
+    // `props.X` 正则抽不到 → 必须显式解析链字面量。否则「往现金链里塞 total_revenue」这类
+    // 断裂对本守卫失明（正是本卡要防的 K3 断裂②）。
+    for (const m of src.matchAll(/[A-Z_]*PROP_CHAIN\s*=\s*\[([^\]]*)\]/g)) {
+      for (const s of m[1].matchAll(/'([A-Za-z_][A-Za-z0-9_]*)'|"([A-Za-z_][A-Za-z0-9_]*)"/g)) {
+        names.add(s[1] || s[2]);
+      }
+    }
   }
   return [...names].sort();
 }
@@ -324,5 +333,27 @@ describe('D803 读侧消费契约 — 四资本哨兵读名 ⊆ 写侧能力集�
     // 断裂检测: 硬编码 financialType === 'revenue' 会让所有上传数据判空 → 日志出现「无收入数据」
     expect(log.info).not.toHaveBeenCalledWith(expect.anything(), '无收入数据');
     expect(Array.isArray(findings)).toBe(true);
+  });
+
+  it('运行时: compute-cash-runway-months 现金链不得挪用 total_revenue（守 10-4 / K3 断裂②指纹）', async () => {
+    // 撕裂点: 现金链曾是 `cash_balance || total_revenue`——把收入当现金，
+    // 32 天现金 / 12 万月耗（真 runway 0.25 → critical）会被 120 万收入伪装成 10 个月（warning）。
+    // 修复后: 现金链全缺 → 诚实降级，绝不产出被收入污染的跑道数字。
+    const store = {
+      queryNodes: () => [{
+        id: 'fin-erp-1',
+        type: 'Financial',
+        props: { financialType: 'erp-standard', total_revenue: 1200000, operating_expense: 120000, period: '2026-Q2' },
+      }],
+      queryEdges: () => [],
+      getNode: () => null,
+    };
+
+    const runway = await computeCashRunwayMonths(store as unknown as GraphStoreReader, { teamId: 'team1' });
+
+    expect(runway.degraded).toBe(true);
+    expect(runway.warnings.some((w) => w.includes('现金字段缺失'))).toBe(true);
+    // 反证: 若 total_revenue 被当现金 → 1200000/120000 = 10（非降级，值 10）
+    expect(runway.value).not.toBe(10);
   });
 });
