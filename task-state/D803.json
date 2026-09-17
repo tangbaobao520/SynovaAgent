@@ -36,25 +36,39 @@
     ],
     "writeset_note": "dev doc §10.1 写集 10 文件零偏差。**交付拆成 2 个单域 PR**：D803 派单声明域=win，但写集天然跨域（scripts/golden-scenarios/** 与 docs/synova/product-lines/** 归 mac，extensions/** 与 tests/** 归 win；实测 python3 scripts/control-tower/check-ownership.py）。按 D773《Win域代行规约》「跨域切片在同一执行方内拆成多个单域 PR，连续做完」拆为 PR-1 win（切片②③）/ PR-2 mac（切片①④⑤）。D734 门禁：单 PR ≤12 文件且单域。scripts/audit/** 0 触碰、scripts/product-lines/calc-progress.py 0 触碰、src/** 0 触碰。",
     "branches": {
-      "pr1_win": "feat/d803-capital-cycle-win（9 文件：7 win + 2 domain-neutral）→ 单域 win，≤12 ✅",
+      "pr1_win": "feat/d803-capital-cycle-win（10 文件 = 7 win + 3 域判定豁免：.claude/bypass.log / .claude/task-briefs/** / task-state/**）→ 单域 win，≤12 ✅",
       "pr1_win_commits": [
         "aa6fa444 fix(D803): 切片② 读侧属性契约守卫 + revenue-health 断裂修复（10-2）",
         "27b153b7 fix(D803): 切片③ 跑道/逾期字段语义修复——存在性守卫+删除 total_revenue 挪用（10-4）",
-        "348a3c6d docs(D803): task-state 回填 impl 段（PR-1 win 切片②③ + D773 单域拆分记录）"
+        "348a3c6d docs(D803): task-state 回填 impl 段（PR-1 win 切片②③ + D773 单域拆分记录）",
+        "19f20c0a refactor(D803): l4-contract 新增 mock 显式标注 GraphStoreReader（铁律 38 as unknown as 清零）",
+        "74591b62 docs(D803): dev doc 落库（派单契约，CTO 指令④；docs/plans/** 归 win 域）"
       ],
-      "pr2_mac": "feat/d803-capital-cycle-mac（8 文件：6 mac + 2 domain-neutral）→ 单域 mac，≤12 ✅",
+      "pr2_mac": "feat/d803-capital-cycle-mac（9 文件 = 6 mac + 3 域判定豁免）→ 单域 mac，≤12 ✅（含 CTO 指令⑤ 的 CT 台账登记）",
       "pr2_mac_commits": [
         "e5a3e288 test(D803): 切片① manifest 挂载回归守卫——threshold-provenance 断言 + evidence_map 10-3",
         "ca1c0388 test(D803): 切片④ GS-03 负向相位 + 线10 证据落点（10-1/10-3/10-6）",
-        "f0151ab8 test(D803): 切片⑤ 10-2 绑定 test:l4-contract + A2 机器证据 + K3 定向复核备料"
+        "f0151ab8 test(D803): 切片⑤ 10-2 绑定 test:l4-contract + A2 机器证据 + K3 定向复核备料",
+        "438c401e docs(D803): 合并约束+验收口径订正+A2 合并树重跑记录；登记 CT 两项（铁律38 tests 盲区 / cherry-pick 误报）"
       ],
-      "evidence_reference": "feat/d803-capital-cycle-v1（两域合一的完整交付参照分支，5 切片单链 + 全部证据可一处分诊；不作为合并载体——D734 单域门禁）"
+      "evidence_reference": "feat/d803-capital-cycle-v1（两域合一的完整交付参照分支，5 切片单链 + 全部证据可一处分诊；不作为合并载体——D734 单域门禁）",
+      "merge_constraint": "⛔ CTO 指令①: 两分支互为前提，**必须同批合并，不可只合 mac**。只合 mac = 假绿：test-2026-09-17.json 会给出 10-4: pass，而产出该绿的用例集是旧版、跑道字段语义缺陷仍在代码里。只合 win 只是不完整（v1_passed 停在 1/6），不算假绿。"
     },
     "ci_equivalence": {
       "pr1_win": "SYNO_CI=1 SYNO_DIFF_BASE=origin/main bash scripts/pre-commit-check.sh → EXIT 0 · 全部 13 组通过 · D734 ✅；bash scripts/control-tower/simulate-ci.sh → EXIT 0（CI 等价模拟通过）",
       "pr2_mac": "同上两条 → 均 EXIT 0（D734 ✅ / 全部 13 组通过 / CI 等价模拟通过）",
       "gatekeeper_note": "本机 2026-09-17 出现 2 条 `detected-bypass head-mismatch` 记录——经复核为 git cherry-pick 重放提交（新 parent 与 marker 不匹配）触发的 post-commit 启发式误报，非 --no-verify；已按门禁自带逃生舱 SYNO_GATEKEEPER_ACK=1 人工确认放行并落 degraded-events.log。根因（cherry-pick 未纳入 D366 三判）属控制塔缺陷，登记 CT 待办。"
-    }
+    },
+    "a2_rerun_on_combined_tree": "CTO 指令②: 在含 win 改动的树上重跑 run-machine-evidence.sh（mac 树叠加 win 全部源码，叠加态从未提交）→ 12 test files / 102 tests 全绿；叠加树 l4-contract = 13 用例（mac-only = 9）证明叠加生效。如实声明: 产出的 test-2026-09-17.json 与 mac-only 版逐字节一致（A2 只记点→裁决，不含树哈希）——防假绿的物理保障是合并约束，不是该文件内容。",
+    "acceptance_wording": {
+      "ledger_line10": "两分支合并后 ledger 线10 v1_passed=5 / v1_total=6（当日账本视角即 green）",
+      "calc_progress_line10": "当日 calc-progress 视角仍判 stale（A1 惰性失效: date-only 证据 + 同日改了线 modules）→ D+1 重跑转绿（DS11）",
+      "line10_status": "5/6 机器证据 + 1 待 K3（10-8）→ 未达 100%，进度按 calc-progress.py:34 契约封顶 99"
+    },
+    "ct_findings_registered": [
+      "AUDIT-FINDINGS-LEDGER 09-17 行: 铁律 38 门禁盲区——组 1 扫描范围仅 ^(src|packages)/.*\\.ts$ 且排除 *.test.ts（D803 实证 2 处 as unknown as 零告警；本卡已自清）",
+      "AUDIT-FINDINGS-LEDGER 09-17 行: D366 三判未覆盖 cherry-pick 重放 → detected-bypass 误报（同型 D366 P1-1 amend 复现，判定语义缺口第二次）"
+    ]
   },
   "audit": null,
   "fix_task_id": null,
@@ -101,7 +115,7 @@
     "not_done": [
       "DS8（K3 执行 10-8）—— 独立审计环节，本卡只备料，禁自我审计",
       "DS11（次日跨天重跑）—— 本会话无法跨天执行；同日提交线 modules 导致 calc-progress 视图 stale（A1 惰性失效，证据无 at 时间戳），D+1 重跑即恢复。命令：bash scripts/product-lines/rerun-evidence.sh 或 bash scripts/golden-scenarios/GS-03-capital-cycle/run.sh",
-      "dev doc 未入任何分支（git branch -a --contains 为空，仅工作区可读）——写集纪律不提交它（10 文件铁律），CTO 需补落库"
+      "dev doc 已按 CTO 指令④ 落库至 PR-1 win 分支 commit 74591b62 ✅（原「未入库」项已闭环）"
     ],
     "ci_equivalence": {
       "check": "SYNO_CI=1 SYNO_DIFF_BASE=origin/main bash scripts/pre-commit-check.sh",
