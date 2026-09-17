@@ -52,6 +52,11 @@ SPEC（dev doc 八节）→ 测试（切片②先红：契约 describe 覆盖断
 - docs/synova/product-lines/product-lines.yaml（切片⑤：仅 10-2 evidence 数组追加 test:l4-contract）
 - scripts/golden-scenarios/evidence/GS-03-2026-09-17.json（切片④产物：场景证据原始 JSON 入 git）
 - task-state/D803.json（卡状态回填 impl 段）
+- .claude/task-briefs/2026-09-17-D803-capital-cycle.md（本任务 task brief 自身，D708 声明源 S3）
+- docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D803-capital-cycle-20260917.md（dev doc 契约，CTO 指令④ 要求随 PR 落库）
+- docs/synova/coordination/AUDIT-FINDINGS-LEDGER.md（CT 台账登记两项控制塔发现，CTO 指令⑤ 要求）
+- docs/synova/product-lines/evidence/test-2026-09-17.json（A2 机器证据，CTO 指令② 要求在含 win 改动的树上重跑产出）
+- docs/synova/product-lines/k3-task-line-10-2026-W37.md（10-8 K3 定向复核备料清单，DS7 要求落盘）
 不做什么：
 - 不改 scripts/product-lines/calc-progress.py（派单红线：只喂证据不改判分）
 - 不改 scripts/audit/run-auditor.py（K3 专属红线）
