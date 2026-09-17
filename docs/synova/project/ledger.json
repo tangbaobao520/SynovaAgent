@@ -1,8 +1,8 @@
 {
   "schema": "project-ledger/1",
   "generated_by": "gen-project-board.py",
-  "generated_at": "2026-09-18T00:59:05+08:00",
-  "git_head": "394012bbd9a508cb980fa1cca6d9f4055e72672c",
+  "generated_at": "2026-09-18T01:16:57+08:00",
+  "git_head": "85c84be54f1a3aae90fbea4d4559113729c11b57",
   "sources": {
     "yaml": "docs/synova/product-lines/product-lines.yaml",
     "v1_dod": "docs/synova/project/26线-V1验收标准-草案v0.2-20260918.md",
@@ -18,12 +18,12 @@
   ],
   "totals": {
     "v1_total": 128,
-    "v1_passed": 23,
+    "v1_passed": 25,
     "v1_verified": 13,
-    "delivery_pct": 18.0,
-    "verify_pct": 56.5,
+    "delivery_pct": 19.5,
+    "verify_pct": 52.0,
     "freshness": {
-      "green": 16,
+      "green": 18,
       "yellow": 1,
       "red": 6
     },
@@ -1326,6 +1326,7 @@
           "kind": "test",
           "ok": true,
           "evidence": [
+            "docs/synova/product-lines/evidence/D806-borrow-cards-20260918.json",
             "docs/synova/product-lines/evidence/test-2026-08-17.json",
             "docs/synova/product-lines/evidence/test-2026-08-18-1.json",
             "docs/synova/product-lines/evidence/test-2026-08-18.json",
@@ -1338,7 +1339,7 @@
             "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
             "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
           ],
-          "age_days": 2,
+          "age_days": 0,
           "freshness": "green",
           "fail_when": "重启丢 / 检索不中"
         },
@@ -1444,11 +1445,11 @@
       "name": "Agent 运行底座",
       "done_definition": "Agent 稳定跑得起来：会话状态对、工具循环真实执行、上下文窗口管理有策略、不会卡死",
       "v1_total": 6,
-      "v1_passed": 1,
+      "v1_passed": 2,
       "v1_verified": 1,
       "points_total": 6,
       "freshness": {
-        "green": 1,
+        "green": 2,
         "yellow": 0,
         "red": 0
       },
@@ -1467,9 +1468,9 @@
         },
         {
           "id": "20-2",
-          "text": "loop 边界与可替换性：无 placeholder 假成功，loop 接口冻结、与 `dsh-agent-loop` 语义等价、具备 Stage 3 整体替换能力",
+          "text": "工具循环真实执行（非 placeholder）——loop 边界与可替换性：无 placeholder 假成功，**loop 接口冻结、与 `dsh-agent-loop` 语义等价、具备 Stage 3 整体替换能力**",
           "verify": "`dsh-agent-loop` 锚点现验 + GS-01 工具调用留痕",
-          "kind": "scenario",
+          "kind": "test",
           "ok": false,
           "evidence": [],
           "age_days": null,
@@ -1480,11 +1481,13 @@
           "id": "20-3",
           "text": "复用 DSH compaction 范式：压缩按 `dsh-compaction-basic`（阈值 0.8 触发 / 保留 0.16 / 影子价严格小于被压缩内容 / tool 配对不拆散）；工具结果按 `dsh-compaction-tool-result-pruner`（8192/4096/1024 + PRUNE_MARKER + 幂等）",
           "verify": "`dsh-compaction-basic` / `dsh-compaction-tool-result-pruner` 锚点现验 + compaction 套件绿",
-          "kind": "founder-demo",
-          "ok": false,
-          "evidence": [],
-          "age_days": null,
-          "freshness": null,
+          "kind": "test",
+          "ok": true,
+          "evidence": [
+            "docs/synova/product-lines/evidence/D806-borrow-cards-20260918.json"
+          ],
+          "age_days": 0,
+          "freshness": "green",
           "fail_when": "爆窗 / 丢上下文 / 修剪非幂等"
         },
         {
@@ -1500,7 +1503,7 @@
         },
         {
           "id": "20-5",
-          "text": "协作式超时：`dsh-timeout`（clampTimeout/deadline/idleWatchdog）+ `dsh-tool-call-timeout-policy`（超时返回 TOOL_TIMEOUT 结果而非抛异常）",
+          "text": "协作式超时：`dsh-timeout`（clampTimeout/deadline/idleWatchdog）+ `dsh-tool-call-timeout-policy`（超时**返回 TOOL_TIMEOUT 结果而非抛异常**）",
           "verify": "`dsh-timeout` 锚点现验 + timeout 套件绿",
           "kind": "test",
           "ok": true,
@@ -1525,7 +1528,7 @@
         },
         {
           "id": "20-6",
-          "text": "审计员复核运行底座（复核范围含 G1 零依赖守卫 + 借鉴卡锚点现验 + 台账行存在）",
+          "text": "审计员复核运行底座 ｜ 复核范围含 **G1 零依赖守卫**（`grep -rn \"@deepseek-ai\" src/ packages/` 零结果）+ 借鉴卡锚点现验 + 台账行存在",
           "verify": "K3 PASS + G1 `grep -rn \"@deepseek-ai\" src/ packages/` 零结果",
           "kind": "k3",
           "ok": false,
@@ -1541,11 +1544,11 @@
       "name": "模型底座与 DeepSeek 深度优化",
       "done_definition": "基于 DeepSeek 的差异化优势：提示词效果、成本、长上下文都有优化策略且可测量",
       "v1_total": 5,
-      "v1_passed": 2,
+      "v1_passed": 3,
       "v1_verified": 0,
       "points_total": 5,
       "freshness": {
-        "green": 2,
+        "green": 3,
         "yellow": 0,
         "red": 0
       },
@@ -1553,7 +1556,7 @@
       "assertions": [
         {
           "id": "21-1",
-          "text": "DeepSeek 适配器可用（标准 API 接入）——错误码对齐 DSH 四 canonical 码 + `normalizeLlmFailure`，路由基于 code 绝不解析 message",
+          "text": "DeepSeek 适配器可用（标准 API 接入）——错误码对齐 DSH 四 canonical 码 + `normalizeLlmFailure`，**路由基于 code 绝不解析 message**",
           "verify": "`dsh-llm` error.js 锚点现验 + provider 测试绿",
           "kind": "test",
           "ok": true,
@@ -1601,11 +1604,13 @@
           "id": "21-3",
           "text": "`dsh-token-meter` 四桶计量（uncachedInput/output/cacheRead/cacheWrite）+ 预算护栏超限告警",
           "verify": "`dsh-token-meter` 锚点现验 + token-meter 套件绿",
-          "kind": "founder-demo",
-          "ok": false,
-          "evidence": [],
-          "age_days": null,
-          "freshness": null,
+          "kind": "test",
+          "ok": true,
+          "evidence": [
+            "docs/synova/product-lines/evidence/D806-borrow-cards-20260918.json"
+          ],
+          "age_days": 0,
+          "freshness": "green",
           "fail_when": "无四桶 / 超限无告警"
         },
         {
@@ -1649,7 +1654,7 @@
       "assertions": [
         {
           "id": "22-1",
-          "text": "看门狗/熔断/健康检查真实可用 + 不变量注册表（`dsh-invariants` 范式：检查可选、违约必炸）",
+          "text": "看门狗/熔断/健康检查真实可用 ｜ 加不变量注册表（`dsh-invariants` 范式：检查可选、违约必炸）",
           "verify": "`dsh-invariants` 锚点现验 + watchdog 测试 + `/health`",
           "kind": "test",
           "ok": true,
@@ -1734,7 +1739,7 @@
       "assertions": [
         {
           "id": "23-1",
-          "text": "RBAC 角色权限分明 + 部署权限档位（`dsh-permission-presets` 范式，预设不成为第二真相源）",
+          "text": "RBAC 角色权限分明 ｜ 加部署权限档位（`dsh-permission-presets` 范式，**预设不成为第二真相源**）",
           "verify": "`dsh-permission-presets` 锚点现验 + GS-07 exit 0",
           "kind": "scenario",
           "ok": false,
@@ -2032,9 +2037,9 @@
         },
         {
           "id": "26-7",
-          "text": "Synova 作为 MCP client 连企业已有 MCP server：stdio/StreamableHTTP 双 transport + 工具表变更通知重载 + `scrubbedParentEnv` 环境擦除（借鉴 `dsh-mcp-client`）",
+          "text": "Synova 作为 MCP **client** 连企业已有 MCP server：stdio/StreamableHTTP 双 transport + 工具表变更通知重载 + `scrubbedParentEnv` 环境擦除（借鉴 `dsh-mcp-client`）；与 26-1…26-5（作 server，保持自造）互补",
           "verify": "`dsh-mcp-client` 锚点现验 + MCP client 套件绿",
-          "kind": "test",
+          "kind": "scenario",
           "ok": false,
           "evidence": [],
           "age_days": null,
@@ -4754,7 +4759,7 @@
     {
       "id": "D806",
       "title": "台账修复-DSH复用可见",
-      "status": "claimed",
+      "status": "impl_done",
       "owner": null,
       "domain": null,
       "depends_on": [],
