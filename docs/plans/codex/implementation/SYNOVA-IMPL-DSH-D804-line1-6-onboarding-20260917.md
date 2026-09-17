@@ -31,7 +31,7 @@ north-star:
 
 > §二 **目标**：线1 的 1-1/1-4 断言化 + 线6 的 6-1/6-2/6-3 端到端可复跑（Win/Mac 真机证据按 D773 挂账）
 > §二 **验收**：GS-01 场景 24h 内可复跑 exit 0；线1 ≥3 条断言转 pending_k3；K3 复核点（1-8）在报告中列出
-> §四 **规格冻结门**：dev doc 经 CTO 复核前，**不得提交任何 src/ 全量  变更**（违反 = 该 PR 退回）
+> §四 **规格冻结门**：dev doc 经 CTO 复核前，**不得提交任何 src/ 下的变更**（违反 = 该 PR 退回）
 
 **权威 ② — V1 分母（唯一来源）**：`docs/synova/project/26线-V1验收标准-草案v0.1-20260917.md`
 
@@ -389,7 +389,7 @@ north-star:
 | 改 src/middleware/auth.ts  的 consult 白名单口径 | 属 D590 创始人裁决①面；本卡只把**断言**对齐裁决，不动裁决 |
 | 复活 `/api/diagnosis/interview`（结构化问卷端点） | D590 裁决② 已 410 下线；复活 = 与已生效裁决冲突（口径澄清见 S1 / 决策参考 D3） |
 | 改 `scripts/product-lines/calc-progress.py` | 判分器红线（派单 §一）；本卡只产出证据，不动判分 |
-| 改 src/ 全量  任何文件 | 派单 §四 规格冻结门；本卡阶段 0 零 src 变更 |
+| 改 src/ 下的任何文件 | 派单 §四 规格冻结门；本卡阶段 0 零 src 变更 |
 | 碰 `scripts/audit/**`、写审计标准、做 K3 判定 | K3 专属红线（D336 多 Agent 协议） |
 | 改 `.github/workflows/ci.yml` | 控制塔/CI 域，非本卡写集；CI 侧产物面继续由既存 `desktop-build.yml` 承载 |
 | 用 Mac 实测结果声称 Win 实机通过 | D773 规约明令：实机级证据挂账，禁顶替 |
@@ -430,7 +430,7 @@ north-star:
 | DS12 | 未定论项显式登记（C8/C9 打包态端口；6-3 yaml↔V1 口径冲突；Win 实机挂账） | 文末 + S6 注 | 三类项逐条写明"为什么未定论 + 谁能定 + 定论命令" |
 | DS13 | 决策参考 7 点走四步并记录参考系（S-12） | 决策参考 | 表格 7 行 |
 | DS14 | 提交纪律：隔离 worktree + 分支 + brief（写集机器生成）+ `synova-commit` + push + PR（PR 正文附八节清单） | 交付时 | `git log` / PR 链接 |
-| DS15 | 红线自查：本卡零 src/ 全量  变更、零 `scripts/audit/**` 触碰 | What We Don't Do | `git diff --name-only origin/main...HEAD` 逐行核对 |
+| DS15 | 红线自查：本卡零 src/ 下的变更、零 `scripts/audit/**` 触碰 | What We Don't Do | `git diff --name-only origin/main...HEAD` 逐行核对 |
 
 ---
 
