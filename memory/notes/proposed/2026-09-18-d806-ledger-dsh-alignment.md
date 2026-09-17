@@ -11,6 +11,7 @@
 - **② 落点归属**（D808 §12.2 + R1/R5）：`src/llm/`→线21；`src/store/`→线20；`src/services/llm-cost.ts`→线21（文件粒度，不整目录挂靠）；`src/config/config-layers.ts`→线23、`src/config/customer-config-package.ts`→线25（CTO 裁定文件级）。
 - **③ 借鉴卡回写**：B-06→20-5、B-09→25-6（计分）；B-02/B-06→22-1（M2 绑定，该点已计分不虚增）；B-03/B-04/B-05/B-07/B-10 如实标**未计分**（理由见上）。
 - **④ 分母变更单**：`FROZEN_V1_TOTAL` 125→128 + 测试读数 128/36 + 落库版 128 条表 + `product-lines.yaml` 元断言 M1–M5 注释（v0.2 §四 落点2）。`calc-progress.py` 零改动。
+- **⑤ 治理补齐（D806 执行中暴露，CTO 当场批准）**：`ownership.yaml` 新增 3 条 mac 条目 —— `scripts/project/**` / `tests/project/**` / `docs/synova/project/**`。D793/D795 新建这三条路径时漏补本表 → 落 `**` 兜底被判 **win**，与 `DIVISION-CHARTER-v4 §四`「26 线产品完成度 → Mac DSH」矛盾，且兄弟路径 `scripts/product-lines/**`、`docs/synova/product-lines/**` 早列 mac。后果实证：D806 同一单内 ①（product-lines.yaml=mac）与 ④（project 三路径=win）被 D734 判**跨域硬阻断**。补齐后全单同域 mac（7 域文件 + 5 中性），未改任何既有归属。连带 `--emit-codeowners` 重生成 `.github/CODEOWNERS`（+3 行 glob；三个域都映射同一 GitHub handle `@tangbaobao520`，**今日实际 review 路由不变**），`tests/control-tower/check-ownership.test.sh` 51 项全绿。
 
 ## 参考
 
