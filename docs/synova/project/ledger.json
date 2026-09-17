@@ -1,8 +1,8 @@
 {
   "schema": "project-ledger/1",
   "generated_by": "gen-project-board.py",
-  "generated_at": "2026-09-17T13:53:57+08:00",
-  "git_head": "d919afeeae64efd904c20710c3489e9e580b3032",
+  "generated_at": "2026-09-17T16:05:40+08:00",
+  "git_head": "7e68c4d168e103e60c4f7923b36372ec7dc5542d",
   "sources": {
     "yaml": "docs/synova/product-lines/product-lines.yaml",
     "v1_dod": "docs/synova/project/26线-V1验收标准-草案v0.1-20260917.md",
@@ -4706,10 +4706,10 @@
     },
     {
       "id": "D805",
-      "title": "项目总览时间轴数据接通",
-      "status": "claimed",
-      "owner": null,
-      "domain": null,
+      "title": "项目总览时间轴数据接通 + 无数据不渲染假表",
+      "status": "impl_done",
+      "owner": "dsh",
+      "domain": "scripts/project + dsh-plugin",
       "depends_on": [],
       "blocked": null,
       "stale_days": 0,
@@ -4747,7 +4747,7 @@
       "actual": {
         "dispatched": "2026-09-15",
         "first_commit": "2026-08-22",
-        "merged": null,
+        "merged": "2026-09-17",
         "audited": null
       }
     },
