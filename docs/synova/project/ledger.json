@@ -1,8 +1,8 @@
 {
   "schema": "project-ledger/1",
   "generated_by": "gen-project-board.py",
-  "generated_at": "2026-09-17T16:05:40+08:00",
-  "git_head": "7e68c4d168e103e60c4f7923b36372ec7dc5542d",
+  "generated_at": "2026-09-17T23:18:27+08:00",
+  "git_head": "db695174c29677909458a46f54c2bbbeda909e3a",
   "sources": {
     "yaml": "docs/synova/product-lines/product-lines.yaml",
     "v1_dod": "docs/synova/project/26线-V1验收标准-草案v0.1-20260917.md",
