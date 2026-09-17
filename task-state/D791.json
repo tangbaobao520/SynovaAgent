@@ -1,0 +1,37 @@
+{
+  "task_id": "D791",
+  "title": "线3 报告体系——一页纸四槽位 + 各维度循环结论 + 结论可溯源（3-1/3-7）",
+  "status": "impl_done",
+  "risk": "medium",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D791-line3-report-onepager-20260917.md",
+    "commit": "23c262bc",
+    "by": "synova-devdoc (DSH dev-doc session)",
+    "at": "2026-09-17"
+  },
+  "impl": {
+    "commit": "7afa9c3e（PR-A #617）+ 本 PR-B commit（见 PR-B 描述）",
+    "branch": "feat/d791a-onepager-win（A）/ feat/d791b-onepager-mac（B）",
+    "by": "deepseek-harness (DSH 编码 session)",
+    "at": "2026-09-17",
+    "pr_a": "#617 feat/d791a-onepager-win（win 9 文件）",
+    "pr_b": "feat/d791b-onepager-mac（mac 11 文件）—— A 合入后开",
+    "files": [
+      ".claude/task-briefs/2026-09-17-D791a-line3-onepager-win.md",
+      "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D791-line3-report-onepager-20260917.md",
+      "src/agent/cycle-conclusion-service.ts",
+      "src/agent/report-assembler.ts",
+      "src/agent/report-onepager-trace.ts",
+      "src/l3/report-templates.ts",
+      "src/routes/diagnosis.ts",
+      "tests/agent/cycle-conclusion-service.test.ts",
+      "tests/agent/report-onepager-trace.test.ts"
+    ],
+    "note": "D734 拆单（CTO 2026-09-17 裁决）：原实现写集横跨 win/mac 两域 + 与 dev-doc 交付件/证据合计 21 文件 > 上限 12 ⇒ A=win 产品代码（src/**5 + tests/agent/**2 + spec）、B=mac（GS-08 场景 5 + 证据 2 + 编码指令 + .gitignore + task-state）。A 组 8 文件（+brief=9）实测 check-pr-budget ✅ ①9≤12 ②PASS 8 同域 win；B 组 10 文件（+brief=11）实测 ✅ ②PASS 7 同域 mac（豁免 3）。实测: GS-08 24/24 断言 pass（含 4 条负向 + http-equals-local-render 端到端等价性）；单测 18 用例 + D480 既有 5 用例全绿；架构门禁全部通过；pre-commit 13 组过；run.sh 同日重跑工件逐字节幂等（14 文件 sha 全等）。DS13: 点级证据 docs/synova/product-lines/evidence/scenario-2026-09-17.json 已入库（含 at）；因 main 的 calc-progress.py machine 路径不消费 at（--since 取 <date>T00:00:00，:216-232），与 src/l3/ 提交同日必判 stale ⇒ A、B 合入 main 后**次日**重跑 run.sh（写 scenario-<次日>.json）即转 pending_k3（线 1 test-2026-09-15→09-16 同型先例）；判据零改动。spec §5.1/§5.2/§5.5/§5.6 已同 commit 回填（含 A/B 拆单登记 + B 组确切文件名清单）。"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-17",
+  "updated_by": "deepseek-harness",
+  "note": "dev-doc 交付三件: spec（11 节 + 写集表 6 修改/3 目录级新建 = 12 文件上限 + DS1-DS14）+ 编码指令 docs/synova/coordination/编码指令-D791-线3报告体系-20260917.md + 本 state spec 段。spec 基线 origin/main@6a06e853，所有 file:line 声称在交付 worktree 内 grep/read 实测。关键实测发现（写入 spec §4）: ① GS-08 已产 3 份 verdict=pass 证据但落在 scripts/golden-scenarios/evidence/（calc-progress 只扫 docs/synova/product-lines/evidence/）② 验收点标签 S8-1/S8-2 与线 3 点 id 3-1/3-7 不匹配且全仓无映射层 → 三点循环「绿了不算分」（线 3 = 8 点全 0 证据的根因之一）⇒ spec §5.5 给出兑换链路修复。DSH 基线更正: 本机实装 0.1.5-rc.2 / 241 包，旧图纸 DSH 侧描述已过期，本 spec 零 DSH 依赖。"
+}

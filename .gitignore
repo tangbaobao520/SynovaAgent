@@ -80,6 +80,11 @@ evidence/
 # D774: GS 场景证据同样走 git 跟踪（GSS 契约「证据产物 evidence/GS-XX-<date>.json（git 跟踪）」）。
 # 保鲜流水线每 7 天产新证据，豁免后 add 无需 -f（历史文件即先例）。
 !scripts/golden-scenarios/evidence/
+# D791: GS-08 场景**审计工件目录**（onepager*.md / cycle-slot*.md / *-audit.json / *-meta.json）
+# 不入版本库——机器生成、逐字节幂等（同日重跑 sha 全等）、断言在运行期直接读取该目录；
+# 同日戳目录若入版本库会被 .github 侧 D2 登记门禁判为「未登记文档」（同 DASHBOARD*.md 生成物排除语义）。
+# 机器断言证据 `scripts/golden-scenarios/evidence/GS-08-<date>.json`（单文件）仍入版本库。
+scripts/golden-scenarios/evidence/GS-08-*/
 # D665: 运行时隔离 worktree 与 session 仓库不入版本库（gitlink 入树曾致 main build 常红）。
 # 树级守门: scripts/control-tower/check-gitlinks.sh（三态退出）+ 密封测试入 ci.yml。
 .synova-wt-*
