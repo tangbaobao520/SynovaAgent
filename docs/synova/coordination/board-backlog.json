@@ -277,6 +277,41 @@
       "severity": "P1",
       "source": "D774 执行期实测（2026-09-15）",
       "note": "GS 场景证据 acceptance_point 用 L1-1/S0-1 等场景侧 id，product-lines.yaml 点 id 为 1-1/7-1 → calc-progress verdicts_by_point 索引永不命中，GS 证据对产品进度零兑换（保鲜流水线兑换全靠线1 vitest+A2 写对 id）。需建「场景点→产品点」机器可读映射（GS expect.json 或 yaml evidence 绑定侧）或统一 id。附带：GS-01（noauth-401）/GS-02/04（severity-critical）断言 08-21 起持续失败（三轮同型），待场景归属线修复——修复前每轮重跑汇总显式 fail（诚实红）。属场景归属域（scripts/golden-scenarios 场景本体 + 对应产品代码）。"
+    },
+    {
+      "id": "PLAN-d808-card-rewrite",
+      "title": "B-01…B-10 借鉴卡回写 26 线验收点 + 生成绑定证据（M2 物理化）",
+      "severity": "P1",
+      "source": "D808 物理取证（2026-09-17）",
+      "note": "7 张卡代码已在 main（B-01 D586 / B-02+B-06 D593 / B-03 D598 / B-04 D587 / B-05 D594 / B-07 D588 / B-09+B-10 D599），但 docs/synova/product-lines/evidence/ 全目录无任何卡的绑定记录（grep 借鉴/B-0/D587/D593/D598/D599 仅 README.md 命中）；41 个 pass 点不含 21-3（成本可测量）/20-3（上下文策略）。按 M2 未回写 = 不计通过（当前 0/20）。动作：① 按 M1 口径把落点写成验收点（「接入/配置/约束 DSH 的 <能力> 并验证」）② evidence-writer.py 落绑定证据 ③ 核验 verdicts[].acceptance_point。依据：DSH借鉴指引 §11。"
+    },
+    {
+      "id": "PLAN-d808-module-ownership",
+      "title": "借鉴落点归属落 product-lines.yaml（src/llm|store|config 归属 + providers/ → src/providers/ 修正）",
+      "severity": "P1",
+      "source": "D808 物理取证（2026-09-17）",
+      "note": "① src/llm（7 文件、含 B-02/03/04/06 落点）、src/store（6 文件、B-07）、src/config（2 文件、B-09/B-10）无一被任何线 modules 包含 → A1 惰性失效永不触发；② yaml 线20/线21 写 \"providers/\" 实测 `git log -- providers/` 零输出（目录不存在），真实目录 src/providers/ 命中 D586/D598 → 该线失效检查静默空转；③ src/services 30 文件跨多线，须按文件粒度归属（不得整目录挂靠）。规则见 DSH借鉴指引 §12。归属线（线20/21/23/25 取舍）需 CTO + 线主裁决。"
+    },
+    {
+      "id": "PLAN-d808-anchor-refresh",
+      "title": "4 文件 DSH 锚点按 M3 补齐（包+文件+符号 + 现验命令）",
+      "severity": "P2",
+      "source": "D808 物理取证（2026-09-17）",
+      "note": "src/llm/tool-result-pruner.ts、src/llm/timeout.ts、src/agent/context-compaction.ts、src/store/session-projection.ts 的锚点注释仍为旧口径（Win 路径 D:/deepseek-harness/packages/... + 版本 0.1.1-rc.2，无现验命令）。现行安装 deepseek-harness-pkg 0.1.6-alpha.1（09-17 02:01，D797 审计）；M3 要求只锚 包+文件+符号 并附现验命令、行号现查。属 src/ 代码改动 → 编码卡（含测试/接线审计）。"
+    },
+    {
+      "id": "PLAN-d808-b20-unregistered",
+      "title": "借鉴卡 B-20 未登记（D760…D768 已覆盖 B-11…B-19，D769 空号）",
+      "severity": "P2",
+      "source": "D808 实测（2026-09-17）",
+      "note": "task-state/D760…D768 分别对应 B-11…B-19（均 claimed），B-20（速览族 6 项）无 task-state 登记（D769 不存在）。按 M2 每张卡必须有验收点绑定 → 需先登记再回写；速览族 6 项（output-retention / repeat-tool-reminder / scrubbedParentEnv / time-context / session-query-sqlite / session-checkpoint-policy）落点分散，需逐项定线归属。"
+    },
+    {
+      "id": "PLAN-prepush-golden-tri-state",
+      "title": "pre-push 黄金案例 F1 门禁需三态退出码（检查未执行 ≠ 发现退化）",
+      "severity": "P1",
+      "source": "D808 执行期实测（2026-09-17，D718 §⑤ 同型第 2 次）",
+      "note": "scripts/pre-push-check.sh:276 以 `npx tsx scripts/ci/golden-case-checker.ts` 判 F1，环境失败（本机 ~/.npm/_cacache 含 root-owned 文件 → npm EPERM）时输出「❌ 黄金案例 F1 门禁失败 — 诊断质量退解冻, 见上方 diff」= 把「检查未执行」报成「发现质量退化」（M5 环境依赖 + M2 错误归因）。同型第 2 次（D718 §⑤ 首记）→ 按红线升级创始人。修法：三态退出码（0 通过 / 1 发现退化 / 2 未执行）+ 门禁文案区分；工作区 node_modules 缺席/不可写场景须显式说明。涉 scripts/pre-push-check.sh（ctrl-tower-change 域）。"
     }
   ]
 }
