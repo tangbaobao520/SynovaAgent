@@ -3,7 +3,8 @@
   "evidence_map": [
     { "acceptance_point": "4-5", "assertion_ids": ["erp-upload-ok"] },
     { "acceptance_point": "5-2", "assertion_ids": ["cash-runway-critical-triggered"] },
-    { "acceptance_point": "4-7", "assertion_ids": ["no-false-critical-zero-runway"] }
+    { "acceptance_point": "4-7", "assertion_ids": ["no-false-critical-zero-runway"] },
+    { "acceptance_point": "10-3", "assertion_ids": ["cash-runway-critical-triggered", "threshold-provenance"] }
   ],
   "assertions": [
     {
@@ -16,9 +17,16 @@
     {
       "id": "cash-runway-critical-triggered",
       "desc": "低现金数据触发 cash-runway critical 阈值告警「现金流危急」",
-      "purpose": "证明 cashBalance↔cash 对齐后低现金触发阈值（验收点 5-2）",
+      "purpose": "证明 cashBalance↔cash 对齐后低现金触发阈值（验收点 5-2 / 10-3 触发侧）",
       "check": { "type": "file", "path": "__DATA_DIR__/run-response.json" },
       "expect": { "exists": true, "contains": "现金流危急" }
+    },
+    {
+      "id": "threshold-provenance",
+      "desc": "critical 告警文案含「低于critical阈值6个月」——数字 6 来自 manifest.thresholds 而非硬编码",
+      "purpose": "证明阈值告警真实由 manifest 配置驱动（验收点 10-3：manifest 挂载 + 阈值真实生效——D356 挂载回归时本文案随 this.manifest=null 一并消失，故本断言同时是挂载回归守卫）",
+      "check": { "type": "file", "path": "__DATA_DIR__/run-response.json" },
+      "expect": { "exists": true, "contains": "低于critical阈值6个月" }
     },
     {
       "id": "no-false-critical-zero-runway",
