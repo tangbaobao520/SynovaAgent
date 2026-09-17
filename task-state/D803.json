@@ -36,9 +36,24 @@
     ],
     "writeset_note": "dev doc §10.1 写集 10 文件零偏差。**交付拆成 2 个单域 PR**：D803 派单声明域=win，但写集天然跨域（scripts/golden-scenarios/** 与 docs/synova/product-lines/** 归 mac，extensions/** 与 tests/** 归 win；实测 python3 scripts/control-tower/check-ownership.py）。按 D773《Win域代行规约》「跨域切片在同一执行方内拆成多个单域 PR，连续做完」拆为 PR-1 win（切片②③）/ PR-2 mac（切片①④⑤）。D734 门禁：单 PR ≤12 文件且单域。scripts/audit/** 0 触碰、scripts/product-lines/calc-progress.py 0 触碰、src/** 0 触碰。",
     "branches": {
-      "pr1_win": "feat/d803-capital-cycle-win（extensions/** + tests/**；单域 win）",
-      "pr2_mac": "feat/d803-capital-cycle-mac（scripts/golden-scenarios/** + docs/synova/product-lines/**；单域 mac）",
-      "evidence_reference": "feat/d803-capital-cycle-v1（两域合一的完整交付参照分支：五切片 + 全部证据可一处分诊；不直接合并——D734 单域门禁）"
+      "pr1_win": "feat/d803-capital-cycle-win（9 文件：7 win + 2 domain-neutral）→ 单域 win，≤12 ✅",
+      "pr1_win_commits": [
+        "aa6fa444 fix(D803): 切片② 读侧属性契约守卫 + revenue-health 断裂修复（10-2）",
+        "27b153b7 fix(D803): 切片③ 跑道/逾期字段语义修复——存在性守卫+删除 total_revenue 挪用（10-4）",
+        "348a3c6d docs(D803): task-state 回填 impl 段（PR-1 win 切片②③ + D773 单域拆分记录）"
+      ],
+      "pr2_mac": "feat/d803-capital-cycle-mac（8 文件：6 mac + 2 domain-neutral）→ 单域 mac，≤12 ✅",
+      "pr2_mac_commits": [
+        "e5a3e288 test(D803): 切片① manifest 挂载回归守卫——threshold-provenance 断言 + evidence_map 10-3",
+        "ca1c0388 test(D803): 切片④ GS-03 负向相位 + 线10 证据落点（10-1/10-3/10-6）",
+        "f0151ab8 test(D803): 切片⑤ 10-2 绑定 test:l4-contract + A2 机器证据 + K3 定向复核备料"
+      ],
+      "evidence_reference": "feat/d803-capital-cycle-v1（两域合一的完整交付参照分支，5 切片单链 + 全部证据可一处分诊；不作为合并载体——D734 单域门禁）"
+    },
+    "ci_equivalence": {
+      "pr1_win": "SYNO_CI=1 SYNO_DIFF_BASE=origin/main bash scripts/pre-commit-check.sh → EXIT 0 · 全部 13 组通过 · D734 ✅；bash scripts/control-tower/simulate-ci.sh → EXIT 0（CI 等价模拟通过）",
+      "pr2_mac": "同上两条 → 均 EXIT 0（D734 ✅ / 全部 13 组通过 / CI 等价模拟通过）",
+      "gatekeeper_note": "本机 2026-09-17 出现 2 条 `detected-bypass head-mismatch` 记录——经复核为 git cherry-pick 重放提交（新 parent 与 marker 不匹配）触发的 post-commit 启发式误报，非 --no-verify；已按门禁自带逃生舱 SYNO_GATEKEEPER_ACK=1 人工确认放行并落 degraded-events.log。根因（cherry-pick 未纳入 D366 三判）属控制塔缺陷，登记 CT 待办。"
     }
   },
   "audit": null,
@@ -58,7 +73,7 @@
     "线10 v1_passed==v1_total==6",
     "反向删证据回退"
   ],
-  "next": "K3 定向审计（10-8 本体：点级 verdicts 10-1…10-8 + 线级 acceptance_point=\"line:10\" verdict=pass）。备料清单：docs/synova/product-lines/k3-task-line-10-2026-W37.md",
+  "next": "K3 定向审计（10-8 本体：点级 verdicts 10-1…10-8 + 线级 acceptance_point=\"line:10\" verdict=pass）。备料清单：docs/synova/product-lines/k3-task-line-10-2026-W37.md（PR-2 mac）。D803 交付拆两个单域 PR（D773 规约）：PR-1 win（修复+守卫）/ PR-2 mac（场景+证据+绑定）；两者合并后线10 方达 5/6。",
   "d803_evidence": {
     "ledger_line10": {
       "generated_at": "2026-09-17T15:26:09+08:00",
