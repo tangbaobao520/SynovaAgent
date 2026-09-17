@@ -1485,3 +1485,4 @@ Binary file .claude/bypass.log matches
 2026-09-17T16:14:03+08:00 | COMMITTED | pre-commit PASS (D804 一次性补记: rebase onto b396bafc 改哈希，原记录绑定旧哈希 036d9e34；本次 13 组本地全过) | TASK_ID=D804 | AGENT=mac-coding | HASH=ad1ae4dc21529bf5f8395ccf28c8afd25bfb7fb0
 2026-09-17T16:14:03+08:00 | COMMITTED | pre-commit PASS (D804 一次性补记: rebase 改哈希，原记录绑定旧哈希 c8ef8134；13 组本地全过) | TASK_ID=D804 | AGENT=mac-coding | HASH=94be510c6db696709363acd89d0d3942e9bd0fad
 2026-09-17T16:14:57+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=0a3eca4de9779beadb0a76b05e67c741f3a645ad
+2026-09-17T16:29:28+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=aeb3aef66d5fd36d30511560c8e4630376b9273f
