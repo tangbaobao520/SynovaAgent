@@ -1,0 +1,87 @@
+{
+  "task_id": "D803",
+  "title": "线10 资本循环 V1 6/6（第一条 100% 线，规格先行）",
+  "spec": {
+    "path": "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D803-capital-cycle-20260917.md",
+    "commit": null,
+    "by": "synova-cto",
+    "at": "2026-09-17"
+  },
+  "impl": {
+    "commit": "83546e411c48c359e7c1baffd9ebefc7448b5889..78c655f0ba82781cc5d61232ac90052e0fffc4aa",
+    "commits": [
+      "83546e41 fix(D803): 切片② 读侧属性契约守卫 + revenue-health 断裂修复（10-2）",
+      "5e4fab84 fix(D803): 切片③ 跑道/逾期字段语义修复——存在性守卫+删除 total_revenue 挪用（10-4）",
+      "3ab3c9e2 test(D803): 切片① manifest 挂载回归守卫——threshold-provenance 断言 + evidence_map 10-3",
+      "c34f762e test(D803): 切片④ GS-03 负向相位 + 线10 证据落点（10-1/10-3/10-6）",
+      "78c655f0 test(D803): 切片⑤ 10-2 绑定 test:l4-contract + A2 机器证据落盘"
+    ],
+    "by": "deepseek-harness",
+    "at": "2026-09-17",
+    "branch": "feat/d803-capital-cycle-v1",
+    "files": [
+      "scripts/golden-scenarios/GS-03-capital-cycle/run.sh",
+      "scripts/golden-scenarios/GS-03-capital-cycle/expect.json",
+      "extensions/sentinels/cash-runway/computes/compute-cash-runway-months.ts",
+      "extensions/sentinels/cash-runway/computes/compute-receivable-overdue-rate.ts",
+      "extensions/sentinels/revenue-health/aggregate.ts",
+      "tests/sentinels/cash-runway/compute-cash-runway-months.test.ts",
+      "tests/sentinels/cash-runway/compute-receivable-overdue-rate.test.ts",
+      "tests/sentinels/revenue-health.test.ts",
+      "tests/contract/l4-contract.test.ts",
+      "docs/synova/product-lines/product-lines.yaml",
+      "scripts/golden-scenarios/evidence/GS-03-2026-09-17.json",
+      "docs/synova/product-lines/evidence/test-2026-09-17.json",
+      "docs/synova/product-lines/k3-task-line-10-2026-W37.md"
+    ],
+    "writeset_note": "前 10 项 = dev doc §10.1 写集（10 修改 + 0 新建，零偏差）；后 3 项为 DS4/DS5/DS7 强制交付的派生产物（场景证据 / A2 机器证据 / K3 备料清单）。scripts/audit/** 0 触碰、scripts/product-lines/calc-progress.py 0 触碰、src/** 0 触碰。"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-17",
+  "updated_by": "deepseek-harness",
+  "domain": "win",
+  "target": "2026-W39",
+  "owner": "devdoc→mac-coding",
+  "milestone": "M3 循环类样板",
+  "depends_on": [
+    "D802"
+  ],
+  "blocked": null,
+  "acceptance_points": [
+    "属性契约映射表逐字段列出",
+    "线10 v1_passed==v1_total==6",
+    "反向删证据回退"
+  ],
+  "next": "K3 定向审计（10-8 本体：点级 verdicts 10-1…10-8 + 线级 acceptance_point=\"line:10\" verdict=pass）。备料清单：docs/synova/product-lines/k3-task-line-10-2026-W37.md",
+  "d803_evidence": {
+    "ledger_line10": {
+      "generated_at": "2026-09-17T15:26:09+08:00",
+      "generator": "scripts/project/gen-project-board.py @ feats/d795-project-board 5895fb99（D795 在途，未落 main；本次以 --repo-root 指向 D803 worktree、--out 指向 /tmp 只读方式运行，零写集污染）",
+      "v1_total": 6,
+      "v1_passed": 5,
+      "v1_verified": 2,
+      "points": {
+        "10-1": "scenario ok=True green",
+        "10-2": "test ok=True green",
+        "10-3": "scenario ok=True green",
+        "10-4": "test ok=True green",
+        "10-6": "scenario ok=True green",
+        "10-8": "k3 ok=False —— 待审计员执行"
+      }
+    },
+    "gs03": "exit 0 · 7/7 断言 pass · evidence scripts/golden-scenarios/evidence/GS-03-2026-09-17.json（verdicts 含 10-1/10-3/10-6）",
+    "a2": "test-2026-09-17.json · 19 验收点 · 含 10-2/10-4 · verdict=pass",
+    "reverse_verifications": [
+      "① 注释 src/sentinel/sentinel-loader.ts:211 挂载行 → GS-03 4/7 fail（no-data-degraded-warning / threshold-provenance / cash-runway-critical-triggered 全红），exit 1",
+      "② erp-standard.json cash→cashBalance → l4-contract 4 断言红 + GS-03 4/7 fail（financial-node-created cell cnt=0）",
+      "③ 现金链加回 total_revenue → cash-runway+l4-contract 7 用例红",
+      "④ 删 GS-03 证据 10-6 verdict → ledger 10-6 ok=False、v1_passed 5→4；删 test-2026-09-17.json → calc-progress 10-2 回 uncommitted"
+    ],
+    "not_done": [
+      "DS8（K3 执行 10-8）—— 独立审计环节，本卡只备料，禁自我审计",
+      "DS11（次日跨天重跑）—— 本会话无法跨天执行；同日提交线 modules 导致 calc-progress 视图 stale（A1 惰性失效，证据无 at 时间戳），D+1 重跑即恢复。命令：bash scripts/product-lines/rerun-evidence.sh 或 bash scripts/golden-scenarios/GS-03-capital-cycle/run.sh",
+      "dev doc 未入任何分支（git branch -a --contains 为空，仅工作区可读）——写集纪律不提交它（10 文件铁律），CTO 需补落库"
+    ]
+  }
+}
