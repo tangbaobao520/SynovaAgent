@@ -68,10 +68,9 @@
       "authorized_by": "CTO（D806 session 指令 ①）",
       "files": [
         "docs/synova/project/26线-V1验收标准-v0.2-20260917.md",
-        "docs/synova/project/26线-V1-上游基线-草案v0.1-20260917.md",
         "tests/project/gen-project-board.test.sh"
       ],
-      "effect": "glob('docs/synova/project/26线-V1验收标准*.md') 候选 2→1；签字区 sha256 c11841e6 逐字节保留（复现验证）；落库版哈希 97288654"
+      "effect": "glob 候选 2→1（唯一候选含 §五 签字块）；签字区 sha256 c11841e6 逐字节保留；v0.1 按「删除重复文件」处理（改名会占 D734 的 A 名额致 13>12）——内容以 sha256[:16]=1008ceb1ce1a94ca + git show 取回命令存于附录 B"
     },
     {
       "date": "2026-09-18",
