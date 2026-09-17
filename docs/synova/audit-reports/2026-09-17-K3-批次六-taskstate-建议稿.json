@@ -13,9 +13,9 @@
     "D794": {
       "pr": 613,
       "verdict": "CONDITIONAL PASS",
-      "condition": "补登记 task-state/D794.json（K3-B6-01，P1；impl 段含 PR #613 引用）",
-      "findings": ["P1 K3-B6-01 task-state 全位置缺失（状态机断链，F1 第四次实证）", "P2 K3-B6-02 brief 写集含 README 而 PR 12 文件（留痕偏离未回刷写集段）", "P2 K3-B6-03 cordis.patch.yml 硬编码 /Users/wane/SynovaAgent"],
-      "回填": "先补 task-state/D790 同款登记，再追加 audit 段 verdict:'conditional_pass'"
+      "condition": "将 doc 分支（docs/dispatch-d794-d795-20260917 / docs/dispatch-batch7-20260917，status=claimed）上的 task-state/D794.json 并入实现 PR #613，或随 #613 合并带入 main（K3-B6-01 v1.1：五 PR head+main absent、仅两 doc 分支在场；两臂判据皆不满足，P1 维持）",
+      "findings": ["P1 K3-B6-01 task-state 未落自身实现 PR/main（仅在派单 doc 分支；状态机断链，F1 第四次实证）", "P2 K3-B6-02 brief 写集含 README 而 PR 12 文件（留痕偏离未回刷写集段）", "P2 K3-B6-03 cordis.patch.yml 硬编码 /Users/wane/SynovaAgent"],
+      "回填": "登记随 #613 落库后追加 audit 段 verdict:'conditional_pass'"
     },
     "D795": {
       "pr": 612,
