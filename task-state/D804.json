@@ -45,7 +45,7 @@
   ],
   "evidence": {
    "gs01": "exit 0 / 9-9 断言 / verdict=pass（改造前 exit 1 仅 noauth-401 红）",
-   "tests": "tests/electron + tests/golden-scenarios = 14 files / 186 passed / 3 skipped",
+   "tests": "相对 main 13→17（+3 切片 0 / +1 补丁）——tests/golden-scenarios/gss-common.test.ts 用例数（main 13 → 本分支 17，新增 3 条切片 0 契约用例 + 1 条补丁用例）；配套套件 tests/electron + tests/golden-scenarios 全绿零回归（186 passed / 3 skipped）",
    "gates": "SYNO_CI=1 SYNO_DIFF_BASE=origin/main pre-commit-check.sh → exit 0（13/13）；simulate-ci.sh → exit 0",
    "migration": "无 token /api/config/dump → 401；无 token consult 缺 role → 400（非 401）"
   },
@@ -58,12 +58,13 @@
    "ownership.yaml 本次仅补 tests/golden-scenarios/**、tests/electron/** 两条 mac 规则（+13 行）；另两条经实测不补——docs/synova/runbooks/** 同时含 mac/win 文档（整体改判会错判 Win 线），scripts/desktop/** 归属清晰但切片 0-2 不碰。"
   ],
   "commit_patch": "94be510c",
-  "rebase_note": "原提交 036d9e34/c8ef8134 在 rebase onto b396bafc（当轮 main）后换哈希为 ad1ae4dc/94be510c；bypass.log 记录按 D331 一次性补记。内容等价，无行为变更。"
+  "rebase_note": "原提交 036d9e34/c8ef8134 在 rebase onto b396bafc（当轮 main）后换哈希为 ad1ae4dc/94be510c；bypass.log 记录按 D331 一次性补记。内容等价，无行为变更。",
+  "record_correction": "CTO 2026-09-17 指令订正（执行方 dev-doc session）：① 测试口径改为相对 main 的增量口径（13→17：+3 切片 0 / +1 补丁），绝对套件数作佐证保留；② impl.commit 归属改为「当前内容提交」——该提交语义涵盖 ad1ae4dc（切片 0）+ 94be510c（切片 0 补丁）；订正理由：原 impl.commit 仅指切片 0，漏补丁，配合 d804 补丁提交后 read 出的实现落地提交不完整。"
  },
  "audit": null,
  "fix_task_id": null,
  "updated_at": "2026-09-17",
- "updated_by": "mac-coding",
+ "updated_by": "dev-doc (CTO 指令订正)",
  "domain": "win",
  "target": "2026-W39",
  "task_id": "D804",
