@@ -1486,3 +1486,4 @@ Binary file .claude/bypass.log matches
 2026-09-17T15:30:01+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=348a3c6d44742a233c282d657e7e8c8b42d7f85d
 2026-09-17T15:42:12+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=2764d40b1c4ca84ac5260b2a8ae84f370d994934
 2026-09-17T15:45:31+0800 | COMMITTED | pre-commit PASS (cherry-pick 补记: 内容同 v1 分支 5e4fab84，已过 synova-commit 门禁) | HASH=27b153b7060ef52177a51adda4a82e8bd5a8926d
+2026-09-17T15:45:37+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=92fce68a60be055adc26ffc3d775d1b02dc248fe
