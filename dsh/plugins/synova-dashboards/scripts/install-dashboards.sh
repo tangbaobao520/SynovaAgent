@@ -1,88 +1,130 @@
 #!/usr/bin/env bash
-# install-dashboards.sh — 把 synova-dashboards 插件装入 **synova-cto 预设**（CTO 模式）
-# 幂等：重复执行安全。步骤：
-#   ① 放置包到 web profile 的 node_modules（loader 解析基准，预设行从这里解析包名）
-#   ② 在 ~/.dsh/.agent-presets/synova-cto/agent.cordis.yml 追加 loader 行（CTO 预设专属）
-#   ③ 清理旧的"全局 web profile"条目（若存在，迁移到预设专属）
-# 生效：重启 dsh web → 打开/恢复 CTO 会话（预设挂载）→ 刷新浏览器。
+# install-dashboards.sh — 把 @synova/dsh-dashboards **全局**装入 dsh web profile（D794）
+#
+# 与旧版的区别：挂载点从「synova-cto 预设专属 loader 块」改为「profile 的 bundle 层」，
+# 因此**任意预设会话**都可见（D794 派单 §A.2.1）。幂等：重复执行安全。
+#
+# 做四件事（全部只写 $DSH_HOME，仓库零写入）：
+#   ① 放置包到 profile 的 node_modules（bundle 名的解析锚点；profile 的 node_modules 优先）
+#   ② 把副本里 cordis.patch.yml 的 repoRoot 改写成本机实际仓库根（跨机可移植）
+#   ③ profile/package.json：dependencies 增 file: 依赖 + dsh.profile.bundles 追加包名
+#   ④ 从 synova-cto 预设删除旧的 loader 块（避免与 bundle 层重复挂载）
+#
+# 生效：重启 dsh web → 刷新浏览器 → 左侧栏出现「项目总览」入口。
+# 回滚：脚本尾部打印卸载步骤（并已备份 package.json）。
 set -euo pipefail
 
 PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PROFILE_DIR="${DSH_HOME:-$HOME/.dsh}/profiles/web"
+DSH_HOME_DIR="${DSH_HOME:-$HOME/.dsh}"
+PROFILE_DIR="$DSH_HOME_DIR/profiles/web"
+PKG_JSON="$PROFILE_DIR/package.json"
 DEST="$PROFILE_DIR/node_modules/@synova/dsh-dashboards"
-PATCH_FILE="$PROFILE_DIR/cordis.patch.yml"
-PRESET_FILE="${DSH_HOME:-$HOME/.dsh}/.agent-presets/synova-cto/agent.cordis.yml"
+PRESET_FILE="$DSH_HOME_DIR/.agent-presets/synova-cto/agent.cordis.yml"
+PKG_NAME="@synova/dsh-dashboards"
 ENTRY_ID="synova-dashboards"
+MARKER="Synova 全局跟踪三仪表盘"
 # 仓库根 = <repo>/dsh/plugins/synova-dashboards 上溯三级
 REPO_ROOT_DEFAULT="$(cd "$PLUGIN_DIR/../../.." && pwd)"
-MARKER="Synova 全局跟踪三仪表盘"
 
 echo "==> ① 放置插件包: $PLUGIN_DIR → $DEST"
 mkdir -p "$PROFILE_DIR/node_modules/@synova"
 rm -rf "$DEST"
 cp -R "$PLUGIN_DIR" "$DEST"
-rm -f "$DEST"/.DS_Store
+rm -f "$DEST/.DS_Store"
 
-echo "==> ② 追加 loader 行到 CTO 预设: ${PRESET_FILE}"
-if [ ! -f "$PRESET_FILE" ]; then
-  echo "    ❌ 预设文件不存在: ${PRESET_FILE}（先运行 install-dsh-preset.sh --install）"
-  exit 1
-fi
-if grep -qF "$MARKER" "$PRESET_FILE"; then
-  echo "    行已存在，跳过"
-else
-  {
-    echo ""
-    echo "# ── ${MARKER}（右侧栏实时可视化）"
-    echo "# 由 dsh/plugins/synova-dashboards/scripts/install-dashboards.sh 追加；幂等。"
-    echo "# 卸载：删除本行块 + rm -rf ${DEST}，然后重启 dsh web。"
-    echo "- id: $ENTRY_ID"
-    echo "  name: '@synova/dsh-dashboards'"
-    echo "  inject: [webServer]"
-    echo "  config:"
-    echo "    repoRoot: $REPO_ROOT_DEFAULT"
-  } >> "$PRESET_FILE"
-  echo "    已追加（repoRoot=${REPO_ROOT_DEFAULT}）"
-fi
-
-echo "==> ③ 清理全局 web profile 条目（迁移到预设专属）: $PATCH_FILE"
-if grep -qF "$MARKER" "$PATCH_FILE" 2>/dev/null; then
-  python3 - "$PATCH_FILE" <<'EOF'
-import io, sys
-p = sys.argv[1]
+echo "==> ② 改写副本 repoRoot → $REPO_ROOT_DEFAULT"
+python3 - "$DEST/cordis.patch.yml" "$REPO_ROOT_DEFAULT" <<'PY'
+import io, re, sys
+p, root = sys.argv[1], sys.argv[2]
 s = io.open(p, encoding="utf-8").read()
-marker = "# ── Synova 全局跟踪三仪表盘"
-if marker not in s:
-    print("    未找到 marker，跳过")
-    sys.exit(0)
-idx = s.index(marker)
-body = s[idx:].split("\n")
-# 块 = 从 marker 行起到下一个顶层内容（非缩进、非注释、非空行）之前
-end = 1
-saw_blank = False
-for i in range(1, len(body)):
-    ln = body[i]
-    if ln.strip() == "":
-        saw_blank = True
-        continue
-    if not ln.startswith((" ", "#", "\t")):
-        if saw_blank:
-            end = i
-            break
-    else:
-        saw_blank = False
-cleaned = s[:idx] + "\n".join(body[end:])
-io.open(p, "w", encoding="utf-8").write(cleaned)
-print("    已清理全局条目（迁移到 CTO 预设）")
-EOF
+new, n = re.subn(r"(?m)^(\s*repoRoot:\s*).*$", lambda m: m.group(1) + root, s)
+if n == 0:
+    print("    ⚠ 副本 patch 无 repoRoot 行（保留 cwd 默认）")
+else:
+    io.open(p, "w", encoding="utf-8").write(new)
+    print(f"    已改写 {n} 处")
+PY
+
+echo "==> ③ profile/package.json：dependencies + dsh.profile.bundles"
+if [ ! -f "$PKG_JSON" ]; then
+  echo "    ❌ profile package.json 不存在: $PKG_JSON"; exit 1
+fi
+[ -f "$PKG_JSON.synova-bak" ] || cp "$PKG_JSON" "$PKG_JSON.synova-bak"
+python3 - "$PKG_JSON" "$PKG_NAME" "file:$PLUGIN_DIR" <<'PY'
+import io, json, sys
+p, name, spec = sys.argv[1], sys.argv[2], sys.argv[3]
+d = json.load(io.open(p, encoding="utf-8"))
+deps = d.setdefault("dependencies", {})
+bundles = d.setdefault("dsh", {}).setdefault("profile", {}).setdefault("bundles", [])
+changed = []
+if deps.get(name) != spec:
+    deps[name] = spec
+    changed.append("dependencies")
+if name not in bundles:
+    bundles.append(name)
+    changed.append("bundles")
+io.open(p, "w", encoding="utf-8").write(json.dumps(d, indent=2, ensure_ascii=False) + "\n")
+print("    已更新: " + (", ".join(changed) if changed else "无变化（已就位）"))
+PY
+
+echo "==> ④ 删除 synova-cto 预设的旧 loader 块（避免重复挂载）"
+if [ ! -f "$PRESET_FILE" ]; then
+  echo "    预设不存在，跳过: $PRESET_FILE"
+elif ! grep -qF "$MARKER" "$PRESET_FILE"; then
+  echo "    无旧块，跳过"
 else
-  echo "    无全局条目，跳过"
+  python3 - "$PRESET_FILE" "$MARKER" "$ENTRY_ID" <<'PY'
+import io, sys
+p, marker, entry_id = sys.argv[1], sys.argv[2], sys.argv[3]
+lines = io.open(p, encoding="utf-8").read().split("\n")
+start = next((i for i, l in enumerate(lines) if marker in l), None)
+if start is None:
+    print("    未找到 marker，跳过"); sys.exit(0)
+# 把紧邻的上方空行也算进块内
+cut = start
+while cut > 0 and lines[cut - 1].strip() == "":
+    cut -= 1
+seen_entry = False
+i = start
+while i < len(lines):
+    ln = lines[i]
+    if not seen_entry:
+        if ln.startswith("#") or ln.strip() == "":
+            i += 1; continue
+        if ln.startswith("- id: " + entry_id):
+            seen_entry = True; i += 1; continue
+        break                      # 意外的结构 → 停止，保守不删
+    if ln.startswith((" ", "\t")):  # 条目的缩进续行
+        i += 1; continue
+    break
+if not seen_entry:
+    print("    ⚠ 找到 marker 但未找到 '- id: %s' 条目，保守跳过（请人工核对）" % entry_id)
+    sys.exit(0)
+out = lines[:cut] + lines[i:]
+# 收敛连续空行，保持 YAML 整洁
+res, prev_blank = [], False
+for ln in out:
+    if ln.strip() == "":
+        if prev_blank:
+            continue
+        prev_blank = True
+    else:
+        prev_blank = False
+    res.append(ln)
+io.open(p, "w", encoding="utf-8").write("\n".join(res))
+print(f"    已删除旧块（第 {cut + 1}–{i} 行，{i - cut} 行）")
+PY
 fi
 
 echo ""
-echo "✅ 完成。生效步骤："
-echo "   1) 重启 dsh web（停掉当前进程 → dsh web）"
-echo "   2) 打开/恢复 CTO 会话（synova-cto 预设挂载后）"
-echo "   3) 刷新浏览器 → 右侧出现 📊 窄栏，点击展开三仪表盘"
+echo "✅ 安装完成（全局挂载）。生效步骤："
+echo "   1) 重启 dsh web：bash dsh/plugins/synova-dashboards/scripts/restart-dsh-web.sh"
+echo "      （该脚本会 kill 占用 3080 的进程 —— 若你正在某个 session 里，请从会话外执行）"
+echo "   2) 刷新浏览器 → 左侧栏出现「项目总览」入口，点击打开中央只读面板"
+echo "   3) 验证路由：curl -s http://127.0.0.1:3080/synova/pm/ledger | head -c 200"
 echo ""
-echo "验证数据路由: curl -s http://127.0.0.1:3080/synova/dashboards/data | head -c 300"
+echo "↩︎  回滚 / 卸载："
+echo "   1) cp '$PKG_JSON.synova-bak' '$PKG_JSON'   # 或手工删除 dependencies 与 dsh.profile.bundles 里的 $PKG_NAME"
+echo "   2) rm -rf '$DEST'"
+echo "   3) 重启 dsh web"
+echo "   （synova-cto 预设的旧 loader 块已删除；如需恢复预设专属挂载，从 git 取回该文件的对应行）"
