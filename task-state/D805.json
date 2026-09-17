@@ -35,7 +35,9 @@
       "批七 D799（线10 派单）在 docs/dispatch-batch7-20260917 分支未合 main——合入后线10 dispatched 自动出现（派生器零改动）",
       "merged/audited 的线→D# 映射依赖派单文档标题+行级规则（宁缺勿造：多线行跳过）；新增派单保持「一行一卡一归属」写法",
       "README 区块⑥描述未更新——D794 session 主工作区有未提交新版 README 在飞，归其收口（防撞车）"
-    ]
+    ],
+    "pr": "#619（fix/d805-timeline-truth-wiring → main）",
+    "ci_state": "首轮 2 红均 stacked 结构性（非增量缺陷）：D734 预算 20>12（基线硬编码 origin/main 计入在飞上游）；组6 架构层（CI 无 current-brief → 认领计数选中 D794 brief → 其架构层 L1 长度2<3 下限）。解除：#612/#613 合并后 merge main → diff 缩至 7 文件 → CI 绿。净增量本地 13 组全绿已验证"
   },
   "created_at": "2026-09-17",
   "updated_at": "2026-09-17"
