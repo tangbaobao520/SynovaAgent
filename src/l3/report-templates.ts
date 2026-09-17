@@ -25,6 +25,17 @@ export interface ReportData {
   obstacles: Array<{ description: string; status: string }>;
   recommendations: string[];
   extra?: Record<string, unknown>;
+  /**
+   * D791 S1: 结论槽溯源指针（`[src:report:<reportId>#summary]`）。
+   * 缺席 → 结论行不带指针（覆盖审计会把它计为 missingPointerLines，由 L2 装配保证非缺席）。
+   */
+  conclusionPointer?: string;
+  /** D791 S2: 关键证据条目正文（不含 `- ` 前缀；每条自带 `[src:finding:...]` 指针）。 */
+  keyEvidence?: string[];
+  /** D791 S3: 各维度循环结论条目正文（不含 `- ` 前缀；每条自带 `[src:cycle:...]` 指针）。 */
+  cycleConclusions?: string[];
+  /** D791 S4: 行动建议条目正文（不含 `- ` 前缀；每条自带 `[src:report:...#recommendation:<i>]` 指针）。 */
+  actionItems?: string[];
 }
 
 // ═══ Built-in Templates ═══
@@ -113,9 +124,78 @@ const WEEKLY_SUMMARY: ReportTemplate = {
   },
 };
 
+// ═══ D791: 一页纸四槽位版式基建 ═══
+
+/**
+ * D791 降级标记（**ASCII**——D480 既有 3 个用例断言正常路径 `not.toContain('降级')`；
+ * 中文标记会误伤既有用例，spec §5.2 R2 明文）。
+ * 字面与 `agent/report-onepager-trace.ts ` 的 DEGRADED_MARK 一致——L3 不 import L2（避免层间倒置），
+ * 一致性由 `tests/agent/report-onepager.test.ts ` 的槽位一致性用例守护。
+ */
+const DEGRADED_MARK_S2 = '[degraded]';
+
+/** D791 槽位条数二次裁剪上限（spec §5.2 可读性约束表；零新阈值——与 Top 3 对称 / 注册循环实测上限 6） */
+const S2_LIMIT = 3;
+const S3_LIMIT = 6;
+const S4_LIMIT = 3;
+
+/** D791 一页纸四槽位标题（字面固定——GS-08 断言与覆盖审计共同依赖；顺序即渲染顺序） */
+export const EXECUTIVE_SUMMARY_SLOT_TITLES = [
+  '### 结论',
+  '### 关键证据',
+  '### 各维度循环结论',
+  '### 行动建议',
+] as const;
+
+/** 槽位空态文案（缺数据 / 缺入参两种——R2 降级显式，不得渲染正面结论措辞） */
+const SLOT_EMPTY_TEXT: Readonly<Record<string, { empty: string; absent: string }>> = {
+  '### 关键证据': { empty: '哨兵无 finding 记录', absent: '未提供关键证据（inputs 缺席）' },
+  '### 各维度循环结论': { empty: '暂无已注册循环模型（cycles/ 无 .cycle.json）', absent: '未提供循环结论（inputs 缺席）' },
+  '### 行动建议': { empty: '报告无行动建议条目', absent: '未提供行动建议（inputs 缺席）' },
+};
+
+/** unknown → string（非字符串 → 空串，零断言——铁律 38） */
+function toStringOrEmpty(value: unknown): string {
+  return typeof value === 'string' ? value : '';
+}
+
+/**
+ * 渲染一个槽位段（标题 + 条目行 + 尾部空行）。
+ *
+ * @input  lines 输出行累加器；title 槽位标题；items 条目正文数组（undefined = 入参缺席）；
+ *         limit 条数上限（二次裁剪）；table 空态文案表
+ * @output 无（原地追加）
+ * @degraded items 缺席 → `[degraded] <absent>`；items 为空/全空白 → `[degraded] <empty>`
+ *           （两条路径都不静默省略槽位——R2）
+ */
+function pushSlot(
+  lines: string[],
+  title: string,
+  items: unknown,
+  limit: number,
+): void {
+  const table = SLOT_EMPTY_TEXT[title] ?? { empty: '无条目', absent: '未提供入参（inputs 缺席）' };
+  lines.push(title);
+  if (!Array.isArray(items)) {
+    lines.push(`- ${DEGRADED_MARK_S2} ${table.absent}`);
+    lines.push('');
+    return;
+  }
+  const kept = items
+    .map(item => toStringOrEmpty(item))
+    .filter(item => item.trim() !== '')
+    .slice(0, limit);
+  if (kept.length === 0) {
+    lines.push(`- ${DEGRADED_MARK_S2} ${table.empty}`);
+  } else {
+    for (const item of kept) lines.push(`- ${item}`);
+  }
+  lines.push('');
+}
+
 const EXECUTIVE_SUMMARY: ReportTemplate = {
   name: 'executive_summary',
-  description: '高管摘要 — 一句话结论+Top3+行动',
+  description: '高管摘要 — 结论先行四槽位（结论 / 关键证据 / 各维度循环结论 / 行动建议）+ Top3',
   render(data: ReportData): string {
     const criticalAlerts = data.alerts.filter(a => a.priority === 'high');
     const summaryLine = criticalAlerts.length > 0
@@ -123,8 +203,21 @@ const EXECUTIVE_SUMMARY: ReportTemplate = {
       : `✅ ${data.orgId}: 运行平稳`;
 
     const lines: string[] = [];
+    // ── D480 既有头行（一字不改——回归红线 tests/agent/report-assembler.test.ts:44-62）──
     lines.push(`## ${summaryLine}`);
     lines.push('');
+
+    // ── D791 S1 结论（正文 = recommendations[0]，由 L2 按深度映射: ceo=assembleCeo 摘要）──
+    lines.push('### 结论');
+    const conclusion = toStringOrEmpty(data.recommendations[0]);
+    if (conclusion !== '') {
+      lines.push(`- ${conclusion}${data.conclusionPointer ? ` ${data.conclusionPointer}` : ''}`);
+    } else {
+      lines.push(`- ${DEGRADED_MARK_S2} 无结论内容可溯源（recommendations 为空）`);
+    }
+    lines.push('');
+
+    // ── D480 既有 Top 3 块（一字不改）──
     lines.push(`**Top 3:**`);
     const topItems = [
       ...data.alerts.slice(0, 2).map(a => `- 🔴 ${a.description}`),
@@ -133,6 +226,13 @@ const EXECUTIVE_SUMMARY: ReportTemplate = {
     ];
     topItems.slice(0, 3).forEach(l => lines.push(l));
     lines.push('');
+
+    // ── D791 S2/S3/S4 三个新槽位（空数组 → 该槽位 [degraded] 说明行，不静默省略——R2）──
+    pushSlot(lines, '### 关键证据', data.keyEvidence, S2_LIMIT);
+    pushSlot(lines, '### 各维度循环结论', data.cycleConclusions, S3_LIMIT);
+    pushSlot(lines, '### 行动建议', data.actionItems, S4_LIMIT);
+
+    // ── D480 既有 footer（一字不改）──
     lines.push(`📎 完整报告: ${data.goals.length} 目标 · ${data.alerts.length} 告警`);
     return lines.join('\n');
   },
