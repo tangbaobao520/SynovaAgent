@@ -1480,3 +1480,6 @@ Binary file .claude/bypass.log matches
 2026-09-16T22:52:13+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=b83ccc30d4e6f3de0e44ebc419b6c11c585b36e3
 2026-09-17T00:45:50+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=b4b34cb84b2d8dd4a14a1c0e39210a07fc72abd2
 2026-09-17T15:05:18+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D803 | AGENT=deepseek-harness
+2026-09-17T07:29:03Z detected-bypass head-mismatch marker=6d1f262eed072710df7e135600be58af24a63573 parent=0f59e514838568f35cb2516eec79d40e5e0c1c33
+2026-09-17T07:29:03Z detected-bypass head-mismatch marker=6d1f262eed072710df7e135600be58af24a63573 parent=aa6fa444e7c669e3a9c17e3187c32a5319025a3a
+2026-09-17T15:29:27+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D803 | AGENT=deepseek-harness
