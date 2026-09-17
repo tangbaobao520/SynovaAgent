@@ -34,7 +34,12 @@ export const revenueHealthSentinel = {
 
       if (!usedTraversal) {
         const nodes = store.queryNodes('Financial', { teamId });
-        revenueNodes = nodes.filter(n => n.props.financialType === 'revenue');
+        // D803 切片②（10-2 读侧契约）: 原为 `n.props.financialType === 'revenue'`——值域硬编码断裂。
+        // ingest 写入的 financialType = mapping.name = 'erp-standard'（data-ingest-service.ts:164），
+        // 上传数据永远不等于 'revenue' → 过滤器恒空 → 「无收入数据」静默 return []（K3 断裂②同构）。
+        // 修复方向 = 对齐其自有遍历分支（本文件 :28）的判定：financialType 标识 + total_revenue 兜底。
+        // 用 `!= null` 而非真值判断——显式 0 是合法营收值，不应被判空。
+        revenueNodes = nodes.filter(n => n.props.financialType === 'revenue' || n.props.total_revenue != null);
         clientNodes = store.queryNodes('Client', { teamId });
       }
 
