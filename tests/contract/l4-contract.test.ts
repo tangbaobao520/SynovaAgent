@@ -313,7 +313,8 @@ describe('D803 读侧消费契约 — 四资本哨兵读名 ⊆ 写侧能力集�
 
   it('运行时: 上传形态 financialType=erp-standard + total_revenue 必须被 revenue-health 吃到（非判空）', async () => {
     const queried: string[] = [];
-    const store = {
+    // 显式标注 GraphStoreReader（铁律 38: 不用 as unknown as 绕过类型检查）
+    const store: GraphStoreReader = {
       queryNodes: (type: string) => {
         queried.push(type);
         if (type === 'Financial') {
@@ -325,7 +326,7 @@ describe('D803 读侧消费契约 — 四资本哨兵读名 ⊆ 写侧能力集�
       getNode: () => null,
     };
 
-    const findings = await revenueHealthSentinel.check(store as unknown as GraphStoreReader, 'team1');
+    const findings = await revenueHealthSentinel.check(store, 'team1');
 
     // 正控: 回退分支真的跑了两次 queryNodes（Financial + Client），不是提前 return
     expect(queried).toContain('Financial');
@@ -339,7 +340,7 @@ describe('D803 读侧消费契约 — 四资本哨兵读名 ⊆ 写侧能力集�
     // 撕裂点: 现金链曾是 `cash_balance || total_revenue`——把收入当现金，
     // 32 天现金 / 12 万月耗（真 runway 0.25 → critical）会被 120 万收入伪装成 10 个月（warning）。
     // 修复后: 现金链全缺 → 诚实降级，绝不产出被收入污染的跑道数字。
-    const store = {
+    const store: GraphStoreReader = {
       queryNodes: () => [{
         id: 'fin-erp-1',
         type: 'Financial',
@@ -349,7 +350,7 @@ describe('D803 读侧消费契约 — 四资本哨兵读名 ⊆ 写侧能力集�
       getNode: () => null,
     };
 
-    const runway = await computeCashRunwayMonths(store as unknown as GraphStoreReader, { teamId: 'team1' });
+    const runway = await computeCashRunwayMonths(store, { teamId: 'team1' });
 
     expect(runway.degraded).toBe(true);
     expect(runway.warnings.some((w) => w.includes('现金字段缺失'))).toBe(true);
