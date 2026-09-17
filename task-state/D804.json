@@ -27,7 +27,7 @@
   }
  },
  "impl": {
-  "commit": "036d9e34",
+  "commit": "ad1ae4dc",
   "by": "mac-coding (DSH synova-dsh)",
   "at": "2026-09-17",
   "scope": "切片 0（GS-01 断言契约校准 + V1 绑定）——切片 1-2 已授权未做，切片 3-5 未授权",
@@ -56,7 +56,9 @@
    "task-state/D804.json 在本 PR 与 spec PR 间存在 add/add 撞名风险（D715 P1-1 同型）：本 PR 采用「spec 段 + impl 段」超集写法规避，合并时以本文件为准即可无损。",
    "未定论项 U1（打包态后端是否真自启并绑 18790）/ U2（6-3 证据类型 yaml↔V1 口径冲突）/ U4（x64 打包信任度）/ U5（双击语义含 Gatekeeper）均未自行拍板，待切片 3 实测或 CTO 裁决。",
    "ownership.yaml 本次仅补 tests/golden-scenarios/**、tests/electron/** 两条 mac 规则（+13 行）；另两条经实测不补——docs/synova/runbooks/** 同时含 mac/win 文档（整体改判会错判 Win 线），scripts/desktop/** 归属清晰但切片 0-2 不碰。"
-  ]
+  ],
+  "commit_patch": "94be510c",
+  "rebase_note": "原提交 036d9e34/c8ef8134 在 rebase onto b396bafc（当轮 main）后换哈希为 ad1ae4dc/94be510c；bypass.log 记录按 D331 一次性补记。内容等价，无行为变更。"
  },
  "audit": null,
  "fix_task_id": null,
