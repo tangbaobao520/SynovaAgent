@@ -1,0 +1,38 @@
+{
+  "task_id": "D808",
+  "title": "DSH 借鉴标准更新（治理文档）：合规口径 + G3 守卫物理化 + 落点归属 + V1 元断言一致性核对表",
+  "status": "impl_done",
+  "spec": "docs/synova/research/DSH迁移施工图-20260820/DSH借鉴指引-v2-20260904.md（原文件处更新：§10/§11/§12 + 附录 C）",
+  "impl": {
+    "branch": "docs/d808-dsh-borrow-standard",
+    "base": "origin/main@50d8a3d9",
+    "files": [
+      "docs/synova/research/DSH迁移施工图-20260820/DSH借鉴指引-v2-20260904.md",
+      ".claude/task-briefs/D808.md",
+      "memory/notes/implemented/2026-09-17-D808-dsh-borrow-standard.md"
+    ],
+    "verify": {
+      "三节落地": "grep -n '^## 10\\.\\|^## 11\\.\\|^## 12\\.\\|^## 附录 C' → 4 命中",
+      "元断言逐字": "提取三个 ```text 代码块与创始人 2026-09-17 裁定原文比对 → M1/M2/M3 byte 级一致",
+      "核验命令可跑": "附录 C 命令块（stub V02 实跑）→ 本指引 2 / V1 v0.2 1",
+      "红线": "git diff --name-only：scripts/audit/**、src/**、scripts/** 零命中；仅 1 文档 + 簿记"
+    }
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-17",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "cto",
+  "milestone": "M0 项目管理基建",
+  "depends_on": ["D797", "D793"],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "三节落地（§10 合规口径 M3 / §11 G3 物理化 M2 / §12 落点归属 M1）+ 附录 C 一致性核对表",
+    "三条元断言与创始人 9-17 裁定原文 byte 级逐字一致（不许各写各的）",
+    "物理取证可复现：卡零绑定证据 / 落点零归属 / pathspec 空转 / 4 文件旧锚点"
+  ],
+  "next": "① K3 审计（治理文档属审计面）→ ② 派卡：B-01…B-10 回写 26 线验收点 + 绑定证据；③ 派卡：落点归属落 product-lines.yaml（含 providers/→src/providers/ 修正）；④ 派卡：4 文件锚点按 M3 补齐；⑤ B-20(D769) 未登记补齐",
+  "note": "治理文档更新（非实现规格）：创始人 2026-09-17 裁定 M1/M2/M3 落为 §10/§11/§12 引文块（byte 级逐字）+ 附录 C 核对表。口径变更 = 抄码由『禁』转『允许且鼓励』、桥接引用维持禁止（铁律 46 判定）、G3 由『挂台账行』升级为『回写验收点 + 绑定证据』。本卡零代码改动：scripts/audit/**、src/**、scripts/** 均未碰。"
+}
