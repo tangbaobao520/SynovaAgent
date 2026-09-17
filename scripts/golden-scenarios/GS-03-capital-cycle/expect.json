@@ -4,7 +4,9 @@
     { "acceptance_point": "4-5", "assertion_ids": ["erp-upload-ok"] },
     { "acceptance_point": "5-2", "assertion_ids": ["cash-runway-critical-triggered"] },
     { "acceptance_point": "4-7", "assertion_ids": ["no-false-critical-zero-runway"] },
-    { "acceptance_point": "10-3", "assertion_ids": ["cash-runway-critical-triggered", "threshold-provenance"] }
+    { "acceptance_point": "10-1", "assertion_ids": ["erp-upload-ok", "financial-node-created"] },
+    { "acceptance_point": "10-3", "assertion_ids": ["cash-runway-critical-triggered", "threshold-provenance"] },
+    { "acceptance_point": "10-6", "assertion_ids": ["no-data-degraded-warning", "no-data-no-critical", "no-false-critical-zero-runway"] }
   ],
   "assertions": [
     {
@@ -31,9 +33,34 @@
     {
       "id": "no-false-critical-zero-runway",
       "desc": "降级时不误报「跑道0.0个月」假 critical（负向断言）",
-      "purpose": "证明数据不足时 fail-closed 降级而非误报（验收点 4-7，D356 守卫）",
+      "purpose": "证明数据不足时 fail-closed 降级而非误报（验收点 4-7 / 10-6，D356 守卫）",
       "check": { "type": "file", "path": "__DATA_DIR__/run-response.json" },
       "expect": { "exists": true, "notContains": "跑道0.0个月" }
+    },
+    {
+      "id": "financial-node-created",
+      "desc": "sqlite graph_nodes 实存 type='Financial' 且 props.cash=30000 的行（上传落库物证）",
+      "purpose": "证明 ERP 上传真的在 L5 存储层落成 Financial 节点（验收点 10-1：断在进口则 DB 无行；只认 DB 物理行，不认 HTTP 响应自述——K3 P0-3 假绿教训）",
+      "check": {
+        "type": "sqlite",
+        "db": "__DATA_DIR__/synova.db",
+        "sql": "SELECT COUNT(*) AS cnt FROM graph_nodes WHERE graph='default' AND type='Financial' AND json_extract(props,'$.cash') = 30000"
+      },
+      "expect": { "cell": { "column": "cnt", "op": "gte", "value": 1 } }
+    },
+    {
+      "id": "no-data-degraded-warning",
+      "desc": "空库（未注入）触发 cash-runway → 响应含降级 finding「现金流数据不完整」",
+      "purpose": "证明无数据时降级信号对调用方可见、不静默（验收点 10-6；同时是 S4 行5 manifest 挂载回归守卫——该 finding 只在 this.manifest 挂载后产出，挂载回归则本断言必红）",
+      "check": { "type": "file", "path": "__DATA_DIR__/run-response-empty.json" },
+      "expect": { "exists": true, "contains": "现金流数据不完整" }
+    },
+    {
+      "id": "no-data-no-critical",
+      "desc": "空库响应不含「现金流危急」critical 告警（负向断言）",
+      "purpose": "证明无数据不误报 critical 越阈告警（验收点 10-6：P1-1 短路 + 切片③ 存在性守卫——禁止把「没上报现金」当成「公司没钱」）",
+      "check": { "type": "file", "path": "__DATA_DIR__/run-response-empty.json" },
+      "expect": { "exists": true, "notContains": "现金流危急" }
     }
   ]
 }
