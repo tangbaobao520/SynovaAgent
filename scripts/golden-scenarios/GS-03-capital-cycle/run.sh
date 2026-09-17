@@ -66,7 +66,15 @@ PORT="$(python3 -c "import json;print(json.load(open('$BOOT_STATE'))['port'])")"
 BASE="http://127.0.0.1:$PORT"
 echo "[GS-03] 服务就绪: $BASE"
 
-# 3. inject fixture（erp-standard 契约，走 field-mappings）
+# 3. 负向相位（D803 切片④）: **空库先跑哨兵**——无数据必须诚实降级、绝不误报 critical（10-6）。
+#    必须在 inject 之前: 注入后 Financial 节点已存在，"空库"这一半状态就永久消失了。
+#    一份 fresh-db 天然自带此相位（D-2 决策: 同场景双相位，不另造 GS-XX）；形态对齐 GS-05-alert-closure 既有先例。
+#    同时它是 manifest 挂载回归守卫（S4 行5）: 降级 warning finding 只有 this.manifest 挂载后才产出。
+curl -sS -X POST "$BASE/api/sentinel/run/cash-runway" \
+  > "$DATA_DIR/run-response-empty.json" 2>&1 || true
+echo "[GS-03] 空库触发响应: $(cat "$DATA_DIR/run-response-empty.json")"
+
+# 4. inject fixture（erp-standard 契约，走 field-mappings）
 curl -sS -X POST "$BASE/api/data/upload" \
   -H 'Content-Type: application/json' \
   -H "$AUTH_HEADER" \
@@ -74,12 +82,12 @@ curl -sS -X POST "$BASE/api/data/upload" \
   > "$DATA_DIR/upload-response.json" 2>&1 || true
 echo "[GS-03] 注入响应: $(cat "$DATA_DIR/upload-response.json")"
 
-# 4. 触发 cash-runway 哨兵（阈值告警）
+# 5. 正相位: 触发 cash-runway 哨兵（阈值告警）
 curl -sS -X POST "$BASE/api/sentinel/run/cash-runway" \
   > "$DATA_DIR/run-response.json" 2>&1 || true
 echo "[GS-03] 触发响应: $(cat "$DATA_DIR/run-response.json")"
 
-# 5. 断言（expect.json 模板 → 注入 DATA_DIR 实际路径）
+# 6. 断言（expect.json 模板 → 注入 DATA_DIR 实际路径）
 sed "s|__DATA_DIR__|$DATA_DIR|g" "$SCRIPT_DIR/expect.json" > "$SCRIPT_DIR/expect.runtime.json"
 
 cd "$REPO_ROOT"
