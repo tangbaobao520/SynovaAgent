@@ -158,5 +158,25 @@
       "title": "fix(D803 PR-1/2 win): 线10 资本循环——读侧属性契约守卫 + 跑道/逾期字段语义修复（10-2/10-4）+ dev doc 落库",
       "body": "# D803 PR-1/2（win 域）— 线10 资本循环：读侧属性契约守卫 + 跑道/逾期字段语义修复\n\n## ⛔ 同批合并约束（CTO 指令①）\n\n本 PR 与 **PR-2 `feat/d803-capital-cycle-mac`（9 文件 / 单域 mac）互为前提，必须同批合并。**\n- **只合 PR-2（mac）= 假绿**：`test-2026-09-17.json` 会给出 `10-4: pass`，但产出该绿的\n  `tests/sentinels/cash-runway/` 用例集是**旧版（9 用例）**，本 PR 修的字段语义缺陷\n  （现金属性缺失 → 误报 critical）仍在代码里。**证据绿 ≠ 代码对。**\n- 只合本 PR（win）= 不完整（线10 `v1_passed` 仍停在 1/6），**不构成假绿**。\n\n## 为什么拆两个 PR\n\nD734 PR 预算门禁（`scripts/control-tower/check-pr-budget.sh`，CI 硬阻断：≤12 文件 + 单域）：\n两域合一实测 **16 文件 / mac+win 跨域 → ❌**（`SYNO_CI=1 pre-commit-check.sh` 物理复现）。\n按 D773《Win域代行规约》「跨域切片在同一执行方内拆成多个单域 PR，连续做完」拆分。\n归属实测：`extensions/**`+`tests/**` = win；`scripts/golden-scenarios/**`+`docs/synova/product-lines/**` = mac。\n**顺带登记**：D803 派单 §三.4 声明「D803 = win」与其写集实际跨域矛盾 —— 派单层面待 CTO 修订。\n\n## 内容（切片②③ + dev doc 落库，4 commit）\n\n| commit | 改了什么 |\n|---|---|\n| `aa6fa444` 切片② | **读侧属性契约守卫**（`tests/contract/l4-contract.test.ts` 新增 describe：四资本哨兵源码读名闭包 ⊆ 写侧能力集 + 双向精确契约 + 运行时断言）+ `revenue-health/aggregate.ts:37` 断裂修复（`financialType==='revenue'` 硬编码值域 → 对齐 `\\|\\| total_revenue != null`）+ revenue-health 用例 3→5 |\n| `27b153b7` 切片③ | `compute-cash-runway-months.ts` / `compute-receivable-overdue-rate.ts`：**删除 `\\|\\| total_revenue` 当现金挪用**；新增 `pickPresentNumber` 存在性守卫原语（区分「属性缺失」→降级 vs「值为 0」→合法值）；消耗链补 `operating_expense`/`total_cost`；应收链遍历分支对齐 `accounts_receivable\\|\\|receivables`；JSDoc 契约同步（铁律 47）。新增/改用例 12 红→绿 |\n| `19f20c0a` | l4-contract 新增 mock 显式标注 `GraphStoreReader`（铁律 38 `as unknown as` 清零，CTO 指令⑤） |\n| `74591b62` | **dev doc 落库**（CTO 指令④，`docs/plans/**` 归 win 域） |\n\n## 验收（全部可独立复跑）\n\n- `node_modules/.bin/vitest run tests/sentinels/cash-runway/ tests/contract/l4-contract.test.ts tests/sentinels/revenue-health.test.ts` → **48 passed**\n- 切片② red→green：修复前 `1 failed | 11 passed` → 修复后 `17 passed`（原始输出见 K3 备料）\n- 切片③ red→green：原始 compute 下 `12 failed | 18 passed` → 修复后 `30 passed`\n- `bash scripts/golden-scenarios/GS-05-alert-closure/run.sh` 回归 → **exit 0 · 4/4 断言**（同哨兵消费方）\n- tsc：基线 28 → 本卡 28 → **零新增**；全量 vitest：基线 11 failed → 本卡 8 failed → **零新增**\n\n## 反向必红（4 条全实测，跑完还原）\n\n1. 注释 `src/sentinel/sentinel-loader.ts:211` 挂载行 → GS-03 `4/7 fail`（`no-data-degraded-warning` 必红）\n2. `erp-standard.json` `cash`→`cashBalance` → l4-contract **4 断言红** + GS-03 `4/7 fail`（`financial-node-created` cnt=0）\n3. 现金链加回 `total_revenue` → cash-runway + l4-contract **7 用例红**\n4. 删 GS-03 证据任一 verdict → ledger 该点 `ok=False`、`v1_passed 5→4`\n\n## 写集 / 域\n\n11 文件 = **8 win** + **3 域判定豁免**（`.claude/bypass.log` / `.claude/task-briefs/**` / `task-state/**`）。\n红线：`scripts/audit/**` **0**、`scripts/product-lines/calc-progress.py` **0**、`src/**` **0**。\n\n## CI 等价本地验收\n\n`SYNO_CI=1 SYNO_DIFF_BASE=origin/main bash scripts/pre-commit-check.sh` → **EXIT 0 · 全部 13 组通过 · D734 ✅**\n`bash scripts/control-tower/simulate-ci.sh` → **EXIT 0（CI 等价模拟通过）**\n"
     }
-  }
+  },
+  "write_set": [
+    "scripts/golden-scenarios/GS-03-capital-cycle/run.sh",
+    "scripts/golden-scenarios/GS-03-capital-cycle/expect.json",
+    "extensions/sentinels/cash-runway/computes/compute-cash-runway-months.ts",
+    "extensions/sentinels/cash-runway/computes/compute-receivable-overdue-rate.ts",
+    "extensions/sentinels/revenue-health/aggregate.ts",
+    "tests/sentinels/cash-runway/compute-cash-runway-months.test.ts",
+    "tests/sentinels/cash-runway/compute-receivable-overdue-rate.test.ts",
+    "tests/sentinels/revenue-health.test.ts",
+    "tests/contract/l4-contract.test.ts",
+    "docs/synova/product-lines/product-lines.yaml",
+    "scripts/golden-scenarios/evidence/GS-03-2026-09-17.json",
+    "task-state/D803.json",
+    ".claude/task-briefs/2026-09-17-D803-capital-cycle.md",
+    "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D803-capital-cycle-20260917.md",
+    "docs/synova/coordination/AUDIT-FINDINGS-LEDGER.md",
+    "docs/synova/product-lines/evidence/test-2026-09-17.json",
+    "docs/synova/product-lines/k3-task-line-10-2026-W37.md"
+  ],
+  "write_set_note": "D708 声明源 S1。含两 PR 的并集（D803 是一个任务的跨域拆分，Q2 同口径）。非实现类但必须随 PR 落库的交付物逐条列明：task brief 自身 / dev doc（CTO 指令④）/ CT 台账登记（⑤）/ A2 机器证据（②）/ K3 定向复核备料（DS7）。"
 }
