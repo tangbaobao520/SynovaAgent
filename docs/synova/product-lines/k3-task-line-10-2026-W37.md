@@ -77,6 +77,35 @@ test(D803): 切片⑤ 10-2 绑定 test:l4-contract + A2 机器证据落盘
 
 `git diff --name-only origin/main...HEAD` 实现类 = spec §10.1 写集 10 文件，零偏差；`scripts/audit/**` 0、`scripts/product-lines/calc-progress.py` 0、`src/**` 0。
 
+## ⛔ 合并约束（CTO 2026-09-17 指令①——**缺一即假绿**）
+
+> **D803 拆两个单域 PR（D773 规约），两分支互为前提，必须【同批合并】，不可只合 `mac`。**
+
+- `feat/d803-capital-cycle-win`（10 文件 = 7 win + 3 域判定豁免）：切片②③——读侧契约守卫 + 跑道/逾期字段语义修复（**代码修复本体**）
+- `feat/d803-capital-cycle-mac`（8 文件 = 5 mac + 3 域判定豁免）：切片①④⑤——GS-03 双相位 + 线10 证据落点 + 10-2 绑定 + 本文档（**证据与场景本体**）
+- **只合 mac 的后果（物理路径）**：`docs/synova/product-lines/evidence/test-2026-09-17.json` 会给出 `10-4: pass`——但产生该绿的是 `tests/sentinels/cash-runway/` 的**旧**用例集（9 条），跑道字段语义缺陷（现金属性缺失→误报 critical）仍在代码里。**证据绿 ≠ 代码对** = 典型假绿。
+- 只合 win 的后果：线10 无场景/test 证据落点，`v1_passed` 停在 1/6——**不算假绿**，只是不完整。
+
+**为什么按域拆（物理原因，非风格偏好）**：D734 PR 预算门禁（`scripts/control-tower/check-pr-budget.sh`，上限 12 文件 + 单域）在 CI 上是硬阻断。两域合一实测 **16 文件 / mac+win 跨域 → ❌**。归属实测：`scripts/golden-scenarios/**` 与 `docs/synova/product-lines/**` 归 mac（TASK-ROUTING L32/L33），`extensions/**` 与 `tests/**` 归 win（兜底）。**注意 D803 派单 §三.4 声明「D803 = win」与其写集实际跨域矛盾**——派单层面待 CTO 修订。
+
+## 验收口径订正（CTO 指令③——禁 overclaim）
+
+- ❌ 不写「线10 5/6 绿」→ ✅ 写「**两分支合并后**，`ledger.json` 线10 `v1_passed=5 / v1_total=6`」。
+  **同日限制**：`calc-progress` 视角（`product-progress.json`）当日仍判 `stale`——A1 惰性失效对 date-only 证据按 `date+T00:00:00` 比较，本卡当天改了 `extensions/sentinels/` 即触发；D+1 重跑（DS11）后自动转绿。**账本视角（D795 `ledger.json`）当日已是 green**——两者口径不同，不要混用。
+- ❌ 不写「第一条 100% 线」→ ✅ 写「**5/6 机器证据 + 1（10-8）待 K3**」。10-8 未过 → 线10 未达 100%，进度按 `calc-progress.py:34` 契约封顶 99。
+
+## A2 机器证据重跑记录（CTO 指令②——证据必须由「含修复的代码」产生）
+
+| 项 | 值 |
+|---|---|
+| 命令 | `bash scripts/product-lines/run-machine-evidence.sh` |
+| 跑在什么树上 | **mac 分支树 + win 分支全部源码叠加**（`git checkout <win> -- extensions/sentinels/** tests/**` 叠加，跑完还原；叠加态从未提交到任何分支） |
+| 叠加态物理校验 | `extensions/sentinels/cash-runway/computes/compute-cash-runway-months.ts` 含 `pickPresentNumber` ×7；`tests/contract/l4-contract.test.ts` 含 D803 读侧 describe 标记 ×2 |
+| 套件结果 | **12 test files / 102 tests 全绿** |
+| 关键差异（证明叠加生效） | 叠加树上 `tests/contract/l4-contract.test.ts` = **13 用例**（win 版）；mac-only 树上该文件 = 9 用例 |
+| 产物 | `docs/synova/product-lines/evidence/test-2026-09-17.json`（test / 19 点 / verdict=pass，含 10-2、10-4） |
+| ⚠️ 如实声明 | 该 JSON 与 mac-only 树下产出的版本**逐字节一致**（A2 记录的是「点→裁决」映射，不含用例数/树哈希）——**差异只在 provenance**。因此「防假绿」的物理保障是上方合并约束（指令①），不是该文件内容本身；需要更强 provenance 时应由 `evidence-writer.py` 记录树哈希（独立任务，本卡不改判分/证据器） |
+
 ## 结论栏（审计员填写）
 
 - 10-1: ____  10-2: ____  10-3: ____  10-4: ____  10-6: ____  10-8: ____
