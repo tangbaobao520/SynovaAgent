@@ -178,5 +178,28 @@
     "docs/synova/product-lines/evidence/test-2026-09-17.json",
     "docs/synova/product-lines/k3-task-line-10-2026-W37.md"
   ],
-  "write_set_note": "D708 声明源 S1。含两 PR 的并集（D803 是一个任务的跨域拆分，Q2 同口径）。非实现类但必须随 PR 落库的交付物逐条列明：task brief 自身 / dev doc（CTO 指令④）/ CT 台账登记（⑤）/ A2 机器证据（②）/ K3 定向复核备料（DS7）。"
+  "write_set_note": "D708 声明源 S1。含两 PR 的并集（D803 是一个任务的跨域拆分，Q2 同口径）。非实现类但必须随 PR 落库的交付物逐条列明：task brief 自身 / dev doc（CTO 指令④）/ CT 台账登记（⑤）/ A2 机器证据（②）/ K3 定向复核备料（DS7）。",
+  "d708_fix": {
+    "红": "python3 scripts/control-tower/merge_writeset_gate.py --base origin/main → rc=1；win 夹带 2 / mac 夹带 4",
+    "夹带清单": {
+      "win": [
+        ".claude/task-briefs/2026-09-17-D803-capital-cycle.md",
+        "docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D803-capital-cycle-20260917.md"
+      ],
+      "mac": [
+        ".claude/task-briefs/2026-09-17-D803-capital-cycle.md",
+        "docs/synova/coordination/AUDIT-FINDINGS-LEDGER.md",
+        "docs/synova/product-lines/evidence/test-2026-09-17.json",
+        "docs/synova/product-lines/k3-task-line-10-2026-W37.md"
+      ]
+    },
+    "修法": "选项① 声明（非② 移出、非③ 豁免）：全部夹带项均为 CTO 明文指令要求的交付物（dev doc ④ / A2 证据 ② / K3 备料 DS7 / CT 台账 ⑤ / brief 为 pre-commit Gate 0 必需），移出即违背指令，豁免即掩盖。",
+    "落地": {
+      "S3_brief.Q2": "做什么 段补 5 条声明（brief 自身 + dev doc + CT 台账 + A2 证据 + K3 备料）；两分支 brief 保持**字节一致**（防 add/add 合并冲突）",
+      "S1_task-state.write_set": "补 17 条（两 PR 并集 + 非实现类交付物），win 分支独有"
+    },
+    "偏离 CTO ① 的说明（须 K3 可核）": "未执行 declare-write-set.sh。理由两条：①实测 `merge_writeset_gate.py` **不读** brief 的「## 写集（机器生成，禁手改）」块（源码 3 源 = S1 task-state.write_set / S2 devdoc 写集表 / S3 brief Q2-include，全文 grep 零处引用该块）——它不进对账；②该脚本按 `git diff <base>...HEAD` 生成**逐分支**内容（win 11 文件 vs mac 9 文件），写入两分支后 brief 分叉 → PR-1 合并后 PR-2 触发 **add/add 冲突**（当前 brief 字节一致故合并干净）。若需机器块，建议两 PR 合并后在 main 上跑一次归档。",
+    "复验": "两分支 `merge_writeset_gate.py --base origin/main` 均 **rc=0 / 结论 pass / 无夹带**；pre-commit(SYNO_CI=1) EXIT 0 全部 13 组；simulate-ci EXIT 0",
+    "红线自证": "文件数修前=修后（win 11 / mac 9，无删除）；夹带文件仍全部在树（win 2 / mac 4）；三声明文件内「写集豁免」出现 0 次（未用豁免舱）；修复提交仅改声明文件（win: brief+task-state；mac: brief）"
+  }
 }
