@@ -281,6 +281,41 @@ describe('GS-01 断言契约回归（D804 切片 0：V1 绑定 + 负向断言迁
     expect(offenders).toEqual([]);
   });
 
+  it('验收修补③: pass 的 detail 携带观测真值（GREEN/RED 可区分），长内容截断、空内容不编造', async () => {
+    const mod = await import(path.join(COMMON, 'assert.ts'));
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'gss-excerpt-'));
+    const statusFile = path.join(tmp, 'status.txt');
+    fs.writeFileSync(statusFile, 'CONSULT_LLM_RED (LLM key 未提供 — 诚实 RED)\n', 'utf-8');
+    const longFile = path.join(tmp, 'long.txt');
+    fs.writeFileSync(longFile, 'x'.repeat(500), 'utf-8');
+    const blankFile = path.join(tmp, 'blank.txt');
+    fs.writeFileSync(blankFile, '   \n', 'utf-8');
+
+    const doc = mod.validateExpectDoc({
+      scenario_id: 'GS-03',
+      evidence_map: [{ acceptance_point: '10-1', assertion_ids: ['A1', 'A2', 'A3'] }],
+      assertions: [
+        { id: 'A1', desc: 'd1', purpose: 'p1', check: { type: 'file', path: statusFile }, expect: { exists: true, contains: 'CONSULT_LLM_' } },
+        { id: 'A2', desc: 'd2', purpose: 'p2', check: { type: 'file', path: longFile }, expect: { exists: true } },
+        { id: 'A3', desc: 'd3', purpose: 'p3', check: { type: 'file', path: blankFile }, expect: { exists: true } },
+      ],
+    });
+    const results = mod.runAssertions(doc);
+    const byId = Object.fromEntries(results.map((r: { id: string; detail: string }) => [r.id, r]));
+    // 正常: 真值进 detail —— GREEN/RED 由此可区分（否则 pass 只证明"形状对"）
+    expect(byId.A1.verdict).toBe('pass');
+    expect(byId.A1.detail).toContain('CONSULT_LLM_RED');
+    // 边界: 长内容截断（不把整个文件灌进证据）
+    expect(byId.A2.detail).toContain('…');
+    expect(byId.A2.detail.length).toBeLessThan(220);
+    // 降级: 无可摘内容 → 不编造观测值（保持原语义）
+    expect(byId.A3.detail).toBe('符合预期');
+    // 端到端: evidence quote 携带真值
+    const ev = mod.buildEvidence(doc, results, '2026-09-17', '自检');
+    expect(ev.verdicts[0].quote).toContain('CONSULT_LLM_RED');
+    fs.rmSync(tmp, { recursive: true, force: true });
+  });
+
   it('边界: 负向 auth 断言靶点 = 受 JWT 保护端点（D590 裁决① 前提不可回归）', () => {
     const doc = readExpect();
     const negatives = doc.assertions.filter((a: { expect?: { contains?: string } }) => a.expect?.contains === '401');
