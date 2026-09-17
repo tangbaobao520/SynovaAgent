@@ -10,10 +10,11 @@
     "evidence": {
       "ledger": "docs/synova/project/ledger.json → v1_total 125→128 | v1_passed 21→25 | 线20 0/5→2/6（20-3/20-5）| 线21 2/5→3/5（21-3）| 线25 3/5→4/6（25-6）| 线18 2/4（18-2 既有）| 线22 1/5（22-1 既有）",
       "reverse_test": "删 D806-borrow-cards-20260918.json → v1_passed 25→22（回退 3：20-3 / 21-3 / 25-6 三条跨 3 线）；20-5 仍绿系 run-machine-evidence.sh 既有记录已绑该点（如实登记）",
-      "verbatim_check": "机器比对 origin/docs/v1-v0.2-freeze-20260917：§一 13 条条文 + fail_when + §二 26-7 条文 全部逐字命中（非手抄自述）",
+      "verbatim_check": "机器校验（.claude/tools/d806-verbatim-check.py）：① 签字区 sha256 前 8 位复现 == c11841e6；② 冻证件 §一 13 条 + §二 26-7 的【条文 + fail_when】与落库附录 A 对应行**逐字节全等 14/14**（首轮 5 处 fail_when 被我并入 v0.1 后缀 → 已改全等）；③ difflib 统一 diff 空",
       "kind_mapping": "证据列 14 条与 CTO 映射逐条一致：test=20-2/20-3/20-5/18-2/21-1/21-3/22-1/25-6；scenario=2-3/7-3/8-6/23-1/26-7；k3=20-6",
       "unscored": "B-10 配置三层（建议点 23-1 = scenario 类，GS 证据用自有 ID 空间且无 23-1 绑定）→ 如实标未计分，不造假证据",
-      "tests": "gen-project-board.test.sh PASS=61 FAIL=0 | 10 张卡套件 96/96 | check-ownership.test.sh 51/51"
+      "tests": "gen-project-board.test.sh PASS=61 FAIL=0 | 10 张卡套件 96/96 | check-ownership.test.sh 51/51",
+      "spec_source": "glob('docs/synova/project/26线-V1验收标准*.md') = 唯一候选 26线-V1验收标准-v0.2-20260917.md（含 §五 签字块）；v0.1 移出 glob 防 sorted()[-1] 静默回退分母"
     }
   },
   "audit": null,
@@ -59,6 +60,28 @@
         "docs/synova/product-lines/evidence/D806-borrow-cards-20260918.json"
       ],
       "effect": "v1_passed 21→25；反向删证据 25→22"
+    },
+    {
+      "date": "2026-09-18",
+      "change": "规格源收敛为一份（创始人冻证件为唯一权威）",
+      "basis": "CTO D806 session ①：并入 473 行完整表 + 删重复 + 移出 glob 竞争",
+      "authorized_by": "CTO（D806 session 指令 ①）",
+      "files": [
+        "docs/synova/project/26线-V1验收标准-v0.2-20260917.md",
+        "docs/synova/project/26线-V1-上游基线-草案v0.1-20260917.md",
+        "tests/project/gen-project-board.test.sh"
+      ],
+      "effect": "glob('docs/synova/project/26线-V1验收标准*.md') 候选 2→1；签字区 sha256 c11841e6 逐字节保留（复现验证）；落库版哈希 97288654"
+    },
+    {
+      "date": "2026-09-18",
+      "change": "yaml evidence 字段与 CTO 映射对齐（5 点）+ 字段角色注释",
+      "basis": "CTO D806 session ③：yaml 该字段实测**零机器读取**（唯一命中为计算结果的 evidence_files）",
+      "authorized_by": "CTO（D806 session 指令 ③）",
+      "files": [
+        "docs/synova/product-lines/product-lines.yaml"
+      ],
+      "effect": "20-2 scenario→test / 20-3 founder-demo→test / 21-3 founder-demo→test / 25-6 scenario→test / 8-6 空→scenario；注释写明 kind 机器源 = V1 表附录 A"
     }
   ],
   "updated_at": "2026-09-18",

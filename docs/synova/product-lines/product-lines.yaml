@@ -42,6 +42,10 @@
 #     id               — 线号-序号
 #     desc             — 一条可验证的"完成"定义（大白话）
 #     evidence         — 证据绑定（scenario:GS-XX / k3:<报告> / test:<套件> / founder-demo:<记录>）
+#                        ⚠️ 角色（D806 澄清）: 本字段是**文档性标注**（全仓实测零机器读取），说明「这条点打算用什么证据」；
+#                        **证据 kind 的机器源 = `docs/synova/project/26线-V1验收标准-v0.2-20260917.md` 附录 A**
+#                        （`gen-project-board.py` 按「证据」列 kind 与证据文件 record_type 配对计分 → ledger.json）；
+#                        `calc-progress.py` 只看证据文件，不读本字段。改 kind 口径请改 V1 表 + 本字段同步。
 #     status           — 六态: uncommitted / failed / pending_k3 / verified / rejected / stale
 #                        （yaml 内为初始值；最终状态由 calc-progress.py 按证据重算）
 #     note             — 为什么是这个状态（可追溯）
@@ -434,7 +438,7 @@ lines:
         note: ""
       - id: "8-6"
         desc: "通知按状态驱动 + 监测契约（新发现/实质变化立刻推；已认领停止重复、转约定节奏；未回应或停滞按契约升级；节奏与格式在首次告警时由老板确认）"
-        evidence: []
+        evidence: ["scenario:GS-05"]
         status: uncommitted
         note: "创始人 2026-09-12 裁 D-1 改写（原『5 分钟 vs 30 分钟』时间窗框架作废；5 分钟降级为抖动合并器）。实现缺口：runner.ts:1321 通知决策仅查 sentinelId+last_sent_ms，不读工单状态（TicketStatus 已在 runner.ts:178，机制有而未接线＝M3）。监测契约文件/升级规则/首次沟通请求待建。"
 
@@ -906,12 +910,12 @@ lines:
         note: "代码存在；端到端未验证"
       - id: "20-2"
         desc: "工具循环真实执行（不是 placeholder，K3 P1-C2 教训）"
-        evidence: ["scenario:GS-01"]
+        evidence: ["test:dsh-agent-loop 锚点 + GS-01 工具调用留痕"]
         status: uncommitted
         note: ""
       - id: "20-3"
         desc: "上下文窗口管理策略（长会话不爆窗、不丢重点）"
-        evidence: ["founder-demo:长会话实测"]
+        evidence: ["test:compaction 套件"]
         status: uncommitted
         note: "创始人 13 问第 4 问：当前 = 0，要设计"
       - id: "20-4"
@@ -953,7 +957,7 @@ lines:
         note: "深度优化 = 0"
       - id: "21-3"
         desc: "成本策略（token 预算/缓存，成本可测量）"
-        evidence: ["founder-demo:成本报告"]
+        evidence: ["test:token-meter 套件"]
         status: uncommitted
         note: ""
       - id: "21-4"
@@ -1131,7 +1135,7 @@ lines:
         note: "创始人 13 问第 9 问：多模式框架 = 0"
       - id: "25-6"
         desc: "运行时插件化（运行中加载，不改代码不重启）"
-        evidence: ["scenario:GS-05"]
+        evidence: ["test:customer-config-package 套件"]
         status: uncommitted
         note: "文件驱动是 1.0，运行时插件化是 2.0"
       - id: "25-7"

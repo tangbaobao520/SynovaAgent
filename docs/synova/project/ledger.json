@@ -1,11 +1,11 @@
 {
   "schema": "project-ledger/1",
   "generated_by": "gen-project-board.py",
-  "generated_at": "2026-09-18T01:16:57+08:00",
-  "git_head": "85c84be54f1a3aae90fbea4d4559113729c11b57",
+  "generated_at": "2026-09-18T01:52:43+08:00",
+  "git_head": "4032565a9e3576f53e0a3e5e5ff94697d38bc3c2",
   "sources": {
     "yaml": "docs/synova/product-lines/product-lines.yaml",
-    "v1_dod": "docs/synova/project/26线-V1验收标准-草案v0.2-20260918.md",
+    "v1_dod": "docs/synova/project/26线-V1验收标准-v0.2-20260917.md",
     "evidence_dirs": [
       "docs/synova/product-lines/evidence",
       "scripts/golden-scenarios/evidence"
@@ -148,7 +148,7 @@
         },
         {
           "id": "2-3",
-          "text": "关键选择用交互卡片（不让老板打字选）——复用 DSH user-questions 范式（seam + `dsh-tool-ask-user` + composer takeover 卡片）",
+          "text": "复用 DSH user-questions 范式（seam + `dsh-tool-ask-user` + composer takeover 卡片）",
           "verify": "`dsh-user-questions` / `dsh-tool-ask-user` 锚点现验 + GS-01 卡片命中",
           "kind": "scenario",
           "ok": false,
@@ -485,7 +485,7 @@
         },
         {
           "id": "7-3",
-          "text": "监测结果持久化（重启不丢 findings）——事件化日志 + 冷恢复（`dsh-schedule` 范式：变更事件 append → fold 重放恢复）",
+          "text": "事件化日志 + 冷恢复（`dsh-schedule` 范式：变更事件 append → fold 重放恢复）",
           "verify": "`dsh-schedule` 锚点现验 + GS-05 重启后查询",
           "kind": "scenario",
           "ok": false,
@@ -579,14 +579,14 @@
         },
         {
           "id": "8-6",
-          "text": "状态驱动通知（新发现/实质变化才推；已认领转约定节奏）——外部事件触发路由与 Sentinel cron 互补，采用 `dsh-webhook` 范式（三 id + 签名验签 + provenance 注入）",
+          "text": "外部事件触发路由与 Sentinel cron 互补，采用 `dsh-webhook` 范式（三 id + 签名验签 + provenance 注入）",
           "verify": "`dsh-webhook` 锚点现验 + GS-05（创始人 2026-09-12 裁定 D-1）",
           "kind": "scenario",
           "ok": false,
           "evidence": [],
           "age_days": null,
           "freshness": null,
-          "fail_when": "重复投递不幂等 / 按固定时间窗轰炸"
+          "fail_when": "重复投递不幂等"
         },
         {
           "id": "8-5",
@@ -1321,7 +1321,7 @@
         },
         {
           "id": "18-2",
-          "text": "重启后记忆还在（SessionStore 恢复）——事件溯源 + 投影（`dsh-session-persistence` JSONL + 跨进程写锁；`dsh-session-query-sqlite` FTS5；B-07 投影注册表）",
+          "text": "事件溯源 + 投影（`dsh-session-persistence` JSONL + 跨进程写锁；`dsh-session-query-sqlite` FTS5；B-07 投影注册表）",
           "verify": "`dsh-session-persistence` / `dsh-session-query-sqlite` 锚点现验 + session-store 测试绿",
           "kind": "test",
           "ok": true,
@@ -1468,7 +1468,7 @@
         },
         {
           "id": "20-2",
-          "text": "工具循环真实执行（非 placeholder）——loop 边界与可替换性：无 placeholder 假成功，**loop 接口冻结、与 `dsh-agent-loop` 语义等价、具备 Stage 3 整体替换能力**",
+          "text": "loop 边界与可替换性：无 placeholder 假成功，**loop 接口冻结、与 `dsh-agent-loop` 语义等价、具备 Stage 3 整体替换能力**",
           "verify": "`dsh-agent-loop` 锚点现验 + GS-01 工具调用留痕",
           "kind": "test",
           "ok": false,
@@ -1528,14 +1528,14 @@
         },
         {
           "id": "20-6",
-          "text": "审计员复核运行底座 ｜ 复核范围含 **G1 零依赖守卫**（`grep -rn \"@deepseek-ai\" src/ packages/` 零结果）+ 借鉴卡锚点现验 + 台账行存在",
+          "text": "复核范围含 **G1 零依赖守卫**（`grep -rn \"@deepseek-ai\" src/ packages/` 零结果）+ 借鉴卡锚点现验 + 台账行存在",
           "verify": "K3 PASS + G1 `grep -rn \"@deepseek-ai\" src/ packages/` 零结果",
           "kind": "k3",
           "ok": false,
           "evidence": [],
           "age_days": null,
           "freshness": null,
-          "fail_when": "发现 DSH 依赖 / 锚点失效 / 无台账行 / 复核不通过"
+          "fail_when": "发现 DSH 依赖 / 锚点失效 / 无台账行"
         }
       ]
     },
@@ -1556,7 +1556,7 @@
       "assertions": [
         {
           "id": "21-1",
-          "text": "DeepSeek 适配器可用（标准 API 接入）——错误码对齐 DSH 四 canonical 码 + `normalizeLlmFailure`，**路由基于 code 绝不解析 message**",
+          "text": "错误码对齐 DSH 四 canonical 码 + `normalizeLlmFailure`，**路由基于 code 绝不解析 message**",
           "verify": "`dsh-llm` error.js 锚点现验 + provider 测试绿",
           "kind": "test",
           "ok": true,
@@ -1575,7 +1575,7 @@
           ],
           "age_days": 2,
           "freshness": "green",
-          "fail_when": "按 message 字符串路由 / 接不上"
+          "fail_when": "按 message 字符串路由"
         },
         {
           "id": "21-2",
@@ -1654,7 +1654,7 @@
       "assertions": [
         {
           "id": "22-1",
-          "text": "看门狗/熔断/健康检查真实可用 ｜ 加不变量注册表（`dsh-invariants` 范式：检查可选、违约必炸）",
+          "text": "加不变量注册表（`dsh-invariants` 范式：检查可选、违约必炸）",
           "verify": "`dsh-invariants` 锚点现验 + watchdog 测试 + `/health`",
           "kind": "test",
           "ok": true,
@@ -1674,7 +1674,7 @@
           ],
           "age_days": 0,
           "freshness": "green",
-          "fail_when": "违约不 fail-loud / 组件不生效"
+          "fail_when": "违约不 fail-loud"
         },
         {
           "id": "22-2",
@@ -1739,14 +1739,14 @@
       "assertions": [
         {
           "id": "23-1",
-          "text": "RBAC 角色权限分明 ｜ 加部署权限档位（`dsh-permission-presets` 范式，**预设不成为第二真相源**）",
+          "text": "加部署权限档位（`dsh-permission-presets` 范式，**预设不成为第二真相源**）",
           "verify": "`dsh-permission-presets` 锚点现验 + GS-07 exit 0",
           "kind": "scenario",
           "ok": false,
           "evidence": [],
           "age_days": null,
           "freshness": null,
-          "fail_when": "出现第二真相源 / 越权可读"
+          "fail_when": "出现第二真相源"
         },
         {
           "id": "23-2",
