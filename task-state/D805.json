@@ -37,7 +37,7 @@
       "README 区块⑥描述未更新——D794 session 主工作区有未提交新版 README 在飞，归其收口（防撞车）"
     ],
     "pr": "#619（fix/d805-timeline-truth-wiring → main）",
-    "ci_state": "首轮 2 红均 stacked 结构性（非增量缺陷）：D734 预算 20>12（基线硬编码 origin/main 计入在飞上游）；组6 架构层（CI 无 current-brief → 认领计数选中 D794 brief → 其架构层 L1 长度2<3 下限）。解除：#612/#613 合并后 merge main → diff 缩至 7 文件 → CI 绿。净增量本地 13 组全绿已验证"
+    "ci_state": "首轮 2 红均 stacked 结构性（非增量缺陷），数字四源一致（API changed_files / pull.diff / 本地三点差 / D734 门禁自打）：对 origin/main = 21 文件 > 上限 12；其中 D805 自身增量 = 10（7 申报写集 + .claude/reference-map.md + .claude/bypass.log + 本 brief），在飞上游 #612/#613 = 11。解除：上游合并后 merge main → diff 缩至 D805 自身 10 ≤ 12 → D734 绿；组6 红同因（CI 无 current-brief → 认领计数选中 D794 brief → 其架构层 L1 长度2<3 下限），diff 剩 D805 文件后 resolver 选中 D805 brief → 绿"
   },
   "created_at": "2026-09-17",
   "updated_at": "2026-09-17"
