@@ -346,12 +346,12 @@ if [ -f "$V1_REAL" ]; then
   OUT6="$TMPD/real.json"
   run_sut "$REPO" "$OUT6" >/dev/null 2>&1; RC6=$?
   [ "$RC6" = "0" ] && ok "真实仓库 exit 0" || no "真实仓库 exit $RC6"
-  [ "$(jget "$OUT6" totals.v1_total)" = "125" ] && ok "真实仓库 v1_total=125（分母冻结）" \
-    || no "真实仓库 v1_total 应 125，实 $(jget "$OUT6" totals.v1_total)"
+  [ "$(jget "$OUT6" totals.v1_total)" = "128" ] && ok "真实仓库 v1_total=128（分母冻结，v0.2 §三）" \
+    || no "真实仓库 v1_total 应 128，实 $(jget "$OUT6" totals.v1_total)"
   [ "$(jget "$OUT6" lines | "$PYBIN" -c 'import json,sys;print(len(json.load(sys.stdin)))')" = "26" ] \
     && ok "真实仓库 lines=26" || no "真实仓库 lines 应 26"
-  [ "$(jget "$OUT6" totals.backlog_points)" = "39" ] && ok "真实仓库 backlog_points=39（164-125）" \
-    || no "backlog_points 应 39，实 $(jget "$OUT6" totals.backlog_points)"
+  [ "$(jget "$OUT6" totals.backlog_points)" = "36" ] && ok "真实仓库 backlog_points=36（164-128）" \
+    || no "backlog_points 应 36，实 $(jget "$OUT6" totals.backlog_points)"
 else
   no "真实仓库缺 V1 断言表 ${V1_NAME}（上游 D793/PR#608 未并入）"
 fi

@@ -1,11 +1,42 @@
 {
   "task_id": "D806",
   "title": "台账修复-DSH复用可见",
-  "status": "claimed",
-  "spec": null,
-  "impl": null,
+  "status": "impl_done",
+  "spec": "docs/synova/coordination/DSH锚点重锚审计-20260917.md（依据，D797 @ docs/dsh-reanchor-20260917）+ CTO D806 派单四缺陷；口径单源 docs/synova/project/26线-V1验收标准-v0.2-20260917.md（v0.2 冻结件）",
+  "impl": {
+    "commit": "(见本次提交)",
+    "branch": "fix/d806-ledger-dsh-alignment",
+    "change": "① 11 条幻影 modules → 现验真实路径（26 线 102 条 modules 零幻影）② 借鉴卡四目录归属按 D808 §12.2 + R1/R5 收敛 ③ 8 张借鉴卡回写 V1 点 + 绑定证据（D806-borrow-cards-20260918.json）④ V1 v0.2 落库版 128 条表 + M1–M5 元断言落 yaml 注释 + 分母变更单",
+    "evidence": {
+      "ledger": "docs/synova/project/ledger.json → v1_total 125→128 | v1_passed 21→23 | 线20 0/5→1/6 | 线25 3/5→4/6 | 线26 0/6→0/7（未交付不虚增）",
+      "reverse_test": "删 D806-borrow-cards-20260918.json → 25-6 ok=False 回退（总 23→22）；20-5 仍绿系 run-machine-evidence.sh 既有记录已绑该点（如实登记）",
+      "founder_demo_gap": "21-3 / 20-3 / 21-4 证据列=founder-demo，全仓 founder-demo 记录=0 → 恒不计分（B-03/B-04/B-05 本批如实标未计分）"
+    }
+  },
   "audit": null,
   "fix_task_id": null,
+  "change_log": [
+    {
+      "date": "2026-09-18",
+      "change": "V1 分母 125 → 128",
+      "basis": "V1 v0.2 §三（docs/synova/project/26线-V1验收标准-v0.2-20260917.md）：+2 由 backlog 提入 V1（20-5 协作式超时 / 25-6 运行时插件化）+1 线26 新增（26-7 MCP client）；元断言 M1–M5 不计入分母",
+      "authorized_by": "CTO（D806 扩写集授权）",
+      "files": [
+        "scripts/project/gen-project-board.py",
+        "tests/project/gen-project-board.test.sh",
+        "docs/synova/project/26线-V1验收标准-草案v0.2-20260918.md"
+      ]
+    },
+    {
+      "date": "2026-09-18",
+      "change": "backlog 39 → 36",
+      "basis": "164（yaml 验收点总数）− 128（v0.2 冻结分母）= 36；测试真实仓库读数同步",
+      "authorized_by": "CTO（D806 扩写集授权）",
+      "files": [
+        "tests/project/gen-project-board.test.sh"
+      ]
+    }
+  ],
   "updated_at": "2026-09-18",
-  "updated_by": "alloc-task-id"
+  "updated_by": "DeepSeek Harness"
 }

@@ -7,12 +7,36 @@
 # 诚实规则: 只有带证据的验收点才算"已验证"。agent 说"做了"不算；代码提交不算；D# 合并不算。
 #           证据 = 可 grep、可重跑、可复核的物理事实（K3 报告 / 场景绿 / 测试绿 / 创始人演示核验）。
 #
+# ── V1 v0.2 元断言 M1–M5（判定规则，不计入分母）─────────────────────────────
+# 单源: docs/synova/project/26线-V1验收标准-v0.2-20260917.md §〇（冻结件，创始人 2026-09-17 签字）
+# 落点: 本文档（yaml 注释）｜冻结件 §〇｜《DSH借鉴指引-v2-20260904》§10/§11/§12（D808 附录 C 逐字核）
+# 账目: docs/synova/project/26线-V1验收标准-草案v0.2-20260918.md（128 条 = v0.2 §三 变更单）
+#
+# M1（DSH 复用口径 · 全 26 线适用）
+#   凡某验收点的能力与现行 DSH 已有能力重叠时，该点必须写成「接入/配置/约束 DSH 的 <能力> 并验证」，
+#   不得写成「实现 <能力>」。判定：verify 须同时指向 ① DSH 侧配置/接入点 ② 本仓验证断言两段；
+#   只写「实现 X」视为口径不合格，不计通过。
+# M2（G3 物理化 · 借鉴卡必须回写台账）
+#   每张 DSH 借鉴卡（B-01…B-20）必须回写到至少一个 26 线验收点，并生成绑定该点 id 的证据文件；
+#   未回写、或无绑定证据者，该卡不计通过。
+# M3（合规边界 · 创始人裁定）
+#   抄代码 = 允许且鼓励；桥接引用 = 禁止（禁 import @deepseek-ai/*、禁 re-export 壳）；
+#   抄写处必须留锚点注释（包 + 文件 + 符号）+ 现验命令（行号现查）。
+# M4（借鉴发现机制 · 发现即登记）
+#   任何 session 发现新的可借鉴能力（含 UI/前端组件、页面范式、交互形态）必须走三步：
+#   ① 立借鉴卡 ② 回写对应线验收点 ③ 生成绑定证据。发现而不登记 = 漏账，计入审计 findings。
+# M5（UI / 前端面复用口径）
+#   凡 DSH 客户端已有的 UI 范式，界面元素一律「复用/对齐 + 验证」，禁止从零造组件。
+#
 # 字段说明:
 #   id/name/value      — 线的基本定义（大白话，创始人可读）
 #   weight             — 产品总进度权重（默认等权 1.0）
 #   baseline_pct       — Phase 0 诚实粗估（±15%，由验收点验证后取代）
 #   baseline_note      — 粗估的事实依据
 #   modules            — 关联代码路径（git 变更 → 该线证据自动失效转黄，A1）
+#                        归属规则（D808 §12）: R1 一个落点只归一条线；R3 必须是真实存在且 git pathspec
+#                        可命中的路径（幻影路径 = 失效检查静默空转）；R5 混合目录按文件粒度归属，
+#                        禁止整目录挂靠。
 #   done_definition    — 100% 的完整定义
 #   acceptance_points  — 验收点清单:
 #     id               — 线号-序号
@@ -87,7 +111,7 @@ lines:
     weight: 1.0
     baseline_pct: 50
     baseline_note: "聊天+SSE+线程存在；主动交互蓝图未全接线"
-    modules: ["src/agent/", "src/l1/", "src/l1-interaction/", "app/", "src/tui-v2/", "src/llm/"]
+    modules: ["src/agent/", "src/l1/", "src/l1-interaction/", "app/", "src/tui-v2/"]
     done_definition: "老板一句大白话 → 系统听懂意图 → 流式回答 → 关键选择给卡片 → 系统主动发起对话（该提醒时提醒）"
     acceptance_points:
       - id: "2-1"
@@ -134,7 +158,7 @@ lines:
     weight: 1.0
     baseline_pct: 30
     baseline_note: "一页纸结构有；详细报告/交互深度 = 0"
-    modules: ["src/l3/", "extensions/reports/", "src/agent/report-assembler.ts", "src/llm/"]
+    modules: ["src/l3/", "extensions/reports/", "src/agent/report-assembler.ts"]
     done_definition: "老板拿到一页纸结论（看得懂），想深挖有详细报告，想调整深浅说句话就行；手机能看，能导出"
     acceptance_points:
       - id: "3-1"
@@ -914,7 +938,7 @@ lines:
     weight: 1.0
     baseline_pct: 10
     baseline_note: "标准适配器有（providers/deepseek.ts）；深度优化 = 0"
-    modules: ["src/providers/", "src/infra/", "src/l2/", "src/llm/", "src/services/", "src/store/"]
+    modules: ["src/providers/", "src/infra/", "src/l2/", "src/llm/", "src/services/llm-cost.ts"]
     done_definition: "基于 DeepSeek 的差异化优势：提示词效果、成本、长上下文都有优化策略且可测量"
     acceptance_points:
       - id: "21-1"
@@ -951,7 +975,7 @@ lines:
     weight: 1.0
     baseline_pct: 40
     baseline_note: "看门狗/熔断/健康检查/优雅停机存在；断网降级 = 0，容灾演练 = 0"
-    modules: ["src/infra/", "scripts/watchdog.js", "src/deploy/", "scripts/backup/", "src/llm/"]
+    modules: ["src/infra/", "scripts/watchdog.js", "src/deploy/", "scripts/backup/"]
     done_definition: "系统能说出自己健不健康；出问题能自愈；断网时不装死；数据有备份且演练过恢复"
     acceptance_points:
       - id: "22-1"
@@ -993,7 +1017,7 @@ lines:
     weight: 1.0
     baseline_pct: 55
     baseline_note: "RBAC/GA 边界/数据导出删除存在（代码实证）；冲突仲裁流程 = 0，端到端未验证"
-    modules: ["src/infra/", "src/security/", "src/l1/", "src/config/"]
+    modules: ["src/infra/", "src/security/", "src/l1/", "src/config/config-layers.ts"]
     done_definition: "谁看什么清清楚楚；GA 和企业意见冲突有仲裁流程；老板说『删掉这段数据』就能彻底删"
     acceptance_points:
       - id: "23-1"
@@ -1077,7 +1101,7 @@ lines:
     weight: 1.0
     baseline_pct: 20
     baseline_note: "文件驱动有；运行时插件化/多模式框架 = 0"
-    modules: ["extensions/", "expert/", "skills/", "src/l3/", "src/config/"]
+    modules: ["extensions/", "expert/", "skills/", "src/l3/", "src/config/customer-config-package.ts"]
     done_definition: "加新能力只加文件不改代码：新专家、新技能、新哨兵、新连接器、新模式都是插件"
     acceptance_points:
       - id: "25-1"
