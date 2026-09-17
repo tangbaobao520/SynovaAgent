@@ -10,6 +10,8 @@
              --repo-root      仓库根；默认 = 本脚本上两级目录
              --out            输出路径；默认 <repo-root>/docs/synova/project/ledger.json
              --today          覆盖"今天" YYYY-MM-DD；默认系统日期（测试注入缝，保确定性）
+              --bulk-boundary  bulk import 排除界 YYYY-MM-DD；默认 2026-08-16（PHASE0/26 线
+                               计划定稿日，D805 口径；界日当天含界前）。测试注入缝
              --v1-dod         V1 断言表；默认 <root>/docs/synova/project/26线-V1验收标准*.md（取最新）
              --yaml           product-lines.yaml；默认 <root>/docs/synova/product-lines/product-lines.yaml
              --evidence-dirs  证据目录（可多次）；默认 产品证据 + golden-scenarios 证据**两处都算**
@@ -18,7 +20,8 @@
              --compact        单行 JSON（默认缩进 2）
 @output  — <out> 处的 JSON 文件，schema "project-ledger/1"：
              schema / generated_by / generated_at / git_head / sources / degraded /
-             degraded_sources / skipped_sources / totals / lines / tasks / blocked / timeline
+             degraded_sources / skipped_sources / totals / lines / tasks / blocked /
+              timeline / timeline_meta
            标准输出: 一行摘要；诊断信息走 stderr（logging）
 @exit    — 0  正常
              0  降级（默认）—— 文件**仍完整写出**，降级在带内（degraded:true），
@@ -45,6 +48,25 @@
              保鲜     = 证据龄 ≤7🟢 / 8–14🟡 / >14🔴；只对"已通过"的断言分桶计数
              阻塞     = 仅当 blocked{reason,since,needs} 三要素齐全才计入；days = today - since
              backlog  = product-lines.yaml 验收点总数 - V1 断言数（V1 外不参与交付度）
+             timeline（D805 口径，创始人派单 2026-09-17）:
+             first_commit = 该线 modules 在 bulk 界（2026-08-16，含当天为界前）之后的
+                            最早提交日；界后无提交 → null + degraded_sources 登记
+                            「仅有 bulk import 界前历史」（禁静默改口径）；无任何历史
+                            → null + 登记「modules 无任何提交历史」。
+                            bulk 界依据：仓库初始 54 提交（2026-06-03）让每线"最早提交"
+                            都等于仓库生日（无信息量假数据）；PHASE0/26 线体系 08-16 定稿，
+                            界前 modules 提交发生在"线不存在"语境（D333 收敛决策）。
+             dispatched = 最早一份提到该线（线N/lineN，词边界）的派单文档
+                            （docs/synova/coordination/*派单*）的文件名日期。
+             merged    = min(线→D#→squash 最早合入日, subject 直连线N 的 squash 最早日)。
+                            squash 判定 = subject 规整格式 `type(D#..): ..(#PR)`（main 上
+                            实测 120 条，机械可判）；ref 优先 origin/main（D334 唯一真相），
+                            退 main。线→D# 映射 = 派单文档标题（标题含线N + 标题 D#）+
+                            行级规则（一行恰一个线号 + 行内 D#）——宁缺勿造，多线行跳过。
+             audited   = min(报告头部声明线N 的最早报告日, 线→D#→报告文件名 -D# 最早日)。
+                            头部 = 前 12 行（标题+元信息）；日期 = 文件名 YYYY-MM-DD 前缀。
+             milestone/planned_week = 创始人《里程碑表》未到位 → 恒 null +
+                            timeline_meta.milestone_source="not_available" 显式标注（到位后接入）。
 @determinism — 同输入连续两次运行，除 generated_at / git_head 外逐键相等（测试组 ⑤）
 
 红线: 不修改 calc-progress.py；不写回 product-lines.yaml；不碰 scripts/audit/**；零三方依赖。
@@ -81,6 +103,24 @@ DEFAULT_EVIDENCE_RELS = (
     "docs/synova/product-lines/evidence",
     "scripts/golden-scenarios/evidence",
 )
+
+# bulk import 排除界（D805）：仓库初始 54 提交（2026-06-03）让每线 modules "最早提交"
+# 都等于仓库生日；PHASE0/26 线计划 2026-08-16 定稿，界前提交发生在"线不存在"语境。
+# 界日当天含界前（当天是计划入库日，非线开发日）。CLI --bulk-boundary 可覆盖（测试缝）。
+DEFAULT_BULK_BOUNDARY = "2026-08-16"
+
+# 线引用词边界正则（D805）：「线N / 线 N / lineN / line N」，N=1..2 位数字；
+# (?<!\d)(?!\d) 双侧词边界防「线1」误吞「线10」/「线10」误归「线1」。
+LINE_REF_RE = re.compile(r"(?:\u7ebf|line)\s{0,1}(\d{1,2})(?!\d)", re.IGNORECASE)
+
+# squash merge subject 规整格式（main 实测 120 条）：`type(D#..): 描述 (#PR)`
+SQUASH_SUBJECT_RE = re.compile(r"^[a-z]+\((?:D(\d+))[^)]*\): .+\(#(\d+)\)$")
+
+# K3 报告文件名日期前缀：`YYYY-MM-DD-D#....md`
+REPORT_DATE_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})")
+
+MAX_LINE_ID = 26  # 线号上限（26 线体系）
+REPORT_HEAD_LINES = 12  # K3 报告"头部声明"窗口：标题 + 元信息块
 
 
 # ── 通用工具 ──────────────────────────────────────────────────────────────
@@ -388,10 +428,16 @@ def git_head_sha(root):
     return (sha, None) if sha else (None, "git rev-parse 返回空")
 
 
-def git_first_commit(root, modules):
-    """该线 modules 最早一次提交日期（timeline.actual.first_commit）；取不到 → None。"""
+def git_module_dates(root, modules):
+    """该线 modules 的全部提交日期（git log %as，新→旧）。
+
+    @input  — root:Path, modules:list[str]
+    @output — dates:list[str]（可能为空 = 无历史）| None（git 层失败：非仓库/超时/非零退出）
+    @degraded — git 失败返回 None 并 log.debug（溯源信息不计 degraded，与 git_head 同语义）；
+                空 list 与 None 语义不同：前者=确无历史，后者=取不到（调用方不得混淆）。
+    """
     if not modules:
-        return None
+        return []
     try:
         proc = subprocess.run(
             ["git", "-C", str(root), "log", "--format=%as", "--"] + [str(m) for m in modules],
@@ -403,8 +449,188 @@ def git_first_commit(root, modules):
     if proc.returncode != 0:
         LOG.debug("git log 非零退出（modules=%s）: %s", modules, (proc.stderr or "").strip())
         return None
-    dates = [d.strip() for d in (proc.stdout or "").splitlines() if d.strip()]
-    return dates[-1] if dates else None
+    return [d.strip() for d in (proc.stdout or "").splitlines() if d.strip()]
+
+
+def split_first_commit(dates, boundary):
+    """bulk 界分桶（D805 口径，契约见文件头 @contract timeline）。
+
+    @input  — dates:list[str]|None（git_module_dates 产物）, boundary:date
+    @output — (first_commit:str|None, state:"ok"|"bulk_only"|"no_history"|"git_error")
+              ok        → 界后最早提交日
+              bulk_only → 界后无、界前有 → None（调用方登记 degraded_sources）
+              no_history→ 界前后皆无  → None（调用方登记 degraded_sources）
+              git_error → git 层失败 → None（不登记 degraded，溯源语义）
+    """
+    if dates is None:
+        return None, "git_error"
+    b = boundary.isoformat()
+    after = sorted(d for d in dates if d > b)
+    if after:
+        return after[0], "ok"
+    if dates:
+        return None, "bulk_only"
+    return None, "no_history"
+
+
+def line_refs_in(text):
+    """文本中出现的线号集合（词边界；上限 26 线体系）。@input str @output set[int]"""
+    found = set()
+    for m in LINE_REF_RE.finditer(text):
+        n = int(m.group(1))
+        if 1 <= n <= MAX_LINE_ID:
+            found.add(n)
+    return found
+
+
+def dispatch_doc_date(filename):
+    """派单文档文件名日期 `20260901` → `2026-09-01`；无 → None。"""
+    m = re.search(r"(20\d{2})(\d{2})(\d{2})", filename)
+    if not m:
+        return None
+    d = "%s-%s-%s" % m.groups()
+    return d if parse_date(d) else None
+
+
+def scan_dispatch_docs(coord_dir):
+    """扫描派单文档 → 三索引（D805 dispatched / 线→D# 映射源）。
+
+    @input  — coord_dir:Path（docs/synova/coordination）
+    @output — {
+        "dispatched": {line_id:int → 最早文件名日期 str},   # 全文提到线N（宽口径：出现即算）
+        "line_tasks": {line_id:int → set(int D号)},          # 严口径：标题规则 + 行级规则
+        "degraded":   [str],                                  # 目录缺失/不可读登记
+      }
+    @degraded — 目录缺失 → degraded 登记（dispatched/line_tasks 对应线为 null，不臆测）；
+                单文件读取失败 → log.warning 跳过（扫描间隙，不算输入级故障）。
+    @口径 — dispatched=最早一份**提到**该线的派单文档日期（创始人派单原文"该线出现的日期"）。
+             line_tasks 供 merged/audited 的 D# 链路：标题（标题含线N + 标题 D# 列表）或
+             行级（一行恰一个线号 + 行内 D#）——多线行/无线行跳过，宁缺勿造。
+    """
+    out = {"dispatched": {}, "line_tasks": {}, "missing": None}
+    if not coord_dir.is_dir():
+        # 目录缺失 = 数据域未接入（非输入级故障）→ timeline_meta 级留痕（D805）；
+        # 不进 degraded_sources：真实降级（坏文件/坏JSON）不被淹没（同 skipped_sources 设计理由）
+        out["missing"] = str(coord_dir)
+        LOG.warning("timeline: 派单目录缺失 → dispatched/merged 链路受限: %s", coord_dir)
+        return out
+    for f in sorted(coord_dir.glob("*派单*.md")):
+        fdate = dispatch_doc_date(f.name)
+        try:
+            text = f.read_text(encoding="utf-8")
+        except OSError as exc:
+            LOG.warning("派单文档不可读，跳过: %s (%s)", f, exc)
+            continue
+        name_dnums = set(int(x) for x in re.findall(r"D(\d{3,4})", f.stem))
+        # dispatched（宽）：全文提到线N → 该线最早文档日期
+        if fdate:
+            for n in line_refs_in(text) | line_refs_in(f.name):
+                cur = out["dispatched"].get(n)
+                if cur is None or fdate < cur:
+                    out["dispatched"][n] = fdate
+        # line_tasks（严 a）：标题含线N + 标题 D#
+        title_lines = line_refs_in(f.name)
+        if title_lines and name_dnums:
+            for n in title_lines:
+                out["line_tasks"].setdefault(n, set()).update(name_dnums)
+        # line_tasks（严 b）：一行恰一个线号 + 行内 D#
+        for row in text.splitlines():
+            rows_lines = line_refs_in(row)
+            if len(rows_lines) != 1:
+                continue
+            row_dnums = set(int(x) for x in re.findall(r"D(\d{3,4})", row))
+            if row_dnums:
+                out["line_tasks"].setdefault(rows_lines.pop(), set()).update(row_dnums)
+    return out
+
+
+def git_squash_index(root):
+    """squash merge 提交索引（D805 merged 双源）。
+
+    @input  — root:Path（ref 优先 origin/main，退 main——D334 main 唯一真相；都无 → None）
+    @output — {"by_task": {D号:int → 最早日期 str}, "by_line": {线号:int → 最早日期 str},
+               "ref": str|None}
+    @degraded — 两个 ref 都取不到 → 全空索引 + ref=None（merged 置 null，log.warning；
+                溯源信息不计 degraded，与 git_head 同语义）
+    @口径 — 只认 subject 规整格式 `type(D#..): ..(#PR)`（SQUASH_SUBJECT_RE）；
+             by_line 要求 subject 内出现线N（词边界）。均取**最早**（线的首个 PR 合入日）。
+    """
+    out = {"by_task": {}, "by_line": {}, "ref": None}
+    log = None
+    for ref in ("origin/main", "main"):
+        try:
+            proc = subprocess.run(
+                ["git", "-C", str(root), "log", ref, "--format=%as|%s"],
+                capture_output=True, text=True, timeout=60,
+            )
+        except (OSError, subprocess.SubprocessError) as exc:
+            LOG.debug("git log %s 失败: %s", ref, exc)
+            continue
+        if proc.returncode == 0:
+            log = proc.stdout
+            out["ref"] = ref
+            break
+        LOG.debug("git log %s 非零退出: %s", ref, (proc.stderr or "").strip())
+    if log is None:
+        LOG.warning("timeline.merged 取不到（origin/main 与 main 均不可用）→ 置 null")
+        return out
+    for line in log.splitlines():
+        d, _, subj = line.partition("|")
+        m = SQUASH_SUBJECT_RE.match(subj)
+        if not m:
+            continue
+        dnum = int(m.group(1))
+        cur = out["by_task"].get(dnum)
+        if cur is None or d < cur:
+            out["by_task"][dnum] = d
+        for n in line_refs_in(subj):
+            cur = out["by_line"].get(n)
+            if cur is None or d < cur:
+                out["by_line"][n] = d
+    return out
+
+
+def scan_audit_reports(reports_dir):
+    """K3 报告扫描（D805 audited 双源）。
+
+    @input  — reports_dir:Path（docs/synova/audit-reports）
+    @output — {"by_line": {线号 → 最早报告日}, "by_task": {D号 → 最早报告日}, "degraded": [str]}
+    @degraded — 目录缺失 → degraded 登记（K3 报告是任务指定的 audited 源，缺失属输入级）。
+    @口径 — 头部源：报告前 12 行（标题+元信息）出现线N（词边界）；
+             文件名源：文件名 `YYYY-MM-DD-D#...`；日期取文件名前缀（无 → 头部 `日期: YYYY-MM-DD`，
+             仍无 → 跳过该文件的线级归属，log.debug）。均取最早（首次裁定日）。
+    """
+    out = {"by_line": {}, "by_task": {}, "missing": None}
+    if not reports_dir.is_dir():
+        out["missing"] = str(reports_dir)
+        LOG.warning("timeline: K3 报告目录缺失 → audited 受限: %s", reports_dir)
+        return out
+    for f in sorted(reports_dir.glob("*.md")):
+        dm = REPORT_DATE_RE.match(f.name)
+        fdate = dm.group(1) if dm else None
+        try:
+            text = f.read_text(encoding="utf-8")
+        except OSError as exc:
+            LOG.warning("K3 报告不可读，跳过: %s (%s)", f, exc)
+            continue
+        head = "\n".join(text.splitlines()[:REPORT_HEAD_LINES])
+        if not fdate:
+            hm = re.search(r"\u65e5\u671f:\s*(\d{4}-\d{2}-\d{2})", head)
+            fdate = hm.group(1) if hm else None
+        tm = re.search(r"-D(\d{3,4})", f.name)
+        if tm and fdate:
+            dnum = int(tm.group(1))
+            cur = out["by_task"].get(dnum)
+            if cur is None or fdate < cur:
+                out["by_task"][dnum] = fdate
+        if fdate:
+            for n in line_refs_in(head):
+                cur = out["by_line"].get(n)
+                if cur is None or fdate < cur:
+                    out["by_line"][n] = fdate
+        elif not tm:
+            LOG.debug("K3 报告无日期锚，跳过线级归属: %s", f.name)
+    return out
 
 
 # ── 派生主逻辑 ────────────────────────────────────────────────────────────
@@ -518,21 +744,68 @@ def build_ledger(args):
             "assertions": assertions,
         })
 
-    # ⑦ timeline（每线 modules 最早提交日；git 不可用 → 全 null，D794 显示"待数据"）
+    # ⑦ timeline 四源（D805：first_commit bulk 界 / dispatched 派单 / merged squash / audited K3）
+    boundary = parse_date(args.bulk_boundary) if args.bulk_boundary else parse_date(DEFAULT_BULK_BOUNDARY)
+    if boundary is None:  # main() 已校验，兜底不静默
+        boundary = parse_date(DEFAULT_BULK_BOUNDARY)
+        degraded_sources.append("timeline: --bulk-boundary 非法已回退默认 %s" % DEFAULT_BULK_BOUNDARY)
+    dispatch_idx = scan_dispatch_docs(root / "docs" / "synova" / "coordination")
+    squash_idx = git_squash_index(root) if head_sha else {"by_task": {}, "by_line": {}, "ref": None}
+    audit_idx = scan_audit_reports(root / "docs" / "synova" / "audit-reports")
+
     timeline = []
     for ln in v1_lines:
-        modules = pl_by_id.get(ln["id"], {}).get("modules") or []
+        lid = ln["id"]
+        modules = pl_by_id.get(lid, {}).get("modules") or []
+        dates = git_module_dates(root, modules) if head_sha else None
+        first_commit, fc_state = split_first_commit(dates, boundary)
+        if fc_state == "bulk_only":
+            degraded_sources.append(
+                "timeline: 线%d first_commit 未接入——modules 仅有 bulk import 界前历史（≤%s，D805 口径）"
+                % (lid, boundary.isoformat()))
+        elif fc_state == "no_history":
+            degraded_sources.append(
+                "timeline: 线%d first_commit 未接入——modules 无任何提交历史" % lid)
+        # dispatched：最早提到该线的派单文档日期（宽口径，无 → null 不登记——从未派单是事实非故障）
+        dispatched = dispatch_idx["dispatched"].get(lid)
+        # merged：双源取最早（线→D#→squash / subject 直连线N）
+        merge_cands = []
+        for dnum in dispatch_idx["line_tasks"].get(lid, ()):
+            d = squash_idx["by_task"].get(dnum)
+            if d:
+                merge_cands.append(d)
+        if squash_idx["by_line"].get(lid):
+            merge_cands.append(squash_idx["by_line"][lid])
+        merged = min(merge_cands) if merge_cands else None
+        # audited：双源取最早（报告头部线N / 线→D#→报告文件名）
+        audit_cands = []
+        if audit_idx["by_line"].get(lid):
+            audit_cands.append(audit_idx["by_line"][lid])
+        for dnum in dispatch_idx["line_tasks"].get(lid, ()):
+            d = audit_idx["by_task"].get(dnum)
+            if d:
+                audit_cands.append(d)
+        audited = min(audit_cands) if audit_cands else None
         timeline.append({
-            "line": ln["id"],
-            "milestone": None,
+            "line": lid,
+            "milestone": None,      # 创始人《里程碑表》未到位——恒 null，见 timeline_meta
             "planned_week": None,
             "actual": {
-                "dispatched": None,
-                "first_commit": git_first_commit(root, modules) if head_sha else None,
-                "merged": None,
-                "audited": None,
+                "dispatched": dispatched,
+                "first_commit": first_commit,
+                "merged": merged,
+                "audited": audited,
             },
         })
+    timeline_meta = {
+        "bulk_boundary": boundary.isoformat(),
+        "milestone_source": "not_available",
+        "milestone_note": "创始人《里程碑表》未到位；milestone/planned_week=null 属显式未接入，非无里程碑（到位后接入）",
+        "dispatched_source": "docs/synova/coordination/*派单*.md 文件名日期（最早提到该线的一份）",
+        "merged_source": "squash subject（ref=%s）：线→D# 链路 + subject 直连，取最早" % squash_idx["ref"],
+        "audited_source": "docs/synova/audit-reports/**（头部声明线N + 线→D#→文件名），取最早",
+        "sources_missing": [m for m in (dispatch_idx["missing"], audit_idx["missing"]) if m],
+    }
 
     # 剥离内部字段 `_line`——它只用于线级阻塞归属，不进输出 schema
     for t in tasks:
@@ -568,6 +841,7 @@ def build_ledger(args):
         "tasks": tasks,
         "blocked": blocked,
         "timeline": timeline,
+        "timeline_meta": timeline_meta,
     }
     return ledger, bool(degraded_sources)
 
@@ -578,6 +852,7 @@ def main(argv=None):
     parser.add_argument("--repo-root", default=str(Path(__file__).resolve().parent.parent.parent))
     parser.add_argument("--out")
     parser.add_argument("--today")
+    parser.add_argument("--bulk-boundary")
     parser.add_argument("--v1-dod")
     parser.add_argument("--yaml")
     parser.add_argument("--task-state-dir")
@@ -591,6 +866,9 @@ def main(argv=None):
 
     if args.today and not parse_date(args.today):
         LOG.error("--today 非法（需 YYYY-MM-DD）: %s", args.today)
+        return 2
+    if args.bulk_boundary and not parse_date(args.bulk_boundary):
+        LOG.error("--bulk-boundary 非法（需 YYYY-MM-DD）: %s", args.bulk_boundary)
         return 2
 
     root = Path(args.repo_root).resolve()

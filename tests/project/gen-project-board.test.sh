@@ -358,6 +358,168 @@ fi
 # 只读证明: 夹具与真实仓库均不得被写
 [ ! -f "$REPO/docs/synova/project/ledger.json.tmp" ] && ok "未在真实仓库留临时文件" || no "真实仓库被写脏"
 
+# ═══ 组 ⑦ timeline 四源（D805）═══
+echo "⑦ timeline 四源（first_commit 界 / dispatched / merged / audited）"
+F7="$TMPD/timeline"; mkdir -p "$F7"
+# — git 夹具：bulk 界前提交 + 界后提交 + squash merge 提交（日期全部定死，零平台差异）—
+git -C "$F7" init -q 2>/dev/null || git -C "$F7" init -q
+git -C "$F7" symbolic-ref HEAD refs/heads/main 2>/dev/null || true
+G() { git -C "$F7" -c user.email=t@t -c user.name=t "$@"; }
+mkdir -p "$F7/src/line1" "$F7/src/line2" "$F7/src/line3" "$F7/docs"
+echo a > "$F7/src/line1/a.ts"; echo b > "$F7/src/line2/b.ts"
+# bulk import（界前 2026-06-03，全目录一把进）
+G add -A
+GIT_AUTHOR_DATE="2026-06-03T10:00:00" GIT_COMMITTER_DATE="2026-06-03T10:00:00" \
+  G commit -qm "SynovaAgent — 组织智能诊断独立仓库"
+# 界后真实开发提交（线1 only）
+echo a2 > "$F7/src/line1/a.ts"
+G add -A
+GIT_AUTHOR_DATE="2026-08-20T10:00:00" GIT_COMMITTER_DATE="2026-08-20T10:00:00" \
+  G commit -qm "feat: 线1 界后开发"
+# squash merge 提交 ×3（线1 subject 直连 / D300 行级链路 / 干扰项线10 不误归线1）
+mkdir -p "$F7/blank"
+G add -A
+GIT_AUTHOR_DATE="2026-09-02T10:00:00" GIT_COMMITTER_DATE="2026-09-02T10:00:00" \
+  G commit -qm "feat(D100): 线1桌面端修复 (#55)" --allow-empty
+GIT_AUTHOR_DATE="2026-09-05T10:00:00" GIT_COMMITTER_DATE="2026-09-05T10:00:00" \
+  G commit -qm "docs(D300): 哨兵复核派单 (#77)" --allow-empty
+GIT_AUTHOR_DATE="2026-09-03T10:00:00" GIT_COMMITTER_DATE="2026-09-03T10:00:00" \
+  G commit -qm "chore(D400): 线10 资本循环调整 (#88)" --allow-empty
+# — 派单文档夹具 —
+mkdir -p "$F7/docs/synova/coordination" "$F7/docs/synova/audit-reports" \
+         "$F7/docs/synova/product-lines/evidence" "$F7/scripts/golden-scenarios/evidence" \
+         "$F7/task-state" "$F7/docs/synova/project"
+cat > "$F7/docs/synova/coordination/派单-D100-线1重验-20260901.md" <<'MD'
+# 派单：线 1 重验批（D100）
+线 1 桌面端证据重验，7 个点过期。
+MD
+cat > "$F7/docs/synova/coordination/派单-D300-20260904.md" <<'MD'
+# 派单：复核批（D300）
+| D# | 任务 |
+|---|---|
+| **D300** | 线 3 哨兵复核 |
+MD
+cat > "$F7/docs/synova/coordination/派单-D400-线10-20260903.md" <<'MD'
+# 派单：线 10 资本循环（D400）
+线 10 是第一条 100% 线候选。
+MD
+# — K3 报告夹具：D100（文件名日期）+ 头部声明线 3 —
+cat > "$F7/docs/synova/audit-reports/2026-09-04-D100.md" <<'MD'
+# K3 审计报告 — D100 线 1 重验
+> 日期: 2026-09-04
+## 结论: 🟢 PASS
+MD
+cat > "$F7/docs/synova/audit-reports/2026-09-07-D500-audit.md" <<'MD'
+# K3 审计报告 — 线 3 哨兵全量复核
+> 日期: 2026-09-07
+## 结论: 🟢 PASS
+MD
+# — V1 断言表（3 线）+ yaml（modules 声明）—
+cat > "$F7/docs/synova/project/$V1_NAME" <<'MD'
+### 线1 桌面端
+| ID | 断言（判定式） | verify | 证据 | fail_when |
+|---|---|---|---|---|
+| 1-1 | 甲 | v | scenario | x |
+
+### 线2 对话
+| ID | 断言（判定式） | verify | 证据 | fail_when |
+|---|---|---|---|---|
+| 2-1 | 丙 | v | scenario | x |
+
+### 线3 哨兵
+| ID | 断言（判定式） | verify | 证据 | fail_when |
+|---|---|---|---|---|
+| 3-1 | 戊 | v | scenario | x |
+MD
+cat > "$F7/docs/synova/product-lines/product-lines.yaml" <<'YML'
+version: 1.0
+lines:
+  - id: 1
+    name: "桌面端"
+    done_definition: "d1"
+    modules: ["src/line1"]
+    acceptance_points:
+      - id: "1-1"
+        desc: "甲"
+  - id: 2
+    name: "对话"
+    done_definition: "d2"
+    modules: ["src/line2"]
+    acceptance_points:
+      - id: "2-1"
+        desc: "丙"
+  - id: 3
+    name: "哨兵"
+    done_definition: "d3"
+    modules: ["src/line3"]
+    acceptance_points:
+      - id: "3-1"
+        desc: "戊"
+YML
+OUT7="$TMPD/timeline.json"
+run_sut "$F7" "$OUT7" >/dev/null 2>&1; RC7=$?
+[ "$RC7" = "0" ] && ok "timeline 夹具 exit 0" || no "timeline 夹具 exit $RC7"
+[ "$(jget "$OUT7" timeline | "$PYBIN" -c 'import json,sys;print(len(json.load(sys.stdin)))')" = "3" ] \
+  && ok "timeline=3 行" || no "timeline 行数应 3"
+# 线1: first_commit 界后（不是 bulk 2026-06-03）
+[ "$(jget "$OUT7" timeline.0.actual.first_commit)" = "2026-08-20" ] \
+  && ok "线1 first_commit=2026-08-20（界后首提交，非 bulk 2026-06-03）" \
+  || no "线1 first_commit 应 2026-08-20，实 $(jget "$OUT7" timeline.0.actual.first_commit)"
+[ "$(jget "$OUT7" timeline.0.actual.dispatched)" = "2026-09-01" ] \
+  && ok "线1 dispatched=2026-09-01（最早派单文档文件名日期）" \
+  || no "线1 dispatched 应 2026-09-01，实 $(jget "$OUT7" timeline.0.actual.dispatched)"
+[ "$(jget "$OUT7" timeline.0.actual.merged)" = "2026-09-02" ] \
+  && ok "线1 merged=2026-09-02（squash subject 直连 (#55)）" \
+  || no "线1 merged 应 2026-09-02，实 $(jget "$OUT7" timeline.0.actual.merged)"
+[ "$(jget "$OUT7" timeline.0.actual.audited)" = "2026-09-04" ] \
+  && ok "线1 audited=2026-09-04（报告文件名日期，D100 链路）" \
+  || no "线1 audited 应 2026-09-04，实 $(jget "$OUT7" timeline.0.actual.audited)"
+# 线2: 反向——仅 bulk 历史 → first_commit=null + degraded_sources 登记（验收①）
+[ "$(jget "$OUT7" timeline.1.actual.first_commit)" = "None" ] \
+  && ok "线2 first_commit=null（仅 bulk 历史，禁显示 2026-06-03）" \
+  || no "线2 first_commit 应 null，实 $(jget "$OUT7" timeline.1.actual.first_commit)"
+[ "$(jget "$OUT7" timeline.1.actual.dispatched)" = "None" ] && ok "线2 dispatched=null（无派单引用）" || no "线2 dispatched 应 null"
+[ "$(jget "$OUT7" timeline.1.actual.merged)" = "None" ]      && ok "线2 merged=null"                          || no "线2 merged 应 null"
+[ "$(jget "$OUT7" timeline.1.actual.audited)" = "None" ]     && ok "线2 audited=null"                         || no "线2 audited 应 null"
+[ "$(jget "$OUT7" degraded)" = "True" ] \
+  && ok "线2 bulk 排除 → degraded=true（禁静默改口径）" || no "degraded 应 true，实 $(jget "$OUT7" degraded)"
+grep -q "线2" "$OUT7" && grep -q "bulk" "$OUT7" \
+  && ok "degraded_sources 点名「线2」+ bulk 语义" || no "degraded_sources 未登记线2 bulk 排除（静默）"
+# 线3: 无任何 modules 历史 → null + 「无提交历史」登记（区别于 bulk 排除）
+[ "$(jget "$OUT7" timeline.2.actual.first_commit)" = "None" ] \
+  && ok "线3 first_commit=null（modules 无历史）" || no "线3 first_commit 应 null"
+grep -q "线3" "$OUT7" \
+  && ok "线3 无历史也显式登记（区别于 bulk）" || no "线3 未登记"
+[ "$(jget "$OUT7" timeline.2.actual.dispatched)" = "2026-09-04" ] \
+  && ok "线3 dispatched=2026-09-04（行级规则: 表格行 D300×线3）" \
+  || no "线3 dispatched 应 2026-09-04，实 $(jget "$OUT7" timeline.2.actual.dispatched)"
+[ "$(jget "$OUT7" timeline.2.actual.merged)" = "2026-09-05" ] \
+  && ok "线3 merged=2026-09-05（行级 D300 → squash (#77)，subject 不含线3）" \
+  || no "线3 merged 应 2026-09-05，实 $(jget "$OUT7" timeline.2.actual.merged)"
+[ "$(jget "$OUT7" timeline.2.actual.audited)" = "2026-09-07" ] \
+  && ok "线3 audited=2026-09-07（报告头部声明「线 3」源）" \
+  || no "线3 audited 应 2026-09-07，实 $(jget "$OUT7" timeline.2.actual.audited)"
+# 词边界: 线10 的派单/squash 不得误归线1/线2
+[ "$(jget "$OUT7" timeline.1.actual.dispatched)" = "None" ] \
+  && ok "词边界: 「线 10」文档不误归线2/线1" || no "词边界误归"
+# milestone 未到位 → null + timeline_meta 显式标注
+[ "$(jget "$OUT7" timeline.0.milestone)" = "None" ] && ok "线1 milestone=null（表未到位）" || no "milestone 应 null"
+[ "$(jget "$OUT7" timeline.0.planned_week)" = "None" ] && ok "线1 planned_week=null" || no "planned_week 应 null"
+[ "$(jget "$OUT7" timeline_meta.milestone_source)" = "not_available" ] \
+  && ok "timeline_meta.milestone_source=not_available（显式标注）" || no "timeline_meta.milestone_source 错"
+[ "$(jget "$OUT7" timeline_meta.bulk_boundary)" = "2026-08-16" ] \
+  && ok "timeline_meta.bulk_boundary=2026-08-16（口径可核）" || no "bulk_boundary 错"
+# 注入缝: 界改 2026-08-20（含当天）→ 线1 界后无提交 → null + degraded
+OUT7B="$TMPD/timeline-b.json"
+run_sut "$F7" "$OUT7B" --bulk-boundary 2026-08-20 >/dev/null 2>&1
+[ "$(jget "$OUT7B" timeline.0.actual.first_commit)" = "None" ] \
+  && ok "--bulk-boundary 注入: 界含当天 2026-08-20 → 线1 null（界日当天算界前）" \
+  || no "注入界失败，实 $(jget "$OUT7B" timeline.0.actual.first_commit)"
+grep -q "线1" "$OUT7B" && ok "注入界下线1 也显式登记" || no "注入界下线1 未登记"
+# 非 git 夹具（组①的 F1 无 .git）→ timeline 四源全 null 不崩（既有行为保持）
+[ "$(jget "$OUT1" timeline.0.actual.first_commit)" = "None" ] \
+  && ok "非 git 夹具: first_commit=null 不崩" || no "非 git 夹具 first_commit 应 null"
+
 echo
 echo "PASS=$PASS FAIL=$FAIL"
 [ "$FAIL" = "0" ] || exit 1
