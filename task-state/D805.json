@@ -1,0 +1,42 @@
+{
+  "task_id": "D805",
+  "title": "项目总览时间轴数据接通 + 无数据不渲染假表",
+  "status": "impl_done",
+  "owner": "dsh",
+  "domain": "scripts/project + dsh-plugin",
+  "spec": "创始人直接派单 2026-09-17（修项目总览→时间轴——数据接通 + 无数据不得渲染假表）",
+  "impl": {
+    "branch": "fix/d805-timeline-truth-wiring",
+    "base": "feat/d795-project-board(#612) + merge origin/feat/d794-panel-ux(#613)——stacked 双依赖",
+    "files": [
+      "scripts/project/gen-project-board.py",
+      "tests/project/gen-project-board.test.sh",
+      "dsh/plugins/synova-dashboards/lib/client.js",
+      "dsh/plugins/synova-dashboards/test/client-panel.test.js",
+      "docs/synova/project/ledger.json",
+      "task-state/D805.json",
+      ".claude/task-briefs/2026-09-17-D805-项目总览时间轴数据接通.md"
+    ],
+    "verify": {
+      "数据层": "bash tests/project/gen-project-board.test.sh → PASS=86 FAIL=0 exit 0（含 D805 timeline 组 25 条）",
+      "展示层": "node --test dsh/plugins/synova-dashboards/test/*.test.js → 34 pass 0 fail",
+      "验收②": "真实仓库 线1/2/9 dispatched+merged+audited 三真值齐；全链线恰为 [1,2,9]",
+      "验收①反向": "线19/线21 modules 仅 bulk 界前历史 → first_commit=null + degraded_sources 显式登记；26 行 0 行出现 2026-06-03",
+      "幂等": "连跑两次除 generated_at/git_head 外逐键相等",
+      "判分零漂移": "totals 与 D795 基线一致（125/21/12/16.8%/freshness 14-1-6）",
+      "禁区": "calc-progress.py / product-lines.yaml / scripts/audit/ 零改动"
+    },
+    "decisions": [
+      "first_commit 口径 = 硬日期界 2026-08-16（PHASE0 定稿日，界日当天含界前）——创始人授权 DSH 按 D333 自决（三参考系收敛）；--bulk-boundary 为测试注入缝",
+      "dispatched 源目录/K3 报告目录缺失 → timeline_meta.sources_missing 留痕，不进 degraded_sources（真实降级不淹没）",
+      "milestone/planned_week 恒 null + timeline_meta.milestone_source=not_available 显式标注"
+    ],
+    "known_open": [
+      "批七 D799（线10 派单）在 docs/dispatch-batch7-20260917 分支未合 main——合入后线10 dispatched 自动出现（派生器零改动）",
+      "merged/audited 的线→D# 映射依赖派单文档标题+行级规则（宁缺勿造：多线行跳过）；新增派单保持「一行一卡一归属」写法",
+      "README 区块⑥描述未更新——D794 session 主工作区有未提交新版 README 在飞，归其收口（防撞车）"
+    ]
+  },
+  "created_at": "2026-09-17",
+  "updated_at": "2026-09-17"
+}

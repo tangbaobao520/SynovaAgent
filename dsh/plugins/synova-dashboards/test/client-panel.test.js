@@ -104,7 +104,7 @@ test("正常路径：账本数据 → 三数 / 26 线 / 阻塞 / 时间轴占位
     assert.match(text, /真绕过（detected-bypass）/);
     assert.match(text, /门禁拒绝（BLOCKED）/);
     // 时间轴占位（ledger 无 timeline → 显式文案，不得空白）
-    assert.match(text, /待数据（D795）/);
+    assert.match(text, /timeline 无数据（ledger\.timeline 为空）/);
     // 无硬降级横幅（⚠ 降级：）
     assert.doesNotMatch(text, /⚠ 降级：/);
   } finally {
@@ -123,7 +123,7 @@ test("降级① 路由级：ok:false → 显式 degraded 文案，不白屏不�
     assert.match(text, /交付度/);
     assert.match(text, /26 线总览/);
     assert.match(text, /阻塞清单/);
-    assert.match(text, /待数据（D795）/);
+    assert.match(text, /timeline 无数据（ledger\.timeline 为空）/);
     assert.match(text, /ledger 无 lines 数据/);
   } finally {
     p.restore();
@@ -164,7 +164,7 @@ test("边界：空 lines/blocked/timeline → 各区块给显式空态文案，�
     const text = await p.render({ schema: "project-ledger/1", degraded: false, totals: { v1_total: 125, v1_passed: 0, v1_verified: 0, freshness: { green: 0, yellow: 0, red: 0 }, blocked_count: 0 }, lines: [], blocked: [], timeline: [] });
     assert.match(text, /ledger 无 lines 数据（待 D795）/);
     assert.match(text, /无阻塞（blocked 为空）/);
-    assert.match(text, /待数据（D795）/);
+    assert.match(text, /timeline 无数据（ledger\.timeline 为空）/);
   } finally {
     p.restore();
   }
@@ -405,6 +405,90 @@ test("修裁切/重叠：子项 flex:none、列表自带滚动、区块是 .spo-
     const row = r.nodes.find((n) => n.className === "spo-line");
     assert.ok(row, "26 线必须渲染出行");
     assert.ok(row.handlers.includes("onClick"), "行必须可点击展开断言明细");
+  } finally {
+    p.restore();
+  }
+});
+
+// ═══ D805 时间轴：数据接通 + 无数据不渲染假表 ═══
+
+const TIMELINE_META = {
+  bulk_boundary: "2026-08-16",
+  milestone_source: "not_available",
+  milestone_note: "创始人《里程碑表》未到位；milestone/planned_week=null 属显式未接入，非无里程碑（到位后接入）",
+};
+
+test("时间轴正常：有值字段渲染真日期，缺失字段标「未接入：缺什么」", async () => {
+  const p = loadPlugin();
+  try {
+    const text = await p.render(Object.assign({}, LEDGER_OK, {
+      timeline_meta: TIMELINE_META,
+      timeline: [
+        { line: 1, milestone: null, planned_week: null,
+          actual: { dispatched: "2026-09-01", first_commit: "2026-08-20", merged: "2026-09-02", audited: "2026-09-04" } },
+        { line: 2, milestone: null, planned_week: null,
+          actual: { dispatched: null, first_commit: null, merged: null, audited: null } },
+        { line: 3, milestone: null, planned_week: null,
+          actual: { dispatched: "2026-09-04", first_commit: null, merged: "2026-09-05", audited: "2026-09-07" } },
+      ],
+    }));
+    // 线1 全链真值（验收②形态）
+    assert.match(text, /派单 2026-09-01/);
+    assert.match(text, /首提交 2026-08-20/);
+    assert.match(text, /合并 2026-09-02/);
+    assert.match(text, /审计 2026-09-04/);
+    // 线2 四字段全缺 → 行级「未接入」点名缺什么（验收①形态：不许出现假日期占位）
+    assert.match(text, /未接入：dispatched\/first_commit\/merged\/audited/);
+    assert.doesNotMatch(text, /首提交 —/, "缺失字段不得用 — 假装有值");
+    // 线3 部分缺 → 有值照常显示 + 只点名缺的字段
+    assert.match(text, /未接入：first_commit/);
+    // 里程碑未到位的显式标注（milestone_source=not_available）
+    assert.match(text, /里程碑表未到位/);
+  } finally {
+    p.restore();
+  }
+});
+
+test("时间轴整块全缺 → 只显示一行说明，不渲染 26 行假数据", async () => {
+  const p = loadPlugin();
+  try {
+    const rows = [];
+    for (let i = 1; i <= 26; i++) {
+      rows.push({ line: i, milestone: null, planned_week: null,
+        actual: { dispatched: null, first_commit: null, merged: null, audited: null } });
+    }
+    const r = await p.renderDetailed(Object.assign({}, LEDGER_OK, {
+      timeline_meta: TIMELINE_META,
+      timeline: rows,
+    }));
+    assert.match(r.text, /时间轴未接入/);
+    assert.match(r.text, /全部缺失/);
+    // 反向验收：不得渲染 26 行假行卡。spo-blocked 行卡全库只有两处产出：
+    // 阻塞清单（本夹具 blocked=1 项 D793）与时间轴行 → 全缺时总数必须恰为 1（只剩阻塞区那张）
+    const rowCards = r.nodes.filter((n) => n.className === "spo-blocked");
+    assert.equal(rowCards.length, 1, "时间轴全缺时不得产出任何行卡（26 行假表禁止），实际行卡数 " + rowCards.length);
+    assert.doesNotMatch(r.text, /线26/, "全缺时不得出现线26 假行");
+  } finally {
+    p.restore();
+  }
+});
+
+test("时间轴行卡结构：线N 标签 + 里程碑空态 + 计划周空态（部分数据在场时）", async () => {
+  const p = loadPlugin();
+  try {
+    const r = await p.renderDetailed(Object.assign({}, LEDGER_OK, {
+      timeline_meta: TIMELINE_META,
+      timeline: [
+        { line: 9, milestone: null, planned_week: null,
+          actual: { dispatched: "2026-08-29", first_commit: null, merged: "2026-08-29", audited: "2026-08-29" } },
+      ],
+    }));
+    assert.match(r.text, /线9/);
+    // 里程碑未排期（不是空白，也不是假里程碑）
+    assert.match(r.text, /未排期/);
+    // first_commit 缺 → 点名（bulk 排除/无历史时派生器登记 degraded_sources）
+    assert.match(r.text, /未接入：first_commit/);
+    assert.doesNotMatch(r.text, /2026-06-03/, "bulk import 日期不得出现在时间轴（假数据禁令）");
   } finally {
     p.restore();
   }

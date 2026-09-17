@@ -1,8 +1,8 @@
 {
   "schema": "project-ledger/1",
   "generated_by": "gen-project-board.py",
-  "generated_at": "2026-09-17T02:33:58+08:00",
-  "git_head": "662965f31927d2c7ca8a695ae54fb60bd2e20c46",
+  "generated_at": "2026-09-17T13:53:57+08:00",
+  "git_head": "d919afeeae64efd904c20710c3489e9e580b3032",
   "sources": {
     "yaml": "docs/synova/product-lines/product-lines.yaml",
     "v1_dod": "docs/synova/project/26线-V1验收标准-草案v0.1-20260917.md",
@@ -11,8 +11,11 @@
       "scripts/golden-scenarios/evidence"
     ]
   },
-  "degraded": false,
-  "degraded_sources": [],
+  "degraded": true,
+  "degraded_sources": [
+    "timeline: 线19 first_commit 未接入——modules 仅有 bulk import 界前历史（≤2026-08-16，D805 口径）",
+    "timeline: 线21 first_commit 未接入——modules 仅有 bulk import 界前历史（≤2026-08-16，D805 口径）"
+  ],
   "skipped_sources": [
     "非 verdicts 证据记录: D524-verify-20260825-2121.json (record_type=d524-verify)"
   ],
@@ -4700,6 +4703,17 @@
       "blocked": null,
       "stale_days": 0,
       "updated_at": "2026-09-17"
+    },
+    {
+      "id": "D805",
+      "title": "项目总览时间轴数据接通",
+      "status": "claimed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 0,
+      "updated_at": "2026-09-17"
     }
   ],
   "blocked": [],
@@ -4709,10 +4723,10 @@
       "milestone": null,
       "planned_week": null,
       "actual": {
-        "dispatched": null,
-        "first_commit": "2026-06-03",
-        "merged": null,
-        "audited": null
+        "dispatched": "2026-09-04",
+        "first_commit": "2026-08-23",
+        "merged": "2026-08-30",
+        "audited": "2026-08-25"
       }
     },
     {
@@ -4720,10 +4734,10 @@
       "milestone": null,
       "planned_week": null,
       "actual": {
-        "dispatched": null,
-        "first_commit": "2026-06-03",
-        "merged": null,
-        "audited": null
+        "dispatched": "2026-09-07",
+        "first_commit": "2026-08-17",
+        "merged": "2026-09-08",
+        "audited": "2026-09-08"
       }
     },
     {
@@ -4731,8 +4745,8 @@
       "milestone": null,
       "planned_week": null,
       "actual": {
-        "dispatched": null,
-        "first_commit": "2026-06-03",
+        "dispatched": "2026-09-15",
+        "first_commit": "2026-08-22",
         "merged": null,
         "audited": null
       }
@@ -4742,8 +4756,8 @@
       "milestone": null,
       "planned_week": null,
       "actual": {
-        "dispatched": null,
-        "first_commit": "2026-06-03",
+        "dispatched": "2026-09-15",
+        "first_commit": "2026-08-19",
         "merged": null,
         "audited": null
       }
@@ -4754,7 +4768,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-18",
         "merged": null,
         "audited": null
       }
@@ -4765,7 +4779,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-17",
         "merged": null,
         "audited": null
       }
@@ -4775,8 +4789,8 @@
       "milestone": null,
       "planned_week": null,
       "actual": {
-        "dispatched": null,
-        "first_commit": "2026-06-03",
+        "dispatched": "2026-09-05",
+        "first_commit": "2026-08-17",
         "merged": null,
         "audited": null
       }
@@ -4786,9 +4800,9 @@
       "milestone": null,
       "planned_week": null,
       "actual": {
-        "dispatched": null,
-        "first_commit": "2026-06-03",
-        "merged": null,
+        "dispatched": "2026-09-06",
+        "first_commit": "2026-08-17",
+        "merged": "2026-09-06",
         "audited": null
       }
     },
@@ -4797,10 +4811,10 @@
       "milestone": null,
       "planned_week": null,
       "actual": {
-        "dispatched": null,
-        "first_commit": "2026-06-03",
-        "merged": null,
-        "audited": null
+        "dispatched": "2026-08-29",
+        "first_commit": "2026-08-19",
+        "merged": "2026-08-29",
+        "audited": "2026-08-29"
       }
     },
     {
@@ -4809,7 +4823,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-17",
         "merged": null,
         "audited": null
       }
@@ -4820,7 +4834,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-17",
         "merged": null,
         "audited": null
       }
@@ -4831,7 +4845,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-17",
         "merged": null,
         "audited": null
       }
@@ -4842,7 +4856,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-17",
         "merged": null,
         "audited": null
       }
@@ -4853,7 +4867,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-17",
         "merged": null,
         "audited": null
       }
@@ -4864,7 +4878,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-22",
         "merged": null,
         "audited": null
       }
@@ -4874,8 +4888,8 @@
       "milestone": null,
       "planned_week": null,
       "actual": {
-        "dispatched": null,
-        "first_commit": "2026-06-03",
+        "dispatched": "2026-09-15",
+        "first_commit": "2026-08-17",
         "merged": null,
         "audited": null
       }
@@ -4885,10 +4899,10 @@
       "milestone": null,
       "planned_week": null,
       "actual": {
-        "dispatched": null,
-        "first_commit": "2026-06-03",
+        "dispatched": "2026-09-02",
+        "first_commit": "2026-08-17",
         "merged": null,
-        "audited": null
+        "audited": "2026-09-02"
       }
     },
     {
@@ -4896,8 +4910,8 @@
       "milestone": null,
       "planned_week": null,
       "actual": {
-        "dispatched": null,
-        "first_commit": "2026-06-03",
+        "dispatched": "2026-09-07",
+        "first_commit": "2026-08-17",
         "merged": null,
         "audited": null
       }
@@ -4907,8 +4921,8 @@
       "milestone": null,
       "planned_week": null,
       "actual": {
-        "dispatched": null,
-        "first_commit": "2026-06-05",
+        "dispatched": "2026-09-15",
+        "first_commit": null,
         "merged": null,
         "audited": null
       }
@@ -4918,8 +4932,8 @@
       "milestone": null,
       "planned_week": null,
       "actual": {
-        "dispatched": null,
-        "first_commit": "2026-06-03",
+        "dispatched": "2026-09-02",
+        "first_commit": "2026-08-17",
         "merged": null,
         "audited": null
       }
@@ -4930,7 +4944,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": null,
         "merged": null,
         "audited": null
       }
@@ -4941,7 +4955,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-21",
         "merged": null,
         "audited": null
       }
@@ -4952,7 +4966,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-28",
         "merged": null,
         "audited": null
       }
@@ -4962,8 +4976,8 @@
       "milestone": null,
       "planned_week": null,
       "actual": {
-        "dispatched": null,
-        "first_commit": "2026-06-03",
+        "dispatched": "2026-09-07",
+        "first_commit": "2026-08-28",
         "merged": null,
         "audited": null
       }
@@ -4973,8 +4987,8 @@
       "milestone": null,
       "planned_week": null,
       "actual": {
-        "dispatched": null,
-        "first_commit": "2026-06-03",
+        "dispatched": "2026-09-07",
+        "first_commit": "2026-08-17",
         "merged": null,
         "audited": null
       }
@@ -4984,11 +4998,20 @@
       "milestone": null,
       "planned_week": null,
       "actual": {
-        "dispatched": null,
-        "first_commit": "2026-06-03",
+        "dispatched": "2026-09-15",
+        "first_commit": "2026-08-28",
         "merged": null,
         "audited": null
       }
     }
-  ]
+  ],
+  "timeline_meta": {
+    "bulk_boundary": "2026-08-16",
+    "milestone_source": "not_available",
+    "milestone_note": "创始人《里程碑表》未到位；milestone/planned_week=null 属显式未接入，非无里程碑（到位后接入）",
+    "dispatched_source": "docs/synova/coordination/*派单*.md 文件名日期（最早提到该线的一份）",
+    "merged_source": "squash subject（ref=origin/main）：线→D# 链路 + subject 直连，取最早",
+    "audited_source": "docs/synova/audit-reports/**（头部声明线N + 线→D#→文件名），取最早",
+    "sources_missing": []
+  }
 }

@@ -248,21 +248,66 @@ window.__ModuleLoader__.load({
 			});
 		}
 
-		function TimelineSection({ timeline, collapsed, onToggle }) {
-			return jsx(Section, {
-				id: "timeline", title: "时间轴（里程碑泳道 / 计划×实际）", collapsed, onToggle,
-				children: timeline.length === 0
-					? jsx("div", { className: "spo-empty", children: "待数据（D795）" })
-					: timeline.map((t, i) => jsx("div", { className: "spo-blocked", key: (t.line ?? "") + "-" + (t.milestone ?? i), children: [
+		// ── 时间轴（D805：数据接通 + 无数据不渲染假表）─────────────────────────
+		// 契约（铁律 47）：
+		//   @input  ledger.timeline[]（每行 {line, milestone, planned_week,
+		//           actual:{dispatched,first_commit,merged,audited}}）+ ledger.timeline_meta
+		//           （{milestone_source:"not_available"|..., milestone_note, ...}，可缺省）
+		//   @output 三态（创始人派单 2026-09-17 原文「任一字段缺失→该行显示未接入：<缺什么>；
+		//           整块全缺→只显示一行说明而不是 26 行假数据；有值的字段才上图」）：
+		//           ① 行级：有值字段显示真日期；缺失字段聚合为「未接入：<key列表>」，
+		//              不得用 "—" 假装有值（2026-06-03 bulk 假日期教训）
+		//           ② 块级全缺（无任何一行有任何 actual 值）→ 单行说明，0 行卡
+		//           ③ timeline 空数组 → 显式空态文案（不白屏）
+		//   @degraded timeline_meta.milestone_source=not_available → 块头显式标注
+		//           「里程碑表未到位」（null 是显式未接入，不是无里程碑——铁律 11 禁静默）
+		const TIMELINE_FIELDS = [
+			["dispatched", "派单"],
+			["first_commit", "首提交"],
+			["merged", "合并"],
+			["audited", "审计"],
+		];
+		function timelineMissingKeys(t) {
+			const a = t && t.actual ? t.actual : {};
+			return TIMELINE_FIELDS.filter(([k]) => a[k] == null || a[k] === "").map(([k]) => k);
+		}
+		function TimelineSection({ timeline, timelineMeta, collapsed, onToggle }) {
+			const msPending = timelineMeta && timelineMeta.milestone_source === "not_available";
+			const extra = msPending
+				? jsx("span", { className: "spo-muted", title: esc(timelineMeta.milestone_note ?? ""),
+					children: "里程碑表未到位" })
+				: null;
+			let body;
+			if (timeline.length === 0) {
+				body = jsx("div", { className: "spo-empty", children: "timeline 无数据（ledger.timeline 为空）" });
+			} else if (!timeline.some((t) => timelineMissingKeys(t).length < TIMELINE_FIELDS.length)) {
+				// 整块全缺：单行说明，不渲染行卡（创始人：无数据不得渲染假表）
+				body = jsx("div", { className: "spo-empty", children: [
+					"时间轴未接入：dispatched/first_commit/merged/audited 全部缺失" +
+					(msPending ? "；里程碑表未到位（milestone/planned_week 亦为未接入）" : "")
+				] });
+			} else {
+				body = timeline.map((t, i) => {
+					const a = (t && t.actual) || {};
+					const missing = timelineMissingKeys(t);
+					const allMissing = missing.length === TIMELINE_FIELDS.length;
+					const shown = TIMELINE_FIELDS.filter(([k]) => a[k] != null && a[k] !== "")
+						.map(([k, zh]) => zh + " " + a[k]).join(" · ");
+					return jsx("div", { className: "spo-blocked", key: (t.line ?? "") + "-" + i, children: [
 						jsx("div", { className: "spo-blockedHead", children: [
 							jsx("span", { className: "spo-tag", children: "线" + (t.line ?? "?") }),
-							jsx("span", { className: "spo-blockedReason", children: t.milestone ?? "(未命名里程碑)" }),
+							jsx("span", { className: "spo-blockedReason", children: t.milestone ?? "(未接入里程碑)" }),
 							jsx("span", { className: "spo-num", children: t.planned_week ?? "未排期" })
 						] }),
-						jsx("div", { className: "spo-muted", children: t.actual
-							? "实际：派单 " + (t.actual.dispatched ?? "—") + " · 首提交 " + (t.actual.first_commit ?? "—") + " · 合并 " + (t.actual.merged ?? "—") + " · 审计 " + (t.actual.audited ?? "—")
-							: "实际：—" })
-					]}))
+						jsx("div", { className: "spo-muted", children: allMissing
+							? "未接入：dispatched/first_commit/merged/audited"
+							: "实际：" + shown + (missing.length > 0 ? " · 未接入：" + missing.join("/") : "") })
+					] });
+				});
+			}
+			return jsx(Section, {
+				id: "timeline", title: "时间轴（里程碑泳道 / 计划×实际）", collapsed, onToggle, extra,
+				children: body
 			});
 		}
 
@@ -532,6 +577,8 @@ window.__ModuleLoader__.load({
 			const lines = usable && Array.isArray(data.lines) ? data.lines : [];
 			const blockedTop = usable && Array.isArray(data.blocked) ? data.blocked : [];
 			const timeline = usable && Array.isArray(data.timeline) ? data.timeline : [];
+			const timelineMeta = usable && data.timeline_meta && typeof data.timeline_meta === "object"
+				&& !Array.isArray(data.timeline_meta) ? data.timeline_meta : null;
 			const tasks = usable && Array.isArray(data.tasks) ? data.tasks : [];
 			const totals = usable && data.totals ? data.totals : null;
 			// 取数来源标注（验收 b）：worktree（工作区文件）| origin/main（git 权威回退）
@@ -563,7 +610,7 @@ window.__ModuleLoader__.load({
 			body.push(jsx(BlockedSection, { key: "blocked", blocked: blockedTop, collapsed: collapsed.blocked, onToggle: toggleSection }));
 			body.push(jsx(TasksSection, { key: "tasks", tasks, collapsed: collapsed.tasks, onToggle: toggleSection }));
 			body.push(jsx(HealthSection, { key: "health", dash, error: dashError, collapsed: collapsed.health, onToggle: toggleSection }));
-			body.push(jsx(TimelineSection, { key: "timeline", timeline, collapsed: collapsed.timeline, onToggle: toggleSection }));
+			body.push(jsx(TimelineSection, { key: "timeline", timeline, timelineMeta, collapsed: collapsed.timeline, onToggle: toggleSection }));
 
 			return jsx("div", {
 				className: "spo-root",
