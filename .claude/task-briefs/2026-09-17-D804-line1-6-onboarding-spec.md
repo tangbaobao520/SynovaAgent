@@ -96,6 +96,9 @@ L1（Electron 桌面端）+ L2/L3 编排链路（仅验收面）；写集落 `sc
 
 | 文件 | 类型 |
 |---|---|
+| .claude/bypass.log | builtin（hook 运行期产物，自动豁免） |
 | .claude/task-briefs/2026-09-17-D804-line1-6-onboarding-spec.md | task |
 | docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D804-line1-6-onboarding-20260917.md | task |
+| docs/synova/coordination/编码指令-D804-line1-6-onboarding-20260917.md | task |
 | task-state/D804.json | task |
+
