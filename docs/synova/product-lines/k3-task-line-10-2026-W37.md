@@ -80,9 +80,14 @@ test(D803): 切片⑤ 10-2 绑定 test:l4-contract + A2 机器证据落盘
 ## ⛔ 合并约束（CTO 2026-09-17 指令①——**缺一即假绿**）
 
 > **D803 拆两个单域 PR（D773 规约），两分支互为前提，必须【同批合并】，不可只合 `mac`。**
+>
+> **PR 描述本体（可直接粘贴）**：两份完整描述已落 `task-state/D803.json` → `pr_descriptions.pr1_win` / `pr_descriptions.pr2_mac`
+> （JSON 的 `body` 字段即 GitHub PR 描述全文）。标题：
+> · PR-1 `feat/d803-capital-cycle-win` → `fix(D803 PR-1/2 win): 线10 资本循环——读侧属性契约守卫 + 跑道/逾期字段语义修复（10-2/10-4）+ dev doc 落库`
+> · PR-2 `feat/d803-capital-cycle-mac` → `test(D803 PR-2/2 mac): 线10 资本循环——GS-03 双相位 + 线10 证据落点（10-1/10-3/10-6）+ 10-2 绑定 + K3 备料`
 
-- `feat/d803-capital-cycle-win`（10 文件 = 7 win + 3 域判定豁免）：切片②③——读侧契约守卫 + 跑道/逾期字段语义修复（**代码修复本体**）
-- `feat/d803-capital-cycle-mac`（8 文件 = 5 mac + 3 域判定豁免）：切片①④⑤——GS-03 双相位 + 线10 证据落点 + 10-2 绑定 + 本文档（**证据与场景本体**）
+- `feat/d803-capital-cycle-win`（**11 文件** = 8 win + 3 域判定豁免：`.claude/bypass.log` / `.claude/task-briefs/**` / `task-state/**`）：切片②③——读侧契约守卫 + 跑道/逾期字段语义修复（**代码修复本体**）+ dev doc 落库（CTO 指令④）
+- `feat/d803-capital-cycle-mac`（**9 文件** = 6 mac + 3 域判定豁免：`.claude/bypass.log` / `.claude/task-briefs/**` / `docs/synova/product-lines/evidence/**`）：切片①④⑤——GS-03 双相位 + 线10 证据落点 + 10-2 绑定 + 本文档 + CT 台账登记（**证据与场景本体**）
 - **只合 mac 的后果（物理路径）**：`docs/synova/product-lines/evidence/test-2026-09-17.json` 会给出 `10-4: pass`——但产生该绿的是 `tests/sentinels/cash-runway/` 的**旧**用例集（9 条），跑道字段语义缺陷（现金属性缺失→误报 critical）仍在代码里。**证据绿 ≠ 代码对** = 典型假绿。
 - 只合 win 的后果：线10 无场景/test 证据落点，`v1_passed` 停在 1/6——**不算假绿**，只是不完整。
 
