@@ -109,7 +109,29 @@ test(D803): 切片⑤ 10-2 绑定 test:l4-contract + A2 机器证据落盘
 | 套件结果 | **12 test files / 102 tests 全绿** |
 | 关键差异（证明叠加生效） | 叠加树上 `tests/contract/l4-contract.test.ts` = **13 用例**（win 版）；mac-only 树上该文件 = 9 用例 |
 | 产物 | `docs/synova/product-lines/evidence/test-2026-09-17.json`（test / 19 点 / verdict=pass，含 10-2、10-4） |
-| ⚠️ 如实声明 | 该 JSON 与 mac-only 树下产出的版本**逐字节一致**（A2 记录的是「点→裁决」映射，不含用例数/树哈希）——**差异只在 provenance**。因此「防假绿」的物理保障是上方合并约束（指令①），不是该文件内容本身；需要更强 provenance 时应由 `evidence-writer.py` 记录树哈希（独立任务，本卡不改判分/证据器） |
+| ⚠️ 如实声明 | 该 JSON 与 mac-only 树下产出的版本**逐字节一致**（A2 记录的是「点→裁决」映射，不含用例数/树哈希）——**差异只在 provenance**。因此「防假绿」的物理保障是下方跨分支守卫（指令①加固），不是该文件内容本身；需要更强 provenance 时应由 `evidence-writer.py` 记录树哈希（独立任务，本卡不改判分/证据器） |
+
+## 跨分支守卫相位（CTO 2026-09-17 批准「加固①」——把假绿挡在证据层）
+
+**位置**：`scripts/golden-scenarios/GS-03-capital-cycle/run.sh` 相位 **3b**（空库相位之后、低现金注入之前）+ `expect.json` 两条断言，均映射到 **10-6**。
+**注入**：`[{"营业收入":500000,"期间":"2026-Q1"}]` —— 有收入、**无现金**（属性不存在，非值为 0）。
+
+**为什么它能探测 PR-1(win) 的存在**（compute 分支对照）：
+
+| 树状态 | 哨兵行为 | 本相位 |
+|---|---|---|
+| **win 修复在场** | `pickPresentNumber` 检出「现金键全缺」→ `degraded:true`，warning「现金字段缺失 — 无法计算跑道」 | ✅ `no-cash-missing-degraded` + `no-cash-missing-no-critical` 双绿 |
+| **win 修复不在场** | `totalCash=0 / burn=0` → `runway 0 ≤ critical 6` → **误报 critical「现金流危急—跑道0.0个月」** | ❌ 双红 → GS-03 `7/9` exit 1 |
+
+**双向实测（原始输出，跑完还原叠加态）**：
+- mac-only 树：`7/9 断言通过 → verdict=fail`，`✗ no-cash-missing-degraded`、`✗ no-cash-missing-no-critical`，findings = `cash_critical「现金流危急—跑道0.0个月」evidence:["总现金: 0","月消耗: 0"]` —— **S4 行2 误报根因在活运行上原样复现**
+- 叠加 win 修复树：`9/9 断言通过 → verdict=pass`，findings = `cr_runway_degraded「现金流数据不完整」description「现金跑道计算降级：现金字段缺失 — 无法计算跑道」`
+
+**真实作用范围（勿夸大——本卡实测更正）**：`.github/workflows/` 全目录 grep **无任何 GS-0\* 调用**（CI 只跑 `scripts/ci/golden-case-checker.ts`，与 GS 场景无关）→ **本守卫不会让 PR CI 变红**。它在「产出证据的每一个地方」生效：D774 `rerun-evidence.sh`（每周/重跑）、K3 10-8 独立复核、任何本地复跑。
+**净效果**：只合 mac（缺 win 修复）时 `10-6` 记为 **fail** 而非假 pass → 账本 `v1_passed` 掉到 4 而非虚绿 5。假绿被挡在证据层，**不依赖人记得读 PR 描述**。
+
+**本相位证据的 provenance**：`GS-03-2026-09-17.json`（9/9 pass）由**叠加 win 修复的树**产出——与 A2 同一口径（合并后真实状态）；叠加态从未提交到任何分支。
+**断言总数**：7 → **9**（正/降级/负向三相位齐备）。
 
 ## 结论栏（审计员填写）
 
