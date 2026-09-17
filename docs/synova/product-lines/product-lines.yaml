@@ -87,7 +87,7 @@ lines:
     weight: 1.0
     baseline_pct: 50
     baseline_note: "聊天+SSE+线程存在；主动交互蓝图未全接线"
-    modules: ["src/agent/", "src/l1/", "src/l1-interaction/", "app/", "tui/"]
+    modules: ["src/agent/", "src/l1/", "src/l1-interaction/", "app/", "src/tui-v2/", "src/llm/"]
     done_definition: "老板一句大白话 → 系统听懂意图 → 流式回答 → 关键选择给卡片 → 系统主动发起对话（该提醒时提醒）"
     acceptance_points:
       - id: "2-1"
@@ -134,7 +134,7 @@ lines:
     weight: 1.0
     baseline_pct: 30
     baseline_note: "一页纸结构有；详细报告/交互深度 = 0"
-    modules: ["src/l3/", "extensions/reports/", "src/reports/"]
+    modules: ["src/l3/", "extensions/reports/", "src/agent/report-assembler.ts", "src/llm/"]
     done_definition: "老板拿到一页纸结论（看得懂），想深挖有详细报告，想调整深浅说句话就行；手机能看，能导出"
     acceptance_points:
       - id: "3-1"
@@ -561,7 +561,7 @@ lines:
     weight: 1.0
     baseline_pct: 0
     baseline_note: "专家存在，维度端到端循环 = 0——诚实 0"
-    modules: ["src/l3/", "extensions/sentinels/", "expert/tech/"]
+    modules: ["src/l3/", "extensions/sentinels/", "expert/technology-foundation/"]
     done_definition: "系统的技术状态（债务、能力、演进方向）像财务一样被持续诊断并出结论"
     acceptance_points:
       - id: "12-1"
@@ -598,7 +598,7 @@ lines:
     weight: 1.0
     baseline_pct: 0
     baseline_note: "专家存在，维度端到端循环 = 0——诚实 0"
-    modules: ["src/l3/", "extensions/sentinels/", "expert/finance/"]
+    modules: ["src/l3/", "extensions/sentinels/", "expert/fundamental-efficiency/"]
     done_definition: "融资结构、资本成本、财务健康像现金流一样被持续诊断并出结论"
     acceptance_points:
       - id: "13-1"
@@ -635,7 +635,7 @@ lines:
     weight: 1.0
     baseline_pct: 0
     baseline_note: "专家存在，维度端到端循环 = 0——诚实 0"
-    modules: ["src/l3/", "extensions/sentinels/", "expert/strategy/"]
+    modules: ["src/l3/", "extensions/sentinels/", "expert/competitive-strategy/"]
     done_definition: "竞争位置、护城河、战略有效性被持续诊断并出结论"
     acceptance_points:
       - id: "14-1"
@@ -672,7 +672,7 @@ lines:
     weight: 1.0
     baseline_pct: 70
     baseline_note: "注册表+调度+工具接线存在（代码实证）；提示词效果未验证"
-    modules: ["src/l3/", "expert/", "expert-platform/", "skills/"]
+    modules: ["src/l3/", "expert/", "src/expert-platform/", "skills/"]
     done_definition: "诊断时专家真的在干活（老板看得见），交叉验证结论，专家提示词效果有数据证明"
     acceptance_points:
       - id: "15-1"
@@ -756,7 +756,7 @@ lines:
     weight: 1.0
     baseline_pct: 10
     baseline_note: "N13 P0：placeholder 假成功"
-    modules: ["src/evolution/", "src/l2/", "memory/", "src/evidence/"]
+    modules: ["extensions/evolution/", "src/l2/", "memory/", "src/evidence/"]
     done_definition: "老板说『你判错了』，系统真的改规则，下次同类诊断变准，且能证明变准了"
     acceptance_points:
       - id: "17-1"
@@ -872,7 +872,7 @@ lines:
     weight: 1.0
     baseline_pct: 45
     baseline_note: "ConversationEngine/工具循环/熔断/优雅停机/卡会话检测存在；上下文窗口管理策略 = 0"
-    modules: ["src/agent/", "src/l2/", "src/infra/", "providers/"]
+    modules: ["src/agent/", "src/l2/", "src/infra/", "src/providers/", "src/store/"]
     done_definition: "Agent 稳定跑得起来：会话状态对、工具循环真实执行、上下文窗口管理有策略、不会卡死"
     acceptance_points:
       - id: "20-1"
@@ -914,7 +914,7 @@ lines:
     weight: 1.0
     baseline_pct: 10
     baseline_note: "标准适配器有（providers/deepseek.ts）；深度优化 = 0"
-    modules: ["providers/", "src/infra/", "src/l2/"]
+    modules: ["src/providers/", "src/infra/", "src/l2/", "src/llm/", "src/services/", "src/store/"]
     done_definition: "基于 DeepSeek 的差异化优势：提示词效果、成本、长上下文都有优化策略且可测量"
     acceptance_points:
       - id: "21-1"
@@ -951,7 +951,7 @@ lines:
     weight: 1.0
     baseline_pct: 40
     baseline_note: "看门狗/熔断/健康检查/优雅停机存在；断网降级 = 0，容灾演练 = 0"
-    modules: ["src/infra/", "scripts/watchdog.js", "src/deploy/", "scripts/backup/"]
+    modules: ["src/infra/", "scripts/watchdog.js", "src/deploy/", "scripts/backup/", "src/llm/"]
     done_definition: "系统能说出自己健不健康；出问题能自愈；断网时不装死；数据有备份且演练过恢复"
     acceptance_points:
       - id: "22-1"
@@ -993,7 +993,7 @@ lines:
     weight: 1.0
     baseline_pct: 55
     baseline_note: "RBAC/GA 边界/数据导出删除存在（代码实证）；冲突仲裁流程 = 0，端到端未验证"
-    modules: ["src/infra/", "security/", "src/l1/"]
+    modules: ["src/infra/", "src/security/", "src/l1/", "src/config/"]
     done_definition: "谁看什么清清楚楚；GA 和企业意见冲突有仲裁流程；老板说『删掉这段数据』就能彻底删"
     acceptance_points:
       - id: "23-1"
@@ -1035,7 +1035,7 @@ lines:
     weight: 1.0
     baseline_pct: 60
     baseline_note: "PII/注入检测/审计哈希链存在（代码实证）；注入异常降级放行（fail-open 待修）；对抗性测试 = 0"
-    modules: ["security/", "src/infra/", "src/l1/"]
+    modules: ["src/security/", "src/infra/", "src/l1/"]
     done_definition: "数据本地不出门、敏感信息脱敏、恶意提示词防得住、篡改可查，且对抗性测试过"
     acceptance_points:
       - id: "24-1"
@@ -1077,7 +1077,7 @@ lines:
     weight: 1.0
     baseline_pct: 20
     baseline_note: "文件驱动有；运行时插件化/多模式框架 = 0"
-    modules: ["extensions/", "expert/", "skills/", "src/l3/"]
+    modules: ["extensions/", "expert/", "skills/", "src/l3/", "src/config/"]
     done_definition: "加新能力只加文件不改代码：新专家、新技能、新哨兵、新连接器、新模式都是插件"
     acceptance_points:
       - id: "25-1"
