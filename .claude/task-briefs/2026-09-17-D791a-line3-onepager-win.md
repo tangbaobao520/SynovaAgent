@@ -58,3 +58,6 @@ L1 src/routes/diagnosis.ts（装配与传递；store 经 `req.app.locals` + `typ
 - [ ] DS-A4: `bash scripts/workflow/check-dev-doc-write-set.sh docs/plans/codex/implementation/SYNOVA-IMPL-DSH-D791-line3-report-onepager-20260917.md` → 漂移 0
 - [ ] DS-A5: `npx vitest run` 无新增失败（与 main 基线差值 0）
 - [ ] DS-A6: `bash scripts/pre-commit-check.sh` 13 组过（禁 --no-verify）+ `check-pr-budget.sh` 通过
+
+## 写集豁免
+- .claude/task-briefs/2026-09-17-D791a-line3-onepager-win.md — 本任务 brief 自身：pre-commit 组 6 要求的流程工件（Q0-Q3/架构层/Done 6 核心字段），非产品写集；D708 声明级豁免
