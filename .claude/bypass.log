@@ -1484,3 +1484,10 @@ Binary file .claude/bypass.log matches
 2026-09-17T02:35:49+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=70601d7b7522c35bd2bbec12979ef724150b4b31
 2026-09-17T13:22:41+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=7afa9c3ed1e924909584ce15bddf7216a9f23467
 2026-09-17T13:27:42+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=0d1a360a90e216ef489e91b834a9d65eae5bdb54
+2026-09-17T16:11:06+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=0ba52730159de60030a49fd56004513ddfd5beba
+2026-09-17T16:14:03+08:00 | COMMITTED | pre-commit PASS (D804 一次性补记: rebase onto b396bafc 改哈希，原记录绑定旧哈希 036d9e34；本次 13 组本地全过) | TASK_ID=D804 | AGENT=mac-coding | HASH=ad1ae4dc21529bf5f8395ccf28c8afd25bfb7fb0
+2026-09-17T16:14:03+08:00 | COMMITTED | pre-commit PASS (D804 一次性补记: rebase 改哈希，原记录绑定旧哈希 c8ef8134；13 组本地全过) | TASK_ID=D804 | AGENT=mac-coding | HASH=94be510c6db696709363acd89d0d3942e9bd0fad
+2026-09-17T16:14:57+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=0a3eca4de9779beadb0a76b05e67c741f3a645ad
+2026-09-17T16:29:28+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=aeb3aef66d5fd36d30511560c8e4630376b9273f
+2026-09-17T23:18:12+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=e54ab79a3eaaaf7e6f74c9c08ffeadaba997fec8
+2026-09-17T23:18:47+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=32f73cb4024f2a5cb29049da4215afc33cec67d3
