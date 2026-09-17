@@ -68,7 +68,30 @@
     "ct_findings_registered": [
       "AUDIT-FINDINGS-LEDGER 09-17 行: 铁律 38 门禁盲区——组 1 扫描范围仅 ^(src|packages)/.*\\.ts$ 且排除 *.test.ts（D803 实证 2 处 as unknown as 零告警；本卡已自清）",
       "AUDIT-FINDINGS-LEDGER 09-17 行: D366 三判未覆盖 cherry-pick 重放 → detected-bypass 误报（同型 D366 P1-1 amend 复现，判定语义缺口第二次）"
-    ]
+    ],
+    "cross_branch_guard": {
+      "批准": "CTO 2026-09-17 批准「加固①」",
+      "位置": "scripts/golden-scenarios/GS-03-capital-cycle/run.sh 相位 3b + expect.json 两条断言（映射 10-6）",
+      "注入": "[{\"营业收入\":500000,\"期间\":\"2026-Q1\"}] —— 有收入、无现金（属性不存在，非值为 0）",
+      "探测器原理": "win 修复在场 → pickPresentNumber 存在性守卫 → degraded；win 修复不在场 → totalCash=0/burn=0 → runway 0 ≤ critical 6 → 误报 critical「现金流危急—跑道0.0个月」",
+      "双向实测": {
+        "mac_only_无win修复": "7/9 断言通过 → verdict=fail；✗no-cash-missing-degraded ✗no-cash-missing-no-critical；findings=cash_critical「现金流危急—跑道0.0个月」evidence:[\"总现金: 0\",\"月消耗: 0\"]（S4 行2 根因活运行原样复现）",
+        "叠加win修复": "9/9 断言通过 → verdict=pass；findings=cr_runway_degraded「现金流数据不完整」description「现金跑道计算降级：现金字段缺失 — 无法计算跑道」"
+      },
+      "真实作用范围_实测更正": ".github/workflows/ 全目录 grep 无任何 GS-0* 调用（CI 只跑 scripts/ci/golden-case-checker.ts，与 GS 场景无关）→ 本守卫不会让 PR CI 变红。它在产出证据的每个地方生效：D774 rerun-evidence、K3 10-8 独立复核、本地复跑。净效果：只合 mac 时 10-6 记 fail 而非假 pass → 账本 v1_passed 掉到 4 而非虚绿 5。",
+      "断言总数": "7 → 9（正/降级/负向三相位齐备）",
+      "证据 provenance": "GS-03-2026-09-17.json（9/9 pass）由叠加 win 修复的树产出（与 ② 同口径）；叠加态从未提交"
+    },
+    "merge_status": {
+      "merged_origin_main": [
+        "feat/d803-capital-cycle-win @ 3936d04a",
+        "feat/d803-capital-cycle-mac @ bebfce4b"
+      ],
+      "behind": 0,
+      "merge_content": "origin/main 新增 #612(D795 账本派生器+ledger.json) / #613，与本卡 10 个写集文件零重叠，无冲突",
+      "post_merge_gate": "两分支 post-merge 复跑：pre-commit(SYNO_CI=1) EXIT 0 全部 13 组 · D734 ✅；simulate-ci EXIT 0"
+    },
+    "ledger_refresh_gap": "实测：docs/synova/project/ledger.json 已随 D795 落 main，但**无任何 CI/脚本/workflow 刷新它**（refresh-all.sh 不调 gen-project-board.py；.github/workflows/ 全目录 grep 零命中）。且 ledger.json 归 **win 域**，而本卡产出 5/6 的证据（GS-03 场景 + A2 test）在 mac 分支——故在任一单分支上重算 ledger 都会产生**假绿**（win 单独带 5/6 = main 上假绿；mac 域不合）。结论：**必须在两分支都合并后**在 main 上执行 `python3 scripts/project/gen-project-board.py` 重算。本卡不提交 ledger.json（正确性 > 好看）。"
   },
   "audit": null,
   "fix_task_id": null,
