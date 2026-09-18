@@ -1,0 +1,37 @@
+{
+  "task_id": "D817",
+  "title": "第 0 项：CI 能跑一次生产入口级对话（验证基础设施，全部验收的公共前置）",
+  "status": "claimed",
+  "risk": "high",
+  "spec": "派单即规格：docs/synova/coordination/派单-批十-第0项-CI生产入口级对话-20260918.md（含 CTO 已核实的四处事实）",
+  "write_set": [
+    "tests/integration/production-entry-conversation.integration.test.ts",
+    "tests/helpers/fake-llm-upstream.ts",
+    "docs/synova/product-lines/evidence/D817-capture-20260918.json",
+    "task-state/D817.json",
+    ".claude/task-briefs/2026-09-18-D817-生产入口级对话.md",
+    "memory/notes/proposed/2026-09-18-D817-ci-production-entry.md",
+    ".github/workflows/ci.yml"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-18",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "milestone": "M1 产品可用",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "CI=1 下 `npx vitest run tests/integration/production-entry-conversation.integration.test.ts` 被包含且通过（起真实 createServer + listen(0) + fetch 真实路由）",
+    "假上游（tests/helpers/fake-llm-upstream.ts）收到 ≥1 个出站请求，且证据文件落盘出站 body 的 Object.keys()（P0-1 的机器判据来源）",
+    "工具循环被真实驱动：假上游首次返回含 tool_calls 的响应 → 断言工具确实被执行",
+    "P0-1 已知缺陷以 `it.fails` 形式证词化（出站体应含 tools；当前预期失败）；P0-1 修好后它翻转为通过并须删除",
+    "全程零外网零真实 API key：上游地址走既有配置缝指向 127.0.0.1 假上游",
+    "不得为让测试变绿而改 vitest.config.ts 的 exclude 或把文件挪回 tests/e2e/**"
+  ],
+  "next": "① 读 tests/smoke.test.ts 与 tests/routes/diagnosis-token-meter.integration.test.ts 的启动范式 ② 写假上游 helper（OpenAI 兼容、记录 body、脚本化含 tool_call 的响应）③ 起真实 server 打 POST /api/conversations/:id/messages ④ 落证据文件（body keys）⑤ 跑 CI=1 验证被包含 ⑥ 汇报（含命令与原始输出）",
+  "note": "CTO 已核实（2026-09-18，origin/main）：① vitest.config.ts:29-37 在 CI 下排除 tests/e2e/**（注释 Needs LLM API）→ 所有『穿真实生产入口』验收今天无法自动判定；② src/providers/base.ts:139-151 出站 body 只有 model/messages/temperature/max_tokens/stream，无 tools，而 tool-loop-executor.ts:112,251 确实把 tools 传了进去；③ 范式已存在：tests/smoke.test.ts 用 src/server 的 createServer，tests/routes/diagnosis-token-meter.integration.test.ts 头部注明铁律 12『集成测试走真实路由 express app + listen(0) + fetch，不 mock 管线』；④ 目标路由存在 src/routes/conversations.ts:359。此为全部 15 项任务书验收的前置（第 0 批第一位）。"
+}
