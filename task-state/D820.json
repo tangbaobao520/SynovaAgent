@@ -1,0 +1,34 @@
+{
+  "task_id": "D820",
+  "title": "T-D3：删会话不删诊断报告（隐私/数据资产；清理函数已存在却零调用）",
+  "status": "claimed",
+  "risk": "medium",
+  "spec": "派单即规格：docs/synova/coordination/派单-批十一-P0-1-P0-2-20260918.md §A/D820（含 CTO 实测三处位置）",
+  "write_set": [
+    "src/store/session-store.ts",
+    "tests/store/delete-session-cascade.test.ts",
+    "task-state/D820.json",
+    ".claude/task-briefs/2026-09-18-D820-删会话级联.md",
+    "memory/notes/proposed/2026-09-18-D820-delete-session-cascade.md"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-18",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "milestone": "M1 产品可用",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "deleteSession 调用已有的 deleteDiagnosisCheckpoints（当前零调用者）",
+    "报告列表 SQL 加会话存在性过滤（当前 SELECT ... FROM diagnosis_checkpoints WHERE phase=5，不 join agent_sessions）",
+    "端到端：建会话 → 跑诊断落报告 → 删会话 → 断言 diagnosis_checkpoints 无残留行",
+    "端到端：断言 GET 报告列表 API 查不到已删会话的报告（不是只在库里删了、列表还在）",
+    "反向：未删会话的报告仍可正常列出（不误删）"
+  ],
+  "next": "① 核行号（session-store.ts deleteSession / deleteDiagnosisCheckpoints / listDiagnosisReports）② deleteSession 内接清理 ③ 列表 SQL 加过滤 ④ 写端到端测试（真实 store，不 mock）⑤ 汇报",
+  "note": "CTO 已实测（origin/main）：deleteSession 只删 agent_messages + agent_sessions（session-store.ts:355-358）；deleteDiagnosisCheckpoints 存在（:581-583）但全仓零调用者；报告列表 SQL 为 `SELECT ... FROM diagnosis_checkpoints WHERE phase = 5 ORDER BY saved_at DESC`（:604-608），**不 join agent_sessions** → 删会话后报告仍经 GET /api/diagnosis/reports 列出（src/routes/diagnosis.ts:947 调 listDiagnosisReports）。判据 D（客户数据资产）；若对外承诺过『彻底删除』则升 P0。"
+}
