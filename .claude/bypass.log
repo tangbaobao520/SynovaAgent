@@ -1482,6 +1482,12 @@ Binary file .claude/bypass.log matches
 2026-09-17T03:31:32+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=402c3abde9c64d153188f633e7b00051e0b070e8
 2026-09-17T03:33:56+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=e38dc2eb36aaac49c7f1d968fc3aacaf4d7a8e5d
 2026-09-17T03:37:16+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=04cbfb00bea8a3583de198b5ebf8453fd068978d
+2026-09-17T15:33:13+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=e5a3e288e39e6e76ea386eea80b60623df013749
+2026-09-17T15:36:26+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=ca1c03889e381790fd8fd974a92a87897a4361cc
+2026-09-17T15:37:21+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=f0151ab880fbfe5994c1b12b62ea75337752120f
+2026-09-17T16:10:06+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=438c401e974cd1e1c861772f4c2d7ec04614063c
+2026-09-17T23:17:33+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=347f13a48a9df2ca5e261a41e26bb5deaac5fd84
+2026-09-17T23:44:12+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=20a982c0fcac6ba7592230c5fe0d17b1e06d16ef
 2026-09-17T15:05:18+08:00 | BLOCKED | pre-commit FAIL (exit 1) | TASK_ID=D803 | AGENT=deepseek-harness
 2026-09-17T07:29:03Z detected-bypass head-mismatch marker=6d1f262eed072710df7e135600be58af24a63573 parent=0f59e514838568f35cb2516eec79d40e5e0c1c33
 2026-09-17T07:29:03Z detected-bypass head-mismatch marker=6d1f262eed072710df7e135600be58af24a63573 parent=aa6fa444e7c669e3a9c17e3187c32a5319025a3a
@@ -1506,6 +1512,7 @@ Binary file .claude/bypass.log matches
 2026-09-17T20:50:49+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=8d37a39b8dd21911088a454a83b4c32b87d0a74d
 2026-09-17T20:53:11+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=797024e69740aabe86d0e844b0221dea0e36581e
 2026-09-17T21:49:17+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=a4e568281c516102b4875067fc9bb31b9cd3b324
+2026-09-18T00:22:31+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=0ee60c20ac86e819fdfdef99d55918edd2f6082a
 2026-09-17T23:49:46+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=50da0f61c78dd1bbd8af988e8a6481b40901700a
 2026-09-18T00:21:54+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=5abad4c2677332d137d0c7f29ec728823104f5cf
 2026-09-18T00:27:38+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=d170f8fcf949d37ccbd4ed3cda60f62413f3c43f
