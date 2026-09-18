@@ -15,11 +15,12 @@ import { SessionStore } from '../../src/store/session-store';
 import { SessionProjectionRegistry, sessionProjections, toProjectionEvents } from '../../src/store/session-projection';
 import {
   RETRY_PROJECTION_KEY,
-  RETRY_EVENT_KIND,
   retryProjectionDefinition,
-  appendRetryEvent,
   type RetryStatsState,
 } from '../../src/store/retry-projection';
+// D810: 落盘缝迁至共享基础设施层（铁律 39 禁 L2 静态 import src/store）；
+// kind 常量同步单源——投影侧与写入侧同读 src/llm/retry-middleware.ts
+import { RETRY_EVENT_KIND, appendRetryEvent } from '../../src/llm/retry-middleware';
 
 function createStore(): SessionStore {
   const db = new Database(':memory:');

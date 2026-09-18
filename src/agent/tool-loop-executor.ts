@@ -7,17 +7,27 @@
  * Iron law #32: 错误统一通过 try/catch + log 处理。
  * Iron law #31: degraded 信号传播——工具失败不阻断对话。
  */
-import type { LLMMessage } from '../providers/types';
+import type { LLMMessage, ChatOptions } from '../providers/types';
 import type { EngineContext } from './engine-context';
 import { createLogger } from '@synova/logger';
 import { ToolGuard } from '../l3/tool-guard';
 import { pruneToolResult, ToolResultPruneError } from '../llm/tool-result-pruner';
+// D810 接线: LLM 调用韧性层（B-02 重试 / B-06 协作式超时）——本文件是生产 LLM 调用链
+// （ConversationEngine → ToolLoopExecutor → provider.chat）。outcome 化：失败返回 code，不抛。
+// 重试事件落 D500 事件流（投影计数单元见 store/retry-projection，由 deploy/bootstrap 注册）：
+// 落盘缝在 src/llm（共享基础设施层）——铁律 39 禁本层静态 import src/store。
+import { callWithResilience, appendRetryEvent, type LlmRetryEvent, type ResilienceOutcome } from '../llm/retry-middleware';
 import * as crypto from 'crypto';
 
 /** Tool execution result — may contain error property on failure */
 interface ToolExecResult {
   error?: string;
   [key: string]: unknown;
+}
+
+/** 错误消息提取（catch err: unknown → string；铁律 38 零 as any） */
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
 }
 
 export class ToolLoopExecutor {
@@ -48,19 +58,67 @@ export class ToolLoopExecutor {
   }
 
   /**
+   * D810: 协作式 LLM 调用（D593 韧性层 B-02/B-06 的生产接入口）。
+   * @input  — messages + ChatOptions（tools 等原样透传给 provider）
+   * @output — { ok:true, result, attempts } | ResilienceFailure{ code, kind, degraded, retryable }
+   * @degraded — 本方法**永不抛**：可重试失败按策略退避重试；截止超时归类 TOOL_TIMEOUT
+   *             立即结果化（重试不能违背调用方 deadline 意图）；调用方按 outcome.code 降级。
+   */
+  private callLlm(messages: LLMMessage[], options?: ChatOptions): Promise<ResilienceOutcome> {
+    return callWithResilience(this.ctx.provider, messages, {
+      ...options,
+      onRetry: (event) => { this.onLlmRetry(event); },
+    });
+  }
+
+  /**
+   * D810: 重试事件落盘（onRetry → D500 事件流，store/retry-projection 投影计数）。
+   * @degraded — 无 store/无 sessionId 时静默跳过（重试本身不受影响）；落盘失败 log.warn + degraded，
+   *             不阻断重试链（铁律 24/31）。
+   */
+  private onLlmRetry(event: LlmRetryEvent): void {
+    const store = this.ctx.sessionStore;
+    const sessionId = this.ctx.sessionId;
+    if (!store?.appendEvent || !sessionId) return;
+    // 必须 bind(store)：解构出的方法丢 this，直接包成对象会让 appendEvent 读到 undefined 的 db
+    // （本用例在 D810 测试 ④ 首跑即复现——落盘静默 degraded、事件流为空）
+    const result = appendRetryEvent({ appendEvent: store.appendEvent.bind(store) }, sessionId, {
+      provider: event.provider,
+      code: event.code,
+      attempt: event.attempt,
+      delayMs: Math.round(event.delayMs),
+      mode: event.mode,
+    });
+    if (!result.ok) {
+      this.log.warn(
+        { code: event.code, degraded: true, error: result.error },
+        '重试事件落盘失败 — degraded（不阻断重试链）',
+      );
+    }
+  }
+
+  /**
    * Call LLM with tool execution loop (non-streaming).
    * Max 3 rounds of tool calls to prevent infinite loops.
    */
   async callLLMWithTools(): Promise<string> {
     const MAX_TOOL_ROUNDS = 3;
     const tools = this.ctx.toolRegistry.listTools();
-    const { provider, messages, hookRunner, eventBus, sessionId, toolRegistry } = this.ctx;
+    const { messages, hookRunner, eventBus, sessionId, toolRegistry } = this.ctx;
 
     for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
       try {
-        const result = await provider.chat(messages, {
+        const outcome = await this.callLlm(messages, {
           tools: tools.length > 0 ? toolRegistry.toOpenAITools() : undefined,
         });
+        if (!outcome.ok) {
+          this.log.warn(
+            { code: outcome.code, kind: outcome.kind, attempts: outcome.attempts, degraded: true, round },
+            'LLM 调用降级（韧性层分类）',
+          );
+          return `抱歉，调用失败：${outcome.message}`;
+        }
+        const result = outcome.result;
 
         // 无工具调用 → 直接返回
         if (!result.toolCalls || result.toolCalls.length === 0) {
@@ -153,19 +211,26 @@ export class ToolLoopExecutor {
         }
 
         continue; // 下一轮 LLM 调用
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.log.error({ err, round }, 'LLM 调用失败');
-        return `抱歉，调用失败：${err.message}`;
+        return `抱歉，调用失败：${errorMessage(err)}`;
       }
     }
 
     // 达到最大轮次 → 最后一次无工具调用
     try {
-      const final = await provider.chat(messages);
-      return final.content || '(no response)';
-    } catch (err: any) {
+      const outcome = await this.callLlm(messages);
+      if (!outcome.ok) {
+        this.log.warn(
+          { code: outcome.code, kind: outcome.kind, attempts: outcome.attempts, degraded: true },
+          'callLLMWithTools: 最终轮 LLM 调用降级（韧性层分类）',
+        );
+        return `工具调用超过最大轮次: ${outcome.message}`;
+      }
+      return outcome.result.content || '(no response)';
+    } catch (err: unknown) {
       this.log.error({ err }, 'callLLMWithTools: 最终轮 LLM 调用失败');
-      return `工具调用超过最大轮次: ${err.message}`;
+      return `工具调用超过最大轮次: ${errorMessage(err)}`;
     }
   }
 
@@ -178,13 +243,21 @@ export class ToolLoopExecutor {
   async streamWithToolLoop(onToken: (token: string) => void): Promise<string> {
     const MAX_ROUNDS = 3;
     const tools = this.ctx.toolRegistry.listTools();
-    const { provider, messages, toolRegistry, hookRunner, eventBus, sessionId } = this.ctx;
+    const { messages, toolRegistry, hookRunner, eventBus, sessionId } = this.ctx;
 
     for (let round = 0; round < MAX_ROUNDS; round++) {
       try {
-        const result = await provider.chat(messages, {
+        const outcome = await this.callLlm(messages, {
           tools: tools.length > 0 ? toolRegistry.toOpenAITools() : undefined,
         });
+        if (!outcome.ok) {
+          this.log.warn(
+            { code: outcome.code, kind: outcome.kind, attempts: outcome.attempts, degraded: true, round },
+            'streamWithToolLoop: LLM 调用降级（韧性层分类）',
+          );
+          return `抱歉，调用失败：${outcome.message}`;
+        }
+        const result = outcome.result;
 
         const content = result.content || '';
 
@@ -285,22 +358,30 @@ export class ToolLoopExecutor {
         onToken(']\n');
 
         continue;
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.log.error({ err, round }, 'streamWithToolLoop: LLM 调用失败');
-        return `抱歉，调用失败：${err.message}`;
+        return `抱歉，调用失败：${errorMessage(err)}`;
       }
     }
 
     // 达到最大轮次
     try {
-      const final = await provider.chat(messages);
+      const outcome = await this.callLlm(messages);
+      if (!outcome.ok) {
+        this.log.warn(
+          { code: outcome.code, kind: outcome.kind, attempts: outcome.attempts, degraded: true },
+          'streamWithToolLoop: 最终轮 LLM 调用降级（韧性层分类）',
+        );
+        return '工具调用超过最大轮次，请稍后重试。';
+      }
+      const final = outcome.result;
       for (const ch of (final.content || '')) {
         onToken(ch);
         await sleep(5);
       }
       messages.push({ role: 'assistant', content: final.content || '' });
       return final.content || '(no response)';
-    } catch (err: any) {
+    } catch (err: unknown) {
       this.log.error({ err }, 'streamWithToolLoop: 最终轮 LLM 调用失败');
       return '工具调用超过最大轮次，请稍后重试。';
     }
