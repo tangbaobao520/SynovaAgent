@@ -37,7 +37,7 @@ done
 [ -n "$PYBIN" ] || { echo "❌ 无可用 python"; exit 2; }
 
 TODAY="2026-09-17"   # 固定时钟: 保鲜分桶与 days 计算全部相对它
-V1_NAME="26线-V1验收标准-草案v0.1-20260917.md"
+V1_NAME="26线-V1验收标准-v0.2-20260917.md"   # D806 ①: 规格源收敛为一份（唯一 glob 候选）
 
 # ── 工具 ──────────────────────────────────────────────────────
 dago() { "$PYBIN" -c "import datetime,sys;print((datetime.date.fromisoformat(sys.argv[1])-datetime.timedelta(days=int(sys.argv[2]))).isoformat())" "$TODAY" "$1"; }
@@ -346,17 +346,53 @@ if [ -f "$V1_REAL" ]; then
   OUT6="$TMPD/real.json"
   run_sut "$REPO" "$OUT6" >/dev/null 2>&1; RC6=$?
   [ "$RC6" = "0" ] && ok "真实仓库 exit 0" || no "真实仓库 exit $RC6"
-  [ "$(jget "$OUT6" totals.v1_total)" = "125" ] && ok "真实仓库 v1_total=125（分母冻结）" \
-    || no "真实仓库 v1_total 应 125，实 $(jget "$OUT6" totals.v1_total)"
+  [ "$(jget "$OUT6" totals.v1_total)" = "128" ] && ok "真实仓库 v1_total=128（分母冻结，v0.2 §三）" \
+    || no "真实仓库 v1_total 应 128，实 $(jget "$OUT6" totals.v1_total)"
   [ "$(jget "$OUT6" lines | "$PYBIN" -c 'import json,sys;print(len(json.load(sys.stdin)))')" = "26" ] \
     && ok "真实仓库 lines=26" || no "真实仓库 lines 应 26"
-  [ "$(jget "$OUT6" totals.backlog_points)" = "39" ] && ok "真实仓库 backlog_points=39（164-125）" \
-    || no "backlog_points 应 39，实 $(jget "$OUT6" totals.backlog_points)"
+  [ "$(jget "$OUT6" totals.backlog_points)" = "36" ] && ok "真实仓库 backlog_points=36（164-128）" \
+    || no "backlog_points 应 36，实 $(jget "$OUT6" totals.backlog_points)"
 else
   no "真实仓库缺 V1 断言表 ${V1_NAME}（上游 D793/PR#608 未并入）"
 fi
 # 只读证明: 夹具与真实仓库均不得被写
 [ ! -f "$REPO/docs/synova/project/ledger.json.tmp" ] && ok "未在真实仓库留临时文件" || no "真实仓库被写脏"
+
+# ═══ 组 ⑦ 规格源唯一 + 冻证件逐字（D806 ①②）═══
+echo "⑦ 规格源唯一 + 冻证件逐字（签字哈希复现 + 字节级全等）"
+V7="$TMPD/v7.txt"
+"$PYBIN" - "$REPO" >"$V7" 2>&1 <<'PY'
+import glob, hashlib, io, os, re, sys
+os.chdir(sys.argv[1])
+def emit(cond, msg): print(("OK " if cond else "NO ") + msg)
+cands = sorted(glob.glob("docs/synova/project/26线-V1验收标准*.md"))
+emit(len(cands) == 1, "规格源唯一（glob 候选=%d: %s）" % (len(cands), cands[-1] if cands else "-"))
+if not cands:
+    sys.exit(0)
+doc = io.open(cands[-1], encoding="utf-8").read()
+emit("## §五 签字（创始人）" in doc, "唯一规格源含 §五 签字块")
+signed = doc.split("## 附录 A", 1)[0]
+h = hashlib.sha256((signed.split("## §五")[0].rstrip() + "\n").encode()).hexdigest()[:8]
+emit(h == "c11841e6", "签字区 sha256[:8] 复现 == c11841e6（实 %s）" % h)
+sec1 = signed.split("## §一")[1].split("## §二")[0]
+F = {pt: (b, f) for _, pt, b, f in re.findall(
+    r"^\|\s*(\d+)\s*\|\s*([0-9]+-[0-9]+)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*$", sec1, re.M)}
+F["26-7"] = (re.search(r"^\|\s*14\s*\|\s*26（新）\s*\|\s*(.+?)\s*\|\s*$", signed, re.M).group(1), None)
+ap = doc.split("## 附录 A", 1)[1]
+cells = {pt: (d, k, f) for pt, d, v, k, f in re.findall(
+    r"^\| ([0-9]+-[0-9]+) \| (.+?) \| (.+?) \| ([a-z0-9\-]+) \| (.+?) \|$", ap, re.M)}
+bad = [pt for pt, (b, f) in F.items()
+       if pt not in cells or cells[pt][0] != b or (f is not None and cells[pt][2] != f)]
+emit(not bad, "冻证件 §一/§二 条文+fail_when 与落库表逐字节全等（%d/%d%s）"
+     % (len(F) - len(bad), len(F), "" if not bad else " 差异: %s" % bad))
+PY
+while IFS= read -r line; do
+  case "$line" in
+    OK\ *) ok "${line#OK }" ;;
+    NO\ *) no "${line#NO }" ;;
+    *)     echo "    $line" ;;
+  esac
+done < "$V7"
 
 echo
 echo "PASS=$PASS FAIL=$FAIL"
