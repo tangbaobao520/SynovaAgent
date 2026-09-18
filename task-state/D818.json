@@ -1,0 +1,33 @@
+{
+  "task_id": "D818",
+  "title": "三项开工前核实（研究院任务书的未核实面）：security 余 11 文件 / 数据层未核实 1·2·5·10 / Node 基线",
+  "status": "claimed",
+  "risk": "medium",
+  "spec": "派单即规格：docs/synova/coordination/派单-批十-第0项-CI生产入口级对话-20260918.md §H（附：三项核实派单）",
+  "write_set": [
+    "docs/synova/coordination/核实单-D818-未核实面-20260918.md",
+    "task-state/D818.json",
+    ".claude/task-briefs/2026-09-18-D818-三项核实.md",
+    "memory/notes/proposed/2026-09-18-D818-prespec-verification.md"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-18",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-devdoc",
+  "milestone": "M1 产品可用",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "核实单三节齐备，每节以『结论 + 证据（文件:行）+ 会推翻/改变哪一项派单判定』收束",
+    "第 1 节：src/security/ 余 11 文件（约 1,847 行）逐个读，逐条回答『是否已覆盖 不变量/凭据/设置热改/溢出/文档转换 五项缺口』——研究院点名这条可能推翻 5 项缺口判定",
+    "第 2 节：数据层任务书未核实第 1/2/5/10 条（stats URL 形状 / turn-step 产出点 / FTS tokenizer / 指标保留期与 bucket）给出可执行结论或仍缺什么信息",
+    "第 3 节：Node 运行基线（package.json engines + CI node 版本 + 客户部署假设）→ 判定 NODE_USE_ENV_PROXY 零依赖代理路线是否可行",
+    "零代码改动（只读核实）；不碰 scripts/audit/**；结论必须可复现（附命令与输出）"
+  ],
+  "next": "① 读 src/security/ 除 credential-vault.ts / index.ts 外的 11 文件 ② 读数据层任务书未核实 4 条对应代码 ③ 查 Node 基线（package.json / ci.yml / 部署文档） ④ 出核实单 ⑤ 汇报（每条给『会不会改变派单判定』）",
+  "note": "研究院交付的四份任务书自曝 15 项未核实（U1–U15），并建议『先派三个 1 天级核实任务再派 15 项正式任务』。本卡把这三项合成一张卡（同属只读核实、同一交付形态），派给最空闲的规格线。CTO 已提前解决其中 U3（src/routes/credentials.ts 确实挂在生产 server：src/server.ts:394）与部分 U11（vitest.config.ts:29-37 CI 排除 e2e，已成 D817）。"
+}
