@@ -1,0 +1,88 @@
+{
+  "task_id": "D806",
+  "title": "台账修复-DSH复用可见",
+  "status": "impl_done",
+  "spec": "docs/synova/coordination/DSH锚点重锚审计-20260917.md（依据，D797 @ docs/dsh-reanchor-20260917）+ CTO D806 派单四缺陷；口径单源 docs/synova/project/26线-V1验收标准-v0.2-20260917.md（v0.2 冻结件）",
+  "impl": {
+    "commit": "(见本次提交)",
+    "branch": "fix/d806-ledger-dsh-alignment",
+    "change": "① 11 条幻影 modules → 现验真实路径（26 线 98 条 modules 零幻影）② 借鉴卡落点归属按 D808 §12.2 + R1/R5 收敛 ③ 8 张借鉴卡回写 V1 点 + 绑定证据（D806-borrow-cards-20260918.json，6 个计分绑定）④ V1 v0.2 落库版 128 条表（条文逐字引用冻结件）+ 证据列按 CTO 映射重排 + M1–M5 元断言落 yaml + 分母变更单",
+    "evidence": {
+      "ledger": "docs/synova/project/ledger.json → v1_total 125→128 | v1_passed 21→25 | 线20 0/5→2/6（20-3/20-5）| 线21 2/5→3/5（21-3）| 线25 3/5→4/6（25-6）| 线18 2/4（18-2 既有）| 线22 1/5（22-1 既有）",
+      "reverse_test": "删 D806-borrow-cards-20260918.json → v1_passed 25→22（回退 3：20-3 / 21-3 / 25-6 三条跨 3 线）；20-5 仍绿系 run-machine-evidence.sh 既有记录已绑该点（如实登记）",
+      "verbatim_check": "机器校验（.claude/tools/d806-verbatim-check.py）：① 签字区 sha256 前 8 位复现 == c11841e6；② 冻证件 §一 13 条 + §二 26-7 的【条文 + fail_when】与落库附录 A 对应行**逐字节全等 14/14**（首轮 5 处 fail_when 被我并入 v0.1 后缀 → 已改全等）；③ difflib 统一 diff 空",
+      "kind_mapping": "证据列 14 条与 CTO 映射逐条一致：test=20-2/20-3/20-5/18-2/21-1/21-3/22-1/25-6；scenario=2-3/7-3/8-6/23-1/26-7；k3=20-6",
+      "unscored": "B-10 配置三层（建议点 23-1 = scenario 类，GS 证据用自有 ID 空间且无 23-1 绑定）→ 如实标未计分，不造假证据",
+      "tests": "gen-project-board.test.sh PASS=61 FAIL=0 | 10 张卡套件 96/96 | check-ownership.test.sh 51/51",
+      "spec_source": "glob('docs/synova/project/26线-V1验收标准*.md') = 唯一候选 26线-V1验收标准-v0.2-20260917.md（含 §五 签字块）；v0.1 移出 glob 防 sorted()[-1] 静默回退分母"
+    }
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "change_log": [
+    {
+      "date": "2026-09-18",
+      "change": "V1 分母 125 → 128",
+      "basis": "V1 v0.2 §三（docs/synova/project/26线-V1验收标准-v0.2-20260917.md）：+2 由 backlog 提入 V1（20-5 协作式超时 / 25-6 运行时插件化）+1 线26 新增（26-7 MCP client）；元断言 M1–M5 不计入分母",
+      "authorized_by": "CTO（D806 扩写集授权）",
+      "files": [
+        "scripts/project/gen-project-board.py",
+        "tests/project/gen-project-board.test.sh",
+        "docs/synova/project/26线-V1验收标准-草案v0.2-20260918.md"
+      ]
+    },
+    {
+      "date": "2026-09-18",
+      "change": "backlog 39 → 36",
+      "basis": "164（yaml 验收点总数）− 128（v0.2 冻结分母）= 36；测试真实仓库读数同步",
+      "authorized_by": "CTO（D806 扩写集授权）",
+      "files": [
+        "tests/project/gen-project-board.test.sh"
+      ]
+    },
+    {
+      "date": "2026-09-18",
+      "change": "V1 表 14 行证据列按 CTO 映射重排（test 8 / scenario 5 / k3 1）",
+      "basis": "CTO D806 session 指令 ③；条文来源 origin/docs/v1-v0.2-freeze-20260917 §一/§二（逐字，机器校验）",
+      "authorized_by": "CTO（D806 session 指令）",
+      "files": [
+        "docs/synova/project/26线-V1验收标准-草案v0.2-20260918.md",
+        "docs/synova/product-lines/evidence/D806-borrow-cards-20260918.json"
+      ],
+      "effect": "20-2/20-3/21-3 founder-demo·scenario → test；26-7 test → scenario。解掉 21-3（B-03）/20-3（B-04/B-05）两处 founder-demo 死点（全仓 founder-demo 记录=0）"
+    },
+    {
+      "date": "2026-09-18",
+      "change": "借鉴卡绑定证据重做（6 个计分绑定）",
+      "basis": "M2 物理化 + 冻结件明文点名优先（18-2 条文点名「B-07 投影注册表」、20-3 点名 dsh-compaction 两件套、21-3 点名 dsh-token-meter）",
+      "authorized_by": "CTO（D806 session 指令 ③）",
+      "files": [
+        "docs/synova/product-lines/evidence/D806-borrow-cards-20260918.json"
+      ],
+      "effect": "v1_passed 21→25；反向删证据 25→22"
+    },
+    {
+      "date": "2026-09-18",
+      "change": "规格源收敛为一份（创始人冻证件为唯一权威）",
+      "basis": "CTO D806 session ①：并入 473 行完整表 + 删重复 + 移出 glob 竞争",
+      "authorized_by": "CTO（D806 session 指令 ①）",
+      "files": [
+        "docs/synova/project/26线-V1验收标准-v0.2-20260917.md",
+        "tests/project/gen-project-board.test.sh"
+      ],
+      "effect": "glob 候选 2→1（唯一候选含 §五 签字块）；签字区 sha256 c11841e6 逐字节保留；v0.1 按「删除重复文件」处理（改名会占 D734 的 A 名额致 13>12）——内容以 sha256[:16]=1008ceb1ce1a94ca + git show 取回命令存于附录 B"
+    },
+    {
+      "date": "2026-09-18",
+      "change": "yaml evidence 字段与 CTO 映射对齐（5 点）+ 字段角色注释",
+      "basis": "CTO D806 session ③：yaml 该字段实测**零机器读取**（唯一命中为计算结果的 evidence_files）",
+      "authorized_by": "CTO（D806 session 指令 ③）",
+      "files": [
+        "docs/synova/product-lines/product-lines.yaml"
+      ],
+      "effect": "20-2 scenario→test / 20-3 founder-demo→test / 21-3 founder-demo→test / 25-6 scenario→test / 8-6 空→scenario；注释写明 kind 机器源 = V1 表附录 A"
+    }
+  ],
+  "updated_at": "2026-09-18",
+  "updated_by": "DeepSeek Harness"
+}

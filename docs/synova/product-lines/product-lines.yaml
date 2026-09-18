@@ -7,17 +7,45 @@
 # 诚实规则: 只有带证据的验收点才算"已验证"。agent 说"做了"不算；代码提交不算；D# 合并不算。
 #           证据 = 可 grep、可重跑、可复核的物理事实（K3 报告 / 场景绿 / 测试绿 / 创始人演示核验）。
 #
+# ── V1 v0.2 元断言 M1–M5（判定规则，不计入分母）─────────────────────────────
+# 单源: docs/synova/project/26线-V1验收标准-v0.2-20260917.md §〇（冻结件，创始人 2026-09-17 签字）
+# 落点: 本文档（yaml 注释）｜冻结件 §〇｜《DSH借鉴指引-v2-20260904》§10/§11/§12（D808 附录 C 逐字核）
+# 账目: docs/synova/project/26线-V1验收标准-草案v0.2-20260918.md（128 条 = v0.2 §三 变更单）
+#
+# M1（DSH 复用口径 · 全 26 线适用）
+#   凡某验收点的能力与现行 DSH 已有能力重叠时，该点必须写成「接入/配置/约束 DSH 的 <能力> 并验证」，
+#   不得写成「实现 <能力>」。判定：verify 须同时指向 ① DSH 侧配置/接入点 ② 本仓验证断言两段；
+#   只写「实现 X」视为口径不合格，不计通过。
+# M2（G3 物理化 · 借鉴卡必须回写台账）
+#   每张 DSH 借鉴卡（B-01…B-20）必须回写到至少一个 26 线验收点，并生成绑定该点 id 的证据文件；
+#   未回写、或无绑定证据者，该卡不计通过。
+# M3（合规边界 · 创始人裁定）
+#   抄代码 = 允许且鼓励；桥接引用 = 禁止（禁 import @deepseek-ai/*、禁 re-export 壳）；
+#   抄写处必须留锚点注释（包 + 文件 + 符号）+ 现验命令（行号现查）。
+# M4（借鉴发现机制 · 发现即登记）
+#   任何 session 发现新的可借鉴能力（含 UI/前端组件、页面范式、交互形态）必须走三步：
+#   ① 立借鉴卡 ② 回写对应线验收点 ③ 生成绑定证据。发现而不登记 = 漏账，计入审计 findings。
+# M5（UI / 前端面复用口径）
+#   凡 DSH 客户端已有的 UI 范式，界面元素一律「复用/对齐 + 验证」，禁止从零造组件。
+#
 # 字段说明:
 #   id/name/value      — 线的基本定义（大白话，创始人可读）
 #   weight             — 产品总进度权重（默认等权 1.0）
 #   baseline_pct       — Phase 0 诚实粗估（±15%，由验收点验证后取代）
 #   baseline_note      — 粗估的事实依据
 #   modules            — 关联代码路径（git 变更 → 该线证据自动失效转黄，A1）
+#                        归属规则（D808 §12）: R1 一个落点只归一条线；R3 必须是真实存在且 git pathspec
+#                        可命中的路径（幻影路径 = 失效检查静默空转）；R5 混合目录按文件粒度归属，
+#                        禁止整目录挂靠。
 #   done_definition    — 100% 的完整定义
 #   acceptance_points  — 验收点清单:
 #     id               — 线号-序号
 #     desc             — 一条可验证的"完成"定义（大白话）
 #     evidence         — 证据绑定（scenario:GS-XX / k3:<报告> / test:<套件> / founder-demo:<记录>）
+#                        ⚠️ 角色（D806 澄清）: 本字段是**文档性标注**（全仓实测零机器读取），说明「这条点打算用什么证据」；
+#                        **证据 kind 的机器源 = `docs/synova/project/26线-V1验收标准-v0.2-20260917.md` 附录 A**
+#                        （`gen-project-board.py` 按「证据」列 kind 与证据文件 record_type 配对计分 → ledger.json）；
+#                        `calc-progress.py` 只看证据文件，不读本字段。改 kind 口径请改 V1 表 + 本字段同步。
 #     status           — 六态: uncommitted / failed / pending_k3 / verified / rejected / stale
 #                        （yaml 内为初始值；最终状态由 calc-progress.py 按证据重算）
 #     note             — 为什么是这个状态（可追溯）
@@ -87,7 +115,7 @@ lines:
     weight: 1.0
     baseline_pct: 50
     baseline_note: "聊天+SSE+线程存在；主动交互蓝图未全接线"
-    modules: ["src/agent/", "src/l1/", "src/l1-interaction/", "app/", "tui/"]
+    modules: ["src/agent/", "src/l1/", "src/l1-interaction/", "app/", "src/tui-v2/"]
     done_definition: "老板一句大白话 → 系统听懂意图 → 流式回答 → 关键选择给卡片 → 系统主动发起对话（该提醒时提醒）"
     acceptance_points:
       - id: "2-1"
@@ -134,7 +162,7 @@ lines:
     weight: 1.0
     baseline_pct: 30
     baseline_note: "一页纸结构有；详细报告/交互深度 = 0"
-    modules: ["src/l3/", "extensions/reports/", "src/reports/"]
+    modules: ["src/l3/", "extensions/reports/", "src/agent/report-assembler.ts"]
     done_definition: "老板拿到一页纸结论（看得懂），想深挖有详细报告，想调整深浅说句话就行；手机能看，能导出"
     acceptance_points:
       - id: "3-1"
@@ -410,7 +438,7 @@ lines:
         note: ""
       - id: "8-6"
         desc: "通知按状态驱动 + 监测契约（新发现/实质变化立刻推；已认领停止重复、转约定节奏；未回应或停滞按契约升级；节奏与格式在首次告警时由老板确认）"
-        evidence: []
+        evidence: ["scenario:GS-05"]
         status: uncommitted
         note: "创始人 2026-09-12 裁 D-1 改写（原『5 分钟 vs 30 分钟』时间窗框架作废；5 分钟降级为抖动合并器）。实现缺口：runner.ts:1321 通知决策仅查 sentinelId+last_sent_ms，不读工单状态（TicketStatus 已在 runner.ts:178，机制有而未接线＝M3）。监测契约文件/升级规则/首次沟通请求待建。"
 
@@ -561,7 +589,7 @@ lines:
     weight: 1.0
     baseline_pct: 0
     baseline_note: "专家存在，维度端到端循环 = 0——诚实 0"
-    modules: ["src/l3/", "extensions/sentinels/", "expert/tech/"]
+    modules: ["src/l3/", "extensions/sentinels/", "expert/technology-foundation/"]
     done_definition: "系统的技术状态（债务、能力、演进方向）像财务一样被持续诊断并出结论"
     acceptance_points:
       - id: "12-1"
@@ -598,7 +626,7 @@ lines:
     weight: 1.0
     baseline_pct: 0
     baseline_note: "专家存在，维度端到端循环 = 0——诚实 0"
-    modules: ["src/l3/", "extensions/sentinels/", "expert/finance/"]
+    modules: ["src/l3/", "extensions/sentinels/", "expert/fundamental-efficiency/"]
     done_definition: "融资结构、资本成本、财务健康像现金流一样被持续诊断并出结论"
     acceptance_points:
       - id: "13-1"
@@ -635,7 +663,7 @@ lines:
     weight: 1.0
     baseline_pct: 0
     baseline_note: "专家存在，维度端到端循环 = 0——诚实 0"
-    modules: ["src/l3/", "extensions/sentinels/", "expert/strategy/"]
+    modules: ["src/l3/", "extensions/sentinels/", "expert/competitive-strategy/"]
     done_definition: "竞争位置、护城河、战略有效性被持续诊断并出结论"
     acceptance_points:
       - id: "14-1"
@@ -672,7 +700,7 @@ lines:
     weight: 1.0
     baseline_pct: 70
     baseline_note: "注册表+调度+工具接线存在（代码实证）；提示词效果未验证"
-    modules: ["src/l3/", "expert/", "expert-platform/", "skills/"]
+    modules: ["src/l3/", "expert/", "src/expert-platform/", "skills/"]
     done_definition: "诊断时专家真的在干活（老板看得见），交叉验证结论，专家提示词效果有数据证明"
     acceptance_points:
       - id: "15-1"
@@ -756,7 +784,7 @@ lines:
     weight: 1.0
     baseline_pct: 10
     baseline_note: "N13 P0：placeholder 假成功"
-    modules: ["src/evolution/", "src/l2/", "memory/", "src/evidence/"]
+    modules: ["extensions/evolution/", "src/l2/", "memory/", "src/evidence/"]
     done_definition: "老板说『你判错了』，系统真的改规则，下次同类诊断变准，且能证明变准了"
     acceptance_points:
       - id: "17-1"
@@ -872,7 +900,7 @@ lines:
     weight: 1.0
     baseline_pct: 45
     baseline_note: "ConversationEngine/工具循环/熔断/优雅停机/卡会话检测存在；上下文窗口管理策略 = 0"
-    modules: ["src/agent/", "src/l2/", "src/infra/", "providers/"]
+    modules: ["src/agent/", "src/l2/", "src/infra/", "src/providers/", "src/store/"]
     done_definition: "Agent 稳定跑得起来：会话状态对、工具循环真实执行、上下文窗口管理有策略、不会卡死"
     acceptance_points:
       - id: "20-1"
@@ -882,12 +910,12 @@ lines:
         note: "代码存在；端到端未验证"
       - id: "20-2"
         desc: "工具循环真实执行（不是 placeholder，K3 P1-C2 教训）"
-        evidence: ["scenario:GS-01"]
+        evidence: ["test:dsh-agent-loop 锚点 + GS-01 工具调用留痕"]
         status: uncommitted
         note: ""
       - id: "20-3"
         desc: "上下文窗口管理策略（长会话不爆窗、不丢重点）"
-        evidence: ["founder-demo:长会话实测"]
+        evidence: ["test:compaction 套件"]
         status: uncommitted
         note: "创始人 13 问第 4 问：当前 = 0，要设计"
       - id: "20-4"
@@ -914,7 +942,7 @@ lines:
     weight: 1.0
     baseline_pct: 10
     baseline_note: "标准适配器有（providers/deepseek.ts）；深度优化 = 0"
-    modules: ["providers/", "src/infra/", "src/l2/"]
+    modules: ["src/providers/", "src/infra/", "src/l2/", "src/llm/", "src/services/llm-cost.ts"]
     done_definition: "基于 DeepSeek 的差异化优势：提示词效果、成本、长上下文都有优化策略且可测量"
     acceptance_points:
       - id: "21-1"
@@ -929,7 +957,7 @@ lines:
         note: "深度优化 = 0"
       - id: "21-3"
         desc: "成本策略（token 预算/缓存，成本可测量）"
-        evidence: ["founder-demo:成本报告"]
+        evidence: ["test:token-meter 套件"]
         status: uncommitted
         note: ""
       - id: "21-4"
@@ -993,7 +1021,7 @@ lines:
     weight: 1.0
     baseline_pct: 55
     baseline_note: "RBAC/GA 边界/数据导出删除存在（代码实证）；冲突仲裁流程 = 0，端到端未验证"
-    modules: ["src/infra/", "security/", "src/l1/"]
+    modules: ["src/infra/", "src/security/", "src/l1/", "src/config/config-layers.ts"]
     done_definition: "谁看什么清清楚楚；GA 和企业意见冲突有仲裁流程；老板说『删掉这段数据』就能彻底删"
     acceptance_points:
       - id: "23-1"
@@ -1035,7 +1063,7 @@ lines:
     weight: 1.0
     baseline_pct: 60
     baseline_note: "PII/注入检测/审计哈希链存在（代码实证）；注入异常降级放行（fail-open 待修）；对抗性测试 = 0"
-    modules: ["security/", "src/infra/", "src/l1/"]
+    modules: ["src/security/", "src/infra/", "src/l1/"]
     done_definition: "数据本地不出门、敏感信息脱敏、恶意提示词防得住、篡改可查，且对抗性测试过"
     acceptance_points:
       - id: "24-1"
@@ -1077,7 +1105,7 @@ lines:
     weight: 1.0
     baseline_pct: 20
     baseline_note: "文件驱动有；运行时插件化/多模式框架 = 0"
-    modules: ["extensions/", "expert/", "skills/", "src/l3/"]
+    modules: ["extensions/", "expert/", "skills/", "src/l3/", "src/config/customer-config-package.ts"]
     done_definition: "加新能力只加文件不改代码：新专家、新技能、新哨兵、新连接器、新模式都是插件"
     acceptance_points:
       - id: "25-1"
@@ -1107,7 +1135,7 @@ lines:
         note: "创始人 13 问第 9 问：多模式框架 = 0"
       - id: "25-6"
         desc: "运行时插件化（运行中加载，不改代码不重启）"
-        evidence: ["scenario:GS-05"]
+        evidence: ["test:customer-config-package 套件"]
         status: uncommitted
         note: "文件驱动是 1.0，运行时插件化是 2.0"
       - id: "25-7"

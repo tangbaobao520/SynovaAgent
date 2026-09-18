@@ -74,8 +74,10 @@ EVIDENCE_PRIORITY = ("k3", "test", "scenario", "founder-demo")
 FRESH_GREEN_MAX_DAYS = 7
 FRESH_YELLOW_MAX_DAYS = 14
 
-# 冻结分母（派单 §B.3「分母 = 125 冻结」）。仅作漂移告警，**不覆盖**从断言表解析出的实测值。
-FROZEN_V1_TOTAL = 125
+# 冻结分母（v0.2 §三 变更单：125 → 128 = +2 由 backlog 提入 V1（20-5/25-6）+1 线26 新增（26-7），
+# 依据 `docs/synova/project/26线-V1验收标准-v0.2-20260917.md` §三；元断言 M1–M5 不计入）。
+# 仅作漂移告警，**不覆盖**从断言表解析出的实测值。
+FROZEN_V1_TOTAL = 128
 
 DEFAULT_EVIDENCE_RELS = (
     "docs/synova/product-lines/evidence",
