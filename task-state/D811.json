@@ -1,0 +1,33 @@
+{
+  "task_id": "D811",
+  "title": "队列收口：39 个未合 PR → 「有主 + behind=0」清单 + 可签字关闭清单",
+  "status": "claimed",
+  "risk": "medium",
+  "spec": "派单即规格：docs/synova/coordination/派单-批八-20260918.md §B/D811",
+  "write_set": [
+    "docs/synova/coordination/队列收口-20260918.md",
+    "task-state/D811.json",
+    ".claude/task-briefs/2026-09-18-D811-队列收口.md",
+    "memory/notes/proposed/2026-09-18-D811-queue-closeout.md"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-18",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "报告表行数 == 当时 open PR 数（API 实测，命令+输出落报告）",
+    "标记「保留并已刷新」的每个分支 git rev-list --count origin/<b>..origin/main == 0（逐个贴输出）",
+    "R1（自身文件已被 main 取代）清单逐 PR 列出比对命令与结果，供创始人签字",
+    "每条冲突：文件 + 处理方式 + 依据；语义冲突标「待 CTO 裁决」",
+    "禁 force push / 禁 rebase 压平（git reflog 无 reset --hard）"
+  ],
+  "next": "① 取全量 open PR 列表（curl API）② 逐 PR 算 ahead/behind + 自身文件是否已被取代 ③ R3 分支 merge origin/main 刷新并推送 ④ 出报告 + 关闭清单 ⑤ 汇报给 CTO（含 mergeable 实测值）",
+  "note": "跨分支动作：会对多个在途 PR 分支推送 merge-main 提交（非 force）。排除 K3 审计域（audit/k3-* 分支、scripts/audit/**）。本卡不关闭任何 PR（需创始人签字或 token）。"
+}
