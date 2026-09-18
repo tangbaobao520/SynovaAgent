@@ -1512,3 +1512,5 @@ Binary file .claude/bypass.log matches
 2026-09-18T02:09:17+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=c9ad92d7d4fd21298560e7530b98f0f9c3cfb018
 2026-09-18T11:26:09+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=28d54b37ebfa1504ea2a9c37538d4844bafe8871
 2026-09-18T03:26:09Z detected-bypass head-mismatch marker=9af013e44af5464c582eb08de601436a5f76ceb1 parent=28d54b37ebfa1504ea2a9c37538d4844bafe8871
+2026-09-18T11:26:16+08:00 | GATE_FAIL_SOFT | exit=1 | branch=feat/d810-llm-resilience-wiring
+2026-09-18T11:26:17+08:00 | COMMITTED | pre-commit PASS (hook 层登记) | HASH=5faea590336c72e2d7ab444e35178e96a480d8b8
