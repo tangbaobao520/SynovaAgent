@@ -13,6 +13,11 @@ export interface DiagnosisEvent {
   phase: number;
   label?: string;
   message?: string;
+  /**
+   * D810: 稳定分类码（type='error' 时来自 L3 ErrorEvent.code，如 TOOL_TIMEOUT / INVALID_CREDENTIAL）。
+   * 消费方按 code 路由与展示，不解析 message（21-1 口径；铁律 31 降级信号传播到前端）。
+   */
+  code?: string;
   findings?: Array<{ moduleId: string; summary: string; confidence?: number }>;
   confidence?: number;
   nodesCreated?: number;

@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "record_type": "test",
+  "source": "tests/llm/resilient-chat-adapter.test.ts + tests/agent/tool-loop-executor-resilience.integration.test.ts + tests/agent/context-compaction.integration.test.ts（D810 接线）",
+  "date": "2026-09-18",
+  "written_by": "evidence-writer.py",
+  "verdicts": [
+    {
+      "acceptance_point": "20-3",
+      "verdict": "pass",
+      "quote": "D810: retry-middleware/context-compaction/timeout 三入口接入生产 LLM 调用链；生产调用点 grep：callWithResilience 命中 src/agent/tool-loop-executor.ts(×2)/src/orchestrator/context-engine.ts/src/services/background-review.ts(×2)/src/expert-platform/extractor.ts(×3)；断开反证 3 断言必红；GS-01 真实 consult 产出 SSE code=AUTH_FAILED（韧性层分类码端到端）"
+    },
+    {
+      "acceptance_point": "20-5",
+      "verdict": "pass",
+      "quote": "D810: retry-middleware/context-compaction/timeout 三入口接入生产 LLM 调用链；生产调用点 grep：callWithResilience 命中 src/agent/tool-loop-executor.ts(×2)/src/orchestrator/context-engine.ts/src/services/background-review.ts(×2)/src/expert-platform/extractor.ts(×3)；断开反证 3 断言必红；GS-01 真实 consult 产出 SSE code=AUTH_FAILED（韧性层分类码端到端）"
+    },
+    {
+      "acceptance_point": "22-1",
+      "verdict": "pass",
+      "quote": "D810: retry-middleware/context-compaction/timeout 三入口接入生产 LLM 调用链；生产调用点 grep：callWithResilience 命中 src/agent/tool-loop-executor.ts(×2)/src/orchestrator/context-engine.ts/src/services/background-review.ts(×2)/src/expert-platform/extractor.ts(×3)；断开反证 3 断言必红；GS-01 真实 consult 产出 SSE code=AUTH_FAILED（韧性层分类码端到端）"
+    }
+  ]
+}

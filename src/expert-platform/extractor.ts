@@ -9,8 +9,15 @@
 import type { LLMProvider } from '../providers/types';
 import type { ExpertContribution, ExpertTemplate } from './types';
 import { createLogger } from '@synova/logger';
+// D810 接线: 提取/交叉验证 LLM 调用经韧性层（B-02 重试 / B-06 协作式超时，outcome 化不抛）
+import { callWithResilience } from '../llm/retry-middleware';
 
 const log = createLogger('expert-platform/extractor');
+
+/** 错误消息提取（catch err: unknown → string；铁律 38 零 as any） */
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
 
 // ═══ Extraction prompt ═══
 
@@ -64,10 +71,19 @@ export class ExpertKnowledgeExtractor {
     ].filter(Boolean).join('\n');
 
     try {
-      const result = await this.provider.chat([
+      // D810 接线: 提取 LLM 调用经韧性层（outcome 化，失败走既有降级分支不抛断链）
+      const outcome = await callWithResilience(this.provider, [
         { role: 'system', content: EXTRACTION_PROMPT },
         { role: 'user', content: userMessage },
       ], { temperature: 0.3, maxTokens: 500 });
+      if (!outcome.ok) {
+        log.warn(
+          { code: outcome.code, kind: outcome.kind, attempts: outcome.attempts, degraded: true },
+          '知识提取 LLM 降级（韧性层分类）— 转简化提示词重试',
+        );
+        return this.extractWithSimplePrompt(contribution);
+      }
+      const result = outcome.result;
 
       const extracted = JSON.parse(result.content) as {
         symptom: string;
@@ -110,40 +126,62 @@ export class ExpertKnowledgeExtractor {
       }, '行业知识模板已提取');
 
       return template;
-    } catch (err: any) {
+    } catch (err: unknown) {
       // JSON parse failure or LLM error — retry with lower temperature
-      log.warn({ err: err.message }, '知识提取失败');
+      log.warn({ err: errorMessage(err) }, '知识提取失败');
+      return this.extractWithSimplePrompt(contribution);
+    }
+  }
 
-      // Second attempt with simpler prompt
-      try {
-        const retry = await this.provider.chat([
-          { role: 'system', content: 'Extract symptom, root_cause, edge_type, principle, solution as JSON from the expert description. Output ONLY valid JSON.' },
-          { role: 'user', content: contribution.description },
-        ], { temperature: 0.1, maxTokens: 400 });
-
-        const data = JSON.parse(retry.content);
-        if (data.symptom && data.root_cause) {
-          return {
-            id: `tpl_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
-            symptom: String(data.symptom).slice(0, 40),
-            rootCause: String(data.root_cause).slice(0, 40),
-            edgeType: String(data.edge_type || data.edgeType || 'TRIGGERS').slice(0, 20),
-            industry: contribution.industry,
-            scenario: contribution.scenario,
-            confidence: Math.min(Math.max(contribution.confidence ?? 0.5, 0), 1),
-            principle: String(data.principle || '').slice(0, 200),
-            solution: String(data.solution || '').slice(0, 200),
-            contributedBy: contribution.expertId,
-            createdAt: new Date().toISOString(),
-            status: 'experimental',
-          };
-        }
-      } catch (err) {
-        log.warn({ err }, '专家输出提取失败 — degraded');
+  /**
+   * 简化提示词二次提取（D810: 由原 extract 的 catch 内联块提取，两条降级路径复用）。
+   * @input  — contribution（专家原始描述）
+   * @output — ExpertTemplate | null
+   * @degraded — 韧性层 outcome 失败或解析失败 → log.warn(code/degraded) + 返回 null（不抛）
+   */
+  private async extractWithSimplePrompt(contribution: ExpertContribution): Promise<ExpertTemplate | null> {
+    try {
+      const outcome = await callWithResilience(this.provider, [
+        { role: 'system', content: 'Extract symptom, root_cause, edge_type, principle, solution as JSON from the expert description. Output ONLY valid JSON.' },
+        { role: 'user', content: contribution.description },
+      ], { temperature: 0.1, maxTokens: 400 });
+      if (!outcome.ok) {
+        log.warn(
+          { code: outcome.code, kind: outcome.kind, attempts: outcome.attempts, degraded: true },
+          '简化提示词提取 LLM 降级（韧性层分类）',
+        );
+        return null;
       }
 
-      return null;
+      const data = JSON.parse(outcome.result.content) as {
+        symptom?: unknown;
+        root_cause?: unknown;
+        edge_type?: unknown;
+        edgeType?: unknown;
+        principle?: unknown;
+        solution?: unknown;
+      };
+      if (data.symptom && data.root_cause) {
+        return {
+          id: `tpl_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+          symptom: String(data.symptom).slice(0, 40),
+          rootCause: String(data.root_cause).slice(0, 40),
+          edgeType: String(data.edge_type || data.edgeType || 'TRIGGERS').slice(0, 20),
+          industry: contribution.industry,
+          scenario: contribution.scenario,
+          confidence: Math.min(Math.max(contribution.confidence ?? 0.5, 0), 1),
+          principle: String(data.principle || '').slice(0, 200),
+          solution: String(data.solution || '').slice(0, 200),
+          contributedBy: contribution.expertId,
+          createdAt: new Date().toISOString(),
+          status: 'experimental',
+        };
+      }
+    } catch (err: unknown) {
+      log.warn({ err: errorMessage(err) }, '专家输出提取失败 — degraded');
     }
+
+    return null;
   }
 
   /**
@@ -167,19 +205,31 @@ export class ExpertKnowledgeExtractor {
     ].join('\n');
 
     try {
-      const result = await this.provider.chat([
+      // D810 接线: 交叉验证 LLM 调用经韧性层；失败按 code 降级为「默认通过」并留痕（不抛）
+      const outcome = await callWithResilience(this.provider, [
         { role: 'system', content: '你是组织诊断知识的审核专家。审核以下知识提取是否准确。只输出 JSON。' },
         { role: 'user', content: prompt },
       ], { temperature: 0.2, maxTokens: 300 });
+      if (!outcome.ok) {
+        log.warn(
+          { code: outcome.code, kind: outcome.kind, attempts: outcome.attempts, degraded: true },
+          '交叉验证 LLM 降级（韧性层分类）— 默认通过',
+        );
+        return { agrees: true, comment: '自动审核失败，默认通过' };
+      }
 
-      const review = JSON.parse(result.content);
+      const review = JSON.parse(outcome.result.content) as {
+        agrees?: unknown;
+        comment?: unknown;
+        correction?: unknown;
+      };
       return {
         agrees: !!review.agrees,
-        comment: review.comment || '',
-        suggestedCorrection: review.correction,
+        comment: typeof review.comment === 'string' ? review.comment : '',
+        suggestedCorrection: typeof review.correction === 'string' ? review.correction : undefined,
       };
-    } catch (err: any) {
-      log.warn({ err: err.message }, 'Cross-validation LLM call failed — defaulting to agree');
+    } catch (err: unknown) {
+      log.warn({ err: errorMessage(err) }, 'Cross-validation LLM call failed — defaulting to agree');
       return { agrees: true, comment: '自动审核失败，默认通过' };
     }
   }

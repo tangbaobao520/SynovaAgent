@@ -13,6 +13,8 @@ import type { EventBus } from '../orchestrator/event-bus';
 import type { EvidenceCollector, CorroborationEngine } from '../evidence/index';
 import type { createGraphBridge, GraphStore } from '../l4/graph-bridge';
 import type { DiagnosisEngine } from '../l2-interfaces/diagnosis-engine';
+// D810: 会话事件落盘缝 — 内联结构类型（同 diagnosis-launcher 口径，避免 L2→L5 具体类 import，铁律 39）
+import type { SessionStoreLike } from './diagnosis-launcher';
 
 export interface EngineContext {
   /** LLM provider (shared across all components) */
@@ -50,4 +52,9 @@ export interface EngineContext {
   createGraphStore?: (db: unknown) => Promise<unknown>;
   /** FED-001: 联邦进化适配器 — 诊断完成后上报质量信号 */
   federalAdapter?: import('../adapters/federal-adapter').FederalAdapter;
+  /**
+   * D810: 会话事件落盘缝（D487 装配点注入）——ToolLoopExecutor 经此把 LLM 重试事件
+   * 写进 D500 事件流（store/retry-projection 投影计数）。缺省 = 无持久化，重试仍生效（仅不落盘）。
+   */
+  sessionStore?: SessionStoreLike | null;
 }

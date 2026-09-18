@@ -40,6 +40,7 @@ import type { DiagnosisEngine } from '../l2-interfaces/diagnosis-engine';
 import { SessionManager } from '../orchestrator/session-manager';
 import { registerBuiltinTools } from '../agent/builtin-tools';
 import { ToolRegistry } from '../agent/tools';
+import { createResilientChatAdapter } from '../llm/resilient-chat-adapter';
 import { WebViewAdapter } from '../l1-interaction/web-adapter';
 
 const log = createLogger('routes/conversations');
@@ -117,21 +118,14 @@ async function buildDiagnosisEngine(): Promise<DiagnosisEngine> {
     model: config.llmModel,
   });
   const toolRegistry = new ToolRegistry();
+  // D810 接线: LLM 适配器经韧性层（重试 + 截止超时 + 分类码）——协作式 outcome 在本缝
+  // 转成 LlmResilienceError（带 code/phase/retryable），L3 引擎既有 catch 分支按对象降级。
+  const llm = createResilientChatAdapter(provider);
   const { createSynovaDiagnosisEngine } = await import('../l3/synova-diagnosis-engine-impl');
   const newEngine = createSynovaDiagnosisEngine(
     {
       async chat(messages, opts) {
-        const result = await provider.chat(
-          messages as Array<{ role: 'system' | 'user' | 'assistant' | 'tool'; content: string }>,
-          opts as Record<string, unknown> | undefined,
-        );
-        return {
-          content: result.content || '',
-          toolCalls: result.toolCalls?.map(tc => ({
-            name: tc.function.name,
-            arguments: JSON.parse(tc.function.arguments) as Record<string, unknown>,
-          })),
-        };
+        return llm.chat(messages, opts);
       },
     },
     {

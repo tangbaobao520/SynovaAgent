@@ -13,8 +13,15 @@
  */
 import type { LLMProvider } from '../providers/types';
 import { createLogger } from '@synova/logger';
+// D810 接线: 后台审查 LLM 调用经韧性层（B-02 重试 / B-06 协作式超时，outcome 化不抛）
+import { callWithResilience } from '../llm/retry-middleware';
 
 const log = createLogger('services/background-review');
+
+/** 错误消息提取（catch err: unknown → string；铁律 38 零 as any） */
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
 
 // ═══ Review Prompts (Hermes _MEMORY_REVIEW_PROMPT + _SKILL_REVIEW_PROMPT 模式) ═══
 
@@ -127,32 +134,47 @@ export class BackgroundReviewer {
 
   private async reviewQuality(reportText: string, _orgId: string): Promise<QualityReviewResult | null> {
     try {
-      const result = await this.provider.chat([
+      // D810 接线: 后台审查 LLM 调用同走韧性层（outcome 化，失败按 code 降级返回 null）
+      const outcome = await callWithResilience(this.provider, [
         { role: 'system', content: QUALITY_REVIEW_PROMPT },
         { role: 'user', content: reportText.slice(0, 8000) },
       ], { model: this.reviewModel, temperature: 0.1, maxTokens: 1000 });
+      if (!outcome.ok) {
+        log.warn(
+          { code: outcome.code, kind: outcome.kind, attempts: outcome.attempts, degraded: true },
+          '质量审查 LLM 降级（韧性层分类）',
+        );
+        return null;
+      }
 
-      const parsed = JSON.parse(result.content) as QualityReviewResult;
+      const parsed = JSON.parse(outcome.result.content) as QualityReviewResult;
       log.info({ score: parsed.qualityScore, gaps: parsed.evidenceGaps.length }, '诊断质量审查完成');
       return parsed;
-    } catch (err: any) {
-      log.warn({ err: err.message }, '质量审查失败 — degraded');
+    } catch (err: unknown) {
+      log.warn({ err: errorMessage(err) }, '质量审查失败 — degraded');
       return null;
     }
   }
 
   private async extractPatterns(reportText: string, _orgId: string): Promise<PatternExtractionResult | null> {
     try {
-      const result = await this.provider.chat([
+      const outcome = await callWithResilience(this.provider, [
         { role: 'system', content: PATTERN_EXTRACTION_PROMPT },
         { role: 'user', content: reportText.slice(0, 8000) },
       ], { model: this.reviewModel, temperature: 0.1, maxTokens: 1000 });
+      if (!outcome.ok) {
+        log.warn(
+          { code: outcome.code, kind: outcome.kind, attempts: outcome.attempts, degraded: true },
+          '模式提取 LLM 降级（韧性层分类）',
+        );
+        return null;
+      }
 
-      const parsed = JSON.parse(result.content) as PatternExtractionResult;
+      const parsed = JSON.parse(outcome.result.content) as PatternExtractionResult;
       log.info({ patterns: parsed.patternsFound.length, updates: parsed.templateUpdates.length }, '模式提取完成');
       return parsed;
-    } catch (err: any) {
-      log.warn({ err: err.message }, '模式提取失败 — degraded');
+    } catch (err: unknown) {
+      log.warn({ err: errorMessage(err) }, '模式提取失败 — degraded');
       return null;
     }
   }

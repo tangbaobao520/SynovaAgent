@@ -461,8 +461,9 @@ export class ConversationEngine {
       loggerPrefix: 'agent',
     };
     // D487: 会话事件 store 注入 — launcher 经 ctx.sessionStore 落诊断事件流
-    // （铁律 39: 内联类型注入，EngineContext 接口不加 L5 字段）
-    (engineCtx as { sessionStore?: SessionStoreLike }).sessionStore = config.sessionStore;
+    // D810: 同一缝供 ToolLoopExecutor 落 LLM 重试事件（store/retry-projection 投影计数）；
+    // 类型内联结构（SessionStoreLike），EngineContext 仍不 import L5 具体类（铁律 39）
+    engineCtx.sessionStore = config.sessionStore;
     this.toolLoop = new ToolLoopExecutor(engineCtx);
     this.diagnosisLauncher = new DiagnosisLauncher(engineCtx, diagnosisEngine);
     this.ontologySyncer = new OntologySyncer(engineCtx);

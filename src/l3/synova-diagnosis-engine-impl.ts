@@ -19,6 +19,8 @@
  */
 import { createLogger } from '@synova/logger';
 import { getAllExpertIds } from '../agent/expert-config-loader';
+// D810: 韧性层分类错误（routes 装配点经 createResilientChatAdapter 产出）——仅取 code 用于事件路由
+import { LlmResilienceError } from '../llm/resilient-chat-adapter';
 import type {
   SynovaDiagnosisEngine,
   InitiatorProfile,
@@ -310,10 +312,13 @@ export class SynovaDiagnosisEngineImpl implements SynovaDiagnosisEngine {
         log.info({ teamId, contentLength: llmResult.content.length }, 'Phase 2: LLM 响应就绪');
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
-        log.error({ err: msg, teamId }, 'Phase 2: LLM 调用失败');
+        // D810: 韧性层分类码原样透传（TOOL_TIMEOUT / RATE_LIMITED / …）——消费方按 code 路由，
+        // 不解析 message（21-1 口径）；非韧性层错误保持 LLM_ERROR。
+        const code = err instanceof LlmResilienceError ? err.code : 'LLM_ERROR';
+        log.error({ err: msg, code, teamId }, 'Phase 2: LLM 调用失败');
         emit({
           type: 'error', timestamp: now(),
-          code: 'LLM_ERROR', message: `LLM 调用失败: ${msg}`, recoverable: false,
+          code, message: `LLM 调用失败: ${msg}`, recoverable: false,
         });
         degradedModules.push('phase2_llm');
 

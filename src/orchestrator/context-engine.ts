@@ -24,6 +24,8 @@ import { join, resolve } from 'path';
 import { createLogger } from '@synova/logger';
 import { ContextCompressor, type CompressionConfig, type SummaryProvider } from './context-compressor';
 import type { LLMMessage, LLMProvider } from '../providers/types';
+// D810 接线: 摘要 LLM 调用经韧性层（B-02 重试 / B-06 协作式超时，outcome 化不抛）
+import { callWithResilience } from '../llm/retry-middleware';
 
 const log = createLogger('orchestrator/context-engine');
 
@@ -300,16 +302,25 @@ export class ContextEngine {
       };
 
       // 构造 SummaryProvider 包装（provider.chat 作为摘要模型）
+      // D810 接线: 摘要调用同走韧性层（重试 + 截止超时）——失败以 outcome 返回，
+      // 本缝按 code 降级为空摘要（上层 compressor 走 truncate_oldest），不抛断压缩链。
       const summaryProvider: SummaryProvider = {
         consult: async (systemPrompt: string, userMessage: string) => {
           if (!this.provider) {
             return { content: '' };
           }
-          const result = await this.provider.chat([
+          const outcome = await callWithResilience(this.provider, [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userMessage },
           ], { temperature: 0.3, maxTokens: 300 });
-          return { content: result.content, model: result.model };
+          if (!outcome.ok) {
+            log.warn(
+              { code: outcome.code, kind: outcome.kind, attempts: outcome.attempts, degraded: true },
+              '摘要模型调用降级（韧性层分类）— 回落 truncate_oldest',
+            );
+            return { content: '' };
+          }
+          return { content: outcome.result.content, model: outcome.result.model };
         },
       };
 

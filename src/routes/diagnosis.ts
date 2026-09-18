@@ -26,6 +26,7 @@ import {
 import { createLogger } from '@synova/logger';
 import type { DiagnosisEngine, DiagnosisEvent, ConsultationResult } from '../l2-interfaces/diagnosis-engine';
 import { ToolRegistry } from '../agent/tools';
+import { createResilientChatAdapter } from '../llm/resilient-chat-adapter';
 // D489: consult 路由经 DiagnosisLauncher 落流（L1→L2 合法方向；SessionStoreLike 内联类型复用）
 import { DiagnosisLauncher, type SessionStoreLike } from '../agent/diagnosis-launcher';
 import type { EngineContext } from '../agent/engine-context';
@@ -271,35 +272,27 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
       log.warn({ err: meterErr, consultId }, 'TokenMeter 构造失败 — 计量降级（degraded，诊断继续）');
     }
     let lastUsage: ProviderUsageLike | undefined;
-    let lastMessages: Array<{ role: 'system' | 'user' | 'assistant' | 'tool'; content: string }> = [];
+    let lastMessages: Array<{ role: string; content: string }> = [];
 
     // D10: engine-core 退役 — 始终使用 Synova 自研引擎
     log.info({ consultId }, '使用 Synova 自研引擎');
+    // D810 接线: LLM 适配器经韧性层（重试 + 截止超时 + 分类码）；D598 四桶计量在缝内保留
+    const resilientLlm = createResilientChatAdapter(provider);
     const { createSynovaDiagnosisEngine } = await import('../l3/synova-diagnosis-engine-impl');
     const newEngine = createSynovaDiagnosisEngine(
       {
         async chat(messages, opts) {
-          const typedMessages = messages as Array<{ role: 'system' | 'user' | 'assistant' | 'tool'; content: string }>;
-          const result = await provider.chat(
-            typedMessages,
-            opts as Record<string, unknown> | undefined,
-          );
+          const result = await resilientLlm.chat(messages, opts);
           // D598: 逐次请求计量（usage 缺失 → missingUsageCount 降级计数，不阻断诊断）；
           // record 失败仅计量降级，LLM 调用结果不受影响（铁律 24/31）。
           try {
             meter?.record(result.usage, result.model);
             lastUsage = result.usage;
-            lastMessages = typedMessages;
+            lastMessages = messages;
           } catch (meterErr: unknown) {
             log.warn({ err: meterErr, consultId }, 'token 计量记录失败 — 计量降级（degraded，诊断继续）');
           }
-          return {
-            content: result.content || '',
-            toolCalls: result.toolCalls?.map(tc => ({
-              name: tc.function.name,
-              arguments: JSON.parse(tc.function.arguments) as Record<string, unknown>,
-            })),
-          };
+          return { content: result.content, toolCalls: result.toolCalls };
         },
       },
       {
@@ -397,6 +390,7 @@ router.post('/api/diagnosis/consult', async (req: Request, res: Response) => {
           phase: event.phase,
           label: event.label,
           message: event.message,
+          code: event.code, // D810: 稳定分类码透传到前端（铁律 31 降级信号传播）
           findings: event.findings,
           confidence: event.confidence,
           nodesCreated: event.nodesCreated,
