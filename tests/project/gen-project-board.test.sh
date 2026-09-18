@@ -352,6 +352,21 @@ if [ -f "$V1_REAL" ]; then
     && ok "真实仓库 lines=26" || no "真实仓库 lines 应 26"
   [ "$(jget "$OUT6" totals.backlog_points)" = "36" ] && ok "真实仓库 backlog_points=36（164-128）" \
     || no "backlog_points 应 36，实 $(jget "$OUT6" totals.backlog_points)"
+  # D809: 未接线三点必须判 pending_k3 且不计 passed（撤回生效的**真实仓库**读数）
+  PW_REAL="$("$PYBIN" - "$OUT6" <<'PY'
+import json,sys
+d=json.load(open(sys.argv[1],encoding='utf-8'))
+a={x['id']:x for l in d['lines'] for x in l['assertions']}
+print(",".join("%s:%s:%s" % (k,a[k]['status'],a[k]['ok']) for k in ('20-3','20-5','22-1')),
+      d['totals'].get('pending_k3'))
+PY
+)"
+  [ "$PW_REAL" = "20-3:pending_k3:False,20-5:pending_k3:False,22-1:pending_k3:False 3" ] \
+    && ok "真实仓库 20-3/20-5/22-1 = pending_k3 且不计 passed（pending_k3=3）" \
+    || no "真实仓库三点撤回读数错: $PW_REAL"
+  [ "$(jget "$OUT6" totals.v1_passed)" = "22" ] \
+    && ok "真实仓库 v1_passed=22（D809 撤回三点后；接线恢复即回 25）" \
+    || no "真实仓库 v1_passed 应 22，实 $(jget "$OUT6" totals.v1_passed)"
 else
   no "真实仓库缺 V1 断言表 ${V1_NAME}（上游 D793/PR#608 未并入）"
 fi
@@ -379,8 +394,9 @@ F = {pt: (b, f) for _, pt, b, f in re.findall(
     r"^\|\s*(\d+)\s*\|\s*([0-9]+-[0-9]+)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*$", sec1, re.M)}
 F["26-7"] = (re.search(r"^\|\s*14\s*\|\s*26（新）\s*\|\s*(.+?)\s*\|\s*$", signed, re.M).group(1), None)
 ap = doc.split("## 附录 A", 1)[1]
+# D809: kind 字符类补 `_`——pending_wiring 含下划线，漏掉会把该行静默丢弃并误报「冻证件不一致」
 cells = {pt: (d, k, f) for pt, d, v, k, f in re.findall(
-    r"^\| ([0-9]+-[0-9]+) \| (.+?) \| (.+?) \| ([a-z0-9\-]+) \| (.+?) \|$", ap, re.M)}
+    r"^\| ([0-9]+-[0-9]+) \| (.+?) \| (.+?) \| ([a-z0-9_\-]+) \| (.+?) \|$", ap, re.M)}
 bad = [pt for pt, (b, f) in F.items()
        if pt not in cells or cells[pt][0] != b or (f is not None and cells[pt][2] != f)]
 emit(not bad, "冻证件 §一/§二 条文+fail_when 与落库表逐字节全等（%d/%d%s）"
@@ -393,6 +409,86 @@ while IFS= read -r line; do
     *)     echo "    $line" ;;
   esac
 done < "$V7"
+
+# ═══ 组 ⑧ pending_wiring 语义（D809 · 假绿回退 / K3 D808 P0 B-02/B-05/B-06）═══
+# 口径: 证据列 = pending_wiring 表示「点亮已撤回，等接线」——① 永不与任何证据配对（fail-closed，
+#       即便存在 record_type=pending_wiring 的记录也不点亮）② 不计 v1_passed / 不进保鲜分桶
+#       ③ 计入 totals.pending_k3 与 lines[].pending_k3，断言级 status=pending_k3
+#       ④ 反向: 接线完成后把证据列改回 test → 下一轮派生自动恢复计分（不做不可逆删除）
+echo "⑧ pending_wiring → pending_k3（不计 passed；fail-closed；反向可复原）"
+F8="$TMPD/pending"
+mkdir -p "$F8/task-state" "$F8/docs/synova/product-lines/evidence" "$F8/docs/synova/project" "$F8/scripts/golden-scenarios/evidence"
+cat > "$F8/docs/synova/project/$V1_NAME" <<'MD'
+### 线1 未接线撤回
+- 价值: 夹具
+- DoD: 夹具
+- 底数: 0%
+- V1 断言:
+| ID | 断言（判定式） | verify | 证据 | fail_when |
+|---|---|---|---|---|
+| 1-1 | 已撤回但存量证据仍在 | v | pending_wiring | x |
+| 1-2 | 正常计分点 | v | test | x |
+| 1-3 | 撤回且无任何证据 | v | pending_wiring | x |
+MD
+cat > "$F8/docs/synova/product-lines/product-lines.yaml" <<'YML'
+version: 1.0
+lines:
+  - id: 1
+    name: "未接线撤回"
+    done_definition: "夹具"
+    acceptance_points:
+      - id: "1-1"
+        desc: "a"
+      - id: "1-2"
+        desc: "b"
+      - id: "1-3"
+        desc: "c"
+YML
+# 存量证据 = 假绿来源（test pass 在 1-1 上）；另造 pending_wiring 证据作 fail-closed 反例
+mk_evidence "$F8/docs/synova/product-lines/evidence/ev-test-1-1.json" test           "$(dago 1)" 1-1
+mk_evidence "$F8/docs/synova/product-lines/evidence/ev-test-1-2.json" test           "$(dago 1)" 1-2
+mk_evidence "$F8/docs/synova/product-lines/evidence/ev-pw-1-1.json"   pending_wiring "$(dago 1)" 1-1
+OUT8="$TMPD/pending.json"; run_sut "$F8" "$OUT8" >/dev/null 2>&1; RC8=$?
+[ "$RC8" = "0" ] && ok "pending_wiring 夹具 exit 0（撤回不是降级）" || no "夹具 exit $RC8"
+[ "$(jget "$OUT8" totals.v1_passed)" = "1" ] \
+  && ok "撤回点不计 passed: v1_passed=1（仅 1-2；存量 test 证据不再点亮 1-1）" \
+  || no "v1_passed 应 1，实 $(jget "$OUT8" totals.v1_passed)"
+[ "$(jget "$OUT8" totals.pending_k3)" = "2" ] \
+  && ok "pending_wiring 计为 pending_k3: totals.pending_k3=2" \
+  || no "totals.pending_k3 应 2，实 $(jget "$OUT8" totals.pending_k3)"
+[ "$(jget "$OUT8" lines.0.pending_k3)" = "2" ] \
+  && ok "线级 pending_k3=2（看板可按线显示）" || no "lines.0.pending_k3 应 2，实 $(jget "$OUT8" lines.0.pending_k3)"
+[ "$(jget "$OUT8" lines.0.assertions.0.status)" = "pending_k3" ] \
+  && ok "1-1 status=pending_k3" || no "1-1 status 应 pending_k3，实 $(jget "$OUT8" lines.0.assertions.0.status)"
+[ "$(jget "$OUT8" lines.0.assertions.0.ok)" = "False" ] \
+  && ok "1-1 ok=false（fail-closed：伪造 record_type=pending_wiring 也点不亮）" \
+  || no "1-1 ok 应 false，实 $(jget "$OUT8" lines.0.assertions.0.ok)"
+[ "$(jget "$OUT8" lines.0.assertions.1.status)" = "passed" ] \
+  && ok "1-2 status=passed（正常点不受影响）" || no "1-2 status 应 passed，实 $(jget "$OUT8" lines.0.assertions.1.status)"
+[ "$(jget "$OUT8" lines.0.assertions.2.status)" = "pending_k3" ] \
+  && ok "1-3 status=pending_k3（撤回但零证据 = 边界情形）" \
+  || no "1-3 status 应 pending_k3，实 $(jget "$OUT8" lines.0.assertions.2.status)"
+[ "$(jget "$OUT8" lines.0.assertions.0.freshness)" = "None" ] \
+  && ok "撤回点不进保鲜分桶（freshness=null）" || no "撤回点 freshness 应 null，实 $(jget "$OUT8" lines.0.assertions.0.freshness)"
+[ "$(jget "$OUT8" totals.freshness)" = '{"green": 1, "red": 0, "yellow": 0}' ] \
+  && ok "保鲜只数通过点: green=1" || no "freshness 应 green1，实 $(jget "$OUT8" totals.freshness)"
+[ "$(jget "$OUT8" totals.v1_verified)" = "0" ] \
+  && ok "撤回点不计 verified（无 k3 复核）" || no "v1_verified 应 0，实 $(jget "$OUT8" totals.v1_verified)"
+# 反向: 接线完成 → 证据列改回 test（python 改写，跨平台，不用 sed -i）
+"$PYBIN" - "$F8/docs/synova/project/$V1_NAME" <<'PY'
+import io,sys
+p=sys.argv[1]; t=io.open(p,encoding='utf-8').read()
+io.open(p,'w',encoding='utf-8').write(t.replace('| 1-1 | 已撤回但存量证据仍在 | v | pending_wiring | x |',
+                                               '| 1-1 | 已撤回但存量证据仍在 | v | test | x |'))
+PY
+OUT8B="$TMPD/pending-reverse.json"; run_sut "$F8" "$OUT8B" >/dev/null 2>&1
+[ "$(jget "$OUT8B" totals.v1_passed)" = "2" ] \
+  && ok "反向: 1-1 改回 test → v1_passed 1→2（接线完成即复原，非不可逆删除）" \
+  || no "反向 v1_passed 应 2，实 $(jget "$OUT8B" totals.v1_passed)"
+[ "$(jget "$OUT8B" totals.pending_k3)" = "1" ] \
+  && ok "反向: pending_k3 2→1（仅剩 1-3）" || no "反向 pending_k3 应 1，实 $(jget "$OUT8B" totals.pending_k3)"
+[ "$(jget "$OUT8B" lines.0.assertions.0.status)" = "passed" ] \
+  && ok "反向: 1-1 status=passed" || no "反向 1-1 status 应 passed，实 $(jget "$OUT8B" lines.0.assertions.0.status)"
 
 echo
 echo "PASS=$PASS FAIL=$FAIL"

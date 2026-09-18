@@ -45,6 +45,17 @@
              保鲜     = 证据龄 ≤7🟢 / 8–14🟡 / >14🔴；只对"已通过"的断言分桶计数
              阻塞     = 仅当 blocked{reason,since,needs} 三要素齐全才计入；days = today - since
              backlog  = product-lines.yaml 验收点总数 - V1 断言数（V1 外不参与交付度）
+             pending_wiring（D809 · 假绿回退，依据 K3 D808 审计 P0 B-02/B-05/B-06 未接线）:
+               断言表「证据」列写 `pending_wiring` = 该点的点亮**已撤回，等接线完成**。
+               判据（四条，缺一不可）:
+                 ① fail-closed —— 永不与任何证据配对：即便仓库里存在 record_type=pending_wiring
+                    的证据记录也**不点亮**（它不是证据类型，是撤回标记）
+                 ② 不计入 v1_passed / v1_verified，也不进保鲜分桶（未点亮 = 无保鲜可言）
+                 ③ 显式归类并计数 —— 断言级 status="pending_k3"，lines[].pending_k3 与
+                    totals.pending_k3 记数（撤回要看得见，不能沉进「无证据」里）
+                 ④ 反向可复原 —— 接线完成后把证据列改回真实证据类型（如 test），
+                    下一轮派生自动恢复计分（撤回不是删除，判据源可回滚）
+             断言 status 三态: passed（点亮）/ pending_k3（撤回待接线）/ pending（未点亮，无匹配证据）
 @determinism — 同输入连续两次运行，除 generated_at / git_head 外逐键相等（测试组 ⑤）
 
 红线: 不修改 calc-progress.py；不写回 product-lines.yaml；不碰 scripts/audit/**；零三方依赖。
@@ -69,6 +80,15 @@ GENERATED_BY = "gen-project-board.py"
 
 # 证据类型优先级（派单 §B.3）: k3 > test > scenario > founder-demo
 EVIDENCE_PRIORITY = ("k3", "test", "scenario", "founder-demo")
+
+# D809: 未接线撤回标记 —— 不是证据类型，是「点亮已撤回、等接线」的显式状态
+# （依据 K3 D808 审计 P0 B-02/B-05/B-06 未接线；语义见文件头 @contract）
+PENDING_WIRING_KIND = "pending_wiring"
+PENDING_WIRING_STATUS = "pending_k3"
+
+# 断言 status 三态（互斥，全量覆盖）
+STATUS_PASSED = "passed"
+STATUS_PENDING = "pending"
 
 # 保鲜分桶边界（派单 §B.3）: ≤7 🟢 / 8–14 🟡 / >14 🔴
 FRESH_GREEN_MAX_DAYS = 7
@@ -459,6 +479,7 @@ def build_ledger(args):
     totals_fresh = {"green": 0, "yellow": 0, "red": 0}
     v1_passed = 0
     v1_verified = 0
+    v1_pending_k3 = 0
     out_lines = []
 
     for ln in v1_lines:
@@ -468,16 +489,21 @@ def build_ledger(args):
         assertions = []
         line_passed = 0
         line_verified = 0
+        line_pending_k3 = 0
 
         for a in ln["assertions"]:
-            cands = ev_index.get(a["id"], [])
-            matched = [c for c in cands if c["kind"] == a["kind"]] if a["kind"] else []
+            # D809: pending_wiring = 撤回标记，不是证据类型 → 短路配对（fail-closed，见文件头 @contract）
+            pending_wiring = a["kind"] == PENDING_WIRING_KIND
+            cands = [] if pending_wiring else ev_index.get(a["id"], [])
+            matched = [] if pending_wiring else (
+                [c for c in cands if c["kind"] == a["kind"]] if a["kind"] else [])
             ok = bool(matched)
             primary = pick_primary(matched) if matched else None
             age_days = (today - primary["date"]).days if (primary and primary["date"]) else None
             bucket = freshness_bucket(age_days) if ok else None
             # verified = 通过 且 另有 k3 独立复核 PASS（禁自我审计）
             verified = bool(ok and any(c["kind"] == "k3" for c in cands))
+            status = PENDING_WIRING_STATUS if pending_wiring else (STATUS_PASSED if ok else STATUS_PENDING)
 
             if ok:
                 line_passed += 1
@@ -488,6 +514,9 @@ def build_ledger(args):
             if verified:
                 line_verified += 1
                 v1_verified += 1
+            if pending_wiring:
+                line_pending_k3 += 1
+                v1_pending_k3 += 1
 
             assertions.append({
                 "id": a["id"],
@@ -495,6 +524,7 @@ def build_ledger(args):
                 "verify": a["verify"],
                 "kind": a["kind"],
                 "ok": ok,
+                "status": status,
                 "evidence": [rel_to(c["path"], root) for c in matched],
                 "age_days": age_days,
                 "freshness": bucket,
@@ -514,6 +544,7 @@ def build_ledger(args):
             "v1_total": len(ln["assertions"]),
             "v1_passed": line_passed,
             "v1_verified": line_verified,
+            "pending_k3": line_pending_k3,
             "points_total": meta.get("points_total"),
             "freshness": line_fresh,
             "blocked": line_blocked,
@@ -544,6 +575,8 @@ def build_ledger(args):
         "v1_total": v1_total,
         "v1_passed": v1_passed if v1_total is not None else None,
         "v1_verified": v1_verified if v1_total is not None else None,
+        # D809: 撤回待接线点数（不计 passed；撤回要看得见，见文件头 @contract）
+        "pending_k3": v1_pending_k3 if v1_total is not None else None,
         "delivery_pct": round(100.0 * v1_passed / v1_total, 1) if v1_total else None,
         "verify_pct": round(100.0 * v1_verified / v1_passed, 1) if v1_passed else None,
         "freshness": totals_fresh,
