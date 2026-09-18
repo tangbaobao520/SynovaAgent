@@ -1,0 +1,36 @@
+{
+  "task_id": "D813",
+  "title": "tests/** 类型网 ratchet（卡 C）：新增 check-test-type-net.sh + 冻结基线",
+  "status": "claimed",
+  "risk": "high",
+  "spec": "派单即规格：docs/synova/coordination/派单-批八-20260918.md §B/D813（含 CTO 实测命令与原始输出）",
+  "write_set": [
+    "scripts/control-tower/check-test-type-net.sh",
+    "tests/control-tower/check-test-type-net.test.sh",
+    "tests/control-tower/test-type-net-baseline.txt",
+    "scripts/pre-commit-check.sh",
+    "task-state/D813.json",
+    ".claude/task-briefs/2026-09-18-D813-测试类型网.md",
+    "memory/notes/proposed/2026-09-18-D813-test-type-net.md"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-18",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "夹具「基线内 N 处 → exit 0」/「新增 1 处 as never → 非零且点名 文件:行:模式」/「基线缺失 → 显式 degraded + 非零」三路径测试全绿",
+    "SYNO_CI=1 bash scripts/pre-commit-check.sh 对新增违规返回非零（CI 硬阻断生效）",
+    "--freeze 只打印当前计数、不写基线（基线由 CTO 签署）",
+    "src/ + packages/ 的零容忍口径不变（本卡不动其判定）",
+    "改动 scripts/pre-commit-check.sh 前已加载 ctrl-tower-change 技能，且不改变其余 12 组检查的语义"
+  ],
+  "next": "① 加载 ctrl-tower-change 技能 ② 实现扫描脚本 + 三路径测试 ③ 接线 pre-commit-check.sh ④ 首次 --freeze 输出交 CTO 签署基线 ⑤ 汇报",
+  "note": "CTO 实测（2026-09-18）：门禁取文件集为 git diff -- src/ packages/ ':(exclude)**/*.test.ts' … → 仓库根 tests/** 不在面内。暂存 tests/_probe_type_net/probe.test.ts（含 as never + as unknown as string）时过滤器命中 0 个文件；同内容放 src/_probe/probe.ts 命中 1；跑真门禁组 1 输出「✅ as any / as never / as unknown as 零容忍」= 放行。"
+}
