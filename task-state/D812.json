@@ -1,0 +1,36 @@
+{
+  "task_id": "D812",
+  "title": "派单引用小节存在性门禁（C4）：pre-dispatch-check 增检查 ⑪",
+  "status": "claimed",
+  "risk": "medium",
+  "spec": "派单即规格：docs/synova/coordination/派单-批八-20260918.md §B/D812（含 CTO 复现证据）",
+  "write_set": [
+    "scripts/control-tower/pre-dispatch-check.sh",
+    "tests/control-tower/pre-dispatch-check.test.sh",
+    "task-state/D812.json",
+    ".claude/task-briefs/2026-09-18-D812-引用锚点门禁.md",
+    "memory/notes/proposed/2026-09-18-D812-dispatch-ref-anchor-gate.md"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-18",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [
+    "D778"
+  ],
+  "blocked": "前置：#574（D778 派单复核门禁）合入后才可开工——同一文件 pre-dispatch-check.sh，必须串行",
+  "target": "2026-W38",
+  "acceptance_points": [
+    "含假引用（§四 指向不存在小节）的文档 → bash scripts/control-tower/pre-dispatch-check.sh <doc> exit 1 且点名 文件:行:引用",
+    "合法文档（引用与标题均存在）→ exit 0",
+    "目标文件不存在 / 解析歧义 → 显式 degraded 行 + 非零（禁静默当绿，铁律 11）",
+    "tests/control-tower/pre-dispatch-check.test.sh 三类用例 + 1 真实反例夹具全绿",
+    "不改变既有 ①④⑥⑩⑨② 检查的语义与退出码"
+  ],
+  "next": "① 等 #574 合入 ② 读 main 版 pre-dispatch-check.sh 与 tests 基线 ③ 加检查 ⑪ + 测试 ④ 用 D808 指令包原文做反例跑通 ⑤ 汇报",
+  "note": "CTO 亲测证据：docs/synova/coordination/编码指令-D808后续-20260917.md:24 写「与本文 §四 原文比对」，该文档标题仅 ## 一（L9）/ ## 二（L49）→ K3 D808 审计判 P1。同类第 2 次（9-17 另一次引用未写就小节）→ 属红线「同类第二次 = 防线系统性失效」。"
+}
