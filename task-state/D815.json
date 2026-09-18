@@ -1,0 +1,32 @@
+{
+  "task_id": "D815",
+  "title": "线10 资本循环全链路独立复核（第一条 100% 线收官，10-8 门槛）",
+  "status": "claimed",
+  "risk": "medium",
+  "spec": "派单即规格：docs/synova/coordination/派单-批九-20260918.md §A/D815",
+  "write_set": [
+    "docs/synova/audit-reports/2026-09-18-K3-line10.md",
+    "docs/synova/product-lines/evidence/k3-line10-2026-09-18.json",
+    "task-state/D799.json",
+    "task-state/D815.json"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-18",
+  "updated_by": "synova-cto",
+  "domain": "k3",
+  "owner": "k3",
+  "milestone": "M1 产品可用",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "10-1/10-2/10-3/10-4/10-6 逐点复核：证据 + 代码接线（不接受测试冒充生产接线），每点附命令 + 原始输出",
+    "10-5 告警→工单→推送链路必须有生产调用点；未接线如实判 NOT-PASS 并列缺口",
+    "PASS 时绑定 10-8：docs/synova/product-lines/evidence/k3-line10-2026-09-18.json（kind: k3）",
+    "gen-project-board.py 重算后线10 = 6/6（或如实给出未达点）"
+  ],
+  "next": "① 读 origin/main 的 product-lines.yaml 线10 六点与证据 ② 实跑 GS-03（含负向用例）③ grep 生产调用点 ④ 出报告 + 回填 D799.audit ⑤ 若 PASS 落 k3 证据并重算账本",
+  "note": "线10 现状 5/6（main 5cc619ac 实测）；未过点 = 10-8（k3_only，100% 门槛）。已合 D803：PR #624（win 读侧契约守卫 + 跑道语义修复）、PR #625（mac GS-03 双相位 7→9 断言 + 证据落点）。"
+}
