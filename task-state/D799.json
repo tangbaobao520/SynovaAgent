@@ -1,0 +1,25 @@
+{
+ "status": "claimed",
+ "spec": "待 dev-doc 出规格（A 类，必须）",
+ "impl": null,
+ "audit": null,
+ "fix_task_id": null,
+ "updated_at": "2026-09-17",
+ "updated_by": "synova-cto",
+ "domain": "mac",
+ "target": "2026-W38",
+ "task_id": "D799",
+ "title": "产品线第一条 100%：线 10 资本循环（V1 6/6）",
+ "owner": "mac-coding",
+ "milestone": "M1 产品可用",
+ "depends_on": [
+  "D797"
+ ],
+ "blocked": null,
+ "acceptance_points": [
+  "线10 v1_passed==v1_total==6",
+  "K3 复核 PASS",
+  "反向删证据即回退"
+ ],
+ "next": "按 K3 转绿路径修 manifest/属性契约/跑道计算/不误报；Win 真机证据挂账"
+}
