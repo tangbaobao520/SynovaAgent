@@ -25,6 +25,10 @@ import { SessionStore } from '../store/session-store';
 // SessionStore.prototype.appendEvent，生产 8+ 构造点零修改自动获得投影 drive（import 即接线）。
 // 无此行 = wrap 从未触发 = 投影死代码（铁律 0-2 接线）。
 import '../store/session-projection';
+// M3 修复（D810）：副作用导入——retry-projection 模块加载时经 registerProjection 注册
+// llm_retry 计数单元；无此行 = 投影单元从未注册（appendEvent 落的重试事件无人投影）。
+// 与上行 session-projection 同范式（import 即接线，铁律 0-2）。
+import '../store/retry-projection';
 import { PhaseStateMachine } from '../orchestrator/phase-state-machine';
 import { createOrchestrationWiring, type OrchestrationWiring } from '../orchestrator/wiring';
 import { ToolRegistry } from '../agent/tools';

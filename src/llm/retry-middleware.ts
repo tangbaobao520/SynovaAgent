@@ -170,6 +170,66 @@ export interface LlmRetryEvent {
   readonly message: string;
 }
 
+// ═══ 重试事件落盘缝（D810; store/retry-projection 的 apply 读同一 kind 常量）═══
+
+/**
+ * D500 事件流载荷 kind——**单一事实源**。
+ * 投影侧（src/store/retry-projection.ts）读此常量匹配；写入侧（本文件 appendRetryEvent）用它构造。
+ * 改这里即改两端（防 M7 双源漂移）。
+ */
+export const RETRY_EVENT_KIND = 'llm_retry';
+
+/**
+ * 落盘缝（结构契约，D810）: 任何提供 `appendEvent(sessionId, 'system', payload)` 的对象都可作 sink
+ * （`SessionStore` / `SessionStoreLike` 结构可赋值——方法参数双变）。
+ * 为什么在 src/llm 而非 src/store: 写入方是 L2 LLM 调用链，**铁律 39 禁 L2→L5 静态 import**；
+ * 本模块属共享基础设施层（非 L1-L5 任一层），L2 经已注入的结构化 store 调用不产生跨层依赖。
+ */
+export interface RetryEventSink {
+  appendEvent(
+    sessionId: string,
+    eventType: 'system',
+    payload: unknown,
+  ): { ok: true; seq: number } | { ok: false; degraded: true; error: string };
+}
+
+/** appendRetryEvent 输入（attempt/delayMs/mode 可选——最小必需 provider+code） */
+export interface RetryEventPayload {
+  provider: string;
+  code: string;
+  attempt?: number;
+  delayMs?: number;
+  mode?: 'chat' | 'stream';
+}
+
+/**
+ * 重试事件落盘（onRetry 回调 → D500 事件流）。
+ * @input  — sink（结构化 appendEvent 缝）+ sessionId + payload（provider/code 非空）
+ * @output — sink.appendEvent 结果透传 { ok:true, seq } | { ok:false, degraded:true, error }
+ * @degraded — 校验失败不落盘，显式 error（铁律 24: 不静默吞）；调用方 log.warn，不阻断重试链
+ */
+export function appendRetryEvent(
+  sink: RetryEventSink,
+  sessionId: string,
+  event: RetryEventPayload,
+): { ok: true; seq: number } | { ok: false; degraded: true; error: string } {
+  if (typeof event?.provider !== 'string' || event.provider.length === 0) {
+    return { ok: false, degraded: true, error: 'retry event provider must be a non-empty string' };
+  }
+  if (typeof event.code !== 'string' || event.code.length === 0) {
+    return { ok: false, degraded: true, error: 'retry event code must be a non-empty string' };
+  }
+  return sink.appendEvent(sessionId, 'system', {
+    kind: RETRY_EVENT_KIND,
+    provider: event.provider,
+    code: event.code,
+    attempt: event.attempt,
+    delayMs: event.delayMs,
+    mode: event.mode,
+    at: new Date().toISOString(),
+  });
+}
+
 /** 韧性入口选项 = 策略片段 + 超时 + 上游信号 + 重试回调 */
 export interface ResilienceOptions extends RetryPolicyConfig {
   /** provider 策略注册名（缺省用 provider.name） */
@@ -180,7 +240,12 @@ export interface ResilienceOptions extends RetryPolicyConfig {
   onRetry?: (event: LlmRetryEvent) => void;
 }
 
-/** 剥离韧性专属键，只透传 ChatOptions（不向 provider 泄漏策略字段） */
+/**
+ * 剥离韧性专属键，只透传 ChatOptions（不向 provider 泄漏策略字段）。
+ * D810 修复: 白名单补齐 tools/cacheConfig——原实现静默丢弃 `tools`，
+ * 韧性入口一旦接线，工具循环会退化为"永不请求工具"（行为回归，铁律 11 静默降级同族）。
+ * 枚举 ChatOptions 全字段（新增字段须同步此处，否则同样静默丢弃）。
+ */
 function pickChatOptions(options: (ChatOptions & ResilienceOptions) | undefined, signal: AbortSignal): ChatOptions {
   const chat: ChatOptions = { signal };
   if (options === undefined) return chat;
@@ -188,6 +253,8 @@ function pickChatOptions(options: (ChatOptions & ResilienceOptions) | undefined,
   if (options.temperature !== undefined) chat.temperature = options.temperature;
   if (options.maxTokens !== undefined) chat.maxTokens = options.maxTokens;
   if (options.reasoningEffort !== undefined) chat.reasoningEffort = options.reasoningEffort;
+  if (options.tools !== undefined) chat.tools = options.tools;
+  if (options.cacheConfig !== undefined) chat.cacheConfig = options.cacheConfig;
   return chat;
 }
 
