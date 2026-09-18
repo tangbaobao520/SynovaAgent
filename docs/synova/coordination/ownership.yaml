@@ -112,6 +112,20 @@ rules:
   - glob: "docs/synova/product-lines/**"
     owner: "mac"
     source: "TASK-ROUTING.md L32"
+  # D806 增补（2026-09-18）: 26 线完成度看板工具链的 project/ 三路径。
+  #   D793/D795 新建 scripts/project + tests/project + docs/synova/project 时漏补本表，
+  #   落 `**` 兜底被判 win —— 与 DIVISION-CHARTER-v4 §四「26 线产品完成度 → Mac DSH
+  #   （scripts/product-lines/ + 进度页）」矛盾，且兄弟路径 scripts/product-lines/** 与
+  #   docs/synova/product-lines/** 均已明列 mac。同工具链同域，补齐缺口（不改任何既有归属）。
+  - glob: "scripts/project/**"
+    owner: "mac"
+    source: "DIVISION-CHARTER-v4 §四 26 线产品完成度=Mac DSH（D795 派生器 gen-project-board.py）"
+  - glob: "tests/project/**"
+    owner: "mac"
+    source: "派生: 同 scripts/project/**（测试随被测工具归属，同 tests/control-tower/** 惯例）"
+  - glob: "docs/synova/project/**"
+    owner: "mac"
+    source: "DIVISION-CHARTER-v4 §四（26 线 V1 验收标准 + ledger.json + 可视版 = D793/D795 产物）"
   - glob: ".github/workflows/**"
     owner: "mac"
     source: "TASK-ROUTING.md L34 场景回归 CI、产品进度 CI"
