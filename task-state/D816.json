@@ -1,0 +1,37 @@
+{
+  "task_id": "D816",
+  "title": "控制塔卫生：alloc-task-id 跨 worktree 取号 + .claude/bypass.log 停止入库",
+  "status": "claimed",
+  "risk": "high",
+  "spec": "派单即规格：docs/synova/coordination/派单-批九-20260918.md §A/D816（含两条实测复现）",
+  "write_set": [
+    "scripts/control-tower/alloc-task-id.sh",
+    "scripts/control-tower/check-bypass-log.sh",
+    ".gitignore",
+    "tests/control-tower/alloc-task-id.test.sh",
+    "tests/control-tower/check-bypass-log.test.sh",
+    "task-state/D816.json",
+    ".claude/task-briefs/2026-09-18-D816-控制塔卫生.md",
+    "memory/notes/proposed/2026-09-18-D816-control-tower-hygiene.md"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-18",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "取号夹具：两个 worktree 各跑一次 alloc-task-id.sh → 必须得到不同号（当前实现会撞号，先红后绿）",
+    "git ls-files .claude/bypass.log 为空 + .gitignore 含该路径",
+    "依赖 bypass.log 的门禁（bypass 检测 / D331 对账）改为从工作区读取或有替代落点，相关测试全绿",
+    "连续两次提交后 git diff 不再包含 .claude/bypass.log",
+    "改动 scripts/control-tower/* 前已加载 ctrl-tower-change 技能；不改变任何门禁判定口径"
+  ],
+  "next": "① 加载 ctrl-tower-change ② 修 alloc-task-id 扫描面（全 refs + 全 worktree）③ git rm --cached bypass.log + .gitignore + 门禁读取路径调整 ④ 两缺陷各写先红后绿夹具 ⑤ 汇报",
+  "note": "两缺陷均为实测：① D810 session 首跑取号得 D809，与 origin/fix/d809-pending-wiring 撞号（CTO 用 git for-each-ref + worktree list 复核）② 今日 #614 因 .claude/bypass.log 三次变 dirty（git merge-tree 零冲突），D708 门禁本就将其列为 [builtin] 豁免 → 该文件不属任何写集。"
+}

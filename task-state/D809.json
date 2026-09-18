@@ -1,0 +1,55 @@
+{
+  "task_id": "D809",
+  "title": "假绿回退：20-3/20-5/22-1 证据标 pending_wiring（不计 passed）",
+  "status": "impl_done",
+  "spec": "docs/synova/project/26线-V1验收标准-v0.2-20260917.md 附录 A（判据源）+ scripts/project/gen-project-board.py 文件头 @contract（派生口径）",
+  "write_set": [
+    ".claude/task-briefs/2026-09-18-D809-假绿回退-pending-wiring.md",
+    "docs/synova/project/26线-V1验收标准-v0.2-20260917.md",
+    "docs/synova/project/ledger.json",
+    "memory/notes/proposed/2026-09-18-d809-pending-wiring.md",
+    "scripts/project/gen-project-board.py",
+    "task-state/D809.json",
+    "tests/project/gen-project-board.test.sh"
+  ],
+  "impl": {
+    "branch": "fix/d809-pending-wiring",
+    "base": "origin/main@9af013e4",
+    "change": "① 判据源：附录 A 三条证据列 test → pending_wiring（20-3/20-5/22-1，依据 K3 D808 审计 P0 B-02/B-05/B-06 未接线）+ 头注映射同步 + 附录 B 记撤回后哈希 df11b86c（D806 落库态 97288654 留档）② 派生器：pending_wiring 一等非证据态（fail-closed 永不配对）→ 断言 status=pending_k3 / 三态 passed|pending_k3|pending，lines[].pending_k3 + totals.pending_k3 计数，不计 v1_passed/v1_verified/保鲜 ③ 重跑 ledger.json ④ 测试组⑦ kind 正则补 `_` + 新增组⑧（四路径：存量证据不点亮 / fail-closed 反例 / 零证据边界 / 反向复原）",
+    "files": [
+      "docs/synova/project/26线-V1验收标准-v0.2-20260917.md",
+      "scripts/project/gen-project-board.py",
+      "tests/project/gen-project-board.test.sh",
+      "docs/synova/project/ledger.json",
+      "memory/notes/proposed/2026-09-18-d809-pending-wiring.md"
+    ],
+    "verify": {
+      "回收生效": "ledger.json totals: v1_passed 25→22 / v1_verified 13→11 / freshness.green 18→15 / delivery_pct 19.5→17.2 / pending_k3=3；分母 128 与 backlog 36 不变",
+      "三点归类": "python3 读 ledger.json：20-3/20-5/22-1 均 status=pending_k3、ok=false、freshness=null、kind=pending_wiring",
+      "反向可复原": "测试组⑧夹具内把 1-1 证据列改回 test → v1_passed 1→2、pending_k3 2→1、status passed（接线完成后同型操作即回 25）",
+      "fail-closed": "夹具内造 record_type=pending_wiring 的 pass 证据 → 该点仍 ok=false（pending_wiring 不是证据类型）",
+      "自测": "bash tests/project/gen-project-board.test.sh → PASS=81 FAIL=0",
+      "冻证件零改动": "签字区 sha256[:8]=c11841e6 复现；§一/§二 14 条条文+fail_when 与落库表逐字节全等（测试组⑦）",
+      "证据零改动": "git diff --name-only origin/main...HEAD 不含 docs/synova/product-lines/evidence/**",
+      "红线": "scripts/audit/**、src/** 零改动；calc-progress.py / product-lines.yaml / 看板插件零改动"
+    }
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-18",
+  "updated_by": "DeepSeek Harness",
+  "domain": "mac",
+  "owner": "dsh",
+  "milestone": "M0 项目管理基建",
+  "depends_on": ["D806", "D808"],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "20-3 / 20-5 / 22-1 三点点亮撤回：v1_passed 25 → 22，pending_k3 = 3",
+    "接线完成后把证据列改回 test 即恢复 25（反向可复原，不做不可逆删除）",
+    "pending_wiring 永不与证据配对（fail-closed）；撤回不进保鲜分桶",
+    "冻证件 §〇–§六 逐字节未动（签字哈希 c11841e6 复现）；存量证据记录零改动"
+  ],
+  "next": "① push + 开 PR（CI 全绿后由 CTO 合并）② 待派：看板前端渲染 status=pending_k3（dsh/plugins/synova-dashboards/**，当值另一 session，撞车回避）③ 待派：另一条判分链 calc-progress.py 是否同步撤回（20-5/22-1 在该链读数）④ 恢复路径：卡 3（4 文件锚点按 M3 重写）落地后把三点证据列改回 test",
+  "note": "本单只改「判据源 + 派生器」，不删任何历史证据：假绿的根因是判据源缺『已交付但未接线』这一态，故补态而非改历史。派单依据（K3 D808 P0 B-02/B-05/B-06）本机独立复核结果如实分列：B-02（retry-middleware 零调用方）与 22-1（无不变量注册表）物理可见未接线；20-3/20-5 的组件层有生产调用点，但 M3 锚点仍为 Win 旧路径（D808 §11.3 ③ 具名 4 文件之一），按派单判未接线。"
+}
