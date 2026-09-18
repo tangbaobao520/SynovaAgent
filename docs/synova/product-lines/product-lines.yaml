@@ -501,7 +501,7 @@ lines:
         note: "K3：L5 无 ERP 连接器"
       - id: "10-2"
         desc: "属性契约对齐（cashBalance↔cash 等 snake/camel）"
-        evidence: ["scenario:GS-03"]
+        evidence: ["scenario:GS-03", "test:l4-contract"]
         status: uncommitted
         note: "K3：属性契约断裂"
       - id: "10-3"

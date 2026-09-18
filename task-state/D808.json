@@ -24,10 +24,16 @@
       "红线": "git diff --name-only：scripts/audit/**、src/**、scripts/** 零命中；仅 1 文档 + 簿记"
     }
   },
-  "audit": null,
+  "audit": {
+    "verdict": "CONDITIONAL PASS",
+    "report": "docs/synova/audit-reports/2026-09-18-K3-D808.md",
+    "at": "2026-09-18",
+    "by": "k3",
+    "note": "0×P0 / 1×P1 / 4×P2。L1-A1/A3、L2-B1..B5、L3-C1..C3、L4-D1/D2 全部以 origin/main@715a7daa 复现通过；A2 判 NOT-AUDITABLE——指令包引用的 §四 不存在且裁定原文未落库，「byte 级逐字」在 git 内仅可自证（内部一致性 K3 已证：引文块=附录 C heredoc byte 级相同，stub V02 实跑 2/1），修复=裁定原文落独立文件后按附录 C 补对表。已知观察两件均判实锤（D202 假矛盾 external-auditor.sh:244-252 + dims 非法 JSON；pre-push 二值门禁 pre-push-check.sh:276-280），属控制塔工具域，不阻断本卡。"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-17",
-  "updated_by": "synova-cto",
+  "updated_at": "2026-09-18",
+  "updated_by": "k3",
   "domain": "mac",
   "owner": "cto",
   "milestone": "M0 项目管理基建",

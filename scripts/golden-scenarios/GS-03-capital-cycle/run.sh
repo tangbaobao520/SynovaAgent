@@ -66,7 +66,36 @@ PORT="$(python3 -c "import json;print(json.load(open('$BOOT_STATE'))['port'])")"
 BASE="http://127.0.0.1:$PORT"
 echo "[GS-03] 服务就绪: $BASE"
 
-# 3. inject fixture（erp-standard 契约，走 field-mappings）
+# 3. 负向相位（D803 切片④）: **空库先跑哨兵**——无数据必须诚实降级、绝不误报 critical（10-6）。
+#    必须在 inject 之前: 注入后 Financial 节点已存在，"空库"这一半状态就永久消失了。
+#    一份 fresh-db 天然自带此相位（D-2 决策: 同场景双相位，不另造 GS-XX）；形态对齐 GS-05-alert-closure 既有先例。
+#    同时它是 manifest 挂载回归守卫（S4 行5）: 降级 warning finding 只有 this.manifest 挂载后才产出。
+curl -sS -X POST "$BASE/api/sentinel/run/cash-runway" \
+  > "$DATA_DIR/run-response-empty.json" 2>&1 || true
+echo "[GS-03] 空库触发响应: $(cat "$DATA_DIR/run-response-empty.json")"
+
+# 3b. 跨分支守卫相位（CTO 2026-09-17 批准加固①）: 注入「只有营业收入、无现金」一行 → 跑哨兵。
+#     口径: 现金属性**不存在**（≠ 值为 0）时必须降级，不得误报「现金流危急」。
+#     本相位同时是 PR-1(win) 修复存在性的物理探测器:
+#       · win 修复在   → compute 走 pickPresentNumber 存在性守卫 → degraded warning，本相位绿
+#       · win 修复不在 → totalCash=0/burn=0 → runway 0 ≤ critical 6 → 误报 critical → 本相位红
+#     目的（真实作用范围，勿夸大）: **CI 不跑 GS 场景**（.github/workflows/ 实测无 GS-0* 调用），
+#       故本守卫不在 PR CI 上发红；它在「产出证据的每一个地方」发红——
+#       D774 rerun-evidence（每周/重跑）、K3 10-8 独立复核、本地复跑。
+#       效果: 只合 mac（缺 win 修复）时，10-6 记为 **fail** 而非假 pass → 账本 v1_passed 掉到 4 而非虚绿 5。
+#       —— 假绿被挡在证据层，不依赖人记得读 PR 描述。
+printf '%s' '[{"营业收入":500000,"期间":"2026-Q1"}]' > "$DATA_DIR/nocash-rows.json"
+curl -sS -X POST "$BASE/api/data/upload" \
+  -H 'Content-Type: application/json' \
+  -H "$AUTH_HEADER" \
+  -d "{\"mapping\":\"erp-standard\",\"rows\":$(cat "$DATA_DIR/nocash-rows.json"),\"graph\":\"default\"}" \
+  > "$DATA_DIR/upload-response-nocash.json" 2>&1 || true
+curl -sS -X POST "$BASE/api/sentinel/run/cash-runway" \
+  > "$DATA_DIR/run-response-nocash.json" 2>&1 || true
+echo "[GS-03] 无现金相位注入: $(cat "$DATA_DIR/upload-response-nocash.json")"
+echo "[GS-03] 无现金相位触发: $(cat "$DATA_DIR/run-response-nocash.json")"
+
+# 4. inject fixture（erp-standard 契约，走 field-mappings）
 curl -sS -X POST "$BASE/api/data/upload" \
   -H 'Content-Type: application/json' \
   -H "$AUTH_HEADER" \
@@ -74,12 +103,12 @@ curl -sS -X POST "$BASE/api/data/upload" \
   > "$DATA_DIR/upload-response.json" 2>&1 || true
 echo "[GS-03] 注入响应: $(cat "$DATA_DIR/upload-response.json")"
 
-# 4. 触发 cash-runway 哨兵（阈值告警）
+# 5. 正相位: 触发 cash-runway 哨兵（阈值告警）
 curl -sS -X POST "$BASE/api/sentinel/run/cash-runway" \
   > "$DATA_DIR/run-response.json" 2>&1 || true
 echo "[GS-03] 触发响应: $(cat "$DATA_DIR/run-response.json")"
 
-# 5. 断言（expect.json 模板 → 注入 DATA_DIR 实际路径）
+# 6. 断言（expect.json 模板 → 注入 DATA_DIR 实际路径）
 sed "s|__DATA_DIR__|$DATA_DIR|g" "$SCRIPT_DIR/expect.json" > "$SCRIPT_DIR/expect.runtime.json"
 
 cd "$REPO_ROOT"
