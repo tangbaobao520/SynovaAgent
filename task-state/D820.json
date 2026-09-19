@@ -16,7 +16,7 @@
   "fix_task_id": null,
   "updated_at": "2026-09-18",
   "updated_by": "synova-cto",
-  "domain": "mac",
+  "domain": "win",
   "owner": "mac-coding",
   "milestone": "M1 产品可用",
   "depends_on": [],
@@ -30,5 +30,8 @@
     "反向：未删会话的报告仍可正常列出（不误删）"
   ],
   "next": "① 核行号（session-store.ts deleteSession / deleteDiagnosisCheckpoints / listDiagnosisReports）② deleteSession 内接清理 ③ 列表 SQL 加过滤 ④ 写端到端测试（真实 store，不 mock）⑤ 汇报",
-  "note": "CTO 已实测（origin/main）：deleteSession 只删 agent_messages + agent_sessions（session-store.ts:355-358）；deleteDiagnosisCheckpoints 存在（:581-583）但全仓零调用者；报告列表 SQL 为 `SELECT ... FROM diagnosis_checkpoints WHERE phase = 5 ORDER BY saved_at DESC`（:604-608），**不 join agent_sessions** → 删会话后报告仍经 GET /api/diagnosis/reports 列出（src/routes/diagnosis.ts:947 调 listDiagnosisReports）。判据 D（客户数据资产）；若对外承诺过『彻底删除』则升 P0。"
+  "note": "CTO 已实测（origin/main）：deleteSession 只删 agent_messages + agent_sessions（session-store.ts:355-358）；deleteDiagnosisCheckpoints 存在（:581-583）但全仓零调用者；报告列表 SQL 为 `SELECT ... FROM diagnosis_checkpoints WHERE phase = 5 ORDER BY saved_at DESC`（:604-608），**不 join agent_sessions** → 删会话后报告仍经 GET /api/diagnosis/reports 列出（src/routes/diagnosis.ts:947 调 listDiagnosisReports）。判据 D（客户数据资产）；若对外承诺过『彻底删除』则升 P0。",
+  "executor": "mac-coding",
+  "delegation": "Mac 代行 win（D773 规约；创始人 2026-09-18 重申『涉及 win 线的一并先给 Mac 执行』）",
+  "acceptance_level": "代码级可验（Mac 必须验）；若涉及 Windows 实机行为 → 挂账，Win 回归后补验，禁止声称"
 }

@@ -12,7 +12,7 @@
   "fix_task_id": null,
   "updated_at": "2026-09-18",
   "updated_by": "synova-cto",
-  "domain": "mac",
+  "domain": "win",
   "owner": "mac-coding",
   "milestone": "M1 产品可用",
   "depends_on": [
@@ -30,5 +30,8 @@
     "验收按 docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md（禁 grep；三问自查；命令+原始输出）"
   ],
   "next": "见派单文档对应小节；开工第一步重新核行号（会漂移）",
-  "note": "CTO 已核：src/sentinel/sentinel-events.ts:9-13 有三条命名的 I1/I2/I3，但全是注释与错误码，无运行期断言/注册表/归属/fail-closed；check-architecture.sh 是静态门禁，看不见运行期接线。DSH 参照 dsh-invariants（lib/index.js 123 行，净逻辑约 40 行）→ ①范式复用。**硬依赖 D819**（否则断言在生产中一次都不会被触发）。判据 C。"
+  "note": "CTO 已核：src/sentinel/sentinel-events.ts:9-13 有三条命名的 I1/I2/I3，但全是注释与错误码，无运行期断言/注册表/归属/fail-closed；check-architecture.sh 是静态门禁，看不见运行期接线。DSH 参照 dsh-invariants（lib/index.js 123 行，净逻辑约 40 行）→ ①范式复用。**硬依赖 D819**（否则断言在生产中一次都不会被触发）。判据 C。",
+  "executor": "mac-coding",
+  "delegation": "Mac 代行 win（D773 规约；创始人 2026-09-18 重申『涉及 win 线的一并先给 Mac 执行』）",
+  "acceptance_level": "代码级可验（Mac 必须验）；若涉及 Windows 实机行为 → 挂账，Win 回归后补验，禁止声称"
 }

@@ -12,7 +12,7 @@
   "fix_task_id": null,
   "updated_at": "2026-09-18",
   "updated_by": "synova-cto",
-  "domain": "mac",
+  "domain": "win",
   "owner": "mac-coding",
   "milestone": "M1 产品可用",
   "depends_on": [
@@ -28,5 +28,8 @@
     "验收按 docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md（禁 grep；三问自查；命令+原始输出）"
   ],
   "next": "见派单文档对应小节；开工第一步重新核行号（会漂移）",
-  "note": "CTO 已核：session_events.event_type 的 CHECK 只有 6 类（session-store.ts:140-146/216-224），结构上装不下 compaction；ContextCompaction 实例化未传 onEvent（conversation-engine.ts:394-399）；tool.executed 只记 {toolName,success}，无 callId/入参/结果。DSH 参照：tool/call+tool/result+sourceEventSeqs（dsh-agent-loop:685-711）→ ①范式复用。判据 C。"
+  "note": "CTO 已核：session_events.event_type 的 CHECK 只有 6 类（session-store.ts:140-146/216-224），结构上装不下 compaction；ContextCompaction 实例化未传 onEvent（conversation-engine.ts:394-399）；tool.executed 只记 {toolName,success}，无 callId/入参/结果。DSH 参照：tool/call+tool/result+sourceEventSeqs（dsh-agent-loop:685-711）→ ①范式复用。判据 C。",
+  "executor": "mac-coding",
+  "delegation": "Mac 代行 win（D773 规约；创始人 2026-09-18 重申『涉及 win 线的一并先给 Mac 执行』）",
+  "acceptance_level": "代码级可验（Mac 必须验）；若涉及 Windows 实机行为 → 挂账，Win 回归后补验，禁止声称"
 }
