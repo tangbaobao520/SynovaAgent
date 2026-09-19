@@ -1,6 +1,7 @@
 ---
-状态: proposed
+状态: implemented
 日期: 2026-09-18
+落地: D817（2026-09-19，分支 feat/d817-production-entry-conversation）——交付 tests/helpers/fake-llm-upstream.ts + tests/integration/production-entry-conversation.integration.test.ts + docs/synova/product-lines/evidence/D817-capture-20260918.json。执行中新发现两处产品缺陷（D817-F1 响应侧 tool_calls 未映射 / D817-F2 assistant 重复入上下文），与 P0-1 一并以 it.fails 证词化；全程零 src/** 改动。
 决策: 立 **第 0 项 = CI 能跑一次"生产入口级对话"**（D817），并把它定为研究院四份任务书**全部 15 项验收标准的公共前置**：验收判据从"grep 命中"升级为"起真实 server、打真实 HTTP 路由、在假上游抓到真实出站请求体"。同时定下三条纪律——① 不得在生产代码加测试专用开关（走既有配置缝）② 不得改 CI 排除清单来让测试变绿 ③ P0-1（工具 schema 未进请求体）以 `it.fails` 形式**证词化**，修好后必须翻转并删除。
 理由: ① `vitest.config.ts:29-37` 在 CI 下排除 `tests/e2e/**`（注释 "Needs LLM API"）→ 任务书里每条"穿真实入口"的验收今天**一条都无法自动判定**；② 研究院交叉验证：这条与 CTO 此前独立得出的"验证基础设施缺口"是同一件事，两条独立路径指向同一处；③ 不解决它，8 个任务会重演"测试全绿但生产不通"——而该模式在本仓**已发生 8 次**（横跨 4 层，见 `可派工任务书-自研缺陷修复.md` §三）；④ 范式已存在（`tests/smoke.test.ts` 起 `createServer`；`tests/routes/diagnosis-token-meter.integration.test.ts` 已按铁律 12 用 `listen(0)+fetch` 打真实路由）→ 本项是**接线与纪律**，不是造轮子。
 ---

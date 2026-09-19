@@ -16,6 +16,14 @@ export interface LLMMessage {
 }
 
 export interface ToolCall {
+  /**
+   * D819: 模型给的调用 id（响应侧映射时填入）。
+   * assistant.tool_calls[].id 与其后 role='tool' 消息的 tool_call_id 必须共用同一 id（配对合法性）。
+   * 可选：既有替身/测试直接构造无 id 的 ToolCall；缺失时由 provider 边界确定性兜底（非随机 UUID）。
+   */
+  id?: string;
+  /** OpenAI 兼容出站形状；本仓 provider 边界当前只产出 'function' */
+  type?: 'function';
   function: { name: string; arguments: string };
 }
 
