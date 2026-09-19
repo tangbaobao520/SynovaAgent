@@ -1,0 +1,32 @@
+{
+  "task_id": "D825",
+  "title": "T-D2+T-D9：压缩入日志 + 工具事件入日志（同一 schema 变更，必须一起做）",
+  "status": "claimed",
+  "risk": "high",
+  "spec": "派单即规格：docs/synova/coordination/批十三-断线补卡与固化-20260918.md",
+  "write_set": [
+    "task-state/D825.json"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-18",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "milestone": "M1 产品可用",
+  "depends_on": [
+    "D819"
+  ],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "压缩事件真的落盘：注入超阈值内容触发压缩 → 断言 session_events 新增 compaction 事件且含 shadowedSeqs（seq 而非数组下标）",
+    "日志可重放：从日志 replay 能取回『压缩前的原文』；GET /api/sessions/:id 与内部状态一致（当前给两个不同的会话）",
+    "工具事件落盘：跑一次含工具调用的真实对话 → 断言日志含 callId + 入参摘要，且由 callId 能关联到对应结果",
+    "schema 变更走既有迁移范式（session-store.ts:228-262 的 CHECK 升级/表重建），不新建第二套迁移机制",
+    "验收按 docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md（禁 grep；三问自查；命令+原始输出）"
+  ],
+  "next": "见派单文档对应小节；开工第一步重新核行号（会漂移）",
+  "note": "CTO 已核：session_events.event_type 的 CHECK 只有 6 类（session-store.ts:140-146/216-224），结构上装不下 compaction；ContextCompaction 实例化未传 onEvent（conversation-engine.ts:394-399）；tool.executed 只记 {toolName,success}，无 callId/入参/结果。DSH 参照：tool/call+tool/result+sourceEventSeqs（dsh-agent-loop:685-711）→ ①范式复用。判据 C。"
+}

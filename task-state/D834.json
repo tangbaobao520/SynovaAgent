@@ -1,0 +1,30 @@
+{
+  "task_id": "D834",
+  "title": "固化③：项目总览/台账跟踪三层清单（29 线 / 3 前提 / 12 线外 + 9 断线）",
+  "status": "claimed",
+  "risk": "medium",
+  "spec": "派单即规格：docs/synova/coordination/批十三-断线补卡与固化-20260918.md",
+  "write_set": [
+    "task-state/D834.json"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-18",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "milestone": "M1 产品可用",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "项目总览面板显示三层：能力线（含两条新线登记后的条数）/ 前提清单（3 项，优先于线）/ 线外工作项（12 项）+ 9 处断线状态",
+    "每个工作项能回答：自研还是借鉴（③/①/②）、当前五态、负责人、卡号",
+    "断线计数为机器判定（不是手写）：删掉证据/卡后数字跟着变（反向验收）",
+    "台账同步：新文档/新卡登记进 DOCS-REGISTRY 与 task-state，面板读得到",
+    "验收按 docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md"
+  ],
+  "next": "见派单文档对应小节；开工第一步重新核行号（会漂移）",
+  "note": "创始人 2026-09-18 裁定『你要登记台账跟踪，项目总览要跟踪』。当前面板只读 ledger.json（由 gen-project-board.py 从 product-lines.yaml + task-state + 证据派生），三层清单与新线还没进派生链 → 本卡把它接上。判据 C。"
+}
