@@ -1,7 +1,7 @@
 {
   "task_id": "D817",
   "title": "第 0 项：CI 能跑一次生产入口级对话（验证基础设施，全部验收的公共前置）",
-  "status": "claimed",
+  "status": "impl_done",
   "risk": "high",
   "spec": "派单即规格：docs/synova/coordination/派单-批十-第0项-CI生产入口级对话-20260918.md（含 CTO 已核实的四处事实）",
   "write_set": [
@@ -9,15 +9,26 @@
     "tests/helpers/fake-llm-upstream.ts",
     "docs/synova/product-lines/evidence/D817-capture-20260918.json",
     "task-state/D817.json",
-    ".claude/task-briefs/2026-09-18-D817-生产入口级对话.md",
-    "memory/notes/proposed/2026-09-18-D817-ci-production-entry.md",
-    ".github/workflows/ci.yml"
+    ".claude/task-briefs/2026-09-19-D817-生产入口级对话.md",
+    "memory/notes/implemented/2026-09-18-D817-ci-production-entry.md",
+    "memory/notes/proposed/2026-09-18-D817-ci-production-entry.md"
   ],
-  "impl": null,
+  "impl": {
+    "commit": "b754e484",
+    "by": "mac-coding",
+    "at": "2026-09-19",
+    "files": [
+      ".claude/task-briefs/2026-09-19-D817-生产入口级对话.md",
+      "tests/helpers/fake-llm-upstream.ts",
+      "tests/integration/production-entry-conversation.integration.test.ts",
+      "docs/synova/product-lines/evidence/D817-capture-20260918.json",
+      "memory/notes/implemented/2026-09-18-D817-ci-production-entry.md"
+    ]
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-09-18",
-  "updated_by": "synova-cto",
+  "updated_at": "2026-09-19",
+  "updated_by": "mac-coding-D817",
   "domain": "win",
   "owner": "mac-coding",
   "milestone": "M1 产品可用",
@@ -34,6 +45,21 @@
   ],
   "next": "① 读 tests/smoke.test.ts 与 tests/routes/diagnosis-token-meter.integration.test.ts 的启动范式 ② 写假上游 helper（OpenAI 兼容、记录 body、脚本化含 tool_call 的响应）③ 起真实 server 打 POST /api/conversations/:id/messages ④ 落证据文件（body keys）⑤ 跑 CI=1 验证被包含 ⑥ 汇报（含命令与原始输出）",
   "note": "CTO 已核实（2026-09-18，origin/main）：① vitest.config.ts:29-37 在 CI 下排除 tests/e2e/**（注释 Needs LLM API）→ 所有『穿真实生产入口』验收今天无法自动判定；② src/providers/base.ts:139-151 出站 body 只有 model/messages/temperature/max_tokens/stream，无 tools，而 tool-loop-executor.ts:112,251 确实把 tools 传了进去；③ 范式已存在：tests/smoke.test.ts 用 src/server 的 createServer，tests/routes/diagnosis-token-meter.integration.test.ts 头部注明铁律 12『集成测试走真实路由 express app + listen(0) + fetch，不 mock 管线』；④ 目标路由存在 src/routes/conversations.ts:359。此为全部 15 项任务书验收的前置（第 0 批第一位）。",
+  "impl_report": {
+    "verdict": "验收点 1/2/4/5/6 达成；验收点 3（工具循环被真实驱动）今日**无法正向达成**——见 findings，已按同一纪律以 it.fails 证词化（不做假绿）",
+    "entry": "POST /api/conversations（建会话）→ POST /api/conversations/:id/messages（src/routes/conversations.ts:359），真实 createServer + PORT=0 + 真实 fetch",
+    "upstream_seam": "D575 凭证文件（SYNOVA_DATA_DIR/llm-credentials.json，生产中由 routes/llm-config.ts 写）→ src/config.ts:90-94 llmBaseUrl → src/routes/conversations.ts:192 createProvider(detectProvider(), {apiKey, baseUrl, model}) → src/providers/index.ts:54 → src/providers/base.ts:148 fetch",
+    "src_touched": 0,
+    "vitest_config_touched": 0,
+    "ci_mode": "CI=1 npx vitest run tests/integration/production-entry-conversation.integration.test.ts → 9 tests：6 passed | 3 expected fail（exit 0）",
+    "external_network_calls": 0,
+    "findings": [
+      "P0-1（派单已知）：出站请求体缺 tools —— 证据 body_keys_union = [model, messages, temperature, max_tokens]",
+      "D817-F1（本次新发现）：响应侧 tool_calls 未映射到 ChatResult.toolCalls（src/providers/base.ts:215-238 只取 choices[0].message.content）→ 工具循环在真实 provider 路径上永不触发；因此验收点 3 的『工具确实被执行』不可能通过，除非先修此处",
+      "D817-F2（本次新发现）：streaming 路径 assistant 回复重复入上下文（tool-loop-executor.ts:270 + conversation-engine.ts:785 双推）→ 第 2 轮出站 messages 角色序 = [system,user,assistant,assistant,user]"
+    ],
+    "evidence": "docs/synova/product-lines/evidence/D817-capture-20260918.json（machine-generated：出站体字段清单 + 断言结果 + 三条证词 observed 值）"
+  },
   "executor": "mac-coding",
   "delegation": "Mac 代行 win（D773 规约；创始人 2026-09-18 重申『涉及 win 线的一并先给 Mac 执行』）",
   "acceptance_level": "代码级可验（Mac 必须验）；若涉及 Windows 实机行为 → 挂账，Win 回归后补验，禁止声称"
