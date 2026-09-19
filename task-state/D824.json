@@ -1,0 +1,35 @@
+{
+  "task_id": "D824",
+  "title": "T-D12 check-bridge-files 孤儿脚本处置（防回潮门禁本身『写了没接上』）",
+  "status": "claimed",
+  "risk": "high",
+  "spec": "派单即规格：docs/synova/coordination/批十二-计划与派单-20260918.md（含 CTO 实测位置与验收标准）",
+  "write_set": [
+    "scripts/check-bridge-files.sh",
+    "scripts/pre-commit-check.sh",
+    "tests/control-tower/check-bridge-files-orphan.test.sh",
+    "task-state/D824.json",
+    ".claude/task-briefs/2026-09-18-D824-.md",
+    "memory/notes/proposed/2026-09-18-D824-.md"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-18",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "milestone": "M1 产品可用",
+  "depends_on": [
+    "D813"
+  ],
+  "blocked": "串行：D813 也在改 scripts/pre-commit-check.sh（同文件），**D813 先落、D824 再动**",
+  "target": "2026-W38",
+  "acceptance_points": [
+    "二选一落地且**不留两个实现**：① 删除 scripts/check-bridge-files.sh；或 ② 组 5b 改为调用它（单点维护）",
+    "故意造一个 engine-core 桥接文件 → 断言 pre-commit **拦住**（证明判定链仍然有效）",
+    "验收按 docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md（禁 grep 命中；三问自查逐条作答；报告含命令+原始输出+五态定位）"
+  ],
+  "next": "见派单文档 §A 对应小节",
+  "note": "CTO 核实：scripts/check-bridge-files.sh（111 行，自述『桥接文件欺诈检测 铁律 46』）**不在 .git/hooks/、不在 pre-commit-check.sh、不在 CI、不在 package.json** —— 是『写了没接上』的第 4 个实例，而且是**防回潮门禁本身**。等效能力已在 pre-commit-check.sh 组 5b 重新实现并接线，所以目前不出事；但审计时『存在即生效』会误导。判据 C。工作量 1 天以内。"
+}

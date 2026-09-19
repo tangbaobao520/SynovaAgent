@@ -1,0 +1,33 @@
+{
+  "task_id": "D823",
+  "title": "T-D6 im-inbound 调不存在的方法（IM 历史恢复静默空转）",
+  "status": "claimed",
+  "risk": "medium",
+  "spec": "派单即规格：docs/synova/coordination/批十二-计划与派单-20260918.md（含 CTO 实测位置与验收标准）",
+  "write_set": [
+    "src/l1/im-inbound.ts",
+    "tests/l1/im-inbound-history.test.ts",
+    "task-state/D823.json",
+    ".claude/task-briefs/2026-09-18-D823-.md",
+    "memory/notes/proposed/2026-09-18-D823-.md"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-18",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "milestone": "M1 产品可用",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "经 IM 通道发两轮消息 → 断言第 2 轮模型上下文**含第 1 轮**（当前每轮只看到当前一句）",
+    "断言无 as unknown as 逃逸（铁律 38 扩展 CT-46）",
+    "若确定不恢复该意图 → 显式删除该『恢复』动作，不留假动作（不允许保留一个永远返回空的调用）",
+    "验收按 docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md（禁 grep 命中；三问自查逐条作答；报告含命令+原始输出+五态定位）"
+  ],
+  "next": "见派单文档 §A 对应小节",
+  "note": "CTO 核实：src/l1/im-inbound.ts:195 调用 addToHistory —— 全仓 grep 仅此一处，且写作手法是先 as unknown as 再可选链 → IM 通道『恢复会话历史』是静默空转。判据 C。工作量 1–3 天。"
+}

@@ -1,0 +1,35 @@
+{
+  "task_id": "D822",
+  "title": "T-D5 降级信号自遮蔽（写失败被同轮后一次成功抹掉，且测试固化了缺陷）",
+  "status": "claimed",
+  "risk": "medium",
+  "spec": "派单即规格：docs/synova/coordination/批十二-计划与派单-20260918.md（含 CTO 实测位置与验收标准）",
+  "write_set": [
+    "src/store/session-store.ts",
+    "src/routes/conversations.ts",
+    "tests/store/session-event-log.test.ts",
+    "tests/store/degraded-signal-not-masked.test.ts",
+    "task-state/D822.json",
+    ".claude/task-briefs/2026-09-18-D822-.md",
+    "memory/notes/proposed/2026-09-18-D822-.md"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-18",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "milestone": "M1 产品可用",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "注入一次写失败 + 一次写成功 → 断言 STORE_DEGRADED 仍被发出（当前会被同轮后一次成功抹掉）",
+    "那条固化缺陷的测试已改写：tests/store/session-event-log.test.ts:146-164 现固化的正是缺陷行为",
+    "addMessage 透传已有的 AppendEventResult（返回值已编码失败），路由层据此判定",
+    "验收按 docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md（禁 grep 命中；三问自查逐条作答；报告含命令+原始输出+五态定位）"
+  ],
+  "next": "见派单文档 §A 对应小节",
+  "note": "CTO 实测位置：src/store/session-store.ts:377-383（addMessage 成功即重置 lastDegraded）；src/routes/conversations.ts:249/255/260（第 2 次写成功后才检查）→ 写失败信号被同轮后一次成功写入抹掉，STORE_DEGRADED 帧不会发。判据 C。工作量 1–3 天（性价比最高档）。"
+}

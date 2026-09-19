@@ -1,0 +1,43 @@
+# preconditions.yaml — 前提清单（优先级高于线）
+#
+# 来源: docs/authority/产品完成度定义与推进总纲-20260918.md §2.2（研究院总纲）
+# 语义: 线可以"以后再做"，前提不行 —— 缺一项则**全盘不可用/不可判**，不分哪条线。
+# 登记: CTO 2026-09-18 起草；**优先级高于线的排序规则待创始人裁定**（总纲 §6-3）。
+# 维护: CTO 起草 → 创始人确认；新增/移除必须写明"它为什么不能当线"。
+
+schema: preconditions/v1
+owner: synova-cto
+updated_at: "2026-09-18"
+
+preconditions:
+  - id: P-1
+    name: "HTTP 代理 / 内网适配"
+    why_not_a_line: "客户内网装不上 = 全盘归零，不分哪条线；线可以延后，前提不能"
+    evidence_of_gap: "全 src grep HTTPS_PROXY/http_proxy/NO_PROXY/setGlobalDispatcher 零命中；全部出站是裸 fetch（25+ 处）"
+    acceptance: "在只允许代理出网的环境跑一次真实 LLM 调用，断言成功且直连会失败"
+    order: "第 0 批（与 P0-1 并行）"
+    design_precondition: "必须先冻结『出站 HTTP 唯一出口』；否则会出现『有时走代理有时不走』"
+    status: dispatched
+    card: D821
+    self_build_or_borrow: "① 范式复用（DSH dsh-http-proxy 的策略语义）+ ③ 自建（SOCKS5 / 自定义 CA / 配置化）"
+
+  - id: P-2
+    name: "不变量机制（运行期断言）"
+    why_not_a_line: "它是机制不是能力；价值不在用户感知，而在让『写了没接』无法再发生"
+    evidence_of_gap: "src/sentinel/sentinel-events.ts:9-13 有三条命名的 invariant（I1/I2/I3）但全是注释与错误码，无运行期断言/注册表/归属/fail-closed"
+    acceptance: "故意破坏一条不变量 → 断言流程**失败**而非静默通过"
+    order: "第 1 批（**硬依赖 P0-1 先修**：否则断言在生产中一次都不会被触发）"
+    design_precondition: "首批 3 条断言（工具 schema 真的发出去了 / tool 消息与 assistant tool_calls 配对 / 降级信号不被后续成功写入抹掉）"
+    status: not_dispatched
+    card: null
+    self_build_or_borrow: "① 范式复用（DSH dsh-invariants 123 行，净逻辑约 40 行）"
+
+  - id: P-3
+    name: "验证基建（CI 跑一次生产入口级对话）"
+    why_not_a_line: "它决定 29 条线的『完成』能否被自动判定；是判定手段，不是被判定对象"
+    evidence_of_gap: "vitest.config.ts:29-37 在 CI 下 exclude tests/e2e/**（注释 Needs LLM API）"
+    acceptance: "CI 里能跑一次生产入口级对话（真实 server + 真实路由 + 假上游抓出站请求体）"
+    order: "第 0 批（**所有验收的前提**）"
+    status: dispatched
+    card: D817
+    self_build_or_borrow: "③ 自建（复用我方既有 listen(0)+fetch 范式；零 DSH 依赖）"
