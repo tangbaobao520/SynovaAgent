@@ -17,7 +17,7 @@
   "fix_task_id": null,
   "updated_at": "2026-09-18",
   "updated_by": "synova-cto",
-  "domain": "mac",
+  "domain": "win",
   "owner": "mac-coding",
   "milestone": "M1 产品可用",
   "depends_on": [
@@ -34,5 +34,8 @@
     "不新增依赖；不在 src/** 加测试专用分支；provider 契约（ChatOptions.tools）语义不变"
   ],
   "next": "① 等 D817 合入 ② 核行号（base.ts body 组装 / tool-loop-executor assistant 与 tool 消息构造）③ 在 body 组装处透传 tools（经 provider 的 convertTools 或 OpenAI 形状）④ tool 消息改用模型给的 tc.id、assistant 补 tool_calls ⑤ 用假上游跑端到端 ⑥ 汇报",
-  "note": "CTO 已实测（origin/main）：① src/providers/base.ts 的 body 组装只含 model/messages/temperature/max_tokens/reasoning_effort/stream，无 tools；而 tool-loop-executor.ts:110-113 确实把 tools 传进 callLlm → 在 provider 边界被丢弃；② tool-loop-executor.ts:131-134 push 的 assistant 消息只有 role+content，tool_calls 被丢；:153 等处 tool 消息用 crypto.randomUUID() 当 tool_call_id（模型给的 tc.id 未使用）。故两张必须同时修：只修①，模型仍收到结构非法的工具对话。"
+  "note": "CTO 已实测（origin/main）：① src/providers/base.ts 的 body 组装只含 model/messages/temperature/max_tokens/reasoning_effort/stream，无 tools；而 tool-loop-executor.ts:110-113 确实把 tools 传进 callLlm → 在 provider 边界被丢弃；② tool-loop-executor.ts:131-134 push 的 assistant 消息只有 role+content，tool_calls 被丢；:153 等处 tool 消息用 crypto.randomUUID() 当 tool_call_id（模型给的 tc.id 未使用）。故两张必须同时修：只修①，模型仍收到结构非法的工具对话。",
+  "executor": "mac-coding",
+  "delegation": "Mac 代行 win（D773 规约；创始人 2026-09-18 重申『涉及 win 线的一并先给 Mac 执行』）",
+  "acceptance_level": "代码级可验（Mac 必须验）；若涉及 Windows 实机行为 → 挂账，Win 回归后补验，禁止声称"
 }
