@@ -7,7 +7,7 @@
  * Iron law #32: 错误统一通过 try/catch + log 处理。
  * Iron law #31: degraded 信号传播——工具失败不阻断对话。
  */
-import type { LLMMessage, ChatOptions } from '../providers/types';
+import type { LLMMessage, ChatOptions, ToolCall } from '../providers/types';
 import type { EngineContext } from './engine-context';
 import { createLogger } from '@synova/logger';
 import { ToolGuard } from '../l3/tool-guard';
@@ -17,13 +17,15 @@ import { pruneToolResult, ToolResultPruneError } from '../llm/tool-result-pruner
 // 重试事件落 D500 事件流（投影计数单元见 store/retry-projection，由 deploy/bootstrap 注册）：
 // 落盘缝在 src/llm（共享基础设施层）——铁律 39 禁本层静态 import src/store。
 import { callWithResilience, appendRetryEvent, type LlmRetryEvent, type ResilienceOutcome } from '../llm/retry-middleware';
-import * as crypto from 'crypto';
 
 /** Tool execution result — may contain error property on failure */
 interface ToolExecResult {
   error?: string;
   [key: string]: unknown;
 }
+
+/** D819: 出站 assistant.tool_calls 的 OpenAI 形状（id/type/function）—— 配对 id 的唯一来源 */
+type OutboundToolCall = ToolCall & { id: string; type: 'function' };
 
 /** 错误消息提取（catch err: unknown → string；铁律 38 零 as any） */
 function errorMessage(err: unknown): string {
@@ -34,9 +36,38 @@ export class ToolLoopExecutor {
   private ctx: EngineContext;
   private log = createLogger('agent/tool-loop');
   private toolGuard = new ToolGuard();
+  /** D819: 缺失 tool_call id 时的确定性兜底序号（executor 实例内单调；禁 crypto.randomUUID） */
+  private toolCallSeq = 0;
 
   constructor(ctx: EngineContext) {
     this.ctx = ctx;
+  }
+
+  /**
+   * normalizeToolCalls — 工具调用归一化：assistant.tool_calls 与其后 role='tool' 消息必须共用同一 id。
+   *
+   * 契约（铁律 47）:
+   *   @input  — calls: ToolCall[]（模型/provider 返回的 toolCalls；测试替身可能不带 id）
+   *   @output — OutboundToolCall[]：id 恒非空（模型给了 → 原样透传；缺失 → 确定性哨兵 id
+   *             `call_loop_<n>`），type 恒 'function'，function 原样保留
+   *   @degraded — 缺 id → 合成确定性 id + log.warn({degraded:true})：配对仍合法，模型不会收到
+   *               结构非法的工具对话（旧实现用随机 UUID → tool_call_id 与 assistant.tool_calls 失配）
+   *   @error  — 不抛（纯数据面，无 I/O）
+   */
+  private normalizeToolCalls(calls: ToolCall[]): OutboundToolCall[] {
+    return calls.map((tc) => {
+      const modelId = typeof tc.id === 'string' && tc.id.length > 0 ? tc.id : '';
+      if (modelId.length > 0) {
+        return { id: modelId, type: 'function' as const, function: tc.function };
+      }
+      this.toolCallSeq += 1;
+      const id = `call_loop_${this.toolCallSeq}`;
+      this.log.warn(
+        { tool: tc.function.name, synthesizedId: id, degraded: true },
+        'tool_call 缺 id — 合成确定性 id 保持配对合法（非随机 UUID）',
+      );
+      return { id, type: 'function' as const, function: tc.function };
+    });
   }
 
   /**
@@ -128,12 +159,16 @@ export class ToolLoopExecutor {
         // 有工具调用 → 执行并注入结果
         this.log.info({ count: result.toolCalls.length, round }, 'LLM 请求工具调用');
 
+        // D819: assistant 必须带 tool_calls（此前只推 role+content → 模型收到的工具对话结构非法）；
+        // id 与下方 tool 消息同源（模型给的 id，缺 id 走确定性兜底）
+        const toolCalls = this.normalizeToolCalls(result.toolCalls);
         messages.push({
           role: 'assistant',
           content: result.content || '',
-        } as LLMMessage);
+          tool_calls: toolCalls,
+        });
 
-        for (const tc of result.toolCalls) {
+        for (const tc of toolCalls) {
           let params: Record<string, unknown> = {};
           try {
             params = JSON.parse(tc.function.arguments);
@@ -150,7 +185,7 @@ export class ToolLoopExecutor {
             });
             if (preResult.action === 'deny') {
               messages.push({
-                role: 'tool', tool_call_id: crypto.randomUUID(),
+                role: 'tool', tool_call_id: tc.id,
                 content: JSON.stringify({ error: `工具被拒绝: ${preResult.reason}` }),
               });
               eventBus?.emit({
@@ -171,14 +206,14 @@ export class ToolLoopExecutor {
           const guardDecision = this.toolGuard.beforeCall(tc.function.name, effectiveParams);
           if (!guardDecision.allow) {
             this.log.warn({ tool: tc.function.name, reason: guardDecision.reason }, '工具被 ToolGuard 阻止');
-            messages.push({ role: 'tool', tool_call_id: crypto.randomUUID(), content: JSON.stringify({ error: `工具被阻止: ${guardDecision.reason}` }) });
+            messages.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify({ error: `工具被阻止: ${guardDecision.reason}` }) });
             continue;
           }
           // D473: reminder 注入模型可见上下文（不阻断执行，决策留给模型 — DSH advisory 范式）
           if (guardDecision.level === 'reminder' && guardDecision.reminderMessage) {
             messages.push({
               role: 'tool',
-              tool_call_id: crypto.randomUUID(),
+              tool_call_id: tc.id,
               content: JSON.stringify({ reminder: guardDecision.reminderMessage }),
             });
           }
@@ -205,7 +240,7 @@ export class ToolLoopExecutor {
 
           messages.push({
             role: 'tool',
-            tool_call_id: crypto.randomUUID(),
+            tool_call_id: tc.id,
             content: this.pruneForPrompt(JSON.stringify(execResult)),
           });
         }
@@ -262,12 +297,13 @@ export class ToolLoopExecutor {
         const content = result.content || '';
 
         // 无工具调用 → 流式输出文本 + 返回
+        // D819: 最终态 assistant 由 ConversationEngine 统一入上下文（conversation-engine.ts:785/790）——
+        // 此处不再 push（旧实现与本方法出口双推 → 出站角色序出现 assistant,assistant，D817-F2）。
         if (!result.toolCalls || result.toolCalls.length === 0) {
           for (const ch of content) {
             onToken(ch);
             await sleep(5); // P3-06: 5ms/char 流式动画
           }
-          messages.push({ role: 'assistant', content });
           return content || '(empty response)';
         }
 
@@ -279,14 +315,16 @@ export class ToolLoopExecutor {
           await sleep(5);
         }
 
+        // D819: assistant.tool_calls 归一化（id 与下方 tool 消息同源；assistant/调用 id 配对合法）
+        const toolCalls = this.normalizeToolCalls(result.toolCalls);
         messages.push({
           role: 'assistant',
           content,
-          tool_calls: result.toolCalls,
+          tool_calls: toolCalls,
         });
 
         onToken('\n[工具调用: ');
-        for (const tc of result.toolCalls) {
+        for (const tc of toolCalls) {
           onToken(tc.function.name + ' ');
           let params: Record<string, unknown> = {};
           try {
@@ -301,7 +339,7 @@ export class ToolLoopExecutor {
           if (hookRunner) {
             const preResult = await hookRunner.runPreToolUse({ name: tc.function.name, input: JSON.stringify(params) });
             if (preResult.action === 'deny') {
-              messages.push({ role: 'tool', tool_call_id: crypto.randomUUID(), content: JSON.stringify({ error: `工具被拒绝: ${preResult.reason}` }) });
+              messages.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify({ error: `工具被拒绝: ${preResult.reason}` }) });
               eventBus?.emit({ id: `evt_${Date.now().toString(36)}`, type: 'tool.denied', consultationId: sessionId, data: { toolName: tc.function.name, reason: preResult.reason }, traceId: sessionId, spanId: sessionId.slice(0, 16), timestamp: new Date().toISOString() });
               continue;
             }
@@ -314,14 +352,14 @@ export class ToolLoopExecutor {
           const guardDecision = this.toolGuard.beforeCall(tc.function.name, effectiveParams);
           if (!guardDecision.allow) {
             this.log.warn({ tool: tc.function.name, reason: guardDecision.reason }, '工具被 ToolGuard 阻止');
-            messages.push({ role: 'tool', tool_call_id: crypto.randomUUID(), content: JSON.stringify({ error: `工具被阻止: ${guardDecision.reason}` }) });
+            messages.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify({ error: `工具被阻止: ${guardDecision.reason}` }) });
             continue;
           }
           // D473: reminder 注入模型可见上下文（streaming 路径同样消费，不阻断执行）
           if (guardDecision.level === 'reminder' && guardDecision.reminderMessage) {
             messages.push({
               role: 'tool',
-              tool_call_id: crypto.randomUUID(),
+              tool_call_id: tc.id,
               content: JSON.stringify({ reminder: guardDecision.reminderMessage }),
             });
           }
@@ -351,7 +389,7 @@ export class ToolLoopExecutor {
 
           messages.push({
             role: 'tool',
-            tool_call_id: crypto.randomUUID(),
+            tool_call_id: tc.id,
             content: this.pruneForPrompt(JSON.stringify(execResult)),
           });
         }
@@ -379,7 +417,7 @@ export class ToolLoopExecutor {
         onToken(ch);
         await sleep(5);
       }
-      messages.push({ role: 'assistant', content: final.content || '' });
+      // D819: 同上——最终态 assistant 由 ConversationEngine 统一入上下文（此处勿再 push，防双推）
       return final.content || '(no response)';
     } catch (err: unknown) {
       this.log.error({ err }, 'streamWithToolLoop: 最终轮 LLM 调用失败');
