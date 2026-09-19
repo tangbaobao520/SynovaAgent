@@ -17,7 +17,7 @@
   "fix_task_id": null,
   "updated_at": "2026-09-18",
   "updated_by": "synova-cto",
-  "domain": "mac",
+  "domain": "win",
   "owner": "mac-coding",
   "milestone": "M1 产品可用",
   "depends_on": [
@@ -31,5 +31,9 @@
     "验收按 docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md（禁 grep 命中；三问自查逐条作答；报告含命令+原始输出+五态定位）"
   ],
   "next": "见派单文档 §A 对应小节",
-  "note": "CTO 核实：scripts/check-bridge-files.sh（111 行，自述『桥接文件欺诈检测 铁律 46』）**不在 .git/hooks/、不在 pre-commit-check.sh、不在 CI、不在 package.json** —— 是『写了没接上』的第 4 个实例，而且是**防回潮门禁本身**。等效能力已在 pre-commit-check.sh 组 5b 重新实现并接线，所以目前不出事；但审计时『存在即生效』会误导。判据 C。工作量 1 天以内。"
+  "note": "CTO 核实：scripts/check-bridge-files.sh（111 行，自述『桥接文件欺诈检测 铁律 46』）**不在 .git/hooks/、不在 pre-commit-check.sh、不在 CI、不在 package.json** —— 是『写了没接上』的第 4 个实例，而且是**防回潮门禁本身**。等效能力已在 pre-commit-check.sh 组 5b 重新实现并接线，所以目前不出事；但审计时『存在即生效』会误导。判据 C。工作量 1 天以内。",
+  "executor": "mac-coding",
+  "delegation": "Mac 代行 win（D773 规约；创始人 2026-09-18 重申『涉及 win 线的一并先给 Mac 执行』）",
+  "cross_domain_note": "scripts/check-bridge-files.sh 落 win 兜底；scripts/pre-commit-check.sh 归 mac → **拆两个 PR**（脚本处置=win，门禁接线=mac）",
+  "acceptance_level": "代码级可验（Mac 必须验）；若涉及 Windows 实机行为 → 挂账，Win 回归后补验，禁止声称"
 }

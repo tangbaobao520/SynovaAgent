@@ -12,7 +12,7 @@
   "fix_task_id": null,
   "updated_at": "2026-09-18",
   "updated_by": "synova-cto",
-  "domain": "mac",
+  "domain": "win",
   "owner": "mac-coding",
   "milestone": "M1 产品可用",
   "depends_on": [],
@@ -26,5 +26,9 @@
     "验收按 docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md（禁 grep；三问自查；命令+原始输出）"
   ],
   "next": "见派单文档对应小节；开工第一步重新核行号（会漂移）",
-  "note": "创始人 2026-09-18 裁定『派单文档与 dev doc 也要遵循新验收标准，这个要固化』。本卡把它变成物理门禁。**注意**：#574（D778 派单复核门禁）若已合，本卡在它之上扩展；未合则先合它（避免两个实现）。判据 C。"
+  "note": "创始人 2026-09-18 裁定『派单文档与 dev doc 也要遵循新验收标准，这个要固化』。本卡把它变成物理门禁。**注意**：#574（D778 派单复核门禁）若已合，本卡在它之上扩展；未合则先合它（避免两个实现）。判据 C。",
+  "executor": "mac-coding",
+  "delegation": "Mac 代行 win（D773 规约；创始人 2026-09-18 重申『涉及 win 线的一并先给 Mac 执行』）",
+  "cross_domain_note": "scripts/control-tower/**（mac）+ 若触及 docs/plans 规格模板（win）→ **拆两个 PR**",
+  "acceptance_level": "代码级可验（Mac 必须验）；若涉及 Windows 实机行为 → 挂账，Win 回归后补验，禁止声称"
 }
