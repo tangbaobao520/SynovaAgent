@@ -112,7 +112,10 @@ async function postMessage(path: string, body: Record<string, unknown>): Promise
   return { res, text };
 }
 
-/** 证据落盘（机器生成，不手写；含出站请求体字段清单 = P0-1 的机器判据来源） */
+/** 证据落盘（机器生成，不手写；含出站请求体字段清单 = P0-1 的机器判据来源）
+ *
+ *  确定性（可复跑、可 diff）：不落盘易变字段（端口 / session id / 毫秒时间戳）——
+ *  只保留跨运行稳定的观察面；易变面留在测试输出与断言里，不污染证据文件。 */
 function writeEvidence(mainRequestIndex: number): void {
   const snap = snapshotUpstream(fake);
   const mainRequest = snap.requests[mainRequestIndex];
@@ -121,8 +124,9 @@ function writeEvidence(mainRequestIndex: number): void {
     record_type: 'production-entry-capture',
     task: 'D817',
     title: 'CI 能跑一次生产入口级对话（验证基础设施，全部验收的公共前置）',
-    captured_at: new Date().toISOString(),
+    captured_date: new Date().toISOString().slice(0, 10),
     generated_by: 'tests/integration/production-entry-conversation.integration.test.ts',
+    volatile_fields_excluded: ['mock 端口', 'session_id', '毫秒时间戳'],
     entry: {
       server: 'src/server.ts:124 createServer()（真实 bootstrap；app.locals.orchestration 由 server.ts:286 装配）',
       routes: ['POST /api/conversations', 'POST /api/conversations/:id/messages (src/routes/conversations.ts:359)'],
@@ -131,7 +135,7 @@ function writeEvidence(mainRequestIndex: number): void {
     },
     upstream: snap,
     conversation: {
-      session_id: sessionId,
+      session_id_echoed: sessionId.length > 0,
       sse_frame_types: frameTypes(firstTurnFrames),
       sse_token_frame_count: firstTurnFrames.filter(f => f.type === 'token').length,
       sse_converged: firstTurnFrames.length > 0 && firstTurnFrames[firstTurnFrames.length - 1].type === 'end',

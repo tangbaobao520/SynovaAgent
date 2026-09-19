@@ -3,8 +3,13 @@
   "record_type": "production-entry-capture",
   "task": "D817",
   "title": "CI 能跑一次生产入口级对话（验证基础设施，全部验收的公共前置）",
-  "captured_at": "2026-09-19T11:33:53.361Z",
+  "captured_date": "2026-09-19",
   "generated_by": "tests/integration/production-entry-conversation.integration.test.ts",
+  "volatile_fields_excluded": [
+    "mock 端口",
+    "session_id",
+    "毫秒时间戳"
+  ],
   "entry": {
     "server": "src/server.ts:124 createServer()（真实 bootstrap；app.locals.orchestration 由 server.ts:286 装配）",
     "routes": [
@@ -66,7 +71,7 @@
     ]
   },
   "conversation": {
-    "session_id": "sess_mu8b7ge7_q7wf",
+    "session_id_echoed": true,
     "sse_frame_types": [
       "open",
       "token",
