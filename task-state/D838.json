@@ -1,0 +1,34 @@
+{
+  "task_id": "D838",
+  "title": "两条新线的验收点补全 + 11 项缺口验收点起草 + V1 标准变更单（起草件，待创始人确认）",
+  "status": "claimed",
+  "risk": "medium",
+  "spec": "上游：docs/synova/coordination/草案-新增两线-20260918.md（创始人已确认）+ docs/synova/product-lines/gap-line-mapping.yaml（11 项归线登记）",
+  "write_set": [
+    "docs/synova/coordination/变更单-V1标准-新增两线-20260919.md",
+    "task-state/D838.json",
+    ".claude/task-briefs/2026-09-19-D838-V1变更单.md",
+    "memory/notes/proposed/2026-09-19-D838-v1-amendment.md"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-19",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-devdoc",
+  "executor": "mac-devdoc",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "产出《V1 标准变更单（草案）》：明确新增两条线如何进入计分分母（选项甲：分母保持 128、新线点先进待定区；选项乙：分母 +10 → 138，需说明与 M1–M5 元断言的一致性）",
+    "11 项缺口的验收点逐条起草（每条：断言判定式 + verify + 证据类型 + fail_when），格式对齐 V1 标准附录 A 的列",
+    "每条起草件标注「自研 / 借鉴」方式（③/①/②）与依赖（如 27-3 依赖 27-1）",
+    "**不得直接改冻结件**（V1 标准）：变更单为草案，须创始人确认后由 CTO 落盘并更新签名哈希",
+    "起草件行号/路径当场核过（禁凭记忆）"
+  ],
+  "next": "① 读 V1 标准 v0.2 附录 A 列定义 + gap-line-mapping.yaml ② 起草 11 点 + 两线 10 点的正式条目 ③ 出变更单（含分母两种选项与影响面）④ 交创始人确认",
+  "note": "来源：创始人 2026-09-19 三项裁定（两条新线 / 11 项归线不新开 / 前提清单优先）。当前状态：线已登记进 yaml（total_lines=28），点已进待定区（36→46），但**未进计分分母**——因为计分源是冻结的 V1 验收标准（v0.2，哈希 c11841e6）。本卡只产起草件，不改冻结件。"
+}
