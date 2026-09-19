@@ -26,5 +26,7 @@
     "验收按 docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md"
   ],
   "next": "见派单文档对应小节；开工第一步重新核行号（会漂移）",
-  "note": "创始人 2026-09-18 裁定『你要登记台账跟踪，项目总览要跟踪』。当前面板只读 ledger.json（由 gen-project-board.py 从 product-lines.yaml + task-state + 证据派生），三层清单与新线还没进派生链 → 本卡把它接上。判据 C。"
+  "note": "创始人 2026-09-18 裁定『你要登记台账跟踪，项目总览要跟踪』。当前面板只读 ledger.json（由 gen-project-board.py 从 product-lines.yaml + task-state + 证据派生），三层清单与新线还没进派生链 → 本卡把它接上。判据 C。",
+  "executor": "mac-coding",
+  "acceptance_level": "代码级可验（Mac 必须验）；若涉及 Windows 实机行为 → 挂账，Win 回归后补验，禁止声称"
 }
