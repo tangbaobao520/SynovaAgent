@@ -1,10 +1,11 @@
 {
   "task_id": "D819",
-  "title": "P0-1+P0-2：工具 schema 进请求体 + tool_call 配对（两张必须同时修，工具循环方能通）",
+  "title": "P0-1+P0-2+D817-F1/F2：工具 schema 进请求体 + tool_call 配对 + 响应侧 tool_calls 映射 + assistant 不重复入上下文",
   "status": "claimed",
   "risk": "high",
   "spec": "派单即规格：docs/synova/coordination/派单-批十一-P0-1-P0-2-20260918.md §A/D819（含 CTO 实测的四处位置）",
   "write_set": [
+    "src/agent/conversation-engine.ts",
     "src/providers/base.ts",
     "src/agent/tool-loop-executor.ts",
     "tests/agent/tool-loop-tool-pairing.integration.test.ts",
@@ -26,15 +27,15 @@
   "blocked": "前置：D817（假上游 + 生产入口 harness）合入后开工——本卡的验收必须用它的出站抓取点",
   "target": "2026-W38",
   "acceptance_points": [
-    "出站请求体含 tools：D817 假上游抓到 body.tools 长度 == 本轮注册工具数（不再是 undefined）",
-    "assistant 消息携带 tool_calls：第二轮请求里 role=assistant 的消息含 tool_calls[]（id/name/arguments）",
-    "tool 消息的 tool_call_id == 上一条 assistant tool_calls[].id（不再出现随机 UUID）",
-    "端到端：假上游脚本化返回一次 tool_call → 断言工具被真实执行且第二轮请求配对合法",
-    "P0-1 的 it.fails 证词（D817 交付）翻转为通过，并删除该 it.fails 改为正向断言",
-    "不新增依赖；不在 src/** 加测试专用分支；provider 契约（ChatOptions.tools）语义不变"
+    "出站体含 tools：D817 假上游抓到 body.tools 长度 == 本轮注册工具数",
+    "D817-F1 修复：响应侧 tool_calls 映射进 ChatResult.toolCalls（base.ts 非流式路径），工具循环在真实 provider 路径上被驱动（第二轮请求出现 role='tool'）",
+    "D817-F2 修复：assistant 回复不再重复入上下文（第 2 轮角色序不得出现连续两个 assistant）",
+    "tool 消息的 tool_call_id == 上一条 assistant tool_calls[].id（不再随机 UUID）",
+    "D817 交付的 3 条 it.fails 证词（P0-1/F1/F2）**全部翻转为通过**，并删除这 3 条 it.fails 改成正向断言",
+    "验收按 docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md（禁 grep；三问自查；命令+原始输出+五态定位）"
   ],
   "next": "① 等 D817 合入 ② 核行号（base.ts body 组装 / tool-loop-executor assistant 与 tool 消息构造）③ 在 body 组装处透传 tools（经 provider 的 convertTools 或 OpenAI 形状）④ tool 消息改用模型给的 tc.id、assistant 补 tool_calls ⑤ 用假上游跑端到端 ⑥ 汇报",
-  "note": "CTO 已实测（origin/main）：① src/providers/base.ts 的 body 组装只含 model/messages/temperature/max_tokens/reasoning_effort/stream，无 tools；而 tool-loop-executor.ts:110-113 确实把 tools 传进 callLlm → 在 provider 边界被丢弃；② tool-loop-executor.ts:131-134 push 的 assistant 消息只有 role+content，tool_calls 被丢；:153 等处 tool 消息用 crypto.randomUUID() 当 tool_call_id（模型给的 tc.id 未使用）。故两张必须同时修：只修①，模型仍收到结构非法的工具对话。",
+  "note": "CTO 已实测（origin/main）：① src/providers/base.ts 的 body 组装只含 model/messages/temperature/max_tokens/reasoning_effort/stream，无 tools；而 tool-loop-executor.ts:110-113 确实把 tools 传进 callLlm → 在 provider 边界被丢弃；② tool-loop-executor.ts:131-134 push 的 assistant 消息只有 role+content，tool_calls 被丢；:153 等处 tool 消息用 crypto.randomUUID() 当 tool_call_id（模型给的 tc.id 未使用）。故两张必须同时修：只修①，模型仍收到结构非法的工具对话。\n\n【2026-09-19 CTO 验收 D817 后扩围】D817 执行中实测发现两处新缺陷，与本卡同一文件/同一调用链，必须一起修：\n- D817-F1（响应侧 tool_calls 从未映射）：src/providers/base.ts 非流式返回只取 choices[0].message.content；ChatResult.toolCalls（types.ts:40）有类型但无人写 → 工具循环在真实 provider 路径上永不触发（抓包实证：假上游回了 tool_calls，第二轮请求无 role:'tool'）。\n- D817-F2（assistant 重复入上下文）：tool-loop-executor.ts:270 与本工具循环出口各推一次 → 第 2 轮角色序实测 = [system,user,assistant,assistant,user]；它会直接破坏「发出去的请求 == 日志重建的请求」这条不变量（P0-4）。\n证据：docs/synova/product-lines/evidence/D817-capture-20260918.json（machine 生成，两次运行 sha256 一致 a605dad2…）。",
   "executor": "mac-coding",
   "delegation": "Mac 代行 win（D773 规约；创始人 2026-09-18 重申『涉及 win 线的一并先给 Mac 执行』）",
   "acceptance_level": "代码级可验（Mac 必须验）；若涉及 Windows 实机行为 → 挂账，Win 回归后补验，禁止声称"

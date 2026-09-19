@@ -1,0 +1,34 @@
+{
+  "task_id": "D835",
+  "title": "控制塔卫生 2：D708 写集门禁对 git mv（重命名）来源路径误判为夹带",
+  "status": "claimed",
+  "risk": "medium",
+  "spec": "派单即规格：本卡 + D817 实证（提交 47ab6037 / CI run 35440735254）",
+  "write_set": [
+    "scripts/control-tower/merge_writeset_gate.py",
+    "tests/control-tower/merge-writeset-gate.test.sh",
+    "task-state/D835.json",
+    "memory/notes/proposed/2026-09-19-D835-d708-rename-from-side.md"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-19",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "mac-coding",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "夹具：一条 `git mv a b` 改名 + 只声明 to 侧 → 断言当前判『夹带』（先红）",
+    "修复后：rename 的 from/to 视为同一路径组（或在报错文案里明确要求声明两侧）→ 夹具转绿",
+    "不放松真实夹带检测：另造一条与 rename 无关的夹带文件 → 断言仍被拦（反向验收）",
+    "验收按 docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md（禁 grep 命中当完成；三问自查）"
+  ],
+  "next": "① 核 D708 变更集如何取 R 状态文件 ② 加 from 侧归组或文案修正 ③ 先红后绿夹具 ④ 汇报",
+  "note": "D817 执行方实证：`git mv memory/notes/proposed/… → implemented/…` 后，D708 把 from 侧路径判为『夹带』→ CI 红一次（run 35440735254）；修法=声明两侧（临时解）。与 D814（任务号错锚）同族但根因不同：D814 是推断错任务号，本卡是 rename 来源侧未归组。",
+  "acceptance_level": "代码级可验（Mac 必须验）"
+}
