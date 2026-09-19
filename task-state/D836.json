@@ -1,0 +1,33 @@
+{
+  "task_id": "D836",
+  "title": "K3 独立审计：D819 工具接线三修（试点队产出）—— 试点指标③（审计能挑出几个问题）",
+  "status": "claimed",
+  "risk": "medium",
+  "spec": "派单即规格：本卡 + PR #646（实现面）/ #647（过程记录面）",
+  "write_set": [
+    "docs/synova/audit-reports/2026-09-19-K3-D819.md",
+    "task-state/D836.json"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-19",
+  "updated_by": "synova-cto",
+  "domain": "k3",
+  "owner": "k3",
+  "executor": "k3",
+  "milestone": "M1 产品可用",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "独立复核「工具真的发出去且工具循环被驱动」：给文件:行 + 可复现命令 + 原始输出（不接受转述）",
+    "独立复核配对：tool_call_id == assistant.tool_calls[].id（含缺 id 的确定性兜底场景）",
+    "独立复核「助手不重复入上下文」：第 2 轮角色序精确 [system,user,assistant,tool]",
+    "复核自验记录的 6 条遗留（L1-L6）是否被如实登记、是否有被掩盖的问题",
+    "特别关注：证据文件是否自证（tools 长度是否同源复算而非硬编码）；确定性（两次运行 sha256）是否成立",
+    "产出报告 docs/synova/audit-reports/2026-09-19-K3-D819.md（逐条 ✅/❌ + 命令 + 原始输出 + 0×P0/…×P1/…×P2 计数）"
+  ],
+  "next": "① 读 PR #646/#647 与分支 feat/d819-tool-wiring-pilot ② 在独立 clone 内复跑验收命令 ③ 逐条对照卡内 6 条验收点 ④ 出报告 + 回填本卡 audit 段",
+  "note": "试点背景：本卡是「每任务一临时小队」试点的最后一项指标（K3 是队外独立审计，不入队）。交付方：spec-d819 / impl-d819 / verify-d819 三人队（我会在试点复盘中给出全链路时序与返工数据）。审计红线不变：不碰 scripts/audit/**、不改审计标准、不自我审计。"
+}
