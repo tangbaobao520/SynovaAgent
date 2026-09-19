@@ -1,0 +1,37 @@
+{
+  "task_id": "D837",
+  "title": "小队模式物理门禁：check-team-protocol.sh（M1–M6 六项检查 + 夹具 + 接线）",
+  "status": "claimed",
+  "risk": "high",
+  "spec": "机制定义：docs/synova/coordination/小队模式-固化件-v1-20260919.md（M1–M6）",
+  "write_set": [
+    "scripts/control-tower/check-team-protocol.sh",
+    "tests/control-tower/check-team-protocol.test.sh",
+    "scripts/pre-commit-check.sh",
+    "task-state/D837.json",
+    ".claude/task-briefs/2026-09-19-D837-小队门禁.md",
+    "memory/notes/proposed/2026-09-19-D837-team-protocol-gate.md"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-19",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "mac-coding",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "六项检查各有一对「先红后绿」夹具：M1 工作树隔离 / M2 写集互斥（含前缀包含）/ M3 自验措辞（禁用词 + 必备结论词）/ M4 指令-工具副作用冲突 / M5 证据写入归属（测试写路径含本任务号）/ M6 队伍收尾（无残留归属 + 三件交付）",
+    "门禁装进 pre-commit（本地软提示 / SYNO_CI=1 硬阻断）；不改变其余 13 组语义",
+    "反向验收：脚本缺失或解析失败 → 显式 degraded + 非零（禁静默放行）；无小队产物时不空转报错",
+    "性能：无相关产物时 <1s 跳过（V4.5.1 教训：pre-commit 超时 = --no-verify = 门禁链失效）",
+    "改动 scripts/control-tower/** 前加载 ctrl-tower-change 技能；不碰 scripts/audit/**",
+    "K3 抽审：门禁本身属审计面"
+  ],
+  "next": "① 加载 ctrl-tower-change ② 按固化件 M1–M6 定义输入/输出/退出码（契约优先）③ 实现六项检查 + 六对夹具 ④ 接进 pre-commit ⑤ 汇报（命令 + 原始输出）",
+  "note": "来源：D819 小队试点（规格/编码/自验三人队 + K3 队外）实测暴露的 6 个坑，创始人 2026-09-19 指令「固化成必须遵守的机制」。本卡只建**物理检查**，不改机制内容（机制见固化件 v1）。落地前六条只是纪律不是门禁——这条差异必须在卡与本文件里明写，防「文档说了但没接上」。"
+}
