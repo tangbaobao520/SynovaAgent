@@ -120,6 +120,9 @@ export function createOpenAICompatibleProvider(cfg: ProviderAdapterConfig): LLMP
   // 熔断器实例 — D5: 统一LLM调用保护 (threshold=5, cooldown=30s)
   const breaker = new CircuitBreaker({ threshold: 5, cooldownMs: 30_000 });
 
+  /** D819: 上游未给 tool_call_id 时的确定性兜底序号（provider 实例内单调；禁随机 UUID） */
+  let fallbackToolCallSeq = 0;
+
   /** 共享 HTTP POST 请求 — 消除 24 行重复 (块 B) */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async function makeRequest(messages: LLMMessage[] | LLMMessage[], opts?: ChatOptions, stream = false) {
@@ -144,6 +147,9 @@ export function createOpenAICompatibleProvider(cfg: ProviderAdapterConfig): LLMP
     };
     if (opts?.reasoningEffort) body.reasoning_effort = opts.reasoningEffort;
     if (stream) body.stream = true;
+    // D819: tools schema 进请求体（工具循环的生产接收入口 —— 此前在 provider 边界被丢弃）。
+    // 空数组/未传 → 不写字段（与旧行为一致，provider 契约语义不变）。
+    if (opts?.tools && opts.tools.length > 0) body.tools = opts.tools;
 
     return fetch(`${baseUrl}${chatPath}`, {
       method: 'POST',
@@ -219,19 +225,46 @@ export function createOpenAICompatibleProvider(cfg: ProviderAdapterConfig): LLMP
         const res = await makeRequest(msgs, opts);
         await checkResponse(res, 'API 错误');
         const data = await res.json() as ChatCompletionResponse;
-        const content = data?.choices?.[0]?.message?.content;
-        if (!content) {
+        const message = data?.choices?.[0]?.message;
+        const content = message?.content ?? '';
+        // D819 (D817-F1): 响应侧 tool_calls → ChatResult.toolCalls 映射。
+        // 此前只取 content → toolCalls 恒 undefined → 工具循环在真实 provider 路径永不触发。
+        const rawToolCalls = message?.tool_calls;
+        let synthesizedIds = 0;
+        const toolCalls = rawToolCalls && rawToolCalls.length > 0
+          ? rawToolCalls.map((tc) => {
+              let id = typeof tc.id === 'string' && tc.id.length > 0 ? tc.id : '';
+              if (id.length === 0) {
+                // 非规范上游缺 id → 确定性兜底（禁随机 UUID）；配对仍合法，显式降级不留痕静默
+                synthesizedIds += 1;
+                fallbackToolCallSeq += 1;
+                id = `call_resp_${fallbackToolCallSeq}`;
+              }
+              return {
+                id,
+                type: 'function' as const,
+                function: { name: tc.function.name, arguments: tc.function.arguments },
+              };
+            })
+          : undefined;
+        if (synthesizedIds > 0) {
+          log.warn(
+            { provider: cfg.name, synthesized: synthesizedIds, degraded: true },
+            '上游 tool_calls 缺 id — 确定性兜底 id（配对仍合法；来源层需修）',
+          );
+        }
+        if (content.length === 0 && !toolCalls) {
           // DSH B-01 assembler 侧分类: 正常完成但零内容 → EMPTY_RESPONSE
           // （产物为零，重试策略视为可安全重复）
           throw new DiagnosticAgentError({
             code: ErrorCode.EMPTY_RESPONSE,
-            message: `${cfg.name} 返回缺少 content（退化空响应 EMPTY_RESPONSE）`,
+            message: `${cfg.name} 返回缺少 content 且无 tool_calls（退化空响应 EMPTY_RESPONSE）`,
             phase: 0, retryable: true, shouldFallback: true,
           });
         }
         const extra = cfg.afterResponse ? cfg.afterResponse(data, opts) : {};
         breaker.recordSuccess();
-        return { content, model: data.model || model, ...extra };
+        return { content, model: data.model || model, ...(toolCalls ? { toolCalls } : {}), ...extra };
       } catch (err) {
         breaker.recordFailure();
         throw finalizeAdapterFailure(err, cfg.name, 'chat');

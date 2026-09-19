@@ -19,11 +19,11 @@ interface FakeProviderOpts {
   /** Text content for the first chat call */
   firstContent?: string;
   /** Tool calls for the first chat call */
-  firstToolCalls?: Array<{ function: { name: string; arguments: string } }>;
+  firstToolCalls?: Array<{ id?: string; function: { name: string; arguments: string } }>;
   /** Text content for the second chat call (after tool results) */
   secondContent?: string;
   /** Tool calls for the second chat call */
-  secondToolCalls?: Array<{ function: { name: string; arguments: string } }>;
+  secondToolCalls?: Array<{ id?: string; function: { name: string; arguments: string } }>;
   /** Make chat() throw after Nth call */
   throwAfterCalls?: number;
   /** Error to throw */
@@ -246,7 +246,7 @@ describe('streamWithToolLoop — single LLM call per user message', () => {
 });
 
 describe('streamWithToolLoop — tool_call_id fix', () => {
-  it('Given a tool call, When tool result injected, Then tool_call_id is a unique identifier (not function name)', async () => {
+  it('Given a tool call, When tool result injected, Then tool_call_id equals the model-provided id (paired, not random UUID)', async () => {
     const toolNames: string[] = [];
     const registry = new ToolRegistry();
     registry.register({
@@ -262,7 +262,7 @@ describe('streamWithToolLoop — tool_call_id fix', () => {
     const provider = fakeProviderWithTools({
       firstContent: 'Calling tool...',
       firstToolCalls: [
-        { function: { name: 'my_special_tool', arguments: '{}' } },
+        { id: 'call_test_1', function: { name: 'my_special_tool', arguments: '{}' } },
       ],
       secondContent: 'Tool done.',
     });
@@ -284,13 +284,19 @@ describe('streamWithToolLoop — tool_call_id fix', () => {
     // Tool was called
     expect(toolNames).toContain('called');
 
-    // Check that tool message in history uses unique ID, not function name
+    // Check that tool message in history uses the model-provided id (D819: 不再用随机 UUID)
     const msgs = conv.getMessages() as any[];
     const toolMsg = msgs.find((m: any) => m.role === 'tool');
     expect(toolMsg).toBeDefined();
     // tool_call_id should NOT be the function name
     expect(toolMsg.tool_call_id).not.toBe('my_special_tool');
-    // Should be a UUID-like string
-    expect(toolMsg.tool_call_id).toMatch(/^[a-f0-9-]{8,}$/i);
+    // D819: 必须等于模型给的 tc.id —— assistant.tool_calls[].id 与 tool.tool_call_id 同源
+    expect(toolMsg.tool_call_id).toBe('call_test_1');
+    // 且不再是随机 UUID 形态（旧实现 crypto.randomUUID）
+    expect(toolMsg.tool_call_id).not.toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+    // assistant 中间态消息带同 id 的 tool_calls（配对的结构前提）
+    const assistantWithCalls = msgs.find((m: { role?: string; tool_calls?: Array<{ id?: string }> }) =>
+      m.role === 'assistant' && Array.isArray(m.tool_calls));
+    expect(assistantWithCalls?.tool_calls?.[0]?.id).toBe('call_test_1');
   });
 });

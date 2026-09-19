@@ -16,12 +16,12 @@
  * buildFallbackProvider（conversation-engine.ts:323-339）返回 null：物理上不存在指向真实 API 的
  * failover 分支，零外网可证（另见本文件 installFetchObserver 的全程出站观测）。
  *
- * 三条**证词**（it.fails，当前预期失败；修好后会翻转为红 → 必须删除 it.fails 改正向断言）：
- *   ① P0-1：出站请求体应含 tools            （src/providers/base.ts:139-146 不落 tools）
- *   ② D817-F1：工具循环应被真实驱动          （src/providers/base.ts:215-238 chat() 未映射响应侧
- *      tool_calls → ChatResult.toolCalls 恒 undefined → tool-loop-executor.ts:265 恒走「无工具调用」分支）
- *   ③ D817-F2：出站上下文不得重复 assistant  （tool-loop-executor.ts:270 + conversation-engine.ts:785 双推）
- *   ②③ 是本次执行时**新发现**的缺陷（派单只列了 ①）；本卡按红线只证词化，不私自改产品代码。
+ * 三条**证词**（D819 修复后已翻转为正向断言，不再使用 expect-fail 形态断言）：
+ *   ① P0-1：出站请求体含 tools            （src/providers/base.ts body 组装透传 opts.tools）
+ *   ② D817-F1：工具循环被真实驱动          （src/providers/base.ts chat() 映射响应侧 tool_calls
+ *      → ChatResult.toolCalls → tool-loop-executor 走工具分支）
+ *   ③ D817-F2：出站上下文不重复 assistant  （tool-loop-executor 只推中间态；conversation-engine 为终态 owner）
+ *   ②③ 是 D817 执行时**新发现**的缺陷（派单只列了 ①），D819 一并修复后翻转。
  *
  * 铁律 24/31/33/47/48 + 验收标准《穿真实入口 v1》四条禁止（grep 当完成 / 文件存在当验收 /
  * src/** 测试开关 / 放宽排除清单）。
@@ -61,6 +61,8 @@ let tmpDataDir: string;
 let sessionId = '';
 let firstTurnFrames: Array<Record<string, unknown>> = [];
 let firstTurnSseText = '';
+/** D819: 入口首轮（建会话轮）的 SSE 原文 —— 工具轮的 `[工具调用: ` 注解在这一轮（脚本首轮带 tool_calls） */
+let entryTurnSseText = '';
 const externalCalls: string[] = [];
 const savedEnv = new Map<string, string | undefined>();
 const realFetch = globalThis.fetch;
@@ -100,6 +102,16 @@ function parseSseFrames(text: string): Array<Record<string, unknown>> {
 
 function frameTypes(frames: Array<Record<string, unknown>>): string[] {
   return frames.map(f => (typeof f.type === 'string' ? f.type : '(no-type)'));
+}
+
+/** 记录体类型守卫（零类型断言的窄化；D819 断言出站 tools 项形状用） */
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v);
+}
+
+/** unknown → 记录数组（非数组/非记录项一律剔除；零类型断言） */
+function recordArray(v: unknown): Array<Record<string, unknown>> {
+  return Array.isArray(v) ? v.filter(isRecord) : [];
 }
 
 async function postMessage(path: string, body: Record<string, unknown>): Promise<{ res: Response; text: string }> {
@@ -154,24 +166,24 @@ function writeEvidence(mainRequestIndex: number): void {
         assertion: '出站请求体含 tools（工具 schema 进请求体）',
         machine_criterion: "upstream.body_keys_union 含 'tools'",
         observed: snap.body_keys_union.includes('tools'),
-        expected_now: 'false —— P0-1 未修；本卡以 it.fails 证词化，修好后必须删除 it.fails 改正向断言',
-        evidence_source: 'src/providers/base.ts:139-146（body 只落 model/messages/temperature/max_tokens）',
+        expected_now: 'true —— D819 已修（tools 透传到 provider 边界）；本项为正向断言',
+        evidence_source: 'src/providers/base.ts（body 组装透传 opts.tools）',
       },
       d817_f1_tool_loop_not_driven: {
         assertion: '工具循环被真实驱动（工具被真实执行且结果喂回模型）',
         machine_criterion: "任一出站请求 messages 含 role='tool'（或 SSE token 帧含 '[工具调用: '）",
         observed: snap.saw_tool_result_message,
-        expected_now: 'false —— 响应侧 tool_calls 未映射到 ChatResult.toolCalls；it.fails 证词化',
-        evidence_source: 'src/providers/base.ts:215-238（chat() 只取 choices[0].message.content）+ tool-loop-executor.ts:265',
-        note: 'D817 执行时新发现（派单只列了 request 侧 P0-1）；产物零 src/** 改动，留证待 CTO/创始人裁决',
+        expected_now: 'true —— D819 已映射响应侧 tool_calls 到 ChatResult.toolCalls；本项为正向断言',
+        evidence_source: 'src/providers/base.ts chat()（choices[0].message.tool_calls → ChatResult.toolCalls）',
+        note: 'D817 执行时新发现（派单只列了 request 侧 P0-1）；D819 修复后翻转',
       },
       d817_f2_duplicate_assistant: {
         assertion: '出站上下文不得重复 assistant 回复（同一条助手消息只应入上下文一次）',
         machine_criterion: "任一出站请求 messages 角色序列不含 'assistant,assistant'（连续两条 assistant）",
         observed: snap.requests.some(r => r.messages_roles.join(',').includes('assistant,assistant')),
-        expected_now: 'true（重复存在）—— it.fails 证词化；修好后翻转为红，必须删除 it.fails',
-        evidence_source: 'tool-loop-executor.ts:270 推 assistant + conversation-engine.ts:785 再推一次（streaming 路径双推）',
-        note: 'D817 执行时新发现：出站上下文膨胀一倍（第 1 轮 = [system,user]；第 2 轮 = [system,user,assistant,assistant,user]）',
+        expected_now: 'false（不再重复）—— D819 已去重：工具循环只推中间态 assistant，终态由 ConversationEngine 唯一写入',
+        evidence_source: 'tool-loop-executor.ts（删除两处终态 push）+ conversation-engine.ts:785/790（终态 owner）',
+        note: 'D817 执行时新发现：旧行为出站上下文膨胀一倍（第 1 轮 = [system,user]；第 2 轮 = [system,user,assistant,assistant,user]）',
       },
     },
   };
@@ -231,6 +243,7 @@ describe('D817 生产入口级对话（真实 createServer + 真实路由 + 假�
     const { res, text } = await postMessage('/api/conversations', { message: 'D817 入口探针：先说说团队规模' });
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type') ?? '').toContain('text/event-stream');
+    entryTurnSseText = text;
 
     const frames = parseSseFrames(text);
     expect(frames.length).toBeGreaterThan(0);
@@ -299,16 +312,34 @@ describe('D817 生产入口级对话（真实 createServer + 真实路由 + 假�
     expect(fake.requests.every(r => r.host.startsWith('127.0.0.1'))).toBe(true);
   });
 
-  it.fails('④ P0-1 证词：出站请求体应含 tools（当前预期失败；修好后必须删除本 it.fails 改正向断言）', () => {
+  it('④ P0-1 正向断言：出站请求体含 tools（形状合法且含注册工具名）', () => {
     const snap = snapshotUpstream(fake);
     expect(snap.body_keys_union).toContain('tools');
+
+    // snapshot 剥掉了 body（易变面裸奔防护）→ 用真实抓包体核对形状与工具名集合
+    const withTools = fake.requests.filter(r => r.hasToolsField);
+    expect(withTools.length).toBeGreaterThan(0);
+    const tools = recordArray(withTools[0].body.tools);
+    expect(tools.length).toBeGreaterThan(0);
+    for (const t of tools) {
+      expect(t.type).toBe('function');
+      if (!isRecord(t.function)) throw new Error('出站 tools[].function 不是对象');
+      expect(typeof t.function.name).toBe('string');
+    }
+    const names = tools
+      .map(t => (isRecord(t.function) ? t.function.name : undefined))
+      .filter((n): n is string => typeof n === 'string');
+    expect(names).toContain(SCRIPTED_TOOL);
   });
 
-  it.fails('⑤ D817-F1 证词：工具循环应被真实驱动（当前预期失败；修好后必须删除本 it.fails）', () => {
+  it('⑤ D817-F1 正向断言：工具循环被真实驱动（工具轮往返 + 工具注解）', () => {
     const snap = snapshotUpstream(fake);
-    const sawToolRoundTrip = snap.saw_tool_result_message;
-    const sawToolAnnotation = firstTurnSseText.includes('[工具调用: ');
-    expect({ sawToolRoundTrip, sawToolAnnotation }).toEqual({ sawToolRoundTrip: true, sawToolAnnotation: true });
+    // 任一出站请求含 role='tool' = 工具结果被真实喂回模型
+    expect(snap.saw_tool_result_message).toBe(true);
+    // 工具轮（入口首轮，脚本首轮带 tool_calls）的 SSE 文本含工具注解
+    expect(entryTurnSseText).toContain('[工具调用: ');
+    // 续轮（第 2 轮用户消息）SSE 也真实流出（非空，契约面）
+    expect(firstTurnSseText.length).toBeGreaterThan(0);
   });
 
   it('⑥ CI 排除面不含本文件（负向对照：tests/e2e/** 仍在排除面内 = 检查不是空转）', () => {
@@ -366,7 +397,7 @@ describe('D817 生产入口级对话（真实 createServer + 真实路由 + 假�
     log.info({ parseError: captured.parseError }, 'D817 假上游降级路径已验证（400 + parseError 留痕）');
   });
 
-  it.fails('⑨ D817-F2 证词：出站上下文不得重复 assistant 回复（当前预期失败；修好后必须删除本 it.fails）', () => {
+  it('⑨ D817-F2 正向断言：出站上下文不重复 assistant 回复', () => {
     const roleSequences = fake.requests
       .filter(r => r.messagesRoles.includes('user'))
       .map(r => r.messagesRoles.join(','));
