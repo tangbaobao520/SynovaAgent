@@ -18,7 +18,7 @@
   "fix_task_id": null,
   "updated_at": "2026-09-18",
   "updated_by": "synova-cto",
-  "domain": "mac",
+  "domain": "win",
   "owner": "mac-coding",
   "milestone": "M1 产品可用",
   "depends_on": [],
@@ -31,5 +31,8 @@
     "验收按 docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md（禁 grep 命中；三问自查逐条作答；报告含命令+原始输出+五态定位）"
   ],
   "next": "见派单文档 §A 对应小节",
-  "note": "CTO 实测位置：src/store/session-store.ts:377-383（addMessage 成功即重置 lastDegraded）；src/routes/conversations.ts:249/255/260（第 2 次写成功后才检查）→ 写失败信号被同轮后一次成功写入抹掉，STORE_DEGRADED 帧不会发。判据 C。工作量 1–3 天（性价比最高档）。"
+  "note": "CTO 实测位置：src/store/session-store.ts:377-383（addMessage 成功即重置 lastDegraded）；src/routes/conversations.ts:249/255/260（第 2 次写成功后才检查）→ 写失败信号被同轮后一次成功写入抹掉，STORE_DEGRADED 帧不会发。判据 C。工作量 1–3 天（性价比最高档）。",
+  "executor": "mac-coding",
+  "delegation": "Mac 代行 win（D773 规约；创始人 2026-09-18 重申『涉及 win 线的一并先给 Mac 执行』）",
+  "acceptance_level": "代码级可验（Mac 必须验）；若涉及 Windows 实机行为 → 挂账，Win 回归后补验，禁止声称"
 }

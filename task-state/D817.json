@@ -18,7 +18,7 @@
   "fix_task_id": null,
   "updated_at": "2026-09-18",
   "updated_by": "synova-cto",
-  "domain": "mac",
+  "domain": "win",
   "owner": "mac-coding",
   "milestone": "M1 产品可用",
   "depends_on": [],
@@ -33,5 +33,8 @@
     "不得为让测试变绿而改 vitest.config.ts 的 exclude 或把文件挪回 tests/e2e/**"
   ],
   "next": "① 读 tests/smoke.test.ts 与 tests/routes/diagnosis-token-meter.integration.test.ts 的启动范式 ② 写假上游 helper（OpenAI 兼容、记录 body、脚本化含 tool_call 的响应）③ 起真实 server 打 POST /api/conversations/:id/messages ④ 落证据文件（body keys）⑤ 跑 CI=1 验证被包含 ⑥ 汇报（含命令与原始输出）",
-  "note": "CTO 已核实（2026-09-18，origin/main）：① vitest.config.ts:29-37 在 CI 下排除 tests/e2e/**（注释 Needs LLM API）→ 所有『穿真实生产入口』验收今天无法自动判定；② src/providers/base.ts:139-151 出站 body 只有 model/messages/temperature/max_tokens/stream，无 tools，而 tool-loop-executor.ts:112,251 确实把 tools 传了进去；③ 范式已存在：tests/smoke.test.ts 用 src/server 的 createServer，tests/routes/diagnosis-token-meter.integration.test.ts 头部注明铁律 12『集成测试走真实路由 express app + listen(0) + fetch，不 mock 管线』；④ 目标路由存在 src/routes/conversations.ts:359。此为全部 15 项任务书验收的前置（第 0 批第一位）。"
+  "note": "CTO 已核实（2026-09-18，origin/main）：① vitest.config.ts:29-37 在 CI 下排除 tests/e2e/**（注释 Needs LLM API）→ 所有『穿真实生产入口』验收今天无法自动判定；② src/providers/base.ts:139-151 出站 body 只有 model/messages/temperature/max_tokens/stream，无 tools，而 tool-loop-executor.ts:112,251 确实把 tools 传了进去；③ 范式已存在：tests/smoke.test.ts 用 src/server 的 createServer，tests/routes/diagnosis-token-meter.integration.test.ts 头部注明铁律 12『集成测试走真实路由 express app + listen(0) + fetch，不 mock 管线』；④ 目标路由存在 src/routes/conversations.ts:359。此为全部 15 项任务书验收的前置（第 0 批第一位）。",
+  "executor": "mac-coding",
+  "delegation": "Mac 代行 win（D773 规约；创始人 2026-09-18 重申『涉及 win 线的一并先给 Mac 执行』）",
+  "acceptance_level": "代码级可验（Mac 必须验）；若涉及 Windows 实机行为 → 挂账，Win 回归后补验，禁止声称"
 }

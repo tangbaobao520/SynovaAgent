@@ -23,7 +23,7 @@
   "fix_task_id": null,
   "updated_at": "2026-09-18",
   "updated_by": "synova-cto",
-  "domain": "mac",
+  "domain": "win",
   "owner": "mac-coding",
   "milestone": "M1 产品可用",
   "depends_on": [
@@ -40,5 +40,8 @@
     "验收按 docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md（禁 grep 命中；三问自查逐条作答；报告含命令+原始输出+五态定位）"
   ],
   "next": "见派单文档 §A 对应小节",
-  "note": "CTO 实测：全 src grep HTTPS_PROXY/http_proxy/NO_PROXY/setGlobalDispatcher 零命中；出站是裸 fetch（providers/base.ts:148,197、ernie.ts:40,110、connectors/ima.ts 4 处等，25+ 处）；package.json 无 undici/node-fetch/axios。DSH 参照 dsh-http-proxy（lib/index.js 536 行 + policy.d.ts 135 行）：借鉴解析顺序（scheme → ALL_PROXY → HTTPS 回退 HTTP）、loopback 整网段、CIDR 需改写、不可用值降级不阻止启动、子进程环境还原；不借鉴 undici 全局 dispatcher 劫持（DSH 自认跨版本隐式耦合）、单进程单策略、无 SOCKS5/无自定义 CA。方式=①范式复用策略语义 + ③自建（SOCKS5/自定义 CA/配置化）。"
+  "note": "CTO 实测：全 src grep HTTPS_PROXY/http_proxy/NO_PROXY/setGlobalDispatcher 零命中；出站是裸 fetch（providers/base.ts:148,197、ernie.ts:40,110、connectors/ima.ts 4 处等，25+ 处）；package.json 无 undici/node-fetch/axios。DSH 参照 dsh-http-proxy（lib/index.js 536 行 + policy.d.ts 135 行）：借鉴解析顺序（scheme → ALL_PROXY → HTTPS 回退 HTTP）、loopback 整网段、CIDR 需改写、不可用值降级不阻止启动、子进程环境还原；不借鉴 undici 全局 dispatcher 劫持（DSH 自认跨版本隐式耦合）、单进程单策略、无 SOCKS5/无自定义 CA。方式=①范式复用策略语义 + ③自建（SOCKS5/自定义 CA/配置化）。",
+  "executor": "mac-coding",
+  "delegation": "Mac 代行 win（D773 规约；创始人 2026-09-18 重申『涉及 win 线的一并先给 Mac 执行』）",
+  "acceptance_level": "代码级可验（Mac 必须验）；若涉及 Windows 实机行为 → 挂账，Win 回归后补验，禁止声称"
 }
