@@ -208,19 +208,3 @@ documents:
     status: active
     owner: founder + dev-line
     note: "文档体系改革交付清单（4 批提交计划 + K3 审计材料 + task brief 模板）"
-
-  # ---- 产品完成度定义（CTO 2026-09-18 登记）----
-  - id: DOC-0030
-    type: decision
-    path: docs/authority/产品完成度定义与推进总纲-20260918.md
-    status: active
-    owner: CTO
-    verified-by: docs/synova/product-lines/preconditions.yaml (清单一致性)
-
-  - id: DOC-0031
-    type: governance
-    path: docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md
-    status: active
-    owner: CTO
-    verified-by: scripts/control-tower/pre-dispatch-check.sh (planned)
-
