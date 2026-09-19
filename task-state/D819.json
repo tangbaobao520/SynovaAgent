@@ -1,22 +1,43 @@
 {
   "task_id": "D819",
   "title": "P0-1+P0-2：工具 schema 进请求体 + tool_call 配对（两张必须同时修，工具循环方能通）",
-  "status": "claimed",
+  "status": "impl_done",
   "risk": "high",
   "spec": "派单即规格：docs/synova/coordination/派单-批十一-P0-1-P0-2-20260918.md §A/D819（含 CTO 实测的四处位置）",
   "write_set": [
+    "src/providers/types.ts",
     "src/providers/base.ts",
     "src/agent/tool-loop-executor.ts",
     "tests/agent/tool-loop-tool-pairing.integration.test.ts",
+    "tests/integration/production-entry-conversation.integration.test.ts",
+    "tests/stream-tool-loop.test.ts",
+    "docs/synova/product-lines/evidence/D819-capture-20260919.json",
     "task-state/D819.json",
     ".claude/task-briefs/2026-09-18-D819-tools-in-body.md",
-    "memory/notes/proposed/2026-09-18-D819-tools-and-tool-call-pairing.md"
+    "memory/notes/proposed/2026-09-18-D819-tools-and-tool-call-pairing.md",
+    "memory/notes/implemented/2026-09-18-D819-tools-and-tool-call-pairing.md"
   ],
-  "impl": null,
+  "impl": {
+    "commit": null,
+    "by": "impl-d819",
+    "at": "2026-09-19",
+    "note": "commit hash 不在自引用内；见本分支 git log --grep D819",
+    "files": [
+      "src/providers/types.ts",
+      "src/providers/base.ts",
+      "src/agent/tool-loop-executor.ts",
+      "tests/agent/tool-loop-tool-pairing.integration.test.ts",
+      "tests/integration/production-entry-conversation.integration.test.ts",
+      "tests/stream-tool-loop.test.ts",
+      "docs/synova/product-lines/evidence/D819-capture-20260919.json",
+      ".claude/task-briefs/2026-09-18-D819-tools-in-body.md",
+      "memory/notes/implemented/2026-09-18-D819-tools-and-tool-call-pairing.md"
+    ]
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-09-18",
-  "updated_by": "synova-cto",
+  "updated_at": "2026-09-19",
+  "updated_by": "impl-d819",
   "domain": "win",
   "owner": "mac-coding",
   "milestone": "M1 产品可用",
@@ -37,5 +58,39 @@
   "note": "CTO 已实测（origin/main）：① src/providers/base.ts 的 body 组装只含 model/messages/temperature/max_tokens/reasoning_effort/stream，无 tools；而 tool-loop-executor.ts:110-113 确实把 tools 传进 callLlm → 在 provider 边界被丢弃；② tool-loop-executor.ts:131-134 push 的 assistant 消息只有 role+content，tool_calls 被丢；:153 等处 tool 消息用 crypto.randomUUID() 当 tool_call_id（模型给的 tc.id 未使用）。故两张必须同时修：只修①，模型仍收到结构非法的工具对话。",
   "executor": "mac-coding",
   "delegation": "Mac 代行 win（D773 规约；创始人 2026-09-18 重申『涉及 win 线的一并先给 Mac 执行』）",
-  "acceptance_level": "代码级可验（Mac 必须验）；若涉及 Windows 实机行为 → 挂账，Win 回归后补验，禁止声称"
+  "acceptance_level": "代码级可验（Mac 必须验）；若涉及 Windows 实机行为 → 挂账，Win 回归后补验，禁止声称",
+  "impl_report": {
+    "verdict": "6 条验收点全部达成（穿真实入口，命令 + 原始输出见 D819 交付报告）",
+    "entry": "POST /api/conversations（真实 createServer + PORT=0 + 真实 fetch）→ ConversationEngine.processMessageStream → ToolLoopExecutor → callWithResilience → provider.chat → base.ts fetch（唯一替身 = 127.0.0.1 假上游；零 mock 管线）",
+    "changes": [
+      "src/providers/base.ts：body 组装透传 opts.tools（无 tools 时不加 key）；chat() 映射 choices[0].message.tool_calls → ChatResult.toolCalls（空 content 且无 tool_calls 才抛 EMPTY_RESPONSE）；上游缺 id → 确定性兜底 call_resp_<n> + log.warn(degraded)",
+      "src/providers/types.ts：ToolCall 加可选 id/type（纯增量，零契约语义变更）",
+      "src/agent/tool-loop-executor.ts：normalizeToolCalls 归一化（assistant.tool_calls 与 tool.tool_call_id 同源）；8 处 crypto.randomUUID() 归零；删两处终态 assistant push（终态 owner = conversation-engine）；删 crypto 死 import",
+      "src/agent/conversation-engine.ts：零改动（终态 assistant 唯一 owner，见 impl_report.zero_change_rationale）"
+    ],
+    "verification": {
+      "command": "CI=1 npx vitest run tests/integration/production-entry-conversation.integration.test.ts tests/agent/tool-loop-tool-pairing.integration.test.ts",
+      "result": "2 files / 14 tests passed（D817 文件 9：原 3 条 it.fails 已翻正删除；新用例 5：正常/降级×2/边界×2）",
+      "strict_tool_count": "36（同一 registerBuiltinTools 注册函数进程内复算；出站体 tools 长度 == 36）",
+      "pairing": "全部子场景 assistant.tool_calls[].id === tool.tool_call_id，pairing_ok=true",
+      "role_sequence": "第二轮精确 [system,user,assistant,tool]；MAX_ROUNDS 收尾轮 [system,user,assistant,tool,assistant,tool,assistant,tool] 且不带 tools",
+      "evidence": "docs/synova/product-lines/evidence/D819-capture-20260919.json（两次运行 sha256 一致：a65918291d567bfafb6199df30121ad8f5ad013d1ec216e8fdff584de1f217d4）"
+    },
+    "zero_change_rationale": "conversation-engine.ts 的 push（:720/:726 非流式、:785/:790 流式）是所有分支的终态唯一写入点；工具循环侧 :270/:382 是同一回复的重复 push。删循环侧即可去重且不改变任何 return 分支行为；删引擎侧则需在循环 4 个 return 点各补一次 push（改动面更大、更易漏），且会改变降级文案（:258/363/375/386）的入上下文行为。",
+    "findings": [
+      "既有遗留（不改，登记）：D473 ToolGuard reminder 路径会对同一次 tool_call 多推一条 reminder tool 消息（与执行结果同 id）——既有设计，非本卡修复面；本卡用例已避开该路径（C2 用不同参数）",
+      "既有遗留（不改，登记）：诊断 consult 路径 src/l3/synova-diagnosis-engine-impl.ts 走内部形状 tools（{name,description,parameters}），当前两个生产装配点 registry 为空 → 不可达；一旦注册工具，出站体将出现非 OpenAI 形状 tools → 上游 400。另开卡",
+      "provider.stream() 的 SSE delta.tool_calls 未映射（生产对话入口不经它，全仓无生产调用者）——另开卡"
+    ],
+    "post_verify_fixes": {
+      "task": "task-4",
+      "at": "2026-09-19",
+      "by": "impl-d819",
+      "source": "D819 自验记录 §4（verify-d819 独立复核：判『可提请独立审计』，但抓出交付物两处毛病）",
+      "L1": "证据文件每场景 registered_tool_count 曾恒为 0（模块级 evidenceToolCount 声明后从未赋值，与顶层 36 自相矛盾）→ 已删该死变量，每场景改为写入与顶层/断言同源的进程内复算真值（36）；重跑两次 sha256 一致",
+      "L2": "末用例名 overclaim（原名『证据文件机器生成且含机器判据字段（体例自证）』，实际仅 2 条弱断言）→ 选**补断言档**：用例内显式落盘 + 读回文件，断言『文件存在 / scenario 数 == 已记录场景数 / id 集合 = [A,B1,B2,C1,C2] / 每场景工具数 == 复算真值 / 顶层与断言同源 / 上游缝指向 127.0.0.1』",
+      "L3_记录不改": "memory note 落 implemented/ 而非批准的 proposed/ —— D472 迁移门禁所致（status=impl_done 会把 proposed/ 内含 D819 的 note 判僵尸 → pre-commit 阻断）；与 D817 同款做法，保持现状",
+      "redline": "本轮零源码改动（src/** 未动）；D817 基建未动；自验记录（verify 产物）未动；禁 --no-verify"
+    }
+  }
 }
