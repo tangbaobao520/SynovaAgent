@@ -10,7 +10,8 @@
     "docs/synova/product-lines/evidence/D817-capture-20260918.json",
     "task-state/D817.json",
     ".claude/task-briefs/2026-09-19-D817-生产入口级对话.md",
-    "memory/notes/implemented/2026-09-18-D817-ci-production-entry.md"
+    "memory/notes/implemented/2026-09-18-D817-ci-production-entry.md",
+    "memory/notes/proposed/2026-09-18-D817-ci-production-entry.md"
   ],
   "impl": {
     "commit": "b754e484",
