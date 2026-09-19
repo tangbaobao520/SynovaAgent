@@ -1,0 +1,34 @@
+{
+  "task_id": "D839",
+  "title": "认领制缺陷：已完成 session 的 brief 不释放声明 → 后续任务被永久锁死（D296/D329 门禁）",
+  "status": "claimed",
+  "risk": "high",
+  "spec": "实测证据：D838 登记 product-lines.yaml 被 D806 brief 阻断（staging_guard.py 输出 status=block，owner_session=2026-09-18-D806-台账修复-DSH复用可见，reason=认领 brief D# 与本 session 任务不一致）",
+  "write_set": [
+    "scripts/control-tower/staging_guard.py",
+    "scripts/control-tower/session_registry.py",
+    "tests/control-tower/staging-guard-release.test.sh",
+    "task-state/D839.json"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-19",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "mac-coding",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "释放规则：当认领 brief 对应任务的 task-state 状态 ∈ {impl_done, audited}（或该任务已 merge 且 session 记录已归档）→ 该 brief 不再阻塞其他 session（门禁降为 warn 并打印释放理由）",
+    "门禁提示升级：block 消息必须给出**可执行路径**（『如何申请释放』的命令），而不是只让人『去协调』",
+    "夹具：造一个「已完成任务 A 的 brief 声明文件 X + 新任务 B 改 X」场景 → 当前应 block（先红）；修复后应 warn+放行（后绿）",
+    "不放松真实并发保护：任务 A 仍在进行（task-state=claimed/in_progress）时，B 改 X 仍必须 block（反向验收）",
+    "改 scripts/control-tower/** 前加载 ctrl-tower-change 技能；K3 抽审（门禁变更属审计面）"
+  ],
+  "next": "① 加载 ctrl-tower-change ② 读 staging_guard.py 的 brief 解析与 ownership 判定 ③ 加「已完成任务释放」规则 + block 文案带 release 命令 ④ 一对夹具（先红后绿）+ 反向验收（进行中仍拦）⑤ 汇报",
+  "note": "实测阻塞：创始人 2026-09-19 批准登记两条新线 → CTO 改 product-lines.yaml → 被 2026-09-18 的 D806 brief（台账修复，**该任务已完成并合入**）判为 foreign file 阻断。gc 已归档 D806 session 记录，但**解析器只看 brief 文件内容**，故归档无效 → 任何被历史 brief 提及的文件对后续所有任务永久锁死。这是 D296/D329 认领制的真实缺陷，不是本次任务的操作问题。"
+}
