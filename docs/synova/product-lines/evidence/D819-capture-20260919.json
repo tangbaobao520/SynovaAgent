@@ -30,7 +30,7 @@
     {
       "id": "A",
       "name": "正常路径",
-      "registered_tool_count": 0,
+      "registered_tool_count": 36,
       "requests": [
         {
           "index": 0,
@@ -83,7 +83,7 @@
     {
       "id": "B1",
       "name": "降级：上游 tool_call 缺 id",
-      "registered_tool_count": 0,
+      "registered_tool_count": 36,
       "requests": [
         {
           "index": 0,
@@ -136,7 +136,7 @@
     {
       "id": "B2",
       "name": "降级：未知工具执行失败",
-      "registered_tool_count": 0,
+      "registered_tool_count": 36,
       "requests": [
         {
           "index": 0,
@@ -189,7 +189,7 @@
     {
       "id": "C1",
       "name": "边界：空 content + tool_calls",
-      "registered_tool_count": 0,
+      "registered_tool_count": 36,
       "requests": [
         {
           "index": 0,
@@ -242,7 +242,7 @@
     {
       "id": "C2",
       "name": "边界：MAX_ROUNDS 用尽",
-      "registered_tool_count": 0,
+      "registered_tool_count": 36,
       "requests": [
         {
           "index": 0,

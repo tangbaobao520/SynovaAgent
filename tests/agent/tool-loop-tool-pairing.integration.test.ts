@@ -23,7 +23,7 @@
  * 铁律 24/31/33/47/48；红线：不在 src/** 加测试专用分支，不改 D817 的 helper 与断言口径。
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import type { AddressInfo } from 'node:net';
@@ -148,8 +148,10 @@ interface ScenarioRecord {
 }
 
 const evidenceScenarios: ScenarioRecord[] = [];
-let evidenceToolCount = 0;
 let entryBaseUrl = '';
+
+/** 上游装配缝（写进证据文件的 entry.upstream_seam；与 afterAll/末用例同源，禁两处字面量分叉） */
+const ENTRY_UPSTREAM_SEAM = 'SYNOVA_DATA_DIR/llm-credentials.json → src/config.ts loadConfig()（每请求重读）→ src/routes/conversations.ts createProvider({baseUrl}) → src/providers/base.ts fetch';
 
 function recordScenario(
   id: string,
@@ -161,7 +163,8 @@ function recordScenario(
   const record: ScenarioRecord = {
     id,
     name,
-    registered_tool_count: evidenceToolCount,
+    // D819 修正（task-4 L1）: 与顶层 writeEvidence(expectedToolCount) 同源——同一份进程内复算真值
+    registered_tool_count: expectedToolCount,
     requests: fake.requests.map(r => {
       const msgs = messagesOf(r);
       return {
@@ -294,7 +297,7 @@ beforeAll(async () => {
 }, 60_000);
 
 afterAll(async () => {
-  writeEvidence(expectedToolCount, 'SYNOVA_DATA_DIR/llm-credentials.json → src/config.ts loadConfig()（每请求重读）→ src/routes/conversations.ts createProvider({baseUrl}) → src/providers/base.ts fetch');
+  writeEvidence(expectedToolCount, ENTRY_UPSTREAM_SEAM);
   await new Promise<void>(resolve => { server.close(() => resolve()); });
   await bootstrapFake.close();
   for (const [k, v] of savedEnv) {
@@ -530,9 +533,28 @@ describe('D819 工具接线（真实 createServer + 真实路由 + 假上游，�
     }
   }, 40_000);
 
-  it('证据文件机器生成且含机器判据字段（体例自证）', () => {
-    // afterAll 才写；这里只断言抓包对象本身可供证据落盘（体例：body_keys/messages_roles/tools_len）
+  it('证据文件机器生成（体例自证）：文件存在、scenario 数 == 已记录场景数、每场景工具数与复算真值同源', () => {
+    // 显式落盘一次（afterAll 亦会做最终 flush）——让断言针对「真的被写出来的文件」，而不是内存对象
+    writeEvidence(expectedToolCount, ENTRY_UPSTREAM_SEAM);
+    const parsed: unknown = JSON.parse(readFileSync(EVIDENCE_PATH, 'utf-8'));
+    expect(isRecord(parsed)).toBe(true);
+    if (!isRecord(parsed)) throw new Error('证据文件不是 JSON 对象');
+
+    // 顶层与断言同源（D819 修正 task-4 L1：每场景字段也曾恒为 0，与顶层自相矛盾）
+    expect(parsed.registered_tool_count).toBe(expectedToolCount);
+    expect(typeof parsed.registered_tool_count).toBe('number');
+
+    const scenarios = recordArray(parsed.scenarios);
+    // scenario 数 == 本用例内已记录的场景数（用例数与记录数一致，防漏写/少写）
+    expect(scenarios.length).toBe(evidenceScenarios.length);
+    expect(scenarios.length).toBeGreaterThanOrEqual(5);
+    expect(scenarios.map(s => stringField(s, 'id'))).toEqual(['A', 'B1', 'B2', 'C1', 'C2']);
+    for (const s of scenarios) {
+      // 每场景必须写真实复算值（不是初始化的 0），与顶层同源
+      expect(s.registered_tool_count).toBe(expectedToolCount);
+    }
     expect(expectedToolCount).toBeGreaterThan(0);
+    // 上游缝确实指向 127.0.0.1 假上游（配置缝生效，非真实 provider）
     expect(entryBaseUrl.startsWith('http://127.0.0.1:')).toBe(true);
   });
 });

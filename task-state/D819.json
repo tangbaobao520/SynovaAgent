@@ -81,6 +81,16 @@
       "既有遗留（不改，登记）：D473 ToolGuard reminder 路径会对同一次 tool_call 多推一条 reminder tool 消息（与执行结果同 id）——既有设计，非本卡修复面；本卡用例已避开该路径（C2 用不同参数）",
       "既有遗留（不改，登记）：诊断 consult 路径 src/l3/synova-diagnosis-engine-impl.ts 走内部形状 tools（{name,description,parameters}），当前两个生产装配点 registry 为空 → 不可达；一旦注册工具，出站体将出现非 OpenAI 形状 tools → 上游 400。另开卡",
       "provider.stream() 的 SSE delta.tool_calls 未映射（生产对话入口不经它，全仓无生产调用者）——另开卡"
-    ]
+    ],
+    "post_verify_fixes": {
+      "task": "task-4",
+      "at": "2026-09-19",
+      "by": "impl-d819",
+      "source": "D819 自验记录 §4（verify-d819 独立复核：判『可提请独立审计』，但抓出交付物两处毛病）",
+      "L1": "证据文件每场景 registered_tool_count 曾恒为 0（模块级 evidenceToolCount 声明后从未赋值，与顶层 36 自相矛盾）→ 已删该死变量，每场景改为写入与顶层/断言同源的进程内复算真值（36）；重跑两次 sha256 一致",
+      "L2": "末用例名 overclaim（原名『证据文件机器生成且含机器判据字段（体例自证）』，实际仅 2 条弱断言）→ 选**补断言档**：用例内显式落盘 + 读回文件，断言『文件存在 / scenario 数 == 已记录场景数 / id 集合 = [A,B1,B2,C1,C2] / 每场景工具数 == 复算真值 / 顶层与断言同源 / 上游缝指向 127.0.0.1』",
+      "L3_记录不改": "memory note 落 implemented/ 而非批准的 proposed/ —— D472 迁移门禁所致（status=impl_done 会把 proposed/ 内含 D819 的 note 判僵尸 → pre-commit 阻断）；与 D817 同款做法，保持现状",
+      "redline": "本轮零源码改动（src/** 未动）；D817 基建未动；自验记录（verify 产物）未动；禁 --no-verify"
+    }
   }
 }
