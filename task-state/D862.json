@@ -1,0 +1,39 @@
+{
+  "task_id": "D862",
+  "title": "绿腿告警回捞 + canary 假覆盖传导 CI（ci.yml 小改，等 #682/#657 合并后单写者释放）",
+  "status": "claimed",
+  "risk": "medium",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": null,
+  "branch": null,
+  "worktree": null,
+  "base": "origin/main（待定：等 #682 / #657 合并后的 main）",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [
+    "D854",
+    "D839"
+  ],
+  "blocked": "`.github/workflows/ci.yml` 在飞双写者：PR #682（fix/d854-ct70-project-tests-ci，mergeable=dirty）与 PR #657（fix/d839-claim-release，mergeable=dirty）。两者合并前 ci.yml 不得有第三个写者（单写者规则）。",
+  "target": "2026-W39",
+  "spec": "来源：K3 审计 docs/synova/audit-reports/2026-09-20-K3-D854.md §5/P2（绿腿吞 ⚠）＋ D858 收口遗留清单第 1/2 项（D858 实测：`bash scripts/control-tower/check-canary-drift.sh || true` 使新 exit 1 在 CI 层不生效）。D858 硬边界明确 ci.yml 不在其写集 → 由本卡承接。",
+  "write_set": [
+    ".github/workflows/ci.yml",
+    "tests/project/gen-project-board.test.sh",
+    "task-state/D862.json"
+  ],
+  "acceptance_points": [
+    "① 绿腿告警回捞：CT Gate job 中 tests/project 循环的 stdout 被重定向到 /tmp/ct-out-project.log 且仅失败时 cat → 绿腿上 Windows 反斜杠 ⚠（tests/project/gen-project-board.test.sh 的 rel_to 分支）必须可见。实现二选一：ci.yml 成功路径后 `grep '⚠' /tmp/ct-out-project.log && echo ::warning …`，或测试自身写 `$GITHUB_STEP_SUMMARY`（独立通道）。给一次真实绿腿运行的可见性证据（run/job id + 匿名可核命令输出 + 归档日志片段）。",
+    "② canary 假覆盖传导：D858 已让 check-canary-drift.sh 在「注释声明未被物理覆盖」时 exit 1；ci.yml 现为 `|| true` 全吞 → 改为显式接收退出码（例：`bash … ; RC=$?; [ \"$RC\" -eq 1 ] && FAIL=1`），使假覆盖真正把 job 判红；同时保持漂移/幽灵仅告警（exit 0）不误伤存量 71 条。给先红后绿两次原始输出。",
+    "③ 不重排既有测试清单、不删除既有断言（git diff 仅新增行为准）。",
+    "④ 参考 D858 证据包标准件：docs/synova/coordination/D858-证据包标准件-匿名取CI证据-20260921.md（交付须附 run/job id + 归档片段 + sha256 + 匿名复现命令）。"
+  ],
+  "next": "① 等 #682 与 #657 合并（ci.yml 单写者释放）② 取号后开工（本卡已登记）③ 先红后绿夹具 ④ 真实 CI 证据 ⑤ K3 复审",
+  "authority": [
+    "docs/synova/audit-reports/2026-09-20-K3-D854.md §5/P2 + L4 缺口 2",
+    "docs/synova/coordination/收口-D858-canary-glob-20260921.md（遗留清单）"
+  ],
+  "updated_at": "2026-09-21T03:00:00+08:00",
+  "updated_by": "synova-cto",
+  "note": "本卡由 D858 收口时由 CTO 排期登记（派单 §〇 写集硬边界要求：若 P2 必须改 ci.yml → 先报 CTO 排期）。D# 经 alloc-task-id.sh 分配（D859/D860/D861 已被在途分支/worktree 占用）。"
+}

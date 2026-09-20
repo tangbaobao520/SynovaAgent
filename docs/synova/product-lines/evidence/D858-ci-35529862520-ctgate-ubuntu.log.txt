@@ -1,0 +1,115 @@
+2026-09-20T18:42:22.2404769Z ── tests/control-tower/check-canary-drift.test.sh
+2026-09-20T18:42:23.2056866Z ── tests/control-tower/claim-regex-narrow.test.sh
+2026-09-20T18:42:23.2318172Z ── tests/control-tower/ci-strict-visible.test.sh
+2026-09-20T18:42:23.3041967Z ── tests/control-tower/skeleton-brief-gate.test.sh
+2026-09-20T18:42:23.3181436Z ── tests/control-tower/clone-config-init.test.sh
+2026-09-20T18:42:23.4508037Z ── tests/control-tower/clone-shadow-commit.test.sh
+2026-09-20T18:42:23.7919401Z ── tests/control-tower/verify-parallel-ci.test.sh
+2026-09-20T18:42:26.1576768Z ── tests/control-tower/alloc-task-id.test.sh
+2026-09-20T18:42:26.4448446Z ── tests/control-tower/alloc-task-id-lock.test.sh
+2026-09-20T18:42:29.4319675Z ── tests/control-tower/check-gitlinks.test.sh
+2026-09-20T18:42:29.5007062Z ── tests/control-tower/grep-oP-regression.test.sh
+2026-09-20T18:42:29.6543629Z ── tests/control-tower/merge_writeset_gate.test.sh
+2026-09-20T18:42:31.1622766Z ── tests/control-tower/ci-ratchet-base.test.sh
+2026-09-20T18:42:31.2619981Z ── tests/control-tower/verify-doc.test.sh
+2026-09-20T18:42:31.3909672Z ── tests/doc-system/check-doc-truth.test.sh
+2026-09-20T18:42:31.5463949Z ── tests/doc-system/doc-registry-gate.test.sh
+2026-09-20T18:42:31.6241001Z ── tests/doc-system/doc-categories.test.sh
+2026-09-20T18:42:31.6828942Z ── tests/doc-system/doc-staleness.test.sh
+2026-09-20T18:42:31.7741935Z ── tests/doc-system/doc-triage.test.sh
+2026-09-20T18:42:31.8254257Z ── tests/doc-system/generate-chronicle-monthly.test.sh
+2026-09-20T18:42:31.8667230Z ── tests/control-tower/check-progress-freshness.test.sh
+2026-09-20T18:42:32.3948225Z 
+2026-09-20T18:42:32.3948806Z ── canary 漂移对账 (D526) ──
+2026-09-20T18:42:32.3949375Z   测试文件总数: 729 | canary 清单: 41 项
+2026-09-20T18:42:32.3950470Z ⚠ 漂移: 71 个 .test.sh 不在 CI canary 清单（红态无防线感知——评估纳入或确认排除）:
+2026-09-20T18:42:32.3951106Z   tests/control-tower/attach.test.sh
+2026-09-20T18:42:32.3951640Z   tests/control-tower/backup-db.test.sh
+2026-09-20T18:42:32.3951978Z   tests/control-tower/ban-stash.test.sh
+2026-09-20T18:42:32.3952536Z   tests/control-tower/baseline-check.test.sh
+2026-09-20T18:42:32.3953126Z   tests/control-tower/baseline-exemption.test.sh
+2026-09-20T18:42:32.3953826Z   tests/control-tower/brief-parseable.test.sh
+2026-09-20T18:42:32.3954479Z   tests/control-tower/brief-template-decision.test.sh
+2026-09-20T18:42:32.3955112Z   tests/control-tower/brief_parser.test.sh
+2026-09-20T18:42:32.3955679Z   tests/control-tower/bypass-ledger.test.sh
+2026-09-20T18:42:32.3956278Z   tests/control-tower/bypass-union-merge.test.sh
+2026-09-20T18:42:32.3956908Z   tests/control-tower/check-bypass-log.test.sh
+2026-09-20T18:42:32.3957504Z   tests/control-tower/check-ci-stale-red.test.sh
+2026-09-20T18:42:32.3958505Z   tests/control-tower/check-dataflow-alignment.test.sh
+2026-09-20T18:42:32.3959147Z   tests/control-tower/check-dev-doc-write-set.test.sh
+2026-09-20T18:42:32.3959763Z   tests/control-tower/check-notes-lifecycle.test.sh
+2026-09-20T18:42:32.3960376Z   tests/control-tower/check-orphan-worktrees.test.sh
+2026-09-20T18:42:32.3960972Z   tests/control-tower/check-ownership.test.sh
+2026-09-20T18:42:32.3961524Z   tests/control-tower/check-pr-budget.test.sh
+2026-09-20T18:42:32.3962064Z   tests/control-tower/check-secrets.test.sh
+2026-09-20T18:42:32.3962639Z   tests/control-tower/check-sentinel-type-net.test.sh
+2026-09-20T18:42:32.3963243Z   tests/control-tower/check-test-first.test.sh
+2026-09-20T18:42:32.3963789Z   tests/control-tower/ci-strict-mode.test.sh
+2026-09-20T18:42:32.3964362Z   tests/control-tower/commit-msg-consistency.test.sh
+2026-09-20T18:42:32.3965047Z   tests/control-tower/commit-msg-merge.test.sh
+2026-09-20T18:42:32.3965476Z   tests/control-tower/commit-msg-note-mandatory.test.sh
+2026-09-20T18:42:32.3966090Z   tests/control-tower/daemon-smoke.test.sh
+2026-09-20T18:42:32.3966618Z   tests/control-tower/decide-next.test.sh
+2026-09-20T18:42:32.3967163Z   tests/control-tower/declare-write-set.test.sh
+2026-09-20T18:42:32.3967963Z   tests/control-tower/dev-doc-gatekeeper.test.sh
+2026-09-20T18:42:32.3968574Z   tests/control-tower/doc-commit-exempt.test.sh
+2026-09-20T18:42:32.3969150Z   tests/control-tower/external-auditor.test.sh
+2026-09-20T18:42:32.3969704Z   tests/control-tower/founder-truth.test.sh
+2026-09-20T18:42:32.3970273Z   tests/control-tower/g12-taskstate-exempt.test.sh
+2026-09-20T18:42:32.3970934Z   tests/control-tower/gen-cto-health-repro.test.sh
+2026-09-20T18:42:32.3971568Z   tests/control-tower/gen-cto-health.test.sh
+2026-09-20T18:42:32.3972142Z   tests/control-tower/gen-plan-status.test.sh
+2026-09-20T18:42:32.3972705Z   tests/control-tower/generated-gate.test.sh
+2026-09-20T18:42:32.3973298Z   tests/control-tower/hard-gate-convergence.test.sh
+2026-09-20T18:42:32.3973917Z   tests/control-tower/hook-block-write.test.sh
+2026-09-20T18:42:32.3974519Z   tests/control-tower/hook-check-memory.test.sh
+2026-09-20T18:42:32.3975122Z   tests/control-tower/hook-check-task-scope.test.sh
+2026-09-20T18:42:32.3975716Z   tests/control-tower/hook-git-detect.test.sh
+2026-09-20T18:42:32.3976264Z   tests/control-tower/hooks-install.test.sh
+2026-09-20T18:42:32.3976647Z   tests/control-tower/incident-loop-hygiene.test.sh
+2026-09-20T18:42:32.3976995Z   tests/control-tower/install-dsh-preset.test.sh
+2026-09-20T18:42:32.3977320Z   tests/control-tower/notes-four-state.test.sh
+2026-09-20T18:42:32.3977888Z   tests/control-tower/pre-audit-summary.test.sh
+2026-09-20T18:42:32.3978293Z   tests/control-tower/pre-dispatch-check.test.sh
+2026-09-20T18:42:32.3978624Z   tests/control-tower/push-sync-guard.test.sh
+2026-09-20T18:42:32.3978940Z   tests/control-tower/redeem-task-redeem.test.sh
+2026-09-20T18:42:32.3979260Z   tests/control-tower/rerun-evidence.test.sh
+2026-09-20T18:42:32.3979581Z   tests/control-tower/resolve-commit-brief.test.sh
+2026-09-20T18:42:32.3980083Z   tests/control-tower/secrets-env-exempt.test.sh
+2026-09-20T18:42:32.3980542Z   tests/control-tower/session-worktree-isolation.test.sh
+2026-09-20T18:42:32.3981165Z   tests/control-tower/sop-gate.test.sh
+2026-09-20T18:42:32.3981680Z   tests/control-tower/sync-dsh-skills.test.sh
+2026-09-20T18:42:32.3982214Z   tests/control-tower/tag-bypass-wiring.test.sh
+2026-09-20T18:42:32.3982546Z   tests/control-tower/tag-consistency.test.sh
+2026-09-20T18:42:32.3982844Z   tests/control-tower/task-start.test.sh
+2026-09-20T18:42:32.3983135Z   tests/control-tower/today-by-name.test.sh
+2026-09-20T18:42:32.3983439Z   tests/control-tower/utf8.test.sh
+2026-09-20T18:42:32.3983731Z   tests/control-tower/verify-incremental.test.sh
+2026-09-20T18:42:32.3984049Z   tests/control-tower/weekly-selfcheck.test.sh
+2026-09-20T18:42:32.3984358Z   tests/control-tower/worktree-manager.test.sh
+2026-09-20T18:42:32.3984699Z   tests/control-tower/writeset-c6-gatekeeper.test.sh
+2026-09-20T18:42:32.3985046Z   tests/desktop/verify-package-signature.test.sh
+2026-09-20T18:42:32.3985364Z   tests/doc-system/doc-truth-probe.test.sh
+2026-09-20T18:42:32.3985661Z   tests/doc-system/system-registry.test.sh
+2026-09-20T18:42:32.3985963Z   tests/project/calc-progress-panel.test.sh
+2026-09-20T18:42:32.3986262Z   tests/project/gen-project-board.test.sh
+2026-09-20T18:42:32.3986552Z   tests/project/pr-queue-scan.test.sh
+2026-09-20T18:42:32.4016072Z ##[warning]71 个测试不在 CI canary 清单:   tests/control-tower/attach.test.sh,  tests/control-tower/backup-db.test.sh,  tests/control-tower/ban-stash.test.sh,
+2026-09-20T18:42:32.4044293Z   （摘要已写入 GITHUB_STEP_SUMMARY）
+2026-09-20T18:42:32.4216835Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERS
+2026-09-20T18:42:32.4218834Z Post job cleanup.
+2026-09-20T18:42:32.5106775Z [command]/usr/bin/git version
+2026-09-20T18:42:32.5152717Z git version 2.55.0
+2026-09-20T18:42:32.5195314Z Temporarily overriding HOME='/home/runner/work/_temp/8f14ba8d-f6a4-415e-8174-f7937647b3f1' before making global git config changes
+2026-09-20T18:42:32.5196291Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T18:42:32.5202724Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/SynovaAgent/SynovaAgent
+2026-09-20T18:42:32.5240303Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T18:42:32.5275703Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshComman
+2026-09-20T18:42:32.5550546Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T18:42:32.5576216Z http.https://github.com/.extraheader
+2026-09-20T18:42:32.5587019Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-09-20T18:42:32.5625475Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local 
+2026-09-20T18:42:32.5896338Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T18:42:32.5933966Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T18:42:32.6337546Z Cleaning up orphan processes
+2026-09-20T18:42:32.6646832Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: http
