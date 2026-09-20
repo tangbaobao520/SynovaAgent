@@ -96,7 +96,9 @@ if [ -f "$REAL_LEDGER" ]; then REAL_LEDGER_SIG=$(_sha256 "$REAL_LEDGER"); else R
 PASS=0; FAIL=0
 DIAG=""; PROBE=""; RES_OUT=""
 pass() { PASS=$((PASS + 1)); echo "  ✅ $1"; }
-fail() { FAIL=$((FAIL + 1)); echo "  ❌ $1" >&2; }
+# D853: 失败断言名必须活到 CI 注解 —— 注解只带 tail -8，❌ 行会被其后的 ✅ 挤出可见区（F12 实证）
+FAILLOG=""
+fail() { FAIL=$((FAIL + 1)); echo "  ❌ $1" >&2; FAILLOG="${FAILLOG}${1} ; "; }
 assert_eq() { if [ "$1" = "$2" ]; then pass "$3 (=$1)"; else fail "$3 — 实际 $1 期望 $2"; fi; }
 assert_contains() { if echo "$1" | grep -qF -- "$2"; then pass "$3"; else fail "$3 — 未找到: $2"; fi; }
 assert_not_contains() { if echo "$1" | grep -qF -- "$2"; then fail "$3 — 不应包含: $2"; else pass "$3"; fi; }
@@ -353,8 +355,13 @@ if [ -f "$CLAIM" ]; then
   printf '#!/bin/sh\nexit 1\n' > "$SHIM/python3"; chmod +x "$SHIM/python3"
   cp "$SHIM/python3" "$SHIM/python"; cp "$SHIM/python3" "$SHIM/py"
   REALPY=$(command -v python3)
+  # 链路证据（判 H 为何没 fail-closed：链是否真断 / 标记是否发 / guard 判什么）
+  H_RES=$(cd "$SB" && PATH="$SHIM:$PATH" "$BASH_BIN" "$SB/scripts/workflow/resolve-commit-brief.sh" --session D902 docs/x.md 2>&1); H_RC=$?
+  H_MARK=$(printf '%s' "$H_RES" | grep -oE 'SYNO-RESOLVER-DEGRADED' | head -1)
   OUT=$(cd "$SB" && PATH="$SHIM:$PATH" "$REALPY" "$GUARD" --session-id D902 --staged docs/x.md 2>&1); EC=$?
   diag H "$EC" "$(_status_of "$OUT")"
+  DIAG_H=$(printf 'rc=%s mark=[%s] out=[%s]' "$H_RC" "${H_MARK:-none}" "$(printf '%s' "$H_RES" | grep -v SYNO-RESOLVER | head -1 | cut -c1-40)")
+  printf '%s' "$H_RES" | grep -q "SYNO-RESOLVER-DEGRADED" || DIAG_H="$DIAG_H (标记未发: PYBIN 仍可用?)"
   assert_eq "$EC" "1" "场景H 链断 → exit 1（fail-closed，禁静默 pass）"
   assert_contains "$OUT" '"status": "block"' "场景H status=block（不是 pass）"
   assert_contains "$OUT" '"degraded": true' "场景H 降级显式传播（铁律 11/31）"
@@ -400,6 +407,8 @@ if [ "$FAIL" -ne 0 ]; then
   #   复跑，故失败时把"链路证据"压进**末尾**行（放在 FAIL= 之后，避免被 cut -c1-450 截掉）：
   #   场景=各场景 exit/status，链=子链事实（path 命名空间 + git/python 可达性 + **python 试运行 rc**）。
   # D853: 两行各压到 ≤68 字符（含前缀 ≤74）——注解预算是 450 字符且含其他行，长行会被截断丢关键字段。
+  echo "DIAG-FAIL $(printf '%s' "$FAILLOG" | tr '\n' ' ' | tr -s ' ' | cut -c1-140)"
+  [ -n "${DIAG_H:-}" ] && echo "DIAG-H $(printf '%s' "$DIAG_H" | cut -c1-140)"
   echo "DIAG1 $(printf '%s' "$DIAG" | tr '\n' ' ' | tr -s ' ' | cut -c1-68)"
   echo "DIAG2 $(printf '%s' "$PROBE" | tr '\n' ' ' | tr -s ' ' | cut -c1-68)"
 fi

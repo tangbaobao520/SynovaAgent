@@ -29,7 +29,9 @@ SRC="$REPO_DIR/scripts/control-tower/claim_release.py"
 
 PASS=0; FAIL=0
 pass() { PASS=$((PASS + 1)); echo "  ✅ $1"; }
-fail() { FAIL=$((FAIL + 1)); echo "  ❌ $1" >&2; }
+# D853（F12 同款修法）: 失败断言名必须进 tail -8 —— 否则 CI 注解里只剩尾部 ✅，根本看不见是哪条红
+FAILLOG=""
+fail() { FAIL=$((FAIL + 1)); echo "  ❌ $1" >&2; FAILLOG="${FAILLOG}${1} ; "; }
 assert_eq() { if [ "$1" = "$2" ]; then pass "$3 (=$1)"; else fail "$3 — 实际 $1 期望 $2"; fi; }
 assert_contains() { if echo "$1" | grep -qF -- "$2"; then pass "$3"; else fail "$3 — 未找到: $2"; fi; }
 assert_not_contains() { if echo "$1" | grep -qF -- "$2"; then fail "$3 — 不应包含: $2"; else pass "$3"; fi; }
@@ -185,4 +187,9 @@ done
 echo "──────────────────────────────────────────────"
 echo "  PASS=$PASS FAIL=$FAIL"
 [ "$FAIL" -eq 0 ] && echo "FAIL=0" || echo "FAIL=$FAIL"
+if [ "$FAIL" -ne 0 ]; then
+  # D853: CI 注解只带 tail -8 → 失败断言名 + 关键环境事实压进末尾（否则被尾部 ✅ 挤出可见区）
+  echo "DIAG-FAIL $(printf '%s' "$FAILLOG" | tr '\n' ' ' | tr -s ' ' | cut -c1-150)"
+  echo "DIAG-ENV py=$(command -v python3 2>/dev/null || echo NONE) bash=$(command -v bash 2>/dev/null || echo NONE) git=$(command -v git 2>/dev/null || echo NONE)"
+fi
 exit $([ "$FAIL" -eq 0 ] && echo 0 || echo 1)
