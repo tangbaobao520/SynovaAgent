@@ -160,6 +160,20 @@ export type AppendEventResult =
   | { ok: true; seq: number }
   | { ok: false; degraded: true; error: string };
 
+/**
+ * D820: 报告列表的「会话存在性」谓词（total 与 rows 共用同一条，防两套口径）。
+ *
+ * 语义：只隐藏**链到已不存在会话**的归档行（删会话的纵深防御——级联删除已覆盖主路径，
+ * 本谓词兜住旧库/旧二进制删过会话留下的孤儿）。
+ *
+ * ⚠️ 为什么不是裸 `EXISTS (SELECT 1 FROM agent_sessions ...)`：phase=5 归档行的 session_id
+ * 存的是 **reportId**（consult 路线 diagnosis.ts:600-602、对话桥 conversations.ts:307-309），
+ * 永无对应 agent_sessions 行 → 裸 EXISTS 会把**全部 GA 报告**从列表抹掉（比原缺陷更严重）。
+ * 故 `origin_session_id IS NULL`（consult 报告 + 全部存量旧行）一律照旧列出。
+ */
+const PHASE5_LIST_PREDICATE =
+  'phase = 5 AND (origin_session_id IS NULL OR EXISTS (SELECT 1 FROM agent_sessions s WHERE s.id = diagnosis_checkpoints.origin_session_id))';
+
 // ═══ SessionStore ═══
 
 export class SessionStore {
@@ -271,6 +285,12 @@ export class SessionStore {
       )`);
     } catch (err) { log.debug({ err }, '会话表已存在 — 跳过创建'); }
 
+    // D820: 归档行 → 来源会话链（幂等迁移，同 :275 user_id idiom；旧库自动补列）
+    // 必要性：phase=5 行的 session_id 存的是 **reportId**（consult 路线 diagnosis.ts:600-602、
+    // 对话桥路线 conversations.ts:307-309），**不是** chat 会话 id，且该表无 FK/无 CASCADE →
+    // 删会话时按 session_id 删匹配不到任何行。本列是「删会话 → 报告真删」的物理依据。
+    try { this.db.exec('ALTER TABLE diagnosis_checkpoints ADD COLUMN origin_session_id TEXT'); } catch { log.debug('origin_session_id 列已存在 — 跳过迁移'); }
+
     // M1-Slice2: 迁移旧数据库 (添加 user_id 列，幂等)
     try { this.db.exec('ALTER TABLE agent_sessions ADD COLUMN user_id TEXT'); } catch { log.debug('user_id 列已存在 — 跳过迁移'); }
 
@@ -301,6 +321,17 @@ export class SessionStore {
         DELETE FROM agent_messages_fts WHERE rowid = old.id;
       END;
     `);
+    if (needsFtsTriggerRepair) {
+      // 一次性索引对齐（仅旧库、仅本分支一次；新库不跑）：旧插入触发器未显式落 rowid，
+      // FTS rowid 可能与 agent_messages.id 漂移 → 按 rowid 删会漏（残留消息全文）。
+      // 写放大操作，故 log 出来（可观测，铁律 24/31 精神）。
+      const messagesBefore = Number((this.db.prepare('SELECT COUNT(*) AS c FROM agent_messages').get() as { c: number }).c);
+      const ftsRowsBefore = Number((this.db.prepare('SELECT COUNT(*) AS c FROM agent_messages_fts').get() as { c: number }).c);
+      this.db.exec('DELETE FROM agent_messages_fts');
+      this.db.exec('INSERT INTO agent_messages_fts(rowid, session_id, content) SELECT id, session_id, content FROM agent_messages');
+      log.warn({ messages: messagesBefore, ftsRowsBefore },
+        'D820-FTS: FTS 索引按 agent_messages.id 全量重建完成（对齐 rowid + 清掉已删消息的残留索引）');
+    }
   }
 
   // ═══ Sessions ═══
@@ -321,17 +352,6 @@ export class SessionStore {
       stateJson: row.state_json as string | null, createdAt: row.created_at as string, updatedAt: row.updated_at as string,
     };
   }
-    if (needsFtsTriggerRepair) {
-      // 一次性索引对齐（仅旧库、仅本分支一次；新库不跑）：旧插入触发器未显式落 rowid，
-      // FTS rowid 可能与 agent_messages.id 漂移 → 按 rowid 删会漏（残留消息全文）。
-      // 写放大操作，故 log 出来（可观测，铁律 24/31 精神）。
-      const messagesBefore = Number((this.db.prepare('SELECT COUNT(*) AS c FROM agent_messages').get() as { c: number }).c);
-      const ftsRowsBefore = Number((this.db.prepare('SELECT COUNT(*) AS c FROM agent_messages_fts').get() as { c: number }).c);
-      this.db.exec('DELETE FROM agent_messages_fts');
-      this.db.exec('INSERT INTO agent_messages_fts(rowid, session_id, content) SELECT id, session_id, content FROM agent_messages');
-      log.warn({ messages: messagesBefore, ftsRowsBefore },
-        'D820-FTS: FTS 索引按 agent_messages.id 全量重建完成（对齐 rowid + 清掉已删消息的残留索引）');
-    }
 
   updateSession(id: string, updates: { phase?: number }): void {
     const now = new Date().toISOString();
@@ -381,8 +401,22 @@ export class SessionStore {
     }));
   }
 
+  /**
+   * D820: 删除会话（级联——会话的**全部**数据，含诊断检查点/报告归档行）。
+   * 契约（铁律 47 — 契约优先）:
+   *   @input  — id: 会话 id
+   *   @output — void；**真删**（物理 DELETE，无软删除、无 deleted_at 列）
+   *   @cascade — ① agent_messages（兼容表，FTS 由触发器同步）
+   *              ② diagnosis_checkpoints：键=sessionId 的 resume 行（phase<5，launcher 用 chat
+   *                 sessionId 写）+ 键=reportId 但 origin_session_id=id 的 phase=5 归档行
+   *              ③ session_events（FK ON DELETE CASCADE，better-sqlite3 实测 foreign_keys=1）
+   *              ④ agent_sessions 本体
+   *   @note D820 修复前只删 ①④ → 删会话后诊断报告仍可经 GET /api/diagnosis/reports 列出
+   *         （客户数据资产/隐私面，判据 D）。
+   */
   deleteSession(id: string): void {
     this.db.prepare('DELETE FROM agent_messages WHERE session_id=?').run(id);
+    this.deleteDiagnosisCheckpoints(id);
     this.db.prepare('DELETE FROM agent_sessions WHERE id=?').run(id);
   }
 
@@ -571,19 +605,42 @@ export class SessionStore {
 
   // ═══ 诊断检查点 — 崩溃恢复 ═══
 
-  /** 保存诊断检查点 (每个 Phase 完成后调用) */
+  /**
+   * 保存诊断检查点 (每个 Phase 完成后调用)。
+   *
+   * 契约（铁律 47 — 契约优先）:
+   *   @input  — checkpoint: { sessionId, phase, completedModules, partialReport, savedAt,
+   *             originSessionId? }。**sessionId 语义分两种**（如实记录，勿混）：
+   *             · phase<5 resume 行（diagnosis-launcher.ts:166）→ sessionId = chat 会话 id
+   *             · phase=5 归档行（diagnosis.ts:600 / conversations.ts:307）→ sessionId = **reportId**
+   *             originSessionId（D820 新增，可选）— 该归档行**归属的会话 id**；对话桥路线
+   *             记 chat sessionId，consult 路线无 chat 会话可链 → 不传（列表侧照旧可见）。
+   *   @output — void（落库；PK = (session_id, phase)）
+   *   @upsert — 同键重写时 originSessionId 缺省**保留原链**（COALESCE），
+   *             防「后一次不携带来源的写」把归因抹掉（键=reportId 的两路线并存场景）。
+   *   @error  — 落库异常上抛，调用方 catch + log.warn + degraded
+   *             （conversations.ts:320-322 / diagnosis.ts:615-617 既有语义，不改）。
+   */
   saveDiagnosisCheckpoint(checkpoint: {
     sessionId: string; phase: number; completedModules: string[];
     partialReport: unknown; savedAt: string;
+    /** D820: 归档行归属的会话 id（可选；缺省不覆盖已有链） */
+    originSessionId?: string;
   }): void {
     this.db.prepare(`
-      INSERT OR REPLACE INTO diagnosis_checkpoints (session_id, phase, completed_modules, partial_report, saved_at)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO diagnosis_checkpoints (session_id, phase, completed_modules, partial_report, saved_at, origin_session_id)
+      VALUES (?, ?, ?, ?, ?, ?)
+      ON CONFLICT(session_id, phase) DO UPDATE SET
+        completed_modules = excluded.completed_modules,
+        partial_report = excluded.partial_report,
+        saved_at = excluded.saved_at,
+        origin_session_id = COALESCE(excluded.origin_session_id, diagnosis_checkpoints.origin_session_id)
     `).run(
       checkpoint.sessionId, checkpoint.phase,
       JSON.stringify(checkpoint.completedModules),
       JSON.stringify(checkpoint.partialReport),
       checkpoint.savedAt,
+      checkpoint.originSessionId ?? null,
     );
   }
 
@@ -606,9 +663,18 @@ export class SessionStore {
     } catch (err) { log.warn({ err }, '会话检查点解析失败'); return null; }
   }
 
-  /** 删除会话的检查点 */
+  /**
+   * D820: 删除某会话的**全部**诊断检查点（会话清理的级联入口；调用方 = deleteSession）。
+   * 契约:
+   *   @input  — sessionId（chat 会话 id）
+   *   @output — void
+   *   @scope  — ① 键=sessionId 的行（phase<5 resume 检查点，launcher 用 chat sessionId 写）
+   *             ② 键=reportId 但 origin_session_id=sessionId 的归档行（对话桥 phase=5 报告）
+   *   @note   修复前本方法全仓零调用者（D820 基线实证）→ 删会话不删报告。
+   */
   deleteDiagnosisCheckpoints(sessionId: string): void {
     this.db.prepare('DELETE FROM diagnosis_checkpoints WHERE session_id = ?').run(sessionId);
+    this.db.prepare('DELETE FROM diagnosis_checkpoints WHERE origin_session_id = ?').run(sessionId);
   }
 
   /**
@@ -620,8 +686,11 @@ export class SessionStore {
    *   @output   — { ok: true, total, degraded, reports: Array<{ reportId, teamId, completedAt,
    *               summary: string | null, onePagerAvailable: boolean }> }，按 saved_at DESC
    *               （rowid DESC 决同刻稳定序：后写先出）
+   *   @filter（D820）— 会话存在性谓词（见 PHASE5_LIST_PREDICATE）：**已删会话的归档行不列出**
+   *               （清单 API ≠ 库内残留）；`origin_session_id IS NULL` 的 consult 报告与存量
+   *               旧行照旧列出（不误删）。total 与 rows 共用同一条谓词，口径一致。
    *   @degraded — 行级 partial_report JSON 损坏/形状非法 → log.warn + 跳过该行 + degraded: true
-   *               （不 500，铁律 24）；total 恒为 phase=5 行计数（不因跳过缩水）
+   *               （不 500，铁律 24）；total 恒为**过滤后** phase=5 行计数（不因跳过缩水）
    *   @error    — 查询异常 → { ok: false, degraded: true, error }（调用方路由映射 503 fail-closed）
    */
   listDiagnosisReports(opts: { limit: number; offset: number }):
@@ -630,10 +699,10 @@ export class SessionStore {
     try {
       const limit = Math.min(Math.max(Math.trunc(opts.limit) || 0, 1), 200);
       const offset = Math.max(Math.trunc(opts.offset) || 0, 0);
-      const totalRow = this.db.prepare('SELECT COUNT(*) AS c FROM diagnosis_checkpoints WHERE phase = 5').get() as { c: number } | undefined;
+      const totalRow = this.db.prepare(`SELECT COUNT(*) AS c FROM diagnosis_checkpoints WHERE ${PHASE5_LIST_PREDICATE}`).get() as { c: number } | undefined;
       const total = Number(totalRow?.c ?? 0);
       const rows = this.db.prepare(
-        'SELECT session_id, partial_report FROM diagnosis_checkpoints WHERE phase = 5 ORDER BY saved_at DESC, rowid DESC LIMIT ? OFFSET ?',
+        `SELECT session_id, partial_report FROM diagnosis_checkpoints WHERE ${PHASE5_LIST_PREDICATE} ORDER BY saved_at DESC, rowid DESC LIMIT ? OFFSET ?`,
       ).all(limit, offset) as SqliteRow[];
       const reports: Array<{ reportId: string; teamId: string; completedAt: string; summary: string | null; onePagerAvailable: boolean }> = [];
       let degraded = false;

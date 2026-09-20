@@ -1,5 +1,5 @@
 ---
-状态: proposed
+状态: implemented
 日期: 2026-09-20
 决策: D820-FTS —— `agent_messages_fts` 的同步触发器改为「插入显式落 rowid ≡ `agent_messages.id`」+「删除用普通 `DELETE ... WHERE rowid = old.id`」，并对旧库做一次性幂等迁移（检出失效触发器才重建 + 全量索引对齐）。**保持普通 FTS5 表**（不 contentless）、**不改列定义**。
 理由: 该表是**普通** FTS5 表（`src/store/session-store.ts:221-225`，无 `content=''`），但 `AFTER DELETE` 触发器用的是 **contentless 专用** 的 `('delete', session_id, content)` 命令 → SQLite（本机 3.53.2 / better-sqlite3 12.11.1）物理拒绝并抛 `SQL logic error`。后果两条：① 任何 `DELETE FROM agent_messages` 抛错 ⇒ `deleteSession` 全路径失败（`DELETE /api/sessions/:id` → 500），D820 卡面「建会话→落报告→删会话」在真实入口上物理走不通；② FTS 索引里残留已「删除」消息的**全文**，`search()` 仍可召回（一级隐私面，与 D820 同判据 D）。该缺陷**自初始提交 a6160381 存活至今**，既有测试未捕获是因为它们都不删「有消息的会话」（`tests/session-store.test.ts:76` 删的是刚建的空会话；`data-purger`/`im-inbound` 的测试用假 store）——即**「有机制在场 ≠ 机制工作」**：FTS 同步机制一直在，但从未真正工作过。修法须避开两条红线：不得改 contentless（`search()` 依赖 `snippet(agent_messages_fts, 1, ...)`，`:564`）、不得改列定义（D826 波2 的租户过滤 join 与 snippet 依赖 `session_id UNINDEXED, content`）。
@@ -21,6 +21,8 @@
 - 测试：`tests/store/fts-sync-trigger.test.ts`（5 条断言：删除可用 / 旧库触发器已换 / rowid 对齐 / 孤儿索引清除且不可召回 / 新库不重建）。
 
 ## 相关
+
+- 落地提交：`98c24872 fix(D820): FTS5 删除触发器改普通 DELETE + rowid 对齐`（折入本批的独立 commit）
 
 - 卡：`task-state/D820.json`（本改动为**卡外阻塞缺陷，经队长 2026-09-20 授权折入本批**，单独 commit，不混入 D820 主体 diff）。
 - 上游发现：D820 e2e 穿真实入口时暴露（`tests/store/delete-session-cascade.test.ts`）。

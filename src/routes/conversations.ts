@@ -316,6 +316,9 @@ async function handleConversationMessage(req: Request, res: Response, pathSessio
                 source: 'conversation',
               },
               savedAt: completedAtIso,
+              // D820: 归档行的归属会话链——键是 reportId，本字段才让「删会话 → 报告一并消失」
+              // 可物理匹配（deleteSession → deleteDiagnosisCheckpoints 按 origin_session_id 删）
+              originSessionId: sessionId,
             });
           } catch (persistErr: unknown) {
             log.warn({ err: persistErr, sessionId, reportId: conversationReportId }, '对话桥报告落盘失败 — degraded（complete 帧已送达）');

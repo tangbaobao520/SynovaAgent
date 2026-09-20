@@ -1,9 +1,9 @@
 {
   "task_id": "D820",
   "title": "T-D3：删会话不删诊断报告（隐私/数据资产；清理函数已存在却零调用）",
-  "status": "claimed",
+  "status": "impl_done",
   "risk": "medium",
-  "spec": "派单即规格：docs/synova/coordination/派单-批十一-P0-1-P0-2-20260918.md §A/D820（含 CTO 实测三处位置）",
+  "spec": ".claude/task-briefs/2026-09-20-D820-delete-session-cascade.md（批十四小队 A 规格：含 sessionId=reportId 实测/写集冲突清单/反向验收；上游卡面见原派单 §A/D820）",
   "write_set": [
     "src/store/session-store.ts",
     "tests/store/delete-session-cascade.test.ts",
@@ -11,13 +11,29 @@
     ".claude/task-briefs/2026-09-18-D820-删会话级联.md",
     "memory/notes/proposed/2026-09-18-D820-delete-session-cascade.md"
   ],
-  "impl": null,
+  "impl": {
+    "commit": "98c24872（FTS 前置，折入本批的独立 commit）；D820 主体 = 本卡提交（git log --grep delete-session-cascade）",
+    "by": "coder-a(批十四小队)",
+    "at": "2026-09-20",
+    "files": [
+      "src/store/session-store.ts",
+      "src/routes/conversations.ts",
+      "tests/store/delete-session-cascade.test.ts",
+      "tests/store/fts-sync-trigger.test.ts",
+      ".claude/task-briefs/2026-09-20-D820-delete-session-cascade.md",
+      "memory/notes/implemented/2026-09-20-D820-delete-session-cascade.md",
+      "memory/notes/implemented/2026-09-20-D820-fts-delete-trigger-broken.md"
+    ],
+    "evidence": "验收（穿真实入口，原始输出见交付报告）：删除后 diagnosis_checkpoints 两键查零 + 无墓碑列；GET /api/diagnosis/reports 不再列出已删会话报告；未删会话报告 + consult 报告（origin NULL）仍在；旧库无新列 → 自动补列且列表 ok:true 不 503",
+    "reverse_acceptance": "抽掉 A（级联）→ 4 red；抽掉 B（读侧谓词）→ 用例 8 red（首次抽 B 全绿 → 据此补「存量孤儿行」用例使其可证伪）；两次还原后 8 passed",
+    "regression_gate": "只读回归门 47 passed（D593 报告持久化 / 对话路由 / session-manager / session-store / checkpoint e2e）——三个只读文件未改"
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-09-18",
-  "updated_by": "synova-cto",
+  "updated_at": "2026-09-20",
+  "updated_by": "coder-a(批十四小队)",
   "domain": "win",
-  "owner": "mac-coding",
+  "owner": "coder-a(批十四小队)",
   "milestone": "M1 产品可用",
   "depends_on": [],
   "blocked": null,
@@ -29,9 +45,12 @@
     "端到端：断言 GET 报告列表 API 查不到已删会话的报告（不是只在库里删了、列表还在）",
     "反向：未删会话的报告仍可正常列出（不误删）"
   ],
-  "next": "① 核行号（session-store.ts deleteSession / deleteDiagnosisCheckpoints / listDiagnosisReports）② deleteSession 内接清理 ③ 列表 SQL 加过滤 ④ 写端到端测试（真实 store，不 mock）⑤ 汇报",
-  "note": "CTO 已实测（origin/main）：deleteSession 只删 agent_messages + agent_sessions（session-store.ts:355-358）；deleteDiagnosisCheckpoints 存在（:581-583）但全仓零调用者；报告列表 SQL 为 `SELECT ... FROM diagnosis_checkpoints WHERE phase = 5 ORDER BY saved_at DESC`（:604-608），**不 join agent_sessions** → 删会话后报告仍经 GET /api/diagnosis/reports 列出（src/routes/diagnosis.ts:947 调 listDiagnosisReports）。判据 D（客户数据资产）；若对外承诺过『彻底删除』则升 P0。",
+  "next": "交付队长 → 队内自验（独立复核）→ 修复抽掉/B/旧库三条命令复跑；K3 独立审计后置",
+  "note": "CTO 已实测（origin/main）：deleteSession 只删 agent_messages + agent_sessions（session-store.ts:355-358）；deleteDiagnosisCheckpoints 存在（:581-583）但全仓零调用者；报告列表 SQL 为 `SELECT ... FROM diagnosis_checkpoints WHERE phase = 5 ORDER BY saved_at DESC`（:604-608），**不 join agent_sessions** → 删会话后报告仍经 GET /api/diagnosis/reports 列出（src/routes/diagnosis.ts:947 调 listDiagnosisReports）。判据 D（客户数据资产）；若对外承诺过『彻底删除』则升 P0。 【批十四小队 A 实测补充】phase=5 归档行的 session_id 存的是 reportId（consult/对话桥两路线一致），表无 FK/CASCADE ⇒ 只接 deleteDiagnosisCheckpoints 是空操作，必须新增 origin_session_id 归属链；读侧谓词不能是裸 EXISTS(agent_sessions)（会把全部 GA 报告抹掉）。另折入一处卡外阻塞缺陷（FTS 同步触发器失效 → deleteSession 全路径 500 + 索引残留消息全文），经队长 2026-09-20 授权，单独 commit 98c24872。",
   "executor": "mac-coding",
   "delegation": "Mac 代行 win（D773 规约；创始人 2026-09-18 重申『涉及 win 线的一并先给 Mac 执行』）",
-  "acceptance_level": "代码级可验（Mac 必须验）；若涉及 Windows 实机行为 → 挂账，Win 回归后补验，禁止声称"
+  "acceptance_level": "代码级可验（Mac 必须验）；若涉及 Windows 实机行为 → 挂账，Win 回归后补验，禁止声称",
+  "team": "批十四小队",
+  "worktree": ".synova-wt-team14",
+  "branch": "team/win-batch14"
 }
