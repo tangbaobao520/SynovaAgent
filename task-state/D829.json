@@ -17,7 +17,7 @@
     "docs/synova/product-lines/evidence/D829-evidence-20260920.md"
   ],
   "impl": {
-    "sha": null,
+    "sha": "3bafa7d5",
     "files": [
       "packages/evolution/src/feedback-collector.ts（+nextFeedbackId 唯一化 :48-50；+collectGaCalibrationFeedback :141-176，含 GA_CALIBRATION_DECISION 映射）",
       "packages/evolution/src/index.ts（+:48-50 类型导出、+:58 函数导出）",
@@ -26,12 +26,12 @@
       "tests/routes/ga-calibration.test.ts（+7 用例 D829-1..7；+SYNO_FACTS_ROOT 落盘隔离；+memoryRowsByTag helper）",
       "tests/routes/evolution-rule-version.test.ts（新建：验收点③ 真实 approve 路由 → evolution_snapshot 版本记录）"
     ],
-    "commit": null
+    "commit": "3bafa7d5"
   },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-20",
-  "updated_by": "coder-c(批十四小队)",
+  "updated_by": "synova-cto(批十四小队队长)",
   "domain": "win",
   "owner": "coder-c(批十四小队)",
   "team": "批十四小队",

@@ -1,0 +1,146 @@
+{
+  "card": "D829",
+  "task_id": "task-3",
+  "subject": "C｜packages/evolution 接线（线 17-1 feedback-collector 有真实消费方）",
+  "verify_role": "队内自验（独立于编码；非审计）",
+  "verifier": "verifier",
+  "date": "2026-09-20",
+  "worktree": "/Users/wane/SynovaAgent/.synova-wt-team14",
+  "branch": "team/win-batch14",
+  "baseline": { "worktree_base": "d527abcb", "origin_main": "4f3bb21c" },
+  "delivery": {
+    "commit": "3bafa7d5",
+    "subject": "feat(D829): GA 纠错接 L0 进化收集器（线 17-1 有真实消费方）",
+    "files": [
+      ".claude/task-briefs/2026-09-20-D829-feedback-collector-evolution-wiring.md",
+      "docs/synova/product-lines/evidence/D829-evidence-20260920.md",
+      "memory/notes/implemented/2026-09-20-D829-feedback-collector-consumer.md",
+      "packages/evolution/src/feedback-collector.ts",
+      "packages/evolution/src/index.ts",
+      "src/routes/ga-calibration.ts",
+      "task-state/D829.json",
+      "tests/evolution/feedback-collector.test.ts",
+      "tests/routes/evolution-rule-version.test.ts",
+      "tests/routes/ga-calibration.test.ts"
+    ],
+    "write_scope_check": {
+      "verdict": "在范围内",
+      "evidence": "task-3 rev4 writeScopes 含 packages/evolution、src/routes/ga-calibration.ts、task-state/D829.json、tests/evolution/feedback-collector.test.ts、tests/routes/ga-calibration.test.ts、tests/routes/evolution-rule-version.test.ts、docs/synova/product-lines/evidence/D829-evidence-20260920.md（队外：task brief + memory note 属派单 §二 各切片标准产物）",
+      "commands": "team_task_get task-3 → revision 4；git show --name-only 3bafa7d5"
+    }
+  },
+  "commands_and_raw_output": [
+    {
+      "claim": "3 个测试文件 55 用例全绿",
+      "command": "node_modules/.bin/vitest run tests/evolution/feedback-collector.test.ts tests/routes/ga-calibration.test.ts tests/routes/evolution-rule-version.test.ts",
+      "raw_summary": "✓ tests/evolution/feedback-collector.test.ts (20 tests) | ✓ tests/routes/evolution-rule-version.test.ts (2 tests) | ✓ tests/routes/ga-calibration.test.ts (33 tests) || Test Files 3 passed (3) / Tests 55 passed (55) / Duration 3.01s",
+      "match_with_claim": true
+    },
+    {
+      "claim": "生产调用点 src/routes/ga-calibration.ts:244-245，全仓唯一",
+      "command": "grep -rn \"collectGaCalibrationFeedback\" src/ packages/ --include=*.ts",
+      "raw_summary": "src/routes/ga-calibration.ts:244（await import('@synova/evolution')）、:245（调用）；packages/evolution/src/index.ts:58（导出）、packages/evolution/src/feedback-collector.ts:159（定义）",
+      "match_with_claim": true
+    },
+    {
+      "claim": "路由已挂载 → 生产可达",
+      "command": "grep -n \"gaCalibrationRoutes\" src/server.ts",
+      "raw_summary": "src/server.ts:68 import；src/server.ts:406 app.use(gaCalibrationRoutes)（基线既有，非本卡新增）",
+      "match_with_claim": true
+    },
+    {
+      "claim": "读取出口 GET /api/ga/calibration/evolution-feedback 存在于 :539",
+      "command": "grep -n \"evolution-feedback\" src/routes/ga-calibration.ts",
+      "raw_summary": "9（文件头注释）、526（分节注释）、539（router.get 定义）、585（internalError scope）",
+      "match_with_claim": true
+    },
+    {
+      "claim": "tsc 28 error 全为存量、本卡改动文件零命中",
+      "command": "node_modules/.bin/tsc --noEmit > /tmp/verify-tsc.txt 2>&1; grep -c 'error TS'; grep -E '<本批改动文件>' /tmp/verify-tsc.txt",
+      "raw_summary": "tsc exit=2；总错误数 28；本批改动文件零命中（含 packages/evolution/src、src/routes/ga-calibration、src/store/session-store、src/l1/im-inbound、src/routes/conversations、tests/）；分布 = extensions/sentinels/_extinct/** 多个 + src/server.ts 等",
+      "match_with_claim": true,
+      "scope_note": "我核的是「改动文件零命中」；『28 全为存量』由『零命中 + 分布均在 _extinct/src/server.ts』支持，未逐条回溯父提交"
+    },
+    {
+      "claim": "id 唯一性修复（同毫秒连续纠错不再相撞）",
+      "command": "grep -n \"nextFeedbackId\" -A 3 packages/evolution/src/feedback-collector.ts",
+      "raw_summary": "function nextFeedbackId(): string { return `fb_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`; } 且 collectFeedback 内 const id = nextFeedbackId();",
+      "match_with_claim": true
+    },
+    {
+      "claim": "规则版本管理可观测（验收点③）",
+      "command": "grep -n \"expect(\" tests/routes/evolution-rule-version.test.ts",
+      "raw_summary": "断言 status 200 / proposal.status='approved' / typeof appliedSnapshotId='string' / rolloutPercentage=10 / snapshots>=1 / parsed.id===appliedSnapshotId / checksum 为 string / version='1.0' / listed.some(verified=true) / adjustments>=1 且 sentinelId 一致",
+      "match_with_claim": true
+    }
+  ],
+  "three_questions": {
+    "q1_who_calls_it": {
+      "answer": "src/routes/ga-calibration.ts:244-245（全仓唯一生产调用点，我独立 grep 确认）；触发面 = POST /api/ga/calibration 且 action ∈ {mark_error, rewrite_logic, demote_signal} 的 201 成功路径（REFLUX_DECISION 非空 → 必经 L0 收集块）；路由挂载 src/server.ts:406（基线既有）",
+      "independently_verified": true
+    },
+    "q2_test_through_real_implementation": {
+      "answer": "是。tests/routes/ga-calibration.test.ts D829-1..7 走真实路由 handler（真实 Router stack 取 handler）+ 真实 better-sqlite3 + 真实 AgentMemoryStore + 真实 @synova/evolution 收集器 + 真实 OrgAdapter.adjustThresholds；vi.mock 仅两处（engine-context 注入内存库、logger 探针），与被验对象无关。tests/routes/evolution-rule-version.test.ts 走真实 approve handler + 真实 SentinelRunner.getL0API()。断言落在「收集器可查（getFeedbackByOrg/ByAction）/持久化行形状/下游阈值调整」而非「函数被调用」",
+      "independently_verified": true,
+      "caveat_disclosed": "该 harness 沿用本仓库基线惯例（tests/routes/ga-calibration.test.ts 同款 getHandler+makeRes），handler 直调而非起真实 HTTP socket；生产可达性由『router 已挂载 server.ts:406』独立确认"
+    },
+    "q3_what_breaks_if_removed": {
+      "answer": "已由我在 §reverse_acceptance 亲自复现：抽掉 L0 收集调用 → D829-1..5 全红（evolutionCollected/evolutionDegraded/持久化/下游消费断言）。删读取出口 → D829-4/D829-7 红",
+      "independently_verified": true
+    }
+  },
+  "reverse_acceptance": {
+    "performed_by": "verifier（亲自抽、亲自看红、亲自还原）",
+    "method": "cp src/routes/ga-calibration.ts /tmp/verify-bak-D829-ga-calibration.ts + shasum -a 256 取指纹 → edit 抽掉 L0 收集调用块（保留变量声明，避免编译错，确保是行为性报红）→ 跑用例 → cp 还原 → 指纹比对 → 重跑全绿",
+    "fingerprint_before": "691e9ea14f3fc73c4fc3c993c82978eac1bd304b65ca28106145d68f780e8a29",
+    "fingerprint_after_restore": "691e9ea14f3fc73c4fc3c993c82978eac1bd304b65ca28106145d68f780e8a29",
+    "restore_byte_identical": true,
+    "git_diff_head_after_restore": "空（工作树与提交态一致）",
+    "red_run": {
+      "command": "node_modules/.bin/vitest run tests/routes/ga-calibration.test.ts -t \"D829\"",
+      "raw_summary": "Tests 5 failed | 2 passed | 26 skipped (33)；失败 = D829-1/2/3/4/5；仍通过 = D829-6（add_context 不收集，无接线亦真）、D829-7（读取出口 401，出口未抽）",
+      "example_error": "AssertionError: expected undefined to be true (tests/routes/ga-calibration.test.ts:726 → out.body.evolutionDegraded)"
+    },
+    "green_run_after_restore": {
+      "command": "node_modules/.bin/vitest run tests/routes/ga-calibration.test.ts",
+      "raw_summary": "Tests 33 passed (33)"
+    },
+    "deliverer_reverse_record_reviewed": "交付方证据 §4.1 记录 6 红（它还原整个 route 文件 → 连读取出口一起消失）；我抽的是收集调用（保留出口）→ 5 红。两者差异与抽掉范围一致，非矛盾；我亲自复现的是行为性报红，非编译错",
+    "reverse_acceptance_2_id_uniqueness": {
+      "target": "packages/evolution/src/feedback-collector.ts:48-50 nextFeedbackId()",
+      "fingerprint_before": "2d4e5de6d042a26384c088ab25ccf209a96cbc714bbe38f24272ababf710a203",
+      "action": "edit 还原旧实现 `fb_${Date.now().toString(36)}`（去掉随机后缀）",
+      "red_run": {
+        "command": "node_modules/.bin/vitest run tests/evolution/feedback-collector.test.ts",
+        "raw_summary": "Tests 1 failed | 19 passed (20)；唯一失败 = 'D829 回归: 同毫秒连续纠错不得 id/key 相撞（旧实现 5 连写 distinct=1 → UPSERT 静默覆盖）'",
+        "answers_leads_question": "该用例 5 连写无任何 sleep、旧实现下必红 ⇒ 实证它命中的就是**同毫秒**窗口（不是隔毫秒），非仅靠常量断言"
+      },
+      "restore": "cp /tmp/verify-bak-D829-fc.ts → sha256 = 2d4e5de6...（与备份一致）；git diff HEAD 空；重跑 Tests 20 passed (20)"
+    }
+  },
+  "forbidden_pattern_check": {
+    "grep_as_completion": "交付未以 grep 命中当完成（有 7 条穿入口用例 + 反向验收）",
+    "table_column_created_as_acceptance": "不适用（本卡无 DDL）",
+    "test_only_switch_in_src": "零命中：git show 3bafa7d5 -U0 | grep -E \"^\\+.*(NODE_ENV==='test'|process.env.VITEST|__TEST__|isTest)\" → 空",
+    "loosened_exclusions": "未动：git show 3bafa7d5 --name-only | grep -E 'vitest.config|\\.github/' → 空",
+    "evidence_naming_M5": "合规：docs/synova/product-lines/evidence/D829-evidence-20260920.md（按任务号）",
+    "escape_hatches": {
+      "production_added_lines": 0,
+      "note": "本 commit 新增行中 as unknown as 全部位于 tests/routes/evolution-rule-version.test.ts:63/78/84-86，且与基线 tests/routes/ga-calibration.test.ts:71/98/104-106（HEAD d527abcb 既有）逐字同款 harness 习语",
+      "rule_scope_evidence": "scripts/pre-commit-check.sh:481-489 —— 组 1a 明确 ':(exclude)**/*.test.ts' 且注释 'D501 修复：排除测试/声明文件 … 只查生产代码' ⇒ 铁律 38/CT-46 的执法范围 = src/ + packages/ 生产代码（不含测试）",
+      "verdict": "不构成退回；按「声称 vs 事实」口径披露（交付方 §3.3 的 '本卡新增行内 = 0' 与该执法范围一致）"
+    }
+  },
+  "disclosures": [
+    "demote_signal → evolution decision 'reject'（growth 侧同动作为 'ineffective'），因 evolution FeedbackInput.decision 无 'ineffective' 枚举；已在 packages/evolution/src/feedback-collector.ts JSDoc 明示，区分度由 sentinelId+reason 承载",
+    "memory note 落在 memory/notes/implemented/（派单 §二 写的是 proposed/）；本卡代码已随 commit 落地，按 D534 四态语义可接受，仅记录",
+    "读取出口 GET /api/ga/calibration/evolution-feedback 对 targetId 过滤时用 getFeedbackByAction ∩ getFeedbackByOrg 求交（因 getFeedbackByAction 无 org 参数）——是防跨 org 泄漏的正确处理，D829-4 有反证",
+    "遗留（交付方已自declared、非本卡写集）：src/routes/chat.ts:70-76 既有 collectFeedback 未传 store（不落库）+ .catch 空吞（铁律 24）；src/routes/evolution.ts:210 collectAllFeedback() 零参恒空"
+  ],
+  "redline_check": {
+    "no_audit_wording": "交付方结论用「可提请独立审计」，无「审计通过/审计合格/已通过审计」",
+    "no_yueyongyuezhun_claim": "grep -rn \"越用越准|进化能力\" 命中 3 处**否定式声明**（证据 §181 / D829.json note / memory note），无正面宣称 —— 符合 D829 验收点④红线"
+  },
+  "conclusion": "可提请独立审计",
+  "conclusion_basis": "生产调用点可达（file:line + 挂载）+ 结果可查（两个真实 reader 真断言）+ 我亲自反向验收（抽掉 → 5 红 → byte-identical 还原 → 33/33 全绿）+ tsc 改动文件零命中 + 四条禁止零命中 + 证据按任务号命名"
+}

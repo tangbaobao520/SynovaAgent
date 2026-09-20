@@ -1,0 +1,133 @@
+{
+  "card": "D823",
+  "task_id": "task-2",
+  "subject": "B｜D823 im-inbound 调不存在的方法（IM 历史恢复静默空转）",
+  "verify_role": "队内自验（独立于编码；非审计）",
+  "verifier": "verifier",
+  "date": "2026-09-20",
+  "worktree": "/Users/wane/SynovaAgent/.synova-wt-team14",
+  "branch": "team/win-batch14",
+  "verified_sha": "3a0d5b5c",
+  "verified_sha_subject": "fix(D823): IM 通道会话历史连续 — 会话级引擎复用 + 清 5 处类型逃逸",
+  "baseline_pre_fix": "d527abcb（修复前；我用于反向验收的缺陷态版本）",
+  "delivery_files": [
+    ".claude/task-briefs/2026-09-20-D823-im-inbound-history.md",
+    "docs/synova/product-lines/evidence/D823-im-inbound-history-20260920.json",
+    "memory/notes/implemented/2026-09-20-D823-im-inbound-history.md",
+    "src/l1/im-inbound.ts",
+    "task-state/D823.json",
+    "tests/l1/im-inbound-history.test.ts"
+  ],
+  "commands_and_raw_output": [
+    {
+      "claim": "B 的 6 用例全绿",
+      "command": "node_modules/.bin/vitest run tests/l1/im-inbound-history.test.ts",
+      "raw_summary": "✓ tests/l1/im-inbound-history.test.ts (6 tests) 1858ms；Test Files 1 passed (1) / Tests 6 passed (6)（两次重跑一致）",
+      "match_with_claim": true
+    },
+    {
+      "claim": "回归（含架构门禁；L1→L2 新增 type import 不触线）",
+      "command": "node_modules/.bin/vitest run tests/l1 tests/architecture tests/routes/conversations.test.ts tests/store/session-event-log.test.ts",
+      "raw_summary": "Test Files 7 passed (7) / Tests 67 passed (67)（含 check-architecture-gate、l1-cross-layer 基线、conversations 13 用例）",
+      "match_with_claim": true
+    },
+    {
+      "claim": "文件级逃逸 = 0（修复前 5 处）",
+      "command": "grep -nE \"as (any|never|unknown as)\" src/l1/im-inbound.ts ; git show 3a0d5b5c -U0 -- src/l1/im-inbound.ts | grep -E '^\\+.*(as any|as never|as unknown as)'",
+      "raw_summary": "全文件零命中；本 commit 对 src/ 的**新增行**零命中（其余命中出现在 task brief / evidence 的说明文本里，非代码）",
+      "match_with_claim": true,
+      "note": "整文件 5 处存量逃逸被一并清理（超出队长's 硬判据要求），清理后文件级 = 0"
+    },
+    {
+      "claim": "addToHistory 假动作已删除",
+      "command": "grep -rn \"addToHistory\" src/ --include=*.ts",
+      "raw_summary": "零命中（修复前 src/l1/im-inbound.ts:195 为全仓唯一命中）",
+      "match_with_claim": true
+    },
+    {
+      "claim": "注册表有界（IM_SESSION_MAX=200 + FIFO 逐出在位且有调用）",
+      "command": "grep -n \"IM_SESSION_MAX\\|function evictOverflow\\|sweepImSessions\" src/l1/im-inbound.ts",
+      "raw_summary": ":139 const IM_SESSION_MAX = 200；:142 evictOverflow（resolveImSession:159 内调用）；:170 sweepImSessions 定义 + :345 在 startSessionCleanup 内被调用（非死代码）",
+      "match_with_claim": true
+    },
+    {
+      "claim": "零改 L2（不越界）",
+      "command": "git show --name-only 3a0d5b5c ; git diff --stat d527abcb..3a0d5b5c -- src/agent/conversation-engine.ts",
+      "raw_summary": "commit 文件清单不含 src/agent/conversation-engine.ts；该文件在两 SHA 间零差异",
+      "match_with_claim": true
+    },
+    {
+      "claim": "本卡文件 tsc 零新增错误",
+      "command": "node_modules/.bin/tsc --noEmit | grep -E \"src/l1/im-inbound|tests/l1/im-inbound-history\"",
+      "raw_summary": "零命中（总错误 28，均为存量：extensions/sentinels/_extinct/**、src/server.ts 等）",
+      "match_with_claim": true
+    }
+  ],
+  "three_questions": {
+    "q1_who_calls_it": {
+      "answer": "生产入口 = POST /api/im/feishu/webhook（src/routes/im.ts:19 路由）→ src/routes/im.ts:54 handleInboundMessage；本文件内 :190 链式调 generateAIReply；注册表回收接在 startSessionCleanup(:345)",
+      "independently_verified": true
+    },
+    "q2_test_through_real_implementation": {
+      "answer": "是，且是本批最强形态：真实 express 路由 + listen(0) + 真实 fetch 打本机 → 真实 handleInboundMessage → 真实 SessionStore(better-sqlite3 :memory:) → 真实 ConversationEngine → 真实 createProvider 经**真实 HTTP** 打本机 OpenAI 兼容替身端点。vi.mock 仅 @synova/logger（可观测边界），**未 mock providers 模块、未 mock 管线、未在 src/** 加测试开关**。断言落在 provider 请求体（roles 序列 + 第 1 轮 user/assistant 文本）与 store.getMessages 逐字内容",
+      "independently_verified": true
+    },
+    "q3_what_breaks_if_removed": {
+      "answer": "已由我亲自反向验收（见下）：回到修复前实现 → D823-1 红（第 2 轮 sessionId 不同、模型上下文不含第 1 轮）",
+      "independently_verified": true
+    }
+  },
+  "reverse_acceptance": {
+    "performed_by": "verifier（亲自置缺陷态、亲自看红、亲自还原；全程 cp + shasum，未用 git checkout / git stash，避开共享 index）",
+    "method": "cp 备份修复态（sha256 e9635520…）→ `git show d527abcb:src/l1/im-inbound.ts > /tmp/...`（只读）→ cp 覆盖为缺陷态 → 跑用例 → cp 还原 → 指纹比对 → 复跑",
+    "defect_state_marker": "addToHistory 命中 = 1；工作树为修复前 243 行版本",
+    "red_run": {
+      "command": "node_modules/.bin/vitest run tests/l1/im-inbound-history.test.ts",
+      "raw_summary": "Tests 3 failed | 3 passed (6)",
+      "failed": [
+        "D823-1 两轮上下文连续（第 2 轮模型上下文含第 1 轮）+ 消息真落库",
+        "D823-3 降级非静默：store.db 缺失 → log.error（带 degraded）+ 消息仍处理",
+        "D823-8 上界：注册表有界 + FIFO 逐出最旧"
+      ],
+      "passed_in_defect_state": [
+        "D823-2 边界：不同发送者不串上下文（修复前各轮各会话，天然不串 → 不具反向判别力）",
+        "D823-9 并发：同用户串行、跨用户不阻塞（修复前无共享链，天然不阻塞 → 不具反向判别力）",
+        "D823-5 会话清理后不复用已删会话（修复前每轮新建 → 天然不复用 → 不具反向判别力）"
+      ],
+      "honest_coverage_note": "6 用例中 3 条具备反向判别力（D823-1/3/8），另 3 条是隔离/并发/清理的守卫用例，在缺陷态亦绿。已如实标注，避免『3 绿 = 覆盖强』的误读"
+    },
+    "restore": {
+      "fingerprint_before": "e9635520fa7d59b03175f5b369063b15095b5bcc99c0eff3291170424eba95a7",
+      "fingerprint_after": "e9635520fa7d59b03175f5b369063b15095b5bcc99c0eff3291170424eba95a7",
+      "byte_identical": true,
+      "git_diff_head_after_restore": "空（与 3a0d5b5c 提交态逐字一致）",
+      "green_run_after_restore": "Tests 6 passed (6)"
+    },
+    "deliverer_red_record_cross_check": "B 证据记录的是缺陷态下 `-t D823-1` 单条红（1 failed | 5 skipped）；我跑的是全文件 → 3 failed。两者一致（我那 2 条额外红 = D823-3/8，因 B 只筛了 D823-1）。另 B 自陈第一轮反向验收因 git 还原撞 index.lock 得过一次假绿并已重做——我此处的红是**我自己的原始输出**，未采信其第二次输出"
+  },
+  "forbidden_pattern_check": {
+    "grep_as_completion": "未以 grep 命中当完成（6 条穿真实 HTTP 入口用例）",
+    "table_column_created_as_acceptance": "不适用",
+    "test_only_switch_in_src": "零命中（git show 3a0d5b5c -U0 | grep NODE_ENV==='test'|__TEST__|VITEST → 空）",
+    "loosened_exclusions": "未动（commit 未含 vitest.config / .github/）",
+    "evidence_naming_M5": "合规：docs/synova/product-lines/evidence/D823-im-inbound-history-20260920.json（以任务号开头）",
+    "escape_hatches_hard_criterion": "通过且超额：diff 触及行 0；:195 所在函数体 0；**整文件 0**（含原存量 5 处）"
+  },
+  "independent_side_finding_L2": {
+    "claim_by_deliverer": "ConversationEngine.fromState 恢复后模型上下文丢失，故 IM 跨重启历史恢复不可用（本卡上报挂账，不修 L2）",
+    "my_probe": "/tmp/verify-fromstate.ts + /tmp/verify-fromstate2.ts（自建探针，非采信交付方输出）",
+    "raw_result": "[A 构造器对照] 首调 roles = [\"system\",\"user\"]，含 CTRL-ROUND1 = true ｜ [B fromState] getMessages() 3 条 [system,user,assistant]，但 provider 首调 roles = [\"system\"]，含 ROUND1-USER-RESTORED = false、含 ROUND2-USER-NEW = false（processMessage 与 processMessageStream 两条路径均如此）",
+    "verdict": "交付方论述成立：fromState 恢复的引擎对模型**完全不可见输入**（连本轮用户消息都进不去）",
+    "repo_precedent_verified": "src/routes/conversations.ts:60-62 决策记录自认同源缺陷；tests/e2e/conversation-flow.e2e.test.ts:527-530 如实记录并划归 Stage 3（两处引用我逐字打开核对）",
+    "no_overclaim_in_delivery": "brief:104『不得声称修好 L2』、brief:94『上报挂账』；commit 零改 conversation-engine.ts → 无越界宣称"
+  },
+  "disclosures": [
+    "注册表为**进程内**内存结构（多实例/多进程部署下同一用户不共享连续性）——交付未宣称跨进程，仅需知悉",
+    "证据文件 docs/synova/product-lines/evidence/D823-im-inbound-history-20260920.json **不在 task-2 writeScopes 内**（task-2 rev2 仅 3 项：src/l1/im-inbound.ts、tests/l1/im-inbound-history.test.ts、task-state/D823.json）。它恰是 M5 要求的按任务号证据 → 属**登记缺口**（对照：队长已把 C 的证据文件补登进 task-3 rev4）。建议队长同样补登 task-2，使机器可核记录与实物一致",
+    "memory note 落在 memory/notes/implemented/（派单 §二 写 proposed/）；代码已随 commit 落地，按 D534 四态语义可接受",
+    "交付方另报两处遗留（我抽查其一成立）：① src/routes/im.ts:54 存量 as unknown as（非本卡写集）② src/store/session-store.ts:332-341 listSessions 映射丢弃 user_id（A 写集）→ 我核了 ②：listSessions 只映射 7 字段、无 userId，故旧代码 `s.userId` 恒 undefined（这正是修复前『每轮新建会话』的第二层根因）——**该文件属 A 写集，我不改，仅登记**",
+    "队长治理动作 8de56ed2（cherry-pick 补 bypass.log 登记）非本卡范围，未纳入本卡验收叙述"
+  ],
+  "conclusion": "可提请独立审计",
+  "conclusion_basis": "核的是 3a0d5b5c；6/6 用例我自己重跑通过；反向验收我自己做（缺陷态 3 红，其中 D823-1 直锁卡面主判据）；还原字节一致且与提交态一致；逃逸超标准清理（整文件 0）；零改 L2 且 L2 缺陷论述经我独立探针证实；四条禁止零命中；回归 7 文件 67 用例全绿"
+}

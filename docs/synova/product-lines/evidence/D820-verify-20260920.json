@@ -1,0 +1,111 @@
+{
+  "card": "D820",
+  "task_id": "task-1",
+  "subject": "A｜D820 删会话级联清诊断报告 + 报告列表会话存在性谓词",
+  "verify_role": "队内自验（独立于编码；非审计）",
+  "verifier": "verifier",
+  "date": "2026-09-20",
+  "worktree": "/Users/wane/SynovaAgent/.synova-wt-team14",
+  "branch": "team/win-batch14",
+  "verified_sha": "8e89f357",
+  "verified_sha_subject": "fix(D820): 删会话级联清诊断报告 + 报告列表会话存在性谓词",
+  "related_sha": {
+    "98c24872": "fix(D820-FTS): FTS5 删除触发器改普通 DELETE + rowid 对齐（**卡外阻塞缺陷**，前置独立 commit）"
+  },
+  "baseline_pre_fix": "d527abcb",
+  "delivery_files": [
+    ".claude/task-briefs/2026-09-20-D820-delete-session-cascade.md",
+    "memory/notes/implemented/2026-09-20-D820-delete-session-cascade.md",
+    "memory/notes/implemented/2026-09-20-D820-fts-delete-trigger-broken.md",
+    "src/routes/conversations.ts",
+    "src/store/session-store.ts",
+    "task-state/D820.json",
+    "tests/store/delete-session-cascade.test.ts"
+  ],
+  "commands_and_raw_output": [
+    {
+      "claim": "8 用例全绿（含新补用例 8）+ D593 回归 + FTS 专项 + conversations 回归",
+      "command": "node_modules/.bin/vitest run tests/store/delete-session-cascade.test.ts tests/store/fts-sync-trigger.test.ts tests/routes/diagnosis-report-persistence.test.ts tests/routes/conversations.test.ts",
+      "raw_summary": "Test Files 4 passed (4) / Tests 38 passed (38)（cascade 8、fts 5、diagnosis-report-persistence 12、conversations 13）；运行前后 src/store/session-store.ts sha256 均为 3aa9decc…（无并发干扰）",
+      "match_with_claim": true
+    },
+    {
+      "claim": "N1 归档行必须有生产写入者（否则是『字段已加』式假绿）",
+      "command": "git show 8e89f357:src/routes/conversations.ts | grep -n originSessionId",
+      "raw_summary": ":321 originSessionId: sessionId（对话桥落盘处，生产写链）；全仓非 session-store 的 origin_session_id/originSessionId 命中仅 conversations.ts 此一处（注释+赋值）",
+      "match_with_claim": true
+    },
+    {
+      "claim": "N2 存量库迁移（CREATE TABLE IF NOT EXISTS 不会加列 → 老库必须 ALTER）",
+      "command": "git show 8e89f357:src/store/session-store.ts | grep -n 'ALTER TABLE diagnosis_checkpoints'  + 自建探针 /tmp/verify-n2-legacy.ts",
+      "raw_summary": ":292 try { ALTER TABLE diagnosis_checkpoints ADD COLUMN origin_session_id TEXT } catch { log.debug }；探针：手搓无该列的旧库 → new SessionStore → 列变为 [...,origin_session_id]、listDiagnosisReports.ok=true、total=1、存量行照旧列出；第二次 new SessionStore 不抛错（幂等）",
+      "match_with_claim": true
+    },
+    {
+      "claim": "N3 读侧谓词两个方向都不假绿（NULL 行照旧列出；链到已删会话的行不列出）",
+      "command": "vitest run tests/routes/diagnosis-report-persistence.test.ts + tests/store/delete-session-cascade.test.ts",
+      "raw_summary": "D593 12/12 全绿（用例 1/5/8 未被误伤 → 方向一成立）；cascade 用例 3（未删会话报告 + consult 报告 origin NULL 仍在）与用例 8（孤儿行不列出、会话复活后可见）全绿（方向二成立）",
+      "match_with_claim": true
+    },
+    {
+      "claim": "真实入口：DELETE /api/sessions/:id → 200；列表走真实 HTTP",
+      "command": "（读测试）tests/store/delete-session-cascade.test.ts:169-173 deleteSession() + :225/:244/:267 断言 200；:120-145 runChatDiagnosis 走真实 /api/conversations 三轮 → 诊断桥落 phase=5；:164 listReports 走 GET /api/diagnosis/reports",
+      "raw_summary": "用例 1/2/3/4 均以 HTTP 200 断言删除成功，且 express + listen(0) + fetch 真实链路（app.locals.orchestration.db 注入内存库）",
+      "match_with_claim": true
+    }
+  ],
+  "three_questions": {
+    "q1_who_calls_it": {
+      "answer": "deleteDiagnosisCheckpoints ← deleteSession（src/store/session-store.ts:445，由 src/routes/sessions.ts:117 DELETE /api/sessions/:id 触发；另 src/l4/data-purger.ts:291、src/l1/im-inbound.ts:232 亦调 deleteSession）；originSessionId 写链 ← src/routes/conversations.ts:321；读侧谓词 ← src/routes/diagnosis.ts:947（GET /api/diagnosis/reports，src/server.ts:384 挂载）",
+      "independently_verified": true
+    },
+    "q2_test_through_real_implementation": {
+      "answer": "是：测试用真实 express + listen(0) + fetch 打 /api/conversations（三轮访谈真跑出 phaseComplete）→ 真实诊断桥落盘 → 真实 DELETE /api/sessions/:id → 真实 GET /api/diagnosis/reports；真实 better-sqlite3；vi.mock 仅 providers/config/诊断引擎工厂（外部边界）",
+      "independently_verified": true
+    },
+    "q3_what_breaks_if_removed": {
+      "answer": "两半各自可证伪，见我亲自复现：抽级联 → 用例 1/2/3/4 红；抽谓词 → 仅用例 8 红（补用例 8 之前该半是假验收）",
+      "independently_verified": true
+    }
+  },
+  "reverse_acceptance": {
+    "performed_by": "verifier（亲自抽两半、亲自看红、cp+sha256 还原；未用 git checkout / git stash）",
+    "fingerprint_before": "3aa9decc9e61f8a2eb40deab55d981690b753f60b517cc3a230fab1c759a62d2",
+    "fingerprint_after_all_restores": "3aa9decc9e61f8a2eb40deab55d981690b753f60b517cc3a230fab1c759a62d2",
+    "restore_byte_identical": true,
+    "git_diff_head_after_restore": "0 行（与 66d1638e 提交态一致）",
+    "half_a_cascade": {
+      "action": "抽掉 deleteSession 内 this.deleteDiagnosisCheckpoints(id)（级联半边）",
+      "red_run": "vitest run tests/store/delete-session-cascade.test.ts → Tests 4 failed | 4 passed (8)；红 = 用例 1/2/3/4；绿 = 用例 5/6/7/8（与级联无关，合理）",
+      "restore_then_green": "8 passed (8)"
+    },
+    "half_b_predicate": {
+      "action": "把 PHASE5_LIST_PREDICATE 还原为 'phase = 5'（读侧谓词半边）",
+      "red_run_full": "Tests 1 failed | 7 passed (8)；红 = 仅用例 8（纵深防御）",
+      "red_run_excluding_case8": "vitest run ... -t \"用例 [1-7]\" → Tests 7 passed | 1 skipped (8)",
+      "significance": "**亲自复现了交付方自述的『抽掉读侧谓词首次全绿』**：补用例 8 之前，谓词半边没有任何可证伪断言（假验收风险）；补用例 8 后该半边才可单独变红。两条均与我实测一致，非采信其自述。",
+      "restore_then_green": "8 passed (8)（并与 D593 12/12 同跑 → 20 passed）"
+    }
+  },
+  "boundary_attribution_fts_vs_d820": {
+    "requirement": "区分『FTS 修复 98c24872 带来的能力』与『D820 主体检出的能力』，不得把 FTS 功劳记进 D820 验收叙述",
+    "my_evidence": "我独立复刻 HEAD 基线 DDL/触发器（普通 FTS5 表 + contentless 专用 ('delete',…) 命令）→ `DELETE FROM agent_messages` / `DELETE FROM agent_sessions` 均抛 'SQL logic error'，且已删内容仍在 FTS 可召回；修复后同路径 DELETE 成功、fts=0、search=0",
+    "conclusion": "`DELETE /api/sessions/:id → 200`（用例 1/2/3/4 的前置条件）**由 FTS 修复 98c24872 提供**，D820 主体提供的是『级联清归档行 + 读侧谓词』；两者在结论中分列，不合并计功。D820 commit 未含 FTS 代码变更（仅引用其 note）→ 边界清晰"
+  },
+  "forbidden_pattern_check": {
+    "grep_as_completion": "未以 grep 命中当完成（8 条穿真实 HTTP 入口用例 + 反向验收）",
+    "table_column_created_as_acceptance": "列本身不作为验收：N1 已核『生产写链真的写它』+ 用例 1 断言 origin_session_id === sessionId；N2 已核存量库补列后列表不 fail-closed",
+    "test_only_switch_in_src": "零命中",
+    "loosened_exclusions": "未动（commit 未含 vitest.config / .github/）",
+    "evidence_naming_M5": "合规：docs/synova/product-lines/evidence/D820-evidence-20260920.md（交付方）+ D820-verify-20260920.json（本自验）",
+    "escape_hatches": "本 commit 对 src/ 的新增行零命中（as any / as never / as unknown as）"
+  },
+  "disclosures": [
+    "用例 4（phase<5 键=sessionId 的 resume 检查点随会话删除）在生产上属**防御性**：我实测 src/agent/diagnosis-launcher.ts:162 的 saveCheckpoint 是只定义零调用的死函数 ⇒ 生产不产生 phase<5 行；A 的证据未把它说成主机制（用例 4 表述中性、读侧标『纵深防御』），无 overclaim，但建议波2/后续卡顺手处理该死函数",
+    "D820 commit 顺带 +4/−1 更新了 FTS note（memory/notes/implemented/2026-09-20-D820-fts-delete-trigger-broken.md），属文档补记，非代码混入",
+    "reportId 作键是承重语义（src/routes/diagnosis.ts:858 getDiagnosisCheckpoint(reportId) 冷读）——D820 未改键，仅加 origin 链，故 D593 用例 2/3 仍绿；我核过该约束未被动",
+    "队长治理动作（cherry-pick 8de56ed2 补 bypass.log 登记）非本卡范围，未纳入本卡验收叙述"
+  ],
+  "conclusion": "可提请独立审计",
+  "conclusion_basis": "核的是 8e89f357；N1/N2/N3 三条新核点全部由我独立实测通过（含自建旧库迁移探针）；两半修复各自可单独变红（我亲自复现，含复现交付方自述的『谓词半边首次全绿』）；D593 回归 12/12 未误伤；DELETE 200 的 FTS 依赖已单独归因；四条禁止零命中；证据按任务号命名"
+}

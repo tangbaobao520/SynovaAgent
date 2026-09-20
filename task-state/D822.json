@@ -14,7 +14,7 @@
     "memory/notes/proposed/2026-09-18-D822-.md"
   ],
   "impl": {
-    "commit": "D822 主体 = 本卡提交（git log --grep degraded-signal）；同批前置 98c24872(FTS)/8e89f357(D820 主体)",
+    "commit": "66d1638e",
     "by": "coder-a(批十四小队)",
     "at": "2026-09-20",
     "files": [
@@ -33,7 +33,7 @@
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-20",
-  "updated_by": "coder-a(批十四小队)",
+  "updated_by": "synova-cto(批十四小队队长)",
   "domain": "win",
   "owner": "coder-a(批十四小队)",
   "milestone": "M1 产品可用",

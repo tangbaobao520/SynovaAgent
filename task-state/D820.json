@@ -12,7 +12,7 @@
     "memory/notes/proposed/2026-09-18-D820-delete-session-cascade.md"
   ],
   "impl": {
-    "commit": "98c24872（FTS 前置，折入本批的独立 commit）；D820 主体 = 本卡提交（git log --grep delete-session-cascade）",
+    "commit": "8e89f357",
     "by": "coder-a(批十四小队)",
     "at": "2026-09-20",
     "files": [
@@ -26,12 +26,19 @@
     ],
     "evidence": "验收（穿真实入口，原始输出见交付报告）：删除后 diagnosis_checkpoints 两键查零 + 无墓碑列；GET /api/diagnosis/reports 不再列出已删会话报告；未删会话报告 + consult 报告（origin NULL）仍在；旧库无新列 → 自动补列且列表 ok:true 不 503",
     "reverse_acceptance": "抽掉 A（级联）→ 4 red；抽掉 B（读侧谓词）→ 用例 8 red（首次抽 B 全绿 → 据此补「存量孤儿行」用例使其可证伪）；两次还原后 8 passed",
-    "regression_gate": "只读回归门 47 passed（D593 报告持久化 / 对话路由 / session-manager / session-store / checkpoint e2e）——三个只读文件未改"
+    "regression_gate": "只读回归门 47 passed（D593 报告持久化 / 对话路由 / session-manager / session-store / checkpoint e2e）——三个只读文件未改",
+    "folded_fixes": [
+      {
+        "sha": "98c24872",
+        "why": "卡外阻塞缺陷（FTS5 删除触发器 contentless 语法误用）— 经队长授权折入本批，独立 commit；不修则本卡卡面「建会话→落报告→删会话」在真实入口物理走不通（DELETE /api/sessions/:id 对任何有消息的会话都 500）",
+        "audit": "供 K3 独立审，不并入 D820 验收叙述"
+      }
+    ]
   },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-20",
-  "updated_by": "coder-a(批十四小队)",
+  "updated_by": "synova-cto(批十四小队队长)",
   "domain": "win",
   "owner": "coder-a(批十四小队)",
   "milestone": "M1 产品可用",

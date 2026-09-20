@@ -1,0 +1,121 @@
+{
+  "card": "D822",
+  "task_id": "task-1",
+  "subject": "A｜D822 降级信号自遮蔽（写失败被同轮后一次成功抹掉 + 测试固化缺陷）",
+  "verify_role": "队内自验（独立于编码；非审计）",
+  "verifier": "verifier",
+  "date": "2026-09-20",
+  "worktree": "/Users/wane/SynovaAgent/.synova-wt-team14",
+  "branch": "team/win-batch14",
+  "verified_sha": "66d1638e",
+  "verified_sha_subject": "fix(D822): 降级信号不再被同轮后一次成功抹掉（改为逐条结果 + 累计入账）",
+  "baseline_pre_fix": "d527abcb（缺陷点：session-store.ts:377-383 成功即复位 lastDegraded；conversations.ts:249/255/260 只在两次写后查一次）",
+  "delivery_files": [
+    ".claude/task-briefs/2026-09-20-D822-degraded-signal-not-masked.md",
+    "memory/notes/implemented/2026-09-20-D822-degraded-signal-not-masked.md",
+    "src/routes/conversations.ts",
+    "src/store/session-store.ts",
+    "task-state/D822.json",
+    "tests/store/degraded-signal-not-masked.test.ts",
+    "tests/store/session-event-log.test.ts"
+  ],
+  "commands_and_raw_output": [
+    {
+      "claim": "本卡 2 文件 20 passed",
+      "command": "node_modules/.bin/vitest run tests/store/degraded-signal-not-masked.test.ts tests/store/session-event-log.test.ts",
+      "raw_summary": "Test Files 2 passed (2) / Tests 20 passed (20)（degraded-signal-not-masked 3 + session-event-log 17）",
+      "match_with_claim": true
+    },
+    {
+      "claim": "只读回归门 4 文件 41 passed",
+      "command": "node_modules/.bin/vitest run tests/store/degraded-signal-not-masked.test.ts tests/store/session-event-log.test.ts tests/routes/conversations.test.ts tests/orchestrator/session-manager-eventlog.test.ts",
+      "raw_summary": "Test Files 4 passed (4) / Tests 41 passed (41)（conversations 13、session-manager-eventlog 8 含逐条 lastDegraded 断言分支）",
+      "match_with_claim": true
+    },
+    {
+      "claim": "appendFailureCount 不是死代码（铁律 37）——JSDoc 声称两个消费者",
+      "command": "grep -rn appendFailureCount src/ tests/ task-state/",
+      "raw_summary": "生产读：src/routes/conversations.ts:267（log.error 载荷里读它）；测试真断言：tests/store/session-event-log.test.ts:154/162/182/183（`failuresBefore+1`、`toBeGreaterThan(0)`）；写入点：src/store/session-store.ts:509；D831 卡片：task-state/D831.json:29 验收点③原文含『降级信号不被后续成功写入抹掉』（逐字核对存在）",
+      "match_with_claim": true
+    },
+    {
+      "claim": "真累计（事件化）而不是布尔别名",
+      "command": "读 src/store/session-store.ts:182-212（字段 JSDoc）+ :450-512（addMessage/appendEvent 契约与实现）",
+      "raw_summary": "`appendFailureCount = 0`（只读计数）+ appendEvent catch 内 `this.appendFailureCount += 1;`（只增不减、永不复位）；addMessage 改为透传 AppendEventResult；lastDegraded 保留『最近一次写』逐条语义（session-manager.ts:86 依赖不动）——与 DSH 范式（每个事件独立入账、不被后续覆盖）同型，非布尔别名",
+      "match_with_claim": true
+    },
+    {
+      "claim": "不在写集的两个测试文件一行未改且仍绿",
+      "command": "git show 66d1638e --name-only | grep -E 'tests/routes/conversations.test.ts|tests/orchestrator/session-manager-eventlog.test.ts'",
+      "raw_summary": "零命中（未改）；两文件在回归门中全绿（13 + 8）",
+      "match_with_claim": true
+    },
+    {
+      "claim": "注入手法真造成『一失败一成功』（按 role 选择性注入）",
+      "command": "读 tests/store/degraded-signal-not-masked.test.ts:95-96（触发器）+ :133-139（注入生效判据）",
+      "raw_summary": "触发器 `BEFORE INSERT ON session_events WHEN json_extract(NEW.payload_json,'$.role')='user' BEGIN SELECT RAISE(ABORT,'d822-injected'); END`；用例自证注入生效：agent_messages=2 行（两条兼容写都成功）、session_events **恰好 1 行且 role='assistant'** —— 与交付方判据逐条一致；注入在测试侧（非 src/** 测试开关）",
+      "match_with_claim": true
+    }
+  ],
+  "three_questions": {
+    "q1_who_calls_it": {
+      "answer": "路由判定点 src/routes/conversations.ts:264-271（真实入口 POST /api/conversations 与 POST /api/conversations/:id/messages，src/server.ts:387 挂载）；addMessage 返回值消费点同上 :249 与 :255；appendFailureCount 生产读点 :267；lastDegraded 另一消费者 src/orchestrator/session-manager.ts:86（逐条断言语义，本卡刻意保留）",
+      "independently_verified": true
+    },
+    "q2_test_through_real_implementation": {
+      "answer": "是：tests/store/degraded-signal-not-masked.test.ts 用真实 express + listen(0) + fetch 打真实对话端点到流结束，解析真实 SSE 帧；失败注入是测试侧 SQLite 触发器（真实 SQLite 物理拒绝，非 mock）；session-event-log 改写用例走真实 SessionStore + 真实 drop/recreate 表。vi.mock 仅 providers/config/诊断引擎工厂（外部边界），未 mock 管线",
+      "independently_verified": true
+    },
+    "q3_what_breaks_if_removed": {
+      "answer": "两半各自可证伪（我亲自复现）：抽路由逐条判定 → 用例 1 红（STORE_DEGRADED 帧漏发）且用例 2/3 仍绿；抽累计计数 → 改写用例红",
+      "independently_verified": true
+    }
+  },
+  "reverse_acceptance": {
+    "performed_by": "verifier（两半各亲自抽一次、亲自看红、cp+sha256 还原；未用 git checkout / git stash）",
+    "fingerprints": {
+      "conversations_ts": "d1e1d36f6a2844e690de78f3d1fe234743a73fe285ee3ab6a0d6f958588c4dd4",
+      "session_store_ts": "3aa9decc9e61f8a2eb40deab55d981690b753f60b517cc3a230fab1c759a62d2",
+      "after_restore_both_identical": true
+    },
+    "git_diff_head_after_restore": "0 行（两文件均与 66d1638e 提交态一致）",
+    "half_a_route_judgment": {
+      "action": "把 `if (failedWrites.length > 0 || store.lastDegraded)` 回退为 `if (store.lastDegraded)`",
+      "red_run": "vitest run tests/store/degraded-signal-not-masked.test.ts tests/store/session-event-log.test.ts → Tests 1 failed | 19 passed (20)；红 = 用例 1（核心：STORE_DEGRADED 帧漏发）；用例 2/3（不误报两例）仍绿",
+      "significance": "与交付方声称（1 failed | 19 passed，用例 2/3 仍绿 ≠ 靠误报取胜）逐字一致；我复现的是自己的原始输出",
+      "restore_then_green": "两文件 20 passed"
+    },
+    "half_b_failure_counter": {
+      "action": "抽掉 appendEvent catch 内的 `this.appendFailureCount += 1;`",
+      "red_run": "同命令 → Tests 1 failed | 19 passed (20)；唯一红 = 『D822 改写: appendEvent 失败 → 成功，失败事实不被后续成功抹掉』（内部断言 `appendFailureCount === failuresBefore+1`）",
+      "note_on_vs_claim": "交付方记的是『1 failed | 16 passed』——他是只跑 session-event-log.test.ts（17 条）；我跑两文件（20 条）⇒ 1 failed | 19 passed。同一失败点，范围差异，非矛盾",
+      "significance": "累计计数半边**独立可证伪**（抽它 → 只有 store 侧改写用例红；路由用例 1 仍绿），与路由半边互不遮蔽",
+      "restore_then_green": "两文件 20 passed"
+    }
+  },
+  "old_defect_fixing_test_rewrite": {
+    "original": "tests/store/session-event-log.test.ts:146-166（原断言『失败→成功 ⇒ lastDegraded=false』把缺陷固化了；卡面写 :146-164，行号略窄）",
+    "new": "同位置改写为『D822 改写: appendEvent 失败 → 成功，**失败事实不被后续成功抹掉**（原用例固化的是缺陷行为）』",
+    "checks": {
+      "not_deleted": "文件仍 17 个 it（改写前 17；该时点文件内 it 计数未减少）",
+      "not_tautological": "新增断言 `failed.ok===false`、`failed.degraded===true`、`appendFailureCount===failuresBefore+1`、`recovered.ok===true`、`lastDegraded===false`（逐条语义保留）、`[failed,recovered].some(w=>!w.ok)===true`（本轮聚合判定）——真断言，且抽掉计数即红（见 half_b）",
+      "bonus": "改写时不再从 store 内部掏 private db（去掉原 `(store as unknown as {db}).db`），改用自带 db 句柄"
+    }
+  },
+  "forbidden_pattern_check": {
+    "grep_as_completion": "未以 grep 命中当完成（3 条真实 SSE 端到端用例 + 改写用例 + 反向验收）",
+    "table_column_created_as_acceptance": "不适用",
+    "test_only_switch_in_src": "零命中（注入全在测试侧 SQLite 触发器）",
+    "loosened_exclusions": "未动（commit 未含 vitest.config / .github/）",
+    "evidence_naming_M5": "合规：docs/synova/product-lines/evidence/D822-evidence-20260920.md（交付方）+ D822-verify-20260920.json（本自验）",
+    "escape_hatches": "本 commit 对 src/ 的新增行零命中"
+  },
+  "disclosures": [
+    "lastDegraded 语义被刻意保留为『最近一次写的结果』（逐条断言），本轮聚合判定改由路由『逐条结果』+ 累计计数承担——两条语义并存且各有消费者（session-manager.ts:86 / conversations.ts:264-271），JSDoc 已澄清，非重复状态",
+    "appendFailureCount 是实例级只增计数（进程内），不持久化；其定位是『本轮/本进程内的物理探针面』而非指标导出——交付未把它宣称为监控指标",
+    "注入手法从『按 seq』改为『按 role』是交付方实测后的修正（seq 由 MAX(seq)+1 算，ABORT 后持续命中），commit message 与 D822.json note 均有如实记录，非事后掩饰",
+    "队长治理动作（cherry-pick 8de56ed2 补 bypass.log 登记）非本卡范围，未纳入本卡验收叙述"
+  ],
+  "conclusion": "可提请独立审计",
+  "conclusion_basis": "核的是 66d1638e；2 文件 20 用例与 4 文件 41 用例我自己重跑一致；appendFailureCount 三条消费者逐条核实（生产读 + 测试真断言 + D831 卡片原文）⇒ 非死代码；真累计非布尔别名；旧固化测试**真被改写**且有判别力；两半各自独立可证伪（我亲自抽两半，两次还原 sha256 一致）；非写集两文件一行未改且仍绿；注入手法真造成『一失败一成功』且自证注入生效；四条禁止零命中"
+}
