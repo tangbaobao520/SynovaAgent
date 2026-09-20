@@ -1,20 +1,32 @@
 {
   "task_id": "D847",
   "title": "K3 P1-3 后续：claim-releases 台账并发 lost-update（30 轮首轮即中）",
-  "status": "claimed",
+  "status": "impl_done",
   "risk": "high",
   "spec": "K3 审计 P1-3：task-state/claim-releases.json 并发写丢更新（30 轮第 0 轮即中），未复用同目录既有 scripts/control-tower/write_lock.py。",
   "write_set": [
     "scripts/control-tower/claim_release.py",
     "scripts/control-tower/write_lock.py",
     "tests/control-tower/claim_release.test.sh",
-    "task-state/D847.json"
+    "task-state/D847.json",
+    "tests/control-tower/write_lock.test.sh"
   ],
-  "impl": null,
+  "impl": {
+    "branch": "gate/claim-release-a",
+    "files": [
+      "scripts/control-tower/claim_release.py",
+      "scripts/control-tower/write_lock.py",
+      "tests/control-tower/claim_release.test.sh",
+      "tests/control-tower/write_lock.test.sh"
+    ],
+    "note": "台账 RMW 进 write_lock 临界区（O_EXCL 原子锁 + 过期回收 + 争用超时拒绝写）；事实源不变量（剔除全部 GIT_*，GIT_DIR 换仓 fail-open 闭合）；夹具 PASS=87 FAIL=0（先红：D839 版 53/34、D846 版 79/8）",
+    "verification": "bash tests/control-tower/claim_release.test.sh → PASS=87 FAIL=0；独立压测 N=16×4 轮 坏轮次=0；test-write-lock.py OK",
+    "audit": "可提请独立审计（K3 队外）"
+  },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-20",
-  "updated_by": "synova-cto",
+  "updated_by": "coding-a",
   "domain": "mac",
   "owner": "mac-coding",
   "executor": "mac-coding",

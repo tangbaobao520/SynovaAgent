@@ -55,6 +55,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -62,6 +63,48 @@ LEDGER_REL = Path("task-state") / "claim-releases.json"
 BRIEF_DIR_REL = Path(".claude") / "task-briefs"
 REGISTRY_REL = Path(".codex") / "control-tower" / "session-registry.json"
 LEDGER_VERSION = 1
+
+# ── 事实源不变量（D847-追加，自验第二轮 fail-open 闭合） ────────────────────────────
+# 不变量: **释放判定读哪个仓库，由函数入参 repo 决定，不由调用者进程环境决定。**
+# 反例（实测）: `GIT_DIR=<外部仓>/.git python3 staging_guard.py …` → `git -C <repo> show HEAD:…`
+# 仍听 GIT_DIR → 读到外部仓 HEAD（他人卡 impl_done）→ warn/exit 0 解锁他人认领，
+# 且被守护仓库零痕迹（git status 干净、无提交）——文件级无痕路径封住了，仓库级还开着。
+# 故所有 git 子进程一律用清洗后的环境（剔除全部 GIT_*）。show/ls-files/status 都不需要它们；
+# 剔除后若 git 找不到仓库 → 显式失败 → fail-closed（阻断），方向正确。
+_GIT_ENV_PREFIX = "GIT_"
+
+
+def _git_env() -> dict:
+    """不受调用者 git 环境支配的子进程环境（剔除全部 `GIT_*`）。
+
+    覆盖 `GIT_DIR` / `GIT_WORK_TREE` / `GIT_INDEX_FILE` / `GIT_OBJECT_DIRECTORY` /
+    `GIT_ALTERNATE_OBJECT_DIRECTORIES` / `GIT_COMMON_DIR` / `GIT_NAMESPACE` … 等一切能
+    改变"读哪个仓库 / 哪些对象 / 哪个索引"的变量（同类面一并封，不只封 GIT_DIR）。
+    """
+    return {k: v for k, v in os.environ.items() if not k.startswith(_GIT_ENV_PREFIX)}
+
+
+# ── 模块解析同族加固: 锁实现（write_lock）必须来自本目录，不接受调用者 PYTHONPATH 注入 ──
+def _pin_own_dir_on_path() -> None:
+    here = str(Path(__file__).resolve().parent)
+    while here in sys.path:
+        sys.path.remove(here)
+    sys.path.insert(0, here)
+
+
+_pin_own_dir_on_path()
+
+# D847: 台账写入锁（复用同目录既有 write_lock.py，不另造机制）
+try:
+    from write_lock import WriteLock
+except ImportError:  # pragma: no cover - 树被裁剪/重命名
+    WriteLock = None
+LEDGER_LOCK_DIR_REL = Path(".codex") / "control-tower" / "locks"  # 与 session_registry 同目录（gitignore 区）
+LEDGER_LOCK_STALE_SEC = 30      # 过期阈值：持锁进程崩溃残留 > 30s 视为可回收（临界区只需毫秒级）
+# 争用等待上限；超时**拒绝写入**（宁可失败也不丢记录）。
+# 可用 SYNO_CLAIM_LOCK_WAIT_SEC 覆盖（测试注入缝，只改等待时长，不改语义——见 ctrl-tower-change 模式 5）。
+LEDGER_LOCK_WAIT_SEC = float(os.environ.get("SYNO_CLAIM_LOCK_WAIT_SEC", "15"))
+LEDGER_LOCK_POLL_SEC = 0.02
 
 # 已释放认领的跨进程公告前缀 —— `resolve-commit-brief.sh` 写 stderr，`staging_guard.py` 读。
 # 单一事实源放本模块：两处各自定义会漂移（D839 自测期真实踩过：staging_guard 定义、
@@ -100,7 +143,7 @@ def _read_json(path: Path):
 def _git(repo: Path, *args: str):
     """跑 git。失败 → (None, err)。"""
     try:
-        p = subprocess.run(["git", "-C", str(repo), *args], capture_output=True,
+        p = subprocess.run(["git", "-C", str(repo), *args], capture_output=True, env=_git_env(),
                            text=True, encoding="utf-8", errors="replace", timeout=60)
     except (OSError, subprocess.SubprocessError) as exc:
         return None, f"{type(exc).__name__}: {exc}"
@@ -129,7 +172,7 @@ def _read_committed_json(repo, rel: str):
     """
     try:
         p = subprocess.run(["git", "-C", str(_as_repo(repo)), "show", f"HEAD:{rel}"],
-                           capture_output=True, text=True, encoding="utf-8",
+                           capture_output=True, env=_git_env(), text=True, encoding="utf-8",
                            errors="replace", timeout=60)
     except (OSError, subprocess.SubprocessError) as exc:
         return None, f"{type(exc).__name__}: {exc}"
@@ -219,7 +262,7 @@ def ledger_uncommitted(repo) -> bool:
     rel = LEDGER_REL.as_posix()
     try:
         p = subprocess.run(["git", "-C", str(_as_repo(repo)), "status", "--porcelain", "--", rel],
-                           capture_output=True, text=True, encoding="utf-8",
+                           capture_output=True, env=_git_env(), text=True, encoding="utf-8",
                            errors="replace", timeout=60)
     except (OSError, subprocess.SubprocessError):
         return True
@@ -232,7 +275,8 @@ def save_ledger(repo: Path, data: dict) -> None:
     """原子写台账（唯一 tmp 名 + os.replace）——禁半写。
 
     D846 只做到"唯一 tmp 名"（进程 pid 后缀，杜绝多进程共用同一 tmp 被互相吃掉）；
-    真正的**并发互斥**（lost-update）是 D847 的写集，走 write_lock.py，不在本卡。
+    **并发互斥**（lost-update）由 `save_ledger_locked()` 提供（D847）——本函数只负责"写得原子"，
+    必须在锁内调用（或调用方自行保证单写者）。
     """
     p = ledger_path(repo)
     p.parent.mkdir(parents=True, exist_ok=True)
@@ -240,6 +284,61 @@ def save_ledger(repo: Path, data: dict) -> None:
     tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
                    encoding="utf-8")
     os.replace(tmp, p)
+
+
+def save_ledger_locked(repo, mutate_fn) -> dict:
+    """**锁内**台账 read-modify-write（D847：消 lost-update，K3 D841 P1-3）。
+
+    契约（铁律 47）:
+      @input  mutate_fn(ledger: dict, lock_state: str) -> dict —— 锁内执行的纯修改（改完返回 ledger）
+      @output {"ok": True, "ledger": {...}, "lock": "held"|"degraded:<原因>"}
+            | {"ok": False, "code": 2, "error": str}
+      @degraded ① 锁降级（锁目录/锁文件不可用，write_lock 的 D209 §5 契约）→ ok=True +
+                `lock="degraded:<原因>"` + stderr 告警（**显式可见**，铁律 11/24/31）
+                ② write_lock 模块不可 import → ok=False（**拒绝无锁写**，不静默退回基线缺陷）
+                ③ 争用超时（> LEDGER_LOCK_WAIT_SEC）→ ok=False（**拒绝写入**：宁可失败也不丢记录）
+                ④ 台账写入 OSError → ok=False + 点名（禁静默）
+      @exit   不抛异常（含锁释放异常：只告警，不影响已落盘结果）
+    为什么整个 RMW 都要在锁内: 原子替换（tmp+rename）只解决"半写可见"，不解决"读-改-写丢更新"——
+      两个进程各自读到同一份旧台账、各自写回，后写者覆盖先写者（K3 实测 30 轮第 0 轮即中）。
+    """
+    if WriteLock is None:
+        return {"ok": False, "code": 2,
+                "error": ("write_lock 模块不可用 → 拒绝无锁写台账（禁丢记录）；"
+                          "请恢复 scripts/control-tower/write_lock.py")}
+    key = LEDGER_REL.as_posix()
+    lock = WriteLock(lock_dir=str(_as_repo(repo) / LEDGER_LOCK_DIR_REL),
+                     timeout_sec=LEDGER_LOCK_STALE_SEC)
+    res = lock.acquire(key, owner=f"claim-release:{os.getpid()}")
+    deadline = time.monotonic() + LEDGER_LOCK_WAIT_SEC
+    while not res.get("acquired") and time.monotonic() < deadline:
+        time.sleep(LEDGER_LOCK_POLL_SEC)
+        res = lock.acquire(key, owner=f"claim-release:{os.getpid()}")
+    if not res.get("acquired"):
+        return {"ok": False, "code": 2,
+                "error": (f"台账写入锁争用超时（{LEDGER_LOCK_WAIT_SEC:g}s）→ 拒绝写入"
+                          f"（宁可失败也不丢记录）: {res.get('reason', '')}")}
+    lock_state = "held"
+    if res.get("degraded"):
+        lock_state = f"degraded:{res.get('reason', '锁不可用')}"
+        sys.stderr.write(f"⚠ claim-release: 台账写入锁降级（{res.get('reason', '锁不可用')}）"
+                         f"→ 仍写入，但**并发互斥不成立**（降级必须可见，铁律 11）\n")
+    try:
+        ledger = mutate_fn(load_ledger(repo), lock_state)
+        ledger["version"] = LEDGER_VERSION
+        save_ledger(repo, ledger)
+        return {"ok": True, "ledger": ledger, "lock": lock_state}
+    except OSError as exc:  # 禁静默吞（铁律 24）：写不进 = 释放没发生
+        return {"ok": False, "code": 2,
+                "error": f"台账写入失败（释放未生效，禁静默）: {type(exc).__name__}: {exc}"}
+    finally:
+        try:
+            rel = lock.release(key)
+        except OSError as exc:  # 释放失败只告警：记录已落盘，不改变结果（但必须可见）
+            rel = {"released": False, "reason": f"{type(exc).__name__}: {exc}"}
+        if not rel.get("released"):
+            sys.stderr.write(f"⚠ claim-release: 台账锁释放异常（{rel.get('reason', '')}）"
+                             f"—— 锁可能残留 %ds 后被回收\n" % LEDGER_LOCK_STALE_SEC)
 
 
 # ─────────────────────────── 判定 ───────────────────────────
@@ -493,23 +592,27 @@ def release_task(repo: Path, task_id: str, reason: str, by: str) -> dict:
         # 空凭证的记录会被 ledger_record_verdict 判为"不构成证据"→ 释放静默失效
         # （D846 自测期实测踩到：③e「owner 释放生效」当场红）。
         reason = f"owner 自释放（{by}），未附额外理由"
-    ledger = load_ledger(repo)
-    ledger.setdefault("releases", {})[tid] = {
-        "released": True,
-        "reason": reason,
-        "by": by,
-        "at": _now(),
-        "basis_at_release": is_released(repo, tid, ledger={"releases": {}})["basis"] or "explicit-only",
-        "owner_at_release": owner or "",
-    }
-    ledger["version"] = LEDGER_VERSION
-    try:
-        save_ledger(repo, ledger)
-    except OSError as exc:  # 禁静默吞（铁律 24）：写不进台账 = 释放没发生
-        return {"ok": False, "code": 2,
-                "error": f"台账写入失败（释放未生效，禁静默）: {type(exc).__name__}: {exc}"}
+    basis = is_released(repo, tid, ledger={"releases": {}})["basis"] or "explicit-only"
+
+    def _apply(ledger: dict, lock_state: str) -> dict:
+        """锁内修改（D847）：读-改-写整段在临界区，杜绝 lost-update。"""
+        ledger.setdefault("releases", {})[tid] = {
+            "released": True,
+            "reason": reason,
+            "by": by,
+            "at": _now(),
+            "basis_at_release": basis,
+            "owner_at_release": owner or "",
+            "lock": lock_state,
+        }
+        return ledger
+
+    written = save_ledger_locked(repo, _apply)
+    if not written["ok"]:
+        return {"ok": False, "code": written.get("code", 2), "error": written["error"]}
     return {"ok": True, "task_id": tid, "ledger": str(ledger_path(repo)),
-            "record": dict(ledger["releases"][tid])}
+            "record": dict(written["ledger"]["releases"][tid]),
+            "lock": written["lock"]}
 
 
 def _now() -> str:

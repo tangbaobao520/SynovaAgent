@@ -53,7 +53,12 @@ class WriteLock:
 
     def acquire(self, file_path: str, owner: str = "agent") -> dict:
         """
-        获取文件写入锁。
+        获取文件写入锁（**原子**）。
+
+        D847: 由「`lock_path.exists()` 探测 + 写」改为 **`os.open(O_CREAT|O_EXCL)` 原子创建**，
+        消除 check-then-act 竞态（`session_registry.py:79` 记录的 D209 遗留：两进程可同时"成功"
+        获取同一把锁 → 上层的 read-modify-write 仍丢更新）。过期锁（timestamp 超 `timeout_sec`
+        = 持锁进程崩溃残留）回收后**重试一次**，避免永久死锁。
 
         Args:
             file_path: 相对项目根的文件路径 (如 "src/routes/ga-admin.ts")
@@ -61,23 +66,61 @@ class WriteLock:
 
         Returns:
             {"acquired": True, "lock_id": str} 或 {"acquired": False, "reason": str}
+            降级（锁目录/锁文件不可用，D209 §5 契约）:
+            {"acquired": True, "lock_id": "", "degraded": True, "reason": str}
         """
         try:
             self._ensure_lock_dir()
         except OSError as e:
             log.warning("锁目录不可创建 (%s) — 降级允许写入", e)
-            return {"acquired": True, "lock_id": "", "degraded": True}
+            return {"acquired": True, "lock_id": "", "degraded": True,
+                    "reason": f"锁目录不可创建: {e}"}
 
         lock_id = self._lock_id(file_path)
         lock_path = self.lock_dir / lock_id
+        payload = json.dumps(
+            {
+                "pid": os.getpid(),
+                "timestamp": time.time(),
+                "owner": owner,
+                "file_path": file_path,
+            },
+            ensure_ascii=False,
+        ).encode("utf-8")
 
-        # 检查是否存在未超时的锁
-        if lock_path.exists():
-            if self._is_expired(lock_path):
-                log.info("锁已超时 (%s) — 自动释放", lock_id)
-                lock_path.unlink(missing_ok=True)
-            else:
-                return {"acquired": False, "reason": f"文件已被锁定: {lock_id}"}
+        for _attempt in (1, 2):  # 第 2 次 = 回收过期锁后的重试
+            try:
+                fd = os.open(str(lock_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+            except FileExistsError:
+                if not self._is_expired(lock_path):
+                    # 未过期 = 有活着的持有者 → 拒绝（不抢锁）
+                    return {"acquired": False, "reason": f"文件已被锁定: {lock_id}"}
+                log.info("锁已超时 (%s) — 回收后重试", lock_id)
+                try:
+                    lock_path.unlink(missing_ok=True)
+                except OSError as e:
+                    return {"acquired": False, "reason": f"过期锁回收失败: {e}"}
+                continue
+            except OSError as e:
+                # 只读锁目录等 → D209 §5 降级允许写入（**显式可见**，不静默）
+                log.warning("锁文件创建失败 (%s) — 降级允许写入", e)
+                return {"acquired": True, "lock_id": "", "degraded": True,
+                        "reason": f"锁文件创建失败: {e}"}
+            try:
+                with os.fdopen(fd, "wb") as fh:
+                    fh.write(payload)
+            except OSError as e:
+                try:
+                    lock_path.unlink(missing_ok=True)
+                except OSError:
+                    pass  # swallow-ok: 清理失败不掩盖主因，下面按降级返回并告警
+                log.warning("锁文件写入失败 (%s) — 降级允许写入", e)
+                return {"acquired": True, "lock_id": "", "degraded": True,
+                        "reason": f"锁文件写入失败: {e}"}
+            log.info("锁已获取: %s (owner=%s)", lock_id, owner)
+            return {"acquired": True, "lock_id": lock_id}
+
+        return {"acquired": False, "reason": f"文件已被锁定: {lock_id}"}
 
         # 写入锁文件
         try:
@@ -106,10 +149,11 @@ class WriteLock:
         lock_id = self._lock_id(file_path)
         lock_path = self.lock_dir / lock_id
 
-        if not lock_path.exists():
-            return {"released": True, "reason": "锁不存在（无需释放）"}
-
+        # D847: exists() 也要在 try 内 —— 只读/无执行权限的锁目录上 stat() 会抛 PermissionError，
+        # 基线会把它抛给调用方（违反 D209 §5「锁不可用 → 降级」契约）。
         try:
+            if not lock_path.exists():
+                return {"released": True, "reason": "锁不存在（无需释放）"}
             data = json.loads(lock_path.read_text(encoding="utf-8"))
             if data.get("pid") != os.getpid():
                 return {"released": False, "reason": "锁属于其他进程，无法释放"}
@@ -118,7 +162,10 @@ class WriteLock:
             return {"released": True}
         except (json.JSONDecodeError, OSError) as e:
             log.warning("锁释放失败 (%s) — 强制删除", e)
-            lock_path.unlink(missing_ok=True)
+            try:
+                lock_path.unlink(missing_ok=True)
+            except OSError as e2:
+                return {"released": False, "degraded": True, "reason": f"锁文件不可删: {e2}"}
             return {"released": True, "degraded": True}
 
     def wait(self, file_path: str, timeout_sec: int = 60) -> dict:
@@ -162,13 +209,26 @@ class WriteLock:
         return hashlib.sha256(file_path.encode("utf-8")).hexdigest()[:16]
 
     def _is_expired(self, lock_path: Path) -> bool:
-        """检查锁文件是否超时。"""
+        """锁是否过期（= 可回收）。
+
+        契约:
+          @output True = 过期（持锁进程崩溃残留，可回收）；False = 仍在有效期内（**不可抢**）
+          @degraded 内容不可解析（含 D847 实测到的"`O_EXCL` 已创建、payload 尚未写入"的空窗口，
+                    以及半写/损坏）→ 退回 **mtime** 判定：mtime 在 `timeout_sec` 内 → **不算过期**
+                    （fail-closed，绝不抢活锁；否则两进程会同时进临界区 → 又丢更新）。
+          @exit 不抛异常（stat 失败 → True，由调用方 unlink 分支显式报错）
+        D847 实测教训: 基线"损坏锁 = 过期"的宽容口径 + 原子创建后的空窗口 = 抢锁 → lost-update
+          在 8 进程并发第 1 轮即复现（本卡夹具当场红）。宽容口径只允许对**确实陈旧**的锁生效。
+        """
         try:
             data = json.loads(lock_path.read_text(encoding="utf-8"))
             elapsed = time.time() - data.get("timestamp", 0)
             return elapsed > self.timeout_sec
-        except (json.JSONDecodeError, OSError):
-            return True  # 损坏的锁文件视为超时
+        except (json.JSONDecodeError, OSError, TypeError, ValueError, AttributeError):
+            try:
+                return (time.time() - lock_path.stat().st_mtime) > self.timeout_sec
+            except OSError:
+                return True
 
 
 # ═══ CLI ═══

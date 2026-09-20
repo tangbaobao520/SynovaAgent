@@ -54,7 +54,8 @@ else
   SIG_BEFORE="ABSENT"
 fi
 
-SB=$(mktemp -d); trap 'rm -rf "$SB"' EXIT
+SB=$(mktemp -d); EXT=$(mktemp -d)
+trap 'rm -rf "$SB" "$EXT"' EXIT
 git -C "$SB" init -q; git -C "$SB" config user.email t@t.local; git -C "$SB" config user.name t
 mkdir -p "$SB/.claude/task-briefs" "$SB/task-state" "$SB/scripts/control-tower" "$SB/scripts/workflow" "$SB/docs"
 cp "$SRC" "$SB/scripts/control-tower/claim_release.py"
@@ -135,8 +136,30 @@ else
   skip "①c 端到端 guard（本平台 claim 路径不可用: exit=$PROBE_EC；根因在 staging_guard.py 的
        resolver 调用，属 D849 写集，不在本卡范围 —— 见回报遗留清单）"
 fi
-# ①d 符号链接指向伪造内容（平台支持时）
-rm -f "$SB/task-state/D912.json"
+echo "── 组 ⑪: 事实源不变量（D847-追加 / 自验第二轮）: 调用者环境不得换掉被判定的仓库 ──"
+# 外部仓: 同一张 D901 卡 status=impl_done（已提交）—— 若判定听 GIT_DIR，就会读到它 → 解锁他人认领
+git -C "$EXT" init -q; git -C "$EXT" config user.email t@t.local; git -C "$EXT" config user.name t
+mkdir -p "$EXT/task-state"
+printf '{"task_id":"D901","title":"t","status":"impl_done"}\n' > "$EXT/task-state/D901.json"
+git -C "$EXT" add -A >/dev/null 2>&1; git -C "$EXT" commit -qm ext >/dev/null 2>&1
+set_state_wt D901 impl_done           # 保持①的伪造态（本仓 HEAD 仍是 claimed）
+O=$(cd "$EXT" && python3 "$CLAIM" --repo . status --task D901 2>&1); EC=$?
+assert_eq "$EC" "0" "⑪ 对照: 直接读外部仓 → released（证明确有可被换掉的事实源）"
+for var in "GIT_DIR=$EXT/.git" "GIT_WORK_TREE=$EXT" "GIT_INDEX_FILE=$EXT/.git/index" \
+           "GIT_OBJECT_DIRECTORY=$EXT/.git/objects" "GIT_COMMON_DIR=$EXT/.git"; do
+  O=$(cd "$SB" && env "$var" python3 "$CLAIM" --repo . status --task D901 2>&1); EC=$?
+  assert_eq "$EC" "1" "⑪ $var 不得改变事实源 → 仍 exit 1（不释放）"
+done
+O=$(cd "$SB" && env "GIT_DIR=$SB/.git" python3 "$CLAIM" --repo . status --task D901 2>&1); EC=$?
+assert_eq "$EC" "1" "⑪ 对照: GIT_DIR 指回本仓 → 行为不变（仍 exit 1）"
+if [ "$PROBE_EC" = "1" ]; then
+  O=$(cd "$SB" && env "GIT_DIR=$EXT/.git" python3 "$GUARD" --session-id D902 --staged docs/x.md 2>&1); EC=$?
+  assert_eq "$EC" "1" "⑪ 端到端 guard: GIT_DIR 指向外部仓 → 仍 exit 1（他人认领未被解锁）"
+  assert_contains "$O" '"status": "block"' "⑪ 端到端 guard: status=block"
+  assert_not_contains "$O" 'task-state:impl_done' "⑪ guard 未把外部仓的事实当依据"
+fi
+
+# ①d 符号链接指向伪造内容（平台支持时）rm -f "$SB/task-state/D912.json"
 if ln -s "$SB/docs/x.md" "$SB/task-state/D912.json" 2>/dev/null; then  # swallow-ok: 平台探测，失败走 else 的显式 skip（Windows 无符号链接权限）
   O=$(status_of D912); EC=$?
   assert_eq "$EC" "1" "①d 符号链接指向伪造内容 → 仍 exit 1"
@@ -263,6 +286,81 @@ mkdir -p "$SB/empty-repo"
 O=$(cd "$SB/empty-repo" && python3 "$CLAIM" --repo . scan 2>&1); EC=$?
 assert_eq "$EC" "2" "⑧ 仓库根不可识别 → exit 2（契约不满足，不与通过混同）"
 assert_contains "$O" "契约不满足" "⑧ 显式报契约不满足（不静默）"
+
+echo "── 组 ⑩: 台账并发（D847 / K3 P1-3 + 自验两类失效）──"
+# 断言两类失效**同时**被覆盖: ①丢写（台账记录数 < 释放数）②崩溃（进程 rc≠0）。
+# 基线（无锁 RMW）：每轮记录数 < N 且存在 rc≠0；修后：每轮记录数 == N 且 rc 全 0。
+N=8; ROUNDS=2; RCBAD=0; MISMATCH=""
+for r in $(seq 1 $ROUNDS); do
+  rm -f "$LEDGER"; rm -rf "$SB/.codex/control-tower/locks"
+  pids=""
+  for i in $(seq 1 $N); do
+    ( cd "$SB" && python3 "$CLAIM" --repo . release --task "D92$i" --by stress --reason "并发夹具 $r-$i" ) \
+      >"$SB/cc-$r-$i.out" 2>&1 &
+    pids="$pids $!"
+  done
+  rcbad=0
+  for p in $pids; do wait "$p" || rcbad=$((rcbad + 1)); done
+  RCBAD=$((RCBAD + rcbad))
+  cnt=$(cd "$SB" && python3 -c "import json;print(len(json.load(open('task-state/claim-releases.json',encoding='utf-8'))['releases']))" 2>&1)
+  missing=""
+  for i in $(seq 1 $N); do
+    grep -qF -- "\"D92$i\"" "$LEDGER" || missing="$missing D92$i"
+  done
+  echo "  轮 $r: 台账记录数=${cnt}/${N}  失败进程数=${rcbad}  缺失记录=${missing:-无}"
+  [ "$cnt" = "$N" ] || MISMATCH="${MISMATCH}轮$r(记录数$cnt)"
+  [ -z "$missing" ] || MISMATCH="${MISMATCH}轮$r(缺$missing)"
+done
+assert_eq "$MISMATCH" "" "⑩ 并发 release ×$N ×${ROUNDS} 轮 → 无丢写（每轮记录数==N 且 8 个 D# 全在）"
+assert_eq "$RCBAD" "0" "⑩ 所有并发进程 rc=0（无崩溃/异常退出：共享 tmp 竞态已消）"
+
+# ⑩b 持锁进程崩溃 → 残留锁可回收（无永久死锁）
+rm -f "$LEDGER"; rm -rf "$SB/.codex/control-tower/locks"
+mkdir -p "$SB/.codex/control-tower/locks"
+LKID=$(python3 -c "import hashlib;print(hashlib.sha256(b'task-state/claim-releases.json').hexdigest()[:16])")
+printf '{"pid":999999,"timestamp":0,"owner":"dead-holder","file_path":"task-state/claim-releases.json"}' \
+  > "$SB/.codex/control-tower/locks/$LKID"
+O=$(run release --task D930 --by stress --reason "残留锁回收夹具"); EC=$?
+assert_eq "$EC" "0" "⑩b 崩溃残留锁（timestamp=0）→ 下一次 release 仍成功（无永久死锁）"
+assert_file_contains "$LEDGER" '"D930"' "⑩b 回收后记录正常落盘"
+
+# ⑩c 锁不可用（锁目录被文件占据）→ D209 降级契约：照写 + 显式可见，禁静默
+rm -f "$LEDGER"; rm -rf "$SB/.codex"
+mkdir -p "$SB/.codex/control-tower"; printf 'not-a-dir\n' > "$SB/.codex/control-tower/locks"
+O=$(run release --task D940 --by stress --reason "锁降级夹具"); EC=$?
+assert_eq "$EC" "0" "⑩c 锁目录不可用 → 降级允许写入（D209 §5 契约）"
+assert_contains "$O" "降级" "⑩c 降级显式告警（铁律 11：不静默放过）"
+assert_file_contains "$LEDGER" '"lock": "degraded:' "⑩c 记录标注 lock=degraded:…（事后可核）"
+rm -rf "$SB/.codex"
+
+# ⑩d 锁被占用且等待超时 → **拒绝写入**（宁可失败也不丢记录），不静默落盘
+rm -f "$LEDGER"
+( cd "$SB" && python3 -c "
+import sys, time
+sys.path.insert(0, 'scripts/control-tower')
+from write_lock import WriteLock
+lk = WriteLock(lock_dir='.codex/control-tower/locks', timeout_sec=30)
+r = lk.acquire('task-state/claim-releases.json', owner='holder-fixture')
+print('HELD' if r.get('acquired') else 'NOT-HELD: %s' % r.get('reason'), flush=True)
+time.sleep(3)
+lk.release('task-state/claim-releases.json')
+" ) >"$SB/holder.out" 2>&1 &
+HOLDER=$!
+sleep 1
+if grep -qF "HELD" "$SB/holder.out"; then
+  O=$(cd "$SB" && SYNO_CLAIM_LOCK_WAIT_SEC=0.2 python3 "$CLAIM" --repo . release \
+        --task D941 --by stress --reason "争用超时夹具" 2>&1); EC=$?
+  assert_eq "$EC" "2" "⑩d 锁被占用且等待超时 → exit 2（契约不满足，拒绝写入）"
+  assert_contains "$O" "争用超时" "⑩d 报错点名争用超时（不静默）"
+  grep -qF '"D941"' "$LEDGER" && fail "⑩d 超时却落了台账（违背"宁可失败不丢记录"）" \
+    || pass "⑩d 超时未写台账（无静默落盘）"
+else
+  skip "⑩d 争用超时（夹具未能先占锁: $(head -c 120 "$SB/holder.out")）"
+fi
+wait "$HOLDER" 2>/dev/null || true   # swallow-ok: 夹具清理等待；持锁进程早已退出，失败无副作用
+O=$(run release --task D941 --by stress --reason "持锁者释放后重试"); EC=$?
+assert_eq "$EC" "0" "⑩d 持锁者释放后重试成功（无永久死锁）"
+assert_file_contains "$LEDGER" '"D941"' "⑩d 重试记录落盘"
 
 echo "── 组 ⑨: 围栏（不得写真实仓库）──"
 if [ -f "$REAL_LEDGER" ]; then SIG_AFTER=$(sha256_of "$REAL_LEDGER"); else SIG_AFTER="ABSENT"; fi
