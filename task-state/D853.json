@@ -1,0 +1,49 @@
+{
+  "task_id": "D853",
+  "title": "Windows 认证制门禁静默 fail-open 根治：PYBIN 只探存在性 + MSYS 路径喂 native python + stderr 未 UTF-8",
+  "status": "impl_done",
+  "risk": "high",
+  "spec": "CI 实证（#657 Control Tower Gate Tests windows-latest 红）+ CTO 静态复核 + 编码 A 因果实证：Windows 上整条认领制门禁静默 fail-open（staging_guard 5 场景全 ec0/pass，DIAG 链 PROBE_RC=1 零输出）。三条根因：A) resolve-commit-brief.sh:52-55 PYBIN 只探存在性（WindowsApps 占位 shim 命中但跑不动）；B) claim_release.py 只 reconfigure stdout，stderr 中文在 cp1252 管道下被 backslashreplace 吃；C) $ROOT（MSYS 形）既被注入 python 代码串（os.listdir 读不到）又被 stdout 输出（下游 native python 读不到 brief 路径）。同类面：resolver 的 git rev-parse/branch 用未清洗环境（GIT_WORK_TREE 可换掉 ROOT）、claim_release._git 用裸 git（PATH 可伪造）。",
+  "write_set": [
+    "scripts/workflow/resolve-commit-brief.sh",
+    "scripts/control-tower/claim_release.py",
+    "tests/control-tower/staging_guard.test.sh",
+    "tests/control-tower/claim_release.test.sh",
+    "task-state/D853.json"
+  ],
+  "impl": {
+    "branch": "gate/d839-win-chain",
+    "files": [
+      "scripts/workflow/resolve-commit-brief.sh",
+      "scripts/control-tower/claim_release.py",
+      "tests/control-tower/staging_guard.test.sh",
+      "tests/control-tower/claim_release.test.sh"
+    ],
+    "note": "A 试运行探测（照抄 verify-parallel.sh 口径）+ 全候选失败显式告警；B stdout+stderr 双 UTF-8；C ROOT 统一 cygpath -m 混合形（bash+native python 同实体）；D resolver 剥 GIT_* + git 试运行校验，claim_release 加 git_bin()/_clean_env()（假 git → 拒绝作证据）；DIAG 压至 ≤68 字符 + PROBE 增 pyrun",
+    "verification": "claim_release PASS=33 FAIL=0（+组15/16）；staging_guard PASS=33 FAIL=0；先红原如：坏 shim→rc=1 零输出、cp1252→\\uXXXX、cygpath 别名判别、假 git→采信 FAKE-TRACKED-FILE.md",
+    "audit": "可提请独立审计（K3 队外）"
+  },
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-20",
+  "updated_by": "coding-a",
+  "domain": "win",
+  "owner": "mac-coding",
+  "executor": "coding-a",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [
+    "D839"
+  ],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "PYBIN 探测改试运行口径（存在且可运行），全候选失败显式告警",
+    "ROOT 统一为 cygpath -m 混合形：python 注入与 stdout 输出均为目标运行时命名空间",
+    "resolver 的 git 调用剥 GIT_* + git 试运行校验；claim_release._git 走校验过的绝对路径（假 git 不作证据）",
+    "claim_release.py stdout+stderr 双 UTF-8（cp1252 下中文可断言）",
+    "staging_guard.test.sh DIAG 两行 ≤68 字符 + PROBE 带 pyrun（找到但跑不动可判别）",
+    "CI Control Tower Gate Tests windows-latest 与 ubuntu-latest 双绿"
+  ],
+  "next": "队长把本枝并入 fix/d839-claim-release 触发 CI；按注解迭代至双绿",
+  "note": "卡号 D853（原拟 D850 撞车作废）；写集含 resolve-commit-brief.sh —— CTO 显式授权偏离（D839 已 CONDITIONAL PASS 且它在 Windows 上是坏的）。"
+}

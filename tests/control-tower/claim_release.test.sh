@@ -143,6 +143,38 @@ O=$(python3 "$CLAIM" --repo "$SB/empty-repo" scan 2>&1); EC=$?
 assert_eq "$EC" "2" "⑬ 仓库根不可识别 → exit 2（契约不满足，不与通过混同）"
 assert_contains "$O" "契约不满足" "⑬ 显式报契约不满足（不静默）"
 
+echo "── 组 15: stderr 编码（D853）: cp1252 管道下中文仍完整（只改编码，不改语义）──"
+O=$(cd "$SB" && PYTHONIOENCODING=cp1252 python3 "$CLAIM" --repo "$SB/empty-repo" scan 2>&1); EC=$?
+assert_eq "$EC" "2" "⑮ 契约不满足仍 exit 2（语义不变）"
+assert_contains "$O" "契约不满足" "⑮ cp1252 下 stderr 中文完整（基线为 \\uXXXX 转义 → 断言恒红）"
+
+echo "── 组 16: PATH 上的假 git（D853）: 事实源不可由调用者环境提供 ──"
+FAKE_TMP=$(mktemp -d); FAKE_REPO="$SB/fakebin"; mkdir -p "$FAKE_REPO"
+# (a) 临时目录里的假 git（`--version` 也不合法）→ 不得被选中
+printf '#!/bin/sh\ncase "$*" in *--version*) echo "not-a-real-git";; *ls-files*) echo "docs/fake-claim.md";; esac\nexit 0\n' > "$FAKE_TMP/git"
+chmod +x "$FAKE_TMP/git"
+R=$(cd "$SB" && PATH="$FAKE_TMP:$PATH" python3 -c "
+import sys; sys.path.insert(0, 'scripts/control-tower')
+import claim_release as cr
+b = cr.git_bin()
+print('picked_fake=%s' % ('YES' if (b or '').startswith('$FAKE_TMP') else 'NO'))" 2>&1)
+assert_contains "$R" "picked_fake=NO" "⑯a 未选中临时目录里的假 git（试运行校验 + 非临时目录约束）"
+# (b) 仓库内的假 git（版本串合法 → 过试运行；但位于被判定的仓库里）→ _git 必须拒绝
+printf '#!/bin/sh\ncase "$*" in *--version*) echo "git version 9.9.9";; *ls-files*) echo "docs/fake-claim.md";; esac\nexit 0\n' > "$FAKE_REPO/git"
+chmod +x "$FAKE_REPO/git"
+R=$(cd "$SB" && python3 -c "
+import sys; sys.path.insert(0, 'scripts/control-tower')
+import claim_release as cr
+cr._GIT_BIN_CACHE[:] = ['$FAKE_REPO/git']       # 直接注入：模拟'校验通过的 git 落在被判定的仓库内'
+out, err = cr._git('$SB', 'ls-files')
+print('out=%r' % (out,))
+print('err=%s' % err)" 2>&1)
+assert_contains "$R" "out=None" "⑯b 仓库内 git → _git 拒绝返回内容（不当事实）"
+assert_contains "$R" "位于被判定的仓库内" "⑯b 拒绝原因点名（不静默）"
+O=$(cd "$SB" && PATH="$FAKE_REPO:$PATH" python3 "$CLAIM" --repo "$SB" scan --json 2>&1); EC=$?
+assert_not_contains "$O" "fake-claim.md" "⑯c 端到端: 假 git 回吐的认领事实未被采信"
+rm -rf "$FAKE_TMP" "$FAKE_REPO"
+
 echo "── 组 14: 围栏（不得写真实仓库）──"
 if [ -f "$REAL_LEDGER" ]; then SIG_AFTER=$(sha256_of "$REAL_LEDGER"); else SIG_AFTER="ABSENT"; fi
 assert_eq "$SIG_AFTER" "$SIG_BEFORE" "⑭ 真实仓库释放台账指纹未变"

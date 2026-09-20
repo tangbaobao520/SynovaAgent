@@ -29,12 +29,37 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 set +e
 
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+# D853-①（仓库事实不可被调用者环境换掉）: hook 上下文会导出 GIT_DIR/GIT_WORK_TREE/GIT_INDEX_FILE
+#   （ct-test-gate.sh:48-54 已记该坑）；实测 `GIT_WORK_TREE=<外部仓>` 会让上面这行把 ROOT 变成
+#   外部仓 → 候选池空 → staging_guard.py:172-173「claimed 为空则跳过认领判定」→ **静默 fail-open**。
+# D853-②（工具可用性 = 存在 **且** 可运行）: `command -v git` 只探存在性 —— PATH 上放一个假/坏 git
+#   即可让"事实"由攻击者提供。故候选逐个**试运行**校验（`--version` 形如 `git version N.`）。
+_git_clean() { env -u GIT_DIR -u GIT_WORK_TREE -u GIT_INDEX_FILE -u GIT_OBJECT_DIRECTORY \
+                   -u GIT_COMMON_DIR -u GIT_ALTERNATE_OBJECT_DIRECTORIES -u GIT_NAMESPACE "$@"; }
+GITBIN=""
+for _g in "$(command -v git 2>/dev/null || true)" /usr/bin/git /usr/local/bin/git \
+          "/c/Program Files/Git/cmd/git.exe"; do
+  [ -n "$_g" ] && [ -x "$_g" ] || continue
+  if _git_clean "$_g" --version 2>/dev/null | grep -qE '^git version [0-9]'; then GITBIN="$_g"; break; fi
+done
+[ -n "$GITBIN" ] || echo "⚠ D853: git 不可用或未通过试运行校验 → 仓库事实读不到（按无候选处理，非静默）" >&2
+ROOT="$([ -n "$GITBIN" ] && _git_clean "$GITBIN" rev-parse --show-toplevel 2>/dev/null || pwd)"
+# D853-③（喂目标运行时的路径必须是它的命名空间 —— 两层都堵）: Windows 上上面这行给 MSYS 形（/d/a/...）。
+#   MSYS 只在 **argv 层**做转换，不转换：① 内嵌在 python -c 字符串里的路径（native python `os.listdir`
+#   读不到 → 候选池空 → 末尾 exit 1 零输出）② **本脚本 stdout 输出的 brief 路径**（下游 staging_guard
+#   是 native python，`Path(brief).read_text()` 读不到 → genuine=False → 跳过认领判定）。
+#   两层都是静默 fail-open。故**统一成混合形**（cygpath -m → C:/...）：MSYS bash 可 cd/glob、
+#   native python 可 open/readdir = 同一实体（D849 夹具同口径，仓内已验证）。POSIX 无 cygpath → 原值。
+_ro_raw="$ROOT"
+ROOT="$(cygpath -m "$_ro_raw" 2>/dev/null || echo "$_ro_raw")"
+ROOT_W="$ROOT"   # 兼容既有 python 注入点（两者同义；保留双名以最小化 diff）
 # D317: brief_parser 是 resolver 的兄弟组件（同仓库）——不能用 $ROOT 定位，
 # 测试隔离（临时 repo）或 ROOT 与脚本异仓库时 $ROOT 下没有解析器。
 RESOLVER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PARSER="$RESOLVER_DIR/../control-tower/brief_parser.py"
-# Windows python 不认 MSYS 路径（/d/...）→ cygpath 转 C:/...（sys.path 注入用）
-PARSER_DIR_W="$(cygpath -w "$RESOLVER_DIR/../control-tower" 2>/dev/null || echo "$RESOLVER_DIR/../control-tower")"
+# Windows python 不认 MSYS 路径（/d/...）→ cygpath -m 转 C:/...（sys.path 注入用；POSIX 原值）
+PARSER_DIR_W="$(cygpath -m "$RESOLVER_DIR/../control-tower" 2>/dev/null || echo "$RESOLVER_DIR/../control-tower")"
+
 TODAY=$(date +%Y-%m-%d)
 STAGED="${1:-}"
 
@@ -48,11 +73,14 @@ if [ "${1:-}" = "--session" ]; then
 fi
 
 # D317: PYBIN 跨平台 — Windows 部分机器无 python3.exe（仅 python / py -3）。
-# 本机实测 python3 可用（WindowsApps shim），但防御性回退防精简 Git/CI runner。
+# D853: 探测必须**试运行**（仓内既有正确口径: verify-parallel.sh:70-77 / dev-doc-gatekeeper.sh:191-197）。
+#   只探存在性 = 选中"存在但跑不动"的 WindowsApps 占位 shim → 下面 5 处 "$PYBIN" -c 全失败
+#   → RESULT 空 → 末尾 exit 1 零输出 → staging_guard 按"无认领"放行 = **静默 fail-open**（本卡主根因，实测复现）。
 PYBIN=""
 for _c in python3 python py; do
-  if command -v "$_c" >/dev/null 2>&1; then PYBIN="$_c"; break; fi
+  if command -v "$_c" >/dev/null 2>&1 && "$_c" -c "import sys" >/dev/null 2>&1; then PYBIN="$_c"; break; fi
 done
+[ -n "$PYBIN" ] || echo "⚠ D853: python3/python/py 均不可用（试运行未过）→ 认领候选为空（按无认领处理，非静默）" >&2
 
 # ── current-brief (当日有效) ──
 CUR=""
@@ -82,7 +110,7 @@ fi
 # 降级: 提不到锚点 → 行为与修复前完全一致（纯日期窗口，零回归）。
 ANCHOR_STRONG_RAW=""
 ANCHOR_WEAK_RAW=""
-BR_CUR="$(git -C "$ROOT" branch --show-current 2>/dev/null || true)"
+BR_CUR="$([ -n "$GITBIN" ] && _git_clean "$GITBIN" -C "$ROOT" branch --show-current 2>/dev/null || true)"
 [ -n "$BR_CUR" ] && ANCHOR_STRONG_RAW="$BR_CUR"
 ANCHOR_STRONG_RAW="$ANCHOR_STRONG_RAW $(printf '%s\n' "$STAGED" | grep -oE 'task-state/D[0-9]+\.json' || true)"
 if [ -f "$CUR_SRC" ]; then
@@ -169,7 +197,7 @@ else
 _PYERR="$(mktemp 2>/dev/null || echo "${TMPDIR:-/tmp}/.synova-resolver-err.$$")"
 RESULT=$("$PYBIN" -c "
 import os, re, sys
-sys.path.insert(0, r'$ROOT/scripts/control-tower')
+sys.path.insert(0, r'$ROOT_W/scripts/control-tower')
 try:
     from brief_parser import parse_q2, match_path
 except ImportError:
@@ -248,7 +276,7 @@ def _release_of(brief):
     if not m:
         return (False, '', '', '')
     try:
-        v = _is_released(r'$ROOT', m.group(0))
+        v = _is_released(r'$ROOT_W', m.group(0))
     except Exception as exc:
         _deg(brief, type(exc).__name__ + ':' + str(exc)[:80])
         return (False, '', '', '')
@@ -353,7 +381,7 @@ sys.path.insert(0, r'$PARSER_DIR_W')
 from brief_parser import parse_criteria
 
 briefs = []
-for f in os.listdir(r'$ROOT/.claude/task-briefs/'):
+for f in os.listdir(r'$ROOT_W/.claude/task-briefs/'):
     if not f.endswith('.md'):
         continue
     m = re.match(r'(\d{4}-\d{2}-\d{2})', f)
@@ -362,11 +390,11 @@ for f in os.listdir(r'$ROOT/.claude/task-briefs/'):
 briefs.sort(key=lambda x: x[0], reverse=True)
 for _d, _f in briefs:
     try:
-        text = open(os.path.join(r'$ROOT/.claude/task-briefs/', _f), encoding='utf-8', errors='replace').read()
+        text = open(os.path.join(r'$ROOT_W/.claude/task-briefs/', _f), encoding='utf-8', errors='replace').read()
     except OSError:
         continue
     if parse_criteria(text):
-        print(os.path.join(r'$ROOT/.claude/task-briefs/', _f))
+        print(os.path.join(r'$ROOT_W/.claude/task-briefs/', _f))
         sys.exit(0)
 sys.exit(1)
 " 2>/dev/null || true)

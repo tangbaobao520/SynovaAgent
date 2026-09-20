@@ -36,15 +36,88 @@ import argparse
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
+
+# D853-④: stdout **与 stderr** 一律 UTF-8。Windows 管道/控制台默认 cp1252 → 中文 stderr 被
+#   backslashreplace 成 \uXXXX 转义（实测：`PYTHONIOENCODING=cp1252` 下 `❌ 契约不满足…` 变成
+#   `\u274c \u5951\u7ea6…`）→ 夹具断言「契约不满足」恒红、算子读不懂报错。与调用者 locale 无关。
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8")
+    except (AttributeError, ValueError):  # 非标准流（被重定向为对象）→ 保持原样
+        pass
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 LEDGER_REL = Path("task-state") / "claim-releases.json"
 BRIEF_DIR_REL = Path(".claude") / "task-briefs"
 REGISTRY_REL = Path(".codex") / "control-tower" / "session-registry.json"
 LEDGER_VERSION = 1
+
+# D853-⑤: git 事实源加固 —— 与 D847 在 `_git_env()` 里确立的同一条不变量（仓库事实由入参决定、
+#   不由调用者环境决定），本卡把它补齐到**工具层**（PATH 上放假 git = 事实由攻击者提供）：
+#   ① 剥净 GIT_*（GIT_DIR/GIT_WORK_TREE/GIT_INDEX_FILE/GIT_OBJECT_DIRECTORY/GIT_COMMON_DIR/
+#      GIT_ALTERNATE_OBJECT_DIRECTORIES/GIT_NAMESPACE）② git 可执行文件**试运行校验**
+#      （`--version` 形如 `git version N.`，且不在临时目录）——只探存在性正是本卡要修的缺陷。
+_GIT_ENV_DROP = ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY",
+                 "GIT_COMMON_DIR", "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_NAMESPACE")
+_GIT_BIN_CACHE: list = []
+
+
+def _clean_env() -> dict:
+    """剥净 GIT_* 的子进程环境（仓库事实不可被调用者环境换掉）。"""
+    return {k: v for k, v in os.environ.items() if k not in _GIT_ENV_DROP}
+
+
+def git_bin():
+    """**试运行校验过的** git 绝对路径。→ str | None（None = 不可用/不可信）。
+
+    契约:
+      @output 绝对路径字符串（已通过 `<bin> --version` 输出匹配 `^git version \\d+\\.`）；否则 None
+      @degraded None = 拒绝把读到的东西当证据（调用方 fail-closed + 显式 reason，**不静默**）
+      @exit   不抛异常（OSError/超时 → 换下一候选）
+    为什么要试运行: `command -v`/`shutil.which` 只回答"PATH 里有没有这个名字"——PATH 上放一个假 git
+      即可让 `ls-files`/`rev-parse` 回吐攻击者给的事实；损坏 shim 则让读取静默失败。
+    残余: 能让假 git 输出合法 `git version N.` 的本地进程仍可骗过（无外部信任锚，需本地任意代码执行权限）
+      —— 已在 brief 威胁模型显式登记，超出本卡范围。
+    """
+    if _GIT_BIN_CACHE:
+        return _GIT_BIN_CACHE[0]
+    cands = [shutil.which("git")]
+    if os.name == "nt":  # pragma: no cover - Windows 常见安装位（PATH 上的 shim 可能是占位件）
+        cands += [r"C:\Program Files\Git\cmd\git.exe", r"C:\Program Files (x86)\Git\cmd\git.exe"]
+    else:
+        cands += ["/usr/bin/git", "/usr/local/bin/git", "/opt/homebrew/bin/git"]
+    tmp_roots = []
+    for t in (tempfile.gettempdir(), "/tmp", "/var/folders"):
+        try:
+            if t and os.path.isdir(t):
+                tmp_roots.append(os.path.realpath(t).lower().rstrip(os.sep) + os.sep)
+        except OSError:
+            continue
+    for c in cands:
+        if not c or not os.path.isabs(c) or not os.path.exists(c):
+            continue
+        try:
+            rp = os.path.realpath(c)
+        except OSError:
+            continue
+        if any(rp.lower().startswith(t) for t in tmp_roots):
+            continue  # 真 git 不在临时目录：PATH 上的临时目录 git = 可疑（假 git 的典型落点）
+        try:
+            p = subprocess.run([c, "--version"], capture_output=True, text=True, env=_clean_env(),
+                               encoding="utf-8", errors="replace", timeout=20)
+        except (OSError, subprocess.SubprocessError):
+            continue
+        if p.returncode == 0 and re.match(r"^git version \d+\.", (p.stdout or "").strip()):
+            _GIT_BIN_CACHE.append(c)
+            return c
+    _GIT_BIN_CACHE.append(None)
+    return None
+
 
 # 已释放认领的跨进程公告前缀 —— `resolve-commit-brief.sh` 写 stderr，`staging_guard.py` 读。
 # 单一事实源放本模块：两处各自定义会漂移（D839 自测期真实踩过：staging_guard 定义、
@@ -75,9 +148,29 @@ def _read_json(path: Path):
 
 
 def _git(repo: Path, *args: str):
-    """跑 git。失败 → (None, err)。"""
+    """跑 git（**校验过的绝对路径 + 剥净 GIT_\* 的环境**）。失败 → (None, err)。
+
+    契约:
+      @input  repo + git 参数
+      @output (stdout, None) 成功；否则 (None, err)。err 含 "git 不可用/不可信: <原因>"（工具层降级）
+      @degraded git 不可用/不可信 → 一律 (None, err)：调用方把"读不到"当 **拿不到证据** 处理
+                （fail-closed + degraded 上报，铁律 11/24/31），绝不静默当"无变更/无认领"
+      @exit   不抛异常
+    D853: 基线是裸 `["git", ...]` —— ① 继承调用者 GIT_*（GIT_WORK_TREE 可换掉被判定的仓库）
+      ② 听 PATH（假 git 可回吐任意事实）。两者都属"调用者环境决定事实源"，与本卡其他根因同族。
+    """
+    gb = git_bin()
+    if gb is None:
+        return None, "git 不可用/不可信（试运行校验未过）→ 拒绝把读取结果当证据"
     try:
-        p = subprocess.run(["git", "-C", str(repo), *args], capture_output=True,
+        rp = os.path.realpath(gb)
+        root = os.path.realpath(str(_as_repo(repo)))
+        if root and rp.lower().startswith(root.lower().rstrip(os.sep) + os.sep):
+            return None, f"git 位于被判定的仓库内（{gb}）→ 拒绝把读取结果当证据"
+    except OSError:
+        pass
+    try:
+        p = subprocess.run([gb, "-C", str(repo), *args], capture_output=True, env=_clean_env(),
                            text=True, encoding="utf-8", errors="replace", timeout=60)
     except (OSError, subprocess.SubprocessError) as exc:
         return None, f"{type(exc).__name__}: {exc}"

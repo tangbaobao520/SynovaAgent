@@ -196,21 +196,25 @@ def form(s):
 
 
 p = run(["bash", script, "--session", "D902", "docs/x.md"])
-print("PROBE_RC=%s" % ("EXC" if p is None else p.returncode))
-print("PROBE_OUT=%s" % ("" if p is None else os.path.basename(p.stdout.strip())))
-# 子链事实（同一 spawn 路径: native python → bash）：path 命名空间 + git/python 可达性
+# 子链事实（同一 spawn 路径: native python → bash）：路径命名空间 + git/python 可达性 +
+#   **python 试运行 rc**（D853：`command -v` 命中 ≠ 能跑——WindowsApps 占位 shim 正是"存在但跑不动"）
 e = run(["bash", "-c",
          'echo "pwd=$PWD"; echo "top=$(git rev-parse --show-toplevel 2>/dev/null || echo FAIL)";'
-         ' echo "git=$(command -v git || echo NONE)"; echo "py=$(command -v python3 || echo NONE)"'])
+         ' echo "git=$(command -v git || echo NONE)"; PY=$(command -v python3 || echo NONE); echo "py=$PY";'
+         ' if [ "$PY" != "NONE" ]; then "$PY" -c "import sys" >/dev/null 2>&1; echo "pyrun=$?";'
+         ' else echo "pyrun=NONE"; fi'])
 facts = {}
 if e is not None:
     for line in e.stdout.splitlines():
         k, _, v = line.partition("=")
         facts[k.strip()] = v.strip()
-print("PROBE_ENV pwd=%s top=%s git=%s py=%s" % (
+print("PROBE_RC=%s PY=%s OUT=%s" % (
+    "EXC" if p is None else p.returncode,
+    "%s:%s" % (os.path.basename(facts.get("py", "NONE") or "NONE"), facts.get("pyrun", "NONE")),
+    "" if p is None else os.path.basename(p.stdout.strip())))
+print("PROBE_ENV pwd=%s top=%s git=%s" % (
     form(facts.get("pwd", "")), form(facts.get("top", "")),
-    os.path.basename(facts.get("git", "NONE") or "NONE"),
-    os.path.basename(facts.get("py", "NONE") or "NONE")))
+    os.path.basename(facts.get("git", "NONE") or "NONE")))
 PYEOF
   )
 }
@@ -352,8 +356,9 @@ echo "  PASS=$PASS FAIL=$FAIL"
 if [ "$FAIL" -ne 0 ]; then
   # D849: CI 只把 tail -8 注入 ::error 注解（.github/workflows/ci.yml:272）——Windows 侧无法本地
   #   复跑，故失败时把"链路证据"压进**末尾**行（放在 FAIL= 之后，避免被 cut -c1-450 截掉）：
-  #   场景=各场景 exit/status，链=子链事实（path 命名空间 + git/python 可达性 + resolver 输出）。
-  echo "DIAG 场景 $(printf '%s' "$DIAG" | cut -c1-150)"
-  echo "DIAG 链 $(printf '%s' "$PROBE" | tr '\n' ' ' | cut -c1-140)"
+  #   场景=各场景 exit/status，链=子链事实（path 命名空间 + git/python 可达性 + **python 试运行 rc**）。
+  # D853: 两行各压到 ≤68 字符（含前缀 ≤74）——注解预算是 450 字符且含其他行，长行会被截断丢关键字段。
+  echo "DIAG1 $(printf '%s' "$DIAG" | tr '\n' ' ' | tr -s ' ' | cut -c1-68)"
+  echo "DIAG2 $(printf '%s' "$PROBE" | tr '\n' ' ' | tr -s ' ' | cut -c1-68)"
 fi
 exit $([ "$FAIL" -eq 0 ] && echo 0 || echo 1)
