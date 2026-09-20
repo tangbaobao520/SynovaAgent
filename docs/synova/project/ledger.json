@@ -1,8 +1,8 @@
 {
   "schema": "project-ledger/1",
   "generated_by": "gen-project-board.py",
-  "generated_at": "2026-09-18T10:59:57+08:00",
-  "git_head": "9af013e44af5464c582eb08de601436a5f76ceb1",
+  "generated_at": "2026-09-20T19:41:43+08:00",
+  "git_head": "a04af01e6577d4dafbd442f962baea158798d4c9",
   "sources": {
     "yaml": "docs/synova/product-lines/product-lines.yaml",
     "v1_dod": "docs/synova/project/26线-V1验收标准-v0.2-20260917.md",
@@ -14,22 +14,24 @@
   "degraded": false,
   "degraded_sources": [],
   "skipped_sources": [
-    "非 verdicts 证据记录: D524-verify-20260825-2121.json (record_type=d524-verify)"
+    "非 verdicts 证据记录: D524-verify-20260825-2121.json (record_type=d524-verify)",
+    "非 verdicts 证据记录: D817-capture-20260918.json (record_type=production-entry-capture)",
+    "非 verdicts 证据记录: D819-capture-20260919.json (record_type=production-entry-capture)"
   ],
   "totals": {
     "v1_total": 128,
-    "v1_passed": 22,
-    "v1_verified": 11,
+    "v1_passed": 27,
+    "v1_verified": 16,
     "pending_k3": 3,
-    "delivery_pct": 17.2,
-    "verify_pct": 50.0,
+    "delivery_pct": 21.1,
+    "verify_pct": 59.3,
     "freshness": {
-      "green": 15,
+      "green": 20,
       "yellow": 1,
       "red": 6
     },
     "blocked_count": 0,
-    "backlog_points": 36
+    "backlog_points": 46
   },
   "lines": [
     {
@@ -58,7 +60,7 @@
           "evidence": [
             "docs/synova/product-lines/evidence/scenario-2026-09-13.json"
           ],
-          "age_days": 5,
+          "age_days": 7,
           "freshness": "green",
           "fail_when": "产物缺失或场景红"
         },
@@ -96,7 +98,7 @@
           "evidence": [
             "docs/synova/product-lines/evidence/scenario-2026-09-13-1.json"
           ],
-          "age_days": 5,
+          "age_days": 7,
           "freshness": "green",
           "fail_when": "重启后服务不在"
         },
@@ -110,7 +112,7 @@
           "evidence": [
             "docs/synova/product-lines/evidence/task-D527.json"
           ],
-          "age_days": 20,
+          "age_days": 22,
           "freshness": "red",
           "fail_when": "复核 NOT-AUDITABLE/FAIL"
         }
@@ -178,7 +180,7 @@
           "evidence": [
             "docs/synova/product-lines/evidence/k3-D592-closeout.json"
           ],
-          "age_days": 10,
+          "age_days": 12,
           "freshness": "yellow",
           "fail_when": "复核不通过"
         }
@@ -308,9 +310,10 @@
             "docs/synova/product-lines/evidence/test-2026-09-07.json",
             "docs/synova/product-lines/evidence/test-2026-09-12.json",
             "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
-            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-17.json"
           ],
-          "age_days": 2,
+          "age_days": 3,
           "freshness": "green",
           "fail_when": "连不上/映射错"
         },
@@ -325,9 +328,11 @@
             "scripts/golden-scenarios/evidence/GS-03-2026-08-21.json",
             "scripts/golden-scenarios/evidence/GS-03-2026-08-22.json",
             "scripts/golden-scenarios/evidence/GS-03-2026-09-15.json",
-            "scripts/golden-scenarios/evidence/GS-03-2026-09-16.json"
+            "scripts/golden-scenarios/evidence/GS-03-2026-09-16.json",
+            "scripts/golden-scenarios/evidence/GS-03-2026-09-17.json",
+            "scripts/golden-scenarios/evidence/GS-03-2026-09-20.json"
           ],
-          "age_days": 2,
+          "age_days": 0,
           "freshness": "green",
           "fail_when": "静默丢/无报错"
         },
@@ -503,7 +508,7 @@
           "evidence": [
             "docs/synova/product-lines/evidence/k3-full-chain-20260813.json"
           ],
-          "age_days": 36,
+          "age_days": 38,
           "freshness": "red",
           "fail_when": "调度不生效"
         },
@@ -685,7 +690,7 @@
           "evidence": [
             "docs/synova/product-lines/evidence/k3-full-chain-20260813.json"
           ],
-          "age_days": 36,
+          "age_days": 38,
           "freshness": "red",
           "fail_when": "计算错"
         },
@@ -744,12 +749,12 @@
       "name": "资本循环",
       "done_definition": "老板能接财务数据，系统自动产出现金流/成本/利润的持续监测与告警，每条结论可回溯证据",
       "v1_total": 6,
-      "v1_passed": 1,
-      "v1_verified": 1,
+      "v1_passed": 6,
+      "v1_verified": 6,
       "pending_k3": 0,
       "points_total": 8,
       "freshness": {
-        "green": 1,
+        "green": 6,
         "yellow": 0,
         "red": 0
       },
@@ -760,11 +765,14 @@
           "text": "ERP 财务数据上传 → Financial 节点",
           "verify": "GS-03 exit 0",
           "kind": "scenario",
-          "ok": false,
-          "status": "pending",
-          "evidence": [],
-          "age_days": null,
-          "freshness": null,
+          "ok": true,
+          "status": "passed",
+          "evidence": [
+            "scripts/golden-scenarios/evidence/GS-03-2026-09-17.json",
+            "scripts/golden-scenarios/evidence/GS-03-2026-09-20.json"
+          ],
+          "age_days": 0,
+          "freshness": "green",
           "fail_when": "断在进口"
         },
         {
@@ -772,11 +780,13 @@
           "text": "属性契约对齐（cashBalance↔cash）",
           "verify": "contract-check",
           "kind": "test",
-          "ok": false,
-          "status": "pending",
-          "evidence": [],
-          "age_days": null,
-          "freshness": null,
+          "ok": true,
+          "status": "passed",
+          "evidence": [
+            "docs/synova/product-lines/evidence/test-2026-09-17.json"
+          ],
+          "age_days": 3,
+          "freshness": "green",
           "fail_when": "映射缺失"
         },
         {
@@ -784,11 +794,14 @@
           "text": "哨兵 manifest 挂载、阈值真实触发",
           "verify": "GS-03 + 配置生效",
           "kind": "scenario",
-          "ok": false,
-          "status": "pending",
-          "evidence": [],
-          "age_days": null,
-          "freshness": null,
+          "ok": true,
+          "status": "passed",
+          "evidence": [
+            "scripts/golden-scenarios/evidence/GS-03-2026-09-17.json",
+            "scripts/golden-scenarios/evidence/GS-03-2026-09-20.json"
+          ],
+          "age_days": 0,
+          "freshness": "green",
           "fail_when": "硬编码/未挂载"
         },
         {
@@ -810,9 +823,10 @@
             "docs/synova/product-lines/evidence/test-2026-09-07.json",
             "docs/synova/product-lines/evidence/test-2026-09-12.json",
             "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
-            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-17.json"
           ],
-          "age_days": 2,
+          "age_days": 3,
           "freshness": "green",
           "fail_when": "计算错"
         },
@@ -821,11 +835,14 @@
           "text": "无数据不误报 critical（降级诚实）",
           "verify": "GS-03 负向用例",
           "kind": "scenario",
-          "ok": false,
-          "status": "pending",
-          "evidence": [],
-          "age_days": null,
-          "freshness": null,
+          "ok": true,
+          "status": "passed",
+          "evidence": [
+            "scripts/golden-scenarios/evidence/GS-03-2026-09-17.json",
+            "scripts/golden-scenarios/evidence/GS-03-2026-09-20.json"
+          ],
+          "age_days": 0,
+          "freshness": "green",
           "fail_when": "误报"
         },
         {
@@ -833,11 +850,13 @@
           "text": "审计员全链路复核（100% 门槛）",
           "verify": "K3 PASS",
           "kind": "k3",
-          "ok": false,
-          "status": "pending",
-          "evidence": [],
-          "age_days": null,
-          "freshness": null,
+          "ok": true,
+          "status": "passed",
+          "evidence": [
+            "docs/synova/product-lines/evidence/k3-line10-2026-09-18.json"
+          ],
+          "age_days": 0,
+          "freshness": "green",
           "fail_when": "复核不通过"
         }
       ]
@@ -868,7 +887,7 @@
           "evidence": [
             "docs/synova/product-lines/evidence/k3-full-chain-20260813.json"
           ],
-          "age_days": 36,
+          "age_days": 38,
           "freshness": "red",
           "fail_when": "计算错"
         },
@@ -882,7 +901,7 @@
           "evidence": [
             "docs/synova/product-lines/evidence/k3-full-chain-20260813.json"
           ],
-          "age_days": 36,
+          "age_days": 38,
           "freshness": "red",
           "fail_when": "空数据误报"
         },
@@ -1204,9 +1223,10 @@
             "docs/synova/product-lines/evidence/test-2026-09-07.json",
             "docs/synova/product-lines/evidence/test-2026-09-12.json",
             "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
-            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-17.json"
           ],
-          "age_days": 2,
+          "age_days": 3,
           "freshness": "green",
           "fail_when": "缺注册/硬编码"
         },
@@ -1418,7 +1438,7 @@
           "evidence": [
             "docs/synova/product-lines/evidence/k3-full-chain-20260813.json"
           ],
-          "age_days": 36,
+          "age_days": 38,
           "freshness": "red",
           "fail_when": "类缺失"
         },
@@ -1441,9 +1461,10 @@
             "docs/synova/product-lines/evidence/test-2026-09-07.json",
             "docs/synova/product-lines/evidence/test-2026-09-12.json",
             "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
-            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-17.json"
           ],
-          "age_days": 0,
+          "age_days": 2,
           "freshness": "green",
           "fail_when": "重启丢 / 检索不中"
         },
@@ -1519,9 +1540,10 @@
             "docs/synova/product-lines/evidence/test-2026-09-07.json",
             "docs/synova/product-lines/evidence/test-2026-09-12.json",
             "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
-            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-17.json"
           ],
-          "age_days": 2,
+          "age_days": 3,
           "freshness": "green",
           "fail_when": "规则含糊/无断言"
         },
@@ -1675,9 +1697,10 @@
             "docs/synova/product-lines/evidence/test-2026-09-07.json",
             "docs/synova/product-lines/evidence/test-2026-09-12.json",
             "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
-            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-17.json"
           ],
-          "age_days": 2,
+          "age_days": 3,
           "freshness": "green",
           "fail_when": "按 message 字符串路由"
         },
@@ -1699,9 +1722,10 @@
             "docs/synova/product-lines/evidence/test-2026-09-07.json",
             "docs/synova/product-lines/evidence/test-2026-09-12.json",
             "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
-            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-17.json"
           ],
-          "age_days": 2,
+          "age_days": 3,
           "freshness": "green",
           "fail_when": "无指标"
         },
@@ -1715,7 +1739,7 @@
           "evidence": [
             "docs/synova/product-lines/evidence/D806-borrow-cards-20260918.json"
           ],
-          "age_days": 0,
+          "age_days": 2,
           "freshness": "green",
           "fail_when": "无四桶 / 超限无告警"
         },
@@ -1989,9 +2013,10 @@
             "docs/synova/product-lines/evidence/test-2026-09-07.json",
             "docs/synova/product-lines/evidence/test-2026-09-12.json",
             "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
-            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-17.json"
           ],
-          "age_days": 2,
+          "age_days": 3,
           "freshness": "green",
           "fail_when": "需改代码"
         },
@@ -2013,9 +2038,10 @@
             "docs/synova/product-lines/evidence/test-2026-09-07.json",
             "docs/synova/product-lines/evidence/test-2026-09-12.json",
             "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
-            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-17.json"
           ],
-          "age_days": 2,
+          "age_days": 3,
           "freshness": "green",
           "fail_when": "需改代码"
         },
@@ -2037,9 +2063,10 @@
             "docs/synova/product-lines/evidence/test-2026-09-07.json",
             "docs/synova/product-lines/evidence/test-2026-09-12.json",
             "docs/synova/product-lines/evidence/test-2026-09-15-1.json",
-            "docs/synova/product-lines/evidence/test-2026-09-16-1.json"
+            "docs/synova/product-lines/evidence/test-2026-09-16-1.json",
+            "docs/synova/product-lines/evidence/test-2026-09-17.json"
           ],
-          "age_days": 2,
+          "age_days": 3,
           "freshness": "green",
           "fail_when": "需改代码"
         },
@@ -2065,7 +2092,7 @@
           "evidence": [
             "docs/synova/product-lines/evidence/D806-borrow-cards-20260918.json"
           ],
-          "age_days": 0,
+          "age_days": 2,
           "freshness": "green",
           "fail_when": "需改代码 / 需重启"
         },
@@ -2195,7 +2222,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2206,7 +2233,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2217,7 +2244,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2228,7 +2255,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2239,7 +2266,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2250,7 +2277,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2261,7 +2288,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2272,7 +2299,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2283,7 +2310,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2294,7 +2321,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2305,7 +2332,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2316,7 +2343,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2327,7 +2354,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2338,7 +2365,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2349,7 +2376,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2360,7 +2387,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 8,
+      "stale_days": 10,
       "updated_at": "2026-09-10"
     },
     {
@@ -2371,7 +2398,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 8,
+      "stale_days": 10,
       "updated_at": "2026-09-10"
     },
     {
@@ -2382,7 +2409,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2393,7 +2420,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2404,7 +2431,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2415,7 +2442,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2426,7 +2453,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2437,7 +2464,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2448,7 +2475,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2459,7 +2486,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2470,7 +2497,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2481,7 +2508,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2492,7 +2519,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2503,7 +2530,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2514,7 +2541,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 8,
+      "stale_days": 10,
       "updated_at": "2026-09-10"
     },
     {
@@ -2525,7 +2552,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2536,7 +2563,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2547,7 +2574,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2558,7 +2585,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2569,7 +2596,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2580,7 +2607,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2591,7 +2618,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2602,7 +2629,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2613,7 +2640,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2624,7 +2651,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2635,7 +2662,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2646,7 +2673,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2657,7 +2684,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2668,7 +2695,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2679,7 +2706,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2690,7 +2717,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2701,7 +2728,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2712,7 +2739,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2723,7 +2750,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2734,7 +2761,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2745,7 +2772,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2756,7 +2783,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2767,7 +2794,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2778,7 +2805,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2789,7 +2816,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2800,7 +2827,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2811,7 +2838,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2822,7 +2849,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2833,7 +2860,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2844,7 +2871,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2855,7 +2882,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2866,7 +2893,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2877,7 +2904,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2888,7 +2915,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2899,7 +2926,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2910,7 +2937,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2921,7 +2948,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2932,7 +2959,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2943,7 +2970,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2954,7 +2981,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2965,7 +2992,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2976,7 +3003,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2987,7 +3014,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -2998,7 +3025,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 21,
+      "stale_days": 23,
       "updated_at": "2026-08-28"
     },
     {
@@ -3009,7 +3036,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 21,
+      "stale_days": 23,
       "updated_at": "2026-08-28"
     },
     {
@@ -3020,7 +3047,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 24,
+      "stale_days": 26,
       "updated_at": "2026-08-25"
     },
     {
@@ -3031,7 +3058,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 21,
+      "stale_days": 23,
       "updated_at": "2026-08-28"
     },
     {
@@ -3042,7 +3069,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 20,
+      "stale_days": 22,
       "updated_at": "2026-08-29"
     },
     {
@@ -3053,7 +3080,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 21,
+      "stale_days": 23,
       "updated_at": "2026-08-28"
     },
     {
@@ -3064,7 +3091,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 16,
+      "stale_days": 18,
       "updated_at": "2026-09-02"
     },
     {
@@ -3075,7 +3102,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 17,
+      "stale_days": 19,
       "updated_at": "2026-09-01"
     },
     {
@@ -3086,7 +3113,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 16,
+      "stale_days": 18,
       "updated_at": "2026-09-02"
     },
     {
@@ -3097,7 +3124,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 14,
+      "stale_days": 16,
       "updated_at": "2026-09-04"
     },
     {
@@ -3108,7 +3135,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 27,
+      "stale_days": 29,
       "updated_at": "2026-08-22"
     },
     {
@@ -3119,7 +3146,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 20,
+      "stale_days": 22,
       "updated_at": "2026-08-29"
     },
     {
@@ -3130,7 +3157,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 26,
+      "stale_days": 28,
       "updated_at": "2026-08-23"
     },
     {
@@ -3141,7 +3168,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 26,
+      "stale_days": 28,
       "updated_at": "2026-08-23"
     },
     {
@@ -3152,7 +3179,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 26,
+      "stale_days": 28,
       "updated_at": "2026-08-23"
     },
     {
@@ -3163,7 +3190,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 26,
+      "stale_days": 28,
       "updated_at": "2026-08-23"
     },
     {
@@ -3174,7 +3201,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 10,
+      "stale_days": 12,
       "updated_at": "2026-09-08"
     },
     {
@@ -3185,7 +3212,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 20,
+      "stale_days": 22,
       "updated_at": "2026-08-29"
     },
     {
@@ -3196,7 +3223,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 20,
+      "stale_days": 22,
       "updated_at": "2026-08-29"
     },
     {
@@ -3207,7 +3234,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 25,
+      "stale_days": 27,
       "updated_at": "2026-08-24"
     },
     {
@@ -3218,7 +3245,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 10,
+      "stale_days": 12,
       "updated_at": "2026-09-08"
     },
     {
@@ -3229,7 +3256,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 10,
+      "stale_days": 12,
       "updated_at": "2026-09-08"
     },
     {
@@ -3240,7 +3267,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 20,
+      "stale_days": 22,
       "updated_at": "2026-08-29"
     },
     {
@@ -3251,7 +3278,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 25,
+      "stale_days": 27,
       "updated_at": "2026-08-24"
     },
     {
@@ -3262,7 +3289,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 20,
+      "stale_days": 22,
       "updated_at": "2026-08-29"
     },
     {
@@ -3273,7 +3300,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 20,
+      "stale_days": 22,
       "updated_at": "2026-08-29"
     },
     {
@@ -3284,7 +3311,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 20,
+      "stale_days": 22,
       "updated_at": "2026-08-29"
     },
     {
@@ -3295,7 +3322,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 20,
+      "stale_days": 22,
       "updated_at": "2026-08-29"
     },
     {
@@ -3306,7 +3333,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 20,
+      "stale_days": 22,
       "updated_at": "2026-08-29"
     },
     {
@@ -3317,7 +3344,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 20,
+      "stale_days": 22,
       "updated_at": "2026-08-29"
     },
     {
@@ -3328,7 +3355,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 20,
+      "stale_days": 22,
       "updated_at": "2026-08-29"
     },
     {
@@ -3339,7 +3366,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 20,
+      "stale_days": 22,
       "updated_at": "2026-08-29"
     },
     {
@@ -3350,7 +3377,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 20,
+      "stale_days": 22,
       "updated_at": "2026-08-29"
     },
     {
@@ -3361,7 +3388,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 20,
+      "stale_days": 22,
       "updated_at": "2026-08-29"
     },
     {
@@ -3372,7 +3399,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 20,
+      "stale_days": 22,
       "updated_at": "2026-08-29"
     },
     {
@@ -3383,7 +3410,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 20,
+      "stale_days": 22,
       "updated_at": "2026-08-29"
     },
     {
@@ -3394,7 +3421,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 20,
+      "stale_days": 22,
       "updated_at": "2026-08-29"
     },
     {
@@ -3405,7 +3432,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 20,
+      "stale_days": 22,
       "updated_at": "2026-08-29"
     },
     {
@@ -3416,7 +3443,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 10,
+      "stale_days": 12,
       "updated_at": "2026-09-08"
     },
     {
@@ -3427,7 +3454,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 21,
+      "stale_days": 23,
       "updated_at": "2026-08-28"
     },
     {
@@ -3438,7 +3465,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 24,
+      "stale_days": 26,
       "updated_at": "2026-08-25"
     },
     {
@@ -3449,7 +3476,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 24,
+      "stale_days": 26,
       "updated_at": "2026-08-25"
     },
     {
@@ -3460,7 +3487,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 21,
+      "stale_days": 23,
       "updated_at": "2026-08-28"
     },
     {
@@ -3471,7 +3498,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 20,
+      "stale_days": 22,
       "updated_at": "2026-08-29"
     },
     {
@@ -3482,7 +3509,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 20,
+      "stale_days": 22,
       "updated_at": "2026-08-29"
     },
     {
@@ -3493,7 +3520,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 21,
+      "stale_days": 23,
       "updated_at": "2026-08-28"
     },
     {
@@ -3504,7 +3531,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 20,
+      "stale_days": 22,
       "updated_at": "2026-08-29"
     },
     {
@@ -3515,7 +3542,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 20,
+      "stale_days": 22,
       "updated_at": "2026-08-29"
     },
     {
@@ -3526,7 +3553,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 22,
+      "stale_days": 24,
       "updated_at": "2026-08-27"
     },
     {
@@ -3537,7 +3564,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 21,
+      "stale_days": 23,
       "updated_at": "2026-08-28"
     },
     {
@@ -3548,7 +3575,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 21,
+      "stale_days": 23,
       "updated_at": "2026-08-28"
     },
     {
@@ -3559,7 +3586,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 21,
+      "stale_days": 23,
       "updated_at": "2026-08-28"
     },
     {
@@ -3570,7 +3597,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 21,
+      "stale_days": 23,
       "updated_at": "2026-08-28"
     },
     {
@@ -3581,7 +3608,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 21,
+      "stale_days": 23,
       "updated_at": "2026-08-28"
     },
     {
@@ -3592,7 +3619,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 10,
+      "stale_days": 12,
       "updated_at": "2026-09-08"
     },
     {
@@ -3603,7 +3630,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 21,
+      "stale_days": 23,
       "updated_at": "2026-08-28"
     },
     {
@@ -3614,7 +3641,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 21,
+      "stale_days": 23,
       "updated_at": "2026-08-28"
     },
     {
@@ -3625,7 +3652,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 10,
+      "stale_days": 12,
       "updated_at": "2026-09-08"
     },
     {
@@ -3636,7 +3663,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 20,
+      "stale_days": 22,
       "updated_at": "2026-08-29"
     },
     {
@@ -3647,7 +3674,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 20,
+      "stale_days": 22,
       "updated_at": "2026-08-29"
     },
     {
@@ -3658,7 +3685,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 20,
+      "stale_days": 22,
       "updated_at": "2026-08-29"
     },
     {
@@ -3669,7 +3696,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 21,
+      "stale_days": 23,
       "updated_at": "2026-08-28"
     },
     {
@@ -3680,7 +3707,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 21,
+      "stale_days": 23,
       "updated_at": "2026-08-28"
     },
     {
@@ -3691,7 +3718,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 21,
+      "stale_days": 23,
       "updated_at": "2026-08-28"
     },
     {
@@ -3702,7 +3729,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 21,
+      "stale_days": 23,
       "updated_at": "2026-08-28"
     },
     {
@@ -3713,7 +3740,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 10,
+      "stale_days": 12,
       "updated_at": "2026-09-08"
     },
     {
@@ -3724,7 +3751,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 20,
+      "stale_days": 22,
       "updated_at": "2026-08-29"
     },
     {
@@ -3735,7 +3762,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 8,
+      "stale_days": 10,
       "updated_at": "2026-09-10"
     },
     {
@@ -3746,7 +3773,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 20,
+      "stale_days": 22,
       "updated_at": "2026-08-29"
     },
     {
@@ -3757,7 +3784,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 20,
+      "stale_days": 22,
       "updated_at": "2026-08-29"
     },
     {
@@ -3768,7 +3795,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 20,
+      "stale_days": 22,
       "updated_at": "2026-08-29"
     },
     {
@@ -3779,7 +3806,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 20,
+      "stale_days": 22,
       "updated_at": "2026-08-29"
     },
     {
@@ -3790,7 +3817,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 16,
+      "stale_days": 18,
       "updated_at": "2026-09-02"
     },
     {
@@ -3801,7 +3828,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 16,
+      "stale_days": 18,
       "updated_at": "2026-09-02"
     },
     {
@@ -3812,7 +3839,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 10,
+      "stale_days": 12,
       "updated_at": "2026-09-08"
     },
     {
@@ -3823,7 +3850,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 10,
+      "stale_days": 12,
       "updated_at": "2026-09-08"
     },
     {
@@ -3834,7 +3861,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 10,
+      "stale_days": 12,
       "updated_at": "2026-09-08"
     },
     {
@@ -3845,7 +3872,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 10,
+      "stale_days": 12,
       "updated_at": "2026-09-08"
     },
     {
@@ -3856,7 +3883,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 10,
+      "stale_days": 12,
       "updated_at": "2026-09-08"
     },
     {
@@ -3867,7 +3894,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 15,
+      "stale_days": 17,
       "updated_at": "2026-09-03"
     },
     {
@@ -3878,7 +3905,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 14,
+      "stale_days": 16,
       "updated_at": "2026-09-04"
     },
     {
@@ -3889,7 +3916,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 14,
+      "stale_days": 16,
       "updated_at": "2026-09-04"
     },
     {
@@ -3900,7 +3927,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 10,
+      "stale_days": 12,
       "updated_at": "2026-09-08"
     },
     {
@@ -3911,7 +3938,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 10,
+      "stale_days": 12,
       "updated_at": "2026-09-08"
     },
     {
@@ -3922,7 +3949,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 10,
+      "stale_days": 12,
       "updated_at": "2026-09-08"
     },
     {
@@ -3933,7 +3960,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 10,
+      "stale_days": 12,
       "updated_at": "2026-09-08"
     },
     {
@@ -3944,7 +3971,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 12,
+      "stale_days": 14,
       "updated_at": "2026-09-06"
     },
     {
@@ -3955,7 +3982,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 12,
+      "stale_days": 14,
       "updated_at": "2026-09-06"
     },
     {
@@ -3966,7 +3993,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 12,
+      "stale_days": 14,
       "updated_at": "2026-09-06"
     },
     {
@@ -3977,7 +4004,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 12,
+      "stale_days": 14,
       "updated_at": "2026-09-06"
     },
     {
@@ -3988,7 +4015,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 12,
+      "stale_days": 14,
       "updated_at": "2026-09-06"
     },
     {
@@ -3999,7 +4026,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 12,
+      "stale_days": 14,
       "updated_at": "2026-09-06"
     },
     {
@@ -4010,7 +4037,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 10,
+      "stale_days": 12,
       "updated_at": "2026-09-08"
     },
     {
@@ -4021,7 +4048,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 10,
+      "stale_days": 12,
       "updated_at": "2026-09-08"
     },
     {
@@ -4032,7 +4059,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 10,
+      "stale_days": 12,
       "updated_at": "2026-09-08"
     },
     {
@@ -4043,7 +4070,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 10,
+      "stale_days": 12,
       "updated_at": "2026-09-08"
     },
     {
@@ -4054,7 +4081,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 9,
+      "stale_days": 11,
       "updated_at": "2026-09-09"
     },
     {
@@ -4065,7 +4092,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 9,
+      "stale_days": 11,
       "updated_at": "2026-09-09"
     },
     {
@@ -4076,7 +4103,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 10,
+      "stale_days": 12,
       "updated_at": "2026-09-08"
     },
     {
@@ -4087,7 +4114,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 2,
+      "stale_days": 4,
       "updated_at": "2026-09-16"
     },
     {
@@ -4098,7 +4125,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 8,
+      "stale_days": 10,
       "updated_at": "2026-09-10"
     },
     {
@@ -4109,7 +4136,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 8,
+      "stale_days": 10,
       "updated_at": "2026-09-10"
     },
     {
@@ -4120,7 +4147,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 8,
+      "stale_days": 10,
       "updated_at": "2026-09-10"
     },
     {
@@ -4131,7 +4158,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 10,
+      "stale_days": 12,
       "updated_at": "2026-09-08"
     },
     {
@@ -4142,7 +4169,7 @@
       "domain": "win",
       "depends_on": [],
       "blocked": null,
-      "stale_days": 3,
+      "stale_days": 5,
       "updated_at": "2026-09-15"
     },
     {
@@ -4153,7 +4180,7 @@
       "domain": "win",
       "depends_on": [],
       "blocked": null,
-      "stale_days": 3,
+      "stale_days": 5,
       "updated_at": "2026-09-15"
     },
     {
@@ -4164,7 +4191,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 9,
+      "stale_days": 11,
       "updated_at": "2026-09-09"
     },
     {
@@ -4175,7 +4202,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 10,
+      "stale_days": 12,
       "updated_at": "2026-09-08"
     },
     {
@@ -4186,7 +4213,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 9,
+      "stale_days": 11,
       "updated_at": "2026-09-09"
     },
     {
@@ -4197,7 +4224,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 9,
+      "stale_days": 11,
       "updated_at": "2026-09-09"
     },
     {
@@ -4208,7 +4235,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 9,
+      "stale_days": 11,
       "updated_at": "2026-09-09"
     },
     {
@@ -4219,7 +4246,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 8,
+      "stale_days": 10,
       "updated_at": "2026-09-10"
     },
     {
@@ -4230,7 +4257,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 8,
+      "stale_days": 10,
       "updated_at": "2026-09-10"
     },
     {
@@ -4241,7 +4268,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 8,
+      "stale_days": 10,
       "updated_at": "2026-09-10"
     },
     {
@@ -4252,7 +4279,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 5,
+      "stale_days": 7,
       "updated_at": "2026-09-13"
     },
     {
@@ -4263,7 +4290,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 8,
+      "stale_days": 10,
       "updated_at": "2026-09-10"
     },
     {
@@ -4274,7 +4301,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 7,
+      "stale_days": 9,
       "updated_at": "2026-09-11"
     },
     {
@@ -4285,7 +4312,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 5,
+      "stale_days": 7,
       "updated_at": "2026-09-13"
     },
     {
@@ -4296,7 +4323,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 5,
+      "stale_days": 7,
       "updated_at": "2026-09-13"
     },
     {
@@ -4307,7 +4334,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 5,
+      "stale_days": 7,
       "updated_at": "2026-09-13"
     },
     {
@@ -4318,7 +4345,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 6,
+      "stale_days": 8,
       "updated_at": "2026-09-12"
     },
     {
@@ -4329,7 +4356,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 6,
+      "stale_days": 8,
       "updated_at": "2026-09-12"
     },
     {
@@ -4340,7 +4367,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 6,
+      "stale_days": 8,
       "updated_at": "2026-09-12"
     },
     {
@@ -4351,7 +4378,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 5,
+      "stale_days": 7,
       "updated_at": "2026-09-13"
     },
     {
@@ -4362,7 +4389,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 5,
+      "stale_days": 7,
       "updated_at": "2026-09-13"
     },
     {
@@ -4373,7 +4400,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 5,
+      "stale_days": 7,
       "updated_at": "2026-09-13"
     },
     {
@@ -4384,7 +4411,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 5,
+      "stale_days": 7,
       "updated_at": "2026-09-13"
     },
     {
@@ -4395,7 +4422,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 5,
+      "stale_days": 7,
       "updated_at": "2026-09-13"
     },
     {
@@ -4406,7 +4433,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 5,
+      "stale_days": 7,
       "updated_at": "2026-09-13"
     },
     {
@@ -4417,7 +4444,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 5,
+      "stale_days": 7,
       "updated_at": "2026-09-13"
     },
     {
@@ -4428,7 +4455,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 5,
+      "stale_days": 7,
       "updated_at": "2026-09-13"
     },
     {
@@ -4439,7 +4466,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 5,
+      "stale_days": 7,
       "updated_at": "2026-09-13"
     },
     {
@@ -4450,7 +4477,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 5,
+      "stale_days": 7,
       "updated_at": "2026-09-13"
     },
     {
@@ -4461,7 +4488,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 5,
+      "stale_days": 7,
       "updated_at": "2026-09-13"
     },
     {
@@ -4472,7 +4499,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 4,
+      "stale_days": 6,
       "updated_at": "2026-09-14"
     },
     {
@@ -4483,7 +4510,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 4,
+      "stale_days": 6,
       "updated_at": "2026-09-14"
     },
     {
@@ -4494,7 +4521,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 4,
+      "stale_days": 6,
       "updated_at": "2026-09-14"
     },
     {
@@ -4505,7 +4532,7 @@
       "domain": "mac",
       "depends_on": [],
       "blocked": null,
-      "stale_days": 3,
+      "stale_days": 5,
       "updated_at": "2026-09-15"
     },
     {
@@ -4516,7 +4543,7 @@
       "domain": "mac",
       "depends_on": [],
       "blocked": null,
-      "stale_days": 3,
+      "stale_days": 5,
       "updated_at": "2026-09-15"
     },
     {
@@ -4527,7 +4554,7 @@
       "domain": "mac",
       "depends_on": [],
       "blocked": null,
-      "stale_days": 3,
+      "stale_days": 5,
       "updated_at": "2026-09-15"
     },
     {
@@ -4538,7 +4565,7 @@
       "domain": "mac",
       "depends_on": [],
       "blocked": null,
-      "stale_days": 3,
+      "stale_days": 5,
       "updated_at": "2026-09-15"
     },
     {
@@ -4549,7 +4576,7 @@
       "domain": "mac",
       "depends_on": [],
       "blocked": null,
-      "stale_days": 3,
+      "stale_days": 5,
       "updated_at": "2026-09-15"
     },
     {
@@ -4560,7 +4587,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 4,
+      "stale_days": 6,
       "updated_at": "2026-09-14"
     },
     {
@@ -4571,7 +4598,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 4,
+      "stale_days": 6,
       "updated_at": "2026-09-14"
     },
     {
@@ -4582,7 +4609,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 4,
+      "stale_days": 6,
       "updated_at": "2026-09-14"
     },
     {
@@ -4593,7 +4620,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 4,
+      "stale_days": 6,
       "updated_at": "2026-09-14"
     },
     {
@@ -4604,7 +4631,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 3,
+      "stale_days": 5,
       "updated_at": "2026-09-15"
     },
     {
@@ -4615,7 +4642,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 4,
+      "stale_days": 6,
       "updated_at": "2026-09-14"
     },
     {
@@ -4626,7 +4653,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 3,
+      "stale_days": 5,
       "updated_at": "2026-09-15"
     },
     {
@@ -4637,7 +4664,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 4,
+      "stale_days": 6,
       "updated_at": "2026-09-14"
     },
     {
@@ -4648,7 +4675,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 4,
+      "stale_days": 6,
       "updated_at": "2026-09-14"
     },
     {
@@ -4659,7 +4686,7 @@
       "domain": "win",
       "depends_on": [],
       "blocked": null,
-      "stale_days": 3,
+      "stale_days": 5,
       "updated_at": "2026-09-15"
     },
     {
@@ -4670,7 +4697,7 @@
       "domain": "mac",
       "depends_on": [],
       "blocked": null,
-      "stale_days": 3,
+      "stale_days": 5,
       "updated_at": "2026-09-15"
     },
     {
@@ -4681,7 +4708,7 @@
       "domain": "mac",
       "depends_on": [],
       "blocked": null,
-      "stale_days": 3,
+      "stale_days": 5,
       "updated_at": "2026-09-15"
     },
     {
@@ -4692,7 +4719,7 @@
       "domain": "mac",
       "depends_on": [],
       "blocked": null,
-      "stale_days": 3,
+      "stale_days": 5,
       "updated_at": "2026-09-15"
     },
     {
@@ -4703,7 +4730,7 @@
       "domain": "win",
       "depends_on": [],
       "blocked": null,
-      "stale_days": 3,
+      "stale_days": 5,
       "updated_at": "2026-09-15"
     },
     {
@@ -4714,7 +4741,7 @@
       "domain": "win",
       "depends_on": [],
       "blocked": null,
-      "stale_days": 3,
+      "stale_days": 5,
       "updated_at": "2026-09-15"
     },
     {
@@ -4725,7 +4752,7 @@
       "domain": "win",
       "depends_on": [],
       "blocked": null,
-      "stale_days": 3,
+      "stale_days": 5,
       "updated_at": "2026-09-15"
     },
     {
@@ -4736,7 +4763,7 @@
       "domain": "win",
       "depends_on": [],
       "blocked": null,
-      "stale_days": 3,
+      "stale_days": 5,
       "updated_at": "2026-09-15"
     },
     {
@@ -4747,7 +4774,7 @@
       "domain": "win",
       "depends_on": [],
       "blocked": null,
-      "stale_days": 3,
+      "stale_days": 5,
       "updated_at": "2026-09-15"
     },
     {
@@ -4758,7 +4785,7 @@
       "domain": "win",
       "depends_on": [],
       "blocked": null,
-      "stale_days": 3,
+      "stale_days": 5,
       "updated_at": "2026-09-15"
     },
     {
@@ -4769,7 +4796,7 @@
       "domain": "win",
       "depends_on": [],
       "blocked": null,
-      "stale_days": 3,
+      "stale_days": 5,
       "updated_at": "2026-09-15"
     },
     {
@@ -4780,7 +4807,7 @@
       "domain": "win/mac",
       "depends_on": [],
       "blocked": null,
-      "stale_days": 3,
+      "stale_days": 5,
       "updated_at": "2026-09-15"
     },
     {
@@ -4791,7 +4818,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 3,
+      "stale_days": 5,
       "updated_at": "2026-09-15"
     },
     {
@@ -4802,7 +4829,7 @@
       "domain": "mac",
       "depends_on": [],
       "blocked": null,
-      "stale_days": 3,
+      "stale_days": 5,
       "updated_at": "2026-09-15"
     },
     {
@@ -4813,7 +4840,7 @@
       "domain": "win",
       "depends_on": [],
       "blocked": null,
-      "stale_days": 3,
+      "stale_days": 5,
       "updated_at": "2026-09-15"
     },
     {
@@ -4824,7 +4851,7 @@
       "domain": "win",
       "depends_on": [],
       "blocked": null,
-      "stale_days": 3,
+      "stale_days": 5,
       "updated_at": "2026-09-15"
     },
     {
@@ -4835,7 +4862,7 @@
       "domain": "mac",
       "depends_on": [],
       "blocked": null,
-      "stale_days": 3,
+      "stale_days": 5,
       "updated_at": "2026-09-15"
     },
     {
@@ -4846,7 +4873,7 @@
       "domain": "mac",
       "depends_on": [],
       "blocked": null,
-      "stale_days": 3,
+      "stale_days": 5,
       "updated_at": "2026-09-15"
     },
     {
@@ -4857,8 +4884,30 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 2,
+      "stale_days": 4,
       "updated_at": "2026-09-16"
+    },
+    {
+      "id": "D790",
+      "title": "A1 度量口径修复：证据失效比时间戳（不比日期）+ 重跑刷新",
+      "status": "impl_done",
+      "owner": null,
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 3,
+      "updated_at": "2026-09-17"
+    },
+    {
+      "id": "D791",
+      "title": "线3 报告体系 spec：一页纸结构（3-1）+ 各维度循环结论（3-7）",
+      "status": "spec_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 3,
+      "updated_at": "2026-09-17"
     },
     {
       "id": "D793",
@@ -4868,7 +4917,20 @@
       "domain": "mac",
       "depends_on": [],
       "blocked": null,
-      "stale_days": 1,
+      "stale_days": 3,
+      "updated_at": "2026-09-17"
+    },
+    {
+      "id": "D794",
+      "title": "项目总览插件：左侧边栏入口 + 四视图（全局可见）",
+      "status": "claimed",
+      "owner": "create-mode",
+      "domain": "mac",
+      "depends_on": [
+        "D795"
+      ],
+      "blocked": null,
+      "stale_days": 3,
       "updated_at": "2026-09-17"
     },
     {
@@ -4879,7 +4941,79 @@
       "domain": "mac",
       "depends_on": [],
       "blocked": null,
-      "stale_days": 1,
+      "stale_days": 3,
+      "updated_at": "2026-09-17"
+    },
+    {
+      "id": "D796",
+      "title": "交付纪律三闸（物理固化）：工作区归属 / 完工落库 / 派单四件套",
+      "status": "claimed",
+      "owner": "cto",
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 3,
+      "updated_at": "2026-09-17"
+    },
+    {
+      "id": "D797",
+      "title": "S1：task-state 六字段回填 + 门禁（解锁阻塞/时间轴）",
+      "status": "claimed",
+      "owner": "mac-coding",
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 3,
+      "updated_at": "2026-09-17"
+    },
+    {
+      "id": "D798",
+      "title": "S3：账本日常化（每日刷新 + 周报生成器）",
+      "status": "claimed",
+      "owner": "mac-coding",
+      "domain": "mac",
+      "depends_on": [
+        "D795"
+      ],
+      "blocked": null,
+      "stale_days": 3,
+      "updated_at": "2026-09-17"
+    },
+    {
+      "id": "D799",
+      "title": "产品线第一条 100%：线 10 资本循环（V1 6/6）",
+      "status": "claimed",
+      "owner": "mac-coding",
+      "domain": "mac",
+      "depends_on": [
+        "D797"
+      ],
+      "blocked": null,
+      "stale_days": 3,
+      "updated_at": "2026-09-17"
+    },
+    {
+      "id": "D800",
+      "title": "证据完整性：未挣得证据洞（--skip-vitest 写假绿）",
+      "status": "claimed",
+      "owner": "mac-coding",
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 3,
+      "updated_at": "2026-09-17"
+    },
+    {
+      "id": "D803",
+      "title": "线10 资本循环 V1 6/6（第一条 100% 线，规格先行）",
+      "status": null,
+      "owner": "devdoc→mac-coding",
+      "domain": "win",
+      "depends_on": [
+        "D802"
+      ],
+      "blocked": null,
+      "stale_days": 3,
       "updated_at": "2026-09-17"
     },
     {
@@ -4890,7 +5024,7 @@
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 0,
+      "stale_days": 2,
       "updated_at": "2026-09-18"
     },
     {
@@ -4904,19 +5038,388 @@
         "D793"
       ],
       "blocked": null,
-      "stale_days": 1,
-      "updated_at": "2026-09-17"
+      "stale_days": 2,
+      "updated_at": "2026-09-18"
     },
     {
       "id": "D809",
       "title": "假绿回退：20-3/20-5/22-1 证据标 pending_wiring（不计 passed）",
-      "status": "claimed",
+      "status": "impl_done",
+      "owner": "dsh",
+      "domain": "mac",
+      "depends_on": [
+        "D806",
+        "D808"
+      ],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-18"
+    },
+    {
+      "id": "D810",
+      "title": "LLM 韧性层三入口接线（retry-middleware / context-compaction / timeout）",
+      "status": "impl_done",
       "owner": null,
       "domain": null,
       "depends_on": [],
       "blocked": null,
-      "stale_days": 0,
+      "stale_days": 2,
       "updated_at": "2026-09-18"
+    },
+    {
+      "id": "D811",
+      "title": "队列收口：39 个未合 PR → 「有主 + behind=0」清单 + 可签字关闭清单",
+      "status": "claimed",
+      "owner": "mac-coding",
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-18"
+    },
+    {
+      "id": "D812",
+      "title": "派单引用小节存在性门禁（C4）：pre-dispatch-check 增检查 ⑪",
+      "status": "claimed",
+      "owner": "mac-coding",
+      "domain": "mac",
+      "depends_on": [
+        "D778"
+      ],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-18"
+    },
+    {
+      "id": "D813",
+      "title": "tests/** 类型网 ratchet（卡 C）：新增 check-test-type-net.sh + 冻结基线",
+      "status": "claimed",
+      "owner": "mac-coding",
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-18"
+    },
+    {
+      "id": "D814",
+      "title": "D708 任务号推断修复：merge-main 后被错锚到 main 侧任务号（infer_did 改 --first-parent）",
+      "status": "claimed",
+      "owner": "mac-coding",
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-18"
+    },
+    {
+      "id": "D815",
+      "title": "线10 资本循环全链路独立复核（第一条 100% 线收官，10-8 门槛）",
+      "status": "claimed",
+      "owner": "k3",
+      "domain": "k3",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-18"
+    },
+    {
+      "id": "D816",
+      "title": "控制塔卫生：alloc-task-id 跨 worktree 取号 + .claude/bypass.log 停止入库",
+      "status": "claimed",
+      "owner": "mac-coding",
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-18"
+    },
+    {
+      "id": "D817",
+      "title": "第 0 项：CI 能跑一次生产入口级对话（验证基础设施，全部验收的公共前置）",
+      "status": "impl_done",
+      "owner": "mac-coding",
+      "domain": "win",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 1,
+      "updated_at": "2026-09-19"
+    },
+    {
+      "id": "D818",
+      "title": "三项开工前核实（研究院任务书的未核实面）：security 余 11 文件 / 数据层未核实 1·2·5·10 / Node 基线",
+      "status": "claimed",
+      "owner": "mac-devdoc",
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-18"
+    },
+    {
+      "id": "D819",
+      "title": "P0-1+P0-2+D817-F1/F2：工具 schema 进请求体 + tool_call 配对 + 响应侧 tool_calls 映射 + assistant 不重复入上下文",
+      "status": "claimed",
+      "owner": "mac-coding",
+      "domain": "win",
+      "depends_on": [
+        "D817"
+      ],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-18"
+    },
+    {
+      "id": "D820",
+      "title": "T-D3：删会话不删诊断报告（隐私/数据资产；清理函数已存在却零调用）",
+      "status": "claimed",
+      "owner": "mac-coding",
+      "domain": "win",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-18"
+    },
+    {
+      "id": "D821",
+      "title": "P-1 HTTP 代理 / 内网适配（企业私有化部署刚需，前提清单第 1 项）",
+      "status": "claimed",
+      "owner": "mac-coding",
+      "domain": "win",
+      "depends_on": [
+        "D818"
+      ],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-18"
+    },
+    {
+      "id": "D822",
+      "title": "T-D5 降级信号自遮蔽（写失败被同轮后一次成功抹掉，且测试固化了缺陷）",
+      "status": "claimed",
+      "owner": "mac-coding",
+      "domain": "win",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-18"
+    },
+    {
+      "id": "D823",
+      "title": "T-D6 im-inbound 调不存在的方法（IM 历史恢复静默空转）",
+      "status": "claimed",
+      "owner": "mac-coding",
+      "domain": "win",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-18"
+    },
+    {
+      "id": "D824",
+      "title": "T-D12 check-bridge-files 孤儿脚本处置（防回潮门禁本身『写了没接上』）",
+      "status": "claimed",
+      "owner": "mac-coding",
+      "domain": "win",
+      "depends_on": [
+        "D813"
+      ],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-18"
+    },
+    {
+      "id": "D825",
+      "title": "T-D2+T-D9：压缩入日志 + 工具事件入日志（同一 schema 变更，必须一起做）",
+      "status": "claimed",
+      "owner": "mac-coding",
+      "domain": "win",
+      "depends_on": [
+        "D819"
+      ],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-18"
+    },
+    {
+      "id": "D826",
+      "title": "search() 缺租户过滤（跨租户泄露面；锚点＝第 2 个客户接入前必须修）",
+      "status": "claimed",
+      "owner": "mac-coding",
+      "domain": "win",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-18"
+    },
+    {
+      "id": "D827",
+      "title": "会话统计：两处『有雏形零接线』接通（agent_metrics 零写入 + checkpoint() 零消费者）",
+      "status": "claimed",
+      "owner": "mac-coding",
+      "domain": "win",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-18"
+    },
+    {
+      "id": "D828",
+      "title": "趋势算法接线（computeTemporalBaseline 零生产调用）",
+      "status": "claimed",
+      "owner": "mac-coding",
+      "domain": "win",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-18"
+    },
+    {
+      "id": "D829",
+      "title": "packages/evolution 接线（2,503 行零生产引用；线 17 第一条验收点）",
+      "status": "claimed",
+      "owner": "mac-coding",
+      "domain": "win",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-18"
+    },
+    {
+      "id": "D830",
+      "title": "T-D1/T-D10 复核：D810 是否真覆盖（对着已合入 main 独立复核）",
+      "status": "claimed",
+      "owner": "k3",
+      "domain": "k3",
+      "depends_on": [
+        "D819"
+      ],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-18"
+    },
+    {
+      "id": "D831",
+      "title": "P-2 不变量机制（前提清单第 2 项；首批 3 条断言）",
+      "status": "claimed",
+      "owner": "mac-coding",
+      "domain": "win",
+      "depends_on": [
+        "D819"
+      ],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-18"
+    },
+    {
+      "id": "D832",
+      "title": "固化①：新验收标准进派单与规格（门禁 + 模板）",
+      "status": "claimed",
+      "owner": "mac-coding",
+      "domain": "win",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-18"
+    },
+    {
+      "id": "D833",
+      "title": "固化②：CTO 验收记录模板 + 检查（我的验收也受门禁约束）",
+      "status": "claimed",
+      "owner": "mac-coding",
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-18"
+    },
+    {
+      "id": "D834",
+      "title": "固化③：项目总览/台账跟踪三层清单（29 线 / 3 前提 / 12 线外 + 9 断线）",
+      "status": "claimed",
+      "owner": "mac-coding",
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 2,
+      "updated_at": "2026-09-18"
+    },
+    {
+      "id": "D835",
+      "title": "控制塔卫生 2：D708 写集门禁对 git mv（重命名）来源路径误判为夹带",
+      "status": "claimed",
+      "owner": "mac-coding",
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 1,
+      "updated_at": "2026-09-19"
+    },
+    {
+      "id": "D836",
+      "title": "K3 独立审计：D819 工具接线三修（试点队产出）—— 试点指标③（审计能挑出几个问题）",
+      "status": "claimed",
+      "owner": "k3",
+      "domain": "k3",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 1,
+      "updated_at": "2026-09-19"
+    },
+    {
+      "id": "D837",
+      "title": "小队模式物理门禁：check-team-protocol.sh（M1–M6 六项检查 + 夹具 + 接线）",
+      "status": "claimed",
+      "owner": "mac-coding",
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 1,
+      "updated_at": "2026-09-19"
+    },
+    {
+      "id": "D838",
+      "title": "两条新线的验收点补全 + 11 项缺口验收点起草 + V1 标准变更单（起草件，待创始人确认）",
+      "status": "claimed",
+      "owner": "mac-devdoc",
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 1,
+      "updated_at": "2026-09-19"
+    },
+    {
+      "id": "D839",
+      "title": "认领制缺陷：已完成 session 的 brief 不释放声明 → 后续任务被永久锁死（D296/D329 门禁）",
+      "status": "claimed",
+      "owner": "mac-coding",
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 1,
+      "updated_at": "2026-09-19"
+    },
+    {
+      "id": "D840",
+      "title": "派单模板加『为什么派它/做完推动什么』必填节 + 并行车道图（创始人 2026-09-20 要求）",
+      "status": "impl_done",
+      "owner": "synova-cto",
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 0,
+      "updated_at": "2026-09-20"
+    },
+    {
+      "id": "D841",
+      "title": "K3 独立审计：D839 认领门禁变更（完成即释放/批量释放/持久化）——门禁变更属审计面",
+      "status": "claimed",
+      "owner": "k3",
+      "domain": "k3",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 0,
+      "updated_at": "2026-09-20"
     }
   ],
   "blocked": [],
@@ -4927,7 +5430,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-01",
         "merged": null,
         "audited": null
       }
@@ -4938,7 +5441,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-01",
         "merged": null,
         "audited": null
       }
@@ -4949,7 +5452,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-01",
         "merged": null,
         "audited": null
       }
@@ -4960,7 +5463,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-01",
         "merged": null,
         "audited": null
       }
@@ -4971,7 +5474,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-01",
         "merged": null,
         "audited": null
       }
@@ -4982,7 +5485,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-01",
         "merged": null,
         "audited": null
       }
@@ -4993,7 +5496,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-01",
         "merged": null,
         "audited": null
       }
@@ -5004,7 +5507,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-01",
         "merged": null,
         "audited": null
       }
@@ -5015,7 +5518,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-01",
         "merged": null,
         "audited": null
       }
@@ -5026,7 +5529,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-01",
         "merged": null,
         "audited": null
       }
@@ -5037,7 +5540,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-01",
         "merged": null,
         "audited": null
       }
@@ -5048,7 +5551,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-01",
         "merged": null,
         "audited": null
       }
@@ -5059,7 +5562,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-01",
         "merged": null,
         "audited": null
       }
@@ -5070,7 +5573,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-01",
         "merged": null,
         "audited": null
       }
@@ -5081,7 +5584,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-01",
         "merged": null,
         "audited": null
       }
@@ -5092,7 +5595,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-01",
         "merged": null,
         "audited": null
       }
@@ -5103,7 +5606,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-01",
         "merged": null,
         "audited": null
       }
@@ -5114,7 +5617,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-01",
         "merged": null,
         "audited": null
       }
@@ -5125,7 +5628,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-05",
+        "first_commit": "2026-08-01",
         "merged": null,
         "audited": null
       }
@@ -5136,7 +5639,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-01",
         "merged": null,
         "audited": null
       }
@@ -5147,7 +5650,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-01",
         "merged": null,
         "audited": null
       }
@@ -5158,7 +5661,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-01",
         "merged": null,
         "audited": null
       }
@@ -5169,7 +5672,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-01",
         "merged": null,
         "audited": null
       }
@@ -5180,7 +5683,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-01",
         "merged": null,
         "audited": null
       }
@@ -5191,7 +5694,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-01",
         "merged": null,
         "audited": null
       }
@@ -5202,7 +5705,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-06-03",
+        "first_commit": "2026-08-01",
         "merged": null,
         "audited": null
       }
