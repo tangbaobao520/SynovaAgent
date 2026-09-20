@@ -31,7 +31,9 @@ fail-closed（D839，方向相反，必须区分）:
 """
 import argparse
 import json
+import os
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -54,6 +56,102 @@ except ImportError:  # pragma: no cover — 旧检出/被裁剪的树
     _claim_is_released = None
     RELEASED_MARK = "SYNO-RELEASED-CLAIM"
     DEGRADED_MARK = "SYNO-CLAIM-RELEASE-DEGRADED"
+
+# D853: resolver 链断（python/git 不可用）时它发的显式降级公告 —— **字面量与
+# `resolve-commit-brief.sh` 里 printf 的那两行相同（改一处必改两处）**。
+# 语义: 认领判定这一维**整条不可用** → 拿不到认领列表 ≠ 没有认领 → 必须 fail-closed（block），
+#   否则"链断了"会被翻译成"放行"（Windows CI 实测：5 场景全 ec0/pass）。
+RESOLVER_DEGRADED_MARK = "SYNO-RESOLVER-DEGRADED"
+
+
+def parse_resolver_degraded(stderr_text: str) -> List[str]:
+    """解析 resolver 的**链断**公告（D853）。→ [原因, ...]（空 = 链正常）。
+
+    契约: 输入 = 任意文本；输出 = 原因列表。容错: 非本前缀行忽略，绝不抛异常。
+    与 `parse_degraded_claims` 的区别: 那条是"释放维度降级"（仍能判认领，只是不释放认领）；
+    本条是"**认领判定整条不可用**"（python/git 不可用）→ 调用方必须 fail-closed。
+    """
+    out: List[str] = []
+    for line in (stderr_text or "").splitlines():
+        if not line.startswith(RESOLVER_DEGRADED_MARK):
+            continue
+        parts = line.split("\t")
+        out.append(parts[1].strip() if len(parts) > 1 and parts[1].strip() else "原因未给")
+    return out
+
+
+def _find_bash():
+    """自包含 bash 探测（windows-compat 模式 1）→ (bash|None, reason)。
+
+    契约:
+      @output ("/path/to/bash", "") 可用；否则 (None, "<原因>")
+      @degraded None = **不可用** → 调用方必须 fail-closed（不得静默当作"无认领"）
+      @exit   不抛异常
+    D853: Windows 上 PATH 命中的 `bash` 可能是 **WSL 桩**（`C:\\Windows\\System32\\bash.exe`，
+      实测输出 "Windows Subsystem for Linux has no installed distributions"）→ 只 `command -v`/`which`
+      不够（那是本卡正在修的"只探存在性"同型缺陷）→ **必须试运行校验**。
+      优先序: SYNO_BASH 显式指定 → Git Bash 常见安装位 → PATH 上的 bash（逐个试运行）。
+    """
+    cands = []
+    env_bash = os.environ.get("SYNO_BASH")
+    if env_bash:
+        cands.append(env_bash)
+    if os.name == "nt":  # pragma: no cover — Windows
+        cands += [r"C:\Program Files\Git\bin\bash.exe", r"C:\Program Files\Git\usr\bin\bash.exe",
+                  r"C:\Program Files (x86)\Git\bin\bash.exe"]
+    found = shutil.which("bash")
+    if found:
+        cands.append(found)
+    cands += ["/bin/bash", "/usr/bin/bash", "/usr/local/bin/bash"]
+    for c in cands:
+        if not c or not os.path.exists(c):
+            continue
+        try:
+            p = subprocess.run([c, "-c", "echo SYNO_BASH_OK"], capture_output=True, text=True,
+                               encoding="utf-8", errors="replace", timeout=20)
+        except (OSError, subprocess.SubprocessError):
+            continue
+        if p.returncode == 0 and "SYNO_BASH_OK" in (p.stdout or ""):
+            return c, ""
+    return None, "未找到可用 bash（SYNO_BASH / Git Bash / PATH 上的 bash 试运行均失败）"
+
+
+def _bash_env(bash: str) -> dict:
+    """自包含 subprocess 环境（windows-compat 模式 1）: MSYS 的 PATH 分隔符是 ':'，且 Git Bash 的
+    `usr/bin`（cat/grep/python3 依赖链）默认不在纯系统 PATH 上 → 显式前置。POSIX 上等价于原 env。
+    """
+    env = dict(os.environ)
+    if os.name == "nt":  # pragma: no cover — Windows
+        root = Path(bash).parent.parent
+        if root.name.lower() == "usr":
+            root = root.parent
+        paths = [root / "usr" / "bin", root / "bin", root / "cmd", root / "mingw64" / "bin",
+                 Path(sys.executable).parent]
+        msys = []
+        for p in paths:
+            s = str(p).replace("\\", "/")
+            if len(s) > 1 and s[1] == ":":
+                s = "/" + s[0].lower() + s[2:]
+            msys.append(s)
+        env["PATH"] = ":".join(msys + [env.get("PATH", "")])
+    return env
+
+
+def _fail_closed(result: dict, why: str) -> dict:
+    """认领判定链不可用 → **fail-closed**（block + 显式点名，绝不静默当作"无认领"）。
+
+    D853: 与 `check_staging` 里"registry 缺失 → fail-open pass"方向相反——认领维度是**保护**维度，
+    拿不到事实时不放行（与 release 维度同哲学）；差异必须由 `degraded`/`degraded_reason` 显式表达
+    （铁律 11/24/31），而不是被压成同一个 pass。
+    """
+    result["status"] = "block"
+    result["degraded"] = True
+    _prev = result.get("degraded_reason", "")
+    result["degraded_reason"] = (_prev + " | " if _prev else "") + f"D853 认领判定不可用（{why}）→ fail-closed 阻断"
+    result["foreign_files"].append(
+        {"file": "<staged>", "owner_session": "unknown", "brief": "",
+         "reason": f"认领判定链不可用: {why}"})
+    return result
 
 
 def parse_released_claims(stderr_text: str) -> List[dict]:
@@ -150,10 +248,24 @@ def check_staging(
         # 支持已实现但零生产调用方（KIMI K3 审计: D329 dev doc §5 只要求"resolver
         # 读取"，没要求"生产调用方真实传递"）。本调用是生产唯一调用点（WIRE CHECK
         # 升级: grep "resolve-commit-brief.sh.*--session" scripts/ ≥1 真实命中）。
+        # D853-①: bash 必须**自包含 + 试运行校验**——Windows 上裸 "bash" 会命中 WSL 桩
+        #   （C:\Windows\System32\bash.exe，输出 "no installed distributions"）→ resolver 根本没执行
+        #   → rc=1 零输出 → 认领判定整条消失（CI 实测：5 场景全 ec0/pass）。
+        _bash, _bash_why = _find_bash()
+        if _bash is None:
+            log_degraded(reg.degraded_log, "staging-guard", f"D853 bash 不可用: {_bash_why}")
+            return _fail_closed(result, f"bash 不可用（{_bash_why}）")
         _proc = subprocess.run(
-            ["bash", str(REPO_ROOT / "scripts/workflow/resolve-commit-brief.sh"), "--session", session_id, staged_arg],
+            [_bash, str(REPO_ROOT / "scripts/workflow/resolve-commit-brief.sh"), "--session", session_id, staged_arg],
             capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30,
+            env=_bash_env(_bash),
         )
+        # D853-②: 链断 ≠ 无认领 —— resolver 自报 python/git 不可用时必须 fail-closed（不是跳过判定）
+        _resolver_broken = parse_resolver_degraded(_proc.stderr)
+        if _resolver_broken:
+            _why = "; ".join(_resolver_broken)
+            log_degraded(reg.degraded_log, "staging-guard", f"D853 resolver 链断: {_why}")
+            return _fail_closed(result, f"resolver 链断（{_why}）")
         claimed = _proc.stdout.strip().splitlines()
         # D839 ①: resolver 已把"已释放"的 brief 剔出候选池 —— 剔除理由在 stderr，取回来降 warn 用
         released_claims = parse_released_claims(_proc.stderr)

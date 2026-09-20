@@ -326,6 +326,29 @@ else
   fail "场景G claim_release.py 不存在（未实现）"
 fi
 scen_end SCEN_G
+scen_start
+echo "── 场景 H（D853 · 链断 fail-closed）: python 不可用 → resolver 链断 → 必须 block（禁静默 pass）──"
+if [ -f "$CLAIM" ]; then
+  mk_state D901 claimed          # 本应 block（他人进行中认领）
+  SHIM=$(mktemp -d)
+  printf '#!/bin/sh\nexit 1\n' > "$SHIM/python3"; chmod +x "$SHIM/python3"
+  cp "$SHIM/python3" "$SHIM/python"; cp "$SHIM/python3" "$SHIM/py"
+  REALPY=$(command -v python3)
+  OUT=$(cd "$SB" && PATH="$SHIM:$PATH" "$REALPY" "$GUARD" --session-id D902 --staged docs/x.md 2>&1); EC=$?
+  diag H "$EC" "$(_status_of "$OUT")"
+  assert_eq "$EC" "1" "场景H 链断 → exit 1（fail-closed，禁静默 pass）"
+  assert_contains "$OUT" '"status": "block"' "场景H status=block（不是 pass）"
+  assert_contains "$OUT" '"degraded": true' "场景H 降级显式传播（铁律 11/31）"
+  # 标记字面量两端一致（resolver 发 / guard 解析）——防两处定义漂移（D839 踩过）
+  RESM=$(grep -o "SYNO-RESOLVER-DEGRADED" "$SB/scripts/workflow/resolve-commit-brief.sh" | head -1)
+  GRDM=$(cd "$SB" && python3 -c "import sys;sys.path.insert(0,'scripts/control-tower');import staging_guard;print(staging_guard.RESOLVER_DEGRADED_MARK)")
+  assert_eq "$RESM" "$GRDM" "场景H 链断标记字面量两端一致（防漂移）"
+  assert_contains "$RESM" "SYNO-RESOLVER-DEGRADED" "场景H resolver 侧确实发该标记（非空，防两端同为空假绿）"
+  rm -rf "$SHIM"
+else
+  fail "场景H claim_release.py 不存在（未实现）"
+fi
+scen_end SCEN_H
 
 echo "── 场景 F（沙箱围栏）: 测试不得写真实仓库 ──"
 scen_start
