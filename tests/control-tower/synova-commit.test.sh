@@ -198,6 +198,19 @@ OUTC=$(cd "$SBC" && SYNO_PRE_COMMIT="$STUB" bash "$SBC/scripts/control-tower/syn
 printf '%s' "$OUTC" | grep -q "staging-guard 执行异常" \
   && ok "⑨ 异常显式点名（非静默）" || bad "⑨ 异常未点名"
 
+# ⑩ D853（行为面）: python 不可用 → guard 无法执行 → **fail-closed**（旧行为 = 跳过放行 → 该用例旧实现 rc=0）
+SHP="$TMPD/nopy"; mkdir -p "$SHP"
+printf '#!/bin/sh\nexit 1\n' > "$SHP/python3"; chmod +x "$SHP/python3"
+cp "$SHP/python3" "$SHP/python"; cp "$SHP/python3" "$SHP/py"
+echo "nopy" > "$SB/np.md"; git -C "$SB" -c user.name=t -c user.email=t@t add np.md
+OUTP=$(cd "$SB" && PATH="$SHP:$PATH" SYNO_PRE_COMMIT="$STUB" bash "$SB/scripts/control-tower/synova-commit" \
+        --task-id T10 --agent test --message "test: python unavailable probe" 2>&1); rcp=$?
+[ "$rcp" -eq 1 ] && ok "⑩ python 不可用 → exit 1（fail-closed；旧实现为跳过放行 rc=0）" \
+  || bad "⑩ python 不可用未阻断 rc=$rcp"
+printf '%s' "$OUTP" | grep -q "python3/python/py 试运行均不可用" \
+  && ok "⑩ 原因显式点名（非静默）" || bad "⑩ 原因未点名"
+git -C "$SB" restore --staged np.md 2>/dev/null || true; rm -f "$SB/np.md"
+
 echo "pass=$PASS fail=$FAIL"
 if [ "$FAIL" -ne 0 ]; then
   # D853: 末尾两行 = CI 注解可见区（tail -8）。①失败断言名 ②关键环境事实（供判"链/工具/路径"哪层坏）
