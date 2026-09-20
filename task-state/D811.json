@@ -8,7 +8,11 @@
     "docs/synova/coordination/队列收口-20260918.md",
     "task-state/D811.json",
     ".claude/task-briefs/2026-09-18-D811-队列收口.md",
-    "memory/notes/proposed/2026-09-18-D811-queue-closeout.md"
+    "memory/notes/proposed/2026-09-18-D811-queue-closeout.md",
+    "scripts/project/",
+    "docs/synova/coordination/小队派单-D811-队列收口-20260920.md",
+    "docs/synova/project/",
+    ".claude/task-briefs/2026-09-20-D811-队列收口.md"
   ],
   "impl": null,
   "audit": null,
@@ -29,5 +33,5 @@
     "禁 force push / 禁 rebase 压平（git reflog 无 reset --hard）"
   ],
   "next": "① 取全量 open PR 列表（curl API）② 逐 PR 算 ahead/behind + 自身文件是否已被取代 ③ R3 分支 merge origin/main 刷新并推送 ④ 出报告 + 关闭清单 ⑤ 汇报给 CTO（含 mergeable 实测值）",
-  "note": "跨分支动作：会对多个在途 PR 分支推送 merge-main 提交（非 force）。排除 K3 审计域（audit/k3-* 分支、scripts/audit/**）。本卡不关闭任何 PR（需创始人签字或 token）。"
+  "note": "跨分支动作：会对多个在途 PR 分支推送 merge-main 提交（非 force）。排除 K3 审计域（audit/k3-* 分支、scripts/audit/**）。本卡不关闭任何 PR（需创始人签字或 token）。\n\n【2026-09-20 CTO 扩范围（创始人同意先派②）】按《DSH 决策镜头》先修瓶颈：① 队列台账扫描器（机器算，人只看）② 可签字关闭清单（每条给理由）③ 队列上限=12 的**提示层**（不拦死）④ 旁路派生指标。硬边界：不碰 D839 地盘的四个文件（PR #657 待 K3 审计）。派单件：docs/synova/coordination/小队派单-D811-队列收口-20260920.md"
 }

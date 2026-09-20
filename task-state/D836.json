@@ -1,7 +1,7 @@
 {
   "task_id": "D836",
   "title": "K3 独立审计：D819 工具接线三修（试点队产出）—— 试点指标③（审计能挑出几个问题）",
-  "status": "claimed",
+  "status": "audited",
   "risk": "medium",
   "spec": "派单即规格：本卡 + PR #646（实现面）/ #647（过程记录面）",
   "write_set": [
@@ -9,10 +9,17 @@
     "task-state/D836.json"
   ],
   "impl": null,
-  "audit": null,
+  "audit": {
+    "verdict": "PASS",
+    "auditor": "k3",
+    "audited_at": "2026-09-20",
+    "p0p1p2": { "p0": 0, "p1": 1, "p2": 5 },
+    "report": "docs/synova/audit-reports/2026-09-19-K3-D819.md",
+    "summary": "6 条必查全过（独立 worktree + K3 自建取证脚本复跑）。P1×1：D473 reminder 同一 tool_call_id 双推 role='tool'（小队 L5 已登记，建议另卡修复）。P2×5：stream delta.tool_calls 未映射未编号（K3 新）、证据 sha256 确定性仅同日（K3 新）、D817 证据过期、memory note 路径偏离+bypass.log 入库、兜底序号按 provider 实例重置。指标③：K3 挑出 6 个问题，其中 4 个小队自验已发现（L3/L4/L5/L6），2 个 K3 新发现。"
+  },
   "fix_task_id": null,
-  "updated_at": "2026-09-19",
-  "updated_by": "synova-cto",
+  "updated_at": "2026-09-20",
+  "updated_by": "k3",
   "domain": "k3",
   "owner": "k3",
   "executor": "k3",

@@ -1,0 +1,34 @@
+{
+  "task_id": "D846",
+  "title": "K3 P1-1 后续：释放证据无防伪——改工作树即可无痕解锁他人认领（释放判定不得读工作树）",
+  "status": "claimed",
+  "risk": "high",
+  "spec": "K3 审计（docs/synova/audit-reports/2026-09-20-K3-D839.md）P1-1：claim_release.py 读 task-state 用 path.read_text()（工作树），任何人改工作树把他人卡 status 改成 impl_done 即可无痕解锁其认领（沙箱实证 block→warn）；release 子命令无鉴权、无审计留痕。",
+  "write_set": [
+    "scripts/control-tower/claim_release.py",
+    "tests/control-tower/claim_release.test.sh",
+    "task-state/D846.json"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-20",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "mac-coding",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [
+    "D839"
+  ],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "释放判定改读 `git show HEAD:<path>`（或已提交内容），工作树改动不得作为释放依据",
+    "夹具：①工作树改他人卡 status=impl_done → 仍 block（先红：现在会放行）②已提交的 impl_done → 正确放行",
+    "release 子命令留下可审计凭证（谁/依据/时间），且非 owner 释放需显式理由",
+    "不碰 scripts/audit/**；K3 复审（门禁变更属审计面）"
+  ],
+  "next": "① 重新核行号 ② 先红后绿夹具 ③ 交回三件",
+  "note": "来源：K3 D841 裁决 P1-1。本卡是 D839 的后续（D839 本体已 CONDITIONAL PASS）。"
+}

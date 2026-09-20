@@ -1,0 +1,35 @@
+{
+  "task_id": "D847",
+  "title": "K3 P1-3 后续：claim-releases 台账并发 lost-update（30 轮首轮即中）",
+  "status": "claimed",
+  "risk": "high",
+  "spec": "K3 审计 P1-3：task-state/claim-releases.json 并发写丢更新（30 轮第 0 轮即中），未复用同目录既有 scripts/control-tower/write_lock.py。",
+  "write_set": [
+    "scripts/control-tower/claim_release.py",
+    "scripts/control-tower/write_lock.py",
+    "tests/control-tower/claim_release.test.sh",
+    "task-state/D847.json"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-20",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "mac-coding",
+  "executor": "mac-coding",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [
+    "D839"
+  ],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "台账写入走 write_lock.py（同目录既有机制，不另造）",
+    "并发夹具：N 进程并发释放 → 断言全部记录在案（无 lost-update），给先红后绿两次原始输出",
+    "锁失败路径有明确降级/报错（禁静默吞）",
+    "K3 复审"
+  ],
+  "next": "① 重新核行号 ② 先红后绿夹具 ③ 交回三件",
+  "note": "来源：K3 D841 裁决 P1-3。"
+}
