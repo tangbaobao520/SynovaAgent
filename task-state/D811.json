@@ -1,19 +1,26 @@
 {
   "task_id": "D811",
-  "title": "队列收口：39 个未合 PR → 「有主 + behind=0」清单 + 可签字关闭清单",
+  "title": "队列收口：未合 PR 台账扫描器 + 可签字关闭清单 + 上限=12 提示层 + 旁路派生指标",
   "status": "claimed",
   "risk": "medium",
-  "spec": "派单即规格：docs/synova/coordination/派单-批八-20260918.md §B/D811",
+  "spec": "docs/synova/coordination/小队派单-D811-队列收口-20260920.md（**注**：该件不在 main，在 chore/dispatch-d811 分支 commit 5110188f / PR #664，本卡按其实测内容执行）",
   "write_set": [
-    "docs/synova/coordination/队列收口-20260918.md",
+    "scripts/project/pr-queue-scan.py",
+    "scripts/project/gen-project-board.py",
+    "tests/project/pr-queue-scan.test.sh",
+    "tests/project/gen-project-board.test.sh",
+    "docs/synova/project/pr-queue.json",
+    "docs/synova/project/ledger.json",
+    "docs/synova/coordination/队列收口-D811-20260920.md",
+    "docs/synova/coordination/AUDIT-FINDINGS-LEDGER.md",
     "task-state/D811.json",
-    ".claude/task-briefs/2026-09-18-D811-队列收口.md",
-    "memory/notes/proposed/2026-09-18-D811-queue-closeout.md"
+    ".claude/task-briefs/2026-09-20-D811-队列收口.md",
+    "memory/notes/proposed/2026-09-20-D811-queue-closeout.md"
   ],
   "impl": null,
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-09-18",
+  "updated_at": "2026-09-20",
   "updated_by": "synova-cto",
   "domain": "mac",
   "owner": "mac-coding",
@@ -22,12 +29,13 @@
   "blocked": null,
   "target": "2026-W38",
   "acceptance_points": [
-    "报告表行数 == 当时 open PR 数（API 实测，命令+输出落报告）",
-    "标记「保留并已刷新」的每个分支 git rev-list --count origin/<b>..origin/main == 0（逐个贴输出）",
-    "R1（自身文件已被 main 取代）清单逐 PR 列出比对命令与结果，供创始人签字",
-    "每条冲突：文件 + 处理方式 + 依据；语义冲突标「待 CTO 裁决」",
-    "禁 force push / 禁 rebase 压平（git reflog 无 reset --hard）"
+    "扫描器对实测未合 PR 出完整台账（编号/标题/主人/behind/CI/age/可否关闭），命令+原始输出落报告",
+    "可签字关闭清单按退役优先排序，**每条给理由码 + 证据**（红在哪个 job / behind=N / age=N）",
+    "上限告警夹具先红后绿：13>12 出告警、12=12 无告警，**两次退出码均 0**（只提示不拦死）",
+    "旁路指标（队列长度/最老 PR 年龄/behind 分布）出现在 ledger.json.pr_queue（派生链已接线）",
+    "证明主提交路径零新增检查：scripts/pre-commit-check.sh、.git/hooks/{pre-commit,pre-push} 对 pr-queue-scan 零引用",
+    "禁 force push / 禁 stash / 禁 --no-verify（git reflog 无 reset --hard）"
   ],
-  "next": "① 取全量 open PR 列表（curl API）② 逐 PR 算 ahead/behind + 自身文件是否已被取代 ③ R3 分支 merge origin/main 刷新并推送 ④ 出报告 + 关闭清单 ⑤ 汇报给 CTO（含 mergeable 实测值）",
-  "note": "跨分支动作：会对多个在途 PR 分支推送 merge-main 提交（非 force）。排除 K3 审计域（audit/k3-* 分支、scripts/audit/**）。本卡不关闭任何 PR（需创始人签字或 token）。"
+  "next": "① 已建扫描器+测试（46 项断言绿）② 已挂账本旁路段（ledger.pr_queue）③ 已出可签字关闭清单 ④ 待：提交 PR + 交回三件（diff/自验结论/遗留清单）",
+  "note": "与派单件的一处偏离并已显式登记：派单写集未含 tests/project/**，但铁律 48 要求新增脚本配配对测试（且 G12 只认显式路径），故把 tests/project/{pr-queue-scan.test.sh,gen-project-board.test.sh} 纳入写集。硬边界未越：未碰 scripts/control-tower/**、scripts/workflow/resolve-commit-brief.sh。本卡不关闭任何 PR（关闭需创始人签字）。"
 }
