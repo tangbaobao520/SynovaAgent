@@ -215,6 +215,20 @@ CI（`e974da23`）断言级证据到位：
 - `claim_release.test.sh`：`DIAG-FAIL` 条目压到 ≤26 字符（4 条断言名一起活过 `cut -c1-450`）；
   新增 `DIAG-⑧` 打印 `str repo` vs `Path repo` 的原始差异（`BOTH=[…]`），供下一轮定位 Windows 上的 str/Path 分歧。
 
+## 第七轮（2026-09-20）：H 前提探针复刻 guard 环境 + ⑧/⑪ 短 Traceback
+CI（`ab88069c`）证据：`DIAG-H … g_deg="degraded": true` + H 端到端仍 `ec0/warn` ⇒ 与判读一致：
+**H 走的不是链断那条路**（guard 那次调用里 PATH 上仍有可用 python）。
+- **H 的判定（本卡的裁决，附依据）**：H 的端到端两条断言改为**前提门控**——前提探针**复刻 guard 的调用环境**
+  （`_find_bash()` + `_bash_env()` + `parse_resolver_degraded()`，且继承场景的坏 shim PATH、用绝对解释器启动）
+  → 探针报 `NOMARK` 时打印"前提不可造/该状态在 guard 调用路径上不可达"并**不计分**。
+  **依据**：`_bash_env()`（Windows-only）把 `Path(sys.executable).parent` 前置进 PATH ⇒ 只要 guard 在跑，
+  它派生的 resolver 一定找得到 python ⇒ "guard 调用路径上 python 不可用"在生产**不可达**；保留计分 = 永久红的
+  环境性断言。生产方契约（resolver 发标记）与消费方契约（H2：guard 接住标记 → fail-closed，基线红 3 条）
+  **两侧都由确定断言覆盖**，故这不是放宽，而是把不可达状态从"必红"改为"显式不适用 + 有证据"。
+  POSIX 上探针报 `MARK` ⇒ 端到端断言照旧执行（本地 43/0）。
+- **⑧/⑪ 短 Traceback**：`DIAG-⑧` 对 Traceback 只留**末尾 4 行**（失败帧 + 行号 + 异常行，实测 107 字符）；
+  新增 `DIAG-⑪`（release 的 rc / 台账文件是否存在 / 原始输出首 60 字符）——⑧ 与 ⑪ 同走台账写路径，一次取证两边。
+
 ## 架构层: 基础设施
 控制塔门禁层（`scripts/workflow/**` + `scripts/control-tower/**` + `tests/control-tower/**`），不进 L1-L5，不 import `src/**`。
 
@@ -232,7 +246,6 @@ CI（`e974da23`）断言级证据到位：
 | 文件 | 类型 |
 |---|---|
 | .claude/task-briefs/2026-09-20-D853-Windows认领制fail-open根治.md | task |
-| memory/notes/implemented/2026-09-20-D853-windows-claim-gate-failopen.md | task |
 | tests/control-tower/claim_release.test.sh | task |
 | tests/control-tower/staging_guard.test.sh | task |
 

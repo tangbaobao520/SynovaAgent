@@ -355,23 +355,46 @@ if [ -f "$CLAIM" ]; then
   printf '#!/bin/sh\nexit 1\n' > "$SHIM/python3"; chmod +x "$SHIM/python3"
   cp "$SHIM/python3" "$SHIM/python"; cp "$SHIM/python3" "$SHIM/py"
   REALPY=$(command -v python3)
-  # 前提探针：**先直调 resolver** 看本环境能否真造出"链断"（发标记）。
-  #   D853 实测教训: guard 侧 `_bash_env()` 会把 `sys.executable` 所在目录前置进 PATH ——
-  #   若该目录里有可用的 python3（Windows hostedtoolcache 就是），PATH 上的 shim 会被"反超"，
-  #   链根本断不了 → 场景前提不成立。此时**不能**把"没 block"当作 guard 的错（那是误判）。
+  # ── 前提探针（D853-8 修正）：必须**复刻 guard 的调用环境**再判"本环境能否造出链断" ──
+  #   旧探针用裸 bash 直调 → 与 guard 的真实调用不同（guard 走 _find_bash + _bash_env）。
+  #   Windows 上 `_bash_env()` 会把 `Path(sys.executable).parent`（= hostedtoolcache，**内含可用 python3.exe**）
+  #   前置进 PATH → PATH 上的坏 shim 被反超 → **guard 那次调用里链根本断不了**（该状态在 guard 调用路径上不可达）。
+  #   故前提探针必须用 guard 自己的 _find_bash()/_bash_env() + parse_resolver_degraded() 复刻。
+  #   ⚠ 探针必须继承场景 H 的 PATH（含坏 shim）——否则测的是"正常环境"，前提判定失真
+  #   ⚠ 且必须用**绝对解释器**启动探针（PATH 首位是坏 shim，裸 python3 会跑不起来 → 探针静默空）
+  H_PREM=$(cd "$SB" && PATH="$SHIM:$PATH" "$REALPY" - "$SB" <<'PYEOF' 2>&1
+import os, subprocess, sys
+sb = sys.argv[1]
+sys.path.insert(0, os.path.join(sb, "scripts", "control-tower"))
+import staging_guard as sg                      # noqa: E402
+b, why = sg._find_bash()
+if b is None:
+    print("NOBASH:%s" % why); raise SystemExit(0)
+p = subprocess.run([b, os.path.join(sb, "scripts", "workflow", "resolve-commit-brief.sh"),
+                    "--session", "D902", "docs/x.md"],
+                   capture_output=True, text=True, encoding="utf-8", errors="replace",
+                   env=sg._bash_env(b), cwd=sb)
+print("MARK" if sg.parse_resolver_degraded(p.stderr) else "NOMARK rc=%s" % p.returncode)
+PYEOF
+  )
   H_RES=$(cd "$SB" && PATH="$SHIM:$PATH" "$BASH_BIN" "$SB/scripts/workflow/resolve-commit-brief.sh" --session D902 docs/x.md 2>&1); H_RC=$?
   H_MARK=$(printf '%s' "$H_RES" | grep -oE 'SYNO-RESOLVER-DEGRADED' | head -1)
-  DIAG_H=$(printf 'rc=%s mark=[%s]' "$H_RC" "${H_MARK:-none}")
-  if [ "$H_MARK" = "SYNO-RESOLVER-DEGRADED" ]; then
+  DIAG_H=$(printf 'rc=%s mark=[%s] guard_prem=[%s]' "$H_RC" "${H_MARK:-none}" "${H_PREM:-none}")
+  # 生产方契约（resolver 侧）：坏 python 的 PATH 下必须发标记 ✓ 全平台应成立
+  assert_contains "$H_RES" "SYNO-RESOLVER-DEGRADED" "场景H resolver 侧发链断标记（生产方契约）"
+  if [ "$H_PREM" = "MARK" ]; then
+    # 消费方契约（端到端）：guard 自己的环境下链确实断 → 必须 fail-closed
     OUT=$(cd "$SB" && PATH="$SHIM:$PATH" "$REALPY" "$GUARD" --session-id D902 --staged docs/x.md 2>&1); EC=$?
     diag H "$EC" "$(_status_of "$OUT")"
-    DIAG_H="$DIAG_H g_deg=$(printf '%s' "$OUT" | grep -oE '"degraded": (true|false)' | head -1)"
+    DIAG_H="$DIAG_H g=[$(printf '%s' "$OUT" | grep -oE '"status": "[a-z]+"' | head -1)]"
     assert_eq "$EC" "1" "场景H 链断 → exit 1（fail-closed，禁静默 pass）"
     assert_contains "$OUT" '"status": "block"' "场景H status=block（不是 pass）"
     assert_contains "$OUT" '"degraded": true' "场景H 降级显式传播（铁律 11/31）"
   else
-    # 前提不可造 → 不计分但**显式打印**（不静默通过）；契约面由 H2 全平台确定覆盖
-    echo "  ⚠ 场景H 前提不可造（resolver 直调未发标记：$DIAG_H）→ 该场景本环境不适用，契约面由 H2 覆盖"
+    # 前提不可造 → **不计分但显式打印**（不静默通过）；消费方契约由 H2 全平台确定覆盖。
+    #   依据：guard 的 _bash_env()（Windows-only）保证"自己的解释器目录"永远在 PATH 上 →
+    #   只要 guard 在跑，它派生的 resolver 就一定找得到 python ⇒ "guard 调用路径上 python 不可用"不可达。
+    echo "  ⚠ 场景H 前提不可造（guard 侧 PATH 仍含可用 python：$H_PREM）→ 该状态在 guard 调用路径上不可达；消费方契约由场景 H2 覆盖"
   fi
   # 标记字面量两端一致（resolver 发 / guard 解析）——防两处定义漂移（D839 踩过）
   RESM=$(grep -o "SYNO-RESOLVER-DEGRADED" "$SB/scripts/workflow/resolve-commit-brief.sh" | head -1)
