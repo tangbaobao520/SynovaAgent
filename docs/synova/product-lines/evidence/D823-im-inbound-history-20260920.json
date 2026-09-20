@@ -1,0 +1,90 @@
+{
+  "task": "D823",
+  "title": "T-D6 im-inbound 调不存在的方法（IM 历史恢复静默空转）· 判据 C",
+  "record_type": "test",
+  "date": "2026-09-20",
+  "team": "批十四小队（win 并行）",
+  "owner": "coder-b",
+  "worktree": ".synova-wt-team14",
+  "branch": "team/win-batch14",
+  "baseline": "d527abcb（= origin/main@4f3bb21c + 派单件）",
+  "spec": ".claude/task-briefs/2026-09-20-D823-im-inbound-history.md",
+  "note": "memory/notes/implemented/2026-09-20-D823-im-inbound-history.md",
+  "decision": {
+    "ruling": "(a′) 会话级引擎复用（队长 2026-09-20 批准，附 6 条硬条件）；(b) 否决",
+    "why_not_a": "ConversationEngine 唯一 restore API fromState 实证对模型上下文无效（构造器按引用注入 messages @src/agent/conversation-engine.ts:444，fromState 赋值换数组 @:844 → toolLoop 引用脱钩）→ 供应商侧实测只收到 1 条 system，连本轮用户消息都进不去",
+    "why_not_b": "删除假动作后 IM 通道永久单轮 → 卡面主判据（第 2 轮含第 1 轮）永不成立"
+  },
+  "entry": "POST /api/im/feishu/webhook（src/routes/im.ts:19）→ handleInboundMessage（src/l1/im-inbound.ts）",
+  "tests": [
+    "tests/l1/im-inbound-history.test.ts（6 用例，穿真实入口；不 mock 管线/不替换 provider 模块/不在 src/** 加测试开关）"
+  ],
+  "commands": [
+    {
+      "id": "D823-1..6",
+      "cmd": "node_modules/.bin/vitest run tests/l1/im-inbound-history.test.ts",
+      "raw_output": "\n RUN  v4.1.8 /Users/wane/SynovaAgent/.synova-wt-team14\n\n ✓ tests/l1/im-inbound-history.test.ts (6 tests) 1749ms\n     ✓ D823-1 两轮上下文连续（第 2 轮模型上下文含第 1 轮）+ 消息真落库  474ms\n     ✓ D823-8 上界：注册表有界 + FIFO 逐出最旧（队长条件 1/2）  818ms\n\n Test Files  1 passed (1)\n      Tests  6 passed (6)\n   Duration  2.10s (transform 540ms, setup 0ms, import 154ms, tests 1.75s, environment 0ms)",
+      "verdict": "pass"
+    },
+    {
+      "id": "反向验收·缺陷态（D823-1）",
+      "cmd": "cp /tmp/d823-prefix.ts src/l1/im-inbound.ts && node_modules/.bin/vitest run tests/l1/im-inbound-history.test.ts -t \"D823-1\"",
+      "raw_output": "== 已置入**修复前**版本（缺陷态，5 处逃逸）==\n5\n---- 反向验收 · 原始输出（修复前，D823-1）----\n FAIL  tests/l1/im-inbound-history.test.ts > D823: IM 通道会话历史连续（穿真实 webhook 入口） > D823-1 两轮上下文连续（第 2 轮模型上下文含第 1 轮）+ 消息真落库\nAssertionError: expected 'sess_mu9qcxr3_ga3d' to be 'sess_mu9qcxh1_ichy' // Object.is equality\n\nExpected: \"sess_mu9qcxh1_ichy\"\nReceived: \"sess_mu9qcxr3_ga3d\"\n\n Test Files  1 failed (1)\n      Tests  1 failed | 5 skipped (6)\n   Duration  757ms",
+      "verdict": "red（预期）"
+    },
+    {
+      "id": "反向验收·缺陷态·模型上下文直证",
+      "cmd": "node_modules/.bin/tsx /tmp/d823-harness-probe.ts（穿同一真实 webhook 入口的独立探针）",
+      "raw_output": "r1 = {\"ok\":true,\"sessionId\":\"sess_mu9qd11t_gpzt\",\"degraded\":false}\nr2 = {\"ok\":true,\"sessionId\":\"sess_mu9qd147_unyw\",\"degraded\":false}\nprovider calls = 2 ok1= true ok2= true\ncall1 roles = [\"system\",\"user\"]\ncall2 roles = [\"system\",\"user\"]\ncall2 has ROUND1 = false\ncall2 has ROUND2 = true\nsessionId same = false sess_mu9qd11t_gpzt sess_mu9qd147_unyw",
+      "verdict": "red（预期）—— 缺陷态第 2 轮模型上下文不含第 1 轮，且两轮 sessionId 不同"
+    },
+    {
+      "id": "还原后全绿",
+      "cmd": "cp /tmp/d823-fixed-im-inbound.ts src/l1/im-inbound.ts && node_modules/.bin/vitest run tests/l1/im-inbound-history.test.ts",
+      "raw_output": "== 还原修复版 ==\n文件与修复版备份一致\n逃逸命中: 0  addToHistory 命中: 0\n---- 还原后全绿 · 原始输出（全文件 6 用例）----\n ✓ tests/l1/im-inbound-history.test.ts (6 tests) 1749ms\n      Tests  6 passed (6)",
+      "verdict": "pass"
+    },
+    {
+      "id": "类型安全（铁律 38 / CT-46）",
+      "cmd": "grep -nE \"as (any|never|unknown as)\" src/l1/im-inbound.ts ; grep -c addToHistory src/l1/im-inbound.ts ; grep -c getMessages src/l1/im-inbound.ts",
+      "raw_output": "（无输出 → exit 1，零命中）\naddToHistory 命中: 0\ngetMessages: 0\n（修复前对照：grep -cE \"as (any|never|unknown as)\" = 5；addToHistory 命中 1 @:195）",
+      "verdict": "pass"
+    },
+    {
+      "id": "tsc（本卡文件零新增错误）",
+      "cmd": "node_modules/.bin/tsc --noEmit | grep -E \"src/l1/im-inbound\\.ts|tests/l1/im-inbound-history\\.test\\.ts\"",
+      "raw_output": "（零命中）\ntotal errors: 28（全部为存量：extensions/sentinels/_extinct/**、src/connectors/ima.ts:143、src/server.ts:464-465 —— 与本卡无关）",
+      "verdict": "pass（新增 0）"
+    },
+    {
+      "id": "越界检查（队长条件 5）",
+      "cmd": "git status --porcelain -- src/agent/conversation-engine.ts src/store/ src/routes/ packages/",
+      "raw_output": "（本卡未改上述任何路径；git diff 仅含本卡写集 5 文件 + 本证据文件）",
+      "verdict": "pass"
+    }
+  ],
+  "acceptance_points_coverage": [
+    { "point": "经 IM 通道发两轮消息 → 第 2 轮模型上下文含第 1 轮", "status": "pass", "how": "D823-1 经 POST /api/im/feishu/webhook 两轮 → 真实 provider HTTP 请求体断言含第 1 轮 user + assistant（roles=[system,user,assistant,user]）" },
+    { "point": "无 as unknown as 逃逸（铁律 38 / CT-46）", "status": "pass", "how": "文件级 grep 零命中（修复前 5 处：:126 :127 :183 :189 :195）" },
+    { "point": "不留永远返回空的假恢复动作 / 或接上真实历史读取", "status": "pass", "how": "假恢复块整段删除；连续性由会话级引擎复用真实达成（D823-1 主判据）；跨重启边界显式 log 记账并上报 L2（不掩盖）" },
+    { "point": "五态定位", "status": "能跑未验证 → 健康（本卡范围内）", "how": "live=true（穿真实 HTTP 入口运行）；testedThroughEntry=true（D823-1..5 穿 webhook 真实入口）。注：客户侧验证未做（属产品级，本卡不宣称）" }
+  ],
+  "three_questions": {
+    "who_calls_it": "src/routes/im.ts:54（handleInboundMessage，生产 IM webhook 唯一调用点）；src/l1/im-inbound.ts:190 内部链式调用 generateAIReply",
+    "test_through_real_impl": "tests/l1/im-inbound-history.test.ts —— 真实 express 路由 + 真实 SessionStore(:memory:) + 真实 ConversationEngine + 真实 provider HTTP；无 provider 模块替换、无管线 mock（唯一替身为外部 LLM 端点与日志接收器）",
+    "what_breaks_if_deleted": "IM 通道回到单轮：第 2 轮模型上下文丢失第 1 轮（实测 call2 has ROUND1=false / roles=[system,user]），且每轮新建会话（sessionId 两轮不同）→ 用户可见的『上下文失忆』；先前的假恢复块被删除后不再有静默 no-op 掩盖该症状"
+  },
+  "guardrails": {
+    "no_test_only_switch_in_src": true,
+    "no_mock_of_pipeline": true,
+    "no_write_to_scripts_audit_or_control_tower": true,
+    "no_git_stash_no_verify_force_push": true,
+    "audit_claim": "本文件不含任何『审计通过/审计合格』结论；队内结论仅限『可提请独立审计』/『退回（附理由）』"
+  },
+  "leftovers": [
+    "L2 缺陷（P0，需另派卡）：ConversationEngine.fromState 恢复后模型上下文丢失（src/agent/conversation-engine.ts:444 引用注入 vs :844 赋值换数组）——影响 src/routes/conversations.ts:233 进程重启恢复路径",
+    "src/routes/im.ts:54 存量 as unknown as（非本卡写集）",
+    "src/store/session-store.ts:332-341 listSessions 丢弃 user_id 列（A 写集，禁越界）→ 跨重启会话归位在 L5 层不可表达",
+    "跨重启 IM 历史恢复未实现（依赖 L2 缺陷修复）；当前边界已在代码内 log.info 显式记录"
+  ]
+}

@@ -1,23 +1,45 @@
 {
   "task_id": "D823",
   "title": "T-D6 im-inbound 调不存在的方法（IM 历史恢复静默空转）",
-  "status": "claimed",
+  "status": "impl_done",
   "risk": "medium",
-  "spec": "派单即规格：docs/synova/coordination/批十二-计划与派单-20260918.md（含 CTO 实测位置与验收标准）",
+  "spec": ".claude/task-briefs/2026-09-20-D823-im-inbound-history.md（批十四小队 B 规格：含 (a)/(b)/(a′) 判定 + 原始实测输出 + 写集冲突清单；上游派单 docs/synova/coordination/批十二-计划与派单-20260918.md §2.2）",
   "write_set": [
     "src/l1/im-inbound.ts",
     "tests/l1/im-inbound-history.test.ts",
     "task-state/D823.json",
-    ".claude/task-briefs/2026-09-18-D823-.md",
-    "memory/notes/proposed/2026-09-18-D823-.md"
+    ".claude/task-briefs/2026-09-20-D823-im-inbound-history.md",
+    "memory/notes/implemented/2026-09-20-D823-im-inbound-history.md",
+    "docs/synova/product-lines/evidence/D823-im-inbound-history-20260920.json"
   ],
-  "impl": null,
+  "impl": {
+    "sha": null,
+    "by": "coder-b(批十四小队)",
+    "at": "2026-09-20",
+    "decision": "(a′) 会话级引擎复用（队长 2026-09-20 批，附 6 条硬条件；(b) 否决）",
+    "files": [
+      "src/l1/im-inbound.ts（删 :191-197 假恢复块；新增 IM 会话注册表 userId→{sessionId,engine,chain,lastSeen}，IM_SESSION_MAX=200 + FIFO 逐出 + 清理器同步回收；generateAIReply 命中即复用引擎；清 5 处类型逃逸 :126/:127/:183/:189/:195）",
+      "tests/l1/im-inbound-history.test.ts（新建，6 用例穿真实 webhook 入口：两轮连续+真落库/不同发送者不串/store.db 缺失降级非静默/同用户串行跨用户不阻塞/注册表上界 201 用户 FIFO 逐出/清理后不复用已删会话）",
+      "docs/synova/product-lines/evidence/D823-im-inbound-history-20260920.json（M5 证据：命令 + 原始输出 + 三问 + 五态）",
+      ".claude/task-briefs/2026-09-20-D823-im-inbound-history.md（规格 + 队长 6 条硬条件落点）",
+      "memory/notes/implemented/2026-09-20-D823-im-inbound-history.md（铁律 49 Note）"
+    ],
+    "evidence": {
+      "green": "node_modules/.bin/vitest run tests/l1/im-inbound-history.test.ts → 6 passed (6)，Duration 2.10s",
+      "red_reverse": "置入修复前版本 → D823-1 AssertionError（sessionId 两轮不同）+ 探针 call2 has ROUND1=false / roles=[system,user]；还原后 6 passed",
+      "type_safety": "grep -nE \"as (any|never|unknown as)\" src/l1/im-inbound.ts → 零命中（修复前 5 处）；grep -c addToHistory → 0",
+      "tsc": "本卡两文件零新增错误（存量 28 error 与本卡无关）"
+    }
+  },
   "audit": null,
   "fix_task_id": null,
-  "updated_at": "2026-09-18",
-  "updated_by": "synova-cto",
+  "updated_at": "2026-09-20",
+  "updated_by": "coder-b(批十四小队)",
   "domain": "win",
-  "owner": "mac-coding",
+  "owner": "coder-b(批十四小队)",
+  "team": "批十四小队",
+  "worktree": ".synova-wt-team14",
+  "branch": "team/win-batch14",
   "milestone": "M1 产品可用",
   "depends_on": [],
   "blocked": null,
@@ -28,9 +50,9 @@
     "若确定不恢复该意图 → 显式删除该『恢复』动作，不留假动作（不允许保留一个永远返回空的调用）",
     "验收按 docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md（禁 grep 命中；三问自查逐条作答；报告含命令+原始输出+五态定位）"
   ],
-  "next": "见派单文档 §A 对应小节",
-  "note": "CTO 核实：src/l1/im-inbound.ts:195 调用 addToHistory —— 全仓 grep 仅此一处，且写作手法是先 as unknown as 再可选链 → IM 通道『恢复会话历史』是静默空转。判据 C。工作量 1–3 天。",
+  "next": "已 impl_done → 队内自验（verifier）独立复核 → K3 独立审计；遗留 4 项见 evidence JSON §leftovers（L2 fromState 缺陷需另派卡）",
+  "note": "CTO 核实：src/l1/im-inbound.ts:195 调用 addToHistory —— 全仓 grep 仅此一处，且写作手法是先 as unknown as 再可选链 → IM 通道『恢复会话历史』是静默空转。判据 C。工作量 1–3 天。 【B 补】实现见 impl.evidence：会话连续性改由 L1 会话注册表 + 会话级引擎复用承载；跨重启历史恢复受阻于 L2（fromState 数组引用脱钩，实证），已上报挂账，不掩盖、不留假动作。",
   "executor": "mac-coding",
   "delegation": "Mac 代行 win（D773 规约；创始人 2026-09-18 重申『涉及 win 线的一并先给 Mac 执行』）",
-  "acceptance_level": "代码级可验（Mac 必须验）；若涉及 Windows 实机行为 → 挂账，Win 回归后补验，禁止声称"
+  "acceptance_level": "代码级可验（Mac 已验：6 用例穿真实 webhook 入口 + 反向验收两次原始输出 + 本卡文件类型逃逸零命中 + tsc 零新增）；若涉及 Windows 实机行为 → 挂账，Win 回归后补验，禁止声称"
 }
