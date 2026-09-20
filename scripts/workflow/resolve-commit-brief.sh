@@ -42,7 +42,10 @@ for _g in "$(command -v git 2>/dev/null || true)" /usr/bin/git /usr/local/bin/gi
   [ -n "$_g" ] && [ -x "$_g" ] || continue
   if _git_clean "$_g" --version 2>/dev/null | grep -qE '^git version [0-9]'; then GITBIN="$_g"; break; fi
 done
-[ -n "$GITBIN" ] || echo "⚠ D853: git 不可用或未通过试运行校验 → 仓库事实读不到（按无候选处理，非静默）" >&2
+# D853: 链断必须让**下游**（staging_guard）能 fail-closed —— 只写人读告警不够（下游不解析它）。
+#   契约: SYNO-RESOLVER-DEGRADED\t<原因>（与 staging_guard.py 的 RESOLVER_DEGRADED_MARK 同字面量，
+#   改一处必改两处；staging_guard.test.sh 有"链断 → block"夹具守着）。
+[ -n "$GITBIN" ] || printf 'SYNO-RESOLVER-DEGRADED\tgit 不可用或未通过试运行校验\n' >&2
 ROOT="$([ -n "$GITBIN" ] && _git_clean "$GITBIN" rev-parse --show-toplevel 2>/dev/null || pwd)"
 # D853-③（喂目标运行时的路径必须是它的命名空间 —— 两层都堵）: Windows 上上面这行给 MSYS 形（/d/a/...）。
 #   MSYS 只在 **argv 层**做转换，不转换：① 内嵌在 python -c 字符串里的路径（native python `os.listdir`
@@ -80,7 +83,7 @@ PYBIN=""
 for _c in python3 python py; do
   if command -v "$_c" >/dev/null 2>&1 && "$_c" -c "import sys" >/dev/null 2>&1; then PYBIN="$_c"; break; fi
 done
-[ -n "$PYBIN" ] || echo "⚠ D853: python3/python/py 均不可用（试运行未过）→ 认领候选为空（按无认领处理，非静默）" >&2
+[ -n "$PYBIN" ] || printf 'SYNO-RESOLVER-DEGRADED\tpython3/python/py 试运行均不可用\n' >&2
 
 # ── current-brief (当日有效) ──
 CUR=""

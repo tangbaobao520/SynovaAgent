@@ -46,6 +46,31 @@
   `staging_guard.test.sh` PASS=33（DIAG 压短 + PROBE 增 `pyrun`，断言强度不变）。
 - 唯一验收判据：CI `Control Tower Gate Tests` windows-latest + ubuntu-latest 双绿（队长并枝触发）。
 
+## 第二轮（CTO 授权扩写集，2026-09-20）：CI 诊断 + 链断 fail-closed
+
+- **Windows 真病因**（CI 注解原文，队长代读）：`DIAG2 PROBE_RC=1 PY=NONE:NONE OUT=Windows Subsystem for Linux
+  has no installed distributions` → 子链里起来的 **不是 Git Bash，而是 WSL 桩** `C:\Windows\System32\bash.exe`
+  → resolver 根本没执行 → 认领判定整条 fail-open。我第一轮的 PYBIN 试运行修复**生效且必要**（`PY=NONE:NONE`
+  如实报出"探到但不可用"），但只把症状暴露出来：**病因是"选错 bash"**。
+- 处置（均在 CTO 授权写集内）：
+  ① `staging_guard.py` 新增 `_find_bash()`/`_bash_env()`（windows-compat 模式 1）：SYNO_BASH → Git Bash 安装位
+     → PATH 上的 bash **逐个试运行**（`-c "echo SYNO_BASH_OK"`）→ 全败**显式降级**；调用 resolver 时传
+     `env=_bash_env(bash)`（MSYS PATH 前置 Git 的 usr/bin）。
+  ② `staging_guard.py` 新增 `parse_resolver_degraded()` + `_fail_closed()`：resolver 自报链断
+     （`SYNO-RESOLVER-DEGRADED`）→ **block + degraded + 点名**（拿不到认领列表 ≠ 没有认领）。
+     与既有"registry 缺失 → fail-open pass"方向相反——认领维度是保护维度，与 release 维度同哲学（fail-closed）。
+  ③ `resolve-commit-brief.sh` 在 python/git 不可用时发 `SYNO-RESOLVER-DEGRADED\t<原因>`
+     （与 guard 的 `RESOLVER_DEGRADED_MARK` **同字面量**；夹具场景 H 有双端一致性断言守漂移）。
+  ④ `tests/control-tower/staging_guard.test.sh` 新增场景 H（链断 → exit 1/block/degraded + 双端标记一致）：
+     本树 PASS=38 FAIL=0；**基线（5b7d0326 + 新夹具）红 3 断言**（实际 pass/exit 0）= 判别性成立。
+- **ubuntu 回归定位手段**（`synova-commit.test.sh` pass=16 fail=1，CI-only）：本地三路复现均 17/0
+  （CI 环境变量组 / detached HEAD / ci.yml 全 43 项同 shell 串跑）→ 按 CTO 授权在该夹具**失败时**把
+  `DIAG-FAIL <失败断言名>` + `DIAG-ENV bash/py/git/rc` 打进**末尾 8 行**（CI 注解唯一可见区；❌ 行原本被
+  其后的 ✅⑥⑦⑧ 挤出可见区）。诊断已自检（注入失败 → 末尾两行如期出现；正常态零新增输出）。
+- 顺带修掉一个真实缺陷：`staging_guard.py` **从未 import os**，我第一版 `_find_bash` 因此 NameError，
+  被 `check_staging` 外层 `except Exception` 吞成 **fail-open pass**（夹具当场全场景 ec0/pass）——
+  这正是本卡要治的那类静默放行；已补 `import os` 并复跑全绿。
+
 ## 残余（显式登记，未静默放过）
 
 - 假 git 若同时①输出合法 `git version N.`②不在临时目录③不在被判定的仓库内，仍可能被采信

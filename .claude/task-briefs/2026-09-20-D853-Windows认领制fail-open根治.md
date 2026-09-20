@@ -90,12 +90,21 @@ git commit → synova-commit → staging_guard.py --session-id <D#> --staged <fi
   校验失败 → **拒绝作为证据**（fail-closed + 显式 degraded），绝不静默。
 - `tests/control-tower/staging_guard.test.sh` — DIAG 两行压到 ≤75 字符（关键字段前置）+
   `PROBE_ENV` 增加 `pyrun=<python3 试运行 rc>`（判别"找到但跑不动"）。
+- `scripts/control-tower/staging_guard.py` — **CTO 授权扩写集**（仅两处）：① `_find_bash()`/`_bash_env()`
+  自包含 bash 选择（SYNO_BASH → Git Bash 安装位 → PATH + **试运行校验**；Windows 上裸 `bash` 会命中
+  WSL 桩 `C:\Windows\System32\bash.exe`，实测 5 场景全 ec0/pass）；② `parse_resolver_degraded()` +
+  `_fail_closed()`：resolver 自报 python/git 不可用（`SYNO-RESOLVER-DEGRADED`）→ **block + degraded + 点名**
+  （拿不到认领列表 ≠ 没有认领）。
+- `tests/control-tower/synova-commit.test.sh` — **CTO 授权**：失败断言名 + 环境事实（bash/py/git/rc）进**末尾 8 行**
+  （CI 注解唯一可见区；32cc6a02 实测 ubuntu 红但注解被 ✅⑥⑦⑧ 挤掉 ❌ 行，无法定位）。
 - `tests/control-tower/claim_release.test.sh` — 追加两组回归夹具：
   ① stderr 编码（`PYTHONIOENCODING=cp1252` 下中文必须仍可断言）② PATH 伪造 git（须 fail-closed + 可见降级）。
 - `task-state/D853.json`、本 brief、`memory/notes/implemented/2026-09-20-D853-*.md`。
 
 不做什么（含文件路径）：
-- 不改 `scripts/control-tower/staging_guard.py`（`:172-173` 空 claimed 跳过认领制的结构性 fail-open、`:189-194` 不传播 degraded —— 均已在队长另立卡里，**不碰**）
+- 不改 `scripts/control-tower/staging_guard.py` 的**释放维度**与 registry 判定段（`:189-194` 不传播 degraded、registry fail-open 语义保持原样）
+- 不改 `scripts/control-tower/synova-commit`（本体）
+- 不改 `scripts/control-tower/write_lock.py`（回收竞态归另卡）
 - 不改 `tests/control-tower/write_lock.py` / `scripts/control-tower/write_lock.py`（自验发现的回收竞态归另卡）
 - 不改 `tests/control-tower/staging_guard.test.sh` 的**断言强度**（只压 DIAG 打印 + 加 PROBE 事实字段）
 - 不改 `scripts/control-tower/session_registry.py`
@@ -139,6 +148,16 @@ git commit → synova-commit → staging_guard.py --session-id <D#> --staged <fi
 | `PATH` 里塞假 `git` | 假 git 可回吐任意事实（此处用 `ls-files`/`rev-parse`） | 解析绝对路径 + 试运行校验 `--version` 形如 `git version N.` | 能让假 git 输出合法 version 串的本地进程仍可骗过（无外部信任锚）→ 已登记；本地进程本就等同任意代码执行 |
 | `PYTHONIOENCODING`/控制台 cp1252 | stderr 中文被 backslashreplace 吃 → 断言恒红 | stdout+stderr 双 reconfigure UTF-8 | 无 |
 
+## 第二轮追加（CTO 授权，2026-09-20）：CI 诊断 + 链断 fail-closed
+1. **ubuntu 回归定位**（`synova-commit.test.sh` pass=16 fail=1，本地不可复现：CI 环境变量、detached HEAD、
+   ci.yml 全清单同 shell 串跑三种尝试均 17/0）→ 按 CTO 授权把**失败断言名 + 关键环境事实**打进末尾 8 行
+   （CI 注解只带 `tail -8`，而 ❌ 行被其后的 ✅⑥⑦⑧ 挤出可见区）。
+2. **Windows 真病因**（CI 注解原文：`OUT=Windows Subsystem for Linux has no installed distributions`）：
+   子链里起来的不是 Git Bash 而是 **WSL 桩 `C:\Windows\System32\bash.exe`** → resolver 没执行 →
+   `PROBE_RC=1` 零输出 → 认领判定整条 fail-open。处置：guard 侧自包含 bash 选择（试运行校验）+ 链断 fail-closed。
+3. **契约新增**：`SYNO-RESOLVER-DEGRADED\t<原因>`（resolver 发、guard 解析；**同字面量两端**，
+   夹具场景 H 守双端一致）；语义 = 认领判定整条不可用 → block（不是 pass）。
+
 ## 架构层: 基础设施
 控制塔门禁层（`scripts/workflow/**` + `scripts/control-tower/**` + `tests/control-tower/**`），不进 L1-L5，不 import `src/**`。
 
@@ -157,9 +176,9 @@ git commit → synova-commit → staging_guard.py --session-id <D#> --staged <fi
 |---|---|
 | .claude/task-briefs/2026-09-20-D853-Windows认领制fail-open根治.md | task |
 | memory/notes/implemented/2026-09-20-D853-windows-claim-gate-failopen.md | task |
-| scripts/control-tower/claim_release.py | task |
+| scripts/control-tower/staging_guard.py | task |
 | scripts/workflow/resolve-commit-brief.sh | task |
 | task-state/D853.json | task |
-| tests/control-tower/claim_release.test.sh | task |
 | tests/control-tower/staging_guard.test.sh | task |
+| tests/control-tower/synova-commit.test.sh | task |
 

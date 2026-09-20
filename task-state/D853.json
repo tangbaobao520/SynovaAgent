@@ -9,7 +9,9 @@
     "scripts/control-tower/claim_release.py",
     "tests/control-tower/staging_guard.test.sh",
     "tests/control-tower/claim_release.test.sh",
-    "task-state/D853.json"
+    "task-state/D853.json",
+    "scripts/control-tower/staging_guard.py",
+    "tests/control-tower/synova-commit.test.sh"
   ],
   "impl": {
     "branch": "gate/d839-win-chain",
@@ -17,10 +19,12 @@
       "scripts/workflow/resolve-commit-brief.sh",
       "scripts/control-tower/claim_release.py",
       "tests/control-tower/staging_guard.test.sh",
-      "tests/control-tower/claim_release.test.sh"
+      "tests/control-tower/claim_release.test.sh",
+      "scripts/control-tower/staging_guard.py",
+      "tests/control-tower/synova-commit.test.sh"
     ],
-    "note": "A 试运行探测（照抄 verify-parallel.sh 口径）+ 全候选失败显式告警；B stdout+stderr 双 UTF-8；C ROOT 统一 cygpath -m 混合形（bash+native python 同实体）；D resolver 剥 GIT_* + git 试运行校验，claim_release 加 git_bin()/_clean_env()（假 git → 拒绝作证据）；DIAG 压至 ≤68 字符 + PROBE 增 pyrun",
-    "verification": "claim_release PASS=33 FAIL=0（+组15/16）；staging_guard PASS=33 FAIL=0；先红原如：坏 shim→rc=1 零输出、cp1252→\\uXXXX、cygpath 别名判别、假 git→采信 FAKE-TRACKED-FILE.md",
+    "note": "A 试运行探测（照抄 verify-parallel.sh 口径）+ 全候选失败显式告警；B stdout+stderr 双 UTF-8；C ROOT 统一 cygpath -m 混合形（bash+native python 同实体）；D resolver 剥 GIT_* + git 试运行校验，claim_release 加 git_bin()/_clean_env()（假 git → 拒绝作证据）；DIAG 压至 ≤68 字符 + PROBE 增 pyrun；第二轮（CTO 授权扩写集）：staging_guard 自包含 bash 选择（试运行，Windows WSL 桩）+ 认领判定链断 fail-closed（SYNO-RESOLVER-DEGRADED）+ synova-commit.test.sh 失败诊断进末尾 8 行",
+    "verification": "claim_release PASS=33 FAIL=0（+组15/16）；staging_guard PASS=33 FAIL=0；先红原如：坏 shim→rc=1 零输出、cp1252→\\uXXXX、cygpath 别名判别、假 git→采信 FAKE-TRACKED-FILE.md；staging_guard PASS=38 FAIL=0（新场景 H 在基线红 3 断言）、claim_release 33/0、synova-commit 17/0、test-staging-guard.py OK",
     "audit": "可提请独立审计（K3 队外）"
   },
   "audit": null,
