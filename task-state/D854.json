@@ -13,15 +13,19 @@
   ],
   "impl": {
     "scope": "CT-70 部分（派单 §A）；本卡的 D811 报告路径 / 快照交叉登记项不在该派单写集内，仍待处理",
-    "pr": null,
-    "branch": "fix/ct70-project-tests-ci-v2",
-    "commit": null,
+    "pr": 682,
+    "branch": "fix/d854-ct70-project-tests-ci",
+    "commit": "6a406246",
     "evidence": [
-      "ci.yml（control-tower-tests job）追加 tests/project/*.test.sh glob 段：24 行新增 / 0 删除，既有显式清单不重排（git diff --numstat 可核）",
+      "ci.yml（control-tower-tests job）追加 tests/project/*.test.sh glob 段：27 行新增 / 0 删除，既有显式清单零改动未重排（git diff --numstat 可核）；命中行 275-297（glob 在 284，fail-closed 在 286）",
       "glob 零命中 fail-closed：目录被删/改名 → ::error + FAIL=1（不静默跳过，M1 / 铁律 11）",
       "CT-67 折入（同域 tests/project）：gen-project-board.test.sh 组⑥ 两条 live 常量（backlog_points=36 / v1_passed=22）→ 不变量断言（非负整数 / 1 ≤ v1_passed ≤ v1_total）；实测现读数 46 / 27",
       "本地自验：bash tests/project/gen-project-board.test.sh → PASS=94 FAIL=0；bash tests/project/pr-queue-scan.test.sh → PASS=46 FAIL=0",
-      "SYNO_CI=1 SYNO_DIFF_BASE=origin/main bash scripts/pre-commit-check.sh → 全部 13 组通过"
+      "SYNO_CI=1 SYNO_DIFF_BASE=origin/main bash scripts/pre-commit-check.sh → 全部 13 组通过",
+      "【红证】run 35516548497 / job 106093359089 Control Tower Gate Tests (ubuntu-latest) → failure，日志 `FAIL: tests/project/gen-project-board.test.sh` + `PASS=94 FAIL=1`（注入 b7cda35e 的一条必然失败断言；第二支测试仍继续执行）",
+      "【绿证】run 35517647353 → success（12/12 job）；job 106096175429 (ubuntu) 与 106096175469 (windows) 日志均出现 `── tests/project/gen-project-board.test.sh` / `── tests/project/pr-queue-scan.test.sh`",
+      "【接线首轮暴露并修复】windows 腿精确 2 条失败（产物路径分隔符：gen-project-board.py rel_to 反斜杠）→ 断言改 [\\\\/]+（语义不变）+ 反斜杠显式告警；gen-project-board.py 属 D848/D850 写集，本卡不碰 → 遗留登记",
+      "【诊断改进】新增段失败分支补 cat /tmp/ct-out-project.log（D563/D564 诊断黑洞同型：::error 注解 450 字符上限丢 ❌ 行）"
     ]
   },
   "audit": null,
