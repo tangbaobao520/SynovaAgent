@@ -1,0 +1,11 @@
+{
+  "task_id": "D769",
+  "title": "DSH 借鉴卡 B-20：速览族六项小缺口（截断披露/防呆/擦除/时间上下文/FTS5/检查点）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "alloc-task-id"
+}

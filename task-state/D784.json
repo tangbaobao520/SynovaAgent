@@ -1,0 +1,11 @@
+{
+  "task_id": "D784",
+  "title": "审计侧 3 条免疫细胞落位（dsh-audit-draft persona → install，创始人过措辞）",
+  "status": "claimed",
+  "spec": null,
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-15",
+  "updated_by": "alloc-task-id"
+}
