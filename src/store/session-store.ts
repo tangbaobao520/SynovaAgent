@@ -274,13 +274,31 @@ export class SessionStore {
     // M1-Slice2: 迁移旧数据库 (添加 user_id 列，幂等)
     try { this.db.exec('ALTER TABLE agent_sessions ADD COLUMN user_id TEXT'); } catch { log.debug('user_id 列已存在 — 跳过迁移'); }
 
-    // FTS5 同步触发器 (幂等——触发器已存在时报错忽略)
+    // ═══ FTS5 同步触发器 ═══
+    // D820-FTS（**卡外阻塞缺陷，经队长 2026-09-20 授权折入本批**，单独 commit）:
+    //   旧实现的 AFTER DELETE 触发器用了 **contentless 专用** 的 ('delete', ...) 命令，而本表是
+    //   普通 FTS5 表（:221-225，无 content=''）→ SQLite 3.53 物理拒绝 → 任何
+    //   `DELETE FROM agent_messages` 抛 "SQL logic error" → deleteSession 全路径失败
+    //   （DELETE /api/sessions/:id → 500），且 FTS 索引里残留已"删除"消息的**全文**（隐私面）。
+    //   修法（不动列定义、不改 contentless —— snippet() 能力必须保持，D826 波2 依赖）:
+    //     插入显式落 rowid ≡ agent_messages.id；删除改普通 DELETE ... WHERE rowid = old.id。
+    const ftsTriggerRows = this.db.prepare(
+      "SELECT name, sql FROM sqlite_master WHERE type='trigger' AND name IN ('agent_msg_fts_insert','agent_msg_fts_delete')",
+    ).all() as Array<{ name: string; sql: string | null }>;
+    const hasLegacyDeleteTrigger = ftsTriggerRows.some(r => (r.sql ?? '').includes("'delete'"));
+    const hasLegacyInsertTrigger = ftsTriggerRows.some(r => r.name === 'agent_msg_fts_insert' && !(r.sql ?? '').includes('rowid'));
+    const needsFtsTriggerRepair = hasLegacyDeleteTrigger || hasLegacyInsertTrigger;
+    if (needsFtsTriggerRepair) {
+      log.warn({ hasLegacyDeleteTrigger, hasLegacyInsertTrigger },
+        'D820-FTS: 检出失效的 FTS 同步触发器 — 重建（旧库迁移路径）');
+      this.db.exec('DROP TRIGGER IF EXISTS agent_msg_fts_insert; DROP TRIGGER IF EXISTS agent_msg_fts_delete;');
+    }
     this.db.exec(`
       CREATE TRIGGER IF NOT EXISTS agent_msg_fts_insert AFTER INSERT ON agent_messages BEGIN
-        INSERT INTO agent_messages_fts(session_id, content) VALUES (new.session_id, new.content);
+        INSERT INTO agent_messages_fts(rowid, session_id, content) VALUES (new.id, new.session_id, new.content);
       END;
       CREATE TRIGGER IF NOT EXISTS agent_msg_fts_delete AFTER DELETE ON agent_messages BEGIN
-        INSERT INTO agent_messages_fts(agent_messages_fts, session_id, content) VALUES ('delete', old.session_id, old.content);
+        DELETE FROM agent_messages_fts WHERE rowid = old.id;
       END;
     `);
   }
@@ -303,6 +321,17 @@ export class SessionStore {
       stateJson: row.state_json as string | null, createdAt: row.created_at as string, updatedAt: row.updated_at as string,
     };
   }
+    if (needsFtsTriggerRepair) {
+      // 一次性索引对齐（仅旧库、仅本分支一次；新库不跑）：旧插入触发器未显式落 rowid，
+      // FTS rowid 可能与 agent_messages.id 漂移 → 按 rowid 删会漏（残留消息全文）。
+      // 写放大操作，故 log 出来（可观测，铁律 24/31 精神）。
+      const messagesBefore = Number((this.db.prepare('SELECT COUNT(*) AS c FROM agent_messages').get() as { c: number }).c);
+      const ftsRowsBefore = Number((this.db.prepare('SELECT COUNT(*) AS c FROM agent_messages_fts').get() as { c: number }).c);
+      this.db.exec('DELETE FROM agent_messages_fts');
+      this.db.exec('INSERT INTO agent_messages_fts(rowid, session_id, content) SELECT id, session_id, content FROM agent_messages');
+      log.warn({ messages: messagesBefore, ftsRowsBefore },
+        'D820-FTS: FTS 索引按 agent_messages.id 全量重建完成（对齐 rowid + 清掉已删消息的残留索引）');
+    }
 
   updateSession(id: string, updates: { phase?: number }): void {
     const now = new Date().toISOString();
