@@ -1,0 +1,59 @@
+# gap-line-mapping.yaml — 11 项 DSH 缺口归线登记
+#
+# 依据: 创始人 2026-09-19 裁定「归线不新开」（作为已有线的验收点补强）
+# 上游: docs/authority/产品完成度定义与推进总纲-20260918.md §2.1
+# 语义: 验收点**逐条待起草 → 创始人确认 → 登记进 product-lines.yaml**；未登记完 = 不得计分。
+# 维护: CTO 起草；改本表须注明裁定来源与日期。
+# 注: 与 product-lines.yaml 分离——看板派生器的自研 YAML 子集解析器不支持行内映射（{...}），
+#     2026-09-19 实测：放进 product-lines.yaml 会导致解析 degraded（backlog_points=null）。
+
+version: 1
+owner: synova-cto
+ruled_by: "创始人 2026-09-19"
+updated_at: "2026-09-19"
+
+mapping:
+  - gap: "遥测 / OTel"
+    line: 22
+    way: "3-自建（走 OTel 标准）"
+    note: "DSH 的不是可观测性层（默认关闭的日志外发管道）；建议点：用量可按客户/时段统计并导出"
+  - gap: "会话统计（用量）"
+    line: 22
+    way: "1-范式复用"
+    note: "dsh-session-stats 字段口径；注意两处零接线：agent_metrics 零写入 + checkpoint() 零消费者"
+  - gap: "会话搜索（FTS5）"
+    line: 18
+    way: "1-范式复用"
+    note: "建议点：能按关键词/时间检索历史诊断结论；含 search() 缺 org_id（D826）"
+  - gap: "超长输出 / spill"
+    line: 4
+    way: "1-范式复用 seam + 3-自建后端"
+    note: "与 tool-result-pruner 的先后顺序须先冻结；两个 cap 数字待产品决定"
+  - gap: "凭据管理"
+    line: 4
+    way: "1-范式复用 seam + 3-自建后端"
+    note: "dsh-credentials-local 明文落盘，明确否决；建议点：数据源凭据加密存储并可轮换"
+  - gap: "文档格式转换"
+    line: 4
+    way: "3-自建（B 路线：客户侧转 PDF）"
+    note: "libreoffice-kit 不采用（许可义务依赖不可验证可达的仓库 + Linux 无原生包）"
+  - gap: "联网检索"
+    line: 4
+    way: "待定"
+    note: "研究院 T9 已立项，独立推进"
+  - gap: "设置运行时修改"
+    line: 25
+    way: "1-范式复用"
+    note: "建议点：改配置不重启生效（live/restart 分类声明）"
+  - gap: "Webhook / 事件订阅"
+    line: 8
+    way: "5a 入站 1-范式复用 / 5b 出站 3-自建"
+    note: "DSH 的 webhook 是入站，我方需求偏出站；建议点：告警可投递到客户自有系统"
+  - gap: "时间上下文"
+    line: 3
+    way: "7a 1-范式复用 / 7b 数据时点 3-自建"
+    note: "建议点：报告标注数据时点与时间窗"
+  - gap: "可解释性 / 轨迹"
+    line: 3
+    way: "1-范式复用"
+    note: "强前置：事件流缺 turn/step 边界；建议点：结论可追溯到证据链与推理过程"

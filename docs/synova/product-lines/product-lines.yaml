@@ -52,9 +52,8 @@
 
 version: 1.0
 locked: "2026-08-16 创始人确认（PHASE0-LINE-REVIEW v3）"
-total_lines: 26
+total_lines: 28
 v2_lines: ["federated-evolution"]
-
 lines:
   # ────────────────────────── 01 桌面端 ──────────────────────────
   - id: 1
@@ -1186,6 +1185,78 @@ lines:
         evidence: ["k3:MCP集成复核"]
         status: uncommitted
         note: ""
+
+  # ────────────────────────── 27 测量与参数标定（创始人 2026-09-19 批准新增） ──────────────────────────
+  - id: 27
+    name: "测量与参数标定"
+    value: "诊断用的每个测量器都有标定过的参数，并且跨客户收敛——越用越准"
+    weight: 1.0
+    baseline_pct: 0
+    baseline_note: "护城河所在；26 线全文 标定/transfer_function/因果 全 0 命中（研究员实测）"
+    modules: ["src/l4/temporal-baseline.ts", "extensions/sentinels/", "docs/synova/product-lines/"]
+    done_definition: "老板能在报告里看到：这条结论背后的参数是被验证过的、并且在同类企业里收敛——不是拍脑袋的阈值"
+    acceptance_points:
+      - id: "27-1"
+        desc: "指标时序真的落盘：跑一次真实哨兵 → metric_series 新增 ≥1 行且 value 非空、org_id 正确"
+        evidence: ["scenario:GS-sentinel-run"]
+        status: uncommitted
+        note: "P0-1 指标时序存储（DSH 全家族无时序能力 → ③自建；只借鉴写链纪律 + 原子发布协议）"
+      - id: "27-2"
+        desc: "趋势真的接线：注入 3 期历史 → 哨兵 finding 的 payload 含 trend 且方向与注入数据一致"
+        evidence: ["test:temporal-baseline"]
+        status: uncommitted
+        note: "computeTemporalBaseline 现为零生产调用（D828 修）"
+      - id: "27-3"
+        desc: "参数标定表存在且有来源：每个在生产被引用的测量器，其参数有标定值 + 标定依据 + 日期"
+        evidence: ["test:param-calibration"]
+        status: uncommitted
+        note: "依赖 27-1（没有历史测量值就无数据可标）"
+      - id: "27-4"
+        desc: "跨客户收敛：≥2 个客户的同类测量值进入同一收敛过程，收敛结果可导出"
+        evidence: ["k3:param-convergence-review"]
+        status: uncommitted
+        note: "护城河判据；需≥2 客户数据"
+      - id: "27-5"
+        desc: "因果边可用：42 条因果边的 transfer_function 不再是待定，且运行时被真实计算"
+        evidence: ["test:causal-edge-transfer"]
+        status: uncommitted
+        note: "E5 报 42 边 transfer_function 全 TBD、运行时零计算"
+
+  # ────────────────────────── 28 多客户配置与租户分层（创始人 2026-09-19 批准新增） ──────────────────────────
+  - id: 28
+    name: "多客户配置与租户分层"
+    value: "同一套部署能安全地服务多家企业：配置分层、数据隔离、凭据分区、用量可分辨"
+    weight: 1.0
+    baseline_pct: 0
+    baseline_note: "生意前提；26 线全文 多租户/多客户/客户配置 全 0 命中；customer-config/ = 0 文件（研究员实测）"
+    modules: ["src/config/", "src/middleware/rbac.ts", "src/store/session-store.ts", "docs/synova/product-lines/"]
+    done_definition: "第 2 家企业接入时不需要改代码：配置按客户分层加载、数据互不可见、凭据各自加密存放、用量可区分到客户"
+    acceptance_points:
+      - id: "28-1"
+        desc: "客户配置包可加载并生效：为 org-A 放一份配置 → 不重启，该 org 的请求按新配置行为"
+        evidence: ["scenario:GS-customer-config"]
+        status: uncommitted
+        note: "config-layers.ts 已有四层叠加 + provenance（范式复用 DSH settings 语义）"
+      - id: "28-2"
+        desc: "数据隔离：以 org-A 身份查 org-B 的数据（搜索/报告/指标）→ 返回空，且不泄漏『存在但无权』"
+        evidence: ["test:tenant-isolation"]
+        status: uncommitted
+        note: "含 search() 缺 org_id 过滤（D826，锚点=第 2 个客户接入前）+ 指标/报告面"
+      - id: "28-3"
+        desc: "凭据分区：两 org 各存一份凭据 → 各自出站只带自己的；GET 不回显任何明文/末 4 位"
+        evidence: ["test:credential-partition"]
+        status: uncommitted
+        note: "现生产路由走内存 Map + 明文 + 末 4 位回显（CTO 已核 server.ts:394 确实挂载）"
+      - id: "28-4"
+        desc: "用量可分辨：按客户/时段统计 token 用量并可导出"
+        evidence: ["test:usage-by-tenant"]
+        status: uncommitted
+        note: "依赖会话统计两处零接线修好（D827）"
+      - id: "28-5"
+        desc: "第 2 个客户接入演练：从零接入一家新企业，全流程不改代码（配置/隔离/凭据/报告署名）"
+        evidence: ["k3:onboarding-second-tenant"]
+        status: uncommitted
+        note: "端到端演练；依赖 28-1..28-4 全绿"
 
 # ────────────────────────── v2+ 扩展线（不占 v1 进度） ──────────────────────────
 federated-evolution:
