@@ -25,8 +25,12 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 #                      不计漂移、不误报假覆盖、exit 0（旧 sed 口径会把它判成漂移）
 #   H3 C2 行尾注释 glob 不产生覆盖 — 注释里 `# 覆盖 tests/project/*.test.sh` 但代码段只覆盖 aa
 #                      → 清单 1 项（非 2）；bb 同时进漂移（S3）+ 假覆盖（S2）→ exit 1
-#   H4 降级 fail-closed — 受限 PATH（无 awk）→ `::error title=canary-exec` + 显式人读文案 + exit 2
-#                          （三态；同一夹具不再由 exit 1 退化为 0 —— fail-open 闭合）
+#   H4 降级 fail-closed — ① 注入缝 `SYNO_AWK_BIN=`（确定性，跨平台同结果）：exit 2 +
+#                          `::error title=canary-exec` + 显式人读文案 + 无 canary-fake-coverage；
+#                          `SYNO_AWK_BIN=/不存在` 同样 fail-closed（防坏路径静默降级）。
+#                       ② 受限 PATH 探针降级为「可证伪才断言」（D520/D506）：仅当实测
+#                          `PATH=noawk command -v awk` 失败且沙箱工具链齐备才断言 exit 2；
+#                          否则显式 SKIP 打印原因、不计失败（Git Bash/Windows 常不成立）
 #   R1 注释起点对齐真实 shell 词边界 — `echo hi;#tests/op/op1.test.sh`：真实 shell 里 `;#` 后是注释
 #                      → 清单 1 项（该路径不产生覆盖）→ op1 进 DECLARED 未覆盖 → 假覆盖 exit 1
 #   R2 词边界不得过度扩大（对照片）— `x=y#z …` / `echo \# …` / `y="${z#p}" …` 三类仍算代码
@@ -229,18 +233,39 @@ NB="$TMPD/noawk"; mkdir -p "$NB"
 for b in grep sed find sort cut head tr dirname; do
   [ -e "$NB/$b" ] || ln -s "$(command -v "$b")" "$NB/$b"
 done
-if [ -e "$NB/awk" ]; then
-  no "H4 夹具自身问题: 受限 PATH 里出现了 awk"
+# ── H4-a 确定性：注入缝 SYNO_AWK_BIN（空串）→ awk 不可用分支。macOS/Linux/Windows 同结果 ──
+OK_H4=1
+OUT4A=$(SYNO_AWK_BIN= SYNO_TESTS_DIR="$TMPD/h3/tests" SYNO_CI_YML="$H3Y" bash "$DRIFT" 2>&1); rc4a=$?
+[ "$rc4a" -eq 2 ] && ok "H4 注入缝 SYNO_AWK_BIN=（空）→ exit 2（三态 fail-closed，既非 0 也非 1）" || { no "H4 应 exit 2, 实际 $rc4a"; OK_H4=0; }
+echo "$OUT4A" | grep -q "::error title=canary-exec" && ok "H4 ::error title=canary-exec 注解输出" || { no "H4 缺 ::error title=canary-exec"; OK_H4=0; }
+echo "$OUT4A" | grep -q "awk 不可用" && ok "H4 显式人读文案（不静默）" || { no "H4 缺人读文案"; OK_H4=0; }
+echo "$OUT4A" | grep -q "canary-fake-coverage" && no "H4 降级路径误报假覆盖（应走执行失败通道）" || ok "H4 降级走执行失败通道（非假覆盖通道）"
+# 反面对照：同一 H3 夹具在 awk 可用（未设缝）时是 exit 1（假覆盖）——降级后必须变 2 而不是变 0
+INJ_SPLIT=$(SYNO_AWK_BIN= SYNO_TESTS_DIR="$TMPD/h3/tests" SYNO_CI_YML="$H3Y" bash "$DRIFT" 2>&1 | grep -c "canary 清单" || true)
+[ "$INJ_SPLIT" -eq 0 ] && ok "H4 降级路径不做覆盖判定（无 清单 输出，不产生伪结论）" || { no "H4 降级仍输出判定结果"; OK_H4=0; }
+[ "$OK_H4" -eq 1 ] && ok "H4 降级 fail-closed（注入缝确定性：同一夹具不再由 exit 1 退化为 0）"
+# 注入缝第二形态：指向不可执行路径 → 同样 fail-closed（防止「设了但指向坏路径」静默降级）
+OUT4B=$(SYNO_AWK_BIN=/nonexistent-dir-xyz/awk SYNO_TESTS_DIR="$TMPD/h3/tests" SYNO_CI_YML="$H3Y" bash "$DRIFT" 2>&1); rc4b=$?
+[ "$rc4b" -eq 2 ] && ok "H4 SYNO_AWK_BIN 指向不可执行路径 → exit 2" || no "H4 坏路径应 exit 2, 实际 $rc4b"
+echo "$OUT4B" | grep -q "canary-fake-coverage" && no "H4 坏路径误报假覆盖" || ok "H4 坏路径不误报假覆盖"
+
+# ── H4-b 受限 PATH 探针（D520/D506「可证伪才断言」；Git Bash/Windows 上常不成立 → SKIP 不计失败）──
+if [ "${SYNO_AWK_BIN+set}" = "set" ]; then
+  echo "  ⚠ SKIP: 受限 PATH 探针不适用（外层已设 SYNO_AWK_BIN）——该语义由 H4-a 注入缝确定性覆盖"
+elif [ -n "$(PATH="$NB" command -v awk || true)" ]; then
+  echo "  ⚠ SKIP: 本平台受限 PATH 无法屏蔽 awk（Git Bash/Windows 常见）——该路径由 SYNO_AWK_BIN 注入确定性覆盖，不计失败"
 else
-  # 注意: PATH 受限后连 bash 都要用绝对路径调用（赋值先于命令查找生效）
-  OK_H4=1
-  OUT4A=$(PATH="$NB" SYNO_TESTS_DIR="$TMPD/h3/tests" SYNO_CI_YML="$H3Y" "$BASH_BIN" "$DRIFT" 2>&1); rc4a=$?
-  [ "$rc4a" -eq 2 ] && ok "H4 awk 不可用 → exit 2（三态 fail-closed，既非 0 也非 1）" || { no "H4 应 exit 2, 实际 $rc4a"; OK_H4=0; }
-  echo "$OUT4A" | grep -q "::error title=canary-exec" && ok "H4 ::error title=canary-exec 注解输出" || { no "H4 缺 ::error title=canary-exec"; OK_H4=0; }
-  echo "$OUT4A" | grep -q "awk 不可用" && ok "H4 显式人读文案（不静默）" || { no "H4 缺人读文案"; OK_H4=0; }
-  echo "$OUT4A" | grep -q "canary-fake-coverage" && no "H4 降级路径误报假覆盖（应走执行失败通道）" || ok "H4 降级走执行失败通道（非假覆盖通道）"
-  # 反面对照: 同一 H3 夹具在 awk 正常时是 exit 1（假覆盖）——降级后必须变 2 而不是变 0（T4 抓到的 fail-open）
-  [ "$OK_H4" -eq 1 ] && ok "H4 降级 fail-closed（同一夹具不再由 exit 1 退化为 0）"
+  NB_TOOLS_OK=1
+  for b in grep sed find sort cut head tr dirname; do
+    [ -x "$NB/$b" ] || NB_TOOLS_OK=0
+  done
+  if [ "$NB_TOOLS_OK" -ne 1 ]; then
+    echo "  ⚠ SKIP: 本平台受限 PATH 沙箱工具链未装齐（ln -s 不可用或工具缺失）——该路径由 SYNO_AWK_BIN 注入确定性覆盖，不计失败"
+  else
+    OUT4C=$(PATH="$NB" SYNO_TESTS_DIR="$TMPD/h3/tests" SYNO_CI_YML="$H3Y" "$BASH_BIN" "$DRIFT" 2>&1); rc4c=$?
+    [ "$rc4c" -eq 2 ] && ok "H4 受限 PATH 真屏蔽 awk → exit 2（探针与注入缝同结论）" || no "H4 受限 PATH 应 exit 2, 实际 $rc4c"
+    echo "$OUT4C" | grep -q "::error title=canary-exec" && ok "H4 受限 PATH 路径输出 ::error title=canary-exec" || no "H4 受限 PATH 缺 ::error"
+  fi
 fi
 
 # ═════════════════════════════════════════════════════════════════

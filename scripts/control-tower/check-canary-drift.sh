@@ -26,7 +26,10 @@
 # 契约 (铁律 47):
 #   @input  — 无参；注入缝: SYNO_TESTS_DIR（测试目录，默认 tests/）、
 #             SYNO_CI_YML（canary 清单来源，默认 .github/workflows/ci.yml）、
-#             GITHUB_STEP_SUMMARY（CI 独立通道；未设 → 不写，本地零副作用）
+#             GITHUB_STEP_SUMMARY（CI 独立通道；未设 → 不写，本地零副作用）、
+#             SYNO_AWK_BIN（awk 二进制注入缝，测试隔离用；**显式设置即采用**——
+#               空串或不可执行路径 = 视为 awk 不可用 → 走 fail-closed exit 2；
+#               未设置才 `command -v awk`，生产默认行为不变）
 #   @output — (a) 漂移清单（仓库有、可执行覆盖未含的 .test.sh）
 #             (b) 幽灵清单项（覆盖集合含、文件不存在）
 #             (c) 假覆盖清单（注释声明未被物理覆盖）— D858/L4-1
@@ -105,13 +108,21 @@ BEGIN { sq = sprintf("%c", 39); bs = sprintf("%c", 92); tab = sprintf("%c", 9) }
   }
   print "E" code; print "D" cmt
 }'
-_AWK_BIN="$(command -v awk || true)"
+# awk 二进制: 注入缝 SYNO_AWK_BIN —— **显式设置即采用**（空串/不可执行路径 = 视为 awk 不可用，
+#   走 fail-closed）；未设置才 `command -v awk`。用途 = 测试隔离（与 SYNO_TESTS_DIR/SYNO_CI_YML 同族）：
+#   「自制受限 PATH 屏蔽 awk」在 Git Bash/Windows 上不可靠（D858-T7 CI 实证），故降级路径必须可确定性注入。
+_AWK_BIN=""
+if [ "${SYNO_AWK_BIN+set}" = "set" ]; then
+  [ -n "$SYNO_AWK_BIN" ] && [ -x "$SYNO_AWK_BIN" ] && _AWK_BIN="$SYNO_AWK_BIN"
+else
+  _AWK_BIN="$(command -v awk || true)"
+fi
 if [ -n "$_AWK_BIN" ]; then
   _SPLIT="$("$_AWK_BIN" "$_SPLIT_AWK" "$CI_YML")"
   EXEC_LINES="$(printf '%s\n' "$_SPLIT" | grep '^E' | cut -c2-)"
   DECL_LINES="$(printf '%s\n' "$_SPLIT" | grep '^D' | cut -c2-)"
 else
-  # awk 缺失 → 覆盖判定无法可信执行 → fail-closed（三态: 2 = 执行失败/降级）
+  # awk 不可用 → 覆盖判定无法可信执行 → fail-closed（三态: 2 = 执行失败/降级）
   #   不再退回旧 sed 口径（那会把 R1/C1/C2 的已知缺陷重新放回生产线，且同一夹具由 1 变 0）
   echo -e "${YELLOW}⚠ awk 不可用: 覆盖判定无法可信执行（注释切分不可用）—— fail-closed${RESET}"
   echo "::error title=canary-exec::awk 不可用——canary 覆盖判定无法可信执行（fail-closed，exit 2）"
