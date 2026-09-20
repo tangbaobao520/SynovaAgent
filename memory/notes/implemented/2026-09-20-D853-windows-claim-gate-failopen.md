@@ -71,6 +71,21 @@
   被 `check_staging` 外层 `except Exception` 吞成 **fail-open pass**（夹具当场全场景 ec0/pass）——
   这正是本卡要治的那类静默放行；已补 `import os` 并复跑全绿。
 
+## 第三轮（2026-09-20）：② 双平台共有 + 夹具 bash 自包含
+
+- **关键事实**：ubuntu 与 windows **同一个断言**红（`DIAG-FAIL ② 应拦, 实际 exit=0`）→ 不是平台差异，是
+  **"CI 环境"输入差异**。本地六路复现全 17/0（含 `env -i` 无 HOME gitconfig + CI 变量组、detached HEAD、
+  ci.yml 全 43 项同 shell 串跑）→ 只能靠 CI 注解定位。
+- 处置：把 ② 的链路证据做进末尾 8 行 —— `staged=[暂存区实况] gl=[synova-commit 在 guard 段打的那行]
+  grc=<直调 guard rc> status=<block|warn|pass|degraded>`。四态即四类根因：崩了（guard 异常→调用点降级放行）/
+  跳了（暂存区为空或 python 不可用）/ 降了 / 放了（registry 没看到 other-sess）。
+- 夹具自身 bash 自包含（清 windows `PROBE_RC=1`）：native python 解析裸 `bash` 走 **Windows PATH** →
+  WSL 桩；MSYS 形 PATH 前置对 native 子进程无效 → 必须**显式绝对路径**（`_pick_bash()` 逐个试运行，
+  与 `staging_guard._find_bash` 同口径）；夹具三处 bash 调用统一；PROBE 增 `BASH=<basename>`。
+- 未做（等注解）：② 的根因修法。**不猜修**——若注解显示"崩了"，则修调用点（`synova-commit` 的 guard 段
+  在 rc≠0 非 block 时降级放行 = fail-open，需 CTO 授权扩写集）；若"放了"，则修 registry 状态一致性；
+  若"跳了"，则修暂存区前置。三者修法完全不同，故先取证据。
+
 ## 残余（显式登记，未静默放过）
 
 - 假 git 若同时①输出合法 `git version N.`②不在临时目录③不在被判定的仓库内，仍可能被采信

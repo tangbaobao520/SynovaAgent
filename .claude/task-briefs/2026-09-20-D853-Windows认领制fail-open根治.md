@@ -158,6 +158,18 @@ git commit → synova-commit → staging_guard.py --session-id <D#> --staged <fi
 3. **契约新增**：`SYNO-RESOLVER-DEGRADED\t<原因>`（resolver 发、guard 解析；**同字面量两端**，
    夹具场景 H 守双端一致）；语义 = 认领判定整条不可用 → block（不是 pass）。
 
+## 第三轮追加（2026-09-20）：② 双平台共有 + 夹具 bash 自包含
+1. **ubuntu 与 windows 是同一断言在红**（CI 实测两平台都 `pass=16 fail=1` + `DIAG-FAIL ② 应拦, 实际 exit=0`）
+   → 收窄为 **"CI 环境"专属**（本地六路复现全 17/0：终端/管道、CI 环境变量组、detached HEAD、ci.yml 全 43 项
+   同 shell 串跑、最 CI 像的最小环境（`env -i` + 无 HOME gitconfig + CI 变量）、git 全局/system config 全屏蔽）。
+   → 本轮把 ② 的**链路证据**做成末尾 8 行可见（CI 注解唯一通道）：`DIAG-② staged=[...] gl=[synova-commit 在
+   guard 段打印的那行] grc=<直调 guard rc> "status": "<block|warn|pass|degraded>"`，一次注解即可判
+   "崩了 / 跳了 / 降了 / 放了"四态中的哪一态。已自检：注入 ② 失败 → 三者如期出现；正常态零新增输出。
+2. **夹具自身 bash 自包含**（清 windows A/C/H 的 `PROBE_RC=1`）：`BASH_BIN="$(_pick_bash)"`（SYNO_BASH →
+   PATH → /bin/bash → Git Bash 两处，逐个**试运行**）；`_probe_chain` 的 native python 两条 spawn 改为
+   显式绝对路径（native python 解析裸 `bash` 走 **Windows PATH** → 命中 **WSL 桩**，MSYS 形 PATH 前置对它无效）；
+   夹具自己三处 `bash ...` 调用统一 `"$BASH_BIN"`；PROBE 行加 `BASH=<basename>`（字段前置，活过 DIAG2 截断）。
+
 ## 架构层: 基础设施
 控制塔门禁层（`scripts/workflow/**` + `scripts/control-tower/**` + `tests/control-tower/**`），不进 L1-L5，不 import `src/**`。
 
@@ -176,9 +188,6 @@ git commit → synova-commit → staging_guard.py --session-id <D#> --staged <fi
 |---|---|
 | .claude/task-briefs/2026-09-20-D853-Windows认领制fail-open根治.md | task |
 | memory/notes/implemented/2026-09-20-D853-windows-claim-gate-failopen.md | task |
-| scripts/control-tower/staging_guard.py | task |
-| scripts/workflow/resolve-commit-brief.sh | task |
-| task-state/D853.json | task |
 | tests/control-tower/staging_guard.test.sh | task |
 | tests/control-tower/synova-commit.test.sh | task |
 

@@ -51,6 +51,23 @@ for _d in "$(dirname "$(command -v git 2>/dev/null || echo /usr/bin/git)")" \
 done
 export PATH
 
+# ── D853 ④: 夹具**自己的** bash 调用也必须自包含（不能只修被测实现）──
+#   native Windows python（本夹具的 PROBE/准备步骤就是 native python 起子进程）解析裸 "bash"
+#   走的是 **Windows PATH**（System32 优先）→ 命中 **WSL 桩** `C:\Windows\System32\bash.exe`
+#   （实测输出 "no installed distributions"）→ PROBE_RC=1 零输出。上面的 MSYS 形 PATH 前置
+#   对 native 子进程无效（Windows PATH 条目是 C:\... 形）→ 必须**显式绝对路径 + 试运行校验**。
+_pick_bash() {
+  local c
+  for c in "${SYNO_BASH:-}" "$(command -v bash 2>/dev/null || true)" /bin/bash /usr/bin/bash \
+           "/c/Program Files/Git/bin/bash.exe" "/c/Program Files/Git/usr/bin/bash.exe"; do
+    [ -n "$c" ] && [ -x "$c" ] || continue
+    if "$c" -c 'echo SYNO_BASH_OK' 2>/dev/null | grep -q SYNO_BASH_OK; then printf '%s' "$c"; return 0; fi
+  done
+  return 1
+}
+BASH_BIN="$(_pick_bash || true)"
+[ -n "$BASH_BIN" ] || { echo "❌ 夹具前置失败: 未找到可用 bash（试运行均失败）" >&2; exit 2; }
+
 # ── D849 ②: 跨平台 sha256（Windows Git Bash **无 shasum**——CI 注解实测
 #    `shasum: command not found`；旧写法两边都取空串 → 围栏断言 "空 == 空" 恒绿 = 假绿围栏）──
 # 顺序: sha256sum（coreutils，双平台都有）→ shasum（macOS）→ python hashlib。
@@ -171,9 +188,10 @@ run_guard() { # <session-id> → OUT / EC
 # 这里红 = 路径命名空间/依赖链断裂；此时下面所有"应拦"的判定都会 fail-open 假绿，
 # 所以必须显式红 + 带证据，绝不允许静默通过（这正是 Windows 12 红此前无法定位的原因）。
 _probe_chain() {
-  (cd "$SB" && python3 - "$SB" <<'PYEOF' 2>&1
+  (cd "$SB" && python3 - "$SB" "$BASH_BIN" <<'PYEOF' 2>&1
 import os, subprocess, sys
 sb = sys.argv[1]
+bash_bin = sys.argv[2]          # D853: 显式绝对路径（native python 解析裸 "bash" 会命中 WSL 桩）
 script = os.path.join(sb, "scripts", "workflow", "resolve-commit-brief.sh")
 
 
@@ -195,10 +213,10 @@ def form(s):
     return "win" if len(s) > 1 and s[1] == ":" else "rel"
 
 
-p = run(["bash", script, "--session", "D902", "docs/x.md"])
+p = run([bash_bin, script, "--session", "D902", "docs/x.md"])
 # 子链事实（同一 spawn 路径: native python → bash）：路径命名空间 + git/python 可达性 +
 #   **python 试运行 rc**（D853：`command -v` 命中 ≠ 能跑——WindowsApps 占位 shim 正是"存在但跑不动"）
-e = run(["bash", "-c",
+e = run([bash_bin, "-c",
          'echo "pwd=$PWD"; echo "top=$(git rev-parse --show-toplevel 2>/dev/null || echo FAIL)";'
          ' echo "git=$(command -v git || echo NONE)"; PY=$(command -v python3 || echo NONE); echo "py=$PY";'
          ' if [ "$PY" != "NONE" ]; then "$PY" -c "import sys" >/dev/null 2>&1; echo "pyrun=$?";'
@@ -208,9 +226,10 @@ if e is not None:
     for line in e.stdout.splitlines():
         k, _, v = line.partition("=")
         facts[k.strip()] = v.strip()
-print("PROBE_RC=%s PY=%s OUT=%s" % (
+print("PROBE_RC=%s PY=%s BASH=%s OUT=%s" % (
     "EXC" if p is None else p.returncode,
     "%s:%s" % (os.path.basename(facts.get("py", "NONE") or "NONE"), facts.get("pyrun", "NONE")),
+    os.path.basename(bash_bin),
     "" if p is None else os.path.basename(p.stdout.strip())))
 print("PROBE_ENV pwd=%s top=%s git=%s" % (
     form(facts.get("pwd", "")), form(facts.get("top", "")),
@@ -240,7 +259,7 @@ assert_not_contains "$OUT" '"status": "block"' "场景A 不得 block"
 # plan-integrity / brief-vs-code / staging_guard —— 任一拿到已完成任务的 brief 都按错任务校验）
 # D849 ②: 证据文件落沙箱（旧写法写死 /tmp/d839-res.err = 跨运行/跨机器共享路径）
 RES_ERR_FILE="$SB/.res-probe.err"
-RES_OUT=$(cd "$SB" && bash "$SB/scripts/workflow/resolve-commit-brief.sh" --session D902 "docs/x.md" 2>"$RES_ERR_FILE")
+RES_OUT=$(cd "$SB" && "$BASH_BIN" "$SB/scripts/workflow/resolve-commit-brief.sh" --session D902 "docs/x.md" 2>"$RES_ERR_FILE")
 RES_ERR=$(cat "$RES_ERR_FILE" 2>/dev/null || true)
 assert_contains "$RES_OUT" "D902-b.md" "场景A resolver 源头已剔除已释放 brief → 返回本 session 的 brief"
 assert_not_contains "$RES_OUT" "D901-a.md" "场景A resolver 不再返回已完成任务的 brief"
@@ -280,7 +299,7 @@ else
   # 造出真实变更 + 必须 cd 沙箱（否则 git rev-parse --show-toplevel = 真实仓库 → 越界）
   printf 'y\n' >> "$SB/docs/x.md"
   git -C "$SB" add docs/x.md >/dev/null 2>&1
-  (cd "$SB" && bash "$SB/scripts/control-tower/declare-write-set.sh" \
+  (cd "$SB" && "$BASH_BIN" "$SB/scripts/control-tower/declare-write-set.sh" \
      --brief "$SB/.claude/task-briefs/${TODAY}-D901-a.md" --staged) >/dev/null 2>&1
   assert_contains "$(cat "$SB/.claude/task-briefs/${TODAY}-D901-a.md")" "| docs/x.md |" "场景C declare-write-set 重跑确实用 ASCII 重生成机器块"
   run_guard D902
@@ -319,7 +338,7 @@ if [ -f "$CLAIM" ]; then
   assert_eq "$EC" "1" "场景G 释放维度不可用 → 仍 block（fail-closed，绝不误放行）"
   assert_contains "$OUT" '"degraded": true' "场景G 降级信号显式传播到结果（不静默）"
   assert_contains "$OUT" 'claim_release' "场景G 降级原因点名缺失模块"
-  RES_ERR2=$(cd "$SB" && bash "$SB/scripts/workflow/resolve-commit-brief.sh" --session D902 "docs/x.md" 2>&1 >/dev/null || true)
+  RES_ERR2=$(cd "$SB" && "$BASH_BIN" "$SB/scripts/workflow/resolve-commit-brief.sh" --session D902 "docs/x.md" 2>&1 >/dev/null || true)
   assert_contains "$RES_ERR2" "SYNO-CLAIM-RELEASE-DEGRADED" "场景G resolver 也发显式降级公告"
   mv "$CLAIM.off" "$CLAIM"
 else

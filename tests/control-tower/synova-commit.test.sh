@@ -58,7 +58,20 @@ echo "foreign" > "$SB/x.md"
 git -C "$SB" -c user.name=t -c user.email=t@t add x.md
 OUT=$(cd "$SB" && SYNO_PRE_COMMIT="$STUB" SYNO_GATEKEEPER_ACK=1 \
   bash "$SB/scripts/control-tower/synova-commit" --task-id T-self --agent test --message "test: foreign file" 2>&1); rc=$?
-[ "$rc" -eq 1 ] && ok "② 他人写集 → exit 1（并行劫持阻断）" || bad "② 应拦, 实际 exit=$rc"
+if [ "$rc" -eq 1 ]; then
+  ok "② 他人写集 → exit 1（并行劫持阻断）"
+else
+  bad "② 应拦, 实际 exit=$rc"
+  # D853: ② 失败时的链路证据（CI 注解唯一可见区）——判"哪条分支被走了"：暂存区是否真的有文件 /
+  #   registry 是否登记到 other-sess / synova-commit 走了哪条放行文案 / 直调 guard 判什么
+  D2_STAGED=$(git -C "$SB" diff --cached --name-only 2>/dev/null | tr '\n' ',')
+  # synova-commit 在 guard 段打印的那行（判"崩了/跳了/降了/放了" —— 这是 ② 变 exit0 的直接证据）
+  D2_GL=$(printf '%s' "$OUT" | grep -aE "staging-guard|暂存区隔离|暂存区为空|他人文件" | head -2 | tr '\n' '/')
+  # 直调 guard：它自己判什么（block? warn? pass?）+ rc
+  D2_GRC=0; D2_G=$(cd "$SB" && python3 "$SB/scripts/control-tower/staging_guard.py" --session-id T-self --staged x.md 2>&1) || D2_GRC=$?
+  D2_ST=$(printf '%s' "$D2_G" | grep -oE '"status": "[a-z]+"' | head -1)
+  DIAG2=$(printf 'staged=[%s] gl=[%s] grc=%s %s' "$D2_STAGED" "$(printf '%s' "$D2_GL" | cut -c1-48)" "$D2_GRC" "$D2_ST")
+fi
 echo "$OUT" | grep -q "x.md" && echo "$OUT" | grep -q "other-sess" \
   && ok "② 点名文件与归属 session" || bad "② 未点名: $(echo "$OUT" | grep -a '❌' | head -2)"
 
@@ -162,6 +175,7 @@ echo "pass=$PASS fail=$FAIL"
 if [ "$FAIL" -ne 0 ]; then
   # D853: 末尾两行 = CI 注解可见区（tail -8）。①失败断言名 ②关键环境事实（供判"链/工具/路径"哪层坏）
   echo "DIAG-FAIL $(printf '%s' "$FAILLOG" | tr '\n' ' ' | cut -c1-150)"
+  echo "DIAG-② $(printf '%s' "${DIAG2:-无}" | cut -c1-150)"
   echo "DIAG-ENV bash=$(command -v bash 2>/dev/null || echo NONE) py=$(command -v python3 2>/dev/null || echo NONE) git=$(command -v git 2>/dev/null || echo NONE) rc2=${rc2:-?} rc=${rc:-?}"
 fi
 [ "$FAIL" -eq 0 ]
