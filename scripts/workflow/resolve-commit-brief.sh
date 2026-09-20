@@ -14,6 +14,12 @@ export LC_ALL=C.UTF-8 2>/dev/null || true
 #   2. 否则 → 今日 brief 中认领暂存文件数最多的 (其他 session 的文件由自己的 brief 认领)
 #   3. 无任何认领 → current-brief (当日); 无 → 今日最新
 #
+# D839 完成即释放: 步骤 1/2 的候选池**剔除已释放的 brief**（所属任务 task-state status ∈
+#   {impl_done, audited} / 显式释放台账 / session 已归档）。被剔除者向 stderr 发一行
+#   `SYNO-RELEASED-CLAIM\t<brief>\t<D#>\t<basis>\t<detail>`，供门禁降 warn 并打印释放理由。
+#   判定源 = scripts/control-tower/claim_release.py（单一事实源）；判定不可用 → 不剔除（fail-closed）。
+#   无暂存文件时（CI 干净检出）行为与修复前完全一致。
+#
 # 用法: bash resolve-commit-brief.sh "<暂存文件列表 (换行分隔)>"
 #       bash resolve-commit-brief.sh --session <sid> "<暂存文件列表>"  (D329: session 专属 current-brief 优先)
 # 输出: brief 绝对路径; 无可用 brief → exit 1
@@ -160,8 +166,9 @@ if [ -z "$PYBIN" ]; then
   # D317: python 不可用 → 无法认领 → 直接走最终回退（回退同样无 python 时 exit 1 fail-open）
   RESULT=""
 else
+_PYERR="$(mktemp 2>/dev/null || echo "${TMPDIR:-/tmp}/.synova-resolver-err.$$")"
 RESULT=$("$PYBIN" -c "
-import re, sys
+import os, re, sys
 sys.path.insert(0, r'$ROOT/scripts/control-tower')
 try:
     from brief_parser import parse_q2, match_path
@@ -208,6 +215,43 @@ cur = '''$CUR'''
 anchored_strong = set(x.strip() for x in '''$ANCHORED_STRONG_FILES'''.split('\n') if x.strip())
 anchored_weak = set(x.strip() for x in '''$ANCHORED_WEAK_FILES'''.split('\n') if x.strip())
 
+# ── D839: 完成即释放 —— 已释放的 brief 不参与候选 ──
+# 根因: 候选池只看 brief 里 Q2 的字面路径，不看该 brief 所属任务是否已完成 → 历史 brief
+#   提及过的文件对后续所有任务永久锁死（D838 被已完成并合入的 D806 brief 阻断）。
+# 释放证据 = task-state status ∈ {impl_done, audited} / 显式释放台账 / session 已归档
+#   （单一事实源 = scripts/control-tower/claim_release.py）。改在源头而非各下游补救——
+#   本 resolver 有 6 个生产消费者（G12 范围 / commit-msg / verifiable-done / plan-integrity /
+#   brief-vs-code / staging_guard），任一拿到「已完成任务的 brief」都会按错任务校验。
+# 降级: 判定模块缺失或抛异常 → 一律视为未释放（fail-closed，行为与修复前一致，零回归）。
+try:
+    from claim_release import is_released as _is_released, RELEASED_MARK as _REL_MARK
+except ImportError:
+    _is_released = None
+    _REL_MARK = 'SYNO-RELEASED-CLAIM'
+
+def _release_of(brief):
+    # → (released, task_id, basis, detail)；不可用/异常 → (False, '', '', '')
+    if _is_released is None:
+        return (False, '', '', '')
+    m = re.search(r'D\d+', os.path.basename(brief))
+    if not m:
+        return (False, '', '', '')
+    try:
+        v = _is_released(r'$ROOT', m.group(0))
+    except Exception:
+        return (False, '', '', '')
+    if not v.get('released'):
+        return (False, '', '', '')
+    return (True, m.group(0), v.get('basis', ''), v.get('detail', ''))
+
+def _announce_if_released(brief):
+    # 已释放 → 向 stderr 公告（供门禁降 warn + 打印释放理由），并返回 True 让调用方剔出候选
+    r = _release_of(brief)
+    if r[0]:
+        sys.stderr.write(_REL_MARK + '\t' + os.path.basename(brief) + '\t' + r[1]
+                         + '\t' + r[2] + '\t' + r[3] + '\n')
+    return r[0]
+
 claims = []
 for b in briefs:
     try:
@@ -216,6 +260,8 @@ for b in briefs:
         continue
     scope = parse_q2(text)['include']
     n = sum(1 for sf in staged for p in scope if match_path(sf, p))
+    if n > 0 and _announce_if_released(b):
+        n = 0  # D839: 已释放 → 不再参与认领裁决
     claims.append((n, b))
 
 # 1. current-brief 认领 ≥1 → 用它
@@ -235,7 +281,11 @@ if best > 0:
 if cur:
     print(cur)
     sys.exit(0)
-" 2>/dev/null || true)
+" 2>"$_PYERR" || true)
+# D839: python 段 stderr 里只有两类东西 —— 错误（保持静默，沿用原语义）与
+# 「已释放认领」公告。公告必须**转回 shell stderr** 才能到门禁手里（staging_guard 靠它降 warn）。
+grep '^SYNO-RELEASED-CLAIM' "$_PYERR" >&2 2>/dev/null || true
+rm -f "$_PYERR" 2>/dev/null || true
 fi
 
 if [ -n "$RESULT" ] && [ -f "$RESULT" ]; then
