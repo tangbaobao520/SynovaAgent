@@ -1,8 +1,8 @@
 {
   "schema": "project-ledger/1",
   "generated_by": "gen-project-board.py",
-  "generated_at": "2026-09-20T19:41:43+08:00",
-  "git_head": "a04af01e6577d4dafbd442f962baea158798d4c9",
+  "generated_at": "2026-09-20T20:39:21+08:00",
+  "git_head": "2417ef64487d079b18bd48b0d27850ca12bf5f6c",
   "sources": {
     "yaml": "docs/synova/product-lines/product-lines.yaml",
     "v1_dod": "docs/synova/project/26线-V1验收标准-v0.2-20260917.md",
@@ -32,6 +32,149 @@
     },
     "blocked_count": 0,
     "backlog_points": 46
+  },
+  "pr_queue": {
+    "source": "synova/project/pr-queue.json",
+    "generated_at": "2026-09-20T20:24:38+08:00",
+    "limit": 12,
+    "queue_length": 46,
+    "over_limit": true,
+    "oldest": {
+      "number": 464,
+      "age_days": 11
+    },
+    "behind_distribution": {
+      "0": 1,
+      "1-5": 4,
+      "6-20": 5,
+      "21-100": 0,
+      "100+": 36,
+      "unknown": 0
+    },
+    "behind_unknown": 0,
+    "ci_distribution": {
+      "success": 18,
+      "failure": 23,
+      "pending": 2,
+      "none": 3,
+      "unknown": 0
+    },
+    "closeable_count": 13,
+    "closeable": [
+      {
+        "number": 546,
+        "age_days": 7,
+        "behind": 240,
+        "reasons": [
+          "CI_RED_LONG"
+        ]
+      },
+      {
+        "number": 544,
+        "age_days": 7,
+        "behind": 241,
+        "reasons": [
+          "CI_RED_LONG"
+        ]
+      },
+      {
+        "number": 537,
+        "age_days": 7,
+        "behind": 242,
+        "reasons": [
+          "CI_RED_LONG"
+        ]
+      },
+      {
+        "number": 536,
+        "age_days": 7,
+        "behind": 240,
+        "reasons": [
+          "CI_RED_LONG"
+        ]
+      },
+      {
+        "number": 534,
+        "age_days": 7,
+        "behind": 233,
+        "reasons": [
+          "CI_RED_LONG"
+        ]
+      },
+      {
+        "number": 533,
+        "age_days": 7,
+        "behind": 233,
+        "reasons": [
+          "CI_RED_LONG"
+        ]
+      },
+      {
+        "number": 528,
+        "age_days": 7,
+        "behind": 233,
+        "reasons": [
+          "CI_RED_LONG"
+        ]
+      },
+      {
+        "number": 526,
+        "age_days": 7,
+        "behind": 293,
+        "reasons": [
+          "CI_RED_LONG"
+        ]
+      },
+      {
+        "number": 521,
+        "age_days": 7,
+        "behind": 294,
+        "reasons": [
+          "CI_RED_LONG"
+        ]
+      },
+      {
+        "number": 513,
+        "age_days": 7,
+        "behind": 301,
+        "reasons": [
+          "CONTENT_IN_MAIN",
+          "CI_RED_LONG"
+        ]
+      },
+      {
+        "number": 511,
+        "age_days": 7,
+        "behind": 233,
+        "reasons": [
+          "CI_RED_LONG"
+        ]
+      },
+      {
+        "number": 464,
+        "age_days": 11,
+        "behind": 305,
+        "reasons": [
+          "CI_RED_LONG"
+        ]
+      },
+      {
+        "number": 456,
+        "age_days": 11,
+        "behind": 385,
+        "reasons": [
+          "CI_RED_LONG"
+        ]
+      }
+    ],
+    "orphan_count": 0,
+    "owner_conflicts": 1,
+    "by_reason": {
+      "CI_RED_LONG": 13,
+      "CONTENT_IN_MAIN": 1
+    },
+    "warning": "⚠️ 未合 PR 队列超限：46 > 12 —— 先退役再开新 PR（机器判可关 13 个；退役清单：docs/synova/coordination/队列收口-*.md）",
+    "scanner_degraded": false
   },
   "lines": [
     {
@@ -4811,6 +4954,50 @@
       "updated_at": "2026-09-15"
     },
     {
+      "id": "D769",
+      "title": "DSH 借鉴卡 B-20：速览族六项小缺口（截断披露/防呆/擦除/时间上下文/FTS5/检查点）",
+      "status": "claimed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 5,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D770",
+      "title": "登记 DSH 借鉴卡 B-11~B-20 为看板任务 + 计划表回填 D# + 排期派单",
+      "status": "claimed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 5,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D771",
+      "title": "派单前复核脚本 D370 类崩溃修复（$VAR 全角边界）+ 幻号/欠登记 task-state 补登记",
+      "status": "claimed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 5,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D772",
+      "title": "收口登记：D769 卡 + D770/D771 自身台账（拆单后续）",
+      "status": "claimed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 5,
+      "updated_at": "2026-09-15"
+    },
+    {
       "id": "D773",
       "title": "Win 域代行规约（临时，至 Win 机回归）+ DSH 卡与 Win 工单执行方改派 Mac",
       "status": "claimed",
@@ -4877,9 +5064,108 @@
       "updated_at": "2026-09-15"
     },
     {
+      "id": "D779",
+      "title": "登记补齐：D727-D736 task-state 从 #536 分支抽出入 main（复核 ① 项 + 看板可见）",
+      "status": "claimed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 5,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D780",
+      "title": "K3 审计批次四：33 个 impl 无 audit 任务 + 本批新交付（D751/D752/D754/D757/D758/D759）",
+      "status": "claimed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 5,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D781",
+      "title": "K3 权威文档一致性专项审计（2026-09-14）登记：FAIL / 35 条（9 P0）",
+      "status": "claimed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 5,
+      "updated_at": "2026-09-15"
+    },
+    {
       "id": "D782",
       "title": "机制批：18 份真相源文档接机器防线（check-doc-truth + doc-registry-gate 入 pre-commit + 唯一 runner + system-registry 规格）",
       "status": "impl_done",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 4,
+      "updated_at": "2026-09-16"
+    },
+    {
+      "id": "D783",
+      "title": "文档一致性批：P1/P2 逐条「改文档 or 改事实」收敛（27 条）",
+      "status": "claimed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 5,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D784",
+      "title": "审计侧 3 条免疫细胞落位（dsh-audit-draft persona → install，创始人过措辞）",
+      "status": "claimed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 5,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D785",
+      "title": "因果链 22 条 ↔ cycles/*.cycle.json 对应关系取证（供 §8#5 裁定）",
+      "status": "claimed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 5,
+      "updated_at": "2026-09-15"
+    },
+    {
+      "id": "D787",
+      "title": "CT 最高优先三机制：提交级写集对账 + 合并 diff 白名单核验 + task-state 载体存在性检查；并附 D595 载体修复",
+      "status": "claimed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 4,
+      "updated_at": "2026-09-16"
+    },
+    {
+      "id": "D788",
+      "title": "预算门禁口径修正：只计审查面（治理/审计产物不计入计数与域判定）——解锁审计批次落地",
+      "status": "claimed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 4,
+      "updated_at": "2026-09-16"
+    },
+    {
+      "id": "D789",
+      "title": "K3 审计批次五：D774/D786 流水线与看门狗 + D782 part1 + 门禁变更（D778/D788）+ A1 口径修复",
+      "status": "claimed",
       "owner": null,
       "domain": null,
       "depends_on": [],
@@ -4908,6 +5194,17 @@
       "blocked": null,
       "stale_days": 3,
       "updated_at": "2026-09-17"
+    },
+    {
+      "id": "D792",
+      "title": "main 存量红定位：Vitest (2/2) shard2 失败集（只读诊断，不改 CI）",
+      "status": "claimed",
+      "owner": null,
+      "domain": null,
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 4,
+      "updated_at": "2026-09-16"
     },
     {
       "id": "D793",
@@ -4989,8 +5286,8 @@
         "D797"
       ],
       "blocked": null,
-      "stale_days": 3,
-      "updated_at": "2026-09-17"
+      "stale_days": 0,
+      "updated_at": "2026-09-20"
     },
     {
       "id": "D800",
@@ -5068,14 +5365,14 @@
     },
     {
       "id": "D811",
-      "title": "队列收口：39 个未合 PR → 「有主 + behind=0」清单 + 可签字关闭清单",
-      "status": "claimed",
+      "title": "队列收口：未合 PR 台账扫描器 + 可签字关闭清单 + 上限=12 提示层 + 旁路派生指标",
+      "status": "impl_done",
       "owner": "mac-coding",
       "domain": "mac",
       "depends_on": [],
       "blocked": null,
-      "stale_days": 2,
-      "updated_at": "2026-09-18"
+      "stale_days": 0,
+      "updated_at": "2026-09-20"
     },
     {
       "id": "D812",
@@ -5115,13 +5412,13 @@
     {
       "id": "D815",
       "title": "线10 资本循环全链路独立复核（第一条 100% 线收官，10-8 门槛）",
-      "status": "claimed",
+      "status": "audited",
       "owner": "k3",
       "domain": "k3",
       "depends_on": [],
       "blocked": null,
-      "stale_days": 2,
-      "updated_at": "2026-09-18"
+      "stale_days": 0,
+      "updated_at": "2026-09-20"
     },
     {
       "id": "D816",
@@ -5288,15 +5585,15 @@
     {
       "id": "D830",
       "title": "T-D1/T-D10 复核：D810 是否真覆盖（对着已合入 main 独立复核）",
-      "status": "claimed",
+      "status": "audited",
       "owner": "k3",
       "domain": "k3",
       "depends_on": [
         "D819"
       ],
       "blocked": null,
-      "stale_days": 2,
-      "updated_at": "2026-09-18"
+      "stale_days": 0,
+      "updated_at": "2026-09-20"
     },
     {
       "id": "D831",
@@ -5358,13 +5655,13 @@
     {
       "id": "D836",
       "title": "K3 独立审计：D819 工具接线三修（试点队产出）—— 试点指标③（审计能挑出几个问题）",
-      "status": "claimed",
+      "status": "audited",
       "owner": "k3",
       "domain": "k3",
       "depends_on": [],
       "blocked": null,
-      "stale_days": 1,
-      "updated_at": "2026-09-19"
+      "stale_days": 0,
+      "updated_at": "2026-09-20"
     },
     {
       "id": "D837",
@@ -5413,9 +5710,79 @@
     {
       "id": "D841",
       "title": "K3 独立审计：D839 认领门禁变更（完成即释放/批量释放/持久化）——门禁变更属审计面",
-      "status": "claimed",
+      "status": "audited",
       "owner": "k3",
       "domain": "k3",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 0,
+      "updated_at": "2026-09-20"
+    },
+    {
+      "id": "D842",
+      "title": "归档恢复 1/3：task-state 记账卡（D769/D770/D771/D772/D779/D780/D781）",
+      "status": "impl_done",
+      "owner": "synova-cto",
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 0,
+      "updated_at": "2026-09-20"
+    },
+    {
+      "id": "D843",
+      "title": "归档恢复 2/3：task-state 记账卡（D783/D784/D785/D787/D788/D789/D792）",
+      "status": "impl_done",
+      "owner": "synova-cto",
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 0,
+      "updated_at": "2026-09-20"
+    },
+    {
+      "id": "D845",
+      "title": "固化 DSH 决策六原则为纪律件（skill：dsh-decision-lens）——创始人 2026-09-20 定'以后遇到需要决策的用 DSH 的思维'",
+      "status": "impl_done",
+      "owner": "synova-cto",
+      "domain": "mac",
+      "depends_on": [],
+      "blocked": null,
+      "stale_days": 0,
+      "updated_at": "2026-09-20"
+    },
+    {
+      "id": "D846",
+      "title": "K3 P1-1 后续：释放证据无防伪——改工作树即可无痕解锁他人认领（释放判定不得读工作树）",
+      "status": "claimed",
+      "owner": "mac-coding",
+      "domain": "mac",
+      "depends_on": [
+        "D839"
+      ],
+      "blocked": null,
+      "stale_days": 0,
+      "updated_at": "2026-09-20"
+    },
+    {
+      "id": "D847",
+      "title": "K3 P1-3 后续：claim-releases 台账并发 lost-update（30 轮首轮即中）",
+      "status": "claimed",
+      "owner": "mac-coding",
+      "domain": "mac",
+      "depends_on": [
+        "D839"
+      ],
+      "blocked": null,
+      "stale_days": 0,
+      "updated_at": "2026-09-20"
+    },
+    {
+      "id": "D848",
+      "title": "账本漂移门禁：证据/状态变更合并后必须重算 ledger 派生器（K3 D815 P1 归因）",
+      "status": "claimed",
+      "owner": "mac-coding",
+      "domain": "mac",
       "depends_on": [],
       "blocked": null,
       "stale_days": 0,
@@ -5430,7 +5797,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-08-01",
+        "first_commit": "2026-06-03",
         "merged": null,
         "audited": null
       }
@@ -5441,7 +5808,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-08-01",
+        "first_commit": "2026-06-03",
         "merged": null,
         "audited": null
       }
@@ -5452,7 +5819,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-08-01",
+        "first_commit": "2026-06-03",
         "merged": null,
         "audited": null
       }
@@ -5463,7 +5830,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-08-01",
+        "first_commit": "2026-06-03",
         "merged": null,
         "audited": null
       }
@@ -5474,7 +5841,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-08-01",
+        "first_commit": "2026-06-03",
         "merged": null,
         "audited": null
       }
@@ -5485,7 +5852,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-08-01",
+        "first_commit": "2026-06-03",
         "merged": null,
         "audited": null
       }
@@ -5496,7 +5863,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-08-01",
+        "first_commit": "2026-06-03",
         "merged": null,
         "audited": null
       }
@@ -5507,7 +5874,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-08-01",
+        "first_commit": "2026-06-03",
         "merged": null,
         "audited": null
       }
@@ -5518,7 +5885,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-08-01",
+        "first_commit": "2026-06-03",
         "merged": null,
         "audited": null
       }
@@ -5529,7 +5896,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-08-01",
+        "first_commit": "2026-06-03",
         "merged": null,
         "audited": null
       }
@@ -5540,7 +5907,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-08-01",
+        "first_commit": "2026-06-03",
         "merged": null,
         "audited": null
       }
@@ -5551,7 +5918,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-08-01",
+        "first_commit": "2026-06-03",
         "merged": null,
         "audited": null
       }
@@ -5562,7 +5929,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-08-01",
+        "first_commit": "2026-06-03",
         "merged": null,
         "audited": null
       }
@@ -5573,7 +5940,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-08-01",
+        "first_commit": "2026-06-03",
         "merged": null,
         "audited": null
       }
@@ -5584,7 +5951,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-08-01",
+        "first_commit": "2026-06-03",
         "merged": null,
         "audited": null
       }
@@ -5595,7 +5962,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-08-01",
+        "first_commit": "2026-06-03",
         "merged": null,
         "audited": null
       }
@@ -5606,7 +5973,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-08-01",
+        "first_commit": "2026-06-03",
         "merged": null,
         "audited": null
       }
@@ -5617,7 +5984,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-08-01",
+        "first_commit": "2026-06-03",
         "merged": null,
         "audited": null
       }
@@ -5628,7 +5995,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-08-01",
+        "first_commit": "2026-06-05",
         "merged": null,
         "audited": null
       }
@@ -5639,7 +6006,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-08-01",
+        "first_commit": "2026-06-03",
         "merged": null,
         "audited": null
       }
@@ -5650,7 +6017,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-08-01",
+        "first_commit": "2026-06-03",
         "merged": null,
         "audited": null
       }
@@ -5661,7 +6028,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-08-01",
+        "first_commit": "2026-06-03",
         "merged": null,
         "audited": null
       }
@@ -5672,7 +6039,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-08-01",
+        "first_commit": "2026-06-03",
         "merged": null,
         "audited": null
       }
@@ -5683,7 +6050,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-08-01",
+        "first_commit": "2026-06-03",
         "merged": null,
         "audited": null
       }
@@ -5694,7 +6061,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-08-01",
+        "first_commit": "2026-06-03",
         "merged": null,
         "audited": null
       }
@@ -5705,7 +6072,7 @@
       "planned_week": null,
       "actual": {
         "dispatched": null,
-        "first_commit": "2026-08-01",
+        "first_commit": "2026-06-03",
         "merged": null,
         "audited": null
       }
