@@ -24,7 +24,15 @@
                                     快照缺失/损坏 → null + skipped_sources 登记（**不计 degraded**：
                                     旁路诊断物，不参与交付度分子分母；缺失不静默也不淹没真降级）。
                                     主提交路径**不读它、不跑它**——本器未被 pre-commit/pre-push 调用。
-           标准输出: 一行摘要；诊断信息走 stderr（logging）
+           totals（D850 口径变更，创始人 2026-09-20 裁定）**不含任何百分比字段**：
+           v1_total / v1_passed / v1_verified / pending_k3 / backlog_points /
+           freshness / blocked_count +
+           buckets = **离散三档**（schema "discrete-health-buckets/1"）:
+                     healthy / written_not_wired / missing + other_states{wired_broken,
+                     live_unverified, state_unknown} + identity{...}，**每档带 evidence_cmd**
+                     （源侧复算的可复现命令，不读本派生物）。无法从现有证据源判定的档
+                     显式 `count: null` + `reason`（**禁猜 0**；恒等式由显式残余闭合，不丢点）。
+           标准输出: 一行摘要（**离散计数，零百分比**）；诊断信息走 stderr（logging）
 @exit    — 0  正常
              0  降级（默认）—— 文件**仍完整写出**，降级在带内（degraded:true），
                 使 D794 永远拿得到可渲染的 JSON 而非 404
@@ -40,13 +48,20 @@
             受影响字段置 null，**禁止静默填 0**；ENOENT 与解析失败分别登记（不混为一谈）。
             git 不可用**不计降级**（git_head/timeline 属溯源信息，非 §B.2 声明的数据输入），
             但显式 log.warning，不静默。
-@contract— 口径（派单 §B.3，照抄不得自创）:
-             交付度   = v1_passed / v1_total；分母 = V1 断言表条数（冻结 125，变更走变更单）
+@contract— 口径（派单 §B.3 + D850 口径变更，照抄不得自创）:
+             交付度   = **已取消**（D850，创始人 2026-09-20 裁定：改「N 个健康 / M 个写了没接 /
+                        K 个缺」离散计数，见文件头 D850 段与 totals.buckets）。
+                        此前口径 = v1_passed / v1_total。分母仍 = V1 断言表条数（冻结 128，
+                        变更走变更单）。**不得再加回任何 *_pct 字段。**
              断言通过 = ① 有证据（record_type 与断言声明的证据类型**匹配**）
                         ② 证据龄**不影响**通过判定 —— 保鲜只计数不扣交付度（09-17 口径）
                         多份匹配证据取主证据：最新日期优先，同日按优先级
                         k3 > test > scenario > founder-demo，再按路径稳定排序
              verified = 通过的断言中，另有 record_type=k3 的 PASS 裁决（K3 独立复核，禁自我审计）
+             三档     = healthy（点亮且另有 k3 独立 PASS）/ written_not_wired（V1 表证据列
+                        pending_wiring 撤回标记）/ missing（缺，判定手段=代码检索 → null + 原因）
+                        + 显式其它态（live_unverified = 能跑未验证 / wired_broken / state_unknown）
+                        互斥且完备；无法判定 → count:null + reason（禁猜 0）；恒等式由残余闭合
              保鲜     = 证据龄 ≤7🟢 / 8–14🟡 / >14🔴；只对"已通过"的断言分桶计数
              阻塞     = 仅当 blocked{reason,since,needs} 三要素齐全才计入；days = today - since
              backlog  = product-lines.yaml 验收点总数 - V1 断言数（V1 外不参与交付度）
@@ -108,6 +123,110 @@ DEFAULT_EVIDENCE_RELS = (
     "docs/synova/product-lines/evidence",
     "scripts/golden-scenarios/evidence",
 )
+
+# ── D850: 离散三档（取消整体完成度百分数口径）─────────────────────────────
+# 权威（引用必须全名 + 版本）:
+#   ① `docs/authority/产品完成度定义与推进总纲-20260918.md` §1.2（v1，2026-09-18）
+#      五态定义 + 「共同报告方式：`N 个健康 / M 个写了没接 / K 个缺` —— **离散计数，不是百分比**」
+#   ② `docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md` §二（v1.1，2026-09-19）
+#      五态的**判定手段**（缺 = 代码检索 / 写了没接 = 运行时不变量 / 接了跑不通 = 冒烟启动 /
+#      能跑未验证 = e2e / 健康 = live && testedThroughEntry）
+#   ③ `/Users/wane/山河研究院/99-综合/方案-项目度量-从声明驱动到事实驱动.md` §四
+#      （「每个数字必须带一条可复现的命令。不能复现的数字，不上看板」）
+#      + §六（L3 静态 grep 检测实测准确率 3/5 = 60% → 静态检测只能粗筛，**不能当判定源**）
+# 创始人签字: `docs/synova/coordination/创始人裁定表-§6五项-20260920.md`（D850 = 离散健康计数）
+BUCKETS_SCHEMA = "discrete-health-buckets/1"
+BUCKETS_AUTHORITY = (
+    "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2（v1，2026-09-18）"
+    " + docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二（v1.1，2026-09-19）"
+    " + 方案-项目度量-从声明驱动到事实驱动.md §四/§六（创始人授权引用）"
+)
+
+# 源侧复算命令模板（`{field}` = 档名）——**不读派生物**，直接从权威源（V1 断言表 + 两处证据目录）
+# 重算，故它是独立于本脚本实现的**可复现证据**（读回自己的输出不算证据）。
+_EVIDENCE_RECOMPUTE = """python3 - {field} <<'PY'
+import glob, json, re, sys
+rows = [[c.strip() for c in l.strip().strip('|').split('|')]
+        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')
+        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]
+kinds = {r[0]: r[3] for r in rows if len(r) >= 5}
+verdicts = {}
+for d in ('docs/synova/product-lines/evidence', 'scripts/golden-scenarios/evidence'):
+    for f in sorted(glob.glob(d + '/*.json')):
+        try:
+            rec = json.load(open(f, encoding='utf-8'))
+        except (OSError, ValueError):
+            continue
+        if not isinstance(rec, dict):
+            continue
+        for v in rec.get('verdicts') or []:
+            if isinstance(v, dict) and str(v.get('verdict', '')).lower() == 'pass' and v.get('acceptance_point'):
+                verdicts.setdefault(str(v['acceptance_point']), set()).add(rec.get('record_type'))
+lit = set(i for i, k in kinds.items() if k != 'pending_wiring' and k in verdicts.get(i, set()))
+counts = {}
+counts['healthy'] = sum(1 for i in lit if 'k3' in verdicts.get(i, set()))
+counts['written_not_wired'] = sum(1 for k in kinds.values() if k == 'pending_wiring')
+counts['live_unverified'] = sum(1 for i in lit if 'k3' not in verdicts.get(i, set()))
+counts['v1_total'] = len(kinds)
+counts['state_unknown'] = (counts['v1_total'] - counts['healthy']
+                           - counts['written_not_wired'] - counts['live_unverified'])
+print('%s=%s' % (sys.argv[1], counts[sys.argv[1]]))
+PY"""
+
+# 判定源存在性探针（`{field}` = 被判定的机器可读字段名）——用于**无法判定的档**：
+# 它的输出是该档 `count: null` 的**可复现依据**（证明判定源缺席），而不是把 null 静默成 0。
+_EVIDENCE_SOURCE_PROBE = """python3 - {field} <<'PY'
+import glob, re, sys
+name = sys.argv[1]
+hits = []
+for f in (sorted(glob.glob('docs/synova/product-lines/*.yaml'))
+          + sorted(glob.glob('docs/synova/product-lines/evidence/*.json'))):
+    try:
+        txt = open(f, encoding='utf-8').read()
+    except OSError:
+        continue
+    if re.search(r'(?m)^\\s*"?%s"?\\s*:' % name, txt):
+        hits.append(f)
+print('%s=%s' % (name, 'SOURCE_PRESENT' if hits else 'SOURCE_ABSENT'))
+PY"""
+
+# 档位定义文案（照抄权威语义，不自由发挥）
+_DEF_HEALTHY = ("总纲 §1.2「健康」（live && testedThroughEntry）的可判定代理：断言已点亮，"
+                "且另有 record_type=k3 的独立 PASS 裁决（K3 独立复核，禁自我审计）")
+_DEF_WRITTEN = ("总纲 §1.2「写了没接」（implemented=true, wired=false）：V1 断言表「证据」列"
+                "= pending_wiring 撤回标记（D809；显式声明，非 grep 静态判定）")
+_DEF_MISSING = ("总纲 §1.2「缺」（implemented=false）：判定手段 = 代码检索；本口径禁用 grep 型"
+                "静态判据（事实驱动 §六 实测 3/5=60%），且「无匹配证据」≠「无实现」（诚实规则）")
+_DEF_WIRED_BROKEN = "总纲 §1.2「接了跑不通」（wired=true, live=false）：判定手段 = 冒烟启动"
+_DEF_LIVE_UNVERIFIED = ("总纲 §1.2「能跑未验证」（live=true, testedThroughEntry=false）："
+                        "断言已点亮但无独立 k3 复核——**单独成态，绝不并进健康**")
+_DEF_STATE_UNKNOWN = ("残余：断言既未点亮、也非撤回标记 → 其五态归属不可判定"
+                      "（缺 / 写了没接 / 接了跑不通 三选一，无机器可读源）；显式列出以闭合恒等式")
+
+
+# ⓓ-4 命令语义（件内 schema 级说明，不只写在 docstring）：与 product-progress 件并列披露，
+# 「复现强度不同」不得沉默偏离。
+LEDGER_CMD_SEMANTICS = {
+    "evidence_cmd": ("**源侧重算**（本档「那条命令」）：直接读权威输入（V1 断言表「证据」列 + 两处"
+                     "证据目录的 record_type/verdict）重算该档同一个值，**不读 ledger.json**"
+                     "（读回自己的输出不构成证据）。单档毫秒级，无需中间件。"),
+    "artifact_selfcheck_cmd": ("本件**不提供**：ledger.json 各档 evidence_cmd 已是源侧重算，"
+                               "不需要「读回派生物」的自查形态（宁缺勿造）。"),
+    "regenerate_cmd": "**件级一次源侧重生成** → docs/synova/project/ledger.json。",
+    "source_probe_cmd": "只服务 null 档：复现「为什么没有数字」（判定源缺席 = SOURCE_ABSENT）。",
+    "independent_check_cmd": ("本件**不单列**：evidence_cmd 本身即不读派生件的独立判据"
+                              "（同一形态承担两职，不是省略）。"),
+    "reproducibility_strength": {
+        "本件": "源侧重算、单档毫秒级、无中间件；与 product-progress 件的比对形态不同（那边因六态"
+                "状态机无法内联表达，走「一次重算 + 逐档比对」）。",
+    },
+}
+
+
+def _reason_no_source(what, how):
+    """不可判定档的显式原因（**禁猜 0**：null 必须带可核原因）。"""
+    return ("无机器可读判定源：总纲 §1.2 判定手段 = %s（%s），本仓无承载该判定的字段"
+            "（yaml 与证据记录均无；可复现依据 = 本档 evidence_cmd 输出 SOURCE_ABSENT）" % (how, what))
 
 
 # ── 通用工具 ──────────────────────────────────────────────────────────────
@@ -485,6 +604,124 @@ def load_pr_queue(path):
     }, "ok"
 
 
+def build_buckets(v1_total, v1_passed, v1_verified, v1_pending_k3):
+    """D850: 把逐点判定折叠为**离散三档**（取代整体完成度百分数），每档自带可复现命令。
+
+    @input  — v1_total:int|None（分母 = V1 断言表条数）
+              v1_passed:int|None（已点亮 = 有匹配声明类型的 PASS 证据）
+              v1_verified:int|None（其中另有 record_type=k3 独立 PASS 裁决者）
+              v1_pending_k3:int|None（V1 表「证据」列 = pending_wiring 的撤回标记数）
+    @output — dict，schema = "discrete-health-buckets/1":
+                healthy / written_not_wired / missing            ← 三档（互斥）
+                other_states{wired_broken, live_unverified, state_unknown} ← 显式列出，不丢点
+                identity{expr, terms, null_terms, holds, denominator}      ← 恒等式（可机检）
+                每档 = {count, evidence_cmd, definition, source, reason}
+    @contract — 口径**照抄权威，不得自创**（见文件头 D850 段）:
+                healthy           = 点亮 且 另有 k3 独立 PASS 裁决
+                written_not_wired = V1 表证据列 pending_wiring（D809 撤回标记）
+                missing           = 总纲「缺」→ 判定手段 = 代码检索 → **null + 原因**（禁猜 0）
+                live_unverified   = 点亮但无独立核验 = 总纲「能跑未验证」（**不得并进 healthy**）
+                wired_broken      = 总纲「接了跑不通」→ 判定手段 = 冒烟启动 → **null + 原因**
+                state_unknown     = 残余（未点亮且非撤回）；显式列出 → 恒等式闭合，不丢点
+    @degraded — v1_total 为 None（V1 断言表降级）→ 全部 count = None + reason（**绝不猜 0**）
+    """
+    if v1_total is None or v1_passed is None or v1_verified is None or v1_pending_k3 is None:
+        degraded_reason = "上游降级：V1 断言表不可用 → 分母未知（不得静默猜 0，见文件头 @degraded）"
+        n_healthy = n_written = n_live = n_unknown = None
+        null_reason = {k: degraded_reason for k in
+                       ("healthy", "written_not_wired", "missing",
+                        "wired_broken", "live_unverified", "state_unknown")}
+    else:
+        n_healthy = v1_verified
+        n_written = v1_pending_k3
+        n_live = v1_passed - v1_verified
+        n_unknown = v1_total - n_healthy - n_written - n_live
+        null_reason = {
+            "missing": _reason_no_source("缺（implemented=false）", "代码检索"),
+            "wired_broken": _reason_no_source("接了跑不通（wired=true, live=false）", "冒烟启动"),
+        }
+
+    def entry(count, definition, source, cmd_field, probe=False, reason=None):
+        tpl = _EVIDENCE_SOURCE_PROBE if probe else _EVIDENCE_RECOMPUTE
+        return {
+            "count": count,
+            "evidence_cmd": tpl.replace("{field}", cmd_field),
+            "definition": definition,
+            "source": source,
+            "reason": reason,
+        }
+
+    buckets = {
+        "schema": BUCKETS_SCHEMA,
+        "authority": BUCKETS_AUTHORITY,
+        "granularity": "acceptance_point",
+        "regenerate_cmd": ("python3 scripts/project/gen-project-board.py --out "
+                           "docs/synova/project/ledger.json"),
+        "cmd_semantics": LEDGER_CMD_SEMANTICS,
+        "denominator": v1_total,
+        "denominator_note": ("与 `docs/synova/product-lines/product-progress.json` 的顶层 buckets "
+                             "分母不同（此处 = V1 断言表条数；该件 = product-lines.yaml 验收点数）——"
+                             "同名档不可跨件混读，各档自带 denominator"),
+        "healthy": entry(
+            n_healthy, _DEF_HEALTHY,
+            "V1 断言表（声明类型）+ 两处证据目录（record_type=k3 的 PASS 裁决）",
+            "healthy", reason=null_reason.get("healthy")),
+        "written_not_wired": entry(
+            n_written, _DEF_WRITTEN,
+            "V1 断言表「证据」列 = pending_wiring（D809 撤回标记）",
+            "written_not_wired", reason=null_reason.get("written_not_wired")),
+        "missing": entry(
+            None, _DEF_MISSING,
+            "判定手段 = 代码检索（本口径禁用；事实驱动 §六 实测静态检测 3/5=60%）",
+            "implemented", probe=True, reason=null_reason["missing"]),
+        "other_states": {
+            "live_unverified": entry(
+                n_live, _DEF_LIVE_UNVERIFIED,
+                "V1 断言表 + 证据目录（点亮但无 k3 独立 PASS）",
+                "live_unverified", reason=null_reason.get("live_unverified")),
+            "wired_broken": entry(
+                None, _DEF_WIRED_BROKEN,
+                "判定手段 = 冒烟启动（本仓无该判定的机器可读源）",
+                "wired", probe=True, reason=null_reason["wired_broken"]),
+            "state_unknown": entry(
+                n_unknown, _DEF_STATE_UNKNOWN,
+                "V1 断言表 + 证据目录（既未点亮、也非撤回标记）",
+                "state_unknown", reason=null_reason.get("state_unknown")),
+        },
+    }
+    terms = {
+        "healthy": buckets["healthy"]["count"],
+        "written_not_wired": buckets["written_not_wired"]["count"],
+        "missing": buckets["missing"]["count"],
+        "wired_broken": buckets["other_states"]["wired_broken"]["count"],
+        "live_unverified": buckets["other_states"]["live_unverified"]["count"],
+        "state_unknown": buckets["other_states"]["state_unknown"]["count"],
+    }
+    known_sum = sum(v for v in terms.values() if v is not None)
+    buckets["identity"] = {
+        "expr": ("healthy + written_not_wired + missing + wired_broken + live_unverified "
+                 "+ state_unknown = v1_total"),
+        "terms": sorted(terms),
+        "null_terms": sorted(k for k, v in terms.items() if v is None),
+        "denominator": v1_total,
+        "known_terms_sum": known_sum,
+        "holds": (v1_total is not None and known_sum == v1_total),
+        "note": ("null 档不参与求和（其归属不可判定，禁猜 0）；state_unknown 是显式残余，"
+                 "故恒等式永远闭合——任何点都不会被静默丢弃。"
+                 "边界（队长 2026-09-20 裁定）：本恒等式**只保证完备性**"
+                 "（丢点会显形为 state_unknown），**不保证各档归类正确**——归类正确性由"
+                 "tests/project/*.test.sh 与各档 evidence_cmd/判定源探针负责；"
+                 "它是自洽性检查，不是正确性证据"),
+    }
+    buckets["strict_source_absent"] = {
+        "field": "testedThroughEntry / live / wired / implemented",
+        "reason": ("总纲 §1.2 的**严格**五态（live && testedThroughEntry）无机器可读源：e2e 不在 CI"
+                   "（第 0 项 P-3 未立项）。故 buckets.healthy 报的是「独立核验通过」口径的可判定代理，"
+                   "不冒充严格健康数——数字与口径同时给出，读者可自行判定可信度"),
+    }
+    return buckets
+
+
 def build_ledger(args):
     """组装账本 dict。@return (ledger:dict, degraded:bool)"""
     root = Path(args.repo_root).resolve()
@@ -638,8 +875,14 @@ def build_ledger(args):
         "v1_verified": v1_verified if v1_total is not None else None,
         # D809: 撤回待接线点数（不计 passed；撤回要看得见，见文件头 @contract）
         "pending_k3": v1_pending_k3 if v1_total is not None else None,
-        "delivery_pct": round(100.0 * v1_passed / v1_total, 1) if v1_total else None,
-        "verify_pct": round(100.0 * v1_verified / v1_passed, 1) if v1_passed else None,
+        # D850: 百分比口径已取消（旧的两个顶层百分比字段已删除）——创始人 2026-09-20 裁定，
+        #       改三档离散计数（每档带可复现命令）。**不得再加回任何 *_pct 字段。**
+        "buckets": build_buckets(
+            v1_total,
+            v1_passed if v1_total is not None else None,
+            v1_verified if v1_total is not None else None,
+            v1_pending_k3 if v1_total is not None else None,
+        ),
         "freshness": totals_fresh,
         "blocked_count": len(blocked),
         "backlog_points": (pl_total_points - v1_total)
@@ -711,9 +954,17 @@ def main(argv=None):
 
     if not args.quiet:
         t = ledger["totals"]
-        print("ledger.json → %s | v1_total=%s v1_passed=%s verified=%s delivery=%s%% "
+        b = t["buckets"]
+        # D850: 摘要行改**离散三档**（零百分比）——口径单源，不留百分比后门
+        print("ledger.json → %s | v1_total=%s v1_passed=%s v1_verified=%s | "
+              "healthy=%s written_not_wired=%s missing=%s | "
+              "live_unverified=%s wired_broken=%s state_unknown=%s | "
               "freshness=%s blocked=%s degraded=%s"
-              % (out_path, t["v1_total"], t["v1_passed"], t["v1_verified"], t["delivery_pct"],
+              % (out_path, t["v1_total"], t["v1_passed"], t["v1_verified"],
+                 b["healthy"]["count"], b["written_not_wired"]["count"], b["missing"]["count"],
+                 b["other_states"]["live_unverified"]["count"],
+                 b["other_states"]["wired_broken"]["count"],
+                 b["other_states"]["state_unknown"]["count"],
                  t["freshness"], t["blocked_count"], ledger["degraded"]))
         for reason in ledger["degraded_sources"]:
             print("  ⚠ degraded: %s" % reason, file=sys.stderr)
