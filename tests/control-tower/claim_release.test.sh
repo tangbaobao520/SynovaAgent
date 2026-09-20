@@ -111,9 +111,16 @@ print(a['released'])
 " 2>&1)
 assert_contains "$BOTH" "SAME" "⑧ str repo 与 Path repo 判定一致"
 assert_contains "$BOTH" "True" "⑧ str repo 仍能识别已释放（源头过滤不被吞）"
-# D853: ⑧ 的原始差异（CI 上一句"SAME 未找到"信息量不够——要看 a/b 各自判什么）
+# D853: ⑧ 的原始差异（CI 上"SAME 未找到"信息量不够）。若是 Traceback → 只留**末尾 4 行**
+# （File/行号/异常行 = 炸点），不整段塞进注解预算。
 DIAG8=""
-printf '%s' "$BOTH" | grep -qF "SAME" || DIAG8="BOTH=[$(printf '%s' "$BOTH" | tr '\n' '/' | tr -s ' ' | cut -c1-108)]"
+if ! printf '%s' "$BOTH" | grep -qF "SAME"; then
+  if printf '%s' "$BOTH" | grep -qF "Traceback"; then
+    DIAG8="TB[$(printf '%s' "$BOTH" | grep -vE '^[[:space:]]*$' | tail -4 | tr '\n' '|' | cut -c1-128)]"
+  else
+    DIAG8="BOTH=[$(printf '%s' "$BOTH" | tr '\n' '/' | tr -s ' ' | cut -c1-128)]"
+  fi
+fi
 
 echo "── 组 9-10: scan ──"
 rm -f "$SB/task-state/claim-releases.json" "$SB/.codex/control-tower/session-registry.json"
@@ -127,8 +134,13 @@ assert_contains "$(run scan --path docs/nonexistent/ --json)" '"stale": []' "⑩
 
 echo "── 组 11-12: release / release-stale ──"
 rm -f "$SB/task-state/claim-releases.json"
-run release --task D901 --reason "单测" >/dev/null 2>&1
-N1=$(python3 -c "import json;print(len(json.load(open('$SB/task-state/claim-releases.json',encoding='utf-8'))['releases']))")
+D11_OUT=$(run release --task D901 --reason "单测" 2>&1); D11_RC=$?
+N1=$(python3 -c "import json;print(len(json.load(open('$SB/task-state/claim-releases.json',encoding='utf-8'))['releases']))" 2>&1); N1RC=$?
+# D853: ⑪ 失败证据（release 的 rc/输出 + 台账文件是否存在 + 读取报什么）——只在失败时进 DIAG-⑪
+DIAG11=""
+{ [ "$N1" != "1" ] || [ "$N1RC" != "0" ]; } && DIAG11=$(printf 'rc=%s ledger=%s out=[%s] rd=[%s]' "$D11_RC" \
+  "$([ -f "$SB/task-state/claim-releases.json" ] && echo ok || echo MISSING)" \
+  "$(printf '%s' "$D11_OUT" | tr '\n' '/' | cut -c1-60)" "$(printf '%s' "$N1" | tr '\n' '/' | cut -c1-50)")
 assert_eq "$N1" "1" "⑪ release 写台账 1 条"
 run release --task D901 --reason "单测2" >/dev/null 2>&1
 N2=$(python3 -c "import json;print(len(json.load(open('$SB/task-state/claim-releases.json',encoding='utf-8'))['releases']))")
@@ -193,7 +205,8 @@ echo "  PASS=$PASS FAIL=$FAIL"
 if [ "$FAIL" -ne 0 ]; then
   # D853: CI 注解只带 tail -8 → 失败断言名 + 关键环境事实压进末尾（否则被尾部 ✅ 挤出可见区）
   echo "DIAG-FAIL $(printf '%s' "$FAILLOG" | tr '\n' ' ' | tr -s ' ' | cut -c1-150)"
-  [ -n "${DIAG8:-}" ] && echo "DIAG-⑧ $(printf '%s' "$DIAG8" | cut -c1-120)"
+  [ -n "${DIAG8:-}" ] && echo "DIAG-⑧ $(printf '%s' "$DIAG8" | cut -c1-130)"
+  [ -n "${DIAG11:-}" ] && echo "DIAG-⑪ $(printf '%s' "$DIAG11" | cut -c1-130)"
   echo "DIAG-ENV py=$(command -v python3 2>/dev/null || echo NONE) bash=$(command -v bash 2>/dev/null || echo NONE) git=$(command -v git 2>/dev/null || echo NONE)"
 fi
 exit $([ "$FAIL" -eq 0 ] && echo 0 || echo 1)
