@@ -636,6 +636,10 @@ def build_buckets(v1_total, v1_passed, v1_verified, v1_pending_k3):
         "schema": BUCKETS_SCHEMA,
         "authority": BUCKETS_AUTHORITY,
         "granularity": "acceptance_point",
+        "denominator": v1_total,
+        "denominator_note": ("与 `docs/synova/product-lines/product-progress.json` 的顶层 buckets "
+                             "分母不同（此处 = V1 断言表条数；该件 = product-lines.yaml 验收点数）——"
+                             "同名档不可跨件混读，各档自带 denominator"),
         "healthy": entry(
             n_healthy, _DEF_HEALTHY,
             "V1 断言表（声明类型）+ 两处证据目录（record_type=k3 的 PASS 裁决）",

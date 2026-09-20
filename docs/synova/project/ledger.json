@@ -1,8 +1,8 @@
 {
   "schema": "project-ledger/1",
   "generated_by": "gen-project-board.py",
-  "generated_at": "2026-09-20T22:31:29+08:00",
-  "git_head": "7e4e169d277bb4581db10be7fdccf2d5cd2a77c6",
+  "generated_at": "2026-09-20T22:34:03+08:00",
+  "git_head": "e1b3a9c50cfbbca40877294bfa1369d42109a0ec",
   "sources": {
     "yaml": "docs/synova/product-lines/product-lines.yaml",
     "v1_dod": "docs/synova/project/26线-V1验收标准-v0.2-20260917.md",
@@ -27,6 +27,8 @@
       "schema": "discrete-health-buckets/1",
       "authority": "docs/authority/产品完成度定义与推进总纲-20260918.md §1.2（v1，2026-09-18） + docs/synova/coordination/验收标准-穿真实入口-v1-20260918.md §二（v1.1，2026-09-19） + 方案-项目度量-从声明驱动到事实驱动.md §四/§六（创始人授权引用）",
       "granularity": "acceptance_point",
+      "denominator": 128,
+      "denominator_note": "与 `docs/synova/product-lines/product-progress.json` 的顶层 buckets 分母不同（此处 = V1 断言表条数；该件 = product-lines.yaml 验收点数）——同名档不可跨件混读，各档自带 denominator",
       "healthy": {
         "count": 16,
         "evidence_cmd": "python3 - healthy <<'PY'\nimport glob, json, re, sys\nrows = [[c.strip() for c in l.strip().strip('|').split('|')]\n        for l in open(sorted(glob.glob('docs/synova/project/26线-V1验收标准*.md'))[-1], encoding='utf-8')\n        if re.match(r'^\\|\\s*\\d+-\\d+\\s*\\|', l)]\nkinds = {r[0]: r[3] for r in rows if len(r) >= 5}\nverdicts = {}\nfor d in ('docs/synova/product-lines/evidence', 'scripts/golden-scenarios/evidence'):\n    for f in sorted(glob.glob(d + '/*.json')):\n        try:\n            rec = json.load(open(f, encoding='utf-8'))\n        except (OSError, ValueError):\n            continue\n        if not isinstance(rec, dict):\n            continue\n        for v in rec.get('verdicts') or []:\n            if isinstance(v, dict) and str(v.get('verdict', '')).lower() == 'pass' and v.get('acceptance_point'):\n                verdicts.setdefault(str(v['acceptance_point']), set()).add(rec.get('record_type'))\nlit = set(i for i, k in kinds.items() if k != 'pending_wiring' and k in verdicts.get(i, set()))\ncounts = {}\ncounts['healthy'] = sum(1 for i in lit if 'k3' in verdicts.get(i, set()))\ncounts['written_not_wired'] = sum(1 for k in kinds.values() if k == 'pending_wiring')\ncounts['live_unverified'] = sum(1 for i in lit if 'k3' not in verdicts.get(i, set()))\ncounts['v1_total'] = len(kinds)\ncounts['state_unknown'] = (counts['v1_total'] - counts['healthy']\n                           - counts['written_not_wired'] - counts['live_unverified'])\nprint('%s=%s' % (sys.argv[1], counts[sys.argv[1]]))\nPY",
