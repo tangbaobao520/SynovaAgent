@@ -19,7 +19,7 @@
     "docs/synova/product-lines/evidence/D826-search-tenant-isolation-20260920.json"
   ],
   "impl": {
-    "sha": null,
+    "sha": "1151cb86",
     "by": "coder-b(批十四小队)",
     "at": "2026-09-20",
     "decision": "队长裁定 B：租户权威只取已验证身份 `req.auth?.orgId`，取不到 → 服务端实例 org `loadConfig().orgId`；永不采信 `?orgId=` / `x-synova-token`",
@@ -38,12 +38,13 @@
       "reverse": "三半各自可证伪：抽掉 LIKE 过滤→D826-1 红/D826-2 绿；抽掉 FTS5 过滤→D826-2 红/D826-1 绿；抽掉字面短语化→D826-4 红；还原后 sha256 与修复态一致 + 7 passed",
       "tsc": "本卡 5 个 src 文件 + 新测试零 error（全仓存量 28 error 与本卡无关）",
       "fp": "src/store/session-store.ts 修复态 sha256 = 7fb026d2b77398d4ae810b18d822b946ca104f1352440e28b56f66c11de92a7f"
-    }
+    },
+    "commit": "1151cb86"
   },
   "audit": null,
   "fix_task_id": null,
   "updated_at": "2026-09-20",
-  "updated_by": "coder-b(批十四小队)",
+  "updated_by": "synova-cto(批十四小队队长)",
   "domain": "win",
   "owner": "coder-b(批十四小队)",
   "milestone": "M1 产品可用",
