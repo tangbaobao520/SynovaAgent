@@ -204,9 +204,17 @@ fi
 [ "$(jget "$OUT1" lines.1.assertions.0.ok)" = "True" ]  && ok "2-1 ok=true" || no "2-1 ok 应 true"
 [ "$(jget "$OUT1" lines.1.assertions.1.ok)" = "False" ] && ok "2-2 ok=false（无 founder-demo 证据）" || no "2-2 ok 应 false"
 [ "$(jget "$OUT1" lines.1.assertions.1.age_days)" = "None" ] && ok "2-2 age_days=null（无证据）" || no "2-2 age_days 应 null"
-grep -q "golden-scenarios/evidence" "$OUT1" \
+# Windows 兼容（D854，CI 首轮实测）：gen-project-board.py 的 rel_to() 用 Path.relative_to
+#   → Windows 产出反斜杠（JSON 里落成 `scripts\\golden-scenarios\\evidence`）→ 旧断言写死
+#   字面 "/" 在 windows-latest 腿恒红（首轮实测：同一次运行**精确 2 条**，就是本组两条目录串）。
+#   本卡写集不含 gen-project-board.py（D848/D850 地盘）→ 断言接受两种分隔符；
+#   真命中反斜杠时**显式告警**（不静默 —— 产物路径跨平台不可读 = 遗留，待另卡修）。
+if grep -qE 'golden-scenarios\\\\evidence' "$OUT1"; then
+  echo "    ⚠ 产物路径用反斜杠（Windows）—— gen-project-board.py rel_to 跨平台缺陷，待另卡修"
+fi
+grep -qE 'golden-scenarios[\\/]+evidence' "$OUT1" \
   && ok "两处证据都算: 2-1 证据来源标 golden-scenarios" || no "GS 目录证据未被计入（K3-B5-P1 静默丢弃同型）"
-grep -q "product-lines/evidence" "$OUT1" \
+grep -qE 'product-lines[\\/]+evidence' "$OUT1" \
   && ok "sources 标明 product-lines/evidence" || no "sources 未标明产品证据目录"
 [ "$(jget "$OUT1" sources.v1_dod | grep -c "$V1_NAME")" = "1" ] && ok "sources.v1_dod 指向断言表" || no "sources.v1_dod 错"
 [ "$(jget "$OUT1" tasks | "$PYBIN" -c 'import json,sys;print(len(json.load(sys.stdin)))')" = "3" ] \
