@@ -53,8 +53,10 @@ touch "$SB/.claude/bypass.log"
 STUB="$TMPD/stub-precommit.sh"; printf '#!/bin/bash\nexit 0\n' > "$STUB"; chmod +x "$STUB"
 
 # 他人 session 登记写集 x.md
-python3 "$SB/scripts/control-tower/session_registry.py" register --session-id other-sess --brief "" --task-id D999 >/dev/null 2>&1
-python3 "$SB/scripts/control-tower/session_registry.py" write-set --session-id other-sess --add x.md >/dev/null 2>&1
+# D853: 准备步骤的输出**不再丢弃**（旧写法 `>/dev/null 2>&1`）——② 若以"没拦"形式失败，
+#   这两条输出是判「准备步骤失败」vs「门禁不拦」的唯一依据；只在失败时进 DIAG-②（有 150 字符预算）。
+D2_REGISTER_OUT=$(python3 "$SB/scripts/control-tower/session_registry.py" register --session-id other-sess --brief "" --task-id D999 2>&1)
+D2_WS_OUT=$(python3 "$SB/scripts/control-tower/session_registry.py" write-set --session-id other-sess --add x.md 2>&1)
 # D853: ② 前置断言 —— registry 必须**真的**登记上（旧写法 `>/dev/null 2>&1` 把准备步骤的失败也吞了，
 #   于是"准备失败"会以"② 没拦"的形式出现，把两类不同根因混成一个症状）。这条只做"前置可见"，不放宽 ②。
 D2_PRE=$(cd "$SB" && python3 scripts/control-tower/session_registry.py claimants x.md 2>&1 | head -1)
@@ -81,7 +83,11 @@ else
   # 直调 guard：它自己判什么（block? warn? pass?）+ rc
   D2_GRC=0; D2_G=$(cd "$SB" && python3 "$SB/scripts/control-tower/staging_guard.py" --session-id T-self --staged x.md 2>&1) || D2_GRC=$?
   D2_ST=$(printf '%s' "$D2_G" | grep -oE '"status": "[a-z]+"' | head -1)
-  DIAG2=$(printf 'staged=[%s] gl=[%s] grc=%s %s' "$D2_STAGED" "$(printf '%s' "$D2_GL" | cut -c1-48)" "$D2_GRC" "$D2_ST")
+  D2_PREP=""
+  # 只留可疑行（INFO 是 registry CLI 的正常日志，别占 150 字符预算）
+  D2_SUS=$(printf '%s\n%s' "$D2_REGISTER_OUT" "$D2_WS_OUT" | grep -aE "WARN|ERROR|⚠|❌|Traceback|Error|error" | head -1 | cut -c1-50)
+  [ -n "$D2_SUS" ] && D2_PREP=" prep=[$D2_SUS]"
+  DIAG2=$(printf 'staged=[%s] gl=[%s] grc=%s %s%s' "$D2_STAGED" "$(printf '%s' "$D2_GL" | cut -c1-40)" "$D2_GRC" "$D2_ST" "$D2_PREP")
 fi
 echo "$OUT" | grep -q "x.md" && echo "$OUT" | grep -q "other-sess" \
   && ok "② 点名文件与归属 session" || bad "② 未点名: $(echo "$OUT" | grep -a '❌' | head -2)"
