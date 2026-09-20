@@ -111,6 +111,14 @@
       "by": "claim-release",
       "reason": "批量释放（task-state:impl_done）",
       "released": true
+    },
+    "D839": {
+      "at": "2026-09-20T20:38:17+08:00",
+      "basis_at_release": "task-state:impl_done",
+      "by": "D846",
+      "owner_at_release": "mac-coding",
+      "reason": "D839 已 CONDITIONAL PASS，D846 承接其文件",
+      "released": true
     }
   },
   "version": 1
