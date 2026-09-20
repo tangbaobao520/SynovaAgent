@@ -1,0 +1,153 @@
+{
+  "card": "D826",
+  "task_id": "task-5",
+  "subject": "B｜D826 search() 租户隔离 — 两条 SQL 加 org 过滤 + FTS5 字面短语化 + 权威链（仅验签身份）",
+  "verify_role": "队内自验（独立于编码；非审计）",
+  "verifier": "verifier",
+  "date": "2026-09-20",
+  "worktree": "/Users/wane/SynovaAgent/.synova-wt-team14",
+  "branch": "team/win-batch14",
+  "verified_sha": "1151cb86",
+  "verified_sha_subject": "fix(D826): search() 租户隔离 — 两条 SQL 加 org 过滤 + FTS5 字面短语化 + 权威链(仅验签身份)",
+  "baseline_pre_fix": "d527abcb",
+  "delivery_files": [
+    ".claude/task-briefs/2026-09-20-D826-search-tenant-isolation.md",
+    "docs/synova/product-lines/evidence/D826-search-tenant-isolation-20260920.json",
+    "memory/notes/implemented/2026-09-20-D826-search-tenant-isolation.md",
+    "src/agent/builtin-tools.ts",
+    "src/cli.ts",
+    "src/routes/sessions.ts",
+    "src/store/session-store.ts",
+    "src/tui-v2/lib/commands.ts",
+    "task-state/D826.json",
+    "tests/session-store.test.ts",
+    "tests/store/fts-sync-trigger.test.ts",
+    "tests/store/search-tenant-isolation.test.ts"
+  ],
+  "commands_and_raw_output": [
+    {
+      "claim": "新文件 7 用例 + 存量回归 21 passed",
+      "command": "node_modules/.bin/vitest run tests/store/search-tenant-isolation.test.ts tests/store/fts-sync-trigger.test.ts tests/session-store.test.ts tests/sessions-api.test.ts",
+      "raw_summary": "Test Files 4 passed (4) / Tests 28 passed (28)；分项 = search-tenant-isolation 7、fts-sync-trigger 5、session-store 10、sessions-api 6（存量 5+10+6 = 21 与交付方声称一致）",
+      "match_with_claim": true,
+      "note": "交付方给的路径 tests/routes/sessions-api.test.ts 不存在，实际为 tests/sessions-api.test.ts（6 用例）——路径笔误，非事实错误"
+    },
+    {
+      "claim": "两条 SQL 各自加 org 过滤",
+      "command": "读 src/store/session-store.ts:637-663",
+      "raw_summary": "LIKE 分支 `WHERE m.content LIKE ? AND s.org_id = ?` + `.all(query, likePattern, orgId, limit)`（参数序与占位符一致：instr/LIKE/org/LIMIT）；FTS5 分支 `WHERE agent_messages_fts MATCH ? AND s.org_id = ?` + `.all(toFtsLiteralPhrase(query), orgId, limit)`",
+      "match_with_claim": true
+    },
+    {
+      "claim": "签名收紧 search(query, orgId, limit = 10)（编译期强制）",
+      "command": "grep -n 'search(query: string, orgId: string' src/store/session-store.ts + 调用点核对",
+      "raw_summary": "`search(query: string, orgId: string, limit = 10)`；调用点全部同步且租户均来自服务端上下文：src/cli.ts:204（conv.getOrgId()）、src/tui-v2/lib/commands.ts:214-220（本会话 org；取不到 → 明确提示并跳过，绝不发无租户查询）、src/agent/builtin-tools.ts:108（getOrgId()）；tsc --noEmit 对这 5 个文件零报错",
+      "match_with_claim": true
+    },
+    {
+      "claim": "FTS 表 schema 逐字未动",
+      "command": "git diff d527abcb..1151cb86 -- src/store/session-store.ts | grep -E '^[+-].*(CREATE VIRTUAL TABLE|UNINDEXED|tokenize)'",
+      "raw_summary": "零命中（无任何 +/- 变更行）",
+      "match_with_claim": true
+    },
+    {
+      "claim": "权威链只用 req.auth，永不采信 ?orgId= / x-synova-token",
+      "command": "grep -nE 'query\\.orgId|x-synova-token' src/routes/sessions.ts",
+      "raw_summary": "`:66` 说明注释『**永不**采信 `?orgId=` / `x-synova-token`』；`:86` `const requestedOrgId = ...` 仅用于**记 warn 审计**，未作租户来源；`resolveSearchOrgId:70-74` = `req.auth?.orgId` → 否则 `loadConfig().orgId`",
+      "match_with_claim": true
+    },
+    {
+      "claim": "语法类异常 500 → 400 SEARCH_QUERY_INVALID；limit 边界收敛",
+      "command": "读 src/routes/sessions.ts:79-112",
+      "raw_summary": "`/unterminated string|unknown special query|fts5: syntax error|malformed MATCH/i` → 400 `SEARCH_QUERY_INVALID`（其余仍 500 + log.error）；limit：非有限/≤0 → 10，上限 50",
+      "match_with_claim": true
+    },
+    {
+      "claim": "类型安全：本卡 5 个 src 文件逃逸 = 0",
+      "command": "git show 1151cb86 -U0 -- src/ | grep -E '^\\+.*(as any|as never|as unknown as)'",
+      "raw_summary": "零命中（新增行）；`tsc --noEmit` 与这 5 个文件相关报错零命中",
+      "match_with_claim": true
+    }
+  ],
+  "three_questions": {
+    "q1_who_calls_it": {
+      "answer": "入口 GET /api/sessions/search（src/routes/sessions.ts:76）→ resolveSearchOrgId(:70-74) → store.search(q, orgId, limit)（src/store/session-store.ts:632）；其他调用点 cli.ts:204 / tui-v2/lib/commands.ts:214-220 / builtin-tools.ts:108（租户均来自服务端上下文）",
+      "independently_verified": true
+    },
+    "q2_test_through_real_implementation": {
+      "answer": "是：真实 express 路由 + listen(0) + 真实 fetch + 真实 SessionStore(better-sqlite3 :memory:，**同库两租户**) + 真实 SQL 两条分支 + **真实 JWT 签发/验签**（signJwtToken/verifyJwtToken）；未 mock 路由/store/管线（vi.mock 仅 logger 作可观测边界）。另设**第二个无身份 app** 复现白名单路径的生产形态（D826-6）",
+      "independently_verified": true,
+      "boundary_disclosed": "身份驱动用测试 app 里的验签中间件（等价于生产中间件在非白名单路径上做的那一步），**不是**穿真实 jwtAuthMiddleware——因 /api/sessions 在白名单、中间件解析 Authorization 前早退（src/middleware/auth.ts:124、:282-284）⇒ 本进程内无法用真实中间件驱动租户。交付方已在测试头注释、evidence『验证边界』、note:39 三处如实标注"
+    },
+    "q3_what_breaks_if_removed": {
+      "answer": "四半各自可证伪（见 reverse_acceptance）：LIKE 过滤 / FTS5 过滤 / 字面短语化 / 权威链，各自抽掉都只让对应用例变红",
+      "independently_verified": true
+    }
+  },
+  "reverse_acceptance": {
+    "performed_by": "verifier（四轮突变串行、每轮独立 cp+sha256 还原；未用 git checkout / git stash）",
+    "fingerprints": {
+      "session_store_ts_before": "7fb026d2b77398d4ae810b18d822b946ca104f1352440e28b56f66c11de92a7f",
+      "sessions_ts_before": "7241254f17c43839edd88acc0fdc85c670a4920d70a17012aab789810ad222f8",
+      "after_all_restores_identical": true,
+      "git_diff_head_after_restore": "0 行",
+      "cross_check": "session-store.ts 修复态指纹与交付方记录（task-state/D826.json fp）逐字一致"
+    },
+    "half_a_like_branch": {
+      "action": "抽掉 LIKE 分支 `AND s.org_id = ?`（并同步移除对应 orgId 参数，避免参数错位造成的伪红）",
+      "red_run": "Tests 3 failed | 4 passed (7)；红 = D826-1（跨租户中文词）/ D826-3 / D826-6（后两条也走 CJK 分支）；**D826-2 仍绿**",
+      "significance": "两条 SQL 互不遮蔽的第一半证据"
+    },
+    "half_b_fts_branch": {
+      "action": "抽掉 FTS5 分支 `AND s.org_id = ?`",
+      "red_run": "Tests 1 failed | 6 passed (7)；红 = **仅 D826-2**（英文词跨租户泄露）；**D826-1 仍绿**",
+      "significance": "两条 SQL 互不遮蔽的第二半证据 ⇒ 队长要求的『两条 SQL 各自可证伪』成立"
+    },
+    "half_c_literal_phrase": {
+      "action": "FTS 分支参数由 `toFtsLiteralPhrase(query)` 回退为裸 `query`",
+      "red_run": "Tests 1 failed | 6 passed (7)；红 = **仅 D826-4**（`a OR b` 被当布尔算符误召回）"
+    },
+    "half_d_authority_chain": {
+      "action": "把 `resolveSearchOrgId` 改回优先采信 `req.query.orgId`（= 把租户权威交给调用方）",
+      "red_run": "Tests 1 failed | 6 passed (7)；红 = **仅 D826-3**（客户端入参选租户成功 + 无审计线索）"
+    },
+    "full_defect_state": {
+      "action": "把 src/store/session-store.ts + src/routes/sessions.ts 一并还原为 d527abcb（修复前）",
+      "red_run": "Tests 5 failed | 2 passed (7)",
+      "green_in_defect_state": ["D826-5 snippet 契约（FTS5 保留 <mark>）", "D826-7 limit 非法/超界不抛（200 + 结果受控）"],
+      "significance": "**与交付方自行标注的『D826-5/7 不具反向判别力』完全吻合**——该自标经我实测独立证实（本批第二条回灌建议的第三例实证）",
+      "restore_then_green": "4 文件 28 passed；两文件与 HEAD 差异 0 行"
+    }
+  },
+  "overclaim_guard_check": {
+    "requirement": "① 验证边界 = store/路由层 + 模拟的已验证身份，不是穿真实 JWT 中间件 ② 判据定位 = 为多租户做纵深防御、今天实际泄露风险 ≈ 0，不得写『当前正在泄露』",
+    "statement_1_found_at": [
+      "docs/synova/product-lines/evidence/D826-search-tenant-isolation-20260920.json → acceptance_points_coverage『五态定位』条：『**验证边界**：身份边界为「模拟已验证身份」——白名单早退使本进程内无法用真实 JWT 中间件驱动租户（如实标注，禁 overclaim）』",
+      "memory/notes/implemented/2026-09-20-D826-search-tenant-isolation.md:39（逐字同义，含『交付里不得写成"穿真实 JWT 中间件的租户隔离"』）",
+      "tests/store/search-tenant-isolation.test.ts:9-13（测试头『身份边界说明（如实标注，勿误读为 mock 管线）』）"
+    ],
+    "statement_2_found_at": [
+      "docs/synova/product-lines/evidence/D826-search-tenant-isolation-20260920.json → overclaim_guard：『D826 的价值是为多租户阶段做纵深防御；当前 D590 单机本地信任模型下今天实际泄露风险 ≈ 0。不得表述为"当前正在泄露"』",
+      "memory/notes/implemented/2026-09-20-D826-search-tenant-isolation.md:6（同一口径，含『不宣称"当前正在泄露"』）"
+    ],
+    "commit_message": "仅一行事实摘要，无越界声明",
+    "verdict": "两条禁 overclaim 声明**逐字在位**（evidence + note 双落点 + 测试头），无一处写成『当前正在泄露』"
+  },
+  "forbidden_pattern_check": {
+    "grep_as_completion": "未以 grep 命中当完成（7 条穿真实 HTTP 入口用例 + 四轮反向验收）",
+    "table_column_created_as_acceptance": "不适用",
+    "test_only_switch_in_src": "零命中（无 NODE_ENV==='test' / VITEST 分支）",
+    "loosened_exclusions": "未动（commit 未含 vitest.config / .github/）",
+    "evidence_naming_M5": "合规：docs/synova/product-lines/evidence/D826-search-tenant-isolation-20260920.json（交付方）+ D826-verify-20260920.json（本自验）",
+    "escape_hatches": "本卡 5 个 src 文件新增行 = 0",
+    "scope": "12 文件均落在 task-5 writeScopes / 标准产物内（tests/sessions-api.test.ts 一行未改）"
+  },
+  "disclosures": [
+    "验证边界如实标注：租户身份由测试 app 的验签中间件驱动（等价步骤），非穿真实 jwtAuthMiddleware——原因（白名单早退）已由交付方三处披露，我复核并认可；生产路径的可达性由 D826-6 的『无身份 app → 实例 org』形态覆盖",
+    "交付方另如实登记 **🔴 鉴权模型层缺陷**（白名单路由 req.auth 恒空 + extractAuthFromRequest 落到无签名 x-synova-token，middleware/auth.ts:282-284 / :401-402），并把结论留给 K3/CTO，本卡未夹带鉴权改造——边界正确（我核了它确实未改 middleware/auth.ts）",
+    "交付方给的回归命令路径 tests/routes/sessions-api.test.ts 不存在（实际 tests/sessions-api.test.ts）——路径笔误，不影响 21 passed 的事实",
+    "`?orgId=` 参数被读取后仅用于审计 warn（:86），不参与租户判定；D826-3 同时断言『带参结果 === 不带参结果』与『存在审计线索』，两条都真断言"
+  ],
+  "conclusion": "可提请独立审计",
+  "conclusion_basis": "核的是 1151cb86；队长六项重点核全部我独立完成：① 两条 SQL 各自可证伪（抽 LIKE → 仅 D826-1 红；抽 FTS5 → 仅 D826-2 红，双方互不遮蔽）② 权威链 grep + 行为双证（改回信任 ?orgId= → 仅 D826-3 红）③ FTS 表 schema 零改动（diff 零命中）④ 两条禁 overclaim 声明逐字在位 ⑤ 存量 21 passed 我重跑一致且 sessions-api 一行未改 ⑥ 5 个 src 文件新增行逃逸 = 0；另全量缺陷态 5 failed | 2 passed 与交付方自标的非判别用例完全吻合；四轮突变全部 sha256 还原、git diff HEAD = 0"
+}
