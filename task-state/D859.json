@@ -1,0 +1,31 @@
+{
+  "task_id": "D859",
+  "title": "审计/交付分支未推送的缺口：交付必须附 push 回执（ls-remote 命中）",
+  "status": "claimed",
+  "risk": "high",
+  "spec": "创始人 2026-09-20 转达 K3 两份审计结论，但 CTO 实测两份报告分支与 commit（cebeeb60）在远端均不存在、本地零落盘 → 报告实体不可取。与 D817「PR-ready ≠ mergeable」同类：交付声称已推送而无物理回执。",
+  "write_set": [
+    "docs/synova/coordination/",
+    "docs/synova/audit-reports/",
+    "task-state/D859.json"
+  ],
+  "impl": null,
+  "audit": null,
+  "fix_task_id": null,
+  "updated_at": "2026-09-20",
+  "updated_by": "synova-cto",
+  "domain": "mac",
+  "owner": "synova-cto",
+  "executor": "synova-cto",
+  "milestone": "M0 项目管理基建",
+  "depends_on": [],
+  "blocked": null,
+  "target": "2026-W38",
+  "acceptance_points": [
+    "交付汇报（含 K3 审计交付）必须附可核验物理回执：分支名 + ls-remote --heads origin 命中行 + commit sha；写已推送而无回执 = 不算交付",
+    "把该要求写进审计派单与交付模板（K3 侧与编码侧同权）",
+    "补一次实际验证：任一分支能被 ls-remote 命中（给原始输出）"
+  ],
+  "next": "① 写进模板/派单件 ② 请 K3 补推两份报告 ③ 复验",
+  "note": "来源：D850/D852 与 D854/CT-70 两份 K3 报告分支在远端与本地均不可查（2026-09-20 CTO 实测）。"
+}
