@@ -164,6 +164,7 @@ git commit → synova-commit → staging_guard.py --session-id <D#> --staged <fi
 | `GIT_WORK_TREE`/`GIT_DIR` 指外部仓（resolver） | ROOT 变外部仓 → 候选池空 → guard **pass**，被守护仓零痕迹 | 剥 `GIT_*` 后再 `rev-parse`/`branch` | 无 |
 | `PATH` 里塞假 `git` | 假 git 可回吐任意事实（此处用 `ls-files`/`rev-parse`） | 解析绝对路径 + 试运行校验 `--version` 形如 `git version N.` | 能让假 git 输出合法 version 串的本地进程仍可骗过（无外部信任锚）→ 已登记；本地进程本就等同任意代码执行 |
 | `PYTHONIOENCODING`/控制台 cp1252 | stderr 中文被 backslashreplace 吃 → 断言恒红 | stdout+stderr 双 reconfigure UTF-8 | 无 |
+| **python 不可用（调用点）** | 旧行为「`GUARD_STATUS=degraded` → 跳过 guard」= 放行 | 调用点 **fail-closed 阻断 + 点名**（第四轮追加授权；夹具 ⑩ 判据：旧实现 rc=0 / 新实现 rc=1） | 无 python 的机器提交被阻断（**有意**：整条控制塔本就依赖 python；出路文案给出） |
 | **guard 异常/崩溃（调用点）** | `synova-commit` 旧行为「降级放行」→ 该拦的放行 | 调用点 **fail-closed**（异常 → 阻断 + 点名；授权偏离，见第四轮） | 若 guard 真坏，提交被阻断（**有意的** fail-closed；出路文案给出"移出暂存文件/修好 guard"） |
 | guard **内部**链断（bash/python/git 不可用） | `claimed` 空 → 跳过认领判定 | `_fail_closed()`：block + degraded + 点名（第二轮） | 无 |
 

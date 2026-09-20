@@ -628,8 +628,14 @@ if [[ -f "$STAGING_GUARD" ]]; then
         GUARD_STATUS=$(echo "$GUARD_OUT" | "$PYBIN" -c "import json,sys; print(json.load(sys.stdin).get('status','degraded'))" 2>/dev/null || echo "degraded")
       fi
     else
-      GUARD_STATUS="degraded"
-      echo -e "${YELLOW}⚠ staging-guard 跳过: python 不可用或损坏（fail-open 显式提示，不静默）${NC}"
+      # D853 (CTO 授权): 旧行为 = GUARD_STATUS=degraded → 跳过 guard → **放行**（fail-open）。
+      #   python 不可用 = 认领判定整条不可用 → 与 staging_guard._fail_closed() 及上面的
+      #   "guard 执行异常" 路径**同口径**：fail-closed 阻断 + 点名原因（铁律 11/24/31）。
+      #   理由: 认领维度是**保护**维度，"拿不到认领列表" ≠ "没有认领"。
+      echo -e "${RED}❌ D853: staging-guard 无法执行 — python3/python/py 试运行均不可用 → 认领判定不可用 → fail-closed 阻断${NC}"
+      echo -e "${YELLOW}   出路: 修复本机 python 后重跑；或按实情移出暂存文件: git restore --staged <file>${NC}"
+      echo ""
+      exit 1
     fi
     if [[ "$GUARD_STATUS" == "block" ]]; then
       # D535: 防跑偏信号接线 — block 事件自动沉淀到学习闭环（incident-loop）

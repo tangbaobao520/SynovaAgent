@@ -96,8 +96,10 @@
 - 夹具 ④ 从"grep 旧文案（降级放行）"升级为"grep 异常命名 + fail-closed"（旧实现上红）；
   ② 增加"registry 登记成功"前置断言（旧写法把准备步骤失败 `>/dev/null 2>&1` 吞掉 → 误诊为"门禁不拦"）。
 - 边界：**只改** guard 异常处置那一段；synova-commit 其余逻辑（D839 交付、K3 已审）未动。
-- 仍未动（超授权）：`synova-commit` 里"python 不可用 → GUARD_STATUS=degraded → 跳过"那条分支
-  （同样是放行语义）→ 若下一轮注解显示 ② 走的是这条，再请授权。
+- **追加授权后已补**（第四轮第 2 项）：`synova-commit` 里"python3/python/py 试运行均不可用 →
+  `GUARD_STATUS=degraded` → 跳过 guard"那条分支，旧行为同为放行语义 → 改为 **fail-closed 阻断 + 点名**。
+  夹具 ⑩ 行为面：沙箱 PATH 前置三个坏 python shim → 旧实现 `rc=0`（放行）/ 新实现 `rc=1`（阻断 + 点名）
+  → 判别性成立。至此 `synova-commit` 的两条放行语义（异常 / python 不可用）都已收干净。
 
 ## 残余（显式登记，未静默放过）
 
