@@ -113,6 +113,17 @@
 - `claim_release.test.sh`：`DIAG-FAIL` ≤26 字符/条（4 条断言名活过注解预算）+ 新增 `DIAG-⑧`
   （str/Path 原始差异），下一轮定位 Windows str/Path 分歧。
 
+## 第八轮（2026-09-20）：claim_release 夹具路径命名空间（收尾轮）
+
+- CI：`staging_guard` 转绿（H 前提门控 + H2 契约级在 Windows 验证成立）；剩 `claim_release.test.sh` ⑧×2/⑪×2。
+- 根因：**该夹具的沙箱路径未做 D849 的 `cygpath -m` 归一化**（兄弟夹具做了，注释里记的正是这个坑）→ Windows 上
+  `$SB` 是 MSYS 形 → native python 读成 `C:\tmp\...` → 夹具的 `sys.path.insert`/`open()` 与 CLI 的 `--repo $SB`
+  落在不同根 → `FileNotFoundError`（⑧ 炸在夹具内联脚本；⑪ 是夹具**读**台账失败，不是 `save_ledger` 写失败）。
+- 证据：AST 逐条列模块级语句（无 import 期 FS 访问）+ 用不存在路径做 sys.path 首项导入仍 import OK
+  ⇒ 生产 import 无嫌疑；⑪ 的失败值是读失败；D849 同款前例在仓内。
+- 处置：夹具 `SB_RAW`+`cygpath -m`（POSIX 原值，零行为变化）；**生产侧不改**（`ledger_path`/`save_ledger`
+  一律从 `repo` 入参构造，调用方给原生形即正确）。诊断预算重排 ⑪→⑧→FAILLOG→ENV（407/450 字符）。
+
 ## 残余（显式登记，未静默放过）
 
 - 假 git 若同时①输出合法 `git version N.`②不在临时目录③不在被判定的仓库内，仍可能被采信

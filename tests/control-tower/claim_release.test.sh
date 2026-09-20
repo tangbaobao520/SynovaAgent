@@ -50,7 +50,13 @@ sha256_of() {
 REAL_LEDGER="$REPO_DIR/task-state/claim-releases.json"
 if [ -f "$REAL_LEDGER" ]; then SIG_BEFORE=$(sha256_of "$REAL_LEDGER"); else SIG_BEFORE="ABSENT"; fi
 
-SB=$(mktemp -d); trap 'rm -rf "$SB"' EXIT
+# D853 ⑩: 沙箱路径必须**双命名空间同实体**（D849 已在 staging_guard 夹具用同一口径）——
+#   裸 mktemp 给 MSYS 形（/tmp/...）；Windows **native python** 把它读成 C:\tmp\...（不存在）
+#   → 夹具自己的 `sys.path.insert('$SB/...')` / `open('$SB/task-state/...')` 与 CLI 的 `--repo $SB`
+#   落到不同根 → ⑧/⑪ 双红（CI 实证：`FileNotFoundError` + 台账 MISSING）。
+#   cygpath -m 给 mixed 形（C:/...）：bash 可 cd/glob、native python 可 open = 同一实体。
+SB_RAW=$(mktemp -d); trap 'rm -rf "$SB_RAW"' EXIT
+SB="$(cygpath -m "$SB_RAW" 2>/dev/null || echo "$SB_RAW")"  # POSIX 无 cygpath → 原样
 git -C "$SB" init -q; git -C "$SB" config user.email t@t.local; git -C "$SB" config user.name t
 mkdir -p "$SB/.claude/task-briefs" "$SB/task-state" "$SB/scripts/control-tower" "$SB/docs"
 cp "$SRC" "$SB/scripts/control-tower/claim_release.py"
@@ -204,9 +210,10 @@ echo "  PASS=$PASS FAIL=$FAIL"
 [ "$FAIL" -eq 0 ] && echo "FAIL=0" || echo "FAIL=$FAIL"
 if [ "$FAIL" -ne 0 ]; then
   # D853: CI 注解只带 tail -8 → 失败断言名 + 关键环境事实压进末尾（否则被尾部 ✅ 挤出可见区）
-  echo "DIAG-FAIL $(printf '%s' "$FAILLOG" | tr '\n' ' ' | tr -s ' ' | cut -c1-150)"
-  [ -n "${DIAG8:-}" ] && echo "DIAG-⑧ $(printf '%s' "$DIAG8" | cut -c1-130)"
-  [ -n "${DIAG11:-}" ] && echo "DIAG-⑪ $(printf '%s' "$DIAG11" | cut -c1-130)"
-  echo "DIAG-ENV py=$(command -v python3 2>/dev/null || echo NONE) bash=$(command -v bash 2>/dev/null || echo NONE) git=$(command -v git 2>/dev/null || echo NONE)"
+  # D853: 顺序 = 信息密度（CI 注解 `tail -8 | tr | cut -c1-450` 取**前段**）→ 最要紧的先进预算
+  [ -n "${DIAG11:-}" ] && echo "DIAG-⑪ $(printf '%s' "$DIAG11" | cut -c1-110)"
+  [ -n "${DIAG8:-}" ] && echo "DIAG-⑧ $(printf '%s' "$DIAG8" | cut -c1-110)"
+  echo "DIAG-FAIL $(printf '%s' "$FAILLOG" | tr '\n' ' ' | tr -s ' ' | cut -c1-110)"
+  echo "DIAG-ENV sb=[$(printf '%s' "$SB" | cut -c1-40)] py=$(command -v python3 2>/dev/null || echo NONE)"
 fi
 exit $([ "$FAIL" -eq 0 ] && echo 0 || echo 1)

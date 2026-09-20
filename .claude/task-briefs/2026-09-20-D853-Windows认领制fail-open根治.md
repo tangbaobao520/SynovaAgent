@@ -229,6 +229,21 @@ CI（`ab88069c`）证据：`DIAG-H … g_deg="degraded": true` + H 端到端仍 
 - **⑧/⑪ 短 Traceback**：`DIAG-⑧` 对 Traceback 只留**末尾 4 行**（失败帧 + 行号 + 异常行，实测 107 字符）；
   新增 `DIAG-⑪`（release 的 rc / 台账文件是否存在 / 原始输出首 60 字符）——⑧ 与 ⑪ 同走台账写路径，一次取证两边。
 
+## 第八轮（2026-09-20）：claim_release 夹具路径命名空间（D849 同款漏改）
+CI（`d44b0cea`）证据：`stageing_guard` 已转绿（H2/前提门控在 CI 验证成立）；只剩 `claim_release.test.sh`
+（⑧×2 + ⑪×2），且 `DIAG-⑧` 给出 `File "<string>", line 4` + `⑪` 的失败值里是 **`FileNotFoundError`（读台账）**。
+**根因判定（证据链，非猜）**：
+1. 生产模块**无 import 期 FS 访问**（AST 逐条列模块级语句验证 + 用不存在路径做 sys.path 首项导入 → import OK）
+   ⇒ ⑧ 的炸点不在生产 import。
+2. ⑪ 的失败值是**夹具自己的内联 python 读**台账时的 `FileNotFoundError`（`<string>` line 1）——是**读**失败，
+   不是 `save_ledger` 写失败（若写炸，CLI 会 traceback，且 `ledger=` 会显示别的东西）。
+3. **`claim_release.test.sh` 的沙箱路径从未做 D849 的 `cygpath -m` 归一化**（兄弟夹具 `staging_guard.test.sh:117`
+   有，且其注释记的正是同一失效模式）⇒ Windows 上 `$SB` 是 MSYS 形 `/tmp/...`，**native python 读成 `C:\tmp\...`**
+   → 夹具的 `sys.path.insert`/`open('$SB/task-state/…')` 与 CLI 的 `--repo $SB` 落在不同根 → ⑧/⑪ 双红。
+**处置**：`SB_RAW=$(mktemp -d)` + `SB="$(cygpath -m "$SB_RAW" ...)"`（bash 可 cd/glob、native python 可 open = 同实体；
+POSIX 原值零变化），trap 清理 `SB_RAW`。**生产侧无需改动**（`ledger_path()`/`save_ledger()` 一律从 `repo` 入参构造，
+调用方传原生形即正确）；诊断预算重排为 ⑪→⑧→FAILLOG→ENV（各 ≤110，合计 407 < 450）。
+
 ## 架构层: 基础设施
 控制塔门禁层（`scripts/workflow/**` + `scripts/control-tower/**` + `tests/control-tower/**`），不进 L1-L5，不 import `src/**`。
 
@@ -246,6 +261,6 @@ CI（`ab88069c`）证据：`DIAG-H … g_deg="degraded": true` + H 端到端仍 
 | 文件 | 类型 |
 |---|---|
 | .claude/task-briefs/2026-09-20-D853-Windows认领制fail-open根治.md | task |
+| memory/notes/implemented/2026-09-20-D853-windows-claim-gate-failopen.md | task |
 | tests/control-tower/claim_release.test.sh | task |
-| tests/control-tower/staging_guard.test.sh | task |
 
